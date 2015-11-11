@@ -25,7 +25,14 @@
 # 
 #
 
-LD_lookup_charset
-LD_lookup_texttype
-LD_setup_attributes
-LD_version
+
+{
+global:
+	LD_lookup_charset;
+	LD_lookup_texttype;
+	LD_setup_attributes;
+	LD_version;
+
+local:
+	*;
+};

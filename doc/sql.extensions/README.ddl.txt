@@ -136,8 +136,7 @@ Proposed syntax for testing:
 COMMENT ON DATABASE IS {'txt'|NULL};
 COMMENT ON <basic_type> name IS {'txt'|NULL};
 COMMENT ON COLUMN table_or_view_name.field_name IS {'txt'|NULL};
-COMMENT ON {PROCEDURE | [EXTERNAL] FUNCTION} [<package_name> .] name.param_name IS {'txt'|NULL};
-COMMENT ON [PROCEDURE | FUNCTION] PARAMETER [<package_name> .] name.param_name IS {'txt'|NULL};
+COMMENT ON PARAMETER procedure_name.param_name IS {'txt'|NULL};
 
 An empty literal string '' will act as NULL since the internal code (DYN in this case)
 works this way with blobs.
@@ -146,7 +145,9 @@ basic_type:
 - DOMAIN
 - TABLE
 - VIEW
+- PROCEDURE
 - TRIGGER
+- EXTERNAL FUNCTION
 - FILTER
 - EXCEPTION
 - GENERATOR
@@ -155,8 +156,6 @@ basic_type:
 - ROLE
 - CHARACTER SET
 - COLLATION
-- PACKAGE
-- USER (ability to store comment depends upon user management plugin)
 - SECURITY CLASS (not implemented because Borland hid them).
 
 
@@ -244,7 +243,7 @@ alter view v_users (id, name) as
 
 Function:
 
-Makes it possible to specify non-default (which is CURRENT_USER) grantor in GRANT and REVOKE
+Makes it possible to specify non-default (which is CURRENT_USER) grantor in GRANT and REVOKE 
 commands.
 
 Syntax:
@@ -265,7 +264,7 @@ GRANT R1 TO PUBLIC GRANTED BY USER1
 GRANT R1 TO USER1 WITH ADMIN OPTION
 
 Misc:
-GRANTED BY form of clause is recommended by SQL standard. AS is supported by some other
+GRANTED BY form of clause is recommended by SQL standard. AS is supported by some other 
 servers (Informix), and is added for better compatibility.
 
 
@@ -289,18 +288,18 @@ Example:
 
 create database 'peoples.fdb'
     default character set win1252;
-
+ 
 alter character set win1252
     set default collation win_ptbr;
-
+ 
 create table peoples (
     id integer,
     name varchar(50)  -- will use the database default character set and the win1252 default collation
 );
-
+ 
 insert into peoples values (1, 'adriano');
 insert into peoples values (2, 'ADRIANO');
-
+ 
 -- will retrieve both records because win_ptbr is case insensitive
 select * from peoples where name like 'A%';
 
@@ -335,7 +334,7 @@ create database 'test.fdb'
 Function:
 
 When user is removed from security database (or any other authentication source),
-it's useful to revoke his access to any object in database.
+it's useful to revoke his access to any object in database. 
 
 Syntax:
 
@@ -351,138 +350,3 @@ Database:  employee
 SQL> REVOKE ALL ON ALL FROM USER guest;
 SQL>
 
-
-13) Syntax for change nullability of a field or domain
-(Adriano dos Santos Fernandes)
-
-Nullability of a table field or a domain can now be changed with the ALTER command. Syntax:
-
-ALTER TABLE <table name> ALTER <field name> {DROP | SET} NOT NULL
-
-ALTER DOMAIN <domain name> {DROP | SET} NOT NULL
-
-A change in a table from NULL to NOT NULL is subject to a full data validation on the table.
-A change in a domain changes and validates all the tables using the domain.
-
-An explicity NOT NULL on a field depending on a domain prevails over the domain. In this case,
-changing the domain to nullable does not automatically change the field to nullable.
-
-
-14) CONTINUE statement
-(Adriano dos Santos Fernandes)
-
-Syntax: CONTINUE [<label>];
-
-CONTINUE is a complementary command to BREAK/LEAVE and allows the restart (next iteration) of a
-FOR/WHILE block.
-
-
-15) RECREATE, CREATE OR ALTER and ALTER SEQUENCE statements
-(Adriano dos Santos Fernandes)
-(Dmitry Yemanov)
-
-Syntax present in 3.0:
-
-{ CREATE | RECREATE } { SEQUENCE | GENERATOR } <sequence name> [ START WITH <value> ]
-
-CREATE OR ALTER { SEQUENCE | GENERATOR } <sequence name> { RESTART | START WITH <value> }
-
-ALTER { SEQUENCE | GENERATOR } <sequence name> RESTART [ WITH <value> ]
-
-Syntax present in 2.5 for reference:
-
-ALTER SEQUENCE <sequence name> RESTART WITH <value>
-
-
-16) Increment for sequences.
-(Claudio Valderrama)
-
-For 3.0, the options specified in (15) include INCREMENT:
-{ CREATE | RECREATE } { SEQUENCE | GENERATOR } <sequence name> [ START WITH <value> ] [ INCREMENT [BY] <increment> ]
-CREATE OR ALTER { SEQUENCE | GENERATOR } <sequence name> { RESTART | START WITH <value> } [ INCREMENT [BY] <increment> ]
-ALTER { SEQUENCE | GENERATOR } <sequence name> RESTART [ WITH <value> ] [ INCREMENT [BY] <increment> ]
-
-This is the increment that's applied to the SQL standard way of working with generators:
-NEXT VALUE FOR <sequence name>
-is equivalent to
-gen_id(<sequence name>, <increment>)
-
-The default increment for user generators is one and for system generators, zero. This makes possible
-to apply NEXT VALUE FOR <sys generator>
-since system generators cannot be changed by user requests now. Example:
-
-create sequence seq increment 10; -- starts at zero and changes by 10
-select next value for seq from rdb$database; -- result is 10
-select gen_id(seq, 1) from rdb$database; -- result is 11, gen_id() is not affected by the increment.
-
-If the database is new and no trigger has been defined, doing
-select next value for rdb$procedures from rdb$database;
-many times will produce zero again and again, because it's a system generator.
-
-The increment cannot be zero for user generators. Example:
-
-SQL> create generator g00 increment 0;
-Statement failed, SQLSTATE = 42000
-unsuccessful metadata update
--CREATE SEQUENCE G00 failed
--INCREMENT 0 is an illegal option for sequence G00
-
-The change in the value of INCREMENT is a feature that takes effect for each request that starts
-after the change commits. Procedures that are invoked for the first time after the change in INCREMENT
-will use the new value if they contain NEXT VALUE FOR statements. Procedures that are already
-running are not affected because they're cached. Procedures relying on NEXT VALUE FOR do not need
-to be recompiled to see the new increment, but if they are running already, they are loaded and
-no effect is seen. Of course, gen_id(gen, expression) is not affected by the increment.
-
-
-17) More security for system objects.
-(Claudio Valderrama)
-
-For 3.0, system domains cannot be altered:
-
-SQL> alter domain rdb$linger type boolean;
-Statement failed, SQLSTATE = 42000
-unsuccessful metadata update
--ALTER DOMAIN RDB$LINGER failed
--System domain RDB$LINGER cannot be modified
-
-The value of a system generator cannot be changed by user requests:
-
-SQL> select gen_id(rdb$procedures, 1) from rdb$database;
-               GEN_ID
-=====================
-Statement failed, SQLSTATE = 42000
-System generator RDB$PROCEDURES cannot be modified
-
-SQL> set generator rdb$procedures to 0;
-Statement failed, SQLSTATE = 42000
-unsuccessful metadata update
--SET GENERATOR RDB$PROCEDURES failed
--System generator RDB$PROCEDURES cannot be modified
-
-Also, the name RDB$GENERATORS does not refer anymore to an invisible system
-generator. The name can be applied to an user generator.
-
-
-18) Added ROLE clause to CREATE DATABASE statement.
-(Alex Peshkov)
-
-For 3.0, setting role when creating database may affect user rights to create databases.
-This can happen if user is granted (in appropriate security database) system role RDB$ADMIN
-or some ordinary role which in turn is granted CREATE DATABASE right. When using API call
-IProvider::createDatabase (or isc_create_database) there are no problems with placing
-isc_dpb_sql_role_name tag with required value into DPB, but CREATE DATABASE statement
-missed ROLE clause before 3.0.
-
-ISQL now also takes into an account global role setting when creating databases.
-
-
-19) Added {PRESERVE | DELETE} FILE clause to DROP SHADOW statement.
-(Alex Peshkov)
-
-In some cases it's desired to keep shadow file after dropping shadow (for example for
-backup purporse). In FB3 appropriate clause is added to DROP SHADOW. Full syntax is:
-
-DROP SHADOW <number> [{PRESERVE | DELETE} FILE];
-
-Default behavior is to delete file, keeping backwards compatibility.

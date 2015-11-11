@@ -22,7 +22,6 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- *  Adriano dos Santos Fernandes
  *
  */
 
@@ -33,14 +32,15 @@ using namespace Firebird;
 
 UnicodeCollationHolder::UnicodeCollationHolder(MemoryPool& pool)
 {
-	cs = FB_NEW_POOL(pool) charset;
-	tt = FB_NEW_POOL(pool) texttype;
+	cs = FB_NEW(pool) charset;
+	tt = FB_NEW(pool) texttype;
 
 	IntlUtil::initUtf8Charset(cs);
 
 	string collAttributes("ICU-VERSION=");
-	collAttributes += Jrd::UnicodeUtil::getDefaultIcuVersion();
-	IntlUtil::setupIcuAttributes(cs, collAttributes, "", collAttributes);
+	collAttributes += Jrd::UnicodeUtil::DEFAULT_ICU_VERSION;
+	if (!IntlUtil::setupIcuAttributes(cs, collAttributes, "", collAttributes))
+		fatal_exception::raiseFmt("cannot convert ICU-VERSION to COLL-VERSION");
 
 	UCharBuffer collAttributesBuffer;
 	collAttributesBuffer.push(reinterpret_cast<const UCHAR*>(collAttributes.c_str()),
@@ -49,8 +49,9 @@ UnicodeCollationHolder::UnicodeCollationHolder(MemoryPool& pool)
 	if (!IntlUtil::initUnicodeCollation(tt, cs, "UNICODE", 0, collAttributesBuffer, string()))
 		fatal_exception::raiseFmt("cannot initialize UNICODE collation to use in trace plugin");
 
+
 	charSet = Jrd::CharSet::createInstance(pool, 0, cs);
-	textType = FB_NEW_POOL(pool) Jrd::TextType(0, tt, charSet);
+	textType = FB_NEW(pool) Jrd::TextType(0, tt, charSet);
 }
 
 UnicodeCollationHolder::~UnicodeCollationHolder()

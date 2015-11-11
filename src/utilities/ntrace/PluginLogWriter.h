@@ -29,12 +29,10 @@
 #define PLUGINLOGWRITER_H
 
 
-#include "firebird.h"
 #include "../../jrd/ntrace.h"
 #include "../../common/classes/timestamp.h"
-#include "../../common/isc_s_proto.h"
-#include "../../common/os/path_utils.h"
-#include "../../common/classes/ImplementHelper.h"
+#include "../../jrd/isc_s_proto.h"
+#include "../../jrd/os/path_utils.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -47,25 +45,15 @@
 #include <sys/stat.h>
 
 
-class PluginLogWriter FB_FINAL :
-	public Firebird::RefCntIface<Firebird::ITraceLogWriterImpl<PluginLogWriter, Firebird::CheckStatusWrapper> >
+class PluginLogWriter : public TraceLogWriter
 {
 public:
 	PluginLogWriter(const char* fileName, size_t maxSize);
 	~PluginLogWriter();
 
-	// TraceLogWriter implementation
-	virtual FB_SIZE_T write(const void* buf, FB_SIZE_T size);
-
-	virtual int release()
-	{
-		if (--refCounter == 0)
-		{
-			delete this;
-			return 0;
-		}
-		return 1;
-	}
+	virtual size_t write(const void* buf, size_t size);
+	virtual void release()
+	{ delete this; }
 
 private:
 	SINT64 seekToEnd();
@@ -81,7 +69,7 @@ private:
 	void lock();
 	void unlock();
 
-	struct Firebird::mtx m_mutex;
+	struct mtx m_mutex;
 
 	class Guard
 	{

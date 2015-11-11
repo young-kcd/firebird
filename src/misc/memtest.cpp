@@ -40,7 +40,7 @@
 
 #include "firebird.h"
 #include <stdio.h>
-#include "../jrd/mov.cpp"
+#include "../jrd/mov.c"
 #ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
@@ -76,7 +76,7 @@ time_t first_time, last_time, curr_time;
 int curr_repeat = 0;
 ULONG intervals[TEST_REPEATS];
 
-void report_time(const char* s);
+void report_time();
 void init_time();
 void start_time();
 void stop_time();
@@ -101,8 +101,7 @@ void start_time()
 
 void stop_time()
 {
-	if (ftime(&tp) != -1)
-	{
+	if (ftime(&tp) != -1) {
 		curr_time = (tp.time * 1000) + tp.millitm;
 		intervals[curr_repeat++] = curr_time - last_time;
 	}
@@ -110,7 +109,8 @@ void stop_time()
 		printf("ftime() failed\n");
 }
 
-void report_time(const char* s)
+void report_time(s)
+	 char *s;
 {
 	int i;
 	ULONG max_interval = 0;
@@ -121,8 +121,7 @@ void report_time(const char* s)
 /* Doesn't handle single repeat case */
 /* Ignores the first timing */
 
-	for (i = 1; i < curr_repeat; i++)
-	{
+	for (i = 1; i < curr_repeat; i++) {
 		sum_interval += intervals[i];
 		if (intervals[i] > max_interval)
 			max_interval = intervals[i];
@@ -130,19 +129,21 @@ void report_time(const char* s)
 			min_interval = intervals[i];
 	}
 
-	avg_interval = (sum_interval - (max_interval + min_interval)) / (curr_repeat - 3);
+	avg_interval =
+		(sum_interval - (max_interval + min_interval)) / (curr_repeat - 3);
 
 	printf("%s: %4ld avg ms %4ld min ms %4ld max ms\n",
 			  s, avg_interval, min_interval, max_interval);
 }
 
-main(int argc, char** argv)
+main(argc, argv)
+	 int argc;
+	 char **argv;
 {
 	int i, j, k, r;
 
 	init_time();
-	for (r = 0; r < TEST_REPEATS; ++r)
-	{
+	for (r = 0; r < TEST_REPEATS; ++r) {
 		start_time();
 		{
 			for (j = 0; j < MCOUNT; ++j)
@@ -153,8 +154,7 @@ main(int argc, char** argv)
 	report_time("Empty Loop");
 
 	init_time();
-	for (r = 0; r < TEST_REPEATS; ++r)
-	{
+	for (r = 0; r < TEST_REPEATS; ++r) {
 		start_time();
 		{
 			for (j = 0; j < MCOUNT; ++j)
@@ -166,14 +166,12 @@ main(int argc, char** argv)
 
 	printf("\n\nTiming memset (destination aligments & blocksizes)\n\n");
 
-	for (k = 0; k < BSIZES; ++k)
-	{
+	for (k = 0; k < BSIZES; ++k) {
 		/* Aligned */
 		do_test_memset((UCHAR *) destination, block_sizes[k]);
 	}
 
-	for (k = 0; k < BSIZES; ++k)
-	{
+	for (k = 0; k < BSIZES; ++k) {
 		/* Unaligned */
 		do_test_memset((UCHAR *) destination + 1, block_sizes[k]);
 	}
@@ -182,22 +180,22 @@ main(int argc, char** argv)
 
 	printf
 		("\n\nTiming memcpy (source aligments, destination alignments & blocksizes)\n\n");
-	for (k = 0; k < BSIZES; ++k)
-	{
+	for (k = 0; k < BSIZES; ++k) {
 		/* Both aligned */
-		do_test_memcpy((UCHAR *) source, (UCHAR *) destination, block_sizes[k]);
+		do_test_memcpy((UCHAR *) source, (UCHAR *) destination,
+					   block_sizes[k]);
 	}
 
-	for (k = 0; k < BSIZES; ++k)
-	{
+	for (k = 0; k < BSIZES; ++k) {
 		/* Both on SAME alignment */
-		do_test_memcpy((UCHAR *) source + 1, (UCHAR *) destination + 1, block_sizes[k]);
+		do_test_memcpy((UCHAR *) source + 1, (UCHAR *) destination + 1,
+					   block_sizes[k]);
 	}
 
-	for (k = 0; k < BSIZES; ++k)
-	{
+	for (k = 0; k < BSIZES; ++k) {
 		/* Different alignments */
-		do_test_memcpy((UCHAR *) source + 1, (UCHAR *) destination + 3, block_sizes[k]);
+		do_test_memcpy((UCHAR *) source + 1, (UCHAR *) destination + 3,
+					   block_sizes[k]);
 	}
 
 	fflush(stdout);
@@ -211,7 +209,9 @@ empty_procedure()
 {
 }
 
-do_test_memset(void* dest, int size)
+do_test_memset(dest, size)
+	 void *dest;
+	 int size;
 {
 	int j;
 	int r;
@@ -219,8 +219,7 @@ do_test_memset(void* dest, int size)
 
 
 	init_time();
-	for (r = 0; r < TEST_REPEATS; r++)
-	{
+	for (r = 0; r < TEST_REPEATS; r++) {
 		start_time();
 		for (j = 0; j < MCOUNT; ++j)
 			MOV_fill((SLONG *) dest, (ULONG) size);
@@ -231,8 +230,7 @@ do_test_memset(void* dest, int size)
 	report_time(message_buffer);
 
 	init_time();
-	for (r = 0; r < TEST_REPEATS; r++)
-	{
+	for (r = 0; r < TEST_REPEATS; r++) {
 		start_time();
 		for (j = 0; j < MCOUNT; ++j)
 			memset(dest, 0, size);
@@ -243,16 +241,13 @@ do_test_memset(void* dest, int size)
 	report_time(message_buffer);
 
 	init_time();
-	for (r = 0; r < TEST_REPEATS; r++)
-	{
+	for (r = 0; r < TEST_REPEATS; r++) {
 		char *p, *p_end;
 
 		start_time();
 		for (j = 0; j < MCOUNT; ++j)
-		{
 			for (p = dest, p_end = p + size; p < p_end;)
 				*p++ = 0;
-		}
 		stop_time();
 	}
 	sprintf(message_buffer, "Dest align %1d Size %4d %20s",
@@ -266,13 +261,11 @@ const int SIZE_OPTIMAL_MEMCPY_INLINE	= 16;
 const int SIZE_OPTIMAL_MEMCPY_MEMCPY	= 160;
 
 	init_time();
-	for (r = 0; r < TEST_REPEATS; r++)
-	{
+	for (r = 0; r < TEST_REPEATS; r++) {
 		char *p, *p_end;
 
 		start_time();
 		for (j = 0; j < MCOUNT; ++j)
-		{
 			if (size < SIZE_OPTIMAL_MEMSET_INLINE)
 				for (p = dest, p_end = p + size; p < p_end;)
 					*p++ = 0;
@@ -280,7 +273,6 @@ const int SIZE_OPTIMAL_MEMCPY_MEMCPY	= 160;
 				memset(dest, 0, size);
 			else
 				MOV_fill((SLONG *) dest, (ULONG) size);
-		}
 		stop_time();
 	}
 	sprintf(message_buffer, "Dest align %1d Size %4d %20s",
@@ -289,15 +281,18 @@ const int SIZE_OPTIMAL_MEMCPY_MEMCPY	= 160;
 }
 
 
-do_test_memcpy(void* src, void* dest, int size)
+do_test_memcpy(src, dest, size)
+	 void *src;
+	 void *dest;
+	 int size;
 {
 	int j;
 	int r;
 	char message_buffer[150];
 
+
 	init_time();
-	for (r = 0; r < TEST_REPEATS; r++)
-	{
+	for (r = 0; r < TEST_REPEATS; r++) {
 		start_time();
 		{
 			for (j = 0; j < MCOUNT; ++j)
@@ -311,8 +306,7 @@ do_test_memcpy(void* src, void* dest, int size)
 	report_time(message_buffer);
 
 	init_time();
-	for (r = 0; r < TEST_REPEATS; r++)
-	{
+	for (r = 0; r < TEST_REPEATS; r++) {
 		start_time();
 		{
 			for (j = 0; j < MCOUNT; ++j)
@@ -327,11 +321,9 @@ do_test_memcpy(void* src, void* dest, int size)
 
 /* MOV_faster can only do aligned moves, so don't test it otherwise */
 	if (((((U_IPTR) dest) % sizeof(ULONG)) == 0) &&
-		((((U_IPTR) src) % sizeof(ULONG)) == 0))
-	{
+		((((U_IPTR) src) % sizeof(ULONG)) == 0)) {
 		init_time();
-		for (r = 0; r < TEST_REPEATS; r++)
-		{
+		for (r = 0; r < TEST_REPEATS; r++) {
 			start_time();
 			{
 				for (j = 0; j < MCOUNT; ++j)
@@ -346,16 +338,13 @@ do_test_memcpy(void* src, void* dest, int size)
 	}
 
 	init_time();
-	for (r = 0; r < TEST_REPEATS; r++)
-	{
+	for (r = 0; r < TEST_REPEATS; r++) {
 		char *p, *q, *p_end;
 
 		start_time();
 		for (j = 0; j < MCOUNT; ++j)
-		{
 			for (p = dest, q = src, p_end = p + size; p < p_end;)
 				*p++ = *q++;
-		}
 		stop_time();
 	}
 	sprintf(message_buffer, "Src align %1d Dest align %1d Size %4d %20s",
@@ -364,13 +353,11 @@ do_test_memcpy(void* src, void* dest, int size)
 	report_time(message_buffer);
 
 	init_time();
-	for (r = 0; r < TEST_REPEATS; r++)
-	{
+	for (r = 0; r < TEST_REPEATS; r++) {
 		char *p, *q, *p_end;
 
 		start_time();
 		for (j = 0; j < MCOUNT; ++j)
-		{
 			if (size < SIZE_OPTIMAL_MEMCPY_INLINE)
 				for (p = dest, q = src, p_end = p + size; p < p_end;)
 					*p++ = *q++;
@@ -380,7 +367,6 @@ do_test_memcpy(void* src, void* dest, int size)
 				MOV_faster((SLONG *) src, (SLONG *) dest, (ULONG) size);
 			else
 				memcpy(dest, src, size);
-		}
 		stop_time();
 	}
 	sprintf(message_buffer, "Src align %1d Dest align %1d Size %4d %20s",
@@ -403,7 +389,7 @@ USHORT CVT_make_string()
 {
 }
 
-int CVT2_compare()
+SSHORT CVT2_compare()
 {
 }
 

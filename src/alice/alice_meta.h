@@ -26,7 +26,7 @@
 
 void	MET_disable_wal(ISC_STATUS*, isc_db_handle);
 void	MET_get_state(ISC_STATUS*, tdr*);
-tdr*	MET_get_transaction(ISC_STATUS*, isc_db_handle, TraNumber);
+tdr*	MET_get_transaction(ISC_STATUS*, isc_db_handle, SLONG);
 void	MET_set_capabilities(ISC_STATUS*, tdr*);
 
 #endif	// ALICE_ALICE_META_H

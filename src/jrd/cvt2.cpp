@@ -27,20 +27,22 @@
 
 #include "firebird.h"
 #include <string.h>
+#include "../jrd/common.h"
+#include "../jrd/ibase.h"
 
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
+#include "../jrd/quad.h"
 #include "gen/iberror.h"
 #include "../jrd/intl.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/cvt2_proto.h"
 #include "../common/cvt.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/intl_classes.h"
-#include "../jrd/Collation.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 // CVC: I needed them here.
 #include "../jrd/jrd.h"
 #include "../jrd/blb_proto.h"
@@ -90,33 +92,8 @@ static const BYTE compare_priority[] =
 	dtype_blob + 1,
 	dtype_array + 1,
 	dtype_long + 1,				// int64 goes right after long
-	dtype_dbkey,				// compares with nothing except itself
-	dtype_boolean				// compares with nothing except itself
+	dtype_dbkey					// compares with nothing except itself
 };
-
-static inline int QUAD_COMPARE(const SQUAD* arg1, const SQUAD* arg2)
-{
-/**************************************
- *
- *      Q U A D _ c o m p a r e
- *
- **************************************
- *
- * Functional description
- *      Compare two descriptors.  Return (-1, 0, 1) if a<b, a=b, or a>b.
- *
- **************************************/
-
-	if (((SLONG*) arg1)[HIGH_WORD] > ((SLONG*) arg2)[HIGH_WORD])
-		return 1;
-	if (((SLONG*) arg1)[HIGH_WORD] < ((SLONG*) arg2)[HIGH_WORD])
-		return -1;
-	if (((ULONG*) arg1)[LOW_WORD] > ((ULONG*) arg2)[LOW_WORD])
-		return 1;
-	if (((ULONG*) arg1)[LOW_WORD] < ((ULONG*) arg2)[LOW_WORD])
-		return -1;
-	return 0;
-}
 
 
 bool CVT2_get_binary_comparable_desc(dsc* result, const dsc* arg1, const dsc* arg2)
@@ -138,7 +115,7 @@ bool CVT2_get_binary_comparable_desc(dsc* result, const dsc* arg1, const dsc* ar
 		// Any of the arguments is a blob or an array
 		return false;
 	}
-
+	
 	if (arg1->dsc_dtype == dtype_dbkey || arg2->dsc_dtype == dtype_dbkey)
 	{
 		// Any of the arguments is DBKEY
@@ -169,11 +146,6 @@ bool CVT2_get_binary_comparable_desc(dsc* result, const dsc* arg1, const dsc* ar
 		// Arguments can be compared directly
 		*result = *arg1;
 	}
-	else if (arg1->dsc_dtype == dtype_boolean || arg2->dsc_dtype == dtype_boolean)
-	{
-		// boolean is not comparable to a non-boolean
-		return false;
-	}
 	else
 	{
 		// Arguments are of different data types
@@ -187,7 +159,7 @@ bool CVT2_get_binary_comparable_desc(dsc* result, const dsc* arg1, const dsc* ar
 }
 
 
-int CVT2_compare(const dsc* arg1, const dsc* arg2)
+SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 {
 /**************************************
  *
@@ -239,7 +211,7 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2)
 			return -1;
 
 		case dtype_quad:
-			return QUAD_COMPARE((SQUAD *) p1, (SQUAD *) p2);
+			return QUAD_COMPARE(*(SQUAD *) p1, *(SQUAD *) p2);
 
 		case dtype_int64:
 			if (*(SINT64 *) p1 == *(SINT64 *) p2)
@@ -252,7 +224,7 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2)
 			{
 				// keep old ttype_binary compare rules
 				USHORT l = MIN(arg1->dsc_length, arg2->dsc_length);
-				int rc = memcmp(p1, p2, l);
+				SSHORT rc = memcmp(p1, p2, l);
 				if (rc)
 				{
 					return rc;
@@ -284,9 +256,6 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2)
 			if (*(double *) p1 > *(double *) p2)
 				return 1;
 			return -1;
-
-		case dtype_boolean:
-			return *p1 == *p2 ? 0 : *p1 < *p2 ? -1 : 1;
 
 		case dtype_text:
 		case dtype_varying:
@@ -399,14 +368,15 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2)
 
 	switch (arg1->dsc_dtype)
 	{
+		SLONG date[2];
+
 	case dtype_timestamp:
 		{
 			DSC desc;
 			MOVE_CLEAR(&desc, sizeof(desc));
 			desc.dsc_dtype = dtype_timestamp;
-			SLONG datetime[2];
-			desc.dsc_length = sizeof(datetime);
-			desc.dsc_address = (UCHAR*) datetime;
+			desc.dsc_length = sizeof(date);
+			desc.dsc_address = (UCHAR *) date;
 			CVT_move(arg2, &desc);
 			return CVT2_compare(arg1, &desc);
 		}
@@ -416,9 +386,8 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2)
 			DSC desc;
 			MOVE_CLEAR(&desc, sizeof(desc));
 			desc.dsc_dtype = dtype_sql_time;
-			SLONG atime;
-			desc.dsc_length = sizeof(atime);
-			desc.dsc_address = (UCHAR*) &atime;
+			desc.dsc_length = sizeof(date[0]);
+			desc.dsc_address = (UCHAR *) date;
 			CVT_move(arg2, &desc);
 			return CVT2_compare(arg1, &desc);
 		}
@@ -428,9 +397,8 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2)
 			DSC desc;
 			MOVE_CLEAR(&desc, sizeof(desc));
 			desc.dsc_dtype = dtype_sql_date;
-			SLONG date;
-			desc.dsc_length = sizeof(date);
-			desc.dsc_address = (UCHAR*) &date;
+			desc.dsc_length = sizeof(date[0]);
+			desc.dsc_address = (UCHAR *) date;
 			CVT_move(arg2, &desc);
 			return CVT2_compare(arg1, &desc);
 		}
@@ -478,7 +446,7 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2)
 				scale = arg1->dsc_scale;
 			const SQUAD temp1 = CVT_get_quad(arg1, scale, ERR_post);
 			const SQUAD temp2 = CVT_get_quad(arg2, scale, ERR_post);
-			return QUAD_COMPARE(&temp1, &temp2);
+			return QUAD_COMPARE(temp1, temp2);
 		}
 
 	case dtype_real:
@@ -511,14 +479,14 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2)
 		break;
 
 	case dtype_dbkey:
-		if (arg2->isText())
+		if (arg2->dsc_dtype <= dtype_any_text)
 		{
 			UCHAR* p = NULL;
 			USHORT t; // unused later
 			USHORT length = CVT_get_string_ptr(arg2, &t, &p, NULL, 0);
 
 			USHORT l = MIN(arg1->dsc_length, length);
-			int rc = memcmp(arg1->dsc_address, p, l);
+			SSHORT rc = memcmp(arg1->dsc_address, p, l);
 			if (rc)
 			{
 				return rc;
@@ -526,10 +494,6 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2)
 			return (arg1->dsc_length > l) ? 1 : (length > l) ? -1 : 0;
 		}
 		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) << "DB_KEY compare");
-		break;
-
-	case dtype_boolean:
-		ERR_post(Arg::Gds(isc_invalid_boolean_usage));
 		break;
 
 	default:
@@ -540,7 +504,7 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2)
 }
 
 
-int CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
+SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 {
 /**************************************
  *
@@ -559,7 +523,7 @@ int CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 
 	SLONG l1, l2;
 	USHORT ttype2;
-	int ret_val = 0;
+	SSHORT ret_val = 0;
 
 	thread_db* tdbb = NULL;
 	SET_TDBB(tdbb);
@@ -628,10 +592,8 @@ int CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 			bpbLength = sizeof(bpb);
 		}
 
-	    blb* blob1 = blb::open(tdbb, tdbb->getRequest()->req_transaction,
-			(bid*) arg1->dsc_address);
-		blb* blob2 = blb::open2(tdbb, tdbb->getRequest()->req_transaction,
-			(bid*) arg2->dsc_address, bpbLength, bpb);
+	    blb* blob1 = BLB_open(tdbb, tdbb->getRequest()->req_transaction, (bid*) arg1->dsc_address);
+		blb* blob2 = BLB_open2(tdbb, tdbb->getRequest()->req_transaction, (bid*) arg2->dsc_address, bpbLength, bpb);
 
 		if (charSet1->isMultiByte())
 		{
@@ -641,8 +603,8 @@ int CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 
 		while (ret_val == 0 && !(blob1->blb_flags & BLB_eof) && !(blob2->blb_flags & BLB_eof))
 		{
-			l1 = blob1->BLB_get_data(tdbb, buffer1.begin(), buffer1.getCapacity(), false);
-			l2 = blob2->BLB_get_data(tdbb, buffer2.begin(), buffer2.getCapacity(), false);
+			l1 = BLB_get_data(tdbb, blob1, buffer1.begin(), buffer1.getCapacity(), false);
+			l2 = BLB_get_data(tdbb, blob2, buffer2.begin(), buffer2.getCapacity(), false);
 
 			ret_val = obj1->compare(l1, buffer1.begin(), l2, buffer2.begin());
 		}
@@ -660,17 +622,17 @@ int CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 					 (blob2->blb_flags & BLB_eof) == BLB_eof))
 			{
 				if (!(blob1->blb_flags & BLB_eof))
-					l1 = blob1->BLB_get_data(tdbb, buffer1.begin(), buffer1.getCapacity(), false);
+					l1 = BLB_get_data(tdbb, blob1, buffer1.begin(), buffer1.getCapacity(), false);
 
 				if (!(blob2->blb_flags & BLB_eof))
-					l2 = blob2->BLB_get_data(tdbb, buffer2.begin(), buffer2.getCapacity(), false);
+					l2 = BLB_get_data(tdbb, blob2, buffer2.begin(), buffer2.getCapacity(), false);
 
 				ret_val = obj1->compare(l1, buffer1.begin(), l2, buffer2.begin());
 			}
 		}
 
-		blob1->BLB_close(tdbb);
-		blob2->BLB_close(tdbb);
+		BLB_close(tdbb, blob1);
+		BLB_close(tdbb, blob2);
 	}
 	else if (arg2->dsc_dtype == dtype_array)
 	{
@@ -703,26 +665,49 @@ int CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 
 		l2 = CVT2_make_string2(arg2, ttype1, &p, temp_str);
 
-		blb* blob1 = blb::open(tdbb, tdbb->getRequest()->req_transaction, (bid*) arg1->dsc_address);
+		blb* blob1 = BLB_open(tdbb, tdbb->getRequest()->req_transaction, (bid*) arg1->dsc_address);
 
 		if (charSet1->isMultiByte())
 			buffer1.getBuffer(blob1->blb_length);
 		else
 			buffer1.getBuffer(l2);
 
-		l1 = blob1->BLB_get_data(tdbb, buffer1.begin(), buffer1.getCapacity(), false);
+		l1 = BLB_get_data(tdbb, blob1, buffer1.begin(), buffer1.getCapacity(), false);
 		ret_val = obj1->compare(l1, buffer1.begin(), l2, p);
 
 		while (ret_val == 0 && (blob1->blb_flags & BLB_eof) != BLB_eof)
 		{
-			l1 = blob1->BLB_get_data(tdbb, buffer1.begin(), buffer1.getCapacity(), false);
+			l1 = BLB_get_data(tdbb, blob1, buffer1.begin(), buffer1.getCapacity(), false);
 			ret_val = obj1->compare(l1, buffer1.begin(), 0, p);
 		}
 
-		blob1->BLB_close(tdbb);
+		BLB_close(tdbb, blob1);
 	}
 
 	return ret_val;
+}
+
+
+void CVT2_get_name(const dsc* desc, TEXT* string)
+{
+/**************************************
+ *
+ *	C V T 2 _ g e t _ n a m e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get a name (max length 31, NULL terminated) from a descriptor.
+ *
+ **************************************/
+	VaryStr<MAX_SQL_IDENTIFIER_SIZE> temp;			// 31 bytes + 1 NULL
+	const char* p;
+
+	const USHORT length = CVT_make_string(desc, ttype_metadata, &p, &temp, sizeof(temp), ERR_post);
+
+	memcpy(string, p, length);
+	string[length] = 0;
+	fb_utils::exact_name(string);
 }
 
 
@@ -757,7 +742,7 @@ USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd
 
 	case dtype_cstring:
 		from_buf = desc->dsc_address;
-		from_len = MIN(static_cast<USHORT>(strlen((char *) desc->dsc_address)), (unsigned) (desc->dsc_length - 1));
+		from_len = MIN(strlen((char *) desc->dsc_address), (unsigned) (desc->dsc_length - 1));
 		from_interp = INTL_TTYPE(desc);
 		break;
 
@@ -771,9 +756,10 @@ USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd
 		break;
 	}
 
-	if (desc->isText())
+	if (desc->dsc_dtype <= dtype_any_text)
 	{
-		if (from_interp == to_interp || to_interp == ttype_none || to_interp == ttype_binary)
+
+		if (to_interp == from_interp)
 		{
 			*address = from_buf;
 			return from_len;
@@ -792,7 +778,6 @@ USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd
 		UCHAR* tempptr = temp.getBuffer(length);
 		length = INTL_convert_bytes(tdbb, cs1, tempptr, length, cs2, from_buf, from_len, ERR_post);
 		*address = tempptr;
-		temp.resize(length);
 		return length;
 	}
 
@@ -803,8 +788,8 @@ USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd
 	temp_desc.dsc_length = temp.getCapacity();
 	temp_desc.dsc_address = temp.getBuffer(temp_desc.dsc_length);
 	vary* vtmp = reinterpret_cast<vary*>(temp_desc.dsc_address);
+	INTL_ASSIGN_TTYPE(&temp_desc, to_interp);
 	temp_desc.dsc_dtype = dtype_varying;
-	temp_desc.setTextType(to_interp);
 	CVT_move(desc, &temp_desc);
 	*address = reinterpret_cast<UCHAR*>(vtmp->vary_string);
 

@@ -45,6 +45,9 @@
  */
 
 
+#include "../jrd/common.h"
+
+
 // Switch handling constants.  Note that IN_SW_COUNT must always be
 // one larger than the largest switch value
 
@@ -74,7 +77,6 @@ enum gpre_cmd_switch
 	IN_SW_GPRE_D_FLOAT, // use blr_d_float for doubles
 	IN_SW_GPRE_CXX, 	// source is C++
 	IN_SW_GPRE_SCXX, 	// source is C++ with Saber extension
-	IN_SW_GPRE_OCXX,	// C++ with object API
 	IN_SW_GPRE_SQLDA, 	// use old or new SQLDA
 	IN_SW_GPRE_USER, 	// default username to use when attaching database
 	IN_SW_GPRE_PASSWORD, // default password to use in attaching database
@@ -141,7 +143,7 @@ struct sw_tab_t
 };
 
 
-const static Switches::in_sw_tab_t gpre_in_sw_table[] =
+static const in_sw_tab_t gpre_in_sw_table[] =
 {
 #ifdef GPRE_ADA
 	{IN_SW_GPRE_ADA		, 0, "ADA"			, 0, 0, 0, false, 0, 0, "\t\textended ADA program"},
@@ -168,7 +170,6 @@ const static Switches::in_sw_tab_t gpre_in_sw_table[] =
 	{IN_SW_GPRE_M		, 0, "MANUAL"		, 0, 0, 0, false, 0, 0, "\t\tdo not automatically ATTACH to a database"},
 	{IN_SW_GPRE_N		, 0, "NO_LINES"		, 0, 0, 0, false, 0, 0, "\tdo not generate C debug lines"},
 	{IN_SW_GPRE_O		, 0, "OUTPUT"		, 0, 0, 0, false, 0, 0, "\t\tsend output to standard out"},
-	{IN_SW_GPRE_OCXX	, 0, "OCXX"			, 0, 0, 0, false, 0, 0, "\t\textended C++ program with objects API"},
 #ifdef GPRE_PASCAL
 	{IN_SW_GPRE_P		, 0, "PASCAL"		, 0, 0, 0, false, 0, 0, "\t\textended PASCAL program"},
 #endif
@@ -195,6 +196,6 @@ const static Switches::in_sw_tab_t gpre_in_sw_table[] =
 #ifdef GPRE_COBOL
 	{IN_SW_GPRE_DATE_FMT, 0, "DFM"			, 0, 0, 0, false, 0, 0, "\t\tCobol date format"},
 #endif
-	{IN_SW_NO_QLI		, 0, "NOQLI"		, 0, 0, 0, false, 0, 0, "\t\tsuppress QLI syntax"},
+	{IN_SW_NO_QLI		, 0, "NOQLI"		, 0, 0, 0, false, 0, 0, "\t\tsupress QLI syntax"},
 	{IN_SW_GPRE_0		, 0, NULL			, 0, 0, 0, false, 0, 0, NULL}
 };

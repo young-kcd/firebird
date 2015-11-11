@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/ibase.h"
+#include "../jrd/common.h"
 #include "../gpre/gpre.h"
 #include "../jrd/intl.h"
 #include "../gpre/cmp_proto.h"
@@ -397,7 +398,7 @@ SINT64 EXP_SINT64_ordinal(bool advance_flag)
 	if (gpreGlob.token_global.tok_type != tok_number)
 		CPR_s_error("<number>");
 
-	const char format[8] = "%"SQUADFORMAT;
+	const char format[8] = "%" SQUADFORMAT;
 	SINT64 n;
 	sscanf(gpreGlob.token_global.tok_string, format, &n);
 
@@ -427,7 +428,7 @@ SLONG EXP_SLONG_ordinal(bool advance_flag)
 
 	const SLONG n = atoi(gpreGlob.token_global.tok_string);
 	char buffer[32];
-	sprintf(buffer, "%"SLONGFORMAT, n);
+	sprintf(buffer, "%" SLONGFORMAT, n);
 	if (strcmp(buffer, gpreGlob.token_global.tok_string) != 0)
 		PAR_error("Numeric value out of range");
 
@@ -477,7 +478,7 @@ ULONG EXP_ULONG_ordinal(bool advance_flag)
 
 	const ULONG n = atoi(gpreGlob.token_global.tok_string);
 	char buffer[32];
-	sprintf(buffer, "%"ULONGFORMAT, n);
+	sprintf(buffer, "%" ULONGFORMAT, n);
 	if (strcmp(buffer, gpreGlob.token_global.tok_string) != 0)
 		PAR_error("Numeric value out of range");
 
@@ -1040,7 +1041,7 @@ static gpre_nod* normalize_index( dim* dimension, gpre_nod* user_index, USHORT a
 	}
 
 	ref* reference = (ref*) MSC_alloc(REF_LEN);
-	char* tmp = (TEXT *) MSC_alloc(static_cast<int>(strlen(string)));
+	char* tmp = (TEXT *) MSC_alloc(strlen(string));
 	reference->ref_value = tmp;
 	strcpy(tmp, string);
 	gpre_nod* adjustment_node = MSC_unary(nod_literal, (gpre_nod*) reference);

@@ -32,19 +32,14 @@
 
 namespace Jrd {
 
-using Firebird::ITracePlugin;
-using Firebird::ITraceFactory;
-
 class TraceDSQLPrepare
 {
 public:
-	TraceDSQLPrepare(Attachment* attachment, jrd_tra* transaction,
-				FB_SIZE_T string_length, const TEXT* string)
-		: m_attachment(attachment),
-		  m_transaction(transaction),
-		  m_request(NULL),
-		  m_string_len(string_length),
-		  m_string(string)
+	TraceDSQLPrepare(Attachment* attachemnt, USHORT string_length, const TEXT* string) :
+		m_attachment(attachemnt),
+		m_request(NULL),
+		m_string_len(string_length),
+		m_string(string)
 	{
 		m_need_trace = TraceManager::need_dsql_prepare(m_attachment);
 		if (!m_need_trace)
@@ -62,7 +57,7 @@ public:
 
 	~TraceDSQLPrepare()
 	{
-		prepare(ITracePlugin::RESULT_FAILED);
+		prepare(res_failed);
 	}
 
 	void setStatement(dsql_req* request)
@@ -82,27 +77,28 @@ public:
 		const SINT64 millis = (fb_utils::query_performance_counter() - m_start_clock) * 1000 /
 			fb_utils::query_performance_frequency();
 
-		if ((result == ITracePlugin::RESULT_SUCCESS) && m_request)
+		if ((result == res_successful) && m_request)
 		{
 			TraceSQLStatementImpl stmt(m_request, NULL);
-			TraceManager::event_dsql_prepare(m_attachment, m_transaction, &stmt, millis, result);
+			TraceManager::event_dsql_prepare(m_attachment, m_request->req_transaction,
+				&stmt, millis, result);
 		}
 		else
 		{
 			Firebird::string str(*getDefaultMemoryPool(), m_string, m_string_len);
 
 			TraceFailedSQLStatement stmt(str);
-			TraceManager::event_dsql_prepare(m_attachment, m_transaction, &stmt, millis, result);
+			TraceManager::event_dsql_prepare(m_attachment, m_request ? m_request->req_transaction : NULL,
+				&stmt, millis, result);
 		}
 	}
 
 private:
 	bool m_need_trace;
-	Attachment* m_attachment;
-	jrd_tra* const m_transaction;
+	Attachment* const m_attachment;
 	dsql_req* m_request;
 	SINT64 m_start_clock;
-	FB_SIZE_T m_string_len;
+	size_t m_string_len;
 	const TEXT* m_string;
 };
 
@@ -120,8 +116,7 @@ public:
 
 		{	// scope
 			TraceSQLStatementImpl stmt(request, NULL);
-			TraceManager::event_dsql_execute(m_attachment, request->req_transaction, &stmt, true,
-				ITracePlugin::RESULT_SUCCESS);
+			TraceManager::event_dsql_execute(m_attachment, request->req_transaction, &stmt, true, res_successful);
 		}
 
 		m_start_clock = fb_utils::query_performance_counter();
@@ -135,7 +130,7 @@ public:
 		if (jrd_request)
 		{
 			MemoryPool* pool = MemoryPool::getContextPool();
-			m_request->req_fetch_baseline = FB_NEW_POOL(*pool) RuntimeStatistics(*pool, jrd_request->req_stats);
+			m_request->req_fetch_baseline = FB_NEW(*pool) RuntimeStatistics(*pool, jrd_request->req_stats);
 		}
 	}
 
@@ -151,8 +146,8 @@ public:
 			return;
 		}
 
-		TraceRuntimeStats stats(m_attachment, m_request->req_fetch_baseline,
-			&m_request->req_request->req_stats,
+		TraceRuntimeStats stats(m_attachment->att_database, m_request->req_fetch_baseline,
+			&m_request->req_request ? &m_request->req_request->req_stats : NULL,
 			fb_utils::query_performance_counter() - m_start_clock,
 			m_request->req_fetch_rowcount);
 
@@ -164,7 +159,7 @@ public:
 
 	~TraceDSQLExecute()
 	{
-		finish(false, ITracePlugin::RESULT_FAILED);
+		finish(false, res_failed);
 	}
 
 private:
@@ -181,7 +176,7 @@ public:
 		m_attachment(attachment),
 		m_request(request)
 	{
-		m_need_trace = m_request->req_traced && TraceManager::need_dsql_execute(m_attachment) &&
+		m_need_trace = m_request->req_traced && TraceManager::need_dsql_execute(m_attachment) && 
 					   m_request->req_request && (m_request->req_request->req_flags & req_active);
 
 		if (!m_need_trace)
@@ -195,7 +190,7 @@ public:
 
 	~TraceDSQLFetch()
 	{
-		fetch(true, ITracePlugin::RESULT_FAILED);
+		fetch(true, res_failed);
 	}
 
 	void fetch(bool eof, ntrace_result_t result)
@@ -211,8 +206,9 @@ public:
 			return;
 		}
 
-		TraceRuntimeStats stats(m_attachment, m_request->req_fetch_baseline,
-			&m_request->req_request->req_stats, m_request->req_fetch_elapsed,
+		TraceRuntimeStats stats(m_attachment->att_database, m_request->req_fetch_baseline,
+			m_request->req_request ? &m_request->req_request->req_stats : NULL, 
+			m_request->req_fetch_elapsed,
 			m_request->req_fetch_rowcount);
 
 		TraceSQLStatementImpl stmt(m_request, stats.getPerf());

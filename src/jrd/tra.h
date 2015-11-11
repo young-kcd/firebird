@@ -41,10 +41,8 @@
 #include "../jrd/sbm.h" // For bid structure
 #include "../jrd/sort.h"
 
-#include "../jrd/Monitoring.h"
+#include "../jrd/DatabaseSnapshot.h"
 #include "../jrd/TempSpace.h"
-#include "../jrd/obj.h"
-#include "../jrd/EngineInterface.h"
 
 namespace EDS {
 class Transaction;
@@ -65,20 +63,10 @@ class DeferredWork;
 class DeferredJob;
 class dsql_opn;
 class UserManagement;
-class MappingList;
-class DbCreatorsList;
 class thread_db;
 
-class SecDbContext
-{
-public:
-	SecDbContext(Firebird::IAttachment* a, Firebird::ITransaction* t);
-	~SecDbContext();
 
-	Firebird::IAttachment* att;
-	Firebird::ITransaction* tra;
-	int savePoint;
-};
+const SLONG MAX_TRA_NUMBER = MAX_SLONG;
 
 // Blobs active in transaction identified by bli_temp_id. Please keep this
 // structure small as there can be huge amount of them floating in memory.
@@ -108,46 +96,12 @@ typedef Firebird::BePlusTree<BlobIndex, ULONG, MemoryPool, BlobIndex> BlobIndexT
 
 // Transaction block
 
-struct CallerName
-{
-	CallerName(int aType, const Firebird::MetaName& aName)
-		: type(aType),
-		  name(aName)
-	{
-	}
-
-	CallerName()
-		: type(obj_type_MAX)
-	{
-	}
-
-	CallerName(const CallerName& o)
-		: type(o.type),
-		  name(o.name)
-	{
-	}
-
-	void operator =(const CallerName& o)
-	{
-		if (&o != this)
-		{
-			type = o.type;
-			name = o.name;
-		}
-	}
-
-	int type;
-	Firebird::MetaName name;
-};
-
 const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
 const char* const TRA_BLOB_SPACE = "fb_blob_";
 const char* const TRA_UNDO_SPACE = "fb_undo_";
 
 class jrd_tra : public pool_alloc<type_tra>
 {
-	typedef Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<USHORT, SINT64> > > GenIdCache;
-
 	static const size_t MAX_UNDO_RECORDS = 2;
 	typedef Firebird::HalfStaticArray<Record*, MAX_UNDO_RECORDS> UndoRecordList;
 
@@ -159,7 +113,7 @@ public:
 	};
 
 	jrd_tra(MemoryPool* p, Firebird::MemoryStats* parent_stats,
-			Attachment* attachment, jrd_tra* outer)
+			Attachment* attachment, jrd_tra* outer, size_t length = 0)
 	:	tra_attachment(attachment),
 		tra_pool(p),
 		tra_memory_stats(parent_stats),
@@ -176,26 +130,22 @@ public:
 		tra_outer(outer),
 		tra_transactions(*p),
 		tra_sorts(*p),
-		tra_public_interface(NULL),
-		tra_gen_ids(NULL),
-		tra_interface(NULL),
 		tra_blob_space(NULL),
 		tra_undo_space(NULL),
 		tra_undo_records(*p),
 		tra_user_management(NULL),
-		tra_sec_db_context(NULL),
-		tra_mapping_list(NULL),
 		tra_autonomous_pool(NULL),
 		tra_autonomous_cnt(0)
 	{
+		tra_transactions.resize(length);
 	}
 
 	~jrd_tra();
 
-	static jrd_tra* create(MemoryPool* pool, Attachment* attachment, jrd_tra* outer)
+	static jrd_tra* create(MemoryPool* pool, Attachment* attachment, jrd_tra* outer, size_t length = 0)
 	{
 		jrd_tra* const transaction =
-			FB_NEW_POOL(*pool) jrd_tra(pool, &attachment->att_memory_stats, attachment, outer);
+			FB_NEW(*pool) jrd_tra(pool, &attachment->att_memory_stats, attachment, outer, length);
 
 		if (!outer)
 		{
@@ -205,13 +155,11 @@ public:
 		return transaction;
 	}
 
-	static void destroy(Attachment* const attachment, jrd_tra* const transaction)
+	static void destroy(Database* const dbb, jrd_tra* const transaction)
 	{
 		if (transaction)
 		{
-			if (!attachment)
-				delete transaction;
-			else if (transaction->tra_outer)
+			if (transaction->tra_outer)
 			{
 				jrd_tra* outer = transaction->tra_outer;
 				MemoryPool* const pool = transaction->tra_pool;
@@ -224,41 +172,28 @@ public:
 				Firebird::MemoryStats temp_stats;
 				pool->setStatsGroup(temp_stats);
 				delete transaction;
-				attachment->deletePool(pool);
+				dbb->deletePool(pool);
 			}
 		}
 	}
 
-	Attachment* getAttachment()
-	{
-		return tra_attachment;
-	}
-
-	dsql_dbb* getDsqlAttachment()
-	{
-		return tra_attachment->att_dsql_instance;
-	}
-
-	JTransaction* getInterface();
-	void setInterface(JTransaction* jt);
-
-	FB_API_HANDLE tra_public_handle;	// Public handle
 	Attachment* tra_attachment;			// database attachment
-	TraNumber tra_number;				// transaction number
-	TraNumber tra_top;					// highest transaction in snapshot
-	TraNumber tra_oldest;				// oldest interesting transaction
-	TraNumber tra_oldest_active;		// record versions older than this can be
+	SLONG tra_number;					// transaction number
+	SLONG tra_top;						// highest transaction in snapshot
+	SLONG tra_oldest;					// oldest interesting transaction
+	SLONG tra_oldest_active;			// record versions older than this can be
 										// gargage-collected by this tx
-	TraNumber tra_att_oldest_active;	// oldest active transaction in the same attachment
-	jrd_tra*	tra_next;				// next transaction in attachment
+	SLONG tra_att_oldest_active;		// oldest active transaction in the same attachment
+	jrd_tra*	tra_next;				// next transaction in database
+	jrd_tra*	tra_sibling;			// next transaction in group
 	MemoryPool* const tra_pool;			// pool for transaction
 	Firebird::MemoryStats	tra_memory_stats;
 	BlobIndexTree tra_blobs_tree;		// list of active blobs
 	BlobIndexTree* tra_blobs;			// pointer to actual list of active blobs
 	ArrayField*	tra_arrays;				// Linked list of active arrays
 	Lock*		tra_lock;				// lock for transaction
-	vec<Lock*>*			tra_relation_locks;	// locks for relations
-	TransactionBitmap*	tra_commit_sub_trans;	// committed sub-transactions
+	vec<Lock*>*		tra_relation_locks;	// locks for relations
+	UInt32Bitmap*	tra_commit_sub_trans;	// commited sub-transactions
 	Savepoint*	tra_save_point;			// list of savepoints
 	Savepoint*	tra_save_free;			// free savepoints
 	SLONG tra_save_point_number;		// next save point number to use
@@ -273,30 +208,23 @@ public:
 	ULONG tra_next_blob_id;     		// ID of the previous blob or array created in this transaction
 	const Firebird::TimeStamp tra_timestamp; // transaction start time
 	jrd_req* tra_requests;				// Doubly linked list of requests active in this transaction
-	MonitoringSnapshot* tra_mon_snapshot;	// Database state snapshot (for monitoring purposes)
+	DatabaseSnapshot* tra_db_snapshot;	// Database state snapshot (for monitoring purposes)
 	RuntimeStatistics tra_stats;
-	Firebird::Array<DsqlCursor*> tra_open_cursors;
-	bool tra_in_use;					// transaction in use (can't be committed or rolled back)
+	Firebird::Array<dsql_req*> tra_open_cursors;
 	jrd_tra* const tra_outer;			// outer transaction of an autonomous transaction
-	CallerName tra_caller_name;			// caller object name
+	jrd_req* tra_callback_caller;		// caller request for execute statement
 	Firebird::Array<UCHAR> tra_transactions;
 	SortOwner tra_sorts;
 
 	EDS::Transaction *tra_ext_common;
 	//Transaction *tra_ext_two_phase;
-	Firebird::ITransaction* tra_public_interface;
-	GenIdCache* tra_gen_ids;
 
 private:
-	JTransaction* tra_interface;
 	TempSpace* tra_blob_space;	// temp blob storage
 	TempSpace* tra_undo_space;	// undo log storage
 
 	UndoRecordList tra_undo_records;	// temporary records used for the undo purposes
 	UserManagement* tra_user_management;
-	SecDbContext* tra_sec_db_context;
-	MappingList* tra_mapping_list;
-	DbCreatorsList* tra_dbcreators_list;
 	MemoryPool* tra_autonomous_pool;
 	USHORT tra_autonomous_cnt;
 	static const USHORT TRA_AUTONOMOUS_PER_POOL = 64;
@@ -317,10 +245,7 @@ public:
 			return tra_outer->getBlobSpace();
 
 		if (!tra_blob_space)
-		{
-			fb_assert(!tra_outer);
-			tra_blob_space = FB_NEW_POOL(*tra_pool) TempSpace(*tra_pool, TRA_BLOB_SPACE);
-		}
+			tra_blob_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_BLOB_SPACE);
 
 		return tra_blob_space;
 	}
@@ -329,77 +254,90 @@ public:
 	{
 		if (!tra_undo_space)
 		{
-			tra_undo_space = FB_NEW_POOL(*tra_pool) TempSpace(*tra_pool, TRA_UNDO_SPACE);
+			fb_assert(!tra_outer);
+			tra_undo_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_UNDO_SPACE);
 		}
 
 		return tra_undo_space;
 	}
 
-	Record* getUndoRecord(const Format* format)
+	Record* getUndoRecord(USHORT length, SINT64 number, const Format* format, UCHAR flags)
 	{
+		Record** recordPtr = NULL;
+
 		for (Record** iter = tra_undo_records.begin(); iter != tra_undo_records.end(); ++iter)
 		{
-			Record* const record = *iter;
-			fb_assert(record);
+			fb_assert(*iter);
 
-			if (!record->testFlags(REC_undo_active))
+			if (!((*iter)->rec_flags & REC_undo_active))
 			{
-				// initialize record for reuse
-				record->reset(format, REC_undo_active);
-				return record;
+				recordPtr = iter;
+				break;
 			}
 		}
 
-		fb_assert(tra_undo_records.getCount() < MAX_UNDO_RECORDS);
+		Record* record = NULL;
 
-		Record* const record = FB_NEW_POOL(*tra_pool) Record(*tra_pool, format, REC_undo_active);
-		tra_undo_records.add(record);
+		if (recordPtr)
+		{
+			record = *recordPtr;
 
+			if (record->rec_length < length)
+			{
+				delete record;
+				*recordPtr = record = FB_NEW_RPT(*tra_pool, length) Record(*tra_pool);
+			}
+			else
+				memset(record, 0, sizeof(Record) + length);
+		}
+		else
+		{
+			fb_assert(tra_undo_records.getCount() < MAX_UNDO_RECORDS);
+			record = FB_NEW_RPT(*tra_pool, length) Record(*tra_pool);
+			tra_undo_records.add(record);
+		}
+
+		record->rec_number.setValue(number);
+		record->rec_length = length;
+		record->rec_format = format;
+		record->rec_flags = (flags | REC_undo_active);
 		return record;
 	}
 
 	UserManagement* getUserManagement();
-	SecDbContext* getSecDbContext();
-	SecDbContext* setSecDbContext(Firebird::IAttachment* att, Firebird::ITransaction* tra);
-	void eraseSecDbContext();
-	MappingList* getMappingList();
-	DbCreatorsList* getDbCreatorsList();
-
-	GenIdCache* getGenIdCache()
-	{
-		if (!tra_gen_ids)
-			tra_gen_ids = FB_NEW_POOL(*tra_pool) GenIdCache(*tra_pool);
-
-		return tra_gen_ids;
-	}
 };
 
 // System transaction is always transaction 0.
-const TraNumber TRA_system_transaction = 0;
+const SLONG TRA_system_transaction = 0;
 
 // Flag definitions for tra_flags.
 
-const ULONG TRA_system				= 0x1L;		// system transaction
-const ULONG TRA_prepared			= 0x2L;		// transaction is in limbo
-const ULONG TRA_reconnected			= 0x4L;		// reconnect in progress
-const ULONG TRA_degree3				= 0x8L;		// serializeable transaction
-const ULONG TRA_write				= 0x10L;	// transaction has written
-const ULONG TRA_readonly			= 0x20L;	// transaction is readonly
-const ULONG TRA_prepare2			= 0x40L;	// transaction has updated RDB$TRANSACTIONS
-const ULONG TRA_ignore_limbo		= 0x80L;	// ignore transactions in limbo
-const ULONG TRA_invalidated 		= 0x100L;	// transaction invalidated by failed write
-const ULONG TRA_deferred_meta 		= 0x200L;	// deferred meta work posted
-const ULONG TRA_read_committed		= 0x400L;	// can see latest committed records
-const ULONG TRA_autocommit			= 0x800L;	// autocommits all updates
-const ULONG TRA_perform_autocommit	= 0x1000L;	// indicates autocommit is necessary
-const ULONG TRA_rec_version			= 0x2000L;	// don't wait for uncommitted versions
-const ULONG TRA_restart_requests	= 0x4000L;	// restart all requests in attachment
-const ULONG TRA_no_auto_undo		= 0x8000L;	// don't start a savepoint in TRA_start
-const ULONG TRA_precommitted		= 0x10000L;	// transaction committed at startup
-const ULONG TRA_own_interface		= 0x20000L;	// tra_interface was created for internal needs
+const ULONG TRA_system			= 1L;			// system transaction
+//const ULONG TRA_update		= 2L;			// update is permitted
+const ULONG TRA_prepared		= 4L;			// transaction is in limbo
+const ULONG TRA_reconnected		= 8L;			// reconnect in progress
+//const ULONG TRA_reserving		= 16L;			// relations explicityly locked
+const ULONG TRA_degree3			= 32L;			// serializeable transaction
+//const ULONG TRA_committing	= 64L;			// commit in progress
+const ULONG TRA_write			= 128L;			// transaction has written
+const ULONG TRA_readonly		= 256L;			// transaction is readonly
+//const ULONG TRA_nowait		= 512L;			// don't wait on relations, give up
+const ULONG TRA_prepare2		= 1024L;		// transaction has updated RDB$TRANSACTIONS
+const ULONG TRA_ignore_limbo	= 2048L;		// ignore transactions in limbo
+const ULONG TRA_invalidated 	= 4096L;		// transaction invalidated by failed write
+const ULONG TRA_deferred_meta 	= 8192L;		// deferred meta work posted
+//const ULONG TRA_add_log		= 16384L;		// write ahead log file was added
+//const ULONG TRA_delete_log	= 32768L;		// write ahead log file was deleted
+const ULONG TRA_read_committed	= 65536L;		// can see latest committed records
+const ULONG TRA_autocommit		= 131072L;		// autocommits all updates
+const ULONG TRA_perform_autocommit	= 262144L;	// indicates autocommit is necessary
+const ULONG TRA_rec_version			= 524288L;	// don't wait for uncommitted versions
+const ULONG TRA_restart_requests	= 1048576L;	// restart all requests in attachment
+const ULONG TRA_no_auto_undo		= 2097152L;	// don't start a savepoint in TRA_start
+const ULONG TRA_precommitted		= 4194304L;	// transaction committed at startup
 
 // flags derived from TPB, see also transaction_options() at tra.cpp
-const ULONG TRA_OPTIONS_MASK = (TRA_degree3 | TRA_readonly | TRA_ignore_limbo | TRA_read_committed |
+const ULONG TRA_OPTIONS_MASK = (TRA_degree3 | TRA_readonly | TRA_ignore_limbo | TRA_read_committed | 
 	TRA_autocommit | TRA_rec_version | TRA_no_auto_undo | TRA_restart_requests);
 
 const int TRA_MASK				= 3;
@@ -427,6 +365,9 @@ const int tra_committed		= 3;
 const int tra_us			= 4;	// Transaction is us
 const int tra_precommitted	= 5;	// Transaction is precommitted
 
+// The highest transaction number possible.  This is 0x7fffffff if SLONG is 32 bits.
+//#define MAX_TRA_NUMBER		 (~(1L << (BITS_PER_LONG - 1)))
+
 // Savepoint block
 
 class Savepoint : public pool_alloc<type_sav>
@@ -438,13 +379,13 @@ public:
 		deleteActions(sav_verb_free);
 	}
 
-	VerbAction*			sav_verb_actions;	// verb action list
-	VerbAction*			sav_verb_free;		// free verb actions
-	USHORT				sav_verb_count;		// active verb count
-	SLONG				sav_number;			// save point number
-	Savepoint*			sav_next;
-	USHORT				sav_flags;
-	Firebird::MetaName	sav_name; 			// savepoint name
+	VerbAction*		sav_verb_actions;	// verb action list
+	VerbAction*		sav_verb_free;		// free verb actions
+	USHORT			sav_verb_count;		// Active verb count
+	SLONG			sav_number;			// save point number
+	Savepoint*		sav_next;
+	USHORT			sav_flags;
+	TEXT			sav_name[MAX_SQL_IDENTIFIER_SIZE]; // Savepoint name
 
 private:
 	void deleteActions(VerbAction* list);
@@ -476,7 +417,6 @@ enum dfw_t {
 	dfw_add_file,
 	dfw_add_shadow,
 	dfw_delete_shadow,
-	dfw_delete_shadow_nodelete,
 	dfw_modify_file,
 	dfw_erase_file,
 	dfw_create_field,
@@ -503,19 +443,14 @@ enum dfw_t {
 	dfw_delete_exception,
 	//dfw_unlink_file,
 	dfw_delete_generator,
-	dfw_create_function,
-	dfw_modify_function,
-	dfw_delete_function,
+	dfw_modify_generator,
+	dfw_delete_udf,
 	dfw_add_difference,
 	dfw_delete_difference,
 	dfw_begin_backup,
 	dfw_end_backup,
 	dfw_user_management,
-	dfw_drop_package_header,
-	dfw_drop_package_body,
-	dfw_check_not_null,
-	dfw_store_view_context_type,
-	dfw_set_generator,
+	dfw_create_generator,
 
 	// deferred works argument types
 	dfw_arg_index_name,		// index name for dfw_delete_expression_index, mandatory
@@ -525,94 +460,69 @@ enum dfw_t {
 	dfw_arg_check_blr,		// check if BLR is still compilable
 	dfw_arg_rel_name,		// relation name of a trigger
 	dfw_arg_trg_type,		// trigger type
-	dfw_arg_new_name,		// new name
-	dfw_arg_field_not_null,	// set domain to not nullable
-	dfw_db_crypt,			// change database encryption status
-	dfw_set_linger,			// set database linger
-	dfw_clear_mapping		// clear user mapping cache
+	dfw_arg_new_name		// new name
 };
 
 // Verb actions
 
 class UndoItem
 {
-	static const UCHAR FLAG_SAME_TX	= 1;	// record inserted/updated and deleted by same tx
-	static const UCHAR FLAG_NEW_VER	= 2;	// savepoint created new record version and deleted it
-
 public:
-	static const SINT64& generate(const void* /*sender*/, const UndoItem& item)
+    static const SINT64& generate(const void* /*sender*/, const UndoItem& item)
 	{
-		return item.m_number;
+		return item.number;
     }
 
 	UndoItem() {}
 
-	UndoItem(RecordNumber recordNumber, bool sameTx, bool newVersion)
-		: m_number(recordNumber.getValue()), m_offset(0), m_format(NULL)
-	{
-		m_flags = (sameTx ? FLAG_SAME_TX : 0) | (newVersion ? FLAG_NEW_VER : 0);
-	}
+	UndoItem(RecordNumber recordNumber, UCHAR recordFlags)
+		: number(recordNumber.getValue()),
+		  flags(recordFlags),
+		  length(0), offset(0), format(NULL)
+	{}
 
-	UndoItem(jrd_tra* transaction, RecordNumber recordNumber, const Record* record,
-			 bool sameTx, bool newVersion)
-		: m_number(recordNumber.getValue()), m_format(record->getFormat())
+	UndoItem(jrd_tra* transaction, RecordNumber recordNumber, const Record* record, UCHAR recordFlags)
+		: number(recordNumber.getValue()),
+		  flags(recordFlags),
+		  length(record->rec_length),
+		  offset(0),
+		  format(record->rec_format)
 	{
-		m_flags = (sameTx ? FLAG_SAME_TX : 0) | (newVersion ? FLAG_NEW_VER : 0);
-		m_offset = transaction->getUndoSpace()->allocateSpace(m_format->fmt_length);
-		transaction->getUndoSpace()->write(m_offset, record->getData(), record->getLength());
-	}
-
-	Record* setupRecord(jrd_tra* transaction) const
-	{
-		if (m_format)
+		if (length)
 		{
-			Record* const record = transaction->getUndoRecord(m_format);
-			transaction->getUndoSpace()->read(m_offset, record->getData(), record->getLength());
-			return record;
+			offset = transaction->getUndoSpace()->allocateSpace(length);
+			transaction->getUndoSpace()->write(offset, record->rec_data, length);
 		}
+	}
 
-		return NULL;
+	Record* setupRecord(jrd_tra* transaction, UCHAR newFlags = 0)
+	{
+		flags |= newFlags;
+
+		Record* const record = transaction->getUndoRecord(length, number, format, flags);
+
+		if (length)
+			transaction->getUndoSpace()->read(offset, record->rec_data, length);
+
+		return record;
 	}
 
 	void release(jrd_tra* transaction)
 	{
-		if (m_format)
+		if (length)
 		{
-			transaction->getUndoSpace()->releaseSpace(m_offset, m_format->fmt_length);
-			m_format = NULL;
+			transaction->getUndoSpace()->releaseSpace(offset, length);
+			length = 0;
+			format = NULL;
 		}
 	}
 
-	void markSameTx()
-	{
-		m_flags |= FLAG_SAME_TX;
-	}
-
-	const bool isSameTx() const
-	{
-		return (m_flags & FLAG_SAME_TX);
-	}
-
-	const bool isNewVersion() const
-	{
-		return (m_flags & FLAG_NEW_VER);
-	}
-
-	bool hasData() const
-	{
-		return (m_format != NULL);
-	}
-
-	bool isEmpty() const
-	{
-		return (m_format == NULL);
-	}
-
 private:
-	SINT64 m_number;
-	offset_t m_offset;
-	const Format* m_format;
-	UCHAR m_flags;
+	SINT64 number;
+	UCHAR flags;
+	USHORT length;
+	offset_t offset;
+	const Format* format;
 };
 
 typedef Firebird::BePlusTree<UndoItem, SINT64, MemoryPool, UndoItem> UndoItemTree;
@@ -641,6 +551,36 @@ inline void Savepoint::deleteActions(VerbAction* list)
 		delete list;
 		list = next;
 	}
+};
+
+class AutoUndoRecord
+{
+public:
+	AutoUndoRecord(jrd_tra* transaction, UndoItem* undo, USHORT flags = 0)
+		: m_record(undo ? undo->setupRecord(transaction, flags) : NULL)
+	{}
+
+	~AutoUndoRecord()
+	{
+		if (m_record)
+		{
+			fb_assert(m_record->rec_flags & REC_undo_active);
+			m_record->rec_flags &= ~REC_undo_active;
+		}
+	}
+
+	operator Record*()
+	{
+		return m_record;
+	}
+
+	Record* operator->()
+	{
+		return m_record;
+	}
+
+private:
+	Record* const m_record;
 };
 
 } //namespace Jrd

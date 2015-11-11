@@ -45,89 +45,48 @@ namespace Firebird {
 class ClumpletReader : protected AutoStorage
 {
 public:
-	enum Kind
-	{
-		EndOfList,
-		Tagged,
-		UnTagged,
-		SpbAttach,
-		SpbStart,
-		Tpb,
-		WideTagged,
-		WideUnTagged,
-		SpbSendItems,
-		SpbReceiveItems
-	};
-
-	struct KindList
-	{
-		Kind kind;
-		UCHAR tag;
-	};
-
-	struct SingleClumplet
-	{
-		UCHAR tag;
-		FB_SIZE_T size;
-		const UCHAR* data;
-	};
+	enum Kind {Tagged, UnTagged, SpbAttach, SpbStart, Tpb/*, SpbInfo*/, WideTagged, WideUnTagged, SpbItems};
 
 	// Constructor prepares an object from plain PB
-	ClumpletReader(Kind k, const UCHAR* buffer, FB_SIZE_T buffLen);
-	ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, FB_SIZE_T buffLen);
-
-	// Different versions of clumplets may have different kinds
-	ClumpletReader(const KindList* kl, const UCHAR* buffer, FB_SIZE_T buffLen, FPTR_VOID raise = NULL);
-	ClumpletReader(MemoryPool& pool, const KindList* kl, const UCHAR* buffer, FB_SIZE_T buffLen, FPTR_VOID raise = NULL);
+	ClumpletReader(Kind k, const UCHAR* buffer, size_t buffLen);
+	ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, size_t buffLen);
 	virtual ~ClumpletReader() { }
-
-	// Create a copy of reader
-	ClumpletReader(MemoryPool& pool, const ClumpletReader& from);
-	ClumpletReader(const ClumpletReader& from);
 
 	// Navigation in clumplet buffer
 	bool isEof() const { return cur_offset >= getBufferLength(); }
 	void moveNext();
 	void rewind();
 	bool find(UCHAR tag);
-	bool next(UCHAR tag);
 
     // Methods which work with currently selected clumplet
 	UCHAR getClumpTag() const;
-	FB_SIZE_T getClumpLength() const;
+	size_t getClumpLength() const;
 
 	SLONG getInt() const;
 	bool getBoolean() const;
 	SINT64 getBigInt() const;
 	string& getString(string& str) const;
 	PathName& getPath(PathName& str) const;
-	void getData(UCharBuffer& data) const;
 	const UCHAR* getBytes() const;
 	double getDouble() const;
 	ISC_TIMESTAMP getTimeStamp() const;
 	ISC_TIME getTime() const { return getInt(); }
 	ISC_DATE getDate() const { return getInt(); }
 
-	// get the most generic representation of clumplet
-	SingleClumplet getClumplet() const;
-
 	// Return the tag for buffer (usually structure version)
 	UCHAR getBufferTag() const;
-	// true if buffer has tag
-	bool isTagged() const;
-	FB_SIZE_T getBufferLength() const
+	size_t getBufferLength() const
 	{
-		FB_SIZE_T rc = getBufferEnd() - getBuffer();
+		size_t rc = getBufferEnd() - getBuffer();
 		if (rc == 1 && kind != UnTagged     && kind != SpbStart &&
-					   kind != WideUnTagged && kind != SpbSendItems &&
-					   kind != SpbReceiveItems)
+					   kind != WideUnTagged && kind != SpbItems)
 		{
 			rc = 0;
 		}
 		return rc;
 	}
-	FB_SIZE_T getCurOffset() const { return cur_offset; }
-	void setCurOffset(FB_SIZE_T newOffset) { cur_offset = newOffset; }
+	size_t getCurOffset() const { return cur_offset; }
+	void setCurOffset(size_t newOffset) { cur_offset = newOffset; }
 
 #ifdef DEBUG_CLUMPLETS
 	// Sometimes it's really useful to have it in case of errors
@@ -138,18 +97,18 @@ public:
 	// but in different order
 	bool simpleCompare(const ClumpletReader &other) const
 	{
-		const FB_SIZE_T len = getBufferLength();
+		const size_t len = getBufferLength();
 		return (len == other.getBufferLength()) && (memcmp(getBuffer(), other.getBuffer(), len) == 0);
 	}
 
 protected:
 	enum ClumpletType {TraditionalDpb, SingleTpb, StringSpb, IntSpb, ByteSpb, Wide};
 	ClumpletType getClumpletType(UCHAR tag) const;
-	FB_SIZE_T getClumpletSize(bool wTag, bool wLength, bool wData) const;
+	size_t getClumpletSize(bool wTag, bool wLength, bool wData) const;
 	void adjustSpbState();
 
-	FB_SIZE_T cur_offset;
-	Kind kind;
+	size_t cur_offset;
+	const Kind kind;
 	UCHAR spbState;		// Reflects state of spb parser/writer
 
 	// Methods are virtual so writer can override 'em
@@ -167,58 +126,17 @@ protected:
 	virtual void invalid_structure(const char* what) const;
 
 private:
-	// Assignment not implemented.
+	// Assignment and copy constructor not implemented.
+	ClumpletReader(const ClumpletReader& from);
 	ClumpletReader& operator=(const ClumpletReader& from);
 
 	const UCHAR* static_buffer;
 	const UCHAR* static_buffer_end;
 
-	static SINT64 fromVaxInteger(const UCHAR* ptr, FB_SIZE_T length);
-	void create(const KindList* kl, FB_SIZE_T buffLen, FPTR_VOID raise);
-
-public:
-	// Some frequently used kind lists
-	static const KindList dpbList[];
-	static const KindList spbList[];
+	static SINT64 fromVaxInteger(const UCHAR* ptr, size_t length);
 };
-
-class AuthReader : public ClumpletReader
-{
-public:
-	static const unsigned char AUTH_NAME = 1;		// name described by it's type
-	static const unsigned char AUTH_PLUGIN = 2;		// plugin which added a record
-	static const unsigned char AUTH_TYPE = 3;		// it can be user/group/role/etc. - what plugin sets
-	static const unsigned char AUTH_SECURE_DB = 4;	// sec. db in which context record was added
-													// missing when plugin is server-wide
-	static const unsigned char AUTH_ORIG_PLUG = 5;	// original plugin that added a mapped record
-													// (human information reasons only)
-	typedef Array<UCHAR> AuthBlock;
-
-	struct Info
-	{
-		NoCaseString type, name, plugin, secDb, origPlug;
-		unsigned found, current;
-
-		Info()
-			: found(0), current(0)
-		{ }
-	};
-
-	explicit AuthReader(const AuthBlock& authBlock);
-	explicit AuthReader(const ClumpletReader& rdr)
-		: ClumpletReader(rdr)
-	{ }
-
-	bool getInfo(Info& info);
-};
-
-//#define AUTH_BLOCK_DEBUG
-#ifdef AUTH_BLOCK_DEBUG
-void dumpAuthBlock(const char* text, ClumpletReader* pb, unsigned char param);
-#else
-static inline void dumpAuthBlock(const char*, ClumpletReader*, unsigned char) { }
-#endif
 
 } // namespace Firebird
 
 #endif // CLUMPLETREADER_H
+

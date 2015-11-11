@@ -39,12 +39,10 @@
 #include "../common/classes/init.h"
 
 #if defined(HAVE___THREAD)
-
 // Recent GCC supports __thread keyword. Sun compiler and HP-UX should have it too
 # define TLS_DECLARE(TYPE, NAME) __thread TYPE NAME
 # define TLS_GET(NAME) NAME
 # define TLS_SET(NAME, VALUE) NAME = (VALUE)
-
 #elif defined(WIN_NT)
 
 namespace Firebird {
@@ -58,7 +56,7 @@ public:
 		if ((key = TlsAlloc()) == MAX_ULONG)
 			system_call_failed::raise("TlsAlloc");
 		// Allocated pointer is saved by InstanceList::constructor.
-		FB_NEW InstanceControl::InstanceLink<Win32Tls, PRIORITY_TLS_KEY>(this);
+		new InstanceControl::InstanceLink<Win32Tls, PRIORITY_TLS_KEY>(this);
 	}
 	const T get()
 	{
@@ -102,12 +100,11 @@ private:
 //# define TLS_DECLARE(TYPE, NAME) __declspec(thread) TYPE NAME
 //# define TLS_GET(NAME) NAME
 //# define TLS_SET(NAME, VALUE) NAME = (VALUE)
-
 #else
 
 #include "../common/classes/init.h"
 
-#include "fb_pthread.h"
+#include <pthread.h>
 
 namespace Firebird {
 
@@ -124,7 +121,7 @@ public:
 		if (rc)
 			system_call_failed::raise("pthread_key_create", rc);
 		// Allocated pointer is saved by InstanceList::constructor.
-		FB_NEW InstanceControl::InstanceLink<TlsValue, PRIORITY_TLS_KEY>(this);
+		new InstanceControl::InstanceLink<TlsValue, PRIORITY_TLS_KEY>(this);
 	}
 
 	const T get()

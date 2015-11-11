@@ -28,13 +28,6 @@
 #include "PluginLogWriter.h"
 #include "../common/classes/init.h"
 
-#ifndef S_IREAD
-#define S_IREAD S_IRUSR
-#endif
-#ifndef S_IWRITE
-#define S_IWRITE S_IWUSR
-#endif
-
 using namespace Firebird;
 
 // seems to only be Solaris 9 that doesn't have strerror_r,
@@ -43,7 +36,7 @@ using namespace Firebird;
 void strerror_r(int err, char* buf, size_t bufSize)
 {
 	static Firebird::GlobalPtr<Firebird::Mutex> mutex;
-	Firebird::MutexLockGuard guard(mutex, FB_FUNCTION);
+	Firebird::MutexLockGuard guard(mutex);
 	strncpy(buf, strerror(err), bufSize);
 }
 #endif
@@ -111,7 +104,7 @@ void PluginLogWriter::reopen()
 		checkErrno("open");
 }
 
-FB_SIZE_T PluginLogWriter::write(const void* buf, FB_SIZE_T size)
+size_t PluginLogWriter::write(const void* buf, size_t size)
 {
 #ifdef WIN_NT
 	Guard guard(this);
@@ -134,7 +127,7 @@ FB_SIZE_T PluginLogWriter::write(const void* buf, FB_SIZE_T size)
 		stamp.decode(&times);
 
 		PathName newName;
-		const FB_SIZE_T last_dot_pos = m_fileName.rfind(".");
+		const size_t last_dot_pos = m_fileName.rfind(".");
 		if (last_dot_pos > 0)
 		{
 			PathName log_name = m_fileName.substr(0, last_dot_pos);
@@ -175,7 +168,7 @@ FB_SIZE_T PluginLogWriter::write(const void* buf, FB_SIZE_T size)
 		seekToEnd();
 	}
 
-	const FB_SIZE_T written = ::write(m_fileHandle, buf, size);
+	const size_t written = ::write(m_fileHandle, buf, size);
 	if (written != size)
 		checkErrno("write");
 

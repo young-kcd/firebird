@@ -93,14 +93,6 @@ if (SQLCODE)
     exit (FINI_ERROR);
     }
 
-printf ("Turning forced writes off\n");
-sprintf (cmd, "gfix -write async %s", Db_name);
-if (system (cmd))
-    {
-    printf ("Couldn't turn forced writes off\n");
-    exit (FINI_ERROR);
-    }
-
 printf ("Creating tables\n");
 sprintf (cmd, "isql %s -q -i empddl.sql", Db_name);
 if (system (cmd))
@@ -111,27 +103,13 @@ if (system (cmd))
 
 printf ("Turning  off indices and triggers \n");
 sprintf (cmd, "isql %s -i indexoff.sql", Db_name);
-if (system (cmd))
-    {
-    printf ("Couldn't turn off indices and triggers \n");
-    exit (FINI_ERROR);
-    }
-
+system (cmd);
 printf ("Loading  column data\n");
 sprintf (cmd, "isql %s -i empdml.sql", Db_name);
-if (system (cmd))
-    {
-    printf ("Couldn't load column data \n");
-    exit (FINI_ERROR);
-    }
-
+system (cmd);
 printf ("Turning  on indices and triggers \n");
 sprintf (cmd, "isql %s -i indexon.sql", Db_name);
-if (system (cmd))
-    {
-    printf ("Couldn't turn on indices and triggers \n");
-    exit (FINI_ERROR);
-    }
+system (cmd);
 
 EXEC SQL CONNECT DB;
 if (SQLCODE)
@@ -140,41 +118,16 @@ if (SQLCODE)
     exit (FINI_ERROR);
     }
 
-// What is/was the point of this? 
-// Each of the functions below start their own txn.
-//EXEC SQL SET TRANSACTION;
+EXEC SQL SET TRANSACTION;
 
-printf ("Loading Language arrays\n");
-if ( addlang() ) 
-	{
-    printf ("Couldn't load Language arrays\n");
-	EXEC SQL DISCONNECT DB;	
-    exit (FINI_ERROR);
-    }
-
+printf ("Loading Language blobs\n");
+addlang();
 printf ("Loading Job blobs\n");
-if ( addjob() )
-	{
-    printf ("Couldn't load Job blobs\n");
-	EXEC SQL DISCONNECT DB;	
-    exit (FINI_ERROR);
-    }
-
+addjob();
 printf ("Loading project blobs \n");
-if ( addproj() ) 
-	{
-    printf ("Couldn't load project blobs\n");
-	EXEC SQL DISCONNECT DB;	
-    exit (FINI_ERROR);
-    }
-
+addproj();
 printf ("Loading quarter arrays \n");
-if ( addqtr() )
-	{
-    printf ("Couldn't load quarter arrays\n");
-	EXEC SQL DISCONNECT DB;	
-    exit (FINI_ERROR);
-    }
+addqtr();
 
 exit (FINI_OK);
 }
@@ -242,7 +195,6 @@ Error:
 
 printf ("SQLCODE=%ld\n", (long)SQLCODE);
 isc_print_status (gds__status);
-EXEC SQL ROLLBACK;
 return (1);
 }
 
@@ -319,7 +271,6 @@ Error:
 
 printf ("SQLCODE=%ld\n", (long)SQLCODE);
 isc_print_status (gds__status);
-EXEC SQL ROLLBACK;
 
 return (1);
 }
@@ -394,7 +345,6 @@ Error:
 
 printf ("SQLCODE=%ld\n", (long)SQLCODE);
 isc_print_status (gds__status);
-EXEC SQL ROLLBACK;
 
 return (1);
 }
@@ -455,7 +405,6 @@ Error:
 
 printf ("SQLCODE=%ld\n", (long)SQLCODE);
 isc_print_status (gds__status);
-EXEC SQL ROLLBACK;
 
 return (1);
 }

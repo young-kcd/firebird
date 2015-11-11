@@ -22,6 +22,7 @@
  */
 
 #include "firebird.h"
+#include "../jrd/common.h"
 
 #ifdef HAVE_TIMES
 #include <sys/types.h>
@@ -329,7 +330,7 @@ static void db_open( const char* file_name, USHORT file_length)
  *
  **************************************/
 
-	if ((file = os_utils::open(file_name, 2)) == -1)
+	if ((file = open(file_name, 2)) == -1)
 		db_error(errno);
 }
 

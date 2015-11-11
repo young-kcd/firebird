@@ -29,11 +29,13 @@
 #
 #
 ROOT=../..
+ObjModuleType=boot
+CPPFLAGS+= -DBOOT_BUILD
 
 # Add the install include directory to the search path since the
 # examples need to build using those headers values.
 
-CFLAGS := $(CFLAGS) -I$(FB_BUILD)/include
+CFLAGS := $(CFLAGS) -I$(ROOT)/gen/firebird/include
 
 
 include     $(ROOT)/gen/make.defaults
@@ -50,17 +52,14 @@ include     $(ROOT)/gen/make.shared.variables
 PATH := ./:$(BIN):$(PATH)
 export PATH
 
-#ifeq ($(PLATFORM),DARWIN)
-#DYLD_LIBRARY_PATH := $(DYLD_LIBRARY_PATH):$(GEN_ROOT)/firebird/lib
-#export DYLD_LIBRARY_PATH
-#else
-#LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(GEN_ROOT)/firebird/lib
-#export LD_LIBRARY_PATH
-#endif
-GPRE_FLAGS=	-m -z -n
-
-LIB_LINK_RPATH = $(call LIB_PLATFORM_RPATH,$(if $(subst intl,,$(1)),$(LIB),$(LIB)/../intl))
-LIB_LINK_MAPFILE =
+ifeq ($(PLATFORM),DARWIN)
+DYLD_LIBRARY_PATH := $(DYLD_LIBRARY_PATH):$(GEN_ROOT)/firebird/lib
+export DYLD_LIBRARY_PATH
+else
+LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(GEN_ROOT)/firebird/lib
+export LD_LIBRARY_PATH
+endif
+GPRE_FLAGS=	-r -m -z -n
 
 EXAMPLES_DEST=	$(GEN_ROOT)/examples
 EXAMPLES_SRC=	$(ROOT)/examples
@@ -79,7 +78,6 @@ INTL_Files    =	intlddl.sql intldml.sql indexoff.sql indexon.sql \
 INTL_Sources =   $(addprefix $(EXAMPLES_DEST)/, $(INTL_Files))
 
 EMPLOYEE_DB=	$(EXAMPLES_DEST)/employee.fdb
-FINAL_EMPDB=	$(FIREBIRD)/examples/empbuild/employee.fdb
 INTLEMP_DB=	$(EXAMPLES_DEST)/intlemp.fdb
 
 .PHONY: all examples
@@ -87,23 +85,20 @@ INTLEMP_DB=	$(EXAMPLES_DEST)/intlemp.fdb
 all: examples
 
 # examples: $(EMPLOYEE_DB) $(INTLEMP_DB) $(FIREBIRD)/examples/README
-examples:	$(FINAL_EMPDB) $(FIREBIRD)/examples/README
-
-$(FINAL_EMPDB):	$(EMPLOYEE_DB)
-	$(RM) $(FINAL_EMPDB)
-	$(CP) $(EMPLOYEE_DB) $(FINAL_EMPDB)
+examples: $(EMPLOYEE_DB) $(FIREBIRD)/examples/README
 
 $(FIREBIRD)/examples/README:
 	$(CP) $(ROOT)/examples/readme $(FIREBIRD)/examples/README
 	$(CP) $(ROOT)/examples/*.* $(FIREBIRD)/examples/
 	$(CP) $(ROOT)/examples/api/*.* $(FIREBIRD)/examples/api/
-	$(CP) $(ROOT)/examples/dbcrypt/*.* $(FIREBIRD)/examples/dbcrypt/
+#	$(CP) $(ROOT)/examples/build_unix/*.* $(FIREBIRD)/examples/build_unix/
+#	$(CP) $(ROOT)/examples/build_win32/*.* $(FIREBIRD)/examples/build_win32/
+	$(CP) $(ROOT)/examples/dyn/*.* $(FIREBIRD)/examples/dyn/
+#	$(CP) $(ROOT)/examples/empbuild/*.* $(FIREBIRD)/examples/empbuild/
 	$(CP) $(ROOT)/examples/include/*.* $(FIREBIRD)/examples/include/
-	$(CP) $(ROOT)/examples/interfaces/*.* $(FIREBIRD)/examples/interfaces/
-	$(CP) $(ROOT)/examples/package/*.* $(FIREBIRD)/examples/package/
 	$(CP) $(ROOT)/examples/stat/*.* $(FIREBIRD)/examples/stat/
 	$(CP) $(ROOT)/examples/udf/*.* $(FIREBIRD)/examples/udf/
-	$(CP) $(ROOT)/examples/udr/*.* $(FIREBIRD)/examples/udr/
+	$(CP) employee.fdb $(FIREBIRD)/examples/empbuild/
 #	$(CP) intlemp.fdb $(FIREBIRD)/examples/empbuild/
 
 $(EXAMPLES_DEST)% : $(EXAMPLES_SRC)%
@@ -121,20 +116,19 @@ $(EXAMPLES_DEST)% : $(EXAMPLES_SRC)%
 # MOD 28-July-2002
 
 
-$(EMPLOYEE_DB):	$(EXAMPLES_DEST)/empbuild$(EXEC_EXT) $(INPUT_Sources) $(EXAMPLES_DEST)/isql$(EXEC_EXT)
-	-$(RM) $(EMPLOYEE_DB)
-	./empbuild $(EMPLOYEE_DB)
-	$(GFIX) -write sync $(EMPLOYEE_DB)
-	-$(CHMOD_6) $(EMPLOYEE_DB)
+$(EXAMPLES_DEST)/employee.fdb:	$(EXAMPLES_DEST)/empbuild$(EXEC_EXT) $(INPUT_Sources) $(EXAMPLES_DEST)/isql$(EXEC_EXT)
+	-$(RM) employee.fdb
+	./empbuild employee.fdb
+	-$(CHMOD_6) employee.fdb
 
-# To get past the fact isql is called from the programs, we create a local link in this directory
+# To get past the fact isql is called from the programs, we create a local link
+# to the static one in this directory
 
 $(EXAMPLES_DEST)/isql$(EXEC_EXT):
-	-$(RM) $(EXAMPLES_DEST)/isql$(EXEC_EXT)
-	$(LN) $(ISQL) $(EXAMPLES_DEST)/isql$(EXEC_EXT)
+	-$(LN) $(ISQL_STATIC) $(EXAMPLES_DEST)/isql$(EXEC_EXT)
 
-$(EXAMPLES_DEST)/empbuild$(EXEC_EXT): $(EMPBLD_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ -L$(LIB) $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+$(EXAMPLES_DEST)/empbuild$(EXEC_EXT): $(EMPBLD_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A) 
+	$(EXE_LINK) $(LINK_OPTS) $(EMPBLD_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
 
 $(EXAMPLES_DEST)/empbuild.c:	$(EXAMPLES_DEST)/empbuild.fdb $(EXAMPLES_DEST)/empbuild.e
 
@@ -151,8 +145,8 @@ $(EXAMPLES_DEST)/intlemp.fdb:	$(EXAMPLES_DEST)/intlbld$(EXEC_EXT) $(INTL_Sources
 	./intlbld intlemp.fdb
 	-$(CHMOD_6) intlemp.fdb
 
-$(EXAMPLES_DEST)/intlbld$(EXEC_EXT): $(INTLBLD_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(EXE_LINK_OPTIONS) @^ -o $@ -L$(LIB) $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+$(EXAMPLES_DEST)/intlbld$(EXEC_EXT): $(INTLBLD_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A) 
+	$(EXE_LINK) $(LINK_OPTS) $(INTLBLD_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
 
 $(EXAMPLES_DEST)/intlbld.c:	$(EXAMPLES_DEST)/intlbuild.fdb $(EXAMPLES_DEST)/intlbld.e
 

@@ -28,13 +28,14 @@
 #include "consts_pub.h"
 #include "fb_exception.h"
 #include "iberror.h"
+#include "../../jrd/ibase.h"
 #include "../../common/classes/fb_string.h"
 #include "../../common/classes/timestamp.h"
 #include "../../common/config/config.h"
 #include "../../common/StatusArg.h"
-#include "../../common/ThreadStart.h"
+#include "../../common/thd.h"
 #include "../../jrd/svc.h"
-#include "../../common/os/guid.h"
+#include "../../jrd/os/guid.h"
 #include "../../jrd/trace/TraceLog.h"
 #include "../../jrd/trace/TraceManager.h"
 #include "../../jrd/trace/TraceService.h"
@@ -54,8 +55,8 @@ public:
 
 	virtual ~TraceSvcJrd() {};
 
-	virtual void setAttachInfo(const string& service_name, const string& user, const string& pwd,
-		const AuthReader::AuthBlock& authBlock, bool isAdmin);
+	virtual void setAttachInfo(const string& service_name, const string& user,
+		const string& pwd, bool isAdmin);
 
 	virtual void startSession(TraceSession& session, bool interactive);
 	virtual void stopSession(ULONG id);
@@ -69,15 +70,13 @@ private:
 
 	Service& m_svc;
 	string m_user;
-	AuthReader::AuthBlock m_authBlock;
 	bool   m_admin;
 	ULONG  m_chg_number;
 };
 
-void TraceSvcJrd::setAttachInfo(const string& /*svc_name*/, const string& user, const string& pwd,
-	const AuthReader::AuthBlock& authBlock, bool isAdmin)
+void TraceSvcJrd::setAttachInfo(const string& /*service_name*/, const string& user,
+	const string& /*pwd*/, bool isAdmin)
 {
-	m_authBlock = authBlock;
 	m_user = user;
 	m_admin = isAdmin || (m_user == SYSDBA_USER_NAME);
 }
@@ -89,13 +88,12 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 		m_svc.printf(false, "Can not start trace session. There are no trace plugins loaded\n");
 		return;
 	}
-
+	
 	ConfigStorage* storage = TraceManager::getStorage();
 
 	{	// scope
 		StorageGuard guard(storage);
 
-		session.ses_auth = m_authBlock;
 		session.ses_user = m_user;
 
 		session.ses_flags = trs_active;
@@ -105,7 +103,7 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 
 		if (interactive)
 		{
-			Guid guid;
+			FB_GUID guid;
 			GenerateGuid(&guid);
 
 			char* buff = session.ses_logfile.getBuffer(GUID_BUFF_SIZE);
@@ -274,13 +272,13 @@ void TraceSvcJrd::readSession(TraceSession& session)
 	}
 
 	MemoryPool& pool = *getDefaultMemoryPool();
-	AutoPtr<TraceLog> log(FB_NEW_POOL(pool) TraceLog(pool, session.ses_logfile, true));
+	AutoPtr<TraceLog> log(FB_NEW(pool) TraceLog(pool, session.ses_logfile, true));
 
 	UCHAR buff[1024];
 	int flags = session.ses_flags;
 	while (!m_svc.finished() && checkAliveAndFlags(session.ses_id, flags))
 	{
-		const FB_SIZE_T len = log->read(buff, sizeof(buff));
+		const size_t len = log->read(buff, sizeof(buff));
 		if (!len)
 		{
 			if (!checkAliveAndFlags(session.ses_id, flags))
@@ -333,7 +331,7 @@ bool TraceSvcJrd::checkAliveAndFlags(ULONG sesId, int& flags)
 
 
 // service entrypoint
-int TRACE_main(UtilSvc* arg)
+THREAD_ENTRY_DECLARE TRACE_main(THREAD_ENTRY_PARAM arg)
 {
 	Service* svc = (Service*) arg;
 	int exit_code = FB_SUCCESS;
@@ -345,12 +343,15 @@ int TRACE_main(UtilSvc* arg)
 	}
 	catch (const Exception& e)
 	{
-		StaticStatusVector status;
-		e.stuffException(status);
+		ISC_STATUS_ARRAY status;
+		e.stuff_exception(status);
 		svc->initStatus();
-		svc->setServiceStatus(status.begin());
+		svc->setServiceStatus(status);
 		exit_code = FB_FAILURE;
 	}
 
-	return exit_code;
+	svc->started();
+	svc->finish();
+
+	return (THREAD_ENTRY_RETURN)(IPTR) exit_code;
 }

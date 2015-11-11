@@ -27,7 +27,7 @@
 // Utility functions
 
 #include "firebird.h"
-#include "../common/os/guid.h"
+#include "../jrd/common.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -38,42 +38,28 @@
 #endif
 #include <stdarg.h>
 #include <stdio.h>
-#include <ctype.h>
 
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/locks.h"
 #include "../common/classes/init.h"
 #include "../jrd/constants.h"
-#include "../jrd/inf_pub.h"
-#include "../jrd/align.h"
-#include "../common/os/path_utils.h"
-#include "../common/os/fbsyslog.h"
-#include "../common/StatusArg.h"
-#include "../common/os/os_utils.h"
-#include "../dsql/sqlda_pub.h"
+#include "../jrd/os/path_utils.h"
+#include "../jrd/os/fbsyslog.h"
 
 #ifdef WIN_NT
 #include <direct.h>
 #include <io.h> // isatty()
 #endif
-
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
 #ifdef HAVE_TERMIOS_H
 #include <termios.h>
 #endif
-
-#ifdef HAVE_TIMES
-#include <sys/times.h>
-#endif
-
 
 namespace fb_utils
 {
@@ -103,7 +89,7 @@ char* copy_terminate(char* dest, const char* src, size_t bufsize)
 }
 
 
-char* exact_name(char* const name)
+char* exact_name(char* const str)
 {
 /**************************************
  *
@@ -121,19 +107,19 @@ char* exact_name(char* const name)
  *	Returns:     str
  *
  **************************************/
-	char* p = name;
+	char* p = str;
 	while (*p)
 	    ++p;
 	// Now, let's go back
 	--p;
-	while (p >= name && *p == '\x20') // blank character, ASCII(32)
+	while (p >= str && *p == '\x20') // blank character, ASCII(32)
 		--p;
 	*(p + 1) = '\0';
-	return name;
+	return str;
 }
 
 
-char* exact_name_limit(char* const name, size_t bufsize)
+char* exact_name_limit(char* const str, size_t bufsize)
 {
 /**************************************
  *
@@ -153,16 +139,16 @@ char* exact_name_limit(char* const name, size_t bufsize)
  *	Returns:     str
  *
  **************************************/
-	const char* const end = name + bufsize - 1;
-	char* p = name;
+	const char* const end = str + bufsize - 1;
+	char* p = str;
 	while (*p && p < end)
 	    ++p;
 	// Now, let's go back
 	--p;
-	while (p >= name && *p == '\x20') // blank character, ASCII(32)
+	while (p >= str && *p == '\x20') // blank character, ASCII(32)
 		--p;
 	*(p + 1) = '\0';
-	return name;
+	return str;
 }
 
 
@@ -247,20 +233,6 @@ int name_length(const TEXT* const name)
 }
 
 
-// *********************************
-// n a m e _ l e n g t h _ l i m i t
-// *********************************
-// Compute length without trailing blanks. The second parameter is maximum length.
-int name_length_limit(const TEXT* const name, size_t bufsize)
-{
-	const char* p = name + bufsize - 1;
-	// Now, let's go back
-	while (p >= name && *p == ' ') // blank character, ASCII(32)
-		--p;
-	return (p + 1) - name;
-}
-
-
 //***************
 // r e a d e n v
 //***************
@@ -340,7 +312,7 @@ char* cleanup_passwd(char* arg)
 		return arg;
 	}
 
-	const int lpass = static_cast<int>(strlen(arg));
+	const int lpass = strlen(arg);
 	char* savePass = (char*) gds__alloc(lpass + 1);
 	if (! savePass)
 	{
@@ -385,7 +357,7 @@ bool prefix_kernel_object_name(char* name, size_t bufsize)
 
 		// if name and prefix can't fit in name's buffer than we must
 		// not overwrite end of name because it contains object type
-		const size_t move_prefix = (len_name + len_prefix > bufsize) ?
+		const int move_prefix = (len_name + len_prefix > bufsize) ?
 			(bufsize - len_name) : len_prefix;
 
 		memmove(name + move_prefix, name, len_name);
@@ -718,9 +690,9 @@ void getCwd(Firebird::PathName& pn)
 #if defined(WIN_NT)
 	_getcwd(buffer, MAXPATHLEN);
 #elif defined(HAVE_GETCWD)
-	FB_UNUSED(getcwd(buffer, MAXPATHLEN));
+	getcwd(buffer, MAXPATHLEN);
 #else
-	FB_UNUSED(getwd(buffer));
+	getwd(buffer);
 #endif
 	pn.recalculate_length();
 }
@@ -736,7 +708,7 @@ namespace {
 				f = stdin;
 			}
 			else {
-				f = os_utils::fopen(name.c_str(), "rt");
+				f = fopen(name.c_str(), "rt");
 			}
 			if (f && isatty(fileno(f)))
 			{
@@ -811,7 +783,7 @@ FetchPassResult fetchPassword(const Firebird::PathName& name, const char*& passw
 	}
 
 	// this is planned leak of a few bytes of memory in utilities
-	char* pass = FB_NEW_POOL(*getDefaultMemoryPool()) char[pwd.length() + 1];
+	char* pass = FB_NEW(*getDefaultMemoryPool()) char[pwd.length() + 1];
 	pwd.copyTo(pass, pwd.length() + 1);
 	password = pass;
 	return FETCH_PASS_OK;
@@ -835,7 +807,7 @@ SINT64 query_performance_counter()
 	return counter.QuadPart;
 #elif defined(HAVE_CLOCK_GETTIME)
 
-	// Use high-resolution clock
+	// Use high-resultion clock
 	struct timespec tp;
 	if (clock_gettime(CLOCK_REALTIME, &tp) != 0)
 		return 0;
@@ -871,43 +843,6 @@ SINT64 query_performance_frequency()
 	return CLOCKS_PER_SEC;
 #endif
 }
-
-
-// returns system and user time in milliseconds that process runs
-void get_process_times(SINT64 &userTime, SINT64 &sysTime)
-{
-#if defined(WIN_NT)
-	FILETIME utime, stime, dummy;
-	if (GetProcessTimes(GetCurrentProcess(), &dummy, &dummy, &stime, &utime))
-	{
-		LARGE_INTEGER lint;
-
-		lint.HighPart = stime.dwHighDateTime;
-		lint.LowPart = stime.dwLowDateTime;
-		sysTime = lint.QuadPart / 10000;
-
-		lint.HighPart = utime.dwHighDateTime;
-		lint.LowPart = utime.dwLowDateTime;
-		userTime = lint.QuadPart / 10000;
-	}
-	else
-	{
-		sysTime = userTime = 0;
-	}
-#else
-	::tms tus;
-	if (times(&tus) == (clock_t)(-1))
-	{
-		sysTime = userTime = 0;
-		return;
-	}
-
-	const int TICK = sysconf(_SC_CLK_TCK);
-	sysTime = SINT64(tus.tms_stime) * 1000 / TICK;
-	userTime = SINT64(tus.tms_utime) * 1000 / TICK;
-#endif
-}
-
 
 void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool append)
 {
@@ -977,7 +912,7 @@ void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool a
 	if (neg)
 		buffer[--iter] = '-';
 
-	const FB_SIZE_T len = MAX_BUFFER - iter - 1;
+	const size_t len = MAX_BUFFER - iter - 1;
 
 	if (append)
 		target.append(buffer + iter, len);
@@ -986,111 +921,85 @@ void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool a
 }
 
 
-// returns true if environment variable FIREBIRD_BOOT_BUILD is set
-bool bootBuild()
-{
-	static enum {FB_BOOT_UNKNOWN, FB_BOOT_NORMAL, FB_BOOT_SET} state = FB_BOOT_UNKNOWN;
-
-	if (state == FB_BOOT_UNKNOWN)
-	{
-		// not care much about protecting state with mutex - each thread will assign it same value
-		Firebird::string dummy;
-		state = readenv("FIREBIRD_BOOT_BUILD", dummy) ? FB_BOOT_SET : FB_BOOT_NORMAL;
-	}
-
-	return state == FB_BOOT_SET;
-}
-
 // Build full file name in specified directory
-Firebird::PathName getPrefix(unsigned int prefType, const char* name)
+Firebird::PathName getPrefix(FB_DIR prefType, const char* name)
 {
 	Firebird::PathName s;
 	char tmp[MAXPATHLEN];
 
+#ifndef BOOT_BUILD
 	const char* configDir[] = {
 		FB_BINDIR, FB_SBINDIR, FB_CONFDIR, FB_LIBDIR, FB_INCDIR, FB_DOCDIR, FB_UDFDIR, FB_SAMPLEDIR,
 		FB_SAMPLEDBDIR, FB_HELPDIR, FB_INTLDIR, FB_MISCDIR, FB_SECDBDIR, FB_MSGDIR, FB_LOGDIR,
 		FB_GUARDDIR, FB_PLUGDIR
 	};
 
-	fb_assert(FB_NELEM(configDir) == Firebird::IConfigManager::DIR_COUNT);
-	fb_assert(prefType < Firebird::IConfigManager::DIR_COUNT);
+	fb_assert(FB_NELEM(configDir) == FB_DIR_LAST);
+	fb_assert(prefType < FB_DIR_LAST);
 
-	if (! bootBuild())
+	if (prefType != FB_DIR_CONF && prefType != FB_DIR_MSG && configDir[prefType][0])
 	{
-		if (prefType != Firebird::IConfigManager::DIR_CONF &&
-			prefType != Firebird::IConfigManager::DIR_MSG &&
-			configDir[prefType][0])
-		{
-			// Value is set explicitly and is not environment overridable
-			PathUtils::concatPath(s, configDir[prefType], name);
-			return s;
-		}
+		// Value is set explicitly and is not environment overridable
+		PathUtils::concatPath(s, configDir[prefType], name);
+		return s;
 	}
+#endif
 
 	switch(prefType)
 	{
-		case Firebird::IConfigManager::DIR_BIN:
-		case Firebird::IConfigManager::DIR_SBIN:
-#ifdef WIN_NT
-			s = "";
-#else
+		case FB_DIR_BIN:
+		case FB_DIR_SBIN:
 			s = "bin";
-#endif
 			break;
 
-		case Firebird::IConfigManager::DIR_CONF:
-		case Firebird::IConfigManager::DIR_LOG:
-		case Firebird::IConfigManager::DIR_GUARD:
-		case Firebird::IConfigManager::DIR_SECDB:
+		case FB_DIR_CONF:
+		case FB_DIR_LOG:
+		case FB_DIR_GUARD:
+		case FB_DIR_SECDB:
 			s = "";
 			break;
 
-		case Firebird::IConfigManager::DIR_LIB:
-#ifdef WIN_NT
-			s = "";
-#else
+		case FB_DIR_LIB:
 			s = "lib";
-#endif
 			break;
 
-		case Firebird::IConfigManager::DIR_PLUGINS:
+		case FB_DIR_PLUGINS:
 			s = "plugins";
 			break;
 
-		case Firebird::IConfigManager::DIR_INC:
+		case FB_DIR_INC:
 			s = "include";
 			break;
 
-		case Firebird::IConfigManager::DIR_DOC:
+		case FB_DIR_DOC:
 			s = "doc";
 			break;
 
-		case Firebird::IConfigManager::DIR_UDF:
+		case FB_DIR_UDF:
 			s = "UDF";
 			break;
 
-		case Firebird::IConfigManager::DIR_SAMPLE:
+		case FB_DIR_SAMPLE:
 			s = "examples";
 			break;
 
-		case Firebird::IConfigManager::DIR_SAMPLEDB:
+		case FB_DIR_SAMPLEDB:
 			s = "examples/empbuild";
 			break;
 
-		case Firebird::IConfigManager::DIR_HELP:
+		case FB_DIR_HELP:
 			s = "help";
 			break;
 
-		case Firebird::IConfigManager::DIR_INTL:
+		case FB_DIR_INTL:
 			s = "intl";
 			break;
 
-		case Firebird::IConfigManager::DIR_MISC:
+		case FB_DIR_MISC:
 			s = "misc";
 			break;
 
-		case Firebird::IConfigManager::DIR_MSG:
+		case FB_DIR_MSG:
 			gds__prefix_msg(tmp, name);
 			return tmp;
 
@@ -1108,367 +1017,6 @@ Firebird::PathName getPrefix(unsigned int prefType, const char* name)
 	return tmp;
 }
 
-unsigned int copyStatus(ISC_STATUS* const to, const unsigned int space,
-						const ISC_STATUS* const from, const unsigned int count) throw()
-{
-	unsigned int copied = 0;
-
-	for (unsigned int i = 0; i < count; )
-	{
-		if (from[i] == isc_arg_end)
-		{
-			break;
-		}
-		i += (from[i] == isc_arg_cstring ? 3 : 2);
-		if (i > space - 1)
-		{
-			break;
-		}
-		copied = i;
-	}
-
-	memcpy(to, from, copied * sizeof(to[0]));
-	to[copied] = isc_arg_end;
-
-	return copied;
-}
-
-unsigned int mergeStatus(ISC_STATUS* const dest, unsigned int space,
-						 const Firebird::IStatus* from) throw()
-{
-	const ISC_STATUS* s;
-	unsigned int copied = 0;
-	const int state = from->getState();
-	ISC_STATUS* to = dest;
-
-	if (state & Firebird::IStatus::STATE_ERRORS)
-	{
-		s = from->getErrors();
-		copied = copyStatus(to, space, s, statusLength(s));
-
-		to += copied;
-		space -= copied;
-	}
-
-	if (state & Firebird::IStatus::STATE_WARNINGS)
-	{
-		if (!copied)
-		{
-			init_status(to);
-			to += 2;
-			space -= 2;
-			copied += 2;
-		}
-		s = from->getWarnings();
-		copied += copyStatus(to, space, s, statusLength(s));
-	}
-
-	if (!copied)
-		init_status(dest);
-
-	return copied;
-}
-
-void copyStatus(Firebird::CheckStatusWrapper* to, const Firebird::CheckStatusWrapper* from) throw()
-{
-	to->init();
-
-	unsigned flags = from->getState();
-	if (flags & Firebird::IStatus::STATE_ERRORS)
-		to->setErrors(from->getErrors());
-	if (flags & Firebird::IStatus::STATE_WARNINGS)
-		to->setWarnings(from->getWarnings());
-}
-
-void setIStatus(Firebird::CheckStatusWrapper* to, const ISC_STATUS* from) throw()
-{
-	try
-	{
-		const ISC_STATUS* w = from;
-		while (*w != isc_arg_end)
-		{
-			if (*w == isc_arg_warning)
-			{
-				to->setWarnings(w);
-				break;
-			}
-			w += (*w == isc_arg_cstring ? 3 : 2);
-		}
-		to->setErrors2(w - from, from);
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		ex.stuffException(to);
-	}
-}
-
-unsigned int statusLength(const ISC_STATUS* const status) throw()
-{
-	unsigned int l = 0;
-	for(;;)
-	{
-		if (status[l] == isc_arg_end)
-		{
-			return l;
-		}
-		l += (status[l] == isc_arg_cstring ? 3 : 2);
-	}
-}
-
-bool cmpStatus(unsigned int len, const ISC_STATUS* a, const ISC_STATUS* b) throw()
-{
-	for (unsigned i = 0; i < len; )
-	{
-		const ISC_STATUS* op1 = &a[i];
-		const ISC_STATUS* op2 = &b[i];
-		if (*op1 != *op2)
-			return false;
-
-		if (i == len - 1 && *op1 == isc_arg_end)
-			break;
-
-		i += (*op1 == isc_arg_cstring ? 3 : 2);
-		if (i > len)		// arg does not fit
-			return false;
-
-		unsigned l1, l2;
-		const char *s1, *s2;
-		switch (*op1)
-		{
-		case isc_arg_cstring:
-		case isc_arg_string:
-		case isc_arg_interpreted:
-		case isc_arg_sql_state:
-			if (*op1 == isc_arg_cstring)
-			{
-				l1 = op1[1];
-				l2 = op2[1];
-				s1 = (const char*)(op1[2]);
-				s2 = (const char*)(op2[2]);
-			}
-			else
-			{
-				s1 = (const char*)(op1[1]);
-				s2 = (const char*)(op2[1]);
-				l1 = strlen(s1);
-				l2 = strlen(s2);
-			}
-
-			if (l1 != l2)
-				return false;
-			if (memcmp(s1, s2, l1) != 0)
-				return false;
-			break;
-
-		default:
-			if (op1[1] != op2[1])
-				return false;
-			break;
-		}
-	}
-
-	return true;
-}
-
-unsigned int subStatus(const ISC_STATUS* in, unsigned int cin,
-					   const ISC_STATUS* sub, unsigned int csub) throw()
-{
-	for (unsigned pos = 0; csub <= cin - pos; )
-	{
-		for (unsigned i = 0; i < csub; )
-		{
-			const ISC_STATUS* op1 = &in[pos + i];
-			const ISC_STATUS* op2 = &sub[i];
-			if (*op1 != *op2)
-				goto miss;
-
-			i += (*op1 == isc_arg_cstring ? 3 : 2);
-			if (i > csub)		// arg does not fit
-				goto miss;
-
-			unsigned l1, l2;
-			const char *s1, *s2;
-
-			switch (*op1)
-			{
-			case isc_arg_cstring:
-			case isc_arg_string:
-			case isc_arg_interpreted:
-			case isc_arg_sql_state:
-				if (*op1 == isc_arg_cstring)
-				{
-					l1 = op1[1];
-					l2 = op2[1];
-					s1 = (const char*) (op1[2]);
-					s2 = (const char*) (op2[2]);
-				}
-				else
-				{
-					s1 = (const char*) (op1[1]);
-					s2 = (const char*) (op2[1]);
-					l1 = strlen(s1);
-					l2 = strlen(s2);
-				}
-
-				if (l1 != l2)
-					goto miss;
-				if (memcmp(s1, s2, l1) != 0)
-					goto miss;
-				break;
-
-			default:
-				if (op1[1] != op2[1])
-					goto miss;
-				break;
-			}
-
-		}
-
-		return pos;
-
-miss:	pos += (in[pos] == isc_arg_cstring ? 3 : 2);
-	}
-
-	return ~0u;
-}
-
-// moves DB path information (from limbo transaction) to another buffer
-void getDbPathInfo(unsigned int& itemsLength, const unsigned char*& items,
-	unsigned int& bufferLength, unsigned char*& buffer,
-	Firebird::Array<unsigned char>& newItemsBuffer, const Firebird::PathName& dbpath)
-{
-	if (itemsLength && items)
-	{
-		const unsigned char* ptr = (const unsigned char*) memchr(items, fb_info_tra_dbpath, itemsLength);
-		if (ptr)
-		{
-			newItemsBuffer.add(items, itemsLength);
-			newItemsBuffer.remove(ptr - items);
-			items = newItemsBuffer.begin();
-			--itemsLength;
-
-			unsigned int len = dbpath.length();
-			if (len + 3 > bufferLength)
-			{
-				len = bufferLength - 3;
-			}
-			bufferLength -= (len + 3);
-			*buffer++ = fb_info_tra_dbpath;
-			*buffer++ = len;
-			*buffer++ = len >> 8;
-			memcpy(buffer, dbpath.c_str(), len);
-			buffer += len;
-		}
-	}
-}
-
-// returns true if passed info items work with running svc thread
-bool isRunningCheck(const UCHAR* items, unsigned int length)
-{
-	enum {S_NEU, S_RUN, S_INF} state = S_NEU;
-
-	while (length--)
-	{
-		if (!items)
-		{
-			(Firebird::Arg::Gds(isc_random) << "Missing info items block of non-zero length").raise();
-		}
-
-		switch (*items++)
-		{
-		case isc_info_end:
-		case isc_info_truncated:
-		case isc_info_error:
-		case isc_info_data_not_ready:
-		case isc_info_length:
-		case isc_info_flag_end:
-		case isc_info_svc_auth_block:
-		case isc_info_svc_running:
-			break;
-
-		case isc_info_svc_line:
-		case isc_info_svc_to_eof:
-		case isc_info_svc_timeout:
-		case isc_info_svc_limbo_trans:
-		case isc_info_svc_get_users:
-		case isc_info_svc_stdin:
-			if (state == S_INF)
-			{
-				(Firebird::Arg::Gds(isc_random) << "Wrong info items combination").raise();
-			}
-			state = S_RUN;
-			break;
-
-		case isc_info_svc_svr_db_info:
-		case isc_info_svc_get_license:
-		case isc_info_svc_get_license_mask:
-		case isc_info_svc_get_config:
-		case isc_info_svc_version:
-		case isc_info_svc_server_version:
-		case isc_info_svc_implementation:
-		case isc_info_svc_capabilities:
-		case isc_info_svc_user_dbpath:
-		case isc_info_svc_get_env:
-		case isc_info_svc_get_env_lock:
-		case isc_info_svc_get_env_msg:
-		case isc_info_svc_get_licensed_users:
-			if (state == S_RUN)
-			{
-				(Firebird::Arg::Gds(isc_random) << "Wrong info items combination").raise();
-			}
-			state = S_INF;
-			break;
-
-		default:
-			(Firebird::Arg::Gds(isc_random) << "Unknown info item").raise();
-			break;
-		}
-	}
-
-	return state == S_RUN;
-}
-
-static inline char conv_bin2ascii(ULONG l)
-{
-	return "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"[l & 0x3f];
-}
-
-// converts bytes to BASE64 representation
-void base64(Firebird::string& b64, const Firebird::UCharBuffer& bin)
-{
-	b64.erase();
-	const unsigned char* f = bin.begin();
-	for (int i = bin.getCount(); i > 0; i -= 3, f += 3)
-	{
-		if (i >= 3)
-		{
-			const ULONG l = (ULONG(f[0]) << 16) | (ULONG(f[1]) <<  8) | f[2];
-			b64 += conv_bin2ascii(l >> 18);
-			b64 += conv_bin2ascii(l >> 12);
-			b64 += conv_bin2ascii(l >> 6);
-			b64 += conv_bin2ascii(l);
-		}
-		else
-		{
-			ULONG l = ULONG(f[0]) << 16;
-			if (i == 2)
-				l |= (ULONG(f[1]) << 8);
-			b64 += conv_bin2ascii(l >> 18);
-			b64 += conv_bin2ascii(l >> 12);
-			b64 += (i == 1 ? '=' : conv_bin2ascii(l >> 6));
-			b64 += '=';
-		}
-	}
-}
-
-void random64(Firebird::string& randomValue, FB_SIZE_T length)
-{
-	Firebird::UCharBuffer binRand;
-	Firebird::GenerateRandomBytes(binRand.getBuffer(length), length);
-	base64(randomValue, binRand);
-	randomValue.resize(length, '$');
-}
-
 void logAndDie(const char* text)
 {
 	gds__log(text);
@@ -1480,170 +1028,65 @@ void logAndDie(const char* text)
 #endif
 }
 
-unsigned sqlTypeToDsc(unsigned runOffset, unsigned sqlType, unsigned sqlLength,
-	unsigned* dtype, unsigned* len, unsigned* offset, unsigned* nullOffset)
+
+const char switch_char = '-';
+
+bool switchMatch(const Firebird::string& sw, const char* target)
 {
-	sqlType &= ~1;
-	unsigned dscType;
-
-	switch (sqlType)
+/**************************************
+ *
+ *	s w i t c h M a t c h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Returns true if switch matches target
+ *
+ **************************************/
+	size_t n = strlen(target);
+	if (n < sw.length())
 	{
-	case SQL_VARYING:
-		dscType = dtype_varying;
-		break;
-
-	case SQL_TEXT:
-		dscType = dtype_text;
-		break;
-
-	case SQL_DOUBLE:
-		dscType = dtype_double;
-		break;
-
-	case SQL_FLOAT:
-		dscType = dtype_real;
-		break;
-
-	case SQL_D_FLOAT:
-		dscType = dtype_d_float;
-		break;
-
-	case SQL_TYPE_DATE:
-		dscType = dtype_sql_date;
-		break;
-
-	case SQL_TYPE_TIME:
-		dscType = dtype_sql_time;
-		break;
-
-	case SQL_TIMESTAMP:
-		dscType = dtype_timestamp;
-		break;
-
-	case SQL_BLOB:
-		dscType = dtype_blob;
-		break;
-
-	case SQL_ARRAY:
-		dscType = dtype_array;
-		break;
-
-	case SQL_LONG:
-		dscType = dtype_long;
-		break;
-
-	case SQL_SHORT:
-		dscType = dtype_short;
-		break;
-
-	case SQL_INT64:
-		dscType = dtype_int64;
-		break;
-
-	case SQL_QUAD:
-		dscType = dtype_quad;
-		break;
-
-	case SQL_BOOLEAN:
-		dscType = dtype_boolean;
-		break;
-
-	case SQL_NULL:
-		dscType = dtype_text;
-		break;
-
-	default:
-		fb_assert(false);
-		// keep old yvalve logic
-		dscType = sqlType;
-		break;
+		return false;
 	}
-
-	if (dtype)
-	{
-		*dtype = dscType;
-	}
-
-	if (sqlType == SQL_VARYING)
-		sqlLength += sizeof(USHORT);
-	if (len)
-		*len = sqlLength;
-
-	unsigned align = type_alignments[dscType % FB_NELEM(type_alignments)];
-	if (align)
-		runOffset = FB_ALIGN(runOffset, align);
-	if (offset)
-		*offset = runOffset;
-
-	runOffset += sqlLength;
-	align = type_alignments[dtype_short];
-	if (align)
-		runOffset = FB_ALIGN(runOffset, align);
-	if (nullOffset)
-		*nullOffset = runOffset;
-
-	return runOffset + sizeof(SSHORT);
+	n = sw.length();
+	return memcmp(sw.c_str(), target, n) == 0;
 }
 
-bool containsErrorCode(const ISC_STATUS* v, ISC_STATUS code)
-{
-#ifdef DEV_BUILD
-const ISC_STATUS* const origen = v;
-#endif
-	while (v[0] == isc_arg_gds)
-	{
-		if (v[1] == code)
-			return true;
 
-		do
-		{
-			v += (v[0] == isc_arg_cstring ? 3 : 2);
-		} while (v[0] != isc_arg_warning && v[0] != isc_arg_gds && v[0] != isc_arg_end);
-		fb_assert(v - origen < ISC_STATUS_LENGTH);
+in_sw_tab_t* findSwitch(in_sw_tab_t* table, Firebird::string sw)
+{
+/**************************************
+ *
+ *	f i n d S w i t c h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Returns pointer to in_sw_tab entry for current switch
+ *	If not a switch, returns NULL.
+ *
+ **************************************/
+	if (sw.isEmpty())
+	{
+		return 0;
 	}
-
-	return false;
-}
-
-const char* dpbItemUpper(const char* s, FB_SIZE_T l, Firebird::string& buf)
-{
-	if (l && (s[0] == '"' || s[0] == '\''))
+	if (sw[0] != switch_char)
 	{
-		const char end_quote = s[0];
-		bool ascii = true;
+		return 0;
+	}
+	sw.erase(0, 1);
+	sw.upper();
 
-		// quoted string - strip quotes
-		for (FB_SIZE_T i = 1; i < l; ++i)
+	for (in_sw_tab_t* in_sw_tab = table; in_sw_tab->in_sw_name; in_sw_tab++)
+	{
+		if ((sw.length() >= in_sw_tab->in_sw_min_length) &&
+			switchMatch(sw, in_sw_tab->in_sw_name))
 		{
-			if (s[i] == end_quote)
-			{
-				if (++i >= l || s[i] != end_quote)
-					break;		// delimited quote, done processing
-
-				// skipped the escape quote, continue processing
-			}
-
-			if (s[i] & 0x80)
-				ascii = false;
-			buf += s[i];
+			return in_sw_tab;
 		}
-
-		if (ascii && s[0] == '\'')
-			buf.upper();
-
-		return buf.c_str();
 	}
 
-	// non-quoted string - try to uppercase
-	for (FB_SIZE_T i = 0; i < l; ++i)
-	{
-		if (!(s[i] & 0x80))
-			buf += toupper(s[i]);
-		else
-			return NULL;				// contains non-ascii data
-	}
-
-	return buf.c_str();
+	return 0;
 }
 
 } // namespace fb_utils

@@ -44,7 +44,7 @@ struct LocksArrayItem {
 
 	LocksArrayItem() {}
 	LocksArrayItem(HANDLE handle, Firebird::Mutex* mutex) : first(handle), second(mutex) { }
-	static HANDLE generate(LocksArrayItem value) {
+	static HANDLE generate(const void*, LocksArrayItem value) {
 		return value.first;
 	}
 };
@@ -85,7 +85,7 @@ HANDLE CreateFile_9X(
         file_locks_9X.add(
             LocksArrayItem(
                 file,
-                FB_NEW Firebird::Mutex()));
+                new Firebird::Mutex()));
     }
 
     SetLastError(dwLastError);

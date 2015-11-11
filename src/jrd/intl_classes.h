@@ -29,13 +29,13 @@
 #define JRD_INTL_CLASSES_H
 
 #include "firebird.h"
-
-#include "../common/intlobj_new.h"
+#include "../jrd/jrd.h"
+#include "../jrd/intlobj_new.h"
 #include "../jrd/constants.h"
-#include "../common/unicode_util.h"
-#include "../common/CsConvert.h"
-#include "../common/CharSet.h"
-#include "../common/TextType.h"
+#include "../jrd/unicode_util.h"
+#include "../jrd/CsConvert.h"
+#include "../jrd/CharSet.h"
+#include "../jrd/TextType.h"
 
 namespace Jrd {
 
@@ -61,17 +61,6 @@ protected:
 	TextType* textType;
 };
 
-class BaseSubstringSimilarMatcher : public PatternMatcher
-{
-public:
-	BaseSubstringSimilarMatcher(MemoryPool& pool, TextType* ttype)
-		: PatternMatcher(pool, ttype)
-	{
-	}
-
-	virtual void getResultInfo(unsigned* start, unsigned* length) = 0;
-};
-
 class NullStrConverter
 {
 public:
@@ -80,7 +69,7 @@ public:
 	}
 };
 
-template <typename PrevConverter = NullStrConverter>
+template <typename PrevConverter>
 class UpcaseConverter : public PrevConverter
 {
 public:
@@ -88,7 +77,7 @@ public:
 		: PrevConverter(pool, obj, str, len)
 	{
 		if (len > (int) sizeof(tempBuffer))
-			out_str = FB_NEW_POOL(pool) UCHAR[len];
+			out_str = FB_NEW(pool) UCHAR[len];
 		else
 			out_str = tempBuffer;
 		obj->str_to_upper(len, str, len, out_str);
@@ -106,7 +95,7 @@ private:
 	UCHAR* out_str;
 };
 
-template <typename PrevConverter = NullStrConverter>
+template <typename PrevConverter>
 class CanonicalConverter : public PrevConverter
 {
 public:
@@ -116,7 +105,7 @@ public:
 		const SLONG out_len = len / obj->getCharSet()->minBytesPerChar() * obj->getCanonicalWidth();
 
 		if (out_len > (int) sizeof(tempBuffer))
-			out_str = FB_NEW_POOL(pool) UCHAR[out_len];
+			out_str = FB_NEW(pool) UCHAR[out_len];
 		else
 			out_str = tempBuffer;
 
@@ -141,6 +130,9 @@ private:
 };
 
 } // namespace Jrd
+
+
+#include "../jrd/Collation.h"
 
 
 #endif	// JRD_INTL_CLASSES_H

@@ -23,31 +23,22 @@
  */
 
 #include "firebird.h"
-#include <windows.h>
 #include "../../../common/dllinst.h"
-#include "../../../yvalve/utl_proto.h"
 
+#include <windows.h>
 
 using namespace Firebird;
 
 
-BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
+BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID /*reserved*/)
 {
 	switch (reason)
 	{
 		case DLL_PROCESS_ATTACH:
 			hDllInst = h;
-			break;
-
-		case DLL_THREAD_DETACH:
-		{
-			Why::threadCleanup();
-			break;
-		}
-
-		case DLL_PROCESS_DETACH:
-			bDllProcessExiting = (reserved != NULL);
-			dDllUnloadTID = GetCurrentThreadId();
+#if defined(EMBEDDED)
+			bEmbedded = true;
+#endif
 			break;
 	}
 

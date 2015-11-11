@@ -417,7 +417,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 			}
 		}
 		else if (long_flag) {
-			sprintf(p, "%"SLONGFORMAT, long_value);
+			sprintf(p, "%" SLONGFORMAT , long_value);
 		}
 		else {
 			sprintf(p, "%d", value);
@@ -429,7 +429,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 
 	*p = 0;
 
-#if (defined GPRE_ADA || defined GPRE_COBOL || defined GPRE_FORTRAN)
+#if (defined GPRE_ADA || defined GPRE_COBOL || defined GPRE_FORTRAN) && !defined(BOOT_BUILD)
 	switch (gpreGlob.sw_language)
 	{
 #ifdef GPRE_ADA
@@ -458,11 +458,11 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 #endif
 
 	default:
-		fprintf(gpreGlob.out_file, "%s", buffer);
+		fputs(buffer, gpreGlob.out_file);
 		break;
 	}
 #else
-	fprintf(gpreGlob.out_file, "%s", buffer);
+	fputs(buffer, gpreGlob.out_file);
 #endif
 
 }

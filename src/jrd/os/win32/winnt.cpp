@@ -35,6 +35,7 @@
 
 #include "firebird.h"
 #include <string.h>
+#include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/os/pio.h"
 #include "../jrd/ods.h"
@@ -43,8 +44,8 @@
 #include "gen/iberror.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"
-#include "../common/isc_proto.h"
-#include "../common/isc_f_proto.h"
+#include "../jrd/isc_proto.h"
+#include "../jrd/isc_f_proto.h"
 
 #include "../jrd/lck_proto.h"
 #include "../jrd/mov_proto.h"
@@ -72,9 +73,9 @@ public:
 		if (m_lock)
 		{
 			if (m_exclusive)
-				m_lock->beginWrite(FB_FUNCTION);
+				m_lock->beginWrite();
 			else
-				m_lock->beginRead(FB_FUNCTION);
+				m_lock->beginRead();
 		}
 	}
 
@@ -104,6 +105,29 @@ private:
 using namespace Jrd;
 using namespace Firebird;
 
+namespace {
+
+#ifdef SUPERSERVER
+
+typedef Database::Checkout PioCheckout;
+
+#else
+
+class PioCheckout
+{
+public:
+	PioCheckout(Database*) {}
+	~PioCheckout() {}
+
+private:
+	PioCheckout(const PioCheckout&);
+	PioCheckout& operator=(const PioCheckout&);
+};
+
+#endif
+
+};
+
 #ifdef TEXT
 #undef TEXT
 #endif
@@ -113,9 +137,9 @@ using namespace Firebird;
 static void release_io_event(jrd_file*, OVERLAPPED*);
 #endif
 static bool	maybeCloseFile(HANDLE&);
-static jrd_file* seek_file(jrd_file*, BufferDesc*, FbStatusVector*, OVERLAPPED*, OVERLAPPED**);
-static jrd_file* setup_file(Database*, const Firebird::PathName&, HANDLE, bool, bool);
-static bool nt_error(const TEXT*, const jrd_file*, ISC_STATUS, FbStatusVector* const);
+static jrd_file* seek_file(jrd_file*, BufferDesc*, ISC_STATUS*, OVERLAPPED*, OVERLAPPED**);
+static jrd_file* setup_file(Database*, const Firebird::PathName&, HANDLE, bool);
+static bool nt_error(const TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS* = NULL);
 static void adjustFileSystemCacheSize();
 
 struct AdjustFsCache
@@ -123,20 +147,23 @@ struct AdjustFsCache
 	static void init() { adjustFileSystemCacheSize(); }
 };
 
-static InitMutex<AdjustFsCache> adjustFsCacheOnce("AdjustFsCacheOnce");
-
-inline static DWORD getShareFlags(const bool shared_access, bool temporary = false)
-{
-	return FILE_SHARE_READ | ((!temporary && shared_access) ? FILE_SHARE_WRITE : 0);
-}
+static InitMutex<AdjustFsCache> adjustFsCacheOnce;
 
 #ifdef SUPERSERVER_V2
+static const DWORD g_dwShareFlags = FILE_SHARE_READ;	// no write sharing
 static const DWORD g_dwExtraFlags = FILE_FLAG_OVERLAPPED |
 									FILE_FLAG_NO_BUFFERING;
 #else
+#ifdef SUPERSERVER
+static const DWORD g_dwShareFlags = FILE_SHARE_READ;	// no write sharing
+static const DWORD g_dwExtraFlags = 0;
+#else
+static const DWORD g_dwShareFlags = FILE_SHARE_READ | FILE_SHARE_WRITE;
 static const DWORD g_dwExtraFlags = 0;
 #endif
+#endif
 
+static const DWORD g_dwShareTempFlags = FILE_SHARE_READ;
 static const DWORD g_dwExtraTempFlags = FILE_ATTRIBUTE_TEMPORARY |
 										FILE_FLAG_DELETE_ON_CLOSE;
 
@@ -155,7 +182,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& f
  *	sequence of 0.
  *
  **************************************/
-	jrd_file* const new_file = PIO_create(dbb, file_name, false, false);
+	jrd_file* const new_file = PIO_create(dbb, file_name, false, false, false);
 	if (!new_file) {
 		return 0;
 	}
@@ -206,7 +233,7 @@ void PIO_close(jrd_file* main_file)
 
 
 jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
-					 const bool overwrite, const bool temporary)
+					 const bool overwrite, const bool temporary, const bool share_delete)
 {
 /**************************************
  *
@@ -221,9 +248,10 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
 	adjustFsCacheOnce.init();
 
 	const TEXT* file_name = string.c_str();
-	const bool shareMode = dbb->dbb_config->getServerMode() != MODE_SUPER;
 
-	DWORD dwShareMode = getShareFlags(shareMode, temporary);
+	DWORD dwShareMode = (temporary ? g_dwShareTempFlags : g_dwShareFlags);
+	if (share_delete)
+		dwShareMode |= FILE_SHARE_DELETE;
 
 	DWORD dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL | g_dwExtraFlags;
 	if (temporary)
@@ -249,11 +277,11 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
 	Firebird::PathName workspace(string);
 	ISC_expand_filename(workspace, false);
 
-	return setup_file(dbb, workspace, desc, false, shareMode);
+	return setup_file(dbb, workspace, desc, false);
 }
 
 
-bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, FB_SIZE_T len_expanded)
+bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, size_t len_expanded)
 {
 /**************************************
  *
@@ -271,7 +299,7 @@ bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, 
 }
 
 
-void PIO_extend(Database* /*dbb*/, jrd_file* main_file, const ULONG extPages, const USHORT pageSize)
+void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const USHORT pageSize)
 {
 /**************************************
  *
@@ -295,7 +323,7 @@ void PIO_extend(Database* /*dbb*/, jrd_file* main_file, const ULONG extPages, co
 	if (!main_file->fil_ext_lock)
 		return;
 
-	//Database::Checkout dcoHolder(dbb);
+	PioCheckout dcoHolder(dbb);
 	FileExtendLockGuard extLock(main_file->fil_ext_lock, true);
 
 	ULONG leftPages = extPages;
@@ -315,10 +343,10 @@ void PIO_extend(Database* /*dbb*/, jrd_file* main_file, const ULONG extPages, co
 
 			const DWORD ret = SetFilePointer(hFile, newSize.LowPart, &newSize.HighPart, FILE_BEGIN);
 			if (ret == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR) {
-				nt_error("SetFilePointer", file, isc_io_write_err, 0);
+				nt_error("SetFilePointer", file, isc_io_write_err);
 			}
 			if (!SetEndOfFile(hFile)) {
-				nt_error("SetEndOfFile", file, isc_io_write_err, 0);
+				nt_error("SetEndOfFile", file, isc_io_write_err);
 			}
 
 			leftPages -= extendBy;
@@ -327,7 +355,7 @@ void PIO_extend(Database* /*dbb*/, jrd_file* main_file, const ULONG extPages, co
 }
 
 
-void PIO_flush(Database* /*dbb*/, jrd_file* main_file)
+void PIO_flush(Database* dbb, jrd_file* main_file)
 {
 /**************************************
  *
@@ -339,10 +367,11 @@ void PIO_flush(Database* /*dbb*/, jrd_file* main_file)
  *	Flush the operating system cache back to good, solid oxide.
  *
  **************************************/
-	//Database::Checkout dcoHolder(dbb);
-
+	PioCheckout dcoHolder(dbb);
 	for (jrd_file* file = main_file; file; file = file->fil_next)
+	{
 		FlushFileBuffers(file->fil_desc);
+	}
 }
 
 
@@ -367,13 +396,12 @@ void PIO_force_write(jrd_file* file, const bool forceWrite, const bool notUseFSC
 		const int force = forceWrite ? FILE_FLAG_WRITE_THROUGH : 0;
 		const int fsCache = notUseFSCache ? FILE_FLAG_NO_BUFFERING : 0;
 		const int writeMode = (file->fil_flags & FIL_readonly) ? 0 : GENERIC_WRITE;
-		const bool sharedMode = (file->fil_flags & FIL_sh_write);
 
         HANDLE& hFile = file->fil_desc;
 		maybeCloseFile(hFile);
 		hFile = CreateFile(file->fil_string,
 						  GENERIC_READ | writeMode,
-						  getShareFlags(sharedMode),
+						  g_dwShareFlags,
 						  NULL,
 						  OPEN_EXISTING,
 						  FILE_ATTRIBUTE_NORMAL | force | fsCache | g_dwExtraFlags,
@@ -429,25 +457,39 @@ void PIO_header(Database* dbb, SCHAR* address, int length)
 	overlapped_ptr = &overlapped;
 #ifdef SUPERSERVER_V2
 	if (!(overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL)))
-		nt_error("Overlapped event", file, isc_io_read_err, 0);
+		nt_error("Overlapped event", file, isc_io_read_err);
 	ResetEvent(overlapped.hEvent);
 #endif
 
     DWORD actual_length;
-
-	if (!ReadFile(desc, address, length, &actual_length, overlapped_ptr) ||
-		actual_length != (DWORD) length)
+	if (dbb->dbb_encrypt_key.hasData())
 	{
-#ifdef SUPERSERVER_V2
-		if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE) ||
-			actual_length != length)
+		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
+
+		if (!ReadFile(desc, spare_buffer, length, &actual_length, overlapped_ptr) ||
+			actual_length != (DWORD) length)
 		{
-			CloseHandle(overlapped.hEvent);
-			nt_error("GetOverlappedResult", file, isc_io_read_err, 0);
+			nt_error("ReadFile", file, isc_io_read_err);
 		}
+
+		(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key.c_str(), spare_buffer, length, address);
+	}
+	else
+	{
+		if (!ReadFile(desc, address, length, &actual_length, overlapped_ptr) ||
+			actual_length != (DWORD) length)
+		{
+#ifdef SUPERSERVER_V2
+			if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE) ||
+				actual_length != length)
+			{
+				CloseHandle(overlapped.hEvent);
+				nt_error("GetOverlappedResult", file, isc_io_read_err);
+			}
 #else
-		nt_error("ReadFile", file, isc_io_read_err, 0);
+			nt_error("ReadFile", file, isc_io_read_err);
 #endif
+		}
 	}
 
 #ifdef SUPERSERVER_V2
@@ -460,7 +502,7 @@ void PIO_header(Database* dbb, SCHAR* address, int length)
 static Firebird::InitInstance<ZeroBuffer> zeros;
 
 
-USHORT PIO_init_data(Database* dbb, jrd_file* main_file, FbStatusVector* status_vector,
+USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vector,
 					 ULONG startPage, USHORT initPages)
 {
 /**************************************
@@ -474,14 +516,15 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, FbStatusVector* status_
  *
  **************************************/
 	const char* const zero_buff = zeros().getBuffer();
-	const FB_SIZE_T zero_buff_size = zeros().getSize();
+	const size_t zero_buff_size = zeros().getSize();
 
-	//Database::Checkout dcoHolder(dbb);
+	PioCheckout dcoHolder(dbb);
 	FileExtendLockGuard extLock(main_file->fil_ext_lock, false);
 
 	// Fake buffer, used in seek_file. Page space ID doesn't matter there
 	// as we already know file to work with
-	BufferDesc bdb(dbb->dbb_bcb);
+	BufferDesc bdb;
+	bdb.bdb_dbb = dbb;
 	bdb.bdb_page = PageNumber(0, startPage);
 
 	OVERLAPPED overlapped;
@@ -506,8 +549,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, FbStatusVector* status_
 		if (write_pages > leftPages)
 			write_pages = leftPages;
 
-		jrd_file* file1 = seek_file(main_file, &bdb, status_vector, &overlapped, &overlapped_ptr);
-		fb_assert(file1 == file);
+		seek_file(main_file, &bdb, status_vector, &overlapped, &overlapped_ptr);
 
 		const DWORD to_write = (DWORD) write_pages * dbb->dbb_page_size;
 		DWORD written;
@@ -529,7 +571,8 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, FbStatusVector* status_
 
 jrd_file* PIO_open(Database* dbb,
 				   const Firebird::PathName& string,
-				   const Firebird::PathName& file_name)
+				   const Firebird::PathName& file_name,
+				   const bool share_delete)
 {
 /**************************************
  *
@@ -543,13 +586,12 @@ jrd_file* PIO_open(Database* dbb,
  **************************************/
 	const TEXT* const ptr = (string.hasData() ? string : file_name).c_str();
 	bool readOnly = false;
-	const bool shareMode = dbb->dbb_config->getServerMode() != MODE_SUPER;
 
 	adjustFsCacheOnce.init();
 
 	HANDLE desc = CreateFile(ptr,
 					  GENERIC_READ | GENERIC_WRITE,
-					  getShareFlags(shareMode),
+					  g_dwShareFlags | (share_delete ? FILE_SHARE_DELETE : 0),
 					  NULL,
 					  OPEN_EXISTING,
 					  FILE_ATTRIBUTE_NORMAL |
@@ -586,11 +628,11 @@ jrd_file* PIO_open(Database* dbb,
 		}
 	}
 
-	return setup_file(dbb, string, desc, readOnly, shareMode);
+	return setup_file(dbb, string, desc, readOnly);
 }
 
 
-bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* status_vector)
+bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -602,11 +644,10 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* s
  *	Read a data page.
  *
  **************************************/
-	BufferControl *bcb = bdb->bdb_bcb;
-	const DWORD size = bcb->bcb_page_size;
+	Database* const dbb = bdb->bdb_dbb;
+	const DWORD size = dbb->dbb_page_size;
 
-	Database* const dbb = bcb->bcb_database;
-	//Database::Checkout dcoHolder(dbb);
+	PioCheckout dcoHolder(dbb);
 	FileExtendLockGuard extLock(file->fil_ext_lock, false);
 
 	OVERLAPPED overlapped, *overlapped_ptr;
@@ -615,20 +656,36 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* s
 
 	HANDLE desc = file->fil_desc;
 
-	DWORD actual_length;
-	if (!ReadFile(desc, page, size, &actual_length, overlapped_ptr) ||
-		actual_length != size)
+	if (dbb->dbb_encrypt_key.hasData())
 	{
-#ifdef SUPERSERVER_V2
-		if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE) ||
+		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
+        DWORD actual_length;
+
+		if (!ReadFile(desc, spare_buffer, size, &actual_length, overlapped_ptr) ||
 			actual_length != size)
 		{
-			release_io_event(file, overlapped_ptr);
-			return nt_error("GetOverlappedResult", file, isc_io_read_err, status_vector);
+			return nt_error("ReadFile", file, isc_io_read_err, status_vector);
 		}
+
+		(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key.c_str(), spare_buffer, size, page);
+	}
+	else
+	{
+		DWORD actual_length;
+		if (!ReadFile(desc, page, size, &actual_length, overlapped_ptr) ||
+			actual_length != size)
+		{
+#ifdef SUPERSERVER_V2
+			if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE) ||
+				actual_length != size)
+			{
+				release_io_event(file, overlapped_ptr);
+				return nt_error("GetOverlappedResult", file, isc_io_read_err, status_vector);
+			}
 #else
-		return nt_error("ReadFile", file, isc_io_read_err, status_vector);
+			return nt_error("ReadFile", file, isc_io_read_err, status_vector);
 #endif
+		}
 	}
 
 #ifdef SUPERSERVER_V2
@@ -645,7 +702,7 @@ bool PIO_read_ahead(Database*		dbb,
 				   SCHAR*	buffer,
 				   SLONG	pages,
 				   phys_io_blk*		piob,
-				   FbStatusVector*	status_vector)
+				   ISC_STATUS*	status_vector)
 {
 /**************************************
  *
@@ -661,7 +718,7 @@ bool PIO_read_ahead(Database*		dbb,
  **************************************/
 	OVERLAPPED overlapped, *overlapped_ptr;
 
-	//Database::Checkout dcoHolder(dbb);
+	PioCheckout dcoHolder(dbb);
 
 	// If an I/O status block was passed the caller wants to queue an asynchronous I/O.
 
@@ -737,7 +794,7 @@ bool PIO_read_ahead(Database*		dbb,
 
 
 #ifdef SUPERSERVER_V2
-bool PIO_status(Database* dbb, phys_io_blk* piob, FbStatusVector* status_vector)
+bool PIO_status(Database* dbb, phys_io_blk* piob, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -749,7 +806,7 @@ bool PIO_status(Database* dbb, phys_io_blk* piob, FbStatusVector* status_vector)
  *	Check the status of an asynchronous I/O.
  *
  **************************************/
-	//Database::Checkout dcoHolder(dbb);
+	PioCheckout dcoHolder(dbb);
 
 	if (!(piob->piob_flags & PIOB_success))
 	{
@@ -775,7 +832,7 @@ bool PIO_status(Database* dbb, phys_io_blk* piob, FbStatusVector* status_vector)
 #endif
 
 
-bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* status_vector)
+bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -789,11 +846,10 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* 
  **************************************/
 	OVERLAPPED overlapped, *overlapped_ptr;
 
-	BufferControl *bcb = bdb->bdb_bcb;
-	const DWORD size = bcb->bcb_page_size;
+	Database* const dbb = bdb->bdb_dbb;
+	const DWORD size = dbb->dbb_page_size;
 
-	Database* const dbb = bcb->bcb_database;
-	//Database::Checkout dcoHolder(dbb);
+	PioCheckout dcoHolder(dbb);
 	FileExtendLockGuard extLock(file->fil_ext_lock, false);
 
 	file = seek_file(file, bdb, status_vector, &overlapped, &overlapped_ptr);
@@ -803,19 +859,35 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* 
 
 	HANDLE desc = file->fil_desc;
 
-	DWORD actual_length;
-	if (!WriteFile(desc, page, size, &actual_length, overlapped_ptr) || actual_length != size )
+	if (dbb->dbb_encrypt_key.hasData())
 	{
-#ifdef SUPERSERVER_V2
-		if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE) ||
+		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
+
+		(*dbb->dbb_encrypt) (dbb->dbb_encrypt_key.c_str(), page, size, spare_buffer);
+
+		DWORD actual_length;
+		if (!WriteFile(desc, spare_buffer, size, &actual_length, overlapped_ptr) ||
 			actual_length != size)
 		{
-			release_io_event(file, overlapped_ptr);
-			return nt_error("GetOverlappedResult", file, isc_io_write_err, status_vector);
+			return nt_error("WriteFile", file, isc_io_write_err, status_vector);
 		}
+	}
+	else
+	{
+		DWORD actual_length;
+		if (!WriteFile(desc, page, size, &actual_length, overlapped_ptr) || actual_length != size )
+		{
+#ifdef SUPERSERVER_V2
+			if (!GetOverlappedResult(desc, overlapped_ptr, &actual_length, TRUE) ||
+				actual_length != size)
+			{
+				release_io_event(file, overlapped_ptr);
+				return nt_error("GetOverlappedResult", file, isc_io_write_err, status_vector);
+			}
 #else
-		return nt_error("WriteFile", file, isc_io_write_err, status_vector);
+			return nt_error("WriteFile", file, isc_io_write_err, status_vector);
 #endif
+		}
 	}
 
 #ifdef SUPERSERVER_V2
@@ -844,11 +916,46 @@ ULONG PIO_get_number_of_pages(const jrd_file* file, const USHORT pagesize)
 	const DWORD dwFileSizeLow = GetFileSize(hFile, &dwFileSizeHigh);
 
 	if ((dwFileSizeLow == INVALID_FILE_SIZE) && (GetLastError() != NO_ERROR)) {
-		nt_error("GetFileSize", file, isc_io_access_err, 0);
+		nt_error("GetFileSize", file, isc_io_access_err);
 	}
 
     const ULONGLONG ullFileSize = (((ULONGLONG) dwFileSizeHigh) << 32) + dwFileSizeLow;
 	return (ULONG) ((ullFileSize + pagesize - 1) / pagesize);
+}
+
+
+void PIO_get_unique_file_id(const Jrd::jrd_file* file, Firebird::UCharBuffer& id)
+{
+/**************************************
+ *
+ *	P I O _ g e t _ u n i q u e _ f i l e _ i d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return a binary string that uniquely identifies the file.
+ *
+ **************************************/
+	BY_HANDLE_FILE_INFORMATION file_info;
+	if (!GetFileInformationByHandle(file->fil_desc, &file_info)) {
+		nt_error("GetFileInformationByHandle", file, isc_io_access_err);
+	}
+
+	// The identifier is [nFileIndexHigh, nFileIndexLow]
+	// MSDN says: After a process opens a file, the identifier is constant until
+	// the file is closed. An application can use this identifier and the
+	// volume serial number to determine whether two handles refer to the same file.
+	const size_t len1 = sizeof(file_info.dwVolumeSerialNumber);
+	const size_t len2 = sizeof(file_info.nFileIndexHigh);
+	const size_t len3 = sizeof(file_info.nFileIndexLow);
+
+	UCHAR* p = id.getBuffer(len1 + len2 + len3);
+
+	memcpy(p, &file_info.dwVolumeSerialNumber, len1);
+	p += len1;
+	memcpy(p, &file_info.nFileIndexHigh, len2);
+	p += len2;
+	memcpy(p, &file_info.nFileIndexLow, len3);
 }
 
 
@@ -889,7 +996,7 @@ static void release_io_event(jrd_file* file, OVERLAPPED* overlapped)
 
 static jrd_file* seek_file(jrd_file*	file,
 					 	   BufferDesc*	bdb,
-					 	   FbStatusVector*	/*status_vector*/,
+					 	   ISC_STATUS*	/*status_vector*/,
 					 	   OVERLAPPED*	overlapped,
 					 	   OVERLAPPED**	overlapped_ptr)
 {
@@ -904,7 +1011,7 @@ static jrd_file* seek_file(jrd_file*	file,
  *	file block and seek to the proper page in that file.
  *
  **************************************/
-	BufferControl *bcb = bdb->bdb_bcb;
+	Database* const dbb = bdb->bdb_dbb;
 	ULONG page = bdb->bdb_page.getPageNum();
 
 	for (;; file = file->fil_next)
@@ -920,7 +1027,7 @@ static jrd_file* seek_file(jrd_file*	file,
 	page -= file->fil_min_page - file->fil_fudge;
 
     LARGE_INTEGER liOffset;
-	liOffset.QuadPart = UInt32x32To64((DWORD) page, (DWORD) bcb->bcb_page_size);
+	liOffset.QuadPart = UInt32x32To64((DWORD) page, (DWORD) dbb->dbb_page_size);
 
 	overlapped->Offset = liOffset.LowPart;
 	overlapped->OffsetHigh = liOffset.HighPart;
@@ -929,6 +1036,8 @@ static jrd_file* seek_file(jrd_file*	file,
 	overlapped->hEvent = (HANDLE) 0;
 
 	*overlapped_ptr = overlapped;
+
+	fb_assert(dbb == bdb->bdb_dbb);
 
 #ifdef SUPERSERVER_V2
 	Firebird::MutexLockGuard guard(file->fil_mutex);
@@ -944,7 +1053,7 @@ static jrd_file* seek_file(jrd_file*	file,
 
 	if (!overlapped->hEvent && !(overlapped->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL)))
 	{
-		nt_error("CreateEvent", file, isc_io_access_err, NULL/*status_vector*/);
+		nt_error("CreateEvent", file, isc_io_access_err, status_vector);
 		return 0;
 	}
 
@@ -958,8 +1067,7 @@ static jrd_file* seek_file(jrd_file*	file,
 static jrd_file* setup_file(Database* dbb,
 							const Firebird::PathName& file_name,
 							HANDLE desc,
-							bool read_only,
-							bool shareMode)
+							bool read_only)
 {
 /**************************************
  *
@@ -985,8 +1093,6 @@ static jrd_file* setup_file(Database* dbb,
 
 		if (read_only)
 			file->fil_flags |= FIL_readonly;
-		if (shareMode)
-			file->fil_flags |= FIL_sh_write;
 
 		// If this isn't the primary file, we're done
 
@@ -999,7 +1105,7 @@ static jrd_file* setup_file(Database* dbb,
 		if (ISC_is_WinNT())
 #endif
 		{
-			file->fil_ext_lock = FB_NEW_POOL(*dbb->dbb_permanent) Firebird::RWLock();
+			file->fil_ext_lock = FB_NEW(*dbb->dbb_permanent) Firebird::RWLock();
 		}
 	}
 	catch (const Firebird::Exception&)
@@ -1036,8 +1142,8 @@ static bool maybeCloseFile(HANDLE& hFile)
 }
 
 static bool nt_error(const TEXT* string,
-	const jrd_file* file, ISC_STATUS operation,
-	FbStatusVector* const status_vector)
+					 const jrd_file* file, ISC_STATUS operation,
+					 ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -1050,18 +1156,17 @@ static bool nt_error(const TEXT* string,
  *	to do something about it.  Harumph!
  *
  **************************************/
-	const DWORD lastError = GetLastError();
-	Arg::StatusVector status;
-	status << Arg::Gds(isc_io_error) << Arg::Str(string) << Arg::Str(file->fil_string) <<
-			  Arg::Gds(operation);
-	if (lastError != ERROR_SUCCESS)
-		status << Arg::Windows(lastError);
-
 	if (!status_vector)
-		ERR_post(status);
+	{
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str(string) << Arg::Str(file->fil_string) <<
+				 Arg::Gds(operation) << Arg::Windows(GetLastError()));
+	}
 
-	ERR_build_status(status_vector, status);
-	iscLogStatus(NULL, status_vector);
+	ERR_build_status(status_vector,
+					 Arg::Gds(isc_io_error) << Arg::Str(string) << Arg::Str(file->fil_string) <<
+					 Arg::Gds(operation) << Arg::Windows(GetLastError()));
+
+	gds__log_status(0, status_vector);
 
 	return false;
 }

@@ -21,7 +21,7 @@
  */
 
 #include "firebird.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
 
@@ -32,10 +32,13 @@ const char* const SCRATCH = "fb_recbuf_";
 using namespace Jrd;
 
 RecordBuffer::RecordBuffer(MemoryPool& pool, const Format* format)
-	: count(0)
+	: length(format->fmt_length), count(0), filled(false)
 {
-	space = FB_NEW_POOL(pool) TempSpace(pool, SCRATCH);
-	record = FB_NEW_POOL(pool) Record(pool, format);
+	space = FB_NEW(pool) TempSpace(pool, SCRATCH);
+
+	record = FB_NEW_RPT(pool, length) Record(pool);
+	record->rec_format = format;
+	record->rec_length = length;
 }
 
 RecordBuffer::~RecordBuffer()
@@ -44,30 +47,44 @@ RecordBuffer::~RecordBuffer()
 	delete space;
 }
 
+size_t RecordBuffer::getCount() const
+{
+	return count;
+}
+
+Record* RecordBuffer::getTempRecord() const
+{
+	return record;
+}
+
+const Format* RecordBuffer::getFormat() const
+{
+	return record->rec_format;
+}
+
 offset_t RecordBuffer::store(const Record* new_record)
 {
-	const ULONG length = record->getLength();
-	fb_assert(new_record->getLength() == length);
+	fb_assert(new_record->rec_length == length);
 
-	space->write(count * length, new_record->getData(), length);
+	fb_assert(!filled);
+
+	space->write(count * length, new_record->rec_data, length);
 
 	return count++;
 }
 
 bool RecordBuffer::fetch(offset_t position, Record* to_record)
 {
-	const ULONG length = record->getLength();
-	fb_assert(to_record->getLength() == length);
+	fb_assert(to_record->rec_length == length);
+
+	filled = true;
 
 	if (position >= count)
+	{
 		return false;
+	}
 
-	space->read(position * length, to_record->getData(), length);
+	space->read(position * length, to_record->rec_data, length);
 
 	return true;
-}
-
-const Format* RecordBuffer::getFormat() const
-{
-	return record->getFormat();
 }

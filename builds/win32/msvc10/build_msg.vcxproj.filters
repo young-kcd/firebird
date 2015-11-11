@@ -2,20 +2,20 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{fcdd6b30-509f-42af-a518-62266799e430}</UniqueIdentifier>
+      <UniqueIdentifier>{2033b97c-0b8a-45ae-b217-63f7b7e70387}</UniqueIdentifier>
       <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
     </Filter>
     <Filter Include="Resource Files">
-      <UniqueIdentifier>{56bc7ec7-a5b0-49f7-88b8-329f39418f57}</UniqueIdentifier>
+      <UniqueIdentifier>{4e023bbf-9ab4-4691-bbee-9b0ecc5536aa}</UniqueIdentifier>
       <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
     </Filter>
     <Filter Include="Header Files">
-      <UniqueIdentifier>{516ad004-1726-4fc9-965c-314487a60d9d}</UniqueIdentifier>
+      <UniqueIdentifier>{ba7687bd-0b6b-4e5c-b93b-27e8a7530405}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\gen\msgs\build_file.cpp">
+    <ClCompile Include="..\..\..\gen\$(Platform)\msgs\build_file.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -44,7 +44,7 @@ static inline bool FAMILY1(texttype* cache,
 	if ((attributes & ~TEXTTYPE_ATTR_PAD_SPACE) || specific_attributes_length)
 		return false;
 
-	TextTypeImpl* impl = FB_NEW TextTypeImpl;
+	TextTypeImpl* impl = new TextTypeImpl;
 
 	cache->texttype_version			= TEXTTYPE_VERSION_1;
 	cache->texttype_name			= POSIX;

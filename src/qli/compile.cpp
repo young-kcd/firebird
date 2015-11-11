@@ -33,8 +33,8 @@
 #include "../qli/err_proto.h"
 #include "../qli/forma_proto.h"
 #include "../qli/meta_proto.h"
-#include "../common/dsc_proto.h"
-#include "../common/gdsassert.h"
+#include "../jrd/dsc_proto.h"
+#include "../jrd/gdsassert.h"
 #include "../jrd/align.h"
 
 const USHORT PROMPT_LENGTH	= 80;
@@ -119,7 +119,7 @@ void CMP_alloc_temp(qli_nod* node)
 	qli_str* string = (qli_str*) ALLOCDV(type_str, node->nod_desc.dsc_length +
 					     type_alignments[node->nod_desc.dsc_dtype]);
 	node->nod_desc.dsc_address = (UCHAR*)
-		FB_ALIGN(string->str_data, type_alignments[node->nod_desc.dsc_dtype]);
+		FB_ALIGN((FB_UINT64)(U_IPTR)(string->str_data), type_alignments[node->nod_desc.dsc_dtype]);
 	QLI_validate_desc(node->nod_desc);
 }
 

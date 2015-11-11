@@ -31,28 +31,25 @@
 #include "../../common/classes/array.h"
 #include "../../common/classes/fb_string.h"
 #include "../../common/classes/init.h"
-#include "../../common/isc_s_proto.h"
-#include "../../jrd/trace/TraceSession.h"
 #include "../../common/classes/RefCounted.h"
+#include "../../common/classes/semaphore.h"
+#include "../../jrd/isc.h"
+#include "../../jrd/ThreadStart.h"
+#include "../../jrd/trace/TraceSession.h"
 
 namespace Jrd {
 
-struct TraceCSHeader : public Firebird::MemoryHeader
-{
-	static const USHORT TRACE_STORAGE_VERSION = 1;
+class StorageInstance;
 
-	volatile ULONG change_number;
-	volatile ULONG session_number;
-	ULONG cnt_uses;
-	char cfg_file_name[MAXPATHLEN];
-};
-
-class ConfigStorage FB_FINAL : public Firebird::GlobalStorage, public Firebird::IpcObject, public Firebird::Reasons
+class ConfigStorage : public Firebird::GlobalStorage
 {
-public:
+friend class StorageInstance;
+
+private:
 	ConfigStorage();
 	~ConfigStorage();
 
+public:
 	void addSession(Firebird::TraceSession& session);
 	bool getNextSession(Firebird::TraceSession& session);
 	void removeSession(ULONG id);
@@ -60,31 +57,22 @@ public:
 	void updateSession(Firebird::TraceSession& session);
 
 	ULONG getChangeNumber() const
-	{ return m_sharedMemory && m_sharedMemory->getHeader() ? m_sharedMemory->getHeader()->change_number : 0; }
+	{ return m_base ? m_base->change_number : 0; }
 
 	void acquire();
 	void release();
 
 	void shutdown();
+
 private:
-	void mutexBug(int osErrorCode, const char* text);
-	bool initialize(Firebird::SharedMemoryBase*, bool);
+	static void checkMutex(const TEXT*, int);
+	static void initShMem(void*, sh_mem*, bool);
 
 	void checkFile();
 	void touchFile();
 
-	class TouchFile FB_FINAL :
-		public Firebird::RefCntIface<Firebird::ITimerImpl<TouchFile, Firebird::CheckStatusWrapper> >
-	{
-	public:
-		void handler();
-		void start(const char* fName);
-		void stop();
-		int release();
-	private:
-		const char* fileName;
-	};
-	Firebird::RefPtr<TouchFile> m_timer;
+	static THREAD_ENTRY_DECLARE touchThread(THREAD_ENTRY_PARAM arg);
+	void touchThreadFunc();
 
 	void checkDirty()
 	{
@@ -99,18 +87,29 @@ private:
 	{
 		if (!m_dirty)
 		{
-			if (m_sharedMemory && m_sharedMemory->getHeader())
-				m_sharedMemory->getHeader()->change_number++;
+			m_base->change_number++;
 			m_dirty = true;
 		}
 	}
+
+	struct ShMemHeader
+	{
+		ULONG version;
+		volatile ULONG change_number;
+		volatile ULONG session_number;
+		ULONG cnt_uses;
+		char  cfg_file_name[MAXPATHLEN];
+#ifndef WIN_NT
+		struct mtx mutex;
+#endif
+		SINT64 touch_time;
+	};
 
 	// items in every session record at sessions file
 	enum ITEM
 	{
 		tagID = 1,			// session ID
 		tagName,			// session Name
-		tagAuthBlock,		// with which creator logged in
 		tagUserName,		// creator user name
 		tagFlags,			// session flags
 		tagConfig,			// configuration
@@ -122,11 +121,21 @@ private:
 	void putItem(ITEM tag, ULONG len, const void* data);
 	bool getItemLength(ITEM& tag, ULONG& len);
 
-	Firebird::AutoPtr<Firebird::SharedMemory<TraceCSHeader> > m_sharedMemory;
+	sh_mem m_handle;
+	ShMemHeader* m_base;
+#ifdef WIN_NT
+	struct mtx m_winMutex;
+#endif
+	struct mtx* m_mutex;
 	int m_recursive;
-	ThreadId m_mutexTID;
-	int m_cfg_file;
+	FB_THREAD_ID m_mutexTID;
+	int  m_cfg_file;
 	bool m_dirty;
+	bool m_shutdown;
+	Firebird::Semaphore m_touchStart;
+	Firebird::Semaphore m_touchStop;
+	Firebird::AnyRef<Firebird::Semaphore>* m_touchSemaphore;
+	Firebird::Reference  m_touchSemRef;
 };
 
 
@@ -141,23 +150,9 @@ public:
 		storage(NULL)
 	{}
 
-	~StorageInstance()
-	{
-		delete storage;
-	}
+	~StorageInstance();
 
-	ConfigStorage* getStorage()
-	{
-		if (!storage)
-		{
-			Firebird::MutexLockGuard guard(initMtx, FB_FUNCTION);
-			if (!storage)
-			{
-				storage = FB_NEW ConfigStorage;
-			}
-		}
-		return storage;
-	}
+	ConfigStorage* getStorage();
 };
 
 

@@ -23,18 +23,12 @@
 #define JRD_RELATION_H
 
 #include "../jrd/jrd.h"
-#include "../jrd/btr.h"
 #include "../jrd/lck.h"
 #include "../jrd/pag.h"
 #include "../jrd/val.h"
-#include "../jrd/Attachment.h"
 
 namespace Jrd
 {
-
-class BoolExprNode;
-class RseNode;
-class StmtNode;
 
 // view context block to cache view aliases
 
@@ -43,53 +37,96 @@ class ViewContext
 public:
 	explicit ViewContext(MemoryPool& p, const TEXT* context_name,
 						 const TEXT* relation_name, USHORT context,
-						 ViewContextType type)
-	: vcx_context_name(p, context_name, fb_strlen(context_name)),
-	  vcx_relation_name(relation_name),
-	  vcx_context(context),
-	  vcx_type(type)
+						 bool is_relation) :
+		vcx_context_name(p, context_name, strlen(context_name)),
+		vcx_relation_name(relation_name),
+		vcx_context(context),
+		vcx_is_relation(is_relation)
 	{
 	}
 
-	static USHORT generate(const ViewContext* vc)
+	static USHORT generate(const void*, const ViewContext* vc)
 	{
 		return vc->vcx_context;
 	}
 
-	const Firebird::string vcx_context_name;
-	const Firebird::MetaName vcx_relation_name;
-	const USHORT vcx_context;
-	const ViewContextType vcx_type;
+	const Firebird::string	vcx_context_name;
+	const Firebird::MetaName	vcx_relation_name;
+	const USHORT	vcx_context;
+	const bool		vcx_is_relation;
 };
 
 typedef Firebird::SortedArray<ViewContext*, Firebird::EmptyStorage<ViewContext*>,
 		USHORT, ViewContext> ViewContexts;
 
+#ifdef GARBAGE_THREAD
+
+class RelationGarbage
+{
+private:
+	class TranGarbage
+	{
+	public:
+		SLONG tran;
+		PageBitmap *bm;
+
+		TranGarbage(PageBitmap* aBm, SLONG aTran)
+			: tran(aTran), bm(aBm)
+		{}
+
+		static inline const SLONG generate(void const*, const TranGarbage& Item)
+		{
+			return Item.tran;
+		}
+	};
+
+	typedef	Firebird::SortedArray<
+				TranGarbage,
+				Firebird::EmptyStorage<TranGarbage>,
+				SLONG,
+				TranGarbage> TranGarbageArray;
+
+	TranGarbageArray array;
+
+public:
+	explicit RelationGarbage(MemoryPool& p)
+		: array(p)
+	{}
+	~RelationGarbage() { clear(); }
+
+	void addPage(MemoryPool* pool, const SLONG pageno, const SLONG tranid);
+	void clear();
+
+	void getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm);
+
+	SLONG minTranID() const
+	{
+		return (array.getCount() > 0) ? array[0].tran : MAX_SLONG;
+	}
+};
+
+#endif //GARBAGE_THREAD
 
 class RelationPages
 {
 public:
-	typedef SINT64 RP_INSTANCE_ID;
-	vcl* rel_pages;				// vector of pointer page numbers
-	RP_INSTANCE_ID rel_instance_id;		// 0 or att_attachment_id or tra_number
-	// Vlad asked for this compile-time check to make sure we can contain a txn number here
-	typedef int RangeCheck1[sizeof(RP_INSTANCE_ID) >= sizeof(TraNumber)];
-	typedef int RangeCheck2[sizeof(RP_INSTANCE_ID) >= sizeof(AttNumber)];
-
-	SLONG rel_index_root;		// index root page number
-	SLONG rel_data_pages;		// count of relation data pages
-	ULONG rel_slot_space;		// lowest pointer page with slot space
-	ULONG rel_pri_data_space;	// lowest pointer page with primary data page space
-	ULONG rel_sec_data_space;	// lowest pointer page with secondary data page space
-	USHORT rel_pg_space_id;
+	vcl*	rel_pages;			// vector of pointer page numbers
+	SLONG	rel_instance_id;	// 0 or att_attachment_id or tra_number
+	SLONG	rel_index_root;		// index root page number
+	SLONG	rel_data_pages;		// count of relation data pages
+	ULONG	rel_slot_space;		// lowest pointer page with slot space
+	ULONG	rel_data_space;		// lowest pointer page with data page space
+	USHORT	rel_pg_space_id;
 
 	RelationPages()
-		: rel_pages(NULL), rel_instance_id(0),
-		  rel_index_root(0), rel_data_pages(0), rel_slot_space(0),
-		  rel_pri_data_space(0), rel_sec_data_space(0),
-		  rel_pg_space_id(DB_PAGE_SPACE), rel_next_free(NULL),
-		  useCount(0)
-	{}
+	{
+		rel_pages = 0;
+		rel_index_root = rel_data_pages = rel_instance_id = 0;
+		rel_slot_space = rel_data_space = 0;
+		rel_pg_space_id = DB_PAGE_SPACE;
+		rel_next_free = 0;
+		useCount = 0;
+	}
 
 	inline SLONG addRef()
 	{
@@ -98,7 +135,7 @@ public:
 
 	void free(RelationPages*& nextFree);
 
-	static inline RP_INSTANCE_ID generate(const RelationPages* item)
+	static inline SLONG generate(const void*, const RelationPages* item)
 	{
 		return item->rel_instance_id;
 	}
@@ -131,34 +168,34 @@ struct frgn
 	vec<int>* frgn_indexes;
 };
 
+
 // Relation block; one is created for each relation referenced
 // in the database, though it is not really filled out until
 // the relation is scanned
 
 class jrd_rel : public pool_alloc<type_rel>
 {
-	typedef Firebird::HalfStaticArray<Record*, 4> GCRecordList;
-
 public:
-	MemoryPool*		rel_pool;
 	USHORT			rel_id;
 	USHORT			rel_current_fmt;	// Current format number
 	ULONG			rel_flags;
 	Format*			rel_current_format;	// Current record format
-
 	Firebird::MetaName	rel_name;		// ascii relation name
-	Firebird::MetaName	rel_owner_name;	// ascii owner
-	Firebird::MetaName	rel_security_name;	// security class name for relation
-
 	vec<Format*>*	rel_formats;		// Known record formats
+	Firebird::MetaName	rel_owner_name;	// ascii owner
 	vec<jrd_fld*>*	rel_fields;			// vector of field blocks
 
-	RseNode*		rel_view_rse;		// view record select expression
+	RecordSelExpr*	rel_view_rse;		// view record select expression
 	ViewContexts	rel_view_contexts;	// sorted array of view contexts
 
+	Firebird::MetaName	rel_security_name;	// security class name for relation
 	ExternalFile* 	rel_file;			// external file name
 
-	GCRecordList	rel_gc_records;		// records for garbage collection
+	vec<Record*>*	rel_gc_rec;			// vector of records for garbage collection
+#ifdef GARBAGE_THREAD
+	PageBitmap*		rel_gc_bitmap;		// garbage collect bitmap of data page sequences
+	RelationGarbage*	rel_garbage;	// deferred gc bitmap's by tran numbers
+#endif
 
 	USHORT		rel_use_count;		// requests compiled with relation
 	USHORT		rel_sweep_count;	// sweep and/or garbage collector threads active
@@ -166,7 +203,6 @@ public:
 
 	Lock*		rel_existence_lock;	// existence lock, if any
 	Lock*		rel_partners_lock;	// partners lock
-	Lock*		rel_rescan_lock;	// lock forcing relation to be scanned
 	Lock*		rel_gc_lock;		// garbage collection lock
 	IndexLock*	rel_index_locks;	// index existence locks
 	IndexBlock*	rel_index_blocks;	// index blocks for caching index info
@@ -187,17 +223,17 @@ public:
 	bool isView() const;
 
 	// global temporary relations attributes
-	RelationPages* getPages(thread_db* tdbb, TraNumber tran = MAX_TRA_NUMBER, bool allocPages = true);
+	RelationPages* getPages(thread_db* tdbb, SLONG tran = -1, bool allocPages = true);
 
 	RelationPages* getBasePages()
 	{
 		return &rel_pages_base;
 	}
 
-	bool			delPages(thread_db* tdbb, TraNumber tran = MAX_TRA_NUMBER, RelationPages* aPages = NULL);
+	bool			delPages(thread_db* tdbb, SLONG tran = -1, RelationPages* aPages = 0);
 
 	void			getRelLockKey(thread_db* tdbb, UCHAR* key);
-	USHORT			getRelLockKeyLength() const;
+	SSHORT			getRelLockKeyLength() const;
 
 	void			cleanUp();
 
@@ -228,19 +264,15 @@ private:
 	typedef Firebird::SortedArray<
 				RelationPages*,
 				Firebird::EmptyStorage<RelationPages*>,
-				SINT64,
+				SLONG,
 				RelationPages>
 			RelationPagesInstances;
-
-	// Vlad asked for this compile-time check to make sure we can contain a txn number here
-	typedef int RangeCheck1[sizeof(SINT64) >= sizeof(TraNumber)];
-	typedef int RangeCheck2[sizeof(SINT64) >= sizeof(AttNumber)];
 
 	RelationPagesInstances* rel_pages_inst;
 	RelationPages			rel_pages_base;
 	RelationPages*			rel_pages_free;
 
-	RelationPages* getPagesInternal(thread_db* tdbb, TraNumber tran, bool allocPages);
+	RelationPages*	getPagesInternal(thread_db* tdbb, SLONG tran, bool allocPages);
 
 public:
 	explicit jrd_rel(MemoryPool& p);
@@ -249,16 +281,15 @@ public:
 
 	static Lock* createLock(thread_db* tdbb, MemoryPool* pool, jrd_rel* relation, lck_t, bool);
 	static int blocking_ast_gcLock(void*);
-
 	void downgradeGCLock(thread_db* tdbb);
 	bool acquireGCLock(thread_db* tdbb, int wait);
 
-	// This guard is used by regular code to prevent online validation while
+	// This guard is used by regular code to prevent online validation while 
 	// dead- or back- versions is removed from disk.
 	class GCShared
 	{
 	public:
-		GCShared(thread_db* tdbb, jrd_rel* relation);
+		GCShared(thread_db* tdbb, jrd_rel* relation); 
 		~GCShared();
 
 		bool gcEnabled() const
@@ -277,7 +308,7 @@ public:
 	class GCExclusive
 	{
 	public:
-		GCExclusive(thread_db* tdbb, jrd_rel* relation);
+		GCExclusive(thread_db* tdbb, jrd_rel* relation); 
 		~GCExclusive();
 
 		bool acquire(int wait);
@@ -317,9 +348,8 @@ const ULONG REL_gc_lockneed				= 0x80000;	// gc lock should be acquired
 /// class jrd_rel
 
 inline jrd_rel::jrd_rel(MemoryPool& p)
-	: rel_pool(&p), rel_flags(REL_gc_lockneed),
-	  rel_name(p), rel_owner_name(p), rel_security_name(p),
-	  rel_view_contexts(p), rel_gc_records(p)
+		: rel_flags(REL_gc_lockneed), rel_name(p), rel_owner_name(p),
+		  rel_view_contexts(p), rel_security_name(p)
 {
 }
 
@@ -343,7 +373,7 @@ inline bool jrd_rel::isView() const
 	return (rel_flags & REL_jrd_view);
 }
 
-inline RelationPages* jrd_rel::getPages(thread_db* tdbb, TraNumber tran, bool allocPages)
+inline RelationPages* jrd_rel::getPages(thread_db* tdbb, SLONG tran, bool allocPages)
 {
 	if (!isTemporary())
 		return &rel_pages_base;
@@ -353,10 +383,10 @@ inline RelationPages* jrd_rel::getPages(thread_db* tdbb, TraNumber tran, bool al
 
 /// class jrd_rel::GCShared
 
-inline jrd_rel::GCShared::GCShared(thread_db* tdbb, jrd_rel* relation)
-	: m_tdbb(tdbb),
-	  m_relation(relation),
-	  m_gcEnabled(false)
+inline jrd_rel::GCShared::GCShared(thread_db* tdbb, jrd_rel* relation) :
+	m_tdbb(tdbb),
+	m_relation(relation),
+	m_gcEnabled(false)
 {
 	if (m_relation->rel_flags & (REL_gc_blocking | REL_gc_disabled))
 		return;
@@ -389,20 +419,19 @@ inline jrd_rel::GCShared::~GCShared()
 class jrd_fld : public pool_alloc<type_fld>
 {
 public:
-	BoolExprNode*	fld_validation;		// validation clause, if any
-	BoolExprNode*	fld_not_null;		// if field cannot be NULL
-	ValueExprNode*	fld_missing_value;	// missing value, if any
-	ValueExprNode*	fld_computation;	// computation for virtual field
-	ValueExprNode*	fld_source;			// source for view fields
-	ValueExprNode*	fld_default_value;	// default value, if any
+	jrd_nod*	fld_validation;		// validation clause, if any
+	jrd_nod*	fld_not_null;		// if field cannot be NULL
+	jrd_nod*	fld_missing_value;	// missing value, if any
+	jrd_nod*	fld_computation;	// computation for virtual field
+	jrd_nod*	fld_source;			// source for view fields
+	jrd_nod*	fld_default_value;	// default value, if any
 	ArrayField*	fld_array;			// array description, if array
 	Firebird::MetaName	fld_name;	// Field name
 	Firebird::MetaName	fld_security_name;	// security class name for field
-	Firebird::MetaName	fld_generator_name;	// identity generator name
 
 public:
 	explicit jrd_fld(MemoryPool& p)
-		: fld_name(p), fld_security_name(p), fld_generator_name(p)
+		: fld_name(p), fld_security_name(p)
 	{ }
 };
 

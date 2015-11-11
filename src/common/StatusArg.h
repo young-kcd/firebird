@@ -29,15 +29,10 @@
 #ifndef FB_STATUS_ARG
 #define FB_STATUS_ARG
 
-#include "fb_exception.h"
-#include "firebird/Interface.h"
-#include "../common/SimpleStatusVector.h"
-
 namespace Firebird {
 
 class AbstractString;
 class MetaName;
-class Exception;
 
 namespace Arg {
 
@@ -63,16 +58,12 @@ protected:
 		ISC_STATUS getCode() const throw() { return code; }
 
 		virtual const ISC_STATUS* value() const throw() { return NULL; }
-		virtual unsigned int length() const throw() { return 0; }
-		virtual unsigned int firstWarning() const throw() { return 0; }
+		virtual int length() const throw() { return 0; }
+		virtual int firstWarning() const throw() { return 0; }
 		virtual bool hasData() const throw() { return false; }
 		virtual void clear() throw() { }
 		virtual void append(const StatusVector&) throw() { }
-		virtual void prepend(const StatusVector&) throw() { }
-		virtual void assign(const StatusVector& ex) throw() { }
-		virtual void assign(const Exception& ex) throw() { }
 		virtual ISC_STATUS copyTo(ISC_STATUS*) const throw() { return 0; }
-		virtual void copyTo(IStatus*) const throw() { }
 
 		virtual void shiftLeft(const Base&) throw() { }
 		virtual void shiftLeft(const Warning&) throw() { }
@@ -80,15 +71,15 @@ protected:
 		virtual void shiftLeft(const AbstractString&) throw() { }
 		virtual void shiftLeft(const MetaName&) throw() { }
 
-		virtual bool compare(const StatusVector& /*v*/) const throw() { return false; }
+		virtual bool compare(const StatusVector& v) const throw() { return false; }
 
 		ImplBase(ISC_STATUS k, ISC_STATUS c) throw() : kind(k), code(c) { }
 		virtual ~ImplBase() { }
 	};
 
-	Base(ISC_STATUS k, ISC_STATUS c) throw(Firebird::BadAlloc);
+	Base(ISC_STATUS k, ISC_STATUS c);// : implementation(new ImplBase(k, c)) { }
 	explicit Base(ImplBase* i) throw() : implementation(i) { }
-	~Base() throw() { delete implementation; }
+	~Base() { delete implementation; }
 
 	ImplBase* const implementation;
 
@@ -103,79 +94,57 @@ protected:
 	class ImplStatusVector : public ImplBase
 	{
 	private:
-		StaticStatusVector m_status_vector;
-		unsigned int m_warning;
+		ISC_STATUS_ARRAY m_status_vector;
+		int m_length, m_warning;
 
 		bool appendErrors(const ImplBase* const v) throw();
 		bool appendWarnings(const ImplBase* const v) throw();
-		bool append(const ISC_STATUS* const from, const unsigned int count) throw();
-		void append(const ISC_STATUS* const from) throw();
+		bool append(const ISC_STATUS* const from, const int count) throw();
 
 	public:
-		virtual const ISC_STATUS* value() const throw() { return m_status_vector.begin(); }
-		virtual unsigned int length() const throw() { return m_status_vector.getCount() - 1u; }
-		virtual unsigned int firstWarning() const throw() { return m_warning; }
-		virtual bool hasData() const throw() { return length() > 0u; }
+		virtual const ISC_STATUS* value() const throw() { return m_status_vector; }
+		virtual int length() const throw() { return m_length; }
+		virtual int firstWarning() const throw() { return m_warning; }
+		virtual bool hasData() const throw() { return m_length > 0; }
 		virtual void clear() throw();
 		virtual void append(const StatusVector& v) throw();
-		virtual void prepend(const StatusVector& v) throw();
-		virtual void assign(const StatusVector& v) throw();
-		virtual void assign(const Exception& ex) throw();
 		virtual ISC_STATUS copyTo(ISC_STATUS* dest) const throw();
-		virtual void copyTo(IStatus* dest) const throw();
 		virtual void shiftLeft(const Base& arg) throw();
 		virtual void shiftLeft(const Warning& arg) throw();
 		virtual void shiftLeft(const char* text) throw();
 		virtual void shiftLeft(const AbstractString& text) throw();
 		virtual void shiftLeft(const MetaName& text) throw();
+
 		virtual bool compare(const StatusVector& v) const throw();
 
-		ImplStatusVector(ISC_STATUS k, ISC_STATUS c) throw()
-			: ImplBase(k, c),
-			  m_status_vector(*getDefaultMemoryPool())
+		ImplStatusVector(ISC_STATUS k, ISC_STATUS c) throw() : ImplBase(k, c)
 		{
 			clear();
 		}
 
 		explicit ImplStatusVector(const ISC_STATUS* s) throw();
-		explicit ImplStatusVector(const IStatus* s) throw();
-		explicit ImplStatusVector(const Exception& ex) throw();
 	};
 
-	StatusVector(ISC_STATUS k, ISC_STATUS v) throw(Firebird::BadAlloc);
+	StatusVector(ISC_STATUS k, ISC_STATUS v);
 
 public:
-	explicit StatusVector(const ISC_STATUS* s) throw(Firebird::BadAlloc);
-	explicit StatusVector(const IStatus* s) throw(Firebird::BadAlloc);
-	explicit StatusVector(const Exception& ex) throw(Firebird::BadAlloc);
-	StatusVector() throw(Firebird::BadAlloc);
+	explicit StatusVector(const ISC_STATUS* s);
+	StatusVector();
 	~StatusVector() { }
 
 	const ISC_STATUS* value() const throw() { return implementation->value(); }
-	unsigned int length() const throw() { return implementation->length(); }
+	int length() const throw() { return implementation->length(); }
 	bool hasData() const throw() { return implementation->hasData(); }
-	bool isEmpty() const throw() { return !implementation->hasData(); }
 
 	void clear() throw() { implementation->clear(); }
 	void append(const StatusVector& v) throw() { implementation->append(v); }
-	void prepend(const StatusVector& v) throw() { implementation->prepend(v); }
-	void assign(const StatusVector& v) throw() { implementation->assign(v); }
-	void assign(const Exception& ex) throw() { implementation->assign(ex); }
 	void raise() const;
 	ISC_STATUS copyTo(ISC_STATUS* dest) const throw() { return implementation->copyTo(dest); }
-	void copyTo(IStatus* dest) const throw() { implementation->copyTo(dest); }
 
 	// generic argument insert
 	StatusVector& operator<<(const Base& arg) throw()
 	{
 		implementation->shiftLeft(arg);
-		return *this;
-	}
-
-	// StatusVector case - append multiple args
-	StatusVector& operator<<(const StatusVector& arg) throw()
-	{
-		implementation->append(arg);
 		return *this;
 	}
 
@@ -214,6 +183,8 @@ public:
 	{
 		return !(*this == arg);
 	}
+
+private:
 };
 
 
@@ -221,14 +192,6 @@ class Gds : public StatusVector
 {
 public:
 	explicit Gds(ISC_STATUS s) throw();
-};
-
-// To simplify calls to DYN messages from DSQL, only for private DYN messages
-// that do not have presence in system_errors2.sql, when you have to call ENCODE_ISC_MSG.
-class PrivateDyn : public Gds
-{
-public:
-	explicit PrivateDyn(ISC_STATUS codeWithoutFacility) throw();
 };
 
 class Str : public Base
@@ -287,7 +250,6 @@ class OsError : public Base
 {
 public:
 	OsError() throw();
-	explicit OsError(ISC_STATUS s) throw();
 };
 
 } // namespace Arg

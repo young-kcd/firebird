@@ -2,19 +2,19 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="UTILITIES files">
-      <UniqueIdentifier>{33bc8a69-c1fb-4f8a-8651-36ffa9569ddb}</UniqueIdentifier>
+      <UniqueIdentifier>{2faec9bb-c7ae-454d-aa3f-fa3b29b1ee03}</UniqueIdentifier>
       <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
     </Filter>
     <Filter Include="Header files">
-      <UniqueIdentifier>{240a682a-2105-409c-8a6e-416a1b11d1b5}</UniqueIdentifier>
+      <UniqueIdentifier>{853f8cba-6c22-4da6-86ad-a0f4c465bfb2}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
     <Filter Include="Resource files">
-      <UniqueIdentifier>{6613cf3d-f24f-4e23-8c94-f660ef24689e}</UniqueIdentifier>
+      <UniqueIdentifier>{8321cebf-4b15-4187-8e90-ea353536e2ba}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\utilities\fbsvcmgr\fbsvcmgr.cpp">
+    <ClCompile Include="..\..\..\src\utilities\fbsvcmgr.cpp">
       <Filter>UTILITIES files</Filter>
     </ClCompile>
   </ItemGroup>

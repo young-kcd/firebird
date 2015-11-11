@@ -32,17 +32,13 @@
 #include <string.h>
 #include "../remote/remote.h"
 #include "gen/iberror.h"
-#include "../common/sdl.h"
-#include "../common/gdsassert.h"
+#include "../jrd/sdl.h"
+#include "../jrd/gdsassert.h"
 #include "../remote/parse_proto.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/sdl_proto.h"
-#include "../common/StatusHolder.h"
-#include "../common/classes/stack.h"
-
-using namespace Firebird;
+#include "../jrd/gds_proto.h"
+#include "../jrd/sdl_proto.h"
 
 #ifdef DEBUG_XDR_MEMORY
 inline bool_t P_TRUE(XDR* xdrs, PACKET* p)
@@ -99,33 +95,22 @@ static void free_cstring(XDR*, CSTRING*);
 static void reset_statement(XDR*, SSHORT);
 static bool_t xdr_cstring(XDR*, CSTRING*);
 static inline bool_t xdr_cstring_const(XDR*, CSTRING_CONST*);
+static bool_t xdr_datum(XDR*, const DSC*, BLOB_PTR*);
 #ifdef DEBUG_XDR_MEMORY
 static bool_t xdr_debug_packet(XDR*, enum xdr_op, PACKET*);
 #endif
 static bool_t xdr_longs(XDR*, CSTRING*);
 static bool_t xdr_message(XDR*, RMessage*, const rem_fmt*);
-static bool_t xdr_packed_message(XDR*, RMessage*, const rem_fmt*);
+static bool_t xdr_quad(XDR*, struct bid*);
 static bool_t xdr_request(XDR*, USHORT, USHORT, USHORT);
 static bool_t xdr_slice(XDR*, lstring*, /*USHORT,*/ const UCHAR*);
-static bool_t xdr_status_vector(XDR*, DynamicStatusVector*&);
+static bool_t xdr_status_vector(XDR*, ISC_STATUS*);
 static bool_t xdr_sql_blr(XDR*, SLONG, CSTRING*, bool, SQL_STMT_TYPE);
 static bool_t xdr_sql_message(XDR*, SLONG);
 static bool_t xdr_trrq_blr(XDR*, CSTRING*);
 static bool_t xdr_trrq_message(XDR*, USHORT);
 
-#include "../common/xdr_proto.h"
-
-inline void fixupLength(const XDR* xdrs, ULONG& length)
-{
-	// If the short (16-bit) value >= 32KB is being transmitted,
-	// it gets expanded to long (32-bit) with a sign bit propagated.
-	// In order to avoid troubles when reading such a value as long,
-	// let's detect and fix unexpected overflows. Here we assume
-	// that real longs will never have the highest 16 bits set.
-
-	if (xdrs->x_op == XDR_DECODE && length >> 16 == (ULONG) 0xFFFF)
-		length &= (ULONG) 0xFFFF;
-}
+#include "../remote/xdr_proto.h"
 
 
 #ifdef DEBUG
@@ -214,18 +199,19 @@ void xdr_debug_memory(XDR* xdrs,
 							packet->p_malloc[j].p_operation = op_void;
 							packet->p_malloc[j].p_allocated = NULL;
 							packet->p_malloc[j].p_address = 0;
+							//  packet->p_malloc [j].p_xdrvar = 0;
 							return;
 						}
 					}
 					else
-					{
-						// XDR_ENCODE or XDR_DECODE
+					{		// XDR_ENCODE or XDR_DECODE
 
 						fb_assert(xop == XDR_ENCODE || xop == XDR_DECODE);
 						if (packet->p_malloc[j].p_operation == op_void) {
 							packet->p_malloc[j].p_operation = packet->p_operation;
 							packet->p_malloc[j].p_allocated = length;
 							packet->p_malloc[j].p_address = address;
+							//  packet->p_malloc [j].p_xdrvar = xdrvar;
 							return;
 						}
 					}
@@ -255,8 +241,8 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
  *
  **************************************/
 	p_cnct::p_cnct_repeat* tail;
+	const rem_port* port;
 	P_ACPT *accept;
-	P_ACPD *accept_with_data;
 	P_ATCH *attach;
 	P_RESP *response;
 	P_CMPL *compile;
@@ -290,8 +276,6 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	case op_reject:
 	case op_disconnect:
 	case op_dummy:
-	case op_ping:
-	case op_abort_aux_connection:
 		return P_TRUE(xdrs, p);
 
 	case op_connect:
@@ -341,19 +325,6 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
-	case op_accept_data:
-	case op_cond_accept:
-		accept_with_data = &p->p_acpd;
-		MAP(xdr_short, reinterpret_cast<SSHORT&>(accept_with_data->p_acpt_version));
-		MAP(xdr_enum, reinterpret_cast<xdr_op&>(accept_with_data->p_acpt_architecture));
-		MAP(xdr_u_short, accept_with_data->p_acpt_type);
-		MAP(xdr_cstring, accept_with_data->p_acpt_data);
-		MAP(xdr_cstring, accept_with_data->p_acpt_plugin);
-		MAP(xdr_u_short, accept_with_data->p_acpt_authenticated);
-		MAP(xdr_cstring, accept_with_data->p_acpt_keys);
-		DEBUG_PRINTSIZE(xdrs, p->p_operation);
-		return P_TRUE(xdrs, p);
-
 	case op_connect_request:
 	case op_aux_connect:
 		request = &p->p_req;
@@ -389,6 +360,15 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_transaction));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_message_number));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_messages));
+#ifdef SCROLLABLE_CURSORS
+		port = (rem_port*) xdrs->x_public;
+		if ((p->p_operation == op_receive) && (port->port_protocol > PROTOCOL_VERSION8))
+		{
+			MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_direction));
+			MAP(xdr_long, reinterpret_cast<SLONG&>(data->p_data_offset));
+		}
+
+#endif
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -418,6 +398,8 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(response->p_resp_object));
 		MAP(xdr_quad, response->p_resp_blob_id);
 		MAP(xdr_cstring, response->p_resp_data);
+		if (!response->p_resp_status_vector)	// incorrectly called - packet not prepared
+			return P_FALSE(xdrs, p);
 		return xdr_status_vector(xdrs, response->p_resp_status_vector) ?
 								 	P_TRUE(xdrs, p) : P_FALSE(xdrs, p);
 
@@ -493,9 +475,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_cstring_const, info->p_info_items);
 		if (p->p_operation == op_service_info)
 			MAP(xdr_cstring_const, info->p_info_recv_items);
-		MAP(xdr_long, reinterpret_cast<SLONG&>(info->p_info_buffer_length));
-		// p_info_buffer_length was USHORT in older versions
-		fixupLength(xdrs, info->p_info_buffer_length);
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(info->p_info_buffer_length));
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -672,9 +652,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(prep_stmt->p_sqlst_SQL_dialect));
 		MAP(xdr_cstring_const, prep_stmt->p_sqlst_SQL_str);
 		MAP(xdr_cstring_const, prep_stmt->p_sqlst_items);
-		MAP(xdr_long, reinterpret_cast<SLONG&>(prep_stmt->p_sqlst_buffer_length));
-		// p_sqlst_buffer_length was USHORT in older versions
-		fixupLength(xdrs, prep_stmt->p_sqlst_buffer_length);
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(prep_stmt->p_sqlst_buffer_length));
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -698,7 +676,9 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 
 		// Changes to this op's protocol must mirror in xdr_protocol_overhead
 
-		if (sqldata->p_sqldata_messages)
+		port = (rem_port*) xdrs->x_public;
+		if ((port->port_protocol > PROTOCOL_VERSION7 && sqldata->p_sqldata_messages) ||
+			(port->port_protocol <= PROTOCOL_VERSION7 && !sqldata->p_sqldata_status))
 		{
 			return xdr_sql_message(xdrs, (SLONG)sqldata->p_sqldata_statement) ?
 				P_TRUE(xdrs, p) : P_FALSE(xdrs, p);
@@ -710,6 +690,22 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		free_stmt = &p->p_sqlfree;
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(free_stmt->p_sqlfree_statement));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(free_stmt->p_sqlfree_option));
+		DEBUG_PRINTSIZE(xdrs, p->p_operation);
+		return P_TRUE(xdrs, p);
+
+	case op_insert:
+		sqldata = &p->p_sqldata;
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_statement));
+		if (!xdr_sql_blr(xdrs, (SLONG) sqldata->p_sqldata_statement,
+						 &sqldata->p_sqldata_blr, false, TYPE_PREPARED))
+		{
+			return P_FALSE(xdrs, p);
+		}
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_message_number));
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_messages));
+		if (sqldata->p_sqldata_messages)
+			return xdr_sql_message(xdrs, (SLONG) sqldata->p_sqldata_statement) ?
+											P_TRUE(xdrs, p) : P_FALSE(xdrs, p);
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -761,18 +757,6 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			return P_TRUE(xdrs, p);
 		}
 
-	case op_cont_auth:
-		{
-			P_AUTH_CONT* auth = &p->p_auth_cont;
-			MAP(xdr_cstring, auth->p_data);
-			MAP(xdr_cstring, auth->p_name);
-			MAP(xdr_cstring, auth->p_list);
-			MAP(xdr_cstring, auth->p_keys);
-			DEBUG_PRINTSIZE(xdrs, p->p_operation);
-
-			return P_TRUE(xdrs, p);
-		}
-
 	case op_cancel:
 		{
 			P_CANCEL_OP* cancel_op = &p->p_cancel_op;
@@ -782,26 +766,6 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			return P_TRUE(xdrs, p);
 		}
 
-	case op_crypt:
-		{
-			P_CRYPT* crypt = &p->p_crypt;
-			MAP(xdr_cstring, crypt->p_plugin);
-			MAP(xdr_cstring, crypt->p_key);
-			DEBUG_PRINTSIZE(xdrs, p->p_operation);
-
-			return P_TRUE(xdrs, p);
-		}
-
-	case op_crypt_key_callback:
-		{
-			P_CRYPT_CALLBACK* cc = &p->p_cc;
-			MAP(xdr_cstring, cc->p_cc_data);
-			DEBUG_PRINTSIZE(xdrs, p->p_operation);
-
-			return P_TRUE(xdrs, p);
-		}
-
-	///case op_insert:
 	default:
 #ifdef DEV_BUILD
 		if (xdrs->x_op != XDR_FREE)
@@ -904,9 +868,9 @@ static bool alloc_cstring(XDR* xdrs, CSTRING* cstring)
 	{
 		// fb_assert(!cstring->cstr_allocated);
 		try {
-			cstring->cstr_address = FB_NEW_POOL(*getDefaultMemoryPool()) UCHAR[cstring->cstr_length];
+			cstring->cstr_address = FB_NEW(*getDefaultMemoryPool()) UCHAR[cstring->cstr_length];
 		}
-		catch (const BadAlloc&) {
+		catch (const Firebird::BadAlloc&) {
 			return false;
 		}
 
@@ -954,14 +918,13 @@ static void free_cstring( XDR* xdrs, CSTRING* cstring)
 // The same function is being used to check P_SGMT & P_DDL.
 static inline bool_t xdr_cstring_const(XDR* xdrs, CSTRING_CONST* cstring)
 {
+#ifdef SUPERCLIENT
 #ifdef DEV_BUILD
-	if (xdrs->x_client)
-	{
-		const bool cond =
-			!(xdrs->x_op == XDR_DECODE &&
-				cstring->cstr_length <= cstring->cstr_allocated && cstring->cstr_allocated);
-		fb_assert(cond);
-	}
+	const bool cond =
+		!(xdrs->x_op == XDR_DECODE &&
+			cstring->cstr_length <= cstring->cstr_allocated && cstring->cstr_allocated);
+	fb_assert(cond);
+#endif
 #endif
 	return xdr_cstring(xdrs, reinterpret_cast<CSTRING*>(cstring));
 }
@@ -982,13 +945,10 @@ static bool_t xdr_cstring( XDR* xdrs, CSTRING* cstring)
 	SCHAR trash[4];
 	static const SCHAR filler[4] = { 0, 0, 0, 0 };
 
-	if (!xdr_long(xdrs, reinterpret_cast<SLONG*>(&cstring->cstr_length)))
+	if (!xdr_short(xdrs, reinterpret_cast<SSHORT*>(&cstring->cstr_length)))
 	{
 		return FALSE;
 	}
-
-	// string length was USHORT in older versions
-	fixupLength(xdrs, cstring->cstr_length);
 
 	switch (xdrs->x_op)
 	{
@@ -1028,6 +988,128 @@ static bool_t xdr_cstring( XDR* xdrs, CSTRING* cstring)
 }
 
 
+static bool_t xdr_datum( XDR* xdrs, const DSC* desc, BLOB_PTR* buffer)
+{
+/**************************************
+ *
+ *	x d r _ d a t u m
+ *
+ **************************************
+ *
+ * Functional description
+ *	Handle a data item by relative descriptor and buffer.
+ *
+ **************************************/
+	BLOB_PTR* p = buffer + (IPTR) desc->dsc_address;
+
+	switch (desc->dsc_dtype)
+	{
+	case dtype_dbkey:
+		fb_assert(false);	// dbkey should not get outside jrd,
+		// but in case it happenned in production server treat it as text
+		// Fall through ...
+
+	case dtype_text:
+		if (!xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(p), desc->dsc_length))
+		{
+			return FALSE;
+		}
+		break;
+
+	case dtype_varying:
+		{
+			fb_assert(desc->dsc_length >= sizeof(USHORT));
+			vary* v = reinterpret_cast<vary*>(p);
+			if (!xdr_short(xdrs, reinterpret_cast<SSHORT*>(&v->vary_length)))
+			{
+				return FALSE;
+			}
+			if (!xdr_opaque(xdrs, v->vary_string,
+							MIN((USHORT) (desc->dsc_length - 2), v->vary_length)))
+			{
+				return FALSE;
+			}
+			if (xdrs->x_op == XDR_DECODE && desc->dsc_length - 2 > v->vary_length)
+			{
+				memset(v->vary_string + v->vary_length, 0, desc->dsc_length - 2 - v->vary_length);
+			}
+		}
+		break;
+
+	case dtype_cstring:
+	    {
+			//SSHORT n;
+			USHORT n;
+			if (xdrs->x_op == XDR_ENCODE)
+			{
+				n = MIN(strlen(reinterpret_cast<char*>(p)), (ULONG) (desc->dsc_length - 1));
+			}
+			if (!xdr_short(xdrs, reinterpret_cast<SSHORT*>(&n)))
+				return FALSE;
+			if (!xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(p), n))
+				return FALSE;
+			if (xdrs->x_op == XDR_DECODE)
+				p[n] = 0;
+		}
+		break;
+
+	case dtype_short:
+		fb_assert(desc->dsc_length >= sizeof(SSHORT));
+		if (!xdr_short(xdrs, reinterpret_cast<SSHORT*>(p)))
+			return FALSE;
+		break;
+
+	case dtype_sql_time:
+	case dtype_sql_date:
+	case dtype_long:
+		fb_assert(desc->dsc_length >= sizeof(SLONG));
+		if (!xdr_long(xdrs, reinterpret_cast<SLONG*>(p)))
+			return FALSE;
+		break;
+
+	case dtype_real:
+		fb_assert(desc->dsc_length >= sizeof(float));
+		if (!xdr_float(xdrs, reinterpret_cast<float*>(p)))
+			return FALSE;
+		break;
+
+	case dtype_double:
+		fb_assert(desc->dsc_length >= sizeof(double));
+		if (!xdr_double(xdrs, reinterpret_cast<double*>(p)))
+			return FALSE;
+		break;
+
+	case dtype_timestamp:
+		fb_assert(desc->dsc_length >= 2 * sizeof(SLONG));
+		if (!xdr_long(xdrs, &((SLONG*) p)[0]))
+			return FALSE;
+		if (!xdr_long(xdrs, &((SLONG*) p)[1]))
+			return FALSE;
+		break;
+
+	case dtype_int64:
+		fb_assert(desc->dsc_length >= sizeof(SINT64));
+		if (!xdr_hyper(xdrs, p))
+			return FALSE;
+		break;
+
+	case dtype_array:
+	case dtype_quad:
+	case dtype_blob:
+		fb_assert(desc->dsc_length >= sizeof(struct bid));
+		if (!xdr_quad(xdrs, (struct bid*) p))
+			return FALSE;
+		break;
+
+	default:
+		fb_assert(FALSE);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+
 #ifdef DEBUG_XDR_MEMORY
 static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
 {
@@ -1063,8 +1145,7 @@ static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
 		}
 	}
 	else
-	{
-		// XDR_ENCODE or XDR_DECODE
+	{						// XDR_ENCODE or XDR_DECODE
 
 		// Allocate an unused slot in the packet tracking vector
 		// to start recording memory allocations for this packet.
@@ -1108,13 +1189,10 @@ static bool_t xdr_longs( XDR* xdrs, CSTRING* cstring)
  *	Pass a vector of longs.
  *
  **************************************/
-	if (!xdr_long(xdrs, reinterpret_cast<SLONG*>(&cstring->cstr_length)))
+	if (!xdr_short(xdrs, reinterpret_cast<SSHORT*>(&cstring->cstr_length)))
 	{
 		return FALSE;
 	}
-
-	// string length was USHORT in older versions
-	fixupLength(xdrs, cstring->cstr_length);
 
 	// Handle operation specific stuff, particularly memory allocation/deallocation
 
@@ -1133,10 +1211,10 @@ static bool_t xdr_longs( XDR* xdrs, CSTRING* cstring)
 		return TRUE;
 	}
 
-	const size_t n = cstring->cstr_length / sizeof(SLONG);
+	const ULONG n = cstring->cstr_length / sizeof(SLONG);
 
 	SLONG* next = (SLONG*) cstring->cstr_address;
-	for (const SLONG* const end = next + n; next < end; next++)
+	for (const SLONG* const end = next + (int) n; next < end; next++)
 	{
 		if (!xdr_long(xdrs, next))
 			return FALSE;
@@ -1161,19 +1239,24 @@ static bool_t xdr_message( XDR* xdrs, RMessage* message, const rem_fmt* format)
 	if (xdrs->x_op == XDR_FREE)
 		return TRUE;
 
-	rem_port* port = (rem_port*) xdrs->x_public;
+	const rem_port* port = (rem_port*) xdrs->x_public;
 
-	if (!message || !format)
+
+	if ((!message) || (!format))
+	{
 		return FALSE;
+	}
 
 	// If we are running a symmetric version of the protocol, just slop
 	// the bits and don't sweat the translations
 
 	if (port->port_flags & PORT_symmetric)
+	{
 		return xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(message->msg_address), format->fmt_length);
+	}
 
 	const dsc* desc = format->fmt_desc.begin();
-	for (const dsc* const end = format->fmt_desc.end(); desc < end; ++desc)
+	for (const dsc* const end = desc + format->fmt_count; desc < end; ++desc)
 	{
 		if (!xdr_datum(xdrs, desc, message->msg_address))
 			return FALSE;
@@ -1184,137 +1267,43 @@ static bool_t xdr_message( XDR* xdrs, RMessage* message, const rem_fmt* format)
 }
 
 
-static bool_t xdr_packed_message( XDR* xdrs, RMessage* message, const rem_fmt* format)
+static bool_t xdr_quad( XDR* xdrs, struct bid* ip)
 {
 /**************************************
  *
- *	x d r _ p a c k e d _ m e s s a g e
+ *	x d r _ q u a d
  *
  **************************************
  *
  * Functional description
- *	Map a formatted message.
+ *	Map from external to internal representation (or vice versa).
+ *	A "quad" is represented by two longs.
+ *	Currently used only for blobs
  *
  **************************************/
 
-	if (xdrs->x_op == XDR_FREE)
-		return TRUE;
-
-	const rem_port* const port = (rem_port*) xdrs->x_public;
-
-	if (!message || !format)
+	switch (xdrs->x_op)
+	{
+	case XDR_ENCODE:
+		if ((*xdrs->x_ops->x_putlong) (xdrs, reinterpret_cast<SLONG*>(&ip->bid_quad_high)) &&
+			(*xdrs->x_ops->x_putlong) (xdrs, reinterpret_cast<SLONG*>(&ip->bid_quad_low)))
+		{
+			return TRUE;
+		}
 		return FALSE;
 
-	// If we are running a symmetric version of the protocol, just slop
-	// the bits and don't sweat the translations
-
-	if (port->port_flags & PORT_symmetric)
-		return xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(message->msg_address), format->fmt_length);
-
-	// Optimize the message by transforming NULL indicators into a bitmap
-	// and then skipping the NULL items
-
-	class NullBitmap : private HalfStaticArray<UCHAR, 4>
-	{
-	public:
-		explicit NullBitmap(USHORT size)
+	case XDR_DECODE:
+		if (!(*xdrs->x_ops->x_getlong)(xdrs, reinterpret_cast<SLONG*>(&ip->bid_quad_high)))
 		{
-			resize(size);
-		}
-
-		void setNull(USHORT id)
-		{
-			data[id >> 3] |= (1 << (id & 7));
-		}
-
-		bool isNull(USHORT id) const
-		{
-			return data[id >> 3] & (1 << (id & 7));
-		}
-
-		UCHAR* getData()
-		{
-			return data;
-		}
-	};
-
-	fb_assert(format->fmt_desc.getCount() % 2 == 0);
-	const USHORT flagBytes = (format->fmt_desc.getCount() / 2 + 7) / 8;
-	NullBitmap nulls(flagBytes);
-
-	if (xdrs->x_op == XDR_ENCODE)
-	{
-		// First pass (odd elements): track NULL indicators
-
-		const dsc* desc = format->fmt_desc.begin() + 1;
-		for (const dsc* const end = format->fmt_desc.end(); desc < end; desc += 2)
-		{
-			fb_assert(desc->dsc_dtype == dtype_short);
-			const USHORT index = (USHORT) (desc - format->fmt_desc.begin()) / 2;
-			const SSHORT* const flag = (SSHORT*) (message->msg_address + (IPTR) desc->dsc_address);
-
-			if (*flag)
-				nulls.setNull(index);
-		}
-
-		// Send the NULL bitmap
-
-		if (!xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(nulls.getData()), flagBytes))
 			return FALSE;
-
-		// Second pass (even elements): process non-NULL items
-
-		desc = format->fmt_desc.begin();
-		for (const dsc* const end = format->fmt_desc.end(); desc < end; desc += 2)
-		{
-			const USHORT index = (USHORT) (desc - format->fmt_desc.begin()) / 2;
-
-			if (!nulls.isNull(index))
-			{
-				if (!xdr_datum(xdrs, desc, message->msg_address))
-					return FALSE;
-			}
 		}
-	}
-	else	// XDR_DECODE
-	{
-		// Zero-initialize the message
+		return (*xdrs->x_ops->x_getlong) (xdrs, reinterpret_cast<SLONG*>(&ip->bid_quad_low));
 
-		memset(message->msg_address, 0, format->fmt_length);
-
-		// Receive the NULL bitmap
-
-		if (!xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(nulls.getData()), flagBytes))
-			return FALSE;
-
-		// First pass (odd elements): initialize NULL indicators
-
-		const dsc* desc = format->fmt_desc.begin() + 1;
-		for (const dsc* const end = format->fmt_desc.end(); desc < end; desc += 2)
-		{
-			fb_assert(desc->dsc_dtype == dtype_short);
-			const USHORT index = (USHORT) (desc - format->fmt_desc.begin()) / 2;
-			SSHORT* const flag = (SSHORT*) (message->msg_address + (IPTR) desc->dsc_address);
-			*flag = nulls.isNull(index) ? -1 : 0;
-		}
-
-		// Second pass (even elements): process non-NULL items
-
-		desc = format->fmt_desc.begin();
-		for (const dsc* const end = format->fmt_desc.end(); desc < end; desc += 2)
-		{
-			const USHORT index = (USHORT) (desc - format->fmt_desc.begin()) / 2;
-
-			if (!nulls.isNull(index))
-			{
-				if (!xdr_datum(xdrs, desc, message->msg_address))
-					return FALSE;
-			}
-		}
+	case XDR_FREE:
+		return TRUE;
 	}
 
-	DEBUG_PRINTSIZE(xdrs, op_void);
-	return TRUE;
+	return FALSE;
 }
 
 
@@ -1346,7 +1335,7 @@ static bool_t xdr_request(XDR* xdrs,
 	{
 		request = port->port_objects[request_id];
 	}
-	catch (const status_exception&)
+	catch (const Firebird::status_exception&)
 	{
 		return FALSE;
 	}
@@ -1410,9 +1399,9 @@ static bool_t xdr_slice(XDR* xdrs, lstring* slice, /*USHORT sdl_length,*/ const 
 		if (!slice->lstr_address)
 		{
 			try {
-				slice->lstr_address = FB_NEW_POOL(*getDefaultMemoryPool()) UCHAR[slice->lstr_length];
+				slice->lstr_address = FB_NEW(*getDefaultMemoryPool()) UCHAR[slice->lstr_length];
 			}
-			catch (const BadAlloc&) {
+			catch (const Firebird::BadAlloc&) {
 				return false;
 			}
 
@@ -1433,13 +1422,10 @@ static bool_t xdr_slice(XDR* xdrs, lstring* slice, /*USHORT sdl_length,*/ const 
 
 	// Get descriptor of array element
 
+	ISC_STATUS_ARRAY status_vector;
 	struct sdl_info info;
-	{
-		Firebird::LocalStatus ls;
-		Firebird::CheckStatusWrapper s(&ls);
-		if (SDL_info(&s, sdl, &info, 0))
-			return FALSE;
-	}
+	if (SDL_info(status_vector, sdl, &info, 0))
+		return FALSE;
 
 	const dsc* desc = &info.sdl_info_element;
 	const rem_port* port = (rem_port*) xdrs->x_public;
@@ -1508,7 +1494,7 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 		{
 			statement = port->port_objects[statement_id];
 		}
-		catch (const status_exception&)
+		catch (const Firebird::status_exception&)
 		{
 			return FALSE;
 		}
@@ -1516,7 +1502,7 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 	else
 	{
 		if (!(statement = port->port_statement))
-			statement = port->port_statement = FB_NEW Rsr;
+			statement = port->port_statement = new Rsr;
 	}
 
 	if ((xdrs->x_op == XDR_ENCODE) && !direction)
@@ -1547,7 +1533,14 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 		// setting up a format
 
 		if (blr->cstr_length)
-			*fmt_ptr = PARSE_msg_format(blr->cstr_address, blr->cstr_length);
+		{
+			RMessage* temp_msg = (RMessage*) PARSE_messages(blr->cstr_address, blr->cstr_length);
+			if (temp_msg != (RMessage*) -1)
+			{
+				*fmt_ptr = (rem_fmt*) temp_msg->msg_address;
+				delete temp_msg;
+			}
+		}
 	}
 
 	// If we know the length of the message, make sure there is a buffer
@@ -1560,11 +1553,14 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 	if (!message || statement->rsr_format->fmt_length > statement->rsr_fmt_length)
 	{
 		RMessage* const org_message = message;
-		const ULONG org_length = message ? statement->rsr_fmt_length : 0;
+		const USHORT org_length = message ? statement->rsr_fmt_length : 0;
 		statement->rsr_fmt_length = statement->rsr_format->fmt_length;
-		statement->rsr_buffer = message = FB_NEW RMessage(statement->rsr_fmt_length);
+		statement->rsr_buffer = message = new RMessage(statement->rsr_fmt_length);
 		statement->rsr_message = message;
 		message->msg_next = message;
+#ifdef SCROLLABLE_CURSORS
+		message->msg_prior = message;
+#endif
 		if (org_length)
 		{
 			// dimitr:	the original buffer might have something useful inside
@@ -1607,7 +1603,7 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 		{
 			statement = port->port_objects[statement_id];
 		}
-		catch (const status_exception&)
+		catch (const Firebird::status_exception&)
 		{
 			return FALSE;
 		}
@@ -1622,19 +1618,20 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 
 	RMessage* message = statement->rsr_buffer;
 	if (!message)
+	{
+		// We should not call xdr_message() with NULL
 		return FALSE;
-
+	}
+	
 	statement->rsr_buffer = message->msg_next;
 	if (!message->msg_address)
 		message->msg_address = message->msg_buffer;
 
-	return (port->port_protocol >= PROTOCOL_VERSION13) ?
-		xdr_packed_message(xdrs, message, statement->rsr_format) :
-		xdr_message(xdrs, message, statement->rsr_format);
+	return xdr_message(xdrs, message, statement->rsr_format);
 }
 
 
-static bool_t xdr_status_vector(XDR* xdrs, DynamicStatusVector*& vector)
+static bool_t xdr_status_vector(XDR* xdrs, ISC_STATUS* vector)
 {
 /**************************************
  *
@@ -1652,90 +1649,75 @@ static bool_t xdr_status_vector(XDR* xdrs, DynamicStatusVector*& vector)
 
 	if (xdrs->x_op == XDR_FREE)
 	{
-		delete vector;
-		vector = NULL;
 		return TRUE;
 	}
 
-	if (!vector)
-		vector = FB_NEW_POOL(*getDefaultMemoryPool()) DynamicStatusVector();
-
-	StaticStatusVector vectorDecode;
-	const ISC_STATUS* vectorEncode = vector->value();
-
-	Stack<SCHAR*> space;
-	bool rc = false;
-
 	SLONG vec;
+	SCHAR* sp = NULL;
+	ISC_STATUS* const end = &vector[ISC_STATUS_LENGTH];
 
 	while (true)
 	{
+		if (vector >= end)
+			return FALSE;
 		if (xdrs->x_op == XDR_ENCODE)
-			vec = *vectorEncode++;
+			vec = (SLONG) * vector++;
 		if (!xdr_long(xdrs, &vec))
-			goto brk;
+			return FALSE;
 		if (xdrs->x_op == XDR_DECODE)
-			vectorDecode.push((ISC_STATUS) vec);
+			*vector++ = (ISC_STATUS) vec;
 
 		switch (static_cast<ISC_STATUS>(vec))
 		{
 		case isc_arg_end:
-			rc = true;
-			goto brk;
+			return TRUE;
 
 		case isc_arg_interpreted:
 		case isc_arg_string:
 		case isc_arg_sql_state:
+			if (vector >= end)
+				return FALSE;
 			if (xdrs->x_op == XDR_ENCODE)
 			{
-				if (!xdr_wrapstring(xdrs, (SCHAR**)(vectorEncode++)))
-					goto brk;
+				if (!xdr_wrapstring(xdrs, reinterpret_cast<SCHAR**>(vector++)))
+					return FALSE;
 			}
 			else
 			{
-				SCHAR* sp = NULL;
-
 				if (!xdr_wrapstring(xdrs, &sp))
-					goto brk;
-				vectorDecode.push((ISC_STATUS)(IPTR) sp);
-				space.push(sp);
+					return FALSE;
+				*vector++ = (ISC_STATUS)(IPTR) sp;
+				*vector = 0;
+
+				// Save string in circular buffer
+				Firebird::makePermanentVector(vector - 2);
+
+				// Free memory allocated by xdr_wrapstring()
+				if (sp)
+				{
+					XDR freeXdrs;
+					freeXdrs.x_public = xdrs->x_public;
+					freeXdrs.x_op = XDR_FREE;
+					if (!xdr_wrapstring(&freeXdrs, &sp))
+						return FALSE;
+					sp = NULL;
+				}
 			}
 			break;
 
 		case isc_arg_number:
 		default:
+			if (vector >= end)
+				return FALSE;
 			if (xdrs->x_op == XDR_ENCODE)
-				vec = *vectorEncode++;
+				vec = (SLONG) * vector++;
 			if (!xdr_long(xdrs, &vec))
-				goto brk;
+				return FALSE;
 			if (xdrs->x_op == XDR_DECODE)
-				vectorDecode.push((ISC_STATUS) vec);
+				*vector++ = (ISC_STATUS) vec;
 			break;
 		}
 	}
-
-brk:
-	// If everything is OK, copy temp buffer to dynamic storage
-	if (rc && xdrs->x_op == XDR_DECODE)
-	{
-		vector->save(vectorDecode.begin());
-	}
-
-	// Free memory allocated by xdr_wrapstring()
-	while (space.hasData())
-	{
-		SCHAR* sp = space.pop();
-		XDR freeXdrs;
-		freeXdrs.x_public = xdrs->x_public;
-		freeXdrs.x_op = XDR_FREE;
-		if (!xdr_wrapstring(&freeXdrs, &sp))
-		{
-			fb_assert(false);	// Very interesting how could it happen
-			return FALSE;
-		}
-	}
-
-	return rc;
 }
 
 
@@ -1763,7 +1745,7 @@ static bool_t xdr_trrq_blr(XDR* xdrs, CSTRING* blr)
 	rem_port* port = (rem_port*) xdrs->x_public;
 	Rpr* procedure = port->port_rpr;
 	if (!procedure)
-		procedure = port->port_rpr = FB_NEW Rpr;
+		procedure = port->port_rpr = new Rpr;
 
 	// Parse the blr describing the message.
 
@@ -1777,33 +1759,38 @@ static bool_t xdr_trrq_blr(XDR* xdrs, CSTRING* blr)
 	procedure->rpr_out_format = NULL;
 
 	RMessage* message = PARSE_messages(blr->cstr_address, blr->cstr_length);
-	while (message)
+	if (message != (RMessage*) -1)
 	{
-		switch (message->msg_number)
+		while (message)
 		{
-		case 0:
-			procedure->rpr_in_msg = message;
-			procedure->rpr_in_format = (rem_fmt*) message->msg_address;
-			message->msg_address = message->msg_buffer;
-			message = message->msg_next;
-			procedure->rpr_in_msg->msg_next = NULL;
-			break;
-		case 1:
-			procedure->rpr_out_msg = message;
-			procedure->rpr_out_format = (rem_fmt*) message->msg_address;
-			message->msg_address = message->msg_buffer;
-			message = message->msg_next;
-			procedure->rpr_out_msg->msg_next = NULL;
-			break;
-		default:
+			switch (message->msg_number)
 			{
-				RMessage* temp = message;
+			case 0:
+				procedure->rpr_in_msg = message;
+				procedure->rpr_in_format = (rem_fmt*) message->msg_address;
+				message->msg_address = message->msg_buffer;
 				message = message->msg_next;
-				delete temp;
+				procedure->rpr_in_msg->msg_next = NULL;
+				break;
+			case 1:
+				procedure->rpr_out_msg = message;
+				procedure->rpr_out_format = (rem_fmt*) message->msg_address;
+				message->msg_address = message->msg_buffer;
+				message = message->msg_next;
+				procedure->rpr_out_msg->msg_next = NULL;
+				break;
+			default:
+				{
+					RMessage* temp = message;
+					message = message->msg_next;
+					delete temp;
+				}
+				break;
 			}
-			break;
 		}
 	}
+	else
+		fb_assert(FALSE);
 
 	return TRUE;
 }
@@ -1867,7 +1854,7 @@ static void reset_statement( XDR* xdrs, SSHORT statement_id)
 			statement = port->port_objects[statement_id];
 			REMOTE_reset_statement(statement);
 		}
-		catch (const status_exception&)
+		catch (const Firebird::status_exception&)
 		{} // no-op
 	}
 }

@@ -99,8 +99,7 @@
 #include "../jrd/intl_classes.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/intl_classes.h"
-#include "../jrd/Collation.h"
-#include "../common/TextType.h"
+#include "../jrd/TextType.h"
 
 #include "../jrd/SimilarToMatcher.h"
 
@@ -138,7 +137,7 @@ static const UCHAR SLEUTH_SPECIAL[128] =
 
 // Below are templates for functions used in Collation implementation
 
-template <typename CharType, typename StrConverter = CanonicalConverter<> >
+template <typename StrConverter, typename CharType>
 class LikeMatcher : public PatternMatcher
 {
 public:
@@ -178,7 +177,7 @@ public:
 					 cvt_match_one(pool, ttype, sql_match_one, match_one_length);
 
 		fb_assert(length % sizeof(CharType) == 0);
-		return FB_NEW_POOL(pool) LikeMatcher(pool, ttype,
+		return FB_NEW(pool) LikeMatcher(pool, ttype,
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType),
 			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escape_length != 0,
 			*reinterpret_cast<const CharType*>(sql_match_any),
@@ -211,7 +210,7 @@ private:
 	Firebird::LikeEvaluator<CharType> evaluator;
 };
 
-template <typename CharType, typename StrConverter>
+template <typename StrConverter, typename CharType>
 class StartsMatcher : public PatternMatcher
 {
 public:
@@ -244,7 +243,7 @@ public:
 	{
 		StrConverter cvt(pool, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
-		return FB_NEW_POOL(pool) StartsMatcher(pool, ttype,
+		return FB_NEW(pool) StartsMatcher(pool, ttype,
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
 	}
 
@@ -265,7 +264,7 @@ private:
 	Firebird::StartsEvaluator<CharType> evaluator;
 };
 
-template <typename CharType, typename StrConverter = CanonicalConverter<UpcaseConverter<> > >
+template <typename StrConverter, typename CharType>
 class ContainsMatcher : public PatternMatcher
 {
 public:
@@ -297,7 +296,7 @@ public:
 	{
 		StrConverter cvt(pool, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
-		return FB_NEW_POOL(pool) ContainsMatcher(pool, ttype,
+		return FB_NEW(pool) ContainsMatcher(pool, ttype,
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
 	}
 
@@ -318,7 +317,7 @@ private:
 	Firebird::ContainsEvaluator<CharType> evaluator;
 };
 
-template <typename CharType, typename StrConverter = CanonicalConverter<> >
+template <typename StrConverter, typename CharType>
 class MatchesMatcher
 {
 public:
@@ -386,7 +385,7 @@ private:
 	}
 };
 
-template <typename CharType, typename StrConverter = CanonicalConverter<> >
+template <typename StrConverter, typename CharType>
 class SleuthMatcher
 {
 public:
@@ -638,7 +637,7 @@ private:
 			CharType c = *control++;
 			if (*control == *(CharType*) obj->getCanonicalChar(CHAR_GDML_SUBSTITUTE))
 			{
-				// Note: don't allow substitution characters larger than vector
+				/* Note: don't allow substitution characters larger than vector */
 				CharType** const end_vector = vector + (((int) c < FB_NELEM(vector)) ? c : 0);
 				while (v <= end_vector)
 					*v++ = 0;
@@ -710,26 +709,19 @@ private:
 
 		// YYY - need to add code watching for overflow of combined
 
-		return static_cast<ULONG>((comb - combined) * sizeof(CharType));
+		return (comb - combined) * sizeof(CharType);
 	}
 
 private:
 	static const int SLEUTH_INSENSITIVE;
 };
 
-template <typename CharType, typename StrConverter>
-const int SleuthMatcher<CharType, StrConverter>::SLEUTH_INSENSITIVE	= 1;
+template <typename StrConverter, typename CharType>
+const int SleuthMatcher<StrConverter, CharType>::SLEUTH_INSENSITIVE	= 1;
 
 
-template <
-	typename pStartsMatcher,
-	typename pContainsMatcher,
-	typename pLikeMatcher,
-	typename pSimilarToMatcher,
-	typename pSubstringSimilarMatcher,
-	typename pMatchesMatcher,
-	typename pSleuthMatcher
->
+template <typename pStartsMatcher, typename pContainsMatcher, typename pLikeMatcher,
+	typename pSimilarToMatcher, typename pMatchesMatcher, typename pSleuthMatcher>
 class CollationImpl : public Collation
 {
 public:
@@ -766,37 +758,31 @@ public:
 	}
 
 	virtual bool like(MemoryPool& pool, const UCHAR* s, SLONG sl,
-		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escapeLen)
+		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escape_length)
 	{
-		return pLikeMatcher::evaluate(pool, this, s, sl, p, pl, escape, escapeLen,
+		return pLikeMatcher::evaluate(pool, this, s, sl, p, pl, escape, escape_length,
 			getCharSet()->getSqlMatchAny(), getCharSet()->getSqlMatchAnyLength(),
 			getCharSet()->getSqlMatchOne(), getCharSet()->getSqlMatchOneLength());
 	}
 
 	virtual PatternMatcher* createLikeMatcher(MemoryPool& pool, const UCHAR* p, SLONG pl,
-		const UCHAR* escape, SLONG escapeLen)
+		const UCHAR* escape, SLONG escape_length)
 	{
-		return pLikeMatcher::create(pool, this, p, pl, escape, escapeLen,
+		return pLikeMatcher::create(pool, this, p, pl, escape, escape_length,
 			getCharSet()->getSqlMatchAny(), getCharSet()->getSqlMatchAnyLength(),
 			getCharSet()->getSqlMatchOne(), getCharSet()->getSqlMatchOneLength());
 	}
 
 	virtual bool similarTo(MemoryPool& pool, const UCHAR* s, SLONG sl,
-		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escapeLen)
+		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escape_length)
 	{
-		return pSimilarToMatcher::evaluate(pool, this, s, sl, p, pl, escape, escapeLen);
+		return pSimilarToMatcher::evaluate(pool, this, s, sl, p, pl, escape, escape_length);
 	}
 
 	virtual PatternMatcher* createSimilarToMatcher(MemoryPool& pool, const UCHAR* p, SLONG pl,
-		const UCHAR* escape, SLONG escapeLen)
+		const UCHAR* escape, SLONG escape_length)
 	{
-		return pSimilarToMatcher::create(pool, this, p, pl, escape, escapeLen);
-	}
-
-	virtual BaseSubstringSimilarMatcher* createSubstringSimilarMatcher(MemoryPool& pool,
-		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escapeLen)
-	{
-		return pSubstringSimilarMatcher::create(pool, this, p, pl, escape, escapeLen);
+		return pSimilarToMatcher::create(pool, this, p, pl, escape, escape_length);
 	}
 
 	virtual bool contains(MemoryPool& pool, const UCHAR* s, SLONG sl, const UCHAR* p, SLONG pl)
@@ -810,40 +796,32 @@ public:
 	}
 };
 
-template <typename T>
-Collation* newCollation(MemoryPool& pool, TTYPE_ID id, texttype* tt, CharSet* cs)
-{
-	using namespace Firebird;
+using namespace Firebird;
 
-	typedef StartsMatcher<UCHAR, NullStrConverter> StartsMatcherUCharDirect;
-	typedef StartsMatcher<UCHAR, CanonicalConverter<> > StartsMatcherUCharCanonical;
-	typedef ContainsMatcher<UCHAR, UpcaseConverter<> > ContainsMatcherUCharDirect;
+typedef StartsMatcher<NullStrConverter, UCHAR> StartsMatcherUCharDirect;
+typedef StartsMatcher<CanonicalConverter<NullStrConverter>, UCHAR> StartsMatcherUCharCanonical;
 
-	typedef CollationImpl<
-		StartsMatcherUCharDirect,
-		ContainsMatcherUCharDirect,
-		LikeMatcher<T>,
-		SimilarToMatcher<T>,
-		SubstringSimilarMatcher<T>,
-		MatchesMatcher<T>,
-		SleuthMatcher<T>
-	> DirectImpl;
+typedef ContainsMatcher<UpcaseConverter<NullStrConverter>, UCHAR> ContainsMatcherUCharDirect;
+//typedef ContainsMatcher<UpcaseConverter<NullStrConverter>, USHORT> ContainsMatcherUShortDirect;
+//typedef ContainsMatcher<UpcaseConverter<NullStrConverter>, ULONG> ContainsMatcherULongDirect;
 
-	typedef CollationImpl<
-		StartsMatcherUCharCanonical,
-		ContainsMatcher<T>,
-		LikeMatcher<T>,
-		SimilarToMatcher<T>,
-		SubstringSimilarMatcher<T>,
-		MatchesMatcher<T>,
-		SleuthMatcher<T>
-	> NonDirectImpl;
+typedef MatchesMatcher<CanonicalConverter<NullStrConverter>, UCHAR> MatchesMatcherUCharCanonical;
+typedef SleuthMatcher<CanonicalConverter<NullStrConverter>, UCHAR> SleuthMatcherUCharCanonical;
+typedef LikeMatcher<CanonicalConverter<NullStrConverter>, UCHAR> LikeMatcherUCharCanonical;
+typedef SimilarToMatcher<CanonicalConverter<NullStrConverter>, UCHAR> SimilarToMatcherUCharCanonical;
+typedef ContainsMatcher<CanonicalConverter<UpcaseConverter<NullStrConverter> >, UCHAR> ContainsMatcherUCharCanonical;
 
-	if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
-		return FB_NEW_POOL(pool) DirectImpl(id, tt, cs);
-	else
-		return FB_NEW_POOL(pool) NonDirectImpl(id, tt, cs);
-}
+typedef MatchesMatcher<CanonicalConverter<NullStrConverter>, USHORT> MatchesMatcherUShortCanonical;
+typedef SleuthMatcher<CanonicalConverter<NullStrConverter>, USHORT> SleuthMatcherUShortCanonical;
+typedef LikeMatcher<CanonicalConverter<NullStrConverter>, USHORT> LikeMatcherUShortCanonical;
+typedef SimilarToMatcher<CanonicalConverter<NullStrConverter>, USHORT> SimilarToMatcherUShortCanonical;
+typedef ContainsMatcher<CanonicalConverter<UpcaseConverter<NullStrConverter> >, USHORT> ContainsMatcherUShortCanonical;
+
+typedef MatchesMatcher<CanonicalConverter<NullStrConverter>, ULONG> MatchesMatcherULongCanonical;
+typedef SleuthMatcher<CanonicalConverter<NullStrConverter>, ULONG> SleuthMatcherULongCanonical;
+typedef LikeMatcher<CanonicalConverter<NullStrConverter>, ULONG> LikeMatcherULongCanonical;
+typedef SimilarToMatcher<CanonicalConverter<NullStrConverter>, ULONG> SimilarToMatcherULongCanonical;
+typedef ContainsMatcher<CanonicalConverter<UpcaseConverter<NullStrConverter> >, ULONG> ContainsMatcherULongCanonical;
 
 }	// namespace
 
@@ -856,33 +834,75 @@ namespace Jrd {
 
 Collation* Collation::createInstance(MemoryPool& pool, TTYPE_ID id, texttype* tt, CharSet* cs)
 {
+	fb_assert(tt->texttype_canonical_width == 1 ||
+			  tt->texttype_canonical_width == 2 ||
+			  tt->texttype_canonical_width == 4);
+
 	switch (tt->texttype_canonical_width)
 	{
 		case 1:
-			return newCollation<UCHAR>(pool, id, tt, cs);
+			if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
+			{
+				return FB_NEW(pool) CollationImpl<StartsMatcherUCharDirect, ContainsMatcherUCharDirect,
+					LikeMatcherUCharCanonical, SimilarToMatcherUCharCanonical,
+					MatchesMatcherUCharCanonical, SleuthMatcherUCharCanonical>(id, tt, cs);
+			}
+
+			return FB_NEW(pool) CollationImpl<StartsMatcherUCharCanonical, ContainsMatcherUCharCanonical,
+				LikeMatcherUCharCanonical, SimilarToMatcherUCharCanonical,
+				MatchesMatcherUCharCanonical, SleuthMatcherUCharCanonical>(id, tt, cs);
 
 		case 2:
-			return newCollation<USHORT>(pool, id, tt, cs);
+			if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
+			{
+				return FB_NEW(pool) CollationImpl<StartsMatcherUCharDirect, ContainsMatcherUCharDirect,
+					LikeMatcherUShortCanonical, SimilarToMatcherUShortCanonical,
+					MatchesMatcherUShortCanonical, SleuthMatcherUShortCanonical>(id, tt, cs);
+			}
+
+			return FB_NEW(pool) CollationImpl<StartsMatcherUCharCanonical, ContainsMatcherUShortCanonical,
+				LikeMatcherUShortCanonical, SimilarToMatcherUShortCanonical,
+				MatchesMatcherUShortCanonical, SleuthMatcherUShortCanonical>(id, tt, cs);
 
 		case 4:
-			return newCollation<ULONG>(pool, id, tt, cs);
+			if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
+			{
+				return FB_NEW(pool) CollationImpl<StartsMatcherUCharDirect, ContainsMatcherUCharDirect,
+					LikeMatcherULongCanonical, SimilarToMatcherULongCanonical,
+					MatchesMatcherULongCanonical, SleuthMatcherULongCanonical>(id, tt, cs);
+			}
+
+			return FB_NEW(pool) CollationImpl<StartsMatcherUCharCanonical, ContainsMatcherULongCanonical,
+				LikeMatcherULongCanonical, SimilarToMatcherULongCanonical,
+				MatchesMatcherULongCanonical, SleuthMatcherULongCanonical>(id, tt, cs);
 	}
 
 	fb_assert(false);
 	return NULL;	// compiler silencer
 }
 
-void Collation::release(thread_db* tdbb)
+
+void Collation::release()
 {
 	fb_assert(useCount >= 0);
 
 	if (existenceLock)
+	{
+		// Establish a thread context
+		ThreadContextHolder tdbb;
+
+		tdbb->setDatabase(existenceLock->lck_dbb);
+		tdbb->setAttachment(existenceLock->lck_attachment);
+		Jrd::ContextPoolHolder context(tdbb, 0);
+
 		LCK_release(tdbb, existenceLock);
 
-	useCount = 0;
+		useCount = 0;
+	}
 }
 
-void Collation::destroy(thread_db* tdbb)
+
+void Collation::destroy()
 {
 	fb_assert(useCount == 0);
 
@@ -891,19 +911,21 @@ void Collation::destroy(thread_db* tdbb)
 
 	delete tt;
 
-	release(tdbb);
+	release();
 
 	delete existenceLock;
 	existenceLock = NULL;
 }
 
-void Collation::incUseCount(thread_db* /*tdbb*/)
+
+void Collation::incUseCount(thread_db* tdbb)
 {
 	fb_assert(!obsolete);
 	fb_assert(useCount >= 0);
 
 	++useCount;
 }
+
 
 void Collation::decUseCount(thread_db* tdbb)
 {

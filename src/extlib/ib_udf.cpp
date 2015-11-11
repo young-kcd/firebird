@@ -55,7 +55,7 @@ int MATHERR(struct exception_type*)
 	return 1;
 }
 #undef exception_type
-#endif // SOLARIS
+#endif /* SOLARIS */
 #endif //__ICC
 
 typedef char* pChar;
@@ -77,7 +77,7 @@ pChar EXPORT IB_UDF_ascii_char( ISC_LONG *a)
 
 	char* b = (char *) ib_util_malloc(2);
 	*b = (char) (*a);
-	// let us not forget to NULL terminate
+	/* let us not forget to NULL terminate */
 	b[1] = '\0';
 	return (b);
 }
@@ -192,7 +192,7 @@ pChar EXPORT IB_UDF_lower(const char *s)
 	if (!s)
 		return 0;
 
-	char* buf = (char *) ib_util_malloc(static_cast<long>(strlen(s) + 1));
+	char* buf = (char *) ib_util_malloc(strlen(s) + 1);
 	char* p = buf;
 	while (*s)
 	{
@@ -217,8 +217,8 @@ pChar EXPORT IB_UDF_lpad( const char *s, ISC_LONG *a, const char *c)
 	if (avalue >= 0)
 	{
 		long current = 0;
-		const long length = static_cast<long>(strlen(s));
-		const long padlength = static_cast<long>(strlen(c));
+		const long length = strlen(s);
+		const long padlength = strlen(c);
 		const long stop = avalue < length ? avalue : length;
 		char* buf = (char*) ib_util_malloc(avalue + 1);
 
@@ -248,10 +248,10 @@ pChar EXPORT IB_UDF_ltrim( const char *s)
 	if (!s)
 		return 0;
 
-	while (*s == ' ')		// skip leading blanks
+	while (*s == ' ')		/* skip leading blanks */
 		s++;
 
-	const long length = static_cast<long>(strlen(s));
+	const long length = strlen(s);
 	char* buf = (char *) ib_util_malloc(length + 1);
 	memcpy(buf, s, length);
 	buf[length] = '\0';
@@ -304,9 +304,9 @@ pChar EXPORT IB_UDF_rpad( const char *s, ISC_LONG *a, const char *c)
 
 	if (avalue >= 0)
 	{
-		const long length = static_cast<long>(strlen(s));
+		const long length = strlen(s);
 		long current = (avalue - length) < 0 ? avalue : length;
-		const long padlength = static_cast<long>(strlen(c));
+		const long padlength = strlen(c);
 		char* buf = (char*) ib_util_malloc (avalue + 1);
 		memcpy(buf, s, current);
 
@@ -352,7 +352,7 @@ ISC_LONG EXPORT IB_UDF_sign( double *a)
 		return 1;
 	if (*a < 0)
 		return -1;
-	// If neither is true then it equals 0
+	/* If neither is true then it equals 0 */
 	return 0;
 }
 
@@ -378,7 +378,7 @@ pChar EXPORT IB_UDF_substr(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 	}
 
 	char* buf;
-	long length = static_cast<long>(strlen(s));
+	long length = strlen(s);
 	if (!length ||
 		*m > *n ||
 		*m < 1  ||
@@ -390,8 +390,10 @@ pChar EXPORT IB_UDF_substr(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 	}
 	else
 	{
-		// we want from the mth char to the nth char inclusive, so add one to the length.
-		// CVC: We need to compensate for n if it's longer than s's length
+		/* we want from the mth char to the
+		   nth char inclusive, so add one to
+		   the length. */
+		/* CVC: We need to compensate for n if it's longer than s's length */
 		if (*n > length) {
 			length -= *m - 1;
 		}
@@ -417,7 +419,7 @@ pChar EXPORT IB_UDF_substrlen(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 	}
 
 	char* buf;
-	long length = static_cast<long>(strlen(s));
+	long length = strlen(s);
 	if (!length ||
 		*m < 1  ||
 		*n < 1  ||
@@ -428,8 +430,10 @@ pChar EXPORT IB_UDF_substrlen(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 	}
 	else
 	{
-		// we want from the mth char to the (m+n)th char inclusive, so add one to the length.
-		// CVC: We need to compensate for n if it's longer than s's length
+		/* we want from the mth char to the (m+n)th char inclusive,
+		 * so add one to the length.
+		 */
+		/* CVC: We need to compensate for n if it's longer than s's length */
 		if (*m + *n - 1 > length) {
 			length -= *m - 1;
 		}
@@ -445,7 +449,7 @@ pChar EXPORT IB_UDF_substrlen(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 
 ISC_LONG EXPORT IB_UDF_strlen( const char *a)
 {
-	return static_cast<ISC_LONG>(strlen(a));
+	return (strlen(a));
 }
 
 double EXPORT IB_UDF_tan( double *a)

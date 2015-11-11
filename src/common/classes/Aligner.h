@@ -53,7 +53,6 @@ public:
 	{
 		fb_assert(len % sizeof(C) == 0);
 #ifdef RISC_ALIGNMENT
-		fb_assert(sizeof(C) == 2 || sizeof(C) == 4 || sizeof(C) == 8 || sizeof(C) == 16);
 		if ((IPTR) userBuffer & (sizeof(C) - 1))
 		{
 			bPointer = localBuffer.getBuffer(len / sizeof(C) + (bSize % sizeof(C) ? 1 : 0));
@@ -81,24 +80,6 @@ public:
 	}
 };
 
-// Align in/out parameter.
-template <typename C>
-class BiAligner : public OutAligner<C>
-{
-public:
-	BiAligner(UCHAR* buf, ULONG len)
-		: OutAligner<C>(buf, len)
-	{
-#ifdef RISC_ALIGNMENT
-		C* ptr = this->operator C*();
-		if (buf != reinterpret_cast<UCHAR*>(ptr))
-		{
-			memcpy(ptr, buf, len);
-		}
-#endif
-	}
-};
-
 // Aligns input parameter.
 template <typename C>
 class Aligner
@@ -114,7 +95,6 @@ public:
 	{
 		fb_assert(len % sizeof(C) == 0);
 #ifdef RISC_ALIGNMENT
-		fb_assert(sizeof(C) == 2 || sizeof(C) == 4 || sizeof(C) == 8 || sizeof(C) == 16);
 		if ((IPTR) buf & (sizeof(C) - 1))
 		{
 			C* tempPointer = localBuffer.getBuffer(len / sizeof(C) + (len % sizeof(C) ? 1 : 0));
@@ -131,6 +111,13 @@ public:
 		return bPointer;
 	}
 };
+
+// Aligns tail in *_rpt structures when later too active casts are used
+#if defined(RISC_ALIGNMENT) && (SIZEOF_VOID_P < FB_DOUBLE_ALIGN)
+#define RPT_ALIGN(rpt) union { rpt; SINT64 dummy; }
+#else
+#define RPT_ALIGN(rpt) rpt
+#endif
 
 } // namespace Firebird
 

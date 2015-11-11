@@ -63,13 +63,15 @@
 #include <stddef.h>				// offsetof
 
 #include <stdio.h>
-#include "dyn_consts.h"
+#include "../jrd/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/constants.h"
 
 #ifdef GPRE_FORTRAN
 #if defined AIX || defined AIX_PPC || defined __sun
+#ifndef BOOT_BUILD
 #define FTN_BLK_DATA
+#endif
 #endif
 #endif
 
@@ -96,6 +98,7 @@ enum lang_t
 	lang_internal,
 	lang_pascal,
 	lang_fortran,
+	//lang_epascal,
 	lang_cobol,
 	lang_c,
 	lang_ada,
@@ -277,7 +280,7 @@ struct gpre_nod
 	gpre_nod* nod_arg[1];		// argument
 };
 
-inline FB_SIZE_T NOD_LEN(const FB_SIZE_T cnt)
+inline size_t NOD_LEN(const size_t cnt)
 {
 	return sizeof(gpre_nod) + (cnt ? cnt - 1 : 0) * sizeof(gpre_nod*);
 }
@@ -408,6 +411,16 @@ struct gpre_trg
 };
 
 const size_t TRG_LEN = sizeof(gpre_trg);
+
+// Beware the numbers cannot change
+enum gpre_trg_types {
+	PRE_STORE_TRIGGER = 1,
+	//POST_STORE_TRIGGER = 2,
+	PRE_MODIFY_TRIGGER = 3,
+	POST_MODIFY_TRIGGER = 4,
+	//PRE_ERASE_TRIGGER = 5,
+	POST_ERASE_TRIGGER = 6
+};
 
 
 // Linked list stack stuff
@@ -836,6 +849,12 @@ struct gpre_dbb
 	int dbb_buffercount;
 	ULONG dbb_length;				// Length of database in pages, if known
 	gpre_file* dbb_logfiles;
+#ifdef SCROLLABLE_CURSORS
+	SSHORT dbb_base_level;			// code level of the engine we are talking to
+#endif
+#ifdef FLINT_CACHE // In practice, never used.
+	gpre_file* dbb_cache_file;
+#endif
 	gpre_file* dbb_files;
 };
 
@@ -847,7 +866,11 @@ enum dbb_flags_valss {
 	DBB_in_trans	= 4,		// included in this transaction
 //	DBB_drop_log	= 8,
 	DBB_log_serial	= 16
+//	DBB_log_default	= 32,
 //	DBB_cascade		= 64,		// only set but not used
+//	DBB_drop_cache	= 128,		// only set but not used
+//	DBB_create_database	= 256,	// unused
+//	DBB_v3			= 512		// Database is V3; not supported anymore in FB2.5
 };
 
 enum dbb_scope_vals {
@@ -867,7 +890,7 @@ struct tpb {
 	UCHAR tpb_string[1];		// actual TPB
 };
 
-inline FB_SIZE_T TPB_LEN(const FB_SIZE_T tpb_string_len)
+inline size_t TPB_LEN(const size_t tpb_string_len)
 {
 	return sizeof(tpb) + tpb_string_len;
 }
@@ -940,7 +963,7 @@ struct gpre_rse
 };
 
 
-inline FB_SIZE_T RSE_LEN(const FB_SIZE_T cnt)
+inline size_t RSE_LEN(const size_t cnt)
 {
 	return sizeof(gpre_rse) + (cnt ? cnt - 1 : 0) * sizeof (int*);
 	// CVC: The statement below avoids problem with cnt==0 but at the
@@ -1122,7 +1145,7 @@ struct slc
 	} slc_rpt[1];
 };
 
-inline FB_SIZE_T SLC_LEN(const FB_SIZE_T count)
+inline size_t SLC_LEN(const size_t count)
 {
 	return sizeof(slc) + sizeof(slc::slc_repeat) * (count ? count - 1 : 0);
 }
@@ -1178,6 +1201,9 @@ public:
 	gpre_ctx* req_update;		// update context for mass insert
 	gpre_req* req_next;			// next request in module or metadata action
 	ref* req_values;			// host values required
+#ifdef SCROLLABLE_CURSORS
+	ref* req_avalues;			// parameters to pass to asynchronous message
+#endif
 	ref* req_eof;				// eof reference for FOR
 	//ref* req_index;				// index variable; unused
 	ref* req_references;		// fields referenced in context
@@ -1187,6 +1213,9 @@ public:
 	gpre_port* req_primary;		// primary input or output port
 	gpre_port* req_sync;		// synchronization port
 	gpre_port* req_vport;		// port to send values in
+#ifdef SCROLLABLE_CURSORS
+	gpre_port* req_aport;		// port for asynchronous message
+#endif
 	gpre_req* req_routine;		// other requests in routine
 	blb*		req_blobs;		// blobs in request
 	slc* req_slice;				// slice for request
@@ -1220,10 +1249,11 @@ public:
 	}
 	inline void add_cstring(const char* string)
 	{
-		add_byte(static_cast<int>(strlen(string)));
+		add_byte(strlen(string));
 		UCHAR c;
-		while ((c = *string++))
+		while (c = *string++) {
 			add_byte(c);
+		}
 	}
 
 };
@@ -1237,8 +1267,12 @@ enum req_flags_vals {
 	REQ_sql_blob_open		= 8192,		// request is SQL open blob cursor
 	REQ_sql_blob_create		= 16384,	// request is SQL create blob cursor
 	REQ_sql_database_dyn	= 32768,	// request is to generate DYN to add files o database
-	REQ_blr_version4		= 65536,	// request must generate blr_version4
-	REQ_sql_returning		= 131072	// RETURNING clause is present
+#ifdef SCROLLABLE_CURSORS
+	REQ_scroll				= 65536,	// request is a scrollable cursor
+	REQ_backwards			= 131072,	// request was last scrolled backwards
+#endif
+	REQ_blr_version4		= 262144,	// request must generate blr_version4
+	REQ_sql_returning		= 524288	// RETURNING clause is present
 };
 
 const size_t REQ_LEN = sizeof(gpre_req);
@@ -1261,7 +1295,7 @@ struct gpre_ctx {
 };
 
 enum ctx_flags_vals {
-	CTX_null = 1				// context evaluates to NULL
+	CTX_null	= 1				// context evaluates to NULL
 };
 
 const size_t CTX_LEN = sizeof(gpre_ctx);
@@ -1511,7 +1545,7 @@ struct upd {
 
 const size_t UPD_LEN = sizeof(upd);
 
-#include "../common/dsc.h"
+#include "../jrd/dsc.h"
 #include "parse.h"
 
 // GPRE wide globals

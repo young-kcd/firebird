@@ -25,8 +25,8 @@
 #include "firebird.h"
 #include "../common/classes/alloc.h"
 #include "../intl/ldcommon.h"
-#include "../common/CharSet.h"
-#include "../common/IntlUtil.h"
+#include "../jrd/CharSet.h"
+#include "../jrd/IntlUtil.h"
 #include "lc_narrow.h"
 #include "ld_proto.h"
 #include <limits.h>
@@ -268,8 +268,7 @@ USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar
 			}
 		}
 		else
-		{
-			// (col->IsCompress)
+		{					// (col->IsCompress)
 			const bool complete = (USHORT) (i + 1) < iInLen;
 
 			if (complete)
@@ -810,7 +809,7 @@ bool LC_NARROW_family2(
 	if (attributes & ~TEXTTYPE_ATTR_PAD_SPACE)
 		return false;
 
-	TextTypeImpl* impl = FB_NEW_POOL(*getDefaultMemoryPool()) TextTypeImpl;
+	TextTypeImpl* impl = FB_NEW(*getDefaultMemoryPool()) TextTypeImpl;
 
 	tt->texttype_version			= TEXTTYPE_VERSION_1;
 	tt->texttype_name				= name;

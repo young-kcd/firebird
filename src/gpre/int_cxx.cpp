@@ -29,12 +29,13 @@
 
 #include "firebird.h"
 #include <stdio.h>
+#include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/lang_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../common/utils_proto.h"
 
 static void align(const int);
@@ -286,9 +287,10 @@ static void gen_compile( const gpre_req* request, int column)
 	column += INDENT;
 	//const gpre_dbb* db = request->req_database;
 	//const gpre_sym* symbol = db->dbb_name;
-	//align(column);
+	fprintf(gpreGlob.out_file, "if (!%s)", request->req_handle);
+	align(column);
 	fprintf(gpreGlob.out_file,
-		"%s.compile(tdbb, (UCHAR*) jrd_%"ULONGFORMAT", sizeof(jrd_%"ULONGFORMAT"));",
+		"%s = CMP_compile2 (tdbb, (UCHAR*) jrd_%" ULONGFORMAT ", sizeof(jrd_%" ULONGFORMAT "), true);",
 			   request->req_handle, request->req_ident, request->req_ident);
 }
 
@@ -476,7 +478,7 @@ static void gen_receive( const gpre_req* request, const gpre_port* port)
 {
 
 	fprintf(gpreGlob.out_file,
-			   "EXE_receive (tdbb, %s, %d, %d, (UCHAR*) &jrd_%"ULONGFORMAT");",
+			   "EXE_receive (tdbb, %s, %d, %d, (UCHAR*) &jrd_%" ULONGFORMAT ");",
 			   request->req_handle, port->por_msg_number, port->por_length,
 			   port->por_ident);
 }
@@ -493,7 +495,7 @@ static void gen_request( const gpre_req* request)
 	if (!(request->req_flags & REQ_exp_hand))
 		fprintf(gpreGlob.out_file, "static void\t*%s;\t// request handle \n", request->req_handle);
 
-	fprintf(gpreGlob.out_file, "static const UCHAR\tjrd_%"ULONGFORMAT" [%d] =",
+	fprintf(gpreGlob.out_file, "static const UCHAR\tjrd_%" ULONGFORMAT " [%d] =",
 			   request->req_ident, request->req_length);
 	align(INDENT);
 	fprintf(gpreGlob.out_file, "{\t// blr string \n");
@@ -582,11 +584,11 @@ static void gen_send( const gpre_req* request, const gpre_port* port, int column
 		align(column);
 		fprintf(gpreGlob.out_file, "if (ignore_perm)");
 		align(column);
-		fprintf(gpreGlob.out_file, "\trequest->getStatement()->flags |= JrdStatement::FLAG_IGNORE_PERM;");
+		fprintf(gpreGlob.out_file, "\trequest->req_flags |= req_ignore_perm;");
 	}
 	align(column);
 
-	fprintf(gpreGlob.out_file, "EXE_send (tdbb, %s, %d, %d, (UCHAR*) &jrd_%"ULONGFORMAT");",
+	fprintf(gpreGlob.out_file, "EXE_send (tdbb, %s, %d, %d, (UCHAR*) &jrd_%" ULONGFORMAT ");",
 			   request->req_handle, port->por_msg_number, port->por_length, port->por_ident);
 }
 
@@ -714,7 +716,7 @@ static void make_port( const gpre_port* port, int column)
 			fprintf(gpreGlob.out_file, fmtstr, reference->ref_ident, name);
 	}
 	align(column);
-	fprintf(gpreGlob.out_file, "} jrd_%"ULONGFORMAT";", port->por_ident);
+	fprintf(gpreGlob.out_file, "} jrd_%" ULONGFORMAT ";", port->por_ident);
 }
 
 

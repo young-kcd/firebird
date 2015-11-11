@@ -28,6 +28,7 @@
 
 #include "firebird.h"
 #include "../jrd/ibase.h"
+#include "../jrd/common.h"
 #include "../jrd/constants.h"
 #include "../jrd/ods.h"
 
@@ -67,7 +68,8 @@ void JRDMET_init( gpre_dbb* db)
 		const int* fld = relfld + RFLD_RPT;
 		for (int n = 0; fld[RFLD_F_NAME]; ++n, fld += RFLD_F_LENGTH)
 		{
-			const gfld* gfield = &gfields[fld[RFLD_F_ID]];
+			const gfld* gfield =
+				fld[RFLD_F_UPD_MINOR] ? &gfields[fld[RFLD_F_UPD_ID]] : &gfields[fld[RFLD_F_ID]];
 			gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
 			relation->rel_fields = field;
 			field->fld_relation = relation;
@@ -80,29 +82,21 @@ void JRDMET_init( gpre_dbb* db)
 			{
 				field->fld_dtype = dtype_cstring;
 				field->fld_flags |= FLD_text;
-
+				++field->fld_length;
 				if (gfield->gfld_sub_type == dsc_text_type_metadata)
 				{
-					if (gpreGlob.sw_language == lang_internal)
-						field->fld_flags |= FLD_charset;
-					else
-						field->fld_length *= 4;
-
+					field->fld_flags |= FLD_charset;
 					field->fld_charset_id = CS_METADATA;
 					field->fld_collate_id = COLLATE_NONE;
 					field->fld_ttype = ttype_metadata;
 				}
 				else
 				{
-					if (gpreGlob.sw_language == lang_internal)
-						field->fld_flags |= FLD_charset;
-
+					field->fld_flags |= FLD_charset;
 					field->fld_charset_id = CS_NONE;
 					field->fld_collate_id = COLLATE_NONE;
 					field->fld_ttype = ttype_none;
 				}
-
-				++field->fld_length;
 			}
 			else if (field->fld_dtype == dtype_blob)
 			{

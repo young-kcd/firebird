@@ -38,9 +38,9 @@
 //  FSG (Frank Schlottmann-Gödde) 8.Mar.2002 - tiny cobol support
 //       fixed Bug No. 526204
 //
-// 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
-//
 //  Stephen W. Boyd                - Added support for new features.
+//
+// 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
 //
 //____________________________________________________________
 //
@@ -59,17 +59,12 @@
 #include "../gpre/gpre_meta.h"
 #include "../gpre/msc_proto.h"
 #include "../gpre/par_proto.h"
+#include "../gpre/gpreswi.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/TempFile.h"
-#include "../common/classes/Switches.h"
-#include "../gpre/gpreswi.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
-
-#ifdef HAVE_LOCALE_H
-#include <locale.h>
 #endif
 
 // Globals
@@ -89,7 +84,7 @@ static bool			file_rename(TEXT*, const TEXT*, const TEXT*);
 static void			finish_based(act*);
 #endif
 static int			get_char(FILE*);
-static bool			get_switches(int, TEXT**, const Switches::in_sw_tab_t*, sw_tab_t*, TEXT**);
+static bool			get_switches(int, TEXT**, const in_sw_tab_t*, sw_tab_t*, TEXT**);
 static tok*			get_token();
 static int			nextchar();
 static SLONG		pass1(const TEXT*);
@@ -242,12 +237,6 @@ const UCHAR CHR_INTRODUCER	= 32;
 const UCHAR CHR_DBLQUOTE	= 64;
 
 
-static void atexit_fb_shutdown()
-{
-	fb_shutdown(0, fb_shutrsn_app_stopped);
-}
-
-
 //____________________________________________________________
 //
 //	Main line routine for C preprocessor.  Initializes
@@ -257,15 +246,9 @@ static void atexit_fb_shutdown()
 
 int main(int argc, char* argv[])
 {
-#ifdef HAVE_LOCALE_H
-	// Pick up the system locale to allow SYSTEM<->UTF8 conversions
-	setlocale(LC_CTYPE, "");
-#endif
-	atexit(&atexit_fb_shutdown);
-
 	gpre_sym* symbol;
-	// CVC: COUNT + 1 because IN_SW_GPRE_INTERP is repeated in gpre_in_sw_table.
-	sw_tab_t sw_table[IN_SW_GPRE_COUNT + 1];
+	const ext_table_t* ext_tab;
+	sw_tab_t sw_table[IN_SW_GPRE_COUNT];
 
 	gpreGlob.module_lc_ctype	= NULL;
 	gpreGlob.errors_global	= 0;
@@ -386,8 +369,7 @@ int main(int argc, char* argv[])
 
 	TEXT spare_file_name[MAXPATHLEN];
 	if (gpreGlob.sw_language == lang_undef)
-		for (const ext_table_t* ext_tab = dml_ext_table;
-			gpreGlob.sw_language = ext_tab->ext_language; ext_tab++)
+		for (ext_tab = dml_ext_table; gpreGlob.sw_language = ext_tab->ext_language; ext_tab++)
 		{
 			strcpy(spare_file_name, file_name);
 			if (!file_rename(spare_file_name, ext_tab->in, NULL))
@@ -398,8 +380,7 @@ int main(int argc, char* argv[])
 	// extension and we can use that.
 
 	if (gpreGlob.sw_language == lang_undef)
-		for (const ext_table_t* ext_tab = dml_ext_table;
-			gpreGlob.sw_language = ext_tab->ext_language; ext_tab++)
+		for (ext_tab = dml_ext_table; gpreGlob.sw_language = ext_tab->ext_language; ext_tab++)
 		{
 			strcpy(spare_file_name, file_name);
 			if (file_rename(spare_file_name, ext_tab->in, NULL) &&
@@ -428,9 +409,10 @@ int main(int argc, char* argv[])
 	if (!input_file)
 	{
 		strcpy(spare_file_name, file_name);
-		const ext_table_t* ext_tab = dml_ext_table;
-		while (ext_tab->ext_language != gpreGlob.sw_language)
-			ext_tab++;
+		for (ext_tab = dml_ext_table; ext_tab->ext_language != gpreGlob.sw_language; ext_tab++)
+		{
+				 ;	// empty loop body
+		}
 		const bool renamed = file_rename(spare_file_name, ext_tab->in, NULL);
 		if (renamed && (input_file = fopen(spare_file_name, FOPEN_READ_TYPE)))
 		{
@@ -484,18 +466,6 @@ int main(int argc, char* argv[])
 			gpreGlob.database_name	= "gds_database";
 			break;
 
-		case IN_SW_GPRE_OCXX:
-			gen_routine = OBJ_CXX_action;
-			gpreGlob.sw_language	= lang_cxx;
-			gpreGlob.ident_pattern	= "fb_%d";
-			gpreGlob.long_ident_pattern	= "fb_%ld";
-			gpreGlob.utility_name	= "fbUtility";
-			gpreGlob.count_name		= "fbCount";
-			gpreGlob.slack_name		= "fbSlack";
-			gpreGlob.transaction_name = "fbTrans";
-			gpreGlob.database_name	= "fbDatabase";
-			break;
-
 		case IN_SW_GPRE_D:
 			// allocate database block and link to db chain
 
@@ -546,6 +516,7 @@ int main(int argc, char* argv[])
 			gpreGlob.sw_no_qli = true;
 			break;
 
+#ifndef BOOT_BUILD
 #ifdef GPRE_ADA
 		case IN_SW_GPRE_ADA:
 			gpreGlob.ada_null_address = "0";
@@ -625,6 +596,7 @@ int main(int argc, char* argv[])
 			comment_stop	= "*)";
 			break;
 #endif // GPRE_PASCAL
+#endif // !BOOT_BUILD
 
 		case IN_SW_GPRE_D_FLOAT:
 			gpreGlob.sw_d_float = true;
@@ -634,7 +606,7 @@ int main(int argc, char* argv[])
 			gpreGlob.sw_language			= lang_internal;
 			gen_routine			= INT_CXX_action;
 			gpreGlob.sw_cstring			= false;
-			gpreGlob.transaction_name	= "attachment->getSysTransaction()";
+			gpreGlob.transaction_name	= "dbb->dbb_sys_trans";
 			gpreGlob.sw_know_interp		= true;
 			gpreGlob.sw_interp			= ttype_metadata;
 			break;
@@ -717,7 +689,7 @@ int main(int argc, char* argv[])
 	if (gpreGlob.sw_language == lang_cpp || gpreGlob.sw_language == lang_cplusplus)
 		gpreGlob.sw_language = lang_cxx;
 
-#if defined(GPRE_COBOL)
+#if defined(GPRE_COBOL) && !defined(BOOT_BUILD)
 	// if cobol is defined we need both sw_cobol and sw_cob_dialect to
 	// determine how the string substitution table is set up
 
@@ -1128,6 +1100,55 @@ void CPR_get_text( TEXT* buffer, const gpre_txt* text)
 		*p++ = getc(trace_file);
 	fseek(trace_file, (SLONG) 0, 2);
 }
+
+
+//____________________________________________________________
+//
+//       A BASIC-specific function which resides here since it reads from
+//       the input file.  Look for a '\n' with no continuation character (&).
+//       Eat tokens until previous condition is satisfied.
+//       This function is used to "eat" a BASIC external function definition.
+//
+
+#ifdef NOT_USED_OR_REPLACED
+void CPR_raw_read()
+{
+	SCHAR token_string[MAX_SYM_SIZE];
+	bool continue_char = false;
+
+	SCHAR* p = token_string;
+
+	SSHORT c;
+	while (c = get_char(input_file))
+	{
+		position++;
+		if ((get_classes(c) == CHR_WHITE) && sw_trace && token_string)
+		{
+			*p = 0;
+			puts(token_string);
+			token_string[0] = 0;
+			p = token_string;
+		}
+		else
+			*p++ = (SCHAR) c;
+
+		if (c == '\n') // Changed assignment to comparison. Probable archaic bug
+		{
+			line_global++;
+			line_position = 0;
+			if (!continue_char)
+				return;
+			continue_char = false;
+		}
+		else
+		{
+			line_position++;
+			if (get_classes(c) != CHR_WHITE)
+				continue_char = (gpreGlob.token_global.tok_keyword == KW_AMPERSAND);
+		}
+	}
+}
+#endif
 
 
 //____________________________________________________________
@@ -1596,7 +1617,7 @@ static int get_char( FILE* file)
 
 static bool get_switches(int			argc,
 						 TEXT**		argv,
-						 const Switches::in_sw_tab_t*	in_sw_table,
+						 const in_sw_tab_t*	in_sw_table,
 						 sw_tab_t*		sw_table,
 						 TEXT**		file_array)
 {
@@ -1606,18 +1627,12 @@ static bool get_switches(int			argc,
 	// that apply immediately, since we may find out more when
 	// we try to open the file.
 
-	bool version = false;
 	sw_tab_t* sw_table_iterator = sw_table;
 
 	for (--argc; argc; argc--)
 	{
 		TEXT* string = *++argv;
-		if (*string == '?' || strcmp(string, "-?") == 0)
-		{
-			in_sw = IN_SW_GPRE_0;
-			version = true;
-		}
-		else
+		if (*string != '?')
 		{
 			if (*string != '-')
 			{
@@ -1643,7 +1658,7 @@ static bool get_switches(int			argc,
 				sw_table_iterator++;
 				sw_table_iterator->sw_in_sw = IN_SW_GPRE_0;
 				const TEXT* q;
-				for (const Switches::in_sw_tab_t* in_sw_table_iterator = in_sw_table;
+				for (const in_sw_tab_t* in_sw_table_iterator = in_sw_table;
 					 q = in_sw_table_iterator->in_sw_name;
 					 in_sw_table_iterator++)
 				{
@@ -1677,6 +1692,10 @@ static bool get_switches(int			argc,
 		// Check here for switches that affect file look ups
 		// and -D so we don't lose their arguments.
 		// Give up here if we find a bad switch.
+
+		if (*string == '?') {
+			in_sw = IN_SW_GPRE_0;
+		}
 
 		switch (in_sw)
 		{
@@ -1826,13 +1845,13 @@ static bool get_switches(int			argc,
 
 		case IN_SW_GPRE_Z:
 			if (!gpreGlob.sw_version) {
-				printf("gpre version %s\n", FB_VERSION);
+				printf("gpre version %s\n", GDS_VERSION);
 			}
 			gpreGlob.sw_version = true;
 			break;
 
 		case IN_SW_GPRE_0:
-			if (!version) {
+			if (*string != '?') {
 				fprintf(stderr, "gpre: unknown switch %s\n", string);
 			}
 			print_switches();
@@ -2451,7 +2470,7 @@ static void pass2( SLONG start_position)
 		}
 		fprintf(gpreGlob.out_file,
 				   "%s**************** gpre version %s *********************%s\n",
-				   comment_start, FB_VERSION, comment_stop);
+				   comment_start, GDS_VERSION, comment_stop);
 	}
 
 #ifdef GPRE_ADA
@@ -2482,7 +2501,7 @@ static void pass2( SLONG start_position)
 	SLONG current = 1 + start_position;
 	SLONG column = 0;
 
-	SSHORT comment_start_len = static_cast<SSHORT>(strlen(comment_start));
+	SSHORT comment_start_len = strlen(comment_start);
 	SSHORT to_skip = 0;
 
 	// Dump text until the start of the next action, then process the action.
@@ -2506,9 +2525,9 @@ static void pass2( SLONG start_position)
 				if (line_pending)
 				{
 					if (line == 1)
-						fprintf(gpreGlob.out_file, "#line %"SLONGFORMAT" \"%s\"\n", line, backlash_fixed_file_name);
+						fprintf(gpreGlob.out_file, "#line %" SLONGFORMAT " \"%s\"\n", line, backlash_fixed_file_name);
 					else
-						fprintf(gpreGlob.out_file, "\n#line %"SLONGFORMAT" \"%s\"", line, backlash_fixed_file_name);
+						fprintf(gpreGlob.out_file, "\n#line %" SLONGFORMAT " \"%s\"", line, backlash_fixed_file_name);
 
 					line_pending = false;
 				}
@@ -2649,7 +2668,7 @@ static void pass2( SLONG start_position)
 	{
 		if (c == '\n' && line_pending)
 		{
-			fprintf(gpreGlob.out_file, "\n#line %"SLONGFORMAT" \"%s\"", line + 1, backlash_fixed_file_name);
+			fprintf(gpreGlob.out_file, "\n#line %" SLONGFORMAT " \"%s\"", line + 1, backlash_fixed_file_name);
 			line_pending = false;
 		}
 		if (c == EOF)
@@ -2675,7 +2694,7 @@ static void pass2( SLONG start_position)
 
 static void print_switches()
 {
-	const Switches::in_sw_tab_t* in_sw_table_iterator;
+	const in_sw_tab_t* in_sw_table_iterator;
 
 	fprintf(stderr, "\tlegal switches are:\n");
 	for (in_sw_table_iterator = gpre_in_sw_table; in_sw_table_iterator->in_sw; in_sw_table_iterator++)
@@ -2862,7 +2881,7 @@ static SSHORT skip_white()
 
 		if (c == '-' && (gpreGlob.sw_sql || gpreGlob.sw_language == lang_ada))
 		{
-			const SSHORT next = nextchar();
+			SSHORT next = nextchar();
 			if (next != '-')
 			{
 				return_char(next);

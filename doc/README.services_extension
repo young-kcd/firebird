@@ -31,6 +31,7 @@ password are set using some other method):
  Return to normal state:
   fbsvcmgr service_mgr action_properties dbname employee prp_online_mode prp_sm_normal
 
+
 2) Services API extension - nbackup support.
 (Alex Peshkov, peshkoff@mail.ru, 2008)
 
@@ -82,7 +83,7 @@ Start user trace session :
 
 Stop trace session
 	action
-		isc_action_svc_trace_stop     
+		isc_action_svc_trace_stop
 
 	parameter(s)
 		isc_spb_trc_id : trace session ID, integer, mandatory
@@ -96,7 +97,7 @@ Stop trace session
 
 Suspend trace session
 	action
-		isc_action_svc_trace_suspend  
+		isc_action_svc_trace_suspend
 
 	parameter(s)
 		isc_spb_trc_id : trace session ID, integer, mandatory
@@ -109,7 +110,7 @@ Suspend trace session
 
 Resume trace session
 	action
-		isc_action_svc_trace_resume   
+		isc_action_svc_trace_resume
 
 	parameter(s)
 		isc_spb_trc_id : trace session ID, integer, mandatory
@@ -122,7 +123,7 @@ Resume trace session
 
 List of existing trace sessions
 	action
-		isc_action_svc_trace_list     
+		isc_action_svc_trace_list
 
 	parameter(s)
 		none
@@ -156,7 +157,7 @@ See also README.trace_services
 (Alex Peshkov, peshkoff@mail.ru, 2011-2012)
 
 This way of doing backups is specially efficient when one needs to perform
-backup/restore operation for database, located on a server accessed using
+backup/restore operation for database, located on ther server accessed using
 internet, due to the great performance advantage.
 
 The simplest way to use this feature is fbsvcmgr. To backup database run
@@ -185,7 +186,7 @@ server is ready to accept from client. (0 value means no more data is needed rig
 now.) The main trick is that client should NOT send more data than requested by
 server - this causes an error "Size of data is more than requested". The data is
 sent in next isc_service_query() call in the send_items block, using
-isc_info_svc_line tag in tradition form: isc_info_svc_line, 2 bytes length, data.
+isc_info_svc_line tag in traditional form: isc_info_svc_line, 2 bytes length, data.
 When server needs next portion, it once more returns non-zero isc_info_svc_stdin
 value from isc_service_query().
 
@@ -193,62 +194,24 @@ A sample of how services API should be used for remote backup and restore can be
 found in source code of fbsvcmgr.
 
 
-5) Services API extension - using services with non-default security database.
-(Alex Peshkov, peshkoff@mail.ru, 2013)
+5) Services API extension - online validation.
+(Khorsun Vlad, hvlad@users.sourceforge.net, 2015)
 
-If one wants to use services API to access database which is configured to use
-non-default security database, new SPB item isc_spb_expected_db should be used
-when attaching to services manager. Value of this item is a database which is
-expected to be accessed.
+action:
+	isc_action_svc_validate 
 
-Formally this does not raise backward incompatibility - as long as one does not
-use new FB3 feature (multiple security databases) he has no problems with old
-programs using services API. In a case when one has really big need to use old
-program for a database with non-default configuration there is a workaround:
-setting environment variable FB_EXPECTED_DB which will be added to SPB
-automatically.
+parameters:
+	isc_spb_dbname : 
+		database file name, string, mandatory
 
-Example. Imagine we have the following lines in databases.conf:
-employee = $(dir_sampledb)/employee.fdb
-{
-  SecurityDatabase = employee
-}
-i.e. employee database is configured as security database for itself.
+	isc_spb_val_tab_incl, isc_spb_val_tab_excl,
+	isc_spb_val_idx_incl, isc_spb_val_idx_excl : 
+		patterns for tables\indices names, string, optional
 
-To access it using fbsvcmgr one should use the following command line:
-fbsvcmgr host:service_mgr user sysdba password xxx expected_db employee action_db_stats dbname employee sts_data_pages
+	isc_spb_val_lock_timeout : 
+		lock timeout, integer, optional
 
-or in advance set FB_EXPECTED_DB:
-export FB_EXPECTED_DB=employee
-fbsvcmgr host:service_mgr user sysdba password xxx action_db_stats dbname employee sts_data_pages
+output:
+	text messages with progress of online validation process
 
-Certainly any other database action can be used here.
-
-
-6) Services API extension - using services to temporary turn off linger for database.
-(Alex Peshkov, peshkoff@mail.ru, 2013)
-
-Linger is used to optimize performance in some cases (see also sql.extensions/README.linger).
-If you want to turn off linger temporary (for next database close) you may use gfix utility or
-services. New tag isc_spb_prp_nolinger is added for it (option). Setting isc_spb_prp_nolinger
-option turns off linger for the next database close operation and may be used to force closing
-database in linger state.
-
-Example:
-fbsvcmgr host:service_mgr user sysdba password xxx action_properties dbname employee prp_nolinger
-
-
-7) Services API extension - passing SQL role to services manager.
-(Alex Peshkov, peshkoff@mail.ru, 2014)
-
-Just a few actions (user-management related) were capable to pass SQL role to server in pre-3
-releases. With flexible access control in FB3 passing role to the services manager is sometimes
-useful and therefore possible. Services manager now accepts SPB item isc_spb_sql_role_name in
-start() call and passes it to invoked utilities.
-
-Example (assumimg user "leg" is granted admin rights):
-fbsvcmgr host:service_mgr user leg password leg action_restore dbname target.fdb bkp_file some.fbk
-   (fails with "no permission for CREATE access to DATABASE" error)
-fbsvcmgr host:service_mgr user leg password leg role 'rdb$admin' action_restore dbname target.fdb bkp_file some.fbk
-   (works as expected)
-
+See also README.online_validation

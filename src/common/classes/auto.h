@@ -40,7 +40,7 @@ template <typename What>
 class SimpleDelete
 {
 public:
-	static void clear(What* ptr)
+	static void clear(What *ptr)
 	{
 		delete ptr;
 	}
@@ -55,34 +55,6 @@ public:
 		delete[] ptr;
 	}
 };
-
-template <typename T>
-class SimpleRelease
-{
-public:
-	static void clear(T* ptr)
-	{
-		if (ptr)
-		{
-			ptr->release();
-		}
-	}
-};
-
-
-template <typename T>
-class SimpleDispose
-{
-public:
-	static void clear(T* ptr)
-	{
-		if (ptr)
-		{
-			ptr->dispose();
-		}
-	}
-};
-
 
 template <typename Where, typename Clear = SimpleDelete<Where> >
 class AutoPtr
@@ -111,37 +83,12 @@ public:
 		return ptr;
 	}
 
-	Where* get()
-	{
-		return ptr;
-	}
-
-	operator const Where*() const
-	{
-		return ptr;
-	}
-
-	const Where* get() const
-	{
-		return ptr;
-	}
-
 	bool operator !() const
 	{
 		return !ptr;
 	}
 
-	bool hasData() const
-	{
-		return ptr != NULL;
-	}
-
 	Where* operator->()
-	{
-		return ptr;
-	}
-
-	const Where* operator->() const
 	{
 		return ptr;
 	}
@@ -155,8 +102,7 @@ public:
 
 	void reset(Where* v = NULL)
 	{
-		if (v != ptr)
-		{
+		if (v != ptr) {
 			Clear::clear(ptr);
 			ptr = v;
 		}
@@ -192,39 +138,6 @@ private:
 	T* value;
 	T oldValue;
 };
-
-
-template <typename T>
-class AutoSetRestoreFlag
-{
-public:
-	AutoSetRestoreFlag(T* aValue, T newBit, bool set)
-		: value(aValue),
-		  bit(newBit),
-		  oldValue((*value) & bit)
-	{
-		if (set)
-			*value |= bit;
-		else
-			*value &= ~bit;
-	}
-
-	~AutoSetRestoreFlag()
-	{
-		*value &= ~bit;
-		*value |= oldValue;
-	}
-
-private:
-	// copying is prohibited
-	AutoSetRestoreFlag(const AutoSetRestoreFlag&);
-	AutoSetRestoreFlag& operator =(const AutoSetRestoreFlag&);
-
-	T* value;
-	T bit;
-	T oldValue;
-};
-
 
 template <typename T, typename T2>
 class AutoSetRestore2

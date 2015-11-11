@@ -22,10 +22,9 @@
 #include "firebird.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
-#include "../common/os/path_utils.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/os/path_utils.h"
+#include "../jrd/gds_proto.h"
 #include "../jrd/TempSpace.h"
-#include "../common/utils_proto.h"
 
 namespace Firebird {
 
@@ -47,12 +46,12 @@ void ParsedPath::parse(const PathName& path)
 	} while (oldpath.length() > 0);
 }
 
-PathName ParsedPath::subPath(FB_SIZE_T n) const
+PathName ParsedPath::subPath(size_t n) const
 {
 	PathName rc = (*this)[0];
 	if (PathUtils::isRelative(rc + PathUtils::dir_sep))
 		rc = PathUtils::dir_sep + rc;
-	for (FB_SIZE_T i = 1; i < n; i++)
+	for (size_t i = 1; i < n; i++)
 	{
 		PathName newpath;
 		PathUtils::concatPath(newpath, rc, (*this)[i]);
@@ -70,7 +69,7 @@ ParsedPath::operator PathName() const
 
 bool ParsedPath::contains(const ParsedPath& pPath) const
 {
-	FB_SIZE_T nFullElem = getCount();
+	size_t nFullElem = getCount();
 	if (nFullElem > 1 && (*this)[nFullElem - 1].length() == 0)
 		nFullElem--;
 
@@ -78,14 +77,14 @@ bool ParsedPath::contains(const ParsedPath& pPath) const
 		return false;
 	}
 
-	for (FB_SIZE_T i = 0; i < nFullElem; i++)
+	for (size_t i = 0; i < nFullElem; i++)
 	{
 		if (pPath[i] != (*this)[i]) {
 			return false;
 		}
 	}
 
-	for (FB_SIZE_T i = nFullElem + 1; i <= pPath.getCount(); i++)
+	for (size_t i = nFullElem + 1; i <= pPath.getCount(); i++)
 	{
 		const PathName x = pPath.subPath(i);
 		if (PathUtils::isSymLink(x)) {
@@ -155,9 +154,9 @@ void DirectoryList::initialize(bool simple_mode)
 		}
 	}
 
-	FB_SIZE_T last = 0;
+	size_t last = 0;
 	PathName root = Config::getRootDirectory();
-	FB_SIZE_T i;
+	size_t i;
 	for (i = 0; i < val.length(); i++)
 	{
 		if (val[i] == ';')
@@ -195,11 +194,9 @@ void DirectoryList::initialize(bool simple_mode)
 
 bool DirectoryList::isPathInList(const PathName& path) const
 {
-	if (fb_utils::bootBuild())
-	{
-		return true;
-	}
-
+#ifdef BOOT_BUILD
+	return true;
+#else  //BOOT_BUILD
 	fb_assert(mode != NotInitialized);
 
 	// Handle special cases
@@ -227,7 +224,7 @@ bool DirectoryList::isPathInList(const PathName& path) const
 
 	ParsedPath pPath(varpath);
 	bool rc = false;
-	for (FB_SIZE_T i = 0; i < getCount(); i++)
+	for (size_t i = 0; i < getCount(); i++)
 	{
 		if ((*this)[i].contains(pPath))
 		{
@@ -236,12 +233,13 @@ bool DirectoryList::isPathInList(const PathName& path) const
 		}
 	}
 	return rc;
+#endif //BOOT_BUILD
 }
 
 bool DirectoryList::expandFileName(PathName& path, const PathName& name) const
 {
 	fb_assert(mode != NotInitialized);
-	for (FB_SIZE_T i = 0; i < getCount(); i++)
+	for (size_t i = 0; i < getCount(); i++)
 	{
 		PathUtils::concatPath(path, (*this)[i], name);
 		if (PathUtils::canAccess(path, 4)) {

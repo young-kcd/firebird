@@ -22,8 +22,10 @@
  */
 
 #include "firebird.h"
+#include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/scl.h"
+#include "../jrd/ibase.h"
 #include "../jrd/nbak.h"
 #include "../jrd/ods.h"
 #include "../jrd/cch_proto.h"
@@ -33,13 +35,12 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/rlck_proto.h"
 #include "../jrd/shut_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/extds/ExtDS.h"
 
 using namespace Jrd;
 using namespace Firebird;
-
-const SSHORT SHUT_WAIT_TIME	= 5;
 
 // Shutdown lock data
 union shutdown_data
@@ -68,11 +69,11 @@ static void same_mode(Database* dbb)
 }
 
 static void check_backup_state(thread_db*);
-static bool notify_shutdown(thread_db*, SSHORT, SSHORT, Sync*);
-static bool shutdown(thread_db*, SSHORT, bool);
+static bool notify_shutdown(thread_db*, SSHORT, SSHORT);
+static void shutdown(thread_db*, SSHORT, bool);
 
 
-bool SHUT_blocking_ast(thread_db* tdbb, bool ast)
+void SHUT_blocking_ast(thread_db* tdbb, bool ast)
 {
 /**************************************
  *
@@ -123,11 +124,14 @@ bool SHUT_blocking_ast(thread_db* tdbb, bool ast)
 			}
 		}
 
-		return false;
+		return;
 	}
 
 	if ((flag & isc_dpb_shut_force) && !delay)
-		return shutdown(tdbb, flag, ast);
+	{
+		shutdown(tdbb, flag, ast);
+		return;
+	}
 
 	if (flag & isc_dpb_shut_attachment)
 		dbb->dbb_ast_flags |= DBB_shut_attach;
@@ -135,12 +139,10 @@ bool SHUT_blocking_ast(thread_db* tdbb, bool ast)
 		dbb->dbb_ast_flags |= DBB_shut_force;
 	if (flag & isc_dpb_shut_transaction)
 		dbb->dbb_ast_flags |= DBB_shut_tran;
-
-	return false;
 }
 
 
-void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* guard)
+void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 {
 /**************************************
  *
@@ -154,16 +156,14 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* guard)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
+	Attachment* const attachment = tdbb->getAttachment();
 
-	// Only platform's user locksmith can shutdown or bring online a database
+/* Only platform's user locksmith can shutdown or bring online
+   a database. */
 
 	if (!attachment->locksmith())
 	{
-		ERR_post_nothrow(Arg::Gds(isc_no_priv) << "shutdown" << "database" << dbb->dbb_filename);
-		if (attachment->att_user->usr_flags & USR_mapdown)
-			ERR_post_nothrow(Arg::Gds(isc_map_down));
-		ERR_punt();
+		ERR_post(Arg::Gds(isc_no_priv) << "shutdown" << "database" << dbb->dbb_filename);
 	}
 
 	const int shut_mode = flag & isc_dpb_shut_mode_mask;
@@ -182,7 +182,7 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* guard)
 		}
 		break;
 	case isc_dpb_shut_multi:
-		if (dbb->dbb_ast_flags & (DBB_shutdown_full | DBB_shutdown_single))
+		if ((dbb->dbb_ast_flags & DBB_shutdown_full) || (dbb->dbb_ast_flags & DBB_shutdown_single))
 		{
 			bad_mode(dbb);
 		}
@@ -224,16 +224,17 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* guard)
 
 	attachment->att_flags |= ATT_shutdown_manager;
 
-	// Database is being shutdown. First notification gives shutdown type and delay in seconds.
+	// Database is being shutdown. First notification gives shutdown
+	// type and delay in seconds.
 
-	bool exclusive = notify_shutdown(tdbb, flag, delay, guard);
+	bool exclusive = notify_shutdown(tdbb, flag, delay);
 	bool successful = exclusive;
 
 	// Try to get exclusive database lock periodically up to specified delay. If we
 	// haven't gotten it report shutdown error for weaker forms. For forced shutdown
-	// keep notifying until successful.
+	// keep notifying until success.
 
-	SSHORT timeout = delay ? delay - 1 : 0;
+	SSHORT timeout = delay > 0 ? delay - 1 : 0;
 
 	if (!exclusive)
 	{
@@ -248,28 +249,27 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* guard)
 				break;
 			}
 
-			if (timeout && CCH_exclusive(tdbb, LCK_PW, -1, guard))
+			if (timeout && CCH_exclusive(tdbb, LCK_PW, -1))
 			{
 				exclusive = true;
 				break;
 			}
-		}
-		while (timeout--);
+		} while (timeout--);
 	}
 
 	if (!exclusive && !successful &&
-		(timeout > 0 || (flag & (isc_dpb_shut_attachment | isc_dpb_shut_transaction))))
+		(timeout > 0 || flag & (isc_dpb_shut_attachment | isc_dpb_shut_transaction)))
 	{
-		notify_shutdown(tdbb, 0, -1, guard);	// Tell everyone we're giving up
+		notify_shutdown(tdbb, 0, -1);	// Tell everyone we're giving up
 		attachment->att_flags &= ~ATT_shutdown_manager;
 		ERR_post(Arg::Gds(isc_shutfail));
 	}
 
-	if (!exclusive && !notify_shutdown(tdbb, shut_mode | isc_dpb_shut_force, 0, guard))
+	if (!exclusive && !notify_shutdown(tdbb, shut_mode | isc_dpb_shut_force, 0))
 	{
-		if (!CCH_exclusive(tdbb, LCK_PW, LCK_WAIT, guard))
+		if (!CCH_exclusive(tdbb, LCK_PW, LCK_WAIT))
 		{
-			notify_shutdown(tdbb, 0, -1, guard);	// Tell everyone we're giving up
+			notify_shutdown(tdbb, 0, -1);	// Tell everyone we're giving up
 			attachment->att_flags &= ~ATT_shutdown_manager;
 			ERR_post(Arg::Gds(isc_shutfail));
 		}
@@ -278,7 +278,7 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* guard)
 	dbb->dbb_ast_flags &= ~(DBB_shut_force | DBB_shut_attach | DBB_shut_tran);
 
 	WIN window(HEADER_PAGE_NUMBER);
-	Ods::header_page* const header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	// Set appropriate shutdown mode in database header
 	header->hdr_flags &= ~Ods::hdr_shutdown_mask;
@@ -322,7 +322,7 @@ void SHUT_init(thread_db* tdbb)
 }
 
 
-void SHUT_online(thread_db* tdbb, SSHORT flag, Sync* guard)
+void SHUT_online(thread_db* tdbb, SSHORT flag)
 {
 /**************************************
  *
@@ -336,16 +336,13 @@ void SHUT_online(thread_db* tdbb, SSHORT flag, Sync* guard)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
+	Attachment* const attachment = tdbb->getAttachment();
 
 	// Only platform's user locksmith can shutdown or bring online a database
 
 	if (!attachment->att_user->locksmith())
 	{
-		ERR_post_nothrow(Arg::Gds(isc_no_priv) << "bring online" << "database" << dbb->dbb_filename);
-		if (attachment->att_user->usr_flags & USR_mapdown)
-			ERR_post_nothrow(Arg::Gds(isc_map_down));
-		ERR_punt();
+		ERR_post(Arg::Gds(isc_no_priv) << "bring online" << "database" << dbb->dbb_filename);
 	}
 
 	const int shut_mode = flag & isc_dpb_shut_mode_mask;
@@ -404,7 +401,7 @@ void SHUT_online(thread_db* tdbb, SSHORT flag, Sync* guard)
 	// Reset shutdown flag on database header page
 
 	WIN window(HEADER_PAGE_NUMBER);
-	Ods::header_page* const header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 	// Set appropriate shutdown mode in database header
 	header->hdr_flags &= ~Ods::hdr_shutdown_mask;
@@ -428,7 +425,7 @@ void SHUT_online(thread_db* tdbb, SSHORT flag, Sync* guard)
 
 	// Notify existing database clients that a currently scheduled shutdown is cancelled
 
-	if (notify_shutdown(tdbb, shut_mode, -1, guard))
+	if (notify_shutdown(tdbb, shut_mode, -1))
 		CCH_release_exclusive(tdbb);
 }
 
@@ -439,14 +436,13 @@ static void check_backup_state(thread_db* tdbb)
 
 	BackupManager::StateReadGuard stateGuard(tdbb);
 
-	if (dbb->dbb_backup_manager->getState() != Ods::hdr_nbak_normal)
+	if (dbb->dbb_backup_manager->getState() != nbak_state_normal)
 	{
 		ERR_post(Arg::Gds(isc_bad_shutdown_mode) << Arg::Str(dbb->dbb_filename));
 	}
 }
 
-
-static bool notify_shutdown(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* guard)
+static bool notify_shutdown(thread_db* tdbb, SSHORT flag, SSHORT delay)
 {
 /**************************************
  *
@@ -462,7 +458,6 @@ static bool notify_shutdown(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* gu
  *
  **************************************/
 	Database* const dbb = tdbb->getDatabase();
-	StableAttachmentPart* const sAtt = tdbb->getAttachment()->getStable();
 
 	shutdown_data data;
 	data.data_items.flag = flag;
@@ -470,21 +465,17 @@ static bool notify_shutdown(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* gu
 
 	LCK_write_data(tdbb, dbb->dbb_lock, data.data_long);
 
-	{ // scope
-		// Checkout before calling AST function
-		MutexUnlockGuard uguard(*(sAtt->getMutex()), FB_FUNCTION);
+	// Notify local attachments
 
-		// Notify local attachments
-		SHUT_blocking_ast(tdbb, true);
-	}
+	SHUT_blocking_ast(tdbb, true);
 
-	// Send blocking ASTs to other database users
+	// Send blocking ASTs to database users
 
-	return CCH_exclusive(tdbb, LCK_PW, -1, guard);
+	return CCH_exclusive(tdbb, LCK_PW, -1);
 }
 
 
-static bool shutdown(thread_db* tdbb, SSHORT flag, bool force)
+static void shutdown(thread_db* tdbb, SSHORT flag, bool force)
 {
 /**************************************
  *
@@ -522,27 +513,20 @@ static bool shutdown(thread_db* tdbb, SSHORT flag, bool force)
 	if (force)
 	{
 		bool found = false;
-		for (Jrd::Attachment* attachment = dbb->dbb_attachments;
+		for (Attachment* attachment = attachment = dbb->dbb_attachments;
 			attachment; attachment = attachment->att_next)
 		{
-			StableAttachmentPart* const sAtt = attachment->getStable();
-			MutexLockGuard guard(*(sAtt->getMutex(true)), FB_FUNCTION);
-
 			if (!(attachment->att_flags & ATT_shutdown_manager))
 			{
 				if (!(attachment->att_flags & ATT_shutdown))
 				{
-					attachment->signalShutdown();
 					found = true;
+					attachment->signalShutdown(tdbb);
 				}
 			}
 		}
 
 		if (found)
 			JRD_shutdown_attachments(dbb);
-
-		return true;
 	}
-
-	return false;
 }

@@ -36,7 +36,6 @@
 #include "../common/classes/fb_string.h"
 #include "GlobalRWLock.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/Attachment.h"
 
 // Uncomment this line if you need to trace backup-related activity
 //#define NBAK_DEBUG
@@ -67,14 +66,12 @@ class AllocItem
 public:
 	ULONG db_page; // Page number in the main database file
 	ULONG diff_page; // Page number in the difference file
-
+	//Record* rec_data;
 	static const ULONG& generate(const void* /*sender*/, const AllocItem& item)
 	{
 		return item.db_page;
 	}
-
 	AllocItem() {}
-
 	AllocItem(ULONG db_pageL, ULONG diff_pageL)
 	{
 		this->db_page = db_pageL;
@@ -109,9 +106,14 @@ public:
 protected:
 	BackupManager* backup_manager;
 	virtual bool fetch(thread_db* tdbb);
-
 	virtual void invalidate(thread_db* tdbb);
 };
+
+// Note this flags MUST correspond with backup mask in ods.h
+const USHORT nbak_state_normal	= 0x000;	// Normal mode. Changes are simply written to main files
+const USHORT nbak_state_stalled	= 0x400;	// 1024 Main files are locked. Changes are written to diff file
+const USHORT nbak_state_merge	= 0x800;	// 2048 Merging changes from diff file into main files
+const USHORT nbak_state_unknown	= USHORT(~0);	// State is unknown. Needs to be read from disk
 
 /*
  *  The functional responsibilities of NBAK are:
@@ -126,7 +128,7 @@ protected:
  *  5. to increment SCN on each change of backup state
  *
  *  The backup state cycle is:
- *  hdr_nbak_normal -> hdr_nbak_stalled -> hdr_nbak_merge -> hdr_nbak_normal
+ *  nbak_state_normal -> nbak_state_stalled -> nbak_state_merge -> nbak_state_normal
  *  - In normal state writes go directly to the main database files.
  *  - In stalled state writes go to the difference file only and the main files are
  *  read-only.
@@ -165,9 +167,9 @@ protected:
  *  take WRITE lock of this kind. READ lock is necessary to read the table.
  *
  *  LCK_backup_end is used to ensure reliable execution of state transition from
- *  hdr_nbak_merge to hdr_nbak_normal (MERGE process). Taking of WRITE (LCK_EX)
+ *  nbak_state_merge to nbak_state_normal (MERGE process). Taking of WRITE (LCK_EX)
  *  lock of this kind is needed to perform the MERGE. Every new attachment attempts
- *  to finalize incomplete merge if the database is in hdr_nbak_merge mode and
+ *  to finalize incomplete merge if the database is in nbak_state_merge mode and
  *  this lock is not taken.
  */
 
@@ -178,14 +180,13 @@ public:
 	class StateWriteGuard
 	{
 	public:
-		StateWriteGuard(thread_db* tdbb, Jrd::WIN* window);
+		StateWriteGuard(thread_db* _tdbb, WIN* wnd);
 		~StateWriteGuard();
 
 		void releaseHeader();
-
 		void setSuccess()
 		{
-			m_success = true;
+			success = true;
 		}
 
 	private:
@@ -193,30 +194,30 @@ public:
 		StateWriteGuard(const StateWriteGuard&);
 		StateWriteGuard& operator=(const StateWriteGuard&);
 
-		thread_db* m_tdbb;
-		Jrd::WIN* m_window;
-		bool m_success;
+		thread_db* tdbb;
+		WIN* window;
+		bool success;
 	};
 
 	class StateReadGuard
 	{
 	public:
-		explicit StateReadGuard(thread_db* tdbb) : m_tdbb(tdbb)
+		explicit StateReadGuard(thread_db* _tdbb) : tdbb(_tdbb)
 		{
 			lock(tdbb, LCK_WAIT);
 		}
 
 		~StateReadGuard()
 		{
-			unlock(m_tdbb);
+			unlock(tdbb);
 		}
 
 		static bool lock(thread_db* tdbb, SSHORT wait)
 		{
-			Jrd::Attachment* const att = tdbb->getAttachment();
-			Database* const dbb = tdbb->getDatabase();
+			Attachment* att = tdbb->getAttachment();
+			Database* dbb = tdbb->getDatabase();
 
-			const bool ok = att ?
+			const bool ok = att ? 
 				att->backupStateReadLock(tdbb, wait) :
 				dbb->dbb_backup_manager->lockStateRead(tdbb, wait);
 
@@ -228,8 +229,8 @@ public:
 
 		static void unlock(thread_db* tdbb)
 		{
-			Jrd::Attachment* const att = tdbb->getAttachment();
-			Database* const dbb = tdbb->getDatabase();
+			Attachment* att = tdbb->getAttachment();
+			Database* dbb = tdbb->getDatabase();
 
 			if (att)
 				att->backupStateReadUnLock(tdbb);
@@ -242,7 +243,7 @@ public:
 		StateReadGuard(const StateReadGuard&);
 		StateReadGuard& operator=(const StateReadGuard&);
 
-		thread_db* m_tdbb;
+		thread_db* tdbb;
 	};
 
 private:
@@ -250,15 +251,15 @@ private:
 	class LocalAllocGuard
 	{
 	public:
-		explicit LocalAllocGuard(BackupManager* bm)
-			: m_bm(bm)
+		explicit LocalAllocGuard(BackupManager* bm) :
+		  m_bm(bm)
 		{
-			//Database::Checkout cout(m_bm->database);
+			Database::Checkout cout(m_bm->database);
 
 			if (Exclusive)
-				m_bm->localAllocLock.beginWrite("BackupManager::LocalAllocGuard");
+				m_bm->localAllocLock.beginWrite();
 			else
-				m_bm->localAllocLock.beginRead("BackupManager::LocalAllocGuard");
+				m_bm->localAllocLock.beginRead();
 		}
 
 		~LocalAllocGuard()
@@ -289,8 +290,8 @@ private:
 	class GlobalAllocGuard
 	{
 	public:
-		GlobalAllocGuard(thread_db* aTdbb, BackupManager* aBackupManager)
-			: tdbb(aTdbb), backupManager(aBackupManager)
+		GlobalAllocGuard(thread_db* _tdbb, BackupManager* _backupManager)
+			: tdbb(_tdbb), backupManager(_backupManager)
 		{
 			if (Exclusive)
 				backupManager->lockAllocWrite(tdbb);
@@ -326,7 +327,7 @@ public:
 	~BackupManager();
 
 	// Set difference file name in header.
-	// State must be locked and equal to hdr_nbak_normal to call this method
+	// State must be locked and equal to nbak_state_normal to call this method
 	void setDifference(thread_db* tdbb, const char* filename);
 
 	// Return current backup state
@@ -357,20 +358,14 @@ public:
 	// State Lock member functions
 	bool lockStateWrite(thread_db* tdbb, SSHORT wait)
 	{
-		fb_assert(!(tdbb->tdbb_flags & TDBB_backup_write_locked));
 		tdbb->tdbb_flags |= TDBB_backup_write_locked;
-		if (stateLock->lockWrite(tdbb, wait))
-			return true;
-
-		tdbb->tdbb_flags &= ~TDBB_backup_write_locked;
-		return false;
+		return stateLock->lockWrite(tdbb, wait);
 	}
 
 	void unlockStateWrite(thread_db* tdbb)
 	{
-		fb_assert(tdbb->tdbb_flags & TDBB_backup_write_locked);
 		tdbb->tdbb_flags &= ~TDBB_backup_write_locked;
-		stateLock->unlockWrite(tdbb, backup_state == Ods::hdr_nbak_unknown);
+		stateLock->unlockWrite(tdbb, backup_state == nbak_state_unknown);
 	}
 
 	bool lockStateRead(thread_db* tdbb, SSHORT wait)
@@ -404,7 +399,6 @@ public:
 	bool actualizeState(thread_db* tdbb);
 	bool actualizeAlloc(thread_db* tdbb, bool haveGlobalLock);
 	void initializeAlloc(thread_db* tdbb);
-
 	void invalidateAlloc(thread_db* tdbb)
 	{
 		allocIsValid = false;
@@ -417,10 +411,10 @@ public:
 	// Return next page index in the difference file to be allocated
 	ULONG allocateDifferencePage(thread_db* tdbb, ULONG db_page);
 
-	// Must have FbStatusVector because it is called from write_page
+	// Must have ISC_STATUS because it is called from write_page
 	void openDelta();
 	void closeDelta();
-	bool writeDifference(FbStatusVector* status, ULONG diff_page, Ods::pag* page);
+	bool writeDifference(ISC_STATUS* status, ULONG diff_page, Ods::pag* page);
 	bool readDifference(thread_db* tdbb, ULONG diff_page, Ods::pag* page);
 	void flushDifference();
 	void setForcedWrites(const bool forceWrite, const bool notUseFSCache);
@@ -442,9 +436,9 @@ public:
 		return flushInProgress;
 	}
 
-	bool isShutDown() const
+	bool isShuttedDown() const
 	{
-		return shutDown;
+		return shuttedDown;
 	}
 
 	// Get size (in pages) of locked database file
@@ -461,7 +455,7 @@ private:
 	Firebird::PathName diff_name;
 	bool explicit_diff_name;
 	bool flushInProgress;
-	bool shutDown;
+	bool shuttedDown;
 	bool allocIsValid;			// true, if alloc table cache is completely read from disk
 
 	NBackupStateLock* stateLock;
@@ -487,6 +481,7 @@ private:
 	{
 		if (!allocLock->lockRead(tdbb, LCK_WAIT))
 			ERR_bugcheck_msg("Can't lock alloc table for reading");
+
 	}
 
 	void unlockAllocRead(thread_db* tdbb)

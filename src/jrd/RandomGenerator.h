@@ -31,12 +31,12 @@ class RandomGenerator
 public:
 	RandomGenerator();
 
-	void getBytes(void* p, FB_SIZE_T size);
+	void getBytes(void* p, size_t size);
 
 private:
 	const static size_t BUFFER_SIZE = 4096;
 
-	FB_SIZE_T bufferPos;
+	size_t bufferPos;
 	char buffer[BUFFER_SIZE];
 };
 

@@ -37,8 +37,8 @@
 #include "../qli/gener_proto.h"
 #include "../qli/meta_proto.h"
 #include "../qli/mov_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/gdsassert.h"
 
 #ifdef DEV_BUILD
 #include "../jrd/constants.h"
@@ -232,7 +232,7 @@ static void explain(qli_dbb* db, const UCHAR* explain_buffer)
 				explain_printf(level, "isc_info_rsb_relation, ", 0);
 
 				buffer_length--;
-				const FB_SIZE_T length = *explain_buffer++;
+				const size_t length = *explain_buffer++;
 				fb_assert(length < MAX_SQL_IDENTIFIER_SIZE);
 				buffer_length -= length;
 
@@ -401,7 +401,7 @@ static void explain_index_tree(qli_dbb* db, int level, const TEXT* relation_name
 			explain_printf(level, "isc_info_rsb_index, ", 0);
 			(*buffer_length)--;
 
-			const FB_SIZE_T length = *explain_buffer++;
+			const size_t length = *explain_buffer++;
 			TEXT index_name[MAX_SQL_IDENTIFIER_SIZE];
 			memcpy(index_name, explain_buffer, length);
 			index_name[length] = 0;
@@ -448,7 +448,7 @@ static void explain_printf(int level, const TEXT* control, const TEXT* string)
 	if (string)
 		printf(control, string);
 	else
-		printf("%s", control);
+		printf(control);
 }
 #endif
 
@@ -658,7 +658,7 @@ static void gen_descriptor(const dsc* desc, qli_req* request)
 
 	case dtype_varying:
 		STUFF(blr_varying);
-		STUFF_WORD((desc->dsc_length - static_cast<USHORT>(sizeof(SSHORT))));
+		STUFF_WORD((desc->dsc_length - sizeof(SSHORT)));
 		break;
 
 	case dtype_cstring:
@@ -1525,7 +1525,7 @@ static void gen_request( qli_req* request)
 		STUFF_WORD(message->msg_parameter);
 
 		qli_str* string = (qli_str*) ALLOCDV(type_str, message->msg_length + FB_DOUBLE_ALIGN - 1);
-		message->msg_buffer = (UCHAR*) FB_ALIGN(string->str_data, FB_DOUBLE_ALIGN);
+		message->msg_buffer = (UCHAR*) FB_ALIGN((FB_UINT64)(U_IPTR) string->str_data, FB_DOUBLE_ALIGN);
 
 		for (param = message->msg_parameters; param; param = param->par_next)
 		{

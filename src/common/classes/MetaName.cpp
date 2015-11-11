@@ -34,7 +34,7 @@
 
 namespace Firebird {
 
-	MetaName& MetaName::assign(const char* s, FB_SIZE_T l)
+	MetaName& MetaName::assign(const char* s, size_t l)
 	{
 		init();
 		if (s)
@@ -49,20 +49,12 @@ namespace Firebird {
 		return *this;
 	}
 
-	char* MetaName::getBuffer(const FB_SIZE_T l)
-	{
-		fb_assert (l < MAX_SQL_IDENTIFIER_SIZE);
-		init();
-		count = l;
-		return data;
-	}
-
-	int MetaName::compare(const char* s, FB_SIZE_T l) const
+	int MetaName::compare(const char* s, size_t l) const
 	{
 		if (s)
 		{
 			adjustLength(s, l);
-			FB_SIZE_T x = length() < l ? length() : l;
+			size_t x = length() < l ? length() : l;
 			int rc = memcmp(c_str(), s, x);
 			if (rc)
 			{
@@ -72,7 +64,7 @@ namespace Firebird {
 		return length() - l;
 	}
 
-	void MetaName::adjustLength(const char* const s, FB_SIZE_T& l)
+	void MetaName::adjustLength(const char* const s, size_t& l)
 	{
 		fb_assert(s);
 		if (l > MAX_SQL_IDENTIFIER_LEN)
@@ -89,13 +81,29 @@ namespace Firebird {
 		}
 	}
 
+	void MetaName::upper7()
+	{
+		for (char* p = data; *p; p++)
+		{
+			*p = UPPER7(*p);
+		}
+	}
+
+	void MetaName::lower7()
+	{
+		for (char* p = data; *p; p++)
+		{
+			*p = LOWWER7(*p);
+		}
+	}
+
 	void MetaName::printf(const char* format, ...)
 	{
 		init();
 		va_list params;
 		va_start(params, format);
 		int l = VSNPRINTF(data, MAX_SQL_IDENTIFIER_LEN, format, params);
-		if (l < 0 || FB_SIZE_T(l) > MAX_SQL_IDENTIFIER_LEN)
+		if (l < 0 || size_t(l) > MAX_SQL_IDENTIFIER_LEN)
 		{
 			l = MAX_SQL_IDENTIFIER_LEN;
 		}
@@ -104,17 +112,13 @@ namespace Firebird {
 		va_end(params);
 	}
 
-	FB_SIZE_T MetaName::copyTo(char* to, FB_SIZE_T toSize) const
+	char* MetaName::getBuffer(const size_t l)
 	{
-		fb_assert(to);
-		fb_assert(toSize);
-		if (--toSize > length())
-		{
-			toSize = length();
-		}
-		memcpy(to, c_str(), toSize);
-		to[toSize] = 0;
-		return toSize;
+		fb_assert (l < MAX_SQL_IDENTIFIER_SIZE);
+		init();
+		count = l;
+		return data;
 	}
 
 } // namespace Firebird
+

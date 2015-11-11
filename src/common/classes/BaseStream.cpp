@@ -44,7 +44,7 @@ int RawStream::write(const void* str, unsigned int n)
 
 int StdioStream::write(const void* str, unsigned int n)
 {
-	return static_cast<int>(::fwrite(str, 1, n, m_stream));
+	return ::fwrite(str, 1, n, m_stream);
 }
 
 StdioStream::~StdioStream()

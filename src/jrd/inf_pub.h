@@ -125,18 +125,6 @@ enum db_info_types
 	isc_info_db_file_size = 112,
 	fb_info_page_contents = 113,
 
-	fb_info_implementation = 114,
-
-	fb_info_page_warns = 115,
-	fb_info_record_warns = 116,
-	fb_info_bpage_warns = 117,
-	fb_info_dpage_warns = 118,
-	fb_info_ipage_warns = 119,
-	fb_info_ppage_warns = 120,
-	fb_info_tpage_warns = 121,
-	fb_info_pip_errors = 122,
-	fb_info_pip_warns = 123,
-
 	isc_info_db_last_value   /* Leave this LAST! */
 };
 
@@ -162,7 +150,7 @@ enum  info_db_implementations
 	isc_info_db_impl_isc_vms = 27,
 	isc_info_db_impl_isc_sun_68k = 28,
 	isc_info_db_impl_isc_os2 = 29,
-	isc_info_db_impl_isc_sun4 = 30,
+	isc_info_db_impl_isc_sun4 = 30,	   
 
 	isc_info_db_impl_isc_hp_ux = 31,
 	isc_info_db_impl_isc_sun_386i = 32,
@@ -173,7 +161,7 @@ enum  info_db_implementations
 	isc_info_db_impl_isc_xenix = 37,
 	isc_info_db_impl_isc_dg = 38,
 	isc_info_db_impl_isc_hp_mpexl = 39,
-	isc_info_db_impl_isc_hp_ux68K = 40,
+	isc_info_db_impl_isc_hp_ux68K = 40,	  
 
 	isc_info_db_impl_isc_sgi = 41,
 	isc_info_db_impl_isc_sco_unix = 42,
@@ -229,11 +217,10 @@ enum  info_db_implementations
 	isc_info_db_impl_linux_alpha = 83,
 	isc_info_db_impl_linux_arm64 = 84,
 	isc_info_db_impl_linux_ppc64el = 85,
-	isc_info_db_impl_linux_ppc64 = 86,
-
 
 	isc_info_db_impl_last_value   // Leave this LAST!
 };
+
 
 enum info_db_class
 {
@@ -321,11 +308,6 @@ enum info_db_provider
 #define isc_info_rsb_skip		22
 #define isc_info_rsb_virt_sequential	23
 #define isc_info_rsb_recursive	24
-#define isc_info_rsb_window		25
-#define isc_info_rsb_singular	26
-#define isc_info_rsb_writelock	27
-#define isc_info_rsb_buffer		28
-#define isc_info_rsb_hash		29
 
 /**********************/
 /* Bitmap expressions */
@@ -363,7 +345,6 @@ enum info_db_provider
 #define isc_info_tra_isolation				8
 #define isc_info_tra_access					9
 #define isc_info_tra_lock_timeout			10
-#define fb_info_tra_dbpath					11
 
 // isc_info_tra_isolation responses
 #define isc_info_tra_consistency		1
@@ -405,8 +386,6 @@ enum info_db_provider
 #define isc_info_sql_records		  23
 #define isc_info_sql_batch_fetch	  24
 #define isc_info_sql_relation_alias		25
-#define isc_info_sql_explain_plan		26
-#define isc_info_sql_stmt_flags         27
 
 /*********************************/
 /* SQL information return values */

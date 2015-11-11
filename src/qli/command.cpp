@@ -36,7 +36,7 @@
 #include "../qli/exe_proto.h"
 #include "../qli/meta_proto.h"
 #include "../qli/proc_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../common/utils_proto.h"
 
 using MsgFormat::SafeArg;
@@ -328,7 +328,7 @@ void CMD_set( qli_syntax* node)
 
 		case set_password:
 			string = (qli_const*) value;
-			length = MIN(string->con_desc.dsc_length + 1u, sizeof(QLI_default_password));
+			length = MIN(string->con_desc.dsc_length + 1, sizeof(QLI_default_password));
 			fb_utils::copy_terminate(QLI_default_password, (char*) string->con_data, length);
 			break;
 
@@ -367,7 +367,7 @@ void CMD_set( qli_syntax* node)
 
 		case set_user:
 			string = (qli_const*) value;
-			length = MIN(string->con_desc.dsc_length + 1u, sizeof(QLI_default_user));
+			length = MIN(string->con_desc.dsc_length + 1, sizeof(QLI_default_user));
 			fb_utils::copy_terminate(QLI_default_user, (char*) string->con_data, length);
 			break;
 
@@ -443,7 +443,7 @@ void CMD_shell( qli_syntax* node)
 #endif
 	}
 
-	FB_UNUSED(system(buffer));
+	system(buffer);
 }
 
 

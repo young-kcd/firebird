@@ -32,13 +32,8 @@
 #include "../../common/classes/auto.h"
 #include "../../common/classes/ClumpletWriter.h"
 #include "../../common/utils_proto.h"
-#include "../../common/os/os_utils.h"
 #include "../../jrd/trace/TraceService.h"
 #include "../../jrd/ibase.h"
-
-#ifdef HAVE_LOCALE_H
-#include <locale.h>
-#endif
 
 namespace Firebird {
 
@@ -48,22 +43,27 @@ public:
 	TraceSvcUtil();
 	virtual ~TraceSvcUtil();
 
-	virtual void setAttachInfo(const string& service_name, const string& user, const string& pwd,
-		const AuthReader::AuthBlock& authBlock, bool isAdmin);
+	virtual void setAttachInfo(const string& service_name, const string& user,
+		const string& pwd, bool isAdmin);
 
 	virtual void startSession(TraceSession& session, bool interactive);
 	virtual void stopSession(ULONG id);
 	virtual void setActive(ULONG id, bool active);
 	virtual void listSessions();
 
+	static void stopRead();
+
 private:
 	void runService(size_t spbSize, const UCHAR* spb);
 
 	isc_svc_handle m_svcHandle;
+	static bool m_stop;
 };
 
 
 const int MAXBUF = 16384;
+
+bool TraceSvcUtil::m_stop = true;
 
 TraceSvcUtil::TraceSvcUtil()
 {
@@ -79,19 +79,35 @@ TraceSvcUtil::~TraceSvcUtil()
 	}
 }
 
-void TraceSvcUtil::setAttachInfo(const string& service_name, const string& user, const string& pwd,
-		const AuthReader::AuthBlock& /*authBlock*/, bool isAdmin)
+void TraceSvcUtil::setAttachInfo(const string& service_name, const string& user,
+	const string& pwd, bool isAdmin)
 {
 	ISC_STATUS_ARRAY status = {0};
 
-	ClumpletWriter spb(ClumpletWriter::spbList, MAXBUF);
+	ClumpletWriter spb(ClumpletWriter::SpbAttach, MAXBUF, isc_spb_current_version);
 
-	if (user.hasData()) {
+	if (user.isEmpty() && !isAdmin)
+	{
+		string isc_user;
+		if (fb_utils::readenv(ISC_USER, isc_user)) {
+			spb.insertString(isc_spb_user_name, isc_user);
+		}
+	}
+	else if (user.hasData()) {
 		spb.insertString(isc_spb_user_name, user);
 	}
-	if (pwd.hasData()) {
+
+	if (pwd.isEmpty() && !isAdmin)
+	{
+		string isc_pwd;
+		if (fb_utils::readenv(ISC_PASSWORD, isc_pwd)) {
+			spb.insertString(isc_spb_password, isc_pwd);
+		}
+	}
+	else if (pwd.hasData()) {
 		spb.insertString(isc_spb_password, pwd);
 	}
+
 	if (isAdmin) {
 		spb.insertTag(isc_spb_trusted_auth);
 	}
@@ -106,6 +122,8 @@ void TraceSvcUtil::setAttachInfo(const string& service_name, const string& user,
 
 void TraceSvcUtil::startSession(TraceSession& session, bool /*interactive*/)
 {
+	m_stop = false;
+
 	HalfStaticArray<UCHAR, 1024> buff(*getDefaultMemoryPool());
 	UCHAR* p = NULL;
 	long len = 0;
@@ -192,10 +210,13 @@ void TraceSvcUtil::listSessions()
 	runService(spb.getBufferLength(), spb.getBuffer());
 }
 
+void TraceSvcUtil::stopRead()
+{
+	m_stop = true;
+}
+
 void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 {
-	os_utils::CtrlCHandler ctrlCHandler;
-
 	ISC_STATUS_ARRAY status;
 
 	if (isc_service_start(status, &m_svcHandle, 0,
@@ -279,7 +300,7 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 										Arg::Num(static_cast<unsigned char>(p[-1])));
 			}
 		}
-	} while (!(ctrlCHandler.getTerminated() || noData));
+	} while (!(m_stop || noData));
 }
 
 } // namespace Firebird
@@ -287,11 +308,33 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 
 using namespace Firebird;
 
-static void atexit_fb_shutdown()
+
+typedef void (*SignalHandlerPointer)(int);
+
+static SignalHandlerPointer prevCtrlCHandler = NULL;
+static bool terminated = false;
+
+static void ctrl_c_handler(int signal)
 {
-	fb_shutdown(0, fb_shutrsn_app_stopped);
+	if (signal == SIGINT)
+		TraceSvcUtil::stopRead();
+
+	if (prevCtrlCHandler)
+		prevCtrlCHandler(signal);
 }
 
+static int shutdownCallback(const int reason, const int, void*)
+{
+	static bool recursion = false;
+	if (!recursion)
+	{
+		recursion = true;
+		fb_shutdown(0, reason);
+		recursion = false;
+		return FB_FAILURE;
+	}
+	return FB_SUCCESS;
+}
 
 int CLIB_ROUTINE main(int argc, char* argv[])
 {
@@ -305,12 +348,9 @@ int CLIB_ROUTINE main(int argc, char* argv[])
  *	Invoke real trace main function
  *
  **************************************/
-#ifdef HAVE_LOCALE_H
-	// Pick up the system locale to allow SYSTEM<->UTF8 conversions
-	setlocale(LC_CTYPE, "");
-#endif
 
-	atexit(&atexit_fb_shutdown);
+	prevCtrlCHandler = signal(SIGINT, ctrl_c_handler);
+	fb_shutdown_callback(NULL, shutdownCallback, fb_shut_confirmation, NULL);
 
 	AutoPtr<UtilSvc> uSvc(UtilSvc::createStandalone(argc, argv));
 	try
@@ -321,10 +361,10 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 	}
 	catch (const Firebird::Exception& ex)
 	{
- 		Firebird::StaticStatusVector temp;
+		ISC_STATUS_ARRAY temp;
 
-		ex.stuffException(temp);
-		isc_print_status(temp.begin());
+		ex.stuff_exception(temp);
+		isc_print_status(temp);
 
 		return FINI_ERROR;
 	}

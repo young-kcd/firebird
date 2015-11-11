@@ -56,26 +56,6 @@ typedef void*		FB_API_HANDLE;
 #endif
 
 /******************************************************************/
-/* Sizes of memory blocks                                         */
-/******************************************************************/
-
-#ifdef FB_USE_SIZE_T
-/* NS: This is how things were done in original Firebird port to 64-bit platforms
-   Basic classes use these quantities. However in many places in the engine and
-   external libraries 32-bit quantities are used to hold sizes of objects.
-   This produces many warnings. This also produces incredibly dirty interfaces,
-   when functions take size_t as argument, but only handle 32 bits internally
-   without any bounds checking.                                                    */
-typedef size_t FB_SIZE_T;
-typedef intptr_t FB_SSIZE_T;
-#else
-/* NS: This is more clean way to handle things for now. We admit that engine is not
-   prepared to handle 64-bit memory blocks in most places, and it is not necessary really. */
-typedef unsigned int FB_SIZE_T;
-typedef int FB_SSIZE_T;
-#endif
-
-/******************************************************************/
 /* Status vector                                                  */
 /******************************************************************/
 
@@ -102,17 +82,18 @@ typedef char FB_SQLSTATE_STRING[FB_SQLSTATE_SIZE];
 
 /*
  * It is difficult to detect 64-bit long from the redistributable header
- * thus we may use plain "int" which is 32-bit on all platforms we support
+ * we do not care of 16-bit platforms anymore thus we may use plain "int"
+ * which is 32-bit on all platforms we support
  *
  * We'll move to this definition in future API releases.
  *
  */
 
 #if defined(_LP64) || defined(__LP64__) || defined(__arch64__)
-typedef	int				ISC_LONG;
+typedef	int		ISC_LONG;
 typedef	unsigned int	ISC_ULONG;
 #else
-typedef	signed long		ISC_LONG;
+typedef	signed long	ISC_LONG;
 typedef	unsigned long	ISC_ULONG;
 #endif
 
@@ -120,11 +101,7 @@ typedef	signed short	ISC_SHORT;
 typedef	unsigned short	ISC_USHORT;
 
 typedef	unsigned char	ISC_UCHAR;
-typedef char			ISC_SCHAR;
-
-typedef ISC_UCHAR		FB_BOOLEAN;
-#define	FB_FALSE		'\0'
-#define	FB_TRUE			'\1'
+typedef char		ISC_SCHAR;
 
 /*******************************************************************/
 /* 64 bit Integers                                                 */

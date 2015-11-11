@@ -22,7 +22,6 @@
  */
 
 #include "firebird.h"
-#include "dyn_consts.h"
 #include <stdio.h>
 #include <string.h>
 #include "../qli/dtr.h"
@@ -37,10 +36,10 @@
 #include "../qli/gener_proto.h"
 #include "../qli/hsh_proto.h"
 #include "../qli/meta_proto.h"
-#include "../common/prett_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/isc_f_proto.h"
-#include "../yvalve/utl_proto.h"
+#include "../gpre/prett_proto.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/isc_f_proto.h"
+#include "../jrd/utl_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/UserBlob.h"
@@ -151,7 +150,6 @@ static const rfr_tab_t rfr_table[] =
 	{ "RDB$RELATION_FIELDS", "RDB$SYSTEM_FLAG", DBB_cap_rfr_sys_flag },
 	{ "RDB$FILTERS", "RDB$FUNCTION_NAME", DBB_cap_filters },
 	{ "RDB$INDICES", "RDB$INDEX_TYPE", DBB_cap_index_type },
-	{ "RDB$PROCEDURES", "RDB$ENGINE_NAME", DBB_cap_nodyn },		// FB3.0
 	{ 0, 0, 0 }
 };
 
@@ -497,7 +495,7 @@ void MET_delete_database( qli_dbb* dbb)
 	else
 	{
 		user = QLI_default_user;
-		user_length = static_cast<USHORT>(strlen(QLI_default_user));
+		user_length = strlen(QLI_default_user);
 	}
 
 	const TEXT* password;
@@ -510,7 +508,7 @@ void MET_delete_database( qli_dbb* dbb)
 	else
 	{
 		password = QLI_default_password;
-		password_length = static_cast<USHORT>(strlen(QLI_default_password));
+		password_length = strlen(QLI_default_password);
 	}
 
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
@@ -537,7 +535,7 @@ void MET_delete_database( qli_dbb* dbb)
 	DB = dbb->dbb_handle;
 
 	FOR F IN DB.RDB$FILES SORTED BY F.RDB$FILE_START
-		qli_str* astring = (qli_str*) ALLOCDV(type_str, static_cast<int>(strlen(F.RDB$FILE_NAME)));
+		qli_str* astring = (qli_str*) ALLOCDV(type_str, strlen(F.RDB$FILE_NAME));
 		strcpy(astring->str_data, F.RDB$FILE_NAME);
 		ALLQ_push((blk*) astring, &stack);
 	END_FOR
@@ -1392,7 +1390,7 @@ void MET_ready( qli_syntax* node, const bool create_flag)
 
 	SSHORT length;
 	const TEXT* lc_ctype = QLI_charset;
-	if (lc_ctype && (length = static_cast<SSHORT>(strlen(lc_ctype)))) {
+	if (lc_ctype && (length = strlen(lc_ctype))) {
 		dpb.insertString(isc_dpb_lc_ctype, lc_ctype, length);
 	}
 
@@ -1420,7 +1418,7 @@ void MET_ready( qli_syntax* node, const bool create_flag)
 	else
 	{
 		q = QLI_default_user;
-		length = static_cast<SSHORT>(strlen(QLI_default_user));
+		length = strlen(QLI_default_user);
 	}
 	if (length) {
 		dpb.insertString(isc_dpb_user_name, q, length);
@@ -1436,7 +1434,7 @@ void MET_ready( qli_syntax* node, const bool create_flag)
 	else
 	{
 		q = QLI_default_password;
-		length = static_cast<SSHORT>(strlen(QLI_default_password));
+		length = strlen(QLI_default_password);
 	}
 	if (length) {
 		dpb.insertString(isc_dpb_password, q, length);
@@ -1905,7 +1903,7 @@ static void blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD& source_blob_id)
 
 	STUFF_WORD((USHORT) size);
 
-	FB_SIZE_T length;
+	size_t length;
 	while (source_blob.getSegment(buffer_length, buffer, length) && !source_blob.getCode())
 	{
 		while (rlb->rlb_data + length > rlb->rlb_limit)
@@ -2089,8 +2087,7 @@ static bool check_relation( qli_rel* relation)
 
 	FOR(REQUEST_HANDLE relation->rel_database->dbb_requests[REQ_relation_def]
 		TRANSACTION_HANDLE relation->rel_database->dbb_meta_trans)
-			X IN DB.RDB$RELATIONS
-			WITH X.RDB$RELATION_NAME EQ relation->rel_symbol->sym_string
+			X IN DB.RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ relation->rel_symbol->sym_string
 		previously_defined = true;
 	END_FOR
 	ON_ERROR
@@ -2145,12 +2142,13 @@ static void clone_fields( qli_rel* target, qli_rel* source)
 	STUFF(isc_dyn_version_1);
 	STUFF(isc_dyn_begin);
 
-	FOR(REQUEST_HANDLE req1 TRANSACTION_HANDLE s_trans)
-		Y IN DB.RDB$RELATION_FIELDS
-			CROSS F IN DB.RDB$FIELDS
-			WITH Y.RDB$RELATION_NAME = source->rel_symbol->sym_string
-			AND Y.RDB$FIELD_SOURCE = F.RDB$FIELD_NAME
-			// If SQL made this field, create a new global field for it
+	FOR(REQUEST_HANDLE req1
+		TRANSACTION_HANDLE s_trans)
+			Y IN DB.RDB$RELATION_FIELDS
+				CROSS F IN DB.RDB$FIELDS
+				WITH Y.RDB$RELATION_NAME = source->rel_symbol->sym_string
+				AND Y.RDB$FIELD_SOURCE = F.RDB$FIELD_NAME
+				// If SQL made this field, create a new global field for it
 		if (F.RDB$COMPUTED_BLR.NULL &&
 			!fb_utils::implicit_domain(Y.RDB$FIELD_NAME) &&
 			fb_utils::implicit_domain(F.RDB$FIELD_NAME))
@@ -2333,7 +2331,8 @@ static void clone_global_fields( qli_rel* target, qli_rel* source)
 	qli_rlb* rlb = NULL;
 	bool first_field = true;
 
-	FOR(REQUEST_HANDLE req1 TRANSACTION_HANDLE s_trans)
+	FOR(REQUEST_HANDLE req1
+		TRANSACTION_HANDLE s_trans)
 		RFR IN DB.RDB$RELATION_FIELDS CROSS
 		Y IN DB.RDB$FIELDS
 		WITH RFR.RDB$RELATION_NAME = source->rel_symbol->sym_string AND
@@ -2805,7 +2804,7 @@ static TEXT* get_query_header( qli_dbb* database, ISC_QUAD& blob_id)
 	{
 		if (p >= end)
 			break;
-		FB_SIZE_T length;
+		size_t length;
 		if (!blob.getSegment(sizeof(buffer), buffer, length))
 			break;
 		if (length && buffer[length - 1] == '\n')
@@ -2861,7 +2860,7 @@ static void install( qli_dbb* old_dbb)
 
 	// Copy the database block to one out of the permanent pool
 
-	const SSHORT l = old_dbb->dbb_filename_length;
+	SSHORT l = old_dbb->dbb_filename_length;
 	qli_dbb* new_dbb = (qli_dbb*) ALLOCPV(type_dbb, l);
 	new_dbb->dbb_filename_length = l;
 	memcpy(new_dbb->dbb_filename, old_dbb->dbb_filename, l);
@@ -2891,15 +2890,6 @@ static void install( qli_dbb* old_dbb)
 
 	get_database_type(new_dbb);
 	set_capabilities(new_dbb);
-#ifndef DEV_BUILD
-	if (new_dbb->dbb_capabilities & DBB_cap_nodyn)
-	{
-		const char* str = new_dbb->dbb_filename;
-		if (name && strncmp(name->nam_string, "QLI_", 4))
-			str = name->nam_string;
-		ERRQ_msg_put(530, str);
-	}
-#endif
 
 	// Get all relations in database.  For each relation make up a
 	// relation block, make up a symbol block, and insert the symbol
@@ -3198,7 +3188,7 @@ static qli_syntax* parse_blr( UCHAR** ptr, qli_symbol* symbol)
 		break;
 
 	case blr_fid:
-		(void) BLR_BYTE;
+		BLR_BYTE;
 		blr += 2;
 		node = make_node(nod_field, 1);
 		name = (qli_name*) ALLOCPV(type_nam, symbol->sym_length);
@@ -3208,7 +3198,7 @@ static qli_syntax* parse_blr( UCHAR** ptr, qli_symbol* symbol)
 		break;
 
 	case blr_field:
-		(void) BLR_BYTE;
+		BLR_BYTE;
 		length = BLR_BYTE;
 		node = make_node(nod_field, 1);
 		name = (qli_name*) ALLOCPV(type_nam, length);
@@ -3255,7 +3245,7 @@ static qli_syntax* parse_blr( UCHAR** ptr, qli_symbol* symbol)
 
 		case blr_varying:
 			dtype = dtype_varying;
-			length = l = static_cast<SSHORT>(gds__vax_integer(blr, 2) + sizeof(USHORT));
+			length = l = gds__vax_integer(blr, 2) + sizeof(USHORT);
 			blr += 2;
 			break;
 
@@ -3263,7 +3253,7 @@ static qli_syntax* parse_blr( UCHAR** ptr, qli_symbol* symbol)
 			dtype = dtype_varying;
 			scale = gds__vax_integer(blr, 2);
 			blr += 2;
-			length = l = static_cast<SSHORT>(gds__vax_integer(blr, 2) + sizeof(USHORT));
+			length = l = gds__vax_integer(blr, 2) + sizeof(USHORT);
 			blr += 2;
 			break;
 
@@ -3387,7 +3377,7 @@ static qli_syntax* parse_blr_blob(ISC_QUAD& blob_id, qli_symbol* symbol)
 
 	for (;;)
 	{
-		FB_SIZE_T length = buffer + sizeof(buffer) - ptr;
+		size_t length = buffer + sizeof(buffer) - ptr;
 		if (!length)
 			break;
 		// The old code considered getting a portion of a segment a bug.
@@ -3470,7 +3460,7 @@ static void put_dyn_string( qli_rlb* rlb, const TEXT* string)
  *
  **************************************/
 
-	const SSHORT l = static_cast<SSHORT>(strlen(string));
+	const SSHORT l = strlen(string);
 
 	while ((SSHORT) (rlb->rlb_limit - rlb->rlb_data) < l) {
 		rlb = GEN_rlb_extend(rlb);
