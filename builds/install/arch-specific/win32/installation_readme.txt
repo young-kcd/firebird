@@ -111,7 +111,7 @@ o There are known areas of overlap between the
 
 o Be sure to install as an administrator. ie, if 
   using the binary installer right click and choose 
-  'Run as administrator'. Otherwise the installer will be 
+  'Run as administrator'. Otherwise the installer 
   may be unable to start the Firebird service at 
   the end of installation.
 
