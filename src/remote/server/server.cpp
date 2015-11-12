@@ -2288,20 +2288,25 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 		if (aux_port)
 		{
 			aux_port->port_flags |= PORT_connecting;
+			bool connected = false;
 			try
 			{
-				if (aux_port->connect(send))
+				connected = aux_port->connect(send) != NULL;
+				if (connected)
 					aux_port->port_context = rdb;
 			}
 			catch (const Exception& ex)
 			{
-				aux_port->port_flags &= ~PORT_connecting;
 				iscLogException("", ex);
+			}
+
+			aux_port->port_flags &= ~PORT_connecting;
+			if (!connected)
+			{
 				fb_assert(port->port_async == aux_port);
 				port->port_async = NULL;
 				aux_port->disconnect();
 			}
-			aux_port->port_flags &= ~PORT_connecting;
 		}
 	}
 	catch (const Exception& ex)

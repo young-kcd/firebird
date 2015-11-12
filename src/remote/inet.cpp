@@ -147,14 +147,15 @@ const int NOTASOCKET = EBADF;
 
 static void SOCLOSE(SOCKET& socket)
 {
-	if (socket != INVALID_SOCKET)
+	SOCKET s = socket;
+	if (s != INVALID_SOCKET)
 	{
-#ifdef WIN_NT
-		closesocket(socket);
-#else
-		close(socket);
-#endif
 		socket = INVALID_SOCKET;
+#ifdef WIN_NT
+		closesocket(s);
+#else
+		close(s);
+#endif
 	}
 }
 
@@ -1365,6 +1366,9 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 				}
 			}
 		}
+
+		if (port->port_channel == INVALID_SOCKET)
+			return NULL;
 
 		const SOCKET n = os_utils::accept(port->port_channel, NULL, NULL);
 		inetErrNo = INET_ERRNO;
