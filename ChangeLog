@@ -1,3 +1,16 @@
+ 2015-11-11 16:14  aafemt 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/ods.h
+A little comment
+
+ 2015-11-11 15:16  alexpeshkoff 
+   D doc/README.UserSql
+Fixed CORE-5009: remove obsolete readme on user management
+
+ 2015-11-11 13:53  alexpeshkoff 
+   M src/jrd/jrd.cpp
+Fixed CORE-4991: Key holder plugin is loaded on connect to database but not on create
+
  2015-11-10 17:04  paul_reeves 
    M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
 Fix dumb error which has been lurking in the windows packaging code for a while.
