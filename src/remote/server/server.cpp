@@ -692,8 +692,8 @@ GlobalPtr<Mutex> GlobalPortLock::mtx;
 class Callback FB_FINAL : public RefCntIface<IEventCallbackImpl<Callback, CheckStatusWrapper> >
 {
 public:
-	explicit Callback(Rvnt* aevent)
-		: event(aevent)
+	explicit Callback(Rdb* aRdb, Rvnt* aEvent)
+		: rdb(aRdb), event(aEvent)
 	{ }
 
 	// IEventCallback implementation
@@ -709,20 +709,21 @@ public:
 	 *
 	 **************************************/
 	{
-		const bool allowCancel = event->rvnt_destroyed.compareExchange(0, 1);
-		if (!allowCancel)
-			return;
-
-		Rdb* rdb = event->rvnt_rdb;
-
 		rem_port* port = rdb->rdb_port->port_async;
-		if (!port)
+		if (!port || port->port_flags & PORT_detached)
 			return;
 
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
+		if (port->port_flags & PORT_detached)
+			return;
+
 		// hvlad: it is important to call IEvents::cancel() under protection
 		// of async port mutex to avoid crash in rem_port::que_events
+
+		const bool allowCancel = event->rvnt_destroyed.compareExchange(0, 1);
+		if (!allowCancel)
+			return;
 
 		if (allowCancel && event->rvnt_iface)
 		{
@@ -758,6 +759,7 @@ public:
 	}
 
 private:
+	Rdb* rdb;
 	Rvnt* event;
 };
 
@@ -2294,6 +2296,13 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 				connected = aux_port->connect(send) != NULL;
 				if (connected)
 					aux_port->port_context = rdb;
+				else
+				{
+					aux_port->port_flags &= ~PORT_connecting;
+					fb_assert(port->port_async == aux_port);
+					port->port_async = NULL;
+					aux_port->disconnect();
+				}
 			}
 			catch (const Exception& ex)
 			{
@@ -2868,12 +2877,15 @@ ISC_STATUS rem_port::end_database(P_RLSE* /*release*/, PACKET* sendL)
 
 	port_flags |= PORT_detached;
 	if (port_async)
+	{
 		port_async->port_flags |= PORT_detached;
 
-	rdb->rdb_iface = NULL;
+		RefMutexGuard portGuard(*port_async->port_sync, FB_FUNCTION);
+		while (rdb->rdb_events)
+			release_event(rdb->rdb_events);
+	}
 
-	while (rdb->rdb_events)
-		release_event(rdb->rdb_events);
+	rdb->rdb_iface = NULL;
 
 	while (rdb->rdb_requests)
 		release_request(rdb->rdb_requests);
@@ -4616,7 +4628,7 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 #endif
 		event->rvnt_next = rdb->rdb_events;
 		rdb->rdb_events = event;
-		event->rvnt_callback = FB_NEW Callback(event);
+		event->rvnt_callback = FB_NEW Callback(rdb, event);
 	}
 
 	event->rvnt_id = stuff->p_event_rid;
