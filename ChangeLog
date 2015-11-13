@@ -1,3 +1,20 @@
+ 2015-11-12 14:13  hvlad 
+   M src/remote/server/server.cpp
+Fixed bug CORE-5015 :  AV in engine could happen when ON DISCONNECT trigger posted event
+
+ 2015-11-12 13:43  alexpeshkoff 
+   M src/remote/inet.cpp
+   M src/remote/server/server.cpp
+Fixed CORE-5014: Interrupt of aux connection during TCP setup phase causes unclear error messages in firebird.log
+
+ 2015-11-12 07:23  paul_reeves 
+   M builds/install/arch-specific/win32/installation_readme.txt
+Misc
+
+ 2015-11-12 07:19  paul_reeves 
+   M builds/install/arch-specific/win32/install_service.bat
+Remove comments left in by error while testing.
+
  2015-11-11 16:14  aafemt 
    M src/jrd/CryptoManager.cpp
    M src/jrd/ods.h
