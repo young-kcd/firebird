@@ -1,3 +1,7 @@
+ 2015-11-13 12:45  alexpeshkoff 
+   M src/remote/server/server.cpp
+Postfix for CORE-5014: not good to disconnject same port twice, looks like I and Vlad tried to fix same bug simultaneously
+
  2015-11-12 14:13  hvlad 
    M src/remote/server/server.cpp
 Fixed bug CORE-5015 :  AV in engine could happen when ON DISCONNECT trigger posted event
