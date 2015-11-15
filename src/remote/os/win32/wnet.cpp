@@ -631,9 +631,9 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 	const DWORD server_pid = (vport->port_server_flags & SRVR_multi_client) ?
 		++event_counter : GetCurrentProcessId();
 	rem_port* const new_port = alloc_port(vport->port_parent);
-	vport->port_async = new_port;
 	new_port->port_server_flags = vport->port_server_flags;
-	new_port->port_flags = vport->port_flags & PORT_no_oob;
+	new_port->port_flags = (vport->port_flags & PORT_no_oob) | PORT_connecting;
+	vport->port_async = new_port;
 
 	TEXT str_pid[32];
 	wnet_make_file_name(str_pid, server_pid);
@@ -731,6 +731,7 @@ static void disconnect(rem_port* port)
 
 	// If this is a sub-port, unlink it from its parent
 	port->unlinkParent();
+	port->port_flags &= ~PORT_connecting;
 
 	if (port->port_server_flags & SRVR_server)
 	{

@@ -1504,7 +1504,7 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 	}
 
 	rem_port* const new_port = alloc_port(port->port_parent,
-		(port->port_flags & PORT_no_oob) | PORT_async);
+		(port->port_flags & PORT_no_oob) | PORT_async | PORT_connecting);
 	port->port_async = new_port;
 	new_port->port_dummy_packet_interval = port->port_dummy_packet_interval;
 	new_port->port_dummy_timeout = new_port->port_dummy_packet_interval;
@@ -1590,6 +1590,7 @@ static void disconnect(rem_port* const port)
 
 	MutexLockGuard guard(port_mutex, FB_FUNCTION);
 	port->port_state = rem_port::DISCONNECTED;
+	port->port_flags &= ~PORT_connecting;
 
 	if (port->port_async)
 	{
@@ -1935,7 +1936,8 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 
 			if (!REMOTE_inflate(port, packet_receive, buffer, bufsize, length))
 			{
-				if (port->port_flags & PORT_disconnect) {
+				if (port->port_flags & (PORT_disconnect | PORT_connecting))
+				{
 					continue;
 				}
 				*length = 0;

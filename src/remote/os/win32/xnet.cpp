@@ -888,10 +888,10 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 											  channel_s2c_client_ptr, xcc->xcc_send_channel->xch_size,
 											  channel_c2s_client_ptr, xcc->xcc_recv_channel->xch_size);
 
-		port->port_async = new_port;
 		new_port->port_xcc = xcc;
-		new_port->port_flags = port->port_flags & PORT_no_oob;
+		new_port->port_flags = (port->port_flags & PORT_no_oob) | PORT_connecting;
 		new_port->port_server_flags = port->port_server_flags;
+		port->port_async = new_port;
 
 		P_RESP* response = &packet->p_resp;
 		response->p_resp_data.cstr_length = 0;
@@ -1441,6 +1441,7 @@ static void disconnect(rem_port* port)
 
 	// If this is a sub-port, unlink it from it's parent
 	port->unlinkParent();
+	port->port_flags &= ~PORT_connecting;
 	xnet_ports->unRegisterPort(port);
 	cleanup_port(port);
 }
