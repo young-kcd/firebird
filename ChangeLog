@@ -1,3 +1,10 @@
+ 2015-11-15 11:57  alexpeshkoff 
+   M src/remote/inet.cpp
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/server/server.cpp
+Fixed CORE-5017: Interrupt of aux connection during TCP setup phase causes server exit due to unhandled exception
+
  2015-11-13 12:45  alexpeshkoff 
    M src/remote/server/server.cpp
 Postfix for CORE-5014: not good to disconnject same port twice, looks like I and Vlad tried to fix same bug simultaneously
