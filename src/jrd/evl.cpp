@@ -337,10 +337,12 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 		{
 			thread_db* tdbb = JRD_get_thread_data();
 
+			const Format* const currentFormat = MET_current(tdbb, relation);
+
 			while (id >= format->fmt_defaults.getCount() ||
 				 format->fmt_defaults[id].vlu_desc.isUnknown())
 			{
-				if (format->fmt_version >= relation->rel_current_format->fmt_version)
+				if (format->fmt_version >= currentFormat->fmt_version)
 				{
 					format = NULL;
 					break;
