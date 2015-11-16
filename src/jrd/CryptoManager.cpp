@@ -353,6 +353,24 @@ namespace Jrd {
 	void CryptoManager::attach(thread_db* tdbb, Attachment* att)
 	{
 		keyHolderPlugins.attach(att, dbb.dbb_config);
+
+		if (!cryptPlugin)
+		{
+			// Lock crypt state
+			takeStateLock(tdbb);
+
+			Header hdr(tdbb, LCK_read);
+			crypt = hdr->hdr_flags & Ods::hdr_encrypted;
+			process = hdr->hdr_flags & Ods::hdr_crypt_process;
+
+			if (crypt || process)
+			{
+				loadPlugin(hdr->hdr_crypt_plugin);
+
+				if (!cryptPlugin)
+					(Arg::Gds(isc_decrypt_error)).raise();
+			}
+		}
 	}
 
 	void CryptoManager::cryptThread()
@@ -518,38 +536,11 @@ namespace Jrd {
 		{
 			if (page->pag_flags & Ods::crypted_page)
 			{
+				fb_assert(cryptPlugin);
 				if (!cryptPlugin)
 				{
-					// We are invoked from shared cache manager, i.e. no valid attachment in tdbb
-					// Therefore create system temporary attachment like in crypt thread to be able to work with locks
-					UserId user;
-					user.usr_user_name = "(Crypt plugin loader)";
-
-					Jrd::Attachment* const attachment = Jrd::Attachment::create(&dbb);
-					RefPtr<SysStableAttachment> sAtt(FB_NEW SysStableAttachment(attachment));
-					attachment->setStable(sAtt);
-					attachment->att_filename = dbb.dbb_filename;
-					attachment->att_user = &user;
-
-					BackgroundContextHolder tdbb(&dbb, attachment, sv, FB_FUNCTION);
-
-					// Lock crypt state
-					takeStateLock(tdbb);
-
-					Header hdr(tdbb, LCK_read);
-					crypt = hdr->hdr_flags & Ods::hdr_encrypted;
-					process = hdr->hdr_flags & Ods::hdr_crypt_process;
-
-					if (crypt || process)
-					{
-						loadPlugin(hdr->hdr_crypt_plugin);
-					}
-
-					if (!cryptPlugin)
-					{
-						(Arg::Gds(isc_decrypt_error)).raise();
-						return false;
-					}
+					(Arg::Gds(isc_decrypt_error)).raise();
+					return false;
 				}
 
 				cryptPlugin->decrypt(sv, dbb.dbb_page_size - sizeof(Ods::pag), &page[1], &page[1]);
