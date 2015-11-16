@@ -34,7 +34,7 @@
 
 using namespace Firebird;
 
-class CryptKey : public Api::ICryptKeyCallbackImpl<CryptKey>
+class CryptKey : public ICryptKeyCallbackImpl<CryptKey, CheckStatusWrapper>
 {
 public:
 	unsigned int callback(unsigned int, const void*, unsigned int length, void* buffer)
@@ -58,7 +58,8 @@ class App
 {
 public:
 	App() :
-		master(fb_get_master_interface()), status(master->getStatus()),
+		master(fb_get_master_interface()),
+		statusWrapper(master->getStatus()), status(&statusWrapper),
 		p(NULL), att(NULL), tra(NULL)
 	{ }
 
@@ -156,7 +157,8 @@ public:
 
 private:
 	IMaster* master;
-	IStatus* status;
+	CheckStatusWrapper statusWrapper;
+	CheckStatusWrapper* status;
 	IProvider* p;
 	IAttachment* att;
 	ITransaction* tra;
