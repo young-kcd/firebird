@@ -2380,24 +2380,18 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
 			node->computable(csb, INVALID_STREAM, false))
 		{
-			// Use conjuncts that have just been matched to indices and
-			// also others, but only if they're local to the current stream.
-			// This leaves the rest being candidates for a merge/hash join.
+			// If inversion is available, utilize all conjuncts that refer to
+			// the stream being retrieved. Otherwise, utilize only conjuncts
+			// that are local to this stream. The remaining ones are left in piece
+			// as possible candidates for a merge/hash join.
 
-			if (tail->opt_conjunct_flags & opt_conjunct_matched)
-			{
-				if (node->findStream(stream))
-				{
-					compose(*tdbb->getDefaultPool(), &boolean, node);
-					tail->opt_conjunct_flags |= opt_conjunct_used;
-				}
-			}
-			else if (node->computable(csb, stream, true))
+			if ((inversion && node->findStream(stream)) ||
+				(!inversion && node->computable(csb, stream, true)))
 			{
 				compose(*tdbb->getDefaultPool(), &boolean, node);
 				tail->opt_conjunct_flags |= opt_conjunct_used;
 
-				if (!outer_flag)
+				if (!outer_flag && !(tail->opt_conjunct_flags & opt_conjunct_matched))
 					csb_tail->csb_flags |= csb_unmatched;
 			}
 		}
