@@ -1,3 +1,23 @@
+ 2015-11-16 20:33  dimitr 
+   M src/jrd/opt.cpp
+Reverted back my change from Jan-2014. I cannot reproduce the original problem anymore. Also, this resolves regression CORE-5018: Non-indexed predicates may not be applied immediately after retrieval when tables are being joined.
+
+ 2015-11-16 16:13  alexpeshkoff 
+   M examples/dbcrypt/CryptApplication.cpp
+Fixed crypt application
+
+ 2015-11-16 12:09  dimitr 
+   M src/jrd/evl.cpp
+This should fix CORE-5016: Server crashes during GC when DELETE is executed after adding new referencing column.
+
+ 2015-11-16 10:25  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+Partially rolled back changes in my last commit in order to restore CS support
+
+ 2015-11-16 09:48  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+Slightly optimize loading of disk crypt plugin, thanks to Dmitry Sibiryakov
+
  2015-11-15 11:57  alexpeshkoff 
    M src/remote/inet.cpp
    M src/remote/os/win32/wnet.cpp
