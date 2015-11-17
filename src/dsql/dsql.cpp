@@ -372,6 +372,12 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 		}
 	}
 
+	if (!request->req_request)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+				  Arg::Gds(isc_unprepared_stmt));
+	}
+
 #ifdef SCROLLABLE_CURSORS
 
 	// check whether we need to send an asynchronous scrolling message
@@ -1256,6 +1262,12 @@ static void execute_request(thread_db* tdbb,
 		fb_assert(false);
 	}
 
+	if (!request->req_request)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+				  Arg::Gds(isc_unprepared_stmt));
+	}
+
 	// If there is no data required, just start the request
 
 	dsql_msg* message = request->req_send;
@@ -1278,10 +1290,7 @@ static void execute_request(thread_db* tdbb,
 	// Selectable execute block should get the "proc fetch" flag assigned,
 	// which ensures that the savepoint stack is preserved while suspending
 	if (request->req_type == REQ_SELECT_BLOCK)
-	{
-		fb_assert(request->req_request);
 		request->req_request->req_flags |= req_proc_fetch;
-	}
 
 	// REQ_EXEC_BLOCK has no outputs so there are no out_msg
 	// supplied from client side, but REQ_EXEC_BLOCK requires

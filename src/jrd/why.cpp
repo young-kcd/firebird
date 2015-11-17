@@ -2714,6 +2714,8 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS* user_status,
 			handle = t->handle;
 		}
 
+		statement->checkPrepared();
+
 		CALL(PROC_DSQL_EXECUTE2, statement->implementation) (status,
 														     &handle,
 														     &statement->handle,
@@ -3251,6 +3253,8 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH_M(ISC_STATUS* user_status,
 		Statement statement = translate<CStatement>(stmt_handle);
 		YEntry entryGuard(status, statement);
 
+		statement->checkPrepared();
+
 		ISC_STATUS s =
 			CALL(PROC_DSQL_FETCH, statement->implementation) (status, &statement->handle,
 															  blr_length, blr,
@@ -3302,6 +3306,8 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2_M(ISC_STATUS* user_status,
 	{
 		Statement statement = translate<CStatement>(stmt_handle);
 		YEntry entryGuard(statement);
+
+		statement->checkPrepared();
 
 		ISC_STATUS s =
 			CALL(PROC_DSQL_FETCH, statement->implementation) (status, &statement->handle,
