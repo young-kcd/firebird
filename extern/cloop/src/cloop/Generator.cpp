@@ -26,7 +26,6 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <inttypes.h>
 
 using std::deque;
 using std::runtime_error;
