@@ -1251,9 +1251,14 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 
 	if (navigationCandidate)
 	{
-		for (i = 0; i < navigationCandidate->segments.getCount(); i++)
+		const int matchedSegments =
+			MAX(navigationCandidate->lowerCount, navigationCandidate->upperCount);
+
+		fb_assert(matchedSegments <= (int) navigationCandidate->segments.getCount());
+
+		for (int segno = 0; segno < matchedSegments; segno++)
 		{
-			const IndexScratchSegment* const segment = navigationCandidate->segments[i];
+			const IndexScratchSegment* const segment = navigationCandidate->segments[segno];
 
 			for (FB_SIZE_T j = 0; j < segment->matches.getCount(); j++)
 			{
