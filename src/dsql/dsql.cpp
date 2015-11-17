@@ -264,6 +264,12 @@ bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 		}
 	}
 
+	if (!req_request)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+				  Arg::Gds(isc_unprepared_stmt));
+	}
+
 	dsql_msg* message = (dsql_msg*) statement->getReceiveMsg();
 
 	// Set up things for tracing this call
@@ -650,6 +656,12 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
 	bool singleton)
 {
+	if (!req_request)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+				  Arg::Gds(isc_unprepared_stmt));
+	}
+
 	// If there is no data required, just start the request
 
 	const dsql_msg* message = statement->getSendMsg();
@@ -672,10 +684,7 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	// Selectable execute block should get the "proc fetch" flag assigned,
 	// which ensures that the savepoint stack is preserved while suspending
 	if (statement->getType() == DsqlCompiledStatement::TYPE_SELECT_BLOCK)
-	{
-		fb_assert(req_request);
 		req_request->req_flags |= req_proc_fetch;
-	}
 
 	// TYPE_EXEC_BLOCK has no outputs so there are no out_msg
 	// supplied from client side, but TYPE_EXEC_BLOCK requires
