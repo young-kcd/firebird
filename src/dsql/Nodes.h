@@ -1135,7 +1135,8 @@ class ValueListNode : public TypedNode<ListExprNode, ExprNode::TYPE_VALUE_LIST>
 public:
 	ValueListNode(MemoryPool& pool, unsigned count)
 		: TypedNode<ListExprNode, ExprNode::TYPE_VALUE_LIST>(pool),
-		  items(pool)
+		  items(pool, INITIAL_CAPACITY),
+		  itemsBegin(items.begin())
 	{
 		items.resize(count);
 
@@ -1148,7 +1149,8 @@ public:
 
 	ValueListNode(MemoryPool& pool, ValueExprNode* arg1)
 		: TypedNode<ListExprNode, ExprNode::TYPE_VALUE_LIST>(pool),
-		  items(pool)
+		  items(pool, INITIAL_CAPACITY),
+		  itemsBegin(items.begin())
 	{
 		items.resize(1);
 		addDsqlChildNode((items[0] = arg1));
@@ -1156,8 +1158,13 @@ public:
 
 	ValueListNode* add(ValueExprNode* argn)
 	{
-		items.add(argn);
-		resetChildNodes();
+		FB_SIZE_T pos = items.add(argn);
+
+		if (invalidated())
+			resetChildNodes();
+		else
+			addChildNode(items[pos], items[pos]);
+
 		return this;
 	}
 
@@ -1220,6 +1227,13 @@ public:
 	}
 
 private:
+	bool invalidated()
+	{
+		bool ret = items.begin() != itemsBegin;
+		itemsBegin = items.begin();
+		return ret;
+	}
+
 	void resetChildNodes()
 	{
 		dsqlChildNodes.clear();
@@ -1227,10 +1241,16 @@ private:
 
 		for (FB_SIZE_T i = 0; i < items.getCount(); ++i)
 			addChildNode(items[i], items[i]);
+
+		itemsBegin = items.begin();
 	}
 
 public:
 	NestValueArray items;
+	NestConst<ValueExprNode>* itemsBegin;
+
+private:
+	static const unsigned INITIAL_CAPACITY = 4;
 };
 
 // Container for a list of record source expressions.
