@@ -315,7 +315,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 #ifdef OPT_DEBUG
 	if (opt_debug_flag != DEBUG_NONE && !opt_debug_file)
-		opt_debug_file = fopen("opt_debug.out", "w");
+		opt_debug_file = fopen(OPTIMIZER_DEBUG_FILE, "w");
 #endif
 
 
@@ -4992,7 +4992,6 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	const OptimizerBlk::opt_conjunct* opt_end = opt->opt_conjuncts.begin() +
 		(inner_flag ? opt->opt_base_missing_conjuncts : opt->opt_conjuncts.getCount());
 	RecordSource* rsb = NULL;
-	bool index_used = false;
 	bool full_unique_match = false;
 
 	Database* dbb = tdbb->getDatabase();
@@ -5228,7 +5227,6 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 				IndexRetrieval*	retrieval = (IndexRetrieval*) idx_node->nod_arg[e_idx_retrieval];
 				compose(&inversion, idx_node, nod_bit_and);
 				idx->idx_runtime_flags |= idx_used_with_and;
-				index_used = true;
 
 				// When we composed a UNIQUE index stop composing, because
 				// this is the best we can get, but only when full used.
