@@ -8993,68 +8993,71 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 	isc_tr_handle	local_trans = 0;
 	bool exists = false;
 	// if grantor is not set than it's system privilege which should not be restored
-	if (grantor[0]) switch (object_type)
+	if (grantor[0])
 	{
-	case obj_package_header:
+		switch (object_type)
 		{
-		for (const burp_pkg* pkg = tdgbl->packages; pkg; pkg = pkg->pkg_next)
-			if (strcmp(pkg->pkg_name, relation_name) == 0)
+		case obj_package_header:
 			{
-				exists = true;
-				local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
-				break;
-			}
-		}
-		break;
-
-	case obj_procedure:
-		{
-		for (const burp_prc* proc = tdgbl->procedures; proc; proc = proc->prc_next)
-			if (!proc->prc_package[0] && strcmp(proc->prc_name, relation_name) == 0)
-			{
-				exists = true;
-				local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
-				break;
-			}
-		}
-		break;
-
-	case obj_relation:
-		{
-		for (const burp_rel* rel = tdgbl->relations; rel; rel = rel->rel_next)
-			if (strcmp(rel->rel_name, relation_name) == 0)
-			{
-				exists = true;
-				if (rel->rel_flags & REL_view)
-					local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
-				break;
-			}
-		}
-		break;
-
-	case obj_charset:
-	case obj_collation:
-	case obj_exception:
-	case obj_udf:
-	case obj_field:
-	case obj_generator:
-		{
-		for (burp_meta_obj* object = tdgbl->miss_privs; object; object = object->obj_next)
-			if (object->obj_type == object_type && strcmp(object->obj_name, relation_name) == 0)
-			{
-				if (object->obj_class)
+			for (const burp_pkg* pkg = tdgbl->packages; pkg; pkg = pkg->pkg_next)
+				if (strcmp(pkg->pkg_name, relation_name) == 0)
+				{
 					exists = true;
-				break;
+					local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
+					break;
+				}
 			}
+			break;
+
+		case obj_procedure:
+			{
+			for (const burp_prc* proc = tdgbl->procedures; proc; proc = proc->prc_next)
+				if (!proc->prc_package[0] && strcmp(proc->prc_name, relation_name) == 0)
+				{
+					exists = true;
+					local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
+					break;
+				}
+			}
+			break;
+
+		case obj_relation:
+			{
+			for (const burp_rel* rel = tdgbl->relations; rel; rel = rel->rel_next)
+				if (strcmp(rel->rel_name, relation_name) == 0)
+				{
+					exists = true;
+					if (rel->rel_flags & REL_view)
+						local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
+					break;
+				}
+			}
+			break;
+
+		case obj_charset:
+		case obj_collation:
+		case obj_exception:
+		case obj_udf:
+		case obj_field:
+		case obj_generator:
+			{
+			for (burp_meta_obj* object = tdgbl->miss_privs; object; object = object->obj_next)
+				if (object->obj_type == object_type && strcmp(object->obj_name, relation_name) == 0)
+				{
+					if (object->obj_class)
+						exists = true;
+					break;
+				}
+			}
+			break;
+
+		case obj_database:
+			break;
+
+		default:
+			exists = true;
+			break;
 		}
-		break;
-
-	case obj_database:
-		break;
-
-	default:
-		exists = true;
-		break;
 	}
 
 	if (object_type == obj_package_header)
