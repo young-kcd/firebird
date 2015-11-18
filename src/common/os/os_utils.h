@@ -77,7 +77,7 @@ namespace os_utils
 		CtrlCHandler();
 		~CtrlCHandler();
 
-		bool getTerminated() const 
+		bool getTerminated() const
 		{
 			return terminated;
 		}

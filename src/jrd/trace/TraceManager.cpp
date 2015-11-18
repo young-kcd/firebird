@@ -163,6 +163,7 @@ void TraceManager::shutdown()
 			init_factories = false;
 		}
 	}
+
 	getStorage()->shutdown();
 }
 

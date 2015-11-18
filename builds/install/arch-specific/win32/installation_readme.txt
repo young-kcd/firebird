@@ -47,15 +47,15 @@ Installation of MS VC runtime libraries
 
 Firebird 3 no longer needs to deploy the MSVC runtimes
 into the windows system directories so no redistributable
-run-timme package is deployed. Firebird 3.0 loads the runtime
-libraries  from the root installation directory.
+run-time package is deployed. Firebird 3.0 loads the runtime
+libraries from the root installation directory.
 
 
 Deployment of gds32.dll
 -----------------------
 
 This compatibility library is no longer deployed into 
-then windows system directory by default. We cannot
+the windows system directory by default. We cannot
 guarantee that the required MSVC runtimes will be 
 available. However it remains an option at install
 time, along with system deployment of fbclient.dll.
@@ -64,7 +64,7 @@ Be sure to check that your target system has the
 appropriate MSVC10 runtimes if you use these options.
 
 
-Installation of the Guardian 
+Installation of the Guardian
 ----------------------------
 
 We are hoping to phase out the Guardian. It doesn't 
@@ -112,7 +112,7 @@ o There are known areas of overlap between the
 o Be sure to install as an administrator. ie, if 
   using the binary installer right click and choose 
   'Run as administrator'. Otherwise the installer 
-  may be unable to start the Firebird service at 
+  may be unable to start the Firebird service at
   the end of installation.
 
 o Libraries deployed by instclient may fail to load if

@@ -914,7 +914,7 @@ static rem_port* listener_socket(rem_port* port, USHORT flag, const addrinfo* pa
  *	binds the socket and calls listen().
  *  For multi-client server (SuperServer or SuperClassic) return listener
  *  port.
- *  For classic server - accept incoming connections and fork worker 
+ *  For classic server - accept incoming connections and fork worker
  *  processes, return NULL at exit;
  *  On error throw exception.
  *

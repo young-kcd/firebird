@@ -1441,7 +1441,7 @@ public:
 		full_size = Limits::getSize(slot);
 
 		FreeObjPtr blk = ListBuilder::getElement(&freeObjects[slot]);
-		if ((!blk) && from)
+		if (!blk && from)
 		{
 			for (unsigned slot1 = slot - 1; Limits::getSize(slot1) >= from; --slot1)
 			{
@@ -1805,13 +1805,13 @@ void MemoryPool::cleanup()
 
 
 MemPool::MemPool()
-  :	pool_destroying(false), parent_redirect(false), stats(MemoryPool::default_stats_group), parent(NULL)
+	: pool_destroying(false), parent_redirect(false), stats(MemoryPool::default_stats_group), parent(NULL)
 {
 	initialize();
 }
 
 MemPool::MemPool(MemPool& p, MemoryStats& s)
-  :	pool_destroying(false), parent_redirect(true), stats(&s), parent(&p)
+	: pool_destroying(false), parent_redirect(true), stats(&s), parent(&p)
 {
 	initialize();
 }
@@ -2556,4 +2556,3 @@ void* operator new[](size_t s) throw (OOM_EXCEPTION)
 	return MemoryPool::globalAlloc(s ALLOC_ARGS);
 }
 #endif // DEBUG_GDS_ALLOC
-

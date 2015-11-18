@@ -250,7 +250,7 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 	// count of fbclient.dll. If application unload fbclient.dll not calling
 	// fb_shutdown, then last unloaded plugin will finally unload fbclient.dll
 	// and the code that is currently running, leading to AV.
-	// To prevent such scenario we increment usage count of fbclient.dll and 
+	// To prevent such scenario we increment usage count of fbclient.dll and
 	// will decrement it in safe way at the end of the timer thread.
 
 	char buff[MAX_PATH];
@@ -258,7 +258,7 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 	HMODULE hDll = LoadLibrary(buff);
 #endif
 
-	while (stopTimerThread.value() == 0 
+	while (stopTimerThread.value() == 0
 #ifdef WIN_NT
 			&& Firebird::dDllUnloadTID == 0
 #endif

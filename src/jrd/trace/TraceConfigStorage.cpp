@@ -162,6 +162,7 @@ void ConfigStorage::shutdown()
 			m_sharedMemory->removeMapFile();
 		}
 	}
+
 	m_sharedMemory = NULL;
 }
 

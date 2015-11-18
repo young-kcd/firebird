@@ -6156,28 +6156,28 @@ dsc* InternalInfoNode::execute(thread_db* tdbb, jrd_req* request) const
 		return &impure->vlu_desc;
 	}
 
-	SLONG int32_result = 0;
-	SINT64 int64_result = 0;
+	SLONG result32 = 0;
+	SINT64 result64 = 0;
 
 	switch (infoType)
 	{
 		case INFO_TYPE_CONNECTION_ID:
-			int64_result = PAG_attachment_id(tdbb);
+			result64 = PAG_attachment_id(tdbb);
 			break;
 		case INFO_TYPE_TRANSACTION_ID:
-			int64_result = tdbb->getTransaction()->tra_number;
+			result64 = tdbb->getTransaction()->tra_number;
 			break;
 		case INFO_TYPE_GDSCODE:
-			int32_result = request->req_last_xcp.as_gdscode();
+			result32 = request->req_last_xcp.as_gdscode();
 			break;
 		case INFO_TYPE_SQLCODE:
-			int32_result = request->req_last_xcp.as_sqlcode();
+			result32 = request->req_last_xcp.as_sqlcode();
 			break;
 		case INFO_TYPE_ROWS_AFFECTED:
-			int64_result = request->req_records_affected.getCount();
+			result64 = request->req_records_affected.getCount();
 			break;
 		case INFO_TYPE_TRIGGER_ACTION:
-			int32_result = request->req_trigger_action;
+			result32 = request->req_trigger_action;
 			break;
 		default:
 			BUGCHECK(232);	// msg 232 EVL_expr: invalid operation
@@ -6185,10 +6185,10 @@ dsc* InternalInfoNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	dsc desc;
 
-	if (int64_result)
-		desc.makeInt64(0, &int64_result);
+	if (result64)
+		desc.makeInt64(0, &result64);
 	else
-		desc.makeLong(0, &int32_result);
+		desc.makeLong(0, &result32);
 
 	EVL_make_value(tdbb, &desc, impure);
 	return &impure->vlu_desc;
