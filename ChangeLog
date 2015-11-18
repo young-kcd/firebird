@@ -1,3 +1,23 @@
+ 2015-11-17 17:01  asfernandes 
+   M src/dsql/Nodes.h
+Try to fix the performance problem noted by Arno.
+
+ 2015-11-17 16:24  aafemt 
+   M extern/cloop/src/cloop/Generator.cpp
+MSVC2010 has no inttypes.h, may be stdint.h or cstdint was supposed?..
+
+ 2015-11-17 12:19  dimitr 
+   M src/misc/writeBuildNum.sh
+Updated the version string.
+
+ 2015-11-17 11:46  dimitr 
+   M src/dsql/dsql.cpp
+FB3 seems to be properly protected from CORE-4983 at the y-valve level, but I'm adding an additional protection for the engine anyway (call me paranoid).
+
+ 2015-11-17 10:47  dimitr 
+   M src/jrd/Optimizer.cpp
+Fixed CORE-5220: Regression: ORDER BY clause on compound index may disable usage of other indices.
+
  2015-11-16 20:33  dimitr 
    M src/jrd/opt.cpp
 Reverted back my change from Jan-2014. I cannot reproduce the original problem anymore. Also, this resolves regression CORE-5018: Non-indexed predicates may not be applied immediately after retrieval when tables are being joined.
