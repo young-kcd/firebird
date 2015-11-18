@@ -3635,10 +3635,16 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE_M(ISC_STATUS* user_status,
 			handle = transaction->handle;
 		}
 
-		CALL(PROC_DSQL_PREPARE, statement->implementation) (status, &handle, &statement->handle,
-															length, string, dialect,
-															item_length, items,
-															buffer_length, buffer);
+		if (CALL(PROC_DSQL_PREPARE, statement->implementation) (status, &handle, &statement->handle,
+																length, string, dialect,
+																item_length, items,
+																buffer_length, buffer))
+		{
+			return status[1];
+		}
+
+		// statement prepared OK
+		statement->flags |= HANDLE_STATEMENT_prepared;
 	}
 	catch (const Exception& e)
 	{
