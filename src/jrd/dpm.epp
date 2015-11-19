@@ -2112,7 +2112,7 @@ void DPM_rewrite_header( thread_db* tdbb, record_param* rpb)
 
 	// dimitr: current code is not expected to change the transaction number
 	fb_assert(rpb->rpb_transaction_nr == Ods::getTraNum(header));
-//	Ods::writeTraNum(header, rpb->rpb_transaction_nr);
+	///Ods::writeTraNum(header, rpb->rpb_transaction_nr);
 
 	header->rhd_flags = rpb->rpb_flags;
 	header->rhd_format = rpb->rpb_format_number;
@@ -2294,7 +2294,7 @@ static void check_swept(thread_db* tdbb, record_param* rpb)
 		{
 			rhd* header = (rhd*) ((SCHAR*) dpage + index->dpg_offset);
 			if (Ods::getTraNum(header) > transaction->tra_oldest ||
-				header->rhd_flags & (rpb_blob | rpb_chained | rpb_fragment) ||
+				(header->rhd_flags & (rpb_blob | rpb_chained | rpb_fragment)) ||
 				header->rhd_b_page)
 			{
 				CCH_RELEASE_TAIL(tdbb, window);
