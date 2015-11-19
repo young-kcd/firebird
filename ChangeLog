@@ -1,3 +1,24 @@
+ 2015-11-18 15:57  alexpeshkoff 
+   M builds/posix/Makefile.in.plugins_examples
+Added build of crypt application sample to posix build at least in order to keep it compilable
+
+ 2015-11-18 01:10  asfernandes 
+   M builds/install/arch-specific/win32/installation_readme.txt
+   M src/common/classes/alloc.cpp
+   M src/common/os/os_utils.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/parse.y
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/remote/inet.cpp
+   M src/yvalve/MasterImplementation.cpp
+Misc.
+
+ 2015-11-18 00:42  asfernandes 
+   M src/burp/restore.epp
+Fixed bad indentation.
+
  2015-11-17 17:01  asfernandes 
    M src/dsql/Nodes.h
 Try to fix the performance problem noted by Arno.
