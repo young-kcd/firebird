@@ -1,3 +1,11 @@
+ 2015-11-18 21:43  dimitr 
+   M src/misc/writeBuildNum.sh
+Bumped the build number.
+
+ 2015-11-18 07:21  dimitr 
+   M src/jrd/why.cpp
+Postfix for CORE-4983.
+
  2015-11-17 11:33  dimitr 
    M src/jrd/opt.cpp
 Misc.
