@@ -460,7 +460,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 
 #ifdef OPT_DEBUG
 	if (opt_debug_flag != DEBUG_NONE && !opt_debug_file)
-		opt_debug_file = os_utils::fopen("opt_debug.out", "w");
+		opt_debug_file = os_utils::fopen(OPTIMIZER_DEBUG_FILE, "w");
 #endif
 
 	// If there is a boolean, there is some work to be done.  First,
