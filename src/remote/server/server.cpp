@@ -710,7 +710,7 @@ public:
 	 **************************************/
 	{
 		rem_port* port = rdb->rdb_port->port_async;
-		if (!port || port->port_flags & PORT_detached)
+		if (!port || (port->port_flags & PORT_detached))
 			return;
 
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
@@ -725,7 +725,7 @@ public:
 		if (!allowCancel)
 			return;
 
-		if (allowCancel && event->rvnt_iface)
+		if (event->rvnt_iface)
 		{
 			LocalStatus ls;
 			CheckStatusWrapper status_vector(&ls);
@@ -4468,33 +4468,37 @@ static bool continue_authentication(rem_port* port, PACKET* send, PACKET* receiv
 	{
 		send_error(port, send, (Arg::Gds(isc_random) << "Operation not supported for network protocol"));
 	}
-	else try
+	else
 	{
-		if (receive->p_operation == op_trusted_auth)
+		try
 		{
-			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: trusted_auth\n"));
-			port->port_srv_auth_block->setDataForPlugin(receive->p_trau.p_trau_data);
-		}
-		else if (receive->p_operation == op_cont_auth)
-		{
-			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: continue_authentication\n"));
-			port->port_srv_auth_block->setDataForPlugin(&receive->p_auth_cont);
-		}
+			if (receive->p_operation == op_trusted_auth)
+			{
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: trusted_auth\n"));
+				port->port_srv_auth_block->setDataForPlugin(receive->p_trau.p_trau_data);
+			}
+			else if (receive->p_operation == op_cont_auth)
+			{
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: continue_authentication\n"));
+				port->port_srv_auth_block->setDataForPlugin(&receive->p_auth_cont);
+			}
 
-		if (sa->authenticate(send, ServerAuth::CONT_AUTH))
-		{
-			delete sa;
-			port->port_srv_auth = NULL;
-		}
-		return true;
-	}
-	catch (const Exception& ex)
-	{
-		LocalStatus ls;
-		CheckStatusWrapper status_vector(&ls);
-		ex.stuffException(&status_vector);
+			if (sa->authenticate(send, ServerAuth::CONT_AUTH))
+			{
+				delete sa;
+				port->port_srv_auth = NULL;
+			}
 
-		port->send_response(send, 0, 0, &status_vector, false);
+			return true;
+		}
+		catch (const Exception& ex)
+		{
+			LocalStatus ls;
+			CheckStatusWrapper status_vector(&ls);
+			ex.stuffException(&status_vector);
+
+			port->send_response(send, 0, 0, &status_vector, false);
+		}
 	}
 
 	port->disconnect(send, receive);
