@@ -628,12 +628,12 @@ void printMessage(USHORT number, const SafeArg& arg, bool newLine = true)
 
 void printInt(const char*& p, SLONG num)
 {
-	printf ("%s: %"SLONGFORMAT"\n", getMessage(num).c_str(), getInt(p));
+	printf("%s: %"SLONGFORMAT"\n", getMessage(num).c_str(), getInt(p));
 }
 
 void printInt64(const char*& p, SINT64 num)
 {
-	printf ("%s: %"SQUADFORMAT"\n", getMessage(num).c_str(), getInt64(p));
+	printf("%s: %"SQUADFORMAT"\n", getMessage(num).c_str(), getInt64(p));
 }
 
 const char* capArray[] = {

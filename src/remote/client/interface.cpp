@@ -5916,11 +5916,11 @@ static void disconnect( rem_port* port)
 		if (port->port_deferred_packets)
 		{
 			for (rem_que_packet* p = port->port_deferred_packets->begin();
-				p < port->port_deferred_packets->end(); p++)
+				 p < port->port_deferred_packets->end();
+				 p++)
 			{
-				if (!p->sent) {
+				if (!p->sent)
 					port->send(&p->packet);
-				}
 			}
 		}
 

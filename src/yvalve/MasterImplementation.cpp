@@ -308,13 +308,14 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 
 #ifdef WIN_NT
 	if (Firebird::dDllUnloadTID)
+	{
 		// fb_shutdown is called as result of FreeLibrary, not by application.
 		// Sooner of all we are the last user of fbclient.dll, and code will be
 		// physically unloaded as result of FreeLibrary() call.
 		FreeLibraryAndExitThread(hDll, 0);
+	}
 	else
-		// It is safe to decrement usage count here
-		FreeLibrary(hDll);
+		FreeLibrary(hDll);	// It is safe to decrement usage count here
 #endif
 
 	return 0;

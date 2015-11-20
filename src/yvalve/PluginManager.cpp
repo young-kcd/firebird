@@ -1051,10 +1051,12 @@ void PluginManager::unregisterModule(IPluginModule* cleanup)
 	// and only if it's unloaded not by PluginManager, but by OS.
 	// That means that task is closing unexpectedly - sooner of all
 	// exit() is called by client of embedded server. Shutdown ourselves.
+
 #ifdef WIN_NT
 	if (!Firebird::dDllUnloadTID)
 		Firebird::dDllUnloadTID = GetCurrentThreadId();
 #endif
+
 	fb_shutdown(5000, fb_shutrsn_exit_called);
 }
 

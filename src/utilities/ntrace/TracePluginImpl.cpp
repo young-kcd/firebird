@@ -952,7 +952,8 @@ void TracePluginImpl::register_connection(ITraceDatabaseConnection* connection)
 
 	string tmp(*getDefaultMemoryPool());
 
-	conn_data.description->printf("\t%s (ATT_%"SQUADFORMAT, connection->getDatabaseName(), connection->getConnectionID());
+	conn_data.description->printf("\t%s (ATT_%"SQUADFORMAT,
+		connection->getDatabaseName(), connection->getConnectionID());
 
 	const char* user = connection->getUserName();
 	if (user)
