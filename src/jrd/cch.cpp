@@ -381,11 +381,11 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag, S
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
 
-	Sync dsGuard(&dbb->dbb_sync, "CCH_exclusive_attachment");
+	Sync dsGuard(&dbb->dbb_sync, FB_FUNCTION);
 
 	const bool exLock = dbb->dbb_sync.ourExclusiveLock();
 	if (!exLock)
-		dsGuard.lock(SYNC_SHARED);
+		dsGuard.lock(level != LCK_none ? SYNC_EXCLUSIVE : SYNC_SHARED);
 	else
 		fb_assert(exGuard);
 
@@ -413,6 +413,9 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag, S
 		}
 		attachment->att_next = dbb->dbb_attachments;
 		dbb->dbb_attachments = attachment;
+
+		if (!exLock)
+			dsGuard.downgrade(SYNC_SHARED);
 	}
 
 	for (SLONG remaining = timeout; remaining >= 0; remaining -= CCH_EXCLUSIVE_RETRY_INTERVAL)

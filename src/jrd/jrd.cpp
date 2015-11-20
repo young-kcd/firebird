@@ -6550,8 +6550,11 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 			return false;
 	}
 
-	if (dbb->dbb_attachments)
-		return false;
+	{
+		SyncLockGuard dsGuard(&dbb->dbb_sync, SYNC_EXCLUSIVE, FB_FUNCTION);
+		if (dbb->dbb_attachments)
+			return false;
+	}
 
 	// Database linger
 	if ((flags & SHUT_DBB_LINGER) &&
