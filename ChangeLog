@@ -1,3 +1,26 @@
+ 2015-11-20 10:17  hvlad 
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.cpp
+Fix one of the reason for AV in the engine (see CORE-4680, test by Pavel Zotov at 18 Nov 2015).
+The race when gone attachment released database object while another attachment is initialized and uses same database object.
+Could happens with shared cache (former SS) only.
+
+ 2015-11-20 08:47  dimitr 
+   M src/jrd/opt.cpp
+Misc.
+
+ 2015-11-20 00:33  asfernandes 
+   M src/remote/client/interface.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/PluginManager.cpp
+Misc.
+
+ 2015-11-20 00:25  asfernandes 
+   M src/remote/server/server.cpp
+Fix bad indentation.
+
  2015-11-19 01:12  asfernandes 
    M src/jrd/dpm.epp
 Misc.
