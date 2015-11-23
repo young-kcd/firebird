@@ -273,6 +273,13 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 	{
 		status->init();
 		ex.stuffException(status);
+		switch(status->getErrors()[1])
+		{
+		case isc_stream_eof:	// User name not found in security database
+			return AUTH_CONTINUE;
+		default:
+			break;
+		}
 	}
 
 	return AUTH_FAILED;

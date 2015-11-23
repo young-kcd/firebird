@@ -349,7 +349,7 @@ int SecurityDatabase::verify(IWriter* authBlock, IServerBlock* sBlock)
 	char pw1[MAX_LEGACY_PASSWORD_LENGTH + 1];
 	if (!lookup_user(login.c_str(), pw1))
 	{
-		return IAuth::AUTH_FAILED;
+		return IAuth::AUTH_CONTINUE;
 	}
 	pw1[MAX_LEGACY_PASSWORD_LENGTH] = 0;
 	string storedHash(pw1, MAX_LEGACY_PASSWORD_LENGTH);
