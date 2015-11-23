@@ -51,6 +51,7 @@
 #endif // WIN_NT
 
 using namespace Firebird;
+using namespace Remote;
 
 static bool accept_connection(rem_port*, const P_CNCT*);
 static rem_port* alloc_port(rem_port*, UCHAR*, ULONG, UCHAR*, ULONG);
@@ -58,10 +59,7 @@ static rem_port* aux_connect(rem_port*, PACKET*);
 static rem_port* aux_request(rem_port*, PACKET*);
 
 static void cleanup_comm(XCC);
-static void cleanup_mapping(XPM);
 static void cleanup_port(rem_port*);
-static rem_port* connect_client(PACKET*, const Firebird::RefPtr<Config>*);
-static rem_port* connect_server(USHORT);
 static void disconnect(rem_port*);
 static void force_close(rem_port*);
 static int cleanup_ports(const int, const int, void* arg);
@@ -69,14 +67,6 @@ static int cleanup_ports(const int, const int, void* arg);
 static rem_port* receive(rem_port*, PACKET*);
 static int send_full(rem_port*, PACKET*);
 static int send_partial(rem_port*, PACKET*);
-
-static void server_shutdown(rem_port* port);
-static rem_port* get_server_port(ULONG, XPM, ULONG, ULONG, ULONG);
-static void make_map(ULONG, ULONG, FILE_ID*, CADDR_T*);
-static XPM make_xpm(ULONG, ULONG);
-static bool server_init(USHORT);
-static XPM get_free_slot(ULONG*, ULONG*, ULONG*);
-static bool fork(ULONG, USHORT, ULONG*);
 
 static int xdrxnet_create(XDR*, rem_port*, UCHAR*, USHORT, xdr_op);
 
@@ -91,74 +81,131 @@ static xdr_t::xdr_ops xnet_ops =
 	xnet_putbytes
 };
 
-static ULONG global_pages_per_slot = XPS_DEF_PAGES_PER_CLI;
-static ULONG global_slots_per_map = XPS_DEF_NUM_CLI;
-static XPM global_client_maps = NULL;
-
-#ifdef WIN_NT
-
-static HANDLE xnet_connect_mutex = 0;
-static HANDLE xnet_connect_map_h = 0;
-static CADDR_T xnet_connect_map = 0;
-
-static HANDLE xnet_connect_event = 0;
-static HANDLE xnet_response_event = 0;
 static DWORD current_process_id;
 
-// XNET endpoint is the IPC prefix name used to access the server.
-// It may have to be dynamically determined and has to be initialized
-// before the protocol can be used. It is initialized at the following points:
-//  - XNET_reconnect (classic servant size)
-//  - connect_client (client side)
-//  - server_init (listener side)
-static char xnet_endpoint[BUFFER_TINY] = "";
-
-#endif // WIN_NT
-
-
-static volatile bool xnet_initialized = false;
 static volatile bool xnet_shutdown = false;
-static GlobalPtr<Mutex> xnet_mutex;
 static GlobalPtr<PortsCleanup>	xnet_ports;
-static ULONG xnet_next_free_map_num = 0;
 
-static bool connect_init();
-static void connect_fini();
-static void release_all();
-
-namespace
+namespace Remote
 {
-	class ExitHandler
+	class XnetEndPoint
 	{
 	public:
-		explicit ExitHandler(MemoryPool&) {};
-
-		~ExitHandler()
+		XnetEndPoint()
 		{
-			xnet_shutdown = true;
-			release_all();
+			xnet_initialized = false;
+			xnet_connect_mutex = 0;
+			xnet_connect_map_h = 0;
+			xnet_connect_map = NULL;
+			xnet_connect_event = 0;
+			xnet_response_event = 0;
+			global_client_maps = NULL;
+			xnet_endpoint[0] = 0;
 		}
+
+		~XnetEndPoint()
+		{
+			shutdown();
+		}
+
+		void make_obj_name(char* buffer, size_t size, const char* format);
+		void make_map_name(char* buffer, size_t size, const char* format, ULONG arg1, ULONG arg2);
+		void make_event_name(char* buffer, size_t size, const char* format, ULONG arg1, ULONG arg2, ULONG arg3);
+
+		void connect_fini();
+		void cleanup_mapping(XPM);
+		void shutdown();
+
+		bool xnet_initialized;
+		Mutex xnet_mutex;
+
+		HANDLE xnet_connect_mutex;
+		HANDLE xnet_connect_map_h;
+		CADDR_T xnet_connect_map;
+
+		HANDLE xnet_connect_event;
+		HANDLE xnet_response_event;
+
+		XPM global_client_maps;
+
+		// XNET endpoint is the IPC prefix name used to access the server.
+		// It may have to be dynamically determined and has to be initialized
+		// before the protocol can be used. It is initialized at the following points:
+		//  - XNET_reconnect (classic servant size)
+		//  - connect_client (client side)
+		//  - server_init (listener side)
+		char xnet_endpoint[BUFFER_TINY];
 	};
 
-	static GlobalPtr<ExitHandler> xnet_exit_handler;
-}
+	class XnetClientEndPoint : public XnetEndPoint
+	{
+	public:
+		explicit XnetClientEndPoint(const MemoryPool&) : XnetEndPoint()
+		{
+		}
+
+		~XnetClientEndPoint()
+		{
+		}
+
+		rem_port* connect_client(PACKET*, const RefPtr<Config>*);
+		void server_shutdown(rem_port* port);
+
+	private:
+		bool connect_init();
+	};
+
+	class XnetServerEndPoint : public XnetEndPoint
+	{
+	public:
+		explicit XnetServerEndPoint(const MemoryPool&) : XnetEndPoint()
+		{
+			global_pages_per_slot = XPS_DEF_PAGES_PER_CLI;
+			global_slots_per_map = XPS_DEF_NUM_CLI;
+			xnet_next_free_map_num = 0;
+		}
+
+		~XnetServerEndPoint()
+		{
+			xnet_shutdown = true;
+		}
+
+		rem_port* connect_server(USHORT);
+		rem_port* reconnect(ULONG client_pid);
+
+	private:
+		void make_map(ULONG, ULONG, FILE_ID*, CADDR_T*);
+		XPM make_xpm(ULONG, ULONG);
+		bool server_init(USHORT);
+		XPM get_free_slot(ULONG*, ULONG*, ULONG*);
+		bool fork(ULONG, USHORT, ULONG*);
+		rem_port* get_server_port(ULONG, XPM, ULONG, ULONG, ULONG);
+
+		ULONG global_pages_per_slot;
+		ULONG global_slots_per_map;
+		ULONG xnet_next_free_map_num;
+	};
+
+	static GlobalPtr<XnetClientEndPoint> xnet_client;
+	static GlobalPtr<XnetServerEndPoint> xnet_server;
+} // namespace Remote
 
 
-inline void make_obj_name(char* buffer, size_t size, const char* format)
+inline void XnetEndPoint::make_obj_name(char* buffer, size_t size, const char* format)
 {
 	fb_assert(strcmp(xnet_endpoint, "") != 0);
 
 	fb_utils::snprintf(buffer, size, format, xnet_endpoint);
 }
 
-inline void make_map_name(char* buffer, size_t size, const char* format, ULONG arg1, ULONG arg2)
+inline void XnetEndPoint::make_map_name(char* buffer, size_t size, const char* format, ULONG arg1, ULONG arg2)
 {
 	fb_assert(strcmp(xnet_endpoint, "") != 0);
 
 	fb_utils::snprintf(buffer, size, format, xnet_endpoint, arg1, arg2);
 }
 
-inline void make_event_name(char* buffer, size_t size, const char* format, ULONG arg1, ULONG arg2, ULONG arg3)
+inline void XnetEndPoint::make_event_name(char* buffer, size_t size, const char* format, ULONG arg1, ULONG arg2, ULONG arg3)
 {
 	fb_assert(strcmp(xnet_endpoint, "") != 0);
 
@@ -376,14 +423,19 @@ rem_port* XNET_connect(PACKET* packet,
 
 	if (packet)
 	{
-		return connect_client(packet, config);
+		return xnet_client->connect_client(packet, config);
 	}
 
-	return connect_server(flag);
+	return xnet_server->connect_server(flag);
 }
 
 
 rem_port* XNET_reconnect(ULONG client_pid)
+{
+	return xnet_server->reconnect(client_pid);
+}
+
+rem_port* XnetServerEndPoint::reconnect(ULONG client_pid)
 {
 /**************************************
  *
@@ -450,7 +502,7 @@ rem_port* XNET_reconnect(ULONG client_pid)
 }
 
 
-static bool connect_init()
+bool XnetClientEndPoint::connect_init()
 {
 /**************************************
  *
@@ -520,7 +572,7 @@ static bool connect_init()
 }
 
 
-static void connect_fini()
+void XnetEndPoint::connect_fini()
 {
 /**************************************
  *
@@ -699,7 +751,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* /*packet*/)
 		parent_xcc = port->port_xcc;
 		xps = (XPS) parent_xcc->xcc_mapped_addr;
 
-		xcc = FB_NEW struct xcc;
+		xcc = FB_NEW struct xcc(parent_xcc->xcc_endpoint);
 
 		xpm = xcc->xcc_xpm = parent_xcc->xcc_xpm;
 		xcc->xcc_map_num = parent_xcc->xcc_map_num;
@@ -712,7 +764,9 @@ static rem_port* aux_connect(rem_port* port, PACKET* /*packet*/)
 		xcc->xcc_mapped_addr = parent_xcc->xcc_mapped_addr;
 		xcc->xcc_xpm->xpm_count++;
 
-		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_EVNT_CHAN_FILLED,
+		XnetEndPoint* endPoint = xcc->xcc_endpoint;
+
+		endPoint->make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_EVNT_CHAN_FILLED,
 						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_send_channel_filled =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
@@ -720,7 +774,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* /*packet*/)
 			system_call_failed::raise(ERR_STR("OpenEvent"));
 		}
 
-		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_EVNT_CHAN_EMPTED,
+		endPoint->make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_EVNT_CHAN_EMPTED,
 						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_send_channel_empted =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
@@ -728,7 +782,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* /*packet*/)
 			system_call_failed::raise(ERR_STR("OpenEvent"));
 		}
 
-		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_FILLED,
+		endPoint->make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_FILLED,
 						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_recv_channel_filled =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
@@ -736,7 +790,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* /*packet*/)
 			system_call_failed::raise(ERR_STR("OpenEvent"));
 		}
 
-		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_EMPTED,
+		endPoint->make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_EMPTED,
 						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_recv_channel_empted =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
@@ -820,7 +874,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		XCC parent_xcc = port->port_xcc;
 		XPS xps = (XPS) parent_xcc->xcc_mapped_addr;
 
-		xcc = FB_NEW struct xcc;
+		xcc = FB_NEW struct xcc(parent_xcc->xcc_endpoint);
 
 		XPM xpm = xcc->xcc_xpm = parent_xcc->xcc_xpm;
 		xcc->xcc_map_num = parent_xcc->xcc_map_num;
@@ -833,7 +887,9 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		xcc->xcc_mapped_addr = parent_xcc->xcc_mapped_addr;
 		xcc->xcc_xpm->xpm_count++;
 
-		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_EVNT_CHAN_FILLED,
+		XnetEndPoint* endPoint = xcc->xcc_endpoint;
+
+		endPoint->make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_EVNT_CHAN_FILLED,
 						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_recv_channel_filled =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
@@ -843,7 +899,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 			system_call_failed::raise(ERR_STR("CreateEvent"));
 		}
 
-		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_EVNT_CHAN_EMPTED,
+		endPoint->make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_EVNT_CHAN_EMPTED,
 						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_recv_channel_empted =
 			CreateEvent(ISC_get_security_desc(), FALSE, TRUE, name_buffer);
@@ -853,7 +909,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 			system_call_failed::raise(ERR_STR("CreateEvent"));
 		}
 
-		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_FILLED,
+		endPoint->make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_FILLED,
 						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_send_channel_filled =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
@@ -863,7 +919,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 			system_call_failed::raise(ERR_STR("CreateEvent"));
 		}
 
-		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_EMPTED,
+		endPoint->make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_EMPTED,
 						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_send_channel_empted =
 			CreateEvent(ISC_get_security_desc(), FALSE, TRUE, name_buffer);
@@ -962,14 +1018,14 @@ static void cleanup_comm(XCC xcc)
 
 	XPM xpm = xcc->xcc_xpm;
 	if (xpm && !(xcc->xcc_flags & XCCF_ASYNC)) {
-		cleanup_mapping(xpm);
+		xcc->xcc_endpoint->cleanup_mapping(xpm);
 	}
 
 	delete xcc;
 }
 
 
-static void cleanup_mapping(XPM xpm)
+void XnetEndPoint::cleanup_mapping(XPM xpm)
 {
 	MutexLockGuard guard(xnet_mutex, FB_FUNCTION);
 
@@ -1029,7 +1085,7 @@ static void raise_lostconn_or_syserror(const char* msg)
 }
 
 
-static rem_port* connect_client(PACKET* packet, const Firebird::RefPtr<Config>* config)
+rem_port* XnetClientEndPoint::connect_client(PACKET* packet, const RefPtr<Config>* config)
 {
 /**************************************
  *
@@ -1083,21 +1139,17 @@ static rem_port* connect_client(PACKET* packet, const Firebird::RefPtr<Config>* 
 				return NULL;
 			}
 		}
-	}
 
-	// setup status with net read error in case of wait timeout
-	Arg::StatusVector temp;
-	temp << Arg::Gds(isc_net_read_err);
 
-	static const int timeout = conf->getConnectionTimeout() * 1000;
-
-	// waiting for XNET connect lock to release
-
-	DWORD err = WaitForSingleObject(xnet_connect_mutex, timeout);
-
-	{ // xnet_mutex scope
-		MutexLockGuard guard(xnet_mutex, FB_FUNCTION);
-
+		// setup status with net read error in case of wait timeout
+		Arg::StatusVector temp;
+		temp << Arg::Gds(isc_net_read_err);
+	
+		static const int timeout = conf->getConnectionTimeout() * 1000;
+	
+		// waiting for XNET connect lock to release
+	
+		DWORD err = WaitForSingleObject(xnet_connect_mutex, timeout);
 		if (err != WAIT_OBJECT_0)
 		{
 			connect_fini();
@@ -1115,15 +1167,10 @@ static rem_port* connect_client(PACKET* packet, const Firebird::RefPtr<Config>* 
 		((XNET_RESPONSE*) xnet_connect_map)->proc_id = current_process_id;
 
 		SetEvent(xnet_connect_event);
-	}
 
-	// waiting for server response
+		// waiting for server response
 
-	err = WaitForSingleObject(xnet_response_event, timeout);
-
-	{ // xnet_mutex scope
-		MutexLockGuard guard(xnet_mutex, FB_FUNCTION);
-
+		err = WaitForSingleObject(xnet_response_event, timeout);
 		if (err != WAIT_OBJECT_0)
 		{
 			ReleaseMutex(xnet_connect_mutex);
@@ -1136,7 +1183,7 @@ static rem_port* connect_client(PACKET* packet, const Firebird::RefPtr<Config>* 
 		memcpy(&response, xnet_connect_map, XNET_CONNECT_RESPONZE_SIZE);
 		ReleaseMutex(xnet_connect_mutex);
 		connect_fini();
-	}
+	} // xnet_mutex scope
 
 	if (response.map_num == XNET_INVALID_MAP_NUM)
 	{
@@ -1147,8 +1194,6 @@ static rem_port* connect_client(PACKET* packet, const Firebird::RefPtr<Config>* 
 		temp.raise();
 	}
 
-	global_pages_per_slot = response.pages_per_slot;
-	global_slots_per_map = response.slots_per_map;
 	const ULONG map_num = response.map_num;
 	const ULONG slot_num = response.slot_num;
 	const ULONG timestamp = response.timestamp;
@@ -1190,7 +1235,7 @@ static rem_port* connect_client(PACKET* packet, const Firebird::RefPtr<Config>* 
 				}
 
 				mapped_address = MapViewOfFile(file_handle, FILE_MAP_WRITE, 0L, 0L,
-											XPS_MAPPED_SIZE(global_slots_per_map, global_pages_per_slot));
+						XPS_MAPPED_SIZE(response.slots_per_map, response.pages_per_slot));
 				if (!mapped_address) {
 					system_error::raise(ERR_STR("MapViewOfFile"));
 				}
@@ -1211,11 +1256,11 @@ static rem_port* connect_client(PACKET* packet, const Firebird::RefPtr<Config>* 
 		} // xnet_mutex scope
 
 		// there's no thread structure, so make one
-		xcc = FB_NEW struct xcc;
+		xcc = FB_NEW struct xcc(this);
 
 		xcc->xcc_map_handle = xpm->xpm_handle;
 		xcc->xcc_mapped_addr =
-			(UCHAR*) xpm->xpm_address + XPS_SLOT_OFFSET(global_pages_per_slot, slot_num);
+			(UCHAR*)xpm->xpm_address + XPS_SLOT_OFFSET(response.pages_per_slot, slot_num);
 		xcc->xcc_map_num = map_num;
 		xcc->xcc_slot = slot_num;
 		xcc->xcc_xpm = xpm;
@@ -1277,7 +1322,7 @@ static rem_port* connect_client(PACKET* packet, const Firebird::RefPtr<Config>* 
 		// differ from the server side
 
 		const ULONG avail =
-			(ULONG) (XPS_USEFUL_SPACE(global_pages_per_slot) - (XNET_EVENT_SPACE * 2)) / 2;
+			(ULONG)(XPS_USEFUL_SPACE(response.pages_per_slot) - (XNET_EVENT_SPACE * 2)) / 2;
 		UCHAR* start_ptr = (UCHAR*) xps + (sizeof(struct xps) + (XNET_EVENT_SPACE * 2));
 
 		// send and receive channels
@@ -1318,7 +1363,7 @@ static rem_port* connect_client(PACKET* packet, const Firebird::RefPtr<Config>* 
 }
 
 
-static rem_port* connect_server(USHORT flag)
+rem_port* XnetServerEndPoint::connect_server(USHORT flag)
 {
 /**************************************
  *
@@ -1507,7 +1552,7 @@ static int cleanup_ports(const int, const int, void* /*arg*/)
  **************************************/
 	xnet_shutdown = true;
 
-	SetEvent(xnet_connect_event);
+	SetEvent(xnet_server->xnet_connect_event);
 	xnet_ports->closePorts();
 
 	return 0;
@@ -1594,7 +1639,7 @@ static int send_partial( rem_port* port, PACKET* packet)
 	return xdr_protocol(&port->port_send, packet);
 }
 
-static void server_shutdown(rem_port* port)
+void XnetClientEndPoint::server_shutdown(rem_port* port)
 {
 /**************************************
  *
@@ -1851,7 +1896,8 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 						// Another side is dead or something bad has happened
 						if (!(xps->xps_flags & XPS_DISCONNECTED) && !portServer)
 						{
-							server_shutdown(port);
+							XnetClientEndPoint* endPoint = static_cast<XnetClientEndPoint*> (xcc->xcc_endpoint);
+							endPoint->server_shutdown(port);
 						}
 
 						xnet_error(port, isc_lost_db_connection, 0);
@@ -1959,7 +2005,8 @@ static bool_t xnet_read(XDR* xdrs)
 			// Another side is dead or something bad has happened
 			if (!(xps->xps_flags & XPS_DISCONNECTED) && !portServer)
 			{
-				server_shutdown(port);
+				XnetClientEndPoint* endPoint = static_cast<XnetClientEndPoint*> (xcc->xcc_endpoint);
+				endPoint->server_shutdown(port);
 			}
 
 			xnet_error(port, isc_lost_db_connection, 0);
@@ -2007,7 +2054,7 @@ static bool_t xnet_write(XDR* xdrs)
 }
 
 
-void release_all()
+void XnetEndPoint::shutdown()
 {
 /**************************************
  *
@@ -2023,9 +2070,12 @@ void release_all()
 	if (!xnet_initialized)
 		return;
 
-	connect_fini();
-
 	MutexLockGuard guard(xnet_mutex, FB_FUNCTION);
+
+	if (!xnet_initialized)
+		return;
+
+	connect_fini();
 
 	// release all map stuff left not released by broken ports
 
@@ -2047,7 +2097,7 @@ void release_all()
 /********************** ONLY SERVER CODE FROM HERE *********************/
 /***********************************************************************/
 
-static void make_map(ULONG map_number, ULONG timestamp, FILE_ID* map_handle, CADDR_T* map_address)
+void XnetServerEndPoint::make_map(ULONG map_number, ULONG timestamp, FILE_ID* map_handle, CADDR_T* map_address)
 {
 /**************************************
  *
@@ -2089,7 +2139,7 @@ static void make_map(ULONG map_number, ULONG timestamp, FILE_ID* map_handle, CAD
 }
 
 
-static XPM make_xpm(ULONG map_number, ULONG timestamp)
+XPM XnetServerEndPoint::make_xpm(ULONG map_number, ULONG timestamp)
 {
 /**************************************
  *
@@ -2130,7 +2180,7 @@ static XPM make_xpm(ULONG map_number, ULONG timestamp)
 }
 
 
-static bool server_init(USHORT flag)
+bool XnetServerEndPoint::server_init(USHORT flag)
 {
 /**************************************
  *
@@ -2235,7 +2285,7 @@ static bool server_init(USHORT flag)
 }
 
 
-static XPM get_free_slot(ULONG* map_num, ULONG* slot_num, ULONG* timestamp)
+XPM XnetServerEndPoint::get_free_slot(ULONG* map_num, ULONG* slot_num, ULONG* timestamp)
 {
 /**************************************
  *
@@ -2299,7 +2349,7 @@ static XPM get_free_slot(ULONG* map_num, ULONG* slot_num, ULONG* timestamp)
 }
 
 
-static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
+bool XnetServerEndPoint::fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
 {
 /**************************************
  *
@@ -2351,7 +2401,7 @@ static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
 }
 
 
-static rem_port* get_server_port(ULONG client_pid,
+rem_port* XnetServerEndPoint::get_server_port(ULONG client_pid,
 								 XPM xpm,
 								 ULONG map_num,
 								 ULONG slot_num,
@@ -2372,7 +2422,7 @@ static rem_port* get_server_port(ULONG client_pid,
 
 	// allocate a communications control structure and fill it in
 
-	XCC xcc = FB_NEW struct xcc;
+	XCC xcc = FB_NEW struct xcc(this);
 
 	try {
 

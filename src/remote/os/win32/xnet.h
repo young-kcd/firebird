@@ -96,16 +96,23 @@ typedef struct xch
 	ULONG		xch_dummy2;					// with 32-bit builds
 } *XCH;
 
+
+namespace Remote {
+class XnetEndPoint;
+};
+
 // Thread connection control block
 
 typedef struct xcc
 {
-	xcc()
+	xcc(Remote::XnetEndPoint* endPoint)
 	{
 		memset(this, 0, sizeof(*this));
+		xcc_endpoint = endPoint;
 	}
 
     struct xcc  *xcc_next;					// pointer to next thread
+	Remote::XnetEndPoint*		xcc_endpoint;				// XnetEndPoint
     XPM         xcc_xpm;					// pointer back to xpm
     ULONG       xcc_map_num;				// this thread's mapped file number
     ULONG       xcc_slot;					// this thread's slot number
