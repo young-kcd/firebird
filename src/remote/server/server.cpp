@@ -4398,7 +4398,7 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 		{
 			if (!port->port_parent)
 			{
-				if (!Worker::isShuttingDown() && !(port->port_flags & PORT_rdb_shutdown))
+				if (!Worker::isShuttingDown() && !(port->port_flags & (PORT_rdb_shutdown | PORT_detached)))
 					gds__log("SERVER/process_packet: broken port, server exiting");
 				port->disconnect(sendL, receive);
 				return false;
