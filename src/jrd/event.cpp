@@ -1400,12 +1400,23 @@ void EventManager::watcher_thread()
 
 			(void) m_sharedMemory->eventWait(&m_process->prb_event, value, 0);
 		}
-
-		m_cleanupSemaphore.release();
 	}
 	catch (const Firebird::Exception& ex)
 	{
 		iscLogException("Error in event watcher thread\n", ex);
+	}
+
+	try
+	{
+		if (startup)
+		{
+			m_startupSemaphore.release();
+		}
+		m_cleanupSemaphore.release();
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		iscLogException("Error closing event watcher thread\n", ex);
 	}
 }
 
