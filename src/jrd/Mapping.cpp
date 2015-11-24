@@ -603,7 +603,17 @@ public:
 		sharedMemory->eventFini(&sMem->process[process].notifyEvent);
 		sharedMemory->eventFini(&sMem->process[process].callbackEvent);
 
-		if (sharedMemory->getHeader()->processes == 1)
+		bool found = false;
+		for (unsigned n = 0; n < sMem->processes; ++n)
+		{
+			if (sMem->process[n].flags & MappingHeader::FLAG_ACTIVE)
+			{
+				found = true;
+				break;
+			}
+		}
+
+		if (!found)
 			sharedMemory->removeMapFile();
 	}
 
