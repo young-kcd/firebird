@@ -1,3 +1,20 @@
+ 2015-11-23 16:08  hvlad 
+   M src/remote/server/server.cpp
+Avoid reporting of "SERVER/process_packet: broken port, server exiting" message for already detached port (affects CS only)
+
+ 2015-11-23 16:06  hvlad 
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/os/win32/xnet.h
+Refactor xnet module to separate client and server parts (endpoints).
+It fixed bug CORE-5029 : AV in fbclient when multi-threaded application uses XNET protocol
+and allows in the future to implement client ability to specify target server endpoint name 
+at connection level (currently it is set in firebird.conf).
+
+ 2015-11-23 09:57  alexpeshkoff 
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+Fixed CORE-5026: Firebird authentication gives up after first common plugin
+
  2015-11-20 10:17  hvlad 
    M src/jrd/cch.cpp
    M src/jrd/jrd.cpp
