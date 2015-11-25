@@ -1,3 +1,11 @@
+ 2015-11-24 23:33  hvlad 
+   M src/jrd/event.cpp
+Fixed bug CORE-5034 : At least 5 seconds delay on disconnect could happen if disconnect happens close after Event Manager initialization
+
+ 2015-11-24 23:17  hvlad 
+   M src/jrd/Mapping.cpp
+Fixed bug CORE-5033 : File fb_user_mapping could be left in Firebird lock directory after correct shutdown of all Firebird worker processes
+
  2015-11-23 16:08  hvlad 
    M src/remote/server/server.cpp
 Avoid reporting of "SERVER/process_packet: broken port, server exiting" message for already detached port (affects CS only)
