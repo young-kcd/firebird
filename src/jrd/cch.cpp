@@ -3757,7 +3757,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 
 			if (page != FREE_PAGE)
 			{
-				CCH_TRACE(("bdb->bdb_lock->lck_logical = LCK_none; page=%i", bdb->bdb_page));
+				CCH_TRACE(("bdb->bdb_lock->lck_logical = LCK_none; page=%i", bdb->bdb_page.getPageNum()));
 				bdb->bdb_lock->lck_logical = LCK_none;
 			}
 			else
