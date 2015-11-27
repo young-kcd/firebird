@@ -1,3 +1,9 @@
+ 2015-11-26 09:28  roman-simakov 
+   M src/jrd/cch.cpp
+   M src/jrd/validation.cpp
+   M src/jrd/validation.h
+Fixed CORE-4978: Improved validation and fix of lost data pages. Thanks to Vlad for help.
+
  2015-11-24 23:33  hvlad 
    M src/jrd/event.cpp
 Fixed bug CORE-5034 : At least 5 seconds delay on disconnect could happen if disconnect happens close after Event Manager initialization
