@@ -1,3 +1,9 @@
+ 2015-11-27 18:37  asfernandes 
+   M src/common/MsgMetadata.cpp
+   M src/common/MsgMetadata.h
+   M src/common/classes/objects_array.h
+Allow to call IMetadataBuilder::getMetadata more than one time.
+
  2015-11-26 09:28  roman-simakov 
    M src/jrd/cch.cpp
    M src/jrd/validation.cpp
