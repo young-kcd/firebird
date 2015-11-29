@@ -4410,8 +4410,6 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	}
 	catch (const status_exception& ex)
 	{
-		tdbb->tdbb_flags |= TDBB_sys_error;
-
 		const Arg::StatusVector status(ex.value());
 
 		if (punt)
@@ -6790,56 +6788,64 @@ bool thread_db::checkCancelState(bool punt)
 	if (tdbb_flags & (TDBB_verb_cleanup | TDBB_detaching | TDBB_wait_cancel_disable))
 		return false;
 
-	if (attachment)
+	try
 	{
-		if (attachment->att_flags & ATT_shutdown)
+		if (attachment)
 		{
-			if (database->dbb_ast_flags & DBB_shutdown)
+			if (attachment->att_flags & ATT_shutdown)
 			{
-				if (!punt)
-					return true;
+				if (database->dbb_ast_flags & DBB_shutdown)
+				{
+					if (!punt)
+						return true;
 
-				status_exception::raise(Arg::Gds(isc_shutdown) <<
-										Arg::Str(attachment->att_filename));
+					status_exception::raise(Arg::Gds(isc_shutdown) <<
+											Arg::Str(attachment->att_filename));
+				}
+				else if (!(tdbb_flags & TDBB_shutdown_manager))
+				{
+					if (!punt)
+						return true;
+
+					status_exception::raise(Arg::Gds(isc_att_shutdown));
+				}
 			}
-			else if (!(tdbb_flags & TDBB_shutdown_manager))
-			{
-				if (!punt)
-					return true;
 
-				status_exception::raise(Arg::Gds(isc_att_shutdown));
+			// If a cancel has been raised, defer its acknowledgement
+			// when executing in the context of an internal request or
+			// the system transaction.
+
+			if ((attachment->att_flags & ATT_cancel_raise) &&
+				!(attachment->att_flags & ATT_cancel_disable))
+			{
+				if ((!request ||
+					 !(request->req_flags & (req_internal | req_sys_trigger))) &&
+					(!transaction || !(transaction->tra_flags & TRA_system)))
+				{
+					if (!punt)
+						return true;
+
+					attachment->att_flags &= ~ATT_cancel_raise;
+					status_exception::raise(Arg::Gds(isc_cancelled));
+				}
 			}
 		}
 
-		// If a cancel has been raised, defer its acknowledgement
-		// when executing in the context of an internal request or
-		// the system transaction.
+		// Check the thread state for already posted system errors. If any still persists,
+		// then someone tries to ignore our attempts to interrupt him. Let's insist.
 
-		if ((attachment->att_flags & ATT_cancel_raise) &&
-			!(attachment->att_flags & ATT_cancel_disable))
+		if (tdbb_flags & TDBB_sys_error)
 		{
-			if ((!request ||
-				 !(request->req_flags & (req_internal | req_sys_trigger))) &&
-				(!transaction || !(transaction->tra_flags & TRA_system)))
-			{
-				if (!punt)
-					return true;
+			if (!punt)
+				return true;
 
-				attachment->att_flags &= ~ATT_cancel_raise;
-				status_exception::raise(Arg::Gds(isc_cancelled));
-			}
+			status_exception::raise(Arg::Gds(isc_cancelled));
 		}
 	}
-
-	// Check the thread state for already posted system errors. If any still persists,
-	// then someone tries to ignore our attempts to interrupt him. Let's insist.
-
-	if (tdbb_flags & TDBB_sys_error)
+	catch (const Exception&)
 	{
-		if (!punt) 
-			return true;
-
-		status_exception::raise(Arg::Gds(isc_cancelled));
+		tdbb_flags |= TDBB_sys_error;
+		throw;
 	}
 
 	return false;
