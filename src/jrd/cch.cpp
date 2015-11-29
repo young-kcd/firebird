@@ -809,7 +809,7 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 
 		// Read page from disk as normal
 		bool error = false;
-		while (!PIO_read(file, bdb, page, status))
+		while (!PIO_read(tdbb, file, bdb, page, status))
 		{
 			if (isTempPage || !read_shadow) {
 				error = true;
@@ -866,7 +866,7 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 				bdb->bdb_page, bak_state, diff_page));
 
 			bool error = false;
-			while (!PIO_read(file, bdb, page, status))
+			while (!PIO_read(tdbb, file, bdb, page, status))
 			{
 				if (!read_shadow) {
 					error = true;
@@ -1079,10 +1079,10 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number)
 
 	if (doFlush)
 	{
-		PIO_flush(dbb, main_file);
+		PIO_flush(tdbb, main_file);
 
 		for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
-			PIO_flush(dbb, shadow->sdw_file);
+			PIO_flush(tdbb, shadow->sdw_file);
 
 		BackupManager* bm = dbb->dbb_backup_manager;
 		if (!bm->isShutDown())
@@ -1090,7 +1090,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number)
 			BackupManager::StateReadGuard stateGuard(tdbb);
 			const int backup_state = bm->getState();
 			if (backup_state == Ods::hdr_nbak_stalled || backup_state == Ods::hdr_nbak_merge)
-				bm->flushDifference();
+				bm->flushDifference(tdbb);
 		}
 
 		tdbb->bumpStats(RuntimeStatistics::FLUSHES);
@@ -2292,7 +2292,7 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 		CryptoManager::Buffer buffer;
 		pag* writePage = dbb->dbb_crypto_manager->encrypt(status, page, buffer);
 
-		if (!(writePage && PIO_write(sdw->sdw_file, bdb, writePage, status)))
+		if (!(writePage && PIO_write(tdbb, sdw->sdw_file, bdb, writePage, status)))
 		{
 			if (sdw->sdw_flags & SDW_manual)
 				result = false;
@@ -2911,7 +2911,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 
 				if (dbb->dbb_flags & DBB_suspend_bgio)
 				{
-					Attachment::Checkout cout(attachment, FB_FUNCTION);
+					EngineCheckout cout(tdbb, FB_FUNCTION);
 					bcb->bcb_writer_sem.tryEnter(10);
 					continue;
 				}
@@ -2956,7 +2956,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 				else
 				{
 					bcb->bcb_flags &= ~BCB_writer_active;
-					Attachment::Checkout cout(attachment, FB_FUNCTION);
+					EngineCheckout cout(tdbb, FB_FUNCTION);
 					bcb->bcb_writer_sem.tryEnter(10);
 				}
 			}
@@ -4883,7 +4883,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 			{
 
 				const bool res =
-					dbb->dbb_backup_manager->writeDifference(status,
+					dbb->dbb_backup_manager->writeDifference(tdbb, status,
 						bdb->bdb_difference_page, bdb->bdb_buffer);
 
 				if (!res)
@@ -4913,7 +4913,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 				}
 
 				jrd_file* file = pageSpace->file;
-				while (!PIO_write(file, bdb, writePage, status))
+				while (!PIO_write(tdbb, file, bdb, writePage, status))
 				{
 					if (isTempPage || !CCH_rollover_to_shadow(tdbb, dbb, file, inAst))
 					{

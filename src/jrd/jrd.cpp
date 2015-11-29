@@ -1526,7 +1526,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 					dbb->dbb_database_name = expanded_name;
 
 				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-				pageSpace->file = PIO_open(dbb, expanded_name, org_filename);
+				pageSpace->file = PIO_open(tdbb, expanded_name, org_filename);
 
 				// Initialize the lock manager
 				dbb->dbb_lock_mgr = LockManager::create(dbb->getUniqueFileId(), dbb->dbb_config);
@@ -2569,7 +2569,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			try
 			{
 				// try to create with overwrite = false
-				pageSpace->file = PIO_create(dbb, expanded_name, false, false);
+				pageSpace->file = PIO_create(tdbb, expanded_name, false, false);
 			}
 			catch (status_exception)
 			{
@@ -2610,7 +2610,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 					if (allow_overwrite)
 					{
 						// file is a database and the user (SYSDBA or owner) has right to overwrite
-						pageSpace->file = PIO_create(dbb, expanded_name, options.dpb_overwrite, false);
+						pageSpace->file = PIO_create(tdbb, expanded_name, options.dpb_overwrite, false);
 					}
 					else
 					{
@@ -5330,59 +5330,6 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 #endif // DEBUG_PROCS
 
 
-bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
-{
-/**************************************
- *
- *	J R D _ r e s c h e d u l e
- *
- **************************************
- *
- * Functional description
- *	Somebody has kindly offered to relinquish
- *	control so that somebody else may run.
- *
- **************************************/
-	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
-
-	if (!tdbb->checkCancelState(false))
-	{
-		Jrd::Attachment::Checkout cout(attachment, FB_FUNCTION);
-		Thread::yield();
-	}
-
-	try
-	{
-		tdbb->checkCancelState(true);
-	}
-	catch (const status_exception& ex)
-	{
-		tdbb->tdbb_flags |= TDBB_sys_error;
-
-		const Arg::StatusVector status(ex.value());
-
-		if (punt)
-		{
-			CCH_unwind(tdbb, false);
-			ERR_post(status);
-		}
-		else
-		{
-			ERR_build_status(tdbb->tdbb_status_vector, status);
-			return true;
-		}
-	}
-
-	Monitoring::checkState(tdbb);
-
-	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?
-		(quantum ? quantum : QUANTUM) : tdbb->tdbb_quantum;
-
-	return false;
-}
-
-
 void jrd_vtof(const char* string, char* field, SSHORT length)
 {
 /**************************************
@@ -6288,11 +6235,11 @@ static void init_database_lock(thread_db* tdbb)
 			fb_utils::init_status(tdbb->tdbb_status_vector);
 
 			// If we are in a single-threaded maintenance mode then clean up and stop waiting
-			SCHAR spare_memory[RAW_HEADER_SIZE + PAGE_ALIGNMENT];
-			SCHAR* header_page_buffer = FB_ALIGN(spare_memory, PAGE_ALIGNMENT);
+			UCHAR spare_memory[RAW_HEADER_SIZE + PAGE_ALIGNMENT];
+			UCHAR* header_page_buffer = FB_ALIGN(spare_memory, PAGE_ALIGNMENT);
 			Ods::header_page* const header_page = reinterpret_cast<Ods::header_page*>(header_page_buffer);
 
-			PIO_header(dbb, header_page_buffer, RAW_HEADER_SIZE);
+			PIO_header(tdbb, header_page_buffer, RAW_HEADER_SIZE);
 
 			if ((header_page->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
 			{
@@ -7268,25 +7215,30 @@ static void unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* u
 
 namespace
 {
-	bool shutdownAttachments(AttachmentsRefHolder* arg)
+	bool shutdownAttachments(AttachmentsRefHolder* arg, bool signal)
 	{
 		AutoPtr<AttachmentsRefHolder> queue(arg);
 		AttachmentsRefHolder& attachments = *arg;
 		bool success = true;
 
-		// Set terminate flag for all attachments
-		for (AttachmentsRefHolder::Iterator iter(attachments); *iter; ++iter)
+		if (signal)
 		{
-			StableAttachmentPart* const sAtt = *iter;
+			// Set terminate flag for all attachments
 
-			MutexLockGuard guard(*(sAtt->getMutex(true)), FB_FUNCTION);
-			Attachment* attachment = sAtt->getHandle();
+			for (AttachmentsRefHolder::Iterator iter(attachments); *iter; ++iter)
+			{
+				StableAttachmentPart* const sAtt = *iter;
 
-			if (attachment)
-				attachment->signalShutdown();
+				MutexLockGuard guard(*(sAtt->getMutex(true)), FB_FUNCTION);
+				Attachment* attachment = sAtt->getHandle();
+
+				if (attachment)
+					attachment->signalShutdown();
+			}
 		}
 
 		// Purge all attachments
+
 		for (AttachmentsRefHolder::Iterator iter(attachments); *iter; ++iter)
 		{
 			StableAttachmentPart* const sAtt = *iter;
@@ -7333,7 +7285,7 @@ namespace
 				return 0;
 			}
 
-			shutdownAttachments(static_cast<AttachmentsRefHolder*>(arg));
+			shutdownAttachments(static_cast<AttachmentsRefHolder*>(arg), false);
 		}
 		catch (const Exception& ex)
 		{
@@ -7386,7 +7338,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 		}
 
 		// Shutdown existing attachments
-		success = success && shutdownAttachments(attachments);
+		success = success && shutdownAttachments(attachments, true);
 
 		HalfStaticArray<Database*, 32> dbArray(pool);
 		{ // scope
@@ -7480,32 +7432,24 @@ bool thread_db::checkCancelState(bool punt)
 	if (tdbb_flags & (TDBB_verb_cleanup | TDBB_detaching | TDBB_wait_cancel_disable))
 		return false;
 
+	Arg::StatusVector status;
+
 	if (attachment)
 	{
 		if (attachment->att_flags & ATT_shutdown)
 		{
 			if (database->dbb_ast_flags & DBB_shutdown)
-			{
-				if (!punt)
-					return true;
-
-				status_exception::raise(Arg::Gds(isc_shutdown) <<
-										Arg::Str(attachment->att_filename));
-			}
+				status << Arg::Gds(isc_shutdown) << Arg::Str(attachment->att_filename);
 			else if (!(tdbb_flags & TDBB_shutdown_manager))
-			{
-				if (!punt)
-					return true;
-
-				status_exception::raise(Arg::Gds(isc_att_shutdown));
-			}
+				status << Arg::Gds(isc_att_shutdown);
 		}
 
 		// If a cancel has been raised, defer its acknowledgement
 		// when executing in the context of an internal request or
 		// the system transaction.
 
-		if ((attachment->att_flags & ATT_cancel_raise) &&
+		if (status.isEmpty() &&
+			(attachment->att_flags & ATT_cancel_raise) &&
 			!(attachment->att_flags & ATT_cancel_disable))
 		{
 			if ((!request ||
@@ -7514,11 +7458,8 @@ bool thread_db::checkCancelState(bool punt)
 						(/*JrdStatement::FLAG_INTERNAL | */JrdStatement::FLAG_SYS_TRIGGER))) &&
 				(!transaction || !(transaction->tra_flags & TRA_system)))
 			{
-				if (!punt)
-					return true;
-
 				attachment->att_flags &= ~ATT_cancel_raise;
-				status_exception::raise(Arg::Gds(isc_cancelled));
+				status << Arg::Gds(isc_cancelled);
 			}
 		}
 	}
@@ -7526,13 +7467,49 @@ bool thread_db::checkCancelState(bool punt)
 	// Check the thread state for already posted system errors. If any still persists,
 	// then someone tries to ignore our attempts to interrupt him. Let's insist.
 
-	if (tdbb_flags & TDBB_sys_error)
+	if (status.isEmpty() && (tdbb_flags & TDBB_sys_error))
+		status << Arg::Gds(isc_cancelled);
+
+	if (status.hasData())
+	{
+		tdbb_flags |= (TDBB_cancel | TDBB_sys_error);
+		ERR_post_nothrow(status, tdbb_status_vector);
+
+		if (punt)
+			ERR_punt();
+
+		return true;
+	}
+
+	return false;
+}
+
+bool thread_db::reschedule(SLONG quantum, bool punt)
+{
+	// Somebody has kindly offered to relinquish
+	// control so that somebody else may run
+
+	tdbb_flags &= ~TDBB_cancel;
+
+	if (!checkCancelState(false))
+	{
+		EngineCheckout cout(this, FB_FUNCTION);
+		Thread::yield();
+	}
+
+	if (tdbb_flags & TDBB_cancel)
 	{
 		if (!punt)
 			return true;
 
-		status_exception::raise(Arg::Gds(isc_cancelled));
+		CCH_unwind(this, false);
+		ERR_punt();
 	}
+
+	Monitoring::checkState(this);
+
+	tdbb_quantum = (tdbb_quantum <= 0) ?
+		(quantum ? quantum : QUANTUM) : tdbb_quantum;
 
 	return false;
 }
@@ -7926,6 +7903,38 @@ bool JRD_verify_database_access(const PathName& name)
 }
 
 
+void JRD_shutdown_attachment(Attachment* attachment)
+{
+/**************************************
+ *
+ *      J R D _ s h u t d o w n _ a t t a c h m e n t
+ *
+ **************************************
+ *
+ * Functional description
+ *  Schedule the attachment marked as shutdown for disconnection.
+ *
+ **************************************/
+	fb_assert(attachment);
+
+	try
+	{
+		fb_assert(attachment->att_flags & ATT_shutdown);
+
+		MemoryPool& pool = *getDefaultMemoryPool();
+		AttachmentsRefHolder* queue = FB_NEW_POOL(pool) AttachmentsRefHolder(pool);
+
+		fb_assert(attachment->getStable());
+		attachment->getStable()->addRef();
+		queue->add(attachment->getStable());
+
+		Thread::start(attachmentShutdownThread, queue, 0);
+	}
+	catch (const Exception&)
+	{} // no-op
+}
+
+
 void JRD_shutdown_attachments(Database* dbb)
 {
 /**************************************
@@ -7943,7 +7952,7 @@ void JRD_shutdown_attachments(Database* dbb)
 	try
 	{
 		MemoryPool& pool = *getDefaultMemoryPool();
-		AttachmentsRefHolder* queue = FB_NEW_POOL(pool) AttachmentsRefHolder(pool);
+		AutoPtr<AttachmentsRefHolder> queue(FB_NEW_POOL(pool) AttachmentsRefHolder(pool));
 
 		{	// scope
 			Sync guard(&dbb->dbb_sync, "JRD_shutdown_attachments");
@@ -7963,7 +7972,8 @@ void JRD_shutdown_attachments(Database* dbb)
 			}
 		}
 
-		Thread::start(attachmentShutdownThread, queue, 0);
+		if (queue.hasData())
+			Thread::start(attachmentShutdownThread, queue.release(), 0);
 	}
 	catch (const Exception&)
 	{} // no-op

@@ -90,7 +90,7 @@ void SDW_add(thread_db* tdbb, const TEXT* file_name, USHORT shadow_number, USHOR
 													 Arg::Str(file_name));
 	}
 
-	jrd_file* shadow_file = PIO_create(dbb, file_name, false, false);
+	jrd_file* shadow_file = PIO_create(tdbb, file_name, false, false);
 
 	if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
 	{
@@ -167,7 +167,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 													 Arg::Str(file_name));
 	}
 
-	const SLONG sequence = PIO_add_file(dbb, shadow_file, file_name, start);
+	const SLONG sequence = PIO_add_file(tdbb, shadow_file, file_name, start);
 	if (!sequence)
 		return 0;
 
@@ -209,7 +209,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 		temp_bdb.bdb_buffer = (PAG) header;
 		header->hdr_header.pag_pageno = temp_bdb.bdb_page.getPageNum();
 		// It's header, never encrypted
-		if (!PIO_write(shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
+		if (!PIO_write(tdbb, shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
 		{
 			delete[] spare_buffer;
 			return 0;
@@ -256,7 +256,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 			temp_bdb.bdb_page = file->fil_min_page;
 			header->hdr_header.pag_pageno = temp_bdb.bdb_page.getPageNum();
 			// It's header, never encrypted
-			if (!PIO_write(shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
+			if (!PIO_write(tdbb, shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
 			{
 				delete[] spare_buffer;
 				return 0;
@@ -988,7 +988,7 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 
 	try {
 
-	shadow_file = PIO_open(dbb, expanded_name, file_name);
+	shadow_file = PIO_open(tdbb, expanded_name, file_name);
 
 	if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
 	{
@@ -1008,7 +1008,7 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 			(header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 		header_fetched++;
 
-		if (!PIO_read(shadow_file, window.win_bdb, (PAG) spare_page, tdbb->tdbb_status_vector))
+		if (!PIO_read(tdbb, shadow_file, window.win_bdb, (PAG) spare_page, tdbb->tdbb_status_vector))
 		{
 			ERR_punt();
 		}
@@ -1232,7 +1232,7 @@ static bool check_for_file(thread_db* tdbb, const SCHAR* name, USHORT length)
 		// This use of PIO_open is NOT checked against DatabaseAccess configuration
 		// parameter. It's not required, because here we only check for presence of
 		// existing file, never really use (or create) it.
-		jrd_file* temp_file = PIO_open(dbb, path, path);
+		jrd_file* temp_file = PIO_open(tdbb, path, path);
 		PIO_close(temp_file);
 	}	// try
 	catch (const Firebird::Exception& ex)

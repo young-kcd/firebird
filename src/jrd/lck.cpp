@@ -151,11 +151,10 @@ inline void ENQUEUE(thread_db* tdbb, CheckStatusWrapper* statusVector, Lock* loc
 inline bool CONVERT(thread_db* tdbb, CheckStatusWrapper* statusVector, Lock* lock, USHORT level, SSHORT wait)
 {
 	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const att = tdbb->getAttachment();
 
 	return lock->lck_compatible ?
 		internal_enqueue(tdbb, statusVector, lock, level, wait, true) :
-		dbb->dbb_lock_mgr->convert(att, statusVector, lock->lck_id, level, wait, lock->lck_ast,
+		dbb->dbb_lock_mgr->convert(tdbb, statusVector, lock->lck_id, level, wait, lock->lck_ast,
 			lock->lck_object);
 }
 
@@ -172,13 +171,12 @@ inline void DEQUEUE(thread_db* tdbb, Lock* lock)
 inline USHORT DOWNGRADE(thread_db* tdbb, Lock* lock)
 {
 	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const att = tdbb->getAttachment();
 
 	FbLocalStatus statusVector;
 
 	USHORT ret = lock->lck_compatible ?
 		internal_downgrade(tdbb, &statusVector, lock) :
-		dbb->dbb_lock_mgr->downgrade(att, &statusVector, lock->lck_id);
+		dbb->dbb_lock_mgr->downgrade(tdbb, &statusVector, lock->lck_id);
 
 	fb_assert(statusVector.isEmpty());
 
@@ -474,7 +472,6 @@ void LCK_fini(thread_db* tdbb, enum lck_owner_t owner_type)
 
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const att = tdbb->getAttachment();
 
 	switch (owner_type)
 	{
@@ -491,7 +488,7 @@ void LCK_fini(thread_db* tdbb, enum lck_owner_t owner_type)
 		break;
 	}
 
-	dbb->dbb_lock_mgr->shutdownOwner(att, owner_handle_ptr);
+	dbb->dbb_lock_mgr->shutdownOwner(tdbb, owner_handle_ptr);
 }
 
 
@@ -796,7 +793,6 @@ void LCK_re_post(thread_db* tdbb, Lock* lock)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const att = tdbb->getAttachment();
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 
@@ -808,7 +804,7 @@ void LCK_re_post(thread_db* tdbb, Lock* lock)
 		return;
 	}
 
-	dbb->dbb_lock_mgr->repost(att, lock->lck_ast, lock->lck_object, lock->lck_owner_handle);
+	dbb->dbb_lock_mgr->repost(tdbb, lock->lck_ast, lock->lck_object, lock->lck_owner_handle);
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 }
@@ -910,11 +906,10 @@ static void enqueue(thread_db* tdbb, CheckStatusWrapper* statusVector, Lock* loc
  **************************************/
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const att = tdbb->getAttachment();
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	lock->lck_id = dbb->dbb_lock_mgr->enqueue(att, statusVector, lock->lck_id,
+	lock->lck_id = dbb->dbb_lock_mgr->enqueue(tdbb, statusVector, lock->lck_id,
 		lock->lck_type, lock->lck_key.lck_string, lock->lck_length,
 		level, lock->lck_ast, lock->lck_object, lock->lck_data, wait,
 		lock->lck_owner_handle);
@@ -1321,7 +1316,6 @@ static USHORT internal_downgrade(thread_db* tdbb, CheckStatusWrapper* statusVect
  **************************************/
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const att = tdbb->getAttachment();
 
 	fb_assert(LCK_CHECK_LOCK(first));
 	fb_assert(first->lck_compatible);
@@ -1336,7 +1330,7 @@ static USHORT internal_downgrade(thread_db* tdbb, CheckStatusWrapper* statusVect
 
 	if (level < first->lck_physical)
 	{
-		if (dbb->dbb_lock_mgr->convert(att, statusVector, first->lck_id, level, LCK_NO_WAIT,
+		if (dbb->dbb_lock_mgr->convert(tdbb, statusVector, first->lck_id, level, LCK_NO_WAIT,
 				external_ast, first))
 		{
 			for (Lock* lock = first; lock; lock = lock->lck_identical)
@@ -1373,7 +1367,6 @@ static bool internal_enqueue(thread_db* tdbb, CheckStatusWrapper* statusVector, 
  **************************************/
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const att = tdbb->getAttachment();
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 	fb_assert(lock->lck_compatible);
@@ -1404,7 +1397,7 @@ static bool internal_enqueue(thread_db* tdbb, CheckStatusWrapper* statusVector, 
 
 			if (level > match->lck_physical)
 			{
-				if (!dbb->dbb_lock_mgr->convert(att, statusVector, match->lck_id, level, wait,
+				if (!dbb->dbb_lock_mgr->convert(tdbb, statusVector, match->lck_id, level, wait,
 						external_ast, lock))
 				{
 					return false;
@@ -1433,7 +1426,7 @@ static bool internal_enqueue(thread_db* tdbb, CheckStatusWrapper* statusVector, 
 	// enqueue the lock, but swap out the ast and the ast argument
 	// with the local ast handler, passing it the lock block itself
 
-	lock->lck_id = dbb->dbb_lock_mgr->enqueue(att, statusVector, lock->lck_id,
+	lock->lck_id = dbb->dbb_lock_mgr->enqueue(tdbb, statusVector, lock->lck_id,
 		lock->lck_type, (const UCHAR*) &lock->lck_key, lock->lck_length,
 		level, external_ast, lock, lock->lck_data, wait, lock->lck_owner_handle);
 

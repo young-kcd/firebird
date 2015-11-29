@@ -635,7 +635,7 @@ int Jrd::Attachment::blockingAstShutdown(void* ast_object)
 
 		attachment->signalShutdown();
 
-		JRD_shutdown_attachments(dbb);
+		JRD_shutdown_attachment(attachment);
 	}
 	catch (const Exception&)
 	{} // no-op

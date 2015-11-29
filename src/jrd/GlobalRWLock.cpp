@@ -90,8 +90,7 @@ void GlobalRWLock::shutdownLock(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
 
-	Attachment* const att = tdbb->getAttachment();
-	Attachment::CheckoutLockGuard counterGuard(att, counterMutex, FB_FUNCTION, true);
+	CheckoutLockGuard counterGuard(tdbb, counterMutex, FB_FUNCTION, true);
 
 	COS_TRACE(("(%p)->shutdownLock readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
 		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
@@ -103,10 +102,8 @@ bool GlobalRWLock::lockWrite(thread_db* tdbb, SSHORT wait)
 {
 	SET_TDBB(tdbb);
 
-	Attachment* const att = tdbb->getAttachment();
-
 	{	// scope 1
-		Attachment::CheckoutLockGuard counterGuard(att, counterMutex, FB_FUNCTION, true);
+		CheckoutLockGuard counterGuard(tdbb, counterMutex, FB_FUNCTION, true);
 
 		COS_TRACE(("(%p)->lockWrite stage 1 readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
 			this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
@@ -114,7 +111,7 @@ bool GlobalRWLock::lockWrite(thread_db* tdbb, SSHORT wait)
 
 		while (readers > 0 )
 		{
-			Attachment::Checkout attCout(att, FB_FUNCTION, true);
+			EngineCheckout cout(tdbb, FB_FUNCTION, true);
 			noReaders.wait(counterMutex);
 		}
 
@@ -123,7 +120,7 @@ bool GlobalRWLock::lockWrite(thread_db* tdbb, SSHORT wait)
 
 		while (currentWriter || pendingLock)
 		{
-			Attachment::Checkout attCout(att, FB_FUNCTION, true);
+			EngineCheckout cout(tdbb, FB_FUNCTION, true);
 			writerFinished.wait(counterMutex);
 		}
 
@@ -151,7 +148,7 @@ bool GlobalRWLock::lockWrite(thread_db* tdbb, SSHORT wait)
 		if ((wait == LCK_NO_WAIT) || ((wait < 0) && (status[1] == isc_lock_timeout)))
 			vector->init();
 
-		Attachment::CheckoutLockGuard counterGuard(att, counterMutex, FB_FUNCTION, true);
+		CheckoutLockGuard counterGuard(tdbb, counterMutex, FB_FUNCTION, true);
 
 		--pendingLock;
 
@@ -165,7 +162,7 @@ bool GlobalRWLock::lockWrite(thread_db* tdbb, SSHORT wait)
 	}
 
 	{	// scope 2
-		Attachment::CheckoutLockGuard counterGuard(att, counterMutex, FB_FUNCTION, true);
+		CheckoutLockGuard counterGuard(tdbb, counterMutex, FB_FUNCTION, true);
 
 		--pendingLock;
 		--pendingWriters;
@@ -185,8 +182,7 @@ void GlobalRWLock::unlockWrite(thread_db* tdbb, const bool release)
 {
 	SET_TDBB(tdbb);
 
-	Attachment* const att = tdbb->getAttachment();
-	Attachment::CheckoutLockGuard counterGuard(att, counterMutex, FB_FUNCTION, true);
+	CheckoutLockGuard counterGuard(tdbb, counterMutex, FB_FUNCTION, true);
 
 	COS_TRACE(("(%p)->unlockWrite readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
 		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
@@ -212,12 +208,10 @@ bool GlobalRWLock::lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump)
 {
 	SET_TDBB(tdbb);
 
-	Attachment* const att = tdbb->getAttachment();
-
 	bool needFetch;
 
 	{	// scope 1
-		Attachment::CheckoutLockGuard counterGuard(att, counterMutex, FB_FUNCTION, true);
+		CheckoutLockGuard counterGuard(tdbb, counterMutex, FB_FUNCTION, true);
 
 		COS_TRACE(("(%p)->lockRead stage 1 readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
 			this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
@@ -233,7 +227,7 @@ bool GlobalRWLock::lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump)
 
 			while (pendingWriters > 0 || currentWriter)
 			{
-				Attachment::Checkout attCout(att, FB_FUNCTION, true);
+				EngineCheckout cout(tdbb, FB_FUNCTION, true);
 				writerFinished.wait(counterMutex);
 			}
 
@@ -244,7 +238,7 @@ bool GlobalRWLock::lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump)
 				break;
 
 			MutexUnlockGuard cout(counterMutex, FB_FUNCTION);
-			Attachment::Checkout attCout(att, FB_FUNCTION, true);
+			EngineCheckout cout2(tdbb, FB_FUNCTION, true);
 			Thread::yield();
 		}
 
@@ -267,13 +261,13 @@ bool GlobalRWLock::lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump)
 		if ((wait == LCK_NO_WAIT) || ((wait < 0) && (status[1] == isc_lock_timeout)))
 			vector->init();
 
-		Attachment::CheckoutLockGuard counterGuard(att, counterMutex, FB_FUNCTION, true);
+		CheckoutLockGuard counterGuard(tdbb, counterMutex, FB_FUNCTION, true);
 		--pendingLock;
 		return false;
 	}
 
 	{	// scope 2
-		Attachment::CheckoutLockGuard counterGuard(att, counterMutex, FB_FUNCTION, true);
+		CheckoutLockGuard counterGuard(tdbb, counterMutex, FB_FUNCTION, true);
 		--pendingLock;
 		++readers;
 
@@ -288,8 +282,7 @@ void GlobalRWLock::unlockRead(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
 
-	Attachment* const att = tdbb->getAttachment();
-	Attachment::CheckoutLockGuard counterGuard(att, counterMutex, FB_FUNCTION, true);
+	CheckoutLockGuard counterGuard(tdbb, counterMutex, FB_FUNCTION, true);
 
 	COS_TRACE(("(%p)->unlockRead readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
 		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));
@@ -311,8 +304,7 @@ void GlobalRWLock::unlockRead(thread_db* tdbb)
 
 bool GlobalRWLock::tryReleaseLock(thread_db* tdbb)
 {
-	Attachment* const att = tdbb->getAttachment();
-	Attachment::CheckoutLockGuard counterGuard(att, counterMutex, FB_FUNCTION, true);
+	CheckoutLockGuard counterGuard(tdbb, counterMutex, FB_FUNCTION, true);
 
 	COS_TRACE(("(%p)->tryReleaseLock readers(%d), blocking(%d), pendingWriters(%d), currentWriter(%d), lck_physical(%d)",
 		this, readers, blocking, pendingWriters, currentWriter, cachedLock->lck_physical));

@@ -4518,7 +4518,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 
 		relation->rel_flags |= REL_deleting;
 		{ // scope
-			Jrd::Attachment::Checkout attCout(attachment, FB_FUNCTION);
+			EngineCheckout cout(tdbb, FB_FUNCTION);
 			relation->rel_drop_mutex.enter(FB_FUNCTION);
 		}
 
@@ -4545,7 +4545,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 				break;
 			}
 
-			Jrd::Attachment::Checkout attCout(attachment, FB_FUNCTION);
+			EngineCheckout cout(tdbb, FB_FUNCTION);
 			Thread::sleep(1 * 1000);
 		}
 

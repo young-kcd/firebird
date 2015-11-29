@@ -320,20 +320,21 @@ const USHORT WIN_garbage_collect	= 8;	// scan left a page for garbage collector
 
 // tdbb_flags
 
-const USHORT TDBB_sweeper				= 1;	// Thread sweeper or garbage collector
-const USHORT TDBB_no_cache_unwind		= 2;	// Don't unwind page buffer cache
-const USHORT TDBB_backup_write_locked	= 4;    // BackupManager has write lock on LCK_backup_database
-const USHORT TDBB_stack_trace_done		= 8;	// PSQL stack trace is added into status-vector
-const USHORT TDBB_shutdown_manager		= 16;	// Server shutdown thread
-const USHORT TDBB_dont_post_dfw			= 32;	// dont post DFW tasks as deferred work is performed now
-const USHORT TDBB_sys_error				= 64;	// error shouldn't be handled by the looper
-const USHORT TDBB_verb_cleanup			= 128;	// verb cleanup is in progress
-const USHORT TDBB_use_db_page_space		= 256;	// use database (not temporary) page space in GTT operations
-const USHORT TDBB_detaching				= 512;	// detach is in progress
-const USHORT TDBB_wait_cancel_disable	= 1024;	// don't cancel current waiting operation
-const USHORT TDBB_cache_unwound			= 2048;	// page cache was unwound
-const USHORT TDBB_trusted_ddl			= 4096;	// skip DDL permission checks. Set after DDL permission check and clear after DDL execution
-const USHORT TDBB_reset_stack			= 8192;	// stack should be reset after stack overflow exception
+const USHORT TDBB_sweeper				= 1;		// Thread sweeper or garbage collector
+const USHORT TDBB_no_cache_unwind		= 2;		// Don't unwind page buffer cache
+const USHORT TDBB_backup_write_locked	= 4;    	// BackupManager has write lock on LCK_backup_database
+const USHORT TDBB_stack_trace_done		= 8;		// PSQL stack trace is added into status-vector
+const USHORT TDBB_shutdown_manager		= 16;		// Server shutdown thread
+const USHORT TDBB_dont_post_dfw			= 32;		// dont post DFW tasks as deferred work is performed now
+const USHORT TDBB_sys_error				= 64;		// error shouldn't be handled by the looper
+const USHORT TDBB_verb_cleanup			= 128;		// verb cleanup is in progress
+const USHORT TDBB_use_db_page_space		= 256;		// use database (not temporary) page space in GTT operations
+const USHORT TDBB_detaching				= 512;		// detach is in progress
+const USHORT TDBB_wait_cancel_disable	= 1024;		// don't cancel current waiting operation
+const USHORT TDBB_cache_unwound			= 2048;		// page cache was unwound
+const USHORT TDBB_trusted_ddl			= 4096;		// skip DDL permission checks. Set after DDL permission check and clear after DDL execution
+const USHORT TDBB_reset_stack			= 8192;		// stack should be reset after stack overflow exception
+const USHORT TDBB_cancel				= 16384;	// cancellation request detected
 
 class thread_db : public Firebird::ThreadData
 {
@@ -468,6 +469,7 @@ public:
 	}
 
 	bool checkCancelState(bool punt);
+	bool reschedule(SLONG quantum, bool punt);
 
 	void registerBdb(BufferDesc* bdb)
 	{
@@ -705,6 +707,11 @@ typedef Firebird::HalfStaticArray<UCHAR, 256> MoveBuffer;
 
 } //namespace Jrd
 
+inline bool JRD_reschedule(Jrd::thread_db* tdbb, SLONG quantum, bool punt)
+{
+	return tdbb->reschedule(quantum, punt);
+}
+
 // Threading macros
 
 /* Define JRD_get_thread_data off the platform specific version.
@@ -882,6 +889,95 @@ namespace Jrd {
 		// copying is prohibited
 		AsyncContextHolder(const AsyncContextHolder&);
 		AsyncContextHolder& operator=(const AsyncContextHolder&);
+	};
+
+	class EngineCheckout
+	{
+	public:
+		EngineCheckout(thread_db* tdbb, const char* from, bool optional = false)
+			: m_tdbb(tdbb), m_from(from)
+		{
+			Attachment* const att = tdbb->getAttachment();
+
+			if (att)
+				m_ref = att->getStable();
+
+			fb_assert(optional || m_ref.hasData());
+
+			if (m_ref.hasData())
+				m_ref->getMutex()->leave();
+		}
+
+		~EngineCheckout()
+		{
+			if (m_ref.hasData())
+				m_ref->getMutex()->enter(m_from);
+
+			// If we were signalled to cancel/shutdown, react as soon as possible.
+			// We cannot throw immediately, but we can reschedule ourselves.
+
+			if (m_tdbb->checkCancelState(false))
+				m_tdbb->tdbb_quantum = 0;
+		}
+
+	private:
+		// copying is prohibited
+		EngineCheckout(const EngineCheckout&);
+		EngineCheckout& operator=(const EngineCheckout&);
+
+		thread_db* const m_tdbb;
+		Firebird::RefPtr<StableAttachmentPart> m_ref;
+		const char* m_from;
+	};
+
+	class CheckoutLockGuard
+	{
+	public:
+		CheckoutLockGuard(thread_db* tdbb, Firebird::Mutex& mutex,
+						  const char* from, bool optional = false)
+			: m_mutex(mutex)
+		{
+			if (!m_mutex.tryEnter(from))
+			{
+				EngineCheckout cout(tdbb, from, optional);
+				m_mutex.enter(from);
+			}
+		}
+
+		~CheckoutLockGuard()
+		{
+			m_mutex.leave();
+		}
+
+	private:
+		// copying is prohibited
+		CheckoutLockGuard(const CheckoutLockGuard&);
+		CheckoutLockGuard& operator=(const CheckoutLockGuard&);
+
+		Firebird::Mutex& m_mutex;
+	};
+
+	class CheckoutSyncGuard
+	{
+	public:
+		CheckoutSyncGuard(thread_db* tdbb, Firebird::SyncObject& sync,
+						  Firebird::SyncType type,
+						  const char* from, bool optional = false)
+			: m_sync(&sync, from)
+		{
+			if (!m_sync.lockConditional(type, from))
+			{
+				EngineCheckout cout(tdbb, from, optional);
+				m_sync.lock(type);
+			}
+		}
+
+	private:
+		// copying is prohibited
+		CheckoutSyncGuard(const CheckoutSyncGuard&);
+		CheckoutSyncGuard& operator=(const CheckoutSyncGuard&);
+
+		Firebird::Sync m_sync;
 	};
 }
 

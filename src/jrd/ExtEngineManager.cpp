@@ -541,7 +541,7 @@ private:
 		char charSetName[MAX_SQL_IDENTIFIER_SIZE];
 
 		{	// scope
-			Attachment::Checkout attCout(attachment, FB_FUNCTION);
+			EngineCheckout cout(tdbb, FB_FUNCTION);
 
 			FbLocalStatus status;
 			obj->getCharSet(&status, attInfo->context, charSetName, MAX_SQL_IDENTIFIER_LEN);
@@ -727,7 +727,7 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, UCHAR* inMsg, UCHAR* o
 			CallerName(obj_udf, udf->getName().identifier) :
 			CallerName(obj_package_header, udf->getName().package)));
 
-	Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
+	EngineCheckout cout(tdbb, FB_FUNCTION);
 
 	FbLocalStatus status;
 	function->execute(&status, attInfo->context, inMsg, outMsg);
@@ -782,7 +782,7 @@ ExtEngineManager::ResultSet::ResultSet(thread_db* tdbb, UCHAR* inMsg, UCHAR* out
 
 	charSet = attachment->att_charset;
 
-	Attachment::Checkout attCout(attachment, FB_FUNCTION);
+	EngineCheckout cout(tdbb, FB_FUNCTION);
 
 	FbLocalStatus status;
 	resultSet = procedure->procedure->open(&status, attInfo->context, inMsg, outMsg);
@@ -794,8 +794,7 @@ ExtEngineManager::ResultSet::~ResultSet()
 {
 	if (resultSet)
 	{
-		fb_assert(attachment == JRD_get_thread_data()->getAttachment());
-		Attachment::Checkout attCout(attachment, FB_FUNCTION);
+		EngineCheckout cout(JRD_get_thread_data(), FB_FUNCTION);
 		resultSet->dispose();
 	}
 }
@@ -814,8 +813,7 @@ bool ExtEngineManager::ResultSet::fetch(thread_db* tdbb)
 			CallerName(obj_procedure, procedure->prc->getName().identifier) :
 			CallerName(obj_package_header, procedure->prc->getName().package)));
 
-	fb_assert(attachment == tdbb->getAttachment());
-	Attachment::Checkout attCout(attachment, FB_FUNCTION);
+	EngineCheckout cout(tdbb, FB_FUNCTION);
 
 	FbLocalStatus status;
 	bool ret = resultSet->fetch(&status);
@@ -899,7 +897,7 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, unsigned action,
 		setValues(tdbb, newMsg, newRpb);
 
 	{	// scope
-		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
+		EngineCheckout cout(tdbb, FB_FUNCTION);
 
 		FbLocalStatus status;
 		trigger->execute(&status, attInfo->context, action,
@@ -1021,7 +1019,7 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 	}
 
 	RefDeb(DEB_RLS_JATT, "ExtEngineManager::closeAttachment");
-	Attachment::Checkout attCout(attachment, FB_FUNCTION, true);
+	EngineCheckout cout(tdbb, FB_FUNCTION, true);
 
 	for (Array<IExternalEngine*>::iterator i = enginesCopy.begin(); i != enginesCopy.end(); ++i)
 	{
@@ -1076,7 +1074,7 @@ void ExtEngineManager::makeFunction(thread_db* tdbb, CompilerScratch* csb, Jrd::
 	IExternalFunction* externalFunction;
 
 	{	// scope
-		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
+		EngineCheckout cout(tdbb, FB_FUNCTION);
 
 		externalFunction = attInfo->engine->makeFunction(&status, attInfo->context, metadata,
 			inBuilder, outBuilder);
@@ -1144,7 +1142,7 @@ void ExtEngineManager::makeFunction(thread_db* tdbb, CompilerScratch* csb, Jrd::
 	}
 	catch (...)
 	{
-		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
+		EngineCheckout cout(tdbb, FB_FUNCTION);
 		externalFunction->dispose();
 		throw;
 	}
@@ -1185,7 +1183,7 @@ void ExtEngineManager::makeProcedure(thread_db* tdbb, CompilerScratch* csb, jrd_
 	IExternalProcedure* externalProcedure;
 
 	{	// scope
-		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
+		EngineCheckout cout(tdbb, FB_FUNCTION);
 
 		externalProcedure = attInfo->engine->makeProcedure(&status, attInfo->context, metadata,
 			inBuilder, outBuilder);
@@ -1254,7 +1252,7 @@ void ExtEngineManager::makeProcedure(thread_db* tdbb, CompilerScratch* csb, jrd_
 	}
 	catch (...)
 	{
-		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
+		EngineCheckout cout(tdbb, FB_FUNCTION);
 		externalProcedure->dispose();
 		throw;
 	}
@@ -1312,7 +1310,7 @@ void ExtEngineManager::makeTrigger(thread_db* tdbb, CompilerScratch* csb, Jrd::T
 	IExternalTrigger* externalTrigger;
 
 	{	// scope
-		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
+		EngineCheckout cout(tdbb, FB_FUNCTION);
 
 		FbLocalStatus status;
 		externalTrigger = attInfo->engine->makeTrigger(&status, attInfo->context, metadata,
@@ -1347,7 +1345,7 @@ void ExtEngineManager::makeTrigger(thread_db* tdbb, CompilerScratch* csb, Jrd::T
 	}
 	catch (...)
 	{
-		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
+		EngineCheckout cout(tdbb, FB_FUNCTION);
 		externalTrigger->dispose();
 		throw;
 	}
@@ -1375,7 +1373,7 @@ IExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& na
 
 				try
 				{
-					Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
+					EngineCheckout cout(tdbb, FB_FUNCTION);
 
 					engine = engineControl.plugin();
 					if (engine)
@@ -1456,7 +1454,7 @@ ExtEngineManager::EngineAttachmentInfo* ExtEngineManager::getEngineAttachment(
 			enginesAttachments.put(key, attInfo);
 
 			ContextManager<IExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
-			Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
+			EngineCheckout cout(tdbb, FB_FUNCTION);
 			FbLocalStatus status;
 			engine->openAttachment(&status, attInfo->context);	//// FIXME: log status
 		}

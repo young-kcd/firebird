@@ -562,7 +562,7 @@ void INF_database_info(thread_db* tdbb,
 		case isc_info_db_file_size:
 			{
 				BackupManager *bm = dbb->dbb_backup_manager;
-				length = INF_convert(bm ? bm->getPageCount() : 0, buffer);
+				length = INF_convert(bm ? bm->getPageCount(tdbb) : 0, buffer);
 			}
 			break;
 

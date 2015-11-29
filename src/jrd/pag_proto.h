@@ -73,10 +73,10 @@ namespace Jrd {
 	{
 	public:
 //		PageCountCallback() { }
-		virtual void newPage(const SLONG, Ods::pag*) = 0;
+		virtual void newPage(Jrd::thread_db*, const SLONG, Ods::pag*) = 0;
 		virtual ~PageCountCallback() { }
 	};
 }
-ULONG	PAG_page_count(Jrd::Database*, Jrd::PageCountCallback*);
+ULONG	PAG_page_count(Jrd::thread_db*, Jrd::PageCountCallback*);
 
 #endif // JRD_PAG_PROTO_H

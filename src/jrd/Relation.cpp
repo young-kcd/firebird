@@ -465,7 +465,7 @@ bool jrd_rel::GCExclusive::acquire(int wait)
 	int sleeps = -wait * 10;
 	while (m_relation->rel_sweep_count)
 	{
-		Attachment::Checkout cout(m_tdbb->getAttachment(), FB_FUNCTION);
+		EngineCheckout cout(m_tdbb, FB_FUNCTION);
 		Thread::sleep(100);
 
 		if (wait < 0 && --sleeps == 0)

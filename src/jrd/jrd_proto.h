@@ -47,8 +47,6 @@ void jrd_vtof(const char*, char*, SSHORT);
 typedef Firebird::SortedObjectsArray<Firebird::PathName> PathNameList;
 void JRD_enum_attachments(PathNameList*, ULONG&, ULONG&, ULONG&);
 
-bool JRD_reschedule(Jrd::thread_db*, SLONG, bool);
-
 #ifdef DEBUG_PROCS
 void	JRD_print_procedure_info(Jrd::thread_db*, const char*);
 #endif
@@ -74,6 +72,7 @@ void JRD_compile(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, Jrd::jrd_req
 	ULONG blr_length, const UCHAR* blr, Firebird::RefStrPtr,
 	ULONG dbginfo_length, const UCHAR* dbginfo, bool isInternalRequest);
 bool JRD_verify_database_access(const Firebird::PathName&);
+void JRD_shutdown_attachment(Jrd::Attachment* attachment);
 void JRD_shutdown_attachments(Jrd::Database* dbb);
 void JRD_cancel_operation(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, int option);
 void JRD_make_role_name(Firebird::string& userIdRole, const int dialect);

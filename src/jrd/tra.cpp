@@ -736,10 +736,9 @@ void TRA_invalidate(thread_db* tdbb, ULONG mask)
  *
  **************************************/
 
-	Database* database = tdbb->getDatabase();
-	Jrd::Attachment* currAttach = tdbb->getAttachment();
+	Database* const database = tdbb->getDatabase();
 
-	Jrd::Attachment::Checkout cout(currAttach, FB_FUNCTION, true);
+	EngineCheckout cout(tdbb, FB_FUNCTION, true);
 
 	SyncLockGuard dbbSync(&database->dbb_sync, SYNC_SHARED, "TRA_invalidate");
 

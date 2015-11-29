@@ -263,7 +263,6 @@ void Routine::releaseStatement(thread_db* tdbb)
 void Routine::remove(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
-	Jrd::Attachment* att = tdbb->getAttachment();
 
 	// MET_procedure locks it. Lets unlock it now to avoid troubles later
 	if (existenceLock)

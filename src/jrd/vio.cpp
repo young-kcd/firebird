@@ -4796,7 +4796,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 				if (dbb->dbb_flags & DBB_suspend_bgio)
 				{
-					Attachment::Checkout cout(attachment, FB_FUNCTION);
+					EngineCheckout cout(tdbb, FB_FUNCTION);
 					dbb->dbb_gc_sem.tryEnter(10);
 					continue;
 				}
@@ -4938,7 +4938,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 					}
 
 					dbb->dbb_flags &= ~DBB_gc_active;
-					Attachment::Checkout cout(attachment, FB_FUNCTION);
+					EngineCheckout cout(tdbb, FB_FUNCTION);
 					dbb->dbb_gc_sem.tryEnter(10);
 				}
 			}

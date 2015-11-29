@@ -418,11 +418,11 @@ public:
 	ULONG allocateDifferencePage(thread_db* tdbb, ULONG db_page);
 
 	// Must have FbStatusVector because it is called from write_page
-	void openDelta();
-	void closeDelta();
-	bool writeDifference(FbStatusVector* status, ULONG diff_page, Ods::pag* page);
+	void openDelta(thread_db* tdbb);
+	void closeDelta(thread_db* tdbb);
+	bool writeDifference(thread_db* tdbb, FbStatusVector* status, ULONG diff_page, Ods::pag* page);
 	bool readDifference(thread_db* tdbb, ULONG diff_page, Ods::pag* page);
-	void flushDifference();
+	void flushDifference(thread_db* tdbb);
 	void setForcedWrites(const bool forceWrite, const bool notUseFSCache);
 
 	void shutdown(thread_db* tdbb);
@@ -448,7 +448,7 @@ public:
 	}
 
 	// Get size (in pages) of locked database file
-	ULONG getPageCount();
+	ULONG getPageCount(thread_db* tdbb);
 private:
 	Database* database;
 	jrd_file* diff_file;
