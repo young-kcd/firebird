@@ -1,3 +1,41 @@
+ 2015-11-29 23:02  egorpugin 
+   M .travis.yml
+[ci] Fix wget sertificate error.
+
+ 2015-11-29 15:12  dimitr 
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/GlobalRWLock.cpp
+   M src/jrd/Relation.cpp
+   M src/jrd/Routine.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/fun.epp
+   M src/jrd/inf.cpp
+   M src/jrd/intl.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/jrd_proto.h
+   M src/jrd/lck.cpp
+   M src/jrd/met.epp
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+   M src/jrd/os/pio_proto.h
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/os/win32/winnt.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/pag_proto.h
+   M src/jrd/sdw.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/vio.cpp
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+1) Slightly refactored recheduling and checkout logic.
+2) Re-enabled checkouts in PIO routines, this resolves CORE-4179. Windows build may be broken, please validate.
+3) Implemented faster reaction on asynchronous cancellation/shutdown requests.
+4) Avoided locking dbb_sync in AST. This change also solves races during massive attachment shutdown.
+
  2015-11-27 18:37  asfernandes 
    M src/common/MsgMetadata.cpp
    M src/common/MsgMetadata.h
