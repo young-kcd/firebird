@@ -1,3 +1,7 @@
+ 2015-11-29 15:16  dimitr 
+   M src/jrd/jrd.cpp
+Fixed processing of asynchronous errors if they're thrown directly via checkCancelState().
+
  2015-11-18 21:43  dimitr 
    M src/misc/writeBuildNum.sh
 Bumped the build number.
