@@ -897,7 +897,7 @@ namespace Jrd {
 		EngineCheckout(thread_db* tdbb, const char* from, bool optional = false)
 			: m_tdbb(tdbb), m_from(from)
 		{
-			Attachment* const att = tdbb->getAttachment();
+			Attachment* const att = tdbb ? tdbb->getAttachment() : NULL;
 
 			if (att)
 				m_ref = att->getStable();
@@ -916,7 +916,7 @@ namespace Jrd {
 			// If we were signalled to cancel/shutdown, react as soon as possible.
 			// We cannot throw immediately, but we can reschedule ourselves.
 
-			if (m_tdbb->tdbb_quantum > 0 && m_tdbb->checkCancelState())
+			if (m_tdbb && m_tdbb->tdbb_quantum > 0 && m_tdbb->checkCancelState())
 				m_tdbb->tdbb_quantum = 0;
 		}
 
