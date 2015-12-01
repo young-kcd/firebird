@@ -334,7 +334,6 @@ const USHORT TDBB_wait_cancel_disable	= 1024;		// don't cancel current waiting o
 const USHORT TDBB_cache_unwound			= 2048;		// page cache was unwound
 const USHORT TDBB_trusted_ddl			= 4096;		// skip DDL permission checks. Set after DDL permission check and clear after DDL execution
 const USHORT TDBB_reset_stack			= 8192;		// stack should be reset after stack overflow exception
-const USHORT TDBB_cancel				= 16384;	// cancellation request detected
 
 class thread_db : public Firebird::ThreadData
 {
@@ -468,6 +467,7 @@ public:
 		dbbStat->bumpRelValue(index, relation_id, delta);
 	}
 
+	ISC_STATUS checkCancelState();
 	bool checkCancelState(bool punt);
 	bool reschedule(SLONG quantum, bool punt);
 
@@ -916,7 +916,7 @@ namespace Jrd {
 			// If we were signalled to cancel/shutdown, react as soon as possible.
 			// We cannot throw immediately, but we can reschedule ourselves.
 
-			if (m_tdbb->checkCancelState(false))
+			if (m_tdbb->tdbb_quantum > 0 && m_tdbb->checkCancelState())
 				m_tdbb->tdbb_quantum = 0;
 		}
 

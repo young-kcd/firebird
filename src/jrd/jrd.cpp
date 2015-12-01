@@ -7422,34 +7422,31 @@ SSHORT thread_db::getCharSet() const
 	return attachment->att_charset;
 }
 
-bool thread_db::checkCancelState(bool punt)
+ISC_STATUS thread_db::checkCancelState()
 {
-	// Test various flags and unwind/throw if required.
+	// Test for asynchronous shutdown/cancellation requests.
 	// But do that only if we're neither in the verb cleanup state
 	// nor currently detaching, as these actions should never be interrupted.
 	// Also don't break wait in LM if it is not safe.
 
 	if (tdbb_flags & (TDBB_verb_cleanup | TDBB_detaching | TDBB_wait_cancel_disable))
-		return false;
-
-	Arg::StatusVector status;
+		return FB_SUCCESS;
 
 	if (attachment)
 	{
 		if (attachment->att_flags & ATT_shutdown)
 		{
 			if (database->dbb_ast_flags & DBB_shutdown)
-				status << Arg::Gds(isc_shutdown) << Arg::Str(attachment->att_filename);
+				return isc_shutdown;
 			else if (!(tdbb_flags & TDBB_shutdown_manager))
-				status << Arg::Gds(isc_att_shutdown);
+				return isc_att_shutdown;
 		}
 
 		// If a cancel has been raised, defer its acknowledgement
 		// when executing in the context of an internal request or
 		// the system transaction.
 
-		if (status.isEmpty() &&
-			(attachment->att_flags & ATT_cancel_raise) &&
+		if ((attachment->att_flags & ATT_cancel_raise) &&
 			!(attachment->att_flags & ATT_cancel_disable))
 		{
 			if ((!request ||
@@ -7459,7 +7456,7 @@ bool thread_db::checkCancelState(bool punt)
 				(!transaction || !(transaction->tra_flags & TRA_system)))
 			{
 				attachment->att_flags &= ~ATT_cancel_raise;
-				status << Arg::Gds(isc_cancelled);
+				return isc_cancelled;
 			}
 		}
 	}
@@ -7467,21 +7464,31 @@ bool thread_db::checkCancelState(bool punt)
 	// Check the thread state for already posted system errors. If any still persists,
 	// then someone tries to ignore our attempts to interrupt him. Let's insist.
 
-	if (status.isEmpty() && (tdbb_flags & TDBB_sys_error))
-		status << Arg::Gds(isc_cancelled);
+	if (tdbb_flags & TDBB_sys_error)
+		return isc_cancelled;
 
-	if (status.hasData())
-	{
-		tdbb_flags |= (TDBB_cancel | TDBB_sys_error);
-		ERR_post_nothrow(status, tdbb_status_vector);
+	return FB_SUCCESS;
+}
 
-		if (punt)
-			ERR_punt();
+bool thread_db::checkCancelState(bool punt)
+{
+	const ISC_STATUS error = checkCancelState();
 
-		return true;
-	}
+	if (!error)
+		return false;
 
-	return false;
+	Arg::Gds status(error);
+
+	if (error == isc_shutdown)
+		status << Arg::Str(attachment->att_filename);
+
+	tdbb_flags |= TDBB_sys_error;
+	ERR_post_nothrow(status, tdbb_status_vector);
+
+	if (punt)
+		ERR_punt();
+
+	return true;
 }
 
 bool thread_db::reschedule(SLONG quantum, bool punt)
@@ -7489,15 +7496,15 @@ bool thread_db::reschedule(SLONG quantum, bool punt)
 	// Somebody has kindly offered to relinquish
 	// control so that somebody else may run
 
-	tdbb_flags &= ~TDBB_cancel;
+	const bool cancelled = checkCancelState(false);
 
-	if (!checkCancelState(false))
+	if (!cancelled)
 	{
 		EngineCheckout cout(this, FB_FUNCTION);
 		Thread::yield();
 	}
 
-	if (tdbb_flags & TDBB_cancel)
+	if (cancelled || checkCancelState(false))
 	{
 		if (!punt)
 			return true;
