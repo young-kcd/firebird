@@ -77,7 +77,9 @@ enum lck_t {
 	LCK_fun_exist,				// Function existence lock
 	LCK_rel_rescan,				// Relation forced rescan lock
 	LCK_crypt,					// Crypt lock for single crypt thread
-	LCK_crypt_status			// Notifies about changed database encryption status
+	LCK_crypt_status,			// Notifies about changed database encryption status
+	LCK_idx_reserve,			// Index reservation lock
+	LCK_record_gc				// Record-level GC lock
 };
 
 // Lock owner types
