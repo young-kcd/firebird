@@ -1,3 +1,17 @@
+ 2015-12-01 21:12  hvlad 
+   M src/jrd/jrd.h
+Fixed AV in CS introduced recently. Dmitry, please review.
+
+ 2015-12-01 12:24  dimitr 
+   M src/lock/print.cpp
+Misc.
+
+ 2015-12-01 12:23  dimitr 
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/lock/lock.cpp
+Second round of my checkout/rescheduling changes.
+
  2015-11-29 23:02  egorpugin 
    M .travis.yml
 [ci] Fix wget sertificate error.
