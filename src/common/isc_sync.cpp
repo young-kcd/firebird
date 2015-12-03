@@ -2163,7 +2163,6 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 		err = GetLastError();
 		if (!event_handle)
 		{
-			CloseHandle(file_handle);
 			system_call_failed::raise("CreateEvent", err);
 		}
 
