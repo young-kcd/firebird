@@ -559,6 +559,7 @@ YTransaction* DtcStart::start(CheckStatusWrapper* status)
 		}
 
 		YTransaction* rc = FB_NEW YTransaction(NULL, dtransaction);
+		rc->addRef();
 		dtransaction->addRef();
 		this->dispose();
 		return rc;
@@ -590,7 +591,9 @@ YTransaction* Dtc::join(CheckStatusWrapper* status, ITransaction* one, ITransact
 		*/
 
 		dtransaction->addRef();
-		return FB_NEW YTransaction(NULL, dtransaction);
+		YTransaction* r = FB_NEW YTransaction(NULL, dtransaction);
+		r->addRef();
+		return r;
 	}
 	catch (const Exception& ex)
 	{

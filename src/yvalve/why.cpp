@@ -3831,6 +3831,7 @@ namespace Why {
 IAttachment* MasterImplementation::registerAttachment(IProvider* provider, IAttachment* attachment)
 {
 	IAttachment* rc = FB_NEW YAttachment(provider, attachment, "");
+	rc->addRef();
 	attachment->addRef();
 	return rc;
 }
@@ -3839,6 +3840,7 @@ ITransaction* MasterImplementation::registerTransaction(IAttachment* attachment,
 	ITransaction* transaction)
 {
 	ITransaction* rc = FB_NEW YTransaction(static_cast<YAttachment*>(attachment), transaction);
+	rc->addRef();
 	transaction->addRef();
 	return rc;
 }
@@ -3847,7 +3849,6 @@ template <typename Impl, typename Intf>
 YHelper<Impl, Intf>::YHelper(NextInterface* aNext)
 {
 	next.assignRefNoIncr(aNext);
-	this->addRef();
 }
 
 //-------------------------------------
@@ -4364,7 +4365,10 @@ ITransaction* YStatement::execute(CheckStatusWrapper* status, ITransaction* tran
 			}
 
 			if (newTrans)
+			{
 				newTrans = FB_NEW YTransaction(attachment, newTrans);
+				newTrans->addRef();
+			}
 		}
 
 		return newTrans;
@@ -4397,7 +4401,9 @@ IResultSet* YStatement::openCursor(Firebird::CheckStatusWrapper* status, ITransa
 
 		YTransaction* const yTra = attachment->getTransaction(status, transaction);
 
-		return FB_NEW YResultSet(attachment, yTra, this, rs);
+		YResultSet* r = FB_NEW YResultSet(attachment, yTra, this, rs);
+		r->addRef();
+		return r;
 	}
 	catch (const Exception& e)
 	{
@@ -4900,6 +4906,7 @@ YTransaction* YTransaction::enterDtc(CheckStatusWrapper* status)
 		YTransaction* copy = FB_NEW YTransaction(this);
 		// copy is created with zero handle
 		copy->addRef();
+		copy->addRef();
 		next->addRef();		// We use NoIncr in YTransaction ctor
 
 		if (attachment)
@@ -5013,7 +5020,9 @@ YStatement* YAttachment::prepare(CheckStatusWrapper* status, ITransaction* trans
 		IStatement* st = entry.next()->prepare(status, trans, stmtLength, sqlStmt, dialect, flags);
 		if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
 		{
-			return FB_NEW YStatement(this, st);
+			YStatement* r = FB_NEW YStatement(this, st);
+			r->addRef();
+			return r;
 		}
 	}
 	catch (const Exception& e)
@@ -5033,7 +5042,11 @@ YTransaction* YAttachment::startTransaction(CheckStatusWrapper* status, unsigned
 
 		ITransaction* transaction = entry.next()->startTransaction(status, tpbLength, tpb);
 		if (transaction)
-			return FB_NEW YTransaction(this, transaction);
+		{
+			YTransaction* r = FB_NEW YTransaction(this, transaction);
+			r->addRef();
+			return r;
+		}
 	}
 	catch (const Exception& e)
 	{
@@ -5053,7 +5066,11 @@ YTransaction* YAttachment::reconnectTransaction(CheckStatusWrapper* status, unsi
 		ITransaction* transaction = entry.next()->reconnectTransaction(status, length, id);
 
 		if (transaction)
-			return FB_NEW YTransaction(this, transaction);
+		{
+			YTransaction* r = FB_NEW YTransaction(this, transaction);
+			r->addRef();
+			return r;
+		}
 	}
 	catch (const Exception& e)
 	{
@@ -5071,7 +5088,13 @@ YRequest* YAttachment::compileRequest(CheckStatusWrapper* status, unsigned int b
 		YEntry<YAttachment> entry(status, this);
 
 		IRequest* request = entry.next()->compileRequest(status, blrLength, blr);
-		return request ? FB_NEW YRequest(this, request) : NULL;
+		YRequest* r = NULL;
+		if (request != NULL)
+		{
+			r = FB_NEW YRequest(this, request);
+			r->addRef();
+		}
+		return r;
 	}
 	catch (const Exception& e)
 	{
@@ -5113,7 +5136,13 @@ YBlob* YAttachment::createBlob(CheckStatusWrapper* status, ITransaction* transac
 		NextTransaction nextTra(yTra->next);
 
 		IBlob* blob = entry.next()->createBlob(status, nextTra, id, bpbLength, bpb);
-		return blob ? FB_NEW YBlob(this, yTra, blob) : NULL;
+		YBlob* r = NULL;
+		if (blob != NULL)
+		{
+			r = FB_NEW YBlob(this, yTra, blob);
+			r->addRef();
+		}
+		return r;
 	}
 	catch (const Exception& e)
 	{
@@ -5134,7 +5163,13 @@ YBlob* YAttachment::openBlob(CheckStatusWrapper* status, ITransaction* transacti
 		NextTransaction nextTra(yTra->next);
 
 		IBlob* blob = entry.next()->openBlob(status, nextTra, id, bpbLength, bpb);
-		return blob ? FB_NEW YBlob(this, yTra, blob) : NULL;
+		YBlob* r = NULL;
+		if (blob != NULL)
+		{
+			r = FB_NEW YBlob(this, yTra, blob);
+			r->addRef();
+		}
+		return r;
 	}
 	catch (const Exception& e)
 	{
@@ -5227,7 +5262,9 @@ IResultSet* YAttachment::openCursor(CheckStatusWrapper* status, ITransaction* tr
 
 		YTransaction* const yTra = getTransaction(status, transaction);
 
-		return FB_NEW YResultSet(this, yTra, rs);
+		YResultSet* r = FB_NEW YResultSet(this, yTra, rs);
+		r->addRef();
+		return r;
 	}
 	catch (const Exception& e)
 	{
@@ -5267,7 +5304,10 @@ ITransaction* YAttachment::execute(CheckStatusWrapper* status, ITransaction* tra
 			}
 
 			if (newTrans)
+			{
 				newTrans = FB_NEW YTransaction(this, newTrans);
+				newTrans->addRef();
+			}
 		}
 
 		return newTrans;
@@ -5318,7 +5358,13 @@ YEvents* YAttachment::queEvents(CheckStatusWrapper* status, IEventCallback* call
 		YEntry<YAttachment> entry(status, this);
 
 		IEvents* events = entry.next()->queEvents(status, callback, length, eventsData);
-		return events ? FB_NEW YEvents(this, events, callback) : NULL;
+		YEvents* r = NULL;
+		if (events != NULL)
+		{
+			r = FB_NEW YEvents(this, events, callback);
+			r->addRef();
+		}
+		return r;
 	}
 	catch (const Exception& e)
 	{
@@ -5662,7 +5708,9 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::CheckStatusWrapper* st
 
 				status->setErrors(currentStatus->getErrors());
 				status->setWarnings(currentStatus->getWarnings());
-				return FB_NEW YAttachment(provider, attachment, expandedFilename);
+				YAttachment* r = FB_NEW YAttachment(provider, attachment, expandedFilename);
+				r->addRef();
+				return r;
 			}
 
 			switch (currentStatus->getErrors()[1])
@@ -5749,7 +5797,11 @@ YService* Dispatcher::attachServiceManager(CheckStatusWrapper* status, const cha
 				spbWriter.getBufferLength(), spbWriter.getBuffer());
 
 			if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
-				return FB_NEW YService(p, service, utfData);
+			{
+				YService* r = FB_NEW YService(p, service, utfData);
+				r->addRef();
+				return r;
+			}
 		}
 
 		if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
