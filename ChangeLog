@@ -1,3 +1,20 @@
+ 2015-12-03 22:17  hvlad 
+   M src/common/isc_sync.cpp
+Correction
+
+ 2015-12-03 16:17  hvlad 
+   M src/common/isc_sync.cpp
+Fixed the race condition on Windows when shared memory is initialized. 
+It could raise errors like:
+MonitoringData: Cannot initialize the shared memory region
+sh_mem_length_mapped is 0 
+LockManager::LockManager()
+Database is probably already opened by another engine instance in another Windows session
+MonitoringData: Cannot initialize the shared memory region
+operating system directive CreateFile failed
+Access is denied.
+Test case is at CORE-4680, see comments by Pavel Zotov at 18 Nov 2015.
+
  2015-12-01 21:12  hvlad 
    M src/jrd/jrd.h
 Fixed AV in CS introduced recently. Dmitry, please review.
