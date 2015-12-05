@@ -1,3 +1,8 @@
+ 2015-12-04 13:07  aafemt 
+   M src/yvalve/DistributedTransaction.cpp
+   M src/yvalve/why.cpp
+Move call addRef() out of constructor
+
  2015-12-03 22:17  hvlad 
    M src/common/isc_sync.cpp
 Correction
