@@ -2234,7 +2234,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 			{
 				length = file_size;
 			}
-			else if (file_size && 
+			else if (file_size &&
 					 SetFilePointer(file_handle, 0, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER ||
 					 !SetEndOfFile(file_handle) || !FlushFileBuffers(file_handle))
 			{
@@ -2248,7 +2248,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 					system_call_failed::raise("SetFilePointer", err);
 			}
 		}
-		
+
 		if (length == 0)
 		{
 			CloseHandle(event_handle);
@@ -3638,7 +3638,7 @@ SharedMemoryBase::~SharedMemoryBase()
 	}
 	sh_mem_hdr_address = NULL;
 	CloseHandle(sh_mem_hdr_object);
-	
+
 	ISC_mutex_fini(&sh_mem_winMutex);
 	sh_mem_mutex = NULL;
 

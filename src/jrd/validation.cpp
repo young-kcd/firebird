@@ -3017,12 +3017,15 @@ Validation::RTN Validation::walk_relation(jrd_rel* relation)
 		{
 			PageBitmap::Accessor c(vdr_chain_pages);
 			PageBitmap::Accessor b(vdr_backversion_pages);
-			if (c.getFirst() && b.getFirst()) {
-				for (bool next = true; next; next = c.getNext() )
+
+			if (c.getFirst() && b.getFirst())
+			{
+				for (bool next = true; next; next = c.getNext())
 				{
 					if (c.current() == b.current())
 						b.getNext();
-					else if ((c.current() < b.current()) || !b.getNext()) {
+					else if ((c.current() < b.current()) || !b.getNext())
+					{
 						//fprintf(stdout, "chain page was visited not via data pages %d\n", c.current());
 						checkDPinPP(relation, c.current());
 						checkDPinPIP(relation, c.current());
@@ -3033,9 +3036,10 @@ Validation::RTN Validation::walk_relation(jrd_rel* relation)
 		else
 		{
 			PageBitmap::Accessor c(vdr_chain_pages);
+
 			if (c.getFirst())
 			{
-				for (bool next = true; next; next = c.getNext() )
+				for (bool next = true; next; next = c.getNext())
 				{
 					//fprintf(stdout, "chain page was visited not via data pages %d\n", c.current());
 					checkDPinPP(relation, c.current());

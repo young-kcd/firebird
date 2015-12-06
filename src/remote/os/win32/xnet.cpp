@@ -1144,11 +1144,11 @@ rem_port* XnetClientEndPoint::connect_client(PACKET* packet, const RefPtr<Config
 		// setup status with net read error in case of wait timeout
 		Arg::StatusVector temp;
 		temp << Arg::Gds(isc_net_read_err);
-	
+
 		static const int timeout = conf->getConnectionTimeout() * 1000;
-	
+
 		// waiting for XNET connect lock to release
-	
+
 		DWORD err = WaitForSingleObject(xnet_connect_mutex, timeout);
 		if (err != WAIT_OBJECT_0)
 		{
