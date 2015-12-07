@@ -1,3 +1,9 @@
+ 2015-12-06 22:49  asfernandes 
+   M src/common/isc_sync.cpp
+   M src/jrd/validation.cpp
+   M src/remote/os/win32/xnet.cpp
+Misc.
+
  2015-12-04 13:07  aafemt 
    M src/yvalve/DistributedTransaction.cpp
    M src/yvalve/why.cpp
