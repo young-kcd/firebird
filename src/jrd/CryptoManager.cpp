@@ -197,13 +197,45 @@ namespace Jrd {
 		cryptPlugin->addRef();
 	}
 
-	void CryptoManager::changeCryptState(thread_db* tdbb, const Firebird::string& plugName)
+	void CryptoManager::prepareChangeCryptState(thread_db* tdbb, const Firebird::MetaName& plugName)
 	{
 		if (plugName.length() > 31)
 		{
 			(Arg::Gds(isc_cp_name_too_long) << Arg::Num(31)).raise();
 		}
 
+		const bool newCryptState = plugName.hasData();
+		{	// window scope
+			Header hdr(tdbb, LCK_read);
+
+			// Check header page for flags
+			if (hdr->hdr_flags & Ods::hdr_crypt_process)
+			{
+				(Arg::Gds(isc_cp_process_active)).raise();
+			}
+
+			bool headerCryptState = hdr->hdr_flags & Ods::hdr_encrypted;
+			if (headerCryptState == newCryptState)
+			{
+				(Arg::Gds(isc_cp_already_crypted)).raise();
+			}
+
+			// Load plugin
+			if (newCryptState)
+			{
+				if (cryptPlugin)
+				{
+					// Unload old plugin
+					PluginManagerInterfacePtr()->releasePlugin(cryptPlugin);
+					cryptPlugin = NULL;
+				}
+				loadPlugin(plugName.c_str());
+			}
+		}
+	}
+
+	void CryptoManager::changeCryptState(thread_db* tdbb, const Firebird::string& plugName)
+	{
 		const bool newCryptState = plugName.hasData();
 
 		{	// window scope
@@ -233,11 +265,6 @@ namespace Jrd {
 			fb_utils::init_status(tdbb->tdbb_status_vector);
 			needLock = false;
 
-			// Load plugin
-			if (newCryptState)
-			{
-				loadPlugin(plugName.c_str());
-			}
 			crypt = newCryptState;
 
 			// Write modified header page
@@ -252,6 +279,7 @@ namespace Jrd {
 				header->hdr_flags &= ~Ods::hdr_encrypted;
 			}
 			header->hdr_flags |= Ods::hdr_crypt_process;
+			header->hdr_crypt_page = 1;
 			process = true;
 		}
 
@@ -266,13 +294,6 @@ namespace Jrd {
 			ERR_punt();
 		}
 		fb_utils::init_status(tdbb->tdbb_status_vector);
-
-		// Now we may set hdr_crypt_page for crypt thread
-		{	// window scope
-			Header hdr(tdbb, LCK_write);
-			Ods::header_page* header = hdr.write();
-			header->hdr_crypt_page = 1;
-		}
 
 		startCryptThread(tdbb);
 	}
@@ -479,6 +500,12 @@ namespace Jrd {
 				if (!down)
 				{
 					writeDbHeader(tdbb, 0, pages);
+					if (!crypt)
+					{
+						// Decryption finished, unload plugin as we don't need it anymore
+						PluginManagerInterfacePtr()->releasePlugin(cryptPlugin);
+						cryptPlugin = NULL;
+					}
 				}
 
 				// Release exclusive lock on StartCryptThread

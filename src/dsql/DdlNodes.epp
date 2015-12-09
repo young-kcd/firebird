@@ -35,6 +35,7 @@
 #include "../jrd/ods.h"
 #include "../jrd/tra.h"
 #include "../common/os/path_utils.h"
+#include "../jrd/CryptoManager.h"
 #include "../jrd/IntlManager.h"
 #include "../jrd/PreparedStatement.h"
 #include "../jrd/ResultSet.h"
@@ -11653,6 +11654,9 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	// Moreover, if should load crypt plugin if it (by a miracle) wasn't already loaded yet
 	if (clauses & CLAUSE_CRYPT)
 	{
+		Database* const db = tdbb->getDatabase();
+		db->dbb_crypto_manager->prepareChangeCryptState(tdbb, cryptPlugin);
+
 		DFW_post_work(transaction, dfw_db_crypt, cryptPlugin.c_str(), 0);
 	}
 

@@ -65,6 +65,7 @@ public:
 
 	void shutdown(thread_db* tdbb);
 
+	void prepareChangeCryptState(thread_db* tdbb, const Firebird::MetaName& plugName);
 	void changeCryptState(thread_db* tdbb, const Firebird::string& plugName);
 	void attach(thread_db* tdbb, Attachment* att);
 	void detach(thread_db* tdbb, Attachment* att);
