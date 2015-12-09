@@ -3962,9 +3962,12 @@ db_alter_clause($alterDatabaseNode)
 	| SET DEFAULT CHARACTER SET symbol_character_set_name
 		{ $alterDatabaseNode->setDefaultCharSet = *$5; }
 	| ENCRYPT WITH valid_symbol_name
-		{ $alterDatabaseNode->cryptPlugin = *$3; }
+		{
+			setClauseFlag($alterDatabaseNode->clauses, AlterDatabaseNode::CLAUSE_CRYPT, "CRYPT");
+			$alterDatabaseNode->cryptPlugin = *$3;
+		}
 	| DECRYPT
-		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_DECRYPT; }
+		{ setClauseFlag($alterDatabaseNode->clauses, AlterDatabaseNode::CLAUSE_CRYPT, "CRYPT"); }
 	| SET LINGER TO long_integer
 		{ $alterDatabaseNode->linger = $4; }
 	| DROP LINGER

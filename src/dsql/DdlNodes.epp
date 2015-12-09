@@ -11587,12 +11587,6 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
-	if (cryptPlugin.hasData())
-		DFW_post_work(transaction, dfw_db_crypt, cryptPlugin.c_str(), 0);
-
-	if (clauses & CLAUSE_DECRYPT)
-		DFW_post_work(transaction, dfw_db_crypt, "", 0);
-
 	Attachment* const attachment = transaction->tra_attachment;
 	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	SLONG dbAlloc = PageSpace::maxAlloc(tdbb->getDatabase());
@@ -11654,6 +11648,13 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 		END_MODIFY
 	}
 	END_FOR
+
+	// Allow update above to work as a lock, preventing altering of the database from parallel transactions
+	// Moreover, if should load crypt plugin if it (by a miracle) wasn't already loaded yet
+	if (clauses & CLAUSE_CRYPT)
+	{
+		DFW_post_work(transaction, dfw_db_crypt, cryptPlugin.c_str(), 0);
+	}
 
 	savePoint.release();	// everything is ok
 }
