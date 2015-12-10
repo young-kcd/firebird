@@ -1,3 +1,21 @@
+ 2015-12-09 14:22  aafemt 
+   M src/dsql/DdlNodes.epp
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+Perform db encryption checks at ddl time to avoid corrupting database by wrong plugin name in header
+
+ 2015-12-09 13:47  aafemt 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/Parser.h
+   M src/dsql/parse.y
+Prevent using DECRYPT and ENCRYPT clauses in one query
+
+ 2015-12-09 10:25  paul_reeves 
+   M builds/install/arch-specific/win32/ru/custom_messages_ru.inc
+Change file format of custom messages to UTF-8
+This ought to fix CORE-5002 but needs further testing
+
  2015-12-06 22:49  asfernandes 
    M src/common/isc_sync.cpp
    M src/jrd/validation.cpp
