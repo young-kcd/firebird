@@ -35,6 +35,7 @@
 #include "../common/classes/fb_string.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/stack.h"
+#include "../common/classes/condition.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/ods.h"
 #include "../jrd/status.h"
@@ -56,8 +57,188 @@ class jrd_file;
 class BufferDesc;
 class thread_db;
 class Lock;
+class PageSpace;
 
-class CryptoManager : public Firebird::PermanentStorage
+class BarSync
+{
+public:
+	class IBar
+	{
+	public:
+		virtual void doOnTakenWriteSync(Jrd::thread_db* tdbb) = 0;
+		virtual void doOnAst(Jrd::thread_db* tdbb) = 0;
+	};
+
+	BarSync(IBar* i)
+		: callback(i), counter(0), lockMode(0), flagWriteLock(false)
+	{ }
+
+	class IoGuard
+	{
+	public:
+		IoGuard(Jrd::thread_db* p_tdbb, BarSync& p_bs)
+			: tdbb(p_tdbb), bs(p_bs)
+		{
+			bs.ioBegin(tdbb);
+		}
+
+		~IoGuard()
+		{
+			bs.ioEnd(tdbb);
+		}
+
+	private:
+		Jrd::thread_db* tdbb;
+		BarSync& bs;
+	};
+
+	class LockGuard
+	{
+	public:
+		LockGuard(Jrd::thread_db* p_tdbb, BarSync& p_bs)
+			: tdbb(p_tdbb), bs(p_bs), flagLocked(false)
+		{ }
+
+		void lock()
+		{
+			fb_assert(!flagLocked);
+			if (!flagLocked)
+			{
+				bs.lockBegin(tdbb);
+				flagLocked = true;
+			}
+		}
+
+		~LockGuard()
+		{
+			if (flagLocked)
+			{
+				bs.lockEnd(tdbb);
+			}
+		}
+
+	private:
+		Jrd::thread_db* tdbb;
+		BarSync& bs;
+		bool flagLocked;
+	};
+
+	void ioBegin(Jrd::thread_db* tdbb)
+	{
+		Firebird::MutexLockGuard g(mutex, FB_FUNCTION);
+
+		if (counter < 0)
+		{
+			if ((counter % BIG_VALUE == 0) && (!flagWriteLock))
+			{
+				if (lockMode)
+				{
+					// Someone is waiting for write lock
+					lockCond.notifyOne();
+					barCond.wait(mutex);
+				}
+				else
+				{
+					// Ast done
+					callWriteLockHandler(tdbb);
+					counter = 0;
+				}
+			}
+			else if (!(flagWriteLock && (thread == getThreadId())))
+				barCond.wait(mutex);
+		}
+		++counter;
+	}
+
+	void ioEnd(Jrd::thread_db* tdbb)
+	{
+		Firebird::MutexLockGuard g(mutex, FB_FUNCTION);
+
+		if (--counter < 0 && counter % BIG_VALUE == 0)
+		{
+			if (!(flagWriteLock && (thread == getThreadId())))
+			{
+				if (lockMode)
+					lockCond.notifyOne();
+				else
+				{
+					callWriteLockHandler(tdbb);
+					finishWriteLock();
+				}
+			}
+		}
+	}
+
+	void ast(Jrd::thread_db* tdbb)
+	{
+		Firebird::MutexLockGuard g(mutex, FB_FUNCTION);
+		if (counter >= 0)
+		{
+			counter -= BIG_VALUE;
+		}
+		callback->doOnAst(tdbb);
+	}
+
+	void lockBegin(Jrd::thread_db* tdbb)
+	{
+		Firebird::MutexLockGuard g(mutex, FB_FUNCTION);
+
+		if ((counter -= BIG_VALUE) != -BIG_VALUE)
+		{
+			++lockMode;
+			try
+			{
+				lockCond.wait(mutex);
+			}
+			catch(const Firebird::Exception&)
+			{
+				--lockMode;
+				throw;
+			}
+			--lockMode;
+		}
+
+		thread = getThreadId();
+		flagWriteLock = true;
+	}
+
+	void lockEnd(Jrd::thread_db* tdbb)
+	{
+		Firebird::MutexLockGuard g(mutex, FB_FUNCTION);
+
+		flagWriteLock = false;
+		finishWriteLock();
+	}
+
+private:
+	void callWriteLockHandler(Jrd::thread_db* tdbb)
+	{
+		thread = getThreadId();
+		flagWriteLock = true;
+		callback->doOnTakenWriteSync(tdbb);
+		flagWriteLock = false;
+	}
+
+	void finishWriteLock()
+	{
+		if ((counter += BIG_VALUE) == 0)
+			barCond.notifyAll();
+		else
+			lockCond.notifyOne();
+	}
+
+	Firebird::Condition barCond, lockCond;
+	Firebird::Mutex mutex;
+	IBar* callback;
+	ThreadId thread;
+	int counter;
+	int lockMode;
+	bool flagWriteLock;
+
+	static const int BIG_VALUE = 1000000;
+};
+
+class CryptoManager FB_FINAL : public Firebird::PermanentStorage, public BarSync::IBar
 {
 public:
 	explicit CryptoManager(thread_db* tdbb);
@@ -73,13 +254,16 @@ public:
 	void startCryptThread(thread_db* tdbb);
 	void terminateCryptThread(thread_db* tdbb);
 
-	bool decrypt(FbStatusVector* sv, Ods::pag* page);
-	Ods::pag* encrypt(FbStatusVector* sv, Ods::pag* from, Ods::pag* to);
+	bool read(thread_db* tdbb, FbStatusVector* sv, jrd_file* file, BufferDesc* bdb,
+		Ods::pag* page, bool noShadows = true, PageSpace* pageSpace = NULL);
+	bool write(thread_db* tdbb, FbStatusVector* sv, jrd_file* file, BufferDesc* bdb,
+		Ods::pag* page);
 
 	void cryptThread();
 
 	ULONG getCurrentPage();
 
+private:
 	class Buffer
 	{
 	public:
@@ -88,11 +272,15 @@ public:
 			return reinterpret_cast<Ods::pag*>(FB_ALIGN(buf, PAGE_ALIGNMENT));
 		}
 
+		Ods::pag* operator->()
+		{
+			return reinterpret_cast<Ods::pag*>(FB_ALIGN(buf, PAGE_ALIGNMENT));
+		}
+
 	private:
 		char buf[MAX_PAGE_SIZE + PAGE_ALIGNMENT - 1];
 	};
 
-private:
 	class HolderAttachments
 	{
 	public:
@@ -134,11 +322,25 @@ private:
 	static int blockingAstChangeCryptState(void*);
 	void blockingAstChangeCryptState();
 
-	void takeStateLock(thread_db* tdbb);
+	// IBar's pure virtual functions are implemented here
+	void doOnTakenWriteSync(thread_db* tdbb);
+	void doOnAst(thread_db* tdbb);
+
 	void loadPlugin(const char* pluginName);
 	ULONG getLastPage(thread_db* tdbb);
 	void writeDbHeader(thread_db* tdbb, ULONG runpage, Firebird::Stack<ULONG>& pages);
 
+	void lockAndReadHeader(thread_db* tdbb, unsigned flags = 0);
+	static const unsigned CRYPT_HDR_INIT =		0x01;
+	static const unsigned CRYPT_HDR_NOWAIT =	0x02;
+
+	enum IoResult {SUCCESS_ALL, FAILED_CRYPT, FAILED_IO};
+	IoResult internalRead(thread_db* tdbb, FbStatusVector* sv, jrd_file* file,
+		BufferDesc* bdb, Ods::pag* page, bool noShadows, PageSpace* pageSpace);
+	IoResult internalWrite(thread_db* tdbb, FbStatusVector* sv, jrd_file* file,
+		BufferDesc* bdb, Ods::pag* page);
+
+	BarSync sync;
 	Firebird::AtomicCounter currentPage;
 	Firebird::Mutex pluginLoadMtx, cryptThreadMtx;
 	KeyHolderPlugins keyHolderPlugins;
@@ -147,7 +349,8 @@ private:
 	Database& dbb;
 	Lock* stateLock;
 	Lock* threadLock;
-	bool needLock, crypt, process, down;
+	SINT64 slowIO;
+	bool crypt, process, down;
 };
 
 } // namespace Jrd

@@ -765,7 +765,6 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 	fb_assert(pageSpace);
 
 	jrd_file* file = pageSpace->file;
-	SSHORT retryCount = 0;
 	const bool isTempPage = pageSpace->isTemporary();
 
 	/*
@@ -808,36 +807,9 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 			bdb->bdb_page.getPageSpaceID(), bdb->bdb_page.getPageNum(), bak_state, diff_page));
 
 		// Read page from disk as normal
-		bool error = false;
-		while (!PIO_read(tdbb, file, bdb, page, status))
+		if (!dbb->dbb_crypto_manager->read(tdbb, status, file, bdb, page, isTempPage || !read_shadow, pageSpace))
 		{
-			if (isTempPage || !read_shadow) {
-				error = true;
-				break;
-			}
-
-			if (!CCH_rollover_to_shadow(tdbb, dbb, file, false))
-			{
-				PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
-				CCH_unwind(tdbb, true);
-			}
-
-			if (file != pageSpace->file)
-				file = pageSpace->file;
-			else
-			{
-				if (retryCount++ == 3)
-				{
-					fprintf(stderr, "IO error loop Unwind to avoid a hang\n");
-					PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
-					CCH_unwind(tdbb, true);
-				}
-			}
-		}
-
-		if (!error)
-		{
-			if (!dbb->dbb_crypto_manager->decrypt(status, page))
+			if (read_shadow && !isTempPage)
 			{
 				PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
 				CCH_unwind(tdbb, true);
@@ -865,36 +837,9 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 			NBAK_TRACE(("Re-reading page %d, state=%d, diff page=%d from DISK",
 				bdb->bdb_page, bak_state, diff_page));
 
-			bool error = false;
-			while (!PIO_read(tdbb, file, bdb, page, status))
+			if (!dbb->dbb_crypto_manager->read(tdbb, status, file, bdb, page, !read_shadow, pageSpace))
 			{
-				if (!read_shadow) {
-					error = true;
-					break;
-				}
-
-				if (!CCH_rollover_to_shadow(tdbb, dbb, file, false))
-				{
-					PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
-					CCH_unwind(tdbb, true);
-				}
-
-				if (file != pageSpace->file)
-					file = pageSpace->file;
-				else
-				{
-					if (retryCount++ == 3)
-					{
-						fprintf(stderr, "IO error loop Unwind to avoid a hang\n");
-						PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
-						CCH_unwind(tdbb, true);
-					}
-				}
-			}
-
-			if (!error)
-			{
-				if (!dbb->dbb_crypto_manager->decrypt(status, page))
+				if (read_shadow)
 				{
 					PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
 					CCH_unwind(tdbb, true);
@@ -2289,10 +2234,7 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 		// shadow to be deleted at the next available opportunity when we
 		// know we don't have a page fetched
 
-		CryptoManager::Buffer buffer;
-		pag* writePage = dbb->dbb_crypto_manager->encrypt(status, page, buffer);
-
-		if (!(writePage && PIO_write(tdbb, sdw->sdw_file, bdb, writePage, status)))
+		if (!dbb->dbb_crypto_manager->write(tdbb, status, sdw->sdw_file, bdb, page))
 		{
 			if (sdw->sdw_flags & SDW_manual)
 				result = false;
@@ -4902,18 +4844,8 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 			else
 			{
 				// We need to write our pages to main database files
-				CryptoManager::Buffer buffer;
-				pag* writePage = dbb->dbb_crypto_manager->encrypt(status, page, buffer);
-
-				if (!writePage)
-				{
-					bdb->bdb_flags |= BDB_io_error;
-					dbb->dbb_flags |= DBB_suspend_bgio;
-					return false;
-				}
-
 				jrd_file* file = pageSpace->file;
-				while (!PIO_write(tdbb, file, bdb, writePage, status))
+				while (!dbb->dbb_crypto_manager->write(tdbb, status, file, bdb, page))
 				{
 					if (isTempPage || !CCH_rollover_to_shadow(tdbb, dbb, file, inAst))
 					{

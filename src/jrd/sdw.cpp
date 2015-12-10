@@ -1013,11 +1013,6 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 			ERR_punt();
 		}
 
-		if (!dbb->dbb_crypto_manager->decrypt(tdbb->tdbb_status_vector, (PAG) spare_page))
-		{
-			ERR_punt();
-		}
-
 		const header_page* shadow_header = (header_page*) spare_page;
 
 		//          NOTE ! NOTE! NOTE!

@@ -1563,13 +1563,11 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				dbb->dbb_backup_manager = FB_NEW_POOL(*dbb->dbb_permanent) BackupManager(tdbb,
 					dbb, Ods::hdr_nbak_unknown);
 				dbb->dbb_backup_manager->initializeAlloc(tdbb);
+				dbb->dbb_crypto_manager = FB_NEW_POOL(*dbb->dbb_permanent) CryptoManager(tdbb);
 
 				PAG_init2(tdbb, 0);
 				PAG_header(tdbb, false);
-
 				dbb->dbb_page_manager.initTempPageSpace(tdbb);
-
-				dbb->dbb_crypto_manager = FB_NEW_POOL(*dbb->dbb_permanent) CryptoManager(tdbb);
 				dbb->dbb_crypto_manager->attach(tdbb, attachment);
 
 				// initialize shadowing as soon as the database is ready for it
@@ -2669,13 +2667,13 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			dbb->dbb_backup_manager = FB_NEW_POOL(*dbb->dbb_permanent) BackupManager(tdbb,
 				dbb, Ods::hdr_nbak_normal);
 			dbb->dbb_backup_manager->dbCreating = true;
+			dbb->dbb_crypto_manager = FB_NEW_POOL(*dbb->dbb_permanent) CryptoManager(tdbb);
 
 			PAG_format_header(tdbb);
 			INI_init2(tdbb);
 			PAG_format_pip(tdbb, *pageSpace);
 
 			dbb->dbb_page_manager.initTempPageSpace(tdbb);
-			dbb->dbb_crypto_manager = FB_NEW_POOL(*dbb->dbb_permanent) CryptoManager(tdbb);
 
 			if (options.dpb_set_page_buffers)
 				PAG_set_page_buffers(tdbb, options.dpb_page_buffers);

@@ -811,11 +811,7 @@ bool BackupManager::writeDifference(thread_db* tdbb, FbStatusVector* status, ULO
 	// Check that diff page is not allocation page
 	fb_assert(diff_page % (database->dbb_page_size / sizeof(ULONG)));
 
-	CryptoManager::Buffer buffer;
-	Ods::pag* writePage = database->dbb_crypto_manager->encrypt(status, page, buffer);
-	if (!writePage)
-		return false;
-	if (!PIO_write(tdbb, diff_file, &temp_bdb, writePage, status))
+	if (!database->dbb_crypto_manager->write(tdbb, status, diff_file, &temp_bdb, page))
 		return false;
 	return true;
 }
@@ -825,9 +821,7 @@ bool BackupManager::readDifference(thread_db* tdbb, ULONG diff_page, Ods::pag* p
 	BufferDesc temp_bdb(database->dbb_bcb);
 	temp_bdb.bdb_page = diff_page;
 	temp_bdb.bdb_buffer = page;
-	if (!PIO_read(tdbb, diff_file, &temp_bdb, page, tdbb->tdbb_status_vector))
-		return false;
-	if (!database->dbb_crypto_manager->decrypt(tdbb->tdbb_status_vector, page))
+	if (!database->dbb_crypto_manager->read(tdbb, tdbb->tdbb_status_vector, diff_file, &temp_bdb, page))
 		return false;
 	NBAK_TRACE(("read_diff page=%d, diff=%d", page->pag_pageno, diff_page));
 	return true;
