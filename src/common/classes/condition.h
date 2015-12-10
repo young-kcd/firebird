@@ -191,7 +191,7 @@ public:
 	{
 		int err = pthread_cond_wait(&cv, &m.mlock);
 		if (err != 0)
-			system_call_failed::raise("pthread_mutex_lock", err);
+			system_call_failed::raise("pthread_cond_wait", err);
 	}
 };
 
