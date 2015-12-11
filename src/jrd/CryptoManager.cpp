@@ -322,11 +322,8 @@ namespace Jrd {
 			if (newCryptState)
 			{
 				if (cryptPlugin)
-				{
-					// Unload old plugin
-					PluginManagerInterfacePtr()->releasePlugin(cryptPlugin);
-					cryptPlugin = NULL;
-				}
+					(Arg::Gds(isc_cp_already_crypted)).raise();
+
 				loadPlugin(plugName.c_str());
 			}
 		}
