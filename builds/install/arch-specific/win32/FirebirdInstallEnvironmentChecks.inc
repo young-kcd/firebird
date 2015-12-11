@@ -746,7 +746,7 @@ procedure SetupSharedFilesArray;
 // - Libraries
 // - License files
 begin
-SetArrayLength(SharedFileArray,35);
+SetArrayLength(SharedFileArray,36);
 
 SharedFileArray[0].Filename := ExpandConstant('{app}')+'IPLicense.txt';
 SharedFileArray[1].Filename := ExpandConstant('{app}')+'IDPLicense.txt';
@@ -794,6 +794,7 @@ SharedFileArray[31].Filename := ExpandConstant('{app}')+'fbtrace.conf';
 SharedFileArray[32].Filename := ExpandConstant('{app}')+'fbsvcmgr.exe';
 SharedFileArray[33].Filename := ExpandConstant('{app}')+'fbrmclib.dll';
 SharedFileArray[34].Filename := ExpandConstant('{app}')+'fbtracemgr.exe';
+SharedFileArray[35].Filename := ExpandConstant('{app}')+'zlib1.dll';
 
 // FIXME 
 // Add in WOW64 here.

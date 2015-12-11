@@ -502,6 +502,7 @@ Source: {#FilesDir}\icudt*.dat;  DestDir: {app}; Components: ServerComponent; Fl
 #if PlatformTarget =="Win32"
 Source: {#FilesDir}\fbrmclib.dll; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
 #endif
+Source: {#FilesDir}\zlib1.dll; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
 
 ;Rules for installation of MS runtimes are simplified with MSVC10
 ;We just install the runtimes into the install dir.
