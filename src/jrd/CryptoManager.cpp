@@ -684,6 +684,8 @@ namespace Jrd {
 					switch (internalRead(tdbb, sv, file, bdb, page, noShadows, pageSpace))
 					{
 					case SUCCESS_ALL:
+						if (slowIO)
+							lockAndReadHeader(tdbb, CRYPT_HDR_NOWAIT);
 						return true;
 
 					case FAILED_IO:
