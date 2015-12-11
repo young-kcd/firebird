@@ -7453,7 +7453,6 @@ ISC_STATUS thread_db::checkCancelState()
 						(/*JrdStatement::FLAG_INTERNAL | */JrdStatement::FLAG_SYS_TRIGGER))) &&
 				(!transaction || !(transaction->tra_flags & TRA_system)))
 			{
-				attachment->att_flags &= ~ATT_cancel_raise;
 				return isc_cancelled;
 			}
 		}
@@ -7479,6 +7478,9 @@ bool thread_db::checkCancelState(bool punt)
 
 	if (error == isc_shutdown)
 		status << Arg::Str(attachment->att_filename);
+
+	if (attachment)
+		attachment->att_flags &= ~ATT_cancel_raise;
 
 	tdbb_flags |= TDBB_sys_error;
 	ERR_post_nothrow(status, tdbb_status_vector);
