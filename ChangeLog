@@ -1,3 +1,16 @@
+ 2015-12-10 16:58  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/sdw.cpp
+Fixed CORE-5041: Database may get corrupted after ALTER DATABASE ENCRYPT/DECRYPT issued multiple times per database open time
+
+ 2015-12-10 15:30  alexpeshkoff 
+   M src/common/classes/condition.h
+Misc - fixed system call name in exception
+
  2015-12-09 14:22  aafemt 
    M src/dsql/DdlNodes.epp
    M src/jrd/CryptoManager.cpp
