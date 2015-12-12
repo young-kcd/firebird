@@ -1,3 +1,24 @@
+ 2015-12-11 19:46  aafemt 
+   M src/jrd/CryptoManager.cpp
+Allow only one ALTER DATABASE ENCRYPT query in transaction
+
+ 2015-12-11 16:06  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+Include zlib1.dll in the binary kits
+
+ 2015-12-11 13:44  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+Postfix for CORE-5041: try to leave slow I/O mode as soon as possible
+
+ 2015-12-11 13:27  alexpeshkoff 
+   M src/yvalve/preparse.cpp
+Fixed CORE-5042: FB3 client cannot create database on FB2.5 server
+
+ 2015-12-11 06:52  dimitr 
+   M src/jrd/jrd.cpp
+Fixed possible problems with asynchronous query cancellation (recent regression).
+
  2015-12-10 16:58  alexpeshkoff 
    M src/jrd/CryptoManager.cpp
    M src/jrd/CryptoManager.h
