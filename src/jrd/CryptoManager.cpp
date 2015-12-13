@@ -86,7 +86,7 @@ namespace {
 		// Fortunately, modern pages of size 4k and bigger can contain everything on one page.
 		bool searchEntry(UCHAR type, UCHAR& out_len, const UCHAR* &entry)
 		{
-			const UCHAR* end = ((const UCHAR*)header) + header->hdr_page_size;
+			const UCHAR* end = ((const UCHAR*) header) + header->hdr_page_size;
 			for (const UCHAR* p = header->hdr_data; (p < end - 2) && (*p != Ods::HDR_end); p += 2u + p[1])
 			{
 				if (*p == type)
@@ -250,7 +250,7 @@ namespace Jrd {
 		else
 		{
 			if (!LCK_convert(tdbb, stateLock, CRYPT_NORMAL,
-				(flags & CRYPT_HDR_NOWAIT) ? LCK_NO_WAIT : LCK_WAIT))
+					(flags & CRYPT_HDR_NOWAIT) ? LCK_NO_WAIT : LCK_WAIT))
 			{
 				slowIO = LCK_read_data(tdbb, stateLock);
 				fb_assert(slowIO);
@@ -401,7 +401,7 @@ namespace Jrd {
 						fb_assert(false);
 					lockAndReadHeader(tdbb);
 				}
-				catch(const Exception&)
+				catch (const Exception&)
 				{ }
 			}
 			throw;
@@ -825,7 +825,7 @@ namespace Jrd {
 		Ods::pag* dest = page;
 		UCHAR savedFlags = page->pag_flags;
 
-		fb_assert ((!crypt) || cryptPlugin);
+		fb_assert((!crypt) || cryptPlugin);
 		if (crypt && Ods::pag_crypt_page[page->pag_type % (pag_max + 1)])
 		{
 			if (!cryptPlugin)

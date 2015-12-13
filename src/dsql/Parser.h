@@ -279,9 +279,11 @@ private:
 	{
 		using namespace Firebird;
 		if (clause & flag)
+		{
 			status_exception::raise(
 				Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
 				Arg::Gds(isc_dsql_duplicate_spec) << duplicateMsg);
+		}
 		clause |= flag;
 	}
 

@@ -11651,7 +11651,7 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	END_FOR
 
 	// Allow update above to work as a lock, preventing altering of the database from parallel transactions
-	// Moreover, if should load crypt plugin if it (by a miracle) wasn't already loaded yet
+	// Moreover, it should load crypt plugin if it (by a miracle) wasn't already loaded yet
 	if (clauses & CLAUSE_CRYPT)
 	{
 		Database* const db = tdbb->getDatabase();

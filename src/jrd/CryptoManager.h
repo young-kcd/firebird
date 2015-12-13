@@ -190,7 +190,7 @@ public:
 			{
 				lockCond.wait(mutex);
 			}
-			catch(const Firebird::Exception&)
+			catch (const Firebird::Exception&)
 			{
 				--lockMode;
 				throw;

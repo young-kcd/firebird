@@ -201,7 +201,9 @@ bool PREPARSE_execute(CheckStatusWrapper* status, Why::YAttachment** ptrAtt,
 
 			SLONG page_size = 0;
 			bool matched;
-			do {
+
+			do
+			{
 				try
 				{
 					token = getToken(pos, tks);
