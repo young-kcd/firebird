@@ -413,8 +413,9 @@
 #
 
 # UserManager sets plugin used to work with security database. If more than
-# one plugin is given, first plugin from the list is used. If you need to manage
-# legacy logins set it to Legacy_UserManager.
+# one plugin is given, first plugin from the list is used by default. If you 
+# need to manage legacy logins using legacy tools set it to Legacy_UserManager.
+# Other managers may be chosen in create/alter/drop user commands.
 #
 # Per-database configurable.
 #
