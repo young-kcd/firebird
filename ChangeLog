@@ -1,3 +1,11 @@
+ 2015-12-13 01:02  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/Parser.h
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+   M src/yvalve/preparse.cpp
+Misc.
+
  2015-12-11 19:46  aafemt 
    M src/jrd/CryptoManager.cpp
 Allow only one ALTER DATABASE ENCRYPT query in transaction
