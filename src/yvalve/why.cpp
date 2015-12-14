@@ -4929,7 +4929,37 @@ YTransaction* YTransaction::enterDtc(CheckStatusWrapper* status)
 
 //-------------------------------------
 
+unsigned int YCallbackInterface::callback(unsigned int keyNameLength, const void* keyName, unsigned int length, void* buffer)
+{
+	RefPtr<Config> config(Config::getDefaultConfig());
+	for (GetPlugins<IKeyHolderPlugin> keyControl(IPluginManager::TYPE_KEY_HOLDER, config);
+		keyControl.hasData(); keyControl.next())
+	{
+		IKeyHolderPlugin* keyPlugin = keyControl.plugin();
 
+		StatusVector status(NULL);
+		CheckStatusWrapper st(&status);
+
+		if (keyPlugin->keyCallback(&st, parentCallback) != 1)
+			continue;
+
+		Firebird::string s(keyName, keyNameLength);
+		ICryptKeyCallback* callback = keyPlugin->keyHandle(&st, s.c_str());
+		if (!callback)
+			continue;
+
+		if (st.getState() & Firebird::IStatus::STATE_ERRORS)
+			return 0;
+
+		unsigned int len = callback->callback(keyNameLength, keyName, length, buffer);
+
+		if (len > 0)
+			return len;
+	}
+	return 0;
+}
+
+//-------------------------------------
 YAttachment::YAttachment(IProvider* aProvider, IAttachment* aNext, const PathName& aDbPath)
 	: YHelper(aNext),
 	  provider(aProvider),
@@ -4943,6 +4973,122 @@ YAttachment::YAttachment(IProvider* aProvider, IAttachment* aNext, const PathNam
 {
 	provider->addRef();
 	makeHandle(&attachments, this, handle);
+}
+
+YAttachment::YAttachment(bool createFlag, const char* filename, unsigned int dpbLength, const unsigned char* dpb, Firebird::ICryptKeyCallback* callback)
+	: YHelper(NULL),
+	  dbPath(getPool()),
+	  childBlobs(getPool()),
+	  childEvents(getPool()),
+	  childRequests(getPool()),
+	  childStatements(getPool()),
+	  childTransactions(getPool()),
+	  cleanupHandlers(getPool())
+{
+	ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE, dpb, dpbLength);
+	bool utfData = newDpb.find(isc_dpb_utf8_filename);
+
+	// Take care about DPB
+	setLogin(newDpb, false);
+	if (!utfData)
+	{
+		IntlDpb().toUtf8(newDpb);
+	}
+
+	// Take care about filename
+	PathName orgFilename(filename);
+	if (utfData)
+	{
+		ISC_utf8ToSystem(orgFilename);
+	}
+	orgFilename.rtrim();
+
+	PathName expandedFilename;
+	RefPtr<Config> config;
+	if (expandDatabaseName(orgFilename, expandedFilename, &config))
+	{
+		expandedFilename = orgFilename;
+	}
+
+	if (newDpb.find(isc_dpb_config))
+	{
+		string dpb_config;
+		newDpb.getString(dpb_config);
+		Config::merge(config, &dpb_config);
+	}
+
+	cryptCallbackInterface.parentCallback = callback;
+
+	// Convert to UTF8
+	ISC_systemToUtf8(orgFilename);
+	ISC_systemToUtf8(expandedFilename);
+
+	// Add original filename to DPB
+	if (orgFilename != expandedFilename && !newDpb.find(isc_dpb_org_filename))
+		newDpb.insertPath(isc_dpb_org_filename, orgFilename);
+
+	StatusVector temp(NULL);
+	CheckStatusWrapper status(&temp);
+
+	for (GetPlugins<IProvider> providerIterator(IPluginManager::TYPE_PROVIDER, config);
+			providerIterator.hasData();
+			providerIterator.next())
+	{
+		provider = providerIterator.plugin();
+
+		provider->setDbCryptCallback(&status, &cryptCallbackInterface);
+		if (status.getState() & Firebird::IStatus::STATE_ERRORS)
+			continue;
+
+		IAttachment* attachment = createFlag ?
+			provider->createDatabase(&status,	expandedFilename.c_str(),
+				newDpb.getBufferLength(), newDpb.getBuffer()) :
+			provider->attachDatabase(&status,	expandedFilename.c_str(),
+				newDpb.getBufferLength(), newDpb.getBuffer());
+
+		if (!(status.getState() & Firebird::IStatus::STATE_ERRORS))
+		{
+			if (createFlag)
+			{
+				config->notify();
+#ifdef WIN_NT
+	            // Now we can expand, the file exists
+				ISC_utf8ToSystem(orgFilename);
+				if (expandDatabaseName(orgFilename, expandedFilename, NULL))
+				{
+					expandedFilename = orgFilename;
+				}
+				ISC_systemToUtf8(expandedFilename);
+#endif
+			}
+
+			dbPath = expandedFilename;
+			next.assignRefNoIncr(attachment);
+			provider->addRef();
+			makeHandle(&attachments, this, handle);
+
+			return;
+		}
+
+		switch (status.getErrors()[1])
+		{
+		case isc_io_error:
+		case isc_lock_dir_access:
+		case isc_no_priv:
+//			currentStatus = &tempCheckStatusWrapper;
+			// fall down...
+		case isc_unavailable:
+			break;
+
+		default:
+			temp.check();
+		}
+
+		status.init();
+	}
+
+	// If execution reached this point, no suitable provider has been found
+	Arg::Gds(isc_unavailable).raise();
 }
 
 FB_API_HANDLE& YAttachment::getHandle()
@@ -5512,6 +5658,67 @@ YService::YService(IProvider* aProvider, IService* aNext, bool utf8)
 	makeHandle(&services, this, handle);
 }
 
+YService::YService(const char* serviceName, unsigned int spbLength, const unsigned char* spb, Firebird::ICryptKeyCallback* callback)
+	: YHelper(NULL)
+{
+	PathName svcName(serviceName);
+	svcName.trim();
+
+	ClumpletWriter spbWriter(ClumpletReader::spbList, MAX_DPB_SIZE, spb, spbLength);
+	utf8Connection = spbWriter.find(isc_spb_utf8_filename);
+
+	// Take care about SPB
+	setLogin(spbWriter, true);
+	if (!utf8Connection)
+	{
+		IntlSpb().toUtf8(spbWriter);
+	}
+
+	// Build correct config
+	RefPtr<Config> config(Config::getDefaultConfig());
+	if (spbWriter.find(isc_spb_config))
+	{
+		string spb_config;
+		spbWriter.getString(spb_config);
+		Config::merge(config, &spb_config);
+	}
+
+	StatusVector temp(NULL);
+	CheckStatusWrapper status(&temp);
+
+	cryptCallbackInterface.parentCallback = callback;
+
+	for (GetPlugins<IProvider> providerIterator(IPluginManager::TYPE_PROVIDER, config);
+			providerIterator.hasData();
+			providerIterator.next())
+	{
+		status.init();
+		IProvider* p = providerIterator.plugin();
+
+		p->setDbCryptCallback(&status, &cryptCallbackInterface);
+		if (status.getState() & Firebird::IStatus::STATE_ERRORS)
+			continue;
+
+		next.assignRefNoIncr(p->attachServiceManager(&status, svcName.c_str(),
+			spbWriter.getBufferLength(), spbWriter.getBuffer()));
+
+		if (!(status.getState() & Firebird::IStatus::STATE_ERRORS))
+		{
+			provider = p;
+			p->addRef();
+			makeHandle(&services, this, handle);
+			return;
+		}
+	}
+
+	// Raise error if any
+	temp.check();
+
+	// If no errors, we are out of providers, raise error anyway
+	(Arg::Gds(isc_service_att_err) <<
+		Arg::Gds(isc_no_providers)).raise();
+}
+
 FB_API_HANDLE& YService::getHandle()
 {
 	fb_assert(handle);
@@ -5627,111 +5834,9 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::CheckStatusWrapper* st
 		if (dpbLength > 0 && !dpb)
 			status_exception::raise(Arg::Gds(isc_bad_dpb_form));
 
-		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE, dpb, dpbLength);
-		bool utfData = newDpb.find(isc_dpb_utf8_filename);
-
-		// Take care about DPB
-		setLogin(newDpb, false);
-		if (!utfData)
-		{
-			IntlDpb().toUtf8(newDpb);
-		}
-
-		// Take care about filename
-		PathName orgFilename(filename);
-		if (utfData)
-		{
-			ISC_utf8ToSystem(orgFilename);
-		}
-		orgFilename.rtrim();
-
-		PathName expandedFilename;
-		RefPtr<Config> config;
-		if (expandDatabaseName(orgFilename, expandedFilename, &config))
-		{
-			expandedFilename = orgFilename;
-		}
-
-		if (newDpb.find(isc_dpb_config))
-		{
-			string dpb_config;
-			newDpb.getString(dpb_config);
-			Config::merge(config, &dpb_config);
-		}
-
-		// Convert to UTF8
-		ISC_systemToUtf8(orgFilename);
-		ISC_systemToUtf8(expandedFilename);
-
-		// Add original filename to DPB
-		if (orgFilename != expandedFilename && !newDpb.find(isc_dpb_org_filename))
-			newDpb.insertPath(isc_dpb_org_filename, orgFilename);
-
-		StatusVector temp(NULL);
-		CheckStatusWrapper tempCheckStatusWrapper(&temp);
-		CheckStatusWrapper* currentStatus = status;
-
-		for (GetPlugins<IProvider> providerIterator(IPluginManager::TYPE_PROVIDER, config);
-			 providerIterator.hasData();
-			 providerIterator.next())
-		{
-			IProvider* provider = providerIterator.plugin();
-
-			if (cryptCallback)
-			{
-				provider->setDbCryptCallback(currentStatus, cryptCallback);
-				if (currentStatus->getState() & Firebird::IStatus::STATE_ERRORS)
-					continue;
-			}
-
-			IAttachment* attachment = createFlag ?
-				provider->createDatabase(currentStatus,	expandedFilename.c_str(),
-					newDpb.getBufferLength(), newDpb.getBuffer()) :
-				provider->attachDatabase(currentStatus,	expandedFilename.c_str(),
-					newDpb.getBufferLength(), newDpb.getBuffer());
-
-			if (!(currentStatus->getState() & Firebird::IStatus::STATE_ERRORS))
-			{
-				if (createFlag)
-				{
-					config->notify();
-#ifdef WIN_NT
-	            	// Now we can expand, the file exists
-					ISC_utf8ToSystem(orgFilename);
-					if (expandDatabaseName(orgFilename, expandedFilename, NULL))
-					{
-						expandedFilename = orgFilename;
-					}
-					ISC_systemToUtf8(expandedFilename);
-#endif
-				}
-
-				status->setErrors(currentStatus->getErrors());
-				status->setWarnings(currentStatus->getWarnings());
-				YAttachment* r = FB_NEW YAttachment(provider, attachment, expandedFilename);
-				r->addRef();
-				return r;
-			}
-
-			switch (currentStatus->getErrors()[1])
-			{
-			case isc_io_error:
-			case isc_lock_dir_access:
-			case isc_no_priv:
-				currentStatus = &tempCheckStatusWrapper;
-				// fall down...
-			case isc_unavailable:
-				break;
-
-			default:
-				return NULL;
-			}
-
-			currentStatus->init();
-		}
-
-		if (status->getErrors()[1] == 0)
-			Arg::Gds(isc_unavailable).raise();
+		YAttachment* r = FB_NEW YAttachment(createFlag, filename, dpbLength, dpb, cryptCallback);
+		r->addRef();
+		return r;
 	}
 	catch (const Exception& e)
 	{
@@ -5745,8 +5850,6 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::CheckStatusWrapper* st
 YService* Dispatcher::attachServiceManager(CheckStatusWrapper* status, const char* serviceName,
 	unsigned int spbLength, const unsigned char* spb)
 {
-	IService* service = NULL;
-
 	try
 	{
 		DispatcherEntry entry(status);
@@ -5758,67 +5861,12 @@ YService* Dispatcher::attachServiceManager(CheckStatusWrapper* status, const cha
 			status_exception::raise(Arg::Gds(isc_bad_spb_form) <<
  									Arg::Gds(isc_null_spb));
 
-		PathName svcName(serviceName);
-		svcName.trim();
-
-		ClumpletWriter spbWriter(ClumpletReader::spbList, MAX_DPB_SIZE, spb, spbLength);
-		bool utfData = spbWriter.find(isc_spb_utf8_filename);
-
-		// Take care about SPB
-		setLogin(spbWriter, true);
-		if (!utfData)
-		{
-			IntlSpb().toUtf8(spbWriter);
-		}
-
-		// Build correct config
-		RefPtr<Config> config(Config::getDefaultConfig());
-		if (spbWriter.find(isc_spb_config))
-		{
-			string spb_config;
-			spbWriter.getString(spb_config);
-			Config::merge(config, &spb_config);
-		}
-
-		for (GetPlugins<IProvider> providerIterator(IPluginManager::TYPE_PROVIDER, config);
-			 providerIterator.hasData();
-			 providerIterator.next())
-		{
-			IProvider* p = providerIterator.plugin();
-
-			if (cryptCallback)
-			{
-				p->setDbCryptCallback(status, cryptCallback);
-				if (status->getState() & Firebird::IStatus::STATE_ERRORS)
-					continue;
-			}
-
-			service = p->attachServiceManager(status, svcName.c_str(),
-				spbWriter.getBufferLength(), spbWriter.getBuffer());
-
-			if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
-			{
-				YService* r = FB_NEW YService(p, service, utfData);
-				r->addRef();
-				return r;
-			}
-		}
-
-		if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
-		{
-			(Arg::Gds(isc_service_att_err) <<
-			 Arg::Gds(isc_no_providers)).copyTo(status);
-		}
+		YService* r = FB_NEW YService(serviceName, spbLength, spb, cryptCallback);
+		r->addRef();
+		return r;
 	}
 	catch (const Exception& e)
 	{
-		if (service)
-		{
-			StatusVector temp(NULL);
-			CheckStatusWrapper tempCheckStatusWrapper(&temp);
-			service->detach(&tempCheckStatusWrapper);
-		}
-
 		e.stuffException(status);
 	}
 

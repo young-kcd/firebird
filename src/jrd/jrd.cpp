@@ -739,22 +739,6 @@ namespace
 		}
 	}
 
-
-	class DefaultCallback : public AutoIface<ICryptKeyCallbackImpl<DefaultCallback, CheckStatusWrapper> >
-	{
-	public:
-		unsigned int callback(unsigned int, const void*, unsigned int, void*)
-		{
-			return 0;
-		}
-	};
-
-	DefaultCallback defCallback;
-
-	ICryptKeyCallback* getDefCryptCallback(ICryptKeyCallback* callback)
-	{
-		return callback ? callback : &defCallback;
-	}
 } // anonymous
 
 
@@ -1488,7 +1472,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 			EngineContextHolder tdbb(user_status, jAtt, FB_FUNCTION, AttachmentHolder::ATT_DONT_LOCK);
 
-			attachment->att_crypt_callback = getDefCryptCallback(cryptCallback);
+			attachment->att_crypt_callback = cryptCallback;
 			attachment->att_client_charset = attachment->att_charset = options.dpb_interp;
 
 			if (options.dpb_no_garbage)
@@ -2515,7 +2499,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 
 			EngineContextHolder tdbb(user_status, jAtt, FB_FUNCTION, AttachmentHolder::ATT_DONT_LOCK);
 
-			attachment->att_crypt_callback = getDefCryptCallback(cryptCallback);
+			attachment->att_crypt_callback = cryptCallback;
 
 			if (options.dpb_working_directory.hasData())
 				attachment->att_working_directory = options.dpb_working_directory;
@@ -6968,6 +6952,7 @@ static void run_commit_triggers(thread_db* tdbb, jrd_tra* transaction)
 	if (transaction == attachment->getSysTransaction())
 		return;
 
+	// start a savepoint to rollback changes of all triggers
 	AutoSavePoint savePoint(tdbb, transaction);
 
 	// run ON TRANSACTION COMMIT triggers
