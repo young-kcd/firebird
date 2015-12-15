@@ -1,3 +1,13 @@
+ 2015-12-14 14:07  aafemt 
+   M src/jrd/jrd.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Allow key holders to be called on client side (CORE-5043)
+
+ 2015-12-14 12:57  alexpeshkoff 
+   M builds/install/misc/firebird.conf.in
+comments
+
  2015-12-13 01:02  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/Parser.h
