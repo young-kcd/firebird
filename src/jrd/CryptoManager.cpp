@@ -252,6 +252,7 @@ namespace Jrd {
 			if (!LCK_convert(tdbb, stateLock, CRYPT_NORMAL,
 					(flags & CRYPT_HDR_NOWAIT) ? LCK_NO_WAIT : LCK_WAIT))
 			{
+				// Failed to take state lock - swith to slow IO mode
 				slowIO = LCK_read_data(tdbb, stateLock);
 				fb_assert(slowIO);
 			}
@@ -673,42 +674,48 @@ namespace Jrd {
 		// Therefore use old (status vector based) method
 		try
 		{
-			if (slowIO)
+			if (!slowIO)
 			{
-				BarSync::LockGuard lockGuard(tdbb, sync);
-				for (SINT64 previous = slowIO; ; previous = slowIO)
+				// Normal case (almost always get here)
+				// Take shared lock on crypto manager and read data
+				BarSync::IoGuard ioGuard(tdbb, sync);
+				if (!slowIO)
+					return internalRead(tdbb, sv, file, bdb, page, noShadows, pageSpace) == SUCCESS_ALL;
+			}
+
+			// Slow IO - we need exclusive lock on crypto manager.
+			// That may happen only when another process changed DB encyption.
+			BarSync::LockGuard lockGuard(tdbb, sync);
+			for (SINT64 previous = slowIO; ; previous = slowIO)
+			{
+				switch (internalRead(tdbb, sv, file, bdb, page, noShadows, pageSpace))
 				{
-					switch (internalRead(tdbb, sv, file, bdb, page, noShadows, pageSpace))
-					{
-					case SUCCESS_ALL:
-						if (slowIO)
-							lockAndReadHeader(tdbb, CRYPT_HDR_NOWAIT);
-						return true;
+				case SUCCESS_ALL:
+					if (!slowIO)				// if we took a lock last time
+						return true;			// nothing else left to do - IO complete
 
-					case FAILED_IO:
-						return false;
+					// An attempt to take a lock, if it fails
+					// we get fresh data from lock needed to validate state of encryption.
+					// Notice - if lock was taken that's also a kind of state
+					// change and first time we must proceed with one more read.
+					lockAndReadHeader(tdbb, CRYPT_HDR_NOWAIT);
+					if (slowIO == previous)		// if crypt state did not change
+						return true;			// we successfully completed IO
+					break;
 
-					case FAILED_CRYPT:
-						if (slowIO)
-						{
-							lockAndReadHeader(tdbb, CRYPT_HDR_NOWAIT);
-							if (slowIO == previous)
-								return false;
-							break;
-						}
-						else
-							return false;
-					}
+				case FAILED_IO:
+					return false;				// not related with crypto manager error
+
+				case FAILED_CRYPT:
+					if (!slowIO)				// if we took a lock last time
+						return false;			// we can't recover from error here
+
+					lockAndReadHeader(tdbb, CRYPT_HDR_NOWAIT);
+					if (slowIO == previous)		// if crypt state did not change
+						return false;			// we can't recover from error here
+					break;
 				}
 			}
-			else
-			{
-				BarSync::IoGuard ioGuard(tdbb, sync);
-				if (internalRead(tdbb, sv, file, bdb, page, noShadows, pageSpace) != SUCCESS_ALL)
-					return false;
-			}
-
-			return true;
 		}
 		catch (const Exception& ex)
 		{
@@ -768,48 +775,43 @@ namespace Jrd {
 		// Therefore use old (status vector based) method
 		try
 		{
-			if (slowIO)
+			if (!slowIO)
 			{
-				BarSync::LockGuard lockGuard(tdbb, sync);
-				for (SINT64 previous = slowIO; ; previous = slowIO)
-				{
-					switch (internalWrite(tdbb, sv, file, bdb, page))
-					{
-					case SUCCESS_ALL:
-						if (slowIO)
-						{
-							lockAndReadHeader(tdbb, CRYPT_HDR_NOWAIT);
-							if (slowIO == previous)
-								return true;
-							break;
-						}
-						else
-							return true;
+				// Normal case (almost always get here)
+				// Take shared lock on crypto manager and write data
+				BarSync::IoGuard ioGuard(tdbb, sync);
+				if (!slowIO)
+				return internalWrite(tdbb, sv, file, bdb, page) == SUCCESS_ALL;
+			}
 
-					case FAILED_IO:
+			// Have to use slow method - see full comments in read() function
+			BarSync::LockGuard lockGuard(tdbb, sync);
+			for (SINT64 previous = slowIO; ; previous = slowIO)
+			{
+				switch (internalWrite(tdbb, sv, file, bdb, page))
+				{
+				case SUCCESS_ALL:
+					if (!slowIO)
+						return true;
+
+					lockAndReadHeader(tdbb, CRYPT_HDR_NOWAIT);
+					if (slowIO == previous)
+						return true;
+					break;
+
+				case FAILED_IO:
+					return false;
+
+				case FAILED_CRYPT:
+					if (!slowIO)
 						return false;
 
-					case FAILED_CRYPT:
-						if (slowIO)
-						{
-							lockAndReadHeader(tdbb, CRYPT_HDR_NOWAIT);
-							if (slowIO == previous)
-								return false;
-							break;
-						}
-						else
-							return false;
-					}
+					lockAndReadHeader(tdbb, CRYPT_HDR_NOWAIT);
+					if (slowIO == previous)
+						return false;
+					break;
 				}
 			}
-			else
-			{
-				BarSync::IoGuard ioGuard(tdbb, sync);
-				if (internalWrite(tdbb, sv, file, bdb, page) != SUCCESS_ALL)
-                    return false;
-			}
-
-			return true;
 		}
 		catch (const Exception& ex)
 		{

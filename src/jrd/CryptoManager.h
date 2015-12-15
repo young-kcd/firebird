@@ -59,6 +59,20 @@ class thread_db;
 class Lock;
 class PageSpace;
 
+
+//
+// This very specific locking class makes it possible to perform traditional read/write locks,
+// but in addition it can on special request perform some predefined action or (in a case when
+// >=1 read lock is taken) set barrier for new locks (new locks will not be granted) and
+// at the moment when last existing lock is released execute that predefined action in context
+// of a thread, releasing last lock.
+//
+// In our case special request is done from AST handler - and therefore called ast.
+// Read locks are done when performing IO+crypt activity - and called ioBegin/ioEnd.
+// Write locks are done when some exclusive activity like changing crypt state is
+// needed - they are full locks and called lockBegin/lockEnd.
+//
+
 class BarSync
 {
 public:
@@ -349,6 +363,28 @@ private:
 	Database& dbb;
 	Lock* stateLock;
 	Lock* threadLock;
+
+	// This counter works only in a case when database encryption is changed.
+	// Traditional processing of AST can not be used for crypto manager.
+	// The problem is with taking state lock after AST.
+	// That should be done before next IO operation to guarantee database
+	// consistency, but IO operation may be requested from another AST
+	// (database cache blocking) when 'wait for a lock' operations are
+	// prohibited. I.e. we can't proceed with normal IO without a lock
+	// but at the same time can't take it.
+
+	// The solution is to use crypt versions counter in a lock (incremented
+	// by one each time one issues ALTER DATABASE ENCRYPT/DECRYPT), read
+	// it when lock can't be taken, store in slowIO variable, perform IO
+	// and compare stored value with current lock data. In case when values
+	// differ encryption status of database was changed during IO operation
+	// and such operation should be repeated. When data in lock does not
+	// change during IO that means that crypt rules remained the same even
+	// without state lock taken by us and therefore result of IO operation
+	// is correct. As soon as non-waiting attempt to take state lock succeeds
+	// slowIO mode is off (slowIO counter becomes zero) and we return to
+	// normal operation.
+
 	SINT64 slowIO;
 	bool crypt, process, down;
 };
