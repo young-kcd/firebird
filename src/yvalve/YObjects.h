@@ -405,11 +405,6 @@ public:
 
 	unsigned int callback(unsigned int keyNameLength, const void* keyName, unsigned int length, void* buffer);
 
-	Firebird::IPluginModule* getModule()
-	{
-		return NULL;
-	}
-
 	Firebird::ICryptKeyCallback* parentCallback;
 };
 
