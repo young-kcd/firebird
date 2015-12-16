@@ -5041,9 +5041,9 @@ YAttachment::YAttachment(bool createFlag, const char* filename, unsigned int dpb
 			continue;
 
 		IAttachment* attachment = createFlag ?
-			provider->createDatabase(&status,	expandedFilename.c_str(),
+			provider->createDatabase(&status, expandedFilename.c_str(),
 				newDpb.getBufferLength(), newDpb.getBuffer()) :
-			provider->attachDatabase(&status,	expandedFilename.c_str(),
+			provider->attachDatabase(&status, expandedFilename.c_str(),
 				newDpb.getBufferLength(), newDpb.getBuffer());
 
 		if (!(status.getState() & Firebird::IStatus::STATE_ERRORS))
