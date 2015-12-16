@@ -7468,7 +7468,7 @@ bool thread_db::checkCancelState(bool punt)
 		attachment->att_flags &= ~ATT_cancel_raise;
 
 	tdbb_flags |= TDBB_sys_error;
-	ERR_post_nothrow(status, tdbb_status_vector);
+	status.copyTo(tdbb_status_vector);
 
 	if (punt)
 		ERR_punt();
