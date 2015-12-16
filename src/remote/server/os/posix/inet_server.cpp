@@ -126,6 +126,11 @@ static void raiseLimit(int resource);
 
 static void logSecurityDatabaseError(const char* path, ISC_STATUS* status)
 {
+	// If I/O error happened then rather likely we just miss standard security DB
+	// Since FB3 with it's multiple security databases - not too big trouble
+	if (fb_utils::containsErrorCode(status, isc_unavailable))
+		return;
+
 	const int SHUTDOWN_TIMEOUT = 5000;  // 5 sec
 
 	gds__log_status(path, status);
@@ -403,11 +408,12 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			{
 				logSecurityDatabaseError(path, status);
 			}
-
-			isc_detach_database(status, &db_handle);
-			if (status[0] == 1 && status[1] > 0)
-			{
-				logSecurityDatabaseError(path, status);
+			else {
+				isc_detach_database(status, &db_handle);
+				if (status[0] == 1 && status[1] > 0)
+				{
+					logSecurityDatabaseError(path, status);
+				}
 			}
 		} // end scope
 
