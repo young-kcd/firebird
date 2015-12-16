@@ -1,3 +1,8 @@
+ 2015-12-15 16:54  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+Mostly comments needed after fix for CORE-5041, also added some checks to be safer with repeated I/O
+
  2015-12-14 14:07  aafemt 
    M src/jrd/jrd.cpp
    M src/yvalve/YObjects.h
