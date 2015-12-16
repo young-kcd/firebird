@@ -5027,6 +5027,7 @@ YAttachment::YAttachment(bool createFlag, const char* filename, unsigned int dpb
 	if (orgFilename != expandedFilename && !newDpb.find(isc_dpb_org_filename))
 		newDpb.insertPath(isc_dpb_org_filename, orgFilename);
 
+	StatusVector lastStatus(NULL);
 	StatusVector temp(NULL);
 	CheckStatusWrapper status(&temp);
 
@@ -5075,7 +5076,7 @@ YAttachment::YAttachment(bool createFlag, const char* filename, unsigned int dpb
 		case isc_io_error:
 		case isc_lock_dir_access:
 		case isc_no_priv:
-//			currentStatus = &tempCheckStatusWrapper;
+			lastStatus.setErrors(temp);
 			// fall down...
 		case isc_unavailable:
 			break;
@@ -5088,6 +5089,9 @@ YAttachment::YAttachment(bool createFlag, const char* filename, unsigned int dpb
 	}
 
 	// If execution reached this point, no suitable provider has been found
+	// Raise error returned by last tried one
+	lastStatus.check();
+	// if no errors, raise isc_unavailable
 	Arg::Gds(isc_unavailable).raise();
 }
 
