@@ -1,3 +1,23 @@
+ 2015-12-16 17:23  aafemt 
+   M src/yvalve/why.cpp
+Restore raising of error from last tried provider as pointed by Alex
+
+ 2015-12-16 17:17  alexpeshkoff 
+   M src/yvalve/why.cpp
+Totally misc - formatting
+
+ 2015-12-16 17:16  alexpeshkoff 
+   M src/yvalve/YObjects.h
+Cleanup
+
+ 2015-12-16 17:12  alexpeshkoff 
+   M src/remote/server/os/posix/inet_server.cpp
+Fixed CORE-5032: Cannot connect to a database which have own security database without security3.fdb
+
+ 2015-12-16 16:43  dimitr 
+   M src/jrd/jrd.cpp
+This should fix the minor error reporting regression noticed for bugs.core_3323.
+
  2015-12-15 16:54  alexpeshkoff 
    M src/jrd/CryptoManager.cpp
    M src/jrd/CryptoManager.h
