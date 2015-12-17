@@ -532,7 +532,8 @@ bool XnetClientEndPoint::connect_init()
 		{
 			if (ERRNO == ERROR_FILE_NOT_FOUND)
 			{
-				Arg::Gds(isc_unavailable).raise();
+				make_obj_name(name_buffer, sizeof(name_buffer), "xnet://%s");
+				(Arg::Gds(isc_network_error) << Arg::Str(name_buffer)).raise();
 			}
 
 			system_error::raise(ERR_STR("OpenMutex"));
