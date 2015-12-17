@@ -289,7 +289,7 @@ bool PREPARSE_execute(CheckStatusWrapper* status, Why::YAttachment** ptrAtt,
 			*ptrAtt = dispatcher->createDatabase(status, file_name.c_str(),
 				dpb.getBufferLength(), dpb.getBuffer());
 
-			if ((!hasUser) || (status->getState() & IStatus::STATE_ERRORS == 0) ||
+			if ((!hasUser) || ((status->getState() & IStatus::STATE_ERRORS) == 0) ||
 				(status->getErrors()[1] != isc_login))
 			{
 				break;
