@@ -397,10 +397,10 @@ public:
 	Firebird::Mutex enterMutex;
 };
 
-class YCallbackInterface: public Firebird::ICryptKeyCallbackImpl<YCallbackInterface, Firebird::CheckStatusWrapper>
+class YCryptKeyCallback: public Firebird::ICryptKeyCallbackImpl<YCryptKeyCallback, Firebird::CheckStatusWrapper>
 {
 public:
-	YCallbackInterface(): parentCallback(NULL)
+	YCryptKeyCallback(): parentCallback(NULL)
 	{}
 
 	unsigned int callback(unsigned int keyNameLength, const void* keyName, unsigned int length, void* buffer);
@@ -484,7 +484,7 @@ public:
 	Firebird::StatusHolder savedStatus;	// Do not use raise() method of this class in yValve.
 
 private:
-	YCallbackInterface cryptCallbackInterface;
+	YCryptKeyCallback cryptCallback;
 
 };
 
@@ -519,7 +519,7 @@ public:
 private:
 	Firebird::IProvider* provider;
 	bool utf8Connection;		// Client talks to us using UTF8, else - system default charset
-	YCallbackInterface cryptCallbackInterface;
+	YCryptKeyCallback cryptCallback;
 };
 
 class Dispatcher FB_FINAL :

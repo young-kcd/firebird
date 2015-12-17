@@ -4929,7 +4929,7 @@ YTransaction* YTransaction::enterDtc(CheckStatusWrapper* status)
 
 //-------------------------------------
 
-unsigned int YCallbackInterface::callback(unsigned int keyNameLength, const void* keyName, unsigned int length, void* buffer)
+unsigned int YCryptKeyCallback::callback(unsigned int keyNameLength, const void* keyName, unsigned int length, void* buffer)
 {
 	RefPtr<Config> config(Config::getDefaultConfig());
 	for (GetPlugins<IKeyHolderPlugin> keyControl(IPluginManager::TYPE_KEY_HOLDER, config);
@@ -4975,7 +4975,8 @@ YAttachment::YAttachment(IProvider* aProvider, IAttachment* aNext, const PathNam
 	makeHandle(&attachments, this, handle);
 }
 
-YAttachment::YAttachment(bool createFlag, const char* filename, unsigned int dpbLength, const unsigned char* dpb, Firebird::ICryptKeyCallback* callback)
+YAttachment::YAttachment(bool createFlag, const char* filename, unsigned int dpbLength, const unsigned char* dpb, 
+						 Firebird::ICryptKeyCallback* callback)
 	: YHelper(NULL),
 	  dbPath(getPool()),
 	  childBlobs(getPool()),
@@ -5017,7 +5018,7 @@ YAttachment::YAttachment(bool createFlag, const char* filename, unsigned int dpb
 		Config::merge(config, &dpb_config);
 	}
 
-	cryptCallbackInterface.parentCallback = callback;
+	cryptCallback.parentCallback = callback;
 
 	// Convert to UTF8
 	ISC_systemToUtf8(orgFilename);
@@ -5037,7 +5038,7 @@ YAttachment::YAttachment(bool createFlag, const char* filename, unsigned int dpb
 	{
 		provider = providerIterator.plugin();
 
-		provider->setDbCryptCallback(&status, &cryptCallbackInterface);
+		provider->setDbCryptCallback(&status, &cryptCallback);
 		if (status.getState() & Firebird::IStatus::STATE_ERRORS)
 			continue;
 
@@ -5662,7 +5663,8 @@ YService::YService(IProvider* aProvider, IService* aNext, bool utf8)
 	makeHandle(&services, this, handle);
 }
 
-YService::YService(const char* serviceName, unsigned int spbLength, const unsigned char* spb, Firebird::ICryptKeyCallback* callback)
+YService::YService(const char* serviceName, unsigned int spbLength, const unsigned char* spb, 
+				   Firebird::ICryptKeyCallback* callback)
 	: YHelper(NULL)
 {
 	PathName svcName(serviceName);
@@ -5690,7 +5692,7 @@ YService::YService(const char* serviceName, unsigned int spbLength, const unsign
 	StatusVector temp(NULL);
 	CheckStatusWrapper status(&temp);
 
-	cryptCallbackInterface.parentCallback = callback;
+	cryptCallback.parentCallback = callback;
 
 	for (GetPlugins<IProvider> providerIterator(IPluginManager::TYPE_PROVIDER, config);
 			providerIterator.hasData();
@@ -5699,7 +5701,7 @@ YService::YService(const char* serviceName, unsigned int spbLength, const unsign
 		status.init();
 		IProvider* p = providerIterator.plugin();
 
-		p->setDbCryptCallback(&status, &cryptCallbackInterface);
+		p->setDbCryptCallback(&status, &cryptCallback);
 		if (status.getState() & Firebird::IStatus::STATE_ERRORS)
 			continue;
 
