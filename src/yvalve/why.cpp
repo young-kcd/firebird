@@ -5689,8 +5689,8 @@ YService::YService(const char* serviceName, unsigned int spbLength, const unsign
 		Config::merge(config, &spb_config);
 	}
 
-	StatusVector temp(NULL);
-	CheckStatusWrapper status(&temp);
+	StatusVector t1(NULL), t2(NULL);
+	StatusVector* st = &t1;
 
 	cryptCallback.parentCallback = callback;
 
@@ -5698,7 +5698,8 @@ YService::YService(const char* serviceName, unsigned int spbLength, const unsign
 			providerIterator.hasData();
 			providerIterator.next())
 	{
-		status.init();
+		st->init();
+		CheckStatusWrapper status(st);
 		IProvider* p = providerIterator.plugin();
 
 		p->setDbCryptCallback(&status, &cryptCallback);
@@ -5715,10 +5716,22 @@ YService::YService(const char* serviceName, unsigned int spbLength, const unsign
 			makeHandle(&services, this, handle);
 			return;
 		}
+
+		switch(st->getErrors()[1])
+		{
+			case isc_service_att_err:
+				st = &t2;
+				// fall down...
+			case isc_unavailable:
+				break;
+
+			default:
+				t1.check();
+		}
 	}
 
 	// Raise error if any
-	temp.check();
+	t1.check();
 
 	// If no errors, we are out of providers, raise error anyway
 	(Arg::Gds(isc_service_att_err) <<
