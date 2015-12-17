@@ -128,7 +128,7 @@ static void logSecurityDatabaseError(const char* path, ISC_STATUS* status)
 {
 	// If I/O error happened then rather likely we just miss standard security DB
 	// Since FB3 with it's multiple security databases - not too big trouble
-	if (fb_utils::containsErrorCode(status, isc_unavailable))
+	if (fb_utils::containsErrorCode(status, isc_io_error))
 		return;
 
 	const int SHUTDOWN_TIMEOUT = 5000;  // 5 sec
