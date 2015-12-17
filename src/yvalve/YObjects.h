@@ -397,17 +397,6 @@ public:
 	Firebird::Mutex enterMutex;
 };
 
-class YCryptKeyCallback: public Firebird::ICryptKeyCallbackImpl<YCryptKeyCallback, Firebird::CheckStatusWrapper>
-{
-public:
-	YCryptKeyCallback(): parentCallback(NULL)
-	{}
-
-	unsigned int callback(unsigned int keyNameLength, const void* keyName, unsigned int length, void* buffer);
-
-	Firebird::ICryptKeyCallback* parentCallback;
-};
-
 class YAttachment FB_FINAL :
 	public YHelper<YAttachment, Firebird::IAttachmentImpl<YAttachment, Firebird::CheckStatusWrapper> >,
 	public EnterCount
@@ -415,8 +404,8 @@ class YAttachment FB_FINAL :
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_db_handle;
 
-	YAttachment(Firebird::IProvider* aProvider, Firebird::IAttachment* aNext, const Firebird::PathName& aDbPath);
-	YAttachment(bool createFlag, const char* filename, unsigned int dpbLength, const unsigned char* dpb, Firebird::ICryptKeyCallback* callback);
+	YAttachment(Firebird::IProvider* aProvider, Firebird::IAttachment* aNext,
+		const Firebird::PathName& aDbPath);
 	~YAttachment();
 
 	void destroy(unsigned dstrFlags);
@@ -482,10 +471,6 @@ public:
 	HandleArray<YTransaction> childTransactions;
 	Firebird::Array<CleanupCallback*> cleanupHandlers;
 	Firebird::StatusHolder savedStatus;	// Do not use raise() method of this class in yValve.
-
-private:
-	YCryptKeyCallback cryptCallback;
-
 };
 
 class YService FB_FINAL :
@@ -496,7 +481,6 @@ public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_svc_handle;
 
 	YService(Firebird::IProvider* aProvider, Firebird::IService* aNext, bool utf8);
-	YService(const char* serviceName, unsigned int spbLength, const unsigned char* spb, Firebird::ICryptKeyCallback* callback);
 	~YService();
 
 	void shutdown();
@@ -519,7 +503,6 @@ public:
 private:
 	Firebird::IProvider* provider;
 	bool utf8Connection;		// Client talks to us using UTF8, else - system default charset
-	YCryptKeyCallback cryptCallback;
 };
 
 class Dispatcher FB_FINAL :
