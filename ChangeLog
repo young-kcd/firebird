@@ -1,3 +1,7 @@
+ 2015-12-17 19:14  roman-simakov 
+   M src/jrd/dfw.epp
+Fixed request leakage due modify indecies
+
  2015-11-29 15:16  dimitr 
    M src/jrd/jrd.cpp
 Fixed processing of asynchronous errors if they're thrown directly via checkCancelState().
