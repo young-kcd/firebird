@@ -322,7 +322,8 @@ jrd_req* JrdStatement::findRequest(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
 
-	if (!this)
+	const JrdStatement* const thisPointer = this;	// avoid warning
+	if (!thisPointer)
 		BUGCHECK(167);	/* msg 167 invalid SEND request */
 
 	// Search clones for one request in use by this attachment.

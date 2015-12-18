@@ -102,10 +102,9 @@ public:
 
 	bool checkHandle() const
 	{
-		if (!this)
-		{
+		const TypedHandle* const thisPointer = this;	// avoid warning
+		if (!thisPointer)
 			return false;
-		}
 
 		return (blockType == BLOCK_TYPE);
 	}
@@ -216,6 +215,7 @@ private:
 	// These operators are off-limits
 	void* operator new(size_t) { return 0; }
 	void* operator new[](size_t) { return 0; }
+
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif

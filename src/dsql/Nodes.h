@@ -482,17 +482,20 @@ public:
 
 	template <typename T> T* as()
 	{
-		return this && type == T::TYPE ? static_cast<T*>(this) : NULL;
+		const ExprNode* const thisPointer = this;	// avoid warning
+		return thisPointer && type == T::TYPE ? static_cast<T*>(this) : NULL;
 	}
 
 	template <typename T> const T* as() const
 	{
-		return this && type == T::TYPE ? static_cast<const T*>(this) : NULL;
+		const ExprNode* const thisPointer = this;	// avoid warning
+		return thisPointer && type == T::TYPE ? static_cast<const T*>(this) : NULL;
 	}
 
 	template <typename T> bool is() const
 	{
-		return this && type == T::TYPE;
+		const ExprNode* const thisPointer = this;	// avoid warning
+		return thisPointer && type == T::TYPE;
 	}
 
 	template <typename T, typename LegacyType> static T* as(LegacyType* node)

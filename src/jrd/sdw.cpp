@@ -961,7 +961,7 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	jrd_file* dbb_file = pageSpace->file;
 
-	if (dbb_file && dbb_file->fil_string && expanded_name == dbb_file->fil_string)
+	if (dbb_file && expanded_name == dbb_file->fil_string)
 	{
 		if (shadow && (shadow->sdw_flags & SDW_rollover))
 			return;
