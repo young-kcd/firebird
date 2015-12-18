@@ -1,3 +1,31 @@
+ 2015-12-17 15:14  alexpeshkoff 
+   M src/remote/server/os/posix/inet_server.cpp
+Postfix for CORE-5032: error handling was broken, therefore checked for invalid error code
+
+ 2015-12-17 13:44  aafemt 
+   M src/jrd/jrd.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Rollback
+
+ 2015-12-17 12:43  alexpeshkoff 
+   M src/yvalve/why.cpp
+Fixed CORE-5039: Connecting to service with invalid servicename yields incorrect error message
+
+ 2015-12-17 11:28  hvlad 
+   M src/remote/os/win32/xnet.cpp
+Let XNET client returns correct isc_network_error in case of not running XNET server.
+Before it returns isc_unavailable and fools y-valve.
+
+ 2015-12-17 09:56  hvlad 
+   M src/yvalve/preparse.cpp
+Fixed warning
+
+ 2015-12-17 09:56  hvlad 
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Make names less dumb. Formatting a bit.
+
  2015-12-16 17:23  aafemt 
    M src/yvalve/why.cpp
 Restore raising of error from last tried provider as pointed by Alex
