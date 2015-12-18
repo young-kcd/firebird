@@ -332,6 +332,12 @@ inline void operator delete[](void* mem, Firebird::MemoryPool& pool ALLOC_PARAMS
 }
 
 #ifdef DEBUG_GDS_ALLOC
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winline-new-delete"
+#endif
+
 inline void operator delete(void* mem) throw()
 {
 	MemoryPool::globalFree(mem);
@@ -340,6 +346,10 @@ inline void operator delete[](void* mem) throw()
 {
 	MemoryPool::globalFree(mem);
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 #define FB_NEW new(__FILE__, __LINE__)
 #define FB_NEW_POOL(pool) new(pool, __FILE__, __LINE__)
