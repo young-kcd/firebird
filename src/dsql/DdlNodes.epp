@@ -8658,9 +8658,12 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 			if (desc.isText())
 			{
-				newField.charLength = newField.length;
-				newField.length *= METD_get_charset_bpc(
+				USHORT adjust = desc.dsc_dtype == dtype_varying ? sizeof(USHORT) : 0;
+				USHORT bpc = METD_get_charset_bpc(
 					dsqlScratch->getTransaction(), newField.charSetId);
+
+				newField.charLength = (newField.length - adjust) / bpc;
+				newField.length = newField.charLength * bpc + adjust;
 			}
 			else
 				newField.subType = desc.dsc_sub_type;
