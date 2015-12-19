@@ -1053,26 +1053,33 @@ TraceFailedConnection::TraceFailedConnection(const char* filename, const Databas
 // do it here to prevent committing every record update
 // in a statement
 //
-static void check_autocommit(jrd_req* request, thread_db* tdbb)
+static void check_autocommit(thread_db* tdbb, jrd_req* request)
 {
-	// dimitr: we should ignore autocommit for requests
-	// created by EXECUTE STATEMENT
-	// AP: also do nothing if request is cancelled and
-	// transaction is already missing
-	if ((!request->req_transaction) || (request->req_transaction->tra_callback_count > 0))
-		return;
+	jrd_tra* const transaction = request->req_transaction;
 
-	if (request->req_transaction->tra_flags & TRA_perform_autocommit)
+	// Ignore autocommit for:
+	// 1) cancelled requests (already detached from the transaction)
+	// 2) requests created by EXECUTE STATEMENT or coming from external engines
+	// 3) internal requests (they may be executed through the DSQL layer)
+
+	if (!transaction ||
+		transaction->tra_callback_count ||
+		request->hasInternalStatement())
+	{
+		return;
+	}
+
+	if (transaction->tra_flags & TRA_perform_autocommit)
 	{
 		if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers) &&
-			!(request->req_transaction->tra_flags & TRA_prepared))
+			!(transaction->tra_flags & TRA_prepared))
 		{
 			// run ON TRANSACTION COMMIT triggers
-			run_commit_triggers(tdbb, request->req_transaction);
+			run_commit_triggers(tdbb, transaction);
 		}
 
-		request->req_transaction->tra_flags &= ~TRA_perform_autocommit;
-		TRA_commit(tdbb, request->req_transaction, true);
+		transaction->tra_flags &= ~TRA_perform_autocommit;
+		TRA_commit(tdbb, transaction, true);
 	}
 }
 
@@ -4274,7 +4281,7 @@ void JAttachment::transactRequest(CheckStatusWrapper* user_status, ITransaction*
 					out_msg_length);
 			}
 
-			check_autocommit(request, tdbb);
+			check_autocommit(tdbb, request);
 
 			CMP_release(tdbb, request);
 		}
@@ -7527,27 +7534,17 @@ bool thread_db::reschedule(SLONG quantum, bool punt)
 
 void JRD_autocommit_ddl(thread_db* tdbb, jrd_tra* transaction)
 {
-/**************************************
- *
- *	J R D _ a u t o c o m m i t _ d d l
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
+	// Ignore autocommit for:
+	// 1) cancelled requests (already detached from the transaction)
+	// 2) requests created by EXECUTE STATEMENT or coming from external engines
+
+	if (!transaction || transaction->tra_callback_count)
+		return;
 
 	// Perform an auto commit for autocommit transactions.
-	// This is slightly tricky. If the commit retain works,
-	// all is well. If TRA_commit() fails, we perform
-	// a rollback_retain(). This will backout the
-	// effects of the transaction, mark it dead and
-	// start a new transaction.
-
-	// Ignore autocommit for requests created by EXECUTE STATEMENT
-
-	if (transaction->tra_callback_count != 0)
-		return;
+	// This is slightly tricky. If the commit retain works, all is well.
+	// If TRA_commit() fails, we perform a rollback_retain(). This will backout
+	// the effects of the transaction, mark it dead and start a new transaction.
 
 	if (transaction->tra_flags & TRA_perform_autocommit)
 	{
@@ -7590,7 +7587,7 @@ void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_l
  **************************************/
 	EXE_receive(tdbb, request, msg_type, msg_length, msg, true);
 
-	check_autocommit(request, tdbb);
+	check_autocommit(tdbb, request);
 
 	if (request->req_flags & req_warning)
 	{
@@ -7614,7 +7611,7 @@ void JRD_send(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_leng
  **************************************/
 	EXE_send(tdbb, request, msg_type, msg_length, msg);
 
-	check_autocommit(request, tdbb);
+	check_autocommit(tdbb, request);
 
 	if (request->req_flags & req_warning)
 	{
@@ -7639,7 +7636,7 @@ void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	EXE_unwind(tdbb, request);
 	EXE_start(tdbb, request, transaction);
 
-	check_autocommit(request, tdbb);
+	check_autocommit(tdbb, request);
 
 	if (request->req_flags & req_warning)
 	{
@@ -7730,7 +7727,7 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
 	EXE_start(tdbb, request, transaction);
 	EXE_send(tdbb, request, msg_type, msg_length, msg);
 
-	check_autocommit(request, tdbb);
+	check_autocommit(tdbb, request);
 
 	if (request->req_flags & req_warning)
 	{
