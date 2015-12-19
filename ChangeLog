@@ -1,3 +1,31 @@
+ 2015-12-18 16:57  dimitr 
+   M src/dsql/DdlNodes.epp
+Constness.
+
+ 2015-12-18 16:34  asfernandes 
+   M src/dsql/Nodes.h
+   M src/include/fb_blk.h
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/sdw.cpp
+Avoid warnings with clang.
+
+ 2015-12-18 16:34  asfernandes 
+   M src/dsql/DdlNodes.epp
+Fixed CORE-5049 - Regression: incorrect calculation of byte-length for view columns.
+
+ 2015-12-18 13:53  alexpeshkoff 
+   M src/common/call_service.cpp
+Fixed gsec with SS
+
+ 2015-12-18 13:45  asfernandes 
+   M src/common/classes/alloc.h
+   M src/include/fb_blk.h
+Avoid warnings with clang.
+
+ 2015-12-18 12:28  dimitr 
+   M builds/install/arch-specific/win32/BuildExecutableInstall.bat
+This should fix CORE-4862: ibase.h from x64 package includes non-existing file.
+
  2015-12-17 15:14  alexpeshkoff 
    M src/remote/server/os/posix/inet_server.cpp
 Postfix for CORE-5032: error handling was broken, therefore checked for invalid error code
