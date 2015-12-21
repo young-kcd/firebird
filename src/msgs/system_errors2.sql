@@ -826,7 +826,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-104, 'HY', '000', 7, 3, 'dsql_transitional_numeric', NULL, NULL)
 (301, '01', '000', 7, 4, 'dsql_dialect_warning_expr', NULL, NULL)
 (-104, 'HY', '000', 7, 5, 'sql_db_dialect_dtype_unsupport', NULL, NULL)
-(-817, 'HY', '000', 7, 7, 'isc_sql_dialect_conflict_num', NULL, NULL)
+(-817, 'HY', '000', 7, 7, 'sql_dialect_conflict_num', NULL, NULL)
 (301, 'HY', '104', 7, 8, 'dsql_warning_number_ambiguous', NULL, NULL)
 (301, 'HY', '104', 7, 9, 'dsql_warning_number_ambiguous1', NULL, NULL)
 (301, 'HY', '104', 7, 10, 'dsql_warn_precision_ambiguous', NULL, NULL)

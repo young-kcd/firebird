@@ -1645,7 +1645,7 @@ COMMIT WORK;
 ('dsql_dialect_warning_expr', 'GEN_expr', 'gen.c', NULL, 7, 4, NULL, 'Use of @1 expression that returns different results in dialect 1 and dialect 3', NULL, NULL);
 ('sql_db_dialect_dtype_unsupport', 'dsql_yyparse', 'parse.y', NULL, 7, 5, NULL, 'Database SQL dialect @1 does not support reference to @2 datatype', NULL, NULL);
 (NULL, NULL, NULL, NULL, 7, 6, NULL, '', NULL, NULL);
-('isc_sql_dialect_conflict_num', 'dsql_yyparse', 'parse.y', NULL, 7, 7, NULL, 'DB dialect @1 and client dialect @2 conflict with respect to numeric precision @3.', NULL, NULL);
+('sql_dialect_conflict_num', 'dsql_yyparse', 'parse.y', NULL, 7, 7, NULL, 'DB dialect @1 and client dialect @2 conflict with respect to numeric precision @3.', NULL, NULL);
 ('dsql_warning_number_ambiguous', 'yylex', 'parse.y', NULL, 7, 8, NULL, 'WARNING: Numeric literal @1 is interpreted as a floating-point', NULL, NULL);
 ('dsql_warning_number_ambiguous1', 'yylex', 'parse.y', NULL, 7, 9, NULL, 'value in SQL dialect 1, but as an exact numeric value in SQL dialect 3.', NULL, NULL);
 ('dsql_warn_precision_ambiguous', 'dsql_yyparse', 'parse.y', NULL, 7, 10, NULL, 'WARNING: NUMERIC and DECIMAL fields with precision 10 or greater are stored', NULL, NULL);
