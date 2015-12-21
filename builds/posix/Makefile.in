@@ -81,10 +81,33 @@ Debug:
 
 .PHONY: updateCloopInterfaces updateBuildNum
 
-updateCloopInterfaces : $(SRC_ROOT)/include/firebird/IdlFbInterfaces.h
+IDL_ROOT=$(SRC_ROOT)/include/firebird
+IDL_FILE=$(IDL_ROOT)/FirebirdInterface.idl
+API_H_FILE=$(IDL_ROOT)/IdlFbInterfaces.h
+API_PAS_FILE=$(SRC_ROOT)/include/gen/Firebird.pas
+PAS_ROOT=$(SRC_ROOT)/misc/pascal
+PASCAL_SOURCES=$(wildcard $(PAS_ROOT)/*)
+TMP_FUNCS=$(TMP_ROOT)/func.pas
+XPB_CONSTS=$(SRC_ROOT)/include/consts_pub.h
+ERR_CONSTS=$(ROOT)/lang_helpers/gds_codes.pas
 
-$(SRC_ROOT)/include/firebird/IdlFbInterfaces.h: $(SRC_ROOT)/include/firebird/FirebirdInterface.idl
+updateCloopInterfaces : $(API_H_FILE) $(API_PAS_FILE)
+
+$(API_H_FILE): $(IDL_FILE)
 	$(CLOOP) $< c++ $@ IDL_FB_INTERFACES_H Firebird I
+
+$(TMP_FUNCS): $(PASCAL_SOURCES) $(XPB_CONSTS) $(ERR_CONSTS)
+	cat $(PAS_ROOT)/fb_get_master_interface.pas >$(TMP_FUNCS)
+	awk -f $(PAS_ROOT)/Pascal.Constants.awk <$(XPB_CONSTS) >>$(TMP_FUNCS)
+	grep '[[:space:]]isc_' $(ERR_CONSTS) >>$(TMP_FUNCS)
+
+$(API_PAS_FILE): $(IDL_FILE) $(PASCAL_SOURCES) $(TMP_FUNCS)
+	$(CLOOP) $(IDL_FILE) pascal $@ Firebird --uses SysUtils \
+		--interfaceFile $(PAS_ROOT)/Pascal.interface.pas \
+    	--implementationFile $(PAS_ROOT)/Pascal.implementation.pas \
+    	--exceptionClass FbException \
+    	--functionsFile $(TMP_FUNCS) \
+    	--prefix I
 
 updateBuildNum : $(SRC_ROOT)/jrd/build_no.h $(GEN_ROOT)/Make.Version
 
@@ -667,6 +690,8 @@ clean_tommath:
 clean_objects:
 	$(RM) `find $(TMP_ROOT)/ -type f -name '*.o' -print`
 	$(RM) `find $(TMP_ROOT)/ -type f -name '*.a' -print`
+	$(RM) `find $(TMP_ROOT)/ -type f -name '*.cpp' -print`
+	$(RM) `find $(TMP_ROOT)/ -type f -name '*.pas' -print`
 
 clean_extern_objects:
 	$(RM) `find $(ROOT)/extern/ -type f -name '*.lo' -print`
