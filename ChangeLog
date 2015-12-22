@@ -1,3 +1,40 @@
+ 2015-12-21 17:01  alexpeshkoff 
+   M builds/install/arch-specific/linux/makeInstallImage.sh.in
+   M builds/posix/Makefile.in
+   A examples/interfaces/01.create.pas
+   M extern/cloop/Makefile
+   M extern/cloop/src/cloop/Generator.cpp
+   M extern/cloop/src/cloop/Generator.h
+   M extern/cloop/src/cloop/Main.cpp
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msg_facs.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/misc/codes.epp
+   A src/misc/pascal
+   A src/misc/pascal/Pascal.Constants.awk
+   A src/misc/pascal/Pascal.implementation.pas
+   A src/misc/pascal/Pascal.interface.pas
+   A src/misc/pascal/fb_get_master_interface.pas
+Added support for using pascal to access OO API
+
+ 2015-12-21 13:34  egorpugin 
+   M .travis.yml
+[ci] Switch to Ubuntu 14.04.
+
+ 2015-12-21 11:16  alexpeshkoff 
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Fixed strange mistype in error code. This error code is never used in sources, i.e. nothing to fix due to this change.
+
+ 2015-12-21 09:48  dimitr 
+   M src/jrd/scl.epp
+Cleaned up the unused routine.
+
  2015-12-19 10:43  dimitr 
    M src/jrd/jrd.cpp
 Fixed CORE-4840: Transactions with isc_tpb_autocommit can hang the server.
