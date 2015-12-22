@@ -1617,6 +1617,8 @@ const
 	gds_invalid_attachment_charset       = 335545104;
 	isc_map_down                         = 335545105;
 	gds_map_down                         = 335545105;
+	isc_login_error                      = 335545106;
+	gds_login_error                      = 335545106;
 	isc_gfix_db_name                     = 335740929;
 	gds_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;

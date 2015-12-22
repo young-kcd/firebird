@@ -893,6 +893,7 @@ Data source : @4', NULL, NULL)
 ('domain_primary_key_notnull', NULL, 'DdlNodes.epp', NULL, 0, 783, NULL, 'Domain used in the PRIMARY KEY constraint of table @1 must be NOT NULL', NULL, NULL);
 ('invalid_attachment_charset', NULL, NULL, NULL, 0, 784, NULL, 'CHARACTER SET @1 cannot be used as a attachment character set', NULL, NULL);
 ('map_down', NULL, 'Mapping.cpp', NULL, 0, 785, NULL, 'Some database(s) were shutdown when trying to read mapping data', NULL, NULL);
+('login_error', NULL, 'server.cpp', NULL, 0, 786, NULL, 'Error occurred during login, please check server firebird.log for details', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

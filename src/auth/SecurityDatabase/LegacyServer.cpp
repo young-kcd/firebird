@@ -385,28 +385,21 @@ int SecurityDatabase::verify(IWriter* authBlock, IServerBlock* sBlock)
 
 void SecurityDatabase::checkStatus(const char* callName, ISC_STATUS userError)
 {
-	// showing real problems with security database to users is not good idea
-	// from security POV - therefore some generic message is used
-	// also suppress throwing errors from destructor which passes userError == 0
-
 	if (status[1] == 0)
-	{
 		return;
-	}
+
+	// suppress throwing errors from destructor which passes userError == 0
+	if (!userError)
+		return;
+
+	Arg::Gds secDbError(userError);
 
 	string message;
 	message.printf("Error in %s() API call when working with legacy security database", callName);
-	iscLogStatus(message.c_str(), status);
+	secDbError << Arg::Gds(isc_random) << message;
 
-	if (userError)
-	{
-#ifdef DEV_BUILD
-	// throw original status error
-		status_exception::raise(status);
-#else
-		Arg::Gds(userError).raise();
-#endif
-	}
+	secDbError << Arg::StatusVector(status);
+	secDbError.raise();
 }
 
 typedef HalfStaticArray<SecurityDatabase*, 4> InstancesArray;

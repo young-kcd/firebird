@@ -807,6 +807,7 @@ static const struct {
 	{"domain_primary_key_notnull", 335545103},
 	{"invalid_attachment_charset", 335545104},
 	{"map_down", 335545105},
+	{"login_error", 335545106},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

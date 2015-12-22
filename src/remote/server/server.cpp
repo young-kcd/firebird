@@ -460,6 +460,7 @@ public:
 				{
 					authServer = NULL;
 					working = false;
+					(Arg::Gds(isc_random) << "Plugin not supported by network protocol").copyTo(&st);		// add port_protocol parameter
 					break;
 				}
 
@@ -495,6 +496,7 @@ public:
 					{
 						authServer = NULL;
 						working = false;
+						(Arg::Gds(isc_random) << "Plugin not supported by network protocol").copyTo(&st);		// add port_protocol parameter
 						break;
 					}
 				}
@@ -517,14 +519,21 @@ public:
 		// no success - perform failure processing
 		loginFail(userName, authPort->getRemoteId());
 
-		Arg::Gds loginError(isc_login);
-#ifndef DEV_BUILD
-		if (st.getErrors()[1] == isc_missing_data_structures)
-#endif
+		if (st.hasData())
 		{
+			if (st.getErrors()[1] == isc_missing_data_structures)
+				status_exception::raise(&st);
+
+			iscLogStatus("Authentication error", &st);
+			Arg::Gds loginError(isc_login_error);
+#ifdef DEV_BUILD
 			loginError << Arg::StatusVector(&st);
+#endif
+			loginError.raise();
 		}
-		status_exception::raise(loginError.value());
+		else
+			Arg::Gds(isc_login).raise();
+
 		return false;	// compiler warning silencer
 	}
 
@@ -6416,11 +6425,13 @@ void SrvAuthBlock::createPluginsItr()
 	if (final.getCount() == 0)
 	{
 		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: createPluginsItr: No matching plugins on server\n"));
-		(Arg::Gds(isc_login)
+
+		Arg::Gds loginError(isc_login_error);
 #ifdef DEV_BUILD
-							<< Arg::Gds(isc_random) << "No matching plugins on server"
+		loginError << Arg::Gds(isc_random) << "No matching plugins on server";
 #endif
-							).raise();
+		gds__log("Authentication error\n\tNo matching plugins on server");
+		loginError.raise();
 	}
 
 	// reorder to make it match first, already passed, plugin data

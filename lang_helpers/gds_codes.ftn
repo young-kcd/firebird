@@ -1622,6 +1622,8 @@ C --
       PARAMETER (GDS__invalid_attachment_charset       = 335545104)
       INTEGER*4 GDS__map_down                        
       PARAMETER (GDS__map_down                         = 335545105)
+      INTEGER*4 GDS__login_error                     
+      PARAMETER (GDS__login_error                      = 335545106)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
