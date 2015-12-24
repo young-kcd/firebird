@@ -1,3 +1,14 @@
+ 2015-12-23 19:42  hvlad 
+   M builds/win32/make_examples.bat
+Build and copy udrcpp_example.dll
+
+ 2015-12-23 19:10  hvlad 
+   M builds/install/misc/plugins.conf
+   M builds/win32/msvc10/udr_engine.vcxproj.filters
+   M builds/win32/msvc10/udrcpp_example.vcxproj
+   M builds/win32/msvc10/udrcpp_example.vcxproj.filters
+Fixed MSVC10 build of UDR examples
+
  2015-12-22 17:53  alexpeshkoff 
    M lang_helpers/gds_codes.ftn
    M lang_helpers/gds_codes.pas
