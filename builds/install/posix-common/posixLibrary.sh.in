@@ -147,6 +147,23 @@ checkInstallUser() {
 
 
 #------------------------------------------------------------------------
+# Report missing library error and exit
+
+missingLibrary() {
+	libName=${1}
+	echo "Please install required library '$libName' before firebird, after it repeat firebird install"
+	exit 1
+}
+
+
+#------------------------------------------------------------------------
+# Make sure we have required libraries installed
+checkLibraries() {
+	haveLibrary tommath || missingLibrary tommath
+}
+
+
+#------------------------------------------------------------------------
 #  resetInetdServer
 #  Works for both inetd and xinetd
 
