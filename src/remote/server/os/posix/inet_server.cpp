@@ -408,7 +408,8 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			{
 				logSecurityDatabaseError(path, status);
 			}
-			else {
+			else
+			{
 				isc_detach_database(status, &db_handle);
 				if (status[0] == 1 && status[1] > 0)
 				{

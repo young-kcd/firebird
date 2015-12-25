@@ -105,7 +105,7 @@ class XnetEndPoint;
 
 typedef struct xcc
 {
-	xcc(Remote::XnetEndPoint* endPoint)
+	explicit xcc(Remote::XnetEndPoint* endPoint)
 	{
 		memset(this, 0, sizeof(*this));
 		xcc_endpoint = endPoint;

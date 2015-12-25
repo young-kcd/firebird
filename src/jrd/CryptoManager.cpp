@@ -68,7 +68,7 @@ namespace {
 
 		void setHeader(void* buf)
 		{
-			header = reinterpret_cast<Ods::header_page*>(buf);
+			header = static_cast<Ods::header_page*>(buf);
 		}
 
 	public:
@@ -148,7 +148,7 @@ namespace {
 	class PhysHdr : public Header
 	{
 	public:
-		PhysHdr(Jrd::thread_db* tdbb)
+		explicit PhysHdr(Jrd::thread_db* tdbb)
 		{
 			Jrd::Database* dbb = tdbb->getDatabase();
 
@@ -168,6 +168,8 @@ namespace {
 	const UCHAR CRYPT_NORMAL = LCK_PR;
 	const UCHAR CRYPT_CHANGE = LCK_PW;
 	const UCHAR CRYPT_INIT = LCK_EX;
+	
+	const int MAX_PLUGIN_NAME_LEN = 31;
 }
 
 
@@ -298,9 +300,9 @@ namespace Jrd {
 
 	void CryptoManager::prepareChangeCryptState(thread_db* tdbb, const Firebird::MetaName& plugName)
 	{
-		if (plugName.length() > 31)
+		if (plugName.length() > MAX_PLUGIN_NAME_LEN)
 		{
-			(Arg::Gds(isc_cp_name_too_long) << Arg::Num(31)).raise();
+			(Arg::Gds(isc_cp_name_too_long) << Arg::Num(MAX_PLUGIN_NAME_LEN)).raise();
 		}
 
 		const bool newCryptState = plugName.hasData();

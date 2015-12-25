@@ -1897,7 +1897,7 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 						// Another side is dead or something bad has happened
 						if (!(xps->xps_flags & XPS_DISCONNECTED) && !portServer)
 						{
-							XnetClientEndPoint* endPoint = static_cast<XnetClientEndPoint*> (xcc->xcc_endpoint);
+							XnetClientEndPoint* endPoint = static_cast<XnetClientEndPoint*>(xcc->xcc_endpoint);
 							endPoint->server_shutdown(port);
 						}
 
@@ -2006,7 +2006,7 @@ static bool_t xnet_read(XDR* xdrs)
 			// Another side is dead or something bad has happened
 			if (!(xps->xps_flags & XPS_DISCONNECTED) && !portServer)
 			{
-				XnetClientEndPoint* endPoint = static_cast<XnetClientEndPoint*> (xcc->xcc_endpoint);
+				XnetClientEndPoint* endPoint = static_cast<XnetClientEndPoint*>(xcc->xcc_endpoint);
 				endPoint->server_shutdown(port);
 			}
 
