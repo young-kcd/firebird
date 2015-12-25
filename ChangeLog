@@ -1,3 +1,7 @@
+ 2015-12-24 11:17  alexpeshkoff 
+   M src/misc/src_bundle.sh
+Fixed CORE-5008: add missing cmake files to fb3 linux tarball
+
  2015-12-23 19:42  hvlad 
    M builds/win32/make_examples.bat
 Build and copy udrcpp_example.dll
