@@ -1,3 +1,16 @@
+ 2015-12-25 18:19  alexpeshkoff 
+   M builds/install/arch-specific/linux/linuxLibrary.sh.in
+   M builds/install/posix-common/posixLibrary.sh.in
+   M builds/install/posix-common/preinstall.sh.in
+Fixed CORE-4842: Installer script fails in some linux environments
+
+ 2015-12-25 01:08  robocop 
+   M src/jrd/CryptoManager.cpp
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/os/win32/xnet.h
+   M src/remote/server/os/posix/inet_server.cpp
+Misc.
+
  2015-12-24 11:17  alexpeshkoff 
    M src/misc/src_bundle.sh
 Fixed CORE-5008: add missing cmake files to fb3 linux tarball
