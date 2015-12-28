@@ -7494,7 +7494,7 @@ bool thread_db::checkCancelState(bool punt)
 	status.copyTo(tdbb_status_vector);
 
 	if (punt)
-		ERR_punt();
+		CCH_unwind(this, true);
 
 	return true;
 }
@@ -7504,22 +7504,16 @@ bool thread_db::reschedule(SLONG quantum, bool punt)
 	// Somebody has kindly offered to relinquish
 	// control so that somebody else may run
 
-	const bool cancelled = checkCancelState(false);
+	if (checkCancelState(punt))
+		return true;
 
-	if (!cancelled)
-	{
+	{	// checkout scope
 		EngineCheckout cout(this, FB_FUNCTION);
 		Thread::yield();
 	}
 
-	if (cancelled || checkCancelState(false))
-	{
-		if (!punt)
-			return true;
-
-		CCH_unwind(this, false);
-		ERR_punt();
-	}
+	if (checkCancelState(punt))
+		return true;
 
 	Monitoring::checkState(this);
 
