@@ -63,16 +63,16 @@ fi
 # See how we were called.
 case "$1" in
   start)
-	echo -n "Starting Firebird server: "
+	printf %s "Starting Firebird server: "
 	start-stop-daemon --start --quiet --oknodo --chuid $FBRunUser --exec $GUARDIAN -- $FB_OPTS
 	RETVAL=$?
 	;;
   stop)
 	if pidof $GUARDIAN > /dev/null; then
-		echo -n "Stopping Guardian server: "
+		printf %s "Stopping Guardian server: "
 		start-stop-daemon --stop --quiet --oknodo --retry 10 --exec $GUARDIAN
-	fi	
-	echo -n "Stopping Firebird server: "
+	fi
+	printf %s "Stopping Firebird server: "
 	if [ -f $pidfile ]
 	then
 		kill `cat $pidfile`
@@ -85,7 +85,7 @@ case "$1" in
 	RETVAL=$?
 	;;
   shutdown)
-  	echo -n "Forcibly killing Firebird server..."
+  	printf %s "Forcibly killing Firebird server..."
 	killall fbguard
 	killall firebird
 	echo "done."

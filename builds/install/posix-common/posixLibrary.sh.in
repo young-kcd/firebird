@@ -72,7 +72,7 @@ MakeTemp() {
 AskQuestion() {
     Test=$1
     DefaultAns=$2
-    echo -n "$Test"
+    printf %s "$Test"
     Answer="$DefaultAns"
     read Answer
 
@@ -87,8 +87,9 @@ AskQuestion() {
 # Prompt for yes or no answer - returns non-zero for no
 
 AskYNQuestion() {
-    while echo -n "${*} (y/n): "
+    while true
     do
+    	printf %s "${*} (y/n): "
         read answer rest
         case $answer in
         [yY]*)
