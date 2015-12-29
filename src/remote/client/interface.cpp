@@ -6084,11 +6084,10 @@ static bool get_new_dpb(ClumpletWriter& dpb, const ParametersSet& par)
  *	Analyze and prepare dpb for attachment to remote server.
  *
  **************************************/
-    if (!Config::getRedirection())
-    {
-	    if (dpb.find(par.address_path)) {
-			status_exception::raise(Arg::Gds(isc_unavailable));
-		}
+	bool redirection = Config::getRedirection();
+    if (((!redirection) && dpb.find(par.address_path)) || dpb.find(par.map_attach))
+	{
+		status_exception::raise(Arg::Gds(isc_unavailable));
 	}
 
 	return dpb.find(par.user_name);

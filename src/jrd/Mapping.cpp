@@ -976,25 +976,19 @@ bool mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 
 					if (db && !iDb)
 					{
-						const char* conf = "Providers=" CURRENT_ENGINE;
-						embeddedSysdba.insertString(isc_dpb_config, conf, fb_strlen(conf));
+						iDb = prov->attachDatabase(&st, alias,
+							embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
 
-						if (!iDb)
+						if (st->getState() & IStatus::STATE_ERRORS)
 						{
-							iDb = prov->attachDatabase(&st, alias,
-								embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
+							const ISC_STATUS* s = st->getErrors();
+							bool missing = fb_utils::containsErrorCode(s, isc_io_error);
+							dbDown = fb_utils::containsErrorCode(s, isc_shutdown);
+							if (!(missing || dbDown))
+								check("IProvider::attachDatabase", &st);
 
-							if (st->getState() & IStatus::STATE_ERRORS)
-							{
-								const ISC_STATUS* s = st->getErrors();
-								bool missing = fb_utils::containsErrorCode(s, isc_io_error);
-								dbDown = fb_utils::containsErrorCode(s, isc_shutdown);
-								if (!(missing || dbDown))
-									check("IProvider::attachDatabase", &st);
-
-								// down/missing DB is not a reason to fail mapping
-								iDb = NULL;
-							}
+							// down/missing DB is not a reason to fail mapping
+							iDb = NULL;
 						}
 					}
 				}
