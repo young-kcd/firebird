@@ -1273,58 +1273,49 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 
 		while (curs->fetchNext(&st, mMap.getBuffer()) == IStatus::RESULT_OK)
 		{
-			int charset = CS_METADATA;
 			record->nullify();
 
 			putField(tdbb, record,
-					 DumpField(f_sec_map_name, VALUE_STRING, name->len, name->data),
-					 charset);
+					 DumpField(f_sec_map_name, VALUE_STRING, name->len, name->data));
 
 			putField(tdbb, record,
-					 DumpField(f_sec_map_using, VALUE_STRING, 1, usng->data),
-					 charset);
+					 DumpField(f_sec_map_using, VALUE_STRING, 1, usng->data));
 
 			if (!plugin.null)
 			{
 				putField(tdbb, record,
-						 DumpField(f_sec_map_plugin, VALUE_STRING, plugin->len, plugin->data),
-						 charset);
+						 DumpField(f_sec_map_plugin, VALUE_STRING, plugin->len, plugin->data));
 			}
 
 			if (!db.null)
 			{
 				putField(tdbb, record,
-						 DumpField(f_sec_map_db, VALUE_STRING, db->len, db->data),
-						 charset);
+						 DumpField(f_sec_map_db, VALUE_STRING, db->len, db->data));
 			}
 
 			if (!fromType.null)
 			{
 				putField(tdbb, record,
-						 DumpField(f_sec_map_from_type, VALUE_STRING, fromType->len, fromType->data),
-						 charset);
+						 DumpField(f_sec_map_from_type, VALUE_STRING, fromType->len, fromType->data));
 			}
 
 			if (!from.null)
 			{
 				putField(tdbb, record,
-						 DumpField(f_sec_map_from, VALUE_STRING, from->len, from->data),
-						 charset);
+						 DumpField(f_sec_map_from, VALUE_STRING, from->len, from->data));
 			}
 
 			if (!role.null)
 			{
 				SINT64 v = role;
 				putField(tdbb, record,
-						 DumpField(f_sec_map_to_type, VALUE_INTEGER, sizeof(v), &v),
-						 charset);
+						 DumpField(f_sec_map_to_type, VALUE_INTEGER, sizeof(v), &v));
 			}
 
 			if (!to.null)
 			{
 				putField(tdbb, record,
-						 DumpField(f_sec_map_to, VALUE_STRING, to->len, to->data),
-						 charset);
+						 DumpField(f_sec_map_to, VALUE_STRING, to->len, to->data));
 			}
 
 			buffer->store(record);

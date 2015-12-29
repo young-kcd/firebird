@@ -212,7 +212,7 @@ public:
 		clearSnapshot();
 	}
 
-	void putField(thread_db*, Record*, const DumpField&, int);
+	void putField(thread_db*, Record*, const DumpField&);
 
 	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
 	RecordBuffer* getData(const jrd_rel*) const;
@@ -235,7 +235,7 @@ public:
 
 class MonitoringData FB_FINAL : public Firebird::IpcObject
 {
-	static const USHORT MONITOR_VERSION = 4;
+	static const USHORT MONITOR_VERSION = 5;
 	static const ULONG DEFAULT_SIZE = 1048576;
 
 	typedef MonitoringHeader Header;
@@ -243,6 +243,7 @@ class MonitoringData FB_FINAL : public Firebird::IpcObject
 	struct Element
 	{
 		AttNumber attId;
+		TEXT userName[USERNAME_LENGTH + 1];
 		ULONG length;
 	};
 
@@ -273,11 +274,11 @@ public:
 	class Writer
 	{
 	public:
-		Writer(MonitoringData* data, AttNumber att_id)
+		Writer(MonitoringData* data, AttNumber att_id, const char* user_name)
 			: dump(data)
 		{
 			fb_assert(dump);
-			offset = dump->setup(att_id);
+			offset = dump->setup(att_id, user_name);
 			fb_assert(offset);
 		}
 
@@ -336,12 +337,12 @@ public:
 	void acquire();
 	void release();
 
-	void read(AttNumber, TempSpace&);
-	ULONG setup(AttNumber);
+	void read(AttNumber, const char*, TempSpace&);
+	ULONG setup(AttNumber, const char*);
 	void write(ULONG, ULONG, const void*);
 
 	void cleanup(AttNumber);
-	void enumerate(SessionList&);
+	void enumerate(SessionList&, const char*);
 
 private:
 	// copying is prohibited

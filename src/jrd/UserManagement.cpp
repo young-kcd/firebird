@@ -465,12 +465,9 @@ void UserManagement::list(IUser* u, unsigned cachePosition)
 	Record* record = buffer->getTempRecord();
 	record->nullify();
 
-	int charset = CS_METADATA;
-
 	const MetaName& plugName(managers[cachePosition].first);
 	putField(threadDbb, record,
-			 DumpField(f_sec_plugin, VALUE_STRING, static_cast<USHORT>(plugName.length()), plugName.c_str()),
-			 charset);
+			 DumpField(f_sec_plugin, VALUE_STRING, static_cast<USHORT>(plugName.length()), plugName.c_str()));
 
 	bool su = false;
 
@@ -478,53 +475,46 @@ void UserManagement::list(IUser* u, unsigned cachePosition)
 	{
 		const char* uname = u->userName()->get();
 		putField(threadDbb, record,
-				 DumpField(f_sec_user_name, VALUE_STRING, static_cast<USHORT>(strlen(uname)), uname),
-				 charset);
+				 DumpField(f_sec_user_name, VALUE_STRING, static_cast<USHORT>(strlen(uname)), uname));
 		su = strcmp(uname, SYSDBA_USER_NAME) == 0;
 	}
 
 	if (u->firstName()->entered())
 	{
 		putField(threadDbb, record,
-				 DumpField(f_sec_first_name, VALUE_STRING, static_cast<USHORT>(strlen(u->firstName()->get())), u->firstName()->get()),
-				 charset);
+				 DumpField(f_sec_first_name, VALUE_STRING, static_cast<USHORT>(strlen(u->firstName()->get())), u->firstName()->get()));
 	}
 
 	if (u->middleName()->entered())
 	{
 		putField(threadDbb, record,
-				 DumpField(f_sec_middle_name, VALUE_STRING, static_cast<USHORT>(strlen(u->middleName()->get())), u->middleName()->get()),
-				 charset);
+				 DumpField(f_sec_middle_name, VALUE_STRING, static_cast<USHORT>(strlen(u->middleName()->get())), u->middleName()->get()));
 	}
 
 	if (u->lastName()->entered())
 	{
 		putField(threadDbb, record,
-				 DumpField(f_sec_last_name, VALUE_STRING, static_cast<USHORT>(strlen(u->lastName()->get())), u->lastName()->get()),
-				 charset);
+				 DumpField(f_sec_last_name, VALUE_STRING, static_cast<USHORT>(strlen(u->lastName()->get())), u->lastName()->get()));
 	}
 
 	if (u->active()->entered())
 	{
 		UCHAR v = u->active()->get() ? '\1' : '\0';
 		putField(threadDbb, record,
-				 DumpField(f_sec_active, VALUE_BOOLEAN, sizeof(v), &v),
-				 charset);
+				 DumpField(f_sec_active, VALUE_BOOLEAN, sizeof(v), &v));
 	}
 
 	if (su || u->admin()->entered())
 	{
 		UCHAR v = (su || u->admin()->get()) ? '\1' : '\0';
 		putField(threadDbb, record,
-				 DumpField(f_sec_admin, VALUE_BOOLEAN, sizeof(v), &v),
-				 charset);
+				 DumpField(f_sec_admin, VALUE_BOOLEAN, sizeof(v), &v));
 	}
 
 	if (u->comment()->entered())
 	{
 		putField(threadDbb, record,
-				 DumpField(f_sec_comment, VALUE_STRING, static_cast<USHORT>(strlen(u->comment()->get())), u->comment()->get()),
-				 charset);
+				 DumpField(f_sec_comment, VALUE_STRING, static_cast<USHORT>(strlen(u->comment()->get())), u->comment()->get()));
 	}
 
 	buffer->store(record);
@@ -541,16 +531,13 @@ void UserManagement::list(IUser* u, unsigned cachePosition)
 			record->nullify();
 
 			putField(threadDbb, record,
-					 DumpField(f_sec_attr_user, VALUE_STRING, static_cast<USHORT>(strlen(u->userName()->get())), u->userName()->get()),
-					 charset);
+					 DumpField(f_sec_attr_user, VALUE_STRING, static_cast<USHORT>(strlen(u->userName()->get())), u->userName()->get()));
 
 			putField(threadDbb, record,
-					 DumpField(f_sec_attr_key, VALUE_STRING, b->name.length(), b->name.c_str()),
-					 charset);
+					 DumpField(f_sec_attr_key, VALUE_STRING, b->name.length(), b->name.c_str()));
 
 			putField(threadDbb, record,
-					 DumpField(f_sec_attr_value, VALUE_STRING, b->value.length(), b->value.c_str()),
-					 charset);
+					 DumpField(f_sec_attr_value, VALUE_STRING, b->value.length(), b->value.c_str()));
 
 			buffer->store(record);
 		}
