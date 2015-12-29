@@ -1,3 +1,15 @@
+ 2015-12-28 14:10  alexpeshkoff 
+   M builds/install/arch-specific/linux/firebird.init.d.debian.in
+   M builds/install/arch-specific/linux/firebird.init.d.generic.in
+   M builds/install/arch-specific/linux/linuxLibrary.sh.in
+   M builds/install/posix-common/changeServerMode.sh.in
+   M builds/install/posix-common/posixLibrary.sh.in
+Fixed CORE-5053: changeServerMode.sh can mess with configuration
+
+ 2015-12-28 06:22  dimitr 
+   M src/jrd/jrd.cpp
+Unwind the cache before throwing. This prevents lock-ups during database shutdown.
+
  2015-12-25 18:19  alexpeshkoff 
    M builds/install/arch-specific/linux/linuxLibrary.sh.in
    M builds/install/posix-common/posixLibrary.sh.in
