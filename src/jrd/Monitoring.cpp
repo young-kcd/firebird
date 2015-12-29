@@ -553,6 +553,8 @@ RecordBuffer* SnapshotData::allocBuffer(thread_db* tdbb, MemoryPool& pool, int r
 
 void SnapshotData::putField(thread_db* tdbb, Record* record, const DumpField& field)
 {
+	jrd_tra* const transaction = tdbb->getTransaction();
+
 	fb_assert(record);
 
 	const Format* const format = record->getFormat();
@@ -624,10 +626,23 @@ void SnapshotData::putField(thread_db* tdbb, Record* record, const DumpField& fi
 	}
 	else if (field.type == VALUE_STRING)
 	{
-		dsc from_desc;
-		MoveBuffer buffer;
-		from_desc.makeText(field.length, CS_METADATA, (UCHAR*) field.data);
-		MOV_move(tdbb, &from_desc, &to_desc);
+		if (to_desc.isBlob())
+		{
+			bid blob_id;
+			blb* const blob = blb::create(tdbb, transaction, &blob_id);
+			blob->BLB_put_data(tdbb, (UCHAR*) field.data, field.length);
+			blob->BLB_close(tdbb);
+
+			dsc from_desc;
+			from_desc.makeBlob(isc_blob_text, CS_METADATA, (ISC_QUAD*) &blob_id);
+			MOV_move(tdbb, &from_desc, &to_desc);
+		}
+		else
+		{
+			dsc from_desc;
+			from_desc.makeText(field.length, CS_METADATA, (UCHAR*) field.data);
+			MOV_move(tdbb, &from_desc, &to_desc);
+		}
 	}
 	else if (field.type == VALUE_BOOLEAN)
 	{
@@ -649,12 +664,11 @@ void SnapshotData::putField(thread_db* tdbb, Record* record, const DumpField& fi
 	if (to_desc.isBlob())
 	{
 		bid* blob_id = reinterpret_cast<bid*>(to_desc.dsc_address);
-		jrd_tra* tran = tdbb->getTransaction();
 
-		if (!tran->tra_blobs->locate(blob_id->bid_temp_id()))
+		if (!transaction->tra_blobs->locate(blob_id->bid_temp_id()))
 			fb_assert(false);
 
-		BlobIndex& blobIdx = tran->tra_blobs->current();
+		BlobIndex& blobIdx = transaction->tra_blobs->current();
 		fb_assert(!blobIdx.bli_materialized);
 
 		if (blobIdx.bli_request)

@@ -62,7 +62,7 @@ public:
 
 	struct DumpField
 	{
-		DumpField(USHORT p_id, ValueType p_type, USHORT p_length, const void* p_data)
+		DumpField(USHORT p_id, ValueType p_type, ULONG p_length, const void* p_data)
 			: id(p_id), type(p_type), length(p_length), data(p_data)
 		{}
 
@@ -72,7 +72,7 @@ public:
 
 		USHORT id;
 		ValueType type;
-		USHORT length;
+		ULONG length;
 		const void* data;
 	};
 
@@ -172,8 +172,8 @@ public:
 				field.id = (USHORT) buffer[offset++];
 				field.type = (ValueType) buffer[offset++];
 				fb_assert(field.type >= VALUE_GLOBAL_ID && field.type <= VALUE_BOOLEAN);
-				memcpy(&field.length, &buffer[offset], sizeof(USHORT));
-				offset += sizeof(USHORT);
+				memcpy(&field.length, &buffer[offset], sizeof(ULONG));
+				offset += sizeof(ULONG);
 				field.data = &buffer[offset];
 				offset += field.length;
 				return true;
@@ -185,16 +185,16 @@ public:
 	private:
 		void storeField(int field_id, ValueType type, FB_SIZE_T length, const void* value)
 		{
-			const FB_SIZE_T delta = sizeof(UCHAR) + sizeof(UCHAR) + sizeof(USHORT) + length;
+			const FB_SIZE_T delta = sizeof(UCHAR) + sizeof(UCHAR) + sizeof(ULONG) + length;
 			buffer.resize(offset + delta);
 
 			UCHAR* ptr = buffer.begin() + offset;
 			fb_assert(field_id <= int(MAX_UCHAR));
 			*ptr++ = (UCHAR) field_id;
 			*ptr++ = (UCHAR) type;
-			const USHORT adjusted_length = (USHORT) length;
+			const ULONG adjusted_length = (ULONG) length;
 			memcpy(ptr, &adjusted_length, sizeof(adjusted_length));
-			ptr += sizeof(USHORT);
+			ptr += sizeof(ULONG);
 			memcpy(ptr, value, length);
 			offset += (ULONG) delta;
 		}
