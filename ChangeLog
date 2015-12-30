@@ -1,3 +1,23 @@
+ 2015-12-29 19:00  dimitr 
+   M src/jrd/Monitoring.cpp
+   M src/jrd/Monitoring.h
+Fixed CORE-4708: Content of MON$EXPLAINED_PLAN in MON$STATEMENTS is truncated if exceeds the 32KB limit.
+
+ 2015-12-29 15:17  dimitr 
+   M src/jrd/DbCreators.cpp
+   M src/jrd/Mapping.cpp
+   M src/jrd/Monitoring.cpp
+   M src/jrd/Monitoring.h
+   M src/jrd/UserManagement.cpp
+Tag the shmem session clumplets with username. This allows much faster lookups for non-locksmith users. Also, it allows to simplify some code. While being there, cleaned up some unused logic.
+
+ 2015-12-29 14:39  alexpeshkoff 
+   M src/jrd/Mapping.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+Fixed CORE-5047: mapUser() routine establish secondary attach using wrong provider
+
  2015-12-28 14:10  alexpeshkoff 
    M builds/install/arch-specific/linux/firebird.init.d.debian.in
    M builds/install/arch-specific/linux/firebird.init.d.generic.in
