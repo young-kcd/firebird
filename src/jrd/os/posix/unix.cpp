@@ -112,7 +112,8 @@ static const mode_t MASK = 0660;
 #define FCNTL_BROKEN
 static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64*, FbStatusVector*);
 static jrd_file* setup_file(Database*, const PathName&, const int, const bool, const bool);
-static bool lockDatabaseFile(int desc, const bool shareMode, const bool temporary = false);
+static void lockDatabaseFile(int& desc, const bool shareMode, const bool temporary,
+							 const char* fileName, ISC_STATUS operation);
 static bool unix_error(const TEXT*, const jrd_file*, ISC_STATUS, FbStatusVector* = NULL);
 #if !(defined HAVE_PREAD && defined HAVE_PWRITE)
 static SLONG pread(int, SCHAR*, SLONG, SLONG);
@@ -217,7 +218,7 @@ jrd_file* PIO_create(thread_db* tdbb, const PathName& file_name,
 
 	Database* const dbb = tdbb->getDatabase();
 
-	const int desc = os_utils::open(file_name.c_str(), flag, 0666);
+	int desc = os_utils::open(file_name.c_str(), flag, 0666);
 	if (desc == -1)
 	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open O_CREAT") << Arg::Str(file_name) <<
@@ -225,15 +226,7 @@ jrd_file* PIO_create(thread_db* tdbb, const PathName& file_name,
 	}
 
 	const bool shareMode = dbb->dbb_config->getServerMode() != MODE_SUPER;
-	if (!lockDatabaseFile(desc, shareMode, temporary))
-	{
-		int lockErrno = errno;
-		close(desc);
-		// error when locking file almost always means it's locked by someone else
-		// therefore do not remove file here (contrary to chmod error)
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lock") << Arg::Str(file_name) <<
-				 Arg::Gds(isc_io_create_err) << Arg::Unix(lockErrno));
-	}
+	lockDatabaseFile(desc, shareMode, temporary, file_name.c_str(), isc_io_create_err);
 
 #ifdef HAVE_FCHMOD
 	if (fchmod(desc, MASK) < 0)
@@ -440,10 +433,7 @@ void PIO_force_write(jrd_file* file, const bool forcedWrites, const bool notUseF
 			unix_error("re open() for SYNC/DIRECT", file, isc_io_open_err);
 		}
 
-		if (!lockDatabaseFile(file->fil_desc, file->fil_flags & FIL_sh_write))
-		{
-			unix_error("lock", file, isc_io_open_err);
-		}
+		lockDatabaseFile(file->fil_desc, file->fil_flags & FIL_sh_write, false, file->fil_string, isc_io_open_err);
 #endif //FCNTL_BROKEN
 
 #ifdef SOLARIS
@@ -677,11 +667,7 @@ jrd_file* PIO_open(thread_db* tdbb,
 	}
 
 	const bool shareMode = dbb->dbb_config->getServerMode() != MODE_SUPER;
-	if (!lockDatabaseFile(desc, shareMode || readOnly))
-	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lock") << Arg::Str(file_name) <<
-				 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
-	}
+	lockDatabaseFile(desc, shareMode || readOnly, false, ptr, isc_io_open_err);
 
 	// posix_fadvise(desc, 0, 0, POSIX_FADV_RANDOM);
 
@@ -942,15 +928,41 @@ static jrd_file* setup_file(Database* dbb,
 }
 
 
-static bool lockDatabaseFile(int desc, const bool share, const bool temporary)
+static void lockDatabaseFile(int& desc, const bool share, const bool temporary,
+							 const char* fileName, ISC_STATUS operation)
 {
-	struct flock lck;
-	lck.l_type = (!temporary && share) ? F_RDLCK : F_WRLCK;
-	lck.l_whence = SEEK_SET;
-	lck.l_start = 0;
-	lck.l_len = 0;
+	bool shared = (!temporary) && share;
+	bool busy = false;
 
-	return fcntl(desc, F_SETLK, &lck) == 0;
+	do
+	{
+#ifndef HAVE_FLOCK
+		struct flock lck;
+		lck.l_type = shared ? F_RDLCK : F_WRLCK;
+		lck.l_whence = SEEK_SET;
+		lck.l_start = 0;
+		lck.l_len = 0;
+
+		if (fcntl(desc, F_SETLK, &lck) == 0)
+			return;
+		busy = (errno == EACCES) || (errno == EAGAIN);
+#else
+		if (flock(desc, (shared ? LOCK_SH : LOCK_EX) | LOCK_NB) == 0)
+			return;
+		busy = (errno == EWOULDBLOCK);
+#endif
+	}
+	while (errno == EINTR);
+
+	maybeCloseFile(desc);
+
+	Arg::Gds err(isc_io_error);
+	err << "lock" << fileName;
+	if (busy)
+		err << Arg::Gds(isc_already_opened);
+	else
+		err << Arg::Gds(operation) << Arg::Unix(errno);
+	ERR_post(err);
 }
 
 

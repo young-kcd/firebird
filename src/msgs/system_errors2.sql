@@ -793,6 +793,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-204, '2C', '000', 0, 784, 'invalid_attachment_charset', NULL, NULL)
 (-901, '08', '004', 0, 785, 'map_down', NULL, NULL)
 (-902, '08', '006', 0, 786, 'login_error', NULL, NULL)
+(-902, '08', '006', 0, 787, 'already_opened', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)

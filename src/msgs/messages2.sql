@@ -894,6 +894,7 @@ Data source : @4', NULL, NULL)
 ('invalid_attachment_charset', NULL, NULL, NULL, 0, 784, NULL, 'CHARACTER SET @1 cannot be used as a attachment character set', NULL, NULL);
 ('map_down', NULL, 'Mapping.cpp', NULL, 0, 785, NULL, 'Some database(s) were shutdown when trying to read mapping data', NULL, NULL);
 ('login_error', NULL, 'server.cpp', NULL, 0, 786, NULL, 'Error occurred during login, please check server firebird.log for details', NULL, NULL);
+('already_opened', 'lockDatabaseFile', 'unix.cpp', NULL, 0, 787, NULL, 'Database already opened with engine instance, incompatible with current', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
