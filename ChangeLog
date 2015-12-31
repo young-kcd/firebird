@@ -1,3 +1,17 @@
+ 2015-12-30 15:16  alexpeshkoff 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/os/posix/unix.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Fixed CORE-5056: Write-lock of database file is cleared ("W" disappears from output of lsof <db_name>) when remote machine obtains DB header running "fbsvcmgr <remote_host>/port:service_mgr action_db_stats <remote_dbname>"
+
  2015-12-29 19:00  dimitr 
    M src/jrd/Monitoring.cpp
    M src/jrd/Monitoring.h
