@@ -236,6 +236,8 @@ static const UCHAR db_items[] =
 {
 	isc_info_page_size,
 	isc_info_db_size_in_pages,
+	fb_info_pages_used,
+	fb_info_pages_free,
 	isc_info_sweep_interval,
 	isc_info_limbo,
 	isc_info_forced_writes,
@@ -429,6 +431,28 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 			}
 			else
 				sprintf(info, "Number of DB pages allocated = %"SLONGFORMAT"%s", value_out, separator);
+			break;
+
+		case fb_info_pages_used:
+			value_out = ISQL_vax_integer(d, length);
+			if (translate)
+			{
+				IUTILS_msg_get(NUMBER_USED_PAGES, msg, SafeArg() << value_out);
+				sprintf(info, "%s%s", msg, separator);
+			}
+			else
+				sprintf(info, "Number of DB pages used = %"SLONGFORMAT"%s", value_out, separator);
+			break;
+
+		case fb_info_pages_free:
+			value_out = ISQL_vax_integer(d, length);
+			if (translate)
+			{
+				IUTILS_msg_get(NUMBER_FREE_PAGES, msg, SafeArg() << value_out);
+				sprintf(info, "%s%s", msg, separator);
+			}
+			else
+				sprintf(info, "Number of DB pages free = %"SLONGFORMAT"%s", value_out, separator);
 			break;
 
 		case isc_info_sweep_interval:

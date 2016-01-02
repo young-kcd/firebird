@@ -3037,6 +3037,8 @@ Fetches = !', NULL, NULL);
 ('REC_DISPLAYCOUNT', 'process_statement', 'isql.epp', NULL, 17, 187, NULL, 'Records displayed: @1', NULL, NULL)
 ('COLUMNS_HIDDEN', 'process_statement', 'isql.epp', NULL, 17, 188, NULL, 'Full NULL columns hidden due to RecordBuff: @1', NULL, NULL)
 ('HLP_SETRECORDBUF', 'help', 'isql.epp', NULL, 17, 189, NULL, '    SET RECORDBuf          -- toggle limited buffering and trimming of columns', NULL, NULL)
+('NUMBER_USED_PAGES', 'SHOW_dbb_parameters', 'show.epp', NULL, 17, 190, NULL, 'Number of DB pages used = @1', NULL, NULL);
+('NUMBER_FREE_PAGES', 'SHOW_dbb_parameters', 'show.epp', NULL, 17, 191, NULL, 'Number of DB pages free = @1', NULL, NULL);
 -- GSEC
 ('GsecMsg1', 'get_line', 'gsec.e', NULL, 18, 1, NULL, 'GSEC>', NULL, NULL);
 ('GsecMsg2', 'printhelp', 'gsec.e', 'This message is used in the Help display. It should be the same as number 1 (but in lower case).', 18, 2, NULL, 'gsec', NULL, NULL);
