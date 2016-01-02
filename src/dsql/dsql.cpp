@@ -1819,7 +1819,8 @@ static void sql_info(thread_db* tdbb,
 
 				if (plan.hasData())
 				{
-					const ULONG buffer_length = end_info - info - 3; // 1-byte item + 2-byte length
+					// 1-byte item + 2-byte length + isc_info_end/isc_info_truncated == 4
+					const ULONG buffer_length = end_info - info - 4;
 					const ULONG max_length = MIN(buffer_length, MAX_USHORT);
 
 					if (plan.length() > max_length)
@@ -1837,12 +1838,13 @@ static void sql_info(thread_db* tdbb,
 						}
 
 						plan += " ...";
-					}
 
-					if (plan.length() > max_length)
-					{
-						// If it's still too long, give up
-						fb_assert(info < end_info);
+						if (plan.length() <= max_length)
+						{
+							info = put_item(item, plan.length(), reinterpret_cast<const UCHAR*>(plan.c_str()),
+											info, end_info);
+						}
+
 						*info = isc_info_truncated;
 						info = NULL;
 					}

@@ -7747,63 +7747,58 @@ static void process_plan()
 
 	UCHAR plan_info[1];
 	plan_info[0] = setValues.ExplainPlan ? isc_info_sql_explain_plan : isc_info_sql_get_plan;
-	UCHAR plan_buffer[PLAN_BUFFER_LENGTH];
-	memset(plan_buffer, 0, sizeof(plan_buffer));
-	UCHAR* planPtr = plan_buffer;
-	unsigned planSize = sizeof(plan_buffer);
-	PtrSentry<UCHAR> planSentry;
 
-	for (int i = 0; i < 3; ++i)
+	Firebird::HalfStaticArray<UCHAR, MAX_SSHORT> planBuffer;
+	unsigned planSize = MAX_SSHORT;
+	UCHAR* planPtr = planBuffer.getBuffer(planSize);
+
+	Firebird::string planString;
+
+	for (int i = 0; i < 2; ++i)
 	{
 		global_Stmt->getInfo(fbStatus, sizeof(plan_info), plan_info, planSize, planPtr);
 		if (ISQL_errmsg(fbStatus))
-		{
 			return;
+
+		bool truncated = false;
+
+		for (const UCHAR* ptr = planPtr; ptr < planPtr + planSize && *ptr != isc_info_end;)
+		{
+			switch (*ptr++)
+			{
+			case isc_info_sql_get_plan:
+			case isc_info_sql_explain_plan:
+				{
+					const ULONG len = gds__vax_integer(ptr, sizeof(USHORT));
+					ptr += sizeof(USHORT);
+					planString.assign((const char*) ptr, len);
+					ptr += len;
+				}
+				break;
+			case isc_info_truncated:
+				// Probably FB 2.1 and before will crash with MAX_USHORT
+				if (i == 0 && ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_2)
+				{
+					planSize = MAX_USHORT;
+					planBuffer.resize(planSize);
+					planPtr = planBuffer.begin();
+				}
+				truncated = true;
+				break;
+			case isc_info_end:
+				break;
+			default:
+				IUTILS_printf2(Diag, "Unknown error while retrieving plan%s", NEWLINE);
+				return;
+			}
 		}
 
-		switch (planPtr[0])
-		{
-		case isc_info_sql_get_plan:
-		case isc_info_sql_explain_plan:
-			{
-				ULONG len = gds__vax_integer(planPtr + 1, 2);
-				if (len > planSize - 3)
-					len = planSize - 3;
-				IUTILS_printf2(Diag, "%.*s%s", len, planPtr + 3, NEWLINE);
-			}
-			return;
-		case isc_info_truncated:
-			switch (i)
-			{
-			case 0:
-				planSentry.exchange((planPtr = FB_NEW UCHAR[planSize = MAX_SSHORT]), true);
-				break;
-			case 1:
-				// Probably FB 2.1 and before will crash with MAX_USHORT.
-				if ((isqlGlob.major_ods == 11 && isqlGlob.minor_ods >= 2) || // FB2.5
-					isqlGlob.major_ods > 11)
-				{
-					planSentry.clean();
-					planSentry.exchange((planPtr = FB_NEW UCHAR[planSize = MAX_USHORT]), true);
-					break;
-				}
-				// else fall into
-			case 2:
-				IUTILS_printf2(Diag, "Plan truncated%s", NEWLINE);
-				return;
-			default:
-				IUTILS_printf2(Diag, "Logical error in isql%s", NEWLINE);
-				fb_assert(false);
-				return;
-			}
+		if (!truncated)
 			break;
-		case isc_info_end:
-			return; // Assume no plan.
-		default:
-			IUTILS_printf2(Diag, "Unknown error while retrieving plan%s", NEWLINE);
-			return;
-		}
 	}
+
+	IUTILS_printf2(Diag, "%s%s", planString.hasData() ? planString.c_str(): "Plan truncated",
+				   NEWLINE);
 }
 
 
