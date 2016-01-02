@@ -1502,8 +1502,24 @@ dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const NestValue
 	}
 
 	UCHAR* data_temp;
-	const USHORT len = MOV_get_string(value, &data_temp, NULL, 0);
-	const UCHAR* data = data_temp;
+	USHORT len = MOV_get_string(value, &data_temp, NULL, 0);
+	const UCHAR* data;
+
+	if (len > GUID_BODY_SIZE)
+	{
+		// Verify if only spaces exists after the expected length. See CORE-5062.
+		data = data_temp + GUID_BODY_SIZE;
+
+		while (len > GUID_BODY_SIZE)
+		{
+			if (*data++ != ASCII_SPACE)
+				break;
+
+			--len;
+		}
+	}
+
+	data = data_temp;
 
 	// validate the UUID
 	if (len != GUID_BODY_SIZE) // 36
