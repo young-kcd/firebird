@@ -137,6 +137,9 @@ enum db_info_types
 	fb_info_pip_errors = 122,
 	fb_info_pip_warns = 123,
 
+	fb_info_pages_used = 124,
+	fb_info_pages_free = 125,
+
 	isc_info_db_last_value   /* Leave this LAST! */
 };
 

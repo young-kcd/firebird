@@ -2143,6 +2143,90 @@ ULONG PageSpace::lastUsedPage(const Database* dbb)
 	return pgSpace->lastUsedPage();
 }
 
+
+const UCHAR bitsInByte[256] = 
+{
+//  0000, 0001, 0010, 0011, 0100, 0101, 0110, 0111, 1000, 1001, 1010, 1011, 1100, 1101, 1110, 1111
+       0,    1,    1,    2,    1,    2,    2,    3,    1,    2,    2,    3,    2,    3,    3,    4,
+// base + 1 0000  
+       1,    2,    2,    3,    2,    3,    3,    4,    2,    3,    3,    4,    3,    4,    4,    5,
+// base + 10 0000  
+       1,    2,    2,    3,    2,    3,    3,    4,    2,    3,    3,    4,    3,    4,    4,    5,
+// base + 11 0000  
+       2,    3,    3,    4,    3,    4,    4,    5,    3,    4,    4,    5,    4,    5,    5,    6,
+// base + 100 0000  
+       1,    2,    2,    3,    2,    3,    3,    4,    2,    3,    3,    4,    3,    4,    4,    5,
+// base + 101 0000  
+       2,    3,    3,    4,    3,    4,    4,    5,    3,    4,    4,    5,    4,    5,    5,    6,
+// base + 110 0000  
+       2,    3,    3,    4,    3,    4,    4,    5,    3,    4,    4,    5,    4,    5,    5,    6,
+// base + 111 0000  
+       3,    4,    4,    5,    4,    5,    5,    6,    4,    5,    5,    6,    5,    6,    6,    7,
+// base + 1000 0000  
+       1,    2,    2,    3,    2,    3,    3,    4,    2,    3,    3,    4,    3,    4,    4,    5,
+// base + 1001 0000  
+       2,    3,    3,    4,    3,    4,    4,    5,    3,    4,    4,    5,    4,    5,    5,    6,
+// base + 1010 0000  
+       2,    3,    3,    4,    3,    4,    4,    5,    3,    4,    4,    5,    4,    5,    5,    6,
+// base + 1011 0000  
+       3,    4,    4,    5,    4,    5,    5,    6,    4,    5,    5,    6,    5,    6,    6,    7,
+// base + 1100 0000  
+       2,    3,    3,    4,    3,    4,    4,    5,    3,    4,    4,    5,    4,    5,    5,    6,
+// base + 1101 0000  
+       3,    4,    4,    5,    4,    5,    5,    6,    4,    5,    5,    6,    5,    6,    6,    7,
+// base + 1110 0000  
+       3,    4,    4,    5,    4,    5,    5,    6,    4,    5,    5,    6,    5,    6,    6,    7,
+// base + 1111 0000  
+       4,    5,    5,    6,    5,    6,    6,    7,    5,    6,    6,    7,    6,    7,    7,    8
+};
+
+ULONG PageSpace::usedPages()
+{
+//  Walk all PIP pages, count number of pages marked as used 
+
+	thread_db* tdbb = JRD_get_thread_data();
+	const PageManager& pageMgr = dbb->dbb_page_manager;
+
+	win window(pageSpaceID, pipFirst);
+	ULONG used = 0;
+	ULONG sequence = 0;
+
+	while (true)
+	{
+		page_inv_page* pip = (page_inv_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_undefined);
+		if (pip->pip_header.pag_type != pag_pages)
+		{
+			CCH_RELEASE(tdbb, &window);
+			break;
+		}
+
+		used += pip->pip_min & (~7);
+		const UCHAR* bytes = pip->pip_bits + pip->pip_min / 8;
+		const UCHAR* const end = pip->pip_bits + pip->pip_used / 8;
+		for (; bytes < end; bytes++)
+		{
+			used += 8 - bitsInByte[*bytes];
+		}
+
+		const bool last = pip->pip_used < pageMgr.pagesPerPIP;
+
+		CCH_RELEASE(tdbb, &window);
+
+		if (last)
+			break;
+
+		window.win_page = ++sequence * pageMgr.pagesPerPIP - 1;
+	}
+
+	return used;
+}
+
+ULONG PageSpace::usedPages(const Database* dbb)
+{
+	PageSpace* pgSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	return pgSpace->usedPages();
+}
+
 bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum, const bool forceSize)
 {
 /**************************************

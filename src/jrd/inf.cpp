@@ -335,7 +335,7 @@ void INF_database_info(thread_db* tdbb,
 			break;
 
 		case isc_info_allocation:
-			CCH_flush(tdbb, FLUSH_ALL, 0);
+			CCH_flush(tdbb, FLUSH_ALL, 0);	// hvlad: do we really need it ?
 			length = INF_convert(PageSpace::maxAlloc(dbb), buffer);
 			break;
 
@@ -672,7 +672,7 @@ void INF_database_info(thread_db* tdbb,
 			break;
 
 		case isc_info_db_size_in_pages:
-			CCH_flush(tdbb, FLUSH_ALL, 0);
+			CCH_flush(tdbb, FLUSH_ALL, 0);  // hvlad: do we really need it ?
 			length = INF_convert(PageSpace::actAlloc(dbb), buffer);
 			break;
 
@@ -753,6 +753,14 @@ void INF_database_info(thread_db* tdbb,
 			buffer[0] = item;
 			item = isc_info_error;
 			length = 1 + INF_convert(isc_adm_task_denied, buffer + 1);
+			break;
+
+		case fb_info_pages_used:
+			length = INF_convert(PageSpace::usedPages(dbb), buffer);
+			break;
+
+		case fb_info_pages_free:
+			length = INF_convert(PageSpace::maxAlloc(dbb) - PageSpace::usedPages(dbb), buffer);
 			break;
 
 		default:

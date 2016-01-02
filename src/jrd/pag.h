@@ -124,6 +124,10 @@ public:
 	ULONG lastUsedPage();
 	static ULONG lastUsedPage(const Database* dbb);
 
+	// number of used pages
+	ULONG usedPages();
+	static ULONG usedPages(const Database* dbb);
+
 	// extend page space
 	bool extend(thread_db*, const ULONG, const bool);
 
