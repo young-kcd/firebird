@@ -7762,9 +7762,11 @@ static void process_plan()
 
 		bool truncated = false;
 
-		for (const UCHAR* ptr = planPtr; ptr < planPtr + planSize && *ptr != isc_info_end;)
+		for (const UCHAR* ptr = planPtr; ptr < planPtr + planSize;)
 		{
-			switch (*ptr++)
+			const UCHAR tag = *ptr++;
+
+			switch (tag)
 			{
 			case isc_info_sql_get_plan:
 			case isc_info_sql_explain_plan:
@@ -7776,13 +7778,6 @@ static void process_plan()
 				}
 				break;
 			case isc_info_truncated:
-				// Probably FB 2.1 and before will crash with MAX_USHORT
-				if (i == 0 && ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_2)
-				{
-					planSize = MAX_USHORT;
-					planBuffer.resize(planSize);
-					planPtr = planBuffer.begin();
-				}
 				truncated = true;
 				break;
 			case isc_info_end:
@@ -7791,14 +7786,26 @@ static void process_plan()
 				IUTILS_printf2(Diag, "Unknown error while retrieving plan%s", NEWLINE);
 				return;
 			}
+
+			if (tag == isc_info_end || tag == isc_info_truncated)
+				break;
 		}
 
-		if (!truncated)
-			break;
+		if (truncated && i == 0 &&
+			// Probably FB 2.1 and before will crash with MAX_USHORT
+			ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_2)
+		{
+			planSize = MAX_USHORT;
+			planBuffer.resize(planSize);
+			planPtr = planBuffer.begin();
+			continue;
+		}
+
+		break;
 	}
 
-	IUTILS_printf2(Diag, "%s%s", planString.hasData() ? planString.c_str(): "Plan truncated",
-				   NEWLINE);
+	if (planString.hasData())
+		IUTILS_printf2(Diag, "%s%s", planString.c_str(), NEWLINE);
 }
 
 
