@@ -1,3 +1,7 @@
+ 2016-01-03 02:56  asfernandes 
+   M src/dsql/dsql.cpp
+Fixed CORE-5062 - CHAR_TO_UUID on column with index throws expression evaluation not supported Human readable UUID argument for CHAR_TO_UUID must be of exact length 36.
+
  2015-12-17 19:14  roman-simakov 
    M src/jrd/dfw.epp
 Fixed request leakage due modify indecies
