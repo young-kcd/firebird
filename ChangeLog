@@ -1,3 +1,11 @@
+ 2016-01-03 20:20  dimitr 
+   M src/isql/isql.epp
+Fixed (hopefully) my last commit re. plan output.
+
+ 2016-01-03 15:50  asfernandes 
+   M src/dsql/dsql.cpp
+Fixed CORE-5062 - CHAR_TO_UUID on column with index throws expression evaluation not supported Human readable UUID argument for CHAR_TO_UUID must be of exact length 36.
+
  2016-01-02 14:41  alexpeshkoff 
    M src/jrd/scl.epp
 Fixed CORE-5060: Cannot CREATE VIEW that selects from a system table, despite having all grants
