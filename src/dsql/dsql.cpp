@@ -1083,25 +1083,6 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 				{
 					// Safe cast because desc is used as source only.
 					desc.dsc_address = const_cast<UCHAR*>(in_dsql_msg_buf) + (IPTR) desc.dsc_address;
-
-					if (desc.dsc_dtype == dtype_text)
-					{
-						const UCHAR* end = desc.dsc_address + desc.dsc_length;
-						INTL_adjust_text_descriptor(tdbb, &desc);
-
-						for (const UCHAR* p = desc.dsc_address + desc.dsc_length; p < end; ++p)
-						{
-							if (*p != ASCII_SPACE)
-							{
-								ERRD_post(
-									Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
-									Arg::Gds(isc_trunc_limits) <<
-									Arg::Num(parDesc.getStringLength()) <<
-									Arg::Num(desc.getStringLength()));
-							}
-						}
-					}
-
 					MOVD_move(tdbb, &desc, &parDesc);
 				}
 			}
