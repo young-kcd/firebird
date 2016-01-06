@@ -460,7 +460,7 @@ static in_sw_tab_t* findSwitch(Firebird::UtilSvc* uSvc, in_sw_tab_t* const table
 		}
 		else
 		{
-			BURP_print(true, 137, sw.c_str());
+			BURP_error(137, true, sw.c_str());
 			// msg 137  unknown switch %s
 		}
 	}
