@@ -177,21 +177,23 @@
 
 // Types - struct
 
-#define FB__TYPE_FB_SCALED_SMALLINT(x)	ISC_SHORT
-#define FB__TYPE_FB_SCALED_INTEGER(x)	ISC_LONG
-#define FB__TYPE_FB_SCALED_BIGINT(x)	ISC_INT64
-#define FB__TYPE_FB_SMALLINT			ISC_SHORT
-#define FB__TYPE_FB_INTEGER				ISC_LONG
-#define FB__TYPE_FB_BIGINT				ISC_INT64
-#define FB__TYPE_FB_FLOAT				float
-#define FB__TYPE_FB_DOUBLE				double
-#define FB__TYPE_FB_BLOB				ISC_QUAD
-#define FB__TYPE_FB_BOOLEAN				ISC_UCHAR
-#define FB__TYPE_FB_DATE				::Firebird::FbDate
-#define FB__TYPE_FB_TIME				::Firebird::FbTime
-#define FB__TYPE_FB_TIMESTAMP			::Firebird::FbTimestamp
-#define FB__TYPE_FB_CHAR(len)			::Firebird::FbChar<(len)>
-#define FB__TYPE_FB_VARCHAR(len)		::Firebird::FbVarChar<(len)>
+#define FB__TYPE_FB_SCALED_SMALLINT(x)			ISC_SHORT
+#define FB__TYPE_FB_SCALED_INTEGER(x)			ISC_LONG
+#define FB__TYPE_FB_SCALED_BIGINT(x)			ISC_INT64
+#define FB__TYPE_FB_SMALLINT					ISC_SHORT
+#define FB__TYPE_FB_INTEGER						ISC_LONG
+#define FB__TYPE_FB_BIGINT						ISC_INT64
+#define FB__TYPE_FB_FLOAT						float
+#define FB__TYPE_FB_DOUBLE						double
+#define FB__TYPE_FB_BLOB						ISC_QUAD
+#define FB__TYPE_FB_BOOLEAN						ISC_UCHAR
+#define FB__TYPE_FB_DATE						::Firebird::FbDate
+#define FB__TYPE_FB_TIME						::Firebird::FbTime
+#define FB__TYPE_FB_TIMESTAMP					::Firebird::FbTimestamp
+#define FB__TYPE_FB_CHAR(len)					::Firebird::FbChar<(len)>
+#define FB__TYPE_FB_VARCHAR(len)				::Firebird::FbVarChar<(len)>
+#define FB__TYPE_FB_INTL_CHAR(len, charSet)		::Firebird::FbChar<(len)>
+#define FB__TYPE_FB_INTL_VARCHAR(len, charSet)	::Firebird::FbVarChar<(len)>
 
 #define FB_TRIGGER_MESSAGE_MOVE_NAMES(name, fields)	\
 	FB_TRIGGER_MESSAGE_MOVE_NAMES_I(name, 3, FB_BOOST_PP_CAT(FB_TRIGGER_MESSAGE_MOVE_NAMES_X fields, 0))
