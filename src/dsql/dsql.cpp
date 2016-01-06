@@ -54,7 +54,6 @@
 #include "../dsql/pass1_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
-#include "../jrd/evl_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/inf_proto.h"
 #include "../jrd/jrd_proto.h"
@@ -2253,22 +2252,6 @@ static void map_in_out(	thread_db*		tdbb,
 				{
 					// Safe cast because desc is used as source only.
 					desc.dsc_address = const_cast<UCHAR*>(in_dsql_msg_buf) + (IPTR) desc.dsc_address;
-
-					if (desc.dsc_dtype == dtype_text)
-					{
-						const UCHAR* end = desc.dsc_address + desc.dsc_length;
-						EVL_adjust_text_descriptor(tdbb, &desc);
-
-						for (const UCHAR* p = desc.dsc_address + desc.dsc_length; p < end; ++p)
-						{
-							if (*p != ASCII_SPACE)
-							{
-								ERRD_post(
-									Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
-							}
-						}
-					}
-
 					MOVD_move(tdbb, &desc, &parameter->par_desc);
 				}
 			}

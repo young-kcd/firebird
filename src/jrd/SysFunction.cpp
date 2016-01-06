@@ -1383,8 +1383,22 @@ dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 
 	USHORT ttype;
 	UCHAR* data_temp;
-	const USHORT len = CVT_get_string_ptr(value, &ttype, &data_temp, NULL, 0);
+	USHORT len = CVT_get_string_ptr(value, &ttype, &data_temp, NULL, 0);
 	const UCHAR* data = data_temp;
+
+	if (len > GUID_BODY_SIZE)
+	{
+		// Verify if only spaces exists after the expected length. See CORE-5062.
+		data = data_temp + GUID_BODY_SIZE;
+
+		while (len > GUID_BODY_SIZE)
+		{
+			if (*data++ != ASCII_SPACE)
+				break;
+
+			--len;
+		}
+	}
 
 	// validate the UUID
 	if (len != GUID_BODY_SIZE) // 36
@@ -1394,6 +1408,8 @@ dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 										Arg::Num(GUID_BODY_SIZE) <<
 										Arg::Str(function->name));
 	}
+
+	data = data_temp;
 
 	for (int i = 0; i < GUID_BODY_SIZE; ++i)
 	{
