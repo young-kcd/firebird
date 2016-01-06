@@ -1384,7 +1384,7 @@ dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 	USHORT ttype;
 	UCHAR* data_temp;
 	USHORT len = CVT_get_string_ptr(value, &ttype, &data_temp, NULL, 0);
-	const UCHAR* data = data_temp;
+	const UCHAR* data;
 
 	if (len > GUID_BODY_SIZE)
 	{
