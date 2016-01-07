@@ -1,3 +1,12 @@
+ 2016-01-06 18:20  asfernandes 
+   M src/dsql/dsql.cpp
+   M src/jrd/SysFunction.cpp
+Revert to the bad (that works) commit for CORE-5062. It's difficult to work when both the original architects and the users do bad things in relation to CHAR and MBCS.
+
+ 2016-01-06 18:20  asfernandes 
+   M src/include/firebird/Message.h
+Fix for messages with FB_INTL_CHAR and FB_INTL_VARCHAR macros.
+
  2016-01-03 20:20  dimitr 
    M src/isql/isql.epp
 Fixed (hopefully) my last commit re. plan output.
