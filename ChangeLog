@@ -1,3 +1,16 @@
+ 2016-01-06 18:33  asfernandes 
+   M src/jrd/SysFunction.cpp
+Misc.
+
+ 2016-01-06 18:26  asfernandes 
+   M src/dsql/dsql.cpp
+   M src/jrd/SysFunction.cpp
+Revert to the bad (that works) commit for CORE-5062. It's difficult to work when both the original architects and the users do bad things in relation to CHAR and MBCS.
+
+ 2016-01-06 07:43  hvlad 
+   M src/burp/burp.cpp
+Fixed bug CORE-5068 : gbak with invalid parameter crashes FB
+
  2016-01-03 02:56  asfernandes 
    M src/dsql/dsql.cpp
 Fixed CORE-5062 - CHAR_TO_UUID on column with index throws expression evaluation not supported Human readable UUID argument for CHAR_TO_UUID must be of exact length 36.
