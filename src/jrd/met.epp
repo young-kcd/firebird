@@ -110,6 +110,7 @@ static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, int type, const Fireb
 static int blocking_ast_procedure(void*);
 static int blocking_ast_relation(void*);
 static int partners_ast_relation(void*);
+static int rescan_ast_relation(void*);
 static ULONG get_rel_flags_from_FLAGS(USHORT);
 static void get_trigger(thread_db*, jrd_rel*, bid*, bid*, trig_vec**, const TEXT*, UCHAR, bool, USHORT);
 static bool get_type(thread_db*, USHORT*, const UCHAR*, const TEXT*);
@@ -2696,6 +2697,7 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 		if (check_relation != relation) {
 			LCK_release(tdbb, check_relation->rel_existence_lock);
 			LCK_release(tdbb, check_relation->rel_partners_lock);
+			LCK_release(tdbb, check_relation->rel_rescan_lock);
 			check_relation->rel_flags &= ~REL_check_partners;
 			check_relation->rel_flags |= REL_deleted;
 		}
@@ -2811,6 +2813,7 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 		if (check_relation != relation) {
 			LCK_release(tdbb, check_relation->rel_existence_lock);
 			LCK_release(tdbb, check_relation->rel_partners_lock);
+			LCK_release(tdbb, check_relation->rel_rescan_lock);
 			check_relation->rel_flags &= ~REL_check_partners;
 			check_relation->rel_flags |= REL_deleted;
 		}
@@ -3458,6 +3461,19 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 		lock->lck_ast = partners_ast_relation;
 	}
 
+	{ // Scope block.
+		Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock;
+		relation->rel_rescan_lock = lock;
+		lock->lck_parent = dbb->dbb_lock;
+		lock->lck_dbb = dbb;
+		lock->lck_key.lck_long = relation->rel_id;
+		lock->lck_length = sizeof(lock->lck_key.lck_long);
+		lock->lck_type = LCK_rel_rescan;
+		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+		lock->lck_object = relation;
+		lock->lck_ast = rescan_ast_relation;
+	}
+
 	// This should check system flag instead.
 	if (relation->rel_id <= dbb->dbb_max_sys_rel) {
 		return relation;
@@ -4046,6 +4062,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 		MET_release_triggers(tdbb, &tmp_vector);
 	}
 
+	LCK_lock(tdbb, relation->rel_rescan_lock, LCK_SR, LCK_WAIT);
 	relation->rel_flags &= ~REL_being_scanned;
 
 	relation->rel_current_format = NULL;
@@ -4339,6 +4356,27 @@ static int partners_ast_relation(void* ast_object)
 	{} // no-op
 
 	return 0;
+}
+
+
+static int rescan_ast_relation(void* ast_object)
+{
+	jrd_rel* relation = static_cast<jrd_rel*>(ast_object);
+
+	try
+	{
+		Database* dbb = relation->rel_rescan_lock->lck_dbb;
+		AstContextHolder tdbb(dbb, relation->rel_rescan_lock->lck_attachment);
+
+		Jrd::ContextPoolHolder context(tdbb, 0);
+
+		LCK_release(tdbb, relation->rel_rescan_lock);
+		relation->rel_flags &= ~REL_scanned;
+	}
+	catch (const Firebird::Exception&)
+	{} // no-op
+
+ 	return 0;
 }
 
 

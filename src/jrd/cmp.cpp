@@ -2563,6 +2563,11 @@ void CMP_shutdown_database(thread_db* tdbb)
 					LCK_release(tdbb, relation->rel_gc_lock);
 					relation->rel_flags |= REL_gc_lockneed;
 				}
+				if (relation->rel_rescan_lock)
+				{
+					LCK_release(tdbb, relation->rel_rescan_lock);
+					relation->rel_flags &= ~REL_scanned;
+				}
 				for (IndexLock* index = relation->rel_index_locks; index; index = index->idl_next)
 				{
 					if (index->idl_lock) {
