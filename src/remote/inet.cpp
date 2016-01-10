@@ -440,6 +440,8 @@ static bool forkThreadStarted = false;
 static SocketsArray* forkSockets;
 #endif
 
+static void		get_peer_info(rem_port*);
+
 static void		inet_gen_error(bool, rem_port*, const Arg::StatusVector& v);
 static bool_t	inet_getbytes(XDR*, SCHAR *, u_int);
 static void		inet_error(bool, rem_port*, const TEXT*, ISC_STATUS, int);
@@ -874,9 +876,12 @@ rem_port* INET_connect(const TEXT* name,
 			}
 
 			n = connect(port->port_handle, pai->ai_addr, pai->ai_addrlen);
-			if ((n != -1) && send_full(port, packet))
+			if (n != -1)
 			{
-				goto exit_free;
+				port->port_peer_name = host;
+				get_peer_info(port);
+				if (send_full(port, packet))
+					goto exit_free;
 			}
 		}
 		else
@@ -1198,22 +1203,8 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 	// store user identity
 	port->port_login = port->port_user_name = user_name;
 	port->port_peer_name = host_name;
-	port->port_protocol_id = "TCPv4";
 
-	SockAddr address;
-	if (address.getpeername(port->port_handle) == 0)
-	{
-		address.unmapV4(); // convert mapped IPv4 to regular IPv4
-		char host[40];      // 32 digits, 7 colons, 1 trailing null byte
-		int nameinfo = getnameinfo(address.ptr(), address.length(), host, sizeof(host),
-				NULL, 0, NI_NUMERICHOST);
-
-		if (!nameinfo)
-			port->port_address = host;
-
-		if (address.family() == AF_INET6)
-			port->port_protocol_id = "TCPv6";
-	}
+	get_peer_info(port);
 
 	return true;
 }
@@ -1383,6 +1374,9 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 		SOCLOSE(port->port_channel);
 		port->port_handle = n;
 		port->port_flags |= PORT_async;
+
+		get_peer_info(port);
+
 		return port;
 	}
 
@@ -1436,6 +1430,9 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 	}
 
 	new_port->port_handle = n;
+
+	new_port->port_peer_name = port->port_peer_name;
+	get_peer_info(new_port);
 
 	return new_port;
 }
@@ -1524,6 +1521,7 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 	response->p_resp_data.cstr_length = (ULONG) port_address.length();
 	memcpy(response->p_resp_data.cstr_address, port_address.ptr(), port_address.length());
 
+	new_port->port_peer_name = port->port_peer_name;
 	return new_port;
 }
 
@@ -2310,6 +2308,38 @@ static void alarm_handler( int x)
 }
 #endif
 
+void get_peer_info(rem_port* port)
+{
+/**************************************
+*
+*	g e t _ p e e r _ i n f o
+*
+**************************************
+*
+* Functional description
+*	Port just connected. Obtain some info about connection and peer.
+*
+**************************************/
+	port->port_protocol_id = "TCPv4";
+
+	SockAddr address;
+	if (address.getpeername(port->port_handle) == 0)
+	{
+		address.unmapV4();	// convert mapped IPv4 to regular IPv4
+		char host[64];		// 32 digits, 7 colons, 1 trailing null byte
+		char serv[16];
+		int nameinfo = getnameinfo(address.ptr(), address.length(), host, sizeof(host),
+			serv, sizeof(serv), NI_NUMERICHOST);
+
+		if (!nameinfo)
+			port->port_address.printf("%s/%s", host, serv);
+
+		if (address.family() == AF_INET6)
+			port->port_protocol_id = "TCPv6";
+	}
+}
+
+
 static void inet_gen_error(bool releasePort, rem_port* port, const Arg::StatusVector& v)
 {
 /**************************************
@@ -2427,8 +2457,38 @@ static void inet_error(bool releasePort, rem_port* port, const TEXT* function, I
  **************************************/
 	if (status)
 	{
-		if (port->port_state != rem_port::BROKEN) {
-			gds__log("INET/inet_error: %s errno = %d", function, status);
+		if (port->port_state != rem_port::BROKEN) 
+		{
+			string err;
+			err.printf("INET/inet_error: %s errno = %d", function, status);
+
+			if (port->port_peer_name.hasData() || port->port_address.hasData())
+			{
+				err.append(port->port_flags & PORT_async ? ", aux " : ", ");
+				err.append(port->port_server_flags ? "client" : "server");
+
+				if (port->port_peer_name.hasData())
+				{
+					err.append(" host = "); 
+					err.append(port->port_peer_name);
+				}
+
+				if (port->port_address.hasData())
+				{
+					if (port->port_peer_name.hasData())
+						err.append(",");
+
+					err.append(" address = ");
+					err.append(port->port_address);
+				}
+			}
+			if (port->port_user_name.hasData())
+			{
+				err.append(", user = ");
+				err.append(port->port_user_name);
+			}
+
+			gds__log(err.c_str());
 		}
 
 		inet_gen_error(releasePort, port, Arg::Gds(operation) << SYS_ERR(status));
