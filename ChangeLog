@@ -1,3 +1,13 @@
+ 2016-01-09 17:10  alexpeshkoff 
+   M src/jrd/Relation.h
+   M src/jrd/cmp.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/evl.cpp
+   M src/jrd/lck.cpp
+   M src/jrd/lck.h
+   M src/jrd/met.epp
+Backported fix for CORE-3024: Error "no current record for fetch operation" after ALTER VIEW
+
  2016-01-06 18:33  asfernandes 
    M src/jrd/SysFunction.cpp
 Misc.
