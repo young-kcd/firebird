@@ -1,4 +1,4 @@
-*** How to migrate existaing users from firebird 2.X to firebird 3? ***
+*** How to migrate existing users from firebird 2.X to firebird 3? ***
 
 Firebird 3 is using new method to validate users on the server.
 Direct upgrade of security database is therefore impossible.
