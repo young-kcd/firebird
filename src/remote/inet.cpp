@@ -2329,7 +2329,7 @@ void get_peer_info(rem_port* port)
 		char host[64];		// 32 digits, 7 colons, 1 trailing null byte
 		char serv[16];
 		int nameinfo = getnameinfo(address.ptr(), address.length(), host, sizeof(host),
-			serv, sizeof(serv), NI_NUMERICHOST);
+			serv, sizeof(serv), NI_NUMERICHOST | NI_NUMERICSERV);
 
 		if (!nameinfo)
 			port->port_address.printf("%s/%s", host, serv);
