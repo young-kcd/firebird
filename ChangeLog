@@ -1,3 +1,7 @@
+ 2016-01-10 14:20  hvlad 
+   M src/remote/inet.cpp
+Improvement CORE-2493 : Append the IP address of the remote host to error messages in firebird.log for TCP connections
+
  2016-01-06 18:20  asfernandes 
    M src/dsql/dsql.cpp
    M src/jrd/SysFunction.cpp
