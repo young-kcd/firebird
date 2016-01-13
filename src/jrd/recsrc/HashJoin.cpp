@@ -227,7 +227,7 @@ class HashJoin::HashTable : public PermanentStorage
 			const ULONG len2 = m_itemLength;
 			const ULONG minLen = MIN(len1, len2);
 
-			if (memcmp(ptr1, ptr2, len1))
+			if (memcmp(ptr1, ptr2, minLen))
 			{
 				m_iterator = INVALID_ITERATOR;
 				return false;
