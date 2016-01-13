@@ -2488,7 +2488,9 @@ static void inet_error(bool releasePort, rem_port* port, const TEXT* function, I
 				err.append(port->port_user_name);
 			}
 
-			gds__log(err.c_str());
+			// Address could contain percent sign inside, therefore make
+			// sure error string not used as printf format string.
+			gds__log("%s", err.c_str());
 		}
 
 		inet_gen_error(releasePort, port, Arg::Gds(operation) << SYS_ERR(status));
