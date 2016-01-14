@@ -256,12 +256,12 @@ JAttachment::JAttachment(StableAttachmentPart* sa)
 
 Attachment* JAttachment::getHandle() throw()
 {
-	return att->getHandle();
+	return att ? att->getHandle() : NULL;
 }
 
 const Attachment* JAttachment::getHandle() const throw()
 {
-	return att->getHandle();
+	return att ? att->getHandle() : NULL;
 }
 
 //#define DEBUG_ATT_COUNTERS
