@@ -1,3 +1,17 @@
+ 2016-01-13 13:53  asfernandes 
+   M extern/icu/Readme.txt
+   M extern/icu/icu.exe
+Add missing (GBK, for example) character sets to our ICU data file.
+
+ 2016-01-13 10:08  dimitr 
+   M src/jrd/recsrc/HashJoin.cpp
+Minor correction.
+
+ 2016-01-13 09:35  hvlad 
+   M src/remote/inet.cpp
+IPv6 address could contain percent sign inside, therefore make sure error string not used as vfprintf format string by gds__log().
+See also comments at CORE-2493.
+
  2016-01-11 14:23  alexpeshkoff 
    M builds/install/arch-specific/linux/makeInstallImage.sh.in
    M src/misc/upgrade/v3.0/security_database.txt
