@@ -129,6 +129,8 @@ begin
 		att.detach(st);
 		att := nil;
 
+		dpb.dispose;
+		dpb := nil;
 	except
 		on e: FbException do PrintError(e.getStatus);
 	end;
