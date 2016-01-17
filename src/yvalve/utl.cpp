@@ -775,11 +775,6 @@ public:
 		}
 	}
 
-	~XpbBuilder()
-	{
-		delete pb;
-	}
-
 	// IXpbBuilder implementation
 	void clear(CheckStatusWrapper* status)
 	{
@@ -1040,7 +1035,7 @@ public:
 	}
 
 private:
-	ClumpletWriter* pb;
+	AutoPtr<ClumpletWriter> pb;
 	unsigned char nextTag;
 	string strVal;
 };
