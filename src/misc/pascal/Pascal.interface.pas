@@ -36,4 +36,3 @@
 		dsc_length, dsc_sub_type, dsc_flags: Int16;
 		dsc_address: ^Byte;
 	end;
-

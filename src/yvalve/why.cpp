@@ -4928,6 +4928,8 @@ YTransaction* YTransaction::enterDtc(CheckStatusWrapper* status)
 
 
 //-------------------------------------
+
+
 YAttachment::YAttachment(IProvider* aProvider, IAttachment* aNext, const PathName& aDbPath)
 	: YHelper(aNext),
 	  provider(aProvider),
@@ -5819,6 +5821,7 @@ YService* Dispatcher::attachServiceManager(CheckStatusWrapper* status, const cha
 				default:
 					return NULL;
 			}
+
 			currentStatus->init();
 		}
 

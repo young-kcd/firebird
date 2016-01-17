@@ -127,7 +127,7 @@ static void raiseLimit(int resource);
 static void logSecurityDatabaseError(const char* path, ISC_STATUS* status)
 {
 	// If I/O error happened then rather likely we just miss standard security DB
-	// Since FB3 with it's multiple security databases - not too big trouble
+	// Since FB3 with its multiple security databases - not too big trouble
 	if (fb_utils::containsErrorCode(status, isc_io_error))
 		return;
 

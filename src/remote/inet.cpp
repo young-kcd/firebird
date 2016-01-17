@@ -2457,7 +2457,7 @@ static void inet_error(bool releasePort, rem_port* port, const TEXT* function, I
  **************************************/
 	if (status)
 	{
-		if (port->port_state != rem_port::BROKEN) 
+		if (port->port_state != rem_port::BROKEN)
 		{
 			string err;
 			err.printf("INET/inet_error: %s errno = %d", function, status);
@@ -2469,7 +2469,7 @@ static void inet_error(bool releasePort, rem_port* port, const TEXT* function, I
 
 				if (port->port_peer_name.hasData())
 				{
-					err.append(" host = "); 
+					err.append(" host = ");
 					err.append(port->port_peer_name);
 				}
 
@@ -2482,6 +2482,7 @@ static void inet_error(bool releasePort, rem_port* port, const TEXT* function, I
 					err.append(port->port_address);
 				}
 			}
+
 			if (port->port_user_name.hasData())
 			{
 				err.append(", user = ");

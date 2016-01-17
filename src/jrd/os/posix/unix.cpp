@@ -433,7 +433,8 @@ void PIO_force_write(jrd_file* file, const bool forcedWrites, const bool notUseF
 			unix_error("re open() for SYNC/DIRECT", file, isc_io_open_err);
 		}
 
-		lockDatabaseFile(file->fil_desc, file->fil_flags & FIL_sh_write, false, file->fil_string, isc_io_open_err);
+		lockDatabaseFile(file->fil_desc, file->fil_flags & FIL_sh_write, false,
+			file->fil_string, isc_io_open_err);
 #endif //FCNTL_BROKEN
 
 #ifdef SOLARIS
@@ -951,8 +952,7 @@ static void lockDatabaseFile(int& desc, const bool share, const bool temporary,
 			return;
 		busy = (errno == EWOULDBLOCK);
 #endif
-	}
-	while (errno == EINTR);
+	} while (errno == EINTR);
 
 	maybeCloseFile(desc);
 

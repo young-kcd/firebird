@@ -168,7 +168,7 @@ namespace {
 	const UCHAR CRYPT_NORMAL = LCK_PR;
 	const UCHAR CRYPT_CHANGE = LCK_PW;
 	const UCHAR CRYPT_INIT = LCK_EX;
-	
+
 	const int MAX_PLUGIN_NAME_LEN = 31;
 }
 
@@ -783,7 +783,7 @@ namespace Jrd {
 				// Take shared lock on crypto manager and write data
 				BarSync::IoGuard ioGuard(tdbb, sync);
 				if (!slowIO)
-				return internalWrite(tdbb, sv, file, bdb, page) == SUCCESS_ALL;
+					return internalWrite(tdbb, sv, file, bdb, page) == SUCCESS_ALL;
 			}
 
 			// Have to use slow method - see full comments in read() function
