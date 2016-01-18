@@ -1,3 +1,22 @@
+ 2016-01-17 01:46  asfernandes 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/pag.cpp
+   M src/misc/pascal/Pascal.implementation.pas
+   M src/misc/pascal/Pascal.interface.pas
+   M src/remote/inet.cpp
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/yvalve/why.cpp
+Misc.
+
+ 2016-01-17 01:14  asfernandes 
+   M examples/interfaces/01.create.pas
+Missing dispose.
+
+ 2016-01-17 01:10  asfernandes 
+   M src/yvalve/utl.cpp
+Misc.
+
  2016-01-14 23:09  hvlad 
    M src/jrd/jrd.cpp
 Fixed crash reason (see CORE-5075).
