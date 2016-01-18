@@ -250,6 +250,7 @@ static const UCHAR db_items[] =
 #ifdef DEV_BUILD
 	isc_info_db_id,
 #endif
+	fb_info_crypt_state,
 	isc_info_end
 };
 
@@ -453,6 +454,30 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 			}
 			else
 				sprintf(info, "Number of DB pages free = %"SLONGFORMAT"%s", value_out, separator);
+			break;
+
+		case fb_info_crypt_state:
+			value_out = ISQL_vax_integer(d, length);
+			if (translate)
+			{
+				Firebird::string s;
+				if (value_out & fb_info_crypt_encypted)
+					IUTILS_msg_get(DATABASE_CRYPTED, msg);
+				else
+					IUTILS_msg_get(DATABASE_NOT_CRYPTED, msg);
+				s = msg;
+				if (value_out & fb_info_crypt_process)
+				{
+					s += ", ";
+					IUTILS_msg_get(DATABASE_CRYPT_PROCESS, msg);
+					s += msg;
+				}
+				sprintf(info, "%s%s", s.c_str(), separator);
+			}
+			else
+				sprintf(info, "DB %sencrypted%s%s",
+					value_out & fb_info_crypt_encypted ? "" : "not ",
+					value_out & fb_info_crypt_process ? ", crypt thread not complete" : "", separator);
 			break;
 
 		case isc_info_sweep_interval:

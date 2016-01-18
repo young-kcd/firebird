@@ -43,6 +43,7 @@
 #include "../jrd/cch_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/pag_proto.h"
+#include "../jrd/inf_pub.h"
 #include "../jrd/os/pio_proto.h"
 #include "../common/isc_proto.h"
 #include "../common/classes/GetPlugins.h"
@@ -876,6 +877,11 @@ namespace Jrd {
 	ULONG CryptoManager::getLastPage(thread_db* tdbb)
 	{
 		return PAG_last_page(tdbb) + 1;
+	}
+
+    UCHAR CryptoManager::getCurrentState()
+	{
+		return (crypt ? fb_info_crypt_encypted : 0) | (process ? fb_info_crypt_process : 0);
 	}
 
 	CryptoManager::HolderAttachments::HolderAttachments(MemoryPool& p)

@@ -262,6 +262,9 @@ const int NO_MAPS					= 185;		// There are no mappings in this database
 const int INVALID_TERM_CHARS		= 186;		// Invalid characters for SET TERMINATOR are @1
 const int NUMBER_USED_PAGES			= 190;		// Number of used DB pages = @1
 const int NUMBER_FREE_PAGES			= 191;		// Number of free DB pages = @1
+const int DATABASE_CRYPTED			= 192;		// DB encrypted
+const int DATABASE_NOT_CRYPTED		= 193;		// DB not encrypted
+const int DATABASE_CRYPT_PROCESS	= 194;		// crypt thread not complete
 
 
 // Initialize types

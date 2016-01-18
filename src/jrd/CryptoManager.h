@@ -276,6 +276,7 @@ public:
 	void cryptThread();
 
 	ULONG getCurrentPage();
+	UCHAR getCurrentState();
 
 private:
 	class Buffer

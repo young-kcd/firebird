@@ -64,6 +64,7 @@
 #include "../common/StatusArg.h"
 #include "../common/classes/DbImplementation.h"
 #include "../jrd/validation.h"
+#include "../jrd/CryptoManager.h"
 
 using namespace Firebird;
 using namespace Jrd;
@@ -761,6 +762,11 @@ void INF_database_info(thread_db* tdbb,
 
 		case fb_info_pages_free:
 			length = INF_convert(PageSpace::maxAlloc(dbb) - PageSpace::usedPages(dbb), buffer);
+			break;
+
+		case fb_info_crypt_state:
+			length = INF_convert(dbb->dbb_crypto_manager ?
+				dbb->dbb_crypto_manager->getCurrentState() : 0, buffer);
 			break;
 
 		default:
