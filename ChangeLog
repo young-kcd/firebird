@@ -1,3 +1,14 @@
+ 2016-01-18 17:30  alexpeshkoff 
+   M src/isql/isql.h
+   M src/isql/show.epp
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+   M src/jrd/inf.cpp
+   M src/jrd/inf_pub.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+Fixed CORE-5077: ISQL does not show encryption status of database
+
  2016-01-17 01:46  asfernandes 
    M src/jrd/CryptoManager.cpp
    M src/jrd/os/posix/unix.cpp
