@@ -277,6 +277,7 @@ public:
 	dsql_dbb* att_dsql_instance;
 	bool att_in_use;						// attachment in use (can't be detached or dropped)
 	int att_use_count;						// number of API calls running except of asynchronous ones
+	ThreadId att_purge_tid;					// ID of thread running purge_attachment()
 
 	EDS::Connection* att_ext_connection;	// external connection executed by this attachment
 	ULONG att_ext_call_depth;				// external connection call depth, 0 for user attachment
@@ -392,7 +393,7 @@ const ULONG ATT_cancel_disable		= 0x00200L;	// Disable cancel operations
 const ULONG ATT_no_db_triggers		= 0x00400L;	// Don't execute database triggers
 const ULONG ATT_manual_lock			= 0x00800L;	// Was locked manually
 const ULONG ATT_async_manual_lock	= 0x01000L;	// Async mutex was locked manually
-const ULONG ATT_purge_started		= 0x02000L; // Purge already started - avoid 2 purges at once
+//const ULONG ATT_purge_started		= 0x02000L; // Purge already started - avoid 2 purges at once
 const ULONG ATT_system				= 0x04000L; // Special system attachment
 const ULONG ATT_creator				= 0x08000L; // This attachment created the DB
 const ULONG ATT_monitor_done		= 0x10000L; // Monitoring data is refreshed

@@ -5395,7 +5395,8 @@ static void check_database(thread_db* tdbb, bool async)
 		status_exception::raise(Arg::Gds(isc_bug_check) << Arg::Str(string));
 	}
 
-	if ((attachment->att_flags & ATT_shutdown) ||
+	if ((attachment->att_flags & ATT_shutdown) && 
+		(attachment->att_purge_tid != Thread::getId()) ||
 		((dbb->dbb_ast_flags & DBB_shutdown) &&
 			((dbb->dbb_ast_flags & DBB_shutdown_full) || !attachment->locksmith())))
 	{
@@ -6789,7 +6790,13 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 
 	Jrd::Attachment* attachment = sAtt->getHandle();
 
-	while (attachment && (attachment->att_flags & ATT_purge_started))
+	if (attachment && attachment->att_purge_tid == Thread::getId())
+	{
+		fb_assert(false); // recursive call - impossible ?
+		return;
+	}
+
+	while (attachment && attachment->att_purge_tid)
 	{
 		attachment->att_use_count--;
 
@@ -6812,7 +6819,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 		return;
 
 	fb_assert(attachment->att_flags & ATT_shutdown);
-	attachment->att_flags |= ATT_purge_started;
+	attachment->att_purge_tid = Thread::getId();
 
 	fb_assert(attachment->att_use_count > 0);
 	attachment = sAtt->getHandle();
@@ -6876,9 +6883,13 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 					// and commit the transaction
 					TRA_commit(tdbb, transaction, false);
 				}
-				catch (const Exception&)
+				catch (const Exception& ex)
 				{
 					attachment->att_flags = save_flags;
+
+					string s;
+					s.printf("Database: %s\n\tError at disconnect:", attachment->att_filename.c_str());
+					iscLogException(s.c_str(), ex);
 
 					if (dbb->dbb_flags & DBB_bugcheck)
 						throw;
@@ -6900,7 +6911,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 		{
 			if (!nocheckPurge)
 			{
-				attachment->att_flags &= ~ATT_purge_started;
+				attachment->att_purge_tid = 0;
 				throw;
 			}
 		}
@@ -6921,7 +6932,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 	{
 		if (!nocheckPurge)
 		{
-			attachment->att_flags &= ~ATT_purge_started;
+			attachment->att_purge_tid = 0;
 			throw;
 		}
 	}
@@ -7440,6 +7451,9 @@ ISC_STATUS thread_db::checkCancelState()
 
 	if (attachment)
 	{
+		if (attachment->att_purge_tid == Thread::getId())
+			return FB_SUCCESS;
+
 		if (attachment->att_flags & ATT_shutdown)
 		{
 			if (database->dbb_ast_flags & DBB_shutdown)
