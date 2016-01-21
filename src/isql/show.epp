@@ -461,7 +461,7 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 			if (translate)
 			{
 				Firebird::string s;
-				if (value_out & fb_info_crypt_encypted)
+				if (value_out & fb_info_crypt_encrypted)
 					IUTILS_msg_get(DATABASE_CRYPTED, msg);
 				else
 					IUTILS_msg_get(DATABASE_NOT_CRYPTED, msg);
@@ -476,7 +476,7 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 			}
 			else
 				sprintf(info, "DB %sencrypted%s%s",
-					value_out & fb_info_crypt_encypted ? "" : "not ",
+					value_out & fb_info_crypt_encrypted ? "" : "not ",
 					value_out & fb_info_crypt_process ? ", crypt thread not complete" : "", separator);
 			break;
 

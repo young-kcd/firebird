@@ -869,7 +869,7 @@ namespace Jrd {
 		return 0;
 	}
 
-	ULONG CryptoManager::getCurrentPage()
+	ULONG CryptoManager::getCurrentPage() const
 	{
 		return process ? currentPage.value() : 0;
 	}
@@ -879,9 +879,9 @@ namespace Jrd {
 		return PAG_last_page(tdbb) + 1;
 	}
 
-    UCHAR CryptoManager::getCurrentState()
+    UCHAR CryptoManager::getCurrentState() const
 	{
-		return (crypt ? fb_info_crypt_encypted : 0) | (process ? fb_info_crypt_process : 0);
+		return (crypt ? fb_info_crypt_encrypted : 0) | (process ? fb_info_crypt_process : 0);
 	}
 
 	CryptoManager::HolderAttachments::HolderAttachments(MemoryPool& p)

@@ -147,7 +147,7 @@ enum db_info_types
 
 enum db_info_crypt			/* flags set in fb_info_crypt_state */
 {
-	fb_info_crypt_encypted = 0x01,
+	fb_info_crypt_encrypted = 0x01,
 	fb_info_crypt_process = 0x02
 };
 
