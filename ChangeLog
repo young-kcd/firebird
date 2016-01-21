@@ -1,3 +1,9 @@
+ 2016-01-20 10:05  hvlad 
+   M src/jrd/Attachment.h
+   M src/jrd/jrd.cpp
+Fixed bug CORE-5075 : Triger on DISCONNECT with dynamic SQL (ES 'insert into ...'): 1) does not work in 3.0
+Also, log exception happens in ON DISCONNECT trigger.
+
  2016-01-18 17:30  alexpeshkoff 
    M src/isql/isql.h
    M src/isql/show.epp
