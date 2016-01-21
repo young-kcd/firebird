@@ -1020,7 +1020,11 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		}
 	}
 
-	bid* source = (bid*) from_desc->dsc_address;
+	// Use local copy of source blob id to not change contents of from_desc in 
+	// a case when it points to materialized temporary blob (see below for 
+	// assignment to *source).
+	bid srcBlobID = *(bid*) from_desc->dsc_address;
+	bid* source = &srcBlobID;
 	bid* destination = (bid*) to_desc->dsc_address;
 
 	// If nothing changed, do nothing.  If it isn't broken, don't fix it.
@@ -1174,7 +1178,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 					}
 					***/
 
-					source = &blobIndex->bli_blob_id;
+					*source = blobIndex->bli_blob_id;
 					continue;
 				}
 
@@ -1303,6 +1307,10 @@ blb* BLB_open2(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
+	// Use local copy of input blob id to not change contents of *blob_id in a 
+	// case when it points to materialized temporary blob.
+	bid blobId = *blob_id;
+
 	// Handle filter case
 	SSHORT from, to;
 	SSHORT from_charset, to_charset;
@@ -1325,9 +1333,9 @@ blb* BLB_open2(thread_db* tdbb,
 	bool try_relations = false;
 	BlobIndex* current = NULL;
 
-	if (!blob_id->bid_internal.bid_relation_id)
+	if (!blobId.bid_internal.bid_relation_id)
 	{
-		if (blob_id->isEmpty())
+		if (blobId.isEmpty())
 			blob->blb_flags |= BLB_eof;
 		else
 		{
@@ -1341,13 +1349,13 @@ blb* BLB_open2(thread_db* tdbb,
 
 			// Search the index of transaction blobs for a match
 			const blb* new_blob = NULL;
-			if (transaction->tra_blobs->locate(blob_id->bid_temp_id()))
+			if (transaction->tra_blobs->locate(blobId.bid_temp_id()))
 			{
 				current = &transaction->tra_blobs->current();
 				if (!current->bli_materialized)
 					new_blob = current->bli_blob_object;
 				else
-					blob_id = &current->bli_blob_id;
+					blobId = current->bli_blob_id;
 			}
 
 			if (!current || !current->bli_materialized)
@@ -1405,14 +1413,14 @@ blb* BLB_open2(thread_db* tdbb,
 
 		vec<jrd_rel*>* vector = dbb->dbb_relations;
 
-		if (blob_id->bid_internal.bid_relation_id >= vector->count() ||
-			!(blob->blb_relation = (*vector)[blob_id->bid_internal.bid_relation_id] ) )
+		if (blobId.bid_internal.bid_relation_id >= vector->count() ||
+			!(blob->blb_relation = (*vector)[blobId.bid_internal.bid_relation_id] ) )
 		{
 				ERR_post(Arg::Gds(isc_bad_segstr_id));
 		}
 
 		blob->blb_pg_space_id = blob->blb_relation->getPages(tdbb)->rel_pg_space_id;
-		DPM_get_blob(tdbb, blob, blob_id->get_permanent_number(), false, (SLONG) 0);
+		DPM_get_blob(tdbb, blob, blobId.get_permanent_number(), false, (SLONG) 0);
 
 		// If the blob is known to be damaged, ignore it.
 
