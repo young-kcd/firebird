@@ -1,3 +1,17 @@
+ 2016-01-21 11:00  hvlad 
+   M src/jrd/blb.cpp
+Fixed bug CORE-5078 : "Invalid BLOB ID" error
+
+ 2016-01-21 00:25  robocop 
+   M src/jrd/CryptoManager.h
+Misc.
+
+ 2016-01-21 00:25  robocop 
+   M src/isql/show.epp
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/inf_pub.h
+Typo.
+
  2016-01-20 10:05  hvlad 
    M src/jrd/Attachment.h
    M src/jrd/jrd.cpp
