@@ -2685,8 +2685,10 @@ void LockManager::post_blockage(thread_db* tdbb, lrq* request, lbl* lock)
 	ASSERT_ACQUIRED;
 	CHECK(request->lrq_flags & LRQ_pending);
 
-	srq* lock_srq = SRQ_NEXT(lock->lbl_requests);
-	while (lock_srq != &lock->lbl_requests)
+	Firebird::HalfStaticArray<SRQ_PTR, 16> blocking_owners;
+
+	SRQ lock_srq;
+	SRQ_LOOP(lock->lbl_requests, lock_srq)
 	{
 		lrq* const block = (lrq*) ((UCHAR*) lock_srq - offsetof(lrq, lrq_lbl_requests));
 		own* const blocking_owner = (own*) SRQ_ABS_PTR(block->lrq_owner);
@@ -2705,7 +2707,6 @@ void LockManager::post_blockage(thread_db* tdbb, lrq* request, lbl* lock)
 			!block->lrq_ast_routine ||
 			(block->lrq_flags & LRQ_blocking_seen))
 		{
-			lock_srq = SRQ_NEXT((*lock_srq));
 			continue;
 		}
 
@@ -2719,26 +2720,32 @@ void LockManager::post_blockage(thread_db* tdbb, lrq* request, lbl* lock)
 			block->lrq_flags &= ~(LRQ_blocking_seen | LRQ_just_granted);
 		}
 
-		if (blocking_owner->own_flags & OWN_signaled)
-		{
-			lock_srq = SRQ_NEXT((*lock_srq));
-			continue;
-		}
+		blocking_owners.add(block->lrq_owner);
 
-		if (!signal_owner(tdbb, blocking_owner))
+		if (block->lrq_state == LCK_EX)
+			break;
+	}
+
+	Firebird::HalfStaticArray<SRQ_PTR, 16> dead_processes;
+
+	for (SRQ_PTR* iter = blocking_owners.begin(); iter != blocking_owners.end(); ++iter)
+	{
+		own* const blocking_owner = (own*) SRQ_ABS_PTR(*iter);
+
+		if (blocking_owner->own_count &&
+			!(blocking_owner->own_flags & OWN_signaled) &&
+			!signal_owner(tdbb, blocking_owner))
 		{
-			prc* const process = (prc*) SRQ_ABS_PTR(blocking_owner->own_process);
+			dead_processes.add(blocking_owner->own_process);
+		}
+	}
+
+	for (SRQ_PTR* iter = dead_processes.begin(); iter != dead_processes.end(); ++iter)
+	{
+		prc* const process = (prc*) SRQ_ABS_PTR(*iter);
+
+		if (process->prc_process_id)
 			purge_process(process);
-		}
-
-		// Restart from the beginning, as the list of requests chained to our lock
-		// could be changed in the meantime thus invalidating the iterator
-
-		owner = (own*) SRQ_ABS_PTR(owner_offset);
-		request = (lrq*) SRQ_ABS_PTR(request_offset);
-		lock = (lbl*) SRQ_ABS_PTR(lock_offset);
-
-		lock_srq = SRQ_NEXT(lock->lbl_requests);
 	}
 }
 
