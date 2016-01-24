@@ -510,7 +510,7 @@ protected:
 public:
 	FB_API_HANDLE& getAPIHandle() { return m_handle; }
 
-	virtual void attach(Jrd::thread_db* tdbb, const Firebird::string& dbName,
+	virtual void attach(Jrd::thread_db* tdbb, const Firebird::PathName& dbName,
 		const Firebird::string& user, const Firebird::string& pwd,
 		const Firebird::string& role);
 

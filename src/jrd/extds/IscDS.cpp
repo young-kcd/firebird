@@ -110,11 +110,11 @@ IscConnection::~IscConnection()
 {
 }
 
-void IscConnection::attach(thread_db* tdbb, const string& dbName, const string& user,
+void IscConnection::attach(thread_db* tdbb, const PathName& dbName, const string& user,
 	const string& pwd, const string& role)
 {
 	m_dbName = dbName;
-	generateDPB(tdbb, m_dpb, user, pwd, role);
+	generateDPB(tdbb, m_dpb, user, pwd, role, dbName);
 
 	FbLocalStatus status;
 	{

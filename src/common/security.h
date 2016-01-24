@@ -29,6 +29,7 @@
 #include "../common/classes/GetPlugins.h"
 #include "../common/classes/array.h"
 #include "../common/classes/MetaName.h"
+#include "../common/classes/objects_array.h"
 
 namespace Auth {
 
@@ -262,6 +263,13 @@ public:
 };
 
 int setGsecCode(int code, int operation);
+
+// tools to operate lists of security-related plugins
+typedef Firebird::ObjectsArray<Firebird::PathName> ParsedList;
+void parseList(ParsedList& parsed, Firebird::PathName list);
+void makeList(Firebird::PathName& list, const ParsedList& parsed);
+void mergeLists(Firebird::PathName& list, const Firebird::PathName& serverList,
+	const Firebird::PathName& clientList);
 
 } // namespace Auth
 

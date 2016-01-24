@@ -134,7 +134,7 @@ private:
 	FbStatusVector *v;
 };
 
-void InternalConnection::attach(thread_db* tdbb, const string& dbName,
+void InternalConnection::attach(thread_db* tdbb, const PathName& dbName,
 		const string& user, const string& pwd,
 		const string& role)
 {
@@ -157,7 +157,7 @@ void InternalConnection::attach(thread_db* tdbb, const string& dbName,
 	{
 		m_isCurrent = false;
 		m_dbName = dbb->dbb_database_name.c_str();
-		generateDPB(tdbb, m_dpb, user, pwd, role);
+		generateDPB(tdbb, m_dpb, user, pwd, role, dbName);
 
 		FbLocalStatus status;
 
@@ -238,7 +238,7 @@ bool InternalConnection::isAvailable(thread_db* tdbb, TraScope /*traScope*/) con
 		(m_isCurrent && (tdbb->getAttachment() == m_attachment->getHandle()));
 }
 
-bool InternalConnection::isSameDatabase(thread_db* tdbb, const string& dbName,
+bool InternalConnection::isSameDatabase(thread_db* tdbb, const PathName& dbName,
 		const string& user, const string& pwd,
 		const string& role) const
 {
