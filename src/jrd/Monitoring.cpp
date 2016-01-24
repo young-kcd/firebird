@@ -786,6 +786,7 @@ void Monitoring::putDatabase(SnapshotData::DumpRecord& record, const Database* d
 
 	if (database->dbb_flags & DBB_shared)
 	{
+		MutexLockGuard guard(database->dbb_stats_mutex, FB_FUNCTION);
 		putStatistics(record, database->dbb_stats, writer, stat_id, stat_database);
 		putMemoryUsage(record, database->dbb_memory_stats, writer, stat_id, stat_database);
 	}
@@ -876,6 +877,7 @@ void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Atta
 	}
 	else
 	{
+		MutexLockGuard guard(attachment->att_database->dbb_stats_mutex, FB_FUNCTION);
 		putStatistics(record, attachment->att_database->dbb_stats, writer, stat_id, stat_attachment);
 		putMemoryUsage(record, attachment->att_database->dbb_memory_stats, writer, stat_id, stat_attachment);
 	}
@@ -1182,13 +1184,15 @@ void Monitoring::checkState(thread_db* tdbb)
 }
 
 
-void Monitoring::dumpAttachment(thread_db* tdbb, const Attachment* attachment, bool ast)
+void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment, bool ast)
 {
 	if (!attachment->att_user)
 		return;
 
 	Database* const dbb = tdbb->getDatabase();
 	MemoryPool& pool = *dbb->dbb_permanent;
+
+	attachment->mergeStats();
 
 	const AttNumber att_id = attachment->att_attachment_id;
 	const string& user_name = attachment->att_user->usr_user_name;

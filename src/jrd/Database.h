@@ -447,8 +447,9 @@ public:
 	Firebird::Semaphore dbb_gc_fini;	// Event for finalization garbage collector
 
 	Firebird::MemoryStats dbb_memory_stats;
-
 	RuntimeStatistics dbb_stats;
+	mutable Firebird::Mutex dbb_stats_mutex;
+
 	TraNumber	dbb_last_header_write;	// Transaction id of last header page physical write
 	SLONG dbb_flush_cycle;				// Current flush cycle
 	ULONG dbb_sweep_interval;			// Transactions between sweep

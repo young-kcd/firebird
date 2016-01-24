@@ -1037,8 +1037,6 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number)
 			if (backup_state == Ods::hdr_nbak_stalled || backup_state == Ods::hdr_nbak_merge)
 				bm->flushDifference(tdbb);
 		}
-
-		tdbb->bumpStats(RuntimeStatistics::FLUSHES);
 	}
 
 	// take the opportunity when we know there are no pages

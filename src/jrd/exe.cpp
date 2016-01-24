@@ -902,9 +902,6 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 		impure->vlu_flags = 0;
 	}
 
-	if (statement->sqlText)
-		tdbb->bumpStats(RuntimeStatistics::STMT_EXECUTES);
-
 	request->req_src_line = 0;
 	request->req_src_column = 0;
 

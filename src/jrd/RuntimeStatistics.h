@@ -50,7 +50,6 @@ public:
 		PAGE_READS,
 		PAGE_MARKS,
 		PAGE_WRITES,
-		FLUSHES,
 		RECORD_SEQ_READS,
 		RECORD_IDX_READS,
 		RECORD_UPDATES,
@@ -65,23 +64,18 @@ public:
 		RECORD_BACKVERSION_READS,
 		RECORD_FRAGMENT_READS,
 		RECORD_RPT_READS,
-		SORTS,
-		SORT_GETS,
-		SORT_PUTS,
-		STMT_PREPARES,
-		STMT_EXECUTES,
 		TOTAL_ITEMS		// last
 	};
+
+private:
+	static const size_t REL_BASE_OFFSET = RECORD_SEQ_READS;
+	static const size_t REL_TOTAL_ITEMS = RECORD_RPT_READS - REL_BASE_OFFSET + 1;
 
 	// Performance counters for individual table
 
 	class RelationCounts
 	{
-		static const size_t REL_BASE_OFFSET = RECORD_SEQ_READS;
-
 	public:
-		static const size_t REL_TOTAL_ITEMS = RECORD_RPT_READS - REL_BASE_OFFSET + 1;
-
 		explicit RelationCounts(SLONG relation_id)
 			: rlc_relation_id(relation_id)
 		{
@@ -158,6 +152,7 @@ public:
 	typedef Firebird::SortedArray<RelationCounts, Firebird::EmptyStorage<RelationCounts>,
 		SLONG, RelationCounts> RelCounters;
 
+public:
 	RuntimeStatistics()
 		: Firebird::AutoStorage(), rel_counts(getPool())
 	{
@@ -226,12 +221,14 @@ public:
 
 	// add difference between newStats and baseStats to our counters
 	// newStats and baseStats must be "in-sync"
-	void adjust(const RuntimeStatistics& baseStats, const RuntimeStatistics& newStats)
+	void adjust(const RuntimeStatistics& baseStats, const RuntimeStatistics& newStats, bool relStatsOnly = false)
 	{
 		if (baseStats.allChgNumber != newStats.allChgNumber)
 		{
+			const size_t FIRST_ITEM = relStatsOnly ? REL_BASE_OFFSET : 0;
+
 			allChgNumber++;
-			for (size_t i = 0; i < TOTAL_ITEMS; ++i)
+			for (size_t i = FIRST_ITEM; i < TOTAL_ITEMS; ++i)
 				values[i] += newStats.values[i] - baseStats.values[i];
 
 			if (baseStats.relChgNumber != newStats.relChgNumber)

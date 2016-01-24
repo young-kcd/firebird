@@ -342,8 +342,6 @@ void Sort::get(thread_db* tdbb, ULONG** record_address)
 		{
 			diddleKey((UCHAR*) record->sort_record_key, false);
 		}
-
-		tdbb->bumpStats(RuntimeStatistics::SORT_GETS);
 	}
 	catch (const BadAlloc&)
 	{
@@ -419,8 +417,6 @@ void Sort::put(thread_db* tdbb, ULONG** record_address)
 		*m_next_pointer++ = reinterpret_cast<sort_record*>(record->sr_sort_record.sort_record_key);
 		m_records++;
 		*record_address = (ULONG*) record->sr_sort_record.sort_record_key;
-
-		tdbb->bumpStats(RuntimeStatistics::SORT_PUTS);
 	}
 	catch (const BadAlloc&)
 	{
@@ -463,7 +459,6 @@ void Sort::sort(thread_db* tdbb)
 			sort();
 			m_next_pointer = m_first_pointer + 1;
 			m_flags |= scb_sorted;
-			tdbb->bumpStats(RuntimeStatistics::SORTS);
 			return;
 		}
 
@@ -619,7 +614,6 @@ void Sort::sort(thread_db* tdbb)
 		sortRunsBySeek(run_count);
 
 		m_flags |= scb_sorted;
-		tdbb->bumpStats(RuntimeStatistics::SORTS);
 	}
 	catch (const BadAlloc&)
 	{

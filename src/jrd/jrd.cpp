@@ -6358,6 +6358,8 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 		attachment->deletePool(pool);
 	}
 
+	attachment->mergeStats();
+
 	// remove the attachment block from the dbb linked list
 	Sync sync(&dbb->dbb_sync, "jrd.cpp: release_attachment");
 	sync.lock(SYNC_EXCLUSIVE);
@@ -7399,17 +7401,13 @@ void thread_db::setDatabase(Database* val)
 		const bool wasActive = database && (priorThread || nextThread || database->dbb_active_threads == this);
 
 		if (wasActive)
-		{
 			deactivate();
-		}
 
 		database = val;
 		dbbStat = val ? &val->dbb_stats : RuntimeStatistics::getDummy();
 
 		if (wasActive)
-		{
 			activate();
-		}
 	}
 }
 

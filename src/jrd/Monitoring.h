@@ -385,7 +385,7 @@ public:
 	static void checkState(thread_db* tdbb);
 	static SnapshotData* getSnapshot(thread_db* tdbb);
 
-	static void dumpAttachment(thread_db* tdbb, const Attachment* attachment, bool ast);
+	static void dumpAttachment(thread_db* tdbb, Attachment* attachment, bool ast);
 
 	static void publishAttachment(thread_db* tdbb);
 	static void cleanupAttachment(thread_db* tdbb);

@@ -179,6 +179,7 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	  att_lock_owner_id(Database::getLockOwnerId()),
 	  att_backup_state_counter(0),
 	  att_stats(*pool),
+	  att_base_stats(*pool),
 	  att_working_directory(*pool),
 	  att_filename(*pool),
 	  att_timestamp(Firebird::TimeStamp::getCurrentTimeStamp()),
@@ -378,6 +379,14 @@ void Jrd::Attachment::signalShutdown()
 		att_ext_connection->cancelExecution();
 
 	LCK_cancel_wait(this);
+}
+
+
+void Jrd::Attachment::mergeStats()
+{
+	MutexLockGuard guard(att_database->dbb_stats_mutex, FB_FUNCTION);
+	att_database->dbb_stats.adjust(att_base_stats, att_stats, true);
+	att_base_stats.assign(att_stats);
 }
 
 

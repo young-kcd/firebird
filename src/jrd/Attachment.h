@@ -250,6 +250,7 @@ public:
 	SecurityClass*	att_security_class;		// security class for database
 	SecurityClassList*	att_security_classes;	// security classes
 	RuntimeStatistics	att_stats;
+	RuntimeStatistics	att_base_stats;
 	ULONG		att_flags;					// Flags describing the state of the attachment
 	SSHORT		att_client_charset;			// user's charset specified in dpb
 	SSHORT		att_charset;				// current (client or external) attachment charset
@@ -354,6 +355,8 @@ public:
 
 	void signalCancel();
 	void signalShutdown();
+
+	void mergeStats();
 
 	bool backupStateWriteLock(thread_db* tdbb, SSHORT wait);
 	void backupStateWriteUnLock(thread_db* tdbb);

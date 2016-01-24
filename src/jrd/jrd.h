@@ -459,12 +459,30 @@ public:
 
 	void bumpRelStats(const RuntimeStatistics::StatType index, SLONG relation_id, SINT64 delta = 1)
 	{
-		bumpStats(index, delta);
+		// We don't bump counters for dbbStat here, they're merged from attStats on demand
 
-		reqStat->bumpRelValue(index, relation_id, delta);
-		traStat->bumpRelValue(index, relation_id, delta);
-		attStat->bumpRelValue(index, relation_id, delta);
-		dbbStat->bumpRelValue(index, relation_id, delta);
+		reqStat->bumpValue(index, delta);
+		traStat->bumpValue(index, delta);
+		attStat->bumpValue(index, delta);
+
+		const RuntimeStatistics* const dummyStat = RuntimeStatistics::getDummy();
+
+		// We expect that at least attStat is present (not a dummy object)
+
+		fb_assert(attStat != dummyStat);
+
+		// Relation statistics is a quite complex beast, so a conditional check
+		// does not hurt. It also allows to avoid races while accessing the static
+		// dummy object concurrently.
+
+		if (reqStat != dummyStat)
+			reqStat->bumpRelValue(index, relation_id, delta);
+
+		if (traStat != dummyStat)
+			traStat->bumpRelValue(index, relation_id, delta);
+
+		if (attStat != dummyStat)
+			attStat->bumpRelValue(index, relation_id, delta);
 	}
 
 	ISC_STATUS checkCancelState();

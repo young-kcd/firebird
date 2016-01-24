@@ -281,8 +281,6 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 
 	if (internalFlag)
 		statement->flags |= FLAG_INTERNAL;
-	else
-		tdbb->bumpStats(RuntimeStatistics::STMT_PREPARES);
 
 	return statement;
 }
