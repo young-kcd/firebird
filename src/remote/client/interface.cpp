@@ -5361,7 +5361,7 @@ static void authenticateStep0(ClntAuthBlock& cBlock)
 			{
 				iscLogStatus("Authentication, client plugin:", &s);
 			}
-			(Arg::Gds(isc_login)
+			(Arg::Gds(isc_login_error)
 #ifdef DEV_BUILD
 								 << Arg::StatusVector(&s)
 #endif
