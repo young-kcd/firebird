@@ -30,6 +30,7 @@
 #include "../common/dsc.h"
 #include "../exe.h"
 #include "IscDS.h"
+#include "ValidatePassword.h"
 #include "../tra.h"
 
 #include "../blb_proto.h"
@@ -114,7 +115,8 @@ void IscConnection::attach(thread_db* tdbb, const PathName& dbName, const string
 	const string& pwd, const string& role)
 {
 	m_dbName = dbName;
-	generateDPB(tdbb, m_dpb, user, pwd, role, dbName);
+	generateDPB(tdbb, m_dpb, user, pwd, role);
+	validatePassword(tdbb, m_dbName, m_dpb);
 
 	FbLocalStatus status;
 	{

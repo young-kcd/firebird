@@ -27,14 +27,24 @@
 #include "../../common/classes/array.h"
 #include "../../common/classes/ClumpletWriter.h"
 #include "../../common/classes/locks.h"
+#include "../../common/classes/init.h"
+#include "../../common/classes/NestConst.h"
 #include "../../common/utils_proto.h"
+#include "../../jrd/status.h"
 
+namespace Firebird
+{
+	class MetaName;
+}
 
 namespace Jrd
 {
 	class jrd_tra;
+	class jrd_req;
 	class thread_db;
 	class ValueListNode;
+	class Attachment;
+	class ValueExprNode;
 }
 
 namespace EDS {
@@ -215,9 +225,7 @@ public:
 protected:
 	void generateDPB(Jrd::thread_db* tdbb, Firebird::ClumpletWriter& dpb,
 		const Firebird::string& user, const Firebird::string& pwd,
-		const Firebird::string& role, const Firebird::PathName& file) const;
-	static void validatePassword(Jrd::thread_db* tdbb, const Firebird::PathName& file,
-		Firebird::ClumpletWriter& dpb);
+		const Firebird::string& role) const;
 
 	virtual Transaction* doCreateTransaction() = 0;
 	virtual Statement* doCreateStatement() = 0;

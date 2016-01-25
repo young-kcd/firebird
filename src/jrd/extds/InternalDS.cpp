@@ -41,6 +41,7 @@
 #include "../Function.h"
 
 #include "InternalDS.h"
+#include "ValidatePassword.h"
 
 using namespace Jrd;
 using namespace Firebird;
@@ -157,7 +158,8 @@ void InternalConnection::attach(thread_db* tdbb, const PathName& dbName,
 	{
 		m_isCurrent = false;
 		m_dbName = dbb->dbb_database_name.c_str();
-		generateDPB(tdbb, m_dpb, user, pwd, role, dbName);
+		generateDPB(tdbb, m_dpb, user, pwd, role);
+		validatePassword(tdbb, m_dbName, m_dpb);
 
 		FbLocalStatus status;
 
