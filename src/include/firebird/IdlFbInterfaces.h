@@ -84,6 +84,7 @@ namespace Firebird
 	class ITimerControl;
 	class IVersionCallback;
 	class IUtil;
+	class IOffsetsCallback;
 	class IXpbBuilder;
 	class ITraceConnection;
 	class ITraceDatabaseConnection;
@@ -3446,6 +3447,7 @@ namespace Firebird
 			unsigned (CLOOP_CARG *formatStatus)(IUtil* self, char* buffer, unsigned bufferSize, IStatus* status) throw();
 			unsigned (CLOOP_CARG *getClientVersion)(IUtil* self) throw();
 			IXpbBuilder* (CLOOP_CARG *getXpbBuilder)(IUtil* self, IStatus* status, unsigned kind, const unsigned char* buf, unsigned len) throw();
+			unsigned (CLOOP_CARG *setOffsets)(IUtil* self, IStatus* status, IMessageMetadata* metadata, IOffsetsCallback* callback) throw();
 		};
 
 	protected:
@@ -3537,6 +3539,43 @@ namespace Firebird
 			IXpbBuilder* ret = static_cast<VTable*>(this->cloopVTable)->getXpbBuilder(this, status, kind, buf, len);
 			StatusType::checkException(status);
 			return ret;
+		}
+
+		template <typename StatusType> unsigned setOffsets(StatusType* status, IMessageMetadata* metadata, IOffsetsCallback* callback)
+		{
+			StatusType::clearException(status);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->setOffsets(this, status, metadata, callback);
+			StatusType::checkException(status);
+			return ret;
+		}
+	};
+
+	class IOffsetsCallback : public IVersioned
+	{
+	public:
+		struct VTable : public IVersioned::VTable
+		{
+			void (CLOOP_CARG *setOffset)(IOffsetsCallback* self, IStatus* status, unsigned index, unsigned offset, unsigned nullOffset) throw();
+		};
+
+	protected:
+		IOffsetsCallback(DoNotInherit)
+			: IVersioned(DoNotInherit())
+		{
+		}
+
+		~IOffsetsCallback()
+		{
+		}
+
+	public:
+		static const unsigned VERSION = 2;
+
+		template <typename StatusType> void setOffset(StatusType* status, unsigned index, unsigned offset, unsigned nullOffset)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->setOffset(this, status, index, offset, nullOffset);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -12257,6 +12296,7 @@ namespace Firebird
 					this->formatStatus = &Name::cloopformatStatusDispatcher;
 					this->getClientVersion = &Name::cloopgetClientVersionDispatcher;
 					this->getXpbBuilder = &Name::cloopgetXpbBuilderDispatcher;
+					this->setOffsets = &Name::cloopsetOffsetsDispatcher;
 				}
 			} vTable;
 
@@ -12424,6 +12464,21 @@ namespace Firebird
 				return static_cast<IXpbBuilder*>(0);
 			}
 		}
+
+		static unsigned CLOOP_CARG cloopsetOffsetsDispatcher(IUtil* self, IStatus* status, IMessageMetadata* metadata, IOffsetsCallback* callback) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::setOffsets(&status2, metadata, callback);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<unsigned>(0);
+			}
+		}
 	};
 
 	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUtil> > >
@@ -12451,6 +12506,58 @@ namespace Firebird
 		virtual unsigned formatStatus(char* buffer, unsigned bufferSize, IStatus* status) = 0;
 		virtual unsigned getClientVersion() = 0;
 		virtual IXpbBuilder* getXpbBuilder(StatusType* status, unsigned kind, const unsigned char* buf, unsigned len) = 0;
+		virtual unsigned setOffsets(StatusType* status, IMessageMetadata* metadata, IOffsetsCallback* callback) = 0;
+	};
+
+	template <typename Name, typename StatusType, typename Base>
+	class IOffsetsCallbackBaseImpl : public Base
+	{
+	public:
+		typedef IOffsetsCallback Declaration;
+
+		IOffsetsCallbackBaseImpl(DoNotInherit = DoNotInherit())
+		{
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->setOffset = &Name::cloopsetOffsetDispatcher;
+				}
+			} vTable;
+
+			this->cloopVTable = &vTable;
+		}
+
+		static void CLOOP_CARG cloopsetOffsetDispatcher(IOffsetsCallback* self, IStatus* status, unsigned index, unsigned offset, unsigned nullOffset) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::setOffset(&status2, index, offset, nullOffset);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+	};
+
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IOffsetsCallback> > >
+	class IOffsetsCallbackImpl : public IOffsetsCallbackBaseImpl<Name, StatusType, Base>
+	{
+	protected:
+		IOffsetsCallbackImpl(DoNotInherit = DoNotInherit())
+		{
+		}
+
+	public:
+		virtual ~IOffsetsCallbackImpl()
+		{
+		}
+
+		virtual void setOffset(StatusType* status, unsigned index, unsigned offset, unsigned nullOffset) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

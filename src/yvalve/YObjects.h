@@ -567,6 +567,8 @@ public:
 	unsigned getClientVersion();
 	Firebird::IXpbBuilder* getXpbBuilder(Firebird::CheckStatusWrapper* status,
 		unsigned kind, const unsigned char* buf, unsigned len);
+	unsigned setOffsets(Firebird::CheckStatusWrapper* status, Firebird::IMessageMetadata* metadata,
+		Firebird::IOffsetsCallback* callback);
 };
 
 }	// namespace Why

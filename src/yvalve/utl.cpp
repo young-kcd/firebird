@@ -1054,6 +1054,42 @@ IXpbBuilder* UtilInterface::getXpbBuilder(CheckStatusWrapper* status,
 	}
 }
 
+unsigned UtilInterface::setOffsets(CheckStatusWrapper* status, IMessageMetadata* metadata,
+	IOffsetsCallback* callback)
+{
+	try
+	{
+		unsigned count = metadata->getCount(status);
+		check(status);
+
+		unsigned length = 0;
+
+		for (unsigned n = 0; n < count; ++n)
+		{
+			unsigned type = metadata->getType(status, n);
+			check(status);
+			unsigned len = metadata->getLength(status, n);
+			check(status);
+
+			unsigned offset, nullOffset;
+			length = fb_utils::sqlTypeToDsc(length, type, len,
+				NULL /*dtype*/, NULL /*length*/, &offset, &nullOffset);
+
+			callback->setOffset(status, n, offset, nullOffset);
+			check(status);
+		}
+
+		return length;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return 0;
+}
+
+
 } // namespace Why
 
 

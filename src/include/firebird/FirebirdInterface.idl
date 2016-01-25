@@ -911,8 +911,7 @@ interface VersionCallback : Versioned
 
 interface Util : Versioned
 {
-	void getFbVersion(Status status, Attachment att,
-		VersionCallback callback);
+	void getFbVersion(Status status, Attachment att, VersionCallback callback);
 	void loadBlob(Status status, ISC_QUAD* blobId,
 		Attachment att, Transaction tra, const string file, boolean txt);
 	void dumpBlob(Status status, ISC_QUAD* blobId,
@@ -929,6 +928,12 @@ interface Util : Versioned
 	uint formatStatus(string buffer, uint bufferSize, Status status);
 	uint getClientVersion();	// Returns major * 256 + minor
 	XpbBuilder getXpbBuilder(Status status, uint kind, const uchar* buf, uint len);
+	uint setOffsets(Status status, MessageMetadata metadata, OffsetsCallback callback);
+}
+
+interface OffsetsCallback : Versioned
+{
+	void setOffset(Status status, uint index, uint offset, uint nullOffset);
 }
 
 interface XpbBuilder : Disposable
