@@ -1,3 +1,44 @@
+ 2016-01-24 21:14  dimitr 
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/Database.h
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/Monitoring.cpp
+   M src/jrd/Monitoring.h
+   M src/jrd/RuntimeStatistics.h
+   M src/jrd/cch.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/sort.cpp
+This should fix the races while accessing the relation statistics inside dbb_stats. Reads/writes/fetches/marks are incremented (CCH) and read (INF) unprotected, as it's crash safe and read skews are acceptable. Other counters (both global and relation wise) are protected with a mutex. They're incremented on demand based on the attachment counters (via diffs). While being there, cleaned up the currently unused performance counters.
+
+ 2016-01-24 21:02  dimitr 
+   M src/lock/lock.cpp
+Reverted back to the single-pass algorithm used in v2.x. This should work around the issue with non-zero-timeout shutdown in SC.
+
+ 2016-01-24 17:58  alexpeshkoff 
+   M src/common/classes/GetPlugins.h
+   M src/common/security.cpp
+   M src/common/security.h
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/InternalDS.h
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/extds/IscDS.h
+   M src/remote/remot_proto.h
+   M src/remote/remote.cpp
+Fixed CORE-5082: Server does not validate correctness of user/password pair provided in EXECUTE STATEMENT operator
+
+ 2016-01-24 17:53  alexpeshkoff 
+   M src/remote/client/interface.cpp
+Use correct error code
+
+ 2016-01-24 17:51  alexpeshkoff 
+   M src/include/firebird/FirebirdInterface.idl
+Drop old wrong comment
+
  2016-01-21 11:00  hvlad 
    M src/jrd/blb.cpp
 Fixed bug CORE-5078 : "Invalid BLOB ID" error
