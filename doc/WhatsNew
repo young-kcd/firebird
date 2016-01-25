@@ -1,4 +1,241 @@
   **************************
+  * v3.0 Release Candidate 2
+  **************************
+
+    * Bugfix CORE-5082
+        Server does not validate correctness of user/password pair provided in EXECUTE STATEMENT operator
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5078
+        "Invalid BLOB ID" error is thrown unexpectedly
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-5075
+        Trigger on DISCONNECT with EXECUTE STATEMENT: 1) does not work in 3.0; 2) leads FB to crash when it is recreated
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-5062
+        CHAR_TO_UUID on column with index throws "expression evaluation not supported"
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5061
+        ISQL plan output is unexpectedly truncated after a query is simplified to become shorter
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5060
+        Cannot CREATE VIEW that selects from a system table, despite having all grants
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5056
+        Write-lock of database file is cleared when retrieving the database statistics via the Services API
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5053
+        changeServerMode.sh can mess with configuration
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5049
+        Incorrect calculation of byte-length for view columns
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5047
+        mapUser() routine establish secondary attach using wrong provider
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5042
+        FB3 client cannot create database on FB2.5 server
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5041
+        Database may get corrupted after ALTER DATABASE ENCRYPT/DECRYPT issued multiple times per database open time
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5039
+        Connecting to service with invalid servicename yields incorrect error message
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5034
+        At least 5 seconds delay on disconnect could happen if disconnect happens close after Event Manager initialization
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-5033
+        File fb_user_mapping could be left in Firebird lock directory after correct shutdown of all Firebird worker processes
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-5032
+        Cannot connect to a database which have own security database without security3.fdb
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5029
+        Crash in fbclient when multi-threaded application uses XNET protocol
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-5026
+        Firebird authentication gives up after first common plugin
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5020
+        ORDER BY clause on compound index may disable usage of other indices
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5018
+        Non-indexed predicates may not be applied immediately after retrieval when tables are being joined
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5017
+        Interrupt of aux connection during TCP setup phase causes server exit due to unhandled exception
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5016
+        Server crashes during GC when DELETE is executed after adding new referencing column
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5015
+        Server may crash when event is posted from ON DISCONNECT trigger
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-5014
+        Interrupt of aux connection during TCP setup phase causes unclear error messages in firebird.log
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4999
+        Deadlock when trying to access database with invalid crypt key
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4998
+        Both client and server could not close connection after failed authentification
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4997
+        Races when two threads try to establish first enbedded connections to engine simultaneously
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4991
+        Key holder plugin is loaded on connect to database but not on create
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4990
+        Database is not decrypted completely
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4982
+        Server crashes during "select from procedure" if exception is thrown while backing out the current savepoint
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4980
+        Operator REVOKE can modify rights granted to system tables at DB creation time
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4969
+        SEC$USERS table is unavailable in case of any error in any configured user manager plugin
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4964
+        Real errors during connect to security database are hidden by Srp user manager
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4910
+        Firebird build on Windows fail if path to sources contains spaces
+      Contributor(s):
+        Dimitry Sibiryakov <sd at ibphoenix.com>
+
+    * Bugfix CORE-4862
+        ibase.h from x64 package includes non-existing file
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4842
+        Installer script fails in some Linux environments
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+        Mykhaylo Masyk <miwaonline at gmail.com>
+
+    * Bugfix CORE-4840
+        Transactions with isc_tpb_autocommit can hang the server
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4708
+        Content of MON$EXPLAINED_PLAN in MON$STATEMENTS is truncated if exceeds the 32KB limit
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4179
+        Unable to read MON$ tables when there's intensive disk-bound load
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-5077
+        ISQL does not show encryption status of database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-5063
+        Make SHOW DATABASE command to show numbers of used and free pages in database
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Improvement CORE-5028
+        Report the remote port number in MON$ATTACHMENTS
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Improvement CORE-4978
+        Improve validation and fixup of lost data pages
+      Contributor(s):
+        Roman Simakov <roman.simakov at red-soft.biz>
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Improvement CORE-2493
+        Append the IP address of the remote host to error messages in firebird.log for TCP connections
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * New feature CORE-4996
+        Need some SECURITY2.FDB --> SECURITY3.FDB upgrade feature
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * New feature CORE-1538
+        Add an option to isc_database_info() API to return the number of free pages in a database
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+
+  **************************
   * v3.0 Release Candidate 1
   **************************
 
