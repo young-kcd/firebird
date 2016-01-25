@@ -21,25 +21,10 @@
  */
 
 #include "firebird.h"
-//#include "fb_types.h"
-//#include "../../include/fb_blk.h"
 #include "fb_exception.h"
 #include "iberror.h"
 
-/*#include "../../dsql/chars.h"
-#include "../../dsql/ExprNodes.h"
-#include "../common/dsc.h"
-#include "../exe.h"*/
-#include "ExtDS.h"
 #include "../jrd.h"
-/*#include "../tra.h"
-
-#include "../blb_proto.h"
-#include "../exe_proto.h"
-#include "../err_proto.h"
-#include "../evl_proto.h"
-#include "../intl_proto.h"
-#include "../mov_proto.h" */
 #include "../common/isc_f_proto.h"
 #include "../common/db_alias.h"
 #include "../common/isc_proto.h"
@@ -192,7 +177,7 @@ void validatePassword(thread_db* tdbb, const PathName& file, ClumpletWriter& dpb
 	// Build list of client/server plugins
 	RefPtr<Config> config;
 	PathName list;
-	expandDatabaseName(file, list /* usused value */, &config);
+	expandDatabaseName(file, list /* unused value */, &config);
 	PathName serverList = config->getPlugins(IPluginManager::TYPE_AUTH_SERVER);
 	PathName clientList = config->getPlugins(IPluginManager::TYPE_AUTH_CLIENT);
 	Auth::mergeLists(list, serverList, clientList);

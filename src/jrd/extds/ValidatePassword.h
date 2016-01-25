@@ -29,9 +29,7 @@
 
 namespace Jrd
 {
-	class jrd_tra;
 	class thread_db;
-	class ValueListNode;
 }
 
 namespace EDS {

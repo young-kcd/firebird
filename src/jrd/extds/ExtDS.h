@@ -27,24 +27,14 @@
 #include "../../common/classes/array.h"
 #include "../../common/classes/ClumpletWriter.h"
 #include "../../common/classes/locks.h"
-#include "../../common/classes/init.h"
-#include "../../common/classes/NestConst.h"
 #include "../../common/utils_proto.h"
-#include "../../jrd/status.h"
 
-namespace Firebird
-{
-	class MetaName;
-}
 
 namespace Jrd
 {
 	class jrd_tra;
-	class jrd_req;
 	class thread_db;
 	class ValueListNode;
-	class Attachment;
-	class ValueExprNode;
 }
 
 namespace EDS {

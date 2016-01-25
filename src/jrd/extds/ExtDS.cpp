@@ -41,10 +41,7 @@
 #include "../evl_proto.h"
 #include "../intl_proto.h"
 #include "../mov_proto.h"
-#include "../common/isc_f_proto.h"
-#include "../common/db_alias.h"
-#include "../common/isc_proto.h"
-#include "../common/Auth.h"
+
 
 using namespace Jrd;
 using namespace Firebird;
