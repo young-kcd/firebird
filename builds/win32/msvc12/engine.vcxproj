@@ -76,6 +76,7 @@
     <ClCompile Include="..\..\..\src\jrd\extds\ExtDS.cpp" />
     <ClCompile Include="..\..\..\src\jrd\extds\InternalDS.cpp" />
     <ClCompile Include="..\..\..\src\jrd\extds\IscDS.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\extds\ValidatePassword.cpp" />
     <ClCompile Include="..\..\..\src\jrd\ExtEngineManager.cpp" />
     <ClCompile Include="..\..\..\src\jrd\filters.cpp" />
     <ClCompile Include="..\..\..\src\jrd\flu.cpp" />
@@ -231,6 +232,7 @@
     <ClInclude Include="..\..\..\src\jrd\extds\ExtDS.h" />
     <ClInclude Include="..\..\..\src\jrd\extds\InternalDS.h" />
     <ClInclude Include="..\..\..\src\jrd\extds\IscDS.h" />
+    <ClInclude Include="..\..\..\src\jrd\extds\ValidatePassword.h" />
     <ClInclude Include="..\..\..\src\jrd\ExtEngineManager.h" />
     <ClInclude Include="..\..\..\src\jrd\ext_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\fields.h" />
