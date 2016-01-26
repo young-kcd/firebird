@@ -1,3 +1,38 @@
+ 2016-01-25 18:34  alexpeshkoff 
+   A examples/interfaces/05.user_metadata.cpp
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/yvalve/YObjects.h
+   M src/yvalve/utl.cpp
+Implemented CORE-5083: Provide method to correcty set offsets in implemented by user IMessageMetadata
+
+ 2016-01-25 14:17  hvlad 
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/extds/ValidatePassword.cpp
+   M src/jrd/extds/ValidatePassword.h
+Cleanup
+
+ 2016-01-25 14:03  hvlad 
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M builds/win32/msvc12/engine.vcxproj
+   M builds/win32/msvc12/engine.vcxproj.filters
+Update VC10 and VC12 builds
+
+ 2016-01-25 13:52  alexpeshkoff 
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/IscDS.cpp
+   A src/jrd/extds/ValidatePassword.cpp
+   A src/jrd/extds/ValidatePassword.h
+Postfix for CORE-5082: reorganized sources according to Vlad request
+
+ 2016-01-25 07:17  dimitr 
+   M doc/WhatsNew
+Updated the docs for RC2.
+
  2016-01-24 21:14  dimitr 
    M src/jrd/Attachment.cpp
    M src/jrd/Attachment.h
