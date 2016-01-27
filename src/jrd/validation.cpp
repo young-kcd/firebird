@@ -1926,7 +1926,7 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
  **************************************/
 	Database* dbb = vdr_tdbb->getDatabase();
 
-	const ULONG page_number = root_page.irt_rpt[id].irt_root;
+	const ULONG page_number = root_page.irt_rpt[id].getRoot();
 	if (!page_number) {
 		return rtn_ok;
 	}
@@ -3107,7 +3107,7 @@ Validation::RTN Validation::walk_root(jrd_rel* relation)
 
 	for (USHORT i = 0; i < page->irt_count; i++)
 	{
-		if (page->irt_rpt[i].irt_root == 0)
+		if (page->irt_rpt[i].getRoot() == 0)
 			continue;
 
 		MetaName index;

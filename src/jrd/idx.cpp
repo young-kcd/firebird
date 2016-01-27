@@ -105,17 +105,6 @@ static inline USHORT getNullSegment(const temporary_key& key)
 	return MAX_USHORT;
 }
 
-IndexReserveLock::IndexReserveLock(thread_db* tdbb, const jrd_rel* relation, const index_desc* idx)
-	: Lock(tdbb, sizeof(SLONG), LCK_idx_reserve), m_tdbb(tdbb)
-{
-	lck_key.lck_long = (relation->rel_id << 16) | idx->idx_id;
-}
-
-IndexReserveLock::~IndexReserveLock()
-{
-	LCK_release(m_tdbb, this);
-}
-
 
 void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_rel* relation)
 {

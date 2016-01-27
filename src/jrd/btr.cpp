@@ -408,11 +408,8 @@ void BTR_create(thread_db* tdbb,
 	WIN window(relPages->rel_pg_space_id, relPages->rel_index_root);
 	index_root_page* const root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 	CCH_MARK(tdbb, &window);
-	root->irt_rpt[idx->idx_id].irt_root = idx->idx_root;
-	root->irt_rpt[idx->idx_id].irt_flags &= ~irt_in_progress;
+	root->irt_rpt[idx->idx_id].setRoot(idx->idx_root);
 	update_selectivity(root, idx->idx_id, selectivity);
-
-	LCK_release(tdbb, creation.lock);
 
 	CCH_RELEASE(tdbb, &window);
 }
@@ -446,11 +443,11 @@ bool BTR_delete_index(thread_db* tdbb, WIN* window, USHORT id)
 	{
 		index_root_page::irt_repeat* irt_desc = root->irt_rpt + id;
 		CCH_MARK(tdbb, window);
-		const PageNumber next(window->win_page.getPageSpaceID(), irt_desc->irt_root);
-		tree_exists = (irt_desc->irt_root != 0);
+		const PageNumber next(window->win_page.getPageSpaceID(), irt_desc->getRoot());
+		tree_exists = (irt_desc->getRoot() != 0);
 
 		// remove the pointer to the top-level index page before we delete it
-		irt_desc->irt_root = 0;
+		irt_desc->setRoot(0);
 		irt_desc->irt_flags = 0;
 		const PageNumber prior = window->win_page;
 		const USHORT relation_id = root->irt_relation;
@@ -484,11 +481,11 @@ bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, 
 
 	const index_root_page::irt_repeat* irt_desc = &root->irt_rpt[id];
 
-	if (irt_desc->irt_root == 0)
+	if (irt_desc->getRoot() == 0)
 		return false;
 
 	idx->idx_id = id;
-	idx->idx_root = irt_desc->irt_root;
+	idx->idx_root = irt_desc->getRoot();
 	idx->idx_count = irt_desc->irt_keys;
 	idx->idx_flags = irt_desc->irt_flags;
 	idx->idx_runtime_flags = 0;
@@ -1017,7 +1014,7 @@ void BTR_insert(thread_db* tdbb, WIN* root_window, index_insertion* insertion)
 	// update the index root page.  Oh boy.
 	index_root_page* root = (index_root_page*) CCH_FETCH(tdbb, root_window, LCK_write, pag_root);
 
-	window.win_page = root->irt_rpt[idx->idx_id].irt_root;
+	window.win_page = root->irt_rpt[idx->idx_id].getRoot();
 	bucket = (btree_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_index);
 
 	if (window.win_page.getPageNum() != idx->idx_root)
@@ -1066,7 +1063,7 @@ void BTR_insert(thread_db* tdbb, WIN* root_window, index_insertion* insertion)
 			BUGCHECK(204);	// msg 204 index inconsistent
 		}
 
-		window.win_page = root->irt_rpt[idx->idx_id].irt_root;
+		window.win_page = root->irt_rpt[idx->idx_id].getRoot();
 		bucket = (btree_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_index);
 		key = ret_key;
 	}
@@ -1151,7 +1148,7 @@ void BTR_insert(thread_db* tdbb, WIN* root_window, index_insertion* insertion)
 	CCH_RELEASE(tdbb, &new_window);
 	CCH_precedence(tdbb, root_window, new_window.win_page);
 	CCH_MARK(tdbb, root_window);
-	root->irt_rpt[idx->idx_id].irt_root = new_window.win_page.getPageNum();
+	root->irt_rpt[idx->idx_id].setRoot(new_window.win_page.getPageNum());
 	CCH_RELEASE(tdbb, root_window);
 }
 
@@ -1736,44 +1733,25 @@ bool BTR_next_index(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction, in
 	for (; id < root->irt_count; ++id)
 	{
 		const index_root_page::irt_repeat* irt_desc = root->irt_rpt + id;
-		if (!irt_desc->irt_root && (irt_desc->irt_flags & irt_in_progress) && transaction)
+		if (irt_desc->getTransaction() && transaction)
 		{
-			Lock temp_lock(tdbb, sizeof(SLONG), LCK_idx_reserve);
-			temp_lock.lck_key.lck_long = (relation->rel_id << 16) | id;
-
-			while (true)
+			const TraNumber trans = irt_desc->getTransaction();
+			CCH_RELEASE(tdbb, window);
+			const int trans_state = TRA_wait(tdbb, transaction, trans, jrd_tra::tra_wait);
+			if ((trans_state == tra_dead) || (trans_state == tra_committed))
 			{
-				const ULONG tra_mask = irt_desc->irt_transaction;
-
-				CCH_RELEASE(tdbb, window);
-
-				if (!LCK_lock(tdbb, &temp_lock, LCK_SR, LCK_WAIT))
-					ERR_punt();
-
-				LCK_release(tdbb, &temp_lock);
-
-				// attempt to clean up this left-over index
-
+				// clean up this left-over index
 				root = (index_root_page*) CCH_FETCH(tdbb, window, LCK_write, pag_root);
-
-				if (id >= root->irt_count)
-					return false;
-
 				irt_desc = root->irt_rpt + id;
-
-				if (!irt_desc->irt_root && (irt_desc->irt_flags & irt_in_progress))
+				if (irt_desc->getTransaction() == trans)
 				{
-					if (irt_desc->irt_transaction == tra_mask)
-					{
-						BTR_delete_index(tdbb, window, id);
-						break;
-					}
+					BTR_delete_index(tdbb, window, id);
 				}
-				else
-				{
+				else {
 					CCH_RELEASE(tdbb, window);
-					break;
 				}
+				root = (index_root_page*) CCH_FETCH(tdbb, window, LCK_read, pag_root);
+				continue;
 			}
 
 			root = (index_root_page*) CCH_FETCH(tdbb, window, LCK_read, pag_root);
@@ -1852,7 +1830,7 @@ void BTR_remove(thread_db* tdbb, WIN* root_window, index_insertion* insertion)
 		}
 
 		CCH_MARK(tdbb, root_window);
-		root->irt_rpt[idx->idx_id].irt_root = number;
+		root->irt_rpt[idx->idx_id].setRoot(number);
 
 		// release the pages, and place the page formerly at the top level
 		// on the free list, making sure the root page is written out first
@@ -1948,10 +1926,10 @@ void BTR_reserve_slot(thread_db* tdbb, IndexCreation& creation)
 		end = root->irt_rpt + root->irt_count;
 		for (index_root_page::irt_repeat* root_idx = root->irt_rpt; root_idx < end; root_idx++)
 		{
-			if (root_idx->irt_root || (root_idx->irt_flags & irt_in_progress))
+			if (root_idx->isUsed())
 				space = MIN(space, root_idx->irt_desc);
 
-			if (!root_idx->irt_root && !slot && !(root_idx->irt_flags & irt_in_progress))
+			if (!root_idx->isUsed() && !slot)
 			{
 				if (!use_idx_id || (root_idx - root->irt_rpt) == idx->idx_id)
 					slot = root_idx;
@@ -1990,22 +1968,13 @@ void BTR_reserve_slot(thread_db* tdbb, IndexCreation& creation)
 	slot->irt_desc = space;
 	fb_assert(idx->idx_count <= MAX_UCHAR);
 	slot->irt_keys = (UCHAR) idx->idx_count;
-	slot->irt_flags = idx->idx_flags | irt_in_progress;
-	slot->irt_transaction = (ULONG) transaction->tra_number;
-	slot->irt_root = 0;
+	slot->irt_flags = idx->idx_flags;
+	slot->setTransaction(transaction->tra_number);
 
 	// Exploit the fact idx_repeat structure matches ODS IRTD one
 	memcpy(desc, idx->idx_rpt, len);
 
-	fb_assert(!creation.lock);
-	creation.lock = FB_NEW_RPT(*transaction->tra_pool, 0) IndexReserveLock(tdbb, relation, idx);
-
-	const bool error = !LCK_lock(tdbb, creation.lock, LCK_EX, LCK_WAIT);
-
 	CCH_RELEASE(tdbb, &window);
-
-	if (error)
-		ERR_punt();
 }
 
 
@@ -2036,7 +2005,7 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 	}
 
 	SLONG page;
-	if (id >= root->irt_count || !(page = root->irt_rpt[id].irt_root))
+	if (id >= root->irt_count || !(page = root->irt_rpt[id].getRoot()))
 	{
 		CCH_RELEASE(tdbb, &window);
 		return;
@@ -2840,7 +2809,7 @@ static USHORT compress_root(thread_db* tdbb, index_root_page* page)
 	for (const index_root_page::irt_repeat* const end = root_idx + page->irt_count;
 		 root_idx < end; root_idx++)
 	{
-		if (root_idx->irt_root)
+		if (root_idx->getRoot())
 		{
 			const USHORT len = root_idx->irt_keys * sizeof(irtd);
 			p -= len;

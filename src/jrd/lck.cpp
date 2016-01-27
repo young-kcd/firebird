@@ -541,7 +541,6 @@ static SLONG get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_cancel:
 	case LCK_monitor:
 	case LCK_btr_dont_gc:
-	case LCK_idx_reserve:
 	case LCK_rel_gc:
 	case LCK_record_gc:
 		handle = *LCK_OWNER_HANDLE_ATT(tdbb);

@@ -253,16 +253,6 @@ public:
 	static bool isPageGCAllowed(thread_db* tdbb, const PageNumber& page);
 };
 
-class IndexReserveLock : public Lock
-{
-public:
-	IndexReserveLock(thread_db* tdbb, const jrd_rel* relation, const index_desc* idx);
-	~IndexReserveLock();
-
-private:
-	thread_db* const m_tdbb;
-};
-
 // Struct used for index creation
 
 struct IndexCreation
@@ -271,7 +261,6 @@ struct IndexCreation
 	index_desc* index;
 	jrd_tra* transaction;
 	USHORT key_length;
-	Firebird::AutoPtr<IndexReserveLock> lock;
 	Firebird::AutoPtr<Sort> sort;
 };
 
