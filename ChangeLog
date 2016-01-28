@@ -1,3 +1,17 @@
+ 2016-01-27 11:11  hvlad 
+   M src/jrd/btr.cpp
+   M src/jrd/btr.h
+   M src/jrd/idx.cpp
+   M src/jrd/lck.cpp
+   M src/jrd/lck.h
+   M src/jrd/ods.h
+   M src/jrd/validation.cpp
+   M src/utilities/gstat/dba.epp
+Remove LCK_idx_reserve introduced with 64-bit transaction ID. 
+Restore original logic in BTR_next_index (wait for tx lock when index build is in progress). 
+Use irt_repeat::irt_root to store high 32 bit of tra_num. 
+It also fixed deadlock related with LCK_idx_reserve lock (reported privately).
+
  2016-01-25 18:34  alexpeshkoff 
    A examples/interfaces/05.user_metadata.cpp
    M src/include/firebird/FirebirdInterface.idl
