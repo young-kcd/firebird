@@ -1,4 +1,4 @@
-ru.MyAppName=Сервер баз данных Firebird %1
+﻿ru.MyAppName=Сервер баз данных Firebird %1
 ru.ServerInstall=Полная установка сервера и инструментов разработки
 ru.SuperServerInstall=Полная установка SuperServer и инструментов разработки
 ru.ClassicServerInstall=Полная установка Classic Server и инструментов разработки
