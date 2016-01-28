@@ -400,6 +400,7 @@ ITimerControl* MasterImplementation::getTimerControl()
 
 void shutdownTimers()
 {
+	stopTimerThread.setValue(1);
 	timerHolder.cleanup();
 }
 
