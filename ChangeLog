@@ -1,3 +1,11 @@
+ 2016-01-28 17:00  alexpeshkoff 
+   M src/yvalve/MasterImplementation.cpp
+Fixed CORE-5088: Segfault when 'gstat -h' is closing
+
+ 2016-01-28 11:40  paul_reeves 
+   M builds/install/arch-specific/win32/ru/custom_messages_ru.inc
+Add BOM to file. Hopefully this finally fixes CORE-5002
+
  2016-01-27 11:11  hvlad 
    M src/jrd/btr.cpp
    M src/jrd/btr.h
