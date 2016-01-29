@@ -278,6 +278,12 @@ public:
 	ULONG getCurrentPage() const;
 	UCHAR getCurrentState() const;
 
+	enum IoResult {SUCCESS_ALL, FAILED_CRYPT, FAILED_IO};
+	IoResult internalRead(thread_db* tdbb, FbStatusVector* sv, jrd_file* file,
+		BufferDesc* bdb, Ods::pag* page, bool noShadows, PageSpace* pageSpace);
+	IoResult internalWrite(thread_db* tdbb, FbStatusVector* sv, jrd_file* file,
+		BufferDesc* bdb, Ods::pag* page);
+
 private:
 	class Buffer
 	{
@@ -348,12 +354,6 @@ private:
 	void lockAndReadHeader(thread_db* tdbb, unsigned flags = 0);
 	static const unsigned CRYPT_HDR_INIT =		0x01;
 	static const unsigned CRYPT_HDR_NOWAIT =	0x02;
-
-	enum IoResult {SUCCESS_ALL, FAILED_CRYPT, FAILED_IO};
-	IoResult internalRead(thread_db* tdbb, FbStatusVector* sv, jrd_file* file,
-		BufferDesc* bdb, Ods::pag* page, bool noShadows, PageSpace* pageSpace);
-	IoResult internalWrite(thread_db* tdbb, FbStatusVector* sv, jrd_file* file,
-		BufferDesc* bdb, Ods::pag* page);
 
 	BarSync sync;
 	Firebird::AtomicCounter currentPage;

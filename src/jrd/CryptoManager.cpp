@@ -151,13 +151,48 @@ namespace {
 	public:
 		explicit PhysHdr(Jrd::thread_db* tdbb)
 		{
+			// Can't use CCH_fetch_page() here cause it will cause infinite recursion
+
 			Jrd::Database* dbb = tdbb->getDatabase();
+			Jrd::BufferControl* bcb = dbb->dbb_bcb;
+			Jrd::BufferDesc bdb(bcb);
+			bdb.bdb_page = Jrd::PageNumber(Jrd::DB_PAGE_SPACE, 0);
 
 			UCHAR* h = FB_NEW_POOL(*Firebird::MemoryPool::getContextPool()) UCHAR[dbb->dbb_page_size + PAGE_ALIGNMENT];
 			buffer.reset(h);
-
 			h = FB_ALIGN(h, PAGE_ALIGNMENT);
-			PIO_header(tdbb, h, dbb->dbb_page_size);
+			bdb.bdb_buffer = (Ods::pag*)h;
+
+			Jrd::FbStatusVector* const status = tdbb->tdbb_status_vector;
+
+			Ods::pag* page = bdb.bdb_buffer;
+
+			Jrd::PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(Jrd::DB_PAGE_SPACE);
+			fb_assert(pageSpace);
+
+			Jrd::jrd_file* file = pageSpace->file;
+			const bool isTempPage = pageSpace->isTemporary();
+
+			Jrd::BackupManager* bm = dbb->dbb_backup_manager;
+			const int bak_state = bm->getState();
+			fb_assert(bak_state != Ods::hdr_nbak_unknown);
+
+			ULONG diff_page = 0;
+			if (bak_state != Ods::hdr_nbak_normal)
+				diff_page = bm->getPageIndex(tdbb, bdb.bdb_page.getPageNum());
+
+			if (bak_state == Ods::hdr_nbak_normal || !diff_page)
+			{
+				// Read page from disk as normal
+				if (dbb->dbb_crypto_manager->internalRead(tdbb, status, file, &bdb, page, false, pageSpace) != Jrd::CryptoManager::SUCCESS_ALL)
+					ERR_punt();
+			}
+			else
+			{
+				if (!bm->readDifference(tdbb, diff_page, page))
+					ERR_punt();
+			}
+
 			setHeader(h);
 		}
 
