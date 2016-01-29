@@ -356,7 +356,7 @@ private:
 	static const unsigned CRYPT_HDR_NOWAIT =	0x02;
 
 	BarSync sync;
-	Firebird::AtomicCounter currentPage;
+	ULONG currentPage;
 	Firebird::Mutex pluginLoadMtx, cryptThreadMtx;
 	KeyHolderPlugins keyHolderPlugins;
 	Thread::Handle cryptThreadId;

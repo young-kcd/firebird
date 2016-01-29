@@ -509,7 +509,7 @@ namespace Jrd {
 				LCK_release(tdbb, threadLock);
 				return;
 			}
-			currentPage.setValue(hdr->hdr_crypt_page);
+			currentPage = hdr->hdr_crypt_page;
 
 			// Refresh encryption flag
 			crypt = hdr->hdr_flags & Ods::hdr_encrypted ? true : false;
@@ -572,7 +572,6 @@ namespace Jrd {
 			tdbb->tdbb_quantum = SWEEP_QUANTUM;
 
 			ULONG lastPage = getLastPage(tdbb);
-			ULONG runpage = 1;
 			Stack<ULONG> pages;
 
 			// Take exclusive threadLock
@@ -589,7 +588,7 @@ namespace Jrd {
 				do
 				{
 					// Check is there some job to do
-					while ((runpage = currentPage.exchangeAdd(+1)) < lastPage)
+					while (currentPage < lastPage)
 					{
 						// forced terminate
 						if (down)
@@ -600,11 +599,6 @@ namespace Jrd {
 						// nbackup state check
 						if (dbb.dbb_backup_manager && dbb.dbb_backup_manager->getState() != Ods::hdr_nbak_normal)
 						{
-							if (static_cast<ULONG>(currentPage.exchangeAdd(-1)) >= lastPage)
-							{
-								// currentPage was set to last page by thread, closing database
-								break;
-							}
 							Thread::sleep(100);
 							continue;
 						}
@@ -616,22 +610,22 @@ namespace Jrd {
 						}
 
 						// writing page to disk will change it's crypt status in usual way
-						WIN window(DB_PAGE_SPACE, runpage);
+						WIN window(DB_PAGE_SPACE, currentPage);
 						Ods::pag* page = CCH_FETCH(tdbb, &window, LCK_write, pag_undefined);
 						if (page && page->pag_type <= pag_max &&
 							(bool(page->pag_flags & Ods::crypted_page) != crypt) &&
 							Ods::pag_crypt_page[page->pag_type])
 						{
 							CCH_MARK(tdbb, &window);
-							pages.push(runpage);
+							pages.push(currentPage);
 						}
 						CCH_RELEASE_TAIL(tdbb, &window);
 
 						// sometimes save currentPage into DB header
-						++runpage;
-						if ((runpage & 0x3FF) == 0)
+						++currentPage;
+						if ((currentPage & 0x3FF) == 0)
 						{
-							writeDbHeader(tdbb, runpage, pages);
+							writeDbHeader(tdbb, currentPage, pages);
 						}
 					}
 
@@ -644,7 +638,7 @@ namespace Jrd {
 					{
 						break;
 					}
-				} while (runpage < lastPage);
+				} while (currentPage < lastPage);
 
 				// Finalize crypt
 				if (!down)
@@ -671,7 +665,7 @@ namespace Jrd {
 						// try to save current state of crypt thread
 						if (!down)
 						{
-							writeDbHeader(tdbb, runpage, pages);
+							writeDbHeader(tdbb, currentPage, pages);
 						}
 
 						// Release exclusive lock on StartCryptThread
@@ -906,7 +900,7 @@ namespace Jrd {
 
 	ULONG CryptoManager::getCurrentPage() const
 	{
-		return process ? currentPage.value() : 0;
+		return process ? currentPage : 0;
 	}
 
 	ULONG CryptoManager::getLastPage(thread_db* tdbb)
