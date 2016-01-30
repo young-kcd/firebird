@@ -1,3 +1,17 @@
+ 2016-01-29 15:46  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+Simplified code - thanks to Vlad
+
+ 2016-01-29 14:51  asfernandes 
+   M src/isql/extract.epp
+Fixed CORE-5089 - Metadata extration (ISQL -X): "CREATE PROCEDURE/FUNCTION"  statement contains reference to column of table(s) that not yet exists if this procedure had parameter of such type when it was created.
+
+ 2016-01-29 14:12  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+Fixed regression in CryptoManager added after RC1 - avoid reading incorrect header when database is locked by nbackup
+
  2016-01-28 17:00  alexpeshkoff 
    M src/yvalve/MasterImplementation.cpp
 Fixed CORE-5088: Segfault when 'gstat -h' is closing
