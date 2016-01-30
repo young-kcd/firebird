@@ -180,7 +180,7 @@ public:
 template <typename T>
 T to(const unsigned char* b, unsigned o)
 {
-	return *((T*)(b + o));
+	return *((T*) (b + o));
 }
 
 int main()
@@ -254,7 +254,7 @@ int main()
 	prov->release();
 	status.dispose();
 
-	delete buffer;
+	delete[] buffer;
 
 	return rc;
 }
