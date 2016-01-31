@@ -139,7 +139,7 @@ void parseList(ParsedList& parsed, PathName list)
 
 		parsed.push(list.substr(0, p));
 		list = list.substr(p + 1);
-		list.ltrim(" \t,;");
+		list.ltrim(sep);
 	}
 }
 
