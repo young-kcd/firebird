@@ -1,3 +1,7 @@
+ 2016-01-30 23:40  asfernandes 
+   M examples/interfaces/05.user_metadata.cpp
+Correction.
+
  2016-01-29 15:46  alexpeshkoff 
    M src/jrd/CryptoManager.cpp
    M src/jrd/CryptoManager.h
