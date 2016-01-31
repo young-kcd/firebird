@@ -374,19 +374,12 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			isqlGlob.printf("%s ", fb_utils::exact_name(RFR.RDB$FIELD_NAME));
 
 		/*
-		** Check first for computed fields, then domains.
 		** If this is a known domain, then just print the domain rather than type
 		** Domains won't have length, array, or blob definitions, but they
 		** may have not null, default and check overriding their definitions
 		*/
 
-		if (!FLD.RDB$COMPUTED_BLR.NULL)
-		{
-			isqlGlob.printf("COMPUTED BY ");
-			if (!FLD.RDB$COMPUTED_SOURCE.NULL)
-				ISQL_print_validation (isqlGlob.Out, &FLD.RDB$COMPUTED_SOURCE, true, fbTrans);
-		}
-		else if (!(fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && FLD.RDB$SYSTEM_FLAG != 1))
+		if (!(fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && FLD.RDB$SYSTEM_FLAG != 1))
 		{
 			fb_utils::exact_name(FLD.RDB$FIELD_NAME);
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
@@ -468,6 +461,13 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			}
 		}
 
+		// Check for computed fields
+		if (!FLD.RDB$COMPUTED_BLR.NULL)
+		{
+			isqlGlob.printf(" COMPUTED BY ");
+			if (!FLD.RDB$COMPUTED_SOURCE.NULL)
+				ISQL_print_validation (isqlGlob.Out, &FLD.RDB$COMPUTED_SOURCE, true, fbTrans);
+		}
 
 		// Handle defaults for columns
 
