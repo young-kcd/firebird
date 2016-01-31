@@ -68,8 +68,8 @@ using MsgFormat::SafeArg;
 DATABASE DB = EXTERN COMPILETIME "yachts.lnk" RUNTIME isqlGlob.global_Db_name;
 
 static bool extract_rel_constraints(const char* relation_name);
-static void get_procedure_args(const char*, bool);
-static void get_function_args_ods12(const char*, bool, USHORT);
+static void get_procedure_args(const char*);
+static void get_function_args_ods12(const char*, USHORT);
 static void list_all_grants();
 static processing_state list_all_grants2(bool, const SCHAR*);
 static void list_all_tables(LegacyTables flag, SSHORT);
@@ -640,7 +640,7 @@ static bool extract_rel_constraints(const char* relation_name)
 }
 
 
-static void get_procedure_args(const char* proc_name, bool header)
+static void get_procedure_args(const char* proc_name)
 {
 /**************************************
  *
@@ -742,9 +742,8 @@ static void get_procedure_args(const char* proc_name, bool header)
 			isqlGlob.printf("%s ", SQL_identifier);
 
 			const bool basedOnColumn = relationName[0] && relationField[0];
-			if (!header &&
-				(!fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) || FLD.RDB$SYSTEM_FLAG == 1 ||
-				 basedOnColumn))
+			if (!fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) || FLD.RDB$SYSTEM_FLAG == 1 ||
+				basedOnColumn)
 			{
 				if (prm_mech == prm_mech_type_of)
 					isqlGlob.printf("TYPE OF ");
@@ -854,7 +853,7 @@ static void get_procedure_args(const char* proc_name, bool header)
 }
 
 
-static void get_function_args_ods12(const char* func_name, bool header, USHORT out_arg)
+static void get_function_args_ods12(const char* func_name, USHORT out_arg)
 {
 /**************************************
  *
@@ -958,9 +957,8 @@ static void get_function_args_ods12(const char* func_name, bool header, USHORT o
 			}
 
 			const bool basedOnColumn = relationName[0] && relationField[0];
-			if (!header &&
-				(!fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) || FLD.RDB$SYSTEM_FLAG == 1 ||
-				 basedOnColumn))
+			if (!fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) || FLD.RDB$SYSTEM_FLAG == 1 ||
+				basedOnColumn)
 			{
 				if (prm_mech == prm_mech_type_of)
 					isqlGlob.printf("TYPE OF ");
@@ -1453,7 +1451,7 @@ static void list_procedure_headers()
 			isqlGlob.printf(create_procedure, PRC.RDB$PROCEDURE_NAME);
 		}
 
-		get_procedure_args(PRC.RDB$PROCEDURE_NAME, true);
+		get_procedure_args(PRC.RDB$PROCEDURE_NAME);
 		isqlGlob.printf("AS %s", NEWLINE);
 
 		prc_t proc_type = PRC.RDB$PROCEDURE_TYPE.NULL ? prc_legacy : (prc_t) PRC.RDB$PROCEDURE_TYPE;
@@ -1516,7 +1514,7 @@ static void list_procedure_bodies()
 		else
 			isqlGlob.printf("%sALTER PROCEDURE %s ", NEWLINE, PRC.RDB$PROCEDURE_NAME);
 
-		get_procedure_args(PRC.RDB$PROCEDURE_NAME, false);
+		get_procedure_args(PRC.RDB$PROCEDURE_NAME);
 
 		// Print the procedure body
 
@@ -2834,7 +2832,7 @@ static void list_functions_ods12_headers()
 			isqlGlob.printf(create_function, FUN.RDB$FUNCTION_NAME);
 		}
 
-		get_function_args_ods12(FUN.RDB$FUNCTION_NAME, true, FUN.RDB$RETURN_ARGUMENT);
+		get_function_args_ods12(FUN.RDB$FUNCTION_NAME, FUN.RDB$RETURN_ARGUMENT);
 
 		if (!FUN.RDB$DETERMINISTIC_FLAG.NULL && FUN.RDB$DETERMINISTIC_FLAG)
 			isqlGlob.printf("DETERMINISTIC %s", NEWLINE);
@@ -2883,7 +2881,7 @@ static void list_functions_ods12_bodies()
 		else
 			isqlGlob.printf("%sALTER FUNCTION %s ", NEWLINE, FUN.RDB$FUNCTION_NAME);
 
-		get_function_args_ods12(FUN.RDB$FUNCTION_NAME, false, FUN.RDB$RETURN_ARGUMENT);
+		get_function_args_ods12(FUN.RDB$FUNCTION_NAME, FUN.RDB$RETURN_ARGUMENT);
 
 		if (!FUN.RDB$DETERMINISTIC_FLAG.NULL && FUN.RDB$DETERMINISTIC_FLAG)
 			isqlGlob.printf("DETERMINISTIC %s", NEWLINE);
