@@ -458,6 +458,7 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 
 		case fb_info_crypt_state:
 			value_out = ISQL_vax_integer(d, length);
+
 			if (translate)
 			{
 				Firebird::string s;
@@ -465,19 +466,24 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 					IUTILS_msg_get(DATABASE_CRYPTED, msg);
 				else
 					IUTILS_msg_get(DATABASE_NOT_CRYPTED, msg);
+
 				s = msg;
+
 				if (value_out & fb_info_crypt_process)
 				{
 					s += ", ";
 					IUTILS_msg_get(DATABASE_CRYPT_PROCESS, msg);
 					s += msg;
 				}
+
 				sprintf(info, "%s%s", s.c_str(), separator);
 			}
 			else
+			{
 				sprintf(info, "DB %sencrypted%s%s",
-					value_out & fb_info_crypt_encrypted ? "" : "not ",
-					value_out & fb_info_crypt_process ? ", crypt thread not complete" : "", separator);
+					(value_out & fb_info_crypt_encrypted ? "" : "not "),
+					(value_out & fb_info_crypt_process ? ", crypt thread not complete" : "", separator));
+			}
 			break;
 
 		case isc_info_sweep_interval:

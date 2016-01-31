@@ -1006,8 +1006,8 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNod
 			BUGCHECK(199);	// msg 199 expected field node
 	}
 
-	// Use local copy of source blob id to not change contents of from_desc in 
-	// a case when it points to materialized temporary blob (see below for 
+	// Use local copy of source blob id to not change contents of from_desc in
+	// a case when it points to materialized temporary blob (see below for
 	// assignment to *source).
 	bid srcBlobID = *(bid*)from_desc->dsc_address;
 	bid* source = &srcBlobID;
@@ -1293,7 +1293,7 @@ blb* blb::open2(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	// Use local copy of input blob id to not change contents of *blob_id in a 
+	// Use local copy of input blob id to not change contents of *blob_id in a
 	// case when it points to materialized temporary blob.
 	bid blobId = *blob_id;
 

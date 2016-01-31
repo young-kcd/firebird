@@ -5395,7 +5395,7 @@ static void check_database(thread_db* tdbb, bool async)
 		status_exception::raise(Arg::Gds(isc_bug_check) << Arg::Str(string));
 	}
 
-	if ((attachment->att_flags & ATT_shutdown) && 
+	if ((attachment->att_flags & ATT_shutdown) &&
 		(attachment->att_purge_tid != Thread::getId()) ||
 		((dbb->dbb_ast_flags & DBB_shutdown) &&
 			((dbb->dbb_ast_flags & DBB_shutdown_full) || !attachment->locksmith())))

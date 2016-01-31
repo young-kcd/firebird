@@ -125,7 +125,7 @@ void parseList(ParsedList& parsed, PathName list)
 	parsed.clear();
 	const char* sep = " \t,;";
 
-	for(;;)
+	for (;;)
 	{
 		PathName::size_type p = list.find_first_of(sep);
 		if (p == PathName::npos)

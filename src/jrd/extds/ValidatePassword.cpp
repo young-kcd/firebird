@@ -45,14 +45,17 @@ public:
 	// ICryptKey implementation
 	void setSymmetric(Firebird::CheckStatusWrapper* status, const char* type, unsigned keyLength, const void* key)
 	{ }
+
 	void setAsymmetric(Firebird::CheckStatusWrapper* status, const char* type, unsigned encryptKeyLength,
 		const void* encryptKey, unsigned decryptKeyLength, const void* decryptKey)
 	{ }
+
 	const void* getEncryptKey(unsigned* length)
 	{
 		*length = 0;
 		return NULL;
 	}
+
 	const void* getDecryptKey(unsigned* length)
 	{
 		*length = 0;
@@ -181,6 +184,7 @@ void validatePassword(thread_db* tdbb, const PathName& file, ClumpletWriter& dpb
 	PathName serverList = config->getPlugins(IPluginManager::TYPE_AUTH_SERVER);
 	PathName clientList = config->getPlugins(IPluginManager::TYPE_AUTH_CLIENT);
 	Auth::mergeLists(list, serverList, clientList);
+
 	if (!list.hasData())
 	{
 		Arg::Gds noPlugins(isc_random);
@@ -224,7 +228,7 @@ void validatePassword(thread_db* tdbb, const PathName& file, ClumpletWriter& dpb
 			CheckStatusWrapper s(&ls);
 			ISC_STATUS code = isc_login;
 
-			switch(client.plugin()->authenticate(&s, &cBlock))
+			switch (client.plugin()->authenticate(&s, &cBlock))
 			{
 			case IAuth::AUTH_SUCCESS:
 			case IAuth::AUTH_MORE_DATA:
@@ -248,7 +252,7 @@ void validatePassword(thread_db* tdbb, const PathName& file, ClumpletWriter& dpb
 				break;	// compiler silencer
 			}
 
-			switch(server.plugin()->authenticate(&s, &sBlock, &writer))
+			switch (server.plugin()->authenticate(&s, &sBlock, &writer))
 			{
 			case IAuth::AUTH_SUCCESS:
 				dpb.deleteWithTag(isc_dpb_user_name);

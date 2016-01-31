@@ -310,8 +310,8 @@ struct index_root_page
 	struct irt_repeat
 	{
 	private:
-		ULONG irt_root;				// page number of index root if irt_in_progress is NOT set, or 
-									// highest 32 bit of transaction if irt_in_progress is set 
+		ULONG irt_root;				// page number of index root if irt_in_progress is NOT set, or
+									// highest 32 bit of transaction if irt_in_progress is set
 		ULONG irt_transaction;		// transaction in progress (lowest 32 bits)
 	public:
 		USHORT irt_desc;			// offset to key descriptions
@@ -363,8 +363,8 @@ inline TraNumber index_root_page::irt_repeat::getTransaction() const
 
 inline void index_root_page::irt_repeat::setTransaction(TraNumber traNumber)
 {
-	irt_root = ULONG (traNumber >> BITS_PER_LONG);
-	irt_transaction = ULONG (traNumber);
+	irt_root = ULONG(traNumber >> BITS_PER_LONG);
+	irt_transaction = ULONG(traNumber);
 	irt_flags |= irt_in_progress;
 }
 

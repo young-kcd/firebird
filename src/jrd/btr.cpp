@@ -1743,13 +1743,12 @@ bool BTR_next_index(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction, in
 				// clean up this left-over index
 				root = (index_root_page*) CCH_FETCH(tdbb, window, LCK_write, pag_root);
 				irt_desc = root->irt_rpt + id;
+
 				if (irt_desc->getTransaction() == trans)
-				{
 					BTR_delete_index(tdbb, window, id);
-				}
-				else {
+				else
 					CCH_RELEASE(tdbb, window);
-				}
+
 				root = (index_root_page*) CCH_FETCH(tdbb, window, LCK_read, pag_root);
 				continue;
 			}

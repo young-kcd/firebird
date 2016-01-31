@@ -161,7 +161,7 @@ namespace {
 			UCHAR* h = FB_NEW_POOL(*Firebird::MemoryPool::getContextPool()) UCHAR[dbb->dbb_page_size + PAGE_ALIGNMENT];
 			buffer.reset(h);
 			h = FB_ALIGN(h, PAGE_ALIGNMENT);
-			bdb.bdb_buffer = (Ods::pag*)h;
+			bdb.bdb_buffer = (Ods::pag*) h;
 
 			Jrd::FbStatusVector* const status = tdbb->tdbb_status_vector;
 
@@ -509,6 +509,7 @@ namespace Jrd {
 				LCK_release(tdbb, threadLock);
 				return;
 			}
+
 			currentPage = hdr->hdr_crypt_page;
 
 			// Refresh encryption flag
