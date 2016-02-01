@@ -25,7 +25,7 @@
 #define JRD_TPC_PROTO_H
 
 int		TPC_cache_state(Jrd::thread_db*, SLONG);
-SLONG	TPC_find_limbo(Jrd::thread_db*, SLONG, SLONG);
+SLONG	TPC_find_states(Jrd::thread_db*, SLONG, SLONG, ULONG, int&);
 void	TPC_initialize_tpc(Jrd::thread_db*, SLONG);
 void	TPC_set_state(Jrd::thread_db*, SLONG, SSHORT);
 int		TPC_snapshot_state(Jrd::thread_db*, SLONG);

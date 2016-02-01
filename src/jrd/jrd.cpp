@@ -5882,6 +5882,8 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 #ifdef SUPERSERVER_V2
 		TRA_header_write(tdbb, dbb, 0L);	// Update transaction info on header page.
 #endif
+		if (release_pools)
+			TRA_update_counters(tdbb, dbb);
 
 		MET_clear_cache(tdbb);
 

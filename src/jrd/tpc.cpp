@@ -100,17 +100,23 @@ int TPC_cache_state(thread_db* tdbb, SLONG number)
 }
 
 
-SLONG TPC_find_limbo(Jrd::thread_db* tdbb, SLONG min_number, SLONG max_number)
+inline bool check_state(int state, ULONG mask)
+{
+	return ((1 << state) & mask) != 0;
+}
+
+SLONG TPC_find_states(thread_db* tdbb, SLONG min_number, SLONG max_number, ULONG mask, int& state)
 {
 /**************************************
  *
- *	T P C _ f i n d _ l i m b o
+ *	T P C _ f i n d _ s t a t e s
  *
  **************************************
  *
  * Functional description
- *	Return the oldest limbo transaction in the given boundaries.
- *  If not found, return zero.
+ *	Return the oldest transaction in the given state. Lookup in the 
+ *  [min_number, max_number) bounds.
+ *  If not found, return zero and don't change value of "state".
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -126,29 +132,51 @@ SLONG TPC_find_limbo(Jrd::thread_db* tdbb, SLONG min_number, SLONG max_number)
 	TPC_initialize_tpc(tdbb, max_number);
 	const TxPageCache* tip_cache = dbb->dbb_tip_cache;
 
-	// All transactions older than the oldest in our TIP cache
-	// are known to be committed, so there's no point looking at them
+	const bool check_precommitted = dbb->dbb_pc_transactions && 
+		check_state(tra_precommitted, mask);
 
-	if ((ULONG) max_number < (ULONG) tip_cache->tpc_base)
+	// If we looking for tra_precommitted only and there is no precommitted
+	// transactions - return immediately
+
+	if (mask == (1 << tra_precommitted) && !dbb->dbb_pc_transactions)
 		return 0;
 
-	if ((ULONG) min_number < (ULONG) tip_cache->tpc_base)
-		min_number = tip_cache->tpc_base;
+	SLONG number = min_number;
 
-	// Scan the TIP cache and return the first (i.e. oldest) limbo transaction
+	// Check for too old transactions (assumed committed)
 
-	for (ULONG number = min_number;
-		tip_cache && number <= (ULONG) max_number;
-		tip_cache = tip_cache->tpc_next)
+	if (number < tip_cache->tpc_base || number == 0)
 	{
-		if (number >= (ULONG) tip_cache->tpc_base)
+		if (check_state(tra_committed, mask))
 		{
-			for (; number < (ULONG) (tip_cache->tpc_base + trans_per_tip) &&
-				number <= (ULONG) max_number;
-				number++)
+			state = tra_committed;
+			return number;
+		}
+
+		number = tip_cache->tpc_base;
+	}
+
+	for (; tip_cache && number < max_number; tip_cache = tip_cache->tpc_next)
+	{
+		fb_assert(number >= tip_cache->tpc_base);
+		if (number < tip_cache->tpc_base)
+			continue;
+
+		for (; (ULONG) number < (ULONG) (tip_cache->tpc_base + trans_per_tip) &&
+				number < max_number; 
+				number++) 
+		{
+			if (check_precommitted && number && TRA_precommited(tdbb, number, number))
 			{
-				if (TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base, number) == tra_limbo)
-					return number;
+				state = tra_precommitted;
+				return number;
+			}
+
+			const int tx_state = TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base, number);
+			if (check_state(tx_state, mask))
+			{
+				state = tx_state;
+				return number;
 			}
 		}
 	}

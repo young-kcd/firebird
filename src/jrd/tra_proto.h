@@ -60,6 +60,7 @@ Jrd::jrd_tra*	TRA_start(Jrd::thread_db*, ULONG flags, SSHORT lock_timeout, Jrd::
 Jrd::jrd_tra*	TRA_start(Jrd::thread_db*, int, const UCHAR*, Jrd::jrd_tra* outer = NULL);
 int		TRA_state(const UCHAR*, ULONG, ULONG);
 void	TRA_sweep(Jrd::thread_db*);
+void	TRA_update_counters(Jrd::thread_db*, Jrd::Database*);
 int		TRA_wait(Jrd::thread_db*, Jrd::jrd_tra*, SLONG, Jrd::jrd_tra::wait_t);
 void	TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request);
 void	TRA_detach_request(Jrd::jrd_req* request);

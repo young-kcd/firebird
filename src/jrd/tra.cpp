@@ -838,6 +838,46 @@ void TRA_unlink_cursor(jrd_tra* transaction, dsql_req* cursor)
 }
 
 
+void TRA_update_counters(thread_db* tdbb, Database* dbb)
+{
+/**************************************
+ *
+ *	T R A _ u p d a t e _ c o u n t e r s
+ *
+ **************************************
+ *
+ * Functional description
+ *  Update header page using cached values of transactions counters
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	if (!dbb || dbb->dbb_flags & DBB_read_only)
+		return;
+
+	WIN window(HEADER_PAGE_NUMBER);
+	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+
+	if (dbb->dbb_oldest_active > header->hdr_oldest_active ||
+		dbb->dbb_oldest_transaction > header->hdr_oldest_transaction ||
+		dbb->dbb_oldest_snapshot > header->hdr_oldest_snapshot)
+	{
+		CCH_MARK_MUST_WRITE(tdbb, &window);
+
+		if (dbb->dbb_oldest_active > header->hdr_oldest_active)
+			header->hdr_oldest_active = dbb->dbb_oldest_active;
+
+		if (dbb->dbb_oldest_transaction > header->hdr_oldest_transaction)
+			header->hdr_oldest_transaction = dbb->dbb_oldest_transaction;
+
+		if (dbb->dbb_oldest_snapshot > header->hdr_oldest_snapshot)
+			header->hdr_oldest_snapshot = dbb->dbb_oldest_snapshot;
+	}
+
+	CCH_RELEASE(tdbb, &window);
+}
+
+
 void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& resources)
 {
 /**************************************
@@ -1790,8 +1830,10 @@ void TRA_sweep(thread_db* tdbb)
 		// As our transaction is read-committed (see sweep_tpb), we have to scan
 		// the global TIP cache.
 
+		int oldest_state = 0;
 		const SLONG oldest_limbo =
-			TPC_find_limbo(tdbb, transaction->tra_oldest, transaction->tra_top - 1);
+			TPC_find_states(tdbb, transaction->tra_oldest, transaction->tra_top, 
+				1 << tra_limbo, oldest_state);
 
 		const SLONG active = oldest_limbo ? oldest_limbo : transaction->tra_top;
 
@@ -2664,6 +2706,8 @@ static void start_sweeper(thread_db* tdbb)
 	if (!dbb->allowSweepThread(tdbb))
 		return;
 
+	TRA_update_counters(tdbb, dbb);
+
 	// allocate space for the string and a null at the end
 	const char* pszFilename = tdbb->getAttachment()->att_filename.c_str();
 
@@ -3317,18 +3361,28 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	base = oldest & ~TRA_MASK;
 	oldest_active = number;
 	bool cleanup = !(number % TRA_ACTIVE_CLEANUP);
-	USHORT oldest_state;
+	int oldest_state;
 
 	for (; active < number; active++)
 	{
 		if (trans->tra_flags & TRA_read_committed)
-			oldest_state = TPC_cache_state(tdbb, active);
+		{
+			const ULONG mask = (1 << tra_active);
+			active = TPC_find_states(tdbb, active, number, mask, oldest_state);
+			if (!active)
+			{
+				active = number;
+				break;
+			}
+			fb_assert(oldest_state == tra_active);
+		}
 		else
 		{
 			const ULONG byte = TRANS_OFFSET(active - base);
 			const USHORT shift = TRANS_SHIFT(active);
 			oldest_state = (trans->tra_transactions[byte] >> shift) & TRA_MASK;
 		}
+
 		if (oldest_state == tra_active)
 		{
 			temp_lock.lck_key.lck_long = active;
@@ -3418,7 +3472,16 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	for (oldest = trans->tra_oldest; oldest < number; oldest++)
 	{
 		if (trans->tra_flags & TRA_read_committed)
-			oldest_state = TPC_cache_state(tdbb, oldest);
+		{
+			const ULONG mask = ~((1 << tra_committed) | (1 << tra_precommitted));
+			oldest = TPC_find_states(tdbb, trans->tra_oldest, number, mask, oldest_state);
+			if (!oldest) 
+			{
+				oldest = number;
+				break;
+			}
+			fb_assert(oldest_state != tra_committed && oldest_state != tra_precommitted);
+		}
 		else
 		{
 			const ULONG byte = TRANS_OFFSET(oldest - base);
