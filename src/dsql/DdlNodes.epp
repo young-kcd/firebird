@@ -7656,6 +7656,8 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 
 			if (clause->computed)
 			{
+				field->flags |= FLD_computed;
+
 				defineComputed(dsqlScratch, dsqlNode, field, clause->computed, computedSource,
 					computedValue);
 			}

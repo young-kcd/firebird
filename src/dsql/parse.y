@@ -3730,7 +3730,7 @@ alter_op($relationNode)
 	| col_opt symbol_column_name KW_TYPE non_array_type def_computed
 		{
 			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
-			clause->field = newNode<dsql_fld>();
+			clause->field = $4;
 			clause->field->fld_name = *$2;
 			clause->computed = $5;
 			$relationNode->clauses.add(clause);
