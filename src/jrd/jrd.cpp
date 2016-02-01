@@ -5586,28 +5586,22 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 	dpb_overwrite = false;
 	dpb_sql_dialect = 99;
 	invalid_client_SQL_dialect = false;
-	dpb_utf8_filename = false;
 
 	if (dpb_length == 0)
-	{
 		return;
-	}
+
 	if (dpb == NULL)
-	{
 		ERR_post(Arg::Gds(isc_bad_dpb_form));
-	}
 
 	ClumpletReader rdr(ClumpletReader::dpbList, dpb, dpb_length, dpbErrorRaise);
 	dumpAuthBlock("DatabaseOptions::get()", &rdr, isc_dpb_auth_block);
+
+	dpb_utf8_filename = rdr.find(isc_dpb_utf8_filename);
 
 	for (rdr.rewind(); !rdr.isEof(); rdr.moveNext())
 	{
 		switch (rdr.getClumpTag())
 		{
-		case isc_dpb_utf8_filename:
-			dpb_utf8_filename = true;
-			break;
-
 		case isc_dpb_working_directory:
 			getPath(rdr, dpb_working_directory);
 			break;
