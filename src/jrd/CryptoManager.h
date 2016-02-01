@@ -34,7 +34,6 @@
 #include "../common/classes/SyncObject.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/objects_array.h"
-#include "../common/classes/stack.h"
 #include "../common/classes/condition.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/ods.h"
@@ -268,23 +267,25 @@ public:
 	void startCryptThread(thread_db* tdbb);
 	void terminateCryptThread(thread_db* tdbb);
 
-	bool read(thread_db* tdbb, FbStatusVector* sv, jrd_file* file, BufferDesc* bdb,
-		Ods::pag* page, bool noShadows = true, PageSpace* pageSpace = NULL);
-	bool write(thread_db* tdbb, FbStatusVector* sv, jrd_file* file, BufferDesc* bdb,
-		Ods::pag* page);
+	class IOCallback
+	{
+	public:
+		virtual bool callback(thread_db* tdbb, FbStatusVector* sv, Ods::pag* page) = 0;
+	};
+
+	bool read(thread_db* tdbb, FbStatusVector* sv, Ods::pag* page, IOCallback* io);
+	bool write(thread_db* tdbb, FbStatusVector* sv, Ods::pag* page, IOCallback* io);
 
 	void cryptThread();
 
 	ULONG getCurrentPage() const;
 	UCHAR getCurrentState() const;
 
-	enum IoResult {SUCCESS_ALL, FAILED_CRYPT, FAILED_IO};
-	IoResult internalRead(thread_db* tdbb, FbStatusVector* sv, jrd_file* file,
-		BufferDesc* bdb, Ods::pag* page, bool noShadows, PageSpace* pageSpace);
-	IoResult internalWrite(thread_db* tdbb, FbStatusVector* sv, jrd_file* file,
-		BufferDesc* bdb, Ods::pag* page);
-
 private:
+	enum IoResult {SUCCESS_ALL, FAILED_CRYPT, FAILED_IO};
+	IoResult internalRead(thread_db* tdbb, FbStatusVector* sv, Ods::pag* page, IOCallback* io);
+	IoResult internalWrite(thread_db* tdbb, FbStatusVector* sv, Ods::pag* page, IOCallback* io);
+
 	class Buffer
 	{
 	public:
@@ -349,7 +350,7 @@ private:
 
 	void loadPlugin(const char* pluginName);
 	ULONG getLastPage(thread_db* tdbb);
-	void writeDbHeader(thread_db* tdbb, ULONG runpage, Firebird::Stack<ULONG>& pages);
+	void writeDbHeader(thread_db* tdbb, ULONG runpage);
 
 	void lockAndReadHeader(thread_db* tdbb, unsigned flags = 0);
 	static const unsigned CRYPT_HDR_INIT =		0x01;

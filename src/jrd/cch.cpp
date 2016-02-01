@@ -787,6 +787,49 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 	calling CCH_unwind, and eventually punting out.
 	*/
 
+	class Pio : public CryptoManager::IOCallback
+	{
+	public:
+		Pio(jrd_file* f, BufferDesc* b, bool tp, bool rs, PageSpace* ps)
+			: file(f), bdb(b), isTempPage(tp),
+			  read_shadow(rs), pageSpace(ps)
+		{ }
+
+		bool callback(thread_db* tdbb, FbStatusVector* status, Ods::pag* page)
+		{
+			Database *dbb = tdbb->getDatabase();
+			int retryCount = 0;
+
+			while (!PIO_read(tdbb, file, bdb, page, status))
+	 		{
+				if (isTempPage || !read_shadow)
+					return false;
+
+				if (!CCH_rollover_to_shadow(tdbb, dbb, file, false))
+ 					return false;
+
+				if (file != pageSpace->file)
+					file = pageSpace->file;
+				else
+				{
+					if (retryCount++ == 3)
+					{
+						gds__log("IO error loop Unwind to avoid a hang\n");
+						return false;
+					}
+				}
+ 			}
+
+			return true;
+		}
+	private:
+		jrd_file* file;
+		BufferDesc* bdb;
+		bool isTempPage;
+		bool read_shadow;
+		PageSpace* pageSpace;
+	};
+
 	BackupManager* bm = dbb->dbb_backup_manager;
 	const int bak_state = bm->getState();
 	fb_assert(bak_state != Ods::hdr_nbak_unknown);
@@ -807,7 +850,8 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 			bdb->bdb_page.getPageSpaceID(), bdb->bdb_page.getPageNum(), bak_state, diff_page));
 
 		// Read page from disk as normal
-		if (!dbb->dbb_crypto_manager->read(tdbb, status, file, bdb, page, isTempPage || !read_shadow, pageSpace))
+		Pio io(file, bdb, isTempPage, read_shadow, pageSpace);
+		if (!dbb->dbb_crypto_manager->read(tdbb, status, page, &io))
 		{
 			if (read_shadow && !isTempPage)
 			{
@@ -837,7 +881,8 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 			NBAK_TRACE(("Re-reading page %d, state=%d, diff page=%d from DISK",
 				bdb->bdb_page, bak_state, diff_page));
 
-			if (!dbb->dbb_crypto_manager->read(tdbb, status, file, bdb, page, !read_shadow, pageSpace))
+			Pio io(file, bdb, false, read_shadow, pageSpace);
+			if (!dbb->dbb_crypto_manager->read(tdbb, status, page, &io))
 			{
 				if (read_shadow)
 				{
@@ -2232,7 +2277,7 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 		// shadow to be deleted at the next available opportunity when we
 		// know we don't have a page fetched
 
-		if (!dbb->dbb_crypto_manager->write(tdbb, status, sdw->sdw_file, bdb, page))
+		if (!PIO_write(tdbb, sdw->sdw_file, bdb, page, status))
 		{
 			if (sdw->sdw_flags & SDW_manual)
 				result = false;
@@ -4821,18 +4866,15 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 				(backup_state == Ods::hdr_nbak_stalled ||
 					(backup_state == Ods::hdr_nbak_merge && bdb->bdb_difference_page)))
 			{
-
-				const bool res =
-					dbb->dbb_backup_manager->writeDifference(tdbb, status,
-						bdb->bdb_difference_page, bdb->bdb_buffer);
-
-				if (!res)
+				if (!dbb->dbb_backup_manager->writeDifference(tdbb, status,
+						bdb->bdb_difference_page, bdb->bdb_buffer))
 				{
 					bdb->bdb_flags |= BDB_io_error;
 					dbb->dbb_flags |= DBB_suspend_bgio;
 					return false;
 				}
 			}
+
 			if (!isTempPage && backup_state == Ods::hdr_nbak_stalled)
 			{
 				// We finished. Adjust transaction accounting and get ready for exit
@@ -4842,24 +4884,55 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 			else
 			{
 				// We need to write our pages to main database files
-				jrd_file* file = pageSpace->file;
-				while (!dbb->dbb_crypto_manager->write(tdbb, status, file, bdb, page))
+
+				class Pio : public CryptoManager::IOCallback
 				{
-					if (isTempPage || !CCH_rollover_to_shadow(tdbb, dbb, file, inAst))
+				public:
+					Pio(jrd_file* f, BufferDesc* b, bool ast, bool tp, PageSpace* ps)
+						: file(f), bdb(b), inAst(ast), isTempPage(tp), pageSpace(ps)
+					{ }
+
+					bool callback(thread_db* tdbb, FbStatusVector* status, Ods::pag* page)
 					{
-						bdb->bdb_flags |= BDB_io_error;
-						dbb->dbb_flags |= DBB_suspend_bgio;
-						return false;
+						Database *dbb = tdbb->getDatabase();
+						AutoSetRestore<Ods::pag*> swapPage(&(bdb->bdb_buffer), page);
+
+						while (!PIO_write(tdbb, file, bdb, page, status))
+						{
+							if (isTempPage || !CCH_rollover_to_shadow(tdbb, dbb, file, inAst))
+							{
+								bdb->bdb_flags |= BDB_io_error;
+								dbb->dbb_flags |= DBB_suspend_bgio;
+								return false;
+							}
+
+							file = pageSpace->file;
+						}
+
+						if (bdb->bdb_page == HEADER_PAGE_NUMBER)
+							dbb->dbb_last_header_write = Ods::getNT((header_page*) page);
+
+						if (dbb->dbb_shadow && !isTempPage)
+							return CCH_write_all_shadows(tdbb, 0, bdb, status, inAst);
+
+						return true;
 					}
 
-					file = pageSpace->file;
+				private:
+					jrd_file* file;
+					BufferDesc* bdb;
+					bool inAst;
+					bool isTempPage;
+					PageSpace* pageSpace;
+				};
+
+				Pio io(pageSpace->file, bdb, inAst, isTempPage, pageSpace);
+				result = dbb->dbb_crypto_manager->write(tdbb, status, page, &io);
+				if ((!result) && (bdb->bdb_flags & BDB_io_error))
+				{
+					return false;
 				}
 
-				if (bdb->bdb_page == HEADER_PAGE_NUMBER)
-					dbb->dbb_last_header_write = Ods::getNT((header_page*) page);
-
-				if (dbb->dbb_shadow && !isTempPage)
-					result = CCH_write_all_shadows(tdbb, 0, bdb, status, inAst);
 			}
 		}
 

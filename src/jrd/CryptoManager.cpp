@@ -128,14 +128,6 @@ namespace {
 			return const_cast<Ods::header_page*>(operator->());
 		}
 
-		void depends(Stack<ULONG>& pages)
-		{
-			while (pages.hasData())
-			{
-				CCH_precedence(tdbb, &window, pages.pop());
-			}
-		}
-
 		~CchHdr()
 		{
 			CCH_RELEASE(tdbb, &window);
@@ -184,8 +176,24 @@ namespace {
 			if (bak_state == Ods::hdr_nbak_normal || !diff_page)
 			{
 				// Read page from disk as normal
-				if (dbb->dbb_crypto_manager->internalRead(tdbb, status, file, &bdb, page, false, pageSpace) != Jrd::CryptoManager::SUCCESS_ALL)
-					ERR_punt();
+				int retryCount = 0;
+
+				while (!PIO_read(tdbb, file, &bdb, page, status))
+	 			{
+					if (!CCH_rollover_to_shadow(tdbb, dbb, file, false))
+ 						ERR_punt();;
+
+					if (file != pageSpace->file)
+						file = pageSpace->file;
+					else
+					{
+						if (retryCount++ == 3)
+						{
+							gds__log("IO error loop Unwind to avoid a hang\n");
+							ERR_punt();
+						}
+					}
+ 				}
 			}
 			else
 			{
@@ -573,7 +581,6 @@ namespace Jrd {
 			tdbb->tdbb_quantum = SWEEP_QUANTUM;
 
 			ULONG lastPage = getLastPage(tdbb);
-			Stack<ULONG> pages;
 
 			// Take exclusive threadLock
 			// If can't take that lock - nothing to do, cryptThread already runs somewhere
@@ -617,8 +624,7 @@ namespace Jrd {
 							(bool(page->pag_flags & Ods::crypted_page) != crypt) &&
 							Ods::pag_crypt_page[page->pag_type])
 						{
-							CCH_MARK(tdbb, &window);
-							pages.push(currentPage);
+							CCH_MARK_MUST_WRITE(tdbb, &window);
 						}
 						CCH_RELEASE_TAIL(tdbb, &window);
 
@@ -626,7 +632,7 @@ namespace Jrd {
 						++currentPage;
 						if ((currentPage & 0x3FF) == 0)
 						{
-							writeDbHeader(tdbb, currentPage, pages);
+							writeDbHeader(tdbb, currentPage);
 						}
 					}
 
@@ -644,7 +650,7 @@ namespace Jrd {
 				// Finalize crypt
 				if (!down)
 				{
-					writeDbHeader(tdbb, 0, pages);
+					writeDbHeader(tdbb, 0);
 					if (!crypt)
 					{
 						// Decryption finished, unload plugin as we don't need it anymore
@@ -666,7 +672,7 @@ namespace Jrd {
 						// try to save current state of crypt thread
 						if (!down)
 						{
-							writeDbHeader(tdbb, currentPage, pages);
+							writeDbHeader(tdbb, currentPage);
 						}
 
 						// Release exclusive lock on StartCryptThread
@@ -686,10 +692,9 @@ namespace Jrd {
 		}
 	}
 
-	void CryptoManager::writeDbHeader(thread_db* tdbb, ULONG runpage, Stack<ULONG>& pages)
+	void CryptoManager::writeDbHeader(thread_db* tdbb, ULONG runpage)
 	{
 		CchHdr hdr(tdbb, LCK_write);
-		hdr.depends(pages);
 
 		Ods::header_page* header = hdr.write();
 		header->hdr_crypt_page = runpage;
@@ -700,8 +705,7 @@ namespace Jrd {
 		}
 	}
 
-	bool CryptoManager::read(thread_db* tdbb, FbStatusVector* sv, jrd_file* file,
-		BufferDesc* bdb, Ods::pag* page, bool noShadows, PageSpace* pageSpace)
+	bool CryptoManager::read(thread_db* tdbb, FbStatusVector* sv, Ods::pag* page, IOCallback* io)
 	{
 		// Code calling us is not ready to process exceptions correctly
 		// Therefore use old (status vector based) method
@@ -713,7 +717,7 @@ namespace Jrd {
 				// Take shared lock on crypto manager and read data
 				BarSync::IoGuard ioGuard(tdbb, sync);
 				if (!slowIO)
-					return internalRead(tdbb, sv, file, bdb, page, noShadows, pageSpace) == SUCCESS_ALL;
+					return internalRead(tdbb, sv, page, io) == SUCCESS_ALL;
 			}
 
 			// Slow IO - we need exclusive lock on crypto manager.
@@ -721,7 +725,7 @@ namespace Jrd {
 			BarSync::LockGuard lockGuard(tdbb, sync);
 			for (SINT64 previous = slowIO; ; previous = slowIO)
 			{
-				switch (internalRead(tdbb, sv, file, bdb, page, noShadows, pageSpace))
+				switch (internalRead(tdbb, sv, page, io))
 				{
 				case SUCCESS_ALL:
 					if (!slowIO)				// if we took a lock last time
@@ -758,30 +762,10 @@ namespace Jrd {
 	}
 
 	CryptoManager::IoResult CryptoManager::internalRead(thread_db* tdbb, FbStatusVector* sv,
-		jrd_file* file, BufferDesc* bdb, Ods::pag* page, bool noShadows, PageSpace* pageSpace)
+		Ods::pag* page, IOCallback* io)
 	{
-		fb_assert(pageSpace || noShadows);
-		int retryCount = 0;
-
-		while (!PIO_read(tdbb, file, bdb, page, sv))
-		{
-			if (noShadows)
-				return FAILED_IO;
-
-			if (!CCH_rollover_to_shadow(tdbb, &dbb, file, false))
-				return FAILED_IO;
-
-			if (file != pageSpace->file)
-				file = pageSpace->file;
-			else
-			{
-				if (retryCount++ == 3)
-				{
-					gds__log("IO error loop Unwind to avoid a hang");
-					return FAILED_IO;
-				}
-			}
-		}
+		if (!io->callback(tdbb, sv, page))
+			return FAILED_IO;
 
 		if (page->pag_flags & Ods::crypted_page)
 		{
@@ -801,8 +785,7 @@ namespace Jrd {
 		return SUCCESS_ALL;
 	}
 
-	bool CryptoManager::write(thread_db* tdbb, FbStatusVector* sv, jrd_file* file,
-		BufferDesc* bdb, Ods::pag* page)
+	bool CryptoManager::write(thread_db* tdbb, FbStatusVector* sv, Ods::pag* page, IOCallback* io)
 	{
 		// Code calling us is not ready to process exceptions correctly
 		// Therefore use old (status vector based) method
@@ -814,14 +797,14 @@ namespace Jrd {
 				// Take shared lock on crypto manager and write data
 				BarSync::IoGuard ioGuard(tdbb, sync);
 				if (!slowIO)
-					return internalWrite(tdbb, sv, file, bdb, page) == SUCCESS_ALL;
+					return internalWrite(tdbb, sv, page, io) == SUCCESS_ALL;
 			}
 
 			// Have to use slow method - see full comments in read() function
 			BarSync::LockGuard lockGuard(tdbb, sync);
 			for (SINT64 previous = slowIO; ; previous = slowIO)
 			{
-				switch (internalWrite(tdbb, sv, file, bdb, page))
+				switch (internalWrite(tdbb, sv, page, io))
 				{
 				case SUCCESS_ALL:
 					if (!slowIO)
@@ -854,18 +837,19 @@ namespace Jrd {
 	}
 
 	CryptoManager::IoResult CryptoManager::internalWrite(thread_db* tdbb, FbStatusVector* sv,
-		jrd_file* file, BufferDesc* bdb, Ods::pag* page)
+		Ods::pag* page, IOCallback* io)
 	{
 		Buffer to;
 		Ods::pag* dest = page;
 		UCHAR savedFlags = page->pag_flags;
 
-		fb_assert((!crypt) || cryptPlugin);
 		if (crypt && Ods::pag_crypt_page[page->pag_type % (pag_max + 1)])
 		{
+			fb_assert(cryptPlugin);
 			if (!cryptPlugin)
 			{
-				Arg::Gds(isc_decrypt_error).copyTo(sv);	//!!!!
+				(Arg::Gds(isc_decrypt_error) <<
+				 Arg::Gds(isc_random) << "Missing crypt plugin").copyTo(sv);
 				return FAILED_CRYPT;
 			}
 
@@ -884,7 +868,7 @@ namespace Jrd {
 			page->pag_flags &= ~Ods::crypted_page;
 		}
 
-		if (!PIO_write(tdbb, file, bdb, dest, sv))
+		if (!io->callback(tdbb, sv, dest))
 		{
 			page->pag_flags = savedFlags;
 			return FAILED_IO;

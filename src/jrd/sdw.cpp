@@ -496,8 +496,29 @@ void SDW_dump_pages(thread_db* tdbb)
 				// page type is 0
 
 				CCH_FETCH(tdbb, &window, LCK_read, pag_undefined);
-				if (!CCH_write_all_shadows(tdbb, shadow, window.win_bdb,
-										   tdbb->tdbb_status_vector, false))
+
+				class Pio : public CryptoManager::IOCallback
+				{
+				public:
+					Pio(Shadow* s, BufferDesc* b)
+						: shadow(s), bdb(b)
+					{ }
+
+					bool callback(thread_db* tdbb, FbStatusVector* status, Ods::pag* page)
+					{
+						AutoSetRestore<Ods::pag*> swapPage(&(bdb->bdb_buffer), page);
+
+						return CCH_write_all_shadows(tdbb, shadow, bdb, status, false);
+					}
+
+				private:
+					Shadow* shadow;
+					BufferDesc* bdb;
+				};
+				Pio cryptIo(shadow, window.win_bdb);
+
+				if (!dbb->dbb_crypto_manager->write(tdbb, tdbb->tdbb_status_vector,
+					window.win_bdb->bdb_buffer, &cryptIo))
 				{
 					CCH_RELEASE(tdbb, &window);
 					ERR_punt();

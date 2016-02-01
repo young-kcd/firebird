@@ -811,7 +811,24 @@ bool BackupManager::writeDifference(thread_db* tdbb, FbStatusVector* status, ULO
 	// Check that diff page is not allocation page
 	fb_assert(diff_page % (database->dbb_page_size / sizeof(ULONG)));
 
-	if (!database->dbb_crypto_manager->write(tdbb, status, diff_file, &temp_bdb, page))
+	class Pio : public CryptoManager::IOCallback
+	{
+	public:
+		Pio(jrd_file* p_file, BufferDesc* p_bdb)
+			: file(p_file), bdb(p_bdb)
+		{ }
+
+		bool callback(thread_db* tdbb, FbStatusVector* sv, Ods::pag* page)
+		{
+			return PIO_write(tdbb, file, bdb, page, sv);
+		}
+	private:
+		jrd_file* file;
+		BufferDesc* bdb;
+	};
+	Pio io(diff_file, &temp_bdb);
+
+	if (!database->dbb_crypto_manager->write(tdbb, status, page, &io))
 		return false;
 	return true;
 }
@@ -821,7 +838,25 @@ bool BackupManager::readDifference(thread_db* tdbb, ULONG diff_page, Ods::pag* p
 	BufferDesc temp_bdb(database->dbb_bcb);
 	temp_bdb.bdb_page = diff_page;
 	temp_bdb.bdb_buffer = page;
-	if (!database->dbb_crypto_manager->read(tdbb, tdbb->tdbb_status_vector, diff_file, &temp_bdb, page))
+
+	class Pio : public CryptoManager::IOCallback
+	{
+	public:
+		Pio(jrd_file* p_file, BufferDesc* p_bdb)
+			: file(p_file), bdb(p_bdb)
+		{ }
+
+		bool callback(thread_db* tdbb, FbStatusVector* sv, Ods::pag* page)
+		{
+			return PIO_read(tdbb, file, bdb, page, sv);
+		}
+	private:
+		jrd_file* file;
+		BufferDesc* bdb;
+	};
+	Pio io(diff_file, &temp_bdb);
+
+	if (!database->dbb_crypto_manager->read(tdbb, tdbb->tdbb_status_vector, page, &io))
 		return false;
 	NBAK_TRACE(("read_diff page=%d, diff=%d", page->pag_pageno, diff_page));
 	return true;
