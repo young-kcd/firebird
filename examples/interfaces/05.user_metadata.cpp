@@ -36,7 +36,7 @@ static IMaster* master = fb_get_master_interface();
 
 /*
  * Trivial sample of IMessageMetadata implementation.
- * Metadata is created for a fixed outptu format with single char field.
+ * Metadata is created for a fixed output format with single char field.
  * Therefore index parameter in all functions is ignored.
  * Because the only possible error is index out of bounds status parameter is ignored too.
  * Atomic operation is not used in IReferenceCounted cause we do not plan MT support.
