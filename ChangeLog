@@ -1,3 +1,30 @@
+ 2016-01-31 23:57  asfernandes 
+   M src/isql/extract.epp
+Fixed CORE-5092 - ISQL extract command lose COMPUTED BY field types.
+
+ 2016-01-31 23:56  asfernandes 
+   M src/isql/extract.epp
+Revert this solution for CORE-5089 as it doesn't work for packages.
+
+ 2016-01-31 10:45  dimitr 
+   M src/common/isc_file.cpp
+Fix for semicolons embedded into the []-styled IPv6 address.
+
+ 2016-01-31 00:09  asfernandes 
+   M src/common/security.cpp
+Avoid constant duplication.
+
+ 2016-01-31 00:06  asfernandes 
+   M src/common/security.cpp
+   M src/isql/show.epp
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/blb.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/extds/ValidatePassword.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/ods.h
+Misc.
+
  2016-01-30 23:40  asfernandes 
    M examples/interfaces/05.user_metadata.cpp
 Correction.
