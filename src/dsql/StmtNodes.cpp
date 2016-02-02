@@ -3434,11 +3434,10 @@ const StmtNode* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, Ex
 		EDS::Connection* conn = EDS::Manager::getConnection(tdbb, sDataSrc, sUser, sPwd, sRole, traScope);
 
 		stmt = conn->createStatement(sSql);
-
-		EDS::Transaction* tran = EDS::Transaction::getTransaction(tdbb, stmt->getConnection(), traScope);
-
 		stmt->bindToRequest(request, stmtPtr);
 		stmt->setCallerPrivileges(useCallerPrivs);
+
+		EDS::Transaction* tran = EDS::Transaction::getTransaction(tdbb, stmt->getConnection(), traScope);
 
 		const MetaName* const* inpNames = inputNames ? inputNames->begin() : NULL;
 		stmt->prepare(tdbb, tran, sSql, inputNames != NULL);
