@@ -852,8 +852,11 @@ void TRA_update_counters(thread_db* tdbb, Database* dbb)
  **************************************/
 	SET_TDBB(tdbb);
 
-	if (!dbb || dbb->dbb_flags & DBB_read_only)
+	if (!dbb || dbb->dbb_flags & DBB_read_only || dbb->dbb_flags & DBB_new || 
+		dbb->dbb_oldest_transaction == 0)
+	{
 		return;
+	}
 
 	WIN window(HEADER_PAGE_NUMBER);
 	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
