@@ -81,6 +81,7 @@ static void list_create_db();
 static void list_domain_table(const SCHAR*, SSHORT);
 static void list_domains(SSHORT);
 static void listDomainConstraints();
+static void listRelationComputed(LegacyTables flag, SSHORT);
 static void list_exceptions();
 static void list_filters();
 static void list_foreign();
@@ -183,20 +184,21 @@ int EXTRACT_ddl(LegacyTables flag, const SCHAR* tabname)
 		list_collations();
 		list_generators();
 		list_domains(default_char_set_id);
+		list_all_tables(flag, default_char_set_id);
 		list_functions_legacy();
 		list_functions_ods12_headers();
 		list_procedure_headers();
 		list_package_headers();
-		list_all_tables(flag, default_char_set_id);
 		list_indexes();
 		list_foreign();
 		list_views();
-		list_check();
 		list_exceptions();
 		list_functions_ods12_bodies();
 		list_procedure_bodies();
 		list_package_bodies();
 		listDomainConstraints();
+		list_check();
+		listRelationComputed(flag, default_char_set_id);
 		list_all_triggers();
 		list_all_grants();
 		SHOW_maps(true, "");
@@ -465,8 +467,14 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		if (!FLD.RDB$COMPUTED_BLR.NULL)
 		{
 			isqlGlob.printf(" COMPUTED BY ");
-			if (!FLD.RDB$COMPUTED_SOURCE.NULL)
-				ISQL_print_validation (isqlGlob.Out, &FLD.RDB$COMPUTED_SOURCE, true, fbTrans);
+
+			if (domain_flag)
+			{
+				if (!FLD.RDB$COMPUTED_SOURCE.NULL)
+					ISQL_print_validation (isqlGlob.Out, &FLD.RDB$COMPUTED_SOURCE, true, fbTrans);
+			}
+			else
+				isqlGlob.printf("(NULL)");
 		}
 
 		// Handle defaults for columns
@@ -1786,6 +1794,8 @@ static void list_check()
 
 	// Query gets the check clauses for triggers stored for check constraints
 
+	bool first = true;
+
 	FOR TRG IN RDB$TRIGGERS CROSS
 		CHK IN RDB$CHECK_CONSTRAINTS WITH
 		TRG.RDB$TRIGGER_TYPE EQ 1 AND
@@ -1796,6 +1806,12 @@ static void list_check()
 		AND RELC.RDB$CONSTRAINT_TYPE EQ "CHECK")
 		REDUCED TO CHK.RDB$CONSTRAINT_NAME
 		SORTED BY CHK.RDB$CONSTRAINT_NAME
+
+		if (first)
+		{
+			isqlGlob.printf("%s/* Table constraints */%s", NEWLINE, NEWLINE);
+			first = false;
+		}
 
 		fb_utils::exact_name(TRG.RDB$RELATION_NAME);
 
@@ -2412,6 +2428,177 @@ static void listDomainConstraints()
 		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
+}
+
+
+// Fix computed field expressions.
+static void listRelationComputed(LegacyTables flag, SSHORT default_char_set_id)
+{
+	// This version of cursor gets only sql tables identified by security class
+	// and misses views, getting only null view_source
+
+	Firebird::string lastTable;
+	SCHAR char_sets[86];
+
+	FOR REL IN RDB$RELATIONS CROSS
+		RFR IN RDB$RELATION_FIELDS CROSS
+		FLD IN RDB$FIELDS
+		WITH (REL.RDB$SYSTEM_FLAG NE 1 OR REL.RDB$SYSTEM_FLAG MISSING) AND
+			 REL.RDB$VIEW_BLR MISSING AND
+			 FLD.RDB$COMPUTED_BLR NOT MISSING AND
+			 RFR.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME AND
+			 RFR.RDB$RELATION_NAME EQ REL.RDB$RELATION_NAME
+		SORTED BY REL.RDB$RELATION_NAME, RFR.RDB$FIELD_POSITION, RFR.RDB$FIELD_NAME
+
+		// If this is not an SQL table and we aren't doing ALL objects
+		if ((REL.RDB$FLAGS.NULL || !(REL.RDB$FLAGS & REL_sql)) && (flag != ALL_objects) )
+			continue;
+
+		SSHORT collation = 0;
+		SSHORT char_set_id = 0;
+
+		// Null terminate name string
+		fb_utils::exact_name(REL.RDB$RELATION_NAME);
+
+		if (flag || !strncmp(REL.RDB$SECURITY_CLASS, "SQL$", 4))
+		{
+			if (lastTable.isEmpty())
+				isqlGlob.printf("%s/* Computed fields */%s%s", NEWLINE, NEWLINE, NEWLINE);
+
+			if (lastTable != REL.RDB$RELATION_NAME)
+			{
+				if (!lastTable.isEmpty())
+					isqlGlob.printf("%s%s%s", isqlGlob.global_Term, NEWLINE, NEWLINE);
+
+				isqlGlob.printf("ALTER TABLE ");
+
+				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+				{
+					IUTILS_copy_SQL_id(REL.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
+					isqlGlob.printf("%s ", SQL_identifier);
+				}
+				else
+					isqlGlob.printf("%s ", REL.RDB$RELATION_NAME);
+
+				lastTable = REL.RDB$RELATION_NAME;
+			}
+			else
+				isqlGlob.printf(",");
+
+			isqlGlob.printf("%s%sALTER ", NEWLINE, TAB_AS_SPACES);
+
+			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+			{
+				IUTILS_copy_SQL_id(fb_utils::exact_name(RFR.RDB$FIELD_NAME), SQL_identifier, DBL_QUOTE);
+				isqlGlob.printf("%s ", SQL_identifier);
+			}
+			else
+				isqlGlob.printf("%s ", fb_utils::exact_name(RFR.RDB$FIELD_NAME));
+
+			isqlGlob.printf("TYPE ");
+
+			/*
+			** If this is a known domain, then just print the domain rather than type
+			** Domains won't have length, array, or blob definitions, but they
+			** may have not null, default and check overriding their definitions
+			*/
+
+			if (!(fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && FLD.RDB$SYSTEM_FLAG != 1))
+			{
+				fb_utils::exact_name(FLD.RDB$FIELD_NAME);
+				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+				{
+					IUTILS_copy_SQL_id (FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
+					isqlGlob.prints(SQL_identifier);
+				}
+				else
+					isqlGlob.prints(FLD.RDB$FIELD_NAME);
+
+				// International character sets
+				// Print only the character set
+				if ((FLD.RDB$FIELD_TYPE == T_CHAR || FLD.RDB$FIELD_TYPE == VARCHAR) &&
+					!RFR.RDB$COLLATION_ID.NULL && RFR.RDB$COLLATION_ID)
+				{
+					char_sets[0] = '\0';
+					collation = RFR.RDB$COLLATION_ID;
+					char_set_id = FLD.RDB$CHARACTER_SET_ID;
+					ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, true, false, char_sets);
+					if (char_sets[0])
+						isqlGlob.prints(char_sets);
+				}
+			}
+			else
+			{
+				if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SCALE))
+					return;
+
+				if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
+				{
+					if (FLD.RDB$CHARACTER_LENGTH.NULL)
+						isqlGlob.printf("(%d)", FLD.RDB$FIELD_LENGTH);
+					else
+						isqlGlob.printf("(%d)", FLD.RDB$CHARACTER_LENGTH);
+				}
+
+				// Catch arrays after printing the type
+
+				if (!FLD.RDB$DIMENSIONS.NULL)
+					ISQL_array_dimensions(FLD.RDB$FIELD_NAME);
+
+				if (FLD.RDB$FIELD_TYPE == BLOB)
+				{
+					const int subtype = FLD.RDB$FIELD_SUB_TYPE;
+					isqlGlob.printf(" SUB_TYPE ");
+
+					if ((subtype > 0) && (subtype <= MAX_BLOBSUBTYPES))
+						isqlGlob.prints(Sub_types[subtype]);
+					else
+						isqlGlob.printf("%d", subtype);
+
+					isqlGlob.printf(" SEGMENT SIZE %u", (USHORT) FLD.RDB$SEGMENT_LENGTH);
+				}
+
+				// International character sets
+				if ((FLD.RDB$FIELD_TYPE == T_CHAR || FLD.RDB$FIELD_TYPE == VARCHAR ||
+					 FLD.RDB$FIELD_TYPE == BLOB) &&
+					!FLD.RDB$CHARACTER_SET_ID.NULL)
+				{
+					char_sets[0] = '\0';
+
+					// Override rdb$fields id with relation_fields if present
+
+					if (!RFR.RDB$COLLATION_ID.NULL)
+						collation = RFR.RDB$COLLATION_ID;
+					else if (!FLD.RDB$COLLATION_ID.NULL)
+						collation = FLD.RDB$COLLATION_ID;
+
+					if (!FLD.RDB$CHARACTER_SET_ID.NULL)
+						char_set_id = FLD.RDB$CHARACTER_SET_ID;
+					if ((char_set_id != default_char_set_id) || collation)
+						ISQL_get_character_sets (char_set_id, 0, false, false, char_sets);
+					if (char_sets[0])
+						isqlGlob.prints(char_sets);
+					// CVC: Someone deleted the code that checks intchar when handling collations
+					// several lines below, so it didn't have any effect. Commented it.
+					//if (!char_set_id)
+					//	intchar = true;
+				}
+			}
+
+			isqlGlob.printf(" COMPUTED BY ");
+
+			if (!FLD.RDB$COMPUTED_SOURCE.NULL)
+				ISQL_print_validation(isqlGlob.Out, &FLD.RDB$COMPUTED_SOURCE, true, fbTrans);
+		}
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(fbStatus);
+		ROLLBACK;
+		return;
+	END_ERROR;
+
+	if (lastTable.hasData())
+		isqlGlob.printf("%s%s%s", isqlGlob.global_Term, NEWLINE, NEWLINE);
 }
 
 
