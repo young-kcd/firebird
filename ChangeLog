@@ -1,3 +1,28 @@
+ 2016-02-01 16:51  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/parse.y
+Fixed CORE-5093 - Alter computed field type does not work.
+
+ 2016-02-01 16:16  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+   M src/jrd/cch.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/sdw.cpp
+Fixed CORE-5044: Pages are encrypted for each shadow separately
+
+ 2016-02-01 16:13  alexpeshkoff 
+   M examples/interfaces/05.user_metadata.cpp
+comment
+
+ 2016-02-01 15:05  dimitr 
+   M src/jrd/jrd.cpp
+Fixed (or worked around, if you wish) redundant UTF8->system conversions happening if isc_dpb_utf8_filename tag is located in the middle of DPB.
+
+ 2016-02-01 14:54  dimitr 
+   M src/auth/trusted/AuthSspi.cpp
+Fixed (on behalf of Alex) CORE-4885: Error retrieving current user name when using Windows trusted authentication and OS user name contains non-ASCII characters.
+
  2016-01-31 23:57  asfernandes 
    M src/isql/extract.epp
 Fixed CORE-5092 - ISQL extract command lose COMPUTED BY field types.
