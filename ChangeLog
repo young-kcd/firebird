@@ -1,3 +1,11 @@
+ 2016-02-01 15:39  hvlad 
+   M src/jrd/jrd.cpp
+   M src/jrd/tpc.cpp
+   M src/jrd/tpc_proto.h
+   M src/jrd/tra.cpp
+   M src/jrd/tra_proto.h
+Fixed bug CORE-5067 : Blocking new connections as a consequence of the too long sweep security2.fdb
+
  2016-01-21 10:51  hvlad 
    M src/jrd/blb.cpp
 Fixed bug CORE-5078 : "Invalid BLOB ID" error
