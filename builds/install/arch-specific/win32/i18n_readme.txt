@@ -118,7 +118,7 @@ o Adding the new language to the InnoSetup install script
 
     [Messages]
     en.BeveledLabel=English
-    fr.BeveledLabel=Français
+    fr.BeveledLabel=FranÃ§ais
 
     [CustomMessages]
     #include "custom_messages.inc"

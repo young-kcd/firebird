@@ -1,4 +1,4 @@
-en.MyAppName=Firebird Database Server %1
+﻿en.MyAppName=Firebird Database Server %1
 en.ServerInstall=Full installation of Server and development tools.
 en.SuperServerInstall=Full installation of Super Server and development tools.
 en.ClassicServerInstall=Full installation of Classic Server and development tools.
