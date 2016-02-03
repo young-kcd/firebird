@@ -1621,6 +1621,10 @@ const
 	gds_login_error                      = 335545106;
 	isc_already_opened                   = 335545107;
 	gds_already_opened                   = 335545107;
+	isc_bad_crypt_key                    = 335545108;
+	gds_bad_crypt_key                    = 335545108;
+	isc_encrypt_error                    = 335545109;
+	gds_encrypt_error                    = 335545109;
 	isc_gfix_db_name                     = 335740929;
 	gds_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;

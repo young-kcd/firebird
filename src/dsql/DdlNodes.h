@@ -2228,7 +2228,8 @@ public:
 		  setDefaultCharSet(p),
 		  setDefaultCollation(p),
 		  files(p),
-		  cryptPlugin(p)
+		  cryptPlugin(p),
+		  keyName(p)
 	{
 	}
 
@@ -2263,6 +2264,7 @@ public:
 	Firebird::MetaName setDefaultCollation;
 	Firebird::Array<NestConst<DbFileClause> > files;
 	Firebird::MetaName cryptPlugin;
+	Firebird::MetaName keyName;
 };
 
 

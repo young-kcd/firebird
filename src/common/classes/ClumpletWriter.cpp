@@ -30,6 +30,7 @@
 #include "firebird.h"
 
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/classes/MetaName.h"
 #include "fb_exception.h"
 
 #include "../jrd/ibase.h"
@@ -183,7 +184,7 @@ void ClumpletWriter::reset(const UCHAR* buffer, const FB_SIZE_T buffLen)
 	}
 	else
 	{
-		UCHAR tag = (kind == SpbStart || kind == UnTagged || kind == WideUnTagged) ? getBufferTag() : 0;
+		UCHAR tag = (kind == SpbStart || kind == UnTagged || kind == WideUnTagged) ? 0 : getBufferTag();
 		initNewBuffer(tag);
 	}
 	rewind();
@@ -250,14 +251,24 @@ void ClumpletWriter::insertString(UCHAR tag, const string& str)
 	insertString(tag, str.c_str(), str.length());
 }
 
-void ClumpletWriter::insertPath(UCHAR tag, const PathName& str)
+void ClumpletWriter::insertString(UCHAR tag, const MetaName& str)
 {
 	insertString(tag, str.c_str(), str.length());
+}
+
+void ClumpletWriter::insertString(UCHAR tag, const char* str)
+{
+	insertString(tag, str, strlen(str));
 }
 
 void ClumpletWriter::insertString(UCHAR tag, const char* str, FB_SIZE_T length)
 {
 	insertBytesLengthCheck(tag, str, length);
+}
+
+void ClumpletWriter::insertPath(UCHAR tag, const PathName& str)
+{
+	insertString(tag, str.c_str(), str.length());
 }
 
 void ClumpletWriter::insertBytes(UCHAR tag, const void* bytes, FB_SIZE_T length)

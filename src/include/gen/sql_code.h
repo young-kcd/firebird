@@ -808,6 +808,8 @@ static const struct {
 	{335545105, -901}, /* 785 map_down */
 	{335545106, -902}, /* 786 login_error */
 	{335545107, -902}, /* 787 already_opened */
+	{335545108, -902}, /* 788 bad_crypt_key */
+	{335545109, -901}, /* 789 encrypt_error */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

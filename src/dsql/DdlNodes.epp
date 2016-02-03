@@ -11577,6 +11577,7 @@ string AlterDatabaseNode::internalPrint(NodePrinter& printer) const
 	NODE_PRINT(printer, setDefaultCollation);
 	NODE_PRINT(printer, files);
 	NODE_PRINT(printer, cryptPlugin);
+	NODE_PRINT(printer, keyName);
 
 	return "AlterDatabaseNode";
 }
@@ -11660,7 +11661,7 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	if (clauses & CLAUSE_CRYPT)
 	{
 		Database* const db = tdbb->getDatabase();
-		db->dbb_crypto_manager->prepareChangeCryptState(tdbb, cryptPlugin);
+		db->dbb_crypto_manager->prepareChangeCryptState(tdbb, cryptPlugin, keyName);
 
 		DFW_post_work(transaction, dfw_db_crypt, cryptPlugin.c_str(), 0);
 	}

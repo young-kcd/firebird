@@ -809,6 +809,8 @@ static const struct {
 	{"map_down", 335545105},
 	{"login_error", 335545106},
 	{"already_opened", 335545107},
+	{"bad_crypt_key", 335545108},
+	{"encrypt_error", 335545109},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

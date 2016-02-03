@@ -1626,6 +1626,10 @@ C --
       PARAMETER (GDS__login_error                      = 335545106)
       INTEGER*4 GDS__already_opened                  
       PARAMETER (GDS__already_opened                   = 335545107)
+      INTEGER*4 GDS__bad_crypt_key                   
+      PARAMETER (GDS__bad_crypt_key                    = 335545108)
+      INTEGER*4 GDS__encrypt_error                   
+      PARAMETER (GDS__encrypt_error                    = 335545109)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

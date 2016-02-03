@@ -281,6 +281,14 @@ void PPG_print_header(const header_page* header, ULONG page,
 			break;
 		}
 
+		case HDR_crypt_key:
+			uSvc->printf(false, "\tEncryption key name:\t%*.*s\n", p[1], p[1], p + 2);
+			break;
+
+		case HDR_crypt_hash:
+			uSvc->printf(false, "\tKey hash:\t%*.*s\n", p[1], p[1], p + 2);
+			break;
+
 		default:
 			if (*p > HDR_max)
 				uSvc->printf(false, "\tUnrecognized option %d, length %d\n", p[0], p[1]);

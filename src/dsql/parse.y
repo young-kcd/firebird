@@ -3961,7 +3961,7 @@ db_alter_clause($alterDatabaseNode)
 		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_END_BACKUP; }
 	| SET DEFAULT CHARACTER SET symbol_character_set_name
 		{ $alterDatabaseNode->setDefaultCharSet = *$5; }
-	| ENCRYPT WITH valid_symbol_name
+	| ENCRYPT WITH valid_symbol_name crypt_key_clause($alterDatabaseNode)
 		{
 			setClauseFlag($alterDatabaseNode->clauses, AlterDatabaseNode::CLAUSE_CRYPT, "CRYPT");
 			$alterDatabaseNode->cryptPlugin = *$3;
@@ -3974,6 +3974,12 @@ db_alter_clause($alterDatabaseNode)
 		{ $alterDatabaseNode->linger = 0; }
 	;
 
+%type crypt_key_clause(<alterDatabaseNode>)
+crypt_key_clause($alterDatabaseNode)
+	:  /* nothing */
+	| KEY valid_symbol_name
+		{ $alterDatabaseNode->keyName = *$2; }
+	;
 
 // ALTER TRIGGER
 

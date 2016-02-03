@@ -743,7 +743,7 @@ static const struct {
 	{335545040, "22001"}, // 720 cp_name_too_long
 	{335545041, "42818"}, // 721 cp_process_active
 	{335545042, "42818"}, // 722 cp_already_crypted
-	{335545043, "39000"}, // 723 decrypt_error
+	{335545043, "XX000"}, // 723 decrypt_error
 	{335545044, "39000"}, // 724 no_providers
 	{335545045, "42818"}, // 725 null_spb
 	{335545046, "42000"}, // 726 max_args_exceeded
@@ -808,6 +808,8 @@ static const struct {
 	{335545105, "08004"}, // 785 map_down
 	{335545106, "08006"}, // 786 login_error
 	{335545107, "08006"}, // 787 already_opened
+	{335545108, "08006"}, // 788 bad_crypt_key
+	{335545109, "XX000"}, // 789 encrypt_error
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

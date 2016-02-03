@@ -73,7 +73,9 @@ public:
 	void insertBigInt(UCHAR tag, const SINT64 value);
 	void insertBytes(UCHAR tag, const void* bytes, FB_SIZE_T length);
 	void insertString(UCHAR tag, const string& str);
+	void insertString(UCHAR tag, const MetaName& str);
 	void insertPath(UCHAR tag, const PathName& str);
+	void insertString(UCHAR tag, const char* str);
 	void insertString(UCHAR tag, const char* str, FB_SIZE_T length);
 	void insertByte(UCHAR tag, const UCHAR byte);
 	void insertTag(UCHAR tag);

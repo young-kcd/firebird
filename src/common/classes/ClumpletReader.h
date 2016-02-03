@@ -40,6 +40,8 @@
 
 namespace Firebird {
 
+class MetaName;
+
 // This class provides read access for clumplet structure
 // Note: it doesn't make a copy of buffer it reads
 class ClumpletReader : protected AutoStorage
@@ -100,6 +102,7 @@ public:
 	bool getBoolean() const;
 	SINT64 getBigInt() const;
 	string& getString(string& str) const;
+	MetaName& getString(MetaName& str) const;
 	PathName& getPath(PathName& str) const;
 	void getData(UCharBuffer& data) const;
 	const UCHAR* getBytes() const;

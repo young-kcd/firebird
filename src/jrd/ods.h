@@ -429,7 +429,9 @@ const UCHAR HDR_sweep_interval		= 4;	// Transactions between sweeps
 const UCHAR HDR_password_file_key	= 5;	// Key to compare to password db
 const UCHAR HDR_difference_file		= 6;	// Delta file that is used during backup lock
 const UCHAR HDR_backup_guid			= 7;	// UID generated on each switch into backup mode
-const UCHAR HDR_max					= 8;	// Maximum HDR_clump value
+const UCHAR HDR_crypt_key			= 8;	// Name of a key used to crypt database
+const UCHAR HDR_crypt_hash			= 9;	// Validator of key correctness
+const UCHAR HDR_max					= 10;	// Maximum HDR_clump value
 
 // Header page flags
 

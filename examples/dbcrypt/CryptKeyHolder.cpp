@@ -85,7 +85,7 @@ class CryptKeyHolder : public IKeyHolderPluginImpl<CryptKeyHolder, CheckStatusWr
 {
 public:
 	explicit CryptKeyHolder(IPluginConfig* cnf) throw()
-		: callbackInterface(this), config(cnf), key(0), owner(NULL)
+		: callbackInterface(this), named(NULL), config(cnf), key(0), owner(NULL)
 	{
 		config->addRef();
 	}
@@ -139,12 +139,12 @@ private:
 	{
 	public:
 		explicit CallbackInterface(CryptKeyHolder* p)
-			: parent(p)
+			: holder(p)
 		{ }
 
 		unsigned int callback(unsigned int, const void*, unsigned int length, void* buffer)
 		{
-			UCHAR k = parent->getKey();
+			UCHAR k = holder->getKey();
 			if (!k)
 			{
 				return 0;
@@ -157,16 +157,38 @@ private:
 			return 1;
 		}
 
-		IPluginModule* getModule()
+	private:
+		CryptKeyHolder* holder;
+	};
+
+	class NamedCallback : public ICryptKeyCallbackImpl<NamedCallback, CheckStatusWrapper>
+	{
+	public:
+		NamedCallback(NamedCallback *n, const char* nm, UCHAR k)
+			: next(n), key(k)
 		{
-			return &module;
+			strncpy(name, nm, sizeof(name));
+			name[sizeof(name) - 1] = 0;
 		}
 
-	private:
-		CryptKeyHolder* parent;
+		unsigned int callback(unsigned int, const void*, unsigned int length, void* buffer)
+		{
+			memcpy(buffer, &key, 1);
+			return 1;
+		}
+
+		~NamedCallback()
+		{
+			delete next;
+		}
+
+		char name[32];
+		NamedCallback* next;
+		UCHAR key;
 	};
 
 	CallbackInterface callbackInterface;
+	NamedCallback *named;
 
 	IPluginConfig* config;
 	UCHAR key;
@@ -174,18 +196,21 @@ private:
 	AtomicCounter refCounter;
 	IReferenceCounted* owner;
 
-	void noKeyError(CheckStatusWrapper* status);
+	IConfigEntry* getEntry(CheckStatusWrapper* status, const char* entryName);
 };
 
-void CryptKeyHolder::noKeyError(CheckStatusWrapper* status)
+IConfigEntry* CryptKeyHolder::getEntry(CheckStatusWrapper* status, const char* entryName)
 {
-	ISC_STATUS_ARRAY vector;
-	vector[0] = isc_arg_gds;
-	vector[1] = isc_random;
-	vector[2] = isc_arg_string;
-	vector[3] = (ISC_STATUS) "Key not set";
-	vector[4] = isc_arg_end;
-	status->setErrors(vector);
+	IConfig* def = config->getDefaultConfig(status);
+	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+		return NULL;
+
+	IConfigEntry* confEntry = def->find(status, entryName);
+	def->release();
+	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+		return NULL;
+
+	return confEntry;
 }
 
 int CryptKeyHolder::keyCallback(CheckStatusWrapper* status, ICryptKeyCallback* callback)
@@ -195,14 +220,7 @@ int CryptKeyHolder::keyCallback(CheckStatusWrapper* status, ICryptKeyCallback* c
 	if (key != 0)
 		return 1;
 
-	IConfig* def = config->getDefaultConfig(status);
-	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
-		return 1;
-
-	IConfigEntry* confEntry = def->find(status, "Auto");
-	def->release();
-	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
-		return 1;
+	IConfigEntry* confEntry = getEntry(status, "Auto");
 
 	if (confEntry)
 	{
@@ -226,12 +244,33 @@ int CryptKeyHolder::keyCallback(CheckStatusWrapper* status, ICryptKeyCallback* c
 
 ICryptKeyCallback* CryptKeyHolder::keyHandle(CheckStatusWrapper* status, const char* keyName)
 {
-	if (strcmp(keyName, "sample") != 0)
+	if (keyName[0] == 0)
+		return &callbackInterface;
+
+	for (NamedCallback* n = named; n; n = n->next)
 	{
-		return NULL;
+		if (strcmp(keyName, n->name) == 0)
+			return n;
 	}
 
-	return &callbackInterface;
+	char kn[40];
+	strcpy(kn, "Key");
+	strncat(kn, keyName, sizeof(kn));
+	kn[sizeof(kn) - 1] = 0;
+
+	IConfigEntry* confEntry = getEntry(status, kn);
+	if (confEntry)
+	{
+		UCHAR k = confEntry->getIntValue();
+		confEntry->release();
+		if (k > 0 && k < 256)
+		{
+			named = new NamedCallback(named, keyName, static_cast<UCHAR>(k));
+			return named;
+		}
+	}
+
+	return NULL;
 }
 
 class Factory : public IPluginFactoryImpl<Factory, CheckStatusWrapper>

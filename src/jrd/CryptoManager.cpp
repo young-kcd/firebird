@@ -48,6 +48,8 @@
 #include "../common/isc_proto.h"
 #include "../common/classes/GetPlugins.h"
 #include "../common/classes/RefMutex.h"
+#include "../common/classes/ClumpletWriter.h"
+#include "../common/sha.h"
 
 using namespace Firebird;
 
@@ -83,23 +85,16 @@ namespace {
 			return header;
 		}
 
-		// This routine is looking for a clumplet on header page but is not ready to handle continuation
-		// Fortunately, modern pages of size 4k and bigger can contain everything on one page.
-		bool searchEntry(UCHAR type, UCHAR& out_len, const UCHAR* &entry)
+		// This routine is getting clumplets from header page but is not ready to handle continuation
+		// Fortunately, modern pages of size 4k and bigger can fit everything on one page.
+		void getClumplets(ClumpletWriter& writer)
 		{
-			const UCHAR* end = ((const UCHAR*) header) + header->hdr_page_size;
-			for (const UCHAR* p = header->hdr_data; (p < end - 2) && (*p != Ods::HDR_end); p += 2u + p[1])
-			{
-				if (*p == type)
-				{
-					out_len = p[1];
-					entry = p + 2;
-					if (entry + out_len > end)
-						out_len = end - entry;
-					return true;
-				}
-			}
-			return false;
+			const UCHAR* p = header->hdr_data;
+			const UCHAR* const end = reinterpret_cast<const UCHAR*>(header) + header->hdr_page_size;
+			while ((p < end - 2) && (*p != Ods::HDR_end))
+				p += 2u + p[1];
+
+			writer.reset(header->hdr_data, p - header->hdr_data);
 		}
 
 	private:
@@ -112,7 +107,8 @@ namespace {
 	public:
 		CchHdr(Jrd::thread_db* p_tdbb, USHORT lockType)
 			: window(Jrd::HEADER_PAGE_NUMBER),
-			  tdbb(p_tdbb)
+			  tdbb(p_tdbb),
+			  wrtFlag(false)
 		{
 			void* h = CCH_FETCH(tdbb, &window, lockType, pag_header);
 			if (!h)
@@ -124,8 +120,28 @@ namespace {
 
 		Ods::header_page* write()
 		{
-			CCH_MARK_MUST_WRITE(tdbb, &window);
+			if (!wrtFlag)
+			{
+				CCH_MARK_MUST_WRITE(tdbb, &window);
+				wrtFlag = true;
+			}
 			return const_cast<Ods::header_page*>(operator->());
+		}
+
+		void setClumplets(const ClumpletWriter& writer)
+		{
+			Ods::header_page* hdr = write();
+			UCHAR* const to = hdr->hdr_data;
+			UCHAR* const end = reinterpret_cast<UCHAR*>(hdr) + hdr->hdr_page_size;
+			const unsigned limit = (end - to) - 1;
+
+			const unsigned length = writer.getBufferLength();
+			fb_assert(length <= limit);
+			if (length > limit)
+				(Arg::Gds(isc_random) << "HDR page clumplets overflow").raise();
+
+			memcpy(to, writer.getBuffer(), length);
+			to[length] = Ods::HDR_end;
 		}
 
 		~CchHdr()
@@ -136,6 +152,7 @@ namespace {
 	private:
 		Jrd::WIN window;
 		Jrd::thread_db* tdbb;
+		bool wrtFlag;
 	};
 
 	class PhysHdr : public Header
@@ -222,6 +239,7 @@ namespace Jrd {
 	CryptoManager::CryptoManager(thread_db* tdbb)
 		: PermanentStorage(*tdbb->getDatabase()->dbb_permanent),
 		  sync(this),
+		  keyName(getPool()),
 		  keyHolderPlugins(getPool()),
 		  cryptThreadId(0),
 		  cryptPlugin(NULL),
@@ -310,9 +328,27 @@ namespace Jrd {
 		PhysHdr hdr(tdbb);
 		crypt = hdr->hdr_flags & Ods::hdr_encrypted;
 		process = hdr->hdr_flags & Ods::hdr_crypt_process;
-		if (crypt || process)
+
+		if ((crypt || process) && !cryptPlugin)
 		{
+			ClumpletWriter hc(ClumpletWriter::UnTagged, hdr->hdr_page_size);
+			hdr.getClumplets(hc);
+			if (hc.find(Ods::HDR_crypt_key))
+				hc.getString(keyName);
+			else
+				keyName = "";
+
 			loadPlugin(hdr->hdr_crypt_plugin);
+
+			string valid;
+			calcValidation(valid);
+			if (hc.find(Ods::HDR_crypt_hash))
+			{
+				string hash;
+				hc.getString(hash);
+				if (hash != valid)
+					(Arg::Gds(isc_bad_crypt_key) << keyName).raise();
+			}
 		}
 	}
 
@@ -337,12 +373,13 @@ namespace Jrd {
 
 		// do not assign cryptPlugin directly before key init complete
 		IDbCryptPlugin* p = cryptControl.plugin();
-		keyHolderPlugins.init(p);
+		keyHolderPlugins.init(p, keyName.c_str());
 		cryptPlugin = p;
 		cryptPlugin->addRef();
 	}
 
-	void CryptoManager::prepareChangeCryptState(thread_db* tdbb, const Firebird::MetaName& plugName)
+	void CryptoManager::prepareChangeCryptState(thread_db* tdbb, const MetaName& plugName,
+		const MetaName& key)
 	{
 		if (plugName.length() > MAX_PLUGIN_NAME_LEN)
 		{
@@ -371,12 +408,28 @@ namespace Jrd {
 				if (cryptPlugin)
 					(Arg::Gds(isc_cp_already_crypted)).raise();
 
+				keyName = key;
 				loadPlugin(plugName.c_str());
 			}
 		}
 	}
 
-	void CryptoManager::changeCryptState(thread_db* tdbb, const Firebird::string& plugName)
+	void CryptoManager::calcValidation(string& valid)
+	{
+		// crypt verifier
+		const char* sample = "0123456789ABCDEF";
+		char result[16];
+		FbLocalStatus sv;
+		cryptPlugin->encrypt(&sv, sizeof(result), sample, result);
+		if (sv->getState() & IStatus::STATE_ERRORS)
+			Arg::StatusVector(&sv).raise();
+
+		// calculate it's hash
+		const string verifier(result, sizeof(result));
+		Sha1::hashBased64(valid, verifier);
+	}
+
+	void CryptoManager::changeCryptState(thread_db* tdbb, const string& plugName)
 	{
 		if (plugName.length() > 31)
 		{
@@ -423,17 +476,31 @@ namespace Jrd {
 
 			// Write modified header page
 			Ods::header_page* header = hdr.write();
+			ClumpletWriter hc(ClumpletWriter::UnTagged, header->hdr_page_size);
+			hdr.getClumplets(hc);
+
 			if (crypt)
 			{
 				header->hdr_flags |= Ods::hdr_encrypted;
 				plugName.copyTo(header->hdr_crypt_plugin, sizeof(header->hdr_crypt_plugin));
+				string hash;
+				calcValidation(hash);
+				hc.insertString(Ods::HDR_crypt_hash, hash);
 			}
 			else
 			{
 				header->hdr_flags &= ~Ods::hdr_encrypted;
+				hc.deleteWithTag(Ods::HDR_crypt_hash);
 			}
 
-			// Set hdr_crypt_page for crypt thread
+			if (crypt && keyName.hasData())
+				hc.insertString(Ods::HDR_crypt_key, keyName);
+			else
+				hc.deleteWithTag(Ods::HDR_crypt_key);
+
+			hdr.setClumplets(hc);
+
+			// Setup hdr_crypt_page for crypt thread
 			header->hdr_crypt_page = 1;
 			header->hdr_flags |= Ods::hdr_crypt_process;
 			process = true;
@@ -848,8 +915,7 @@ namespace Jrd {
 			fb_assert(cryptPlugin);
 			if (!cryptPlugin)
 			{
-				(Arg::Gds(isc_decrypt_error) <<
-				 Arg::Gds(isc_random) << "Missing crypt plugin").copyTo(sv);
+				Arg::Gds(isc_encrypt_error).copyTo(sv);
 				return FAILED_CRYPT;
 			}
 
@@ -950,7 +1016,7 @@ namespace Jrd {
 		{
 			IKeyHolderPlugin* keyPlugin = keyControl.plugin();
 			FbLocalStatus st;
-			if (keyPlugin->keyCallback(&st, att->att_crypt_callback) == 1)	//// FIXME: 1 ???
+			if (keyPlugin->keyCallback(&st, att->att_crypt_callback) > 0)
 			{
 				// holder accepted attachment's key
 				HolderAttachments* ha = NULL;
@@ -992,7 +1058,7 @@ namespace Jrd {
 		}
 	}
 
-	void CryptoManager::KeyHolderPlugins::init(IDbCryptPlugin* crypt)
+	void CryptoManager::KeyHolderPlugins::init(IDbCryptPlugin* crypt, const char* keyName)
 	{
 		MutexLockGuard g(holdersMutex, FB_FUNCTION);
 
@@ -1005,7 +1071,7 @@ namespace Jrd {
 		}
 
 		FbLocalStatus st;
-		crypt->setKey(&st, length, vector);
+		crypt->setKey(&st, keyName, length, vector);
 		st.check();
 	}
 

@@ -95,7 +95,8 @@ public:
 	// ICryptPlugin implementation
 	void encrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to);
 	void decrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to);
-	void setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolderPlugin** sources);
+	void setKey(CheckStatusWrapper* status, const char* keyName,
+		unsigned int length, IKeyHolderPlugin** sources);
 
 	int release()
 	{
@@ -129,6 +130,7 @@ public:
 
 private:
 	IPluginConfig* config;
+	char savedKeyName[32];
 	UCHAR key;
 
 	AtomicCounter refCounter;
@@ -139,11 +141,20 @@ private:
 
 void DbCrypt::noKeyError(CheckStatusWrapper* status)
 {
+	char msg[100];
+	strcpy(msg, "Crypt key ");
+	if (savedKeyName[0])
+	{
+		strcat(msg, savedKeyName);
+		strcat(msg, " ");
+	}
+	strcat(msg, "not set");
+
 	ISC_STATUS_ARRAY vector;
 	vector[0] = isc_arg_gds;
 	vector[1] = isc_random;
 	vector[2] = isc_arg_string;
-	vector[3] = (ISC_STATUS)"Key not set";
+	vector[3] = (ISC_STATUS)msg;
 	vector[4] = isc_arg_end;
 	status->setErrors(vector);
 }
@@ -186,12 +197,16 @@ void DbCrypt::decrypt(CheckStatusWrapper* status, unsigned int length, const voi
 	}
 }
 
-void DbCrypt::setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolderPlugin** sources)
+void DbCrypt::setKey(CheckStatusWrapper* status, const char* keyName,
+	unsigned int length, IKeyHolderPlugin** sources)
 {
 	status->init();
 
 	if (key != 0)
 		return;
+
+	strncpy(savedKeyName, keyName ? keyName : "", sizeof(savedKeyName));
+	savedKeyName[sizeof(savedKeyName) - 1] = 0;
 
 	IConfig* def = config->getDefaultConfig(status);
 	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
@@ -230,7 +245,7 @@ void DbCrypt::setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolder
 
 	for (unsigned n = 0; n < length; ++n)
 	{
-		ICryptKeyCallback* callback = sources[n]->keyHandle(status, "sample");
+		ICryptKeyCallback* callback = sources[n]->keyHandle(status, savedKeyName);
 		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 			return;
 

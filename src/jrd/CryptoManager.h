@@ -35,6 +35,7 @@
 #include "../common/classes/fb_string.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/condition.h"
+#include "../common/classes/MetaName.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/ods.h"
 #include "../jrd/status.h"
@@ -259,7 +260,8 @@ public:
 
 	void shutdown(thread_db* tdbb);
 
-	void prepareChangeCryptState(thread_db* tdbb, const Firebird::MetaName& plugName);
+	void prepareChangeCryptState(thread_db* tdbb, const Firebird::MetaName& plugName,
+		const Firebird::MetaName& key);
 	void changeCryptState(thread_db* tdbb, const Firebird::string& plugName);
 	void attach(thread_db* tdbb, Attachment* att);
 	void detach(thread_db* tdbb, Attachment* att);
@@ -334,7 +336,7 @@ private:
 
 		void attach(Attachment* att, Config* config);
 		void detach(Attachment* att);
-		void init(Firebird::IDbCryptPlugin* crypt);
+		void init(Firebird::IDbCryptPlugin* crypt, const char* keyName);
 
 	private:
 		Firebird::Mutex holdersMutex;
@@ -351,12 +353,14 @@ private:
 	void loadPlugin(const char* pluginName);
 	ULONG getLastPage(thread_db* tdbb);
 	void writeDbHeader(thread_db* tdbb, ULONG runpage);
+	void calcValidation(Firebird::string& valid);
 
 	void lockAndReadHeader(thread_db* tdbb, unsigned flags = 0);
 	static const unsigned CRYPT_HDR_INIT =		0x01;
 	static const unsigned CRYPT_HDR_NOWAIT =	0x02;
 
 	BarSync sync;
+	Firebird::MetaName keyName;
 	ULONG currentPage;
 	Firebird::Mutex pluginLoadMtx, cryptThreadMtx;
 	KeyHolderPlugins keyHolderPlugins;

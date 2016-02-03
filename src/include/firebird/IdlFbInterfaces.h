@@ -2871,7 +2871,7 @@ namespace Firebird
 	public:
 		struct VTable : public IPluginBase::VTable
 		{
-			void (CLOOP_CARG *setKey)(IDbCryptPlugin* self, IStatus* status, unsigned length, IKeyHolderPlugin** sources) throw();
+			void (CLOOP_CARG *setKey)(IDbCryptPlugin* self, IStatus* status, const char* keyName, unsigned length, IKeyHolderPlugin** sources) throw();
 			void (CLOOP_CARG *encrypt)(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw();
 			void (CLOOP_CARG *decrypt)(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw();
 		};
@@ -2889,10 +2889,10 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 4;
 
-		template <typename StatusType> void setKey(StatusType* status, unsigned length, IKeyHolderPlugin** sources)
+		template <typename StatusType> void setKey(StatusType* status, const char* keyName, unsigned length, IKeyHolderPlugin** sources)
 		{
 			StatusType::clearException(status);
-			static_cast<VTable*>(this->cloopVTable)->setKey(this, status, length, sources);
+			static_cast<VTable*>(this->cloopVTable)->setKey(this, status, keyName, length, sources);
 			StatusType::checkException(status);
 		}
 
@@ -11093,13 +11093,13 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopsetKeyDispatcher(IDbCryptPlugin* self, IStatus* status, unsigned length, IKeyHolderPlugin** sources) throw()
+		static void CLOOP_CARG cloopsetKeyDispatcher(IDbCryptPlugin* self, IStatus* status, const char* keyName, unsigned length, IKeyHolderPlugin** sources) throw()
 		{
 			StatusType status2(status);
 
 			try
 			{
-				static_cast<Name*>(self)->Name::setKey(&status2, length, sources);
+				static_cast<Name*>(self)->Name::setKey(&status2, keyName, length, sources);
 			}
 			catch (...)
 			{
@@ -11199,7 +11199,7 @@ namespace Firebird
 		{
 		}
 
-		virtual void setKey(StatusType* status, unsigned length, IKeyHolderPlugin** sources) = 0;
+		virtual void setKey(StatusType* status, const char* keyName, unsigned length, IKeyHolderPlugin** sources) = 0;
 		virtual void encrypt(StatusType* status, unsigned length, const void* from, void* to) = 0;
 		virtual void decrypt(StatusType* status, unsigned length, const void* from, void* to) = 0;
 	};
