@@ -1,3 +1,8 @@
+ 2016-02-02 10:08  hvlad 
+   M src/jrd/tra.cpp
+Postfix for CORE-5067. 
+Avoid crashing in TRA_update_counters() with not initialized Database object
+
  2016-02-01 15:39  hvlad 
    M src/jrd/jrd.cpp
    M src/jrd/tpc.cpp
