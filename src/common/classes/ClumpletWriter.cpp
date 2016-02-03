@@ -121,7 +121,7 @@ void ClumpletWriter::reset(const UCHAR* buffer, const size_t buffLen)
 	}
 	else
 	{
-		UCHAR tag = (kind == SpbStart || kind == UnTagged || kind == WideUnTagged) ? getBufferTag() : 0;
+		UCHAR tag = (kind == SpbStart || kind == UnTagged || kind == WideUnTagged) ? 0 : getBufferTag();
 		initNewBuffer(tag);
 	}
 	rewind();
