@@ -483,6 +483,29 @@ ISQL now also takes into an account global role setting when creating databases.
 In some cases it's desired to keep shadow file after dropping shadow (for example for
 backup purporse). In FB3 appropriate clause is added to DROP SHADOW. Full syntax is:
 
-DROP SHADOW <number> [{PRESERVE | DELETE} FILE];
+DROP SHADOW <number> [{PRESERVE | DELETE} FILE]
 
 Default behavior is to delete file, keeping backwards compatibility.
+
+
+20) Added database encryption/decryption clauses to ALTER DATABASE statement.
+(Alex Peshkov)
+
+Database crypt support was added to FB3. Actual encryption is performed by appropriate
+plugin, but process is controlled using SQL.
+
+ALTER DATABASE ENCRYPT WITH <plugin-name> [ KEY <key-name> ]
+
+Encrypts database using named plugin. Control returns from DDL command NOT waiting
+for encryption completion, crypt progress can be monitored using
+MON$DATABASE.MON$CRYPT_PAGE field. For example:
+
+select MON$CRYPT_PAGE * 100 / MON$PAGES from MON$DATABASE
+
+will print percent of crypt completion. Additional KEY clause makes it possible to pass name
+of crypt key to dbcrypt plugin. It's plugin's decision what to do with that key name (up to
+ignoring it).
+
+ALTER DATABASE DECRYPT
+
+Decrypts database.
