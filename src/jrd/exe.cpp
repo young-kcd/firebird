@@ -1593,11 +1593,10 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 		EDS::Connection* conn = EDS::Manager::getConnection(tdbb, sDataSrc, sUser, sPwd, sRole, tra_scope);
 
 		stmt = conn->createStatement(sSql);
-
-		EDS::Transaction* tran = EDS::Transaction::getTransaction(tdbb, stmt->getConnection(), tra_scope);
-
 		stmt->bindToRequest(request, stmt_ptr);
 		stmt->setCallerPrivileges(caller_privs);
+
+		EDS::Transaction* tran = EDS::Transaction::getTransaction(tdbb, stmt->getConnection(), tra_scope);
 
 		const Firebird::string* const * inp_names = inputs_names ? inputs_names->begin() : NULL;
 		stmt->prepare(tdbb, tran, sSql, inputs_names != NULL);
