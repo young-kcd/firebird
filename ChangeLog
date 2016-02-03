@@ -1,3 +1,11 @@
+ 2016-02-02 22:26  hvlad 
+   M src/dsql/StmtNodes.cpp
+It should fix bug CORE-5087 : Database shutdown can cause server crash if multiple attachments run EXECUTE STATEMENT
+
+ 2016-02-02 14:46  asfernandes 
+   M src/isql/extract.epp
+Fixed CORE-5089 - Metadata extration (ISQL -X): "CREATE PROCEDURE/FUNCTION" statement contains reference to column of table(s) that not yet exists if this procedure had parameter of such type when it was created.
+
  2016-02-01 16:51  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/parse.y
