@@ -1,6 +1,6 @@
-
+ï»¿
 ======================================
-Firebird $MAJOR.$MINOR.$RELEASE  (Windows Felépítés)
+Firebird $MAJOR.$MINOR.$RELEASE  (Windows FelÃ©pÃ­tÃ©s)
 ======================================
 
 

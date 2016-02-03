@@ -1,4 +1,4 @@
-Servidor de Base de Dados Firebird $MAJOR.$MINOR
+﻿Servidor de Base de Dados Firebird $MAJOR.$MINOR
 ==================================================
 
 

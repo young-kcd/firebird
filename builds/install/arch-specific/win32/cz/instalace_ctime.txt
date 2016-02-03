@@ -1,4 +1,4 @@
-Databázový server Firebird $MAJOR.$MINOR.$RELEASE
+ï»¿DatabÃ¡zovÃ½ server Firebird $MAJOR.$MINOR.$RELEASE
 ==================================================
 
 

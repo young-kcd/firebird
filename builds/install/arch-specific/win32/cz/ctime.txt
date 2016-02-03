@@ -1,6 +1,5 @@
-	
-======================================
-Firebird $MAJOR.$MINOR.$RELEASE    (Windows sestaven�)
+﻿======================================
+Firebird $MAJOR.$MINOR.$RELEASE    (Windows sestavení)
 ======================================
 
 

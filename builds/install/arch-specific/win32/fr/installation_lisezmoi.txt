@@ -1,4 +1,4 @@
-Firebird Serveur Bases de donn�es $MAJOR.$MINOR.$RELEASE
+﻿Firebird Serveur Bases de données $MAJOR.$MINOR.$RELEASE
 ==================================================
 
 ------------------------------------------------------
