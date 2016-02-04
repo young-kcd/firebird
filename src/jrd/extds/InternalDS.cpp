@@ -257,7 +257,8 @@ void InternalTransaction::doStart(ISC_STATUS* status, thread_db* tdbb, ClumpletW
 		jrd8_start_transaction(status, &m_transaction, 1, &att,
 			tpb.getBufferLength(), tpb.getBuffer());
 
-		m_transaction->tra_callback_count = localTran ? localTran->tra_callback_count : 1;
+		if (m_transaction)
+			m_transaction->tra_callback_count = localTran ? localTran->tra_callback_count : 1;
 	}
 }
 
