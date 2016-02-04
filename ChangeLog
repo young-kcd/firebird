@@ -1,3 +1,89 @@
+ 2016-02-03 19:41  hvlad 
+   M src/common/classes/FpeControl.h
+Frontport code from v2.5. It should fix CORE-5102 : FB3.0 RC1 Fbclient.dll function calls modify FPU control word
+
+ 2016-02-03 15:22  asfernandes 
+   M src/jrd/met.epp
+Fixed CORE-5097 - COMPUTED-BY expressions are not converted to their field type inside the engine.
+
+ 2016-02-03 15:02  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+Convert install script to UTF-8
+Do not assign name of chosen installation language to BelevedLabel as, at least for the moment non-ascii characters get mangled.
+Disable support for Bosnian at install time (temporarily, I hope.)
+
+ 2016-02-03 14:59  paul_reeves 
+   M builds/install/arch-specific/win32/custom_messages.inc
+   M builds/install/arch-specific/win32/i18n_readme.txt
+Convert i18n files to UTF-8 with BOM
+
+ 2016-02-03 14:57  paul_reeves 
+   M builds/install/arch-specific/win32/ba/Instalacija_ProcitajMe.txt
+   M builds/install/arch-specific/win32/ba/ProcitajMe.txt
+   M builds/install/arch-specific/win32/ba/custom_messages_ba.inc
+   M builds/install/arch-specific/win32/cz/ctime.txt
+   M builds/install/arch-specific/win32/cz/custom_messages_cz.inc
+   M builds/install/arch-specific/win32/cz/instalace_ctime.txt
+   M builds/install/arch-specific/win32/de/custom_messages_de.inc
+   M builds/install/arch-specific/win32/de/installation_liesmich.txt
+   M builds/install/arch-specific/win32/de/liesmich.txt
+   M builds/install/arch-specific/win32/es/custom_messages_es.inc
+   M builds/install/arch-specific/win32/es/leame.txt
+   M builds/install/arch-specific/win32/es/leame_instalacion.txt
+   M builds/install/arch-specific/win32/fr/custom_messages_fr.inc
+   M builds/install/arch-specific/win32/fr/documents-en-francais.txt
+   M builds/install/arch-specific/win32/fr/installation_lisezmoi.txt
+   M builds/install/arch-specific/win32/fr/lisezmoi.txt
+   M builds/install/arch-specific/win32/hu/custom_messages_hu.inc
+   M builds/install/arch-specific/win32/hu/olvass_el.txt
+   M builds/install/arch-specific/win32/hu/telepitesi_segedlet.txt
+   M builds/install/arch-specific/win32/it/custom_messages_it.inc
+   M builds/install/arch-specific/win32/it/leggimi.txt
+   M builds/install/arch-specific/win32/it/leggimi_installazione.txt
+   M builds/install/arch-specific/win32/pl/custom_messages_pl.inc
+   M builds/install/arch-specific/win32/pl/czytajto.txt
+   M builds/install/arch-specific/win32/pl/instalacja_czytajto.txt
+   M builds/install/arch-specific/win32/pt/custom_messages_pt.inc
+   M builds/install/arch-specific/win32/pt/instalacao_leia-me.txt
+   M builds/install/arch-specific/win32/pt/leia-me.txt
+   M builds/install/arch-specific/win32/ru/Readme.txt
+   M builds/install/arch-specific/win32/ru/installation_readme.txt
+   M builds/install/arch-specific/win32/si/custom_messages_si.inc
+   M builds/install/arch-specific/win32/si/instalacija_precitajMe.txt
+Convert i18n files to UTF-8 with BOM
+
+ 2016-02-03 14:15  alexpeshkoff 
+   M doc/sql.extensions/README.ddl.txt
+Documented CORE-5100
+
+ 2016-02-03 13:20  alexpeshkoff 
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M examples/dbcrypt/DbCrypt.cpp
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/common/classes/ClumpletReader.cpp
+   M src/common/classes/ClumpletReader.h
+   M src/common/classes/ClumpletWriter.cpp
+   M src/common/classes/ClumpletWriter.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/parse.y
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+   M src/jrd/ods.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/utilities/gstat/ppg.cpp
+Implemented CORE-5100: Improve control over database crypt keys
+
  2016-02-02 22:26  hvlad 
    M src/dsql/StmtNodes.cpp
 It should fix bug CORE-5087 : Database shutdown can cause server crash if multiple attachments run EXECUTE STATEMENT
