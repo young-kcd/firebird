@@ -1,3 +1,12 @@
+ 2016-02-03 13:35  alexpeshkoff 
+   M src/common/classes/ClumpletWriter.cpp
+Backported fix for very old bug in clumplets processing code.
+Looks like we never used to step on it (resetting writer to buffer with 0 length), but anyway it's better to have it fixed.
+
+ 2016-02-03 11:06  hvlad 
+   M src/jrd/exe.cpp
+Backport fix bug CORE-5087 : Database shutdown can cause server crash if multiple attachments run EXECUTE STATEMENT
+
  2016-02-02 10:08  hvlad 
    M src/jrd/tra.cpp
 Postfix for CORE-5067. 
