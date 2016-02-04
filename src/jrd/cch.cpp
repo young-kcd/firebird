@@ -1039,7 +1039,14 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number)
 	PageSpace* pageSpaceID = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	jrd_file* main_file = pageSpaceID->file;
 
-	if (!(main_file->fil_flags & FIL_force_write) && (max_num || max_time))
+	// Avoid flush while creating and restoring database
+
+	const Jrd::Attachment* att = tdbb->getAttachment();
+	const bool dontFlush = (dbb->dbb_flags & DBB_creating) ||
+		(dbb->dbb_ast_flags & DBB_shutdown_single) &&
+		att && (att->att_flags & (ATT_creator | ATT_system));
+
+	if (!(main_file->fil_flags & FIL_force_write) && (max_num || max_time) && !dontFlush)
 	{
 		const time_t now = time(0);
 
@@ -1049,7 +1056,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number)
 		if (!dbb->last_flushed_write)
 			dbb->last_flushed_write = now;
 
-		const bool forceFlush = (flush_flag & FLUSH_ALL) && !(dbb->dbb_flags & DBB_creating);
+		const bool forceFlush = (flush_flag & FLUSH_ALL);
 
 		// test max_num condition and max_time condition
 		max_num = max_num && (dbb->unflushed_writes == max_unflushed_writes);
