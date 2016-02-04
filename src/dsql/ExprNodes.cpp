@@ -5621,6 +5621,24 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 	sub = NodeCopier::copy(tdbb, csb, sub, map);
 
+	// If this is a computed field, cast the computed expression to the field type if required.
+	// See CORE-5097.
+	if (field->fld_computation)
+	{
+		dsc subDesc;
+		sub->getDesc(tdbb, csb, &subDesc);
+
+		if (!DSC_EQUIV(&subDesc, &desc, true))
+		{
+			CastNode* cast = FB_NEW_POOL(*tdbb->getDefaultPool()) CastNode(
+				*tdbb->getDefaultPool());
+			cast->source = sub;
+			cast->castDesc = desc;
+
+			sub = cast;
+		}
+	}
+
 	if (relation->rel_view_rse)
 	{
 		// dimitr:	if we reference view columns, we need to pass them

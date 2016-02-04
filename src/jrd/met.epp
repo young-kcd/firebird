@@ -3850,14 +3850,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 							field->fld_name, obj_computed, 0, depTrans) :
 						PAR_blr(tdbb, relation, p, length, csb, NULL, NULL, false, 0);
 
-					Format* format = MET_format(tdbb, relation, relation->rel_current_fmt);
-
-					CastNode* cast = FB_NEW_POOL(*tdbb->getDefaultPool()) CastNode(
-						*tdbb->getDefaultPool());
-					cast->source = static_cast<ValueExprNode*>(nod);
-					cast->castDesc = format->fmt_desc[field_id];
-
-					field->fld_computation = cast;
+					field->fld_computation = static_cast<ValueExprNode*>(nod);
 				}
 				break;
 
