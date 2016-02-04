@@ -1071,7 +1071,7 @@ namespace Jrd {
 		}
 
 		FbLocalStatus st;
-		crypt->setKey(&st, keyName, length, vector);
+		crypt->setKey(&st, length, vector, keyName);
 		st.check();
 	}
 

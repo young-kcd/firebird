@@ -95,8 +95,8 @@ public:
 	// ICryptPlugin implementation
 	void encrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to);
 	void decrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to);
-	void setKey(CheckStatusWrapper* status, const char* keyName,
-		unsigned int length, IKeyHolderPlugin** sources);
+	void setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolderPlugin** sources,
+		const char* keyName);
 
 	int release()
 	{
@@ -197,8 +197,8 @@ void DbCrypt::decrypt(CheckStatusWrapper* status, unsigned int length, const voi
 	}
 }
 
-void DbCrypt::setKey(CheckStatusWrapper* status, const char* keyName,
-	unsigned int length, IKeyHolderPlugin** sources)
+void DbCrypt::setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolderPlugin** sources,
+	const char* keyName)
 {
 	status->init();
 

@@ -724,7 +724,7 @@ interface DbCryptPlugin : PluginBase
 	// It's supposed that crypt plugin will invoke keyHandle() function from them
 	// to access callback interface for getting actual crypt key.
 	// If crypt plugin fails to find appropriate key in sources, it should raise error.
-	void setKey(Status status, const string keyName, uint length, KeyHolderPlugin* sources);
+	void setKey(Status status, uint length, KeyHolderPlugin* sources, const string keyName);
 	void encrypt(Status status, uint length, const void* from, void* to);
 	void decrypt(Status status, uint length, const void* from, void* to);
 }
