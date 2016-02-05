@@ -5623,7 +5623,7 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 	// If this is a computed field, cast the computed expression to the field type if required.
 	// See CORE-5097.
-	if (field->fld_computation)
+	if (field->fld_computation && !relation->rel_view_rse)
 	{
 		dsc subDesc;
 		sub->getDesc(tdbb, csb, &subDesc);
