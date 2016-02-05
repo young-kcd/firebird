@@ -1,3 +1,7 @@
+ 2016-02-04 17:14  hvlad 
+   M src/jrd/extds/InternalDS.cpp
+Additional fix for bug CORE-5087 : Database shutdown can cause server crash if multiple attachments run EXECUTE STATEMENT
+
  2016-02-03 13:35  alexpeshkoff 
    M src/common/classes/ClumpletWriter.cpp
 Backported fix for very old bug in clumplets processing code.
