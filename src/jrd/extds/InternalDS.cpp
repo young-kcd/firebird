@@ -165,13 +165,12 @@ void InternalConnection::attach(thread_db* tdbb, const PathName& dbName,
 		validatePassword(tdbb, m_dbName, newDpb);
 
 		FbLocalStatus status;
-
 		{
 			EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 			RefPtr<JProvider> jInstance(JProvider::getInstance());
 			jInstance->setDbCryptCallback(&status, tdbb->getAttachment()->att_crypt_callback);
 			m_attachment.assignRefNoIncr(jInstance->attachDatabase(&status, m_dbName.c_str(),
-				m_dpb.getBufferLength(), m_dpb.getBuffer()));
+				newDpb.getBufferLength(), newDpb.getBuffer()));
 		}
 
 		if (status->getState() & IStatus::STATE_ERRORS)

@@ -125,8 +125,8 @@ void IscConnection::attach(thread_db* tdbb, const PathName& dbName, const string
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		m_iscProvider.isc_attach_database(&status, m_dbName.length(), m_dbName.c_str(),
-			&m_handle, m_dpb.getBufferLength(),
-			reinterpret_cast<const char*>(m_dpb.getBuffer()));
+			&m_handle, newDpb.getBufferLength(),
+			reinterpret_cast<const char*>(newDpb.getBuffer()));
 	}
 	if (status->getState() & IStatus::STATE_ERRORS) {
 		raise(&status, tdbb, "attach");
