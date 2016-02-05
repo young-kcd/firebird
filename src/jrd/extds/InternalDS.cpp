@@ -159,7 +159,10 @@ void InternalConnection::attach(thread_db* tdbb, const PathName& dbName,
 		m_isCurrent = false;
 		m_dbName = dbb->dbb_database_name.c_str();
 		generateDPB(tdbb, m_dpb, user, pwd, role);
-		validatePassword(tdbb, m_dbName, m_dpb);
+
+		// Avoid change of m_dpb by validatePassword() below 
+		ClumpletWriter newDpb(m_dpb);
+		validatePassword(tdbb, m_dbName, newDpb);
 
 		FbLocalStatus status;
 
