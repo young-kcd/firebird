@@ -377,7 +377,7 @@ public:
 	LockManager*	dbb_lock_mgr;
 	EventManager*	dbb_event_mgr;
 
-	JProvider*	dbb_provider;
+	JProvider*	dbb_provider;			// Provider that owns this database block
 	Database*	dbb_next;				// Next database block in system
 	Attachment* dbb_attachments;		// Active attachments
 	Attachment* dbb_sys_attachments;	// System attachments

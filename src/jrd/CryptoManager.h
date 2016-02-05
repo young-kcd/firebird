@@ -267,7 +267,8 @@ public:
 	void detach(thread_db* tdbb, Attachment* att);
 
 	void startCryptThread(thread_db* tdbb);
-	void terminateCryptThread(thread_db* tdbb);
+	void terminateCryptThread();
+	void stopThreadUsing(Attachment* att);
 
 	class IOCallback
 	{
@@ -369,6 +370,7 @@ private:
 	Database& dbb;
 	Lock* stateLock;
 	Lock* threadLock;
+	Attachment* cryptAtt;
 
 	// This counter works only in a case when database encryption is changed.
 	// Traditional processing of AST can not be used for crypto manager.
@@ -392,7 +394,7 @@ private:
 	// normal operation.
 
 	SINT64 slowIO;
-	bool crypt, process, down;
+	bool crypt, process, down, run;
 };
 
 } // namespace Jrd

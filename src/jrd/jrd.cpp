@@ -6549,7 +6549,7 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 	VIO_fini(tdbb);
 
 	if (dbb->dbb_crypto_manager)
-		dbb->dbb_crypto_manager->terminateCryptThread(tdbb);
+		dbb->dbb_crypto_manager->terminateCryptThread();
 
 	CCH_shutdown(tdbb);
 
@@ -6932,6 +6932,9 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 			throw;
 		}
 	}
+
+	// stop crypt thread using this attachment
+	dbb->dbb_crypto_manager->stopThreadUsing(attachment);
 
 	// Notify Trace API manager about disconnect
 	if (attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_DETACH))

@@ -244,10 +244,12 @@ namespace Jrd {
 		  cryptThreadId(0),
 		  cryptPlugin(NULL),
 		  dbb(*tdbb->getDatabase()),
+		  cryptAtt(NULL),
 		  slowIO(0),
 		  crypt(false),
 		  process(false),
-		  down(false)
+		  down(false),
+		  run(false)
 	{
 		stateLock = FB_NEW_RPT(getPool(), 0)
 			Lock(tdbb, 0, LCK_crypt_status, this, blockingAstChangeCryptState);
@@ -260,19 +262,9 @@ namespace Jrd {
 		delete threadLock;
 	}
 
-	void CryptoManager::terminateCryptThread(thread_db*)
-	{
-		if (cryptThreadId)
-		{
-			down = true;
-			Thread::waitForCompletion(cryptThreadId);
-			cryptThreadId = 0;
-		}
-	}
-
 	void CryptoManager::shutdown(thread_db* tdbb)
 	{
-		terminateCryptThread(tdbb);
+		terminateCryptThread();
 
 		if (cryptPlugin)
 		{
@@ -548,15 +540,40 @@ namespace Jrd {
 		LCK_convert(tdbb, stateLock, CRYPT_RELEASE, LCK_NO_WAIT);
 	}
 
+	void CryptoManager::attach(thread_db* tdbb, Attachment* att)
+	{
+		keyHolderPlugins.attach(att, dbb.dbb_config);
+
+		lockAndReadHeader(tdbb, CRYPT_HDR_INIT);
+	}
+
+	void CryptoManager::terminateCryptThread()
+	{
+		if (cryptThreadId)
+		{
+			down = true;
+			Thread::waitForCompletion(cryptThreadId);
+			cryptThreadId = 0;
+		}
+	}
+
+	void CryptoManager::stopThreadUsing(Attachment* att)
+	{
+		if (att == cryptAtt)
+			terminateCryptThread();
+	}
+
 	void CryptoManager::startCryptThread(thread_db* tdbb)
 	{
 		// Try to take crypt mutex
 		// If can't take that mutex - nothing to do, cryptThread already runs in our process
 		MutexEnsureUnlock guard(cryptThreadMtx, FB_FUNCTION);
 		if (!guard.tryEnter())
-		{
 			return;
-		}
+
+		// Check for recursion
+		if (run)
+			return;
 
 		// Take exclusive threadLock
 		// If can't take that lock - nothing to do, cryptThread already runs somewhere
@@ -572,7 +589,7 @@ namespace Jrd {
 		try
 		{
 			// Cleanup resources
-			terminateCryptThread(tdbb);
+			terminateCryptThread();
 			down = false;
 
 			// Determine current page from the header
@@ -613,16 +630,10 @@ namespace Jrd {
 		}
 	}
 
-	void CryptoManager::attach(thread_db* tdbb, Attachment* att)
-	{
-		keyHolderPlugins.attach(att, dbb.dbb_config);
-
-		lockAndReadHeader(tdbb, CRYPT_HDR_INIT);
-	}
-
 	void CryptoManager::cryptThread()
 	{
 		FbLocalStatus status_vector;
+		bool lckRelease = false;
 
 		try
 		{
@@ -634,7 +645,8 @@ namespace Jrd {
 				return;
 			}
 
-			// establish context
+			// Establish temp context
+			// Needed to take crypt thread lock
 			UserId user;
 			user.usr_user_name = "(Crypt thread)";
 
@@ -643,23 +655,54 @@ namespace Jrd {
 			attachment->setStable(sAtt);
 			attachment->att_filename = dbb.dbb_filename;
 			attachment->att_user = &user;
-
-			BackgroundContextHolder tdbb(&dbb, attachment, &status_vector, FB_FUNCTION);
-			tdbb->tdbb_quantum = SWEEP_QUANTUM;
-
-			ULONG lastPage = getLastPage(tdbb);
+			BackgroundContextHolder tempDbb(&dbb, attachment, &status_vector, FB_FUNCTION);
 
 			// Take exclusive threadLock
 			// If can't take that lock - nothing to do, cryptThread already runs somewhere
-			if (!LCK_lock(tdbb, threadLock, LCK_EX, LCK_NO_WAIT))
-			{
+			if (!LCK_lock(tempDbb, threadLock, LCK_EX, LCK_NO_WAIT))
 				return;
-			}
-
-			bool lckRelease = false;
 
 			try
 			{
+				// Set running flag
+				AutoSetRestore<bool> runFlag(&run, true);
+
+				// Establish context
+				// Need real attachment in order to make classic mode happy
+				ClumpletWriter writer(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+				writer.insertString(isc_dpb_user_name, "(Crypt thread)");
+				RefPtr<JAttachment> jAtt(REF_NO_INCR, dbb.dbb_provider->attachDatabase(&status_vector,
+					dbb.dbb_filename.c_str(), writer.getBufferLength(), writer.getBuffer()));
+				check(&status_vector);
+				MutexLockGuard attGuard(*(jAtt->getStable()->getMutex()), FB_FUNCTION);
+				Attachment* att = jAtt->getHandle();
+				if (!att)
+					Arg::Gds(isc_att_shutdown).raise();
+				ThreadContextHolder tdbb(att->att_database, att, &status_vector);
+				tdbb->tdbb_quantum = SWEEP_QUANTUM;
+				DatabaseContextHolder dbHolder(tdbb);
+
+				class UseCountHolder
+				{
+				public:
+					explicit UseCountHolder(Attachment* a)
+						: att(a)
+					{
+						att->att_use_count++;
+					}
+					~UseCountHolder()
+					{
+						att->att_use_count--;
+					}
+				private:
+					Attachment* att;
+				};
+				UseCountHolder use_count(att);
+
+				// get ready...
+				AutoSetRestore<Attachment*> attSet(&cryptAtt, att);
+				ULONG lastPage = getLastPage(tdbb);
+
 				do
 				{
 					// Check is there some job to do
@@ -672,7 +715,8 @@ namespace Jrd {
 						}
 
 						// nbackup state check
-						if (dbb.dbb_backup_manager && dbb.dbb_backup_manager->getState() != Ods::hdr_nbak_normal)
+						if (tdbb->getDatabase()->dbb_backup_manager &&
+							tdbb->getDatabase()->dbb_backup_manager->getState() != Ods::hdr_nbak_normal)
 						{
 							Thread::sleep(100);
 							continue;
@@ -728,7 +772,7 @@ namespace Jrd {
 
 				// Release exclusive lock on StartCryptThread
 				lckRelease = true;
-				LCK_release(tdbb, threadLock);
+				LCK_release(tempDbb, threadLock);
 			}
 			catch (const Exception&)
 			{
@@ -736,14 +780,8 @@ namespace Jrd {
 				{
 					if (!lckRelease)
 					{
-						// try to save current state of crypt thread
-						if (!down)
-						{
-							writeDbHeader(tdbb, currentPage);
-						}
-
 						// Release exclusive lock on StartCryptThread
-						LCK_release(tdbb, threadLock);
+						LCK_release(tempDbb, threadLock);
 					}
 				}
 				catch (const Exception&)
