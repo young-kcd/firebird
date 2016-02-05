@@ -1,3 +1,19 @@
+ 2016-02-04 14:28  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/met.epp
+Move the code and add the CAST only when required, per Dmitry comment.
+
+ 2016-02-04 10:33  hvlad 
+   M src/jrd/cch.cpp
+Fixed bug CORE-5101 : Backup restore is slow in FB3 when the database contains many small tables with indices
+
+ 2016-02-04 09:22  alexpeshkoff 
+   M examples/dbcrypt/DbCrypt.cpp
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/jrd/CryptoManager.cpp
+Postfix for CORE-5100: restored binary compatibility with crypt plugins for RC1
+
  2016-02-03 19:41  hvlad 
    M src/common/classes/FpeControl.h
 Frontport code from v2.5. It should fix CORE-5102 : FB3.0 RC1 Fbclient.dll function calls modify FPU control word
