@@ -110,7 +110,8 @@ void SDW_add(thread_db* tdbb, const TEXT* file_name, USHORT shadow_number, USHOR
 	WIN window(HEADER_PAGE_NUMBER);
 	CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
-	CCH_write_all_shadows(tdbb, 0, window.win_bdb, tdbb->tdbb_status_vector, false);
+	CCH_write_all_shadows(tdbb, 0, window.win_bdb, window.win_bdb->bdb_buffer,
+		tdbb->tdbb_status_vector, false);
 	CCH_RELEASE(tdbb, &window);
 	if (file_flags & FILE_conditional)
 		shadow->sdw_flags |= SDW_conditional;
@@ -506,9 +507,7 @@ void SDW_dump_pages(thread_db* tdbb)
 
 					bool callback(thread_db* tdbb, FbStatusVector* status, Ods::pag* page)
 					{
-						AutoSetRestore<Ods::pag*> swapPage(&(bdb->bdb_buffer), page);
-
-						return CCH_write_all_shadows(tdbb, shadow, bdb, status, false);
+						return CCH_write_all_shadows(tdbb, shadow, bdb, page, status, false);
 					}
 
 				private:

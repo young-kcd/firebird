@@ -2185,7 +2185,7 @@ bool CCH_validate(WIN* window)
 }
 
 
-bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
+bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb, Ods::pag* page,
 	FbStatusVector* status, const bool inAst)
 {
 /**************************************
@@ -2212,19 +2212,14 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 	bool result = true;
 	Firebird::UCharBuffer spare_buffer;
 
-	pag* page = bdb->bdb_buffer;
-	pag* old_buffer = NULL;
 	if (bdb->bdb_page == HEADER_PAGE_NUMBER)
 	{
-		page = (pag*) spare_buffer.getBuffer(dbb->dbb_page_size);
-		memcpy(page, bdb->bdb_buffer, HDR_SIZE);
+		Ods::pag* newPage = (pag*) spare_buffer.getBuffer(dbb->dbb_page_size);
+		memcpy(newPage, page, HDR_SIZE);
+		page = newPage;
 		memset((UCHAR*) page + HDR_SIZE, 0, dbb->dbb_page_size - HDR_SIZE);
-		old_buffer = bdb->bdb_buffer;
-
-		// hvlad: is it mt-safe ?
-		bdb->bdb_buffer = page;
 	}
-	bdb->bdb_buffer->pag_pageno = bdb->bdb_page.getPageNum();
+	page->pag_pageno = bdb->bdb_page.getPageNum();
 
 	for (; sdw; sdw = sdw->sdw_next)
 	{
@@ -2308,10 +2303,6 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 		if (shadow) {
 			break;
 		}
-	}
-
-	if (bdb->bdb_page == HEADER_PAGE_NUMBER) {
-		bdb->bdb_buffer = old_buffer;
 	}
 
 	return result;
@@ -4902,7 +4893,6 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 					bool callback(thread_db* tdbb, FbStatusVector* status, Ods::pag* page)
 					{
 						Database *dbb = tdbb->getDatabase();
-						AutoSetRestore<Ods::pag*> swapPage(&(bdb->bdb_buffer), page);
 
 						while (!PIO_write(tdbb, file, bdb, page, status))
 						{
@@ -4920,7 +4910,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 							dbb->dbb_last_header_write = Ods::getNT((header_page*) page);
 
 						if (dbb->dbb_shadow && !isTempPage)
-							return CCH_write_all_shadows(tdbb, 0, bdb, status, inAst);
+							return CCH_write_all_shadows(tdbb, 0, bdb, page, status, inAst);
 
 						return true;
 					}
