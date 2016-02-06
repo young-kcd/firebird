@@ -1,3 +1,31 @@
+ 2016-02-05 15:21  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+   M src/jrd/Database.h
+   M src/jrd/jrd.cpp
+Fixed CORE-5105: Deadlocks when database is initially encrypted
+
+ 2016-02-05 15:13  alexpeshkoff 
+   M src/jrd/cch.cpp
+   M src/jrd/cch_proto.h
+   M src/jrd/sdw.cpp
+Postfix for CORE-5100: avoid races caused by temporary changed bdb_buffer
+
+ 2016-02-05 15:09  hvlad 
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/IscDS.cpp
+Missed piece for CORE-5104, thanks to Alex again
+
+ 2016-02-05 15:05  hvlad 
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/IscDS.cpp
+Fixed bug CORE-5104 : External data source selects became slow
+Thanks to Alex
+
+ 2016-02-05 11:00  dimitr 
+   M src/dsql/ExprNodes.cpp
+Postfix to address the regression found in the recent commit for CORE-5097.
+
  2016-02-04 14:28  asfernandes 
    M src/dsql/ExprNodes.cpp
    M src/jrd/met.epp
