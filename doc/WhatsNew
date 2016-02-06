@@ -2,6 +2,58 @@
   * v3.0 Release Candidate 2
   **************************
 
+    * Bugfix CORE-5105
+        Deadlocks when database is initially encrypted
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5104
+        External data source selects became slow
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5102
+        fbclient.dll API calls modify FPU control word
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-5101
+        Restore is slow when the database contains many small tables with indices
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-5097
+        COMPUTED-BY expressions are not converted to their field type inside the engine
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5093
+        ALTER does not change type of a computed field
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5092
+        ISQL extract command lose COMPUTED BY field types
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5089
+        Metadata extration (ISQL -X): "CREATE PROCEDURE/FUNCTION" statement contains reference to column of table(s)
+        that not yet exists if this procedure had parameter of such type when it was created
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5088
+        Segmentation fault when 'gstat -h' is closing
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5087
+        Database shutdown can cause server crash if multiple attachments run EXECUTE STATEMENT
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
     * Bugfix CORE-5082
         Server does not validate correctness of user/password pair provided in EXECUTE STATEMENT operator
       Contributor(s):
@@ -49,6 +101,11 @@
 
     * Bugfix CORE-5047
         mapUser() routine establish secondary attach using wrong provider
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5044
+        Pages are encrypted for each shadow separately
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
@@ -122,6 +179,11 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix CORE-5002
+        Windows installer includes malformed strings
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
     * Bugfix CORE-4999
         Deadlock when trying to access database with invalid crypt key
       Contributor(s):
@@ -172,6 +234,12 @@
       Contributor(s):
         Dimitry Sibiryakov <sd at ibphoenix.com>
 
+    * Bugfix CORE-4885
+        Error retrieving current user name when using Windows trusted authentication and OS user name contains non-ASCII characters.
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-4862
         ibase.h from x64 package includes non-existing file
       Contributor(s):
@@ -197,6 +265,18 @@
         Unable to read MON$ tables when there's intensive disk-bound load
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-5100
+        Improve control over database crypt keys
+      See also:
+        /doc/sql.extensions/README.ddl.txt
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-5083
+        Provide method to correcty set offsets in implemented by user IMessageMetadata
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Improvement CORE-5077
         ISQL does not show encryption status of database
