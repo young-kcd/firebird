@@ -477,18 +477,15 @@ namespace Jrd {
 				plugName.copyTo(header->hdr_crypt_plugin, sizeof(header->hdr_crypt_plugin));
 				string hash;
 				calcValidation(hash);
-				hc.insertString(Ods::HDR_crypt_hash, hash);
-			}
-			else
-			{
-				header->hdr_flags &= ~Ods::hdr_encrypted;
 				hc.deleteWithTag(Ods::HDR_crypt_hash);
-			}
+				hc.insertString(Ods::HDR_crypt_hash, hash);
 
-			if (crypt && keyName.hasData())
-				hc.insertString(Ods::HDR_crypt_key, keyName);
-			else
 				hc.deleteWithTag(Ods::HDR_crypt_key);
+				if (keyName.hasData())
+					hc.insertString(Ods::HDR_crypt_key, keyName);
+			}
+			else
+				header->hdr_flags &= ~Ods::hdr_encrypted;
 
 			hdr.setClumplets(hc);
 
@@ -807,6 +804,15 @@ namespace Jrd {
 		{
 			header->hdr_flags &= ~Ods::hdr_crypt_process;
 			process = false;
+
+			if (!crypt)
+			{
+				ClumpletWriter hc(ClumpletWriter::UnTagged, header->hdr_page_size);
+				hdr.getClumplets(hc);
+				hc.deleteWithTag(Ods::HDR_crypt_hash);
+				hc.deleteWithTag(Ods::HDR_crypt_key);
+				hdr.setClumplets(hc);
+			}
 		}
 	}
 
