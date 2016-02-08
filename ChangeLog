@@ -1,3 +1,7 @@
+ 2016-02-07 11:48  dimitr 
+   M src/jrd/jrd.cpp
+Backported from trunk: unwind the cache if checkCancelState(true) is called directly.
+
  2016-02-04 17:14  hvlad 
    M src/jrd/extds/InternalDS.cpp
 Additional fix for bug CORE-5087 : Database shutdown can cause server crash if multiple attachments run EXECUTE STATEMENT
