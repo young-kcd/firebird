@@ -1,4 +1,4 @@
-Firebird Database Server $MAJOR.$MINOR.$RELEASE (Release Candidate 1)
+Firebird Database Server $MAJOR.$MINOR.$RELEASE (Release Candidate 2)
 ========================================================
 
 
@@ -9,7 +9,7 @@ Firebird $MAJOR.$MINOR in general. In addition, these notes are
 primarily aimed at users of the binary installer.
 
 It is assumed that readers of this document are already
-familiar with Firebird 2.5. If you are evaluating
+familiar with Firebird. If you are evaluating
 Firebird $MAJOR.$MINOR as part of a migration from Fb 2.5 you are
 advised to review the Fb $MAJOR.$MINOR documentation to
 understand the changes made between 2.5 and $MAJOR.$MINOR.
@@ -23,7 +23,7 @@ o Installation of MS VC runtime libraries
 o Deployment of gds32.dll
 o Installation of the Guardian
 o Re-installation of Firebird 3
-o Other known installation problems
+o Known installation problems
 o Uninstallation
 o Installation from a batch file
 
@@ -79,12 +79,12 @@ Re-installation of Firebird 3
 
 The binary installer does its best to detect and 
 preserve a previous install. If the installer detects 
-firebird.conf or security3.fdb it will not offer the option 
-to install legacy_auth. Neither will it offer the 
-option to set the SYSDBA username and password.
+firebird.conf or security3.fdb it will not offer the 
+option to install legacy_auth. Neither will it offer 
+the option to set the SYSDBA username and password.
 
 
-Other known installation problems
+Known installation problems
 ---------------------------------
 
 o It is only possible to use the binary installer
@@ -97,17 +97,10 @@ o Unfortunately, the installer cannot reliably detect
   if a previous version of Firebird Classic server
   is running.
 
-o There are known areas of overlap between the
-  32-bit and 64-bit installs:
-
-  - The service installer (instsvc) uses the same
-    default instance name for 32-bit and 64-bit
-    installations. This is by design. Services exist
-    in a single name space.
-
-  - If the 32-bit and 64-bit control panel applets are
-    installed they will both point to the same default
-    instance.
+o The service installer (instsvc) uses the same
+  default instance name for 32-bit and 64-bit
+  installations. This is by design. Services exist
+  in a single name space.
 
 o Be sure to install as an administrator. ie, if 
   using the binary installer right click and choose 
@@ -118,7 +111,7 @@ o Be sure to install as an administrator. ie, if
 o Libraries deployed by instclient may fail to load if
   the MS runtime libraries have not been installed. 
   This may be a problem if installing on older Windows
-  platforms.
+  platforms. 
 
 
 Uninstallation
