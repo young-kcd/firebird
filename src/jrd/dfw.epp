@@ -2164,7 +2164,7 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 		try
 		{
 			jrd_rel* relation = MET_lookup_relation(tdbb, work->dfw_name);
-			if (relation->rel_view_rse || work->dfw_ids.isEmpty())
+			if (!relation || relation->rel_view_rse || work->dfw_ids.isEmpty())
 				break;
 
 			// Protect relation from modification
