@@ -1,3 +1,15 @@
+ 2016-02-10 17:53  asfernandes 
+   M src/jrd/dfw.epp
+Fixed CORE-5107 - set autoddl off and sequence of: ( create view V as select * from T; alter view V as select 1 x from rdb$database; drop view V; ) leads to server crash.
+
+ 2016-02-10 14:25  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+   M builds/install/arch-specific/win32/Readme.txt
+   M builds/install/arch-specific/win32/custom_messages.inc
+   M builds/install/arch-specific/win32/i18n_readme.txt
+   M builds/install/arch-specific/win32/installation_readme.txt
+Miscellaneous changes to prepare windows installer for RC2
+
  2016-02-07 07:44  alexpeshkoff 
    M src/jrd/CryptoManager.cpp
 Postfix for CORE-5100, thanks to Dmitry Sibiryakov
