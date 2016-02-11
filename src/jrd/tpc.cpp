@@ -145,6 +145,9 @@ SLONG TPC_find_states(thread_db* tdbb, SLONG min_number, SLONG max_number, ULONG
 
 	// Check for too old transactions (assumed committed)
 
+	if (max_number < tip_cache->tpc_base)
+		return 0;
+
 	if (number < tip_cache->tpc_base || number == 0)
 	{
 		if (check_state(tra_committed, mask))
