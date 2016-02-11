@@ -7922,6 +7922,26 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 				END_MODIFY
 			}
 			END_FOR
+
+			request2.reset();
+
+			FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+				RFR2 IN RDB$RELATION_FIELDS CROSS
+				VRL IN RDB$VIEW_RELATIONS
+				WITH VRL.RDB$RELATION_NAME EQ name.c_str() AND
+					 VRL.RDB$PACKAGE_NAME MISSING AND
+					 VRL.RDB$CONTEXT_TYPE EQ VCT_TABLE AND
+					 RFR2.RDB$RELATION_NAME EQ VRL.RDB$VIEW_NAME AND
+					 RFR2.RDB$VIEW_CONTEXT EQ VRL.RDB$VIEW_CONTEXT AND
+					 RFR2.RDB$BASE_FIELD = field->fld_name.c_str()
+			{
+				MODIFY RFR2
+				{
+					strcpy(RFR2.RDB$FIELD_SOURCE, RFR.RDB$FIELD_SOURCE);
+				}
+				END_MODIFY
+			}
+			END_FOR
 		}
 		END_FOR
 
