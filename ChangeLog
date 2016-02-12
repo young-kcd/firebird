@@ -1,3 +1,7 @@
+ 2016-02-11 12:09  hvlad 
+   M src/jrd/tpc.cpp
+Missed check (CORE-5067). 
+
  2016-02-07 11:48  dimitr 
    M src/jrd/jrd.cpp
 Backported from trunk: unwind the cache if checkCancelState(true) is called directly.
