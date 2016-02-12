@@ -2013,8 +2013,10 @@ bool VIO_get_current(thread_db* tdbb,
 		case tra_committed:
 			return !(rpb->rpb_flags & rpb_deleted);
 		case tra_dead:
-			if (transaction->tra_attachment->att_flags & ATT_no_cleanup)
-				return !foreign_key;
+			// Run backout else false key violation could be reported, see CORE-5110
+			//
+			// if (transaction->tra_attachment->att_flags & ATT_no_cleanup)
+			//	return !foreign_key;
 
 			{
 				jrd_rel::GCShared gcGuard(tdbb, rpb->rpb_relation);
@@ -2113,9 +2115,8 @@ bool VIO_get_current(thread_db* tdbb,
 			return true;
 
 		case tra_dead:
-			if (transaction->tra_attachment->att_flags & ATT_no_cleanup) {
-				return !foreign_key;
-			}
+			// if (transaction->tra_attachment->att_flags & ATT_no_cleanup)
+			//	return !foreign_key;
 
 			{
 				jrd_rel::GCShared gcGuard(tdbb, rpb->rpb_relation);
