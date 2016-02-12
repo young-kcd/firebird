@@ -1,3 +1,7 @@
+ 2016-02-11 18:10  asfernandes 
+   M src/dsql/DdlNodes.epp
+Fixed CORE-2923 - Problem with dependencies with views.
+
  2016-02-10 17:53  asfernandes 
    M src/jrd/dfw.epp
 Fixed CORE-5107 - set autoddl off and sequence of: ( create view V as select * from T; alter view V as select 1 x from rdb$database; drop view V; ) leads to server crash.
