@@ -1,3 +1,7 @@
+ 2016-02-12 13:04  hvlad 
+   M src/jrd/vio.cpp
+Simplest fix for bug CORE-5110 : False PK\FK violation could be reported when attachment used isc_dpb_no_garbage_collect flag
+
  2016-02-11 12:09  hvlad 
    M src/jrd/tpc.cpp
 Missed check (CORE-5067). 
