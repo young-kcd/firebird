@@ -1,3 +1,7 @@
+ 2016-02-12 13:13  hvlad 
+   M src/jrd/vio.cpp
+Simplest fix for bug CORE-5110 : False PK\FK violation could be reported when attachment used isc_dpb_no_garbage_collect flag
+
  2016-02-11 18:10  asfernandes 
    M src/dsql/DdlNodes.epp
 Fixed CORE-2923 - Problem with dependencies with views.
