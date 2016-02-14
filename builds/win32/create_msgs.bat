@@ -9,7 +9,7 @@
 @if exist "%FB_GEN_DIR%\dbs\msg.fdb" del "%FB_GEN_DIR%\dbs\msg.fdb"
 
 @echo create database '%FB_GEN_DB_DIR%/dbs/msg.fdb'; | "%FB_BIN_DIR%\isql" -q
-@set FB_MSG_ISQL=@"%FB_BIN_DIR%\isql" -q %FB_GEN_DB_DIR%/dbs/msg.fdb -i %FB_ROOT_PATH%\src\msgs\
+@set FB_MSG_ISQL=@"%FB_BIN_DIR%\isql" -b -q %FB_GEN_DB_DIR%/dbs/msg.fdb -i %FB_ROOT_PATH%\src\msgs\
 @%FB_MSG_ISQL%msg.sql
 @echo.
 @echo loading facilities

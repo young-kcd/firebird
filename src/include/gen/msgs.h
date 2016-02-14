@@ -284,7 +284,7 @@ static const struct {
 	{335544580, "Table unknown"},		/* dsql_relation_err */
 	{335544581, "Procedure unknown"},		/* dsql_procedure_err */
 	{335544582, "Request unknown"},		/* dsql_request_err */
-	{335544583, "SQLDA missing or incorrect version, or incorrect number/type of variables"},		/* dsql_sqlda_err */
+	{335544583, "SQLDA error"},		/* dsql_sqlda_err */
 	{335544584, "Count of read-write columns does not equal count of values"},		/* dsql_var_count_err */
 	{335544585, "Invalid statement handle"},		/* dsql_stmt_handle */
 	{335544586, "Function unknown"},		/* dsql_function_err */
@@ -872,6 +872,12 @@ Data source : @4"},		/* eds_statement */
 	{336003102, "Incompatible trigger type"},		/* dsql_incompatible_trigger_type */
 	{336003103, "Database trigger type can't be changed"},		/* dsql_db_trigger_type_cant_change */
 	{336003104, "To be used with RDB$RECORD_VERSION, @1 must be a table or a view of single table"},		/* dsql_record_version_table */
+	{336003105, "SQLDA version expected between @1 and @2, found @3"},		/* dsql_invalid_sqlda_version */
+	{336003106, "at SQLVAR index @1"},		/* dsql_sqlvar_index */
+	{336003107, "empty pointer to NULL indicator variable"},		/* dsql_no_sqlind */
+	{336003108, "empty pointer to data"},		/* dsql_no_sqldata */
+	{336003109, "No SQLDA for input values provided"},		/* dsql_no_input_sqlda */
+	{336003110, "No SQLDA for output values provided"},		/* dsql_no_output_sqlda */
 	{336068645, "BLOB Filter @1 not found"},		/* dyn_filter_not_found */
 	{336068649, "Function @1 not found"},		/* dyn_func_not_found */
 	{336068656, "Index not found"},		/* dyn_index_not_found */

@@ -359,7 +359,7 @@ without specifying a character set.', NULL);
 ('dsql_relation_err', 'PASS1_make_context', 'dsql pass1.c', NULL, 0, 260, NULL, 'Table unknown', NULL, NULL);
 ('dsql_procedure_err', 'PASS1_statement', 'dsql pass1.c', NULL, 0, 261, NULL, 'Procedure unknown', NULL, NULL);
 ('dsql_request_err', 'lookup_stmt', 'dsql user_dsql.c', NULL, 0, 262, NULL, 'Request unknown', NULL, NULL);
-('dsql_sqlda_err', '(several)', 'dsql (several)', NULL, 0, 263, NULL, 'SQLDA missing or incorrect version, or incorrect number/type of variables', NULL, NULL);
+('dsql_sqlda_err', '(several)', 'dsql (several)', NULL, 0, 263, NULL, 'SQLDA error', NULL, NULL);
 ('dsql_var_count_err', 'pass1_insert', 'dsql pass1.c', NULL, 0, 264, NULL, 'Count of read-write columns does not equal count of values', NULL, NULL);
 ('dsql_stmt_handle', 'bad_sql_handle', 'whyb.c', NULL, 0, 265, NULL, 'Invalid statement handle', NULL, NULL);
 ('dsql_function_err', 'pass1_udf', 'dsql pass1.c', NULL, 0, 266, NULL, 'Function unknown', NULL, NULL);
@@ -1675,6 +1675,12 @@ COMMIT WORK;
 ('dsql_incompatible_trigger_type', 'define_trigger', 'ddl.cpp', NULL, 7, 30, NULL, 'Incompatible trigger type', NULL, NULL);
 ('dsql_db_trigger_type_cant_change', 'define_trigger', 'ddl.cpp', NULL, 7, 31, NULL, 'Database trigger type can''t be changed', NULL, NULL);
 ('dsql_record_version_table', 'MAKE_desc', 'ExprNodes.cpp', NULL, 7, 32, NULL, 'To be used with RDB$RECORD_VERSION, @1 must be a table or a view of single table', NULL, NULL);
+('dsql_invalid_sqlda_version', NULL, 'why.cpp', NULL, 7, 33, NULL, 'SQLDA version expected between @1 and @2, found @3', NULL, NULL);
+('dsql_sqlvar_index', NULL, 'why.cpp', NULL, 7, 34, NULL, 'at SQLVAR index @1', NULL, NULL);
+('dsql_no_sqlind', NULL, 'why.cpp', NULL, 7, 35, NULL, 'empty pointer to NULL indicator variable', NULL, NULL);
+('dsql_no_sqldata', NULL, 'why.cpp', NULL, 7, 36, NULL, 'empty pointer to data', NULL, NULL);
+('dsql_no_input_sqlda', NULL, NULL, NULL, 7, 37, NULL, 'No SQLDA for input values provided', NULL, NULL);
+('dsql_no_output_sqlda', NULL, NULL, NULL, 7, 38, NULL, 'No SQLDA for output values provided', NULL, NULL);
 -- Do not change the arguments of the previous DSQL messages.
 -- Write the new DSQL messages here.
 -- DYN

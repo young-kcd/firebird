@@ -1746,6 +1746,18 @@ C --
       PARAMETER (GDS__dsql_db_trigger_type_cant_change = 336003103)
       INTEGER*4 GDS__dsql_record_version_table       
       PARAMETER (GDS__dsql_record_version_table        = 336003104)
+      INTEGER*4 GDS__dsql_invalid_sqlda_version      
+      PARAMETER (GDS__dsql_invalid_sqlda_version       = 336003105)
+      INTEGER*4 GDS__dsql_sqlvar_index               
+      PARAMETER (GDS__dsql_sqlvar_index                = 336003106)
+      INTEGER*4 GDS__dsql_no_sqlind                  
+      PARAMETER (GDS__dsql_no_sqlind                   = 336003107)
+      INTEGER*4 GDS__dsql_no_sqldata                 
+      PARAMETER (GDS__dsql_no_sqldata                  = 336003108)
+      INTEGER*4 GDS__dsql_no_input_sqlda             
+      PARAMETER (GDS__dsql_no_input_sqlda              = 336003109)
+      INTEGER*4 GDS__dsql_no_output_sqlda            
+      PARAMETER (GDS__dsql_no_output_sqlda             = 336003110)
       INTEGER*4 GDS__dyn_filter_not_found            
       PARAMETER (GDS__dyn_filter_not_found             = 336068645)
       INTEGER*4 GDS__dyn_func_not_found              

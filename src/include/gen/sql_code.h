@@ -868,6 +868,12 @@ static const struct {
 	{336003102, -817}, /*  30 dsql_incompatible_trigger_type */
 	{336003103, -817}, /*  31 dsql_db_trigger_type_cant_change */
 	{336003104, -607}, /*  32 dsql_record_version_table */
+	{336003105, -802}, /*  33 dsql_invalid_sqlda_version */
+	{336003106, -802}, /*  34 dsql_sqlvar_index */
+	{336003107, -802}, /*  35 dsql_no_sqlind */
+	{336003108, -802}, /*  36 dsql_no_sqldata */
+	{336003109, -802}, /*  37 dsql_no_input_sqlda */
+	{336003110, -802}, /*  38 dsql_no_output_sqlda */
 	{336068645, -901}, /*  37 dyn_filter_not_found */
 	{336068649, -901}, /*  41 dyn_func_not_found */
 	{336068656, -901}, /*  48 dyn_index_not_found */

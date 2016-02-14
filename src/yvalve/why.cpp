@@ -84,7 +84,7 @@ static void badHandle(ISC_STATUS code);
 static bool isNetworkError(const IStatus* status);
 static void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code);
 //static void saveErrorString(ISC_STATUS* status);
-static void error804(ISC_STATUS err);
+static void badSqldaVersion(const short version);
 static void sqldaDescribeParameters(XSQLDA* sqlda, IMessageMetadata* parameters);
 static ISC_STATUS openOrCreateBlob(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle,
 	FB_API_HANDLE* traHandle, FB_API_HANDLE* blobHandle, ISC_QUAD* blobId,
@@ -226,10 +226,7 @@ SQLDAMetadata::SQLDAMetadata(const XSQLDA* aSqlda)
 {
 	if (sqlda && sqlda->version != SQLDA_VERSION1)
 	{
-		(Arg::Gds(isc_dsql_sqlda_err) <<
-		 Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-		 Arg::Gds(isc_random) << "Invalid SQLDA version"
-		).raise();
+		badSqldaVersion(sqlda->version);
 	}
 }
 
@@ -506,9 +503,8 @@ void SQLDAMetadata::gatherData(DataBuffer& to)
 			if (!var.sqlind)
 			{
 				(Arg::Gds(isc_dsql_sqlda_value_err) <<
-				 Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				 Arg::Gds(isc_random) << "empty pointer to NULL indicator variable" <<
-				 Arg::Gds(isc_index_name) << Arg::Num(i)  // To be replaced later with proper message
+				 Arg::Gds(isc_dsql_no_sqlind) <<
+				 Arg::Gds(isc_dsql_sqlvar_index) << Arg::Num(i)
 				).raise();
 			}
 
@@ -521,9 +517,8 @@ void SQLDAMetadata::gatherData(DataBuffer& to)
 		if (!var.sqldata && !*nullInd && (var.sqltype & ~1) != SQL_NULL)
 		{
 			(Arg::Gds(isc_dsql_sqlda_value_err) <<
-				Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				Arg::Gds(isc_random) << "empty pointer to data" <<
-				Arg::Gds(isc_index_name) << Arg::Num(i)  // To be replaced later with proper message
+				Arg::Gds(isc_dsql_no_sqldata) <<
+				Arg::Gds(isc_dsql_sqlvar_index) << Arg::Num(i)
 			).raise();
 		}
 
@@ -558,9 +553,8 @@ void SQLDAMetadata::scatterData(DataBuffer& from)
 			if (!var.sqldata)
 			{
 				(Arg::Gds(isc_dsql_sqlda_value_err) <<
-					Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-					Arg::Gds(isc_random) << "empty pointer to data" <<
-					Arg::Gds(isc_index_name) << Arg::Num(i)  // To be replaced later with proper message
+					Arg::Gds(isc_dsql_no_sqldata) <<
+					Arg::Gds(isc_dsql_sqlvar_index) << Arg::Num(i)
 				).raise();
 			}
 
@@ -576,9 +570,8 @@ void SQLDAMetadata::scatterData(DataBuffer& from)
 			if (!var.sqlind)
 			{
 				(Arg::Gds(isc_dsql_sqlda_value_err) <<
-					Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-					Arg::Gds(isc_random) << "empty pointer to NULL indicator variable" <<
-					Arg::Gds(isc_index_name) << Arg::Num(i)  // To be replaced later with proper message
+					Arg::Gds(isc_dsql_no_sqlind) <<
+					Arg::Gds(isc_dsql_sqlvar_index) << Arg::Num(i)
 				).raise();
 			}
 
@@ -1443,12 +1436,12 @@ static void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code)
 		badHandle(code);
 }
 
-// Raises a DSQL -804 error message.
-static void error804(ISC_STATUS err)
+static void badSqldaVersion(const short version)
 {
-	status_exception::raise(
-		Arg::Gds(isc_dsql_error) << Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-		Arg::Gds(err));
+		(Arg::Gds(isc_dsql_sqlda_value_err) <<
+		 Arg::Gds(isc_dsql_invalid_sqlda_version) <<
+		 Arg::Num(SQLDA_VERSION1) << Arg::Num(SQLDA_VERSION1) << Arg::Num(version)
+		).raise();
 }
 
 // Set charset info in SQLVAR according to legacy rules
@@ -1473,7 +1466,7 @@ static void sqldaDescribeParameters(XSQLDA* sqlda, IMessageMetadata* parameters)
 		return;
 
 	if (sqlda->version != SQLDA_VERSION1)
-		error804(isc_dsql_sqlda_err);
+		badSqldaVersion(sqlda->version);
 
 	StatusVector status(NULL);
 	CheckStatusWrapper statusWrapper(&status);
@@ -2516,7 +2509,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS* userStatus, FB_API_HANDLE* stm
 	try
 	{
 		if (!sqlda)
-			status_exception::raise(Arg::Gds(isc_dsql_sqlda_err) << Arg::Gds(isc_random) << "No output SQLDA for fetch");
+			status_exception::raise(Arg::Gds(isc_dsql_sqlda_err) << Arg::Gds(isc_dsql_no_output_sqlda));
 
 		RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
 

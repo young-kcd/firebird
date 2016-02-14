@@ -856,6 +856,12 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-817, '42', '000', 7, 30, 'dsql_incompatible_trigger_type', NULL, NULL)
 (-817, '42', '000', 7, 31, 'dsql_db_trigger_type_cant_change', NULL, NULL)
 (-607, 'HY', '000', 7, 32, 'dsql_record_version_table', NULL, NULL)
+(-802, '07', '002', 7, 33, 'dsql_invalid_sqlda_version', NULL, NULL)
+(-802, '07', '002', 7, 34, 'dsql_sqlvar_index', NULL, NULL)
+(-802, '07', '002', 7, 35, 'dsql_no_sqlind', NULL, NULL)
+(-802, '07', '002', 7, 36, 'dsql_no_sqldata', NULL, NULL)
+(-802, '07', '002', 7, 37, 'dsql_no_input_sqlda', NULL, NULL)
+(-802, '07', '002', 7, 38, 'dsql_no_output_sqlda', NULL, NULL)
 --  DYN
 (-901, '42', '000', 8, 37, 'dyn_filter_not_found', NULL, NULL)
 (-901, '42', '000', 8, 41, 'dyn_func_not_found', NULL, NULL)
