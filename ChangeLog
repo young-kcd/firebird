@@ -1,3 +1,18 @@
+ 2016-02-14 13:10  aafemt 
+   M builds/win32/create_msgs.bat
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/yvalve/why.cpp
+Messages for CORE-5112
+
  2016-02-12 13:13  hvlad 
    M src/jrd/vio.cpp
 Simplest fix for bug CORE-5110 : False PK\FK violation could be reported when attachment used isc_dpb_no_garbage_collect flag
