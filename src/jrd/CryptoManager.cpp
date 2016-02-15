@@ -416,7 +416,7 @@ namespace Jrd {
 		if (sv->getState() & IStatus::STATE_ERRORS)
 			Arg::StatusVector(&sv).raise();
 
-		// calculate it's hash
+		// calculate its hash
 		const string verifier(result, sizeof(result));
 		Sha1::hashBased64(valid, verifier);
 	}

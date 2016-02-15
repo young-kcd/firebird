@@ -164,7 +164,7 @@ private:
 	class NamedCallback : public ICryptKeyCallbackImpl<NamedCallback, CheckStatusWrapper>
 	{
 	public:
-		NamedCallback(NamedCallback *n, const char* nm, UCHAR k)
+		NamedCallback(NamedCallback* n, const char* nm, UCHAR k)
 			: next(n), key(k)
 		{
 			strncpy(name, nm, sizeof(name));

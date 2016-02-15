@@ -3480,7 +3480,7 @@ trigger_active
 		{ $$ = Nullable<bool>::val(true); }
 	| INACTIVE
 		{ $$ = Nullable<bool>::val(false); }
-	|
+	| // nothing
 		{ $$ = Nullable<bool>::empty(); }
 	;
 
@@ -3976,9 +3976,8 @@ db_alter_clause($alterDatabaseNode)
 
 %type crypt_key_clause(<alterDatabaseNode>)
 crypt_key_clause($alterDatabaseNode)
-	:  /* nothing */
-	| KEY valid_symbol_name
-		{ $alterDatabaseNode->keyName = *$2; }
+	: // nothing
+	| KEY valid_symbol_name		{ $alterDatabaseNode->keyName = *$2; }
 	;
 
 // ALTER TRIGGER

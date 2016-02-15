@@ -111,7 +111,7 @@ o Be sure to install as an administrator. ie, if
 o Libraries deployed by instclient may fail to load if
   the MS runtime libraries have not been installed. 
   This may be a problem if installing on older Windows
-  platforms. 
+  platforms.
 
 
 Uninstallation

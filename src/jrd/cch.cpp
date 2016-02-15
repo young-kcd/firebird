@@ -4892,7 +4892,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 
 					bool callback(thread_db* tdbb, FbStatusVector* status, Ods::pag* page)
 					{
-						Database *dbb = tdbb->getDatabase();
+						Database* dbb = tdbb->getDatabase();
 
 						while (!PIO_write(tdbb, file, bdb, page, status))
 						{
@@ -4925,7 +4925,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 
 				Pio io(pageSpace->file, bdb, inAst, isTempPage, pageSpace);
 				result = dbb->dbb_crypto_manager->write(tdbb, status, page, &io);
-				if ((!result) && (bdb->bdb_flags & BDB_io_error))
+				if (!result && (bdb->bdb_flags & BDB_io_error))
 				{
 					return false;
 				}

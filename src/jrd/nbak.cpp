@@ -822,10 +822,12 @@ bool BackupManager::writeDifference(thread_db* tdbb, FbStatusVector* status, ULO
 		{
 			return PIO_write(tdbb, file, bdb, page, sv);
 		}
+
 	private:
 		jrd_file* file;
 		BufferDesc* bdb;
 	};
+
 	Pio io(diff_file, &temp_bdb);
 
 	if (!database->dbb_crypto_manager->write(tdbb, status, page, &io))
@@ -850,10 +852,12 @@ bool BackupManager::readDifference(thread_db* tdbb, ULONG diff_page, Ods::pag* p
 		{
 			return PIO_read(tdbb, file, bdb, page, sv);
 		}
+
 	private:
 		jrd_file* file;
 		BufferDesc* bdb;
 	};
+
 	Pio io(diff_file, &temp_bdb);
 
 	if (!database->dbb_crypto_manager->read(tdbb, tdbb->tdbb_status_vector, page, &io))

@@ -2266,7 +2266,7 @@ bool VIO_get_current(thread_db* tdbb,
 		case tra_committed:
 			return !(rpb->rpb_flags & rpb_deleted);
 		case tra_dead:
-			// Run backout else false key violation could be reported, see CORE-5110
+			// Run backout otherwise false key violation could be reported, see CORE-5110
 			//
 			// if (transaction->tra_attachment->att_flags & ATT_no_cleanup)
 			//	return !foreign_key;

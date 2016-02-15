@@ -514,10 +514,11 @@ void SDW_dump_pages(thread_db* tdbb)
 					Shadow* shadow;
 					BufferDesc* bdb;
 				};
+
 				Pio cryptIo(shadow, window.win_bdb);
 
 				if (!dbb->dbb_crypto_manager->write(tdbb, tdbb->tdbb_status_vector,
-					window.win_bdb->bdb_buffer, &cryptIo))
+						window.win_bdb->bdb_buffer, &cryptIo))
 				{
 					CCH_RELEASE(tdbb, &window);
 					ERR_punt();

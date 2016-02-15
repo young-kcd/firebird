@@ -154,7 +154,7 @@ void DbCrypt::noKeyError(CheckStatusWrapper* status)
 	vector[0] = isc_arg_gds;
 	vector[1] = isc_random;
 	vector[2] = isc_arg_string;
-	vector[3] = (ISC_STATUS)msg;
+	vector[3] = (ISC_STATUS) msg;
 	vector[4] = isc_arg_end;
 	status->setErrors(vector);
 }
@@ -205,7 +205,7 @@ void DbCrypt::setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolder
 	if (key != 0)
 		return;
 
-	strncpy(savedKeyName, keyName ? keyName : "", sizeof(savedKeyName));
+	strncpy(savedKeyName, (keyName ? keyName : ""), sizeof(savedKeyName));
 	savedKeyName[sizeof(savedKeyName) - 1] = 0;
 
 	IConfig* def = config->getDefaultConfig(status);

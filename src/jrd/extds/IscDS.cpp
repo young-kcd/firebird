@@ -117,7 +117,7 @@ void IscConnection::attach(thread_db* tdbb, const PathName& dbName, const string
 	m_dbName = dbName;
 	generateDPB(tdbb, m_dpb, user, pwd, role);
 
-	// Avoid change of m_dpb by validatePassword() below 
+	// Avoid change of m_dpb by validatePassword() below
 	ClumpletWriter newDpb(m_dpb);
 	validatePassword(tdbb, m_dbName, newDpb);
 
