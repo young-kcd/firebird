@@ -1,3 +1,21 @@
+ 2016-02-15 02:53  asfernandes 
+   M builds/install/arch-specific/win32/installation_readme.txt
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M examples/dbcrypt/DbCrypt.cpp
+   M src/dsql/parse.y
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/sdw.cpp
+   M src/jrd/vio.cpp
+Misc.
+
+ 2016-02-15 02:53  asfernandes 
+   M src/msgs/facilities2.sql
+Correction.
+
  2016-02-14 13:10  aafemt 
    M builds/win32/create_msgs.bat
    M lang_helpers/gds_codes.ftn
