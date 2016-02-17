@@ -6545,6 +6545,8 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 #ifdef SUPERSERVER_V2
 	TRA_header_write(tdbb, dbb, 0);	// Update transaction info on header page.
 #endif
+	if (flags & SHUT_DBB_RELEASE_POOLS)
+		TRA_update_counters(tdbb, dbb);
 
 	VIO_fini(tdbb);
 

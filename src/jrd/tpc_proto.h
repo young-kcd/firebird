@@ -43,7 +43,7 @@ public:
 	~TipCache();
 
 	int cacheState(thread_db*, TraNumber number);
-	TraNumber findLimbo(thread_db* tdbb, TraNumber minNumber, TraNumber maxNumber);
+	TraNumber findStates(thread_db* tdbb, TraNumber minNumber, TraNumber maxNumber, ULONG mask, int& state);
 	void initializeTpc(thread_db*, TraNumber number);
 	void setState(TraNumber number, SSHORT state);
 	int snapshotState(thread_db*, TraNumber number);
@@ -78,9 +78,10 @@ inline int TPC_cache_state(thread_db* tdbb, TraNumber number)
 	 return tdbb->getDatabase()->dbb_tip_cache->cacheState(tdbb, number);
 }
 
-inline TraNumber TPC_find_limbo(thread_db* tdbb, TraNumber minNumber, TraNumber maxNumber)
+inline TraNumber TPC_find_states(thread_db* tdbb, TraNumber minNumber, TraNumber maxNumber,
+	ULONG mask, int& state)
 {
-	 return tdbb->getDatabase()->dbb_tip_cache->findLimbo(tdbb, minNumber, maxNumber);
+	return tdbb->getDatabase()->dbb_tip_cache->findStates(tdbb, minNumber, maxNumber, mask, state);
 }
 
 inline void TPC_initialize_tpc(thread_db* tdbb, TraNumber number)

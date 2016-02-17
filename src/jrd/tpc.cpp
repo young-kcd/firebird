@@ -106,17 +106,24 @@ int TipCache::cacheState(thread_db* tdbb, TraNumber number)
 }
 
 
-TraNumber TipCache::findLimbo(thread_db* tdbb, TraNumber minNumber, TraNumber maxNumber)
+inline bool check_state(int state, ULONG mask)
+{
+	return ((1 << state) & mask) != 0;
+}
+
+TraNumber TipCache::findStates(thread_db* tdbb, TraNumber minNumber, TraNumber maxNumber, 
+	ULONG mask, int& state)
 {
 /**************************************
  *
- *	T P C _ f i n d _ l i m b o
+ *	T P C _ f i n d _ s t a t e s
  *
  **************************************
  *
  * Functional description
- *	Return the oldest limbo transaction in the given boundaries.
- *  If not found, return zero.
+ *	Return the oldest transaction in the given state. Lookup in the 
+ *  [min_number, max_number) bounds.
+ *  If not found, return zero and don't change value of "state".
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -129,29 +136,50 @@ TraNumber TipCache::findLimbo(thread_db* tdbb, TraNumber minNumber, TraNumber ma
 
 	initializeTpc(tdbb, maxNumber);
 
-	SyncLockGuard sync(&m_sync, SYNC_SHARED, "TipCache::findLimbo");
+	SyncLockGuard sync(&m_sync, SYNC_SHARED, "TipCache::findStates");
 
-	// All transactions older than the oldest in our TIP cache
-	// are known to be committed, so there's no point looking at them
+	const TxPage* tip_cache = m_cache.front();
 
-	TxPage* tip_cache = m_cache.front();
+	// Check for too old transactions (assumed committed)
 
 	if (maxNumber < tip_cache->tpc_base)
 		return 0;
 
-	if (minNumber < tip_cache->tpc_base)
+	if (minNumber < tip_cache->tpc_base || minNumber == 0)
+	{
+		if (check_state(tra_committed, mask))
+		{
+			state = tra_committed;
+			return minNumber;
+		}
+
 		minNumber = tip_cache->tpc_base;
+	}
+
+	bool check_precommitted = false;
+	if (check_state(tra_precommitted, mask))
+	{
+		// If we looking for tra_precommitted only and there is no precommitted
+		// transactions - return immediately
+
+		SyncLockGuard syncPC(&dbb->dbb_pc_sync, SYNC_SHARED, "TipCache::findLimbo");
+		if (dbb->dbb_pc_transactions != NULL)
+			check_precommitted = true;
+		else if (mask == (1 << tra_precommitted))
+			return 0;			
+	}
 
 	const ULONG trans_per_tip = m_dbb->dbb_page_manager.transPerTIP;
 	const TraNumber base = minNumber - minNumber % trans_per_tip;
 
-	// Scan the TIP cache and return the first (i.e. oldest) limbo transaction
+	// Scan the TIP cache and return the first (i.e. oldest) transaction in 
+	// state we are looking for
 
 	FB_SIZE_T pos;
 	if (m_cache.find(base, pos))
 	{
 		for (TraNumber number = minNumber;
-			 pos < m_cache.getCount() && number <= maxNumber;
+			 pos < m_cache.getCount() && number < maxNumber;
 			 pos++)
 		{
 			tip_cache = m_cache[pos];
@@ -159,11 +187,21 @@ TraNumber TipCache::findLimbo(thread_db* tdbb, TraNumber minNumber, TraNumber ma
 			fb_assert(number >= tip_cache->tpc_base);
 			fb_assert(tip_cache->tpc_base < MAX_TRA_NUMBER - trans_per_tip);
 
-			for (; number < (tip_cache->tpc_base + trans_per_tip) && number <= maxNumber;
+			for (; number < (tip_cache->tpc_base + trans_per_tip) && number < maxNumber;
 				 number++)
 			{
-				if (TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base, number) == tra_limbo)
+				if (check_precommitted && number && TRA_precommited(tdbb, number, number))
+				{
+					state = tra_precommitted;
 					return number;
+				}
+
+				const int tx_state = TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base, number);
+				if (check_state(tx_state, mask))
+				{
+					state = tx_state;
+					return number;
+				}
 			}
 		}
 	}
