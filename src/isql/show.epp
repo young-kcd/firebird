@@ -4135,9 +4135,9 @@ static processing_state show_functions(const SCHAR* funcname)
 					isqlGlob.printf("Global functions%s%s", NEWLINE, NEWLINE);
 
 					isqlGlob.printf(
-						"Function Name                    Invalid Dependency, Type%s", NEWLINE);
+						"Function Name                     Invalid Dependency, Type%s", NEWLINE);
 					isqlGlob.printf(
-						"================================ ======= =====================================%s", NEWLINE);
+						"================================= ======= =====================================%s", NEWLINE);
 				}
 				else
 				{
@@ -4147,9 +4147,9 @@ static processing_state show_functions(const SCHAR* funcname)
 					isqlGlob.printf("Package: %s%s%s", package.c_str(), NEWLINE, NEWLINE);
 
 					isqlGlob.printf(
-						"Function Name                    Invalid%s", NEWLINE);
+						"Function Name                     Invalid%s", NEWLINE);
 					isqlGlob.printf(
-						"================================ =======%s", NEWLINE);
+						"================================= =======%s", NEWLINE);
 				}
 
 				first = false;
@@ -5034,9 +5034,9 @@ static processing_state show_proc(const SCHAR* procname)
 					isqlGlob.printf("Global procedures%s%s", NEWLINE, NEWLINE);
 
 					isqlGlob.printf(
-						"Procedure Name                   Invalid Dependency, Type%s", NEWLINE);
+						"Procedure Name                    Invalid Dependency, Type%s", NEWLINE);
 					isqlGlob.printf(
-						"================================ ======= =====================================%s", NEWLINE);
+						"================================= ======= =====================================%s", NEWLINE);
 				}
 				else
 				{
@@ -5046,9 +5046,9 @@ static processing_state show_proc(const SCHAR* procname)
 					isqlGlob.printf("Package: %s%s%s", package.c_str(), NEWLINE, NEWLINE);
 
 					isqlGlob.printf(
-						"Procedure Name                   Invalid%s", NEWLINE);
+						"Procedure Name                    Invalid%s", NEWLINE);
 					isqlGlob.printf(
-						"================================ =======%s", NEWLINE);
+						"================================= =======%s", NEWLINE);
 				}
 
 				first_proc = false;
