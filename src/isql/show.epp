@@ -482,7 +482,8 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 			{
 				sprintf(info, "DB %sencrypted%s%s",
 					(value_out & fb_info_crypt_encrypted ? "" : "not "),
-					(value_out & fb_info_crypt_process ? ", crypt thread not complete" : "", separator));
+					(value_out & fb_info_crypt_process ? ", crypt thread not complete" : ""),
+					separator);
 			}
 			break;
 
