@@ -1,3 +1,9 @@
+ 2016-02-16 13:47  makowski 
+   M builds/install/arch-specific/win32/fr/custom_messages_fr.inc
+   M builds/install/arch-specific/win32/fr/installation_lisezmoi.txt
+   M builds/install/arch-specific/win32/fr/lisezmoi.txt
+update French files for Windows install
+
  2016-02-15 02:53  asfernandes 
    M builds/install/arch-specific/win32/installation_readme.txt
    M examples/dbcrypt/CryptKeyHolder.cpp
