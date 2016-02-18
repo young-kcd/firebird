@@ -2530,7 +2530,8 @@ CastNode::CastNode(MemoryPool& pool, ValueExprNode* aSource, dsql_fld* aDsqlFiel
 	  dsqlAlias("CAST"),
 	  dsqlField(aDsqlField),
 	  source(aSource),
-	  itemInfo(NULL)
+	  itemInfo(NULL),
+	  dummyCast(false)
 {
 	castDesc.clear();
 	addChildNode(source, source);
@@ -2719,6 +2720,31 @@ ValueExprNode* CastNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	getDesc(tdbb, csb, &desc);
 	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
+	dsc sourceDesc;
+	source->getDesc(tdbb, csb, &sourceDesc);
+
+	// Let's check if the cast is required.
+
+	if (desc.dsc_dtype == dtype_text)
+	{
+		desc.dsc_dtype = dtype_varying;
+		desc.dsc_length += sizeof(USHORT);
+	}
+
+	if (sourceDesc.dsc_dtype == dtype_text)
+	{
+		sourceDesc.dsc_dtype = dtype_varying;
+		sourceDesc.dsc_length += sizeof(USHORT);
+	}
+
+	if (desc.dsc_dtype == dtype_varying && sourceDesc.dsc_dtype == dtype_varying &&
+		desc.dsc_length > sourceDesc.dsc_length)
+	{
+		desc.dsc_length = sourceDesc.dsc_length;
+	}
+
+	dummyCast = !itemInfo && DSC_EQUIV(&sourceDesc, &desc, true);
+
 	return this;
 }
 
@@ -2726,6 +2752,10 @@ ValueExprNode* CastNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	dsc* value = EVL_expr(tdbb, request, source);
+
+	if (!itemInfo && dummyCast)
+		return value;
+
 	if (request->req_flags & req_null)
 		value = NULL;
 
@@ -5625,18 +5655,12 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	// See CORE-5097.
 	if (field->fld_computation && !relation->rel_view_rse)
 	{
-		dsc subDesc;
-		sub->getDesc(tdbb, csb, &subDesc);
+		CastNode* cast = FB_NEW_POOL(*tdbb->getDefaultPool()) CastNode(
+			*tdbb->getDefaultPool());
+		cast->source = sub;
+		cast->castDesc = desc;
 
-		if (!DSC_EQUIV(&subDesc, &desc, true))
-		{
-			CastNode* cast = FB_NEW_POOL(*tdbb->getDefaultPool()) CastNode(
-				*tdbb->getDefaultPool());
-			cast->source = sub;
-			cast->castDesc = desc;
-
-			sub = cast;
-		}
+		sub = cast;
 	}
 
 	if (relation->rel_view_rse)
