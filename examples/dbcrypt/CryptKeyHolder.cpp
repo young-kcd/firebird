@@ -261,7 +261,7 @@ ICryptKeyCallback* CryptKeyHolder::keyHandle(CheckStatusWrapper* status, const c
 	IConfigEntry* confEntry = getEntry(status, kn);
 	if (confEntry)
 	{
-		UCHAR k = confEntry->getIntValue();
+		int k = confEntry->getIntValue();
 		confEntry->release();
 		if (k > 0 && k < 256)
 		{
