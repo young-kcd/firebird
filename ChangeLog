@@ -1,3 +1,8 @@
+ 2016-02-18 14:52  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+Fixed regression with CORE-1839 after fix for CORE-5097.
+
  2016-02-17 09:21  hvlad 
    M src/jrd/jrd.cpp
    M src/jrd/tpc.cpp
