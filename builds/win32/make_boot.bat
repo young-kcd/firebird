@@ -17,10 +17,6 @@ set ERRLEV=0
 ::===========
 :MAIN
 @echo.
-@echo Copy autoconfig.h
-@del %FB_ROOT_PATH%\src\include\gen\autoconfig.h 2> nul
-@copy %FB_ROOT_PATH%\src\include\gen\autoconfig_msvc.h %FB_ROOT_PATH%\src\include\gen\autoconfig.h > nul
-
 @echo Creating directories
 @rmdir /s /q %FB_GEN_DIR% 2>nul
 :: Remove previously generated output, and recreate the directory hierarchy. 
