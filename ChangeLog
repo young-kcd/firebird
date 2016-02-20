@@ -1,3 +1,7 @@
+ 2016-02-19 10:39  alexpeshkoff 
+   M examples/dbcrypt/CryptKeyHolder.cpp
+Fixed bug in a sample - thanks to Adriano
+
  2016-02-18 14:52  asfernandes 
    M src/dsql/ExprNodes.cpp
    M src/dsql/ExprNodes.h
