@@ -2193,10 +2193,10 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	const bool smallTable = (streamCardinality <= THRESHOLD_CARDINALITY);
 
 	// These flags work around our smart index selection algorithm. Any explicit
-	// (i.e. user specified) plan which requires all existing indices to be
-	// considered for a retrieval. Internal (system) requests used by the engine
-	// itself are often optimized using zero or non-actual statistics, so they are
-	// processed using somewhat relaxed rules.
+	// (i.e. user specified) plan requires all existing indices to be considered
+	// for a retrieval. Internal (system) requests used by the engine itself are
+	// often optimized using zero or non-actual statistics, so they are processed
+	// using somewhat relaxed rules.
 	const bool customPlan = csb->csb_rpt[stream].csb_plan;
 	const bool sysRequest = (csb->csb_g_flags & csb_internal);
 
