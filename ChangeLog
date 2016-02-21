@@ -1,3 +1,10 @@
+ 2016-02-20 15:34  aafemt 
+   M builds/win32/clean_all.bat
+   M builds/win32/make_boot.bat
+   M src/gpre/languages/fbrmclib.cpp
+   M src/include/firebird.h
+Use autoconfig_msvc.h from where it is
+
  2016-02-19 10:39  alexpeshkoff 
    M examples/dbcrypt/CryptKeyHolder.cpp
 Fixed bug in a sample - thanks to Adriano
