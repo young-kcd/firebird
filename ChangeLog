@@ -1,3 +1,11 @@
+ 2016-02-21 09:02  dimitr 
+   M src/jrd/Optimizer.cpp
+Fixed the comment.
+
+ 2016-02-21 08:54  dimitr 
+   M src/jrd/Optimizer.cpp
+Corrected my old commit re. optimization of the system requests.
+
  2016-02-20 15:34  aafemt 
    M builds/win32/clean_all.bat
    M builds/win32/make_boot.bat
