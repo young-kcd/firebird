@@ -25,7 +25,7 @@ ru.instclientGenGds32=Создание gds32.dll в системном ката�
 ru.instclientDecLibCountGds32="Уменьшаем счетчик для общей библиотеки gds32 и удаляем ее, если необходимо."
 ru.instclientDecLibCountFbClient="Уменьшаем счетчик для общей библиотеки fbclient и удаляем ее, если необходимо."
 ru.instsvcSetup=Установка службы
-ru.instsvcStartQuestion=Запустить Службу Firebird?
+ru.instsvcStartQuestion=Запустить службу Firebird?
 ru.instsvcStartMsg=Запуск сервера
 ru.instsvcStopMsg="Остановка службы "
 ru.instsvcRemove="Удаление службы "
@@ -71,7 +71,12 @@ ru.RunISQL=Запуск утилиты Interactive SQL
 
 ru.ReadmeFile=readme.txt
 ru.InstallationReadmeFile=installation_readme.txt
-ru.RunCS=Запуск Firebird Classic Server
-ru.RunSC=Запуск Firebird SuperClassic Server
-ru.RunSS=Запуск Firebird SuperServer 
-;ru.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
+ru.RunCS=Запуск Firebird в режиме Classic Server
+ru.RunSC=Запуск Firebird в режиме SuperClassic Server
+ru.RunSS=Запуск Firebird в режиме SuperServer
+ru.ServerTaskDescription=Выберите архитектуру сервера:
+ru.initSecurityDb=Добавляем SYSDBA в базу данных безопасности.
+ru.SYSDBAPasswordMismatch=Несовпадение пароля. Повторите ввод пароля для SYSDBA.
+ru.SYSDBAPasswordEmpty=Пароль не задан. Вы должны ввести пароль для SYSDBA.
+ru.EnableLegacyClientAuth=Разрешить авторизацию предыдущих версий клиента Firebird?
+
