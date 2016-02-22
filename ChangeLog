@@ -1,3 +1,11 @@
+ 2016-02-21 09:03  dimitr 
+   M src/jrd/Optimizer.cpp
+Misc.
+
+ 2016-02-21 09:00  dimitr 
+   M src/jrd/Optimizer.cpp
+Corrected my old commit re. optimization of the system requests.
+
  2016-02-12 13:04  hvlad 
    M src/jrd/vio.cpp
 Simplest fix for bug CORE-5110 : False PK\FK violation could be reported when attachment used isc_dpb_no_garbage_collect flag
