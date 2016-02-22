@@ -9,10 +9,10 @@ Firebird $MAJOR.$MINOR in general. In addition, these notes are
 primarily aimed at users of the binary installer.
 
 It is assumed that readers of this document are already
-familiar with Firebird. If you are evaluating
-Firebird $MAJOR.$MINOR as part of a migration from Fb 2.5 you are
-advised to review the Fb $MAJOR.$MINOR documentation to
-understand the changes made between 2.5 and $MAJOR.$MINOR.
+familiar with Firebird. If you are evaluating Firebird $MAJOR.$MINOR
+as part of a migration from Firebird 2.5 you are advised to
+review the Firebird $MAJOR.$MINOR documentation to understand
+the changes made between 2.5 and $MAJOR.$MINOR.
 
 
 Contents
@@ -22,7 +22,7 @@ o Before installation
 o Installation of MS VC runtime libraries
 o Deployment of gds32.dll
 o Installation of the Guardian
-o Re-installation of Firebird 3
+o Re-installation of Firebird $MAJOR.$MINOR
 o Known installation problems
 o Uninstallation
 o Installation from a batch file
@@ -37,17 +37,17 @@ this package. It is especially important to verify that
 fbclient.dll and gds32.dll are removed from <system32>.
 See the UNINSTALL section below for more info on this.
 
-If you have installed a beta or alpha version 
-firebird 3 the installer will rename firebid.conf and
-security3.fdb as these files are no longer compatible.
+If you have installed a beta or alpha version of Firebird $MAJOR.$MINOR
+the installer will rename firebird.conf and security3.fdb as
+these files are no longer compatible.
 
 
 Installation of MS VC runtime libraries
 ---------------------------------------
 
-Firebird 3 no longer needs to deploy the MSVC runtimes
+Firebird $MAJOR.$MINOR no longer needs to deploy the MSVC runtimes
 into the windows system directories so no redistributable
-run-time package is deployed. Firebird 3.0 loads the runtime
+run-time package is deployed. Firebird $MAJOR.$MINOR loads the runtime
 libraries from the root installation directory.
 
 
