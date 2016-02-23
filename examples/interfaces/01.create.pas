@@ -58,7 +58,7 @@ var
 	prov : IProvider;
 
 	// Attachment and Transaction contain methods to work with
-	// database attachment and transactions
+	// database attachment and transaction
 	att : IAttachment;
 	tra : ITransaction;
 
@@ -70,7 +70,7 @@ var
 		maxMessage := 256;
 		outMessage := StrAlloc(maxMessage);
 		util.formatStatus(outMessage, maxMessage, s);
-		writeln (outMessage);
+		writeln(outMessage);
 		StrDispose(outMessage);
 	end;
 
@@ -99,6 +99,10 @@ begin
 		// detach from database
 		att.detach(st);
 		att := nil;
+
+		// remove unneeded any more tag from DPB
+		if dpb.findFirst(st, isc_dpb_page_size)
+			then dpb.removeCurrent(st);
 
 		// attach it once again
 		att := prov.attachDatabase(st, 'fbtests.fdb', dpb.getBufferLength(st), dpb.getBuffer(st));
