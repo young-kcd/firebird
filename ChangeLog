@@ -1,3 +1,20 @@
+ 2016-02-22 16:20  paul_reeves 
+   M builds/install/arch-specific/win32/ba/Instalacija_ProcitajMe.txt
+   M builds/install/arch-specific/win32/ba/ProcitajMe.txt
+   M builds/install/arch-specific/win32/ba/custom_messages_ba.inc
+Add Bosnian i18n files for the Windows binary installer. 
+With thanks to Fikret Hasovic
+
+ 2016-02-22 08:27  dimitr 
+   M builds/install/arch-specific/win32/installation_readme.txt
+Misc adjustments.
+
+ 2016-02-22 08:19  dimitr 
+   M builds/install/arch-specific/win32/ru/Readme.txt
+   M builds/install/arch-specific/win32/ru/custom_messages_ru.inc
+   M builds/install/arch-specific/win32/ru/installation_readme.txt
+Russian translation for the Windows installer.
+
  2016-02-21 09:02  dimitr 
    M src/jrd/Optimizer.cpp
 Fixed the comment.
