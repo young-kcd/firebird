@@ -71,9 +71,14 @@ bool checkExpressionIndex(const index_desc* idx, ValueExprNode* node, StreamType
 		while (!idx->idx_expression->sameAs(node, true))
 		{
 			DerivedExprNode* const derivedExpr = node->as<DerivedExprNode>();
-			if (!derivedExpr)
+			CastNode* const cast = node->as<CastNode>();
+
+			if (derivedExpr)
+				node = derivedExpr->arg;
+			else if (cast && cast->dummyCast)
+				node = cast->source;
+			else
 				return false;
-			node = derivedExpr->arg;
 		}
 
 		SortedStreamList exprStreams, nodeStreams;
