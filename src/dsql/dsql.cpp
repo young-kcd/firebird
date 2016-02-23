@@ -1003,13 +1003,15 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 		{
 			if (dsql_msg_buf == NULL)
 			{
-				ERRD_post(Arg::Gds(isc_dsql_no_output_sqlda));
+				ERRD_post(Arg::Gds(isc_dsql_sqlda_err) <<
+						  Arg::Gds(isc_dsql_no_output_sqlda));
 			}
 		}
 		else
 			if (in_dsql_msg_buf == NULL)
 			{
-				ERRD_post(Arg::Gds(isc_dsql_no_input_sqlda));
+				ERRD_post(Arg::Gds(isc_dsql_sqlda_err) <<
+						  Arg::Gds(isc_dsql_no_input_sqlda));
 			}
 	}
 
