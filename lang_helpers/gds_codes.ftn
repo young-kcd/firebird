@@ -1758,6 +1758,8 @@ C --
       PARAMETER (GDS__dsql_no_input_sqlda              = 336003109)
       INTEGER*4 GDS__dsql_no_output_sqlda            
       PARAMETER (GDS__dsql_no_output_sqlda             = 336003110)
+      INTEGER*4 GDS__dsql_wrong_param_num            
+      PARAMETER (GDS__dsql_wrong_param_num             = 336003111)
       INTEGER*4 GDS__dyn_filter_not_found            
       PARAMETER (GDS__dyn_filter_not_found             = 336068645)
       INTEGER*4 GDS__dyn_func_not_found              

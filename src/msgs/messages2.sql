@@ -1681,6 +1681,7 @@ COMMIT WORK;
 ('dsql_no_sqldata', NULL, 'why.cpp', NULL, 7, 36, NULL, 'empty pointer to data', NULL, NULL);
 ('dsql_no_input_sqlda', NULL, NULL, NULL, 7, 37, NULL, 'No SQLDA for input values provided', NULL, NULL);
 ('dsql_no_output_sqlda', NULL, NULL, NULL, 7, 38, NULL, 'No SQLDA for output values provided', NULL, NULL);
+('dsql_wrong_param_num', NULL, NULL, NULL, 7, 39, NULL, 'Wrong number of parameters (expected @1, got @2)', NULL, NULL);
 -- Do not change the arguments of the previous DSQL messages.
 -- Write the new DSQL messages here.
 -- DYN

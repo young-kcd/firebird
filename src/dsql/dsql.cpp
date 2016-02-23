@@ -997,17 +997,23 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 
 	// Sanity check
 
-	if (count && !(toExternal ? dsql_msg_buf : in_dsql_msg_buf))
+	if (count)
 	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				  Arg::Gds(isc_dsql_sqlda_err)
-#ifdef DEV_BUILD
-				  << Arg::Gds(isc_random) << "Missing message data buffer"
-#endif
-				  );
+		if (toExternal)
+		{
+			if (dsql_msg_buf == NULL)
+			{
+				ERRD_post(Arg::Gds(isc_dsql_no_output_sqlda));
+			}
+		}
+		else
+			if (in_dsql_msg_buf == NULL)
+			{
+				ERRD_post(Arg::Gds(isc_dsql_no_input_sqlda));
+			}
 	}
 
-	bool err = false;
+	USHORT count2 = 0;
 
 	for (FB_SIZE_T i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
@@ -1022,11 +1028,18 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 				desc.clear();
 
 			//ULONG length = (IPTR) desc.dsc_address + desc.dsc_length;
-
-			if (/*length > msg_length || */!desc.dsc_dtype)
+			//if (length > msg_length)
+			//{
+			//		ERRD_post(Arg::Gds(isc_dsql_sqlda_err)
+			//			<< Arg::Gds(isc_random) << "Message buffer too short"
+			//		);
+			//}
+			if (!desc.dsc_dtype)
 			{
-				err = true;
-				break;
+				ERRD_post(Arg::Gds(isc_dsql_sqlda_err)
+					<< Arg::Gds(isc_dsql_datatype_err)
+					<< Arg::Gds(isc_dsql_sqlvar_index) << Arg::Num(parameter->par_index-1)
+				  );
 			}
 
 			UCHAR* msgBuffer = request->req_msg_buffers[parameter->par_message->msg_buffer_number];
@@ -1045,8 +1058,9 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 				length = null_offset + sizeof(SSHORT);
 				if (length > msg_length)
 				{
-					err = true;
-					break;
+					ERRD_post(Arg::Gds(isc_dsql_sqlda_err)
+						<< Arg::Gds(isc_random) << "Message buffer too short"
+					);
 				}
 				*/
 
@@ -1089,20 +1103,14 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 			else
 				memset(parDesc.dsc_address, 0, parDesc.dsc_length);
 
-			count--;
+			++count2;
 		}
 	}
 
-	// If we got here because the loop was exited early or if part of the
-	// message given to us hasn't been used, complain.
-
-	if (err || count)
+	if (count != count2)
 	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				  Arg::Gds(isc_dsql_sqlda_err)
-#ifdef DEV_BUILD
-				  << Arg::Gds(isc_random) << (err ? "Message buffer too short" : "Wrong number of message parameters")
-#endif
+		ERRD_post(Arg::Gds(isc_dsql_sqlda_err) <<
+					Arg::Gds(isc_dsql_wrong_param_num) << Arg::Num(count) <<Arg::Num(count2)
 				  );
 	}
 
@@ -1210,13 +1218,11 @@ static USHORT parse_metadata(dsql_req* request, IMessageMetadata* meta,
 	unsigned count = meta->getCount(&st);
 	checkD(&st);
 
-	if (count != parameters.getCount())
+	unsigned count2 = parameters.getCount();
+	if (count != count2)
 	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				  Arg::Gds(isc_dsql_sqlda_err)
-#ifdef DEV_BUILD
-				  << Arg::Gds(isc_random) << "Wrong number of message parameters"
-#endif
+		ERRD_post(Arg::Gds(isc_dsql_sqlda_err) <<
+				  Arg::Gds(isc_dsql_wrong_param_num) <<Arg::Num(count2) << Arg::Num(count)
 				  );
 	}
 

@@ -874,6 +874,7 @@ static const struct {
 	{336003108, "07002"}, //  36 dsql_no_sqldata
 	{336003109, "07002"}, //  37 dsql_no_input_sqlda
 	{336003110, "07002"}, //  38 dsql_no_output_sqlda
+	{336003111, "07001"}, //  39 dsql_wrong_param_num
 	{336068645, "42000"}, //  37 dyn_filter_not_found
 	{336068649, "42000"}, //  41 dyn_func_not_found
 	{336068656, "42000"}, //  48 dyn_index_not_found
