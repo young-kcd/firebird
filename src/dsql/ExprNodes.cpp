@@ -2720,30 +2720,37 @@ ValueExprNode* CastNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	getDesc(tdbb, csb, &desc);
 	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
-	dsc sourceDesc;
-	source->getDesc(tdbb, csb, &sourceDesc);
+	// dimitr:	DomainValidationNode describes its type using the domain type, which is always
+	//			equal to the destination type for the cast, see FieldNode::parse() below.
+	//			Avoiding this cast leads to wrong validations, so we treat it as a special case.
 
-	// Let's check if the cast is required.
-
-	if (desc.dsc_dtype == dtype_text)
+	if (!source->is<DomainValidationNode>())
 	{
-		desc.dsc_dtype = dtype_varying;
-		desc.dsc_length += sizeof(USHORT);
-	}
+		dsc sourceDesc;
+		source->getDesc(tdbb, csb, &sourceDesc);
 
-	if (sourceDesc.dsc_dtype == dtype_text)
-	{
-		sourceDesc.dsc_dtype = dtype_varying;
-		sourceDesc.dsc_length += sizeof(USHORT);
-	}
+		// Let's check if the cast is required.
 
-	if (desc.dsc_dtype == dtype_varying && sourceDesc.dsc_dtype == dtype_varying &&
-		desc.dsc_length > sourceDesc.dsc_length)
-	{
-		desc.dsc_length = sourceDesc.dsc_length;
-	}
+		if (desc.dsc_dtype == dtype_text)
+		{
+			desc.dsc_dtype = dtype_varying;
+			desc.dsc_length += sizeof(USHORT);
+		}
 
-	dummyCast = !itemInfo && DSC_EQUIV(&sourceDesc, &desc, true);
+		if (sourceDesc.dsc_dtype == dtype_text)
+		{
+			sourceDesc.dsc_dtype = dtype_varying;
+			sourceDesc.dsc_length += sizeof(USHORT);
+		}
+
+		if (desc.dsc_dtype == dtype_varying && sourceDesc.dsc_dtype == dtype_varying &&
+			desc.dsc_length > sourceDesc.dsc_length)
+		{
+			desc.dsc_length = sourceDesc.dsc_length;
+		}
+
+		dummyCast = !itemInfo && DSC_EQUIV(&sourceDesc, &desc, true);
+	}
 
 	return this;
 }
