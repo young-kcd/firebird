@@ -2729,25 +2729,7 @@ ValueExprNode* CastNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 		dsc sourceDesc;
 		source->getDesc(tdbb, csb, &sourceDesc);
 
-		// Let's check if the cast is required.
-
-		if (desc.dsc_dtype == dtype_text)
-		{
-			desc.dsc_dtype = dtype_varying;
-			desc.dsc_length += sizeof(USHORT);
-		}
-
-		if (sourceDesc.dsc_dtype == dtype_text)
-		{
-			sourceDesc.dsc_dtype = dtype_varying;
-			sourceDesc.dsc_length += sizeof(USHORT);
-		}
-
-		if (desc.dsc_dtype == dtype_varying && sourceDesc.dsc_dtype == dtype_varying &&
-			desc.dsc_length > sourceDesc.dsc_length)
-		{
-			desc.dsc_length = sourceDesc.dsc_length;
-		}
+		// Let's check if the cast is required
 
 		dummyCast = !itemInfo && DSC_EQUIV(&sourceDesc, &desc, true);
 	}
