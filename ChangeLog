@@ -1,3 +1,42 @@
+ 2016-02-23 20:49  aafemt 
+   M src/dsql/dsql.cpp
+Get secondary error code isc_dsql_sqlda_err back, thanks to Dmitry Yemanov
+
+ 2016-02-23 16:54  alexpeshkoff 
+   A examples/dbcrypt/cryptDb.pas
+Sample of writing plugin using pascal
+
+ 2016-02-23 16:53  alexpeshkoff 
+   M examples/interfaces/01.create.pas
+Misc changes in example
+
+ 2016-02-23 16:18  aafemt 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/dsql.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Some more cases of CORE-5112 as pointed by Dmitry Yemanov
+
+ 2016-02-23 09:52  dimitr 
+   M src/dsql/ExprNodes.cpp
+Removed "cast no-op" extensions as they break many tests, e.g. CAST('A' as CHAR(10)) remains CHAR(1) instead of being padded up to CHAR(10). Let's no-op only really equal descriptors for the time being.
+
+ 2016-02-23 09:10  dimitr 
+   M src/dsql/ExprNodes.cpp
+And another postfix for CORE-5097, it resolves regression for core_3545.fbt.
+Adriano, please review.
+
+ 2016-02-23 08:20  dimitr 
+   M src/jrd/Optimizer.cpp
+Yet another postfix for CORE-5097, it resolves regressions for core_1173.fbt and core_1525.fbt.
+
  2016-02-22 16:20  paul_reeves 
    M builds/install/arch-specific/win32/ba/Instalacija_ProcitajMe.txt
    M builds/install/arch-specific/win32/ba/ProcitajMe.txt
