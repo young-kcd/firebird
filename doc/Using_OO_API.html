@@ -1,0 +1,211 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice 4.1.2  (Unix)">
+	<META NAME="AUTHOR" CONTENT="alex ">
+	<META NAME="CREATED" CONTENT="20130531;10003100">
+	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
+	<META NAME="CHANGED" CONTENT="20160224;18294800">
+	<STYLE TYPE="text/css">
+	<!--
+		@page { size: 8.5in 11in; margin: 0.79in }
+		P { margin-bottom: 0.08in }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="en-US" DIR="LTR">
+<P STYLE="margin-top: 0.17in; margin-bottom: 0.2in; page-break-after: avoid">
+<FONT FACE="Albany, sans-serif"><FONT SIZE=4>Firebird interfaces.</FONT></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Firebird's OO API is based
+on use of interfaces. That interfaces, though looking in some aspects
+like OLE2 interfaces (some of them have addRef() and release()
+methods) are non standard and have features, missing in ither widely
+used types of interfaces. First of all firebird interfaces are
+</FONT><FONT SIZE=4><B>language independent</B></FONT><FONT SIZE=4> –
+that means that to define/use them one need not use language specific
+constructions like </FONT><FONT SIZE=4><I>class</I></FONT><FONT SIZE=4>
+in C++, interface may be defined using any language having concepts
+of array and pointer to procedure/function. Next interfaces are
+</FONT><FONT SIZE=4><SPAN STYLE="font-style: normal"><B>versioned</B></SPAN></FONT><FONT SIZE=4>
+– i.e. we support different versions of same interface. Binary
+layout of interfaces is designed to support that features very
+efficient (there is no need in additional virtual calls like in
+OLE2/COM with it's </FONT><STRONG><FONT SIZE=4><SPAN STYLE="font-weight: normal">QueryInterface</SPAN></FONT></STRONG><STRONG><FONT SIZE=4>)</FONT></STRONG><STRONG><FONT SIZE=4><SPAN STYLE="font-weight: normal">
+but it's not convenient for direct use from most languages. Therefore
+language-specific wrappers should better be designed for different
+languages making use of API easier. Currently we have wrappers for
+C++ and Pascal, Java is coming soon. From end-user POV calls from C++
+and Pascal have absolutely no difference, though some additional
+language-specific features present in C++ (like manual status check
+after API calls) are missing in Pascal.</SPAN></FONT></STRONG></P>
+<P STYLE="margin-bottom: 0in; font-weight: normal"><BR>
+</P>
+<P STYLE="margin-bottom: 0in; font-weight: normal"><FONT SIZE=4>Typically
+database API is used to access data stored in database. Firebird OO
+API certainly performs this task but in addition it supports writing
+your own </FONT><FONT SIZE=4><B>plugins</B></FONT><FONT SIZE=4> –
+modules, making it possible to enhance firebird capabilities
+according to your needs. Therefore this document contains 2 big parts
+– accessing databases and writing plugins. Certainly some
+interfaces (like status vector) are used in both parts of API, they
+will be discussed in data access part and freely referenced later
+when discussing plugins. Therefore even if you plan to write some
+plugin you should better start with the first part of this document.
+Moreover a lot of plugins need to access databases themselves and
+data access API is typically needed for it.</FONT></P>
+<P STYLE="margin-bottom: 0in; font-weight: normal"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="result_box"></A><FONT SIZE=4><SPAN STYLE="font-weight: normal">Firebird
+installation package contains a number of live samples of use of OO
+API – they are in examples/interfaces (database access) and
+examples/dbcrypt (plugin performing </SPAN></FONT><FONT SIZE=4><SPAN LANG="en">fictitious
+database encryption</SPAN></FONT><FONT SIZE=4><SPAN STYLE="font-weight: normal">)
+directories. It's supposed that the reader is familiar wit ISC API
+used in firebird since interbase times.</SPAN></FONT></P>
+<P STYLE="margin-bottom: 0in; font-weight: normal"><BR>
+</P>
+<P STYLE="margin-top: 0.17in; margin-bottom: 0.2in; page-break-after: avoid">
+<FONT FACE="Albany, sans-serif"><FONT SIZE=4><FONT SIZE=4>Accessing
+databases.</FONT></FONT></FONT></P>
+<H1><FONT SIZE=4>Creating database and attaching to existing
+database.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>First of all we need to
+get access to <B>IMaster</B> interface. IMaster is primary firebird
+interface, required to access all the rest of  interfaces. Therefore
+there is a special way of accessing it – the only one needed to use
+OO API plain function called fb_get_master_interface(). This function
+has no parameters and always succeeds. There is one and only one
+instance of IMaster per firebird client library, therefore one need
+not care about releasing memory, used by master interface. A simplest
+way to access it from your program is to have appropriate global or
+static variable:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>static <A HREF="#Master">IMaster</A>*
+master = fb_get_master_interface();</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>For a lot of methods, used
+in firebird API, first parameter is <B>IStatus</B> interface. It's a
+logical replacement of ISC_STATUS_ARRAY, but works separately with
+errors and warnings (not mising them in same array), can contain
+unlimited number of errors inside and (this will be important if you
+plan to implement IStatus yourself) always keeps strings, referenced
+by it, inside interface. Typically you need at least one instance of
+IStatus to call other methods. You obtain it from IMaster:</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>IStatus* st =
+master-&gt;getStatus();</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>If method getStatus()
+fails for some reason (OOM for example) it returns NULL – obviously
+we can't use generic error reporting method which is based on use of
+IStatus here.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Now we are going to deal
+with first interface, directly related to database calls. This is
+<A HREF="#Provider">IProvider</A> – interface called this way cause
+it's exactly that interface that must be implemented by any provider
+in firebird. Firebird client library also has it's own implementation
+of IProvider, which must be used to start any database activity. To
+obtain it we call IMaster's method:</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>IProvider* prov =
+master-&gt;getDispatcher();</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><U>The following is C++
+specific: </U>We are almost ready to call attachDatabase() method of
+IProvider, but before it a few words about concept of <B>Status
+Wrapper</B> should be said. Status wrapper is not an interface, it's
+very thin envelope for IStatus interface. It helps to customize
+behavior of C++ API (change a way how errors, returned in IStatus
+interface, are processed). For the first time we recommend use of
+<B>ThrowStatusWrapper</B>, which raises C++ exception each time an
+error is returned in IStatus.</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>ThrowStatusWrapper
+status(st);</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="Master"></A><FONT SIZE=4>Master
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IStatus* getStatus()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IProvider*
+	getDispatcher()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IPluginManager*
+	getPluginManager()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITimerControl*
+	getTimerControl()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IDtc* getDtc()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IUtil*
+	getUtilInterface()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IConfigManager*
+	getConfigManager()</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="Status"></A><FONT SIZE=4>Status
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"> <FONT SIZE=4>void init()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"> <FONT SIZE=4>unsigned getState()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"> <FONT SIZE=4>void
+	setErrors2(unsigned length, const intptr_t* value)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"> <FONT SIZE=4>void
+	setWarnings2(unsigned length, const intptr_t* value)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"> <FONT SIZE=4>void setErrors(const
+	intptr_t* value)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"> <FONT SIZE=4>void
+	setWarnings(const intptr_t* value)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"> <FONT SIZE=4>const intptr_t*
+	getErrors()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"> <FONT SIZE=4>const intptr_t*
+	getWarnings()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"> <FONT SIZE=4>IStatus* clone()</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Constants defined by
+Status interface:</FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4>STATE_WARNINGS - </FONT>
+</P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4>STATE_ERRORS</FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4>RESULT_ERROR = -1;</FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4>RESULT_OK = 0;</FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4>RESULT_NO_DATA =
+1;</FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4>RESULT_SEGMENT =
+2;</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="Provider"></A><FONT SIZE=4>Provider
+methods:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IAttachment*
+	attachDatabase(StatusType* status, const char* fileName, unsigned
+	dpbLength, const unsigned char* dpb)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IAttachment*
+	createDatabase(StatusType* status, const char* fileName, unsigned
+	dpbLength, const unsigned char* dpb)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IService*
+	attachServiceManager(StatusType* status, const char* service,
+	unsigned spbLength, const unsigned char* spb)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	shutdown(StatusType* status, unsigned timeout, const int reason)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	setDbCryptCallback(StatusType* status, ICryptKeyCallback*
+	cryptCallback)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+</BODY>
+</HTML>
