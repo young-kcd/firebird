@@ -2531,7 +2531,7 @@ CastNode::CastNode(MemoryPool& pool, ValueExprNode* aSource, dsql_fld* aDsqlFiel
 	  dsqlField(aDsqlField),
 	  source(aSource),
 	  itemInfo(NULL),
-	  dummyCast(false)
+	  artificial(false)
 {
 	castDesc.clear();
 	addChildNode(source, source);
@@ -2720,20 +2720,6 @@ ValueExprNode* CastNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	getDesc(tdbb, csb, &desc);
 	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
-	// dimitr:	DomainValidationNode describes its type using the domain type, which is always
-	//			equal to the destination type for the cast, see FieldNode::parse() below.
-	//			Avoiding this cast leads to wrong validations, so we treat it as a special case.
-
-	if (!source->is<DomainValidationNode>())
-	{
-		dsc sourceDesc;
-		source->getDesc(tdbb, csb, &sourceDesc);
-
-		// Let's check if the cast is required
-
-		dummyCast = !itemInfo && DSC_EQUIV(&sourceDesc, &desc, true);
-	}
-
 	return this;
 }
 
@@ -2742,11 +2728,14 @@ dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	dsc* value = EVL_expr(tdbb, request, source);
 
-	if (!itemInfo && dummyCast)
-		return value;
-
 	if (request->req_flags & req_null)
 		value = NULL;
+
+	// If validation is not required and the source value is either NULL
+	// or already in the desired data type, simply return it "as is"
+
+	if (!itemInfo && (!value || DSC_EQUIV(value, &castDesc, true)))
+		return value;
 
 	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 
@@ -5648,6 +5637,7 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 			*tdbb->getDefaultPool());
 		cast->source = sub;
 		cast->castDesc = desc;
+		cast->artificial = true;
 
 		sub = cast;
 	}

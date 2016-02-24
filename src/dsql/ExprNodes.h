@@ -194,7 +194,7 @@ public:
 	dsc castDesc;
 	NestConst<ValueExprNode> source;
 	NestConst<ItemInfo> itemInfo;
-	bool dummyCast;
+	bool artificial;
 };
 
 

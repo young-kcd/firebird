@@ -75,7 +75,7 @@ bool checkExpressionIndex(const index_desc* idx, ValueExprNode* node, StreamType
 
 			if (derivedExpr)
 				node = derivedExpr->arg;
-			else if (cast && cast->dummyCast)
+			else if (cast && cast->artificial)
 				node = cast->source;
 			else
 				return false;
