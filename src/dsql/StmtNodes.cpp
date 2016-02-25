@@ -5625,6 +5625,9 @@ DmlNode* ModifyNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	ModifyNode* node = FB_NEW_POOL(pool) ModifyNode(pool);
 	node->orgStream = orgStream;
 	node->newStream = newStream;
+
+	AutoSetRestore<StmtNode*> autoCurrentDMLNode(&csb->csb_currentDMLNode, node);
+
 	node->statement = PAR_parse_stmt(tdbb, csb);
 
 	if (blrOp == blr_modify2)
@@ -6431,6 +6434,8 @@ static RegisterNode<StoreNode> regStoreNode2(blr_store2);
 DmlNode* StoreNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	StoreNode* node = FB_NEW_POOL(pool) StoreNode(pool);
+
+	AutoSetRestore<StmtNode*> autoCurrentDMLNode(&csb->csb_currentDMLNode, node);
 
 	const UCHAR* blrPos = csb->csb_blr_reader.getPos();
 

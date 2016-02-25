@@ -431,6 +431,7 @@ class CompilerScratch : public pool_alloc<type_csb>
 		subFunctions(p),
 		subProcedures(p),
 		csb_currentForNode(NULL),
+		csb_currentDMLNode(NULL),
 		csb_rpt(p, len)
 	{
 		csb_dbg_info = FB_NEW_POOL(p) Firebird::DbgInfo(p);
@@ -530,6 +531,7 @@ public:
 	Firebird::GenericMap<Firebird::Left<Firebird::MetaName, DeclareSubProcNode*> > subProcedures;
 
 	ForNode*	csb_currentForNode;
+	StmtNode*	csb_currentDMLNode;	// could be StoreNode or ModifyNode
 
 	struct csb_repeat
 	{

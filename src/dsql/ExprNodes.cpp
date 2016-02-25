@@ -9186,6 +9186,9 @@ DmlNode* SubQueryNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 
 		if (csb->csb_currentForNode && csb->csb_currentForNode->parBlrBeginCnt <= 1)
 			node->ownSavepoint = false;
+
+		if (csb->csb_currentDMLNode)
+			node->ownSavepoint = false;
 	}
 
 	return node;
