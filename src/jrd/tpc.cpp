@@ -106,12 +106,12 @@ int TipCache::cacheState(thread_db* tdbb, TraNumber number)
 }
 
 
-inline bool check_state(int state, ULONG mask)
+static inline bool check_state(int state, ULONG mask)
 {
 	return ((1 << state) & mask) != 0;
 }
 
-TraNumber TipCache::findStates(thread_db* tdbb, TraNumber minNumber, TraNumber maxNumber, 
+TraNumber TipCache::findStates(thread_db* tdbb, TraNumber minNumber, TraNumber maxNumber,
 	ULONG mask, int& state)
 {
 /**************************************
@@ -121,7 +121,7 @@ TraNumber TipCache::findStates(thread_db* tdbb, TraNumber minNumber, TraNumber m
  **************************************
  *
  * Functional description
- *	Return the oldest transaction in the given state. Lookup in the 
+ *	Return the oldest transaction in the given state. Lookup in the
  *  [min_number, max_number) bounds.
  *  If not found, return zero and don't change value of "state".
  *
@@ -166,13 +166,13 @@ TraNumber TipCache::findStates(thread_db* tdbb, TraNumber minNumber, TraNumber m
 		if (dbb->dbb_pc_transactions != NULL)
 			check_precommitted = true;
 		else if (mask == (1 << tra_precommitted))
-			return 0;			
+			return 0;
 	}
 
 	const ULONG trans_per_tip = m_dbb->dbb_page_manager.transPerTIP;
 	const TraNumber base = minNumber - minNumber % trans_per_tip;
 
-	// Scan the TIP cache and return the first (i.e. oldest) transaction in 
+	// Scan the TIP cache and return the first (i.e. oldest) transaction in
 	// state we are looking for
 
 	FB_SIZE_T pos;

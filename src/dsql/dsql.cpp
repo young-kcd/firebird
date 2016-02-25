@@ -1008,11 +1008,13 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 			}
 		}
 		else
+		{
 			if (in_dsql_msg_buf == NULL)
 			{
 				ERRD_post(Arg::Gds(isc_dsql_sqlda_err) <<
 						  Arg::Gds(isc_dsql_no_input_sqlda));
 			}
+		}
 	}
 
 	USHORT count2 = 0;
@@ -1029,19 +1031,19 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 			if (!request->req_user_descs.get(parameter, desc))
 				desc.clear();
 
-			//ULONG length = (IPTR) desc.dsc_address + desc.dsc_length;
-			//if (length > msg_length)
-			//{
-			//		ERRD_post(Arg::Gds(isc_dsql_sqlda_err)
-			//			<< Arg::Gds(isc_random) << "Message buffer too short"
-			//		);
-			//}
+			/***
+			ULONG length = (IPTR) desc.dsc_address + desc.dsc_length;
+			if (length > msg_length)
+			{
+				ERRD_post(Arg::Gds(isc_dsql_sqlda_err) <<
+					Arg::Gds(isc_random) << "Message buffer too short");
+			}
+			***/
 			if (!desc.dsc_dtype)
 			{
-				ERRD_post(Arg::Gds(isc_dsql_sqlda_err)
-					<< Arg::Gds(isc_dsql_datatype_err)
-					<< Arg::Gds(isc_dsql_sqlvar_index) << Arg::Num(parameter->par_index-1)
-				  );
+				ERRD_post(Arg::Gds(isc_dsql_sqlda_err) <<
+					Arg::Gds(isc_dsql_datatype_err) <<
+					Arg::Gds(isc_dsql_sqlvar_index) << Arg::Num(parameter->par_index-1));
 			}
 
 			UCHAR* msgBuffer = request->req_msg_buffers[parameter->par_message->msg_buffer_number];
@@ -1056,15 +1058,14 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 
 				const ULONG null_offset = (IPTR) userNullDesc.dsc_address;
 
-				/*
+				/***
 				length = null_offset + sizeof(SSHORT);
 				if (length > msg_length)
 				{
 					ERRD_post(Arg::Gds(isc_dsql_sqlda_err)
-						<< Arg::Gds(isc_random) << "Message buffer too short"
-					);
+						<< Arg::Gds(isc_random) << "Message buffer too short");
 				}
-				*/
+				***/
 
 				dsc nullDesc = null_ind->par_desc;
 				nullDesc.dsc_address = msgBuffer + (IPTR) nullDesc.dsc_address;
@@ -1111,9 +1112,9 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 
 	if (count != count2)
 	{
-		ERRD_post(Arg::Gds(isc_dsql_sqlda_err) <<
-					Arg::Gds(isc_dsql_wrong_param_num) << Arg::Num(count) <<Arg::Num(count2)
-				  );
+		ERRD_post(
+			Arg::Gds(isc_dsql_sqlda_err) <<
+			Arg::Gds(isc_dsql_wrong_param_num) << Arg::Num(count) <<Arg::Num(count2));
 	}
 
 	const DsqlCompiledStatement* statement = request->getStatement();
@@ -1221,11 +1222,11 @@ static USHORT parse_metadata(dsql_req* request, IMessageMetadata* meta,
 	checkD(&st);
 
 	unsigned count2 = parameters.getCount();
+
 	if (count != count2)
 	{
 		ERRD_post(Arg::Gds(isc_dsql_sqlda_err) <<
-				  Arg::Gds(isc_dsql_wrong_param_num) <<Arg::Num(count2) << Arg::Num(count)
-				  );
+				  Arg::Gds(isc_dsql_wrong_param_num) <<Arg::Num(count2) << Arg::Num(count));
 	}
 
 	unsigned offset = 0;
