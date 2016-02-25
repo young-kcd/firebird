@@ -22,7 +22,7 @@
 on use of interfaces. That interfaces, though looking in some aspects
 like OLE2 interfaces (some of them have addRef() and release()
 methods) are non standard and have features, missing in ither widely
-used types of interfaces. First of all firebird interfaces are
+used types of interfaces. First of all Firebird interfaces are
 </FONT><FONT SIZE=4><B>language independent</B></FONT><FONT SIZE=4> –
 that means that to define/use them one need not use language specific
 constructions like </FONT><FONT SIZE=4><I>class</I></FONT><FONT SIZE=4>
@@ -38,7 +38,7 @@ language-specific wrappers should better be designed for different
 languages making use of API easier. Currently we have wrappers for
 C++ and Pascal, Java is coming soon. From end-user POV calls from C++
 and Pascal have absolutely no difference, though some additional
-language-specific features present in C++ (like manual status check
+language-specific features present in C++ (like automatic status check
 after API calls) are missing in Pascal.</SPAN></FONT></STRONG></P>
 <P STYLE="margin-bottom: 0in; font-weight: normal"><BR>
 </P>
@@ -46,7 +46,7 @@ after API calls) are missing in Pascal.</SPAN></FONT></STRONG></P>
 database API is used to access data stored in database. Firebird OO
 API certainly performs this task but in addition it supports writing
 your own </FONT><FONT SIZE=4><B>plugins</B></FONT><FONT SIZE=4> –
-modules, making it possible to enhance firebird capabilities
+modules, making it possible to enhance Firebird capabilities
 according to your needs. Therefore this document contains 2 big parts
 – accessing databases and writing plugins. Certainly some
 interfaces (like status vector) are used in both parts of API, they
@@ -62,8 +62,8 @@ installation package contains a number of live samples of use of OO
 API – they are in examples/interfaces (database access) and
 examples/dbcrypt (plugin performing </SPAN></FONT><FONT SIZE=4><SPAN LANG="en">fictitious
 database encryption</SPAN></FONT><FONT SIZE=4><SPAN STYLE="font-weight: normal">)
-directories. It's supposed that the reader is familiar wit ISC API
-used in firebird since interbase times.</SPAN></FONT></P>
+directories. It's supposed that the reader is familiar with ISC API
+used in Firebird since interbase times.</SPAN></FONT></P>
 <P STYLE="margin-bottom: 0in; font-weight: normal"><BR>
 </P>
 <P STYLE="margin-top: 0.17in; margin-bottom: 0.2in; page-break-after: avoid">
@@ -72,12 +72,12 @@ databases.</FONT></FONT></FONT></P>
 <H1><FONT SIZE=4>Creating database and attaching to existing
 database.</FONT></H1>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>First of all we need to
-get access to <B>IMaster</B> interface. IMaster is primary firebird
+get access to <B>IMaster</B> interface. IMaster is primary Firebird
 interface, required to access all the rest of  interfaces. Therefore
 there is a special way of accessing it – the only one needed to use
 OO API plain function called fb_get_master_interface(). This function
 has no parameters and always succeeds. There is one and only one
-instance of IMaster per firebird client library, therefore one need
+instance of IMaster per Firebird client library, therefore one need
 not care about releasing memory, used by master interface. A simplest
 way to access it from your program is to have appropriate global or
 static variable:</FONT></P>
@@ -86,9 +86,9 @@ master = fb_get_master_interface();</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>For a lot of methods, used
-in firebird API, first parameter is <B>IStatus</B> interface. It's a
+in Firebird API, first parameter is <B>IStatus</B> interface. It's a
 logical replacement of ISC_STATUS_ARRAY, but works separately with
-errors and warnings (not mising them in same array), can contain
+errors and warnings (not mixing them in same array), can contain
 unlimited number of errors inside and (this will be important if you
 plan to implement IStatus yourself) always keeps strings, referenced
 by it, inside interface. Typically you need at least one instance of
@@ -105,7 +105,7 @@ IStatus here.</FONT></P>
 with first interface, directly related to database calls. This is
 <A HREF="#Provider">IProvider</A> – interface called this way cause
 it's exactly that interface that must be implemented by any provider
-in firebird. Firebird client library also has it's own implementation
+in Firebird. Firebird client library also has it's own implementation
 of IProvider, which must be used to start any database activity. To
 obtain it we call IMaster's method:</FONT></P>
 <P STYLE="margin-bottom: 0in">    <FONT SIZE=4>IProvider* prov =
