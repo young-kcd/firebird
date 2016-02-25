@@ -1,3 +1,13 @@
+ 2016-02-24 20:11  dimitr 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/jrd/Optimizer.cpp
+Checking the datatype at compile time is unreliable: some nodes return one type at compile time and another type at runtime, thus causing unexpectedly missing casts. I'm moving the check to runtime, this should fix the remaining regressions (fingers crossed).
+
+ 2016-02-24 15:32  alexpeshkoff 
+   A doc/Using_OO_API.html
+Started work on new API docs
+
  2016-02-23 20:49  aafemt 
    M src/dsql/dsql.cpp
 Get secondary error code isc_dsql_sqlda_err back, thanks to Dmitry Yemanov
