@@ -35,7 +35,7 @@
 //
 //  TMN (Mike Nordell) 11.APR.2001 - Reduce compiler warnings
 //
-//  FSG (Frank Schlottmann-Gödde) 8.Mar.2002 - tiny cobol support
+//  FSG (Frank Schlottmann-GÃ¶dde) 8.Mar.2002 - tiny cobol support
 //       fixed Bug No. 526204
 //
 // 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
