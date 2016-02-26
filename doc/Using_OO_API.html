@@ -7,7 +7,8 @@
 	<META NAME="AUTHOR" CONTENT="alex ">
 	<META NAME="CREATED" CONTENT="20130531;10003100">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
-	<META NAME="CHANGED" CONTENT="20160224;18294800">
+	<META NAME="CHANGED" CONTENT="20160226;19094200">
+	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
 	<STYLE TYPE="text/css">
 	<!--
 		@page { size: 8.5in 11in; margin: 0.79in }
@@ -23,39 +24,40 @@ on use of interfaces. That interfaces, though looking in some aspects
 like OLE2 interfaces (some of them have addRef() and release()
 methods) are non standard and have features, missing in ither widely
 used types of interfaces. First of all Firebird interfaces are
-</FONT><FONT SIZE=4><B>language independent</B></FONT><FONT SIZE=4> –
-that means that to define/use them one need not use language specific
-constructions like </FONT><FONT SIZE=4><I>class</I></FONT><FONT SIZE=4>
-in C++, interface may be defined using any language having concepts
-of array and pointer to procedure/function. Next interfaces are
-</FONT><FONT SIZE=4><SPAN STYLE="font-style: normal"><B>versioned</B></SPAN></FONT><FONT SIZE=4>
-– i.e. we support different versions of same interface. Binary
-layout of interfaces is designed to support that features very
-efficient (there is no need in additional virtual calls like in
-OLE2/COM with it's </FONT><STRONG><FONT SIZE=4><SPAN STYLE="font-weight: normal">QueryInterface</SPAN></FONT></STRONG><STRONG><FONT SIZE=4>)</FONT></STRONG><STRONG><FONT SIZE=4><SPAN STYLE="font-weight: normal">
-but it's not convenient for direct use from most languages. Therefore
+</FONT><FONT SIZE=4><B>language independent</B></FONT> – <FONT SIZE=4>that
+means that to define/use them one need not use language specific
+constructions like </FONT><FONT SIZE=4><I>class</I></FONT> <FONT SIZE=4>in
+C++, interface may be defined using any language having concepts of
+array and pointer to procedure/function. Next interfaces are
+</FONT><FONT SIZE=4><SPAN STYLE="font-style: normal"><B>versioned</B></SPAN></FONT>
+– <FONT SIZE=4>i.e. we support different versions of same
+interface. Binary layout of interfaces is designed to support that
+features very efficient (there is no need in additional virtual calls
+like in OLE2/COM with it's </FONT><STRONG><FONT SIZE=4><SPAN STYLE="font-weight: normal">QueryInterface</SPAN></FONT></STRONG><STRONG><FONT SIZE=4>)</FONT></STRONG><STRONG>
+</STRONG><STRONG><FONT SIZE=4><SPAN STYLE="font-weight: normal">but
+it's not convenient for direct use from most languages. Therefore
 language-specific wrappers should better be designed for different
 languages making use of API easier. Currently we have wrappers for
 C++ and Pascal, Java is coming soon. From end-user POV calls from C++
 and Pascal have absolutely no difference, though some additional
-language-specific features present in C++ (like automatic status check
-after API calls) are missing in Pascal.</SPAN></FONT></STRONG></P>
-<P STYLE="margin-bottom: 0in; font-weight: normal"><BR>
+language-specific features present in C++ (like automatic status
+check after API calls) are missing in Pascal.</SPAN></FONT></STRONG></P>
+<P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in; font-weight: normal"><FONT SIZE=4>Typically
 database API is used to access data stored in database. Firebird OO
 API certainly performs this task but in addition it supports writing
-your own </FONT><FONT SIZE=4><B>plugins</B></FONT><FONT SIZE=4> –
-modules, making it possible to enhance Firebird capabilities
-according to your needs. Therefore this document contains 2 big parts
-– accessing databases and writing plugins. Certainly some
-interfaces (like status vector) are used in both parts of API, they
-will be discussed in data access part and freely referenced later
-when discussing plugins. Therefore even if you plan to write some
-plugin you should better start with the first part of this document.
-Moreover a lot of plugins need to access databases themselves and
-data access API is typically needed for it.</FONT></P>
-<P STYLE="margin-bottom: 0in; font-weight: normal"><BR>
+your own </FONT><FONT SIZE=4><B>plugins</B></FONT> – <FONT SIZE=4>modules,
+making it possible to enhance Firebird capabilities according to your
+needs. Therefore this document contains 2 big parts – accessing
+databases and writing plugins. Certainly some interfaces (like status
+vector) are used in both parts of API, they will be discussed in data
+access part and freely referenced later when discussing plugins.
+Therefore even if you plan to write some plugin you should better
+start with the first part of this document. Moreover a lot of plugins
+need to access databases themselves and data access API is typically
+needed for it.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="result_box"></A><FONT SIZE=4><SPAN STYLE="font-weight: normal">Firebird
 installation package contains a number of live samples of use of OO
@@ -64,16 +66,15 @@ examples/dbcrypt (plugin performing </SPAN></FONT><FONT SIZE=4><SPAN LANG="en">f
 database encryption</SPAN></FONT><FONT SIZE=4><SPAN STYLE="font-weight: normal">)
 directories. It's supposed that the reader is familiar with ISC API
 used in Firebird since interbase times.</SPAN></FONT></P>
-<P STYLE="margin-bottom: 0in; font-weight: normal"><BR>
+<P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-top: 0.17in; margin-bottom: 0.2in; page-break-after: avoid">
-<FONT FACE="Albany, sans-serif"><FONT SIZE=4><FONT SIZE=4>Accessing
-databases.</FONT></FONT></FONT></P>
+<FONT FACE="Albany, sans-serif"><FONT SIZE=4>Accessing databases.</FONT></FONT></P>
 <H1><FONT SIZE=4>Creating database and attaching to existing
 database.</FONT></H1>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>First of all we need to
 get access to <B>IMaster</B> interface. IMaster is primary Firebird
-interface, required to access all the rest of  interfaces. Therefore
+interface, required to access all the rest of interfaces. Therefore
 there is a special way of accessing it – the only one needed to use
 OO API plain function called fb_get_master_interface(). This function
 has no parameters and always succeeds. There is one and only one
@@ -81,8 +82,8 @@ instance of IMaster per Firebird client library, therefore one need
 not care about releasing memory, used by master interface. A simplest
 way to access it from your program is to have appropriate global or
 static variable:</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>static <A HREF="#Master">IMaster</A>*
-master = fb_get_master_interface();</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>static <A HREF="#Master">IMaster</A>*
+master = fb_get_master_interface();</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>For a lot of methods, used
@@ -93,8 +94,8 @@ unlimited number of errors inside and (this will be important if you
 plan to implement IStatus yourself) always keeps strings, referenced
 by it, inside interface. Typically you need at least one instance of
 IStatus to call other methods. You obtain it from IMaster:</FONT></P>
-<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>IStatus* st =
-master-&gt;getStatus();</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I><A HREF="#Status">IStatus</A>*
+st = master-&gt;getStatus();</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>If method getStatus()
 fails for some reason (OOM for example) it returns NULL – obviously
 we can't use generic error reporting method which is based on use of
@@ -108,12 +109,47 @@ it's exactly that interface that must be implemented by any provider
 in Firebird. Firebird client library also has it's own implementation
 of IProvider, which must be used to start any database activity. To
 obtain it we call IMaster's method:</FONT></P>
-<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>IProvider* prov =
-master-&gt;getDispatcher();</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>IProvider* prov =
+master-&gt;getDispatcher();</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>When attaching to existing
+database or moreover creating new one it's often necessary to pass a
+lot of additional parameters (logon/password, page size for new
+database, etc.) to API call. Having separate language-level
+parameters is close to unreal – we will have to modify a call too
+often to add new parameters, and number of them will be very big no
+matter of the fact that typically one needs to pass not too much of
+them. Therefore to pass additional parameters special in-memory data
+structure, called </FONT><FONT SIZE=4><I>database parameters block</I></FONT><FONT SIZE=4>
+(DPB) is used. Format of it is well defined, and it's possible to
+build DPB byte after byte. But it's much easier to use special
+interface </FONT><A HREF="#XpbBuilder"><FONT SIZE=4><B>IXpbBuilder</B></FONT></A><FONT SIZE=4>,
+which simplifies creation of various parameters blocks. To obtain an
+instance of IXpbBuilder you must know one more generic-use interface
+of firebird API – </FONT><A HREF="#Util"><FONT SIZE=4><B>IUtil</B></FONT></A><FONT SIZE=4>.
+It's a kind of placeholder for the calls that do not fit well in
+other places. So we do</FONT></P>
+<P STYLE="margin-bottom: 0in">    <I><FONT SIZE=4>IUtil* utl =
+master-&gt;getUtilInterface();</FONT></I></P>
+<P STYLE="margin-bottom: 0in">    <I><FONT SIZE=4>IXpbBuilder* dpb =
+utl-&gt;getXpbBuilder(&amp;status, IXpbBuilder::DPB, NULL, 0);</FONT></I></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>This creates empty
+parameters' block builder of DPB type. Now adding required parameter
+to it is trivial:</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>dpb-&gt;insertInt(&amp;status,
+isc_dpb_page_size, 4 * 1024);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>will make firebird to
+create new database with pagesize equal to 4Kb and meaning of</FONT></P>
+<P STYLE="margin-bottom: 0in">    <I><FONT SIZE=4>dpb-&gt;insertString(</FONT><FONT SIZE=4>&amp;status</FONT><FONT SIZE=4>,
+isc_dpb_user_name, “sysdba”);</FONT></I></P>
+<P STYLE="margin-bottom: 0in">    <I><FONT SIZE=4>dpb-&gt;insertString(</FONT><FONT SIZE=4>&amp;status</FONT><FONT SIZE=4>,
+isc_dpb_password, “masterkey”);</FONT></I></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>is (I hope) obvious.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><U>The following is C++
-specific: </U>We are almost ready to call attachDatabase() method of
+specific: </U>We are almost ready to call createDatabase() method of
 IProvider, but before it a few words about concept of <B>Status
 Wrapper</B> should be said. Status wrapper is not an interface, it's
 very thin envelope for IStatus interface. It helps to customize
@@ -121,12 +157,82 @@ behavior of C++ API (change a way how errors, returned in IStatus
 interface, are processed). For the first time we recommend use of
 <B>ThrowStatusWrapper</B>, which raises C++ exception each time an
 error is returned in IStatus.</FONT></P>
-<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>ThrowStatusWrapper
-status(st);</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>ThrowStatusWrapper
+status(st);</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Now we may create new
+empty database:</FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>att =
+prov-&gt;createDatabase(&amp;status, &quot;fbtests.fdb&quot;,
+dpb-&gt;getBufferLength(&amp;status), dpb-&gt;getBuffer(&amp;status));</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>printf(&quot;Database
+fbtests.fdb created\n&quot;);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Pay attention that we do
+not check status after the call to createDatabase(), because in case
+of error C++ or Pascal exception will be raised (therefore it's very
+good idea to have try/catch/except syntax in your program). We also
+use two new functions from IXpbBuilder – getBufferLength() and
+getBuffer(), which extract data from interface in native parameters
+block format. As you can see there is no need to check explicitly for
+status of functions, returning intermediate results.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Detaching from just
+created database is trivial:</FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>att-&gt;detach(&amp;status);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Now it remains to enclose
+all operators into <I>try</I> block and write a handler in catch
+block. When using ThrowStatusWrapper you should always catch defined
+in C++ API exception class FbException, in Pascal you must also work
+with class FbException. Exception handler block in simplest case may
+look this way:</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>catch (const
+FbException&amp; error)</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>char buf[256];</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>utl-&gt;formatStatus(buf,
+sizeof(buf), error.getStatus());</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>fprintf(stderr,
+&quot;%s\n&quot;, buf);</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Pay attention that here we
+use one more function from <A HREF="#Util">IUtil</A> –
+formatStatus(). It returns in buffer text, describing an error
+(warning), stored in IStatus parameter.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>To attach to existing
+database just use attachDatabase() method of IProvider instead
+createDatabase(). All parameters are the same for both methods.</FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>att =
+prov-&gt;attachDatabase(&amp;status, &quot;fbtests.fdb&quot;, 0,
+NULL);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>This sample is using no
+additional DPB parameters. Take into account that without
+logon/password any remote connection will fail if no trusted
+authorization plugin is configured. Certainly login info may be also
+provided in environment (in ISC_USER and ISC_PASSWORD variables) like
+it was before.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Our examples contain
+complete samples, dedicated except others to creating databases –
+01.create.cpp and 01.create.pas. When samples are present it will be
+very useful to build and try to run appropriate samples when reading
+this document.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<H1><FONT SIZE=4>Starting transaction and executing trivial SQL
+operator in it.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Only creating empty
+databases is definitely not enough to work with RDBMS. We want to be
+able to create various objects (like tables and so on) in database
+and insert data in that tables. Any operation within database is
+performed by firebird under transaction control. Therefore first of
+all we must learn to start transaction.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="Master"></A><FONT SIZE=4>Master
@@ -149,42 +255,6 @@ interface:</FONT></P>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
-<P STYLE="margin-bottom: 0in"><A NAME="Status"></A><FONT SIZE=4>Status
-interface:</FONT></P>
-<OL>
-	<LI><P STYLE="margin-bottom: 0in"> <FONT SIZE=4>void init()</FONT></P>
-	<LI><P STYLE="margin-bottom: 0in"> <FONT SIZE=4>unsigned getState()</FONT></P>
-	<LI><P STYLE="margin-bottom: 0in"> <FONT SIZE=4>void
-	setErrors2(unsigned length, const intptr_t* value)</FONT></P>
-	<LI><P STYLE="margin-bottom: 0in"> <FONT SIZE=4>void
-	setWarnings2(unsigned length, const intptr_t* value)</FONT></P>
-	<LI><P STYLE="margin-bottom: 0in"> <FONT SIZE=4>void setErrors(const
-	intptr_t* value)</FONT></P>
-	<LI><P STYLE="margin-bottom: 0in"> <FONT SIZE=4>void
-	setWarnings(const intptr_t* value)</FONT></P>
-	<LI><P STYLE="margin-bottom: 0in"> <FONT SIZE=4>const intptr_t*
-	getErrors()</FONT></P>
-	<LI><P STYLE="margin-bottom: 0in"> <FONT SIZE=4>const intptr_t*
-	getWarnings()</FONT></P>
-	<LI><P STYLE="margin-bottom: 0in"> <FONT SIZE=4>IStatus* clone()</FONT></P>
-</OL>
-<P STYLE="margin-bottom: 0in"><BR>
-</P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Constants defined by
-Status interface:</FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4>STATE_WARNINGS - </FONT>
-</P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4>STATE_ERRORS</FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4>RESULT_ERROR = -1;</FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4>RESULT_OK = 0;</FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4>RESULT_NO_DATA =
-1;</FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4>RESULT_SEGMENT =
-2;</FONT></P>
-<P STYLE="margin-bottom: 0in"><BR>
-</P>
-<P STYLE="margin-bottom: 0in"><BR>
-</P>
 <P STYLE="margin-bottom: 0in"><A NAME="Provider"></A><FONT SIZE=4>Provider
 methods:</FONT></P>
 <OL>
@@ -199,12 +269,136 @@ methods:</FONT></P>
 	unsigned spbLength, const unsigned char* spb)</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	shutdown(StatusType* status, unsigned timeout, const int reason)</FONT></P>
-	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	<P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	setDbCryptCallback(StatusType* status, ICryptKeyCallback*
 	cryptCallback)</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="Status"></A><FONT SIZE=4>Status
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void init()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned getState()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	setErrors2(unsigned length, const intptr_t* value)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	setWarnings2(unsigned length, const intptr_t* value)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void setErrors(const
+	intptr_t* value)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	setWarnings(const intptr_t* value)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const intptr_t*
+	getErrors()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const intptr_t*
+	getWarnings()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IStatus* clone()</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Constants defined by
+Status interface:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>STATE_WARNINGS - </FONT>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>STATE_ERRORS</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_ERROR = -1;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_OK = 0;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_NO_DATA = 1;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_SEGMENT = 2;</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="Util"></A><FONT SIZE=4>Util
+methods:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	getFbVersion(StatusType* status, IAttachment* att, IVersionCallback*
+	callback)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	loadBlob(StatusType* status, ISC_QUAD* blobId, IAttachment* att,
+	ITransaction* tra, const char* file, FB_BOOLEAN txt)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	dumpBlob(StatusType* status, ISC_QUAD* blobId, IAttachment* att,
+	ITransaction* tra, const char* file, FB_BOOLEAN txt)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	getPerfCounters(StatusType* status, IAttachment* att, const char*
+	countersSet, ISC_INT64* counters)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IAttachment*
+	executeCreateDatabase(StatusType* status, unsigned stmtLength, const
+	char* creatDBstatement, unsigned dialect, FB_BOOLEAN*
+	stmtIsCreateDb)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	decodeDate(ISC_DATE date, unsigned* year, unsigned* month, unsigned*
+	day)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	decodeTime(ISC_TIME time, unsigned* hours, unsigned* minutes,
+	unsigned* seconds, unsigned* fractions)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ISC_DATE
+	encodeDate(unsigned year, unsigned month, unsigned day)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ISC_TIME
+	encodeTime(unsigned hours, unsigned minutes, unsigned seconds,
+	unsigned fractions)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
+	formatStatus(char* buffer, unsigned bufferSize, IStatus* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
+	getClientVersion()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IXpbBuilder*
+	getXpbBuilder(StatusType* status, unsigned kind, const unsigned
+	char* buf, unsigned len)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
+	setOffsets(StatusType* status, IMessageMetadata* metadata,
+	IOffsetsCallback* callback)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="XpbBuilder"></A><FONT SIZE=4>XpbBuilder
+methods:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	clear(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	removeCurrent(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	insertInt(StatusType* status, unsigned char tag, int value)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	insertBigInt(StatusType* status, unsigned char tag, ISC_INT64 value)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	insertBytes(StatusType* status, unsigned char tag, const void*
+	bytes, unsigned length)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	insertTag(StatusType* status, unsigned char tag)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_BOOLEAN
+	isEof(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	moveNext(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	rewind(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_BOOLEAN
+	findFirst(StatusType* status, unsigned char tag)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_BOOLEAN
+	findNext(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned char
+	getTag(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
+	getLength(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
+	getInt(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ISC_INT64
+	getBigInt(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	getString(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const unsigned char*
+	getBytes(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
+	getBufferLength(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const unsigned char*
+	getBuffer(StatusType* status)</FONT></P>
+</OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 </BODY>
