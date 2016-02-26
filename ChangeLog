@@ -1,3 +1,24 @@
+ 2016-02-25 09:20  hvlad 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/exe.h
+This should fix known issues with MERGE and stable cursor (see CORE-3362).
+Thanks to Dmitry for idea
+
+ 2016-02-25 02:11  asfernandes 
+   M src/gpre/gpre.cpp
+Convert the file to UTF-8 as grep thinks it's a binary file.
+
+ 2016-02-25 01:50  asfernandes 
+   M src/dsql/dsql.cpp
+   M src/jrd/tpc.cpp
+Misc.
+
+ 2016-02-25 01:07  asfernandes 
+   M doc/Using_OO_API.html
+Typos.
+
  2016-02-24 20:11  dimitr 
    M src/dsql/ExprNodes.cpp
    M src/dsql/ExprNodes.h
