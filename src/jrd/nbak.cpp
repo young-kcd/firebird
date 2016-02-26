@@ -246,6 +246,15 @@ void BackupManager::beginBackup(thread_db* tdbb)
 		return;
 	}
 
+	// Check crypt state
+	if (header->hdr_flags & Ods::hdr_crypt_process)
+	{
+		NBAK_TRACE(("begin backup - crypt thread runs"));
+		stateGuard.setSuccess();
+		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) <<
+			"Cannot begin backup: please wait for crypt thread completion");
+	}
+
 	try
 	{
 		// Create file

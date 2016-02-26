@@ -870,12 +870,15 @@ class CryptKeyCallback : public VersionedIface<ICryptKeyCallbackImpl<CryptKeyCal
 {
 public:
 	explicit CryptKeyCallback(rem_port* prt)
-		: port(prt), l(0), d(NULL)
+		: port(prt), l(0), d(NULL), stopped(false)
 	{ }
 
 	unsigned int callback(unsigned int dataLength, const void* data,
 		unsigned int bufferLength, void* buffer)
 	{
+		if (stopped)
+			return 0;
+
 		Reference r(*port);
 
 		PACKET p;
@@ -885,7 +888,9 @@ public:
 		p.p_cc.p_cc_reply = bufferLength;
 		port->send(&p);
 
-		sem.enter();
+		if (!sem.tryEnter(10))
+			return 0;
+
 		if (bufferLength > l)
 			bufferLength = l;
 		memcpy(buffer, d, bufferLength);
@@ -904,11 +909,17 @@ public:
 			sem2.enter();
 	}
 
+	void stop()
+	{
+		stopped = true;
+	}
+
 private:
 	rem_port* port;
 	Semaphore sem, sem2;
 	unsigned int l;
 	const void* d;
+	bool stopped;
 };
 
 class ServerCallback : public ServerCallbackBase, public GlobalStorage
@@ -929,6 +940,11 @@ public:
 	ICryptKeyCallback* getInterface()
 	{
 		return &cryptCallback;
+	}
+
+	void stop()
+	{
+		cryptCallback.stop();
 	}
 
 private:
@@ -2246,6 +2262,7 @@ void DatabaseAuth::accept(PACKET* send, Auth::WriterImplementation* authBlock)
 
 	CSTRING* const s = &send->p_resp.p_resp_data;
 	authPort->extractNewKeys(s);
+	authPort->port_server_crypt_callback->stop();
 	authPort->send_response(send, 0, s->cstr_length, &status_vector, false);
 }
 
@@ -5372,6 +5389,7 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 			svc->svc_iface = iface;
 		}
 	}
+	port_server_crypt_callback->stop();
 
 	return this->send_response(sendL, 0, sendL->p_resp.p_resp_data.cstr_length, &status_vector,
 		false);

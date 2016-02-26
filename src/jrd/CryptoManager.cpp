@@ -44,6 +44,7 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/inf_pub.h"
+#include "../jrd/Monitoring.h"
 #include "../jrd/os/pio_proto.h"
 #include "../common/isc_proto.h"
 #include "../common/classes/GetPlugins.h"
@@ -89,12 +90,7 @@ namespace {
 		// Fortunately, modern pages of size 4k and bigger can fit everything on one page.
 		void getClumplets(ClumpletWriter& writer)
 		{
-			const UCHAR* p = header->hdr_data;
-			const UCHAR* const end = reinterpret_cast<const UCHAR*>(header) + header->hdr_page_size;
-			while ((p < end - 2) && (*p != Ods::HDR_end))
-				p += 2u + p[1];
-
-			writer.reset(header->hdr_data, p - header->hdr_data);
+			writer.reset(header->hdr_data, header->hdr_end - HDR_SIZE);
 		}
 
 	private:
@@ -142,6 +138,7 @@ namespace {
 
 			memcpy(to, writer.getBuffer(), length);
 			to[length] = Ods::HDR_end;
+			hdr->hdr_end = HDR_SIZE + length;
 		}
 
 		~CchHdr()
@@ -182,43 +179,54 @@ namespace {
 			Jrd::jrd_file* file = pageSpace->file;
 			const bool isTempPage = pageSpace->isTemporary();
 
+			Jrd::BackupManager::StateReadGuard::lock(tdbb, 1);
 			Jrd::BackupManager* bm = dbb->dbb_backup_manager;
-			const int bak_state = bm->getState();
-			fb_assert(bak_state != Ods::hdr_nbak_unknown);
+			int bak_state = bm->getState();
 
-			ULONG diff_page = 0;
-			if (bak_state != Ods::hdr_nbak_normal)
-				diff_page = bm->getPageIndex(tdbb, bdb.bdb_page.getPageNum());
-
-			if (bak_state == Ods::hdr_nbak_normal || !diff_page)
+			try
 			{
-				// Read page from disk as normal
-				int retryCount = 0;
+				fb_assert(bak_state != Ods::hdr_nbak_unknown);
 
-				while (!PIO_read(tdbb, file, &bdb, page, status))
-	 			{
-					if (!CCH_rollover_to_shadow(tdbb, dbb, file, false))
- 						ERR_punt();;
+				ULONG diff_page = 0;
+				if (bak_state != Ods::hdr_nbak_normal)
+					diff_page = bm->getPageIndex(tdbb, bdb.bdb_page.getPageNum());
 
-					if (file != pageSpace->file)
-						file = pageSpace->file;
-					else
-					{
-						if (retryCount++ == 3)
+				if (bak_state == Ods::hdr_nbak_normal || !diff_page)
+				{
+					// Read page from disk as normal
+					int retryCount = 0;
+
+					while (!PIO_read(tdbb, file, &bdb, page, status))
+		 			{
+						if (!CCH_rollover_to_shadow(tdbb, dbb, file, false))
+ 							ERR_punt();;
+
+						if (file != pageSpace->file)
+							file = pageSpace->file;
+						else
 						{
-							gds__log("IO error loop Unwind to avoid a hang\n");
-							ERR_punt();
+							if (retryCount++ == 3)
+							{
+								gds__log("IO error loop Unwind to avoid a hang\n");
+								ERR_punt();
+							}
 						}
-					}
- 				}
-			}
-			else
-			{
-				if (!bm->readDifference(tdbb, diff_page, page))
-					ERR_punt();
-			}
+ 					}
+				}
+				else
+				{
+					if (!bm->readDifference(tdbb, diff_page, page))
+						ERR_punt();
+				}
 
-			setHeader(h);
+				setHeader(h);
+			}
+			catch(const Exception&)
+			{
+				Jrd::BackupManager::StateReadGuard::unlock(tdbb);
+				throw;
+			}
+			Jrd::BackupManager::StateReadGuard::unlock(tdbb);
 		}
 
 	private:
@@ -258,13 +266,16 @@ namespace Jrd {
 
 	CryptoManager::~CryptoManager()
 	{
+		if (cryptThreadId)
+			Thread::waitForCompletion(cryptThreadId);
+
 		delete stateLock;
 		delete threadLock;
 	}
 
 	void CryptoManager::shutdown(thread_db* tdbb)
 	{
-		terminateCryptThread();
+		terminateCryptThread(tdbb);
 
 		if (cryptPlugin)
 		{
@@ -379,6 +390,11 @@ namespace Jrd {
 		}
 
 		const bool newCryptState = plugName.hasData();
+
+		BackupManager::StateReadGuard::lock(tdbb, 1);
+		int bak_state = dbb.dbb_backup_manager->getState();
+		BackupManager::StateReadGuard::unlock(tdbb);
+
 		{	// window scope
 			CchHdr hdr(tdbb, LCK_read);
 
@@ -394,11 +410,26 @@ namespace Jrd {
 				(Arg::Gds(isc_cp_already_crypted)).raise();
 			}
 
+			if (bak_state != Ods::hdr_nbak_normal)
+			{
+				(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) <<
+					"Cannot crypt: please wait for nbackup completion").raise();
+			}
+
 			// Load plugin
 			if (newCryptState)
 			{
 				if (cryptPlugin)
-					(Arg::Gds(isc_cp_already_crypted)).raise();
+				{
+					if (!headerCryptState)
+					{
+						// unload old plugin
+						PluginManagerInterfacePtr()->releasePlugin(cryptPlugin);
+						cryptPlugin = NULL;
+					}
+					else
+						Arg::Gds(isc_cp_already_crypted).raise();
+				}
 
 				keyName = key;
 				loadPlugin(plugName.c_str());
@@ -437,6 +468,15 @@ namespace Jrd {
 			// header scope
 			CchHdr hdr(tdbb, LCK_write);
 			writeGuard.lock();
+
+			// Nbak's lock was taken in prepareChangeCryptState()
+			// If it was invalidated it's enough reason not to continue now
+			int bak_state = dbb.dbb_backup_manager->getState();
+			if (bak_state != Ods::hdr_nbak_normal)
+			{
+				(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) <<
+					"Cannot crypt: please wait for nbackup completion").raise();
+			}
 
 			// Check header page for flags
 			if (hdr->hdr_flags & Ods::hdr_crypt_process)
@@ -544,20 +584,15 @@ namespace Jrd {
 		lockAndReadHeader(tdbb, CRYPT_HDR_INIT);
 	}
 
-	void CryptoManager::terminateCryptThread()
+	void CryptoManager::terminateCryptThread(thread_db*)
 	{
-		if (cryptThreadId)
-		{
-			down = true;
-			Thread::waitForCompletion(cryptThreadId);
-			cryptThreadId = 0;
-		}
+		down = true;
 	}
 
-	void CryptoManager::stopThreadUsing(Attachment* att)
+	void CryptoManager::stopThreadUsing(thread_db* tdbb, Attachment* att)
 	{
 		if (att == cryptAtt)
-			terminateCryptThread();
+			terminateCryptThread(tdbb);
 	}
 
 	void CryptoManager::startCryptThread(thread_db* tdbb)
@@ -586,7 +621,7 @@ namespace Jrd {
 		try
 		{
 			// Cleanup resources
-			terminateCryptThread();
+			terminateCryptThread(tdbb);
 			down = false;
 
 			// Determine current page from the header
@@ -606,6 +641,10 @@ namespace Jrd {
 
 			// If we are going to start crypt thread, we need plugin to be loaded
 			loadPlugin(hdr->hdr_crypt_plugin);
+
+			releasingLock = true;
+			LCK_release(tdbb, threadLock);
+			releasingLock = false;
 
 			// ready to go
 			guard.leave();		// release in advance to avoid races with cryptThread()
@@ -654,10 +693,18 @@ namespace Jrd {
 			attachment->att_user = &user;
 			BackgroundContextHolder tempDbb(&dbb, attachment, &status_vector, FB_FUNCTION);
 
+			LCK_init(tempDbb, LCK_OWNER_attachment);
+			sAtt->initDone();
+
 			// Take exclusive threadLock
 			// If can't take that lock - nothing to do, cryptThread already runs somewhere
 			if (!LCK_lock(tempDbb, threadLock, LCK_EX, LCK_NO_WAIT))
+			{
+				Monitoring::cleanupAttachment(tempDbb);
+				attachment->releaseLocks(tempDbb);
+				LCK_fini(tempDbb, LCK_OWNER_attachment);
 				return;
+			}
 
 			try
 			{
@@ -667,16 +714,20 @@ namespace Jrd {
 				// Establish context
 				// Need real attachment in order to make classic mode happy
 				ClumpletWriter writer(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
-				writer.insertString(isc_dpb_user_name, "(Crypt thread)");
+				writer.insertString(isc_dpb_user_name, "SYSDBA");
+				writer.insertByte(isc_dpb_no_db_triggers, TRUE);
+
 				RefPtr<JAttachment> jAtt(REF_NO_INCR, dbb.dbb_provider->attachDatabase(&status_vector,
 					dbb.dbb_filename.c_str(), writer.getBufferLength(), writer.getBuffer()));
 				check(&status_vector);
+
 				MutexLockGuard attGuard(*(jAtt->getStable()->getMutex()), FB_FUNCTION);
 				Attachment* att = jAtt->getHandle();
 				if (!att)
 					Arg::Gds(isc_att_shutdown).raise();
 				ThreadContextHolder tdbb(att->att_database, att, &status_vector);
 				tdbb->tdbb_quantum = SWEEP_QUANTUM;
+
 				DatabaseContextHolder dbHolder(tdbb);
 
 				class UseCountHolder
@@ -711,18 +762,22 @@ namespace Jrd {
 							break;
 						}
 
-						// nbackup state check
-						if (tdbb->getDatabase()->dbb_backup_manager &&
-							tdbb->getDatabase()->dbb_backup_manager->getState() != Ods::hdr_nbak_normal)
-						{
-							Thread::sleep(100);
-							continue;
-						}
-
 						// scheduling
 						if (--tdbb->tdbb_quantum < 0)
 						{
 							JRD_reschedule(tdbb, SWEEP_QUANTUM, true);
+						}
+
+						// nbackup state check
+						BackupManager::StateReadGuard::lock(tdbb, 1);
+						int bak_state = tdbb->getDatabase()->dbb_backup_manager->getState();
+						BackupManager::StateReadGuard::unlock(tdbb);
+
+						if (bak_state != Ods::hdr_nbak_normal)
+						{
+							EngineCheckout checkout(tdbb, FB_FUNCTION);
+							Thread::sleep(10);
+							continue;
 						}
 
 						// writing page to disk will change it's crypt status in usual way
@@ -744,32 +799,30 @@ namespace Jrd {
 						}
 					}
 
-					// At this moment of time all pages with number < lastpage
-					// are guaranteed to change crypt state. Check for added pages.
-					lastPage = getLastPage(tdbb);
-
 					// forced terminate
 					if (down)
 					{
 						break;
 					}
+
+					// At this moment of time all pages with number < lastpage
+					// are guaranteed to change crypt state. Check for added pages.
+					lastPage = getLastPage(tdbb);
+
 				} while (currentPage < lastPage);
 
 				// Finalize crypt
 				if (!down)
 				{
 					writeDbHeader(tdbb, 0);
-					if (!crypt)
-					{
-						// Decryption finished, unload plugin as we don't need it anymore
-						PluginManagerInterfacePtr()->releasePlugin(cryptPlugin);
-						cryptPlugin = NULL;
-					}
 				}
 
 				// Release exclusive lock on StartCryptThread
 				lckRelease = true;
 				LCK_release(tempDbb, threadLock);
+				Monitoring::cleanupAttachment(tempDbb);
+				attachment->releaseLocks(tempDbb);
+				LCK_fini(tempDbb, LCK_OWNER_attachment);
 			}
 			catch (const Exception&)
 			{
@@ -779,6 +832,9 @@ namespace Jrd {
 					{
 						// Release exclusive lock on StartCryptThread
 						LCK_release(tempDbb, threadLock);
+						Monitoring::cleanupAttachment(tempDbb);
+						attachment->releaseLocks(tempDbb);
+						LCK_fini(tempDbb, LCK_OWNER_attachment);
 					}
 				}
 				catch (const Exception&)
@@ -834,6 +890,7 @@ namespace Jrd {
 			// Slow IO - we need exclusive lock on crypto manager.
 			// That may happen only when another process changed DB encyption.
 			BarSync::LockGuard lockGuard(tdbb, sync);
+			lockGuard.lock();
 			for (SINT64 previous = slowIO; ; previous = slowIO)
 			{
 				switch (internalRead(tdbb, sv, page, io))
@@ -913,6 +970,7 @@ namespace Jrd {
 
 			// Have to use slow method - see full comments in read() function
 			BarSync::LockGuard lockGuard(tdbb, sync);
+			lockGuard.lock();
 			for (SINT64 previous = slowIO; ; previous = slowIO)
 			{
 				switch (internalWrite(tdbb, sv, page, io))

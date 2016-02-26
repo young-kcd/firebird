@@ -638,6 +638,7 @@ public:
 	virtual ~ServerCallbackBase();
 	virtual void wakeup(unsigned int length, const void* data) = 0;
 	virtual Firebird::ICryptKeyCallback* getInterface() = 0;
+	virtual void stop() = 0;
 };
 
 // CryptKey implementation

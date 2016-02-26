@@ -3885,7 +3885,7 @@ void LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_wai
 				}
 
 				{ // scope
-					EngineCheckout cout(tdbb, FB_FUNCTION);
+					EngineCheckout cout(tdbb, FB_FUNCTION, true);
 					ret = m_sharedMemory->eventWait(&owner->own_wakeup, value, (timeout - current_time) * 1000000);
 					--m_waitingOwners;
 				}
