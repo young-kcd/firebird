@@ -2976,164 +2976,170 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		relation = NULL;
 		idx.idx_flags = 0;
 
-		// Here we need dirty reads from database (first of all from
-		// RDB$RELATION_FIELDS and RDB$FIELDS - tables not directly related
-		// with index to be created and it's dfw_name. Missing it breaks gbak,
-		// and appears can break other applications. Modification of
-		// record in RDB$INDICES was moved into separate request. AP-2008.
-
 		// Fetch the information necessary to create the index.  On the first
 		// time thru, check to see if the index already exists.  If so, delete
 		// it.  If the index inactive flag is set, don't create the index
 
 		request.reset(tdbb, irq_c_index, IRQ_REQUESTS);
 
-		FOR(REQUEST_HANDLE request)
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 			IDX IN RDB$INDICES CROSS
-				SEG IN RDB$INDEX_SEGMENTS OVER RDB$INDEX_NAME CROSS
-				RFR IN RDB$RELATION_FIELDS OVER RDB$FIELD_NAME,
-				RDB$RELATION_NAME CROSS
-				FLD IN RDB$FIELDS CROSS
-				REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
-					FLD.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE AND
-					IDX.RDB$INDEX_NAME EQ work->dfw_name.c_str()
+			REL IN RDB$RELATIONS OVER RDB$RELATION_NAME
+				WITH IDX.RDB$INDEX_NAME EQ work->dfw_name.c_str()
 		{
+			relation = MET_lookup_relation_id(tdbb, REL.RDB$RELATION_ID, false);
 			if (!relation)
 			{
-				relation = MET_lookup_relation_id(tdbb, REL.RDB$RELATION_ID, false);
-				if (!relation)
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_idx_create_err) << Arg::Str(work->dfw_name));
+				// Msg308: can't create index %s
+			}
+
+			if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0)
+			{
+				// we need to know if this relation is temporary or not
+				MET_scan_relation(tdbb, relation);
+
+				// no need to recalculate statistics for base instance of GTT
+				RelationPages* relPages = relation->getPages(tdbb, MAX_TRA_NUMBER, false);
+				const bool isTempInstance = relation->isTemporary() &&
+					relPages && (relPages->rel_instance_id != 0);
+
+				if (isTempInstance || !relation->isTemporary())
 				{
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_idx_create_err) << Arg::Str(work->dfw_name));
-					// Msg308: can't create index %s
-				}
-				if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0)
-				{
-					// we need to know if this relation is temporary or not
-					MET_scan_relation(tdbb, relation);
-
-					// no need to recalculate statistics for base instance of GTT
-					RelationPages* relPages = relation->getPages(tdbb, MAX_TRA_NUMBER, false);
-					const bool isTempInstance = relation->isTemporary() &&
-						relPages && (relPages->rel_instance_id != 0);
-
-					if (isTempInstance || !relation->isTemporary())
-					{
-						SelectivityList selectivity(*tdbb->getDefaultPool());
-						const USHORT id = IDX.RDB$INDEX_ID - 1;
-						IDX_statistics(tdbb, relation, id, selectivity);
-						DFW_update_index(work->dfw_name.c_str(), id, selectivity, transaction);
-					}
-
-					return false;
+					SelectivityList selectivity(*tdbb->getDefaultPool());
+					const USHORT id = IDX.RDB$INDEX_ID - 1;
+					IDX_statistics(tdbb, relation, id, selectivity);
+					DFW_update_index(work->dfw_name.c_str(), id, selectivity, transaction);
 				}
 
-				if (IDX.RDB$INDEX_ID)
+				return false;
+			}
+
+			if (IDX.RDB$INDEX_ID)
+			{
+				IDX_delete_index(tdbb, relation, (USHORT)(IDX.RDB$INDEX_ID - 1));
+
+				AutoCacheRequest request2(tdbb, irq_c_index_m, IRQ_REQUESTS);
+
+				FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+					IDXM IN RDB$INDICES WITH IDXM.RDB$INDEX_NAME EQ work->dfw_name.c_str()
 				{
-					IDX_delete_index(tdbb, relation, (USHORT)(IDX.RDB$INDEX_ID - 1));
-
-					AutoCacheRequest request2(tdbb, irq_c_index_m, IRQ_REQUESTS);
-
-			        FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
-						IDXM IN RDB$INDICES WITH IDXM.RDB$INDEX_NAME EQ work->dfw_name.c_str()
-					{
-						MODIFY IDXM
-							IDXM.RDB$INDEX_ID.NULL = TRUE;
-						END_MODIFY
-					}
-					END_FOR
-				}
-
-				if (IDX.RDB$INDEX_INACTIVE)
-					return false;
-
-				idx.idx_count = IDX.RDB$SEGMENT_COUNT;
-
-				if (!idx.idx_count || idx.idx_count > MAX_INDEX_SEGMENTS)
-				{
-					if (!idx.idx_count)
-					{
-						ERR_post(Arg::Gds(isc_no_meta_update) <<
-								 Arg::Gds(isc_idx_seg_err) << Arg::Str(work->dfw_name));
-						// Msg304: segment count of 0 defined for index %s
-					}
-					else
-					{
-						ERR_post(Arg::Gds(isc_no_meta_update) <<
-								 Arg::Gds(isc_idx_key_err) << Arg::Str(work->dfw_name));
-						// Msg311: too many keys defined for index %s
-					}
-				}
-				if (IDX.RDB$UNIQUE_FLAG)
-					idx.idx_flags |= idx_unique;
-				if (IDX.RDB$INDEX_TYPE == 1)
-					idx.idx_flags |= idx_descending;
-				if (!IDX.RDB$FOREIGN_KEY.NULL)
-					idx.idx_flags |= idx_foreign;
-
-				AutoRequest rc_request;
-
-				FOR(REQUEST_HANDLE rc_request TRANSACTION_HANDLE transaction)
-					RC IN RDB$RELATION_CONSTRAINTS WITH
-					RC.RDB$INDEX_NAME EQ work->dfw_name.c_str() AND
-					RC.RDB$CONSTRAINT_TYPE = PRIMARY_KEY
-				{
-					idx.idx_flags |= idx_primary;
+					MODIFY IDXM
+						IDXM.RDB$INDEX_ID.NULL = TRUE;
+					END_MODIFY
 				}
 				END_FOR
 			}
 
-			if (++key_count > idx.idx_count || SEG.RDB$FIELD_POSITION > idx.idx_count ||
-				FLD.RDB$FIELD_TYPE == blr_blob || !FLD.RDB$DIMENSIONS.NULL)
+			if (IDX.RDB$INDEX_INACTIVE)
+				return false;
+
+			idx.idx_count = IDX.RDB$SEGMENT_COUNT;
+
+			if (!idx.idx_count || idx.idx_count > MAX_INDEX_SEGMENTS)
 			{
-				if (key_count > idx.idx_count)
+				if (!idx.idx_count)
+				{
+					ERR_post(Arg::Gds(isc_no_meta_update) <<
+							 Arg::Gds(isc_idx_seg_err) << Arg::Str(work->dfw_name));
+					// Msg304: segment count of 0 defined for index %s
+				}
+				else
 				{
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
 							 Arg::Gds(isc_idx_key_err) << Arg::Str(work->dfw_name));
 					// Msg311: too many keys defined for index %s
 				}
-				else if (SEG.RDB$FIELD_POSITION > idx.idx_count)
-				{
-					fb_utils::exact_name(RFR.RDB$FIELD_NAME);
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_inval_key_posn) <<
-							 // Msg358: invalid key position
-							 Arg::Gds(isc_field_name) << Arg::Str(RFR.RDB$FIELD_NAME) <<
-							 Arg::Gds(isc_index_name) << Arg::Str(work->dfw_name));
-				}
-				else if (FLD.RDB$FIELD_TYPE == blr_blob)
-				{
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_blob_idx_err) << Arg::Str(work->dfw_name));
-					// Msg350: attempt to index blob column in index %s
-				}
-				else
-				{
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_array_idx_err) << Arg::Str(work->dfw_name));
-					// Msg351: attempt to index array column in index %s
-				}
 			}
 
-			idx.idx_rpt[SEG.RDB$FIELD_POSITION].idx_field = RFR.RDB$FIELD_ID;
+			if (IDX.RDB$UNIQUE_FLAG)
+				idx.idx_flags |= idx_unique;
+			if (IDX.RDB$INDEX_TYPE == 1)
+				idx.idx_flags |= idx_descending;
+			if (!IDX.RDB$FOREIGN_KEY.NULL)
+				idx.idx_flags |= idx_foreign;
 
-			if (FLD.RDB$CHARACTER_SET_ID.NULL)
-				FLD.RDB$CHARACTER_SET_ID = CS_NONE;
+			AutoCacheRequest rc_request(tdbb, irq_c_index_rc, IRQ_REQUESTS);
 
-			SSHORT collate;
-			if (!RFR.RDB$COLLATION_ID.NULL)
-				collate = RFR.RDB$COLLATION_ID;
-			else if (!FLD.RDB$COLLATION_ID.NULL)
-				collate = FLD.RDB$COLLATION_ID;
-			else
-				collate = COLLATE_NONE;
+			FOR(REQUEST_HANDLE rc_request TRANSACTION_HANDLE transaction)
+				RC IN RDB$RELATION_CONSTRAINTS WITH
+				RC.RDB$INDEX_NAME EQ work->dfw_name.c_str() AND
+				RC.RDB$CONSTRAINT_TYPE = PRIMARY_KEY
+			{
+				idx.idx_flags |= idx_primary;
+			}
+			END_FOR
 
-			const SSHORT text_type = INTL_CS_COLL_TO_TTYPE(FLD.RDB$CHARACTER_SET_ID, collate);
-			idx.idx_rpt[SEG.RDB$FIELD_POSITION].idx_itype =
-				DFW_assign_index_type(tdbb, work->dfw_name, gds_cvt_blr_dtype[FLD.RDB$FIELD_TYPE], text_type);
+			// Here we need dirty reads from database (first of all from
+			// RDB$RELATION_FIELDS and RDB$FIELDS - tables not directly related
+			// with index to be created and it's dfw_name). Missing it breaks gbak,
+			// and appears can break other applications.
 
-			// Initialize selectivity to zero. Otherwise random rubbish makes its way into database
-			idx.idx_rpt[SEG.RDB$FIELD_POSITION].idx_selectivity = 0;
+			AutoCacheRequest seg_request(tdbb, irq_c_index_seg, IRQ_REQUESTS);
+
+			FOR(REQUEST_HANDLE seg_request)
+				SEG IN RDB$INDEX_SEGMENTS CROSS
+				RFR IN RDB$RELATION_FIELDS CROSS
+				FLD IN RDB$FIELDS
+					WITH SEG.RDB$INDEX_NAME EQ work->dfw_name.c_str()
+					AND RFR.RDB$RELATION_NAME EQ relation->rel_name.c_str()
+					AND RFR.RDB$FIELD_NAME EQ SEG.RDB$FIELD_NAME
+					AND FLD.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
+			{
+				if (++key_count > idx.idx_count || SEG.RDB$FIELD_POSITION > idx.idx_count ||
+					FLD.RDB$FIELD_TYPE == blr_blob || !FLD.RDB$DIMENSIONS.NULL)
+				{
+					if (key_count > idx.idx_count)
+					{
+						ERR_post(Arg::Gds(isc_no_meta_update) <<
+								 Arg::Gds(isc_idx_key_err) << Arg::Str(work->dfw_name));
+						// Msg311: too many keys defined for index %s
+					}
+					else if (SEG.RDB$FIELD_POSITION > idx.idx_count)
+					{
+						fb_utils::exact_name(RFR.RDB$FIELD_NAME);
+						ERR_post(Arg::Gds(isc_no_meta_update) <<
+								 Arg::Gds(isc_inval_key_posn) <<
+								 // Msg358: invalid key position
+								 Arg::Gds(isc_field_name) << Arg::Str(RFR.RDB$FIELD_NAME) <<
+								 Arg::Gds(isc_index_name) << Arg::Str(work->dfw_name));
+					}
+					else if (FLD.RDB$FIELD_TYPE == blr_blob)
+					{
+						ERR_post(Arg::Gds(isc_no_meta_update) <<
+								 Arg::Gds(isc_blob_idx_err) << Arg::Str(work->dfw_name));
+						// Msg350: attempt to index blob column in index %s
+					}
+					else
+					{
+						ERR_post(Arg::Gds(isc_no_meta_update) <<
+								 Arg::Gds(isc_array_idx_err) << Arg::Str(work->dfw_name));
+						// Msg351: attempt to index array column in index %s
+					}
+				}
+
+				idx.idx_rpt[SEG.RDB$FIELD_POSITION].idx_field = RFR.RDB$FIELD_ID;
+
+				if (FLD.RDB$CHARACTER_SET_ID.NULL)
+					FLD.RDB$CHARACTER_SET_ID = CS_NONE;
+
+				SSHORT collate;
+				if (!RFR.RDB$COLLATION_ID.NULL)
+					collate = RFR.RDB$COLLATION_ID;
+				else if (!FLD.RDB$COLLATION_ID.NULL)
+					collate = FLD.RDB$COLLATION_ID;
+				else
+					collate = COLLATE_NONE;
+
+				const SSHORT text_type = INTL_CS_COLL_TO_TTYPE(FLD.RDB$CHARACTER_SET_ID, collate);
+				idx.idx_rpt[SEG.RDB$FIELD_POSITION].idx_itype =
+					DFW_assign_index_type(tdbb, work->dfw_name, gds_cvt_blr_dtype[FLD.RDB$FIELD_TYPE], text_type);
+
+				// Initialize selectivity to zero. Otherwise random rubbish makes its way into database
+				idx.idx_rpt[SEG.RDB$FIELD_POSITION].idx_selectivity = 0;
+			}
+			END_FOR
 		}
 		END_FOR
 
