@@ -2,6 +2,16 @@
   * v3.0 Release Candidate 2
   **************************
 
+    * Bugfix CORE-5110
+        False PK\FK violation could be reported when attachment used isc_dpb_no_garbage_collect flag
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-5107
+        SET AUTODDL OFF and sequence of CREATE + ALTER + DROP VIEW leads to server crash
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
     * Bugfix CORE-5105
         Deadlocks when database is initially encrypted
       Contributor(s):
@@ -66,6 +76,11 @@
 
     * Bugfix CORE-5075
         Trigger on DISCONNECT with EXECUTE STATEMENT: 1) does not work in 3.0; 2) leads FB to crash when it is recreated
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-5067
+        Blocking new connections as a consequence of the sweeping the security database too long
       Contributor(s):
         Vlad Khorsun <hvlad at users.sf.net>
 
@@ -265,6 +280,16 @@
         Unable to read MON$ tables when there's intensive disk-bound load
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2923
+        Problem with dependencies with views
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Improvement CORE-5112
+        Improve error messages for malformed SQDLA
+      Contributor(s):
+        Dimitry Sibiryakov <sd at ibphoenix.com>
 
     * Improvement CORE-5100
         Improve control over database crypt keys
