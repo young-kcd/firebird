@@ -1,3 +1,23 @@
+ 2016-02-26 17:19  dimitr 
+   M src/jrd/dfw.epp
+   M src/jrd/irq.h
+Split a 5-way join into two smaller joins to help the optimizer in cases when statistics is outdated (index creation time suffers when there are many tables/indices). While being there, cache requests that weren't cached yet.
+
+ 2016-02-26 16:10  alexpeshkoff 
+   M doc/Using_OO_API.html
+WIP on docs
+
+ 2016-02-26 12:55  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+   M src/jrd/jrd.cpp
+   M src/jrd/nbak.cpp
+   M src/lock/lock.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+Fixed some asserts and segfaults in crypto manager
+Disable simultaneous nbackup & encrypt/decrypt operation
+
  2016-02-25 09:20  hvlad 
    M src/dsql/BoolNodes.cpp
    M src/dsql/ExprNodes.cpp
