@@ -7910,6 +7910,9 @@ SetTransactionNode* SetTransactionNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	if (restartRequests.specified)
 		dsqlScratch->appendUChar(isc_tpb_restart_requests);
 
+	if (autoCommit.specified)
+		dsqlScratch->appendUChar(isc_tpb_autocommit);
+
 	if (lockTimeout.specified)
 	{
 		dsqlScratch->appendUChar(isc_tpb_lock_timeout);

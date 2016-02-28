@@ -4739,12 +4739,14 @@ tran_option($setTransactionNode)
 		{ setClause($setTransactionNode->ignoreLimbo, "IGNORE LIMBO", true); }
 	| RESTART REQUESTS
 		{ setClause($setTransactionNode->restartRequests, "RESTART REQUESTS", true); }
+	| AUTO COMMIT
+		{ setClause($setTransactionNode->autoCommit, "AUTO COMMIT", true); }
 	// timeout
 	| LOCK TIMEOUT nonneg_short_integer
 		{ setClause($setTransactionNode->lockTimeout, "LOCK TIMEOUT", (USHORT) $3); }
 	// reserve options
 	| RESERVING
-			{ checkDuplicateClause($setTransactionNode->reserveList, "RESERVING"); }
+		{ checkDuplicateClause($setTransactionNode->reserveList, "RESERVING"); }
 		restr_list($setTransactionNode)
 	;
 
