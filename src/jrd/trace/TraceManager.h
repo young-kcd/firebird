@@ -56,6 +56,12 @@ public:
 	/* Finalize plugins. Called when database is closed by the engine */
 	~TraceManager();
 
+	static void shutdown()
+	{
+		if (storageInstance->initialized())
+			storageInstance->getStorage()->shutdown();
+	}
+
 	static ConfigStorage* getStorage()
 	{ return storageInstance->getStorage(); }
 

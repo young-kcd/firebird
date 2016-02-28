@@ -153,6 +153,12 @@ public:
 	~StorageInstance();
 
 	ConfigStorage* getStorage();
+
+	bool initialized()
+	{
+		Firebird::MutexLockGuard guard(initMtx);
+		return (storage != NULL);
+	}
 };
 
 
