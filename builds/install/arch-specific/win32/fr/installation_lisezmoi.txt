@@ -140,7 +140,7 @@ o La désinstallation laisse cinq fichiers dans le
   - firebird.conf
   - fbtrace.conf
   - firebird.log
-  - security2.fdb
+  - security3.fdb
 
   Ceci est intentionnel. Ces fichiers sont tous
   potentiellement modifiables par les utilisateurs et peuvent
