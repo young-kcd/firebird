@@ -524,7 +524,7 @@ bool OPT_expression_equal2(jrd_nod* node1, jrd_nod* node2, bool ignoreStreams)
 				const dsc* const desc1 = &((Literal*) node1)->lit_desc;
 				const dsc* const desc2 = &((Literal*) node2)->lit_desc;
 
-				if (desc1 && desc2 && !MOV_compare(desc1, desc2))
+				if (!MOV_compare(desc1, desc2))
 				{
 					return true;
 				}
