@@ -6654,8 +6654,7 @@ bool LiteralNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 	const LiteralNode* const otherNode = other->as<LiteralNode>();
 	fb_assert(otherNode);
 
-	return DSC_EQUIV(&litDesc, &otherNode->litDesc, true) &&
-		memcmp(litDesc.dsc_address, otherNode->litDesc.dsc_address, litDesc.dsc_length) == 0;
+	return !MOV_compare(&litDesc, &otherNode->litDesc);
 }
 
 ValueExprNode* LiteralNode::pass2(thread_db* tdbb, CompilerScratch* csb)
