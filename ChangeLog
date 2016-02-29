@@ -1,3 +1,9 @@
+ 2016-02-28 15:51  hvlad 
+   M src/jrd/jrd.cpp
+   M src/jrd/trace/TraceConfigStorage.h
+   M src/jrd/trace/TraceManager.h
+Fixed bug CORE-5117 : Firebird embedded could crash on unload if was used as pure client only
+
  2016-02-23 13:38  alexpeshkoff 
    M src/jrd/evl.cpp
 One more postfix for CORE-3024 - thanks to Dmitry
