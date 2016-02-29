@@ -522,12 +522,9 @@ bool OPT_expression_equal2(jrd_nod* node1, jrd_nod* node2, bool ignoreStreams)
 		case nod_literal:
 			{
 				const dsc* const desc1 = &((Literal*) node1)->lit_desc;
-				const UCHAR* const ptr1 = desc1->dsc_address;
-
 				const dsc* const desc2 = &((Literal*) node2)->lit_desc;
-				const UCHAR* const ptr2 = desc2->dsc_address;
 
-				if (DSC_EQUIV(desc1, desc2, true) && !memcmp(ptr1, ptr2, desc1->dsc_length))
+				if (desc1 && desc2 && !MOV_compare(desc1, desc2))
 				{
 					return true;
 				}
