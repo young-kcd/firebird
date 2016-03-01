@@ -1,3 +1,11 @@
+ 2016-02-29 19:41  dimitr 
+   M src/jrd/Optimizer.cpp
+Misc (simplified the code).
+
+ 2016-02-29 19:19  dimitr 
+   M src/jrd/Optimizer.cpp
+Fixed CORE-5122: Expression index may not be used by the optimizer if created and used in different connection charsets.
+
  2016-02-28 15:51  hvlad 
    M src/jrd/jrd.cpp
    M src/jrd/trace/TraceConfigStorage.h
