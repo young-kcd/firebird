@@ -10,10 +10,10 @@ TmpSmall=${TmpDir}/small.log
 WriteBuildNumFile="src/misc/writeBuildNum.sh"
 HeaderFile="src/jrd/build_no.h"
 
-cd /home/fbadmin/changelogs/trunk
+cd /home/fbadmin/changelogs/branches/B3_0_Release
 svn up || exit
 svn log -v >$TmpLog || exit
-smallog <$TmpLog >$TmpSmall || exit
+smallog /firebird/branches/B3_0_Release/ <$TmpLog >$TmpSmall || exit
 dd if=$TmpSmall of=ChangeLog bs=512k || exit
 
 VersionCount=`egrep -c '[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}' ChangeLog`
