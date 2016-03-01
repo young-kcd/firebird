@@ -1,3 +1,7 @@
+ 2016-02-29 20:01  dimitr 
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-5122: Expression index may not be used by the optimizer if created and used in different connection charsets.
+
  2016-02-28 09:14  dimitr 
    M src/dsql/StmtNodes.cpp
    M src/dsql/StmtNodes.h
