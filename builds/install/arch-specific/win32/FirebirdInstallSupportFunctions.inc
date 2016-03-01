@@ -46,6 +46,7 @@ Function Prototypes
   function CheckWinsock2(): Boolean;
   function GetAppPath: String;
   function GetSysPath: String;
+  function WIVersion: string;
   function ReplaceLine(Filename, StringToFind, NewLine,CommentType: string): boolean;
   procedure DecodeVersion( VerStr: String; var VerInt: array of Integer );
   function CompareVersion( ver1, ver2: String ) : Integer;
@@ -287,6 +288,16 @@ function GetSysPath: String;
 begin
   Result := ExpandConstant('{sys}');
 //  Result := '"' + Result +'"';
+end;
+
+
+function WIVersion: string;
+//Get version of Windows Installer
+var
+  VersionStr: string;
+begin
+  GetVersionNumbersString(GetSysPath + '\msi.dll', VersionStr);
+  result := VersionStr;
 end;
 
 
