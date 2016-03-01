@@ -19,7 +19,6 @@ Sadrzaj
 --------
 
 o Prije instalacije
-o Instalacija MS VC runtime biblioteka
 o Deployment gds32.dll
 o Instalacija Guardian-a
 o Re-instalacija Firebird-a 3
@@ -40,15 +39,6 @@ Pogledajte UNINSTALL sekciju ispod za vise informacija o ovome.
 Ako ste instalirali beta ili alpha verziju 
 firebird-a 3, instalacija ce preimenovati firebid.conf i
 security3.fdb jer ove datoteke vise nisu kompatibilne.
-
-
-Instalacija MS VC runtime biblioteka
----------------------------------------
-
-Firebird 3 vise ne zahtjeva deploy MSVC runtime-a
-u windows system direktorije, pa se vise ne radi deploy 
-redistributable run-time paketa. Firebird 3.0 ucitava runtime
-biblioteke iz direktorija gdje je instaliran.
 
 
 Deployment gds32.dll
