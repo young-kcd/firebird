@@ -50,7 +50,6 @@ bool	VIO_get(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, MemoryPool*);
 bool	VIO_get_current(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*,
 						MemoryPool*, bool, bool&);
 void	VIO_init(Jrd::thread_db*);
-void	VIO_merge_proc_sav_points(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::Savepoint**);
 bool	VIO_writelock(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
 void	VIO_modify(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*, Jrd::jrd_tra*);
 bool	VIO_next_record(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, MemoryPool*, bool);
@@ -60,8 +59,9 @@ void	VIO_start_save_point(Jrd::thread_db*, Jrd::jrd_tra*);
 void	VIO_store(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
 bool	VIO_sweep(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::TraceSweepEvent*);
 void	VIO_verb_cleanup(Jrd::thread_db*, Jrd::jrd_tra*);
-IPTR	VIO_savepoint_large(const Jrd::Savepoint*, IPTR);
 void	VIO_temp_cleanup(Jrd::jrd_tra*);
+void	garbage_collect_idx(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::record_param*, Jrd::Record*);
+void	update_in_place(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::record_param*, Jrd::record_param*);
 
 namespace Jrd
 {

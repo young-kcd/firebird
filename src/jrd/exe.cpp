@@ -603,27 +603,41 @@ void EXE_receive(thread_db* tdbb,
 		ERR_post(Arg::Gds(isc_req_sync));
 	}
 
+	SLONG merge_sav_number = 0;
+
 	if (request->req_flags & req_proc_fetch)
 	{
-		/* request->req_proc_sav_point stores all the request savepoints.
+		/* request->req_proc_sav_point stores the request savepoints.
 		   When going to continue execution put request save point list
 		   into transaction->tra_save_point so that it is used in looper.
-		   When we come back to EXE_receive() restore
-		   transaction->tra_save_point and merge all work done under
+		   When we come back to EXE_receive() merge all work done under
 		   stored procedure savepoints into the current transaction
-		   savepoint, which is the savepoint for fetch. */
+		   savepoint, which is the savepoint for fetch and save them into the list. */
 
-		Savepoint* const save_sav_point = transaction->tra_save_point;
-		transaction->tra_save_point = request->req_proc_sav_point;
-		request->req_proc_sav_point = save_sav_point;
-
-		if (!transaction->tra_save_point) {
+		if (transaction->tra_save_point)
+		{
+			merge_sav_number = transaction->tra_save_point->sav_number;
+			if (request->req_proc_sav_point)
+			{
+				// Push all saved savepoints to the top of transaction savepoints stack
+				while (request->req_proc_sav_point)
+				{
+					Savepoint* const sav_point = request->req_proc_sav_point;
+					request->req_proc_sav_point = sav_point->sav_next;
+					sav_point->sav_next = transaction->tra_save_point;
+					transaction->tra_save_point = sav_point;
+				}
+			}
+			else
+			{
+				VIO_start_save_point(tdbb, transaction);
+			}
+		}
+		else
+		{
 			VIO_start_save_point(tdbb, transaction);
 		}
 	}
-
-	try
-	{
 
 	const JrdStatement* statement = request->getStatement();
 
@@ -673,25 +687,27 @@ void EXE_receive(thread_db* tdbb,
 
 	execute_looper(tdbb, request, transaction, request->req_next, jrd_req::req_proceed);
 
-	}	//try
-	catch (const Firebird::Exception&)
-	{
-		if (request->req_flags & req_proc_fetch)
-		{
-			Savepoint* const save_sav_point = transaction->tra_save_point;
-			transaction->tra_save_point = request->req_proc_sav_point;
-			request->req_proc_sav_point = save_sav_point;
-			release_proc_save_points(request);
-		}
-		throw;
-	}
-
 	if (request->req_flags & req_proc_fetch)
 	{
-		Savepoint* const save_sav_point = transaction->tra_save_point;
-		transaction->tra_save_point = request->req_proc_sav_point;
-		request->req_proc_sav_point = save_sav_point;
-		VIO_merge_proc_sav_points(tdbb, transaction, &request->req_proc_sav_point);
+		// At this point request->req_proc_sav_point == NULL that is assured by code above
+		try
+		{
+			// merge work into target savepoint and save request's savepoints (with numbers!!!) till the next loop
+			while (transaction->tra_save_point && transaction->tra_save_point->sav_number > merge_sav_number)
+			{
+				Savepoint* const save_sav_point = transaction->tra_save_point;
+				save_sav_point->rollforward(tdbb);
+				transaction->tra_save_point = save_sav_point->sav_next;
+				save_sav_point->sav_next = request->req_proc_sav_point;
+				request->req_proc_sav_point = save_sav_point;
+			}
+		}
+		catch (...)
+		{
+			// If something went wrong, drop already stored savepoints to prevent memory leak
+			release_proc_save_points(request);
+			throw;
+		}
 	}
 }
 
@@ -1032,7 +1048,7 @@ static void execute_looper(thread_db* tdbb,
 			!transaction->tra_save_point->sav_verb_count)
 		{
 			// Forget about any undo for this verb
-			VIO_verb_cleanup(tdbb, transaction);
+			transaction->rollforwardSavepoint(tdbb);
 		}
 	}
 }
@@ -1308,15 +1324,8 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 			// our own savepoints.
 			if (exeState.catchDisabled)
 			{
-				if (request->req_transaction != sysTransaction)
-				{
-					while (request->req_transaction->tra_save_point &&
-						request->req_transaction->tra_save_point->sav_number >= save_point_number)
-					{
-						++request->req_transaction->tra_save_point->sav_verb_count;
-						VIO_verb_cleanup(tdbb, request->req_transaction);
-					}
-				}
+				// Put cleanup off till the point where it has meaning to avoid
+				// sequence 1->2->3->4 being undone as 4->3->2->1 instead of 4->1
 
 				ERR_punt();
 			}
@@ -1324,14 +1333,6 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 			// If the database is already bug-checked, then get out
 			if (dbb->dbb_flags & DBB_bugcheck)
 				Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-
-			// Since an error happened, the current savepoint needs to be undone
-			if (request->req_transaction != sysTransaction &&
-				request->req_transaction->tra_save_point)
-			{
-				++request->req_transaction->tra_save_point->sav_verb_count;
-				VIO_verb_cleanup(tdbb, request->req_transaction);
-			}
 
 			exeState.errorPending = true;
 			exeState.catchDisabled = true;
@@ -1385,12 +1386,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 	{
 		if (request->req_transaction != sysTransaction)
 		{
-			while (request->req_transaction->tra_save_point &&
-				request->req_transaction->tra_save_point->sav_number >= save_point_number)
-			{
-				++request->req_transaction->tra_save_point->sav_verb_count;
-				VIO_verb_cleanup(tdbb, request->req_transaction);
-			}
+			request->req_transaction->rollbackToSavepoint(tdbb, save_point_number);
 		}
 
 		ERR_punt();
@@ -1505,7 +1501,6 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 	}
 }
 
-
 static void release_proc_save_points(jrd_req* request)
 {
 /**************************************
@@ -1520,18 +1515,14 @@ static void release_proc_save_points(jrd_req* request)
  **************************************/
 	Savepoint* sav_point = request->req_proc_sav_point;
 
-	if (request->req_transaction)
+	while (sav_point)
 	{
-		while (sav_point)
-		{
-			Savepoint* const temp_sav_point = sav_point->sav_next;
-			delete sav_point;
-			sav_point = temp_sav_point;
-		}
+		Savepoint* const temp_sav_point = sav_point->sav_next;
+		delete sav_point;
+		sav_point = temp_sav_point;
 	}
 	request->req_proc_sav_point = NULL;
 }
-
 
 static void trigger_failure(thread_db* tdbb, jrd_req* trigger)
 {

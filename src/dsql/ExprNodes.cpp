@@ -11154,7 +11154,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 				while (transaction->tra_save_point &&
 					transaction->tra_save_point->sav_number > savePointNumber)
 				{
-					VIO_verb_cleanup(tdbb, transaction);
+					transaction->rollforwardSavepoint(tdbb);
 				}
 			}
 		}

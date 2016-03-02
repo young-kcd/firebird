@@ -544,34 +544,19 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 					while (transaction->tra_save_point &&
 						transaction->tra_save_point->sav_number >= count)
 					{
-						VIO_verb_cleanup(tdbb, transaction);
+						transaction->rollforwardSavepoint(tdbb);
 					}
 				}
 
 				return parentStmt;
 			}
 
-			if (transaction != sysTransaction)
-			{
-				count = *request->getImpure<SLONG>(impureOffset);
-
-				// Since there occurred an error (req_unwind), undo all savepoints
-				// up to, but not including, the savepoint of this block.  The
-				// savepoint of this block will be dealt with below.
-
-				while (transaction->tra_save_point &&
-					transaction->tra_save_point->sav_number > count)
-				{
-					++transaction->tra_save_point->sav_verb_count;
-					VIO_verb_cleanup(tdbb, transaction);
-				}
-			}
-
 			const StmtNode* temp;
 
-			if (handlers)
+			if (handlers && handlers->statements.getCount() > 0)
 			{
 				temp = parentStmt;
+				bool handled = false;
 				const NestConst<StmtNode>* ptr = handlers->statements.begin();
 
 				for (const NestConst<StmtNode>* const end = handlers->statements.end();
@@ -586,6 +571,31 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 						request->req_operation = jrd_req::req_evaluate;
 						temp = handlerNode->action;
 						exeState->errorPending = false;
+
+						if (transaction != sysTransaction)
+						{
+							count = *request->getImpure<SLONG>(impureOffset);
+
+							// Since there occurred an error (req_unwind), undo all savepoints
+							// up to, _but not including_, the savepoint of this block.
+							// That's why transaction->rollbackToSavepoint() cannot be used here
+							// The savepoint of this block will be dealt with below.
+							// Do this only if error handlers exist. If not - leave rollbacking to caller node
+
+							while (transaction->tra_save_point &&
+								   transaction->tra_save_point->sav_next &&
+								   count < transaction->tra_save_point->sav_next->sav_number)
+							{
+								transaction->rollforwardSavepoint(tdbb);
+							}
+							// There can be no savepoints above the given one
+							if (transaction->tra_save_point && transaction->tra_save_point->sav_number > count)
+							{
+								transaction->rollbackSavepoint(tdbb);
+							}
+							// after that we still have to have our savepoint. If not - CORE-4424/4483 is sneaking around
+							fb_assert(transaction->tra_save_point && transaction->tra_save_point->sav_number == count);
+						}
 
 						// On entering looper exeState->oldRequest etc. are saved.
 						// On recursive calling we will loose the actual old
@@ -624,19 +634,24 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 							tdbb->setRequest(request);
 							fb_assert(request->req_caller == NULL);
 							request->req_caller = exeState->oldRequest;
+							handled = true;
 						}
 
-						// The error is dealt with by the application, cleanup
-						// this block's savepoint.
+					}
+				}
+				// The error is dealt with by the application, cleanup
+				// this block's savepoint.
 
-						if (transaction != sysTransaction)
-						{
-							while (transaction->tra_save_point &&
-								transaction->tra_save_point->sav_number >= count)
-							{
-								VIO_verb_cleanup(tdbb, transaction);
-							}
-						}
+				if (handled && transaction != sysTransaction)
+				{
+					// Check that exception handlers wee executed in context of right savepoint.
+					// If not - mirror copy of CORE-4424 or CORE-4483 is around here.
+					fb_assert(transaction->tra_save_point && transaction->tra_save_point->sav_number == count);
+					for (const Savepoint* save_point = transaction->tra_save_point;
+							save_point && count <= save_point->sav_number;
+							save_point = transaction->tra_save_point)
+					{
+						transaction->rollforwardSavepoint(tdbb);
 					}
 				}
 			}
@@ -644,18 +659,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 				temp = parentStmt;
 
 			// If the application didn't have an error handler, then
-			// the error will still be pending.  Undo the block by
-			// using its savepoint.
-
-			if (exeState->errorPending && transaction != sysTransaction)
-			{
-				while (transaction->tra_save_point &&
-					transaction->tra_save_point->sav_number >= count)
-				{
-					++transaction->tra_save_point->sav_verb_count;
-					VIO_verb_cleanup(tdbb, transaction);
-				}
-			}
+			// the error will still be pending. Leave undo to outer blocks.
 
 			return temp;
 		}
@@ -665,10 +669,12 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 			{
 				count = *request->getImpure<SLONG>(impureOffset);
 
-				while (transaction->tra_save_point &&
-					transaction->tra_save_point->sav_number >= count)
+				// rollforward all savepoints
+				for (const Savepoint* save_point = transaction->tra_save_point;
+					 save_point && save_point->sav_next && count <= save_point->sav_number;
+					 save_point = transaction->tra_save_point)
 				{
-					VIO_verb_cleanup(tdbb, transaction);
+					transaction->rollforwardSavepoint(tdbb);
 				}
 			}
 
@@ -2981,7 +2987,7 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 			while (transaction->tra_save_point &&
 				transaction->tra_save_point->sav_number > savePointNumber)
 			{
-				VIO_verb_cleanup(tdbb, transaction);
+				transaction->rollforwardSavepoint(tdbb);
 			}
 		}
 	}
@@ -3718,7 +3724,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 			!(transaction->tra_save_point->sav_flags & SAV_user) &&
 			!transaction->tra_save_point->sav_verb_count)
 		{
-			VIO_verb_cleanup(tdbb, transaction);
+			transaction->rollforwardSavepoint(tdbb);
 		}
 
 		{ // scope
@@ -3743,7 +3749,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 					!(transaction->tra_save_point->sav_flags & SAV_user) &&
 					!transaction->tra_save_point->sav_verb_count)
 				{
-					VIO_verb_cleanup(tdbb, transaction);
+					transaction->rollforwardSavepoint(tdbb);
 				}
 
 				AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
@@ -3778,14 +3784,6 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 			{
 				AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
 					tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);
-
-				// undo all savepoints up to our one
-				while (transaction->tra_save_point &&
-					transaction->tra_save_point->sav_number >= impure->savNumber)
-				{
-					++transaction->tra_save_point->sav_verb_count;
-					VIO_verb_cleanup(tdbb, transaction);
-				}
 
 				TRA_rollback(tdbb, transaction, false, false);
 			}
@@ -7160,11 +7158,10 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 				// Release the savepoint
 				if (found)
 				{
-					Savepoint* const current = transaction->tra_save_point;
-					transaction->tra_save_point = savepoint;
-					VIO_verb_cleanup(tdbb, transaction);
-					previous->sav_next = transaction->tra_save_point;
-					transaction->tra_save_point = current;
+					savepoint->rollforward(tdbb);
+					previous->sav_next = savepoint->sav_next;
+					savepoint->sav_next = transaction->tra_save_free;
+					transaction->tra_save_free = savepoint;
 				}
 
 				// Use the savepoint created by EXE_start
@@ -7175,11 +7172,10 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 			case CMD_RELEASE_ONLY:
 			{
 				// Release the savepoint
-				Savepoint* const current = transaction->tra_save_point;
-				transaction->tra_save_point = savepoint;
-				VIO_verb_cleanup(tdbb, transaction);
-				previous->sav_next = transaction->tra_save_point;
-				transaction->tra_save_point = current;
+				savepoint->rollforward(tdbb);
+				previous->sav_next = savepoint->sav_next;
+				savepoint->sav_next = transaction->tra_save_free;
+				transaction->tra_save_free = savepoint;
 				break;
 			}
 
@@ -7191,7 +7187,7 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 				while (transaction->tra_save_point &&
 					transaction->tra_save_point->sav_number >= sav_number)
 				{
-					VIO_verb_cleanup(tdbb, transaction);
+					transaction->rollforwardSavepoint(tdbb);
 				}
 
 				// Restore the savepoint initially created by EXE_start
@@ -7201,15 +7197,7 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 
 			case CMD_ROLLBACK:
 			{
-				const SLONG sav_number = savepoint->sav_number;
-
-				// Undo the savepoint
-				while (transaction->tra_save_point &&
-					transaction->tra_save_point->sav_number >= sav_number)
-				{
-					transaction->tra_save_point->sav_verb_count++;
-					VIO_verb_cleanup(tdbb, transaction);
-				}
+				transaction->rollbackToSavepoint(tdbb, savepoint->sav_number);
 
 				// Now set the savepoint again to allow to return to it later
 				VIO_start_save_point(tdbb, transaction);
@@ -7841,8 +7829,9 @@ const StmtNode* SavePointNode::execute(thread_db* tdbb, jrd_req* request, ExeSta
 					// If an error is still pending when the savepoint is supposed to end, then the
 					// application didn't handle the error and the savepoint should be undone.
 					if (exeState->errorPending)
-						++transaction->tra_save_point->sav_verb_count;
-					VIO_verb_cleanup(tdbb, transaction);
+						transaction->rollbackSavepoint(tdbb);
+					else
+						transaction->rollforwardSavepoint(tdbb);
 				}
 
 				if (request->req_operation == jrd_req::req_evaluate)
