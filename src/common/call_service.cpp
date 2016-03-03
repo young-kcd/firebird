@@ -257,7 +257,7 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 		if (status[1] == 0)
 			return svc_handle;
 		if (status[1] != isc_network_error)
-			return NULL;
+			return 0;
 
 		fb_utils::init_status(status);
 	}

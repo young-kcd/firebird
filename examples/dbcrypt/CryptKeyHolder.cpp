@@ -255,7 +255,7 @@ ICryptKeyCallback* CryptKeyHolder::keyHandle(CheckStatusWrapper* status, const c
 
 	char kn[40];
 	strcpy(kn, "Key");
-	strncat(kn, keyName, sizeof(kn));
+	strncat(kn, keyName, sizeof(kn) - 3 - 1);
 	kn[sizeof(kn) - 1] = 0;
 
 	IConfigEntry* confEntry = getEntry(status, kn);
