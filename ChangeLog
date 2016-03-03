@@ -1,3 +1,17 @@
+ 2016-03-02 15:33  aafemt 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+   M src/jrd/vio.cpp
+   M src/jrd/vio_proto.h
+Savepoints refactoring that fixes CORE-4701, CORE-4424 and CORE-4483
+
+ 2016-03-02 15:23  paulbeach 
+   M extern/cloop/src/tests/test1/CTest.c
+malloc.h is no longer needed (LibreOffice)
+
  2016-02-29 20:01  dimitr 
    M src/dsql/ExprNodes.cpp
 Fixed CORE-5122: Expression index may not be used by the optimizer if created and used in different connection charsets.
