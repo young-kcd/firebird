@@ -20,6 +20,7 @@
  */
 
 #include "CalcCApi.h"
+#include <malloc.h>
 #include <stdio.h>
 
 #ifdef WIN32
