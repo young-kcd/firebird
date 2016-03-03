@@ -52,6 +52,10 @@ namespace
 	  qsort_compare_callback compare;
 	};
 
+#if defined(DARWIN) // || defined(FREEBSD)
+#undef HAVE_QSORT_R
+#endif
+
 #ifndef HAVE_QSORT_R
 #if defined(WIN_NT) || defined(DARWIN) || defined(FREEBSD)
 	int qsort_ctx_arg_swap(void* arg, const void* a1, const void* a2)
