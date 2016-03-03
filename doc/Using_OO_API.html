@@ -7,7 +7,9 @@
 	<META NAME="AUTHOR" CONTENT="alex ">
 	<META NAME="CREATED" CONTENT="20130531;10003100">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
-	<META NAME="CHANGED" CONTENT="20160226;19094200">
+	<META NAME="CHANGED" CONTENT="20160303;18023000">
+	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
+	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
 	<STYLE TYPE="text/css">
 	<!--
@@ -121,30 +123,30 @@ parameters is close to unreal – we will have to modify a call too
 often to add new parameters, and number of them will be very big no
 matter of the fact that typically one needs to pass not too much of
 them. Therefore to pass additional parameters special in-memory data
-structure, called </FONT><FONT SIZE=4><I>database parameters block</I></FONT><FONT SIZE=4>
-(DPB) is used. Format of it is well defined, and it's possible to
-build DPB byte after byte. But it's much easier to use special
-interface </FONT><A HREF="#XpbBuilder"><FONT SIZE=4><B>IXpbBuilder</B></FONT></A><FONT SIZE=4>,
+structure, called </FONT><FONT SIZE=4><I>database parameters block</I></FONT>
+<FONT SIZE=4>(DPB) is used. Format of it is well defined, and it's
+possible to build DPB byte after byte. But it's much easier to use
+special interface </FONT><A HREF="#XpbBuilder"><FONT SIZE=4><B>IXpbBuilder</B></FONT></A><FONT SIZE=4>,
 which simplifies creation of various parameters blocks. To obtain an
 instance of IXpbBuilder you must know one more generic-use interface
 of firebird API – </FONT><A HREF="#Util"><FONT SIZE=4><B>IUtil</B></FONT></A><FONT SIZE=4>.
 It's a kind of placeholder for the calls that do not fit well in
 other places. So we do</FONT></P>
-<P STYLE="margin-bottom: 0in">    <I><FONT SIZE=4>IUtil* utl =
-master-&gt;getUtilInterface();</FONT></I></P>
-<P STYLE="margin-bottom: 0in">    <I><FONT SIZE=4>IXpbBuilder* dpb =
-utl-&gt;getXpbBuilder(&amp;status, IXpbBuilder::DPB, NULL, 0);</FONT></I></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>IUtil* utl =
+master-&gt;getUtilInterface();</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>IXpbBuilder* dpb =
+utl-&gt;getXpbBuilder(&amp;status, IXpbBuilder::DPB, NULL, 0);</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>This creates empty
 parameters' block builder of DPB type. Now adding required parameter
 to it is trivial:</FONT></P>
-<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>dpb-&gt;insertInt(&amp;status,
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>dpb-&gt;insertInt(&amp;status,
 isc_dpb_page_size, 4 * 1024);</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>will make firebird to
 create new database with pagesize equal to 4Kb and meaning of</FONT></P>
-<P STYLE="margin-bottom: 0in">    <I><FONT SIZE=4>dpb-&gt;insertString(</FONT><FONT SIZE=4>&amp;status</FONT><FONT SIZE=4>,
-isc_dpb_user_name, “sysdba”);</FONT></I></P>
-<P STYLE="margin-bottom: 0in">    <I><FONT SIZE=4>dpb-&gt;insertString(</FONT><FONT SIZE=4>&amp;status</FONT><FONT SIZE=4>,
-isc_dpb_password, “masterkey”);</FONT></I></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>dpb-&gt;insertString(&amp;status,
+isc_dpb_user_name, “sysdba”);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>dpb-&gt;insertString(&amp;status,
+isc_dpb_password, “masterkey”);</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>is (I hope) obvious.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
@@ -163,10 +165,10 @@ status(st);</I></FONT></P>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Now we may create new
 empty database:</FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>att =
-prov-&gt;createDatabase(&amp;status, &quot;fbtests.fdb&quot;,
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I><A HREF="#Attachment">IAttachment</A>*
+att = prov-&gt;createDatabase(&amp;status, &quot;fbtests.fdb&quot;,
 dpb-&gt;getBufferLength(&amp;status), dpb-&gt;getBuffer(&amp;status));</I></FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>printf(&quot;Database
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>printf(&quot;Database
 fbtests.fdb created\n&quot;);</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Pay attention that we do
 not check status after the call to createDatabase(), because in case
@@ -180,7 +182,7 @@ status of functions, returning intermediate results.</FONT></P>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Detaching from just
 created database is trivial:</FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>att-&gt;detach(&amp;status);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>att-&gt;detach(&amp;status);</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Now it remains to enclose
@@ -189,15 +191,15 @@ block. When using ThrowStatusWrapper you should always catch defined
 in C++ API exception class FbException, in Pascal you must also work
 with class FbException. Exception handler block in simplest case may
 look this way:</FONT></P>
-<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>catch (const
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>catch (const
 FbException&amp; error)</I></FONT></P>
-<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>{</I></FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>char buf[256];</I></FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>utl-&gt;formatStatus(buf,
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>char buf[256];</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>utl-&gt;formatStatus(buf,
 sizeof(buf), error.getStatus());</I></FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>fprintf(stderr,
-&quot;%s\n&quot;, buf);</I></FONT></P>
-<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>fprintf(stderr, &quot;%s\n&quot;,
+buf);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>}</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Pay attention that here we
 use one more function from <A HREF="#Util">IUtil</A> –
 formatStatus(). It returns in buffer text, describing an error
@@ -207,7 +209,7 @@ formatStatus(). It returns in buffer text, describing an error
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>To attach to existing
 database just use attachDatabase() method of IProvider instead
 createDatabase(). All parameters are the same for both methods.</FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>att =
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>att =
 prov-&gt;attachDatabase(&amp;status, &quot;fbtests.fdb&quot;, 0,
 NULL);</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>This sample is using no
@@ -225,14 +227,222 @@ very useful to build and try to run appropriate samples when reading
 this document.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
-<H1><FONT SIZE=4>Starting transaction and executing trivial SQL
-operator in it.</FONT></H1>
+<H1><FONT SIZE=4>Working with transactions.</FONT></H1>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Only creating empty
 databases is definitely not enough to work with RDBMS. We want to be
 able to create various objects (like tables and so on) in database
 and insert data in that tables. Any operation within database is
 performed by firebird under transaction control. Therefore first of
-all we must learn to start transaction.</FONT></P>
+all we must learn to start transaction. Here we do not discuss
+distributed transactions (supported by <A HREF="#Dtc">IDtc</A>
+interface) to avoid unneeded to most users overcomplication. Starting
+of non-distributed transaction is very simple and done via attachment
+interface:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I><A HREF="#Transaction">ITransaction</A>*
+tra = att-&gt;startTransaction(&amp;status, 0, NULL);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>In this sample default
+transaction parameters are used – no TPB is passed to
+startTransaction() method. If you need non-default parameters you may
+create appropriate <A HREF="#XpbBuilder">IXpbBuilder</A>, add
+required items to it:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I><A HREF="#XpbBuilder">IXpbBuilder</A>*
+tpb = utl-&gt;getXpbBuilder(&amp;status, IXpbBuilder::TPB, NULL, 0);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>tpb-&gt;insertTag(&amp;status,
+isc_tpb_read_committed);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>and pass resulting TPB to
+startTransaction():</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>ITransaction* tra =
+att-&gt;startTransaction(&amp;status, tpb-&gt;getBufferLength(&amp;status),
+tpb-&gt;getBuffer(&amp;status));</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Transaction interface is
+used as a parameter in a lot of other API calls but itself it does
+not perform any actions except commit/rollback transaction, may be
+retaining:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>tra-&gt;commit(&amp;status);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>You may take a look at how
+to start and commit transaction in examples 01.create.cpp and
+01.create.pas.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<H1><FONT SIZE=4>Executing SQL operator without input parameters and
+returned rows.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>With started transaction
+we are ready to execute our first SQL operators. Used for it
+execute() method in <A HREF="#Attachment">IAttachment</A> is rather
+universal and may be also used to execute SQL operators with input
+and output parameters (which is typical for EXECUTE PROCEDURE
+statement), but right now we will use the simple most form of it.
+Both DDL and DML operators can be executed:</FONT></P>
+<P STYLE="margin-bottom: 0in; font-weight: normal"><FONT SIZE=4><I>att-&gt;execute(&amp;status,
+tra, 0, &quot;create table dates_table (d1 date)&quot;,
+SQL_DIALECT_V6, NULL, NULL, NULL, NULL);</I></FONT></P>
+<P STYLE="margin-bottom: 0in; font-weight: normal"><FONT SIZE=4><I>tra-&gt;commitRetaining(&amp;status);</I></FONT></P>
+<P STYLE="margin-bottom: 0in; font-weight: normal"><FONT SIZE=4><I>att-&gt;execute(&amp;status,
+tra, 0, &quot;insert into dates_table values (CURRENT_DATE)&quot;,
+SQL_DIALECT_V6, NULL, NULL, NULL, NULL);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>As you can see transaction
+interface is a required parameter for execute() method (must be NULL
+only if you execute START TRANSACTION statement). Next follows length
+of SQL operator (may be zero causing use of C rules to determine
+string length), text of operator and SQL dialect that should be used
+for it. The following for NULLs stand for metadata descriptions and
+buffers of input parameters and output data. Complete description of
+this method is provided in <A HREF="#Attachment">IAttachment</A>
+interface.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>You may take a look at how
+to start and commit transaction in examples 01.create.cpp and
+01.create.pas.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<H1><FONT SIZE=4>Executing SQL operator with input parameters.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>There are 2 ways to
+execute statement with input parameters. Choice of correct method
+depends upon do you need to execute it more than once and do you know
+in advance format of  parameters. When that format is known and
+statement is needed to be run only once single call to
+IAttachment::execute() may be used. In other cases SQL statement
+should be prepared first and after it executed, may be many times
+with different parameters.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>To prepare SQL statement
+for execution use prepare() method of <A HREF="#Attachment">IAttachment</A>
+interface:</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I><A HREF="#Statement">IStatement</A>*
+stmt = att-&gt;prepare(&amp;status, tra, 0, “UPDATE department SET
+budget = ? * budget + budget WHERE dept_no = ?”,</I></FONT></P>
+<P STYLE="margin-bottom: 0in">                              
+<FONT SIZE=4><I>SQL_DIALECT_V6,
+IStatement::PREPARE_PREFETCH_METADATA);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>If you are not going to
+use parameters description from firebird (i.e. format of parameters
+is known to you in advance) please use
+IStatement::PREPARE_PREFETCH_NONE instead PREPARE_PREFETCH_METADATA –
+this will save client/server traffic and server resources a bit.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>In ISC API XSQLDA is used
+to describe format of statement parameters. New API does not use
+XSQLDA – instead interface IMessageMetadata is used. A set of input
+parameters (and also a row fetched from cursor) is described in
+firebird API in same way and later called message. <A HREF="#MessageMetadata">IMessageMetadata</A>
+is passed as a parameter to the methods performing message exchange
+between your program and database engine. There are many ways to have
+an instance of IMessageMetadata – one can:</FONT></P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>get it from
+	<A HREF="#Statement">IStatement</A>,</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>build using
+	<A HREF="#MetadataBuilder">IMetadataBuilder</A> interface,</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>have your own
+	implementation of this interface.</FONT></P>
+</UL>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>We will not discuss own
+implementation here, one may take a look at example
+05.user_metadata.cpp for details.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="Attachment"></A><FONT SIZE=4>Attachment
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	getInfo(StatusType* status, unsigned itemsLength, const unsigned
+	char* items, unsigned bufferLength, unsigned char* buffer)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
+	startTransaction(StatusType* status, unsigned tpbLength, const
+	unsigned char* tpb)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
+	reconnectTransaction(StatusType* status, unsigned length, const
+	unsigned char* id)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IRequest*
+	compileRequest(StatusType* status, unsigned blrLength, const
+	unsigned char* blr)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	transactRequest(StatusType* status, ITransaction* transaction,
+	unsigned blrLength, const unsigned char* blr, unsigned inMsgLength,
+	const unsigned char* inMsg, unsigned outMsgLength, unsigned char*
+	outMsg)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IBlob*
+	createBlob(StatusType* status, ITransaction* transaction, ISC_QUAD*
+	id, unsigned bpbLength, const unsigned char* bpb)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IBlob*
+	openBlob(StatusType* status, ITransaction* transaction, ISC_QUAD*
+	id, unsigned bpbLength, const unsigned char* bpb)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
+	getSlice(StatusType* status, ITransaction* transaction, ISC_QUAD*
+	id, unsigned sdlLength, const unsigned char* sdl, unsigned
+	paramLength, const unsigned char* param, int sliceLength, unsigned
+	char* slice)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	putSlice(StatusType* status, ITransaction* transaction, ISC_QUAD*
+	id, unsigned sdlLength, const unsigned char* sdl, unsigned
+	paramLength, const unsigned char* param, int sliceLength, unsigned
+	char* slice)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	executeDyn(StatusType* status, ITransaction* transaction, unsigned
+	length, const unsigned char* dyn)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IStatement*
+	prepare(StatusType* status, ITransaction* tra, unsigned stmtLength,
+	const char* sqlStmt, unsigned dialect, unsigned flags)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
+	execute(StatusType* status, ITransaction* transaction, unsigned
+	stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata*
+	inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void*
+	outBuffer)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IResultSet*
+	openCursor(StatusType* status, ITransaction* transaction, unsigned
+	stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata*
+	inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const
+	char* cursorName, unsigned cursorFlags)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IEvents*
+	queEvents(StatusType* status, IEventCallback* callback, unsigned
+	length, const unsigned char* events)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	cancelOperation(StatusType* status, int option)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void ping(StatusType*
+	status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	detach(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	dropDatabase(StatusType* status)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="Dtc"></A><FONT SIZE=4>Dtc
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
+	join(StatusType* status, ITransaction* one, ITransaction* two)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IDtcStart*
+	startBuilder(StatusType* status)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="DtcStart"></A><FONT SIZE=4>DtcStart
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	addAttachment(StatusType* status, IAttachment* att)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	addWithTpb(StatusType* status, IAttachment* att, unsigned length,
+	const unsigned char* tpb)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
+	start(StatusType* status)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="Master"></A><FONT SIZE=4>Master
@@ -255,8 +465,75 @@ interface:</FONT></P>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
+<P STYLE="margin-bottom: 0in"><A NAME="MessageMetadata"></A><FONT SIZE=4>MessageMetadata
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
+	getCount(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	getField(StatusType* status, unsigned index)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	getRelation(StatusType* status, unsigned index)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	getOwner(StatusType* status, unsigned index)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	getAlias(StatusType* status, unsigned index)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
+	getType(StatusType* status, unsigned index)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_BOOLEAN
+	isNullable(StatusType* status, unsigned index)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
+	getSubType(StatusType* status, unsigned index)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
+	getLength(StatusType* status, unsigned index)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
+	getScale(StatusType* status, unsigned index)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
+	getCharSet(StatusType* status, unsigned index)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
+	getOffset(StatusType* status, unsigned index)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
+	getNullOffset(StatusType* status, unsigned index)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IMetadataBuilder*
+	getBuilder(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
+	getMessageLength(StatusType* status)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="MetadataBuilder"></A><FONT SIZE=4>MetadataBuilder
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	setType(StatusType* status, unsigned index, unsigned type)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	setSubType(StatusType* status, unsigned index, int subType)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	setLength(StatusType* status, unsigned index, unsigned length)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	setCharSet(StatusType* status, unsigned index, unsigned charSet)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	setScale(StatusType* status, unsigned index, unsigned scale)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	truncate(StatusType* status, unsigned count)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	moveNameToIndex(StatusType* status, const char* name, unsigned
+	index)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	remove(StatusType* status, unsigned index)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
+	addField(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IMessageMetadata*
+	getMetadata(StatusType* status)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
 <P STYLE="margin-bottom: 0in"><A NAME="Provider"></A><FONT SIZE=4>Provider
-methods:</FONT></P>
+interface:</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IAttachment*
 	attachDatabase(StatusType* status, const char* fileName, unsigned
@@ -269,10 +546,72 @@ methods:</FONT></P>
 	unsigned spbLength, const unsigned char* spb)</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	shutdown(StatusType* status, unsigned timeout, const int reason)</FONT></P>
-	<P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	setDbCryptCallback(StatusType* status, ICryptKeyCallback*
 	cryptCallback)</FONT></P>
 </OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="Statement"></A><FONT SIZE=4>Statement
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	getInfo(StatusType* status, unsigned itemsLength, const unsigned
+	char* items, unsigned bufferLength, unsigned char* buffer)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
+	getType(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	getPlan(StatusType* status, FB_BOOLEAN detailed)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ISC_UINT64
+	getAffectedRecords(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IMessageMetadata*
+	getInputMetadata(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IMessageMetadata*
+	getOutputMetadata(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
+	execute(StatusType* status, ITransaction* transaction,
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata*
+	outMetadata, void* outBuffer)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IResultSet*
+	openCursor(StatusType* status, ITransaction* transaction,
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata*
+	outMetadata, unsigned flags)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	setCursorName(StatusType* status, const char* name)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void free(StatusType*
+	status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
+	getFlags(StatusType* status)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Constants defined by
+Statement interface:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_NONE = 0;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_TYPE = 1;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_INPUT_PARAMETERS
+= 2;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_OUTPUT_PARAMETERS
+= 4;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_LEGACY_PLAN
+= 8;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_DETAILED_PLAN
+= 16;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_AFFECTED_RECORDS
+= 32;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_FLAGS =
+64;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_METADATA</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_ALL </FONT>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FLAG_HAS_CURSOR = 1;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FLAG_REPEAT_EXECUTE = 2;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>CURSOR_TYPE_SCROLLABLE =
+1;</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
@@ -307,6 +646,36 @@ Status interface:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_OK = 0;</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_NO_DATA = 1;</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_SEGMENT = 2;</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="Transaction"></A><FONT SIZE=4>Transaction
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	getInfo(StatusType* status, unsigned itemsLength, const unsigned
+	char* items, unsigned bufferLength, unsigned char* buffer)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	prepare(StatusType* status, unsigned msgLength, const unsigned char*
+	message)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	commit(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	commitRetaining(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	rollback(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	rollbackRetaining(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	disconnect(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
+	join(StatusType* status, ITransaction* transaction)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
+	validate(StatusType* status, IAttachment* attachment)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
+	enterDtc(StatusType* status)</FONT></P>
+</OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
@@ -399,6 +768,18 @@ methods:</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const unsigned char*
 	getBuffer(StatusType* status)</FONT></P>
 </OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Constants defined by
+XpbBuilder interface:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>static const unsigned DPB
+= 1;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>static const unsigned
+SPB_ATTACH = 2;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>static const unsigned
+SPB_START = 3;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>static const unsigned TPB
+= 4;</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 </BODY>
