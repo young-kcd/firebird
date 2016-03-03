@@ -848,6 +848,9 @@ static void cmp_field( gpre_req* request, const gpre_fld* field,
 		else
 			request->add_byte(blr_double);
 		break;
+	case dtype_boolean:
+		request->add_byte(blr_bool);
+		break;
 
 	default:
 		{

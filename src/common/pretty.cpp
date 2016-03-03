@@ -416,6 +416,11 @@ static int print_blr_dtype(ctl* control, bool print_object)
 		length = 8;
 		break;
 
+	case blr_bool:
+		string = "bool";
+		length = 1;
+		break;
+
 	default:
 		error(control, 0, "*** invalid data type ***", 0);
 	}
