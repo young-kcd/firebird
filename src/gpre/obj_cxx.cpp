@@ -3583,6 +3583,10 @@ static void make_array_declaration(ref* reference)
 		dtype = "double";
 		break;
 
+	case dtype_boolean:
+		dtype = "UCHAR";
+		break;
+
 	default:
 		{
 			TEXT s[ERROR_LENGTH];
@@ -3741,6 +3745,10 @@ static void make_port(const gpre_port* port, int column)
 
 		case dtype_double:
 			dtype = "double";
+			break;
+
+		case dtype_boolean:
+			dtype = "UCHAR";
 			break;
 
 		default:

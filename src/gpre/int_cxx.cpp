@@ -700,6 +700,10 @@ static void make_port( const gpre_port* port, int column)
 			fmtstr = "    double  jrd_%d;\t// %s ";
 			break;
 
+		case dtype_boolean:
+			fmtstr = "    UCHAR  jrd_%d;\t// %s ";
+			break;
+
 		default:
 			{
 				TEXT s[ERROR_LENGTH];
