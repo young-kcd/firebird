@@ -1,3 +1,7 @@
+ 2016-03-02 15:23  paulbeach 
+   M extern/cloop/src/tests/test1/CTest.c
+malloc.h is no longer needed (LibreOffice)
+
  2016-03-01 08:38  firebirds 
    M mkChangeLog.sh
 Fixed changelog/buildno generating script for branch
