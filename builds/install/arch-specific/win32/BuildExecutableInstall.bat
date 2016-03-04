@@ -125,6 +125,10 @@ if %FBBUILD_ISX_PACK% EQU 1 (
   ) else (@echo     o Inno Setup found at %INNO5_SETUP_PATH%.)
 )
 
+if not defined WIX (
+    call :ERROR WIX not defined. WiX is needed to build the MSI kits of the CRT runtimes.
+    @goto :EOF
+) else (@echo     o WiX found at "%WIX%".)
 
 if not DEFINED FB_EXTERNAL_DOCS (
  @echo.
@@ -199,8 +203,8 @@ set FBBUILD_FB_LAST_VER=%FBBUILD_FB25_CUR_VER%
 :: as well as set up the correct shortcuts
 set FBBUILD_FB15_CUR_VER=1.5.6
 set FBBUILD_FB20_CUR_VER=2.0.7
-set FBBUILD_FB21_CUR_VER=2.1.5
-set FBBUILD_FB25_CUR_VER=2.5.2
+set FBBUILD_FB21_CUR_VER=2.1.7
+set FBBUILD_FB25_CUR_VER=2.5.5
 
 :: Now fix up the major.minor version strings in the readme files.
 :: We place output in %FB_GEN_DIR%\readmes
@@ -240,7 +244,7 @@ del %temp%.\b$?.txt
 @echo   Copying MSVC runtime libraries...
 if not exist %FB_OUTPUT_DIR%\system32 (mkdir %FB_OUTPUT_DIR%\system32)
 @echo on
-for %%f in ( msvcp%MSVC_VERSION%?.dll msvcr%MSVC_VERSION%?.dll  ) do ( 
+@for %%f in ( msvcp%MSVC_VERSION%?.dll msvcr%MSVC_VERSION%?.dll  ) do ( 
 if exist "%VCINSTALLDIR%\redist\%PROCESSOR_ARCHITECTURE%\Microsoft.VC%MSVC_VERSION%0.CRT\%%f" (
 copy  "%VCINSTALLDIR%\redist\%PROCESSOR_ARCHITECTURE%\Microsoft.VC%MSVC_VERSION%0.CRT\%%f" %FB_OUTPUT_DIR%\ 
 )
@@ -357,7 +361,7 @@ for %%v in (IPLicense.txt IDPLicense.txt ) do (
 @copy  %FB_GEN_DIR%\readmes\readme.txt %FB_OUTPUT_DIR%\ > nul
 
 ::  Walk through all docs and transform any that are not .txt, .pdf or .html to .txt
-echo   Setting .txt filetype to ascii docs.
+@echo   Setting .txt filetype to ascii docs.
 for /R %FB_OUTPUT_DIR%\doc %%v in (.) do (
   pushd %%v
   for /F %%W in ( 'dir /B /A-D' ) do (
@@ -385,18 +389,18 @@ for /R %FB_OUTPUT_DIR%\doc %%v in (.) do (
 
 :BUILD_CRT_MSI
 :: Generate runtimes as an MSI file.
-:: This requires WiX 2.0 to be installed
+:: This requires WiX 3.0 to be installed
 ::============
-:: This is only relevent if we are shipping packages built with MSVS 2005 (MSVC8)
-:: We have never shipped packages with MSVS 2008 (MSVC9) and we are hoping not 
-:: to deploy MSI runtimes if we build with MSVC 2010 (MVC10)
-if %MSVC_VERSION% EQU 8 (
+:: This is only relevent if we are shipping packages built with Visual Studio 2010 (MSVC10)
+:: for Firebird 3.0 there are no plans to ship oficial builds with other MSVC runtimes. But we could.
+if %MSVC_VERSION% EQU 10 (
 if not exist %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi (
-    %WIX%\candle.exe -v0 %FB_ROOT_PATH%\builds\win32\msvc%MSVC_VERSION%\VCCRT_%FB_TARGET_PLATFORM%.wxs -out %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj
-    %WIX%\light.exe %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj -out %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi
+    "%WIX%\bin\candle.exe" -v -sw1091 %FB_ROOT_PATH%\builds\win32\msvc%MSVC_VERSION%\VCCRT_%FB_TARGET_PLATFORM%.wxs -out %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj
+    "%WIX%\bin\light.exe" -sw1076 %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj -out %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi
 ) else (
     @echo   Using an existing build of %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi
-))
+)
+)
 
 ::End of BUILD_CRT_MSI
 ::--------------------
@@ -482,16 +486,6 @@ copy %FB_ROOT_PATH%\builds\install\misc\databases.conf.in %FB_OUTPUT_DIR%\databa
 ::End of FB_MSG
 ::-------------
 @goto :EOF
-
-
-::TOUCH_LOCAL
-::==========
-:: Note 1: This doesn't seem to make any difference to whether local libraries are used.
-:: Note 2: MS documentation was incorrectly interpreted. .local files should not be created
-::         for libraries, they should be created for executables.
-:: Create libname.local files for each locally installed library
-::for %%v in ( fbclient msvcrt msvcp%VS_VER%0 )  do touch %FB_OUTPUT_DIR%\%%v.local
-::@goto :EOF
 
 
 :GEN_ZIP
@@ -659,6 +653,9 @@ if NOT DEFINED GNU_TOOLCHAIN (
 @echo.
 @echo     o sed is required for packaging. Use the sed provided by
 @echo       gnuwin32. The cygwin one is not guaranteed to work.
+@echo.
+@echo     o WiX v3.0 is required to build installable msi packages of the
+@echo       MS runtime libraries.
 @echo.
 
 ::End of HELP
