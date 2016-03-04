@@ -25,7 +25,6 @@ Contenu
 --------
 
 o Avant l'installation
-o Installation des bibliothèques MS VC runtime
 o Déployement de gds32.dll
 o Installation du Guardian
 o Réinstallation de Firebird 3
@@ -46,15 +45,6 @@ fbclient.dll et gds32.dll ont été retirés de <system32>.
 Si vous avez installé une version beta ou alpha de Firebird 3,
 l'installeur va renommer firebird.conf et security3.fdb, car ces
 fichiers ne sont plus compatibles avec la version actuelle.
-
-
-Installation des bibliothèques MS VC runtime
--------------------------------------------------------------
-
-
-Firebird 3 n'a plus besoin de déployer les runtimes MSVC dans les
-répertoires système de windows. Frebird 3 charge ces bibliothèques depuis
-son répertoire d'installation.
 
 
 Déployement de gds32.dll
@@ -140,7 +130,7 @@ o La désinstallation laisse cinq fichiers dans le
   - firebird.conf
   - fbtrace.conf
   - firebird.log
-  - security2.fdb
+  - security3.fdb
 
   Ceci est intentionnel. Ces fichiers sont tous
   potentiellement modifiables par les utilisateurs et peuvent

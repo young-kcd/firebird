@@ -392,6 +392,13 @@ Name: EnableLegacyClientAuth; Description: {cm:EnableLegacyClientAuth}; Componen
 
 
 [Run]
+#if msvc_version == 10
+Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_Win32.msi"" /L*v ""{tmp}\vccrt{#msvc_version}_Win32.log"" "; StatusMsg: "Installing MSVC 32-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
+#if PlatformTarget == "x64"
+Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_x64.msi"" /L*v ""{tmp}\vccrt{#msvc_version}_x64.log"" ";  StatusMsg: "Installing MSVC 64-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
+#endif
+#endif
+
 ;Only register Firebird if we are installing AND configuring
 Filename: {app}\instreg.exe; Parameters: "install "; StatusMsg: {cm:instreg}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized; Check: ConfigureFirebird;
 
@@ -517,6 +524,17 @@ Source: {#WOW64Dir}\msvcp{#msvc_version}?.dll; DestDir: {app}\WOW64; Components:
 #endif
 #endif  /* if msvc_version >= 10 */
 
+#if msvc_version == 10
+;Try to install CRT libraries to <sys> via msi, _IF_ msvc_version is 10.
+#if PlatformTarget == "x64"
+;MinVersion 0,5.0 means no version of Win9x and at least Win2k if NT O/S
+;In addition, O/S must have Windows Installer 3.0.
+Source: {#FilesDir}\system32\vccrt10_x64.msi; DestDir: {tmp};  Check: HasWI30; MinVersion: 0,5.0; Components: ClientComponent;
+Source: {#WOW64Dir}\system32\vccrt10_Win32.msi; DestDir: {tmp}; Check: HasWI30; MinVersion: 0,5.0; Components: ClientComponent;
+#else
+Source: {#FilesDir}\system32\vccrt10_Win32.msi; DestDir: {tmp}; Check: HasWI30; MinVersion: 0,5.0; Components: ClientComponent;
+#endif
+#endif
 
 ;Docs
 Source: {#ScriptsDir}\installation_scripted.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion

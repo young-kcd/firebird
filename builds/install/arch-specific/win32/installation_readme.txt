@@ -19,7 +19,6 @@ Contents
 --------
 
 o Before installation
-o Installation of MS VC runtime libraries
 o Deployment of gds32.dll
 o Installation of the Guardian
 o Re-installation of Firebird $MAJOR.$MINOR
@@ -40,15 +39,6 @@ See the UNINSTALL section below for more info on this.
 If you have installed a beta or alpha version of Firebird $MAJOR.$MINOR
 the installer will rename firebird.conf and security3.fdb as
 these files are no longer compatible.
-
-
-Installation of MS VC runtime libraries
----------------------------------------
-
-Firebird $MAJOR.$MINOR no longer needs to deploy the MSVC runtimes
-into the windows system directories so no redistributable
-run-time package is deployed. Firebird $MAJOR.$MINOR loads the runtime
-libraries from the root installation directory.
 
 
 Deployment of gds32.dll
