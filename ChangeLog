@@ -1,3 +1,31 @@
+ 2016-03-03 22:52  asfernandes 
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M src/common/call_service.cpp
+Warnings.
+
+ 2016-03-03 15:04  paulbeach 
+   M src/jrd/recsrc/HashJoin.cpp
+Fix qsort_r for Darwin
+
+ 2016-03-03 15:03  alexpeshkoff 
+   M doc/Using_OO_API.html
+Work in progress
+
+ 2016-03-03 11:57  paulbeach 
+   M extern/cloop/src/tests/test1/CTest.c
+Reverse Cloop change (LibreeOffice), until it can be examined properly.
+
+ 2016-03-03 11:44  aafemt 
+   M src/common/pretty.cpp
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/gpre/c_cxx.cpp
+   M src/gpre/cme.cpp
+   M src/gpre/cmp.cpp
+   M src/gpre/int_cxx.cpp
+   M src/gpre/obj_cxx.cpp
+   M src/gpre/std/gpre_meta.epp
+Boolean datatype in gpre C++ module
+
  2016-03-02 15:33  aafemt 
    M src/dsql/ExprNodes.cpp
    M src/dsql/StmtNodes.cpp
