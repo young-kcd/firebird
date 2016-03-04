@@ -1,3 +1,16 @@
+ 2016-03-03 22:53  asfernandes 
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M src/common/call_service.cpp
+Warnings.
+
+ 2016-03-03 15:02  paulbeach 
+   M src/jrd/recsrc/HashJoin.cpp
+Fix qsort_r for Darwin
+
+ 2016-03-03 11:56  paulbeach 
+   M extern/cloop/src/tests/test1/CTest.c
+Reverse Cloop change (LibreeOffice), until it can be examined properly.
+
  2016-03-02 15:23  paulbeach 
    M extern/cloop/src/tests/test1/CTest.c
 malloc.h is no longer needed (LibreOffice)
