@@ -851,6 +851,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	SLONG hash_max_count = 0;
 	SLONG hash_min_count = 10000000;
 	USHORT i = 0;
+	unsigned int distribution[21] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	for (const srq* slot = LOCK_header->lhb_hash; i < LOCK_header->lhb_hash_slots; slot++, i++)
 	{
 		SLONG hash_lock_count = 0;
@@ -864,6 +865,9 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			hash_min_count = hash_lock_count;
 		if (hash_lock_count > hash_max_count)
 			hash_max_count = hash_lock_count;
+		if (hash_lock_count > 20)
+			hash_lock_count = 20;
+		++distribution[hash_lock_count];
 	}
 
 	FPRINTF(outfile, "\tHash slots: %4d, ", LOCK_header->lhb_hash_slots);
@@ -871,6 +875,16 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	FPRINTF(outfile, "Hash lengths (min/avg/max): %4"SLONGFORMAT"/%4"SLONGFORMAT"/%4"SLONGFORMAT"\n",
 			hash_min_count, (hash_total_count / LOCK_header->lhb_hash_slots),
 			hash_max_count);
+
+	FPRINTF(outfile, "\tHash lengths distribution:\n");
+	if (hash_max_count >= 20)
+		hash_max_count = 19;
+	for (int i = hash_min_count; i<=hash_max_count; ++i)
+	{
+		FPRINTF(outfile, "\t\t%-2d : %8u\t(%d%%)\n", i, distribution[i], distribution[i]*100/LOCK_header->lhb_hash_slots);
+	}
+	if (hash_max_count == 19)
+		FPRINTF(outfile, "\t\t>  : %8u\t(%d%%)\n", distribution[20], distribution[20]*100/LOCK_header->lhb_hash_slots);
 
 	const shb* a_shb = (shb*) SRQ_ABS_PTR(LOCK_header->lhb_secondary);
 	FPRINTF(outfile,

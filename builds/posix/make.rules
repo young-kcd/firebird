@@ -32,16 +32,16 @@
 
 
 # Please don't use compiler/platform specific flags here - nmcc 02-Nov-2002
-WFLAGS:=-I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include $(CPPFLAGS)
+WFLAGS =-I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include $(CPPFLAGS)
 
 ifeq ($(TARGET),Release)
-  WFLAGS:= $(WFLAGS) $(PROD_FLAGS)
+  WFLAGS += $(PROD_FLAGS)
 else
-  WFLAGS:= $(WFLAGS) $(DEV_FLAGS) -DDEV_BUILD
+  WFLAGS += $(DEV_FLAGS) -DDEV_BUILD
 endif
 
-WCFLAGS:= $(WFLAGS) $(THR_FLAGS) $(CFLAGS) $(GLOB_OPTIONS)
-WCXXFLAGS:= $(WFLAGS) $(THR_FLAGS) $(RTTI_FLAG) $(CXXFLAGS) $(GLOB_OPTIONS)
+WCFLAGS = $(WFLAGS) $(THR_FLAGS) $(CFLAGS) $(GLOB_OPTIONS)
+WCXXFLAGS = $(WFLAGS) $(THR_FLAGS) $(RTTI_FLAG) $(CXXFLAGS) $(GLOB_OPTIONS)
 
 # Here we have definitions for using the preprocessor.
 

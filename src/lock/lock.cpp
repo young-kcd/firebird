@@ -51,6 +51,7 @@
 #include "../common/isc_s_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/array.h"
+#include "../common/classes/Hash.h"
 #include "../common/classes/semaphore.h"
 #include "../common/classes/init.h"
 #include "../common/classes/timestamp.h"
@@ -2087,7 +2088,6 @@ void LockManager::debug_delay(ULONG lineno)
 }
 #endif
 
-
 lbl* LockManager::find_lock(USHORT series,
 							const UCHAR* value,
 							USHORT length,
@@ -2107,23 +2107,9 @@ lbl* LockManager::find_lock(USHORT series,
  *
  **************************************/
 
-	// Hash the value preserving its distribution as much as possible
-
-	ULONG hash_value = 0;
-	{ // scope
-		UCHAR* p = NULL; // silence uninitialized warning
-		const UCHAR* q = value;
-		for (USHORT l = 0; l < length; l++)
-		{
-			if (!(l & 3))
-				p = (UCHAR*) &hash_value;
-			*p++ += *q++;
-		}
-	} // scope
-
 	// See if the lock already exists
 
-	const USHORT hash_slot = *slot = (USHORT) (hash_value % m_sharedMemory->getHeader()->lhb_hash_slots);
+	const USHORT hash_slot = *slot = (USHORT) Firebird::hash(value, length, m_sharedMemory->getHeader()->lhb_hash_slots);
 	ASSERT_ACQUIRED;
 	srq* const hash_header = &m_sharedMemory->getHeader()->lhb_hash[hash_slot];
 

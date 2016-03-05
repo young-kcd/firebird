@@ -331,6 +331,16 @@ namespace Firebird
 		}; // class iterator
 	}; // class Hash
 
+typedef unsigned int (*someHashFunc)(const unsigned char* value, unsigned int length);
+
+extern someHashFunc someHash;
+extern const char* hashName;
+
+inline unsigned int hash(const void* value, unsigned int length, unsigned int hashSize)
+{
+	return someHash((const unsigned char*)value, length) % hashSize;
+}
+
 } // namespace Firebird
 
 #endif // CLASSES_HASH_H

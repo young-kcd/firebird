@@ -28,6 +28,7 @@
 
 #include "firebird.h"
 #include <stdio.h>
+#include "../common/classes/Hash.h"
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
 #include "gen/iberror.h"
@@ -59,7 +60,6 @@ static void bug_lck(const TEXT*);
 static bool compatible(const Lock*, const Lock*, USHORT);
 static void enqueue(thread_db*, CheckStatusWrapper*, Lock*, USHORT, SSHORT);
 static int external_ast(void*);
-static USHORT hash_func(const UCHAR*, USHORT);
 static void hash_allocate(Lock*);
 static Lock* hash_get_lock(Lock*, USHORT*, Lock***);
 static void hash_insert_lock(Lock*);
@@ -954,38 +954,6 @@ static int external_ast(void* lock_void)
 }
 
 
-
-static USHORT hash_func(const UCHAR* value, USHORT length)
-{
-/**************************************
- *
- *	h a s h
- *
- **************************************
- *
- * Functional description
- *	Provide a repeatable hash value based
- *	on the passed key.
- *
- **************************************/
-
-	// Hash the value, preserving its distribution as much as possible
-
-	ULONG hash_value = 0;
-	UCHAR* p = 0;
-	const UCHAR* q = value;
-
-	for (USHORT l = 0; l < length; l++)
-	{
-		if (!(l & 3))
-			p = (UCHAR*) &hash_value;
-		*p++ += *q++;
-	}
-
-	return (USHORT) (hash_value % LOCK_HASH_SIZE);
-}
-
-
 static void hash_allocate(Lock* lock)
 {
 /**************************************
@@ -1036,7 +1004,7 @@ static Lock* hash_get_lock(Lock* lock, USHORT* hash_slot, Lock*** prior)
 	if (!att->att_compatibility_table)
 		hash_allocate(lock);
 
-	const USHORT hash_value = hash_func((UCHAR*) &lock->lck_key, lock->lck_length);
+	const USHORT hash_value = hash(&lock->lck_key, lock->lck_length, LOCK_HASH_SIZE);
 
 	if (hash_slot)
 		*hash_slot = hash_value;
