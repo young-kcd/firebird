@@ -52,7 +52,7 @@
 
 	To add new configuration item, you have to take the following steps:
 
-		1. Add key description to ConfigImpl::entries[] array (config.cpp)
+		1. Add key description to Config::entries[] array (config.cpp)
 		2. Add logical key to Config::ConfigKey enumeration (config.h)
 		   (note: both physical and logical keys MUST have the same ordinal
 				  position within appropriate structures)
