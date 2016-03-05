@@ -1004,7 +1004,8 @@ static Lock* hash_get_lock(Lock* lock, USHORT* hash_slot, Lock*** prior)
 	if (!att->att_compatibility_table)
 		hash_allocate(lock);
 
-	const USHORT hash_value = hash(&lock->lck_key, lock->lck_length, LOCK_HASH_SIZE);
+	const USHORT hash_value =
+		(USHORT) InternalHash::hash(lock->lck_length, lock->lck_key.lck_string, LOCK_HASH_SIZE);
 
 	if (hash_slot)
 		*hash_slot = hash_value;

@@ -9,14 +9,11 @@
  *  License. You may obtain a copy of the License at
  *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
  *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
+ *  The Original Code was created by Dmitry Sibiryakov
+ *  for the Firebird Open Source RDBMS project.
  *
- *  The Original Code was created by Inprise Corporation
- *  and its predecessors. Portions created by Inprise Corporation are
- *  Copyright (C) Inprise Corporation.
+ *  Copyright (c) 2015 Dmitry Sibiryakov
+ *  and all contributors signed below.
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
@@ -26,73 +23,81 @@
 #include "firebird.h"
 #include "../common/classes/Hash.h"
 
-namespace Firebird
-{
+#ifdef _MSC_VER
+#include <intrin.h>
+#else
+#include <cpuid.h>
+#endif
 
-static unsigned int basicHash(const unsigned char* value, unsigned int length)
+using namespace Firebird;
+
+unsigned int CRC32C(unsigned int length, const unsigned char* value);
+
+namespace
 {
-	unsigned int hash_value = 0;
-	unsigned char* p;
-	const unsigned char* q = value;
-	while (length >= 4)
+	bool SSE4_2Supported()
 	{
-		p = (unsigned char*) &hash_value;
-		p[0] += q[0];
-		p[1] += q[1];
-		p[2] += q[2];
-		p[3] += q[3];
-		length -= 4;
-		q += 4;
-	}
-	p = (unsigned char*) &hash_value;
-    if (length >= 2)
-    {
-		p[0] += q[0];
-		p[1] += q[1];
-        length -= 2;
-    }
-    if (length)
-    {
-		q += 2;
-        *p += *q;
-    }
-	return hash_value;
-}
-
 #if defined(_M_IX86) || defined(_M_X64) || defined(__x86_64__) || defined(__i386__)
 
 #ifdef _MSC_VER
-
-#include <intrin.h>
-#define bit_SSE4_2	(1 << 20)
-// MS VC has its own definition of __cpuid
-static bool SSE4_2Supported()
-{
-	int flags[4];
-	__cpuid(flags, 1);
-	return (flags[2] & bit_SSE4_2) != 0;
-}
-
+		const int bit_SSE4_2 = 1 << 20;
+		// MS VC has its own definition of __cpuid
+		int flags[4];
+		__cpuid(flags, 1);
+		return (flags[2] & bit_SSE4_2) != 0;
 #else
-
-#include <cpuid.h>
-// GCC - its own
-static bool SSE4_2Supported()
-{
-	unsigned int eax,ebx,ecx,edx;
-	__cpuid(1, eax, ebx, ecx, edx);
-	return (ecx & bit_SSE4_2) != 0;
-}
-
+		// GCC - its own
+		unsigned int eax,ebx,ecx,edx;
+		__cpuid(1, eax, ebx, ecx, edx);
+		return (ecx & bit_SSE4_2) != 0;
 #endif
 
-unsigned int CRC32C(const unsigned char* value, unsigned int length);
-
-someHashFunc someHash = SSE4_2Supported()?CRC32C:basicHash;
 #else
-someHashFunc someHash = basicHash;
-#endif // Architecture check
+		return false;
+#endif // architecture check
+	}
 
-const char* hashName = someHash == CRC32C? "CRC32C": "Basic";
+	unsigned int basicHash(unsigned int length, const UCHAR* value)
+	{
+		unsigned int hash_value = 0;
 
-} // namespace
+		UCHAR* p;
+		const UCHAR* q = value;
+
+		while (length >= 4)
+		{
+			p = (UCHAR*) &hash_value;
+			p[0] += q[0];
+			p[1] += q[1];
+			p[2] += q[2];
+			p[3] += q[3];
+			length -= 4;
+			q += 4;
+		}
+
+		p = (UCHAR*) &hash_value;
+
+		if (length >= 2)
+		{
+			p[0] += q[0];
+			p[1] += q[1];
+			length -= 2;
+		}
+
+		if (length)
+		{
+			q += 2;
+			*p += *q;
+		}
+
+		return hash_value;
+	}
+
+	typedef unsigned int (*hashFunc)(unsigned int length, const UCHAR* value);
+	hashFunc internalHash = SSE4_2Supported() ? CRC32C : basicHash;
+}
+
+unsigned int InternalHash::hash(unsigned int length, const UCHAR* value)
+{
+	return internalHash(length, value);
+}

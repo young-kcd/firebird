@@ -2109,7 +2109,9 @@ lbl* LockManager::find_lock(USHORT series,
 
 	// See if the lock already exists
 
-	const USHORT hash_slot = *slot = (USHORT) Firebird::hash(value, length, m_sharedMemory->getHeader()->lhb_hash_slots);
+	const USHORT hash_slot = *slot =
+		(USHORT) InternalHash::hash(length, value, m_sharedMemory->getHeader()->lhb_hash_slots);
+
 	ASSERT_ACQUIRED;
 	srq* const hash_header = &m_sharedMemory->getHeader()->lhb_hash[hash_slot];
 

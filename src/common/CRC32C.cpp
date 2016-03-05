@@ -32,38 +32,37 @@
 #if defined(_M_IX86) || defined(_M_X64) || defined(__x86_64__) || defined(__i386__)
 
 #include <nmmintrin.h>
-#include "../common/classes/Hash.h"
 
-namespace Firebird
-{
-unsigned int CRC32C(const unsigned char* value, unsigned int length)
+unsigned int CRC32C(unsigned int length, const unsigned char* value)
 {
 	unsigned int hash_value = 0;
+
 	if (length == 1)
-	{
 		return _mm_crc32_u8(hash_value, *value);
-	}
+
 	if (length == 2)
-	{
-		return _mm_crc32_u16(hash_value, *(unsigned short*)value);
-	}
+		return _mm_crc32_u16(hash_value, *(unsigned short*) value);
+
 	while (length >= 4)
 	{
-		hash_value = _mm_crc32_u32(hash_value, *(unsigned int*)value);
+		hash_value = _mm_crc32_u32(hash_value, *(unsigned int*) value);
 		value += 4;
 		length -= 4;
 	}
+
 	if (length >= 2)
 	{
-		hash_value = _mm_crc32_u16(hash_value, *(unsigned short*)value);
+		hash_value = _mm_crc32_u16(hash_value, *(unsigned short*) value);
 		length -= 2;
 	}
+
 	if (length)
 	{
 		value += 2;
 		hash_value = _mm_crc32_u8(hash_value, *value);
 	}
+
 	return hash_value;
 }
-} // namespace
+
 #endif // architecture check

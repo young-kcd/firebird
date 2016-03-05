@@ -146,7 +146,7 @@ private:
 };
 
 class Map;
-typedef Hash<Map, DEFAULT_HASH_SIZE, Map, DefaultKeyValue<Map>, Map> MapHash;
+typedef HashTable<Map, DEFAULT_HASH_SIZE, Map, DefaultKeyValue<Map>, Map> MapHash;
 
 class Map : public MapHash::Entry, public GlobalStorage
 {

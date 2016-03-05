@@ -151,7 +151,7 @@ using namespace Firebird;
 
 namespace Jrd {
 
-typedef Hash<
+typedef HashTable<
 	DeferredWork,
 	DEFAULT_HASH_SIZE,
 	DeferredWork,
@@ -309,7 +309,7 @@ public:
 
 class DfwSavePoint;
 
-typedef Hash<
+typedef HashTable<
 	DfwSavePoint,
 	DEFAULT_HASH_SIZE,
 	SLONG,

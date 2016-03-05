@@ -183,7 +183,7 @@ namespace
 	struct DbName;
 #ifdef HAVE_ID_BY_NAME
 	struct Id;
-	typedef Hash<Id, 127, UCharBuffer, BinHash<Id>, BinHash<Id> > IdHash;
+	typedef HashTable<Id, 127, UCharBuffer, BinHash<Id>, BinHash<Id> > IdHash;
 
 	struct Id : public IdHash::Entry
 	{
@@ -206,7 +206,7 @@ namespace
 	};
 #endif
 
-	typedef Hash<DbName, 127, PathName, PathHash<DbName>, PathHash<DbName> > DbHash;
+	typedef HashTable<DbName, 127, PathName, PathHash<DbName>, PathHash<DbName> > DbHash;
 	struct DbName : public DbHash::Entry
 	{
 		DbName(MemoryPool& p, const PathName& db)
@@ -234,7 +234,7 @@ namespace
 	};
 
 	struct AliasName;
-	typedef Hash<AliasName, 251, PathName, PathHash<AliasName>, PathHash<AliasName> > AliasHash;
+	typedef HashTable<AliasName, 251, PathName, PathHash<AliasName>, PathHash<AliasName> > AliasHash;
 
 	struct AliasName : public AliasHash::Entry
 	{

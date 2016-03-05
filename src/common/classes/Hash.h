@@ -41,7 +41,7 @@ namespace Firebird
 			size_t sum = 0;
 			size_t val;
 
-			const char* data = static_cast<const char*>(value);
+			const UCHAR* data = static_cast<const UCHAR*>(value);
 
 			while (length >= sizeof(size_t))
 			{
@@ -72,7 +72,6 @@ namespace Firebird
 		{
 			return hash(&value, sizeof value, hashSize);
 		}
-
 	};
 
 	const FB_SIZE_T DEFAULT_HASH_SIZE = 97;			// largest prime number < 100
@@ -82,7 +81,7 @@ namespace Firebird
 			  typename K = C,						// default key
 			  typename KeyOfValue = DefaultKeyValue<C>,	// default keygen
 			  typename F = DefaultHash<K> >			// hash function definition
-	class Hash
+	class HashTable
 	{
 	public:
 		// This class is supposed to be used as a BASE class for class to be hashed
@@ -156,22 +155,22 @@ namespace Firebird
 		}; // class Entry
 
 	private:
-		Hash(const Hash&);	// not implemented
+		HashTable(const HashTable&);	// not implemented
 
 	public:
-		explicit Hash(MemoryPool&)
+		explicit HashTable(MemoryPool&)
 			: duplicates(false)
 		{
 			clean();
 		}
 
-		Hash()
+		HashTable()
 			: duplicates(false)
 		{
 			clean();
 		}
 
-		~Hash()
+		~HashTable()
 		{
 			// by default we let hash entries be cleaned by someone else
 			cleanup(NULL);
@@ -255,7 +254,7 @@ namespace Firebird
 
 	private:
 		// disable use of default operator=
-		Hash& operator= (const Hash&);
+		HashTable& operator= (const HashTable&);
 
 		void clean()
 		{
@@ -266,7 +265,7 @@ namespace Firebird
 		class iterator
 		{
 		private:
-			const Hash* hash;
+			const HashTable* hash;
 			FB_SIZE_T elem;
 			Entry* current;
 
@@ -286,7 +285,7 @@ namespace Firebird
 			}
 
 		public:
-			explicit iterator(const Hash& h)
+			explicit iterator(const HashTable& h)
 				: hash(&h), elem(0), current(hash->data[elem])
 			{
 				next();
@@ -329,17 +328,18 @@ namespace Firebird
 				return !(*this == h);
 			}
 		}; // class iterator
-	}; // class Hash
+	}; // class HashTable
 
-typedef unsigned int (*someHashFunc)(const unsigned char* value, unsigned int length);
+	class InternalHash
+	{
+	public:
+		static unsigned int hash(unsigned int length, const UCHAR* value);
 
-extern someHashFunc someHash;
-extern const char* hashName;
-
-inline unsigned int hash(const void* value, unsigned int length, unsigned int hashSize)
-{
-	return someHash((const unsigned char*)value, length) % hashSize;
-}
+		static unsigned int hash(unsigned int length, const UCHAR* value, unsigned int hashSize)
+		{
+			return hash(length, value) % hashSize;
+		}
+	};
 
 } // namespace Firebird
 

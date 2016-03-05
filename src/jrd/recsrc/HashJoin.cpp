@@ -270,7 +270,8 @@ public:
 			 ULONG keyLength, const KeyBuffer* keyBuffer,
 			 ULONG offset, ULONG position)
 	{
-		const unsigned int slot = hash(keyBuffer->begin() + offset, keyLength, m_tableSize);
+		const unsigned int slot =
+			InternalHash::hash(keyLength, keyBuffer->begin() + offset, m_tableSize);
 
 		fb_assert(stream < m_streamCount);
 		fb_assert(slot < m_tableSize);
@@ -288,7 +289,7 @@ public:
 
 	bool setup(ULONG length, const UCHAR* data)
 	{
-		const unsigned int slot = hash(data, length, m_tableSize);
+		const unsigned int slot = InternalHash::hash(length, data, m_tableSize);
 
 		for (size_t i = 0; i < m_streamCount; i++)
 		{
