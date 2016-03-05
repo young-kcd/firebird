@@ -1,3 +1,20 @@
+ 2016-03-04 09:00  paul_reeves 
+   M builds/install/arch-specific/win32/BuildExecutableInstall.bat
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+   M builds/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+   M builds/install/arch-specific/win32/ba/Instalacija_ProcitajMe.txt
+   M builds/install/arch-specific/win32/fr/installation_lisezmoi.txt
+   M builds/install/arch-specific/win32/installation_readme.txt
+   M builds/install/arch-specific/win32/ru/installation_readme.txt
+   A builds/win32/msvc10/VCCRT_Shared_Body.wxi
+   A builds/win32/msvc10/VCCRT_Shared_Header.wxi
+   A builds/win32/msvc10/VCCRT_Win32.wxi
+   A builds/win32/msvc10/VCCRT_Win32.wxs
+   A builds/win32/msvc10/VCCRT_x64.wxi
+   A builds/win32/msvc10/VCCRT_x64.wxs
+Sync recent windows installer changes for fb3 into trunk
+
  2016-03-03 22:52  asfernandes 
    M examples/dbcrypt/CryptKeyHolder.cpp
    M src/common/call_service.cpp
