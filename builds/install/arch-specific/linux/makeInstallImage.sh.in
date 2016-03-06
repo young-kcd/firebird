@@ -37,7 +37,7 @@ fi
 BuildRootDir=..
 BuiltFBDir=Release/firebird  # Where the just build fb exists.
 TargetDir=buildroot    # Where we want to build the install image
-SecurityDatabase=security3.fdb
+SecurityDatabase=security4.fdb
 
 
 #------------------------------------------------------------------------

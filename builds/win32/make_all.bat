@@ -73,7 +73,7 @@ findstr /V "@UDF_COMMENT@" %FB_ROOT_PATH%\builds\install\misc\firebird.conf.in >
 @copy %FB_ROOT_PATH%\builds\install\misc\IDPLicense.txt %FB_OUTPUT_DIR% >nul
 
 :: DATABASES
-@copy %FB_GEN_DIR%\dbs\security3.FDB %FB_OUTPUT_DIR%\security3.fdb >nul
+@copy %FB_GEN_DIR%\dbs\security4.FDB %FB_OUTPUT_DIR%\security4.fdb >nul
 @copy %FB_GEN_DIR%\dbs\HELP.fdb %FB_OUTPUT_DIR%\help\help.fdb >nul
 
 :: DOCS

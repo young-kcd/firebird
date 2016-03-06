@@ -772,7 +772,7 @@
 #
 # Type: string (pathname)
 #
-#SecurityDatabase = $(dir_secDb)/security3.fdb
+#SecurityDatabase = $(dir_secDb)/security4.fdb
 
 
 # ==============================
