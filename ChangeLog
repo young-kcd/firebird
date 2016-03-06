@@ -1,3 +1,44 @@
+ 2016-03-05 17:40  dimitr 
+   M src/common/CRC32C.cpp
+   M src/common/classes/Hash.cpp
+   M src/common/classes/Hash.h
+   M src/common/db_alias.cpp
+   M src/jrd/Mapping.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/lck.cpp
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/lock/lock.cpp
+Misc refactoring:
+1) Renamed Hash class to HashTable
+2) Reversed data/length arguments
+3) Moved hash() routine to its own class/namespace
+4) Fixed the license text
+
+ 2016-03-05 13:03  aafemt 
+   M src/common/config/config.h
+Correction
+
+ 2016-03-05 12:28  aafemt 
+   M builds/posix/make.rules
+   M builds/posix/prefix.linux
+   M builds/posix/prefix.linux_amd64
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/common.vcxproj.filters
+   M builds/win32/msvc12/common.vcxproj
+   M builds/win32/msvc12/common.vcxproj.filters
+   A src/common/CRC32C.cpp
+   A src/common/classes/Hash.cpp
+   M src/common/classes/Hash.h
+   M src/jrd/lck.cpp
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/lock/lock.cpp
+   M src/lock/print.cpp
+Optimized hash function for lock manager and hash join
+
+ 2016-03-05 03:39  asfernandes 
+   M src/gpre/c_cxx.cpp
+Make the generated code compatible with gcc 6 in C++-14 mode.
+
  2016-03-04 09:00  paul_reeves 
    M builds/install/arch-specific/win32/BuildExecutableInstall.bat
    M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
