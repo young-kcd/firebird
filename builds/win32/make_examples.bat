@@ -22,15 +22,12 @@
 
 @echo.
 @echo Building %FB_OBJ_DIR%
-if "%VS_VER%"=="msvc6" (
-    @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2 examples_%FB_TARGET_PLATFORM%.log empbuild intlbld
-) else (
-    @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3_Examples empbuild_%FB_TARGET_PLATFORM%.log empbuild
-    @if defined FB2_INTLEMP (
-      @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3_Examples intlbuild_%FB_TARGET_PLATFORM%.log intlbuild
-    )
-    @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3_Examples udrcpp_example_%FB_TARGET_PLATFORM%.log udrcpp_example
+@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\FirebirdExamples empbuild_%FB_TARGET_PLATFORM%.log empbuild
+@if defined FB2_INTLEMP (
+  @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\FirebirdExamples intlbuild_%FB_TARGET_PLATFORM%.log intlbuild
 )
+@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\FirebirdExamples udrcpp_example_%FB_TARGET_PLATFORM%.log udrcpp_example
+
 @echo.
 @call :MOVE
 @call :BUILD_EMPLOYEE
