@@ -1,3 +1,241 @@
+ 2016-03-06 08:32  dimitr 
+   M autogen.sh
+   M builds/install/arch-specific/linux/makeInstallImage.sh.in
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+   M builds/install/misc/databases.conf.in
+   M builds/install/misc/firebird.conf.in
+   M builds/install/posix-common/posixLibrary.sh.in
+   M builds/posix/Makefile.in
+   M builds/posix/make.defaults
+   M builds/win32/make_all.bat
+   M builds/win32/make_boot.bat
+   M configure.ac
+   M src/CMakeLists.txt
+   M src/common/config/config.cpp
+Renamed security3.fdb -> security4.fdb.
+
+ 2016-03-06 08:17  dimitr 
+   M builds/win32/make_all.bat
+   M builds/win32/make_boot.bat
+   M builds/win32/make_examples.bat
+   A builds/win32/msvc10/Firebird.sln (from /firebird/trunk/builds/win32/msvc10/Firebird3.sln:63050)
+   D builds/win32/msvc10/Firebird3.sln
+   D builds/win32/msvc10/Firebird3Boot.sln
+   D builds/win32/msvc10/Firebird3_Examples.sln
+   A builds/win32/msvc10/FirebirdBoot.sln (from /firebird/trunk/builds/win32/msvc10/Firebird3Boot.sln:63033)
+   A builds/win32/msvc10/FirebirdCommon.props (from /firebird/trunk/builds/win32/msvc10/firebird2.props:63033)
+   A builds/win32/msvc10/FirebirdDebug.props (from /firebird/trunk/builds/win32/msvc10/firebird2debug.props:63033)
+   A builds/win32/msvc10/FirebirdExamples.sln (from /firebird/trunk/builds/win32/msvc10/Firebird3_Examples.sln:63033)
+   A builds/win32/msvc10/FirebirdRelease.props (from /firebird/trunk/builds/win32/msvc10/firebird2release.props:63033)
+   M builds/win32/msvc10/alice.vcxproj
+   M builds/win32/msvc10/btyacc.vcxproj
+   M builds/win32/msvc10/build_msg.vcxproj
+   M builds/win32/msvc10/burp.vcxproj
+   M builds/win32/msvc10/codes.vcxproj
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/empbuild.vcxproj
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/fb2control.vcxproj
+   M builds/win32/msvc10/fb_lock_print.vcxproj
+   M builds/win32/msvc10/fbguard.vcxproj
+   M builds/win32/msvc10/fbrmclib.vcxproj
+   M builds/win32/msvc10/fbserver.vcxproj
+   M builds/win32/msvc10/fbsvcmgr.vcxproj
+   M builds/win32/msvc10/fbtrace.vcxproj
+   M builds/win32/msvc10/fbtracemgr.vcxproj
+   M builds/win32/msvc10/fbudf.vcxproj
+   D builds/win32/msvc10/firebird2.props
+   D builds/win32/msvc10/firebird2debug.props
+   D builds/win32/msvc10/firebird2release.props
+   M builds/win32/msvc10/gbak.vcxproj
+   M builds/win32/msvc10/gfix.vcxproj
+   M builds/win32/msvc10/gpre.vcxproj
+   M builds/win32/msvc10/gpre_boot.vcxproj
+   M builds/win32/msvc10/gpre_common.vcxproj
+   M builds/win32/msvc10/gsec.vcxproj
+   M builds/win32/msvc10/gsplit.vcxproj
+   M builds/win32/msvc10/gstat.vcxproj
+   M builds/win32/msvc10/ib_udf.vcxproj
+   M builds/win32/msvc10/ib_util.vcxproj
+   M builds/win32/msvc10/instclient.vcxproj
+   M builds/win32/msvc10/instreg.vcxproj
+   M builds/win32/msvc10/instsvc.vcxproj
+   M builds/win32/msvc10/intl.vcxproj
+   M builds/win32/msvc10/intlbuild.vcxproj
+   M builds/win32/msvc10/isql.vcxproj
+   M builds/win32/msvc10/legacy_auth.vcxproj
+   M builds/win32/msvc10/legacy_usermanager.vcxproj
+   M builds/win32/msvc10/nbackup.vcxproj
+   M builds/win32/msvc10/qli.vcxproj
+   M builds/win32/msvc10/remote.vcxproj
+   M builds/win32/msvc10/srp.vcxproj
+   M builds/win32/msvc10/udr_engine.vcxproj
+   M builds/win32/msvc10/udrcpp_example.vcxproj
+   M builds/win32/msvc10/yvalve.vcxproj
+   A builds/win32/msvc12/Firebird.sln (from /firebird/trunk/builds/win32/msvc12/Firebird3.sln:63033)
+   D builds/win32/msvc12/Firebird3.sln
+   D builds/win32/msvc12/Firebird3Boot.sln
+   D builds/win32/msvc12/Firebird3_Examples.sln
+   A builds/win32/msvc12/FirebirdBoot.sln (from /firebird/trunk/builds/win32/msvc12/Firebird3Boot.sln:63033)
+   A builds/win32/msvc12/FirebirdCommon.props (from /firebird/trunk/builds/win32/msvc12/firebird2.props:63033)
+   A builds/win32/msvc12/FirebirdDebug.props (from /firebird/trunk/builds/win32/msvc12/firebird2debug.props:63033)
+   A builds/win32/msvc12/FirebirdExamples.sln (from /firebird/trunk/builds/win32/msvc12/Firebird3_Examples.sln:63033)
+   A builds/win32/msvc12/FirebirdRelease.props (from /firebird/trunk/builds/win32/msvc12/firebird2release.props:63033)
+   M builds/win32/msvc12/alice.vcxproj
+   M builds/win32/msvc12/btyacc.vcxproj
+   M builds/win32/msvc12/build_msg.vcxproj
+   M builds/win32/msvc12/burp.vcxproj
+   M builds/win32/msvc12/codes.vcxproj
+   M builds/win32/msvc12/common.vcxproj
+   M builds/win32/msvc12/empbuild.vcxproj
+   M builds/win32/msvc12/engine.vcxproj
+   M builds/win32/msvc12/fb2control.vcxproj
+   M builds/win32/msvc12/fb_lock_print.vcxproj
+   M builds/win32/msvc12/fbguard.vcxproj
+   M builds/win32/msvc12/fbrmclib.vcxproj
+   M builds/win32/msvc12/fbserver.vcxproj
+   M builds/win32/msvc12/fbsvcmgr.vcxproj
+   M builds/win32/msvc12/fbtrace.vcxproj
+   M builds/win32/msvc12/fbtracemgr.vcxproj
+   M builds/win32/msvc12/fbudf.vcxproj
+   D builds/win32/msvc12/firebird2.props
+   D builds/win32/msvc12/firebird2debug.props
+   D builds/win32/msvc12/firebird2release.props
+   M builds/win32/msvc12/gbak.vcxproj
+   M builds/win32/msvc12/gfix.vcxproj
+   M builds/win32/msvc12/gpre.vcxproj
+   M builds/win32/msvc12/gpre_boot.vcxproj
+   M builds/win32/msvc12/gpre_common.vcxproj
+   M builds/win32/msvc12/gsec.vcxproj
+   M builds/win32/msvc12/gsplit.vcxproj
+   M builds/win32/msvc12/gstat.vcxproj
+   M builds/win32/msvc12/ib_udf.vcxproj
+   M builds/win32/msvc12/ib_util.vcxproj
+   M builds/win32/msvc12/instclient.vcxproj
+   M builds/win32/msvc12/instreg.vcxproj
+   M builds/win32/msvc12/instsvc.vcxproj
+   M builds/win32/msvc12/intl.vcxproj
+   M builds/win32/msvc12/intlbuild.vcxproj
+   M builds/win32/msvc12/isql.vcxproj
+   M builds/win32/msvc12/legacy_auth.vcxproj
+   M builds/win32/msvc12/legacy_usermanager.vcxproj
+   M builds/win32/msvc12/nbackup.vcxproj
+   M builds/win32/msvc12/qli.vcxproj
+   M builds/win32/msvc12/remote.vcxproj
+   M builds/win32/msvc12/srp.vcxproj
+   M builds/win32/msvc12/udr_engine.vcxproj
+   M builds/win32/msvc12/udrcpp_example.vcxproj
+   M builds/win32/msvc12/yvalve.vcxproj
+   M builds/win32/msvc7/gds32.vcproj
+   A builds/win32/msvc8/Firebird.sln (from /firebird/trunk/builds/win32/msvc8/Firebird3.sln:63033)
+   D builds/win32/msvc8/Firebird3.sln
+   D builds/win32/msvc8/Firebird3Boot.sln
+   D builds/win32/msvc8/Firebird3_Examples.sln
+   A builds/win32/msvc8/FirebirdBoot.sln (from /firebird/trunk/builds/win32/msvc8/Firebird3Boot.sln:63033)
+   A builds/win32/msvc8/FirebirdCommon.vsprops (from /firebird/trunk/builds/win32/msvc8/firebird2.vsprops:63033)
+   A builds/win32/msvc8/FirebirdDebug.vsprops (from /firebird/trunk/builds/win32/msvc8/firebird2debug.vsprops:63033)
+   A builds/win32/msvc8/FirebirdExamples.sln (from /firebird/trunk/builds/win32/msvc8/Firebird3_Examples.sln:63033)
+   A builds/win32/msvc8/FirebirdRelease.vsprops (from /firebird/trunk/builds/win32/msvc8/firebird2release.vsprops:63033)
+   M builds/win32/msvc8/alice.vcproj
+   M builds/win32/msvc8/btyacc.vcproj
+   M builds/win32/msvc8/build_msg.vcproj
+   M builds/win32/msvc8/burp.vcproj
+   M builds/win32/msvc8/codes.vcproj
+   M builds/win32/msvc8/common.vcproj
+   M builds/win32/msvc8/empbuild.vcproj
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc8/fb2control.vcproj
+   M builds/win32/msvc8/fb_lock_print.vcproj
+   M builds/win32/msvc8/fbguard.vcproj
+   M builds/win32/msvc8/fbrmclib.vcproj
+   M builds/win32/msvc8/fbserver.vcproj
+   M builds/win32/msvc8/fbsvcmgr.vcproj
+   M builds/win32/msvc8/fbtrace.vcproj
+   M builds/win32/msvc8/fbtracemgr.vcproj
+   M builds/win32/msvc8/fbudf.vcproj
+   D builds/win32/msvc8/firebird2.vsprops
+   D builds/win32/msvc8/firebird2debug.vsprops
+   D builds/win32/msvc8/firebird2release.vsprops
+   M builds/win32/msvc8/gbak.vcproj
+   M builds/win32/msvc8/gfix.vcproj
+   M builds/win32/msvc8/gpre.vcproj
+   M builds/win32/msvc8/gpre_boot.vcproj
+   M builds/win32/msvc8/gpre_common.vcproj
+   M builds/win32/msvc8/gsec.vcproj
+   M builds/win32/msvc8/gsplit.vcproj
+   M builds/win32/msvc8/gstat.vcproj
+   M builds/win32/msvc8/ib_udf.vcproj
+   M builds/win32/msvc8/ib_util.vcproj
+   M builds/win32/msvc8/instclient.vcproj
+   M builds/win32/msvc8/instreg.vcproj
+   M builds/win32/msvc8/instsvc.vcproj
+   M builds/win32/msvc8/intl.vcproj
+   M builds/win32/msvc8/intlbuild.vcproj
+   M builds/win32/msvc8/isql.vcproj
+   M builds/win32/msvc8/legacy_usermanager.vcproj
+   M builds/win32/msvc8/nbackup.vcproj
+   M builds/win32/msvc8/qli.vcproj
+   M builds/win32/msvc8/remote.vcproj
+   M builds/win32/msvc8/srp.vcproj
+   M builds/win32/msvc8/udr_engine.vcproj
+   M builds/win32/msvc8/udrcpp_example.vcproj
+   M builds/win32/msvc8/yvalve.vcproj
+   A builds/win32/msvc9/Firebird.sln (from /firebird/trunk/builds/win32/msvc9/Firebird3.sln:63033)
+   D builds/win32/msvc9/Firebird3.sln
+   D builds/win32/msvc9/Firebird3Boot.sln
+   D builds/win32/msvc9/Firebird3_Examples.sln
+   A builds/win32/msvc9/FirebirdBoot.sln (from /firebird/trunk/builds/win32/msvc9/Firebird3Boot.sln:63033)
+   A builds/win32/msvc9/FirebirdCommon.vsprops (from /firebird/trunk/builds/win32/msvc9/firebird2.vsprops:63033)
+   A builds/win32/msvc9/FirebirdDebug.vsprops (from /firebird/trunk/builds/win32/msvc9/firebird2debug.vsprops:63033)
+   A builds/win32/msvc9/FirebirdExamples.sln (from /firebird/trunk/builds/win32/msvc9/Firebird3_Examples.sln:63033)
+   A builds/win32/msvc9/FirebirdRelease.vsprops (from /firebird/trunk/builds/win32/msvc9/firebird2release.vsprops:63033)
+   M builds/win32/msvc9/alice.vcproj
+   M builds/win32/msvc9/btyacc.vcproj
+   M builds/win32/msvc9/build_msg.vcproj
+   M builds/win32/msvc9/burp.vcproj
+   M builds/win32/msvc9/codes.vcproj
+   M builds/win32/msvc9/common.vcproj
+   M builds/win32/msvc9/empbuild.vcproj
+   M builds/win32/msvc9/engine.vcproj
+   M builds/win32/msvc9/fb2control.vcproj
+   M builds/win32/msvc9/fb_lock_print.vcproj
+   M builds/win32/msvc9/fbguard.vcproj
+   M builds/win32/msvc9/fbrmclib.vcproj
+   M builds/win32/msvc9/fbserver.vcproj
+   M builds/win32/msvc9/fbsvcmgr.vcproj
+   M builds/win32/msvc9/fbtrace.vcproj
+   M builds/win32/msvc9/fbtracemgr.vcproj
+   M builds/win32/msvc9/fbudf.vcproj
+   D builds/win32/msvc9/firebird2.vsprops
+   D builds/win32/msvc9/firebird2debug.vsprops
+   D builds/win32/msvc9/firebird2release.vsprops
+   M builds/win32/msvc9/gbak.vcproj
+   M builds/win32/msvc9/gfix.vcproj
+   M builds/win32/msvc9/gpre.vcproj
+   M builds/win32/msvc9/gpre_boot.vcproj
+   M builds/win32/msvc9/gpre_common.vcproj
+   M builds/win32/msvc9/gsec.vcproj
+   M builds/win32/msvc9/gsplit.vcproj
+   M builds/win32/msvc9/gstat.vcproj
+   M builds/win32/msvc9/ib_udf.vcproj
+   M builds/win32/msvc9/ib_util.vcproj
+   M builds/win32/msvc9/instclient.vcproj
+   M builds/win32/msvc9/instreg.vcproj
+   M builds/win32/msvc9/instsvc.vcproj
+   M builds/win32/msvc9/intl.vcproj
+   M builds/win32/msvc9/intlbuild.vcproj
+   M builds/win32/msvc9/isql.vcproj
+   M builds/win32/msvc9/legacy_usermanager.vcproj
+   M builds/win32/msvc9/nbackup.vcproj
+   M builds/win32/msvc9/qli.vcproj
+   M builds/win32/msvc9/remote.vcproj
+   M builds/win32/msvc9/srp.vcproj
+   M builds/win32/msvc9/udr_engine.vcproj
+   M builds/win32/msvc9/udrcpp_example.vcproj
+   M builds/win32/msvc9/yvalve.vcproj
+Removed filename dependencies on FB version, to avoid renaming them with the every release. Cleaned up the MSVC6 remainings.
+
  2016-03-05 17:40  dimitr 
    M src/common/CRC32C.cpp
    M src/common/classes/Hash.cpp
