@@ -55,7 +55,7 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
-    <Import Project="firebird.props" />
+    <Import Project="firebirdCommon.props" />
     <Import Project="FirebirdDebug.props" />
     <Import Project="DllNoEmbedManifest.props" />
   </ImportGroup>
