@@ -1596,6 +1596,10 @@ int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, SLONG number)
 	if (number == TRA_system_transaction)
 		return tra_committed;
 
+	const Database* dbb = tdbb->getDatabase();
+	if ((dbb->dbb_flags & DBB_read_only) && (number > trans->tra_top))
+		return tra_committed;
+
 	// Look in the transaction cache for read committed transactions
 	// fast, and the system transaction.  The system transaction can read
 	// data from active transactions.
@@ -3283,8 +3287,11 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	// of four, which puts the transaction on a byte boundary.
 
 	ULONG base = oldest & ~TRA_MASK;
+	const ULONG top = (dbb->dbb_flags & DBB_read_only) ? 
+		dbb->dbb_next_transaction : number;
 
-	const size_t length = (temp->tra_flags & TRA_read_committed) ? 0 : (number - base + TRA_MASK) / 4;
+	const size_t length = (temp->tra_flags & TRA_read_committed) || (top < oldest) ? 
+		0 : (top + 1 - base + TRA_MASK) / 4;
 
 	MemoryPool* const pool = tdbb->getDefaultPool();
 	jrd_tra* const trans = jrd_tra::create(pool, attachment, temp->tra_outer, length);
@@ -3294,7 +3301,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	trans->tra_lock_timeout = temp->tra_lock_timeout;
 	trans->tra_flags = temp->tra_flags;
 	trans->tra_number = number;
-	trans->tra_top = number;
+	trans->tra_top = top;
 	trans->tra_oldest = oldest;
 	trans->tra_oldest_active = active;
 
@@ -3343,9 +3350,9 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	// since they need to know what is currently committed.
 
 	if (trans->tra_flags & TRA_read_committed)
-		TPC_initialize_tpc(tdbb, number);
-	else
-		TRA_get_inventory(tdbb, trans->tra_transactions.begin(), base, number);
+		TPC_initialize_tpc(tdbb, top);
+	else if (top > base)
+		TRA_get_inventory(tdbb, trans->tra_transactions.begin(), base, top);
 
 	// Next task is to find the oldest active transaction on the system.  This
 	// is needed for garbage collection.  Things are made ever so slightly
@@ -3366,12 +3373,12 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	bool cleanup = !(number % TRA_ACTIVE_CLEANUP);
 	int oldest_state;
 
-	for (; active < number; active++)
+	for (; active < top; active++)
 	{
 		if (trans->tra_flags & TRA_read_committed)
 		{
 			const ULONG mask = (1 << tra_active);
-			active = TPC_find_states(tdbb, active, number, mask, oldest_state);
+			active = TPC_find_states(tdbb, active, top, mask, oldest_state);
 			if (!active)
 			{
 				active = number;
@@ -3472,15 +3479,15 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 	oldest_state = tra_committed;
 
-	for (oldest = trans->tra_oldest; oldest < number; oldest++)
+	for (oldest = trans->tra_oldest; oldest < top; oldest++)
 	{
 		if (trans->tra_flags & TRA_read_committed)
 		{
 			const ULONG mask = ~((1 << tra_committed) | (1 << tra_precommitted));
-			oldest = TPC_find_states(tdbb, trans->tra_oldest, number, mask, oldest_state);
+			oldest = TPC_find_states(tdbb, trans->tra_oldest, top, mask, oldest_state);
 			if (!oldest) 
 			{
-				oldest = number;
+				oldest = top;
 				break;
 			}
 			fb_assert(oldest_state != tra_committed && oldest_state != tra_precommitted);
@@ -3495,6 +3502,9 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 		if (oldest_state != tra_committed && oldest_state != tra_precommitted)
 			break;
 	}
+
+	if (oldest >= top && dbb->dbb_flags & DBB_read_only)
+		oldest = number;
 
 	if (--oldest > (ULONG) dbb->dbb_oldest_transaction)
 		dbb->dbb_oldest_transaction = oldest;
