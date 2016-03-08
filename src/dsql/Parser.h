@@ -258,7 +258,7 @@ private:
 	}
 
 	template <typename T>
-	void setClause(Nullable<T>& clause, const char* duplicateMsg, const T& value)
+	void setClause(BaseNullable<T>& clause, const char* duplicateMsg, const T& value)
 	{
 		checkDuplicateClause(clause, duplicateMsg);
 		clause = value;
@@ -311,7 +311,7 @@ private:
 	}
 
 	template <typename T>
-	bool isDuplicateClause(const Nullable<T>& clause)
+	bool isDuplicateClause(const BaseNullable<T>& clause)
 	{
 		return clause.specified;
 	}
