@@ -1303,7 +1303,8 @@ public:
 			  collate(p),
 			  computed(NULL),
 			  identity(false),
-			  identityStart(0)
+			  identityStart(0),
+			  notNullSpecified(false)
 		{
 		}
 
@@ -1314,6 +1315,7 @@ public:
 		NestConst<ValueSourceClause> computed;
 		bool identity;
 		SINT64 identityStart;
+		bool notNullSpecified;
 	};
 
 	struct AlterColNameClause : public Clause

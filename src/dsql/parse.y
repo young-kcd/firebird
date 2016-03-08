@@ -2199,6 +2199,7 @@ column_constraint_def($addColumnClause)
 column_constraint($addColumnClause)
 	: null_constraint
 		{
+			setClause($addColumnClause->notNullSpecified, "NOT NULL");
 			RelationNode::AddConstraintClause& constraint = $addColumnClause->constraints.add();
 			constraint.constraintType = RelationNode::AddConstraintClause::CTYPE_NOT_NULL;
 		}
