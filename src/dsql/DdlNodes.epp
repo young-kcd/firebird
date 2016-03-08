@@ -5581,9 +5581,18 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 		if (restartSpecified)
 		{
-			const SINT64 val = value.specified ?
-				value.value : (!X.RDB$INITIAL_VALUE.NULL ? X.RDB$INITIAL_VALUE : 0);
-			transaction->getGenIdCache()->put(id, val);
+			const SINT64 oldValue = !X.RDB$INITIAL_VALUE.NULL ? X.RDB$INITIAL_VALUE : 0;
+			const SINT64 newValue = value.specified ? value.value : oldValue;
+
+			transaction->getGenIdCache()->put(id, newValue);
+
+			if (newValue != oldValue)
+			{
+				MODIFY X
+					X.RDB$INITIAL_VALUE.NULL = FALSE;
+					X.RDB$INITIAL_VALUE = newValue;
+				END_MODIFY
+			}
 		}
 
 		dsc desc;
