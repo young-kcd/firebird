@@ -5611,7 +5611,8 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			if (dpb_page_buffers &&
 				(dpb_page_buffers < MIN_PAGE_BUFFERS || dpb_page_buffers > MAX_PAGE_BUFFERS))
 			{
-				ERR_post(Arg::Gds(isc_bad_dpb_content) << Arg::Gds(isc_baddpb_buffers_range));
+				ERR_post(Arg::Gds(isc_bad_dpb_content) << Arg::Gds(isc_baddpb_buffers_range) << 
+						 Arg::Num(MIN_PAGE_BUFFERS) << Arg::Num(MAX_PAGE_BUFFERS));
 			}
 			dpb_set_page_buffers = true;
 			break;
