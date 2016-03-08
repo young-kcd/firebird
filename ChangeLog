@@ -1,3 +1,7 @@
+ 2016-03-07 15:51  aafemt 
+   M builds/win32/msvc12/fbtrace.vcxproj
+Correction
+
  2016-03-06 08:32  dimitr 
    M autogen.sh
    M builds/install/arch-specific/linux/makeInstallImage.sh.in
