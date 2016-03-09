@@ -1,3 +1,11 @@
+ 2016-03-08 18:08  dimitr 
+   M src/dsql/DdlNodes.epp
+Fixed CORE-5133: "Alter sequence restart with" does not change the initial value.
+
+ 2016-03-08 17:15  hvlad 
+   M src/jrd/jrd.cpp
+Backport fix for bug CORE-5140 : Wrong error message when user tries to set number of page buffers into not supported value
+
  2016-03-04 08:54  paul_reeves 
    M builds/install/arch-specific/win32/BuildExecutableInstall.bat
    M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
