@@ -319,7 +319,7 @@ namespace Jrd {
 			if (!LCK_convert(tdbb, stateLock, CRYPT_NORMAL,
 					(flags & CRYPT_HDR_NOWAIT) ? LCK_NO_WAIT : LCK_WAIT))
 			{
-				// Failed to take state lock - swith to slow IO mode
+				// Failed to take state lock - switch to slow IO mode
 				slowIO = LCK_read_data(tdbb, stateLock);
 				fb_assert(slowIO);
 			}

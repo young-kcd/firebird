@@ -143,23 +143,26 @@ public:
 
 		if (counter < 0)
 		{
-			if ((counter % BIG_VALUE == 0) && (!flagWriteLock))
+			if (!(flagWriteLock && (thread == getThreadId())))
 			{
-				if (lockMode)
+				if ((counter % BIG_VALUE == 0) && (!flagWriteLock))
 				{
-					// Someone is waiting for write lock
-					lockCond.notifyOne();
-					barCond.wait(mutex);
+					if (lockMode)
+					{
+						// Someone is waiting for write lock
+						lockCond.notifyOne();
+						barCond.wait(mutex);
+					}
+					else
+					{
+						// Ast done
+						callWriteLockHandler(tdbb);
+						counter = 0;
+					}
 				}
 				else
-				{
-					// Ast done
-					callWriteLockHandler(tdbb);
-					counter = 0;
-				}
+					barCond.wait(mutex);
 			}
-			else if (!(flagWriteLock && (thread == getThreadId())))
-				barCond.wait(mutex);
 		}
 		++counter;
 	}
