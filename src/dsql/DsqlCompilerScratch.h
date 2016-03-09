@@ -64,6 +64,7 @@ public:
 	static const unsigned FLAG_AMBIGUOUS_STMT		= 0x1000;
 	static const unsigned FLAG_DDL					= 0x2000;
 	static const unsigned FLAG_FETCH				= 0x4000;
+	static const unsigned FLAG_VIEW_WITH_CHECK		= 0x8000;
 
 	static const unsigned MAX_NESTING = 512;
 
