@@ -8825,6 +8825,8 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 				Arg::Gds(isc_distinct_err));
 		}
 
+		dsqlScratch->flags |= DsqlCompilerScratch::FLAG_VIEW_WITH_CHECK;
+
 		createCheckTrigger(tdbb, dsqlScratch, items, PRE_MODIFY_TRIGGER);
 		createCheckTrigger(tdbb, dsqlScratch, items, PRE_STORE_TRIGGER);
 	}

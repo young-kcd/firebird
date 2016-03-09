@@ -9210,6 +9210,12 @@ string SubQueryNode::internalPrint(NodePrinter& printer) const
 
 ValueExprNode* SubQueryNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
+	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_VIEW_WITH_CHECK)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				  Arg::Gds(isc_subquery_err));
+	}
+
 	const DsqlContextStack::iterator base(*dsqlScratch->context);
 
 	RseNode* rse = PASS1_rse(dsqlScratch, dsqlRse->as<SelectExprNode>(), false);

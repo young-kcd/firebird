@@ -1674,6 +1674,12 @@ string RseBoolNode::internalPrint(NodePrinter& printer) const
 
 BoolExprNode* RseBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
+	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_VIEW_WITH_CHECK)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				  Arg::Gds(isc_subquery_err));
+	}
+
 	const DsqlContextStack::iterator base(*dsqlScratch->context);
 
 	RseBoolNode* node = FB_NEW_POOL(getPool()) RseBoolNode(getPool(), blrOp,
