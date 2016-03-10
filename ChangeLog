@@ -1,3 +1,15 @@
+ 2016-03-09 18:45  asfernandes 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-5130 - Compiler issues message about "invalid request BLR" when attempt to compile wrong DDL of view with both subquery and "WITH CHECK OPTION" in its DDL.
+
+ 2016-03-09 14:58  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+Backported fix for CORE-5144: Deadlock when database is encrypted or decrypted under high parallel load
+
  2016-03-08 18:08  dimitr 
    M src/dsql/DdlNodes.epp
 Fixed CORE-5133: "Alter sequence restart with" does not change the initial value.
