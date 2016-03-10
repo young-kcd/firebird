@@ -35,27 +35,7 @@ unsigned int CRC32C(unsigned int length, const unsigned char* value);
 
 namespace
 {
-	bool SSE4_2Supported()
-	{
-#if defined(_M_IX86) || defined(_M_X64) || defined(__x86_64__) || defined(__i386__)
-
-#ifdef _MSC_VER
-		const int bit_SSE4_2 = 1 << 20;
-		// MS VC has its own definition of __cpuid
-		int flags[4];
-		__cpuid(flags, 1);
-		return (flags[2] & bit_SSE4_2) != 0;
-#else
-		// GCC - its own
-		unsigned int eax,ebx,ecx,edx;
-		__cpuid(1, eax, ebx, ecx, edx);
-		return (ecx & bit_SSE4_2) != 0;
-#endif
-
-#else
-		return false;
-#endif // architecture check
-	}
+	typedef unsigned int (*hash_func_t)(unsigned int length, const UCHAR* value);
 
 	unsigned int basicHash(unsigned int length, const UCHAR* value)
 	{
@@ -93,8 +73,32 @@ namespace
 		return hash_value;
 	}
 
-	typedef unsigned int (*hashFunc)(unsigned int length, const UCHAR* value);
-	hashFunc internalHash = SSE4_2Supported() ? CRC32C : basicHash;
+#if defined(_M_IX86) || defined(_M_X64) || defined(__x86_64__) || defined(__i386__)
+
+	bool SSE4_2Supported()
+	{
+#ifdef _MSC_VER
+		const int bit_SSE4_2 = 1 << 20;
+		// MS VC has its own definition of __cpuid
+		int flags[4];
+		__cpuid(flags, 1);
+		return (flags[2] & bit_SSE4_2) != 0;
+#else
+		// GCC - its own
+		unsigned int eax,ebx,ecx,edx;
+		__cpuid(1, eax, ebx, ecx, edx);
+		return (ecx & bit_SSE4_2) != 0;
+#endif
+	}
+
+	hash_func_t internalHash = SSE4_2Supported() ? CRC32C : basicHash;
+
+#else	// architecture check
+
+	hash_func_t internalHash = basicHash;
+
+#endif	// architecture check
+
 }
 
 unsigned int InternalHash::hash(unsigned int length, const UCHAR* value)
