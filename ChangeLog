@@ -1,3 +1,7 @@
+ 2016-03-10 16:37  dimitr 
+   M src/common/classes/Hash.cpp
+This should fix linkage on non-Intel platforms, thanks to Dimitry Sibiryakov.
+
  2016-03-09 18:45  asfernandes 
    M src/dsql/BoolNodes.cpp
    M src/dsql/DdlNodes.epp
