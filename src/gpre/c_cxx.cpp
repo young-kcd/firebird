@@ -3595,7 +3595,7 @@ static void make_array_declaration(ref* reference)
 		break;
 
 	case dtype_boolean:
-		dtype = "UCHAR";
+		dtype = "FB_BOOLEAN";
 		break;
 
 	default:
@@ -3759,7 +3759,7 @@ static void make_port(const gpre_port* port, int column)
 			break;
 
 		case dtype_boolean:
-			dtype = "UCHAR";
+			dtype = "FB_BOOLEAN";
 			break;
 
 		default:

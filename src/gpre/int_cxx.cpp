@@ -702,7 +702,7 @@ static void make_port( const gpre_port* port, int column)
 			break;
 
 		case dtype_boolean:
-			fmtstr = "    UCHAR  jrd_%d;\t// %s ";
+			fmtstr = "    FB_BOOLEAN jrd_%d;\t// %s ";
 			break;
 
 		default:
