@@ -66,10 +66,13 @@ private:
 		}
 	};
 
+	FbSampleAtomic referenceCounter;
+
 public:
 	unsigned offset, nullOffset, length;
 
 	MyMetadata()
+		: referenceCounter(0)
 	{
 		IUtil* utl = master->getUtilInterface();
 		ThrowStatusWrapper s(master->getStatus());
@@ -86,16 +89,17 @@ public:
 		s.dispose();
 	}
 
-	// Dummy IReferenceCounted implementation
-	// JUST a SAMPLE - interface will be placed on stack, ignore reference counts !!!
-	// In real life please use your favorite atomic incr/decr here
-	// and create reference counted interfaces on heap.
 	void addRef()
-	{ }
+	{
+		++referenceCounter;
+	}
 
 	int release()
 	{
-		return 1;
+		int rc = --referenceCounter;
+		if (!rc)
+			delete this;
+		return rc;
 	}
 
 	// IMessageMetadata implementation
@@ -200,15 +204,17 @@ int main()
 	IAttachment* att = NULL;
 	ITransaction* tra = NULL;
 	IResultSet* curs = NULL;
-
-	// Instance of our metadata
-	MyMetadata meta;
-
-	// allocate output buffer
-	buffer = new unsigned char[meta.length];
+	MyMetadata* meta = NULL;
 
 	try
 	{
+		// Instance of our metadata
+		meta = new MyMetadata;
+		meta->addRef();
+
+		// allocate output buffer
+		buffer = new unsigned char[meta->length];
+
 		// attach employee db
 		att = prov->attachDatabase(&status, "employee", 0, NULL);
 
@@ -216,12 +222,12 @@ int main()
 		tra = att->startTransaction(&status, 0, NULL);
 
 		// open cursor
-		curs = att->openCursor(&status, tra, 0, "select current_user from rdb$database", 3, NULL, NULL, &meta, NULL, 0);
+		curs = att->openCursor(&status, tra, 0, "select current_user from rdb$database", 3, NULL, NULL, meta, NULL, 0);
 
 		// fetch record from cursor and print it
 		curs->fetchNext(&status, buffer);
-		ISC_SHORT l = to<ISC_SHORT>(buffer, meta.offset);
-		printf("<%*.*s>\n", l, l, buffer + meta.offset + sizeof(ISC_SHORT));
+		ISC_SHORT l = to<ISC_SHORT>(buffer, meta->offset);
+		printf("<%*.*s>\n", l, l, buffer + meta->offset + sizeof(ISC_SHORT));
 
 		// close interfaces
 		curs->close(&status);
@@ -251,9 +257,11 @@ int main()
 	if (att)
 		att->release();
 
+	// generic cleanup
+	if (meta)
+		meta->release();
 	prov->release();
 	status.dispose();
-
 	delete[] buffer;
 
 	return rc;

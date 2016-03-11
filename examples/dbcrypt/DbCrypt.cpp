@@ -24,13 +24,7 @@
  *  Contributor(s): ______________________________________.
  */
 
-#include <stdint.h>
-
-#include "ibase.h"
-#include "firebird/Interface.h"
-
-#include "firebird.h"		// Needed for atomic support
-#include "../common/classes/fb_atomic.h"
+#include "../interfaces/ifaceExamples.h"
 
 using namespace Firebird;
 
@@ -131,9 +125,9 @@ public:
 private:
 	IPluginConfig* config;
 	char savedKeyName[32];
-	UCHAR key;
+	ISC_UCHAR key;
 
-	AtomicCounter refCounter;
+	FbSampleAtomic refCounter;
 	IReferenceCounted* owner;
 
 	void noKeyError(CheckStatusWrapper* status);
@@ -169,8 +163,8 @@ void DbCrypt::encrypt(CheckStatusWrapper* status, unsigned int length, const voi
 		return;
 	}
 
-	const UCHAR* f = static_cast<const UCHAR*>(from);
-	UCHAR* t = static_cast<UCHAR*>(to);
+	const ISC_UCHAR* f = static_cast<const ISC_UCHAR*>(from);
+	ISC_UCHAR* t = static_cast<ISC_UCHAR*>(to);
 
 	while (length--)
 	{
@@ -188,8 +182,8 @@ void DbCrypt::decrypt(CheckStatusWrapper* status, unsigned int length, const voi
 		return;
 	}
 
-	const UCHAR* f = static_cast<const UCHAR*>(from);
-	UCHAR* t = static_cast<UCHAR*>(to);
+	const ISC_UCHAR* f = static_cast<const ISC_UCHAR*>(from);
+	ISC_UCHAR* t = static_cast<ISC_UCHAR*>(to);
 
 	while (length--)
 	{

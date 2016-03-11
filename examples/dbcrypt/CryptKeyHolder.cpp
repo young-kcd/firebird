@@ -24,18 +24,7 @@
  *  Contributor(s): ______________________________________.
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdint.h>
-
-#include "ibase.h"
-#include "firebird/Interface.h"
-
-#include "firebird.h"		// Needed for atomic support
-#include "../common/classes/fb_atomic.h"
-
-
-using namespace Firebird;
+#include "../interfaces/ifaceExamples.h"
 
 namespace
 {
@@ -129,7 +118,7 @@ public:
 		return owner;
 	}
 
-	UCHAR getKey()
+	ISC_UCHAR getKey()
 	{
 		return key;
 	}
@@ -144,7 +133,7 @@ private:
 
 		unsigned int callback(unsigned int, const void*, unsigned int length, void* buffer)
 		{
-			UCHAR k = holder->getKey();
+			ISC_UCHAR k = holder->getKey();
 			if (!k)
 			{
 				return 0;
@@ -164,7 +153,7 @@ private:
 	class NamedCallback : public ICryptKeyCallbackImpl<NamedCallback, CheckStatusWrapper>
 	{
 	public:
-		NamedCallback(NamedCallback* n, const char* nm, UCHAR k)
+		NamedCallback(NamedCallback* n, const char* nm, ISC_UCHAR k)
 			: next(n), key(k)
 		{
 			strncpy(name, nm, sizeof(name));
@@ -184,16 +173,16 @@ private:
 
 		char name[32];
 		NamedCallback* next;
-		UCHAR key;
+		ISC_UCHAR key;
 	};
 
 	CallbackInterface callbackInterface;
 	NamedCallback *named;
 
 	IPluginConfig* config;
-	UCHAR key;
+	ISC_UCHAR key;
 
-	AtomicCounter refCounter;
+	FbSampleAtomic refCounter;
 	IReferenceCounted* owner;
 
 	IConfigEntry* getEntry(CheckStatusWrapper* status, const char* entryName);
@@ -265,7 +254,7 @@ ICryptKeyCallback* CryptKeyHolder::keyHandle(CheckStatusWrapper* status, const c
 		confEntry->release();
 		if (k > 0 && k < 256)
 		{
-			named = new NamedCallback(named, keyName, static_cast<UCHAR>(k));
+			named = new NamedCallback(named, keyName, static_cast<ISC_UCHAR>(k));
 			return named;
 		}
 	}

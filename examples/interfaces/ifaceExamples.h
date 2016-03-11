@@ -28,7 +28,22 @@
 #include <stdio.h>
 #include <string.h>
 
+#if defined(__cplusplus) && (__cplusplus >= 201103L)
+#include <atomic>
+typedef std::atomic_int FbSampleAtomic;
+#else
+typedef int FbSampleAtomic;
+#endif
+
 #include <ibase.h>
 #include <firebird/Interface.h>
+
+#if defined(_WIN32)
+#define FB_DLL_EXPORT __declspec(dllexport)
+#elif defined(__APPLE__)
+#define FB_DLL_EXPORT __attribute__((visibility("default")))
+#else
+#define FB_DLL_EXPORT
+#endif
 
 using namespace Firebird;
