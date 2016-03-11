@@ -24,13 +24,7 @@
  *  Contributor(s): ______________________________________.
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdint.h>
-
-#include <ibase.h>
-#include <firebird/Interface.h>
+#include "../interfaces/ifaceExamples.h"
 
 using namespace Firebird;
 
