@@ -1,3 +1,7 @@
+ 2016-03-10 17:23  alexpeshkoff 
+   M doc/Using_OO_API.html
+Work in progress
+
  2016-03-09 18:45  asfernandes 
    M src/dsql/BoolNodes.cpp
    M src/dsql/DdlNodes.epp
