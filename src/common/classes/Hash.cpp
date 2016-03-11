@@ -84,6 +84,10 @@ namespace
 		__cpuid(flags, 1);
 		return (flags[2] & bit_SSE4_2) != 0;
 #else
+#if defined(__clang__) && !defined(bit_SSE4_2)
+		const int bit_SSE4_2 = bit_SSE42;
+#endif
+
 		// GCC - its own
 		unsigned int eax,ebx,ecx,edx;
 		__cpuid(1, eax, ebx, ecx, edx);
