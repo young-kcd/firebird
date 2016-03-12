@@ -1,3 +1,25 @@
+ 2016-03-11 15:11  alexpeshkoff 
+   M examples/dbcrypt/CryptApplication.cpp
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M examples/dbcrypt/DbCrypt.cpp
+   M examples/interfaces/05.user_metadata.cpp
+   M examples/interfaces/ifaceExamples.h
+Fixed CORE-5134: Samples of dbcrypt-related plugins contain references to internal files
+
+ 2016-03-11 14:10  aafemt 
+   M src/gpre/c_cxx.cpp
+   M src/gpre/int_cxx.cpp
+   M src/gpre/obj_cxx.cpp
+Use public datatype FB_BOOLEAN for preprocessed files. Thanks to Dmitry Yemanov
+
+ 2016-03-11 08:50  dimitr 
+   M src/dsql/ExprNodes.h
+Fixed CORE-5149: LEFT JOIN incorrectly pushes COALESCE into the inner stream causing wrong results.
+
+ 2016-03-11 00:58  asfernandes 
+   M src/common/classes/Hash.cpp
+Fix for clang.
+
  2016-03-10 16:37  dimitr 
    M src/common/classes/Hash.cpp
 This should fix linkage on non-Intel platforms, thanks to Dimitry Sibiryakov.
