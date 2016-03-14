@@ -1784,11 +1784,11 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 				// Only set committed (or limbo) records in the bitmap. If there
 				// is a backversion then at least one of the record versions is
 				// committed. If there's no backversion then check transaction
-				// state of the lone primary record version.
+				// state of the lone primary record version. Unless it is already deleted.
 
 				if (header->rhd_b_page)
 					RBM_SET(vdr_tdbb->getDefaultPool(), &vdr_rel_records, number.getValue());
-				else
+				else if ((header->rhd_flags & rhd_deleted) == 0)
 				{
 					const TraNumber transaction = Ods::getTraNum(header);
 
