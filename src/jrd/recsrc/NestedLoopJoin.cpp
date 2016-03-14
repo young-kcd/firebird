@@ -35,8 +35,7 @@ using namespace Jrd;
 // ------------------------------
 
 NestedLoopJoin::NestedLoopJoin(CompilerScratch* csb, FB_SIZE_T count, RecordSource* const* args)
-	: m_outerJoin(false), m_semiJoin(false), m_antiJoin(false), m_args(csb->csb_pool),
-	  m_boolean(NULL)
+	: m_joinType(INNER_JOIN), m_args(csb->csb_pool), m_boolean(NULL)
 {
 	m_impure = CMP_impure(csb, sizeof(Impure));
 
@@ -47,9 +46,8 @@ NestedLoopJoin::NestedLoopJoin(CompilerScratch* csb, FB_SIZE_T count, RecordSour
 }
 
 NestedLoopJoin::NestedLoopJoin(CompilerScratch* csb, RecordSource* outer, RecordSource* inner,
-							   BoolExprNode* boolean, bool semiJoin, bool antiJoin)
-	: m_outerJoin(true), m_semiJoin(semiJoin), m_antiJoin(antiJoin), m_args(csb->csb_pool),
-	  m_boolean(boolean)
+							   BoolExprNode* boolean, JoinType joinType)
+	: m_joinType(joinType), m_args(csb->csb_pool), m_boolean(boolean)
 {
 	fb_assert(outer && inner);
 
@@ -95,7 +93,29 @@ bool NestedLoopJoin::getRecord(thread_db* tdbb) const
 	if (!(impure->irsb_flags & irsb_open))
 		return false;
 
-	if (m_outerJoin)
+	if (m_joinType == INNER_JOIN)
+	{
+		if (impure->irsb_flags & irsb_first)
+		{
+			for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
+			{
+				m_args[i]->open(tdbb);
+
+				if (!fetchRecord(tdbb, i))
+					return false;
+			}
+
+			impure->irsb_flags &= ~irsb_first;
+		}
+		// hvlad: self referenced members are removed from recursive SELECT's
+		// in recursive CTE (it is done in dsql\pass1.cpp). If there are no other
+		// members in such SELECT then rsb_count will be zero. Handle it.
+		else if (m_args.isEmpty())
+			return false;
+		else if (!fetchRecord(tdbb, m_args.getCount() - 1))
+			return false;
+	}
+	else
 	{
 		fb_assert(m_args.getCount() == 2);
 
@@ -127,14 +147,14 @@ bool NestedLoopJoin::getRecord(thread_db* tdbb) const
 				inner->open(tdbb);
 			}
 
-			if (m_semiJoin)
+			if (m_joinType == SEMI_JOIN)
 			{
 				if (inner->getRecord(tdbb))
 					impure->irsb_flags &= ~irsb_joined;
 				else
 					impure->irsb_flags |= irsb_joined;
 			}
-			else if (m_antiJoin)
+			else if (m_joinType == ANTI_JOIN)
 			{
 				if (inner->getRecord(tdbb))
 					impure->irsb_flags |= irsb_joined;
@@ -162,28 +182,6 @@ bool NestedLoopJoin::getRecord(thread_db* tdbb) const
 			}
 		}
 	}
-	else
-	{
-		if (impure->irsb_flags & irsb_first)
-		{
-			for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
-			{
-				m_args[i]->open(tdbb);
-
-				if (!fetchRecord(tdbb, i))
-					return false;
-			}
-
-			impure->irsb_flags &= ~irsb_first;
-		}
-		// hvlad: self referenced members are removed from recursive SELECT's
-		// in recursive CTE (it is done in dsql\pass1.cpp). If there are no other
-		// members in such SELECT then rsb_count will be zero. Handle it.
-		else if (m_args.isEmpty())
-			return false;
-		else if (!fetchRecord(tdbb, m_args.getCount() - 1))
-			return false;
-	}
 
 	return true;
 }
@@ -206,7 +204,29 @@ void NestedLoopJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigne
 		if (detailed)
 		{
 			plan += printIndent(++level) + "Nested Loop Join ";
-			plan += m_semiJoin ? "(semi)" : m_antiJoin ? "(anti)" : m_outerJoin ? "(outer)" : "(inner)";
+
+			switch (m_joinType)
+			{
+				case INNER_JOIN:
+					plan += "(inner)";
+					break;
+
+				case OUTER_JOIN:
+					plan += "(outer)";
+					break;
+
+				case SEMI_JOIN:
+					plan += "(semi)";
+					break;
+
+				case ANTI_JOIN:
+					plan += "(anti)";
+					break;
+
+				default:
+					fb_assert(false);
+			}
+
 			for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 				m_args[i]->print(tdbb, plan, true, level);
 		}
@@ -252,6 +272,8 @@ void NestedLoopJoin::nullRecords(thread_db* tdbb) const
 
 bool NestedLoopJoin::fetchRecord(thread_db* tdbb, FB_SIZE_T n) const
 {
+	fb_assert(m_joinType == INNER_JOIN);
+
 	const RecordSource* const arg = m_args[n];
 
 	if (arg->getRecord(tdbb))
