@@ -5831,7 +5831,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 						// It is very important to not release port_que_sync before
 						// port_sync, else we can miss data arrived at time between
 						// releasing locks and will never handle it. Therefore we
-						// can't ise MutexLockGuard here
+						// can't use MutexLockGuard here
 						portQueGuard.enter();
 						if (port->haveRecvData())
 						{
