@@ -1,3 +1,13 @@
+ 2016-03-14 09:11  aafemt 
+   M src/jrd/validation.cpp
+Fix false positive index missing entries on already deleted records
+
+ 2016-03-14 09:02  dimitr 
+   M src/jrd/opt.cpp
+   M src/jrd/recsrc/NestedLoopJoin.cpp
+   M src/jrd/recsrc/RecordSource.h
+Misc changes.
+
  2016-03-11 15:11  alexpeshkoff 
    M examples/dbcrypt/CryptApplication.cpp
    M examples/dbcrypt/CryptKeyHolder.cpp
