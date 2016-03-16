@@ -1,3 +1,7 @@
+ 2016-03-15 10:42  hvlad 
+   M src/remote/server/server.cpp
+Fixed "bug" CORE-5139 : mistake in comment "can't ise MutexLockGuard here"
+
  2016-03-14 09:11  aafemt 
    M src/jrd/validation.cpp
 Fix false positive index missing entries on already deleted records
