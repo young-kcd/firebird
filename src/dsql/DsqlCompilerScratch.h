@@ -129,6 +129,11 @@ protected:
 	}
 
 public:
+#ifdef DSQL_DEBUG
+	static void dumpContextStack(const DsqlContextStack* stack);
+#endif
+
+public:
 	virtual bool isVersion4()
 	{
 		return statement->getBlrVersion() == 4;
