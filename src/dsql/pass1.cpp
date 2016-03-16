@@ -287,6 +287,10 @@ static dsql_nod* pass1_rse_is_recursive(CompiledStatement*, dsql_nod*);
 static dsql_nod* pass1_recursive_cte(CompiledStatement*, dsql_nod*);
 static dsql_nod* process_returning(CompiledStatement*, dsql_nod*);
 
+#ifdef DSQL_DEBUG
+static void dump_context_stack(const DsqlContextStack* stack);
+#endif
+
 // CVC: more global variables???
 static const dsql_str* global_temp_collation_name = NULL;
 
@@ -10950,6 +10954,26 @@ static void trace_line(const char* message, ...)
 	va_end(params);
 	buffer[sizeof(buffer) - 1] = 0;
 	gds__trace_raw(buffer);
+}
+
+static void dump_context_stack(const DsqlContextStack* stack)
+{
+	printf("Context dump\n");
+	printf("------------\n");
+
+	for (DsqlContextStack::const_iterator i(*stack); i.hasData(); ++i)
+	{
+		const dsql_ctx* context = i.object();
+
+		printf("scope: %2d; number: %2d; system: %d; returning: %d; alias: %-*.*s; "
+			   "internal alias: %-*.*s\n",
+			context->ctx_scope_level,
+			context->ctx_context,
+			(context->ctx_flags & CTX_system) != 0,
+			(context->ctx_flags & CTX_returning) != 0,
+			(int) MAX_SQL_IDENTIFIER_SIZE, (int) MAX_SQL_IDENTIFIER_SIZE, context->ctx_alias,
+			(int) MAX_SQL_IDENTIFIER_SIZE, (int) MAX_SQL_IDENTIFIER_SIZE, context->ctx_internal_alias);
+	}
 }
 
 /**
