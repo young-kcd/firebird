@@ -915,8 +915,7 @@ public:
 		  verboseInterval(10000),
 		  flag_on_line(true),
 		  firstMap(true),
-		  stdIoMode(false),
-		  unicodeCollation(*getDefaultMemoryPool())
+		  stdIoMode(false)
 	{
 		// this is VERY dirty hack to keep current behaviour
 		memset (&gbl_database_file_name, 0,
@@ -1089,7 +1088,7 @@ public:
 	bool flag_on_line;		// indicates whether we will bring the database on-line
 	bool firstMap;			// this is the first time we entered get_mapping()
 	bool stdIoMode;			// stdin or stdout is used as backup file
-	UnicodeCollationHolder unicodeCollation;
+	Firebird::AutoPtr<UnicodeCollationHolder> unicodeCollation;
 	Firebird::AutoPtr<Firebird::SimilarToMatcher<UCHAR, Jrd::UpcaseConverter<> > > skipDataMatcher;
 
 public:
