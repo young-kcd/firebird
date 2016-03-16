@@ -36,6 +36,26 @@ using namespace Firebird;
 using namespace Jrd;
 
 
+#ifdef DSQL_DEBUG
+void DsqlCompilerScratch::dumpContextStack(const DsqlContextStack* stack)
+{
+	for (DsqlContextStack::const_iterator i(*stack); i.hasData(); ++i)
+	{
+		const dsql_ctx* context = i.object();
+
+		printf("scope: %2d; number: %2d; system: %d; returning: %d; alias: %-*.*s; "
+			   "internal alias: %-*.*s\n",
+			context->ctx_scope_level,
+			context->ctx_context,
+			(context->ctx_flags & CTX_system) != 0,
+			(context->ctx_flags & CTX_returning) != 0,
+			MAX_SQL_IDENTIFIER_SIZE, MAX_SQL_IDENTIFIER_SIZE, context->ctx_alias.c_str(),
+			MAX_SQL_IDENTIFIER_SIZE, MAX_SQL_IDENTIFIER_SIZE, context->ctx_internal_alias.c_str());
+	}
+}
+#endif
+
+
 // Write out field data type.
 // Taking special care to declare international text.
 void DsqlCompilerScratch::putDtype(const TypeClause* field, bool useSubType)
