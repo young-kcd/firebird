@@ -2499,7 +2499,7 @@ static processing_state blobedit(const TEXT* action, const TEXT* const* cmd)
 
 	// Find the high and low values of the blob id
 	ISC_QUAD blobid;
-	sscanf(p, "%"xLONGFORMAT":%"xLONGFORMAT, &blobid.gds_quad_high, &blobid.gds_quad_low);
+	sscanf(p, "%" xLONGFORMAT":%" xLONGFORMAT, &blobid.gds_quad_high, &blobid.gds_quad_low);
 
 	// If it isn't an explicit blobedit, then do a dump. Since this is a
 	// user operation, put it on the M__trans handle.
@@ -3807,7 +3807,7 @@ static void do_isql()
 
 	M__trans = 0;
 
-#if defined(_MSC_VER) && _MSC_VER >= 1400
+#if defined(_MSC_VER) && _MSC_VER >= 1400 && _MSC_VER < 1900
 	_set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
 
@@ -6988,7 +6988,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 			// Print blob-ids only here
 
 			blobid = var->value.blobid;
-			sprintf(blobbuf, "%"xLONGFORMAT":%"xLONGFORMAT, blobid->gds_quad_high,
+			sprintf(blobbuf, "%" xLONGFORMAT":%" xLONGFORMAT, blobid->gds_quad_high,
 					blobid->gds_quad_low);
 			sprintf(p, "%*s ", MAX(17, length), blobbuf);
 			break;
@@ -6998,7 +6998,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 			// Print blob-ids only here
 
 			blobid = var->value.blobid;
-			sprintf(blobbuf, "%"xLONGFORMAT":%"xLONGFORMAT, blobid->gds_quad_high,
+			sprintf(blobbuf, "%" xLONGFORMAT":%" xLONGFORMAT, blobid->gds_quad_high,
 					blobid->gds_quad_low);
 			sprintf(p, "%*s ", MAX(17, length), blobbuf);
 			if (setValues.List)
@@ -7229,7 +7229,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 
 			if (isqlGlob.SQL_dialect > SQL_DIALECT_V5)
 			{
-				sprintf(d, "%4.4d-%2.2d-%2.2d %2.2d:%2.2d:%2.2d.%4.4"ULONGFORMAT,
+				sprintf(d, "%4.4d-%2.2d-%2.2d %2.2d:%2.2d:%2.2d.%4.4" ULONGFORMAT,
 						times.tm_year + 1900, (times.tm_mon + 1),
 						times.tm_mday, times.tm_hour, times.tm_min,
 						times.tm_sec,
@@ -7238,7 +7238,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 			else
 			{
 				if (setValues.Time_display)
-					sprintf(d, "%2d-%s-%4d %2.2d:%2.2d:%2.2d.%4.4"ULONGFORMAT,
+					sprintf(d, "%2d-%s-%4d %2.2d:%2.2d:%2.2d.%4.4" ULONGFORMAT,
 							times.tm_mday, alpha_months[times.tm_mon],
 							times.tm_year + 1900, times.tm_hour, times.tm_min,
 							times.tm_sec,
@@ -7256,7 +7256,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 
 		case SQL_TYPE_TIME:
 			isc_decode_sql_time(var->value.asTime, &times);
-			sprintf(d, "%2.2d:%2.2d:%2.2d.%4.4"ULONGFORMAT,
+			sprintf(d, "%2.2d:%2.2d:%2.2d.%4.4" ULONGFORMAT,
 					times.tm_hour, times.tm_min, times.tm_sec,
 					(*var->value.asTime) % ISC_TIME_SECONDS_PRECISION);
 			sprintf(p, "%-*.*s ", length, length, d);
@@ -7602,9 +7602,9 @@ static processing_state print_performance(const SINT64* perf_before)
 
 		Firebird::string::size_type p;
 		while ((p = diag->find('!')) != Firebird::string::npos)
-			diag->replace(p, 1, "%"SQUADFORMAT);
+			diag->replace(p, 1, "%" SQUADFORMAT);
 		while ((p = diag->find('~')) != Firebird::string::npos)
-			diag->replace(p, 1, "%"SQUADFORMAT".%.3"SQUADFORMAT);
+			diag->replace(p, 1, "%" SQUADFORMAT".%.3" SQUADFORMAT);
 
 		have_report = true;
 	}
@@ -7633,8 +7633,8 @@ static processing_state print_performance(const SINT64* perf_before)
 
 	IsqlStatist iStat(perf_before, perf_after);
 
-	// counters: "%"SQUADFORMAT
-	// time: "%"SQUADFORMAT".%.3"SQUADFORMAT
+	// counters: "%" SQUADFORMAT
+	// time: "%" SQUADFORMAT".%.3" SQUADFORMAT
 	IUTILS_printf2(Diag, diag->c_str(), iStat.curMem, iStat.deltaMem, iStat.maxMem,
 		iStat.realTime / 1000, iStat.realTime % 1000,
 #ifndef WIN_NT

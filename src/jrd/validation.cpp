@@ -809,45 +809,45 @@ namespace Jrd
 
 const Validation::MSG_ENTRY Validation::vdr_msg_table[VAL_MAX_ERROR] =
 {
-	{true, isc_info_page_errors,	"Page %"ULONGFORMAT" wrong type (expected %s encountered %s)"},	// 0
-	{true, isc_info_page_errors,	"Checksum error on page %"ULONGFORMAT},
-	{true, isc_info_page_errors,	"Page %"ULONGFORMAT" doubly allocated"},
-	{true, isc_info_page_errors,	"Page %"ULONGFORMAT" is used but marked free"},
-	{false, fb_info_page_warns,		"Page %"ULONGFORMAT" is an orphan"},
-	{false, fb_info_bpage_warns,	"Blob %"SQUADFORMAT" appears inconsistent"},	// 5
-	{true, isc_info_bpage_errors,	"Blob %"SQUADFORMAT" is corrupt"},
-	{true, isc_info_bpage_errors,	"Blob %"SQUADFORMAT" is truncated"},
-	{true, isc_info_record_errors,	"Chain for record %"SQUADFORMAT" is broken"},
-	{true, isc_info_dpage_errors,	"Data page %"ULONGFORMAT" {sequence %"ULONGFORMAT"} is confused"},
-	{true, isc_info_dpage_errors,	"Data page %"ULONGFORMAT" {sequence %"ULONGFORMAT"}, line %"ULONGFORMAT" is bad"},	// 10
-	{true, isc_info_ipage_errors,	"Index %d is corrupt on page %"ULONGFORMAT" level %d at offset %"ULONGFORMAT". File: %s, line: %d\n\t"},
-	{true, isc_info_ppage_errors,	"Pointer page {sequence %"ULONGFORMAT"} lost"},
-	{true, isc_info_ppage_errors,	"Pointer page %"ULONGFORMAT" {sequence %"ULONGFORMAT"} inconsistent"},
-	{true, isc_info_record_errors,	"Record %"SQUADFORMAT" is marked as damaged"},
-	{true, isc_info_record_errors,	"Record %"SQUADFORMAT" has bad transaction %"ULONGFORMAT},	// 15
-	{true, isc_info_record_errors,	"Fragmented record %"SQUADFORMAT" is corrupt"},
-	{true, isc_info_record_errors,	"Record %"SQUADFORMAT" is wrong length"},
+	{true, isc_info_page_errors,	"Page %" ULONGFORMAT" wrong type (expected %s encountered %s)"},	// 0
+	{true, isc_info_page_errors,	"Checksum error on page %" ULONGFORMAT},
+	{true, isc_info_page_errors,	"Page %" ULONGFORMAT" doubly allocated"},
+	{true, isc_info_page_errors,	"Page %" ULONGFORMAT" is used but marked free"},
+	{false, fb_info_page_warns,		"Page %" ULONGFORMAT" is an orphan"},
+	{false, fb_info_bpage_warns,	"Blob %" SQUADFORMAT" appears inconsistent"},	// 5
+	{true, isc_info_bpage_errors,	"Blob %" SQUADFORMAT" is corrupt"},
+	{true, isc_info_bpage_errors,	"Blob %" SQUADFORMAT" is truncated"},
+	{true, isc_info_record_errors,	"Chain for record %" SQUADFORMAT" is broken"},
+	{true, isc_info_dpage_errors,	"Data page %" ULONGFORMAT" {sequence %" ULONGFORMAT"} is confused"},
+	{true, isc_info_dpage_errors,	"Data page %" ULONGFORMAT" {sequence %" ULONGFORMAT"}, line %" ULONGFORMAT" is bad"},	// 10
+	{true, isc_info_ipage_errors,	"Index %d is corrupt on page %" ULONGFORMAT" level %d at offset %" ULONGFORMAT". File: %s, line: %d\n\t"},
+	{true, isc_info_ppage_errors,	"Pointer page {sequence %" ULONGFORMAT"} lost"},
+	{true, isc_info_ppage_errors,	"Pointer page %" ULONGFORMAT" {sequence %" ULONGFORMAT"} inconsistent"},
+	{true, isc_info_record_errors,	"Record %" SQUADFORMAT" is marked as damaged"},
+	{true, isc_info_record_errors,	"Record %" SQUADFORMAT" has bad transaction %" ULONGFORMAT},	// 15
+	{true, isc_info_record_errors,	"Fragmented record %" SQUADFORMAT" is corrupt"},
+	{true, isc_info_record_errors,	"Record %" SQUADFORMAT" is wrong length"},
 	{true, isc_info_ipage_errors,	"Missing index root page"},
 	{true, isc_info_tpage_errors,	"Transaction inventory pages lost"},
-	{true, isc_info_tpage_errors,	"Transaction inventory page lost, sequence %"ULONGFORMAT},	// 20
-	{true, isc_info_tpage_errors,	"Transaction inventory pages confused, sequence %"ULONGFORMAT},
-	{false, fb_info_record_warns,	"Relation has %"UQUADFORMAT" orphan backversions {%"UQUADFORMAT" in use}"},
-	{true, isc_info_ipage_errors,	"Index %d is corrupt {missing entries for record %"SQUADFORMAT"}"},
-	{false, fb_info_ipage_warns,	"Index %d has orphan child page at page %"ULONGFORMAT},
-	{true, isc_info_ipage_errors,	"Index %d has a circular reference at page %"ULONGFORMAT},	// 25
-	{true, isc_info_page_errors,	"SCN's page %"ULONGFORMAT" {sequence %"ULONGFORMAT"} inconsistent"},
-	{false, fb_info_page_warns,		"Page %"ULONGFORMAT" has SCN %"ULONGFORMAT" while at SCN's page it is %"ULONGFORMAT},
-	{true, isc_info_bpage_errors,	"Blob %"SQUADFORMAT" has unknown level %d instead of {0, 1, 2}"},
-	{false, fb_info_ipage_warns,	"Index %d has inconsistent left sibling pointer, page %"ULONGFORMAT" level %d at offset %"ULONGFORMAT},
-	{false, fb_info_ipage_warns,	"Index %d misses node on page %"ULONGFORMAT" level %d at offset %"ULONGFORMAT},	// 30
-	{false, fb_info_pip_warns,		"PIP %"ULONGFORMAT" (seq %d) have wrong pip_min (%"ULONGFORMAT"). Correct is %"ULONGFORMAT},
-	{false, fb_info_pip_warns,		"PIP %"ULONGFORMAT" (seq %d) have wrong pip_extent (%"ULONGFORMAT"). Correct is %"ULONGFORMAT},
-	{false, fb_info_pip_warns,		"PIP %"ULONGFORMAT" (seq %d) have wrong pip_used (%"ULONGFORMAT"). Correct is %"ULONGFORMAT},
-	{false, fb_info_ppage_warns,	"Pointer page %"ULONGFORMAT" {sequence %"ULONGFORMAT"} bits {0x%02X %s} are not consistent with data page %"ULONGFORMAT" {sequence %"ULONGFORMAT"} state {0x%02X %s}"},
-	{true, fb_info_pip_errors,		"Data page %"ULONGFORMAT" marked as free in PIP (%"ULONGFORMAT":%"ULONGFORMAT")"},
-	{true, isc_info_ppage_errors,	"Data page %"ULONGFORMAT" is not in PP (%"ULONGFORMAT"). Slot (%d) is not found"},
-	{true, isc_info_ppage_errors,	"Data page %"ULONGFORMAT" is not in PP (%"ULONGFORMAT"). Slot (%d) has value %"ULONGFORMAT},
-	{true, isc_info_ppage_errors,	"Pointer page is not found for data page %"ULONGFORMAT". dpg_sequence (%"ULONGFORMAT") is invalid"}
+	{true, isc_info_tpage_errors,	"Transaction inventory page lost, sequence %" ULONGFORMAT},	// 20
+	{true, isc_info_tpage_errors,	"Transaction inventory pages confused, sequence %" ULONGFORMAT},
+	{false, fb_info_record_warns,	"Relation has %" UQUADFORMAT" orphan backversions {%" UQUADFORMAT" in use}"},
+	{true, isc_info_ipage_errors,	"Index %d is corrupt {missing entries for record %" SQUADFORMAT"}"},
+	{false, fb_info_ipage_warns,	"Index %d has orphan child page at page %" ULONGFORMAT},
+	{true, isc_info_ipage_errors,	"Index %d has a circular reference at page %" ULONGFORMAT},	// 25
+	{true, isc_info_page_errors,	"SCN's page %" ULONGFORMAT" {sequence %" ULONGFORMAT"} inconsistent"},
+	{false, fb_info_page_warns,		"Page %" ULONGFORMAT" has SCN %" ULONGFORMAT" while at SCN's page it is %" ULONGFORMAT},
+	{true, isc_info_bpage_errors,	"Blob %" SQUADFORMAT" has unknown level %d instead of {0, 1, 2}"},
+	{false, fb_info_ipage_warns,	"Index %d has inconsistent left sibling pointer, page %" ULONGFORMAT" level %d at offset %" ULONGFORMAT},
+	{false, fb_info_ipage_warns,	"Index %d misses node on page %" ULONGFORMAT" level %d at offset %" ULONGFORMAT},	// 30
+	{false, fb_info_pip_warns,		"PIP %" ULONGFORMAT" (seq %d) have wrong pip_min (%" ULONGFORMAT"). Correct is %" ULONGFORMAT},
+	{false, fb_info_pip_warns,		"PIP %" ULONGFORMAT" (seq %d) have wrong pip_extent (%" ULONGFORMAT"). Correct is %" ULONGFORMAT},
+	{false, fb_info_pip_warns,		"PIP %" ULONGFORMAT" (seq %d) have wrong pip_used (%" ULONGFORMAT"). Correct is %" ULONGFORMAT},
+	{false, fb_info_ppage_warns,	"Pointer page %" ULONGFORMAT" {sequence %" ULONGFORMAT"} bits {0x%02X %s} are not consistent with data page %" ULONGFORMAT" {sequence %" ULONGFORMAT"} state {0x%02X %s}"},
+	{true, fb_info_pip_errors,		"Data page %" ULONGFORMAT" marked as free in PIP (%" ULONGFORMAT":%" ULONGFORMAT")"},
+	{true, isc_info_ppage_errors,	"Data page %" ULONGFORMAT" is not in PP (%" ULONGFORMAT"). Slot (%d) is not found"},
+	{true, isc_info_ppage_errors,	"Data page %" ULONGFORMAT" is not in PP (%" ULONGFORMAT"). Slot (%d) has value %" ULONGFORMAT},
+	{true, isc_info_ppage_errors,	"Pointer page is not found for data page %" ULONGFORMAT". dpg_sequence (%" ULONGFORMAT") is invalid"}
 };
 
 Validation::Validation(thread_db* tdbb, UtilSvc* uSvc) :
@@ -1411,7 +1411,7 @@ static void print_rhd(USHORT length, const rhd* header)
  **************************************/
 	if (VAL_debug_level)
 	{
-		fprintf(stdout, "rhd: len %d TX %"SQUADFORMAT" format %d ",
+		fprintf(stdout, "rhd: len %d TX %" SQUADFORMAT" format %d ",
 				   length, Ods::getTraNum(header), (int) header->rhd_format);
 		fprintf(stdout, "BP %d/%d flags 0x%x ",
 				   header->rhd_b_page, header->rhd_b_line, header->rhd_flags);

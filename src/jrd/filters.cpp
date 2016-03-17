@@ -1110,7 +1110,7 @@ ISC_STATUS filter_trans(USHORT action, BlobControl* control)
 				break;
 
 			case TDR_TRANSACTION_ID:
-				sprintf(out, "    Transaction id: %"SQUADFORMAT, isc_portable_integer(p, length));
+				sprintf(out, "    Transaction id: %" SQUADFORMAT, isc_portable_integer(p, length));
 				break;
 
 			default:
