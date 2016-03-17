@@ -39,6 +39,9 @@ using namespace Jrd;
 #ifdef DSQL_DEBUG
 void DsqlCompilerScratch::dumpContextStack(const DsqlContextStack* stack)
 {
+	printf("Context dump\n");
+	printf("------------\n");
+
 	for (DsqlContextStack::const_iterator i(*stack); i.hasData(); ++i)
 	{
 		const dsql_ctx* context = i.object();
