@@ -838,7 +838,7 @@ static void gen_based(const act* action)
 		break;
 
 	case dtype_text:
-		fprintf(gpreGlob.out_file, "%sCHARACTER*%"SLONGFORMAT"%s", COLUMN,
+		fprintf(gpreGlob.out_file, "%sCHARACTER*%" SLONGFORMAT"%s", COLUMN,
 				(based_on->bas_flags & BAS_segment) ? length : ((field->fld_array_info) ?
 					field->fld_array->fld_length : field->fld_length),
 				COLUMN);
@@ -881,9 +881,9 @@ static void gen_based(const act* action)
 				 dimension = dimension->dim_next)
 			{
 				if (dimension->dim_lower != 1)
-					fprintf(gpreGlob.out_file, "%"SLONGFORMAT":", dimension->dim_lower);
+					fprintf(gpreGlob.out_file, "%" SLONGFORMAT":", dimension->dim_lower);
 
-				fprintf(gpreGlob.out_file, "%"SLONGFORMAT, dimension->dim_upper);
+				fprintf(gpreGlob.out_file, "%" SLONGFORMAT, dimension->dim_upper);
 				if (dimension->dim_next)
 					fprintf(gpreGlob.out_file, ", ");
 			}
@@ -1202,14 +1202,14 @@ static void gen_create_database(const act* action)
 
 	if (request->req_length || request->req_flags & REQ_extend_dpb)
 		sprintf(output_buffer,
-				"%sCALL ISC_CREATE_DATABASE (%s, %s%"SIZEFORMAT"%s, %s'%s'%s, %s, %s%s%s, %s, 0)\n",
+				"%sCALL ISC_CREATE_DATABASE (%s, %s%" SIZEFORMAT"%s, %s'%s'%s, %s, %s%s%s, %s, 0)\n",
 				COLUMN,
 				status_vector(),
 				I2CONST_1, strlen(db->dbb_filename), I2CONST_2,
 				REF_1, db->dbb_filename, REF_2,
 				db->dbb_name->sym_string, I2CONST_1, s1, I2CONST_2, s2);
 	else
-		sprintf(output_buffer, "%sCALL ISC_CREATE_DATABASE (%s, %s%"SIZEFORMAT"%s, %s'%s'%s, %s, %s0%s, 0, 0)\n",
+		sprintf(output_buffer, "%sCALL ISC_CREATE_DATABASE (%s, %s%" SIZEFORMAT"%s, %s'%s'%s, %s, %s0%s, 0, 0)\n",
 				COLUMN,
 				status_vector(),
 				I2CONST_1, strlen(db->dbb_filename), I2CONST_2,
@@ -1599,7 +1599,7 @@ static void gen_drop_database(const act* action)
 {
 	const gpre_dbb* db = (gpre_dbb*) action->act_object;
 
-	sprintf(output_buffer, "%s CALL ISC_DROP_DATABASE (%s, %s%"SIZEFORMAT"%s, %s\'%s\'%s, RDB_K_DB_TYPE_GDS)\n",
+	sprintf(output_buffer, "%s CALL ISC_DROP_DATABASE (%s, %s%" SIZEFORMAT"%s, %s\'%s\'%s, RDB_K_DB_TYPE_GDS)\n",
 			COLUMN,
 			status_vector(),
 			I2_1, strlen(db->dbb_filename), I2_2,
@@ -2690,9 +2690,9 @@ static void gen_raw(const UCHAR* blr, req_t request_type, int request_length, in
 			}
 		}
 		if (blr_length)
-			sprintf(p, "%"SLONGFORMAT",", blr_hunk.longword_blr);
+			sprintf(p, "%" SLONGFORMAT",", blr_hunk.longword_blr);
 		else
-			sprintf(p, "%"SLONGFORMAT, blr_hunk.longword_blr);
+			sprintf(p, "%" SLONGFORMAT, blr_hunk.longword_blr);
 		while (*p)
 			p++;
 		if (p - buffer > 50)
@@ -3457,9 +3457,9 @@ static void gen_tpb_data(const tpb* tpb_buffer)
 				break;
 		}
 		if (length)
-			sprintf(p, "%"SLONGFORMAT",", tpb_hunk.longword_tpb);
+			sprintf(p, "%" SLONGFORMAT",", tpb_hunk.longword_tpb);
 		else
-			sprintf(p, "%"SLONGFORMAT"/\n", tpb_hunk.longword_tpb);
+			sprintf(p, "%" SLONGFORMAT"/\n", tpb_hunk.longword_tpb);
 		p += 12; // ???
 	}
 
@@ -3655,9 +3655,9 @@ static void make_array_declaration( const ref* reference)
 		dimension = dimension->dim_next)
 	{
 		if (dimension->dim_lower != 1)
-			fprintf(gpreGlob.out_file, "%"SLONGFORMAT":", dimension->dim_lower);
+			fprintf(gpreGlob.out_file, "%" SLONGFORMAT":", dimension->dim_lower);
 
-		fprintf(gpreGlob.out_file, "%"SLONGFORMAT, dimension->dim_upper);
+		fprintf(gpreGlob.out_file, "%" SLONGFORMAT, dimension->dim_upper);
 		if (dimension->dim_next)
 			fprintf(gpreGlob.out_file, ", ");
 	}

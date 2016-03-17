@@ -740,7 +740,7 @@ void NBackup::pr_error(const ISC_STATUS* status, const char* operation)
 	fprintf(stderr, "[\n");
 	printMsg(23, SafeArg() << operation); // PROBLEM ON "%s".
 	isc_print_status(status);
-	fprintf(stderr, "SQLCODE:%"SLONGFORMAT"\n", isc_sqlcode(status));
+	fprintf(stderr, "SQLCODE:%" SLONGFORMAT"\n", isc_sqlcode(status));
 	fprintf(stderr, "]\n");
 
 	m_printed = true;

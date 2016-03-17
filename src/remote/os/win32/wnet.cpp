@@ -364,7 +364,7 @@ rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag, Firebird::
 		GetModuleFileName(NULL, name, sizeof(name));
 
 		string cmdLine;
-		cmdLine.printf("%s -w -h %"HANDLEFORMAT"@%"ULONGFORMAT, name, port->port_pipe, GetCurrentProcessId());
+		cmdLine.printf("%s -w -h %" HANDLEFORMAT"@%" ULONGFORMAT, name, port->port_pipe, GetCurrentProcessId());
 
 		STARTUPINFO start_crud;
 		PROCESS_INFORMATION pi;

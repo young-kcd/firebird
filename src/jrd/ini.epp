@@ -1100,7 +1100,7 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 								ByteChunk(acl, acl_length));
 
 	Firebird::MetaName security_class;
-	security_class.printf("%s%"SQUADFORMAT, SQL_SECCLASS_PREFIX,
+	security_class.printf("%s%" SQUADFORMAT, SQL_SECCLASS_PREFIX,
 		DPM_gen_id(tdbb, MET_lookup_generator(tdbb, SQL_SECCLASS_GENERATOR), false, 1));
 
 	AutoRequest handle;
