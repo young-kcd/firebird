@@ -3574,11 +3574,11 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 
 		dsqlScratch->loopLevel = 0;
 		dsqlScratch->cursorNumber = 0;
-		dsqlScratch->scopeLevel++;
 
 		StmtNode* stmtNode = body->dsqlPass(dsqlScratch);
 		GEN_hidden_variables(dsqlScratch);
 
+		dsqlScratch->scopeLevel++;
 		// dimitr: I see no reason to deny EXIT command in triggers,
 		// hence I've added zero label at the beginning.
 		// My first suspicion regarding an obvious conflict

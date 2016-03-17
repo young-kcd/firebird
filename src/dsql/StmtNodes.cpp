@@ -135,8 +135,7 @@ namespace
 			  oldContext(aOldContext),
 			  oldAlias(oldContext->ctx_alias),
 			  oldInternalAlias(oldContext->ctx_internal_alias),
-			  autoFlags(&oldContext->ctx_flags, oldContext->ctx_flags | CTX_system | CTX_returning),
-			  autoScopeLevel(&aScratch->scopeLevel, aScratch->scopeLevel + 1)
+			  autoFlags(&oldContext->ctx_flags, oldContext->ctx_flags | CTX_system | CTX_returning)
 		{
 			// Clone the modify/old context and push with name "NEW" in a greater scope level.
 
@@ -166,7 +165,6 @@ namespace
 
 			newContext->ctx_alias = newContext->ctx_internal_alias = NEW_CONTEXT_NAME;
 			newContext->ctx_flags |= CTX_returning;
-			newContext->ctx_scope_level = scratch->scopeLevel;
 			scratch->context->push(newContext);
 		}
 
@@ -221,7 +219,6 @@ namespace
 		dsql_ctx* oldContext;
 		string oldAlias, oldInternalAlias;
 		AutoSetRestore<USHORT> autoFlags;
-		AutoSetRestore<USHORT> autoScopeLevel;
 	};
 }	// namespace
 
