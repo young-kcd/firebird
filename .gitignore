@@ -2,3 +2,12 @@ temp/
 gen/
 output_Win32/
 output_x64/
+m4/
+autom4te.cache/
+Makefile
+aclocal.m4
+*.patch
+config.status
+configure
+libtool
+*.log
