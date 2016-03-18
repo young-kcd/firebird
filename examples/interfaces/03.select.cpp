@@ -70,7 +70,7 @@ int main()
 		// prepare statement
 		stmt = att->prepare(&status, tra, 0, "select last_name, first_name, phone_ext from phone_list "
 										"where location = 'Monterey' order by last_name, first_name",
-			3, IStatement::PREPARE_PREFETCH_METADATA);
+			SAMPLES_DIALECT, IStatement::PREPARE_PREFETCH_METADATA);
 
 		// get list of columns
 		meta = stmt->getOutputMetadata(&status);

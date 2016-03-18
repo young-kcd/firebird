@@ -95,7 +95,7 @@ int main()
 		tra = att->startTransaction(&status, 0, NULL);
 
 		// create table
-		att->execute(&status, tra, 0, "create table dates_table (d1 date)", 3,
+		att->execute(&status, tra, 0, "create table dates_table (d1 date)", SAMPLES_DIALECT,
 			NULL, NULL, NULL, NULL);	// Input parameters and output data not used
 
 		// commit transaction retaining
@@ -103,7 +103,7 @@ int main()
 		printf("Table dates_table created\n");
 
 		// insert a record into dates_table
-		att->execute(&status, tra, 0, "insert into dates_table values (CURRENT_DATE)", 3,
+		att->execute(&status, tra, 0, "insert into dates_table values (CURRENT_DATE)", SAMPLES_DIALECT,
 			NULL, NULL, NULL, NULL);	// Input parameters and output data not used
 
 		// commit transaction (will close interface)
