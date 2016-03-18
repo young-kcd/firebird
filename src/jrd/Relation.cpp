@@ -102,7 +102,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool a
 
 #ifdef VIO_DEBUG
 		VIO_trace(DEBUG_WRITES,
-			"jrd_rel::getPages inst %"ULONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n",
+			"jrd_rel::getPages inst %" ULONGFORMAT", ppp %" SLONGFORMAT", irp %" SLONGFORMAT", addr 0x%x\n",
 			newPages->rel_instance_id,
 			newPages->rel_pages ? (*newPages->rel_pages)[0] : 0,
 			newPages->rel_index_root,
@@ -137,7 +137,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool a
 
 #ifdef VIO_DEBUG
 			VIO_trace(DEBUG_WRITES,
-				"jrd_rel::getPages inst %"SQUADFORMAT", irp %"SLONGFORMAT", idx %u, idx_root %"SLONGFORMAT", addr 0x%x\n",
+				"jrd_rel::getPages inst %" SQUADFORMAT", irp %" SLONGFORMAT", idx %u, idx_root %" SLONGFORMAT", addr 0x%x\n",
 				newPages->rel_instance_id,
 				newPages->rel_index_root,
 				idx->idx_id,
@@ -175,7 +175,7 @@ bool jrd_rel::delPages(thread_db* tdbb, TraNumber tran, RelationPages* aPages)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"jrd_rel::delPages inst %"ULONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n",
+		"jrd_rel::delPages inst %" ULONGFORMAT", ppp %" SLONGFORMAT", irp %" SLONGFORMAT", addr 0x%x\n",
 		pages->rel_instance_id,
 		pages->rel_pages ? (*pages->rel_pages)[0] : 0,
 		pages->rel_index_root,

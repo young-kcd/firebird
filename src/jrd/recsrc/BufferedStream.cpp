@@ -304,7 +304,7 @@ void BufferedStream::print(thread_db* tdbb, string& plan, bool detailed, unsigne
 	if (detailed)
 	{
 		string extras;
-		extras.printf(" (record length: %"ULONGFORMAT")", m_format->fmt_length);
+		extras.printf(" (record length: %" ULONGFORMAT")", m_format->fmt_length);
 
 		plan += printIndent(++level) + "Record Buffer" + extras;
 	}

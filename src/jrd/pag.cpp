@@ -647,7 +647,7 @@ PAG PAG_allocate_pages(thread_db* tdbb, WIN* window, int cntAlloc, bool aligned)
 
 #ifdef VIO_DEBUG
 				VIO_trace(DEBUG_WRITES_INFO,
-					"\tPAG_allocate:  allocated page %"SLONGFORMAT"\n",
+					"\tPAG_allocate:  allocated page %" SLONGFORMAT"\n",
 							i + sequence * pageMgr.pagesPerPIP);
 #endif
 			}
@@ -718,7 +718,7 @@ PAG PAG_allocate_pages(thread_db* tdbb, WIN* window, int cntAlloc, bool aligned)
 
 #ifdef VIO_DEBUG
 				VIO_trace(DEBUG_WRITES_INFO,
-					"\tPAG_allocate:  allocated page %"SLONGFORMAT"\n",
+					"\tPAG_allocate:  allocated page %" SLONGFORMAT"\n",
 							bit + sequence * pageMgr.pagesPerPIP);
 #endif
 			}
@@ -1590,7 +1590,7 @@ void PAG_release_pages(thread_db* tdbb, USHORT pageSpaceID, int cntRelease,
 	{
 #ifdef VIO_DEBUG
 		VIO_trace(DEBUG_WRITES_INFO,
-			"\tPAG_release_pages:  about to release page %"SLONGFORMAT"\n", pgNums[i]);
+			"\tPAG_release_pages:  about to release page %" SLONGFORMAT"\n", pgNums[i]);
 #endif
 
 		const ULONG seq = pgNums[i] / pageMgr.pagesPerPIP;

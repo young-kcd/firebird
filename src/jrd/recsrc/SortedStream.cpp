@@ -118,7 +118,7 @@ void SortedStream::print(thread_db* tdbb, string& plan,
 	if (detailed)
 	{
 		string extras;
-		extras.printf(" (record length: %"ULONGFORMAT", key length: %"ULONGFORMAT")",
+		extras.printf(" (record length: %" ULONGFORMAT", key length: %" ULONGFORMAT")",
 					  m_map->length, m_map->keyLength);
 
 		plan += printIndent(++level) +
