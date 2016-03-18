@@ -7,7 +7,8 @@
 	<META NAME="AUTHOR" CONTENT="alex ">
 	<META NAME="CREATED" CONTENT="20130531;10003100">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
-	<META NAME="CHANGED" CONTENT="20160310;20220500">
+	<META NAME="CHANGED" CONTENT="20160317;17320200">
+	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
@@ -318,8 +319,7 @@ interface:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I><A HREF="#Statement">IStatement</A>*
 stmt = att-&gt;prepare(&amp;status, tra, 0, “UPDATE department SET
 budget = ? * budget + budget WHERE dept_no = ?”,</I></FONT></P>
-<P STYLE="margin-bottom: 0in">                        
-<FONT SIZE=4><I>SQL_DIALECT_V6,
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>SQL_DIALECT_V6,
 IStatement::PREPARE_PREFETCH_METADATA);</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>If you are not going to
 use parameters description from firebird (i.e. you can provide that
@@ -380,7 +380,7 @@ numeric fields). And finally it's time to get an instance of
 IMessageMetadata:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I><A HREF="#MessageMetadata">IMessageMetadata</A>*
 meta = builder-&gt;getMetadata(&amp;status);</I></FONT></P>
-<P STYLE="margin-bottom: 0in; font-style: normal"><BR>
+<P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in; font-style: normal"><FONT SIZE=4>Here
 we do not discuss in details own implementation of IMessageMetadata.
@@ -390,7 +390,7 @@ obtained (one or another way) an instance of metadata description of
 input parameters. But to work with a message we also need buffer for
 it. Buffer size is one of main message metadata characteristics and
 it's returned by method in IMessageMetadata:</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>buffer = new
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>char* buffer = new
 char[meta-&gt;getMessageLength(&amp;status)];</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>To deal with individual
 values inside buffer offset to them should be taken into an account.
@@ -439,6 +439,18 @@ need to use <A HREF="#Statement">IStatement</A> at all.</FONT></P>
 UPDATE with parameters is present in 02.update.cpp, you will also see
 how raised in trigger/procedure exception may be caught by C++
 program.</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>char* buffer = new
+char[meta-&gt;getMessageLength(&amp;status)];</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>IResultSet has a lot of
+various fetch methods but when cursor is not opened with SCROLL
+option only fetchNext() works, i.e. one can navigate only forward
+record by record.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <H1><FONT SIZE=4>Opening cursor and fetching data from it.</FONT></H1>
@@ -459,17 +471,31 @@ IResultSet interface:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>const char* sql =
 &quot;select * from rdb$relations where RDB$RELATION_ID &lt; 3 or
 RDB$VIEW_SOURCE is not null&quot;;</I></FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>IResultSet* curs =
-att-&gt;openCursor(&amp;status, tra, 0, sql, 3, NULL, NULL, NULL,
-NULL, 0);</I></FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>IMessageMetadata* meta
-= curs-&gt;getMetadata(&amp;status);</I></FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Later this metadata will
-be used to allocate buffer for data and parse fetched rows.</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I><A HREF="#ResultSet">IResultSet</A>*
+curs = att-&gt;openCursor(&amp;status, tra, 0, sql, SQL_DIALECT_V6,
+NULL, NULL, NULL, NULL, 0);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I><A HREF="#MessageMetadata">IMessageMetadata</A>*
+meta = curs-&gt;getMetadata(&amp;status);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Later this metadata may be
+used to allocate buffer for data and parse fetched rows.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>As an alternative one can
+first prepare statement, get metadata from prepared statement and
+after it open cursor. This is preferred way if cursor is likely to be
+opened &gt;1 times.</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><A HREF="#Statement">IStatement</A>*
+stmt = att-&gt;prepare(&amp;status, tra, 0, sql, SQL_DIALECT_V6,
+Istatement::PREPARE_PREFETCH_METADATA);</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><A HREF="#MessageMetadata">IMessageMetadata</A>*
+meta = stmt-&gt;getOutputMetadata(&amp;status);</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><A HREF="#ResultSet">IResultSet</A>*
+curs = stmt-&gt;openCursor(&amp;status, tra, NULL, NULL, NULL, 0);</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>We have obtained (one or
+another way) an instance of metadata description of output fields (a
+row in a set). To work with a message we also need buffer for it:</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
