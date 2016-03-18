@@ -222,7 +222,8 @@ int main()
 		tra = att->startTransaction(&status, 0, NULL);
 
 		// open cursor
-		curs = att->openCursor(&status, tra, 0, "select current_user from rdb$database", 3, NULL, NULL, meta, NULL, 0);
+		curs = att->openCursor(&status, tra, 0, "select current_user from rdb$database",
+			SAMPLES_DIALECT, NULL, NULL, meta, NULL, 0);
 
 		// fetch record from cursor and print it
 		curs->fetchNext(&status, buffer);

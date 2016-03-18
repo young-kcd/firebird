@@ -47,3 +47,5 @@ typedef int FbSampleAtomic;
 #endif
 
 using namespace Firebird;
+
+#define SAMPLES_DIALECT SQL_DIALECT_V6

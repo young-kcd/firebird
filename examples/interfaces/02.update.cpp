@@ -84,7 +84,7 @@ int main()
 		tra = att->startTransaction(&status, 0, NULL);
 
 		// prepare statement
-		stmt = att->prepare(&status, tra, 0, updstr, 3, 0);
+		stmt = att->prepare(&status, tra, 0, updstr, SAMPLES_DIALECT, 0);
 
 		// build metadata
 		// IMaster creates empty new metadata in builder
