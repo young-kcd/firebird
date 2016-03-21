@@ -506,6 +506,9 @@ void IDX_create_index(thread_db* tdbb,
 	if (!ifl_data.ifl_duplicates)
 		scb->sort(tdbb);
 
+	if (!ifl_data.ifl_duplicates)
+		BTR_create(tdbb, creation, selectivity);
+
 	if (ifl_data.ifl_duplicates > 0)
 	{
 		AutoPtr<Record> error_record;
@@ -527,8 +530,6 @@ void IDX_create_index(thread_db* tdbb,
 
 		context.raise(tdbb, idx_e_duplicate, error_record);
 	}
-
-	BTR_create(tdbb, creation, selectivity);
 
 	if ((relation->rel_flags & REL_temp_conn) && (relation->getPages(tdbb)->rel_instance_id != 0))
 	{
