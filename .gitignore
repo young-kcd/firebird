@@ -4,10 +4,15 @@ output_Win32/
 output_x64/
 m4/
 autom4te.cache/
+builds/install_images
 Makefile
 aclocal.m4
 *.patch
+*.diff
 config.status
 configure
 libtool
 *.log
+*.bak
+*.tmp
+src/dsql/parse.cpp
