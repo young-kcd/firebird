@@ -546,6 +546,31 @@ void IDX_create_index(
 
 	BTR_create(tdbb, relation, idx, key_length, sort_handle, selectivity);
 
+	if (ifl_data.ifl_duplicates > 0) {
+		primary.rpb_record = NULL;
+		fb_assert(ifl_data.ifl_dup_recno >= 0);
+		primary.rpb_number.setValue(ifl_data.ifl_dup_recno);
+
+		if (DPM_get(tdbb, &primary, LCK_read))
+		{
+			if (primary.rpb_flags & rpb_deleted)
+				CCH_RELEASE(tdbb, &primary.getWindow(tdbb));
+			else
+				VIO_data(tdbb, &primary, dbb->dbb_permanent);
+
+		}
+
+		string keyStr;
+		if (primary.rpb_record)
+		{
+			keyStr = BTR_print_key(tdbb, relation, idx, primary.rpb_record);
+			delete primary.rpb_record;
+		}
+
+		ERR_duplicate_error(idx_e_duplicate, relation, idx->idx_id,
+							keyStr, index_name);
+	}
+
 	if ((relation->rel_flags & REL_temp_conn) &&
 		(relation->getPages(tdbb)->rel_instance_id != 0))
 	{
