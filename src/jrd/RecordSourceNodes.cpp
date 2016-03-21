@@ -214,18 +214,6 @@ MapNode* MapNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-void MapNode::aggPostRse(thread_db* tdbb, CompilerScratch* csb)
-{
-	for (NestConst<ValueExprNode>* source = sourceList.begin();
-		 source != sourceList.end();
-		 ++source)
-	{
-		AggNode* aggNode = (*source)->as<AggNode>();
-		if (aggNode)
-			aggNode->aggPostRse(tdbb, csb);
-	}
-}
-
 
 //--------------------
 

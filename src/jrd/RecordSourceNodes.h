@@ -90,7 +90,6 @@ public:
 	MapNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	MapNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	MapNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	void aggPostRse(thread_db* tdbb, CompilerScratch* csb);
 
 public:
 	virtual Firebird::string internalPrint(NodePrinter& printer) const
