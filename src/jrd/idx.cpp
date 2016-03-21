@@ -318,6 +318,8 @@ void IDX_create_index(thread_db* tdbb,
 		SORT_init(dbb, &transaction->tra_sorts, key_length + sizeof(index_sort_record),
 				  2, 1, key_desc, callback, callback_arg);
 
+	IndexErrorContext context(relation, idx, index_name);
+
 	try {
 
 	jrd_rel* partner_relation = 0;
@@ -347,8 +349,6 @@ void IDX_create_index(thread_db* tdbb,
 			primary.rpb_org_scans = secondary.rpb_org_scans = relation->rel_scan_count++;
 		}
 	}
-
-	IndexErrorContext context(relation, idx, index_name);
 
 	// Loop thru the relation computing index keys.  If there are old versions, find them, too.
 	temporary_key key;
@@ -532,7 +532,6 @@ void IDX_create_index(thread_db* tdbb,
 				VIO_data(tdbb, &primary, dbb->dbb_permanent);
 				error_record = primary.rpb_record;
 			}
-
 		}
 
 		context.raise(tdbb, idx_e_duplicate, error_record);
@@ -547,6 +546,27 @@ void IDX_create_index(thread_db* tdbb,
 	}
 
 	BTR_create(tdbb, relation, idx, key_length, sort_handle, selectivity);
+
+	if (ifl_data.ifl_duplicates > 0)
+	{
+		AutoPtr<Record> error_record;
+		primary.rpb_record = NULL;
+		fb_assert(ifl_data.ifl_dup_recno >= 0);
+		primary.rpb_number.setValue(ifl_data.ifl_dup_recno);
+
+		if (DPM_get(tdbb, &primary, LCK_read))
+		{
+			if (primary.rpb_flags & rpb_deleted)
+				CCH_RELEASE(tdbb, &primary.getWindow(tdbb));
+			else
+			{
+				VIO_data(tdbb, &primary, dbb->dbb_permanent);
+				error_record = primary.rpb_record;
+			}
+		}
+
+		context.raise(tdbb, idx_e_duplicate, error_record);
+	}
 
 	if ((relation->rel_flags & REL_temp_conn) &&
 		(relation->getPages(tdbb)->rel_instance_id != 0))
