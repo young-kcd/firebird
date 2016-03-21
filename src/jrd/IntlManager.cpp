@@ -735,12 +735,15 @@ string IntlManager::getConfigInfo(const ConfigFile::Parameter* confObj)
 	for (FB_SIZE_T n = 0; n < all.getCount(); ++n)
 	{
 		const ConfigFile::Parameter& par = all[n];
+		const string parName = par.name.ToString();
+
+		if (parName == "filename")
+			continue;
 
 		if (configInfo.hasData())
-		{
 			configInfo.append(";");
-		}
-		configInfo.append(par.name.ToString() + "=" + par.value);
+
+		configInfo.append(parName + "=" + par.value);
 	}
 
 	return configInfo.ToString();
