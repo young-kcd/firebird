@@ -7,22 +7,20 @@
 	<META NAME="AUTHOR" CONTENT="alex ">
 	<META NAME="CREATED" CONTENT="20130531;10003100">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
-	<META NAME="CHANGED" CONTENT="20160317;17320200">
-	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
-	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
-	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
-	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
+	<META NAME="CHANGED" CONTENT="20160321;19320500">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
 	<STYLE TYPE="text/css">
 	<!--
 		@page { size: 8.5in 11in; margin: 0.79in }
-		P { margin-bottom: 0.08in }
+		TD P { margin-bottom: 0.08in; color: #000000 }
+		H1 { color: #000000 }
+		P { margin-bottom: 0.08in; color: #000000 }
 	-->
 	</STYLE>
 </HEAD>
-<BODY LANG="en-US" DIR="LTR">
+<BODY LANG="en-US" TEXT="#000000" DIR="LTR">
 <P STYLE="margin-top: 0.17in; margin-bottom: 0.2in; page-break-after: avoid">
-<FONT FACE="Albany, sans-serif"><FONT SIZE=4>Firebird interfaces.</FONT></FONT></P>
+<FONT FACE="Albany, sans-serif"><FONT SIZE=5>Firebird interfaces.</FONT></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Firebird's OO API is based
 on use of interfaces. That interfaces, though looking in some aspects
 like OLE2 interfaces (some of them have addRef() and release()
@@ -66,14 +64,14 @@ needed for it.</FONT></P>
 <P STYLE="margin-bottom: 0in"><A NAME="result_box"></A><FONT SIZE=4><SPAN STYLE="font-weight: normal">Firebird
 installation package contains a number of live samples of use of OO
 API – they are in examples/interfaces (database access) and
-examples/dbcrypt (plugin performing </SPAN></FONT><FONT SIZE=4><SPAN LANG="en">fictitious
+examples/dbcrypt (plugin performing </SPAN></FONT><FONT SIZE=4><SPAN LANG="en-US">fictitious
 database encryption</SPAN></FONT><FONT SIZE=4><SPAN STYLE="font-weight: normal">)
 directories. It's supposed that the reader is familiar with ISC API
 used in Firebird since interbase times.</SPAN></FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-top: 0.17in; margin-bottom: 0.2in; page-break-after: avoid">
-<FONT FACE="Albany, sans-serif"><FONT SIZE=4>Accessing databases.</FONT></FONT></P>
+<FONT FACE="Albany, sans-serif"><FONT SIZE=5>Accessing databases.</FONT></FONT></P>
 <H1><FONT SIZE=4>Creating database and attaching to existing
 database.</FONT></H1>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>First of all we need to
@@ -439,18 +437,6 @@ need to use <A HREF="#Statement">IStatement</A> at all.</FONT></P>
 UPDATE with parameters is present in 02.update.cpp, you will also see
 how raised in trigger/procedure exception may be caught by C++
 program.</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>char* buffer = new
-char[meta-&gt;getMessageLength(&amp;status)];</I></FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>IResultSet has a lot of
-various fetch methods but when cursor is not opened with SCROLL
-option only fetchNext() works, i.e. one can navigate only forward
-record by record.</FONT></P>
-<P STYLE="margin-bottom: 0in"><BR>
-</P>
-<P STYLE="margin-bottom: 0in"><BR>
-</P>
-<P STYLE="margin-bottom: 0in"><BR>
-</P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <H1><FONT SIZE=4>Opening cursor and fetching data from it.</FONT></H1>
@@ -469,8 +455,9 @@ output message (NULL is passed instead output metadata). Firebird is
 using in this case default message format which may be requested from
 IResultSet interface:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>const char* sql =
-&quot;select * from rdb$relations where RDB$RELATION_ID &lt; 3 or
-RDB$VIEW_SOURCE is not null&quot;;</I></FONT></P>
+&quot;select * from ...&quot;; // some select statement</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I><A HREF="#ResultSet">IResultSet</A>*
 curs = att-&gt;openCursor(&amp;status, tra, 0, sql, SQL_DIALECT_V6,
 NULL, NULL, NULL, NULL, 0);</I></FONT></P>
@@ -496,12 +483,159 @@ curs = stmt-&gt;openCursor(&amp;status, tra, NULL, NULL, NULL, 0);</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>We have obtained (one or
 another way) an instance of metadata description of output fields (a
 row in a set). To work with a message we also need buffer for it:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>unsigned char* buffer =
+new unsigned char[meta-&gt;getMessageLength(&amp;status)];</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="__DdeLink__41_199450663"></A><A NAME="__DdeLink__55_199450663"></A>
+<FONT SIZE=4>IResultSet has a lot of various fetch methods but when
+cursor is not opened with SCROLL option only fetchNext() works, i.e.
+one can navigate only forward record by record. In addition to errors
+and warnings in status fetchNext() returns completion code, which may
+have values RESULT_OK (when buffer is filled with values for next
+row) or RESULT_NO_DATA (when no more rows left in cursor).
+RESULT_NO_DATA is not error state, it's normal state after completion
+of the method, but we know that data in cursor is over. If status
+wrapper, not throwing exception in case of error return is used, one
+more value – RESULT_ERROR – may be returned, that means no data
+in buffer and error vector in status. Method fetchNext() is usually
+called in a cycle:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>while
+(curs-&gt;fetchNext(&amp;status, buffer) == IStatus::RESULT_OK)</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">   <FONT SIZE=4><I>// row processing</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>What is done during row
+processing depends upon your needs. To access particular field
+field's offset should be used:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>unsigned char*
+field_N_ptr = buffer + meta-&gt;getOffset(&amp;status, n);</I></FONT></P>
+<P STYLE="margin-bottom: 0in; font-style: normal"><FONT SIZE=4>where
+n is the number of a field in a message. That pointer should be
+casted to appropriate type, depending upon field type. For example,
+for a VARCHAR field cast to struct vary should be used:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>vary* v_ptr = (vary*)
+(buffer + meta-&gt;getOffset(&amp;status, n));</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Now we may print the value
+of a field:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>printf(“field %s
+value is %*.*s\n”, meta-&gt;getField(&amp;status, n),
+v_ptr-&gt;vary_length, v_ptr-&gt;vary_length, v_ptr-&gt;vary_string);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>If you need maximum
+performance it will be good idea to cache needed metadata values like
+it's done in our samples 03.select.cpp and 04.print_table.cpp.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<H1><FONT SIZE=4>Using FB_MESSAGE macro for static messages.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Working with data using
+offsets is rather efficient but requires a lot of code to be written.
+In C++ this problem can be solved using templates, but even compared
+with them the most convenient way to work with the message is to
+represent it in native (for given language) way – structure in
+C/C++, record in Pascal, etc. Certainly this works only if format of
+a message is known in advance. To help building such structures in
+C++ firebird contains special macro FB_MESSAGE.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_MESSAGE has 3 arguments
+– message (struct) name, type of status wrapper and list of fields.
+Usage of first and second is obvious, list of fields contains pairs
+(field_type, field_name), where field_type is one of the following:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_BIGINT</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_BLOB</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_BOOLEAN</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_CHAR(len)</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_DATE</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_DOUBLE</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_FLOAT</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_INTEGER</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_INTL_CHAR(len, charSet)</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_INTL_VARCHAR(len,
+charSet)</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_SCALED_BIGINT(x)</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_SCALED_INTEGER(x)</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_SCALED_SMALLINT(x)</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_SMALLINT</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_TIME</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_TIMESTAMP</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_VARCHAR(len)</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>In generated by
+preprocessor structure integer and float types are matched with
+appropriate C types, date and time – with classes <A HREF="#FbDate">FbDate</A>
+and <A HREF="#FbTime">FbTime</A> (all mentioned here classes are in
+namespace Firebird), timestamp – with class FbTimestamp, containing
+two public data members date and time of appropriate class, char -
+with struct <A HREF="#FbChar">FbChar</A> and varchar – with struct
+<A HREF="#FbVarChar">FbVarChar</A>. For each field preprocessor
+creates two data members in the message – <I>name</I> for
+field/parameter value and <I>nameNull</I> for NULL indicator. Message
+constructor has 2 parameters – pointer to status wrapper and master
+interface:</FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>FB_MESSAGE(Output,
+ThrowStatusWrapper,</I></FONT></P>
+<P STYLE="margin-bottom: 0in">            <FONT SIZE=4><I>(FB_SMALLINT,
+relationId)</I></FONT></P>
+<P STYLE="margin-bottom: 0in">            <FONT SIZE=4><I>(FB_CHAR(31),
+relationName)</I></FONT></P>
+<P STYLE="margin-bottom: 0in">            <FONT SIZE=4><I>(FB_VARCHAR(100),
+description)</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>)
+output(&amp;status, master);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>For static messages use of
+FB_MESSAGE is sooner of all the best choice – they can be at the
+same time easily passed to execute, openCursor and fetch methods:</FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>rs =
+att-&gt;openCursor(&amp;status, tra, 0, sqlText,</I></FONT></P>
+<P STYLE="margin-bottom: 0in">            <FONT SIZE=4><I>SQL_DIALECT_V6,
+NULL, NULL, output.getMetadata(), NULL, 0);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>and used to work with
+values of individual fields:</FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>while
+(rs-&gt;fetchNext(&amp;status, output.getData()) ==
+IStatus::RESULT_OK)</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">            <FONT SIZE=4><I>printf(&quot;%4d
+%31.31s %*.*s\n&quot;, output-&gt;relationId,
+output-&gt;relationName.str,</I></FONT></P>
+<P STYLE="margin-bottom: 0in">                <FONT SIZE=4><I>output-&gt;descriptionNull
+? 0 : output-&gt;description.length,</I></FONT></P>
+<P STYLE="margin-bottom: 0in">                <FONT SIZE=4><I>output-&gt;descriptionNull
+? 0 : output-&gt;description.length, output-&gt;description.str);</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>An example of using macro
+FB_MESSAGE to work with messages is in the sample 06.fb_message.cpp.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<H1><FONT SIZE=4>Working with blobs.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>For blobs in message
+buffer firebird stores blob identifier – an 8-byte entity which
+should be aligned on 4-byte boundary. Identifier has ISC_QUAD type.
+Interface <A HREF="#Attachment">IAttachment</A> has 2 methods to work
+with blobs – openBlob() and createBlob(), both returning interface
+<A HREF="#Blob">IBlob</A> and having same set of parameters, but
+performing somewhat contrary actions: openBlob() takes blob
+identifier from the message and prepares blob for reading but
+createBlob() creates new blob, puts it's identifier into message and
+prepares blob for writing. </FONT>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-top: 0.17in; margin-bottom: 0.2in; page-break-after: avoid">
+<FONT FACE="Albany, sans-serif"><FONT SIZE=5>Interfaces: from A to Z</FONT></FONT></P>
 <P STYLE="margin-bottom: 0in"><A NAME="Attachment"></A><FONT SIZE=4>Attachment
 interface:</FONT></P>
 <OL>
@@ -565,6 +699,28 @@ interface:</FONT></P>
 	detach(StatusType* status)</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	dropDatabase(StatusType* status)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="Blob"></A><FONT SIZE=4>Blob
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	getInfo(StatusType* status, unsigned itemsLength, const unsigned
+	char* items, unsigned bufferLength, u</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
+	getSegment(StatusType* status, unsigned bufferLength, void* buffer,
+	unsigned* segmentLength)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	putSegment(StatusType* status, unsigned length, const void* buffer)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	cancel(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	close(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int seek(StatusType*
+	status, int mode, int offset)</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
@@ -771,25 +927,27 @@ interface:</FONT></P>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Constants defined by
 Statement interface:</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_NONE = 0;</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_TYPE = 1;</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_INPUT_PARAMETERS
-= 2;</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_OUTPUT_PARAMETERS
-= 4;</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_LEGACY_PLAN
-= 8;</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_DETAILED_PLAN
-= 16;</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_AFFECTED_RECORDS
-= 32;</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_FLAGS =
-64;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>- prepare() flags (may be
+ORed):</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_NONE</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_TYPE</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_INPUT_PARAMETERS</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_OUTPUT_PARAMETERS</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_LEGACY_PLAN</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_DETAILED_PLAN</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_AFFECTED_RECORDS</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_FLAGS</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>- prepare() flags –
+often used combinations of flags:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_METADATA</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_ALL </FONT>
 </P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>FLAG_HAS_CURSOR = 1;</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>FLAG_REPEAT_EXECUTE = 2;</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>CURSOR_TYPE_SCROLLABLE =
 1;</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
@@ -819,13 +977,15 @@ interface:</FONT></P>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Constants defined by
 Status interface:</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>STATE_WARNINGS - </FONT>
-</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>- flags set in the value,
+returned by getState() method:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>STATE_WARNINGS</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>STATE_ERRORS</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_ERROR = -1;</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_OK = 0;</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_NO_DATA = 1;</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_SEGMENT = 2;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>- completion codes:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_ERROR</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_OK</FONT></P>
+<P STYLE="margin-bottom: 0in"><A NAME="__DdeLink__38_199450663"></A><FONT SIZE=4>RESULT_NO_DATA</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_SEGMENT</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
@@ -960,6 +1120,59 @@ SPB_ATTACH = 2;</FONT></P>
 SPB_START = 3;</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>static const unsigned TPB
 = 4;</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<H1><FONT SIZE=4>Non-interface objects used by API.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><A NAME="FbDate"></A><FONT SIZE=4>class
+FbDate methods:</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>void decode(IUtil*
+util, unsigned* year, unsigned* month, unsigned* day)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>unsigned
+getYear(IUtil* util) </FONT>
+</P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>unsigned
+getMonth(IUtil* util)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>unsigned getDay(IUtil*
+util)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>void encode(IUtil*
+util, unsigned year, unsigned month, unsigned day)</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="FbTime"></A><FONT SIZE=4>class
+FbTime methods:</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>void decode(IUtil*
+util, unsigned* hours, unsigned* minutes, unsigned* seconds,
+unsigned* fractions)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>unsigned
+getHours(IUtil* util)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>unsigned
+getMinutes(IUtil* util)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>unsigned
+getSeconds(IUtil* util)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>unsigned
+getFractions(IUtil* util)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>void encode(IUtil*
+util, unsigned hours, unsigned minutes, unsigned seconds, unsigned
+fractions)</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>template &lt;unsigned N&gt;</FONT></P>
+<P STYLE="margin-bottom: 0in"><A NAME="FbChar"></A><FONT SIZE=4>struct
+FbChar</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>{</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>char str[N];</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>};</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>template &lt;unsigned N&gt;</FONT></P>
+<P STYLE="margin-bottom: 0in"><A NAME="FbVarChar"></A><FONT SIZE=4>struct
+FbVarChar</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>{</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>ISC_USHORT length;</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>char str[N];</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>void set(const char*
+s);</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>};</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 </BODY>
