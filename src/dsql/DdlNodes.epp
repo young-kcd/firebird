@@ -10583,11 +10583,19 @@ bool CreateAlterUserNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 
 void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
 {
-	if (mode != USER_ADD && !password && !firstName && !middleName && !lastName &&
-		!adminRole.specified && !active.specified && !comment && !properties.hasData())
+	if (mode != USER_ADD)
 	{
-		// 283: ALTER USER requires at least one clause to be specified
-		status_exception::raise(Arg::PrivateDyn(283));
+		if (!password && !firstName && !middleName && !lastName &&
+			!adminRole.specified && !active.specified && !comment && !properties.hasData())
+		{
+			// 283: ALTER USER requires at least one clause to be specified
+			status_exception::raise(Arg::PrivateDyn(283));
+		}
+	}
+	else if (!password)
+	{
+		// 291: CREATE USER requires password to be specified
+		status_exception::raise(Arg::PrivateDyn(291));
 	}
 
 	// run all statements under savepoint control
