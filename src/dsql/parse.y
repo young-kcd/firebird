@@ -6192,8 +6192,8 @@ create_user_clause
  		{
 			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_ADD, *$1);
 		}
-	user_fixed_opts(NOTRIAL($2))
-	user_var_opts(NOTRIAL($2))
+	user_fixed_list_opt($2)
+	user_var_opts($2)
 		{
 			$$ = $2;
 		}
@@ -6205,8 +6205,8 @@ alter_user_clause
 		{
 			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, *$1);
 		}
-	user_fixed_opts(NOTRIAL($3))
-	user_var_opts(NOTRIAL($3))
+	user_fixed_list_opt($3)
+	user_var_opts($3)
 		{
 			$$ = $3;
 		}
@@ -6218,8 +6218,8 @@ alter_cur_user_clause
 		{
 			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, "");
 		}
-	user_fixed_opts(NOTRIAL($2))
-	user_var_opts(NOTRIAL($2))
+	user_fixed_list_opt($2)
+	user_var_opts($2)
 		{
 			$$ = $2;
 		}
@@ -6231,8 +6231,8 @@ replace_user_clause
 		{
 			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_RPL, *$1);
 		}
-	user_fixed_opts(NOTRIAL($3))
-	user_var_opts(NOTRIAL($3))
+	user_fixed_list_opt($3)
+	user_var_opts($3)
 		{
 			$$ = $3;
 		}
@@ -6243,20 +6243,20 @@ set_noise
 	| SET
 	;
 
-%type user_fixed_opts(<createAlterUserNode>)
-user_fixed_opts($node)
+%type user_fixed_list_opt(<createAlterUserNode>)
+user_fixed_list_opt($node)
 	: // nothing
 	| user_fixed_list($node)
 	;
 
 %type user_fixed_list(<createAlterUserNode>)
 user_fixed_list($node)
-	: user_fixed_opt($node)
-	| user_fixed_list user_fixed_opt($node)
+	: user_fixed_option($node)
+	| user_fixed_list user_fixed_option($node)
 	;
 
-%type user_fixed_opt(<createAlterUserNode>)
-user_fixed_opt($node)
+%type user_fixed_option(<createAlterUserNode>)
+user_fixed_option($node)
 	: FIRSTNAME utf_string	{ setClause($node->firstName, "FIRSTNAME", $2); }
 	| MIDDLENAME utf_string	{ setClause($node->middleName, "MIDDLENAME", $2); }
 	| LASTNAME utf_string	{ setClause($node->lastName, "LASTNAME", $2); }
@@ -6303,7 +6303,7 @@ create_map_clause($global)
 				$$ = $1;
 				$$->global = $global;
 			}
-		map_to(NOTRIAL($2))
+		map_to($2)
 			{
 				$$ = $2;
 			}
@@ -6316,7 +6316,7 @@ alter_map_clause($global)
 				$$ = $1;
 				$$->global = $global;
 			}
-		map_to(NOTRIAL($2))
+		map_to($2)
 			{
 				$$ = $2;
 			}
@@ -6329,7 +6329,7 @@ replace_map_clause($global)
 				$$ = $1;
 				$$->global = $global;
 			}
-		map_to(NOTRIAL($2))
+		map_to($2)
 			{
 				$$ = $2;
 			}
@@ -6351,8 +6351,8 @@ map_clause($op)
  			{
 				$$ = newNode<MappingNode>($op, *$1);
 			}
-		USING map_using(NOTRIAL($2))
-		FROM map_from(NOTRIAL($2))
+		USING map_using($2)
+		FROM map_from($2)
 			{
 				$$ = $2;
 			}
