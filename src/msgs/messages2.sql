@@ -3363,8 +3363,8 @@ Analyzing database pages ...', NULL, NULL);
 ('nbackup_deco_parse', 'NBackup::open_backup_scan', 'nbackup.cpp', NULL, 24, 75, NULL, 'Too complex decompress command (> @1 arguments)', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 76, NULL, '  -RO(LE) <role>                         SQL role name', NULL, NULL)
 ('nbackup_lostrec_guid_db', 'NBackup::backup_database', 'nbackup.cpp', NULL, 24, 77, NULL, 'Cannot find record for database "@1" backup GUID @2 in the backup history', NULL, NULL)
-(NULL, 'usage', 'nbackup.cpp', NULL, 24, 78, NULL, '  -I                                     Restore incremental backup(s) to existing database', NULL, NULL)
-(NULL, 'usage', 'nbackup.cpp', NULL, 24, 79, NULL, '  -I option could corrupt the database that has changed since previous restore', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 78, NULL, '  -I(NPLACE)                             Restore incremental backup(s) to existing database', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 79, NULL, '  -INPLACE option could corrupt the database that has changed since previous restore', NULL, NULL)
 -- FBTRACEMGR
 -- All messages use the new format.
 (NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 1, NULL, 'Firebird Trace Manager version @1', NULL, NULL)

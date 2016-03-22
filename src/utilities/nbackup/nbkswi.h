@@ -55,7 +55,7 @@ static const struct Switches::in_sw_tab_t nbackup_in_sw_table [] =
 {
 	{IN_SW_NBK_NODBTRIG,	isc_spb_nbk_no_triggers,	"T",		0, 0, 0, false,	0,	1, NULL},
 	{IN_SW_NBK_DIRECT,		isc_spb_nbk_direct,			"DIRECT",	0, 0, 0, false, 0,  1, NULL},
-	{IN_SW_NBK_INPLACE,		isc_spb_nbk_inplace,		"I",		0, 0, 0, false, 0,	1, NULL},
+	{IN_SW_NBK_INPLACE,		isc_spb_nbk_inplace,		"INPLACE",	0, 0, 0, false, 0,	1, NULL},
 	{IN_SW_NBK_0,			0,							NULL,		0, 0, 0, false,	0,	0, NULL}	// End of List
 };
 
@@ -70,7 +70,7 @@ static const struct Switches::in_sw_tab_t nbackup_action_in_sw_table [] =
 	{IN_SW_NBK_BACKUP,		isc_action_svc_nbak,	"BACKUP",			0, 0, 0, false,	11,	1,	NULL, nboExclusive},
 	{IN_SW_NBK_RESTORE,		isc_action_svc_nrest,	"RESTORE",			0, 0, 0, false,	12,	1,	NULL, nboExclusive},
 	{IN_SW_NBK_DIRECT,		0,						"DIRECT",			0, 0, 0, false, 70,	1,	NULL, nboSpecial},
-	{IN_SW_NBK_INPLACE,		0,						"I",				0, 0, 0, false, 78, 1,	NULL, nboSpecial},
+	{IN_SW_NBK_INPLACE,		0,						"INPLACE",			0, 0, 0, false, 78, 1,	NULL, nboSpecial},
 	{IN_SW_NBK_SIZE,		0,						"SIZE",				0, 0, 0, false,	17,	1,	NULL, nboSpecial},
 	{IN_SW_NBK_DECOMPRESS,	0,						"DECOMPRESS",		0, 0, 0, false,	74,	2,	NULL, nboSpecial},
 	{IN_SW_NBK_NODBTRIG,	0,						"T",				0, 0, 0, false,	0,	1,	NULL, nboGeneral},
