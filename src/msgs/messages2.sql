@@ -3296,7 +3296,7 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 8, NULL, '  -L(OCK) <database>                     Lock database for filesystem copy', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 9, NULL, '  -UN(LOCK) <database>                   Unlock previously locked database', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 10, NULL, '  -F(IXUP) <database>                    Fixup database after filesystem copy', NULL, NULL)
-(NULL, 'usage', 'nbackup.cpp', NULL, 24, 11, NULL, '  -B(ACKUP) <level> <db> [<file>]        Create incremental backup', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 11, NULL, '  -B(ACKUP) <level>|<GUID> <db> [<file>] Create incremental backup', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 12, NULL, '  -R(ESTORE) <db> [<file0> [<file1>...]] Restore incremental backup', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 13, NULL, '  -U(SER) <user>                         User name', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 14, NULL, '  -P(ASSWORD) <password>                 Password', NULL, NULL)
@@ -3362,6 +3362,9 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 74, NULL, '  -DE(COMPRESS) <command>                Command to extract archives during restore', NULL, NULL)
 ('nbackup_deco_parse', 'NBackup::open_backup_scan', 'nbackup.cpp', NULL, 24, 75, NULL, 'Too complex decompress command (> @1 arguments)', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 76, NULL, '  -RO(LE) <role>                         SQL role name', NULL, NULL)
+('nbackup_lostrec_guid_db', 'NBackup::backup_database', 'nbackup.cpp', NULL, 24, 77, NULL, 'Cannot find record for database "@1" backup GUID @2 in the backup history', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 78, NULL, '  -I                                     Restore incremental backup(s) to existing database', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 79, NULL, '  -I option could corrupt the database that has changed since previous restore', NULL, NULL)
 -- FBTRACEMGR
 -- All messages use the new format.
 (NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 1, NULL, 'Firebird Trace Manager version @1', NULL, NULL)

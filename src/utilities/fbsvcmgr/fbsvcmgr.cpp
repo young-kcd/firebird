@@ -483,6 +483,7 @@ const SvcSwitches nbackOptions[] =
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"nbk_file", putStringArgument, 0, isc_spb_nbk_file, 0},
 	{"nbk_level", putNumericArgument, 0, isc_spb_nbk_level, 0},
+	{"nbk_guid", putStringArgument, 0, isc_spb_nbk_guid, 0},
 	{"nbk_no_triggers", putOption, 0, isc_spb_nbk_no_triggers, 0},
 	{"nbk_direct", putStringArgument, 0, isc_spb_nbk_direct, 0},
 	{0, 0, 0, 0, 0}
@@ -492,6 +493,7 @@ const SvcSwitches nrestOptions[] =
 {
 	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
 	{"nbk_file", putStringArgument, 0, isc_spb_nbk_file, 0},
+	{"nbk_inplace", putOption, 0, isc_spb_nbk_inplace, 0},
 	{0, 0, 0, 0, 0}
 };
 

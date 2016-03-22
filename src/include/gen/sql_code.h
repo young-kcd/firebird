@@ -1269,6 +1269,7 @@ static const struct {
 	{337117255, -901}, /*  71 nbackup_switchd_parameter */
 	{337117257, -901}, /*  73 nbackup_user_stop */
 	{337117259, -901}, /*  75 nbackup_deco_parse */
+	{337117261, -901}, /*  77 nbackup_lostrec_guid_db */
 	{337182750, -901}, /*  30 trace_conflict_acts */
 	{337182751, -901}, /*  31 trace_act_notfound */
 	{337182752, -901}, /*  32 trace_switch_once */

@@ -1268,6 +1268,7 @@ COMMIT WORK;
 (-901, '00', '000', 24, 71, 'nbackup_switchd_parameter', NULL, NULL)
 (-901, '08', '006', 24, 73, 'nbackup_user_stop', NULL, NULL)
 (-901, '54', '023', 24, 75, 'nbackup_deco_parse', NULL, NULL)
+(-901, '00', '000', 24, 77, 'nbackup_lostrec_guid_db', NULL, NULL)
 -- FBTRACEMGR
 (-901, '00', '000', 25, 30, 'trace_conflict_acts', NULL, NULL)
 (-901, '00', '000', 25, 31, 'trace_act_notfound', NULL, NULL)

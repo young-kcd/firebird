@@ -2530,7 +2530,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 	string burp_database, burp_backup;
 	int burp_options = 0;
 
-	string nbk_database, nbk_file;
+	string nbk_database, nbk_file, nbk_guid;
 	int nbk_level = -1;
 
 	bool val_database = false;
@@ -2556,11 +2556,20 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				break;
 
 			case isc_spb_nbk_level:
-				if (nbk_level >= 0)
+				if (nbk_level >= 0 || nbk_guid.hasData())
 				{
-					(Arg::Gds(isc_unexp_spb_form) << Arg::Str("only one isc_spb_nbk_level")).raise();
+					(Arg::Gds(isc_unexp_spb_form) << Arg::Str("only one isc_spb_nbk_level or isc_spb_nbk_guid")).raise();
 				}
 				nbk_level = spb.getInt();
+				break;
+
+			case isc_spb_nbk_guid:
+				if (nbk_level >= 0 || nbk_guid.hasData())
+				{
+					(Arg::Gds(isc_unexp_spb_form) <<
+						Arg::Str("only one isc_spb_nbk_level or isc_spb_nbk_guid")).raise();
+				}
+				get_action_svc_string(spb, nbk_guid);
 				break;
 
 			case isc_spb_nbk_file:
@@ -2980,13 +2989,18 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 		}
 		if (svc_action == isc_action_svc_nbak)
 		{
-			if (nbk_level < 0)
+			if (nbk_level < 0 && nbk_guid.isEmpty())
 			{
-				(Arg::Gds(isc_missing_required_spb) << Arg::Str("isc_spb_nbk_level")).raise();
+				(Arg::Gds(isc_missing_required_spb) << Arg::Str("isc_spb_nbk_level or isc_spb_nbk_guid")).raise();
 			}
-			string temp;
-			temp.printf("%d ", nbk_level);
-			switches += temp;
+			if (nbk_level >= 0)
+			{
+				string temp;
+				temp.printf("%d ", nbk_level);
+				switches += temp;
+			}
+			else
+				switches += nbk_guid;
 		}
 		switches += nbk_database;
 		switches += nbk_file;

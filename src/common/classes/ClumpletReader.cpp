@@ -436,6 +436,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			case isc_spb_nbk_file:
 			case isc_spb_nbk_direct:
 			case isc_spb_dbname:
+			case isc_spb_nbk_guid:
 				return StringSpb;
 			case isc_spb_nbk_level:
 			case isc_spb_options:
