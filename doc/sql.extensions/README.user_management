@@ -9,13 +9,14 @@ Author:
 
 Syntax is:
 
-   CREATE USER name {PASSWORD 'password'} [ options ] [ TAGS ( tag [, tag [, tag ...]] ) ]
-   ALTER USER name SET [PASSWORD 'password'] [ options ] [ TAGS ( tag [, tag [, tag ...]] ) ]
-   ALTER CURRENT USER SET [PASSWORD 'password'] [ options ] [ TAGS ( tag [, tag [, tag ...]] ) ]
-   CREATE OR ALTER USER name SET [PASSWORD 'password'] [ options ] [ TAGS ( tag [, tag [, tag ...]] ) ]
-   DROP USER name [USING PLUGIN name];
+   CREATE USER name [ options ] [ TAGS ( tag [, tag [, tag ...]] ) ]
+   ALTER USER name [ SET ] [ options ] [ TAGS ( tag [, tag [, tag ...]] ) ]
+   ALTER CURRENT USER [ SET ] [ options ] [ TAGS ( tag [, tag [, tag ...]] ) ]
+   CREATE OR ALTER USER name [ SET ] [ options ] [ TAGS ( tag [, tag [, tag ...]] ) ]
+   DROP USER name [ USING PLUGIN name ];
 
 where OPTIONS is a (probably empty) list of following options:
+- PASSWORD 'password'
 - FIRSTNAME 'firstname'
 - MIDDLENAME 'middlename'
 - LASTNAME 'lastname'
@@ -93,9 +94,10 @@ Samples (suppose UserManager=Srp,Legacy_UserManager in firebird.conf):
   SELECT CAST(U.SEC$USER_NAME AS CHAR(20)) LOGIN,
     CAST(A.SEC$KEY AS CHAR(10)) TAG,
     CAST(A.SEC$VALUE AS CHAR(20)) "VALUE",
-    SEC$PLUGIN "PLUGIN"
+    U.SEC$PLUGIN "PLUGIN"
   FROM SEC$USERS U LEFT JOIN SEC$USER_ATTRIBUTES A
-    ON U.SEC$USER_NAME = A.SEC$USER_NAME;
+    ON U.SEC$USER_NAME = A.SEC$USER_NAME
+   AND U.SEC$PLUGIN = A.SEC$PLUGIN;
 
    LOGIN                TAG        VALUE                PLUGIN
    ==================== ========== ==================== ===============================

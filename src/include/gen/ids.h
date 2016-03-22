@@ -634,6 +634,7 @@
 	const USHORT  f_sec_attr_user = 0;
 	const USHORT  f_sec_attr_key = 1;
 	const USHORT  f_sec_attr_value = 2;
+	const USHORT  f_sec_attr_plugin = 3;
 
 
 // Relation 45 (RDB$AUTH_MAPPING)

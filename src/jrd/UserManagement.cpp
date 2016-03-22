@@ -542,6 +542,9 @@ void UserManagement::list(IUser* u, unsigned cachePosition)
 			putField(threadDbb, record,
 					 DumpField(f_sec_attr_value, VALUE_STRING, b->value.length(), b->value.c_str()));
 
+			putField(threadDbb, record,
+					 DumpField(f_sec_attr_plugin, VALUE_STRING, static_cast<USHORT>(plugName.length()), plugName.c_str()));
+
 			buffer->store(record);
 		}
 	}
