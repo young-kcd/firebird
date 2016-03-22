@@ -443,6 +443,9 @@ void UserManagement::execute(USHORT id)
 
 	if (command->op == Auth::ADD_OPER)
 	{
+		if (!command->pass.entered())
+			Arg::PrivateDyn(291).raise();
+
 		if (!command->act.entered())
 		{
 			command->act.set(&statusWrapper, 1);

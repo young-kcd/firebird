@@ -6188,38 +6188,22 @@ table_subquery
 
 %type <createAlterUserNode> create_user_clause
 create_user_clause
-	: symbol_user_name passwd_clause
+	: symbol_user_name
  		{
 			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_ADD, *$1);
-			$$->password = $2;
 		}
-	user_fixed_opts(NOTRIAL($3))
-	user_var_opts(NOTRIAL($3))
+	user_fixed_opts(NOTRIAL($2))
+	user_var_opts(NOTRIAL($2))
 		{
-			$$ = $3;
+			$$ = $2;
 		}
 	;
 
 %type <createAlterUserNode> alter_user_clause
 alter_user_clause
-	: symbol_user_name set_noise passwd_opt
+	: symbol_user_name set_noise
 		{
 			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, *$1);
-			$$->password = $3;
-		}
-	user_fixed_opts(NOTRIAL($4))
-	user_var_opts(NOTRIAL($4))
-		{
-			$$ = $4;
-		}
-	;
-
-%type <createAlterUserNode> alter_cur_user_clause
-alter_cur_user_clause
-	: set_noise passwd_opt
-		{
-			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, "");
-			$$->password = $2;
 		}
 	user_fixed_opts(NOTRIAL($3))
 	user_var_opts(NOTRIAL($3))
@@ -6228,34 +6212,35 @@ alter_cur_user_clause
 		}
 	;
 
+%type <createAlterUserNode> alter_cur_user_clause
+alter_cur_user_clause
+	: set_noise
+		{
+			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, "");
+		}
+	user_fixed_opts(NOTRIAL($2))
+	user_var_opts(NOTRIAL($2))
+		{
+			$$ = $2;
+		}
+	;
+
 %type <createAlterUserNode> replace_user_clause
 replace_user_clause
-	: symbol_user_name set_noise passwd_opt
+	: symbol_user_name set_noise
 		{
 			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_RPL, *$1);
-			$$->password = $3;
 		}
-	user_fixed_opts(NOTRIAL($4))
-	user_var_opts(NOTRIAL($4))
+	user_fixed_opts(NOTRIAL($3))
+	user_var_opts(NOTRIAL($3))
 		{
-			$$ = $4;
+			$$ = $3;
 		}
 	;
 
 set_noise
 	: // nothing
 	| SET
-	;
-
-%type <stringPtr> passwd_opt
-passwd_opt
-	: /* nothing */			{ $$ = NULL; }
-	| passwd_clause
-	;
-
-%type <stringPtr> passwd_clause
-passwd_clause
-	: PASSWORD utf_string	{ $$ = $2; }
 	;
 
 %type user_fixed_opts(<createAlterUserNode>)
@@ -6275,6 +6260,7 @@ user_fixed_opt($node)
 	: FIRSTNAME utf_string	{ setClause($node->firstName, "FIRSTNAME", $2); }
 	| MIDDLENAME utf_string	{ setClause($node->middleName, "MIDDLENAME", $2); }
 	| LASTNAME utf_string	{ setClause($node->lastName, "LASTNAME", $2); }
+	| PASSWORD utf_string   { setClause($node->password, "PASSWORD", $2); }
 	| GRANT ADMIN ROLE		{ setClause($node->adminRole, "ADMIN ROLE", Nullable<bool>(true)); }
 	| REVOKE ADMIN ROLE		{ setClause($node->adminRole, "ADMIN ROLE", Nullable<bool>(false)); }
 	| ACTIVE				{ setClause($node->active, "ACTIVE/INACTIVE", Nullable<bool>(true)); }
