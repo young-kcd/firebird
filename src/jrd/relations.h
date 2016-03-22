@@ -633,6 +633,7 @@ RELATION(nam_sec_user_attributes, rel_sec_user_attributes, ODS_12_0, rel_virtual
 	FIELD(f_sec_attr_user, nam_user_name, fld_user, 0, ODS_12_0)
 	FIELD(f_sec_attr_key, nam_sec_attr_key, fld_attr_key, 0, ODS_12_0)
 	FIELD(f_sec_attr_value, nam_sec_attr_value, fld_attr_value, 0, ODS_12_0)
+	FIELD(f_sec_attr_plugin, nam_sec_plugin, fld_plugin_name, 0, ODS_12_0)
 END_RELATION
 
 // Relation 45 (RDB$AUTH_MAPPING)
