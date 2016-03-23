@@ -7,7 +7,7 @@
 	<META NAME="AUTHOR" CONTENT="alex ">
 	<META NAME="CREATED" CONTENT="20130531;10003100">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
-	<META NAME="CHANGED" CONTENT="20160321;19320500">
+	<META NAME="CHANGED" CONTENT="20160323;17530400">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
 	<STYLE TYPE="text/css">
 	<!--
@@ -626,6 +626,65 @@ identifier from the message and prepares blob for reading but
 createBlob() creates new blob, puts it's identifier into message and
 prepares blob for writing. </FONT>
 </P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>To work with blobs one
+must first of all include blob identifier into the message. If you
+get metadata from firebird engine field of appropriate type will be
+already present. You just use it's offset (assuming variable
+blobFieldNumber contains number of blob field) (and appropriate null
+offset to check for nulls or set null flag) to obtain pointer into
+the message buffer:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>ISC_QUAD* blobPtr =
+(ISC_QUAD*) &amp;buffer[metadata-&gt;getOffset(&amp;status,
+blobFieldNumber)];</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>ISC_SHORT* blobNullPtr
+= (ISC_SHORT*) &amp;buffer[metadata-&gt;getNullOffset(&amp;status,
+blobFieldNumber)];</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>If you use static messages
+and FB_MESSAGE macro blob field is declared as having FB_BLOB type:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>FB_MESSAGE(Msg,
+ThrowStatusWrapper,</I></FONT></P>
+<P STYLE="margin-bottom: 0in">            <FONT SIZE=4><I>(FB_BLOB,
+b)</I></FONT></P>
+<P STYLE="margin-bottom: 0in">   <FONT SIZE=4><I>) message(&amp;status,
+master);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>ISC_QUAD* blobPtr =
+&amp;message-&gt;b;</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>ISC_SHORT* blobNullPtr
+= &amp;message-&gt;bNull;</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>When you have access to
+this pointers make sure that null flag is not set (not required if
+you nullified all message buffer):</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>*blobNullPtr = 0;</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>To create new blob invoke
+createBlob() method:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I><A HREF="#Blob">IBlob</A>*
+blob = att-&gt;createBlob(status, tra, blobPtr, 0, NULL);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Last two parameters are
+required only if you want to use blob filters or use stream blob,
+that's out of scope here.</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Blob interface is ready to
+accept data into blob. Use putSegment() method to send data to
+engine:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>void* segmentData;</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>unsigned segmentLength;</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>while
+(userFunctionProvidingBlobData(&amp;segmentData, &amp;segmentLength))</I></FONT></P>
+<P STYLE="margin-bottom: 0in">      <FONT SIZE=4><I>blob-&gt;putSegment(&amp;status,
+segmentLength, segmentData);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>After sending some data to
+blob do not forget to close blob interface:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>blob-&gt;close(&amp;status);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>and message, containing
+blob, may be used in insert or update statement. After execution of
+that statement new blob will be stored in database.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
