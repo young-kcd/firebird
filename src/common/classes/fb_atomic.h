@@ -190,7 +190,7 @@ public:
 	}
 
 private:
-	std::atomic_pointer pointer;
+	std::atomic<void*> pointer;
 };
 
 
