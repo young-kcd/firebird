@@ -657,8 +657,12 @@ RelationSourceNode* RelationSourceNode::copy(thread_db* tdbb, NodeCopier& copier
 void RelationSourceNode::ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) const
 {
 	csb->csb_rpt[stream].csb_flags |= csb_no_dbkey;
-	const CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
-	const jrd_rel* relation = tail->csb_relation;
+}
+
+RecordSourceNode* RelationSourceNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	const CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[stream];
+	const jrd_rel* const relation = tail->csb_relation;
 
 	if (relation)
 	{
@@ -666,12 +670,16 @@ void RelationSourceNode::ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) cons
 			(tail->csb_view) ? tail->csb_view->rel_id : (view ? view->rel_id : 0),
 			SCL_select, SCL_object_table, relation->rel_name);
 	}
+
+	return this;
 }
 
 void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	BoolExprNode** boolean, RecordSourceNodeStack& stack)
 {
 	stack.push(this);	// Assume that the source will be used. Push it on the final stream stack.
+
+	pass1(tdbb, csb);
 
 	// We have a view or a base table;
 	// prepare to check protection of relation when a field in the stream of the
