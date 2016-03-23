@@ -2594,6 +2594,8 @@ static void transaction_options(thread_db* tdbb,
 		ERR_post(Arg::Gds(isc_bad_tpb_form) <<
 				 Arg::Gds(isc_wrotpbver));
 
+	Attachment* const attachment = tdbb->getAttachment();
+
 	RelationLockTypeMap	lockmap;
 
 	TriState wait, lock_timeout;
@@ -2827,13 +2829,15 @@ static void transaction_options(thread_db* tdbb,
 							 										 Arg::Str(option_name));
 				}
 
-				const Firebird::MetaName name(reinterpret_cast<const char*>(tpb), len);
+				const Firebird::MetaName orgName(reinterpret_cast<const char*>(tpb), len);
+				const Firebird::MetaName metaName = attachment->nameToMetaCharSet(tdbb, orgName);
+
 				tpb += len;
-				jrd_rel* relation = MET_lookup_relation(tdbb, name);
+				jrd_rel* relation = MET_lookup_relation(tdbb, metaName);
 				if (!relation)
 				{
 					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
-							 Arg::Gds(isc_tpb_reserv_relnotfound) << Arg::Str(name) <<
+							 Arg::Gds(isc_tpb_reserv_relnotfound) << Arg::Str(metaName) <<
 																	 Arg::Str(option_name));
 				}
 

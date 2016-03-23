@@ -1370,7 +1370,7 @@ DmlNode* DeclareSubFuncNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 	const UCHAR /*blrOp*/)
 {
 	MetaName name;
-	PAR_name(csb, name);
+	csb->csb_blr_reader.getMetaName(name);
 
 	if (csb->csb_g_flags & csb_subroutine)
 		PAR_error(csb, Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) << "nested sub function");
@@ -1470,7 +1470,7 @@ void DeclareSubFuncNode::parseParameters(thread_db* tdbb, MemoryPool& pool, Comp
 		parameter->prm_fun_mechanism = FUN_value;
 		paramArray[pos + parameter->prm_number] = parameter;
 
-		PAR_name(csb, parameter->prm_name);
+		csb->csb_blr_reader.getMetaName(parameter->prm_name);
 
 		UCHAR hasDefault = reader.getByte();
 
@@ -1644,7 +1644,7 @@ static RegisterNode<DeclareSubProcNode> regDeclareSubProcNode(blr_subproc_decl);
 DmlNode* DeclareSubProcNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	MetaName name;
-	PAR_name(csb, name);
+	csb->csb_blr_reader.getMetaName(name);
 
 	if (csb->csb_g_flags & csb_subroutine)
 		PAR_error(csb, Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) << "nested sub procedure");
@@ -1753,7 +1753,7 @@ void DeclareSubProcNode::parseParameters(thread_db* tdbb, MemoryPool& pool, Comp
 		parameter->prm_number = USHORT(i);
 		paramArray[parameter->prm_number] = parameter;
 
-		PAR_name(csb, parameter->prm_name);
+		csb->csb_blr_reader.getMetaName(parameter->prm_name);
 
 		UCHAR hasDefault = reader.getByte();
 
@@ -2471,12 +2471,12 @@ DmlNode* ErrorHandlerNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 
 			case blr_sql_state:
 				item.type = ExceptionItem::SQL_STATE;
-				PAR_name(csb, item.name);
+				csb->csb_blr_reader.getString(item.name);
 				break;
 
 			case blr_gds_code:
 				item.type = ExceptionItem::GDS_CODE;
-				PAR_name(csb, item.name);
+				csb->csb_blr_reader.getString(item.name);
 				item.name.lower();
 				if (!(item.code = PAR_symbol_to_gdscode(item.name)))
 					PAR_error(csb, Arg::Gds(isc_codnotdef) << item.name);
@@ -2484,7 +2484,7 @@ DmlNode* ErrorHandlerNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 
 			case blr_exception:
 			{
-				PAR_name(csb, item.name);
+				csb->csb_blr_reader.getString(item.name);
 				if (!MET_load_exception(tdbb, item))
 					PAR_error(csb, Arg::Gds(isc_xcpnotdef) << item.name);
 
@@ -2630,8 +2630,9 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 	else
 	{
 		if (blrOp == blr_exec_proc2)
-			PAR_name(csb, name.package);
-		PAR_name(csb, name.identifier);
+			csb->csb_blr_reader.getMetaName(name.package);
+
+		csb->csb_blr_reader.getMetaName(name.identifier);
 
 		if (blrOp == blr_exec_subproc)
 		{
@@ -3125,8 +3126,9 @@ DmlNode* ExecStatementNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 							if (code == blr_exec_stmt_in_params2)
 							{
 								MetaName name;
+								csb->csb_blr_reader.getMetaName(name);
 
-								if (PAR_name(csb, name))
+								if (name.hasData())
 								{
 									MemoryPool& pool = csb->csb_pool;
 
@@ -4194,7 +4196,7 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 		{
 			case blr_gds_code:
 				item->type = ExceptionItem::GDS_CODE;
-				PAR_name(csb, item->name);
+				csb->csb_blr_reader.getString(item->name);
 				item->name.lower();
 				if (!(item->code = PAR_symbol_to_gdscode(item->name)))
 					PAR_error(csb, Arg::Gds(isc_codnotdef) << item->name);
@@ -4204,7 +4206,7 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 			case blr_exception_msg:
 			case blr_exception_params:
 				{
-					PAR_name(csb, item->name);
+					csb->csb_blr_reader.getString(item->name);
 					if (!MET_load_exception(tdbb, *item))
 						PAR_error(csb, Arg::Gds(isc_xcpnotdef) << item->name);
 
@@ -7085,7 +7087,7 @@ DmlNode* UserSavepointNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, Compile
 	UserSavepointNode* node = FB_NEW_POOL(pool) UserSavepointNode(pool);
 
 	node->command = (Command) csb->csb_blr_reader.getByte();
-	PAR_name(csb, node->name);
+	csb->csb_blr_reader.getMetaName(node->name);
 
 	return node;
 }
@@ -7482,7 +7484,7 @@ static RegisterNode<SetGeneratorNode> regSetGeneratorNode(blr_set_generator);
 DmlNode* SetGeneratorNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	MetaName name;
-	PAR_name(csb, name);
+	csb->csb_blr_reader.getMetaName(name);
 
 	SetGeneratorNode* const node = FB_NEW_POOL(pool) SetGeneratorNode(pool, name);
 

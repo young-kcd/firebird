@@ -4686,7 +4686,7 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 		else
 		{
 			MetaName name;
-			PAR_name(csb, name);
+			csb->csb_blr_reader.getMetaName(name);
 		}
 
 		DomainValidationNode* domNode = FB_NEW_POOL(pool) DomainValidationNode(pool);
@@ -4744,7 +4744,7 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 
 		if (procedure)
 		{
-			PAR_name(csb, name);
+			csb->csb_blr_reader.getMetaName(name);
 
 			if ((id = PAR_find_proc_field(procedure, name)) == -1)
 			{
@@ -4763,7 +4763,7 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 			if (!(relation->rel_flags & REL_scanned) || (relation->rel_flags & REL_being_scanned))
 				MET_scan_relation(tdbb, relation);
 
-			PAR_name(csb, name);
+			csb->csb_blr_reader.getMetaName(name);
 
 			if ((id = MET_lookup_field(tdbb, relation, name)) < 0)
 			{
@@ -5807,7 +5807,7 @@ GenIdNode::GenIdNode(MemoryPool& pool, bool aDialect1,
 DmlNode* GenIdNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	MetaName name;
-	PAR_name(csb, name);
+	csb->csb_blr_reader.getMetaName(name);
 
 	ValueExprNode* explicitStep = (blrOp == blr_gen_id2) ? NULL : PAR_parse_value(tdbb, csb);
 	GenIdNode* const node =
@@ -10239,7 +10239,9 @@ DmlNode* SysFuncCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScrat
 	const UCHAR /*blrOp*/)
 {
 	MetaName name;
-	const USHORT count = PAR_name(csb, name);
+	csb->csb_blr_reader.getMetaName(name);
+
+	const USHORT count = name.length();
 
 	SysFuncCallNode* node = FB_NEW_POOL(pool) SysFuncCallNode(pool, name);
 	node->function = SysFunction::lookup(name);
@@ -10781,12 +10783,13 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	const UCHAR* savePos = csb->csb_blr_reader.getPos();
 
 	QualifiedName name;
-	USHORT count = 0;
 
 	if (blrOp == blr_function2)
-		count = PAR_name(csb, name.package);
+		csb->csb_blr_reader.getMetaName(name.package);
 
-	count += PAR_name(csb, name.identifier);
+	csb->csb_blr_reader.getMetaName(name.identifier);
+
+	const USHORT count = name.package.length() + name.identifier.length();
 
 	UdfCallNode* node = FB_NEW_POOL(pool) UdfCallNode(pool, name);
 
