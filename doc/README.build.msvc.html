@@ -7,14 +7,14 @@
 <body>
 <h2>VisualStudio build Notes</h2>
 <hr/>
-Last Update: Sep 26 2014<br>
+Last Update: March 23 2016<br>
 Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
 Updated by: Popa Adrian Marius (mapopa at gmail.com)
 
 <h3>0.-Introduction</h3>
 <blockquote>
 
-<p>There are three VisualStudio builds, msvc8, msvc9 and msvc10. The msvc8 build is used for the official build of Firebird in Windows.</p>
+<p>There are a few VisualStudio solutions in the win32 folder . The msvc12 build is used for the official build of Firebird in Windows.</p>
 <p>Under the directory where you put Firebird sources you will see the following directories</p>
 <ul>
 <li>builds</li>
@@ -82,16 +82,16 @@ Updated by: Popa Adrian Marius (mapopa at gmail.com)
 
 <h4>2.2.-Sed</h4>
 <ol>
-<li class="level1"><div class="li"> Download <a href="http://sourceforge.net/projects/gnuwin32/files/sed/4.2-1/sed-4.2-1-setup.exe/download" class="urlextern" title="http://sourceforge.net/projects/gnuwin32/files/sed/4.2-1/sed-4.2-1-setup.exe/download"  rel="nofollow">Sed setup</a> from <a href="http://gnuwin32.sourceforge.net/packages/sed.htm" class="urlextern" title="http://gnuwin32.sourceforge.net/packages/sed.htm" rel="nofollow">GnuWin32 project</a> I had to run the setup and i extract into c:\gnuwin32 </div> 
-</li> 
-<li class="level1"><div class="li"> Add sed c:\gnuwin32\bin to the PATH environment variable , test it from a new console if it works by typing sed it should show you something abut gnu sed help</div> 
-</li> 
+<li class="level1"><div class="li"> Download <a href="http://sourceforge.net/projects/gnuwin32/files/sed/4.2-1/sed-4.2-1-setup.exe/download" class="urlextern" title="http://sourceforge.net/projects/gnuwin32/files/sed/4.2-1/sed-4.2-1-setup.exe/download"  rel="nofollow">Sed setup</a> from <a href="http://gnuwin32.sourceforge.net/packages/sed.htm" class="urlextern" title="http://gnuwin32.sourceforge.net/packages/sed.htm" rel="nofollow">GnuWin32 project</a> I had to run the setup and i extract into c:\gnuwin32 </div>
+</li>
+<li class="level1"><div class="li"> Add sed c:\gnuwin32\bin to the PATH environment variable , test it from a new console if it works by typing sed it should show you something abut gnu sed help</div>
+</li>
 </ol>
 <h4>2.3.-Inno setup</h4>
 <ol>
-<li>Run the Installer for Innosetup 5 that you downloaded from above 
+<li>Run the Installer for Innosetup 5 that you downloaded from above
 setup-5.3.xx.exe</li>
-<li>Run the Innosetup pack Installer ispack-5.3.10.exe 
+<li>Run the Innosetup pack Installer ispack-5.3.10.exe
 with the default options (next, next, next)</li>
 <ol>
 </blockquote>
