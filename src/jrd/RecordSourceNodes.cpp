@@ -476,7 +476,7 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 			if (blrOp == blr_rid2)
 			{
 				aliasString = FB_NEW_POOL(csb->csb_pool) string(csb->csb_pool);
-				PAR_name(csb, *aliasString);
+				csb->csb_blr_reader.getString(*aliasString);
 			}
 
 			if (!(node->relation = MET_lookup_relation_id(tdbb, id, false)))
@@ -488,12 +488,12 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 		case blr_relation:
 		case blr_relation2:
 		{
-			PAR_name(csb, name);
+			csb->csb_blr_reader.getMetaName(name);
 
 			if (blrOp == blr_relation2)
 			{
 				aliasString = FB_NEW_POOL(csb->csb_pool) string(csb->csb_pool);
-				PAR_name(csb, *aliasString);
+				csb->csb_blr_reader.getString(*aliasString);
 			}
 
 			node->relation = MET_lookup_relation(tdbb, name);
@@ -861,7 +861,7 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 			if (blrOp == blr_pid2)
 			{
 				aliasString = FB_NEW_POOL(csb->csb_pool) string(csb->csb_pool);
-				PAR_name(csb, *aliasString);
+				csb->csb_blr_reader.getString(*aliasString);
 			}
 
 			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, false, false, 0)))
@@ -876,14 +876,14 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 		case blr_procedure4:
 		case blr_subproc:
 			if (blrOp == blr_procedure3 || blrOp == blr_procedure4)
-				PAR_name(csb, name.package);
+				csb->csb_blr_reader.getMetaName(name.package);
 
-			PAR_name(csb, name.identifier);
+			csb->csb_blr_reader.getMetaName(name.identifier);
 
 			if (blrOp == blr_procedure2 || blrOp == blr_procedure4 || blrOp == blr_subproc)
 			{
 				aliasString = FB_NEW_POOL(csb->csb_pool) string(csb->csb_pool);
-				PAR_name(csb, *aliasString);
+				csb->csb_blr_reader.getString(*aliasString);
 
 				if (blrOp == blr_subproc && aliasString->isEmpty())
 				{

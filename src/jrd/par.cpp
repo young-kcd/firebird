@@ -436,7 +436,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 		{
 			const bool fullDomain = (csb->csb_blr_reader.getByte() == blr_domain_full);
 			MetaName* name = FB_NEW_POOL(csb->csb_pool) MetaName(csb->csb_pool);
-			PAR_name(csb, *name);
+			csb->csb_blr_reader.getMetaName(*name);
 
 			MetaNamePair namePair(*name, "");
 
@@ -495,9 +495,9 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 		{
 			const bool fullDomain = (csb->csb_blr_reader.getByte() == blr_domain_full);
 			MetaName* relationName = FB_NEW_POOL(csb->csb_pool) MetaName(csb->csb_pool);
-			PAR_name(csb, *relationName);
+			csb->csb_blr_reader.getMetaName(*relationName);
 			MetaName* fieldName = FB_NEW_POOL(csb->csb_pool) MetaName(csb->csb_pool);
-			PAR_name(csb, *fieldName);
+			csb->csb_blr_reader.getMetaName(*fieldName);
 
 			MetaNamePair namePair(*relationName, *fieldName);
 
@@ -902,65 +902,6 @@ void PAR_dependency(thread_db* tdbb, CompilerScratch* csb, StreamType stream, SS
 }
 
 
-USHORT PAR_name(CompilerScratch* csb, Firebird::MetaName& name)
-{
-/**************************************
- *
- *	P A R _ n a m e
- *
- **************************************
- *
- * Functional description
- *	Parse a counted string, returning count.
- *
- **************************************/
-	FB_SIZE_T l = csb->csb_blr_reader.getByte();
-
-	// Check for overly long identifiers at BLR parse stage to prevent unwanted
-	// surprises in deeper layers of the engine.
-	if (l > MAX_SQL_IDENTIFIER_LEN)
-	{
-		SqlIdentifier st;
-		char* s = st;
-		l = MAX_SQL_IDENTIFIER_LEN;
-		while (l--)
-			*s++ = csb->csb_blr_reader.getByte();
-		*s = 0;
-		ERR_post(Arg::Gds(isc_identifier_too_long) << Arg::Str(st));
-	}
-
-	char* s = name.getBuffer(l);
-
-	while (l--)
-		*s++ = csb->csb_blr_reader.getByte();
-
-	return name.length();
-}
-
-
-FB_SIZE_T PAR_name(CompilerScratch* csb, Firebird::string& name)
-{
-/**************************************
- *
- *	P A R _ n a m e
- *
- **************************************
- *
- * Functional description
- *	Parse a counted string of virtually unlimited size
- *  (up to 64K, actually <= 255), returning count.
- *
- **************************************/
-	FB_SIZE_T l = csb->csb_blr_reader.getByte();
-	char* s = name.getBuffer(l);
-
-	while (l--)
-		*s++ = csb->csb_blr_reader.getByte();
-
-	return name.length();
-}
-
-
 static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
@@ -1028,7 +969,6 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 		// Access plan types (sequential is default)
 
 		node_type = (USHORT) csb->csb_blr_reader.getByte();
-		MetaName name;
 
 		switch (node_type)
 		{
@@ -1039,11 +979,9 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 				// pick up the index name and look up the appropriate ids
 
-				PAR_name(csb, name);
-	            /* CVC: We can't do this. Index names are identifiers.
-	               for (p = name; *p; *p++)
-	               *p = UPPER (*p);
-	               */
+				MetaName name;
+				csb->csb_blr_reader.getMetaName(name);
+
 				SLONG relation_id;
 				IndexStatus idx_status;
 				const SLONG index_id = MET_lookup_index_name(tdbb, name, &relation_id, &idx_status);
@@ -1099,11 +1037,9 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 				while (count-- > 0)
 				{
-					PAR_name(csb, name);
-	          		/* Nickolay Samofatov: We can't do this. Index names are identifiers.
-					 for (p = name; *p; *p++)
-					 *p = UPPER(*p);
-	  	             */
+					MetaName name;
+					csb->csb_blr_reader.getMetaName(name);
+
 					SLONG relation_id;
 					IndexStatus idx_status;
 					const SLONG index_id = MET_lookup_index_name(tdbb, name, &relation_id, &idx_status);
