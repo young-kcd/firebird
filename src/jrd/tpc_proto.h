@@ -24,6 +24,7 @@
 #ifndef JRD_TPC_PROTO_H
 #define JRD_TPC_PROTO_H
 
+#include <atomic>
 #include "../common/classes/array.h"
 #include "../common/classes/SyncObject.h"
 
@@ -138,9 +139,10 @@ public:
 	void assignLatestAttachmentId(SLONG number);
 
 private:
-	class GlobalTpcHeader : public Firebird::MemoryHeader {
+	class GlobalTpcHeader : public Firebird::MemoryHeader 
+	{
 	public:
-		volatile CommitNumber latest_commit_number;
+		std::atomic<CommitNumber> latest_commit_number;
 
 		// We do not need hardware barriers when working with this variable, because
 		// TPC is essentially log-structured and we have extra large safety margin
@@ -148,41 +150,45 @@ private:
 		// The assumption of the code is that it is not possible to process full
 		// memory block worth of transactions during the period of cache decoherence
 		// of any one CPU accessing this variable
-		volatile TraNumber oldest_transaction;
+		std::atomic<TraNumber> oldest_transaction;
 
 		// Incremented each time whenever snapshot is released
-		volatile ULONG snapshot_release_count;
+		std::atomic<ULONG> snapshot_release_count;
 
 		// Shared counters
-		volatile TraNumber latest_transaction_id;
-		volatile SLONG latest_attachment_id;
-		volatile SLONG latest_statement_id;
+		std::atomic<TraNumber> latest_transaction_id;
+		std::atomic<SLONG> latest_attachment_id;
+		std::atomic<SLONG> latest_statement_id;
 	};
 
-	struct SnapshotData {
-		volatile SLONG attachment_id; // Unused slots have attachment_id == 0
-		volatile CommitNumber snapshot;
+	struct SnapshotData 
+	{
+		std::atomic<SLONG> attachment_id; // Unused slots have attachment_id == 0
+		std::atomic<CommitNumber> snapshot;
 	};
 
 	// Note: when maintaining this structure, we are extra careful
 	// to keep it consistent at all times, so that the process using it
 	// can be killed at any time without adverse consequences.
-	class SnapshotList : public Firebird::MemoryHeader {
+	class SnapshotList : public Firebird::MemoryHeader 
+	{
 	public:
-		volatile ULONG slots_allocated;
-		volatile ULONG slots_used;
+		std::atomic<ULONG> slots_allocated;
+		std::atomic<ULONG> slots_used;
 		ULONG min_free_slot; // Position where to start looking for free space
 		SnapshotData slots[1];
 	};
 
-	class TransactionStatusBlock : public Firebird::MemoryHeader {
+	class TransactionStatusBlock : public Firebird::MemoryHeader 
+	{
 	public:
-		volatile CommitNumber data[1];
+		CommitNumber data[1];
 	};
 
 	typedef TransactionStatusBlock* PTransactionStatusBlock;
 
-	struct StatusBlockData {
+	struct StatusBlockData 
+	{
 		int blockNumber;
 		Firebird::SharedMemory<TransactionStatusBlock>* memory;
 		Lock* existenceLock;
@@ -193,7 +199,8 @@ private:
 		}
 	};
 
-	class MemoryInitializer : public Firebird::IpcObject {
+	class MemoryInitializer : public Firebird::IpcObject 
+	{
 	public:
 		explicit MemoryInitializer(TipCache *cache) : m_cache(cache) {}
 		void mutexBug(int osErrorCode, const char* text);
@@ -201,19 +208,22 @@ private:
 		TipCache* m_cache;
 	};
 
-	class GlobalTpcInitializer : public MemoryInitializer {
+	class GlobalTpcInitializer : public MemoryInitializer 
+	{
 	public:
 		explicit GlobalTpcInitializer(TipCache *cache) : MemoryInitializer(cache) {}
 		bool initialize(Firebird::SharedMemoryBase* sm, bool initialize);
 	};
 
-	class SnapshotsInitializer : public MemoryInitializer {
+	class SnapshotsInitializer : public MemoryInitializer 
+	{
 	public:
 		explicit SnapshotsInitializer(TipCache *cache) : MemoryInitializer(cache) {}
 		bool initialize(Firebird::SharedMemoryBase* sm, bool initialize);
 	};
 
-	class MemBlockInitializer : public MemoryInitializer {
+	class MemBlockInitializer : public MemoryInitializer 
+	{
 	public:
 		explicit MemBlockInitializer(TipCache *cache) : MemoryInitializer(cache) {}
 		bool initialize(Firebird::SharedMemoryBase* sm, bool initialize);

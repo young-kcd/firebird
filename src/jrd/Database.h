@@ -478,7 +478,7 @@ private:
 		dbb_tip_cache(NULL),
 		dbb_creation_date(Firebird::TimeStamp::getCurrentTimeStamp()),
 		dbb_external_file_directory_list(NULL),
-		dbb_init_fini(FB_NEW(*getDefaultMemoryPool()) ExistenceRefMutex()),
+		dbb_init_fini(FB_NEW_POOL(*getDefaultMemoryPool()) ExistenceRefMutex()),
 		dbb_linger_seconds(0),
 		dbb_linger_end(0),
 		dbb_plugin_config(pConf)

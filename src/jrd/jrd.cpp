@@ -1576,7 +1576,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 				// Initialize TIP cache. We do this late to give SDW a chance to 
 				// work while we read states for all interesting transactions
-				dbb->dbb_tip_cache = FB_NEW(*dbb->dbb_permanent) TipCache(dbb);
+				dbb->dbb_tip_cache = FB_NEW_POOL(*dbb->dbb_permanent) TipCache(dbb);
 				dbb->dbb_tip_cache->initializeTpc(tdbb);
 
 				// linger
@@ -2746,7 +2746,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			config->notify();
 
 			// Initialize TIP cache
-			dbb->dbb_tip_cache = FB_NEW(*dbb->dbb_permanent) TipCache(dbb);
+			dbb->dbb_tip_cache = FB_NEW_POOL(*dbb->dbb_permanent) TipCache(dbb);
 			dbb->dbb_tip_cache->initializeTpc(tdbb);
 
 			// Init complete - we can release dbInitMutex

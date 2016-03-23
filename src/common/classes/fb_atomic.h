@@ -28,80 +28,9 @@
 #ifndef CLASSES_FB_ATOMIC_H
 #define CLASSES_FB_ATOMIC_H
 
-// NS 2014-08-13. I implemented this module using libatomic_ops for the sole reason that
-// we need to support older compilers (e.g. MSVC10). C++11 sequentially consistent atomics 
-// are the proper way to go forward, and we shall migrate code to use them as the (only)
-// implementation as soon we require C++11 compiler for Firebird build.
-
-extern "C" {
-#define AO_ASSUME_WINDOWS98
-#define AO_USE_INTERLOCKED_INTRINSICS
-#define AO_REQUIRE_CAS
-#include <atomic_ops.h>
-}
+#include <atomic>
 
 namespace Firebird {
-
-// [1] Load-acquire, store-release semantics
-
-template <typename T_PTR>
-inline T_PTR atomic_ptr_load_acquire(const volatile T_PTR* location) {
-	static_assert(sizeof(T_PTR) == sizeof(AO_t), "Incorrect argument size");
-	return reinterpret_cast<T_PTR>(AO_load_acquire(reinterpret_cast<const volatile AO_t*>(location)));
-}
-
-template <typename T_PTR>
-inline void atomic_ptr_store_release(volatile T_PTR* location, T_PTR value) {
-	static_assert(sizeof(T_PTR) == sizeof(AO_t), "Incorrect argument size");
-	AO_store_release(reinterpret_cast<volatile AO_t*>(location), reinterpret_cast<AO_t>(value));
-}
-
-template <typename INT32>
-inline INT32 atomic_int_load_acquire(const volatile INT32* location) {
-	static_assert(sizeof(INT32) == sizeof(unsigned), "Incorrect argument size");
-	return static_cast<INT32>(AO_int_load_acquire(reinterpret_cast<const volatile unsigned*>(location)));
-}
-
-template <typename INT32>
-inline void atomic_int_store_release(volatile INT32* location, INT32 value) {
-	static_assert(sizeof(INT32) == sizeof(unsigned), "Incorrect argument size");
-	AO_int_store_release(reinterpret_cast<volatile unsigned*>(location), static_cast<unsigned>(value));
-}
-
-// [2] Atomic increment with and without barrier (use when you know what you are doing)
-
-template <typename INT32>
-inline INT32 atomic_int_fetch_and_add1(volatile INT32* location) {
-	static_assert(sizeof(INT32) == sizeof(unsigned), "Incorrect argument size");
-	return static_cast<INT32>(AO_int_fetch_and_add1(reinterpret_cast<volatile unsigned*>(location)));
-}
-
-template <typename INT32>
-inline INT32 atomic_int_fetch_and_add1_full(volatile INT32* location) {
-	static_assert(sizeof(INT32) == sizeof(unsigned), "Incorrect argument size");
-	return static_cast<INT32>(AO_int_fetch_and_add1_full(reinterpret_cast<volatile unsigned*>(location)));
-}
-
-
-// [3] Atomic operations with no barrier (use when you know what you are doing)
-
-template <typename INT32>
-inline INT32 atomic_int_load(const volatile INT32* location) {
-	static_assert(sizeof(INT32) == sizeof(unsigned), "Incorrect argument size");
-	return static_cast<INT32>(AO_int_load(reinterpret_cast<const volatile unsigned*>(location)));
-}
-
-template <typename INT32>
-inline void atomic_int_store(volatile INT32* location, INT32 value) {
-	static_assert(sizeof(INT32) == sizeof(unsigned), "Incorrect argument size");
-	AO_int_store(reinterpret_cast<volatile unsigned*>(location), static_cast<unsigned>(value));
-}
-
-// [4] Compiler barrier to protect against code re-ordering (protects logic in the presence of signals)
-
-inline void compiler_barrier() {
-	AO_compiler_barrier();
-}
 
 class AtomicCounter
 {
@@ -118,20 +47,21 @@ public:
 	{
 	}
 
-	counter_type value() const { return AO_load_acquire(&counter); }
+	counter_type value() const { return counter.load(std::memory_order_acquire); }
 
 	counter_type exchangeAdd(counter_type value)
 	{
-		return AO_fetch_and_add_full(&counter, value);
+		return counter.fetch_add(value);
 	}
 
-	void setValue(counter_type val) {
-		AO_store_release(&counter, val);
+	void setValue(counter_type val) 
+	{
+		counter.store(val, std::memory_order_release);
 	}
 
 	bool compareExchange(counter_type oldVal, counter_type newVal)
 	{
-		return AO_compare_and_swap_full(&counter, oldVal, newVal);
+		return counter.compare_exchange_strong(oldVal, newVal);
 	}
 
 	// returns old value
@@ -139,8 +69,8 @@ public:
 	{
 		while (true)
 		{
-			counter_type oldVal = AO_load(&counter);
-			if (AO_compare_and_swap_full(&counter, oldVal, oldVal & val))
+			counter_type oldVal = counter.load();
+			if (counter.compare_exchange_strong(oldVal, oldVal & val))
 				return oldVal;
 		}
 	}
@@ -150,8 +80,8 @@ public:
 	{
 		while (true)
 		{
-			counter_type oldVal = AO_load(&counter);
-			if (AO_compare_and_swap_full(&counter, oldVal, oldVal | val))
+			counter_type oldVal = counter.load();
+			if (counter.compare_exchange_strong(oldVal, oldVal | val))
 				return oldVal;
 		}
 	}
@@ -161,12 +91,12 @@ public:
 	{
 		while (true)
 		{
-			counter_type oldVal = AO_load_acquire(&counter);
+			counter_type oldVal = counter.load(std::memory_order_acquire);
 
 			if (oldVal >= val)
 				return oldVal;
 
-			if (AO_compare_and_swap_full(&counter, oldVal, val))
+			if (counter.compare_exchange_strong(oldVal, val))
 				return oldVal;
 		}
 	}
@@ -176,36 +106,36 @@ public:
 	{
 		while (true)
 		{
-			counter_type oldVal = AO_load_acquire(&counter);
+			counter_type oldVal = counter.load(std::memory_order_acquire);
 
 			if (oldVal <= val)
 				return oldVal;
 
-			if (AO_compare_and_swap_full(&counter, oldVal, val))
+			if (counter.compare_exchange_strong(oldVal, val))
 				return oldVal;
 		}
 	}
 
 	void operator &=(counter_type val)
 	{
-		AO_and_full(&counter, val);
+		counter &= val;
 	}
 
 	void operator |=(counter_type val)
 	{
-		AO_or_full(&counter, val);
+		counter |= val;
 	}
 
 	// returns new value !
 	counter_type operator ++()
 	{
-		return AO_fetch_and_add1_full(&counter) + 1;
+		return counter++ + 1;
 	}
 
 	// returns new value !
 	counter_type operator --()
 	{
-		return AO_fetch_and_sub1_full(&counter) - 1;
+		return counter-- - 1;
 	}
 
 	inline operator counter_type () const
@@ -229,16 +159,15 @@ public:
 	}
 
 private:
-	volatile AO_t counter;
+	std::atomic<counter_type> counter;
 };
 
 class PlatformAtomicPointer
 {
 public:
 	explicit PlatformAtomicPointer(void* val = NULL)
-		: pointer(reinterpret_cast<AO_t>(val))
 	{
-		static_assert(sizeof(void*) == sizeof(AO_t), "AO_t size needs to match pointer size");
+		pointer.store(val);
 	}
 
 	~PlatformAtomicPointer()
@@ -247,20 +176,21 @@ public:
 
 	void* platformValue() const
 	{
-		return reinterpret_cast<void*>(AO_load_acquire(&pointer));
+		return pointer.load(std::memory_order_acquire);
 	}
 
-	void platformSetValue(void* val) {
-		AO_store_release(&pointer, reinterpret_cast<AO_t>(val));
+	void platformSetValue(void* val) 
+	{
+		pointer.store(val, std::memory_order_release);
 	}
 
 	bool platformCompareExchange(void* oldVal, void* newVal)
 	{
-		return AO_compare_and_swap_full(&pointer, reinterpret_cast<AO_t>(oldVal), reinterpret_cast<AO_t>(newVal));
+		return pointer.compare_exchange_strong(oldVal, newVal);
 	}
 
 private:
-	volatile AO_t pointer;
+	std::atomic_pointer pointer;
 };
 
 

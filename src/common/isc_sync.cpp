@@ -2098,7 +2098,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 
 
 #ifdef WIN_NT
-SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject* cb)
+SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject* cb, bool /*skipLock*/)
   :	sh_mem_mutex(0), sh_mem_length_mapped(0),
 	sh_mem_handle(0), sh_mem_object(0), sh_mem_interest(0), sh_mem_hdr_object(0),
 	sh_mem_hdr_address(0), sh_mem_header(NULL), sh_mem_callback(cb), sh_mem_unlink(false)
