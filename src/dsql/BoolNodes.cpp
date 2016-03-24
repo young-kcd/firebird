@@ -1653,6 +1653,9 @@ DmlNode* RseBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	if (csb->csb_currentForNode && csb->csb_currentForNode->parBlrBeginCnt <= 1)
 		node->ownSavepoint = false;
 
+	if (csb->csb_currentDMLNode)
+		node->ownSavepoint = false;
+
 	return node;
 }
 
@@ -1671,6 +1674,12 @@ string RseBoolNode::internalPrint(NodePrinter& printer) const
 
 BoolExprNode* RseBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
+	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_VIEW_WITH_CHECK)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				  Arg::Gds(isc_subquery_err));
+	}
+
 	const DsqlContextStack::iterator base(*dsqlScratch->context);
 
 	RseBoolNode* node = FB_NEW_POOL(getPool()) RseBoolNode(getPool(), blrOp,

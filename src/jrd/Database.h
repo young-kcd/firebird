@@ -339,7 +339,7 @@ public:
 	LockManager*	dbb_lock_mgr;
 	EventManager*	dbb_event_mgr;
 
-	JProvider*	dbb_provider;
+	JProvider*	dbb_provider;			// Provider that owns this database block
 	Database*	dbb_next;				// Next database block in system
 	Attachment* dbb_attachments;		// Active attachments
 	Attachment* dbb_sys_attachments;	// System attachments
@@ -409,8 +409,9 @@ public:
 	Firebird::Semaphore dbb_gc_fini;	// Event for finalization garbage collector
 
 	Firebird::MemoryStats dbb_memory_stats;
-
 	RuntimeStatistics dbb_stats;
+	mutable Firebird::Mutex dbb_stats_mutex;
+
 	TraNumber	dbb_last_header_write;	// Transaction id of last header page physical write
 	SLONG dbb_flush_cycle;				// Current flush cycle
 	ULONG dbb_sweep_interval;			// Transactions between sweep

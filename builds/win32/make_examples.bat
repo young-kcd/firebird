@@ -22,14 +22,12 @@
 
 @echo.
 @echo Building %FB_OBJ_DIR%
-if "%VS_VER%"=="msvc6" (
-    @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2 examples_%FB_TARGET_PLATFORM%.log empbuild intlbld
-) else (
-    @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3_Examples empbuild_%FB_TARGET_PLATFORM%.log empbuild
-    @if defined FB2_INTLEMP (
-      @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3_Examples intlbuild_%FB_TARGET_PLATFORM%.log intlbuild
-    )
+@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\FirebirdExamples empbuild_%FB_TARGET_PLATFORM%.log empbuild
+@if defined FB2_INTLEMP (
+  @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\FirebirdExamples intlbuild_%FB_TARGET_PLATFORM%.log intlbuild
 )
+@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\FirebirdExamples udrcpp_example_%FB_TARGET_PLATFORM%.log udrcpp_example
+
 @echo.
 @call :MOVE
 @call :BUILD_EMPLOYEE
@@ -92,6 +90,7 @@ if defined FB2_INTLEMP (
 @mkdir %FB_OUTPUT_DIR%\examples\stat
 @mkdir %FB_OUTPUT_DIR%\examples\udf
 @mkdir %FB_OUTPUT_DIR%\examples\udr
+@mkdir %FB_OUTPUT_DIR%\plugins\udr 2>nul
 
 @echo Moving files to output directory
 @copy %FB_ROOT_PATH%\examples\* %FB_OUTPUT_DIR%\examples > nul
@@ -108,6 +107,7 @@ if defined FB2_INTLEMP (
 @copy %FB_ROOT_PATH%\examples\stat\* %FB_OUTPUT_DIR%\examples\stat > nul
 @copy %FB_ROOT_PATH%\examples\udf\* %FB_OUTPUT_DIR%\examples\udf > nul
 @copy %FB_ROOT_PATH%\examples\udr\* %FB_OUTPUT_DIR%\examples\udr > nul
+@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\plugins\udr\*.dll %FB_OUTPUT_DIR%\plugins\udr >nul
 @copy %FB_ROOT_PATH%\src\extlib\ib_udf* %FB_OUTPUT_DIR%\examples\udf > nul
 @copy %FB_ROOT_PATH%\src\extlib\fbudf\* %FB_OUTPUT_DIR%\examples\udf > nul
 

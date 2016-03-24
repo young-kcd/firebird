@@ -460,7 +460,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 
 #ifdef OPT_DEBUG
 	if (opt_debug_flag != DEBUG_NONE && !opt_debug_file)
-		opt_debug_file = os_utils::fopen("opt_debug.out", "w");
+		opt_debug_file = os_utils::fopen(OPTIMIZER_DEBUG_FILE, "w");
 #endif
 
 	// If there is a boolean, there is some work to be done.  First,
@@ -2124,7 +2124,8 @@ static RecordSource* gen_outer(thread_db* tdbb, OptimizerBlk* opt, RseNode* rse,
 
 		// Allocate and fill in the rsb
 		return FB_NEW_POOL(*tdbb->getDefaultPool())
-			NestedLoopJoin(csb, stream_o.stream_rsb, stream_i.stream_rsb, boolean, false, false);
+			NestedLoopJoin(csb, stream_o.stream_rsb, stream_i.stream_rsb,
+						   boolean, OUTER_JOIN);
 	}
 
 	bool hasOuterRsb = true, hasInnerRsb = true;
@@ -2147,7 +2148,7 @@ static RecordSource* gen_outer(thread_db* tdbb, OptimizerBlk* opt, RseNode* rse,
 	RecordSource* const innerRsb = gen_residual_boolean(tdbb, opt, stream_i.stream_rsb);
 
 	RecordSource* const rsb1 = FB_NEW_POOL(*tdbb->getDefaultPool())
-		NestedLoopJoin(csb, stream_o.stream_rsb, innerRsb, boolean, false, false);
+		NestedLoopJoin(csb, stream_o.stream_rsb, innerRsb, boolean, OUTER_JOIN);
 
 	for (FB_SIZE_T i = 0; i < opt->opt_conjuncts.getCount(); i++)
 	{
@@ -2182,7 +2183,7 @@ static RecordSource* gen_outer(thread_db* tdbb, OptimizerBlk* opt, RseNode* rse,
 	RecordSource* const outerRsb = gen_residual_boolean(tdbb, opt, stream_o.stream_rsb);
 
 	RecordSource* const rsb2 = FB_NEW_POOL(*tdbb->getDefaultPool())
-		NestedLoopJoin(csb, stream_i.stream_rsb, outerRsb, boolean, false, true);
+		NestedLoopJoin(csb, stream_i.stream_rsb, outerRsb, boolean, ANTI_JOIN);
 
 	return FB_NEW_POOL(*tdbb->getDefaultPool()) FullOuterJoin(csb, rsb1, rsb2);
 }
@@ -2380,24 +2381,18 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
 			node->computable(csb, INVALID_STREAM, false))
 		{
-			// Use conjuncts that have just been matched to indices and
-			// also others, but only if they're local to the current stream.
-			// This leaves the rest being candidates for a merge/hash join.
+			// If inversion is available, utilize all conjuncts that refer to
+			// the stream being retrieved. Otherwise, utilize only conjuncts
+			// that are local to this stream. The remaining ones are left in piece
+			// as possible candidates for a merge/hash join.
 
-			if (tail->opt_conjunct_flags & opt_conjunct_matched)
-			{
-				if (node->findStream(stream))
-				{
-					compose(*tdbb->getDefaultPool(), &boolean, node);
-					tail->opt_conjunct_flags |= opt_conjunct_used;
-				}
-			}
-			else if (node->computable(csb, stream, true))
+			if ((inversion && node->findStream(stream)) ||
+				(!inversion && node->computable(csb, stream, true)))
 			{
 				compose(*tdbb->getDefaultPool(), &boolean, node);
 				tail->opt_conjunct_flags |= opt_conjunct_used;
 
-				if (!outer_flag)
+				if (!outer_flag && !(tail->opt_conjunct_flags & opt_conjunct_matched))
 					csb_tail->csb_flags |= csb_unmatched;
 			}
 		}

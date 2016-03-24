@@ -1,4 +1,4 @@
-Serwer Baz Danych Firebird $MAJOR.$MINOR.$RELEASE
+﻿Serwer Baz Danych Firebird $MAJOR.$MINOR.$RELEASE
 ==================================================
 
 

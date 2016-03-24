@@ -43,7 +43,7 @@ Answer=""
 OrigPasswd=""
 TmpFile=""
 MANIFEST_TXT=""
-SecurityDatabase=security3.fdb
+SecurityDatabase=security4.fdb
 DefaultLibrary=libfbclient
 UninstallScript=FirebirdUninstall.sh
 ArchiveDateTag=`date +"%Y%m%d_%H%M"`
@@ -72,7 +72,7 @@ MakeTemp() {
 AskQuestion() {
     Test=$1
     DefaultAns=$2
-    echo -n "$Test"
+    printf %s "$Test"
     Answer="$DefaultAns"
     read Answer
 
@@ -87,8 +87,9 @@ AskQuestion() {
 # Prompt for yes or no answer - returns non-zero for no
 
 AskYNQuestion() {
-    while echo -n "${*} (y/n): "
+    while true
     do
+    	printf %s "${*} (y/n): "
         read answer rest
         case $answer in
         [yY]*)
@@ -143,6 +144,23 @@ checkRootUser() {
 #alias
 checkInstallUser() {
 	checkRootUser
+}
+
+
+#------------------------------------------------------------------------
+# Report missing library error and exit
+
+missingLibrary() {
+	libName=${1}
+	echo "Please install required library '$libName' before firebird, after it repeat firebird install"
+	exit 1
+}
+
+
+#------------------------------------------------------------------------
+# Make sure we have required libraries installed
+checkLibraries() {
+	haveLibrary tommath || missingLibrary tommath
 }
 
 

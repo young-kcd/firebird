@@ -620,10 +620,10 @@ public:
 		m_perf = perf;
 	}
 
-	ISC_INT64 getOIT()	{ return m_oit; };
-	ISC_INT64 getOST()	{ return m_ost; };
-	ISC_INT64 getOAT()	{ return m_oat; };
-	ISC_INT64 getNext()		{ return m_next; };
+	ISC_INT64 getOIT()			{ return m_oit; };
+	ISC_INT64 getOST()			{ return m_ost; };
+	ISC_INT64 getOAT()			{ return m_oat; };
+	ISC_INT64 getNext()			{ return m_next; };
 	PerformanceInfo* getPerf()	{ return m_perf; };
 
 private:

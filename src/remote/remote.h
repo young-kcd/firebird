@@ -142,7 +142,7 @@ struct ParametersSet
 		  address_path, process_id, process_name,
 		  encrypt_key, client_version, remote_protocol,
 		  host_name, os_user, config_text,
-		  utf8_filename;
+		  utf8_filename, map_attach;
 };
 
 extern const ParametersSet dpbParam, spbParam, connectParam;
@@ -638,6 +638,7 @@ public:
 	virtual ~ServerCallbackBase();
 	virtual void wakeup(unsigned int length, const void* data) = 0;
 	virtual Firebird::ICryptKeyCallback* getInterface() = 0;
+	virtual void stop() = 0;
 };
 
 // CryptKey implementation

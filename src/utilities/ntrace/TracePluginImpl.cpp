@@ -251,7 +251,7 @@ void TracePluginImpl::logRecordConn(const char* action, ITraceDatabaseConnection
 		if (reg)
 		{
 			string temp;
-			temp.printf("\t%s (ATT_%"SQUADFORMAT", <unknown, bug?>)" NEWLINE,
+			temp.printf("\t%s (ATT_%" SQUADFORMAT", <unknown, bug?>)" NEWLINE,
 				config.db_filename.c_str(), conn_id);
 			record.insert(0, temp);
 			break;
@@ -297,7 +297,7 @@ void TracePluginImpl::logRecordTrans(const char* action, ITraceDatabaseConnectio
 		if (reg)
 		{
 			string temp;
-			temp.printf("\t\t(TRA_%"SQUADFORMAT", <unknown, bug?>)" NEWLINE, transaction->getTransactionID());
+			temp.printf("\t\t(TRA_%" SQUADFORMAT", <unknown, bug?>)" NEWLINE, transaction->getTransactionID());
 			record.insert(0, temp);
 			break;
 		}
@@ -354,7 +354,7 @@ void TracePluginImpl::logRecordStmt(const char* action, ITraceDatabaseConnection
 		if (reg)
 		{
 			string temp;
-			temp.printf(NEWLINE "Statement %"SQUADFORMAT", <unknown, bug?>:" NEWLINE, stmt_id);
+			temp.printf(NEWLINE "Statement %" SQUADFORMAT", <unknown, bug?>:" NEWLINE, stmt_id);
 			record.insert(0, temp);
 			break;
 		}
@@ -459,32 +459,32 @@ void TracePluginImpl::appendGlobalCounts(const PerformanceInfo* info)
 {
 	string temp;
 
-	temp.printf("%7"QUADFORMAT"d ms", info->pin_time);
+	temp.printf("%7" QUADFORMAT"d ms", info->pin_time);
 	record.append(temp);
 
 	ntrace_counter_t cnt;
 
 	if ((cnt = info->pin_counters[RuntimeStatistics::PAGE_READS]) != 0)
 	{
-		temp.printf(", %"QUADFORMAT"d read(s)", cnt);
+		temp.printf(", %" QUADFORMAT"d read(s)", cnt);
 		record.append(temp);
 	}
 
 	if ((cnt = info->pin_counters[RuntimeStatistics::PAGE_WRITES]) != 0)
 	{
-		temp.printf(", %"QUADFORMAT"d write(s)", cnt);
+		temp.printf(", %" QUADFORMAT"d write(s)", cnt);
 		record.append(temp);
 	}
 
 	if ((cnt = info->pin_counters[RuntimeStatistics::PAGE_FETCHES]) != 0)
 	{
-		temp.printf(", %"QUADFORMAT"d fetch(es)", cnt);
+		temp.printf(", %" QUADFORMAT"d fetch(es)", cnt);
 		record.append(temp);
 	}
 
 	if ((cnt = info->pin_counters[RuntimeStatistics::PAGE_MARKS]) != 0)
 	{
-		temp.printf(", %"QUADFORMAT"d mark(s)", cnt);
+		temp.printf(", %" QUADFORMAT"d mark(s)", cnt);
 		record.append(temp);
 	}
 
@@ -518,7 +518,7 @@ void TracePluginImpl::appendTableCounts(const PerformanceInfo *info)
 			{
 				//fb_utils::exactNumericToStr(trc->trc_counters[j], 0, temp);
 				//record.append(' ', 10 - temp.length());
-				temp.printf("%10"QUADFORMAT"d", trc->trc_counters[j]);
+				temp.printf("%10" QUADFORMAT"d", trc->trc_counters[j]);
 				record.append(temp);
 			}
 		}
@@ -952,7 +952,8 @@ void TracePluginImpl::register_connection(ITraceDatabaseConnection* connection)
 
 	string tmp(*getDefaultMemoryPool());
 
-	conn_data.description->printf("\t%s (ATT_%"SQUADFORMAT, connection->getDatabaseName(), connection->getConnectionID());
+	conn_data.description->printf("\t%s (ATT_%" SQUADFORMAT,
+		connection->getDatabaseName(), connection->getConnectionID());
 
 	const char* user = connection->getUserName();
 	if (user)
@@ -1050,7 +1051,7 @@ void TracePluginImpl::register_transaction(ITraceTransaction* transaction)
 	TransactionData trans_data;
 	trans_data.id = transaction->getTransactionID();
 	trans_data.description = FB_NEW_POOL(*getDefaultMemoryPool()) string(*getDefaultMemoryPool());
-	trans_data.description->printf("\t\t(TRA_%"SQUADFORMAT", ", trans_data.id);
+	trans_data.description->printf("\t\t(TRA_%" SQUADFORMAT", ", trans_data.id);
 
 	switch (transaction->getIsolation())
 	{
@@ -1231,7 +1232,7 @@ void TracePluginImpl::log_event_proc_execute(ITraceDatabaseConnection* connectio
 		if (info->pin_records_fetched)
 		{
 			string temp;
-			temp.printf("%"QUADFORMAT"d records fetched" NEWLINE, info->pin_records_fetched);
+			temp.printf("%" QUADFORMAT"d records fetched" NEWLINE, info->pin_records_fetched);
 			record.append(temp);
 		}
 		appendGlobalCounts(info);
@@ -1287,7 +1288,7 @@ void TracePluginImpl::log_event_func_execute(ITraceDatabaseConnection* connectio
 	{
 		params = function->getResult();
 		{
-			record.append("returns:"NEWLINE);
+			record.append("returns:" NEWLINE);
 			appendParams(params);
 			record.append(NEWLINE);
 		}
@@ -1298,7 +1299,7 @@ void TracePluginImpl::log_event_func_execute(ITraceDatabaseConnection* connectio
 		if (info->pin_records_fetched)
 		{
 			string temp;
-			temp.printf("%"QUADFORMAT"d records fetched" NEWLINE, info->pin_records_fetched);
+			temp.printf("%" QUADFORMAT"d records fetched" NEWLINE, info->pin_records_fetched);
 			record.append(temp);
 		}
 		appendGlobalCounts(info);
@@ -1491,7 +1492,7 @@ void TracePluginImpl::log_event_dsql_execute(ITraceDatabaseConnection* connectio
 	if (info)
 	{
 		string temp;
-		temp.printf("%"QUADFORMAT"d records fetched" NEWLINE, info->pin_records_fetched);
+		temp.printf("%" QUADFORMAT"d records fetched" NEWLINE, info->pin_records_fetched);
 		record.append(temp);
 
 		appendGlobalCounts(info);
@@ -1526,7 +1527,7 @@ void TracePluginImpl::register_blr_statement(ITraceBLRStatement* statement)
 	string* description = FB_NEW_POOL(*getDefaultMemoryPool()) string(*getDefaultMemoryPool());
 
 	if (statement->getStmtID()) {
-		description->printf(NEWLINE "Statement %"SQUADFORMAT":" NEWLINE, statement->getStmtID());
+		description->printf(NEWLINE "Statement %" SQUADFORMAT":" NEWLINE, statement->getStmtID());
 	}
 
 	if (config.print_blr)
@@ -2060,10 +2061,10 @@ void TracePluginImpl::log_event_sweep(ITraceDatabaseConnection* connection, ITra
 		sweep_state == SWEEP_STATE_FINISHED)
 	{
 		record.printf("\nTransaction counters:\n"
-			"\tOldest interesting %10"UQUADFORMAT"\n"
-			"\tOldest active      %10"UQUADFORMAT"\n"
-			"\tOldest snapshot    %10"UQUADFORMAT"\n"
-			"\tNext transaction   %10"UQUADFORMAT"\n",
+			"\tOldest interesting %10" SQUADFORMAT"\n"
+			"\tOldest active      %10" SQUADFORMAT"\n"
+			"\tOldest snapshot    %10" SQUADFORMAT"\n"
+			"\tNext transaction   %10" SQUADFORMAT"\n",
 			sweep->getOIT(),
 			sweep->getOAT(),
 			sweep->getOST(),

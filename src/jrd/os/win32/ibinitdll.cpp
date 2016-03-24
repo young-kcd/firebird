@@ -47,6 +47,7 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 
 		case DLL_PROCESS_DETACH:
 			bDllProcessExiting = (reserved != NULL);
+			dDllUnloadTID = GetCurrentThreadId();
 			break;
 	}
 

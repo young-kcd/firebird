@@ -97,9 +97,9 @@ public:
 	};
 
 public:
-	MsgMetadata()
-		: items(getPool()),
-		  length(0)
+	explicit MsgMetadata(MsgMetadata* from)
+		: items(getPool(), from->items),
+		  length(from->length)
 	{
 	}
 
@@ -108,6 +108,12 @@ public:
 		  length(0)
 	{
 		assign(from);
+	}
+
+	MsgMetadata()
+		: items(getPool()),
+		  length(0)
+	{
 	}
 
 	void setItemsCount(unsigned n)

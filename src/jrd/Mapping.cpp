@@ -146,7 +146,7 @@ private:
 };
 
 class Map;
-typedef Hash<Map, DEFAULT_HASH_SIZE, Map, DefaultKeyValue<Map>, Map> MapHash;
+typedef HashTable<Map, DEFAULT_HASH_SIZE, Map, DefaultKeyValue<Map>, Map> MapHash;
 
 class Map : public MapHash::Entry, public GlobalStorage
 {
@@ -593,16 +593,27 @@ public:
 
 		MappingHeader* sMem = sharedMemory->getHeader();
 
+		startupSemaphore.tryEnter(5);
 		sMem->process[process].flags &= ~MappingHeader::FLAG_ACTIVE;
 		(void)  // Ignore errors in cleanup
             sharedMemory->eventPost(&sMem->process[process].notifyEvent);
-		Thread::waitForCompletion(threadHandle);
+		cleanupSemaphore.tryEnter(5);
 
 		// Ignore errors in cleanup
 		sharedMemory->eventFini(&sMem->process[process].notifyEvent);
 		sharedMemory->eventFini(&sMem->process[process].callbackEvent);
 
-		if (sharedMemory->getHeader()->processes == 1)
+		bool found = false;
+		for (unsigned n = 0; n < sMem->processes; ++n)
+		{
+			if (sMem->process[n].flags & MappingHeader::FLAG_ACTIVE)
+			{
+				found = true;
+				break;
+			}
+		}
+
+		if (!found)
 			sharedMemory->removeMapFile();
 	}
 
@@ -737,7 +748,7 @@ public:
 
 		try
 		{
-			Thread::start(clearDelivery, this, THREAD_high, &threadHandle);
+			Thread::start(clearDelivery, this, THREAD_high);
 		}
 		catch (const Exception&)
 		{
@@ -749,6 +760,7 @@ public:
 private:
 	void clearDeliveryThread()
 	{
+		bool startup = true;
 		try
 		{
 			MappingHeader::Process* p = &sharedMemory->getHeader()->process[process];
@@ -769,11 +781,21 @@ private:
 					p->flags &= ~MappingHeader::FLAG_DELIVER;
 				}
 
+				if (startup)
+				{
+					startup = false;
+					startupSemaphore.release();
+				}
+
 				if (sharedMemory->eventWait(&p->notifyEvent, value, 0) != FB_SUCCESS)
 				{
 					(Arg::Gds(isc_random) << "Error waiting for notifyEvent in mapping shared memory").raise();
 				}
 			}
+			if (startup)
+				startupSemaphore.release();
+
+			cleanupSemaphore.release();
 		}
 		catch (const Exception& ex)
 		{
@@ -842,9 +864,10 @@ private:
 
 	AutoPtr<SharedMemory<MappingHeader> > sharedMemory;
 	Mutex initMutex;
-	Thread::Handle threadHandle;
 	const SLONG processId;
 	unsigned process;
+	Semaphore startupSemaphore;
+	Semaphore cleanupSemaphore;
 };
 
 GlobalPtr<MappingIpc, InstanceControl::PRIORITY_DELETE_FIRST> mappingIpc;
@@ -953,25 +976,19 @@ bool mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 
 					if (db && !iDb)
 					{
-						const char* conf = "Providers=" CURRENT_ENGINE;
-						embeddedSysdba.insertString(isc_dpb_config, conf, fb_strlen(conf));
+						iDb = prov->attachDatabase(&st, alias,
+							embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
 
-						if (!iDb)
+						if (st->getState() & IStatus::STATE_ERRORS)
 						{
-							iDb = prov->attachDatabase(&st, alias,
-								embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
+							const ISC_STATUS* s = st->getErrors();
+							bool missing = fb_utils::containsErrorCode(s, isc_io_error);
+							dbDown = fb_utils::containsErrorCode(s, isc_shutdown);
+							if (!(missing || dbDown))
+								check("IProvider::attachDatabase", &st);
 
-							if (st->getState() & IStatus::STATE_ERRORS)
-							{
-								const ISC_STATUS* s = st->getErrors();
-								bool missing = fb_utils::containsErrorCode(s, isc_io_error);
-								dbDown = fb_utils::containsErrorCode(s, isc_shutdown);
-								if (!(missing || dbDown))
-									check("IProvider::attachDatabase", &st);
-
-								// down/missing DB is not a reason to fail mapping
-								iDb = NULL;
-							}
+							// down/missing DB is not a reason to fail mapping
+							iDb = NULL;
 						}
 					}
 				}
@@ -1256,58 +1273,49 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 
 		while (curs->fetchNext(&st, mMap.getBuffer()) == IStatus::RESULT_OK)
 		{
-			int charset = CS_METADATA;
 			record->nullify();
 
 			putField(tdbb, record,
-					 DumpField(f_sec_map_name, VALUE_STRING, name->len, name->data),
-					 charset);
+					 DumpField(f_sec_map_name, VALUE_STRING, name->len, name->data));
 
 			putField(tdbb, record,
-					 DumpField(f_sec_map_using, VALUE_STRING, 1, usng->data),
-					 charset);
+					 DumpField(f_sec_map_using, VALUE_STRING, 1, usng->data));
 
 			if (!plugin.null)
 			{
 				putField(tdbb, record,
-						 DumpField(f_sec_map_plugin, VALUE_STRING, plugin->len, plugin->data),
-						 charset);
+						 DumpField(f_sec_map_plugin, VALUE_STRING, plugin->len, plugin->data));
 			}
 
 			if (!db.null)
 			{
 				putField(tdbb, record,
-						 DumpField(f_sec_map_db, VALUE_STRING, db->len, db->data),
-						 charset);
+						 DumpField(f_sec_map_db, VALUE_STRING, db->len, db->data));
 			}
 
 			if (!fromType.null)
 			{
 				putField(tdbb, record,
-						 DumpField(f_sec_map_from_type, VALUE_STRING, fromType->len, fromType->data),
-						 charset);
+						 DumpField(f_sec_map_from_type, VALUE_STRING, fromType->len, fromType->data));
 			}
 
 			if (!from.null)
 			{
 				putField(tdbb, record,
-						 DumpField(f_sec_map_from, VALUE_STRING, from->len, from->data),
-						 charset);
+						 DumpField(f_sec_map_from, VALUE_STRING, from->len, from->data));
 			}
 
 			if (!role.null)
 			{
 				SINT64 v = role;
 				putField(tdbb, record,
-						 DumpField(f_sec_map_to_type, VALUE_INTEGER, sizeof(v), &v),
-						 charset);
+						 DumpField(f_sec_map_to_type, VALUE_INTEGER, sizeof(v), &v));
 			}
 
 			if (!to.null)
 			{
 				putField(tdbb, record,
-						 DumpField(f_sec_map_to, VALUE_STRING, to->len, to->data),
-						 charset);
+						 DumpField(f_sec_map_to, VALUE_STRING, to->len, to->data));
 			}
 
 			buffer->store(record);

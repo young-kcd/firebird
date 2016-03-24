@@ -331,13 +331,9 @@ AggNode* AggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
+	impureOffset = CMP_impure(csb, sizeof(impure_value_ex));
 
 	return this;
-}
-
-void AggNode::aggPostRse(thread_db* /*tdbb*/, CompilerScratch* csb)
-{
-	impureOffset = CMP_impure(csb, sizeof(impure_value_ex));
 }
 
 void AggNode::aggInit(thread_db* tdbb, jrd_req* request) const
@@ -611,15 +607,10 @@ AggNode* AvgAggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	if (dialect1)
 		nodFlags |= FLAG_DOUBLE;
 
-	return this;
-}
-
-void AvgAggNode::aggPostRse(thread_db* tdbb, CompilerScratch* csb)
-{
-	AggNode::aggPostRse(tdbb, csb);
-
 	// We need a second descriptor in the impure area for AVG.
 	tempImpure = CMP_impure(csb, sizeof(impure_value_ex));
+
+	return this;
 }
 
 string AvgAggNode::internalPrint(NodePrinter& printer) const
@@ -1286,12 +1277,6 @@ void StdDevAggNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned /*
 	arg = PAR_parse_value(tdbb, csb);
 }
 
-void StdDevAggNode::aggPostRse(thread_db* tdbb, CompilerScratch* csb)
-{
-	AggNode::aggPostRse(tdbb, csb);
-	impure2Offset = CMP_impure(csb, sizeof(StdDevImpure));
-}
-
 void StdDevAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	desc->makeDouble();
@@ -1309,6 +1294,15 @@ ValueExprNode* StdDevAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
 	return node;
+}
+
+AggNode* StdDevAggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	AggNode::pass2(tdbb, csb);
+
+	impure2Offset = CMP_impure(csb, sizeof(StdDevImpure));
+
+	return this;
 }
 
 string StdDevAggNode::internalPrint(NodePrinter& printer) const
@@ -1419,12 +1413,6 @@ void CorrAggNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned /*co
 	arg2 = PAR_parse_value(tdbb, csb);
 }
 
-void CorrAggNode::aggPostRse(thread_db* tdbb, CompilerScratch* csb)
-{
-	AggNode::aggPostRse(tdbb, csb);
-	impure2Offset = CMP_impure(csb, sizeof(CorrImpure));
-}
-
 void CorrAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	desc->makeDouble();
@@ -1443,6 +1431,15 @@ ValueExprNode* CorrAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	node->arg = copier.copy(tdbb, arg);
 	node->arg2 = copier.copy(tdbb, arg2);
 	return node;
+}
+
+AggNode* CorrAggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	AggNode::pass2(tdbb, csb);
+
+	impure2Offset = CMP_impure(csb, sizeof(CorrImpure));
+
+	return this;
 }
 
 string CorrAggNode::internalPrint(NodePrinter& printer) const
@@ -1601,12 +1598,6 @@ void RegrAggNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned /*co
 	arg2 = PAR_parse_value(tdbb, csb);
 }
 
-void RegrAggNode::aggPostRse(thread_db* tdbb, CompilerScratch* csb)
-{
-	AggNode::aggPostRse(tdbb, csb);
-	impure2Offset = CMP_impure(csb, sizeof(RegrImpure));
-}
-
 void RegrAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	desc->makeDouble();
@@ -1625,6 +1616,15 @@ ValueExprNode* RegrAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	node->arg = copier.copy(tdbb, arg);
 	node->arg2 = copier.copy(tdbb, arg2);
 	return node;
+}
+
+AggNode* RegrAggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	AggNode::pass2(tdbb, csb);
+
+	impure2Offset = CMP_impure(csb, sizeof(RegrImpure));
+
+	return this;
 }
 
 string RegrAggNode::internalPrint(NodePrinter& printer) const

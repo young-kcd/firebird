@@ -105,8 +105,9 @@ void processCommandLine(IntlParametersBlock::ProcessString* processString, strin
 namespace Firebird
 {
 
-void IntlParametersBlock::toUtf8(ClumpletWriter& pb, UCHAR utf8Tag)
+void IntlParametersBlock::toUtf8(ClumpletWriter& pb)
 {
+	UCHAR utf8Tag = getUtf8Tag();
 	if (utf8Tag)
 	{
 		pb.insertTag(utf8Tag);
@@ -115,8 +116,9 @@ void IntlParametersBlock::toUtf8(ClumpletWriter& pb, UCHAR utf8Tag)
 	processParametersBlock(strToUtf8, pb);
 }
 
-void IntlParametersBlock::fromUtf8(ClumpletWriter& pb, UCHAR utf8Tag)
+void IntlParametersBlock::fromUtf8(ClumpletWriter& pb)
 {
+	UCHAR utf8Tag = getUtf8Tag();
 	if (utf8Tag)
 	{
 		pb.deleteWithTag(utf8Tag);
@@ -334,7 +336,24 @@ IntlParametersBlock::TagType IntlSpbStart::checkTag(UCHAR tag, const char** tagN
 	return TAG_SKIP;
 }
 
-
 #undef FB_IPB_TAG
+
+
+UCHAR IntlDpb::getUtf8Tag()
+{
+	return isc_dpb_utf8_filename;
+}
+
+
+UCHAR IntlSpb::getUtf8Tag()
+{
+	return isc_spb_utf8_filename;
+}
+
+
+UCHAR IntlSpbStart::getUtf8Tag()
+{
+	return 0;
+}
 
 }

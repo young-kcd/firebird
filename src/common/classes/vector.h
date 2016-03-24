@@ -118,6 +118,21 @@ public:
 		return data[count];
 	}
 
+	// This method only assigns "pos" if the element is found.
+	// Maybe we should modify it to iterate directy with "pos".
+	bool find(const T& item, FB_SIZE_T& pos) const
+	{
+		for (FB_SIZE_T i = 0; i < count; i++)
+		{
+			if (data[i] == item)
+			{
+				pos = i;
+				return true;
+			}
+		}
+		return false;
+	}
+
 protected:
 	FB_SIZE_T count;
 	T data[Capacity];

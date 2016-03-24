@@ -95,7 +95,7 @@ void NBackupStateLock::invalidate(thread_db* tdbb)
 	GlobalRWLock::invalidate(tdbb);
 	NBAK_TRACE( ("invalidate state stateLock(%p)", this) );
 	backup_manager->setState(Ods::hdr_nbak_unknown);
-	backup_manager->closeDelta();
+	backup_manager->closeDelta(tdbb);
 }
 
 void NBackupStateLock::blockingAstHandler(thread_db* tdbb)
@@ -199,10 +199,10 @@ void BackupManager::generateFilename()
 	explicit_diff_name = false;
 }
 
-void BackupManager::openDelta()
+void BackupManager::openDelta(thread_db* tdbb)
 {
 	fb_assert(!diff_file);
-	diff_file = PIO_open(database, diff_name, diff_name);
+	diff_file = PIO_open(tdbb, diff_name, diff_name);
 
 	if (database->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
 	{
@@ -211,11 +211,11 @@ void BackupManager::openDelta()
 	}
 }
 
-void BackupManager::closeDelta()
+void BackupManager::closeDelta(thread_db* tdbb)
 {
 	if (diff_file)
 	{
-		PIO_flush(database, diff_file);
+		PIO_flush(tdbb, diff_file);
 		PIO_close(diff_file);
 		diff_file = NULL;
 	}
@@ -246,11 +246,20 @@ void BackupManager::beginBackup(thread_db* tdbb)
 		return;
 	}
 
+	// Check crypt state
+	if (header->hdr_flags & Ods::hdr_crypt_process)
+	{
+		NBAK_TRACE(("begin backup - crypt thread runs"));
+		stateGuard.setSuccess();
+		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) <<
+			"Cannot begin backup: please wait for crypt thread completion");
+	}
+
 	try
 	{
 		// Create file
 		NBAK_TRACE(("Creating difference file %s", diff_name.c_str()));
-		diff_file = PIO_create(database, diff_name, true, false);
+		diff_file = PIO_create(tdbb, diff_name, true, false);
 	}
 	catch (const Firebird::Exception&)
 	{
@@ -306,7 +315,7 @@ void BackupManager::beginBackup(thread_db* tdbb)
 		temp_bdb.bdb_page = 0;
 		temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(alloc_buffer);
 		memset(alloc_buffer, 0, database->dbb_page_size);
-		if (!PIO_write(diff_file, &temp_bdb, temp_bdb.bdb_buffer, tdbb->tdbb_status_vector))
+		if (!PIO_write(tdbb, diff_file, &temp_bdb, temp_bdb.bdb_buffer, tdbb->tdbb_status_vector))
 			ERR_punt();
 		NBAK_TRACE(("Set backup state in header"));
 		Guid guid;
@@ -331,7 +340,7 @@ void BackupManager::beginBackup(thread_db* tdbb)
 
 
 // Determine actual DB size (raw devices support)
-ULONG BackupManager::getPageCount()
+ULONG BackupManager::getPageCount(thread_db* tdbb)
 {
 	if (backup_state != Ods::hdr_nbak_stalled)
 	{
@@ -347,29 +356,29 @@ ULONG BackupManager::getPageCount()
 		PageSpace* pageSpace;
 
 	public:
-		explicit PioCount(Database* d)
-			: temp_bdb(d->dbb_bcb)
+		explicit PioCount(Database* dbb)
+			: temp_bdb(dbb->dbb_bcb)
 		{
-			fb_assert(d);
-			pageSpace = d->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+			pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 			fb_assert(pageSpace);
 		}
 
-		virtual void newPage(const SLONG pageNum, Ods::pag* buf)
+		virtual void newPage(thread_db* tdbb, const SLONG pageNum, Ods::pag* buf)
 		{
 			temp_bdb.bdb_buffer = buf;
 			temp_bdb.bdb_page = pageNum;
 			FbLocalStatus status;
 			// It's PIP - therefore no need to try to decrypt
-			if (!PIO_read(pageSpace->file, &temp_bdb, temp_bdb.bdb_buffer, &status))
+			if (!PIO_read(tdbb, pageSpace->file, &temp_bdb, temp_bdb.bdb_buffer, &status))
 			{
 				Firebird::status_exception::raise(&status);
 			}
 		}
 	};
-	PioCount pioCount(database);
 
-	return PAG_page_count(database, &pioCount);
+	PioCount pioCount(tdbb->getDatabase());
+
+	return PAG_page_count(tdbb, &pioCount);
 }
 
 
@@ -402,7 +411,7 @@ bool BackupManager::extendDatabase(thread_db* tdbb)
 	maxAllocPage = pgSpace->maxAlloc();
 	while (maxAllocPage < maxPage)
 	{
-		const USHORT ret = PIO_init_data(database, pgSpace->file, tdbb->tdbb_status_vector,
+		const USHORT ret = PIO_init_data(tdbb, pgSpace->file, tdbb->tdbb_status_vector,
 										 maxAllocPage, 256);
 
 		if (ret != 256)
@@ -594,7 +603,7 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 				ERR_bugcheck_msg("There are holders of alloc_lock after end_backup finish");
 		}
 
-		closeDelta();
+		closeDelta(tdbb);
 		unlink(diff_name.c_str());
 
 		NBAK_TRACE(("backup is over"));
@@ -642,7 +651,7 @@ bool BackupManager::actualizeAlloc(thread_db* tdbb, bool haveGlobalLock)
 			temp_bdb.bdb_page = last_allocated_page & ~PAGES_PER_ALLOC_PAGE;
 			temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(alloc_buffer);
 
-			if (!PIO_read(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector)) {
+			if (!PIO_read(tdbb, diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector)) {
 				return false;
 			}
 
@@ -744,7 +753,7 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 	BufferDesc temp_bdb(database->dbb_bcb);
 	temp_bdb.bdb_page = last_allocated_page + 1;
 	temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(empty_buffer);
-	if (!PIO_write(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector))
+	if (!PIO_write(tdbb, diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector))
 		return 0;
 
 	const bool alloc_page_full = alloc_buffer[0] == database->dbb_page_size / sizeof(ULONG) - 2;
@@ -753,7 +762,7 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 		// Pointer page is full. Its time to create new one.
 		temp_bdb.bdb_page = last_allocated_page + 2;
 		temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(empty_buffer);
-		if (!PIO_write(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector))
+		if (!PIO_write(tdbb, diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector))
 			return 0;
 	}
 
@@ -761,7 +770,7 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 	temp_bdb.bdb_page = last_allocated_page & ~(database->dbb_page_size / sizeof(ULONG) - 1);
 	temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(alloc_buffer);
 	alloc_buffer[++alloc_buffer[0]] = db_page;
-	if (!PIO_write(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector))
+	if (!PIO_write(tdbb, diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector))
 		return 0;
 
 	last_allocated_page++;
@@ -792,7 +801,7 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 	return last_allocated_page;
 }
 
-bool BackupManager::writeDifference(FbStatusVector* status, ULONG diff_page, Ods::pag* page)
+bool BackupManager::writeDifference(thread_db* tdbb, FbStatusVector* status, ULONG diff_page, Ods::pag* page)
 {
 	if (!diff_page)
 	{
@@ -811,11 +820,26 @@ bool BackupManager::writeDifference(FbStatusVector* status, ULONG diff_page, Ods
 	// Check that diff page is not allocation page
 	fb_assert(diff_page % (database->dbb_page_size / sizeof(ULONG)));
 
-	CryptoManager::Buffer buffer;
-	Ods::pag* writePage = database->dbb_crypto_manager->encrypt(status, page, buffer);
-	if (!writePage)
-		return false;
-	if (!PIO_write(diff_file, &temp_bdb, writePage, status))
+	class Pio : public CryptoManager::IOCallback
+	{
+	public:
+		Pio(jrd_file* p_file, BufferDesc* p_bdb)
+			: file(p_file), bdb(p_bdb)
+		{ }
+
+		bool callback(thread_db* tdbb, FbStatusVector* sv, Ods::pag* page)
+		{
+			return PIO_write(tdbb, file, bdb, page, sv);
+		}
+
+	private:
+		jrd_file* file;
+		BufferDesc* bdb;
+	};
+
+	Pio io(diff_file, &temp_bdb);
+
+	if (!database->dbb_crypto_manager->write(tdbb, status, page, &io))
 		return false;
 	return true;
 }
@@ -825,17 +849,35 @@ bool BackupManager::readDifference(thread_db* tdbb, ULONG diff_page, Ods::pag* p
 	BufferDesc temp_bdb(database->dbb_bcb);
 	temp_bdb.bdb_page = diff_page;
 	temp_bdb.bdb_buffer = page;
-	if (!PIO_read(diff_file, &temp_bdb, page, tdbb->tdbb_status_vector))
-		return false;
-	if (!database->dbb_crypto_manager->decrypt(tdbb->tdbb_status_vector, page))
+
+	class Pio : public CryptoManager::IOCallback
+	{
+	public:
+		Pio(jrd_file* p_file, BufferDesc* p_bdb)
+			: file(p_file), bdb(p_bdb)
+		{ }
+
+		bool callback(thread_db* tdbb, FbStatusVector* sv, Ods::pag* page)
+		{
+			return PIO_read(tdbb, file, bdb, page, sv);
+		}
+
+	private:
+		jrd_file* file;
+		BufferDesc* bdb;
+	};
+
+	Pio io(diff_file, &temp_bdb);
+
+	if (!database->dbb_crypto_manager->read(tdbb, tdbb->tdbb_status_vector, page, &io))
 		return false;
 	NBAK_TRACE(("read_diff page=%d, diff=%d", page->pag_pageno, diff_page));
 	return true;
 }
 
-void BackupManager::flushDifference()
+void BackupManager::flushDifference(thread_db* tdbb)
 {
-	PIO_flush(database, diff_file);
+	PIO_flush(tdbb, diff_file);
 }
 
 void BackupManager::setForcedWrites(const bool forceWrite, const bool notUseFSCache)
@@ -924,7 +966,7 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 	jrd_file* file = pageSpace->file;
 
 	// It's header page, never encrypted
-	while (!PIO_read(file, &temp_bdb, temp_bdb.bdb_buffer, status))
+	while (!PIO_read(tdbb, file, &temp_bdb, temp_bdb.bdb_buffer, status))
 	{
 		if (!CCH_rollover_to_shadow(tdbb, database, file, false))
 		{
@@ -984,11 +1026,11 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 				ERR_bugcheck_msg("There are holders of alloc_lock after end_backup finish");
 		}
 
-		closeDelta();
+		closeDelta(tdbb);
 	}
 
 	if (new_backup_state != Ods::hdr_nbak_normal && !diff_file)
-		openDelta();
+		openDelta(tdbb);
 	// Adjust state at the very and to ensure proper error handling
 	backup_state = new_backup_state;
 
@@ -999,7 +1041,7 @@ void BackupManager::shutdown(thread_db* tdbb)
 {
 	shutDown = true;
 
-	closeDelta();
+	closeDelta(tdbb);
 	stateLock->shutdownLock(tdbb);
 	allocLock->shutdownLock(tdbb);
 }

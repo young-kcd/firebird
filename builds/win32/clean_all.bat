@@ -44,7 +44,7 @@ set FB_INTLREALCLEAN=
 
 if defined FB_CLEAN_SHARED (
 @echo Cleaning shared gen and dsql files...
-@del %FB_ROOT_PATH%\src\include\gen\autoconfig.h 2>nul
+@del %FB_ROOT_PATH%\src\include\gen\parse.h 2>nul
 @del %FB_ROOT_PATH%\src\dsql\dsql.tab.h 2>nul
 @del %FB_ROOT_PATH%\src\dsql\parse.cpp 2>nul
 )

@@ -359,7 +359,7 @@ without specifying a character set.', NULL);
 ('dsql_relation_err', 'PASS1_make_context', 'dsql pass1.c', NULL, 0, 260, NULL, 'Table unknown', NULL, NULL);
 ('dsql_procedure_err', 'PASS1_statement', 'dsql pass1.c', NULL, 0, 261, NULL, 'Procedure unknown', NULL, NULL);
 ('dsql_request_err', 'lookup_stmt', 'dsql user_dsql.c', NULL, 0, 262, NULL, 'Request unknown', NULL, NULL);
-('dsql_sqlda_err', '(several)', 'dsql (several)', NULL, 0, 263, NULL, 'SQLDA missing or incorrect version, or incorrect number/type of variables', NULL, NULL);
+('dsql_sqlda_err', '(several)', 'dsql (several)', NULL, 0, 263, NULL, 'SQLDA error', NULL, NULL);
 ('dsql_var_count_err', 'pass1_insert', 'dsql pass1.c', NULL, 0, 264, NULL, 'Count of read-write columns does not equal count of values', NULL, NULL);
 ('dsql_stmt_handle', 'bad_sql_handle', 'whyb.c', NULL, 0, 265, NULL, 'Invalid statement handle', NULL, NULL);
 ('dsql_function_err', 'pass1_udf', 'dsql pass1.c', NULL, 0, 266, NULL, 'Function unknown', NULL, NULL);
@@ -893,6 +893,10 @@ Data source : @4', NULL, NULL)
 ('domain_primary_key_notnull', NULL, 'DdlNodes.epp', NULL, 0, 783, NULL, 'Domain used in the PRIMARY KEY constraint of table @1 must be NOT NULL', NULL, NULL);
 ('invalid_attachment_charset', NULL, NULL, NULL, 0, 784, NULL, 'CHARACTER SET @1 cannot be used as a attachment character set', NULL, NULL);
 ('map_down', NULL, 'Mapping.cpp', NULL, 0, 785, NULL, 'Some database(s) were shutdown when trying to read mapping data', NULL, NULL);
+('login_error', NULL, 'server.cpp', NULL, 0, 786, NULL, 'Error occurred during login, please check server firebird.log for details', NULL, NULL);
+('already_opened', 'lockDatabaseFile', 'unix.cpp', NULL, 0, 787, NULL, 'Database already opened with engine instance, incompatible with current', NULL, NULL);
+('bad_crypt_key', NULL, 'CryptoManager.cpp', NULL, 0, 788, NULL, 'Invalid crypt key @1', NULL, NULL);
+('encrypt_error', NULL, 'CryptoManager.cpp', NULL, 0, 789, NULL, 'Page requires encyption but crypt plugin is missing', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
@@ -1645,7 +1649,7 @@ COMMIT WORK;
 ('dsql_dialect_warning_expr', 'GEN_expr', 'gen.c', NULL, 7, 4, NULL, 'Use of @1 expression that returns different results in dialect 1 and dialect 3', NULL, NULL);
 ('sql_db_dialect_dtype_unsupport', 'dsql_yyparse', 'parse.y', NULL, 7, 5, NULL, 'Database SQL dialect @1 does not support reference to @2 datatype', NULL, NULL);
 (NULL, NULL, NULL, NULL, 7, 6, NULL, '', NULL, NULL);
-('isc_sql_dialect_conflict_num', 'dsql_yyparse', 'parse.y', NULL, 7, 7, NULL, 'DB dialect @1 and client dialect @2 conflict with respect to numeric precision @3.', NULL, NULL);
+('sql_dialect_conflict_num', 'dsql_yyparse', 'parse.y', NULL, 7, 7, NULL, 'DB dialect @1 and client dialect @2 conflict with respect to numeric precision @3.', NULL, NULL);
 ('dsql_warning_number_ambiguous', 'yylex', 'parse.y', NULL, 7, 8, NULL, 'WARNING: Numeric literal @1 is interpreted as a floating-point', NULL, NULL);
 ('dsql_warning_number_ambiguous1', 'yylex', 'parse.y', NULL, 7, 9, NULL, 'value in SQL dialect 1, but as an exact numeric value in SQL dialect 3.', NULL, NULL);
 ('dsql_warn_precision_ambiguous', 'dsql_yyparse', 'parse.y', NULL, 7, 10, NULL, 'WARNING: NUMERIC and DECIMAL fields with precision 10 or greater are stored', NULL, NULL);
@@ -1671,6 +1675,13 @@ COMMIT WORK;
 ('dsql_incompatible_trigger_type', 'define_trigger', 'ddl.cpp', NULL, 7, 30, NULL, 'Incompatible trigger type', NULL, NULL);
 ('dsql_db_trigger_type_cant_change', 'define_trigger', 'ddl.cpp', NULL, 7, 31, NULL, 'Database trigger type can''t be changed', NULL, NULL);
 ('dsql_record_version_table', 'MAKE_desc', 'ExprNodes.cpp', NULL, 7, 32, NULL, 'To be used with RDB$RECORD_VERSION, @1 must be a table or a view of single table', NULL, NULL);
+('dsql_invalid_sqlda_version', NULL, 'why.cpp', NULL, 7, 33, NULL, 'SQLDA version expected between @1 and @2, found @3', NULL, NULL);
+('dsql_sqlvar_index', NULL, 'why.cpp', NULL, 7, 34, NULL, 'at SQLVAR index @1', NULL, NULL);
+('dsql_no_sqlind', NULL, 'why.cpp', NULL, 7, 35, NULL, 'empty pointer to NULL indicator variable', NULL, NULL);
+('dsql_no_sqldata', NULL, 'why.cpp', NULL, 7, 36, NULL, 'empty pointer to data', NULL, NULL);
+('dsql_no_input_sqlda', NULL, NULL, NULL, 7, 37, NULL, 'No SQLDA for input values provided', NULL, NULL);
+('dsql_no_output_sqlda', NULL, NULL, NULL, 7, 38, NULL, 'No SQLDA for output values provided', NULL, NULL);
+('dsql_wrong_param_num', NULL, NULL, NULL, 7, 39, NULL, 'Wrong number of parameters (expected @1, got @2)', NULL, NULL);
 -- Do not change the arguments of the previous DSQL messages.
 -- Write the new DSQL messages here.
 -- DYN
@@ -3035,6 +3046,11 @@ Fetches = !', NULL, NULL);
 ('REC_DISPLAYCOUNT', 'process_statement', 'isql.epp', NULL, 17, 187, NULL, 'Records displayed: @1', NULL, NULL)
 ('COLUMNS_HIDDEN', 'process_statement', 'isql.epp', NULL, 17, 188, NULL, 'Full NULL columns hidden due to RecordBuff: @1', NULL, NULL)
 ('HLP_SETRECORDBUF', 'help', 'isql.epp', NULL, 17, 189, NULL, '    SET RECORDBuf          -- toggle limited buffering and trimming of columns', NULL, NULL)
+('NUMBER_USED_PAGES', 'SHOW_dbb_parameters', 'show.epp', NULL, 17, 190, NULL, 'Number of DB pages used = @1', NULL, NULL);
+('NUMBER_FREE_PAGES', 'SHOW_dbb_parameters', 'show.epp', NULL, 17, 191, NULL, 'Number of DB pages free = @1', NULL, NULL);
+('DATABASE_CRYPTED', 'SHOW_dbb_parameters', 'show.epp', NULL, 17, 192, NULL, 'Database encrypted', NULL, NULL);
+('DATABASE_NOT_CRYPTED', 'SHOW_dbb_parameters', 'show.epp', NULL, 17, 193, NULL, 'Database not encrypted', NULL, NULL);
+('DATABASE_CRYPT_PROCESS', 'SHOW_dbb_parameters', 'show.epp', NULL, 17, 194, NULL, 'crypt thread not complete', NULL, NULL);
 -- GSEC
 ('GsecMsg1', 'get_line', 'gsec.e', NULL, 18, 1, NULL, 'GSEC>', NULL, NULL);
 ('GsecMsg2', 'printhelp', 'gsec.e', 'This message is used in the Help display. It should be the same as number 1 (but in lower case).', 18, 2, NULL, 'gsec', NULL, NULL);
@@ -3280,7 +3296,7 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 8, NULL, '  -L(OCK) <database>                     Lock database for filesystem copy', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 9, NULL, '  -UN(LOCK) <database>                   Unlock previously locked database', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 10, NULL, '  -F(IXUP) <database>                    Fixup database after filesystem copy', NULL, NULL)
-(NULL, 'usage', 'nbackup.cpp', NULL, 24, 11, NULL, '  -B(ACKUP) <level> <db> [<file>]        Create incremental backup', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 11, NULL, '  -B(ACKUP) <level>|<GUID> <db> [<file>] Create incremental backup', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 12, NULL, '  -R(ESTORE) <db> [<file0> [<file1>...]] Restore incremental backup', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 13, NULL, '  -U(SER) <user>                         User name', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 14, NULL, '  -P(ASSWORD) <password>                 Password', NULL, NULL)
@@ -3346,6 +3362,9 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 74, NULL, '  -DE(COMPRESS) <command>                Command to extract archives during restore', NULL, NULL)
 ('nbackup_deco_parse', 'NBackup::open_backup_scan', 'nbackup.cpp', NULL, 24, 75, NULL, 'Too complex decompress command (> @1 arguments)', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 76, NULL, '  -RO(LE) <role>                         SQL role name', NULL, NULL)
+('nbackup_lostrec_guid_db', 'NBackup::backup_database', 'nbackup.cpp', NULL, 24, 77, NULL, 'Cannot find record for database "@1" backup GUID @2 in the backup history', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 78, NULL, '  -I(NPLACE)                             Restore incremental backup(s) to existing database', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 79, NULL, '  -INPLACE option could corrupt the database that has changed since previous restore', NULL, NULL)
 -- FBTRACEMGR
 -- All messages use the new format.
 (NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 1, NULL, 'Firebird Trace Manager version @1', NULL, NULL)

@@ -90,7 +90,7 @@ void SDW_add(thread_db* tdbb, const TEXT* file_name, USHORT shadow_number, USHOR
 													 Arg::Str(file_name));
 	}
 
-	jrd_file* shadow_file = PIO_create(dbb, file_name, false, false);
+	jrd_file* shadow_file = PIO_create(tdbb, file_name, false, false);
 
 	if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
 	{
@@ -110,7 +110,8 @@ void SDW_add(thread_db* tdbb, const TEXT* file_name, USHORT shadow_number, USHOR
 	WIN window(HEADER_PAGE_NUMBER);
 	CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
-	CCH_write_all_shadows(tdbb, 0, window.win_bdb, tdbb->tdbb_status_vector, false);
+	CCH_write_all_shadows(tdbb, 0, window.win_bdb, window.win_bdb->bdb_buffer,
+		tdbb->tdbb_status_vector, false);
 	CCH_RELEASE(tdbb, &window);
 	if (file_flags & FILE_conditional)
 		shadow->sdw_flags |= SDW_conditional;
@@ -167,7 +168,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 													 Arg::Str(file_name));
 	}
 
-	const SLONG sequence = PIO_add_file(dbb, shadow_file, file_name, start);
+	const SLONG sequence = PIO_add_file(tdbb, shadow_file, file_name, start);
 	if (!sequence)
 		return 0;
 
@@ -209,7 +210,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 		temp_bdb.bdb_buffer = (PAG) header;
 		header->hdr_header.pag_pageno = temp_bdb.bdb_page.getPageNum();
 		// It's header, never encrypted
-		if (!PIO_write(shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
+		if (!PIO_write(tdbb, shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
 		{
 			delete[] spare_buffer;
 			return 0;
@@ -256,7 +257,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 			temp_bdb.bdb_page = file->fil_min_page;
 			header->hdr_header.pag_pageno = temp_bdb.bdb_page.getPageNum();
 			// It's header, never encrypted
-			if (!PIO_write(shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
+			if (!PIO_write(tdbb, shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
 			{
 				delete[] spare_buffer;
 				return 0;
@@ -426,7 +427,10 @@ void SDW_close()
  *
  **************************************/
 	Database* dbb = GET_DBB();
-	SyncLockGuard guard(&dbb->dbb_shadow_sync, SYNC_SHARED, "SDW_close");
+
+	Sync guard(&dbb->dbb_shadow_sync, "SDW_close");
+	if (!dbb->dbb_shadow_sync.ourExclusiveLock())
+		guard.lock(SYNC_SHARED);
 
 	for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
 		PIO_close(shadow->sdw_file);
@@ -493,8 +497,28 @@ void SDW_dump_pages(thread_db* tdbb)
 				// page type is 0
 
 				CCH_FETCH(tdbb, &window, LCK_read, pag_undefined);
-				if (!CCH_write_all_shadows(tdbb, shadow, window.win_bdb,
-										   tdbb->tdbb_status_vector, false))
+
+				class Pio : public CryptoManager::IOCallback
+				{
+				public:
+					Pio(Shadow* s, BufferDesc* b)
+						: shadow(s), bdb(b)
+					{ }
+
+					bool callback(thread_db* tdbb, FbStatusVector* status, Ods::pag* page)
+					{
+						return CCH_write_all_shadows(tdbb, shadow, bdb, page, status, false);
+					}
+
+				private:
+					Shadow* shadow;
+					BufferDesc* bdb;
+				};
+
+				Pio cryptIo(shadow, window.win_bdb);
+
+				if (!dbb->dbb_crypto_manager->write(tdbb, tdbb->tdbb_status_vector,
+						window.win_bdb->bdb_buffer, &cryptIo))
 				{
 					CCH_RELEASE(tdbb, &window);
 					ERR_punt();
@@ -958,7 +982,7 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	jrd_file* dbb_file = pageSpace->file;
 
-	if (dbb_file && dbb_file->fil_string && expanded_name == dbb_file->fil_string)
+	if (dbb_file && expanded_name == dbb_file->fil_string)
 	{
 		if (shadow && (shadow->sdw_flags & SDW_rollover))
 			return;
@@ -985,7 +1009,7 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 
 	try {
 
-	shadow_file = PIO_open(dbb, expanded_name, file_name);
+	shadow_file = PIO_open(tdbb, expanded_name, file_name);
 
 	if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
 	{
@@ -1005,12 +1029,7 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 			(header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
 		header_fetched++;
 
-		if (!PIO_read(shadow_file, window.win_bdb, (PAG) spare_page, tdbb->tdbb_status_vector))
-		{
-			ERR_punt();
-		}
-
-		if (!dbb->dbb_crypto_manager->decrypt(tdbb->tdbb_status_vector, (PAG) spare_page))
+		if (!PIO_read(tdbb, shadow_file, window.win_bdb, (PAG) spare_page, tdbb->tdbb_status_vector))
 		{
 			ERR_punt();
 		}
@@ -1229,7 +1248,7 @@ static bool check_for_file(thread_db* tdbb, const SCHAR* name, USHORT length)
 		// This use of PIO_open is NOT checked against DatabaseAccess configuration
 		// parameter. It's not required, because here we only check for presence of
 		// existing file, never really use (or create) it.
-		jrd_file* temp_file = PIO_open(dbb, path, path);
+		jrd_file* temp_file = PIO_open(tdbb, path, path);
 		PIO_close(temp_file);
 	}	// try
 	catch (const Firebird::Exception& ex)

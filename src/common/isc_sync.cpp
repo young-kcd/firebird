@@ -1534,7 +1534,7 @@ ULONG ISC_exception_post(ULONG sig_num, const TEXT* err_msg, ISC_STATUS& /*isc_e
 		break;
 	default:
 		sprintf(log_msg, "%s Unknown Exception.\n"
-				"\t\tException number %"ULONGFORMAT"."
+				"\t\tException number %" ULONGFORMAT"."
 				"\tThis exception will cause the Firebird server\n"
 				"\tto terminate abnormally.", err_msg, sig_num);
 		break;
@@ -1698,7 +1698,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg, ISC_STATUS& isc
 		break;
 	default:
 		sprintf (log_msg, "%s An exception occurred that does\n"
-				"\t\tnot have a description.  Exception number %"XLONGFORMAT".\n"
+				"\t\tnot have a description.  Exception number %" XLONGFORMAT".\n"
 				"\tThis exception will cause the Firebird server\n"
 				"\tto terminate abnormally.", err_msg, except_code);
 		break;
@@ -1749,7 +1749,22 @@ void SharedMemoryBase::unlinkFile()
 
 	// We can't do much (specially in dtors) when it fails
 	// therefore do not check for errors - at least it's just /tmp.
+
+#ifdef WIN_NT
+	// Delete file only if it is not used by anyone else
+	HANDLE hFile = CreateFile(expanded_filename,
+		DELETE,
+		0,
+		NULL,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
+		NULL);
+
+	if (hFile != INVALID_HANDLE_VALUE)
+		CloseHandle(hFile);
+#else
 	unlink(expanded_filename);
+#endif // WIN_NT
 }
 
 
@@ -2115,6 +2130,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
  *	routine (if given) or punt (leaving the file unmapped).
  *
  **************************************/
+	fb_assert(sh_mem_callback);
 	sh_mem_name[0] = '\0';
 
 	ISC_mutex_init(&sh_mem_winMutex, filename);
@@ -2127,34 +2143,14 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	TEXT expanded_filename[MAXPATHLEN];
 	iscPrefixLock(expanded_filename, filename, true);
 
-	const bool trunc_flag = (length != 0);
 	bool init_flag = false;
+	DWORD err = 0;
 
 	// retry to attach to mmapped file if the process initializing dies during initialization.
 
   retry:
 	if (retry_count++ > 0)
 		Thread::sleep(10);
-
-	file_handle = CreateFile(expanded_filename,
-							 GENERIC_READ | GENERIC_WRITE,
-							 FILE_SHARE_READ | FILE_SHARE_WRITE,
-							 NULL,
-							 OPEN_ALWAYS,
-							 FILE_ATTRIBUTE_NORMAL,
-							 NULL);
-	DWORD err = GetLastError();
-	if (file_handle == INVALID_HANDLE_VALUE)
-	{
-		if (err == ERROR_SHARING_VIOLATION)
-			goto retry;
-
-		system_call_failed::raise("CreateFile");
-	}
-
-	// Check if file already exists
-
-	const bool file_exists = (err == ERROR_ALREADY_EXISTS);
 
 	// Create an event that can be used to determine if someone has already
 	// initialized shared memory.
@@ -2168,45 +2164,19 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	if (!init_flag)
 	{
 		event_handle = CreateEvent(ISC_get_security_desc(), TRUE, FALSE, object_name);
+		err = GetLastError();
 		if (!event_handle)
 		{
-			DWORD err = GetLastError();
-			CloseHandle(file_handle);
 			system_call_failed::raise("CreateEvent", err);
 		}
 
-		init_flag = (GetLastError() != ERROR_ALREADY_EXISTS);
-
-		if (init_flag && false)		// What's the crap? AP 2012
-		{
-			DWORD err = GetLastError();
-			CloseHandle(event_handle);
-			CloseHandle(file_handle);
-			Arg::Gds(isc_unavailable).raise();
-		}
+		init_flag = (err != ERROR_ALREADY_EXISTS);
 
 		SetHandleInformation(event_handle, HANDLE_FLAG_INHERIT, 0);
 	}
 
-	if (length == 0)
-	{
-		// Get and use the existing length of the shared segment
-
-		if ((length = GetFileSize(file_handle, NULL)) == -1)
-		{
-			DWORD err = GetLastError();
-			CloseHandle(event_handle);
-			CloseHandle(file_handle);
-			system_call_failed::raise("GetFileSize", err);
-		}
-	}
-
 	// All but the initializer will wait until the event is set.  That
 	// is done after initialization is complete.
-	// Close the file and wait for the event to be set or time out.
-	// The file may be truncated.
-
-	CloseHandle(file_handle);
 
 	if (!init_flag)
 	{
@@ -2228,24 +2198,18 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 		}
 	}
 
-	DWORD fdw_create;
-	if (init_flag && file_exists && trunc_flag)
-		fdw_create = TRUNCATE_EXISTING;
-	else
-		fdw_create = OPEN_ALWAYS;
-
 	file_handle = CreateFile(expanded_filename,
 							 GENERIC_READ | GENERIC_WRITE,
 							 FILE_SHARE_READ | FILE_SHARE_WRITE,
 							 NULL,
-							 fdw_create,
+							 OPEN_ALWAYS,
 							 FILE_ATTRIBUTE_NORMAL,
 							 NULL);
+	err = GetLastError();
+
 	if (file_handle == INVALID_HANDLE_VALUE)
 	{
-		const DWORD err = GetLastError();
-
-		if ((err == ERROR_SHARING_VIOLATION) || (err == ERROR_FILE_NOT_FOUND && fdw_create == TRUNCATE_EXISTING))
+		if ((err == ERROR_SHARING_VIOLATION))
 		{
 			if (!init_flag) {
 				CloseHandle(event_handle);
@@ -2254,16 +2218,67 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 		}
 
 		CloseHandle(event_handle);
-
-		if (err == ERROR_USER_MAPPED_FILE && init_flag && file_exists && trunc_flag)
-			Arg::Gds(isc_instance_conflict).raise();
-		else
-			system_call_failed::raise("CreateFile", err);
+		system_call_failed::raise("CreateFile", err);
 	}
 
-	if (!init_flag)
+	if (init_flag)
 	{
-		if ((GetLastError() != ERROR_ALREADY_EXISTS) ||	SetFilePointer(file_handle, 0, NULL, FILE_END) == 0)
+		if (err == ERROR_ALREADY_EXISTS)
+		{
+			const DWORD file_size = GetFileSize(file_handle, NULL);
+			if (file_size == INVALID_FILE_SIZE)
+			{
+				err = GetLastError();
+				CloseHandle(event_handle);
+				CloseHandle(file_handle);
+				system_call_failed::raise("GetFileSize", err);
+			}
+
+			if (length == 0)
+			{
+				length = file_size;
+			}
+			else if (file_size &&
+					 SetFilePointer(file_handle, 0, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER ||
+					 !SetEndOfFile(file_handle) || !FlushFileBuffers(file_handle))
+			{
+				err = GetLastError();
+				CloseHandle(event_handle);
+				CloseHandle(file_handle);
+
+				if (err == ERROR_USER_MAPPED_FILE)
+					Arg::Gds(isc_instance_conflict).raise();
+				else
+					system_call_failed::raise("SetFilePointer", err);
+			}
+		}
+
+		if (length == 0)
+		{
+			CloseHandle(event_handle);
+			CloseHandle(file_handle);
+
+			if (err == 0)
+			{
+				strcpy(sh_mem_name, filename);
+				unlinkFile();
+			}
+
+			(Arg::Gds(isc_random) << Arg::Str("File for memory mapping is empty.")).raise();
+		}
+
+		if (SetFilePointer(file_handle, length, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER ||
+			!SetEndOfFile(file_handle) || !FlushFileBuffers(file_handle))
+		{
+			err = GetLastError();
+			CloseHandle(event_handle);
+			CloseHandle(file_handle);
+			system_call_failed::raise("SetFilePointer", err);
+		}
+	}
+	else
+	{
+		if ((err != ERROR_ALREADY_EXISTS) || SetFilePointer(file_handle, 0, NULL, FILE_END) == 0)
 		{
 			CloseHandle(event_handle);
 			CloseHandle(file_handle);
@@ -2276,7 +2291,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 
 	if (!make_object_name(object_name, sizeof(object_name), filename, "_mapping"))
 	{
-		DWORD err = GetLastError();
+		err = GetLastError();
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
 		system_call_failed::raise("make_object_name", err);
@@ -2287,15 +2302,15 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 										  PAGE_READWRITE,
 										  0, 2 * sizeof(ULONG),
 										  object_name);
+	err = GetLastError();
 	if (header_obj == NULL)
 	{
-		DWORD err = GetLastError();
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
 		system_call_failed::raise("CreateFileMapping", err);
 	}
 
-	if (!init_flag && GetLastError() != ERROR_ALREADY_EXISTS)
+	if (!init_flag && err != ERROR_ALREADY_EXISTS)
 	{
 		// We have made header_obj but we are not initializing.
 		// Previous owner is closed and clear all header_data.
@@ -2312,7 +2327,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 
 	if (header_address == NULL)
 	{
-		DWORD err = GetLastError();
+		err = GetLastError();
 		CloseHandle(header_obj);
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
@@ -2326,17 +2341,25 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 		header_address[0] = length;
 		header_address[1] = 0;
 	}
+	else if (header_address[0] == 0)
+	{
+		UnmapViewOfFile(header_address);
+		CloseHandle(header_obj);
+		CloseHandle(event_handle);
+		CloseHandle(file_handle);
+		goto retry;
+	}
 	else
 		length = header_address[0];
 
 	// Create the real file mapping object.
 
 	TEXT mapping_name[64]; // enough for int32 as text
-	sprintf(mapping_name, "_mapping_%"ULONGFORMAT, header_address[1]);
+	sprintf(mapping_name, "_mapping_%" ULONGFORMAT, header_address[1]);
 
 	if (!make_object_name(object_name, sizeof(object_name), filename, mapping_name))
 	{
-		DWORD err = GetLastError();
+		err = GetLastError();
 		UnmapViewOfFile(header_address);
 		CloseHandle(header_obj);
 		CloseHandle(event_handle);
@@ -2351,7 +2374,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 										object_name);
 	if (file_obj == NULL)
 	{
-		DWORD err = GetLastError();
+		err = GetLastError();
 		UnmapViewOfFile(header_address);
 		CloseHandle(header_obj);
 		CloseHandle(event_handle);
@@ -2365,7 +2388,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 
 	if (address == NULL)
 	{
-		DWORD err = GetLastError();
+		err = GetLastError();
 		CloseHandle(file_obj);
 		UnmapViewOfFile(header_address);
 		CloseHandle(header_obj);
@@ -2393,12 +2416,8 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 
 	if (init_flag)
 	{
-		FlushViewOfFile(address, 0);
-
-		DWORD err = 0;
-		if (SetFilePointer(sh_mem_handle, length, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER ||
-			!SetEndOfFile(sh_mem_handle) ||
-			!FlushViewOfFile(address, 0))
+		err = 0;
+		if (!FlushViewOfFile(address, 0))
 		{
 			err = GetLastError();
 		}
@@ -2406,7 +2425,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 		SetEvent(event_handle);
 		if (err)
 		{
-			system_call_failed::raise("SetFilePointer", err);
+			system_call_failed::raise("FlushViewOfFile", err);
 		}
 	}
 }
@@ -3138,7 +3157,7 @@ bool SharedMemoryBase::remapFile(CheckStatusWrapper* statusVector,
 	while (true)
 	{
 		TEXT mapping_name[64]; // enough for int32 as text
-		sprintf(mapping_name, "_mapping_%"ULONGFORMAT, sh_mem_hdr_address[1] + 1);
+		sprintf(mapping_name, "_mapping_%" ULONGFORMAT, sh_mem_hdr_address[1] + 1);
 
 		TEXT object_name[MAXPATHLEN];
 		if (!make_object_name(object_name, sizeof(object_name), sh_mem_name, mapping_name))
@@ -3607,39 +3626,25 @@ SharedMemoryBase::~SharedMemoryBase()
 #endif
 
 #ifdef WIN_NT
-	CloseHandle(sh_mem_interest);
 	if (!UnmapViewOfFile(sh_mem_header))
 	{
 		return;
 	}
+	sh_mem_header = NULL;
 	CloseHandle(sh_mem_object);
-
 	CloseHandle(sh_mem_handle);
+
+	CloseHandle(sh_mem_interest);
+
 	if (!UnmapViewOfFile(sh_mem_hdr_address))
 	{
 		return;
 	}
+	sh_mem_hdr_address = NULL;
 	CloseHandle(sh_mem_hdr_object);
-
-	TEXT expanded_filename[MAXPATHLEN];
-	iscPrefixLock(expanded_filename, sh_mem_name, false);
-
-	// Delete file only if it is not used by anyone else
-	HANDLE hFile = CreateFile(expanded_filename,
-							 DELETE,
-							 0,
-							 NULL,
-							 OPEN_EXISTING,
-							 FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
-							 NULL);
-
-	if (hFile != INVALID_HANDLE_VALUE)
-		CloseHandle(hFile);
 
 	ISC_mutex_fini(&sh_mem_winMutex);
 	sh_mem_mutex = NULL;
-
-	sh_mem_header = NULL;
 
 	if (sh_mem_unlink)
 	{

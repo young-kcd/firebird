@@ -76,6 +76,7 @@
     <ClCompile Include="..\..\..\src\jrd\extds\ExtDS.cpp" />
     <ClCompile Include="..\..\..\src\jrd\extds\InternalDS.cpp" />
     <ClCompile Include="..\..\..\src\jrd\extds\IscDS.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\extds\ValidatePassword.cpp" />
     <ClCompile Include="..\..\..\src\jrd\ExtEngineManager.cpp" />
     <ClCompile Include="..\..\..\src\jrd\filters.cpp" />
     <ClCompile Include="..\..\..\src\jrd\flu.cpp" />
@@ -231,6 +232,7 @@
     <ClInclude Include="..\..\..\src\jrd\extds\ExtDS.h" />
     <ClInclude Include="..\..\..\src\jrd\extds\InternalDS.h" />
     <ClInclude Include="..\..\..\src\jrd\extds\IscDS.h" />
+    <ClInclude Include="..\..\..\src\jrd\extds\ValidatePassword.h" />
     <ClInclude Include="..\..\..\src\jrd\ExtEngineManager.h" />
     <ClInclude Include="..\..\..\src\jrd\ext_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\fields.h" />
@@ -428,26 +430,26 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
-    <Import Project="firebird2.props" />
-    <Import Project="firebird2release.props" />
+    <Import Project="FirebirdCommon.props" />
+    <Import Project="FirebirdRelease.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
-    <Import Project="firebird2.props" />
-    <Import Project="firebird2debug.props" />
+    <Import Project="FirebirdCommon.props" />
+    <Import Project="FirebirdDebug.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
-    <Import Project="firebird2.props" />
-    <Import Project="firebird2release.props" />
+    <Import Project="FirebirdCommon.props" />
+    <Import Project="FirebirdRelease.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
-    <Import Project="firebird2.props" />
-    <Import Project="firebird2debug.props" />
+    <Import Project="FirebirdCommon.props" />
+    <Import Project="FirebirdDebug.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>

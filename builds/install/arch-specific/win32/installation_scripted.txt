@@ -143,7 +143,7 @@ Parameters specific to Firebird installs
   SYSDBA name will default to SYSDBA unless overridden with this parameter.
   
   NOTE: If an existing Security database is found this parameter should be 
-  ignored but this has not been fully tested as of Alpha1.
+  ignored.
 
   
 /SYSDBAPASSWORD="masterkey"
@@ -151,7 +151,7 @@ Parameters specific to Firebird installs
   SYSDBA password will use the default "masterkey" password.
   
   NOTE: If an existing Security database is found this parameter should be 
-  ignored but this has not been fully tested as of Alpha1.
+  ignored.
   
 
 /SUPPORTLEGACYCLIENTAUTH

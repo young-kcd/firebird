@@ -45,9 +45,11 @@ int main()
 	setenv("ISC_USER", "sysdba", 0);
 	setenv("ISC_PASSWORD", "masterkey", 0);
 
+	// status vector and main dispatcher
+	ThrowStatusWrapper status(master->getStatus());
+	IProvider* prov = master->getDispatcher();
+
 	// declare pointers to required interfaces
-	IStatus* st = NULL;
-	IProvider* prov = NULL;
 	IAttachment* att = NULL;
 	ITransaction* tra = NULL;
 	IStatement* stmt = NULL;
@@ -59,11 +61,6 @@ int main()
 
 	try
 	{
-		// status vector and main dispatcher
-		st = master->getStatus();
-		ThrowStatusWrapper status(st);
-		prov = master->getDispatcher();
-
 		// attach employee db
 		att = prov->attachDatabase(&status, "employee", 0, NULL);
 
@@ -73,7 +70,7 @@ int main()
 		// prepare statement
 		stmt = att->prepare(&status, tra, 0, "select last_name, first_name, phone_ext from phone_list "
 										"where location = 'Monterey' order by last_name, first_name",
-			3, IStatement::PREPARE_PREFETCH_METADATA);
+			SAMPLES_DIALECT, IStatement::PREPARE_PREFETCH_METADATA);
 
 		// get list of columns
 		meta = stmt->getOutputMetadata(&status);
@@ -176,7 +173,10 @@ int main()
 	{
 		// handle error
 		rc = 1;
-		isc_print_status(error.getStatus()->getErrors());
+
+		char buf[256];
+		master->getUtilInterface()->formatStatus(buf, sizeof(buf), error.getStatus());
+		fprintf(stderr, "%s\n", buf);
 	}
 
 	// release interfaces after error caught
@@ -192,10 +192,9 @@ int main()
 		tra->release();
 	if (att)
 		att->release();
-	if (prov)
-		prov->release();
-	if (st)
-		st->dispose();
+
+	prov->release();
+	status.dispose();
 
 	return rc;
 }

@@ -29,6 +29,7 @@
 #include "firebird.h"
 
 #include "../common/classes/ClumpletReader.h"
+#include "../common/classes/MetaName.h"
 #include "fb_exception.h"
 
 #include "../jrd/ibase.h"
@@ -435,6 +436,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			case isc_spb_nbk_file:
 			case isc_spb_nbk_direct:
 			case isc_spb_dbname:
+			case isc_spb_nbk_guid:
 				return StringSpb;
 			case isc_spb_nbk_level:
 			case isc_spb_options:
@@ -781,6 +783,14 @@ string& ClumpletReader::getString(string& str) const
 	{
 		invalid_structure("string length doesn't match with clumplet");
 	}
+	return str;
+}
+
+MetaName& ClumpletReader::getString(MetaName& str) const
+{
+	const UCHAR* ptr = getBytes();
+	const FB_SIZE_T length = getClumpLength();
+	str.assign(reinterpret_cast<const char*>(ptr), length);
 	return str;
 }
 

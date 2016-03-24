@@ -668,7 +668,7 @@ int main(int ac, char **av)
 	}
 	report();
 #if defined(DEV_BUILD) && defined(FIRESTR)
-	getDefaultMemoryPool()->print_contents(stdout, false);
+	getDefaultMemoryPool()->print_contents(stdout, 0);
 #endif
 	printf("Press enter to continue\n");
 	getchar();

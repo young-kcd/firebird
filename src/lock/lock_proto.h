@@ -291,7 +291,7 @@ class Config;
 
 namespace Jrd {
 
-class Attachment;
+class thread_db;
 
 class LockManager : private Firebird::RefCounted,
 					public Firebird::GlobalStorage,
@@ -403,15 +403,15 @@ public:
 	static void destroy(LockManager*);
 
 	bool initializeOwner(Firebird::CheckStatusWrapper*, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
-	void shutdownOwner(Attachment*, SRQ_PTR*);
+	void shutdownOwner(thread_db*, SRQ_PTR*);
 
-	SRQ_PTR enqueue(Attachment*, Firebird::CheckStatusWrapper*, SRQ_PTR, const USHORT,
+	SRQ_PTR enqueue(thread_db*, Firebird::CheckStatusWrapper*, SRQ_PTR, const USHORT,
 		const UCHAR*, const USHORT, UCHAR, lock_ast_t, void*, LOCK_DATA_T, SSHORT, SRQ_PTR);
-	bool convert(Attachment*, Firebird::CheckStatusWrapper*, SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*);
-	UCHAR downgrade(Attachment*, Firebird::CheckStatusWrapper*, const SRQ_PTR);
+	bool convert(thread_db*, Firebird::CheckStatusWrapper*, SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*);
+	UCHAR downgrade(thread_db*, Firebird::CheckStatusWrapper*, const SRQ_PTR);
 	bool dequeue(const SRQ_PTR);
 
-	void repost(Attachment*, lock_ast_t, void*, SRQ_PTR);
+	void repost(thread_db*, lock_ast_t, void*, SRQ_PTR);
 	bool cancelWait(SRQ_PTR);
 
 	LOCK_DATA_T queryData(const USHORT, const USHORT);
@@ -426,7 +426,7 @@ private:
 	void acquire_shmem(SRQ_PTR);
 	UCHAR* alloc(USHORT, Firebird::CheckStatusWrapper*);
 	lbl* alloc_lock(USHORT, Firebird::CheckStatusWrapper*);
-	void blocking_action(Attachment*, SRQ_PTR);
+	void blocking_action(thread_db*, SRQ_PTR);
 	void blocking_action_thread();
 	void bug(Firebird::CheckStatusWrapper*, const TEXT*);
 	void bug_assert(const TEXT*, ULONG);
@@ -439,15 +439,15 @@ private:
 	lbl* find_lock(USHORT, const UCHAR*, USHORT, USHORT*);
 	lrq* get_request(SRQ_PTR);
 	void grant(lrq*, lbl*);
-	bool grant_or_que(Attachment*, lrq*, lbl*, SSHORT);
+	bool grant_or_que(thread_db*, lrq*, lbl*, SSHORT);
 	bool init_owner_block(Firebird::CheckStatusWrapper*, own*, UCHAR, LOCK_OWNER_T);
 	void insert_data_que(lbl*);
 	void insert_tail(SRQ, SRQ);
-	bool internal_convert(Attachment* database, Firebird::CheckStatusWrapper*, SRQ_PTR, UCHAR, SSHORT,
+	bool internal_convert(thread_db* database, Firebird::CheckStatusWrapper*, SRQ_PTR, UCHAR, SSHORT,
 		lock_ast_t, void*);
 	void internal_dequeue(SRQ_PTR);
 	static USHORT lock_state(const lbl*);
-	void post_blockage(Attachment*, lrq*, lbl*);
+	void post_blockage(thread_db*, lrq*, lbl*);
 	void post_history(USHORT, SRQ_PTR, SRQ_PTR, SRQ_PTR, bool);
 	void post_pending(lbl*);
 	void post_wakeup(own*);
@@ -458,7 +458,7 @@ private:
 	void remove_que(SRQ);
 	void release_shmem(SRQ_PTR);
 	void release_request(lrq*);
-	bool signal_owner(Attachment*, own*);
+	bool signal_owner(thread_db*, own*);
 
 	void validate_history(const SRQ_PTR history_header);
 	void validate_lhb(const lhb*);
@@ -467,7 +467,7 @@ private:
 	void validate_request(const SRQ_PTR, USHORT, USHORT);
 	void validate_shb(const SRQ_PTR);
 
-	void wait_for_request(Attachment*, lrq*, SSHORT);
+	void wait_for_request(thread_db*, lrq*, SSHORT);
 	bool attach_shared_file(Firebird::CheckStatusWrapper*);
 	void detach_shared_file(Firebird::CheckStatusWrapper*);
 	void get_shared_file_name(Firebird::PathName&, ULONG extend = 0) const;

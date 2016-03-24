@@ -124,7 +124,7 @@ public:
 		printIndent();
 
 		Firebird::string temp;
-		temp.printf("<%s>%"QUADFORMAT"d</%s>\n", s.c_str(), value, s.c_str());
+		temp.printf("<%s>%" QUADFORMAT"d</%s>\n", s.c_str(), value, s.c_str());
 		text += temp;
 	}
 

@@ -135,7 +135,7 @@ void MonitoringData::release()
 }
 
 
-void MonitoringData::read(AttNumber att_id, TempSpace& temp)
+void MonitoringData::read(AttNumber att_id, const char* user_name, TempSpace& temp)
 {
 	offset_t position = 0;
 
@@ -152,12 +152,13 @@ void MonitoringData::read(AttNumber att_id, TempSpace& temp)
 			fb_assert(shared_memory->getHeader()->used >= offset + length);
 			temp.write(position, ptr + sizeof(Element), element->length);
 			position += element->length;
+			break;
 		}
 
 		offset += length;
 	}
 
-	// Second, copy data of other sessions
+	// Second, copy data of other permitted sessions
 
 	for (ULONG offset = alignOffset(sizeof(Header)); offset < shared_memory->getHeader()->used;)
 	{
@@ -165,7 +166,9 @@ void MonitoringData::read(AttNumber att_id, TempSpace& temp)
 		const Element* const element = (Element*) ptr;
 		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
-		if (element->attId != att_id)
+		const bool permitted = !user_name || !strcmp(element->userName, user_name);
+
+		if (element->attId != att_id && permitted)
 		{
 			fb_assert(shared_memory->getHeader()->used >= offset + length);
 			temp.write(position, ptr + sizeof(Element), element->length);
@@ -177,7 +180,7 @@ void MonitoringData::read(AttNumber att_id, TempSpace& temp)
 }
 
 
-ULONG MonitoringData::setup(AttNumber att_id)
+ULONG MonitoringData::setup(AttNumber att_id, const char* user_name)
 {
 	ensureSpace(sizeof(Element));
 
@@ -187,6 +190,7 @@ ULONG MonitoringData::setup(AttNumber att_id)
 	UCHAR* const ptr = (UCHAR*) shared_memory->getHeader() + offset;
 	Element* const element = (Element*) ptr;
 	element->attId = att_id;
+	strncpy(element->userName, user_name, USERNAME_LENGTH);
 	element->length = 0;
 	shared_memory->getHeader()->used += alignOffset(sizeof(Element));
 	return offset;
@@ -233,9 +237,9 @@ void MonitoringData::cleanup(AttNumber att_id)
 }
 
 
-void MonitoringData::enumerate(SessionList& sessions)
+void MonitoringData::enumerate(SessionList& sessions, const char* user_name)
 {
-	// Return IDs for all known sessions
+	// Return IDs for all known (and permitted) sessions
 
 	for (ULONG offset = alignOffset(sizeof(Header)); offset < shared_memory->getHeader()->used;)
 	{
@@ -244,7 +248,8 @@ void MonitoringData::enumerate(SessionList& sessions)
 		const ULONG length = alignOffset(sizeof(Element) + element->length);
 		offset += length;
 
-		sessions.add(element->attId);
+		if (!user_name || !strcmp(element->userName, user_name))
+			sessions.add(element->attId);
 	}
 }
 
@@ -363,14 +368,18 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 	// Enumerate active sessions
 
+	const string& user_name = attachment->att_user->usr_user_name;
+	const bool locksmith = attachment->locksmith();
+	const char* user_name_ptr = locksmith ? NULL : user_name.c_str();
+
 	MonitoringData::SessionList sessions(pool);
 
-	Lock temp_lock(tdbb, sizeof(SLONG), LCK_monitor), *lock = &temp_lock;
+	Lock temp_lock(tdbb, sizeof(AttNumber), LCK_monitor), *lock = &temp_lock;
 
 	{ // scope for the guard
 
 		MonitoringData::Guard guard(dbb->dbb_monitoring_data);
-		dbb->dbb_monitoring_data->enumerate(sessions);
+		dbb->dbb_monitoring_data->enumerate(sessions, user_name_ptr);
 	}
 
 	// Signal other sessions to dump their state
@@ -417,30 +426,20 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 			}
 		}
 
-		dbb->dbb_monitoring_data->read(self_att_id, temp_space);
+		dbb->dbb_monitoring_data->read(self_att_id, user_name_ptr, temp_space);
 	}
-
-	string databaseName(dbb->dbb_database_name.c_str());
-	ISC_systemToUtf8(databaseName);
-
-	const string& userName = attachment->att_user->usr_user_name;
-	const bool locksmith = attachment->locksmith();
 
 	// Parse the dump
 
 	MonitoringData::Reader reader(pool, temp_space);
 
-	RecordBuffer* buffer = NULL;
-	Record* record = NULL;
-
-	bool dbb_processed = false, fields_processed = false;
-	bool dbb_allowed = false, att_allowed = false;
-
 	SnapshotData::DumpRecord dumpRecord(pool);
-
 	while (reader.getRecord(dumpRecord))
 	{
 		const int rid = dumpRecord.getRelationId();
+
+		RecordBuffer* buffer = NULL;
+		Record* record = NULL;
 
 		switch (rid)
 		{
@@ -483,63 +482,24 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 			record = buffer->getTempRecord();
 			record->nullify();
 		}
-		else
-		{
-			record = NULL;
-		}
+
+		bool store_record = false;
 
 		SnapshotData::DumpField dumpField;
 		while (dumpRecord.getField(dumpField))
 		{
-			const USHORT fid = dumpField.id;
-			const FB_SIZE_T length = dumpField.length;
-			const char* source = (const char*) dumpField.data;
-
-			// All the strings that may require transliteration (i.e. the target charset is not NONE)
-			// are known to be in the metadata charset or ASCII (which is binary compatible).
-			const int charset = ttype_metadata;
-
-			// special case for MON$DATABASE
-			if (rid == rel_mon_database)
+			if (record)
 			{
-				if (fid == f_mon_db_name)
-					dbb_allowed = !databaseName.compare(source, length);
-
-				if (record && dbb_allowed && !dbb_processed)
+				if (rid != rel_mon_database || !buffer->getCount())
 				{
-					putField(tdbb, record, dumpField, charset);
-					fields_processed = true;
+					putField(tdbb, record, dumpField);
+					store_record = true;
 				}
-
-				att_allowed = (dbb_allowed && !dbb_processed);
-			}
-			// special case for MON$ATTACHMENTS
-			else if (rid == rel_mon_attachments)
-			{
-				if (fid == f_mon_att_user)
-					att_allowed = locksmith || !userName.compare(source, length);
-
-				if (record && dbb_allowed && att_allowed)
-				{
-					putField(tdbb, record, dumpField, charset);
-					fields_processed = true;
-					dbb_processed = true;
-				}
-			}
-			// generic logic that covers all other relations
-			else if (record && dbb_allowed && att_allowed)
-			{
-				putField(tdbb, record, dumpField, charset);
-				fields_processed = true;
-				dbb_processed = true;
 			}
 		}
 
-		if (fields_processed)
-		{
+		if (store_record)
 			buffer->store(record);
-			fields_processed = false;
-		}
 	}
 }
 
@@ -591,8 +551,10 @@ RecordBuffer* SnapshotData::allocBuffer(thread_db* tdbb, MemoryPool& pool, int r
 }
 
 
-void SnapshotData::putField(thread_db* tdbb, Record* record, const DumpField& field, int charset)
+void SnapshotData::putField(thread_db* tdbb, Record* record, const DumpField& field)
 {
+	jrd_tra* const transaction = tdbb->getTransaction();
+
 	fb_assert(record);
 
 	const Format* const format = record->getFormat();
@@ -664,27 +626,23 @@ void SnapshotData::putField(thread_db* tdbb, Record* record, const DumpField& fi
 	}
 	else if (field.type == VALUE_STRING)
 	{
-		dsc from_desc;
-		MoveBuffer buffer;
-
-		if (charset == CS_NONE && to_desc.getCharSet() == CS_METADATA)
+		if (to_desc.isBlob())
 		{
-			// ASF: If an attachment using NONE charset has a string using non-ASCII characters,
-			// nobody will be able to select them in a system field. So we change these characters to
-			// question marks here - CORE-2602.
+			bid blob_id;
+			blb* const blob = blb::create(tdbb, transaction, &blob_id);
+			blob->BLB_put_data(tdbb, (UCHAR*) field.data, field.length);
+			blob->BLB_close(tdbb);
 
-			UCHAR* p = buffer.getBuffer(field.length);
-			const UCHAR* s = (const UCHAR*) field.data;
-
-			for (const UCHAR* end = buffer.end(); p < end; ++p, ++s)
-				*p = (*s > 0x7F ? '?' : *s);
-
-			from_desc.makeText(field.length, CS_ASCII, buffer.begin());
+			dsc from_desc;
+			from_desc.makeBlob(isc_blob_text, CS_METADATA, (ISC_QUAD*) &blob_id);
+			MOV_move(tdbb, &from_desc, &to_desc);
 		}
 		else
-			from_desc.makeText(field.length, charset, (UCHAR*) field.data);
-
-		MOV_move(tdbb, &from_desc, &to_desc);
+		{
+			dsc from_desc;
+			from_desc.makeText(field.length, CS_METADATA, (UCHAR*) field.data);
+			MOV_move(tdbb, &from_desc, &to_desc);
+		}
 	}
 	else if (field.type == VALUE_BOOLEAN)
 	{
@@ -706,12 +664,11 @@ void SnapshotData::putField(thread_db* tdbb, Record* record, const DumpField& fi
 	if (to_desc.isBlob())
 	{
 		bid* blob_id = reinterpret_cast<bid*>(to_desc.dsc_address);
-		jrd_tra* tran = tdbb->getTransaction();
 
-		if (!tran->tra_blobs->locate(blob_id->bid_temp_id()))
+		if (!transaction->tra_blobs->locate(blob_id->bid_temp_id()))
 			fb_assert(false);
 
-		BlobIndex& blobIdx = tran->tra_blobs->current();
+		BlobIndex& blobIdx = transaction->tra_blobs->current();
 		fb_assert(!blobIdx.bli_materialized);
 
 		if (blobIdx.bli_request)
@@ -829,6 +786,7 @@ void Monitoring::putDatabase(SnapshotData::DumpRecord& record, const Database* d
 
 	if (database->dbb_flags & DBB_shared)
 	{
+		MutexLockGuard guard(database->dbb_stats_mutex, FB_FUNCTION);
 		putStatistics(record, database->dbb_stats, writer, stat_id, stat_database);
 		putMemoryUsage(record, database->dbb_memory_stats, writer, stat_id, stat_database);
 	}
@@ -919,6 +877,7 @@ void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Atta
 	}
 	else
 	{
+		MutexLockGuard guard(attachment->att_database->dbb_stats_mutex, FB_FUNCTION);
 		putStatistics(record, attachment->att_database->dbb_stats, writer, stat_id, stat_attachment);
 		putMemoryUsage(record, attachment->att_database->dbb_memory_stats, writer, stat_id, stat_attachment);
 	}
@@ -1225,7 +1184,7 @@ void Monitoring::checkState(thread_db* tdbb)
 }
 
 
-void Monitoring::dumpAttachment(thread_db* tdbb, const Attachment* attachment, bool ast)
+void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment, bool ast)
 {
 	if (!attachment->att_user)
 		return;
@@ -1233,7 +1192,10 @@ void Monitoring::dumpAttachment(thread_db* tdbb, const Attachment* attachment, b
 	Database* const dbb = tdbb->getDatabase();
 	MemoryPool& pool = *dbb->dbb_permanent;
 
-	const SLONG att_id = attachment->att_attachment_id;
+	attachment->mergeStats();
+
+	const AttNumber att_id = attachment->att_attachment_id;
+	const string& user_name = attachment->att_user->usr_user_name;
 
 	// Determine the backup state
 	int backup_state = backup_state_unknown;
@@ -1267,7 +1229,7 @@ void Monitoring::dumpAttachment(thread_db* tdbb, const Attachment* attachment, b
 	MonitoringData::Guard guard(dbb->dbb_monitoring_data);
 	dbb->dbb_monitoring_data->cleanup(att_id);
 
-	MonitoringData::Writer writer(dbb->dbb_monitoring_data, att_id);
+	MonitoringData::Writer writer(dbb->dbb_monitoring_data, att_id, user_name.c_str());
 	SnapshotData::DumpRecord record(pool);
 
 	if (!ast)
@@ -1331,8 +1293,10 @@ void Monitoring::publishAttachment(thread_db* tdbb)
 	if (!dbb->dbb_monitoring_data)
 		dbb->dbb_monitoring_data = FB_NEW_POOL(*dbb->dbb_permanent) MonitoringData(dbb);
 
+	const string& user_name = attachment->att_user->usr_user_name;
+
 	MonitoringData::Guard guard(dbb->dbb_monitoring_data);
-	dbb->dbb_monitoring_data->setup(attachment->att_attachment_id);
+	dbb->dbb_monitoring_data->setup(attachment->att_attachment_id, user_name.c_str());
 }
 
 void Monitoring::cleanupAttachment(thread_db* tdbb)

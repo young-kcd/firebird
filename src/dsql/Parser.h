@@ -258,7 +258,7 @@ private:
 	}
 
 	template <typename T>
-	void setClause(Nullable<T>& clause, const char* duplicateMsg, const T& value)
+	void setClause(BaseNullable<T>& clause, const char* duplicateMsg, const T& value)
 	{
 		checkDuplicateClause(clause, duplicateMsg);
 		clause = value;
@@ -273,6 +273,18 @@ private:
 	void setClause(bool& clause, const char* duplicateMsg)
 	{
 		setClause(clause, duplicateMsg, true);
+	}
+
+	void setClauseFlag(unsigned& clause, const unsigned flag, const char* duplicateMsg)
+	{
+		using namespace Firebird;
+		if (clause & flag)
+		{
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
+				Arg::Gds(isc_dsql_duplicate_spec) << duplicateMsg);
+		}
+		clause |= flag;
 	}
 
 	template <typename T>
@@ -299,7 +311,7 @@ private:
 	}
 
 	template <typename T>
-	bool isDuplicateClause(const Nullable<T>& clause)
+	bool isDuplicateClause(const BaseNullable<T>& clause)
 	{
 		return clause.specified;
 	}

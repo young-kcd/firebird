@@ -170,115 +170,131 @@ bool PREPARSE_execute(CheckStatusWrapper* status, Why::YAttachment** ptrAtt,
 			Arg::Gds(isc_command_end_err).raise();
 		}
 
-		Tokens tks;
-		tks.quotes(quotes);
-		tks.parse(stmt_length, stmt);
-		unsigned pos = 0;
-
-		if (getToken(pos, tks) != pp_symbols[PP_CREATE].symbol)
+		bool hasUser = true;
+		for (int qStrip = 0; qStrip < 2; ++qStrip)
 		{
-			return false;
-		}
+			status->init();
+			hasUser = false;
 
-		NoCaseString token(getToken(pos, tks));
-		if (token != pp_symbols[PP_DATABASE].symbol && token != pp_symbols[PP_SCHEMA].symbol)
-		{
-			return false;
-		}
+			Tokens tks;
+			tks.quotes(quotes);
+			tks.parse(stmt_length, stmt);
+			unsigned pos = 0;
 
-		PathName file_name(getToken(pos, tks, STRING).ToPathName());
-		*stmt_eaten = false;
-		ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
-
-		dpb.insertByte(isc_dpb_overwrite, 0);
-		dpb.insertInt(isc_dpb_sql_dialect, dialect);
-
-		SLONG page_size = 0;
-		bool matched;
-		do {
-			try
+			if (getToken(pos, tks) != pp_symbols[PP_CREATE].symbol)
 			{
-				token = getToken(pos, tks);
+				return false;
 			}
-			catch (const Exception&)
+
+			NoCaseString token(getToken(pos, tks));
+			if (token != pp_symbols[PP_DATABASE].symbol && token != pp_symbols[PP_SCHEMA].symbol)
 			{
-				*stmt_eaten = true;
+				return false;
+			}
+
+			PathName file_name(getToken(pos, tks, STRING).ToPathName());
+			*stmt_eaten = false;
+			ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+
+			dpb.insertByte(isc_dpb_overwrite, 0);
+			dpb.insertInt(isc_dpb_sql_dialect, dialect);
+
+			SLONG page_size = 0;
+			bool matched;
+
+			do
+			{
+				try
+				{
+					token = getToken(pos, tks);
+				}
+				catch (const Exception&)
+				{
+					*stmt_eaten = true;
+					break;
+				}
+
+				matched = false;
+				for (int i = 3; pp_symbols[i].symbol[0] && !matched; i++)
+				{
+					if (token == pp_symbols[i].symbol)
+					{
+						// CVC: What's strange, this routine doesn't check token.length()
+						// but it proceeds blindly, trying to exhaust the token itself.
+
+						switch (pp_symbols[i].code)
+						{
+						case PP_PAGE_SIZE:
+						case PP_PAGESIZE:
+							token = getToken(pos, tks);
+							if (token == "=")
+								token = getToken(pos, tks, NUMERIC);
+
+							page_size = atol(token.c_str());
+							dpb.insertInt(isc_dpb_page_size, page_size);
+							matched = true;
+							break;
+
+						case PP_USER:
+							token = getToken(pos, tks, qStrip ? STRING : SYMBOL);
+
+							dpb.insertString(isc_dpb_user_name, token.ToString());
+							matched = true;
+							hasUser = true;
+							break;
+
+						case PP_PASSWORD:
+							token = getToken(pos, tks, STRING);
+
+							dpb.insertString(isc_dpb_password, token.ToString());
+							matched = true;
+							break;
+
+						case PP_ROLE:
+							token = getToken(pos, tks);
+
+							dpb.insertString(isc_dpb_sql_role_name, token.ToString());
+							matched = true;
+							break;
+
+						case PP_SET:
+							token = getToken(pos, tks);
+							if (token != pp_symbols[PP_NAMES].symbol)
+								generate_error(token, UNEXPECTED_TOKEN);
+							token = getToken(pos, tks, STRING);
+
+							dpb.insertString(isc_dpb_lc_ctype, token.ToString());
+							matched = true;
+							break;
+
+						case PP_LENGTH:
+							token = getToken(pos, tks);
+							if (token == "=")
+								token = getToken(pos, tks, NUMERIC);
+
+							// Skip a token for value
+							matched = true;
+							break;
+
+						case PP_PAGE:
+						case PP_PAGES:
+							matched = true;
+							break;
+						} // switch
+					} // if
+				} // for
+			} while (matched);
+
+			RefPtr<Why::Dispatcher> dispatcher(FB_NEW Why::Dispatcher);
+			*ptrAtt = dispatcher->createDatabase(status, file_name.c_str(),
+				dpb.getBufferLength(), dpb.getBuffer());
+
+			if ((!hasUser) || ((status->getState() & IStatus::STATE_ERRORS) == 0) ||
+				(status->getErrors()[1] != isc_login))
+			{
 				break;
 			}
-
-			matched = false;
-			for (int i = 3; pp_symbols[i].symbol[0] && !matched; i++)
-			{
-				if (token == pp_symbols[i].symbol)
-				{
-					// CVC: What's strange, this routine doesn't check token.length()
-					// but it proceeds blindly, trying to exhaust the token itself.
-
-					switch (pp_symbols[i].code)
-					{
-					case PP_PAGE_SIZE:
-					case PP_PAGESIZE:
-						token = getToken(pos, tks);
-						if (token == "=")
-							token = getToken(pos, tks, NUMERIC);
-
-						page_size = atol(token.c_str());
-						dpb.insertInt(isc_dpb_page_size, page_size);
-						matched = true;
-						break;
-
-					case PP_USER:
-						token = getToken(pos, tks);
-
-						dpb.insertString(isc_dpb_user_name, token.ToString());
-						matched = true;
-						break;
-
-					case PP_PASSWORD:
-						token = getToken(pos, tks, STRING);
-
-						dpb.insertString(isc_dpb_password, token.ToString());
-						matched = true;
-						break;
-
-					case PP_ROLE:
-						token = getToken(pos, tks);
-
-						dpb.insertString(isc_dpb_sql_role_name, token.ToString());
-						matched = true;
-						break;
-
-					case PP_SET:
-						token = getToken(pos, tks);
-						if (token != pp_symbols[PP_NAMES].symbol)
-							generate_error(token, UNEXPECTED_TOKEN);
-						token = getToken(pos, tks, STRING);
-
-						dpb.insertString(isc_dpb_lc_ctype, token.ToString());
-						matched = true;
-						break;
-
-					case PP_LENGTH:
-						token = getToken(pos, tks);
-						if (token == "=")
-							token = getToken(pos, tks, NUMERIC);
-
-						// Skip a token for value
-						matched = true;
-						break;
-
-					case PP_PAGE:
-					case PP_PAGES:
-						matched = true;
-						break;
-					} // switch
-				} // if
-			} // for
-		} while (matched);
-
-		RefPtr<Why::Dispatcher> dispatcher(FB_NEW Why::Dispatcher);
-		*ptrAtt = dispatcher->createDatabase(status, file_name.c_str(),
-			dpb.getBufferLength(), dpb.getBuffer());
+		}
 	}
 	catch (const Exception& ex)
 	{

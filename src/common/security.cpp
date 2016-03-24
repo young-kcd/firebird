@@ -89,14 +89,14 @@ void UserData::clear(Firebird::CheckStatusWrapper*)
 }
 
 // This function sets typical gsec return code based on requested operation if it was not set by plugin
-int setGsecCode(int code, IUser* user)
+int setGsecCode(int code, int operation)
 {
 	if (code >= 0)
 	{
 		return code;
 	}
 
-	switch(user->operation())
+	switch(operation)
 	{
 	case ADD_OPER:
 		return GsecMsg19;
@@ -117,6 +117,63 @@ int setGsecCode(int code, IUser* user)
 	}
 
 	return GsecMsg17;
+}
+
+void parseList(ParsedList& parsed, PathName list)
+{
+	list.alltrim(" \t");
+	parsed.clear();
+	const char* sep = " \t,;";
+
+	for (;;)
+	{
+		PathName::size_type p = list.find_first_of(sep);
+		if (p == PathName::npos)
+		{
+			if (list.hasData())
+			{
+				parsed.push(list);
+			}
+			break;
+		}
+
+		parsed.push(list.substr(0, p));
+		list = list.substr(p + 1);
+		list.ltrim(sep);
+	}
+}
+
+void makeList(PathName& list, const ParsedList& parsed)
+{
+	fb_assert(parsed.hasData());
+	list = parsed[0];
+	for (unsigned i = 1; i < parsed.getCount(); ++i)
+	{
+		list += ' ';
+		list += parsed[i];
+	}
+}
+
+void mergeLists(PathName& list, const PathName& serverList, const PathName& clientList)
+{
+	ParsedList onClient, onServer, merged;
+	parseList(onClient, clientList);
+	parseList(onServer, serverList);
+
+	// do not expect too long lists, therefore use double loop
+	for (unsigned c = 0; c < onClient.getCount(); ++c)
+	{
+		for (unsigned s = 0; s < onServer.getCount(); ++s)
+		{
+			if (onClient[c] == onServer[s])
+			{
+				merged.push(onClient[c]);
+				break;
+			}
+		}
+	}
+
+	makeList(list, merged);
 }
 
 } // namespace Auth

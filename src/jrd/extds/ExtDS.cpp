@@ -112,12 +112,13 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 
 	// dataSource : registered data source name
 	// or connection string : provider::database
-	string prvName, dbName;
+	string prvName;
+	PathName dbName;
 
 	if (dataSource.isEmpty())
 	{
 		prvName = INTERNAL_PROVIDER_NAME;
-		dbName = tdbb->getDatabase()->dbb_database_name.c_str();
+		dbName = tdbb->getDatabase()->dbb_database_name;
 	}
 	else
 	{
@@ -125,7 +126,7 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 		if (pos != string::npos)
 		{
 			prvName = dataSource.substr(0, pos);
-			dbName = dataSource.substr(pos + 2);
+			dbName = dataSource.substr(pos + 2).ToPathName();
 		}
 		else
 		{
@@ -134,7 +135,7 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 
 			// if not found - treat dataSource as Firebird's connection string
 			prvName = FIREBIRD_PROVIDER_NAME;
-			dbName = dataSource;
+			dbName = dataSource.ToPathName();
 		}
 	}
 
@@ -174,7 +175,7 @@ Provider::~Provider()
 	clearConnections(tdbb);
 }
 
-Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
+Connection* Provider::getConnection(thread_db* tdbb, const PathName& dbName,
 	const string& user, const string& pwd, const string& role, TraScope tra_scope)
 {
 	const Jrd::Attachment* attachment = tdbb->getAttachment();
@@ -344,7 +345,7 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 	// remote network address???
 }
 
-bool Connection::isSameDatabase(thread_db* tdbb, const string& dbName,
+bool Connection::isSameDatabase(thread_db* tdbb, const PathName& dbName,
 	const string& user, const string& pwd, const string& role) const
 {
 	if (m_dbName != dbName)

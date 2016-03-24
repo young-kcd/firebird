@@ -17,10 +17,6 @@ set ERRLEV=0
 ::===========
 :MAIN
 @echo.
-@echo Copy autoconfig.h
-@del %FB_ROOT_PATH%\src\include\gen\autoconfig.h 2> nul
-@copy %FB_ROOT_PATH%\src\include\gen\autoconfig_msvc.h %FB_ROOT_PATH%\src\include\gen\autoconfig.h > nul
-
 @echo Creating directories
 @rmdir /s /q %FB_GEN_DIR% 2>nul
 :: Remove previously generated output, and recreate the directory hierarchy. 
@@ -116,7 +112,7 @@ if "%ERRLEV%"=="1" goto :END
 :btyacc
 @echo.
 @echo Building btyacc (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3Boot btyacc_%FB_TARGET_PLATFORM%.log btyacc
+@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\FirebirdBoot btyacc_%FB_TARGET_PLATFORM%.log btyacc
 if errorlevel 1 call :boot2 btyacc
 goto :EOF
 
@@ -154,7 +150,7 @@ goto :EOF
 :gpre_boot
 @echo.
 @echo Building gpre_boot (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3Boot gpre_boot_%FB_TARGET_PLATFORM%.log gpre_boot
+@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\FirebirdBoot gpre_boot_%FB_TARGET_PLATFORM%.log gpre_boot
 if errorlevel 1 call :boot2 gpre_boot
 goto :EOF
 
@@ -163,8 +159,8 @@ goto :EOF
 :engine
 @echo.
 @echo Building engine (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3 engine_%FB_TARGET_PLATFORM%.log engine12
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3 engine_%FB_TARGET_PLATFORM%.log ib_util
+@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird engine_%FB_TARGET_PLATFORM%.log engine12
+@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird engine_%FB_TARGET_PLATFORM%.log ib_util
 if errorlevel 1 call :boot2 engine
 @goto :EOF
 
@@ -173,7 +169,7 @@ if errorlevel 1 call :boot2 engine
 :gbak
 @echo.
 @echo Building gbak (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3 gbak_%FB_TARGET_PLATFORM%.log gbak
+@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird gbak_%FB_TARGET_PLATFORM%.log gbak
 if errorlevel 1 call :boot2 gbak
 @goto :EOF
 
@@ -182,7 +178,7 @@ if errorlevel 1 call :boot2 gbak
 :gpre
 @echo.
 @echo Building gpre (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3 gpre_%FB_TARGET_PLATFORM%.log gpre
+@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird gpre_%FB_TARGET_PLATFORM%.log gpre
 if errorlevel 1 call :boot2 gpre
 @goto :EOF
 
@@ -191,7 +187,7 @@ if errorlevel 1 call :boot2 gpre
 :isql
 @echo.
 @echo Building isql (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3 isql_%FB_TARGET_PLATFORM%.log isql
+@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird isql_%FB_TARGET_PLATFORM%.log isql
 if errorlevel 1 call :boot2 isql
 @goto :EOF
 
@@ -210,7 +206,7 @@ goto :EOF
 :msgs
 @echo.
 @echo Building build_msg (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3Boot build_msg_%FB_TARGET_PLATFORM%.log build_msg
+@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\FirebirdBoot build_msg_%FB_TARGET_PLATFORM%.log build_msg
 if errorlevel 1 goto :msgs2
 @goto :EOF
 :msgs2
@@ -225,7 +221,7 @@ goto :EOF
 :codes
 @echo.
 @echo Building codes (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3Boot codes_%FB_TARGET_PLATFORM%.log codes
+@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\FirebirdBoot codes_%FB_TARGET_PLATFORM%.log codes
 if errorlevel 1 goto :codes2
 @goto :EOF
 :codes2
@@ -240,11 +236,11 @@ goto :EOF
 @rmdir /s /q %FB_GEN_DIR%\dbs 2>nul
 @mkdir %FB_GEN_DIR%\dbs 2>nul
 
-@echo Create security3.fdb...
-@echo create database '%FB_GEN_DB_DIR%\dbs\security3.fdb'; | "%FB_BIN_DIR%\isql" -q
+@echo Create security4.fdb...
+@echo create database '%FB_GEN_DB_DIR%\dbs\security4.fdb'; | "%FB_BIN_DIR%\isql" -q
 @echo Apply security.sql...
-@"%FB_BIN_DIR%\isql" -q %FB_GEN_DB_DIR%/dbs/security3.fdb -i %FB_ROOT_PATH%\src\dbs\security.sql
-@copy %FB_GEN_DIR%\dbs\security3.fdb %FB_GEN_DIR%\dbs\security.fdb > nul
+@"%FB_BIN_DIR%\isql" -q %FB_GEN_DB_DIR%/dbs/security4.fdb -i %FB_ROOT_PATH%\src\dbs\security.sql
+@copy %FB_GEN_DIR%\dbs\security4.fdb %FB_GEN_DIR%\dbs\security.fdb > nul
 
 @echo Restore metadata.gbak...
 @%FB_BIN_DIR%\gbak -r %FB_ROOT_PATH%\builds\misc\metadata.gbak %FB_GEN_DB_DIR%/dbs/metadata.fdb

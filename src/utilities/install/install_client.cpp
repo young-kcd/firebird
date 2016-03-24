@@ -302,7 +302,7 @@ static USHORT inst_error(ULONG status, const TEXT* string)
 								sizeof(buffer),
 								NULL))
 		{
-			printf("Windows NT error %"SLONGFORMAT"\n", status);
+			printf("Windows NT error %" SLONGFORMAT"\n", status);
 		}
 		else
 		{

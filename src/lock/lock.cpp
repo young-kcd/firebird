@@ -51,6 +51,7 @@
 #include "../common/isc_s_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/array.h"
+#include "../common/classes/Hash.h"
 #include "../common/classes/semaphore.h"
 #include "../common/classes/init.h"
 #include "../common/classes/timestamp.h"
@@ -440,7 +441,7 @@ bool LockManager::initializeOwner(CheckStatusWrapper* statusVector,
 }
 
 
-void LockManager::shutdownOwner(Attachment* attachment, SRQ_PTR* owner_handle)
+void LockManager::shutdownOwner(thread_db* tdbb, SRQ_PTR* owner_handle)
 {
 /**************************************
  *
@@ -472,7 +473,7 @@ void LockManager::shutdownOwner(Attachment* attachment, SRQ_PTR* owner_handle)
 	{
 		{ // checkout scope
 			LockTableCheckout checkout(this, FB_FUNCTION);
-			Jrd::Attachment::Checkout cout(attachment, FB_FUNCTION, true);
+			EngineCheckout cout(tdbb, FB_FUNCTION, true);
 			Thread::sleep(10);
 		}
 
@@ -490,7 +491,7 @@ void LockManager::shutdownOwner(Attachment* attachment, SRQ_PTR* owner_handle)
 }
 
 
-SRQ_PTR LockManager::enqueue(Attachment* attachment,
+SRQ_PTR LockManager::enqueue(thread_db* tdbb,
 							 CheckStatusWrapper* statusVector,
 							 SRQ_PTR prior_request,
 							 const USHORT series,
@@ -587,7 +588,7 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 		insert_tail(&lock->lbl_requests, &request->lrq_lbl_requests);
 		request->lrq_data = data;
 
-		if (grant_or_que(attachment, request, lock, lck_wait))
+		if (grant_or_que(tdbb, request, lock, lck_wait))
 			return request_offset;
 
 		Arg::Gds(lck_wait > 0 ? isc_deadlock : lck_wait < 0 ? isc_lock_timeout :
@@ -643,7 +644,7 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 }
 
 
-bool LockManager::convert(Attachment* attachment,
+bool LockManager::convert(thread_db* tdbb,
 						  CheckStatusWrapper* statusVector,
 						  SRQ_PTR request_offset,
 						  UCHAR type,
@@ -682,14 +683,14 @@ bool LockManager::convert(Attachment* attachment,
 		++(m_sharedMemory->getHeader()->lhb_operations[0]);
 
 	const bool result =
-		internal_convert(attachment, statusVector, request_offset, type, lck_wait,
+		internal_convert(tdbb, statusVector, request_offset, type, lck_wait,
 						 ast_routine, ast_argument);
 
 	return result;
 }
 
 
-UCHAR LockManager::downgrade(Attachment* attachment,
+UCHAR LockManager::downgrade(thread_db* tdbb,
 							 CheckStatusWrapper* statusVector,
 							 const SRQ_PTR request_offset)
 {
@@ -747,7 +748,7 @@ UCHAR LockManager::downgrade(Attachment* attachment,
 	}
 	else
 	{
-		internal_convert(attachment, statusVector, request_offset, state, LCK_NO_WAIT,
+		internal_convert(tdbb, statusVector, request_offset, state, LCK_NO_WAIT,
 						 request->lrq_ast_routine, request->lrq_ast_argument);
 	}
 
@@ -792,7 +793,7 @@ bool LockManager::dequeue(const SRQ_PTR request_offset)
 }
 
 
-void LockManager::repost(Attachment* attachment, lock_ast_t ast, void* arg, SRQ_PTR owner_offset)
+void LockManager::repost(thread_db* tdbb, lock_ast_t ast, void* arg, SRQ_PTR owner_offset)
 {
 /**************************************
  *
@@ -849,7 +850,7 @@ void LockManager::repost(Attachment* attachment, lock_ast_t ast, void* arg, SRQ_
 	DEBUG_DELAY;
 
 	if (!(owner->own_flags & OWN_signaled))
-		signal_owner(attachment, owner);
+		signal_owner(tdbb, owner);
 }
 
 
@@ -1389,7 +1390,7 @@ lbl* LockManager::alloc_lock(USHORT length, CheckStatusWrapper* statusVector)
 }
 
 
-void LockManager::blocking_action(Attachment* attachment, SRQ_PTR blocking_owner_offset)
+void LockManager::blocking_action(thread_db* tdbb, SRQ_PTR blocking_owner_offset)
 {
 /**************************************
  *
@@ -1446,7 +1447,7 @@ void LockManager::blocking_action(Attachment* attachment, SRQ_PTR blocking_owner
 
 			{ // checkout scope
 				LockTableCheckout checkout(this, FB_FUNCTION);
-				Jrd::Attachment::Checkout cout(attachment, FB_FUNCTION, true);
+				EngineCheckout cout(tdbb, FB_FUNCTION, true);
 				(*routine)(arg);
 			}
 
@@ -1574,7 +1575,7 @@ void LockManager::bug_assert(const TEXT* string, ULONG line)
 	TEXT buffer[MAXPATHLEN + 100];
 	lhb LOCK_header_copy;
 
-	sprintf((char*) buffer, "%s %"ULONGFORMAT": lock assertion failure: %.60s\n",
+	sprintf((char*) buffer, "%s %" ULONGFORMAT": lock assertion failure: %.60s\n",
 			__FILE__, line, string);
 
 	// Copy the shared memory so we can examine its state when we crashed
@@ -1929,7 +1930,7 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 #ifdef DEBUG_TRACE_DEADLOCKS
 		const own* owner = (own*) SRQ_ABS_PTR(request->lrq_owner);
 		const prc* proc = (prc*) SRQ_ABS_PTR(owner->own_process);
-		gds__log("deadlock chain: OWNER BLOCK %6"SLONGFORMAT"\tProcess id: %6d\tFlags: 0x%02X ",
+		gds__log("deadlock chain: OWNER BLOCK %6" SLONGFORMAT"\tProcess id: %6d\tFlags: 0x%02X ",
 			request->lrq_owner, proc->prc_process_id, owner->own_flags);
 #endif
 		return request;
@@ -2030,7 +2031,7 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 #ifdef DEBUG_TRACE_DEADLOCKS
 				const own* const owner2 = (own*) SRQ_ABS_PTR(request->lrq_owner);
 				const prc* const proc = (prc*) SRQ_ABS_PTR(owner2->own_process);
-				gds__log("deadlock chain: OWNER BLOCK %6"SLONGFORMAT"\tProcess id: %6d\tFlags: 0x%02X ",
+				gds__log("deadlock chain: OWNER BLOCK %6" SLONGFORMAT"\tProcess id: %6d\tFlags: 0x%02X ",
 					request->lrq_owner, proc->prc_process_id, owner2->own_flags);
 #endif
 				return target;
@@ -2086,7 +2087,6 @@ void LockManager::debug_delay(ULONG lineno)
 }
 #endif
 
-
 lbl* LockManager::find_lock(USHORT series,
 							const UCHAR* value,
 							USHORT length,
@@ -2106,23 +2106,11 @@ lbl* LockManager::find_lock(USHORT series,
  *
  **************************************/
 
-	// Hash the value preserving its distribution as much as possible
-
-	ULONG hash_value = 0;
-	{ // scope
-		UCHAR* p = NULL; // silence uninitialized warning
-		const UCHAR* q = value;
-		for (USHORT l = 0; l < length; l++)
-		{
-			if (!(l & 3))
-				p = (UCHAR*) &hash_value;
-			*p++ += *q++;
-		}
-	} // scope
-
 	// See if the lock already exists
 
-	const USHORT hash_slot = *slot = (USHORT) (hash_value % m_sharedMemory->getHeader()->lhb_hash_slots);
+	const USHORT hash_slot = *slot =
+		(USHORT) InternalHash::hash(length, value, m_sharedMemory->getHeader()->lhb_hash_slots);
+
 	ASSERT_ACQUIRED;
 	srq* const hash_header = &m_sharedMemory->getHeader()->lhb_hash[hash_slot];
 
@@ -2160,14 +2148,14 @@ lrq* LockManager::get_request(SRQ_PTR offset)
 	lrq* request = (lrq*) SRQ_ABS_PTR(offset);
 	if (offset == -1 || request->lrq_type != type_lrq)
 	{
-		sprintf(s, "invalid lock id (%"SLONGFORMAT")", offset);
+		sprintf(s, "invalid lock id (%" SLONGFORMAT")", offset);
 		bug(NULL, s);
 	}
 
 	const lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	if (lock->lbl_type != type_lbl)
 	{
-		sprintf(s, "invalid lock (%"SLONGFORMAT")", offset);
+		sprintf(s, "invalid lock (%" SLONGFORMAT")", offset);
 		bug(NULL, s);
 	}
 
@@ -2217,7 +2205,7 @@ void LockManager::grant(lrq* request, lbl* lock)
 }
 
 
-bool LockManager::grant_or_que(Attachment* attachment, lrq* request, lbl* lock, SSHORT lck_wait)
+bool LockManager::grant_or_que(thread_db* tdbb, lrq* request, lbl* lock, SSHORT lck_wait)
 {
 /**************************************
  *
@@ -2254,7 +2242,7 @@ bool LockManager::grant_or_que(Attachment* attachment, lrq* request, lbl* lock, 
 	{
 		const SRQ_PTR request_offset = SRQ_REL_PTR(request);
 
-		wait_for_request(attachment, request, lck_wait);
+		wait_for_request(tdbb, request, lck_wait);
 
 		request = (lrq*) SRQ_ABS_PTR(request_offset);
 
@@ -2515,7 +2503,7 @@ void LockManager::insert_tail(SRQ lock_srq, SRQ node)
 }
 
 
-bool LockManager::internal_convert(Attachment* attachment,
+bool LockManager::internal_convert(thread_db* tdbb,
 								   CheckStatusWrapper* statusVector,
 								   SRQ_PTR request_offset,
 								   UCHAR type,
@@ -2577,7 +2565,7 @@ bool LockManager::internal_convert(Attachment* attachment,
 		else
 			new_ast = false;
 
-		wait_for_request(attachment, request, lck_wait);
+		wait_for_request(tdbb, request, lck_wait);
 
 		request = (lrq*) SRQ_ABS_PTR(request_offset);
 		lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
@@ -2662,7 +2650,7 @@ USHORT LockManager::lock_state(const lbl* lock)
 }
 
 
-void LockManager::post_blockage(Attachment* attachment, lrq* request, lbl* lock)
+void LockManager::post_blockage(thread_db* tdbb, lrq* request, lbl* lock)
 {
 /**************************************
  *
@@ -2684,8 +2672,10 @@ void LockManager::post_blockage(Attachment* attachment, lrq* request, lbl* lock)
 	ASSERT_ACQUIRED;
 	CHECK(request->lrq_flags & LRQ_pending);
 
-	srq* lock_srq = SRQ_NEXT(lock->lbl_requests);
-	while (lock_srq != &lock->lbl_requests)
+	Firebird::HalfStaticArray<SRQ_PTR, 16> blocking_owners;
+
+	SRQ lock_srq;
+	SRQ_LOOP(lock->lbl_requests, lock_srq)
 	{
 		lrq* const block = (lrq*) ((UCHAR*) lock_srq - offsetof(lrq, lrq_lbl_requests));
 		own* const blocking_owner = (own*) SRQ_ABS_PTR(block->lrq_owner);
@@ -2704,7 +2694,6 @@ void LockManager::post_blockage(Attachment* attachment, lrq* request, lbl* lock)
 			!block->lrq_ast_routine ||
 			(block->lrq_flags & LRQ_blocking_seen))
 		{
-			lock_srq = SRQ_NEXT((*lock_srq));
 			continue;
 		}
 
@@ -2718,26 +2707,32 @@ void LockManager::post_blockage(Attachment* attachment, lrq* request, lbl* lock)
 			block->lrq_flags &= ~(LRQ_blocking_seen | LRQ_just_granted);
 		}
 
-		if (blocking_owner->own_flags & OWN_signaled)
-		{
-			lock_srq = SRQ_NEXT((*lock_srq));
-			continue;
-		}
+		blocking_owners.add(block->lrq_owner);
 
-		if (!signal_owner(attachment, blocking_owner))
+		if (block->lrq_state == LCK_EX)
+			break;
+	}
+
+	Firebird::HalfStaticArray<SRQ_PTR, 16> dead_processes;
+
+	for (SRQ_PTR* iter = blocking_owners.begin(); iter != blocking_owners.end(); ++iter)
+	{
+		own* const blocking_owner = (own*) SRQ_ABS_PTR(*iter);
+
+		if (blocking_owner->own_count &&
+			!(blocking_owner->own_flags & OWN_signaled) &&
+			!signal_owner(tdbb, blocking_owner))
 		{
-			prc* const process = (prc*) SRQ_ABS_PTR(blocking_owner->own_process);
+			dead_processes.add(blocking_owner->own_process);
+		}
+	}
+
+	for (SRQ_PTR* iter = dead_processes.begin(); iter != dead_processes.end(); ++iter)
+	{
+		prc* const process = (prc*) SRQ_ABS_PTR(*iter);
+
+		if (process->prc_process_id)
 			purge_process(process);
-		}
-
-		// Restart from the beginning, as the list of requests chained to our lock
-		// could be changed in the meantime thus invalidating the iterator
-
-		owner = (own*) SRQ_ABS_PTR(owner_offset);
-		request = (lrq*) SRQ_ABS_PTR(request_offset);
-		lock = (lbl*) SRQ_ABS_PTR(lock_offset);
-
-		lock_srq = SRQ_NEXT(lock->lbl_requests);
 	}
 }
 
@@ -3222,7 +3217,7 @@ void LockManager::release_request(lrq* request)
 }
 
 
-bool LockManager::signal_owner(Attachment* attachment, own* blocking_owner)
+bool LockManager::signal_owner(thread_db* tdbb, own* blocking_owner)
 {
 /**************************************
  *
@@ -3255,7 +3250,7 @@ bool LockManager::signal_owner(Attachment* attachment, own* blocking_owner)
 	if (process->prc_process_id == PID)
 	{
 		DEBUG_DELAY;
-		blocking_action(attachment, SRQ_REL_PTR(blocking_owner));
+		blocking_action(tdbb, SRQ_REL_PTR(blocking_owner));
 		DEBUG_DELAY;
 		return true;
 	}
@@ -3761,7 +3756,7 @@ void LockManager::validate_shb(const SRQ_PTR shb_ptr)
 }
 
 
-void LockManager::wait_for_request(Attachment* attachment, lrq* request, SSHORT lck_wait)
+void LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_wait)
 {
 /**************************************
  *
@@ -3818,7 +3813,7 @@ void LockManager::wait_for_request(Attachment* attachment, lrq* request, SSHORT 
 	// Post blockage. If the blocking owner has disappeared, the blockage
 	// may clear spontaneously.
 
-	post_blockage(attachment, request, lock);
+	post_blockage(tdbb, request, lock);
 	post_history(his_wait, owner_offset, lock_offset, request_offset, true);
 
 	owner = (own*) SRQ_ABS_PTR(owner_offset);
@@ -3877,7 +3872,7 @@ void LockManager::wait_for_request(Attachment* attachment, lrq* request, SSHORT 
 				}
 
 				{ // scope
-					Jrd::Attachment::Checkout cout(attachment, FB_FUNCTION);
+					EngineCheckout cout(tdbb, FB_FUNCTION, true);
 					ret = m_sharedMemory->eventWait(&owner->own_wakeup, value, (timeout - current_time) * 1000000);
 					--m_waitingOwners;
 				}
@@ -3937,7 +3932,7 @@ void LockManager::wait_for_request(Attachment* attachment, lrq* request, SSHORT 
 		// if so we mark our own request as rejected
 
 		// !!! this will be changed to have no dependency on thread_db !!!
-		const bool cancelled = JRD_get_thread_data()->checkCancelState(false);
+		const bool cancelled = (tdbb->checkCancelState() != FB_SUCCESS);
 
 		if (cancelled || (lck_wait < 0 && lock_timeout <= current_time))
 		{
@@ -3966,7 +3961,7 @@ void LockManager::wait_for_request(Attachment* attachment, lrq* request, SSHORT 
 			// This could happen if the lock was granted to a different request,
 			// we have to tell the new owner of the lock that they are blocking us.
 
-			post_blockage(attachment, request, lock);
+			post_blockage(tdbb, request, lock);
 			continue;
 		}
 
@@ -4021,7 +4016,7 @@ void LockManager::wait_for_request(Attachment* attachment, lrq* request, SSHORT 
 			// We need to inform the new owner.
 
 			DEBUG_MSG(0, ("wait_for_request: forcing a resignal of blockers\n"));
-			post_blockage(attachment, request, lock);
+			post_blockage(tdbb, request, lock);
 #ifdef DEV_BUILD
 			repost_counter++;
 			if (repost_counter % 50 == 0)

@@ -115,8 +115,12 @@ private:
 		VAL_PIP_WRONG_EXTENT		= 32,
 		VAL_PIP_WRONG_USED			= 33,
 		VAL_P_PAGE_WRONG_BITS		= 34,
+		VAL_DATA_PAGE_ISNT_IN_PIP   = 35,
+		VAL_DATA_PAGE_SLOT_NOT_FOUND= 36,
+		VAL_DATA_PAGE_SLOT_BAD_VAL  = 37,
+		VAL_DATA_PAGE_HASNO_PP      = 38,
 
-		VAL_MAX_ERROR				= 35
+		VAL_MAX_ERROR				= 39
 	};
 
 	struct MSG_ENTRY
@@ -136,7 +140,9 @@ private:
 	int vdr_fixed;
 	TraNumber vdr_max_transaction;
 	FB_UINT64 vdr_rel_backversion_counter;	// Counts slots w/rhd_chain
+	PageBitmap* vdr_backversion_pages;      // 1 bit per visited table page
 	FB_UINT64 vdr_rel_chain_counter;		// Counts chains w/rdr_chain
+	PageBitmap* vdr_chain_pages;    // 1 bit per visited record chain page
 	RecordBitmap* vdr_rel_records;			// 1 bit per valid record
 	RecordBitmap* vdr_idx_records;			// 1 bit per index item
 	PageBitmap* vdr_page_bitmap;
@@ -148,6 +154,8 @@ private:
 	PatternMatcher* vdr_idx_incl;
 	PatternMatcher* vdr_idx_excl;
 	int vdr_lock_tout;
+	void checkDPinPP(jrd_rel *relation, SLONG page_number);
+	void checkDPinPIP(jrd_rel *relation, SLONG page_number);
 
 public:
 	explicit Validation(thread_db*, Firebird::UtilSvc* uSvc = NULL);
@@ -159,7 +167,7 @@ public:
 private:
 	struct UsedBdb
 	{
-		UsedBdb(BufferDesc* _bdb) : bdb(_bdb), count(1) {}
+		explicit UsedBdb(BufferDesc* _bdb) : bdb(_bdb), count(1) {}
 
 		BufferDesc* bdb;
 		int count;
@@ -180,7 +188,7 @@ private:
 
 	void cleanup();
 	RTN corrupt(int, const jrd_rel*, ...);
-	FETCH_CODE fetch_page(bool validate, ULONG, USHORT, WIN*, void*);
+	FETCH_CODE fetch_page(bool mark, ULONG, USHORT, WIN*, void*);
 	void release_page(WIN*);
 	void garbage_collect();
 

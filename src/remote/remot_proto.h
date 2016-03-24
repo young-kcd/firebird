@@ -27,7 +27,7 @@
 #include "../common/classes/fb_string.h"
 #include "../common/config/config.h"
 #include "../common/classes/RefCounted.h"
-#include "../common/classes/objects_array.h"
+#include "../common/security.h"
 #include "../common/xdr.h"
 #include "../remote/protocol.h"
 
@@ -38,7 +38,7 @@ namespace Firebird
 
 namespace Remote
 {
-	typedef Firebird::ObjectsArray<Firebird::PathName> ParsedList;
+	typedef Auth::ParsedList ParsedList;
 }
 
 struct rem_port;
@@ -63,11 +63,19 @@ bool_t		REMOTE_getbytes (XDR*, SCHAR*, u_int);
 LegacyPlugin REMOTE_legacy_auth(const char* nm, int protocol);
 Firebird::RefPtr<Config> REMOTE_get_config(const Firebird::PathName* dbName,
 	const Firebird::string* dpb_config = NULL);
-void		REMOTE_parseList(Remote::ParsedList&, Firebird::PathName);
-void		REMOTE_makeList(Firebird::PathName& list, const Remote::ParsedList& parsed);
 void		REMOTE_check_response(Firebird::IStatus* warning, Rdb* rdb, PACKET* packet, bool checkKeys = false);
 bool		REMOTE_inflate(rem_port*, PacketReceive*, UCHAR*, SSHORT, SSHORT*);
 bool		REMOTE_deflate(XDR*, ProtoWrite*, PacketSend*, bool flash);
+
+static inline void REMOTE_parseList(Remote::ParsedList& parsed, const Firebird::PathName& list)
+{
+	Auth::parseList(parsed, list);
+}
+
+static inline void REMOTE_makeList(Firebird::PathName& list, const Remote::ParsedList& parsed)
+{
+	Auth::makeList(list, parsed);
+}
 
 extern signed char wcCompatible[3][3];
 

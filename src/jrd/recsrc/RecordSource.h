@@ -49,6 +49,8 @@ namespace Jrd
 	class BaseBufferedStream;
 	class BufferedStream;
 
+	enum JoinType { INNER_JOIN, OUTER_JOIN, SEMI_JOIN, ANTI_JOIN };
+
 	// Abstract base class
 
 	class RecordSource
@@ -780,7 +782,7 @@ namespace Jrd
 	public:
 		NestedLoopJoin(CompilerScratch* csb, FB_SIZE_T count, RecordSource* const* args);
 		NestedLoopJoin(CompilerScratch* csb, RecordSource* outer, RecordSource* inner,
-					   BoolExprNode* boolean, bool semiJoin, bool antiJoin);
+					   BoolExprNode* boolean, JoinType joinType);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -801,9 +803,7 @@ namespace Jrd
 	private:
 		bool fetchRecord(thread_db*, FB_SIZE_T) const;
 
-		const bool m_outerJoin;
-		const bool m_semiJoin;
-		const bool m_antiJoin;
+		const JoinType m_joinType;
 		Firebird::Array<NestConst<RecordSource> > m_args;
 		NestConst<BoolExprNode> const m_boolean;
 	};

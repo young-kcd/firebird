@@ -185,27 +185,32 @@ namespace Firebird
 			T* dataL = FB_NEW_POOL(this->getPool()) T(this->getPool(), item);
 			inherited::insert(index, dataL);
 		}
+
 		T& insert(size_type index)
 		{
 			T* dataL = FB_NEW_POOL(this->getPool()) T(this->getPool());
 			inherited::insert(index, dataL);
 			return *dataL;
 		}
+
 		size_type add(const T& item)
 		{
 			T* dataL = FB_NEW_POOL(this->getPool()) T(this->getPool(), item);
 			return inherited::add(dataL);
 		}
+
 		T& add()
 		{
 			T* dataL = FB_NEW_POOL(this->getPool()) T(this->getPool());
 			inherited::add(dataL);
 			return *dataL;
 		}
+
 		void push(const T& item)
 		{
 			add(item);
 		}
+
 		T pop()
 		{
 			T* pntr = inherited::pop();
@@ -213,17 +218,20 @@ namespace Firebird
 			delete pntr;
 			return rc;
 		}
+
 		void remove(size_type index)
 		{
 			fb_assert(index < getCount());
 			delete getPointer(index);
 			inherited::remove(index);
 		}
+
 		void remove(iterator itr)
 		{
   			fb_assert(itr.lst == this);
 			remove(itr.pos);
 		}
+
 		void shrink(size_type newCount)
 		{
 			for (size_type i = newCount; i < getCount(); i++) {
@@ -231,6 +239,7 @@ namespace Firebird
 			}
 			inherited::shrink(newCount);
 		}
+
 		void grow(size_type newCount)
 		{
 			size_type oldCount = getCount();
@@ -239,6 +248,7 @@ namespace Firebird
 				inherited::getElement(i) = FB_NEW_POOL(this->getPool()) T(this->getPool());
 			}
 		}
+
 		void resize(const size_type newCount, const T& val)
 		{
 			if (newCount > getCount())
@@ -253,6 +263,7 @@ namespace Firebird
 				shrink(newCount);
 			}
 		}
+
 		void resize(const size_type newCount)
 		{
 			if (newCount > getCount())
@@ -263,54 +274,84 @@ namespace Firebird
 				shrink(newCount);
 			}
 		}
+
 		iterator begin()
 		{
 			return iterator(this, 0);
 		}
+
 		iterator end()
 		{
 			return iterator(this, getCount());
 		}
+
 		iterator back()
 		{
   			fb_assert(getCount() > 0);
 			return iterator(this, getCount() - 1);
 		}
+
 		const_iterator begin() const
 		{
 			return const_iterator(this, 0);
 		}
+
 		const_iterator end() const
 		{
 			return const_iterator(this, getCount());
 		}
+
 		const T& operator[](size_type index) const
 		{
   			return *getPointer(index);
 		}
+
 		const T* getPointer(size_type index) const
 		{
   			return inherited::getElement(index);
 		}
+
 		T& operator[](size_type index)
 		{
   			return *getPointer(index);
 		}
+
 		T* getPointer(size_type index)
 		{
   			return inherited::getElement(index);
 		}
-		explicit ObjectsArray(MemoryPool& p) : A(p) { }
-		ObjectsArray() : A() { }
-		~ObjectsArray()
+
+		explicit ObjectsArray(MemoryPool& p, const ObjectsArray<T, A>& o)
+			: A(p)
 		{
-			for (size_type i = 0; i < getCount(); i++) {
-				delete getPointer(i);
-			}
+			add(o);
 		}
 
-		size_type getCount() const throw() {return inherited::getCount();}
-		size_type getCapacity() const {return inherited::getCapacity();}
+		explicit ObjectsArray(MemoryPool& p)
+			: A(p)
+		{
+		}
+
+		ObjectsArray() :
+			A()
+		{
+		}
+
+		~ObjectsArray()
+		{
+			for (size_type i = 0; i < getCount(); i++)
+				delete getPointer(i);
+		}
+
+		size_type getCount() const throw()
+		{
+			return inherited::getCount();
+		}
+
+		size_type getCapacity() const
+		{
+			return inherited::getCapacity();
+		}
 
 		bool hasData() const
 		{
@@ -324,29 +365,32 @@ namespace Firebird
 
 		void clear()
 		{
-			for (size_type i = 0; i < getCount(); i++) {
+			for (size_type i = 0; i < getCount(); i++)
 				delete getPointer(i);
-			}
+
 			inherited::clear();
 		}
-		ObjectsArray<T, A>& operator =(const ObjectsArray<T, A>& L)
+
+		ObjectsArray<T, A>& operator =(const ObjectsArray<T, A>& o)
 		{
-			while (this->count > L.count)
-			{
+			while (this->count > o.count)
 				delete inherited::pop();
-			}
-			for (size_type i = 0; i < L.count; i++)
+
+			add(o);
+
+			return *this;
+		}
+
+	private:
+		void add(const ObjectsArray<T, A>& o)
+		{
+			for (size_type i = 0; i < o.count; i++)
 			{
 				if (i < this->count)
-				{
-					(*this)[i] = L[i];
-				}
+					(*this)[i] = o[i];
 				else
-				{
-					add(L[i]);
-				}
+					add(o[i]);
 			}
-			return *this;
 		}
 	};
 

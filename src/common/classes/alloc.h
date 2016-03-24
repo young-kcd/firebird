@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Client/Server Common Code
  *	MODULE:		alloc.h
- *	DESCRIPTION:	Memory Pool Manager (based on B+ tree)
+ *	DESCRIPTION:	Memory Pool Manager
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -225,16 +225,12 @@ public:
 	// Initialize context pool
 	static void contextPoolInit();
 
-	// Statistics
-	void increment_usage(size_t size) throw ();
-	void decrement_usage(size_t size) throw ();
-	void increment_mapping(size_t size) throw ();
-	void decrement_mapping(size_t size) throw ();
-
 	// Print out pool contents. This is debugging routine
-	void print_contents(FILE*, bool = false, const char* filter_path = 0) throw ();
+	static const unsigned PRINT_USED_ONLY = 0x01;
+	static const unsigned PRINT_RECURSIVE = 0x02;
+	void print_contents(FILE*, unsigned flags = 0, const char* filter_path = 0) throw ();
 	// The same routine, but more easily callable from the debugger
-	void print_contents(const char* filename, bool = false, const char* filter_path = 0) throw ();
+	void print_contents(const char* filename, unsigned flags = 0, const char* filter_path = 0) throw ();
 
 	friend class MemPool;
 };
@@ -336,6 +332,12 @@ inline void operator delete[](void* mem, Firebird::MemoryPool& pool ALLOC_PARAMS
 }
 
 #ifdef DEBUG_GDS_ALLOC
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winline-new-delete"
+#endif
+
 inline void operator delete(void* mem) throw()
 {
 	MemoryPool::globalFree(mem);
@@ -344,6 +346,10 @@ inline void operator delete[](void* mem) throw()
 {
 	MemoryPool::globalFree(mem);
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 #define FB_NEW new(__FILE__, __LINE__)
 #define FB_NEW_POOL(pool) new(pool, __FILE__, __LINE__)

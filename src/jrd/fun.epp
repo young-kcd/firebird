@@ -205,9 +205,9 @@ bool IbUtil::free(void* ptr)
 typedef void* UDF_ARG;
 
 template <typename T>
-T CALL_UDF(Jrd::Attachment* att, int (*entrypoint)(), UDF_ARG* args)
+T CALL_UDF(Jrd::thread_db* tdbb, int (*entrypoint)(), UDF_ARG* args)
 {
-	Jrd::Attachment::Checkout attCout(att, FB_FUNCTION);
+	EngineCheckout cout(tdbb, FB_FUNCTION);
 	return ((T (*)(UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG,
 		UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG))(entrypoint))
 		(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7],
@@ -1001,12 +1001,11 @@ static void invoke(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* att = tdbb->getAttachment();
 
 	START_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 	if (function->fun_return_arg)
 	{
-		CALL_UDF<void>(att, function->fun_entrypoint, args);
+		CALL_UDF<void>(tdbb, function->fun_entrypoint, args);
 		result_is_null = return_ptr->prm_fun_mechanism == FUN_descriptor &&
 			(value->vlu_desc.dsc_flags & DSC_null) ||
 			return_ptr->prm_fun_mechanism == FUN_blob_struct && return_blob_struct &&
@@ -1021,7 +1020,7 @@ static void invoke(thread_db* tdbb,
 		case dtype_sql_time:
 		case dtype_sql_date:
 		case dtype_long:
-			value->vlu_misc.vlu_long = CALL_UDF<SLONG>(att, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_long = CALL_UDF<SLONG>(tdbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_short:
@@ -1029,7 +1028,7 @@ static void invoke(thread_db* tdbb,
 			// must always be returned as a LONG.  See v3.2 release notes
 			// 1994-September-28 David Schnepper
 
-			value->vlu_misc.vlu_short = (SSHORT) CALL_UDF<SLONG>(att, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_short = (SSHORT) CALL_UDF<SLONG>(tdbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_real:
@@ -1037,15 +1036,15 @@ static void invoke(thread_db* tdbb,
 			// must always be returned as a DOUBLE.  See v3.2 release notes
 			// 1994-September-28 David Schnepper
 
-			value->vlu_misc.vlu_float = (float) CALL_UDF<double>(att, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_float = (float) CALL_UDF<double>(tdbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_int64:
-			value->vlu_misc.vlu_int64 = CALL_UDF<SINT64>(att, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_int64 = CALL_UDF<SINT64>(tdbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_double:
-			value->vlu_misc.vlu_double = CALL_UDF<double>(att, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_double = CALL_UDF<double>(tdbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_timestamp:
@@ -1056,7 +1055,7 @@ static void invoke(thread_db* tdbb,
 	}
 	else
 	{
-		UCHAR* temp_ptr = CALL_UDF<UCHAR*>(att, function->fun_entrypoint, args);
+		UCHAR* temp_ptr = CALL_UDF<UCHAR*>(tdbb, function->fun_entrypoint, args);
 
 		if (temp_ptr != NULL)
 		{

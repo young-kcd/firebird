@@ -40,7 +40,11 @@
 #include <math.h>
 #include <crtdbg.h>
 
+#ifdef _MSC_VER
+#include "autoconfig_msvc.h"
+#else
 #include "autoconfig.h"
+#endif
 #include "fb_types.h"
 #include "../jrd/ibase.h"
 

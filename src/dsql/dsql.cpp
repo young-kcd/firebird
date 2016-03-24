@@ -264,6 +264,12 @@ bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 		}
 	}
 
+	if (!req_request)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+				  Arg::Gds(isc_unprepared_stmt));
+	}
+
 	dsql_msg* message = (dsql_msg*) statement->getReceiveMsg();
 
 	// Set up things for tracing this call
@@ -650,6 +656,12 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
 	bool singleton)
 {
+	if (!req_request)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+				  Arg::Gds(isc_unprepared_stmt));
+	}
+
 	// If there is no data required, just start the request
 
 	const dsql_msg* message = statement->getSendMsg();
@@ -672,10 +684,7 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	// Selectable execute block should get the "proc fetch" flag assigned,
 	// which ensures that the savepoint stack is preserved while suspending
 	if (statement->getType() == DsqlCompiledStatement::TYPE_SELECT_BLOCK)
-	{
-		fb_assert(req_request);
 		req_request->req_flags |= req_proc_fetch;
-	}
 
 	// TYPE_EXEC_BLOCK has no outputs so there are no out_msg
 	// supplied from client side, but TYPE_EXEC_BLOCK requires
@@ -988,17 +997,27 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 
 	// Sanity check
 
-	if (count && !(toExternal ? dsql_msg_buf : in_dsql_msg_buf))
+	if (count)
 	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				  Arg::Gds(isc_dsql_sqlda_err)
-#ifdef DEV_BUILD
-				  << Arg::Gds(isc_random) << "Missing message data buffer"
-#endif
-				  );
+		if (toExternal)
+		{
+			if (dsql_msg_buf == NULL)
+			{
+				ERRD_post(Arg::Gds(isc_dsql_sqlda_err) <<
+						  Arg::Gds(isc_dsql_no_output_sqlda));
+			}
+		}
+		else
+		{
+			if (in_dsql_msg_buf == NULL)
+			{
+				ERRD_post(Arg::Gds(isc_dsql_sqlda_err) <<
+						  Arg::Gds(isc_dsql_no_input_sqlda));
+			}
+		}
 	}
 
-	bool err = false;
+	USHORT count2 = 0;
 
 	for (FB_SIZE_T i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
@@ -1012,12 +1031,19 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 			if (!request->req_user_descs.get(parameter, desc))
 				desc.clear();
 
-			//ULONG length = (IPTR) desc.dsc_address + desc.dsc_length;
-
-			if (/*length > msg_length || */!desc.dsc_dtype)
+			/***
+			ULONG length = (IPTR) desc.dsc_address + desc.dsc_length;
+			if (length > msg_length)
 			{
-				err = true;
-				break;
+				ERRD_post(Arg::Gds(isc_dsql_sqlda_err) <<
+					Arg::Gds(isc_random) << "Message buffer too short");
+			}
+			***/
+			if (!desc.dsc_dtype)
+			{
+				ERRD_post(Arg::Gds(isc_dsql_sqlda_err) <<
+					Arg::Gds(isc_dsql_datatype_err) <<
+					Arg::Gds(isc_dsql_sqlvar_index) << Arg::Num(parameter->par_index-1));
 			}
 
 			UCHAR* msgBuffer = request->req_msg_buffers[parameter->par_message->msg_buffer_number];
@@ -1032,14 +1058,14 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 
 				const ULONG null_offset = (IPTR) userNullDesc.dsc_address;
 
-				/*
+				/***
 				length = null_offset + sizeof(SSHORT);
 				if (length > msg_length)
 				{
-					err = true;
-					break;
+					ERRD_post(Arg::Gds(isc_dsql_sqlda_err)
+						<< Arg::Gds(isc_random) << "Message buffer too short");
 				}
-				*/
+				***/
 
 				dsc nullDesc = null_ind->par_desc;
 				nullDesc.dsc_address = msgBuffer + (IPTR) nullDesc.dsc_address;
@@ -1080,21 +1106,15 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 			else
 				memset(parDesc.dsc_address, 0, parDesc.dsc_length);
 
-			count--;
+			++count2;
 		}
 	}
 
-	// If we got here because the loop was exited early or if part of the
-	// message given to us hasn't been used, complain.
-
-	if (err || count)
+	if (count != count2)
 	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				  Arg::Gds(isc_dsql_sqlda_err)
-#ifdef DEV_BUILD
-				  << Arg::Gds(isc_random) << (err ? "Message buffer too short" : "Wrong number of message parameters")
-#endif
-				  );
+		ERRD_post(
+			Arg::Gds(isc_dsql_sqlda_err) <<
+			Arg::Gds(isc_dsql_wrong_param_num) << Arg::Num(count) <<Arg::Num(count2));
 	}
 
 	const DsqlCompiledStatement* statement = request->getStatement();
@@ -1201,14 +1221,12 @@ static USHORT parse_metadata(dsql_req* request, IMessageMetadata* meta,
 	unsigned count = meta->getCount(&st);
 	checkD(&st);
 
-	if (count != parameters.getCount())
+	unsigned count2 = parameters.getCount();
+
+	if (count != count2)
 	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				  Arg::Gds(isc_dsql_sqlda_err)
-#ifdef DEV_BUILD
-				  << Arg::Gds(isc_random) << "Wrong number of message parameters"
-#endif
-				  );
+		ERRD_post(Arg::Gds(isc_dsql_sqlda_err) <<
+				  Arg::Gds(isc_dsql_wrong_param_num) <<Arg::Num(count2) << Arg::Num(count));
 	}
 
 	unsigned offset = 0;
@@ -1810,7 +1828,8 @@ static void sql_info(thread_db* tdbb,
 
 				if (plan.hasData())
 				{
-					const ULONG buffer_length = end_info - info - 3; // 1-byte item + 2-byte length
+					// 1-byte item + 2-byte length + isc_info_end/isc_info_truncated == 4
+					const ULONG buffer_length = end_info - info - 4;
 					const ULONG max_length = MIN(buffer_length, MAX_USHORT);
 
 					if (plan.length() > max_length)
@@ -1828,12 +1847,13 @@ static void sql_info(thread_db* tdbb,
 						}
 
 						plan += " ...";
-					}
 
-					if (plan.length() > max_length)
-					{
-						// If it's still too long, give up
-						fb_assert(info < end_info);
+						if (plan.length() <= max_length)
+						{
+							info = put_item(item, plan.length(), reinterpret_cast<const UCHAR*>(plan.c_str()),
+											info, end_info);
+						}
+
 						*info = isc_info_truncated;
 						info = NULL;
 					}

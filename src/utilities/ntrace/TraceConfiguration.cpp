@@ -262,7 +262,7 @@ ULONG TraceCfgReader::parseUInteger(const ConfigFile::Parameter* el) const
 {
 	const char *value = el->value.c_str();
 	ULONG result = 0;
-	if (!sscanf(value, "%"ULONGFORMAT, &result))
+	if (!sscanf(value, "%" ULONGFORMAT, &result))
 	{
 		fatal_exception::raiseFmt(ERROR_PREFIX
 			"line %d, element \"%s\": \"%s\" is not a valid integer value",

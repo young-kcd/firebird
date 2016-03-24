@@ -30,5 +30,8 @@
 # It's good idea not to have running firebird/interbase instances
 checkIfServerRunning
 
+# Make sure we have required libraries installed
+checkLibraries
+
 # Archive any files we find
 archivePriorInstallSystemFiles

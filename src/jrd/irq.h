@@ -39,6 +39,8 @@ enum irq_type_t
 	irq_format3,			// make a new format for a record
 	irq_r_format,			// read a format
 	irq_c_index,			// create index
+	irq_c_index_rc,			// create index - read constraints
+	irq_c_index_seg,		// create index - read segments
 	irq_c_index_m,			// create index - modify ID.NULL
 	irq_m_fields,			// process a modification of RDB$FIELDS
 	irq_m_index,			// modify index id

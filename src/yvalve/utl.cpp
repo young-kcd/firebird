@@ -717,7 +717,9 @@ unsigned UtilInterface::formatStatus(char* buffer, unsigned bufferSize, IStatus*
 
 	unsigned ret = MIN((unsigned) s.length(), bufferSize);
 
-	strncpy(buffer, s.c_str(), ret);
+	memcpy(buffer, s.c_str(), ret);
+	if (ret < bufferSize)
+		buffer[ret] = 0;
 
 	return ret;
 }
@@ -771,11 +773,6 @@ public:
 			else
 				pb = FB_NEW_POOL(getPool()) ClumpletWriter(getPool(), k, MAX_DPB_SIZE, buf, len);
 		}
-	}
-
-	~XpbBuilder()
-	{
-		delete pb;
 	}
 
 	// IXpbBuilder implementation
@@ -1038,7 +1035,7 @@ public:
 	}
 
 private:
-	ClumpletWriter* pb;
+	AutoPtr<ClumpletWriter> pb;
 	unsigned char nextTag;
 	string strVal;
 };
@@ -1056,6 +1053,42 @@ IXpbBuilder* UtilInterface::getXpbBuilder(CheckStatusWrapper* status,
 		return NULL;
 	}
 }
+
+unsigned UtilInterface::setOffsets(CheckStatusWrapper* status, IMessageMetadata* metadata,
+	IOffsetsCallback* callback)
+{
+	try
+	{
+		unsigned count = metadata->getCount(status);
+		check(status);
+
+		unsigned length = 0;
+
+		for (unsigned n = 0; n < count; ++n)
+		{
+			unsigned type = metadata->getType(status, n);
+			check(status);
+			unsigned len = metadata->getLength(status, n);
+			check(status);
+
+			unsigned offset, nullOffset;
+			length = fb_utils::sqlTypeToDsc(length, type, len,
+				NULL /*dtype*/, NULL /*length*/, &offset, &nullOffset);
+
+			callback->setOffset(status, n, offset, nullOffset);
+			check(status);
+		}
+
+		return length;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return 0;
+}
+
 
 } // namespace Why
 

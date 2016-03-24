@@ -274,8 +274,6 @@ void AggregatedStream::init(thread_db* tdbb, CompilerScratch* csb)
 	fb_assert(m_map && m_next);
 	m_impure = CMP_impure(csb, sizeof(Impure));
 
-	m_map->aggPostRse(tdbb, csb);
-
 	// Separate nodes that requires the winPass call.
 
 	const NestConst<ValueExprNode>* const sourceEnd = m_map->sourceList.end();

@@ -131,8 +131,8 @@ static const StatFormat STAT_FORMATS[] =
 {
 	{"time",	"%4lu.%03u ",  9},
 	{"delta",	"%2lu.%03u ",  7},
-	{"reads",	"%6"UQUADFORMAT" ", 7},
-	{"writes",	"%6"UQUADFORMAT" ", 7}
+	{"reads",	"%6" UQUADFORMAT" ", 7},
+	{"writes",	"%6" UQUADFORMAT" ", 7}
 };
 
 
@@ -2401,8 +2401,6 @@ void BurpGlobals::setupSkipData(const Firebird::string& regexp)
 		// msg 356 regular expression to skip tables was already set
 	}
 
-	Jrd::TextType* textType = unicodeCollation.getTextType();
-
 	// Compile skip relation expressions
 	try
 	{
@@ -2411,6 +2409,11 @@ void BurpGlobals::setupSkipData(const Firebird::string& regexp)
 			Firebird::string filter(regexp);
 			if (!uSvc->utf8FileNames())
 				ISC_systemToUtf8(filter);
+
+			if (!unicodeCollation)
+				unicodeCollation = FB_NEW UnicodeCollationHolder(*getDefaultMemoryPool());
+
+			Jrd::TextType* const textType = unicodeCollation->getTextType();
 
 			skipDataMatcher.reset(FB_NEW Firebird::SimilarToMatcher<UCHAR, Jrd::UpcaseConverter<> >(
 				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),

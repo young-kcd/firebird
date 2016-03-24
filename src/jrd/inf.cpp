@@ -64,6 +64,7 @@
 #include "../common/StatusArg.h"
 #include "../common/classes/DbImplementation.h"
 #include "../jrd/validation.h"
+#include "../jrd/CryptoManager.h"
 
 using namespace Firebird;
 using namespace Jrd;
@@ -335,7 +336,7 @@ void INF_database_info(thread_db* tdbb,
 			break;
 
 		case isc_info_allocation:
-			CCH_flush(tdbb, FLUSH_ALL, 0);
+			CCH_flush(tdbb, FLUSH_ALL, 0);	// hvlad: do we really need it ?
 			length = INF_convert(PageSpace::maxAlloc(dbb), buffer);
 			break;
 
@@ -562,7 +563,7 @@ void INF_database_info(thread_db* tdbb,
 		case isc_info_db_file_size:
 			{
 				BackupManager *bm = dbb->dbb_backup_manager;
-				length = INF_convert(bm ? bm->getPageCount() : 0, buffer);
+				length = INF_convert(bm ? bm->getPageCount(tdbb) : 0, buffer);
 			}
 			break;
 
@@ -672,7 +673,7 @@ void INF_database_info(thread_db* tdbb,
 			break;
 
 		case isc_info_db_size_in_pages:
-			CCH_flush(tdbb, FLUSH_ALL, 0);
+			CCH_flush(tdbb, FLUSH_ALL, 0);  // hvlad: do we really need it ?
 			length = INF_convert(PageSpace::actAlloc(dbb), buffer);
 			break;
 
@@ -753,6 +754,19 @@ void INF_database_info(thread_db* tdbb,
 			buffer[0] = item;
 			item = isc_info_error;
 			length = 1 + INF_convert(isc_adm_task_denied, buffer + 1);
+			break;
+
+		case fb_info_pages_used:
+			length = INF_convert(PageSpace::usedPages(dbb), buffer);
+			break;
+
+		case fb_info_pages_free:
+			length = INF_convert(PageSpace::maxAlloc(dbb) - PageSpace::usedPages(dbb), buffer);
+			break;
+
+		case fb_info_crypt_state:
+			length = INF_convert(dbb->dbb_crypto_manager ?
+				dbb->dbb_crypto_manager->getCurrentState() : 0, buffer);
 			break;
 
 		default:

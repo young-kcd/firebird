@@ -211,7 +211,7 @@ const bool pag_crypt_page[pag_max + 1] = {false, false, false,
 
 // pag_flags for any page type
 
-const UCHAR crypted_page	= 0x80;		// Page encrypted
+const UCHAR crypted_page	= 0x80;		// Page on disk is encrypted (in memory cache it always isn't)
 
 // Basic page header
 
@@ -309,11 +309,22 @@ struct index_root_page
 	USHORT irt_count;				// Number of indices
 	struct irt_repeat
 	{
-		ULONG irt_root;				// page number of index root
+	private:
+		ULONG irt_root;				// page number of index root if irt_in_progress is NOT set, or
+									// highest 32 bit of transaction if irt_in_progress is set
 		ULONG irt_transaction;		// transaction in progress (lowest 32 bits)
+	public:
 		USHORT irt_desc;			// offset to key descriptions
 		UCHAR irt_keys;				// number of keys in index
 		UCHAR irt_flags;
+
+		ULONG getRoot() const;
+		void setRoot(ULONG root_page);
+
+		TraNumber getTransaction() const;
+		void setTransaction(TraNumber traNumber);
+
+		bool isUsed() const;
 	} irt_rpt[1];
 };
 
@@ -333,6 +344,35 @@ const USHORT irt_in_progress	= 4;
 const USHORT irt_foreign		= 8;
 const USHORT irt_primary		= 16;
 const USHORT irt_expression		= 32;
+
+inline ULONG index_root_page::irt_repeat::getRoot() const
+{
+	return (irt_flags & irt_in_progress) ? 0 : irt_root;
+}
+
+inline void index_root_page::irt_repeat::setRoot(ULONG root_page)
+{
+	irt_root = root_page;
+	irt_flags &= ~irt_in_progress;
+}
+
+inline TraNumber index_root_page::irt_repeat::getTransaction() const
+{
+	return (irt_flags & irt_in_progress) ? ((TraNumber) irt_root << BITS_PER_LONG) | irt_transaction : 0;
+}
+
+inline void index_root_page::irt_repeat::setTransaction(TraNumber traNumber)
+{
+	irt_root = ULONG(traNumber >> BITS_PER_LONG);
+	irt_transaction = ULONG(traNumber);
+	irt_flags |= irt_in_progress;
+}
+
+inline bool index_root_page::irt_repeat::isUsed() const
+{
+	return (irt_flags & irt_in_progress) || (irt_root != 0);
+}
+
 
 const int STUFF_COUNT		= 4;
 
@@ -389,7 +429,9 @@ const UCHAR HDR_sweep_interval		= 4;	// Transactions between sweeps
 const UCHAR HDR_password_file_key	= 5;	// Key to compare to password db
 const UCHAR HDR_difference_file		= 6;	// Delta file that is used during backup lock
 const UCHAR HDR_backup_guid			= 7;	// UID generated on each switch into backup mode
-const UCHAR HDR_max					= 8;	// Maximum HDR_clump value
+const UCHAR HDR_crypt_key			= 8;	// Name of a key used to crypt database
+const UCHAR HDR_crypt_hash			= 9;	// Validator of key correctness
+const UCHAR HDR_max					= 10;	// Maximum HDR_clump value
 
 // Header page flags
 

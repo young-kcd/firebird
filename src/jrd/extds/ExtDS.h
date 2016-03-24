@@ -91,7 +91,7 @@ public:
 	virtual ~Provider();
 
 	// return existing or create new Connection
-	virtual Connection* getConnection(Jrd::thread_db* tdbb, const Firebird::string& dbName,
+	virtual Connection* getConnection(Jrd::thread_db* tdbb, const Firebird::PathName& dbName,
 		const Firebird::string& user, const Firebird::string& pwd, const Firebird::string& role,
 		TraScope tra_scope);
 
@@ -155,7 +155,7 @@ public:
 
 	Provider* getProvider() { return &m_provider; }
 
-	virtual void attach(Jrd::thread_db* tdbb, const Firebird::string& dbName,
+	virtual void attach(Jrd::thread_db* tdbb, const Firebird::PathName& dbName,
 		const Firebird::string& user, const Firebird::string& pwd,
 		const Firebird::string& role) = 0;
 	virtual void detach(Jrd::thread_db* tdbb);
@@ -172,7 +172,7 @@ public:
 
 	virtual bool isConnected() const = 0;
 
-	virtual bool isSameDatabase(Jrd::thread_db* tdbb, const Firebird::string& dbName,
+	virtual bool isSameDatabase(Jrd::thread_db* tdbb, const Firebird::PathName& dbName,
 		const Firebird::string& user, const Firebird::string& pwd,
 		const Firebird::string& role) const;
 
@@ -186,7 +186,7 @@ public:
 
 	const Firebird::string getDataSourceName() const
 	{
-		return m_provider.getName() + "::" + m_dbName;
+		return m_provider.getName() + "::" + m_dbName.ToString();
 	}
 
 	// Get error description from provider and put it with additional context
@@ -229,7 +229,7 @@ protected:
 	Firebird::Mutex m_mutex;
 
 	Provider& m_provider;
-	Firebird::string m_dbName;
+	Firebird::PathName m_dbName;
 	Firebird::ClumpletWriter m_dpb;
 
 	Firebird::Array<Transaction*> m_transactions;

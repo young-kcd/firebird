@@ -226,7 +226,7 @@ int CCH_down_grade_dbb(void* ast_object)
 	{
 		Lock* const lock = dbb->dbb_lock;
 
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, lock);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION);
 
 		SyncLockGuard dsGuard(&dbb->dbb_sync, SYNC_EXCLUSIVE, "CCH_down_grade_dbb");
 
@@ -234,7 +234,8 @@ int CCH_down_grade_dbb(void* ast_object)
 
 		// Process the database shutdown request, if any
 
-		SHUT_blocking_ast(tdbb, true);
+		if (SHUT_blocking_ast(tdbb, true))
+			return 0;
 
 		// If we are already shared, there is nothing more we can do.
 		// If any case, the other guy probably wants exclusive access,
@@ -380,11 +381,11 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag, S
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
 
-	Sync dsGuard(&dbb->dbb_sync, "CCH_exclusive_attachment");
+	Sync dsGuard(&dbb->dbb_sync, FB_FUNCTION);
 
 	const bool exLock = dbb->dbb_sync.ourExclusiveLock();
 	if (!exLock)
-		dsGuard.lock(SYNC_SHARED);
+		dsGuard.lock(level != LCK_none ? SYNC_EXCLUSIVE : SYNC_SHARED);
 	else
 		fb_assert(exGuard);
 
@@ -412,6 +413,9 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag, S
 		}
 		attachment->att_next = dbb->dbb_attachments;
 		dbb->dbb_attachments = attachment;
+
+		if (!exLock)
+			dsGuard.downgrade(SYNC_SHARED);
 	}
 
 	for (SLONG remaining = timeout; remaining >= 0; remaining -= CCH_EXCLUSIVE_RETRY_INTERVAL)
@@ -761,7 +765,6 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 	fb_assert(pageSpace);
 
 	jrd_file* file = pageSpace->file;
-	SSHORT retryCount = 0;
 	const bool isTempPage = pageSpace->isTemporary();
 
 	/*
@@ -784,6 +787,49 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 	calling CCH_unwind, and eventually punting out.
 	*/
 
+	class Pio : public CryptoManager::IOCallback
+	{
+	public:
+		Pio(jrd_file* f, BufferDesc* b, bool tp, bool rs, PageSpace* ps)
+			: file(f), bdb(b), isTempPage(tp),
+			  read_shadow(rs), pageSpace(ps)
+		{ }
+
+		bool callback(thread_db* tdbb, FbStatusVector* status, Ods::pag* page)
+		{
+			Database *dbb = tdbb->getDatabase();
+			int retryCount = 0;
+
+			while (!PIO_read(tdbb, file, bdb, page, status))
+	 		{
+				if (isTempPage || !read_shadow)
+					return false;
+
+				if (!CCH_rollover_to_shadow(tdbb, dbb, file, false))
+ 					return false;
+
+				if (file != pageSpace->file)
+					file = pageSpace->file;
+				else
+				{
+					if (retryCount++ == 3)
+					{
+						gds__log("IO error loop Unwind to avoid a hang\n");
+						return false;
+					}
+				}
+ 			}
+
+			return true;
+		}
+	private:
+		jrd_file* file;
+		BufferDesc* bdb;
+		bool isTempPage;
+		bool read_shadow;
+		PageSpace* pageSpace;
+	};
+
 	BackupManager* bm = dbb->dbb_backup_manager;
 	const int bak_state = bm->getState();
 	fb_assert(bak_state != Ods::hdr_nbak_unknown);
@@ -804,36 +850,10 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 			bdb->bdb_page.getPageSpaceID(), bdb->bdb_page.getPageNum(), bak_state, diff_page));
 
 		// Read page from disk as normal
-		bool error = false;
-		while (!PIO_read(file, bdb, page, status))
+		Pio io(file, bdb, isTempPage, read_shadow, pageSpace);
+		if (!dbb->dbb_crypto_manager->read(tdbb, status, page, &io))
 		{
-			if (isTempPage || !read_shadow) {
-				error = true;
-				break;
-			}
-
-			if (!CCH_rollover_to_shadow(tdbb, dbb, file, false))
-			{
-				PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
-				CCH_unwind(tdbb, true);
-			}
-
-			if (file != pageSpace->file)
-				file = pageSpace->file;
-			else
-			{
-				if (retryCount++ == 3)
-				{
-					fprintf(stderr, "IO error loop Unwind to avoid a hang\n");
-					PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
-					CCH_unwind(tdbb, true);
-				}
-			}
-		}
-
-		if (!error)
-		{
-			if (!dbb->dbb_crypto_manager->decrypt(status, page))
+			if (read_shadow && !isTempPage)
 			{
 				PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
 				CCH_unwind(tdbb, true);
@@ -861,36 +881,10 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 			NBAK_TRACE(("Re-reading page %d, state=%d, diff page=%d from DISK",
 				bdb->bdb_page, bak_state, diff_page));
 
-			bool error = false;
-			while (!PIO_read(file, bdb, page, status))
+			Pio io(file, bdb, false, read_shadow, pageSpace);
+			if (!dbb->dbb_crypto_manager->read(tdbb, status, page, &io))
 			{
-				if (!read_shadow) {
-					error = true;
-					break;
-				}
-
-				if (!CCH_rollover_to_shadow(tdbb, dbb, file, false))
-				{
-					PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
-					CCH_unwind(tdbb, true);
-				}
-
-				if (file != pageSpace->file)
-					file = pageSpace->file;
-				else
-				{
-					if (retryCount++ == 3)
-					{
-						fprintf(stderr, "IO error loop Unwind to avoid a hang\n");
-						PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
-						CCH_unwind(tdbb, true);
-					}
-				}
-			}
-
-			if (!error)
-			{
-				if (!dbb->dbb_crypto_manager->decrypt(status, page))
+				if (read_shadow)
 				{
 					PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
 					CCH_unwind(tdbb, true);
@@ -1045,7 +1039,14 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number)
 	PageSpace* pageSpaceID = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	jrd_file* main_file = pageSpaceID->file;
 
-	if (!(main_file->fil_flags & FIL_force_write) && (max_num || max_time))
+	// Avoid flush while creating and restoring database
+
+	const Jrd::Attachment* att = tdbb->getAttachment();
+	const bool dontFlush = (dbb->dbb_flags & DBB_creating) ||
+		(dbb->dbb_ast_flags & DBB_shutdown_single) &&
+		att && (att->att_flags & (ATT_creator | ATT_system));
+
+	if (!(main_file->fil_flags & FIL_force_write) && (max_num || max_time) && !dontFlush)
 	{
 		const time_t now = time(0);
 
@@ -1055,7 +1056,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number)
 		if (!dbb->last_flushed_write)
 			dbb->last_flushed_write = now;
 
-		const bool forceFlush = (flush_flag & FLUSH_ALL) && !(dbb->dbb_flags & DBB_creating);
+		const bool forceFlush = (flush_flag & FLUSH_ALL);
 
 		// test max_num condition and max_time condition
 		max_num = max_num && (dbb->unflushed_writes == max_unflushed_writes);
@@ -1075,10 +1076,10 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number)
 
 	if (doFlush)
 	{
-		PIO_flush(dbb, main_file);
+		PIO_flush(tdbb, main_file);
 
 		for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
-			PIO_flush(dbb, shadow->sdw_file);
+			PIO_flush(tdbb, shadow->sdw_file);
 
 		BackupManager* bm = dbb->dbb_backup_manager;
 		if (!bm->isShutDown())
@@ -1086,10 +1087,8 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number)
 			BackupManager::StateReadGuard stateGuard(tdbb);
 			const int backup_state = bm->getState();
 			if (backup_state == Ods::hdr_nbak_stalled || backup_state == Ods::hdr_nbak_merge)
-				bm->flushDifference();
+				bm->flushDifference(tdbb);
 		}
-
-		tdbb->bumpStats(RuntimeStatistics::FLUSHES);
 	}
 
 	// take the opportunity when we know there are no pages
@@ -2186,7 +2185,7 @@ bool CCH_validate(WIN* window)
 }
 
 
-bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
+bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb, Ods::pag* page,
 	FbStatusVector* status, const bool inAst)
 {
 /**************************************
@@ -2213,19 +2212,14 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 	bool result = true;
 	Firebird::UCharBuffer spare_buffer;
 
-	pag* page = bdb->bdb_buffer;
-	pag* old_buffer = NULL;
 	if (bdb->bdb_page == HEADER_PAGE_NUMBER)
 	{
-		page = (pag*) spare_buffer.getBuffer(dbb->dbb_page_size);
-		memcpy(page, bdb->bdb_buffer, HDR_SIZE);
+		Ods::pag* newPage = (pag*) spare_buffer.getBuffer(dbb->dbb_page_size);
+		memcpy(newPage, page, HDR_SIZE);
+		page = newPage;
 		memset((UCHAR*) page + HDR_SIZE, 0, dbb->dbb_page_size - HDR_SIZE);
-		old_buffer = bdb->bdb_buffer;
-
-		// hvlad: is it mt-safe ?
-		bdb->bdb_buffer = page;
 	}
-	bdb->bdb_buffer->pag_pageno = bdb->bdb_page.getPageNum();
+	page->pag_pageno = bdb->bdb_page.getPageNum();
 
 	for (; sdw; sdw = sdw->sdw_next)
 	{
@@ -2285,10 +2279,7 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 		// shadow to be deleted at the next available opportunity when we
 		// know we don't have a page fetched
 
-		CryptoManager::Buffer buffer;
-		pag* writePage = dbb->dbb_crypto_manager->encrypt(status, page, buffer);
-
-		if (!(writePage && PIO_write(sdw->sdw_file, bdb, writePage, status)))
+		if (!PIO_write(tdbb, sdw->sdw_file, bdb, page, status))
 		{
 			if (sdw->sdw_flags & SDW_manual)
 				result = false;
@@ -2312,10 +2303,6 @@ bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
 		if (shadow) {
 			break;
 		}
-	}
-
-	if (bdb->bdb_page == HEADER_PAGE_NUMBER) {
-		bdb->bdb_buffer = old_buffer;
 	}
 
 	return result;
@@ -2907,7 +2894,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 
 				if (dbb->dbb_flags & DBB_suspend_bgio)
 				{
-					Attachment::Checkout cout(attachment, FB_FUNCTION);
+					EngineCheckout cout(tdbb, FB_FUNCTION);
 					bcb->bcb_writer_sem.tryEnter(10);
 					continue;
 				}
@@ -2952,7 +2939,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 				else
 				{
 					bcb->bcb_flags &= ~BCB_writer_active;
-					Attachment::Checkout cout(attachment, FB_FUNCTION);
+					EngineCheckout cout(tdbb, FB_FUNCTION);
 					bcb->bcb_writer_sem.tryEnter(10);
 				}
 			}
@@ -3753,7 +3740,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 
 			if (page != FREE_PAGE)
 			{
-				CCH_TRACE(("bdb->bdb_lock->lck_logical = LCK_none; page=%i", bdb->bdb_page));
+				CCH_TRACE(("bdb->bdb_lock->lck_logical = LCK_none; page=%i", bdb->bdb_page.getPageNum()));
 				bdb->bdb_lock->lck_logical = LCK_none;
 			}
 			else
@@ -4877,18 +4864,15 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 				(backup_state == Ods::hdr_nbak_stalled ||
 					(backup_state == Ods::hdr_nbak_merge && bdb->bdb_difference_page)))
 			{
-
-				const bool res =
-					dbb->dbb_backup_manager->writeDifference(status,
-						bdb->bdb_difference_page, bdb->bdb_buffer);
-
-				if (!res)
+				if (!dbb->dbb_backup_manager->writeDifference(tdbb, status,
+						bdb->bdb_difference_page, bdb->bdb_buffer))
 				{
 					bdb->bdb_flags |= BDB_io_error;
 					dbb->dbb_flags |= DBB_suspend_bgio;
 					return false;
 				}
 			}
+
 			if (!isTempPage && backup_state == Ods::hdr_nbak_stalled)
 			{
 				// We finished. Adjust transaction accounting and get ready for exit
@@ -4898,34 +4882,54 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 			else
 			{
 				// We need to write our pages to main database files
-				CryptoManager::Buffer buffer;
-				pag* writePage = dbb->dbb_crypto_manager->encrypt(status, page, buffer);
 
-				if (!writePage)
+				class Pio : public CryptoManager::IOCallback
 				{
-					bdb->bdb_flags |= BDB_io_error;
-					dbb->dbb_flags |= DBB_suspend_bgio;
+				public:
+					Pio(jrd_file* f, BufferDesc* b, bool ast, bool tp, PageSpace* ps)
+						: file(f), bdb(b), inAst(ast), isTempPage(tp), pageSpace(ps)
+					{ }
+
+					bool callback(thread_db* tdbb, FbStatusVector* status, Ods::pag* page)
+					{
+						Database* dbb = tdbb->getDatabase();
+
+						while (!PIO_write(tdbb, file, bdb, page, status))
+						{
+							if (isTempPage || !CCH_rollover_to_shadow(tdbb, dbb, file, inAst))
+							{
+								bdb->bdb_flags |= BDB_io_error;
+								dbb->dbb_flags |= DBB_suspend_bgio;
+								return false;
+							}
+
+							file = pageSpace->file;
+						}
+
+						if (bdb->bdb_page == HEADER_PAGE_NUMBER)
+							dbb->dbb_last_header_write = Ods::getNT((header_page*) page);
+
+						if (dbb->dbb_shadow && !isTempPage)
+							return CCH_write_all_shadows(tdbb, 0, bdb, page, status, inAst);
+
+						return true;
+					}
+
+				private:
+					jrd_file* file;
+					BufferDesc* bdb;
+					bool inAst;
+					bool isTempPage;
+					PageSpace* pageSpace;
+				};
+
+				Pio io(pageSpace->file, bdb, inAst, isTempPage, pageSpace);
+				result = dbb->dbb_crypto_manager->write(tdbb, status, page, &io);
+				if (!result && (bdb->bdb_flags & BDB_io_error))
+				{
 					return false;
 				}
 
-				jrd_file* file = pageSpace->file;
-				while (!PIO_write(file, bdb, writePage, status))
-				{
-					if (isTempPage || !CCH_rollover_to_shadow(tdbb, dbb, file, inAst))
-					{
-						bdb->bdb_flags |= BDB_io_error;
-						dbb->dbb_flags |= DBB_suspend_bgio;
-						return false;
-					}
-
-					file = pageSpace->file;
-				}
-
-				if (bdb->bdb_page == HEADER_PAGE_NUMBER)
-					dbb->dbb_last_header_write = Ods::getNT((header_page*) page);
-
-				if (dbb->dbb_shadow && !isTempPage)
-					result = CCH_write_all_shadows(tdbb, 0, bdb, status, inAst);
 			}
 		}
 

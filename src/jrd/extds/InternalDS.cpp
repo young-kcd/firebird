@@ -41,6 +41,7 @@
 #include "../Function.h"
 
 #include "InternalDS.h"
+#include "ValidatePassword.h"
 
 using namespace Jrd;
 using namespace Firebird;
@@ -134,7 +135,7 @@ private:
 	FbStatusVector *v;
 };
 
-void InternalConnection::attach(thread_db* tdbb, const string& dbName,
+void InternalConnection::attach(thread_db* tdbb, const PathName& dbName,
 		const string& user, const string& pwd,
 		const string& role)
 {
@@ -159,14 +160,17 @@ void InternalConnection::attach(thread_db* tdbb, const string& dbName,
 		m_dbName = dbb->dbb_database_name.c_str();
 		generateDPB(tdbb, m_dpb, user, pwd, role);
 
-		FbLocalStatus status;
+		// Avoid change of m_dpb by validatePassword() below
+		ClumpletWriter newDpb(m_dpb);
+		validatePassword(tdbb, m_dbName, newDpb);
 
+		FbLocalStatus status;
 		{
 			EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 			RefPtr<JProvider> jInstance(JProvider::getInstance());
 			jInstance->setDbCryptCallback(&status, tdbb->getAttachment()->att_crypt_callback);
 			m_attachment.assignRefNoIncr(jInstance->attachDatabase(&status, m_dbName.c_str(),
-				m_dpb.getBufferLength(), m_dpb.getBuffer()));
+				newDpb.getBufferLength(), newDpb.getBuffer()));
 		}
 
 		if (status->getState() & IStatus::STATE_ERRORS)
@@ -238,7 +242,7 @@ bool InternalConnection::isAvailable(thread_db* tdbb, TraScope /*traScope*/) con
 		(m_isCurrent && (tdbb->getAttachment() == m_attachment->getHandle()));
 }
 
-bool InternalConnection::isSameDatabase(thread_db* tdbb, const string& dbName,
+bool InternalConnection::isSameDatabase(thread_db* tdbb, const PathName& dbName,
 		const string& user, const string& pwd,
 		const string& role) const
 {

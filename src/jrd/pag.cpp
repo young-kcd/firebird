@@ -256,7 +256,7 @@ USHORT PAG_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start)
 
 	// Create the file.  If the sequence number comes back zero, it didn't work, so punt
 
-	const USHORT sequence = PIO_add_file(dbb, pageSpace->file, file_name, start);
+	const USHORT sequence = PIO_add_file(tdbb, pageSpace->file, file_name, start);
 	if (!sequence)
 		return 0;
 
@@ -294,7 +294,7 @@ USHORT PAG_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start)
 
 	header->hdr_header.pag_pageno = window.win_page.getPageNum();
 	// It's header, never encrypted
-	PIO_write(pageSpace->file, window.win_bdb, window.win_buffer, tdbb->tdbb_status_vector);
+	PIO_write(tdbb, pageSpace->file, window.win_bdb, window.win_buffer, tdbb->tdbb_status_vector);
 	CCH_RELEASE(tdbb, &window);
 	next->fil_fudge = 1;
 
@@ -325,7 +325,7 @@ USHORT PAG_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start)
 
 	header->hdr_header.pag_pageno = window.win_page.getPageNum();
 	// It's header, never encrypted
-	PIO_write(pageSpace->file, window.win_bdb, window.win_buffer, tdbb->tdbb_status_vector);
+	PIO_write(tdbb, pageSpace->file, window.win_bdb, window.win_buffer, tdbb->tdbb_status_vector);
 	CCH_RELEASE(tdbb, &window);
 	if (file->fil_min_page)
 		file->fil_fudge = 1;
@@ -647,7 +647,7 @@ PAG PAG_allocate_pages(thread_db* tdbb, WIN* window, int cntAlloc, bool aligned)
 
 #ifdef VIO_DEBUG
 				VIO_trace(DEBUG_WRITES_INFO,
-					"\tPAG_allocate:  allocated page %"SLONGFORMAT"\n",
+					"\tPAG_allocate:  allocated page %" SLONGFORMAT"\n",
 							i + sequence * pageMgr.pagesPerPIP);
 #endif
 			}
@@ -718,7 +718,7 @@ PAG PAG_allocate_pages(thread_db* tdbb, WIN* window, int cntAlloc, bool aligned)
 
 #ifdef VIO_DEBUG
 				VIO_trace(DEBUG_WRITES_INFO,
-					"\tPAG_allocate:  allocated page %"SLONGFORMAT"\n",
+					"\tPAG_allocate:  allocated page %" SLONGFORMAT"\n",
 							bit + sequence * pageMgr.pagesPerPIP);
 #endif
 			}
@@ -784,7 +784,7 @@ static ULONG ensureDiskSpace(thread_db* tdbb, WIN* pip_window, const PageNumber 
 			FbLocalStatus status;
 			const ULONG start = sequence * pageMgr.pagesPerPIP + pip_page->pip_used;
 
-			init_pages = PIO_init_data(dbb, pageSpace->file, &status, start, init_pages);
+			init_pages = PIO_init_data(tdbb, pageSpace->file, &status, start, init_pages);
 		}
 
 		if (init_pages)
@@ -868,7 +868,7 @@ AttNumber PAG_attachment_id(thread_db* tdbb)
 		header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK(tdbb, &window);
 		const AttNumber att_id =
-			((SINT64) header->hdr_att_high << BITS_PER_LONG | header->hdr_attachment_id) + 1;
+			((AttNumber) header->hdr_att_high << BITS_PER_LONG | header->hdr_attachment_id) + 1;
 		attachment->att_attachment_id = att_id;
 		header->hdr_att_high = att_id >> BITS_PER_LONG;
 		header->hdr_attachment_id = (ULONG) (att_id & MAX_ULONG);
@@ -1247,10 +1247,10 @@ void PAG_header_init(thread_db* tdbb)
 	// and unit of transfer is a multiple of physical disk
 	// sector for raw disk access.
 
-	SCHAR temp_buffer[RAW_HEADER_SIZE + PAGE_ALIGNMENT];
-	SCHAR* const temp_page = FB_ALIGN(temp_buffer, PAGE_ALIGNMENT);
+	UCHAR temp_buffer[RAW_HEADER_SIZE + PAGE_ALIGNMENT];
+	UCHAR* const temp_page = FB_ALIGN(temp_buffer, PAGE_ALIGNMENT);
 
-	PIO_header(dbb, temp_page, RAW_HEADER_SIZE);
+	PIO_header(tdbb, temp_page, RAW_HEADER_SIZE);
 	const header_page* header = (header_page*) temp_page;
 
 	if (header->hdr_header.pag_type != pag_header || header->hdr_sequence)
@@ -1362,8 +1362,8 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 	// and set up to release it in case of error. Align
 	// the temporary page buffer for raw disk access.
 
-	Array<SCHAR> temp;
-	SCHAR* const temp_page =
+	Array<UCHAR> temp;
+	UCHAR* const temp_page =
 		FB_ALIGN(temp.getBuffer(dbb->dbb_page_size + PAGE_ALIGNMENT), PAGE_ALIGNMENT);
 
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
@@ -1416,7 +1416,7 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 
 			// Read the required page into the local buffer
 			// It's header, never encrypted
-			PIO_read(file, &temp_bdb, (PAG) header, status);
+			PIO_read(tdbb, file, &temp_bdb, (PAG) header, status);
 
 			if (shadow_number && !file->fil_min_page)
 				CCH_RELEASE(tdbb, &window);
@@ -1471,7 +1471,7 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 														 Arg::Str(fileName));
 		}
 
-		file->fil_next = PIO_open(dbb, file_name, file_name);
+		file->fil_next = PIO_open(tdbb, file_name, file_name);
 		file->fil_max_page = last_page;
 		file = file->fil_next;
 		if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
@@ -1586,7 +1586,7 @@ void PAG_release_pages(thread_db* tdbb, USHORT pageSpaceID, int cntRelease,
 	{
 #ifdef VIO_DEBUG
 		VIO_trace(DEBUG_WRITES_INFO,
-			"\tPAG_release_pages:  about to release page %"SLONGFORMAT"\n", pgNums[i]);
+			"\tPAG_release_pages:  about to release page %" SLONGFORMAT"\n", pgNums[i]);
 #endif
 
 		const ULONG seq = pgNums[i] / pageMgr.pagesPerPIP;
@@ -2139,6 +2139,90 @@ ULONG PageSpace::lastUsedPage(const Database* dbb)
 	return pgSpace->lastUsedPage();
 }
 
+
+const UCHAR bitsInByte[256] =
+{
+//  0000, 0001, 0010, 0011, 0100, 0101, 0110, 0111, 1000, 1001, 1010, 1011, 1100, 1101, 1110, 1111
+       0,    1,    1,    2,    1,    2,    2,    3,    1,    2,    2,    3,    2,    3,    3,    4,
+// base + 1 0000
+       1,    2,    2,    3,    2,    3,    3,    4,    2,    3,    3,    4,    3,    4,    4,    5,
+// base + 10 0000
+       1,    2,    2,    3,    2,    3,    3,    4,    2,    3,    3,    4,    3,    4,    4,    5,
+// base + 11 0000
+       2,    3,    3,    4,    3,    4,    4,    5,    3,    4,    4,    5,    4,    5,    5,    6,
+// base + 100 0000
+       1,    2,    2,    3,    2,    3,    3,    4,    2,    3,    3,    4,    3,    4,    4,    5,
+// base + 101 0000
+       2,    3,    3,    4,    3,    4,    4,    5,    3,    4,    4,    5,    4,    5,    5,    6,
+// base + 110 0000
+       2,    3,    3,    4,    3,    4,    4,    5,    3,    4,    4,    5,    4,    5,    5,    6,
+// base + 111 0000
+       3,    4,    4,    5,    4,    5,    5,    6,    4,    5,    5,    6,    5,    6,    6,    7,
+// base + 1000 0000
+       1,    2,    2,    3,    2,    3,    3,    4,    2,    3,    3,    4,    3,    4,    4,    5,
+// base + 1001 0000
+       2,    3,    3,    4,    3,    4,    4,    5,    3,    4,    4,    5,    4,    5,    5,    6,
+// base + 1010 0000
+       2,    3,    3,    4,    3,    4,    4,    5,    3,    4,    4,    5,    4,    5,    5,    6,
+// base + 1011 0000
+       3,    4,    4,    5,    4,    5,    5,    6,    4,    5,    5,    6,    5,    6,    6,    7,
+// base + 1100 0000
+       2,    3,    3,    4,    3,    4,    4,    5,    3,    4,    4,    5,    4,    5,    5,    6,
+// base + 1101 0000
+       3,    4,    4,    5,    4,    5,    5,    6,    4,    5,    5,    6,    5,    6,    6,    7,
+// base + 1110 0000
+       3,    4,    4,    5,    4,    5,    5,    6,    4,    5,    5,    6,    5,    6,    6,    7,
+// base + 1111 0000
+       4,    5,    5,    6,    5,    6,    6,    7,    5,    6,    6,    7,    6,    7,    7,    8
+};
+
+ULONG PageSpace::usedPages()
+{
+	// Walk all PIP pages, count number of pages marked as used
+
+	thread_db* tdbb = JRD_get_thread_data();
+	const PageManager& pageMgr = dbb->dbb_page_manager;
+
+	win window(pageSpaceID, pipFirst);
+	ULONG used = 0;
+	ULONG sequence = 0;
+
+	while (true)
+	{
+		page_inv_page* pip = (page_inv_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_undefined);
+		if (pip->pip_header.pag_type != pag_pages)
+		{
+			CCH_RELEASE(tdbb, &window);
+			break;
+		}
+
+		used += pip->pip_min & (~7);
+		const UCHAR* bytes = pip->pip_bits + pip->pip_min / 8;
+		const UCHAR* const end = pip->pip_bits + pip->pip_used / 8;
+		for (; bytes < end; bytes++)
+		{
+			used += 8 - bitsInByte[*bytes];
+		}
+
+		const bool last = pip->pip_used < pageMgr.pagesPerPIP;
+
+		CCH_RELEASE(tdbb, &window);
+
+		if (last)
+			break;
+
+		window.win_page = ++sequence * pageMgr.pagesPerPIP - 1;
+	}
+
+	return used;
+}
+
+ULONG PageSpace::usedPages(const Database* dbb)
+{
+	PageSpace* pgSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	return pgSpace->usedPages();
+}
+
 bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum, const bool forceSize)
 {
 /**************************************
@@ -2178,7 +2262,7 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum, const bool forceSiz
 			const ULONG oldMaxPageNumber = maxPageNumber;
 			try
 			{
-				PIO_extend(dbb, file, extPages, dbb->dbb_page_size);
+				PIO_extend(tdbb, file, extPages, dbb->dbb_page_size);
 				break;
 			}
 			catch (const status_exception&)
@@ -2324,7 +2408,7 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 			PageSpace* pageSpaceTemp = dbb->dbb_page_manager.findPageSpace(tempPageSpaceID);
 
 			PathName file_name = TempFile::create(SCRATCH);
-			pageSpaceTemp->file = PIO_create(dbb, file_name, true, true);
+			pageSpaceTemp->file = PIO_create(tdbb, file_name, true, true);
 			PAG_format_pip(tdbb, *pageSpaceTemp);
 
 			tempFileCreated = true;
@@ -2333,7 +2417,7 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 	return tempPageSpaceID;
 }
 
-ULONG PAG_page_count(Database* database, PageCountCallback* cb)
+ULONG PAG_page_count(thread_db* tdbb, PageCountCallback* cb)
 {
 /*********************************************
  *
@@ -2347,19 +2431,21 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
  *********************************************/
 	fb_assert(cb);
 
+	Database* const dbb = tdbb->getDatabase();
+
 	Array<UCHAR> temp;
 	page_inv_page* pip = reinterpret_cast<Ods::page_inv_page*>
-		(FB_ALIGN(temp.getBuffer(database->dbb_page_size + PAGE_ALIGNMENT), PAGE_ALIGNMENT));
+		(FB_ALIGN(temp.getBuffer(dbb->dbb_page_size + PAGE_ALIGNMENT), PAGE_ALIGNMENT));
 
-	PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	fb_assert(pageSpace);
 
 	ULONG pageNo = pageSpace->pipFirst;
-	const ULONG pagesPerPip = database->dbb_page_manager.pagesPerPIP;
+	const ULONG pagesPerPip = dbb->dbb_page_manager.pagesPerPIP;
 
 	for (ULONG sequence = 0; true; pageNo = (pagesPerPip * ++sequence) - 1)
 	{
-		cb->newPage(pageNo, &pip->pip_header);
+		cb->newPage(tdbb, pageNo, &pip->pip_header);
 		fb_assert(pip->pip_header.pag_type == pag_pages);
 		if (pip->pip_used == pagesPerPip)
 		{

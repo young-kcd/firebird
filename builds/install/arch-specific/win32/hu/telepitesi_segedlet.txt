@@ -1,4 +1,4 @@
-Firebird Adatb�zis Szerver $MAJOR.$MINOR
+﻿Firebird Adatbázis Szerver $MAJOR.$MINOR
 ===================================================
 
 ------------------------------------------------------

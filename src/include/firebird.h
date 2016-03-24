@@ -32,7 +32,11 @@
 #ifndef INCLUDE_Firebird_H
 #define INCLUDE_Firebird_H
 
+#ifdef _MSC_VER
+#include "gen/autoconfig_msvc.h"
+#else
 #include "gen/autoconfig.h"
+#endif
 
 // Using our debugging code is pointless when we may use Valgrind features
 #if defined(DEV_BUILD) && !defined(USE_VALGRIND)

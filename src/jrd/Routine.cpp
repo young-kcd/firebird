@@ -46,7 +46,9 @@ MsgMetadata* Routine::createMetadata(const Array<NestConst<Parameter> >& paramet
 		metadata->addItem((*i)->prm_name, (*i)->prm_nullable, (*i)->prm_desc);
 	}
 
+	metadata->makeOffsets();
 	metadata->addRef();
+
 	return metadata;
 }
 
@@ -261,7 +263,6 @@ void Routine::releaseStatement(thread_db* tdbb)
 void Routine::remove(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
-	Jrd::Attachment* att = tdbb->getAttachment();
 
 	// MET_procedure locks it. Lets unlock it now to avoid troubles later
 	if (existenceLock)

@@ -102,7 +102,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool a
 
 #ifdef VIO_DEBUG
 		VIO_trace(DEBUG_WRITES,
-			"jrd_rel::getPages inst %"ULONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n",
+			"jrd_rel::getPages inst %" ULONGFORMAT", ppp %" SLONGFORMAT", irp %" SLONGFORMAT", addr 0x%x\n",
 			newPages->rel_instance_id,
 			newPages->rel_pages ? (*newPages->rel_pages)[0] : 0,
 			newPages->rel_index_root,
@@ -137,7 +137,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool a
 
 #ifdef VIO_DEBUG
 			VIO_trace(DEBUG_WRITES,
-				"jrd_rel::getPages inst %"SQUADFORMAT", irp %"SLONGFORMAT", idx %u, idx_root %"SLONGFORMAT", addr 0x%x\n",
+				"jrd_rel::getPages inst %" SQUADFORMAT", irp %" SLONGFORMAT", idx %u, idx_root %" SLONGFORMAT", addr 0x%x\n",
 				newPages->rel_instance_id,
 				newPages->rel_index_root,
 				idx->idx_id,
@@ -175,7 +175,7 @@ bool jrd_rel::delPages(thread_db* tdbb, TraNumber tran, RelationPages* aPages)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"jrd_rel::delPages inst %"ULONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n",
+		"jrd_rel::delPages inst %" ULONGFORMAT", ppp %" SLONGFORMAT", irp %" SLONGFORMAT", addr 0x%x\n",
 		pages->rel_instance_id,
 		pages->rel_pages ? (*pages->rel_pages)[0] : 0,
 		pages->rel_index_root,
@@ -398,7 +398,7 @@ int jrd_rel::blocking_ast_gcLock(void* ast_object)
 		Lock* lock = relation->rel_gc_lock;
 		Database* dbb = lock->lck_dbb;
 
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, lock);
 
 		fb_assert(!(relation->rel_flags & REL_gc_lockneed));
 		if (relation->rel_flags & REL_gc_lockneed) // work already done synchronously ?
@@ -465,7 +465,7 @@ bool jrd_rel::GCExclusive::acquire(int wait)
 	int sleeps = -wait * 10;
 	while (m_relation->rel_sweep_count)
 	{
-		Attachment::Checkout cout(m_tdbb->getAttachment(), FB_FUNCTION);
+		EngineCheckout cout(m_tdbb, FB_FUNCTION);
 		Thread::sleep(100);
 
 		if (wait < 0 && --sleeps == 0)

@@ -30,6 +30,15 @@
   o EnumerateObjectList;
      - Simple demonstration of object enumeration.
 
+	o Show Help	 
+		- CreateHelpDlg;
+		- ShowHelpDlg: Integer;
+		- CloseHelpDlg;
+	
+	o Show some debug info for debugging inno setup script
+		- CreateDebugDlg
+		- CloseDebugDlg;
+		- ShowDebugDlg
 
 *)
 
@@ -223,4 +232,117 @@ begin
   WizardForm.INFOBEFOREMEMO.lines.assign(Alist);
 end;
 
+
+var
+  HelpDlg: TForm;
+
+procedure CreateHelpDlg;
+var
+  HelpFileName: String;
+  HelpMemo: TMemo;
+  OKButton: TButton;
+begin
+  ExtractTemporaryFile ('installation_scripted.txt');
+  HelpFileName := ExpandConstant ('{tmp}\installation_scripted.txt');
+  HelpDlg := TForm.create(nil);
+  with HelpDlg do begin
+      BorderStyle := bsDialog;
+      Position := poScreenCenter;
+      ClientWidth := 450;
+      ClientHeight := 550;
+      Caption := 'Firebird Installation - command-line parameters.';
+  end;
+  HelpMemo := TMemo.Create(HelpDlg);
+  with HelpMemo do begin
+      Parent := HelpDlg;
+      ScrollBars := ssVertical;
+      Lines.LoadFromFile(HelpFileName);
+      Align := alTop;
+      Height := 500;
+      ReadOnly := True;
+    end;
+  OKButton := TButton.create(HelpDlg);
+  with OKButton do begin
+      Parent := HelpDlg;
+      Left := (Parent.width  div 2) - width div 2;
+      top := Parent.ClientHeight - 40;
+      Caption := 'OK';
+      ModalResult := mrOK;
+  end;
+  HelpDlg.ActiveControl := OKButton;
+end;
+
+
+procedure CloseHelpDlg;
+begin
+  with HelpDlg do begin
+     Close;
+     Free;
+  end;
+end;
+
+
+function ShowHelpDlg: Integer;
+begin
+	CreateHelpDlg;
+  result := HelpDlg.ShowModal;
+	CloseHelpDlg;
+end;
+
+
+// Add a simple debug dialogue
+var 
+	DebugDlg: TForm;
+	
+procedure CreateDebugDlg(aString: String; ADescription: String);
+var
+  DebugText: TMemo;
+	DebugDescription: TLabel;
+  OKButton: TButton;
+begin
+  DebugDlg := TForm.create(nil);
+  with DebugDlg do begin
+      BorderStyle := bsSizeable;
+      Position := poScreenCenter;
+      ClientWidth := 450;
+      ClientHeight := 350;
+      Caption := 'Firebird Installation - command-line parameters.';
+  end;
+  DebugText := TMemo.Create(DebugDlg);
+  with DebugText do begin
+      Parent := DebugDlg;
+      ScrollBars := ssVertical;
+      Lines.Text :=aString;
+      Align := alTop;
+      Height := 200;
+      ReadOnly := True;
+    end;
+  OKButton := TButton.create(DebugDlg);
+  with OKButton do begin
+      Parent := DebugDlg;
+      Left := (Parent.width  div 2) - width div 2;
+      top := Parent.ClientHeight - 40;
+      Caption := 'OK';
+      ModalResult := mrOK;
+  end;
+  DebugDlg.ActiveControl := OKButton;
+
+end;
+	
+	
+procedure CloseDebugDlg;
+begin
+  with DebugDlg do begin
+     Close;
+     Free;
+  end;
+end;
+
+
+function ShowDebugDlg(aString: String; aDescription: String): Integer;
+begin
+	CreateDebugDlg(aString,aDescription);
+  result := DebugDlg.ShowModal;
+	CloseDebugDlg;
+end;
 

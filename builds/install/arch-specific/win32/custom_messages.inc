@@ -1,4 +1,4 @@
-en.MyAppName=Firebird Database Server %1
+﻿en.MyAppName=Firebird Database Server %1
 en.ServerInstall=Full installation of Server and development tools.
 en.SuperServerInstall=Full installation of Super Server and development tools.
 en.ClassicServerInstall=Full installation of Classic Server and development tools.
@@ -71,9 +71,9 @@ en.RunISQL=Run command-line based Interactive SQL tool
 
 en.ReadmeFile=readme.txt
 en.InstallationReadmeFile=installation_readme.txt
-;en.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
+en.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
 en.RunCS=Run Firebird in Classic server mode
-en.RunSC=Run Firebird SuperClassic server
+en.RunSC=Run Firebird in SuperClassic server mode
 en.RunSS=Run Firebird in SuperServer mode
 en.ServerTaskDescription=Choose Server Architecture:
 en.initSecurityDb=Adding SYSDBA to security database.

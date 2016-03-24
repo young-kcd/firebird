@@ -54,9 +54,9 @@ include     $(ROOT)/gen/make.shared.variables
 LINK_PLUGIN_SYMBOLS = $(call LIB_LINK_MAPFILE,../$(PLUGIN_VERS))
 
 
-.PHONY: all udrcpp_example dc_example kh_example
+.PHONY: all udrcpp_example dc_example kh_example crypt_app
 
-all: udrcpp_example dc_example kh_example
+all: udrcpp_example dc_example kh_example crypt_app
 
 
 UDR_Objects = $(call makeObjects,../examples/udr,Functions.cpp)	\
@@ -97,6 +97,16 @@ kh_example: $(KH_Plugin)
 
 $(KH_Plugin):	$(KH_Objects)
 	$(LINK_PLUGIN) $(call LIB_LINK_SONAME,$(notdir $@).0) -o $@ $^ $(LINK_PLUG_LIBS) $(FIREBIRD_LIBRARY_LINK)
+
+
+CA_Objects = $(call makeObjects,../examples/dbcrypt,CryptApplication.cpp)
+CRYPT_APP = $(BIN)/cryptAppSample$(EXEC_EXT)
+AllObjects += $(CA_Objects)
+
+crypt_app: $(CRYPT_APP)
+
+$(CRYPT_APP):	$(CA_Objects)
+	$(EXE_LINK) $^ -o $@ $(FIREBIRD_LIBRARY_LINK)
 
 
 include $(ROOT)/gen/make.shared.targets

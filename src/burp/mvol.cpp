@@ -75,6 +75,8 @@ const int MAX_HEADER_SIZE	= 512;
 
 static inline int get(BurpGlobals* tdgbl)
 {
+	if (tdgbl->mvol_io_cnt <= 0)
+		MVOL_read(NULL, NULL);
 	return (--tdgbl->mvol_io_cnt >= 0 ? *tdgbl->mvol_io_ptr++ : 255);
 }
 

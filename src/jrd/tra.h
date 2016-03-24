@@ -279,7 +279,7 @@ public:
 	ArrayField*	tra_arrays;				// Linked list of active arrays
 	Lock*		tra_lock;				// lock for transaction
 	vec<Lock*>*			tra_relation_locks;	// locks for relations
-	TransactionBitmap*	tra_commit_sub_trans;	// commited sub-transactions
+	TransactionBitmap*	tra_commit_sub_trans;	// committed sub-transactions
 	Savepoint*	tra_save_point;			// list of savepoints
 	Savepoint*	tra_save_free;			// free savepoints
 	SLONG tra_save_point_number;		// next save point number to use
@@ -373,8 +373,6 @@ public:
 			}
 		}
 
-		fb_assert(tra_undo_records.getCount() < MAX_UNDO_RECORDS);
-
 		Record* const record = FB_NEW_POOL(*tra_pool) Record(*tra_pool, format, REC_undo_active);
 		tra_undo_records.add(record);
 
@@ -386,6 +384,11 @@ public:
 	SecDbContext* setSecDbContext(Firebird::IAttachment* att, Firebird::ITransaction* tra);
 	void eraseSecDbContext();
 	MappingList* getMappingList();
+	Record* findNextUndo(VerbAction* before_this, jrd_rel* relation, SINT64 number);
+	void listStayingUndo(jrd_rel* relation, SINT64 number, RecordStack &staying);
+	void rollbackSavepoint(thread_db* tdbb);
+	void rollbackToSavepoint(thread_db* tdbb, SLONG number);
+	void rollforwardSavepoint(thread_db* tdbb);
 	DbCreatorsList* getDbCreatorsList();
 
 	GenIdCache* getGenIdCache()
@@ -456,6 +459,7 @@ const int tra_precommitted	= 5;	// Transaction is precommitted
 class Savepoint : public pool_alloc<type_sav>
 {
 public:
+	Savepoint(jrd_tra* transaction) { sav_trans = transaction; }
 	~Savepoint()
 	{
 		deleteActions(sav_verb_actions);
@@ -470,8 +474,17 @@ public:
 	USHORT				sav_flags;
 	Firebird::MetaName	sav_name; 			// savepoint name
 
+	void rollback(thread_db* tdbb);
+	void rollforward(thread_db* tdbb);
+
+	VerbAction* getAction(jrd_rel* relation);
+	IPTR is_large(IPTR size);
+
 private:
+	Savepoint(); // Disable default constructor
 	void deleteActions(VerbAction* list);
+
+	jrd_tra* sav_trans; // Savepoint must know which transaction it belongs to
 };
 
 // Savepoint block flags.
@@ -560,9 +573,6 @@ enum dfw_t {
 
 class UndoItem
 {
-	static const UCHAR FLAG_SAME_TX	= 1;	// record inserted/updated and deleted by same tx
-	static const UCHAR FLAG_NEW_VER	= 2;	// savepoint created new record version and deleted it
-
 public:
 	static const SINT64& generate(const void* /*sender*/, const UndoItem& item)
 	{
@@ -571,17 +581,14 @@ public:
 
 	UndoItem() {}
 
-	UndoItem(RecordNumber recordNumber, bool sameTx, bool newVersion)
+	UndoItem(RecordNumber recordNumber)
 		: m_number(recordNumber.getValue()), m_offset(0), m_format(NULL)
 	{
-		m_flags = (sameTx ? FLAG_SAME_TX : 0) | (newVersion ? FLAG_NEW_VER : 0);
 	}
 
-	UndoItem(jrd_tra* transaction, RecordNumber recordNumber, const Record* record,
-			 bool sameTx, bool newVersion)
+	UndoItem(jrd_tra* transaction, RecordNumber recordNumber, const Record* record)
 		: m_number(recordNumber.getValue()), m_format(record->getFormat())
 	{
-		m_flags = (sameTx ? FLAG_SAME_TX : 0) | (newVersion ? FLAG_NEW_VER : 0);
 		m_offset = transaction->getUndoSpace()->allocateSpace(m_format->fmt_length);
 		transaction->getUndoSpace()->write(m_offset, record->getData(), record->getLength());
 	}
@@ -607,19 +614,9 @@ public:
 		}
 	}
 
-	void markSameTx()
+	void clear()
 	{
-		m_flags |= FLAG_SAME_TX;
-	}
-
-	const bool isSameTx() const
-	{
-		return (m_flags & FLAG_SAME_TX);
-	}
-
-	const bool isNewVersion() const
-	{
-		return (m_flags & FLAG_NEW_VER);
+		m_format = NULL;
 	}
 
 	bool hasData() const
@@ -636,7 +633,6 @@ private:
 	SINT64 m_number;
 	offset_t m_offset;
 	const Format* m_format;
-	UCHAR m_flags;
 };
 
 typedef Firebird::BePlusTree<UndoItem, SINT64, MemoryPool, UndoItem> UndoItemTree;
@@ -654,6 +650,10 @@ public:
 	jrd_rel*		vct_relation;	// Relation involved
 	RecordBitmap*	vct_records;	// Record involved
 	UndoItemTree*	vct_undo;		// Data for undo records
+
+	void mergeTo(thread_db* tdbb, jrd_tra* transaction, VerbAction* next_action);
+	void undo(thread_db* tdbb, jrd_tra* transaction);
+	void garbage_collect_idx_lite(thread_db* tdbb, jrd_tra* transaction, SINT64 RecNumber, VerbAction* next_action, Record* going_record);
 };
 
 

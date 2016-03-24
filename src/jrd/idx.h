@@ -50,6 +50,7 @@ struct ini_idx_t
 using Jrd::idx_unique;
 using Jrd::idx_metadata;
 using Jrd::idx_numeric;
+using Jrd::idx_string;
 using Jrd::idx_descending;
 
 #define INDEX(id, rel, unique, count) {(id), (UCHAR) (rel), (unique), (count), {
@@ -286,7 +287,11 @@ static const struct ini_idx_t indices[] =
 	// define index RDB$INDEX_53 for RDB$FUNCTIONS unique RDB$FUNCTION_ID;
 	INDEX(53, rel_funs, idx_unique, 1)
 		SEGMENT(f_fun_id, idx_numeric)			// function id
-	}}
+	}},
+	// define index RDB$INDEX_54 for RDB$BACKUP_HISTORY RDB$GUID;
+	INDEX(54, rel_backup_history, idx_unique, 1)
+	SEGMENT(f_backup_guid, idx_string)			// backup guid
+	}},
 };
 
 #define SYSTEM_INDEX_COUNT FB_NELEM(indices)

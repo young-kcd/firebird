@@ -32,7 +32,6 @@ set FBBUILD_SHIP_PDB=no_pdb
 :: Reset "make" vars to zero
 set FBBUILD_ZIP_PACK=0
 set FBBUILD_ISX_PACK=0
-set FBBUILD_EMB_PACK=0
 
 if not defined FB2_SNAPSHOT (set FB2_SNAPSHOT=0)
 
@@ -55,17 +54,12 @@ if not "%FBBUILD_FILENAME_SUFFIX:~0,1%"=="_" (
 :: See what we have on the command line
 
 for %%v in ( %* )  do (
-( if /I "%%v"=="DEBUG" (set FBBUILD_BUILDTYPE=debug) )
+  ( if /I "%%v"=="DEBUG" (set FBBUILD_BUILDTYPE=debug) )
   ( if /I "%%v"=="PDB" (set FBBUILD_SHIP_PDB=ship_pdb) )
   ( if /I "%%v"=="ZIP" (set FBBUILD_ZIP_PACK=1) )
   ( if /I "%%v"=="ISX" (set FBBUILD_ISX_PACK=1) )
-  ( if /I "%%v"=="EMB" (set FBBUILD_EMB_PACK=1) )
-  ( if /I "%%v"=="ALL" ( (set FBBUILD_ZIP_PACK=1) & (set FBBUILD_ISX_PACK=1) & (set FBBUILD_EMB_PACK=1) ) )
-)
-
-:: Note FBBUILD_EMB_PACK appears to no be longer relevant. Before removing the code we will
-:: deprecate it here.
-set FBBUILD_EMB_PACK=0
+  ( if /I "%%v"=="ALL" ( (set FBBUILD_ZIP_PACK=1) & (set FBBUILD_ISX_PACK=1) ) )
+)  
 
 :: Now check whether we are debugging the InnoSetup script
 
@@ -81,7 +75,6 @@ set FBBUILD_EMB_PACK=0
 if "%FB2_SNAPSHOT%"=="1" (
   (set FB_ISS_EXAMPLES=noexamples)
   (set FBBUILD_ISX_PACK=0)
-  (set FBBUILD_EMB_PACK=0)
 )
 
 
@@ -132,6 +125,10 @@ if %FBBUILD_ISX_PACK% EQU 1 (
   ) else (@echo     o Inno Setup found at %INNO5_SETUP_PATH%.)
 )
 
+if not defined WIX (
+    call :ERROR WIX not defined. WiX is needed to build the MSI kits of the CRT runtimes.
+    @goto :EOF
+) else (@echo     o WiX found at "%WIX%".)
 
 if not DEFINED FB_EXTERNAL_DOCS (
  @echo.
@@ -206,8 +203,8 @@ set FBBUILD_FB_LAST_VER=%FBBUILD_FB25_CUR_VER%
 :: as well as set up the correct shortcuts
 set FBBUILD_FB15_CUR_VER=1.5.6
 set FBBUILD_FB20_CUR_VER=2.0.7
-set FBBUILD_FB21_CUR_VER=2.1.5
-set FBBUILD_FB25_CUR_VER=2.5.2
+set FBBUILD_FB21_CUR_VER=2.1.7
+set FBBUILD_FB25_CUR_VER=2.5.5
 
 :: Now fix up the major.minor version strings in the readme files.
 :: We place output in %FB_GEN_DIR%\readmes
@@ -247,7 +244,7 @@ del %temp%.\b$?.txt
 @echo   Copying MSVC runtime libraries...
 if not exist %FB_OUTPUT_DIR%\system32 (mkdir %FB_OUTPUT_DIR%\system32)
 @echo on
-for %%f in ( msvcp%MSVC_VERSION%?.dll msvcr%MSVC_VERSION%?.dll  ) do ( 
+@for %%f in ( msvcp%MSVC_VERSION%?.dll msvcr%MSVC_VERSION%?.dll  ) do ( 
 if exist "%VCINSTALLDIR%\redist\%PROCESSOR_ARCHITECTURE%\Microsoft.VC%MSVC_VERSION%0.CRT\%%f" (
 copy  "%VCINSTALLDIR%\redist\%PROCESSOR_ARCHITECTURE%\Microsoft.VC%MSVC_VERSION%0.CRT\%%f" %FB_OUTPUT_DIR%\ 
 )
@@ -276,6 +273,12 @@ if "%PROCESSOR_ARCHITECTURE%"=="x86" (
   @echo   Copying pdb files...
   @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\fbserver\firebird.pdb %FB_OUTPUT_DIR%\ > nul
   @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\yvalve\fbclient.pdb %FB_OUTPUT_DIR%\ > nul
+  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\engine12\engine12.pdb %FB_OUTPUT_DIR%\ > nul
+  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\fbtrace\fbtrace.pdb %FB_OUTPUT_DIR%\ > nul
+  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\legacy_auth\legacy_auth.pdb %FB_OUTPUT_DIR%\ > nul
+  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\legacy_usermanager\legacy_usermanager.pdb %FB_OUTPUT_DIR%\ > nul
+  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\srp\srp.pdb %FB_OUTPUT_DIR%\ > nul
+  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\udr_engine\udr_engine.pdb %FB_OUTPUT_DIR%\ > nul
 )
 
 @echo   Started copying docs...
@@ -358,7 +361,7 @@ for %%v in (IPLicense.txt IDPLicense.txt ) do (
 @copy  %FB_GEN_DIR%\readmes\readme.txt %FB_OUTPUT_DIR%\ > nul
 
 ::  Walk through all docs and transform any that are not .txt, .pdf or .html to .txt
-echo   Setting .txt filetype to ascii docs.
+@echo   Setting .txt filetype to ascii docs.
 for /R %FB_OUTPUT_DIR%\doc %%v in (.) do (
   pushd %%v
   for /F %%W in ( 'dir /B /A-D' ) do (
@@ -386,18 +389,18 @@ for /R %FB_OUTPUT_DIR%\doc %%v in (.) do (
 
 :BUILD_CRT_MSI
 :: Generate runtimes as an MSI file.
-:: This requires WiX 2.0 to be installed
+:: This requires WiX 3.0 to be installed
 ::============
-:: This is only relevent if we are shipping packages built with MSVS 2005 (MSVC8)
-:: We have never shipped packages with MSVS 2008 (MSVC9) and we are hoping not 
-:: to deploy MSI runtimes if we build with MSVC 2010 (MVC10)
-if %MSVC_VERSION% EQU 8 (
+:: This is only relevent if we are shipping packages built with Visual Studio 2010 (MSVC10)
+:: for Firebird 3.0 there are no plans to ship oficial builds with other MSVC runtimes. But we could.
+if %MSVC_VERSION% EQU 10 (
 if not exist %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi (
-    %WIX%\candle.exe -v0 %FB_ROOT_PATH%\builds\win32\msvc%MSVC_VERSION%\VCCRT_%FB_TARGET_PLATFORM%.wxs -out %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj
-    %WIX%\light.exe %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj -out %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi
+    "%WIX%\bin\candle.exe" -v -sw1091 %FB_ROOT_PATH%\builds\win32\msvc%MSVC_VERSION%\VCCRT_%FB_TARGET_PLATFORM%.wxs -out %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj
+    "%WIX%\bin\light.exe" -sw1076 %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj -out %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi
 ) else (
     @echo   Using an existing build of %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi
-))
+)
+)
 
 ::End of BUILD_CRT_MSI
 ::--------------------
@@ -428,7 +431,7 @@ for %%v in ( %FB_ROOT_PATH%\src\include\types_pub.h %FB_ROOT_PATH%\src\include\c
   more /s %OUTPATH%\%%~nv.more > %OUTPATH%\%%~nv.sed
 )
 move /y %OUTPATH%\ibase.h %OUTPATH%\ibase.sed
-sed -e "/#include \"types_pub\.h\"/r %OUTPATH%\types_pub.sed" -e "/#include \"types_pub\.h\"/d" -e "/#include \"consts_pub\.h\"/r %OUTPATH%\consts_pub.sed" -e "/#include \"consts_pub\.h\"/d" -e "/#include \"..\/common\/dsc_pub\.h\"/r %OUTPATH%\dsc_pub.sed" -e "/#include \"..\/jrd\/dsc_pub\.h\"/d" -e "/#include \"..\/dsql\/sqlda_pub\.h\"/r %OUTPATH%\sqlda_pub.sed" -e "/#include \"..\/dsql\/sqlda_pub\.h\"/d" -e "/#include \"blr\.h\"/r %OUTPATH%\blr.sed" -e "/#include \"blr\.h\"/d" -e "/#include \"..\/jrd\/inf_pub\.h\"/r %OUTPATH%\inf_pub.sed" -e "/#include \"..\/jrd\/inf_pub\.h\"/d" %OUTPATH%\ibase.sed > %OUTPATH%\ibase.h
+sed -e "/#include \"types_pub\.h\"/r %OUTPATH%\types_pub.sed" -e "/#include \"types_pub\.h\"/d" -e "/#include \"consts_pub\.h\"/r %OUTPATH%\consts_pub.sed" -e "/#include \"consts_pub\.h\"/d" -e "/#include \"..\/common\/dsc_pub\.h\"/r %OUTPATH%\dsc_pub.sed" -e "/#include \"..\/common\/dsc_pub\.h\"/d" -e "/#include \"..\/dsql\/sqlda_pub\.h\"/r %OUTPATH%\sqlda_pub.sed" -e "/#include \"..\/dsql\/sqlda_pub\.h\"/d" -e "/#include \"blr\.h\"/r %OUTPATH%\blr.sed" -e "/#include \"blr\.h\"/d" -e "/#include \"..\/jrd\/inf_pub\.h\"/r %OUTPATH%\inf_pub.sed" -e "/#include \"..\/jrd\/inf_pub\.h\"/d" %OUTPATH%\ibase.sed > %OUTPATH%\ibase.h
 del %OUTPATH%\ibase.sed %OUTPATH%\types_pub.* %OUTPATH%\consts_pub.* %OUTPATH%\sqlda_pub.* %OUTPATH%\dsc_pub.* %OUTPATH%\inf_pub.* %OUTPATH%\blr.*
 endlocal
 
@@ -485,16 +488,6 @@ copy %FB_ROOT_PATH%\builds\install\misc\databases.conf.in %FB_OUTPUT_DIR%\databa
 @goto :EOF
 
 
-::TOUCH_LOCAL
-::==========
-:: Note 1: This doesn't seem to make any difference to whether local libraries are used.
-:: Note 2: MS documentation was incorrectly interpreted. .local files should not be created
-::         for libraries, they should be created for executables.
-:: Create libname.local files for each locally installed library
-::for %%v in ( fbclient msvcrt msvcp%VS_VER%0 )  do touch %FB_OUTPUT_DIR%\%%v.local
-::@goto :EOF
-
-
 :GEN_ZIP
 ::======
 if %FBBUILD_ZIP_PACK% EQU 0 goto :EOF
@@ -503,13 +496,13 @@ set FBBUILD_ZIP_PACK_ROOT=%FB_ROOT_PATH%\builds\zip_pack_%FB_TARGET_PLATFORM%
 if not exist %FBBUILD_ZIP_PACK_ROOT% @mkdir %FBBUILD_ZIP_PACK_ROOT% 2>nul
 @del /s /q %FBBUILD_ZIP_PACK_ROOT%\ > nul
 @copy /Y %FB_OUTPUT_DIR% %FBBUILD_ZIP_PACK_ROOT% > nul
-for %%v in (bin doc doc\sql.extensions help include intl lib udf misc misc\upgrade misc\upgrade\ib_udf misc\upgrade\security misc\upgrade\metadata system32 plugins ) do (
+for %%v in (doc doc\sql.extensions help include intl lib udf misc misc\upgrade misc\upgrade\ib_udf misc\upgrade\security misc\upgrade\metadata system32 plugins ) do (
     @mkdir %FBBUILD_ZIP_PACK_ROOT%\%%v 2>nul
     @dir /A-D %FB_OUTPUT_DIR%\%%v\*.* > nul 2>nul
     if not ERRORLEVEL 1 @copy /Y %FB_OUTPUT_DIR%\%%v\*.* %FBBUILD_ZIP_PACK_ROOT%\%%v\ > nul
 )
 
-@if %FB2_EXAMPLES% equ 1 for %%v in (examples examples\api examples\dyn examples\empbuild examples\include examples\stat examples\udf examples\build_win32 ) do (
+@if %FB2_EXAMPLES% equ 1 for %%v in (examples examples\api examples\build_win32 examples\dbcrypt examples\empbuild examples\include examples\interfaces examples\package examples\stat examples\udf examples\udr ) do (
     @mkdir %FBBUILD_ZIP_PACK_ROOT%\%%v 2>nul
     dir %FB_OUTPUT_DIR%\%%v\*.* > nul 2>nul
     if not ERRORLEVEL 1 @copy /Y %FB_OUTPUT_DIR%\%%v\*.* %FBBUILD_ZIP_PACK_ROOT%\%%v\ > nul
@@ -519,7 +512,6 @@ for %%v in (bin doc doc\sql.extensions help include intl lib udf misc misc\upgra
 :: Now remove stuff that is not needed.
 setlocal
 set FB_RM_FILE_LIST=doc\installation_readme.txt bin\gpre_boot.exe bin\gpre_static.exe bin\gpre_embed.exe bin\gbak_embed.exe bin\isql_embed.exe bin\gds32.dll bin\btyacc.exe
-if %FB2_SNAPSHOT% EQU 0 (set FB_RM_FILE_LIST=bin\fbembed.dll bin\fbembed.pdb %FB_RM_FILE_LIST%)
 for %%v in ( %FB_RM_FILE_LIST% ) do (
   @del %FBBUILD_ZIP_PACK_ROOT%\%%v > nul 2>&1
 )
@@ -564,77 +556,6 @@ if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
 @goto :EOF
 
 
-:GEN_EMBEDDED
-::===========
-:: Generate the directory tree for the embedded zip pack
-if %FBBUILD_EMB_PACK% EQU 0 goto :EOF
-set FBBUILD_EMB_PACK_ROOT=%FB_ROOT_PATH%\builds\emb_pack_%FB_TARGET_PLATFORM%
-@mkdir %FBBUILD_EMB_PACK_ROOT% 2>nul
-@del /s /q %FBBUILD_EMB_PACK_ROOT%\ > nul
-
-for %%v in (databases.conf firebird.conf firebird.msg) do (	@copy /Y %FB_OUTPUT_DIR%\%%v %FBBUILD_EMB_PACK_ROOT%\%%v > nul)
-
-for %%v in ( doc intl udf ) do (@mkdir %FBBUILD_EMB_PACK_ROOT%\%%v 2>nul)
-
-@copy /Y %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\firebird\fbembed.* %FBBUILD_EMB_PACK_ROOT% > nul
-
-for %%v in ( icuuc30 icudt30 icuin30  ) do (
-@copy %FB_ICU_SOURCE_BIN%\%%v.dll %FBBUILD_EMB_PACK_ROOT% >nul
-)
-
-@copy /Y %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\firebird\ib_util.dll %FBBUILD_EMB_PACK_ROOT% > nul
-@copy /Y %FB_OUTPUT_DIR%\doc\Firebird*.pdf %FBBUILD_EMB_PACK_ROOT%\doc\ > nul
-@copy /Y %FB_OUTPUT_DIR%\intl\*.* %FBBUILD_EMB_PACK_ROOT%\intl\ > nul
-@copy /Y %FB_OUTPUT_DIR%\udf\*.* %FBBUILD_EMB_PACK_ROOT%\udf\ > nul
-@copy /Y %FB_OUTPUT_DIR%\msvc*.* %FBBUILD_EMB_PACK_ROOT% > nul
-if %MSVC_VERSION% EQU 8 (
-  @copy /Y %FB_OUTPUT_DIR%\Microsoft.VC80.CRT.manifest %FBBUILD_EMB_PACK_ROOT% > nul
-)
-
-if "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
-  @copy /Y %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\fbembed\fbembed.pdb %FBBUILD_EMB_PACK_ROOT% > nul
-)
-
-
-:: grab install notes for embedded zip pack
-@copy %FB_ROOT_PATH%\doc\README.user.embedded %FBBUILD_EMB_PACK_ROOT%\doc\README_embedded.txt > nul
-@copy %FB_ROOT_PATH%\doc\WhatsNew %FBBUILD_EMB_PACK_ROOT%\doc\WhatsNew.txt > nul
-
-:: Add license
-for %%v in (IPLicense.txt IDPLicense.txt ) do (
-    @copy %FB_ROOT_PATH%\builds\install\misc\%%v %FBBUILD_EMB_PACK_ROOT%\%%v > nul
-)
-
-:: And readme
-@copy  %FB_GEN_DIR%\readmes\readme.txt %FBBUILD_EMB_PACK_ROOT%\ > nul
-
-
-::End of GEN_EMBEDDED
-::-------------------
-@goto :EOF
-
-
-:EMB_PACK
-::=======
-if %FBBUILD_EMB_PACK% EQU 0 goto :EOF
-:: Now we can zip it up and copy the package to the install images directory.
-if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
-  @del %FBBUILD_INSTALL_IMAGES%\%FBBUILD_FILE_ID%_embed_pdb%FBBUILD_FILENAME_SUFFIX%.zip > nul
-  set FBBUILD_EMBFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_embed_pdb%FBBUILD_FILENAME_SUFFIX%.zip
-) else (
-  @del %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_embed%FBBUILD_FILENAME_SUFFIX%.zip > nul
-  set FBBUILD_EMBFILE=%FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_FILE_ID%_embed%FBBUILD_FILENAME_SUFFIX%.zip
-)
-
-@%SEVENZIP%\7z.exe a -r -tzip -mx9 %FBBUILD_EMBFILE% %FBBUILD_EMB_PACK_ROOT%\*.*
-
-
-@echo   End of EMB_PACK
-@echo.
-::---------------
-goto :EOF
-
-
 :TOUCH_ALL
 ::========
 ::Set file timestamp to something meaningful.
@@ -644,7 +565,6 @@ setlocal
 set TIMESTRING=0%PRODUCT_VER_STRING:~0,1%:0%PRODUCT_VER_STRING:~2,1%:0%PRODUCT_VER_STRING:~4,1%
 @if /I "%BUILDTYPE%"=="release" (
     (@echo Touching release build files with %TIMESTRING% timestamp) & (touch -s -D -t%TIMESTRING% %FB_OUTPUT_DIR%\*.*)
-    (if %FBBUILD_EMB_PACK% EQU 1 (@echo Touching release build files with %TIMESTRING% timestamp) & (touch -s -D -t%TIMESTRING% %FB_ROOT_PATH%\emb_pack\*.*) )
     (if %FBBUILD_ZIP_PACK% EQU 1 (@echo Touching release build files with %TIMESTRING% timestamp) & (touch -s -D -t%TIMESTRING% %FB_ROOT_PATH%\zip_pack\*.*) )
 )
 endlocal
@@ -709,10 +629,6 @@ if NOT DEFINED GNU_TOOLCHAIN (
 @echo       ZIP    Create Zip package.
 @echo              (SEVENZIP is currently used and the SEVENZIP env var must be set.)
 @echo.
-::@echo       EMB    Create Embedded package.
-::@echo              (SEVENZIP is currently used and the SEVENZIP env var must be set.)
-::@echo.
-::@echo       ALL    Build InnoSetup, Zip and Embedded packages.
 @echo       ALL    Build InnoSetup and Zip packages.
 @echo.
 @echo       HELP   This help screen.
@@ -733,11 +649,13 @@ if NOT DEFINED GNU_TOOLCHAIN (
 @echo     o InnoSetup is needed to create the binary installer. See the header
 @echo       of the .iss file to see which minimum version is required.
 @echo.
-::@echo     o 7ZIP is required to create the zip and embedded packages
 @echo     o 7ZIP is required to create the zip package
 @echo.
 @echo     o sed is required for packaging. Use the sed provided by
 @echo       gnuwin32. The cygwin one is not guaranteed to work.
+@echo.
+@echo     o WiX v3.0 is required to build installable msi packages of the
+@echo       MS runtime libraries.
 @echo.
 
 ::End of HELP
@@ -840,11 +758,6 @@ if defined WIX (
 @(@call :FB_MSG ) || (@echo Error calling FB_MSG & @goto :EOF)
 @Echo.
 
-if %FBBUILD_EMB_PACK% EQU 1 (
-@Echo   Generating image of embedded install
-@(@call :GEN_EMBEDDED ) || (@echo Error calling GEN_EMBEDDED & @goto :EOF)
-@Echo.
-)
 
 if %FBBUILD_ZIP_PACK% EQU 1 (
 @echo   Generating image of zipped install
@@ -862,12 +775,6 @@ if %FBBUILD_ZIP_PACK% EQU 1 (
 if %FBBUILD_ZIP_PACK% EQU 1 (
 @echo   Zipping files for zip pack
 @(@call :ZIP_PACK ) || (@echo Error calling ZIP_PACK & @goto :EOF)
-@echo.
-)
-
-if %FBBUILD_EMB_PACK% EQU 1 (
-@echo   Zipping files for embedded pack
-@(@call :EMB_PACK ) || (@echo Error calling EMB_PACK & @goto :EOF)
 @echo.
 )
 

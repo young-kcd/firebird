@@ -65,6 +65,7 @@ public:
 	void acquire();
 	void release();
 
+	void shutdown();
 private:
 	void mutexBug(int osErrorCode, const char* text);
 	bool initialize(Firebird::SharedMemoryBase*, bool);

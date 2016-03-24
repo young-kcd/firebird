@@ -10,7 +10,7 @@
 
 @echo creating msg.fdb
 @echo create database '%FB_GEN_DB_DIR%/dbs/msg.fdb'; | "%FB_BIN_DIR%\isql" -q
-@set FB_MSG_ISQL=@"%FB_BIN_DIR%\isql" -q %FB_GEN_DB_DIR%/dbs/msg.fdb -i %FB_ROOT_PATH%\src\msgs\
+@set FB_MSG_ISQL=@"%FB_BIN_DIR%\isql" -b -q %FB_GEN_DB_DIR%/dbs/msg.fdb -i %FB_ROOT_PATH%\src\msgs\
 @echo loading msg.sql
 @%FB_MSG_ISQL%msg.sql
 @echo.

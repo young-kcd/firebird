@@ -30,6 +30,7 @@
 #include "../common/dsc.h"
 #include "../exe.h"
 #include "IscDS.h"
+#include "ValidatePassword.h"
 #include "../tra.h"
 
 #include "../blb_proto.h"
@@ -110,18 +111,22 @@ IscConnection::~IscConnection()
 {
 }
 
-void IscConnection::attach(thread_db* tdbb, const string& dbName, const string& user,
+void IscConnection::attach(thread_db* tdbb, const PathName& dbName, const string& user,
 	const string& pwd, const string& role)
 {
 	m_dbName = dbName;
 	generateDPB(tdbb, m_dpb, user, pwd, role);
 
+	// Avoid change of m_dpb by validatePassword() below
+	ClumpletWriter newDpb(m_dpb);
+	validatePassword(tdbb, m_dbName, newDpb);
+
 	FbLocalStatus status;
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		m_iscProvider.isc_attach_database(&status, m_dbName.length(), m_dbName.c_str(),
-			&m_handle, m_dpb.getBufferLength(),
-			reinterpret_cast<const char*>(m_dpb.getBuffer()));
+			&m_handle, newDpb.getBufferLength(),
+			reinterpret_cast<const char*>(newDpb.getBuffer()));
 	}
 	if (status->getState() & IStatus::STATE_ERRORS) {
 		raise(&status, tdbb, "attach");

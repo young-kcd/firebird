@@ -65,6 +65,12 @@ public:
 		return (!specified && !o.specified) || (specified == o.specified && value == o.value);
 	}
 
+	void operator =(const T& v)
+	{
+		this->value = v;
+		this->specified = true;
+	}
+
 public:
 	T value;
 	bool specified;

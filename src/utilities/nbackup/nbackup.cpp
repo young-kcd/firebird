@@ -146,7 +146,7 @@ namespace
 		}
 
 		const int mainUsage[] = { 2, 3, 4, 5, 6, 0 };
-		const int notes[] = { 19, 20, 21, 22, 26, 27, 28, 0 };
+		const int notes[] = { 19, 20, 21, 22, 26, 27, 28, 79, 0 };
 		const Switches::in_sw_tab_t* const base = nbackup_action_in_sw_table;
 
 		for (int i = 0; mainUsage[i]; ++i)
@@ -310,11 +310,11 @@ public:
 	typedef ObjectsArray<PathName> BackupFiles;
 
 	// External calls must clean up resources after themselves
-	void fixup_database();
+	void fixup_database(bool set_readonly = false);
 	void lock_database(bool get_size);
 	void unlock_database();
-	void backup_database(int level, const PathName& fname);
-	void restore_database(const BackupFiles& files);
+	void backup_database(int level, Guid& guid, const PathName& fname);
+	void restore_database(const BackupFiles& files, bool inc_rest = false);
 
 	bool printed() const
 	{
@@ -359,7 +359,7 @@ private:
 	string to_system(const PathName& from);
 
 	// Create/open database and backup
-	void open_database_write();
+	void open_database_write(bool exclusive = false);
 	void open_database_scan();
 	void create_database();
 	void close_database();
@@ -450,16 +450,21 @@ void NBackup::seek_file(FILE_HANDLE &file, SINT64 pos)
 		Arg::OsError());
 }
 
-void NBackup::open_database_write()
+void NBackup::open_database_write(bool exclusive)
 {
 #ifdef WIN_NT
+	const DWORD shareFlags = exclusive ? FILE_SHARE_READ : 
+		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
+
 	dbase = CreateFile(dbname.c_str(), GENERIC_READ | GENERIC_WRITE,
-		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		shareFlags, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (dbase != INVALID_HANDLE_VALUE)
 		return;
 #else
-	dbase = os_utils::open(dbname.c_str(), O_RDWR | O_LARGEFILE);
+	const int flags = exclusive ? O_EXCL | O_RDWR | O_LARGEFILE :
+		O_RDWR | O_LARGEFILE;
+
+	dbase = open(dbname.c_str(), flags);
 	if (dbase >= 0)
 		return;
 #endif
@@ -710,7 +715,7 @@ void NBackup::close_backup()
 #endif
 }
 
-void NBackup::fixup_database()
+void NBackup::fixup_database(bool set_readonly)
 {
 	open_database_write();
 	Ods::header_page header;
@@ -724,6 +729,9 @@ void NBackup::fixup_database()
 			Arg::Num(Ods::hdr_nbak_stalled));
 	}
 	header.hdr_flags = (header.hdr_flags & ~Ods::hdr_backup_mask) | Ods::hdr_nbak_normal;
+	if (set_readonly)
+		header.hdr_flags |= Ods::hdr_read_only;
+
 	seek_file(dbase, 0);
 	write_file(dbase, &header, sizeof(header));
 	close_database();
@@ -740,7 +748,7 @@ void NBackup::pr_error(const ISC_STATUS* status, const char* operation)
 	fprintf(stderr, "[\n");
 	printMsg(23, SafeArg() << operation); // PROBLEM ON "%s".
 	isc_print_status(status);
-	fprintf(stderr, "SQLCODE:%"SLONGFORMAT"\n", isc_sqlcode(status));
+	fprintf(stderr, "SQLCODE:%" SLONGFORMAT"\n", isc_sqlcode(status));
 	fprintf(stderr, "]\n");
 
 	m_printed = true;
@@ -917,13 +925,14 @@ void NBackup::unlock_database()
 	detach_database();
 }
 
-void NBackup::backup_database(int level, const PathName& fname)
+void NBackup::backup_database(int level, Guid& guid, const PathName& fname)
 {
 	bool database_locked = false;
 	// We set this flag when backup file is in inconsistent state
 	bool delete_backup = false;
 	ULONG prev_scn = 0;
 	char prev_guid[GUID_BUFF_SIZE] = "";
+	char str_guid[GUID_BUFF_SIZE] = "";
 	Ods::pag* page_buff = NULL;
 	attach_database();
 	ULONG page_writes = 0, page_reads = 0;
@@ -950,6 +959,9 @@ void NBackup::backup_database(int level, const PathName& fname)
 		// Look for SCN and GUID of previous-level backup in history table
 		if (level)
 		{
+			if (level < 0)
+				GuidToString(str_guid, &guid);
+
 			if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
 				pr_error(status, "start transaction");
 			char out_sqlda_data[XSQLDA_LENGTH(2)];
@@ -961,10 +973,18 @@ void NBackup::backup_database(int level, const PathName& fname)
 			if (isc_dsql_allocate_statement(status, &newdb, &stmt))
 				pr_error(status, "allocate statement");
 			char str[200];
-			sprintf(str, "SELECT RDB$GUID, RDB$SCN FROM RDB$BACKUP_HISTORY "
-				"WHERE RDB$BACKUP_ID = "
-				  "(SELECT MAX(RDB$BACKUP_ID) FROM RDB$BACKUP_HISTORY "
-				   "WHERE RDB$BACKUP_LEVEL = %d)", level - 1);
+			if (level > 0)
+			{
+				sprintf(str, "SELECT RDB$GUID, RDB$SCN FROM RDB$BACKUP_HISTORY "
+					"WHERE RDB$BACKUP_ID = "
+					"(SELECT MAX(RDB$BACKUP_ID) FROM RDB$BACKUP_HISTORY "
+					"WHERE RDB$BACKUP_LEVEL = %d)", level - 1);
+			}
+			else
+			{
+				sprintf(str, "SELECT RDB$GUID, RDB$SCN FROM RDB$BACKUP_HISTORY "
+					"WHERE RDB$GUID = '%s'", str_guid);
+			}
 			if (isc_dsql_prepare(status, &trans, &stmt, 0, str, 1, NULL))
 				pr_error(status, "prepare history query");
 			if (isc_dsql_describe(status, &stmt, 1, out_sqlda))
@@ -980,8 +1000,13 @@ void NBackup::backup_database(int level, const PathName& fname)
 			switch (isc_dsql_fetch(status, &stmt, 1, out_sqlda))
 			{
 			case 100: // No more records available
-				status_exception::raise(Arg::Gds(isc_nbackup_lostrec_db) << database.c_str() <<
-										Arg::Num(level - 1));
+				if (level > 0)
+					status_exception::raise(Arg::Gds(isc_nbackup_lostrec_db) << database.c_str() <<
+											Arg::Num(level - 1));
+				else
+					status_exception::raise(Arg::Gds(isc_nbackup_lostrec_guid_db) << database.c_str() << 
+											Arg::Str(str_guid));
+
 			case 0:
 				if (guid_null || scn_null)
 					status_exception::raise(Arg::Gds(isc_nbackup_lostguid_db));
@@ -1008,9 +1033,18 @@ void NBackup::backup_database(int level, const PathName& fname)
 			// Let's generate nice new filename
 			PathName begin, fil;
 			PathUtils::splitLastComponent(begin, fil, database);
-			bakname.printf("%s-%d-%04d%02d%02d-%02d%02d.nbk", fil.c_str(), level,
-				today.tm_year + 1900, today.tm_mon + 1, today.tm_mday,
-				today.tm_hour, today.tm_min);
+			if (level >= 0)
+			{
+				bakname.printf("%s-%d-%04d%02d%02d-%02d%02d.nbk", fil.c_str(), level,
+					today.tm_year + 1900, today.tm_mon + 1, today.tm_mday,
+					today.tm_hour, today.tm_min);
+			}
+			else
+			{
+				bakname.printf("%s-%s-%04d%02d%02d-%02d%02d.nbk", fil.c_str(), str_guid,
+					today.tm_year + 1900, today.tm_mon + 1, today.tm_mday,
+					today.tm_hour, today.tm_min);
+			}
 			if (!uSvc->isService())
 				printf("%s", bakname.c_str()); // Print out generated filename for script processing
 		}
@@ -1100,7 +1134,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 			inc_header bh;
 			memcpy(bh.signature, backup_signature, sizeof(backup_signature));
 			bh.version = BACKUP_VERSION;
-			bh.level = level;
+			bh.level = level > 0 ? level : 0;
 			bh.backup_guid = backup_guid;
 			StringToGuid(&bh.prev_guid, prev_guid);
 			bh.page_size = header->hdr_page_size;
@@ -1271,8 +1305,17 @@ void NBackup::backup_database(int level, const PathName& fname)
 		if (isc_dsql_describe_bind(status, &stmt, 1, in_sqlda))
 			pr_error(status, "bind history insert");
 		short null_flag = 0;
-		in_sqlda->sqlvar[0].sqldata = (char*) &level;
-		in_sqlda->sqlvar[0].sqlind = &null_flag;
+		short null_ind = -1;
+		if (level >= 0)
+		{
+			in_sqlda->sqlvar[0].sqldata = (char*)&level;
+			in_sqlda->sqlvar[0].sqlind = &null_flag;
+		}
+		else
+		{
+			in_sqlda->sqlvar[0].sqldata = NULL;
+			in_sqlda->sqlvar[0].sqlind = &null_ind;
+		}
 		char temp[GUID_BUFF_SIZE];
 		GuidToString(temp, &backup_guid);
 		in_sqlda->sqlvar[1].sqldata = temp;
@@ -1334,14 +1377,17 @@ void NBackup::backup_database(int level, const PathName& fname)
 	}
 }
 
-void NBackup::restore_database(const BackupFiles& files)
+void NBackup::restore_database(const BackupFiles& files, bool inc_rest)
 {
 	// We set this flag when database file is in inconsistent state
 	bool delete_database = false;
 	const int filecount = files.getCount();
 #ifndef WIN_NT
-	create_database();
-	delete_database = true;
+	if (!inc_rest)
+	{
+		create_database();
+		delete_database = true;
+	}
 #endif
 	UCHAR *page_buffer = NULL;
 	try {
@@ -1396,16 +1442,19 @@ void NBackup::restore_database(const BackupFiles& files)
 			}
 			else
 			{
-				if (curLevel >= filecount)
+				if (curLevel >= filecount + (inc_rest ? 1 : 0))
 				{
 					close_database();
-					fixup_database();
+					fixup_database(inc_rest);
 					delete[] page_buffer;
 					return;
 				}
-				bakname = files[curLevel];
+				if (!inc_rest || curLevel)
+					bakname = files[curLevel - (inc_rest ? 1 : 0)];
 #ifdef WIN_NT
 				if (curLevel)
+#else
+				if (!inc_rest || curLevel)
 #endif
 					open_backup_scan();
 			}
@@ -1422,7 +1471,7 @@ void NBackup::restore_database(const BackupFiles& files)
 					status_exception::raise(Arg::Gds(isc_nbackup_unsupvers_incbk) <<
 										Arg::Num(bakheader.version) << bakname.c_str());
 				}
-				if (bakheader.level != curLevel)
+				if (bakheader.level && bakheader.level != curLevel)
 				{
 					status_exception::raise(Arg::Gds(isc_nbackup_invlevel_incbk) <<
 						Arg::Num(bakheader.level) << bakname.c_str() << Arg::Num(curLevel));
@@ -1432,7 +1481,8 @@ void NBackup::restore_database(const BackupFiles& files)
 					status_exception::raise(Arg::Gds(isc_nbackup_wrong_orderbk) << bakname.c_str());
 				seek_file(backup, bakheader.page_size);
 
-				delete_database = true;
+				if (!inc_rest)
+					delete_database = true;
 				prev_guid = bakheader.backup_guid;
 				while (true)
 				{
@@ -1451,28 +1501,34 @@ void NBackup::restore_database(const BackupFiles& files)
 			}
 			else
 			{
+				if (!inc_rest)
+				{
 #ifdef WIN_NT
-				if (!CopyFile(bakname.c_str(), dbname.c_str(), TRUE))
-				{
-					status_exception::raise(Arg::Gds(isc_nbackup_err_copy) <<
-						dbname.c_str() << bakname.c_str() << Arg::OsError());
-				}
-				checkCtrlC(uSvc);
-				delete_database = true; // database is possibly broken
-				open_database_write();
-#else
-				// Use relatively small buffer to make use of prefetch and lazy flush
-				char buffer[65536];
-				while (true)
-				{
-					const FB_SIZE_T bytesRead = read_file(backup, buffer, sizeof(buffer));
-					if (bytesRead == 0)
-						break;
-					write_file(dbase, buffer, bytesRead);
+					if (!CopyFile(bakname.c_str(), dbname.c_str(), TRUE))
+					{
+						status_exception::raise(Arg::Gds(isc_nbackup_err_copy) <<
+							dbname.c_str() << bakname.c_str() << Arg::OsError());
+					}
 					checkCtrlC(uSvc);
-				}
-				seek_file(dbase, 0);
+					delete_database = true; // database is possibly broken
+					open_database_write();
+#else
+					// Use relatively small buffer to make use of prefetch and lazy flush
+					char buffer[65536];
+					while (true)
+					{
+						const FB_SIZE_T bytesRead = read_file(backup, buffer, sizeof(buffer));
+						if (bytesRead == 0)
+							break;
+						write_file(dbase, buffer, bytesRead);
+						checkCtrlC(uSvc);
+					}
+					seek_file(dbase, 0);
 #endif
+				}
+				else
+					open_database_write(true);
+
 				// Read database header
 				Ods::header_page header;
 				if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
@@ -1579,8 +1635,9 @@ void nbackup(UtilSvc* uSvc)
 		false;
 #endif
 	NBackup::BackupFiles backup_files;
-	int level;
-	bool print_size = false, version = false;
+	int level = -1;
+	Guid guid;
+	bool print_size = false, version = false, inc_rest = false;
 	string onOff;
 
 	const Switches switches(nbackup_action_in_sw_table, FB_NELEM(nbackup_action_in_sw_table),
@@ -1709,7 +1766,10 @@ void nbackup(UtilSvc* uSvc)
 			if (++itr >= argc)
 				missingParameterForSwitch(uSvc, argv[itr - 1]);
 
-			level = atoi(argv[itr]);
+			if (argv[itr][0] == '{')
+				StringToGuid(&guid, argv[itr]);
+			else
+				level = atoi(argv[itr]);
 
 			if (++itr >= argc)
 				missingParameterForSwitch(uSvc, argv[itr - 2]);
@@ -1752,6 +1812,10 @@ void nbackup(UtilSvc* uSvc)
 				usage(uSvc, isc_nbackup_unknown_switch, argv[itr]);
 			else
 				version = true;
+			break;
+
+		case IN_SW_NBK_INPLACE:
+			inc_rest = true;
 			break;
 
 		default:
@@ -1797,11 +1861,11 @@ void nbackup(UtilSvc* uSvc)
 				break;
 
 			case nbBackup:
-				nbk.backup_database(level, filename);
+				nbk.backup_database(level, guid, filename);
 				break;
 
 			case nbRestore:
-				nbk.restore_database(backup_files);
+				nbk.restore_database(backup_files, inc_rest);
 				break;
 		}
 	}

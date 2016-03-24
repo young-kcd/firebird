@@ -68,7 +68,8 @@ const ParametersSet dpbParam =
 	isc_dpb_host_name,
 	isc_dpb_os_user,
 	isc_dpb_config,
-	isc_dpb_utf8_filename
+	isc_dpb_utf8_filename,
+	isc_dpb_map_attach
 };
 
 const ParametersSet spbParam =
@@ -91,7 +92,8 @@ const ParametersSet spbParam =
 	isc_spb_host_name,
 	isc_spb_os_user,
 	isc_spb_config,
-	isc_spb_utf8_filename
+	isc_spb_utf8_filename,
+	0
 };
 
 const ParametersSet connectParam =
@@ -113,6 +115,7 @@ const ParametersSet connectParam =
 	0,
 	CNCT_host,
 	CNCT_user,
+	0,
 	0,
 	0
 };
@@ -983,23 +986,8 @@ void ClntAuthBlock::resetClnt(const Firebird::PathName* fileName, const CSTRING*
 	Firebird::PathName final;
 	if (serverPluginList.hasData())
 	{
-		Remote::ParsedList onClient, fromServer, merged;
-		REMOTE_parseList(onClient, pluginList);
-		REMOTE_parseList(fromServer, serverPluginList);
-
-		for (unsigned c = 0; c < onClient.getCount(); ++c)
-		{
-			// do not expect too long lists, therefore use double loop
-			for (unsigned s = 0; s < fromServer.getCount(); ++s)
-			{
-				if (onClient[c] == fromServer[s])
-				{
-					merged.push(onClient[c]);
-				}
-			}
-		}
-
-		if (merged.getCount() == 0)
+		Auth::mergeLists(final, serverPluginList, pluginList);
+		if (final.length() == 0)
 		{
 			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: No matching plugins on client\n"));
 			(Firebird::Arg::Gds(isc_login)
@@ -1008,8 +996,6 @@ void ClntAuthBlock::resetClnt(const Firebird::PathName* fileName, const CSTRING*
 #endif
 								).raise();
 		}
-
-		REMOTE_makeList(final, merged);
 	}
 	else
 	{
@@ -1046,42 +1032,6 @@ Firebird::RefPtr<Config> REMOTE_get_config(const Firebird::PathName* dbName,
 	Config::merge(config, dpb_config);
 
 	return config;
-}
-
-void REMOTE_parseList(Remote::ParsedList& parsed, Firebird::PathName list)
-{
-	list.alltrim(" \t");
-	parsed.clear();
-	const char* sep = " \t,;";
-
-	for(;;)
-	{
-		Firebird::PathName::size_type p = list.find_first_of(sep);
-		if (p == Firebird::PathName::npos)
-		{
-			if (list.hasData())
-			{
-				parsed.push(list);
-			}
-			break;
-		}
-
-		parsed.push(list.substr(0, p));
-		list = list.substr(p + 1);
-		list.ltrim(" \t,;");
-	}
-}
-
-void REMOTE_makeList(Firebird::PathName& list, const Remote::ParsedList& parsed)
-{
-	fb_assert(parsed.hasData());
-	//list.erase();
-	list = parsed[0];
-	for (unsigned i = 1; i < parsed.getCount(); ++i)
-	{
-		list += ' ';
-		list += parsed[i];
-	}
 }
 
 void REMOTE_check_response(Firebird::IStatus* warning, Rdb* rdb, PACKET* packet, bool checkKeys)

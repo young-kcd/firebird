@@ -707,9 +707,10 @@ void DropPackageNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		PRIV IN RDB$USER_PRIVILEGES
-		WITH (PRIV.RDB$RELATION_NAME EQ name.c_str() AND
+		WITH ((PRIV.RDB$RELATION_NAME EQ name.c_str() AND
 				PRIV.RDB$OBJECT_TYPE = obj_package_header) OR
-			 (PRIV.RDB$USER EQ name.c_str() AND PRIV.RDB$USER_TYPE = obj_package_header)
+			 (PRIV.RDB$USER EQ name.c_str() AND PRIV.RDB$USER_TYPE = obj_package_header)) AND
+			 PRIV.RDB$GRANTOR NOT MISSING
 	{
 		ERASE PRIV;
 	}

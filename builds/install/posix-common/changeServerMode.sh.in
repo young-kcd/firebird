@@ -56,7 +56,7 @@ removeServiceAutostart
 
 echo "Starting firebird in $multiAnswer server mode..."
 fbconf="@FB_CONFDIR@/firebird.conf"
-if [ $multiAnswer == classic ]; then
+if [ $multiAnswer = classic ]; then
 	replaceLineInFile $fbconf "ServerMode = Classic" "^ServerMode"
 
 	updateInetdServiceEntry

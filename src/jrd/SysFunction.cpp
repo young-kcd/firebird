@@ -1502,8 +1502,24 @@ dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const NestValue
 	}
 
 	UCHAR* data_temp;
-	const USHORT len = MOV_get_string(value, &data_temp, NULL, 0);
-	const UCHAR* data = data_temp;
+	USHORT len = MOV_get_string(value, &data_temp, NULL, 0);
+	const UCHAR* data;
+
+	if (len > GUID_BODY_SIZE)
+	{
+		// Verify if only spaces exists after the expected length. See CORE-5062.
+		data = data_temp + GUID_BODY_SIZE;
+
+		while (len > GUID_BODY_SIZE)
+		{
+			if (*data++ != ASCII_SPACE)
+				break;
+
+			--len;
+		}
+	}
+
+	data = data_temp;
 
 	// validate the UUID
 	if (len != GUID_BODY_SIZE) // 36
@@ -2164,7 +2180,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 		else if (nameStr == DATABASE_NAME)
 			resultStr = dbb->dbb_database_name.ToString();
 		else if (nameStr == SESSION_ID_NAME)
-			resultStr.printf("%"SQUADFORMAT, PAG_attachment_id(tdbb));
+			resultStr.printf("%" SQUADFORMAT, PAG_attachment_id(tdbb));
 		else if (nameStr == NETWORK_PROTOCOL_NAME)
 		{
 			if (attachment->att_network_protocol.isEmpty())
@@ -2184,7 +2200,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 			if (!attachment->att_remote_pid)
 				return NULL;
 
-			resultStr.printf("%"SLONGFORMAT, attachment->att_remote_pid);
+			resultStr.printf("%" SLONGFORMAT, attachment->att_remote_pid);
 		}
 		else if (nameStr == CLIENT_PROCESS_NAME)
 		{
@@ -2208,7 +2224,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 			resultStr = attachment->att_user->usr_sql_role_name;
 		}
 		else if (nameStr == TRANSACTION_ID_NAME)
-			resultStr.printf("%"SQUADFORMAT, transaction->tra_number);
+			resultStr.printf("%" SQUADFORMAT, transaction->tra_number);
 		else if (nameStr == ISOLATION_LEVEL_NAME)
 		{
 			if (transaction->tra_flags & TRA_read_committed)
@@ -2219,7 +2235,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 				resultStr = SNAPSHOT_VALUE;
 		}
 		else if (nameStr == LOCK_TIMEOUT_NAME)
-			resultStr.printf("%"SLONGFORMAT, transaction->tra_lock_timeout);
+			resultStr.printf("%" SLONGFORMAT, transaction->tra_lock_timeout);
 		else if (nameStr == READ_ONLY_NAME)
 			resultStr = (transaction->tra_flags & TRA_readonly) ? TRUE_VALUE : FALSE_VALUE;
 		else

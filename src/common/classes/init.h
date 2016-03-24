@@ -199,11 +199,27 @@ public:
 // InitInstance - allocate instance of class T on first request.
 
 template <typename T>
+class DefaultInstanceAllocator
+{
+public:
+	static T* create()
+	{
+		return FB_NEW_POOL(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
+	}
+
+	static void destroy(T* inst)
+	{
+		delete inst;
+	}
+};
+
+template <typename T, class A = DefaultInstanceAllocator<T> >
 class InitInstance : private InstanceControl
 {
 private:
 	T* instance;
 	volatile bool flag;
+	A allocator;
 
 public:
 	InitInstance()
@@ -217,7 +233,7 @@ public:
 			MutexLockGuard guard(*StaticMutex::mutex, "InitInstance");
 			if (!flag)
 			{
-				instance = FB_NEW_POOL(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
+				instance = allocator.create();
 				flag = true;
 				// Put ourselves into linked list for cleanup.
 				// Allocated pointer is saved by InstanceList::constructor.
@@ -231,7 +247,7 @@ public:
 	{
 		MutexLockGuard guard(*StaticMutex::mutex, "InitInstance - dtor");
 		flag = false;
-		delete instance;
+		A::destroy(instance);
 		instance = NULL;
 	}
 };
@@ -239,31 +255,36 @@ public:
 // Static - create instance of some class in static char[] buffer. Never destroy it.
 
 template <typename T>
-class Static
+class StaticInstanceAllocator
 {
 private:
 	char buf[sizeof(T) + FB_ALIGNMENT];
-	T* t;
 
 public:
-	Static()
+	T* create()
 	{
-		t = new((void*) FB_ALIGN(buf, FB_ALIGNMENT)) T();
+		return new((void*) FB_ALIGN(buf, FB_ALIGNMENT)) T();
 	}
+
+	static void destroy(T*)
+	{ }
+};
+
+template <typename T>
+class Static : private InitInstance<T, StaticInstanceAllocator<T> >
+{
+public:
+	Static()
+	{ }
 
 	T* operator->()
 	{
-		return t;
+		return &(this->operator()());
 	}
 
 	T* operator&()
 	{
-		return t;
-	}
-
-	operator T()
-	{
-		return *t;
+		return operator->();
 	}
 };
 

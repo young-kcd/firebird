@@ -1016,16 +1016,13 @@ typedef RecreateNode<CreateAlterExceptionNode, DropExceptionNode, isc_dsql_recre
 class CreateAlterSequenceNode : public DdlNode
 {
 public:
-	CreateAlterSequenceNode(MemoryPool& pool, const Firebird::MetaName& aName,
-				BaseNullable<SINT64> aValue, BaseNullable<SLONG> aStep)
+	CreateAlterSequenceNode(MemoryPool& pool, const Firebird::MetaName& aName)
 		: DdlNode(pool),
 		  create(true),
 		  alter(false),
 		  legacy(false),
 		  restartSpecified(false),
-		  name(pool, aName),
-		  value(aValue),
-		  step(aStep)
+		  name(pool, aName)
 	{
 		// Unfortunately, line/column carry no useful information here.
 		// Hence, the check was created directly in parse.y.
@@ -1039,6 +1036,7 @@ public:
 													Arg::Num(this->column));
 		}
 		*/
+		value.specified = false;
 	}
 
 	static SSHORT store(thread_db* tdbb, jrd_tra* transaction, const Firebird::MetaName& name,
@@ -1069,8 +1067,8 @@ public:
 	bool legacy;
 	bool restartSpecified;
 	const Firebird::MetaName name;
-	const BaseNullable<SINT64> value;
-	const BaseNullable<SLONG> step;
+	BaseNullable<SINT64> value;
+	Nullable<SLONG> step;
 };
 
 
@@ -1305,7 +1303,8 @@ public:
 			  collate(p),
 			  computed(NULL),
 			  identity(false),
-			  identityStart(0)
+			  identityStart(0),
+			  notNullSpecified(false)
 		{
 		}
 
@@ -1316,6 +1315,7 @@ public:
 		NestConst<ValueSourceClause> computed;
 		bool identity;
 		SINT64 identityStart;
+		bool notNullSpecified;
 	};
 
 	struct AlterColNameClause : public Clause
@@ -2212,7 +2212,7 @@ public:
 	static const unsigned CLAUSE_BEGIN_BACKUP		= 0x01;
 	static const unsigned CLAUSE_END_BACKUP			= 0x02;
 	static const unsigned CLAUSE_DROP_DIFFERENCE	= 0x04;
-	static const unsigned CLAUSE_DECRYPT			= 0x08;
+	static const unsigned CLAUSE_CRYPT				= 0x08;
 
 	static const unsigned RDB_DATABASE_MASK =
 		CLAUSE_BEGIN_BACKUP | CLAUSE_END_BACKUP | CLAUSE_DROP_DIFFERENCE;
@@ -2228,7 +2228,8 @@ public:
 		  setDefaultCharSet(p),
 		  setDefaultCollation(p),
 		  files(p),
-		  cryptPlugin(p)
+		  cryptPlugin(p),
+		  keyName(p)
 	{
 	}
 
@@ -2263,6 +2264,7 @@ public:
 	Firebird::MetaName setDefaultCollation;
 	Firebird::Array<NestConst<DbFileClause> > files;
 	Firebird::MetaName cryptPlugin;
+	Firebird::MetaName keyName;
 };
 
 

@@ -32,6 +32,7 @@
 #include "../common/classes/ClumpletReader.h"
 #include "firebird/Interface.h"
 #include "../common/classes/ImplementHelper.h"
+#include "../common/isc_f_proto.h"
 
 using namespace Firebird;
 
@@ -363,6 +364,7 @@ int WinSspiServer::authenticate(Firebird::CheckStatusWrapper* status,
 			bool wheel = false;
 			string login;
 			sspi.getLogin(login, wheel);
+			ISC_systemToUtf8(login);
 
 			writerInterface->add(status, login.c_str());
 			if (wheel)

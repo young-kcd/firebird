@@ -194,6 +194,7 @@ public:
 	dsc castDesc;
 	NestConst<ValueExprNode> source;
 	NestConst<ItemInfo> itemInfo;
+	bool artificial;
 };
 
 
@@ -221,6 +222,11 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+	virtual bool possiblyUnknown()
+	{
+		return true;
+	}
 
 public:
 	NestConst<ValueListNode> args;

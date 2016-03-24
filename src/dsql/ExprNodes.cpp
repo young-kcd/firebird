@@ -2530,7 +2530,8 @@ CastNode::CastNode(MemoryPool& pool, ValueExprNode* aSource, dsql_fld* aDsqlFiel
 	  dsqlAlias("CAST"),
 	  dsqlField(aDsqlField),
 	  source(aSource),
-	  itemInfo(NULL)
+	  itemInfo(NULL),
+	  artificial(false)
 {
 	castDesc.clear();
 	addChildNode(source, source);
@@ -2726,8 +2727,15 @@ ValueExprNode* CastNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	dsc* value = EVL_expr(tdbb, request, source);
+
 	if (request->req_flags & req_null)
 		value = NULL;
+
+	// If validation is not required and the source value is either NULL
+	// or already in the desired data type, simply return it "as is"
+
+	if (!itemInfo && (!value || DSC_EQUIV(value, &castDesc, true)))
+		return value;
 
 	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 
@@ -5621,6 +5629,19 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 	sub = NodeCopier::copy(tdbb, csb, sub, map);
 
+	// If this is a computed field, cast the computed expression to the field type if required.
+	// See CORE-5097.
+	if (field->fld_computation && !relation->rel_view_rse)
+	{
+		CastNode* cast = FB_NEW_POOL(*tdbb->getDefaultPool()) CastNode(
+			*tdbb->getDefaultPool());
+		cast->source = sub;
+		cast->castDesc = desc;
+		cast->artificial = true;
+
+		sub = cast;
+	}
+
 	if (relation->rel_view_rse)
 	{
 		// dimitr:	if we reference view columns, we need to pass them
@@ -6158,35 +6179,39 @@ dsc* InternalInfoNode::execute(thread_db* tdbb, jrd_req* request) const
 		SLONG int32_result = 0;
 		SINT64 int64_result = 0;
 
-		switch (infoType)
-		{
-			case INFO_TYPE_CONNECTION_ID:
-				int64_result = PAG_attachment_id(tdbb);
-				break;
-			case INFO_TYPE_TRANSACTION_ID:
-				int64_result = tdbb->getTransaction()->tra_number;
-				break;
-			case INFO_TYPE_GDSCODE:
-				int32_result = request->req_last_xcp.as_gdscode();
-				break;
-			case INFO_TYPE_SQLCODE:
-				int32_result = request->req_last_xcp.as_sqlcode();
-				break;
-			case INFO_TYPE_ROWS_AFFECTED:
-				int64_result = request->req_records_affected.getCount();
-				break;
-			case INFO_TYPE_TRIGGER_ACTION:
-				int32_result = request->req_trigger_action;
-				break;
-			default:
-				BUGCHECK(232);	// msg 232 EVL_expr: invalid operation
-		}
+	SLONG result32 = 0;
+	SINT64 result64 = 0;
 
-		if (int64_result)
-			desc.makeInt64(0, &int64_result);
-		else
-			desc.makeLong(0, &int32_result);
+	switch (infoType)
+	{
+		case INFO_TYPE_CONNECTION_ID:
+			result64 = PAG_attachment_id(tdbb);
+			break;
+		case INFO_TYPE_TRANSACTION_ID:
+			result64 = tdbb->getTransaction()->tra_number;
+			break;
+		case INFO_TYPE_GDSCODE:
+			result32 = request->req_last_xcp.as_gdscode();
+			break;
+		case INFO_TYPE_SQLCODE:
+			result32 = request->req_last_xcp.as_sqlcode();
+			break;
+		case INFO_TYPE_ROWS_AFFECTED:
+			result64 = request->req_records_affected.getCount();
+			break;
+		case INFO_TYPE_TRIGGER_ACTION:
+			result32 = request->req_trigger_action;
+			break;
+		default:
+			BUGCHECK(232);	// msg 232 EVL_expr: invalid operation
 	}
+
+	dsc desc;
+
+	if (result64)
+		desc.makeInt64(0, &result64);
+	else
+		desc.makeLong(0, &result32);
 
 	EVL_make_value(tdbb, &desc, impure);
 	return &impure->vlu_desc;
@@ -6631,8 +6656,7 @@ bool LiteralNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 	const LiteralNode* const otherNode = other->as<LiteralNode>();
 	fb_assert(otherNode);
 
-	return DSC_EQUIV(&litDesc, &otherNode->litDesc, true) &&
-		memcmp(litDesc.dsc_address, otherNode->litDesc.dsc_address, litDesc.dsc_length) == 0;
+	return !MOV_compare(&litDesc, &otherNode->litDesc);
 }
 
 ValueExprNode* LiteralNode::pass2(thread_db* tdbb, CompilerScratch* csb)
@@ -8014,7 +8038,7 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		for (DsqlContextStack::iterator stack(*dsqlScratch->context); stack.hasData(); ++stack)
 		{
 			dsql_ctx* context = stack.object();
-			if ((context->ctx_flags & CTX_system) ||
+			if ((context->ctx_flags & (CTX_system | CTX_returning)) == CTX_system ||
 				context->ctx_scope_level != dsqlScratch->scopeLevel)
 			{
 				continue;
@@ -9163,6 +9187,9 @@ DmlNode* SubQueryNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 
 		if (csb->csb_currentForNode && csb->csb_currentForNode->parBlrBeginCnt <= 1)
 			node->ownSavepoint = false;
+
+		if (csb->csb_currentDMLNode)
+			node->ownSavepoint = false;
 	}
 
 	return node;
@@ -9185,6 +9212,12 @@ string SubQueryNode::internalPrint(NodePrinter& printer) const
 
 ValueExprNode* SubQueryNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
+	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_VIEW_WITH_CHECK)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				  Arg::Gds(isc_subquery_err));
+	}
+
 	const DsqlContextStack::iterator base(*dsqlScratch->context);
 
 	RseNode* rse = PASS1_rse(dsqlScratch, dsqlRse->as<SelectExprNode>(), false);
@@ -11129,7 +11162,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 				while (transaction->tra_save_point &&
 					transaction->tra_save_point->sav_number > savePointNumber)
 				{
-					VIO_verb_cleanup(tdbb, transaction);
+					transaction->rollforwardSavepoint(tdbb);
 				}
 			}
 		}
@@ -11139,7 +11172,6 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 			const bool noPriv = (tdbb->tdbb_status_vector->getErrors()[1] == isc_no_priv);
 			trace.finish(noPriv ? ITracePlugin::RESULT_UNAUTHORIZED : ITracePlugin::RESULT_FAILED);
 
-			tdbb->setRequest(request);
 			EXE_unwind(tdbb, funcRequest);
 			funcRequest->req_attachment = NULL;
 			funcRequest->req_flags &= ~(req_in_use | req_proc_fetch);
@@ -11168,7 +11200,6 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 		}
 
 		EXE_unwind(tdbb, funcRequest);
-		tdbb->setRequest(request);
 
 		funcRequest->req_attachment = NULL;
 		funcRequest->req_flags &= ~(req_in_use | req_proc_fetch);

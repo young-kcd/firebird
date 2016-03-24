@@ -238,9 +238,8 @@ IMessageMetadata* MetadataBuilder::getMetadata(CheckStatusWrapper* status)
 			(Arg::Gds(isc_item_finish) << Arg::Num(i)).raise();
 		}
 
-		IMessageMetadata* rc = msgMetadata;
+		MsgMetadata* rc = FB_NEW MsgMetadata(msgMetadata);
 		rc->addRef();
-		msgMetadata = NULL;
 		return rc;
 	}
 	catch (const Exception& ex)
@@ -252,6 +251,8 @@ IMessageMetadata* MetadataBuilder::getMetadata(CheckStatusWrapper* status)
 
 void MetadataBuilder::metadataError(const char* functionName)
 {
+	// ASF: Current implementation should never set msgMetadata to NULL, but I'm leaving this
+	// function and check for now.
 	if (!msgMetadata)
 	{
 		(Arg::Gds(isc_random) << (string("IMetadataBuilder interface is already inactive: "

@@ -147,14 +147,15 @@ const int NOTASOCKET = EBADF;
 
 static void SOCLOSE(SOCKET& socket)
 {
-	if (socket != INVALID_SOCKET)
+	SOCKET s = socket;
+	if (s != INVALID_SOCKET)
 	{
-#ifdef WIN_NT
-		closesocket(socket);
-#else
-		close(socket);
-#endif
 		socket = INVALID_SOCKET;
+#ifdef WIN_NT
+		closesocket(s);
+#else
+		close(s);
+#endif
 	}
 }
 
@@ -439,6 +440,8 @@ static bool forkThreadStarted = false;
 static SocketsArray* forkSockets;
 #endif
 
+static void		get_peer_info(rem_port*);
+
 static void		inet_gen_error(bool, rem_port*, const Arg::StatusVector& v);
 static bool_t	inet_getbytes(XDR*, SCHAR *, u_int);
 static void		inet_error(bool, rem_port*, const TEXT*, ISC_STATUS, int);
@@ -452,7 +455,7 @@ static rem_port*		inet_try_connect(	PACKET*,
 									RefPtr<Config>*,
 									const PathName*);
 static bool		inet_write(XDR*);
-static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai);
+static rem_port* listener_socket(rem_port* port, USHORT flag, const addrinfo* pai);
 
 #ifdef DEBUG
 static void packet_print(const TEXT*, const UCHAR*, int, ULONG);
@@ -735,7 +738,7 @@ rem_port* INET_connect(const TEXT* name,
 	}
 #endif
 
-	rem_port* const port = alloc_port(NULL);
+	rem_port* port = alloc_port(NULL);
 	if (config)
 	{
 		port->port_config = *config;
@@ -873,15 +876,18 @@ rem_port* INET_connect(const TEXT* name,
 			}
 
 			n = connect(port->port_handle, pai->ai_addr, pai->ai_addrlen);
-			if ((n != -1) && send_full(port, packet))
+			if (n != -1)
 			{
-				goto exit_free;
+				port->port_peer_name = host;
+				get_peer_info(port);
+				if (send_full(port, packet))
+					goto exit_free;
 			}
 		}
 		else
 		{
 			// server
-			INET_server_socket(port, flag, pai);
+			port = listener_socket(port, flag, pai);
 			goto exit_free;
 		}
 
@@ -900,17 +906,22 @@ exit_free:
 	return port;
 }
 
-static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai)
+static rem_port* listener_socket(rem_port* port, USHORT flag, const addrinfo* pai)
 {
 /**************************************
  *
- *	I N E T _ s e r v e r _ s o c k e t
+ *	l i s t e n e r _ s o c k e t
  *
  **************************************
  *
  * Functional description
  *	Final part of server (listening) socket setup. Sets socket options,
  *	binds the socket and calls listen().
+ *  For multi-client server (SuperServer or SuperClassic) return listener
+ *  port.
+ *  For classic server - accept incoming connections and fork worker
+ *  processes, return NULL at exit;
+ *  On error throw exception.
  *
  **************************************/
 
@@ -997,7 +1008,7 @@ static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai)
 		port->port_dummy_packet_interval = 0;
 		port->port_dummy_timeout = 0;
 		port->port_server_flags |= (SRVR_server | SRVR_multi_client);
-		return;
+		return port;
 	}
 
 	while (true)
@@ -1006,7 +1017,8 @@ static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai)
 		const int inetErrNo = INET_ERRNO;
 		if (s == INVALID_SOCKET)
 		{
-			// if (!INET_shutting_down)
+			if (INET_shutting_down)
+				return NULL;
 			inet_error(true, port, "accept", isc_net_connect_err, inetErrNo);
 		}
 #ifdef WIN_NT
@@ -1019,7 +1031,7 @@ static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai)
 			port->port_handle = s;
 			port->port_server_flags |= SRVR_server;
 			port->port_flags |= PORT_server;
-			return;
+			return port;
 		}
 
 #ifdef WIN_NT
@@ -1055,6 +1067,7 @@ static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai)
 		forkSockets = NULL;
 	}
 #endif
+	return NULL;
 }
 
 
@@ -1190,22 +1203,8 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 	// store user identity
 	port->port_login = port->port_user_name = user_name;
 	port->port_peer_name = host_name;
-	port->port_protocol_id = "TCPv4";
 
-	SockAddr address;
-	if (address.getpeername(port->port_handle) == 0)
-	{
-		address.unmapV4(); // convert mapped IPv4 to regular IPv4
-		char host[40];      // 32 digits, 7 colons, 1 trailing null byte
-		int nameinfo = getnameinfo(address.ptr(), address.length(), host, sizeof(host),
-				NULL, 0, NI_NUMERICHOST);
-
-		if (!nameinfo)
-			port->port_address = host;
-
-		if (address.family() == AF_INET6)
-			port->port_protocol_id = "TCPv6";
-	}
+	get_peer_info(port);
 
 	return true;
 }
@@ -1359,6 +1358,9 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 			}
 		}
 
+		if (port->port_channel == INVALID_SOCKET)
+			return NULL;
+
 		const SOCKET n = os_utils::accept(port->port_channel, NULL, NULL);
 		inetErrNo = INET_ERRNO;
 
@@ -1372,6 +1374,9 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 		SOCLOSE(port->port_channel);
 		port->port_handle = n;
 		port->port_flags |= PORT_async;
+
+		get_peer_info(port);
+
 		return port;
 	}
 
@@ -1425,6 +1430,9 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 	}
 
 	new_port->port_handle = n;
+
+	new_port->port_peer_name = port->port_peer_name;
+	get_peer_info(new_port);
 
 	return new_port;
 }
@@ -1493,7 +1501,7 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 	}
 
 	rem_port* const new_port = alloc_port(port->port_parent,
-		(port->port_flags & PORT_no_oob) | PORT_async);
+		(port->port_flags & PORT_no_oob) | PORT_async | PORT_connecting);
 	port->port_async = new_port;
 	new_port->port_dummy_packet_interval = port->port_dummy_packet_interval;
 	new_port->port_dummy_timeout = new_port->port_dummy_packet_interval;
@@ -1513,6 +1521,7 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 	response->p_resp_data.cstr_length = (ULONG) port_address.length();
 	memcpy(response->p_resp_data.cstr_address, port_address.ptr(), port_address.length());
 
+	new_port->port_peer_name = port->port_peer_name;
 	return new_port;
 }
 
@@ -1566,36 +1575,20 @@ static void disconnect(rem_port* const port)
 	// is an attempt to return the socket to a state where a graceful shutdown can
 	// occur.
 
-	// hvlad: for graceful shutdown linger should be turned on (despite of default
-	// setting by OS)
-	{ // scope
-		struct linger lngr = {1, 10};
-		socklen_t optlen = sizeof(lngr);
-
-		if (port->port_linger.l_onoff)
-			lngr = port->port_linger;
-
-		setsockopt(port->port_handle, SOL_SOCKET, SO_LINGER, (SCHAR*) &lngr, sizeof(lngr));
+	if (port->port_linger.l_onoff)
+	{
+		setsockopt(port->port_handle, SOL_SOCKET, SO_LINGER,
+				   (SCHAR*) &port->port_linger, sizeof(port->port_linger));
 	}
 
 	if (port->port_handle != INVALID_SOCKET)
 	{
-		shutdown(port->port_handle, 1);
-
-		fd_set fd = {0};
-		FD_SET(port->port_handle, &fd);
-		timeval tm = {10, 0};
-		int n = select(1, &fd, NULL, NULL, &tm);
-
-		while (n > 0)
-		{
-			char buff[256];
-			n = recv(port->port_handle, buff, sizeof(buff), 0);
-		}
+		shutdown(port->port_handle, 2);
 	}
 
 	MutexLockGuard guard(port_mutex, FB_FUNCTION);
 	port->port_state = rem_port::DISCONNECTED;
+	port->port_flags &= ~PORT_connecting;
 
 	if (port->port_async)
 	{
@@ -1763,7 +1756,7 @@ static int fork(SOCKET old_handle, USHORT flag)
 	}
 
 	string cmdLine;
-	cmdLine.printf("%s -i -h %"HANDLEFORMAT"@%"ULONGFORMAT, name, new_handle, GetCurrentProcessId());
+	cmdLine.printf("%s -i -h %" HANDLEFORMAT"@%" ULONGFORMAT, name, new_handle, GetCurrentProcessId());
 
 	STARTUPINFO start_crud;
 	start_crud.cb = sizeof(STARTUPINFO);
@@ -1941,7 +1934,8 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 
 			if (!REMOTE_inflate(port, packet_receive, buffer, bufsize, length))
 			{
-				if (port->port_flags & PORT_disconnect) {
+				if (port->port_flags & (PORT_disconnect | PORT_connecting))
+				{
 					continue;
 				}
 				*length = 0;
@@ -2120,7 +2114,7 @@ static bool select_wait( rem_port* main_port, Select* selct)
 							if (badSocket || INET_ERRNO == NOTASOCKET)
 							{
 								// not a socket, strange !
-								gds__log("INET/select_wait: found \"not a socket\" socket : %"HANDLEFORMAT,
+								gds__log("INET/select_wait: found \"not a socket\" socket : %" HANDLEFORMAT,
 										 port->port_handle);
 
 								// this will lead to receive() which will break bad connection
@@ -2314,6 +2308,38 @@ static void alarm_handler( int x)
 }
 #endif
 
+void get_peer_info(rem_port* port)
+{
+/**************************************
+*
+*	g e t _ p e e r _ i n f o
+*
+**************************************
+*
+* Functional description
+*	Port just connected. Obtain some info about connection and peer.
+*
+**************************************/
+	port->port_protocol_id = "TCPv4";
+
+	SockAddr address;
+	if (address.getpeername(port->port_handle) == 0)
+	{
+		address.unmapV4();	// convert mapped IPv4 to regular IPv4
+		char host[64];		// 32 digits, 7 colons, 1 trailing null byte
+		char serv[16];
+		int nameinfo = getnameinfo(address.ptr(), address.length(), host, sizeof(host),
+			serv, sizeof(serv), NI_NUMERICHOST | NI_NUMERICSERV);
+
+		if (!nameinfo)
+			port->port_address.printf("%s/%s", host, serv);
+
+		if (address.family() == AF_INET6)
+			port->port_protocol_id = "TCPv6";
+	}
+}
+
+
 static void inet_gen_error(bool releasePort, rem_port* port, const Arg::StatusVector& v)
 {
 /**************************************
@@ -2431,8 +2457,41 @@ static void inet_error(bool releasePort, rem_port* port, const TEXT* function, I
  **************************************/
 	if (status)
 	{
-		if (port->port_state != rem_port::BROKEN) {
-			gds__log("INET/inet_error: %s errno = %d", function, status);
+		if (port->port_state != rem_port::BROKEN)
+		{
+			string err;
+			err.printf("INET/inet_error: %s errno = %d", function, status);
+
+			if (port->port_peer_name.hasData() || port->port_address.hasData())
+			{
+				err.append(port->port_flags & PORT_async ? ", aux " : ", ");
+				err.append(port->port_server_flags ? "client" : "server");
+
+				if (port->port_peer_name.hasData())
+				{
+					err.append(" host = ");
+					err.append(port->port_peer_name);
+				}
+
+				if (port->port_address.hasData())
+				{
+					if (port->port_peer_name.hasData())
+						err.append(",");
+
+					err.append(" address = ");
+					err.append(port->port_address);
+				}
+			}
+
+			if (port->port_user_name.hasData())
+			{
+				err.append(", user = ");
+				err.append(port->port_user_name);
+			}
+
+			// Address could contain percent sign inside, therefore make
+			// sure error string not used as printf format string.
+			gds__log("%s", err.c_str());
 		}
 
 		inet_gen_error(releasePort, port, Arg::Gds(operation) << SYS_ERR(status));

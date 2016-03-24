@@ -1516,6 +1516,7 @@ public:
 		NODE_PRINT(printer, noAutoUndo);
 		NODE_PRINT(printer, ignoreLimbo);
 		NODE_PRINT(printer, restartRequests);
+		NODE_PRINT(printer, autoCommit);
 		NODE_PRINT(printer, lockTimeout);
 		//// FIXME-PRINT: NODE_PRINT(printer, reserveList);
 		NODE_PRINT(printer, tpb);
@@ -1537,6 +1538,7 @@ public:
 	Nullable<bool> noAutoUndo;
 	Nullable<bool> ignoreLimbo;
 	Nullable<bool> restartRequests;
+	Nullable<bool> autoCommit;
 	Nullable<USHORT> lockTimeout;
 	Firebird::Array<RestrictionOption*> reserveList;
 	Firebird::UCharBuffer tpb;

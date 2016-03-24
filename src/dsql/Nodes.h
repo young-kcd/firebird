@@ -482,17 +482,20 @@ public:
 
 	template <typename T> T* as()
 	{
-		return this && type == T::TYPE ? static_cast<T*>(this) : NULL;
+		const ExprNode* const thisPointer = this;	// avoid warning
+		return thisPointer && type == T::TYPE ? static_cast<T*>(this) : NULL;
 	}
 
 	template <typename T> const T* as() const
 	{
-		return this && type == T::TYPE ? static_cast<const T*>(this) : NULL;
+		const ExprNode* const thisPointer = this;	// avoid warning
+		return thisPointer && type == T::TYPE ? static_cast<const T*>(this) : NULL;
 	}
 
 	template <typename T> bool is() const
 	{
-		return this && type == T::TYPE;
+		const ExprNode* const thisPointer = this;	// avoid warning
+		return thisPointer && type == T::TYPE;
 	}
 
 	template <typename T, typename LegacyType> static T* as(LegacyType* node)
@@ -976,9 +979,6 @@ public:
 		return NULL;
 	}
 
-	// Used to allocate aggregate impure inside the impure area of recursive CTEs.
-	virtual void aggPostRse(thread_db* tdbb, CompilerScratch* csb);
-
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const = 0;	// pure, but defined
 	virtual void aggFinish(thread_db* tdbb, jrd_req* request) const;
 	virtual bool aggPass(thread_db* tdbb, jrd_req* request) const;
@@ -1135,7 +1135,8 @@ class ValueListNode : public TypedNode<ListExprNode, ExprNode::TYPE_VALUE_LIST>
 public:
 	ValueListNode(MemoryPool& pool, unsigned count)
 		: TypedNode<ListExprNode, ExprNode::TYPE_VALUE_LIST>(pool),
-		  items(pool)
+		  items(pool, INITIAL_CAPACITY),
+		  itemsBegin(items.begin())
 	{
 		items.resize(count);
 
@@ -1148,7 +1149,8 @@ public:
 
 	ValueListNode(MemoryPool& pool, ValueExprNode* arg1)
 		: TypedNode<ListExprNode, ExprNode::TYPE_VALUE_LIST>(pool),
-		  items(pool)
+		  items(pool, INITIAL_CAPACITY),
+		  itemsBegin(items.begin())
 	{
 		items.resize(1);
 		addDsqlChildNode((items[0] = arg1));
@@ -1156,8 +1158,13 @@ public:
 
 	ValueListNode* add(ValueExprNode* argn)
 	{
-		items.add(argn);
-		resetChildNodes();
+		FB_SIZE_T pos = items.add(argn);
+
+		if (invalidated())
+			resetChildNodes();
+		else
+			addChildNode(items[pos], items[pos]);
+
 		return this;
 	}
 
@@ -1220,6 +1227,13 @@ public:
 	}
 
 private:
+	bool invalidated()
+	{
+		bool ret = items.begin() != itemsBegin;
+		itemsBegin = items.begin();
+		return ret;
+	}
+
 	void resetChildNodes()
 	{
 		dsqlChildNodes.clear();
@@ -1227,10 +1241,16 @@ private:
 
 		for (FB_SIZE_T i = 0; i < items.getCount(); ++i)
 			addChildNode(items[i], items[i]);
+
+		itemsBegin = items.begin();
 	}
 
 public:
 	NestValueArray items;
+	NestConst<ValueExprNode>* itemsBegin;
+
+private:
+	static const unsigned INITIAL_CAPACITY = 4;
 };
 
 // Container for a list of record source expressions.
@@ -1348,8 +1368,9 @@ public:
 
 	struct ExeState
 	{
-		explicit ExeState(thread_db* tdbb)
-			: oldPool(tdbb->getDefaultPool()),
+		ExeState(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
+			: savedTdbb(tdbb),
+			  oldPool(tdbb->getDefaultPool()),
 			  oldRequest(tdbb->getRequest()),
 			  oldTransaction(tdbb->getTransaction()),
 			  errorPending(false),
@@ -1361,8 +1382,17 @@ public:
 			  prevNode(NULL),
 			  exit(false)
 		{
+			savedTdbb->setTransaction(transaction);
+			savedTdbb->setRequest(request);
 		}
 
+		~ExeState()
+		{
+			savedTdbb->setTransaction(oldTransaction);
+			savedTdbb->setRequest(oldRequest);
+		}
+
+		thread_db* savedTdbb;
 		MemoryPool* oldPool;		// Save the old pool to restore on exit.
 		jrd_req* oldRequest;		// Save the old request to restore on exit.
 		jrd_tra* oldTransaction;	// Save the old transcation to restore on exit.

@@ -468,15 +468,23 @@ bool IntlManager::initialize()
 					filename = fname->value.ToPathName();
 					configInfo = getConfigInfo(objModule);
 
-					if (!modules->exist(filename))
+					ModuleLoader::Module* mod = NULL;
+					bool exists = modules->exist(filename);
+
+					if (!exists)
 					{
-						ModuleLoader::Module* mod = ModuleLoader::loadModule(filename);
+						mod = ModuleLoader::loadModule(filename);
 						if (!mod)
 						{
 							ModuleLoader::doctorModuleExtension(filename);
-							mod = ModuleLoader::loadModule(filename);
+							exists = modules->exist(filename);
+							if (!exists)
+								mod = ModuleLoader::loadModule(filename);
 						}
+					}
 
+					if (!exists)
+					{
 						if (mod)
 						{
 							// Negotiate version
@@ -727,12 +735,15 @@ string IntlManager::getConfigInfo(const ConfigFile::Parameter* confObj)
 	for (FB_SIZE_T n = 0; n < all.getCount(); ++n)
 	{
 		const ConfigFile::Parameter& par = all[n];
+		const string parName = par.name.ToString();
+
+		if (parName == "filename")
+			continue;
 
 		if (configInfo.hasData())
-		{
 			configInfo.append(";");
-		}
-		configInfo.append(par.name.ToString() + "=" + par.value);
+
+		configInfo.append(parName + "=" + par.value);
 	}
 
 	return configInfo.ToString();

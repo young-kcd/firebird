@@ -1,3 +1,2055 @@
+ 2016-03-15 10:42  hvlad 
+   M src/remote/server/server.cpp
+Fixed "bug" CORE-5139 : mistake in comment "can't ise MutexLockGuard here"
+
+ 2016-03-14 09:11  aafemt 
+   M src/jrd/validation.cpp
+Fix false positive index missing entries on already deleted records
+
+ 2016-03-14 09:02  dimitr 
+   M src/jrd/opt.cpp
+   M src/jrd/recsrc/NestedLoopJoin.cpp
+   M src/jrd/recsrc/RecordSource.h
+Misc changes.
+
+ 2016-03-11 15:11  alexpeshkoff 
+   M examples/dbcrypt/CryptApplication.cpp
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M examples/dbcrypt/DbCrypt.cpp
+   M examples/interfaces/05.user_metadata.cpp
+   M examples/interfaces/ifaceExamples.h
+Fixed CORE-5134: Samples of dbcrypt-related plugins contain references to internal files
+
+ 2016-03-11 14:10  aafemt 
+   M src/gpre/c_cxx.cpp
+   M src/gpre/int_cxx.cpp
+   M src/gpre/obj_cxx.cpp
+Use public datatype FB_BOOLEAN for preprocessed files. Thanks to Dmitry Yemanov
+
+ 2016-03-11 08:50  dimitr 
+   M src/dsql/ExprNodes.h
+Fixed CORE-5149: LEFT JOIN incorrectly pushes COALESCE into the inner stream causing wrong results.
+
+ 2016-03-11 00:58  asfernandes 
+   M src/common/classes/Hash.cpp
+Fix for clang.
+
+ 2016-03-10 16:37  dimitr 
+   M src/common/classes/Hash.cpp
+This should fix linkage on non-Intel platforms, thanks to Dimitry Sibiryakov.
+
+ 2016-03-09 18:45  asfernandes 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-5130 - Compiler issues message about "invalid request BLR" when attempt to compile wrong DDL of view with both subquery and "WITH CHECK OPTION" in its DDL.
+
+ 2016-03-09 14:58  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+Fixed CORE-5144: Deadlock when database is encrypted or decrypted under high parallel load
+
+ 2016-03-08 18:41  aafemt 
+   M src/dsql/DdlNodes.h
+   M src/dsql/parse.y
+Disable several NOT NULL for one field (CORE-5141)
+
+ 2016-03-08 18:07  dimitr 
+   M src/dsql/DdlNodes.epp
+Fixed CORE-5133: "Alter sequence restart with" does not change the initial value.
+
+ 2016-03-08 17:10  hvlad 
+   M src/jrd/jrd.cpp
+Fixed bug CORE-5140 : Wrong error message when user tries to set number of page buffers into not supported value
+
+ 2016-03-08 10:26  aafemt 
+   M src/common/classes/Nullable.h
+   M src/dsql/DdlNodes.h
+   M src/dsql/Parser.h
+   M src/dsql/parse.y
+Position independent sequence parameters in DDL
+
+ 2016-03-07 15:51  aafemt 
+   M builds/win32/msvc12/fbtrace.vcxproj
+Correction
+
+ 2016-03-06 08:32  dimitr 
+   M autogen.sh
+   M builds/install/arch-specific/linux/makeInstallImage.sh.in
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+   M builds/install/misc/databases.conf.in
+   M builds/install/misc/firebird.conf.in
+   M builds/install/posix-common/posixLibrary.sh.in
+   M builds/posix/Makefile.in
+   M builds/posix/make.defaults
+   M builds/win32/make_all.bat
+   M builds/win32/make_boot.bat
+   M configure.ac
+   M src/CMakeLists.txt
+   M src/common/config/config.cpp
+Renamed security3.fdb -> security4.fdb.
+
+ 2016-03-06 08:17  dimitr 
+   M builds/win32/make_all.bat
+   M builds/win32/make_boot.bat
+   M builds/win32/make_examples.bat
+   A builds/win32/msvc10/Firebird.sln (from /firebird/trunk/builds/win32/msvc10/Firebird3.sln:63050)
+   D builds/win32/msvc10/Firebird3.sln
+   D builds/win32/msvc10/Firebird3Boot.sln
+   D builds/win32/msvc10/Firebird3_Examples.sln
+   A builds/win32/msvc10/FirebirdBoot.sln (from /firebird/trunk/builds/win32/msvc10/Firebird3Boot.sln:63033)
+   A builds/win32/msvc10/FirebirdCommon.props (from /firebird/trunk/builds/win32/msvc10/firebird2.props:63033)
+   A builds/win32/msvc10/FirebirdDebug.props (from /firebird/trunk/builds/win32/msvc10/firebird2debug.props:63033)
+   A builds/win32/msvc10/FirebirdExamples.sln (from /firebird/trunk/builds/win32/msvc10/Firebird3_Examples.sln:63033)
+   A builds/win32/msvc10/FirebirdRelease.props (from /firebird/trunk/builds/win32/msvc10/firebird2release.props:63033)
+   M builds/win32/msvc10/alice.vcxproj
+   M builds/win32/msvc10/btyacc.vcxproj
+   M builds/win32/msvc10/build_msg.vcxproj
+   M builds/win32/msvc10/burp.vcxproj
+   M builds/win32/msvc10/codes.vcxproj
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/empbuild.vcxproj
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/fb2control.vcxproj
+   M builds/win32/msvc10/fb_lock_print.vcxproj
+   M builds/win32/msvc10/fbguard.vcxproj
+   M builds/win32/msvc10/fbrmclib.vcxproj
+   M builds/win32/msvc10/fbserver.vcxproj
+   M builds/win32/msvc10/fbsvcmgr.vcxproj
+   M builds/win32/msvc10/fbtrace.vcxproj
+   M builds/win32/msvc10/fbtracemgr.vcxproj
+   M builds/win32/msvc10/fbudf.vcxproj
+   D builds/win32/msvc10/firebird2.props
+   D builds/win32/msvc10/firebird2debug.props
+   D builds/win32/msvc10/firebird2release.props
+   M builds/win32/msvc10/gbak.vcxproj
+   M builds/win32/msvc10/gfix.vcxproj
+   M builds/win32/msvc10/gpre.vcxproj
+   M builds/win32/msvc10/gpre_boot.vcxproj
+   M builds/win32/msvc10/gpre_common.vcxproj
+   M builds/win32/msvc10/gsec.vcxproj
+   M builds/win32/msvc10/gsplit.vcxproj
+   M builds/win32/msvc10/gstat.vcxproj
+   M builds/win32/msvc10/ib_udf.vcxproj
+   M builds/win32/msvc10/ib_util.vcxproj
+   M builds/win32/msvc10/instclient.vcxproj
+   M builds/win32/msvc10/instreg.vcxproj
+   M builds/win32/msvc10/instsvc.vcxproj
+   M builds/win32/msvc10/intl.vcxproj
+   M builds/win32/msvc10/intlbuild.vcxproj
+   M builds/win32/msvc10/isql.vcxproj
+   M builds/win32/msvc10/legacy_auth.vcxproj
+   M builds/win32/msvc10/legacy_usermanager.vcxproj
+   M builds/win32/msvc10/nbackup.vcxproj
+   M builds/win32/msvc10/qli.vcxproj
+   M builds/win32/msvc10/remote.vcxproj
+   M builds/win32/msvc10/srp.vcxproj
+   M builds/win32/msvc10/udr_engine.vcxproj
+   M builds/win32/msvc10/udrcpp_example.vcxproj
+   M builds/win32/msvc10/yvalve.vcxproj
+   A builds/win32/msvc12/Firebird.sln (from /firebird/trunk/builds/win32/msvc12/Firebird3.sln:63033)
+   D builds/win32/msvc12/Firebird3.sln
+   D builds/win32/msvc12/Firebird3Boot.sln
+   D builds/win32/msvc12/Firebird3_Examples.sln
+   A builds/win32/msvc12/FirebirdBoot.sln (from /firebird/trunk/builds/win32/msvc12/Firebird3Boot.sln:63033)
+   A builds/win32/msvc12/FirebirdCommon.props (from /firebird/trunk/builds/win32/msvc12/firebird2.props:63033)
+   A builds/win32/msvc12/FirebirdDebug.props (from /firebird/trunk/builds/win32/msvc12/firebird2debug.props:63033)
+   A builds/win32/msvc12/FirebirdExamples.sln (from /firebird/trunk/builds/win32/msvc12/Firebird3_Examples.sln:63033)
+   A builds/win32/msvc12/FirebirdRelease.props (from /firebird/trunk/builds/win32/msvc12/firebird2release.props:63033)
+   M builds/win32/msvc12/alice.vcxproj
+   M builds/win32/msvc12/btyacc.vcxproj
+   M builds/win32/msvc12/build_msg.vcxproj
+   M builds/win32/msvc12/burp.vcxproj
+   M builds/win32/msvc12/codes.vcxproj
+   M builds/win32/msvc12/common.vcxproj
+   M builds/win32/msvc12/empbuild.vcxproj
+   M builds/win32/msvc12/engine.vcxproj
+   M builds/win32/msvc12/fb2control.vcxproj
+   M builds/win32/msvc12/fb_lock_print.vcxproj
+   M builds/win32/msvc12/fbguard.vcxproj
+   M builds/win32/msvc12/fbrmclib.vcxproj
+   M builds/win32/msvc12/fbserver.vcxproj
+   M builds/win32/msvc12/fbsvcmgr.vcxproj
+   M builds/win32/msvc12/fbtrace.vcxproj
+   M builds/win32/msvc12/fbtracemgr.vcxproj
+   M builds/win32/msvc12/fbudf.vcxproj
+   D builds/win32/msvc12/firebird2.props
+   D builds/win32/msvc12/firebird2debug.props
+   D builds/win32/msvc12/firebird2release.props
+   M builds/win32/msvc12/gbak.vcxproj
+   M builds/win32/msvc12/gfix.vcxproj
+   M builds/win32/msvc12/gpre.vcxproj
+   M builds/win32/msvc12/gpre_boot.vcxproj
+   M builds/win32/msvc12/gpre_common.vcxproj
+   M builds/win32/msvc12/gsec.vcxproj
+   M builds/win32/msvc12/gsplit.vcxproj
+   M builds/win32/msvc12/gstat.vcxproj
+   M builds/win32/msvc12/ib_udf.vcxproj
+   M builds/win32/msvc12/ib_util.vcxproj
+   M builds/win32/msvc12/instclient.vcxproj
+   M builds/win32/msvc12/instreg.vcxproj
+   M builds/win32/msvc12/instsvc.vcxproj
+   M builds/win32/msvc12/intl.vcxproj
+   M builds/win32/msvc12/intlbuild.vcxproj
+   M builds/win32/msvc12/isql.vcxproj
+   M builds/win32/msvc12/legacy_auth.vcxproj
+   M builds/win32/msvc12/legacy_usermanager.vcxproj
+   M builds/win32/msvc12/nbackup.vcxproj
+   M builds/win32/msvc12/qli.vcxproj
+   M builds/win32/msvc12/remote.vcxproj
+   M builds/win32/msvc12/srp.vcxproj
+   M builds/win32/msvc12/udr_engine.vcxproj
+   M builds/win32/msvc12/udrcpp_example.vcxproj
+   M builds/win32/msvc12/yvalve.vcxproj
+   M builds/win32/msvc7/gds32.vcproj
+   A builds/win32/msvc8/Firebird.sln (from /firebird/trunk/builds/win32/msvc8/Firebird3.sln:63033)
+   D builds/win32/msvc8/Firebird3.sln
+   D builds/win32/msvc8/Firebird3Boot.sln
+   D builds/win32/msvc8/Firebird3_Examples.sln
+   A builds/win32/msvc8/FirebirdBoot.sln (from /firebird/trunk/builds/win32/msvc8/Firebird3Boot.sln:63033)
+   A builds/win32/msvc8/FirebirdCommon.vsprops (from /firebird/trunk/builds/win32/msvc8/firebird2.vsprops:63033)
+   A builds/win32/msvc8/FirebirdDebug.vsprops (from /firebird/trunk/builds/win32/msvc8/firebird2debug.vsprops:63033)
+   A builds/win32/msvc8/FirebirdExamples.sln (from /firebird/trunk/builds/win32/msvc8/Firebird3_Examples.sln:63033)
+   A builds/win32/msvc8/FirebirdRelease.vsprops (from /firebird/trunk/builds/win32/msvc8/firebird2release.vsprops:63033)
+   M builds/win32/msvc8/alice.vcproj
+   M builds/win32/msvc8/btyacc.vcproj
+   M builds/win32/msvc8/build_msg.vcproj
+   M builds/win32/msvc8/burp.vcproj
+   M builds/win32/msvc8/codes.vcproj
+   M builds/win32/msvc8/common.vcproj
+   M builds/win32/msvc8/empbuild.vcproj
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc8/fb2control.vcproj
+   M builds/win32/msvc8/fb_lock_print.vcproj
+   M builds/win32/msvc8/fbguard.vcproj
+   M builds/win32/msvc8/fbrmclib.vcproj
+   M builds/win32/msvc8/fbserver.vcproj
+   M builds/win32/msvc8/fbsvcmgr.vcproj
+   M builds/win32/msvc8/fbtrace.vcproj
+   M builds/win32/msvc8/fbtracemgr.vcproj
+   M builds/win32/msvc8/fbudf.vcproj
+   D builds/win32/msvc8/firebird2.vsprops
+   D builds/win32/msvc8/firebird2debug.vsprops
+   D builds/win32/msvc8/firebird2release.vsprops
+   M builds/win32/msvc8/gbak.vcproj
+   M builds/win32/msvc8/gfix.vcproj
+   M builds/win32/msvc8/gpre.vcproj
+   M builds/win32/msvc8/gpre_boot.vcproj
+   M builds/win32/msvc8/gpre_common.vcproj
+   M builds/win32/msvc8/gsec.vcproj
+   M builds/win32/msvc8/gsplit.vcproj
+   M builds/win32/msvc8/gstat.vcproj
+   M builds/win32/msvc8/ib_udf.vcproj
+   M builds/win32/msvc8/ib_util.vcproj
+   M builds/win32/msvc8/instclient.vcproj
+   M builds/win32/msvc8/instreg.vcproj
+   M builds/win32/msvc8/instsvc.vcproj
+   M builds/win32/msvc8/intl.vcproj
+   M builds/win32/msvc8/intlbuild.vcproj
+   M builds/win32/msvc8/isql.vcproj
+   M builds/win32/msvc8/legacy_usermanager.vcproj
+   M builds/win32/msvc8/nbackup.vcproj
+   M builds/win32/msvc8/qli.vcproj
+   M builds/win32/msvc8/remote.vcproj
+   M builds/win32/msvc8/srp.vcproj
+   M builds/win32/msvc8/udr_engine.vcproj
+   M builds/win32/msvc8/udrcpp_example.vcproj
+   M builds/win32/msvc8/yvalve.vcproj
+   A builds/win32/msvc9/Firebird.sln (from /firebird/trunk/builds/win32/msvc9/Firebird3.sln:63033)
+   D builds/win32/msvc9/Firebird3.sln
+   D builds/win32/msvc9/Firebird3Boot.sln
+   D builds/win32/msvc9/Firebird3_Examples.sln
+   A builds/win32/msvc9/FirebirdBoot.sln (from /firebird/trunk/builds/win32/msvc9/Firebird3Boot.sln:63033)
+   A builds/win32/msvc9/FirebirdCommon.vsprops (from /firebird/trunk/builds/win32/msvc9/firebird2.vsprops:63033)
+   A builds/win32/msvc9/FirebirdDebug.vsprops (from /firebird/trunk/builds/win32/msvc9/firebird2debug.vsprops:63033)
+   A builds/win32/msvc9/FirebirdExamples.sln (from /firebird/trunk/builds/win32/msvc9/Firebird3_Examples.sln:63033)
+   A builds/win32/msvc9/FirebirdRelease.vsprops (from /firebird/trunk/builds/win32/msvc9/firebird2release.vsprops:63033)
+   M builds/win32/msvc9/alice.vcproj
+   M builds/win32/msvc9/btyacc.vcproj
+   M builds/win32/msvc9/build_msg.vcproj
+   M builds/win32/msvc9/burp.vcproj
+   M builds/win32/msvc9/codes.vcproj
+   M builds/win32/msvc9/common.vcproj
+   M builds/win32/msvc9/empbuild.vcproj
+   M builds/win32/msvc9/engine.vcproj
+   M builds/win32/msvc9/fb2control.vcproj
+   M builds/win32/msvc9/fb_lock_print.vcproj
+   M builds/win32/msvc9/fbguard.vcproj
+   M builds/win32/msvc9/fbrmclib.vcproj
+   M builds/win32/msvc9/fbserver.vcproj
+   M builds/win32/msvc9/fbsvcmgr.vcproj
+   M builds/win32/msvc9/fbtrace.vcproj
+   M builds/win32/msvc9/fbtracemgr.vcproj
+   M builds/win32/msvc9/fbudf.vcproj
+   D builds/win32/msvc9/firebird2.vsprops
+   D builds/win32/msvc9/firebird2debug.vsprops
+   D builds/win32/msvc9/firebird2release.vsprops
+   M builds/win32/msvc9/gbak.vcproj
+   M builds/win32/msvc9/gfix.vcproj
+   M builds/win32/msvc9/gpre.vcproj
+   M builds/win32/msvc9/gpre_boot.vcproj
+   M builds/win32/msvc9/gpre_common.vcproj
+   M builds/win32/msvc9/gsec.vcproj
+   M builds/win32/msvc9/gsplit.vcproj
+   M builds/win32/msvc9/gstat.vcproj
+   M builds/win32/msvc9/ib_udf.vcproj
+   M builds/win32/msvc9/ib_util.vcproj
+   M builds/win32/msvc9/instclient.vcproj
+   M builds/win32/msvc9/instreg.vcproj
+   M builds/win32/msvc9/instsvc.vcproj
+   M builds/win32/msvc9/intl.vcproj
+   M builds/win32/msvc9/intlbuild.vcproj
+   M builds/win32/msvc9/isql.vcproj
+   M builds/win32/msvc9/legacy_usermanager.vcproj
+   M builds/win32/msvc9/nbackup.vcproj
+   M builds/win32/msvc9/qli.vcproj
+   M builds/win32/msvc9/remote.vcproj
+   M builds/win32/msvc9/srp.vcproj
+   M builds/win32/msvc9/udr_engine.vcproj
+   M builds/win32/msvc9/udrcpp_example.vcproj
+   M builds/win32/msvc9/yvalve.vcproj
+Removed filename dependencies on FB version, to avoid renaming them with the every release. Cleaned up the MSVC6 remainings.
+
+ 2016-03-05 17:40  dimitr 
+   M src/common/CRC32C.cpp
+   M src/common/classes/Hash.cpp
+   M src/common/classes/Hash.h
+   M src/common/db_alias.cpp
+   M src/jrd/Mapping.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/lck.cpp
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/lock/lock.cpp
+Misc refactoring:
+1) Renamed Hash class to HashTable
+2) Reversed data/length arguments
+3) Moved hash() routine to its own class/namespace
+4) Fixed the license text
+
+ 2016-03-05 13:03  aafemt 
+   M src/common/config/config.h
+Correction
+
+ 2016-03-05 12:28  aafemt 
+   M builds/posix/make.rules
+   M builds/posix/prefix.linux
+   M builds/posix/prefix.linux_amd64
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/common.vcxproj.filters
+   M builds/win32/msvc12/common.vcxproj
+   M builds/win32/msvc12/common.vcxproj.filters
+   A src/common/CRC32C.cpp
+   A src/common/classes/Hash.cpp
+   M src/common/classes/Hash.h
+   M src/jrd/lck.cpp
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/lock/lock.cpp
+   M src/lock/print.cpp
+Optimized hash function for lock manager and hash join
+
+ 2016-03-05 03:39  asfernandes 
+   M src/gpre/c_cxx.cpp
+Make the generated code compatible with gcc 6 in C++-14 mode.
+
+ 2016-03-04 09:00  paul_reeves 
+   M builds/install/arch-specific/win32/BuildExecutableInstall.bat
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+   M builds/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+   M builds/install/arch-specific/win32/ba/Instalacija_ProcitajMe.txt
+   M builds/install/arch-specific/win32/fr/installation_lisezmoi.txt
+   M builds/install/arch-specific/win32/installation_readme.txt
+   M builds/install/arch-specific/win32/ru/installation_readme.txt
+   A builds/win32/msvc10/VCCRT_Shared_Body.wxi
+   A builds/win32/msvc10/VCCRT_Shared_Header.wxi
+   A builds/win32/msvc10/VCCRT_Win32.wxi
+   A builds/win32/msvc10/VCCRT_Win32.wxs
+   A builds/win32/msvc10/VCCRT_x64.wxi
+   A builds/win32/msvc10/VCCRT_x64.wxs
+Sync recent windows installer changes for fb3 into trunk
+
+ 2016-03-03 22:52  asfernandes 
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M src/common/call_service.cpp
+Warnings.
+
+ 2016-03-03 15:04  paulbeach 
+   M src/jrd/recsrc/HashJoin.cpp
+Fix qsort_r for Darwin
+
+ 2016-03-03 15:03  alexpeshkoff 
+   M doc/Using_OO_API.html
+Work in progress
+
+ 2016-03-03 11:57  paulbeach 
+   M extern/cloop/src/tests/test1/CTest.c
+Reverse Cloop change (LibreeOffice), until it can be examined properly.
+
+ 2016-03-03 11:44  aafemt 
+   M src/common/pretty.cpp
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/gpre/c_cxx.cpp
+   M src/gpre/cme.cpp
+   M src/gpre/cmp.cpp
+   M src/gpre/int_cxx.cpp
+   M src/gpre/obj_cxx.cpp
+   M src/gpre/std/gpre_meta.epp
+Boolean datatype in gpre C++ module
+
+ 2016-03-02 15:33  aafemt 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+   M src/jrd/vio.cpp
+   M src/jrd/vio_proto.h
+Savepoints refactoring that fixes CORE-4701, CORE-4424 and CORE-4483
+
+ 2016-03-02 15:23  paulbeach 
+   M extern/cloop/src/tests/test1/CTest.c
+malloc.h is no longer needed (LibreOffice)
+
+ 2016-02-29 20:01  dimitr 
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-5122: Expression index may not be used by the optimizer if created and used in different connection charsets.
+
+ 2016-02-28 09:14  dimitr 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/parse.y
+CORE-5119: Support autocommit mode in SET TRANSACTION statement.
+
+ 2016-02-28 08:45  dimitr 
+   M src/jrd/recsrc/NestedLoopJoin.cpp
+Misc: remove the redundant space in the explained plan output.
+
+ 2016-02-28 08:41  dimitr 
+   M src/misc/writeBuildNum.sh
+Set up the new version.
+
+ 2016-02-28 08:04  dimitr 
+   M doc/WhatsNew
+Set up the new version.
+
+ 2016-02-27 07:15  dimitr 
+   M doc/WhatsNew
+Updated the docs for RC2.
+
+ 2016-02-26 17:19  dimitr 
+   M src/jrd/dfw.epp
+   M src/jrd/irq.h
+Split a 5-way join into two smaller joins to help the optimizer in cases when statistics is outdated (index creation time suffers when there are many tables/indices). While being there, cache requests that weren't cached yet.
+
+ 2016-02-26 16:10  alexpeshkoff 
+   M doc/Using_OO_API.html
+WIP on docs
+
+ 2016-02-26 12:55  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+   M src/jrd/jrd.cpp
+   M src/jrd/nbak.cpp
+   M src/lock/lock.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+Fixed some asserts and segfaults in crypto manager
+Disable simultaneous nbackup & encrypt/decrypt operation
+
+ 2016-02-25 09:20  hvlad 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/exe.h
+This should fix known issues with MERGE and stable cursor (see CORE-3362).
+Thanks to Dmitry for idea
+
+ 2016-02-25 02:11  asfernandes 
+   M src/gpre/gpre.cpp
+Convert the file to UTF-8 as grep thinks it's a binary file.
+
+ 2016-02-25 01:50  asfernandes 
+   M src/dsql/dsql.cpp
+   M src/jrd/tpc.cpp
+Misc.
+
+ 2016-02-25 01:07  asfernandes 
+   M doc/Using_OO_API.html
+Typos.
+
+ 2016-02-24 20:11  dimitr 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/jrd/Optimizer.cpp
+Checking the datatype at compile time is unreliable: some nodes return one type at compile time and another type at runtime, thus causing unexpectedly missing casts. I'm moving the check to runtime, this should fix the remaining regressions (fingers crossed).
+
+ 2016-02-24 15:32  alexpeshkoff 
+   A doc/Using_OO_API.html
+Started work on new API docs
+
+ 2016-02-23 20:49  aafemt 
+   M src/dsql/dsql.cpp
+Get secondary error code isc_dsql_sqlda_err back, thanks to Dmitry Yemanov
+
+ 2016-02-23 16:54  alexpeshkoff 
+   A examples/dbcrypt/cryptDb.pas
+Sample of writing plugin using pascal
+
+ 2016-02-23 16:53  alexpeshkoff 
+   M examples/interfaces/01.create.pas
+Misc changes in example
+
+ 2016-02-23 16:18  aafemt 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/dsql.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Some more cases of CORE-5112 as pointed by Dmitry Yemanov
+
+ 2016-02-23 09:52  dimitr 
+   M src/dsql/ExprNodes.cpp
+Removed "cast no-op" extensions as they break many tests, e.g. CAST('A' as CHAR(10)) remains CHAR(1) instead of being padded up to CHAR(10). Let's no-op only really equal descriptors for the time being.
+
+ 2016-02-23 09:10  dimitr 
+   M src/dsql/ExprNodes.cpp
+And another postfix for CORE-5097, it resolves regression for core_3545.fbt.
+Adriano, please review.
+
+ 2016-02-23 08:20  dimitr 
+   M src/jrd/Optimizer.cpp
+Yet another postfix for CORE-5097, it resolves regressions for core_1173.fbt and core_1525.fbt.
+
+ 2016-02-22 16:20  paul_reeves 
+   M builds/install/arch-specific/win32/ba/Instalacija_ProcitajMe.txt
+   M builds/install/arch-specific/win32/ba/ProcitajMe.txt
+   M builds/install/arch-specific/win32/ba/custom_messages_ba.inc
+Add Bosnian i18n files for the Windows binary installer. 
+With thanks to Fikret Hasovic
+
+ 2016-02-22 08:27  dimitr 
+   M builds/install/arch-specific/win32/installation_readme.txt
+Misc adjustments.
+
+ 2016-02-22 08:19  dimitr 
+   M builds/install/arch-specific/win32/ru/Readme.txt
+   M builds/install/arch-specific/win32/ru/custom_messages_ru.inc
+   M builds/install/arch-specific/win32/ru/installation_readme.txt
+Russian translation for the Windows installer.
+
+ 2016-02-21 09:02  dimitr 
+   M src/jrd/Optimizer.cpp
+Fixed the comment.
+
+ 2016-02-21 08:54  dimitr 
+   M src/jrd/Optimizer.cpp
+Corrected my old commit re. optimization of the system requests.
+
+ 2016-02-20 15:34  aafemt 
+   M builds/win32/clean_all.bat
+   M builds/win32/make_boot.bat
+   M src/gpre/languages/fbrmclib.cpp
+   M src/include/firebird.h
+Use autoconfig_msvc.h from where it is
+
+ 2016-02-19 10:39  alexpeshkoff 
+   M examples/dbcrypt/CryptKeyHolder.cpp
+Fixed bug in a sample - thanks to Adriano
+
+ 2016-02-18 14:52  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+Fixed regression with CORE-1839 after fix for CORE-5097.
+
+ 2016-02-17 09:21  hvlad 
+   M src/jrd/jrd.cpp
+   M src/jrd/tpc.cpp
+   M src/jrd/tpc_proto.h
+   M src/jrd/tra.cpp
+   M src/jrd/tra_proto.h
+Front ported for CORE-5067 : Blocking new connections as a consequence of the too long sweep security2.fdb
+
+ 2016-02-17 01:36  asfernandes 
+   M src/isql/show.epp
+Fixed the problem I inserted in a review.
+
+ 2016-02-17 01:36  asfernandes 
+   M src/isql/show.epp
+Fixed output of SHOW PROCEDURES/FUNCTIONS.
+
+ 2016-02-16 13:47  makowski 
+   M builds/install/arch-specific/win32/fr/custom_messages_fr.inc
+   M builds/install/arch-specific/win32/fr/installation_lisezmoi.txt
+   M builds/install/arch-specific/win32/fr/lisezmoi.txt
+update French files for Windows install
+
+ 2016-02-15 02:53  asfernandes 
+   M builds/install/arch-specific/win32/installation_readme.txt
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M examples/dbcrypt/DbCrypt.cpp
+   M src/dsql/parse.y
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/sdw.cpp
+   M src/jrd/vio.cpp
+Misc.
+
+ 2016-02-15 02:53  asfernandes 
+   M src/msgs/facilities2.sql
+Correction.
+
+ 2016-02-14 13:10  aafemt 
+   M builds/win32/create_msgs.bat
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/yvalve/why.cpp
+Messages for CORE-5112
+
+ 2016-02-12 13:13  hvlad 
+   M src/jrd/vio.cpp
+Simplest fix for bug CORE-5110 : False PK\FK violation could be reported when attachment used isc_dpb_no_garbage_collect flag
+
+ 2016-02-11 18:10  asfernandes 
+   M src/dsql/DdlNodes.epp
+Fixed CORE-2923 - Problem with dependencies with views.
+
+ 2016-02-10 17:53  asfernandes 
+   M src/jrd/dfw.epp
+Fixed CORE-5107 - set autoddl off and sequence of: ( create view V as select * from T; alter view V as select 1 x from rdb$database; drop view V; ) leads to server crash.
+
+ 2016-02-10 14:25  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+   M builds/install/arch-specific/win32/Readme.txt
+   M builds/install/arch-specific/win32/custom_messages.inc
+   M builds/install/arch-specific/win32/i18n_readme.txt
+   M builds/install/arch-specific/win32/installation_readme.txt
+Miscellaneous changes to prepare windows installer for RC2
+
+ 2016-02-07 07:44  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+Postfix for CORE-5100, thanks to Dmitry Sibiryakov
+
+ 2016-02-06 07:37  dimitr 
+   M doc/WhatsNew
+Updated the docs for RC2.
+
+ 2016-02-05 15:21  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+   M src/jrd/Database.h
+   M src/jrd/jrd.cpp
+Fixed CORE-5105: Deadlocks when database is initially encrypted
+
+ 2016-02-05 15:13  alexpeshkoff 
+   M src/jrd/cch.cpp
+   M src/jrd/cch_proto.h
+   M src/jrd/sdw.cpp
+Postfix for CORE-5100: avoid races caused by temporary changed bdb_buffer
+
+ 2016-02-05 15:09  hvlad 
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/IscDS.cpp
+Missed piece for CORE-5104, thanks to Alex again
+
+ 2016-02-05 15:05  hvlad 
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/IscDS.cpp
+Fixed bug CORE-5104 : External data source selects became slow
+Thanks to Alex
+
+ 2016-02-05 11:00  dimitr 
+   M src/dsql/ExprNodes.cpp
+Postfix to address the regression found in the recent commit for CORE-5097.
+
+ 2016-02-04 14:28  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/met.epp
+Move the code and add the CAST only when required, per Dmitry comment.
+
+ 2016-02-04 10:33  hvlad 
+   M src/jrd/cch.cpp
+Fixed bug CORE-5101 : Backup restore is slow in FB3 when the database contains many small tables with indices
+
+ 2016-02-04 09:22  alexpeshkoff 
+   M examples/dbcrypt/DbCrypt.cpp
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/jrd/CryptoManager.cpp
+Postfix for CORE-5100: restored binary compatibility with crypt plugins for RC1
+
+ 2016-02-03 19:41  hvlad 
+   M src/common/classes/FpeControl.h
+Frontport code from v2.5. It should fix CORE-5102 : FB3.0 RC1 Fbclient.dll function calls modify FPU control word
+
+ 2016-02-03 15:22  asfernandes 
+   M src/jrd/met.epp
+Fixed CORE-5097 - COMPUTED-BY expressions are not converted to their field type inside the engine.
+
+ 2016-02-03 15:02  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+Convert install script to UTF-8
+Do not assign name of chosen installation language to BelevedLabel as, at least for the moment non-ascii characters get mangled.
+Disable support for Bosnian at install time (temporarily, I hope.)
+
+ 2016-02-03 14:59  paul_reeves 
+   M builds/install/arch-specific/win32/custom_messages.inc
+   M builds/install/arch-specific/win32/i18n_readme.txt
+Convert i18n files to UTF-8 with BOM
+
+ 2016-02-03 14:57  paul_reeves 
+   M builds/install/arch-specific/win32/ba/Instalacija_ProcitajMe.txt
+   M builds/install/arch-specific/win32/ba/ProcitajMe.txt
+   M builds/install/arch-specific/win32/ba/custom_messages_ba.inc
+   M builds/install/arch-specific/win32/cz/ctime.txt
+   M builds/install/arch-specific/win32/cz/custom_messages_cz.inc
+   M builds/install/arch-specific/win32/cz/instalace_ctime.txt
+   M builds/install/arch-specific/win32/de/custom_messages_de.inc
+   M builds/install/arch-specific/win32/de/installation_liesmich.txt
+   M builds/install/arch-specific/win32/de/liesmich.txt
+   M builds/install/arch-specific/win32/es/custom_messages_es.inc
+   M builds/install/arch-specific/win32/es/leame.txt
+   M builds/install/arch-specific/win32/es/leame_instalacion.txt
+   M builds/install/arch-specific/win32/fr/custom_messages_fr.inc
+   M builds/install/arch-specific/win32/fr/documents-en-francais.txt
+   M builds/install/arch-specific/win32/fr/installation_lisezmoi.txt
+   M builds/install/arch-specific/win32/fr/lisezmoi.txt
+   M builds/install/arch-specific/win32/hu/custom_messages_hu.inc
+   M builds/install/arch-specific/win32/hu/olvass_el.txt
+   M builds/install/arch-specific/win32/hu/telepitesi_segedlet.txt
+   M builds/install/arch-specific/win32/it/custom_messages_it.inc
+   M builds/install/arch-specific/win32/it/leggimi.txt
+   M builds/install/arch-specific/win32/it/leggimi_installazione.txt
+   M builds/install/arch-specific/win32/pl/custom_messages_pl.inc
+   M builds/install/arch-specific/win32/pl/czytajto.txt
+   M builds/install/arch-specific/win32/pl/instalacja_czytajto.txt
+   M builds/install/arch-specific/win32/pt/custom_messages_pt.inc
+   M builds/install/arch-specific/win32/pt/instalacao_leia-me.txt
+   M builds/install/arch-specific/win32/pt/leia-me.txt
+   M builds/install/arch-specific/win32/ru/Readme.txt
+   M builds/install/arch-specific/win32/ru/installation_readme.txt
+   M builds/install/arch-specific/win32/si/custom_messages_si.inc
+   M builds/install/arch-specific/win32/si/instalacija_precitajMe.txt
+Convert i18n files to UTF-8 with BOM
+
+ 2016-02-03 14:15  alexpeshkoff 
+   M doc/sql.extensions/README.ddl.txt
+Documented CORE-5100
+
+ 2016-02-03 13:20  alexpeshkoff 
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M examples/dbcrypt/DbCrypt.cpp
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/common/classes/ClumpletReader.cpp
+   M src/common/classes/ClumpletReader.h
+   M src/common/classes/ClumpletWriter.cpp
+   M src/common/classes/ClumpletWriter.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/parse.y
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+   M src/jrd/ods.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/utilities/gstat/ppg.cpp
+Implemented CORE-5100: Improve control over database crypt keys
+
+ 2016-02-02 22:26  hvlad 
+   M src/dsql/StmtNodes.cpp
+It should fix bug CORE-5087 : Database shutdown can cause server crash if multiple attachments run EXECUTE STATEMENT
+
+ 2016-02-02 14:46  asfernandes 
+   M src/isql/extract.epp
+Fixed CORE-5089 - Metadata extration (ISQL -X): "CREATE PROCEDURE/FUNCTION" statement contains reference to column of table(s) that not yet exists if this procedure had parameter of such type when it was created.
+
+ 2016-02-01 16:51  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/parse.y
+Fixed CORE-5093 - Alter computed field type does not work.
+
+ 2016-02-01 16:16  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+   M src/jrd/cch.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/sdw.cpp
+Fixed CORE-5044: Pages are encrypted for each shadow separately
+
+ 2016-02-01 16:13  alexpeshkoff 
+   M examples/interfaces/05.user_metadata.cpp
+comment
+
+ 2016-02-01 15:05  dimitr 
+   M src/jrd/jrd.cpp
+Fixed (or worked around, if you wish) redundant UTF8->system conversions happening if isc_dpb_utf8_filename tag is located in the middle of DPB.
+
+ 2016-02-01 14:54  dimitr 
+   M src/auth/trusted/AuthSspi.cpp
+Fixed (on behalf of Alex) CORE-4885: Error retrieving current user name when using Windows trusted authentication and OS user name contains non-ASCII characters.
+
+ 2016-01-31 23:57  asfernandes 
+   M src/isql/extract.epp
+Fixed CORE-5092 - ISQL extract command lose COMPUTED BY field types.
+
+ 2016-01-31 23:56  asfernandes 
+   M src/isql/extract.epp
+Revert this solution for CORE-5089 as it doesn't work for packages.
+
+ 2016-01-31 10:45  dimitr 
+   M src/common/isc_file.cpp
+Fix for semicolons embedded into the []-styled IPv6 address.
+
+ 2016-01-31 00:09  asfernandes 
+   M src/common/security.cpp
+Avoid constant duplication.
+
+ 2016-01-31 00:06  asfernandes 
+   M src/common/security.cpp
+   M src/isql/show.epp
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/blb.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/extds/ValidatePassword.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/ods.h
+Misc.
+
+ 2016-01-30 23:40  asfernandes 
+   M examples/interfaces/05.user_metadata.cpp
+Correction.
+
+ 2016-01-29 15:46  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+Simplified code - thanks to Vlad
+
+ 2016-01-29 14:51  asfernandes 
+   M src/isql/extract.epp
+Fixed CORE-5089 - Metadata extration (ISQL -X): "CREATE PROCEDURE/FUNCTION"  statement contains reference to column of table(s) that not yet exists if this procedure had parameter of such type when it was created.
+
+ 2016-01-29 14:12  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+Fixed regression in CryptoManager added after RC1 - avoid reading incorrect header when database is locked by nbackup
+
+ 2016-01-28 17:00  alexpeshkoff 
+   M src/yvalve/MasterImplementation.cpp
+Fixed CORE-5088: Segfault when 'gstat -h' is closing
+
+ 2016-01-28 11:40  paul_reeves 
+   M builds/install/arch-specific/win32/ru/custom_messages_ru.inc
+Add BOM to file. Hopefully this finally fixes CORE-5002
+
+ 2016-01-27 11:11  hvlad 
+   M src/jrd/btr.cpp
+   M src/jrd/btr.h
+   M src/jrd/idx.cpp
+   M src/jrd/lck.cpp
+   M src/jrd/lck.h
+   M src/jrd/ods.h
+   M src/jrd/validation.cpp
+   M src/utilities/gstat/dba.epp
+Remove LCK_idx_reserve introduced with 64-bit transaction ID. 
+Restore original logic in BTR_next_index (wait for tx lock when index build is in progress). 
+Use irt_repeat::irt_root to store high 32 bit of tra_num. 
+It also fixed deadlock related with LCK_idx_reserve lock (reported privately).
+
+ 2016-01-25 18:34  alexpeshkoff 
+   A examples/interfaces/05.user_metadata.cpp
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/yvalve/YObjects.h
+   M src/yvalve/utl.cpp
+Implemented CORE-5083: Provide method to correcty set offsets in implemented by user IMessageMetadata
+
+ 2016-01-25 14:17  hvlad 
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/extds/ValidatePassword.cpp
+   M src/jrd/extds/ValidatePassword.h
+Cleanup
+
+ 2016-01-25 14:03  hvlad 
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M builds/win32/msvc12/engine.vcxproj
+   M builds/win32/msvc12/engine.vcxproj.filters
+Update VC10 and VC12 builds
+
+ 2016-01-25 13:52  alexpeshkoff 
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/IscDS.cpp
+   A src/jrd/extds/ValidatePassword.cpp
+   A src/jrd/extds/ValidatePassword.h
+Postfix for CORE-5082: reorganized sources according to Vlad request
+
+ 2016-01-25 07:17  dimitr 
+   M doc/WhatsNew
+Updated the docs for RC2.
+
+ 2016-01-24 21:14  dimitr 
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/Database.h
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/Monitoring.cpp
+   M src/jrd/Monitoring.h
+   M src/jrd/RuntimeStatistics.h
+   M src/jrd/cch.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/sort.cpp
+This should fix the races while accessing the relation statistics inside dbb_stats. Reads/writes/fetches/marks are incremented (CCH) and read (INF) unprotected, as it's crash safe and read skews are acceptable. Other counters (both global and relation wise) are protected with a mutex. They're incremented on demand based on the attachment counters (via diffs). While being there, cleaned up the currently unused performance counters.
+
+ 2016-01-24 21:02  dimitr 
+   M src/lock/lock.cpp
+Reverted back to the single-pass algorithm used in v2.x. This should work around the issue with non-zero-timeout shutdown in SC.
+
+ 2016-01-24 17:58  alexpeshkoff 
+   M src/common/classes/GetPlugins.h
+   M src/common/security.cpp
+   M src/common/security.h
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/InternalDS.h
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/extds/IscDS.h
+   M src/remote/remot_proto.h
+   M src/remote/remote.cpp
+Fixed CORE-5082: Server does not validate correctness of user/password pair provided in EXECUTE STATEMENT operator
+
+ 2016-01-24 17:53  alexpeshkoff 
+   M src/remote/client/interface.cpp
+Use correct error code
+
+ 2016-01-24 17:51  alexpeshkoff 
+   M src/include/firebird/FirebirdInterface.idl
+Drop old wrong comment
+
+ 2016-01-21 11:00  hvlad 
+   M src/jrd/blb.cpp
+Fixed bug CORE-5078 : "Invalid BLOB ID" error
+
+ 2016-01-21 00:25  robocop 
+   M src/jrd/CryptoManager.h
+Misc.
+
+ 2016-01-21 00:25  robocop 
+   M src/isql/show.epp
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/inf_pub.h
+Typo.
+
+ 2016-01-20 10:05  hvlad 
+   M src/jrd/Attachment.h
+   M src/jrd/jrd.cpp
+Fixed bug CORE-5075 : Triger on DISCONNECT with dynamic SQL (ES 'insert into ...'): 1) does not work in 3.0
+Also, log exception happens in ON DISCONNECT trigger.
+
+ 2016-01-18 17:30  alexpeshkoff 
+   M src/isql/isql.h
+   M src/isql/show.epp
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+   M src/jrd/inf.cpp
+   M src/jrd/inf_pub.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+Fixed CORE-5077: ISQL does not show encryption status of database
+
+ 2016-01-17 01:46  asfernandes 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/pag.cpp
+   M src/misc/pascal/Pascal.implementation.pas
+   M src/misc/pascal/Pascal.interface.pas
+   M src/remote/inet.cpp
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/yvalve/why.cpp
+Misc.
+
+ 2016-01-17 01:14  asfernandes 
+   M examples/interfaces/01.create.pas
+Missing dispose.
+
+ 2016-01-17 01:10  asfernandes 
+   M src/yvalve/utl.cpp
+Misc.
+
+ 2016-01-14 23:09  hvlad 
+   M src/jrd/jrd.cpp
+Fixed crash reason (see CORE-5075).
+Error on disconnect requires more analyzing.
+
+ 2016-01-13 13:53  asfernandes 
+   M extern/icu/Readme.txt
+   M extern/icu/icu.exe
+Add missing (GBK, for example) character sets to our ICU data file.
+
+ 2016-01-13 10:08  dimitr 
+   M src/jrd/recsrc/HashJoin.cpp
+Minor correction.
+
+ 2016-01-13 09:35  hvlad 
+   M src/remote/inet.cpp
+IPv6 address could contain percent sign inside, therefore make sure error string not used as vfprintf format string by gds__log().
+See also comments at CORE-2493.
+
+ 2016-01-11 14:23  alexpeshkoff 
+   M builds/install/arch-specific/linux/makeInstallImage.sh.in
+   M src/misc/upgrade/v3.0/security_database.txt
+Fixed CORE-4996: Need some SECURITY2.FDB --> SECURITY3.FDB upgrade feature, placed new files into linux package
+
+ 2016-01-11 13:46  hvlad 
+   M src/remote/inet.cpp
+Addition to the patch for CORE-2493.
+Always ask for numeric form of service name
+
+ 2016-01-11 13:38  alexpeshkoff 
+   A src/misc/upgrade/v3.0
+   A src/misc/upgrade/v3.0/security_database.sql
+   A src/misc/upgrade/v3.0/security_database.txt
+Fixed CORE-4996: Need some SECURITY2.FDB --> SECURITY3.FDB upgrade feature
+
+ 2016-01-10 14:20  hvlad 
+   M src/remote/inet.cpp
+Improvement CORE-2493 : Append the IP address of the remote host to error messages in firebird.log for TCP connections
+
+ 2016-01-06 18:20  asfernandes 
+   M src/dsql/dsql.cpp
+   M src/jrd/SysFunction.cpp
+Revert to the bad (that works) commit for CORE-5062. It's difficult to work when both the original architects and the users do bad things in relation to CHAR and MBCS.
+
+ 2016-01-06 18:20  asfernandes 
+   M src/include/firebird/Message.h
+Fix for messages with FB_INTL_CHAR and FB_INTL_VARCHAR macros.
+
+ 2016-01-03 20:20  dimitr 
+   M src/isql/isql.epp
+Fixed (hopefully) my last commit re. plan output.
+
+ 2016-01-03 15:50  asfernandes 
+   M src/dsql/dsql.cpp
+Fixed CORE-5062 - CHAR_TO_UUID on column with index throws expression evaluation not supported Human readable UUID argument for CHAR_TO_UUID must be of exact length 36.
+
+ 2016-01-02 14:41  alexpeshkoff 
+   M src/jrd/scl.epp
+Fixed CORE-5060: Cannot CREATE VIEW that selects from a system table, despite having all grants
+
+ 2016-01-02 12:08  dimitr 
+   M src/dsql/dsql.cpp
+   M src/isql/isql.epp
+   M src/isql/isql.h
+Fixed CORE-5061: ISQL plan output is unexpectedly truncated after a query is simplified to become shorter.
+
+ 2016-01-02 11:41  alexpeshkoff 
+   M src/jrd/os/posix/unix.cpp
+Postfix for CORE-5056: better error reporting, thanks to Claudio
+
+ 2016-01-02 11:37  hvlad 
+   M src/isql/isql.h
+   M src/isql/show.epp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+Improvement CORE-5063 : Make "show database" command to show numbers of used and free pages in database
+
+ 2016-01-02 11:28  hvlad 
+   M src/jrd/inf.cpp
+   M src/jrd/inf_pub.h
+   M src/jrd/pag.cpp
+   M src/jrd/pag.h
+New feature CORE-1538 :  Add an option to isc_database_info to return the number of free pages in a database
+
+ 2016-01-02 01:45  asfernandes 
+   M src/jrd/SysFunction.cpp
+Revert fix for CORE-5062 for better investigation.
+
+ 2016-01-02 01:04  asfernandes 
+   M src/jrd/SysFunction.cpp
+Fixed CORE-5062 - CHAR_TO_UUID on column with index throws expression evaluation not supported Human readable UUID argument for CHAR_TO_UUID must be of exact length 36.
+
+ 2015-12-30 15:16  alexpeshkoff 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/os/posix/unix.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Fixed CORE-5056: Write-lock of database file is cleared ("W" disappears from output of lsof <db_name>) when remote machine obtains DB header running "fbsvcmgr <remote_host>/port:service_mgr action_db_stats <remote_dbname>"
+
+ 2015-12-29 19:00  dimitr 
+   M src/jrd/Monitoring.cpp
+   M src/jrd/Monitoring.h
+Fixed CORE-4708: Content of MON$EXPLAINED_PLAN in MON$STATEMENTS is truncated if exceeds the 32KB limit.
+
+ 2015-12-29 15:17  dimitr 
+   M src/jrd/DbCreators.cpp
+   M src/jrd/Mapping.cpp
+   M src/jrd/Monitoring.cpp
+   M src/jrd/Monitoring.h
+   M src/jrd/UserManagement.cpp
+Tag the shmem session clumplets with username. This allows much faster lookups for non-locksmith users. Also, it allows to simplify some code. While being there, cleaned up some unused logic.
+
+ 2015-12-29 14:39  alexpeshkoff 
+   M src/jrd/Mapping.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+Fixed CORE-5047: mapUser() routine establish secondary attach using wrong provider
+
+ 2015-12-28 14:10  alexpeshkoff 
+   M builds/install/arch-specific/linux/firebird.init.d.debian.in
+   M builds/install/arch-specific/linux/firebird.init.d.generic.in
+   M builds/install/arch-specific/linux/linuxLibrary.sh.in
+   M builds/install/posix-common/changeServerMode.sh.in
+   M builds/install/posix-common/posixLibrary.sh.in
+Fixed CORE-5053: changeServerMode.sh can mess with configuration
+
+ 2015-12-28 06:22  dimitr 
+   M src/jrd/jrd.cpp
+Unwind the cache before throwing. This prevents lock-ups during database shutdown.
+
+ 2015-12-25 18:19  alexpeshkoff 
+   M builds/install/arch-specific/linux/linuxLibrary.sh.in
+   M builds/install/posix-common/posixLibrary.sh.in
+   M builds/install/posix-common/preinstall.sh.in
+Fixed CORE-4842: Installer script fails in some linux environments
+
+ 2015-12-25 01:08  robocop 
+   M src/jrd/CryptoManager.cpp
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/os/win32/xnet.h
+   M src/remote/server/os/posix/inet_server.cpp
+Misc.
+
+ 2015-12-24 11:17  alexpeshkoff 
+   M src/misc/src_bundle.sh
+Fixed CORE-5008: add missing cmake files to fb3 linux tarball
+
+ 2015-12-23 19:42  hvlad 
+   M builds/win32/make_examples.bat
+Build and copy udrcpp_example.dll
+
+ 2015-12-23 19:10  hvlad 
+   M builds/install/misc/plugins.conf
+   M builds/win32/msvc10/udr_engine.vcxproj.filters
+   M builds/win32/msvc10/udrcpp_example.vcxproj
+   M builds/win32/msvc10/udrcpp_example.vcxproj.filters
+Fixed MSVC10 build of UDR examples
+
+ 2015-12-22 17:53  alexpeshkoff 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/remote/server/server.cpp
+Fixed CORE-4964: Real errors during connect to security database are hidden by Srp user manager. Errors should be logged no matter what AuthServer is used. (taking into an account Sean's request re. special error for system-related problems)
+
+ 2015-12-21 17:01  alexpeshkoff 
+   M builds/install/arch-specific/linux/makeInstallImage.sh.in
+   M builds/posix/Makefile.in
+   A examples/interfaces/01.create.pas
+   M extern/cloop/Makefile
+   M extern/cloop/src/cloop/Generator.cpp
+   M extern/cloop/src/cloop/Generator.h
+   M extern/cloop/src/cloop/Main.cpp
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msg_facs.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/misc/codes.epp
+   A src/misc/pascal
+   A src/misc/pascal/Pascal.Constants.awk
+   A src/misc/pascal/Pascal.implementation.pas
+   A src/misc/pascal/Pascal.interface.pas
+   A src/misc/pascal/fb_get_master_interface.pas
+Added support for using pascal to access OO API
+
+ 2015-12-21 13:34  egorpugin 
+   M .travis.yml
+[ci] Switch to Ubuntu 14.04.
+
+ 2015-12-21 11:16  alexpeshkoff 
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Fixed strange mistype in error code. This error code is never used in sources, i.e. nothing to fix due to this change.
+
+ 2015-12-21 09:48  dimitr 
+   M src/jrd/scl.epp
+Cleaned up the unused routine.
+
+ 2015-12-19 10:43  dimitr 
+   M src/jrd/jrd.cpp
+Fixed CORE-4840: Transactions with isc_tpb_autocommit can hang the server.
+
+ 2015-12-19 05:55  dimitr 
+   M src/dsql/DdlNodes.epp
+Remove the redundant (no-op) line.
+
+ 2015-12-18 16:57  dimitr 
+   M src/dsql/DdlNodes.epp
+Constness.
+
+ 2015-12-18 16:34  asfernandes 
+   M src/dsql/Nodes.h
+   M src/include/fb_blk.h
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/sdw.cpp
+Avoid warnings with clang.
+
+ 2015-12-18 16:34  asfernandes 
+   M src/dsql/DdlNodes.epp
+Fixed CORE-5049 - Regression: incorrect calculation of byte-length for view columns.
+
+ 2015-12-18 13:53  alexpeshkoff 
+   M src/common/call_service.cpp
+Fixed gsec with SS
+
+ 2015-12-18 13:45  asfernandes 
+   M src/common/classes/alloc.h
+   M src/include/fb_blk.h
+Avoid warnings with clang.
+
+ 2015-12-18 12:28  dimitr 
+   M builds/install/arch-specific/win32/BuildExecutableInstall.bat
+This should fix CORE-4862: ibase.h from x64 package includes non-existing file.
+
+ 2015-12-17 15:14  alexpeshkoff 
+   M src/remote/server/os/posix/inet_server.cpp
+Postfix for CORE-5032: error handling was broken, therefore checked for invalid error code
+
+ 2015-12-17 13:44  aafemt 
+   M src/jrd/jrd.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Rollback
+
+ 2015-12-17 12:43  alexpeshkoff 
+   M src/yvalve/why.cpp
+Fixed CORE-5039: Connecting to service with invalid servicename yields incorrect error message
+
+ 2015-12-17 11:28  hvlad 
+   M src/remote/os/win32/xnet.cpp
+Let XNET client returns correct isc_network_error in case of not running XNET server.
+Before it returns isc_unavailable and fools y-valve.
+
+ 2015-12-17 09:56  hvlad 
+   M src/yvalve/preparse.cpp
+Fixed warning
+
+ 2015-12-17 09:56  hvlad 
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Make names less dumb. Formatting a bit.
+
+ 2015-12-16 17:23  aafemt 
+   M src/yvalve/why.cpp
+Restore raising of error from last tried provider as pointed by Alex
+
+ 2015-12-16 17:17  alexpeshkoff 
+   M src/yvalve/why.cpp
+Totally misc - formatting
+
+ 2015-12-16 17:16  alexpeshkoff 
+   M src/yvalve/YObjects.h
+Cleanup
+
+ 2015-12-16 17:12  alexpeshkoff 
+   M src/remote/server/os/posix/inet_server.cpp
+Fixed CORE-5032: Cannot connect to a database which have own security database without security3.fdb
+
+ 2015-12-16 16:43  dimitr 
+   M src/jrd/jrd.cpp
+This should fix the minor error reporting regression noticed for bugs.core_3323.
+
+ 2015-12-15 16:54  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+Mostly comments needed after fix for CORE-5041, also added some checks to be safer with repeated I/O
+
+ 2015-12-14 14:07  aafemt 
+   M src/jrd/jrd.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Allow key holders to be called on client side (CORE-5043)
+
+ 2015-12-14 12:57  alexpeshkoff 
+   M builds/install/misc/firebird.conf.in
+comments
+
+ 2015-12-13 01:02  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/Parser.h
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+   M src/yvalve/preparse.cpp
+Misc.
+
+ 2015-12-11 19:46  aafemt 
+   M src/jrd/CryptoManager.cpp
+Allow only one ALTER DATABASE ENCRYPT query in transaction
+
+ 2015-12-11 16:06  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+Include zlib1.dll in the binary kits
+
+ 2015-12-11 13:44  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+Postfix for CORE-5041: try to leave slow I/O mode as soon as possible
+
+ 2015-12-11 13:27  alexpeshkoff 
+   M src/yvalve/preparse.cpp
+Fixed CORE-5042: FB3 client cannot create database on FB2.5 server
+
+ 2015-12-11 06:52  dimitr 
+   M src/jrd/jrd.cpp
+Fixed possible problems with asynchronous query cancellation (recent regression).
+
+ 2015-12-10 16:58  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/sdw.cpp
+Fixed CORE-5041: Database may get corrupted after ALTER DATABASE ENCRYPT/DECRYPT issued multiple times per database open time
+
+ 2015-12-10 15:30  alexpeshkoff 
+   M src/common/classes/condition.h
+Misc - fixed system call name in exception
+
+ 2015-12-09 14:22  aafemt 
+   M src/dsql/DdlNodes.epp
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+Perform db encryption checks at ddl time to avoid corrupting database by wrong plugin name in header
+
+ 2015-12-09 13:47  aafemt 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/Parser.h
+   M src/dsql/parse.y
+Prevent using DECRYPT and ENCRYPT clauses in one query
+
+ 2015-12-09 10:25  paul_reeves 
+   M builds/install/arch-specific/win32/ru/custom_messages_ru.inc
+Change file format of custom messages to UTF-8
+This ought to fix CORE-5002 but needs further testing
+
+ 2015-12-06 22:49  asfernandes 
+   M src/common/isc_sync.cpp
+   M src/jrd/validation.cpp
+   M src/remote/os/win32/xnet.cpp
+Misc.
+
+ 2015-12-04 13:07  aafemt 
+   M src/yvalve/DistributedTransaction.cpp
+   M src/yvalve/why.cpp
+Move call addRef() out of constructor
+
+ 2015-12-03 22:17  hvlad 
+   M src/common/isc_sync.cpp
+Correction
+
+ 2015-12-03 16:17  hvlad 
+   M src/common/isc_sync.cpp
+Fixed the race condition on Windows when shared memory is initialized. 
+It could raise errors like:
+MonitoringData: Cannot initialize the shared memory region
+sh_mem_length_mapped is 0 
+LockManager::LockManager()
+Database is probably already opened by another engine instance in another Windows session
+MonitoringData: Cannot initialize the shared memory region
+operating system directive CreateFile failed
+Access is denied.
+Test case is at CORE-4680, see comments by Pavel Zotov at 18 Nov 2015.
+
+ 2015-12-01 21:12  hvlad 
+   M src/jrd/jrd.h
+Fixed AV in CS introduced recently. Dmitry, please review.
+
+ 2015-12-01 12:24  dimitr 
+   M src/lock/print.cpp
+Misc.
+
+ 2015-12-01 12:23  dimitr 
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/lock/lock.cpp
+Second round of my checkout/rescheduling changes.
+
+ 2015-11-29 23:02  egorpugin 
+   M .travis.yml
+[ci] Fix wget sertificate error.
+
+ 2015-11-29 15:12  dimitr 
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/GlobalRWLock.cpp
+   M src/jrd/Relation.cpp
+   M src/jrd/Routine.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/fun.epp
+   M src/jrd/inf.cpp
+   M src/jrd/intl.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/jrd_proto.h
+   M src/jrd/lck.cpp
+   M src/jrd/met.epp
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+   M src/jrd/os/pio_proto.h
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/os/win32/winnt.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/pag_proto.h
+   M src/jrd/sdw.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/vio.cpp
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+1) Slightly refactored recheduling and checkout logic.
+2) Re-enabled checkouts in PIO routines, this resolves CORE-4179. Windows build may be broken, please validate.
+3) Implemented faster reaction on asynchronous cancellation/shutdown requests.
+4) Avoided locking dbb_sync in AST. This change also solves races during massive attachment shutdown.
+
+ 2015-11-27 18:37  asfernandes 
+   M src/common/MsgMetadata.cpp
+   M src/common/MsgMetadata.h
+   M src/common/classes/objects_array.h
+Allow to call IMetadataBuilder::getMetadata more than one time.
+
+ 2015-11-26 09:28  roman-simakov 
+   M src/jrd/cch.cpp
+   M src/jrd/validation.cpp
+   M src/jrd/validation.h
+Fixed CORE-4978: Improved validation and fix of lost data pages. Thanks to Vlad for help.
+
+ 2015-11-24 23:33  hvlad 
+   M src/jrd/event.cpp
+Fixed bug CORE-5034 : At least 5 seconds delay on disconnect could happen if disconnect happens close after Event Manager initialization
+
+ 2015-11-24 23:17  hvlad 
+   M src/jrd/Mapping.cpp
+Fixed bug CORE-5033 : File fb_user_mapping could be left in Firebird lock directory after correct shutdown of all Firebird worker processes
+
+ 2015-11-23 16:08  hvlad 
+   M src/remote/server/server.cpp
+Avoid reporting of "SERVER/process_packet: broken port, server exiting" message for already detached port (affects CS only)
+
+ 2015-11-23 16:06  hvlad 
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/os/win32/xnet.h
+Refactor xnet module to separate client and server parts (endpoints).
+It fixed bug CORE-5029 : AV in fbclient when multi-threaded application uses XNET protocol
+and allows in the future to implement client ability to specify target server endpoint name 
+at connection level (currently it is set in firebird.conf).
+
+ 2015-11-23 09:57  alexpeshkoff 
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+Fixed CORE-5026: Firebird authentication gives up after first common plugin
+
+ 2015-11-20 10:17  hvlad 
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.cpp
+Fix one of the reason for AV in the engine (see CORE-4680, test by Pavel Zotov at 18 Nov 2015).
+The race when gone attachment released database object while another attachment is initialized and uses same database object.
+Could happens with shared cache (former SS) only.
+
+ 2015-11-20 08:47  dimitr 
+   M src/jrd/opt.cpp
+Misc.
+
+ 2015-11-20 00:33  asfernandes 
+   M src/remote/client/interface.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/PluginManager.cpp
+Misc.
+
+ 2015-11-20 00:25  asfernandes 
+   M src/remote/server/server.cpp
+Fix bad indentation.
+
+ 2015-11-19 01:12  asfernandes 
+   M src/jrd/dpm.epp
+Misc.
+
+ 2015-11-18 15:57  alexpeshkoff 
+   M builds/posix/Makefile.in.plugins_examples
+Added build of crypt application sample to posix build at least in order to keep it compilable
+
+ 2015-11-18 01:10  asfernandes 
+   M builds/install/arch-specific/win32/installation_readme.txt
+   M src/common/classes/alloc.cpp
+   M src/common/os/os_utils.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/parse.y
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/remote/inet.cpp
+   M src/yvalve/MasterImplementation.cpp
+Misc.
+
+ 2015-11-18 00:42  asfernandes 
+   M src/burp/restore.epp
+Fixed bad indentation.
+
+ 2015-11-17 17:01  asfernandes 
+   M src/dsql/Nodes.h
+Try to fix the performance problem noted by Arno.
+
+ 2015-11-17 16:24  aafemt 
+   M extern/cloop/src/cloop/Generator.cpp
+MSVC2010 has no inttypes.h, may be stdint.h or cstdint was supposed?..
+
+ 2015-11-17 12:19  dimitr 
+   M src/misc/writeBuildNum.sh
+Updated the version string.
+
+ 2015-11-17 11:46  dimitr 
+   M src/dsql/dsql.cpp
+FB3 seems to be properly protected from CORE-4983 at the y-valve level, but I'm adding an additional protection for the engine anyway (call me paranoid).
+
+ 2015-11-17 10:47  dimitr 
+   M src/jrd/Optimizer.cpp
+Fixed CORE-5220: Regression: ORDER BY clause on compound index may disable usage of other indices.
+
+ 2015-11-16 20:33  dimitr 
+   M src/jrd/opt.cpp
+Reverted back my change from Jan-2014. I cannot reproduce the original problem anymore. Also, this resolves regression CORE-5018: Non-indexed predicates may not be applied immediately after retrieval when tables are being joined.
+
+ 2015-11-16 16:13  alexpeshkoff 
+   M examples/dbcrypt/CryptApplication.cpp
+Fixed crypt application
+
+ 2015-11-16 12:09  dimitr 
+   M src/jrd/evl.cpp
+This should fix CORE-5016: Server crashes during GC when DELETE is executed after adding new referencing column.
+
+ 2015-11-16 10:25  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+Partially rolled back changes in my last commit in order to restore CS support
+
+ 2015-11-16 09:48  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+Slightly optimize loading of disk crypt plugin, thanks to Dmitry Sibiryakov
+
+ 2015-11-15 11:57  alexpeshkoff 
+   M src/remote/inet.cpp
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/server/server.cpp
+Fixed CORE-5017: Interrupt of aux connection during TCP setup phase causes server exit due to unhandled exception
+
+ 2015-11-13 12:45  alexpeshkoff 
+   M src/remote/server/server.cpp
+Postfix for CORE-5014: not good to disconnject same port twice, looks like I and Vlad tried to fix same bug simultaneously
+
+ 2015-11-12 14:13  hvlad 
+   M src/remote/server/server.cpp
+Fixed bug CORE-5015 :  AV in engine could happen when ON DISCONNECT trigger posted event
+
+ 2015-11-12 13:43  alexpeshkoff 
+   M src/remote/inet.cpp
+   M src/remote/server/server.cpp
+Fixed CORE-5014: Interrupt of aux connection during TCP setup phase causes unclear error messages in firebird.log
+
+ 2015-11-12 07:23  paul_reeves 
+   M builds/install/arch-specific/win32/installation_readme.txt
+Misc
+
+ 2015-11-12 07:19  paul_reeves 
+   M builds/install/arch-specific/win32/install_service.bat
+Remove comments left in by error while testing.
+
+ 2015-11-11 16:14  aafemt 
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/ods.h
+A little comment
+
+ 2015-11-11 15:16  alexpeshkoff 
+   D doc/README.UserSql
+Fixed CORE-5009: remove obsolete readme on user management
+
+ 2015-11-11 13:53  alexpeshkoff 
+   M src/jrd/jrd.cpp
+Fixed CORE-4991: Key holder plugin is loaded on connect to database but not on create
+
+ 2015-11-10 17:04  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+Fix dumb error which has been lurking in the windows packaging code for a while.
+
+ 2015-11-10 15:54  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+Fixed CORE-4990: Database is not decrypted completely
+
+ 2015-11-10 14:47  asfernandes 
+   M src/jrd/Routine.cpp
+Pass MessageMetadata with offsets to external routines make* methods.
+
+ 2015-11-10 09:08  paul_reeves 
+   D builds/install/arch-specific/win32/install_classic.bat
+   A builds/install/arch-specific/win32/install_service.bat
+   D builds/install/arch-specific/win32/install_super.bat
+   D builds/install/arch-specific/win32/uninstall.bat
+   A builds/install/arch-specific/win32/uninstall_service.bat
+Sync RC1 windows installer changes to trunk.
+Remove old manual install/uninstall scripts
+Add new ones
+
+ 2015-11-10 09:01  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+   M builds/install/arch-specific/win32/FirebirdInstallGUIFunctions.inc
+   M builds/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+Sync RC1 windows installer changes to trunk.
+
+ 2015-11-10 08:52  paul_reeves 
+   M builds/install/arch-specific/win32/Readme.txt
+   M builds/install/arch-specific/win32/custom_messages.inc
+   M builds/install/arch-specific/win32/installation_readme.txt
+   M builds/install/arch-specific/win32/installation_scripted.txt
+Sync RC1 windows installer changes to trunk.
+Misc changes
+
+ 2015-11-10 08:50  paul_reeves 
+   M builds/install/arch-specific/win32/BuildExecutableInstall.bat
+Sync RC1 windows installer changes to trunk.
+Remove references to embedded kits
+Include all relevant pdb files in the pdb kits
+Bring the contents of the zip kits up-to-date
+
+ 2015-11-10 08:44  paul_reeves 
+   M builds/win32/make_all.bat
+Sync RC1 windows installer changes to trunk.
+Make sure that renamed batch files to aid manual deployment get copied across at end of build.
+
+ 2015-11-09 21:39  hvlad 
+   M src/jrd/btr.cpp
+Correct check for maximum index depth 
+
+ 2015-11-09 15:10  alexpeshkoff 
+   M src/jrd/sdw.cpp
+Fixed CORE-4999: Deadlock when trying to access database with invalid crypt key
+
+ 2015-11-09 13:26  hvlad 
+   M src/remote/client/interface.cpp
+   M src/remote/server/server.cpp
+Fixed bug CORE-4998 : Both client and server could not close connection after failed authentification
+
+ 2015-11-09 09:52  alexpeshkoff 
+   M src/common/classes/init.h
+Fixed CORE-4997: Races when 2 threads try to establish first enbedded connections to engine simultaneously
+
+ 2015-11-08 17:01  aafemt 
+   M src/include/firebird/FirebirdInterface.idl
+A little more decription of key holder interface
+
+ 2015-11-06 17:10  alexpeshkoff 
+   M src/common/security.cpp
+   M src/common/security.h
+   M src/jrd/UserManagement.cpp
+   M src/jrd/UserManagement.h
+   M src/utilities/gsec/gsec.cpp
+Fixed CORE-4969: SEC$USERS table is unavailable in case of any error in any configured user manager plugin
+
+ 2015-11-06 16:58  aafemt 
+   M builds/win32/setenvvar.bat
+Allow build in path containing spaces (CORE-4910)
+
+ 2015-11-06 16:43  aafemt 
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M examples/dbcrypt/DbCrypt.cpp
+Missing export direcrive
+
+ 2015-11-05 17:15  alexpeshkoff 
+   M examples/interfaces/01.create.cpp
+   M examples/interfaces/02.update.cpp
+   M examples/interfaces/03.select.cpp
+   M examples/interfaces/04.print_table.cpp
+Update samples - use IUtil and IXpbBuilder
+Avoid plain isc_ calls
+
+ 2015-11-05 16:06  alexpeshkoff 
+   M src/yvalve/utl.cpp
+Make returned string C-style (with 0 terminator byte) when possible
+
+ 2015-11-05 09:57  alexpeshkoff 
+   M src/common/os/posix/os_utils.cpp
+Fixed build error, reported by Pavel Zotov
+
+ 2015-11-04 07:23  hvlad 
+   M src/jrd/lck.cpp
+Removed unneeded assert, correct code a bit as Dmitry suggested
+
+ 2015-11-04 06:06  dimitr 
+   M src/jrd/Relation.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/shut.cpp
+   M src/jrd/shut_proto.h
+Fixed attachment lock usage. Minimized chances for races during database shutdown.
+
+ 2015-11-03 11:01  hvlad 
+   M src/common/os/os_utils.h
+   M src/common/os/posix/os_utils.cpp
+   M src/common/os/win32/os_utils.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/utilities/fbtracemgr/traceMgrMain.cpp
+Improved reaction on Ctrl+C\Ctrl+Break\console close request in Trace Manager and Services Manager console utilities on Windows.
+
+ 2015-11-03 10:37  dimitr 
+   M src/dsql/ExprNodes.cpp
+Remove the code no longer neccessary.
+
+ 2015-11-03 09:36  hvlad 
+   M src/utilities/ntrace/fbtrace.conf
+Correction
+
+ 2015-11-03 09:12  hvlad 
+   M src/common/ThreadStart.cpp
+   M src/common/dllinst.cpp
+   M src/common/dllinst.h
+   M src/common/os/win32/mod_loader.cpp
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/os/win32/ibinitdll.cpp
+   M src/jrd/svc.cpp
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceConfigStorage.h
+   M src/jrd/trace/TraceManager.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/PluginManager.cpp
+Additional means to avoid crash\hangup when application unload fbclient.dll not calling fb_shutdown.
+Fixed reason of 500 ms delay experienced by such applications (described by Arno in fb-devel).
+Fixed missing assignment of thread priorities.
+
+ 2015-11-02 11:48  dimitr 
+   M src/jrd/exe.cpp
+Fixed the assertion inside the looper (req_caller was not cleared for procedure requests terminated due to exception).
+
+ 2015-11-02 11:46  dimitr 
+   M src/jrd/dpm.epp
+   M src/jrd/req.h
+   M src/jrd/vio.cpp
+Simplified the locking logic and fixed races during record backout.
+
+ 2015-11-01 06:27  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
+ 2015-10-30 06:08  dimitr 
+   M src/jrd/Optimizer.cpp
+Fixed CORE-4984: Ordering by compound index together with a range condition gives wrong results.
+
+ 2015-10-29 15:17  alexpeshkoff 
+   M src/jrd/ini.epp
+Fixed regression cause by fix for CORE-4980: restore creation of generators before privileges - one generator is required to create privileges correctly
+
+ 2015-10-29 11:18  dimitr 
+   M src/dsql/Nodes.h
+   M src/jrd/exe.cpp
+Generic solution for CORE-4982: Server crashes during "select from procedure" if exception is thrown while backing out the current savepoint.
+
+ 2015-10-27 16:57  alexpeshkoff 
+   M src/burp/backup.epp
+Postfix for CORE-4980: no use to backup rights granted to system tables
+
+ 2015-10-27 16:48  alexpeshkoff 
+   M src/burp/burp.h
+   M src/burp/restore.epp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/PackageNodes.epp
+   M src/isql/show.epp
+   M src/jrd/ini.epp
+Fixed CORE-4980: Operator REVOKE can modify rights granted to system tables at DB creation time
+
+ 2015-10-27 12:19  dimitr 
+   M src/dsql/parse.y
+Disabled GRANT/REVOKE for privileges not currently enforced: USAGE/DOMAIN, USAGE/CHARSET, USAGE/COLLATION.
+
+ 2015-10-26 21:22  dimitr 
+   M src/yvalve/why.cpp
+Fixed CORE-4972: Invalid statement handle.
+
+ 2015-10-26 16:55  alexpeshkoff 
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+Do not type "invalid service handle" error message after pressing ctrl-C (as Vlad requested)
+
+ 2015-10-26 15:07  alexpeshkoff 
+   M src/yvalve/why.cpp
+Fixed a case when second copy of fb_shutdown() is called in another thread while first copy of it is still running (restored old code)
+
+ 2015-10-26 15:04  alexpeshkoff 
+   M src/common/IntlParametersBlock.cpp
+   M src/common/IntlParametersBlock.h
+   M src/remote/client/interface.cpp
+   M src/yvalve/why.cpp
+Fixed bug related with IntlParametersBlock noticed by Mark Rotteveel
+
+ 2015-10-26 10:28  dimitr 
+   M src/jrd/pag.cpp
+   M src/utilities/gstat/ppg.cpp
+Misc.
+
+ 2015-10-26 10:17  dimitr 
+   M src/utilities/gstat/ppg.cpp
+Fixed gstat output.
+
+ 2015-10-25 13:54  hvlad 
+   M src/utilities/ntrace/fbtrace.conf
+Fixed bug CORE-4968 : fbtrace.conf in FB30-HOME: missing equality sign ('=') between parameter  "log_errors" and its default values ("false")
+
+ 2015-10-25 13:48  hvlad 
+   M src/remote/server/server.cpp
+Avoid send over closing socket (it put errors 10058 (WSAESHUTDOWN) in firebird.log)
+
+ 2015-10-25 13:45  hvlad 
+   M src/remote/inet.cpp
+Revert some of my recent changes in socket closing sequence as it causes delays client side on Linux.
+It also should fix CORE-4977 : Detach of 3.x database from 3.x Linux client takes much longer than from 3.x Windows client
+
+ 2015-10-23 13:09  alexpeshkoff 
+   M src/jrd/IntlManager.cpp
+Avoid loading same international module many times
+
+ 2015-10-23 05:27  robocop 
+   M src/jrd/validation.cpp
+   M src/jrd/validation.h
+I prefer explicit conversions instead of guessing what the compiler did.
+
+ 2015-10-23 03:09  robocop 
+   M src/common/classes/alloc.cpp
+Misc.
+
+ 2015-10-23 03:08  robocop 
+   M src/jrd/btr.cpp
+Misc.
+
+ 2015-10-23 03:08  robocop 
+   M src/jrd/Relation.h
+Misc.
+
+ 2015-10-23 03:07  robocop 
+   M src/jrd/tra.h
+Misc.
+
+ 2015-10-23 02:50  robocop 
+   M src/remote/inet.cpp
+Misc.
+
+ 2015-10-23 02:48  robocop 
+   M src/jrd/svc.cpp
+I suppose putSInt64 author meant 9 not 5.
+
+ 2015-10-22 17:43  dimitr 
+   M src/alice/tdr.cpp
+Fixed gfix -commit / -rollback on big-endian platforms. Seems to be a very old bug.
+
+ 2015-10-22 17:40  dimitr 
+   M src/jrd/tra.cpp
+Fixed regression for bugs.core_2268.
+
+ 2015-10-22 17:15  dimitr 
+   M src/jrd/Monitoring.cpp
+Fixed regression in the monitoring code.
+
+ 2015-10-22 13:40  hvlad 
+   M src/yvalve/why.cpp
+Fixed AV on client : when disconnect happens while event callback run
+
+ 2015-10-22 10:15  hvlad 
+   M src/remote/server/server.cpp
+It should fix TCS issue with events reported privately by Alex
+
+ 2015-10-21 16:51  alexpeshkoff 
+   M src/common/classes/alloc.cpp
+   M src/common/classes/alloc.h
+   M src/common/classes/misc/class_test.cpp
+   M src/common/classes/tree.h
+   M src/common/classes/vector.h
+Make memory consumption smaller using redirection to parent pool for small extents and medium blocks. This makes simple requests to compile without requesting memory from OS.
+
+ 2015-10-20 13:07  dimitr 
+   M src/jrd/tra.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+Misc.
+
+ 2015-10-20 13:06  dimitr 
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-4970: Table trigger does not see its mode: inserting or updating or deleting.
+
+ 2015-10-19 14:55  hvlad 
+   M src/remote/inet.cpp
+Fixed logging WSAEINTR error on shutdown of Classic listener process (Windows-specific).
+Error looks like
+	INET_connect
+	Unable to complete network request to host ...
+	Failed to establish a connection.
+	A blocking operation was interrupted by a call to WSACancelBlockingCall.
+
+ 2015-10-19 14:51  hvlad 
+   M src/jrd/Mapping.cpp
+Fixed delays on disconnect (Classic mode only, seems Windows-specific)
+
+ 2015-10-19 14:15  dimitr 
+   M doc/WhatsNew
+Updated docs.
+
+ 2015-10-19 14:02  alexpeshkoff 
+   M src/common/classes/alloc.cpp
+   M src/common/classes/alloc.h
+   M src/common/classes/misc/class_test.cpp
+   M src/common/classes/misc/string_test.cpp
+   M src/yvalve/gds.cpp
+Fixed memory statistics collection
+
+ 2015-10-19 13:37  dimitr 
+   M src/jrd/RecordNumber.h
+Removed unused method (its calculations are outdated anyway).
+
+ 2015-10-19 13:32  dimitr 
+   M src/alice/alice.cpp
+   M src/alice/alice.h
+   M src/alice/alice_meta.epp
+   M src/alice/alice_meta.h
+   M src/alice/tdr.cpp
+   M src/alice/tdr_proto.h
+   M src/common/UtilSvc.cpp
+   M src/common/UtilSvc.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/include/consts_pub.h
+   M src/include/fb_types.h
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/Monitoring.cpp
+   M src/jrd/Monitoring.h
+   M src/jrd/Relation.cpp
+   M src/jrd/Relation.h
+   M src/jrd/RuntimeStatistics.cpp
+   M src/jrd/SysFunction.cpp
+   M src/jrd/VirtualTable.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/btr.h
+   M src/jrd/btr_proto.h
+   M src/jrd/cch.cpp
+   M src/jrd/constants.h
+   M src/jrd/dpm.epp
+   M src/jrd/fields.h
+   M src/jrd/filters.cpp
+   M src/jrd/idx.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/lck.cpp
+   M src/jrd/lck.h
+   M src/jrd/lck_proto.h
+   M src/jrd/met.epp
+   M src/jrd/ods.cpp
+   M src/jrd/ods.h
+   M src/jrd/ods_proto.h
+   M src/jrd/opt.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/pag_proto.h
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/recsrc/SortedStream.cpp
+   M src/jrd/req.h
+   M src/jrd/sbm.h
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+   M src/jrd/tpc.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/jrd/validation.cpp
+   M src/jrd/vio.cpp
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+   M src/lock/print.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/utilities/gstat/ppg.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/TracePluginImpl.h
+   M src/utilities/ntrace/traceplugin.cpp
+CORE-4965: Extend the transaction ID space beyond 2^32 transactions. Initially developed in the v2.5 custom branch, then reworked and now merged into v3.0.
+
+ 2015-10-18 12:14  dimitr 
+   M builds/install/misc/firebird.conf.in
+Added version info to the conf file.
+
+ 2015-10-18 12:03  dimitr 
+   M builds/install/misc/firebird.conf.in
+Misc corrections by Helen.
+
+ 2015-10-18 11:59  dimitr 
+   A doc/README.connection_strings
+Some new docs.
+
+ 2015-10-18 01:30  asfernandes 
+   M src/remote/inet.cpp
+   M src/remote/server/server.cpp
+Misc.
+
  2015-10-16 15:30  hvlad 
    M src/remote/client/interface.cpp
    M src/remote/remote.h

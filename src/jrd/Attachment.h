@@ -219,93 +219,6 @@ public:
 		Firebird::RefPtr<StableAttachmentPart> jStable;
 	};
 
-	class Checkout
-	{
-	public:
-		Checkout(Attachment* att, const char* f, bool optional = false)
-#ifdef DEV_BUILD
-			: from(f)
-#define FB_LOCKED_FROM from
-#else
-#define FB_LOCKED_FROM NULL
-#endif
-		{
-			if (att)
-			{
-				m_ref = att->getStable();
-			}
-
-			fb_assert(optional || m_ref.hasData());
-
-			if (m_ref.hasData())
-				m_ref->getMutex()->leave();
-		}
-
-		~Checkout()
-		{
-			if (m_ref.hasData())
-				m_ref->getMutex()->enter(FB_LOCKED_FROM);
-		}
-
-	private:
-		// copying is prohibited
-		Checkout(const Checkout&);
-		Checkout& operator=(const Checkout&);
-
-		Firebird::RefPtr<StableAttachmentPart> m_ref;
-#ifdef DEV_BUILD
-		const char* from;
-#endif
-	};
-#undef FB_LOCKED_FROM
-
-	class CheckoutLockGuard
-	{
-	public:
-		CheckoutLockGuard(Attachment* att, Firebird::Mutex& mutex, const char* f, bool optional = false)
-			: m_mutex(mutex)
-		{
-			if (!m_mutex.tryEnter(f))
-			{
-				Checkout attCout(att, f, optional);
-				m_mutex.enter(f);
-			}
-		}
-
-		~CheckoutLockGuard()
-		{
-			m_mutex.leave();
-		}
-
-	private:
-		// copying is prohibited
-		CheckoutLockGuard(const CheckoutLockGuard&);
-		CheckoutLockGuard& operator=(const CheckoutLockGuard&);
-
-		Firebird::Mutex& m_mutex;
-	};
-
-	class CheckoutSyncGuard
-	{
-	public:
-		CheckoutSyncGuard(Attachment* att, Firebird::SyncObject& sync, Firebird::SyncType type, const char* f)
-			: m_sync(&sync, f)
-		{
-			if (!m_sync.lockConditional(type, f))
-			{
-				Checkout attCout(att, f);
-				m_sync.lock(type);
-			}
-		}
-
-	private:
-		// copying is prohibited
-		CheckoutSyncGuard(const CheckoutSyncGuard&);
-		CheckoutSyncGuard& operator=(const CheckoutSyncGuard&);
-
-		Firebird::Sync m_sync;
-	};
-
 public:
 	static Attachment* create(Database* dbb);
 	static void destroy(Attachment* const attachment);
@@ -337,6 +250,7 @@ public:
 	SecurityClass*	att_security_class;		// security class for database
 	SecurityClassList*	att_security_classes;	// security classes
 	RuntimeStatistics	att_stats;
+	RuntimeStatistics	att_base_stats;
 	ULONG		att_flags;					// Flags describing the state of the attachment
 	SSHORT		att_client_charset;			// user's charset specified in dpb
 	SSHORT		att_charset;				// current (client or external) attachment charset
@@ -364,6 +278,7 @@ public:
 	dsql_dbb* att_dsql_instance;
 	bool att_in_use;						// attachment in use (can't be detached or dropped)
 	int att_use_count;						// number of API calls running except of asynchronous ones
+	ThreadId att_purge_tid;					// ID of thread running purge_attachment()
 
 	EDS::Connection* att_ext_connection;	// external connection executed by this attachment
 	ULONG att_ext_call_depth;				// external connection call depth, 0 for user attachment
@@ -441,6 +356,8 @@ public:
 	void signalCancel();
 	void signalShutdown();
 
+	void mergeStats();
+
 	bool backupStateWriteLock(thread_db* tdbb, SSHORT wait);
 	void backupStateWriteUnLock(thread_db* tdbb);
 	bool backupStateReadLock(thread_db* tdbb, SSHORT wait);
@@ -479,7 +396,7 @@ const ULONG ATT_cancel_disable		= 0x00200L;	// Disable cancel operations
 const ULONG ATT_no_db_triggers		= 0x00400L;	// Don't execute database triggers
 const ULONG ATT_manual_lock			= 0x00800L;	// Was locked manually
 const ULONG ATT_async_manual_lock	= 0x01000L;	// Async mutex was locked manually
-const ULONG ATT_purge_started		= 0x02000L; // Purge already started - avoid 2 purges at once
+//const ULONG ATT_purge_started		= 0x02000L; // Purge already started - avoid 2 purges at once
 const ULONG ATT_system				= 0x04000L; // Special system attachment
 const ULONG ATT_creator				= 0x08000L; // This attachment created the DB
 const ULONG ATT_monitor_done		= 0x10000L; // Monitoring data is refreshed

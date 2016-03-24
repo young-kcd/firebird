@@ -349,7 +349,16 @@ bool ISC_analyze_protocol(const char* protocol, tstring& expanded_name, tstring&
 			node_name = expanded_name.substr(0, p);
 			expanded_name.erase(0, node_name.length() + 1);
 
-			p = node_name.find_first_of(':');
+			if (node_name[0] == '[')
+			{
+				p = node_name.find_first_of(']');
+				if (p == npos)
+					p = 0;
+			}
+			else
+				p = 0;
+
+			p = node_name.find_first_of(':', p);
 			if (p != npos)
 				node_name[p] = *separator;
 		}

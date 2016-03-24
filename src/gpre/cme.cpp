@@ -1867,6 +1867,9 @@ static void cmp_sdl_dtype( const gpre_fld* field, ref* reference)
 		else
 			reference->add_byte(blr_double);
 		break;
+	case dtype_boolean:
+		reference->add_byte(blr_bool);
+		break;
 
 	default:
 		{

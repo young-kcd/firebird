@@ -256,12 +256,12 @@ JAttachment::JAttachment(StableAttachmentPart* sa)
 
 Attachment* JAttachment::getHandle() throw()
 {
-	return att->getHandle();
+	return att ? att->getHandle() : NULL;
 }
 
 const Attachment* JAttachment::getHandle() const throw()
 {
-	return att->getHandle();
+	return att ? att->getHandle() : NULL;
 }
 
 //#define DEBUG_ATT_COUNTERS
@@ -1053,26 +1053,33 @@ TraceFailedConnection::TraceFailedConnection(const char* filename, const Databas
 // do it here to prevent committing every record update
 // in a statement
 //
-static void check_autocommit(jrd_req* request, thread_db* tdbb)
+static void check_autocommit(thread_db* tdbb, jrd_req* request)
 {
-	// dimitr: we should ignore autocommit for requests
-	// created by EXECUTE STATEMENT
-	// AP: also do nothing if request is cancelled and
-	// transaction is already missing
-	if ((!request->req_transaction) || (request->req_transaction->tra_callback_count > 0))
-		return;
+	jrd_tra* const transaction = request->req_transaction;
 
-	if (request->req_transaction->tra_flags & TRA_perform_autocommit)
+	// Ignore autocommit for:
+	// 1) cancelled requests (already detached from the transaction)
+	// 2) requests created by EXECUTE STATEMENT or coming from external engines
+	// 3) internal requests (they may be executed through the DSQL layer)
+
+	if (!transaction ||
+		transaction->tra_callback_count ||
+		request->hasInternalStatement())
+	{
+		return;
+	}
+
+	if (transaction->tra_flags & TRA_perform_autocommit)
 	{
 		if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers) &&
-			!(request->req_transaction->tra_flags & TRA_prepared))
+			!(transaction->tra_flags & TRA_prepared))
 		{
 			// run ON TRANSACTION COMMIT triggers
-			run_commit_triggers(tdbb, request->req_transaction);
+			run_commit_triggers(tdbb, transaction);
 		}
 
-		request->req_transaction->tra_flags &= ~TRA_perform_autocommit;
-		TRA_commit(tdbb, request->req_transaction, true);
+		transaction->tra_flags &= ~TRA_perform_autocommit;
+		TRA_commit(tdbb, transaction, true);
 	}
 }
 
@@ -1526,7 +1533,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 					dbb->dbb_database_name = expanded_name;
 
 				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-				pageSpace->file = PIO_open(dbb, expanded_name, org_filename);
+				pageSpace->file = PIO_open(tdbb, expanded_name, org_filename);
 
 				// Initialize the lock manager
 				dbb->dbb_lock_mgr = LockManager::create(dbb->getUniqueFileId(), dbb->dbb_config);
@@ -1561,13 +1568,11 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				dbb->dbb_backup_manager = FB_NEW_POOL(*dbb->dbb_permanent) BackupManager(tdbb,
 					dbb, Ods::hdr_nbak_unknown);
 				dbb->dbb_backup_manager->initializeAlloc(tdbb);
+				dbb->dbb_crypto_manager = FB_NEW_POOL(*dbb->dbb_permanent) CryptoManager(tdbb);
 
 				PAG_init2(tdbb, 0);
 				PAG_header(tdbb, false);
-
 				dbb->dbb_page_manager.initTempPageSpace(tdbb);
-
-				dbb->dbb_crypto_manager = FB_NEW_POOL(*dbb->dbb_permanent) CryptoManager(tdbb);
 				dbb->dbb_crypto_manager->attach(tdbb, attachment);
 
 				// initialize shadowing as soon as the database is ready for it
@@ -2572,7 +2577,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			try
 			{
 				// try to create with overwrite = false
-				pageSpace->file = PIO_create(dbb, expanded_name, false, false);
+				pageSpace->file = PIO_create(tdbb, expanded_name, false, false);
 			}
 			catch (status_exception)
 			{
@@ -2613,7 +2618,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 					if (allow_overwrite)
 					{
 						// file is a database and the user (SYSDBA or owner) has right to overwrite
-						pageSpace->file = PIO_create(dbb, expanded_name, options.dpb_overwrite, false);
+						pageSpace->file = PIO_create(tdbb, expanded_name, options.dpb_overwrite, false);
 					}
 					else
 					{
@@ -2670,13 +2675,13 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			dbb->dbb_backup_manager = FB_NEW_POOL(*dbb->dbb_permanent) BackupManager(tdbb,
 				dbb, Ods::hdr_nbak_normal);
 			dbb->dbb_backup_manager->dbCreating = true;
+			dbb->dbb_crypto_manager = FB_NEW_POOL(*dbb->dbb_permanent) CryptoManager(tdbb);
 
 			PAG_format_header(tdbb);
 			INI_init2(tdbb);
 			PAG_format_pip(tdbb, *pageSpace);
 
 			dbb->dbb_page_manager.initTempPageSpace(tdbb);
-			dbb->dbb_crypto_manager = FB_NEW_POOL(*dbb->dbb_permanent) CryptoManager(tdbb);
 
 			if (options.dpb_set_page_buffers)
 				PAG_set_page_buffers(tdbb, options.dpb_page_buffers);
@@ -2741,6 +2746,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			if (!options.dpb_set_force_write)
 				PAG_set_force_write(tdbb, true);
 
+			dbb->dbb_crypto_manager->attach(tdbb, attachment);
 			dbb->dbb_backup_manager->dbCreating = false;
 
 			config->notify();
@@ -4280,7 +4286,7 @@ void JAttachment::transactRequest(CheckStatusWrapper* user_status, ITransaction*
 					out_msg_length);
 			}
 
-			check_autocommit(request, tdbb);
+			check_autocommit(tdbb, request);
 
 			CMP_release(tdbb, request);
 		}
@@ -5334,59 +5340,6 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 #endif // DEBUG_PROCS
 
 
-bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
-{
-/**************************************
- *
- *	J R D _ r e s c h e d u l e
- *
- **************************************
- *
- * Functional description
- *	Somebody has kindly offered to relinquish
- *	control so that somebody else may run.
- *
- **************************************/
-	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
-
-	if (!tdbb->checkCancelState(false))
-	{
-		Jrd::Attachment::Checkout cout(attachment, FB_FUNCTION);
-		Thread::yield();
-	}
-
-	try
-	{
-		tdbb->checkCancelState(true);
-	}
-	catch (const status_exception& ex)
-	{
-		tdbb->tdbb_flags |= TDBB_sys_error;
-
-		const Arg::StatusVector status(ex.value());
-
-		if (punt)
-		{
-			CCH_unwind(tdbb, false);
-			ERR_post(status);
-		}
-		else
-		{
-			ERR_build_status(tdbb->tdbb_status_vector, status);
-			return true;
-		}
-	}
-
-	Monitoring::checkState(tdbb);
-
-	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?
-		(quantum ? quantum : QUANTUM) : tdbb->tdbb_quantum;
-
-	return false;
-}
-
-
 void jrd_vtof(const char* string, char* field, SSHORT length)
 {
 /**************************************
@@ -5447,7 +5400,8 @@ static void check_database(thread_db* tdbb, bool async)
 		status_exception::raise(Arg::Gds(isc_bug_check) << Arg::Str(string));
 	}
 
-	if ((attachment->att_flags & ATT_shutdown) ||
+	if ((attachment->att_flags & ATT_shutdown) &&
+		(attachment->att_purge_tid != Thread::getId()) ||
 		((dbb->dbb_ast_flags & DBB_shutdown) &&
 			((dbb->dbb_ast_flags & DBB_shutdown_full) || !attachment->locksmith())))
 	{
@@ -5637,28 +5591,22 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 	dpb_overwrite = false;
 	dpb_sql_dialect = 99;
 	invalid_client_SQL_dialect = false;
-	dpb_utf8_filename = false;
 
 	if (dpb_length == 0)
-	{
 		return;
-	}
+
 	if (dpb == NULL)
-	{
 		ERR_post(Arg::Gds(isc_bad_dpb_form));
-	}
 
 	ClumpletReader rdr(ClumpletReader::dpbList, dpb, dpb_length, dpbErrorRaise);
 	dumpAuthBlock("DatabaseOptions::get()", &rdr, isc_dpb_auth_block);
+
+	dpb_utf8_filename = rdr.find(isc_dpb_utf8_filename);
 
 	for (rdr.rewind(); !rdr.isEof(); rdr.moveNext())
 	{
 		switch (rdr.getClumpTag())
 		{
-		case isc_dpb_utf8_filename:
-			dpb_utf8_filename = true;
-			break;
-
 		case isc_dpb_working_directory:
 			getPath(rdr, dpb_working_directory);
 			break;
@@ -5668,7 +5616,8 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			if (dpb_page_buffers &&
 				(dpb_page_buffers < MIN_PAGE_BUFFERS || dpb_page_buffers > MAX_PAGE_BUFFERS))
 			{
-				ERR_post(Arg::Gds(isc_bad_dpb_content) << Arg::Gds(isc_baddpb_buffers_range));
+				ERR_post(Arg::Gds(isc_bad_dpb_content) << Arg::Gds(isc_baddpb_buffers_range) << 
+						 Arg::Num(MIN_PAGE_BUFFERS) << Arg::Num(MAX_PAGE_BUFFERS));
 			}
 			dpb_set_page_buffers = true;
 			break;
@@ -6292,11 +6241,11 @@ static void init_database_lock(thread_db* tdbb)
 			fb_utils::init_status(tdbb->tdbb_status_vector);
 
 			// If we are in a single-threaded maintenance mode then clean up and stop waiting
-			SCHAR spare_memory[RAW_HEADER_SIZE + PAGE_ALIGNMENT];
-			SCHAR* header_page_buffer = FB_ALIGN(spare_memory, PAGE_ALIGNMENT);
+			UCHAR spare_memory[RAW_HEADER_SIZE + PAGE_ALIGNMENT];
+			UCHAR* header_page_buffer = FB_ALIGN(spare_memory, PAGE_ALIGNMENT);
 			Ods::header_page* const header_page = reinterpret_cast<Ods::header_page*>(header_page_buffer);
 
-			PIO_header(dbb, header_page_buffer, RAW_HEADER_SIZE);
+			PIO_header(tdbb, header_page_buffer, RAW_HEADER_SIZE);
 
 			if ((header_page->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
 			{
@@ -6408,6 +6357,8 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 		delete attachment->att_dsql_instance;
 		attachment->deletePool(pool);
 	}
+
+	attachment->mergeStats();
 
 	// remove the attachment block from the dbb linked list
 	Sync sync(&dbb->dbb_sync, "jrd.cpp: release_attachment");
@@ -6554,8 +6505,11 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 			return false;
 	}
 
-	if (dbb->dbb_attachments)
-		return false;
+	{
+		SyncLockGuard dsGuard(&dbb->dbb_sync, SYNC_EXCLUSIVE, FB_FUNCTION);
+		if (dbb->dbb_attachments)
+			return false;
+	}
 
 	// Database linger
 	if ((flags & SHUT_DBB_LINGER) &&
@@ -6597,6 +6551,8 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 #ifdef SUPERSERVER_V2
 	TRA_header_write(tdbb, dbb, 0);	// Update transaction info on header page.
 #endif
+	if (flags & SHUT_DBB_RELEASE_POOLS)
+		TRA_update_counters(tdbb, dbb);
 
 	VIO_fini(tdbb);
 
@@ -6626,6 +6582,9 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 
 	if (dbb->dbb_lock)
 		LCK_release(tdbb, dbb->dbb_lock);
+
+	delete dbb->dbb_crypto_manager;
+	dbb->dbb_crypto_manager = NULL;
 
 	LCK_fini(tdbb, LCK_OWNER_database);
 
@@ -6840,7 +6799,13 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 
 	Jrd::Attachment* attachment = sAtt->getHandle();
 
-	while (attachment && (attachment->att_flags & ATT_purge_started))
+	if (attachment && attachment->att_purge_tid == Thread::getId())
+	{
+		fb_assert(false); // recursive call - impossible ?
+		return;
+	}
+
+	while (attachment && attachment->att_purge_tid)
 	{
 		attachment->att_use_count--;
 
@@ -6863,7 +6828,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 		return;
 
 	fb_assert(attachment->att_flags & ATT_shutdown);
-	attachment->att_flags |= ATT_purge_started;
+	attachment->att_purge_tid = Thread::getId();
 
 	fb_assert(attachment->att_use_count > 0);
 	attachment = sAtt->getHandle();
@@ -6927,9 +6892,13 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 					// and commit the transaction
 					TRA_commit(tdbb, transaction, false);
 				}
-				catch (const Exception&)
+				catch (const Exception& ex)
 				{
 					attachment->att_flags = save_flags;
+
+					string s;
+					s.printf("Database: %s\n\tError at disconnect:", attachment->att_filename.c_str());
+					iscLogException(s.c_str(), ex);
 
 					if (dbb->dbb_flags & DBB_bugcheck)
 						throw;
@@ -6951,7 +6920,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 		{
 			if (!nocheckPurge)
 			{
-				attachment->att_flags &= ~ATT_purge_started;
+				attachment->att_purge_tid = 0;
 				throw;
 			}
 		}
@@ -6972,10 +6941,13 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 	{
 		if (!nocheckPurge)
 		{
-			attachment->att_flags &= ~ATT_purge_started;
+			attachment->att_purge_tid = 0;
 			throw;
 		}
 	}
+
+	// stop crypt thread using this attachment
+	dbb->dbb_crypto_manager->stopThreadUsing(tdbb, attachment);
 
 	// Notify Trace API manager about disconnect
 	if (attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_DETACH))
@@ -7026,6 +6998,7 @@ static void run_commit_triggers(thread_db* tdbb, jrd_tra* transaction)
 	if (transaction == attachment->getSysTransaction())
 		return;
 
+	// start a savepoint to rollback changes of all triggers
 	AutoSavePoint savePoint(tdbb, transaction);
 
 	// run ON TRANSACTION COMMIT triggers
@@ -7271,25 +7244,30 @@ static void unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* u
 
 namespace
 {
-	bool shutdownAttachments(AttachmentsRefHolder* arg)
+	bool shutdownAttachments(AttachmentsRefHolder* arg, bool signal)
 	{
 		AutoPtr<AttachmentsRefHolder> queue(arg);
 		AttachmentsRefHolder& attachments = *arg;
 		bool success = true;
 
-		// Set terminate flag for all attachments
-		for (AttachmentsRefHolder::Iterator iter(attachments); *iter; ++iter)
+		if (signal)
 		{
-			StableAttachmentPart* const sAtt = *iter;
+			// Set terminate flag for all attachments
 
-			MutexLockGuard guard(*(sAtt->getMutex(true)), FB_FUNCTION);
-			Attachment* attachment = sAtt->getHandle();
+			for (AttachmentsRefHolder::Iterator iter(attachments); *iter; ++iter)
+			{
+				StableAttachmentPart* const sAtt = *iter;
 
-			if (attachment)
-				attachment->signalShutdown();
+				MutexLockGuard guard(*(sAtt->getMutex(true)), FB_FUNCTION);
+				Attachment* attachment = sAtt->getHandle();
+
+				if (attachment)
+					attachment->signalShutdown();
+			}
 		}
 
 		// Purge all attachments
+
 		for (AttachmentsRefHolder::Iterator iter(attachments); *iter; ++iter)
 		{
 			StableAttachmentPart* const sAtt = *iter;
@@ -7336,7 +7314,7 @@ namespace
 				return 0;
 			}
 
-			shutdownAttachments(static_cast<AttachmentsRefHolder*>(arg));
+			shutdownAttachments(static_cast<AttachmentsRefHolder*>(arg), false);
 		}
 		catch (const Exception& ex)
 		{
@@ -7389,7 +7367,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 		}
 
 		// Shutdown existing attachments
-		success = success && shutdownAttachments(attachments);
+		success = success && shutdownAttachments(attachments, true);
 
 		HalfStaticArray<Database*, 32> dbArray(pool);
 		{ // scope
@@ -7433,17 +7411,13 @@ void thread_db::setDatabase(Database* val)
 		const bool wasActive = database && (priorThread || nextThread || database->dbb_active_threads == this);
 
 		if (wasActive)
-		{
 			deactivate();
-		}
 
 		database = val;
 		dbbStat = val ? &val->dbb_stats : RuntimeStatistics::getDummy();
 
 		if (wasActive)
-		{
 			activate();
-		}
 	}
 }
 
@@ -7473,35 +7447,27 @@ SSHORT thread_db::getCharSet() const
 	return attachment->att_charset;
 }
 
-bool thread_db::checkCancelState(bool punt)
+ISC_STATUS thread_db::checkCancelState()
 {
-	// Test various flags and unwind/throw if required.
+	// Test for asynchronous shutdown/cancellation requests.
 	// But do that only if we're neither in the verb cleanup state
 	// nor currently detaching, as these actions should never be interrupted.
 	// Also don't break wait in LM if it is not safe.
 
 	if (tdbb_flags & (TDBB_verb_cleanup | TDBB_detaching | TDBB_wait_cancel_disable))
-		return false;
+		return FB_SUCCESS;
 
 	if (attachment)
 	{
+		if (attachment->att_purge_tid == Thread::getId())
+			return FB_SUCCESS;
+
 		if (attachment->att_flags & ATT_shutdown)
 		{
 			if (database->dbb_ast_flags & DBB_shutdown)
-			{
-				if (!punt)
-					return true;
-
-				status_exception::raise(Arg::Gds(isc_shutdown) <<
-										Arg::Str(attachment->att_filename));
-			}
+				return isc_shutdown;
 			else if (!(tdbb_flags & TDBB_shutdown_manager))
-			{
-				if (!punt)
-					return true;
-
-				status_exception::raise(Arg::Gds(isc_att_shutdown));
-			}
+				return isc_att_shutdown;
 		}
 
 		// If a cancel has been raised, defer its acknowledgement
@@ -7517,11 +7483,7 @@ bool thread_db::checkCancelState(bool punt)
 						(/*JrdStatement::FLAG_INTERNAL | */JrdStatement::FLAG_SYS_TRIGGER))) &&
 				(!transaction || !(transaction->tra_flags & TRA_system)))
 			{
-				if (!punt)
-					return true;
-
-				attachment->att_flags &= ~ATT_cancel_raise;
-				status_exception::raise(Arg::Gds(isc_cancelled));
+				return isc_cancelled;
 			}
 		}
 	}
@@ -7530,12 +7492,55 @@ bool thread_db::checkCancelState(bool punt)
 	// then someone tries to ignore our attempts to interrupt him. Let's insist.
 
 	if (tdbb_flags & TDBB_sys_error)
-	{
-		if (!punt)
-			return true;
+		return isc_cancelled;
 
-		status_exception::raise(Arg::Gds(isc_cancelled));
+	return FB_SUCCESS;
+}
+
+bool thread_db::checkCancelState(bool punt)
+{
+	const ISC_STATUS error = checkCancelState();
+
+	if (!error)
+		return false;
+
+	Arg::Gds status(error);
+
+	if (error == isc_shutdown)
+		status << Arg::Str(attachment->att_filename);
+
+	if (attachment)
+		attachment->att_flags &= ~ATT_cancel_raise;
+
+	tdbb_flags |= TDBB_sys_error;
+	status.copyTo(tdbb_status_vector);
+
+	if (punt)
+		CCH_unwind(this, true);
+
+	return true;
+}
+
+bool thread_db::reschedule(SLONG quantum, bool punt)
+{
+	// Somebody has kindly offered to relinquish
+	// control so that somebody else may run
+
+	if (checkCancelState(punt))
+		return true;
+
+	{	// checkout scope
+		EngineCheckout cout(this, FB_FUNCTION);
+		Thread::yield();
 	}
+
+	if (checkCancelState(punt))
+		return true;
+
+	Monitoring::checkState(this);
+
+	tdbb_quantum = (tdbb_quantum <= 0) ?
+		(quantum ? quantum : QUANTUM) : tdbb_quantum;
 
 	return false;
 }
@@ -7545,27 +7550,17 @@ bool thread_db::checkCancelState(bool punt)
 
 void JRD_autocommit_ddl(thread_db* tdbb, jrd_tra* transaction)
 {
-/**************************************
- *
- *	J R D _ a u t o c o m m i t _ d d l
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
+	// Ignore autocommit for:
+	// 1) cancelled requests (already detached from the transaction)
+	// 2) requests created by EXECUTE STATEMENT or coming from external engines
+
+	if (!transaction || transaction->tra_callback_count)
+		return;
 
 	// Perform an auto commit for autocommit transactions.
-	// This is slightly tricky. If the commit retain works,
-	// all is well. If TRA_commit() fails, we perform
-	// a rollback_retain(). This will backout the
-	// effects of the transaction, mark it dead and
-	// start a new transaction.
-
-	// Ignore autocommit for requests created by EXECUTE STATEMENT
-
-	if (transaction->tra_callback_count != 0)
-		return;
+	// This is slightly tricky. If the commit retain works, all is well.
+	// If TRA_commit() fails, we perform a rollback_retain(). This will backout
+	// the effects of the transaction, mark it dead and start a new transaction.
 
 	if (transaction->tra_flags & TRA_perform_autocommit)
 	{
@@ -7608,7 +7603,7 @@ void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_l
  **************************************/
 	EXE_receive(tdbb, request, msg_type, msg_length, msg, true);
 
-	check_autocommit(request, tdbb);
+	check_autocommit(tdbb, request);
 
 	if (request->req_flags & req_warning)
 	{
@@ -7632,7 +7627,7 @@ void JRD_send(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_leng
  **************************************/
 	EXE_send(tdbb, request, msg_type, msg_length, msg);
 
-	check_autocommit(request, tdbb);
+	check_autocommit(tdbb, request);
 
 	if (request->req_flags & req_warning)
 	{
@@ -7657,7 +7652,7 @@ void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	EXE_unwind(tdbb, request);
 	EXE_start(tdbb, request, transaction);
 
-	check_autocommit(request, tdbb);
+	check_autocommit(tdbb, request);
 
 	if (request->req_flags & req_warning)
 	{
@@ -7748,7 +7743,7 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
 	EXE_start(tdbb, request, transaction);
 	EXE_send(tdbb, request, msg_type, msg_length, msg);
 
-	check_autocommit(request, tdbb);
+	check_autocommit(tdbb, request);
 
 	if (request->req_flags & req_warning)
 	{
@@ -7929,6 +7924,38 @@ bool JRD_verify_database_access(const PathName& name)
 }
 
 
+void JRD_shutdown_attachment(Attachment* attachment)
+{
+/**************************************
+ *
+ *      J R D _ s h u t d o w n _ a t t a c h m e n t
+ *
+ **************************************
+ *
+ * Functional description
+ *  Schedule the attachment marked as shutdown for disconnection.
+ *
+ **************************************/
+	fb_assert(attachment);
+
+	try
+	{
+		fb_assert(attachment->att_flags & ATT_shutdown);
+
+		MemoryPool& pool = *getDefaultMemoryPool();
+		AttachmentsRefHolder* queue = FB_NEW_POOL(pool) AttachmentsRefHolder(pool);
+
+		fb_assert(attachment->getStable());
+		attachment->getStable()->addRef();
+		queue->add(attachment->getStable());
+
+		Thread::start(attachmentShutdownThread, queue, 0);
+	}
+	catch (const Exception&)
+	{} // no-op
+}
+
+
 void JRD_shutdown_attachments(Database* dbb)
 {
 /**************************************
@@ -7946,7 +7973,7 @@ void JRD_shutdown_attachments(Database* dbb)
 	try
 	{
 		MemoryPool& pool = *getDefaultMemoryPool();
-		AttachmentsRefHolder* queue = FB_NEW_POOL(pool) AttachmentsRefHolder(pool);
+		AutoPtr<AttachmentsRefHolder> queue(FB_NEW_POOL(pool) AttachmentsRefHolder(pool));
 
 		{	// scope
 			Sync guard(&dbb->dbb_sync, "JRD_shutdown_attachments");
@@ -7966,7 +7993,8 @@ void JRD_shutdown_attachments(Database* dbb)
 			}
 		}
 
-		Thread::start(attachmentShutdownThread, queue, 0);
+		if (queue.hasData())
+			Thread::start(attachmentShutdownThread, queue.release(), 0);
 	}
 	catch (const Exception&)
 	{} // no-op

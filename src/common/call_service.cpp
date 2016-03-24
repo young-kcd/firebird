@@ -245,13 +245,24 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 	{
 		stuffSpb(spb, isc_spb_trusted_auth, "");
 	}
+
+	isc_svc_handle svc_handle = 0;
 	if ((!server[0]) && forceLoopback && (Config::getServerMode() == MODE_SUPER))
-	{	// local connection & force   & superserver
-		stuffSpb(spb, isc_spb_config, "Providers=Loopback," CURRENT_ENGINE);
+	{	// local connection & force   &   superserver
+		char* spb2 = spb;
+		stuffSpb(spb2, isc_spb_config, "Providers=Loopback");
+
+		isc_service_attach(status, static_cast<USHORT>(strlen(service)), service, &svc_handle,
+						static_cast<USHORT>(spb2 - spb_buffer), spb_buffer);
+		if (status[1] == 0)
+			return svc_handle;
+		if (status[1] != isc_network_error)
+			return 0;
+
+		fb_utils::init_status(status);
 	}
 
 	fb_assert((size_t)(spb - spb_buffer) <= sizeof(spb_buffer));
-	isc_svc_handle svc_handle = 0;
 	isc_service_attach(status, static_cast<USHORT>(strlen(service)), service, &svc_handle,
 						static_cast<USHORT>(spb - spb_buffer), spb_buffer);
 	return status[1] ? 0 : svc_handle;

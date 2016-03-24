@@ -62,7 +62,7 @@ public:
 
 	struct DumpField
 	{
-		DumpField(USHORT p_id, ValueType p_type, USHORT p_length, const void* p_data)
+		DumpField(USHORT p_id, ValueType p_type, ULONG p_length, const void* p_data)
 			: id(p_id), type(p_type), length(p_length), data(p_data)
 		{}
 
@@ -72,7 +72,7 @@ public:
 
 		USHORT id;
 		ValueType type;
-		USHORT length;
+		ULONG length;
 		const void* data;
 	};
 
@@ -172,8 +172,8 @@ public:
 				field.id = (USHORT) buffer[offset++];
 				field.type = (ValueType) buffer[offset++];
 				fb_assert(field.type >= VALUE_GLOBAL_ID && field.type <= VALUE_BOOLEAN);
-				memcpy(&field.length, &buffer[offset], sizeof(USHORT));
-				offset += sizeof(USHORT);
+				memcpy(&field.length, &buffer[offset], sizeof(ULONG));
+				offset += sizeof(ULONG);
 				field.data = &buffer[offset];
 				offset += field.length;
 				return true;
@@ -185,16 +185,16 @@ public:
 	private:
 		void storeField(int field_id, ValueType type, FB_SIZE_T length, const void* value)
 		{
-			const FB_SIZE_T delta = sizeof(UCHAR) + sizeof(UCHAR) + sizeof(USHORT) + length;
+			const FB_SIZE_T delta = sizeof(UCHAR) + sizeof(UCHAR) + sizeof(ULONG) + length;
 			buffer.resize(offset + delta);
 
 			UCHAR* ptr = buffer.begin() + offset;
 			fb_assert(field_id <= int(MAX_UCHAR));
 			*ptr++ = (UCHAR) field_id;
 			*ptr++ = (UCHAR) type;
-			const USHORT adjusted_length = (USHORT) length;
+			const ULONG adjusted_length = (ULONG) length;
 			memcpy(ptr, &adjusted_length, sizeof(adjusted_length));
-			ptr += sizeof(USHORT);
+			ptr += sizeof(ULONG);
 			memcpy(ptr, value, length);
 			offset += (ULONG) delta;
 		}
@@ -212,7 +212,7 @@ public:
 		clearSnapshot();
 	}
 
-	void putField(thread_db*, Record*, const DumpField&, int);
+	void putField(thread_db*, Record*, const DumpField&);
 
 	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
 	RecordBuffer* getData(const jrd_rel*) const;
@@ -235,7 +235,7 @@ public:
 
 class MonitoringData FB_FINAL : public Firebird::IpcObject
 {
-	static const USHORT MONITOR_VERSION = 4;
+	static const USHORT MONITOR_VERSION = 5;
 	static const ULONG DEFAULT_SIZE = 1048576;
 
 	typedef MonitoringHeader Header;
@@ -243,6 +243,7 @@ class MonitoringData FB_FINAL : public Firebird::IpcObject
 	struct Element
 	{
 		AttNumber attId;
+		TEXT userName[USERNAME_LENGTH + 1];
 		ULONG length;
 	};
 
@@ -273,11 +274,11 @@ public:
 	class Writer
 	{
 	public:
-		Writer(MonitoringData* data, AttNumber att_id)
+		Writer(MonitoringData* data, AttNumber att_id, const char* user_name)
 			: dump(data)
 		{
 			fb_assert(dump);
-			offset = dump->setup(att_id);
+			offset = dump->setup(att_id, user_name);
 			fb_assert(offset);
 		}
 
@@ -336,12 +337,12 @@ public:
 	void acquire();
 	void release();
 
-	void read(AttNumber, TempSpace&);
-	ULONG setup(AttNumber);
+	void read(AttNumber, const char*, TempSpace&);
+	ULONG setup(AttNumber, const char*);
 	void write(ULONG, ULONG, const void*);
 
 	void cleanup(AttNumber);
-	void enumerate(SessionList&);
+	void enumerate(SessionList&, const char*);
 
 private:
 	// copying is prohibited
@@ -384,7 +385,7 @@ public:
 	static void checkState(thread_db* tdbb);
 	static SnapshotData* getSnapshot(thread_db* tdbb);
 
-	static void dumpAttachment(thread_db* tdbb, const Attachment* attachment, bool ast);
+	static void dumpAttachment(thread_db* tdbb, Attachment* attachment, bool ast);
 
 	static void publishAttachment(thread_db* tdbb);
 	static void cleanupAttachment(thread_db* tdbb);

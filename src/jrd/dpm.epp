@@ -88,45 +88,27 @@ static void store_big_record(thread_db*, record_param*, PageStack&, const UCHAR*
 
 namespace
 {
-	void lock_gc_active(thread_db* tdbb, const jrd_tra* transaction, record_param* rpb)
+	Lock* lock_gc_active(thread_db* tdbb, const jrd_tra* transaction, record_param* rpb)
 	{
-		if (rpb->rpb_gc_lock)
+		AutoPtr<Lock> lock(FB_NEW_RPT(*tdbb->getDefaultPool(), 0)
+			Lock(tdbb, sizeof(SINT64), LCK_record_gc));
+		lock->lck_key.lck_long = ((SINT64) rpb->rpb_page << 16) | rpb->rpb_line;
+		lock->lck_data = transaction->tra_number;
+
+		ThreadStatusGuard temp_status(tdbb);
+
+		if (LCK_lock(tdbb, lock, LCK_EX, LCK_NO_WAIT))
+			return lock.release();
+
+		if (lock->lck_data != LCK_read_data(tdbb, lock))
 		{
-			fb_assert(rpb->rpb_gc_lock->lck_id);
-			fb_assert(rpb->rpb_gc_lock->lck_logical == LCK_EX);
-			fb_assert(rpb->rpb_gc_lock->lck_data == transaction->tra_number);
+			fb_assert(false);
+			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+			temp_status.copyToOriginal();
+			ERR_punt();
 		}
-		else
-		{
-			AutoPtr<Lock> lock(FB_NEW_RPT(*tdbb->getDefaultPool(), 0)
-				Lock(tdbb, sizeof(SINT64), LCK_record_gc));
-			lock->lck_key.lck_long = ((SINT64) rpb->rpb_page << 16) | rpb->rpb_line;
-			lock->lck_data = transaction->tra_number;
 
-			ThreadStatusGuard temp_status(tdbb);
-
-			if (!LCK_lock(tdbb, lock, LCK_EX, LCK_NO_WAIT))
-			{
-				fb_assert(false);
-				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
-				ERR_punt();
-			}
-
-			rpb->rpb_gc_lock = lock.release();
-		}
-	}
-
-	void release_gc_active(thread_db* tdbb, record_param* rpb)
-	{
-		if (rpb->rpb_gc_lock)
-		{
-			fb_assert(rpb->rpb_gc_lock->lck_id);
-			fb_assert(rpb->rpb_gc_lock->lck_logical == LCK_EX);
-
-			LCK_release(tdbb, rpb->rpb_gc_lock);
-			delete rpb->rpb_gc_lock;
-			rpb->rpb_gc_lock = NULL;
-		}
+		return NULL;
 	}
 }
 
@@ -149,7 +131,7 @@ PAG DPM_allocate(thread_db* tdbb, WIN* window)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
-		"DPM_allocate (window page %"ULONGFORMAT")\n",
+		"DPM_allocate (window page %" ULONGFORMAT")\n",
 		window ? window->win_page.getPageNum() : 0);
 #endif
 
@@ -178,11 +160,11 @@ void DPM_backout( thread_db* tdbb, record_param* rpb)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"DPM_backout (record_param %"QUADFORMAT"d)\n", rpb->rpb_number.getValue());
+		"DPM_backout (record_param %" QUADFORMAT"d)\n", rpb->rpb_number.getValue());
 
 	VIO_trace(DEBUG_WRITES_INFO,
-		"    record  %"ULONGFORMAT":%d transaction %"ULONGFORMAT" back %"
-		ULONGFORMAT":%d fragment %"ULONGFORMAT":%d flags %d\n",
+		"    record  %" ULONGFORMAT":%d transaction %" ULONGFORMAT" back %"
+		ULONGFORMAT":%d fragment %" ULONGFORMAT":%d flags %d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
 		rpb->rpb_f_line, rpb->rpb_flags);
@@ -202,7 +184,7 @@ void DPM_backout( thread_db* tdbb, record_param* rpb)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
-		"    old record %"ULONGFORMAT":%d, new record %"ULONGFORMAT
+		"    old record %" ULONGFORMAT":%d, new record %" ULONGFORMAT
 		":%d, old dpg_count %d, ",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_b_page,
 		rpb->rpb_b_line, page->dpg_count);
@@ -342,13 +324,13 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"DPM_chain (org_rpb %"QUADFORMAT"d, new_rpb %"
+		"DPM_chain (org_rpb %" QUADFORMAT"d, new_rpb %"
 		QUADFORMAT"d)\n", org_rpb->rpb_number.getValue(),
 		new_rpb ? new_rpb->rpb_number.getValue() : 0);
 
 	VIO_trace(DEBUG_WRITES_INFO,
-		"    org record  %"ULONGFORMAT":%d transaction %"ULONGFORMAT
-		" back %"ULONGFORMAT":%d fragment %"ULONGFORMAT":%d flags %d\n",
+		"    org record  %" ULONGFORMAT":%d transaction %" ULONGFORMAT
+		" back %" ULONGFORMAT":%d fragment %" ULONGFORMAT":%d flags %d\n",
 		org_rpb->rpb_page, org_rpb->rpb_line, org_rpb->rpb_transaction_nr,
 		org_rpb->rpb_b_page, org_rpb->rpb_b_line, org_rpb->rpb_f_page,
 		org_rpb->rpb_f_line, org_rpb->rpb_flags);
@@ -356,7 +338,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 	if (new_rpb)
 	{
 		VIO_trace(DEBUG_WRITES_INFO,
-			"    new record length %d transaction %"ULONGFORMAT
+			"    new record length %d transaction %" ULONGFORMAT
 			" flags %d\n",
 			new_rpb->rpb_length, new_rpb->rpb_transaction_nr,
 			new_rpb->rpb_flags);
@@ -659,7 +641,7 @@ ULONG DPM_data_pages(thread_db* tdbb, jrd_rel* relation)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE_ALL,
-		"    returned pages: %"ULONGFORMAT"\n", pages);
+		"    returned pages: %" ULONGFORMAT"\n", pages);
 #endif
 
 	return pages;
@@ -688,12 +670,12 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"DPM_delete (record_param %"QUADFORMAT", prior_page %"ULONGFORMAT")\n",
+		"DPM_delete (record_param %" QUADFORMAT", prior_page %" ULONGFORMAT")\n",
 		rpb->rpb_number.getValue(), prior_page);
 
 	VIO_trace(DEBUG_WRITES_INFO,
-		"    record  %"ULONGFORMAT":%d transaction %"ULONGFORMAT" back %"
-		ULONGFORMAT":%d fragment %"ULONGFORMAT":%d flags %d\n",
+		"    record  %" ULONGFORMAT":%d transaction %" ULONGFORMAT" back %"
+		ULONGFORMAT":%d fragment %" ULONGFORMAT":%d flags %d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
 		rpb->rpb_f_line, rpb->rpb_flags);
@@ -923,7 +905,7 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
-		"\tDPM_delete:  page %"ULONGFORMAT
+		"\tDPM_delete:  page %" ULONGFORMAT
 		" is empty and about to be released from relation %d\n",
 		window->win_page.getPageNum(), rpb->rpb_relation->rel_id);
 #endif
@@ -1108,11 +1090,11 @@ bool DPM_fetch(thread_db* tdbb, record_param* rpb, USHORT lock)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_READS,
-		"DPM_fetch (record_param %"QUADFORMAT"d, lock %d)\n",
+		"DPM_fetch (record_param %" QUADFORMAT"d, lock %d)\n",
 		rpb->rpb_number.getValue(), lock);
 
 	VIO_trace(DEBUG_READS_INFO,
-		"    record %"ULONGFORMAT":%d\n", rpb->rpb_page, rpb->rpb_line);
+		"    record %" ULONGFORMAT":%d\n", rpb->rpb_page, rpb->rpb_line);
 #endif
 
 	const RecordNumber number = rpb->rpb_number;
@@ -1128,8 +1110,8 @@ bool DPM_fetch(thread_db* tdbb, record_param* rpb, USHORT lock)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_READS_INFO,
-		"    record  %"ULONGFORMAT":%d transaction %"ULONGFORMAT" back %"
-		ULONGFORMAT":%d fragment %"ULONGFORMAT":%d flags %d\n",
+		"    record  %" ULONGFORMAT":%d transaction %" ULONGFORMAT" back %"
+		ULONGFORMAT":%d fragment %" ULONGFORMAT":%d flags %d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
 		rpb->rpb_f_line, rpb->rpb_flags);
@@ -1170,12 +1152,12 @@ bool DPM_fetch_back(thread_db* tdbb, record_param* rpb, USHORT lock, SSHORT latc
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_READS,
-		"DPM_fetch_back (record_param %"QUADFORMAT"d, lock %d)\n",
+		"DPM_fetch_back (record_param %" QUADFORMAT"d, lock %d)\n",
 		rpb->rpb_number.getValue(), lock);
 
 	VIO_trace(DEBUG_READS_INFO,
-		"    record  %"ULONGFORMAT":%d transaction %"ULONGFORMAT
-		" back %"ULONGFORMAT":%d\n",
+		"    record  %" ULONGFORMAT":%d transaction %" ULONGFORMAT
+		" back %" ULONGFORMAT":%d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_b_page, rpb->rpb_b_line);
 #endif
@@ -1203,8 +1185,8 @@ bool DPM_fetch_back(thread_db* tdbb, record_param* rpb, USHORT lock, SSHORT latc
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_READS_INFO,
-		"    record fetched  %"ULONGFORMAT":%d transaction %"
-		ULONGFORMAT" back %"ULONGFORMAT":%d fragment %"ULONGFORMAT
+		"    record fetched  %" ULONGFORMAT":%d transaction %"
+		ULONGFORMAT" back %" ULONGFORMAT":%d fragment %" ULONGFORMAT
 		":%d flags %d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
@@ -1234,12 +1216,12 @@ void DPM_fetch_fragment( thread_db* tdbb, record_param* rpb, USHORT lock)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_READS,
-		"DPM_fetch_fragment (record_param %"QUADFORMAT"d, lock %d)\n",
+		"DPM_fetch_fragment (record_param %" QUADFORMAT"d, lock %d)\n",
 		rpb->rpb_number.getValue(), lock);
 
 	VIO_trace(DEBUG_READS_INFO,
-		"    record  %"ULONGFORMAT":%d transaction %"ULONGFORMAT
-		" back %"ULONGFORMAT":%d\n",
+		"    record  %" ULONGFORMAT":%d transaction %" ULONGFORMAT
+		" back %" ULONGFORMAT":%d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_b_page, rpb->rpb_b_line);
 #endif
@@ -1257,8 +1239,8 @@ void DPM_fetch_fragment( thread_db* tdbb, record_param* rpb, USHORT lock)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_READS_INFO,
-		"    record fetched  %"ULONGFORMAT":%d transaction %"ULONGFORMAT
-		" back %"ULONGFORMAT":%d fragment %"ULONGFORMAT":%d flags %d\n",
+		"    record fetched  %" ULONGFORMAT":%d transaction %" ULONGFORMAT
+		" back %" ULONGFORMAT":%d fragment %" ULONGFORMAT":%d flags %d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
 		rpb->rpb_f_line, rpb->rpb_flags);
@@ -1287,7 +1269,7 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE_ALL,
-		"DPM_gen_id (generator %"SLONGFORMAT", val %" QUADFORMAT "d)\n", generator, val);
+		"DPM_gen_id (generator %" SLONGFORMAT", val %" QUADFORMAT "d)\n", generator, val);
 #endif
 
 	// For the uncommited transaction, values are stored in the transaction-level cache,
@@ -1395,7 +1377,7 @@ bool DPM_get(thread_db* tdbb, record_param* rpb, SSHORT lock_type)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_READS,
-		"DPM_get (record_param %"QUADFORMAT"d, lock type %d)\n",
+		"DPM_get (record_param %" QUADFORMAT"d, lock type %d)\n",
 		rpb->rpb_number.getValue(), lock_type);
 #endif
 
@@ -1420,7 +1402,7 @@ bool DPM_get(thread_db* tdbb, record_param* rpb, SSHORT lock_type)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_READS_INFO,
-		"    record  %"ULONGFORMAT":%d\n", page->ppg_page[slot], line);
+		"    record  %" ULONGFORMAT":%d\n", page->ppg_page[slot], line);
 #endif
 
 	const ULONG page_number = page->ppg_page[slot];
@@ -1469,8 +1451,8 @@ ULONG DPM_get_blob(thread_db* tdbb,
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_READS,
-		"DPM_get_blob (blob, record_number %"QUADFORMAT
-		"d, delete_flag %d, prior_page %"ULONGFORMAT")\n",
+		"DPM_get_blob (blob, record_number %" QUADFORMAT
+		"d, delete_flag %d, prior_page %" ULONGFORMAT")\n",
 		record_number.getValue(), (int) delete_flag, prior_page);
 #endif
 
@@ -1588,7 +1570,7 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_READS,
-		"DPM_next (record_param %"QUADFORMAT"d)\n", rpb->rpb_number.getValue());
+		"DPM_next (record_param %" QUADFORMAT"d)\n", rpb->rpb_number.getValue());
 #endif
 
 	WIN* window = &rpb->getWindow(tdbb);
@@ -1774,7 +1756,7 @@ void DPM_pages(thread_db* tdbb, SSHORT rel_id, int type, ULONG sequence, ULONG p
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE_ALL,
-		"DPM_pages (rel_id %d, type %d, sequence %"ULONGFORMAT", page %"ULONGFORMAT")\n",
+		"DPM_pages (rel_id %d, type %d, sequence %" ULONGFORMAT", page %" ULONGFORMAT")\n",
 		rel_id, type, sequence, page);
 #endif
 
@@ -1955,12 +1937,12 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, const Jrd:
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"DPM_store (record_param %"QUADFORMAT"d, stack, type %d)\n",
+		"DPM_store (record_param %" QUADFORMAT"d, stack, type %d)\n",
 		rpb->rpb_number.getValue(), type);
 
 	VIO_trace(DEBUG_WRITES_INFO,
-		"    record to store %"ULONGFORMAT":%d transaction %"ULONGFORMAT
-		" back %"ULONGFORMAT":%d fragment %"ULONGFORMAT":%d flags %d\n",
+		"    record to store %" ULONGFORMAT":%d transaction %" ULONGFORMAT
+		" back %" ULONGFORMAT":%d fragment %" ULONGFORMAT":%d flags %d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
 		rpb->rpb_f_line, rpb->rpb_flags);
@@ -2000,8 +1982,8 @@ void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, const Jrd:
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
-		"    record %"ULONGFORMAT":%d, length %"SLONGFORMAT
-		", rpb_flags %d, f_page %"ULONGFORMAT":%d, b_page %"ULONGFORMAT
+		"    record %" ULONGFORMAT":%d, length %" SLONGFORMAT
+		", rpb_flags %d, f_page %" ULONGFORMAT":%d, b_page %" ULONGFORMAT
 		":%d\n",
 		rpb->rpb_page, rpb->rpb_line, length, rpb->rpb_flags,
 		rpb->rpb_f_page, rpb->rpb_f_line, rpb->rpb_b_page,
@@ -2108,10 +2090,10 @@ void DPM_rewrite_header( thread_db* tdbb, record_param* rpb)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"DPM_rewrite_header (record_param %"QUADFORMAT"d)\n", rpb->rpb_number.getValue());
+		"DPM_rewrite_header (record_param %" QUADFORMAT"d)\n", rpb->rpb_number.getValue());
 
 	VIO_trace(DEBUG_WRITES_INFO,
-		"    record  %"ULONGFORMAT":%d\n", rpb->rpb_page, rpb->rpb_line);
+		"    record  %" ULONGFORMAT":%d\n", rpb->rpb_page, rpb->rpb_line);
 #endif
 
 	WIN* window = &rpb->getWindow(tdbb);
@@ -2120,21 +2102,21 @@ void DPM_rewrite_header( thread_db* tdbb, record_param* rpb)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
-		"    old flags %d, old transaction %"SQUADFORMAT
-		", old format %d, old back record %"ULONGFORMAT":%d\n",
+		"    old flags %d, old transaction %" SQUADFORMAT
+		", old format %d, old back record %" ULONGFORMAT":%d\n",
 		header->rhd_flags, Ods::getTraNum(header), (int) header->rhd_format,
 		header->rhd_b_page, header->rhd_b_line);
 
 	VIO_trace(DEBUG_WRITES_INFO,
-		"    new flags %d, new transaction %"SQUADFORMAT
-		", new format %d, new back record %"ULONGFORMAT":%d\n",
+		"    new flags %d, new transaction %" SQUADFORMAT
+		", new format %d, new back record %" ULONGFORMAT":%d\n",
 		rpb->rpb_flags, rpb->rpb_transaction_nr, rpb->rpb_format_number,
 		rpb->rpb_b_page, rpb->rpb_b_line);
 #endif
 
 	// dimitr: current code is not expected to change the transaction number
 	fb_assert(rpb->rpb_transaction_nr == Ods::getTraNum(header));
-//	Ods::writeTraNum(header, rpb->rpb_transaction_nr);
+	///Ods::writeTraNum(header, rpb->rpb_transaction_nr);
 
 	header->rhd_flags = rpb->rpb_flags;
 	header->rhd_format = rpb->rpb_format_number;
@@ -2161,12 +2143,12 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack, const jrd
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"DPM_update (record_param %"QUADFORMAT"d, stack, transaction %"ULONGFORMAT")\n",
+		"DPM_update (record_param %" QUADFORMAT"d, stack, transaction %" ULONGFORMAT")\n",
 		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
 
 	VIO_trace(DEBUG_WRITES_INFO,
-		"    record %"ULONGFORMAT":%d transaction %"ULONGFORMAT" back %"
-		ULONGFORMAT":%d fragment %"ULONGFORMAT":%d flags %d\n",
+		"    record %" ULONGFORMAT":%d transaction %" ULONGFORMAT" back %"
+		ULONGFORMAT":%d fragment %" ULONGFORMAT":%d flags %d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
 		rpb->rpb_f_line, rpb->rpb_flags);
@@ -2241,17 +2223,15 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack, const jrd
 	header->rhd_b_page = rpb->rpb_b_page;
 	header->rhd_b_line = rpb->rpb_b_line;
 
-	release_gc_active(tdbb, rpb);
-
 	UCHAR* const data = (UCHAR*) header + header_size;
 
 	dcc.pack(rpb->rpb_address, data);
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
-		"    record %"ULONGFORMAT
-		":%d, dpg_length %d, rpb_flags %d, rpb_f record %"ULONGFORMAT
-		":%d, rpb_b record %"ULONGFORMAT":%d\n",
+		"    record %" ULONGFORMAT
+		":%d, dpg_length %d, rpb_flags %d, rpb_f record %" ULONGFORMAT
+		":%d, rpb_b record %" ULONGFORMAT":%d\n",
 		rpb->rpb_page, rpb->rpb_line, page->dpg_rpt[slot].dpg_length,
 		rpb->rpb_flags, rpb->rpb_f_page, rpb->rpb_f_line,
 		rpb->rpb_b_page, rpb->rpb_b_line);
@@ -2318,7 +2298,7 @@ static void check_swept(thread_db* tdbb, record_param* rpb)
 		{
 			rhd* header = (rhd*) ((SCHAR*) dpage + index->dpg_offset);
 			if (Ods::getTraNum(header) > transaction->tra_oldest ||
-				header->rhd_flags & (rpb_blob | rpb_chained | rpb_fragment) ||
+				(header->rhd_flags & (rpb_blob | rpb_chained | rpb_fragment)) ||
 				header->rhd_b_page)
 			{
 				CCH_RELEASE_TAIL(tdbb, window);
@@ -2353,7 +2333,7 @@ static USHORT compress(thread_db* tdbb, data_page* page)
 		"compress (page)\n");
 
 	VIO_trace(DEBUG_TRACE_ALL_INFO,
-		"    sequence %"ULONGFORMAT"\n", page->dpg_sequence);
+		"    sequence %" ULONGFORMAT"\n", page->dpg_sequence);
 #endif
 
 	UCHAR temp_page[MAX_PAGE_SIZE];
@@ -2407,8 +2387,8 @@ static void delete_tail(thread_db* tdbb, rhdf* header, const USHORT page_space, 
 		"delete_tail (header, length)\n");
 
 	VIO_trace(DEBUG_WRITES_INFO,
-		"    transaction %"SQUADFORMAT" flags %d fragment %"
-		ULONGFORMAT":%d back %"ULONGFORMAT":%d\n",
+		"    transaction %" SQUADFORMAT" flags %d fragment %"
+		ULONGFORMAT":%d back %" ULONGFORMAT":%d\n",
 		Ods::getTraNum(header), header->rhdf_flags,
 		header->rhdf_f_page, header->rhdf_f_line,
 		header->rhdf_b_page, header->rhdf_b_line);
@@ -2534,14 +2514,14 @@ static void fragment(thread_db* tdbb,
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"fragment (record_param %"QUADFORMAT
-		"d, available_space %d, dcc, length %d, transaction %"ULONGFORMAT")\n",
+		"fragment (record_param %" QUADFORMAT
+		"d, available_space %d, dcc, length %d, transaction %" ULONGFORMAT")\n",
 		rpb->rpb_number.getValue(), available_space, length,
 		transaction ? transaction->tra_number : 0);
 
 	VIO_trace(DEBUG_WRITES_INFO,
-		"    record %"ULONGFORMAT":%d transaction %"ULONGFORMAT" back %"
-		ULONGFORMAT":%d fragment %"ULONGFORMAT":%d flags %d\n",
+		"    record %" ULONGFORMAT":%d transaction %" ULONGFORMAT" back %"
+		ULONGFORMAT":%d fragment %" ULONGFORMAT":%d flags %d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page,
 		rpb->rpb_f_line, rpb->rpb_flags);
@@ -2588,13 +2568,14 @@ static void fragment(thread_db* tdbb,
 	}
 
 	header->rhdf_flags |= rhd_gc_active;
-	lock_gc_active(tdbb, transaction, rpb);
+
+	AutoLock gcLockGuard(tdbb, lock_gc_active(tdbb, transaction, rpb));
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
-		"    rhdf_transaction %"SQUADFORMAT", window record %"ULONGFORMAT
+		"    rhdf_transaction %" SQUADFORMAT", window record %" ULONGFORMAT
 		":%d, available_space %d, rhdf_flags %d, rhdf_f record %"
-		ULONGFORMAT":%d, rhdf_b record %"ULONGFORMAT":%d\n",
+		ULONGFORMAT":%d, rhdf_b record %" ULONGFORMAT":%d\n",
 		Ods::getTraNum(header), window->win_page.getPageNum(), line,
 		available_space, header->rhdf_flags, header->rhdf_f_page,
 		header->rhdf_f_line, header->rhdf_b_page, header->rhdf_b_line);
@@ -2647,7 +2628,7 @@ static void fragment(thread_db* tdbb,
 		header->rhdf_b_line = rpb->rpb_b_line;
 	}
 
-	release_gc_active(tdbb, rpb);
+	gcLockGuard.release();
 
 	const size_t post_header_length =
 		dcc.pack(rpb->rpb_address, available_space - RHDF_SIZE, header->rhdf_data);
@@ -2657,9 +2638,9 @@ static void fragment(thread_db* tdbb,
 		"    fragment head \n");
 
 	VIO_trace(DEBUG_WRITES_INFO,
-		"    rhdf_trans %"SQUADFORMAT", window record %"ULONGFORMAT
-		":%d, dpg_length %d\n\trhdf_flags %d, rhdf_f record %"ULONGFORMAT
-		":%d, rhdf_b record %"ULONGFORMAT":%d\n",
+		"    rhdf_trans %" SQUADFORMAT", window record %" ULONGFORMAT
+		":%d, dpg_length %d\n\trhdf_flags %d, rhdf_f record %" ULONGFORMAT
+		":%d, rhdf_b record %" ULONGFORMAT":%d\n",
 		Ods::getTraNum(header), window->win_page.getPageNum(), line,
 		page->dpg_rpt[line].dpg_length, header->rhdf_flags,
 		header->rhdf_f_page, header->rhdf_f_line, header->rhdf_b_page,
@@ -2859,7 +2840,7 @@ static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window, con
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
-		"   extended_relation (relation %d, window_page %"ULONGFORMAT")\n",
+		"   extended_relation (relation %d, window_page %" ULONGFORMAT")\n",
 		relation->rel_id, window->win_page.getPageNum());
 #endif
 }
@@ -3290,7 +3271,7 @@ static rhd* locate_space(thread_db* tdbb,
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
-		"    extended relation %d with page %"ULONGFORMAT" to get %d bytes\n",
+		"    extended relation %d with page %" ULONGFORMAT" to get %d bytes\n",
 		relation->rel_id, window->win_page.getPageNum(), size);
 #endif
 
@@ -3552,8 +3533,8 @@ static void store_big_record(thread_db* tdbb,
 			"    back portion\n");
 
 		VIO_trace(DEBUG_WRITES_INFO,
-			"    getWindow(tdbb) page %"ULONGFORMAT
-			", max_data %d, \n\trhdf_flags %d, prior %"ULONGFORMAT"\n",
+			"    getWindow(tdbb) page %" ULONGFORMAT
+			", max_data %d, \n\trhdf_flags %d, prior %" ULONGFORMAT"\n",
 			rpb->getWindow(tdbb).win_page.getPageNum(), max_data, header->rhdf_flags,
 			prior.getPageNum());
 #endif
@@ -3584,9 +3565,9 @@ static void store_big_record(thread_db* tdbb,
 		"    front part\n");
 
 	VIO_trace(DEBUG_WRITES_INFO,
-		"    rhdf_trans %"SQUADFORMAT", rpb_window record %"ULONGFORMAT
-		":%d, dpg_length %d \n\trhdf_flags %d, rhdf_f record %"ULONGFORMAT
-		":%d, rhdf_b record %"ULONGFORMAT":%d\n",
+		"    rhdf_trans %" SQUADFORMAT", rpb_window record %" ULONGFORMAT
+		":%d, dpg_length %d \n\trhdf_flags %d, rhdf_f record %" ULONGFORMAT
+		":%d, rhdf_b record %" ULONGFORMAT":%d\n",
 		Ods::getTraNum(header), rpb->getWindow(tdbb).win_page.getPageNum(),
 		rpb->rpb_line, page->dpg_rpt[rpb->rpb_line].dpg_length,
 		header->rhdf_flags, header->rhdf_f_page, header->rhdf_f_line,

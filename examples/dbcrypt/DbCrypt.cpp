@@ -24,13 +24,7 @@
  *  Contributor(s): ______________________________________.
  */
 
-#include <stdint.h>
-
-#include "ibase.h"
-#include "firebird/Interface.h"
-
-#include "firebird.h"		// Needed for atomic support
-#include "../common/classes/fb_atomic.h"
+#include "../interfaces/ifaceExamples.h"
 
 using namespace Firebird;
 
@@ -95,7 +89,8 @@ public:
 	// ICryptPlugin implementation
 	void encrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to);
 	void decrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to);
-	void setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolderPlugin** sources);
+	void setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolderPlugin** sources,
+		const char* keyName);
 
 	int release()
 	{
@@ -129,9 +124,10 @@ public:
 
 private:
 	IPluginConfig* config;
-	UCHAR key;
+	char savedKeyName[32];
+	ISC_UCHAR key;
 
-	AtomicCounter refCounter;
+	FbSampleAtomic refCounter;
 	IReferenceCounted* owner;
 
 	void noKeyError(CheckStatusWrapper* status);
@@ -139,11 +135,20 @@ private:
 
 void DbCrypt::noKeyError(CheckStatusWrapper* status)
 {
+	char msg[100];
+	strcpy(msg, "Crypt key ");
+	if (savedKeyName[0])
+	{
+		strcat(msg, savedKeyName);
+		strcat(msg, " ");
+	}
+	strcat(msg, "not set");
+
 	ISC_STATUS_ARRAY vector;
 	vector[0] = isc_arg_gds;
 	vector[1] = isc_random;
 	vector[2] = isc_arg_string;
-	vector[3] = (ISC_STATUS)"Key not set";
+	vector[3] = (ISC_STATUS) msg;
 	vector[4] = isc_arg_end;
 	status->setErrors(vector);
 }
@@ -158,8 +163,8 @@ void DbCrypt::encrypt(CheckStatusWrapper* status, unsigned int length, const voi
 		return;
 	}
 
-	const UCHAR* f = static_cast<const UCHAR*>(from);
-	UCHAR* t = static_cast<UCHAR*>(to);
+	const ISC_UCHAR* f = static_cast<const ISC_UCHAR*>(from);
+	ISC_UCHAR* t = static_cast<ISC_UCHAR*>(to);
 
 	while (length--)
 	{
@@ -177,8 +182,8 @@ void DbCrypt::decrypt(CheckStatusWrapper* status, unsigned int length, const voi
 		return;
 	}
 
-	const UCHAR* f = static_cast<const UCHAR*>(from);
-	UCHAR* t = static_cast<UCHAR*>(to);
+	const ISC_UCHAR* f = static_cast<const ISC_UCHAR*>(from);
+	ISC_UCHAR* t = static_cast<ISC_UCHAR*>(to);
 
 	while (length--)
 	{
@@ -186,12 +191,16 @@ void DbCrypt::decrypt(CheckStatusWrapper* status, unsigned int length, const voi
 	}
 }
 
-void DbCrypt::setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolderPlugin** sources)
+void DbCrypt::setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolderPlugin** sources,
+	const char* keyName)
 {
 	status->init();
 
 	if (key != 0)
 		return;
+
+	strncpy(savedKeyName, (keyName ? keyName : ""), sizeof(savedKeyName));
+	savedKeyName[sizeof(savedKeyName) - 1] = 0;
 
 	IConfig* def = config->getDefaultConfig(status);
 	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
@@ -230,7 +239,7 @@ void DbCrypt::setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolder
 
 	for (unsigned n = 0; n < length; ++n)
 	{
-		ICryptKeyCallback* callback = sources[n]->keyHandle(status, "sample");
+		ICryptKeyCallback* callback = sources[n]->keyHandle(status, savedKeyName);
 		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 			return;
 
@@ -271,7 +280,7 @@ Factory factory;
 
 } // anonymous namespace
 
-extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* m)
+extern "C" void FB_DLL_EXPORT FB_PLUGIN_ENTRY_POINT(IMaster* m)
 {
 	master = m;
 	pluginManager = master->getPluginManager();

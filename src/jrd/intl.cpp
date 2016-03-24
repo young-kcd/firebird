@@ -345,8 +345,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			return charset_collations[id];
 	}
 
-	Jrd::Attachment* att = tdbb->getAttachment();
-	Jrd::Attachment::CheckoutLockGuard guard(att, createCollationMtx, FB_FUNCTION); // do we need it ?
+	CheckoutLockGuard guard(tdbb, createCollationMtx, FB_FUNCTION); // do we need it ?
 
 	Collation* to_delete = NULL;
 
@@ -388,6 +387,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			info.specificAttributes = specificAttributes;
 		}
 
+		Attachment* const att = tdbb->getAttachment();
 		texttype* tt = FB_NEW_POOL(*att->att_pool) texttype;
 		memset(tt, 0, sizeof(texttype));
 

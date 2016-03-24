@@ -112,7 +112,8 @@ static const mode_t MASK = 0660;
 #define FCNTL_BROKEN
 static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64*, FbStatusVector*);
 static jrd_file* setup_file(Database*, const PathName&, const int, const bool, const bool);
-static bool lockDatabaseFile(int desc, const bool shareMode, const bool temporary = false);
+static void lockDatabaseFile(int& desc, const bool shareMode, const bool temporary,
+							 const char* fileName, ISC_STATUS operation);
 static bool unix_error(const TEXT*, const jrd_file*, ISC_STATUS, FbStatusVector* = NULL);
 #if !(defined HAVE_PREAD && defined HAVE_PWRITE)
 static SLONG pread(int, SCHAR*, SLONG, SLONG);
@@ -125,7 +126,7 @@ static int  raw_devices_unlink_database (const PathName&);
 static int	openFile(const char*, const bool, const bool, const bool);
 static void	maybeCloseFile(int&);
 
-int PIO_add_file(Database* dbb, jrd_file* main_file, const PathName& file_name, SLONG start)
+int PIO_add_file(thread_db* tdbb, jrd_file* main_file, const PathName& file_name, SLONG start)
 {
 /**************************************
  *
@@ -142,7 +143,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const PathName& file_name, 
  *	have been locked before entry.
  *
  **************************************/
-	jrd_file* new_file = PIO_create(dbb, file_name, false, false);
+	jrd_file* new_file = PIO_create(tdbb, file_name, false, false);
 	if (!new_file)
 		return 0;
 
@@ -186,7 +187,7 @@ void PIO_close(jrd_file* main_file)
 }
 
 
-jrd_file* PIO_create(Database* dbb, const PathName& file_name,
+jrd_file* PIO_create(thread_db* tdbb, const PathName& file_name,
 	const bool overwrite, const bool temporary)
 {
 /**************************************
@@ -215,7 +216,9 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 #endif
 #endif
 
-	const int desc = os_utils::open(file_name.c_str(), flag, 0666);
+	Database* const dbb = tdbb->getDatabase();
+
+	int desc = os_utils::open(file_name.c_str(), flag, 0666);
 	if (desc == -1)
 	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open O_CREAT") << Arg::Str(file_name) <<
@@ -223,15 +226,7 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 	}
 
 	const bool shareMode = dbb->dbb_config->getServerMode() != MODE_SUPER;
-	if (!lockDatabaseFile(desc, shareMode, temporary))
-	{
-		int lockErrno = errno;
-		close(desc);
-		// error when locking file almost always means it's locked by someone else
-		// therefore do not remove file here (contrary to chmod error)
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lock") << Arg::Str(file_name) <<
-				 Arg::Gds(isc_io_create_err) << Arg::Unix(lockErrno));
-	}
+	lockDatabaseFile(desc, shareMode, temporary, file_name.c_str(), isc_io_create_err);
 
 #ifdef HAVE_FCHMOD
 	if (fchmod(desc, MASK) < 0)
@@ -294,7 +289,7 @@ bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, 
 }
 
 
-void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const USHORT pageSize)
+void PIO_extend(thread_db* tdbb, jrd_file* main_file, const ULONG extPages, const USHORT pageSize)
 {
 /**************************************
  *
@@ -308,6 +303,9 @@ void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const 
  **************************************/
 
 #if defined(HAVE_LINUX_FALLOC_H) && defined(HAVE_FALLOCATE)
+
+	EngineCheckout cout(tdbb, FB_FUNCTION, true);
+
 	ULONG leftPages = extPages;
 	for (jrd_file* file = main_file; file && leftPages; file = file->fil_next)
 	{
@@ -361,7 +359,7 @@ void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const 
 }
 
 
-void PIO_flush(Database* dbb, jrd_file* main_file)
+void PIO_flush(thread_db* tdbb, jrd_file* main_file)
 {
 /**************************************
  *
@@ -376,9 +374,9 @@ void PIO_flush(Database* dbb, jrd_file* main_file)
 
 	// Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this is a no-op.
 #ifndef SUPERSERVER_V2
-	MutexLockGuard guard(main_file->fil_mutex, FB_FUNCTION);
 
-	///Database::Checkout dcoHolder(dbb);
+	EngineCheckout cout(tdbb, FB_FUNCTION, true);
+	MutexLockGuard guard(main_file->fil_mutex, FB_FUNCTION);
 
 	for (jrd_file* file = main_file; file; file = file->fil_next)
 	{
@@ -435,10 +433,8 @@ void PIO_force_write(jrd_file* file, const bool forcedWrites, const bool notUseF
 			unix_error("re open() for SYNC/DIRECT", file, isc_io_open_err);
 		}
 
-		if (!lockDatabaseFile(file->fil_desc, file->fil_flags & FIL_sh_write))
-		{
-			unix_error("lock", file, isc_io_open_err);
-		}
+		lockDatabaseFile(file->fil_desc, file->fil_flags & FIL_sh_write, false,
+			file->fil_string, isc_io_open_err);
 #endif //FCNTL_BROKEN
 
 #ifdef SOLARIS
@@ -487,7 +483,7 @@ ULONG PIO_get_number_of_pages(const jrd_file* file, const USHORT pagesize)
 }
 
 
-void PIO_header(Database* dbb, SCHAR* address, int length)
+void PIO_header(thread_db* tdbb, UCHAR* address, int length)
 {
 /**************************************
  *
@@ -499,6 +495,8 @@ void PIO_header(Database* dbb, SCHAR* address, int length)
  *	Read the page header.
  *
  **************************************/
+	Database* const dbb = tdbb->getDatabase();
+
 	int i;
 	FB_UINT64 bytes;
 
@@ -545,7 +543,7 @@ void PIO_header(Database* dbb, SCHAR* address, int length)
 static Firebird::InitInstance<ZeroBuffer> zeros;
 
 
-USHORT PIO_init_data(Database* dbb, jrd_file* main_file, FbStatusVector* status_vector,
+USHORT PIO_init_data(thread_db* tdbb, jrd_file* main_file, FbStatusVector* status_vector,
 					 ULONG startPage, USHORT initPages)
 {
 /**************************************
@@ -561,6 +559,8 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, FbStatusVector* status_
 	const char* const zero_buff = zeros().getBuffer();
 	const size_t zero_buff_size = zeros().getSize();
 
+	Database* const dbb = tdbb->getDatabase();
+
 	// Fake buffer, used in seek_file. Page space ID have no matter there
 	// as we already know file to work with
 	BufferDesc bdb(dbb->dbb_bcb);
@@ -568,7 +568,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, FbStatusVector* status_
 
 	FB_UINT64 offset;
 
-	///Database::Checkout dcoHolder(dbb);
+	EngineCheckout cout(tdbb, FB_FUNCTION, true);
 
 	jrd_file* file = seek_file(main_file, &bdb, &offset, status_vector);
 
@@ -612,7 +612,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, FbStatusVector* status_
 }
 
 
-jrd_file* PIO_open(Database* dbb,
+jrd_file* PIO_open(thread_db* tdbb,
 				   const PathName& string,
 				   const PathName& file_name)
 {
@@ -626,6 +626,8 @@ jrd_file* PIO_open(Database* dbb,
  *	Open a database file.
  *
  **************************************/
+	Database* const dbb = tdbb->getDatabase();
+
 	bool readOnly = false;
 	const TEXT* const ptr = (string.hasData() ? string : file_name).c_str();
 	int desc = openFile(ptr, false, false, false);
@@ -666,11 +668,7 @@ jrd_file* PIO_open(Database* dbb,
 	}
 
 	const bool shareMode = dbb->dbb_config->getServerMode() != MODE_SUPER;
-	if (!lockDatabaseFile(desc, shareMode || readOnly))
-	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lock") << Arg::Str(file_name) <<
-				 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
-	}
+	lockDatabaseFile(desc, shareMode || readOnly, false, file_name.c_str(), isc_io_open_err);
 
 	// posix_fadvise(desc, 0, 0, POSIX_FADV_RANDOM);
 
@@ -690,7 +688,7 @@ jrd_file* PIO_open(Database* dbb,
 }
 
 
-bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* status_vector)
+bool PIO_read(thread_db* tdbb, jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* status_vector)
 {
 /**************************************
  *
@@ -705,13 +703,12 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* s
 	int i;
 	FB_UINT64 bytes, offset;
 
-	if (file->fil_desc == -1) {
+	if (file->fil_desc == -1)
 		return unix_error("read", file, isc_io_read_err, status_vector);
-	}
 
-	BufferControl* bcb = bdb->bdb_bcb;
-	Database* dbb = bcb->bcb_database;
-	///Database::Checkout dcoHolder(dbb);
+	Database* const dbb = tdbb->getDatabase();
+
+	EngineCheckout cout(tdbb, FB_FUNCTION, true);
 
 	const FB_UINT64 size = dbb->dbb_page_size;
 
@@ -749,7 +746,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* s
 }
 
 
-bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* status_vector)
+bool PIO_write(thread_db* tdbb, jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* status_vector)
 {
 /**************************************
  *
@@ -768,9 +765,9 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* 
 	if (file->fil_desc == -1)
 		return unix_error("write", file, isc_io_write_err, status_vector);
 
-	BufferControl* bcb = bdb->bdb_bcb;
-	Database* dbb = bcb->bcb_database;
-	///Database::Checkout dcoHolder(dbb);
+	Database* const dbb = tdbb->getDatabase();
+
+	EngineCheckout cout(tdbb, FB_FUNCTION, true);
 
 	const SLONG size = dbb->dbb_page_size;
 
@@ -932,15 +929,40 @@ static jrd_file* setup_file(Database* dbb,
 }
 
 
-static bool lockDatabaseFile(int desc, const bool share, const bool temporary)
+static void lockDatabaseFile(int& desc, const bool share, const bool temporary,
+							 const char* fileName, ISC_STATUS operation)
 {
-	struct flock lck;
-	lck.l_type = (!temporary && share) ? F_RDLCK : F_WRLCK;
-	lck.l_whence = SEEK_SET;
-	lck.l_start = 0;
-	lck.l_len = 0;
+	bool shared = (!temporary) && share;
+	bool busy = false;
 
-	return fcntl(desc, F_SETLK, &lck) == 0;
+	do
+	{
+#ifndef HAVE_FLOCK
+		struct flock lck;
+		lck.l_type = shared ? F_RDLCK : F_WRLCK;
+		lck.l_whence = SEEK_SET;
+		lck.l_start = 0;
+		lck.l_len = 0;
+
+		if (fcntl(desc, F_SETLK, &lck) == 0)
+			return;
+		busy = (errno == EACCES) || (errno == EAGAIN);
+#else
+		if (flock(desc, (shared ? LOCK_SH : LOCK_EX) | LOCK_NB) == 0)
+			return;
+		busy = (errno == EWOULDBLOCK);
+#endif
+	} while (errno == EINTR);
+
+	maybeCloseFile(desc);
+
+	Arg::Gds err(isc_io_error);
+	err << "lock" << fileName;
+	if (busy)
+		err << Arg::Gds(isc_already_opened);
+	else
+		err << Arg::Gds(operation) << Arg::Unix(errno);
+	ERR_post(err);
 }
 
 

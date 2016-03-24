@@ -37,7 +37,7 @@ fi
 BuildRootDir=..
 BuiltFBDir=Release/firebird  # Where the just build fb exists.
 TargetDir=buildroot    # Where we want to build the install image
-SecurityDatabase=security3.fdb
+SecurityDatabase=security4.fdb
 
 
 #------------------------------------------------------------------------
@@ -140,7 +140,7 @@ copyFiles() {
     		  @FB_SAMPLEDIR@ @FB_SAMPLEDBDIR@ @FB_HELPDIR@ @FB_INTLDIR@ @FB_MISCDIR@ @FB_SECDBDIR@ @FB_MSGDIR@ @FB_LOGDIR@ \
     		  @FB_GUARDDIR@ @FB_PLUGDIR@"
 
-	for i in ib_udf metadata security; do
+	for i in security; do
 		makeDirs @FB_MISCDIR@/upgrade/$i
 	done
 
@@ -227,10 +227,11 @@ copyFiles() {
 	#secureDB (access rights will be set at install time)
     cp $BuiltFBDir/$SecurityDatabase ${TargetDir}@FB_SECDBDIR@
 
-	#include (.h files)
+	#include (.h .pas files)
     cp $BuiltFBDir/include/*.h ${TargetDir}@FB_INCDIR@
     cp $BuildRootDir/src/include/firebird/*.h ${TargetDir}@FB_INCDIR@/firebird
     tar -C $BuildRootDir/src/include/firebird -cf - impl | tar -C ${TargetDir}@FB_INCDIR@/firebird -x
+    cp $BuildRootDir/src/include/gen/Firebird.pas ${TargetDir}@FB_INCDIR@/firebird
 
 	chown -R root:root ${TargetDir}@FB_INCDIR@/*.h ${TargetDir}@FB_INCDIR@/firebird/*
 	chmod -R 0444 ${TargetDir}@FB_INCDIR@/*.h ${TargetDir}@FB_INCDIR@/firebird/*
@@ -292,9 +293,7 @@ copyFiles() {
 
 	#misc
     cp $BuildRootDir/src/misc/intl.sql							${TargetDir}@FB_MISCDIR@
-    cp $BuildRootDir/src/misc/upgrade/v2/ib_udf*				${TargetDir}@FB_MISCDIR@/upgrade/ib_udf
-    cp $BuildRootDir/src/misc/upgrade/v2/security_database*		${TargetDir}@FB_MISCDIR@/upgrade/security
-    cp $BuildRootDir/src/misc/upgrade/v2.1/metadata_charset*	${TargetDir}@FB_MISCDIR@/upgrade/metadata
+    cp $BuildRootDir/src/misc/upgrade/v3.0/security_database*	${TargetDir}@FB_MISCDIR@/upgrade/security
     cp $BuildRootDir/gen/install/misc/firebird.xinetd			${TargetDir}@FB_MISCDIR@
 	cp $BuildRootDir/gen/install/misc/firebird.init.d.*			${TargetDir}@FB_MISCDIR@
 	cp $BuildRootDir/gen/install/misc/rc.config.firebird		${TargetDir}@FB_MISCDIR@

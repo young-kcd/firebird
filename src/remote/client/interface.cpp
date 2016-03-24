@@ -5361,7 +5361,7 @@ static void authenticateStep0(ClntAuthBlock& cBlock)
 			{
 				iscLogStatus("Authentication, client plugin:", &s);
 			}
-			(Arg::Gds(isc_login)
+			(Arg::Gds(isc_login_error)
 #ifdef DEV_BUILD
 								 << Arg::StatusVector(&s)
 #endif
@@ -5526,7 +5526,15 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 	if (!port)
 		Arg::Gds(isc_unavailable).raise();
 
-	secureAuthentication(cBlock, port);
+	try
+	{
+		secureAuthentication(cBlock, port);
+	}
+	catch (const Exception&)
+	{
+		disconnect(port);
+		throw;
+	}
 
 	return port;
 }
@@ -5905,12 +5913,14 @@ static void disconnect( rem_port* port)
 		PACKET* packet = &rdb->rdb_packet;
 
 		// Deliver the pending deferred packets
-
-		for (rem_que_packet* p = port->port_deferred_packets->begin();
-			 p < port->port_deferred_packets->end(); p++)
+		if (port->port_deferred_packets)
 		{
-			if (!p->sent) {
-				port->send(&p->packet);
+			for (rem_que_packet* p = port->port_deferred_packets->begin();
+				 p < port->port_deferred_packets->end();
+				 p++)
+			{
+				if (!p->sent)
+					port->send(&p->packet);
 			}
 		}
 
@@ -6074,11 +6084,10 @@ static bool get_new_dpb(ClumpletWriter& dpb, const ParametersSet& par)
  *	Analyze and prepare dpb for attachment to remote server.
  *
  **************************************/
-    if (!Config::getRedirection())
-    {
-	    if (dpb.find(par.address_path)) {
-			status_exception::raise(Arg::Gds(isc_unavailable));
-		}
+	bool redirection = Config::getRedirection();
+    if (((!redirection) && dpb.find(par.address_path)) || dpb.find(par.map_attach))
+	{
+		status_exception::raise(Arg::Gds(isc_unavailable));
 	}
 
 	return dpb.find(par.user_name);
@@ -6375,7 +6384,7 @@ static void init(CheckStatusWrapper* status, ClntAuthBlock& cBlock, rem_port* po
 		{
 			// This is FB < 2.5. Lets remove that not recognized DPB/SPB and convert the UTF8
 			// strings to the OS codepage.
-			intlParametersBlock.fromUtf8(dpb, isc_dpb_utf8_filename);
+			intlParametersBlock.fromUtf8(dpb);
 			ISC_unescape(file_name);
 			ISC_utf8ToSystem(file_name);
 		}
@@ -7274,7 +7283,7 @@ static void svcstart(CheckStatusWrapper*	status,
 	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION13)
 	{
 		// This is FB < 3.0. Lets convert the UTF8 strings to the OS codepage.
-		IntlSpbStart().fromUtf8(send, 0);
+		IntlSpbStart().fromUtf8(send);
 	}
 
 	// Build the primary packet to get the operation started.

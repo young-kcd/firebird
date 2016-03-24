@@ -37,7 +37,7 @@
 
 inline void fb_assert_impl(const char* msg, const char* file, int line, bool do_abort)
 {
-	const char* const ASSERT_FAILURE_STRING = "Assertion (%s) failure: %s %"LINEFORMAT"\n";
+	const char* const ASSERT_FAILURE_STRING = "Assertion (%s) failure: %s %" LINEFORMAT"\n";
 
 	if (isatty(2))
 		fprintf(stderr, ASSERT_FAILURE_STRING, msg, file, line);

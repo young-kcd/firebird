@@ -460,6 +460,7 @@ public:
 				{
 					authServer = NULL;
 					working = false;
+					(Arg::Gds(isc_random) << "Plugin not supported by network protocol").copyTo(&st);		// add port_protocol parameter
 					break;
 				}
 
@@ -495,6 +496,7 @@ public:
 					{
 						authServer = NULL;
 						working = false;
+						(Arg::Gds(isc_random) << "Plugin not supported by network protocol").copyTo(&st);		// add port_protocol parameter
 						break;
 					}
 				}
@@ -517,14 +519,21 @@ public:
 		// no success - perform failure processing
 		loginFail(userName, authPort->getRemoteId());
 
-		Arg::Gds loginError(isc_login);
-#ifndef DEV_BUILD
-		if (st.getErrors()[1] == isc_missing_data_structures)
-#endif
+		if (st.hasData())
 		{
+			if (st.getErrors()[1] == isc_missing_data_structures)
+				status_exception::raise(&st);
+
+			iscLogStatus("Authentication error", &st);
+			Arg::Gds loginError(isc_login_error);
+#ifdef DEV_BUILD
 			loginError << Arg::StatusVector(&st);
+#endif
+			loginError.raise();
 		}
-		status_exception::raise(loginError.value());
+		else
+			Arg::Gds(isc_login).raise();
+
 		return false;	// compiler warning silencer
 	}
 
@@ -692,8 +701,8 @@ GlobalPtr<Mutex> GlobalPortLock::mtx;
 class Callback FB_FINAL : public RefCntIface<IEventCallbackImpl<Callback, CheckStatusWrapper> >
 {
 public:
-	explicit Callback(Rvnt* aevent)
-		: event(aevent)
+	explicit Callback(Rdb* aRdb, Rvnt* aEvent)
+		: rdb(aRdb), event(aEvent)
 	{ }
 
 	// IEventCallback implementation
@@ -709,22 +718,23 @@ public:
 	 *
 	 **************************************/
 	{
-		const bool allowCancel = event->rvnt_destroyed.compareExchange(0, 1);
-		if (!allowCancel)
-			return;
-
-		Rdb* rdb = event->rvnt_rdb;
-
 		rem_port* port = rdb->rdb_port->port_async;
-		if (!port)
+		if (!port || (port->port_flags & PORT_detached))
 			return;
 
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
+		if (port->port_flags & PORT_detached)
+			return;
+
 		// hvlad: it is important to call IEvents::cancel() under protection
 		// of async port mutex to avoid crash in rem_port::que_events
 
-		if (allowCancel && event->rvnt_iface)
+		const bool allowCancel = event->rvnt_destroyed.compareExchange(0, 1);
+		if (!allowCancel)
+			return;
+
+		if (event->rvnt_iface)
 		{
 			LocalStatus ls;
 			CheckStatusWrapper status_vector(&ls);
@@ -758,6 +768,7 @@ public:
 	}
 
 private:
+	Rdb* rdb;
 	Rvnt* event;
 };
 
@@ -859,12 +870,15 @@ class CryptKeyCallback : public VersionedIface<ICryptKeyCallbackImpl<CryptKeyCal
 {
 public:
 	explicit CryptKeyCallback(rem_port* prt)
-		: port(prt), l(0), d(NULL)
+		: port(prt), l(0), d(NULL), stopped(false)
 	{ }
 
 	unsigned int callback(unsigned int dataLength, const void* data,
 		unsigned int bufferLength, void* buffer)
 	{
+		if (stopped)
+			return 0;
+
 		Reference r(*port);
 
 		PACKET p;
@@ -874,7 +888,9 @@ public:
 		p.p_cc.p_cc_reply = bufferLength;
 		port->send(&p);
 
-		sem.enter();
+		if (!sem.tryEnter(10))
+			return 0;
+
 		if (bufferLength > l)
 			bufferLength = l;
 		memcpy(buffer, d, bufferLength);
@@ -893,11 +909,17 @@ public:
 			sem2.enter();
 	}
 
+	void stop()
+	{
+		stopped = true;
+	}
+
 private:
 	rem_port* port;
 	Semaphore sem, sem2;
 	unsigned int l;
 	const void* d;
+	bool stopped;
 };
 
 class ServerCallback : public ServerCallbackBase, public GlobalStorage
@@ -920,6 +942,11 @@ public:
 		return &cryptCallback;
 	}
 
+	void stop()
+	{
+		cryptCallback.stop();
+	}
+
 private:
 	CryptKeyCallback cryptCallback;
 };
@@ -936,8 +963,7 @@ static void		append_request_chain(server_req_t*, server_req_t**);
 static void		append_request_next(server_req_t*, server_req_t**);
 static void		attach_database(rem_port*, P_OP, P_ATCH*, PACKET*);
 static void		attach_service(rem_port*, P_ATCH*, PACKET*);
-static void		trusted_auth(rem_port*, const P_TRAU*, PACKET*);
-static void		continue_authentication(rem_port*, const p_auth_continue*, PACKET*);
+static bool		continue_authentication(rem_port*, PACKET*, PACKET*);
 
 static void		aux_request(rem_port*, /*P_REQ*,*/ PACKET*);
 static bool		bad_port_context(IStatus*, IReferenceCounted*, const ISC_STATUS);
@@ -2236,6 +2262,7 @@ void DatabaseAuth::accept(PACKET* send, Auth::WriterImplementation* authBlock)
 
 	CSTRING* const s = &send->p_resp.p_resp_data;
 	authPort->extractNewKeys(s);
+	authPort->port_server_crypt_callback->stop();
 	authPort->send_response(send, 0, s->cstr_length, &status_vector, false);
 }
 
@@ -2288,21 +2315,28 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 
 		if (aux_port)
 		{
-			aux_port->port_flags |= PORT_connecting;
+			fb_assert(aux_port->port_flags & PORT_connecting);
+			bool connected = false;
 			try
 			{
-				if (aux_port->connect(send))
+				connected = aux_port->connect(send) != NULL;
+				if (connected)
+				{
 					aux_port->port_context = rdb;
+					aux_port->port_flags &= ~PORT_connecting;
+				}
 			}
 			catch (const Exception& ex)
 			{
-				aux_port->port_flags &= ~PORT_connecting;
 				iscLogException("", ex);
+			}
+
+			if (!connected)
+			{
 				fb_assert(port->port_async == aux_port);
 				port->port_async = NULL;
 				aux_port->disconnect();
 			}
-			aux_port->port_flags &= ~PORT_connecting;
 		}
 	}
 	catch (const Exception& ex)
@@ -2628,7 +2662,9 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 
 	if (this->port_flags & PORT_async)
 	{
-		if (rdb && rdb->rdb_port && !(rdb->rdb_port->port_flags & PORT_disconnect))
+		if (!(this->port_flags & PORT_detached) &&
+			rdb && rdb->rdb_port &&
+			!(rdb->rdb_port->port_flags & (PORT_disconnect | PORT_detached)))
 		{
 			PACKET *packet = &rdb->rdb_packet;
 			packet->p_operation = op_dummy;
@@ -2784,6 +2820,8 @@ void rem_port::drop_database(P_RLSE* /*release*/, PACKET* sendL)
 
 	rdb->rdb_iface = NULL;
 	port_flags |= PORT_detached;
+	if (port_async)
+		port_async->port_flags |= PORT_detached;
 
 	while (rdb->rdb_events)
 		release_event(rdb->rdb_events);
@@ -2859,10 +2897,16 @@ ISC_STATUS rem_port::end_database(P_RLSE* /*release*/, PACKET* sendL)
 		return this->send_response(sendL, 0, 0, &status_vector, false);
 
 	port_flags |= PORT_detached;
-	rdb->rdb_iface = NULL;
+	if (port_async)
+	{
+		port_async->port_flags |= PORT_detached;
 
-	while (rdb->rdb_events)
-		release_event(rdb->rdb_events);
+		RefMutexGuard portGuard(*port_async->port_sync, FB_FUNCTION);
+		while (rdb->rdb_events)
+			release_event(rdb->rdb_events);
+	}
+
+	rdb->rdb_iface = NULL;
 
 	while (rdb->rdb_requests)
 		release_request(rdb->rdb_requests);
@@ -4172,11 +4216,9 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 			break;
 
 		case op_trusted_auth:	// PROTOCOL < 13
-			trusted_auth(port, &receive->p_trau, sendL);
-			break;
-
 		case op_cont_auth:		// PROTOCOL >= 13
-			continue_authentication(port, &receive->p_auth_cont, sendL);
+			if (!continue_authentication(port, sendL, receive))
+				return false;
 			break;
 
 		case op_update_account_info:
@@ -4382,7 +4424,7 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 		{
 			if (!port->port_parent)
 			{
-				if (!Worker::isShuttingDown() && !(port->port_flags & PORT_rdb_shutdown))
+				if (!Worker::isShuttingDown() && !(port->port_flags & (PORT_rdb_shutdown | PORT_detached)))
 					gds__log("SERVER/process_packet: broken port, server exiting");
 				port->disconnect(sendL, receive);
 				return false;
@@ -4428,40 +4470,7 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 }
 
 
-static void trusted_auth(rem_port* port, const P_TRAU* p_trau, PACKET* send)
-{
-/**************************************
- *
- *	t r u s t e d _ a u t h
- *
- **************************************
- *
- * Functional description
- *	Server side of trusted auth handshake.
- *
- **************************************/
-	ServerAuthBase* sa = port->port_srv_auth;
-	if (! sa)
-	{
-		send_error(port, send, isc_unavailable);
-	}
-
-	if (port->port_protocol < PROTOCOL_VERSION11 || port->port_protocol >= PROTOCOL_VERSION13)
-	{
-		send_error(port, send, (Arg::Gds(isc_random) << "Operation not supported for network protocol"));
-	}
-
-	HANDSHAKE_DEBUG(fprintf(stderr, "Srv: trusted_auth\n"));
-	port->port_srv_auth_block->setDataForPlugin(p_trau->p_trau_data);
-	if (sa->authenticate(send, ServerAuth::CONT_AUTH))
-	{
-		delete sa;
-		port->port_srv_auth = NULL;
-	}
-}
-
-
-static void continue_authentication(rem_port* port, const p_auth_continue* p_auth_c, PACKET* send)
+static bool continue_authentication(rem_port* port, PACKET* send, PACKET* receive)
 {
 /**************************************
  *
@@ -4471,26 +4480,56 @@ static void continue_authentication(rem_port* port, const p_auth_continue* p_aut
  *
  * Functional description
  *	Server side of multi-hop auth handshake.
+ *  Returns false if auth failed and port was disconnected.
  *
  **************************************/
 	ServerAuthBase* sa = port->port_srv_auth;
-	if (! sa)
+	if (!sa)
 	{
 		send_error(port, send, isc_unavailable);
 	}
-
-	if (port->port_protocol < PROTOCOL_VERSION13)
+	else if (port->port_protocol < PROTOCOL_VERSION11 ||
+			 receive->p_operation == op_trusted_auth && port->port_protocol >= PROTOCOL_VERSION13 ||
+			 receive->p_operation == op_cont_auth && port->port_protocol < PROTOCOL_VERSION13)
 	{
 		send_error(port, send, (Arg::Gds(isc_random) << "Operation not supported for network protocol"));
 	}
-
-	HANDSHAKE_DEBUG(fprintf(stderr, "Srv: continue_authentication\n"));
-	port->port_srv_auth_block->setDataForPlugin(p_auth_c);
-	if (sa->authenticate(send, ServerAuth::CONT_AUTH))
+	else
 	{
-		delete sa;
-		port->port_srv_auth = NULL;
+		try
+		{
+			if (receive->p_operation == op_trusted_auth)
+			{
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: trusted_auth\n"));
+				port->port_srv_auth_block->setDataForPlugin(receive->p_trau.p_trau_data);
+			}
+			else if (receive->p_operation == op_cont_auth)
+			{
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: continue_authentication\n"));
+				port->port_srv_auth_block->setDataForPlugin(&receive->p_auth_cont);
+			}
+
+			if (sa->authenticate(send, ServerAuth::CONT_AUTH))
+			{
+				delete sa;
+				port->port_srv_auth = NULL;
+			}
+
+			return true;
+		}
+		catch (const Exception& ex)
+		{
+			LocalStatus ls;
+			CheckStatusWrapper status_vector(&ls);
+			ex.stuffException(&status_vector);
+
+			port->send_response(send, 0, 0, &status_vector, false);
+		}
 	}
+
+	port->disconnect(send, receive);
+
+	return false;
 }
 
 
@@ -4600,7 +4639,10 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 	for (event = rdb->rdb_events; event; event = event->rvnt_next)
 	{
 		if (!event->rvnt_iface)
+		{
+			event->rvnt_destroyed = 0;
 			break;
+		}
 	}
 
 	if (!event)
@@ -4611,7 +4653,7 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 #endif
 		event->rvnt_next = rdb->rdb_events;
 		rdb->rdb_events = event;
-		event->rvnt_callback = FB_NEW Callback(event);
+		event->rvnt_callback = FB_NEW Callback(rdb, event);
 	}
 
 	event->rvnt_id = stuff->p_event_rid;
@@ -5347,6 +5389,7 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 			svc->svc_iface = iface;
 		}
 	}
+	port_server_crypt_callback->stop();
 
 	return this->send_response(sendL, 0, sendL->p_resp.p_resp_data.cstr_length, &status_vector,
 		false);
@@ -5788,7 +5831,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 						// It is very important to not release port_que_sync before
 						// port_sync, else we can miss data arrived at time between
 						// releasing locks and will never handle it. Therefore we
-						// can't ise MutexLockGuard here
+						// can't use MutexLockGuard here
 						portQueGuard.enter();
 						if (port->haveRecvData())
 						{
@@ -6400,11 +6443,13 @@ void SrvAuthBlock::createPluginsItr()
 	if (final.getCount() == 0)
 	{
 		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: createPluginsItr: No matching plugins on server\n"));
-		(Arg::Gds(isc_login)
+
+		Arg::Gds loginError(isc_login_error);
 #ifdef DEV_BUILD
-							<< Arg::Gds(isc_random) << "No matching plugins on server"
+		loginError << Arg::Gds(isc_random) << "No matching plugins on server";
 #endif
-							).raise();
+		gds__log("Authentication error\n\tNo matching plugins on server");
+		loginError.raise();
 	}
 
 	// reorder to make it match first, already passed, plugin data

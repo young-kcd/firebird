@@ -815,13 +815,6 @@ grant0($node)
 			$node->grantAdminOption = $7;
 			$node->grantor = $8;
 		}
-	| usage_privilege(NOTRIAL(&$node->privileges)) ON KW_DOMAIN symbol_domain_name
-			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
-		{
-			$node->object = newNode<GranteeClause>(obj_field, *$4);
-			$node->grantAdminOption = $7;
-			$node->grantor = $8;
-		}
 	| usage_privilege(NOTRIAL(&$node->privileges)) ON EXCEPTION symbol_exception_name
 			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
 		{
@@ -843,6 +836,14 @@ grant0($node)
 			$node->grantAdminOption = $7;
 			$node->grantor = $8;
 		}
+	/***
+	| usage_privilege(NOTRIAL(&$node->privileges)) ON KW_DOMAIN symbol_domain_name
+			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
+		{
+			$node->object = newNode<GranteeClause>(obj_field, *$4);
+			$node->grantAdminOption = $7;
+			$node->grantor = $8;
+		}
 	| usage_privilege(NOTRIAL(&$node->privileges)) ON CHARACTER SET symbol_character_set_name
 			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
 		{
@@ -857,6 +858,7 @@ grant0($node)
 			$node->grantAdminOption = $7;
 			$node->grantor = $8;
 		}
+	***/
 	| ddl_privileges(NOTRIAL(&$node->privileges)) object
 			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
 		{ 
@@ -1070,13 +1072,6 @@ revoke0($node)
 			$node->grantAdminOption = $1;
 			$node->grantor = $8;
 		}
-	| rev_grant_option usage_privilege(NOTRIAL(&$node->privileges)) ON KW_DOMAIN symbol_domain_name
-			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
-		{
-			$node->object = newNode<GranteeClause>(obj_field, *$5);
-			$node->grantAdminOption = $1;
-			$node->grantor = $8;
-		}
 	| rev_grant_option usage_privilege(NOTRIAL(&$node->privileges)) ON EXCEPTION symbol_exception_name
 			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
 		{
@@ -1098,6 +1093,14 @@ revoke0($node)
 			$node->grantAdminOption = $1;
 			$node->grantor = $8;
 		}
+	/***
+	| rev_grant_option usage_privilege(NOTRIAL(&$node->privileges)) ON KW_DOMAIN symbol_domain_name
+			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
+		{
+			$node->object = newNode<GranteeClause>(obj_field, *$5);
+			$node->grantAdminOption = $1;
+			$node->grantor = $8;
+		}
 	| rev_grant_option usage_privilege(NOTRIAL(&$node->privileges)) ON CHARACTER SET symbol_character_set_name
 			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
 		{
@@ -1112,6 +1115,7 @@ revoke0($node)
 			$node->grantAdminOption = $1;
 			$node->grantor = $8;
 		}
+	***/
 	| rev_grant_option ddl_privileges(NOTRIAL(&$node->privileges)) object
 			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
 		{
@@ -1612,28 +1616,40 @@ check_constraint
 
 
 // CREATE SEQUENCE/GENERATOR
-
 %type <createAlterSequenceNode> generator_clause
 generator_clause
-	: symbol_generator_name start_with_opt step_option
-		{ $$ = newNode<CreateAlterSequenceNode>(*$1, $2, $3); }
+	: symbol_generator_name
+		{ $$ = newNode<CreateAlterSequenceNode>(*$1); }
+	  create_sequence_options($2)
+		{ $$ = $2; }
 	;
 
-%type <nullableInt64Val> start_with_opt
-start_with_opt
-	: /* nothing */		{ $$ = Nullable<SINT64>::empty(); }
-	| start_with		{ $$ = Nullable<SINT64>::val($1); }
+%type create_sequence_options(<createAlterSequenceNode>)
+create_sequence_options($seqNode)
+	: /* nothing */
+	| create_seq_option($seqNode) create_sequence_options($seqNode)
 	;
 
-%type <int64Val> start_with
-start_with
-	: START WITH sequence_value		{ $$ = $3; }
+%type create_seq_option(<createAlterSequenceNode>)
+create_seq_option($seqNode)
+	: start_with_opt($seqNode)
+	| step_option($seqNode)
 	;
 
-%type <nullableInt32Val> step_option
-step_option
-	: /* nothing */ 							{ $$ = Nullable<SLONG>::empty(); }
-	| INCREMENT by_noise signed_long_integer	{ $$ = Nullable<SLONG>::val($3); }
+%type start_with_opt(<createAlterSequenceNode>)
+start_with_opt($seqNode)
+	: START WITH sequence_value
+		{
+			setClause($seqNode->value, "START WITH", $3);
+			setClause($seqNode->restartSpecified, "RESTART", true);
+		}
+	;
+
+%type step_option(<createAlterSequenceNode>)
+step_option($seqNode)
+	: INCREMENT by_noise signed_long_integer
+		{ setClause($seqNode->step, "INCREMENT BY", $3); }
+	;
 
 by_noise
 	: // nothing
@@ -1641,58 +1657,90 @@ by_noise
 
 %type <createAlterSequenceNode> replace_sequence_clause
 replace_sequence_clause
-	: symbol_generator_name replace_sequence_options step_option
+	: symbol_generator_name
 		{
-			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1, $2, $3);
+			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1);
 			node->alter = true;
-			node->restartSpecified = true;
 			$$ = node;
 		}
+	  replace_sequence_options($2)
+		{
+			// Remove this to implement CORE-5137
+			if (!$2->restartSpecified && !$2->step.specified)
+				yyerrorIncompleteCmd();
+			$$ = $2;
+		}
+	;
+	
+%type replace_sequence_options(<createAlterSequenceNode>)
+replace_sequence_options($seqNode)
+	: /* nothing */
+	| replace_seq_option($seqNode) replace_sequence_options($seqNode)
 	;
 
-%type <nullableInt64Val> replace_sequence_options
-replace_sequence_options
-	: RESTART						{ $$ = Nullable<SINT64>::empty(); }
-	| START WITH sequence_value		{ $$ = Nullable<SINT64>::val($3); }
+%type replace_seq_option(<createAlterSequenceNode>)
+replace_seq_option($seqNode)
+	: RESTART
+		{
+			setClause($seqNode->restartSpecified, "RESTART", true);
+		}
+	| start_with_opt($seqNode)
+	| step_option($seqNode)
 	;
 
 %type <createAlterSequenceNode> alter_sequence_clause
 alter_sequence_clause
-	: symbol_generator_name restart_value_opt2 step_option
+	: symbol_generator_name
 		{
-			if (!$2.specified && !$3.specified)
-				yyerrorIncompleteCmd();
-			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1, $2.value, $3);
+			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1);
 			node->create = false;
 			node->alter = true;
-			node->restartSpecified = $2.specified;
 			$$ = node;
 		}
+	  alter_sequence_options($2)
+		{
+			if (!$2->restartSpecified && !$2->value.specified && !$2->step.specified)
+				yyerrorIncompleteCmd();
+			$$ = $2;
+		}
+
+%type alter_sequence_options(<createAlterSequenceNode>)
+alter_sequence_options($seqNode)
+	: /* nothing */
+	| alter_seq_option($seqNode) alter_sequence_options($seqNode)
 	;
 
-%type <nullableInt64Val> restart_value_opt
-restart_value_opt
-	: RESTART						{ $$ = Nullable<SINT64>::empty(); }
-	| RESTART WITH sequence_value	{ $$ = Nullable<SINT64>::val($3); }
+%type alter_seq_option(<createAlterSequenceNode>)
+alter_seq_option($seqNode)
+	: restart_option($seqNode)
+	| step_option($seqNode)
 	;
 
-%type <nullableNullableInt64Val> restart_value_opt2
-restart_value_opt2
-	: /* nothing */			{ $$ = Nullable<BaseNullable<SINT64> >::empty(); }
-	| restart_value_opt		{ $$ = Nullable<BaseNullable<SINT64> > ::val($1); }
-	;
 
+%type restart_option(<createAlterSequenceNode>)
+restart_option($seqNode)
+	: RESTART with_opt
+		{
+			setClause($seqNode->restartSpecified, "RESTART", true);
+			setClause($seqNode->value, "RESTART WITH", $2);
+		}
+
+%type <nullableInt64Val> with_opt
+with_opt
+	: /* Nothign */			{ $$ = BaseNullable<SINT64>::empty(); }
+	| WITH sequence_value	{ $$ = BaseNullable<SINT64>::val($2); }
+	;
 
 %type <createAlterSequenceNode> set_generator_clause
 set_generator_clause
 	: SET GENERATOR symbol_generator_name TO sequence_value
 		{
-			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$3,
-				Nullable<SINT64>::val($5), Nullable<SLONG>::empty());
+			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$3);
 			node->create = false;
 			node->alter = true;
 			node->legacy = true;
 			node->restartSpecified = true;
+			node->value = BaseNullable<SINT64>::val($5);
 			$$ = node;
 		}
 	;
@@ -2046,7 +2094,7 @@ identity_clause
 %type <int64Val> identity_clause_options
 identity_clause_options
 	: /* nothing */			{ $$ = 0; }
-	| '(' start_with ')'	{ $$ = $2; }
+	| '(' START WITH sequence_value ')'	{ $$ = $4; }
 	;
 
 // value does allow parens around it, but there is a problem getting the source text.
@@ -2151,6 +2199,7 @@ column_constraint_def($addColumnClause)
 column_constraint($addColumnClause)
 	: null_constraint
 		{
+			setClause($addColumnClause->notNullSpecified, "NOT NULL");
 			RelationNode::AddConstraintClause& constraint = $addColumnClause->constraints.add();
 			constraint.constraintType = RelationNode::AddConstraintClause::CTYPE_NOT_NULL;
 		}
@@ -3476,7 +3525,7 @@ trigger_active
 		{ $$ = Nullable<bool>::val(true); }
 	| INACTIVE
 		{ $$ = Nullable<bool>::val(false); }
-	|
+	| // nothing
 		{ $$ = Nullable<bool>::empty(); }
 	;
 
@@ -3726,7 +3775,7 @@ alter_op($relationNode)
 	| col_opt symbol_column_name KW_TYPE non_array_type def_computed
 		{
 			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
-			clause->field = newNode<dsql_fld>();
+			clause->field = $4;
 			clause->field->fld_name = *$2;
 			clause->computed = $5;
 			$relationNode->clauses.add(clause);
@@ -3757,13 +3806,13 @@ alter_op($relationNode)
 			clause->dropDefault = true;
 			$relationNode->clauses.add(clause);
 		}
-	| col_opt symbol_column_name restart_value_opt
+	| col_opt symbol_column_name RESTART with_opt
 		{
 			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
 			clause->field = newNode<dsql_fld>();
 			clause->field->fld_name = *$2;
 			clause->identityRestart = true;
-			clause->identityRestartValue = $3;
+			clause->identityRestartValue = $4;
 			$relationNode->clauses.add(clause);
 		}
 	;
@@ -3957,16 +4006,24 @@ db_alter_clause($alterDatabaseNode)
 		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_END_BACKUP; }
 	| SET DEFAULT CHARACTER SET symbol_character_set_name
 		{ $alterDatabaseNode->setDefaultCharSet = *$5; }
-	| ENCRYPT WITH valid_symbol_name
-		{ $alterDatabaseNode->cryptPlugin = *$3; }
+	| ENCRYPT WITH valid_symbol_name crypt_key_clause($alterDatabaseNode)
+		{
+			setClauseFlag($alterDatabaseNode->clauses, AlterDatabaseNode::CLAUSE_CRYPT, "CRYPT");
+			$alterDatabaseNode->cryptPlugin = *$3;
+		}
 	| DECRYPT
-		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_DECRYPT; }
+		{ setClauseFlag($alterDatabaseNode->clauses, AlterDatabaseNode::CLAUSE_CRYPT, "CRYPT"); }
 	| SET LINGER TO long_integer
 		{ $alterDatabaseNode->linger = $4; }
 	| DROP LINGER
 		{ $alterDatabaseNode->linger = 0; }
 	;
 
+%type crypt_key_clause(<alterDatabaseNode>)
+crypt_key_clause($alterDatabaseNode)
+	: // nothing
+	| KEY valid_symbol_name		{ $alterDatabaseNode->keyName = *$2; }
+	;
 
 // ALTER TRIGGER
 
@@ -4727,12 +4784,14 @@ tran_option($setTransactionNode)
 		{ setClause($setTransactionNode->ignoreLimbo, "IGNORE LIMBO", true); }
 	| RESTART REQUESTS
 		{ setClause($setTransactionNode->restartRequests, "RESTART REQUESTS", true); }
+	| AUTO COMMIT
+		{ setClause($setTransactionNode->autoCommit, "AUTO COMMIT", true); }
 	// timeout
 	| LOCK TIMEOUT nonneg_short_integer
 		{ setClause($setTransactionNode->lockTimeout, "LOCK TIMEOUT", (USHORT) $3); }
 	// reserve options
 	| RESERVING
-			{ checkDuplicateClause($setTransactionNode->reserveList, "RESERVING"); }
+		{ checkDuplicateClause($setTransactionNode->reserveList, "RESERVING"); }
 		restr_list($setTransactionNode)
 	;
 
@@ -6263,10 +6322,10 @@ user_fixed_opt($node)
 	: FIRSTNAME utf_string	{ setClause($node->firstName, "FIRSTNAME", $2); }
 	| MIDDLENAME utf_string	{ setClause($node->middleName, "MIDDLENAME", $2); }
 	| LASTNAME utf_string	{ setClause($node->lastName, "LASTNAME", $2); }
-	| GRANT ADMIN ROLE		{ setClause($node->adminRole, "ADMIN ROLE", Nullable<bool>(true)); }
-	| REVOKE ADMIN ROLE		{ setClause($node->adminRole, "ADMIN ROLE", Nullable<bool>(false)); }
-	| ACTIVE				{ setClause($node->active, "ACTIVE/INACTIVE", Nullable<bool>(true)); }
-	| INACTIVE				{ setClause($node->active, "ACTIVE/INACTIVE", Nullable<bool>(false)); }
+	| GRANT ADMIN ROLE		{ setClause($node->adminRole, "ADMIN ROLE", true); }
+	| REVOKE ADMIN ROLE		{ setClause($node->adminRole, "ADMIN ROLE", false); }
+	| ACTIVE				{ setClause($node->active, "ACTIVE/INACTIVE", true); }
+	| INACTIVE				{ setClause($node->active, "ACTIVE/INACTIVE", false); }
 	| USING PLUGIN valid_symbol_name
 							{ setClause($node->plugin, "USING PLUGIN", $3); }
 	;

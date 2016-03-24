@@ -53,8 +53,7 @@ int main()
 	setenv("ISC_USER", "sysdba", 0);
 	setenv("ISC_PASSWORD", "masterkey", 0);
 
-	IStatus* st = master->getStatus();
-	ThrowStatusWrapper status(st);
+	ThrowStatusWrapper status(master->getStatus());
 	IProvider* prov = master->getDispatcher();
 
 	IAttachment* att = NULL;
@@ -79,7 +78,7 @@ int main()
 														 "or RDB$VIEW_SOURCE is not null";
 
 		// Do not use IStatement - just ask attachment to open cursor
-		curs = att->openCursor(&status, tra, 0, sql, 3, NULL, NULL, NULL, NULL, 0);
+		curs = att->openCursor(&status, tra, 0, sql, SAMPLES_DIALECT, NULL, NULL, NULL, NULL, 0);
 		meta = curs->getMetadata(&status);
 		unsigned cols = meta->getCount(&status);
 
@@ -153,7 +152,10 @@ int main()
 		// handle error
 		fflush(stdout);
 		rc = 1;
-		isc_print_status(error.getStatus()->getErrors());
+
+		char buf[256];
+		master->getUtilInterface()->formatStatus(buf, sizeof(buf), error.getStatus());
+		fprintf(stderr, "%s\n", buf);
 	}
 
 	if (meta)
@@ -164,10 +166,9 @@ int main()
 		tra->release();
 	if (att)
 		att->release();
-	if (prov)
-		prov->release();
-	if (st)
-		st->dispose();
+
+	prov->release();
+	status.dispose();
 
 	return rc;
 }

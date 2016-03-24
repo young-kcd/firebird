@@ -284,18 +284,15 @@ RecordBuffer* DbCreatorsList::getList(thread_db* tdbb, jrd_rel* relation)
 		buffer = makeBuffer(tdbb);
 		while (curs->fetchNext(&st, gr.getBuffer()) == IStatus::RESULT_OK)
 		{
-			int charset = CS_METADATA;
 			Record* record = buffer->getTempRecord();
 			record->nullify();
 
 			putField(tdbb, record,
-					 DumpField(f_sec_crt_user, VALUE_STRING, u->len, u->data),
-					 charset);
+					 DumpField(f_sec_crt_user, VALUE_STRING, u->len, u->data));
 
 			SINT64 v = uType;
 			putField(tdbb, record,
-					 DumpField(f_sec_crt_u_type, VALUE_INTEGER, sizeof(v), &v),
-					 charset);
+					 DumpField(f_sec_crt_u_type, VALUE_INTEGER, sizeof(v), &v));
 
 			buffer->store(record);
 		}

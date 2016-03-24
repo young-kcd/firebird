@@ -947,23 +947,19 @@ SecurityClass::flags_t SCL_get_mask(thread_db* tdbb, const TEXT* relation_name, 
  * Functional description
  *	Get a protection mask for a named object.  If field and
  *	relation names are present, get access to field.  If just
- *	relation name, get access to relation.  If neither, get
- *	access for database.
+ *	relation name, get access to relation.
  *
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* const attachment = tdbb->getAttachment();
-
-	// Start with database security class
-
-	const SecurityClass* s_class = attachment->att_security_class;
-	SecurityClass::flags_t access = s_class ? s_class->scl_flags : -1;
+	SecurityClass::flags_t access = ~0;
 
 	// If there's a relation, track it down
 	jrd_rel* relation;
 	if (relation_name && (relation = MET_lookup_relation(tdbb, relation_name)))
 	{
 		MET_scan_relation(tdbb, relation);
+		const SecurityClass* s_class;
 		if ( (s_class = SCL_get_class(tdbb, relation->rel_security_name.c_str())) )
 		{
 			access &= s_class->scl_flags;
@@ -1292,27 +1288,6 @@ SecurityClass::flags_t SCL_get_object_mask(const int object_type)
 		return s_class->scl_flags;
 
 	return -1 & ~SCL_corrupt;
-}
-
-void SCL_set_user(const Firebird::MetaName& user_name, UserId& user)
-{
-/**************************************
- *
- *	S C L _ s e t _ u s e r
- *
- **************************************
- *
- * Functional description
- *	Set user attributes.
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
-
-	user.usr_user_name = user_name.c_str();
-
-	if (!user.usr_user_name.compare(dbb->dbb_owner.c_str()))
-		user.usr_flags |= USR_owner;
 }
 
 static bool check_number(const UCHAR* acl, USHORT number)

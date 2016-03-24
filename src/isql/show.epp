@@ -236,6 +236,8 @@ static const UCHAR db_items[] =
 {
 	isc_info_page_size,
 	isc_info_db_size_in_pages,
+	fb_info_pages_used,
+	fb_info_pages_free,
 	isc_info_sweep_interval,
 	isc_info_limbo,
 	isc_info_forced_writes,
@@ -248,6 +250,7 @@ static const UCHAR db_items[] =
 #ifdef DEV_BUILD
 	isc_info_db_id,
 #endif
+	fb_info_crypt_state,
 	isc_info_end
 };
 
@@ -417,7 +420,7 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 
 		case isc_info_page_size:
 			value_out = ISQL_vax_integer(d, length);
-			sprintf(info, "PAGE_SIZE %"SLONGFORMAT"%s", value_out, separator);
+			sprintf(info, "PAGE_SIZE %" SLONGFORMAT"%s", value_out, separator);
 			break;
 
 		case isc_info_db_size_in_pages:
@@ -428,7 +431,60 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 				sprintf(info, "%s%s", msg, separator);
 			}
 			else
-				sprintf(info, "Number of DB pages allocated = %"SLONGFORMAT"%s", value_out, separator);
+				sprintf(info, "Number of DB pages allocated = %" SLONGFORMAT"%s", value_out, separator);
+			break;
+
+		case fb_info_pages_used:
+			value_out = ISQL_vax_integer(d, length);
+			if (translate)
+			{
+				IUTILS_msg_get(NUMBER_USED_PAGES, msg, SafeArg() << value_out);
+				sprintf(info, "%s%s", msg, separator);
+			}
+			else
+				sprintf(info, "Number of DB pages used = %" SLONGFORMAT"%s", value_out, separator);
+			break;
+
+		case fb_info_pages_free:
+			value_out = ISQL_vax_integer(d, length);
+			if (translate)
+			{
+				IUTILS_msg_get(NUMBER_FREE_PAGES, msg, SafeArg() << value_out);
+				sprintf(info, "%s%s", msg, separator);
+			}
+			else
+				sprintf(info, "Number of DB pages free = %" SLONGFORMAT"%s", value_out, separator);
+			break;
+
+		case fb_info_crypt_state:
+			value_out = ISQL_vax_integer(d, length);
+
+			if (translate)
+			{
+				Firebird::string s;
+				if (value_out & fb_info_crypt_encrypted)
+					IUTILS_msg_get(DATABASE_CRYPTED, msg);
+				else
+					IUTILS_msg_get(DATABASE_NOT_CRYPTED, msg);
+
+				s = msg;
+
+				if (value_out & fb_info_crypt_process)
+				{
+					s += ", ";
+					IUTILS_msg_get(DATABASE_CRYPT_PROCESS, msg);
+					s += msg;
+				}
+
+				sprintf(info, "%s%s", s.c_str(), separator);
+			}
+			else
+			{
+				sprintf(info, "DB %sencrypted%s%s",
+					(value_out & fb_info_crypt_encrypted ? "" : "not "),
+					(value_out & fb_info_crypt_process ? ", crypt thread not complete" : ""),
+					separator);
+			}
 			break;
 
 		case isc_info_sweep_interval:
@@ -439,7 +495,7 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 				sprintf(info, "%s%s", msg, separator);
 			}
 			else
-				sprintf(info, "Sweep interval = %"SLONGFORMAT"%s", value_out, separator);
+				sprintf(info, "Sweep interval = %" SLONGFORMAT"%s", value_out, separator);
 			break;
 
 		case isc_info_forced_writes:
@@ -449,22 +505,22 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 
 		case isc_info_oldest_transaction :
 			value_out = ISQL_vax_integer (d, length);
-			sprintf(info, "Transaction - oldest = %"SLONGFORMAT"%s", value_out, separator);
+			sprintf(info, "Transaction - oldest = %" SLONGFORMAT"%s", value_out, separator);
 			break;
 
 		case isc_info_oldest_active :
 			value_out = ISQL_vax_integer (d, length);
-			sprintf(info, "Transaction - oldest active = %"SLONGFORMAT"%s", value_out, separator);
+			sprintf(info, "Transaction - oldest active = %" SLONGFORMAT"%s", value_out, separator);
 			break;
 
 		case isc_info_oldest_snapshot :
 			value_out = ISQL_vax_integer (d, length);
-			sprintf(info, "Transaction - oldest snapshot = %"SLONGFORMAT"%s", value_out, separator);
+			sprintf(info, "Transaction - oldest snapshot = %" SLONGFORMAT"%s", value_out, separator);
 			break;
 
 		case isc_info_next_transaction :
 			value_out = ISQL_vax_integer (d, length);
-			sprintf (info, "Transaction - Next = %"SLONGFORMAT"%s", value_out, separator);
+			sprintf (info, "Transaction - Next = %" SLONGFORMAT"%s", value_out, separator);
 			break;
 
 		case isc_info_base_level:
@@ -475,7 +531,7 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 				sprintf(info, "%s%s", msg, separator);
 			}
 			else
-				sprintf(info, "Base level = %"SLONGFORMAT"%s", value_out, separator);
+				sprintf(info, "Base level = %" SLONGFORMAT"%s", value_out, separator);
 			break;
 
 		case isc_info_limbo:
@@ -486,7 +542,7 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 				sprintf(info, "%s%s", msg, separator);
 			}
 			else
-				sprintf(info, "Transaction in limbo = %"SLONGFORMAT"%s", value_out, separator);
+				sprintf(info, "Transaction in limbo = %" SLONGFORMAT"%s", value_out, separator);
 			break;
 
 		case isc_info_ods_version:
@@ -494,7 +550,7 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 			break;
 		case isc_info_ods_minor_version:
 			value_out = ISQL_vax_integer(d, length);
-			sprintf(info, "ODS = %"SLONGFORMAT".%"SLONGFORMAT"%s",
+			sprintf(info, "ODS = %" SLONGFORMAT".%" SLONGFORMAT"%s",
 					(SLONG) isqlGlob.major_ods, value_out, separator);
 			break;
 
@@ -563,7 +619,7 @@ void SHOW_read_owner()
 }
 
 
-static const char* granted_by(char* buffer, const char* grantor)
+static const char* granted_by(char* buffer, const char* grantor, bool nullGrantor)
 {
 /**************************************
  *
@@ -600,7 +656,7 @@ static const char* granted_by(char* buffer, const char* grantor)
 
  	strcpy(buffer, grantor);
 	fb_utils::exact_name(buffer);
-	if (!strcmp(buffer, owner))
+	if ((!strcmp(buffer, owner)) || nullGrantor)
 		buffer[0] = '\0';
 	else
 	{
@@ -757,7 +813,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					isqlGlob.printf("GRANT %s%s ON %s TO %s%s%s%s%s",
 						priv_string, col_string,
 						SQL_identifier,
-						user_string, with_option, granted_by(buf_grantor, prev_grantor),
+						user_string, with_option, granted_by(buf_grantor, prev_grantor, false),
 						terminator, NEWLINE);
 
 					// re-initialize strings
@@ -872,7 +928,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				isqlGlob.printf("GRANT %s%s ON %s TO %s%s%s%s%s",
 					priv_string, col_string,
 					SQL_identifier,
-					user_string, with_option, granted_by(buf_grantor, prev_grantor), terminator, NEWLINE);
+					user_string, with_option, granted_by(buf_grantor, prev_grantor, false), terminator, NEWLINE);
 			}
 
 		END_FOR
@@ -944,7 +1000,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 				isqlGlob.printf("GRANT EXECUTE ON PROCEDURE %s TO %s%s%s%s%s",
 						 SQL_identifier, user_string, with_option,
-						 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+						 granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL), terminator, NEWLINE);
 
 			END_FOR
 			ON_ERROR
@@ -997,7 +1053,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					with_option[0] = '\0';
 
 				sprintf(Print_buffer, "GRANT %s TO %s%s%s%s%s", SQL_identifier,
-						user_string, with_option, granted_by(buf_grantor, PRV.RDB$GRANTOR),
+						user_string, with_option, granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
 						terminator, NEWLINE);
 
 				if (first && optional_msg)
@@ -1076,7 +1132,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 					isqlGlob.printf("GRANT EXECUTE ON PACKAGE %s TO %s%s%s%s%s",
 							 SQL_identifier, user_string, with_option,
-							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
+							 terminator, NEWLINE);
 
 				END_FOR
 				ON_ERROR
@@ -1152,7 +1209,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 					isqlGlob.printf("GRANT EXECUTE ON FUNCTION %s TO %s%s%s%s%s",
 							 SQL_identifier, user_string, with_option,
-							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
+							 terminator, NEWLINE);
 
 				END_FOR
 				ON_ERROR
@@ -1224,7 +1282,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 					isqlGlob.printf("GRANT USAGE ON SEQUENCE %s TO %s%s%s%s%s",
 							 SQL_identifier, user_string, with_option,
-							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
+							 terminator, NEWLINE);
 
 				END_FOR
 				ON_ERROR
@@ -1296,7 +1355,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 					isqlGlob.printf("GRANT USAGE ON EXCEPTION %s TO %s%s%s%s%s",
 							 SQL_identifier, user_string, with_option,
-							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
+							 terminator, NEWLINE);
 
 				END_FOR
 				ON_ERROR
@@ -1368,7 +1428,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 					isqlGlob.printf("GRANT USAGE ON DOMAIN %s TO %s%s%s%s%s",
 							 SQL_identifier, user_string, with_option,
-							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
+							 terminator, NEWLINE);
 
 				END_FOR
 				ON_ERROR
@@ -1440,7 +1501,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 					isqlGlob.printf("GRANT USAGE ON CHARACTER SET %s TO %s%s%s%s%s",
 							 SQL_identifier, user_string, with_option,
-							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
+							 terminator, NEWLINE);
 
 				END_FOR
 				ON_ERROR
@@ -1512,7 +1574,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 					isqlGlob.printf("GRANT USAGE ON COLLATION %s TO %s%s%s%s%s",
 							 SQL_identifier, user_string, with_option,
-							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
+							 terminator, NEWLINE);
 
 				END_FOR
 				ON_ERROR
@@ -1656,7 +1719,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 				isqlGlob.printf("GRANT %s %s TO %s%s%s%s%s",
 						 priv_string, obj_string, user_string, with_option,
-						 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+						 granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
+						 terminator, NEWLINE);
 
 			END_FOR
 			ON_ERROR
@@ -1780,7 +1844,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 			user_string = SQL_identifier2;
 		}
 		isqlGlob.printf("GRANT %s TO %s%s%s%s%s", role,
-			user_string, with_option, granted_by(buf_grantor, grantor), terminator, NEWLINE);
+			user_string, with_option, granted_by(buf_grantor, grantor, false), terminator, NEWLINE);
 
 	END_FOR
 	ON_ERROR
@@ -4072,9 +4136,9 @@ static processing_state show_functions(const SCHAR* funcname)
 					isqlGlob.printf("Global functions%s%s", NEWLINE, NEWLINE);
 
 					isqlGlob.printf(
-						"Function Name                    Invalid Dependency, Type%s", NEWLINE);
+						"Function Name                     Invalid Dependency, Type%s", NEWLINE);
 					isqlGlob.printf(
-						"================================ ======= =====================================%s", NEWLINE);
+						"================================= ======= =====================================%s", NEWLINE);
 				}
 				else
 				{
@@ -4084,9 +4148,9 @@ static processing_state show_functions(const SCHAR* funcname)
 					isqlGlob.printf("Package: %s%s%s", package.c_str(), NEWLINE, NEWLINE);
 
 					isqlGlob.printf(
-						"Function Name                    Invalid%s", NEWLINE);
+						"Function Name                     Invalid%s", NEWLINE);
 					isqlGlob.printf(
-						"================================ =======%s", NEWLINE);
+						"================================= =======%s", NEWLINE);
 				}
 
 				first = false;
@@ -4971,9 +5035,9 @@ static processing_state show_proc(const SCHAR* procname)
 					isqlGlob.printf("Global procedures%s%s", NEWLINE, NEWLINE);
 
 					isqlGlob.printf(
-						"Procedure Name                   Invalid Dependency, Type%s", NEWLINE);
+						"Procedure Name                    Invalid Dependency, Type%s", NEWLINE);
 					isqlGlob.printf(
-						"================================ ======= =====================================%s", NEWLINE);
+						"================================= ======= =====================================%s", NEWLINE);
 				}
 				else
 				{
@@ -4983,9 +5047,9 @@ static processing_state show_proc(const SCHAR* procname)
 					isqlGlob.printf("Package: %s%s%s", package.c_str(), NEWLINE, NEWLINE);
 
 					isqlGlob.printf(
-						"Procedure Name                   Invalid%s", NEWLINE);
+						"Procedure Name                    Invalid%s", NEWLINE);
 					isqlGlob.printf(
-						"================================ =======%s", NEWLINE);
+						"================================= =======%s", NEWLINE);
 				}
 
 				first_proc = false;

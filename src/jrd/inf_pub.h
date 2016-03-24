@@ -137,7 +137,18 @@ enum db_info_types
 	fb_info_pip_errors = 122,
 	fb_info_pip_warns = 123,
 
+	fb_info_pages_used = 124,
+	fb_info_pages_free = 125,
+
+	fb_info_crypt_state = 126,
+
 	isc_info_db_last_value   /* Leave this LAST! */
+};
+
+enum db_info_crypt			/* flags set in fb_info_crypt_state */
+{
+	fb_info_crypt_encrypted = 0x01,
+	fb_info_crypt_process = 0x02
 };
 
 #define isc_info_version isc_info_isc_version

@@ -35,6 +35,7 @@
 #include "../jrd/ods.h"
 #include "../jrd/tra.h"
 #include "../common/os/path_utils.h"
+#include "../jrd/CryptoManager.h"
 #include "../jrd/IntlManager.h"
 #include "../jrd/PreparedStatement.h"
 #include "../jrd/ResultSet.h"
@@ -2428,6 +2429,7 @@ void DropFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$RELATION_NAME EQ name.c_str()
 				AND PRIV.RDB$OBJECT_TYPE = obj_udf
+				AND PRIV.RDB$GRANTOR NOT MISSING
 		{
 			ERASE PRIV;
 		}
@@ -2438,6 +2440,7 @@ void DropFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$USER EQ name.c_str()
 				AND PRIV.RDB$USER_TYPE = obj_udf
+				AND PRIV.RDB$GRANTOR NOT MISSING
 		{
 			ERASE PRIV;
 		}
@@ -3213,6 +3216,7 @@ void DropProcedureNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$RELATION_NAME EQ name.c_str()
 				AND PRIV.RDB$OBJECT_TYPE = obj_procedure
+				AND PRIV.RDB$GRANTOR NOT MISSING
 		{
 			ERASE PRIV;
 		}
@@ -3223,6 +3227,7 @@ void DropProcedureNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$USER EQ name.c_str()
 				AND PRIV.RDB$USER_TYPE = obj_procedure
+				AND PRIV.RDB$GRANTOR NOT MISSING
 		{
 			ERASE PRIV;
 		}
@@ -3569,11 +3574,11 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 
 		dsqlScratch->loopLevel = 0;
 		dsqlScratch->cursorNumber = 0;
+		dsqlScratch->scopeLevel++;
 
 		StmtNode* stmtNode = body->dsqlPass(dsqlScratch);
 		GEN_hidden_variables(dsqlScratch);
 
-		dsqlScratch->scopeLevel++;
 		// dimitr: I see no reason to deny EXIT command in triggers,
 		// hence I've added zero label at the beginning.
 		// My first suspicion regarding an obvious conflict
@@ -3695,7 +3700,8 @@ void DropTriggerNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		PRIV IN RDB$USER_PRIVILEGES
 		WITH PRIV.RDB$USER EQ name.c_str() AND
-			 PRIV.RDB$USER_TYPE = obj_trigger
+			 PRIV.RDB$USER_TYPE = obj_trigger AND
+			 PRIV.RDB$GRANTOR NOT MISSING
 	{
 		ERASE PRIV;
 	}
@@ -4106,7 +4112,8 @@ void DropCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		PRIV IN RDB$USER_PRIVILEGES
 		WITH PRIV.RDB$RELATION_NAME EQ name.c_str() AND
-			 PRIV.RDB$OBJECT_TYPE = obj_collation
+			 PRIV.RDB$OBJECT_TYPE = obj_collation AND
+			 PRIV.RDB$GRANTOR NOT MISSING
 	{
 		ERASE PRIV;
 	}
@@ -5099,7 +5106,8 @@ void DropDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		PRIV IN RDB$USER_PRIVILEGES
 		WITH PRIV.RDB$RELATION_NAME EQ name.c_str() AND
-			 PRIV.RDB$OBJECT_TYPE = obj_field
+			 PRIV.RDB$OBJECT_TYPE = obj_field AND
+			 PRIV.RDB$GRANTOR NOT MISSING
 	{
 		ERASE PRIV;
 	}
@@ -5368,7 +5376,8 @@ void DropExceptionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		PRIV IN RDB$USER_PRIVILEGES
 		WITH PRIV.RDB$RELATION_NAME EQ name.c_str() AND
-			 PRIV.RDB$OBJECT_TYPE = obj_exception
+			 PRIV.RDB$OBJECT_TYPE = obj_exception AND
+			 PRIV.RDB$GRANTOR NOT MISSING
 	{
 		ERASE PRIV;
 	}
@@ -5572,9 +5581,18 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 		if (restartSpecified)
 		{
-			const SINT64 val = value.specified ?
-				value.value : (!X.RDB$INITIAL_VALUE.NULL ? X.RDB$INITIAL_VALUE : 0);
-			transaction->getGenIdCache()->put(id, val);
+			const SINT64 oldValue = !X.RDB$INITIAL_VALUE.NULL ? X.RDB$INITIAL_VALUE : 0;
+			const SINT64 newValue = value.specified ? value.value : oldValue;
+
+			transaction->getGenIdCache()->put(id, newValue);
+
+			if (newValue != oldValue)
+			{
+				MODIFY X
+					X.RDB$INITIAL_VALUE.NULL = FALSE;
+					X.RDB$INITIAL_VALUE = newValue;
+				END_MODIFY
+			}
 		}
 
 		dsc desc;
@@ -5712,7 +5730,8 @@ void DropSequenceNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		PRIV IN RDB$USER_PRIVILEGES
 		WITH PRIV.RDB$RELATION_NAME EQ name.c_str() AND
-			 PRIV.RDB$OBJECT_TYPE = obj_generator
+			 PRIV.RDB$OBJECT_TYPE = obj_generator AND
+			 PRIV.RDB$GRANTOR NOT MISSING
 	{
 		ERASE PRIV;
 	}
@@ -6064,7 +6083,8 @@ void RelationNode::deleteLocalField(thread_db* tdbb, jrd_tra* transaction,
 		PRIV IN RDB$USER_PRIVILEGES
 		WITH PRIV.RDB$RELATION_NAME EQ relationName.c_str() AND
 			 PRIV.RDB$FIELD_NAME EQ fieldName.c_str() AND
-		     PRIV.RDB$OBJECT_TYPE = obj_relation
+		     PRIV.RDB$OBJECT_TYPE = obj_relation AND
+		     PRIV.RDB$GRANTOR NOT MISSING
 	{
 		ERASE PRIV;
 	}
@@ -7645,6 +7665,8 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 
 			if (clause->computed)
 			{
+				field->flags |= FLD_computed;
+
 				defineComputed(dsqlScratch, dsqlNode, field, clause->computed, computedSource,
 					computedValue);
 			}
@@ -7909,6 +7931,26 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 				END_MODIFY
 			}
 			END_FOR
+
+			request2.reset();
+
+			FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+				RFR2 IN RDB$RELATION_FIELDS CROSS
+				VRL IN RDB$VIEW_RELATIONS
+				WITH VRL.RDB$RELATION_NAME EQ name.c_str() AND
+					 VRL.RDB$PACKAGE_NAME MISSING AND
+					 VRL.RDB$CONTEXT_TYPE EQ VCT_TABLE AND
+					 RFR2.RDB$RELATION_NAME EQ VRL.RDB$VIEW_NAME AND
+					 RFR2.RDB$VIEW_CONTEXT EQ VRL.RDB$VIEW_CONTEXT AND
+					 RFR2.RDB$BASE_FIELD = field->fld_name.c_str()
+			{
+				MODIFY RFR2
+				{
+					strcpy(RFR2.RDB$FIELD_SOURCE, RFR.RDB$FIELD_SOURCE);
+				}
+				END_MODIFY
+			}
+			END_FOR
 		}
 		END_FOR
 
@@ -8155,7 +8197,8 @@ void DropRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
 			PRIV IN RDB$USER_PRIVILEGES
 			WITH PRIV.RDB$USER EQ triggerName.c_str() AND
-					PRIV.RDB$USER_TYPE = obj_trigger
+				PRIV.RDB$USER_TYPE = obj_trigger AND
+				PRIV.RDB$GRANTOR NOT MISSING
 		{
 			ERASE PRIV;
 		}
@@ -8168,7 +8211,8 @@ void DropRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		PRIV IN RDB$USER_PRIVILEGES
 		WITH PRIV.RDB$RELATION_NAME EQ name.c_str() AND
-			 PRIV.RDB$OBJECT_TYPE = obj_relation
+			 PRIV.RDB$OBJECT_TYPE = obj_relation AND
+			 PRIV.RDB$GRANTOR NOT MISSING
 	{
 		ERASE PRIV;
 	}
@@ -8179,7 +8223,8 @@ void DropRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		PRIV IN RDB$USER_PRIVILEGES
 		WITH PRIV.RDB$USER EQ name.c_str() AND
-			 PRIV.RDB$USER_TYPE = obj_view
+			 PRIV.RDB$USER_TYPE = obj_view AND
+			 PRIV.RDB$GRANTOR NOT MISSING
 	{
 		ERASE PRIV;
 	}
@@ -8644,9 +8689,12 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 			if (desc.isText())
 			{
-				newField.charLength = newField.length;
-				newField.length *= METD_get_charset_bpc(
-					dsqlScratch->getTransaction(), newField.charSetId);
+				const USHORT adjust =
+					(desc.dsc_dtype == dtype_varying) ? sizeof(USHORT) : 0;
+				const USHORT bpc =
+					METD_get_charset_bpc(dsqlScratch->getTransaction(), newField.charSetId);
+
+				newField.charLength = (newField.length - adjust) / bpc;
 			}
 			else
 				newField.subType = desc.dsc_sub_type;
@@ -8776,6 +8824,8 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 				Arg::Gds(isc_dsql_command_err) <<
 				Arg::Gds(isc_distinct_err));
 		}
+
+		dsqlScratch->flags |= DsqlCompilerScratch::FLAG_VIEW_WITH_CHECK;
 
 		createCheckTrigger(tdbb, dsqlScratch, items, PRE_MODIFY_TRIGGER);
 		createCheckTrigger(tdbb, dsqlScratch, items, PRE_STORE_TRIGGER);
@@ -10429,8 +10479,9 @@ void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 		// The 2nd OR clause finds all privileges granted to the role
 		FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
 			PRIV IN RDB$USER_PRIVILEGES
-			WITH (PRIV.RDB$RELATION_NAME EQ name.c_str() AND PRIV.RDB$OBJECT_TYPE = obj_sql_role) OR
-					(PRIV.RDB$USER EQ name.c_str() AND PRIV.RDB$USER_TYPE = obj_sql_role)
+			WITH ((PRIV.RDB$RELATION_NAME EQ name.c_str() AND PRIV.RDB$OBJECT_TYPE = obj_sql_role) OR
+				  (PRIV.RDB$USER EQ name.c_str() AND PRIV.RDB$USER_TYPE = obj_sql_role)) AND
+				 PRIV.RDB$GRANTOR NOT MISSING
 		{
 			ERASE PRIV;
 		}
@@ -10991,7 +11042,8 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 			PRIV IN RDB$USER_PRIVILEGES
 			WITH PRIV.RDB$USER = user.c_str() AND
-				 PRIV.RDB$USER_TYPE = userType
+				 PRIV.RDB$USER_TYPE = userType AND
+				 PRIV.RDB$GRANTOR NOT MISSING
 		{
 			if (tdbb->getAttachment()->att_user->locksmith() || grantorRevoker == PRIV.RDB$GRANTOR)
 			{
@@ -11131,7 +11183,8 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 						 PRIV.RDB$PRIVILEGE EQ priv AND
 						 PRIV.RDB$USER = user.c_str() AND
 						 PRIV.RDB$USER_TYPE = userType AND
-						 PRIV.RDB$FIELD_NAME EQ field.c_str()
+						 PRIV.RDB$FIELD_NAME EQ field.c_str() AND
+						 PRIV.RDB$GRANTOR NOT MISSING
 				{
 					if (grantorRevoker == PRIV.RDB$GRANTOR)
 					{
@@ -11151,7 +11204,8 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 						 PRIV.RDB$RELATION_NAME EQ objName.c_str() AND
 						 PRIV.RDB$OBJECT_TYPE = objType AND
 						 PRIV.RDB$USER EQ user.c_str() AND
-						 PRIV.RDB$USER_TYPE = userType
+						 PRIV.RDB$USER_TYPE = userType AND
+						 PRIV.RDB$GRANTOR NOT MISSING
 				{
 					// Revoking a permission at the table level implies revoking the perm. on all
 					// columns. So for all fields in this table which have been granted the
@@ -11554,6 +11608,7 @@ string AlterDatabaseNode::internalPrint(NodePrinter& printer) const
 	NODE_PRINT(printer, setDefaultCollation);
 	NODE_PRINT(printer, files);
 	NODE_PRINT(printer, cryptPlugin);
+	NODE_PRINT(printer, keyName);
 
 	return "AlterDatabaseNode";
 }
@@ -11569,12 +11624,6 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 {
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
-
-	if (cryptPlugin.hasData())
-		DFW_post_work(transaction, dfw_db_crypt, cryptPlugin.c_str(), 0);
-
-	if (clauses & CLAUSE_DECRYPT)
-		DFW_post_work(transaction, dfw_db_crypt, "", 0);
 
 	Attachment* const attachment = transaction->tra_attachment;
 	dsql_dbb* dbb = transaction->getDsqlAttachment();
@@ -11637,6 +11686,16 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 		END_MODIFY
 	}
 	END_FOR
+
+	// Allow update above to work as a lock, preventing altering of the database from parallel transactions
+	// Moreover, it should load crypt plugin if it (by a miracle) wasn't already loaded yet
+	if (clauses & CLAUSE_CRYPT)
+	{
+		Database* const db = tdbb->getDatabase();
+		db->dbb_crypto_manager->prepareChangeCryptState(tdbb, cryptPlugin, keyName);
+
+		DFW_post_work(transaction, dfw_db_crypt, cryptPlugin.c_str(), 0);
+	}
 
 	savePoint.release();	// everything is ok
 }

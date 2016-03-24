@@ -41,12 +41,12 @@
     function ShowCopyGds32Task: boolean;
     function CopyFbClientLib: boolean;
     function ShowCopyFbClientLibTask: boolean;
+		
+	function SummarizeInstalledProducts: String;
+	function AnalysisAssessment: boolean;
 
     function HasWI30: boolean;
     function HasNotWI30: boolean;
-		
-		function SummarizeInstalledProducts: String;
-		function AnalysisAssessment: boolean;
 
  *)
 
@@ -749,7 +749,7 @@ procedure SetupSharedFilesArray;
 // - Libraries
 // - License files
 begin
-SetArrayLength(SharedFileArray,35);
+SetArrayLength(SharedFileArray,36);
 
 SharedFileArray[0].Filename := ExpandConstant('{app}')+'IPLicense.txt';
 SharedFileArray[1].Filename := ExpandConstant('{app}')+'IDPLicense.txt';
@@ -792,11 +792,12 @@ else
 SharedFileArray[27].Filename := ExpandConstant('{app}')+'databases.conf';
 SharedFileArray[28].Filename := ExpandConstant('{app}')+'firebird.conf';
 SharedFileArray[29].Filename := ExpandConstant('{app}')+'firebird.log';
-SharedFileArray[30].Filename := ExpandConstant('{app}')+'security3.fdb';
+SharedFileArray[30].Filename := ExpandConstant('{app}')+'security4.fdb';
 SharedFileArray[31].Filename := ExpandConstant('{app}')+'fbtrace.conf';
 SharedFileArray[32].Filename := ExpandConstant('{app}')+'fbsvcmgr.exe';
 SharedFileArray[33].Filename := ExpandConstant('{app}')+'fbrmclib.dll';
 SharedFileArray[34].Filename := ExpandConstant('{app}')+'fbtracemgr.exe';
+SharedFileArray[35].Filename := ExpandConstant('{app}')+'zlib1.dll';
 
 // FIXME 
 // Add in WOW64 here.
@@ -996,6 +997,14 @@ begin
 end;
 
 
+function InstallGuardian: boolean;
+begin
+  result := False;
+  if (ConfigureFirebird) then
+     result := IsTaskSelected('UseSuperServerTask\UseGuardianTask') 
+			or IsTaskSelected('UseSuperClassicTask\UseGuardianTask');
+end;
+
 
 function CopyGds32: boolean;
 begin
@@ -1034,27 +1043,6 @@ begin
     result := ((not CopyFbClient) and ConfigureFirebird);
 end;
 
-
-function HasWI30: boolean;
-//We need at least Windows Installer 3.0 available if we
-//are installing the msi bundles for the VC8 CRT libraries.
-var
-  VersionStr: String;
-  VerInt: array of Integer;
-begin
-  Result := False;
-  VersionStr := WIVersion;
-  DecodeVersion(VersionStr, VerInt);
-  if (VerInt[0] >= 3) then
-    Result := True;
-
-end;
-
-function HasNotWI30: boolean;
-//Used to check if O/S does NOT have minimum version of Windows Installer
-begin
-  result := NOT HasWI30;
-end;
 
 function SummarizeInstalledProducts: String;
 var
@@ -1176,5 +1164,52 @@ begin
     //but we don't configure
     if ((InstallAndConfigure AND Configure) = Configure) then
       InstallAndConfigure := InstallAndConfigure - Configure;
+end;
+
+
+procedure RenamePreFB3RC1Files;
+//The method of specifying the architecture used changed after Beta 2
+//Detect this old config and rename it.
+var
+  FirebirdConfStr: AnsiString;
+begin
+  if FileExists(GetAppPath+'\firebird.conf') then begin
+    LoadStringFromFile( GetAppPath+'\firebird.conf', FirebirdConfStr );
+    if  pos('SharedDatabase', FirebirdConfStr) > 0 then begin
+      RenameFile(GetAppPath+'\firebird.conf', GetAppPath+'\firebird.conf.preRC1');
+      RenameFile(GetAppPath+'\security4.fdb', GetAppPath+'\security4.fdb.preRC1');
+		end
+  end
+end;
+
+
+function ConfigureAuthentication: boolean;
+begin
+  if FileExists(WizardDirValue + '\security4.fdb') then
+		Result := false
+	else
+		Result := true;
+end;
+
+
+function HasWI30: boolean;
+//We need at least Windows Installer 3.0 available if we
+//are installing the msi bundles for the VC10 CRT libraries.
+var
+  VersionStr: String;
+  VerInt: array of Integer;
+begin
+  Result := False;
+  VersionStr := WIVersion;
+  DecodeVersion(VersionStr, VerInt);
+  if (VerInt[0] >= 3) then
+    Result := True;
+end;
+
+
+function HasNotWI30: boolean;
+//Used to check if O/S does NOT have minimum version of Windows Installer
+begin
+  result := NOT HasWI30;
 end;
 

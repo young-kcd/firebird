@@ -67,17 +67,17 @@ public:
 		getPlugin();
 	}
 
-	bool hasData()
+	bool hasData() const
 	{
 		return currentPlugin;
 	}
 
-	const char* name()
+	const char* name() const
 	{
 		return hasData() ? pluginSet->getName() : NULL;
 	}
 
-	P* plugin()
+	P* plugin() const
 	{
 		return currentPlugin;
 	}

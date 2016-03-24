@@ -42,7 +42,6 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual AggNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual void aggPostRse(thread_db* tdbb, CompilerScratch* csb);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
@@ -179,12 +178,11 @@ public:
 
 	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
 
-	virtual void aggPostRse(thread_db* tdbb, CompilerScratch* csb);
-
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual AggNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
@@ -220,12 +218,11 @@ public:
 
 	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
 
-	virtual void aggPostRse(thread_db* tdbb, CompilerScratch* csb);
-
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual AggNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
 	virtual bool aggPass(thread_db* tdbb, jrd_req* request) const;
@@ -268,12 +265,11 @@ public:
 
 	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
 
-	virtual void aggPostRse(thread_db* tdbb, CompilerScratch* csb);
-
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual AggNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
 	virtual bool aggPass(thread_db* tdbb, jrd_req* request) const;
