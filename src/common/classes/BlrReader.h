@@ -24,6 +24,8 @@
 #define COMMON_CLASSES_BLR_READER_H
 
 #include "iberror.h"
+#include "../common/classes/fb_string.h"
+#include "../common/classes/MetaName.h"
 #include "../common/StatusArg.h"
 
 namespace Firebird {
@@ -89,7 +91,7 @@ public:
 		fb_assert(pos);
 
 		if (pos >= end)
-			(Firebird::Arg::Gds(isc_invalid_blr) << Firebird::Arg::Num(getOffset())).raise();
+			(Arg::Gds(isc_invalid_blr) << Arg::Num(getOffset())).raise();
 
 		return *pos;
 	}
@@ -121,8 +123,6 @@ public:
 
 	UCHAR checkByte(UCHAR expected)
 	{
-		using namespace Firebird;
-
 		UCHAR byte = getByte();
 
 		if (byte != expected)
@@ -138,8 +138,6 @@ public:
 
 	USHORT checkWord(USHORT expected)
 	{
-		using namespace Firebird;
-
 		USHORT word = getWord();
 
 		if (word != expected)
@@ -151,6 +149,31 @@ public:
 		}
 
 		return word;
+	}
+
+	void getString(string& s)
+	{
+		const unsigned len = getByte();
+
+		if (pos + len >= end)
+			(Arg::Gds(isc_invalid_blr) << Arg::Num(getOffset())).raise();
+
+		s.assign(pos, len);
+
+		seekForward(len);
+	}
+
+	void getMetaName(MetaName& name)
+	{
+		string str;
+		getString(str);
+
+		// Check for overly long identifiers at BLR parse stage to prevent unwanted
+		// surprises in deeper layers of the engine.
+		if (str.length() > MAX_SQL_IDENTIFIER_LEN)
+			(Arg::Gds(isc_identifier_too_long) << Arg::Str(str)).raise();
+
+		name.assign(str.c_str());
 	}
 
 private:

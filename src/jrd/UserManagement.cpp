@@ -443,6 +443,9 @@ void UserManagement::execute(USHORT id)
 
 	if (command->op == Auth::ADD_OPER)
 	{
+		if (!command->pass.entered())
+			Arg::PrivateDyn(291).raise();
+
 		if (!command->act.entered())
 		{
 			command->act.set(&statusWrapper, 1);
@@ -538,6 +541,9 @@ void UserManagement::list(IUser* u, unsigned cachePosition)
 
 			putField(threadDbb, record,
 					 DumpField(f_sec_attr_value, VALUE_STRING, b->value.length(), b->value.c_str()));
+
+			putField(threadDbb, record,
+					 DumpField(f_sec_attr_plugin, VALUE_STRING, static_cast<USHORT>(plugName.length()), plugName.c_str()));
 
 			buffer->store(record);
 		}

@@ -387,12 +387,8 @@ void CMP_post_access(thread_db* tdbb,
 
 	FB_SIZE_T i;
 
-	if (csb->csb_access.find(access, i))
-	{
-		return;
-	}
-
-	csb->csb_access.insert(i, access);
+	if (!csb->csb_access.find(access, i))
+		csb->csb_access.insert(i, access);
 }
 
 

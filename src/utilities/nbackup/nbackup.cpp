@@ -1046,7 +1046,7 @@ void NBackup::backup_database(int level, Guid& guid, const PathName& fname)
 					today.tm_hour, today.tm_min);
 			}
 			if (!uSvc->isService())
-				printf("%s", bakname.c_str()); // Print out generated filename for script processing
+				printf("%s\n", bakname.c_str()); // Print out generated filename for script processing
 		}
 
 		// Level 0 backup is a full reconstructed database image that can be
@@ -1107,17 +1107,20 @@ void NBackup::backup_database(int level, Guid& guid, const PathName& fname)
 		Guid backup_guid;
 		bool guid_found = false;
 		const UCHAR* p = reinterpret_cast<Ods::header_page*>(page_buff)->hdr_data;
-		while (true)
+		const UCHAR* const end = reinterpret_cast<UCHAR*>(page_buff) + header->hdr_page_size;
+		while (p < end)
 		{
 			switch (*p)
 			{
 			case Ods::HDR_backup_guid:
-				if (p[1] != sizeof(Guid))
-					break;
-				memcpy(&backup_guid, p + 2, sizeof(Guid));
-				guid_found = true;
+				if (p[1] == sizeof(Guid))
+				{
+					memcpy(&backup_guid, p + 2, sizeof(Guid));
+					guid_found = true;
+				}
 				break;
-			case Ods::HDR_difference_file:
+
+			default:
 				p += p[1] + 2;
 				continue;
 			}
@@ -1542,17 +1545,20 @@ void NBackup::restore_database(const BackupFiles& files, bool inc_rest)
 
 				bool guid_found = false;
 				const UCHAR* p = reinterpret_cast<Ods::header_page*>(page_buffer)->hdr_data;
-				while (true)
+				const UCHAR* const end = page_buffer + header.hdr_page_size;
+				while (p < end)
 				{
 					switch (*p)
 					{
 					case Ods::HDR_backup_guid:
-						if (p[1] != sizeof(Guid))
-							break;
-						memcpy(&prev_guid, p + 2, sizeof(Guid));
-						guid_found = true;
+						if (p[1] == sizeof(Guid))
+						{
+							memcpy(&prev_guid, p + 2, sizeof(Guid));
+							guid_found = true;
+						}
 						break;
-					case Ods::HDR_difference_file:
+
+					default:
 						p += p[1] + 2;
 						continue;
 					}

@@ -6235,57 +6235,53 @@ table_subquery
 
 %type <createAlterUserNode> create_user_clause
 create_user_clause
-	: symbol_user_name passwd_clause
+	: symbol_user_name
  		{
 			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_ADD, *$1);
-			$$->password = $2;
 		}
-	user_fixed_opts(NOTRIAL($3))
-	user_var_opts(NOTRIAL($3))
+	user_fixed_list_opt($2)
+	user_var_opts($2)
 		{
-			$$ = $3;
+			$$ = $2;
 		}
 	;
 
 %type <createAlterUserNode> alter_user_clause
 alter_user_clause
-	: symbol_user_name set_noise passwd_opt
+	: symbol_user_name set_noise
 		{
 			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, *$1);
-			$$->password = $3;
 		}
-	user_fixed_opts(NOTRIAL($4))
-	user_var_opts(NOTRIAL($4))
-		{
-			$$ = $4;
-		}
-	;
-
-%type <createAlterUserNode> alter_cur_user_clause
-alter_cur_user_clause
-	: set_noise passwd_opt
-		{
-			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, "");
-			$$->password = $2;
-		}
-	user_fixed_opts(NOTRIAL($3))
-	user_var_opts(NOTRIAL($3))
+	user_fixed_list_opt($3)
+	user_var_opts($3)
 		{
 			$$ = $3;
 		}
 	;
 
+%type <createAlterUserNode> alter_cur_user_clause
+alter_cur_user_clause
+	: set_noise
+		{
+			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, "");
+		}
+	user_fixed_list_opt($2)
+	user_var_opts($2)
+		{
+			$$ = $2;
+		}
+	;
+
 %type <createAlterUserNode> replace_user_clause
 replace_user_clause
-	: symbol_user_name set_noise passwd_opt
+	: symbol_user_name set_noise
 		{
 			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_RPL, *$1);
-			$$->password = $3;
 		}
-	user_fixed_opts(NOTRIAL($4))
-	user_var_opts(NOTRIAL($4))
+	user_fixed_list_opt($3)
+	user_var_opts($3)
 		{
-			$$ = $4;
+			$$ = $3;
 		}
 	;
 
@@ -6294,34 +6290,24 @@ set_noise
 	| SET
 	;
 
-%type <stringPtr> passwd_opt
-passwd_opt
-	: /* nothing */			{ $$ = NULL; }
-	| passwd_clause
-	;
-
-%type <stringPtr> passwd_clause
-passwd_clause
-	: PASSWORD utf_string	{ $$ = $2; }
-	;
-
-%type user_fixed_opts(<createAlterUserNode>)
-user_fixed_opts($node)
+%type user_fixed_list_opt(<createAlterUserNode>)
+user_fixed_list_opt($node)
 	: // nothing
 	| user_fixed_list($node)
 	;
 
 %type user_fixed_list(<createAlterUserNode>)
 user_fixed_list($node)
-	: user_fixed_opt($node)
-	| user_fixed_list user_fixed_opt($node)
+	: user_fixed_option($node)
+	| user_fixed_list user_fixed_option($node)
 	;
 
-%type user_fixed_opt(<createAlterUserNode>)
-user_fixed_opt($node)
+%type user_fixed_option(<createAlterUserNode>)
+user_fixed_option($node)
 	: FIRSTNAME utf_string	{ setClause($node->firstName, "FIRSTNAME", $2); }
 	| MIDDLENAME utf_string	{ setClause($node->middleName, "MIDDLENAME", $2); }
 	| LASTNAME utf_string	{ setClause($node->lastName, "LASTNAME", $2); }
+	| PASSWORD utf_string	{ setClause($node->password, "PASSWORD", $2); }
 	| GRANT ADMIN ROLE		{ setClause($node->adminRole, "ADMIN ROLE", true); }
 	| REVOKE ADMIN ROLE		{ setClause($node->adminRole, "ADMIN ROLE", false); }
 	| ACTIVE				{ setClause($node->active, "ACTIVE/INACTIVE", true); }
@@ -6364,7 +6350,7 @@ create_map_clause($global)
 				$$ = $1;
 				$$->global = $global;
 			}
-		map_to(NOTRIAL($2))
+		map_to($2)
 			{
 				$$ = $2;
 			}
@@ -6377,7 +6363,7 @@ alter_map_clause($global)
 				$$ = $1;
 				$$->global = $global;
 			}
-		map_to(NOTRIAL($2))
+		map_to($2)
 			{
 				$$ = $2;
 			}
@@ -6390,7 +6376,7 @@ replace_map_clause($global)
 				$$ = $1;
 				$$->global = $global;
 			}
-		map_to(NOTRIAL($2))
+		map_to($2)
 			{
 				$$ = $2;
 			}
@@ -6412,8 +6398,8 @@ map_clause($op)
  			{
 				$$ = newNode<MappingNode>($op, *$1);
 			}
-		USING map_using(NOTRIAL($2))
-		FROM map_from(NOTRIAL($2))
+		USING map_using($2)
+		FROM map_from($2)
 			{
 				$$ = $2;
 			}

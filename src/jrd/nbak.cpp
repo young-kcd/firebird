@@ -995,16 +995,19 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 	// Read difference file name from header clumplets
 	explicit_diff_name = false;
 	const UCHAR* p = header->hdr_data;
-	while (true)
+	const UCHAR* const end = reinterpret_cast<UCHAR*>(header) + header->hdr_page_size;
+	while (p < end)
 	{
 		switch (*p)
 		{
-		case Ods::HDR_backup_guid:
-			p += p[1] + 2;
-			continue;
 		case Ods::HDR_difference_file:
 			explicit_diff_name = true;
 			diff_name.assign(reinterpret_cast<const char*>(p + 2), p[1]);
+			break;
+
+		default:
+			p += p[1] + 2;
+			continue;
 		}
 		break;
 	}

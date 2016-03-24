@@ -68,7 +68,7 @@ AggNode::AggNode(MemoryPool& pool, const AggInfo& aAggInfo, bool aDistinct, bool
 DmlNode* AggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	MetaName name;
-	PAR_name(csb, name);
+	csb->csb_blr_reader.getMetaName(name);
 
 	AggNode* node = NULL;
 
@@ -84,7 +84,7 @@ DmlNode* AggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 	if (!node)
 		PAR_error(csb, Arg::Gds(isc_funnotdef) << name);
 
-	UCHAR count = csb->csb_blr_reader.getByte();
+	const UCHAR count = csb->csb_blr_reader.getByte();
 
 	if (count != node->jrdChildNodes.getCount())
 		PAR_error(csb, Arg::Gds(isc_funmismat) << name);
