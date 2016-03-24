@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="engine12"
+	Name="engine"
 	ProjectGUID="{F8798A49-9D20-451E-A7BD-FEB5237103B5}"
 	RootNamespace="engine"
 	>
@@ -62,6 +62,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="mpr.lib"
 				AdditionalLibraryDirectories="&quot;../../../extern/icu/$(PlatformName)/release/lib&quot;"
+				OutputFile="$(OutDir)\engine12.dll"
 				ModuleDefinitionFile="..\defs\plugin.def"
 			/>
 			<Tool
@@ -136,6 +137,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="mpr.lib"
 				AdditionalLibraryDirectories="&quot;../../../extern/icu/$(PlatformName)/release/lib&quot;"
+				OutputFile="$(OutDir)\engine12.dll"
 				ModuleDefinitionFile="..\defs\plugin.def"
 			/>
 			<Tool
@@ -212,6 +214,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="mpr.lib"
 				AdditionalLibraryDirectories="&quot;../../../extern/icu/$(PlatformName)/release/lib&quot;"
+				OutputFile="$(OutDir)\engine12.dll"
 				ModuleDefinitionFile="..\defs\plugin.def"
 			/>
 			<Tool
@@ -289,6 +292,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="mpr.lib"
 				AdditionalLibraryDirectories="&quot;../../../extern/icu/$(PlatformName)/release/lib&quot;"
+				OutputFile="$(OutDir)\engine12.dll"
 				ModuleDefinitionFile="..\defs\plugin.def"
 			/>
 			<Tool

@@ -397,7 +397,6 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F8798A49-9D20-451E-A7BD-FEB5237103B5}</ProjectGuid>
-    <ProjectName>engine12</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -462,6 +461,10 @@
     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">engine12</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">engine12</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">engine12</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">engine12</TargetName>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\plugins\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\plugins\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\plugins\</OutDir>

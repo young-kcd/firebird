@@ -36,7 +36,7 @@ add_custom_command(
 add_executable          (empbuild empbuild.c empbuild.fdb ${CMAKE_CURRENT_SOURCE_DIR}/empbuild/empbuild.e)
 target_link_libraries   (empbuild yvalve)
 set_output_directory    (empbuild . CURRENT_DIR)
-add_dependencies_cc     (empbuild engine12)
+add_dependencies_cc     (empbuild engine)
 project_group           (empbuild Examples)
 
 file(GLOB files
