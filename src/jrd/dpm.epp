@@ -225,8 +225,6 @@ void DPM_backout_mark(thread_db* tdbb, record_param* rpb, const jrd_tra* transac
 	header->rhd_flags |= rhd_gc_active;
 	rpb->rpb_flags |= rpb_gc_active;
 
-	lock_gc_active(tdbb, transaction, rpb);
-
 	CCH_RELEASE(tdbb, window);
 }
 

@@ -131,7 +131,7 @@ public:
 public:
 	UCHAR lck_logical;				// Logical lock level
 	UCHAR lck_physical;				// Physical lock level
-	LOCK_DATA_T lck_data;					// Data associated with a lock
+	LOCK_DATA_T lck_data;			// Data associated with a lock
 
 	union
 	{

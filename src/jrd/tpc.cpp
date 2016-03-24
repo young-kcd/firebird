@@ -28,7 +28,6 @@
 #include "../jrd/pag.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/lck_proto.h"
-#include "../jrd/ods_proto.h"
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../common/isc_proto.h"
@@ -367,7 +366,7 @@ TipCache::TransactionStatusBlock* TipCache::getTransactionStatusBlock(int blockN
 		if (!block)
 		{
 			// Check if block might be too old to be created.
-			TraNumber oldest = m_tpcHeader->getHeader()->oldest_transaction.load();
+			TraNumber oldest = m_tpcHeader->getHeader()->oldest_transaction.load(std::memory_order_relaxed);
 			if (blockNumber >= static_cast<int>(oldest / m_transactionsPerBlock)) 
 			{
 				block = createTransactionStatusBlock(blockNumber);
