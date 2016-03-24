@@ -6165,19 +6165,17 @@ dsc* InternalInfoNode::execute(thread_db* tdbb, jrd_req* request) const
 	fb_assert(value->dsc_dtype == dtype_long);
 	const InfoType infoType = static_cast<InfoType>(*reinterpret_cast<SLONG*>(value->dsc_address));
 
-	dsc desc;
-
 	if (infoType == INFO_TYPE_SQLSTATE)
 	{
 		FB_SQLSTATE_STRING sqlstate;
 		request->req_last_xcp.as_sqlstate(sqlstate);
 
+		dsc desc;
 		desc.makeText(FB_SQLSTATE_LENGTH, ttype_ascii, (UCHAR*) sqlstate);
+		EVL_make_value(tdbb, &desc, impure);
+
+		return &impure->vlu_desc;
 	}
-	else
-	{
-		SLONG int32_result = 0;
-		SINT64 int64_result = 0;
 
 	SLONG result32 = 0;
 	SINT64 result64 = 0;

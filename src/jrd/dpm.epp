@@ -180,8 +180,6 @@ void DPM_backout( thread_db* tdbb, record_param* rpb)
 	rhd* header = (rhd*) ((SCHAR *) page + index1->dpg_offset);
 	header->rhd_flags &= ~(rhd_chain | rhd_gc_active);
 
-	release_gc_active(tdbb, rpb);
-
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
 		"    old record %" ULONGFORMAT":%d, new record %" ULONGFORMAT

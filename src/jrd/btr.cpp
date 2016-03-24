@@ -411,8 +411,6 @@ void BTR_create(thread_db* tdbb,
 	root->irt_rpt[idx->idx_id].setRoot(idx->idx_root);
 	update_selectivity(root, idx->idx_id, selectivity);
 
-	LCK_release(tdbb, creation.lock);
-
 	CCH_RELEASE(tdbb, &window);
 }
 
@@ -1742,33 +1740,18 @@ bool BTR_next_index(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction, in
 			const int trans_state = TRA_wait(tdbb, transaction, trans, jrd_tra::tra_wait);
 			if ((trans_state == tra_dead) || (trans_state == tra_committed))
 			{
-				const ULONG tra_mask = irt_desc->irt_transaction;
-
-				CCH_RELEASE(tdbb, window);
-
-				if (!LCK_lock(tdbb, &temp_lock, LCK_SR, LCK_WAIT))
-					ERR_punt();
-
-				LCK_release(tdbb, &temp_lock);
-
-				// attempt to clean up this left-over index
+				// clean up this left-over index
 
 				root = (index_root_page*) CCH_FETCH(tdbb, window, LCK_write, pag_root);
-
-				if (id >= root->irt_count)
-					return false;
-
 				irt_desc = root->irt_rpt + id;
 
 				if (irt_desc->getTransaction() == trans)
-					if (irt_desc->irt_transaction == tra_mask)
-					{
-						BTR_delete_index(tdbb, window, id);
-						break;
-					}
+					BTR_delete_index(tdbb, window, id);
 				else
 					CCH_RELEASE(tdbb, window);
 
+				root = (index_root_page*) CCH_FETCH(tdbb, window, LCK_read, pag_root);
+				continue;
 			}
 
 			root = (index_root_page*) CCH_FETCH(tdbb, window, LCK_read, pag_root);
@@ -1991,15 +1974,7 @@ void BTR_reserve_slot(thread_db* tdbb, IndexCreation& creation)
 	// Exploit the fact idx_repeat structure matches ODS IRTD one
 	memcpy(desc, idx->idx_rpt, len);
 
-	fb_assert(!creation.lock);
-	creation.lock = FB_NEW_RPT(*transaction->tra_pool, 0) IndexReserveLock(tdbb, relation, idx);
-
-	const bool error = !LCK_lock(tdbb, creation.lock, LCK_EX, LCK_WAIT);
-
 	CCH_RELEASE(tdbb, &window);
-
-	if (error)
-		ERR_punt();
 }
 
 

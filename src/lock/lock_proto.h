@@ -49,7 +49,7 @@
 #include "../jrd/que.h"
 
 typedef FB_UINT64 LOCK_OWNER_T; // Data type for the Owner ID
-typedef ULONG LOCK_DATA_T;
+typedef SINT64 LOCK_DATA_T;
 
 // Maximum lock series for gathering statistics and querying data
 

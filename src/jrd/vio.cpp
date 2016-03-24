@@ -543,13 +543,6 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		{
 			DPM_backout_mark(tdbb, rpb, transaction);
 
-			// dimitr:	We don't need to clear the GC flag on the data page
-			//			as the record version is to be removed. Just ensure
-			//			that the appropriate lock is released at the same time.
-
-			AutoLock gcLockGuard(tdbb, rpb->rpb_gc_lock);
-			rpb->rpb_gc_lock = NULL;
-
 			RecordStack empty_staying;
 			IDX_garbage_collect(tdbb, rpb, going, empty_staying);
 			BLB_garbage_collect(tdbb, going, empty_staying, rpb->rpb_page, relation);
