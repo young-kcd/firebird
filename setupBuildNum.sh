@@ -43,12 +43,10 @@ processBranch B3_0_Release $v30Offset
 processBranch B2_5_Release $v25Offset
 processBranch B2_1_Release $v21Offset
 
-git checkout master
-
 export GIT_COMMITTER_NAME="firebirds"
 export GIT_COMMITTER_EMAIL="<>"
 export GIT_AUTHOR_NAME="firebirds"
 export GIT_AUTHOR_EMAIL="<>"
 
-git push
+git push --all
 
