@@ -49,7 +49,6 @@ if defined FB_CLEAN_SHARED (
 @del %FB_ROOT_PATH%\src\dsql\parse.cpp 2>nul
 )
 
-@del %FB_ROOT_PATH%\builds\win32\msvc6\*.plg 2>nul
 @rmdir /s /q %FB_ROOT_PATH%\builds\win32\install_image 2>nul
 
 

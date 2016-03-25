@@ -1,12 +1,11 @@
 @echo off
 ::==============
 :: compile.bat solution, output, [projects...]
-::   Note: MSVC7/8 don't accept more than one project
+::   Note: MSVC8 don't accept more than one project
 ::
-::   Note2: Our MSVC8/9 projects create object files in temp/$platform/$config
+::   Note2: Our projects create object files in temp/$platform/$config
 ::     but we call devenv with $config|$platform (note variable in reverse order
-::      and odd syntax.) This extended syntax for devenv does not seem to be
-::      supported in MSVC7 (despite documentation to the contrary.)
+::     and odd syntax).
 
 setlocal
 set solution=%1
@@ -19,9 +18,7 @@ set projects=
 	set config=debug
 )
 
-if %MSVC_VERSION% GEQ 8 (
-	set config="%config%|%FB_TARGET_PLATFORM%"
-)
+set config="%config%|%FB_TARGET_PLATFORM%"
 
 if "%VS_VER_EXPRESS%"=="1" (
 	set exec=vcexpress
