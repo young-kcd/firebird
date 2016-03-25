@@ -1,6 +1,6 @@
 #!/bin/sh
 
-v40Filter="--after=15.03.2016"
+v40Filter="--after=28.02.2016"
 v30Offset=15471
 v25Offset=13822
 v21Offset=9146
@@ -12,7 +12,8 @@ Adjust="$2"
 Filter="$3"
 
 git checkout $Branch
-git pull
+git reset --hard origin/$Branch
+git clean -d -x -f
 
 TmpFile=temp.buildno
 WriteBuildNumFile="src/misc/writeBuildNum.sh"
@@ -37,6 +38,8 @@ if [ "$NewBuildNo" != "$OrgBuildNo" ]; then
 fi
 
 }
+
+git fetch --all
 
 processBranch master 0 $v40Filter
 processBranch B3_0_Release $v30Offset
