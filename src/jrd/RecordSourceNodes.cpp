@@ -2282,7 +2282,8 @@ bool RseNode::dsqlFieldFinder(FieldFinder& visitor)
 
 RseNode* RseNode::dsqlFieldRemapper(FieldRemapper& visitor)
 {
-	AutoSetRestore<USHORT> autoCurrentLevel(&visitor.currentLevel, visitor.currentLevel + 1);
+	AutoSetRestore<USHORT> autoCurrentLevel(&visitor.currentLevel, visitor.currentLevel +
+		(flags & RseNode::FLAG_DSQL_COMPARATIVE ? 0 : 1));
 
 	doDsqlFieldRemapper(visitor, dsqlStreams);
 	doDsqlFieldRemapper(visitor, dsqlWhere);
