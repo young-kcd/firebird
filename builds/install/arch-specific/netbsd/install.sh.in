@@ -189,8 +189,7 @@ cp $BuildRootDir/src/extlib/fbudf/fbudf.sql $DestDir/UDF/ || exit
 # Note that this copies files from outside the build tree.
 echo Installing documentation
 cp $BuildRootDir/doc/README.*  		$DestDir/doc || exit
-cp $BuildRootDir/doc/WhatsNew 		$DestDir || exit
-cp $BuildRootDir/doc/README.user 	$DestDir/README	|| exit
+cp $BuildRootDir/*.md 		$DestDir || exit
 
 SQLEXTENSIONS=`find $BuildRootDir/doc/sql.extensions ! -type d | grep -v CVS`
 cp ${SQLEXTENSIONS}	$DestDir/doc/sql.extensions || exit
@@ -227,7 +226,7 @@ done
 chown -R root:wheel @prefix@/lib || exit
 
 # make the following read-only
-chmod -R a=r @prefix@/WhatsNew || exit
+chmod -R a=r @prefix@/*.md || exit
 for i in `find @prefix@/doc -type f -print`
 do
 	chmod a=r $i || exit

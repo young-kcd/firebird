@@ -277,8 +277,7 @@ copyFiles() {
 	#doc
     cp $BuildRootDir/doc/README.* ${TargetDir}@FB_DOCDIR@
     cp $BuildRootDir/doc/sql.extensions/README* ${TargetDir}@FB_DOCDIR@/sql.extensions
-    cp $BuildRootDir/doc/WhatsNew ${TargetDir}@FB_CONFDIR@/WhatsNew
-    cp $BuildRootDir/doc/README.user ${TargetDir}@FB_CONFDIR@/README
+    cp $BuildRootDir/*.md ${TargetDir}@FB_CONFDIR@
 
 	chown -R root:wheel ${TargetDir}@FB_MISCDIR@
 	for i in `find ${TargetDir}@FB_MISCDIR@ -print`; do

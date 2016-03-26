@@ -20,7 +20,8 @@ v CONFIG.prsv @prefix@/security2.fdb=$SRCDIR/security2.fdb  0660 firebird firebi
 v CONFIG.prsv @prefix@/firebird.conf=$SRCDIR/misc/firebird.conf  0644 firebird firebird
 v CONFIG.prsv @prefix@/databases.conf=$SRCDIR/../../builds/install/misc/databases.conf.in  0544 firebird firebird
 v CONFIG.prsv @prefix@/intl/fbintl.conf=$SRCDIR/misc/fbintl.conf 0644 firebird firebird
-f none @prefix@/WhatsNew=$SRCDIR/../../doc/WhatsNew 0644 firebird firebird
+f none @prefix@/CHANGELOG.md=$SRCDIR/../../CHANGELOG.md 0644 firebird firebird
+f none @prefix@/README.md=$SRCDIR/../../README.md 0644 firebird firebird
 
 d none @prefix@/bin  0755 firebird firebird
 
@@ -257,7 +258,6 @@ f none @prefix@/doc/README.perforamance_monitoring=$SRCDIR/../../doc/README.perf
 f none @prefix@/doc/README.raw_devices=$SRCDIR/../../doc/README.raw_devices 0644 firebird firebird
 f none @prefix@/doc/README.sha1=$SRCDIR/../../doc/README.sha1 0644 firebird firebird
 f none @prefix@/doc/README.trusted_authentication=$SRCDIR/../../doc/README.trusted_authentication 0644 firebird firebird
-f none @prefix@/doc/README.user=$SRCDIR/../../doc/README.user 0644 firebird firebird
 f none @prefix@/doc/README.user.embedded=$SRCDIR/../../doc/README.user.embedded 0644 firebird firebird
 f none @prefix@/doc/README.user.troubleshooting=$SRCDIR/../../doc/README.user.troubleshooting 0644 firebird firebird
 f none @prefix@/doc/README.Win32LibraryInstallation=$SRCDIR/../../doc/README.Win32LibraryInstallation.txt 0644 firebird firebird

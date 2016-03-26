@@ -196,10 +196,8 @@ copyFiles() {
 
 #   Copy various documentation
     ls $BuildRootDir/doc/*.pdf >/dev/null 2>&1 && cp $BuildRootDir/doc/*.pdf $DestDir/doc
-    cp $BuildRootDir/doc/README.* $DestDir/doc
     cp $BuildRootDir/doc/sql.extensions/README* $DestDir/doc/sql.extensions
-    cp $BuildRootDir/doc/WhatsNew $DestDir/WhatsNew
-    cp $BuildRootDir/doc/README.user $DestDir/README
+    cp $BuildRootDir/*.md $DestDir
 
 #   Copy various upgrade stuff
     cp $BuildRootDir/src/misc/intl.sql                          $DestDir/misc/
