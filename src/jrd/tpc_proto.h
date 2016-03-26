@@ -29,16 +29,16 @@
 #include "../common/classes/SyncObject.h"
 
 namespace Ods {
+
 struct tx_inv_page;
-};
+
+}
 
 namespace Jrd {
 
 class Database;
 class thread_db;
 class TipCache;
-
-
 
 // Special values of CommitNumber reserved for uncommitted transaction states
 const CommitNumber

@@ -49,10 +49,10 @@ bool TipCache::GlobalTpcInitializer::initialize(Firebird::SharedMemoryBase* sm, 
 {
 	m_cache->m_tpcHeader = static_cast<Firebird::SharedMemory<GlobalTpcHeader>*>(sm);
 
-	if (!initialize) return true;
+	if (!initialize)
+		return true;
 
 	thread_db* tdbb = JRD_get_thread_data();
-
 
 	GlobalTpcHeader* header = static_cast<GlobalTpcHeader*>(sm->sh_mem_header);
 
@@ -71,7 +71,8 @@ bool TipCache::GlobalTpcInitializer::initialize(Firebird::SharedMemoryBase* sm, 
 
 bool TipCache::SnapshotsInitializer::initialize(Firebird::SharedMemoryBase* sm, bool initialize) 
 {
-	if (!initialize) return true;
+	if (!initialize)
+		return true;
 
 	SnapshotList* header = static_cast<SnapshotList*>(sm->sh_mem_header);
 
@@ -90,7 +91,8 @@ bool TipCache::SnapshotsInitializer::initialize(Firebird::SharedMemoryBase* sm, 
 
 bool TipCache::MemBlockInitializer::initialize(Firebird::SharedMemoryBase* sm, bool initialize) 
 {
-	if (!initialize) return true;
+	if (!initialize)
+		return true;
 
 	TransactionStatusBlock* header = static_cast<TransactionStatusBlock*>(sm->sh_mem_header);
 
@@ -171,6 +173,8 @@ CommitNumber TipCache::cacheState(TraNumber number)
 	TransactionStatusBlock *block = getTransactionStatusBlock(blockNumber);
 
 	// This should not really happen ever
+	fb_assert(block);
+
 	if (!block)
 		return CN_PREHISTORIC;
 
@@ -182,8 +186,6 @@ CommitNumber TipCache::cacheState(TraNumber number)
 	return state;
 }
 
-
-
 void TipCache::initializeTpc(thread_db *tdbb) 
 {
 	// Initialization can only be called on a TipCache that is not initialized
@@ -192,9 +194,7 @@ void TipCache::initializeTpc(thread_db *tdbb)
 	m_blockSize = m_dbb->dbb_config->getTpcBlockSize();
 
 	m_transactionsPerBlock = 
-		static_cast<ULONG>(
-			(m_blockSize - 
-				offsetof(TransactionStatusBlock, data[0])) / sizeof(CommitNumber));
+		static_cast<ULONG>((m_blockSize - offsetof(TransactionStatusBlock, data[0])) / sizeof(CommitNumber));
 
 	int blockCount = MAX_SLONG / m_transactionsPerBlock + 1; // hvlad: MAX_SLONG ?
 
@@ -353,7 +353,6 @@ TipCache::TransactionStatusBlock* TipCache::createTransactionStatusBlock(int blo
 	return memory->getHeader();
 }
 
-
 TipCache::TransactionStatusBlock* TipCache::getTransactionStatusBlock(int blockNumber) 
 {
 	// This is a double-checked locking pattern with barriers
@@ -442,51 +441,48 @@ CommitNumber TipCache::setState(TraNumber number, SSHORT state)
 	CommitNumber oldStateCn = statePtr->load(std::memory_order_relaxed);
 	switch(state) 
 	{
-	case tra_committed: 
-	{
-		if (oldStateCn == CN_DEAD) {
-			ERR_bugcheck_msg("TPC: Attempt to commit dead transaction");
-		}
-
-		// If transaction is already committed - do nothing
-		if (oldStateCn >= CN_PREHISTORIC && oldStateCn <= CN_MAX_NUMBER)
-			return oldStateCn;
-
-		// We verified for all other cases, transaction must either be Active or in Limbo
-		fb_assert(oldStateCn == CN_ACTIVE || oldStateCn == CN_LIMBO);
-
-		// Generate new commit number
-		CommitNumber newCommitNumber = m_tpcHeader->getHeader()->latest_commit_number++ + 1;
-
-		statePtr->store(newCommitNumber, std::memory_order_relaxed);
-		return newCommitNumber;
-	}
-
-	case tra_limbo:
-		if (oldStateCn != CN_ACTIVE)
-			ERR_bugcheck_msg("TPC: Attempt to mark inactive transaction to be in limbo");
-
-		if (oldStateCn != CN_LIMBO)
-			statePtr->store(CN_LIMBO, std::memory_order_relaxed);
-
-		return CN_LIMBO;
-
-	case tra_dead:
-		if (oldStateCn == CN_DEAD)
-			return CN_DEAD;
-
-		if (oldStateCn != CN_ACTIVE && oldStateCn != CN_LIMBO)
+		case tra_committed:
 		{
-			return CN_DEAD;
-			ERR_bugcheck_msg("TPC: Attempt to mark inactive transaction to be dead");  // hvlad: ???
-		}
-		
-		statePtr->store(CN_DEAD, std::memory_order_relaxed);
-		return CN_DEAD;
+			if (oldStateCn == CN_DEAD)
+				ERR_bugcheck_msg("TPC: Attempt to commit dead transaction");
 
-	default:
-		ERR_bugcheck_msg("TPC: Attempt to mark invalid transaction state");
-		return CN_ACTIVE; // silence the compiler
+			// If transaction is already committed - do nothing
+			if (oldStateCn >= CN_PREHISTORIC && oldStateCn <= CN_MAX_NUMBER)
+				return oldStateCn;
+
+			// We verified for all other cases, transaction must either be Active or in Limbo
+			fb_assert(oldStateCn == CN_ACTIVE || oldStateCn == CN_LIMBO);
+
+			// Generate new commit number
+			CommitNumber newCommitNumber = m_tpcHeader->getHeader()->latest_commit_number++ + 1;
+
+			statePtr->store(newCommitNumber, std::memory_order_relaxed);
+			return newCommitNumber;
+		}
+
+		case tra_limbo:
+			if (oldStateCn != CN_ACTIVE)
+				ERR_bugcheck_msg("TPC: Attempt to mark inactive transaction to be in limbo");
+
+			if (oldStateCn != CN_LIMBO)
+				statePtr->store(CN_LIMBO, std::memory_order_relaxed);
+
+			return CN_LIMBO;
+
+		case tra_dead:
+			if (oldStateCn == CN_DEAD)
+				return CN_DEAD;
+
+			if (oldStateCn != CN_ACTIVE && oldStateCn != CN_LIMBO)
+				ERR_bugcheck_msg("TPC: Attempt to mark inactive transaction to be dead");
+
+			statePtr->store(CN_DEAD, std::memory_order_relaxed);
+
+			return CN_DEAD;
+
+		default:
+			ERR_bugcheck_msg("TPC: Attempt to mark invalid transaction state");
+			return CN_ACTIVE; // silence the compiler
 	}
 }
 
