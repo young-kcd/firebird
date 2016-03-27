@@ -28,6 +28,7 @@
 #include "../jrd/pag.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/lck_proto.h"
+#include "../jrd/ods_proto.h"
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../common/isc_proto.h"
@@ -83,8 +84,8 @@ bool TipCache::SnapshotsInitializer::initialize(Firebird::SharedMemoryBase* sm, 
 
 	header->slots_used.store(0, std::memory_order_relaxed);
 	header->min_free_slot = 0;
-	header->slots_allocated.store(static_cast<ULONG>((sm->sh_mem_length_mapped - offsetof(SnapshotList, slots[0])) / sizeof(SnapshotData)), 
-		std::memory_order_relaxed);
+	const ULONG dataSize = sm->sh_mem_length_mapped - offsetof(SnapshotList, slots[0]);
+	header->slots_allocated.store(dataSize / sizeof(SnapshotData), std::memory_order_relaxed);
 
 	return true;
 }
@@ -252,9 +253,9 @@ void TipCache::loadInventoryPages(thread_db* tdbb)
 #else
 	WIN window(HEADER_PAGE_NUMBER);
 	const Ods::header_page* header_page = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
-	const TraNumber hdr_oldest_transaction = header_page->hdr_oldest_transaction;
-	const TraNumber hdr_next_transaction = header_page->hdr_next_transaction;
-	const SLONG hdr_attachment_id = header_page->hdr_attachment_id;
+	const TraNumber hdr_oldest_transaction = Ods::getOIT(header_page);
+	const TraNumber hdr_next_transaction = Ods::getNT(header_page);
+	const AttNumber hdr_attachment_id = Ods::getAttID(header_page);
 	CCH_RELEASE(tdbb, &window);
 #endif
 
@@ -299,7 +300,8 @@ void TipCache::loadInventoryPages(thread_db* tdbb)
 		if (++t > hdr_next_transaction)
 			break;
 
-		if (++transOffset == topTransactionInFile) {
+		if (++transOffset == topTransactionInFile) 
+		{
 			blockNumber++;
 			transOffset = 0;
 			topTransactionInFile += m_transactionsPerBlock;
@@ -696,7 +698,7 @@ void TipCache::remapSnapshots(bool sync)
 
 
 
-SnapshotHandle TipCache::beginSnapshot(thread_db* tdbb, SLONG attachmentId, CommitNumber *commitNumber_out) 
+SnapshotHandle TipCache::beginSnapshot(thread_db* tdbb, AttNumber attachmentId, CommitNumber *commitNumber_out)
 {
 	// Can only be called on initialized TipCache
 	fb_assert(m_tpcHeader);
@@ -809,7 +811,7 @@ void TipCache::updateActiveSnapshots(thread_db* tdbb, ActiveSnapshots* activeSna
 
 		snapshots = m_snapshots->getHeader();
 
-		Firebird::GenericMap<Pair<NonPooled<SLONG,bool> > > att_states;
+		Firebird::GenericMap<Pair<NonPooled<AttNumber, bool> > > att_states;
 
 		// We modify snapshots list only while holding a mutex
 		SharedMutexGuard guard(m_snapshots, false);
@@ -818,7 +820,7 @@ void TipCache::updateActiveSnapshots(thread_db* tdbb, ActiveSnapshots* activeSna
 		for (ULONG slotNumber = 0; slotNumber < slots_used_org; slotNumber++) 
 		{
 			SnapshotData *slot = snapshots->slots + slotNumber;
-			SLONG slot_attachment_id = slot->attachment_id.load(std::memory_order_acquire);
+			AttNumber slot_attachment_id = slot->attachment_id.load(std::memory_order_acquire);
 			if (slot_attachment_id) 
 			{
 				bool isAttachmentDead;
@@ -894,24 +896,24 @@ TraNumber TipCache::generateTransactionId()
 	return transaction_id;
 }
 
-SLONG TipCache::generateAttachmentId() 
+AttNumber TipCache::generateAttachmentId() 
 {
 	// Can only be called on initialized TipCache
 	fb_assert(m_tpcHeader);
 
 	// No barrier here, because attachment id order does not generally matter
 	// especially for read-only databases where this function is used.
-	SLONG attachment_id = m_tpcHeader->getHeader()->latest_attachment_id++ + 1;
+	AttNumber attachment_id = m_tpcHeader->getHeader()->latest_attachment_id++ + 1;
 	return attachment_id;
 }
 
-SLONG TipCache::generateStatementId() 
+StmtNumber TipCache::generateStatementId() 
 {
 	// Can only be called on initialized TipCache
 	fb_assert(m_tpcHeader);
 
 	// No barrier here, because statement id order does not generally matter
-	SLONG statement_id = m_tpcHeader->getHeader()->latest_statement_id++ + 1;
+	StmtNumber statement_id = m_tpcHeader->getHeader()->latest_statement_id++ + 1;
 	return statement_id;
 }
 
@@ -920,7 +922,7 @@ SLONG TipCache::generateStatementId()
 //	atomic_int_store_release(&m_tpcHeader->getHeader()->latest_transaction_id, number);
 //}
 
-void TipCache::assignLatestAttachmentId(SLONG number) 
+void TipCache::assignLatestAttachmentId(AttNumber number)
 {
 	// XXX: there is no paired acquire because value assigned here is not really used for now
 	m_tpcHeader->getHeader()->latest_attachment_id.store(number, std::memory_order_release);

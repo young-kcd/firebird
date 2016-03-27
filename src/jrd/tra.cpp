@@ -111,12 +111,15 @@ static const UCHAR sweep_tpb[] =
 	isc_tpb_read_committed, isc_tpb_rec_version
 };
 
+
 ActiveSnapshots::ActiveSnapshots(Firebird::MemoryPool& p) : 
 	m_snapshots(p), m_lastCommit(CN_ACTIVE), m_releaseCount(0)
 {
 }
 
-CommitNumber ActiveSnapshots::getSnapshotForVersion(CommitNumber version_cn) {
+
+CommitNumber ActiveSnapshots::getSnapshotForVersion(CommitNumber version_cn) 
+{
 	if (version_cn > m_lastCommit)
 		return CN_ACTIVE;
 
@@ -126,7 +129,8 @@ CommitNumber ActiveSnapshots::getSnapshotForVersion(CommitNumber version_cn) {
 	return m_lastCommit;
 }
 
-void	TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request) {
+void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request) 
+{
 	// This function is called whenever request is started in a transaction.
 	// Setup context to preserve cursor stability in READ COMMITTED transactions.
 
@@ -141,8 +145,8 @@ void	TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request) {
 		cache->updateActiveSnapshots(tdbb, &transaction->tra_active_snapshots);
 
 	// If we are not READ COMMITTED or stable cursors are not needed then nothing to do here
-	if (!(transaction->tra_flags & TRA_read_committed) ||
-		!(transaction->tra_flags & TRA_read_consistency)) return;
+	if (!(transaction->tra_flags & TRA_read_committed) || !(transaction->tra_flags & TRA_read_consistency)) 
+		return;
 
 	// See if there is any request right above us in the call stack
 	jrd_req* org_request;
@@ -150,20 +154,24 @@ void	TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request) {
 	do {
 		// Check regular request call stack
 		org_request = jrd_ctx->getRequest();
-		if (org_request) break;
+		if (org_request) 
+			break;
 
 		// Check for engine context switch (EXECUTE STATEMENT, etc)
 		ThreadData* ctx = jrd_ctx;
 		jrd_ctx = NULL;
-		while( (ctx = ctx->getPriorContext()) ) {
-			if (ctx->getType() == ThreadData::tddDBB) {
+		while( (ctx = ctx->getPriorContext()) ) 
+		{
+			if (ctx->getType() == ThreadData::tddDBB) 
+			{
 				jrd_ctx = static_cast<thread_db*>(ctx);
 				break;
 			}
 		}
 	} while (jrd_ctx);
 
-	if (org_request && org_request->req_transaction == transaction) {
+	if (org_request && org_request->req_transaction == transaction) 
+	{
 		fb_assert(org_request->req_snapshot_owner);
 		request->req_snapshot_owner = org_request->req_snapshot_owner;
 		return;
@@ -179,20 +187,24 @@ void	TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request) {
 			tdbb->getAttachment()->att_attachment_id, &request->req_snapshot_number);
 }
 
-void	TRA_release_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request) {
+
+void TRA_release_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request) 
+{
 	// This function is called whenever request has completed processing 
 	// in a transaction (normally or abnormally)
 
 	if (!request->req_snapshot_owner)
 		return;
 
-	if (request->req_snapshot_handle) {
+	if (request->req_snapshot_handle) 
+	{
 		tdbb->getDatabase()->dbb_tip_cache->endSnapshot(tdbb, request->req_snapshot_handle);
 		request->req_snapshot_handle = 0;
 	}
 
 	request->req_snapshot_owner = NULL;
 }
+
 
 void TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request)
 {
@@ -984,7 +996,7 @@ bool TRA_is_active(thread_db* tdbb, TraNumber number)
  *	Returns whether a given transaction
  *  owned by some other guy active or not.
  *
- * If function return false - you can tust this value and be sure that transaction 
+ * If function return false - you can trust this value and be sure that transaction 
  * is not active. However if function returns true - it might be inactive already,
  * but two engine threads are checking for its status at once. Callers need to
  * behave correctly when facing this behavior.
@@ -1530,7 +1542,8 @@ int TRA_snapshot_state(thread_db* tdbb, jrd_tra* trans, TraNumber number, Commit
 	// If the transaction is older than the oldest
 	// interesting transaction, it must be committed.
 
-	if (number < trans->tra_oldest) {
+	if (number < trans->tra_oldest) 
+	{
 		if (snapshot)
 			*snapshot = trans->tra_active_snapshots.getSnapshotForVersion(CN_PREHISTORIC);
 		return tra_committed;
@@ -1538,7 +1551,8 @@ int TRA_snapshot_state(thread_db* tdbb, jrd_tra* trans, TraNumber number, Commit
 
 	// If the transaction is the system transaction, it is considered committed.
 
-	if (number == TRA_system_transaction) {
+	if (number == TRA_system_transaction) 
+	{
 		if (snapshot)
 			*snapshot = trans->tra_active_snapshots.getSnapshotForVersion(CN_PREHISTORIC);
 		return tra_committed;
@@ -1549,9 +1563,11 @@ int TRA_snapshot_state(thread_db* tdbb, jrd_tra* trans, TraNumber number, Commit
 	int state;
 	CommitNumber stateCn = CN_PREHISTORIC;
 
-	if (TipCache* tip_cache = dbb->dbb_tip_cache) {
+	if (TipCache* tip_cache = dbb->dbb_tip_cache) 
+	{
 		stateCn = tip_cache->snapshotState(tdbb, number);
-		switch(stateCn) {
+		switch(stateCn) 
+		{
 			case CN_ACTIVE:
 				state = tra_active;
 				break;
@@ -1567,7 +1583,8 @@ int TRA_snapshot_state(thread_db* tdbb, jrd_tra* trans, TraNumber number, Commit
 					*snapshot = trans->tra_active_snapshots.getSnapshotForVersion(CN_PREHISTORIC);
 				break;
 		}
-	} else
+	} 
+	else
 		state = TRA_fetch_state(tdbb, number);
 
 	// If the transaction is a committed sub-transction - do the easy lookup.
@@ -1575,12 +1592,16 @@ int TRA_snapshot_state(thread_db* tdbb, jrd_tra* trans, TraNumber number, Commit
 	if (trans->tra_commit_sub_trans && trans->tra_commit_sub_trans->test(number))
 		return tra_committed;
 
-	if (trans->tra_flags & TRA_read_committed) {
-		if ((trans->tra_flags & TRA_read_consistency) && state == tra_committed) {
+	if (trans->tra_flags & TRA_read_committed) 
+	{
+		if ((trans->tra_flags & TRA_read_consistency) && state == tra_committed) 
+		{
 			// GC thread accesses data directly without any request
-			if (jrd_req* current_request = tdbb->getRequest()) {
+			if (jrd_req* current_request = tdbb->getRequest()) 
+			{
 				// There is no request snapshot when we build expression index
-				if (jrd_req* snapshot_request = current_request->req_snapshot_owner) {
+				if (jrd_req* snapshot_request = current_request->req_snapshot_owner) 
+				{
 					if (stateCn > snapshot_request->req_snapshot_number)
 						return tra_active;
 				}
@@ -1807,6 +1828,10 @@ void TRA_sweep(thread_db* tdbb)
 		int oldest_state = 0;
 		const TraNumber oldest_limbo =
 			TPC_find_limbo(tdbb, transaction->tra_oldest, transaction->tra_top - 1);
+/*
+			TPC_find_states(tdbb, transaction->tra_oldest, transaction->tra_top - 1,
+							1 << tra_limbo, oldest_state);
+*/
 
 		const TraNumber active = oldest_limbo ? oldest_limbo : transaction->tra_top;
 
@@ -3228,7 +3253,6 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 			}
 
 			oldest_active = active;
-
 			break;
 		}
 	}
@@ -3263,14 +3287,14 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	const TraNumber lck_data = ((trans->tra_flags & TRA_read_committed) 
 		&& !(trans->tra_flags & TRA_read_consistency)) ? number : oldest_active;
 
-	//fb_assert(sizeof(lock->lck_data) == sizeof(lck_data));
-	if (lock->lck_data != (SLONG) lck_data)
+	static_assert(sizeof(lock->lck_data) == sizeof(lck_data), "Check lock data type !");
+	if (lock->lck_data != lck_data)
 		LCK_write_data(tdbb, lock, lck_data);
 
 	// Query the minimum lock data for all active transaction locks.
 	// This will be the oldest active snapshot used for regulating garbage collection.
 
-	LOCK_DATA_T data = LCK_query_data(tdbb, LCK_tra, LCK_MIN); // FIXME: wrong result for values >2^31
+	const TraNumber data = LCK_query_data(tdbb, LCK_tra, LCK_MIN);
 	if (data && data < trans->tra_oldest_active)
 		trans->tra_oldest_active = data;
 

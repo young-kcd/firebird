@@ -118,7 +118,7 @@ public:
 	// Create snapshot. The snapshot shall use only versions committed 
 	// before commitNumber_out. Snapshots inhibit GC to some extent.
 	// When snapshot is no longer needed you call endSnapshot.
-	SnapshotHandle beginSnapshot(thread_db* tdbb, SLONG attachmentId, CommitNumber *commitNumber_out);
+	SnapshotHandle beginSnapshot(thread_db* tdbb, AttNumber attachmentId, CommitNumber *commitNumber_out);
 
 	// Deallocate snapshot.
 	void endSnapshot(thread_db* tdbb, SnapshotHandle handle);
@@ -133,10 +133,10 @@ public:
 
 	// Transactions, attachments, statements ID management.
 	TraNumber generateTransactionId();
-	SLONG generateAttachmentId();
-	SLONG generateStatementId();
+	AttNumber generateAttachmentId();
+	StmtNumber generateStatementId();
 	//void assignLatestTransactionId(TraNumber number);
-	void assignLatestAttachmentId(SLONG number);
+	void assignLatestAttachmentId(AttNumber number);
 
 private:
 	class GlobalTpcHeader : public Firebird::MemoryHeader 
@@ -157,13 +157,13 @@ private:
 
 		// Shared counters
 		std::atomic<TraNumber> latest_transaction_id;
-		std::atomic<SLONG> latest_attachment_id;
-		std::atomic<SLONG> latest_statement_id;
+		std::atomic<AttNumber> latest_attachment_id;
+		std::atomic<StmtNumber> latest_statement_id;
 	};
 
 	struct SnapshotData 
 	{
-		std::atomic<SLONG> attachment_id; // Unused slots have attachment_id == 0
+		std::atomic<AttNumber> attachment_id; // Unused slots have attachment_id == 0
 		std::atomic<CommitNumber> snapshot;
 	};
 
