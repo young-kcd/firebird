@@ -290,7 +290,7 @@ static const struct ini_idx_t indices[] =
 	}},
 	// define index RDB$INDEX_54 for RDB$BACKUP_HISTORY RDB$GUID;
 	INDEX(54, rel_backup_history, idx_unique, 1)
-	SEGMENT(f_backup_guid, idx_string)			// backup guid
+		SEGMENT(f_backup_guid, idx_string)		// backup guid
 	}},
 };
 

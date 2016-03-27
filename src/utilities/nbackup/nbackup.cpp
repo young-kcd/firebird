@@ -453,7 +453,8 @@ void NBackup::seek_file(FILE_HANDLE &file, SINT64 pos)
 void NBackup::open_database_write(bool exclusive)
 {
 #ifdef WIN_NT
-	const DWORD shareFlags = exclusive ? FILE_SHARE_READ : 
+	const DWORD shareFlags = exclusive ?
+		FILE_SHARE_READ :
 		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
 
 	dbase = CreateFile(dbname.c_str(), GENERIC_READ | GENERIC_WRITE,
@@ -461,7 +462,8 @@ void NBackup::open_database_write(bool exclusive)
 	if (dbase != INVALID_HANDLE_VALUE)
 		return;
 #else
-	const int flags = exclusive ? O_EXCL | O_RDWR | O_LARGEFILE :
+	const int flags = exclusive ?
+		O_EXCL | O_RDWR | O_LARGEFILE :
 		O_RDWR | O_LARGEFILE;
 
 	dbase = open(dbname.c_str(), flags);
@@ -1001,11 +1003,15 @@ void NBackup::backup_database(int level, Guid& guid, const PathName& fname)
 			{
 			case 100: // No more records available
 				if (level > 0)
+				{
 					status_exception::raise(Arg::Gds(isc_nbackup_lostrec_db) << database.c_str() <<
 											Arg::Num(level - 1));
+				}
 				else
+				{
 					status_exception::raise(Arg::Gds(isc_nbackup_lostrec_guid_db) << database.c_str() << 
 											Arg::Str(str_guid));
+				}
 
 			case 0:
 				if (guid_null || scn_null)
@@ -1311,7 +1317,7 @@ void NBackup::backup_database(int level, Guid& guid, const PathName& fname)
 		short null_ind = -1;
 		if (level >= 0)
 		{
-			in_sqlda->sqlvar[0].sqldata = (char*)&level;
+			in_sqlda->sqlvar[0].sqldata = (char*) &level;
 			in_sqlda->sqlvar[0].sqlind = &null_flag;
 		}
 		else
