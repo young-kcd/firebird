@@ -308,11 +308,11 @@ for %%v in ( fbudf.sql fbudf.txt ) do (
   )
 )
 
-::UDF upgrade script and doc
-mkdir %FB_OUTPUT_DIR%\misc\upgrade\ib_udf 2>nul
-@copy %FB_ROOT_PATH%\src\misc\upgrade\v2\ib_udf*.* %FB_OUTPUT_DIR%\misc\upgrade\ib_udf\ > nul
+:: Various upgrade scripts and docs
+mkdir %FB_OUTPUT_DIR%\misc\upgrade\security 2>nul
+@copy %FB_ROOT_PATH%\src\misc\upgrade\v3.0\security_* %FB_OUTPUT_DIR%\misc\upgrade\security > nul
 
-::INTL script
+:: INTL script
 @copy %FB_ROOT_PATH%\src\misc\intl.sql %FB_OUTPUT_DIR%\misc\ > nul
 
 
@@ -443,12 +443,6 @@ copy %FB_ROOT_PATH%\builds\install\misc\databases.conf.in %FB_OUTPUT_DIR%\databa
 
 :MISC
 ::==============================================
-:: miscellany that doesn't belong anywhere else
-::==============================================
-::Metadata migration - presumably not needed for 3.0 so disabled for now
-::mkdir %FB_OUTPUT_DIR%\misc\upgrade\metadata 2>nul
-::@copy %FB_ROOT_PATH%\src\misc\upgrade\v2.1\metadata_* %FB_OUTPUT_DIR%\misc\upgrade\metadata > nul
-
 :: Make sure that qli's help.fdb is available
 ::===============================================
 @if not exist %FB_OUTPUT_DIR%\help\help.fdb (

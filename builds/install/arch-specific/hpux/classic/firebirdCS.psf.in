@@ -66,12 +66,6 @@ tag misc
 directory buildroot@prefix@/misc=@prefix@/misc
 file_permissions -u 0644 -g firebird -o firebird
 file *
-directory buildroot@prefix@/misc/upgrade/ib_udf=@prefix@/misc/upgrade/ib_udf
-file_permissions -u 0644 -g firebird -o firebird
-file *
-directory buildroot@prefix@/misc/upgrade/metadata=@prefix@/misc/upgrade/metadata
-file_permissions -u 0644 -g firebird -o firebird
-file *
 directory buildroot@prefix@/misc/upgrade/security=@prefix@/misc/upgrade/security
 file_permissions -u 0644 -g firebird -o firebird
 file *
