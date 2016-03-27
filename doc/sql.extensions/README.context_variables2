@@ -54,12 +54,20 @@ Usage:
    Variable name        Value
   ------------------------------------------------------------------------------
    NETWORK_PROTOCOL | The network protocol used by client to connect. Currently
-                    | used values: "TCPv4", "WNET", "XNET" and NULL
+                    | used values: "TCPv4", "TCPv6", "WNET", "XNET" and NULL
                     |
-   CLIENT_ADDRESS   | The wire protocol address of remote client represented as
-                    | string. Value is IP address in form "xxx.xxx.xxx.xxx" for
-                    | TCPv4 protocol, local host name for XNET protocol and
-                    | NULL for all other protocols
+   CLIENT_ADDRESS   | The wire protocol address and port number of remote client
+                    | represented as string. Value is IP address concatenated with
+                    | port number using the '/' separator character. Value is
+                    | returned for TCPv4 and TCPv6 protocols only, for all other
+                    | protocols NULL is returned
+                    |
+   CLIENT_HOST      | The wire protocol host name of remote client. Value is
+                    | returned for all supported protocols
+                    |
+   CLIENT_PID       | Process ID of remote client application
+                    |
+   CLIENT_PROCESS   | Process name of remote client application
                     |
    DB_NAME          | Canonical name of current database. It is either alias
                     | name if connectivity via file names is not allowed or
@@ -70,6 +78,11 @@ Usage:
                     |
    TRANSACTION_ID   | Numeric ID for current transaction. Returned value is the
                     | same as of CURRENT_TRANSACTION pseudo-variable
+                    |
+   LOCK_TIMEOUT     | Lock timeout value specified for current transaction
+                    |
+   READ_ONLY        | Returns "TRUE" if current transaction is read-only and 
+                    | "FALSE" otherwise
                     |
    SESSION_ID       | Numeric ID for current session. Returned value is the
                     | same as of CURRENT_CONNECTION pseudo-variable
