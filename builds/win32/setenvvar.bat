@@ -28,6 +28,14 @@ set FB_PROCESSOR_ARCHITECTURE=%PROCESSOR_ARCHITECTURE%
 
 :: To disable VS8/VS9/VS10 build, slightly alter the env var names in "if" conditions below
 
+if DEFINED VS140COMNTOOLS (
+@devenv /? >nul 2>nul
+@if errorlevel 9009 (call "%VS140COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS140COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
+) else (
+if DEFINED VS120COMNTOOLS (
+@devenv /? >nul 2>nul
+@if errorlevel 9009 (call "%VS120COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS120COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
+) else (
 if DEFINED VS100COMNTOOLS (
 @devenv /? >nul 2>nul
 @if errorlevel 9009 (call "%VS100COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS100COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
@@ -49,6 +57,8 @@ if DEFINED VS71COMNTOOLS (
 )
 )
 )
+)
+)
 @echo.
 
 
@@ -58,7 +68,7 @@ if DEFINED VS71COMNTOOLS (
 @SET SERVER_NAME=localhost
 
 @cd ..\..
-@for /f "delims=" %%a in ('@cd') do (set FB_ROOT_PATH=%%a)
+@for /f "delims=" %%a in ('@cd') do (set FB_ROOT_PATH=%%~sa)
 @cd %~dp0
 @for /f "tokens=*" %%a in ('@echo %FB_ROOT_PATH:\=/%') do (set FB_DB_PATH=%%a)
 
@@ -102,7 +112,6 @@ if DEFINED VS71COMNTOOLS (
 @set FB_GEN_DIR=%FB_ROOT_PATH%\gen\%FB_TARGET_PLATFORM%
 @set FB_GEN_DB_DIR=%FB_DB_PATH%/gen/%FB_TARGET_PLATFORM%
 @set FB_ICU_SOURCE_BIN=%FB_ROOT_PATH%\extern\icu\%FB_TARGET_PLATFORM%\release\bin\
-
 
 
 
