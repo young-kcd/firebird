@@ -3560,8 +3560,8 @@ void jrd_tra::rollbackToSavepoint(thread_db* tdbb, SLONG number)
  **************************************/
 {
 	// merge all but one folowing savepoints into one
-	while(tra_save_point && tra_save_point->sav_next &&
-		  tra_save_point->sav_next->sav_number >= number)
+	while(tra_save_point && tra_save_point->sav_number > number &&
+		  tra_save_point->sav_next && tra_save_point->sav_next->sav_number >= number)
 	{
 		rollforwardSavepoint(tdbb);
 	}
