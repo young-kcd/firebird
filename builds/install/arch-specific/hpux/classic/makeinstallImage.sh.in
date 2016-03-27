@@ -200,10 +200,8 @@ copyFiles() {
 
 #   Copy various upgrade stuff
     cp $BuildRootDir/src/misc/intl.sql                          $DestDir/misc/
-    cp $BuildRootDir/src/misc/upgrade/v2/ib_udf*                $DestDir/misc/upgrade/ib_udf/
-    cp $BuildRootDir/src/misc/upgrade/v2/security_database*     $DestDir/misc/upgrade/security/
-    cp $BuildRootDir/src/misc/upgrade/v2.1/metadata_charset*    $DestDir/misc/upgrade/metadata/
-
+    cp $BuildRootDir/src/misc/upgrade/v3.0/security_database*     $DestDir/misc/upgrade/security/
+    
 #   Misc config files
     cp $BuildRootDir/gen/install/misc/firebird.conf $DestDir/
     cp $BuildRootDir/gen/install/misc/databases.conf $DestDir/

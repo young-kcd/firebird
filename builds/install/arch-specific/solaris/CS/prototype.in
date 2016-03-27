@@ -77,11 +77,8 @@ f none @prefix@/bin/nbackup=$SRCDIR/bin/nbackup 0451 firebird firebird
 # upgrade
 
 d none @prefix@/upgrade 0751 firebird firebird
-f none @prefix@/upgrade/ib_udf2_params.txt=$SRCDIR/../../src/misc/upgrade/v2/ib_udf2_params.txt 0644 firebird firebird
-f none @prefix@/upgrade/ib_udf_params.txt=$SRCDIR/../../src/misc/upgrade/v2/ib_udf_params.txt 0644 firebird firebird
-f none @prefix@/upgrade/ib_udf_upgrade.sql=$SRCDIR/../../src/misc/upgrade/v2/ib_udf_upgrade.sql 0644 firebird firebird
-f none @prefix@/upgrade/security_database.sql=$SRCDIR/../../src/misc/upgrade/v2/security_database.sql 0644 firebird firebird
-f none @prefix@/upgrade/security_database.txt=$SRCDIR/../../src/misc/upgrade/v2/security_database.txt 0644 firebird firebird
+f none @prefix@/upgrade/security_database.sql=$SRCDIR/../../src/misc/upgrade/v3.0/security_database.sql 0644 firebird firebird
+f none @prefix@/upgrade/security_database.txt=$SRCDIR/../../src/misc/upgrade/v3.0/security_database.txt 0644 firebird firebird
 
 # examples
 

@@ -292,9 +292,7 @@ copyFiles() {
 
 	#misc
     cp $BuildRootDir/src/misc/intl.sql							${TargetDir}@FB_MISCDIR@
-    cp $BuildRootDir/src/misc/upgrade/v2/ib_udf*				${TargetDir}@FB_MISCDIR@/upgrade/ib_udf
-    cp $BuildRootDir/src/misc/upgrade/v2/security_database*		${TargetDir}@FB_MISCDIR@/upgrade/security
-    cp $BuildRootDir/src/misc/upgrade/v2.1/metadata_charset*	${TargetDir}@FB_MISCDIR@/upgrade/metadata
+    cp $BuildRootDir/src/misc/upgrade/v3.0/security_database*		${TargetDir}@FB_MISCDIR@/upgrade/security
 
     chown -R root:wheel ${TargetDir}@FB_MISCDIR@
     chmod -R go-rwx ${TargetDir}@FB_MISCDIR@
