@@ -301,18 +301,6 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 	BURP_verbose(msgVerbose_write_collations);
 	write_collations();
 
-	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
-	{
-		// Write packages
-		BURP_verbose(336);	// msg 336 writing packages
-		write_packages();
-	}
-
-	// Write functions
-	BURP_verbose(148);
-	// msg 148 writing functions
-	write_functions();
-
 	// Write relations
 
 	BURP_verbose(154);
@@ -331,20 +319,31 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 	write_filters();
 
 	// Write generators
-
 	BURP_verbose(164);
 	// msg 164  writing id generators
 	write_generators();
+
+	// Write exceptions
+	BURP_verbose(197);
+	// msg 197 writing exceptions
+	write_exceptions();
+
+	// Write functions
+	BURP_verbose(148);
+	// msg 148 writing functions
+	write_functions();
 
 	// Write procedures
 	BURP_verbose(192);
 	// msg 192 writing stored procedures
 	write_procedures();
 
-	// Write exceptions
-	BURP_verbose(197);
-	// msg 197 writing exceptions
-	write_exceptions();
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
+	{
+		// Write packages
+		BURP_verbose(336);	// msg 336 writing packages
+		write_packages();
+	}
 
 	// Now go back and write all data
 
