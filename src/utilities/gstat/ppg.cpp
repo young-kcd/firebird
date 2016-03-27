@@ -73,10 +73,7 @@ void PPG_print_header(const header_page* header, ULONG page,
 		uSvc->printf(false, "\tOldest snapshot\t\t%" SQUADFORMAT"\n", Ods::getOST(header));
 		uSvc->printf(false, "\tNext transaction\t%" SQUADFORMAT"\n", Ods::getNT(header));
 		uSvc->printf(false, "\tSequence number\t\t%d\n", header->hdr_sequence);
-
-		const AttNumber att_id =
-			(AttNumber) header->hdr_att_high << BITS_PER_LONG | header->hdr_attachment_id;
-		uSvc->printf(false, "\tNext attachment ID\t%" SQUADFORMAT"\n", att_id);
+		uSvc->printf(false, "\tNext attachment ID\t%" SQUADFORMAT"\n", Ods::getAttID(header));
 
 		Firebird::DbImplementation imp(header);
 		uSvc->printf(false, "\tImplementation\t\tHW=%s %s-endian OS=%s CC=%s\n",

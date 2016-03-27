@@ -52,6 +52,9 @@ namespace Ods {
 	TraNumber getTraNum(const void* ptr);
 	void writeTraNum(void* ptr, TraNumber number, FB_SIZE_T header_size);
 
+	AttNumber getAttID(const header_page* page);
+	void writeAttID(header_page* page, AttNumber number);
+
 } // namespace
 
 #endif //ODS_PROTO_H

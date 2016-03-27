@@ -867,11 +867,10 @@ AttNumber PAG_attachment_id(thread_db* tdbb)
 		window.win_page = HEADER_PAGE_NUMBER;
 		header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK(tdbb, &window);
-		const AttNumber att_id =
-			((AttNumber) header->hdr_att_high << BITS_PER_LONG | header->hdr_attachment_id) + 1;
+
+		const AttNumber att_id = Ods::getAttID(header) + 1;
 		attachment->att_attachment_id = att_id;
-		header->hdr_att_high = att_id >> BITS_PER_LONG;
-		header->hdr_attachment_id = (ULONG) (att_id & MAX_ULONG);
+		Ods::writeAttID(header, att_id);
 		dbb->assignLatestAttachmentId(attachment->att_attachment_id);
 
 		CCH_RELEASE(tdbb, &window);
