@@ -1009,7 +1009,7 @@ void NBackup::backup_database(int level, Guid& guid, const PathName& fname)
 				}
 				else
 				{
-					status_exception::raise(Arg::Gds(isc_nbackup_lostrec_guid_db) << database.c_str() << 
+					status_exception::raise(Arg::Gds(isc_nbackup_lostrec_guid_db) << database.c_str() <<
 											Arg::Str(str_guid));
 				}
 

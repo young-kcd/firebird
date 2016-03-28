@@ -647,7 +647,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 
 				if (handled && transaction != sysTransaction)
 				{
-					// Check that exception handlers wee executed in context of right savepoint.
+					// Check that exception handlers were executed in context of right savepoint.
 					// If not - mirror copy of CORE-4424 or CORE-4483 is around here.
 					fb_assert(transaction->tra_save_point && transaction->tra_save_point->sav_number == count);
 					for (const Savepoint* save_point = transaction->tra_save_point;

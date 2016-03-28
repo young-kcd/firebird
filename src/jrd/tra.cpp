@@ -4000,7 +4000,7 @@ void VerbAction::garbage_collect_idx_lite(thread_db* tdbb, jrd_tra* transaction,
  *
  *   This speed trick is possible only because btr.cpp:insert_node() allows duplicate nodes
  *  which work as an index entry reference counter.
- *	
+ *
  **************************************/
 {
 	record_param rpb;
@@ -4181,7 +4181,7 @@ void VerbAction::undo(thread_db* tdbb, jrd_tra* transaction)
 			{
 				VIO_data(tdbb, &rpb, transaction->tra_pool);
 			}
-			else 
+			else
 			{
 				CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
 			}
