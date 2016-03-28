@@ -569,6 +569,7 @@ public:
 		unsigned kind, const unsigned char* buf, unsigned len);
 	unsigned setOffsets(Firebird::CheckStatusWrapper* status, Firebird::IMessageMetadata* metadata,
 		Firebird::IOffsetsCallback* callback);
+	Firebird::IEventBlock* createEventBlock(Firebird::CheckStatusWrapper* status, const char** events);
 };
 
 }	// namespace Why

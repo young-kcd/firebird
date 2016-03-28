@@ -1,13 +1,12 @@
 /*
  *	PROGRAM:	Object oriented API samples.
- *	MODULE:		07.blob.cpp
- *	DESCRIPTION:	A sample of loading data into blob and reading.
- *					Run second time (when database already exists) to see
- *					how FbException is caught and handled by this code.
+ *	MODULE:		08.events.cpp
+ *	DESCRIPTION:	A sample of working with events.
  *
  *					Example for the following interfaces:
- *					IAttachment - use of open and create blob methods
- *					IBlob - interface to work with blobs
+ *					IEvents - returned by queEvents(), used to cancel events monitoring
+ *					IEventBlock - creates and handles various blocks needed to que events
+ *					IEventCallback - it's callback is invoked when event happens
  *
  * The contents of this file are subject to the Mozilla Public License Version
  * 1.1 (the "License"); you may not use this file except in compliance with
@@ -39,6 +38,7 @@ static IMaster* master = fb_get_master_interface();
 
 namespace
 {
+	// This class encapsulates single event handling
 	class Event : public IEventCallbackImpl<Event, ThrowStatusWrapper>
 	{
 	public:
@@ -48,7 +48,8 @@ namespace
 			  counter(0),
 			  status(master->getStatus()),
 			  eventBlock(NULL),
-			  events(NULL)
+			  events(NULL),
+			  first(true)
 		{
 			const char* names[] = {name, NULL};
 			eventBlock = master->getUtilInterface()->createEventBlock(&status, names);
@@ -60,19 +61,33 @@ namespace
 			if (!events)
 				return;
 
+			unsigned tot = 0;
 			if (counter)
 			{
 				eventBlock->counts();
-				unsigned tot = eventBlock->getCounters()[0];
-				printf("Event count on pass %d is %d\n", pass, tot);
+				tot = eventBlock->getCounters()[0];
 
 				events->release();
 				events = NULL;
 				counter = 0;
 				events = attachment->queEvents(&status, this, eventBlock->getLength(), eventBlock->getValues());
 			}
+
+			if (tot && !first)
+				printf("Event count on pass %d is %d\n", pass, tot);
 			else
 				printf("Pass %d - no events\n", pass);
+
+			first = false;
+		}
+
+		// IEventCallback implementation
+		void eventCallbackFunction(unsigned int length, const ISC_UCHAR* data)
+		{
+			memcpy(eventBlock->getBuffer(), data, length);
+			++counter;
+			if (!first)
+				printf("AST called\n");
 		}
 
 		// refCounted implementation
@@ -92,14 +107,6 @@ namespace
 				return 1;
 		}
 
-		// IEventCallback implementation
-		void eventCallbackFunction(unsigned int length, const ISC_UCHAR* data)
-		{
-			memcpy(eventBlock->getBuffer(), data, length);
-			++counter;
-			printf("AST called\n");
-		}
-
 	private:
 		~Event()
 		{
@@ -115,6 +122,7 @@ namespace
 		ThrowStatusWrapper status;
 		IEventBlock* eventBlock;
 		IEvents* events;
+		bool first;
 	};
 }
 
@@ -137,7 +145,7 @@ int main()
 
 	try
 	{
-		// create database
+		// attach database
 		att = prov->attachDatabase(&status, "employee", 0, NULL);
 
 		// register an event
