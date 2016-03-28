@@ -569,6 +569,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 					// The savepoint of this block will be dealt with below.
 					// Do this only if error handlers exist. If not - leave rollbacking to caller node
 					while (transaction->tra_save_point &&
+						count < transaction->tra_save_point->sav_number &&
 						transaction->tra_save_point->sav_next &&
 						count < transaction->tra_save_point->sav_next->sav_number)
 					{
