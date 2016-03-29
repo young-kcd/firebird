@@ -1824,7 +1824,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	if (rpb->rpb_transaction_nr == transaction->tra_number)
 	{
-		update_in_place(tdbb, transaction, rpb, &temp);
+		VIO_update_in_place(tdbb, transaction, rpb, &temp);
 		if (transaction->tra_save_point && transaction->tra_save_point->sav_verb_count)
 		{
 			verb_post(tdbb, transaction, rpb, rpb->rpb_undo);
@@ -2462,7 +2462,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 
 	if (transaction->tra_flags & TRA_system)
 	{
-		update_in_place(tdbb, transaction, org_rpb, new_rpb);
+		VIO_update_in_place(tdbb, transaction, org_rpb, new_rpb);
 		tdbb->bumpRelStats(RuntimeStatistics::RECORD_UPDATES, relation->rel_id);
 		return;
 	}
@@ -2815,7 +2815,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		org_rpb->rpb_format_number == new_rpb->rpb_format_number)
 	{
 		IDX_modify_flag_uk_modified(tdbb, org_rpb, new_rpb, transaction);
-		update_in_place(tdbb, transaction, org_rpb, new_rpb);
+		VIO_update_in_place(tdbb, transaction, org_rpb, new_rpb);
 		if (!(transaction->tra_flags & TRA_system) &&
 			transaction->tra_save_point && transaction->tra_save_point->sav_verb_count)
 		{
@@ -4347,7 +4347,7 @@ static void garbage_collect(thread_db* tdbb, record_param* rpb, ULONG prior_page
 	clearRecordStack(going);
 }
 
-void garbage_collect_idx(thread_db* tdbb, jrd_tra* transaction,
+void VIO_garbage_collect_idx(thread_db* tdbb, jrd_tra* transaction,
 								record_param* org_rpb,
 								Record* old_data)
 {
@@ -5773,7 +5773,7 @@ static void set_system_flag(thread_db* tdbb, Record* record, USHORT field_id)
 }
 
 
-void update_in_place(thread_db* tdbb,
+void VIO_update_in_place(thread_db* tdbb,
 							jrd_tra* transaction, record_param* org_rpb, record_param* new_rpb)
 {
 /**************************************
