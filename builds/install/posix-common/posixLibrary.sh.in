@@ -61,8 +61,15 @@ MakeTemp() {
 	TmpFile=`mktemp $mktOptions /tmp/firebird_install.XXXXXX`
 	if [ $? -ne 0 ]
 	then
-		TmpFile=/tmp/firebird_install
-		touch $TmpFile
+		for n in `seq 1000`
+		do
+			TmpFile=/tmp/firebird_install.$n
+			if [ ! -e $TmpFile ]
+			then
+				touch $TmpFile
+				return
+			fi
+		done
 	fi
 }
 
@@ -829,12 +836,60 @@ MakeFileFirebirdWritable() {
 
 #------------------------------------------------------------------------
 #  fixFilePermissions
-#  Change the permissions to restrict access to server programs to 
-#  firebird group only.  This is MUCH better from a safety point of 
-#  view than installing as root user, even if it requires a little 
+#  Change the permissions to restrict access to server programs to
+#  firebird group only.  This is MUCH better from a safety point of
+#  view than installing as root user, even if it requires a little
 #  more work.
 
 fixFilePermissions() {
+	# First of all set owneship of all files to root
+	# Build list of interesting directories all over the FS
+	dirs="@FB_BINDIR@ @FB_SBINDIR@ @FB_CONFDIR@ @FB_LIBDIR@ @FB_INCDIR@/firebird @FB_DOCDIR@/sql.extensions @FB_UDFDIR@ \
+		@FB_SAMPLEDIR@ @FB_SAMPLEDBDIR@ @FB_HELPDIR@ @FB_INTLDIR@ @FB_MISCDIR@ @FB_SECDBDIR@ @FB_MSGDIR@ @FB_LOGDIR@ \
+		@FB_GUARDDIR@ @FB_PLUGDIR@"
+	dirs2=`for i in $dirs; do echo $i; done|sort|uniq`
+
+	MakeTemp
+	tmp1=$TmpFile
+	MakeTemp
+	tmp2=$TmpFile
+	MakeTemp
+	tmp3=$TmpFile
+	MakeTemp
+	tmp4=$TmpFile
+
+	# Extract list of our files in that directories from manifest
+	manifest=@FB_MISCDIR@/manifest.txt
+	for i in $dirs2
+	do
+		grep $i manifest.txt >$tmp1
+		echo $i > $tmp3
+		for j in $dirs2
+		do
+			if [ $i != $j ]
+			then
+				if ! grep -q $j $tmp3
+				then
+					grep -v $j $tmp1 >$tmp2
+					rm -f $tmp1
+					mv $tmp2 $tmp1
+				fi
+			fi
+		done
+		cat $tmp1 >> $tmp4
+	done
+
+	# Change ownership
+	rundir=`pwd`
+	cd /
+	for f in `cat $tmp4`
+	do
+		chown root:root $f
+	done
+	cd $rundir
+
+	rm -f $tmp1 $tmp2 $tmp3 $tmp4
+
     # Lock files
     cd @FB_GUARDDIR@
     for FileName in fb_guard
