@@ -115,7 +115,6 @@ makeDirs() {
 	for d in $Dirs; do
 		Dir=${TargetDir}${d}
 		mkdir -p $Dir
-		chown root:root $Dir
 		chmod 0755 $Dir
 	done
 }
@@ -159,7 +158,6 @@ copyFiles() {
     cp $BuiltFBDir/bin/isql ${TargetDir}@FB_BINDIR@/isql
     cp $BuiltFBDir/bin/qli ${TargetDir}@FB_BINDIR@/qli
 
-	chown root:root ${TargetDir}@FB_BINDIR@/*
 	chmod 0755 ${TargetDir}@FB_BINDIR@/*
 
 	#sbin
@@ -171,7 +169,6 @@ copyFiles() {
     cp $BuiltFBDir/bin/registerDatabase.sh ${TargetDir}@FB_SBINDIR@
     cp $BuiltFBDir/bin/fb_config ${TargetDir}@FB_SBINDIR@
 
-	chown root:root ${TargetDir}@FB_SBINDIR@/*
 	chmod 0755 ${TargetDir}@FB_SBINDIR@/*
 	chmod 0700 ${TargetDir}@FB_SBINDIR@/*.sh
 
@@ -195,19 +192,16 @@ copyFiles() {
 
 	    for i in `find ${TargetDir}@FB_SAMPLEDIR@ -type d -print`
 	    do
-			chown root:root $i
-    		chmod 0555 $i
+			chmod 0555 $i
 	    done
 	    for i in `find ${TargetDir}@FB_SAMPLEDIR@ -type f -print`
 	    do
-			chown root:root $i
-    		chmod 0444 $i
-	    done
+			chmod 0444 $i
+		done
 
 		makeDirs @FB_SAMPLEDBDIR@
 		cp $BuiltFBDir/examples/empbuild/*.fdb ${TargetDir}@FB_SAMPLEDBDIR@
 
-		chown root:root ${TargetDir}@FB_SAMPLEDBDIR@/*.fdb
 		chmod 0444 ${TargetDir}@FB_SAMPLEDBDIR@/*.fdb
     fi
 
@@ -215,13 +209,11 @@ copyFiles() {
     copyIfExists $BuiltFBDir/help/help.gbak ${TargetDir}@FB_HELPDIR@
     cp $BuiltFBDir/help/help.fdb ${TargetDir}@FB_HELPDIR@
 
-	chown root:root ${TargetDir}@FB_HELPDIR@/*.fdb
 	chmod 0444 ${TargetDir}@FB_HELPDIR@/*.fdb
 
 	#message file
     cp $BuiltFBDir/*.msg ${TargetDir}@FB_MSGDIR@
 
-	chown root:root ${TargetDir}@FB_MSGDIR@/*.msg
 	chmod 0444 ${TargetDir}@FB_MSGDIR@/*.msg
 
 	#secureDB (access rights will be set at install time)
@@ -233,23 +225,19 @@ copyFiles() {
     tar -C $BuildRootDir/src/include/firebird -cf - impl | tar -C ${TargetDir}@FB_INCDIR@/firebird -x
     cp $BuildRootDir/src/include/gen/Firebird.pas ${TargetDir}@FB_INCDIR@/firebird
 
-	chown -R root:root ${TargetDir}@FB_INCDIR@/*.h ${TargetDir}@FB_INCDIR@/firebird/*
 	chmod -R 0444 ${TargetDir}@FB_INCDIR@/*.h ${TargetDir}@FB_INCDIR@/firebird/*
 
 	#lib
-    copyIfExists $BuiltFBDir/lib/libfbembed.so* ${TargetDir}@FB_LIBDIR@
     cp -df $BuiltFBDir/lib/libfbclient.so* ${TargetDir}@FB_LIBDIR@
     cp -f $BuiltFBDir/lib/libib_util.so ${TargetDir}@FB_LIBDIR@/libib_util.so
     copyIfExists $BuiltFBDir/lib/libicu*.so* ${TargetDir}@FB_LIBDIR@
 
-	chown root:root ${TargetDir}@FB_LIBDIR@/*.so*
 	chmod 0755 ${TargetDir}@FB_LIBDIR@/*.so*
 
 	#plugins
 	(cd $BuiltFBDir/plugins;tar cf - .) | (cd ${TargetDir}@FB_PLUGDIR@; tar xvf -)
 
 	for file in `find ${TargetDir}@FB_PLUGDIR@ -name '*.so*' -print`; do
-		chown root:root ${file}
 		chmod 0755 ${file}
 	done
 
@@ -257,7 +245,6 @@ copyFiles() {
     cp $BuiltFBDir/intl/libfbintl.so ${TargetDir}@FB_INTLDIR@/fbintl
     cp $BuiltFBDir/intl/fbintl.conf ${TargetDir}@FB_INTLDIR@
 
-	chown root:root ${TargetDir}@FB_INTLDIR@/fbintl*
 	chmod 0755 ${TargetDir}@FB_INTLDIR@/fbintl
 	chmod 0644 ${TargetDir}@FB_INTLDIR@/fbintl.conf
 
@@ -270,7 +257,6 @@ copyFiles() {
     cp $BuildRootDir/src/extlib/ib_udf2.sql ${TargetDir}@FB_UDFDIR@
     cp $BuildRootDir/src/extlib/fbudf/fbudf.sql ${TargetDir}@FB_UDFDIR@
 
-	chown root:root ${TargetDir}@FB_UDFDIR@/*.so ${TargetDir}@FB_UDFDIR@/*.sql
 	chmod 0755 ${TargetDir}@FB_UDFDIR@/*.so
 	chmod 0644 ${TargetDir}@FB_UDFDIR@/*.sql
 
@@ -280,9 +266,7 @@ copyFiles() {
     cp $BuildRootDir/doc/sql.extensions/README* ${TargetDir}@FB_DOCDIR@/sql.extensions
     cp $BuildRootDir/*.md ${TargetDir}@FB_CONFDIR@
 
-	chown -R root:root ${TargetDir}@FB_MISCDIR@
 	for i in `find ${TargetDir}@FB_MISCDIR@ -print`; do
-		chown root:root $i
 		if [ -d $i ]; then
 			chmod 0755 $i
 		else
@@ -298,7 +282,6 @@ copyFiles() {
 	cp $BuildRootDir/gen/install/misc/rc.config.firebird		${TargetDir}@FB_MISCDIR@
     cp $BuildRootDir/gen/install/misc/firebird-*				${TargetDir}@FB_MISCDIR@
 
-	chown -R root:root ${TargetDir}@FB_MISCDIR@
 	chmod -R go-rwx ${TargetDir}@FB_MISCDIR@
 
 	#conf
@@ -307,13 +290,11 @@ copyFiles() {
     cp $BuiltFBDir/fbtrace.conf ${TargetDir}@FB_CONFDIR@
     cp $BuiltFBDir/plugins.conf ${TargetDir}@FB_CONFDIR@
 
-	chown root:root ${TargetDir}@FB_CONFDIR@/*.conf
 	chmod 0644 ${TargetDir}@FB_CONFDIR@/*.conf
 
 	#license
 	cp $BuildRootDir/builds/install/misc/*License.txt ${TargetDir}@FB_CONFDIR@
 
-	chown root:root ${TargetDir}@FB_CONFDIR@/*License.txt
 	chmod 0444 ${TargetDir}@FB_CONFDIR@/*License.txt
 
 # link include files to /usr/include
