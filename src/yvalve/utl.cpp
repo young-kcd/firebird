@@ -1181,7 +1181,7 @@ public:
 private:
 	UCharBuffer values;
 	UCharBuffer buffer;
-	HalfStaticArray<unsigned, 16> counters;
+	HalfStaticArray<ULONG, 16> counters;
 };
 
 IEventBlock* UtilInterface::createEventBlock(CheckStatusWrapper* status, const char** events)
