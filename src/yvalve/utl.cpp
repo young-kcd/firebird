@@ -1165,7 +1165,7 @@ public:
 
 	unsigned* getCounters()
 	{
-		return counters.begin();
+		return (unsigned*) counters.begin();
 	}
 
 	void counts()
