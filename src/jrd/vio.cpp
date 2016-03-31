@@ -1377,8 +1377,8 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 			rpb->rpb_number.getValue(), length, format->fmt_length);
 
 		VIO_trace(DEBUG_WRITES_INFO,
-			"   record  %" SLONGFORMAT"d:%d, rpb_trans %" SQUADFORMAT
-			"d, flags %d, back %" SLONGFORMAT"d:%d, fragment %" SLONGFORMAT"d:%d\n",
+			"   record  %" SLONGFORMAT":%d, rpb_trans %" SQUADFORMAT
+			"d, flags %d, back %" SLONGFORMAT":%d, fragment %" SLONGFORMAT":%d\n",
 			rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr, rpb->rpb_flags,
 			rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page, rpb->rpb_f_line);
 #endif
@@ -1956,6 +1956,19 @@ static void delete_version_chain(thread_db* tdbb, record_param* rpb, bool delete
  *	because we have the last existing copy of them.
  *
  **************************************/
+#ifdef VIO_DEBUG
+	VIO_trace(DEBUG_TRACE,
+		"delete_version_chain (record_param %" SQUADFORMAT", delete_head %s)\n",
+		rpb->rpb_number.getValue(), delete_head ? "true" : "false");
+
+	VIO_trace(DEBUG_TRACE_INFO,
+		"   record  %" SLONGFORMAT":%d, rpb_trans %" SQUADFORMAT
+		", flags %d, back %" SLONGFORMAT":%d, fragment %" SLONGFORMAT":%d\n",
+		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+		rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
+		rpb->rpb_f_page, rpb->rpb_f_line);
+#endif
+
 	ULONG prior_page = 0;
 
 	while (rpb->rpb_b_page != 0)
@@ -2019,6 +2032,20 @@ void VIO_intermediate_gc(
 		return;
 	}
 
+#ifdef VIO_DEBUG
+	VIO_trace(DEBUG_TRACE,
+		"VIO_intermediate_gc (record_param %" SQUADFORMAT", transaction %"
+		SQUADFORMAT")\n",
+		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
+
+	VIO_trace(DEBUG_TRACE_INFO,
+		"   record  %" SLONGFORMAT":%d, rpb_trans %" SQUADFORMAT
+		", flags %d, back %" SLONGFORMAT":%d, fragment %" SLONGFORMAT":%d\n",
+		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+		rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
+		rpb->rpb_f_page, rpb->rpb_f_line);
+#endif
+
 	// Determine what records need to stay and which need to go.
 	// For that we iterate all records in newest->oldest order (natural order is oldest->newest)
 	// and move unnecessary records from staying into going stack.
@@ -2051,7 +2078,6 @@ void VIO_intermediate_gc(
 	// Delta-compress and store new versions chain for staying records (iterate oldest->newest)
 	record_param staying_chain_rpb;
 	staying_chain_rpb.getWindow(tdbb).win_flags = WIN_secondary;
-	staying_chain_rpb.rpb_flags = rpb_chained;
 	staying_chain_rpb.rpb_relation = rpb->rpb_relation;
 
 	PageStack precedence_stack;
@@ -2060,6 +2086,7 @@ void VIO_intermediate_gc(
 	fb_assert(staying.hasData());
 	Record* current_record = const_i.object(), *org_record;
 	++const_i;
+	bool prior_delta = false;
 	while (const_i.hasData()) {
 		org_record = current_record;
 		current_record = const_i.object();
@@ -2069,15 +2096,18 @@ void VIO_intermediate_gc(
 			Compressor::makeDiff(current_record->getLength(), current_record->getData(),
 									org_record->getLength(), org_record->getData(),
 									sizeof(differences), differences);
+		
+		staying_chain_rpb.rpb_flags = rpb_chained | (prior_delta ? rpb_delta : 0);
+
 		if ((l < sizeof(differences)) && (l < org_record->getLength()))
 		{
 			staying_chain_rpb.rpb_address = differences;
 			staying_chain_rpb.rpb_length = (ULONG) l;
-			staying_chain_rpb.rpb_flags |= rpb_delta;
+			prior_delta = true;
 		} else {
 			staying_chain_rpb.rpb_address = org_record->getData();
 			staying_chain_rpb.rpb_length = org_record->getLength();
-			staying_chain_rpb.rpb_flags &= ~rpb_delta;
+			prior_delta = false;
 		}
 		staying_chain_rpb.rpb_transaction_nr = org_record->getTransaction_nr();
 		staying_chain_rpb.rpb_format_number = org_record->getFormat()->fmt_version;
@@ -2095,7 +2125,8 @@ void VIO_intermediate_gc(
 	if (rpb->rpb_flags & rpb_deleted) {
 		staying_chain_rpb.rpb_address = current_record->getData();
 		staying_chain_rpb.rpb_length = current_record->getLength();
-		staying_chain_rpb.rpb_flags &= ~rpb_delta;
+		staying_chain_rpb.rpb_flags = rpb_chained | (prior_delta ? rpb_delta : 0);
+		prior_delta = false;
 		staying_chain_rpb.rpb_transaction_nr = current_record->getTransaction_nr();
 		staying_chain_rpb.rpb_format_number = current_record->getFormat()->fmt_version;
 		if (staying_chain_rpb.rpb_page) {
@@ -2140,6 +2171,10 @@ void VIO_intermediate_gc(
 	temp_rpb.rpb_b_page = staying_chain_rpb.rpb_page;
 	temp_rpb.rpb_b_line = staying_chain_rpb.rpb_line;
 	CCH_MARK(tdbb, &temp_rpb.getWindow(tdbb));
+	if (prior_delta)
+		temp_rpb.rpb_flags |= rpb_delta;
+	else
+		temp_rpb.rpb_flags &= ~rpb_delta;
 	DPM_rewrite_header(tdbb, &temp_rpb);
 	CCH_RELEASE(tdbb, &temp_rpb.getWindow(tdbb));
 
