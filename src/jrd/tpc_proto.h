@@ -187,12 +187,17 @@ private:
 
 	typedef TransactionStatusBlock* PTransactionStatusBlock;
 
-	struct StatusBlockData 
+	class StatusBlockData 
 	{
+	public:
+		StatusBlockData(Jrd::thread_db* tdbb, Jrd::TipCache* tipCache, int blockNumber);
+		~StatusBlockData();
+
 		int blockNumber;
 		Firebird::SharedMemory<TransactionStatusBlock>* memory;
-		Lock* existenceLock;
+		Lock existenceLock;
 		TipCache* cache;
+
 		inline static int& generate(const void* /*sender*/, StatusBlockData* item)
 		{
 			return item->blockNumber;

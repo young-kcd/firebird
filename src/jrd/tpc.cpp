@@ -134,20 +134,25 @@ void TipCache::finalizeTpc(thread_db* tdbb)
 		do 
 		{
 			StatusBlockData* cur = m_blocks_memory.current();
-			LCK_release(tdbb, cur->existenceLock);
-			delete cur->existenceLock;
-			delete cur->memory;
 			delete cur;
 		} while (m_blocks_memory.getNext());
 
 	delete[] m_status_blocks;
 	m_status_blocks = NULL;
 
-	delete m_snapshots;
-	m_snapshots = NULL;
+	if (m_snapshots)
+	{
+		m_snapshots->removeMapFile();
+		delete m_snapshots;
+		m_snapshots = NULL;
+	}
 
-	delete m_tpcHeader;
-	m_tpcHeader = NULL;
+	if (m_tpcHeader)
+	{
+		m_tpcHeader->removeMapFile();
+		delete m_tpcHeader;
+		m_tpcHeader = NULL;
+	}
 
 	m_blocks_memory.clear();
 
@@ -284,7 +289,6 @@ void TipCache::loadInventoryPages(thread_db* tdbb)
 
 	int blockNumber = hdr_oldest_transaction / m_transactionsPerBlock;
 	int transOffset = hdr_oldest_transaction % m_transactionsPerBlock;
-	TraNumber topTransactionInFile = hdr_oldest_transaction - transOffset + m_transactionsPerBlock;
 	TransactionStatusBlock* statusBlock = getTransactionStatusBlock(blockNumber);
 
 	for (TraNumber t = hdr_oldest_transaction; ; ) 
@@ -300,14 +304,58 @@ void TipCache::loadInventoryPages(thread_db* tdbb)
 		if (++t > hdr_next_transaction)
 			break;
 
-		if (++transOffset == topTransactionInFile) 
+		if (++transOffset == m_transactionsPerBlock)
 		{
 			blockNumber++;
 			transOffset = 0;
-			topTransactionInFile += m_transactionsPerBlock;
 			statusBlock = getTransactionStatusBlock(blockNumber);
 		}
 	}
+}
+
+
+TipCache::StatusBlockData::StatusBlockData(thread_db* tdbb, TipCache* tipCache, int blkNumber) :
+	blockNumber(blkNumber),
+	memory(NULL),
+	existenceLock(tdbb, sizeof(SLONG), LCK_tpc_block, this, tpc_block_blocking_ast),
+	cache(tipCache)
+{
+	Database* dbb = tipCache->m_dbb;
+	MemoryPool* pool = dbb->dbb_permanent;
+
+	blockNumber = blockNumber;
+	memory = NULL;
+	cache = tipCache;
+	existenceLock.lck_key.lck_long = blockNumber;
+
+	if (!LCK_lock(tdbb, &existenceLock, LCK_SR, LCK_WAIT))
+		ERR_bugcheck_msg("Unable to obtain memory block lock");
+
+
+	string fileName;
+	fileName.printf(TPC_BLOCK_FILE, cache->m_dbb->getUniqueFileId().c_str(), blockNumber);
+	try
+	{
+		memory = FB_NEW_POOL(*pool) Firebird::SharedMemory<TransactionStatusBlock>(
+			fileName.c_str(), cache->m_blockSize, &cache->memBlockInitializer, true);
+	}
+	catch (const Exception& ex)
+	{
+		iscLogException("TPC: Cannot initialize the shared memory region (header)", ex);
+		LCK_release(tdbb, &existenceLock);
+		throw;
+	}
+
+	fb_assert(memory->getHeader()->mhb_version == TPC_VERSION);
+}
+
+TipCache::StatusBlockData::~StatusBlockData()
+{
+	thread_db* tdbb = JRD_get_thread_data();
+
+	LCK_release(tdbb, &existenceLock);
+	memory->removeMapFile();
+	delete memory;
 }
 
 TipCache::TransactionStatusBlock* TipCache::createTransactionStatusBlock(int blockNumber) 
@@ -317,42 +365,11 @@ TipCache::TransactionStatusBlock* TipCache::createTransactionStatusBlock(int blo
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
 
-	StatusBlockData* blockData = FB_NEW_POOL(*dbb->dbb_permanent) StatusBlockData;
+	StatusBlockData* blockData = FB_NEW_POOL(*dbb->dbb_permanent) StatusBlockData(tdbb, this, blockNumber);
 
-	Lock *lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock(tdbb, sizeof(SLONG), LCK_tpc_block, blockData, tpc_block_blocking_ast);
-	lock->lck_key.lck_long = blockNumber;
-
-	blockData->blockNumber = blockNumber;
-	blockData->memory = NULL;
-	blockData->existenceLock = lock;
-	blockData->cache = this;
-
-	if (!LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT))
-		ERR_bugcheck_msg("Unable to obtain memory block lock");
-
-	Firebird::SharedMemory<TransactionStatusBlock>* memory;
-
-	string fileName;
-
-	fileName.printf(TPC_BLOCK_FILE, m_dbb->getUniqueFileId().c_str(), blockNumber);
-	try
-	{
-		memory = FB_NEW_POOL(*m_dbb->dbb_permanent) Firebird::SharedMemory<TransactionStatusBlock>(
-			fileName.c_str(), m_blockSize, &memBlockInitializer, true);
-	}
-	catch (const Exception& ex)
-	{
-		iscLogException("TPC: Cannot initialize the shared memory region (header)", ex);
-		LCK_release(tdbb, lock);
-		throw;
-	}
-
-	fb_assert(memory->getHeader()->mhb_version == TPC_VERSION);
-
-	blockData->memory = memory;
 	m_blocks_memory.add(blockData);
 
-	return memory->getHeader();
+	return blockData->memory->getHeader();
 }
 
 TipCache::TransactionStatusBlock* TipCache::getTransactionStatusBlock(int blockNumber) 
@@ -385,7 +402,6 @@ TraNumber TipCache::findLimbo(TraNumber minNumber, TraNumber maxNumber)
 
 	TransactionStatusBlock* statusBlock;
 	int blockNumber, transOffset;
-	TraNumber topTransactionInFile;
 	do 
 	{
 		TraNumber oldest = m_tpcHeader->getHeader()->oldest_transaction.load(std::memory_order_relaxed);
@@ -395,7 +411,6 @@ TraNumber TipCache::findLimbo(TraNumber minNumber, TraNumber maxNumber)
 
 		blockNumber = minNumber / m_transactionsPerBlock;
 		transOffset = minNumber % m_transactionsPerBlock;
-		topTransactionInFile = minNumber - transOffset + m_transactionsPerBlock;
 		statusBlock = getTransactionStatusBlock(blockNumber);
 	} while(!statusBlock);
 
@@ -410,11 +425,10 @@ TraNumber TipCache::findLimbo(TraNumber minNumber, TraNumber maxNumber)
 		if (++t > maxNumber)
 			break;
 
-		if (++transOffset == topTransactionInFile) 
+		if (++transOffset == m_transactionsPerBlock)
 		{
 			blockNumber++;
 			transOffset = 0;
-			topTransactionInFile += m_transactionsPerBlock;
 			statusBlock = getTransactionStatusBlock(blockNumber);
 		}
 	}
@@ -540,7 +554,7 @@ void TipCache::updateOldestTransaction(thread_db *tdbb, TraNumber oldest, TraNum
 	TraNumber oldestNow = m_tpcHeader->getHeader()->oldest_transaction.load(std::memory_order_relaxed);
 	if (oldestNew > oldestNow)
 	{
-		m_tpcHeader->getHeader()->oldest_transaction.store(oldestNow, std::memory_order_relaxed);
+		m_tpcHeader->getHeader()->oldest_transaction.store(oldestNew, std::memory_order_relaxed);
 		releaseSharedMemory(tdbb, oldestNow, oldestNew);
 	}
 }
@@ -549,8 +563,8 @@ int TipCache::tpc_block_blocking_ast(void* arg)
 {
 	StatusBlockData* data = static_cast<StatusBlockData*>(arg);
 
-	Database* const dbb = data->existenceLock->lck_dbb;
-	AsyncContextHolder tdbb(dbb, FB_FUNCTION, data->existenceLock);
+	Database* const dbb = data->existenceLock.lck_dbb;
+	AsyncContextHolder tdbb(dbb, FB_FUNCTION, &data->existenceLock);
 
 	TipCache* cache = data->cache;
 	TraNumber oldest = cache->m_tpcHeader->getHeader()->oldest_transaction.load(std::memory_order_relaxed);
@@ -558,7 +572,7 @@ int TipCache::tpc_block_blocking_ast(void* arg)
 	// Release shared memory
 	delete data->memory;
 	data->memory = NULL;
-	LCK_release(tdbb, data->existenceLock);
+	LCK_release(tdbb, &data->existenceLock);
 
 	// Check if there is a bug in cleanup code and we were requested to 
 	// release memory that might be in use
@@ -600,26 +614,34 @@ void TipCache::releaseSharedMemory(thread_db *tdbb, TraNumber oldest_old, TraNum
 		blocksToCleanup.add(blockNumber);
 	}
 
-	for (int *itr = blocksToCleanup.end()-1; itr >= blocksToCleanup.begin(); itr--) 
+	if (blocksToCleanup.isEmpty())
+		return;
+
+	SyncLockGuard sync(&m_sync_status, SYNC_EXCLUSIVE, "TipCache::releaseSharedMemory");
+	for (int *itr = blocksToCleanup.end() - 1; itr >= blocksToCleanup.begin(); itr--)
 	{
+		int blockNumber = *itr;
+
+		if (m_blocks_memory.locate(blockNumber))
+		{
+			((std::atomic<TransactionStatusBlock*>*)(m_status_blocks + blockNumber))->store(NULL, std::memory_order_release);
+
+			StatusBlockData* cur = m_blocks_memory.current();
+			m_blocks_memory.fastRemove();
+
+			delete cur;
+		}
+
+		// Signal other processes to release resources
 		Lock temp(tdbb, sizeof(SLONG), LCK_tpc_block);
-		temp.lck_key.lck_long = *itr;
-		if (!LCK_lock(tdbb, &temp, LCK_EX, LCK_WAIT)) 
+		temp.lck_key.lck_long = blockNumber;
+		if (!LCK_lock(tdbb, &temp, LCK_EX, LCK_WAIT))
 		{
 			gds__log("TPC BUG: Unable to obtain cleanup lock for block %d. Please report this error to developers", *itr);
 			fb_assert(false);
 			break;
 		}
-
-		fileName.printf(TPC_BLOCK_FILE, m_dbb->getUniqueFileId().c_str(), *itr);
-		TEXT expanded_filename[MAXPATHLEN];
-		iscPrefixLock(expanded_filename, fileName.c_str(), false);
-
-		if (::unlink(expanded_filename)) 
-		{
-			gds__log("TPC: cannot delete file %s, error code %d", expanded_filename, errno);
-			break;
-		}
+		LCK_release(tdbb, &temp);
 	}
 }
 
