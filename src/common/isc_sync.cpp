@@ -1929,15 +1929,17 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	sh_mem_length_mapped = length;
 	strcpy(sh_mem_name, filename);
 
-#if defined(HAVE_SHARED_MUTEX_SECTION) && defined(USE_MUTEX_MAP)
-
+#ifdef HAVE_SHARED_MUTEX_SECTION
+#ifdef USE_MUTEX_MAP
 	sh_mem_mutex = (mtx*) mapObject(&statusVector, offsetof(MemoryHeader, mhb_mutex), sizeof(mtx));
 	if (!sh_mem_mutex)
 	{
 		system_call_failed::raise("mmap");
 	}
-
+#else
+	sh_mem_mutex = &sh_mem_header->mhb_mutex;
 #endif
+#endif // HAVE_SHARED_MUTEX_SECTION
 
 #if defined(USE_SYS5SEMAPHORE)
 #if !defined(USE_FILELOCKS)
