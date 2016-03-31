@@ -553,11 +553,13 @@ void EventManager::acquire_shmem()
 		LocalStatus ls;
 		CheckStatusWrapper localStatus(&ls);
 		if (!m_sharedMemory->remapFile(&localStatus, length, false))
-#endif
 		{
+			iscLogStatus("Remap file error:", &localStatus);
+#else
+		{
+#endif
 			release_shmem();
-			iscLogStatus("Event table remap failed", &localStatus);
-			exit(FINI_ERROR);
+			fb_utils::logAndDie("Event table remap failed");
 		}
 	}
 }
