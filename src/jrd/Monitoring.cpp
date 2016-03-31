@@ -179,7 +179,7 @@ void MonitoringData::release()
 }
 
 
-void MonitoringData::read(AttNumber att_id, const char* user_name, TempSpace& temp)
+void MonitoringData::read(const char* user_name, TempSpace& temp)
 {
 	offset_t position = temp.getSize();
 
@@ -460,7 +460,7 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 			}
 		}
 
-		dbb->dbb_monitoring_data->read(self_att_id, user_name_ptr, temp_space);
+		dbb->dbb_monitoring_data->read(user_name_ptr, temp_space);
 	}
 
 	// Parse the dump
