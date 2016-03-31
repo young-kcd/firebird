@@ -62,6 +62,50 @@ using namespace Firebird;
 using namespace Jrd;
 
 
+namespace
+{
+	class DumpWriter : public SnapshotData::DumpRecord::Writer
+	{
+	public:
+		DumpWriter(MonitoringData* data, AttNumber att_id, const char* user_name)
+			: dump(data), offset(dump->setup(att_id, user_name))
+		{
+			fb_assert(offset);
+		}
+
+		void write(const SnapshotData::DumpRecord& record)
+		{
+			const ULONG length = record.getLength();
+			dump->write(offset, sizeof(ULONG), &length);
+			dump->write(offset, length, record.getData());
+		}
+
+	private:
+		MonitoringData* const dump;
+		const ULONG offset;
+	};
+
+	class TempWriter : public SnapshotData::DumpRecord::Writer
+	{
+	public:
+		TempWriter(TempSpace& temp)
+			: tempSpace(temp)
+		{}
+
+		void write(const SnapshotData::DumpRecord& record)
+		{
+			const offset_t offset = tempSpace.getSize();
+			const ULONG length = record.getLength();
+			tempSpace.write(offset, &length, sizeof(ULONG));
+			tempSpace.write(offset + sizeof(ULONG), record.getData(), length);
+		}
+
+	private:
+		TempSpace& tempSpace;
+	};
+}
+
+
 const Format* MonitoringTableScan::getFormat(thread_db* tdbb, jrd_rel* relation) const
 {
 	MonitoringSnapshot* const snapshot = MonitoringSnapshot::create(tdbb);
@@ -135,30 +179,11 @@ void MonitoringData::release()
 }
 
 
-void MonitoringData::read(AttNumber att_id, const char* user_name, TempSpace& temp)
+void MonitoringData::read(const char* user_name, TempSpace& temp)
 {
-	offset_t position = 0;
+	offset_t position = temp.getSize();
 
-	// First, find and copy data for the given session
-
-	for (ULONG offset = alignOffset(sizeof(Header)); offset < shared_memory->getHeader()->used;)
-	{
-		UCHAR* const ptr = (UCHAR*) shared_memory->getHeader() + offset;
-		const Element* const element = (Element*) ptr;
-		const ULONG length = alignOffset(sizeof(Element) + element->length);
-
-		if (element->attId == att_id)
-		{
-			fb_assert(shared_memory->getHeader()->used >= offset + length);
-			temp.write(position, ptr + sizeof(Element), element->length);
-			position += element->length;
-			break;
-		}
-
-		offset += length;
-	}
-
-	// Second, copy data of other permitted sessions
+	// Copy data of all permitted sessions
 
 	for (ULONG offset = alignOffset(sizeof(Header)); offset < shared_memory->getHeader()->used;)
 	{
@@ -166,9 +191,7 @@ void MonitoringData::read(AttNumber att_id, const char* user_name, TempSpace& te
 		const Element* const element = (Element*) ptr;
 		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
-		const bool permitted = !user_name || !strcmp(element->userName, user_name);
-
-		if (element->attId != att_id && permitted)
+		if (!user_name || !strcmp(element->userName, user_name))
 		{
 			fb_assert(shared_memory->getHeader()->used >= offset + length);
 			temp.write(position, ptr + sizeof(Element), element->length);
@@ -358,7 +381,7 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 	// Dump our own data and downgrade the lock, if required
 
-	Monitoring::dumpAttachment(tdbb, attachment, false);
+	Monitoring::dumpAttachment(tdbb, attachment);
 
 	if (!(attachment->att_flags & ATT_monitor_done))
 	{
@@ -400,10 +423,21 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 		}
 	}
 
-	// Read the dump into a temporary space. While being there,
-	// also check for dead sessions and garbage collect them.
+	// Collect monitoring data. Start by gathering database-level info,
+	// it goes directly to the temporary space (as it's not stored in the shared dump).
 
 	TempSpace temp_space(pool, SCRATCH);
+
+	{ // scope for putDatabase and its utilities
+
+		TempWriter writer(temp_space);
+		SnapshotData::DumpRecord tempRecord(pool, writer);
+
+		Monitoring::putDatabase(tdbb, tempRecord);
+	}
+
+	// Read the dump into a temporary space. While being there,
+	// also check for dead sessions and garbage collect them.
 
 	{ // scope for the guard
 
@@ -426,7 +460,7 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 			}
 		}
 
-		dbb->dbb_monitoring_data->read(self_att_id, user_name_ptr, temp_space);
+		dbb->dbb_monitoring_data->read(user_name_ptr, temp_space);
 	}
 
 	// Parse the dump
@@ -490,11 +524,8 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 		{
 			if (record)
 			{
-				if (rid != rel_mon_database || !buffer->getCount())
-				{
-					putField(tdbb, record, dumpField);
-					store_record = true;
-				}
+				putField(tdbb, record, dumpField);
+				store_record = true;
 			}
 		}
 
@@ -694,12 +725,34 @@ SINT64 Monitoring::getGlobalId(int value)
 }
 
 
-void Monitoring::putDatabase(SnapshotData::DumpRecord& record, const Database* database,
-							 MonitoringData::Writer& writer, int stat_id, int backup_state)
+void Monitoring::putDatabase(thread_db* tdbb, SnapshotData::DumpRecord& record)
 {
-	fb_assert(database);
+	const Database* const database = tdbb->getDatabase();
 
 	record.reset(rel_mon_database);
+
+	// Determine the backup state
+	int backup_state = backup_state_unknown;
+
+	BackupManager* const bm = database->dbb_backup_manager;
+
+	if (bm && !bm->isShutDown())
+	{
+		BackupManager::StateReadGuard holder(tdbb);
+
+		switch (bm->getState())
+		{
+		case Ods::hdr_nbak_normal:
+			backup_state = backup_state_normal;
+			break;
+		case Ods::hdr_nbak_stalled:
+			backup_state = backup_state_stalled;
+			break;
+		case Ods::hdr_nbak_merge:
+			backup_state = backup_state_merge;
+			break;
+		}
+	}
 
 	PathName databaseName(database->dbb_database_name);
 	ISC_systemToUtf8(databaseName);
@@ -779,29 +832,29 @@ void Monitoring::putDatabase(SnapshotData::DumpRecord& record, const Database* d
 			secDbType = "Default";
 	}
 	record.storeString(f_mon_db_secdb, secDbType);
-
 	// statistics
+	const int stat_id = fb_utils::genUniqueId();
 	record.storeGlobalId(f_mon_db_stat_id, getGlobalId(stat_id));
-	writer.putRecord(record);
+
+	record.write();
 
 	if (database->dbb_flags & DBB_shared)
 	{
 		MutexLockGuard guard(database->dbb_stats_mutex, FB_FUNCTION);
-		putStatistics(record, database->dbb_stats, writer, stat_id, stat_database);
-		putMemoryUsage(record, database->dbb_memory_stats, writer, stat_id, stat_database);
+		putStatistics(record, database->dbb_stats, stat_id, stat_database);
+		putMemoryUsage(record, database->dbb_memory_stats, stat_id, stat_database);
 	}
 	else
 	{
 		RuntimeStatistics zero_rt_stats;
 		MemoryStats zero_mem_stats;
-		putStatistics(record, zero_rt_stats, writer, stat_id, stat_database);
-		putMemoryUsage(record, zero_mem_stats, writer, stat_id, stat_database);
+		putStatistics(record, zero_rt_stats, stat_id, stat_database);
+		putMemoryUsage(record, zero_mem_stats, stat_id, stat_database);
 	}
 }
 
 
-void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Attachment* attachment,
-							   MonitoringData::Writer& writer, int stat_id)
+void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Attachment* attachment)
 {
 	fb_assert(attachment && attachment->att_user);
 
@@ -840,9 +893,7 @@ void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Atta
 	record.storeString(f_mon_att_remote_addr, attachment->att_remote_address);
 	// remote process id
 	if (attachment->att_remote_pid)
-	{
 		record.storeInteger(f_mon_att_remote_pid, attachment->att_remote_pid);
-	}
 	// remote process name
 	record.storeString(f_mon_att_remote_process, attachment->att_remote_process);
 	// charset
@@ -863,32 +914,32 @@ void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Atta
 	// authentication method
 	record.storeString(f_mon_att_auth_method, attachment->att_user->usr_auth_method);
 	// statistics
+	const int stat_id = fb_utils::genUniqueId();
 	record.storeGlobalId(f_mon_att_stat_id, getGlobalId(stat_id));
 	// system flag
 	temp = (attachment->att_flags & ATT_system) ? 1 : 0;
 	record.storeInteger(f_mon_att_sys_flag, temp);
 
-	writer.putRecord(record);
+	record.write();
 
 	if (attachment->att_database->dbb_flags & DBB_shared)
 	{
-		putStatistics(record, attachment->att_stats, writer, stat_id, stat_attachment);
-		putMemoryUsage(record, attachment->att_memory_stats, writer, stat_id, stat_attachment);
+		putStatistics(record, attachment->att_stats, stat_id, stat_attachment);
+		putMemoryUsage(record, attachment->att_memory_stats, stat_id, stat_attachment);
 	}
 	else
 	{
 		MutexLockGuard guard(attachment->att_database->dbb_stats_mutex, FB_FUNCTION);
-		putStatistics(record, attachment->att_database->dbb_stats, writer, stat_id, stat_attachment);
-		putMemoryUsage(record, attachment->att_database->dbb_memory_stats, writer, stat_id, stat_attachment);
+		putStatistics(record, attachment->att_database->dbb_stats, stat_id, stat_attachment);
+		putMemoryUsage(record, attachment->att_database->dbb_memory_stats, stat_id, stat_attachment);
 	}
 
 	// context vars
-	putContextVars(record, attachment->att_context_vars, writer, attachment->att_attachment_id, true);
+	putContextVars(record, attachment->att_context_vars, attachment->att_attachment_id, true);
 }
 
 
-void Monitoring::putTransaction(SnapshotData::DumpRecord& record, const jrd_tra* transaction,
-								MonitoringData::Writer& writer, int stat_id)
+void Monitoring::putTransaction(SnapshotData::DumpRecord& record, const jrd_tra* transaction)
 {
 	fb_assert(transaction);
 
@@ -913,18 +964,14 @@ void Monitoring::putTransaction(SnapshotData::DumpRecord& record, const jrd_tra*
 	record.storeInteger(f_mon_tra_oat, transaction->tra_oldest_active);
 	// isolation mode
 	if (transaction->tra_flags & TRA_degree3)
-	{
 		temp = iso_mode_consistency;
-	}
 	else if (transaction->tra_flags & TRA_read_committed)
 	{
 		temp = (transaction->tra_flags & TRA_rec_version) ?
 			iso_mode_rc_version : iso_mode_rc_no_version;
 	}
 	else
-	{
 		temp = iso_mode_concurrency;
-	}
 	record.storeInteger(f_mon_tra_iso_mode, temp);
 	// lock timeout
 	record.storeInteger(f_mon_tra_lock_timeout, transaction->tra_lock_timeout);
@@ -937,20 +984,22 @@ void Monitoring::putTransaction(SnapshotData::DumpRecord& record, const jrd_tra*
 	// auto undo flag
 	temp = (transaction->tra_flags & TRA_no_auto_undo) ? 0 : 1;
 	record.storeInteger(f_mon_tra_auto_undo, temp);
-
 	// statistics
+	const int stat_id = fb_utils::genUniqueId();
 	record.storeGlobalId(f_mon_tra_stat_id, getGlobalId(stat_id));
-	writer.putRecord(record);
-	putStatistics(record, transaction->tra_stats, writer, stat_id, stat_transaction);
-	putMemoryUsage(record, transaction->tra_memory_stats, writer, stat_id, stat_transaction);
+
+	record.write();
+
+	putStatistics(record, transaction->tra_stats, stat_id, stat_transaction);
+	putMemoryUsage(record, transaction->tra_memory_stats, stat_id, stat_transaction);
 
 	// context vars
-	putContextVars(record, transaction->tra_context_vars, writer, transaction->tra_number, false);
+	putContextVars(record, transaction->tra_context_vars, transaction->tra_number, false);
 }
 
 
 void Monitoring::putRequest(SnapshotData::DumpRecord& record, const jrd_req* request,
-							MonitoringData::Writer& writer, int stat_id, const string& plan)
+							const string& plan)
 {
 	fb_assert(request);
 
@@ -960,24 +1009,18 @@ void Monitoring::putRequest(SnapshotData::DumpRecord& record, const jrd_req* req
 	record.storeInteger(f_mon_stmt_id, request->req_id);
 	// attachment id
 	if (request->req_attachment)
-	{
 		record.storeInteger(f_mon_stmt_att_id, request->req_attachment->att_attachment_id);
-	}
 	// state, transaction ID, timestamp
 	if (request->req_flags & req_active)
 	{
 		const bool is_stalled = (request->req_flags & req_stall);
 		record.storeInteger(f_mon_stmt_state, is_stalled ? mon_state_stalled : mon_state_active);
 		if (request->req_transaction)
-		{
 			record.storeInteger(f_mon_stmt_tra_id, request->req_transaction->tra_number);
-		}
 		record.storeTimestamp(f_mon_stmt_timestamp, request->req_timestamp);
 	}
 	else
-	{
 		record.storeInteger(f_mon_stmt_state, mon_state_idle);
-	}
 
 	const JrdStatement* const statement = request->getStatement();
 
@@ -990,15 +1033,17 @@ void Monitoring::putRequest(SnapshotData::DumpRecord& record, const jrd_req* req
 		record.storeString(f_mon_stmt_expl_plan, plan);
 
 	// statistics
+	const int stat_id = fb_utils::genUniqueId();
 	record.storeGlobalId(f_mon_stmt_stat_id, getGlobalId(stat_id));
-	writer.putRecord(record);
-	putStatistics(record, request->req_stats, writer, stat_id, stat_statement);
-	putMemoryUsage(record, request->req_memory_stats, writer, stat_id, stat_statement);
+
+	record.write();
+
+	putStatistics(record, request->req_stats, stat_id, stat_statement);
+	putMemoryUsage(record, request->req_memory_stats, stat_id, stat_statement);
 }
 
 
-void Monitoring::putCall(SnapshotData::DumpRecord& record, const jrd_req* request,
-						 MonitoringData::Writer& writer, int stat_id)
+void Monitoring::putCall(SnapshotData::DumpRecord& record, const jrd_req* request)
 {
 	fb_assert(request);
 
@@ -1017,9 +1062,7 @@ void Monitoring::putCall(SnapshotData::DumpRecord& record, const jrd_req* reques
 	record.storeInteger(f_mon_call_stmt_id, initialRequest->req_id);
 	// caller id
 	if (initialRequest != request->req_caller)
-	{
 		record.storeInteger(f_mon_call_caller_id, request->req_caller->req_id);
-	}
 
 	const JrdStatement* statement = request->getStatement();
 	const Routine* routine = statement->getRoutine();
@@ -1054,14 +1097,17 @@ void Monitoring::putCall(SnapshotData::DumpRecord& record, const jrd_req* reques
 	}
 
 	// statistics
+	const int stat_id = fb_utils::genUniqueId();
 	record.storeGlobalId(f_mon_call_stat_id, getGlobalId(stat_id));
-	writer.putRecord(record);
-	putStatistics(record, request->req_stats, writer, stat_id, stat_call);
-	putMemoryUsage(record, request->req_memory_stats, writer, stat_id, stat_call);
+
+	record.write();
+
+	putStatistics(record, request->req_stats, stat_id, stat_call);
+	putMemoryUsage(record, request->req_memory_stats, stat_id, stat_call);
 }
 
 void Monitoring::putStatistics(SnapshotData::DumpRecord& record, const RuntimeStatistics& statistics,
-							   MonitoringData::Writer& writer, int stat_id, int stat_group)
+							   int stat_id, int stat_group)
 {
 	// statistics id
 	const SINT64 id = getGlobalId(stat_id);
@@ -1074,7 +1120,7 @@ void Monitoring::putStatistics(SnapshotData::DumpRecord& record, const RuntimeSt
 	record.storeInteger(f_mon_io_page_writes, statistics.getValue(RuntimeStatistics::PAGE_WRITES));
 	record.storeInteger(f_mon_io_page_fetches, statistics.getValue(RuntimeStatistics::PAGE_FETCHES));
 	record.storeInteger(f_mon_io_page_marks, statistics.getValue(RuntimeStatistics::PAGE_MARKS));
-	writer.putRecord(record);
+	record.write();
 
 	// logical I/O statistics (global)
 	record.reset(rel_mon_rec_stats);
@@ -1094,7 +1140,7 @@ void Monitoring::putStatistics(SnapshotData::DumpRecord& record, const RuntimeSt
 	record.storeInteger(f_mon_rec_bkver_reads, statistics.getValue(RuntimeStatistics::RECORD_BACKVERSION_READS));
 	record.storeInteger(f_mon_rec_frg_reads, statistics.getValue(RuntimeStatistics::RECORD_FRAGMENT_READS));
 	record.storeInteger(f_mon_rec_rpt_reads, statistics.getValue(RuntimeStatistics::RECORD_RPT_READS));
-	writer.putRecord(record);
+	record.write();
 
 	// logical I/O statistics (table wise)
 
@@ -1107,7 +1153,7 @@ void Monitoring::putStatistics(SnapshotData::DumpRecord& record, const RuntimeSt
 		record.storeInteger(f_mon_tab_stat_group, stat_group);
 		record.storeTableId(f_mon_tab_name, (*iter).getRelationId());
 		record.storeGlobalId(f_mon_tab_rec_stat_id, rec_stat_id);
-		writer.putRecord(record);
+		record.write();
 
 		record.reset(rel_mon_rec_stats);
 		record.storeGlobalId(f_mon_rec_stat_id, rec_stat_id);
@@ -1126,13 +1172,12 @@ void Monitoring::putStatistics(SnapshotData::DumpRecord& record, const RuntimeSt
 		record.storeInteger(f_mon_rec_bkver_reads, (*iter).getCounter(RuntimeStatistics::RECORD_BACKVERSION_READS));
 		record.storeInteger(f_mon_rec_frg_reads, (*iter).getCounter(RuntimeStatistics::RECORD_FRAGMENT_READS));
 		record.storeInteger(f_mon_rec_rpt_reads, (*iter).getCounter(RuntimeStatistics::RECORD_RPT_READS));
-		writer.putRecord(record);
+		record.write();
 	}
 }
 
 void Monitoring::putContextVars(SnapshotData::DumpRecord& record, const StringMap& variables,
-								MonitoringData::Writer& writer, SINT64 object_id,
-								bool is_attachment)
+								SINT64 object_id, bool is_attachment)
 {
 	StringMap::ConstAccessor accessor(&variables);
 
@@ -1146,12 +1191,12 @@ void Monitoring::putContextVars(SnapshotData::DumpRecord& record, const StringMa
 		record.storeString(f_mon_ctx_var_name, accessor.current()->first);
 		record.storeString(f_mon_ctx_var_value, accessor.current()->second);
 
-		writer.putRecord(record);
+		record.write();
 	}
 }
 
 void Monitoring::putMemoryUsage(SnapshotData::DumpRecord& record, const MemoryStats& stats,
-								MonitoringData::Writer& writer, int stat_id, int stat_group)
+								int stat_id, int stat_group)
 {
 	// statistics id
 	const SINT64 id = getGlobalId(stat_id);
@@ -1165,7 +1210,7 @@ void Monitoring::putMemoryUsage(SnapshotData::DumpRecord& record, const MemorySt
 	record.storeInteger(f_mon_mem_max_used, stats.getMaximumUsage());
 	record.storeInteger(f_mon_mem_max_alloc, stats.getMaximumMapping());
 
-	writer.putRecord(record);
+	record.write();
 }
 
 
@@ -1184,7 +1229,7 @@ void Monitoring::checkState(thread_db* tdbb)
 }
 
 
-void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment, bool ast)
+void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment)
 {
 	if (!attachment->att_user)
 		return;
@@ -1197,45 +1242,16 @@ void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment, bool as
 	const AttNumber att_id = attachment->att_attachment_id;
 	const string& user_name = attachment->att_user->usr_user_name;
 
-	// Determine the backup state
-	int backup_state = backup_state_unknown;
-
-	if (!ast)
-	{
-		BackupManager* const bm = dbb->dbb_backup_manager;
-
-		if (bm && !bm->isShutDown())
-		{
-			BackupManager::StateReadGuard holder(tdbb);
-
-			switch (bm->getState())
-			{
-			case Ods::hdr_nbak_normal:
-				backup_state = backup_state_normal;
-				break;
-			case Ods::hdr_nbak_stalled:
-				backup_state = backup_state_stalled;
-				break;
-			case Ods::hdr_nbak_merge:
-				backup_state = backup_state_merge;
-				break;
-			}
-		}
-	}
-
 	if (!dbb->dbb_monitoring_data)
 		dbb->dbb_monitoring_data = FB_NEW_POOL(pool) MonitoringData(dbb);
 
 	MonitoringData::Guard guard(dbb->dbb_monitoring_data);
 	dbb->dbb_monitoring_data->cleanup(att_id);
 
-	MonitoringData::Writer writer(dbb->dbb_monitoring_data, att_id, user_name.c_str());
-	SnapshotData::DumpRecord record(pool);
+	DumpWriter writer(dbb->dbb_monitoring_data, att_id, user_name.c_str());
+	SnapshotData::DumpRecord record(pool, writer);
 
-	if (!ast)
-		putDatabase(record, dbb, writer, fb_utils::genUniqueId(), backup_state);
-
-	putAttachment(record, attachment, writer, fb_utils::genUniqueId());
+	putAttachment(record, attachment);
 
 	jrd_tra* transaction = NULL;
 
@@ -1244,7 +1260,7 @@ void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment, bool as
 	for (transaction = attachment->att_transactions; transaction;
 		 transaction = transaction->tra_next)
 	{
-		putTransaction(record, transaction, writer, fb_utils::genUniqueId());
+		putTransaction(record, transaction);
 	}
 
 	// Call stack information
@@ -1262,7 +1278,7 @@ void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment, bool as
 					(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)) &&
 				request->req_caller)
 			{
-				putCall(record, request, writer, fb_utils::genUniqueId());
+				putCall(record, request);
 			}
 		}
 	}
@@ -1279,7 +1295,7 @@ void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment, bool as
 				(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)))
 		{
 			const string plan = OPT_get_plan(tdbb, request, true);
-			putRequest(record, request, writer, fb_utils::genUniqueId(), plan);
+			putRequest(record, request, plan);
 		}
 	}
 }
