@@ -325,7 +325,7 @@ public:
 	void acquire();
 	void release();
 
-	void read(AttNumber, const char*, TempSpace&);
+	void read(const char*, TempSpace&);
 	ULONG setup(AttNumber, const char*);
 	void write(ULONG, ULONG, const void*);
 
