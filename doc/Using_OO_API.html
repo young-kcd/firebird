@@ -7,7 +7,7 @@
 	<META NAME="AUTHOR" CONTENT="alex ">
 	<META NAME="CREATED" CONTENT="20130531;10003100">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
-	<META NAME="CHANGED" CONTENT="20160323;17530400">
+	<META NAME="CHANGED" CONTENT="20160331;18381100">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
 	<STYLE TYPE="text/css">
 	<!--
@@ -657,12 +657,6 @@ master);</I></FONT></P>
 = &amp;message-&gt;bNull;</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>When you have access to
-this pointers make sure that null flag is not set (not required if
-you nullified all message buffer):</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>*blobNullPtr = 0;</I></FONT></P>
-<P STYLE="margin-bottom: 0in"><BR>
-</P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>To create new blob invoke
 createBlob() method:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I><A HREF="#Blob">IBlob</A>*
@@ -682,11 +676,107 @@ segmentLength, segmentData);</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>After sending some data to
 blob do not forget to close blob interface:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>blob-&gt;close(&amp;status);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Make sure that null flag
+is not set (not required if you nullified all message buffer before
+creating blob):</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>*blobNullPtr = 0;</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>and message, containing
 blob, may be used in insert or update statement. After execution of
 that statement new blob will be stored in database.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>To read a blob begin with
+getting containing it's identifier message from firebird engine. This
+may be done using fetch() or execute() methods. After it use
+openBlob() attachment's method:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I><A HREF="#Blob">IBlob</A>*
+blob = att-&gt;openBlob(status, tra, blobPtr, 0, NULL);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Blob  interface is ready
+to provide blob data. Use getSegment() method to receive data from
+engine:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>char buffer[BUFSIZE];</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>unsigned actualLength;</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>for(;;)</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>switch
+(blob-&gt;getSegment(&amp;status, sizeof(buffer), buffer,
+&amp;actualLength))</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>case
+IStatus::RESULT_OK:</I></FONT></P>
+<P STYLE="margin-bottom: 0in">       
+<FONT SIZE=4><I>userFunctionAcceptingBlobData(buffer, actualLength,
+true);</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>continue;</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>case
+IStatus::RESULT_SEGMENT:</I></FONT></P>
+<P STYLE="margin-bottom: 0in">       
+<FONT SIZE=4><I>userFunctionAcceptingBlobData(buffer, actualLength,
+false);</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>continue;</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>default:</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>break;</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Last parameter in
+userFunctionAcceptingBlobData() is a flag that end of segment is
+reached – when getSegment() returns RESULT_SEGMENT completion code
+that function is notified (by passing false as last parameter) that
+segment was not read completely and continuation is expected at next
+call.</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>After finishing with blob
+do not forget top close it:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>blob-&gt;close(&amp;status);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<H1><FONT SIZE=4>Working with events.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Events interface was not
+completed in FB3, we expect to have something more interesting in
+next version. The minimum existing support is as follows: <A HREF="#Attachment">IAttachment</A>
+contains call queEvents() which performs almost same functions as
+isc_que_events() call. Instead the pair of parameters
+<I>FPTR_EVENT_CALLBACK ast</I> and <I>void* arg</I>, required to
+invoke user code when event happens in firebird engine, callback
+interface IEventCallback is used. This is traditional approach which
+helps to avoid non-safe casts from void* in user function. Another
+important difference is that instead event identifier (a kind of
+handler) this function returns reference counted interface <A HREF="#Events">IEvents</A>
+having method cancel() used when waiting for event should be stopped.
+Unlike identifier which is automatically destroyed when event arrives
+interface can not be automatically destroyed – in case when event
+is received right before canceling interface call to cancel() would
+cause segfault when interface is already destroyed. Therefore
+interface <A HREF="#Events">IEvents</A> must be explicitly released
+after receiving an event. This may be done for example right before
+queuing for an event next time:</FONT></P>
+<P STYLE="margin-bottom: 0in">  <FONT SIZE=4><I>events-&gt;release();</I></FONT></P>
+<P STYLE="margin-bottom: 0in">  <FONT SIZE=4><I>events = NULL;</I></FONT></P>
+<P STYLE="margin-bottom: 0in">  <FONT SIZE=4><I>events =
+attachment-&gt;queEvents(&amp;status, this, eveLen, eveBuffer);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Setting interface pointer
+to NULL is useful in case of exception during queEvents. In other
+aspects events handling did not change compared with ISC API. Please
+use for additional details our sample 08.events.cpp. </FONT>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<H1><FONT SIZE=4>Using services.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>To begin to use services
+one should first of all connect to service manager. This is done
+using attachServiceManager() method of <A HREF="#Provider">IProvider</A>.
+ This method returns <A HREF="#Service">IService</A> interface which
+is used later to talk to service. To prepare SPB to attach to service
+manager one can use IXpbBuilder:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>IXpbBuilder* spb1 =
+utl-&gt;getXpbBuilder(&amp;status, IXpbBuilder::SPB_START, NULL, 0);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>spb1-&gt;insertString(&amp;status,
+isc_dpb_user_name, “sysdba”);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>spb1-&gt;insertString(&amp;status,
+isc_dpb_password, “masterkey”);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>and proceed with attach:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>IService* svc =
+prov-&gt;attachServiceManager(&amp;status, “service_mgr”,
+spb1-&gt;getBufferLength(&amp;status), spb1-&gt;getBuffer(&amp;status));</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
@@ -807,6 +897,26 @@ interface:</FONT></P>
 	const unsigned char* tpb)</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
 	start(StatusType* status)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="EventCallback"></A><FONT SIZE=4>EventCallback
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	eventCallbackFunction(unsigned length, const unsigned char* events)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="Events"></A><FONT SIZE=4>Events
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	cancel(StatusType* status)</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
@@ -944,6 +1054,23 @@ interface:</FONT></P>
 	getMetadata(StatusType* status)</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	close(StatusType* status)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="Service"></A><FONT SIZE=4>Service
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	detach(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	query(StatusType* status, unsigned sendLength, const unsigned char*
+	sendItems, unsigned receiveLength, const unsigned char*
+	receiveItems, unsigned bufferLength, unsigned char* buffer)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	start(StatusType* status, unsigned spbLength, const unsigned char*
+	spb)</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
@@ -1181,7 +1308,8 @@ SPB_START = 3;</FONT></P>
 = 4;</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
-<H1><FONT SIZE=4>Non-interface objects used by API.</FONT></H1>
+<H1><FONT SIZE=4>Non-interface objects used by API (C++ specific
+header Message.h).</FONT></H1>
 <P STYLE="margin-bottom: 0in"><A NAME="FbDate"></A><FONT SIZE=4>class
 FbDate methods:</FONT></P>
 <P STYLE="margin-bottom: 0in">    <FONT SIZE=4>void decode(IUtil*
