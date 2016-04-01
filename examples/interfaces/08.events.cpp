@@ -197,4 +197,6 @@ int main()
 	// generic cleanup
 	prov->release();
 	status.dispose();
+
+	return rc;
 }
