@@ -2,7 +2,7 @@
 :: FB_ROOT_PATH dos format path of the main directory
 :: FB_DB_PATH unix format path of the main directory
 :: (This is used by gpre and preprocess.bat)
-:: VS_VER VisualStudio version (msvc7|msvc8|msvc9)
+:: VS_VER VisualStudio version (msvc8|msvc9|msvc10|msvc12|msvc14)
 :: SERVER_NAME server needed to connect to firebird (could include port)
 ::   Example : localhost/3051
 :: (Note - SERVER_NAME is almost deprecated - it is only used by
@@ -26,7 +26,7 @@ set FB_PROCESSOR_ARCHITECTURE=%PROCESSOR_ARCHITECTURE%
 ::===============================
 ::Set up the compiler environment
 
-:: To disable VS8/VS9/VS10 build, slightly alter the env var names in "if" conditions below
+:: To disable some particular MSVC build, slightly alter the env var names in "if" conditions below
 
 if DEFINED VS140COMNTOOLS (
 @devenv /? >nul 2>nul
@@ -48,12 +48,7 @@ if DEFINED VS80COMNTOOLS (
 @devenv /? >nul 2>nul
 @if errorlevel 9009 (call "%VS80COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS80COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
 ) else (
-if DEFINED VS71COMNTOOLS (
-@devenv /? >nul 2>nul
-@if errorlevel 9009 (call "%VS71COMNTOOLS%vsvars32.bat") else ( echo    The file: & echo      "%VS71COMNTOOLS%vsvars32.bat" & echo    has already been executed.)
-) else (
 @goto :HELP
-)
 )
 )
 )
@@ -98,12 +93,8 @@ if DEFINED VS71COMNTOOLS (
 
 :SET_FB_TARGET_PLATFORM
 @set FB_TARGET_PLATFORM=Win32
-:: If MSVC >= 8 then we can test for processor architecture
-:: We certainly don't want to try and set platform=x64 if MSVC7 is installed
-@if %MSVC_VERSION% GEQ 8 (
 @if "%FB_PROCESSOR_ARCHITECTURE%"=="x86" (set FB_TARGET_PLATFORM=Win32)
 @if "%FB_PROCESSOR_ARCHITECTURE%"=="AMD64" (set FB_TARGET_PLATFORM=x64)
-)
 
 
 @set FB_OUTPUT_DIR=%FB_ROOT_PATH%\output_%FB_TARGET_PLATFORM%
@@ -126,13 +117,13 @@ goto :END
 @echo    A working version of Visual Studio cannot be found
 @echo    on your current path.
 @echo.
-@echo    You need MS Visual Studio 7 or newer to build Firebird
+@echo    You need MS Visual Studio 8 or newer to build Firebird
 @echo    from these batch files.
 @echo.
 @echo    A properly installed version of Visual Studio will set
-@echo    an environment variable such as %%VS71COMNTOOLS%% or
-@echo    %%VS80COMNTOOLS%%. We use that variable to run the
-@echo    appropriate batch file to set up the build environment.
+@echo    an environment variable such as %%VS80COMNTOOLS%%.
+@echo    We use that variable to run the appropriate batch file
+@echo    to set up the build environment.
 @echo.
 :: set errorlevel
 @exit /B 1

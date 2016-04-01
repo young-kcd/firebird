@@ -164,8 +164,7 @@ copyFiles() {
     cp $BuildRootDir/doc/*.pdf $DestDir/doc
     cp $BuildRootDir/doc/README.* $DestDir/doc
     cp $BuildRootDir/doc/sql.extensions/README* $DestDir/doc/sql.extensions
-    cp $BuildRootDir/doc/WhatsNew $DestDir/WhatsNew
-    cp $BuildRootDir/doc/README.user $DestDir/README
+    cp $BuildRootDir/*.md $DestDir
 
 # Miscellaneous config and stratup files
     cp $BuildRootDir/gen/install/misc/firebird.conf $DestDir/firebird.conf

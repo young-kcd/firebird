@@ -5991,7 +5991,11 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 
 			fb_assert(!desc->isBlob());
 
-			value = MOV_make_string2(tdbb, desc, ttype_dynamic);
+			if (desc->dsc_dtype == dtype_boolean)
+				value = MOV_get_boolean(desc) ? "TRUE" : "FALSE";
+			else
+				value = MOV_make_string2(tdbb, desc, ttype_dynamic);
+
 			const int len = (int) value.length();
 			const char* const str = value.c_str();
 

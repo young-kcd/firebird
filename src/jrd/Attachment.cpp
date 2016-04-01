@@ -686,7 +686,7 @@ int Jrd::Attachment::blockingAstMonitor(void* ast_object)
 		{
 			try
 			{
-				Monitoring::dumpAttachment(tdbb, attachment, true);
+				Monitoring::dumpAttachment(tdbb, attachment);
 			}
 			catch (const Exception& ex)
 			{

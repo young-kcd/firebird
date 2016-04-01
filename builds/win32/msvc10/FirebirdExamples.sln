@@ -7,6 +7,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "udr_engine", "udr_engine.vcxproj", "{20DEBF08-EF0A-4C94-ADEB-FE9BBA14588B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "udrcpp_example", "udrcpp_example.vcxproj", "{FF0FD8DF-1E5C-486E-B395-A620376A4633}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4FE03933-98CD-4879-A135-FD9430087A6B} = {4FE03933-98CD-4879-A135-FD9430087A6B}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "common", "common.vcxproj", "{15605F44-BFFD-444F-AD4C-55DC9D704465}"
 EndProject

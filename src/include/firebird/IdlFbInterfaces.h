@@ -51,6 +51,7 @@ namespace Firebird
 	class IStatement;
 	class IRequest;
 	class IEvents;
+	class IEventBlock;
 	class IAttachment;
 	class IService;
 	class IProvider;
@@ -1775,6 +1776,68 @@ namespace Firebird
 		}
 	};
 
+	class IEventBlock : public IDisposable
+	{
+	public:
+		struct VTable : public IDisposable::VTable
+		{
+			unsigned (CLOOP_CARG *getLength)(IEventBlock* self) throw();
+			unsigned char* (CLOOP_CARG *getValues)(IEventBlock* self) throw();
+			unsigned char* (CLOOP_CARG *getBuffer)(IEventBlock* self) throw();
+			unsigned (CLOOP_CARG *getCount)(IEventBlock* self) throw();
+			unsigned* (CLOOP_CARG *getCounters)(IEventBlock* self) throw();
+			void (CLOOP_CARG *counts)(IEventBlock* self) throw();
+		};
+
+	protected:
+		IEventBlock(DoNotInherit)
+			: IDisposable(DoNotInherit())
+		{
+		}
+
+		~IEventBlock()
+		{
+		}
+
+	public:
+		static const unsigned VERSION = 3;
+
+		unsigned getLength()
+		{
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getLength(this);
+			return ret;
+		}
+
+		unsigned char* getValues()
+		{
+			unsigned char* ret = static_cast<VTable*>(this->cloopVTable)->getValues(this);
+			return ret;
+		}
+
+		unsigned char* getBuffer()
+		{
+			unsigned char* ret = static_cast<VTable*>(this->cloopVTable)->getBuffer(this);
+			return ret;
+		}
+
+		unsigned getCount()
+		{
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getCount(this);
+			return ret;
+		}
+
+		unsigned* getCounters()
+		{
+			unsigned* ret = static_cast<VTable*>(this->cloopVTable)->getCounters(this);
+			return ret;
+		}
+
+		void counts()
+		{
+			static_cast<VTable*>(this->cloopVTable)->counts(this);
+		}
+	};
+
 	class IAttachment : public IReferenceCounted
 	{
 	public:
@@ -3448,6 +3511,7 @@ namespace Firebird
 			unsigned (CLOOP_CARG *getClientVersion)(IUtil* self) throw();
 			IXpbBuilder* (CLOOP_CARG *getXpbBuilder)(IUtil* self, IStatus* status, unsigned kind, const unsigned char* buf, unsigned len) throw();
 			unsigned (CLOOP_CARG *setOffsets)(IUtil* self, IStatus* status, IMessageMetadata* metadata, IOffsetsCallback* callback) throw();
+			IEventBlock* (CLOOP_CARG *createEventBlock)(IUtil* self, IStatus* status, const char** events) throw();
 		};
 
 	protected:
@@ -3461,7 +3525,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static const unsigned VERSION = 3;
 
 		template <typename StatusType> void getFbVersion(StatusType* status, IAttachment* att, IVersionCallback* callback)
 		{
@@ -3545,6 +3609,20 @@ namespace Firebird
 		{
 			StatusType::clearException(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->setOffsets(this, status, metadata, callback);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> IEventBlock* createEventBlock(StatusType* status, const char** events)
+		{
+			if (cloopVTable->version < 3)
+			{
+				StatusType::setVersionError(status, "IUtil", cloopVTable->version, 3);
+				StatusType::checkException(status);
+				return 0;
+			}
+			StatusType::clearException(status);
+			IEventBlock* ret = static_cast<VTable*>(this->cloopVTable)->createEventBlock(this, status, events);
 			StatusType::checkException(status);
 			return ret;
 		}
@@ -8482,6 +8560,143 @@ namespace Firebird
 	};
 
 	template <typename Name, typename StatusType, typename Base>
+	class IEventBlockBaseImpl : public Base
+	{
+	public:
+		typedef IEventBlock Declaration;
+
+		IEventBlockBaseImpl(DoNotInherit = DoNotInherit())
+		{
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->dispose = &Name::cloopdisposeDispatcher;
+					this->getLength = &Name::cloopgetLengthDispatcher;
+					this->getValues = &Name::cloopgetValuesDispatcher;
+					this->getBuffer = &Name::cloopgetBufferDispatcher;
+					this->getCount = &Name::cloopgetCountDispatcher;
+					this->getCounters = &Name::cloopgetCountersDispatcher;
+					this->counts = &Name::cloopcountsDispatcher;
+				}
+			} vTable;
+
+			this->cloopVTable = &vTable;
+		}
+
+		static unsigned CLOOP_CARG cloopgetLengthDispatcher(IEventBlock* self) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getLength();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<unsigned>(0);
+			}
+		}
+
+		static unsigned char* CLOOP_CARG cloopgetValuesDispatcher(IEventBlock* self) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getValues();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<unsigned char*>(0);
+			}
+		}
+
+		static unsigned char* CLOOP_CARG cloopgetBufferDispatcher(IEventBlock* self) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getBuffer();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<unsigned char*>(0);
+			}
+		}
+
+		static unsigned CLOOP_CARG cloopgetCountDispatcher(IEventBlock* self) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getCount();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<unsigned>(0);
+			}
+		}
+
+		static unsigned* CLOOP_CARG cloopgetCountersDispatcher(IEventBlock* self) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getCounters();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<unsigned*>(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopcountsDispatcher(IEventBlock* self) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::counts();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::dispose();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+	};
+
+	template <typename Name, typename StatusType, typename Base = IDisposableImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IEventBlock> > > > >
+	class IEventBlockImpl : public IEventBlockBaseImpl<Name, StatusType, Base>
+	{
+	protected:
+		IEventBlockImpl(DoNotInherit = DoNotInherit())
+		{
+		}
+
+	public:
+		virtual ~IEventBlockImpl()
+		{
+		}
+
+		virtual unsigned getLength() = 0;
+		virtual unsigned char* getValues() = 0;
+		virtual unsigned char* getBuffer() = 0;
+		virtual unsigned getCount() = 0;
+		virtual unsigned* getCounters() = 0;
+		virtual void counts() = 0;
+	};
+
+	template <typename Name, typename StatusType, typename Base>
 	class IAttachmentBaseImpl : public Base
 	{
 	public:
@@ -12297,6 +12512,7 @@ namespace Firebird
 					this->getClientVersion = &Name::cloopgetClientVersionDispatcher;
 					this->getXpbBuilder = &Name::cloopgetXpbBuilderDispatcher;
 					this->setOffsets = &Name::cloopsetOffsetsDispatcher;
+					this->createEventBlock = &Name::cloopcreateEventBlockDispatcher;
 				}
 			} vTable;
 
@@ -12479,6 +12695,21 @@ namespace Firebird
 				return static_cast<unsigned>(0);
 			}
 		}
+
+		static IEventBlock* CLOOP_CARG cloopcreateEventBlockDispatcher(IUtil* self, IStatus* status, const char** events) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::createEventBlock(&status2, events);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<IEventBlock*>(0);
+			}
+		}
 	};
 
 	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUtil> > >
@@ -12507,6 +12738,7 @@ namespace Firebird
 		virtual unsigned getClientVersion() = 0;
 		virtual IXpbBuilder* getXpbBuilder(StatusType* status, unsigned kind, const unsigned char* buf, unsigned len) = 0;
 		virtual unsigned setOffsets(StatusType* status, IMessageMetadata* metadata, IOffsetsCallback* callback) = 0;
+		virtual IEventBlock* createEventBlock(StatusType* status, const char** events) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

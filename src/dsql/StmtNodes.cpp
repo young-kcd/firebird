@@ -558,6 +558,32 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 
 			if (handlers && handlers->statements.getCount() > 0)
 			{
+				// First of all rollback failed work
+				if (transaction != sysTransaction)
+				{
+					count = *request->getImpure<SLONG>(impureOffset);
+
+					// Since there occurred an error (req_unwind), undo all savepoints
+					// up to, _but not including_, the savepoint of this block.
+					// That's why transaction->rollbackToSavepoint() cannot be used here
+					// The savepoint of this block will be dealt with below.
+					// Do this only if error handlers exist. If not - leave rollbacking to caller node
+					while (transaction->tra_save_point &&
+						count < transaction->tra_save_point->sav_number &&
+						transaction->tra_save_point->sav_next &&
+						count < transaction->tra_save_point->sav_next->sav_number)
+					{
+						transaction->rollforwardSavepoint(tdbb);
+					}
+					// There can be no savepoints above the given one
+					if (transaction->tra_save_point && transaction->tra_save_point->sav_number > count)
+					{
+						transaction->rollbackSavepoint(tdbb);
+					}
+					// after that we still have to have our savepoint. If not - CORE-4424/4483 is sneaking around
+					fb_assert(transaction->tra_save_point && transaction->tra_save_point->sav_number == count);
+				}
+
 				temp = parentStmt;
 				bool handled = false;
 				const NestConst<StmtNode>* ptr = handlers->statements.begin();
@@ -574,31 +600,6 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 						request->req_operation = jrd_req::req_evaluate;
 						temp = handlerNode->action;
 						exeState->errorPending = false;
-
-						if (transaction != sysTransaction)
-						{
-							count = *request->getImpure<SLONG>(impureOffset);
-
-							// Since there occurred an error (req_unwind), undo all savepoints
-							// up to, _but not including_, the savepoint of this block.
-							// That's why transaction->rollbackToSavepoint() cannot be used here
-							// The savepoint of this block will be dealt with below.
-							// Do this only if error handlers exist. If not - leave rollbacking to caller node
-
-							while (transaction->tra_save_point &&
-								   transaction->tra_save_point->sav_next &&
-								   count < transaction->tra_save_point->sav_next->sav_number)
-							{
-								transaction->rollforwardSavepoint(tdbb);
-							}
-							// There can be no savepoints above the given one
-							if (transaction->tra_save_point && transaction->tra_save_point->sav_number > count)
-							{
-								transaction->rollbackSavepoint(tdbb);
-							}
-							// after that we still have to have our savepoint. If not - CORE-4424/4483 is sneaking around
-							fb_assert(transaction->tra_save_point && transaction->tra_save_point->sav_number == count);
-						}
 
 						// On entering looper exeState->oldRequest etc. are saved.
 						// On recursive calling we will loose the actual old
@@ -647,9 +648,16 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 
 				if (handled && transaction != sysTransaction)
 				{
-					// Check that exception handlers wee executed in context of right savepoint.
+					// Check that exception handlers were executed in context of right savepoint.
 					// If not - mirror copy of CORE-4424 or CORE-4483 is around here.
-					fb_assert(transaction->tra_save_point && transaction->tra_save_point->sav_number == count);
+					// Except the case of nested exception handlers and throwing in inner one.
+					// In this case execution flow is like this:
+					//		inner before (block that rollbacking savepoints above)
+					//		outer before
+					//		outer after  (this block)
+					//		inner after
+					// Because of this following assert is commentd out
+					//fb_assert(transaction->tra_save_point && transaction->tra_save_point->sav_number == count);
 					for (const Savepoint* save_point = transaction->tra_save_point;
 							save_point && count <= save_point->sav_number;
 							save_point = transaction->tra_save_point)

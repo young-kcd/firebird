@@ -2700,7 +2700,7 @@ StreamType OptimizerInnerJoin::findJoinOrder()
 	printStartOrder();
 #endif
 
-	unsigned navigations = 0;
+	int indexes = 0, navigations = 0;
 
 	FB_SIZE_T i = 0;
 	remainingStreams = 0;
@@ -2711,7 +2711,12 @@ StreamType OptimizerInnerJoin::findJoinOrder()
 		{
 			remainingStreams++;
 
-			if (innerStreams[i]->baseNavigated)
+			if (navigations && innerStreams[i]->baseIndexes)
+				navigations = 0;
+
+			indexes += innerStreams[i]->baseIndexes;
+
+			if (innerStreams[i]->baseNavigated && innerStreams[i]->baseIndexes == indexes)
 				navigations++;
 
 			if (innerStreams[i]->independent())
@@ -2737,7 +2742,8 @@ StreamType OptimizerInnerJoin::findJoinOrder()
 				// If optimization for first rows has been requested and index navigations are possible,
 				// then consider only join orders starting with a navigational stream
 
-				if (!optimizer->optimizeFirstRows || !navigations || innerStreams[i]->baseNavigated)
+				if (!optimizer->optimizeFirstRows || !navigations ||
+					(innerStreams[i]->baseNavigated && innerStreams[i]->baseIndexes == indexes))
 				{
 					indexedRelationships.clear();
 					findBestOrder(0, innerStreams[i], &indexedRelationships, 0.0, 1.0);

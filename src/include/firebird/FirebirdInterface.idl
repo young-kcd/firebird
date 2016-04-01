@@ -462,6 +462,16 @@ interface Events : ReferenceCounted
 	void cancel(Status status);
 }
 
+interface EventBlock : Disposable
+{
+	uint getLength();
+	uchar* getValues();
+	uchar* getBuffer();
+	uint getCount();
+	uint* getCounters();
+	void counts();
+}
+
 interface Attachment : ReferenceCounted
 {
 	void getInfo(Status status,
@@ -929,6 +939,9 @@ interface Util : Versioned
 	uint getClientVersion();	// Returns major * 256 + minor
 	XpbBuilder getXpbBuilder(Status status, uint kind, const uchar* buf, uint len);
 	uint setOffsets(Status status, MessageMetadata metadata, OffsetsCallback callback);
+
+version:
+	EventBlock createEventBlock(Status status, const string* events);
 }
 
 interface OffsetsCallback : Versioned

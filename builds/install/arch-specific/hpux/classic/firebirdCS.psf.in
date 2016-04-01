@@ -28,7 +28,8 @@ tag main
 file -u 0660 -g firebird -o firebird buildroot@prefix@/security2.fdb @prefix@/security2.fdb
 file -u 0644 -g firebird -o firebird buildroot@prefix@/firebird.conf @prefix@/firebird.conf
 file -u 0644 -g firebird -o firebird buildroot@prefix@/databases.conf @prefix@/databases.conf
-file -u 0644 -g firebird -o firebird buildroot@prefix@/WhatsNew @prefix@/WhatsNew
+file -u 0644 -g firebird -o firebird buildroot@prefix@/CHANGELOG.md @prefix@/CHANGELOG.md
+file -u 0644 -g firebird -o firebird buildroot@prefix@/README.md @prefix@/README.md
 end
 #
 fileset 
@@ -63,12 +64,6 @@ end
 fileset
 tag misc
 directory buildroot@prefix@/misc=@prefix@/misc
-file_permissions -u 0644 -g firebird -o firebird
-file *
-directory buildroot@prefix@/misc/upgrade/ib_udf=@prefix@/misc/upgrade/ib_udf
-file_permissions -u 0644 -g firebird -o firebird
-file *
-directory buildroot@prefix@/misc/upgrade/metadata=@prefix@/misc/upgrade/metadata
 file_permissions -u 0644 -g firebird -o firebird
 file *
 directory buildroot@prefix@/misc/upgrade/security=@prefix@/misc/upgrade/security

@@ -15,7 +15,7 @@ Syntax is:
    CREATE OR ALTER USER name [ SET ] [ options ] [ TAGS ( tag [, tag [, tag ...]] ) ]
    DROP USER name [ USING PLUGIN name ];
 
-where OPTIONS is a (probably empty) list of following options:
+where OPTIONS is a list of following options:
 - PASSWORD 'password'
 - FIRSTNAME 'firstname'
 - MIDDLENAME 'middlename'

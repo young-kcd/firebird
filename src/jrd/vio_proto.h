@@ -61,8 +61,8 @@ bool	VIO_sweep(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::TraceSweepEvent*);
 void	VIO_verb_cleanup(Jrd::thread_db*, Jrd::jrd_tra*);
 void	VIO_temp_cleanup(Jrd::jrd_tra*);
 void	VIO_intermediate_gc(Jrd::thread_db* tdbb, Jrd::record_param* rpb, Jrd::jrd_tra* transaction);
-void	garbage_collect_idx(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::record_param*, Jrd::Record*);
-void	update_in_place(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::record_param*, Jrd::record_param*);
+void	VIO_garbage_collect_idx(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::record_param*, Jrd::Record*);
+void	VIO_update_in_place(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::record_param*, Jrd::record_param*);
 
 namespace Jrd
 {

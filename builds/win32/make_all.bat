@@ -77,8 +77,7 @@ findstr /V "@UDF_COMMENT@" %FB_ROOT_PATH%\builds\install\misc\firebird.conf.in >
 @copy %FB_GEN_DIR%\dbs\HELP.fdb %FB_OUTPUT_DIR%\help\help.fdb >nul
 
 :: DOCS
-@copy %FB_ROOT_PATH%\ChangeLog %FB_OUTPUT_DIR%\doc\ChangeLog.txt >nul
-@copy %FB_ROOT_PATH%\doc\WhatsNew %FB_OUTPUT_DIR%\doc\WhatsNew.txt >nul
+@copy %FB_ROOT_PATH%\*.md %FB_OUTPUT_DIR%\doc\ >nul
 
 :: READMES
 @copy %FB_ROOT_PATH%\doc\README.* %FB_OUTPUT_DIR%\doc >nul

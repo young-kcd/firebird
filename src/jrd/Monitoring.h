@@ -79,15 +79,19 @@ public:
 	class DumpRecord
 	{
 	public:
+		class Writer
+		{
+		public:
+			virtual void write(const DumpRecord& record) = 0;
+		};
+
 		explicit DumpRecord(MemoryPool& pool)
-			: buffer(pool), offset(0)
+			: buffer(pool), offset(0), writer(NULL)
 		{}
 
-		DumpRecord(MemoryPool& pool, int rel_id)
-			: buffer(pool), offset(1)
-		{
-			buffer.add(rel_id);
-		}
+		DumpRecord(MemoryPool& pool, Writer& wr)
+			: buffer(pool), offset(0), writer(&wr)
+		{}
 
 		void reset(int rel_id)
 		{
@@ -182,6 +186,12 @@ public:
 			return false;
 		}
 
+		void write() const
+		{
+			fb_assert(writer);
+			writer->write(*this);
+		}
+
 	private:
 		void storeField(int field_id, ValueType type, FB_SIZE_T length, const void* value)
 		{
@@ -201,6 +211,7 @@ public:
 
 		Firebird::HalfStaticArray<UCHAR, 1024> buffer;
 		ULONG offset;
+		Writer* const writer;
 	};
 
 	explicit SnapshotData(MemoryPool& pool)
@@ -271,29 +282,6 @@ public:
 		MonitoringData* const data;
 	};
 
-	class Writer
-	{
-	public:
-		Writer(MonitoringData* data, AttNumber att_id, const char* user_name)
-			: dump(data)
-		{
-			fb_assert(dump);
-			offset = dump->setup(att_id, user_name);
-			fb_assert(offset);
-		}
-
-		void putRecord(const SnapshotData::DumpRecord& record)
-		{
-			const ULONG length = record.getLength();
-			dump->write(offset, sizeof(ULONG), &length);
-			dump->write(offset, length, record.getData());
-		}
-
-	private:
-		MonitoringData* dump;
-		ULONG offset;
-	};
-
 	class Reader
 	{
 	public:
@@ -337,7 +325,7 @@ public:
 	void acquire();
 	void release();
 
-	void read(AttNumber, const char*, TempSpace&);
+	void read(const char*, TempSpace&);
 	ULONG setup(AttNumber, const char*);
 	void write(ULONG, ULONG, const void*);
 
@@ -385,30 +373,22 @@ public:
 	static void checkState(thread_db* tdbb);
 	static SnapshotData* getSnapshot(thread_db* tdbb);
 
-	static void dumpAttachment(thread_db* tdbb, Attachment* attachment, bool ast);
+	static void dumpAttachment(thread_db* tdbb, Attachment* attachment);
 
 	static void publishAttachment(thread_db* tdbb);
 	static void cleanupAttachment(thread_db* tdbb);
 
+	static void putDatabase(thread_db* tdbb, SnapshotData::DumpRecord&);
 private:
 	static SINT64 getGlobalId(int);
 
-	static void putDatabase(SnapshotData::DumpRecord&, const Database*,
-							MonitoringData::Writer&, int, int);
-	static void putAttachment(SnapshotData::DumpRecord&, const Attachment*,
-							  MonitoringData::Writer&, int);
-	static void putTransaction(SnapshotData::DumpRecord&, const jrd_tra*,
-							   MonitoringData::Writer&, int);
-	static void putRequest(SnapshotData::DumpRecord&, const jrd_req*,
-						   MonitoringData::Writer&, int, const Firebird::string&);
-	static void putCall(SnapshotData::DumpRecord&, const jrd_req*,
-						MonitoringData::Writer&, int);
-	static void putStatistics(SnapshotData::DumpRecord&, const RuntimeStatistics&,
-							  MonitoringData::Writer&, int, int);
-	static void putContextVars(SnapshotData::DumpRecord&, const Firebird::StringMap&,
-							   MonitoringData::Writer&, SINT64, bool);
-	static void putMemoryUsage(SnapshotData::DumpRecord&, const Firebird::MemoryStats&,
-							   MonitoringData::Writer&, int, int);
+	static void putAttachment(SnapshotData::DumpRecord&, const Attachment*);
+	static void putTransaction(SnapshotData::DumpRecord&, const jrd_tra*);
+	static void putRequest(SnapshotData::DumpRecord&, const jrd_req*, const Firebird::string&);
+	static void putCall(SnapshotData::DumpRecord&, const jrd_req*);
+	static void putStatistics(SnapshotData::DumpRecord&, const RuntimeStatistics&, int, int);
+	static void putContextVars(SnapshotData::DumpRecord&, const Firebird::StringMap&, SINT64, bool);
+	static void putMemoryUsage(SnapshotData::DumpRecord&, const Firebird::MemoryStats&, int, int);
 };
 
 } // namespace

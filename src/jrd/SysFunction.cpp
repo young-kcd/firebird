@@ -210,6 +210,7 @@ const char
 	SESSION_ID_NAME[] = "SESSION_ID",
 	NETWORK_PROTOCOL_NAME[] = "NETWORK_PROTOCOL",
 	CLIENT_ADDRESS_NAME[] = "CLIENT_ADDRESS",
+	CLIENT_HOST_NAME[] = "CLIENT_HOST",
 	CLIENT_PID_NAME[] = "CLIENT_PID",
 	CLIENT_PROCESS_NAME[] = "CLIENT_PROCESS",
 	CURRENT_USER_NAME[] = "CURRENT_USER",
@@ -2194,6 +2195,13 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 				return NULL;
 
 			resultStr = attachment->att_remote_address;
+		}
+		else if (nameStr == CLIENT_HOST_NAME)
+		{
+			if (attachment->att_remote_host.isEmpty())
+				return NULL;
+
+			resultStr = attachment->att_remote_host;
 		}
 		else if (nameStr == CLIENT_PID_NAME)
 		{

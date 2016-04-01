@@ -150,7 +150,7 @@ add_custom_command(
 )
 add_custom_target(databases
     DEPENDS
-        boot_engine12
+        boot_engine
         help.fdb
         metadata.fdb
         security.fdb
@@ -235,7 +235,7 @@ add_custom_command(
 )
 add_custom_target(msg_fdb
     DEPENDS
-        boot_engine12
+        boot_engine
         msg.fdb
 )
 project_group(msg_fdb "Boot/Custom build steps")
@@ -450,10 +450,10 @@ set_target_properties       (yvalve PROPERTIES OUTPUT_NAME fbclient)
 
 
 ########################################
-# SHARED LIBRARY boot_engine12
+# SHARED LIBRARY boot_engine
 ########################################
 
-file(GLOB engine12_src
+file(GLOB engine_src
     "dsql/*.cpp"
     "jrd/*.cpp"
     "jrd/extds/*.cpp"
@@ -461,7 +461,7 @@ file(GLOB engine12_src
     "jrd/trace/*.cpp"
     "jrd/os/${OS_DIR}/*.cpp"
 )
-set(engine12_src ${engine12_src}
+set(engine_src ${engine_src}
     lock/lock.cpp
     utilities/gsec/gsec.cpp
     utilities/gstat/ppg.cpp
@@ -469,10 +469,10 @@ set(engine12_src ${engine12_src}
     # parse
     ${GENERATED_DIR}/dsql/parse.cpp   
 )
-add_src_apple(engine12_src
+add_src_apple(engine_src
     jrd/os/posix/unix.cpp
 )
-set(engine12_generated_src
+set(engine_generated_src
     dsql/DdlNodes.epp
     dsql/metd.epp
     dsql/PackageNodes.epp
@@ -488,35 +488,35 @@ set(engine12_generated_src
     jrd/scl.epp
     utilities/gstat/dba.epp
 )
-add_epp_suffix(engine12_generated_src boot)
-add_epp_suffix(engine12_generated_src master)
+add_epp_suffix(engine_generated_src boot)
+add_epp_suffix(engine_generated_src master)
 
-file(GLOB_RECURSE engine12_include "dsql/*.h" "jrd/*.h" include/gen/iberror.h)
+file(GLOB_RECURSE engine_include "dsql/*.h" "jrd/*.h" include/gen/iberror.h)
 
-add_library                 (engine12_common ${engine12_src} ${engine12_include} ${parse_src})
-add_dependencies_cc         (engine12_common parse UpdateCloopInterfaces)
+add_library                 (engine_common ${engine_src} ${engine_include} ${parse_src})
+add_dependencies_cc         (engine_common parse UpdateCloopInterfaces)
 
 if (NOT CMAKE_CROSSCOMPILING)
 
-add_library                 (boot_engine12 SHARED ${engine12_generated_src_boot} ${VERSION_RC})
-target_link_libraries       (boot_engine12 engine12_common boot_alice boot_burp common boot_yvalve)
-set_output_directory        (boot_engine12 plugins CURRENT_DIR)
-set_exported_symbols        (boot_engine12 fbplugin)
-copy_and_rename_lib         (boot_engine12 Engine12)
-project_group               (boot_engine12 Boot)
+add_library                 (boot_engine SHARED ${engine_generated_src_boot} ${VERSION_RC})
+target_link_libraries       (boot_engine engine_common boot_alice boot_burp common boot_yvalve)
+set_output_directory        (boot_engine plugins CURRENT_DIR)
+set_exported_symbols        (boot_engine fbplugin)
+copy_and_rename_lib         (boot_engine Engine12)
+project_group               (boot_engine Boot)
 
 endif() # if (NOT CMAKE_CROSSCOMPILING)
 
 
 ########################################
-# SHARED LIBRARY engine12
+# SHARED LIBRARY engine
 ########################################
 
-add_library                 (engine12 SHARED ${engine12_generated_src_master} ${VERSION_RC})
-target_link_libraries       (engine12 engine12_common alice burp common yvalve)
-set_target_properties       (engine12 PROPERTIES OUTPUT_NAME Engine12)
-set_output_directory        (engine12 plugins)
-set_exported_symbols        (engine12 fbplugin)
+add_library                 (engine SHARED ${engine_generated_src_master} ${VERSION_RC})
+target_link_libraries       (engine engine_common alice burp common yvalve)
+set_target_properties       (engine PROPERTIES OUTPUT_NAME Engine12)
+set_output_directory        (engine plugins)
+set_exported_symbols        (engine fbplugin)
 
 
 ###############################################################################
@@ -731,7 +731,7 @@ add_epp_suffix(gstat_generated_src master)
 
 add_executable              (gstat ${gstat_src} ${gstat_generated_src_master} ${VERSION_RC})
 target_link_libraries       (gstat common yvalve)
-add_dependencies_cc         (gstat engine12)
+add_dependencies_cc         (gstat engine)
 
 
 ########################################
@@ -952,8 +952,8 @@ add_custom_target(copy_files
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/src/extlib/ib_udf2.sql ${output_dir}/UDF/ib_udf2.sql
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/src/extlib/fbudf/fbudf.sql ${output_dir}/UDF/fbudf.sql
     # docs
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/ChangeLog ${output_dir}/doc/ChangeLog
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/doc/WhatsNew ${output_dir}/doc/WhatsNew
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/CHANGELOG.md ${output_dir}/doc/CHANGELOG.md
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/README.md ${output_dir}/doc/README.md
     # examples
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/examples/api ${output_dir}/examples/api
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/examples/dbcrypt ${output_dir}/examples/dbcrypt

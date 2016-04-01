@@ -273,7 +273,7 @@ if "%PROCESSOR_ARCHITECTURE%"=="x86" (
   @echo   Copying pdb files...
   @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\fbserver\firebird.pdb %FB_OUTPUT_DIR%\ > nul
   @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\yvalve\fbclient.pdb %FB_OUTPUT_DIR%\ > nul
-  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\engine12\engine12.pdb %FB_OUTPUT_DIR%\ > nul
+  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\engine\engine*.pdb %FB_OUTPUT_DIR%\ > nul
   @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\fbtrace\fbtrace.pdb %FB_OUTPUT_DIR%\ > nul
   @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\legacy_auth\legacy_auth.pdb %FB_OUTPUT_DIR%\ > nul
   @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\legacy_usermanager\legacy_usermanager.pdb %FB_OUTPUT_DIR%\ > nul
@@ -284,7 +284,7 @@ if "%PROCESSOR_ARCHITECTURE%"=="x86" (
 @echo   Started copying docs...
 @rmdir /S /Q %FB_OUTPUT_DIR%\doc 2>nul
 @mkdir %FB_OUTPUT_DIR%\doc
-@copy %FB_ROOT_PATH%\ChangeLog %FB_OUTPUT_DIR%\doc\ChangeLog.txt >nul
+@copy %FB_ROOT_PATH%\*.md %FB_OUTPUT_DIR%\doc\ > nul
 @copy %FB_ROOT_PATH%\doc\*.* %FB_OUTPUT_DIR%\doc\ > nul
 @if %ERRORLEVEL% GEQ 1 (
   call :ERROR COPY of main documentation tree failed with error %ERRORLEVEL%
@@ -308,26 +308,16 @@ for %%v in ( fbudf.sql fbudf.txt ) do (
   )
 )
 
-::UDF upgrade script and doc
-mkdir %FB_OUTPUT_DIR%\misc\upgrade\ib_udf 2>nul
-@copy %FB_ROOT_PATH%\src\misc\upgrade\v2\ib_udf*.* %FB_OUTPUT_DIR%\misc\upgrade\ib_udf\ > nul
+:: Various upgrade scripts and docs
+mkdir %FB_OUTPUT_DIR%\misc\upgrade\security 2>nul
+@copy %FB_ROOT_PATH%\src\misc\upgrade\v3.0\security_* %FB_OUTPUT_DIR%\misc\upgrade\security > nul
 
-::INTL script
+:: INTL script
 @copy %FB_ROOT_PATH%\src\misc\intl.sql %FB_OUTPUT_DIR%\misc\ > nul
 
 
 @echo   Copying other documentation...
 @copy  %FB_GEN_DIR%\readmes\installation_readme.txt %FB_OUTPUT_DIR%\doc\installation_readme.txt > nul
-@copy %FB_OUTPUT_DIR%\doc\WhatsNew %FB_OUTPUT_DIR%\doc\WhatsNew.txt > nul
-@del %FB_OUTPUT_DIR%\doc\WhatsNew
-
-
-:: If we are not doing a final release then include stuff that is
-:: likely to be of use to testers, especially as our release notes
-:: may be incomplete or non-existent
-@if /I "%FBBUILD_PROD_STATUS%"=="DEV" (
-  @copy %FB_ROOT_PATH%\ChangeLog %FB_OUTPUT_DIR%\doc\ChangeLog.txt  > nul
-)
 
 
 @mkdir %FB_OUTPUT_DIR%\doc\sql.extensions 2>nul
@@ -348,7 +338,7 @@ if defined FB_EXTERNAL_DOCS (
 
 :: Clean out text notes that are either not relevant to Windows or
 :: are only of use to engine developers.
-@for %%v in (  README.makefiles README.user README.user.embedded README.user.troubleshooting README.build.mingw.html README.build.msvc.html fb2-todo.txt cleaning-todo.txt install_win32.txt README.coding.style emacros-cross_ref.html firebird_conf.txt *.*~) do (
+@for %%v in (  README.makefiles README.user.embedded README.user.troubleshooting README.build.mingw.html README.build.msvc.html fb2-todo.txt cleaning-todo.txt install_win32.txt README.coding.style emacros-cross_ref.html firebird_conf.txt *.*~) do (
   @del %FB_OUTPUT_DIR%\doc\%%v 2>nul
 )
 
@@ -453,12 +443,6 @@ copy %FB_ROOT_PATH%\builds\install\misc\databases.conf.in %FB_OUTPUT_DIR%\databa
 
 :MISC
 ::==============================================
-:: miscellany that doesn't belong anywhere else
-::==============================================
-::Metadata migration - presumably not needed for 3.0 so disabled for now
-::mkdir %FB_OUTPUT_DIR%\misc\upgrade\metadata 2>nul
-::@copy %FB_ROOT_PATH%\src\misc\upgrade\v2.1\metadata_* %FB_OUTPUT_DIR%\misc\upgrade\metadata > nul
-
 :: Make sure that qli's help.fdb is available
 ::===============================================
 @if not exist %FB_OUTPUT_DIR%\help\help.fdb (

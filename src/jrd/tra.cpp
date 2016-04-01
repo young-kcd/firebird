@@ -3580,8 +3580,8 @@ void jrd_tra::rollbackToSavepoint(thread_db* tdbb, SLONG number)
  **************************************/
 {
 	// merge all but one folowing savepoints into one
-	while(tra_save_point && tra_save_point->sav_next &&
-		  tra_save_point->sav_next->sav_number >= number)
+	while(tra_save_point && tra_save_point->sav_number > number &&
+		  tra_save_point->sav_next && tra_save_point->sav_next->sav_number >= number)
 	{
 		rollforwardSavepoint(tdbb);
 	}
@@ -4014,13 +4014,13 @@ void VerbAction::garbage_collect_idx_lite(thread_db* tdbb, jrd_tra* transaction,
  *
  * Functional description
  *	Clean up index entries and referenced BLOBs.
- *  This routine uses smaller set of staying record than original garbage_collect_idx().
+ *  This routine uses smaller set of staying record than original VIO_garbage_collect_idx().
  *
  *  Notes:
  *
  *   This speed trick is possible only because btr.cpp:insert_node() allows duplicate nodes
  *  which work as an index entry reference counter.
- *	
+ *
  **************************************/
 {
 	record_param rpb;
@@ -4201,7 +4201,7 @@ void VerbAction::undo(thread_db* tdbb, jrd_tra* transaction)
 			{
 				VIO_data(tdbb, &rpb, transaction->tra_pool);
 			}
-			else 
+			else
 			{
 				CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
 			}
@@ -4228,11 +4228,11 @@ void VerbAction::undo(thread_db* tdbb, jrd_tra* transaction)
 				new_rpb.rpb_flags = 0;
 				Record* dead_record = rpb.rpb_record;
 				// This record will be in staying list twice. Ignorable overhead.
-				update_in_place(tdbb, transaction, &rpb, &new_rpb);
+				VIO_update_in_place(tdbb, transaction, &rpb, &new_rpb);
 				if (dead_record)
 				{
-					rpb.rpb_record = NULL; // garbage_collect_idx will play with this record dirty tricks
-					garbage_collect_idx(tdbb, transaction, &rpb, dead_record);
+					rpb.rpb_record = NULL; // VIO_garbage_collect_idx will play with this record dirty tricks
+					VIO_garbage_collect_idx(tdbb, transaction, &rpb, dead_record);
 				}
 				rpb.rpb_record = save_record;
 			}
