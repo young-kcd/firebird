@@ -638,7 +638,7 @@ void TRA_get_inventory(thread_db* tdbb, UCHAR* bit_vector, TraNumber base, TraNu
  *
  * Functional description
  *	Get an inventory of the state of all transactions
- *	between the base and top transactions passed.
+ *	between the base and top (included) transactions passed.
  *	To get a consistent view of the transaction
  *	inventory (in case we ever implement sub-transactions),
  *	do handoffs to read the pages in order.
@@ -648,9 +648,12 @@ void TRA_get_inventory(thread_db* tdbb, UCHAR* bit_vector, TraNumber base, TraNu
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
+	// It does not make sence to call this function without bit_vector now
+	fb_assert(bit_vector);
+
 	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 	ULONG sequence = base / trans_per_tip;
-	const ULONG last = top / trans_per_tip;
+	const ULONG last = (top + 1) / trans_per_tip;
 
 	// fetch the first inventory page
 
@@ -660,14 +663,11 @@ void TRA_get_inventory(thread_db* tdbb, UCHAR* bit_vector, TraNumber base, TraNu
 	// move the first page into the bit vector
 
 	UCHAR* p = bit_vector;
-	if (p)
-	{
-		ULONG l = base % trans_per_tip;
-		const UCHAR* q = tip->tip_transactions + TRANS_OFFSET(l);
-		l = TRANS_OFFSET(MIN((top + TRA_MASK - base), trans_per_tip - l));
-		memcpy(p, q, l);
-		p += l;
-	}
+	ULONG l = base % trans_per_tip;
+	const UCHAR* q = tip->tip_transactions + TRANS_OFFSET(l);
+	l = TRANS_OFFSET(MIN((top + 1 + TRA_MASK - base), trans_per_tip - l));
+	memcpy(p, q, l);
+	p += l;
 
 	// move successive pages into the bit vector
 
@@ -680,13 +680,10 @@ void TRA_get_inventory(thread_db* tdbb, UCHAR* bit_vector, TraNumber base, TraNu
 
 		tip = (tx_inv_page*) CCH_HANDOFF(tdbb, &window, inventory_page(tdbb, sequence++),
 							  LCK_read, pag_transactions);
-		TPC_update_cache(tdbb, tip, sequence - 1);
-		if (p)
-		{
-			const ULONG l = TRANS_OFFSET(MIN((top + TRA_MASK - base), trans_per_tip));
-			memcpy(p, tip->tip_transactions, l);
-			p += l;
-		}
+
+		l = TRANS_OFFSET(MIN((top + 1 + TRA_MASK - base), trans_per_tip));
+		memcpy(p, tip->tip_transactions, l);
+		p += l;
 	}
 
 	CCH_RELEASE(tdbb, &window);
@@ -2232,8 +2229,6 @@ static tx_inv_page* fetch_inventory_page(thread_db* tdbb,
 
 	window->win_page = inventory_page(tdbb, sequence);
 	tx_inv_page* tip = (tx_inv_page*) CCH_FETCH(tdbb, window, lock_level, pag_transactions);
-
-	TPC_update_cache(tdbb, tip, sequence);
 
 	return tip;
 }

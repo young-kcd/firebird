@@ -279,7 +279,7 @@ void TipCache::loadInventoryPages(thread_db* tdbb)
 	// transaction in temporary buffer on a byte boundary
 	TraNumber base = hdr_oldest_transaction & ~TRA_MASK;
 
-	const FB_SIZE_T buffer_length = (hdr_next_transaction - base + TRA_MASK) / 4;
+	const FB_SIZE_T buffer_length = (hdr_next_transaction + 1 - base + TRA_MASK) / 4;
 	Firebird::Array<UCHAR> transactions(buffer_length);
 
 	UCHAR *buffer = transactions.begin();

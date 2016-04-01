@@ -302,12 +302,6 @@ inline void TPC_set_state(thread_db* tdbb, TraNumber number, SSHORT state)
 
 int TPC_snapshot_state(thread_db* tdbb, TraNumber number);
 
-// FIXME: remove unneeded function
-inline void TPC_update_cache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, ULONG sequence)
-{
-	//tdbb->getDatabase()->dbb_tip_cache->updateCache(tip_page, sequence);
-}
-
 } // namespace Jrd
 
 #endif // JRD_TPC_PROTO_H
