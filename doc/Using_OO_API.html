@@ -7,7 +7,7 @@
 	<META NAME="AUTHOR" CONTENT="alex ">
 	<META NAME="CREATED" CONTENT="20130531;10003100">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
-	<META NAME="CHANGED" CONTENT="20160331;18381100">
+	<META NAME="CHANGED" CONTENT="20160401;21314800">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
 	<STYLE TYPE="text/css">
 	<!--
@@ -68,6 +68,22 @@ examples/dbcrypt (plugin performing </SPAN></FONT><FONT SIZE=4><SPAN LANG="en-US
 database encryption</SPAN></FONT><FONT SIZE=4><SPAN STYLE="font-weight: normal">)
 directories. It's supposed that the reader is familiar with ISC API
 used in Firebird since interbase times.</SPAN></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><SPAN STYLE="font-weight: normal">This
+document does not pretend to be a full Firebird 3 documentation –
+it just describes new object oriented API, and a reader should be
+familiar with main Firebird concepts, knowledge about ISC API is also
+much welcome. For example – when describing how to work with
+services there is no explanation what is service and why is it
+needed, only description of how to obtain <A HREF="#Service">IService</A>
+interface and how to use it. Also pay attention that samples of code
+do not use a lot of powerful features of C++. Not used reference
+counted pointers, not user other RAII holders, not used templates
+(except one present in firebird public headers), etc. Primary goal is
+to make this text usable not only to C++ people because our API is
+oriented to support not only C++ but other, more simple languages
+too.</SPAN></FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-top: 0.17in; margin-bottom: 0.2in; page-break-after: avoid">
@@ -487,19 +503,19 @@ row in a set). To work with a message we also need buffer for it:</FONT></P>
 new unsigned char[meta-&gt;getMessageLength(&amp;status)];</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
-<P STYLE="margin-bottom: 0in"><A NAME="__DdeLink__41_199450663"></A><A NAME="__DdeLink__55_199450663"></A>
-<FONT SIZE=4>IResultSet has a lot of various fetch methods but when
-cursor is not opened with SCROLL option only fetchNext() works, i.e.
-one can navigate only forward record by record. In addition to errors
-and warnings in status fetchNext() returns completion code, which may
-have values RESULT_OK (when buffer is filled with values for next
-row) or RESULT_NO_DATA (when no more rows left in cursor).
-RESULT_NO_DATA is not error state, it's normal state after completion
-of the method, but we know that data in cursor is over. If status
-wrapper, not throwing exception in case of error return is used, one
-more value – RESULT_ERROR – may be returned, that means no data
-in buffer and error vector in status. Method fetchNext() is usually
-called in a cycle:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>IResultSet has a lot of
+various fetch methods but when cursor is not opened with SCROLL
+option only fetchNext() works, i.e. one can navigate only forward
+record by record. In addition to errors and warnings in status
+fetchNext() returns completion code, which may have values RESULT_OK
+(when buffer is filled with values for next row) or RESULT_NO_DATA
+(when no more rows left in cursor). RESULT_NO_DATA is not error
+state, it's normal state after completion of the method, but we know
+that data in cursor is over. If status wrapper, not throwing
+exception in case of error return is used, one more value –
+RESULT_ERROR – may be returned, that means no data in buffer and
+error vector in status. Method fetchNext() is usually called in a
+cycle:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>while
 (curs-&gt;fetchNext(&amp;status, buffer) == IStatus::RESULT_OK)</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>{</I></FONT></P>
@@ -768,17 +784,366 @@ using attachServiceManager() method of <A HREF="#Provider">IProvider</A>.
 is used later to talk to service. To prepare SPB to attach to service
 manager one can use IXpbBuilder:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>IXpbBuilder* spb1 =
-utl-&gt;getXpbBuilder(&amp;status, IXpbBuilder::SPB_START, NULL, 0);</I></FONT></P>
+utl-&gt;getXpbBuilder(&amp;status, IXpbBuilder::SPB_ATTACH, NULL, 0);</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>spb1-&gt;insertString(&amp;status,
-isc_dpb_user_name, “sysdba”);</I></FONT></P>
+isc_spb_user_name, “sysdba”);</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>spb1-&gt;insertString(&amp;status,
-isc_dpb_password, “masterkey”);</I></FONT></P>
+isc_spb_password, “masterkey”);</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>and proceed with attach:</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>IService* svc =
-prov-&gt;attachServiceManager(&amp;status, “service_mgr”,
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><A HREF="#Service">IService</A>*
+svc = prov-&gt;attachServiceManager(&amp;status, “service_mgr”,
 spb1-&gt;getBufferLength(&amp;status), spb1-&gt;getBuffer(&amp;status));</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Using IService one can
+perform both available for services actions – start services and
+query various information about started utilities and server in
+general. When querying information one limitation takes place –
+formats of parameter blocks, used by query() method, in Firebird 3
+are not supported by IXpbBuilder. Support will be probably added in
+later versions, in Firebird 3 you will have to build and analyze that
+blocks manually. Format of that blocks matches old format (used in
+ISC API) one to one. </FONT>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>To start service one
+should first of all create appropriate SPB:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>IXpbBuilder* spb2 =
+utl-&gt;getXpbBuilder(&amp;status, IXpbBuilder::SPB_START, NULL, 0);</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>and add required items to
+it. For example, to print encryption statistics for database employee
+the following should be placed into SPB:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>spb2-&gt;insertTag(&amp;status,
+isc_action_svc_db_stats);</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>spb2-&gt;insertString(&amp;status,
+isc_spb_dbname, &quot;employee&quot;);</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>spb2-&gt;insertInt(&amp;status,
+isc_spb_options, isc_spb_sts_encryption);</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>After it service can be
+started using start() method of <A HREF="#Service">IService</A>
+interface:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>svc-&gt;start(&amp;status,
+spb2-&gt;getBufferLength(&amp;status), spb2-&gt;getBuffer(&amp;status));</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Many started services
+(including mentioned here gstat) return text information during
+execution. To display it one should query started service anout that
+information line by line. This is done by calling query() method of 
+<A HREF="#Service">IService</A> interface with appropriate send and
+receive blocks of parameters. Send block may contain various helper
+information (like timeout when querying service) or information to be
+passed to stdin of service utility or may be empty in the simplest
+case. Receive block must contain list of tags you want to receive
+from service. For most of utilities this is single isc_info_svc_line:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>const unsigned char
+receiveItems1[] = {isc_info_svc_line};</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>To query information one
+also needs a buffer for that information:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>unsigned char
+results[1024];</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>After that preliminary
+steps we are ready to query service in a loop (each line returned in
+a single call to query()):</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>do</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">     <FONT SIZE=4><I>svc-&gt;query(&amp;status,
+0, NULL, sizeof(receiveItems1), receiveItems1, sizeof(results),
+results);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>} while
+(printInfo(results, sizeof(results)));</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>In this example we suppose
+that printInfo() function returns TRUE as long as service returns
+results block containing next output line (i.e. till end of data
+stream from service). Format of results block varies from service to
+service, and some services like gsec produce historical formats that
+are not trivial for parse – but this is out of our scope here. A
+minimum working sample of printInfo() is present in example
+09.service.cpp.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Same query method is used
+to retrieve information about server but in this case query function
+is not invoked in a loop, i.e. buffer must be big enough to fit all
+information at once. This is not too hard – typically such calls do
+not return much data. As in previous case begin with receive block
+placing required items in it – in our example it's
+isc_info_svc_server_version:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>const unsigned char
+receiveItems2[] = {isc_info_svc_server_version};</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Existing from previous
+call results buffer may be reused. No loop is needed here:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>svc-&gt;query(&amp;status,
+0, NULL, sizeof(receiveItems2), receiveItems2, sizeof(results),
+results);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>printInfo(results,
+sizeof(results));</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>After finishing with
+services tasks do not forget to close an interface:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>svc-&gt;detach(&amp;status);</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-top: 0.17in; margin-bottom: 0.2in; page-break-after: avoid">
+<FONT FACE="Albany, sans-serif"><FONT SIZE=5>Writing plugins.</FONT></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>To write a plugin means to
+implement some interfaces and place your implementation into dynamic
+library (.dll in windows or .so in linux) later referenced as <I>plugin
+module</I> or just <I>module</I>. In most cases single plugin is
+place in dynamic library but in common case. One of that interfaces –
+<A HREF="#PluginModule">IPluginModule</A> – is module-wide (as more
+or less clear from it's name), others are per plugin. Also each
+plugin module should contain special exported entrypoint
+firebird_plugin() which name is defined in include file
+firebird/Interfaces.h as FB_PLUGIN_ENTRY_POINT.</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>In previous part of this
+text we were mostly describing how to use existing interfaces, here
+main attention will be paid to implementing interfaces yourself.
+Certainly to do it one can and should use already existing interfaces
+both generic needed for accessing firebird databases (already
+described) and some more interfaces specifically designed for
+plugins.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<H1><FONT SIZE=4>Implementation of plugin module.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Plugins actively interact
+with special firebird component called <I>plugin manager</I>. In
+particular plugin manager should be aware what plugin modules were
+loaded and must be notified if operating system tries to unload one
+of that modules without explicit plugin manager command (this may
+happen first of all when using embedded access – when exit() is
+called in a program or main firebird library <I><SPAN STYLE="font-weight: normal">fbclient</SPAN></I>
+is unloaded). Primary task of IPluginModule interface is that
+notification. First of all one must decide - how to detect that
+module is going to be unloaded? When dynamic library is unloaded for
+some reason a lot of OS-dependent actions is performed and some of
+that actions may be used to detect this fact in the program. When
+writing plugins distributed with firebird we always use invocation of
+destructor of global variable. The big “plus” for this method is
+that it is OS independent (though something like atexit() function
+maybe also used successfully). But use of destructor makes it
+possible to easily concentrate almost everything related with unload
+detection in single class implementing at the same time <A HREF="#PluginModule">IPluginModule</A>
+interface.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Minimum implementation
+looks as follows:</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>class PluginModule :
+public IPluginModuleImpl&lt;PluginModule, CheckStatusWrapper&gt;</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>private:</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>IPluginManager*
+pluginManager;</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>public:</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>PluginModule()</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>:
+pluginManager(NULL)</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>{ }</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>~PluginModule()</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>if
+(pluginManager)</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">           
+<FONT SIZE=4><I>pluginManager-&gt;unregisterModule(this);</I></FONT></P>
+<P STYLE="margin-bottom: 0in">            <FONT SIZE=4><I>doClean();</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>void
+registerMe(IPluginManager* m)</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>pluginManager =
+m;</I></FONT></P>
+<P STYLE="margin-bottom: 0in">       
+<FONT SIZE=4><I>pluginManager-&gt;registerModule(this);</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>void doClean()</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">          <FONT SIZE=4><I>pluginManager
+= NULL;</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>};</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>The only data member is
+plugin manager interface <A HREF="#PluginManager">IPluginManager</A>.
+It's passed to registerModule() function and saved in private
+variable, at the same time module is registered in plugin manager by
+the call to registerModule() method with own address as a single
+parameter. Variable <I>pluginManager </I>not only stores pointer to
+interface, at the same time it serves as a flag that module is
+registered. When destructor of registered module is invoked it
+notifies plugin manager (yes, this is what for this class exists!)
+about unexpected unload by the call to unregisterModule() passing
+pointer to itself. When plugin manager is going to unload module in
+regular way in first of all calls doClean() method changing module
+state to unregistered and this avoiding call to unregisterModule()
+when OS performs actual unload.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Implementing plugin's
+interface IPluginModule we met with first interface required to
+implement plugins – <A HREF="#PluginManager">IPluginManager</A>. It
+will be actively used later, the rest of internals of this class will
+hardly be required to you after copying it to your program. Just
+don't forget to declare global variable of this type and call
+registerMe() function from FB_PLUGIN_ENTRY_POINT.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<H1><FONT SIZE=4>Core interface of any plugin.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Let's start implementing
+plugin itself. The type of main interface depends upon plugin type
+(which is obvious), but all of them are based on common reference
+counted interface IPluginBase which performs common for all plugins
+(and very simple) tasks. Each plugin has some (also reference
+counted) object which <I>owns</I> this plugin. In order to perform
+smart plugin lifetime management any plugin must be able to store
+that owner information and report it to plugin manager on request.
+That means that each plugin must implement two trivial methods
+setOwner() and getOwner() contained in IPluginBase interface.
+Type-dependent methods are certainly more interesting - they are
+discussed in interfaces description part.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Let's take a look at
+typical part of any plugin implementation (here I specially use
+non-existent type SomePlugin):</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>class MyPlugin : public
+ISomePluginImpl&lt;MyPlugin, CheckStatusWrapper&gt;</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>public:</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>explicit
+MyPlugin(<A HREF="#PluginConfig">IPluginConfig</A>* cnf) throw()</I></FONT></P>
+<P STYLE="margin-bottom: 0in">                <FONT SIZE=4><I>:
+config(cnf), refCounter(0), owner(NULL)</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">                <FONT SIZE=4><I>config-&gt;addRef();</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in; font-style: normal"><FONT SIZE=4>Constructor
+gets as parameter plugin configuration interface. If you are going to
+have you plugin configured in some way it's good idea to save this
+interface in your plugin and use it later. This will let you use
+common for all firebird configuration style letting users have
+familiar configuration and minimize code written. Certainly when
+saving any reference counted interface it's better not forget to add
+reference to it. Also set reference counter to 0 and plugin owner to
+NULL.</FONT></P>
+<P STYLE="margin-bottom: 0in; font-style: normal"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>~MyPlugin()</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">                <FONT SIZE=4><I>config-&gt;release();</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in; font-style: normal"><FONT SIZE=4>Destructor
+releases config interface. Pay attention – we do not change
+reference counter of our owner cause it owns us, not we own it.</FONT></P>
+<P STYLE="margin-bottom: 0in; font-style: normal"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>// IRefCounted
+implementation</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>int release()</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">                <FONT SIZE=4><I>if
+(--refCounter == 0)</I></FONT></P>
+<P STYLE="margin-bottom: 0in">                <FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">                        <FONT SIZE=4><I>delete
+this;</I></FONT></P>
+<P STYLE="margin-bottom: 0in">                        <FONT SIZE=4><I>return
+0;</I></FONT></P>
+<P STYLE="margin-bottom: 0in">                <FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in">                <FONT SIZE=4><I>return
+1;</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>void addRef()</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">                <FONT SIZE=4><I>++refCounter;</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in; font-style: normal"><FONT SIZE=4>Absolutely
+typical implementation of reference counted object.</FONT></P>
+<P STYLE="margin-bottom: 0in; font-style: normal"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>// IPluginBase
+implementation</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>void
+setOwner(IReferenceCounted* o)</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">                <FONT SIZE=4><I>owner =
+o;</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>IReferenceCounted*
+getOwner()</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">                <FONT SIZE=4><I>return
+owner;</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in; font-style: normal"><FONT SIZE=4>As it
+was promised implementation of IPluginBase is trivial.</FONT></P>
+<P STYLE="margin-bottom: 0in; font-style: normal"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>// ISomePlugin
+implementation</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>// … here go
+various methods required for particular plugin type</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>private:</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>IPluginConfig*
+config;</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>FbSampleAtomic
+refCounter;</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>IReferenceCounted*
+owner;</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>};</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>With this sample formal
+part of main plugin interface implementation is over. After adding
+type-specific methods (and writing probably a lo-o-o-ot of code to
+make them useful) interface is ready. But to complete with plugin one
+more interface – <A HREF="#PluginFactory">IPluginFactory</A> should
+be added. Factory as always creates instances of plugin and returns
+them to plugin manager. Factory typically looks this way:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>class Factory : public
+IPluginFactoryImpl&lt;Factory, CheckStatusWrapper&gt;</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>public:</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>IPluginBase*
+createPlugin(CheckStatusWrapper* status, IPluginConfig*
+factoryParameter)</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>try</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">            <FONT SIZE=4><I>MyPlugin* p
+= new MyPlugin(factoryParameter);</I></FONT></P>
+<P STYLE="margin-bottom: 0in">            <FONT SIZE=4><I>p-&gt;addRef();</I></FONT></P>
+<P STYLE="margin-bottom: 0in">            <FONT SIZE=4><I>return p;</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>catch (...)</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>{</I></FONT></P>
+<P STYLE="margin-bottom: 0in">            <FONT SIZE=4><I>ISC_STATUS
+st[3] = {isc_arg_gds, isc_virmemexh, isc_arg_end};</I></FONT></P>
+<P STYLE="margin-bottom: 0in">            <FONT SIZE=4><I>status-&gt;setErrors(st);</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>return NULL;</I></FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>}</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>};</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
@@ -1009,6 +1374,76 @@ interface:</FONT></P>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
+<P STYLE="margin-bottom: 0in"><A NAME="PluginConfig"></A><FONT SIZE=4>PluginConfig
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	getConfigFileName()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IConfig*
+	getDefaultConfig(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IFirebirdConf*
+	getFirebirdConf(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	setReleaseDelay(StatusType* status, ISC_UINT64 microSeconds)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="PluginFactory"></A><FONT SIZE=4>PluginFactory
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IPluginBase*
+	createPlugin(StatusType* status, IPluginConfig* factoryParameter)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="PluginManager"></A><FONT SIZE=4>PluginManager
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	registerPluginFactory(unsigned pluginType, const char* defaultName,
+	IPluginFactory* factory)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	registerModule(IPluginModule* cleanup)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	unregisterModule(IPluginModule* cleanup)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IPluginSet*
+	getPlugins(StatusType* status, unsigned pluginType, const char*
+	namesList, IFirebirdConf* firebirdConf)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IConfig*
+	getConfig(StatusType* status, const char* filename)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	releasePlugin(IPluginBase* plugin)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Constants defined by
+PluginManager interface (plugin types):</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>TYPE_PROVIDER</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>TYPE_AUTH_SERVER</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>TYPE_AUTH_CLIENT</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>TYPE_AUTH_USER_MANAGEMENT</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>TYPE_EXTERNAL_ENGINE</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>TYPE_TRACE</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>TYPE_WIRE_CRYPT</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>TYPE_DB_CRYPT</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>TYPE_KEY_HOLDER</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="PluginModule"></A><FONT SIZE=4>PluginModule
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void doClean()</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
 <P STYLE="margin-bottom: 0in"><A NAME="Provider"></A><FONT SIZE=4>Provider
 interface:</FONT></P>
 <OL>
@@ -1170,7 +1605,7 @@ returned by getState() method:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>- completion codes:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_ERROR</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_OK</FONT></P>
-<P STYLE="margin-bottom: 0in"><A NAME="__DdeLink__38_199450663"></A><FONT SIZE=4>RESULT_NO_DATA</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_NO_DATA</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_SEGMENT</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
