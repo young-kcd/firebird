@@ -653,7 +653,7 @@ void TRA_get_inventory(thread_db* tdbb, UCHAR* bit_vector, TraNumber base, TraNu
 
 	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 	ULONG sequence = base / trans_per_tip;
-	const ULONG last = (top + 1) / trans_per_tip;
+	const ULONG last = top / trans_per_tip;
 
 	// fetch the first inventory page
 
