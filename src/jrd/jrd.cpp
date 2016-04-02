@@ -6534,6 +6534,12 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 
 	fb_assert(!dbb->locked());
 
+#ifdef SUPERSERVER_V2
+	TRA_header_write(tdbb, dbb, 0);	// Update transaction info on header page.
+#endif
+	if (flags & SHUT_DBB_RELEASE_POOLS)
+		TRA_update_counters(tdbb, dbb);
+
 	// Disable AST delivery as we're about to release all locks
 
 	{ // scope
@@ -6542,12 +6548,6 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 	}
 
 	// Shutdown file and/or remote connection
-
-#ifdef SUPERSERVER_V2
-	TRA_header_write(tdbb, dbb, 0);	// Update transaction info on header page.
-#endif
-	if (flags & SHUT_DBB_RELEASE_POOLS)
-		TRA_update_counters(tdbb, dbb);
 
 	VIO_fini(tdbb);
 
