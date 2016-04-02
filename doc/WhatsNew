@@ -1,4 +1,64 @@
   **************************
+  * v2.5.6
+  **************************
+
+    * Bugfix CORE-5161
+        Unique index could be created on non-unique data
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5157
+        Server goes into infinite loop when data is sent from client to the service in small packets
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5122
+        Expression index may not be used by the optimizer if created and used in different connection charsets
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5117
+        Firebird embedded could crash on unload if was used as pure client only
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5110
+        False PK\FK violation could be reported when attachment used isc_dpb_no_garbage_collect flag
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5087
+        Database shutdown can cause server crash if multiple attachments run EXECUTE STATEMENT
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5078
+        "Invalid BLOB ID" error
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5068
+        GBAK service with invalid parameter crashes the server
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5067
+        Blocking new connections as a consequence of the too long sweep security2.fdb
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5062
+        CHAR_TO_UUID on column with index throws "expression evaluation not supported. Human readable UUID argument for CHAR_TO_UUID must be of exact length 36"
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-4983
+        Server crashes during execution of unprepared statement
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+
+  **************************
   * v2.5.5
   **************************
 
