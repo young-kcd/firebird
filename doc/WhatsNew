@@ -1,4 +1,114 @@
   **************************
+  * v3.0 Final Release
+  **************************
+
+    * Bugfix CORE-5181
+        Build fails when HAVE_MMAP is not defined
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5179
+        Database-level statistics (MON$STAT_GROUP = 0) may contain multiple rows under concurrent load
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5166
+        Wrong error message with UNIQUE BOOLEAN field
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5165
+        HAVING COUNT(*) NOT IN ( <Q> ) prevent record from appearing in outer resultset when it should be there (<Q> = resultset without nulls)
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5162
+        SEC$ tables and tag/attributes
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5161
+        Unique index could be created on non-unique data
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-5159
+        Regression: engine may throw transliteration errors when running from non-ASCII system path
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5157
+        Server goes into infinite loop when data is sent from client to the service in small packets
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5155
+        [CREATE OR] ALTER USER statement: clause PASSWORD (if present) must be always specified just after USER
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5153
+        Regression: Server crashes when aggregate functions are used together with NOT IN predicate
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5149
+        Regression: LEFT JOIN incorrectly pushes COALESCE into the inner stream causing wrong results
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5147
+        CREATE TRIGGER fails with "ambiguous field name between table B and table A" error
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5146
+        Suboptimal join order if one table has a selective predicate and MIN is calculated for the other one
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5144
+        Deadlock when database is encrypted or decrypted under high parallel load
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5143
+        GBAK restore fails when there is SQL function accessing table and switch -O(NE_AT_A_TIME) is used
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5140
+        Wrong error message when user tries to set number of page buffers into not supported value
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-5134
+        Samples of dbcrypt-related plugins contain references to internal files
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5133
+        ALTER SEQUENCE RESTART WITH does not change the initial value
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5130
+        Message about "invalid request BLR" attempting to compile wrong DDL of view with both subquery and "WITH CHECK OPTION" in its DDL
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5122
+        Expression index may not be used by the optimizer if created and used in different connection charsets
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-5180
+        Do not require root rights to build linux package
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+
+  **************************
   * v3.0 Release Candidate 2
   **************************
 
