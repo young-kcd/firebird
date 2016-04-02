@@ -5868,17 +5868,17 @@ static bool shutdown_database(Database* dbb, const bool release_pools)
 	{	//scope
 		Database::SyncGuard	syncGuard1(dbb);
 
-		// Disable AST delivery as we're about to release all locks
-
-		dbb->dbb_flags |= DBB_no_ast;
-
-		// Shutdown file and/or remote connection
-
 #ifdef SUPERSERVER_V2
 		TRA_header_write(tdbb, dbb, 0L);	// Update transaction info on header page.
 #endif
 		if (release_pools)
 			TRA_update_counters(tdbb, dbb);
+
+		// Disable AST delivery as we're about to release all locks
+
+		dbb->dbb_flags |= DBB_no_ast;
+
+		// Shutdown file and/or remote connection
 
 		MET_clear_cache(tdbb);
 
