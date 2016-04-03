@@ -1133,7 +1133,7 @@ public:
 			buffer.getBuffer(values.getCount());
 			counters.getBuffer(num);
 		}
-		catch(const Exception&)
+		catch (const Exception&)
 		{
 			counters.free();
 			buffer.free();
