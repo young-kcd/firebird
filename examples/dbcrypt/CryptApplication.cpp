@@ -41,11 +41,6 @@ public:
 		}
 		return 1;
 	}
-
-	IPluginModule* getModule()
-	{
-		return NULL;		// OK for application, not for plugin
-	}
 };
 
 class App

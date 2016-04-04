@@ -29,46 +29,36 @@
 namespace
 {
 
-IMaster* master = NULL;
-IPluginManager* pluginManager = NULL;
-
 class PluginModule : public IPluginModuleImpl<PluginModule, CheckStatusWrapper>
 {
 public:
 	PluginModule()
-		: flag(false)
+		: pluginManager(NULL)
 	{ }
-
-	void registerMe()
-	{
-		pluginManager->registerModule(this);
-		flag = true;
-	}
 
 	~PluginModule()
 	{
-		if (flag)
+		if (pluginManager)
 		{
 			pluginManager->unregisterModule(this);
 			doClean();
 		}
 	}
 
-	IPluginModule* getModule()
+	void registerMe(IPluginManager* m)
 	{
-		return this;
+		pluginManager = m;
+		pluginManager->registerModule(this);
 	}
 
 	void doClean()
 	{
-		flag = false;
+		pluginManager = NULL;
 	}
 
 private:
-	bool flag;
+	IPluginManager* pluginManager;
 };
-
-PluginModule module;
 
 class CryptKeyHolder : public IKeyHolderPluginImpl<CryptKeyHolder, CheckStatusWrapper>
 {
@@ -101,11 +91,6 @@ public:
 	void addRef()
 	{
 		++refCounter;
-	}
-
-	IPluginModule* getModule()
-	{
-		return &module;
 	}
 
 	void setOwner(Firebird::IReferenceCounted* o)
@@ -265,38 +250,25 @@ ICryptKeyCallback* CryptKeyHolder::keyHandle(CheckStatusWrapper* status, const c
 class Factory : public IPluginFactoryImpl<Factory, CheckStatusWrapper>
 {
 public:
-	IPluginModule* getModule()
-	{
-		return &module;
-	}
-
 	IPluginBase* createPlugin(CheckStatusWrapper* status, IPluginConfig* factoryParameter)
 	{
-		try
-		{
-			CryptKeyHolder* p = new CryptKeyHolder(factoryParameter);
-			p->addRef();
-			return p;
-		}
-		catch (...)
-		{
-			ISC_STATUS st[3] = {isc_arg_gds, isc_virmemexh, isc_arg_end};
-			status->setErrors(st);
-		}
-		return NULL;
+		CryptKeyHolder* p = new CryptKeyHolder(factoryParameter);
+		p->addRef();
+		return p;
 	}
 };
 
+PluginModule module;
 Factory factory;
 
 } // anonymous namespace
 
-extern "C" void FB_DLL_EXPORT FB_PLUGIN_ENTRY_POINT(IMaster* m)
+extern "C" void FB_DLL_EXPORT FB_PLUGIN_ENTRY_POINT(IMaster* master)
 {
-	master = m;
-	pluginManager = master->getPluginManager();
+	IPluginManager* pluginManager = master->getPluginManager();
 
-	module.registerMe();
+	module.registerMe(pluginManager);
 	pluginManager->registerPluginFactory(IPluginManager::TYPE_KEY_HOLDER, "CryptKeyHolder_example",
 		&factory);
 }
+
