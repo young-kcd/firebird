@@ -667,8 +667,8 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 
 bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
-							  jrd_tra* transaction,
-							  MemoryPool* pool, bool writelock)
+							  jrd_tra* transaction, MemoryPool* pool,
+							  bool writelock, bool noundo)
 {
 /**************************************
  *
@@ -721,7 +721,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 	rpb->rpb_runtime_flags &= ~(RPB_undo_data | RPB_undo_read);
 	int forceBack = 0;
 
-	if (state == tra_us && !(transaction->tra_flags & TRA_system))
+	if (state == tra_us && !noundo && !(transaction->tra_flags & TRA_system))
 	{
 		switch (get_undo_data(tdbb, transaction, rpb, pool))
 		{
@@ -1083,7 +1083,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 				rpb->rpb_transaction_nr, transaction->tra_number);
 #endif
 
-			if (!(rpb->rpb_flags & rpb_chained) && !(transaction->tra_flags & TRA_system))
+			if (!noundo && !(rpb->rpb_flags & rpb_chained) && !(transaction->tra_flags & TRA_system))
 			{
 				fb_assert(forceBack == 0);
 				forceBack = 0;
@@ -1417,9 +1417,8 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	if (rpb->rpb_runtime_flags & (RPB_refetch | RPB_undo_read))
 	{
-		rpb->rpb_runtime_flags |= RPB_no_undo;
-		VIO_refetch_record(tdbb, rpb, transaction, false);
-		rpb->rpb_runtime_flags &= ~(RPB_refetch | RPB_no_undo);
+		VIO_refetch_record(tdbb, rpb, transaction, false, true);
+		rpb->rpb_runtime_flags &= ~RPB_refetch;
 		fb_assert(!(rpb->rpb_runtime_flags & RPB_undo_read));
 	}
 
@@ -2093,7 +2092,7 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, jrd_tra* transaction, MemoryPoo
 	const USHORT lock_type = (rpb->rpb_stream_flags & RPB_s_update) ? LCK_write : LCK_read;
 
 	if (!DPM_get(tdbb, rpb, lock_type) ||
-		!VIO_chase_record_version(tdbb, rpb, transaction, pool, false))
+		!VIO_chase_record_version(tdbb, rpb, transaction, pool, false, false))
 	{
 		return false;
 	}
@@ -2451,9 +2450,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 
 	if (org_rpb->rpb_runtime_flags & (RPB_refetch | RPB_undo_read))
 	{
-		org_rpb->rpb_runtime_flags |= RPB_no_undo;
-		VIO_refetch_record(tdbb, org_rpb, transaction, false);
-		org_rpb->rpb_runtime_flags &= ~(RPB_refetch | RPB_no_undo);
+		VIO_refetch_record(tdbb, org_rpb, transaction, false, true);
+		org_rpb->rpb_runtime_flags &= ~RPB_refetch;
 		fb_assert(!(org_rpb->rpb_runtime_flags & RPB_undo_read));
 	}
 
@@ -2915,7 +2913,7 @@ bool VIO_next_record(thread_db* tdbb,
 		{
 			return false;
 		}
-	} while (!VIO_chase_record_version(tdbb, rpb, transaction, pool, false));
+	} while (!VIO_chase_record_version(tdbb, rpb, transaction, pool, false, false));
 
 	if (rpb->rpb_runtime_flags & RPB_undo_data)
 		fb_assert(rpb->getWindow(tdbb).win_bdb == NULL);
@@ -2991,7 +2989,8 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format, Mem
 }
 
 
-bool VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction, bool writelock)
+bool VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction,
+						bool writelock, bool noundo)
 {
 /**************************************
  *
@@ -3013,7 +3012,7 @@ bool VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction
 	const TraNumber tid_fetch = rpb->rpb_transaction_nr;
 
 	if (!DPM_get(tdbb, rpb, LCK_read) ||
-		!VIO_chase_record_version(tdbb, rpb, transaction, tdbb->getDefaultPool(), writelock))
+		!VIO_chase_record_version(tdbb, rpb, transaction, tdbb->getDefaultPool(), writelock, noundo))
 	{
 		if (writelock)
 			return false;
@@ -3710,9 +3709,8 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 
 	if (org_rpb->rpb_runtime_flags & (RPB_refetch | RPB_undo_read))
 	{
-		org_rpb->rpb_runtime_flags |= RPB_no_undo;
-		VIO_refetch_record(tdbb, org_rpb, transaction, false);
-		org_rpb->rpb_runtime_flags &= ~(RPB_refetch | RPB_no_undo);
+		VIO_refetch_record(tdbb, org_rpb, transaction, false, true);
+		org_rpb->rpb_runtime_flags &= ~RPB_refetch;
 		fb_assert(!(org_rpb->rpb_runtime_flags & RPB_undo_read));
 	}
 
@@ -4703,9 +4701,6 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
  **********************************************************/
 {
 	if (!transaction->tra_save_point)
-		return udNone;
-
-	if (rpb->rpb_runtime_flags & RPB_no_undo)
 		return udNone;
 
 	VerbAction* action = transaction->tra_save_point->sav_verb_actions;

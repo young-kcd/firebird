@@ -61,7 +61,8 @@ struct record_param
 		  rpb_page(0), rpb_line(0),
 		  rpb_f_page(0), rpb_f_line(0),
 		  rpb_b_page(0), rpb_b_line(0),
-		  rpb_address(NULL), rpb_length(0), rpb_flags(0), rpb_stream_flags(0),
+		  rpb_address(NULL), rpb_length(0),
+		  rpb_flags(0), rpb_stream_flags(0), rpb_runtime_flags(0),
 		  rpb_org_scans(0), rpb_window(DB_PAGE_SPACE, -1)
 	{
 	}
@@ -127,8 +128,7 @@ const USHORT RPB_s_sweeper	= 0x04;	// garbage collector - skip swept pages
 
 const USHORT RPB_refetch	= 0x01;	// re-fetch is required
 const USHORT RPB_undo_data	= 0x02;	// data got from undo log
-const USHORT RPB_no_undo	= 0x04;	// don't use undo log when retrieving data
-const USHORT RPB_undo_read	= 0x08;	// read was performed using the undo log
+const USHORT RPB_undo_read	= 0x04;	// read was performed using the undo log
 
 const unsigned int MAX_DIFFERENCES	= 1024;	// Max length of generated Differences string
 											// between two records
