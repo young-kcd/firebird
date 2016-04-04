@@ -1104,43 +1104,32 @@ public:
 		}
 
 		unsigned num = 0;
-		try
-		{
-			values.push(EPB_version1);
+		values.push(EPB_version1);
 
-			for (const char** e = events; *e; ++e)
+		for (const char** e = events; *e; ++e)
+		{
+			++num;
+
+			string ev(*e);
+			ev.rtrim();
+
+			if (ev.length() > 255)
 			{
-				++num;
-
-				string ev(*e);
-				ev.rtrim();
-
-				if (ev.length() > 255)
-				{
-					(Arg::Gds(isc_random) << ("Too long event name: " + ev)
-						<< Arg::SqlState("HY024")).raise();
-						// HY024: Invalid attribute value
-				}
-				values.push(ev.length());
-				values.push(reinterpret_cast<const unsigned char*>(ev.begin()), ev.length());
-				values.push(0);
-				values.push(0);
-				values.push(0);
-				values.push(0);
+				(Arg::Gds(isc_random) << ("Too long event name: " + ev)
+					<< Arg::SqlState("HY024")).raise();
+					// HY024: Invalid attribute value
 			}
-
-			// allocate memory for various buffers
-			buffer.getBuffer(values.getCount());
-			counters.getBuffer(num);
+			values.push(ev.length());
+			values.push(reinterpret_cast<const unsigned char*>(ev.begin()), ev.length());
+			values.push(0);
+			values.push(0);
+			values.push(0);
+			values.push(0);
 		}
-		catch (const Exception&)
-		{
-			counters.free();
-			buffer.free();
-			values.free();
 
-			throw;
-		}
+		// allocate memory for various buffers
+		buffer.getBuffer(values.getCount());
+		counters.getBuffer(num);
 	}
 
 	unsigned getLength()
