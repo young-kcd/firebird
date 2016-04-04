@@ -7,7 +7,7 @@
 	<META NAME="AUTHOR" CONTENT="alex ">
 	<META NAME="CREATED" CONTENT="20130531;10003100">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
-	<META NAME="CHANGED" CONTENT="20160401;21314800">
+	<META NAME="CHANGED" CONTENT="20160404;21484900">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
 	<STYLE TYPE="text/css">
 	<!--
@@ -42,8 +42,8 @@ language-specific wrappers should better be designed for different
 languages making use of API easier. Currently we have wrappers for
 C++ and Pascal, Java is coming soon. From end-user POV calls from C++
 and Pascal have absolutely no difference, though some additional
-language-specific features present in C++ (like automatic status
-check after API calls) are missing in Pascal.</SPAN></FONT></STRONG></P>
+language-specific features present in C++ (like ability to turn off
+automatic status check after API calls) are missing in Pascal.</SPAN></FONT></STRONG></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in; font-weight: normal"><FONT SIZE=4>Typically
@@ -907,6 +907,12 @@ described) and some more interfaces specifically designed for
 plugins.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Following text is actively
+using example of database encryption plugin
+examples/dbcrypt/DbCrypt.cpp. It will be good idea to compile this
+sample yourself and learn it when reading later.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
 <H1><FONT SIZE=4>Implementation of plugin module.</FONT></H1>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Plugins actively interact
 with special firebird component called <I>plugin manager</I>. In
@@ -1116,10 +1122,14 @@ owner;</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>With this sample formal
 part of main plugin interface implementation is over. After adding
 type-specific methods (and writing probably a lo-o-o-ot of code to
-make them useful) interface is ready. But to complete with plugin one
-more interface – <A HREF="#PluginFactory">IPluginFactory</A> should
-be added. Factory as always creates instances of plugin and returns
-them to plugin manager. Factory typically looks this way:</FONT></P>
+make them useful) interface is ready.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<H1><FONT SIZE=4>Plugin's factory.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>One more interface
+required for plugin to work is <A HREF="#PluginFactory">IPluginFactory</A>.
+Factory creates instances of plugin and returns them to plugin
+manager. Factory typically looks this way:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>class Factory : public
 IPluginFactoryImpl&lt;Factory, CheckStatusWrapper&gt;</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>{</I></FONT></P>
@@ -1128,28 +1138,90 @@ IPluginFactoryImpl&lt;Factory, CheckStatusWrapper&gt;</I></FONT></P>
 createPlugin(CheckStatusWrapper* status, IPluginConfig*
 factoryParameter)</I></FONT></P>
 <P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>{</I></FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>try</I></FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>{</I></FONT></P>
-<P STYLE="margin-bottom: 0in">            <FONT SIZE=4><I>MyPlugin* p
-= new MyPlugin(factoryParameter);</I></FONT></P>
-<P STYLE="margin-bottom: 0in">            <FONT SIZE=4><I>p-&gt;addRef();</I></FONT></P>
-<P STYLE="margin-bottom: 0in">            <FONT SIZE=4><I>return p;</I></FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>}</I></FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>catch (...)</I></FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>{</I></FONT></P>
-<P STYLE="margin-bottom: 0in">            <FONT SIZE=4><I>ISC_STATUS
-st[3] = {isc_arg_gds, isc_virmemexh, isc_arg_end};</I></FONT></P>
-<P STYLE="margin-bottom: 0in">            <FONT SIZE=4><I>status-&gt;setErrors(st);</I></FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>}</I></FONT></P>
-<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>return NULL;</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>MyPlugin* p =
+new MyPlugin(factoryParameter);</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>p-&gt;addRef();</I></FONT></P>
+<P STYLE="margin-bottom: 0in">        <FONT SIZE=4><I>return p;</I></FONT></P>
 <P STYLE="margin-bottom: 0in">    <FONT SIZE=4><I>}</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>};</I></FONT></P>
+<P STYLE="margin-bottom: 0in; font-style: normal"><BR>
+</P>
+<P STYLE="margin-bottom: 0in; font-style: normal"><FONT SIZE=4>Here
+attention should be payed to the fact that even in a case when code
+in a function may throw exceptions (operator new may throw in a case
+when memory exhausted) one need not always manually define try/catch
+block – implementation of firebird interfaces does this job for
+you, in implementation of IPluginFactory it's placed into template
+IPluginFactoryImpl. Take into an account that default status wrappers
+perform meaning-full processing only for FbException. But if you
+(that definitely makes sense if you work on some big project) define
+your own wrapper you can handle any type of C++ exception and pass
+useful information about it from your plugin.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<H1><FONT SIZE=4>Plugin module initialization entrypoint.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>When plugin manager loads
+plugin module it invokes module initializing routine – the only
+exported from plugin function FB_PLUGIN_ENTRY_POINT. To wrote it's
+code one will need two global variables – plugin module and plugin
+factory. In our case that is:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>PluginModule module;</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>Factory factory;</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>If you module contains
+more than one plugin you will need a factory per each plugin.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>For FB_PLUGIN_ENTRY_POINT
+we should not forget that it should be exported from plugin module,
+and it requires taking into an account some OS specifics. We do it
+using macro FB_DLL_EXPORT defined in
+examples/interfaces/ifaceExamples.h. If you are sure you write plugin
+only for some specific OS you can make this place a bit simpler. In
+minimum case the function should register module and all factories in
+plugin manager:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>extern &quot;C&quot; void
+FB_DLL_EXPORT FB_PLUGIN_ENTRY_POINT(IMaster* master)</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>{</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>IPluginManager*
+pluginManager = master-&gt;getPluginManager();</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>module.registerMe(pluginManager);</FONT></P>
+<P STYLE="margin-bottom: 0in">   
+<FONT SIZE=4>pluginManager-&gt;registerPluginFactory(IPluginManager::TYPE_DB_CRYPT,
+&quot;DbCrypt_example&quot;, &amp;factory);</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>}</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>First of all we call
+written by us not long ago PluginModule::registerMe() function which
+will saves IPluginManager for future use and registers our plugin
+module. Next time to register factory (or factories in case of
+multiple plugins per module) takes place. We must pass correct plugin
+type (valid types are enumerated in interface IPluginManager) and a
+name under which plugin will be registered. In simple case it should
+match with the name of dynamic library with plugin module. Following
+last rule will help you avoid configuring your plugin manually in
+plugins.conf.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Pay attention - unlike
+applications plugins should not use fb_get_master_interface() to
+obtain IMaster. Instance, passed to FB_PLUGIN_ENTRY_POINT, should be
+used instead. If you ever need master interface in your plugin take
+care about saving it in this function.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-top: 0.17in; margin-bottom: 0.2in; page-break-after: avoid">
 <FONT FACE="Albany, sans-serif"><FONT SIZE=5>Interfaces: from A to Z</FONT></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>In this glossary we do not
+list interfaces that are not actively used (like IRequest, needed
+first of all to support legacy ISC API requests). Same reference may
+be made for a number of methods (like compileRequest() in
+IAttachment).</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<H1><FONT SIZE=4>Generic interfaces.</FONT></H1>
 <P STYLE="margin-bottom: 0in"><A NAME="Attachment"></A><FONT SIZE=4>Attachment
 interface:</FONT></P>
 <OL>
@@ -1240,6 +1312,54 @@ interface:</FONT></P>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Config interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IConfigEntry*
+	find(StatusType* status, const char* name)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IConfigEntry*
+	findValue(StatusType* status, const char* name, const char* value)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IConfigEntry*
+	findPos(StatusType* status, const char* name, unsigned pos)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>ConfigManager interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	getDirectory(unsigned code)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IFirebirdConf*
+	getFirebirdConf()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IFirebirdConf*
+	getDatabaseConf(const char* dbName)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IConfig*
+	getPluginConfig(const char* configuredPlugin)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	getInstallDirectory()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	getRootDirectory()</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>ConfigEntry interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char* getName()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	getValue()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ISC_INT64
+	getIntValue()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_BOOLEAN
+	getBoolValue()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IConfig*
+	getSubConfig(StatusType* status)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
 <P STYLE="margin-bottom: 0in"><A NAME="Dtc"></A><FONT SIZE=4>Dtc
 interface:</FONT></P>
 <OL>
@@ -1282,6 +1402,21 @@ interface:</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	cancel(StatusType* status)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FirebirdConf</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned getKey(const
+	char* name)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ISC_INT64
+	asInteger(unsigned key)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	asString(unsigned key)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_BOOLEAN
+	asBoolean(unsigned key)</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
@@ -1743,6 +1878,211 @@ SPB_START = 3;</FONT></P>
 = 4;</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
+<H1><FONT SIZE=4>Plugin, encrypting data transferred over the wire.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>CryptKey interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	setSymmetric(StatusType* status, const char* type, unsigned
+	keyLength, const void* key)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	setAsymmetric(StatusType* status, const char* type, unsigned
+	encryptKeyLength, const void* encryptKey, unsigned decryptKeyLength,
+	const void* decryptKey)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const void*
+	getEncryptKey(unsigned* length)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const void*
+	getDecryptKey(unsigned* length)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>WireCryptPlugin interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	getKnownTypes(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	setKey(StatusType* status, ICryptKey* key)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	encrypt(StatusType* status, unsigned length, const void* from, void*
+	to)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	decrypt(StatusType* status, unsigned length, const void* from, void*
+	to)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<H1><FONT SIZE=4>Server side of authentication plugin.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Writer interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void reset()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void add(StatusType*
+	status, const char* name)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	setType(StatusType* status, const char* value)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	setDb(StatusType* status, const char* value)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>ServerBlock interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	getLogin()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const unsigned char*
+	getData(unsigned* length)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	putData(StatusType* status, unsigned length, const void* data)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ICryptKey*
+	newKey(StatusType* status)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Server interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
+	authenticate(StatusType* status, IServerBlock* sBlock, IWriter*
+	writerInterface)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<H1><FONT SIZE=4>Client side of authentication plugin.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>ClientBlock interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	getLogin()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	getPassword()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const unsigned char*
+	getData(unsigned* length)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	putData(StatusType* status, unsigned length, const void* data)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ICryptKey*
+	newKey(StatusType* status)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Client</FONT><FONT SIZE=4>
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
+	authenticate(StatusType* status, IClientBlock* cBlock)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<H1><FONT SIZE=4>User management plugin.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>UserField interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int entered()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int specified()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	setEntered(StatusType* status, int newValue)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>CharUserField interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char* get()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void set(StatusType*
+	status, const char* newValue)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>IntUserField interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int get()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void set(StatusType*
+	status, int newValue)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>User interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int operation()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ICharUserField*
+	userName()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ICharUserField*
+	password()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ICharUserField*
+	firstName()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ICharUserField*
+	lastName()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ICharUserField*
+	middleName()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ICharUserField*
+	comment()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ICharUserField*
+	attributes()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IIntUserField*
+	active()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IIntUserField*
+	admin()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	clear(StatusType* status)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>ListUsers interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void list(StatusType*
+	status, IUser* user)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>LogonInfo interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char* name()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char* role()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	networkProtocol()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	remoteAddress()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const unsigned char*
+	authBlock(unsigned* length)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Management interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	start(StatusType* status, ILogonInfo* logonInfo)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
+	execute(StatusType* status, IUser* user, IListUsers* callback)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	commit(StatusType* status)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	rollback(StatusType* status)</FONT></P>
+</OL>
+<H1><FONT SIZE=4>Database encryption plugin.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>CryptKeyCallback
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
+	callback(unsigned dataLength, const void* data, unsigned
+	bufferLength, void* buffer)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>DbCryptPlugin interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	setKey(StatusType* status, unsigned length, IKeyHolderPlugin**
+	sources, const char* keyName)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	encrypt(StatusType* status, unsigned length, const void* from, void*
+	to)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	decrypt(StatusType* status, unsigned length, const void* from, void*
+	to)</FONT></P>
+</OL>
+<H1><FONT SIZE=4>Key holder for database encryption plugin.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>KeyHolderPlugin interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
+	keyCallback(StatusType* status, ICryptKeyCallback* callback)</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ICryptKeyCallback*
+	keyHandle(StatusType* status, const char* keyName)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
 <H1><FONT SIZE=4>Non-interface objects used by API (C++ specific
 header Message.h).</FONT></H1>
 <P STYLE="margin-bottom: 0in"><A NAME="FbDate"></A><FONT SIZE=4>class
@@ -1795,6 +2135,14 @@ FbVarChar</FONT></P>
 <P STYLE="margin-bottom: 0in">    <FONT SIZE=4>void set(const char*
 s);</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>};</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>TYPE_EXTERNAL_ENGINE</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>TYPE_TRACE</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 </BODY>
