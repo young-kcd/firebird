@@ -208,7 +208,7 @@ public:
 
 	IStatus* clone() const
 	{
-		Final* ret = FB_NEW Final();
+		IStatus* ret = MasterInterfacePtr()->getStatus();
 
 		ret->setWarnings(getWarnings());
 		ret->setErrors(getErrors());
