@@ -529,8 +529,16 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2)
 		break;
 
 	case dtype_boolean:
-		ERR_post(Arg::Gds(isc_invalid_boolean_usage));
-		break;
+		{
+			const int temp1 = CVT_get_boolean(arg1, ERR_post) ? 1 : 0;
+			const int temp2 = CVT_get_boolean(arg2, ERR_post) ? 1 : 0;
+
+			if (temp1 == temp2)
+				return 0;
+			if (temp1 > temp2)
+				return 1;
+			return -1;
+		}
 
 	default:
 		BUGCHECK(189);			// msg 189 comparison not supported for specified data types

@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "gen/iberror.h"
 
 #include "../common/gdsassert.h"
@@ -1042,11 +1043,42 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 // Get the value of a boolean descriptor.
 bool CVT_get_boolean(const dsc* desc, ErrorFunction err)
 {
-	if (desc->dsc_dtype == dtype_boolean)
-		return *desc->dsc_address != '\0';
+	switch (desc->dsc_dtype)
+	{
+		case dtype_boolean:
+			return *desc->dsc_address != '\0';
 
-	CVT_conversion_error(desc, err);
-	return false;	// silence warning
+		case dtype_varying:
+		case dtype_cstring:
+		case dtype_text:
+		{
+			VaryStr<100> buffer;	// arbitrarily large
+			const char* p = NULL;
+			int len = CVT_make_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer), err);
+
+			// Remove heading and trailing spaces.
+
+			while (len > 0 && isspace((UCHAR) *p))
+			{
+				++p;
+				--len;
+			}
+
+			while (len > 0 && isspace((UCHAR) p[len - 1]))
+				--len;
+
+			if (len == 4 && fb_utils::strnicmp(p, "TRUE", len) == 0)
+				return true;
+			else if (len == 5 && fb_utils::strnicmp(p, "FALSE", len) == 0)
+				return false;
+
+			// fall into
+		}
+
+		default:
+			CVT_conversion_error(desc, err);
+			return false;	// silence warning
+	}
 }
 
 
@@ -1280,7 +1312,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 {
 /**************************************
  *
- *      C V T _ m o v e
+ *      C V T _ m o v e _ c o m m o n
  *
  **************************************
  *
@@ -1618,10 +1650,23 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 			datetime_to_text(from, to, cb);
 			return;
 
+		case dtype_boolean:
+			{
+				char* text = const_cast<char*>(*(FB_BOOLEAN*) from->dsc_address ? "TRUE" : "FALSE");
+
+				dsc intermediate;
+				intermediate.dsc_dtype = dtype_text;
+				intermediate.dsc_ttype() = ttype_ascii;
+				intermediate.makeText(static_cast<USHORT>(strlen(text)), CS_ASCII,
+					reinterpret_cast<UCHAR*>(text));
+
+				CVT_move_common(&intermediate, to, cb);
+				return;
+			}
+
 		default:
 			fb_assert(false);		// Fall into ...
 
-		case dtype_boolean:
 		case dtype_blob:
 			CVT_conversion_error(from, cb->err);
 			return;
@@ -1715,7 +1760,28 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		return;
 
 	case dtype_boolean:
-		CVT_conversion_error(from, cb->err);
+		switch (from->dsc_dtype)
+		{
+		case dtype_varying:
+		case dtype_cstring:
+		case dtype_text:
+			*((FB_BOOLEAN*) to->dsc_address) = CVT_get_boolean(from, cb->err) ? '\1' : '\0';
+			return;
+
+		default:
+			fb_assert(false);		// Fall into ...
+		case dtype_sql_date:
+		case dtype_sql_time:
+		case dtype_short:
+		case dtype_long:
+		case dtype_int64:
+		case dtype_dbkey:
+		case dtype_quad:
+		case dtype_real:
+		case dtype_double:
+			CVT_conversion_error(from, cb->err);
+			break;
+		}
 		break;
 	}
 

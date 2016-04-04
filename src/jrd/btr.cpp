@@ -2238,9 +2238,7 @@ bool BTR_types_comparable(const dsc& target, const dsc& source)
 	}
 
 	if (target.dsc_dtype == dtype_boolean)
-	{
-		return (source.dsc_dtype == dtype_boolean);
-	}
+		return DTYPE_IS_TEXT(source.dsc_dtype) || source.dsc_dtype == dtype_boolean;
 
 	return false;
 }
@@ -5990,10 +5988,7 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 
 			fb_assert(!desc->isBlob());
 
-			if (desc->dsc_dtype == dtype_boolean)
-				value = MOV_get_boolean(desc) ? "TRUE" : "FALSE";
-			else
-				value = MOV_make_string2(tdbb, desc, ttype_dynamic);
+			value = MOV_make_string2(tdbb, desc, ttype_dynamic);
 
 			const int len = (int) value.length();
 			const char* const str = value.c_str();
