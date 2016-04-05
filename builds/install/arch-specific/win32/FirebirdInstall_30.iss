@@ -378,9 +378,9 @@ Name: ClientComponent; Description: {cm:ClientComponent}; Types: ServerInstall D
 ;Server tasks
 Name: UseClassicServerTask; Description: {cm:RunCS}; GroupDescription: {cm:ServerTaskDescription}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: exclusive; Check: ConfigureFirebird;
 Name: UseSuperClassicTask; Description: {cm:RunSC}; GroupDescription: {cm:ServerTaskDescription}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: exclusive; Check: ConfigureFirebird;
-Name: UseSuperClassicTask\UseGuardianTask; Description: {cm:UseGuardianTask}; Components: ServerComponent; MinVersion: 4.0,4.0; Check: ConfigureFirebird;
+Name: UseSuperClassicTask\UseGuardianTask; Description: {cm:UseGuardianTask}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: unchecked dontinheritcheck;Check: ConfigureFirebird;
 Name: UseSuperServerTask; Description: {cm:RunSS}; GroupDescription: {cm:ServerTaskDescription}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: exclusive; Check: ConfigureFirebird;
-Name: UseSuperServerTask\UseGuardianTask; Description: {cm:UseGuardianTask}; Components: ServerComponent; MinVersion: 4.0,4.0; Check: ConfigureFirebird;
+Name: UseSuperServerTask\UseGuardianTask; Description: {cm:UseGuardianTask}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: unchecked dontinheritcheck; Check: ConfigureFirebird;
 Name: UseApplicationTask; Description: {cm:UseApplicationTaskMsg}; GroupDescription: {cm:TaskGroupDescription}; Components: ServerComponent; MinVersion: 4,4; Flags: exclusive; Check: ConfigureFirebird;
 Name: UseServiceTask; Description: {cm:UseServiceTask}; GroupDescription: {cm:TaskGroupDescription}; Components: ServerComponent; MinVersion: 0,4; Flags: exclusive; Check: ConfigureFirebird;
 Name: AutoStartTask; Description: {cm:AutoStartTask}; Components: ServerComponent; MinVersion: 4,4; Check: ConfigureFirebird;
