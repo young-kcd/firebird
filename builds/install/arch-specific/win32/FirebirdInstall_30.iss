@@ -1210,30 +1210,18 @@ function NextButtonClick(CurPageID: Integer): Boolean;
 var
 	i: integer;
 begin
-  { check user has entered sysdba password correctly. }
-	Result := True;
+  Result := True;
   case CurPageID of
     AdminUserPage.ID : begin
-      if not (AdminUserPage.Values[0] = '') then begin
-        Result := False;
-        MsgBox(ExpandConstant('{cm:SYSDBAPasswordEmpty}'), mbError, MB_OK);
-      end;
+	  { check user has entered new sysdba password correctly. }
       i := CompareStr(AdminUserPage.Values[0],AdminUserPage.Values[1]);
       If  not (i = 0) then begin
         Result := False;
         AdminUserPage.Values[0] :='';
         AdminUserPage.Values[1] :='';
         MsgBox(ExpandConstant('{cm:SYSDBAPasswordMismatch}'), mbError, MB_OK);
-      end;
+	  end;
     end;
-  
-(*    wpSelectDir :    begin 
-      if PreFB3RC1InstallDetected then begin
-        MsgBox(ExpandConstant('{cm:PreFB3RC1VersionInstalled}'), mbError, MB_OK)
-        Result := false;
-      end;
-    end;
-*)
   end;
 end;
 	
