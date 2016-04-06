@@ -8,10 +8,11 @@ to the installation package itself, rather than
 Firebird $MAJOR.$MINOR in general. In addition, these notes are
 primarily aimed at users of the binary installer.
 
-It is assumed that readers of this document are already
-familiar with Firebird. If you are evaluating Firebird $MAJOR.$MINOR
-as part of a migration from Firebird 2.5 you are advised to
-review the Firebird $MAJOR.$MINOR documentation to understand
+It is assumed that readers of this document are 
+already familiar with Firebird. If you are evaluating 
+Firebird $MAJOR.$MINOR as part of a migration from 
+Firebird 2.5 you are advised to review the 
+Firebird $MAJOR.$MINOR documentation to understand 
 the changes made between 2.5 and $MAJOR.$MINOR.
 
 
@@ -36,22 +37,17 @@ this package. It is especially important to verify that
 fbclient.dll and gds32.dll are removed from <system32>.
 See the UNINSTALL section below for more info on this.
 
-If you have installed a beta or alpha version of Firebird $MAJOR.$MINOR
-the installer will rename firebird.conf and security3.fdb as
-these files are no longer compatible.
+If you have installed a beta or alpha version of 
+Firebird $MAJOR.$MINOR the installer will rename firebird.conf 
+and security3.fdb as these files are no longer compatible.
 
 
 Deployment of gds32.dll
 -----------------------
 
 This compatibility library is no longer deployed into 
-the windows system directory by default. We cannot
-guarantee that the required MSVC runtimes will be 
-available. However it remains an option at install
-time, along with system deployment of fbclient.dll.
-
-Be sure to check that your target system has the 
-appropriate MSVC10 runtimes if you use these options.
+the windows system directory by default. However it 
+remains an option at install time.
 
 
 Installation of the Guardian
@@ -71,7 +67,7 @@ The binary installer does its best to detect and
 preserve a previous install. If the installer detects 
 firebird.conf or security3.fdb it will not offer the 
 option to install legacy_auth. Neither will it offer 
-the option to set the SYSDBA username and password.
+the option to set the SYSDBA password.
 
 
 Known installation problems
