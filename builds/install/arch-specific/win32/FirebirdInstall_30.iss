@@ -863,10 +863,10 @@ var
   AStringList: TStringList;
   TempDir: String;
 	ResultCode: Integer;
-  TempStr: string;
+	CmdStr: string;
 begin
 	TempDir := ExpandConstant( '{tmp}' );
-  TempStr := ExpandConstant( '{app}\isql.exe' );
+	CmdStr := ExpandConstant( '{app}\isql.exe' );
 	AStringList := TStringList.create;
 	with AStringList do begin
 		Add( 'create user ' + GetAdminUserName + ' password ''' + GetAdminUserPassword + ''' using plugin Srp;' );
@@ -877,7 +877,7 @@ begin
 		Add( 'exit;' );
 		SaveToFile( Tempdir +'\temp.sql' );
 	end;
-	Result := Exec( ExpandConstant( '{app}\isql.exe' ) , ' -m -m2 -user SYSDBA -i ' + TempDir + '\temp.sql -o ' + TempDir + '\temp.sql.txt employee ' , TempDir, SW_HIDE, ewWaitUntilTerminated, ResultCode );
+	Result := Exec( CmdStr , ' -m -m2 -user SYSDBA -i ' + TempDir + '\temp.sql -o ' + TempDir + '\temp.sql.txt employee ' , TempDir, SW_HIDE, ewWaitUntilTerminated, ResultCode );
 	DeleteFile( TempDir + +'\temp.sql ');
 end;
 
