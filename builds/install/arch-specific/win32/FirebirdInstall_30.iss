@@ -505,7 +505,7 @@ Source: {#WOW64Dir}\instclient.exe; DestDir: {app}\WOW64; Components: ClientComp
 Source: {#FilesDir}\icuuc??.dll; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\icuin??.dll; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\icudt??.dll; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
-Source: {#FilesDir}\icudt*.dat;  DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\icudt??l.dat;  DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
 #if PlatformTarget =="Win32"
 Source: {#FilesDir}\fbrmclib.dll; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
 #endif
@@ -556,6 +556,7 @@ Source: {#FilesDir}\UDF\fbudf.dll; DestDir: {app}\UDF; Components: ServerCompone
 Source: {#FilesDir}\UDF\*.sql; DestDir: {app}\UDF; Components: ServerComponent; Flags: ignoreversion;
 Source: {#FilesDir}\UDF\*.txt; DestDir: {app}\UDF; Components: ServerComponent; Flags: ignoreversion;
 
+Source: {#FilesDir}\plugins.conf; DestDir: {app}; Components: ServerComponent; Flags: ignoreversion;
 Source: {#FilesDir}\plugins\*.dll; DestDir: {app}\plugins; Components: ServerComponent; Flags: ignoreversion;
 Source: {#FilesDir}\plugins\*.conf; DestDir: {app}\plugins; Components: ServerComponent; Flags: ignoreversion;
 
