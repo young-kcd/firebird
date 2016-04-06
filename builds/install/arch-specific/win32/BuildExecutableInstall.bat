@@ -505,7 +505,7 @@ for %%v in (doc doc\sql.extensions help include intl lib udf misc misc\upgrade m
 
 :: Now remove stuff that is not needed.
 setlocal
-set FB_RM_FILE_LIST=doc\installation_readme.txt bin\gpre_boot.exe bin\gpre_static.exe bin\gpre_embed.exe bin\gbak_embed.exe bin\isql_embed.exe bin\gds32.dll bin\btyacc.exe
+set FB_RM_FILE_LIST=doc\installation_readme.txt system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.wixpdb icudt52l_empty.dat
 for %%v in ( %FB_RM_FILE_LIST% ) do (
   @del %FBBUILD_ZIP_PACK_ROOT%\%%v > nul 2>&1
 )
@@ -519,8 +519,8 @@ if not "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
   @del /q %FBBUILD_ZIP_PACK_ROOT%\*.pdb > nul 2>&1
 )
 
-:: grab install notes for zip pack
-@copy %FB_ROOT_PATH%\doc\install_win32.txt %FBBUILD_ZIP_PACK_ROOT%\doc\README_installation.txt > nul
+:: Don't grab old install notes for zip pack - document needs a complete re-write.
+::@copy %FB_ROOT_PATH%\doc\install_win32.txt %FBBUILD_ZIP_PACK_ROOT%\doc\README_installation.txt > nul
 
 ::End of GEN_ZIP
 ::--------------
