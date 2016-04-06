@@ -280,8 +280,8 @@ int Parser::yylex()
 	if (!yylexSkipSpaces())
 		return -1;
 
-	yyposn.firstLine = lex.lines;
-	yyposn.firstColumn = lex.ptr - lex.line_start;
+	yyposn.firstLine = lex.lines_bk;
+	yyposn.firstColumn = lex.last_token_bk - lex.line_start_bk + 1;
 	yyposn.firstPos = lex.ptr - 1;
 
 	lex.prev_keyword = yylexAux();
