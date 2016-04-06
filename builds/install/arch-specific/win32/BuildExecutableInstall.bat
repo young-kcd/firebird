@@ -284,7 +284,7 @@ if "%PROCESSOR_ARCHITECTURE%"=="x86" (
 @echo   Started copying docs...
 @rmdir /S /Q %FB_OUTPUT_DIR%\doc 2>nul
 @mkdir %FB_OUTPUT_DIR%\doc
-@copy %FB_ROOT_PATH%\ChangeLog %FB_OUTPUT_DIR%\doc\ChangeLog.txt >nul
+::@copy %FB_ROOT_PATH%\ChangeLog %FB_OUTPUT_DIR%\doc\ChangeLog.txt >nul
 @copy %FB_ROOT_PATH%\doc\*.* %FB_OUTPUT_DIR%\doc\ > nul
 @if %ERRORLEVEL% GEQ 1 (
   call :ERROR COPY of main documentation tree failed with error %ERRORLEVEL%
@@ -348,7 +348,7 @@ if defined FB_EXTERNAL_DOCS (
 
 :: Clean out text notes that are either not relevant to Windows or
 :: are only of use to engine developers.
-@for %%v in (  README.makefiles README.user README.user.embedded README.user.troubleshooting README.build.mingw.html README.build.msvc.html fb2-todo.txt cleaning-todo.txt install_win32.txt README.coding.style emacros-cross_ref.html firebird_conf.txt *.*~) do (
+@for %%v in (  README.makefiles README.user README.user.embedded README.user.troubleshooting README.build.mingw.html README.build.msvc.html fb2-todo.txt cleaning-todo.txt install_win32.txt install_windows_manually.txt README_installation README.coding.style emacros-cross_ref.html firebird_conf.txt *.*~) do (
   @del %FB_OUTPUT_DIR%\doc\%%v 2>nul
 )
 
