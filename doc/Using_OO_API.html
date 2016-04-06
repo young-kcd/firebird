@@ -7,7 +7,7 @@
 	<META NAME="AUTHOR" CONTENT="alex ">
 	<META NAME="CREATED" CONTENT="20130531;10003100">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
-	<META NAME="CHANGED" CONTENT="20160404;21484900">
+	<META NAME="CHANGED" CONTENT="20160405;22171600">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
 	<STYLE TYPE="text/css">
 	<!--
@@ -166,15 +166,15 @@ isc_dpb_password, “masterkey”);</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>is (I hope) obvious.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4><U>The following is C++
-specific: </U>We are almost ready to call createDatabase() method of
-IProvider, but before it a few words about concept of <B>Status
-Wrapper</B> should be said. Status wrapper is not an interface, it's
-very thin envelope for IStatus interface. It helps to customize
-behavior of C++ API (change a way how errors, returned in IStatus
-interface, are processed). For the first time we recommend use of
-<B>ThrowStatusWrapper</B>, which raises C++ exception each time an
-error is returned in IStatus.</FONT></P>
+<P STYLE="margin-bottom: 0in"><A NAME="Status Wrapper"></A><FONT SIZE=4><U>The
+following is C++ specific: </U>We are almost ready to call
+createDatabase() method of IProvider, but before it a few words about
+concept of <B>Status Wrapper</B> should be said. Status wrapper is
+not an interface, it's very thin envelope for IStatus interface. It
+helps to customize behavior of C++ API (change a way how errors,
+returned in IStatus interface, are processed). For the first time we
+recommend use of <B>ThrowStatusWrapper</B>, which raises C++
+exception each time an error is returned in IStatus.</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>ThrowStatusWrapper
 status(st);</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
@@ -1218,340 +1218,540 @@ care about saving it in this function.</FONT></P>
 list interfaces that are not actively used (like IRequest, needed
 first of all to support legacy ISC API requests). Same reference may
 be made for a number of methods (like compileRequest() in
-IAttachment).</FONT></P>
+IAttachment). For interfaces / methods, having direct analogue in old
+API, that analogue is provided.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <H1><FONT SIZE=4>Generic interfaces.</FONT></H1>
 <P STYLE="margin-bottom: 0in"><A NAME="Attachment"></A><FONT SIZE=4>Attachment
-interface:</FONT></P>
+interface – replaces isc_db_handle:</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	getInfo(StatusType* status, unsigned itemsLength, const unsigned
-	char* items, unsigned bufferLength, unsigned char* buffer)</FONT></P>
+	char* items, unsigned bufferLength, unsigned char* buffer) –
+	replaces isc_database_info().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
 	startTransaction(StatusType* status, unsigned tpbLength, const
-	unsigned char* tpb)</FONT></P>
+	unsigned char* tpb) – partially replaces isc_start_multiple(), to
+	start &gt;1 transaction <A HREF="#Dtc">distributed transactions
+	coordinator</A> should be used, also possible to <A HREF="#Transaction">join</A>
+	2 transactions into single distributed transaction.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
 	reconnectTransaction(StatusType* status, unsigned length, const
-	unsigned char* id)</FONT></P>
+	unsigned char* id) – makes it possible to connect to a transaction
+	in limbo. Id parameter contains transaction number in network format
+	of given length.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IRequest*
 	compileRequest(StatusType* status, unsigned blrLength, const
-	unsigned char* blr)</FONT></P>
+	unsigned char* blr) – support of ISC API.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	transactRequest(StatusType* status, ITransaction* transaction,
 	unsigned blrLength, const unsigned char* blr, unsigned inMsgLength,
 	const unsigned char* inMsg, unsigned outMsgLength, unsigned char*
-	outMsg)</FONT></P>
+	outMsg) – support of ISC API.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IBlob*
 	createBlob(StatusType* status, ITransaction* transaction, ISC_QUAD*
-	id, unsigned bpbLength, const unsigned char* bpb)</FONT></P>
+	id, unsigned bpbLength, const unsigned char* bpb) – creates new
+	blob, stores it's identifier in id, replaces isc_create_blob2().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IBlob*
 	openBlob(StatusType* status, ITransaction* transaction, ISC_QUAD*
-	id, unsigned bpbLength, const unsigned char* bpb)</FONT></P>
+	id, unsigned bpbLength, const unsigned char* bpb) – opens existing
+	blob, replaces isc_open_blob2().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
 	getSlice(StatusType* status, ITransaction* transaction, ISC_QUAD*
 	id, unsigned sdlLength, const unsigned char* sdl, unsigned
 	paramLength, const unsigned char* param, int sliceLength, unsigned
-	char* slice)</FONT></P>
+	char* slice) - support of ISC API.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	putSlice(StatusType* status, ITransaction* transaction, ISC_QUAD*
 	id, unsigned sdlLength, const unsigned char* sdl, unsigned
 	paramLength, const unsigned char* param, int sliceLength, unsigned
-	char* slice)</FONT></P>
+	char* slice) - support of ISC API.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	executeDyn(StatusType* status, ITransaction* transaction, unsigned
-	length, const unsigned char* dyn)</FONT></P>
+	length, const unsigned char* dyn) - support of ISC API.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IStatement*
 	prepare(StatusType* status, ITransaction* tra, unsigned stmtLength,
-	const char* sqlStmt, unsigned dialect, unsigned flags)</FONT></P>
+	const char* sqlStmt, unsigned dialect, unsigned flags) – replaces
+	isc_dsql_prepare(). Additional parameter flags makes it possible to
+	control what information will be preloaded from engine at once (i.e.
+	in single network packet for remote operation).</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
 	execute(StatusType* status, ITransaction* transaction, unsigned
 	stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata*
 	inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void*
-	outBuffer)</FONT></P>
+	outBuffer) – executes any SQL statement except returning multiple
+	rows of data. Partial analogue of isc_dsql_execute2() - in and out
+	XSLQDAs replaced with input and output messages with appropriate
+	buffers.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IResultSet*
 	openCursor(StatusType* status, ITransaction* transaction, unsigned
 	stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata*
 	inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const
-	char* cursorName, unsigned cursorFlags)</FONT></P>
+	char* cursorName, unsigned cursorFlags) – executes SQL statement
+	potentially returning multiple rows of data. Returns <A HREF="#ResultSet">ResultSet</A>
+	interface which should be used to fetch that data. Format of output
+	data is defined by outMetadata parameter, leaving it NULL default
+	format may be used. Parameter cursorName specifies name of opened
+	cursor (analogue of isc_dsql_set_cursor_name()). Parameter
+	cursorFlags is needed to open bidirectional cursor setting it's
+	value to Istatement::CURSOR_TYPE_SCROLLABLE.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IEvents*
 	queEvents(StatusType* status, IEventCallback* callback, unsigned
-	length, const unsigned char* events)</FONT></P>
+	length, const unsigned char* events) – replaces isc_que_events()
+	call. Instead callback function with void* parameter callback
+	interface is used.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	cancelOperation(StatusType* status, int option)</FONT></P>
+	cancelOperation(StatusType* status, int option) – replaces
+	fb_cancel_operation().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void ping(StatusType*
-	status)</FONT></P>
+	status) – check connection status. If test fails the only
+	operation possible with attachment is to close it.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	detach(StatusType* status)</FONT></P>
+	detach(StatusType* status) – replaces isc_detach_database(). On
+	success releases interface.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	dropDatabase(StatusType* status)</FONT></P>
+	dropDatabase(StatusType* status) - replaces isc_drop_database(). On
+	success releases interface.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="Blob"></A><FONT SIZE=4>Blob
-interface:</FONT></P>
+interface – replaces isc_blob_handle:</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	getInfo(StatusType* status, unsigned itemsLength, const unsigned
-	char* items, unsigned bufferLength, u</FONT></P>
+	char* items, unsigned bufferLength, unsigned char* buffer) –
+	replaces isc_blob_info().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
 	getSegment(StatusType* status, unsigned bufferLength, void* buffer,
-	unsigned* segmentLength)</FONT></P>
+	unsigned* segmentLength) – replaces isc_get_segment(). Unlike it
+	never returns isc_segstr_eof and isc_segment errors (that are
+	actually not errors), instead returns <A HREF="#Completion codes">completion
+	codes</A> IStatus::RESULT_NO_DATA and IStatus::RESULT_SEGMENT,
+	normal return is IStatus::RESULT_OK.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	putSegment(StatusType* status, unsigned length, const void* buffer)</FONT></P>
+	putSegment(StatusType* status, unsigned length, const void* buffer)
+	– replaces isc_put_segment().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	cancel(StatusType* status)</FONT></P>
+	cancel(StatusType* status) – replaces isc_cancel_blob(). On
+	success releases interface.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	close(StatusType* status)</FONT></P>
+	close(StatusType* status) – replaces isc_close_blob(). On success
+	releases interface.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int seek(StatusType*
-	status, int mode, int offset)</FONT></P>
+	status, int mode, int offset) – replaces isc_seek_blob().</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Config interface:</FONT></P>
+<P STYLE="margin-bottom: 0in"><A NAME="Config"></A><FONT SIZE=4>Config
+interface – generic configuration file interface:</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IConfigEntry*
-	find(StatusType* status, const char* name)</FONT></P>
+	find(StatusType* status, const char* name) – find entry by name.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IConfigEntry*
-	findValue(StatusType* status, const char* name, const char* value)</FONT></P>
+	findValue(StatusType* status, const char* name, const char* value) –
+	find entry by name and value.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IConfigEntry*
-	findPos(StatusType* status, const char* name, unsigned pos)</FONT></P>
+	findPos(StatusType* status, const char* name, unsigned pos) – find
+	entry by name and position. If configuration file contains lines:</FONT></P>
 </OL>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Db=DBA</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Db=DBB</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Db=DBC</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>call to findPos(status,
+“Db”, 2) will return entry with value DBB.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>ConfigManager interface:</FONT></P>
+<P STYLE="margin-bottom: 0in"><A NAME="ConfigManager"></A><FONT SIZE=4>ConfigManager
+interface – generic interface to access various configuration
+objects:</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
-	getDirectory(unsigned code)</FONT></P>
+	getDirectory(unsigned code) – returns location of appropriate
+	directory in current firebird instance. See codes for this call a
+	<A HREF="#Directory codes">few lines later</A>.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IFirebirdConf*
-	getFirebirdConf()</FONT></P>
+	getFirebirdConf() - returns interface to access default
+	configuration values (from firebird.conf).</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IFirebirdConf*
-	getDatabaseConf(const char* dbName)</FONT></P>
+	getDatabaseConf(const char* dbName) - returns interface to access
+	db-specific configuration (takes into an account firebird.conf and
+	appropriate part of databases.conf).</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IConfig*
-	getPluginConfig(const char* configuredPlugin)</FONT></P>
+	getPluginConfig(const char* configuredPlugin) – returns interface
+	to access named plugin configuration.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
-	getInstallDirectory()</FONT></P>
+	getInstallDirectory() - returns directory where firebird is
+	installed.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
-	getRootDirectory()</FONT></P>
+	getRootDirectory() - returns root directory of current instance, in
+	single-instance case usually matches install directory.</FONT></P>
 </OL>
+<P STYLE="margin-bottom: 0in"><A NAME="Directory codes"></A><FONT SIZE=4>Directory
+codes:</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>DIR_BIN – bin
+(utilities like isql, gbak, gstat)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>DIR_SBIN – sbin
+(fbguard and firebird server)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>DIR_CONF –
+configuration files (firebird.conf, databases.conf, plugins.conf)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>DIR_LIB – lib
+(fbclient, ib_util)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>DIR_INC – include
+(ibase.h, firebird/Interfaces.h)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>DIR_DOC -
+documentation</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>DIR_UDF – UDF
+(ib_udf, fbudf)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>DIR_SAMPLE - samples</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>DIR_SAMPLEDB –
+samples database (employee.fdb)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>DIR_HELP – qli help
+(help.fdb)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>DIR_INTL –
+international libraries (fbintl)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>DIR_MISC –
+miscellaneous files (like uninstall manifest and something else)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>DIR_SECDB – where
+security database is stored (securityN.fdb)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>DIR_MSG – where
+messages file is stored (firebird.msg)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>DIR_LOG – where log
+file is stored (firebird.log)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>DIR_GUARD – where
+guardian lock is stored (fb_guard)</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>DIR_PLUGINS –
+plugins directory ([lib]Engine12.{dll|so})</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>ConfigEntry interface:</FONT></P>
+<P STYLE="margin-bottom: 0in"><A NAME="ConfigEntry"></A><FONT SIZE=4>ConfigEntry
+interface – represents an entry (Key = Values with probably
+sub-entries) in firebird configuration file:</FONT></P>
 <OL>
-	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char* getName()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char* getName()
+	- returns key name.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
-	getValue()</FONT></P>
+	getValue() - returns value as character string.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ISC_INT64
-	getIntValue()</FONT></P>
+	getIntValue() - treats value as integer and returns it.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_BOOLEAN
-	getBoolValue()</FONT></P>
+	getBoolValue() - treats value as boolean and returns it.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IConfig*
-	getSubConfig(StatusType* status)</FONT></P>
+	getSubConfig(StatusType* status) – treats sub-entries as separate
+	configuration file and returns Config interface for it.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="Dtc"></A><FONT SIZE=4>Dtc
-interface:</FONT></P>
+interface – distributed transactions coordinator. Used to start
+distributed (working with 2 or more attachments) transaction. Unlike
+pre-FB3 approach where distributed transaction must be started in
+this way from the most beginning FB3's distributed transactions
+coordinator makes it also possible to join already started
+transactions into single distributed transaction.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
-	join(StatusType* status, ITransaction* one, ITransaction* two)</FONT></P>
+	join(StatusType* status, ITransaction* one, ITransaction* two) –
+	joins 2 independent transactions into distributed transaction. On
+	success both transactions passed to join() are released and pointers
+	to them should not be used any more.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IDtcStart*
-	startBuilder(StatusType* status)</FONT></P>
+	startBuilder(StatusType* status) – returns <A HREF="#DtcStart">DtcStart</A>
+	interface.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="DtcStart"></A><FONT SIZE=4>DtcStart
-interface:</FONT></P>
+interface – replaces array of struct TEB (passed to
+isc_start_multiple() in ISC API). This interface accumulates
+attachments (and probably appropriate TPBs) for which dustributed
+transaction should be started.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	addAttachment(StatusType* status, IAttachment* att)</FONT></P>
+	addAttachment(StatusType* status, IAttachment* att) – adds
+	attachment, transaction for it will be started with default TPB.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	addWithTpb(StatusType* status, IAttachment* att, unsigned length,
-	const unsigned char* tpb)</FONT></P>
+	const unsigned char* tpb) - adds attachment and TPB which will be
+	used to start transaction for this attachment.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
-	start(StatusType* status)</FONT></P>
+	start(StatusType* status) – start distributed transaction for
+	accumulated attachments. On successful return DtcStart interface is
+	disposed automatically.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="EventCallback"></A><FONT SIZE=4>EventCallback
-interface:</FONT></P>
+interface – replaces callback function used in isc_que_events()
+call. Should be implemented by user to monitor events with
+IAttachment::queEvents() method.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	eventCallbackFunction(unsigned length, const unsigned char* events)</FONT></P>
+	eventCallbackFunction(unsigned length, const unsigned char* events)
+	– is called each time event happens.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="Events"></A><FONT SIZE=4>Events
-interface:</FONT></P>
+interface – replaces event identifier when working with events
+monitoring.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	cancel(StatusType* status)</FONT></P>
+	cancel(StatusType* status) - cancels events monitoring started by
+	IAttachment::queEvents().</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FirebirdConf</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FirebirdConf interface –
+access to main firebird configuration. Used for both default
+configuration, set by firebird.conf, and per-database configuration,
+adjusted by databases.conf. In order to speed up access to
+configuration values calls accessing actual values use integer key
+instead symbolic parameter name. Key is stable during server run
+(i.e. plugin can get it once and than use to get configuration value
+for different databases). </FONT>
+</P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned getKey(const
-	char* name)</FONT></P>
+	char* name) – get key for parameter name. ~0 (all bits are 1) is
+	returned in a case when there is no such parameter.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ISC_INT64
-	asInteger(unsigned key)</FONT></P>
+	asInteger(unsigned key) – return value of integer parameter.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
-	asString(unsigned key)</FONT></P>
+	asString(unsigned key) - return value of string parameter.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_BOOLEAN
-	asBoolean(unsigned key)</FONT></P>
+	asBoolean(unsigned key) - return value of boolean parameter.
+	Standard abbreviations (1/true/t/yes/y) are treated as “true”,
+	all other cases – false.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="Master"></A><FONT SIZE=4>Master
-interface:</FONT></P>
+interface – main interface from which start all operations with
+firebird API.</FONT></P>
 <OL>
-	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IStatus* getStatus()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IStatus* getStatus()
+	- get instance if <A HREF="#Status">Status</A> interface.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IProvider*
-	getDispatcher()</FONT></P>
+	getDispatcher() - get instance of <A HREF="#Provider">Provider</A>
+	interface, implemented by yValve (main provider instance).</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IPluginManager*
-	getPluginManager()</FONT></P>
+	getPluginManager() - get instance of <A HREF="#PluginManager">PluginManager</A>
+	interface.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITimerControl*
-	getTimerControl()</FONT></P>
-	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IDtc* getDtc()</FONT></P>
+	getTimerControl() - get instance of <A HREF="#TimerControl">TimerControl</A>
+	interface.</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IDtc* getDtc() - get
+	instance of <A HREF="#Dtc">Dtc</A> interface.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IUtil*
-	getUtilInterface()</FONT></P>
+	getUtilInterface() - get instance of <A HREF="#Util">Util</A>
+	interface.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IConfigManager*
-	getConfigManager()</FONT></P>
+	getConfigManager() - get instance of <A HREF="#ConfigManager">ConfigManager</A>
+	interface.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="MessageMetadata"></A><FONT SIZE=4>MessageMetadata
-interface:</FONT></P>
+interface – partial analogue of XSQLDA (does not contain message
+data, only message format info is present). Used in a calls related
+with execution of SQL statements.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
-	getCount(StatusType* status)</FONT></P>
+	getCount(StatusType* status) – returns number of fields/parameters
+	in a message. In all calls, containing index parameter, it's value
+	should be: 0 &lt;= index &lt; getCount().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
-	getField(StatusType* status, unsigned index)</FONT></P>
+	getField(StatusType* status, unsigned index) – returns field name.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
-	getRelation(StatusType* status, unsigned index)</FONT></P>
+	getRelation(StatusType* status, unsigned index) – returns relation
+	name (from which given field is selected).</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
-	getOwner(StatusType* status, unsigned index)</FONT></P>
+	getOwner(StatusType* status, unsigned index) - returns relation's
+	owner name.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
-	getAlias(StatusType* status, unsigned index)</FONT></P>
+	getAlias(StatusType* status, unsigned index) - returns field alias.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
-	getType(StatusType* status, unsigned index)</FONT></P>
+	getType(StatusType* status, unsigned index) - returns field SQL
+	type.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_BOOLEAN
-	isNullable(StatusType* status, unsigned index)</FONT></P>
+	isNullable(StatusType* status, unsigned index) - returns true if
+	field is nullable.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
-	getSubType(StatusType* status, unsigned index)</FONT></P>
+	getSubType(StatusType* status, unsigned index) - returns blof field
+	subtype (0 – binary, 1 – text, etc.).</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
-	getLength(StatusType* status, unsigned index)</FONT></P>
+	getLength(StatusType* status, unsigned index) - returns maximum
+	field length.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
-	getScale(StatusType* status, unsigned index)</FONT></P>
+	getScale(StatusType* status, unsigned index) - returns scale factor
+	for numeric field.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
-	getCharSet(StatusType* status, unsigned index)</FONT></P>
+	getCharSet(StatusType* status, unsigned index) - returns character
+	set for character field and text blob.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
-	getOffset(StatusType* status, unsigned index)</FONT></P>
+	getOffset(StatusType* status, unsigned index) - returns offset of
+	field data in message buffer (use it to access data in message
+	buffer).</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
-	getNullOffset(StatusType* status, unsigned index)</FONT></P>
+	getNullOffset(StatusType* status, unsigned index) - returns offset
+	of null indicator for a field in message buffer.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IMetadataBuilder*
-	getBuilder(StatusType* status)</FONT></P>
+	getBuilder(StatusType* status) - returns <A HREF="#MessageMetadata">MetadataBuilder</A>
+	interface initialized with this message metadata.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
-	getMessageLength(StatusType* status)</FONT></P>
+	getMessageLength(StatusType* status) - returns length of message
+	buffer (use it to allocate memory for the buffer).</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="MetadataBuilder"></A><FONT SIZE=4>MetadataBuilder
-interface:</FONT></P>
+interface – makes it possible to coerce datatypes in existing
+message or construct metadata from the beginning.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	setType(StatusType* status, unsigned index, unsigned type)</FONT></P>
+	setType(StatusType* status, unsigned index, unsigned type) – set
+	SQL type of a field.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	setSubType(StatusType* status, unsigned index, int subType)</FONT></P>
+	setSubType(StatusType* status, unsigned index, int subType) – set
+	blof field subtype.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	setLength(StatusType* status, unsigned index, unsigned length)</FONT></P>
+	setLength(StatusType* status, unsigned index, unsigned length) –
+	set maximum length of character field.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	setCharSet(StatusType* status, unsigned index, unsigned charSet)</FONT></P>
+	setCharSet(StatusType* status, unsigned index, unsigned charSet) –
+	set character set for character field and text blob.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	setScale(StatusType* status, unsigned index, unsigned scale)</FONT></P>
+	setScale(StatusType* status, unsigned index, unsigned scale) – set
+	scale factor for numeric field </FONT>
+	</P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	truncate(StatusType* status, unsigned count)</FONT></P>
+	truncate(StatusType* status, unsigned count) – truncate message to
+	contain not more than count fields.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	moveNameToIndex(StatusType* status, const char* name, unsigned
-	index)</FONT></P>
+	index) – reorganize fields in a message – move field “name”
+	to given position.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	remove(StatusType* status, unsigned index)</FONT></P>
+	remove(StatusType* status, unsigned index) – remove field.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
-	addField(StatusType* status)</FONT></P>
+	addField(StatusType* status) – add field.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IMessageMetadata*
-	getMetadata(StatusType* status)</FONT></P>
+	getMetadata(StatusType* status) – get <A HREF="#10. MessageMetadata">MessageMetadata</A>
+	interface built by this builder.</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="OffsetsCallback"></A><FONT SIZE=4>OffsetsCallback
+interface:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>setOffset(StatusType*
+	status, unsigned index, unsigned offset, unsigned nullOffset) –
+	notifies that offsets for field/parameter number “index” should
+	be set to passed values. Should be implemented by user when
+	implementing <A HREF="#MessageMetadata">MessageMetadata</A>
+	interface and using <A HREF="#Util">Util</A>::setOffsets().</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="PluginConfig"></A><FONT SIZE=4>PluginConfig
-interface:</FONT></P>
+interface – passed to plugin's factory when plugin instance (with
+particular configuration) to be created.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
-	getConfigFileName()</FONT></P>
+	getConfigFileName() - recommended file name where configuration for
+	plugin is expected to be stored.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IConfig*
-	getDefaultConfig(StatusType* status)</FONT></P>
+	getDefaultConfig(StatusType* status) – plugin configuration loaded
+	with default rules.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IFirebirdConf*
-	getFirebirdConf(StatusType* status)</FONT></P>
+	getFirebirdConf(StatusType* status) – master firebird
+	configuration taking into an account per-database settings for a
+	database with which will work new instance of plugin.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	setReleaseDelay(StatusType* status, ISC_UINT64 microSeconds)</FONT></P>
+	setReleaseDelay(StatusType* status, ISC_UINT64 microSeconds) –
+	used by plugin to configure recommended delay during which plugin
+	module will not be unloaded by plugin manager after release of last
+	plugin instance from that module.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="PluginFactory"></A><FONT SIZE=4>PluginFactory
-interface:</FONT></P>
+interface – should be implemented by plugin author when writing
+plugin.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IPluginBase*
-	createPlugin(StatusType* status, IPluginConfig* factoryParameter)</FONT></P>
+	createPlugin(StatusType* status, IPluginConfig* factoryParameter) –
+	creates new instance of plugin with passed recommended
+	configuration.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="PluginManager"></A><FONT SIZE=4>PluginManager
-interface:</FONT></P>
+interface – API of plugin manager.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	registerPluginFactory(unsigned pluginType, const char* defaultName,
-	IPluginFactory* factory)</FONT></P>
+	IPluginFactory* factory) – registers named factory of plugins of
+	given type.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	registerModule(IPluginModule* cleanup)</FONT></P>
+	registerModule(IPluginModule* cleanup) – registers plugin module.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	unregisterModule(IPluginModule* cleanup)</FONT></P>
+	unregisterModule(IPluginModule* cleanup) – unregisters plugin
+	module (in case of unexpected unload by OS).</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IPluginSet*
 	getPlugins(StatusType* status, unsigned pluginType, const char*
-	namesList, IFirebirdConf* firebirdConf)</FONT></P>
+	namesList, IFirebirdConf* firebirdConf) – returns PluginSet
+	interface providing access to list of plugins of given type. Names
+	of plugins to be included are taken from namesList, when missing
+	(NULL) – from configuration setting for given pluginType. If
+	firebirdConf parameter is specified it is used for all configuration
+	purporses (including getting list of plugins and passing to
+	<A HREF="#PluginFactory">PluginFactory</A>::createPlugin() method),
+	if missing (NULL) – default configuration (from firebird.conf) is
+	used.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IConfig*
-	getConfig(StatusType* status, const char* filename)</FONT></P>
+	getConfig(StatusType* status, const char* filename) – returns
+	Config interface for given configuration file name. Can be used by
+	plugins to access configuration files with standard format but
+	non-default name.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	releasePlugin(IPluginBase* plugin)</FONT></P>
+	releasePlugin(IPluginBase* plugin) – release given plugin. Should
+	be used for plugins instead simple release() due to need to perform
+	additional actions with plugin owner before actual release.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
@@ -1571,111 +1771,190 @@ PluginManager interface (plugin types):</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="PluginModule"></A><FONT SIZE=4>PluginModule
-interface:</FONT></P>
+interface – represents plugin module (dynamic library). Should be
+implemented by plugin author in each plugin module (one instance per
+module).</FONT></P>
 <OL>
-	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void doClean()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void doClean() -
+	called by plugin manager before normal unload of plugin module.</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PluginSet interface –
+represents set of plugins of given type. Typically used by internal
+firebird code but recommended for use in plugins loading other
+plugins.</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char* getName()
+	- get name of current plugin in a set.</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
+	getModuleName() - get name of a module of current plugin in a set
+	(in simple case matches plugin name).</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IPluginBase*
+	getPlugin(StatusType* status) – get an instance of current plugin,
+	returned interface should be casted to main interface of plugin of
+	requested in <A HREF="#PluginManager">PluginManager</A>::getPlugins()
+	type. Returns NULL if set does not contain any more plugins.
+	Reference counter of plugin, returned by this function, is
+	incremented on return – do not forget to use releasePlugin()
+	method of <A HREF="#PluginManager">PluginManager</A> for plugins
+	returned by this method.</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void next(StatusType*
+	status) – make set to switch to next plugin from the list.</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void set(StatusType*
+	status, const char* list) – reset interface: make it work with
+	list of plugins provided by list parameter. Type of plugins remains
+	unchanged.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="Provider"></A><FONT SIZE=4>Provider
-interface:</FONT></P>
+interface – main interface to start database / service access.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IAttachment*
 	attachDatabase(StatusType* status, const char* fileName, unsigned
-	dpbLength, const unsigned char* dpb)</FONT></P>
+	dpbLength, const unsigned char* dpb) – replaces
+	isc_attach_database().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IAttachment*
 	createDatabase(StatusType* status, const char* fileName, unsigned
-	dpbLength, const unsigned char* dpb)</FONT></P>
+	dpbLength, const unsigned char* dpb) – replaces
+	isc_create_database().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IService*
 	attachServiceManager(StatusType* status, const char* service,
-	unsigned spbLength, const unsigned char* spb)</FONT></P>
+	unsigned spbLength, const unsigned char* spb) – replaces
+	isc_service_attach().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	shutdown(StatusType* status, unsigned timeout, const int reason)</FONT></P>
+	shutdown(StatusType* status, unsigned timeout, const int reason) –
+	replaces fb_shutdown().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	setDbCryptCallback(StatusType* status, ICryptKeyCallback*
-	cryptCallback)</FONT></P>
+	cryptCallback) – sets database encryption callback interface that
+	will be used for following database and service attachments. See …
+	for details.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="ResultSet"></A><FONT SIZE=4>ResultSet
-interface:</FONT></P>
+interface – replaces (with extended functionality) some functions
+of isc_stmt_handle. This interface is returned by openCursor() call
+in <A HREF="#Attachment">IAttachment</A> or <A HREF="#Statement">IStatement</A>.
+All fetch calls except fetchNext() work only for bidirectional
+(opened with CURSOR_TYPE_SCROLLABLE flag) result set.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
-	fetchNext(StatusType* status, void* message)</FONT></P>
+	fetchNext(StatusType* status, void* message) – fetch next record,
+	replaces isc_dsql_fetch(). This method (and other fetch methods)
+	returns <A HREF="#Completion codes">completion code</A>
+	Status::RESULT_NO_DATA when EOF is reached, Status::RESULT_OK on
+	success.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
-	fetchPrior(StatusType* status, void* message)</FONT></P>
+	fetchPrior(StatusType* status, void* message) – fetch previous
+	record.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
-	fetchFirst(StatusType* status, void* message)</FONT></P>
+	fetchFirst(StatusType* status, void* message) – fetch first
+	record.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
-	fetchLast(StatusType* status, void* message)</FONT></P>
+	fetchLast(StatusType* status, void* message) – fetch last record.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
-	fetchAbsolute(StatusType* status, int position, void* message)</FONT></P>
+	fetchAbsolute(StatusType* status, int position, void* message) –
+	fetch record by it's absolute position in result set.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
-	fetchRelative(StatusType* status, int offset, void* message)</FONT></P>
+	fetchRelative(StatusType* status, int offset, void* message) –
+	fetch record by position relative to current.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_BOOLEAN
-	isEof(StatusType* status)</FONT></P>
+	isEof(StatusType* status) – check for EOF.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_BOOLEAN
-	isBof(StatusType* status)</FONT></P>
+	isBof(StatusType* status) – check for BOF.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IMessageMetadata*
-	getMetadata(StatusType* status)</FONT></P>
+	getMetadata(StatusType* status) – get metadata for messages in
+	result set, specially useful when result set is opened by
+	<A HREF="#Attachment">IAttachment</A>::openCursor() call with NULL
+	output metadata format parameter (this is the only way to obtain
+	message format in this case).</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	close(StatusType* status)</FONT></P>
+	close(StatusType* status) – close result set, releases interface
+	on success.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="Service"></A><FONT SIZE=4>Service
-interface:</FONT></P>
+interface – replaces isc_svc_handle.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	detach(StatusType* status)</FONT></P>
+	detach(StatusType* status) – close attachment to services manager,
+	on success releases interface. Replaces isc_service_detach().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	query(StatusType* status, unsigned sendLength, const unsigned char*
 	sendItems, unsigned receiveLength, const unsigned char*
-	receiveItems, unsigned bufferLength, unsigned char* buffer)</FONT></P>
+	receiveItems, unsigned bufferLength, unsigned char* buffer) – send
+	and request information to/from service, with different receiveItems
+	may be used for both running services and to obtain various
+	server-wide information. Replaces isc_service_query().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	start(StatusType* status, unsigned spbLength, const unsigned char*
-	spb)</FONT></P>
+	spb) – start utility in services manager. Replaces
+	isc_service_start().</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="Statement"></A><FONT SIZE=4>Statement
-interface:</FONT></P>
+interface – replaces (partially) isc_stmt_handle.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	getInfo(StatusType* status, unsigned itemsLength, const unsigned
-	char* items, unsigned bufferLength, unsigned char* buffer)</FONT></P>
+	char* items, unsigned bufferLength, unsigned char* buffer) –
+	replaces isc_dsql_sql_info().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
-	getType(StatusType* status)</FONT></P>
+	getType(StatusType* status) – statement type, currently can be
+	found only in firebird sources in dsql/dsql.h.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
-	getPlan(StatusType* status, FB_BOOLEAN detailed)</FONT></P>
+	getPlan(StatusType* status, FB_BOOLEAN detailed) – returns
+	statement execution plan.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ISC_UINT64
-	getAffectedRecords(StatusType* status)</FONT></P>
+	getAffectedRecords(StatusType* status) – returns number of records
+	affected by statement.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IMessageMetadata*
-	getInputMetadata(StatusType* status)</FONT></P>
+	getInputMetadata(StatusType* status) – returns parameters
+	metadata.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IMessageMetadata*
-	getOutputMetadata(StatusType* status)</FONT></P>
+	getOutputMetadata(StatusType* status) – returns output values
+	metadata.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
 	execute(StatusType* status, ITransaction* transaction,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata*
-	outMetadata, void* outBuffer)</FONT></P>
+	outMetadata, void* outBuffer) – executes any SQL statement except
+	returning multiple rows of data. Partial analogue of
+	isc_dsql_execute2() - in and out XSLQDAs replaced with input and
+	output messages with appropriate buffers.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IResultSet*
 	openCursor(StatusType* status, ITransaction* transaction,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata*
-	outMetadata, unsigned flags)</FONT></P>
+	outMetadata, unsigned flags) – executes SQL statement potentially
+	returning multiple rows of data. Returns ResultSet interface which
+	should be used to fetch that data. Format of output data is defined
+	by outMetadata parameter, leaving it NULL default format may be
+	used. Parameter flags is needed to open bidirectional cursor setting
+	it's value to Istatement::CURSOR_TYPE_SCROLLABLE.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	setCursorName(StatusType* status, const char* name)</FONT></P>
+	setCursorName(StatusType* status, const char* name) – replaces
+	isc_dsql_set_cursor_name(). </FONT>
+	</P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void free(StatusType*
-	status)</FONT></P>
+	status) – free statement, releases interface on success.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
-	getFlags(StatusType* status)</FONT></P>
+	getFlags(StatusType* status) – returns <A HREF="#Values returned by getFlags">flags</A>
+	describing how this statement should be executed, simplified
+	replacement of getType() method.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
@@ -1683,61 +1962,102 @@ interface:</FONT></P>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Constants defined by
 Statement interface:</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>- prepare() flags (may be
-ORed):</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_NONE</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_TYPE</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_INPUT_PARAMETERS</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_OUTPUT_PARAMETERS</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_LEGACY_PLAN</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_DETAILED_PLAN</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_AFFECTED_RECORDS</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_FLAGS</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>- prepare() flags –
-often used combinations of flags:</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_METADATA</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_ALL </FONT>
-</P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FLAG_HAS_CURSOR = 1;</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FLAG_REPEAT_EXECUTE = 2;</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>IAttachment::prepare()
+flags:</FONT></P>
+<P STYLE="margin-left: 0.38in; text-indent: -0.01in; margin-bottom: 0in; page-break-before: auto">
+<FONT SIZE=4>PREPARE_PREFETCH_NONE – constant to pass no flags, 0
+value.</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>The following flags may be
+OR-ed to get desired set of flags:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_TYPE</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_INPUT_PARAMETERS</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_OUTPUT_PARAMETERS</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_LEGACY_PLAN</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_DETAILED_PLAN</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_AFFECTED_RECORDS</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_FLAGS
+	(flags returned by getFlags() method)</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Frequently used
+combinations of flags:</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_METADATA</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>PREPARE_PREFETCH_ALL </FONT>
+	</P>
+</OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>CURSOR_TYPE_SCROLLABLE =
-1;</FONT></P>
+<P STYLE="margin-bottom: 0in"><A NAME="Values returned by getFlags"></A>
+<FONT SIZE=4>Values returned by getFlags() method: </FONT>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FLAG_HAS_CURSOR – use
+openCursor() to execute this statement, not execute()</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>FLAG_REPEAT_EXECUTE –
+when prepared statement may be executed many times with different
+parameters</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="Flags passed to openCursor"></A>
+<FONT SIZE=4>Flags passed to openCursor():</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>CURSOR_TYPE_SCROLLABLE –
+open bidirectional cursor.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="Status"></A><FONT SIZE=4>Status
-interface:</FONT></P>
+interface – replaces ISC_STATUS_ARRAY. Functionality is extended –
+Status has separate access to errors and warnings vectors, can hold
+vectors of unlimited length, itself stores strings used in vectors
+avoiding need in circular strings buffer. In C++ Status is always
+used under status wrapper, C++ API provides two different <A HREF="#Status Wrapper">wrappers</A>
+having different behavior when error is returned from API call.
+Interface is on purpose minimized (methods like convert it to text
+are moved to <A HREF="#Util">Util</A> interface) in order to simplify
+it's implementation by users when needed.</FONT></P>
 <OL>
-	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void init()</FONT></P>
-	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned getState()</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void init() - cleanup
+	interface, set it to initial state.</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned getState() -
+	get current state of interface, returns <A HREF="#returned by getState">state
+	flags</A>, may be OR-ed.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	setErrors2(unsigned length, const intptr_t* value)</FONT></P>
+	setErrors2(unsigned length, const intptr_t* value) – set contents
+	of errors vector with length explicitly specified in a call.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	setWarnings2(unsigned length, const intptr_t* value)</FONT></P>
+	setWarnings2(unsigned length, const intptr_t* value) – set
+	contents of warnings vector with length explicitly specified in a
+	call.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void setErrors(const
-	intptr_t* value)</FONT></P>
+	intptr_t* value) – set contents of errors vector, length is
+	defined by value context.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	setWarnings(const intptr_t* value)</FONT></P>
+	setWarnings(const intptr_t* value) – set contents of warnings
+	vector, length is defined by value context.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const intptr_t*
-	getErrors()</FONT></P>
+	getErrors() - get errors vector.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const intptr_t*
-	getWarnings()</FONT></P>
-	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IStatus* clone()</FONT></P>
+	getWarnings() - get warnings vector.</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IStatus* clone() -
+	create clone of current interface.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Constants defined by
 Status interface:</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>- flags set in the value,
-returned by getState() method:</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="returned by getState"></A><FONT SIZE=4>Flags
+set in the value, returned by getState() method:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>STATE_WARNINGS</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>STATE_ERRORS</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>- completion codes:</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="Completion codes"></A><FONT SIZE=4>Completion
+codes:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_ERROR</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_OK</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>RESULT_NO_DATA</FONT></P>
@@ -1746,76 +2066,145 @@ returned by getState() method:</FONT></P>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
+<P STYLE="margin-bottom: 0in"><A NAME="Timer"></A><FONT SIZE=4>Timer
+interface – user timer. Callback interface which should be
+implemented by user to use firebird timer.</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void handler() -
+	method is called when timer rings (or when server is shutting down).</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="TimerControl"></A><FONT SIZE=4>TimerControl
+interface – very simple and not too precise implementation of
+timer. Arrived here because existing timers are very much OS
+dependent and may be used in programs that require to be portable and
+do not need really high precision timer. Particularly execution of
+given timer may be delayed if another one has not completed at the
+moment when given timer should alarm.</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	start(StatusType* status, ITimer* timer, ISC_UINT64 microSeconds) –
+	start <A HREF="#Timer">ITimer</A> to alarm after given delay (in
+	microseconds, 10<SUP>-6</SUP> seconds). Timer will be waked up only
+	once after this call.</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void stop(StatusType*
+	status, ITimer* timer) – stop <A HREF="#Timer">ITimer</A>. It's
+	not an error to stop not started timer thus avoiding problems with
+	races between stop() and timer alarm.</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
 <P STYLE="margin-bottom: 0in"><A NAME="Transaction"></A><FONT SIZE=4>Transaction
-interface:</FONT></P>
+interface – replaces isc_tr_handle.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	getInfo(StatusType* status, unsigned itemsLength, const unsigned
-	char* items, unsigned bufferLength, unsigned char* buffer)</FONT></P>
+	char* items, unsigned bufferLength, unsigned char* buffer) –
+	replaces isc_transaction_info().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	prepare(StatusType* status, unsigned msgLength, const unsigned char*
-	message)</FONT></P>
+	message) – replaces isc_prepare_transaction2().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	commit(StatusType* status)</FONT></P>
+	commit(StatusType* status) – replaces isc_commit_transaction().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	commitRetaining(StatusType* status)</FONT></P>
+	commitRetaining(StatusType* status) – replaces
+	isc_commit_retaining().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	rollback(StatusType* status)</FONT></P>
+	rollback(StatusType* status) – replaces
+	isc_rollback_transaction().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	rollbackRetaining(StatusType* status)</FONT></P>
+	rollbackRetaining(StatusType* status) – replaces
+	isc_rollback_retaining().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	disconnect(StatusType* status)</FONT></P>
+	disconnect(StatusType* status) – replaces
+	fb_disconnect_transaction().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
-	join(StatusType* status, ITransaction* transaction)</FONT></P>
+	join(StatusType* status, ITransaction* transaction) – joins
+	current transaction and passed as parameter transaction into single
+	distributed transaction (using <A HREF="#Dtc">Dtc</A>). On success
+	both current transaction and passed as parameter transaction are
+	released and should not be used any more.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
-	validate(StatusType* status, IAttachment* attachment)</FONT></P>
+	validate(StatusType* status, IAttachment* attachment) – this
+	method is used to support distributed transactions coordinator.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ITransaction*
-	enterDtc(StatusType* status)</FONT></P>
+	enterDtc(StatusType* status) – this method is used to support
+	distributed transactions coordinator.</FONT></P>
+</OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="VersionCallback"></A><FONT SIZE=4>VersionCallback
+interface – callback for <A HREF="#Util">Util</A>::getFbVersion().</FONT></P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
+	callback(StatusType* status, const char* text) – called by
+	firebird engine for each line in multiline version report. Makes it
+	possible to print that lines one by one, place them into message box
+	in any GUI, etc.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="Util"></A><FONT SIZE=4>Util
-methods:</FONT></P>
+interface – various helper methods required here or there.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	getFbVersion(StatusType* status, IAttachment* att, IVersionCallback*
-	callback)</FONT></P>
+	callback) – produce long and beautiful report about firebird
+	version used. It may be seen in ISQL when invoked with -Z switch.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	loadBlob(StatusType* status, ISC_QUAD* blobId, IAttachment* att,
-	ITransaction* tra, const char* file, FB_BOOLEAN txt)</FONT></P>
+	ITransaction* tra, const char* file, FB_BOOLEAN txt) – load blob
+	from file.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	dumpBlob(StatusType* status, ISC_QUAD* blobId, IAttachment* att,
-	ITransaction* tra, const char* file, FB_BOOLEAN txt)</FONT></P>
+	ITransaction* tra, const char* file, FB_BOOLEAN txt) – save blob
+	to file.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	getPerfCounters(StatusType* status, IAttachment* att, const char*
-	countersSet, ISC_INT64* counters)</FONT></P>
+	countersSet, ISC_INT64* counters) – get statistics for given
+	attachment.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IAttachment*
 	executeCreateDatabase(StatusType* status, unsigned stmtLength, const
 	char* creatDBstatement, unsigned dialect, FB_BOOLEAN*
-	stmtIsCreateDb)</FONT></P>
+	stmtIsCreateDb) – execute “CREATE DATABASE ...” statement –
+	ISC trick with NULL statement handle does not work with interfaces.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	decodeDate(ISC_DATE date, unsigned* year, unsigned* month, unsigned*
-	day)</FONT></P>
+	day) – replaces isc_decode_sql_date().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	decodeTime(ISC_TIME time, unsigned* hours, unsigned* minutes,
-	unsigned* seconds, unsigned* fractions)</FONT></P>
+	unsigned* seconds, unsigned* fractions) – replaces
+	isc_decode_sql_time().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ISC_DATE
-	encodeDate(unsigned year, unsigned month, unsigned day)</FONT></P>
+	encodeDate(unsigned year, unsigned month, unsigned day) – replaces
+	isc_encode_sql_date().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ISC_TIME
 	encodeTime(unsigned hours, unsigned minutes, unsigned seconds,
-	unsigned fractions)</FONT></P>
+	unsigned fractions) – replaces isc_encode_sql_time().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
-	formatStatus(char* buffer, unsigned bufferSize, IStatus* status)</FONT></P>
+	formatStatus(char* buffer, unsigned bufferSize, IStatus* status) –
+	replaces fb_interpret().</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
-	getClientVersion()</FONT></P>
+	getClientVersion() – returns integer, containing major version in
+	byte 0 and minor version in byte 1.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>IXpbBuilder*
 	getXpbBuilder(StatusType* status, unsigned kind, const unsigned
-	char* buf, unsigned len)</FONT></P>
+	char* buf, unsigned len) – returns <A HREF="#XpbBuilder">XpbBuilder</A>
+	interface. Valid <A HREF="#Valid builder types">kinds</A> are
+	enumerated in <A HREF="#XpbBuilder">XpbBuilder</A>.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
 	setOffsets(StatusType* status, IMessageMetadata* metadata,
-	IOffsetsCallback* callback)</FONT></P>
+	IOffsetsCallback* callback) – sets valid offsets in
+	<A HREF="#MessageMetadata">MessageMetadata</A>. Performs calls to
+	callback in <A HREF="#OffsetsCallback">OffsetsCallback</A> for each
+	field/parameter.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
@@ -1825,57 +2214,75 @@ methods:</FONT></P>
 methods:</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	clear(StatusType* status)</FONT></P>
+	clear(StatusType* status) – reset builder to empty state.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	removeCurrent(StatusType* status)</FONT></P>
+	removeCurrent(StatusType* status) – removes current clumplet.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	insertInt(StatusType* status, unsigned char tag, int value)</FONT></P>
+	insertInt(StatusType* status, unsigned char tag, int value) –
+	inserts a clumplet with value representing integer in network
+	format.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	insertBigInt(StatusType* status, unsigned char tag, ISC_INT64 value)</FONT></P>
+	insertBigInt(StatusType* status, unsigned char tag, ISC_INT64 value)
+	– inserts a clumplet with value representing integer in network
+	format.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	insertBytes(StatusType* status, unsigned char tag, const void*
-	bytes, unsigned length)</FONT></P>
+	bytes, unsigned length) - inserts a clumplet with value containing
+	passed bytes.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	insertTag(StatusType* status, unsigned char tag)</FONT></P>
+	insertTag(StatusType* status, unsigned char tag) – inserts a
+	clumplet without a value.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_BOOLEAN
-	isEof(StatusType* status)</FONT></P>
+	isEof(StatusType* status) – checks that there is no current
+	clumplet.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	moveNext(StatusType* status)</FONT></P>
+	moveNext(StatusType* status) – moves to next clumplet.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
-	rewind(StatusType* status)</FONT></P>
+	rewind(StatusType* status) – moves to first clumplet.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_BOOLEAN
-	findFirst(StatusType* status, unsigned char tag)</FONT></P>
+	findFirst(StatusType* status, unsigned char tag) – finds first
+	clumplet with given tag.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_BOOLEAN
-	findNext(StatusType* status)</FONT></P>
+	findNext(StatusType* status) – finds next clumplet with given tag.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned char
-	getTag(StatusType* status)</FONT></P>
+	getTag(StatusType* status) – returns tag for current clumplet.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
-	getLength(StatusType* status)</FONT></P>
+	getLength(StatusType* status) – returns length of current clumplet
+	value.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
-	getInt(StatusType* status)</FONT></P>
+	getInt(StatusType* status) – returns value of current clumplet as
+	integer.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ISC_INT64
-	getBigInt(StatusType* status)</FONT></P>
+	getBigInt(StatusType* status) – returns value of current clumplet
+	as 64-bit integer.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const char*
-	getString(StatusType* status)</FONT></P>
+	getString(StatusType* status) – returns value of current clumplet
+	as pointer to zero-terminated string (pointer is valid till next
+	call to this method).</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const unsigned char*
-	getBytes(StatusType* status)</FONT></P>
+	getBytes(StatusType* status) – returns value of current clumplet
+	as pointer to unsigned char.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
-	getBufferLength(StatusType* status)</FONT></P>
+	getBufferLength(StatusType* status) – returns length of parameters
+	block.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>const unsigned char*
-	getBuffer(StatusType* status)</FONT></P>
+	getBuffer(StatusType* status) – returns pointer to parameters
+	block.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Constants defined by
 XpbBuilder interface:</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>static const unsigned DPB
-= 1;</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="Valid builder types"></A><FONT SIZE=4>Valid
+builder types:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>static const unsigned DPB</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>static const unsigned
-SPB_ATTACH = 2;</FONT></P>
+SPB_ATTACH</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>static const unsigned
-SPB_START = 3;</FONT></P>
-<P STYLE="margin-bottom: 0in"><FONT SIZE=4>static const unsigned TPB
-= 4;</FONT></P>
+SPB_START</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>static const unsigned TPB</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <H1><FONT SIZE=4>Plugin, encrypting data transferred over the wire.</FONT></H1>
