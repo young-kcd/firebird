@@ -106,6 +106,8 @@ Const
   FB25_x64_Install  = 14;
   FB30Install       = 15;
   FB30_x64_Install  = 16;
+  Current32Install  = FB30Install;
+  Current64Install  = FB30_x64_Install;
 
   MaxProdInstalled = FB30_x64_Install;
 
@@ -127,6 +129,8 @@ Const
   FB21_x64  = $04000;
   FB25_x64  = $08000;
   FB30_x64  = $10000;
+  CurFB32   = FB30;
+  CurFB64   = FB30_x64;
 
   //  Likely gds32 version strings for installed versions of Firebird or InterBase are:
   //  [6,0,n,n]     InterBase 6.0
@@ -1091,12 +1095,12 @@ end;
 for i:=0 to ProductsInstalledCount-1 do
   InstallSummary := InstallSummary + InstallSummaryArray[i] + #13;
 
-// If FB21 is installed and installed platform does not match current platform
+// If older firebird is installed and installed platform does not match product we are installing
 // then notify user.
 #if PlatformTarget == "x64"
-If ((ProductsInstalled AND FB21_x64 ) = FB21_x64 ) then
+if ((ProductsInstalled AND CurFB64 ) = CurFB64 ) then
 #else
-If ((ProductsInstalled AND FB21 ) = FB21 ) then
+if ((ProductsInstalled AND CurFB32 ) = CurFB32 ) then
 #endif
       InstallSummary := InstallSummary
       +#13 + ExpandConstant('{cm:InstallSummarySuffix1}')
