@@ -670,13 +670,11 @@ begin
      ' *** Note - in Firebird 3 masterkey and masterke are different passwords. ***'
     , ''
     );
-  AdminUserPage.Add('SYSDBA Name:', False);
   AdminUserPage.Add('Password:', True);
   AdminUserPage.Add('Retype Password:', True);
 
-  AdminUserPage.Values[0] := SYSDBAName;
+  AdminUserPage.Values[0] := SYSDBAPassword;
   AdminUserPage.Values[1] := SYSDBAPassword;
-  AdminUserPage.Values[2] := SYSDBAPassword;
 
 end;
 
@@ -718,8 +716,6 @@ begin
     cmdParams := TStringList.create;
     for i:=0 to ParamCount do begin
       cmdParams.add(ParamStr(i));
-      if pos('SYSDBANAME', Uppercase(ParamStr(i)) ) > 0 then
-        SYSDBAName := Copy(ParamStr(i),Length('/SYSDBANAME=')+1,Length(ParamStr(i))-Length('/SYSDBANAME=') );
       if pos('SYSDBAPASSWORD', Uppercase(ParamStr(i)) ) > 0 then
         SYSDBAPassword := Copy(ParamStr(i),Length('/SYSDBAPASSWORD=')+1,Length(ParamStr(i))-Length('/SYSDBAPASSWORD=') );
     end;
@@ -864,15 +860,13 @@ end;
 
 function GetAdminUserName: String;
 begin
-    Result := AdminUserPage.Values[0];
-    if Result = '' then
-      Result := 'SYSDBA';
+  Result := 'SYSDBA';
 end;
 
 
 function GetAdminUserPassword: String;
 begin
-    Result := AdminUserPage.Values[1];
+    Result := AdminUserPage.Values[0];
     if Result = '' then
       Result := 'masterkey';
 end;
@@ -1237,15 +1231,15 @@ begin
 	Result := True;
   case CurPageID of
     AdminUserPage.ID : begin
-      if not (AdminUserPage.Values[0] = '') and (AdminUserPage.Values[1] = '') then begin
+      if not (AdminUserPage.Values[0] = '') then begin
         Result := False;
         MsgBox(ExpandConstant('{cm:SYSDBAPasswordEmpty}'), mbError, MB_OK);
       end;
-      i := CompareStr(AdminUserPage.Values[1],AdminUserPage.Values[2]);
+      i := CompareStr(AdminUserPage.Values[0],AdminUserPage.Values[1]);
       If  not (i = 0) then begin
         Result := False;
+        AdminUserPage.Values[0] :='';
         AdminUserPage.Values[1] :='';
-        AdminUserPage.Values[2] :='';
         MsgBox(ExpandConstant('{cm:SYSDBAPasswordMismatch}'), mbError, MB_OK);
       end;
     end;
