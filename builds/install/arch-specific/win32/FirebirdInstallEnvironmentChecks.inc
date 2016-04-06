@@ -996,8 +996,8 @@ end;
 
 function ShowInstallCPLAppletTask: boolean;
 begin
-  //If NOCPL is on the command line then don't offer the task in UI mode.
-  result := ((not NoCPL) and ConfigureFirebird);
+//  result := ((not NoCPL) and ConfigureFirebird);
+  result := false;
 end;
 
 
@@ -1012,30 +1012,22 @@ end;
 
 function CopyGds32: boolean;
 begin
-  //Note that we invert the value of NOGDSCLIENT so we provide the
-  //correct answer to the question 'Do we copy GDS32 to <sys>' which is
-  //the default behaviour.
   result := False;
   if ConfigureFirebird then begin
-    //If one of these is false then either the commandline switch was passed
-    //or the user unchecked the Copy client as GDS32 box
-    result := ( (not NoGdsClient) AND (IsTaskSelected('CopyFbClientAsGds32Task') ));
+     result := ( IsTaskSelected( 'CopyFbClientAsGds32Task' ) );
   end;
 end;
 
 
 function ShowCopyGds32Task: boolean;
 begin
-  //If NOGDS32 is on the command line then don't offer the task in UI mode.
-  result := ((not NoGdsClient) and ConfigureFirebird);
+  result := ( ConfigureFirebird );
 end;
 
 
 function CopyFbClientLib: boolean;
 begin
-//Note that the default for this is the opposite to CopyGds32.
-  //result := ( (CopyFbClient) OR (ShouldProcessEntry('ClientComponent', 'CopyFbClientToSysTask')= srYes) );
-    result := ( (not CopyFbClient) AND (IsTaskSelected('CopyFbClientToSysTask') ));
+    result := ( IsTaskSelected( 'CopyFbClientToSysTask' ) );
 end;
 
 
@@ -1044,7 +1036,7 @@ function ShowCopyFbClientLibTask: boolean;
 begin
   result := False;
   if ConfigureFirebird then
-    result := ((not CopyFbClient) and ConfigureFirebird);
+    result := ( ConfigureFirebird );
 end;
 
 

@@ -627,20 +627,11 @@ Var
                                 // no other working installation is found (unless we are installing
                                 // over the same version)
 
-  //These three command-line options change the default behaviour
-  // during a scripted install
-  // They also control whether their associated task checkboxes are displayed
-  // during an interactive install
-  NoCPL: Boolean;                   // pass /nocpl on command-line.
-  NoGdsClient: Boolean;             // pass /nogds32 on command line.
-  CopyFbClient: Boolean;            // pass /copyfbclient on command line.
-
   // Options for scripted uninstall.
   CleanUninstall: Boolean;      // If /clean is passed to the uninstaller it will delete
                                 // user config files - firebird.conf, firebird.log,
                                 // databases.conf, fbtrace.conf and the security database.
 
-  SYSDBAName: String;           // Name of SYSDBA
   SYSDBAPassword: String;       // SYSDBA password
 
 #ifdef setuplogging
@@ -692,8 +683,9 @@ begin
 
   if ((pos('HELP',Uppercase(CommandLine)) > 0) or
     (pos('--',Uppercase(CommandLine)) > 0) or
-    (pos('/?',Uppercase(CommandLine)) > 0) or
-    (pos('/H',Uppercase(CommandLine)) > 0) ) then begin
+//    (pos('/?',Uppercase(CommandLine)) > 0) or		// InnoSetup displays its own help if these switches are passed.
+//    (pos('/H',Uppercase(CommandLine)) > 0) ) 		// Note also that our help scren only appears after the Choose Language dialogue :-(
+	then begin
     ShowHelpDlg;
     result := False;
     Exit;
@@ -703,15 +695,6 @@ begin
   if pos('FORCE',Uppercase(CommandLine)) > 0 then
     ForceInstall:=True;
 
-// For now we disable installation of the cpl applet until it is fixed.
-//  if pos('NOCPL', Uppercase(CommandLine)) > 0 then
-    NoCPL := True;
-
-  if pos('NOGDS32', Uppercase(CommandLine)) > 0 then
-    NoGdsClient := True;
-
-  if pos('COPYFBCLIENT', Uppercase(CommandLine)) > 0 then
-    CopyFbClient := True;
 
     cmdParams := TStringList.create;
     for i:=0 to ParamCount do begin
