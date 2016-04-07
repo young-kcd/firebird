@@ -2,6 +2,21 @@
   * v3.0 Final Release
   **************************
 
+    * Bugfix CORE-5189
+        Codes of operation of user management plugin are missing in public API
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5184
+        Assertion in cloop dispatcher when trying to save exception information in status interface
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5182
+        Inconsistent effects of subsequent statement execution if failing during record refetch
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-5181
         Build fails when HAVE_MMAP is not defined
       Contributor(s):
@@ -101,6 +116,11 @@
         Expression index may not be used by the optimizer if created and used in different connection charsets
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4645
+        Internal Firebird consistency check (cannot find tip page (165), file: tra.cpp line: 2375)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
 
     * Improvement CORE-5180
         Do not require root rights to build linux package
