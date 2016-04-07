@@ -2409,63 +2409,6 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 	return true;
 }
 
-IndexRelationship::IndexRelationship()
-{
-/**************************************
- *
- *	I n d e x R e l a t i on s h i p
- *
- **************************************
- *
- *  Initialize
- *
- **************************************/
-	stream = 0;
-	unique = false;
-	cost = 0;
-	cardinality = 0;
-}
-
-
-InnerJoinStreamInfo::InnerJoinStreamInfo(MemoryPool& p) :
-	indexedRelationships(p)
-{
-/**************************************
- *
- *	I n n e r J o i n S t r e a m I n f o
- *
- **************************************
- *
- *  Initialize
- *
- **************************************/
-	stream = 0;
-	baseUnique = false;
-	baseCost = 0;
-	baseIndexes = 0;
-	baseConjunctionMatches = 0;
-	baseNavigated = false;
-	used = false;
-	previousExpectedStreams = 0;
-}
-
-bool InnerJoinStreamInfo::independent() const
-{
-/**************************************
- *
- *	i n d e p e n d e n t
- *
- **************************************
- *
- *  Return true if this stream can't be
- *  used by other streams and it can't
- *  use index retrieval based on other
- *  streams.
- *
- **************************************/
-	return (indexedRelationships.getCount() == 0) && (previousExpectedStreams == 0);
-}
-
 
 OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const StreamList& streams,
 									   SortNode* sort_clause, PlanNode* plan_clause)
@@ -2546,9 +2489,9 @@ void OptimizerInnerJoin::calculateStreamInfo()
 		AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getCost());
 
 		innerStreams[i]->baseCost = candidate->cost;
+		innerStreams[i]->baseSelectivity = candidate->selectivity;
 		innerStreams[i]->baseIndexes = candidate->indexes;
 		innerStreams[i]->baseUnique = candidate->unique;
-		innerStreams[i]->baseConjunctionMatches = (int) candidate->matches.getCount();
 		innerStreams[i]->baseNavigated = candidate->navigated;
 
 		csb_tail->deactivate();
@@ -2583,7 +2526,7 @@ void OptimizerInnerJoin::calculateStreamInfo()
 			{
 				// First those streams which can't be used by other streams
 				// or can't depend on a stream.
-				if (innerStreams[i]->independent() && !tempStreams[index]->independent())
+				if (innerStreams[i]->isIndependent() && !tempStreams[index]->isIndependent())
 					break;
 
 				// Next those with the lowest previous expected streams
@@ -2700,7 +2643,7 @@ StreamType OptimizerInnerJoin::findJoinOrder()
 	printStartOrder();
 #endif
 
-	int indexes = 0, navigations = 0;
+	int filters = 0, navigations = 0;
 
 	FB_SIZE_T i = 0;
 	remainingStreams = 0;
@@ -2711,15 +2654,17 @@ StreamType OptimizerInnerJoin::findJoinOrder()
 		{
 			remainingStreams++;
 
-			if (navigations && innerStreams[i]->baseIndexes)
+			const int currentFilter = innerStreams[i]->isFiltered() ? 1 : 0;
+
+			if (navigations && currentFilter)
 				navigations = 0;
 
-			indexes += innerStreams[i]->baseIndexes;
+			filters += currentFilter;
 
-			if (innerStreams[i]->baseNavigated && innerStreams[i]->baseIndexes == indexes)
+			if (innerStreams[i]->baseNavigated && currentFilter == filters)
 				navigations++;
 
-			if (innerStreams[i]->independent())
+			if (innerStreams[i]->isIndependent())
 			{
 				if (!optimizer->opt_best_count || innerStreams[i]->baseCost < optimizer->opt_best_cost)
 				{
@@ -2739,11 +2684,14 @@ StreamType OptimizerInnerJoin::findJoinOrder()
 		{
 			if (!innerStreams[i]->used)
 			{
-				// If optimization for first rows has been requested and index navigations are possible,
-				// then consider only join orders starting with a navigational stream
+				// If optimization for first rows has been requested and index navigations are
+				// possible, then consider only join orders starting with a navigational stream.
+				// Except cases when other streams have local predicates applied.
+
+				const int currentFilter = innerStreams[i]->isFiltered() ? 1 : 0;
 
 				if (!optimizer->optimizeFirstRows || !navigations ||
-					(innerStreams[i]->baseNavigated && innerStreams[i]->baseIndexes == indexes))
+					(innerStreams[i]->baseNavigated && currentFilter == filters))
 				{
 					indexedRelationships.clear();
 					findBestOrder(0, innerStreams[i], &indexedRelationships, 0.0, 1.0);

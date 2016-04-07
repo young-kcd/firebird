@@ -228,7 +228,9 @@ public:
 class IndexRelationship
 {
 public:
-	IndexRelationship();
+	IndexRelationship()
+		: stream(0), unique(false), cost(0), cardinality(0)
+	{}
 
 	StreamType stream;
 	bool unique;
@@ -241,14 +243,31 @@ typedef Firebird::Array<IndexRelationship*> IndexedRelationships;
 class InnerJoinStreamInfo
 {
 public:
-	explicit InnerJoinStreamInfo(MemoryPool& p);
-	bool independent() const;
+	explicit InnerJoinStreamInfo(MemoryPool& p)
+	: indexedRelationships(p),
+	  stream(0), baseUnique(false), baseCost(0), baseSelectivity(0),
+	  baseIndexes(0), baseNavigated(false),
+	  used(false), previousExpectedStreams(0)
+	{}
+
+	bool isIndependent() const
+	{
+		// Return true if this stream can't be used by other streams
+		// and it can't use index retrieval based on other streams
+
+		return (indexedRelationships.isEmpty() && !previousExpectedStreams);
+	}
+
+	bool isFiltered() const
+	{
+		return (baseSelectivity < MAXIMUM_SELECTIVITY);
+	}
 
 	StreamType stream;
 	bool baseUnique;
 	double baseCost;
+	double baseSelectivity;
 	int baseIndexes;
-	int baseConjunctionMatches;
 	bool baseNavigated;
 	bool used;
 
