@@ -7,7 +7,7 @@
 	<META NAME="AUTHOR" CONTENT="alex ">
 	<META NAME="CREATED" CONTENT="20130531;10003100">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
-	<META NAME="CHANGED" CONTENT="20160406;18550900">
+	<META NAME="CHANGED" CONTENT="20160407;18553100">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
 	<STYLE TYPE="text/css">
 	<!--
@@ -2516,7 +2516,8 @@ about the user. </FONT>
 </P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int operation() -
-	code of operation.</FONT></P>
+	code of operation (see <A HREF="#Constants defined by User interface">list</A>
+	below).</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ICharUserField*
 	userName() - login name.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ICharUserField*
@@ -2540,6 +2541,23 @@ about the user. </FONT>
 	clear(StatusType* status) – sets all fields to not entered and not
 	specified.</FONT></P>
 </OL>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><A NAME="Constants defined by User interface"></A>
+<FONT SIZE=4>Constants defined by User interface – valid codes of
+operation.</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>OP_USER_ADD – create
+user</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>OP_USER_MODIFY – alter
+user</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>OP_USER_DELETE – drop
+user</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>OP_USER_DISPLAY – show
+user</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>OP_USER_SET_MAP – turn
+on mapping of windows admins to role rdb$admin</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>OP_USER_DROP_MAP – turn
+off mapping of windows admins to role rdb$admin</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="ListUsers"></A><FONT SIZE=4>ListUsers
@@ -2577,7 +2595,7 @@ security database with valid credentials. Pres</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="Management"></A><FONT SIZE=4>Management
-interface is main interface user management plugin.</FONT></P>
+interface is main interface of user management plugin.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	start(StatusType* status, ILogonInfo* logonInfo) – starts plugin,
@@ -2619,7 +2637,8 @@ it may be used to protect data in database which is sailed as a
 source of some information together with special application
 accessing that data. Requirements for this usages are quite
 different. In first case we may trust database server that it is not
-modified to steal keys passed to security plugin. In second case
+modified to steal keys passed to security plugin – i.e. we expect
+that key will not be sent to inappropriate server. In second case
 server may be modified in some way to steal keys (if they are passed
 from application to plugin via server code) or even data (as the last
 resort to dump blocks from the cache where they are in non-encrypted
@@ -2630,26 +2649,36 @@ asking a kind of digital signature from it. Making sure that network
 line is encrypted (parsing output of <A HREF="#Util">Util</A>::getFbVersion())
 or using some own encryption of a key is also very good idea in case
 when network access to the server is used. All this job should be
-done in plugin (and application working with it) i.e. encryption
-algorithm by itself may happen to be easiest part of db crypt plugin.</FONT></P>
+done in plugin (and application working with it) i.e. database block
+encryption algorithm by itself may happen to be easiest part of db
+crypt plugin.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="CryptKeyCallback"></A><FONT SIZE=4>CryptKeyCallback
 interface should be provided by a side sending crypt key to db crypt
-plugin.</FONT></P>
+plugin or key holder plugin.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>unsigned
 	callback(unsigned dataLength, const void* data, unsigned
-	bufferLength, void* buffer)</FONT></P>
+	bufferLength, void* buffer) – when performing callback information
+	is passed in both directions. The source of a key receives
+	dataLength bytes of data and may send up to bufferLength bytes into
+	buffer returning actual number of  bytes placed into buffer.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><A NAME="DbCryptPlugin"></A><FONT SIZE=4>DbCryptPlugin
-interface:</FONT></P>
+interface is main interface of database crypt plugin.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	setKey(StatusType* status, unsigned length, IKeyHolderPlugin**
-	sources, const char* keyName)</FONT></P>
+	sources, const char* keyName) – is used to provide to db crypt
+	plugin information about encryption key. Firebird never passes keys
+	for this type of plugin directly. Instead array of <A HREF="#KeyHolderPlugin">KeyHolderPlugins</A>
+	of given length is passed to crypt plugin which must get from one of
+	it <A HREF="#CryptKeyCallback">CryptKeyCallback</A> interface and
+	get a key using it. Parameter keyName is a name of a key like it was
+	entered in “ALTER DATABASE ENCRYPT …” operator.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	encrypt(StatusType* status, unsigned length, const void* from, void*
 	to)</FONT></P>
@@ -2660,18 +2689,52 @@ interface:</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <H1><FONT SIZE=4>Key holder for database encryption plugin.</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>This type of plugin is
+needed to delineate functionality – db crypt plugin is dealing with
+actual encryption, key holder solves questions related with providing
+it a key in secure way. Plugin may be received from application or
+loaded in some other way (up to using flash device inserted into
+server at firebird startup time).</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
 <P STYLE="margin-bottom: 0in"><A NAME="KeyHolderPlugin"></A><FONT SIZE=4>KeyHolderPlugin
-interface:</FONT></P>
+interface is main interface of database crypt key holder plugin.</FONT></P>
 <OL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>int
-	keyCallback(StatusType* status, ICryptKeyCallback* callback)</FONT></P>
+	keyCallback(StatusType* status, ICryptKeyCallback* callback) – is
+	used to pass attachment's <A HREF="#CryptKeyCallback">CryptKeyCallback</A>
+	interface (if provided by user with <A HREF="#Provider">Provider</A>::setDbCryptCallback()
+	call). This call is always performed at database attach moment, and
+	some holders may reject attachment if satisfactory key was not
+	provided. This makes it possible to let only specific applications
+	(i.e. available to provide needed crypt key) access database even if
+	required key was already provided by another attachment.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>ICryptKeyCallback*
-	keyHandle(StatusType* status, const char* keyName)</FONT></P>
+	keyHandle(StatusType* status, const char* keyName) – is intended
+	to be called by <A HREF="#DbCryptPlugin">DbCryptPlugin</A> directly
+	to obtain callback interface for named key from key holder. This
+	makes it possible for open source firebird code to never touch
+	actual keys avoiding ability to steal a key changing firebird code.
+	After getting <A HREF="#CryptKeyCallback">CryptKeyCallback</A>
+	interface crypt plugin starts data exchange using it. Key holder can
+	(for example) check digital signature of crypt plugin before sending
+	a key to it in order to avoid use of modified crypt plugin able to
+	steal secret key.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <H1><FONT SIZE=4>Non-interface objects used by API (C++ specific
 header Message.h).</FONT></H1>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Following 3 classes are
+used to represent date, time and timestamp (datetime) when using
+FB_MESSAGE macro. Members of data structure, representing static
+message, correspondint to fields of types FB_DATE / FB_TIME /
+FB_TIMESTAMP will have a type of one of this classes. Knowing methods
+/ members (which are enough self-descriptive to avoid describing them
+here) of this classes is needed to access date and time fields in
+static messages.</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
 <P STYLE="margin-bottom: 0in"><A NAME="FbDate"></A><FONT SIZE=4>class
 FbDate methods:</FONT></P>
 <P STYLE="margin-bottom: 0in">    <FONT SIZE=4>void decode(IUtil*
@@ -2705,6 +2768,19 @@ util, unsigned hours, unsigned minutes, unsigned seconds, unsigned
 fractions)</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>class FbTimestamp members:</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>FbDate date;</FONT></P>
+<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>FbTime time;</FONT></P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>Following two templates
+are used in static messages to represent CHAR(N) and VARCHAR(N)
+fields. </FONT>
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>template &lt;unsigned N&gt;</FONT></P>
 <P STYLE="margin-bottom: 0in"><A NAME="FbChar"></A><FONT SIZE=4>struct
 FbChar</FONT></P>
@@ -2726,10 +2802,10 @@ s);</FONT></P>
 </P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
-<P STYLE="margin-bottom: 0in"><BR>
-</P>
-<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>TYPE_EXTERNAL_ENGINE</FONT></P>
-<P STYLE="margin-bottom: 0in">    <FONT SIZE=4>TYPE_TRACE</FONT></P>
+<HR>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>This document is currently
+missing 2 types of plugins – ExternalEngine and Trace. Information
+about them will be made available in next release of it.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 </BODY>
