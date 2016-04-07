@@ -24,6 +24,7 @@
 #ifndef UTILITIES_GSEC_H
 #define UTILITIES_GSEC_H
 
+#include "firebird/Interface.h"
 #include "../common/ThreadData.h"
 #include "../jrd/constants.h"
 
@@ -40,16 +41,17 @@ class UserData;
    operation to perform and any parameters entered (sizes are determined
    by the size of the fields in the USERS relation in USERINFO.GDB) */
 
-const int ADD_OPER		= 1;
-const int DEL_OPER		= 2;
-const int DIS_OPER		= 3;
-const int MOD_OPER		= 4;
-const int QUIT_OPER		= 5;
-const int HELP_OPER		= 6;
-const int ADDMOD_OPER	= 7;		// This oper never goes to plugins
-const int MAP_SET_OPER	= 8;
-const int MAP_DROP_OPER	= 9;
-const int OLD_DIS_OPER	= 10;
+const int ADD_OPER		= Firebird::IUser::OP_USER_ADD;
+const int MOD_OPER		= Firebird::IUser::OP_USER_MODIFY;
+const int DEL_OPER		= Firebird::IUser::OP_USER_DELETE;
+const int DIS_OPER		= Firebird::IUser::OP_USER_DISPLAY;
+const int MAP_SET_OPER	= Firebird::IUser::OP_USER_SET_MAP;
+const int MAP_DROP_OPER	= Firebird::IUser::OP_USER_DROP_MAP;
+// Following operations never go to plugins
+const int QUIT_OPER		= 101;
+const int HELP_OPER		= 102;
+const int ADDMOD_OPER	= 103;
+const int OLD_DIS_OPER	= 104;
 
 const int USER_NAME_LEN	= 133;
 const int ALT_NAME_LEN	= 129;

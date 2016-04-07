@@ -232,8 +232,8 @@ namespace {
 		public Firebird::AutoIface<Firebird::IListUsersImpl<Display, Firebird::CheckStatusWrapper> >
 	{
 	public:
-		explicit Display(tsec* t)
-			: tdsec(t), first(true)
+		Display(tsec* t, int op)
+			: tdsec(t), first(true), putAdmin(op != OLD_DIS_OPER)
 		{ }
 
 		// IListUsers implementation
@@ -257,7 +257,7 @@ namespace {
 					tdsec->utilSvc->putLine(isc_spb_sec_lastname, data->lastName()->entered() ? data->lastName()->get() : "");
 					tdsec->utilSvc->putSLong(isc_spb_sec_userid, attr["uid"]);
 					tdsec->utilSvc->putSLong(isc_spb_sec_groupid, attr["gid"]);
-					if (data->operation() == DIS_OPER)
+					if (putAdmin)
 					{
 						tdsec->utilSvc->putSLong(isc_spb_sec_admin, data->admin()->get());
 					}
@@ -288,6 +288,7 @@ namespace {
 	private:
 		tsec* tdsec;
 		bool first;
+		bool putAdmin;
 	};
 
 
@@ -521,14 +522,17 @@ int gsec(Firebird::UtilSvc* uSvc)
 	{
 		if (ret == 0)
 		{
+			Display disp(tdsec, user_data->op);
+			if (user_data->op == OLD_DIS_OPER)
+				user_data->op = DIS_OPER;
+
 			// Signal the start of the service here ONLY if we are displaying users
 			// since the number of users may exceed the service buffer.  This
 			// will cause the service to wait for the client to request data.  However,
 			// if the server is not signaled, then the client can never request anything.
-			if (user_data->operation() == DIS_OPER || user_data->operation() == OLD_DIS_OPER)
+			if (user_data->operation() == DIS_OPER)
 				uSvc->started();
 
-			Display disp(tdsec);
 			if (! useServices)
 			{
 				if (user_data->operation() == ADD_OPER)
@@ -543,7 +547,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 					(fieldSet(&user_data->u) || fieldSet(&user_data->g) || fieldSet(&user_data->group)))
 				{
 					StackUserData u;
-					u.op = OLD_DIS_OPER;
+					u.op = DIS_OPER;
 					u.user.set(&statusWrapper, user_data->userName()->get());
 					check(&statusWrapper);
 					u.user.setEntered(&statusWrapper, 1);
@@ -658,7 +662,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 
 				if (ret == 0)
 				{
-					Display disp(tdsec);
+					Display disp(tdsec, DIS_OPER);
 					callRemoteServiceManager(status, sHandle, *user_data, &disp);
 					if (status[1])
 					{

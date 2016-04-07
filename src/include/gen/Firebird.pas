@@ -1742,6 +1742,12 @@ type
 
 	IUser = class(IVersioned)
 		const VERSION = 11;
+		const OP_USER_ADD = Integer(1);
+		const OP_USER_MODIFY = Integer(2);
+		const OP_USER_DELETE = Integer(3);
+		const OP_USER_DISPLAY = Integer(4);
+		const OP_USER_SET_MAP = Integer(5);
+		const OP_USER_DROP_MAP = Integer(6);
 
 		function operation(): Integer;
 		function userName(): ICharUserField;

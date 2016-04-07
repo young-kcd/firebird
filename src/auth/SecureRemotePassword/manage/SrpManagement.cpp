@@ -279,18 +279,18 @@ public:
 
 			switch(user->operation())
 			{
-			case MAP_DROP_OPER:
-			case MAP_SET_OPER:
+			case Firebird::IUser::OP_USER_DROP_MAP:
+			case Firebird::IUser::OP_USER_SET_MAP:
 				{
 					Firebird::string sql;
 					sql.printf("ALTER ROLE " ADMIN_ROLE " %s AUTO ADMIN MAPPING",
-						user->operation() == MAP_SET_OPER ? "SET" : "DROP");
+						user->operation() == Firebird::IUser::OP_USER_SET_MAP ? "SET" : "DROP");
 					att->execute(status, tra, sql.length(), sql.c_str(), SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
 					check(status);
 				}
 				break;
 
-			case ADD_OPER:
+			case Firebird::IUser::OP_USER_ADD:
 				{
 					const char* insert =
 						"INSERT INTO plg$srp_view(PLG$USER_NAME, PLG$VERIFIER, PLG$SALT, PLG$FIRST, PLG$MIDDLE, PLG$LAST,"
@@ -378,7 +378,7 @@ public:
 				}
 				break;
 
-			case MOD_OPER:
+			case Firebird::IUser::OP_USER_MODIFY:
 				{
 					Firebird::string update = "UPDATE plg$srp_view SET ";
 
@@ -482,7 +482,7 @@ public:
 				}
 				break;
 
-			case DEL_OPER:
+			case Firebird::IUser::OP_USER_DELETE:
 				{
 					const char* del = "DELETE FROM plg$srp_view WHERE PLG$USER_NAME=?";
 					Firebird::IStatement* stmt = NULL;
@@ -525,8 +525,7 @@ public:
 				}
 				break;
 
-			case OLD_DIS_OPER:
-			case DIS_OPER:
+			case Firebird::IUser::OP_USER_DISPLAY:
 				{
 					Firebird::string disp =	"SELECT PLG$USER_NAME, PLG$FIRST, PLG$MIDDLE, PLG$LAST, PLG$COMMENT, PLG$ATTRIBUTES, "
 											"	CASE WHEN RDB$RELATION_NAME IS NULL THEN FALSE ELSE TRUE END, PLG$ACTIVE "

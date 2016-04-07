@@ -2538,6 +2538,13 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 2;
 
+		static const int OP_USER_ADD = 1;
+		static const int OP_USER_MODIFY = 2;
+		static const int OP_USER_DELETE = 3;
+		static const int OP_USER_DISPLAY = 4;
+		static const int OP_USER_SET_MAP = 5;
+		static const int OP_USER_DROP_MAP = 6;
+
 		int operation()
 		{
 			int ret = static_cast<VTable*>(this->cloopVTable)->operation(this);
