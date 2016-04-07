@@ -403,7 +403,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 		while (transaction->tra_save_point)
 		{
 			transaction->rollforwardSavepoint(tdbb);
-		}
+	}
 
 		transaction_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
 	}
@@ -748,7 +748,7 @@ void TRA_invalidate(thread_db* tdbb, ULONG mask)
 		Jrd::Attachment::SyncGuard attGuard(attachment, FB_FUNCTION);
 
 		for (jrd_tra* transaction = attachment->att_transactions; transaction;
-			 transaction = transaction->tra_next)
+			transaction = transaction->tra_next)
 		{
 			const ULONG transaction_mask = 1L << (transaction->tra_number & (BITS_PER_LONG - 1));
 			if ((transaction_mask & mask) && (transaction->tra_flags & TRA_write))
@@ -1221,7 +1221,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 
 			if (relation && (relation->rel_flags & REL_temp_tran))
 				relation->delPages(tdbb, transaction->tra_number);
-		}
+			}
 
 	} // end scope
 
@@ -1336,33 +1336,33 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		// the transaction as dead.
 
 		try
-		{
+	{
 			// Release all user savepoints except transaction one
 			// It will clean up blob ids and temporary space anyway but faster than rollback
 			// because record data won't be updated with intermediate versions
 			while (transaction->tra_save_point && !(transaction->tra_save_point->sav_flags & SAV_trans_level))
-			{
+		{
 				transaction->rollforwardSavepoint(tdbb);
-			}
+		}
 
 			if (transaction->tra_save_point) // we still can use undo log for rollback, it wasn't reset because of no_auto_undo flag or size
+	{
+			// In an attempt to avoid deadlocks, clear the precedence by writing
+			// all dirty buffers for this transaction.
+
+			if (transaction->tra_flags & TRA_write)
 			{
-				// In an attempt to avoid deadlocks, clear the precedence by writing
-				// all dirty buffers for this transaction.
-
-				if (transaction->tra_flags & TRA_write)
-				{
 					transaction_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
 					transaction->rollbackSavepoint(tdbb);
 					transaction_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
-				}
-				else
-					transaction->rollbackSavepoint(tdbb);
-
-				// All changes are undone, so we may mark the transaction
-				// as committed
-				state = tra_committed;
 			}
+			else
+					transaction->rollbackSavepoint(tdbb);
+
+			// All changes are undone, so we may mark the transaction
+			// as committed
+			state = tra_committed;
+		}
 		}
 		catch (const Firebird::Exception&)
 		{
@@ -1509,6 +1509,10 @@ int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, TraNumber number)
 	// If the transaction is the system transaction, it is considered committed.
 
 	if (number == TRA_system_transaction)
+		return tra_committed;
+
+	const Database* dbb = tdbb->getDatabase();
+	if ((dbb->dbb_flags & DBB_read_only) && (number > trans->tra_top))
 		return tra_committed;
 
 	// Look in the transaction cache for read committed transactions
@@ -1743,7 +1747,7 @@ void TRA_sweep(thread_db* tdbb)
 		int oldest_state = 0;
 		const TraNumber oldest_limbo =
 			TPC_find_states(tdbb, transaction->tra_oldest, transaction->tra_top - 1,
-							1 << tra_limbo, oldest_state);
+				1 << tra_limbo, oldest_state);
 
 		const TraNumber active = oldest_limbo ? oldest_limbo : transaction->tra_top;
 
@@ -2329,11 +2333,11 @@ static void restart_requests(thread_db* tdbb, jrd_tra* trans)
 
 			if (request && request->req_transaction)
 			{
-				EXE_unwind(tdbb, request);
-				EXE_start(tdbb, request, trans);
-			}
+			EXE_unwind(tdbb, request);
+			EXE_start(tdbb, request, trans);
 		}
-	}
+				}
+			}
 }
 
 
@@ -2445,8 +2449,8 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 	if (!transaction->tra_save_point && !(transaction->tra_flags & TRA_no_auto_undo))
 	{
 		VIO_start_save_point(tdbb, transaction);	// start new savepoint if necessary
-		transaction->tra_save_point->sav_flags |= SAV_trans_level;
-	}
+			transaction->tra_save_point->sav_flags |= SAV_trans_level;
+		}
 
 	if (transaction->tra_flags & TRA_precommitted)
 	{
@@ -2498,9 +2502,9 @@ static void start_sweeper(thread_db* tdbb)
 		}
 		catch (const Firebird::Exception& ex)
 		{
-			gds__free(database);
+		gds__free(database);
 			iscLogException("cannot start sweep thread", ex);
-		}
+	}
 	}
 	else
 	{
@@ -3087,15 +3091,17 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	// of four, which puts the transaction on a byte boundary.
 
 	TraNumber base = oldest & ~TRA_MASK;
+	const ULONG top = (dbb->dbb_flags & DBB_read_only) ? 
+		dbb->dbb_next_transaction : number;
 
-	if (!(trans->tra_flags & TRA_read_committed))
+	if (!(trans->tra_flags & TRA_read_committed) && (top >= oldest))
 	{
-		const FB_SIZE_T length = (number - base + TRA_MASK) / 4;
+		const FB_SIZE_T length = (top + 1 - base + TRA_MASK) / 4;
 		trans->tra_transactions.resize(length);
 	}
 
 	trans->tra_number = number;
-	trans->tra_top = number;
+	trans->tra_top = top;
 	trans->tra_oldest = oldest;
 	trans->tra_oldest_active = active;
 
@@ -3143,9 +3149,9 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	// since they need to know what is currently committed.
 
 	if (trans->tra_flags & TRA_read_committed)
-		TPC_initialize_tpc(tdbb, number);
-	else
-		TRA_get_inventory(tdbb, trans->tra_transactions.begin(), base, number);
+		TPC_initialize_tpc(tdbb, top);
+	else if (top > base)
+		TRA_get_inventory(tdbb, trans->tra_transactions.begin(), base, top);
 
 	// Next task is to find the oldest active transaction on the system.  This
 	// is needed for garbage collection.  Things are made ever so slightly
@@ -3160,12 +3166,12 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	bool cleanup = !(number % TRA_ACTIVE_CLEANUP);
 	int oldest_state;
 
-	for (; active < number; active++)
+	for (; active < top; active++)
 	{
 		if (trans->tra_flags & TRA_read_committed)
 		{
 			const ULONG mask = (1 << tra_active);
-			active = TPC_find_states(tdbb, active, number, mask, oldest_state);
+			active = TPC_find_states(tdbb, active, top, mask, oldest_state);
 			if (!active)
 			{
 				active = number;
@@ -3259,15 +3265,15 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 
 	oldest_state = tra_committed;
 
-	for (oldest = trans->tra_oldest; oldest < number; oldest++)
+	for (oldest = trans->tra_oldest; oldest < top; oldest++)
 	{
 		if (trans->tra_flags & TRA_read_committed)
 		{
 			const ULONG mask = ~((1 << tra_committed) | (1 << tra_precommitted));
-			oldest = TPC_find_states(tdbb, trans->tra_oldest, number, mask, oldest_state);
+			oldest = TPC_find_states(tdbb, trans->tra_oldest, top, mask, oldest_state);
 			if (!oldest)
 			{
-				oldest = number;
+				oldest = top;
 				break;
 			}
 			fb_assert(oldest_state != tra_committed && oldest_state != tra_precommitted);
@@ -3283,7 +3289,10 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 			break;
 	}
 
-	if (--oldest > dbb->dbb_oldest_transaction)
+	if (oldest >= top && dbb->dbb_flags & DBB_read_only)
+		oldest = number;
+
+	if (--oldest > (ULONG) dbb->dbb_oldest_transaction)
 		dbb->dbb_oldest_transaction = oldest;
 
 	if (oldest_active > dbb->dbb_oldest_active)
