@@ -47,7 +47,7 @@ const int DEL_OPER		= Firebird::IUser::OP_USER_DELETE;
 const int DIS_OPER		= Firebird::IUser::OP_USER_DISPLAY;
 const int MAP_SET_OPER	= Firebird::IUser::OP_USER_SET_MAP;
 const int MAP_DROP_OPER	= Firebird::IUser::OP_USER_DROP_MAP;
-// Foolowing operations never go to plugins
+// Following operations never go to plugins
 const int QUIT_OPER		= 101;
 const int HELP_OPER		= 102;
 const int ADDMOD_OPER	= 103;
