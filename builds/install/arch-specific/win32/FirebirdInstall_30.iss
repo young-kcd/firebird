@@ -683,7 +683,7 @@ begin
   CommandLine:=GetCmdTail;
 
   if ((pos('HELP',Uppercase(CommandLine)) > 0) or
-    (pos('--',Uppercase(CommandLine)) > 0)
+    (pos('--',Uppercase(CommandLine)) > 0) )
 //	or
 //    (pos('/?',Uppercase(CommandLine)) > 0) or		// InnoSetup displays its own help if these switches are passed.
 //    (pos('/H',Uppercase(CommandLine)) > 0) ) 		// Note also that our help scren only appears after the Choose Language dialogue :-(
