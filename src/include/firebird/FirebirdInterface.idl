@@ -645,6 +645,14 @@ interface User : Versioned
 	IntUserField admin();
 
 	void clear(Status status);
+
+	// code of operation()
+	const int OP_USER_ADD = 1;
+	const int OP_USER_MODIFY = 2;
+	const int OP_USER_DELETE = 3;
+	const int OP_USER_DISPLAY = 4;
+	const int OP_USER_SET_MAP = 5;
+	const int OP_USER_DROP_MAP = 6;
 }
 
 interface ListUsers : Versioned
