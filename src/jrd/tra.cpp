@@ -748,7 +748,7 @@ void TRA_invalidate(thread_db* tdbb, ULONG mask)
 		Jrd::Attachment::SyncGuard attGuard(attachment, FB_FUNCTION);
 
 		for (jrd_tra* transaction = attachment->att_transactions; transaction;
-			transaction = transaction->tra_next)
+			 transaction = transaction->tra_next)
 		{
 			const ULONG transaction_mask = 1L << (transaction->tra_number & (BITS_PER_LONG - 1));
 			if ((transaction_mask & mask) && (transaction->tra_flags & TRA_write))
@@ -1221,7 +1221,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 
 			if (relation && (relation->rel_flags & REL_temp_tran))
 				relation->delPages(tdbb, transaction->tra_number);
-			}
+		}
 
 	} // end scope
 
@@ -1415,16 +1415,16 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		// the transaction as dead.
 
 		try
-	{
+		{
 			// In an attempt to avoid deadlocks, clear the precedence by writing
 			// all dirty buffers for this transaction.
 
 			if (transaction->tra_flags & TRA_write)
 			{
-					transaction_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
+				transaction_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
 				++transaction->tra_save_point->sav_verb_count;	// cause undo
 				VIO_verb_cleanup(tdbb, transaction);
-					transaction_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
+				transaction_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
 			}
 			else
 				VIO_verb_cleanup(tdbb, transaction);
@@ -1816,7 +1816,7 @@ void TRA_sweep(thread_db* tdbb)
 		int oldest_state = 0;
 		const TraNumber oldest_limbo =
 			TPC_find_states(tdbb, transaction->tra_oldest, transaction->tra_top - 1,
-				1 << tra_limbo, oldest_state);
+							1 << tra_limbo, oldest_state);
 
 		const TraNumber active = oldest_limbo ? oldest_limbo : transaction->tra_top;
 
@@ -2402,11 +2402,11 @@ static void restart_requests(thread_db* tdbb, jrd_tra* trans)
 
 			if (request && request->req_transaction)
 			{
-			EXE_unwind(tdbb, request);
-			EXE_start(tdbb, request, trans);
-		}
-				}
+				EXE_unwind(tdbb, request);
+				EXE_start(tdbb, request, trans);
 			}
+		}
+	}
 }
 
 
@@ -2593,9 +2593,9 @@ static void start_sweeper(thread_db* tdbb)
 		}
 		catch (const Firebird::Exception& ex)
 		{
-		gds__free(database);
+			gds__free(database);
 			iscLogException("cannot start sweep thread", ex);
-	}
+		}
 	}
 	else
 	{
