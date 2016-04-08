@@ -400,13 +400,13 @@ const char *  ctest_dataSrcDir()
         }
         else {
             /* __FILE__ on MSVC7 does not contain the directory */
-            FILE *file = fopen(".."U_FILE_SEP_STRING".."U_FILE_SEP_STRING "data" U_FILE_SEP_STRING "Makefile.in", "r");
+            FILE *file = fopen(".." U_FILE_SEP_STRING".." U_FILE_SEP_STRING "data" U_FILE_SEP_STRING "Makefile.in", "r");
             if (file) {
                 fclose(file);
-                dataSrcDir = ".."U_FILE_SEP_STRING".."U_FILE_SEP_STRING "data" U_FILE_SEP_STRING;
+                dataSrcDir = ".." U_FILE_SEP_STRING".." U_FILE_SEP_STRING "data" U_FILE_SEP_STRING;
             }
             else {
-                dataSrcDir = ".."U_FILE_SEP_STRING".."U_FILE_SEP_STRING".."U_FILE_SEP_STRING "data" U_FILE_SEP_STRING;
+                dataSrcDir = ".." U_FILE_SEP_STRING".." U_FILE_SEP_STRING".." U_FILE_SEP_STRING "data" U_FILE_SEP_STRING;
             }
         }
     }
@@ -435,7 +435,7 @@ const char *ctest_dataOutDir()
     */
 #if defined (U_TOPBUILDDIR)
     {
-        dataOutDir = U_TOPBUILDDIR "data"U_FILE_SEP_STRING"out"U_FILE_SEP_STRING;
+        dataOutDir = U_TOPBUILDDIR "data" U_FILE_SEP_STRING"out" U_FILE_SEP_STRING;
     }
 #else
 
@@ -467,13 +467,13 @@ const char *ctest_dataOutDir()
         }
         else {
             /* __FILE__ on MSVC7 does not contain the directory */
-            FILE *file = fopen(".."U_FILE_SEP_STRING".."U_FILE_SEP_STRING "data" U_FILE_SEP_STRING "Makefile.in", "r");
+            FILE *file = fopen(".." U_FILE_SEP_STRING".." U_FILE_SEP_STRING "data" U_FILE_SEP_STRING "Makefile.in", "r");
             if (file) {
                 fclose(file);
-                dataOutDir = ".."U_FILE_SEP_STRING".."U_FILE_SEP_STRING "data" U_FILE_SEP_STRING "out" U_FILE_SEP_STRING;
+                dataOutDir = ".." U_FILE_SEP_STRING".." U_FILE_SEP_STRING "data" U_FILE_SEP_STRING "out" U_FILE_SEP_STRING;
             }
             else {
-                dataOutDir = ".."U_FILE_SEP_STRING".."U_FILE_SEP_STRING".."U_FILE_SEP_STRING "data" U_FILE_SEP_STRING "out" U_FILE_SEP_STRING;
+                dataOutDir = ".." U_FILE_SEP_STRING".." U_FILE_SEP_STRING".." U_FILE_SEP_STRING "data" U_FILE_SEP_STRING "out" U_FILE_SEP_STRING;
             }
         }
     }
@@ -560,7 +560,7 @@ const char* loadTestData(UErrorCode* err){
     const char*      directory=NULL;
     UResourceBundle* test =NULL;
     char* tdpath=NULL;
-    const char* tdrelativepath = ".."U_FILE_SEP_STRING".."U_FILE_SEP_STRING"test"U_FILE_SEP_STRING"testdata"U_FILE_SEP_STRING"out"U_FILE_SEP_STRING;
+    const char* tdrelativepath = ".." U_FILE_SEP_STRING".." U_FILE_SEP_STRING"test" U_FILE_SEP_STRING"testdata" U_FILE_SEP_STRING"out" U_FILE_SEP_STRING;
     if( _testDataPath == NULL){
         directory= ctest_dataOutDir();
 

@@ -41,7 +41,7 @@ status(U_ZERO_ERROR)
   if((unsigned int)(index-testDataPath) != (strlen(testDataPath)-1)){
           *(index+1)=0;
   }
-  uprv_strcat(testDataPath,".."U_FILE_SEP_STRING);
+  uprv_strcat(testDataPath,".." U_FILE_SEP_STRING);
   uprv_strcat(testDataPath, "CollationTest_");
 }
 

@@ -633,7 +633,7 @@ static void TestNewTypes() {
     {
         const char *sourcePath = ctest_dataSrcDir();
         int32_t srcPathLen = strlen(sourcePath);
-        const char *deltaPath = ".."U_FILE_SEP_STRING"test"U_FILE_SEP_STRING"testdata"U_FILE_SEP_STRING;
+        const char *deltaPath = ".." U_FILE_SEP_STRING"test" U_FILE_SEP_STRING"testdata" U_FILE_SEP_STRING;
         int32_t deltaPathLen = strlen(deltaPath);
         char *testDataFileName = (char *) malloc( srcPathLen+ deltaPathLen + 50 );
         char *path = testDataFileName;

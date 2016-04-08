@@ -550,7 +550,7 @@ static void TestConvert()
                 *(index+1)=0;
         }
         
-        strcat(ucs_file_name,".."U_FILE_SEP_STRING);
+        strcat(ucs_file_name,".." U_FILE_SEP_STRING);
         strcat(ucs_file_name, CodePagesTestFiles[codepage_index]);
 
         ucs_file_in = fopen(ucs_file_name,"rb");

@@ -1223,7 +1223,7 @@ void MultithreadTest::TestCollators()
     if((unsigned int)(index-testDataPath) != (strlen(testDataPath)-1)){
         *(index+1)=0;
     }
-    strcat(testDataPath,".."U_FILE_SEP_STRING);
+    strcat(testDataPath,".." U_FILE_SEP_STRING);
     strcat(testDataPath, "CollationTest_");
 
     const char* type = "NON_IGNORABLE";

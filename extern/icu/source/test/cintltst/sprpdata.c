@@ -273,7 +273,7 @@ doStringPrepTest(const char* binFileName, const char* txtFileName, int32_t optio
     const char *testdatapath = loadTestData(errorCode);
     const char *srcdatapath =ctest_dataOutDir();
 
-    const char *relativepath = ".."U_FILE_SEP_STRING".."U_FILE_SEP_STRING"test"U_FILE_SEP_STRING"testdata"U_FILE_SEP_STRING;
+    const char *relativepath = ".." U_FILE_SEP_STRING".." U_FILE_SEP_STRING"test" U_FILE_SEP_STRING"testdata" U_FILE_SEP_STRING;
     char *filename = (char*) malloc(strlen(srcdatapath)+strlen(relativepath)+strlen(txtFileName)+10 );
     UStringPrepProfile* profile = usprep_open(testdatapath, binFileName, errorCode);
 
