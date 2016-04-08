@@ -440,6 +440,21 @@ endlocal
 @goto :EOF
 
 
+:INCLUDE_DIR
+:: Prepare other files needed for deployment to /include dir
+setlocal
+@echo Copying other include files required for development...
+set OUTPATH=%FB_OUTPUT_DIR%\include\firebird
+@copy %FB_ROOT_PATH%\src\include\gen\firebird.pas %OUTPATH%
+@mkdir %OUTPATH%\impl
+@xcopy /e %FB_ROOT_PATH%\src\include\firebird\impl\* %OUTPATH%\impl
+endlocal
+
+::End of INCLUDE_DIR
+::------------------
+@goto :EOF
+
+
 :DB_CONF
 :: Generate sample databases file
 ::===============================
@@ -740,6 +755,10 @@ if defined WIX (
 
 @Echo   Concatenating header files for ibase.h
 @(@call :IBASE_H ) || (@echo Error calling IBASE_H & @goto :EOF)
+@Echo.
+
+@Echo   Prepare include directory
+@(@call :INCLUDE_DIR ) || (@echo Error calling INCLUDE_DIR & @goto :EOF)
 @Echo.
 
 @Echo   Writing databases conf
