@@ -444,10 +444,10 @@ endlocal
 :: Prepare other files needed for deployment to /include dir
 setlocal
 @echo Copying other include files required for development...
-set OUTPATH=%FB_OUTPUT_DIR%\include\firebird
-@copy %FB_ROOT_PATH%\src\include\gen\firebird.pas %OUTPATH%
-@mkdir %OUTPATH%\impl
-@xcopy /e %FB_ROOT_PATH%\src\include\firebird\impl\* %OUTPATH%\impl
+set OUTPATH=%FB_OUTPUT_DIR%\include
+@copy %FB_ROOT_PATH%\src\yvalve\perf.h %OUTPATH%\
+@copy %FB_ROOT_PATH%\src\include\gen\firebird.pas %OUTPATH%\firebird\
+@xcopy /e /i /y %FB_ROOT_PATH%\src\include\firebird\impl\* %OUTPATH%\firebird\impl\
 endlocal
 
 ::End of INCLUDE_DIR
