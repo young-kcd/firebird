@@ -1677,8 +1677,8 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 	case dtype_array:
 		if (from->dsc_dtype == dtype_quad)
 		{
-			((SLONG *) p)[0] = ((SLONG *) q)[0];
-			((SLONG *) p)[1] = ((SLONG *) q)[1];
+			((SLONG*) p)[0] = ((SLONG*) q)[0];
+			((SLONG*) p)[1] = ((SLONG*) q)[1];
 			return;
 		}
 

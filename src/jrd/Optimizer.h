@@ -244,10 +244,10 @@ class InnerJoinStreamInfo
 {
 public:
 	explicit InnerJoinStreamInfo(MemoryPool& p)
-	: indexedRelationships(p),
-	  stream(0), baseUnique(false), baseCost(0), baseSelectivity(0),
-	  baseIndexes(0), baseNavigated(false),
-	  used(false), previousExpectedStreams(0)
+		: indexedRelationships(p),
+		  stream(0), baseUnique(false), baseCost(0), baseSelectivity(0),
+		  baseIndexes(0), baseNavigated(false),
+		  used(false), previousExpectedStreams(0)
 	{}
 
 	bool isIndependent() const
