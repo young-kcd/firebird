@@ -89,7 +89,7 @@ void UserData::clear(Firebird::CheckStatusWrapper*)
 }
 
 // This function sets typical gsec return code based on requested operation if it was not set by plugin
-int setGsecCode(int code, int operation)
+int setGsecCode(int code, unsigned int operation)
 {
 	if (code >= 0)
 	{

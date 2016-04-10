@@ -80,7 +80,7 @@ private:
 	void openAllManagers();
 	Firebird::IManagement* registerManager(Auth::Get& getPlugin, const char* plugName);
 	static void checkSecurityResult(int errcode, Firebird::IStatus* status,
-		const char* userName, int operation);
+		const char* userName, unsigned operation);
 };
 
 }	// namespace
