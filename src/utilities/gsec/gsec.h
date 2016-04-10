@@ -41,17 +41,17 @@ class UserData;
    operation to perform and any parameters entered (sizes are determined
    by the size of the fields in the USERS relation in USERINFO.GDB) */
 
-const int ADD_OPER		= Firebird::IUser::OP_USER_ADD;
-const int MOD_OPER		= Firebird::IUser::OP_USER_MODIFY;
-const int DEL_OPER		= Firebird::IUser::OP_USER_DELETE;
-const int DIS_OPER		= Firebird::IUser::OP_USER_DISPLAY;
-const int MAP_SET_OPER	= Firebird::IUser::OP_USER_SET_MAP;
-const int MAP_DROP_OPER	= Firebird::IUser::OP_USER_DROP_MAP;
+const unsigned int ADD_OPER		= Firebird::IUser::OP_USER_ADD;
+const unsigned int MOD_OPER		= Firebird::IUser::OP_USER_MODIFY;
+const unsigned int DEL_OPER		= Firebird::IUser::OP_USER_DELETE;
+const unsigned int DIS_OPER		= Firebird::IUser::OP_USER_DISPLAY;
+const unsigned int MAP_SET_OPER	= Firebird::IUser::OP_USER_SET_MAP;
+const unsigned int MAP_DROP_OPER	= Firebird::IUser::OP_USER_DROP_MAP;
 // Following operations never go to plugins
-const int QUIT_OPER		= 101;
-const int HELP_OPER		= 102;
-const int ADDMOD_OPER	= 103;
-const int OLD_DIS_OPER	= 104;
+const unsigned int QUIT_OPER	= 101;
+const unsigned int HELP_OPER	= 102;
+const unsigned int ADDMOD_OPER	= 103;
+const unsigned int OLD_DIS_OPER	= 104;
 
 const int USER_NAME_LEN	= 133;
 const int ALT_NAME_LEN	= 129;

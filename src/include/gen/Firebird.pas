@@ -333,7 +333,7 @@ type
 	ICharUserField_set_Ptr = procedure(this: ICharUserField; status: IStatus; newValue: PAnsiChar); cdecl;
 	IIntUserField_getPtr = function(this: IIntUserField): Integer; cdecl;
 	IIntUserField_set_Ptr = procedure(this: IIntUserField; status: IStatus; newValue: Integer); cdecl;
-	IUser_operationPtr = function(this: IUser): Integer; cdecl;
+	IUser_operationPtr = function(this: IUser): Cardinal; cdecl;
 	IUser_userNamePtr = function(this: IUser): ICharUserField; cdecl;
 	IUser_passwordPtr = function(this: IUser): ICharUserField; cdecl;
 	IUser_firstNamePtr = function(this: IUser): ICharUserField; cdecl;
@@ -1742,14 +1742,14 @@ type
 
 	IUser = class(IVersioned)
 		const VERSION = 11;
-		const OP_USER_ADD = Integer(1);
-		const OP_USER_MODIFY = Integer(2);
-		const OP_USER_DELETE = Integer(3);
-		const OP_USER_DISPLAY = Integer(4);
-		const OP_USER_SET_MAP = Integer(5);
-		const OP_USER_DROP_MAP = Integer(6);
+		const OP_USER_ADD = Cardinal(1);
+		const OP_USER_MODIFY = Cardinal(2);
+		const OP_USER_DELETE = Cardinal(3);
+		const OP_USER_DISPLAY = Cardinal(4);
+		const OP_USER_SET_MAP = Cardinal(5);
+		const OP_USER_DROP_MAP = Cardinal(6);
 
-		function operation(): Integer;
+		function operation(): Cardinal;
 		function userName(): ICharUserField;
 		function password(): ICharUserField;
 		function firstName(): ICharUserField;
@@ -1765,7 +1765,7 @@ type
 	IUserImpl = class(IUser)
 		constructor create;
 
-		function operation(): Integer; virtual; abstract;
+		function operation(): Cardinal; virtual; abstract;
 		function userName(): ICharUserField; virtual; abstract;
 		function password(): ICharUserField; virtual; abstract;
 		function firstName(): ICharUserField; virtual; abstract;
@@ -5764,7 +5764,7 @@ begin
 	FbException.checkException(status);
 end;
 
-function IUser.operation(): Integer;
+function IUser.operation(): Cardinal;
 begin
 	Result := UserVTable(vTable).operation(Self);
 end;
@@ -9407,7 +9407,7 @@ begin
 	vTable := IIntUserFieldImpl_vTable;
 end;
 
-function IUserImpl_operationDispatcher(this: IUser): Integer; cdecl;
+function IUserImpl_operationDispatcher(this: IUser): Cardinal; cdecl;
 begin
 	try
 		Result := IUserImpl(this).operation();

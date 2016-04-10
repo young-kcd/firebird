@@ -164,7 +164,7 @@ public:
 	{ }
 
 	// IUser implementation
-	int operation()
+	unsigned int operation()
 	{
 		return op;
 	}
@@ -217,7 +217,8 @@ public:
 	void clear(Firebird::CheckStatusWrapper* status);
 
 
-	int op, trustedAuth;
+	unsigned int op;
+	int trustedAuth;
 	CharField user, pass, first, last, middle, com, attr;
 	IntField adm, act;
 	CharField database, dba, dbaPassword, role;
@@ -262,7 +263,7 @@ public:
 	Get(Config* firebirdConf, const char* plugName);
 };
 
-int setGsecCode(int code, int operation);
+int setGsecCode(int code, unsigned int operation);
 
 // tools to operate lists of security-related plugins
 typedef Firebird::ObjectsArray<Firebird::PathName> ParsedList;
