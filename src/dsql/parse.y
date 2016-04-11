@@ -594,7 +594,8 @@ using namespace Firebird;
 %left	OR
 %left	AND
 %left	NOT
-%left	'=' '<' '>' IS BETWEEN LIKE CONTAINING STARTING SIMILAR KW_IN NEQ GEQ LEQ NOT_GTR NOT_LSS
+%left	'=' '<' '>' BETWEEN LIKE CONTAINING STARTING SIMILAR KW_IN NEQ GEQ LEQ NOT_GTR NOT_LSS
+%left	IS
 %left	'+' '-'
 %left	'*' '/'
 %left	UMINUS UPLUS
