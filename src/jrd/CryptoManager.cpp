@@ -714,7 +714,7 @@ namespace Jrd {
 				// Establish context
 				// Need real attachment in order to make classic mode happy
 				ClumpletWriter writer(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
-				writer.insertString(isc_dpb_user_name, "SYSDBA");
+				writer.insertString(isc_dpb_user_name, SYSDBA_USER_NAME);
 				writer.insertByte(isc_dpb_no_db_triggers, TRUE);
 
 				RefPtr<JAttachment> jAtt(REF_NO_INCR, dbb.dbb_provider->attachDatabase(&status_vector,
