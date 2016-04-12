@@ -30,7 +30,6 @@
 #include "../jrd/err_proto.h"
 #include "../common/isc_proto.h"
 #include "../common/os/path_utils.h"
-#include "../common/StatusArg.h"
 
 #include "../jrd/TempSpace.h"
 
