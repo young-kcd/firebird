@@ -407,7 +407,7 @@ void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relati
 				break;
 
 			default:
-				fb_assert(false);
+				fb_assert(!DTYPE_IS_EXACT(field->dtype));
 		}
 	}
 
