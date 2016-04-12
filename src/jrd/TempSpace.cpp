@@ -30,17 +30,18 @@
 #include "../jrd/err_proto.h"
 #include "../common/isc_proto.h"
 #include "../common/os/path_utils.h"
+#include "../common/StatusArg.h"
 
 #include "../jrd/TempSpace.h"
 
-using Firebird::TempFile;
+using namespace Firebird;
 
 // Static definitions/initializations
 
 const size_t MIN_TEMP_BLOCK_SIZE = 64 * 1024;
 
-Firebird::GlobalPtr<Firebird::Mutex> TempSpace::initMutex;
-Firebird::TempDirectoryList* TempSpace::tempDirs = NULL;
+GlobalPtr<Mutex> TempSpace::initMutex;
+TempDirectoryList* TempSpace::tempDirs = NULL;
 FB_SIZE_T TempSpace::minBlockSize = 0;
 offset_t TempSpace::globalCacheUsage = 0;
 
@@ -98,7 +99,7 @@ FB_SIZE_T TempSpace::FileBlock::write(offset_t offset, const void* buffer, FB_SI
 // Constructor
 //
 
-TempSpace::TempSpace(MemoryPool& p, const Firebird::PathName& prefix, bool dynamic)
+TempSpace::TempSpace(MemoryPool& p, const PathName& prefix, bool dynamic)
 		: pool(p), filePrefix(p, prefix),
 		  logicalSize(0), physicalSize(0), localCacheUsage(0),
 		  head(NULL), tail(NULL), tempFiles(p),
@@ -107,11 +108,11 @@ TempSpace::TempSpace(MemoryPool& p, const Firebird::PathName& prefix, bool dynam
 {
 	if (!tempDirs)
 	{
-		Firebird::MutexLockGuard guard(initMutex, FB_FUNCTION);
+		MutexLockGuard guard(initMutex, FB_FUNCTION);
 		if (!tempDirs)
 		{
 			MemoryPool& def_pool = *getDefaultMemoryPool();
-			tempDirs = FB_NEW_POOL(def_pool) Firebird::TempDirectoryList(def_pool);
+			tempDirs = FB_NEW_POOL(def_pool) TempDirectoryList(def_pool);
 			minBlockSize = Config::getTempBlockSize();
 
 			if (minBlockSize < MIN_TEMP_BLOCK_SIZE)
@@ -284,7 +285,7 @@ void TempSpace::extend(FB_SIZE_T size)
 				localCacheUsage += size;
 				globalCacheUsage += size;
 			}
-			catch (const Firebird::BadAlloc&)
+			catch (const BadAlloc&)
 			{
 				// not enough memory
 			}
@@ -371,18 +372,19 @@ TempSpace::Block* TempSpace::findBlock(offset_t& offset) const
 
 TempFile* TempSpace::setupFile(FB_SIZE_T size)
 {
-	Firebird::StaticStatusVector status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper localStatus(&ls);
 
 	for (FB_SIZE_T i = 0; i < tempDirs->getCount(); i++)
 	{
 		TempFile* file = NULL;
 
-		Firebird::PathName directory = (*tempDirs)[i];
+		PathName directory = (*tempDirs)[i];
 		PathUtils::ensureSeparator(directory);
 
 		for (FB_SIZE_T j = 0; j < tempFiles.getCount(); j++)
 		{
-			Firebird::PathName dirname, filename;
+			PathName dirname, filename;
 			PathUtils::splitLastComponent(dirname, filename, tempFiles[j]->getName());
 			PathUtils::ensureSeparator(dirname);
 			if (!directory.compare(dirname))
@@ -402,9 +404,9 @@ TempFile* TempSpace::setupFile(FB_SIZE_T size)
 
 			file->extend(size);
 		}
-		catch (const Firebird::system_error& ex)
+		catch (const system_error& ex)
 		{
-			ex.stuffException(status_vector);
+			ex.stuffException(&localStatus);
 			continue;
 		}
 
@@ -412,10 +414,10 @@ TempFile* TempSpace::setupFile(FB_SIZE_T size)
 	}
 
 	// no room in all directories
-	Firebird::Arg::Gds status(isc_out_of_temp_space);
-	status.append(Firebird::Arg::StatusVector(status_vector.begin()));
-	iscLogStatus(NULL, status.value());
-	status.raise();
+	Arg::Gds status_vector(isc_out_of_temp_space);
+	status_vector.append(Arg::StatusVector(&localStatus));
+	iscLogStatus(NULL, &localStatus);
+	status_vector.raise();
 
 	return NULL; // compiler silencer
 }
@@ -480,7 +482,7 @@ void TempSpace::releaseSpace(offset_t position, FB_SIZE_T size)
 	const offset_t end = position + size;
 	fb_assert(end <= getSize());		// Block ends in file
 
-	if (freeSegments.locate(Firebird::locEqual, end))
+	if (freeSegments.locate(locEqual, end))
 	{
 		// The next segment is found to be adjacent
 		Segment* const next_seg = &freeSegments.current();
@@ -502,7 +504,7 @@ void TempSpace::releaseSpace(offset_t position, FB_SIZE_T size)
 		return;
 	}
 
-	if (freeSegments.locate(Firebird::locLess, position))
+	if (freeSegments.locate(locLess, position))
 	{
 		// Check the prior segment for being adjacent
 		Segment* const prior_seg = &freeSegments.current();
