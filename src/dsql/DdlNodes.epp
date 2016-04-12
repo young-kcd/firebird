@@ -390,6 +390,27 @@ void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relati
 			field->subType = desc.dsc_sub_type;
 	}
 
+	if (field->precision == 0 && field->scale != 0)
+	{
+		switch (field->dtype)
+		{
+			case dtype_short:
+				field->precision = 4;
+				break;
+
+			case dtype_long:
+				field->precision = 9;
+				break;
+
+			case dtype_int64:
+				field->precision = 18;
+				break;
+
+			default:
+				fb_assert(false);
+		}
+	}
+
 	dsqlScratch->resetContextStack();
 
 	// Generate the source text.
