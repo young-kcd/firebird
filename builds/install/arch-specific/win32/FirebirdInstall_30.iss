@@ -393,9 +393,9 @@ Name: EnableLegacyClientAuth; Description: {cm:EnableLegacyClientAuth}; Componen
 
 [Run]
 #if msvc_version == 10
-Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_Win32.msi"" /L*v ""{tmp}\vccrt{#msvc_version}_Win32.log"" "; StatusMsg: "Installing MSVC 32-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
+Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_Win32.msi"" /L*v ""{tmp}\vccrt{#msvc_version}_Win32.log"" "; StatusMsg: {cm:InstallingMSVC32runtimes}; Check: HasWI30; Components: ClientComponent;
 #if PlatformTarget == "x64"
-Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_x64.msi"" /L*v ""{tmp}\vccrt{#msvc_version}_x64.log"" ";  StatusMsg: "Installing MSVC 64-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
+Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_x64.msi"" /L*v ""{tmp}\vccrt{#msvc_version}_x64.log"" ";  StatusMsg: {cm:InstallingMSVC64runtimes}; Check: HasWI30; Components: ClientComponent;
 #endif
 #endif
 
@@ -657,13 +657,11 @@ begin
 
   { Create a page to grab the new SYSDBA password }
   AdminUserPage := CreateInputQueryPage(wpSelectTasks,
-      'Create a password for the Database System Administrator'
-    , 'Or click through to use the default password of ''masterkey''. ' +  #13#10
-     ' *** Note - in Firebird 3 masterkey and masterke are different passwords. ***'
-    , ''
-    );
-  AdminUserPage.Add('Password:', True);
-  AdminUserPage.Add('Retype Password:', True);
+      ExpandConstant( '{cm:CreateSYSDBAPassword}' )
+    , ExpandConstant( '{cm:ClickThroughPWCreation}' ) + #13#10 +
+      ExpandConstant( '{cm:PasswordNote}' ) , '' );
+  AdminUserPage.Add( ExpandConstant( '{cm:SYSDBAPassword}' ), True);
+  AdminUserPage.Add( ExpandConstant( '{cm:RetypeSYSDBAPassword}' ), True);
 
   AdminUserPage.Values[0] := SYSDBAPassword;
   AdminUserPage.Values[1] := SYSDBAPassword;
