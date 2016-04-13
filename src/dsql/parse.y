@@ -6012,9 +6012,17 @@ boolean_value_expression
 	| '(' boolean_value_expression ')'
 		{ $$ = $2; }
 	| value IS boolean_literal
-		{ $$ = newNode<ComparativeBoolNode>(blr_eql, $1, $3); }
+		{
+			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_eql, $1, $3);
+			node->dsqlCheckBoolean = true;
+			$$ = node;
+		}
 	| value IS NOT boolean_literal
-		{ $$ = newNode<NotBoolNode>(newNode<ComparativeBoolNode>(blr_eql, $1, $4)); }
+		{
+			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_eql, $1, $4);
+			node->dsqlCheckBoolean = true;
+			$$ = newNode<NotBoolNode>(node);
+		}
 	;
 
 %type <boolExprNode> predicate
