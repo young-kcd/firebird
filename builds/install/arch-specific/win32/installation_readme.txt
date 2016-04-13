@@ -1,5 +1,5 @@
-Firebird Database Server $MAJOR.$MINOR.$RELEASE (Release Candidate 2)
-========================================================
+Firebird Database Server $MAJOR.$MINOR.$RELEASE
+=======================================================
 
 
 This document is a guide to installing this package of
@@ -93,11 +93,6 @@ o Be sure to install as an administrator. ie, if
   'Run as administrator'. Otherwise the installer 
   may be unable to start the Firebird service at
   the end of installation.
-
-o Libraries deployed by instclient may fail to load if
-  the MS runtime libraries have not been installed. 
-  This may be a problem if installing on older Windows
-  platforms.
 
 
 Uninstallation
