@@ -1816,7 +1816,7 @@ bool ISQL_printNumericType(const char* fieldName, const int fieldType, const int
 		// We are ODS >= 10 and could be any Dialect
 		FOR FLD1 IN RDB$FIELDS WITH
 			FLD1.RDB$FIELD_NAME EQ fieldName
-			AND FLD1.RDB$FIELD_PRECISION NOT MISSING
+			AND NOT FLD1.RDB$FIELD_PRECISION EQ 0
 
 			// We are Dialect >=3 since FIELD_PRECISION is non-NULL
 			if (FLD1.RDB$FIELD_SUB_TYPE > 0 && FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
@@ -1847,13 +1847,13 @@ bool ISQL_printNumericType(const char* fieldName, const int fieldType, const int
 			case INTEGER:
 				isqlGlob.printf("NUMERIC(9, %d)", -fieldScale);
 				break;
+			case BIGINT:
+				isqlGlob.printf("NUMERIC(18, %d)", -fieldScale);
+				break;
 			case DOUBLE_PRECISION:
 				isqlGlob.printf("NUMERIC(15, %d)", -fieldScale);
 				break;
 			default:
-				// BIGINT can't happen there because it would have an explicit field_precision
-				// and then would be caught by the previous if().
-				fb_assert(fieldType != BIGINT);
 				isqlGlob.printf("%s", Column_types[i].type_name);
 			}
 		}

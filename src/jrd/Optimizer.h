@@ -263,6 +263,7 @@ public:
 		return (baseSelectivity < MAXIMUM_SELECTIVITY);
 	}
 
+	IndexedRelationships indexedRelationships;
 	StreamType stream;
 	bool baseUnique;
 	double baseCost;
@@ -270,8 +271,6 @@ public:
 	int baseIndexes;
 	bool baseNavigated;
 	bool used;
-
-	IndexedRelationships indexedRelationships;
 	int previousExpectedStreams;
 };
 
