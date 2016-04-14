@@ -290,10 +290,12 @@ namespace Firebird {
 						if (entries.hasData()) {
 							Entry* previous = entries.pop();
 							previous->next = current_entry->next;
+							current_entry->next = NULL;
 							delete current_entry;
 							current_entry = previous;
 						} else {
 							stack.stk = current_entry->next;
+							current_entry->next = NULL;
 							delete current_entry;
 							current_entry = NULL;
 						}
