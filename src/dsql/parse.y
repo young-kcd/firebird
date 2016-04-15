@@ -589,6 +589,12 @@ using namespace Firebird;
 %token <metaNamePtr> REGR_SXY
 %token <metaNamePtr> REGR_SYY
 
+// tokens added for Firebird 4.0
+
+%token <metaNamePtr> PERCENT_RANK
+%token <metaNamePtr> CUME_DIST
+%token <metaNamePtr> NTILE
+
 // precedence declarations for expression evaluation
 
 %left	OR
@@ -6945,6 +6951,10 @@ window_function
 		{ $$ = newNode<DenseRankWinNode>(); }
 	| RANK '(' ')'
 		{ $$ = newNode<RankWinNode>(); }
+	| PERCENT_RANK '(' ')'
+		{ $$ = newNode<PercentRankWinNode>(); }
+	| CUME_DIST '(' ')'
+		{ $$ = newNode<CumeDistWinNode>(); }
 	| ROW_NUMBER '(' ')'
 		{ $$ = newNode<RowNumberWinNode>(); }
 	| FIRST_VALUE '(' value ')'
@@ -6965,6 +6975,8 @@ window_function
 		{ $$ = newNode<LeadWinNode>($3, $5, newNode<NullNode>()); }
 	| LEAD '(' value ')'
 		{ $$ = newNode<LeadWinNode>($3, MAKE_const_slong(1), newNode<NullNode>()); }
+	| NTILE '(' u_numeric_constant ')'
+		{ $$ = newNode<NTileWinNode>($3); }
 	;
 
 %type <valueExprNode> nth_from
@@ -7774,7 +7786,10 @@ non_reserved_word
 	| LAST_VALUE
 	| LAG
 	| LEAD
+	| NTILE
 	| RANK
+	| PERCENT_RANK
+	| CUME_DIST
 	| ROW_NUMBER
 	| USAGE
 	| LINGER

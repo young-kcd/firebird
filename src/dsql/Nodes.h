@@ -974,7 +974,7 @@ public:
 		return false;
 	}
 
-	virtual dsc* winPass(thread_db* /*tdbb*/, jrd_req* /*request*/, SlidingWindow* /*window*/) const
+	virtual dsc* winPass(thread_db* /*tdbb*/, jrd_req* /*request*/, SlidingWindow* /*window*/, FB_UINT64 /*win_rou_count*/) const
 	{
 		return NULL;
 	}
@@ -983,9 +983,10 @@ public:
 	virtual void aggFinish(thread_db* tdbb, jrd_req* request) const;
 	virtual bool aggPass(thread_db* tdbb, jrd_req* request) const;
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
 
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const = 0;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const = 0;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const = 0;
 
 	virtual AggNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 

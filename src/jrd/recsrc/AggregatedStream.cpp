@@ -125,6 +125,8 @@ bool AggregatedStream::getRecord(thread_db* tdbb) const
 	if (m_bufferedStream)	// Is that a window stream?
 	{
 		const FB_UINT64 position = m_bufferedStream->getPosition(request);
+		FB_UINT64 win_row_count = m_bufferedStream->getCount(tdbb);
+		m_bufferedStream->locate(tdbb, position);
 
 		if (impure->pending == 0)
 		{
@@ -134,7 +136,7 @@ bool AggregatedStream::getRecord(thread_db* tdbb) const
 					fb_assert(false);
 			}
 
-			impure->state = evaluateGroup(tdbb, impure->state);
+			impure->state = evaluateGroup(tdbb, impure->state, win_row_count);
 
 			if (impure->state == STATE_PROCESS_EOF)
 			{
@@ -165,7 +167,7 @@ bool AggregatedStream::getRecord(thread_db* tdbb) const
 				const USHORT id = field->fieldId;
 				Record* record = request->req_rpb[field->fieldStream].rpb_record;
 
-				desc = aggNode->winPass(tdbb, request, &window);
+				desc = aggNode->winPass(tdbb, request, &window, win_row_count);
 
 				if (!desc)
 					record->setNull(id);
@@ -205,7 +207,7 @@ bool AggregatedStream::getRecord(thread_db* tdbb) const
 	}
 	else
 	{
-		impure->state = evaluateGroup(tdbb, impure->state);
+		impure->state = evaluateGroup(tdbb, impure->state, 0);
 
 		if (impure->state == STATE_PROCESS_EOF)
 		{
@@ -295,7 +297,7 @@ void AggregatedStream::init(thread_db* tdbb, CompilerScratch* csb)
 
 // Compute the next aggregated record of a value group. evlGroup is driven by, and returns, a state
 // variable.
-AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, State state) const
+AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, State state, FB_UINT64 win_row_count) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -414,7 +416,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, State s
 				const USHORT id = field->fieldId;
 				Record* record = request->req_rpb[field->fieldStream].rpb_record;
 
-				dsc* desc = aggNode->execute(tdbb, request);
+				dsc* desc = aggNode->execute(tdbb, request, win_row_count);
 				if (!desc || !desc->dsc_dtype)
 					record->setNull(id);
 				else

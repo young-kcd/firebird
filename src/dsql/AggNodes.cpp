@@ -425,7 +425,7 @@ void AggNode::aggFinish(thread_db* /*tdbb*/, jrd_req* request) const
 	}
 }
 
-dsc* AggNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* AggNode::execute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 
@@ -464,7 +464,14 @@ dsc* AggNode::execute(thread_db* tdbb, jrd_req* request) const
 		}
 	}
 
-	return aggExecute(tdbb, request);
+	return aggExecute(tdbb, request, win_row_count);
+}
+
+
+dsc* AggNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	fb_assert(false);
+	return NULL;
 }
 
 
@@ -652,7 +659,7 @@ void AvgAggNode::aggPass(thread_db* /*tdbb*/, jrd_req* request, dsc* desc) const
 		ArithmeticNode::add2(desc, impure, this, blr_add);
 }
 
-dsc* AvgAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
+dsc* AvgAggNode::aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 
@@ -797,7 +804,7 @@ void ListAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 	impure->vlu_blob->BLB_put_data(tdbb, temp, len);
 }
 
-dsc* ListAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
+dsc* ListAggNode::aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 
@@ -904,7 +911,7 @@ void CountAggNode::aggPass(thread_db* /*tdbb*/, jrd_req* request, dsc* /*desc*/)
 		++impure->vlu_misc.vlu_int64;
 }
 
-dsc* CountAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
+dsc* CountAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request, FB_UINT64 win_row_count) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 
@@ -1141,7 +1148,7 @@ void SumAggNode::aggPass(thread_db* /*tdbb*/, jrd_req* request, dsc* desc) const
 		ArithmeticNode::add2(desc, impure, this, blr_add);
 }
 
-dsc* SumAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
+dsc* SumAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request, FB_UINT64 win_row_count) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 
@@ -1232,7 +1239,7 @@ void MaxMinAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 		EVL_make_value(tdbb, desc, impure);
 }
 
-dsc* MaxMinAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
+dsc* MaxMinAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request, FB_UINT64 win_row_count) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 
@@ -1338,7 +1345,7 @@ void StdDevAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 	impure2->x2 += d * d;
 }
 
-dsc* StdDevAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
+dsc* StdDevAggNode::aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	StdDevImpure* impure2 = request->getImpure<StdDevImpure>(impure2Offset);
@@ -1497,7 +1504,7 @@ void CorrAggNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /*desc
 	fb_assert(false);
 }
 
-dsc* CorrAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
+dsc* CorrAggNode::aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	CorrImpure* impure2 = request->getImpure<CorrImpure>(impure2Offset);
@@ -1682,7 +1689,7 @@ void RegrAggNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /*desc
 	fb_assert(false);
 }
 
-dsc* RegrAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
+dsc* RegrAggNode::aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	RegrImpure* impure2 = request->getImpure<RegrImpure>(impure2Offset);
@@ -1839,7 +1846,7 @@ void RegrCountAggNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /
 	fb_assert(false);
 }
 
-dsc* RegrCountAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
+dsc* RegrCountAggNode::aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 

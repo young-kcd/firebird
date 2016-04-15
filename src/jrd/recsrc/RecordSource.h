@@ -661,7 +661,7 @@ namespace Jrd
 	private:
 		void init(thread_db* tdbb, CompilerScratch* csb);
 
-		State evaluateGroup(thread_db* tdbb, State state) const;
+		State evaluateGroup(thread_db* tdbb, State state, FB_UINT64 win_row_count) const;
 		void cacheValues(thread_db* tdbb, jrd_req* request,
 			const NestValueArray* group, unsigned impureOffset) const;
 		bool lookForChange(thread_db* tdbb, jrd_req* request,
