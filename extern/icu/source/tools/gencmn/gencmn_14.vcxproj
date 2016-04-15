@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>decmn</ProjectName>
+    <ProjectName>gencmn</ProjectName>
     <ProjectGuid>{A8D36F8D-09E6-4174-91C3-7BEAA9C3F04F}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -97,12 +97,11 @@
       <Outputs>..\..\..\$(Platform)\$(Configuration)\bin\$(TargetFileName);%(Outputs)</Outputs>
     </CustomBuildStep>
     <Midl>
-      <TypeLibraryName>.\decmn_Win32_Release/decmn.tlb</TypeLibraryName>
+      <TypeLibraryName>$(IntDir)gencmn.tlb</TypeLibraryName>
     </Midl>
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\common;..\toolutil;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <WarningLevel>Level4</WarningLevel>
       <CompileAs>Default</CompileAs>
     </ClCompile>
     <ResourceCompile>
@@ -111,7 +110,7 @@
     </ResourceCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).exe</OutputFile>
-      <ProgramDatabaseFile>$(IntDir)decmn.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(IntDir)gencmn.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -128,12 +127,11 @@
     </CustomBuildStep>
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
-      <TypeLibraryName>.\decmn_Win32_Release/decmn.tlb</TypeLibraryName>
+      <TypeLibraryName>$(IntDir)gencmn.tlb</TypeLibraryName>
     </Midl>
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\common;..\toolutil;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <WarningLevel>Level4</WarningLevel>
       <CompileAs>Default</CompileAs>
     </ClCompile>
     <ResourceCompile>
@@ -142,7 +140,7 @@
     </ResourceCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).exe</OutputFile>
-      <ProgramDatabaseFile>$(IntDir)decmn.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(IntDir)gencmn.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -159,12 +157,11 @@
       <Outputs>..\..\..\$(Platform)\$(Configuration)\bin\$(TargetFileName);%(Outputs)</Outputs>
     </CustomBuildStep>
     <Midl>
-      <TypeLibraryName>.\decmn_Win32_Debug/decmn.tlb</TypeLibraryName>
+      <TypeLibraryName>$(IntDir)gencmn.tlb</TypeLibraryName>
     </Midl>
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\common;..\toolutil;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <CompileAs>Default</CompileAs>
     </ClCompile>
@@ -174,7 +171,7 @@
     </ResourceCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).exe</OutputFile>
-      <ProgramDatabaseFile>$(IntDir)decmn.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(IntDir)gencmn.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -189,12 +186,11 @@
     </CustomBuildStep>
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
-      <TypeLibraryName>.\decmn_Win32_Debug/decmn.tlb</TypeLibraryName>
+      <TypeLibraryName>$(IntDir)gencmn.tlb</TypeLibraryName>
     </Midl>
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\common;..\toolutil;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <WarningLevel>Level4</WarningLevel>
       <CompileAs>Default</CompileAs>
     </ClCompile>
     <ResourceCompile>
@@ -203,7 +199,7 @@
     </ResourceCompile>
     <Link>
       <OutputFile>$(OutDir)$(ProjectName).exe</OutputFile>
-      <ProgramDatabaseFile>$(IntDir)decmn.pdb</ProgramDatabaseFile>
+      <ProgramDatabaseFile>$(IntDir)gencmn.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -212,7 +208,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="decmn.c" />
+    <ClCompile Include="gencmn.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\common\common_10.vcxproj">
