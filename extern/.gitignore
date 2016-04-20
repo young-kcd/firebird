@@ -1,0 +1,12 @@
+**/Win32/
+**/x64/
+icu/**/out
+icu/include/
+*.log
+*.opensdf
+*.sdf
+*.suo
+*.user
+*.y
+*.res
+*.txt
