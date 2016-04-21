@@ -215,7 +215,7 @@ private:
 	// Put data into stdout buffer
 	void	enqueue(const UCHAR* s, ULONG len);
 	// true if there is no data in stdout buffer
-	bool	empty() const;
+	bool	empty(ULONG head) const;
 	// true if no more space in stdout buffer
 	bool	full() const;
 	// start service thread
