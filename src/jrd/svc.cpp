@@ -2129,9 +2129,14 @@ void Service::readFbLog()
 			svc_started = true;
 			TEXT buffer[100];
 			setDataMode(true);
+			int n;
 
-			while (fgets(buffer, sizeof(buffer), file))
-				outputData(buffer, fb_strlen(buffer));
+			while ((n = fread(buffer, sizeof(buffer[0]), FB_NELEM(buffer), file)) > 0)
+			{
+				outputData(buffer, n);
+				if (checkForShutdown())
+					break;
+			}
 
 			setDataMode(false);
 		}
@@ -2186,9 +2191,9 @@ ULONG Service::add_val(ULONG i, ULONG val)
 }
 
 
-bool Service::empty() const
+bool Service::empty(ULONG head) const
 {
-	return svc_stdout_tail == svc_stdout_head;
+	return svc_stdout_tail == head;
 }
 
 
@@ -2264,12 +2269,12 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 
 	while (length)
 	{
-		if ((empty() && (svc_flags & SVC_finished)) || checkForShutdown())
+		if ((empty(head) && (svc_flags & SVC_finished)) || checkForShutdown())
 		{
 			break;
 		}
 
-		if (empty())
+		if (empty(head))
 		{
 			if (svc_stdin_size_requested && (!(flags & GET_BINARY)))
 			{
@@ -2285,6 +2290,12 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 
 			if (flags & GET_ONCE)
 			{
+				break;
+			}
+
+			if (full())
+			{
+				// buffer is full but LF is not present in it
 				break;
 			}
 
@@ -2307,7 +2318,7 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 			break;
 		}
 
-		while (head != svc_stdout_tail && length > 0)
+		while ((!empty(head)) && length > 0)
 		{
 			flagFirst = true;
 			const UCHAR ch = svc_stdout[head];
