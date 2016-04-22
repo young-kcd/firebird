@@ -28,11 +28,6 @@
 # This script builds an image of the installed system into
 # the gen/buildroot directory.
 
-if [ "`whoami`" != "root" ]; then
-	echo 'You must be root to build package'
-	exit 1
-fi
-
 # Making an assumption that this program is being run in the gen directory
 BuildRootDir=..
 BuiltFBDir=Release/firebird  # Where the just build fb exists.
@@ -121,6 +116,25 @@ makeDirs() {
 
 
 #------------------------------------------------------------------------
+#  ReadOnlyTree
+# Set correct rights to files in given subtree
+
+ReadOnlyTree() {
+	Tree=$1
+
+	for i in `find ${Tree} -type d -print`
+	do
+		chmod 0755 $i
+	done
+
+	for i in `find ${Tree} -type f -print`
+	do
+		chmod 0644 $i
+	done
+}
+
+
+#------------------------------------------------------------------------
 #  copyFiles
 # This function copies all the files for a distribution into a
 # directory heirachy mirroring the installation.
@@ -130,7 +144,8 @@ copyFiles() {
 
 #cleanup
     if [ -d $TargetDir ]
-      then
+    then
+		chmod -R +xw $TargetDir
         rm -fr $TargetDir
     fi
 
@@ -190,18 +205,10 @@ copyFiles() {
 		(cd $BuiltFBDir/examples; tar cf - .) | (cd ${TargetDir}@FB_SAMPLEDIR@; tar xf -)
 		rm -rf ${TargetDir}@FB_SAMPLEDIR@/empbuild
 
-	    for i in `find ${TargetDir}@FB_SAMPLEDIR@ -type d -print`
-	    do
-			chmod 0555 $i
-	    done
-	    for i in `find ${TargetDir}@FB_SAMPLEDIR@ -type f -print`
-	    do
-			chmod 0444 $i
-		done
-
 		makeDirs @FB_SAMPLEDBDIR@
 		cp $BuiltFBDir/examples/empbuild/*.fdb ${TargetDir}@FB_SAMPLEDBDIR@
 
+		ReadOnlyTree ${TargetDir}@FB_SAMPLEDIR@
 		chmod 0444 ${TargetDir}@FB_SAMPLEDBDIR@/*.fdb
     fi
 
@@ -225,12 +232,11 @@ copyFiles() {
     tar -C $BuildRootDir/src/include/firebird -cf - impl | tar -C ${TargetDir}@FB_INCDIR@/firebird -x
     cp $BuildRootDir/src/include/gen/Firebird.pas ${TargetDir}@FB_INCDIR@/firebird
 
-	chmod -R 0444 ${TargetDir}@FB_INCDIR@/*.h ${TargetDir}@FB_INCDIR@/firebird/*
+	ReadOnlyTree ${TargetDir}@FB_INCDIR@
 
 	#lib
     cp -df $BuiltFBDir/lib/libfbclient.so* ${TargetDir}@FB_LIBDIR@
     cp -f $BuiltFBDir/lib/libib_util.so ${TargetDir}@FB_LIBDIR@/libib_util.so
-    copyIfExists $BuiltFBDir/lib/libicu*.so* ${TargetDir}@FB_LIBDIR@
 
 	chmod 0755 ${TargetDir}@FB_LIBDIR@/*.so*
 
