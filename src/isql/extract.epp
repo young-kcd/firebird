@@ -1295,7 +1295,7 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 			ISQL_errmsg(fbStatus);
 			return OBJECT_NOT_FOUND;
 		END_ERROR
-
+/*
 		FOR FLD IN RDB$FIELDS WITH
 			FLD.RDB$FIELD_NAME NOT MATCHING "RDB$+" USING "+=[0-9][0-9]* *"
 			AND FLD.RDB$SYSTEM_FLAG NE 1
@@ -1351,7 +1351,7 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 			ISQL_errmsg(fbStatus);
 			return OBJECT_NOT_FOUND;
 		END_ERROR
-
+*/
 		// Process DDL permissions
 		for (int i = obj_database; i < obj_type_MAX; i++)
 		{
