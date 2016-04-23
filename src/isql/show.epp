@@ -1373,7 +1373,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				return (SKIP);
 		}
 	}
-
+/*
 	if (obj_type == obj_field || obj_type == 255)
 	{
 		if (isqlGlob.major_ods >= ODS_VERSION12)
@@ -1592,7 +1592,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				return (SKIP);
 		}
 	}
-
+*/
 	if (obj_type >= obj_database || obj_type == 255)
 	{
 		if (isqlGlob.major_ods >= ODS_VERSION12)
