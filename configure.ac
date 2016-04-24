@@ -508,6 +508,12 @@ AC_ARG_WITH(cross-build,
    IS_CROSS=Y])
 AC_SUBST(IS_CROSS)
 
+TOMBUILD=N
+AC_ARG_WITH(builtin-tommath,
+  [  --with-builtin-tommath  build libtommath library from firebird tree],
+  [TOMBUILD=Y])
+AC_SUBST(TOMBUILD)
+
 dnl Avoid dumb '-g -O2' autoconf's default
 dnl Debugging information and optimization flags should be set in prefix.$platform file
 dnl Should be replaced with AC_PROG_GCC_DEFAULT_FLAGS() when available
@@ -765,11 +771,17 @@ dnl setting ICU_OK here is done to only avoid default action
 AC_CHECK_LIB(icuuc, main, ICU_OK=yes, AC_MSG_ERROR(ICU support not found - please install development ICU package))
 
 dnl check for tommath presence
-XE_SAVE_ENV()
-LIBS=
-AC_CHECK_HEADER(tommath.h,,AC_MSG_ERROR(Include file for tommath not found - please install development tommath package))
-AC_CHECK_LIB(tommath, mp_init, MATHLIB=-ltommath, AC_MSG_ERROR(Library tommath not found - please install development tommath package))
-XE_RESTORE_ENV()
+if test "$TOMBUILD" = "Y"; then
+	MATHLIB=-ltommath
+else
+	AC_CHECK_HEADER(tommath.h,,
+		AC_MSG_ERROR(Include file for tommath not found - please install development tommath package or use --with-builtin-tommath))
+	XE_SAVE_ENV()
+	LIBS=
+	AC_CHECK_LIB(tommath, mp_init, MATHLIB=-ltommath,
+		AC_MSG_ERROR(Library tommath not found - please install development tommath package or use --with-builtin-tommath))
+	XE_RESTORE_ENV()
+fi
 AC_SUBST(MATHLIB)
 
 dnl Check for libraries

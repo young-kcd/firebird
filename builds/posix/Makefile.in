@@ -126,6 +126,12 @@ extern:
 	$(MAKE) -C $(ROOT)/extern/btyacc
 	$(MAKE) -C $(ROOT)/extern/cloop TARGET=release WITH_FPC=0 BUILD_DIR=$(TMP_ROOT)/cloop OUT_DIR=$(GEN_ROOT)/$(TARGET)/cloop
 
+ifeq ($(TOMBUILD_FLG),Y)
+	$(MAKE) -C $(ROOT)/extern/libtommath -f makefile.shared
+	ln -sf $(TOMMATH_SO).$(TOMMATH_VER) $(LIB)
+	ln -sf $(TOMMATH_SO) $(LIB)
+endif
+
 ifeq ($(STD_EDITLINE),false)
 ifeq ($(EDITLINE_FLG),Y)
 	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.editline

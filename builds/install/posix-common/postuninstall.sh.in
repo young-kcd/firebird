@@ -36,3 +36,5 @@ if [ -d $PidDir ]
 then
     rm -rf $PidDir
 fi
+
+reconfigDynamicLoader

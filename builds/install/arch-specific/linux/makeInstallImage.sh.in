@@ -33,6 +33,7 @@ BuildRootDir=..
 BuiltFBDir=Release/firebird  # Where the just build fb exists.
 TargetDir=buildroot    # Where we want to build the install image
 SecurityDatabase=security3.fdb
+TomBuild="@TOMBUILD@"
 
 
 #------------------------------------------------------------------------
@@ -237,6 +238,11 @@ copyFiles() {
 	#lib
     cp -df $BuiltFBDir/lib/libfbclient.so* ${TargetDir}@FB_LIBDIR@
     cp -f $BuiltFBDir/lib/libib_util.so ${TargetDir}@FB_LIBDIR@/libib_util.so
+
+	if [ "$TomBuild" = "Y" ]; then
+		makeDirs @FB_LIBDIR@/.tm
+		cp -df $BuildRootDir/extern/libtommath/.libs/libtommath.so* ${TargetDir}@FB_LIBDIR@/.tm
+	fi
 
 	chmod 0755 ${TargetDir}@FB_LIBDIR@/*.so*
 

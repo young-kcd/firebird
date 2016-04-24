@@ -48,6 +48,7 @@ LNG_ROOT=$(ROOT)/lang_helpers
 EXA_ROOT=$(ROOT)/examples
 
 IsCross=@IS_CROSS@
+TOMBUILD_FLG=@TOMBUILD@
 
 FB_BUILD=$(GEN_ROOT)/$(TARGET)/firebird
 ifeq ($(IsCross), Y)
@@ -248,6 +249,12 @@ endif
 # Shared library name for usage inside of the UDF
 IbUtilLibraryName = $(LIB_PREFIX)ib_util.$(SHRLIB_EXT)
 LIBIBUTIL_SO = $(LIB)/$(IbUtilLibraryName)
+
+# Own tommath support
+TOMMATH=$(ROOT)/extern/libtommath
+TOMMATH_INC=$(TOMMATH)
+TOMMATH_SO=$(TOMMATH)/.libs/libtommath.so
+TOMMATH_VER=0
 
 # LINKER OPTIONS
 #

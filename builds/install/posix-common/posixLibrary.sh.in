@@ -165,9 +165,21 @@ missingLibrary() {
 
 
 #------------------------------------------------------------------------
+# Check library presence, errorexit when missing
+
+checkLibrary() {
+	libName=${1}
+	haveLibrary $libName || missingLibrary $libName
+}
+
+
+#------------------------------------------------------------------------
 # Make sure we have required libraries installed
 checkLibraries() {
-	haveLibrary tommath || missingLibrary tommath
+	if [ "@TOMBUILD@" != "Y" ]
+	then
+		checkLibrary tommath
+	fi
 }
 
 
@@ -583,8 +595,10 @@ createLinksForBackCompatibility() {
 
 createLinksInSystemLib() {
 	LibDir=`CorrectLibDir @libdir@`
-
+	tommath=libtommath.@SHRLIB_EXT@
+	tomdir=@FB_LIBDIR@/.tm
     origDirLinksInSystemLib=`pwd`
+
     cd @FB_LIBDIR@
 	Libraries=`echo libfbclient.@SHRLIB_EXT@* libib_util.@SHRLIB_EXT@`
 
@@ -594,7 +608,23 @@ createLinksInSystemLib() {
 		safeLink @FB_LIBDIR@/$l .$LibDir/$l ${MANIFEST_TXT}
 	done
 
+	if [ -d $tomdir ]; then
+		cd $tomdir
+		Libraries=""
+		if [ ! -f $LibDir/$tommath ]; then
+			Libraries=`echo ${tommath}*`
+		fi
+
+		cd /
+		for l in $Libraries
+		do
+			safeLink @FB_LIBDIR@/.tm/$l .$LibDir/$l ${MANIFEST_TXT}
+		done
+	fi
+
     cd $origDirLinksInSystemLib
+
+	reconfigDynamicLoader
 }
 
 #------------------------------------------------------------------------
