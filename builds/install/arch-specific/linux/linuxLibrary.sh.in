@@ -573,3 +573,10 @@ haveLibrary() {
 	return $?
 }
 
+
+#------------------------------------------------------------------------
+# refresh cache of dynamic loader after add/delete files in system libdir
+
+reconfigDynamicLoader() {
+	ldconfig
+}
