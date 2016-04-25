@@ -379,6 +379,7 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 				ON_ERROR
 					general_on_error ();
 				END_ERROR;
+				tdgbl->flag_on_line = false;
 			END_ERROR;
 		END_FOR;
 		ON_ERROR
@@ -3084,6 +3085,9 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 			// Fix for bug_no 8055:
 			// don't throw away the database just because an index
 			// could not be made
+
+			// don't bring the database on-line
+			tdgbl->flag_on_line = false;
 			ISC_STATUS error_code;
 			while (error_code = tdgbl->status_vector[1])
 			{
@@ -3117,8 +3121,6 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 								// msg 243 ALTER INDEX \"%s\" ACTIVE
 							END_MODIFY;
 						END_FOR;
-						// don't bring the database on-line
-						tdgbl->flag_on_line = false;
 						// commit one more time
 						COMMIT
 						ON_ERROR
