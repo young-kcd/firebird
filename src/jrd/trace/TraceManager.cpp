@@ -308,8 +308,6 @@ void TraceManager::update_session(const TraceSession& session)
 		}
 	}
 
-	MasterInterfacePtr master;
-
 	for (FactoryInfo* info = factories->begin(); info != factories->end(); ++info)
 	{
 		TraceInitInfoImpl attachInfo(session, attachment, filename);
