@@ -1244,8 +1244,7 @@ static void expand_share_name(tstring& share_name)
 		return;
 	}
 
-	strncpy(workspace, p, sizeof(workspace));
-	workspace[sizeof(workspace) - 1] = 0;
+	fb_utils::copy_terminate(workspace, p, sizeof(workspace));
 	// We test for *q, too, to avoid buffer overrun.
 	TEXT* q;
 	for (q = workspace; *q && *p && *p != '!'; p++, q++);

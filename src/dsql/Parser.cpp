@@ -800,9 +800,9 @@ int Parser::yylexAux()
 			if (charlen > 8)
 			{
 				char cbuff[32];
+				fb_assert(charlen <= 16);	// charlen is always <= 16, see 10-15 lines upper
 				cbuff[0] = 'X';
-				strncpy(&cbuff[1], hexstring, charlen);
-				cbuff[charlen + 1] = '\0';
+				fb_utils::copy_terminate(&cbuff[1], hexstring, charlen + 1);
 
 				char* p = &cbuff[1];
 				UCHAR byte = 0;

@@ -5477,8 +5477,7 @@ static gpre_index* make_index( gpre_req* request, const TEXT* string)
 		// CVC: I've kept this silly code. What's the idea of the copy here?
 		// If we are trying to limit the index name, the correct length is NAME_SIZE.
 		TEXT s[ERROR_LENGTH];
-		strncpy(s, string, sizeof(s));
-		s[sizeof(s) - 1] = 0;
+		fb_utils::copy_terminate(s, string, sizeof(s));
 		gpre_index* index = MET_make_index(s);
 		if (request)
 			request->req_database = gpreGlob.isc_databases;
@@ -5501,8 +5500,7 @@ static gpre_rel* make_relation( gpre_req* request, const TEXT* relation_name)
 	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next)
 	{
 		TEXT r[ERROR_LENGTH];
-		strncpy(r, relation_name, sizeof(r));
-		r[sizeof(r) - 1] = 0;
+		fb_utils::copy_terminate(r, relation_name, sizeof(r));
 
 		gpre_rel* relation = MET_make_relation(r);
 		relation->rel_database = gpreGlob.isc_databases;
@@ -6793,8 +6791,7 @@ void SQL_resolve_identifier( const TEXT* err_mesg, TEXT* str_in, int in_size)
 			// or SQL escape sequences in quoted identifiers.
 			if (tk_string[0] == '\"')
 				strip_quotes(gpreGlob.token_global);
-			strncpy(str, tk_string, len);
-			str[len] = 0;
+			fb_utils::copy_terminate(str, tk_string, len + 1);
 			break;
 		case tok_ident:
 			to_upcase(tk_string, str, len + 1);

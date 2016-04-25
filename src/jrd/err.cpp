@@ -159,10 +159,7 @@ void ERR_log(int facility, int number, const TEXT* message)
 
 	DEBUG;
 	if (message)
-	{
-		strncpy(errmsg, message, sizeof(errmsg));
-		errmsg[sizeof(errmsg) - 1] = 0;
-	}
+		fb_utils::copy_terminate(errmsg, message, sizeof(errmsg));
 	else if (gds__msg_lookup(0, facility, number, sizeof(errmsg), errmsg, NULL) < 1)
 		strcpy(errmsg, "Internal error code");
 

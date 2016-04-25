@@ -2185,8 +2185,7 @@ static processing_state add_row(TEXT* tabname)
 
 			// Convert first 4 chars to upper case for comparison
 			SCHAR cmd[5];
-			strncpy(cmd, lastInputLine, 4);
-			cmd[4] = '\0';
+			fb_utils::copy_terminate(cmd, lastInputLine, sizeof cmd);
 			IUTILS_make_upper(cmd);
 
 			// If the user writes NULL, put a null in the column
@@ -2936,8 +2935,7 @@ static processing_state bulk_insert_hack(const char* command)
 			else
 			{
 				// Convert first 4 chars to upper case for comparison.
-				strncpy(cmd, lastPos, 4);
-				cmd[4] = '\0';
+				fb_utils::copy_terminate(cmd, lastPos, sizeof cmd);
 				IUTILS_make_upper(cmd);
 			}
 

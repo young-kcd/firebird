@@ -1116,10 +1116,7 @@ void DSC_get_dtype_name(const dsc* desc, TEXT * buffer, USHORT len)
  *	Convert a datatype to its textual representation
  *
  **************************************/
-	// This function didn't put a string terminator even though
-	// it's calling strncpy that doesn't put it if source > target.
-	strncpy(buffer, DSC_dtype_tostring(desc->dsc_dtype), len);
-	buffer[len - 1] = 0;
+	fb_utils::copy_terminate(buffer, DSC_dtype_tostring(desc->dsc_dtype), len);
 }
 
 

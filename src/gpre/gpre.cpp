@@ -532,8 +532,7 @@ int main(int argc, char* argv[])
 			{
 				gpreGlob.global_db_count = 1;
 				char* dbn = gpreGlob.global_db_list[0].dbd_name;
-				strncpy(dbn, db->dbd_name->sym_string, dbd::dbd_size);
-				dbn[dbd::dbd_size - 1] = 0;
+				fb_utils::copy_terminate(dbn, db->dbd_name->sym_string, dbd::dbd_size);
 			}
 #endif
 			break;

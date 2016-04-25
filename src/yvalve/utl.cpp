@@ -2066,16 +2066,9 @@ void API_ROUTINE isc_format_implementation(USHORT impl_nr,
 	if (cbuflen > 0)
 	{
 		if (impl_class_nr >= FB_NELEM(impl_class) || !(impl_class[impl_class_nr]))
-		{
-			strncpy(cbuf, "**unknown**", cbuflen - 1);
-			cbuf[MIN(11, cbuflen - 1)] = '\0';
-		}
+			fb_utils::copy_terminate(cbuf, "**unknown**", cbuflen);
 		else
-		{
-			strncpy(cbuf, impl_class[impl_class_nr], cbuflen - 1);
-			const int len = static_cast<int>(strlen(impl_class[impl_class_nr]));
-			cbuf[MIN(len, cbuflen - 1)] = '\0';
-		}
+			fb_utils::copy_terminate(cbuf, impl_class[impl_class_nr], cbuflen);
 	}
 
 }

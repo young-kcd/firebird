@@ -229,8 +229,7 @@ bool SecurityDatabase::lookup_user(const char* user_name, char* pwd)
 	if (pwd)
 		*pwd = '\0';
 
-	strncpy(uname, user_name, sizeof uname);
-	uname[sizeof uname - 1] = 0;
+	fb_utils::copy_terminate(uname, user_name, sizeof uname);
 
 	MutexLockGuard guard(mutex, FB_FUNCTION);
 
@@ -260,8 +259,7 @@ bool SecurityDatabase::lookup_user(const char* user_name, char* pwd)
 
 		if (pwd)
 		{
-			strncpy(pwd, user.password, MAX_LEGACY_PASSWORD_LENGTH);
-			pwd[MAX_LEGACY_PASSWORD_LENGTH] = 0;
+			fb_utils::copy_terminate(pwd, user.password, MAX_LEGACY_PASSWORD_LENGTH + 1);
 		}
 	}
 

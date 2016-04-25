@@ -617,8 +617,7 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 		strcat(s, ".");
 		if (!gpreGlob.ada_package[0] || !strcmp(gpreGlob.ada_package, s))
 		{
-			strncpy(gpreGlob.ada_package, s, MAXPATHLEN);
-			gpreGlob.ada_package[MAXPATHLEN - 1] = 0;
+			fb_utils::copy_terminate(gpreGlob.ada_package, s, MAXPATHLEN);
 		}
 		else
 		{

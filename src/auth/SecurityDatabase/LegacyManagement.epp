@@ -225,13 +225,7 @@ int SecurityDatabaseManagement::release()
 	return 1;
 }
 
-#define STR_STORE(to, from) strStore(to, from, sizeof(to))
-
-static inline void strStore(char* to, const char* from, size_t len)
-{
-	to[--len] = '\0';
-	strncpy(to, from, len);
-}
+#define STR_STORE(to, from) fb_utils::copy_terminate(to, from, sizeof(to))
 
 int SecurityDatabaseManagement::execute(Firebird::CheckStatusWrapper* st, Firebird::IUser* user,
 	Firebird::IListUsers* callback)
