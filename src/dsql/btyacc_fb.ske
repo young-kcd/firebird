@@ -552,6 +552,9 @@ yyreduce:
 
   reduce_posn = TRUE;
 
+  yyposn.firstLine = YYPOSNARG(1).firstLine; 
+  yyposn.firstColumn = YYPOSNARG(1).firstColumn; 
+
   switch (yyn) {
 
 %% trailer
