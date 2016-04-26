@@ -1038,7 +1038,7 @@ void Events::freeClientData(CheckStatusWrapper* status, bool force)
 
 			packet->p_operation = op_cancel_events;
 			packet->p_event.p_event_database = rdb->rdb_id;
-			packet->p_event.p_event_rid = rvnt->rvnt_id;
+			const SLONG save_id = packet->p_event.p_event_rid = rvnt->rvnt_id;
 
 			// Send the packet, and if that worked, get a response
 
@@ -1053,7 +1053,7 @@ void Events::freeClientData(CheckStatusWrapper* status, bool force)
 
 			// Get ready to fire the event.
 
-			if (rvnt->rvnt_id)
+			if (rvnt->rvnt_id == save_id)
 			{
 				callback = rvnt->rvnt_callback;
 				rvnt->rvnt_id = 0;
@@ -6032,7 +6032,10 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 				//Therefore simply ignore such bad packet.
 
 				// Finished processing this event
-				event->rvnt_id = 0;
+				// Callback above should release event and another thread could reuse it meanwhile.
+				// Make sure we don't release such reused event.
+				if (event->rvnt_id == pevent->p_event_rid)
+					event->rvnt_id = 0;
 			}
 
 		}						// end of event handling for op_event
