@@ -97,7 +97,7 @@ static const char* Procterm = "^";	// TXNN: script use only
 
 static TEXT Print_buffer[PRINT_BUFFER_LENGTH];
 static TEXT SQL_identifier[BUFFER_LENGTH128];
-static TEXT SQL_identifier2[BUFFER_LENGTH128];
+static TEXT SQL_identifier2[BUFFER_XLARGE];
 
 
 
@@ -579,7 +579,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 					if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 					{
 						ISQL_copy_SQL_id (CON.RDB$CONSTRAINT_NAME, SQL_identifier, DBL_QUOTE);
-						sprintf (Print_buffer, " CONSTRAINT %s", SQL_identifier);
+						isqlGlob.printf(" CONSTRAINT %s", SQL_identifier);
 					}
 					else
 						isqlGlob.printf(" CONSTRAINT %s", CON.RDB$CONSTRAINT_NAME);
