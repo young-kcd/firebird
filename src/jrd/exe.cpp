@@ -1174,49 +1174,52 @@ void EXE_execute_triggers(thread_db* tdbb,
 
 static void stuff_stack_trace(const jrd_req* request)
 {
-	Firebird::string sTrace;
-	bool isEmpty = true;
+	string sTrace;
 
 	for (const jrd_req* req = request; req; req = req->req_caller)
 	{
-		const JrdStatement* statement = req->getStatement();
-		Firebird::string name;
+		const JrdStatement* const statement = req->getStatement();
+
+		string context, name;
 
 		if (statement->triggerName.length())
 		{
-			name = "At trigger '";
-			name += statement->triggerName.c_str();
+			context = "At trigger";
+			name = statement->triggerName.c_str();
 		}
 		else if (statement->procedure)
 		{
-			name = statement->parentStatement ? "At sub procedure '" : "At procedure '";
-			name += statement->procedure->getName().toString().c_str();
+			context = statement->parentStatement ? "At sub procedure" : "At procedure";
+			name = statement->procedure->getName().toString();
 		}
 		else if (statement->function)
 		{
-			name = statement->parentStatement ? "At sub function '" : "At function '";
-			name += statement->function->getName().toString().c_str();
+			context = statement->parentStatement ? "At sub function" : "At function";
+			name = statement->function->getName().toString();
+		}
+		else if (req->req_src_line)
+		{
+			context = "At anonymous block";
 		}
 
-		if (! name.isEmpty())
+		if (context.hasData())
 		{
 			name.trim();
 
-			if (sTrace.length() + name.length() + 2 > MAX_STACK_TRACE)
+			if (name.hasData())
+				context += string(" '") + name + string("'");
+
+			if (sTrace.length() + context.length() > MAX_STACK_TRACE)
 				break;
 
-			if (isEmpty)
-			{
-				isEmpty = false;
-				sTrace += name + "'";
-			}
-			else {
-				sTrace += "\n" + name + "'";
-			}
+			if (sTrace.hasData())
+				sTrace += "\n";
+
+			sTrace += context;
 
 			if (req->req_src_line)
 			{
-				Firebird::string src_info;
+				string src_info;
 				src_info.printf(" line: %" ULONGFORMAT", col: %" ULONGFORMAT,
 								req->req_src_line, req->req_src_column);
 
@@ -1228,7 +1231,7 @@ static void stuff_stack_trace(const jrd_req* request)
 		}
 	}
 
-	if (!isEmpty)
+	if (sTrace.hasData())
 		ERR_post_nothrow(Arg::Gds(isc_stack_trace) << Arg::Str(sTrace));
 }
 
