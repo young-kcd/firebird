@@ -1199,7 +1199,7 @@ static void stuff_stack_trace(const jrd_req* request)
 		}
 		else if (req->req_src_line)
 		{
-			context = "At anonymous block";
+			context = "At block";
 		}
 
 		if (context.hasData())
