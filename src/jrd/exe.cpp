@@ -1784,36 +1784,38 @@ static void get_string(thread_db* tdbb, jrd_req* request, jrd_nod* node, Firebir
 
 static void stuff_stack_trace(const jrd_req* request)
 {
-	Firebird::string sTrace;
-	bool isEmpty = true;
+	string sTrace;
 
 	for (const jrd_req* req = request; req; req = req->req_caller)
 	{
-		Firebird::string name;
+		string context, name;
 
 		if (req->req_trg_name.length()) {
-			name = "At trigger '";
-			name += req->req_trg_name.c_str();
+			context = "At trigger";
+			name = req->req_trg_name.c_str();
 		}
 		else if (req->req_procedure) {
-			name = "At procedure '";
-			name += req->req_procedure->prc_name.c_str();
+			context = "At procedure";
+			name = req->req_procedure->prc_name.c_str();
+		}
+		else if (req->req_src_line) {
+			context = "At block";
 		}
 
-		if (! name.isEmpty())
+		if (context.hasData())
 		{
 			name.trim();
 
-			if (sTrace.length() + name.length() + 2 > MAX_STACK_TRACE)
+			if (name.hasData())
+				context += string(" '") + name + string("'");
+
+			if (sTrace.length() + context.length() > MAX_STACK_TRACE)
 				break;
 
-			if (isEmpty) {
-				isEmpty = false;
-				sTrace += name + "'";
-			}
-			else {
-				sTrace += "\n" + name + "'";
-			}
+			if (sTrace.hasData())
+				sTrace += "\n";
+
+			sTrace += context;
 
 			if (req->req_src_line)
 			{
@@ -1828,7 +1830,7 @@ static void stuff_stack_trace(const jrd_req* request)
 		}
 	}
 
-	if (!isEmpty)
+	if (sTrace.hasData())
 		ERR_post_nothrow(Arg::Gds(isc_stack_trace) << Arg::Str(sTrace));
 }
 
