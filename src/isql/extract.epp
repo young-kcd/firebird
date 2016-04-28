@@ -98,14 +98,8 @@ static void list_views();
 
 static const char* const Procterm = "^";	// TXNN: script use only
 
-/* Maybe 512 would be really enough as Print_buffer size, but
-   as we have PRINT_BUFFER_LENGTH in isql.h, we should use it
-   FSG 17.Nov.2000
-*/
-
-static TEXT Print_buffer[PRINT_BUFFER_LENGTH];
 static TEXT SQL_identifier[BUFFER_LENGTH128];
-static TEXT SQL_identifier2[BUFFER_LENGTH128];
+static TEXT SQL_identifier2[BUFFER_XLARGE]; // should be >= 1026 bytes (exception text + two quotes)
 
 
 
@@ -523,7 +517,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 					if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 					{
 						IUTILS_copy_SQL_id (CON.RDB$CONSTRAINT_NAME, SQL_identifier, DBL_QUOTE);
-						sprintf (Print_buffer, " CONSTRAINT %s", SQL_identifier);
+						isqlGlob.printf(" CONSTRAINT %s", SQL_identifier);
 					}
 					else
 						isqlGlob.printf(" CONSTRAINT %s", CON.RDB$CONSTRAINT_NAME);
