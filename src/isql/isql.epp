@@ -1242,7 +1242,7 @@ void ISQL_get_character_sets(SSHORT char_set_id, SSHORT collation, bool collate_
 			char charSetName[QUOTEDLENGTH];
 			char collateName[QUOTEDLENGTH];
 
-			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+			if (quote && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
 				IUTILS_copy_SQL_id(CST.RDB$CHARACTER_SET_NAME, charSetName, DBL_QUOTE);
 				IUTILS_copy_SQL_id(COL.RDB$COLLATION_NAME, collateName, DBL_QUOTE);
