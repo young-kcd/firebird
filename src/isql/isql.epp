@@ -1201,7 +1201,7 @@ SSHORT ISQL_get_field_length(const TEXT* field_name)
 
 
 void ISQL_get_character_sets(SSHORT char_set_id, SSHORT collation, bool collate_only,
-							 bool not_null, TEXT* string)
+							 bool not_null, bool quote, TEXT* string)
 {
 /**************************************
  *
@@ -1239,17 +1239,31 @@ void ISQL_get_character_sets(SSHORT char_set_id, SSHORT collation, bool collate_
 			fb_utils::exact_name(COL.RDB$COLLATION_NAME);
 			fb_utils::exact_name(CST.RDB$DEFAULT_COLLATE_NAME);
 
+			char charSetName[QUOTEDLENGTH];
+			char collateName[QUOTEDLENGTH];
+
+			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+			{
+				IUTILS_copy_SQL_id(CST.RDB$CHARACTER_SET_NAME, charSetName, DBL_QUOTE);
+				IUTILS_copy_SQL_id(COL.RDB$COLLATION_NAME, collateName, DBL_QUOTE);
+			}
+			else
+			{
+				strcpy(charSetName, CST.RDB$CHARACTER_SET_NAME);
+				strcpy(collateName, COL.RDB$COLLATION_NAME);
+			}
+
 			// Is specified collation the default collation for character set?
 			if (strcmp (CST.RDB$DEFAULT_COLLATE_NAME, COL.RDB$COLLATION_NAME) == 0)
 			{
 				if (!collate_only)
-					sprintf (string, " CHARACTER SET %s%s", CST.RDB$CHARACTER_SET_NAME, notNullStr);
+					sprintf (string, " CHARACTER SET %s%s", charSetName, notNullStr);
 			}
 			else if (collate_only)
-				sprintf (string, "%s COLLATE %s", notNullStr, COL.RDB$COLLATION_NAME);
+				sprintf (string, "%s COLLATE %s", notNullStr, collateName);
 			else
 				sprintf (string, " CHARACTER SET %s%s COLLATE %s",
-						 CST.RDB$CHARACTER_SET_NAME, notNullStr, COL.RDB$COLLATION_NAME);
+						 charSetName, notNullStr, collateName);
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(fbStatus);
