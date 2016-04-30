@@ -4034,7 +4034,9 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 
 	if (org_rpb->rpb_runtime_flags & (RPB_refetch | RPB_undo_read))
 	{
-		VIO_refetch_record(tdbb, org_rpb, transaction, false, true);
+		if (!VIO_refetch_record(tdbb, org_rpb, transaction, true, true))
+			return false;
+
 		org_rpb->rpb_runtime_flags &= ~RPB_refetch;
 		fb_assert(!(org_rpb->rpb_runtime_flags & RPB_undo_read));
 	}

@@ -214,13 +214,14 @@ bool RecordStream::refetchRecord(thread_db* tdbb) const
 
 	if (rpb->rpb_runtime_flags & RPB_refetch)
 	{
-		if (!VIO_refetch_record(tdbb, rpb, transaction, true, false))
-			return false;
-
-		rpb->rpb_runtime_flags &= ~RPB_refetch;
+		if (VIO_refetch_record(tdbb, rpb, transaction, true, false))
+		{
+			rpb->rpb_runtime_flags &= ~RPB_refetch;
+			return true;
+		}
 	}
 
-	return true;
+	return false;
 }
 
 bool RecordStream::lockRecord(thread_db* tdbb) const
