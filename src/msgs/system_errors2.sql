@@ -522,7 +522,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-530, '42', '000', 0, 519, 'foreign_key_references_present', NULL, NULL)
 (-901, 'HY', '000', 0, 520, 'no_update', NULL, NULL)
 (-902, '24', '000', 0, 521, 'cursor_already_open', NULL, NULL)
-(-901, '42', '000', 0, 522, 'stack_trace', NULL, NULL)
+(-901, '00', '000', 0, 522, 'stack_trace', NULL, NULL)
 (-901, 'HY', '000', 0, 523, 'ctx_var_not_found', NULL, NULL)
 (-901, 'HY', '000', 0, 524, 'ctx_namespace_invalid', NULL, NULL)
 (-901, '54', '000', 0, 525, 'ctx_too_big', NULL, NULL)
