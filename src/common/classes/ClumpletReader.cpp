@@ -359,6 +359,10 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			case isc_spb_rpr_rollback_trans:
 			case isc_spb_rpr_recover_two_phase:
 				return IntSpb;
+			case isc_spb_rpr_commit_trans_64:
+			case isc_spb_rpr_rollback_trans_64:
+			case isc_spb_rpr_recover_two_phase_64:
+				return BigIntSpb;
 			}
 			invalid_structure("unknown parameter for repair");
 			break;
@@ -563,6 +567,11 @@ FB_SIZE_T ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) c
 	// Used in SPB for 4-byte integers
 	case IntSpb:
 		dataSize = 4;
+		break;
+
+	// Used in SPB for 8-byte integers
+	case BigIntSpb:
+		dataSize = 8;
 		break;
 
 	// Used in SPB for single byte

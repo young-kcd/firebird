@@ -471,6 +471,9 @@
 #define isc_spb_tra_id_64				46
 #define isc_spb_single_tra_id_64		47
 #define isc_spb_multi_tra_id_64			48
+#define isc_spb_rpr_commit_trans_64		49
+#define isc_spb_rpr_rollback_trans_64	50
+#define isc_spb_rpr_recover_two_phase_64	51
 
 #define isc_spb_rpr_validate_db			0x01
 #define isc_spb_rpr_sweep_db			0x02
