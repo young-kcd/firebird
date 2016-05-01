@@ -2550,6 +2550,8 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 
 	do
 	{
+		bool bigint = false;
+
 		switch (svc_action)
 		{
 		case isc_action_svc_nbak:
@@ -2709,7 +2711,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				{
 					return false;
 				}
-				get_action_svc_data(spb, switches);
+				get_action_svc_data(spb, switches, bigint);
 				break;
 
 			case isc_spb_sec_admin:
@@ -2796,10 +2798,10 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				}
 				break;
 			case isc_spb_bkp_length:
-				get_action_svc_data(spb, burp_backup);
+				get_action_svc_data(spb, burp_backup, bigint);
 				break;
 			case isc_spb_res_length:
-				get_action_svc_data(spb, burp_database);
+				get_action_svc_data(spb, burp_database, bigint);
 				break;
 			case isc_spb_bkp_factor:
 			case isc_spb_res_buffers:
@@ -2809,7 +2811,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				{
 					return false;
 				}
-				get_action_svc_data(spb, switches);
+				get_action_svc_data(spb, switches, bigint);
 				break;
 			case isc_spb_res_access_mode:
 				if (!get_action_svc_parameter(*(spb.getBytes()), reference_burp_in_sw_table, switches))
@@ -2850,6 +2852,11 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					return false;
 				}
 				break;
+			case isc_spb_rpr_commit_trans_64:
+			case isc_spb_rpr_rollback_trans_64:
+			case isc_spb_rpr_recover_two_phase_64:
+				bigint = true;
+				// fall into
 			case isc_spb_prp_page_buffers:
 			case isc_spb_prp_sweep_interval:
 			case isc_spb_prp_shutdown_db:
@@ -2866,7 +2873,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				{
 					return false;
 				}
-				get_action_svc_data(spb, switches);
+				get_action_svc_data(spb, switches, bigint);
 				break;
 			case isc_spb_prp_write_mode:
 			case isc_spb_prp_access_mode:
@@ -2922,7 +2929,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				get_action_svc_string(spb, switches);
 				break;
 			case isc_spb_trc_id:
-				get_action_svc_data(spb, switches);
+				get_action_svc_data(spb, switches, bigint);
 				break;
 			default:
 				return false;
@@ -2949,7 +2956,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				get_action_svc_string(spb, switches);
 				break;
 			case isc_spb_val_lock_timeout:
-				get_action_svc_data(spb, switches);
+				get_action_svc_data(spb, switches, bigint);
 				break;
 			}
 			break;
@@ -3077,10 +3084,10 @@ void Service::get_action_svc_string_pos(const ClumpletReader& spb, string& switc
 }
 
 
-void Service::get_action_svc_data(const ClumpletReader& spb, string& switches)
+void Service::get_action_svc_data(const ClumpletReader& spb, string& switches, bool bigint)
 {
 	string s;
-	s.printf("%" SLONGFORMAT" ", spb.getInt());
+	s.printf("%" SQUADFORMAT" ", bigint ? spb.getBigInt() : (SINT64) spb.getInt());
 	switches += s;
 }
 
