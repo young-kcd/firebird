@@ -22,6 +22,19 @@ If a domain name is used in connection string, all addresses (IPv4 and IPv6)
 are tried in the order returned by resolver until a connection is established.
 Only if all attempts fail, the client fails to connect.
 
+New URL-style connection string format (see README.connection_strings) allows
+to restrict name lookup to only IPv4 or IPv6 addresses:
+
+  connect 'inet://server.example.org/test';
+  connect 'inet4://server.example.org/test';
+  connect 'inet6://server.example.org/test';
+
+First example tries all addresses, second only IPv4 ones, third only IPv6
+ones. This can be used to avoid connection delays on systems where name lookup
+returns IPv6 addresses for some host names but attempts to connect to them
+time out rather than failing immediatelly (as reported, this can happen even
+for name "localhost" on some systems).
+
 
 Server
 ------
