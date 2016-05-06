@@ -3312,6 +3312,9 @@ const
 	isc_spb_tra_id_64 = byte(46);
 	isc_spb_single_tra_id_64 = byte(47);
 	isc_spb_multi_tra_id_64 = byte(48);
+	isc_spb_rpr_commit_trans_64 = byte(49);
+	isc_spb_rpr_rollback_trans_64 = byte(50);
+	isc_spb_rpr_recover_two_phase_64 = byte(51);
 	isc_spb_rpr_validate_db = $01;
 	isc_spb_rpr_sweep_db = $02;
 	isc_spb_rpr_mend_db = $04;
