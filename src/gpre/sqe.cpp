@@ -1733,11 +1733,11 @@ static gpre_ctx* par_alias_list( gpre_req* request, gpre_nod* alias_list)
 			}
 		}
 
-		if (!context)
-		{
-			fb_utils::snprintf(error_string, sizeof(error_string),
-				"there is no alias or table named %s at this scope level",
-				(TEXT*) *arg);
+	if (!context)
+	{
+		fb_utils::snprintf(error_string, sizeof(error_string),
+			"there is no alias or table named %s at this scope level",
+			(TEXT*) *arg);
 		PAR_error(error_string);
 	}
 
