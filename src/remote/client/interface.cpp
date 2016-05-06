@@ -92,6 +92,8 @@
 
 
 const char* const PROTOCOL_INET = "inet";
+const char* const PROTOCOL_INET4 = "inet4";
+const char* const PROTOCOL_INET6 = "inet6";
 const char* const PROTOCOL_WNET = "wnet";
 const char* const PROTOCOL_XNET = "xnet";
 
@@ -5419,6 +5421,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
  **************************************/
 
 	rem_port* port = NULL;
+	int inet_af = AF_UNSPEC;
 
 	cBlock.loadClnt(pb, &parSet);
 	authenticateStep0(cBlock);
@@ -5443,7 +5446,12 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 	else
 #endif
 
-	if (ISC_analyze_protocol(PROTOCOL_INET, attach_name, node_name, INET_SEPARATOR) ||
+	if (ISC_analyze_protocol(PROTOCOL_INET4, attach_name, node_name, INET_SEPARATOR))
+		inet_af = AF_INET;
+	else if (ISC_analyze_protocol(PROTOCOL_INET6, attach_name, node_name, INET_SEPARATOR))
+		inet_af = AF_INET6;
+	if (inet_af != AF_UNSPEC ||
+		ISC_analyze_protocol(PROTOCOL_INET, attach_name, node_name, INET_SEPARATOR) ||
 		ISC_analyze_tcp(attach_name, node_name))
 	{
 		if (node_name.isEmpty())
@@ -5455,7 +5463,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 		}
 
 		port = INET_analyze(&cBlock, attach_name, node_name.c_str(), flags & ANALYZE_UV, pb,
-			cBlock.getConfig(), ref_db_name);
+			cBlock.getConfig(), ref_db_name, inet_af);
 	}
 
 	// We have a local connection string. If it's a file on a network share,
