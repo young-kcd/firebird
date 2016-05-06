@@ -142,7 +142,9 @@ bool IndexTableScan::getRecord(thread_db* tdbb) const
 
 	temporary_key key;
 	memcpy(key.key_data, impure->irsb_nav_data, impure->irsb_nav_length);
+
 	const IndexRetrieval* const retrieval = m_index->retrieval;
+	const USHORT flags = retrieval->irb_generic & (irb_descending | irb_partial | irb_starting);
 
 	// set the upper (or lower) limit for navigational retrieval
 	temporary_key upper;
@@ -182,8 +184,7 @@ bool IndexTableScan::getRecord(thread_db* tdbb) const
 
 		// Make sure we haven't hit the upper (or lower) limit.
 		if (retrieval->irb_upper_count &&
-			compareKeys(idx, key.key_data, key.key_length, &upper,
-						 retrieval->irb_generic & (irb_descending | irb_partial | irb_starting)) > 0)
+			compareKeys(idx, key.key_data, key.key_length, &upper, flags) > 0)
 		{
 			break;
 		}
@@ -389,6 +390,9 @@ int IndexTableScan::compareKeys(const index_desc* idx,
 
 bool IndexTableScan::findSavedNode(thread_db* tdbb, Impure* impure, win* window, UCHAR** return_pointer) const
 {
+	const IndexRetrieval* const retrieval = m_index->retrieval;
+	const USHORT flags = retrieval->irb_generic & irb_descending;
+
 	index_desc* const idx = (index_desc*) ((SCHAR*) impure + m_offset);
 	Ods::btree_page* page = (Ods::btree_page*) CCH_FETCH(tdbb, window, LCK_read, pag_index);
 
@@ -422,7 +426,7 @@ bool IndexTableScan::findSavedNode(thread_db* tdbb, Impure* impure, win* window,
 			memcpy(key.key_data + node.prefix, node.data, node.length);
 			key.key_length = node.length + node.prefix;
 			const int result =
-				compareKeys(idx, impure->irsb_nav_data, impure->irsb_nav_length, &key, 0);
+				compareKeys(idx, impure->irsb_nav_data, impure->irsb_nav_length, &key, flags);
 
 			// if the keys are equal, return this node even if it is just a duplicate node;
 			// duplicate nodes that have already been returned will be filtered out at a
