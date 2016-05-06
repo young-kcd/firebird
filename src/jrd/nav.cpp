@@ -209,8 +209,10 @@ bool NAV_get_record(thread_db* tdbb, RecordSource* rsb,
 		return false;
 	temporary_key key;
 	memcpy(key.key_data, impure->irsb_nav_data, impure->irsb_nav_length);
-	jrd_nod* retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
-	IndexRetrieval* retrieval = (IndexRetrieval*) retrieval_node->nod_arg[e_idx_retrieval];
+
+	const jrd_nod* const retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
+	const IndexRetrieval* const retrieval = (IndexRetrieval*) retrieval_node->nod_arg[e_idx_retrieval];
+	const USHORT compare_flags = retrieval->irb_generic & (irb_descending | irb_partial | irb_starting);
 
 	// set the upper (or lower) limit for navigational retrieval
 	temporary_key upper;
@@ -369,16 +371,14 @@ bool NAV_get_record(thread_db* tdbb, RecordSource* rsb,
 
 		// Make sure we haven't hit the upper (or lower) limit.
 		if ((direction == RSE_get_forward) && retrieval->irb_upper_count &&
-			compare_keys(idx, key.key_data, key.key_length, &upper,
-						 retrieval->irb_generic & (irb_descending | irb_partial | irb_starting)) > 0)
+			compare_keys(idx, key.key_data, key.key_length, &upper, compare_flags) > 0)
 		{
 			break;
 		}
 
 #ifdef SCROLLABLE_CURSORS
 		if ((direction == RSE_get_backward) && retrieval->irb_lower_count &&
-			compare_keys(idx, key.key_data, key.key_length, &lower,
-						 retrieval->irb_generic & (irb_descending | irb_partial | irb_starting)) < 0)
+			compare_keys(idx, key.key_data, key.key_length, &lower, compare_flags) < 0)
 		{
 			break;
 		}
@@ -680,6 +680,10 @@ static bool find_saved_node(thread_db* tdbb, RecordSource* rsb, IRSB_NAV impure,
 	index_desc* idx = (index_desc*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 	Ods::btree_page* page = (Ods::btree_page*) CCH_FETCH(tdbb, window, LCK_read, pag_index);
 
+	const jrd_nod* const retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
+	const IndexRetrieval* const retrieval = (IndexRetrieval*) retrieval_node->nod_arg[e_idx_retrieval];
+	const USHORT compare_flags = retrieval->irb_generic & (irb_descending | irb_partial | irb_starting);
+
 	// the outer loop goes through all the sibling pages
 	// looking for the node (in case the page has split);
 	// the inner loop goes through the nodes on each page
@@ -711,7 +715,7 @@ static bool find_saved_node(thread_db* tdbb, RecordSource* rsb, IRSB_NAV impure,
 			memcpy(key.key_data + node.prefix, node.data, node.length);
 			key.key_length = node.length + node.prefix;
 			const int result = compare_keys(idx, impure->irsb_nav_data,
-											impure->irsb_nav_length, &key, 0);
+											impure->irsb_nav_length, &key, compare_flags);
 
 			// if the keys are equal, return this node even if it is just a duplicate node;
 			// duplicate nodes that have already been returned will be filtered out at a
@@ -1234,4 +1238,3 @@ static bool setup_bitmaps(thread_db* tdbb, RecordSource* rsb, IRSB_NAV impure)
 
 	return true;
 }
-
