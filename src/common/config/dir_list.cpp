@@ -43,7 +43,7 @@ void ParsedPath::parse(const PathName& path)
 		{
 			continue;
 		}
-		if (elem == ".") // Skip current dir reference
+		if (elem == PathUtils::curr_dir_link) // Skip current dir reference
 		{
 			continue;
 		}

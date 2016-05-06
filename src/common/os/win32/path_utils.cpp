@@ -7,6 +7,7 @@
 /// The Win32 implementation of the path_utils abstraction.
 
 const char PathUtils::dir_sep = '\\';
+const char* PathUtils::curr_dir_link = ".";
 const char* PathUtils::up_dir_link = "..";
 const char PathUtils::dir_list_sep = ';';
 

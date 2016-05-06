@@ -746,7 +746,7 @@ bool ConfigFile::wildCards(const char* currentFileName, const PathName& pathPref
 	// Any change in directory can cause config change
 	PathName prefix(pathPrefix);
 	if(!pathPrefix.hasData())
-		prefix = ".";
+		prefix = PathUtils::curr_dir_link;
 
 	bool found = false;
 	PathName next(components.pop());
@@ -761,7 +761,7 @@ bool ConfigFile::wildCards(const char* currentFileName, const PathName& pathPref
 	{
 		PathName name;
 		const PathName fileName = list.getFileName();
-		if (fileName == ".")
+		if (fileName == PathUtils::curr_dir_link)
 			continue;
 		if (fileName[0] == '.' && next[0] != '.')
 			continue;
