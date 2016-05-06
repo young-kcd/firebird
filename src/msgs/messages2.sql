@@ -1980,7 +1980,7 @@ COMMIT WORK;
 (NULL, NULL, 'burp.c', NULL, 12, 0, NULL, 'could not locate appropriate error message', NULL, NULL);
 ('gbak_unknown_switch', NULL, 'burp.c', NULL, 12, 1, NULL, 'found unknown switch', NULL, NULL);
 ('gbak_page_size_missing', NULL, 'burp.c', NULL, 12, 2, NULL, 'page size parameter missing', NULL, NULL);
-('gbak_page_size_toobig', NULL, 'burp.c', NULL, 12, 3, NULL, 'Page size specified (@1) greater than limit (16384 bytes)', NULL, NULL);
+('gbak_page_size_toobig', NULL, 'burp.c', NULL, 12, 3, NULL, 'Page size specified (@1) greater than limit (32768 bytes)', NULL, NULL);
 ('gbak_redir_ouput_missing', NULL, 'burp.c', NULL, 12, 4, NULL, 'redirect location for output is not specified', NULL, NULL);
 ('gbak_switches_conflict', NULL, 'burp.c', NULL, 12, 5, NULL, 'conflicting switches for backup/restore', NULL, NULL);
 ('gbak_unknown_device', NULL, 'burp.c', NULL, 12, 6, NULL, 'device type @1 not known', NULL, NULL);
