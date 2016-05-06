@@ -259,7 +259,7 @@ public:
 	TransactionBitmap*	tra_commit_sub_trans;	// committed sub-transactions
 	Savepoint*	tra_save_point;			// list of savepoints
 	Savepoint*	tra_save_free;			// free savepoints
-	SLONG tra_save_point_number;		// next save point number to use
+	SavNumber tra_save_point_number;	// next save point number to use
 	ULONG tra_flags;
 	DeferredJob*	tra_deferred_job;	// work deferred to commit time
 	ResourceList tra_resources;			// resource existence list
@@ -362,7 +362,7 @@ public:
 	Record* findNextUndo(VerbAction* before_this, jrd_rel* relation, SINT64 number);
 	void listStayingUndo(jrd_rel* relation, SINT64 number, RecordStack &staying);
 	void rollbackSavepoint(thread_db* tdbb);
-	void rollbackToSavepoint(thread_db* tdbb, SLONG number);
+	void rollbackToSavepoint(thread_db* tdbb, SavNumber number);
 	void rollforwardSavepoint(thread_db* tdbb);
 	DbCreatorsList* getDbCreatorsList();
 

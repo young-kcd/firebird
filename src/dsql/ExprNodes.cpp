@@ -11090,7 +11090,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 		}
 
 		jrd_tra* transaction = request->req_transaction;
-		const SLONG savePointNumber = transaction->tra_save_point ?
+		const SavNumber savNumber = transaction->tra_save_point ?
 			transaction->tra_save_point->getNumber() : 0;
 
 		jrd_req* funcRequest = function->getStatement()->findRequest(tdbb);
@@ -11118,7 +11118,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 			if (!(transaction->tra_flags & TRA_system))
 			{
 				while (transaction->tra_save_point &&
-					transaction->tra_save_point->getNumber() > savePointNumber)
+					transaction->tra_save_point->getNumber() > savNumber)
 				{
 					transaction->rollforwardSavepoint(tdbb);
 				}

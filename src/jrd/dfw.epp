@@ -187,7 +187,7 @@ private:
 public:
 	Lock*			dfw_lock;		// relation creation lock
 	Array<DeferredWork*>  dfw_args;	// arguments
-	SLONG			dfw_sav_number;	// save point number
+	SavNumber		dfw_sav_number;	// save point number
 	USHORT			dfw_id;			// object id, if appropriate
 	USHORT			dfw_count;		// count of block posts
 	string			dfw_name;		// name of object
@@ -196,7 +196,7 @@ public:
 
 public:
 	DeferredWork(MemoryPool& p, DeferredWork*** end,
-				 enum dfw_t t, USHORT id, SLONG sn, const string& name,
+				 enum dfw_t t, USHORT id, SavNumber sn, const string& name,
 				 const MetaName& package)
 	  : dfw_type(t), dfw_end(end), dfw_prev(dfw_end ? *dfw_end : NULL),
 		dfw_next(dfw_prev ? *dfw_prev : NULL), dfw_lock(NULL), dfw_args(p),
@@ -312,28 +312,28 @@ class DfwSavePoint;
 typedef HashTable<
 	DfwSavePoint,
 	DEFAULT_HASH_SIZE,
-	SLONG,
+	SavNumber,
 	DfwSavePoint
 > DfwSavePointHash;
 
 class DfwSavePoint : public DfwSavePointHash::Entry
 {
-	SLONG dfw_sav_number;
+	SavNumber dfw_sav_number;
 
 public:
 	DfwHash hash; // Deferred work items posted under this savepoint
 
-	explicit DfwSavePoint(SLONG number) : dfw_sav_number(number) { }
+	explicit DfwSavePoint(SavNumber number) : dfw_sav_number(number) { }
 
 	// hash interface
-	bool isEqual(const SLONG& number) const
+	bool isEqual(const SavNumber& number) const
 	{
 		return dfw_sav_number == number;
 	}
 
 	DfwSavePoint* get() { return this; }
 
-	static SLONG generate(const DfwSavePoint& item)
+	static SavNumber generate(const DfwSavePoint& item)
 	{
 		return item.dfw_sav_number;
 	}
@@ -1114,7 +1114,7 @@ USHORT DFW_assign_index_type(thread_db* tdbb, const Firebird::MetaName& name, SS
 }
 
 
-void DFW_delete_deferred( jrd_tra* transaction, SLONG sav_number)
+void DFW_delete_deferred( jrd_tra* transaction, SavNumber sav_number)
 {
 /**************************************
  *
@@ -1171,7 +1171,7 @@ SortedArray<int>& DFW_get_ids(DeferredWork* work)
 }
 
 
-void DFW_merge_work(jrd_tra* transaction, SLONG old_sav_number, SLONG new_sav_number)
+void DFW_merge_work(jrd_tra* transaction, SavNumber old_sav_number, SavNumber new_sav_number)
 {
 /**************************************
  *
@@ -1189,17 +1189,13 @@ void DFW_merge_work(jrd_tra* transaction, SLONG old_sav_number, SLONG new_sav_nu
 
 	DeferredJob *job = transaction->tra_deferred_job;
 	if (! job)
-	{
 		return;
-	}
 
 	// Check to see if work is already posted
 
 	DfwSavePoint* oldSp = job->hash.lookup(old_sav_number);
 	if (!oldSp)
-	{
 		return;
-	}
 
 	DfwSavePoint* newSp = job->hash.lookup(new_sav_number);
 
@@ -1489,7 +1485,7 @@ DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const string&
 
 	// get the current save point number
 
-	const SLONG sav_number = transaction->tra_save_point ?
+	const SavNumber sav_number = transaction->tra_save_point ?
 		transaction->tra_save_point->getNumber() : 0;
 
 	// initialize transaction if needed

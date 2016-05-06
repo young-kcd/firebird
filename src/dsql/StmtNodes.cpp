@@ -517,7 +517,7 @@ BlockNode* BlockNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	doPass2(tdbb, csb, action.getAddress(), this);
 	doPass2(tdbb, csb, handlers.getAddress(), this);
 
-	impureOffset = CMP_impure(csb, sizeof(SLONG));
+	impureOffset = CMP_impure(csb, sizeof(SavNumber));
 
 	return this;
 }
@@ -525,7 +525,7 @@ BlockNode* BlockNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
 {
 	jrd_tra* transaction = request->req_transaction;
-	SLONG count;
+	SavNumber savNumber;
 
 	switch (request->req_operation)
 	{
@@ -533,8 +533,8 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 			if (!(transaction->tra_flags & TRA_system))
 			{
 				const Savepoint* const savepoint = Savepoint::start(transaction);
-				count = savepoint->getNumber();
-				*request->getImpure<SLONG>(impureOffset) = count;
+				savNumber = savepoint->getNumber();
+				*request->getImpure<SavNumber>(impureOffset) = savNumber;
 			}
 			return action;
 
@@ -550,10 +550,10 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 
 				if (!(transaction->tra_flags & TRA_system))
 				{
-					count = *request->getImpure<SLONG>(impureOffset);
+					savNumber = *request->getImpure<SavNumber>(impureOffset);
 
 					while (transaction->tra_save_point &&
-						transaction->tra_save_point->getNumber() >= count)
+						transaction->tra_save_point->getNumber() >= savNumber)
 					{
 						transaction->rollforwardSavepoint(tdbb);
 					}
@@ -562,14 +562,14 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 				return parentStmt;
 			}
 
-			const StmtNode* temp;
+			const StmtNode* temp = parentStmt;
 
-			if (handlers && handlers->statements.getCount() > 0)
+			if (handlers && handlers->statements.hasData())
 			{
 				// First of all rollback failed work
 				if (!(transaction->tra_flags & TRA_system))
 				{
-					count = *request->getImpure<SLONG>(impureOffset);
+					savNumber = *request->getImpure<SavNumber>(impureOffset);
 
 					// Since there occurred an error (req_unwind), undo all savepoints
 					// up to, _but not including_, the savepoint of this block.
@@ -578,23 +578,22 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 					// Do this only if error handlers exist. If not - leave rollbacking to caller node
 
 					while (transaction->tra_save_point &&
-						count < transaction->tra_save_point->getNumber() &&
+						savNumber < transaction->tra_save_point->getNumber() &&
 						transaction->tra_save_point->getNext() &&
-						count < transaction->tra_save_point->getNext()->getNumber())
+						savNumber < transaction->tra_save_point->getNext()->getNumber())
 					{
 						transaction->rollforwardSavepoint(tdbb);
 					}
 
 					// There can be no savepoints above the given one
 
-					if (transaction->tra_save_point && transaction->tra_save_point->getNumber() > count)
+					if (transaction->tra_save_point && transaction->tra_save_point->getNumber() > savNumber)
 						transaction->rollbackSavepoint(tdbb);
 
 					// after that we still have to have our savepoint. If not - CORE-4424/4483 is sneaking around
-					fb_assert(transaction->tra_save_point && transaction->tra_save_point->getNumber() == count);
+					fb_assert(transaction->tra_save_point && transaction->tra_save_point->getNumber() == savNumber);
 				}
 
-				temp = parentStmt;
 				bool handled = false;
 				const NestConst<StmtNode>* ptr = handlers->statements.begin();
 
@@ -602,13 +601,11 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 					 ptr != end;
 					 ++ptr)
 				{
-					const ErrorHandlerNode* handlerNode = (*ptr)->as<ErrorHandlerNode>();
-					const ExceptionArray& xcpNode = handlerNode->conditions;
+					const ErrorHandlerNode* const handlerNode = (*ptr)->as<ErrorHandlerNode>();
 
-					if (testAndFixupError(tdbb, request, xcpNode))
+					if (testAndFixupError(tdbb, request, handlerNode->conditions))
 					{
 						request->req_operation = jrd_req::req_evaluate;
-						temp = handlerNode->action;
 						exeState->errorPending = false;
 
 						// On entering looper exeState->oldRequest etc. are saved.
@@ -628,7 +625,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 							const ULONG prev_req_error_handler =
 								request->req_flags & req_error_handler;
 							request->req_flags |= req_error_handler;
-							temp = EXE_looper(tdbb, request, temp);
+							temp = EXE_looper(tdbb, request, handlerNode->action);
 							request->req_flags &= ~req_error_handler;
 							request->req_flags |= prev_req_error_handler;
 
@@ -650,7 +647,6 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 							request->req_caller = exeState->oldRequest;
 							handled = true;
 						}
-
 					}
 				}
 				// The error is dealt with by the application, cleanup
@@ -667,18 +663,16 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 					//		outer after  (this block)
 					//		inner after
 					// Because of this following assert is commented out
-					//fb_assert(transaction->tra_save_point && transaction->tra_save_point->getNumber() == count);
+					//fb_assert(transaction->tra_save_point && transaction->tra_save_point->getNumber() == savNumber);
 
 					for (const Savepoint* save_point = transaction->tra_save_point;
-							save_point && count <= save_point->getNumber();
+							save_point && savNumber <= save_point->getNumber();
 							save_point = transaction->tra_save_point)
 					{
 						transaction->rollforwardSavepoint(tdbb);
 					}
 				}
 			}
-			else
-				temp = parentStmt;
 
 			// If the application didn't have an error handler, then
 			// the error will still be pending. Leave undo to outer blocks.
@@ -689,11 +683,11 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 		case jrd_req::req_return:
 			if (!(transaction->tra_flags & TRA_system))
 			{
-				count = *request->getImpure<SLONG>(impureOffset);
+				savNumber = *request->getImpure<SavNumber>(impureOffset);
 
 				// rollforward all savepoints
 				for (const Savepoint* save_point = transaction->tra_save_point;
-					 save_point && save_point->getNext() && count <= save_point->getNumber();
+					 save_point && save_point->getNext() && savNumber <= save_point->getNumber();
 					 save_point = transaction->tra_save_point)
 				{
 					transaction->rollforwardSavepoint(tdbb);
@@ -2975,7 +2969,7 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 	}
 
 	jrd_tra* transaction = request->req_transaction;
-	const SLONG savePointNumber = transaction->tra_save_point ?
+	const SavNumber savNumber = transaction->tra_save_point ?
 		transaction->tra_save_point->getNumber() : 0;
 
 	jrd_req* procRequest = procedure->getStatement()->findRequest(tdbb);
@@ -3001,7 +2995,7 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 		if (!(transaction->tra_flags & TRA_system))
 		{
 			while (transaction->tra_save_point &&
-				transaction->tra_save_point->getNumber() > savePointNumber)
+				transaction->tra_save_point->getNumber() > savNumber)
 			{
 				transaction->rollforwardSavepoint(tdbb);
 			}
@@ -4693,7 +4687,7 @@ StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	// as implicit cursors are always positioned in a valid record, and the name is
 	// only used to raise isc_cursor_not_positioned.
 
-	impureOffset = CMP_impure(csb, sizeof(SLONG));
+	impureOffset = CMP_impure(csb, sizeof(SavNumber));
 
 	return this;
 }
@@ -4705,13 +4699,13 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 	switch (request->req_operation)
 	{
 		case jrd_req::req_evaluate:
-			*request->getImpure<SLONG>(impureOffset) = 0;
+			*request->getImpure<SavNumber>(impureOffset) = 0;
 			if (!(transaction->tra_flags & TRA_system) &&
 				transaction->tra_save_point &&
 				transaction->tra_save_point->hasChanges())
 			{
 				const Savepoint* const savepoint = Savepoint::start(transaction);
-				*request->getImpure<SLONG>(impureOffset) = savepoint->getNumber();
+				*request->getImpure<SavNumber>(impureOffset) = savepoint->getNumber();
 			}
 			cursor->open(tdbb);
 			request->req_records_affected.clear();
@@ -4748,12 +4742,12 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 
 		default:
 		{
-			const SLONG sav_number = *request->getImpure<SLONG>(impureOffset);
+			const SavNumber savNumber = *request->getImpure<SavNumber>(impureOffset);
 
-			if (sav_number)
+			if (savNumber)
 			{
 				while (transaction->tra_save_point &&
-					transaction->tra_save_point->getNumber() >= sav_number)
+					transaction->tra_save_point->getNumber() >= savNumber)
 				{
 					if (transaction->tra_save_point->isChanging()) // we must rollback this savepoint
 						transaction->rollbackSavepoint(tdbb);
@@ -7184,11 +7178,11 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 
 			case CMD_RELEASE:
 			{
-				const SLONG sav_number = savepoint->getNumber();
+				const SavNumber savNumber = savepoint->getNumber();
 
 				// Release the savepoint and all subsequent ones
 				while (transaction->tra_save_point &&
-					transaction->tra_save_point->getNumber() >= sav_number)
+					transaction->tra_save_point->getNumber() >= savNumber)
 				{
 					transaction->rollforwardSavepoint(tdbb);
 				}

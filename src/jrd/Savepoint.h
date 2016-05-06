@@ -154,7 +154,7 @@ namespace Jrd
 			return m_next;
 		}
 
-		SLONG getNumber() const
+		SavNumber getNumber() const
 		{
 			return m_number;
 		}
@@ -300,7 +300,7 @@ namespace Jrd
 		Savepoint* release(Savepoint* prior = NULL);
 
 		jrd_tra* m_transaction; 		// transaction this savepoint belongs to
-		SLONG m_number;					// savepoint number
+		SavNumber m_number;				// savepoint number
 		USHORT m_flags;					// misc flags
 		USHORT m_count;					// active verb count
 		Firebird::MetaName m_name; 		// savepoint name
@@ -346,7 +346,7 @@ namespace Jrd
 	private:
 		thread_db* const m_tdbb;
 		jrd_tra* const m_transaction;
-		SLONG m_number;
+		SavNumber m_number;
 	};
 
 } // namespace

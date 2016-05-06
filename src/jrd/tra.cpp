@@ -3538,7 +3538,7 @@ void jrd_tra::rollbackSavepoint(thread_db* tdbb)
 	}
 }
 
-void jrd_tra::rollbackToSavepoint(thread_db* tdbb, SLONG number)
+void jrd_tra::rollbackToSavepoint(thread_db* tdbb, SavNumber number)
 /**************************************
  *
  *	 r o l l b a c k T o S a v e p o i n t

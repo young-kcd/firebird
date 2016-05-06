@@ -602,7 +602,7 @@ void EXE_receive(thread_db* tdbb,
 		ERR_post(Arg::Gds(isc_req_sync));
 	}
 
-	SLONG merge_sav_number = 0;
+	SavNumber mergeSavNumber = 0;
 
 	if (request->req_flags & req_proc_fetch)
 	{
@@ -615,7 +615,7 @@ void EXE_receive(thread_db* tdbb,
 
 		if (transaction->tra_save_point)
 		{
-			merge_sav_number = transaction->tra_save_point->getNumber();
+			mergeSavNumber = transaction->tra_save_point->getNumber();
 
 			if (request->req_proc_sav_point)
 			{
@@ -692,7 +692,7 @@ void EXE_receive(thread_db* tdbb,
 			// Merge work into target savepoint and save request's savepoints (with numbers!!!)
 			// till the next looper iteration
 			while (transaction->tra_save_point &&
-				transaction->tra_save_point->getNumber() > merge_sav_number)
+				transaction->tra_save_point->getNumber() > mergeSavNumber)
 			{
 				Savepoint* const savepoint = transaction->tra_save_point;
 				transaction->rollforwardSavepoint(tdbb);
@@ -1284,7 +1284,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 	fb_assert(request->req_caller == NULL);
 	request->req_caller = exeState.oldRequest;
 
-	const SLONG save_point_number = (request->req_transaction->tra_save_point) ?
+	const SavNumber savNumber = (request->req_transaction->tra_save_point) ?
 		request->req_transaction->tra_save_point->getNumber() : 0;
 
 	tdbb->tdbb_flags &= ~(TDBB_stack_trace_done | TDBB_sys_error);
@@ -1389,7 +1389,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 	if (exeState.errorPending)
 	{
 		if (!(request->req_transaction->tra_flags & TRA_system))
-			request->req_transaction->rollbackToSavepoint(tdbb, save_point_number);
+			request->req_transaction->rollbackToSavepoint(tdbb, savNumber);
 
 		ERR_punt();
 	}
