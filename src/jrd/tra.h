@@ -261,7 +261,7 @@ public:
 	TransactionBitmap*	tra_commit_sub_trans;	// committed sub-transactions
 	Savepoint*	tra_save_point;			// list of savepoints
 	Savepoint*	tra_save_free;			// free savepoints
-	SLONG tra_save_point_number;		// next save point number to use
+	SavNumber tra_save_point_number;	// next save point number to use
 	ULONG tra_flags;
 	DeferredJob*	tra_deferred_job;	// work deferred to commit time
 	ResourceList tra_resources;			// resource existence list
@@ -441,7 +441,7 @@ public:
 	VerbAction*			sav_verb_actions;	// verb action list
 	VerbAction*			sav_verb_free;		// free verb actions
 	USHORT				sav_verb_count;		// active verb count
-	SLONG				sav_number;			// save point number
+	SavNumber			sav_number;			// save point number
 	Savepoint*			sav_next;
 	USHORT				sav_flags;
 	Firebird::MetaName	sav_name; 			// savepoint name

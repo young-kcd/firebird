@@ -154,5 +154,6 @@ inline T FB_ALIGN(T n, uintptr_t b)
 typedef SINT64 AttNumber;
 typedef SINT64 TraNumber;
 typedef SINT64 StmtNumber;
+typedef SINT64 SavNumber;
 
 #endif /* INCLUDE_FB_TYPES_H */

@@ -97,7 +97,7 @@ namespace Jrd
 	private:
 		thread_db* m_tdbb;
 		jrd_tra* m_tran;
-		SLONG m_number;
+		SavNumber m_number;
 	};
 }
 

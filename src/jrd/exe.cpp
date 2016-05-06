@@ -1267,7 +1267,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 	fb_assert(request->req_caller == NULL);
 	request->req_caller = exeState.oldRequest;
 
-	const SLONG save_point_number = (request->req_transaction->tra_save_point) ?
+	const SavNumber savNumber = (request->req_transaction->tra_save_point) ?
 		request->req_transaction->tra_save_point->sav_number : 0;
 
 	tdbb->tdbb_flags &= ~(TDBB_stack_trace_done | TDBB_sys_error);
@@ -1314,7 +1314,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 				if (request->req_transaction != sysTransaction)
 				{
 					while (request->req_transaction->tra_save_point &&
-						request->req_transaction->tra_save_point->sav_number >= save_point_number)
+						request->req_transaction->tra_save_point->sav_number >= savNumber)
 					{
 						++request->req_transaction->tra_save_point->sav_verb_count;
 						VIO_verb_cleanup(tdbb, request->req_transaction);
@@ -1389,7 +1389,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 		if (request->req_transaction != sysTransaction)
 		{
 			while (request->req_transaction->tra_save_point &&
-				request->req_transaction->tra_save_point->sav_number >= save_point_number)
+				request->req_transaction->tra_save_point->sav_number >= savNumber)
 			{
 				++request->req_transaction->tra_save_point->sav_verb_count;
 				VIO_verb_cleanup(tdbb, request->req_transaction);

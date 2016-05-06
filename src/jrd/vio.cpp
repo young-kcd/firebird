@@ -2472,7 +2472,7 @@ void VIO_merge_proc_sav_points(thread_db* tdbb, jrd_tra* transaction, Savepoint*
 	for (Savepoint* sav_point = *sav_point_list; sav_point; sav_point = sav_point->sav_next)
 	{
 		Savepoint* const sav_next = sav_point->sav_next;
-		const SLONG sav_number = sav_point->sav_number;
+		const SavNumber sav_number = sav_point->sav_number;
 
 		if (!sav_point->sav_next)
 			sav_point->sav_next = org_save_point;

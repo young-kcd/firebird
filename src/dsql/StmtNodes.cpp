@@ -507,7 +507,7 @@ BlockNode* BlockNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	doPass2(tdbb, csb, action.getAddress(), this);
 	doPass2(tdbb, csb, handlers.getAddress(), this);
 
-	impureOffset = CMP_impure(csb, sizeof(SLONG));
+	impureOffset = CMP_impure(csb, sizeof(SavNumber));
 
 	return this;
 }
@@ -516,7 +516,8 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 {
 	jrd_tra* transaction = request->req_transaction;
 	jrd_tra* sysTransaction = request->req_attachment->getSysTransaction();
-	SLONG count;
+
+	SavNumber savNumber;
 
 	switch (request->req_operation)
 	{
@@ -525,8 +526,8 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 			{
 				VIO_start_save_point(tdbb, transaction);
 				const Savepoint* save_point = transaction->tra_save_point;
-				count = save_point->sav_number;
-				*request->getImpure<SLONG>(impureOffset) = count;
+				savNumber = save_point->sav_number;
+				*request->getImpure<SavNumber>(impureOffset) = savNumber;
 			}
 			return action;
 
@@ -542,10 +543,10 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 
 				if (transaction != sysTransaction)
 				{
-					count = *request->getImpure<SLONG>(impureOffset);
+					savNumber = *request->getImpure<SavNumber>(impureOffset);
 
 					while (transaction->tra_save_point &&
-						transaction->tra_save_point->sav_number >= count)
+						transaction->tra_save_point->sav_number >= savNumber)
 					{
 						VIO_verb_cleanup(tdbb, transaction);
 					}
@@ -556,14 +557,14 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 
 			if (transaction != sysTransaction)
 			{
-				count = *request->getImpure<SLONG>(impureOffset);
+				savNumber = *request->getImpure<SavNumber>(impureOffset);
 
 				// Since there occurred an error (req_unwind), undo all savepoints
 				// up to, but not including, the savepoint of this block.  The
 				// savepoint of this block will be dealt with below.
 
 				while (transaction->tra_save_point &&
-					transaction->tra_save_point->sav_number > count)
+					transaction->tra_save_point->sav_number > savNumber)
 				{
 					++transaction->tra_save_point->sav_verb_count;
 					VIO_verb_cleanup(tdbb, transaction);
@@ -635,7 +636,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 						if (transaction != sysTransaction)
 						{
 							while (transaction->tra_save_point &&
-								transaction->tra_save_point->sav_number >= count)
+								transaction->tra_save_point->sav_number >= savNumber)
 							{
 								VIO_verb_cleanup(tdbb, transaction);
 							}
@@ -653,7 +654,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 			if (exeState->errorPending && transaction != sysTransaction)
 			{
 				while (transaction->tra_save_point &&
-					transaction->tra_save_point->sav_number >= count)
+					transaction->tra_save_point->sav_number >= savNumber)
 				{
 					++transaction->tra_save_point->sav_verb_count;
 					VIO_verb_cleanup(tdbb, transaction);
@@ -666,10 +667,10 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 		case jrd_req::req_return:
 			if (transaction != sysTransaction)
 			{
-				count = *request->getImpure<SLONG>(impureOffset);
+				savNumber = *request->getImpure<SavNumber>(impureOffset);
 
 				while (transaction->tra_save_point &&
-					transaction->tra_save_point->sav_number >= count)
+					transaction->tra_save_point->sav_number >= savNumber)
 				{
 					VIO_verb_cleanup(tdbb, transaction);
 				}
@@ -2956,7 +2957,7 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 	}
 
 	jrd_tra* transaction = request->req_transaction;
-	const SLONG savePointNumber = transaction->tra_save_point ?
+	const SavNumber savNumber = transaction->tra_save_point ?
 		transaction->tra_save_point->sav_number : 0;
 
 	jrd_req* procRequest = procedure->getStatement()->findRequest(tdbb);
@@ -2982,7 +2983,7 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 		if (transaction != attachment->getSysTransaction())
 		{
 			while (transaction->tra_save_point &&
-				transaction->tra_save_point->sav_number > savePointNumber)
+				transaction->tra_save_point->sav_number > savNumber)
 			{
 				VIO_verb_cleanup(tdbb, transaction);
 			}
@@ -4681,7 +4682,7 @@ StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	// as implicit cursors are always positioned in a valid record, and the name is
 	// only used to raise isc_cursor_not_positioned.
 
-	impureOffset = CMP_impure(csb, sizeof(SLONG));
+	impureOffset = CMP_impure(csb, sizeof(SavNumber));
 
 	return this;
 }
@@ -4694,13 +4695,13 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 	switch (request->req_operation)
 	{
 		case jrd_req::req_evaluate:
-			*request->getImpure<SLONG>(impureOffset) = 0;
+			*request->getImpure<SavNumber>(impureOffset) = 0;
 			if (transaction != sysTransaction &&
 				transaction->tra_save_point && transaction->tra_save_point->sav_verb_actions)
 			{
 				VIO_start_save_point(tdbb, transaction);
 				const Savepoint* save_point = transaction->tra_save_point;
-				*request->getImpure<SLONG>(impureOffset) = save_point->sav_number;
+				*request->getImpure<SavNumber>(impureOffset) = save_point->sav_number;
 			}
 			cursor->open(tdbb);
 			request->req_records_affected.clear();
@@ -4737,12 +4738,12 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 
 		default:
 		{
-			const SLONG sav_number = *request->getImpure<SLONG>(impureOffset);
+			const SavNumber savNumber = *request->getImpure<SavNumber>(impureOffset);
 
-			if (sav_number)
+			if (savNumber)
 			{
 				while (transaction->tra_save_point &&
-					transaction->tra_save_point->sav_number >= sav_number)
+					transaction->tra_save_point->sav_number >= savNumber)
 				{
 					VIO_verb_cleanup(tdbb, transaction);
 				}
@@ -7188,11 +7189,11 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 
 			case CMD_RELEASE:
 			{
-				const SLONG sav_number = savepoint->sav_number;
+				const SavNumber savNumber = savepoint->sav_number;
 
 				// Release the savepoint and all subsequent ones
 				while (transaction->tra_save_point &&
-					transaction->tra_save_point->sav_number >= sav_number)
+					transaction->tra_save_point->sav_number >= savNumber)
 				{
 					VIO_verb_cleanup(tdbb, transaction);
 				}
@@ -7204,11 +7205,11 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 
 			case CMD_ROLLBACK:
 			{
-				const SLONG sav_number = savepoint->sav_number;
+				const SavNumber savNumber = savepoint->sav_number;
 
 				// Undo the savepoint
 				while (transaction->tra_save_point &&
-					transaction->tra_save_point->sav_number >= sav_number)
+					transaction->tra_save_point->sav_number >= savNumber)
 				{
 					transaction->tra_save_point->sav_verb_count++;
 					VIO_verb_cleanup(tdbb, transaction);
