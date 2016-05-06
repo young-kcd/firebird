@@ -6986,9 +6986,8 @@ static void run_commit_triggers(thread_db* tdbb, jrd_tra* transaction)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	if (transaction == attachment->getSysTransaction())
+	if (transaction->tra_flags & TRA_system)
 		return;
 
 	// start a savepoint to rollback changes of all triggers

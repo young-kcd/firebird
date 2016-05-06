@@ -55,50 +55,9 @@ void	VIO_modify(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*, Jrd::jr
 bool	VIO_next_record(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, MemoryPool*, bool);
 Jrd::Record*	VIO_record(Jrd::thread_db*, Jrd::record_param*, const Jrd::Format*, MemoryPool*);
 bool	VIO_refetch_record(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, bool, bool);
-void	VIO_start_save_point(Jrd::thread_db*, Jrd::jrd_tra*);
 void	VIO_store(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
 bool	VIO_sweep(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::TraceSweepEvent*);
-void	VIO_verb_cleanup(Jrd::thread_db*, Jrd::jrd_tra*);
-void	VIO_temp_cleanup(Jrd::jrd_tra*);
 void	VIO_garbage_collect_idx(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::record_param*, Jrd::Record*);
 void	VIO_update_in_place(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::record_param*, Jrd::record_param*);
-
-namespace Jrd
-{
-	// Starts a savepoint and rollback it in destructor if release() is not called.
-	class AutoSavePoint
-	{
-	public:
-		AutoSavePoint(thread_db* tdbb, jrd_tra* aTransaction);
-		~AutoSavePoint();
-
-		void release()
-		{
-			released = true;
-		}
-
-	private:
-		jrd_tra* transaction;
-		bool released;
-	};
-
-	class StableCursorSavePoint
-	{
-	public:
-		StableCursorSavePoint(thread_db* tdbb, jrd_tra* transaction, bool start);
-
-		~StableCursorSavePoint()
-		{
-			release();
-		}
-
-		void release();
-
-	private:
-		thread_db* m_tdbb;
-		jrd_tra* m_tran;
-		SLONG m_number;
-	};
-}
 
 #endif // JRD_VIO_PROTO_H

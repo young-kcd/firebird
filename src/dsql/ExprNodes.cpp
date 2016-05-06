@@ -11091,7 +11091,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 
 		jrd_tra* transaction = request->req_transaction;
 		const SLONG savePointNumber = transaction->tra_save_point ?
-			transaction->tra_save_point->sav_number : 0;
+			transaction->tra_save_point->getNumber() : 0;
 
 		jrd_req* funcRequest = function->getStatement()->findRequest(tdbb);
 
@@ -11115,10 +11115,10 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 
 			// Clean up all savepoints started during execution of the procedure.
 
-			if (transaction != attachment->getSysTransaction())
+			if (!(transaction->tra_flags & TRA_system))
 			{
 				while (transaction->tra_save_point &&
-					transaction->tra_save_point->sav_number > savePointNumber)
+					transaction->tra_save_point->getNumber() > savePointNumber)
 				{
 					transaction->rollforwardSavepoint(tdbb);
 				}

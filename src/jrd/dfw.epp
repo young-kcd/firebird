@@ -1490,7 +1490,7 @@ DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const string&
 	// get the current save point number
 
 	const SLONG sav_number = transaction->tra_save_point ?
-		transaction->tra_save_point->sav_number : 0;
+		transaction->tra_save_point->getNumber() : 0;
 
 	// initialize transaction if needed
 
@@ -1533,7 +1533,7 @@ DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const string&
 		// fall down ...
 	case dfw_post_event:
 		if (transaction->tra_save_point)
-			transaction->tra_save_point->sav_flags |= SAV_force_dfw;
+			transaction->tra_save_point->forceDeferredWork();
 		break;
 	default:
 		transaction->tra_flags |= TRA_deferred_meta;

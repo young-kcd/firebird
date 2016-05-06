@@ -34,7 +34,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/ByteChunk.h"
 #include "../common/classes/Nullable.h"
-#include "../jrd/vio_proto.h"
+#include "../jrd/Savepoint.h"
 #include "../dsql/errd_proto.h"
 
 namespace Jrd {
