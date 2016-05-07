@@ -308,7 +308,7 @@ Lock* jrd_rel::createLock(thread_db* tdbb, MemoryPool* pool, jrd_rel* relation, 
 	const USHORT relLockLen = relation->getRelLockKeyLength();
 
 	Lock* lock = FB_NEW_RPT(*pool, relLockLen) Lock(tdbb, relLockLen, lckType, relation);
-	relation->getRelLockKey(tdbb, &lock->lck_key.lck_string[0]);
+	relation->getRelLockKey(tdbb, lock->getKeyString());
 
 	lock->lck_type = lckType;
 	switch (lckType)

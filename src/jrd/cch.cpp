@@ -4055,7 +4055,7 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 			fb_assert(lock->lck_ast != NULL);
 		}
 
-		bdb->bdb_page.getLockStr(lock->lck_key.lck_string);
+		bdb->bdb_page.getLockStr(lock->getKeyString());
 		if (LCK_lock_opt(tdbb, lock, lock_type, wait))
 		{
 			if (!lock->lck_ast)
