@@ -540,6 +540,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\Savepoint.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\sdw.cpp"
 				>
 			</File>

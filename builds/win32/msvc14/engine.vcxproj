@@ -135,6 +135,7 @@
     <ClCompile Include="..\..\..\src\jrd\Routine.cpp" />
     <ClCompile Include="..\..\..\src\jrd\rpb_chain.cpp" />
     <ClCompile Include="..\..\..\src\jrd\RuntimeStatistics.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\Savepoint.cpp" />
     <ClCompile Include="..\..\..\src\jrd\sdw.cpp" />
     <ClCompile Include="..\..\..\src\jrd\shut.cpp" />
     <ClCompile Include="..\..\..\src\jrd\sort.cpp" />
