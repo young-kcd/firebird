@@ -134,9 +134,18 @@ public:
 
 	union
 	{
-		UCHAR lck_string[1];
+		UCHAR lck_string[8];
 		SINT64 lck_long;
 	} lck_key;						// Lock key string
+
+	UCHAR* getKeyString()
+	{
+#ifdef WORDS_BIGENDIAN
+		if (lck_length <= 8)
+			return &lck_key.lck_string[8-lck_length];
+#endif
+		return &lck_key.lck_string[0];
+	}
 
 	UCHAR lck_tail[1];				// Makes the allocator happy
 };

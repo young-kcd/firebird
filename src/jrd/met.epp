@@ -1390,7 +1390,7 @@ void MET_dsql_cache_release(thread_db* tdbb, int type, const MetaName& name, con
 	const USHORT key_length = item->lock->lck_length;
 	AutoPtr<Lock> temp_lock(FB_NEW_RPT(*tdbb->getDefaultPool(), key_length)
 		Lock(tdbb, key_length, LCK_dsql_cache));
-	memcpy(temp_lock->lck_key.lck_string, item->lock->lck_key.lck_string, key_length);
+	memcpy(temp_lock->getKeyString(), item->lock->getKeyString(), key_length);
 
 	if (LCK_lock(tdbb, temp_lock, LCK_EX, LCK_WAIT))
 		LCK_release(tdbb, temp_lock);
@@ -4134,7 +4134,7 @@ static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, int type, const Quali
 		item->locked = false;
 		item->lock = FB_NEW_RPT(*attachment->att_pool, key.length())
 			Lock(tdbb, key.length(), LCK_dsql_cache, item, blocking_ast_dsql_cache);
-		memcpy(item->lock->lck_key.lck_string, key.c_str(), key.length());
+		memcpy(item->lock->getKeyString(), key.c_str(), key.length());
 	}
 	else
 	{
