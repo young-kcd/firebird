@@ -957,7 +957,7 @@ Data source : @4"},		/* eds_statement */
 	{336068898, "Default values for parameters are allowed only in declaration of packaged function @1.@2"},		/* dyn_defvaldecl_package_func */
 	{336330753, "found unknown switch"},		/* gbak_unknown_switch */
 	{336330754, "page size parameter missing"},		/* gbak_page_size_missing */
-	{336330755, "Page size specified (@1) greater than limit (16384 bytes)"},		/* gbak_page_size_toobig */
+	{336330755, "Page size specified (@1) greater than limit (32768 bytes)"},		/* gbak_page_size_toobig */
 	{336330756, "redirect location for output is not specified"},		/* gbak_redir_ouput_missing */
 	{336330757, "conflicting switches for backup/restore"},		/* gbak_switches_conflict */
 	{336330758, "device type @1 not known"},		/* gbak_unknown_device */
