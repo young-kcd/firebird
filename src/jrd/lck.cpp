@@ -739,7 +739,7 @@ SINT64 LCK_read_data(thread_db* tdbb, Lock* lock)
 
 	const SINT64 data =
 		dbb->dbb_lock_mgr->readData2(lock->lck_type,
-									 lock->lck_key.lck_string, lock->lck_length,
+									 lock->getKeyString(), lock->lck_length,
 									 lock->lck_owner_handle);
 	fb_assert(LCK_CHECK_LOCK(lock));
 	return data;
@@ -909,7 +909,7 @@ static void enqueue(thread_db* tdbb, CheckStatusWrapper* statusVector, Lock* loc
 	fb_assert(LCK_CHECK_LOCK(lock));
 
 	lock->lck_id = dbb->dbb_lock_mgr->enqueue(tdbb, statusVector, lock->lck_id,
-		lock->lck_type, lock->lck_key.lck_string, lock->lck_length,
+		lock->lck_type, lock->getKeyString(), lock->lck_length,
 		level, lock->lck_ast, lock->lck_object, lock->lck_data, wait,
 		lock->lck_owner_handle);
 
@@ -1005,7 +1005,7 @@ static Lock* hash_get_lock(Lock* lock, USHORT* hash_slot, Lock*** prior)
 		hash_allocate(lock);
 
 	const USHORT hash_value =
-		(USHORT) InternalHash::hash(lock->lck_length, lock->lck_key.lck_string, LOCK_HASH_SIZE);
+		(USHORT) InternalHash::hash(lock->lck_length, lock->getKeyString(), LOCK_HASH_SIZE);
 
 	if (hash_slot)
 		*hash_slot = hash_value;
@@ -1030,7 +1030,7 @@ static Lock* hash_get_lock(Lock* lock, USHORT* hash_slot, Lock*** prior)
 		{
 			// check that the keys are the same
 
-			if (!memcmp(lock->lck_key.lck_string, collision->lck_key.lck_string, lock->lck_length))
+			if (!memcmp(lock->getKeyString(), collision->getKeyString(), lock->lck_length))
 				return collision;
 		}
 
@@ -1395,7 +1395,7 @@ static bool internal_enqueue(thread_db* tdbb, CheckStatusWrapper* statusVector, 
 	// with the local ast handler, passing it the lock block itself
 
 	lock->lck_id = dbb->dbb_lock_mgr->enqueue(tdbb, statusVector, lock->lck_id,
-		lock->lck_type, (const UCHAR*) &lock->lck_key, lock->lck_length,
+		lock->lck_type, lock->getKeyString(), lock->lck_length,
 		level, external_ast, lock, lock->lck_data, wait, lock->lck_owner_handle);
 
 	// If the lock exchange failed, set the lock levels appropriately
