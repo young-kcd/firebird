@@ -352,4 +352,3 @@ namespace Jrd
 } // namespace
 
 #endif // JRD_SAVEPOINT_H
-

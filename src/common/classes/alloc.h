@@ -341,6 +341,7 @@ inline void operator delete[](void* mem, std::size_t s ALLOC_PARAMS) throw()
 	MemoryPool::globalFree(mem);
 }
 #endif
+
 #ifdef DEBUG_GDS_ALLOC
 
 #ifdef __clang__

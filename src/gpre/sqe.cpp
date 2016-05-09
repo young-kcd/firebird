@@ -1721,6 +1721,7 @@ static gpre_ctx* par_alias_list( gpre_req* request, gpre_nod* alias_list)
 	// a base table having a matching table name or alias
 
 	if (!context)
+	{
 		for (context = request->req_contexts; context; context = context->ctx_next)
 		{
 			if (context->ctx_scope_level != request->req_scope_level)
@@ -1732,6 +1733,7 @@ static gpre_ctx* par_alias_list( gpre_req* request, gpre_nod* alias_list)
 				break;
 			}
 		}
+	}
 
 	if (!context)
 	{

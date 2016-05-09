@@ -3087,7 +3087,7 @@ void Service::get_action_svc_string_pos(const ClumpletReader& spb, string& switc
 void Service::get_action_svc_data(const ClumpletReader& spb, string& switches, bool bigint)
 {
 	string s;
-	s.printf("%" SQUADFORMAT" ", bigint ? spb.getBigInt() : (SINT64) spb.getInt());
+	s.printf("%" SQUADFORMAT" ", (bigint ? spb.getBigInt() : (SINT64) spb.getInt()));
 	switches += s;
 }
 

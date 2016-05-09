@@ -5450,6 +5450,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 		inet_af = AF_INET;
 	else if (ISC_analyze_protocol(PROTOCOL_INET6, attach_name, node_name, INET_SEPARATOR))
 		inet_af = AF_INET6;
+
 	if (inet_af != AF_UNSPEC ||
 		ISC_analyze_protocol(PROTOCOL_INET, attach_name, node_name, INET_SEPARATOR) ||
 		ISC_analyze_tcp(attach_name, node_name))
