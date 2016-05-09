@@ -262,7 +262,7 @@ namespace Jrd
 			{
 				counter->lock =
 					FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock(tdbb, sizeof(SLONG), LCK_shared_counter);
-				counter->lock->lck_key.lck_long = space;
+				counter->lock->setKey(space);
 				LCK_lock(tdbb, counter->lock, LCK_PW, LCK_WAIT);
 			}
 			else

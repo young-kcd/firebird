@@ -229,19 +229,8 @@ typedef Firebird::HalfStaticArray<float, 4> SelectivityList;
 
 class BtrPageGCLock : public Lock
 {
-	// We want to put 8 bytes (PageNumber) in lock key. One long is already
-	// reserved by Lock::lck_long, this is the second long. It is really unused
-	// as second long needed for 8-byte key already "allocated" by compiler
-	// because of alignment rules. Anyway, to be formally correct, let introduce
-	// 4-byte field for guarantee we have space for lock key.
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-private-field"
-#endif
-	ULONG unused;
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
+	// This class assumes that the static part of the lock key (Lock::lck_key)
+	// is at least 64 bits in size
 
 public:
 	explicit BtrPageGCLock(thread_db* tdbb);

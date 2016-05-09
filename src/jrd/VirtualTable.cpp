@@ -94,7 +94,7 @@ void VirtualTable::erase(thread_db* tdbb, record_param* rpb)
 
 	// Post a blocking request
 	Lock temp_lock(tdbb, sizeof(SINT64), lock_type);
-	temp_lock.lck_key.lck_long = id;
+	temp_lock.setKey(id);
 
 	ThreadStatusGuard temp_status(tdbb);
 

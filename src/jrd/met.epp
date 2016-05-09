@@ -1390,7 +1390,7 @@ void MET_dsql_cache_release(thread_db* tdbb, int type, const MetaName& name, con
 	const USHORT key_length = item->lock->lck_length;
 	AutoPtr<Lock> temp_lock(FB_NEW_RPT(*tdbb->getDefaultPool(), key_length)
 		Lock(tdbb, key_length, LCK_dsql_cache));
-	memcpy(temp_lock->getKeyString(), item->lock->getKeyString(), key_length);
+	memcpy(temp_lock->getKeyPtr(), item->lock->getKeyPtr(), key_length);
 
 	if (LCK_lock(tdbb, temp_lock, LCK_EX, LCK_WAIT))
 		LCK_release(tdbb, temp_lock);
@@ -3196,7 +3196,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
 		Lock* lock = FB_NEW_RPT(*attachment->att_pool, 0)
 			Lock(tdbb, sizeof(SLONG), LCK_prc_exist, procedure, blocking_ast_procedure);
 		procedure->existenceLock = lock;
-		lock->lck_key.lck_long = procedure->getId();
+		lock->setKey(procedure->getId());
 	}
 
 	LCK_lock(tdbb, procedure->existenceLock, LCK_SR, LCK_WAIT);
@@ -3493,14 +3493,14 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 		Lock* lock = FB_NEW_RPT(*pool, 0)
 			Lock(tdbb, sizeof(SLONG), LCK_rel_partners, relation, partners_ast_relation);
 		relation->rel_partners_lock = lock;
-		lock->lck_key.lck_long = relation->rel_id;
+		lock->setKey(relation->rel_id);
 	}
 
 	{ // Scope block.
 		Lock* lock = FB_NEW_RPT(*pool, 0)
 			Lock(tdbb, sizeof(SLONG), LCK_rel_rescan, relation, rescan_ast_relation);
 		relation->rel_rescan_lock = lock;
-		lock->lck_key.lck_long = relation->rel_id;
+		lock->setKey(relation->rel_id);
 	}
 
 	// This should check system flag instead.
@@ -3511,7 +3511,7 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 		Lock* lock = FB_NEW_RPT(*pool, 0)
 			Lock(tdbb, sizeof(SLONG), LCK_rel_exist, relation, blocking_ast_relation);
 		relation->rel_existence_lock = lock;
-		lock->lck_key.lck_long = relation->rel_id;
+		lock->setKey(relation->rel_id);
 	}
 
 	relation->rel_flags |= (REL_check_existence | REL_check_partners);
@@ -4134,7 +4134,7 @@ static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, int type, const Quali
 		item->locked = false;
 		item->lock = FB_NEW_RPT(*attachment->att_pool, key.length())
 			Lock(tdbb, key.length(), LCK_dsql_cache, item, blocking_ast_dsql_cache);
-		memcpy(item->lock->getKeyString(), key.c_str(), key.length());
+		memcpy(item->lock->getKeyPtr(), key.c_str(), key.length());
 	}
 	else
 	{

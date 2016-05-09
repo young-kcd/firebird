@@ -919,7 +919,7 @@ bool TRA_pc_active(thread_db* tdbb, TraNumber number)
 	CHECK_DBB(dbb);
 
 	Lock temp_lock(tdbb, sizeof(TraNumber), LCK_tra_pc);
-	temp_lock.lck_key.lck_long = number;
+	temp_lock.setKey(number);
 
 	// If we can't get a lock on the transaction, it must be active
 
@@ -1838,7 +1838,7 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, TraNumber number, jrd_tra::wait_t 
 	if (wait != jrd_tra::tra_no_wait)
 	{
 		Lock temp_lock(tdbb, sizeof(TraNumber), LCK_tra);
-		temp_lock.lck_key.lck_long = number;
+		temp_lock.setKey(number);
 
 		const SSHORT timeout = (wait == jrd_tra::tra_wait) ? trans->getLockWait() : 0;
 
@@ -2391,7 +2391,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 	if (old_lock)
 	{
 		new_lock = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) Lock(tdbb, sizeof(TraNumber), LCK_tra);
-		new_lock->lck_key.lck_long = new_number;
+		new_lock->setKey(new_number);
 		new_lock->lck_data = transaction->tra_lock->lck_data;
 
 		if (!LCK_lock(tdbb, new_lock, LCK_write, LCK_WAIT))
@@ -3102,7 +3102,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	trans->tra_oldest_active = active;
 
 	trans->tra_lock = lock;
-	lock->lck_key.lck_long = number;
+	lock->setKey(number);
 
 	// Put the TID of the oldest active transaction (from the header page)
 	// in the new transaction's lock.
@@ -3184,7 +3184,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 
 		if (oldest_state == tra_active)
 		{
-			temp_lock.lck_key.lck_long = active;
+			temp_lock.setKey(active);
 			TraNumber data = LCK_read_data(tdbb, &temp_lock);
 			if (!data)
 			{

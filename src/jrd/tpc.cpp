@@ -362,7 +362,7 @@ int TipCache::snapshotState(thread_db* tdbb, TraNumber number)
 		// see if we can get a lock on the transaction; if we can't
 		// then we know it is still active
 		Lock temp_lock(tdbb, sizeof(TraNumber), LCK_tra);
-		temp_lock.lck_key.lck_long = number;
+		temp_lock.setKey(number);
 
 		// If we can't get a lock on the transaction, it must be active.
 

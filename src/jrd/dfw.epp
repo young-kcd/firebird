@@ -3317,9 +3317,9 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 	case 3:
 		// Take a relation lock on rel id -1 before actually generating a relation id.
 
-		work->dfw_lock = lock = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(SLONG))
+		work->dfw_lock = lock = FB_NEW_RPT(*tdbb->getDefaultPool(), 0)
 			Lock(tdbb, sizeof(SLONG), LCK_relation);
-		lock->lck_key.lck_long = -1;
+		lock->setKey(-1);
 
 		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 

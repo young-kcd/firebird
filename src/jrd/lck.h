@@ -132,22 +132,36 @@ public:
 	UCHAR lck_physical;				// Physical lock level
 	SINT64 lck_data;				// Data associated with a lock
 
+private:
+
+	static const size_t KEY_STATIC_SIZE = sizeof(SINT64);
+
 	union
 	{
-		UCHAR lck_string[8];
-		SINT64 lck_long;
+		UCHAR key_string[KEY_STATIC_SIZE];
+		SINT64 key_long;
 	} lck_key;						// Lock key string
 
-	UCHAR* getKeyString()
+public:
+
+	UCHAR* getKeyPtr()
 	{
 #ifdef WORDS_BIGENDIAN
-		if (lck_length <= 8)
-			return &lck_key.lck_string[8 - lck_length];
+		if (lck_length < KEY_STATIC_SIZE)
+			return &lck_key.key_string[KEY_STATIC_SIZE - lck_length];
 #endif
-		return &lck_key.lck_string[0];
+		return &lck_key.key_string[0];
 	}
 
-	UCHAR lck_tail[1];				// Makes the allocator happy
+	SINT64 getKey() const
+	{
+		return lck_key.key_long;
+	}
+
+	void setKey(SINT64 value)
+	{
+		lck_key.key_long = value;
+	}
 };
 
 } // namespace Jrd

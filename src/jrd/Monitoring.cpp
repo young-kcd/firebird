@@ -415,7 +415,7 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 		{
 			if (*iter != self_att_id)
 			{
-				lock->lck_key.lck_long = *iter;
+				lock->setKey(*iter);
 
 				if (LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT))
 					LCK_release(tdbb, lock);
@@ -450,7 +450,7 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 		{
 			if (*iter != self_att_id)
 			{
-				lock->lck_key.lck_long = *iter;
+				lock->setKey(*iter);
 
 				if (LCK_lock(tdbb, lock, LCK_EX, LCK_NO_WAIT))
 				{

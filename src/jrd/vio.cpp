@@ -268,7 +268,7 @@ inline int wait(thread_db* tdbb, jrd_tra* transaction, const record_param* rpb)
 inline bool checkGCActive(thread_db* tdbb, record_param* rpb, int& state)
 {
 	Lock temp_lock(tdbb, sizeof(SINT64), LCK_record_gc);
-	temp_lock.lck_key.lck_long = ((SINT64) rpb->rpb_page << 16) | rpb->rpb_line;
+	temp_lock.setKey(((SINT64) rpb->rpb_page << 16) | rpb->rpb_line);
 
 	ThreadStatusGuard temp_status(tdbb);
 
@@ -288,7 +288,7 @@ inline bool checkGCActive(thread_db* tdbb, record_param* rpb, int& state)
 inline void waitGCActive(thread_db* tdbb, const record_param* rpb)
 {
 	Lock temp_lock(tdbb, sizeof(SINT64), LCK_record_gc);
-	temp_lock.lck_key.lck_long = ((SINT64) rpb->rpb_page << 16) | rpb->rpb_line;
+	temp_lock.setKey(((SINT64) rpb->rpb_page << 16) | rpb->rpb_line);
 
 	if (!LCK_lock(tdbb, &temp_lock, LCK_SR, LCK_WAIT))
 		ERR_punt();
@@ -300,7 +300,7 @@ inline Lock* lockGCActive(thread_db* tdbb, const jrd_tra* transaction, const rec
 {
 	AutoPtr<Lock> lock(FB_NEW_RPT(*tdbb->getDefaultPool(), 0)
 		Lock(tdbb, sizeof(SINT64), LCK_record_gc));
-	lock->lck_key.lck_long = ((SINT64) rpb->rpb_page << 16) | rpb->rpb_line;
+	lock->setKey(((SINT64) rpb->rpb_page << 16) | rpb->rpb_line);
 	lock->lck_data = transaction->tra_number;
 
 	ThreadStatusGuard temp_status(tdbb);

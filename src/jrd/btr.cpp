@@ -223,7 +223,7 @@ BtrPageGCLock::~BtrPageGCLock()
 
 void BtrPageGCLock::disablePageGC(thread_db* tdbb, const PageNumber &page)
 {
-	page.getLockStr(getKeyString());
+	page.getLockStr(getKeyPtr());
 	LCK_lock(tdbb, this, LCK_read, LCK_WAIT);
 }
 
@@ -235,7 +235,7 @@ void BtrPageGCLock::enablePageGC(thread_db* tdbb)
 bool BtrPageGCLock::isPageGCAllowed(thread_db* tdbb, const PageNumber& page)
 {
 	BtrPageGCLock lock(tdbb);
-	page.getLockStr(lock.getKeyString());
+	page.getLockStr(lock.getKeyPtr());
 
 	ThreadStatusGuard temp_status(tdbb);
 
