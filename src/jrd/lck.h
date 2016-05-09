@@ -141,8 +141,8 @@ public:
 	UCHAR* getKeyString()
 	{
 #ifdef WORDS_BIGENDIAN
-		if (lck_length <= 8)
-			return &lck_key.lck_string[8-lck_length];
+		if (lck_length < 8)
+			return &lck_key.lck_string[8 - lck_length];
 #endif
 		return &lck_key.lck_string[0];
 	}
