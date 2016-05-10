@@ -1474,11 +1474,12 @@ static void analyze_index( const dba_rel* relation, dba_idx* index)
 	bool firstLeafNode = true;
 	SLONG number;
 	FB_UINT64 duplicates = 0;
-	// AB: In fact length for KEY should be MAX_KEY (1/4 of used page-size)
-	// This value should be kept equal with size declared in btr.h
-	//UCHAR key[4096];
-	UCHAR* key = (UCHAR*) alloc(tddba->page_size / 4);
+
+	// Maximum key length is 1/4 of the used page-size
+	Array<UCHAR> key_buffer;
+	UCHAR* const key = key_buffer.getBuffer(tddba->page_size / 4);
 	USHORT key_length = 0;
+
 	ULONG prior_pagno = MAX_ULONG;
 	while (true)
 	{
