@@ -615,7 +615,7 @@ static void string_to_datetime(const dsc* desc,
 
 					while (++p < end)
 					{
-						if (*p != ' ' && *p != '\t' && *p != 0)
+						if (*p != ' ' && *p != '\t' && *p != '\0')
 							CVT_conversion_error(desc, err);
 					}
 
@@ -699,7 +699,7 @@ static void string_to_datetime(const dsc* desc,
 	// We won't allow random trash after the recognized string
 	while (p < end)
 	{
-		if (*p != ' ' && *p != '\t' && p != 0)
+		if (*p != ' ' && *p != '\t' && *p != '\0')
 		{
 			CVT_conversion_error(desc, err);
 			return;

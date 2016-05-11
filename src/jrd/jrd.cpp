@@ -777,9 +777,6 @@ void Trigger::compile(thread_db* tdbb)
 
 	if (!statement /*&& !compile_in_progress*/)
 	{
-		if (statement)
-			return;
-
 		compile_in_progress = true;
 		// Allocate statement memory pool
 		MemoryPool* new_pool = att->createPool();

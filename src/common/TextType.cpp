@@ -335,12 +335,14 @@ SSHORT TextType::compare(ULONG len1, const UCHAR* str1, ULONG len2, const UCHAR*
 										 len2, Firebird::Aligner<USHORT>(str2, len2), &error_flag);
 	}
 
-	SSHORT cmp = memcmp(str1, str2, MIN(len1, len2));
+	int cmp = memcmp(str1, str2, MIN(len1, len2));
 
 	if (cmp == 0)
 		cmp = (len1 < len2 ? -1 : (len1 > len2 ? 1 : 0));
+	else
+		cmp = (cmp < 0 ? -1 : 1);
 
-	return cmp;
+	return (SSHORT) cmp;
 }
 
 

@@ -2811,7 +2811,7 @@ static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAtt
 
 	LPCSTR name = lpName;
 
-	if (strlen(lpName) + strlen(FAST_MUTEX_EVT_NAME) - 2 >= MAXPATHLEN)
+	if (lpName && strlen(lpName) + strlen(FAST_MUTEX_EVT_NAME) - 2 >= MAXPATHLEN)
 	{
 		// this is the same error which CreateEvent will return for long name
 		SetLastError(ERROR_FILENAME_EXCED_RANGE);
@@ -2896,7 +2896,7 @@ static bool openFastMutex(FAST_MUTEX* lpMutex, DWORD DesiredAccess, LPCSTR lpNam
 {
 	LPCSTR name = lpName;
 
-	if (strlen(lpName) + strlen(FAST_MUTEX_EVT_NAME) - 2 >= MAXPATHLEN)
+	if (lpName && strlen(lpName) + strlen(FAST_MUTEX_EVT_NAME) - 2 >= MAXPATHLEN)
 	{
 		SetLastError(ERROR_FILENAME_EXCED_RANGE);
 		return false;
