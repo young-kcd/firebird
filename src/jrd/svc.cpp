@@ -1895,7 +1895,7 @@ THREAD_ENTRY_DECLARE Service::run(THREAD_ENTRY_PARAM arg)
 	{
 		Service* svc = (Service*)arg;
 		RefPtr<SvcMutex> ref(svc->svc_existence);
-		int exit_code = svc->svc_service_run->serv_thd(svc);
+		exit_code = svc->svc_service_run->serv_thd(svc);
 
 		svc->started();
 		svc->svc_sem_full.release();

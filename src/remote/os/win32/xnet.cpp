@@ -2228,7 +2228,7 @@ bool XnetServerEndPoint::server_init(USHORT flag)
 
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_CONNECT_MUTEX);
 		xnet_connect_mutex = CreateMutex(ISC_get_security_desc(), FALSE, name_buffer);
-		if (!xnet_connect_mutex || (xnet_connect_mutex && ERRNO == ERROR_ALREADY_EXISTS))
+		if (!xnet_connect_mutex || ERRNO == ERROR_ALREADY_EXISTS)
 		{
 			system_error::raise(ERR_STR("CreateMutex"));
 		}
@@ -2530,7 +2530,7 @@ rem_port* XnetServerEndPoint::get_server_port(ULONG client_pid,
 	{
 		if (port)
 			cleanup_port(port);
-		else if (xcc)
+		else
 			cleanup_comm(xcc);
 
 		throw;

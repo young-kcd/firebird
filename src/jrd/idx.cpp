@@ -506,6 +506,8 @@ void IDX_create_index(thread_db* tdbb,
 	if (!ifl_data.ifl_duplicates)
 		scb->sort(tdbb);
 
+	// ASF: We have a callback accessing ifl_data, so don't join above and below if's.
+
 	if (!ifl_data.ifl_duplicates)
 		BTR_create(tdbb, creation, selectivity);
 

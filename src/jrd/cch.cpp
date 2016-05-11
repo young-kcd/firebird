@@ -4824,7 +4824,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 		BackupManager* bm = dbb->dbb_backup_manager;
 		const int backup_state = bm->getState();
 
-		if (bdb->bdb_page.getPageNum() >= 0)
+		/// ASF: Always true: if (bdb->bdb_page.getPageNum() >= 0)
 		{
 			fb_assert(backup_state != Ods::hdr_nbak_unknown);
 			page->pag_pageno = bdb->bdb_page.getPageNum();

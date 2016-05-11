@@ -65,7 +65,7 @@ static inline void BURP_free(void* block)
 	MISC_free_burp(block);
 }
 
-const int GDS_NAME_LEN		= 32;
+const int GDS_NAME_LEN		= METADATA_IDENTIFIER_CHAR_LEN * 4 /* max bytes per char */ + 1;
 typedef TEXT			GDS_NAME[GDS_NAME_LEN];
 
 enum redirect_vals {
