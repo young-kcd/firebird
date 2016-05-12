@@ -1818,7 +1818,7 @@ void BTR_remove(thread_db* tdbb, WIN* root_window, index_insertion* insertion)
 		IndexNode pageNode;
 		pointer = pageNode.readNode(pointer, false);
 
-		const SLONG number = pageNode.pageNumber;
+		const ULONG number = pageNode.pageNumber;
 		pointer = pageNode.readNode(pointer, false);
 		if (!(pageNode.isEndBucket || pageNode.isEndLevel))
 		{
@@ -2002,7 +2002,7 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 		return;
 	}
 
-	SLONG page;
+	ULONG page;
 	if (id >= root->irt_count || !(page = root->irt_rpt[id].getRoot()))
 	{
 		CCH_RELEASE(tdbb, &window);
@@ -3446,7 +3446,7 @@ static ULONG fast_load(thread_db* tdbb,
 					memmove(bucket->btr_nodes + totalJumpSize[0], bucket->btr_nodes, l);
 
 					// Update JumpInfo
-					if (leafJumpNodes->getCount() > 255) {
+					if (leafJumpNodes->getCount() > MAX_UCHAR) {
 						BUGCHECK(205);	// msg 205 index bucket overfilled
 					}
 					bucket->btr_jump_interval = jumpAreaSize;
@@ -3725,7 +3725,7 @@ static ULONG fast_load(thread_db* tdbb,
 				{
 					// mark the end of the page; note that the end_bucket marker must
 					// contain info about the first node on the next page
-					const SLONG lastPageNumber = tempNode.pageNumber;
+					const ULONG lastPageNumber = tempNode.pageNumber;
 					tempNode.readNode(tempNode.nodePointer, false);
 					tempNode.setEndBucket();
 					levelPointer = tempNode.writeNode(tempNode.nodePointer, false, false);
@@ -3741,7 +3741,7 @@ static ULONG fast_load(thread_db* tdbb,
 						memmove(bucket->btr_nodes + totalJumpSize[level], bucket->btr_nodes, l);
 
 						// Update JumpInfo
-						if (pageJumpNodes->getCount() > 255) {
+						if (pageJumpNodes->getCount() > MAX_UCHAR) {
 							BUGCHECK(205);	// msg 205 index bucket overfilled
 						}
 						bucket->btr_jump_interval = jumpAreaSize;
@@ -3898,7 +3898,7 @@ static ULONG fast_load(thread_db* tdbb,
 				memmove(bucket->btr_nodes + totalJumpSize[level], bucket->btr_nodes, l);
 
 				// Update JumpInfo
-				if (pageJumpNodes->getCount() > 255) {
+				if (pageJumpNodes->getCount() > MAX_UCHAR) {
 					BUGCHECK(205);	// msg 205 index bucket overfilled
 				}
 				bucket->btr_jump_interval = jumpAreaSize;
@@ -4603,7 +4603,7 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, ULONG parent_numbe
 	// get to it quickly; don't worry if it's not accurate now or
 	// is changed after we release the page, since we will fetch
 	// it in a fault-tolerant way anyway.
-	const SLONG left_number = gc_page->btr_left_sibling;
+	const ULONG left_number = gc_page->btr_left_sibling;
 
 	// if the left sibling is blank, that indicates we are the leftmost page,
 	// so don't garbage-collect the page; do this for several reasons:
@@ -5701,7 +5701,7 @@ static ULONG insert_node(thread_db* tdbb,
 	}
 
 	// format the new page to look like the old page
-	const SLONG right_sibling = bucket->btr_sibling;
+	const ULONG right_sibling = bucket->btr_sibling;
 	split->btr_header.pag_type = bucket->btr_header.pag_type;
 	split->btr_relation = bucket->btr_relation;
 	split->btr_id = bucket->btr_id;
@@ -5767,7 +5767,7 @@ static ULONG insert_node(thread_db* tdbb,
 	// the prefixes found on the original page; the sum of the prefixes on the
 	// original page must exclude the split node
 	split->btr_prefix_total = newBucket->btr_prefix_total - prefix_total;
-	const SLONG split_page = split_window.win_page.getPageNum();
+	const ULONG split_page = split_window.win_page.getPageNum();
 
 	CCH_RELEASE(tdbb, &split_window);
 	CCH_precedence(tdbb, window, split_window.win_page);
@@ -6130,7 +6130,7 @@ static contents remove_node(thread_db* tdbb, index_insertion* insertion, WIN* wi
 		{
 
 			// handoff down to the next level, retaining the parent page number
-			const SLONG parent_number = window->win_page.getPageNum();
+			const ULONG parent_number = window->win_page.getPageNum();
 			page = (btree_page*) CCH_HANDOFF(tdbb, window, number, (SSHORT)
 				((page->btr_level == 1) ? LCK_write : LCK_read), pag_index);
 
