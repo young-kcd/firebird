@@ -1904,6 +1904,7 @@ THREAD_ENTRY_DECLARE Service::run(THREAD_ENTRY_PARAM arg)
 	catch (const Exception& ex)
 	{
 		// Not much we can do here
+		exit_code = -1;
 		iscLogException("Exception in Service::run():", ex);
 	}
 
