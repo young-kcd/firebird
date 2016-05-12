@@ -43,4 +43,7 @@ Jrd::DeferredWork* DFW_post_work_arg(Jrd::jrd_tra*, Jrd::DeferredWork*, const ds
 Jrd::DeferredWork* DFW_post_work_arg(Jrd::jrd_tra*, Jrd::DeferredWork*, const dsc*, USHORT, Jrd::dfw_t);
 void DFW_update_index(const TEXT*, USHORT, const Jrd::SelectivityList&, Jrd::jrd_tra*);
 
+Jrd::Lock* DFW_protect_relation(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::jrd_rel*, bool&);
+void DFW_release_protect_lock(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::Lock*);
+
 #endif // JRD_DFW_PROTO_H

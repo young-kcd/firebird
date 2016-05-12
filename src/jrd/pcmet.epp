@@ -191,6 +191,10 @@ void PCMET_expression_index(thread_db* tdbb, const string& name, USHORT& id, jrd
 
 	// Actually create the index
 
+	bool releaseRelationLock = false;
+	Lock* relationLock = DFW_protect_relation(tdbb, transaction, relation, 
+							releaseRelationLock);
+
 	SelectivityList selectivity(*tdbb->getDefaultPool());
 
 	current_request = tdbb->getRequest();
@@ -202,6 +206,10 @@ void PCMET_expression_index(thread_db* tdbb, const string& name, USHORT& id, jrd
 		idx.idx_id = id;
 		IDX_create_index(tdbb, relation, &idx, name.c_str(), &id, transaction, selectivity);
 
+		if (relationLock && releaseRelationLock) {
+			DFW_release_protect_lock(tdbb, transaction, relationLock);
+		}
+
 		fb_assert(id == idx.idx_id);
 	}
 	catch(const Exception&)
@@ -209,6 +217,10 @@ void PCMET_expression_index(thread_db* tdbb, const string& name, USHORT& id, jrd
 		tdbb->setRequest(current_request);
 		tdbb->setTransaction(current_transaction);
 		dbb->deletePool(new_pool);
+
+		if (relationLock && releaseRelationLock) {
+			DFW_release_protect_lock(tdbb, transaction, relationLock);
+		}
 
 		throw;
 	}
