@@ -58,7 +58,6 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
-#include "../jrd/pcmet_proto.h"
 #include "../jrd/tra_proto.h"
 
 using namespace Jrd;
@@ -512,7 +511,7 @@ bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, 
 
 	if (idx->idx_flags & idx_expressn)
 	{
-		PCMET_lookup_index(tdbb, relation, idx);
+		MET_lookup_index_expression(tdbb, relation, idx);
 		fb_assert(idx->idx_expression != NULL);
 	}
 

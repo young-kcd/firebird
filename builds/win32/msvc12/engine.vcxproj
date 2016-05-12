@@ -30,7 +30,6 @@
     <ClCompile Include="..\..\..\gen\jrd\grant.cpp" />
     <ClCompile Include="..\..\..\gen\jrd\ini.cpp" />
     <ClCompile Include="..\..\..\gen\jrd\met.cpp" />
-    <ClCompile Include="..\..\..\gen\jrd\pcmet.cpp" />
     <ClCompile Include="..\..\..\gen\jrd\scl.cpp" />
     <ClCompile Include="..\..\..\gen\utilities\gstat\dba.cpp" />
     <ClCompile Include="..\..\..\src\dsql\AggNodes.cpp" />
@@ -284,7 +283,6 @@
     <ClInclude Include="..\..\..\src\jrd\pag.h" />
     <ClInclude Include="..\..\..\src\jrd\pag_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\par_proto.h" />
-    <ClInclude Include="..\..\..\src\jrd\pcmet_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\PreparedStatement.h" />
     <ClInclude Include="..\..\..\src\jrd\que.h" />
     <ClInclude Include="..\..\..\src\jrd\RandomGenerator.h" />
@@ -353,7 +351,6 @@
     <None Include="..\..\..\src\jrd\grant.epp" />
     <None Include="..\..\..\src\jrd\ini.epp" />
     <None Include="..\..\..\src\jrd\met.epp" />
-    <None Include="..\..\..\src\jrd\pcmet.epp" />
     <None Include="..\..\..\src\jrd\scl.epp" />
     <None Include="..\..\..\src\utilities\gstat\dba.epp" />
     <None Include="..\defs\plugin.def" />

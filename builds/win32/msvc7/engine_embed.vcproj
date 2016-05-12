@@ -179,8 +179,6 @@
       </File>
       <File RelativePath="..\..\..\src\jrd\par.cpp">
       </File>
-      <File RelativePath="..\..\..\gen\$(PlatformName)\jrd\pcmet.cpp">
-      </File>
       <File RelativePath="..\..\..\src\jrd\PreparedStatement.cpp">
       </File>
       <File RelativePath="..\..\..\src\jrd\pwd.cpp">
@@ -510,8 +508,6 @@
       <File RelativePath="..\..\..\src\jrd\pag_proto.h">
       </File>
       <File RelativePath="..\..\..\src\jrd\par_proto.h">
-      </File>
-      <File RelativePath="..\..\..\src\jrd\pcmet_proto.h">
       </File>
       <File RelativePath="..\..\..\src\jrd\perf.h">
       </File>
