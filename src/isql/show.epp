@@ -1032,7 +1032,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 			FOR PRV IN RDB$USER_PRIVILEGES WITH
 				PRV.RDB$OBJECT_TYPE   EQ obj_sql_role AND
-				PRV.RDB$USER_TYPE     EQ obj_user     AND
+				(PRV.RDB$USER_TYPE    EQ obj_user      OR
+				PRV.RDB$USER_TYPE     EQ obj_sql_role) AND
 				PRV.RDB$RELATION_NAME EQ object       AND
 				PRV.RDB$PRIVILEGE     EQ 'M'
 				SORTED BY PRV.RDB$USER
@@ -1052,7 +1053,11 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				else
 					with_option[0] = '\0';
 
-				sprintf(Print_buffer, "GRANT %s TO %s%s%s%s%s", SQL_identifier,
+				const char* default_option = "";
+				if (!PRV.RDB$FIELD_NAME.NULL && PRV.RDB$FIELD_NAME[0] == 'D')
+					default_option = " DEFAULT";
+
+				sprintf(Print_buffer, "GRANT%s %s TO %s%s%s%s%s", default_option, SQL_identifier,
 						user_string, with_option, granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
 						terminator, NEWLINE);
 
@@ -1834,9 +1839,9 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 		const char* user_string = fb_utils::exact_name(PRV.RDB$USER);
 
 		const char* with_option = "";
-		const char* default_option = "";
 		if (PRV.RDB$GRANT_OPTION)
 			with_option = " WITH ADMIN OPTION";
+		const char* default_option = "";
 		if (!PRV.RDB$FIELD_NAME.NULL && PRV.RDB$FIELD_NAME[0] == 'D')
 			default_option = " DEFAULT";
 
