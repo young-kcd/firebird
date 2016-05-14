@@ -5345,7 +5345,7 @@ static processing_state show_role(const SCHAR* object)
 		return OBJECT_NOT_FOUND;
 	}
 
-	// show role with role supplied, display users granted this role
+	// show role with role supplied, display users and other roles granted this role
 	SCHAR role_name[BUFFER_LENGTH128];
 	bool first = true;
 
@@ -5353,7 +5353,8 @@ static processing_state show_role(const SCHAR* object)
 
 		FOR PRV IN RDB$USER_PRIVILEGES WITH
 			PRV.RDB$OBJECT_TYPE   EQ obj_sql_role AND
-			PRV.RDB$USER_TYPE     EQ obj_user     AND
+			(PRV.RDB$USER_TYPE    EQ obj_user      OR
+			PRV.RDB$USER_TYPE     EQ obj_sql_role) AND
 			PRV.RDB$RELATION_NAME EQ object       AND
 			PRV.RDB$PRIVILEGE     EQ 'M'
 			SORTED BY  PRV.RDB$USER
