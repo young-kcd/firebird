@@ -45,6 +45,9 @@ public:
 	/// The directory separator for the platform.
 	static const char dir_sep;
 
+	/// String used to point to current directory
+	static const char* curr_dir_link;
+
 	/// String used to point to parent directory
 	static const char* up_dir_link;
 
