@@ -1630,6 +1630,8 @@ C --
       PARAMETER (GDS__bad_crypt_key                    = 335545108)
       INTEGER*4 GDS__encrypt_error                   
       PARAMETER (GDS__encrypt_error                    = 335545109)
+      INTEGER*4 GDS__max_idx_depth                   
+      PARAMETER (GDS__max_idx_depth                    = 335545110)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

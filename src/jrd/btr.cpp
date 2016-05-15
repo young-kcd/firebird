@@ -1114,11 +1114,9 @@ void BTR_insert(thread_db* tdbb, WIN* root_window, index_insertion* insertion)
 	{
 		CCH_RELEASE(tdbb, root_window);
 
-		// Maximum level depth reached.
-		// AB: !! NEW ERROR MESSAGE ? !!
-		////BUGCHECK(204);	// msg 204 index inconsistent
+		// Maximum level depth reached
 		status_exception::raise(Arg::Gds(isc_imp_exc) <<
-			Arg::Gds(isc_random) << Arg::Str("Maximum index level reached"));
+			Arg::Gds(isc_max_idx_depth) << Arg::Num(MAX_LEVELS));
 	}
 
 	// Allocate and format new bucket, this will always be a non-leaf page
@@ -3620,6 +3618,13 @@ static ULONG fast_load(thread_db* tdbb,
 			// split upward
 			for (unsigned level = 1; levels[level - 1].splitPage; level++)
 			{
+				if (level == MAX_LEVELS)
+				{
+					// Maximum level depth reached
+					status_exception::raise(Arg::Gds(isc_imp_exc) <<
+						Arg::Gds(isc_max_idx_depth) << Arg::Num(MAX_LEVELS));
+				}
+
 				if (level == levels.getCount())
 					levels.resize(level + 1);
 
