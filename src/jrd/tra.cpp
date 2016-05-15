@@ -2446,7 +2446,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 
 	// All savepoint were already released in TRA_commit/TRA_rollback except, may be, empty transaction-level one
 	if (!transaction->tra_save_point && !(transaction->tra_flags & TRA_no_auto_undo))
-		Savepoint::start(transaction, true);	// start new savepoint if necessary
+		transaction->startSavepoint(true);	// start new savepoint if necessary
 
 	if (transaction->tra_flags & TRA_precommitted)
 	{
@@ -3321,7 +3321,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	// undo the transaction if it rolls back.
 
 	if (!(trans->tra_flags & TRA_system) && !(trans->tra_flags & TRA_no_auto_undo))
-		Savepoint::start(trans, true);
+		trans->startSavepoint(true);
 
 	// if the user asked us to restart all requests in this attachment,
 	// do so now using the new transaction
@@ -3517,6 +3517,32 @@ void jrd_tra::releaseAutonomousPool(MemoryPool* toRelease)
 		MemoryPool::deletePool(tra_autonomous_pool);
 		tra_autonomous_pool = NULL;
 	}
+}
+
+Savepoint* jrd_tra::startSavepoint(bool root)
+/**************************************
+ *
+ *	 s t a r t S a v e p o i n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Start a new savepoint. Reuse some priorly allocated one, if exists.
+ *
+ **************************************/
+{
+	Savepoint* savepoint = tra_save_free;
+
+	if (savepoint)
+		tra_save_free = savepoint->getNext();
+	else
+		savepoint = FB_NEW_POOL(*tra_pool) Savepoint(this);
+
+	const SavNumber number = ++tra_save_point_number;
+	savepoint->init(number, root, tra_save_point);
+	tra_save_point = savepoint;
+
+	return savepoint;
 }
 
 void jrd_tra::rollbackSavepoint(thread_db* tdbb)

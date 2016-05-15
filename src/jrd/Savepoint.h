@@ -138,6 +138,13 @@ namespace Jrd
 			}
 		}
 
+		void init(SavNumber number, bool root, Savepoint* next)
+		{
+			m_number = number;
+			m_flags |= root ? SAV_root : 0;
+			m_next = next;
+		}
+
 		VerbAction* getAction(const jrd_rel* relation) const
 		{
 			for (VerbAction* action = m_actions; action; action = action->vct_next)

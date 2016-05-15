@@ -532,7 +532,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 		case jrd_req::req_evaluate:
 			if (!(transaction->tra_flags & TRA_system))
 			{
-				const Savepoint* const savepoint = Savepoint::start(transaction);
+				const Savepoint* const savepoint = transaction->startSavepoint();
 				savNumber = savepoint->getNumber();
 				*request->getImpure<SavNumber>(impureOffset) = savNumber;
 			}
@@ -3702,7 +3702,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 		request->req_auto_trans.push(org_transaction);
 		impure->traNumber = transaction->tra_number;
 
-		const Savepoint* const savepoint = Savepoint::start(transaction);
+		const Savepoint* const savepoint = transaction->startSavepoint();
 		impure->savNumber = savepoint->getNumber();
 
 		if (!(attachment->att_flags & ATT_no_db_triggers))
@@ -4704,7 +4704,7 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 				transaction->tra_save_point &&
 				transaction->tra_save_point->hasChanges())
 			{
-				const Savepoint* const savepoint = Savepoint::start(transaction);
+				const Savepoint* const savepoint = transaction->startSavepoint();
 				*request->getImpure<SavNumber>(impureOffset) = savepoint->getNumber();
 			}
 			cursor->open(tdbb);
@@ -7188,7 +7188,7 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 				}
 
 				// Restore the savepoint initially created by EXE_start
-				Savepoint::start(transaction);
+				transaction->startSavepoint();
 				break;
 			}
 
@@ -7197,7 +7197,7 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 				transaction->rollbackToSavepoint(tdbb, savepoint->getNumber());
 
 				// Now set the savepoint again to allow to return to it later
-				Savepoint* const savepoint = Savepoint::start(transaction);
+				Savepoint* const savepoint = transaction->startSavepoint();
 				savepoint->setName(name);
 				break;
 			}
@@ -7808,7 +7808,7 @@ const StmtNode* SavePointNode::execute(thread_db* tdbb, jrd_req* request, ExeSta
 			{
 				// Start a save point.
 				if (!(transaction->tra_flags & TRA_system))
-					Savepoint::start(transaction);
+					transaction->startSavepoint();
 
 				request->req_operation = jrd_req::req_return;
 			}

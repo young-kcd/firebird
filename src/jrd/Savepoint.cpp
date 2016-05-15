@@ -327,26 +327,6 @@ void VerbAction::release(jrd_tra* transaction)
 
 // Savepoint implementation
 
-Savepoint* Savepoint::start(jrd_tra* transaction, bool root)
-{
-	// Start a new savepoint. Reuse some priorly allocated one, if exists.
-
-	Savepoint* savepoint = transaction->tra_save_free;
-
-	if (savepoint)
-		transaction->tra_save_free = savepoint->m_next;
-	else
-		savepoint = FB_NEW_POOL(*transaction->tra_pool) Savepoint(transaction);
-
-	savepoint->m_number = ++transaction->tra_save_point_number;
-	savepoint->m_flags = root ? SAV_root : 0;
-
-	savepoint->m_next = transaction->tra_save_point;
-	transaction->tra_save_point = savepoint;
-
-	return savepoint;
-}
-
 VerbAction* Savepoint::createAction(jrd_rel* relation)
 {
 	// Create action for the given relation. If it already exists, just return.
@@ -583,7 +563,7 @@ Savepoint* Savepoint::release(Savepoint* prior)
 AutoSavePoint::AutoSavePoint(thread_db* tdbb, jrd_tra* trans)
 	: m_tdbb(tdbb), m_transaction(trans), m_released(false)
 {
-	Savepoint::start(trans);
+	trans->startSavepoint();
 }
 
 AutoSavePoint::~AutoSavePoint()
@@ -612,7 +592,7 @@ StableCursorSavePoint::StableCursorSavePoint(thread_db* tdbb, jrd_tra* trans, bo
 	if (!trans->tra_save_point)
 		return;
 
-	const Savepoint* const savepoint = Savepoint::start(trans);
+	const Savepoint* const savepoint = trans->startSavepoint();
 	m_number = savepoint->getNumber();
 }
 

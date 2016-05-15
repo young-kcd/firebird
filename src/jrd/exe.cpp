@@ -624,14 +624,10 @@ void EXE_receive(thread_db* tdbb,
 				fb_assert(!request->req_proc_sav_point);
 			}
 			else
-			{
-				Savepoint::start(transaction);
-			}
+				transaction->startSavepoint();
 		}
 		else
-		{
-			Savepoint::start(transaction);
-		}
+			transaction->startSavepoint();
 	}
 
 	const JrdStatement* statement = request->getStatement();
@@ -1033,7 +1029,7 @@ static void execute_looper(thread_db* tdbb,
 	if (!(request->req_flags & req_proc_fetch) && request->req_transaction)
 	{
 		if (transaction && !(transaction->tra_flags & TRA_system))
-			Savepoint::start(transaction);
+			transaction->startSavepoint();
 	}
 
 	request->req_flags &= ~req_stall;
