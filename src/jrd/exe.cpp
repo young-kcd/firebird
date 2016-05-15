@@ -602,7 +602,8 @@ void EXE_receive(thread_db* tdbb,
 		ERR_post(Arg::Gds(isc_req_sync));
 	}
 
-	SavNumber mergeSavNumber = 0;
+	const SavNumber mergeSavNumber = transaction->tra_save_point ?
+		transaction->tra_save_point->getNumber() : 0;
 
 	if (request->req_flags & req_proc_fetch)
 	{
@@ -613,18 +614,11 @@ void EXE_receive(thread_db* tdbb,
 		   stored procedure savepoints into the current transaction
 		   savepoint, which is the savepoint for fetch and save them into the list. */
 
-		if (transaction->tra_save_point)
+		if (request->req_proc_sav_point)
 		{
-			mergeSavNumber = transaction->tra_save_point->getNumber();
-
-			if (request->req_proc_sav_point)
-			{
-				// Push all saved savepoints to the top of transaction savepoints stack
-				Savepoint::merge(transaction->tra_save_point, request->req_proc_sav_point);
-				fb_assert(!request->req_proc_sav_point);
-			}
-			else
-				transaction->startSavepoint();
+			// Push all saved savepoints to the top of transaction savepoints stack
+			Savepoint::merge(transaction->tra_save_point, request->req_proc_sav_point);
+			fb_assert(!request->req_proc_sav_point);
 		}
 		else
 			transaction->startSavepoint();
