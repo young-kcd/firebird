@@ -43,7 +43,7 @@ namespace Jrd {
 
 struct dsc;
 
-Jrd::ValueListNode*	PAR_args(Jrd::thread_db*, Jrd::CompilerScratch*, UCHAR, USHORT);
+Jrd::ValueListNode*	PAR_args(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT, USHORT);
 Jrd::ValueListNode*	PAR_args(Jrd::thread_db*, Jrd::CompilerScratch*);
 Jrd::DmlNode* PAR_blr(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*, ULONG blr_length,
 	Jrd::CompilerScratch*, Jrd::CompilerScratch**, Jrd::JrdStatement**, const bool, USHORT);

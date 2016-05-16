@@ -777,8 +777,7 @@ SSHORT PAR_find_proc_field(const jrd_prc* procedure, const Firebird::MetaName& n
 
 
 // Parse a counted argument list, given the count.
-ValueListNode* PAR_args(thread_db* tdbb, CompilerScratch* csb, UCHAR count,
-	USHORT allocCount)
+ValueListNode* PAR_args(thread_db* tdbb, CompilerScratch* csb, USHORT count, USHORT allocCount)
 {
 	SET_TDBB(tdbb);
 
@@ -804,7 +803,7 @@ ValueListNode* PAR_args(thread_db* tdbb, CompilerScratch* csb, UCHAR count,
 ValueListNode* PAR_args(thread_db* tdbb, CompilerScratch* csb)
 {
 	SET_TDBB(tdbb);
-	UCHAR count = csb->csb_blr_reader.getByte();
+	const UCHAR count = csb->csb_blr_reader.getByte();
 	return PAR_args(tdbb, csb, count, count);
 }
 
