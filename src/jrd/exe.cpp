@@ -888,13 +888,6 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 
 	request->req_records_affected.clear();
 
-	// CVC: set up to count virtual operations on SQL views.
-
-	request->req_view_flags = 0;
-	request->req_top_view_store = NULL;
-	request->req_top_view_modify = NULL;
-	request->req_top_view_erase = NULL;
-
 	// Store request start time for timestamp work
 	request->req_timestamp.validate();
 

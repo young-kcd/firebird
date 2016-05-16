@@ -2426,23 +2426,7 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 	if (!relation->rel_file && !relation->rel_view_rse && !relation->isVirtual())
 		IDX_erase(tdbb, rpb, transaction);
 
-	// CVC: Increment the counter only if we called VIO/EXT_erase() and we were successful.
-	if (!(request->req_view_flags & req_first_erase_return))
-	{
-		request->req_view_flags |= req_first_erase_return;
-		if (relation->rel_view_rse)
-			request->req_top_view_erase = relation;
-	}
-
-	if (relation == request->req_top_view_erase)
-	{
-		if (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG)
-		{
-			request->req_records_deleted++;
-			request->req_records_affected.bumpModified(true);
-		}
-	}
-	else if (relation->rel_file || !relation->rel_view_rse)
+	if (!relation->rel_view_rse || (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG))
 	{
 		request->req_records_deleted++;
 		request->req_records_affected.bumpModified(true);
@@ -6175,25 +6159,8 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 				if (!relation->rel_file && !relation->rel_view_rse && !relation->isVirtual())
 					IDX_modify_check_constraints(tdbb, orgRpb, newRpb, transaction);
 
-				// CVC: Increment the counter only if we called VIO/EXT_modify() and
-				// we were successful.
-				if (!(request->req_view_flags & req_first_modify_return))
-				{
-					request->req_view_flags |= req_first_modify_return;
-
-					if (relation->rel_view_rse)
-						request->req_top_view_modify = relation;
-				}
-
-				if (relation == request->req_top_view_modify)
-				{
-					if (!subMod && (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG))
-					{
-						request->req_records_updated++;
-						request->req_records_affected.bumpModified(true);
-					}
-				}
-				else if (relation->rel_file || !relation->rel_view_rse)
+				if (!relation->rel_view_rse ||
+					(!subMod && (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG)))
 				{
 					request->req_records_updated++;
 					request->req_records_affected.bumpModified(true);
@@ -7013,23 +6980,8 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 						TRIGGER_INSERT, POST_TRIG);
 				}
 
-				// CVC: Increment the counter only if we called VIO/EXT_store() and we were successful.
-				if (!(request->req_view_flags & req_first_store_return))
-				{
-					request->req_view_flags |= req_first_store_return;
-					if (relation->rel_view_rse)
-						request->req_top_view_store = relation;
-				}
-
-				if (relation == request->req_top_view_store)
-				{
-					if (!subStore && (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG))
-					{
-						request->req_records_inserted++;
-						request->req_records_affected.bumpModified(true);
-					}
-				}
-				else if (relation->rel_file || !relation->rel_view_rse)
+				if (!relation->rel_view_rse ||
+					(!subStore && (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG)))
 				{
 					request->req_records_inserted++;
 					request->req_records_affected.bumpModified(true);
