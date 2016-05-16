@@ -147,6 +147,8 @@ namespace Jrd
 
 		VerbAction* getAction(const jrd_rel* relation) const
 		{
+			// Find and return (if exists) action that belongs to the given relation
+
 			for (VerbAction* action = m_actions; action; action = action->vct_next)
 			{
 				if (action->vct_relation == relation)
@@ -201,8 +203,11 @@ namespace Jrd
 			m_flags |= SAV_force_dfw;
 		}
 
-		Savepoint* mergeTo(Savepoint*& target)
+		Savepoint* moveToStack(Savepoint*& target)
 		{
+			// Relink savepoint to the top of the provided savepoint stack.
+			// Return the former "next" pointer to the caller.
+
 			Savepoint* const next = m_next;
 			m_next = target;
 			target = this;
@@ -211,26 +216,10 @@ namespace Jrd
 
 		VerbAction* createAction(jrd_rel* relation);
 
-		void releaseAction(VerbAction* action)
-		{
-			m_actions = action->vct_next;
-			action->vct_next = m_freeActions;
-			m_freeActions = action;
-		}
-
-		void propagateAction(VerbAction* action)
-		{
-			m_actions = action->vct_next;
-			action->vct_next = m_next->m_actions;
-			m_next->m_actions = action;
-		}
-
 		void cleanupTempData();
 
 		Savepoint* rollback(thread_db* tdbb, Savepoint* prior = NULL);
 		Savepoint* rollforward(thread_db* tdbb, Savepoint* prior = NULL);
-
-		static Savepoint* start(jrd_tra* transaction, bool root = false);
 
 		static void destroy(Savepoint*& savepoint)
 		{
@@ -242,10 +231,13 @@ namespace Jrd
 			}
 		}
 
-		static void merge(Savepoint*& target, Savepoint*& source)
+		static void mergeStacks(Savepoint*& target, Savepoint*& source)
 		{
+			// Given two savepoint stacks, merge them together.
+			// The source stack becomes empty after that.
+
 			while (source)
-				source = source->mergeTo(target);
+				source = source->moveToStack(target);
 		}
 
 		class Iterator

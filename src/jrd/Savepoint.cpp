@@ -396,8 +396,13 @@ Savepoint* Savepoint::rollback(thread_db* tdbb, Savepoint* prior)
 
 		while (m_actions)
 		{
-			m_actions->undo(tdbb, m_transaction);
-			releaseAction(m_actions);
+			VerbAction* const action = m_actions;
+
+			action->undo(tdbb, m_transaction);
+
+			m_actions = action->vct_next;
+			action->vct_next = m_freeActions;
+			m_freeActions = action;
 		}
 
 		tdbb->setTransaction(old_tran);
@@ -457,22 +462,29 @@ Savepoint* Savepoint::rollforward(thread_db* tdbb, Savepoint* prior)
 
 		while (m_actions)
 		{
+			VerbAction* const action = m_actions;
 			VerbAction* nextAction = NULL;
 
 			if (m_next)
 			{
-				nextAction = m_next->getAction(m_actions->vct_relation);
+				nextAction = m_next->getAction(action->vct_relation);
 
 				if (!nextAction) // next savepoint didn't touch this table yet - send whole action
 				{
-					propagateAction(m_actions);
+					m_actions = action->vct_next;
+					action->vct_next = m_next->m_actions;
+					m_next->m_actions = action;
 					continue;
 				}
 			}
 
-			// No luck, merge actions in a slow way
-			m_actions->mergeTo(tdbb, m_transaction, nextAction);
-			releaseAction(m_actions);
+			// No luck, merge action in a slow way
+			action->mergeTo(tdbb, m_transaction, nextAction);
+
+			// and release it afterwards
+			m_actions = action->vct_next;
+			action->vct_next = m_freeActions;
+			m_freeActions = action;
 		}
 
 		tdbb->setTransaction(old_tran);

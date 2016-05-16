@@ -617,7 +617,7 @@ void EXE_receive(thread_db* tdbb,
 		if (request->req_proc_sav_point)
 		{
 			// Push all saved savepoints to the top of transaction savepoints stack
-			Savepoint::merge(transaction->tra_save_point, request->req_proc_sav_point);
+			Savepoint::mergeStacks(transaction->tra_save_point, request->req_proc_sav_point);
 			fb_assert(!request->req_proc_sav_point);
 		}
 		else
@@ -687,7 +687,7 @@ void EXE_receive(thread_db* tdbb,
 				Savepoint* const savepoint = transaction->tra_save_point;
 				transaction->rollforwardSavepoint(tdbb);
 				fb_assert(transaction->tra_save_free == savepoint);
-				transaction->tra_save_free = savepoint->mergeTo(request->req_proc_sav_point);
+				transaction->tra_save_free = savepoint->moveToStack(request->req_proc_sav_point);
 				fb_assert(request->req_proc_sav_point == savepoint);
 			}
 		}
