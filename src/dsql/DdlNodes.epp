@@ -11278,32 +11278,34 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				END_FOR
 			}
 
-			if (revokeRoleDefault)
+			if (grantErased)
 			{
-				// Add role grant again without default
-				storePrivilege(tdbb, transaction, objName, user, NULL, pr, userType, objType,
-					curOptions, grantorRevoker);
-			}
-			else if (options && grantErased)
-			{
-				// Add the privilege without the grant option. There is a modify trigger on the
-				// rdb$user_privileges which disallows the table from being updated. It would have
-				// to be changed such that only the grant_option field can be updated.
+				if (revokeRoleDefault)
+				{
+					// Add role grant again without default
+					storePrivilege(tdbb, transaction, objName, user, NULL, pr, userType, objType,
+						curOptions, grantorRevoker);
+				}
+				else if (options)
+				{
+					// Add the privilege without the grant option. There is a modify trigger on the
+					// rdb$user_privileges which disallows the table from being updated. It would have
+					// to be changed such that only the grant_option field can be updated.
 
-				storePrivilege(tdbb, transaction, objName, user, curField, pr, userType, objType,
-					0, grantorRevoker);
+					storePrivilege(tdbb, transaction, objName, user, curField, pr, userType, objType,
+						0, grantorRevoker);
+				}
 			}
-
-			if (badGrantor && !grantErased)
+			else
 			{
-				// msg 246: @1 is not grantor of @2 on @3 to @4.
-				status_exception::raise(Arg::PrivateDyn(246) <<
-					grantorRevoker.c_str() << privilegeName(priv[0]) << objName.c_str() <<
-					user.c_str());
-			}
+				if (badGrantor)
+				{
+					// msg 246: @1 is not grantor of @2 on @3 to @4.
+					status_exception::raise(Arg::PrivateDyn(246) <<
+						grantorRevoker.c_str() << privilegeName(priv[0]) << objName.c_str() <<
+						user.c_str());
+				}
 
-			if (!grantErased)
-			{
 				// msg 247: Warning: @1 on @2 is not granted to @3.
 				ERR_post_warning(
 					Arg::Warning(isc_dyn_miss_priv_warning) <<
