@@ -2,6 +2,26 @@
   * v2.5.6
   **************************
 
+    * Bugfix CORE-5241
+        Affected rows are not counted for some update operations with views
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5226
+        Incorrect result set (missing records) may be returned by the ORDER plan query navigating on a descending index
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5218
+        Explicitly defined names for NOT NULL constraints are not exported into script by ISQL -x
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5217
+        ISQL -x may crash while exporting an exception with message text length > 127 bytes
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-5161
         Unique index could be created on non-unique data
       Contributor(s):
@@ -56,6 +76,31 @@
         Server crashes during execution of unprepared statement
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4870
+        Incorrect number of affected rows for UPDATE against VIEW created WITH CHECK OPTION
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-4645
+        Bugcheck 165 (cannot find tip page)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1716
+        Expression index can be created while doing inserts into table
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-5216
+        Provide location context (line/column numbers) for runtime errors raised inside EXECUTE BLOCK
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-5201
+        Return nonzero result code when restore fails on activating and creating deferred user index
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
 
   **************************
