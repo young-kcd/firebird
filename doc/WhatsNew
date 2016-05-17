@@ -1,4 +1,119 @@
   **************************
+  * v3.0.1
+  **************************
+
+    * Bugfix CORE-5241
+        Affected rows are not counted for some update operations with views
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5232
+        32-bit locks on big-endian systems lead to deadlock
+      Contributor(s):
+        James Clarke <jrtc27 at jrtc27.com>
+
+    * Bugfix CORE-5231
+        EXECUTE STATEMENT: BLR error if more than 256 output parameters exist
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5228
+        Restore may hang if the database contains more than 4 billion records
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5226
+        Incorrect result set (missing records) may be returned by the ORDER plan query navigating on a descending index
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5224
+        Transaction id tags for services API do not support new 48 bit transaction ids
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5222
+        SELECT WITH LOCK may raise unexpected update conflict errors under concurrent load
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5220
+        ISQL -X: double quotes are missed for COLLATE <C> of CREATE DOMAIN statement when <C> is from any non-ascii charset
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-5218
+        Explicitly defined names for NOT NULL constraints are not exported into script by ISQL -x
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5217
+        ISQL -x may crash while exporting an exception with message text length > 127 bytes
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5210
+        Firebird 3.0 + fbclient 3.0 - POST_EVENT won't work
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5207
+        ISQL -X may generate invalid GRANT USAGE statements for domains
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5203
+        Single CPU core fully utilized with trace session
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5193
+        Precedence problem with operator IS
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-5183
+        Regression: line/column numbering may be twisted if alias.name syntax is used
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1746
+        Expression index can be created while doing inserts into table
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-5229
+        Allow to enforce IPv4 or IPv6 in URL-like connection strings
+      Contributor(s):
+        Michal Kubeček <mike at mk-sys.cz>
+
+    * Improvement CORE-5216
+        Provide location context (line/column numbers) for runtime errors raised inside EXECUTE BLOCK
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-5205
+        Add a switch to build linux binaries with builtin libtommath
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-5204
+        Build the Linux code with --enable-binreloc and create an option in the installer to install in different locations than /opt/firebird
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-5201
+        Return nonzero result code when restore fails on activating and creating deferred user index
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-5167
+        Allow implicit conversion between boolean and string
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+
+  **************************
   * v3.0 Final Release
   **************************
 
