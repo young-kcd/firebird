@@ -1030,13 +1030,6 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 
 	request->req_records_affected.clear();
 
-/* CVC: set up to count virtual operations on SQL views. */
-
-	request->req_view_flags = 0;
-	request->req_top_view_store = NULL;
-	request->req_top_view_modify = NULL;
-	request->req_top_view_erase = NULL;
-
 	// Store request start time for timestamp work
 	request->req_timestamp.validate();
 
@@ -1315,21 +1308,8 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	if (!relation->rel_file && !relation->rel_view_rse && !relation->isVirtual())
 		IDX_erase(tdbb, rpb, transaction);
 
-	/* CVC: Increment the counter only if we called VIO/EXT_erase() and
-			we were successful. */
-	if (!(request->req_view_flags & req_first_erase_return)) {
-		request->req_view_flags |= req_first_erase_return;
-		if (relation->rel_view_rse) {
-			request->req_top_view_erase = relation;
-		}
-	}
-	if (relation == request->req_top_view_erase) {
-		if (which_trig == ALL_TRIGS || which_trig == POST_TRIG) {
-			request->req_records_deleted++;
-			request->req_records_affected.bumpModified(true);
-		}
-	}
-	else if (relation->rel_file || !relation->rel_view_rse) {
+	if (!relation->rel_view_rse || (which_trig == ALL_TRIGS || which_trig == POST_TRIG))
+	{
 		request->req_records_deleted++;
 		request->req_records_affected.bumpModified(true);
 	}
@@ -3051,21 +3031,9 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 				--transaction->tra_save_point->sav_verb_count;
 			}
 
-			/* CVC: Increment the counter only if we called VIO/EXT_modify() and
-					we were successful. */
-			if (!(request->req_view_flags & req_first_modify_return)) {
-				request->req_view_flags |= req_first_modify_return;
-				if (relation->rel_view_rse) {
-					request->req_top_view_modify = relation;
-				}
-			}
-			if (relation == request->req_top_view_modify) {
-				if (which_trig == ALL_TRIGS || which_trig == POST_TRIG) {
-					request->req_records_updated++;
-					request->req_records_affected.bumpModified(true);
-				}
-			}
-			else if (relation->rel_file || !relation->rel_view_rse) {
+			if (!relation->rel_view_rse ||
+				(!node->nod_arg[e_mod_sub_mod] && (which_trig == ALL_TRIGS || which_trig == POST_TRIG)))
+			{
 				request->req_records_updated++;
 				request->req_records_affected.bumpModified(true);
 			}
@@ -3813,21 +3781,9 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			trigger_failure(tdbb, trigger);
 		}
 
-		/* CVC: Increment the counter only if we called VIO/EXT_store() and
-				we were successful. */
-		if (!(request->req_view_flags & req_first_store_return)) {
-			request->req_view_flags |= req_first_store_return;
-			if (relation->rel_view_rse) {
-				request->req_top_view_store = relation;
-			}
-		}
-		if (relation == request->req_top_view_store) {
-			if (which_trig == ALL_TRIGS || which_trig == POST_TRIG) {
-				request->req_records_inserted++;
-				request->req_records_affected.bumpModified(true);
-			}
-		}
-		else if (relation->rel_file || !relation->rel_view_rse) {
+		if (!relation->rel_view_rse ||
+			(!node->nod_arg[e_sto_sub_store] && (which_trig == ALL_TRIGS || which_trig == POST_TRIG)))
+		{
 			request->req_records_inserted++;
 			request->req_records_affected.bumpModified(true);
 		}

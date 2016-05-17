@@ -255,11 +255,6 @@ public:
 	RuntimeStatistics	req_base_stats;
 	AffectedRows req_records_affected;	// records affected by the last statement
 
-	USHORT req_view_flags;				// special flags for virtual ops on views
-	jrd_rel* 	req_top_view_store;		// the top view in store(), if any
-	jrd_rel*	req_top_view_modify;	// the top view in modify(), if any
-	jrd_rel*	req_top_view_erase;		// the top view in erase(), if any
-
 	jrd_nod*	req_top_node;			// top of execution tree
 	jrd_nod*	req_next;				// next node for execution
 	Firebird::Array<RecordSource*> req_fors;	// Vector of for loops, if any
