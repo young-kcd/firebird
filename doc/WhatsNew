@@ -87,7 +87,7 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
-    * Bugfix CORE-1716
+    * Bugfix CORE-1746
         Expression index can be created while doing inserts into table
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
