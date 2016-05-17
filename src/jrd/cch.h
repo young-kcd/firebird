@@ -93,11 +93,31 @@ struct bcb_repeat
 	que			bcb_page_mod;	// Que of buffers with page mod n
 };
 
+struct bcb_mem_block
+{
+	bcb_mem_block()
+	{
+		memory = NULL;
+		size = 0;
+	}
+
+	bcb_mem_block(void* _memory, size_t _size)
+	{
+		memory = _memory;
+		size = _size;
+	}
+
+	void* memory;
+	size_t size;
+};
+
+typedef Firebird::Stack<bcb_mem_block> BcbMemStack;
+
 class BufferControl : public pool_alloc_rpt<bcb_repeat, type_bcb>
 {
 public:
 	explicit BufferControl(MemoryPool& p) : bcb_memory(p) { }
-	UCharStack	bcb_memory;			// Large block partitioned into buffers
+	BcbMemStack	bcb_memory;			// Large block partitioned into buffers
 	que			bcb_in_use;			// Que of buffers in use
 	que			bcb_empty;			// Que of empty buffers
 #ifdef DIRTY_TREE

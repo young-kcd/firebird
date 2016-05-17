@@ -1230,7 +1230,8 @@ void CCH_fini(thread_db* tdbb)
 		{
 			while (bcb->bcb_memory.hasData())
 			{
-				dbb->dbb_bufferpool->deallocate(bcb->bcb_memory.pop());
+				bcb_mem_block mem_block = bcb->bcb_memory.pop();
+				dbb->dbb_bufferpool->deallocateHugeBlock(mem_block.memory, mem_block.size);
 			}
 
 			// Dispose off any associated latching semaphores
@@ -4743,7 +4744,7 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 
 	// Copy addresses of previously allocated buffer space to new block
 
-	for (Jrd::UCharStack::iterator stack(old->bcb_memory); stack.hasData(); ++stack) {
+	for (BcbMemStack::iterator stack(old->bcb_memory); stack.hasData(); ++stack) {
 		new_block->bcb_memory.push(stack.object());
 	}
 
@@ -4782,9 +4783,9 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 		if (!num_in_seg)
 		{
 			const size_t alloc_size = dbb->dbb_page_size * (num_per_seg + 1);
-			memory = (UCHAR*) dbb->dbb_bufferpool->allocate_nothrow(alloc_size);
+			memory = (UCHAR*) dbb->dbb_bufferpool->allocateHugeBlock(alloc_size);
 			// NOMEM: crash!
-			new_block->bcb_memory.push(memory);
+			new_block->bcb_memory.push(bcb_mem_block(memory, alloc_size));
 			memory = (UCHAR *) FB_ALIGN((U_IPTR) memory, dbb->dbb_page_size);
 			num_in_seg = num_per_seg;
 			left_to_do -= num_per_seg;
@@ -5670,7 +5671,7 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, SLONG number)
 			while (true)
 			{
 				try {
-					memory = (UCHAR*) dbb->dbb_bufferpool->allocate(memory_size);
+					memory = (UCHAR*) dbb->dbb_bufferpool->allocateHugeBlock(memory_size);
 					break;
 				}
 				catch (Firebird::BadAlloc&)
@@ -5688,7 +5689,7 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, SLONG number)
 				}
 			}
 
-			bcb->bcb_memory.push(memory);
+			bcb->bcb_memory.push(bcb_mem_block(memory, memory_size));
 			memory_end = memory + memory_size;
 
 			// Allocate buffers on an address that is an even multiple
@@ -5708,7 +5709,8 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, SLONG number)
 			// the page buffer overhead. Reduce this number by a 25% fudge factor to
 			// leave some memory for useful work.
 
-			dbb->dbb_bufferpool->deallocate(bcb->bcb_memory.pop());
+			bcb_mem_block mem = bcb->bcb_memory.pop();
+			dbb->dbb_bufferpool->deallocateHugeBlock(mem.memory, mem.size);
 			memory = NULL;
 			for (bcb_repeat* tail2 = old_tail; tail2 < tail; tail2++)
 			{
