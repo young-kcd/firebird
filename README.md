@@ -8,7 +8,6 @@ The Firebird Project is a commercially independent project of C/C++ programmers,
 
 * http://www.firebirdsql.org/
 * http://www.firebirdsql.org/en/historical-reference/
-* http://www.firebirdsql.org/en/licensing/
 * http://www.firebirdsql.org/en/features/
 
 ## Documentation
@@ -27,6 +26,9 @@ The source code is released under variants of the Mozilla Public Licence 1.1 (MP
 
 The source code can be found at:  
 https://github.com/FirebirdSQL/firebird
+
+Build instructions are here:
+http://www.firebirdsql.org/en/building-the-code/
 
 Bugs and feature requests should be submitted at:  
 http://tracker.firebirdsql.org/
