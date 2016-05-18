@@ -40,7 +40,7 @@
     * Bugfix CORE-5220
         ISQL -X: double quotes are missed for COLLATE <C> of CREATE DOMAIN statement when <C> is from any non-ascii charset
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Bugfix CORE-5218
         Explicitly defined names for NOT NULL constraints are not exported into script by ISQL -x
@@ -70,7 +70,7 @@
     * Bugfix CORE-5193
         Precedence problem with operator IS
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Bugfix CORE-5183
         Regression: line/column numbering may be twisted if alias.name syntax is used
@@ -110,7 +110,7 @@
     * Improvement CORE-5167
         Allow implicit conversion between boolean and string
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
 
   **************************
@@ -3400,4 +3400,3 @@
         New option in addition to -V switch to specify a custom verbose interval
       Contributor(s):
         Claudio Valderrama C. <cvalde at usa.net>
-
