@@ -337,7 +337,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 		for (const NestConst<Parameter>* param = function->getInputFields().begin(); param != end; ++param)
 		{
 			const FB_SIZE_T number = (*param)->prm_number;
-			if (allArgs.getCapacity() < number + 1)
+			if (allArgs.getCount() < number + 1)
 				allArgs.grow(number + 1);
 			allArgs[number] = *param;
 		}
@@ -348,7 +348,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 			const FB_SIZE_T number = (*param)->prm_number;
 			if (number != 0)
 			{
-				if (allArgs.getCapacity() < number + 1)
+				if (allArgs.getCount() < number + 1)
 					allArgs.grow(number + 1);
 				allArgs[number] = *param;
 			}
