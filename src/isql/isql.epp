@@ -352,7 +352,7 @@ static processing_state print_sqlda_input(const bool is_selectable);
 static void print_sqlda_output(const XSQLDA& sqlda);
 static void process_header(const XSQLDA* sqlda, const int pad[], TEXT header[], TEXT header2[]);
 static void process_plan();
-static SLONG process_record_count(const int statement_type);
+static SINT64 process_record_count(const int statement_type);
 static SSHORT process_request_type();
 static SLONG* process_sqlda_buffer(XSQLDA* const sqlda, SSHORT nullind[]);
 static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], int pad[]);
@@ -8288,7 +8288,7 @@ static void process_plan()
 // Get number of records affected for updates, deletions and insertions.
 // Return -1 if the statement is not one of those or if there's an error
 // retrieving the information from the server.
-static SLONG process_record_count(const int statement_type)
+static SINT64 process_record_count(const int statement_type)
 {
 	UCHAR count_type = 0;
 
@@ -8319,17 +8319,19 @@ static SLONG process_record_count(const int statement_type)
 
 		if (count_buffer[0] == isc_info_sql_records)
 		{
+			SINT64 total = 0;
 			const UCHAR* p = reinterpret_cast<const UCHAR*>(count_buffer + 3);
 			while (*p != isc_info_end)
 			{
 				const UCHAR count_is = *p++;
 				const SSHORT l = gds__vax_integer(p, 2);
 				p += 2;
-				const SLONG count = gds__vax_integer(p, l);
+				const ULONG count = gds__vax_integer(p, l);
 				p += l;
-				if (count_is == count_type)
-					return count;
+				if (count_is != isc_info_req_select_count)
+					total += count;
 			}
+			return total;
 		}
 	}
 	return -1;
@@ -8762,7 +8764,7 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 
 		if (Docount)
 		{
-			const SLONG count = process_record_count(statement_type);
+			const SINT64 count = process_record_count(statement_type);
 			if (count >= 0)
 			{
 				TEXT rec_count_msg[MSG_LENGTH];
