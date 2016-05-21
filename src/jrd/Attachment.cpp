@@ -436,7 +436,7 @@ void Jrd::Attachment::initLocks(thread_db* tdbb)
 	Lock* lock = FB_NEW_RPT(*att_pool, 0)
 		Lock(tdbb, sizeof(AttNumber), LCK_attachment, this, ast);
 	att_id_lock = lock;
-	lock->lck_key.lck_long = att_attachment_id;
+	lock->setKey(att_attachment_id);
 	LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 
 	// Allocate and take the monitoring lock
@@ -444,7 +444,7 @@ void Jrd::Attachment::initLocks(thread_db* tdbb)
 	lock = FB_NEW_RPT(*att_pool, 0)
 		Lock(tdbb, sizeof(AttNumber), LCK_monitor, this, blockingAstMonitor);
 	att_monitor_lock = lock;
-	lock->lck_key.lck_long = att_attachment_id;
+	lock->setKey(att_attachment_id);
 	LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 
 	// Unless we're a system attachment, allocate the cancellation lock
@@ -454,7 +454,7 @@ void Jrd::Attachment::initLocks(thread_db* tdbb)
 		lock = FB_NEW_RPT(*att_pool, 0)
 			Lock(tdbb, sizeof(AttNumber), LCK_cancel, this, blockingAstCancel);
 		att_cancel_lock = lock;
-		lock->lck_key.lck_long = att_attachment_id;
+		lock->setKey(att_attachment_id);
 	}
 }
 

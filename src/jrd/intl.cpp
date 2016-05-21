@@ -299,7 +299,7 @@ Lock* CharSetContainer::createCollationLock(thread_db* tdbb, USHORT ttype, void*
 
 	Lock* lock = FB_NEW_RPT(*tdbb->getAttachment()->att_pool, 0)
 		Lock(tdbb, sizeof(SLONG), LCK_tt_exist, object, (object ? blocking_ast_collation : NULL));
-	lock->lck_key.lck_long = ttype;
+	lock->setKey(ttype);
 
 	return lock;
 }

@@ -203,10 +203,10 @@ namespace Jrd
 
 		Record* operator=(Record* record)
 		{
-			// class object can be initialized just once...
+			// class object can be initialized just once
 			fb_assert(!m_record);
-			// ... and it must be a valid pointer to a properly flagged record
-			fb_assert(record && (record->m_flags & FLAG));
+			// validate record and its flag
+			fb_assert(!record || (record->m_flags & FLAG));
 
 			m_record = record;
 			return m_record;

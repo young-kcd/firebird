@@ -215,7 +215,7 @@ private:
 	// Put data into stdout buffer
 	void	enqueue(const UCHAR* s, ULONG len);
 	// true if there is no data in stdout buffer
-	bool	empty() const;
+	bool	empty(ULONG head) const;
 	// true if no more space in stdout buffer
 	bool	full() const;
 	// start service thread
@@ -254,7 +254,7 @@ private:
 	static void get_action_svc_string_pos(const Firebird::ClumpletReader& spb, Firebird::string& switches,
 										  Firebird::string::size_type p = Firebird::string::npos);
 	// Get integer from within spb buffer, add it to the command line
-	static void get_action_svc_data(const Firebird::ClumpletReader& spb, Firebird::string& sw);
+	static void get_action_svc_data(const Firebird::ClumpletReader& spb, Firebird::string& sw, bool bigint);
 	// Get parameter from within spb buffer, find corresponding switch within specified table,
 	// add it to the command line
 	static bool get_action_svc_parameter(UCHAR tag, const Switches::in_sw_tab_t* table,

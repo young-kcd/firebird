@@ -1244,8 +1244,7 @@ static void expand_share_name(tstring& share_name)
 		return;
 	}
 
-	strncpy(workspace, p, sizeof(workspace));
-	workspace[sizeof(workspace) - 1] = 0;
+	fb_utils::copy_terminate(workspace, p, sizeof(workspace));
 	// We test for *q, too, to avoid buffer overrun.
 	TEXT* q;
 	for (q = workspace; *q && *p && *p != '!'; p++, q++);
@@ -1460,7 +1459,7 @@ bool Mnt::get()
  **************************************/
 
 
-	TEXT device[128], mount_point[128], mount_type[16], rw[128], foo1[16];
+	TEXT device[MAXPATHLEN], mount_point[MAXPATHLEN], mount_type[16], rw[512], foo1[16];
 
 	const int n = fscanf(mtab, "%s %s %s %s %s %s", device, mount_point, mount_type, rw, foo1, foo1);
 	if (n < 0)

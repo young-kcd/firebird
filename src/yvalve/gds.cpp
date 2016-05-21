@@ -900,10 +900,7 @@ static SLONG safe_interpret(char* const s, const FB_SIZE_T bufsize,
 		if (legacy)
 			safe_strncpy(s, q, bufsize);
 		else
-		{
-			strncpy(s, q, bufsize);
-			s[bufsize - 1] = 0;
-		}
+			fb_utils::copy_terminate(s, q, bufsize);
 		break;
 
 	case isc_arg_unix:
@@ -913,10 +910,7 @@ static SLONG safe_interpret(char* const s, const FB_SIZE_T bufsize,
 		if (legacy)
 			safe_strncpy(s, q, bufsize);
 		else
-		{
-			strncpy(s, q, bufsize);
-			s[bufsize - 1] = 0;
-		}
+			fb_utils::copy_terminate(s, q, bufsize);
 		break;
 
 	case isc_arg_dos:
@@ -2482,8 +2476,7 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 	Firebird::string ib_ext_lib_path;
 	if (!fb_utils::readenv(ib_env_var, ib_ext_lib_path))
 	{
-		strncpy(resolved_module, module, length);
-		resolved_module[length - 1] = 0;
+		fb_utils::copy_terminate(resolved_module, module, length);
 		return TRUE;		// The variable is not defined. Return TRUE
 	}
 
@@ -2513,16 +2506,14 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 		const TEXT* token = strtok(ib_ext_lib_path.begin(), ";");
 		while (token != NULL)
 		{
-			strncpy(path, token, sizeof(path));
-			path[sizeof(path) - 1] = 0;
+			fb_utils::copy_terminate(path, token, sizeof(path));
 			// make sure that there is no traing slash on the path
 			TEXT* p = path + strlen(path);
 			if ((p != path) && ((p[-1] == '/') || (p[-1] == '\\')))
 				p[-1] = 0;
 			if ((EXPAND_PATH(path, abs_path)) && (!COMPARE_PATH(abs_path, abs_module_path)))
 			{
-				strncpy(resolved_module, abs_module, length);
-				resolved_module[length - 1] = 0;
+				fb_utils::copy_terminate(resolved_module, abs_module, length);
 				return TRUE;
 			}
 			token = strtok(NULL, ";");
@@ -3708,8 +3699,7 @@ void FB_EXPORTED gds__trace_printer(void* /*arg*/, SSHORT offset, const TEXT* li
 	gds__ulstr(p, offset, 4, ' ');
 	p += strlen(p);
 	*p++ = ' ';
-	strncpy(p, line, PRETTY_BUFFER_SIZE);
-	p[PRETTY_BUFFER_SIZE] = '\0';
+	fb_utils::copy_terminate(p, line, PRETTY_BUFFER_SIZE + 1);
 	p += strlen(p);
 	*p++ = '\n';
 	*p = 0;

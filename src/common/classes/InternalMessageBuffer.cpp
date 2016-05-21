@@ -211,13 +211,19 @@ InternalMessageBuffer::InternalMessageBuffer(unsigned aBlrLength, const unsigned
 	unsigned aBufferLength, unsigned char* aBuffer)
 {
 	buffer = aBuffer;
-	metadata = FB_NEW MetadataFromBlr(aBlrLength, aBlr, aBufferLength);
-	metadata->addRef();
+	if (aBlr)
+	{
+		metadata = FB_NEW MetadataFromBlr(aBlrLength, aBlr, aBufferLength);
+		metadata->addRef();
+	}
+	else
+		metadata = NULL;
 }
 
 InternalMessageBuffer::~InternalMessageBuffer()
 {
-	metadata->release();
+	if (metadata)
+		metadata->release();
 }
 
 }	// namespace Firebird

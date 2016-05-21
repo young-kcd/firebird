@@ -135,7 +135,7 @@
 	FIELD(fld_pid			, nam_pid			, dtype_long	, sizeof(SLONG)				, 0							, NULL		, true)
 	FIELD(fld_state			, nam_state			, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
 	FIELD(fld_ods_number	, nam_ods_number	, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
-	FIELD(fld_page_size		, nam_page_size		, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
+	FIELD(fld_page_size		, nam_page_size		, dtype_long	, sizeof(SLONG)				, 0							, NULL		, true)
 	FIELD(fld_page_bufs		, nam_page_bufs		, dtype_long	, sizeof(SLONG)				, 0							, NULL		, true)
 	FIELD(fld_shut_mode		, nam_shut_mode		, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
 	FIELD(fld_sql_dialect	, nam_sql_dialect	, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)

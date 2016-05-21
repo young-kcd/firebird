@@ -223,6 +223,16 @@ namespace
 		AutoSetRestore<USHORT> autoFlags;
 		AutoSetRestore<USHORT> autoScopeLevel;
 	};
+
+	class SavepointChangeMarker : public Savepoint::ChangeMarker
+	{
+	public:
+		explicit SavepointChangeMarker(jrd_tra* transaction)
+			: Savepoint::ChangeMarker(transaction->tra_flags & TRA_system ?
+									  NULL : transaction->tra_save_point)
+		{}
+	};
+
 }	// namespace
 
 
@@ -507,7 +517,7 @@ BlockNode* BlockNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	doPass2(tdbb, csb, action.getAddress(), this);
 	doPass2(tdbb, csb, handlers.getAddress(), this);
 
-	impureOffset = CMP_impure(csb, sizeof(SLONG));
+	impureOffset = CMP_impure(csb, sizeof(SavNumber));
 
 	return this;
 }
@@ -515,18 +525,16 @@ BlockNode* BlockNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
 {
 	jrd_tra* transaction = request->req_transaction;
-	jrd_tra* sysTransaction = request->req_attachment->getSysTransaction();
-	SLONG count;
+	SavNumber savNumber;
 
 	switch (request->req_operation)
 	{
 		case jrd_req::req_evaluate:
-			if (transaction != sysTransaction)
+			if (!(transaction->tra_flags & TRA_system))
 			{
-				VIO_start_save_point(tdbb, transaction);
-				const Savepoint* save_point = transaction->tra_save_point;
-				count = save_point->sav_number;
-				*request->getImpure<SLONG>(impureOffset) = count;
+				const Savepoint* const savepoint = transaction->startSavepoint();
+				savNumber = savepoint->getNumber();
+				*request->getImpure<SavNumber>(impureOffset) = savNumber;
 			}
 			return action;
 
@@ -540,12 +548,12 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 				// BREAK/LEAVE/CONTINUE statement in the SP/trigger code.
 				// Do not perform the error handling stuff.
 
-				if (transaction != sysTransaction)
+				if (!(transaction->tra_flags & TRA_system))
 				{
-					count = *request->getImpure<SLONG>(impureOffset);
+					savNumber = *request->getImpure<SavNumber>(impureOffset);
 
 					while (transaction->tra_save_point &&
-						transaction->tra_save_point->sav_number >= count)
+						transaction->tra_save_point->getNumber() >= savNumber)
 					{
 						transaction->rollforwardSavepoint(tdbb);
 					}
@@ -554,37 +562,38 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 				return parentStmt;
 			}
 
-			const StmtNode* temp;
+			const StmtNode* temp = parentStmt;
 
-			if (handlers && handlers->statements.getCount() > 0)
+			if (handlers && handlers->statements.hasData())
 			{
 				// First of all rollback failed work
-				if (transaction != sysTransaction)
+				if (!(transaction->tra_flags & TRA_system))
 				{
-					count = *request->getImpure<SLONG>(impureOffset);
+					savNumber = *request->getImpure<SavNumber>(impureOffset);
 
 					// Since there occurred an error (req_unwind), undo all savepoints
 					// up to, _but not including_, the savepoint of this block.
 					// That's why transaction->rollbackToSavepoint() cannot be used here
 					// The savepoint of this block will be dealt with below.
 					// Do this only if error handlers exist. If not - leave rollbacking to caller node
+
 					while (transaction->tra_save_point &&
-						count < transaction->tra_save_point->sav_number &&
-						transaction->tra_save_point->sav_next &&
-						count < transaction->tra_save_point->sav_next->sav_number)
+						savNumber < transaction->tra_save_point->getNumber() &&
+						transaction->tra_save_point->getNext() &&
+						savNumber < transaction->tra_save_point->getNext()->getNumber())
 					{
 						transaction->rollforwardSavepoint(tdbb);
 					}
+
 					// There can be no savepoints above the given one
-					if (transaction->tra_save_point && transaction->tra_save_point->sav_number > count)
-					{
+
+					if (transaction->tra_save_point && transaction->tra_save_point->getNumber() > savNumber)
 						transaction->rollbackSavepoint(tdbb);
-					}
+
 					// after that we still have to have our savepoint. If not - CORE-4424/4483 is sneaking around
-					fb_assert(transaction->tra_save_point && transaction->tra_save_point->sav_number == count);
+					fb_assert(transaction->tra_save_point && transaction->tra_save_point->getNumber() == savNumber);
 				}
 
-				temp = parentStmt;
 				bool handled = false;
 				const NestConst<StmtNode>* ptr = handlers->statements.begin();
 
@@ -592,13 +601,11 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 					 ptr != end;
 					 ++ptr)
 				{
-					const ErrorHandlerNode* handlerNode = (*ptr)->as<ErrorHandlerNode>();
-					const ExceptionArray& xcpNode = handlerNode->conditions;
+					const ErrorHandlerNode* const handlerNode = (*ptr)->as<ErrorHandlerNode>();
 
-					if (testAndFixupError(tdbb, request, xcpNode))
+					if (testAndFixupError(tdbb, request, handlerNode->conditions))
 					{
 						request->req_operation = jrd_req::req_evaluate;
-						temp = handlerNode->action;
 						exeState->errorPending = false;
 
 						// On entering looper exeState->oldRequest etc. are saved.
@@ -618,7 +625,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 							const ULONG prev_req_error_handler =
 								request->req_flags & req_error_handler;
 							request->req_flags |= req_error_handler;
-							temp = EXE_looper(tdbb, request, temp);
+							temp = EXE_looper(tdbb, request, handlerNode->action);
 							request->req_flags &= ~req_error_handler;
 							request->req_flags |= prev_req_error_handler;
 
@@ -640,13 +647,12 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 							request->req_caller = exeState->oldRequest;
 							handled = true;
 						}
-
 					}
 				}
 				// The error is dealt with by the application, cleanup
 				// this block's savepoint.
 
-				if (handled && transaction != sysTransaction)
+				if (handled && !(transaction->tra_flags & TRA_system))
 				{
 					// Check that exception handlers were executed in context of right savepoint.
 					// If not - mirror copy of CORE-4424 or CORE-4483 is around here.
@@ -656,18 +662,17 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 					//		outer before
 					//		outer after  (this block)
 					//		inner after
-					// Because of this following assert is commentd out
-					//fb_assert(transaction->tra_save_point && transaction->tra_save_point->sav_number == count);
+					// Because of this following assert is commented out
+					//fb_assert(transaction->tra_save_point && transaction->tra_save_point->getNumber() == savNumber);
+
 					for (const Savepoint* save_point = transaction->tra_save_point;
-							save_point && count <= save_point->sav_number;
+							save_point && savNumber <= save_point->getNumber();
 							save_point = transaction->tra_save_point)
 					{
 						transaction->rollforwardSavepoint(tdbb);
 					}
 				}
 			}
-			else
-				temp = parentStmt;
 
 			// If the application didn't have an error handler, then
 			// the error will still be pending. Leave undo to outer blocks.
@@ -676,13 +681,13 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 		}
 
 		case jrd_req::req_return:
-			if (transaction != sysTransaction)
+			if (!(transaction->tra_flags & TRA_system))
 			{
-				count = *request->getImpure<SLONG>(impureOffset);
+				savNumber = *request->getImpure<SavNumber>(impureOffset);
 
 				// rollforward all savepoints
 				for (const Savepoint* save_point = transaction->tra_save_point;
-					 save_point && save_point->sav_next && count <= save_point->sav_number;
+					 save_point && save_point->getNext() && savNumber <= save_point->getNumber();
 					 save_point = transaction->tra_save_point)
 				{
 					transaction->rollforwardSavepoint(tdbb);
@@ -2351,7 +2356,6 @@ const StmtNode* EraseNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 // Perform erase operation.
 const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const
 {
-	Jrd::Attachment* attachment = tdbb->getAttachment();
 	jrd_tra* transaction = request->req_transaction;
 	record_param* rpb = &request->req_rpb[stream];
 	jrd_rel* relation = rpb->rpb_relation;
@@ -2393,12 +2397,11 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 
 	if (rpb->rpb_runtime_flags & RPB_refetch)
 	{
-		VIO_refetch_record(tdbb, rpb, transaction, false);
+		VIO_refetch_record(tdbb, rpb, transaction, false, false);
 		rpb->rpb_runtime_flags &= ~RPB_refetch;
 	}
 
-	if (transaction != attachment->getSysTransaction())
-		++transaction->tra_save_point->sav_verb_count;
+	SavepointChangeMarker scMarker(transaction);
 
 	// Handle pre-operation trigger.
 	preModifyEraseTriggers(tdbb, &relation->rel_pre_erase, whichTrig, rpb, NULL, TRIGGER_DELETE);
@@ -2423,30 +2426,11 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 	if (!relation->rel_file && !relation->rel_view_rse && !relation->isVirtual())
 		IDX_erase(tdbb, rpb, transaction);
 
-	// CVC: Increment the counter only if we called VIO/EXT_erase() and we were successful.
-	if (!(request->req_view_flags & req_first_erase_return))
-	{
-		request->req_view_flags |= req_first_erase_return;
-		if (relation->rel_view_rse)
-			request->req_top_view_erase = relation;
-	}
-
-	if (relation == request->req_top_view_erase)
-	{
-		if (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG)
-		{
-			request->req_records_deleted++;
-			request->req_records_affected.bumpModified(true);
-		}
-	}
-	else if (relation->rel_file || !relation->rel_view_rse)
+	if (!relation->rel_view_rse || (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG))
 	{
 		request->req_records_deleted++;
 		request->req_records_affected.bumpModified(true);
 	}
-
-	if (transaction != attachment->getSysTransaction())
-		--transaction->tra_save_point->sav_verb_count;
 
 	rpb->rpb_number.setValid(false);
 
@@ -2930,8 +2914,6 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 				Arg::Str(procedure->getName().identifier) << Arg::Str(procedure->getName().package));
 	}
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-
 	ULONG inMsgLength = 0;
 	UCHAR* inMsg = NULL;
 
@@ -2971,8 +2953,8 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 	}
 
 	jrd_tra* transaction = request->req_transaction;
-	const SLONG savePointNumber = transaction->tra_save_point ?
-		transaction->tra_save_point->sav_number : 0;
+	const SavNumber savNumber = transaction->tra_save_point ?
+		transaction->tra_save_point->getNumber() : 0;
 
 	jrd_req* procRequest = procedure->getStatement()->findRequest(tdbb);
 
@@ -2994,10 +2976,10 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 
 		// Clean up all savepoints started during execution of the procedure.
 
-		if (transaction != attachment->getSysTransaction())
+		if (!(transaction->tra_flags & TRA_system))
 		{
 			while (transaction->tra_save_point &&
-				transaction->tra_save_point->sav_number > savePointNumber)
+				transaction->tra_save_point->getNumber() > savNumber)
 			{
 				transaction->rollforwardSavepoint(tdbb);
 			}
@@ -3704,8 +3686,8 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 		request->req_auto_trans.push(org_transaction);
 		impure->traNumber = transaction->tra_number;
 
-		VIO_start_save_point(tdbb, transaction);
-		impure->savNumber = transaction->tra_save_point->sav_number;
+		const Savepoint* const savepoint = transaction->startSavepoint();
+		impure->savNumber = savepoint->getNumber();
 
 		if (!(attachment->att_flags & ATT_no_db_triggers))
 		{
@@ -3717,7 +3699,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 	}
 
 	jrd_tra* transaction = request->req_transaction;
-	fb_assert(transaction && transaction != attachment->getSysTransaction());
+	fb_assert(transaction && !(transaction->tra_flags & TRA_system));
 
 	if (!impure->traNumber)
 		return parentStmt;
@@ -3734,8 +3716,8 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 		}
 
 		if (transaction->tra_save_point &&
-			!(transaction->tra_save_point->sav_flags & SAV_user) &&
-			!transaction->tra_save_point->sav_verb_count)
+			transaction->tra_save_point->isSystem() &&
+			transaction->tra_save_point->isChanging())
 		{
 			transaction->rollforwardSavepoint(tdbb);
 		}
@@ -3759,8 +3741,8 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 				}
 
 				if (transaction->tra_save_point &&
-					!(transaction->tra_save_point->sav_flags & SAV_user) &&
-					!transaction->tra_save_point->sav_verb_count)
+					transaction->tra_save_point->isSystem() &&
+					transaction->tra_save_point->isChanging())
 				{
 					transaction->rollforwardSavepoint(tdbb);
 				}
@@ -4689,7 +4671,7 @@ StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	// as implicit cursors are always positioned in a valid record, and the name is
 	// only used to raise isc_cursor_not_positioned.
 
-	impureOffset = CMP_impure(csb, sizeof(SLONG));
+	impureOffset = CMP_impure(csb, sizeof(SavNumber));
 
 	return this;
 }
@@ -4697,18 +4679,17 @@ StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
 	jrd_tra* transaction = request->req_transaction;
-	jrd_tra* sysTransaction = request->req_attachment->getSysTransaction();
 
 	switch (request->req_operation)
 	{
 		case jrd_req::req_evaluate:
-			*request->getImpure<SLONG>(impureOffset) = 0;
-			if (transaction != sysTransaction &&
-				transaction->tra_save_point && transaction->tra_save_point->sav_verb_actions)
+			*request->getImpure<SavNumber>(impureOffset) = 0;
+			if (!(transaction->tra_flags & TRA_system) &&
+				transaction->tra_save_point &&
+				transaction->tra_save_point->hasChanges())
 			{
-				VIO_start_save_point(tdbb, transaction);
-				const Savepoint* save_point = transaction->tra_save_point;
-				*request->getImpure<SLONG>(impureOffset) = save_point->sav_number;
+				const Savepoint* const savepoint = transaction->startSavepoint();
+				*request->getImpure<SavNumber>(impureOffset) = savepoint->getNumber();
 			}
 			cursor->open(tdbb);
 			request->req_records_affected.clear();
@@ -4745,14 +4726,17 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 
 		default:
 		{
-			const SLONG sav_number = *request->getImpure<SLONG>(impureOffset);
+			const SavNumber savNumber = *request->getImpure<SavNumber>(impureOffset);
 
-			if (sav_number)
+			if (savNumber)
 			{
 				while (transaction->tra_save_point &&
-					transaction->tra_save_point->sav_number >= sav_number)
+					transaction->tra_save_point->getNumber() >= savNumber)
 				{
-					VIO_verb_cleanup(tdbb, transaction);
+					if (transaction->tra_save_point->isChanging()) // we must rollback this savepoint
+						transaction->rollbackSavepoint(tdbb);
+					else
+						transaction->rollforwardSavepoint(tdbb);
 				}
 			}
 
@@ -6107,7 +6091,6 @@ const StmtNode* ModifyNode::execute(thread_db* tdbb, jrd_req* request, ExeState*
 // Execute a MODIFY statement.
 const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const
 {
-	Jrd::Attachment* attachment = tdbb->getAttachment();
 	jrd_tra* transaction = request->req_transaction;
 	impure_state* impure = request->getImpure<impure_state>(impureOffset);
 
@@ -6142,8 +6125,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 				// varchar field whose tail may contain garbage.
 				cleanupRpb(tdbb, newRpb);
 
-				if (transaction != attachment->getSysTransaction())
-					++transaction->tra_save_point->sav_verb_count;
+				SavepointChangeMarker scMarker(transaction);
 
 				preModifyEraseTriggers(tdbb, &relation->rel_pre_modify, whichTrig, orgRpb, newRpb,
 					TRIGGER_UPDATE);
@@ -6177,28 +6159,8 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 				if (!relation->rel_file && !relation->rel_view_rse && !relation->isVirtual())
 					IDX_modify_check_constraints(tdbb, orgRpb, newRpb, transaction);
 
-				if (transaction != attachment->getSysTransaction())
-					--transaction->tra_save_point->sav_verb_count;
-
-				// CVC: Increment the counter only if we called VIO/EXT_modify() and
-				// we were successful.
-				if (!(request->req_view_flags & req_first_modify_return))
-				{
-					request->req_view_flags |= req_first_modify_return;
-
-					if (relation->rel_view_rse)
-						request->req_top_view_modify = relation;
-				}
-
-				if (relation == request->req_top_view_modify)
-				{
-					if (!subMod && (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG))
-					{
-						request->req_records_updated++;
-						request->req_records_affected.bumpModified(true);
-					}
-				}
-				else if (relation->rel_file || !relation->rel_view_rse)
+				if (!relation->rel_view_rse ||
+					(!subMod && (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG)))
 				{
 					request->req_records_updated++;
 					request->req_records_affected.bumpModified(true);
@@ -6232,7 +6194,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 
 	if (orgRpb->rpb_runtime_flags & RPB_refetch)
 	{
-		VIO_refetch_record(tdbb, orgRpb, transaction, false);
+		VIO_refetch_record(tdbb, orgRpb, transaction, false, false);
 		orgRpb->rpb_runtime_flags &= ~RPB_refetch;
 	}
 
@@ -6959,7 +6921,6 @@ const StmtNode* StoreNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 // Execute a STORE statement.
 const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const
 {
-	Jrd::Attachment* attachment = tdbb->getAttachment();
 	jrd_tra* transaction = request->req_transaction;
 	impure_state* impure = request->getImpure<impure_state>(impureOffset);
 
@@ -6979,79 +6940,61 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 			break;
 
 		case jrd_req::req_return:
-			if (impure->sta_state)
-				return parentStmt;
-
-			if (transaction != attachment->getSysTransaction())
-				++transaction->tra_save_point->sav_verb_count;
-
-			if (relation->rel_pre_store && whichTrig != POST_TRIG)
+			if (!impure->sta_state)
 			{
-				EXE_execute_triggers(tdbb, &relation->rel_pre_store, NULL, rpb,
-					TRIGGER_INSERT, PRE_TRIG);
-			}
+				SavepointChangeMarker scMarker(transaction);
 
-			if (validations.hasData())
-				validateExpressions(tdbb, validations);
+				if (relation->rel_pre_store && whichTrig != POST_TRIG)
+				{
+					EXE_execute_triggers(tdbb, &relation->rel_pre_store, NULL, rpb,
+						TRIGGER_INSERT, PRE_TRIG);
+				}
 
-			// For optimum on-disk record compression, zero all unassigned
-			// fields. In addition, zero the tail of assigned varying fields
-			// so that previous remnants don't defeat compression efficiency.
+				if (validations.hasData())
+					validateExpressions(tdbb, validations);
 
-			// CVC: The code that was here was moved to its own routine: cleanupRpb()
-			// and replaced by the call shown below.
+				// For optimum on-disk record compression, zero all unassigned
+				// fields. In addition, zero the tail of assigned varying fields
+				// so that previous remnants don't defeat compression efficiency.
 
-			cleanupRpb(tdbb, rpb);
+				// CVC: The code that was here was moved to its own routine: cleanupRpb()
+				// and replaced by the call shown below.
 
-			if (relation->rel_file)
-				EXT_store(tdbb, rpb);
-			else if (relation->isVirtual())
-				VirtualTable::store(tdbb, rpb);
-			else if (!relation->rel_view_rse)
-			{
-				VIO_store(tdbb, rpb, transaction);
-				IDX_store(tdbb, rpb, transaction);
-			}
+				cleanupRpb(tdbb, rpb);
 
-			rpb->rpb_number.setValid(true);
+				if (relation->rel_file)
+					EXT_store(tdbb, rpb);
+				else if (relation->isVirtual())
+					VirtualTable::store(tdbb, rpb);
+				else if (!relation->rel_view_rse)
+				{
+					VIO_store(tdbb, rpb, transaction);
+					IDX_store(tdbb, rpb, transaction);
+				}
 
-			if (relation->rel_post_store && whichTrig != PRE_TRIG)
-			{
-				EXE_execute_triggers(tdbb, &relation->rel_post_store, NULL, rpb,
-					TRIGGER_INSERT, POST_TRIG);
-			}
+				rpb->rpb_number.setValid(true);
 
-			// CVC: Increment the counter only if we called VIO/EXT_store() and we were successful.
-			if (!(request->req_view_flags & req_first_store_return))
-			{
-				request->req_view_flags |= req_first_store_return;
-				if (relation->rel_view_rse)
-					request->req_top_view_store = relation;
-			}
+				if (relation->rel_post_store && whichTrig != PRE_TRIG)
+				{
+					EXE_execute_triggers(tdbb, &relation->rel_post_store, NULL, rpb,
+						TRIGGER_INSERT, POST_TRIG);
+				}
 
-			if (relation == request->req_top_view_store)
-			{
-				if (!subStore && (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG))
+				if (!relation->rel_view_rse ||
+					(!subStore && (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG)))
 				{
 					request->req_records_inserted++;
 					request->req_records_affected.bumpModified(true);
 				}
-			}
-			else if (relation->rel_file || !relation->rel_view_rse)
-			{
-				request->req_records_inserted++;
-				request->req_records_affected.bumpModified(true);
-			}
 
-			if (transaction != attachment->getSysTransaction())
-				--transaction->tra_save_point->sav_verb_count;
-
-			if (statement2)
-			{
-				impure->sta_state = 1;
-				request->req_operation = jrd_req::req_evaluate;
-				return statement2;
+				if (statement2)
+				{
+					impure->sta_state = 1;
+					request->req_operation = jrd_req::req_evaluate;
+					return statement2;
+				}
 			}
+			// fall into
 
 		default:
 			return parentStmt;
@@ -7139,83 +7082,75 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 	jrd_tra* transaction = request->req_transaction;
 
 	if (request->req_operation == jrd_req::req_evaluate &&
-		transaction != request->req_attachment->getSysTransaction())
+		!(transaction->tra_flags & TRA_system))
 	{
 		// Skip the savepoint created by EXE_start
-		Savepoint* savepoint = transaction->tra_save_point->sav_next;
-		Savepoint* previous = transaction->tra_save_point;
+		Savepoint* const previous = transaction->tra_save_point;
 
 		// Find savepoint
-		bool found = false;
-		while (true)
+		Savepoint* savepoint = NULL;
+
+		for (Savepoint::Iterator iter(previous); *iter; ++iter)
 		{
-			if (!savepoint || !(savepoint->sav_flags & SAV_user))
+			Savepoint* const current = *iter;
+
+			if (current == previous)
+				continue;
+
+			if (current->isSystem())
 				break;
 
-			if (name == savepoint->sav_name)
+			if (current->getName() == name)
 			{
-				found = true;
+				savepoint = current;
 				break;
 			}
-
-			previous = savepoint;
-			savepoint = savepoint->sav_next;
 		}
 
-		if (!found && command != CMD_SET)
+		if (!savepoint && command != CMD_SET)
 			ERR_post(Arg::Gds(isc_invalid_savepoint) << Arg::Str(name));
 
 		switch (command)
 		{
 			case CMD_SET:
 				// Release the savepoint
-				if (found)
-				{
-					savepoint->rollforward(tdbb);
-					previous->sav_next = savepoint->sav_next;
-					savepoint->sav_next = transaction->tra_save_free;
-					transaction->tra_save_free = savepoint;
-				}
+				if (savepoint)
+					savepoint->rollforward(tdbb, previous);
 
 				// Use the savepoint created by EXE_start
-				transaction->tra_save_point->sav_flags |= SAV_user;
-				transaction->tra_save_point->sav_name = name;
+				transaction->tra_save_point->setName(name);
 				break;
 
 			case CMD_RELEASE_ONLY:
 			{
 				// Release the savepoint
-				savepoint->rollforward(tdbb);
-				previous->sav_next = savepoint->sav_next;
-				savepoint->sav_next = transaction->tra_save_free;
-				transaction->tra_save_free = savepoint;
+				savepoint->rollforward(tdbb, previous);
 				break;
 			}
 
 			case CMD_RELEASE:
 			{
-				const SLONG sav_number = savepoint->sav_number;
+				const SavNumber savNumber = savepoint->getNumber();
 
 				// Release the savepoint and all subsequent ones
 				while (transaction->tra_save_point &&
-					transaction->tra_save_point->sav_number >= sav_number)
+					transaction->tra_save_point->getNumber() >= savNumber)
 				{
 					transaction->rollforwardSavepoint(tdbb);
 				}
 
 				// Restore the savepoint initially created by EXE_start
-				VIO_start_save_point(tdbb, transaction);
+				transaction->startSavepoint();
 				break;
 			}
 
 			case CMD_ROLLBACK:
 			{
-				transaction->rollbackToSavepoint(tdbb, savepoint->sav_number);
+				transaction->rollbackToSavepoint(tdbb, savepoint->getNumber());
 
 				// Now set the savepoint again to allow to return to it later
-				VIO_start_save_point(tdbb, transaction);
-				transaction->tra_save_point->sav_flags |= SAV_user;
-				transaction->tra_save_point->sav_name = name;
+				Savepoint* const savepoint = transaction->startSavepoint();
+				savepoint->setName(name);
 				break;
 			}
 
@@ -7817,7 +7752,6 @@ void SavePointNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 const StmtNode* SavePointNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
 {
 	jrd_tra* transaction = request->req_transaction;
-	jrd_tra* sysTransaction = request->req_attachment->getSysTransaction();
 
 	switch (blrOp)
 	{
@@ -7825,8 +7759,8 @@ const StmtNode* SavePointNode::execute(thread_db* tdbb, jrd_req* request, ExeSta
 			if (request->req_operation == jrd_req::req_evaluate)
 			{
 				// Start a save point.
-				if (transaction != sysTransaction)
-					VIO_start_save_point(tdbb, transaction);
+				if (!(transaction->tra_flags & TRA_system))
+					transaction->startSavepoint();
 
 				request->req_operation = jrd_req::req_return;
 			}
@@ -7837,7 +7771,7 @@ const StmtNode* SavePointNode::execute(thread_db* tdbb, jrd_req* request, ExeSta
 				request->req_operation == jrd_req::req_unwind)
 			{
 				// If any requested modify/delete/insert ops have completed, forget them.
-				if (transaction != sysTransaction)
+				if (!(transaction->tra_flags & TRA_system))
 				{
 					// If an error is still pending when the savepoint is supposed to end, then the
 					// application didn't handle the error and the savepoint should be undone.
@@ -7982,6 +7916,8 @@ void SetRoleNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** transact
 	UserId* user = attachment->att_user;
 	fb_assert(user);
 
+	user->usr_granted_roles.clear();
+
 	if (trusted)
 	{
 		if (!user->usr_trusted_role.hasData())
@@ -7995,7 +7931,17 @@ void SetRoleNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** transact
 		user->usr_sql_role_name = roleName.c_str();
 	}
 
-	if (SCL_admin_role(tdbb, user->usr_sql_role_name.c_str()))
+	if (!user->usr_sql_role_name.isEmpty() || user->usr_sql_role_name != NULL_ROLE)
+	{
+		// Add role itself and all roles cumulatively granted to it. Not only default.
+		user->usr_granted_roles.add(user->usr_sql_role_name);
+		SCL_find_granted_roles(tdbb, user->usr_sql_role_name, true, user->usr_granted_roles, false);
+	}
+	// Add all default roles granted to user
+	SCL_find_granted_roles(tdbb, user->usr_user_name, false, user->usr_granted_roles, true);
+
+
+	if (SCL_admin_role(tdbb, user->usr_granted_roles))
 		user->usr_flags |= USR_dba;
 	else
 		user->usr_flags &= ~USR_dba;

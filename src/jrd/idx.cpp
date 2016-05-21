@@ -514,6 +514,8 @@ void IDX_create_index(thread_db* tdbb,
 	if (!ifl_data.ifl_duplicates)
 		scb->sort(tdbb);
 
+	// ASF: We have a callback accessing ifl_data, so don't join above and below if's.
+
 	if (!ifl_data.ifl_duplicates)
 		BTR_create(tdbb, creation, selectivity);
 
@@ -584,7 +586,7 @@ IndexBlock* IDX_create_index_block(thread_db* tdbb, jrd_rel* relation, USHORT id
 	Lock* lock = FB_NEW_RPT(*relation->rel_pool, 0)
 		Lock(tdbb, sizeof(SLONG), LCK_expression, index_block, index_block_flush);
 	index_block->idb_lock = lock;
-	lock->lck_key.lck_long = (relation->rel_id << 16) | index_block->idb_id;
+	lock->setKey((relation->rel_id << 16) | index_block->idb_id);
 
 	return index_block;
 }

@@ -196,7 +196,7 @@ const ULONG FIRST_SCN_PAGE	= 2;
 // Page size limits
 
 const USHORT MIN_PAGE_SIZE		= 4096;
-const USHORT MAX_PAGE_SIZE		= 16384;
+const USHORT MAX_PAGE_SIZE		= 32768;
 
 const USHORT DEFAULT_PAGE_SIZE	= 8192;
 
@@ -706,5 +706,8 @@ const USHORT PAGE_ALIGNMENT = 1024;
 
 // size of raw I/O operation for header page
 const USHORT RAW_HEADER_SIZE = 1024;	// ROUNDUP(HDR_SIZE, PAGE_ALIGNMENT);
+
+// max number of table formats (aka versions), limited by "UCHAR rhd_format"
+const int MAX_TABLE_VERSIONS = 255;
 
 #endif // JRD_ODS_H

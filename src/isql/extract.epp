@@ -98,14 +98,8 @@ static void list_views();
 
 static const char* const Procterm = "^";	// TXNN: script use only
 
-/* Maybe 512 would be really enough as Print_buffer size, but
-   as we have PRINT_BUFFER_LENGTH in isql.h, we should use it
-   FSG 17.Nov.2000
-*/
-
-static TEXT Print_buffer[PRINT_BUFFER_LENGTH];
 static TEXT SQL_identifier[BUFFER_LENGTH128];
-static TEXT SQL_identifier2[BUFFER_LENGTH128];
+static TEXT SQL_identifier2[BUFFER_XLARGE]; // should be >= 1026 bytes (exception text + two quotes)
 
 
 
@@ -400,7 +394,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				char_sets[0] = '\0';
 				collation = RFR.RDB$COLLATION_ID;
 				char_set_id = FLD.RDB$CHARACTER_SET_ID;
-				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, true, false, char_sets);
+				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, true, false, true, char_sets);
 				if (char_sets[0])
 					isqlGlob.prints(char_sets);
 			}
@@ -453,7 +447,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				if (!FLD.RDB$CHARACTER_SET_ID.NULL)
 					char_set_id = FLD.RDB$CHARACTER_SET_ID;
 				if ((char_set_id != default_char_set_id) || collation)
-					ISQL_get_character_sets (char_set_id, 0, false, false, char_sets);
+					ISQL_get_character_sets (char_set_id, 0, false, false, true, char_sets);
 				if (char_sets[0])
 					isqlGlob.prints(char_sets);
 				// CVC: Someone deleted the code that checks intchar when handling collations
@@ -523,7 +517,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 					if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 					{
 						IUTILS_copy_SQL_id (CON.RDB$CONSTRAINT_NAME, SQL_identifier, DBL_QUOTE);
-						sprintf (Print_buffer, " CONSTRAINT %s", SQL_identifier);
+						isqlGlob.printf(" CONSTRAINT %s", SQL_identifier);
 					}
 					else
 						isqlGlob.printf(" CONSTRAINT %s", CON.RDB$CONSTRAINT_NAME);
@@ -542,7 +536,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		if (collation)
 		{
 			char_sets[0] = '\0';
-			ISQL_get_character_sets (char_set_id, collation, true, false, char_sets);
+			ISQL_get_character_sets (char_set_id, collation, true, false, true, char_sets);
 			if (char_sets[0])
 				isqlGlob.prints(char_sets);
 		}
@@ -777,7 +771,7 @@ static void get_procedure_args(const char* proc_name)
 				{
 					char_sets[0] = '\0';
 					ISQL_get_character_sets(FLD.RDB$CHARACTER_SET_ID, prm_collation_id, true,
-						!prm_null_flag_null && prm_null_flag, char_sets);
+						!prm_null_flag_null && prm_null_flag, true, char_sets);
 					if (char_sets[0])
 						isqlGlob.prints(char_sets);
 				}
@@ -825,7 +819,7 @@ static void get_procedure_args(const char* proc_name)
 						FLD.RDB$CHARACTER_SET_ID = 0;
 
 					ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, collation, false,
-						!prm_null_flag_null && prm_null_flag, char_sets);
+						!prm_null_flag_null && prm_null_flag, true, char_sets);
 					if (char_sets[0])
 						isqlGlob.prints(char_sets);
 				}
@@ -993,7 +987,7 @@ static void get_function_args_ods12(const char* func_name, USHORT out_arg)
 				{
 					char_sets[0] = '\0';
 					ISQL_get_character_sets(FLD.RDB$CHARACTER_SET_ID, prm_collation_id, true,
-						!prm_null_flag_null && prm_null_flag, char_sets);
+						!prm_null_flag_null && prm_null_flag, true, char_sets);
 					if (char_sets[0])
 						isqlGlob.prints(char_sets);
 				}
@@ -1041,7 +1035,7 @@ static void get_function_args_ods12(const char* func_name, USHORT out_arg)
 						FLD.RDB$CHARACTER_SET_ID = 0;
 
 					ISQL_get_character_sets(FLD.RDB$CHARACTER_SET_ID, collation, false,
-						!prm_null_flag_null && prm_null_flag, char_sets);
+						!prm_null_flag_null && prm_null_flag, true, char_sets);
 
 					if (char_sets[0])
 						isqlGlob.prints(char_sets);
@@ -1296,6 +1290,7 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 			return OBJECT_NOT_FOUND;
 		END_ERROR
 
+		/***
 		FOR FLD IN RDB$FIELDS WITH
 			FLD.RDB$FIELD_NAME NOT MATCHING "RDB$+" USING "+=[0-9][0-9]* *"
 			AND FLD.RDB$SYSTEM_FLAG NE 1
@@ -1351,6 +1346,7 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 			ISQL_errmsg(fbStatus);
 			return OBJECT_NOT_FOUND;
 		END_ERROR
+		***/
 
 		// Process DDL permissions
 		for (int i = obj_database; i < obj_type_MAX; i++)
@@ -2234,7 +2230,8 @@ static void list_domain_table(const SCHAR* table_name, SSHORT default_char_set_i
 			if ((FLD.RDB$CHARACTER_SET_ID != default_char_set_id) ||
 				(!FLD.RDB$COLLATION_ID.NULL && FLD.RDB$COLLATION_ID != 0))
 			{
-				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, false, false, char_sets);
+				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, false, false, true,
+					char_sets);
 			}
 			if (char_sets[0])
 				isqlGlob.prints(char_sets);
@@ -2264,7 +2261,9 @@ static void list_domain_table(const SCHAR* table_name, SSHORT default_char_set_i
 		if (!FLD.RDB$COLLATION_ID.NULL && FLD.RDB$COLLATION_ID != 0)
 		{
 			char_sets[0] = 0;
-			ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID, true, false, char_sets);
+			ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID, true, false,
+				true, char_sets);
+
 			if (char_sets[0])
 				isqlGlob.prints(char_sets);
 		}
@@ -2353,7 +2352,8 @@ static void list_domains(SSHORT default_char_set_id)
 			if ((FLD.RDB$CHARACTER_SET_ID != default_char_set_id) ||
 				(!FLD.RDB$COLLATION_ID.NULL && FLD.RDB$COLLATION_ID != 0))
 			{
-				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, false, false, char_sets);
+				ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, false, false, true,
+					char_sets);
 			}
 			if (char_sets[0])
 				isqlGlob.prints(char_sets);
@@ -2379,7 +2379,9 @@ static void list_domains(SSHORT default_char_set_id)
 		if (!FLD.RDB$COLLATION_ID.NULL && FLD.RDB$COLLATION_ID != 0)
 		{
 			char_sets[0] = 0;
-			ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID, true, false, char_sets);
+			ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, FLD.RDB$COLLATION_ID, true, false,
+				true, char_sets);
+
 			if (char_sets[0])
 				isqlGlob.prints(char_sets);
 		}
@@ -2522,7 +2524,9 @@ static void listRelationComputed(LegacyTables flag, SSHORT default_char_set_id)
 					char_sets[0] = '\0';
 					collation = RFR.RDB$COLLATION_ID;
 					char_set_id = FLD.RDB$CHARACTER_SET_ID;
-					ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, true, false, char_sets);
+					ISQL_get_character_sets (FLD.RDB$CHARACTER_SET_ID, 0, true, false, true,
+						char_sets);
+
 					if (char_sets[0])
 						isqlGlob.prints(char_sets);
 				}
@@ -2575,7 +2579,7 @@ static void listRelationComputed(LegacyTables flag, SSHORT default_char_set_id)
 					if (!FLD.RDB$CHARACTER_SET_ID.NULL)
 						char_set_id = FLD.RDB$CHARACTER_SET_ID;
 					if ((char_set_id != default_char_set_id) || collation)
-						ISQL_get_character_sets (char_set_id, 0, false, false, char_sets);
+						ISQL_get_character_sets (char_set_id, 0, false, false, true, char_sets);
 					if (char_sets[0])
 						isqlGlob.prints(char_sets);
 					// CVC: Someone deleted the code that checks intchar when handling collations
@@ -3161,7 +3165,7 @@ static void list_generators()
 					isqlGlob.printf(" START WITH %" SQUADFORMAT, G2.RDB$INITIAL_VALUE);
 
 				if (G2.RDB$GENERATOR_INCREMENT != 1)
-					isqlGlob.printf(" INCREMENT %ld", G2.RDB$GENERATOR_INCREMENT);
+					isqlGlob.printf(" INCREMENT %" SLONGFORMAT, G2.RDB$GENERATOR_INCREMENT);
 
 			END_FOR
 			ON_ERROR

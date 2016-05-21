@@ -348,6 +348,7 @@ ComparativeBoolNode::ComparativeBoolNode(MemoryPool& pool, UCHAR aBlrOp,
 			ValueExprNode* aArg1, ValueExprNode* aArg2, ValueExprNode* aArg3)
 	: TypedNode<BoolExprNode, ExprNode::TYPE_COMPARATIVE_BOOL>(pool),
 	  blrOp(aBlrOp),
+	  dsqlCheckBoolean(false),
 	  dsqlFlag(DFLAG_NONE),
 	  arg1(aArg1),
 	  arg2(aArg2),
@@ -454,6 +455,18 @@ BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		procArg2,
 		doDsqlPass(dsqlScratch, procArg3));
 
+	if (dsqlCheckBoolean)
+	{
+		dsc desc;
+		MAKE_desc(dsqlScratch, &desc, node->arg1);
+
+		if (desc.dsc_dtype != dtype_boolean && !desc.isNull())
+		{
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				Arg::Gds(isc_invalid_boolean_usage));
+		}
+	}
+
 	switch (blrOp)
 	{
 		case blr_eql:
@@ -478,18 +491,6 @@ BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			{
 				// ? BETWEEN Y AND ? case
 				PASS1_set_parameter_type(dsqlScratch, node->arg3, procArg2, false);
-			}
-
-			dsc desc1, desc2;
-
-			MAKE_desc(dsqlScratch, &desc1, node->arg1);
-			MAKE_desc(dsqlScratch, &desc2, procArg2);
-
-			if ((desc1.dsc_dtype == dtype_boolean || desc2.dsc_dtype == dtype_boolean) &&
-				!(desc1.isNull() || desc2.isNull()) && desc1.dsc_dtype != desc2.dsc_dtype)
-			{
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					Arg::Gds(isc_invalid_boolean_usage));
 			}
 
 			break;
@@ -1571,6 +1572,7 @@ BoolExprNode* NotBoolNode::process(DsqlCompilerScratch* dsqlScratch, bool invert
 				ComparativeBoolNode* node = FB_NEW_POOL(getPool()) ComparativeBoolNode(
 					getPool(), newBlrOp, cmpArg->arg1, cmpArg->arg2);
 				node->dsqlSpecialArg = cmpArg->dsqlSpecialArg;
+				node->dsqlCheckBoolean = cmpArg->dsqlCheckBoolean;
 
 				if (cmpArg->dsqlFlag == ComparativeBoolNode::DFLAG_ANSI_ANY)
 					node->dsqlFlag = ComparativeBoolNode::DFLAG_ANSI_ALL;

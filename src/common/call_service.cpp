@@ -273,12 +273,11 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 
 	userInfoToSpb
 
-	@brief	Writes data from awful borland's struct internal_user_data
-	to not less awful borland's format of spb.
+	@brief	Writes data from UserData to spb.
 
 
 	@param spb
-	@param userInfo
+	@param userData
 
  **/
 static void userInfoToSpb(char*& spb, Auth::UserData& userData)

@@ -303,7 +303,7 @@ USHORT UserManagement::put(Auth::DynamicUserData* userData)
 }
 
 void UserManagement::checkSecurityResult(int errcode, IStatus* status,
-	const char* userName, int operation)
+	const char* userName, unsigned operation)
 {
 	if (!errcode)
 	{

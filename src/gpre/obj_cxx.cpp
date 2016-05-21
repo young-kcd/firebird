@@ -1147,7 +1147,7 @@ static void gen_blr(void* /*user_arg*/, SSHORT /*offset*/, const char* string)
 						{
 							char d = 0;
 							if (p1 < q && ((d = *p1++) == '_' || d == '$'))
-								strncpy(q1 - 4, "isc", 3);
+								memcpy(q1 - 4, "isc", 3);
 							else if (d)
 								*q1++ = d;
 						}

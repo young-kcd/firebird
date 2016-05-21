@@ -447,11 +447,10 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 			transaction_flush(tdbb, FLUSH_SYSTEM, 0);
 
 		transaction->tra_flags &= ~TRA_prepared;
+
 		// Get rid of all user savepoints
-		while (transaction->tra_save_point && !(transaction->tra_save_point->sav_flags & SAV_trans_level))
-		{
+		while (transaction->tra_save_point && !transaction->tra_save_point->isRoot())
 			transaction->rollforwardSavepoint(tdbb);
-		}
 
 		trace.finish(ITracePlugin::RESULT_SUCCESS);
 		return;
@@ -1004,7 +1003,7 @@ bool TRA_is_active(thread_db* tdbb, TraNumber number)
 	CHECK_DBB(dbb);
 
 	Lock temp_lock(tdbb, sizeof(TraNumber), LCK_tra);
-	temp_lock.lck_key.lck_long = number;
+	temp_lock.setKey(number);
 
 	// If we can't get a lock on the transaction, it must be active
 
@@ -1350,15 +1349,17 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 	{
 		// Free all savepoint data
 		// Undo data space and BLOBs will be released in destructor
-		while (transaction->tra_save_point)
-		{
-			Savepoint* const next = transaction->tra_save_point->sav_next;
-			delete transaction->tra_save_point;
-			transaction->tra_save_point = next;
-		}
+		Savepoint::destroy(transaction->tra_save_point);
+		fb_assert(!transaction->tra_save_point);
 	}
 	else
-		VIO_temp_cleanup(transaction);
+	{
+		// Remove undo data for GTT ON COMMIT DELETE ROWS as their data will be released
+		// at transaction end anyway and we don't need to waste time backing it out
+
+		for (Savepoint::Iterator iter(transaction->tra_save_point); *iter; ++iter)
+			(*iter)->cleanupTempData();
+	}
 
 	int state = tra_dead;
 
@@ -1372,10 +1373,8 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 			// Release all user savepoints except transaction one
 			// It will clean up blob ids and temporary space anyway but faster than rollback
 			// because record data won't be updated with intermediate versions
-			while (transaction->tra_save_point && !(transaction->tra_save_point->sav_flags & SAV_trans_level))
-			{
+			while (transaction->tra_save_point && !transaction->tra_save_point->isRoot())
 				transaction->rollforwardSavepoint(tdbb);
-			}
 
 			if (transaction->tra_save_point) // we still can use undo log for rollback, it wasn't reset because of no_auto_undo flag or size
 			{
@@ -1920,7 +1919,7 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, TraNumber number, jrd_tra::wait_t 
 	if (wait != jrd_tra::tra_no_wait)
 	{
 		Lock temp_lock(tdbb, sizeof(TraNumber), LCK_tra);
-		temp_lock.lck_key.lck_long = number;
+		temp_lock.setKey(number);
 
 		const SSHORT timeout = (wait == jrd_tra::tra_wait) ? trans->getLockWait() : 0;
 
@@ -2460,7 +2459,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 	if (old_lock)
 	{
 		new_lock = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) Lock(tdbb, sizeof(TraNumber), LCK_tra);
-		new_lock->lck_key.lck_long = new_number;
+		new_lock->setKey(new_number);
 		new_lock->lck_data = transaction->tra_lock->lck_data;
 
 		if (!LCK_lock(tdbb, new_lock, LCK_write, LCK_WAIT))
@@ -2515,10 +2514,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 
 	// All savepoint were already released in TRA_commit/TRA_rollback except, may be, empty transaction-level one
 	if (!transaction->tra_save_point && !(transaction->tra_flags & TRA_no_auto_undo))
-	{
-		VIO_start_save_point(tdbb, transaction);	// start new savepoint if necessary
-		transaction->tra_save_point->sav_flags |= SAV_trans_level;
-	}
+		transaction->startSavepoint(true);	// start new savepoint if necessary
 
 	if (transaction->tra_flags & TRA_precommitted)
 	{
@@ -3166,7 +3162,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	trans->tra_oldest_active = active;
 
 	trans->tra_lock = lock;
-	lock->lck_key.lck_long = number;
+	lock->setKey(number);
 
 	// Put the TID of the oldest active transaction (from the header page)
 	// in the new transaction's lock.
@@ -3233,7 +3229,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 
 		if (oldest_state == tra_active)
 		{
-			temp_lock.lck_key.lck_long = active;
+			temp_lock.setKey(active);
 			TraNumber data = LCK_read_data(tdbb, &temp_lock);
 			if (!data)
 			{
@@ -3342,11 +3338,8 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	// a savepoint to be started.  This savepoint will be used to
 	// undo the transaction if it rolls back.
 
-	if (trans != attachment->getSysTransaction() && !(trans->tra_flags & TRA_no_auto_undo))
-	{
-		VIO_start_save_point(tdbb, trans);
-		trans->tra_save_point->sav_flags |= SAV_trans_level;
-	}
+	if (!(trans->tra_flags & TRA_system) && !(trans->tra_flags & TRA_no_auto_undo))
+		trans->startSavepoint(true);
 
 	// if the user asked us to restart all requests in this attachment,
 	// do so now using the new transaction
@@ -3476,7 +3469,7 @@ MemoryPool* jrd_tra::getAutonomousPool()
 	return tra_autonomous_pool;
 }
 
-Record* jrd_tra::findNextUndo(VerbAction* before_this, jrd_rel* relation, SINT64 number)
+Record* jrd_tra::findNextUndo(VerbAction* stopAction, jrd_rel* relation, SINT64 number)
 /**************************************
  *
  *	f i n d N e x t U n d o
@@ -3484,22 +3477,24 @@ Record* jrd_tra::findNextUndo(VerbAction* before_this, jrd_rel* relation, SINT64
  **************************************
  *
  * Functional description
- *	for given record find next undo data in stack of savepoint (if any).
+ *	For given record find next undo data in stack of savepoint (if any).
  *
  **************************************/
 {
 	UndoItem* result = NULL;
-	for (Savepoint* itr = tra_save_point; itr; itr = itr->sav_next)
+
+	for (Savepoint::Iterator iter(tra_save_point); *iter; ++iter)
 	{
-		for (VerbAction* action = itr->sav_verb_actions; action; action = action->vct_next)
-		{
-			if (action == before_this)
-				return result?result->setupRecord(this):NULL;
-			if (action->vct_relation == relation && action->vct_undo && action->vct_undo->locate(number))
-				result =  &(action->vct_undo->current());
-		}
+		VerbAction* const action = (*iter)->getAction(relation);
+
+		if (action == stopAction)
+			return result ? result->setupRecord(this) : NULL;
+
+		if (action && action->vct_undo && action->vct_undo->locate(number))
+			result = &(action->vct_undo->current());
 	}
-	fb_assert(false); // verb_action disappeared from savepoint stack.
+
+	fb_assert(false);	// verb_action disappeared from savepoint stack
 	return NULL;
 }
 
@@ -3511,18 +3506,17 @@ void jrd_tra::listStayingUndo(jrd_rel* relation, SINT64 number, RecordStack &sta
  **************************************
  *
  * Functional description
- *	for given record find undo data in stack of savepoint (if any) and push it into list.
+ *	For given record find undo data in stack of savepoint (if any) and push it into list.
  *  Except one from given verb action.
  *
  **************************************/
 {
-	for (Savepoint* itr = tra_save_point; itr; itr = itr->sav_next)
+	for (Savepoint::Iterator iter(tra_save_point); *iter; ++iter)
 	{
-		for (VerbAction* action = itr->sav_verb_actions; action; action = action->vct_next)
-		{
-			if (action->vct_relation == relation && action->vct_undo && action->vct_undo->locate(number))
-				staying.push(action->vct_undo->current().setupRecord(this));
-		}
+		VerbAction* const action = (*iter)->getAction(relation);
+
+		if (action && action->vct_undo && action->vct_undo->locate(number))
+			staying.push(action->vct_undo->current().setupRecord(this));
 	}
 }
 
@@ -3536,38 +3530,55 @@ void jrd_tra::releaseAutonomousPool(MemoryPool* toRelease)
 	}
 }
 
-void jrd_tra::rollbackSavepoint(thread_db* tdbb)
+Savepoint* jrd_tra::startSavepoint(bool root)
 /**************************************
  *
- *	 ro l l b a c k S a v e p o i n t
+ *	 s t a r t S a v e p o i n t
  *
  **************************************
  *
  * Functional description
- *	Rollback one savepoint and free it.
+ *	Start a new savepoint. Reuse some priorly allocated one, if exists.
  *
  **************************************/
 {
-	if (tra_flags & TRA_system)
-	{
-		return;
-	}
+	Savepoint* savepoint = tra_save_free;
 
-	if (tra_save_point)
+	if (savepoint)
+		tra_save_free = savepoint->getNext();
+	else
+		savepoint = FB_NEW_POOL(*tra_pool) Savepoint(this);
+
+	const SavNumber number = ++tra_save_point_number;
+	savepoint->init(number, root, tra_save_point);
+	tra_save_point = savepoint;
+
+	return savepoint;
+}
+
+void jrd_tra::rollbackSavepoint(thread_db* tdbb)
+/**************************************
+ *
+ *	 r o l l b a c k S a v e p o i n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Rollback last savepoint and free it.
+ *
+ **************************************/
+{
+	if (tra_save_point && !(tra_flags & TRA_system))
 	{
 		Jrd::ContextPoolHolder context(tdbb, tra_pool);
-		tra_save_point->rollback(tdbb);  // this call can change sav_next
-		Savepoint* temp = tra_save_point->sav_next;
-		tra_save_point->sav_next = tra_save_free;
-		tra_save_free = tra_save_point;
-		tra_save_point = temp;
+		tra_save_point = tra_save_point->rollback(tdbb);
 	}
 }
 
-void jrd_tra::rollbackToSavepoint(thread_db* tdbb, SLONG number)
+void jrd_tra::rollbackToSavepoint(thread_db* tdbb, SavNumber number)
 /**************************************
  *
- *	 ro l l b a c k T o S a v e p o i n t
+ *	 r o l l b a c k T o S a v e p o i n t
  *
  **************************************
  *
@@ -3579,15 +3590,17 @@ void jrd_tra::rollbackToSavepoint(thread_db* tdbb, SLONG number)
  *
  **************************************/
 {
-	// merge all but one folowing savepoints into one
-	while(tra_save_point && tra_save_point->sav_number > number &&
-		  tra_save_point->sav_next && tra_save_point->sav_next->sav_number >= number)
+	// Merge all but one folowing savepoints into one
+	while (tra_save_point && tra_save_point->getNumber() > number &&
+		tra_save_point->getNext() && tra_save_point->getNext()->getNumber() >= number)
 	{
 		rollforwardSavepoint(tdbb);
 	}
+
 	// Check that savepoint with given number really exists
-	fb_assert(tra_save_point && tra_save_point->sav_number == number);
-	if (tra_save_point && tra_save_point->sav_number >= number) // second line of defence
+	fb_assert(tra_save_point && tra_save_point->getNumber() == number);
+
+	if (tra_save_point && tra_save_point->getNumber() >= number) // second line of defence
 	// under no circumstances a savepoint with smaller number should be rolled back
 	{
 		// Undo the savepoint
@@ -3599,29 +3612,19 @@ void jrd_tra::rollbackToSavepoint(thread_db* tdbb, SLONG number)
 void jrd_tra::rollforwardSavepoint(thread_db* tdbb)
 /**************************************
  *
- *	 ro l l f o r w a r d S a v e p o i n t
+ *	 r o l l f o r w a r d S a v e p o i n t
  *
  **************************************
  *
  * Functional description
- *	Apply one savepoint and free it.
+ *	Apply last savepoint and free it.
  *
  **************************************/
 {
-	if (tra_flags & TRA_system)
-	{
-		return;
-	}
-
-	if (tra_save_point)
+	if (tra_save_point && !(tra_flags & TRA_system))
 	{
 		Jrd::ContextPoolHolder context(tdbb, tra_pool);
-
-		tra_save_point->rollforward(tdbb);  // this call can change sav_next
-		Savepoint* temp = tra_save_point->sav_next;
-		tra_save_point->sav_next = tra_save_free;
-		tra_save_free = tra_save_point;
-		tra_save_point = temp;
+		tra_save_point = tra_save_point->rollforward(tdbb);
 	}
 }
 
@@ -3801,457 +3804,3 @@ void jrd_tra::eraseSecDbContext()
 	delete tra_sec_db_context;
 	tra_sec_db_context = NULL;
 }
-
-void Savepoint::rollback(thread_db* tdbb)
-/**************************************
- *
- *      r o l l b a c k
- *
- **************************************
- *
- * Functional description
- *      Undo changes made in this savepoint.
- *		Perform index and BLOB cleanup if needed.
- *		At the exit Savepoint is clear and safe to reuse.
- *
- **************************************/
-{
-	jrd_tra* old_tran = tdbb->getTransaction();
-	try
-	{
-		DFW_delete_deferred(sav_trans, sav_number);
-		sav_flags &= ~SAV_force_dfw;
-
-		tdbb->tdbb_flags |= TDBB_verb_cleanup;
-		tdbb->setTransaction(sav_trans);
-
-		while (sav_verb_actions)
-		{
-			sav_verb_actions->undo(tdbb, sav_trans);
-			VerbAction* temp = sav_verb_actions;
-			sav_verb_actions = sav_verb_actions->vct_next;
-			temp->vct_next = sav_verb_free;
-			sav_verb_free = temp;
-		}
-		tdbb->setTransaction(old_tran);
-		tdbb->tdbb_flags &= ~TDBB_verb_cleanup;
-	}
-	catch (const Exception& ex)
-	{
-		Arg::StatusVector error(ex);
-		tdbb->setTransaction(old_tran);
-		tdbb->tdbb_flags &= ~TDBB_verb_cleanup;
-		sav_trans->tra_flags |= TRA_invalidated;
-		error.prepend(Arg::Gds(isc_savepoint_backout_err));
-		error.raise();
-	}
-	sav_verb_count = 0;
-	sav_flags = 0;
-}
-
-void Savepoint::rollforward(thread_db* tdbb)
-/**************************************
- *
- *      r o l l f o r w a r d
- *
- **************************************
- *
- * Functional description
- *      Merge changes made in this savepoint into next one.
- *		Perform index and BLOB cleanup if needed.
- *		At the exit Savepoint is clear and safe to reuse.
- *
- **************************************/
-{
-	jrd_tra* old_tran = tdbb->getTransaction();
-	try
-	{
-		// If the current to-be-cleaned-up savepoint is very big, and the next
-		// level savepoint is the transaction level savepoint, then get rid of
-		// the transaction level savepoint now (instead of after making the
-		// transaction level savepoint very very big).
-		if (sav_next &&	(sav_next->sav_flags & SAV_trans_level) && is_large(SAV_LARGE) < 0)
-		{
-			fb_assert(!sav_next->sav_next); // check that transaction savepoint is the last in list
-			// get rid of tx-level savepoint
-			sav_next->rollforward(tdbb);
-			sav_next->sav_next = sav_trans->tra_save_free;
-			sav_trans->tra_save_free = sav_next;
-			sav_next = NULL;
-		}
-
-		// Cleanup/merge deferred work/event post
-
-		if (sav_verb_actions || (sav_flags & SAV_force_dfw))
-		{
-			DFW_merge_work(sav_trans, sav_number, sav_next ? sav_next->sav_number : 0);
-
-			if (sav_next && (sav_flags & SAV_force_dfw))
-			{
-				sav_next->sav_flags |= SAV_force_dfw;
-			}
-			sav_flags &= ~SAV_force_dfw;
-		}
-
-		tdbb->tdbb_flags |= TDBB_verb_cleanup;
-		tdbb->setTransaction(sav_trans);
-
-		while (sav_verb_actions)
-		{
-			VerbAction* next_action = NULL;
-			if (sav_next)
-			{
-				next_action = sav_next->getAction(sav_verb_actions->vct_relation);
-				if (!next_action) // next savepoint didn't touch this table yet - send whole action
-				{
-					VerbAction* temp = sav_verb_actions->vct_next;
-					sav_verb_actions->vct_next = sav_next->sav_verb_actions;
-					sav_next->sav_verb_actions = sav_verb_actions;
-					sav_verb_actions = temp;
-					continue;
-				}
-			}
-			// No luck, merge actions in a slow way
-			sav_verb_actions->mergeTo(tdbb, sav_trans, next_action);
-
-			// Save merged action for reuse because allocation-deallocation is slow
-			VerbAction* temp = sav_verb_actions->vct_next;
-			sav_verb_actions->vct_next = sav_verb_free;
-			sav_verb_free = sav_verb_actions;
-			sav_verb_actions = temp;
-		}
-		tdbb->setTransaction(old_tran);
-		tdbb->tdbb_flags &= ~TDBB_verb_cleanup;
-	}
-	catch (...)
-	{
-		sav_trans->tra_flags |= TRA_invalidated;
-		tdbb->setTransaction(old_tran);
-		tdbb->tdbb_flags &= ~TDBB_verb_cleanup;
-		throw;
-	}
-
-	sav_verb_count = 0;
-	sav_flags = 0;
-	// preserve sav_number for further reuse
-
-	// If the only remaining savepoint is the 'transaction-level' savepoint
-	// that was started by TRA_start, then check if it hasn't grown out of
-	// bounds yet.  If it has, then give up on this transaction-level savepoint.
-	if (sav_next && (sav_next->sav_flags & SAV_trans_level) && sav_next->is_large(SAV_LARGE) < 0)
-	{
-		fb_assert(!sav_next->sav_next); // check that transaction savepoint is the last in list
-		// get rid of tx-level savepoint
-		sav_next->rollforward(tdbb);
-		sav_next->sav_next = sav_trans->tra_save_free;
-		sav_trans->tra_save_free = sav_next;
-		sav_next = NULL;
-	}
-}
-
-
-VerbAction* Savepoint::getAction(jrd_rel* relation)
-{
-	for (VerbAction* result = sav_verb_actions; result; result=result->vct_next)
-	{
-		if (result->vct_relation == relation)
-			return result;
-	}
-	return NULL;
-}
-
-IPTR Savepoint::is_large(IPTR size)
-{
-/**************************************
- *
- *	S a v e p o i n t : : i s _ l a r g e
- *
- **************************************
- *
- * Functional description
- *	Returns an approximate size in bytes of savepoint in-memory data, i.e. a
- *  measure of how big the current savepoint has gotten.
- *
- *  Notes:
- *
- *  - This routine does not take into account the data allocated to 'vct_undo'.
- *   Why? Because this routine is used to estimate size of transaction-level
- *   savepoint and transaction-level savepoint may not contain undo data as it is
- *   always the first savepoint in transaction.
- *
- *  - Function stops counting when return value gets negative.
- *
- *  - We use IPTR, not SLONG to care of case when user savepoint gets very,
- *   very big on 64-bit machine. Its size may overflow 32 significant bits of
- *   SLONG in this case
- *
- **************************************/
-	const VerbAction* verb_actions = sav_verb_actions;
-
-	// Iterate all tables changed under this savepoint
-	while (verb_actions)
-	{
-		// Estimate size used for record backout bitmaps for this table
-		if (verb_actions->vct_records) {
-			size -= verb_actions->vct_records->approxSize();
-		}
-
-		if (size < 0) {
-			break;
-		}
-		verb_actions = verb_actions->vct_next;
-	}
-
-	return size;
-}
-
-void VerbAction::garbage_collect_idx_lite(thread_db* tdbb, jrd_tra* transaction, SINT64 RecNumber, VerbAction* next_action, Record* going_record)
-/**************************************
- *
- *	g a r b a g e _ c o l l e c t _ i d x _ l i t e
- *
- **************************************
- *
- * Functional description
- *	Clean up index entries and referenced BLOBs.
- *  This routine uses smaller set of staying record than original VIO_garbage_collect_idx().
- *
- *  Notes:
- *
- *   This speed trick is possible only because btr.cpp:insert_node() allows duplicate nodes
- *  which work as an index entry reference counter.
- *
- **************************************/
-{
-	record_param rpb;
-	rpb.rpb_relation = vct_relation;
-	rpb.rpb_number.setValue(RecNumber);
-	rpb.rpb_record = NULL;
-	rpb.getWindow(tdbb).win_flags = 0;
-	rpb.rpb_transaction_nr = transaction->tra_number;
-
-	Record* next_ver;
-	AutoUndoRecord undo_next_ver(transaction->findNextUndo(this, vct_relation, RecNumber));
-	AutoPtr<Record> real_next_ver;
-
-	next_ver = undo_next_ver;
-
-	if (!DPM_get(tdbb, &rpb, LCK_read))
-	{
-		BUGCHECK(186);	// msg 186 record disappeared
-	}
-	else
-	{
-		if (next_ver || (rpb.rpb_flags & rpb_deleted))
-		{
-			CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
-		}
-		else
-		{
-			VIO_data(tdbb, &rpb, transaction->tra_pool);
-			next_ver = real_next_ver = rpb.rpb_record;
-		}
-	}
-	if (rpb.rpb_transaction_nr != transaction->tra_number)
-		BUGCHECK(185);	// msg 185 wrong record version
-
-	Record* prev_ver(NULL);
-	AutoUndoRecord undo_prev_ver;
-	AutoPtr<Record> real_prev_ver;
-	if (next_action && next_action->vct_undo && next_action->vct_undo->locate(RecNumber))
-	{
-		prev_ver = undo_prev_ver = next_action->vct_undo->current().setupRecord(transaction);
-	}
-	else if (rpb.rpb_b_page) // previous version exists and we have to find it in a hard way
-	{
-		record_param temp = rpb;
-		temp.rpb_record = NULL;
-		temp.rpb_page = rpb.rpb_b_page;
-		temp.rpb_line = rpb.rpb_b_line;
-		if (!DPM_fetch(tdbb, &temp, LCK_read))
-			BUGCHECK(291); // Back version disappeared
-		if (temp.rpb_flags & rpb_deleted)
-			CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
-		else
-			VIO_data(tdbb, &temp, transaction->tra_pool);
-		prev_ver = real_prev_ver = temp.rpb_record;
-	}
-	RecordStack going, staying;
-	going.push(going_record);
-	if (prev_ver)
-		staying.push(prev_ver);
-	if (next_ver)
-		staying.push(next_ver);
-
-	IDX_garbage_collect(tdbb, &rpb, going, staying);
-	BLB_garbage_collect(tdbb, going, staying, rpb.rpb_page, vct_relation);
-}
-
-void VerbAction::mergeTo(thread_db* tdbb, jrd_tra* transaction, VerbAction* next_action)
-/**************************************
- *
- *	m e r g e T o
- *
- **************************************
- *
- * Functional description
- *	Post bitmap of modified records and undo data to the next savepoint.
- *
- *  Notes:
- *
- *	If previous savepoint already touched a record, undo data must be dropped and
- *	all BLOBs it refers to should be cleaned out because under no circumstances
- *	this undo data can become an active record.
- *
- **************************************/
-{
-	// Merge undo records first
-	if (vct_undo && vct_undo->getFirst())
-	{
-		do
-		{
-			UndoItem& item = vct_undo->current();
-			if (item.hasData()) // this item wasn't released yet
-			{
-				SINT64 RecNumber = item.generate(NULL, item);
-				if (next_action && !(RecordBitmap::test(next_action->vct_records, RecNumber)))
-				{
-					if (!next_action->vct_undo)
-					{
-						next_action->vct_undo = new UndoItemTree(transaction->tra_pool);
-						// We cannot just push whole current undo items list, some items still may to be released
-					}
-					else
-					{
-						if (next_action->vct_undo->locate(RecNumber))
-						// It looks like something went wrong on previous loop and undo record was moved to next action but
-						// record bit in bitmap wasn't set
-						{
-							fb_assert(false);
-							item.clear();
-							continue;
-						}
-					}
-					next_action->vct_undo->add(item);
-					item.clear(); // Do not release undo data, it now belongs to next action
-					continue;
-				}
-				// garbage cleanup and release
-				// because going version for sure has all index entries successfully set up (in contrast with undo)
-				// we can use lightweigth version of garbage collection without collection of full staying list
-
-				AutoUndoRecord this_ver(item.setupRecord(transaction));
-
-				garbage_collect_idx_lite(tdbb, transaction, RecNumber, next_action, this_ver);
-
-				item.release(transaction);
-			}
-		}
-		while (vct_undo->getNext());
-		delete vct_undo;
-		vct_undo = NULL;
-	}
-
-	// Now - bitmap
-	if (next_action)
-	{
-		if (next_action->vct_records)
-		{
-			RecordBitmap** bm_or = RecordBitmap::bit_or(&vct_records, &next_action->vct_records);
-
-			if (*bm_or == vct_records) // if next bitmap has been merged into this bitmap - swap them
-			{
-				RecordBitmap* temp = next_action->vct_records;
-				next_action->vct_records = vct_records;
-				vct_records = temp;
-			}
-			RecordBitmap::reset(vct_records);
-		}
-		else // just push current bitmap as is
-		{
-			next_action->vct_records = vct_records;
-			vct_records = NULL;
-		}
-	}
-	else
-		RecordBitmap::reset(vct_records);
-}
-
-void VerbAction::undo(thread_db* tdbb, jrd_tra* transaction)
-{
-	record_param rpb;
-	rpb.rpb_relation = vct_relation;
-	rpb.rpb_number.setValue(BOF_NUMBER);
-	rpb.rpb_record = NULL;
-	rpb.getWindow(tdbb).win_flags = 0;
-	rpb.rpb_transaction_nr = transaction->tra_number;
-
-	RecordBitmap::Accessor accessor(vct_records);
-	if (accessor.getFirst())
-	{
-		do
-		{
-			rpb.rpb_number.setValue(accessor.current());
-			bool have_undo = vct_undo && vct_undo->locate(rpb.rpb_number.getValue());
-			if (!DPM_get(tdbb, &rpb, LCK_read))
-			{
-				BUGCHECK(186);	// msg 186 record disappeared
-			}
-			if (have_undo && !(rpb.rpb_flags & rpb_deleted))
-			{
-				VIO_data(tdbb, &rpb, transaction->tra_pool);
-			}
-			else
-			{
-				CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
-			}
-			if (rpb.rpb_transaction_nr != transaction->tra_number) {
-				BUGCHECK(185);	// msg 185 wrong record version
-			}
-			if (!have_undo)
-			{
-				VIO_backout(tdbb, &rpb, transaction);
-			}
-			else
-			{
-				AutoUndoRecord record(vct_undo->current().setupRecord(transaction));
-
-				Record* save_record = rpb.rpb_record;
-				record_param new_rpb = rpb;
-				if (rpb.rpb_flags & rpb_deleted)
-				{
-					rpb.rpb_record = NULL;
-				}
-				new_rpb.rpb_record = record;
-				new_rpb.rpb_address = record->getData();
-				new_rpb.rpb_length = record->getLength();
-				new_rpb.rpb_flags = 0;
-				Record* dead_record = rpb.rpb_record;
-				// This record will be in staying list twice. Ignorable overhead.
-				VIO_update_in_place(tdbb, transaction, &rpb, &new_rpb);
-				if (dead_record)
-				{
-					rpb.rpb_record = NULL; // VIO_garbage_collect_idx will play with this record dirty tricks
-					VIO_garbage_collect_idx(tdbb, transaction, &rpb, dead_record);
-				}
-				rpb.rpb_record = save_record;
-			}
-		} while (accessor.getNext());
-
-		delete rpb.rpb_record;
-	}
-
-	RecordBitmap::reset(vct_records);
-	if (vct_undo)
-	{
-		if (vct_undo->getFirst())
-		{
-			do {
-				vct_undo->current().release(transaction);
-			} while (vct_undo->getNext());
-		}
-		delete vct_undo;
-		vct_undo = NULL;
-	}
-}
-

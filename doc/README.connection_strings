@@ -107,6 +107,13 @@ Examples:
     inet://myserver:fb_db/mydb
     inet://localhost:fb_db/mydb
 
+  The "inet" protocol can be replaced by "inet4" or "inet6" to restrict client
+  to IPv4 or IPv6 addresses corresponding to supplied name ("inet" protocol
+  tries all addresses in the order determined by OS):
+
+    inet4://myserver/mydb
+    inet6://myserver/mydb
+
   Connect via named pipes:
 
     wnet://myserver/C:\db\mydb.fdb

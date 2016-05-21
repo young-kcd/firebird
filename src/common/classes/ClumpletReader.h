@@ -146,7 +146,7 @@ public:
 	}
 
 protected:
-	enum ClumpletType {TraditionalDpb, SingleTpb, StringSpb, IntSpb, ByteSpb, Wide};
+	enum ClumpletType {TraditionalDpb, SingleTpb, StringSpb, IntSpb, BigIntSpb, ByteSpb, Wide};
 	ClumpletType getClumpletType(UCHAR tag) const;
 	FB_SIZE_T getClumpletSize(bool wTag, bool wLength, bool wData) const;
 	void adjustSpbState();

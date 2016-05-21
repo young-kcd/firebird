@@ -66,6 +66,7 @@
 #include "dyn_consts.h"
 #include "../jrd/ibase.h"
 #include "../jrd/constants.h"
+#include "../common/utils_proto.h"
 
 #ifdef GPRE_FORTRAN
 #if defined AIX || defined AIX_PPC || defined __sun
@@ -1621,8 +1622,7 @@ public:
 	}
 	gpre_exception(const char* errmsg)
 	{
-		strncpy(msg, errmsg, sizeof(msg));
-		msg[sizeof(msg) - 1] = 0;
+		fb_utils::copy_terminate(msg, errmsg, sizeof(msg));
 	}
 	const char* what() const throw()
 	{

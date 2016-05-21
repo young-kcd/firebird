@@ -540,6 +540,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\Savepoint.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\sdw.cpp"
 				>
 			</File>
@@ -755,10 +759,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\gen\jrd\pcmet.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\..\..\gen\jrd\scl.cpp"
 					>
 				</File>
@@ -796,10 +796,6 @@
 				</File>
 				<File
 					RelativePath="..\..\..\src\jrd\met.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\pcmet.epp"
 					>
 				</File>
 				<File
@@ -1357,10 +1353,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\pass1_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\pcmet_proto.h"
 				>
 			</File>
 			<File

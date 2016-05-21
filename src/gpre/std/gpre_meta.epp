@@ -64,8 +64,7 @@ class MetIdentifier
 public:
 	explicit MetIdentifier(const char* s)
 	{
-		strncpy(name, s, NAME_SIZE);
-		name[NAME_SIZE - 1] = 0;
+		fb_utils::copy_terminate(name, s, NAME_SIZE);
 	}
 	operator char*() {return name;}
 	operator const char*() const {return name;}

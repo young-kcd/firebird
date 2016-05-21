@@ -2575,7 +2575,7 @@ namespace Firebird
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			int (CLOOP_CARG *operation)(IUser* self) throw();
+			unsigned (CLOOP_CARG *operation)(IUser* self) throw();
 			ICharUserField* (CLOOP_CARG *userName)(IUser* self) throw();
 			ICharUserField* (CLOOP_CARG *password)(IUser* self) throw();
 			ICharUserField* (CLOOP_CARG *firstName)(IUser* self) throw();
@@ -2601,9 +2601,16 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 2;
 
-		int operation()
+		static const unsigned OP_USER_ADD = 1;
+		static const unsigned OP_USER_MODIFY = 2;
+		static const unsigned OP_USER_DELETE = 3;
+		static const unsigned OP_USER_DISPLAY = 4;
+		static const unsigned OP_USER_SET_MAP = 5;
+		static const unsigned OP_USER_DROP_MAP = 6;
+
+		unsigned operation()
 		{
-			int ret = static_cast<VTable*>(this->cloopVTable)->operation(this);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->operation(this);
 			return ret;
 		}
 
@@ -10469,7 +10476,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static int CLOOP_CARG cloopoperationDispatcher(IUser* self) throw()
+		static unsigned CLOOP_CARG cloopoperationDispatcher(IUser* self) throw()
 		{
 			try
 			{
@@ -10478,7 +10485,7 @@ namespace Firebird
 			catch (...)
 			{
 				StatusType::catchException(0);
-				return static_cast<int>(0);
+				return static_cast<unsigned>(0);
 			}
 		}
 
@@ -10627,7 +10634,7 @@ namespace Firebird
 		{
 		}
 
-		virtual int operation() = 0;
+		virtual unsigned operation() = 0;
 		virtual ICharUserField* userName() = 0;
 		virtual ICharUserField* password() = 0;
 		virtual ICharUserField* firstName() = 0;

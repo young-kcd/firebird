@@ -34,7 +34,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/ByteChunk.h"
 #include "../common/classes/Nullable.h"
-#include "../jrd/vio_proto.h"
+#include "../jrd/Savepoint.h"
 #include "../dsql/errd_proto.h"
 
 namespace Jrd {
@@ -405,7 +405,7 @@ public:
 	bool compiled;
 	bool invalid;
 	Firebird::MetaName package;
-	Firebird::string packageOwner;
+	Firebird::MetaName packageOwner;
 	bool privateScope;
 	bool preserveDefaults;
 	SLONG udfReturnPos;
@@ -539,7 +539,7 @@ public:
 	bool compiled;
 	bool invalid;
 	Firebird::MetaName package;
-	Firebird::string packageOwner;
+	Firebird::MetaName packageOwner;
 	bool privateScope;
 	bool preserveDefaults;
 };
@@ -2118,6 +2118,7 @@ public:
 		  isGrant(aIsGrant),
 		  privileges(p),
 		  roles(p),
+		  defaultRoles(p),
 		  object(NULL),
 		  users(p),
 		  grantAdminOption(false),
@@ -2142,7 +2143,7 @@ protected:
 private:
 	void modifyPrivileges(thread_db* tdbb, jrd_tra* transaction, SSHORT option, const GranteeClause* user);
 	void grantRevoke(thread_db* tdbb, jrd_tra* transaction, const GranteeClause* object,
-		const GranteeClause* userNod, const char* privs, const Firebird::MetaName& field, int options);
+		const GranteeClause* userNod, const char* privs, Firebird::MetaName field, int options);
 	static void checkGrantorCanGrant(thread_db* tdbb, jrd_tra* transaction, const char* grantor,
 		const char* privilege, const Firebird::MetaName& relationName,
 		const Firebird::MetaName& fieldName, bool topLevel);
@@ -2197,6 +2198,7 @@ public:
 	bool isGrant;
 	Firebird::Array<PrivilegeClause> privileges;
 	Firebird::Array<GranteeClause> roles;
+	Firebird::Array<bool> defaultRoles;
 	NestConst<GranteeClause> object;
 	Firebird::Array<GranteeClause> users;
 	bool grantAdminOption;

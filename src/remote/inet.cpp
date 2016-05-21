@@ -453,7 +453,8 @@ static rem_port*		inet_try_connect(	PACKET*,
 									const TEXT*,
 									ClumpletReader&,
 									RefPtr<Config>*,
-									const PathName*);
+									const PathName*,
+									int);
 static bool		inet_write(XDR*);
 static rem_port* listener_socket(rem_port* port, USHORT flag, const addrinfo* pai);
 
@@ -532,7 +533,8 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 					   bool uv_flag,
 					   ClumpletReader &dpb,
 					   RefPtr<Config>* config,
-					   const PathName* ref_db_name)
+					   const PathName* ref_db_name,
+					   int af)
 {
 /**************************************
  *
@@ -624,7 +626,7 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 		}
 	}
 
-	rem_port* port = inet_try_connect(packet, rdb, file_name, node_name, dpb, config, ref_db_name);
+	rem_port* port = inet_try_connect(packet, rdb, file_name, node_name, dpb, config, ref_db_name, af);
 
 	P_ACPT* accept = NULL;
 	switch (packet->p_operation)
@@ -708,7 +710,8 @@ rem_port* INET_connect(const TEXT* name,
 					   PACKET* packet,
 					   USHORT flag,
 					   ClumpletReader* dpb,
-					   RefPtr<Config>* config)
+					   RefPtr<Config>* config,
+					   int af)
 {
 /**************************************
  *
@@ -800,7 +803,10 @@ rem_port* INET_connect(const TEXT* name,
 
 	struct addrinfo gai_hints;
 	memset(&gai_hints, 0, sizeof(gai_hints));
-	gai_hints.ai_family = ((packet || host.hasData() || !ipv6) ? AF_UNSPEC : AF_INET6);
+	if (packet)
+		gai_hints.ai_family = af;
+	else
+		gai_hints.ai_family = ((host.hasData() || !ipv6) ? AF_UNSPEC : AF_INET6);
 	gai_hints.ai_socktype = SOCK_STREAM;
 
 #if !defined(WIN_NT) && !defined(__clang__)
@@ -811,7 +817,7 @@ rem_port* INET_connect(const TEXT* name,
 
 	gai_hints.ai_flags =
 #ifndef ANDROID
-		AI_V4MAPPED |
+		((af == AF_UNSPEC) ? AI_V4MAPPED : 0) |
 #endif
 			AI_ADDRCONFIG | (packet ? 0 : AI_PASSIVE);
 
@@ -825,7 +831,8 @@ rem_port* INET_connect(const TEXT* name,
 		retry_gai = false;
 		n = getaddrinfo(host_str, protocol.c_str(), &gai_hints, &gai_result);
 
-		if ((n == EAI_FAMILY || (!host_str && n == EAI_NONAME)) && (gai_hints.ai_family == AF_INET6))
+		if ((n == EAI_FAMILY || (!host_str && n == EAI_NONAME)) &&
+			(gai_hints.ai_family == AF_INET6) && (af != AF_INET6))
 		{
 			// May be on a system without IPv6 support, try IPv4
 			gai_hints.ai_family = AF_UNSPEC;
@@ -2639,7 +2646,8 @@ static rem_port* inet_try_connect(PACKET* packet,
 								  const TEXT* node_name,
 								  ClumpletReader& dpb,
 								  RefPtr<Config>* config,
-								  const PathName* ref_db_name)
+								  const PathName* ref_db_name,
+								  int af)
 {
 /**************************************
  *
@@ -2671,7 +2679,7 @@ static rem_port* inet_try_connect(PACKET* packet,
 	rem_port* port = NULL;
 	try
 	{
-		port = INET_connect(node_name, packet, false, &dpb, config);
+		port = INET_connect(node_name, packet, false, &dpb, config, af);
 	}
 	catch (const Exception&)
 	{

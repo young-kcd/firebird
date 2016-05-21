@@ -777,9 +777,6 @@ void Trigger::compile(thread_db* tdbb)
 
 	if (!statement /*&& !compile_in_progress*/)
 	{
-		if (statement)
-			return;
-
 		compile_in_progress = true;
 		// Allocate statement memory pool
 		MemoryPool* new_pool = att->createPool();
@@ -1030,7 +1027,7 @@ static void		rollback(thread_db*, jrd_tra*, const bool);
 static void		purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsigned flags = 0);
 static void		getUserInfo(UserId&, const DatabaseOptions&, const char*, const char*,
 	const RefPtr<Config>*, bool, ICryptKeyCallback*);
-static void		makeRoleName(Database*, string&, DatabaseOptions&);
+static void		makeRoleName(Database*, MetaName &, DatabaseOptions&);
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
 
@@ -1101,7 +1098,7 @@ static void successful_completion(CheckStatusWrapper* s, ISC_STATUS acceptCode =
 }
 
 
-static void makeRoleName(Database* dbb, string& userIdRole, DatabaseOptions& options)
+static void makeRoleName(Database* dbb, MetaName& userIdRole, DatabaseOptions& options)
 {
 	if (userIdRole.isEmpty())
 		return;
@@ -1303,7 +1300,7 @@ static void trace_failed_attach(TraceManager* traceManager, const char* filename
 }
 
 
-void JRD_make_role_name(string& userIdRole, const int dialect)
+void JRD_make_role_name(MetaName& userIdRole, const int dialect)
 {
 	switch (dialect)
 	{
@@ -6539,6 +6536,12 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 
 	fb_assert(!dbb->locked());
 
+#ifdef SUPERSERVER_V2
+	TRA_header_write(tdbb, dbb, 0);	// Update transaction info on header page.
+#endif
+	if (flags & SHUT_DBB_RELEASE_POOLS)
+		TRA_update_counters(tdbb, dbb);
+
 	// Disable AST delivery as we're about to release all locks
 
 	{ // scope
@@ -6547,12 +6550,6 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 	}
 
 	// Shutdown file and/or remote connection
-
-#ifdef SUPERSERVER_V2
-	TRA_header_write(tdbb, dbb, 0);	// Update transaction info on header page.
-#endif
-	if (flags & SHUT_DBB_RELEASE_POOLS)
-		TRA_update_counters(tdbb, dbb);
 
 	VIO_fini(tdbb);
 
@@ -6993,9 +6990,8 @@ static void run_commit_triggers(thread_db* tdbb, jrd_tra* transaction)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	if (transaction == attachment->getSysTransaction())
+	if (transaction->tra_flags & TRA_system)
 		return;
 
 	// start a savepoint to rollback changes of all triggers

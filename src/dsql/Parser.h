@@ -188,8 +188,8 @@ public:
 private:
 	template <typename T> T* setupNode(Node* node)
 	{
-		node->line = (ULONG) lex.lines_bk;
-		node->column = (ULONG) (lex.last_token_bk - lex.line_start_bk + 1);
+		node->line = yyposn.firstLine;
+		node->column = yyposn.firstColumn;
 		return static_cast<T*>(node);
 	}
 
@@ -213,6 +213,8 @@ private:
 
 		ComparativeBoolNode* cmpNode = newNode<ComparativeBoolNode>(
 			blr_eql, value, MAKE_constant("1", CONSTANT_BOOLEAN));
+		cmpNode->dsqlCheckBoolean = true;
+
 		return cmpNode;
 	}
 

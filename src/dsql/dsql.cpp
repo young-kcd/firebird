@@ -546,8 +546,13 @@ void DSQL_execute_immediate(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tr
 
 		Jrd::ContextPoolHolder context(tdbb, &request->getPool());
 
-		// A select with a non zero output length is a singleton select
-		const bool singleton = reqTypeWithCursor(statement->getType()) && out_msg;
+		// A select having cursor is a singleton select when executed immediate
+		const bool singleton = reqTypeWithCursor(statement->getType());
+		if (singleton && !(out_msg && out_meta))
+		{
+			ERRD_post(Arg::Gds(isc_dsql_sqlda_err) <<
+					  Arg::Gds(isc_dsql_no_output_sqlda));
+		}
 
 		request->req_transaction = *tra_handle;
 

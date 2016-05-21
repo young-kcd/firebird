@@ -1945,14 +1945,14 @@ int put_message( att_type attribute, att_type attribute2, const TEXT* text, cons
 	else if (newlen <= MAX_USHORT)
 	{
 		if (!attribute2) // In theory, this never happens, because the caller knows what it's doing.
-			BURP_error(314, "");
+			BURP_error(314, true);
 		put(tdgbl, attribute2);
 		USHORT vax_value = (USHORT) newlen;
 		vax_value = (USHORT) gds__vax_integer((const UCHAR*) &vax_value, sizeof(vax_value));
 		put_block(tdgbl, (const UCHAR*) &vax_value, sizeof(vax_value));
 	}
 	else
-		BURP_error(315, "");
+		BURP_error(315, true);
 
 	if (newlen)
 		put_block(tdgbl, reinterpret_cast<const UCHAR*>(text), newlen);
@@ -3978,7 +3978,7 @@ void write_shadow_files()
  *	Write out files to use as shadows.
  *
  **************************************/
-	TEXT temp[GDS_NAME_LEN];
+	BASED ON RDB$FILES.RDB$FILE_NAME temp;
 	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();

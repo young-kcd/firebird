@@ -268,7 +268,7 @@ inline int wait(thread_db* tdbb, jrd_tra* transaction, const record_param* rpb)
 inline bool checkGCActive(thread_db* tdbb, record_param* rpb, int& state)
 {
 	Lock temp_lock(tdbb, sizeof(SINT64), LCK_record_gc);
-	temp_lock.lck_key.lck_long = ((SINT64) rpb->rpb_page << 16) | rpb->rpb_line;
+	temp_lock.setKey(((SINT64) rpb->rpb_page << 16) | rpb->rpb_line);
 
 	ThreadStatusGuard temp_status(tdbb);
 
@@ -288,7 +288,7 @@ inline bool checkGCActive(thread_db* tdbb, record_param* rpb, int& state)
 inline void waitGCActive(thread_db* tdbb, const record_param* rpb)
 {
 	Lock temp_lock(tdbb, sizeof(SINT64), LCK_record_gc);
-	temp_lock.lck_key.lck_long = ((SINT64) rpb->rpb_page << 16) | rpb->rpb_line;
+	temp_lock.setKey(((SINT64) rpb->rpb_page << 16) | rpb->rpb_line);
 
 	if (!LCK_lock(tdbb, &temp_lock, LCK_SR, LCK_WAIT))
 		ERR_punt();
@@ -300,7 +300,7 @@ inline Lock* lockGCActive(thread_db* tdbb, const jrd_tra* transaction, const rec
 {
 	AutoPtr<Lock> lock(FB_NEW_RPT(*tdbb->getDefaultPool(), 0)
 		Lock(tdbb, sizeof(SINT64), LCK_record_gc));
-	lock->lck_key.lck_long = ((SINT64) rpb->rpb_page << 16) | rpb->rpb_line;
+	lock->setKey(((SINT64) rpb->rpb_page << 16) | rpb->rpb_line);
 	lock->lck_data = transaction->tra_number;
 
 	ThreadStatusGuard temp_status(tdbb);
@@ -667,8 +667,8 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 
 bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
-							  jrd_tra* transaction,
-							  MemoryPool* pool, bool writelock)
+							  jrd_tra* transaction, MemoryPool* pool,
+							  bool writelock, bool noundo)
 {
 /**************************************
  *
@@ -728,7 +728,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 	rpb->rpb_runtime_flags &= ~(RPB_undo_data | RPB_undo_read);
 	int forceBack = 0;
 
-	if (state == tra_us && !(transaction->tra_flags & TRA_system))
+	if (state == tra_us && !noundo && !(transaction->tra_flags & TRA_system))
 	{
 		switch (get_undo_data(tdbb, transaction, rpb, pool))
 		{
@@ -1093,7 +1093,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 				rpb->rpb_transaction_nr, transaction->tra_number);
 #endif
 
-			if (!(rpb->rpb_flags & rpb_chained) && !(transaction->tra_flags & TRA_system))
+			if (!noundo && !(rpb->rpb_flags & rpb_chained) && !(transaction->tra_flags & TRA_system))
 			{
 				fb_assert(forceBack == 0);
 				forceBack = 0;
@@ -1430,9 +1430,8 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	if (rpb->rpb_runtime_flags & (RPB_refetch | RPB_undo_read))
 	{
-		rpb->rpb_runtime_flags |= RPB_no_undo;
-		VIO_refetch_record(tdbb, rpb, transaction, false);
-		rpb->rpb_runtime_flags &= ~(RPB_refetch | RPB_no_undo);
+		VIO_refetch_record(tdbb, rpb, transaction, false, true);
+		rpb->rpb_runtime_flags &= ~RPB_refetch;
 		fb_assert(!(rpb->rpb_runtime_flags & RPB_undo_read));
 	}
 
@@ -1838,10 +1837,10 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	if (rpb->rpb_transaction_nr == transaction->tra_number)
 	{
 		VIO_update_in_place(tdbb, transaction, rpb, &temp);
-		if (transaction->tra_save_point && transaction->tra_save_point->sav_verb_count)
-		{
+
+		if (transaction->tra_save_point && transaction->tra_save_point->isChanging())
 			verb_post(tdbb, transaction, rpb, rpb->rpb_undo);
-		}
+
 		return;
 	}
 
@@ -1897,10 +1896,9 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			MET_revoke(tdbb, transaction, object_name, revokee, privilege);
 		}
 	}
-	if (transaction->tra_save_point && transaction->tra_save_point->sav_verb_count)
-	{
+
+	if (transaction->tra_save_point && transaction->tra_save_point->isChanging())
 		verb_post(tdbb, transaction, rpb, 0);
-	}
 
 	// for an autocommit transaction, mark a commit as necessary
 
@@ -1909,9 +1907,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	// VIO_erase
 	if ((tdbb->getDatabase()->dbb_flags & DBB_gc_background) && !rpb->rpb_relation->isTemporary())
-	{
 		notify_garbage_collector(tdbb, rpb, transaction->tra_number);
-	}
 }
 
 
@@ -2358,7 +2354,7 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, jrd_tra* transaction, MemoryPoo
 	const USHORT lock_type = (rpb->rpb_stream_flags & RPB_s_update) ? LCK_write : LCK_read;
 
 	if (!DPM_get(tdbb, rpb, lock_type) ||
-		!VIO_chase_record_version(tdbb, rpb, transaction, pool, false))
+		!VIO_chase_record_version(tdbb, rpb, transaction, pool, false, false))
 	{
 		return false;
 	}
@@ -2716,9 +2712,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 
 	if (org_rpb->rpb_runtime_flags & (RPB_refetch | RPB_undo_read))
 	{
-		org_rpb->rpb_runtime_flags |= RPB_no_undo;
-		VIO_refetch_record(tdbb, org_rpb, transaction, false);
-		org_rpb->rpb_runtime_flags &= ~(RPB_refetch | RPB_no_undo);
+		VIO_refetch_record(tdbb, org_rpb, transaction, false, true);
+		org_rpb->rpb_runtime_flags &= ~RPB_refetch;
 		fb_assert(!(org_rpb->rpb_runtime_flags & RPB_undo_read));
 	}
 
@@ -3081,11 +3076,13 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 	{
 		IDX_modify_flag_uk_modified(tdbb, org_rpb, new_rpb, transaction);
 		VIO_update_in_place(tdbb, transaction, org_rpb, new_rpb);
+
 		if (!(transaction->tra_flags & TRA_system) &&
-			transaction->tra_save_point && transaction->tra_save_point->sav_verb_count)
+			transaction->tra_save_point && transaction->tra_save_point->isChanging())
 		{
 			verb_post(tdbb, transaction, org_rpb, org_rpb->rpb_undo);
 		}
+
 		tdbb->bumpRelStats(RuntimeStatistics::RECORD_UPDATES, relation->rel_id);
 		return;
 	}
@@ -3116,7 +3113,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 	replace_record(tdbb, org_rpb, &stack, transaction);
 
 	if (!(transaction->tra_flags & TRA_system) &&
-		transaction->tra_save_point && transaction->tra_save_point->sav_verb_count)
+		transaction->tra_save_point && transaction->tra_save_point->isChanging())
 	{
 		verb_post(tdbb, transaction, org_rpb, 0);
 	}
@@ -3180,7 +3177,7 @@ bool VIO_next_record(thread_db* tdbb,
 		{
 			return false;
 		}
-	} while (!VIO_chase_record_version(tdbb, rpb, transaction, pool, false));
+	} while (!VIO_chase_record_version(tdbb, rpb, transaction, pool, false, false));
 
 	if (rpb->rpb_runtime_flags & RPB_undo_data)
 		fb_assert(rpb->getWindow(tdbb).win_bdb == NULL);
@@ -3256,7 +3253,8 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format, Mem
 }
 
 
-bool VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction, bool writelock)
+bool VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction,
+						bool writelock, bool noundo)
 {
 /**************************************
  *
@@ -3278,7 +3276,7 @@ bool VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction
 	const TraNumber tid_fetch = rpb->rpb_transaction_nr;
 
 	if (!DPM_get(tdbb, rpb, LCK_read) ||
-		!VIO_chase_record_version(tdbb, rpb, transaction, tdbb->getDefaultPool(), writelock))
+		!VIO_chase_record_version(tdbb, rpb, transaction, tdbb->getDefaultPool(), writelock, noundo))
 	{
 		if (writelock)
 			return false;
@@ -3321,32 +3319,6 @@ bool VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction
 	}
 
 	return true;
-}
-
-
-void VIO_start_save_point(thread_db* tdbb, jrd_tra* transaction)
-{
-/**************************************
- *
- *      V I O _ s t a r t _ s a v e _ p o i n t
- *
- **************************************
- *
- * Functional description
- *      Start a new save point for a transaction.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Savepoint* sav_point = transaction->tra_save_free;
-
-	if (sav_point)
-		transaction->tra_save_free = sav_point->sav_next;
-	else
-		sav_point = FB_NEW_POOL(*transaction->tra_pool) Savepoint(transaction);
-
-	sav_point->sav_number = ++transaction->tra_save_point_number;
-	sav_point->sav_next = transaction->tra_save_point;
-	transaction->tra_save_point = sav_point;
 }
 
 
@@ -3732,7 +3704,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 #endif
 
 	if (!(transaction->tra_flags & TRA_system) &&
-		transaction->tra_save_point && transaction->tra_save_point->sav_verb_count)
+		transaction->tra_save_point && transaction->tra_save_point->isChanging())
 	{
 		verb_post(tdbb, transaction, rpb, 0);
 	}
@@ -3855,91 +3827,6 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 }
 
 
-void VIO_temp_cleanup(jrd_tra* transaction)
-/**************************************
- *
- *	V I O _ t e m p _ c l e a n u p
- *
- **************************************
- *
- * Functional description
- *  Remove undo data for GTT ON COMMIT DELETE ROWS as their data will be released
- *  at transaction end anyway and we don't need to waste time backing it out on
- *  rollback.
- *
- **************************************/
-{
-	Savepoint* sav_point = transaction->tra_save_point;
-
-	for (; sav_point; sav_point = sav_point->sav_next)
-	{
-		for (VerbAction* action = sav_point->sav_verb_actions; action; action = action->vct_next)
-		{
-			if (action->vct_relation->rel_flags & REL_temp_tran)
-			{
-				RecordBitmap::reset(action->vct_records);
-
-				if (action->vct_undo)
-				{
-					if (action->vct_undo->getFirst())
-					{
-						do
-						{
-							action->vct_undo->current().release(transaction);
-						} while (action->vct_undo->getNext());
-					}
-
-					delete action->vct_undo;
-					action->vct_undo = NULL;
-				}
-			}
-		}
-	}
-}
-
-
-void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
-{
-/**************************************
- *
- *	V I O _ v e r b _ c l e a n u p
- *
- **************************************
- *
- * Functional description
- *	Cleanup after a verb.  If the verb count in the transaction block
- *	is non zero, the verb failed and should be cleaned up.  Cleaning
- *	up ordinarily means just backing out the change, but if we have
- *	an old version we created in this transaction, we replace the current
- *	version with old version.
- *
- *	All changes made by the transaction are kept in one bitmap per
- *	relation.  A second bitmap per relation tracks records for which
- *	we have old data.  The actual data is kept in a linked list stack.
- *	Note that although a record may be changed several times, it will
- *	have only ONE old value -- the value it had before this verb
- *	started.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-#ifdef VIO_DEBUG
-	VIO_trace(DEBUG_TRACE,
-		"VIO_verb_cleanup (transaction %" SQUADFORMAT")\n",
-		transaction ? transaction->tra_number : 0);
-#endif
-
-	if (transaction->tra_save_point->sav_verb_count) // we must rollback this savepoint
-	{
-		transaction->rollbackSavepoint(tdbb);
-	}
-	else
-	{
-		transaction->rollforwardSavepoint(tdbb);
-	}
-}
-
-
 bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 {
 /**************************************
@@ -3975,9 +3862,10 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 
 	if (org_rpb->rpb_runtime_flags & (RPB_refetch | RPB_undo_read))
 	{
-		org_rpb->rpb_runtime_flags |= RPB_no_undo;
-		VIO_refetch_record(tdbb, org_rpb, transaction, false);
-		org_rpb->rpb_runtime_flags &= ~(RPB_refetch | RPB_no_undo);
+		if (!VIO_refetch_record(tdbb, org_rpb, transaction, true, true))
+			return false;
+
+		org_rpb->rpb_runtime_flags &= ~RPB_refetch;
 		fb_assert(!(org_rpb->rpb_runtime_flags & RPB_undo_read));
 	}
 
@@ -4970,37 +4858,31 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
 	if (!transaction->tra_save_point)
 		return udNone;
 
-	if (rpb->rpb_runtime_flags & RPB_no_undo)
-		return udNone;
+	VerbAction* const action = transaction->tra_save_point->getAction(rpb->rpb_relation);
 
-	VerbAction* action = transaction->tra_save_point->sav_verb_actions;
-
-	for (; action; action = action->vct_next)
+	if (action)
 	{
-		if (action->vct_relation == rpb->rpb_relation)
-		{
-			const SINT64 recno = rpb->rpb_number.getValue();
-			if (!RecordBitmap::test(action->vct_records, recno))
-				return udNone;
+		const SINT64 recno = rpb->rpb_number.getValue();
+		if (!RecordBitmap::test(action->vct_records, recno))
+			return udNone;
 
-			rpb->rpb_runtime_flags |= RPB_undo_read;
+		rpb->rpb_runtime_flags |= RPB_undo_read;
 
-			if (!action->vct_undo || !action->vct_undo->locate(recno))
-				return udForceBack;
+		if (!action->vct_undo || !action->vct_undo->locate(recno))
+			return udForceBack;
 
-			const UndoItem& undo = action->vct_undo->current();
+		const UndoItem& undo = action->vct_undo->current();
 
-			rpb->rpb_runtime_flags |= RPB_undo_data;
-			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+		rpb->rpb_runtime_flags |= RPB_undo_data;
+		CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 
-			AutoUndoRecord undoRecord(undo.setupRecord(transaction));
+		AutoUndoRecord undoRecord(undo.setupRecord(transaction));
 
-			Record* const record = VIO_record(tdbb, rpb, undoRecord->getFormat(), pool);
-			record->copyFrom(undoRecord);
+		Record* const record = VIO_record(tdbb, rpb, undoRecord->getFormat(), pool);
+		record->copyFrom(undoRecord);
 
-			rpb->rpb_flags &= ~rpb_deleted;
-			return udExists;
-		}
+		rpb->rpb_flags &= ~rpb_deleted;
+		return udExists;
 	}
 
 	return udNone;
@@ -6222,31 +6104,11 @@ static void verb_post(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
-
-	// Find action block for relation
-	VerbAction* action;
-	for (action = transaction->tra_save_point->sav_verb_actions; action; action = action->vct_next)
-	{
-		if (action->vct_relation == rpb->rpb_relation)
-			break;
-	}
-
-	if (!action)
-	{
-		if ( (action = transaction->tra_save_point->sav_verb_free) )
-			transaction->tra_save_point->sav_verb_free = action->vct_next;
-		else
-			action = FB_NEW_POOL(*tdbb->getDefaultPool()) VerbAction();
-
-		action->vct_next = transaction->tra_save_point->sav_verb_actions;
-		transaction->tra_save_point->sav_verb_actions = action;
-		action->vct_relation = rpb->rpb_relation;
-	}
+	VerbAction* const action = transaction->tra_save_point->createAction(rpb->rpb_relation);
 
 	if (!RecordBitmap::test(action->vct_records, rpb->rpb_number.getValue()))
 	{
-		RBM_SET(tdbb->getDefaultPool(), &action->vct_records, rpb->rpb_number.getValue());
+		RBM_SET(transaction->tra_pool, &action->vct_records, rpb->rpb_number.getValue());
 
 		if (old_data)
 		{
@@ -6254,7 +6116,10 @@ static void verb_post(thread_db* tdbb,
 			// savepoint hasn't seen this record before.
 
 			if (!action->vct_undo)
-				action->vct_undo = FB_NEW UndoItemTree(tdbb->getDefaultPool());
+			{
+				action->vct_undo =
+					FB_NEW_POOL(*transaction->tra_pool) UndoItemTree(*transaction->tra_pool);
+			}
 
 			action->vct_undo->add(UndoItem(transaction, rpb->rpb_number, old_data));
 		}
@@ -6264,66 +6129,6 @@ static void verb_post(thread_db* tdbb,
 		// Double update us posting. The old_data will not be used,
 		// so make sure we garbage collect before we lose track of the
 		// in-place-updated record.
-		action->garbage_collect_idx_lite(tdbb, transaction, rpb->rpb_number.getValue(), action, old_data);
+		action->garbageCollectIdxLite(tdbb, transaction, rpb->rpb_number.getValue(), action, old_data);
 	}
-}
-
-
-//----------------------
-
-
-AutoSavePoint::AutoSavePoint(thread_db* tdbb, jrd_tra* aTransaction)
-	: transaction(aTransaction),
-	  released(false)
-{
-	VIO_start_save_point(tdbb, transaction);
-}
-
-AutoSavePoint::~AutoSavePoint()
-{
-	thread_db* tdbb = JRD_get_thread_data();
-
-	if (!(tdbb->getDatabase()->dbb_flags & DBB_bugcheck))
-	{
-		if (released)
-			transaction->rollforwardSavepoint(tdbb);
-		else
-			transaction->rollbackSavepoint(tdbb);
-	}
-}
-
-
-/// class StableCursorSavePoint
-
-StableCursorSavePoint::StableCursorSavePoint(thread_db* tdbb, jrd_tra* transaction, bool start)
-	: m_tdbb(tdbb),
-	  m_tran(transaction),
-	  m_number(0)
-{
-	if (!start)
-		return;
-
-	if (m_tran == m_tdbb->getAttachment()->getSysTransaction())
-		return;
-
-	const Savepoint* save_point = m_tran->tra_save_point;
-	if (!save_point)
-		return;
-
-	VIO_start_save_point(m_tdbb, m_tran);
-	m_number = m_tran->tra_save_point->sav_number;
-}
-
-
-void StableCursorSavePoint::release()
-{
-	if (!m_number)
-		return;
-
-	while (m_tran->tra_save_point && m_tran->tra_save_point->sav_number >= m_number)
-	{
-		m_tran->rollforwardSavepoint(m_tdbb);
-	}
-
-	m_number = 0;
 }

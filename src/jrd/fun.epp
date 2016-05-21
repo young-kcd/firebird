@@ -336,17 +336,21 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 		const NestConst<Parameter>* end = function->getInputFields().end();
 		for (const NestConst<Parameter>* param = function->getInputFields().begin(); param != end; ++param)
 		{
-			allArgs.resize((*param)->prm_number + 1);
-			allArgs[(*param)->prm_number] = *param;
+			const FB_SIZE_T number = (*param)->prm_number;
+			if (allArgs.getCount() < number + 1)
+				allArgs.grow(number + 1);
+			allArgs[number] = *param;
 		}
 
 		end = function->getOutputFields().end();
 		for (const NestConst<Parameter>* param = function->getOutputFields().begin(); param != end; ++param)
 		{
-			if ((*param)->prm_number != 0)
+			const FB_SIZE_T number = (*param)->prm_number;
+			if (number != 0)
 			{
-				allArgs.resize((*param)->prm_number + 1);
-				allArgs[(*param)->prm_number] = *param;
+				if (allArgs.getCount() < number + 1)
+					allArgs.grow(number + 1);
+				allArgs[number] = *param;
 			}
 		}
 	}

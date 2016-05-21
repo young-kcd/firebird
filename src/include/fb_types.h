@@ -156,5 +156,6 @@ typedef FB_UINT64 TraNumber;
 typedef FB_UINT64 StmtNumber;
 typedef FB_UINT64 CommitNumber;
 typedef ULONG SnapshotHandle;
+typedef SINT64 SavNumber;
 
 #endif /* INCLUDE_FB_TYPES_H */

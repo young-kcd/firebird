@@ -45,6 +45,7 @@
 #include "../jrd/TempSpace.h"
 #include "../jrd/obj.h"
 #include "../jrd/EngineInterface.h"
+#include "../jrd/Savepoint.h"
 
 namespace EDS {
 class Transaction;
@@ -56,14 +57,11 @@ class blb;
 class Lock;
 class jrd_rel;
 template <typename T> class vec;
-class Savepoint;
 class Record;
-class VerbAction;
 class ArrayField;
 class Attachment;
 class DeferredWork;
 class DeferredJob;
-class dsql_opn;
 class UserManagement;
 class MappingList;
 class DbCreatorsList;
@@ -282,7 +280,7 @@ public:
 	TransactionBitmap*	tra_commit_sub_trans;	// committed sub-transactions
 	Savepoint*	tra_save_point;			// list of savepoints
 	Savepoint*	tra_save_free;			// free savepoints
-	SLONG tra_save_point_number;		// next save point number to use
+	SavNumber tra_save_point_number;	// next save point number to use
 	ULONG tra_flags;
 	DeferredJob*	tra_deferred_job;	// work deferred to commit time
 	ResourceList tra_resources;			// resource existence list
@@ -386,8 +384,9 @@ public:
 	MappingList* getMappingList();
 	Record* findNextUndo(VerbAction* before_this, jrd_rel* relation, SINT64 number);
 	void listStayingUndo(jrd_rel* relation, SINT64 number, RecordStack &staying);
+	Savepoint* startSavepoint(bool root = false);
 	void rollbackSavepoint(thread_db* tdbb);
-	void rollbackToSavepoint(thread_db* tdbb, SLONG number);
+	void rollbackToSavepoint(thread_db* tdbb, SavNumber number);
 	void rollforwardSavepoint(thread_db* tdbb);
 	DbCreatorsList* getDbCreatorsList();
 
@@ -453,50 +452,6 @@ const int tra_dead			= 2;
 const int tra_committed		= 3;
 const int tra_us			= 4;	// Transaction is us
 const int tra_precommitted	= 5;	// Transaction is precommitted
-
-// Savepoint block
-
-class Savepoint : public pool_alloc<type_sav>
-{
-public:
-	Savepoint(jrd_tra* transaction) { sav_trans = transaction; }
-	~Savepoint()
-	{
-		deleteActions(sav_verb_actions);
-		deleteActions(sav_verb_free);
-	}
-
-	VerbAction*			sav_verb_actions;	// verb action list
-	VerbAction*			sav_verb_free;		// free verb actions
-	USHORT				sav_verb_count;		// active verb count
-	SLONG				sav_number;			// save point number
-	Savepoint*			sav_next;
-	USHORT				sav_flags;
-	Firebird::MetaName	sav_name; 			// savepoint name
-
-	void rollback(thread_db* tdbb);
-	void rollforward(thread_db* tdbb);
-
-	VerbAction* getAction(jrd_rel* relation);
-	IPTR is_large(IPTR size);
-
-private:
-	Savepoint(); // Disable default constructor
-	void deleteActions(VerbAction* list);
-
-	jrd_tra* sav_trans; // Savepoint must know which transaction it belongs to
-};
-
-// Savepoint block flags.
-
-const int SAV_trans_level	= 1;	// savepoint was started by TRA_start
-const int SAV_force_dfw		= 2;	// DFW is present even if savepoint is empty
-const int SAV_user			= 4;	// named user savepoint as opposed to system ones
-
-// Maximum size in bytes of transaction-level savepoint data.
-// When transaction-level savepoint gets past this size we drop it and use GC
-// mechanisms to clean out changes done in transaction
-const IPTR SAV_LARGE		= 1024 * 32;
 
 // Deferred work blocks are used by the meta data handler to keep track
 // of work deferred to commit time.  This are usually used to perform
@@ -567,104 +522,6 @@ enum dfw_t {
 	dfw_db_crypt,			// change database encryption status
 	dfw_set_linger,			// set database linger
 	dfw_clear_mapping		// clear user mapping cache
-};
-
-// Verb actions
-
-class UndoItem
-{
-public:
-	static const SINT64& generate(const void* /*sender*/, const UndoItem& item)
-	{
-		return item.m_number;
-    }
-
-	UndoItem() {}
-
-	UndoItem(RecordNumber recordNumber)
-		: m_number(recordNumber.getValue()), m_offset(0), m_format(NULL)
-	{
-	}
-
-	UndoItem(jrd_tra* transaction, RecordNumber recordNumber, const Record* record)
-		: m_number(recordNumber.getValue()), m_format(record->getFormat())
-	{
-		m_offset = transaction->getUndoSpace()->allocateSpace(m_format->fmt_length);
-		transaction->getUndoSpace()->write(m_offset, record->getData(), record->getLength());
-	}
-
-	Record* setupRecord(jrd_tra* transaction) const
-	{
-		if (m_format)
-		{
-			Record* const record = transaction->getUndoRecord(m_format);
-			transaction->getUndoSpace()->read(m_offset, record->getData(), record->getLength());
-			return record;
-		}
-
-		return NULL;
-	}
-
-	void release(jrd_tra* transaction)
-	{
-		if (m_format)
-		{
-			transaction->getUndoSpace()->releaseSpace(m_offset, m_format->fmt_length);
-			m_format = NULL;
-		}
-	}
-
-	void clear()
-	{
-		m_format = NULL;
-	}
-
-	bool hasData() const
-	{
-		return (m_format != NULL);
-	}
-
-	bool isEmpty() const
-	{
-		return (m_format == NULL);
-	}
-
-private:
-	SINT64 m_number;
-	offset_t m_offset;
-	const Format* m_format;
-};
-
-typedef Firebird::BePlusTree<UndoItem, SINT64, MemoryPool, UndoItem> UndoItemTree;
-
-class VerbAction : public pool_alloc<type_vct>
-{
-public:
-	~VerbAction()
-	{
-		delete vct_records;
-		delete vct_undo;
-	}
-
-	VerbAction* 	vct_next;		// Next action within verb
-	jrd_rel*		vct_relation;	// Relation involved
-	RecordBitmap*	vct_records;	// Record involved
-	UndoItemTree*	vct_undo;		// Data for undo records
-
-	void mergeTo(thread_db* tdbb, jrd_tra* transaction, VerbAction* next_action);
-	void undo(thread_db* tdbb, jrd_tra* transaction);
-	void garbage_collect_idx_lite(thread_db* tdbb, jrd_tra* transaction, SINT64 RecNumber, VerbAction* next_action, Record* going_record);
-};
-
-
-inline void Savepoint::deleteActions(VerbAction* list)
-{
-	while (list)
-	{
-		VerbAction* next = list->vct_next;
-		delete list;
-		list = next;
-	}
 };
 
 } //namespace Jrd

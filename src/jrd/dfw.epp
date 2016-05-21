@@ -106,7 +106,6 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
-#include "../jrd/pcmet_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/rlck_proto.h"
 #include "../jrd/scl_proto.h"
@@ -187,7 +186,7 @@ private:
 public:
 	Lock*			dfw_lock;		// relation creation lock
 	Array<DeferredWork*>  dfw_args;	// arguments
-	SLONG			dfw_sav_number;	// save point number
+	SavNumber		dfw_sav_number;	// save point number
 	USHORT			dfw_id;			// object id, if appropriate
 	USHORT			dfw_count;		// count of block posts
 	string			dfw_name;		// name of object
@@ -196,7 +195,7 @@ public:
 
 public:
 	DeferredWork(MemoryPool& p, DeferredWork*** end,
-				 enum dfw_t t, USHORT id, SLONG sn, const string& name,
+				 enum dfw_t t, USHORT id, SavNumber sn, const string& name,
 				 const MetaName& package)
 	  : dfw_type(t), dfw_end(end), dfw_prev(dfw_end ? *dfw_end : NULL),
 		dfw_next(dfw_prev ? *dfw_prev : NULL), dfw_lock(NULL), dfw_args(p),
@@ -312,28 +311,28 @@ class DfwSavePoint;
 typedef HashTable<
 	DfwSavePoint,
 	DEFAULT_HASH_SIZE,
-	SLONG,
+	SavNumber,
 	DfwSavePoint
 > DfwSavePointHash;
 
 class DfwSavePoint : public DfwSavePointHash::Entry
 {
-	SLONG dfw_sav_number;
+	SavNumber dfw_sav_number;
 
 public:
 	DfwHash hash; // Deferred work items posted under this savepoint
 
-	explicit DfwSavePoint(SLONG number) : dfw_sav_number(number) { }
+	explicit DfwSavePoint(SavNumber number) : dfw_sav_number(number) { }
 
 	// hash interface
-	bool isEqual(const SLONG& number) const
+	bool isEqual(const SavNumber& number) const
 	{
 		return dfw_sav_number == number;
 	}
 
 	DfwSavePoint* get() { return this; }
 
-	static SLONG generate(const DfwSavePoint& item)
+	static SavNumber generate(const DfwSavePoint& item)
 	{
 		return item.dfw_sav_number;
 	}
@@ -348,6 +347,92 @@ public:
 	DeferredWork** end;
 
 	DeferredJob() : work(NULL), end(&work) { }
+};
+
+
+// Lock relation with protected_read level or raise existing relation lock
+// to this level to ensure nobody can write to this relation.
+// Used when new index is built.
+// releaseLock set to true if there was no existing lock before
+class ProtectRelations
+{
+public:
+	ProtectRelations(thread_db* tdbb, jrd_tra* transaction) :
+		m_tdbb(tdbb),
+		m_transaction(transaction),
+		m_locks()
+	{
+	}
+
+	ProtectRelations(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relation) :
+		m_tdbb(tdbb),
+		m_transaction(transaction),
+		m_locks()
+	{
+		addRelation(relation);
+		lock();
+	}
+
+	~ProtectRelations()
+	{
+		unlock();
+	}
+
+	void addRelation(jrd_rel* relation)
+	{
+		FB_SIZE_T pos;
+		if (!m_locks.find(relation->rel_id, pos))
+			m_locks.insert(pos, relLock(relation));
+	}
+
+	bool exists(USHORT rel_id) const 
+	{
+		FB_SIZE_T pos;
+		return m_locks.find(rel_id, pos);
+	}
+
+	void lock()
+	{
+		relLock* item = m_locks.begin();
+		const relLock* const end = m_locks.end();
+		for (; item < end; item++)
+			item->takeLock(m_tdbb, m_transaction);
+	}
+
+	void unlock()
+	{
+		relLock* item = m_locks.begin();
+		const relLock* const end = m_locks.end();
+		for (; item < end; item++)
+			item->releaseLock(m_tdbb, m_transaction);
+	}
+
+private:
+	struct relLock
+	{
+		relLock(jrd_rel* relation = NULL) :
+			m_relation(relation),
+			m_lock(NULL),
+			m_release(false)
+		{
+		}
+
+		void takeLock(thread_db* tdbb, jrd_tra* transaction);
+		void releaseLock(thread_db* tdbb, jrd_tra* transaction);
+
+		static const USHORT generate(const relLock& item)
+		{
+			return item.m_relation->rel_id;
+		}
+
+		jrd_rel* m_relation;
+		Lock* m_lock;
+		bool m_release;
+	};
+
+	thread_db* m_tdbb;
+	jrd_tra* m_transaction;
+	SortedArray<relLock, InlineStorage<relLock, 2>, USHORT, relLock> m_locks;
 };
 
 } // namespace Jrd
@@ -421,8 +506,6 @@ static blb*	setup_triggers(thread_db*, jrd_rel*, bool, trig_vec**, blb*);
 static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, trig_vec**, const TEXT*, bool);
 static bool validate_text_type (thread_db*, const TemporaryField*);
 
-static Lock* protect_relation(thread_db*, jrd_tra*, jrd_rel*, bool&);
-static void release_protect_lock(thread_db*, jrd_tra*, Lock*);
 static void check_partners(thread_db*, const USHORT);
 static string get_string(const dsc* desc);
 static void setupSpecificCollationAttributes(thread_db*, jrd_tra*, const USHORT, const char*);
@@ -516,6 +599,54 @@ static void raiseTooManyVersionsError(const int obj_type, const string& obj_name
 	ERR_post(Arg::Gds(isc_no_meta_update) <<
 			 Arg::Gds(getErrorCodeByObjectType(obj_type)) << Arg::Str(obj_name) <<
 			 Arg::Gds(isc_version_err));
+}
+
+void Jrd::ProtectRelations::relLock::takeLock(thread_db* tdbb, jrd_tra* transaction)
+{
+	m_lock = RLCK_transaction_relation_lock(tdbb, transaction, m_relation);
+
+	m_release = (m_lock->lck_logical == LCK_none);
+
+	bool inUse = false;
+
+	if (!m_release)
+	{
+		if ((m_lock->lck_logical < LCK_PR) &&
+			!LCK_convert(tdbb, m_lock, LCK_PR, transaction->getLockWait()))
+		{
+			inUse = true;
+		}
+	}
+	else
+	{
+		if (!LCK_lock(tdbb, m_lock, LCK_PR, transaction->getLockWait()))
+			inUse = true;
+	}
+
+	if (inUse)
+		raiseRelationInUseError(m_relation);
+}
+
+
+void Jrd::ProtectRelations::relLock::releaseLock(thread_db* tdbb, jrd_tra* transaction)
+{
+	if (!m_release)
+		return;
+
+	vec<Lock*>* vector = transaction->tra_relation_locks;
+	if (vector)
+	{
+		vec<Lock*>::iterator lock = vector->begin();
+		for (ULONG i = 0; i < vector->count(); ++i, ++lock)
+		{
+			if (*lock == m_lock)
+			{
+				LCK_release(tdbb, m_lock);
+				*lock = 0;
+				break;
+			}
+		}
+	}
 }
 
 static const UCHAR nonnull_validation_blr[] =
@@ -1114,7 +1245,7 @@ USHORT DFW_assign_index_type(thread_db* tdbb, const Firebird::MetaName& name, SS
 }
 
 
-void DFW_delete_deferred( jrd_tra* transaction, SLONG sav_number)
+void DFW_delete_deferred( jrd_tra* transaction, SavNumber sav_number)
 {
 /**************************************
  *
@@ -1171,7 +1302,7 @@ SortedArray<int>& DFW_get_ids(DeferredWork* work)
 }
 
 
-void DFW_merge_work(jrd_tra* transaction, SLONG old_sav_number, SLONG new_sav_number)
+void DFW_merge_work(jrd_tra* transaction, SavNumber old_sav_number, SavNumber new_sav_number)
 {
 /**************************************
  *
@@ -1189,17 +1320,13 @@ void DFW_merge_work(jrd_tra* transaction, SLONG old_sav_number, SLONG new_sav_nu
 
 	DeferredJob *job = transaction->tra_deferred_job;
 	if (! job)
-	{
 		return;
-	}
 
 	// Check to see if work is already posted
 
 	DfwSavePoint* oldSp = job->hash.lookup(old_sav_number);
 	if (!oldSp)
-	{
 		return;
-	}
 
 	DfwSavePoint* newSp = job->hash.lookup(new_sav_number);
 
@@ -1489,8 +1616,8 @@ DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const string&
 
 	// get the current save point number
 
-	const SLONG sav_number = transaction->tra_save_point ?
-		transaction->tra_save_point->sav_number : 0;
+	const SavNumber sav_number = transaction->tra_save_point ?
+		transaction->tra_save_point->getNumber() : 0;
 
 	// initialize transaction if needed
 
@@ -1533,7 +1660,7 @@ DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const string&
 		// fall down ...
 	case dfw_post_event:
 		if (transaction->tra_save_point)
-			transaction->tra_save_point->sav_flags |= SAV_force_dfw;
+			transaction->tra_save_point->forceDeferredWork();
 		break;
 	default:
 		transaction->tra_flags |= TRA_deferred_meta;
@@ -2151,8 +2278,6 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 	SET_TDBB(tdbb);
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Lock* relationLock = NULL;
-	bool releaseRelationLock = false;
 
 	switch (phase)
 	{
@@ -2161,14 +2286,13 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 		return true;
 
 	case 3:
-		try
 		{
 			jrd_rel* relation = MET_lookup_relation(tdbb, work->dfw_name);
 			if (!relation || relation->rel_view_rse || work->dfw_ids.isEmpty())
 				break;
 
 			// Protect relation from modification
-			relationLock = protect_relation(tdbb, transaction, relation, releaseRelationLock);
+			ProtectRelations protectRelation(tdbb, transaction, relation);
 
 			SortedArray<int> fields;
 			AutoRequest handle;
@@ -2314,16 +2438,6 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 				if (hasError)
 					ERR_post(errs);
 			}
-
-			if (relationLock && releaseRelationLock)
-				release_protect_lock(tdbb, transaction, relationLock);
-		}
-		catch (const Exception&)
-		{
-			if (relationLock && releaseRelationLock)
-				release_protect_lock(tdbb, transaction, relationLock);
-
-			throw;
 		}
 
 		break;
@@ -2496,7 +2610,142 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 		return true;
 
 	case 3:
-		PCMET_expression_index(tdbb, work->dfw_name, work->dfw_id, transaction);
+		{
+		jrd_rel* relation = NULL;
+		index_desc idx;
+		MemoryPool* new_pool = NULL;
+
+		SET_TDBB(tdbb);
+		Database* dbb = tdbb->getDatabase();
+		Jrd::Attachment* attachment = tdbb->getAttachment();
+
+		MOVE_CLEAR(&idx, sizeof(index_desc));
+
+		AutoCacheRequest request(tdbb, irq_c_exp_index, IRQ_REQUESTS);
+
+		FOR(REQUEST_HANDLE request)
+			IDX IN RDB$INDICES CROSS
+			REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
+			IDX.RDB$EXPRESSION_BLR NOT MISSING AND
+			IDX.RDB$INDEX_NAME EQ work->dfw_name.c_str()
+		{
+			if (!relation)
+			{
+				relation = MET_relation(tdbb, REL.RDB$RELATION_ID);
+				if (relation->rel_name.length() == 0) {
+					relation->rel_name = REL.RDB$RELATION_NAME;
+				}
+
+				if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0)
+				{
+					SelectivityList selectivity(*tdbb->getDefaultPool());
+					const USHORT localId = IDX.RDB$INDEX_ID - 1;
+					IDX_statistics(tdbb, relation, localId, selectivity);
+					DFW_update_index(work->dfw_name.c_str(), localId, selectivity, transaction);
+
+					return false;
+				}
+
+				if (IDX.RDB$INDEX_ID)
+				{
+					IDX_delete_index(tdbb, relation, IDX.RDB$INDEX_ID - 1);
+					MET_delete_dependencies(tdbb, work->dfw_name, obj_expression_index, transaction);
+					MODIFY IDX
+						IDX.RDB$INDEX_ID.NULL = TRUE;
+					END_MODIFY
+				}
+
+				if (IDX.RDB$INDEX_INACTIVE)
+					return false;
+
+				if (IDX.RDB$SEGMENT_COUNT)
+				{
+					// Msg359: segments not allowed in expression index %s
+					ERR_post(Arg::Gds(isc_no_meta_update) <<
+						Arg::Gds(isc_no_segments_err) << Arg::Str(work->dfw_name));
+				}
+				if (IDX.RDB$UNIQUE_FLAG)
+					idx.idx_flags |= idx_unique;
+				if (IDX.RDB$INDEX_TYPE == 1)
+					idx.idx_flags |= idx_descending;
+
+				CompilerScratch* csb = 0;
+				// allocate a new pool to contain the expression tree for the expression index
+				new_pool = attachment->createPool();
+				{ // scope
+					Jrd::ContextPoolHolder context(tdbb, new_pool);
+					MET_scan_relation(tdbb, relation);
+
+					if (!IDX.RDB$EXPRESSION_BLR.NULL)
+					{
+						idx.idx_expression = static_cast<ValueExprNode*>(MET_get_dependencies(
+							tdbb, relation, NULL, 0, NULL, &IDX.RDB$EXPRESSION_BLR,
+							&idx.idx_expression_statement, &csb, work->dfw_name, obj_expression_index, 0,
+							transaction));
+					}
+				} // end scope
+
+				// fake a description of the index
+
+				idx.idx_count = 1;
+				idx.idx_flags |= idx_expressn;
+				idx.idx_expression->getDesc(tdbb, csb, &idx.idx_expression_desc);
+				idx.idx_rpt[0].idx_itype =
+					DFW_assign_index_type(tdbb, work->dfw_name,
+					idx.idx_expression_desc.dsc_dtype,
+					idx.idx_expression_desc.dsc_sub_type);
+				idx.idx_rpt[0].idx_selectivity = 0;
+
+				delete csb;
+			}
+		}
+		END_FOR
+
+		if (!relation)
+		{
+			if (new_pool)
+				attachment->deletePool(new_pool);
+
+			// Msg308: can't create index %s
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+				Arg::Gds(isc_idx_create_err) << Arg::Str(work->dfw_name));
+		}
+
+		// Actually create the index
+
+		// Protect relation from modification to create consistent index
+		ProtectRelations protectRelation(tdbb, transaction, relation);
+
+		SelectivityList selectivity(*tdbb->getDefaultPool());
+
+		jrd_tra* const current_transaction = tdbb->getTransaction();
+		jrd_req* const current_request = tdbb->getRequest();
+
+		try
+		{
+			fb_assert(work->dfw_id <= dbb->dbb_max_idx);
+			idx.idx_id = work->dfw_id;
+			IDX_create_index(tdbb, relation, &idx, work->dfw_name.c_str(), &work->dfw_id,
+				transaction, selectivity);
+
+			fb_assert(work->dfw_id == idx.idx_id);
+		}
+		catch (const Exception&)
+		{
+			tdbb->setTransaction(current_transaction);
+			tdbb->setRequest(current_request);
+			throw;
+		}
+
+		tdbb->setTransaction(current_transaction);
+		tdbb->setRequest(current_request);
+
+		DFW_update_index(work->dfw_name.c_str(), idx.idx_id, selectivity, transaction);
+
+		// Get rid of the pool containing the expression tree
+
+		attachment->deletePool(new_pool);
+		}
 		break;
 
 	default:
@@ -3170,103 +3419,86 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 		// Actually create the index
 
-		Lock *relationLock = NULL, *partnerLock = NULL;
-		bool releaseRelationLock = false, releasePartnerLock = false;
 		partner_relation = NULL;
-		try
+
+		// Protect relation from modification to create consistent index
+		ProtectRelations protectRelations(tdbb, transaction);
+		protectRelations.addRelation(relation);
+
+		if (idx.idx_flags & idx_foreign)
 		{
-			// Protect relation from modification to create consistent index
-			relationLock = protect_relation(tdbb, transaction, relation, releaseRelationLock);
+			idx.idx_id = idx_invalid;
 
-			if (idx.idx_flags & idx_foreign)
+			if (MET_lookup_partner(tdbb, relation, &idx, work->dfw_name.c_str()))
 			{
-				idx.idx_id = idx_invalid;
+				partner_relation = MET_lookup_relation_id(tdbb, idx.idx_primary_relation, true);
+			}
 
-				if (MET_lookup_partner(tdbb, relation, &idx, work->dfw_name.c_str()))
-				{
-					partner_relation = MET_lookup_relation_id(tdbb, idx.idx_primary_relation, true);
-				}
+			if (!partner_relation)
+			{
+				Firebird::MetaName constraint_name;
+				MET_lookup_cnstrt_for_index(tdbb, constraint_name, work->dfw_name);
+				ERR_post(Arg::Gds(isc_partner_idx_not_found) << Arg::Str(constraint_name));
+			}
 
-				if (!partner_relation)
-				{
-					Firebird::MetaName constraint_name;
-					MET_lookup_cnstrt_for_index(tdbb, constraint_name, work->dfw_name);
-					ERR_post(Arg::Gds(isc_partner_idx_not_found) << Arg::Str(constraint_name));
-				}
+			// Get an protected_read lock on the both relations if the index being
+			// defined enforces a foreign key constraint. This will prevent
+			// the constraint from being violated during index construction.
 
-				// Get an protected_read lock on the both relations if the index being
-				// defined enforces a foreign key constraint. This will prevent
-				// the constraint from being violated during index construction.
+			protectRelations.addRelation(partner_relation);
 
-				partnerLock = protect_relation(tdbb, transaction, partner_relation, releasePartnerLock);
-
-				int bad_segment;
-				if (!IDX_check_master_types(tdbb, idx, partner_relation, bad_segment))
-				{
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_partner_idx_incompat_type) << Arg::Num(bad_segment + 1));
-				}
+			int bad_segment;
+			if (!IDX_check_master_types(tdbb, idx, partner_relation, bad_segment))
+			{
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+							Arg::Gds(isc_partner_idx_incompat_type) << Arg::Num(bad_segment + 1));
+			}
 
 /* hvlad: this code was never called but i preserve it for Claudio review and decision
 
-				// CVC: Currently, the server doesn't enforce FK creation more than at DYN level.
-				// If DYN is bypassed, then FK creation succeeds and operation will fail at run-time.
-				// The aim is to check REFERENCES at DDL time instead of DML time and behave accordingly
-				// to ANSI SQL rules for REFERENCES rights.
-				// For testing purposes, I'm calling SCL_check_index, although most of the DFW ops are
-				// carried using internal metadata structures that are refreshed from system tables.
+			// CVC: Currently, the server doesn't enforce FK creation more than at DYN level.
+			// If DYN is bypassed, then FK creation succeeds and operation will fail at run-time.
+			// The aim is to check REFERENCES at DDL time instead of DML time and behave accordingly
+			// to ANSI SQL rules for REFERENCES rights.
+			// For testing purposes, I'm calling SCL_check_index, although most of the DFW ops are
+			// carried using internal metadata structures that are refreshed from system tables.
 
-				// Don't bother if the master's owner is the same than the detail's owner.
-				// If both tables aren't defined in the same session, partner_relation->rel_owner_name
-				// won't be loaded hence, we need to be careful about null pointers.
+			// Don't bother if the master's owner is the same than the detail's owner.
+			// If both tables aren't defined in the same session, partner_relation->rel_owner_name
+			// won't be loaded hence, we need to be careful about null pointers.
 
-				if (relation->rel_owner_name.length() == 0 ||
-					partner_relation->rel_owner_name.length() == 0 ||
-					relation->rel_owner_name != partner_relation->rel_owner_name)
-				{
-					SCL_check_index(tdbb, partner_relation->rel_name,
-									idx.idx_id + 1, SCL_references);
-				}
-*/
-			}
-
-			fb_assert(work->dfw_id <= dbb->dbb_max_idx);
-			idx.idx_id = work->dfw_id;
-			SelectivityList selectivity(*tdbb->getDefaultPool());
-			IDX_create_index(tdbb, relation, &idx, work->dfw_name.c_str(),
-							&work->dfw_id, transaction, selectivity);
-			fb_assert(work->dfw_id == idx.idx_id);
-			DFW_update_index(work->dfw_name.c_str(), idx.idx_id, selectivity, transaction);
-
-			if (partner_relation)
+			if (relation->rel_owner_name.length() == 0 ||
+				partner_relation->rel_owner_name.length() == 0 ||
+				relation->rel_owner_name != partner_relation->rel_owner_name)
 			{
-				// signal to other processes about new constraint
-				relation->rel_flags |= REL_check_partners;
-				LCK_lock(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
-				LCK_release(tdbb, relation->rel_partners_lock);
-
-				if (relation != partner_relation) {
-					partner_relation->rel_flags |= REL_check_partners;
-					LCK_lock(tdbb, partner_relation->rel_partners_lock, LCK_EX, LCK_WAIT);
-					LCK_release(tdbb, partner_relation->rel_partners_lock);
-				}
+				SCL_check_index(tdbb, partner_relation->rel_name,
+								idx.idx_id + 1, SCL_references);
 			}
-			if (relationLock && releaseRelationLock) {
-				release_protect_lock(tdbb, transaction, relationLock);
-			}
-			if (partnerLock && releasePartnerLock) {
-				release_protect_lock(tdbb, transaction, partnerLock);
-			}
+*/
 		}
-		catch (const Firebird::Exception&)
+
+		protectRelations.lock();
+
+		fb_assert(work->dfw_id <= dbb->dbb_max_idx);
+		idx.idx_id = work->dfw_id;
+		SelectivityList selectivity(*tdbb->getDefaultPool());
+		IDX_create_index(tdbb, relation, &idx, work->dfw_name.c_str(),
+						&work->dfw_id, transaction, selectivity);
+		fb_assert(work->dfw_id == idx.idx_id);
+		DFW_update_index(work->dfw_name.c_str(), idx.idx_id, selectivity, transaction);
+
+		if (partner_relation)
 		{
-			if (relationLock && releaseRelationLock) {
-				release_protect_lock(tdbb, transaction, relationLock);
+			// signal to other processes about new constraint
+			relation->rel_flags |= REL_check_partners;
+			LCK_lock(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+			LCK_release(tdbb, relation->rel_partners_lock);
+
+			if (relation != partner_relation) {
+				partner_relation->rel_flags |= REL_check_partners;
+				LCK_lock(tdbb, partner_relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+				LCK_release(tdbb, partner_relation->rel_partners_lock);
 			}
-			if (partnerLock && releasePartnerLock) {
-				release_protect_lock(tdbb, transaction, partnerLock);
-			}
-			throw;
 		}
 
 		break;
@@ -3321,9 +3553,9 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 	case 3:
 		// Take a relation lock on rel id -1 before actually generating a relation id.
 
-		work->dfw_lock = lock = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(SLONG))
+		work->dfw_lock = lock = FB_NEW_RPT(*tdbb->getDefaultPool(), 0)
 			Lock(tdbb, sizeof(SLONG), LCK_relation);
-		lock->lck_key.lck_long = -1;
+		lock->setKey(-1);
 
 		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 
@@ -3585,18 +3817,6 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 }
 
 
-namespace {
-
-struct TableLock
-{
-	jrd_rel* relation;
-	Lock* lock;
-	static const MetaName& generate(const TableLock& item) { return item.relation->rel_name; }
-};
-
-}
-
-
 void DFW_reset_icu(thread_db* tdbb)
 {
 /**************************************
@@ -3616,7 +3836,6 @@ void DFW_reset_icu(thread_db* tdbb)
 
 	jrd_tra* transaction = NULL;
 	jrd_tra* oldTransaction = tdbb->getTransaction();
-	SortedArray<TableLock, EmptyStorage<TableLock>, MetaName, TableLock> tables;
 
 	try
 	{
@@ -3624,12 +3843,16 @@ void DFW_reset_icu(thread_db* tdbb)
 		transaction = TRA_start(tdbb, 0, 0);
 		tdbb->setTransaction(transaction);
 
+		SortedArray<Firebird::MetaName> indices;
+		ProtectRelations tables(tdbb, transaction);
+
 		// Get list of affected indices & tables
 		const char* indSql =
-			"select ind.RDB$INDEX_NAME, ind.RDB$RELATION_NAME,"
+			"select ind.RDB$INDEX_NAME, rel.RDB$RELATION_ID,"
 			" coalesce(coll.RDB$BASE_COLLATION_NAME, coll.RDB$COLLATION_NAME), cs.RDB$CHARACTER_SET_NAME, "
 			" coll.RDB$SPECIFIC_ATTRIBUTES "
 			"from RDB$INDICES ind "
+			"join RDB$RELATIONS rel on ind.RDB$RELATION_NAME = rel.RDB$RELATION_NAME "
 			"join RDB$INDEX_SEGMENTS seg on ind.RDB$INDEX_NAME = seg.RDB$INDEX_NAME "
 			"join RDB$RELATION_FIELDS rfl on rfl.RDB$RELATION_NAME = ind.RDB$RELATION_NAME "
 			" and rfl.RDB$FIELD_NAME = seg.RDB$FIELD_NAME "
@@ -3639,9 +3862,9 @@ void DFW_reset_icu(thread_db* tdbb)
 			"join RDB$CHARACTER_SETS cs on coll.RDB$CHARACTER_SET_ID = cs.RDB$CHARACTER_SET_ID "
 			"where coll.RDB$SPECIFIC_ATTRIBUTES like '%COLL-VERSION=%' "
 			" and coalesce(ind.RDB$INDEX_INACTIVE, 0) = 0 "
-			"group by ind.RDB$INDEX_NAME, ind.RDB$RELATION_NAME, coll.RDB$BASE_COLLATION_NAME, "
+			"group by ind.RDB$INDEX_NAME, rel.RDB$RELATION_ID, coll.RDB$BASE_COLLATION_NAME, "
 			" coll.RDB$COLLATION_NAME, cs.RDB$CHARACTER_SET_NAME, coll.RDB$SPECIFIC_ATTRIBUTES";
-		SortedArray<Firebird::MetaName> indices;
+
 		{	// scope
 			AutoPreparedStatement ps(attachment->prepareStatement(tdbb, transaction, indSql));
 			AutoResultSet rs(ps->executeQuery(tdbb, transaction));
@@ -3664,26 +3887,18 @@ void DFW_reset_icu(thread_db* tdbb)
 				if (!indices.exist(t))
 					indices.add(rs->getMetaName(tdbb, 1));
 
-				t = rs->getMetaName(tdbb, 2);
-				if (!tables.exist(t))
+				USHORT rel_id = rs->getInt(tdbb, 2);
+				if (!tables.exists(rel_id))
 				{
-					TableLock lock;
-					lock.relation = MET_lookup_relation(tdbb, t);
-					fb_assert(lock.relation);
-					lock.lock = NULL;
-					tables.add(lock);
+					jrd_rel* relation = MET_lookup_relation_id(tdbb, rel_id, false);
+					if (relation)
+						tables.addRelation(relation);
 				}
 			}
 		}
 
 		// Lock the tables
-		for (unsigned n = 0; n < tables.getCount(); ++n)
-		{
-			bool releaseLock;
-			Lock* lock = protect_relation(tdbb, transaction, tables[n].relation, releaseLock);
-			if (releaseLock)
-				tables[n].lock = lock;
-		}
+		tables.lock();
 
 		// Change collation's attributes
 		const char* collSql =
@@ -5905,47 +6120,6 @@ static void put_summary_blob(thread_db* tdbb, blb* blob, rsr_t type, bid* blob_i
 }
 
 
-static Lock* protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relation,
-	bool& releaseLock)
-{
-/**************************************
- *
- * p r o t e c t _ r e l a t i o n
- *
- **************************************
- *
- * Functional description
- *	Lock relation with protected_read level or raise existing relation lock
- * to this level to ensure nobody can write to this relation.
- * Used when new index is built.
- * releaseLock set to true if there was no existing lock before
- *
- **************************************/
-	Lock* relLock = RLCK_transaction_relation_lock(tdbb, transaction, relation);
-
-	releaseLock = (relLock->lck_logical == LCK_none);
-
-	bool inUse = false;
-
-	if (!releaseLock) {
-		if ( (relLock->lck_logical < LCK_PR) &&
-			!LCK_convert(tdbb, relLock, LCK_PR, transaction->getLockWait()) )
-		{
-			inUse = true;
-		}
-	}
-	else {
-		if (!LCK_lock(tdbb, relLock, LCK_PR, transaction->getLockWait()))
-			inUse = true;
-	}
-
-	if (inUse)
-		raiseRelationInUseError(relation);
-
-	return relLock;
-}
-
-
 static void put_summary_record(thread_db* tdbb,
 							   blb*		blob,
 							   rsr_t	type,
@@ -5987,24 +6161,6 @@ static void put_summary_record(thread_db* tdbb,
 
 	if (buffer != temp)
 		delete[] buffer;
-}
-
-
-static void release_protect_lock(thread_db* tdbb, jrd_tra*	transaction, Lock* relLock)
-{
-	vec<Lock*>* vector = transaction->tra_relation_locks;
-	if (vector) {
-		vec<Lock*>::iterator lock = vector->begin();
-		for (ULONG i = 0; i < vector->count(); ++i, ++lock)
-		{
-			if (*lock == relLock)
-			{
-				LCK_release(tdbb, relLock);
-				*lock = 0;
-				break;
-			}
-		}
-	}
 }
 
 

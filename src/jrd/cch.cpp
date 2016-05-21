@@ -86,7 +86,7 @@ static inline void PAGE_LOCK_RELEASE(thread_db* tdbb, BufferControl* bcb, Lock* 
 {
 	if (!(bcb->bcb_flags & BCB_exclusive))
 	{
-		CCH_TRACE(("LCK RLS %06d", lock->lck_key.lck_long));
+		CCH_TRACE(("LCK RLS %" SQUADFORMAT, lock->getKey()));
 		LCK_release(tdbb, lock);
 	}
 }
@@ -101,7 +101,7 @@ static inline void PAGE_LOCK_RE_POST(thread_db* tdbb, BufferControl* bcb, Lock* 
 {
 	if (!(bcb->bcb_flags & BCB_exclusive))
 	{
-		CCH_TRACE(("LCK REP %06d", lock->lck_key.lck_long));
+		CCH_TRACE(("LCK REP %" SQUADFORMAT, lock->getKey()));
 		LCK_re_post(tdbb, lock);
 	}
 }
@@ -4055,7 +4055,7 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 			fb_assert(lock->lck_ast != NULL);
 		}
 
-		bdb->bdb_page.getLockStr(lock->lck_key.lck_string);
+		bdb->bdb_page.getLockStr(lock->getKeyPtr());
 		if (LCK_lock_opt(tdbb, lock, lock_type, wait))
 		{
 			if (!lock->lck_ast)
@@ -4824,7 +4824,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 		BackupManager* bm = dbb->dbb_backup_manager;
 		const int backup_state = bm->getState();
 
-		if (bdb->bdb_page.getPageNum() >= 0)
+		/// ASF: Always true: if (bdb->bdb_page.getPageNum() >= 0)
 		{
 			fb_assert(backup_state != Ods::hdr_nbak_unknown);
 			page->pag_pageno = bdb->bdb_page.getPageNum();

@@ -1201,7 +1201,7 @@ SSHORT ISQL_get_field_length(const TEXT* field_name)
 
 
 void ISQL_get_character_sets(SSHORT char_set_id, SSHORT collation, bool collate_only,
-							 bool not_null, TEXT* string)
+							 bool not_null, bool quote, TEXT* string)
 {
 /**************************************
  *
@@ -1239,17 +1239,31 @@ void ISQL_get_character_sets(SSHORT char_set_id, SSHORT collation, bool collate_
 			fb_utils::exact_name(COL.RDB$COLLATION_NAME);
 			fb_utils::exact_name(CST.RDB$DEFAULT_COLLATE_NAME);
 
+			char charSetName[QUOTEDLENGTH];
+			char collateName[QUOTEDLENGTH];
+
+			if (quote && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+			{
+				IUTILS_copy_SQL_id(CST.RDB$CHARACTER_SET_NAME, charSetName, DBL_QUOTE);
+				IUTILS_copy_SQL_id(COL.RDB$COLLATION_NAME, collateName, DBL_QUOTE);
+			}
+			else
+			{
+				strcpy(charSetName, CST.RDB$CHARACTER_SET_NAME);
+				strcpy(collateName, COL.RDB$COLLATION_NAME);
+			}
+
 			// Is specified collation the default collation for character set?
 			if (strcmp (CST.RDB$DEFAULT_COLLATE_NAME, COL.RDB$COLLATION_NAME) == 0)
 			{
 				if (!collate_only)
-					sprintf (string, " CHARACTER SET %s%s", CST.RDB$CHARACTER_SET_NAME, notNullStr);
+					sprintf (string, " CHARACTER SET %s%s", charSetName, notNullStr);
 			}
 			else if (collate_only)
-				sprintf (string, "%s COLLATE %s", notNullStr, COL.RDB$COLLATION_NAME);
+				sprintf (string, "%s COLLATE %s", notNullStr, collateName);
 			else
 				sprintf (string, " CHARACTER SET %s%s COLLATE %s",
-						 CST.RDB$CHARACTER_SET_NAME, notNullStr, COL.RDB$COLLATION_NAME);
+						 charSetName, notNullStr, collateName);
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(fbStatus);
@@ -1816,7 +1830,7 @@ bool ISQL_printNumericType(const char* fieldName, const int fieldType, const int
 		// We are ODS >= 10 and could be any Dialect
 		FOR FLD1 IN RDB$FIELDS WITH
 			FLD1.RDB$FIELD_NAME EQ fieldName
-			AND FLD1.RDB$FIELD_PRECISION NOT MISSING
+			AND NOT FLD1.RDB$FIELD_PRECISION EQ 0
 
 			// We are Dialect >=3 since FIELD_PRECISION is non-NULL
 			if (FLD1.RDB$FIELD_SUB_TYPE > 0 && FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
@@ -1847,13 +1861,13 @@ bool ISQL_printNumericType(const char* fieldName, const int fieldType, const int
 			case INTEGER:
 				isqlGlob.printf("NUMERIC(9, %d)", -fieldScale);
 				break;
+			case BIGINT:
+				isqlGlob.printf("NUMERIC(18, %d)", -fieldScale);
+				break;
 			case DOUBLE_PRECISION:
 				isqlGlob.printf("NUMERIC(15, %d)", -fieldScale);
 				break;
 			default:
-				// BIGINT can't happen there because it would have an explicit field_precision
-				// and then would be caught by the previous if().
-				fb_assert(fieldType != BIGINT);
 				isqlGlob.printf("%s", Column_types[i].type_name);
 			}
 		}
@@ -2185,8 +2199,7 @@ static processing_state add_row(TEXT* tabname)
 
 			// Convert first 4 chars to upper case for comparison
 			SCHAR cmd[5];
-			strncpy(cmd, lastInputLine, 4);
-			cmd[4] = '\0';
+			fb_utils::copy_terminate(cmd, lastInputLine, sizeof cmd);
 			IUTILS_make_upper(cmd);
 
 			// If the user writes NULL, put a null in the column
@@ -2936,8 +2949,7 @@ static processing_state bulk_insert_hack(const char* command)
 			else
 			{
 				// Convert first 4 chars to upper case for comparison.
-				strncpy(cmd, lastPos, 4);
-				cmd[4] = '\0';
+				fb_utils::copy_terminate(cmd, lastPos, sizeof cmd);
 				IUTILS_make_upper(cmd);
 			}
 

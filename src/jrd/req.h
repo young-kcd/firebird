@@ -61,7 +61,8 @@ struct record_param
 		  rpb_page(0), rpb_line(0),
 		  rpb_f_page(0), rpb_f_line(0),
 		  rpb_b_page(0), rpb_b_line(0),
-		  rpb_address(NULL), rpb_length(0), rpb_flags(0), rpb_stream_flags(0),
+		  rpb_address(NULL), rpb_length(0),
+		  rpb_flags(0), rpb_stream_flags(0), rpb_runtime_flags(0),
 		  rpb_org_scans(0), rpb_window(DB_PAGE_SPACE, -1)
 	{
 	}
@@ -127,8 +128,7 @@ const USHORT RPB_s_sweeper	= 0x04;	// garbage collector - skip swept pages
 
 const USHORT RPB_refetch	= 0x01;	// re-fetch is required
 const USHORT RPB_undo_data	= 0x02;	// data got from undo log
-const USHORT RPB_no_undo	= 0x04;	// don't use undo log when retrieving data
-const USHORT RPB_undo_read	= 0x08;	// read was performed using the undo log
+const USHORT RPB_undo_read	= 0x04;	// read was performed using the undo log
 
 const unsigned int MAX_DIFFERENCES	= 1024;	// Max length of generated Differences string
 											// between two records
@@ -255,11 +255,6 @@ public:
 	RuntimeStatistics	req_base_stats;
 	AffectedRows req_records_affected;	// records affected by the last statement
 
-	USHORT req_view_flags;				// special flags for virtual ops on views
-	jrd_rel* 	req_top_view_store;		// the top view in store(), if any
-	jrd_rel*	req_top_view_modify;	// the top view in modify(), if any
-	jrd_rel*	req_top_view_erase;		// the top view in erase(), if any
-
 	const StmtNode*	req_next;			// next node for execution
 	EDS::Statement*	req_ext_stmt;		// head of list of active dynamic statements
 	Firebird::Array<const Cursor*>	req_cursors;	// named cursors
@@ -330,13 +325,6 @@ const ULONG req_continue_loop	= 0x100L;		// PSQL continue statement
 const ULONG req_proc_fetch		= 0x200L;		// Fetch from procedure in progress
 const ULONG req_same_tx_upd		= 0x400L;		// record was updated by same transaction
 const ULONG req_reserved		= 0x800L;		// Request reserved for client
-
-// Flags for req_view_flags
-enum {
-	req_first_store_return = 0x1,
-	req_first_modify_return = 0x2,
-	req_first_erase_return = 0x4
-};
 
 
 // Index lock block

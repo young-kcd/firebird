@@ -195,7 +195,6 @@ void StatusXcp::as_sqlstate(char* sqlstate) const
 static void execute_looper(thread_db*, jrd_req*, jrd_tra*, const StmtNode*, jrd_req::req_s);
 static void looper_seh(thread_db*, jrd_req*, const StmtNode*);
 static void release_blobs(thread_db*, jrd_req*);
-static void release_proc_save_points(jrd_req*);
 static void trigger_failure(thread_db*, jrd_req*);
 static void stuff_stack_trace(const jrd_req*);
 
@@ -603,7 +602,8 @@ void EXE_receive(thread_db* tdbb,
 		ERR_post(Arg::Gds(isc_req_sync));
 	}
 
-	SLONG merge_sav_number = 0;
+	const SavNumber mergeSavNumber = transaction->tra_save_point ?
+		transaction->tra_save_point->getNumber() : 0;
 
 	if (request->req_flags & req_proc_fetch)
 	{
@@ -614,29 +614,14 @@ void EXE_receive(thread_db* tdbb,
 		   stored procedure savepoints into the current transaction
 		   savepoint, which is the savepoint for fetch and save them into the list. */
 
-		if (transaction->tra_save_point)
+		if (request->req_proc_sav_point)
 		{
-			merge_sav_number = transaction->tra_save_point->sav_number;
-			if (request->req_proc_sav_point)
-			{
-				// Push all saved savepoints to the top of transaction savepoints stack
-				while (request->req_proc_sav_point)
-				{
-					Savepoint* const sav_point = request->req_proc_sav_point;
-					request->req_proc_sav_point = sav_point->sav_next;
-					sav_point->sav_next = transaction->tra_save_point;
-					transaction->tra_save_point = sav_point;
-				}
-			}
-			else
-			{
-				VIO_start_save_point(tdbb, transaction);
-			}
+			// Push all saved savepoints to the top of transaction savepoints stack
+			Savepoint::mergeStacks(transaction->tra_save_point, request->req_proc_sav_point);
+			fb_assert(!request->req_proc_sav_point);
 		}
 		else
-		{
-			VIO_start_save_point(tdbb, transaction);
-		}
+			transaction->startSavepoint();
 	}
 
 	const JrdStatement* statement = request->getStatement();
@@ -690,22 +675,27 @@ void EXE_receive(thread_db* tdbb,
 	if (request->req_flags & req_proc_fetch)
 	{
 		// At this point request->req_proc_sav_point == NULL that is assured by code above
+		fb_assert(!request->req_proc_sav_point);
+
 		try
 		{
-			// merge work into target savepoint and save request's savepoints (with numbers!!!) till the next loop
-			while (transaction->tra_save_point && transaction->tra_save_point->sav_number > merge_sav_number)
+			// Merge work into target savepoint and save request's savepoints (with numbers!!!)
+			// till the next looper iteration
+			while (transaction->tra_save_point &&
+				transaction->tra_save_point->getNumber() > mergeSavNumber)
 			{
-				Savepoint* const save_sav_point = transaction->tra_save_point;
-				save_sav_point->rollforward(tdbb);
-				transaction->tra_save_point = save_sav_point->sav_next;
-				save_sav_point->sav_next = request->req_proc_sav_point;
-				request->req_proc_sav_point = save_sav_point;
+				Savepoint* const savepoint = transaction->tra_save_point;
+				transaction->rollforwardSavepoint(tdbb);
+				fb_assert(transaction->tra_save_free == savepoint);
+				transaction->tra_save_free = savepoint->moveToStack(request->req_proc_sav_point);
+				fb_assert(request->req_proc_sav_point == savepoint);
 			}
 		}
 		catch (...)
 		{
 			// If something went wrong, drop already stored savepoints to prevent memory leak
-			release_proc_save_points(request);
+			Savepoint::destroy(request->req_proc_sav_point);
+			fb_assert(!request->req_proc_sav_point);
 			throw;
 		}
 	}
@@ -863,7 +853,6 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	BLKCHK(request, type_req);
 	BLKCHK(transaction, type_tra);
@@ -898,13 +887,6 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	request->req_records_deleted = 0;
 
 	request->req_records_affected.clear();
-
-	// CVC: set up to count virtual operations on SQL views.
-
-	request->req_view_flags = 0;
-	request->req_top_view_store = NULL;
-	request->req_top_view_modify = NULL;
-	request->req_top_view_erase = NULL;
 
 	// Store request start time for timestamp work
 	request->req_timestamp.validate();
@@ -986,7 +968,11 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 	request->req_sorts.unlinkAll();
 
 	if (request->req_proc_sav_point && (request->req_flags & req_proc_fetch))
-		release_proc_save_points(request);
+	{
+		// Release savepoints used by this request
+		Savepoint::destroy(request->req_proc_sav_point);
+		fb_assert(!request->req_proc_sav_point);
+	}
 
 	TRA_release_request_snapshot(tdbb, request);
 	TRA_detach_request(request);
@@ -1032,8 +1018,8 @@ static void execute_looper(thread_db* tdbb,
 
 	if (!(request->req_flags & req_proc_fetch) && request->req_transaction)
 	{
-		if (transaction && (transaction != attachment->getSysTransaction()))
-			VIO_start_save_point(tdbb, transaction);
+		if (transaction && !(transaction->tra_flags & TRA_system))
+			transaction->startSavepoint();
 	}
 
 	request->req_flags &= ~req_stall;
@@ -1045,10 +1031,10 @@ static void execute_looper(thread_db* tdbb,
 
 	if (!(request->req_flags & req_proc_fetch) && request->req_transaction)
 	{
-		if (transaction && (transaction != attachment->getSysTransaction()) &&
+		if (transaction && !(transaction->tra_flags & TRA_system) &&
 			transaction->tra_save_point &&
-			!(transaction->tra_save_point->sav_flags & SAV_user) &&
-			!transaction->tra_save_point->sav_verb_count)
+			transaction->tra_save_point->isSystem() &&
+			!transaction->tra_save_point->isChanging())
 		{
 			// Forget about any undo for this verb
 			transaction->rollforwardSavepoint(tdbb);
@@ -1193,49 +1179,52 @@ void EXE_execute_triggers(thread_db* tdbb,
 
 static void stuff_stack_trace(const jrd_req* request)
 {
-	Firebird::string sTrace;
-	bool isEmpty = true;
+	string sTrace;
 
 	for (const jrd_req* req = request; req; req = req->req_caller)
 	{
-		const JrdStatement* statement = req->getStatement();
-		Firebird::string name;
+		const JrdStatement* const statement = req->getStatement();
+
+		string context, name;
 
 		if (statement->triggerName.length())
 		{
-			name = "At trigger '";
-			name += statement->triggerName.c_str();
+			context = "At trigger";
+			name = statement->triggerName.c_str();
 		}
 		else if (statement->procedure)
 		{
-			name = statement->parentStatement ? "At sub procedure '" : "At procedure '";
-			name += statement->procedure->getName().toString().c_str();
+			context = statement->parentStatement ? "At sub procedure" : "At procedure";
+			name = statement->procedure->getName().toString();
 		}
 		else if (statement->function)
 		{
-			name = statement->parentStatement ? "At sub function '" : "At function '";
-			name += statement->function->getName().toString().c_str();
+			context = statement->parentStatement ? "At sub function" : "At function";
+			name = statement->function->getName().toString();
+		}
+		else if (req->req_src_line)
+		{
+			context = "At block";
 		}
 
-		if (! name.isEmpty())
+		if (context.hasData())
 		{
 			name.trim();
 
-			if (sTrace.length() + name.length() + 2 > MAX_STACK_TRACE)
+			if (name.hasData())
+				context += string(" '") + name + string("'");
+
+			if (sTrace.length() + context.length() > MAX_STACK_TRACE)
 				break;
 
-			if (isEmpty)
-			{
-				isEmpty = false;
-				sTrace += name + "'";
-			}
-			else {
-				sTrace += "\n" + name + "'";
-			}
+			if (sTrace.hasData())
+				sTrace += "\n";
+
+			sTrace += context;
 
 			if (req->req_src_line)
 			{
-				Firebird::string src_info;
+				string src_info;
 				src_info.printf(" line: %" ULONGFORMAT", col: %" ULONGFORMAT,
 								req->req_src_line, req->req_src_column);
 
@@ -1247,7 +1236,7 @@ static void stuff_stack_trace(const jrd_req* request)
 		}
 	}
 
-	if (!isEmpty)
+	if (sTrace.hasData())
 		ERR_post_nothrow(Arg::Gds(isc_stack_trace) << Arg::Str(sTrace));
 }
 
@@ -1269,8 +1258,6 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 		ERR_post(Arg::Gds(isc_req_no_trans));
 
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-	jrd_tra* sysTransaction = attachment->getSysTransaction();
 	Database* dbb = tdbb->getDatabase();
 
 	if (!node || node->kind != DmlNode::KIND_STATEMENT)
@@ -1283,8 +1270,8 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 	fb_assert(request->req_caller == NULL);
 	request->req_caller = exeState.oldRequest;
 
-	const SLONG save_point_number = (request->req_transaction->tra_save_point) ?
-		request->req_transaction->tra_save_point->sav_number : 0;
+	const SavNumber savNumber = (request->req_transaction->tra_save_point) ?
+		request->req_transaction->tra_save_point->getNumber() : 0;
 
 	tdbb->tdbb_flags &= ~(TDBB_stack_trace_done | TDBB_sys_error);
 
@@ -1388,10 +1375,8 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 
 	if (exeState.errorPending)
 	{
-		if (request->req_transaction != sysTransaction)
-		{
-			request->req_transaction->rollbackToSavepoint(tdbb, save_point_number);
-		}
+		if (!(request->req_transaction->tra_flags & TRA_system))
+			request->req_transaction->rollbackToSavepoint(tdbb, savNumber);
 
 		ERR_punt();
 	}
@@ -1505,28 +1490,6 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 	}
 }
 
-static void release_proc_save_points(jrd_req* request)
-{
-/**************************************
- *
- *	r e l e a s e _ p r o c _ s a v e _ p o i n t s
- *
- **************************************
- *
- * Functional description
- *	Release savepoints used by this request.
- *
- **************************************/
-	Savepoint* sav_point = request->req_proc_sav_point;
-
-	while (sav_point)
-	{
-		Savepoint* const temp_sav_point = sav_point->sav_next;
-		delete sav_point;
-		sav_point = temp_sav_point;
-	}
-	request->req_proc_sav_point = NULL;
-}
 
 static void trigger_failure(thread_db* tdbb, jrd_req* trigger)
 {

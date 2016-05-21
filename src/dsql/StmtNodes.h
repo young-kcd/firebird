@@ -737,7 +737,7 @@ class InAutonomousTransactionNode : public TypedNode<StmtNode, StmtNode::TYPE_IN
 	struct Impure
 	{
 		TraNumber traNumber;
-		SLONG savNumber;
+		SavNumber savNumber;
 	};
 
 public:

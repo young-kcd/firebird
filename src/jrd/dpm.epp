@@ -92,7 +92,7 @@ namespace
 	{
 		AutoPtr<Lock> lock(FB_NEW_RPT(*tdbb->getDefaultPool(), 0)
 			Lock(tdbb, sizeof(SINT64), LCK_record_gc));
-		lock->lck_key.lck_long = ((SINT64) rpb->rpb_page << 16) | rpb->rpb_line;
+		lock->setKey(((SINT64) rpb->rpb_page << 16) | rpb->rpb_line);
 		lock->lck_data = transaction->tra_number;
 
 		ThreadStatusGuard temp_status(tdbb);

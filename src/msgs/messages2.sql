@@ -897,6 +897,7 @@ Data source : @4', NULL, NULL)
 ('already_opened', 'lockDatabaseFile', 'unix.cpp', NULL, 0, 787, NULL, 'Database already opened with engine instance, incompatible with current', NULL, NULL);
 ('bad_crypt_key', NULL, 'CryptoManager.cpp', NULL, 0, 788, NULL, 'Invalid crypt key @1', NULL, NULL);
 ('encrypt_error', NULL, 'CryptoManager.cpp', NULL, 0, 789, NULL, 'Page requires encyption but crypt plugin is missing', NULL, NULL);
+('max_idx_depth', NULL, 'btr.cpp', NULL, 0, 790, NULL, 'Maximum index depth (@1 levels) is reached', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
@@ -1970,6 +1971,7 @@ COMMIT WORK;
 ('dyn_cant_use_in_foreignkey', NULL, 'DdlNodes.epp', NULL, 8, 289, NULL, 'Can''t use @1 in FOREIGN KEY constraint', NULL, NULL);
 ('dyn_defvaldecl_package_func', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 290, NULL, 'Default values for parameters are allowed only in declaration of packaged function @1.@2', NULL, NULL);
 ('dyn_create_user_no_password', 'CreateAlterUserNode', 'DdlNodes.epp', NULL, 8, 291, NULL, 'Password must be specified when creating user', NULL, NULL);
+('dyn_cyclic_role', 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 292, NULL, 'role @1 can not be granted to role @2', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);
@@ -1980,7 +1982,7 @@ COMMIT WORK;
 (NULL, NULL, 'burp.c', NULL, 12, 0, NULL, 'could not locate appropriate error message', NULL, NULL);
 ('gbak_unknown_switch', NULL, 'burp.c', NULL, 12, 1, NULL, 'found unknown switch', NULL, NULL);
 ('gbak_page_size_missing', NULL, 'burp.c', NULL, 12, 2, NULL, 'page size parameter missing', NULL, NULL);
-('gbak_page_size_toobig', NULL, 'burp.c', NULL, 12, 3, NULL, 'Page size specified (@1) greater than limit (16384 bytes)', NULL, NULL);
+('gbak_page_size_toobig', NULL, 'burp.c', NULL, 12, 3, NULL, 'Page size specified (@1) greater than limit (32768 bytes)', NULL, NULL);
 ('gbak_redir_ouput_missing', NULL, 'burp.c', NULL, 12, 4, NULL, 'redirect location for output is not specified', NULL, NULL);
 ('gbak_switches_conflict', NULL, 'burp.c', NULL, 12, 5, NULL, 'conflicting switches for backup/restore', NULL, NULL);
 ('gbak_unknown_device', NULL, 'burp.c', NULL, 12, 6, NULL, 'device type @1 not known', NULL, NULL);

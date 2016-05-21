@@ -2787,49 +2787,6 @@ dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
 	if (!value)
 		return NULL;
 
-	dsc desc;
-	char* text;
-	UCHAR tempByte;
-
-	if (value->dsc_dtype == dtype_boolean &&
-		(DTYPE_IS_TEXT(impure->vlu_desc.dsc_dtype) || DTYPE_IS_BLOB(impure->vlu_desc.dsc_dtype)))
-	{
-		text = const_cast<char*>(MOV_get_boolean(value) ? "TRUE" : "FALSE");
-		desc.makeText(static_cast<USHORT>(strlen(text)), CS_ASCII, reinterpret_cast<UCHAR*>(text));
-		value = &desc;
-	}
-	else if (impure->vlu_desc.dsc_dtype == dtype_boolean &&
-		(DTYPE_IS_TEXT(value->dsc_dtype) || DTYPE_IS_BLOB(value->dsc_dtype)))
-	{
-		desc.makeBoolean(&tempByte);
-
-		MoveBuffer buffer;
-		UCHAR* address;
-		int len = MOV_make_string2(tdbb, value, CS_ASCII, &address, buffer);
-
-		// Remove heading and trailing spaces.
-
-		while (len > 0 && isspace(*address))
-		{
-			++address;
-			--len;
-		}
-
-		while (len > 0 && isspace(address[len - 1]))
-			--len;
-
-		if (len == 4 && fb_utils::strnicmp(reinterpret_cast<char*>(address), "TRUE", len) == 0)
-		{
-			tempByte = '\1';
-			value = &desc;
-		}
-		else if (len == 5 && fb_utils::strnicmp(reinterpret_cast<char*>(address), "FALSE", len) == 0)
-		{
-			tempByte = '\0';
-			value = &desc;
-		}
-	}
-
 	if (DTYPE_IS_BLOB(value->dsc_dtype) || DTYPE_IS_BLOB(impure->vlu_desc.dsc_dtype))
 		blb::move(tdbb, value, &impure->vlu_desc, NULL);
 	else
@@ -11133,8 +11090,8 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 		}
 
 		jrd_tra* transaction = request->req_transaction;
-		const SLONG savePointNumber = transaction->tra_save_point ?
-			transaction->tra_save_point->sav_number : 0;
+		const SavNumber savNumber = transaction->tra_save_point ?
+			transaction->tra_save_point->getNumber() : 0;
 
 		jrd_req* funcRequest = function->getStatement()->findRequest(tdbb);
 
@@ -11158,10 +11115,10 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 
 			// Clean up all savepoints started during execution of the procedure.
 
-			if (transaction != attachment->getSysTransaction())
+			if (!(transaction->tra_flags & TRA_system))
 			{
 				while (transaction->tra_save_point &&
-					transaction->tra_save_point->sav_number > savePointNumber)
+					transaction->tra_save_point->getNumber() > savNumber)
 				{
 					transaction->rollforwardSavepoint(tdbb);
 				}

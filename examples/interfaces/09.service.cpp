@@ -100,8 +100,8 @@ int main()
 	IProvider* prov = master->getDispatcher();
 	IUtil* utl = master->getUtilInterface();
 	IService* svc = NULL;
-	IXpbBuilder *spb1 = NULL;
-	IXpbBuilder *spb2 = NULL;
+	IXpbBuilder* spb1 = NULL;
+	IXpbBuilder* spb2 = NULL;
 
 	try {
 		printf("** Attaching to service manager...\n");

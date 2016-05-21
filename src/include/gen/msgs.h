@@ -814,6 +814,7 @@ Data source : @4"},		/* eds_statement */
 	{335545107, "Database already opened with engine instance, incompatible with current"},		/* already_opened */
 	{335545108, "Invalid crypt key @1"},		/* bad_crypt_key */
 	{335545109, "Page requires encyption but crypt plugin is missing"},		/* encrypt_error */
+	{335545110, "Maximum index depth (@1 levels) is reached"},		/* max_idx_depth */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */
@@ -957,7 +958,7 @@ Data source : @4"},		/* eds_statement */
 	{336068898, "Default values for parameters are allowed only in declaration of packaged function @1.@2"},		/* dyn_defvaldecl_package_func */
 	{336330753, "found unknown switch"},		/* gbak_unknown_switch */
 	{336330754, "page size parameter missing"},		/* gbak_page_size_missing */
-	{336330755, "Page size specified (@1) greater than limit (16384 bytes)"},		/* gbak_page_size_toobig */
+	{336330755, "Page size specified (@1) greater than limit (32768 bytes)"},		/* gbak_page_size_toobig */
 	{336330756, "redirect location for output is not specified"},		/* gbak_redir_ouput_missing */
 	{336330757, "conflicting switches for backup/restore"},		/* gbak_switches_conflict */
 	{336330758, "device type @1 not known"},		/* gbak_unknown_device */

@@ -542,7 +542,7 @@ static const struct {
 	{335544839, "42000"}, // 519 foreign_key_references_present
 	{335544840, "HY000"}, // 520 no_update
 	{335544841, "24000"}, // 521 cursor_already_open
-	{335544842, "42000"}, // 522 stack_trace
+	{335544842, "00000"}, // 522 stack_trace
 	{335544843, "HY000"}, // 523 ctx_var_not_found
 	{335544844, "HY000"}, // 524 ctx_namespace_invalid
 	{335544845, "54000"}, // 525 ctx_too_big
@@ -810,6 +810,7 @@ static const struct {
 	{335545107, "08006"}, // 787 already_opened
 	{335545108, "08006"}, // 788 bad_crypt_key
 	{335545109, "XX000"}, // 789 encrypt_error
+	{335545110, "54000"}, // 790 max_idx_depth
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

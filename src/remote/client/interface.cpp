@@ -92,6 +92,8 @@
 
 
 const char* const PROTOCOL_INET = "inet";
+const char* const PROTOCOL_INET4 = "inet4";
+const char* const PROTOCOL_INET6 = "inet6";
 const char* const PROTOCOL_WNET = "wnet";
 const char* const PROTOCOL_XNET = "xnet";
 
@@ -1038,7 +1040,7 @@ void Events::freeClientData(CheckStatusWrapper* status, bool force)
 
 			packet->p_operation = op_cancel_events;
 			packet->p_event.p_event_database = rdb->rdb_id;
-			packet->p_event.p_event_rid = rvnt->rvnt_id;
+			const SLONG save_id = packet->p_event.p_event_rid = rvnt->rvnt_id;
 
 			// Send the packet, and if that worked, get a response
 
@@ -1053,7 +1055,7 @@ void Events::freeClientData(CheckStatusWrapper* status, bool force)
 
 			// Get ready to fire the event.
 
-			if (rvnt->rvnt_id)
+			if (rvnt->rvnt_id == save_id)
 			{
 				callback = rvnt->rvnt_callback;
 				rvnt->rvnt_id = 0;
@@ -5419,6 +5421,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
  **************************************/
 
 	rem_port* port = NULL;
+	int inet_af = AF_UNSPEC;
 
 	cBlock.loadClnt(pb, &parSet);
 	authenticateStep0(cBlock);
@@ -5443,7 +5446,13 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 	else
 #endif
 
-	if (ISC_analyze_protocol(PROTOCOL_INET, attach_name, node_name, INET_SEPARATOR) ||
+	if (ISC_analyze_protocol(PROTOCOL_INET4, attach_name, node_name, INET_SEPARATOR))
+		inet_af = AF_INET;
+	else if (ISC_analyze_protocol(PROTOCOL_INET6, attach_name, node_name, INET_SEPARATOR))
+		inet_af = AF_INET6;
+
+	if (inet_af != AF_UNSPEC ||
+		ISC_analyze_protocol(PROTOCOL_INET, attach_name, node_name, INET_SEPARATOR) ||
 		ISC_analyze_tcp(attach_name, node_name))
 	{
 		if (node_name.isEmpty())
@@ -5455,7 +5464,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 		}
 
 		port = INET_analyze(&cBlock, attach_name, node_name.c_str(), flags & ANALYZE_UV, pb,
-			cBlock.getConfig(), ref_db_name);
+			cBlock.getConfig(), ref_db_name, inet_af);
 	}
 
 	// We have a local connection string. If it's a file on a network share,
@@ -6032,7 +6041,10 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 				//Therefore simply ignore such bad packet.
 
 				// Finished processing this event
-				event->rvnt_id = 0;
+				// Callback above should release event and another thread could reuse it meanwhile.
+				// Make sure we don't release such reused event.
+				if (event->rvnt_id == pevent->p_event_rid)
+					event->rvnt_id = 0;
 			}
 
 		}						// end of event handling for op_event

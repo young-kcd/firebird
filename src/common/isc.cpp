@@ -249,10 +249,7 @@ TEXT* ISC_get_host(TEXT* string, USHORT length)
 	struct utsname name;
 
 	if (uname(&name) >= 0)
-	{
-		strncpy(string, name.nodename, length);
-		string[length - 1] = 0;
-	}
+		fb_utils::copy_terminate(string, name.nodename, length);
 	else
 		strcpy(string, "local");
 

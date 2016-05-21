@@ -1895,7 +1895,7 @@ THREAD_ENTRY_DECLARE Service::run(THREAD_ENTRY_PARAM arg)
 	{
 		Service* svc = (Service*)arg;
 		RefPtr<SvcMutex> ref(svc->svc_existence);
-		int exit_code = svc->svc_service_run->serv_thd(svc);
+		exit_code = svc->svc_service_run->serv_thd(svc);
 
 		svc->started();
 		svc->svc_sem_full.release();
@@ -1904,6 +1904,7 @@ THREAD_ENTRY_DECLARE Service::run(THREAD_ENTRY_PARAM arg)
 	catch (const Exception& ex)
 	{
 		// Not much we can do here
+		exit_code = -1;
 		iscLogException("Exception in Service::run():", ex);
 	}
 
@@ -2129,9 +2130,14 @@ void Service::readFbLog()
 			svc_started = true;
 			TEXT buffer[100];
 			setDataMode(true);
+			int n;
 
-			while (fgets(buffer, sizeof(buffer), file))
-				outputData(buffer, fb_strlen(buffer));
+			while ((n = fread(buffer, sizeof(buffer[0]), FB_NELEM(buffer), file)) > 0)
+			{
+				outputData(buffer, n);
+				if (checkForShutdown())
+					break;
+			}
 
 			setDataMode(false);
 		}
@@ -2186,9 +2192,9 @@ ULONG Service::add_val(ULONG i, ULONG val)
 }
 
 
-bool Service::empty() const
+bool Service::empty(ULONG head) const
 {
-	return svc_stdout_tail == svc_stdout_head;
+	return svc_stdout_tail == head;
 }
 
 
@@ -2264,12 +2270,12 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 
 	while (length)
 	{
-		if ((empty() && (svc_flags & SVC_finished)) || checkForShutdown())
+		if ((empty(head) && (svc_flags & SVC_finished)) || checkForShutdown())
 		{
 			break;
 		}
 
-		if (empty())
+		if (empty(head))
 		{
 			if (svc_stdin_size_requested && (!(flags & GET_BINARY)))
 			{
@@ -2285,6 +2291,12 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 
 			if (flags & GET_ONCE)
 			{
+				break;
+			}
+
+			if (full())
+			{
+				// buffer is full but LF is not present in it
 				break;
 			}
 
@@ -2307,7 +2319,7 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 			break;
 		}
 
-		while (head != svc_stdout_tail && length > 0)
+		while ((!empty(head)) && length > 0)
 		{
 			flagFirst = true;
 			const UCHAR ch = svc_stdout[head];
@@ -2539,6 +2551,8 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 
 	do
 	{
+		bool bigint = false;
+
 		switch (svc_action)
 		{
 		case isc_action_svc_nbak:
@@ -2698,7 +2712,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				{
 					return false;
 				}
-				get_action_svc_data(spb, switches);
+				get_action_svc_data(spb, switches, bigint);
 				break;
 
 			case isc_spb_sec_admin:
@@ -2785,10 +2799,10 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				}
 				break;
 			case isc_spb_bkp_length:
-				get_action_svc_data(spb, burp_backup);
+				get_action_svc_data(spb, burp_backup, bigint);
 				break;
 			case isc_spb_res_length:
-				get_action_svc_data(spb, burp_database);
+				get_action_svc_data(spb, burp_database, bigint);
 				break;
 			case isc_spb_bkp_factor:
 			case isc_spb_res_buffers:
@@ -2798,7 +2812,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				{
 					return false;
 				}
-				get_action_svc_data(spb, switches);
+				get_action_svc_data(spb, switches, bigint);
 				break;
 			case isc_spb_res_access_mode:
 				if (!get_action_svc_parameter(*(spb.getBytes()), reference_burp_in_sw_table, switches))
@@ -2839,6 +2853,11 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					return false;
 				}
 				break;
+			case isc_spb_rpr_commit_trans_64:
+			case isc_spb_rpr_rollback_trans_64:
+			case isc_spb_rpr_recover_two_phase_64:
+				bigint = true;
+				// fall into
 			case isc_spb_prp_page_buffers:
 			case isc_spb_prp_sweep_interval:
 			case isc_spb_prp_shutdown_db:
@@ -2855,7 +2874,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				{
 					return false;
 				}
-				get_action_svc_data(spb, switches);
+				get_action_svc_data(spb, switches, bigint);
 				break;
 			case isc_spb_prp_write_mode:
 			case isc_spb_prp_access_mode:
@@ -2911,7 +2930,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				get_action_svc_string(spb, switches);
 				break;
 			case isc_spb_trc_id:
-				get_action_svc_data(spb, switches);
+				get_action_svc_data(spb, switches, bigint);
 				break;
 			default:
 				return false;
@@ -2938,7 +2957,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				get_action_svc_string(spb, switches);
 				break;
 			case isc_spb_val_lock_timeout:
-				get_action_svc_data(spb, switches);
+				get_action_svc_data(spb, switches, bigint);
 				break;
 			}
 			break;
@@ -3066,10 +3085,10 @@ void Service::get_action_svc_string_pos(const ClumpletReader& spb, string& switc
 }
 
 
-void Service::get_action_svc_data(const ClumpletReader& spb, string& switches)
+void Service::get_action_svc_data(const ClumpletReader& spb, string& switches, bool bigint)
 {
 	string s;
-	s.printf("%" SLONGFORMAT" ", spb.getInt());
+	s.printf("%" SQUADFORMAT" ", (bigint ? spb.getBigInt() : (SINT64) spb.getInt()));
 	switches += s;
 }
 

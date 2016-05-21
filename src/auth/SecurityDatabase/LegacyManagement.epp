@@ -225,13 +225,7 @@ int SecurityDatabaseManagement::release()
 	return 1;
 }
 
-#define STR_STORE(to, from) strStore(to, from, sizeof(to))
-
-static inline void strStore(char* to, const char* from, size_t len)
-{
-	to[--len] = '\0';
-	strncpy(to, from, len);
-}
+#define STR_STORE(to, from) fb_utils::copy_terminate(to, from, sizeof(to))
 
 int SecurityDatabaseManagement::execute(Firebird::CheckStatusWrapper* st, Firebird::IUser* user,
 	Firebird::IListUsers* callback)
@@ -324,12 +318,12 @@ int SecurityDatabaseManagement::execute(Firebird::CheckStatusWrapper* st, Firebi
 
 		switch (user->operation())
 		{
-		case MAP_DROP_OPER:
-		case MAP_SET_OPER:
+		case Firebird::IUser::OP_USER_DROP_MAP:
+		case Firebird::IUser::OP_USER_SET_MAP:
 			{
 				Firebird::string sql;
 				sql.printf("ALTER ROLE " ADMIN_ROLE " %s AUTO ADMIN MAPPING",
-					user->operation() == MAP_SET_OPER ? "SET" : "DROP");
+					user->operation() == Firebird::IUser::OP_USER_SET_MAP ? "SET" : "DROP");
 				isc_dsql_execute_immediate(isc_status, &database, &transaction, sql.length(), sql.c_str(), 1, NULL);
 				if (isc_status[1] != 0)
 				{
@@ -338,7 +332,7 @@ int SecurityDatabaseManagement::execute(Firebird::CheckStatusWrapper* st, Firebi
 			}
 			break;
 
-		case ADD_OPER:
+		case Firebird::IUser::OP_USER_ADD:
 			// this checks the "entered" flags for each parameter (except the name)
 			// and makes all non-entered parameters null valued
 
@@ -412,7 +406,7 @@ int SecurityDatabaseManagement::execute(Firebird::CheckStatusWrapper* st, Firebi
 			}
 			break;
 
-		case MOD_OPER:
+		case Firebird::IUser::OP_USER_MODIFY:
 			// this updates an existing record, replacing all fields that are
 			// entered, and for those that were specified but not entered, it
 			// changes the current value to the null value
@@ -509,7 +503,7 @@ int SecurityDatabaseManagement::execute(Firebird::CheckStatusWrapper* st, Firebi
 			}
 			break;
 
-		case DEL_OPER:
+		case Firebird::IUser::OP_USER_DELETE:
 			// looks up the specified user record and deletes it
 
 			found = false;
@@ -546,8 +540,7 @@ int SecurityDatabaseManagement::execute(Firebird::CheckStatusWrapper* st, Firebi
 			}
 			break;
 
-		case DIS_OPER:
-		case OLD_DIS_OPER:
+		case Firebird::IUser::OP_USER_DISPLAY:
 			// gets either the desired record, or all records, and displays them
 
 			found = false;

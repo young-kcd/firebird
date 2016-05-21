@@ -39,6 +39,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/UserBlob.h"
 #include "../alice/alice_proto.h"
+#include "../common/utils_proto.h"
 
 #include <string.h>
 
@@ -411,8 +412,7 @@ static void parse_fullpath(tdr* trans)
 			trans->tdr_filename = q + 1;
 
 			trans->tdr_remote_site = FB_NEW_RPT(*tdgbl->getDefaultPool(), q - p + 1) alice_str;
-			strncpy((char*) trans->tdr_remote_site->str_data, (char*) p, q - p);
-			trans->tdr_remote_site->str_data[q - p] = '\0';
+			fb_utils::copy_terminate((char*) trans->tdr_remote_site->str_data, (char*) p, q - p + 1);
 		}
 	}
 	else

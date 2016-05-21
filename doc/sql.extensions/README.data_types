@@ -68,8 +68,8 @@ BOOLEAN (FB 3.0)
 
     3. The value TRUE is greater than the value FALSE.
 
-    4. Booleans are not implicitly convertible to any other datatype. But it's convertible to/from
-       strings with CAST.
+    4. Non-booleans values are not implicitly convertible to boolean in boolean-specific expressions
+       like predicates and arguments for operators NOT, AND, OR and IS.
 
     5. It's allowed to test booleans without compare with TRUE or FALSE. For example,
        "field1 OR field2" and "NOT field1" are valid expressions. It's also allowed to compare with

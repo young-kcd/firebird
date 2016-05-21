@@ -337,6 +337,12 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const void* bytes, const 
 				m.printf("attempt to store %d bytes in a clumplet, need 4", length);
 			}
 			break;
+		case BigIntSpb:
+			if (length != 8)
+			{
+				m.printf("attempt to store %d bytes in a clumplet, need 8", length);
+			}
+			break;
 		case ByteSpb:
 			if (length != 1)
 			{

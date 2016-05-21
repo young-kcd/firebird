@@ -326,7 +326,7 @@ TipCache::StatusBlockData::StatusBlockData(thread_db* tdbb, TipCache* tipCache, 
 	blockNumber = blockNumber;
 	memory = NULL;
 	cache = tipCache;
-	existenceLock.lck_key.lck_long = blockNumber;
+	existenceLock.setKey(blockNumber);
 
 	if (!LCK_lock(tdbb, &existenceLock, LCK_SR, LCK_WAIT))
 		ERR_bugcheck_msg("Unable to obtain memory block lock");
@@ -421,7 +421,7 @@ TraNumber TipCache::findLimbo(TraNumber minNumber, TraNumber maxNumber)
 		// TODO: check if this assumption is indeed correct.
 		if (((std::atomic<CommitNumber>*)(statusBlock->data + transOffset))->load(std::memory_order_relaxed) == CN_LIMBO)
 			return t;
-		
+
 		if (++t > maxNumber)
 			break;
 
@@ -524,7 +524,7 @@ CommitNumber TipCache::snapshotState(thread_db* tdbb, TraNumber number)
 	//    (they were probably not causing much harm, but consistency is a good thing)
 	// 2. Old TPC returned tra_active for transactions in limbo, which was not correct
 	Lock temp_lock(tdbb, sizeof(TraNumber), LCK_tra);
-	temp_lock.lck_key.lck_long = number;
+	temp_lock.setKey(number);
 
 	if (LCK_read_data(tdbb, &temp_lock))
 		return stateCn;
@@ -634,7 +634,7 @@ void TipCache::releaseSharedMemory(thread_db *tdbb, TraNumber oldest_old, TraNum
 
 		// Signal other processes to release resources
 		Lock temp(tdbb, sizeof(SLONG), LCK_tpc_block);
-		temp.lck_key.lck_long = blockNumber;
+		temp.setKey(blockNumber);
 		if (!LCK_lock(tdbb, &temp, LCK_EX, LCK_WAIT))
 		{
 			gds__log("TPC BUG: Unable to obtain cleanup lock for block %d. Please report this error to developers", *itr);
@@ -850,12 +850,12 @@ void TipCache::updateActiveSnapshots(thread_db* tdbb, ActiveSnapshots* activeSna
 				{
 					ThreadStatusGuard temp_status(tdbb);
 					Lock temp_lock(tdbb, sizeof(AttNumber), LCK_attachment);
-					temp_lock.lck_key.lck_long = slot_attachment_id;
+					temp_lock.setKey(slot_attachment_id);
 					if ((isAttachmentDead = LCK_lock(tdbb, &temp_lock, LCK_EX, LCK_NO_WAIT)))
 						LCK_release(tdbb, &temp_lock);
 					att_states.put(slot_attachment_id, isAttachmentDead);
 				}
-				
+
 				if (isAttachmentDead) 
 				{
 					if (!guard.isLocked()) 

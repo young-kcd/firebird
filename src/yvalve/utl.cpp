@@ -1104,43 +1104,32 @@ public:
 		}
 
 		unsigned num = 0;
-		try
-		{
-			values.push(EPB_version1);
+		values.push(EPB_version1);
 
-			for (const char** e = events; *e; ++e)
+		for (const char** e = events; *e; ++e)
+		{
+			++num;
+
+			string ev(*e);
+			ev.rtrim();
+
+			if (ev.length() > 255)
 			{
-				++num;
-
-				string ev(*e);
-				ev.rtrim();
-
-				if (ev.length() > 255)
-				{
-					(Arg::Gds(isc_random) << ("Too long event name: " + ev)
-						<< Arg::SqlState("HY024")).raise();
-						// HY024: Invalid attribute value
-				}
-				values.push(ev.length());
-				values.push(reinterpret_cast<const unsigned char*>(ev.begin()), ev.length());
-				values.push(0);
-				values.push(0);
-				values.push(0);
-				values.push(0);
+				(Arg::Gds(isc_random) << ("Too long event name: " + ev)
+					<< Arg::SqlState("HY024")).raise();
+					// HY024: Invalid attribute value
 			}
-
-			// allocate memory for various buffers
-			buffer.getBuffer(values.getCount());
-			counters.getBuffer(num);
+			values.push(ev.length());
+			values.push(reinterpret_cast<const unsigned char*>(ev.begin()), ev.length());
+			values.push(0);
+			values.push(0);
+			values.push(0);
+			values.push(0);
 		}
-		catch(const Exception&)
-		{
-			counters.free();
-			buffer.free();
-			values.free();
 
-			throw;
-		}
+		// allocate memory for various buffers
+		buffer.getBuffer(values.getCount());
+		counters.getBuffer(num);
 	}
 
 	unsigned getLength()
@@ -2077,16 +2066,9 @@ void API_ROUTINE isc_format_implementation(USHORT impl_nr,
 	if (cbuflen > 0)
 	{
 		if (impl_class_nr >= FB_NELEM(impl_class) || !(impl_class[impl_class_nr]))
-		{
-			strncpy(cbuf, "**unknown**", cbuflen - 1);
-			cbuf[MIN(11, cbuflen - 1)] = '\0';
-		}
+			fb_utils::copy_terminate(cbuf, "**unknown**", cbuflen);
 		else
-		{
-			strncpy(cbuf, impl_class[impl_class_nr], cbuflen - 1);
-			const int len = static_cast<int>(strlen(impl_class[impl_class_nr]));
-			cbuf[MIN(len, cbuflen - 1)] = '\0';
-		}
+			fb_utils::copy_terminate(cbuf, impl_class[impl_class_nr], cbuflen);
 	}
 
 }

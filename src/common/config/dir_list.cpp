@@ -33,25 +33,44 @@ void ParsedPath::parse(const PathName& path)
 {
 	clear();
 
-	if (path.length() == 1) {
-		add(path);
-		return;
-	}
-
 	PathName oldpath = path;
+	int toSkip = 0;
 	do {
 		PathName newpath, elem;
 		PathUtils::splitLastComponent(newpath, elem, oldpath);
 		oldpath = newpath;
+		if (elem.isEmpty() && !oldpath.isEmpty()) // Skip double dir separator
+		{
+			continue;
+		}
+		if (elem == PathUtils::curr_dir_link) // Skip current dir reference
+		{
+			continue;
+		}
+		if (elem == PathUtils::up_dir_link) // skip next up dir
+		{
+			toSkip++;
+			continue;
+		}
+		if (toSkip > 0)
+		{
+			toSkip--;
+			continue;
+		}
 		insert(0, elem);
 	} while (oldpath.length() > 0);
+	if (toSkip != 0)
+	{
+		// Malformed path, attempt to hack?..
+		// Let it be, consequent comparison will rule it out
+	}
 }
 
 PathName ParsedPath::subPath(FB_SIZE_T n) const
 {
 	PathName rc = (*this)[0];
-	if (PathUtils::isRelative(rc + PathUtils::dir_sep))
-		rc = PathUtils::dir_sep + rc;
+	if (rc.isEmpty())
+		rc = PathUtils::dir_sep;
 	for (FB_SIZE_T i = 1; i < n; i++)
 	{
 		PathName newpath;
@@ -155,42 +174,23 @@ void DirectoryList::initialize(bool simple_mode)
 		}
 	}
 
-	FB_SIZE_T last = 0;
 	PathName root = Config::getRootDirectory();
-	FB_SIZE_T i;
-	for (i = 0; i < val.length(); i++)
+	while (!val.isEmpty())
 	{
-		if (val[i] == ';')
+		string::size_type sep = val.find(';');
+		if (sep == string::npos)
+			sep = val.length();
+		PathName dir(val.c_str(), sep);
+		dir.alltrim(" \t\r");
+		val.erase(0, sep + 1);
+		if (PathUtils::isRelative(dir))
 		{
-			PathName dir = "";
-			if (i > last)
-			{
-				dir = val.substr(last, i - last);
-				dir.trim();
-			}
-			if (PathUtils::isRelative(dir))
-			{
-				PathName newdir;
-				PathUtils::concatPath(newdir, root, dir);
-				dir = newdir;
-			}
-			add(ParsedPath(dir));
-			last = i + 1;
+			PathName fullPath;
+			PathUtils::concatPath(fullPath, root, dir);
+			dir = fullPath;
 		}
+		add(ParsedPath(dir));
 	}
-	PathName dir = "";
-	if (i > last)
-	{
-		dir = val.substr(last, i - last);
-		dir.trim();
-	}
-	if (PathUtils::isRelative(dir))
-	{
-		PathName newdir;
-		PathUtils::concatPath(newdir, root, dir);
-		dir = newdir;
-	}
-	add(ParsedPath(dir));
 }
 
 bool DirectoryList::isPathInList(const PathName& path) const
@@ -210,15 +210,6 @@ bool DirectoryList::isPathInList(const PathName& path) const
 	case Full:
 		return true;
 	}
-
-	// Disable any up-dir(..) references - in case our path_utils
-	// and OS handle paths in slightly different ways,
-	// this is "wonderful" potential hole for hacks
-	// Example of IIS attack attempt:
-	// "GET /scripts/..%252f../winnt/system32/cmd.exe?/c+dir HTTP/1.0"
-	//								(live from apache access.log :)
-	if (path.find(PathUtils::up_dir_link) != PathName::npos)
-		return false;
 
 	PathName varpath(path);
 	if (PathUtils::isRelative(path)) {
