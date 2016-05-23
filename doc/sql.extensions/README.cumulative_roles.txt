@@ -51,3 +51,11 @@ GRANT CUMR TO USER US WITH ADMIN OPTION;
 CONNECT 'LOCALHOST:/TMP/CUMROLES.FDB' USER 'US' PASSWORD 'PAS';
 INSERT INTO T VALUES (1);
 GRANT TINS TO US2;
+
+Use RDB$ROLE_IN_USE function to check if privileges of specified role are currently available to the current user.
+
+Syntax:
+RDB$ROLE_IN_USE(role_name varchar(32)) RETURNS BOOLEAN
+
+To get a list of currently active roles you can run:
+SELECT * FROM RDB$ROLES WHERE RDB$ROLE_IN_USE(RDB$ROLE_NAME)
