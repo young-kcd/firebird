@@ -143,7 +143,13 @@ void TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request)
 void TRA_detach_request(Jrd::jrd_req* request)
 {
 	if (!request->req_transaction)
+	{
+		fb_assert(!request->req_savepoints);
 		return;
+	}
+
+	// Release stored looper savepoints
+	Savepoint::destroy(request->req_savepoints);
 
 	// Remove request from the doubly linked list
 	if (request->req_tra_next)
