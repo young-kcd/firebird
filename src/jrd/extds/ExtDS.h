@@ -214,8 +214,8 @@ public:
 
 protected:
 	void generateDPB(Jrd::thread_db* tdbb, Firebird::ClumpletWriter& dpb,
-		const Firebird::MetaName &user, const Firebird::string& pwd,
-		const Firebird::MetaName &role) const;
+		const Firebird::MetaName& user, const Firebird::string& pwd,
+		const Firebird::MetaName& role) const;
 
 	virtual Transaction* doCreateTransaction() = 0;
 	virtual Statement* doCreateStatement() = 0;
