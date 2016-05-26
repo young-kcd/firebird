@@ -10624,7 +10624,7 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 	Auth::DynamicUserData* userData = FB_NEW_POOL(*transaction->tra_pool) Auth::DynamicUserData;
 
-	MetaName text = name.c_str();
+	MetaName text(name);
 	if (text.isEmpty() && mode == USER_MOD)
 	{
 		// alter current user
