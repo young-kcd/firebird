@@ -1036,6 +1036,7 @@ bool SCL_role_granted(thread_db* tdbb, const UserId& usr, const TEXT* sql_role)
 }
 
 
+// TODO: Remove recursion. See dfw.epp/check_computed_dependencies as a model.
 void SCL_find_granted_roles(thread_db* tdbb, const Firebird::MetaName& object, bool isRole,
 	Firebird::SortedArray<Firebird::MetaName>& grantedRoles, bool defaultOnly)
 {
@@ -1089,8 +1090,8 @@ bool SCL_admin_role(thread_db* tdbb, const Firebird::SortedArray<Firebird::MetaN
 		AutoCacheRequest request(tdbb, irq_is_admin_role, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request) R IN RDB$ROLES
-			WITH R.RDB$ROLE_NAME EQ roles[i].c_str()
-			 AND R.RDB$SYSTEM_FLAG != 0
+			WITH R.RDB$ROLE_NAME EQ roles[i].c_str() AND
+			     R.RDB$SYSTEM_FLAG != 0
 		{
 			adminRole = true;
 			break;
@@ -1171,6 +1172,7 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 			user->usr_granted_roles.add(user->usr_sql_role_name);
 			SCL_find_granted_roles(tdbb, user->usr_sql_role_name, true, user->usr_granted_roles, false);
 		}
+
 		// Add all default roles granted to user
 		SCL_find_granted_roles(tdbb, user->usr_user_name, false, user->usr_granted_roles, true);
 

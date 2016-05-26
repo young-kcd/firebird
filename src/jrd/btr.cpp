@@ -243,7 +243,7 @@ BtrPageGCLock::~BtrPageGCLock()
 		LCK_release(JRD_get_thread_data(), this);
 }
 
-void BtrPageGCLock::disablePageGC(thread_db* tdbb, const PageNumber &page)
+void BtrPageGCLock::disablePageGC(thread_db* tdbb, const PageNumber& page)
 {
 	page.getLockStr(getKeyPtr());
 	LCK_lock(tdbb, this, LCK_read, LCK_WAIT);

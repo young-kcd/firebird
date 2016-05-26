@@ -775,7 +775,7 @@ void Trigger::compile(thread_db* tdbb)
 	if (extTrigger)
 		return;
 
-	if (!statement /*&& !compile_in_progress*/)
+	if (!statement)
 	{
 		compile_in_progress = true;
 		// Allocate statement memory pool
@@ -1027,7 +1027,7 @@ static void		rollback(thread_db*, jrd_tra*, const bool);
 static void		purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsigned flags = 0);
 static void		getUserInfo(UserId&, const DatabaseOptions&, const char*, const char*,
 	const RefPtr<Config>*, bool, ICryptKeyCallback*);
-static void		makeRoleName(Database*, MetaName &, DatabaseOptions&);
+static void		makeRoleName(Database*, MetaName&, DatabaseOptions&);
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
 
