@@ -1223,7 +1223,7 @@ role_grantee_list($granteeArray)
 
 %type role_grantee(<granteeArray>)
 role_grantee($granteeArray)
-	: symbol_user_name	{ $granteeArray->add(GranteeClause(obj_user_or_role, *$1)); }
+	: symbol_user_name		{ $granteeArray->add(GranteeClause(obj_user_or_role, *$1)); }
 	| USER symbol_user_name	{ $granteeArray->add(GranteeClause(obj_user, *$2)); }
 	| ROLE symbol_user_name	{ $granteeArray->add(GranteeClause(obj_sql_role, *$2)); }
 	;
@@ -7092,6 +7092,7 @@ system_function_std_syntax
 	| POWER
 	| RAND
 	| RDB_GET_CONTEXT
+	| RDB_ROLE_IN_USE
 	| RDB_SET_CONTEXT
 	| REPLACE
 	| REVERSE
@@ -7106,7 +7107,6 @@ system_function_std_syntax
 	| TANH
 	| TRUNC
 	| UUID_TO_CHAR
-	| RDB_ROLE_IN_USE
 	;
 
 %type <sysFuncCallNode> system_function_special_syntax

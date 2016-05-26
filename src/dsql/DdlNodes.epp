@@ -11149,9 +11149,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 					duplicate = true;
 				}
 				else if (!PRIV.RDB$FIELD_NAME.NULL)
-				{
 					field = PRIV.RDB$FIELD_NAME; // Keep DEFAULT ROLE while adding ADMIN OPTION
-				}
 
 				if (duplicate && objType == obj_sql_role && field == "D" &&
 					PRIV.RDB$FIELD_NAME.NULL)
@@ -11519,7 +11517,8 @@ void GrantRevokeNode::checkGrantorCanGrant(thread_db* tdbb, jrd_tra* transaction
  * Otherwise returns 0;
  *
  */
-int getGrantorOption(thread_db* tdbb, jrd_tra* transaction, const MetaName& grantor, int grantorType, const MetaName& roleName)
+static int getGrantorOption(thread_db* tdbb, jrd_tra* transaction, const MetaName& grantor,
+	int grantorType, const MetaName& roleName)
 {
 	AutoCacheRequest request(tdbb, drq_get_role_au, DYN_REQUESTS);
 
@@ -11530,13 +11529,11 @@ int getGrantorOption(thread_db* tdbb, jrd_tra* transaction, const MetaName& gran
 			PRV.RDB$OBJECT_TYPE = obj_sql_role AND
 			PRV.RDB$PRIVILEGE EQ "M"
 	{
-		const Firebird::MetaName role = PRV.RDB$RELATION_NAME;
+		const MetaName role = PRV.RDB$RELATION_NAME;
 		const bool grantable = PRV.RDB$GRANT_OPTION == 2;
 
 		if (role == roleName)
-		{
 			return grantable ? 2 : 1;
-		}
 		else
 		{
 			switch (getGrantorOption(tdbb, transaction, role, obj_sql_role, roleName))
@@ -11559,7 +11556,7 @@ int getGrantorOption(thread_db* tdbb, jrd_tra* transaction, const MetaName& gran
 /*
  * Check if the grantor has admin privilege on the role or admin privilege on another role
  * which has admin privilege on it, etc
- * If recoursive call of getGrantorOption returns:
+ * If recursive call of getGrantorOption returns:
  * 0 - role does not grant to grantor.
  * 1 - found but without admin option.
  * 2 - with admin option.
@@ -11685,6 +11682,7 @@ void GrantRevokeNode::setFieldClassName(thread_db* tdbb, jrd_tra* transaction,
 	}
 	END_FOR
 }
+
 
 //----------------------
 

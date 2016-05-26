@@ -182,12 +182,12 @@ dsc* evlRand(thread_db* tdbb, const SysFunction* function, const NestValueArray&
 dsc* evlReplace(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlReverse(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlRight(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlRoleInUse(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlRound(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlSign(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlSqrt(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlUuidToChar(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
-dsc* evlRoleInUse(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 
 
 // System context function names
@@ -3810,7 +3810,6 @@ dsc* evlRoleInUse(thread_db* tdbb, const SysFunction*, const NestValueArray& arg
 	return &impure->vlu_desc;
 }
 
-
 } // anonymous namespace
 
 
@@ -3861,6 +3860,7 @@ const SysFunction SysFunction::functions[] =
 		{"POWER", 2, 2, setParamsDouble, makeDoubleResult, evlPower, NULL},
 		{"RAND", 0, 0, NULL, makeDoubleResult, evlRand, NULL},
 		{RDB_GET_CONTEXT, 2, 2, setParamsGetSetContext, makeGetSetContext, evlGetContext, NULL},
+		{"RDB$ROLE_IN_USE", 1, 1, setParamsAsciiVal, makeBooleanResult, evlRoleInUse, NULL},
 		{RDB_SET_CONTEXT, 3, 3, setParamsGetSetContext, makeGetSetContext, evlSetContext, NULL},
 		{"REPLACE", 3, 3, setParamsFromList, makeReplace, evlReplace, NULL},
 		{"REVERSE", 1, 1, NULL, makeReverse, evlReverse, NULL},
@@ -3875,7 +3875,6 @@ const SysFunction SysFunction::functions[] =
 		{"TANH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfTanh},
 		{"TRUNC", 1, 2, setParamsRoundTrunc, makeTrunc, evlTrunc, NULL},
 		{"UUID_TO_CHAR", 1, 1, setParamsUuidToChar, makeUuidToChar, evlUuidToChar, NULL},
-		{"RDB$ROLE_IN_USE", 1, 1, setParamsAsciiVal, makeBooleanResult, evlRoleInUse, NULL},
 		{"", 0, 0, NULL, NULL, NULL, NULL}
 	};
 

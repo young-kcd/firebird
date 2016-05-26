@@ -36,8 +36,8 @@
 
 namespace Jrd {
 
-bool checkCreateDatabaseGrant(const Firebird::MetaName &userName, const Firebird::MetaName &trustedRole,
-	const Firebird::MetaName &sqlRole, const char* securityDb);
+bool checkCreateDatabaseGrant(const Firebird::MetaName& userName, const Firebird::MetaName& trustedRole,
+	const Firebird::MetaName& sqlRole, const char* securityDb);
 
 class DbCreatorsScan: public VirtualTableScan
 {

@@ -477,9 +477,8 @@ ULONG PIO_get_number_of_pages(const jrd_file* file, const USHORT pagesize)
 	}
 
 	struct STAT statistics;
-	if (fb_io::fstat(file->fil_desc, &statistics)) {
+	if (fb_io::fstat(file->fil_desc, &statistics))
 		unix_error("fstat", file, isc_io_access_err);
-	}
 
 	const FB_UINT64 length = statistics.st_size;
 

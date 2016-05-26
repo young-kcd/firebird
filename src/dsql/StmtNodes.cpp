@@ -7937,9 +7937,9 @@ void SetRoleNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** transact
 		user->usr_granted_roles.add(user->usr_sql_role_name);
 		SCL_find_granted_roles(tdbb, user->usr_sql_role_name, true, user->usr_granted_roles, false);
 	}
+
 	// Add all default roles granted to user
 	SCL_find_granted_roles(tdbb, user->usr_user_name, false, user->usr_granted_roles, true);
-
 
 	if (SCL_admin_role(tdbb, user->usr_granted_roles))
 		user->usr_flags |= USR_dba;

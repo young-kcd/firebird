@@ -1033,7 +1033,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 			FOR PRV IN RDB$USER_PRIVILEGES WITH
 				PRV.RDB$OBJECT_TYPE   EQ obj_sql_role AND
 				(PRV.RDB$USER_TYPE    EQ obj_user      OR
-				PRV.RDB$USER_TYPE     EQ obj_sql_role) AND
+				 PRV.RDB$USER_TYPE    EQ obj_sql_role) AND
 				PRV.RDB$RELATION_NAME EQ object       AND
 				PRV.RDB$PRIVILEGE     EQ 'M'
 				SORTED BY PRV.RDB$USER
@@ -1824,7 +1824,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 	FOR PRV IN RDB$USER_PRIVILEGES WITH
 		PRV.RDB$OBJECT_TYPE   EQ obj_sql_role AND
 		(PRV.RDB$USER_TYPE    EQ obj_user      OR
-		PRV.RDB$USER_TYPE     EQ obj_sql_role) AND
+		 PRV.RDB$USER_TYPE     EQ obj_sql_role) AND
 		PRV.RDB$PRIVILEGE     EQ 'M'
 		SORTED BY PRV.RDB$RELATION_NAME, PRV.RDB$USER
 
@@ -5354,7 +5354,7 @@ static processing_state show_role(const SCHAR* object)
 		FOR PRV IN RDB$USER_PRIVILEGES WITH
 			PRV.RDB$OBJECT_TYPE   EQ obj_sql_role AND
 			(PRV.RDB$USER_TYPE    EQ obj_user      OR
-			PRV.RDB$USER_TYPE     EQ obj_sql_role) AND
+			 PRV.RDB$USER_TYPE     EQ obj_sql_role) AND
 			PRV.RDB$RELATION_NAME EQ object       AND
 			PRV.RDB$PRIVILEGE     EQ 'M'
 			SORTED BY  PRV.RDB$USER
