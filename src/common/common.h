@@ -913,7 +913,8 @@ void GDS_breakpoint(int);
 
 namespace fb_io {
 
-inline int open(const char* pathname, int flags, mode_t mode = 0666) {
+inline int open(const char* pathname, int flags, mode_t mode = 0666)
+{
 	int rc;
 	do {
 #ifdef LSB_BUILD
@@ -921,11 +922,12 @@ inline int open(const char* pathname, int flags, mode_t mode = 0666) {
 #else
 		rc = ::open(pathname, flags, mode);
 #endif
-        } while (rc == -1 && SYSCALL_INTERRUPTED(errno));
+	} while (rc == -1 && SYSCALL_INTERRUPTED(errno));
 	return rc;
 }
 
-inline FILE *fopen(const char *path, const char *mode) {
+inline FILE *fopen(const char* path, const char* mode)
+{
 	FILE* rc = NULL;
 	do {
 #ifdef LSB_BUILD
@@ -933,11 +935,12 @@ inline FILE *fopen(const char *path, const char *mode) {
 #else
 		rc = ::fopen(path, mode);
 #endif
-        } while (rc == NULL && SYSCALL_INTERRUPTED(errno));
+	} while (rc == NULL && SYSCALL_INTERRUPTED(errno));
 	return rc;
 }
 
-inline off_t lseek(int fd, off_t offset, int whence) {
+inline off_t lseek(int fd, off_t offset, int whence)
+{
 	off_t rc;
 	do {
 #ifdef LSB_BUILD
@@ -945,11 +948,12 @@ inline off_t lseek(int fd, off_t offset, int whence) {
 #else
 		rc = ::lseek(fd, offset, whence);
 #endif
-        } while (rc == (off_t) -1 && SYSCALL_INTERRUPTED(errno));
+	} while (rc == (off_t) -1 && SYSCALL_INTERRUPTED(errno));
 	return rc;
 }
 
-inline int stat(const char *path, struct STAT *buf) {
+inline int stat(const char* path, struct STAT* buf)
+{
 	int rc;
 	do {
 #ifdef LSB_BUILD
@@ -957,11 +961,12 @@ inline int stat(const char *path, struct STAT *buf) {
 #else
 		rc = ::stat(path, buf);
 #endif
-        } while (rc == -1 && SYSCALL_INTERRUPTED(errno));
+	} while (rc == -1 && SYSCALL_INTERRUPTED(errno));
 	return rc;
 }
 
-inline int fstat(int fd, struct STAT *buf) {
+inline int fstat(int fd, struct STAT* buf)
+{
 	int rc;
 	do {
 #ifdef LSB_BUILD
@@ -969,11 +974,12 @@ inline int fstat(int fd, struct STAT *buf) {
 #else
 		rc = ::fstat(fd, buf);
 #endif
-        } while (rc == -1 && SYSCALL_INTERRUPTED(errno));
+	} while (rc == -1 && SYSCALL_INTERRUPTED(errno));
 	return rc;
 }
 
-inline int fgetpos(FILE *stream, fpos_t *pos) {
+inline int fgetpos(FILE* stream, fpos_t* pos)
+{
 	int rc;
 	do {
 #ifdef LSB_BUILD
@@ -981,11 +987,12 @@ inline int fgetpos(FILE *stream, fpos_t *pos) {
 #else
 		rc = ::fgetpos(stream, pos);
 #endif
-        } while (rc == -1 && SYSCALL_INTERRUPTED(errno));
+	} while (rc == -1 && SYSCALL_INTERRUPTED(errno));
 	return rc;
 }
 
-inline int fsetpos(FILE *stream, const fpos_t *pos) {
+inline int fsetpos(FILE* stream, const fpos_t* pos)
+{
 	int rc;
 	do {
 #ifdef LSB_BUILD
@@ -993,12 +1000,13 @@ inline int fsetpos(FILE *stream, const fpos_t *pos) {
 #else
 		rc = ::fsetpos(stream, pos);
 #endif
-        } while (rc == -1 && SYSCALL_INTERRUPTED(errno));
+	} while (rc == -1 && SYSCALL_INTERRUPTED(errno));
 	return rc;
 }
 
 #ifndef WIN_NT
-inline int lockf(int fd, int cmd, off_t len) {
+inline int lockf(int fd, int cmd, off_t len)
+{
 	int rc;
 	do {
 #ifdef LSB_BUILD
@@ -1006,23 +1014,25 @@ inline int lockf(int fd, int cmd, off_t len) {
 #else
 		rc = ::lockf(fd, cmd, len);
 #endif
-        } while (rc == -1 && SYSCALL_INTERRUPTED(errno));
+	} while (rc == -1 && SYSCALL_INTERRUPTED(errno));
 	return rc;
 }
 
-inline int mkstemp(char *__template) {
+inline int mkstemp(char* templ)
+{
 	int rc;
 	do {
 #ifdef LSB_BUILD
-		rc = mkstemp64(__template);
+		rc = mkstemp64(templ);
 #else
-		rc = ::mkstemp(__template);
+		rc = ::mkstemp(templ);
 #endif
-        } while (rc == -1 && SYSCALL_INTERRUPTED(errno));
+	} while (rc == -1 && SYSCALL_INTERRUPTED(errno));
 	return rc;
 }
 
-inline ssize_t pread(int fd, void *buf, size_t count, off_t offset) {
+inline ssize_t pread(int fd, void* buf, size_t count, off_t offset)
+{
 	// Don't check EINTR because it's done by caller
 	return
 #ifdef LSB_BUILD
@@ -1032,7 +1042,8 @@ inline ssize_t pread(int fd, void *buf, size_t count, off_t offset) {
 #endif
 }
 
-inline ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset) {
+inline ssize_t pwrite(int fd, const void* buf, size_t count, off_t offset)
+{
 	// Don't check EINTR because it's done by caller
 	return
 #ifdef LSB_BUILD
@@ -1042,7 +1053,8 @@ inline ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset) {
 #endif
 }
 
-inline struct dirent *readdir(DIR *dirp) {
+inline struct dirent* readdir(DIR* dirp)
+{
 	struct dirent* rc;
 	do {
 #ifdef LSB_BUILD
@@ -1050,12 +1062,12 @@ inline struct dirent *readdir(DIR *dirp) {
 #else
 		rc = ::readdir(dirp);
 #endif
-        } while (rc == NULL && SYSCALL_INTERRUPTED(errno));
+	} while (rc == NULL && SYSCALL_INTERRUPTED(errno));
 	return rc;
 }
 
-inline void *mmap(void *addr, size_t length, int prot, int flags,
-		  int fd, off_t offset) {
+inline void* mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset)
+{
 	void* rc;
 	do {
 #ifdef LSB_BUILD
@@ -1063,11 +1075,12 @@ inline void *mmap(void *addr, size_t length, int prot, int flags,
 #else
 		rc = ::mmap(addr, length, prot, flags, fd, offset);
 #endif
-        } while (rc == MAP_FAILED && SYSCALL_INTERRUPTED(errno));
+	} while (rc == MAP_FAILED && SYSCALL_INTERRUPTED(errno));
 	return rc;
 }
 
-inline int ftruncate(int fd, off_t length) {
+inline int ftruncate(int fd, off_t length)
+{
 	int rc;
 	do {
 #ifdef LSB_BUILD
@@ -1075,11 +1088,12 @@ inline int ftruncate(int fd, off_t length) {
 #else
 		rc = ::ftruncate(fd, length);
 #endif
-        } while (rc == -1 && SYSCALL_INTERRUPTED(errno));
+	} while (rc == -1 && SYSCALL_INTERRUPTED(errno));
 	return rc;
 }
 
-inline int lstat(const char *path, struct STAT *buf) {
+inline int lstat(const char* path, struct STAT* buf)
+{
 	int rc;
 	do {
 #ifdef LSB_BUILD
@@ -1087,11 +1101,12 @@ inline int lstat(const char *path, struct STAT *buf) {
 #else
 		rc = ::lstat(path, buf);
 #endif
-        } while (rc == -1 && SYSCALL_INTERRUPTED(errno));
+	} while (rc == -1 && SYSCALL_INTERRUPTED(errno));
 	return rc;
 }
 
-inline int posix_fadvise(int fd, off_t offset, off_t len, int advice) {
+inline int posix_fadvise(int fd, off_t offset, off_t len, int advice)
+{
 	int rc;
 	do {
 #ifdef LSB_BUILD
@@ -1099,11 +1114,12 @@ inline int posix_fadvise(int fd, off_t offset, off_t len, int advice) {
 #else
 		rc = ::posix_fadvise(fd, offset, len, advice);
 #endif
-        } while (rc != 0 && SYSCALL_INTERRUPTED(rc));
+	} while (rc != 0 && SYSCALL_INTERRUPTED(rc));
 	return rc;
 }
 
-inline int getrlimit(int resource, struct rlimit *rlim) {
+inline int getrlimit(int resource, struct rlimit* rlim)
+{
 	int rc;
 	do {
 #ifdef LSB_BUILD
@@ -1111,11 +1127,12 @@ inline int getrlimit(int resource, struct rlimit *rlim) {
 #else
 		rc = ::getrlimit(resource, rlim);
 #endif
-        } while (rc == -1 && SYSCALL_INTERRUPTED(errno));
+	} while (rc == -1 && SYSCALL_INTERRUPTED(errno));
 	return rc;
 }
 
-inline int setrlimit(int resource, const struct rlimit *rlim) {
+inline int setrlimit(int resource, const struct rlimit* rlim)
+{
 	int rc;
 	do {
 #ifdef LSB_BUILD
@@ -1123,7 +1140,7 @@ inline int setrlimit(int resource, const struct rlimit *rlim) {
 #else
 		rc = ::setrlimit(resource, rlim);
 #endif
-        } while (rc == -1 && SYSCALL_INTERRUPTED(errno));
+	} while (rc == -1 && SYSCALL_INTERRUPTED(errno));
 	return rc;
 }
 #endif	// WIN_NT

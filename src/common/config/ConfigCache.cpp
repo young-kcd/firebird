@@ -84,6 +84,7 @@ Firebird::PathName ConfigCache::getFileName()
 time_t ConfigCache::File::getTime()
 {
 	struct STAT st;
+
 	if (fb_io::stat(fileName.c_str(), &st) != 0)
 	{
 		if (errno == ENOENT)
@@ -93,6 +94,7 @@ time_t ConfigCache::File::getTime()
 		}
 		system_call_failed::raise("stat");
 	}
+
 	return st.st_mtime;
 }
 

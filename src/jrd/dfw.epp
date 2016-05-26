@@ -385,7 +385,7 @@ public:
 			m_locks.insert(pos, relLock(relation));
 	}
 
-	bool exists(USHORT rel_id) const 
+	bool exists(USHORT rel_id) const
 	{
 		FB_SIZE_T pos;
 		return m_locks.find(rel_id, pos);

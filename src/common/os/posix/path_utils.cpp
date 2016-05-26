@@ -181,10 +181,13 @@ bool PathUtils::isRelative(const Firebird::PathName& path)
 bool PathUtils::isSymLink(const Firebird::PathName& path)
 {
 	struct STAT st, lst;
+
 	if (fb_io::stat(path.c_str(), &st) != 0)
 		return false;
+
 	if (fb_io::lstat(path.c_str(), &lst) != 0)
 		return false;
+
 	return st.st_ino != lst.st_ino;
 }
 
