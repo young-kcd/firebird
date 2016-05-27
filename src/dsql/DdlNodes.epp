@@ -918,7 +918,7 @@ void DdlNode::storePrivileges(thread_db* tdbb, jrd_tra* transaction,
 			X.RDB$OBJECT_TYPE = type;
 			X.RDB$PRIVILEGE[0] = *p;
 			X.RDB$PRIVILEGE[1] = 0;
-			X.RDB$GRANT_OPTION = 1;
+			X.RDB$GRANT_OPTION = WITH_GRANT_OPTION;
 		}
 		END_STORE
 	}
@@ -11416,7 +11416,7 @@ void GrantRevokeNode::checkGrantorCanGrant(thread_db* tdbb, jrd_tra* transaction
 			if (PRV.RDB$GRANT_OPTION.NULL || !PRV.RDB$GRANT_OPTION)
 				goRel = 0;
 			else if (goRel)
-				goRel = 1;
+				goRel = WITH_GRANT_OPTION;
 		}
 		else
 		{
@@ -11530,7 +11530,7 @@ static int getGrantorOption(thread_db* tdbb, jrd_tra* transaction, const MetaNam
 			PRV.RDB$PRIVILEGE EQ "M"
 	{
 		const MetaName role = PRV.RDB$RELATION_NAME;
-		const bool grantable = PRV.RDB$GRANT_OPTION == 2;
+		const bool grantable = PRV.RDB$GRANT_OPTION == WITH_ADMIN_OPTION;
 
 		if (role == roleName)
 			return grantable ? 2 : 1;
@@ -11606,7 +11606,7 @@ void GrantRevokeNode::checkGrantorCanGrantDdl(thread_db* tdbb, jrd_tra* transact
 			 PRV.RDB$OBJECT_TYPE >= obj_database AND
 			 PRV.RDB$PRIVILEGE EQ privilege
 	{
-		grantable = PRV.RDB$GRANT_OPTION == 1;
+		grantable = PRV.RDB$GRANT_OPTION == WITH_GRANT_OPTION;
 	}
 	END_FOR
 

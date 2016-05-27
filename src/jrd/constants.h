@@ -446,4 +446,7 @@ const int OPT_STATIC_ITEMS = 64;
 
 #define CURRENT_ENGINE "Engine12"
 
+const int WITH_GRANT_OPTION = 1;
+const int WITH_ADMIN_OPTION = 2;
+
 #endif // JRD_CONSTANTS_H

@@ -1045,27 +1045,27 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 			case 0:
 				strcpy(PRIV.RDB$USER, user_name.c_str());
 				PRIV.RDB$PRIVILEGE[0] = 'S';
-				PRIV.RDB$GRANT_OPTION = 1;
+				PRIV.RDB$GRANT_OPTION = WITH_GRANT_OPTION;
 				break;
 			case 1:
 				strcpy(PRIV.RDB$USER, user_name.c_str());
 				PRIV.RDB$PRIVILEGE[0] = 'I';
-				PRIV.RDB$GRANT_OPTION = 1;
+				PRIV.RDB$GRANT_OPTION = WITH_GRANT_OPTION;
 				break;
 			case 2:
 				strcpy(PRIV.RDB$USER, user_name.c_str());
 				PRIV.RDB$PRIVILEGE[0] = 'U';
-				PRIV.RDB$GRANT_OPTION = 1;
+				PRIV.RDB$GRANT_OPTION = WITH_GRANT_OPTION;
 				break;
 			case 3:
 				strcpy(PRIV.RDB$USER, user_name.c_str());
 				PRIV.RDB$PRIVILEGE[0] = 'D';
-				PRIV.RDB$GRANT_OPTION = 1;
+				PRIV.RDB$GRANT_OPTION = WITH_GRANT_OPTION;
 				break;
 			case 4:
 				strcpy(PRIV.RDB$USER, user_name.c_str());
 				PRIV.RDB$PRIVILEGE[0] = 'R';
-				PRIV.RDB$GRANT_OPTION = 1;
+				PRIV.RDB$GRANT_OPTION = WITH_GRANT_OPTION;
 				break;
 			default:
 				strcpy(PRIV.RDB$USER, "PUBLIC");
@@ -1196,7 +1196,7 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 			PAD(obj_name.c_str(), PRIV.RDB$RELATION_NAME);
 			PRIV.RDB$PRIVILEGE[0] = *p;
 			PRIV.RDB$PRIVILEGE[1] = 0;
-			PRIV.RDB$GRANT_OPTION = 1;
+			PRIV.RDB$GRANT_OPTION = WITH_GRANT_OPTION;
 			PRIV.RDB$USER_TYPE = obj_user;
 			PRIV.RDB$OBJECT_TYPE = obj_type;
 			PRIV.RDB$GRANTOR.NULL = TRUE;
