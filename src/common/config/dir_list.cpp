@@ -42,7 +42,8 @@ void ParsedPath::parse(const PathName& path)
 		PathUtils::splitLastComponent(newpath, elem, oldpath);
 		oldpath = newpath;
 
-		if (elem.isEmpty() && !oldpath.isEmpty()) // Skip double dir separator
+		if (elem.isEmpty()) // Skip double dir separator
+		{
 			continue;
 
 		if (elem == PathUtils::curr_dir_link) // Skip current dir reference
@@ -72,12 +73,12 @@ void ParsedPath::parse(const PathName& path)
 
 PathName ParsedPath::subPath(FB_SIZE_T n) const
 {
-	PathName rc = (*this)[0];
-
-	if (rc.isEmpty())
-		rc = PathUtils::dir_sep;
-
-	for (FB_SIZE_T i = 1; i < n; i++)
+	PathName rc;
+#ifndef WIN_NT
+	// Code in DirectoryList::initialize() ensured that the path is absolute
+	rc = PathUtils::dir_sep;
+#endif
+	for (FB_SIZE_T i = 0; i < n; i++)
 	{
 		PathName newpath;
 		PathUtils::concatPath(newpath, rc, (*this)[i]);
