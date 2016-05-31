@@ -162,7 +162,7 @@ namespace {
 			Jrd::Database* dbb = tdbb->getDatabase();
 			Jrd::BufferControl* bcb = dbb->dbb_bcb;
 			Jrd::BufferDesc bdb(bcb);
-			bdb.bdb_page = Jrd::PageNumber(Jrd::DB_PAGE_SPACE, 0);
+			bdb.bdb_page = Jrd::HEADER_PAGE_NUMBER;
 
 			UCHAR* h = FB_NEW_POOL(*Firebird::MemoryPool::getContextPool()) UCHAR[dbb->dbb_page_size + PAGE_ALIGNMENT];
 			buffer.reset(h);
@@ -179,54 +179,45 @@ namespace {
 			Jrd::jrd_file* file = pageSpace->file;
 			const bool isTempPage = pageSpace->isTemporary();
 
-			Jrd::BackupManager::StateReadGuard::lock(tdbb, 1);
+			Jrd::BackupManager::StateReadGuard stateGuard(tdbb);
 			Jrd::BackupManager* bm = dbb->dbb_backup_manager;
 			int bak_state = bm->getState();
 
-			try
+			fb_assert(bak_state != Ods::hdr_nbak_unknown);
+
+			ULONG diff_page = 0;
+			if (bak_state != Ods::hdr_nbak_normal)
+				diff_page = bm->getPageIndex(tdbb, bdb.bdb_page.getPageNum());
+
+			if (bak_state == Ods::hdr_nbak_normal || !diff_page)
 			{
-				fb_assert(bak_state != Ods::hdr_nbak_unknown);
+				// Read page from disk as normal
+				int retryCount = 0;
 
-				ULONG diff_page = 0;
-				if (bak_state != Ods::hdr_nbak_normal)
-					diff_page = bm->getPageIndex(tdbb, bdb.bdb_page.getPageNum());
+				while (!PIO_read(tdbb, file, &bdb, page, status))
+		 		{
+					if (!CCH_rollover_to_shadow(tdbb, dbb, file, false))
+ 						ERR_punt();;
 
-				if (bak_state == Ods::hdr_nbak_normal || !diff_page)
-				{
-					// Read page from disk as normal
-					int retryCount = 0;
-
-					while (!PIO_read(tdbb, file, &bdb, page, status))
-		 			{
-						if (!CCH_rollover_to_shadow(tdbb, dbb, file, false))
- 							ERR_punt();;
-
-						if (file != pageSpace->file)
-							file = pageSpace->file;
-						else
+					if (file != pageSpace->file)
+						file = pageSpace->file;
+					else
+					{
+						if (retryCount++ == 3)
 						{
-							if (retryCount++ == 3)
-							{
-								gds__log("IO error loop Unwind to avoid a hang\n");
-								ERR_punt();
-							}
+							gds__log("IO error loop Unwind to avoid a hang\n");
+							ERR_punt();
 						}
- 					}
-				}
-				else
-				{
-					if (!bm->readDifference(tdbb, diff_page, page))
-						ERR_punt();
-				}
-
-				setHeader(h);
+					}
+ 				}
 			}
-			catch(const Exception&)
+			else
 			{
-				Jrd::BackupManager::StateReadGuard::unlock(tdbb);
-				throw;
+				if (!bm->readDifference(tdbb, diff_page, page))
+					ERR_punt();
 			}
-			Jrd::BackupManager::StateReadGuard::unlock(tdbb);
+
+			setHeader(h);
 		}
 
 	private:
@@ -391,9 +382,11 @@ namespace Jrd {
 
 		const bool newCryptState = plugName.hasData();
 
-		BackupManager::StateReadGuard::lock(tdbb, 1);
-		int bak_state = dbb.dbb_backup_manager->getState();
-		BackupManager::StateReadGuard::unlock(tdbb);
+		int bak_state = Ods::hdr_nbak_unknown;
+		{
+			BackupManager::StateReadGuard stateGuard(tdbb);
+			bak_state = dbb.dbb_backup_manager->getState();
+		}
 
 		{	// window scope
 			CchHdr hdr(tdbb, LCK_read);
@@ -769,9 +762,11 @@ namespace Jrd {
 						}
 
 						// nbackup state check
-						BackupManager::StateReadGuard::lock(tdbb, 1);
-						int bak_state = tdbb->getDatabase()->dbb_backup_manager->getState();
-						BackupManager::StateReadGuard::unlock(tdbb);
+						int bak_state = Ods::hdr_nbak_unknown;
+						{
+							BackupManager::StateReadGuard stateGuard(tdbb);
+							bak_state = dbb.dbb_backup_manager->getState();
+						}
 
 						if (bak_state != Ods::hdr_nbak_normal)
 						{
