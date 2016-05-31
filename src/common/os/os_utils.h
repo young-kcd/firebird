@@ -105,7 +105,7 @@ namespace os_utils
 		return rc;
 	}
 	
-	inline int stat(const char *path, struct STAT *buf)
+	inline int stat(const char* path, struct STAT* buf)
 	{
 		int rc;
 		do {
@@ -118,7 +118,7 @@ namespace os_utils
 		return rc;
 	}
 	
-	inline int fstat(int fd, struct STAT *buf)
+	inline int fstat(int fd, struct STAT* buf)
 	{
 		int rc;
 		do {
@@ -131,7 +131,7 @@ namespace os_utils
 		return rc;
 	}
 	
-	inline int fgetpos(FILE *stream, fpos_t *pos)
+	inline int fgetpos(FILE* stream, fpos_t* pos)
 	{
 		int rc;
 		do {
@@ -144,7 +144,7 @@ namespace os_utils
 		return rc;
 	}
 	
-	inline int fsetpos(FILE *stream, const fpos_t *pos)
+	inline int fsetpos(FILE* stream, const fpos_t* pos)
 	{
 		int rc;
 		do {
@@ -171,20 +171,20 @@ namespace os_utils
 		return rc;
 	}
 	
-	inline int mkstemp(char *__template)
+	inline int mkstemp(char* templ)
 	{
 		int rc;
 		do {
 #ifdef LSB_BUILD
-			rc = mkstemp64(__template);
+			rc = mkstemp64(templ);
 #else
-			rc = ::mkstemp(__template);
+			rc = ::mkstemp(templ);
 #endif
 		} while (rc == -1 && SYSCALL_INTERRUPTED(errno));
 		return rc;
 	}
 	
-	inline ssize_t pread(int fd, void *buf, size_t count, off_t offset)
+	inline ssize_t pread(int fd, void* buf, size_t count, off_t offset)
 	{
 		// Don't check EINTR because it's done by caller
 		return
@@ -195,7 +195,7 @@ namespace os_utils
 #endif
 	}
 	
-	inline ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
+	inline ssize_t pwrite(int fd, const void* buf, size_t count, off_t offset)
 	{
 		// Don't check EINTR because it's done by caller
 		return
@@ -206,7 +206,7 @@ namespace os_utils
 #endif
 	}
 	
-	inline struct dirent *readdir(DIR *dirp)
+	inline struct dirent* readdir(DIR* dirp)
 	{
 		struct dirent* rc;
 		do {
@@ -219,7 +219,7 @@ namespace os_utils
 		return rc;
 	}
 	
-	inline void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
+	inline void* mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset)
 	{
 		void* rc;
 		do {
@@ -245,7 +245,7 @@ namespace os_utils
 		return rc;
 	}
 	
-	inline int lstat(const char *path, struct STAT *buf)
+	inline int lstat(const char* path, struct STAT* buf)
 	{
 		int rc;
 		do {
@@ -271,7 +271,7 @@ namespace os_utils
 		return rc;
 	}
 	
-	inline int getrlimit(int resource, struct rlimit *rlim)
+	inline int getrlimit(int resource, struct rlimit* rlim)
 	{
 		int rc;
 		do {
@@ -284,7 +284,7 @@ namespace os_utils
 		return rc;
 	}
 	
-	inline int setrlimit(int resource, const struct rlimit *rlim)
+	inline int setrlimit(int resource, const struct rlimit* rlim)
 	{
 		int rc;
 		do {
