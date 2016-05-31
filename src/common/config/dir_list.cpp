@@ -43,7 +43,6 @@ void ParsedPath::parse(const PathName& path)
 		oldpath = newpath;
 
 		if (elem.isEmpty()) // Skip double dir separator
-		{
 			continue;
 
 		if (elem == PathUtils::curr_dir_link) // Skip current dir reference
