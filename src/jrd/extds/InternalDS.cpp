@@ -147,9 +147,9 @@ void InternalConnection::attach(thread_db* tdbb, const PathName& dbName,
 	setWrapErrors(false);
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	if ((user.isEmpty() || user == attachment->att_user->usr_user_name) &&
+	if ((user.isEmpty() || user == attachment->att_user->getUserName()) &&
 		pwd.isEmpty() &&
-		(role.isEmpty() || role == attachment->att_user->usr_sql_role_name))
+		(role.isEmpty() || role == attachment->att_user->getSqlRole()))
 	{
 		m_isCurrent = true;
 		m_attachment = attachment->getInterface();
@@ -249,9 +249,9 @@ bool InternalConnection::isSameDatabase(thread_db* tdbb, const PathName& dbName,
 	if (m_isCurrent)
 	{
 		const UserId* attUser = m_attachment->getHandle()->att_user;
-		return ((user.isEmpty() || user == attUser->usr_user_name) &&
+		return ((user.isEmpty() || user == attUser->getUserName()) &&
 				pwd.isEmpty() &&
-				(role.isEmpty() || role == attUser->usr_sql_role_name));
+				(role.isEmpty() || role == attUser->getSqlRole()));
 	}
 
 	return Connection::isSameDatabase(tdbb, dbName, user, pwd, role);

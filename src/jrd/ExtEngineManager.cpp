@@ -662,7 +662,7 @@ Firebird::ITransaction* ExtEngineManager::ExternalContextImpl::getTransaction(
 
 const char* ExtEngineManager::ExternalContextImpl::getUserName()
 {
-	return internalAttachment->att_user->usr_user_name.c_str();
+	return internalAttachment->att_user->getUserName().c_str();
 }
 
 const char* ExtEngineManager::ExternalContextImpl::getDatabaseName()

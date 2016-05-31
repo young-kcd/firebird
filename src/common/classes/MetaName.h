@@ -81,6 +81,9 @@ public:
 	bool isEmpty() const { return count == 0; }
 	bool hasData() const { return count != 0; }
 
+	char& operator[](unsigned n) { return data[n]; }
+	char operator[](unsigned n) const { return data[n]; }
+
 	const char* begin() const { return data; }
 	const char* end() const { return data + count; }
 

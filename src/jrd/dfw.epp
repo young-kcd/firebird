@@ -483,7 +483,7 @@ static bool drop_package_body(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool grant_privileges(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool db_crypt(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool set_linger(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-static bool clear_mapping(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool clear_cache(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 
 // ----------------------------------------------------------------
 
@@ -1177,7 +1177,7 @@ static const deferred_task task_table[] =
 	{ dfw_store_view_context_type, store_view_context_type },
 	{ dfw_db_crypt, db_crypt },
 	{ dfw_set_linger, set_linger },
-	{ dfw_clear_mapping, clear_mapping },
+	{ dfw_clear_cache, clear_cache },
 	{ dfw_null, NULL }
 };
 
@@ -2234,11 +2234,11 @@ static bool set_linger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 	return false;
 }
 
-static bool clear_mapping(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra*)
+static bool clear_cache(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra*)
 {
 /**************************************
  *
- *	c l e a r _ m a p p i n g
+ *	c l e a r _ c a c h e
  *
  **************************************
  *
@@ -2256,7 +2256,7 @@ static bool clear_mapping(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd
 		return true;
 
 	case 3:
-		clearMap(dbb->dbb_filename.c_str());
+		clearMappingCache(dbb->dbb_filename.c_str(), work->dfw_id);
 		break;
 	}
 

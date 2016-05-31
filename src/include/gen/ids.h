@@ -452,6 +452,7 @@
 	const USHORT  f_rol_desc = 2;
 	const USHORT  f_rol_sys_flag = 3;
 	const USHORT  f_rol_class = 4;
+	const USHORT  f_rol_sys_priv = 5;
 
 
 // Relation 32 (RDB$BACKUP_HISTORY)

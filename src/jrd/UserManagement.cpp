@@ -47,12 +47,12 @@ namespace
 		// ILogonInfo implementation
 		const char* name()
 		{
-			return att->att_user->usr_user_name.c_str();
+			return att->att_user->getUserName().c_str();
 		}
 
 		const char* role()
 		{
-			return att->att_user->usr_sql_role_name.c_str();
+			return att->att_user->getSqlRole().c_str();
 		}
 
 		const char* networkProtocol()
@@ -479,7 +479,7 @@ void UserManagement::list(IUser* u, unsigned cachePosition)
 		const char* uname = u->userName()->get();
 		putField(threadDbb, record,
 				 DumpField(f_sec_user_name, VALUE_STRING, static_cast<USHORT>(strlen(uname)), uname));
-		su = strcmp(uname, SYSDBA_USER_NAME) == 0;
+		su = strcmp(uname, DBA_USER_NAME) == 0;
 	}
 
 	if (u->firstName()->entered())

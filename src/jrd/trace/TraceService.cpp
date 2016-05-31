@@ -79,7 +79,7 @@ void TraceSvcJrd::setAttachInfo(const string& /*svc_name*/, const string& user, 
 {
 	m_authBlock = authBlock;
 	m_user = user;
-	m_admin = isAdmin || (m_user == SYSDBA_USER_NAME);
+	m_admin = isAdmin || (m_user == DBA_USER_NAME);
 }
 
 void TraceSvcJrd::startSession(TraceSession& session, bool interactive)

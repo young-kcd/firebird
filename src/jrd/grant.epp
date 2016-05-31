@@ -27,6 +27,8 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
+
 #include "../jrd/jrd.h"
 #include "../jrd/scl.h"
 #include "../jrd/acl.h"
@@ -624,6 +626,11 @@ static void grant_user(Acl& acl,
 		CHECK_AND_MOVE(acl, id_view);
 		break;
 
+	case obj_privilege:
+		CHECK_AND_MOVE(acl, id_privilege);
+		fb_assert(isdigit(user[0]));
+		break;
+
 	default:
 		BUGCHECK(292);			// Illegal user_type
 
@@ -1038,6 +1045,13 @@ static SecurityClass::flags_t squeeze_acl(Acl& acl, const Firebird::MetaName& us
 
 				case id_group:
 					if (user_type != obj_user_group)
+						hit = false;
+					if (check_string(a, user))
+						hit = false;
+					break;
+
+				case id_privilege:
+					if (user_type != obj_privilege)
 						hit = false;
 					if (check_string(a, user))
 						hit = false;

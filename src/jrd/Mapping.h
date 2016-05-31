@@ -34,13 +34,23 @@
 #include "../common/classes/ClumpletReader.h"
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/Monitoring.h"
+#include "../jrd/scl.h"
 
 namespace Jrd {
 
-bool mapUser(Firebird::string& name, Firebird::string& trusted_role, Firebird::string* auth_method,
-	Firebird::AuthReader::AuthBlock* newAuthBlock, const Firebird::AuthReader::AuthBlock& authBlock,
-	const char* alias, const char* db, const char* securityDb, Firebird::ICryptKeyCallback* cryptCb);
-void clearMap(const char* dbName);
+ULONG mapUser(const bool throwNotFoundError,
+	Firebird::string& name, Firebird::string& trusted_role, Firebird::string* auth_method,
+	Firebird::AuthReader::AuthBlock* newAuthBlock, UserId::Privileges* system_privileges,
+	const Firebird::AuthReader::AuthBlock& authBlock, const char* alias, const char* db,
+	const char* securityDb, Firebird::ICryptKeyCallback* cryptCb, Firebird::IAttachment* att);
+// bits returned by mapUser
+const ULONG MAPUSER_ERROR_NOT_THROWN = 1;
+const ULONG MAPUSER_MAP_DOWN = 2;
+
+void clearMappingCache(const char* dbName, USHORT index);
+// possible index values
+const USHORT MAPPING_CACHE = 0;
+const USHORT SYSTEM_PRIVILEGES_CACHE = 1;
 
 class GlobalMappingScan: public VirtualTableScan
 {

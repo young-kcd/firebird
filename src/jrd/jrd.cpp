@@ -73,6 +73,7 @@
 #include "../intl/charsets.h"
 #include "../jrd/sort.h"
 #include "../jrd/PreparedStatement.h"
+#include "../jrd/ResultSet.h"
 #include "../dsql/StmtNodes.h"
 
 #include "../jrd/blb_proto.h"
@@ -727,15 +728,27 @@ namespace
 
 	};
 
-	void validateAccess(const Jrd::Attachment* attachment)
+	void validateAccess(thread_db* tdbb, Jrd::Attachment* attachment, SystemPrivilege sp)
 	{
-		if (!attachment->locksmith())
+		if (!attachment->locksmith(tdbb, sp))
 		{
+			PreparedStatement::Builder sql;
+			MetaName missPriv("UNKNOWN");
+			sql << "select" << sql("rdb$type_name", missPriv) << "from rdb$types"
+				<< "where rdb$field_name = 'RDB$SYSTEM_PRIVILEGES'"
+				<< "  and rdb$type =" << SSHORT(sp);
+			jrd_tra* transaction = attachment->getSysTransaction();
+			AutoPreparedStatement ps(attachment->prepareStatement(tdbb, transaction, sql));
+			AutoResultSet rs(ps->executeQuery(tdbb, transaction));
+			rs->fetch(tdbb);
+
 			UserId* u = attachment->att_user;
-			if (u->usr_flags & USR_mapdown)
-				ERR_post(Arg::Gds(isc_adm_task_denied) << Arg::Gds(isc_map_down));
-			else
-				ERR_post(Arg::Gds(isc_adm_task_denied));
+			Arg::Gds err(isc_miss_prvlg);
+			err << missPriv;
+			if (u->testFlag(USR_mapdown))
+				err << Arg::Gds(isc_map_down);
+
+			ERR_post(err);
 		}
 	}
 
@@ -981,7 +994,7 @@ public:
 	// TraceConnection implementation
 	unsigned getKind()					{ return KIND_DATABASE; };
 	int getProcessID()					{ return m_options->dpb_remote_pid; }
-	const char* getUserName()			{ return m_id.usr_user_name.c_str(); }
+	const char* getUserName()			{ return m_id.getUserName().c_str(); }
 	const char* getRoleName()			{ return m_options->dpb_role_name.c_str(); }
 	const char* getCharSet()			{ return m_options->dpb_lc_ctype.c_str(); }
 	const char* getRemoteProtocol()		{ return m_options->dpb_network_protocol.c_str(); }
@@ -1027,7 +1040,6 @@ static void		rollback(thread_db*, jrd_tra*, const bool);
 static void		purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsigned flags = 0);
 static void		getUserInfo(UserId&, const DatabaseOptions&, const char*, const char*,
 	const RefPtr<Config>*, bool, ICryptKeyCallback*);
-static void		makeRoleName(Database*, MetaName&, DatabaseOptions&);
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
 
@@ -1095,44 +1107,6 @@ static void successful_completion(CheckStatusWrapper* s, ISC_STATUS acceptCode =
 	{
 		s->init();
 	}
-}
-
-
-static void makeRoleName(Database* dbb, MetaName& userIdRole, DatabaseOptions& options)
-{
-	if (userIdRole.isEmpty())
-		return;
-
-	switch (options.dpb_sql_dialect)
-	{
-	case 0:
-		// V6 Client --> V6 Server, dummy client SQL dialect 0 was passed
-		// It means that client SQL dialect was not set by user
-		// and takes DB SQL dialect as client SQL dialect
-		if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
-		{
-			// DB created in IB V6.0 by client SQL dialect 3
-			options.dpb_sql_dialect = SQL_DIALECT_V6;
-		}
-		else
-		{
-			// old DB was gbaked in IB V6.0
-			options.dpb_sql_dialect = SQL_DIALECT_V5;
-		}
-		break;
-
-	case 99:
-		// V5 Client --> V6 Server, old client has no concept of dialect
-		options.dpb_sql_dialect = SQL_DIALECT_V5;
-		break;
-
-	default:
-		// V6 Client --> V6 Server, but client SQL dialect was set
-		// by user and was passed.
-		break;
-	}
-
-	JRD_make_role_name(userIdRole, options.dpb_sql_dialect);
 }
 
 
@@ -1296,28 +1270,6 @@ static void trace_failed_attach(TraceManager* traceManager, const char* filename
 
 		if (traceManager->needs(ITraceFactory::TRACE_EVENT_ERROR))
 			traceManager->event_error(&conn, &traceStatus, func);
-	}
-}
-
-
-void JRD_make_role_name(MetaName& userIdRole, const int dialect)
-{
-	switch (dialect)
-	{
-	case SQL_DIALECT_V5:
-		// Invoke utility twice: first to strip quotes, next to uppercase if needed
-		// For unquoted string nothing bad happens
-		fb_utils::dpbItemUpper(userIdRole);
-		fb_utils::dpbItemUpper(userIdRole);
-		break;
-
-	case SQL_DIALECT_V6_TRANSITION:
-	case SQL_DIALECT_V6:
-		fb_utils::dpbItemUpper(userIdRole);
-		break;
-
-	default:
-		break;
 	}
 }
 
@@ -1553,7 +1505,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 					// Here we do not let anyone except SYSDBA (like DBO) to change dbb_page_buffers,
 					// cause other flags is UserId can be set only when DB is opened.
 					// No idea how to test for other cases before init is complete.
-					if ((config->getServerMode() != MODE_SUPER) || userId.locksmith())
+					if ((config->getServerMode() != MODE_SUPER) || userId.locksmith(tdbb, CHANGE_HEADER_SETTINGS))
 						dbb->dbb_page_buffers = options.dpb_page_buffers;
 				}
 
@@ -1639,12 +1591,38 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 						 Arg::Gds(isc_valid_client_dialects) << Arg::Str("1, 2 or 3"));
 			}
 
-			makeRoleName(dbb, userId.usr_sql_role_name, options);
-			makeRoleName(dbb, userId.usr_trusted_role, options);
+			switch (options.dpb_sql_dialect)
+			{
+			case 0:
+				// V6 Client --> V6 Server, dummy client SQL dialect 0 was passed
+				// It means that client SQL dialect was not set by user
+				// and takes DB SQL dialect as client SQL dialect
+				if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
+				{
+					// DB created in IB V6.0 by client SQL dialect 3
+					options.dpb_sql_dialect = SQL_DIALECT_V6;
+				}
+				else
+				{
+					// old DB was gbaked in IB V6.0
+					options.dpb_sql_dialect = SQL_DIALECT_V5;
+				}
+				break;
 
-			options.dpb_sql_dialect = 0;
+			case 99:
+				// V5 Client --> V6 Server, old client has no concept of dialect
+				options.dpb_sql_dialect = SQL_DIALECT_V5;
+				break;
 
-			SCL_init(tdbb, false, userId);
+			default:
+				// V6 Client --> V6 Server, but client SQL dialect was set
+				// by user and was passed.
+				break;
+			}
+
+			userId.makeRoleName(options.dpb_sql_dialect);
+
+			UserId::sclInit(tdbb, false, userId);
 
 			// This pair (SHUT_database/SHUT_online) checks itself for valid user name
 			if (options.dpb_shutdown)
@@ -1686,7 +1664,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 			if (dbb->dbb_ast_flags & DBB_shutdown)
 			{
 				// Allow only SYSDBA/owner to access database that is shut down
-				bool allow_access = attachment->locksmith();
+				bool allow_access = attachment->locksmith(tdbb, ACCESS_SHUTDOWN_DATABASE);
 				// Handle special shutdown modes
 				if (allow_access)
 				{
@@ -1711,7 +1689,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 					// Note we throw exception here when entering full-shutdown mode
 					Arg::Gds v(isc_shutdown);
 					v << Arg::Str(org_filename);
-					if (attachment->att_user->usr_flags & USR_mapdown)
+					if (attachment->att_user->testFlag(USR_mapdown))
 						v << Arg::Gds(isc_map_down);
 					ERR_post(v);
 				}
@@ -1727,11 +1705,14 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 			// database. smistry 10/5/98
 
 			if (attachment->isUtility())
-				validateAccess(attachment);
+				validateAccess(tdbb, attachment,
+					attachment->att_utility == Attachment::UTIL_GBAK ? USE_GBAK_UTILITY :
+					attachment->att_utility == Attachment::UTIL_GFIX ? USE_GFIX_UTILITY :
+					USE_GSTAT_UTILITY);
 
 			if (options.dpb_verify)
 			{
-				validateAccess(attachment);
+				validateAccess(tdbb, attachment, USE_GFIX_UTILITY);
 				if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD, NULL))
 					ERR_post(Arg::Gds(isc_bad_dpb_content) << Arg::Gds(isc_cant_validate));
 
@@ -1745,7 +1726,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 			if (options.dpb_reset_icu)
 			{
-				validateAccess(attachment);
+				validateAccess(tdbb, attachment, USE_GFIX_UTILITY);
 				DFW_reset_icu(tdbb);
 			}
 
@@ -1766,42 +1747,42 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 			if (options.dpb_no_db_triggers)
 			{
-				validateAccess(attachment);
+				validateAccess(tdbb, attachment, IGNORE_DB_TRIGGERS);
 				attachment->att_flags |= ATT_no_db_triggers;
 			}
 
 			if (options.dpb_set_db_sql_dialect)
 			{
-				validateAccess(attachment);
+				validateAccess(tdbb, attachment, CHANGE_HEADER_SETTINGS);
 				PAG_set_db_SQL_dialect(tdbb, options.dpb_set_db_sql_dialect);
 				dbb->dbb_linger_seconds = 0;
 			}
 
 			if (options.dpb_sweep_interval > -1)
 			{
-				validateAccess(attachment);
+				validateAccess(tdbb, attachment, CHANGE_HEADER_SETTINGS);
 				PAG_sweep_interval(tdbb, options.dpb_sweep_interval);
 				dbb->dbb_sweep_interval = options.dpb_sweep_interval;
 			}
 
 			if (options.dpb_set_force_write)
 			{
-				validateAccess(attachment);
+				validateAccess(tdbb, attachment, CHANGE_HEADER_SETTINGS);
 				PAG_set_force_write(tdbb, options.dpb_force_write);
 			}
 
 			if (options.dpb_set_no_reserve)
 			{
-				validateAccess(attachment);
+				validateAccess(tdbb, attachment, CHANGE_HEADER_SETTINGS);
 				PAG_set_no_reserve(tdbb, options.dpb_no_reserve);
 			}
 
 			if (options.dpb_set_page_buffers)
 			{
 				if (dbb->dbb_flags & DBB_shared)
-					validateAccess(attachment);
+					validateAccess(tdbb, attachment, CHANGE_HEADER_SETTINGS);
 
-				if (attachment->locksmith())
+				if (attachment->locksmith(tdbb, CHANGE_HEADER_SETTINGS))
 				{
 					PAG_set_page_buffers(tdbb, options.dpb_page_buffers);
 					dbb->dbb_linger_seconds = 0;
@@ -1810,7 +1791,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 			if (options.dpb_set_db_readonly)
 			{
-				validateAccess(attachment);
+				validateAccess(tdbb, attachment, CHANGE_HEADER_SETTINGS);
 				if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD, NULL))
 				{
 					ERR_post(Arg::Gds(isc_lock_timeout) <<
@@ -2578,7 +2559,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 				if (options.dpb_overwrite)
 				{
 					// isc_dpb_no_db_triggers is required for 2 reasons
-					// - it disables non-DBA attaches with isc_adm_task_denied error
+					// - it disables non-DBA attaches with isc_adm_task_denied or isc_miss_prvlg error
 					// - it disables any user code to be executed when we later lock
 					//   databases_mutex with OverwriteHolder
 					ClumpletWriter dpbWriter(ClumpletReader::dpbList, MAX_DPB_SIZE, dpb, dpb_length);
@@ -2590,16 +2571,20 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 
 					JAttachment* attachment2 = internalAttach(user_status, filename, dpb_length,
 						dpb, INTERNAL_ATT_OVERWRITE_CHECK);
-					if (user_status->getErrors()[1] == isc_adm_task_denied)
+					switch (user_status->getErrors()[1])
 					{
-						throw;
+						case isc_adm_task_denied:
+						case isc_miss_prvlg:
+							throw;
+						default:
+							break;
 					}
 
 					bool allow_overwrite = false;
 
 					if (attachment2)
 					{
-						allow_overwrite = attachment2->getHandle()->att_user->locksmith();
+						allow_overwrite = attachment2->getHandle()->att_user->locksmith(tdbb, DROP_DATABASE);
 						attachment2->detach(user_status);
 					}
 					else
@@ -2645,7 +2630,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			INI_init(tdbb);
 			PAG_init(tdbb);
 
-			SCL_init(tdbb, true, userId);
+			UserId::sclInit(tdbb, true, userId);
 
 			if (options.dpb_set_page_buffers)
 				dbb->dbb_page_buffers = options.dpb_page_buffers;
@@ -2685,7 +2670,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			if (options.dpb_set_no_reserve)
 				PAG_set_no_reserve(tdbb, options.dpb_no_reserve);
 
-			INI_format(attachment->att_user->usr_user_name.c_str(),
+			INI_format(attachment->att_user->getUserName().c_str(),
 				options.dpb_set_db_charset.c_str());
 
 			// If we have not allocated first TIP page, do it now.
@@ -2947,7 +2932,7 @@ void JAttachment::dropDatabase(CheckStatusWrapper* user_status)
 
 				const PathName& file_name = attachment->att_filename;
 
-				if (!attachment->locksmith())
+				if (!attachment->locksmith(tdbb, DROP_DATABASE))
 				{
 					ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("drop") <<
 													  Arg::Str("database") <<
@@ -5395,7 +5380,7 @@ static void check_database(thread_db* tdbb, bool async)
 	if ((attachment->att_flags & ATT_shutdown) &&
 		(attachment->att_purge_tid != Thread::getId()) ||
 		((dbb->dbb_ast_flags & DBB_shutdown) &&
-			((dbb->dbb_ast_flags & DBB_shutdown_full) || !attachment->locksmith())))
+			((dbb->dbb_ast_flags & DBB_shutdown_full) || !attachment->locksmith(tdbb, ACCESS_SHUTDOWN_DATABASE))))
 	{
 		if (dbb->dbb_ast_flags & DBB_shutdown)
 		{
@@ -7104,10 +7089,11 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 		}
 		else if (options.dpb_auth_block.hasData())
 		{
-			if (mapUser(name, trusted_role, &auth_method, &user.usr_auth_block, options.dpb_auth_block,
-				aliasName, dbName, (config ? (*config)->getSecurityDatabase() : NULL), cryptCb))
+			if (mapUser(true, name, trusted_role, &auth_method, &user.usr_auth_block, NULL,
+				options.dpb_auth_block, aliasName, dbName,
+				(config ? (*config)->getSecurityDatabase() : NULL), cryptCb, NULL) & MAPUSER_MAP_DOWN)
 			{
-				user.usr_flags |= USR_mapdown;
+				user.setFlag(USR_mapdown);
 			}
 
 			if (creating && config)		// when config is NULL we are in error handler
@@ -7122,7 +7108,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 			wheel = ISC_get_user(&name, &id, &group);
 			ISC_systemToUtf8(name);
 			fb_utils::dpbItemUpper(name);
-			if (id == 0)
+			if (wheel || id == 0)
 			{
 				auth_method = "OS user name / wheel";
 				wheel = true;
@@ -7132,7 +7118,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 		// if the name from the user database is defined as SYSDBA,
 		// we define that user id as having system privileges
 
-		if (name == SYSDBA_USER_NAME)
+		if (name == DBA_USER_NAME)
 		{
 			wheel = true;
 		}
@@ -7143,7 +7129,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 
 	if (wheel)
 	{
-		name = SYSDBA_USER_NAME;
+		name = DBA_USER_NAME;
 	}
 
 	if (name.length() > USERNAME_LENGTH)
@@ -7152,26 +7138,21 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 														 << Arg::Num(USERNAME_LENGTH));
 	}
 
-	user.usr_user_name = name;
+	user.setUserName(name);
 	user.usr_project_name = "";
 	user.usr_org_name = "";
 	user.usr_auth_method = auth_method;
 	user.usr_user_id = id;
 	user.usr_group_id = group;
 
-	if (wheel)
+	if (trusted_role.hasData())
 	{
-		user.usr_flags |= USR_locksmith;
+		user.setTrustedRole(trusted_role);
 	}
 
 	if (options.dpb_role_name.hasData())
 	{
-		user.usr_sql_role_name = options.dpb_role_name;
-	}
-
-	if (trusted_role.hasData())
-	{
-		user.usr_trusted_role = trusted_role;
+		user.setSqlRole(options.dpb_role_name.c_str());
 	}
 }
 

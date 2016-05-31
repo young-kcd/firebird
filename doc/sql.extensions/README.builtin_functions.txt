@@ -681,6 +681,21 @@ Example:
     select * from x order by rand();
 
 
+--------------------
+RDB$SYSTEM_PRIVILEGE
+--------------------
+
+(FB4 extension)
+Function:
+    Returns true if current attachment has given system privilege.
+
+Format:
+    RDB$SYSTEM_PRIVILEGE( <privilege> )
+
+Example:
+	select rdb$system_privilege(user_management) from rdb$database;
+
+
 -------
 REPLACE
 -------

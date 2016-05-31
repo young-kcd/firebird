@@ -3639,7 +3639,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
  *	Parameters:  statement == the entire statement for processing.
  *
  * Note: SQL ROLE setting must be taken into an account no matter
- *	that the newly created database will not have any roles defined
+ *	that the newly created database will not have any user roles defined
  *	in it. Role may affect right to create new database.
  *
  **************************************/

@@ -326,7 +326,7 @@ public:
 
 	/// former Database members - end
 
-	bool locksmith() const;
+	bool locksmith(thread_db* tdbb, SystemPrivilege sp) const;
 	jrd_tra* getSysTransaction();
 	void setSysTransaction(jrd_tra* trans);	// used only by TRA_init
 
@@ -406,9 +406,9 @@ const ULONG ATT_mapping				= 0x40000L; // Attachment used for mapping auth block
 const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
 
 
-inline bool Attachment::locksmith() const
+inline bool Attachment::locksmith(thread_db* tdbb, SystemPrivilege sp) const
 {
-	return att_user && att_user->locksmith();
+	return att_user && att_user->locksmith(tdbb, sp);
 }
 
 inline jrd_tra* Attachment::getSysTransaction()

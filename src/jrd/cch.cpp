@@ -2860,7 +2860,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	try
 	{
 		UserId user;
-		user.usr_user_name = "Cache Writer";
+		user.setUserName("Cache Writer");
 
 		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
 		RefPtr<SysStableAttachment> sAtt(FB_NEW SysStableAttachment(attachment));

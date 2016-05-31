@@ -1627,6 +1627,10 @@ const
 	gds_encrypt_error                    = 335545109;
 	isc_max_idx_depth                    = 335545110;
 	gds_max_idx_depth                    = 335545110;
+	isc_wrong_prvlg                      = 335545111;
+	gds_wrong_prvlg                      = 335545111;
+	isc_miss_prvlg                       = 335545112;
+	gds_miss_prvlg                       = 335545112;
 	isc_gfix_db_name                     = 335740929;
 	gds_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;

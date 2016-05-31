@@ -130,7 +130,6 @@ enum drq_type_t
 	drq_gcg4,				// grantor_can_grant
 	drq_gcg5,				// grantor_can_grant
 	drq_l_view_idx,			// table is view?
-	drq_role_gens,			// store SQL role
 	drq_get_role_nm,		// get SQL role
 	drq_get_role_au,		// get SQL role auth
 	drq_del_role_1,			// delete SQL role from rdb$user_privilege

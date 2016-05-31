@@ -591,7 +591,10 @@ using namespace Firebird;
 
 // tokens added for Firebird 4.0
 
+%token <metaNamePtr> PRIVILEGE
 %token <metaNamePtr> RDB_ROLE_IN_USE
+%token <metaNamePtr> RDB_SYSTEM_PRIVILEGE
+%token <metaNamePtr> SYSTEM
 
 // precedence declarations for expression evaluation
 
@@ -724,6 +727,7 @@ using namespace Firebird;
 	Jrd::MappingNode* mappingNode;
 	Jrd::MappingNode::OP mappingOp;
 	Jrd::SetRoleNode* setRoleNode;
+	Jrd::CreateAlterRoleNode* createAlterRoleNode;
 }
 
 %include types.y
@@ -1180,6 +1184,8 @@ grantee($granteeArray)
 		{ $granteeArray->add(GranteeClause(obj_view, *$2)); }
 	| ROLE symbol_role_name
 		{ $granteeArray->add(GranteeClause(obj_sql_role, *$2)); }
+	| SYSTEM PRIVILEGE valid_symbol_name
+		{ $granteeArray->add(GranteeClause(obj_privilege, *$3)); }
 	;
 
 // CVC: In the future we can deprecate the first implicit form since we'll support
@@ -1390,7 +1396,7 @@ create_clause
 	| DATABASE db_clause						{ $$ = $2; }
 	| KW_DOMAIN domain_clause					{ $$ = $2; }
 	| SHADOW shadow_clause						{ $$ = $2; }
-	| ROLE role_clause							{ $$ = $2; }
+	| ROLE role_clause							{ $2->createFlag = true; $$ = $2; }
 	| COLLATION collation_clause				{ $$ = $2; }
 	| USER create_user_clause					{ $$ = $2; }
 	| PACKAGE package_clause					{ $$ = $2; }
@@ -1788,11 +1794,40 @@ sequence_value
 	;
 
 
-// CREATE ROLE
+// CREATE / ALTER ROLE
 
-%type <ddlNode> role_clause
+%type <createAlterRoleNode> role_clause
 role_clause
-	: symbol_role_name		{ $$ = newNode<CreateRoleNode>(*$1); }
+	: symbol_role_name
+			{ $$ = newNode<CreateAlterRoleNode>(*$1); }
+		opt_system_privileges($2)
+			{ $$ = $2; }
+	;
+
+%type opt_system_privileges(<createAlterRoleNode>)
+opt_system_privileges($createAlterRole)
+	: // nothing
+	| set_system_privileges($createAlterRole)
+	| drop_system_privileges($createAlterRole)
+	;
+
+%type set_system_privileges(<createAlterRoleNode>)
+set_system_privileges($createAlterRole)
+	: SET SYSTEM PRIVILEGES TO system_privileges_list($createAlterRole)
+
+%type drop_system_privileges(<createAlterRoleNode>)
+drop_system_privileges($createAlterRole)
+	: DROP SYSTEM PRIVILEGES { $createAlterRole->sysPrivDrop = true; }
+
+%type system_privileges_list(<createAlterRoleNode>)
+system_privileges_list($createAlterRole)
+	: system_privilege($createAlterRole)
+	| system_privileges_list ',' system_privilege($createAlterRole)
+	;
+
+%type system_privilege(<createAlterRoleNode>)
+system_privilege($createAlterRole)
+	: valid_symbol_name		{ $createAlterRole->addPrivilege($1); }
 	;
 
 
@@ -3976,20 +4011,27 @@ module_op
 	| MODULE_NAME utf_string	{ $$ = $2; }
 	;
 
-%type <mappingNode>	alter_role_clause
-alter_role_clause
+%type <ddlNode> alter_role_2X_compatibility
+alter_role_2X_compatibility
 	: symbol_role_name alter_role_enable AUTO ADMIN MAPPING
 		{
-			$$ = newNode<MappingNode>(MappingNode::MAP_RPL, "AutoAdminImplementationMapping");
-			$$->op = $2 ? MappingNode::MAP_RPL : MappingNode::MAP_DROP;
-			$$->from = newNode<IntlString>(FB_DOMAIN_ANY_RID_ADMINS);
-			$$->fromType = newNode<MetaName>(FB_PREDEFINED_GROUP);
-			$$->mode = 'P';
-			$$->plugin = newNode<MetaName>("Win_Sspi");
-			$$->role = true;
-			$$->to = $1;
-			$$->validateAdmin();
+			MappingNode* mn = newNode<MappingNode>(MappingNode::MAP_RPL, "AutoAdminImplementationMapping");
+			mn->op = $2 ? MappingNode::MAP_RPL : MappingNode::MAP_DROP;
+			mn->from = newNode<IntlString>(FB_DOMAIN_ANY_RID_ADMINS);
+			mn->fromType = newNode<MetaName>(FB_PREDEFINED_GROUP);
+			mn->mode = 'P';
+			mn->plugin = newNode<MetaName>("Win_Sspi");
+			mn->role = true;
+			mn->to = $1;
+			mn->validateAdmin();
+			$$ = mn;
 		}
+	;
+
+%type <ddlNode> alter_role_clause
+alter_role_clause
+	: role_clause { $$ = $1; }
+	| alter_role_2X_compatibility { $$ = $1; }
 	;
 
 %type <boolVal>	alter_role_enable
@@ -7154,6 +7196,11 @@ system_function_special_syntax
 		}
 	| POSITION '(' value_list_opt  ')'
 		{ $$ = newNode<SysFuncCallNode>(*$1, $3); }
+	| RDB_SYSTEM_PRIVILEGE '(' valid_symbol_name ')'
+		{
+			ValueExprNode* v = MAKE_str_constant(newIntlString($3->c_str()), CS_ASCII);
+			$$ = newNode<SysFuncCallNode>(*$1, newNode<ValueListNode>(v));
+		}
 	;
 
 %type <valueExprNode> string_value_function
@@ -7736,6 +7783,7 @@ non_reserved_word
 	| PASSWORD
 //	| PLAN
 //	| POST_EVENT
+	| PRIVILEGE
 	| PRIVILEGES
 	| PROTECTED
 	| READ
@@ -7755,6 +7803,7 @@ non_reserved_word
 	| STATISTICS
 	| SUB_TYPE
 	| SUSPEND
+	| SYSTEM
 	| TRANSACTION
 	| UNCOMMITTED
 //	| VARIABLE
@@ -7798,6 +7847,7 @@ non_reserved_word
 	| INCREMENT
 	| TRUSTED
 	| RDB_ROLE_IN_USE		// added in FB 4.0
+	| RDB_SYSTEM_PRIVILEGE
 	;
 
 %%

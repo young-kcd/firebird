@@ -289,7 +289,7 @@ void SecurityDatabase::prepare()
 	dpb.insertByte(isc_dpb_sec_attach, TRUE);
 
 	// Attach as SYSDBA
-	dpb.insertString(isc_dpb_trusted_auth, SYSDBA_USER_NAME, fb_strlen(SYSDBA_USER_NAME));
+	dpb.insertString(isc_dpb_trusted_auth, DBA_USER_NAME, fb_strlen(DBA_USER_NAME));
 
 	// Do not use other providers except current engine
 	const char* providers = "Providers=" CURRENT_ENGINE;

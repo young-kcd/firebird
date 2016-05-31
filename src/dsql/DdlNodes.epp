@@ -61,6 +61,7 @@
 #include "../common/dsc_proto.h"
 #include "../common/StatusArg.h"
 #include "../auth/SecureRemotePassword/Message.h"
+#include "../jrd/Mapping.h"
 
 namespace Jrd {
 
@@ -903,7 +904,7 @@ void DdlNode::storePrivileges(thread_db* tdbb, jrd_tra* transaction,
 							  const char* privileges)
 {
 	Attachment* const attachment = transaction->tra_attachment;
-	const MetaName& userName = attachment->att_user->usr_user_name;
+	const MetaName& userName = attachment->att_user->getUserName();
 
 	AutoCacheRequest request(tdbb, drq_s_usr_prvs, DYN_REQUESTS);
 
@@ -966,7 +967,7 @@ void DdlNode::storeGlobalField(thread_db* tdbb, jrd_tra* transaction, MetaName& 
 	const TypeClause* field, const string& computedSource, const BlrDebugWriter::BlrData& computedValue)
 {
 	Attachment* const attachment = transaction->tra_attachment;
-	const MetaName& userName = attachment->att_user->usr_user_name;
+	const MetaName& userName = attachment->att_user->getUserName();
 
 	const ValueListNode* elements = field->ranges;
 	const USHORT dims = elements ? elements->items.getCount() / 2 : 0;
@@ -1674,7 +1675,7 @@ void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch
 	jrd_tra* transaction)
 {
 	Attachment* const attachment = transaction->getAttachment();
-	const MetaName& userName = attachment->att_user->usr_user_name;
+	const MetaName& userName = attachment->att_user->getUserName();
 
 	if (package.isEmpty())
 	{
@@ -2661,7 +2662,7 @@ void CreateAlterProcedureNode::executeCreate(thread_db* tdbb, DsqlCompilerScratc
 	jrd_tra* transaction)
 {
 	Attachment* const attachment = transaction->getAttachment();
-	const MetaName& userName = attachment->att_user->usr_user_name;
+	const MetaName& userName = attachment->att_user->getUserName();
 
 	if (package.isEmpty())
 	{
@@ -3801,7 +3802,7 @@ void CreateCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	jrd_tra* transaction)
 {
 	Attachment* const attachment = transaction->tra_attachment;
-	const MetaName& userName = attachment->att_user->usr_user_name;
+	const MetaName& userName = attachment->att_user->getUserName();
 
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
@@ -5264,7 +5265,7 @@ void CreateAlterExceptionNode::executeCreate(thread_db* tdbb, DsqlCompilerScratc
 	jrd_tra* transaction)
 {
 	Attachment* const attachment = transaction->getAttachment();
-	const MetaName& userName = attachment->att_user->usr_user_name;
+	const MetaName& userName = attachment->att_user->getUserName();
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
 		DDL_TRIGGER_CREATE_EXCEPTION, name, NULL);
@@ -5637,7 +5638,7 @@ SSHORT CreateAlterSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, con
 	fb_sysflag sysFlag, SINT64 val, SLONG step)
 {
 	Attachment* const attachment = transaction->tra_attachment;
-	const MetaName& userName = attachment->att_user->usr_user_name;
+	const MetaName& userName = attachment->att_user->getUserName();
 
 	DYN_UTIL_check_unique_name(tdbb, transaction, name, obj_generator);
 
@@ -8304,7 +8305,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	jrd_tra* transaction)
 {
 	Attachment* const attachment = transaction->tra_attachment;
-	const MetaName& userName = attachment->att_user->usr_user_name;
+	const MetaName& userName = attachment->att_user->getUserName();
 
 	const dsql_rel* modifyingView = NULL;
 
@@ -9725,7 +9726,7 @@ bool CreateFilterNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 // Define a blob filter.
 void CreateFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/, jrd_tra* transaction)
 {
-	MetaName ownerName(tdbb->getAttachment()->att_user->usr_user_name);
+	MetaName ownerName(tdbb->getAttachment()->att_user->getUserName());
 
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
@@ -9953,30 +9954,52 @@ void DropShadowNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch
 //----------------------
 
 
-string CreateRoleNode::internalPrint(NodePrinter& printer) const
+USHORT PrivilegesNode::convertPrivilegeFromString(thread_db* tdbb, jrd_tra* transaction, Firebird::MetaName privilege)
+{
+	string priv(privilege.c_str());
+	priv.upper();
+
+	return SCL_convert_privilege(tdbb, transaction, priv);
+}
+
+
+//----------------------
+
+
+string CreateAlterRoleNode::internalPrint(NodePrinter& printer) const
 {
 	DdlNode::internalPrint(printer);
 
 	NODE_PRINT(printer, name);
 
-	return "CreateRoleNode";
+	return "CreateAlterRoleNode";
 }
 
-bool CreateRoleNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
+bool CreateAlterRoleNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
-	SCL_check_create_access(tdbb, SCL_object_role);
+	if (createFlag)
+		SCL_check_create_access(tdbb, SCL_object_role);
+	else
+		SCL_check_role(tdbb, name, SCL_alter);
+
 	return true;
 }
 
-void CreateRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+void CreateAlterRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
 {
-	MetaName ownerName(tdbb->getAttachment()->att_user->usr_user_name);
+	if (createFlag && sysPrivDrop)
+	{
+		// msg 293: DROP SYSTEM PRIVILEGES should not be used in CREATE ROLE
+		Arg::PrivateDyn(293).raise();
+	}
+
+	MetaName ownerName(tdbb->getAttachment()->att_user->getUserName());
 
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-		DDL_TRIGGER_CREATE_ROLE, name, NULL);
+		createFlag ? DDL_TRIGGER_CREATE_ROLE : DDL_TRIGGER_ALTER_ROLE, name, NULL);
 
 	if (name == ownerName)
 	{
@@ -9997,31 +10020,64 @@ void CreateRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, 
 	}
 
 	MetaName dummyName;
-	if (isItSqlRole(tdbb, transaction, name, dummyName))
+	if (createFlag && isItSqlRole(tdbb, transaction, name, dummyName))
 	{
 		// msg 194: "SQL role @1 already exists"
 		status_exception::raise(Arg::PrivateDyn(194) << name);
 	}
 
-	AutoCacheRequest request(tdbb, drq_role_gens, DYN_REQUESTS);
-
-	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-		X IN RDB$ROLES
+	if (privileges.hasData() || sysPrivDrop)
 	{
-		strcpy(X.RDB$ROLE_NAME, name.c_str());
-		strcpy(X.RDB$OWNER_NAME, ownerName.c_str());
-		X.RDB$SYSTEM_FLAG = 0;
+		if (!tdbb->getAttachment()->locksmith(tdbb, CREATE_PRIVILEGED_ROLES))
+		{
+			// msg 294: Access to SYSTEM PRIVILEGES in ROLES denied to @1
+			(Arg::PrivateDyn(294) << ownerName).raise();
+		}
 	}
-	END_STORE
+
+	UserId::Privileges newPrivileges;
+	if (privileges.hasData() && !sysPrivDrop)
+	{
+		const MetaName* const end = privileges.end();
+		for (const MetaName* privName = privileges.begin(); privName < end; ++privName)
+			newPrivileges.set(convertPrivilegeFromString(tdbb, transaction, *privName));
+	}
+
+	Attachment* attachment = tdbb->getAttachment();
+
+	string p;
+	newPrivileges.store(p.getBuffer(newPrivileges.BYTES_COUNT));
+
+	if (createFlag)
+	{
+		PreparedStatement::Builder sql;
+		sql << "insert into rdb$roles(rdb$role_name, rdb$owner_name, rdb$system_privileges, rdb$system_flag)"
+			<< "values(" << name << "," << ownerName << "," << p << ", 0)";
+
+		AutoPreparedStatement ps(attachment->prepareStatement(tdbb, transaction, sql));
+		ps->execute(tdbb, transaction);
+	}
+	else if (privileges.hasData() || sysPrivDrop)
+	{
+		PreparedStatement::Builder sql;
+		sql << "update rdb$roles set rdb$system_privileges =" << p << "where rdb$role_name =" << name;
+
+		AutoPreparedStatement ps(attachment->prepareStatement(tdbb, transaction, sql));
+		if (ps->executeUpdate(tdbb, transaction) == 0)
+		{
+			// msg 155: "Role %s not found"
+			(Arg::PrivateDyn(155) << name).raise();
+		}
+	}
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER,
-		DDL_TRIGGER_CREATE_ROLE, name, NULL);
+		createFlag ? DDL_TRIGGER_CREATE_ROLE : DDL_TRIGGER_ALTER_ROLE, name, NULL);
 
 	savePoint.release();	// everything is ok
 }
 
 // If role name is user name returns true. Otherwise returns false.
-bool CreateRoleNode::isItUserName(thread_db* tdbb, jrd_tra* transaction)
+bool CreateAlterRoleNode::isItUserName(thread_db* tdbb, jrd_tra* transaction)
 {
 	bool found = false;
 
@@ -10308,8 +10364,8 @@ void MappingNode::runInSecurityDb(SecDbContext* secDbContext)
 // It's purpose is to add/drop mapping from any security name to DB security object.
 void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
 {
-	if (!(tdbb->getAttachment() && tdbb->getAttachment()->locksmith()))
-		status_exception::raise(Arg::Gds(isc_adm_task_denied));
+	if (!(tdbb->getAttachment() && tdbb->getAttachment()->locksmith(tdbb, CHANGE_MAPPING_RULES)))
+		(Arg::Gds(isc_miss_prvlg) << "CHANGE_MAPPING_RULES").raise();
 
 	if (global)
 	{
@@ -10448,7 +10504,7 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 	if (ddlTriggerAction > 0)
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, ddlTriggerAction, name, NULL);
 
-	DFW_post_work(transaction, dfw_clear_mapping, NULL, 0);
+	DFW_post_work(transaction, dfw_clear_cache, NULL, MAPPING_CACHE);
 	savePoint.release();	// everything is ok
 }
 
@@ -10473,7 +10529,7 @@ bool DropRoleNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 
 void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
 {
-	MetaName user(tdbb->getAttachment()->att_user->usr_user_name);
+	MetaName user(tdbb->getAttachment()->att_user->getUserName());
 
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
@@ -10634,7 +10690,7 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		if (!usr)
 			(Arg::Gds(isc_random) << "Missing user name for ALTER CURRENT USER").raise();
 
-		text = usr->usr_user_name;
+		text = usr->getUserName();
 	}
 
 	Firebird::LocalStatus s;
@@ -10835,6 +10891,9 @@ void GrantRevokeNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 				for (usersPtr = users.begin(); usersPtr != usersEnd; ++usersPtr)
 					grantRevoke(tdbb, transaction, rolesPtr, usersPtr, "M", defaultRole ? "D" : NULL, option);
 			}
+
+			// Invalidate system privileges cache
+			DFW_post_work(transaction, dfw_clear_cache, NULL, SYSTEM_PRIVILEGES_CACHE);
 		}
 	}
 
@@ -11035,6 +11094,14 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				status_exception::raise(Arg::PrivateDyn(195) << user.c_str());
 			}
 			break;
+
+		case obj_privilege:		// Should convert symbolic privilege name to bit number
+			{
+				USHORT p = convertPrivilegeFromString(tdbb, transaction, user);
+				user.printf("%d", p);
+			}
+			break;
+
 	}
 
 	if (options == 1)	// with grant option
@@ -11053,16 +11120,26 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				ERRD_post(Arg::Gds(isc_dsql_cant_grant_option) << Arg::Str("views"));
 				break;
 
+			case obj_privilege:
+				ERRD_post(Arg::Gds(isc_dsql_cant_grant_option) << Arg::Str("system privileges"));
+				break;
+
 			default:
 				break;
 		}
 	}
 
 	MetaName grantorRevoker(grantor ?
-		*grantor : tdbb->getAttachment()->att_user->usr_user_name);
+		*grantor : tdbb->getAttachment()->att_user->getUserName());
 
-	if (grantor && !tdbb->getAttachment()->locksmith())
-		status_exception::raise(Arg::PrivateDyn(252) << SYSDBA_USER_NAME);
+	if (grantor && !tdbb->getAttachment()->locksmith(tdbb, USE_GRANTED_BY_CLAUSE))
+	{
+		const Firebird::MetaName& owner(tdbb->getDatabase()->dbb_owner);
+		if (owner == DBA_USER_NAME)
+			(Arg::PrivateDyn(252) << DBA_USER_NAME).raise();
+		else
+			(Arg::PrivateDyn(295) << DBA_USER_NAME << owner).raise();
+	}
 
 	if (!isGrant && !privs)	// REVOKE ALL ON ALL
 	{
@@ -11077,7 +11154,8 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				 PRIV.RDB$USER_TYPE = userType AND
 				 PRIV.RDB$GRANTOR NOT MISSING
 		{
-			if (tdbb->getAttachment()->att_user->locksmith() || grantorRevoker == PRIV.RDB$GRANTOR)
+			if (tdbb->getAttachment()->att_user->locksmith(tdbb, GRANT_REVOKE_ON_ANY_OBJECT) ||
+				grantorRevoker == PRIV.RDB$GRANTOR)
 			{
 				ERASE PRIV;
 				all.grantErased = true;
@@ -11175,11 +11253,13 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				if (userType == obj_sql_role)
 				{
 					// Check for blocking cycles of role grants.
-					Firebird::SortedArray<Firebird::MetaName> grantedRoles;
-					SCL_find_granted_roles(tdbb, objName, true, grantedRoles, false);
-					// 292: role @1 can not be granted to role @2
-					if (grantedRoles.exist(user.c_str()))
+					UserId grantedRoles;
+					grantedRoles.setSqlRole(objName);
+					if (grantedRoles.roleInUse(tdbb, user))
+					{
+						// 292: role @1 can not be granted to role @2
 						status_exception::raise(Arg::PrivateDyn(292) << objName.c_str() << user.c_str());
+					}
 				}
 			}
 			else
@@ -11199,13 +11279,13 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				{
 					// Relation or view because we cannot distinguish at this point.
 					checkGrantorCanGrant(tdbb, transaction,
-						tdbb->getAttachment()->att_user->usr_user_name.c_str(), priv, objName,
+						tdbb->getAttachment()->att_user->getUserName().c_str(), priv, objName,
 						field, true);
 				}
 				else if (objType >= obj_database)
 				{
 					checkGrantorCanGrantDdl(tdbb, transaction,
-						tdbb->getAttachment()->att_user->usr_user_name.c_str(), priv, objName);
+						tdbb->getAttachment()->att_user->getUserName().c_str(), priv, objName);
 				}
 			}
 
@@ -11368,7 +11448,7 @@ void GrantRevokeNode::checkGrantorCanGrant(thread_db* tdbb, jrd_tra* transaction
 
 	// If the current user is locksmith - allow all grants to occur
 
-	if (tdbb->getAttachment()->locksmith())
+	if (tdbb->getAttachment()->locksmith(tdbb, GRANT_REVOKE_ON_ANY_OBJECT))
 		return;
 
 	// If this is a non-sql table, then the owner will probably not have any
@@ -11569,7 +11649,7 @@ void GrantRevokeNode::checkGrantorCanGrantRole(thread_db* tdbb, jrd_tra* transac
 	if (isItSqlRole(tdbb, transaction, roleName, owner))
 	{
 		// Both SYSDBA and the owner of this ROLE can grant membership
-		if (tdbb->getAttachment()->locksmith() || owner == grantor)
+		if (tdbb->getAttachment()->locksmith(tdbb, GRANT_REVOKE_ON_ANY_OBJECT) || owner == grantor)
 			return;
 	}
 	else
@@ -11592,7 +11672,7 @@ void GrantRevokeNode::checkGrantorCanGrantRole(thread_db* tdbb, jrd_tra* transac
 void GrantRevokeNode::checkGrantorCanGrantDdl(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName& grantor, const char* privilege, const MetaName& objName)
 {
-	if (tdbb->getAttachment()->locksmith())
+	if (tdbb->getAttachment()->locksmith(tdbb, GRANT_REVOKE_ANY_DDL_RIGHT))
 		return;
 
 	AutoCacheRequest request(tdbb, drq_l_grant_option, DYN_REQUESTS);

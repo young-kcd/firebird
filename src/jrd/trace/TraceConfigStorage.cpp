@@ -278,7 +278,7 @@ void ConfigStorage::checkFile()
 				gds__log("Audit configuration file \"%s\" is empty", configFileName.c_str());
 			}
 
-			session.ses_user = SYSDBA_USER_NAME;
+			session.ses_user = DBA_USER_NAME;
 			session.ses_name = "Firebird Audit";
 			session.ses_flags = trs_admin | trs_system;
 

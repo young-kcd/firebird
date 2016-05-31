@@ -54,6 +54,7 @@
 
 using namespace Firebird;
 using namespace Jrd;
+using namespace Auth;
 
 namespace {
 
@@ -69,16 +70,15 @@ void check(const char* s, IStatus* st)
 
 bool openDb(const char* securityDb, RefPtr<IAttachment>& att, RefPtr<ITransaction>& tra)
 {
-	DispatcherPtr prov;
-
-	ClumpletWriter embeddedSysdba(ClumpletWriter::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
-	embeddedSysdba.insertString(isc_dpb_user_name, SYSDBA_USER_NAME, fb_strlen(SYSDBA_USER_NAME));
-	embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
-	embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
+	ClumpletWriter embeddedAttach(ClumpletWriter::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+	embeddedAttach.insertString(isc_dpb_user_name, DBA_USER_NAME, fb_strlen(DBA_USER_NAME));
+	embeddedAttach.insertByte(isc_dpb_sec_attach, TRUE);
+	embeddedAttach.insertByte(isc_dpb_no_db_triggers, TRUE);
 
 	FbLocalStatus st;
+	DispatcherPtr prov;
 	att = prov->attachDatabase(&st, securityDb,
-		embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
+		embeddedAttach.getBufferLength(), embeddedAttach.getBuffer());
 	if (st->getState() & IStatus::STATE_ERRORS)
 	{
 		if (!fb_utils::containsErrorCode(st->getErrors(), isc_io_error))
@@ -105,17 +105,16 @@ namespace Jrd {
 bool checkCreateDatabaseGrant(const MetaName& userName, const MetaName& trustedRole,
 	const MetaName& sqlRole, const char* securityDb)
 {
-	if (userName == SYSDBA_USER_NAME)
+	if (userName == DBA_USER_NAME)
 		return true;
 
 	RefPtr<IAttachment> att;
 	RefPtr<ITransaction> tra;
-	if (!openDb(securityDb, att, tra))
-		return false;
+	bool hasDb = openDb(securityDb, att, tra);
 
 	FbLocalStatus st;
 	MetaName role(sqlRole);
-	if (role.hasData())
+	if (hasDb && role.hasData())
 	{
 		const UCHAR info[] = { isc_info_db_sql_dialect, isc_info_end };
 		UCHAR buffer[BUFFER_TINY];
@@ -140,9 +139,9 @@ bool checkCreateDatabaseGrant(const MetaName& userName, const MetaName& trustedR
 			p += length;
 		}
 
-		JRD_make_role_name(role, dialect);
+		UserId::makeRoleName(role, dialect);
 
-		// We need to check is admin role granted to userName in security DB
+		// We need to check is role granted to userName in security DB
 		const char* sql = "select count(*) from RDB$USER_PRIVILEGES "
 			"where RDB$USER = ? and RDB$RELATION_NAME = ? and RDB$PRIVILEGE = 'M'";
 
@@ -176,6 +175,10 @@ bool checkCreateDatabaseGrant(const MetaName& userName, const MetaName& trustedR
 	if (role == ADMIN_ROLE)
 		return true;
 
+	if (!hasDb)
+		return false;
+
+	// check db creators table
 	Message gr;
 	Field<ISC_SHORT> uType(gr);
 	Field<Varying> u(gr, MAX_SQL_IDENTIFIER_LEN);
@@ -204,7 +207,49 @@ bool checkCreateDatabaseGrant(const MetaName& userName, const MetaName& trustedR
 		check("IAttachment::execute", &st);
 	}
 
-	return cnt > 0;
+	if (cnt > 0)
+		return true;
+
+	if (!role.hasData())
+		role = "NONE";
+
+	Message par2;
+	Field<ISC_SHORT> uType2(par2);
+	Field<Varying> u2(par2, MAX_SQL_IDENTIFIER_LEN);
+	Field<Varying> r2(par2, MAX_SQL_IDENTIFIER_LEN);
+	uType2 = obj_user;
+	u2 = userName.c_str();
+	r2 = role.c_str();
+
+	Message res2;
+	Field<Text> priv(res2, 8);
+
+	const char* sql =
+		"with recursive role_tree as ( "
+		"   select rdb$relation_name as nm, 0 as ur from rdb$user_privileges "
+		"       where rdb$privilege = 'M' and rdb$field_name = 'D' and rdb$user_type = ? and rdb$user = ? "
+		"   union all "
+		"   select rdb$role_name as nm, 1 as ur from rdb$roles "
+		"       where rdb$role_name = ? "
+		"   union all "
+		"   select p.rdb$relation_name as nm, t.ur from rdb$user_privileges p "
+		"       join role_tree t on t.nm = p.rdb$user "
+		"       where p.rdb$privilege = 'M' and (p.rdb$field_name = 'D' or t.ur = 1)) "
+		"select r.rdb$system_privileges "
+		"   from role_tree t join rdb$roles r on t.nm = r.rdb$role_name ";
+	RefPtr<IResultSet> rs(att->openCursor(&st, tra, 0, sql,
+		SQL_DIALECT_V6, par2.getMetadata(), par2.getBuffer(), res2.getMetadata(), NULL, 0));
+	check("IAttachment::execute", &st);
+
+	UserId::Privileges privileges, wrk;
+	while (rs->fetchNext(&st, res2.getBuffer()) == IStatus::RESULT_OK)
+	{
+		wrk.load(&priv);
+		privileges |= wrk;
+	}
+	check("IResultSet::fetchNext", &st);
+
+	return wrk.test(CREATE_DATABASE);
 }
 
 

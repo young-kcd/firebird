@@ -566,6 +566,7 @@ enum att_type {
 	att_role_name = SERIES,
 	att_role_owner_name,
 	att_role_description,
+	att_role_sys_priveleges,
 
 	// Check constraints attributes
 	att_chk_constraint_name = SERIES,

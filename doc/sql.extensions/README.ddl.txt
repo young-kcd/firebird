@@ -509,3 +509,61 @@ ignoring it).
 ALTER DATABASE DECRYPT
 
 Decrypts database.
+
+
+21) New clauses in CREATE and ALTER role operators.
+(Alex Peshkov)
+
+Provide support for system privileges. One can:
+
+CREATE ROLE <name> SET SYSTEM PRIVILEGES TO <privilege1> {, <privilege2> {, ...  <privilegeN> }}
+ALTER ROLE <name> SET SYSTEM PRIVILEGES TO <privilege1> {, <privilege2> {, ...  <privilegeN> }}
+
+This forms assign non-empty list of system privileges to role <name>. Privileges previously assigned
+to role <name> are cleared when using second form.
+
+ALTER ROLE <name> DROP SYSTEM PRIVILEGES
+
+This form clears list of system privileges in role <name>.
+
+System privileges make it possible to delegate part of DBO rights to other users.
+Pay attention taht system privileges provide very thin level of control, therefore sometimes
+you will need to give user >1 privilege to perform some task (for example add
+IGNORE_DB_TRIGGERS to USE_GSTAT_UTILITY cause gstat wants to ignore database triggers).
+
+List of valid system privileges for FB4 is as follows:
+USER_MANAGEMENT					Manage users
+READ_RAW_PAGES					Read pages in raw format using Attachment::getInfo()
+CREATE_USER_TYPES				Add/change/delete non-system records in RDB$TYPES
+USE_NBACKUP_UTILITY				Use nbackup to create database's copies
+CHANGE_SHUTDOWN_MODE			Shutdown DB and bring online
+TRACE_ANY_ATTACHMENT			Trace other users' attachments
+MONITOR_ANY_ATTACHMENT			Monitor (tables MON$) other users' attachments
+ACCESS_SHUTDOWN_DATABASE		Access database when it's shut down
+CREATE_DATABASE					Create new databases (given in security.db)
+DROP_DATABASE					Drop this database
+USE_GBAK_UTILITY				Use appropriate utility
+USE_GSTAT_UTILITY				...
+USE_GFIX_UTILITY				...
+IGNORE_DB_TRIGGERS				Insruct engine not to run DB-level triggers
+CHANGE_HEADER_SETTINGS			Modify parameters in DB header page
+SELECT_ANY_OBJECT_IN_DATABASE	Use SELECT for any selectable object
+ACCESS_ANY_OBJECT_IN_DATABASE	Access (in any possible way) any object
+MODIFY_ANY_OBJECT_IN_DATABASE	Modify (up to drop) any object
+CHANGE_MAPPING_RULES			Change authentication mappings
+USE_GRANTED_BY_CLAUSE			Use GRANTED BY in GRANT and REVOKE operators
+GRANT_REVOKE_ON_ANY_OBJECT		GRANT and REVOKE rights on any object in database
+GRANT_REVOKE_ANY_DDL_RIGHT		GRANT and REVOKE any DDL rights
+CREATE_PRIVILEGED_ROLES			Use SET SYSTEM PRIVILEGES in roles
+
+
+22) New grantee type in GRANT and REVOKE operators - SYSTEM PRIVILEGE.
+(Alex Peshkov)
+
+With support for various system privileges in engine it's getting very convenient to grant some
+rights to users already having specific system privilege. Therefore appropriate grantee type is
+suppoprted now. Example:
+
+GRANT ALL ON PLG$SRP_VIEW TO SYSTEM PRIVILEGE USER_MANAGEMENT
+
+Grants all rights to view (used in SRP management plugin) to users having USER_MANAGEMENT privilege.

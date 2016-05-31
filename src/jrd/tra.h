@@ -497,7 +497,7 @@ enum dfw_t {
 	dfw_arg_field_not_null,	// set domain to not nullable
 	dfw_db_crypt,			// change database encryption status
 	dfw_set_linger,			// set database linger
-	dfw_clear_mapping		// clear user mapping cache
+	dfw_clear_cache			// clear user mapping cache
 };
 
 } //namespace Jrd

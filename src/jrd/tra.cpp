@@ -385,7 +385,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 			status_exception::raise(&st);
 
 		secContext->tra = NULL;
-		clearMap(tdbb->getDatabase()->dbb_config->getSecurityDatabase());
+		clearMappingCache(tdbb->getDatabase()->dbb_config->getSecurityDatabase(), MAPPING_CACHE);
 
 		transaction->eraseSecDbContext();
 	}
@@ -3637,7 +3637,7 @@ TraceSweepEvent::TraceSweepEvent(thread_db* tdbb)
 	gds__log("Sweep is started by %s\n"
 		"\tDatabase \"%s\" \n"
 		"\tOIT %" SQUADFORMAT", OAT %" SQUADFORMAT", OST %" SQUADFORMAT", Next %" SQUADFORMAT,
-		att->att_user->usr_user_name.c_str(),
+		att->att_user->getUserName().c_str(),
 		att->att_filename.c_str(),
 		m_sweep_info.getOIT(),
 		m_sweep_info.getOAT(),

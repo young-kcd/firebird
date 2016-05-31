@@ -405,3 +405,5 @@ NAME("RDB$DB_CREATORS", nam_db_creators)
 NAME("SEC$DB_CREATORS", nam_sec_db_creators)
 NAME("SEC$USER", nam_sec_user)
 NAME("SEC$USER_TYPE", nam_sec_user_type)
+
+NAME("RDB$SYSTEM_PRIVILEGES", nam_system_privileges)

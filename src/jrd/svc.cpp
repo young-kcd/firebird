@@ -712,8 +712,8 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 					expandDatabaseName(svc_expected_db, dummy, &config);
 
 					string trusted_role;
-					mapUser(svc_username, trusted_role, NULL, &svc_auth_block, svc_auth_block,
-						"services manager", NULL, config->getSecurityDatabase(), svc_crypt_callback);
+					mapUser(true, svc_username, trusted_role, NULL, &svc_auth_block, NULL,
+						svc_auth_block, "services manager", NULL, config->getSecurityDatabase(), svc_crypt_callback, NULL);
 					trusted_role.upper();
 					svc_trusted_role = trusted_role == ADMIN_ROLE;
 				}
@@ -722,7 +722,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 					// we have embedded service connection, check OS auth
 					if (ISC_get_user(&svc_username, NULL, NULL))
 					{
-						svc_username = SYSDBA_USER_NAME;
+						svc_username = DBA_USER_NAME;
 					}
 				}
 			}
@@ -741,7 +741,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 			}
 
 			// Check that the validated user has the authority to access this service
-			if (svc_username != SYSDBA_USER_NAME && !svc_trusted_role) {
+			if (svc_username != DBA_USER_NAME && !svc_trusted_role) {
 				user_flag = SVC_user_any;
 			}
 			else {

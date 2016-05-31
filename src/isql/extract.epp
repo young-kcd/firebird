@@ -1150,10 +1150,13 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 				{
 					IUTILS_copy_SQL_id (XX.RDB$ROLE_NAME, SQL_identifier, DBL_QUOTE);
-					isqlGlob.printf("CREATE ROLE %s;%s", SQL_identifier, NEWLINE);
+					isqlGlob.printf("CREATE ROLE %s", SQL_identifier);
 				}
 				else
-					isqlGlob.printf("CREATE ROLE %s;%s", XX.RDB$ROLE_NAME, NEWLINE);
+					isqlGlob.printf("CREATE ROLE %s", XX.RDB$ROLE_NAME);
+
+				SHOW_system_privileges(XX.RDB$ROLE_NAME, " SET SYSTEM PRIVILEGES TO", false);
+				isqlGlob.printf(";%s", NEWLINE);
 			}
 
 		END_FOR

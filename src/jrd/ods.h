@@ -138,6 +138,8 @@ const USHORT ODS_11_1		= ENCODE_ODS(ODS_VERSION11, 1);
 const USHORT ODS_11_2		= ENCODE_ODS(ODS_VERSION11, 2);
 const USHORT ODS_12_0		= ENCODE_ODS(ODS_VERSION12, 0);
 
+const USHORT ODS_FB4		= ODS_12_0;		// temporal const to be fixed somehow later
+
 const USHORT ODS_FIREBIRD_FLAG = 0x8000;
 
 // Decode ODS version to Major and Minor parts. The 4 LSB's are minor and

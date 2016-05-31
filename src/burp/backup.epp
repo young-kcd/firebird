@@ -4037,6 +4037,12 @@ void write_sql_roles()
 			if (!X.RDB$DESCRIPTION.NULL) {
 				put_source_blob (att_role_description, att_role_description, X.RDB$DESCRIPTION);
 			}
+
+			const UCHAR ll = sizeof(X.RDB$SYSTEM_PRIVILEGES);
+			put(tdgbl, att_role_sys_priveleges);
+			put(tdgbl, ll);
+			put_block(tdgbl, (const UCHAR*) (X.RDB$SYSTEM_PRIVILEGES), ll);
+
 			put(tdgbl, att_end);
 			MISC_terminate (X.RDB$ROLE_NAME, temp, l, sizeof(temp));
 			BURP_verbose (249, temp);

@@ -7916,35 +7916,14 @@ void SetRoleNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** transact
 	UserId* user = attachment->att_user;
 	fb_assert(user);
 
-	user->usr_granted_roles.clear();
-
 	if (trusted)
-	{
-		if (!user->usr_trusted_role.hasData())
-			Arg::Gds(isc_miss_trusted_role).raise();
-		user->usr_sql_role_name = user->usr_trusted_role;
-	}
+		user->setRoleTrusted();
 	else
 	{
 		if (!SCL_role_granted(tdbb, *user, roleName.c_str()))
 			(Arg::Gds(isc_set_invalid_role) << roleName).raise();
-		user->usr_sql_role_name = roleName.c_str();
+		user->setSqlRole(roleName.c_str());
 	}
-
-	if (!user->usr_sql_role_name.isEmpty() || user->usr_sql_role_name != NULL_ROLE)
-	{
-		// Add role itself and all roles cumulatively granted to it. Not only default.
-		user->usr_granted_roles.add(user->usr_sql_role_name);
-		SCL_find_granted_roles(tdbb, user->usr_sql_role_name, true, user->usr_granted_roles, false);
-	}
-
-	// Add all default roles granted to user
-	SCL_find_granted_roles(tdbb, user->usr_user_name, false, user->usr_granted_roles, true);
-
-	if (SCL_admin_role(tdbb, user->usr_granted_roles))
-		user->usr_flags |= USR_dba;
-	else
-		user->usr_flags &= ~USR_dba;
 
 	SCL_release_all(attachment->att_security_classes);
 }

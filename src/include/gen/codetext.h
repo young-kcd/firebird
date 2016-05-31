@@ -812,6 +812,8 @@ static const struct {
 	{"bad_crypt_key", 335545108},
 	{"encrypt_error", 335545109},
 	{"max_idx_depth", 335545110},
+	{"wrong_prvlg", 335545111},
+	{"miss_prvlg", 335545112},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

@@ -551,6 +551,8 @@ void resetMap(const char* securityDb)
 	MAP_DEBUG(fprintf(stderr, "Empty cache for %s\n", securityDb));
 }
 
+void resetMap(const char* securityDb, ULONG index);
+
 
 // ----------------------------------------------------
 
@@ -559,7 +561,8 @@ class MappingHeader : public Firebird::MemoryHeader
 public:
 	SLONG currentProcess;
 	ULONG processes;
-	char databaseForReset[1024];
+	char databaseForReset[1024];	// database for which cache to be reset
+	ULONG resetIndex;				// what cache to reset
 
 	struct Process
 	{
@@ -617,7 +620,7 @@ public:
 			sharedMemory->removeMapFile();
 	}
 
-	void clearMap(const char* dbName)
+	void clearCache(const char* dbName, USHORT index)
 	{
 		PathName target;
 		expandDatabaseName(dbName, target, NULL);
@@ -628,6 +631,7 @@ public:
 
 		MappingHeader* sMem = sharedMemory->getHeader();
 		target.copyTo(sMem->databaseForReset, sizeof(sMem->databaseForReset));
+		sMem->resetIndex = index;
 
 		// Set currentProcess
 		sMem->currentProcess = -1;
@@ -648,7 +652,7 @@ public:
 		{
 			// did not find current process
 			// better ignore delivery than fail in it
-			gds__log("MappingIpc::clearMap() failed to find current process %d in shared memory", processId);
+			gds__log("MappingIpc::clearCache() failed to find current process %d in shared memory", processId);
 			return;
 		}
 		MappingHeader::Process* current = &sMem->process[sMem->currentProcess];
@@ -662,8 +666,8 @@ public:
 
 			if (p->id == processId)
 			{
-				MAP_DEBUG(fprintf(stderr, "Internal resetMap(%s)\n", sMem->databaseForReset));
-				resetMap(sMem->databaseForReset);
+				MAP_DEBUG(fprintf(stderr, "Internal resetMap(%s, %d)\n", sMem->databaseForReset, sMem->resetIndex));
+				resetMap(sMem->databaseForReset, sMem->resetIndex);
 				continue;
 			}
 
@@ -770,9 +774,9 @@ private:
 
 				if (p->flags & MappingHeader::FLAG_DELIVER)
 				{
-					resetMap(sharedMemory->getHeader()->databaseForReset);
-
 					MappingHeader* sMem = sharedMemory->getHeader();
+					resetMap(sMem->databaseForReset, sMem->resetIndex);
+
 					MappingHeader::Process* cur = &sMem->process[sMem->currentProcess];
 					if (sharedMemory->eventPost(&cur->callbackEvent) != FB_SUCCESS)
 					{
@@ -877,14 +881,246 @@ void setupIpc()
 	mappingIpc->setup();
 }
 
+class DbHandle : public AutoPtr<IAttachment, SimpleRelease<IAttachment> >
+{
+public:
+	DbHandle()
+		: AutoPtr()
+	{ }
+
+	DbHandle(IAttachment* att)
+		: AutoPtr(att)
+	{
+		if (att)
+			att->addRef();
+	}
+
+	bool attach(FbLocalStatus& st, const char* aliasDb, ICryptKeyCallback* cryptCb)
+	{
+		bool down = false;		// true if on attach db is shutdown
+
+		if (hasData())
+			return down;
+
+		DispatcherPtr prov;
+		if (cryptCb)
+		{
+			prov->setDbCryptCallback(&st, cryptCb);
+			check("IProvider::setDbCryptCallback", &st);
+		}
+
+		ClumpletWriter embeddedSysdba(ClumpletWriter::Tagged, 1024, isc_dpb_version1);
+		embeddedSysdba.insertString(isc_dpb_user_name, DBA_USER_NAME, fb_strlen(DBA_USER_NAME));
+		embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
+		embeddedSysdba.insertByte(isc_dpb_map_attach, TRUE);
+		embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
+
+		IAttachment* att = prov->attachDatabase(&st, aliasDb,
+			embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
+
+		if (st->getState() & IStatus::STATE_ERRORS)
+		{
+			const ISC_STATUS* s = st->getErrors();
+			bool missing = fb_utils::containsErrorCode(s, isc_io_error);
+			down = fb_utils::containsErrorCode(s, isc_shutdown);
+			if (!(missing || down))
+				check("IProvider::attachDatabase", &st);
+
+			// down/missing security DB is not a reason to fail mapping
+		}
+		else
+			reset(att);
+
+		return down;
+	}
+};
+
+
+const char* roleSql =
+"with recursive role_tree as ( "
+"   select rdb$role_name as nm from rdb$roles "
+"       where rdb$role_name = ? "
+"   union all "
+"   select p.rdb$relation_name as nm from rdb$user_privileges p "
+"       join role_tree t on t.nm = p.rdb$user "
+"       where p.rdb$privilege = 'M') "
+"select r.rdb$system_privileges from role_tree t "
+"   join rdb$roles r on t.nm = r.rdb$role_name "
+	;
+
+const char* userSql =
+"with recursive role_tree as ( "
+"   select rdb$relation_name as nm from rdb$user_privileges "
+"       where rdb$privilege = 'M' and rdb$field_name = 'D' and rdb$user = ? and rdb$user_type = 8 "
+"   union all "
+"   select p.rdb$relation_name as nm from rdb$user_privileges p "
+"       join role_tree t on t.nm = p.rdb$user "
+"       where p.rdb$privilege = 'M' and p.rdb$field_name = 'D') "
+"select r.rdb$system_privileges from role_tree t "
+"   join rdb$roles r on t.nm = r.rdb$role_name "
+	;
+
+class SysPrivCache : public PermanentStorage
+{
+public:
+	SysPrivCache(MemoryPool& p)
+		: PermanentStorage(p),
+		  databases(getPool())
+	{ }
+
+	SyncObject* getSync()
+	{
+		return &sync;
+	}
+
+	bool getPrivileges(const PathName& db, const string& name, const string& trusted_role, UserId::Privileges& system_privileges)
+	{
+		DbCache* c;
+		return databases.get(db, c) && c->getPrivileges(name, trusted_role, system_privileges);
+	}
+
+	void populate(const PathName& db, DbHandle& iDb, const string& name, const string& trusted_role)
+	{
+		DbCache* c;
+		if (!databases.get(db, c))
+		{
+			c = FB_NEW_POOL(getPool()) DbCache(getPool());
+			*(databases.put(db)) = c;
+		}
+		c->populate(iDb, name, trusted_role);
+
+		setupIpc();
+	}
+
+	void invalidate(const PathName& db)
+	{
+		DbCache* c;
+		if (databases.get(db, c))
+			c->invalidate();
+	}
+
+private:
+	class DbCache
+	{
+	public:
+		DbCache(MemoryPool& p)
+			: logins(p, userSql),
+			  roles(p, roleSql)
+		{ }
+
+		bool getPrivileges(const string& name, const string& trusted_role, UserId::Privileges& system_privileges)
+		{
+			system_privileges.clearAll();
+			return logins.getPrivileges(name, system_privileges) &&
+				roles.getPrivileges(trusted_role, system_privileges);
+		}
+
+		void populate(DbHandle& iDb, const string& name, const string& trusted_role)
+		{
+			logins.populate(name, iDb);
+			roles.populate(trusted_role, iDb);
+		}
+
+		void invalidate()
+		{
+			logins.invalidate();
+			roles.invalidate();
+		}
+
+	private:
+		class NameCache : private GenericMap<Pair<Left<string, UserId::Privileges> > >
+		{
+		public:
+			NameCache(MemoryPool& p, const char* s)
+				: GenericMap(p),
+				  sql(s)
+			{ }
+
+			bool getPrivileges(const string& key, UserId::Privileges& system_privileges)
+			{
+				if (!key.hasData())
+					return false;
+
+				UserId::Privileges p;
+        		if (!get(key, p))
+					return false;
+
+				system_privileges |= p;
+				return true;
+			}
+
+			void populate(const string& key, DbHandle& iDb)
+			{
+				if (!key.hasData())
+					return;
+
+				ThrowLocalStatus st;
+				RefPtr<ITransaction> tra(REF_NO_INCR, iDb->startTransaction(&st, 0, NULL));
+
+				Message par;
+				Field<Varying> user(par, MAX_SQL_IDENTIFIER_SIZE);
+				user = key.c_str();
+
+				RefPtr<IResultSet> curs(REF_NO_INCR, iDb->openCursor(&st, tra, 0, sql, 3,
+					par.getMetadata(), par.getBuffer(), NULL, NULL, 0));
+
+				RefPtr<IMessageMetadata> meta(curs->getMetadata(&st));
+				AutoPtr<UCHAR, ArrayDelete<UCHAR> > buffer(FB_NEW UCHAR[meta->getMessageLength(&st)]);
+				UCHAR* bits = buffer + meta->getOffset(&st, 0);
+				UserId::Privileges g, l;
+				while(curs->fetchNext(&st, buffer) == IStatus::RESULT_OK)
+				{
+					l.load(bits);
+					g |= l;
+				}
+				put(key, g);
+			}
+
+			void invalidate()
+			{
+				clear();
+			}
+
+		private:
+			const char* sql;
+		};
+
+		NameCache logins, roles;
+	};
+
+	SyncObject sync;
+	GenericMap<Pair<Left<PathName, DbCache*> > > databases;
+};
+
+InitInstance<SysPrivCache> spCache;
+
+void resetMap(const char* db, ULONG index)
+{
+	switch(index)
+	{
+	case MAPPING_CACHE:
+		resetMap(db);
+		break;
+
+	case SYSTEM_PRIVILEGES_CACHE:
+		spCache().invalidate(db);
+		break;
+
+	default:
+		fb_assert(false);
+		break;
+	}
+}
+
 } // anonymous namespace
 
 namespace Jrd {
 
-bool mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
-	AuthReader::AuthBlock* newAuthBlock, const AuthReader::AuthBlock& authBlock,
-	const char* alias, const char* db, const char* securityAlias,
-	ICryptKeyCallback* cryptCb)
+ULONG mapUser(const bool throwNotFoundError,
+	string& name, string& trusted_role, Firebird::string* auth_method,
+	AuthReader::AuthBlock* newAuthBlock, UserId::Privileges* system_privileges,
+	const AuthReader::AuthBlock& authBlock,	const char* alias, const char* db,
+	const char* securityAlias, ICryptKeyCallback* cryptCb, Firebird::IAttachment* att)
 {
 	AuthReader::Info info;
 
@@ -903,7 +1139,7 @@ bool mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 			}
 		}
 
-		return false;
+		return 0;
 	}
 
 	// expand security database name (db is expected to be expanded, alias - original)
@@ -912,6 +1148,8 @@ bool mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 	const char* securityDb = secExpanded.c_str();
 	bool secDown = false;
 	bool dbDown = false;
+	DbHandle iDb(att);
+	FbLocalStatus st;
 
 	// Create new writer
 	AuthWriter newBlock;
@@ -928,161 +1166,91 @@ bool mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 	}
 
 	// Perform lock & map only when needed
-	if (flags != (FLAG_DB | FLAG_SEC))
+	if ((flags != (FLAG_DB | FLAG_SEC)) && authBlock.hasData())
 	{
 		AuthReader::Info info;
 		SyncType syncType = SYNC_SHARED;
-		IAttachment* iDb = NULL;
-		IAttachment* iSec = NULL;
-		FbLocalStatus st;
+		DbHandle iSec;
 
-		try
+		for (;;)
 		{
-			for (;;)
+			if (syncType == SYNC_EXCLUSIVE)
 			{
-				if (syncType == SYNC_EXCLUSIVE)
+				if (!iSec)
+					iSec.attach(st, securityAlias, cryptCb);
+
+				if (db && !iDb)
+					iDb.attach(st, alias, cryptCb);
+			}
+
+			MutexEnsureUnlock g(treeMutex, FB_FUNCTION);
+			g.enter();
+
+			Cache* cDb = NULL;
+			if (db)
+				cDb = locate(alias, db);
+			Cache* cSec = locate(securityAlias, securityDb);
+			if (cDb == cSec)
+				cDb = NULL;
+
+			SyncObject dummySync1, dummySync2;
+			Sync sDb(((!(flags & FLAG_DB)) && cDb) ? &cDb->syncObject : &dummySync1, FB_FUNCTION);
+			Sync sSec((!(flags & FLAG_SEC)) ? &cSec->syncObject : &dummySync2, FB_FUNCTION);
+
+			sSec.lock(syncType);
+			if (!sDb.lockConditional(syncType))
+			{
+				// Avoid deadlocks cause hell knows which db is security for which
+				sSec.unlock();
+				// Now safely wait for sSec
+				sDb.lock(syncType);
+				// and repeat whole operation
+				continue;
+			}
+
+			// Required cache(s) are locked somehow - release treeMutex
+			g.leave();
+
+			// Check is it required to populate caches from DB
+			if ((cDb && !cDb->dataFlag) || !cSec->dataFlag)
+			{
+				if (syncType != SYNC_EXCLUSIVE)
 				{
-					DispatcherPtr prov;
-					if (cryptCb)
-					{
-						prov->setDbCryptCallback(&st, cryptCb);
-						check("IProvider::setDbCryptCallback", &st);
-					}
-
-					ClumpletWriter embeddedSysdba(ClumpletWriter::Tagged,
-						MAX_DPB_SIZE, isc_dpb_version1);
-					embeddedSysdba.insertString(isc_dpb_user_name, SYSDBA_USER_NAME,
-						fb_strlen(SYSDBA_USER_NAME));
-					embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
-					embeddedSysdba.insertByte(isc_dpb_map_attach, TRUE);
-					embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
-
-					if (!iSec)
-					{
-						iSec = prov->attachDatabase(&st, securityAlias,
-							embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
-						if (st->getState() & IStatus::STATE_ERRORS)
-						{
-							const ISC_STATUS* s = st->getErrors();
-							bool missing = fb_utils::containsErrorCode(s, isc_io_error);
-							secDown = fb_utils::containsErrorCode(s, isc_shutdown);
-							if (!(missing || secDown))
-								check("IProvider::attachDatabase", &st);
-
-							// down/missing security DB is not a reason to fail mapping
-							iSec = NULL;
-						}
-					}
-
-					if (db && !iDb)
-					{
-						iDb = prov->attachDatabase(&st, alias,
-							embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
-
-						if (st->getState() & IStatus::STATE_ERRORS)
-						{
-							const ISC_STATUS* s = st->getErrors();
-							bool missing = fb_utils::containsErrorCode(s, isc_io_error);
-							dbDown = fb_utils::containsErrorCode(s, isc_shutdown);
-							if (!(missing || dbDown))
-								check("IProvider::attachDatabase", &st);
-
-							// down/missing DB is not a reason to fail mapping
-							iDb = NULL;
-						}
-					}
-				}
-
-				MutexEnsureUnlock g(treeMutex, FB_FUNCTION);
-				g.enter();
-
-				Cache* cDb = NULL;
-				if (db)
-					cDb = locate(alias, db);
-				Cache* cSec = locate(securityAlias, securityDb);
-				if (cDb == cSec)
-					cDb = NULL;
-
-				SyncObject dummySync1, dummySync2;
-				Sync sDb(((!(flags & FLAG_DB)) && cDb) ? &cDb->syncObject : &dummySync1, FB_FUNCTION);
-				Sync sSec((!(flags & FLAG_SEC)) ? &cSec->syncObject : &dummySync2, FB_FUNCTION);
-
-				sSec.lock(syncType);
-				if (!sDb.lockConditional(syncType))
-				{
-					// Avoid deadlocks cause hell knows which db is security for which
+					syncType = SYNC_EXCLUSIVE;
 					sSec.unlock();
-					// Now safely wait for sSec
-					sDb.lock(syncType);
-					// and repeat whole operation
+					sDb.unlock();
+
 					continue;
 				}
 
-				// Required cache(s) are locked somehow - release treeMutex
-				g.leave();
-
-				// Check is it required to populate caches from DB
-				if ((cDb && !cDb->dataFlag) || !cSec->dataFlag)
-				{
-					if (syncType != SYNC_EXCLUSIVE)
-					{
-						syncType = SYNC_EXCLUSIVE;
-						sSec.unlock();
-						sDb.unlock();
-
-						continue;
-					}
-
-					if (cDb)
-						cDb->populate(iDb, dbDown);
-					cSec->populate(iSec, secDown);
-
-					sSec.downgrade(SYNC_SHARED);
-					sDb.downgrade(SYNC_SHARED);
-				}
-
-				// use down flags from caches
 				if (cDb)
-					dbDown = cDb->downFlag;
-				secDown = cSec->downFlag;
+					cDb->populate(iDb, dbDown);
+				cSec->populate(iSec, secDown);
 
-				// Caches are ready somehow - proceed with analysis
-				AuthReader auth(authBlock);
+				sSec.downgrade(SYNC_SHARED);
+				sDb.downgrade(SYNC_SHARED);
+			}
 
-				// Map in simple mode first main, next security db
-				if (cDb && cDb->map4(false, flags & FLAG_DB, auth, info, newBlock))
-					break;
-				if (cSec->map4(false, flags & FLAG_SEC, auth, info, newBlock))
-					break;
+			// use down flags from caches
+			if (cDb)
+				dbDown = cDb->downFlag;
+			secDown = cSec->downFlag;
 
-				// Map in wildcard mode first main, next security db
-				if (cDb && cDb->map4(true, flags & FLAG_DB, auth, info, newBlock))
-					break;
-				cSec->map4(true, flags & FLAG_SEC, auth, info, newBlock);
+			// Caches are ready somehow - proceed with analysis
+			AuthReader auth(authBlock);
 
+			// Map in simple mode first main, next security db
+			if (cDb && cDb->map4(false, flags & FLAG_DB, auth, info, newBlock))
 				break;
-			}
+			if (cSec->map4(false, flags & FLAG_SEC, auth, info, newBlock))
+				break;
 
-			if (iDb)
-			{
-				iDb->detach(&st);
-				check("IAttachment::detach", &st);
-				iDb = NULL;
-			}
-			if (iSec)
-			{
-				iSec->detach(&st);
-				check("IAttachment::detach", &st);
-				iSec = NULL;
-			}
-		}
-		catch (const Exception&)
-		{
-			if (iDb)
-			  	iDb->release();
-			if (iSec)
-				iSec->release();
-			throw;
+			// Map in wildcard mode first main, next security db
+			if (cDb && cDb->map4(true, flags & FLAG_DB, auth, info, newBlock))
+				break;
+			cSec->map4(true, flags & FLAG_SEC, auth, info, newBlock);
+
+			break;
 		}
 
 		for (AuthReader rdr(newBlock); rdr.getInfo(info); rdr.moveNext())
@@ -1134,35 +1302,69 @@ bool mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 		}
 	}
 
+	ULONG rc = secDown || dbDown ? MAPUSER_MAP_DOWN : 0;
 	if (fName.found == Found::FND_NOTHING)
 	{
-		Arg::Gds v(isc_sec_context);
-		v << alias;
-		if (secDown || dbDown)
-			v << Arg::Gds(isc_map_down);
-		v.raise();
+		if (throwNotFoundError)
+		{
+			Arg::Gds v(isc_sec_context);
+			v << alias;
+			if (rc & MAPUSER_MAP_DOWN)
+				v << Arg::Gds(isc_map_down);
+			v.raise();
+		}
+		rc |= MAPUSER_ERROR_NOT_THROWN;
 	}
-
-	name = fName.value.ToString();
-	trusted_role = fRole.value.ToString();
-	MAP_DEBUG(fprintf(stderr, "login=%s tr=%s\n", name.c_str(), trusted_role.c_str()));
-	if (auth_method)
-		*auth_method = fName.method.ToString();
-
-	if (newAuthBlock)
+	else
 	{
-		newAuthBlock->shrink(0);
-		newAuthBlock->push(newBlock.getBuffer(), newBlock.getBufferLength());
-		MAP_DEBUG(fprintf(stderr, "Saved to newAuthBlock %u bytes\n",
-			static_cast<unsigned>(newAuthBlock->getCount())));
+		name = fName.value.ToString();
+		trusted_role = fRole.value.ToString();
+		MAP_DEBUG(fprintf(stderr, "login=%s tr=%s\n", name.c_str(), trusted_role.c_str()));
+		if (auth_method)
+			*auth_method = fName.method.ToString();
+
+		if (newAuthBlock)
+		{
+			newAuthBlock->shrink(0);
+			newAuthBlock->push(newBlock.getBuffer(), newBlock.getBufferLength());
+			MAP_DEBUG(fprintf(stderr, "Saved to newAuthBlock %u bytes\n",
+				static_cast<unsigned>(newAuthBlock->getCount())));
+		}
 	}
 
-	return secDown || dbDown;
+	if (name.hasData() || trusted_role.hasData())
+	{
+		if (system_privileges && db)
+		{
+			system_privileges->clearAll();
+
+			Sync sync(spCache().getSync(), FB_FUNCTION);
+			sync.lock(SYNC_SHARED);
+
+			if (!spCache().getPrivileges(db, name, trusted_role, *system_privileges))
+			{
+				sync.unlock();
+				sync.lock(SYNC_EXCLUSIVE);
+				if (!spCache().getPrivileges(db, name, trusted_role, *system_privileges))
+				{
+					if (!iDb)
+						iDb.attach(st, alias, cryptCb);
+					if (iDb)
+					{
+						spCache().populate(db, iDb, name, trusted_role);
+						spCache().getPrivileges(db, name, trusted_role, *system_privileges);
+					}
+				}
+			}
+		}
+	}
+
+	return rc;
 }
 
-void clearMap(const char* dbName)
+void clearMappingCache(const char* dbName, USHORT index)
 {
-	mappingIpc->clearMap(dbName);
+	mappingIpc->clearCache(dbName, index);
 }
 
 const Format* GlobalMappingScan::getFormat(thread_db* tdbb, jrd_rel* relation) const
@@ -1210,8 +1412,8 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 	{
 		ClumpletWriter embeddedSysdba(ClumpletWriter::Tagged,
 			MAX_DPB_SIZE, isc_dpb_version1);
-		embeddedSysdba.insertString(isc_dpb_user_name, SYSDBA_USER_NAME,
-			fb_strlen(SYSDBA_USER_NAME));
+		embeddedSysdba.insertString(isc_dpb_user_name, DBA_USER_NAME,
+			fb_strlen(DBA_USER_NAME));
 		embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
 		embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
 

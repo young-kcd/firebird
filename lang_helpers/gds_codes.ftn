@@ -1632,6 +1632,10 @@ C --
       PARAMETER (GDS__encrypt_error                    = 335545109)
       INTEGER*4 GDS__max_idx_depth                   
       PARAMETER (GDS__max_idx_depth                    = 335545110)
+      INTEGER*4 GDS__wrong_prvlg                     
+      PARAMETER (GDS__wrong_prvlg                      = 335545111)
+      INTEGER*4 GDS__miss_prvlg                      
+      PARAMETER (GDS__miss_prvlg                       = 335545112)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

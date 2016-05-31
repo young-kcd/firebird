@@ -45,6 +45,7 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/tra_proto.h"
+#include "../jrd/scl_proto.h"
 #include "../common/os/guid.h"
 #include "../jrd/license.h"
 #include "../jrd/trace/TraceManager.h"
@@ -186,6 +187,7 @@ dsc* evlRoleInUse(thread_db* tdbb, const SysFunction* function, const NestValueA
 dsc* evlRound(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlSign(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlSqrt(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlSystemPrivilege(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlUuidToChar(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 
@@ -2231,17 +2233,23 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 		}
 		else if (nameStr == CURRENT_USER_NAME)
 		{
-			if (!attachment->att_user || attachment->att_user->usr_user_name.isEmpty())
-				return NULL;
+			MetaName user;
+			if (attachment->att_user)
+				user = attachment->att_user->getUserName();
 
-			resultStr = attachment->att_user->usr_user_name.c_str();
+			if (user.isEmpty())
+				return NULL;
+			resultStr = user.c_str();
 		}
 		else if (nameStr == CURRENT_ROLE_NAME)
 		{
-			if (!attachment->att_user || attachment->att_user->usr_sql_role_name.isEmpty())
-				return NULL;
+			MetaName role;
+			if (attachment->att_user)
+				role = attachment->att_user->getSqlRole();
 
-			resultStr = attachment->att_user->usr_sql_role_name.c_str();
+			if (role.isEmpty())
+				return NULL;
+			resultStr = role.c_str();
 		}
 		else if (nameStr == TRANSACTION_ID_NAME)
 			resultStr.printf("%" SQUADFORMAT, transaction->tra_number);
@@ -3803,8 +3811,31 @@ dsc* evlRoleInUse(thread_db* tdbb, const SysFunction*, const NestValueArray& arg
 	string roleStr(MOV_make_string2(tdbb, value, ttype_none));
 	roleStr.upper();
 
-	impure->vlu_misc.vlu_uchar = attachment->att_user->usr_granted_roles.exist(roleStr) ? 1 : 0;
+	impure->vlu_misc.vlu_uchar = attachment->att_user->roleInUse(tdbb, roleStr.c_str()) ? FB_TRUE : FB_FALSE;
 
+	impure->vlu_desc.makeBoolean(&impure->vlu_misc.vlu_uchar);
+
+	return &impure->vlu_desc;
+}
+
+
+dsc* evlSystemPrivilege(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
+	impure_value* impure)
+{
+	fb_assert(args.getCount() == 1);
+
+	jrd_req* request = tdbb->getRequest();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
+
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
+	if (request->req_flags & req_null)	// return NULL if value is NULL
+		return NULL;
+
+	string privStr(MOV_make_string2(tdbb, value, ttype_none));
+	privStr.upper();
+	USHORT p = SCL_convert_privilege(tdbb, tdbb->getTransaction(), privStr);
+
+	impure->vlu_misc.vlu_uchar = attachment->att_user->locksmith(tdbb, p) ? FB_TRUE : FB_FALSE;
 	impure->vlu_desc.makeBoolean(&impure->vlu_misc.vlu_uchar);
 
 	return &impure->vlu_desc;
@@ -3862,6 +3893,7 @@ const SysFunction SysFunction::functions[] =
 		{RDB_GET_CONTEXT, 2, 2, setParamsGetSetContext, makeGetSetContext, evlGetContext, NULL},
 		{"RDB$ROLE_IN_USE", 1, 1, setParamsAsciiVal, makeBooleanResult, evlRoleInUse, NULL},
 		{RDB_SET_CONTEXT, 3, 3, setParamsGetSetContext, makeGetSetContext, evlSetContext, NULL},
+		{"RDB$SYSTEM_PRIVILEGE", 1, 1, setParamsAsciiVal, makeBooleanResult, evlSystemPrivilege, NULL},
 		{"REPLACE", 3, 3, setParamsFromList, makeReplace, evlReplace, NULL},
 		{"REVERSE", 1, 1, NULL, makeReverse, evlReverse, NULL},
 		{"RIGHT", 2, 2, setParamsSecondInteger, makeLeftRight, evlRight, NULL},

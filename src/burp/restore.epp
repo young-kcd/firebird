@@ -7769,6 +7769,18 @@ bool get_sql_roles(BurpGlobals* tdgbl)
 						bad_attribute(scan_next_attr, attribute, 250);
 				    break;
 
+				case att_role_sys_priveleges:
+					{
+						const ULONG l = get(tdgbl);
+						if (l > sizeof(X.RDB$SYSTEM_PRIVILEGES))
+							BURP_error_redirect (NULL, 46);
+							// msg 46 string truncated
+
+						if (l)
+							get_block(tdgbl, (UCHAR*) (X.RDB$SYSTEM_PRIVILEGES), l);
+					}
+					break;
+
 				default:
 					// msg 250 SQL role
 					bad_attribute(scan_next_attr, attribute, 250);

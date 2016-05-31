@@ -158,10 +158,10 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* guard)
 
 	// Only platform's user locksmith can shutdown or bring online a database
 
-	if (!attachment->locksmith())
+	if (!attachment->locksmith(tdbb, CHANGE_SHUTDOWN_MODE))
 	{
 		ERR_post_nothrow(Arg::Gds(isc_no_priv) << "shutdown" << "database" << dbb->dbb_filename);
-		if (attachment->att_user->usr_flags & USR_mapdown)
+		if (attachment->att_user->testFlag(USR_mapdown))
 			ERR_post_nothrow(Arg::Gds(isc_map_down));
 		ERR_punt();
 	}
@@ -340,10 +340,10 @@ void SHUT_online(thread_db* tdbb, SSHORT flag, Sync* guard)
 
 	// Only platform's user locksmith can shutdown or bring online a database
 
-	if (!attachment->att_user->locksmith())
+	if (!attachment->att_user->locksmith(tdbb, CHANGE_SHUTDOWN_MODE))
 	{
 		ERR_post_nothrow(Arg::Gds(isc_no_priv) << "bring online" << "database" << dbb->dbb_filename);
-		if (attachment->att_user->usr_flags & USR_mapdown)
+		if (attachment->att_user->testFlag(USR_mapdown))
 			ERR_post_nothrow(Arg::Gds(isc_map_down));
 		ERR_punt();
 	}

@@ -3661,7 +3661,7 @@ dsc* CurrentRoleNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	if (tdbb->getAttachment()->att_user)
 	{
-		curRole = tdbb->getAttachment()->att_user->usr_sql_role_name.c_str();
+		curRole = tdbb->getAttachment()->att_user->getSqlRole().c_str();
 		impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(const_cast<char*>(curRole));
 	}
 
@@ -3756,7 +3756,7 @@ dsc* CurrentUserNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	if (tdbb->getAttachment()->att_user)
 	{
-		curUser = tdbb->getAttachment()->att_user->usr_user_name.c_str();
+		curUser = tdbb->getAttachment()->att_user->getUserName().c_str();
 		impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(const_cast<char*>(curUser));
 	}
 

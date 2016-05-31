@@ -1464,14 +1464,14 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_types:
-		 	if (!tdbb->getAttachment()->locksmith())
+		 	if (!tdbb->getAttachment()->locksmith(tdbb, CREATE_USER_TYPES))
 		 		protect_system_table_delupd(tdbb, relation, "DELETE", true);
 		 	if (EVL_field(0, rpb->rpb_record, f_typ_sys_flag, &desc) && MOV_get_long(&desc, 0))
 		 		protect_system_table_delupd(tdbb, relation, "DELETE", true);
 			break;
 
 		case rel_db_creators:
-			if (!tdbb->getAttachment()->locksmith())
+			if (!tdbb->getAttachment()->locksmith(tdbb, GRANT_REVOKE_ANY_DDL_RIGHT))
 				protect_system_table_delupd(tdbb, relation, "DELETE");
 			break;
 
@@ -2486,14 +2486,14 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			break;
 
 		case rel_types:
-		 	if (!tdbb->getAttachment()->locksmith())
+		 	if (!tdbb->getAttachment()->locksmith(tdbb, CREATE_USER_TYPES))
 		 		protect_system_table_delupd(tdbb, relation, "UPDATE", true);
 			if (EVL_field(0, org_rpb->rpb_record, f_typ_sys_flag, &desc1) && MOV_get_long(&desc1, 0))
 		 		protect_system_table_delupd(tdbb, relation, "UPDATE", true);
 			break;
 
 		case rel_db_creators:
-			if (!tdbb->getAttachment()->locksmith())
+			if (!tdbb->getAttachment()->locksmith(tdbb, GRANT_REVOKE_ANY_DDL_RIGHT))
 				protect_system_table_delupd(tdbb, relation, "UPDATE");
 			break;
 
@@ -3114,14 +3114,14 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_db_creators:
-			if (!tdbb->getAttachment()->locksmith())
+			if (!tdbb->getAttachment()->locksmith(tdbb, GRANT_REVOKE_ANY_DDL_RIGHT))
 				protect_system_table_insert(tdbb, request, relation);
 			break;
 
 		case rel_types:
 			if (!(tdbb->getDatabase()->dbb_flags & DBB_creating))
 			{
-				if (!tdbb->getAttachment()->locksmith())
+				if (!tdbb->getAttachment()->locksmith(tdbb, CREATE_USER_TYPES))
 					protect_system_table_insert(tdbb, request, relation, true);
 				else if (EVL_field(0, rpb->rpb_record, f_typ_sys_flag, &desc) && MOV_get_long(&desc, 0))
 		 			protect_system_table_insert(tdbb, request, relation, true);
@@ -3390,7 +3390,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_backup_history:
-			if (!tdbb->getAttachment()->locksmith())
+			if (!tdbb->getAttachment()->locksmith(tdbb, USE_NBACKUP_UTILITY))
 				protect_system_table_insert(tdbb, request, relation);
 			set_metadata_id(tdbb, rpb->rpb_record,
 							f_backup_id, drq_g_nxt_nbakhist_id, "RDB$BACKUP_HISTORY");
@@ -3823,7 +3823,7 @@ static void check_class(thread_db* tdbb,
 static bool check_nullify_source(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 								 int field_id_1, int field_id_2)
 {
-	if (!tdbb->getAttachment()->locksmith())
+	if (!tdbb->getAttachment()->locksmith(tdbb, NULL_PRIVILEGE))	// legacy right - no system privilege tuning !!!
 		return false;
 
 	bool nullify_found = false;
@@ -3880,7 +3880,7 @@ static void check_owner(thread_db* tdbb,
 		return;
 
 	const Jrd::Attachment* const attachment = tdbb->getAttachment();
-	const Firebird::MetaName name(attachment->att_user->usr_user_name);
+	const Firebird::MetaName name(attachment->att_user->getUserName());
 	desc2.makeText((USHORT) name.length(), CS_METADATA, (UCHAR*) name.c_str());
 	if (!MOV_compare(&desc1, &desc2))
 		return;
@@ -3905,7 +3905,7 @@ static bool check_user(thread_db* tdbb, const dsc* desc)
 
 	const TEXT* p = (TEXT *) desc->dsc_address;
 	const TEXT* const end = p + desc->dsc_length;
-	const TEXT* q = tdbb->getAttachment()->att_user->usr_user_name.c_str();
+	const TEXT* q = tdbb->getAttachment()->att_user->getUserName().c_str();
 
 	// It is OK to not internationalize this function for v4.00 as
 	// User names are limited to 7-bit ASCII for v4.00
@@ -4302,7 +4302,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	try
 	{
 		UserId user;
-		user.usr_user_name = "Garbage Collector";
+		user.setUserName("Garbage Collector");
 
 		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
 		RefPtr<SysStableAttachment> sAtt(FB_NEW SysStableAttachment(attachment));
@@ -5590,7 +5590,7 @@ static void set_owner_name(thread_db* tdbb, Record* record, USHORT field_id)
 	if (!EVL_field(0, record, field_id, &desc1))
 	{
 		const Jrd::Attachment* const attachment = tdbb->getAttachment();
-		const Firebird::MetaName name(attachment->att_user->usr_user_name);
+		const Firebird::MetaName name(attachment->att_user->getUserName());
 		dsc desc2;
 		desc2.makeText((USHORT) name.length(), CS_METADATA, (UCHAR*) name.c_str());
 		MOV_move(tdbb, &desc2, &desc1);

@@ -104,7 +104,7 @@ static void show_index(SCHAR*, SCHAR*, const SSHORT, const SSHORT, const SSHORT)
 static processing_state show_indices(const SCHAR* const*);
 static processing_state show_proc(const SCHAR*);
 static processing_state show_packages(const SCHAR* package_name);
-static processing_state show_role(const SCHAR*);
+static processing_state show_role(const SCHAR*, bool, const char* msg = 0);
 static processing_state show_secclass(const char* object, const char* opt);
 static processing_state show_table(const SCHAR*, bool);
 static processing_state show_trigger(const SCHAR*, bool, bool);
@@ -636,7 +636,7 @@ static const char* granted_by(char* buffer, const char* grantor, bool nullGranto
 	if (reReadDbOwner)
 	{
 		// Get the owner name
-		strcpy(owner, SYSDBA_USER_NAME);
+		strcpy(owner, DBA_USER_NAME);
 
 		FOR REL IN RDB$RELATIONS WITH
 			REL.RDB$RELATION_NAME = "RDB$DATABASE"
@@ -699,6 +699,15 @@ static void set_grantee(int user_type, const char* SQL_identifier, char* user_st
 		break;
 	case obj_package_header:
 		sprintf(user_string, "PACKAGE %s", SQL_identifier);
+		break;
+	case obj_privilege:
+		FOR T IN RDB$TYPES
+			WITH T.RDB$FIELD_NAME EQ 'RDB$SYSTEM_PRIVILEGES'
+			 AND T.RDB$TYPE EQ atoi(SQL_identifier)
+		{
+			sprintf(user_string, "SYSTEM PRIVILEGE %s", fb_utils::exact_name(T.RDB$TYPE_NAME));
+		}
+		END_FOR
 		break;
 	default:
 		strcpy(user_string, SQL_identifier);
@@ -770,6 +779,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 			FOR PRV IN RDB$USER_PRIVILEGES CROSS
 				REL IN RDB$RELATIONS WITH
+				PRV.RDB$GRANTOR NOT MISSING		AND
 				PRV.RDB$RELATION_NAME EQ object AND
 				REL.RDB$RELATION_NAME EQ object AND
 				PRV.RDB$PRIVILEGE     NE 'M'    AND
@@ -952,6 +962,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 			FOR PRV IN RDB$USER_PRIVILEGES CROSS
 				PRC IN RDB$PROCEDURES WITH
+				PRV.RDB$GRANTOR NOT MISSING AND
 				PRV.RDB$OBJECT_TYPE = obj_procedure AND
 				PRV.RDB$RELATION_NAME EQ object AND
 				PRC.RDB$PROCEDURE_NAME EQ object AND
@@ -1031,6 +1042,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 		FOR FIRST 1 R IN RDB$ROLES WITH R.RDB$ROLE_NAME EQ object
 
 			FOR PRV IN RDB$USER_PRIVILEGES WITH
+				PRV.RDB$GRANTOR NOT MISSING           AND
 				PRV.RDB$OBJECT_TYPE   EQ obj_sql_role AND
 				(PRV.RDB$USER_TYPE    EQ obj_user      OR
 				 PRV.RDB$USER_TYPE    EQ obj_sql_role) AND
@@ -1090,6 +1102,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 			FOR FIRST 1 P IN RDB$PACKAGES WITH P.RDB$PACKAGE_NAME EQ object
 				FOR PRV IN RDB$USER_PRIVILEGES CROSS
 					PACK IN RDB$PACKAGES WITH
+					PRV.RDB$GRANTOR NOT MISSING AND
 					PRV.RDB$OBJECT_TYPE = obj_package_header AND
 					PRV.RDB$RELATION_NAME EQ object AND
 					PACK.RDB$PACKAGE_NAME EQ object AND
@@ -1166,6 +1179,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 				FOR PRV IN RDB$USER_PRIVILEGES CROSS
 					FUN IN RDB$FUNCTIONS WITH
+					PRV.RDB$GRANTOR NOT MISSING AND
 					PRV.RDB$OBJECT_TYPE = obj_udf AND
 					PRV.RDB$RELATION_NAME EQ object AND
 					FUN.RDB$FUNCTION_NAME EQ object AND
@@ -1240,6 +1254,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 			FOR FIRST 1 G IN RDB$GENERATORS WITH G.RDB$GENERATOR_NAME EQ object
 				FOR PRV IN RDB$USER_PRIVILEGES CROSS
 					GEN IN RDB$GENERATORS WITH
+					PRV.RDB$GRANTOR NOT MISSING AND
 					PRV.RDB$OBJECT_TYPE = obj_generator AND
 					PRV.RDB$RELATION_NAME EQ object AND
 					GEN.RDB$GENERATOR_NAME EQ object AND
@@ -1313,6 +1328,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 			FOR FIRST 1 E IN RDB$EXCEPTIONS WITH E.RDB$EXCEPTION_NAME EQ object
 				FOR PRV IN RDB$USER_PRIVILEGES CROSS
 					XCP IN RDB$EXCEPTIONS WITH
+					PRV.RDB$GRANTOR NOT MISSING AND
 					PRV.RDB$OBJECT_TYPE = obj_exception AND
 					PRV.RDB$RELATION_NAME EQ object AND
 					XCP.RDB$EXCEPTION_NAME EQ object AND
@@ -1387,6 +1403,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 			FOR FIRST 1 F IN RDB$FIELDS WITH F.RDB$FIELD_NAME EQ object
 				FOR PRV IN RDB$USER_PRIVILEGES CROSS
 					FLD IN RDB$FIELDS WITH
+					PRV.RDB$GRANTOR NOT MISSING AND
 					PRV.RDB$OBJECT_TYPE = obj_field AND
 					PRV.RDB$RELATION_NAME EQ object AND
 					FLD.RDB$FIELD_NAME EQ object AND
@@ -1460,6 +1477,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 			FOR FIRST 1 C IN RDB$CHARACTER_SETS WITH C.RDB$CHARACTER_SET_NAME EQ object
 				FOR PRV IN RDB$USER_PRIVILEGES CROSS
 					CS IN RDB$CHARACTER_SETS WITH
+					PRV.RDB$GRANTOR NOT MISSING AND
 					PRV.RDB$OBJECT_TYPE = obj_charset AND
 					PRV.RDB$RELATION_NAME EQ object AND
 					CS.RDB$CHARACTER_SET_NAME EQ object AND
@@ -1533,6 +1551,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 			FOR FIRST 1 C IN RDB$COLLATIONS WITH C.RDB$COLLATION_NAME EQ object
 				FOR PRV IN RDB$USER_PRIVILEGES CROSS
 					COL IN RDB$COLLATIONS WITH
+					PRV.RDB$GRANTOR NOT MISSING AND
 					PRV.RDB$OBJECT_TYPE = obj_collation AND
 					PRV.RDB$RELATION_NAME EQ object AND
 					COL.RDB$COLLATION_NAME EQ object AND
@@ -1605,6 +1624,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 		if (isqlGlob.major_ods >= ODS_VERSION12)
 		{
 			FOR PRV IN RDB$USER_PRIVILEGES WITH
+				PRV.RDB$GRANTOR NOT MISSING AND
 				PRV.RDB$OBJECT_TYPE >= obj_database AND
 				PRV.RDB$RELATION_NAME EQ object
 				SORTED BY PRV.RDB$USER, PRV.RDB$GRANT_OPTION
@@ -1822,6 +1842,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 	// process role "object"
 
 	FOR PRV IN RDB$USER_PRIVILEGES WITH
+		PRV.RDB$GRANTOR NOT MISSING           AND
 		PRV.RDB$OBJECT_TYPE   EQ obj_sql_role AND
 		(PRV.RDB$USER_TYPE    EQ obj_user      OR
 		 PRV.RDB$USER_TYPE     EQ obj_sql_role) AND
@@ -2090,11 +2111,11 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 				if (*cmd[2] == '"')
 				{
 					remove_delimited_double_quotes(lcmd[2]);
-					ret = show_role(lcmd[2]);
+					ret = show_role(lcmd[2], false);
 				}
 				else
 				{
-					ret = show_role(cmd[2]);
+					ret = show_role(cmd[2], false);
 				}
 
 				if (ret == OBJECT_NOT_FOUND)
@@ -2102,7 +2123,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 			}
 			else
 			{
-				ret = show_role(NULL);
+				ret = show_role(NULL, false);
 				if (ret == OBJECT_NOT_FOUND)
 					key = NO_ROLES;
 			}
@@ -2179,6 +2200,10 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 				show_all_tables(1);
 				break;
 
+			case ShowOptions::role:
+				show_role(NULL, true);
+				break;
+
 			default:
 				return ps_ERR;
 			}
@@ -2193,6 +2218,8 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 			show_sys_functions(msg);
 			IUTILS_msg_get(MSG_COLLATIONS, msg);
 			show_collations("", 1, msg, true);
+			IUTILS_msg_get(MSG_ROLES, msg);
+			show_role(NULL, true, msg);
 		}
 		break;
 
@@ -5300,7 +5327,55 @@ static processing_state show_proc(const SCHAR* procname)
 }
 
 
-static processing_state show_role(const SCHAR* object)
+bool SHOW_system_privileges(const char* role, const char* prefix, bool lf)
+{
+	bool first = true;
+
+	FOR X IN RDB$ROLES WITH
+		X.RDB$ROLE_NAME EQ role
+	{
+		if (!X.RDB$SYSTEM_PRIVILEGES.NULL)
+		{
+			for (unsigned byte = 0; byte < sizeof(X.RDB$SYSTEM_PRIVILEGES); ++byte)
+			{
+				char b = X.RDB$SYSTEM_PRIVILEGES[byte];
+				for (int bit = 0; bit < 8; ++bit)
+				{
+					if (b & (1 << bit))
+					{
+						FOR T IN RDB$TYPES
+							WITH T.RDB$FIELD_NAME EQ 'RDB$SYSTEM_PRIVILEGES'
+							 AND T.RDB$TYPE EQ (byte * 8 + bit)
+						{
+							if (first)
+							{
+								if (lf)
+									isqlGlob.printf("%s", NEWLINE);
+								isqlGlob.printf("%s", prefix);
+							}
+							else
+								isqlGlob.printf(",");
+
+							first = false;
+							isqlGlob.printf(" %s", fb_utils::exact_name(T.RDB$TYPE_NAME));
+						}
+						END_FOR
+					}
+				}
+			}
+		}
+	}
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(fbStatus);
+		return false;
+	END_ERROR;
+
+	return !first;
+}
+
+
+static processing_state show_role(const SCHAR* object, bool system, const char* msg)
 {
 	if (isqlGlob.major_ods < ODS_VERSION9)
 		return OBJECT_NOT_FOUND;
@@ -5323,13 +5398,21 @@ static processing_state show_role(const SCHAR* object)
 
 			bool system_flag = !X.RDB$SYSTEM_FLAG.NULL && X.RDB$SYSTEM_FLAG > 0;
 
-			if (!system_flag)
+			if (system_flag == system)
 			{
+				if (first && msg)
+					isqlGlob.printf("%s%s", msg, NEWLINE);
 				first = false;
+
 				isqlGlob.printf("%38s%s", X.RDB$ROLE_NAME, (odd ? " " : NEWLINE));
 				odd = !odd;
+/*
+				if (SHOW_system_privileges(X.RDB$ROLE_NAME, "System privileges:", !odd))
+				{
+					isqlGlob.printf("%s", NEWLINE);
+					odd = true;
+				} */
 			}
-
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(fbStatus);
@@ -5402,6 +5485,8 @@ static processing_state show_role(const SCHAR* object)
 
 	if (first)
 		return (OBJECT_NOT_FOUND);
+	else if (SHOW_system_privileges(object, "System privileges:", false))
+		isqlGlob.printf("%s", NEWLINE);
 
 	return (SKIP);
 }

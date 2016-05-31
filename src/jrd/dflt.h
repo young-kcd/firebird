@@ -55,13 +55,23 @@ static const UCHAR dflt_full[] =
 };
 
 /* default value of "RESTRICT" for  RDB$UPDATE_RULE, RDB$DELETE_RULE in
-   RDB$REF_CONSTRAINTS                                                  */
+   RDB$REF_CONSTRAINTS                                                   */
 
 static const UCHAR dflt_restrict[] =
 {
 	blr_version5,
 	blr_literal, blr_text2, TWOBYTES(ttype_ascii), 8, 0, 'R', 'E', 'S', 'T',
 		'R', 'I', 'C', 'T',
+	blr_eoc
+};
+
+/* default value of all "\000" for  RDB$SYSTEM_PRIVILEGES                */
+
+static const UCHAR dflt_no_privs[] =
+{
+	blr_version5,
+	blr_literal, blr_text2, TWOBYTES(ttype_binary), 8, 0, '\0', '\0', '\0', '\0',
+		'\0', '\0', '\0', '\0',
 	blr_eoc
 };
 

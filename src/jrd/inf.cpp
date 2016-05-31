@@ -569,11 +569,11 @@ void INF_database_info(thread_db* tdbb,
 
 		case isc_info_user_names:
 			// Assumes user names will be smaller than sizeof(buffer) - 1.
-			if (!(tdbb->getAttachment()->locksmith()))
+			if (!(tdbb->getAttachment()->locksmith(tdbb, USER_MANAGEMENT)))
 			{
 				const UserId* user = tdbb->getAttachment()->att_user;
-				const char* uname = (user && user->usr_user_name.hasData()) ?
-					user->usr_user_name.c_str() : "<Unknown>";
+				const char* uname = (user && user->getUserName().hasData()) ?
+					user->getUserName().c_str() : "<Unknown>";
 				const SSHORT len = static_cast<SSHORT>(strlen(uname));
 				*p++ = len;
 				memcpy(p, uname, len);
@@ -595,8 +595,8 @@ void INF_database_info(thread_db* tdbb,
 
 					if (user)
 					{
-						const char* user_name = user->usr_user_name.hasData() ?
-							user->usr_user_name.c_str() : "(Firebird Worker Thread)";
+						const char* user_name = user->getUserName().hasData() ?
+							user->getUserName().c_str() : "(Firebird Worker Thread)";
 						p = buffer;
 						const SSHORT len = static_cast<SSHORT>(strlen(user_name));
 						*p++ = len;
@@ -729,7 +729,7 @@ void INF_database_info(thread_db* tdbb,
 			break;
 
 		case fb_info_page_contents:
-			if (tdbb->getAttachment()->locksmith())
+			if (tdbb->getAttachment()->locksmith(tdbb, READ_RAW_PAGES))
 			{
 				length = gds__vax_integer(items, 2);
 				items += 2;

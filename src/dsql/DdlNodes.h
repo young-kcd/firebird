@@ -1890,12 +1890,27 @@ public:
 };
 
 
-class CreateRoleNode : public DdlNode
+class PrivilegesNode : public DdlNode
 {
 public:
-	CreateRoleNode(MemoryPool& p, const Firebird::MetaName& aName)
-		: DdlNode(p),
-		  name(p, aName)
+	PrivilegesNode(MemoryPool& p)
+		: DdlNode(p)
+	{
+	}
+
+protected:
+	USHORT convertPrivilegeFromString(thread_db* tdbb, jrd_tra* transaction, Firebird::MetaName privilege);
+};
+
+class CreateAlterRoleNode : public PrivilegesNode
+{
+public:
+	CreateAlterRoleNode(MemoryPool& p, const Firebird::MetaName& aName)
+		: PrivilegesNode(p),
+		  name(p, aName),
+		  createFlag(false),
+		  sysPrivDrop(false),
+		  privileges(p)
 	{
 	}
 
@@ -1907,7 +1922,8 @@ public:
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
 	{
-		statusVector << Firebird::Arg::Gds(isc_dsql_create_role_failed) << name;
+		statusVector << Firebird::Arg::Gds(createFlag ? isc_dsql_create_role_failed :
+			isc_dsql_alter_role_failed) << name;
 	}
 
 private:
@@ -1915,6 +1931,15 @@ private:
 
 public:
 	Firebird::MetaName name;
+	bool createFlag, sysPrivDrop;
+	void addPrivilege(const Firebird::MetaName* privName)
+	{
+		fb_assert(privName);
+		privileges.push(*privName);
+	}
+
+private:
+	Firebird::HalfStaticArray<Firebird::MetaName, 4> privileges;
 };
 
 
@@ -2109,11 +2134,11 @@ public:
 typedef Firebird::Pair<Firebird::NonPooled<char, ValueListNode*> > PrivilegeClause;
 typedef Firebird::Pair<Firebird::NonPooled<SSHORT, Firebird::MetaName> > GranteeClause;
 
-class GrantRevokeNode : public DdlNode, private ExecInSecurityDb
+class GrantRevokeNode : public PrivilegesNode, private ExecInSecurityDb
 {
 public:
 	GrantRevokeNode(MemoryPool& p, bool aIsGrant)
-		: DdlNode(p),
+		: PrivilegesNode(p),
 		  createDbJobs(p),
 		  isGrant(aIsGrant),
 		  privileges(p),

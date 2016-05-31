@@ -99,7 +99,7 @@ void JRDMET_init( gpre_dbb* db)
 
 					field->fld_charset_id = CS_NONE;
 					field->fld_collate_id = COLLATE_NONE;
-					field->fld_ttype = ttype_none;
+					field->fld_ttype = gfield->gfld_sub_type == dsc_text_type_fixed ? ttype_binary : ttype_none;
 				}
 
 				++field->fld_length;

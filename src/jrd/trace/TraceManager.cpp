@@ -245,30 +245,30 @@ void TraceManager::update_session(const TraceSession& session)
 
 			string s_user = session.ses_user;
 			string t_role;
+			UserId::Privileges priv;
+			ULONG mapResult;
+
+			{ // scope
+				AutoSetRestoreFlag<ULONG> autoRestore(&attachment->att_flags, ATT_mapping, true);
+
+				Database* dbb = attachment->att_database;
+				fb_assert(dbb);
+				mapResult = mapUser(false, s_user, t_role, NULL, NULL, &priv, session.ses_auth,
+					attachment->att_filename.c_str(), dbb->dbb_filename.c_str(),
+					dbb->dbb_config->getSecurityDatabase(), dbb->dbb_provider->getCryptCallback(),
+					attachment->getInterface());
+			}
 
 			if (session.ses_auth.hasData())
 			{
-				Database* dbb = attachment->att_database;
-				fb_assert(dbb);
-
-				try
-				{
-					mapUser(s_user, t_role, NULL, NULL, session.ses_auth,
-						attachment->att_filename.c_str(), dbb->dbb_filename.c_str(),
-						dbb->dbb_config->getSecurityDatabase(),
-						dbb->dbb_provider->getCryptCallback());
-				}
-				catch (const Firebird::Exception&)
-				{
-					// Error in mapUser() means missing context, therefore...
-					return;
-				}
+				if (mapResult & MAPUSER_ERROR_NOT_THROWN)
+					return;		// Error in mapUser() means missing context
 
 				t_role.upper();
 			}
 
-			if (s_user != SYSDBA_USER_NAME && t_role != ADMIN_ROLE &&
-				attachment->att_user->usr_user_name != s_user)
+			if (s_user != DBA_USER_NAME && t_role != ADMIN_ROLE &&
+				attachment->att_user->getUserName() != s_user && (!priv.test(TRACE_ANY_ATTACHMENT)))
 			{
 				return;
 			}
@@ -284,12 +284,9 @@ void TraceManager::update_session(const TraceSession& session)
 				RefPtr<Config> config;
 				expandDatabaseName(service->getExpectedDb(), dummy, &config);
 
-				try
-				{
-					mapUser(s_user, t_role, NULL, NULL, session.ses_auth, "services manager", NULL,
-						config->getSecurityDatabase(), service->getCryptCallback());
-				}
-				catch (const Firebird::Exception&)
+				if (mapUser(false, s_user, t_role, NULL, NULL, NULL, session.ses_auth, "services manager",
+					NULL, config->getSecurityDatabase(), service->getCryptCallback(),
+					NULL) & MAPUSER_ERROR_NOT_THROWN)
 				{
 					// Error in mapUser() means missing context, therefore...
 					return;
@@ -298,7 +295,7 @@ void TraceManager::update_session(const TraceSession& session)
 				t_role.upper();
 			}
 
-			if (s_user != SYSDBA_USER_NAME && t_role != ADMIN_ROLE && service->getUserName() != s_user)
+			if (s_user != DBA_USER_NAME && t_role != ADMIN_ROLE && service->getUserName() != s_user)
 				return;
 		}
 		else

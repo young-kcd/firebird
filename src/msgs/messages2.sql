@@ -898,6 +898,8 @@ Data source : @4', NULL, NULL)
 ('bad_crypt_key', NULL, 'CryptoManager.cpp', NULL, 0, 788, NULL, 'Invalid crypt key @1', NULL, NULL);
 ('encrypt_error', NULL, 'CryptoManager.cpp', NULL, 0, 789, NULL, 'Page requires encyption but crypt plugin is missing', NULL, NULL);
 ('max_idx_depth', NULL, 'btr.cpp', NULL, 0, 790, NULL, 'Maximum index depth (@1 levels) is reached', NULL, NULL);
+('wrong_prvlg', 'SCL_convert_privilege', 'scl.epp', NULL, 0, 791, NULL, 'System privilege @1 does not exist', NULL, NULL);
+('miss_prvlg', 'validateAccess', 'jrd.cpp', NULL, 0, 792, NULL, 'Unable to perform operation: system privilege @1 is missing', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
@@ -1931,7 +1933,7 @@ COMMIT WORK;
 ('dyn_cannot_addrem_computed', 'DYN_modify_sql_field', 'dyn_mod.epp', NULL, 8, 249, NULL, 'Cannot add or remove COMPUTED from column @1', NULL, NULL);
 ('dyn_no_empty_pw', 'dyn_user', 'dyn.epp', NULL, 8, 250, NULL, 'Password should not be empty string', NULL, NULL);
 ('dyn_dup_index', 'DYN_define_index', 'dyn_def.epp', NULL, 8, 251, NULL, 'Index @1 already exists', NULL, NULL);
-('dyn_locksmith_use_granted', 'grant/revoke', 'dyn.epp', NULL, 8, 252, NULL, 'Only @1 or database owner can use GRANTED BY clause', NULL, NULL);
+('dyn_locksmith_use_granted', 'grant/revoke', 'dyn.epp', NULL, 8, 252, NULL, 'Only @1 or user with privilege USE_GRANTED_BY_CLAUSE can use GRANTED BY clause', NULL, NULL);
 ('dyn_dup_exception', 'DYN_define_exception', 'dyn_def.epp', NULL, 8, 253, NULL, 'Exception @1 already exists', NULL, NULL);
 ('dyn_dup_generator', 'DYN_define_generator', 'dyn_def.epp', NULL, 8, 254, NULL, 'Sequence @1 already exists', NULL, NULL);
 (NULL, 'revoke_all', 'dyn.epp', NULL, 8, 255, NULL, 'ERASE RDB$USER_PRIVILEGES failed in REVOKE ALL ON ALL', NULL, NULL);
@@ -1972,6 +1974,9 @@ COMMIT WORK;
 ('dyn_defvaldecl_package_func', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 290, NULL, 'Default values for parameters are allowed only in declaration of packaged function @1.@2', NULL, NULL);
 ('dyn_create_user_no_password', 'CreateAlterUserNode', 'DdlNodes.epp', NULL, 8, 291, NULL, 'Password must be specified when creating user', NULL, NULL);
 ('dyn_cyclic_role', 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 292, NULL, 'role @1 can not be granted to role @2', NULL, NULL);
+(NULL, 'CreateAlterRoleNode::execute', 'DdlNodes.epp', NULL, 8, 293, NULL, 'DROP SYSTEM PRIVILEGES should not be used in CREATE ROLE operator', NULL, NULL);
+(NULL, 'CreateAlterRoleNode::execute', 'DdlNodes.epp', NULL, 8, 294, NULL, 'Access to SYSTEM PRIVILEGES in ROLES denied to @1', NULL, NULL);
+(NULL, 'grant/revoke', 'DdlNode.epp', NULL, 8, 295, NULL, 'Only @1, DB owner @2 or user with privilege USE_GRANTED_BY_CLAUSE can use GRANTED BY clause', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);
@@ -3054,6 +3059,7 @@ Fetches = !', NULL, NULL);
 ('DATABASE_CRYPTED', 'SHOW_dbb_parameters', 'show.epp', NULL, 17, 192, NULL, 'Database encrypted', NULL, NULL);
 ('DATABASE_NOT_CRYPTED', 'SHOW_dbb_parameters', 'show.epp', NULL, 17, 193, NULL, 'Database not encrypted', NULL, NULL);
 ('DATABASE_CRYPT_PROCESS', 'SHOW_dbb_parameters', 'show.epp', NULL, 17, 194, NULL, 'crypt thread not complete', NULL, NULL);
+('MSG_ROLES', 'SHOW_metadata', 'show.epp', NULL, 17, 195, NULL, 'Roles:', NULL, NULL);
 -- GSEC
 ('GsecMsg1', 'get_line', 'gsec.e', NULL, 18, 1, NULL, 'GSEC>', NULL, NULL);
 ('GsecMsg2', 'printhelp', 'gsec.e', 'This message is used in the Help display. It should be the same as number 1 (but in lower case).', 18, 2, NULL, 'gsec', NULL, NULL);

@@ -192,3 +192,5 @@
 
 	FIELD(fld_gen_increment	, nam_gen_increment	, dtype_long	, sizeof(SLONG)				, 0							, NULL		, false)
 	FIELD(fld_plan			, nam_plan			, dtype_blob	, BLOB_SIZE					, isc_blob_text				, NULL		, true)
+
+	FIELD(fld_system_privileges, nam_system_privileges, dtype_text, 8						, dsc_text_type_fixed		, dflt_no_privs, true)
