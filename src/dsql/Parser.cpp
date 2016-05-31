@@ -38,16 +38,12 @@ namespace
 
 	struct KeywordVersion
 	{
-		KeywordVersion(int aKeyword, MetaName* aStr, USHORT aVersion)
-			: keyword(aKeyword),
-			  str(aStr),
-			  version(aVersion)
-		{
-		}
+		KeywordVersion(int aKeyword, MetaName* aStr)
+			: keyword(aKeyword), str(aStr)
+		{}
 
 		int keyword;
 		MetaName* str;
-		USHORT version;
 	};
 
 	class KeywordsMap : public GenericMap<Pair<Left<MetaName, KeywordVersion> > >
@@ -59,7 +55,7 @@ namespace
 			for (const TOK* token = KEYWORD_getTokens(); token->tok_string; ++token)
 			{
 				MetaName* str = FB_NEW_POOL(pool) MetaName(token->tok_string);
-				put(*str, KeywordVersion(token->tok_ident, str, token->tok_version));
+				put(*str, KeywordVersion(token->tok_ident, str));
 			}
 		}
 
@@ -76,13 +72,11 @@ namespace
 
 
 Parser::Parser(MemoryPool& pool, DsqlCompilerScratch* aScratch, USHORT aClientDialect,
-			USHORT aDbDialect, USHORT aParserVersion, const TEXT* string, size_t length,
-			SSHORT characterSet)
+			USHORT aDbDialect, const TEXT* string, size_t length, SSHORT characterSet)
 	: PermanentStorage(pool),
 	  scratch(aScratch),
 	  client_dialect(aClientDialect),
 	  db_dialect(aDbDialect),
-	  parser_version(aParserVersion),
 	  transformedString(pool),
 	  strMarks(pool),
 	  stmt_ambiguous(false)
@@ -1090,8 +1084,7 @@ int Parser::yylexAux()
 		MetaName str(string, p - string);
 		KeywordVersion* keyVer = keywordsMap->get(str);
 
-		if (keyVer && parser_version >= keyVer->version &&
-			(keyVer->keyword != COMMENT || lex.prev_keyword == -1))
+		if (keyVer && (keyVer->keyword != COMMENT || lex.prev_keyword == -1))
 		{
 			yylval.metaNamePtr = keyVer->str;
 			lex.last_token_bk = lex.last_token;
@@ -1114,7 +1107,7 @@ int Parser::yylexAux()
 		Firebird::string str(lex.last_token, 2);
 		KeywordVersion* keyVer = keywordsMap->get(str);
 
-		if (keyVer && parser_version >= keyVer->version)
+		if (keyVer)
 		{
 			++lex.ptr;
 			return keyVer->keyword;

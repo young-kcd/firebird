@@ -105,8 +105,6 @@ static inline bool reqTypeWithCursor(DsqlCompiledStatement::Type type)
 	return false;
 }
 
-const USHORT PARSER_VERSION = 2;
-
 #ifdef DSQL_DEBUG
 unsigned DSQL_debug = 0;
 #endif
@@ -1370,7 +1368,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		// Parse the SQL statement.  If it croaks, return
 
 		Parser parser(*tdbb->getDefaultPool(), scratch, clientDialect,
-			scratch->getAttachment()->dbb_db_SQL_dialect, PARSER_VERSION, text, textLength,
+			scratch->getAttachment()->dbb_db_SQL_dialect, text, textLength,
 			tdbb->getAttachment()->att_charset);
 
 		request = parser.parse();

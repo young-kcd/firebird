@@ -120,7 +120,7 @@ public:
 
 public:
 	Parser(MemoryPool& pool, DsqlCompilerScratch* aScratch, USHORT aClientDialect,
-		USHORT aDbDialect, USHORT aParserVersion, const TEXT* string, size_t length,
+		USHORT aDbDialect, const TEXT* string, size_t length,
 		SSHORT characterSet);
 	~Parser();
 
