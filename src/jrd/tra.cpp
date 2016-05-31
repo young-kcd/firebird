@@ -955,6 +955,9 @@ bool TRA_precommited(thread_db* tdbb, TraNumber old_number, TraNumber new_number
 	Database* const dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
+	if (old_number == new_number && !dbb->dbb_pc_transactions)
+		return false;
+
 	Sync sync(&dbb->dbb_pc_sync, "TRA_precommited");
 	sync.lock(old_number == new_number ? SYNC_SHARED : SYNC_EXCLUSIVE);
 
