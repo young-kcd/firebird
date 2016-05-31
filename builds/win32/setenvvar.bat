@@ -2,16 +2,11 @@
 :: FB_ROOT_PATH dos format path of the main directory
 :: FB_DB_PATH unix format path of the main directory
 :: (This is used by gpre and preprocess.bat)
-:: VS_VER VisualStudio version (msvc8|msvc9|msvc10|msvc12|msvc14)
+:: VS_VER VisualStudio version (msvc10|msvc12|msvc14)
 :: SERVER_NAME server needed to connect to firebird (could include port)
 ::   Example : localhost/3051
 :: (Note - SERVER_NAME is almost deprecated - it is only used by
 ::   make_examples.bat
-::
-:: Note for MSVC8/9 and 64-bit build environment: The assumption is that a
-:: 64-bit host is available and builds are targeted at either the native
-:: 64-bit environment or the 32-bit WOW64 environment. Cross-compiling 64-bit
-:: from a 32-bit host is not currently supported from this set of batch files.
 ::
 
 @echo off
@@ -40,17 +35,7 @@ if DEFINED VS100COMNTOOLS (
 @devenv /? >nul 2>nul
 @if errorlevel 9009 (call "%VS100COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS100COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
 ) else (
-if DEFINED VS90COMNTOOLS (
-@devenv /? >nul 2>nul
-@if errorlevel 9009 (call "%VS90COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS90COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
-) else (
-if DEFINED VS80COMNTOOLS (
-@devenv /? >nul 2>nul
-@if errorlevel 9009 (call "%VS80COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS80COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
-) else (
 @goto :HELP
-)
-)
 )
 )
 )
@@ -73,8 +58,6 @@ if DEFINED VS80COMNTOOLS (
 @if "%VS_VER_EXPRESS%" == "" (
   @vcexpress /? >nul 2>nul
   @if not errorlevel 9009 (
-    @if DEFINED VS80COMNTOOLS ((set MSVC_VERSION=8) & (set VS_VER=msvc8))
-    @if DEFINED VS90COMNTOOLS ((set MSVC_VERSION=9) & (set VS_VER=msvc9))
     @if DEFINED VS100COMNTOOLS ((set MSVC_VERSION=10) & (set VS_VER=msvc10))
 
     set VS_VER_EXPRESS=1

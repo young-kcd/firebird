@@ -1,9 +1,8 @@
 @echo off
 ::==============
 :: compile.bat solution, output, [projects...]
-::   Note: MSVC8 don't accept more than one project
 ::
-::   Note2: Our projects create object files in temp/$platform/$config
+::   Note: Our projects create object files in temp/$platform/$config
 ::     but we call devenv with $config|$platform (note variable in reverse order
 ::     and odd syntax).
 
