@@ -327,9 +327,9 @@ static const TOK tokens[] =
 	{DB_KEY, "RDB$DB_KEY", false},
 	{RDB_GET_CONTEXT, "RDB$GET_CONTEXT", true},
 	{RDB_RECORD_VERSION, "RDB$RECORD_VERSION", false},
-	{RDB_ROLE_IN_USE, "RDB$ROLE_IN_USE", false},
+	{RDB_ROLE_IN_USE, "RDB$ROLE_IN_USE", true},
 	{RDB_SET_CONTEXT, "RDB$SET_CONTEXT", true},
-	{RDB_SYSTEM_PRIVILEGE, "RDB$SYSTEM_PRIVILEGE", false},
+	{RDB_SYSTEM_PRIVILEGE, "RDB$SYSTEM_PRIVILEGE", true},
 	{READ, "READ", false},
 	{REAL, "REAL", false},
 	{VERSION, "RECORD_VERSION", false},
@@ -468,7 +468,7 @@ static const TOK tokens[] =
 	{NOT_LSS, "~<", false},	// Alias of !<
 	{NEQ, "~=", false},				// Alias of !=
 	{NOT_GTR, "~>", false},			// Alias of !>
-	{0, 0, false}
+	{0, NULL, false}
 };
 
 // This method is currently used in isql/isql.epp to check if a
@@ -480,14 +480,12 @@ extern "C" {
 
 int API_ROUTINE KEYWORD_stringIsAToken(const char* in_str)
 {
-	const TOK* tok_ptr = tokens;
-	while (tok_ptr->tok_string)
+	for (const TOK* tok_ptr = tokens; tok_ptr->tok_string; ++tok_ptr)
 	{
-		if (!tok_ptr->nonReserved && !strcmp(tok_ptr->tok_string, in_str)) {
+		if (!tok_ptr->nonReserved && !strcmp(tok_ptr->tok_string, in_str))
 			return true;
-		}
-		++tok_ptr;
 	}
+
 	return false;
 }
 

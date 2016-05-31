@@ -7783,7 +7783,6 @@ non_reserved_word
 	| PASSWORD
 //	| PLAN
 //	| POST_EVENT
-	| PRIVILEGE
 	| PRIVILEGES
 	| PROTECTED
 	| READ
@@ -7803,7 +7802,6 @@ non_reserved_word
 	| STATISTICS
 	| SUB_TYPE
 	| SUSPEND
-	| SYSTEM
 	| TRANSACTION
 	| UNCOMMITTED
 //	| VARIABLE
@@ -7848,6 +7846,8 @@ non_reserved_word
 	| TRUSTED
 	| RDB_ROLE_IN_USE		// added in FB 4.0
 	| RDB_SYSTEM_PRIVILEGE
+	| PRIVILEGE
+	| SYSTEM
 	;
 
 %%
