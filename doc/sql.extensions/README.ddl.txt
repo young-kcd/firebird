@@ -527,7 +527,7 @@ ALTER ROLE <name> DROP SYSTEM PRIVILEGES
 This form clears list of system privileges in role <name>.
 
 System privileges make it possible to delegate part of DBO rights to other users.
-Pay attention taht system privileges provide very thin level of control, therefore sometimes
+Pay attention that system privileges provide very thin level of control, therefore sometimes
 you will need to give user >1 privilege to perform some task (for example add
 IGNORE_DB_TRIGGERS to USE_GSTAT_UTILITY cause gstat wants to ignore database triggers).
 
