@@ -444,7 +444,7 @@ const TraNumber MAX_TRA_NUMBER = 0x0000FFFFFFFFFFFF;	// ~2.8 * 10^14
 // CVC: I think we need to have a special, higher value for streams.
 const int OPT_STATIC_ITEMS = 64;
 
-#define CURRENT_ENGINE "Engine12"
+#define CURRENT_ENGINE "Engine13"
 
 const int WITH_GRANT_OPTION = 1;
 const int WITH_ADMIN_OPTION = 2;
