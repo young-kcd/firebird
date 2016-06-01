@@ -451,7 +451,7 @@ RELATION(nam_roles, rel_roles, ODS_9_0, rel_persistent)
 	FIELD(f_rol_desc, nam_description, fld_description, 1, ODS_11_0)
 	FIELD(f_rol_sys_flag, nam_sys_flag, fld_flag, 1, ODS_11_0)
 	FIELD(f_rol_class, nam_class, fld_class, 1, ODS_12_0)
-	FIELD(f_rol_sys_priv, nam_system_privileges, fld_system_privileges, 1, ODS_FB4)
+	FIELD(f_rol_sys_priv, nam_system_privileges, fld_system_privileges, 1, ODS_13_0)
 END_RELATION
 
 // Relation 32 (RDB$BACKUP_HISTORY)
