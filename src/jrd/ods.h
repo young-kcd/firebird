@@ -426,7 +426,7 @@ const UCHAR HDR_root_file_name		= 1;	// Original name of root file
 const UCHAR HDR_file				= 2;	// Secondary file
 const UCHAR HDR_last_page			= 3;	// Last logical page number of file
 const UCHAR HDR_sweep_interval		= 4;	// Transactions between sweeps
-const UCHAR HDR_password_file_key	= 5;	// Key to compare to password db
+const UCHAR HDR_crypt_checksum		= 5;	// Checksum of critical crypt parameters
 const UCHAR HDR_difference_file		= 6;	// Delta file that is used during backup lock
 const UCHAR HDR_backup_guid			= 7;	// UID generated on each switch into backup mode
 const UCHAR HDR_crypt_key			= 8;	// Name of a key used to crypt database
@@ -437,7 +437,6 @@ const UCHAR HDR_max					= 10;	// Maximum HDR_clump value
 
 const USHORT hdr_active_shadow		= 0x1;		// 1	file is an active shadow file
 const USHORT hdr_force_write		= 0x2;		// 2	database is forced write
-// const USHORT hdr_no_checksums	= 0x4;		// 4	don't calculate checksums, not used since ODS 12
 const USHORT hdr_crypt_process		= 0x4;		// 4	Encryption status is changing now
 const USHORT hdr_no_reserve			= 0x8;		// 8	don't reserve space for versions
 const USHORT hdr_SQL_dialect_3		= 0x10;		// 16	database SQL dialect 3

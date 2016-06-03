@@ -63,6 +63,17 @@ namespace {
 		return 0;
 	}
 
+	const UCHAR CRYPT_RELEASE = LCK_SR;
+	const UCHAR CRYPT_NORMAL = LCK_PR;
+	const UCHAR CRYPT_CHANGE = LCK_PW;
+	const UCHAR CRYPT_INIT = LCK_EX;
+
+	const int MAX_PLUGIN_NAME_LEN = 31;
+}
+
+
+namespace Jrd {
+
 	class Header
 	{
 	protected:
@@ -88,7 +99,7 @@ namespace {
 
 		// This routine is getting clumplets from header page but is not ready to handle continuation
 		// Fortunately, modern pages of size 4k and bigger can fit everything on one page.
-		void getClumplets(ClumpletWriter& writer)
+		void getClumplets(ClumpletWriter& writer) const
 		{
 			writer.reset(header->hdr_data, header->hdr_end - HDR_SIZE);
 		}
@@ -233,17 +244,6 @@ namespace {
 		AutoPtr<UCHAR, ArrayDelete<UCHAR> > buffer;
 	};
 
-	const UCHAR CRYPT_RELEASE = LCK_SR;
-	const UCHAR CRYPT_NORMAL = LCK_PR;
-	const UCHAR CRYPT_CHANGE = LCK_PW;
-	const UCHAR CRYPT_INIT = LCK_EX;
-
-	const int MAX_PLUGIN_NAME_LEN = 31;
-}
-
-
-namespace Jrd {
-
 	CryptoManager::CryptoManager(thread_db* tdbb)
 		: PermanentStorage(*tdbb->getDatabase()->dbb_permanent),
 		  sync(this),
@@ -353,6 +353,9 @@ namespace Jrd {
 					(Arg::Gds(isc_bad_crypt_key) << keyName).raise();
 			}
 		}
+
+		if (flags & CRYPT_HDR_INIT)
+			checkDigitalSignature(hdr);
 	}
 
 	void CryptoManager::loadPlugin(const char* pluginName)
@@ -533,6 +536,8 @@ namespace Jrd {
 			header->hdr_crypt_page = 1;
 			header->hdr_flags |= Ods::hdr_crypt_process;
 			process = true;
+
+			digitalySignDatabase(hdr);
 		}
 		catch (const Exception&)
 		{
@@ -870,6 +875,8 @@ namespace Jrd {
 				hdr.setClumplets(hc);
 			}
 		}
+
+		digitalySignDatabase(hdr);
 	}
 
 	bool CryptoManager::read(thread_db* tdbb, FbStatusVector* sv, Ods::pag* page, IOCallback* io)
@@ -1175,6 +1182,99 @@ namespace Jrd {
 		FbLocalStatus st;
 		crypt->setKey(&st, length, vector, keyName);
 		st.check();
+	}
+
+	void CryptoManager::addClumplet(string& signature, ClumpletReader& block, UCHAR tag)
+	{
+		if (block.find(tag))
+		{
+			string tmp;
+			block.getString(tmp);
+			signature += ' ';
+			signature += tmp;
+		}
+	}
+
+	void CryptoManager::calcDigitalSignature(string& signature, const Header& hdr)
+	{
+	   /*
+		We use the following items to calculate digital signature (hash of encrypted string)
+		for database:
+			hdr_flags & (hdr_crypt_process | hdr_encrypted)
+			hdr_crypt_page
+			hdr_crypt_plugin
+			HDR_crypt_key
+			HDR_crypt_hash
+		*/
+
+		signature.printf("%d %d %d %s",
+						  hdr->hdr_flags & Ods::hdr_crypt_process ? 1 : 0,
+							 hdr->hdr_flags & Ods::hdr_encrypted ? 1 : 0,
+								hdr->hdr_crypt_page,
+								   hdr->hdr_crypt_plugin);
+
+		ClumpletWriter hc(ClumpletWriter::UnTagged, hdr->hdr_page_size);
+		hdr.getClumplets(hc);
+
+		addClumplet(signature, hc, Ods::HDR_crypt_key);
+		addClumplet(signature, hc, Ods::HDR_crypt_hash);
+
+		const unsigned QUANTUM = 16;
+		signature += string(QUANTUM - 1, '$');
+		unsigned len = signature.length();
+		len &= ~(QUANTUM - 1);
+
+		loadPlugin(hdr->hdr_crypt_plugin);
+
+		string enc;
+		FbLocalStatus sv;
+		cryptPlugin->encrypt(&sv, len, signature.c_str(), enc.getBuffer(len));
+		if (sv->getState() & IStatus::STATE_ERRORS)
+			Arg::StatusVector(&sv).raise();
+
+		Sha1::hashBased64(signature, enc);
+	}
+
+
+	void CryptoManager::digitalySignDatabase(CchHdr& hdr)
+	{
+		ClumpletWriter hc(ClumpletWriter::UnTagged, hdr->hdr_page_size);
+		hdr.getClumplets(hc);
+
+		bool wf = hc.find(Ods::HDR_crypt_checksum);
+		hc.deleteWithTag(Ods::HDR_crypt_checksum);
+
+		if (hdr->hdr_flags & (Ods::hdr_crypt_process | Ods::hdr_encrypted))
+		{
+			wf = true;
+			string signature;
+			calcDigitalSignature(signature, hdr);
+			hc.insertString(Ods::HDR_crypt_checksum, signature);
+		}
+
+		if (wf)
+			hdr.setClumplets(hc);
+	}
+
+	void CryptoManager::checkDigitalSignature(const Header& hdr)
+	{
+		// if (hdr->hdr_flags & (Ods::hdr_crypt_process | Ods::hdr_encrypted))
+		// Restricted check to ensure compatibility with 3.0.0 databases - only for active crypt process
+		if (hdr->hdr_flags & Ods::hdr_crypt_process)
+		{
+			const char* message = "Invalid or missing checksum of encrypted database";
+
+			ClumpletWriter hc(ClumpletWriter::UnTagged, hdr->hdr_page_size);
+			hdr.getClumplets(hc);
+			if (!hc.find(Ods::HDR_crypt_checksum))
+				(Arg::Gds(isc_random) << message).raise();
+
+			string sig1, sig2;
+			hc.getString(sig1);
+			calcDigitalSignature(sig2, hdr);
+			if (sig1 != sig2)
+				(Arg::Gds(isc_random) << message).raise();
+		}
 	}
 
 } // namespace Jrd
