@@ -46,7 +46,15 @@
 class Config;
 
 namespace Ods {
-	struct pag;
+
+struct pag;
+
+}
+
+namespace Firebird {
+
+class ClumpletReader;
+
 }
 
 namespace Jrd {
@@ -362,6 +370,11 @@ private:
 	void lockAndReadHeader(thread_db* tdbb, unsigned flags = 0);
 	static const unsigned CRYPT_HDR_INIT =		0x01;
 	static const unsigned CRYPT_HDR_NOWAIT =	0x02;
+
+	void addClumplet(Firebird::string& value, Firebird::ClumpletReader& block, UCHAR tag);
+	void calcDigitalSignature(Firebird::string& signature, const class Header& hdr);
+	void digitalySignDatabase(class CchHdr& hdr);
+	void checkDigitalSignature(const class Header& hdr);
 
 	BarSync sync;
 	Firebird::MetaName keyName;

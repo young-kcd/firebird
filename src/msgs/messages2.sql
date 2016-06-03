@@ -900,6 +900,7 @@ Data source : @4', NULL, NULL)
 ('max_idx_depth', NULL, 'btr.cpp', NULL, 0, 790, NULL, 'Maximum index depth (@1 levels) is reached', NULL, NULL);
 ('wrong_prvlg', 'SCL_convert_privilege', 'scl.epp', NULL, 0, 791, NULL, 'System privilege @1 does not exist', NULL, NULL);
 ('miss_prvlg', 'validateAccess', 'jrd.cpp', NULL, 0, 792, NULL, 'Unable to perform operation: system privilege @1 is missing', NULL, NULL);
+('crypt_checksum', 'CryptoManager::checkDigitalSignature', 'CryptoManager.cpp', NULL, 0, 793, NULL, 'Invalid or missing checksum of encrypted database', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

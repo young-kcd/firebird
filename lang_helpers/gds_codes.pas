@@ -1631,6 +1631,8 @@ const
 	gds_wrong_prvlg                      = 335545111;
 	isc_miss_prvlg                       = 335545112;
 	gds_miss_prvlg                       = 335545112;
+	isc_crypt_checksum                   = 335545113;
+	gds_crypt_checksum                   = 335545113;
 	isc_gfix_db_name                     = 335740929;
 	gds_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;

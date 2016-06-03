@@ -814,6 +814,7 @@ static const struct {
 	{"max_idx_depth", 335545110},
 	{"wrong_prvlg", 335545111},
 	{"miss_prvlg", 335545112},
+	{"crypt_checksum", 335545113},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},
