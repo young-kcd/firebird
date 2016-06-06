@@ -3825,16 +3825,14 @@ dsc* evlSystemPrivilege(thread_db* tdbb, const SysFunction*, const NestValueArra
 	fb_assert(args.getCount() == 1);
 
 	jrd_req* request = tdbb->getRequest();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-
 	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	string privStr(MOV_make_string2(tdbb, value, ttype_none));
-	privStr.upper();
-	USHORT p = SCL_convert_privilege(tdbb, tdbb->getTransaction(), privStr);
+	fb_assert(value->dsc_dtype == dtype_short);
+	USHORT p = *((USHORT *) value->dsc_address);
 
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	impure->vlu_misc.vlu_uchar = attachment->att_user->locksmith(tdbb, p) ? FB_TRUE : FB_FALSE;
 	impure->vlu_desc.makeBoolean(&impure->vlu_misc.vlu_uchar);
 
@@ -3893,7 +3891,7 @@ const SysFunction SysFunction::functions[] =
 		{RDB_GET_CONTEXT, 2, 2, setParamsGetSetContext, makeGetSetContext, evlGetContext, NULL},
 		{"RDB$ROLE_IN_USE", 1, 1, setParamsAsciiVal, makeBooleanResult, evlRoleInUse, NULL},
 		{RDB_SET_CONTEXT, 3, 3, setParamsGetSetContext, makeGetSetContext, evlSetContext, NULL},
-		{"RDB$SYSTEM_PRIVILEGE", 1, 1, setParamsAsciiVal, makeBooleanResult, evlSystemPrivilege, NULL},
+		{"RDB$SYSTEM_PRIVILEGE", 1, 1, NULL, makeBooleanResult, evlSystemPrivilege, NULL},
 		{"REPLACE", 3, 3, setParamsFromList, makeReplace, evlReplace, NULL},
 		{"REVERSE", 1, 1, NULL, makeReverse, evlReverse, NULL},
 		{"RIGHT", 2, 2, setParamsSecondInteger, makeLeftRight, evlRight, NULL},

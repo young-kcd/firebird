@@ -7198,7 +7198,7 @@ system_function_special_syntax
 		{ $$ = newNode<SysFuncCallNode>(*$1, $3); }
 	| RDB_SYSTEM_PRIVILEGE '(' valid_symbol_name ')'
 		{
-			ValueExprNode* v = MAKE_str_constant(newIntlString($3->c_str()), CS_ASCII);
+			ValueExprNode* v = MAKE_system_privilege($3->c_str());
 			$$ = newNode<SysFuncCallNode>(*$1, newNode<ValueListNode>(v));
 		}
 	;

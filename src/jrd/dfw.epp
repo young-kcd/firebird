@@ -66,6 +66,7 @@
 
 #include "../common/classes/fb_string.h"
 #include "../common/classes/VaryStr.h"
+#include "../jrd/SystemPrivileges.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/irq.h"
