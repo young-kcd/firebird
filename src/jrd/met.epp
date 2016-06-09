@@ -1480,16 +1480,21 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 		count = p[0] | (p[1] << 8);
 		p += 2;
 
+		UCharBuffer tmpArray;
 		while (count-- > 0)
 		{
 			USHORT offset = p[0] | (p[1] << 8);
 			p += 2;
 
-			const Ods::Descriptor* odsDflDesc = (Ods::Descriptor*) p;
-			p = (UCHAR*) (odsDflDesc + 1);
+			Ods::Descriptor odsDflDesc;
+			memcpy(&odsDflDesc, p, sizeof(odsDflDesc));
+			p += sizeof(Ods::Descriptor);
 
-			dsc desc = *odsDflDesc;
-			desc.dsc_address = const_cast<UCHAR*>(p);
+			dsc desc = odsDflDesc;
+
+			tmpArray.getBuffer(desc.dsc_length);
+			desc.dsc_address = tmpArray.begin();
+			memcpy(desc.dsc_address, p, desc.dsc_length);
 			EVL_make_value(tdbb, &desc, &format->fmt_defaults[offset], relation->rel_pool);
 
 			p += desc.dsc_length;
