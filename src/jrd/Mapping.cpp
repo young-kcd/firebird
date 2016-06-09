@@ -973,7 +973,8 @@ public:
 		return &sync;
 	}
 
-	bool getPrivileges(const PathName& db, const string& name, const string& trusted_role, UserId::Privileges& system_privileges)
+	bool getPrivileges(const PathName& db, const string& name, const string& trusted_role,
+			UserId::Privileges& system_privileges)
 	{
 		DbCache* c;
 		return databases.get(db, c) && c->getPrivileges(name, trusted_role, system_privileges);
@@ -1068,11 +1069,13 @@ private:
 				AutoPtr<UCHAR, ArrayDelete<UCHAR> > buffer(FB_NEW UCHAR[meta->getMessageLength(&st)]);
 				UCHAR* bits = buffer + meta->getOffset(&st, 0);
 				UserId::Privileges g, l;
+
 				while(curs->fetchNext(&st, buffer) == IStatus::RESULT_OK)
 				{
 					l.load(bits);
 					g |= l;
 				}
+
 				put(key, g);
 			}
 

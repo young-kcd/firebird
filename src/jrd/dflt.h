@@ -76,4 +76,3 @@ static const UCHAR dflt_no_privs[] =
 };
 
 #endif // JRD_DFLT_H
-

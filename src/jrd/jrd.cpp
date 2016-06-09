@@ -1705,10 +1705,12 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 			// database. smistry 10/5/98
 
 			if (attachment->isUtility())
+			{
 				validateAccess(tdbb, attachment,
 					attachment->att_utility == Attachment::UTIL_GBAK ? USE_GBAK_UTILITY :
 					attachment->att_utility == Attachment::UTIL_GFIX ? USE_GFIX_UTILITY :
 					USE_GSTAT_UTILITY);
+			}
 
 			if (options.dpb_verify)
 			{

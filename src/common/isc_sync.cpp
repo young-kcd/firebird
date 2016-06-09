@@ -274,9 +274,7 @@ namespace {
 	{
 		struct STAT statistics;
 		if (os_utils::fstat(fd, &statistics) != 0)
-		{
 			system_call_failed::raise("stat");
-		}
 
 		return DevNode(statistics.st_dev, statistics.st_ino);
 	}
@@ -1840,10 +1838,9 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 		static void init(int fd)
 		{
 			void* sTab = os_utils::mmap(0, sizeof(SemTable), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
 			if ((U_IPTR) sTab == (U_IPTR) -1)
-			{
 				system_call_failed::raise("mmap");
-			}
 
 			semTable = (SemTable*) sTab;
 			initCache();
@@ -1879,10 +1876,10 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	{
 		// Get and use the existing length of the shared segment
 		struct STAT file_stat;
+
 		if (os_utils::fstat(mainLock->getFd(), &file_stat) == -1)
-		{
 			system_call_failed::raise("fstat");
-		}
+
 		length = file_stat.st_size;
 
 		if (length == 0)
@@ -3089,6 +3086,7 @@ bool SharedMemoryBase::remapFile(CheckStatusWrapper* statusVector, ULONG new_len
 
 	MemoryHeader* const address = (MemoryHeader*)
 		os_utils::mmap(0, new_length, PROT_READ | PROT_WRITE, MAP_SHARED, mainLock->getFd(), 0);
+
 	if ((U_IPTR) address == (U_IPTR) -1)
 	{
 		error(statusVector, "mmap() failed", errno);

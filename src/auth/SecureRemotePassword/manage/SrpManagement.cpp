@@ -117,7 +117,9 @@ private:
 					++sql;
 					err = true;
 				}
+
 				att->execute(&statusWrapper, ddlTran, 0, sql, SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
+
 				if (!err)
 					check(&statusWrapper);
 			}

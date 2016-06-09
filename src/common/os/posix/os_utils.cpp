@@ -139,13 +139,16 @@ namespace
 	inline int openFile(const char* pathname, int flags, mode_t mode = 0666)
 	{
 		int rc;
-		do {
+
+		do
+		{
 #ifdef LSB_BUILD
 			rc = open64(pathname, flags, mode);
 #else
 			rc = ::open(pathname, flags, mode);
 #endif
 		} while (rc == -1 && SYSCALL_INTERRUPTED(errno));
+
 		return rc;
 	}
 
@@ -161,14 +164,10 @@ void createLockDirectory(const char* pathname)
 		{
 			struct STAT st;
 			if (os_utils::stat(pathname, &st) != 0)
-			{
 				system_call_failed::raise("stat");
-			}
 
 			if (S_ISDIR(st.st_mode))
-			{
 				return;
-			}
 
 			// not exactly original meaning, but very close to it
 			system_call_failed::raise("access", ENOTDIR);
@@ -281,9 +280,7 @@ int open(const char* pathname, int flags, mode_t mode)
 	fd = openFile(pathname, flags | O_CLOEXEC, mode);
 
 	if (fd < 0 && errno == EINVAL)	// probably O_CLOEXEC not accepted
-	{
 		fd = openFile(pathname, flags | O_CLOEXEC, mode);
-	}
 
 	setCloseOnExec(fd);
 	return fd;
@@ -292,7 +289,8 @@ int open(const char* pathname, int flags, mode_t mode)
 FILE* fopen(const char* pathname, const char* mode)
 {
 	FILE* f = NULL;
-	do {
+	do
+	{
 #ifdef LSB_BUILD
 		// TODO: use open + fdopen to avoid races
 		f = fopen64(pathname, mode);
@@ -323,9 +321,7 @@ void getUniqueFileId(int fd, UCharBuffer& id)
 {
 	struct STAT statistics;
 	if (os_utils::fstat(fd, &statistics) != 0)
-	{
 		system_call_failed::raise("fstat");
-	}
 
 	makeUniqueFileId(statistics, id);
 }

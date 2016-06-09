@@ -242,11 +242,13 @@ bool checkCreateDatabaseGrant(const MetaName& userName, const MetaName& trustedR
 	check("IAttachment::execute", &st);
 
 	UserId::Privileges privileges, wrk;
+
 	while (rs->fetchNext(&st, res2.getBuffer()) == IStatus::RESULT_OK)
 	{
 		wrk.load(&priv);
 		privileges |= wrk;
 	}
+
 	check("IResultSet::fetchNext", &st);
 
 	return wrk.test(CREATE_DATABASE);

@@ -1040,6 +1040,7 @@ void UserId::findGrantedRoles(thread_db* tdbb) const
 
 	usr_granted_roles.clear();
 	usr_privileges.clearAll();
+
 	while (rs->fetch(tdbb))
 	{
 		if (!usr_granted_roles.exist(usr_get_role))	// SQL request can return duplicates
@@ -1277,6 +1278,7 @@ SecurityClass::flags_t SCL_get_object_mask(const int object_type)
 
 	return -1 & ~SCL_corrupt;
 }
+
 
 ULONG SCL_get_number(const UCHAR* acl)
 {

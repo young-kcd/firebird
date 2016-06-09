@@ -1932,6 +1932,7 @@ private:
 public:
 	Firebird::MetaName name;
 	bool createFlag, sysPrivDrop;
+
 	void addPrivilege(const Firebird::MetaName* privName)
 	{
 		fb_assert(privName);

@@ -7773,8 +7773,7 @@ bool get_sql_roles(BurpGlobals* tdgbl)
 					{
 						const ULONG l = get(tdgbl);
 						if (l > sizeof(X.RDB$SYSTEM_PRIVILEGES))
-							BURP_error_redirect (NULL, 46);
-							// msg 46 string truncated
+							BURP_error_redirect(NULL, 46);	// msg 46 string truncated
 
 						if (l)
 							get_block(tdgbl, (UCHAR*) (X.RDB$SYSTEM_PRIVILEGES), l);

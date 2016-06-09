@@ -5406,12 +5406,14 @@ static processing_state show_role(const SCHAR* object, bool system, const char* 
 
 				isqlGlob.printf("%38s%s", X.RDB$ROLE_NAME, (odd ? " " : NEWLINE));
 				odd = !odd;
-/*
+
+				/***
 				if (SHOW_system_privileges(X.RDB$ROLE_NAME, "System privileges:", !odd))
 				{
 					isqlGlob.printf("%s", NEWLINE);
 					odd = true;
-				} */
+				}
+				***/
 			}
 		END_FOR
 		ON_ERROR

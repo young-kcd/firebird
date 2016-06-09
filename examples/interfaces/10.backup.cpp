@@ -36,7 +36,7 @@ static IMaster* master = fb_get_master_interface();
 
 bool printLine(const unsigned char*& p)
 {
-	const ISC_USHORT length = (ISC_USHORT) isc_vax_integer((char*)p, sizeof(ISC_USHORT));
+	const ISC_USHORT length = (ISC_USHORT) isc_vax_integer((char*) p, sizeof(ISC_USHORT));
 	p += sizeof(ISC_USHORT);
 	if (length > 0)
 		printf("%*.*s\n", length, length, p);
@@ -60,9 +60,8 @@ bool printInfo(const unsigned char* p, size_t pSize)
 
 		case isc_info_truncated:
 			if (!ignoreTruncation)
-			{
 				printf("\n<<< truncated >>>\n");
-			}
+
 			fflush(stdout);
 			ret = true;
 			break;
@@ -96,7 +95,8 @@ int main()
 	IXpbBuilder* spb1 = NULL;
 	IXpbBuilder* spb2 = NULL;
 
-	try {
+	try
+	{
 		printf("** Attaching to service manager...\n");
 
 		// Prepare SPB to attach to service manager
@@ -166,8 +166,10 @@ int main()
 	// generic cleanup
 	prov->release();
 	status.dispose();
+
 	if (spb1)
 		spb1->dispose();
+
 	if (spb2)
 		spb2->dispose();
 

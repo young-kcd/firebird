@@ -220,7 +220,7 @@ namespace Jrd {
 							ERR_punt();
 						}
 					}
- 				}
+				}
 			}
 			else
 			{
@@ -386,7 +386,7 @@ namespace Jrd {
 		const bool newCryptState = plugName.hasData();
 
 		int bak_state = Ods::hdr_nbak_unknown;
-		{
+		{	// scope
 			BackupManager::StateReadGuard stateGuard(tdbb);
 			bak_state = dbb.dbb_backup_manager->getState();
 		}
@@ -768,7 +768,7 @@ namespace Jrd {
 
 						// nbackup state check
 						int bak_state = Ods::hdr_nbak_unknown;
-						{
+						{	// scope
 							BackupManager::StateReadGuard stateGuard(tdbb);
 							bak_state = dbb.dbb_backup_manager->getState();
 						}
@@ -1203,10 +1203,10 @@ namespace Jrd {
 		*/
 
 		signature.printf("%d %d %d %s",
-						  hdr->hdr_flags & Ods::hdr_crypt_process ? 1 : 0,
-							 hdr->hdr_flags & Ods::hdr_encrypted ? 1 : 0,
-								hdr->hdr_crypt_page,
-								   hdr->hdr_crypt_plugin);
+			(hdr->hdr_flags & Ods::hdr_crypt_process ? 1 : 0),
+			(hdr->hdr_flags & Ods::hdr_encrypted ? 1 : 0),
+			hdr->hdr_crypt_page,
+			hdr->hdr_crypt_plugin);
 
 		ClumpletWriter hc(ClumpletWriter::UnTagged, hdr->hdr_page_size);
 		hdr.getClumplets(hc);

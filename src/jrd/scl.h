@@ -216,12 +216,15 @@ public:
 	Firebird::string	usr_project_name;	// Project name
 	Firebird::string	usr_org_name;		// Organization name
 	Firebird::string	usr_auth_method;	// Authentication method
+
 private:
 	mutable Privileges	usr_privileges;		// Privileges granted to user by default
+
 public:
 	Auth::AuthenticationBlock usr_auth_block;	// Authentication block after mapping
 	USHORT				usr_user_id;		// User id
 	USHORT				usr_group_id;		// Group id
+
 private:
 	mutable USHORT		usr_flags;			// Misc. crud
 

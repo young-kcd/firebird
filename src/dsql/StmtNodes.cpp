@@ -7922,6 +7922,7 @@ void SetRoleNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** transact
 	{
 		if (!SCL_role_granted(tdbb, *user, roleName.c_str()))
 			(Arg::Gds(isc_set_invalid_role) << roleName).raise();
+
 		user->setSqlRole(roleName.c_str());
 	}
 
