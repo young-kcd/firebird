@@ -1,10 +1,10 @@
 /*
  *	PROGRAM:	Object oriented API samples.
  *	MODULE:		10.backup.cpp
- *	DESCRIPTION:	A sample of making backup of database using service maanger.
+ *	DESCRIPTION:	A sample of making backup of database using service manager.
  *
  *					Example for the following interfaces:
- *					IService - interface to work with service maanger.
+ *					IService - interface to work with service manager.
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
