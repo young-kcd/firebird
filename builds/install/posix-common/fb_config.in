@@ -43,7 +43,6 @@ fb_pluginsdir=@FB_PLUGDIR@
 
 fb_cflags="-I$fb_incdir"
 fb_libs="-L$fb_libdir -lfbclient"
-fb_embedlibs="-L$fb_libdir -lfbembed"
 
 BuildVersion=@FIREBIRD_VERSION@.@FB_BUILD_NUM@
 PackageVersion=@FIREBIRD_PACKAGE_VERSION@
@@ -93,7 +92,7 @@ while test $# -gt 0
     case "$1" in
         --cflags) echo $fb_cflags ;;
         --libs) echo $fb_libs ;;
-        --embedlibs) echo $fb_embedlibs ;;
+        --embedlibs) echo $fb_libs ;;
         --bindir) echo $fb_bindir ;;
         --udfdir) echo $fb_udfdir ;;
         --sbindir) echo $fb_sbindir ;;
