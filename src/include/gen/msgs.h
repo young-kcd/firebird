@@ -484,7 +484,7 @@ static const struct {
 	{335544780, "An exception occurred that does not have a description.  Exception number @1."},		/* exception_unknown */
 	{335544781, "Stack overflow.  The resource requirements of the runtime stack have exceeded the memory available to it."},		/* exception_stack_overflow */
 	{335544782, "Segmentation Fault. The code attempted to access memory without privileges."},		/* exception_sigsegv */
-	{335544783, "Illegal Instruction. The Code attempted to perfrom an illegal operation."},		/* exception_sigill */
+	{335544783, "Illegal Instruction. The Code attempted to perform an illegal operation."},		/* exception_sigill */
 	{335544784, "Bus Error. The Code caused a system bus error."},		/* exception_sigbus */
 	{335544785, "Floating Point Error. The Code caused an Arithmetic Exception or a floating point exception."},		/* exception_sigfpe */
 	{335544786, "Cannot delete rows from external files."},		/* ext_file_delete */

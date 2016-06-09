@@ -1514,7 +1514,7 @@ ULONG ISC_exception_post(ULONG sig_num, const TEXT* err_msg, ISC_STATUS& /*isc_e
 	case SIGILL:
 
 		sprintf(log_msg, "%s Illegal Instruction.\n"
-				"\t\tThe code attempted to perfrom an\n"
+				"\t\tThe code attempted to perform an\n"
 				"\t\tillegal operation."
 				"\tThis exception will cause the Firebird server\n"
 				"\tto terminate abnormally.", err_msg);
