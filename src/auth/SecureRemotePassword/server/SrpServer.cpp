@@ -231,6 +231,29 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 
 			server->serverSessionKey(sessionKey, clientPubKey.c_str(), verifier);
 			dumpIt("Srv: sessionKey", sessionKey);
+			return AUTH_MORE_DATA;
+		}
+
+		unsigned int length;
+		const unsigned char* val = sb->getData(&length);
+		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP: phase2, data length is %d\n", length));
+		string proof;
+		proof.assign(val, length);
+		BigInteger clientProof(proof.c_str());
+		BigInteger serverProof = server->clientProof(account.c_str(), salt.c_str(), sessionKey);
+		if (clientProof == serverProof)
+		{
+			// put the record into authentication block
+			writerInterface->add(status, account.c_str());
+			if (status->getState() & IStatus::STATE_ERRORS)
+			{
+				return AUTH_FAILED;
+			}
+			writerInterface->setDb(status, secDbName);
+			if (status->getState() & IStatus::STATE_ERRORS)
+			{
+				return AUTH_FAILED;
+			}
 
 			// output the key
 			ICryptKey* cKey = sb->newKey(status);
@@ -244,28 +267,6 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 				return AUTH_FAILED;
 			}
 
-			return AUTH_MORE_DATA;
-		}
-
-		unsigned int length;
-		const unsigned char* val = sb->getData(&length);
-		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP: phase2, data length is %d\n", length));
-		string proof;
-		proof.assign(val, length);
-		BigInteger clientProof(proof.c_str());
-		BigInteger serverProof = server->clientProof(account.c_str(), salt.c_str(), sessionKey);
-		if (clientProof == serverProof)
-		{
-			writerInterface->add(status, account.c_str());
-			if (status->getState() & IStatus::STATE_ERRORS)
-			{
-				return AUTH_FAILED;
-			}
-			writerInterface->setDb(status, secDbName);
-			if (status->getState() & IStatus::STATE_ERRORS)
-			{
-				return AUTH_FAILED;
-			}
 			return AUTH_SUCCESS;
 		}
 	}
@@ -276,14 +277,14 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 		switch(status->getErrors()[1])
 		{
 		case isc_stream_eof:	// User name not found in security database
-			status->init();
-			return AUTH_CONTINUE;
-		default:
 			break;
+		default:
+			return AUTH_FAILED;
 		}
 	}
 
-	return AUTH_FAILED;
+	status->init();
+	return AUTH_CONTINUE;
 }
 
 int SrpServer::release()

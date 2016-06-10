@@ -370,7 +370,7 @@ int SecurityDatabase::verify(IWriter* authBlock, IServerBlock* sBlock)
 		}
 		if (!legacyHash)
 		{
-			return IAuth::AUTH_FAILED;
+			return IAuth::AUTH_CONTINUE;
 		}
 	}
 
