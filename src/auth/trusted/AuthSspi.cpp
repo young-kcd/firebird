@@ -357,7 +357,7 @@ int WinSspiServer::authenticate(Firebird::CheckStatusWrapper* status,
 		sspiData.add(bytes, length);
 
 		if (!sspi.accept(sspiData))
-			return wasActive ? AUTH_FAILED : AUTH_CONTINUE;
+			return AUTH_CONTINUE;
 
 		if (wasActive && !sspi.isActive())
 		{
@@ -413,7 +413,7 @@ int WinSspiClient::authenticate(Firebird::CheckStatusWrapper* status,
 		sspiData.add(bytes, length);
 
 		if (!sspi.request(sspiData))
-			return wasActive ? AUTH_FAILED : AUTH_CONTINUE;
+			return AUTH_CONTINUE;
 
 		cBlock->putData(status, sspiData.getCount(), sspiData.begin());
 
