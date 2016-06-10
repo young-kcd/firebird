@@ -10,6 +10,8 @@ const char PathUtils::dir_sep = '\\';
 const char* PathUtils::curr_dir_link = ".";
 const char* PathUtils::up_dir_link = "..";
 const char PathUtils::dir_list_sep = ';';
+const size_t PathUtils::curr_dir_link_len = strlen(curr_dir_link);
+const size_t PathUtils::up_dir_link_len = strlen(up_dir_link);
 
 class Win32DirItr : public PathUtils::dir_iterator
 {
@@ -106,32 +108,51 @@ void PathUtils::concatPath(Firebird::PathName& result,
 		const Firebird::PathName& first,
 		const Firebird::PathName& second)
 {
+	result = first;
+
+	// First path used to be from trusted sources like getRootDirectory, etc.
+	// Second path is mostly user-entered and must be carefully parsed to avoid hacking
 	if (second.length() == 0)
 	{
-		result = first;
-		return;
-	}
-	if (first.length() == 0)
-	{
-		result = second;
 		return;
 	}
 
-	if (first[first.length() - 1] != PathUtils::dir_sep &&
-		second[0] != PathUtils::dir_sep)
-	{
-		result = first + PathUtils::dir_sep + second;
-		return;
-	}
-	if (first[first.length() - 1] == PathUtils::dir_sep &&
-		second[0] == PathUtils::dir_sep)
-	{
-		result = first;
-		result.append(second, 1, second.length() - 1);
-		return;
-	}
+	ensureSeparator(result);
 
-	result = first + second;
+	Firebird::PathName::size_type cur_pos = 0;
+
+	for (Firebird::PathName::size_type pos = 0; cur_pos < second.length(); cur_pos = pos + 1)
+	{
+		static const char separators[] = "/\\";
+		static const Firebird::PathName::size_type separatorsLen = static_cast<Firebird::PathName::size_type>(strlen(separators));
+
+		pos = second.find_first_of(separators, cur_pos, separatorsLen);
+		if (pos == Firebird::PathName::npos) // simple name, simple handling
+		{
+			pos = second.length();
+		}
+		if (pos == cur_pos) // Empty piece, ignore
+		{
+			continue;
+		}
+		if (pos == cur_pos + curr_dir_link_len && memcmp(second.c_str() + cur_pos, curr_dir_link, curr_dir_link_len) == 0) // Current dir, ignore
+		{
+			continue;
+		}
+		if (pos == cur_pos + up_dir_link_len && memcmp(second.c_str() + cur_pos, up_dir_link, up_dir_link_len) == 0) // One dir up
+		{
+			if (result.length() < 2) // We have nothing to cut off, ignore this piece (may be throw an error?..)
+				continue;
+
+			const Firebird::PathName::size_type up_dir = result.find_last_of(separators, result.length() - 2, separatorsLen);
+			if (up_dir == Firebird::PathName::npos)
+				continue;
+
+			result.erase(up_dir + 1);
+			continue;
+		}
+		result.append(second, cur_pos, pos - cur_pos + 1); // append the piece including separator
+	}
 }
 
 // We don't work correctly with MBCS.

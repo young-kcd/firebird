@@ -72,9 +72,9 @@ void ConfigCache::checkLoadConfig()
 	loadConfig();
 }
 
-void ConfigCache::addFile(const Firebird::PathName& fName)
+bool ConfigCache::addFile(const Firebird::PathName& fName)
 {
-	files->add(fName);
+	return files->add(fName);
 }
 
 Firebird::PathName ConfigCache::getFileName()
@@ -127,21 +127,23 @@ bool ConfigCache::File::checkLoadConfig(bool set)
 	return false;
 }
 
-void ConfigCache::File::add(const PathName& fName)
+bool ConfigCache::File::add(const PathName& fName)
 {
 	if (fName == fileName)
 	{
-		return;
+		return false;
 	}
 
 	if (next)
 	{
-		next->add(fName);
+		return next->add(fName);
 	}
 	else
 	{
 		next = FB_NEW_POOL(getPool()) ConfigCache::File(getPool(), fName);
+		next->checkLoadConfig(true); // To set current time and avoid unnecessary invalidation
 	}
+	return true;
 }
 
 void ConfigCache::File::trim()
