@@ -274,11 +274,6 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 
 	if (desc->isText() || desc->isBlob())
 		desc->setTextType(INTL_CS_COLL_TO_TTYPE(field->charSetId, field->collationId));
-
-	// UNICODE_FSS_HACK
-	// check if the field is a system domain and CHARACTER SET is UNICODE_FSS
-	if (desc->isText() && (INTL_GET_CHARSET(desc) == CS_UNICODE_FSS) && (field->flags & FLD_system))
-		adjustLength(desc);
 }
 
 
@@ -342,17 +337,6 @@ FieldNode* MAKE_field(dsql_ctx* context, dsql_fld* field, ValueListNode* indices
 			MAKE_desc_from_field(&node->nodDesc, field);
 			node->nodDesc.dsc_dtype = static_cast<UCHAR>(field->elementDtype);
 			node->nodDesc.dsc_length = field->elementLength;
-
-			// node->nodDesc.dsc_scale = field->scale;
-			// node->nodDesc.dsc_sub_type = field->subType;
-
-			// UNICODE_FSS_HACK
-			// check if the field is a system domain and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
-			if ((field->flags & FLD_system) && node->nodDesc.dsc_dtype <= dtype_varying &&
-				INTL_GET_CHARSET(&node->nodDesc) == CS_METADATA)
-			{
-				adjustLength(&node->nodDesc);
-			}
 		}
 		else
 		{

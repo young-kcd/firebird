@@ -3617,9 +3617,7 @@ void CurrentRoleNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 	desc->dsc_scale = 0;
 	desc->dsc_flags = 0;
 	desc->dsc_ttype() = ttype_metadata;
-	desc->dsc_length =
-		(USERNAME_LENGTH / METADATA_BYTES_PER_CHAR) *
-		METD_get_charset_bpc(dsqlScratch->getTransaction(), ttype_metadata) + sizeof(USHORT);
+	desc->dsc_length = USERNAME_LENGTH + sizeof(USHORT);
 }
 
 void CurrentRoleNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
@@ -3713,9 +3711,7 @@ void CurrentUserNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 	desc->dsc_scale = 0;
 	desc->dsc_flags = 0;
 	desc->dsc_ttype() = ttype_metadata;
-	desc->dsc_length =
-		(USERNAME_LENGTH / METADATA_BYTES_PER_CHAR) *
-		METD_get_charset_bpc(dsqlScratch->getTransaction(), ttype_metadata) + sizeof(USHORT);
+	desc->dsc_length = USERNAME_LENGTH + sizeof(USHORT);
 }
 
 void CurrentUserNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
@@ -10860,14 +10856,7 @@ void UdfCallNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 	desc->setNullable(true);
 
 	if (desc->dsc_dtype <= dtype_any_text)
-	{
 		desc->dsc_ttype() = dsqlFunction->udf_character_set_id;
-
-		// UNICODE_FSS_HACK
-		// Fix UNICODE_FSS wrong length used in system tables.
-		if ((dsqlFunction->udf_flags & UDF_sys_based) && (desc->dsc_ttype() == CS_UNICODE_FSS))
-			desc->dsc_length *= 3;
-	}
 	else
 		desc->dsc_ttype() = dsqlFunction->udf_sub_type;
 }

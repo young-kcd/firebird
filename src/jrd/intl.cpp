@@ -597,8 +597,6 @@ CHARSET_ID INTL_charset(thread_db* tdbb, USHORT ttype)
 		return (CS_NONE);
 	case ttype_ascii:
 		return (CS_ASCII);
-	case ttype_unicode_fss:
-		return (CS_UNICODE_FSS);
 	case ttype_binary:
 		return (CS_BINARY);
 	case ttype_dynamic:

@@ -2747,7 +2747,6 @@ static processing_state show_all_tables(SSHORT sys_flag)
  *	1, show system tables only; -1, show views only
  *
  **************************************/
-	bool odd = true;
 	bool first = true;
 
 	if (sys_flag == -1)
@@ -2756,11 +2755,10 @@ static processing_state show_all_tables(SSHORT sys_flag)
 		FOR REL IN RDB$RELATIONS WITH
 			REL.RDB$VIEW_BLR NOT MISSING
 			SORTED BY REL.RDB$RELATION_NAME
-
+		{
 			first = false;
-			isqlGlob.printf("%38s%s", REL.RDB$RELATION_NAME, (odd ? " " : NEWLINE));
-			odd = !odd;
-
+			isqlGlob.printf("%s%s", fb_utils::exact_name(REL.RDB$RELATION_NAME), NEWLINE);
+		}
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(fbStatus);
@@ -2776,11 +2774,10 @@ static processing_state show_all_tables(SSHORT sys_flag)
 				/*OR (sys_flag == 0 AND REL.RDB$SYSTEM_FLAG MISSING)*/)
 			AND REL.RDB$VIEW_BLR MISSING
 			SORTED BY REL.RDB$RELATION_NAME
-
+		{
 			first = false;
-			isqlGlob.printf("%38s%s", REL.RDB$RELATION_NAME, (odd ? " " : NEWLINE));
-			odd = !odd;
-
+			isqlGlob.printf("%s%s", fb_utils::exact_name(REL.RDB$RELATION_NAME), NEWLINE);
+		}
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(fbStatus);
@@ -2944,7 +2941,6 @@ static processing_state show_collations(const SCHAR* object, SSHORT sys_flag, co
  *
  **************************************/
 	bool found = false;
-	bool odd = true;
 
 	// Show all collations or named collation
 	FOR CL IN RDB$COLLATIONS CROSS
@@ -2968,10 +2964,7 @@ static processing_state show_collations(const SCHAR* object, SSHORT sys_flag, co
 			}
 
 			if (compact)
-			{
-				isqlGlob.printf("       %-31s%s", CL.RDB$COLLATION_NAME, (odd ? " " : NEWLINE));
-				odd = !odd;
-			}
+				isqlGlob.printf("%s%s", CL.RDB$COLLATION_NAME, NEWLINE);
 			else
 			{
 				isqlGlob.printf("%s", CL.RDB$COLLATION_NAME);
@@ -3823,7 +3816,6 @@ static processing_state show_domains(const SCHAR* domain_name)
 
 	if (!*domain_name)
 	{
-		bool odd = true;
 		//  List all domain names in columns
 		FOR FLD IN RDB$FIELDS WITH
 			FLD.RDB$FIELD_NAME NOT MATCHING "RDB$+" USING "+=[0-9][0-9]* *"
@@ -3831,8 +3823,7 @@ static processing_state show_domains(const SCHAR* domain_name)
 			SORTED BY FLD.RDB$FIELD_NAME
 
 			first = false;
-			isqlGlob.printf("%38s%s", FLD.RDB$FIELD_NAME, (odd ? " " : NEWLINE));
-			odd = !odd;
+			isqlGlob.printf("%s%s", fb_utils::exact_name(FLD.RDB$FIELD_NAME), NEWLINE);
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(fbStatus);
@@ -3956,22 +3947,18 @@ static processing_state show_exceptions(const SCHAR* object)
 
 	FOR EXC IN RDB$EXCEPTIONS
 		SORTED BY EXC.RDB$EXCEPTION_NAME
-
+	{
 		fb_utils::exact_name(EXC.RDB$EXCEPTION_NAME);
 		// List all objects if none specified, or just the named exception
 
 		if (!*object || !strcmp (EXC.RDB$EXCEPTION_NAME, object))
 		{
-			if (first)
-			{
-				isqlGlob.printf("Exception Name                  Used by, Type%s%s%s",
-					NEWLINE,
-					"=============================== =============================================",
-					NEWLINE);
-			}
 			first = false;
 
-			isqlGlob.printf("%-31s ", EXC.RDB$EXCEPTION_NAME);
+			isqlGlob.printf("%s", EXC.RDB$EXCEPTION_NAME);
+
+			if (!EXC.RDB$MESSAGE.NULL && strlen(EXC.RDB$MESSAGE))
+				isqlGlob.printf("; Msg: %s", EXC.RDB$MESSAGE);
 
 			// Look up dependent objects --procedures and triggers
 			bool first_dep = true;
@@ -3979,11 +3966,14 @@ static processing_state show_exceptions(const SCHAR* object)
 				DEP.RDB$DEPENDED_ON_TYPE = obj_exception AND
 				DEP.RDB$DEPENDED_ON_NAME EQ EXC.RDB$EXCEPTION_NAME
 				SORTED BY DEP.RDB$DEPENDENT_TYPE, DEP.RDB$DEPENDENT_NAME
-
-				if (!first_dep) {
-					isqlGlob.printf("%31s ", "");
+			{
+				if (first_dep)
+				{
+					isqlGlob.printf("; Used by: ");
+					first_dep = false;
 				}
-				first_dep = false;
+				else
+					isqlGlob.printf(", ");
 
 				fb_utils::exact_name(DEP.RDB$DEPENDENT_NAME);
 
@@ -3999,21 +3989,18 @@ static processing_state show_exceptions(const SCHAR* object)
 						strcpy (type, "Unknown");
 						break;
 				}
-				isqlGlob.printf("%s, %s%s", DEP.RDB$DEPENDENT_NAME, type, NEWLINE);
+
+				isqlGlob.printf("%s (%s)", DEP.RDB$DEPENDENT_NAME, type);
+			}
 			END_FOR
 			ON_ERROR
 				ISQL_errmsg (fbStatus);
 				return ps_ERR;
 			END_ERROR;
 
-			if (first_dep)
-				printf(NEWLINE);
-
-			if (!EXC.RDB$MESSAGE.NULL && strlen(EXC.RDB$MESSAGE))
-				isqlGlob.printf("Msg: %s%s", EXC.RDB$MESSAGE, NEWLINE);
-		}
-		if (!first)
 			isqlGlob.printf(NEWLINE);
+		}
+	}
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(fbStatus);
@@ -4042,14 +4029,13 @@ static processing_state show_filters(const SCHAR* object)
 	// Show all functions
 	if (!*object)
 	{
-		bool odd = true;
 		FOR FIL IN RDB$FILTERS
 		SORTED BY FIL.RDB$FUNCTION_NAME
-
+		{
 			first = false;
-			//fb_utils::exact_name(FIL.RDB$FUNCTION_NAME);
-			isqlGlob.printf("%38s%s", FIL.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
-			odd = !odd;
+			fb_utils::exact_name(FIL.RDB$FUNCTION_NAME);
+			isqlGlob.printf("%s%s", FIL.RDB$FUNCTION_NAME, NEWLINE);
+		}
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(fbStatus);
@@ -4108,21 +4094,21 @@ static processing_state show_sys_functions(const SCHAR* msg)
  **************************************/
 
 	bool first = true;
-	bool odd = true;
 
 	FOR FUN IN RDB$FUNCTIONS
 		WITH FUN.RDB$SYSTEM_FLAG EQ 1 AND
 			 FUN.RDB$PACKAGE_NAME MISSING
 		SORTED BY FUN.RDB$FUNCTION_NAME
-
+	{
 		if (first)
 		{
 			first = false;
 			if (msg)
 				isqlGlob.printf("%s%s", msg, NEWLINE);
 		}
-		isqlGlob.printf("%38s%s", FUN.RDB$FUNCTION_NAME, (odd ? " " : NEWLINE));
-		odd = !odd;
+
+		isqlGlob.printf("%s%s", fb_utils::exact_name(FUN.RDB$FUNCTION_NAME), NEWLINE);
+	}
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(fbStatus);
@@ -4170,25 +4156,13 @@ static processing_state show_functions(const SCHAR* funcname)
 			if (first || package != prevPackage)
 			{
 				if (package.isEmpty())
-				{
 					isqlGlob.printf("Global functions%s%s", NEWLINE, NEWLINE);
-
-					isqlGlob.printf(
-						"Function Name                     Invalid Dependency, Type%s", NEWLINE);
-					isqlGlob.printf(
-						"================================= ======= =====================================%s", NEWLINE);
-				}
 				else
 				{
 					if (!first)
-						isqlGlob.printf("%s%s", NEWLINE, NEWLINE);
+						isqlGlob.printf("%s", NEWLINE);
 
 					isqlGlob.printf("Package: %s%s%s", package.c_str(), NEWLINE, NEWLINE);
-
-					isqlGlob.printf(
-						"Function Name                     Invalid%s", NEWLINE);
-					isqlGlob.printf(
-						"================================= =======%s", NEWLINE);
 				}
 
 				first = false;
@@ -4196,15 +4170,11 @@ static processing_state show_functions(const SCHAR* funcname)
 
 			prevPackage = package;
 
-			const char* invalid = "        ";
+			fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
+			isqlGlob.printf("%s", FUN.RDB$FUNCTION_NAME);
 
 			if (!(FUN.RDB$VALID_BLR.NULL || FUN.RDB$VALID_BLR))
-				invalid = "   *    ";
-
-			// Strip trailing blanks
-
-			fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
-			isqlGlob.printf("%-34s%s", FUN.RDB$FUNCTION_NAME, invalid);
+				isqlGlob.printf("; Invalid");
 
 			if (FUN.RDB$PACKAGE_NAME.NULL)
 			{
@@ -4213,15 +4183,20 @@ static processing_state show_functions(const SCHAR* funcname)
 					FUN.RDB$FUNCTION_NAME EQ DEP.RDB$DEPENDENT_NAME
 					REDUCED TO DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
 					SORTED BY DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
-
+				{
 					fb_utils::exact_name(DEP.RDB$DEPENDED_ON_NAME);
-					// Get column type name to print
-					if (!first_dep) {
-						isqlGlob.printf("%s%42s", NEWLINE, "");
+
+					if (first_dep)
+					{
+						isqlGlob.printf("; Dependencies: ");
+						first_dep = false;
 					}
-					first_dep = false;
-					isqlGlob.printf("%s, %s", DEP.RDB$DEPENDED_ON_NAME,
+					else
+						isqlGlob.printf(", ");
+
+					isqlGlob.printf("%s (%s)", fb_utils::exact_name(DEP.RDB$DEPENDED_ON_NAME),
 						Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
+				}
 				END_FOR
 				ON_ERROR
 					ISQL_errmsg (fbStatus);
@@ -4825,15 +4800,14 @@ static processing_state show_packages(const SCHAR* package_name)
 
 	if (!*package_name)
 	{
-		bool odd = true;
 		//  List all package names in columns
 		FOR PACK IN RDB$PACKAGES WITH
 			(PACK.RDB$SYSTEM_FLAG NE 1 OR PACK.RDB$SYSTEM_FLAG MISSING)
 			SORTED BY PACK.RDB$PACKAGE_NAME
-
+		{
 			first = false;
-			isqlGlob.printf("%38s%s", PACK.RDB$PACKAGE_NAME, (odd ? " " : NEWLINE));
-			odd = !odd;
+			isqlGlob.printf("%s%s", fb_utils::exact_name(PACK.RDB$PACKAGE_NAME), NEWLINE);
+		}
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(fbStatus);
@@ -5072,25 +5046,13 @@ static processing_state show_proc(const SCHAR* procname)
 			if (first_proc || package != prevPackage)
 			{
 				if (package.isEmpty())
-				{
 					isqlGlob.printf("Global procedures%s%s", NEWLINE, NEWLINE);
-
-					isqlGlob.printf(
-						"Procedure Name                    Invalid Dependency, Type%s", NEWLINE);
-					isqlGlob.printf(
-						"================================= ======= =====================================%s", NEWLINE);
-				}
 				else
 				{
 					if (!first_proc)
-						isqlGlob.printf("%s%s", NEWLINE, NEWLINE);
+						isqlGlob.printf("%s", NEWLINE);
 
 					isqlGlob.printf("Package: %s%s%s", package.c_str(), NEWLINE, NEWLINE);
-
-					isqlGlob.printf(
-						"Procedure Name                    Invalid%s", NEWLINE);
-					isqlGlob.printf(
-						"================================= =======%s", NEWLINE);
 				}
 
 				first_proc = false;
@@ -5098,15 +5060,13 @@ static processing_state show_proc(const SCHAR* procname)
 
 			prevPackage = package;
 
-			const char* invalid = "        ";
-
-			if (!(PRC.RDB$VALID_BLR.NULL || PRC.RDB$VALID_BLR))
-				invalid = "   *    ";
-
 			// Strip trailing blanks
 
 			fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
-			isqlGlob.printf("%-34s%s", PRC.RDB$PROCEDURE_NAME, invalid);
+			isqlGlob.printf("%s", PRC.RDB$PROCEDURE_NAME);
+
+			if (!(PRC.RDB$VALID_BLR.NULL || PRC.RDB$VALID_BLR))
+				isqlGlob.printf("; Invalid");
 
 			if (PRC.RDB$PACKAGE_NAME.NULL)
 			{
@@ -5115,15 +5075,20 @@ static processing_state show_proc(const SCHAR* procname)
 					PRC.RDB$PROCEDURE_NAME EQ DEP.RDB$DEPENDENT_NAME
 					REDUCED TO DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
 					SORTED BY DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
-
+				{
 					fb_utils::exact_name(DEP.RDB$DEPENDED_ON_NAME);
-					// Get column type name to print
-					if (!first_dep)
-						isqlGlob.printf("%s%42s", NEWLINE, "");
 
-					first_dep = false;
-					isqlGlob.printf("%s, %s", DEP.RDB$DEPENDED_ON_NAME,
+					if (first_dep)
+					{
+						isqlGlob.printf("; Dependencies: ");
+						first_dep = false;
+					}
+					else
+						isqlGlob.printf(", ");
+
+					isqlGlob.printf("%s (%s)", fb_utils::exact_name(DEP.RDB$DEPENDED_ON_NAME),
 							 Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
+				}
 				END_FOR
 				ON_ERROR
 					ISQL_errmsg (fbStatus);
@@ -5390,12 +5355,11 @@ static processing_state show_role(const SCHAR* object, bool system, const char* 
 		// *	Otherwise returns OBJECT_NOT_FOUND.
 		// **************************************/
 		bool first = true;
-		bool odd = true;
 
 		FOR X IN RDB$ROLES WITH
 			X.RDB$ROLE_NAME NOT MISSING
 			SORTED BY X.RDB$ROLE_NAME
-
+		{
 			bool system_flag = !X.RDB$SYSTEM_FLAG.NULL && X.RDB$SYSTEM_FLAG > 0;
 
 			if (system_flag == system)
@@ -5404,8 +5368,7 @@ static processing_state show_role(const SCHAR* object, bool system, const char* 
 					isqlGlob.printf("%s%s", msg, NEWLINE);
 				first = false;
 
-				isqlGlob.printf("%38s%s", X.RDB$ROLE_NAME, (odd ? " " : NEWLINE));
-				odd = !odd;
+				isqlGlob.printf("%s%s", fb_utils::exact_name(X.RDB$ROLE_NAME), NEWLINE);
 
 				/***
 				if (SHOW_system_privileges(X.RDB$ROLE_NAME, "System privileges:", !odd))
@@ -5415,6 +5378,7 @@ static processing_state show_role(const SCHAR* object, bool system, const char* 
 				}
 				***/
 			}
+		}
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(fbStatus);
@@ -5719,9 +5683,7 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
 		if (first)
 		{
 			if (!REL.RDB$EXTERNAL_FILE.NULL)
-			{
 				isqlGlob.printf("External file: %s%s", REL.RDB$EXTERNAL_FILE, NEWLINE);
-			}
 		}
 		first = false;
 		if (isView && REL.RDB$VIEW_BLR.NULL || !isView && !REL.RDB$VIEW_BLR.NULL)
@@ -5757,7 +5719,7 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
 
 		// Print the column name in first column
 
-		isqlGlob.printf("%-32s", RFR.RDB$FIELD_NAME);
+		isqlGlob.printf("%-31s ", RFR.RDB$FIELD_NAME);
 
 		// Decide if this is a user-created domain
 		if (!(fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && FLD.RDB$SYSTEM_FLAG != 1))
@@ -6038,28 +6000,22 @@ static processing_state show_trigger(const SCHAR* object, bool show_source, bool
 				WITH (TRG.RDB$SYSTEM_FLAG EQ 0 OR TRG.RDB$SYSTEM_FLAG MISSING) AND
 					 TRG.RDB$RELATION_NAME MISSING
 				SORTED BY TRG.RDB$TRIGGER_NAME
-
+			{
 				if (!has_dbtrig)
-				{
-					isqlGlob.printf("Trigger name                     Invalid%s", NEWLINE);
-					isqlGlob.printf("================================ =======%s", NEWLINE);
 					has_dbtrig = true;
-				}
-
-				const char* invalid = "        ";
-
-				FOR TRG2 IN RDB$TRIGGERS
-					WITH TRG2.RDB$TRIGGER_NAME EQ TRG.RDB$TRIGGER_NAME
-					if (!(TRG2.RDB$VALID_BLR.NULL || TRG2.RDB$VALID_BLR))
-						invalid = "    *   ";
-				END_FOR
 
 				fb_utils::exact_name(TRG.RDB$TRIGGER_NAME);
-				isqlGlob.printf("%-32s%s%s%s",
-						 TRG.RDB$TRIGGER_NAME,
-						 invalid,
-						 (TRG.RDB$SYSTEM_FLAG == 1 ? "(system)" : ""),	// never used
-						 NEWLINE);
+
+				isqlGlob.printf("%s", TRG.RDB$TRIGGER_NAME);
+
+				if (TRG.RDB$SYSTEM_FLAG == 1)
+					isqlGlob.printf("; System");
+
+				if (!(TRG.RDB$VALID_BLR.NULL || TRG.RDB$VALID_BLR))
+					isqlGlob.printf("; Invalid");
+
+				isqlGlob.printf("%s", NEWLINE);
+			}
 			END_FOR
 			ON_ERROR
 				ISQL_errmsg(fbStatus);
@@ -6074,32 +6030,31 @@ static processing_state show_trigger(const SCHAR* object, bool show_source, bool
 			WITH (TRG.RDB$SYSTEM_FLAG EQ 0 OR TRG.RDB$SYSTEM_FLAG MISSING) AND
 			TRG.RDB$RELATION_NAME = REL.RDB$RELATION_NAME
 			SORTED BY TRG.RDB$RELATION_NAME, TRG.RDB$TRIGGER_NAME
-
+		{
 			if (first)
 			{
 				if (has_dbtrig)
 					isqlGlob.printf("%s", NEWLINE);
 
-				isqlGlob.printf(
-						 "Table name                       Trigger name                     Invalid%s", NEWLINE);
-				isqlGlob.printf(
-						 "================================ ================================ =======%s", NEWLINE);
 				first = false;
 			}
 
-			const char* invalid = "        ";
-
-			if (!(TRG.RDB$VALID_BLR.NULL || TRG.RDB$VALID_BLR))
-				invalid = "    *   ";
-
 			fb_utils::exact_name(TRG.RDB$TRIGGER_NAME);
 			fb_utils::exact_name(TRG.RDB$RELATION_NAME);
-			isqlGlob.printf("%-32s %-32s%s%s%s",
-					 TRG.RDB$RELATION_NAME,
-					 TRG.RDB$TRIGGER_NAME,
-					 invalid,
-					 (TRG.RDB$SYSTEM_FLAG == 1 ? "(system)" : ""),	// never used
-					 NEWLINE);
+
+			isqlGlob.printf("%s", TRG.RDB$TRIGGER_NAME);
+
+			if (!TRG.RDB$RELATION_NAME.NULL)
+				isqlGlob.printf("; Table: %s", TRG.RDB$RELATION_NAME);
+
+			if (TRG.RDB$SYSTEM_FLAG == 1)
+				isqlGlob.printf("; System");
+
+			if (!(TRG.RDB$VALID_BLR.NULL || TRG.RDB$VALID_BLR))
+				isqlGlob.printf("; Invalid");
+
+			isqlGlob.printf("%s", NEWLINE);
+		}
 		END_FOR
 		ON_ERROR
 			ISQL_errmsg(fbStatus);
@@ -6240,7 +6195,7 @@ static processing_state show_users12()
 	mb->setType(fbStatus, 1, SQL_VARYING);
 	if (ISQL_errmsg (fbStatus))
 		return ps_ERR;
-	mb->setLength(fbStatus, 1, MAX_SQL_IDENTIFIER_SIZE * 4);
+	mb->setLength(fbStatus, 1, MAX_SQL_IDENTIFIER_SIZE);
 	if (ISQL_errmsg (fbStatus))
 		return ps_ERR;
 
@@ -6253,7 +6208,7 @@ static processing_state show_users12()
 	if (ISQL_errmsg (fbStatus))
 		return ps_ERR;
 
-	Firebird::AlignedBuffer<MAX_SQL_IDENTIFIER_SIZE * 4 + 32> outBuffer;
+	Firebird::AlignedBuffer<MAX_SQL_IDENTIFIER_SIZE + 32> outBuffer;
 	fb_assert(outMetadata->getMessageLength(fbStatus) <= outBuffer.size());
 
 	char* mark = (char*) &outBuffer[outMetadata->getOffset(fbStatus, 0)];
@@ -6272,7 +6227,7 @@ static processing_state show_users12()
 		return ps_ERR;
 
 	processing_state rc = OBJECT_NOT_FOUND;
-	bool newline = false;
+
 	while (rs->fetchNext(fbStatus, outBuffer) == Firebird::IStatus::RESULT_OK)
 	{
 		if (rc == OBJECT_NOT_FOUND)
@@ -6284,16 +6239,11 @@ static processing_state show_users12()
 			rc = SKIP; // We found at least one user.
 		}
 
-		isqlGlob.printf("%3d %c%-34.*s", *cnt, *mark, username->vary_length, username->vary_string);
-
-		if (newline)
-			isqlGlob.printf("\n");
-		newline = !newline;
+		isqlGlob.printf("%3d %c%.*s", *cnt, *mark, username->vary_length, username->vary_string);
+		isqlGlob.printf("\n");
 	}
 	if (ISQL_errmsg (fbStatus))
 		rc = ps_ERR;
-	if (newline)
-		isqlGlob.printf("\n");
 
 	rs->release();
 
@@ -6331,7 +6281,7 @@ static processing_state show_users()
 	mb->setType(fbStatus, 0, SQL_VARYING);
 	if (ISQL_errmsg (fbStatus))
 		return ps_ERR;
-	mb->setLength(fbStatus, 0, MAX_SQL_IDENTIFIER_SIZE * 4);
+	mb->setLength(fbStatus, 0, MAX_SQL_IDENTIFIER_SIZE);
 	if (ISQL_errmsg (fbStatus))
 		return ps_ERR;
 
@@ -6340,7 +6290,7 @@ static processing_state show_users()
 	if (ISQL_errmsg (fbStatus))
 		return ps_ERR;
 
-	Firebird::AlignedBuffer<MAX_SQL_IDENTIFIER_SIZE * 4 + 32> outBuffer;
+	Firebird::AlignedBuffer<MAX_SQL_IDENTIFIER_SIZE + 32> outBuffer;
 	fb_assert(outMetadata->getMessageLength(fbStatus) <= outBuffer.size());
 	unsigned off = outMetadata->getOffset(fbStatus, 0);
 	if (ISQL_errmsg (fbStatus))
@@ -6360,8 +6310,8 @@ static processing_state show_users()
 	if (ISQL_errmsg(fbStatus))
 		return ps_ERR;
 
-	bool newline = false;
 	processing_state rc = OBJECT_NOT_FOUND;
+
 	for (const UCHAR* data = buffer; *data != isc_info_end;)
 	{
 		const UCHAR item = *data++;
@@ -6388,18 +6338,13 @@ static processing_state show_users()
 				const UCHAR* uname = data + 1;
 				// Let's mark all attachments with our same user with a # prefix.
 				bool same(len == my_user->vary_length && !memcmp(my_user->vary_string, uname, len));
-				isqlGlob.printf("%c %-37.*s", same ? '#' : ' ', len, uname);
-
-				if (newline)
-					isqlGlob.printf("\n");
-
-				newline = !newline;
+				isqlGlob.printf("%c %.*s", same ? '#' : ' ', len, uname);
+				isqlGlob.printf("\n");
 			}
 			break;
 
 		case isc_info_truncated:
-			if (newline)
-				isqlGlob.printf("\n");
+			isqlGlob.printf("\n");
 
 			IUTILS_msg_get(OUTPUT_TRUNCATED, msg);
 			isqlGlob.printf("%s\n", msg);
@@ -6410,9 +6355,6 @@ static processing_state show_users()
 		if (data >= buffer + sizeof(buffer))
 			break;
 	}
-
-	if (newline) // Last line was without newline.
-		isqlGlob.printf("\n");
 
 	return rc;
 }

@@ -57,12 +57,11 @@ const ULONG MAX_STR_SIZE = 65535;		// Bytes
 
 // Metadata constants
 
-const unsigned METADATA_IDENTIFIER_CHAR_LEN	= 31;
-const unsigned METADATA_BYTES_PER_CHAR		= 1;	// UNICODE_FSS_HACK
+const unsigned METADATA_IDENTIFIER_CHAR_LEN	= 64;
+const unsigned METADATA_BYTES_PER_CHAR		= 4;
 
 // Misc constant values
 
-// Characters; beware that USER_NAME_LEN = 133 in gsec.h
 const unsigned int USERNAME_LENGTH	= METADATA_IDENTIFIER_CHAR_LEN * METADATA_BYTES_PER_CHAR;
 
 const FB_SIZE_T MAX_SQL_IDENTIFIER_LEN = METADATA_IDENTIFIER_CHAR_LEN * METADATA_BYTES_PER_CHAR;
