@@ -108,6 +108,12 @@ void PathUtils::concatPath(Firebird::PathName& result,
 		const Firebird::PathName& first,
 		const Firebird::PathName& second)
 {
+	if (first.length() == 0)
+	{
+		result = second;
+		return;
+	}
+
 	result = first;
 
 	// First path used to be from trusted sources like getRootDirectory, etc.
