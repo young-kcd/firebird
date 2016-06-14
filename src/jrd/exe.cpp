@@ -1046,6 +1046,7 @@ static void execute_looper(thread_db* tdbb,
 			// Preserve savepoint for reuse
 			fb_assert(savepoint == transaction->tra_save_free);
 			transaction->tra_save_free = savepoint->moveToStack(request->req_savepoints);
+			fb_assert(savepoint != transaction->tra_save_free);
 		}
 	}
 }
