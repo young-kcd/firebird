@@ -27,6 +27,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/DataTypeUtil.h"
 #include "../yvalve/keywords.h"
+#include "../jrd/intl_proto.h"
 
 using namespace Firebird;
 using namespace Jrd;
@@ -71,8 +72,9 @@ namespace
 }
 
 
-Parser::Parser(MemoryPool& pool, DsqlCompilerScratch* aScratch, USHORT aClientDialect,
-			USHORT aDbDialect, const TEXT* string, size_t length, SSHORT characterSet)
+Parser::Parser(thread_db* tdbb, MemoryPool& pool, DsqlCompilerScratch* aScratch,
+			USHORT aClientDialect, USHORT aDbDialect, const TEXT* string, size_t length,
+			SSHORT characterSet)
 	: PermanentStorage(pool),
 	  scratch(aScratch),
 	  client_dialect(aClientDialect),
@@ -103,10 +105,13 @@ Parser::Parser(MemoryPool& pool, DsqlCompilerScratch* aScratch, USHORT aClientDi
 	lex.lines_bk = lex.lines;
 	lex.param_number = 1;
 	lex.prev_keyword = -1;
+
 #ifdef DSQL_DEBUG
 	if (DSQL_debug & 32)
 		dsql_trace("Source DSQL string:\n%.*s", (int) length, string);
 #endif
+
+	metadataCharSet = INTL_charset_lookup(tdbb, CS_METADATA);
 }
 
 
@@ -392,7 +397,21 @@ bool Parser::yylexSkipSpaces()
 int Parser::yylexAux()
 {
 	thread_db* tdbb = JRD_get_thread_data();
+	Database* const dbb = tdbb->getDatabase();
 	MemoryPool& pool = *tdbb->getDefaultPool();
+
+	int maxByteLength, maxCharLength;
+
+	if (scratch->flags & DsqlCompilerScratch::FLAG_INTERNAL_REQUEST)
+	{
+		maxByteLength = MAX_SQL_IDENTIFIER_LEN;
+		maxCharLength = METADATA_IDENTIFIER_CHAR_LEN;
+	}
+	else
+	{
+		maxByteLength = dbb->dbb_config->getMaxIdentifierByteLength();
+		maxCharLength = dbb->dbb_config->getMaxIdentifierCharLength();
+	}
 
 	SSHORT c = lex.ptr[-1];
 	UCHAR tok_class = classes(c);
@@ -417,7 +436,7 @@ int Parser::yylexAux()
 
 		check_bound(p, string);
 
-		if (p > string + MAX_SQL_IDENTIFIER_LEN)
+		if (p > string + maxByteLength || p > string + maxCharLength)
 			yyabandon(-104, isc_dyn_name_longer);
 
 		*p = 0;
@@ -525,6 +544,11 @@ int Parser::yylexAux()
 
 				Attachment* attachment = tdbb->getAttachment();
 				MetaName name(attachment->nameToMetaCharSet(tdbb, MetaName(buffer, p - buffer)));
+				int charLength = metadataCharSet->length(
+					name.length(), (const UCHAR*) name.c_str(), true);
+
+				if (name.length() > maxByteLength || charLength > maxCharLength)
+					yyabandon(-104, isc_dyn_name_longer);
 
 				yylval.metaNamePtr = FB_NEW_POOL(pool) MetaName(pool, name);
 
@@ -1078,7 +1102,7 @@ int Parser::yylexAux()
 		check_bound(p, string);
 		*p = 0;
 
-		if (p > &string[MAX_SQL_IDENTIFIER_LEN])
+		if (p > &string[maxByteLength] || p > &string[maxCharLength])
 			yyabandon(-104, isc_dyn_name_longer);
 
 		MetaName str(string, p - string);

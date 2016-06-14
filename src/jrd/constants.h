@@ -57,6 +57,8 @@ const ULONG MAX_STR_SIZE = 65535;		// Bytes
 
 // Metadata constants
 
+// When changing these constants, change MaxIdentifierByteLength and MaxIdentifierCharLength in
+// firebird.conf.in too.
 const unsigned METADATA_IDENTIFIER_CHAR_LEN	= 63;
 const unsigned METADATA_BYTES_PER_CHAR		= 4;
 

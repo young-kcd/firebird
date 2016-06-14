@@ -140,6 +140,8 @@ public:
 		KEY_REMOTE_ACCESS,
 		KEY_IPV6_V6ONLY,
 		KEY_WIRE_COMPRESSION,
+		KEY_MAX_IDENTIFIER_BYTE_LENGTH,
+		KEY_MAX_IDENTIFIER_CHAR_LENGTH,
 		MAX_CONFIG_KEY		// keep it last
 	};
 
@@ -343,6 +345,10 @@ public:
 	bool getRemoteAccess() const;
 
 	bool getWireCompression() const;
+
+	int getMaxIdentifierByteLength() const;
+
+	int getMaxIdentifierCharLength() const;
 };
 
 // Implementation of interface to access master configuration file

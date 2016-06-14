@@ -380,6 +380,33 @@
 #
 #TempCacheLimit = 64M
 
+# ----------------------------
+# Maximum allowed identifier name length in bytes
+#
+# Sets a limit for the number of bytes in an identifier.
+#
+# Set to 31 to limit as Firebird 3 and previous versions.
+# Setting this value for all databases (including the security database) may cause problems.
+#
+# Per-database configurable.
+#
+# Type: integer
+#
+#MaxIdentifierByteLength = 252
+
+# ----------------------------
+# Maximum allowed identifier name length in characters
+#
+# Sets a limit for the number of characters in an identifier.
+#
+# Setting this value for all databases (including the security database) may cause problems.
+#
+# Per-database configurable.
+#
+# Type: integer
+#
+#MaxIdentifierCharLength = 63
+
 
 # ----------------------------
 #
