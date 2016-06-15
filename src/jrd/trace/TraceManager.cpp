@@ -170,6 +170,10 @@ void TraceManager::shutdown()
 
 void TraceManager::update_sessions()
 {
+	// Let be inactive until database is creating
+	if (attachment && (attachment->att_database->dbb_flags & DBB_creating))
+		return;
+
 	MemoryPool& pool = *getDefaultMemoryPool();
 	SortedArray<ULONG, InlineStorage<ULONG, 64> > liveSessions(pool);
 	HalfStaticArray<TraceSession*, 64> newSessions;
