@@ -243,6 +243,7 @@ IntlParametersBlock::TagType IntlSpbStart::checkTag(UCHAR tag, const char** tagN
 
 		case isc_action_svc_backup:
 		case isc_action_svc_restore:
+		case isc_action_svc_properties:
 		case isc_action_svc_repair:
 		case isc_action_svc_add_user:
 		case isc_action_svc_delete_user:
