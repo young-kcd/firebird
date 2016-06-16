@@ -2050,6 +2050,24 @@ void MemoryPool::deallocate(void* block)
 	lock.leave();
 }
 
+void* MemoryPool::allocateHugeBlock(size_t size)
+{
+	void* mem = external_alloc(size);
+	if (!mem)
+		Firebird::BadAlloc::raise();
+
+	increment_usage(size);
+	return mem;
+}
+
+
+void MemoryPool::deallocateHugeBlock(void* block, size_t size)
+{
+	external_free(block, size, false, false);
+	decrement_usage(size);
+}
+
+
 MemoryPool& AutoStorage::getAutoMemoryPool()
 {
 #ifndef SUPERCLIENT

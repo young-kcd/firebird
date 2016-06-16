@@ -378,22 +378,10 @@ public:
 
 	// Allocate huge memory block directly from OS. 
 	// In case of problems this method throws Firebird::BadAlloc
-	void* allocateHugeBlock(size_t size)
-	{
-		void* mem = external_alloc(size);
-		if (!mem) {
-			Firebird::BadAlloc::raise();
-		}
-		increment_usage(size);
-		return mem;
-	}
+	void* allocateHugeBlock(size_t size);
 
 	// Return huge memory block to the OS directly. 
-	void deallocateHugeBlock(void* block, size_t size)
-	{
-		external_free(block, size, false, false);
-		decrement_usage(size);
-	}
+	void deallocateHugeBlock(void* block, size_t size);
 
 	// Check pool for internal consistent. When enabled, call is very expensive
 	bool verify_pool(bool fast_checks_only = false);
