@@ -170,6 +170,10 @@ void TraceManager::shutdown()
 
 void TraceManager::update_sessions()
 {
+	// Let be inactive until database is creating
+	if (attachment && (attachment->att_database->dbb_flags & DBB_creating))
+		return;
+
 	MemoryPool& pool = *getDefaultMemoryPool();
 	SortedArray<ULONG, InlineStorage<ULONG, 64> > liveSessions(pool);
 	HalfStaticArray<TraceSession*, 64> newSessions;
@@ -256,7 +260,8 @@ void TraceManager::update_session(const TraceSession& session)
 					mapUser(s_user, t_role, NULL, NULL, session.ses_auth,
 						attachment->att_filename.c_str(), dbb->dbb_filename.c_str(),
 						dbb->dbb_config->getSecurityDatabase(),
-						dbb->dbb_provider->getCryptCallback());
+						dbb->dbb_provider->getCryptCallback(),
+						attachment->getInterface());
 				}
 				catch (const Firebird::Exception&)
 				{
@@ -287,7 +292,7 @@ void TraceManager::update_session(const TraceSession& session)
 				try
 				{
 					mapUser(s_user, t_role, NULL, NULL, session.ses_auth, "services manager", NULL,
-						config->getSecurityDatabase(), service->getCryptCallback());
+						config->getSecurityDatabase(), service->getCryptCallback(), NULL);
 				}
 				catch (const Firebird::Exception&)
 				{

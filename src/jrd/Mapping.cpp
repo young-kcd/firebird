@@ -877,14 +877,68 @@ void setupIpc()
 	mappingIpc->setup();
 }
 
+class DbHandle : public AutoPtr<IAttachment, SimpleRelease<IAttachment> >
+{
+public:
+	DbHandle()
+		: AutoPtr()
+	{ }
+
+	DbHandle(IAttachment* att)
+		: AutoPtr(att)
+	{
+		if (att)
+			att->addRef();
+	}
+
+	bool attach(FbLocalStatus& st, const char* aliasDb, ICryptKeyCallback* cryptCb)
+	{
+		bool down = false;		// true if on attach db is shutdown
+
+		if (hasData())
+			return down;
+
+		DispatcherPtr prov;
+		if (cryptCb)
+		{
+			prov->setDbCryptCallback(&st, cryptCb);
+			check("IProvider::setDbCryptCallback", &st);
+		}
+
+		ClumpletWriter embeddedSysdba(ClumpletWriter::Tagged, 1024, isc_dpb_version1);
+		embeddedSysdba.insertString(isc_dpb_user_name, SYSDBA_USER_NAME, fb_strlen(SYSDBA_USER_NAME));
+		embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
+		embeddedSysdba.insertByte(isc_dpb_map_attach, TRUE);
+		embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
+
+		IAttachment* att = prov->attachDatabase(&st, aliasDb,
+			embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
+
+		if (st->getState() & IStatus::STATE_ERRORS)
+		{
+			const ISC_STATUS* s = st->getErrors();
+			bool missing = fb_utils::containsErrorCode(s, isc_io_error);
+			down = fb_utils::containsErrorCode(s, isc_shutdown);
+			if (!(missing || down))
+				check("IProvider::attachDatabase", &st);
+
+			// down/missing security DB is not a reason to fail mapping
+		}
+		else
+			reset(att);
+
+		return down;
+	}
+};
+
 } // anonymous namespace
 
 namespace Jrd {
 
 bool mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
-	AuthReader::AuthBlock* newAuthBlock, const AuthReader::AuthBlock& authBlock,
-	const char* alias, const char* db, const char* securityAlias,
-	ICryptKeyCallback* cryptCb)
+	AuthReader::AuthBlock* newAuthBlock,
+	const AuthReader::AuthBlock& authBlock,	const char* alias, const char* db,
+	const char* securityAlias, ICryptKeyCallback* cryptCb, Firebird::IAttachment* att)
 {
 	AuthReader::Info info;
 
@@ -928,161 +982,93 @@ bool mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 	}
 
 	// Perform lock & map only when needed
-	if (flags != (FLAG_DB | FLAG_SEC))
+	if ((flags != (FLAG_DB | FLAG_SEC)) && authBlock.hasData())
 	{
 		AuthReader::Info info;
 		SyncType syncType = SYNC_SHARED;
-		IAttachment* iDb = NULL;
-		IAttachment* iSec = NULL;
 		FbLocalStatus st;
+		DbHandle iSec;
+		DbHandle iDb(att);
 
-		try
+		for (;;)
 		{
-			for (;;)
+			if (syncType == SYNC_EXCLUSIVE)
 			{
-				if (syncType == SYNC_EXCLUSIVE)
+				if (!iSec)
+					iSec.attach(st, securityAlias, cryptCb);
+
+				if (db && !iDb)
+					iDb.attach(st, alias, cryptCb);
+			}
+
+			MutexEnsureUnlock g(treeMutex, FB_FUNCTION);
+			g.enter();
+
+			Cache* cDb = NULL;
+			if (db)
+				cDb = locate(alias, db);
+			Cache* cSec = locate(securityAlias, securityDb);
+			if (cDb == cSec)
+				cDb = NULL;
+
+			SyncObject dummySync1, dummySync2;
+			Sync sDb(((!(flags & FLAG_DB)) && cDb) ? &cDb->syncObject : &dummySync1, FB_FUNCTION);
+			Sync sSec((!(flags & FLAG_SEC)) ? &cSec->syncObject : &dummySync2, FB_FUNCTION);
+
+			sSec.lock(syncType);
+			if (!sDb.lockConditional(syncType))
+			{
+				// Avoid deadlocks cause hell knows which db is security for which
+				sSec.unlock();
+				// Now safely wait for sSec
+				sDb.lock(syncType);
+				// and repeat whole operation
+				continue;
+			}
+
+			// Required cache(s) are locked somehow - release treeMutex
+			g.leave();
+
+			// Check is it required to populate caches from DB
+			if ((cDb && !cDb->dataFlag) || !cSec->dataFlag)
+			{
+				if (syncType != SYNC_EXCLUSIVE)
 				{
-					DispatcherPtr prov;
-					if (cryptCb)
-					{
-						prov->setDbCryptCallback(&st, cryptCb);
-						check("IProvider::setDbCryptCallback", &st);
-					}
-
-					ClumpletWriter embeddedSysdba(ClumpletWriter::Tagged,
-						MAX_DPB_SIZE, isc_dpb_version1);
-					embeddedSysdba.insertString(isc_dpb_user_name, SYSDBA_USER_NAME,
-						fb_strlen(SYSDBA_USER_NAME));
-					embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
-					embeddedSysdba.insertByte(isc_dpb_map_attach, TRUE);
-					embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
-
-					if (!iSec)
-					{
-						iSec = prov->attachDatabase(&st, securityAlias,
-							embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
-						if (st->getState() & IStatus::STATE_ERRORS)
-						{
-							const ISC_STATUS* s = st->getErrors();
-							bool missing = fb_utils::containsErrorCode(s, isc_io_error);
-							secDown = fb_utils::containsErrorCode(s, isc_shutdown);
-							if (!(missing || secDown))
-								check("IProvider::attachDatabase", &st);
-
-							// down/missing security DB is not a reason to fail mapping
-							iSec = NULL;
-						}
-					}
-
-					if (db && !iDb)
-					{
-						iDb = prov->attachDatabase(&st, alias,
-							embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
-
-						if (st->getState() & IStatus::STATE_ERRORS)
-						{
-							const ISC_STATUS* s = st->getErrors();
-							bool missing = fb_utils::containsErrorCode(s, isc_io_error);
-							dbDown = fb_utils::containsErrorCode(s, isc_shutdown);
-							if (!(missing || dbDown))
-								check("IProvider::attachDatabase", &st);
-
-							// down/missing DB is not a reason to fail mapping
-							iDb = NULL;
-						}
-					}
-				}
-
-				MutexEnsureUnlock g(treeMutex, FB_FUNCTION);
-				g.enter();
-
-				Cache* cDb = NULL;
-				if (db)
-					cDb = locate(alias, db);
-				Cache* cSec = locate(securityAlias, securityDb);
-				if (cDb == cSec)
-					cDb = NULL;
-
-				SyncObject dummySync1, dummySync2;
-				Sync sDb(((!(flags & FLAG_DB)) && cDb) ? &cDb->syncObject : &dummySync1, FB_FUNCTION);
-				Sync sSec((!(flags & FLAG_SEC)) ? &cSec->syncObject : &dummySync2, FB_FUNCTION);
-
-				sSec.lock(syncType);
-				if (!sDb.lockConditional(syncType))
-				{
-					// Avoid deadlocks cause hell knows which db is security for which
+					syncType = SYNC_EXCLUSIVE;
 					sSec.unlock();
-					// Now safely wait for sSec
-					sDb.lock(syncType);
-					// and repeat whole operation
+					sDb.unlock();
+
 					continue;
 				}
 
-				// Required cache(s) are locked somehow - release treeMutex
-				g.leave();
-
-				// Check is it required to populate caches from DB
-				if ((cDb && !cDb->dataFlag) || !cSec->dataFlag)
-				{
-					if (syncType != SYNC_EXCLUSIVE)
-					{
-						syncType = SYNC_EXCLUSIVE;
-						sSec.unlock();
-						sDb.unlock();
-
-						continue;
-					}
-
-					if (cDb)
-						cDb->populate(iDb, dbDown);
-					cSec->populate(iSec, secDown);
-
-					sSec.downgrade(SYNC_SHARED);
-					sDb.downgrade(SYNC_SHARED);
-				}
-
-				// use down flags from caches
 				if (cDb)
-					dbDown = cDb->downFlag;
-				secDown = cSec->downFlag;
+					cDb->populate(iDb, dbDown);
+				cSec->populate(iSec, secDown);
 
-				// Caches are ready somehow - proceed with analysis
-				AuthReader auth(authBlock);
+				sSec.downgrade(SYNC_SHARED);
+				sDb.downgrade(SYNC_SHARED);
+			}
 
-				// Map in simple mode first main, next security db
-				if (cDb && cDb->map4(false, flags & FLAG_DB, auth, info, newBlock))
-					break;
-				if (cSec->map4(false, flags & FLAG_SEC, auth, info, newBlock))
-					break;
+			// use down flags from caches
+			if (cDb)
+				dbDown = cDb->downFlag;
+			secDown = cSec->downFlag;
 
-				// Map in wildcard mode first main, next security db
-				if (cDb && cDb->map4(true, flags & FLAG_DB, auth, info, newBlock))
-					break;
-				cSec->map4(true, flags & FLAG_SEC, auth, info, newBlock);
+			// Caches are ready somehow - proceed with analysis
+			AuthReader auth(authBlock);
 
+			// Map in simple mode first main, next security db
+			if (cDb && cDb->map4(false, flags & FLAG_DB, auth, info, newBlock))
 				break;
-			}
+			if (cSec->map4(false, flags & FLAG_SEC, auth, info, newBlock))
+				break;
 
-			if (iDb)
-			{
-				iDb->detach(&st);
-				check("IAttachment::detach", &st);
-				iDb = NULL;
-			}
-			if (iSec)
-			{
-				iSec->detach(&st);
-				check("IAttachment::detach", &st);
-				iSec = NULL;
-			}
-		}
-		catch (const Exception&)
-		{
-			if (iDb)
-			  	iDb->release();
-			if (iSec)
-				iSec->release();
-			throw;
+			// Map in wildcard mode first main, next security db
+			if (cDb && cDb->map4(true, flags & FLAG_DB, auth, info, newBlock))
+				break;
+			cSec->map4(true, flags & FLAG_SEC, auth, info, newBlock);
+
+			break;
 		}
 
 		for (AuthReader rdr(newBlock); rdr.getInfo(info); rdr.moveNext())
@@ -1142,19 +1128,21 @@ bool mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 			v << Arg::Gds(isc_map_down);
 		v.raise();
 	}
-
-	name = fName.value.ToString();
-	trusted_role = fRole.value.ToString();
-	MAP_DEBUG(fprintf(stderr, "login=%s tr=%s\n", name.c_str(), trusted_role.c_str()));
-	if (auth_method)
-		*auth_method = fName.method.ToString();
-
-	if (newAuthBlock)
+	else
 	{
-		newAuthBlock->shrink(0);
-		newAuthBlock->push(newBlock.getBuffer(), newBlock.getBufferLength());
-		MAP_DEBUG(fprintf(stderr, "Saved to newAuthBlock %u bytes\n",
-			static_cast<unsigned>(newAuthBlock->getCount())));
+		name = fName.value.ToString();
+		trusted_role = fRole.value.ToString();
+		MAP_DEBUG(fprintf(stderr, "login=%s tr=%s\n", name.c_str(), trusted_role.c_str()));
+		if (auth_method)
+			*auth_method = fName.method.ToString();
+
+		if (newAuthBlock)
+		{
+			newAuthBlock->shrink(0);
+			newAuthBlock->push(newBlock.getBuffer(), newBlock.getBufferLength());
+			MAP_DEBUG(fprintf(stderr, "Saved to newAuthBlock %u bytes\n",
+				static_cast<unsigned>(newAuthBlock->getCount())));
+		}
 	}
 
 	return secDown || dbDown;
