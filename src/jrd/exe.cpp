@@ -813,6 +813,9 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 
 			CharSet* charSet = INTL_charset_lookup(tdbb, DSC_GET_CHARSET(desc));
 
+			if (!charSet->wellFormed(len, p))
+				ERR_post(Arg::Gds(isc_malformed_string));
+
 			const USHORT srcCharLen = charSet->length(len, p, false);
 			const USHORT dstCharLen = descLen / charSet->maxBytesPerChar();
 
@@ -823,9 +826,6 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 					Arg::Gds(isc_string_truncation) <<
 					Arg::Gds(isc_trunc_limits) << Arg::Num(dstCharLen) << Arg::Num(srcCharLen));
 			}
-
-			if (!charSet->wellFormed(len, p))
-				ERR_post(Arg::Gds(isc_malformed_string));
 		}
 		else if (desc->isBlob())
 		{
