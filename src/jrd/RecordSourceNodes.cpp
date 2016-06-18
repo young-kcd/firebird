@@ -666,8 +666,9 @@ RecordSourceNode* RelationSourceNode::pass1(thread_db* tdbb, CompilerScratch* cs
 
 	if (relation)
 	{
-		CMP_post_access(tdbb, csb, relation->rel_security_name,
-			(tail->csb_view) ? tail->csb_view->rel_id : (view ? view->rel_id : 0),
+		int viewId = tail->csb_view ? tail->csb_view->rel_id :
+			view ? view->rel_id : csb->csb_view ? csb->csb_view->rel_id : 0;
+		CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
 			SCL_select, SCL_object_table, relation->rel_name);
 	}
 
