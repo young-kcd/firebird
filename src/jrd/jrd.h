@@ -334,6 +334,7 @@ const USHORT TDBB_wait_cancel_disable	= 1024;		// don't cancel current waiting o
 const USHORT TDBB_cache_unwound			= 2048;		// page cache was unwound
 const USHORT TDBB_trusted_ddl			= 4096;		// skip DDL permission checks. Set after DDL permission check and clear after DDL execution
 const USHORT TDBB_reset_stack			= 8192;		// stack should be reset after stack overflow exception
+const USHORT TDBB_dfw_cleanup			= 16384;	// DFW cleanup phase is active
 
 class thread_db : public Firebird::ThreadData
 {
