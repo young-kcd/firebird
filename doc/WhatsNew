@@ -2,10 +2,20 @@
   * v2.5.6
   **************************
 
+    * Bugfix CORE-5275
+        Expression index may become inconsistent if CREATE INDEX was interrupted after b-tree creation but before commiting
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-5241
         Affected rows are not counted for some update operations with views
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5240
+        Crash while restoring a database with large page cache
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-5226
         Incorrect result set (missing records) may be returned by the ORDER plan query navigating on a descending index
@@ -81,6 +91,11 @@
         Incorrect number of affected rows for UPDATE against VIEW created WITH CHECK OPTION
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4817
+        ISQL doesn`t show number of affected rows for "MERGE ... WHEN MATCHING" in case when this number surely > 0
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
 
     * Bugfix CORE-4645
         Bugcheck 165 (cannot find tip page)
