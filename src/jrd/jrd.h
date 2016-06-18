@@ -789,7 +789,7 @@ const USHORT TDBB_use_db_page_space		= 512;	// use database (not temporary) page
 const USHORT TDBB_detaching				= 1024;	// detach is in progress
 const USHORT TDBB_wait_cancel_disable	= 2048;	// don't cancel current waiting operation
 const USHORT TDBB_cache_unwound			= 4096;	// page cache was unwound 
-
+const USHORT TDBB_dfw_cleanup			= 8192;	// DFW cleanup phase is active
 
 class ThreadContextHolder
 {
