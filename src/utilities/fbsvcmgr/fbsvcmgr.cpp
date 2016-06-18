@@ -942,23 +942,26 @@ bool printInfo(const char* p, size_t pSize, UserPrint& up, ULONG& stdinRq)
 
 // print known switches help
 
+const char* const fileTest = "test.fbsvcmgr";
+
 struct TypeText
 {
 	PopulateFunction* populate;
 	const char* text;
+	const char* testArg;
 } typeText[] = {
-	{ putStringArgument, "string value" },
-	{ putFileArgument, "file name" },
-	{ putFileFromArgument, "file name" },
-	{ putAccessMode, "prp_am_readonly | prp_am_readwrite" },
-	{ putWriteMode, "prp_wm_async | prp_wm_sync" },
-	{ putReserveSpace, "prp_res_use_full | prp_res" },
-	{ putShutdownMode, "prp_sm_normal | prp_sm_multi | prp_sm_single | prp_sm_full" },
-	{ putIntArgument, "int32 value" },
-	{ putBigIntArgument, "int64 value" },
-	{ putOption, NULL },
-	{ putSingleTag, NULL },
-	{ NULL, NULL }
+	{ putStringArgument, "string value", "text" },
+	{ putFileArgument, "file name", fileTest },
+	{ putFileFromArgument, "file name", fileTest },
+	{ putAccessMode, "prp_am_readonly | prp_am_readwrite", "prp_am_readonly" },
+	{ putWriteMode, "prp_wm_async | prp_wm_sync", "prp_wm_sync" },
+	{ putReserveSpace, "prp_res_use_full | prp_res", "prp_res_use_full" },
+	{ putShutdownMode, "prp_sm_normal | prp_sm_multi | prp_sm_single | prp_sm_full", "prp_sm_single" },
+	{ putIntArgument, "int32 value", "123" },
+	{ putBigIntArgument, "int64 value", "456" },
+	{ putOption, NULL, "" },
+	{ putSingleTag, NULL, "" },
+	{ NULL, NULL , NULL }
 };
 
 void printHelp(unsigned int offset, const SvcSwitches* sw)
@@ -989,6 +992,82 @@ void printHelp(unsigned int offset, const SvcSwitches* sw)
 		fb_assert(tt->populate);
 	}
 }
+
+#ifdef DEV_BUILD
+void testSvc(isc_svc_handle* h, ClumpletWriter& spb, const SvcSwitches* sw)
+{
+	for (; sw->name; ++sw)
+	{
+		TypeText* tt = typeText;
+		for (; tt->populate; ++tt)
+		{
+			if (sw->populate == tt->populate)
+			{
+				// some tricks to emulate 'char* argv[]'
+				char x[100];
+				strcpy(x, tt->testArg);
+				char* y = x;
+				char** z = &y;
+
+				sw->populate(z, spb, sw->tag);
+				if (sw->options)
+					testSvc(NULL, spb, sw->options);
+
+				if (h)
+				{
+					ISC_STATUS_ARRAY status;
+					if (isc_service_start(status, h, 0,
+						static_cast<USHORT>(spb.getBufferLength()),
+						reinterpret_cast<const char*>(spb.getBuffer())))
+					{
+						isc_print_status(status);
+						isc_service_detach(status, h);
+						exit(1);
+					}
+					spb.clear();
+				}
+
+				break;
+			}
+		}
+
+		fb_assert(tt->populate);
+	}
+}
+
+void testServices()
+{
+	FILE* f = fopen(fileTest, "w");
+	if (!f)
+	{
+		perror(fileTest);
+		exit(1);
+	}
+	fputs(fileTest, f);
+	fclose(f);
+
+	ISC_STATUS_ARRAY status;
+
+	ClumpletWriter spbAtt(ClumpletWriter::spbList, 1024 * 1024);
+	//spbAtt.insertString(isc_spb_sql_role_name, "@@@");
+	testSvc(NULL, spbAtt, attSwitch);
+
+	isc_svc_handle svc_handle = 0;
+	if (isc_service_attach(status, 0, "@@@", &svc_handle,
+				static_cast<USHORT>(spbAtt.getBufferLength()),
+				reinterpret_cast<const char*>(spbAtt.getBuffer())))
+	{
+		isc_print_status(status);
+		exit(1);
+	}
+
+	ClumpletWriter spbStart(ClumpletWriter::SpbStart,  1024 * 1024);
+	testSvc(&svc_handle, spbStart, actionSwitch);
+
+	isc_service_detach(status, &svc_handle);
+}
+
+#endif //DEV_BUILD
 
 // short usage from firebird.msg
 
@@ -1037,6 +1116,14 @@ int main(int ac, char** av)
 		usage(ac == 2);
 		return 1;
 	}
+
+#ifdef DEV_BUILD
+	if (ac == 2 && strcmp(av[1], "-@") == 0)
+	{
+		testServices();
+		return 0;
+	}
+#endif
 
 	if (ac == 2 && (strcmp(av[1], "-z") == 0 || strcmp(av[1], "-Z") == 0))
 	{
