@@ -43,7 +43,7 @@ public:
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -63,7 +63,7 @@ public:
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -84,15 +84,19 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual AggNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
-	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+
+	virtual void aggSetup(bool& wantWinPass) const
+	{
+		wantWinPass = true;
+	}
+
+	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
-
-private:
-	USHORT tempImpure;
 };
 
 // CUME_DIST function.
@@ -107,15 +111,19 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual AggNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
-	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+
+	virtual void aggSetup(bool& wantWinPass) const
+	{
+		wantWinPass = true;
+	}
+
+	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
-
-private:
-	USHORT tempImpure;
 };
 
 // ROW_NUMBER function.
@@ -131,14 +139,14 @@ public:
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 	virtual void aggSetup(bool& wantWinPass) const
 	{
 		wantWinPass = true;
 	}
 
-	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window, FB_UINT64 /*win_rou_count*/) const;
+	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -157,14 +165,14 @@ public:
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 	virtual void aggSetup(bool& wantWinPass) const
 	{
 		wantWinPass = true;
 	}
 
-	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window, FB_UINT64 /*win_rou_count*/) const;
+	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -185,14 +193,14 @@ public:
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 	virtual void aggSetup(bool& wantWinPass) const
 	{
 		wantWinPass = true;
 	}
 
-	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window, FB_UINT64 /*win_rou_count*/) const;
+	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -221,14 +229,14 @@ public:
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 	virtual void aggSetup(bool& wantWinPass) const
 	{
 		wantWinPass = true;
 	}
 
-	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window, FB_UINT64 /*win_rou_count*/) const;
+	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -253,14 +261,14 @@ public:
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 	virtual void aggSetup(bool& wantWinPass) const
 	{
 		wantWinPass = true;
 	}
 
-	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window, FB_UINT64 /*win_rou_count*/) const;
+	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
 
 protected:
 	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
@@ -321,22 +329,28 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual AggNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
-	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
-	virtual bool shouldCallWinPass() const
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+
+	virtual void aggSetup(bool& wantWinPass) const
 	{
-		return true;
+		wantWinPass = true;
 	}
 
-	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window, FB_UINT64 /*win_rou_count*/) const;
+	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
 
 private:
-	USHORT tempImpure;
+	struct ThisImpure
+	{
+		SINT64 buckets;
+	};
+
+	USHORT thisImpureOffset;
 };
 
 

@@ -7844,10 +7844,7 @@ non_reserved_word
 	| LAST_VALUE
 	| LAG
 	| LEAD
-	| NTILE
 	| RANK
-	| PERCENT_RANK
-	| CUME_DIST
 	| ROW_NUMBER
 	| USAGE
 	| LINGER
@@ -7856,7 +7853,10 @@ non_reserved_word
 	| SERVERWIDE
 	| INCREMENT
 	| TRUSTED
-	| RDB_ROLE_IN_USE		// added in FB 4.0
+	| CUME_DIST				// added in FB 4.0
+	| NTILE
+	| PERCENT_RANK
+	| RDB_ROLE_IN_USE
 	| RDB_SYSTEM_PRIVILEGE
 	| PRIVILEGE
 	| SYSTEM
