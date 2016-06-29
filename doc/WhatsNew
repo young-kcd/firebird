@@ -2,6 +2,11 @@
   * v2.5.6
   **************************
 
+    * Bugfix CORE-5295
+        Validation could read after the end-of-file when handle multifile database
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-5275
         Expression index may become inconsistent if CREATE INDEX was interrupted after b-tree creation but before commiting
       Contributor(s):
