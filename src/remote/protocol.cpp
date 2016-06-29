@@ -796,6 +796,11 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		{
 			P_CRYPT_CALLBACK* cc = &p->p_cc;
 			MAP(xdr_cstring, cc->p_cc_data);
+
+			rem_port* port = (rem_port*) xdrs->x_public;
+			if (port->port_protocol >= PROTOCOL_VERSION14)
+				MAP(xdr_short, reinterpret_cast<SSHORT&>(cc->p_cc_reply));
+
 			DEBUG_PRINTSIZE(xdrs, p->p_operation);
 
 			return P_TRUE(xdrs, p);

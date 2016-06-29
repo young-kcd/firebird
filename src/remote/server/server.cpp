@@ -1716,7 +1716,8 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 		if ((protocol->p_cnct_version == PROTOCOL_VERSION10 ||
 			 protocol->p_cnct_version == PROTOCOL_VERSION11 ||
 			 protocol->p_cnct_version == PROTOCOL_VERSION12 ||
-			 protocol->p_cnct_version == PROTOCOL_VERSION13) &&
+			 protocol->p_cnct_version == PROTOCOL_VERSION13 ||
+			 protocol->p_cnct_version == PROTOCOL_VERSION14) &&
 			 (protocol->p_cnct_architecture == arch_generic ||
 			  protocol->p_cnct_architecture == ARCHITECTURE) &&
 			protocol->p_cnct_weight >= weight)
@@ -6000,6 +6001,7 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 
 		port_async_receive->clearRecvQue();
 		port_async_receive->port_receive.x_handy = 0;
+		port_async_receive->port_protocol = port_protocol;
 		memcpy(port_async_receive->port_queue.add().getBuffer(dataSize), buffer, dataSize);
 
 		// It's required, that async packets follow simple rule:
