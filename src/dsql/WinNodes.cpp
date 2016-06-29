@@ -79,9 +79,12 @@ ValueExprNode* DenseRankWinNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) c
 	return FB_NEW_POOL(*tdbb->getDefaultPool()) DenseRankWinNode(*tdbb->getDefaultPool());
 }
 
-void DenseRankWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
+void DenseRankWinNode::aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const
 {
-	AggNode::aggInit(tdbb, request);
+	AggNode::aggInit(tdbb, request, aggType);
+
+	if (aggType != AGG_TYPE_GROUP)
+		return;
 
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	impure->make_int64(0, 0);
@@ -94,7 +97,10 @@ void DenseRankWinNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /
 dsc* DenseRankWinNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
-	++impure->vlu_misc.vlu_int64;
+
+	if (!ordered || impure->aggType == AGG_TYPE_ORDER)
+		++impure->vlu_misc.vlu_int64;
+
 	return &impure->vlu_desc;
 }
 
@@ -152,9 +158,12 @@ AggNode* RankWinNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-void RankWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
+void RankWinNode::aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const
 {
-	AggNode::aggInit(tdbb, request);
+	AggNode::aggInit(tdbb, request, aggType);
+
+	if (aggType != AGG_TYPE_GROUP)
+		return;
 
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	impure->make_int64(1, 0);
@@ -164,7 +173,9 @@ void RankWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
 void RankWinNode::aggPass(thread_db* /*tdbb*/, jrd_req* request, dsc* /*desc*/) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
-	++impure->vlux_count;
+
+	if (!ordered || impure->aggType == AGG_TYPE_ORDER)
+		++impure->vlux_count;
 }
 
 dsc* RankWinNode::aggExecute(thread_db* tdbb, jrd_req* request) const
@@ -226,9 +237,12 @@ ValueExprNode* RowNumberWinNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) c
 	return FB_NEW_POOL(*tdbb->getDefaultPool()) RowNumberWinNode(*tdbb->getDefaultPool());
 }
 
-void RowNumberWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
+void RowNumberWinNode::aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const
 {
-	AggNode::aggInit(tdbb, request);
+	AggNode::aggInit(tdbb, request, aggType);
+
+	if (aggType != AGG_TYPE_GROUP)
+		return;
 
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	impure->make_int64(0, 0);
@@ -296,9 +310,12 @@ ValueExprNode* FirstValueWinNode::copy(thread_db* tdbb, NodeCopier& copier) cons
 	return node;
 }
 
-void FirstValueWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
+void FirstValueWinNode::aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const
 {
-	AggNode::aggInit(tdbb, request);
+	AggNode::aggInit(tdbb, request, aggType);
+
+	if (aggType != AGG_TYPE_GROUP)
+		return;
 
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	impure->make_int64(0, 0);
@@ -376,9 +393,9 @@ ValueExprNode* LastValueWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-void LastValueWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
+void LastValueWinNode::aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const
 {
-	AggNode::aggInit(tdbb, request);
+	AggNode::aggInit(tdbb, request, aggType);
 }
 
 void LastValueWinNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /*desc*/) const
@@ -460,9 +477,12 @@ ValueExprNode* NthValueWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-void NthValueWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
+void NthValueWinNode::aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const
 {
-	AggNode::aggInit(tdbb, request);
+	AggNode::aggInit(tdbb, request, aggType);
+
+	if (aggType != AGG_TYPE_GROUP)
+		return;
 
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	impure->make_int64(0, 0);
@@ -573,9 +593,9 @@ void LagLeadWinNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	arg->getDesc(tdbb, csb, desc);
 }
 
-void LagLeadWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
+void LagLeadWinNode::aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const
 {
-	AggNode::aggInit(tdbb, request);
+	AggNode::aggInit(tdbb, request, aggType);
 }
 
 void LagLeadWinNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /*desc*/) const

@@ -969,9 +969,8 @@ public:
 		}
 	}
 
-	virtual bool shouldCallWinPass() const
+	virtual void aggSetup(bool& wantWinPass) const
 	{
-		return false;
 	}
 
 	virtual dsc* winPass(thread_db* /*tdbb*/, jrd_req* /*request*/, SlidingWindow* /*window*/) const
@@ -979,7 +978,7 @@ public:
 		return NULL;
 	}
 
-	virtual void aggInit(thread_db* tdbb, jrd_req* request) const = 0;	// pure, but defined
+	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const = 0;	// pure, but defined
 	virtual void aggFinish(thread_db* tdbb, jrd_req* request) const;
 	virtual bool aggPass(thread_db* tdbb, jrd_req* request) const;
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
@@ -1004,6 +1003,7 @@ public:
 	NestConst<ValueExprNode> arg;
 	const AggregateSort* asb;
 	bool indexed;
+	bool ordered;
 
 private:
 	static Factory* factories;
