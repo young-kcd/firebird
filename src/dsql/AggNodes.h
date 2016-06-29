@@ -45,7 +45,7 @@ public:
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -79,7 +79,7 @@ public:
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -103,7 +103,7 @@ public:
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -123,7 +123,7 @@ public:
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -149,7 +149,7 @@ public:
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -186,7 +186,7 @@ public:
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -227,7 +227,7 @@ public:
 	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual bool aggPass(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -274,7 +274,7 @@ public:
 	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual bool aggPass(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
@@ -303,7 +303,7 @@ public:
 	virtual void aggInit(thread_db* tdbb, jrd_req* request, AggType aggType) const;
 	virtual bool aggPass(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
-	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request, FB_UINT64 win_row_count) const;
 
 protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
