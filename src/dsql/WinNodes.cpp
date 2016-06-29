@@ -419,8 +419,7 @@ void RowNumberWinNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /
 
 dsc* RowNumberWinNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
 {
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
-	return &impure->vlu_desc;
+	return NULL;
 }
 
 dsc* RowNumberWinNode::winPass(thread_db* /*tdbb*/, jrd_req* request, SlidingWindow* /*window*/) const
