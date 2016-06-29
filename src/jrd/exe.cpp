@@ -1029,7 +1029,14 @@ static void execute_looper(thread_db* tdbb,
 	if (!(request->req_flags & req_proc_fetch) && request->req_transaction)
 	{
 		if (transaction && !(transaction->tra_flags & TRA_system))
-			transaction->startSavepoint();
+		{
+			if (request->req_savepoints)
+			{
+				request->req_savepoints = request->req_savepoints->moveToStack(transaction->tra_save_point);
+			}
+			else
+				transaction->startSavepoint();
+		}
 	}
 
 	request->req_flags &= ~req_stall;
@@ -1046,8 +1053,13 @@ static void execute_looper(thread_db* tdbb,
 			transaction->tra_save_point->isSystem() &&
 			!transaction->tra_save_point->isChanging())
 		{
+			Savepoint* savepoint = transaction->tra_save_point;
 			// Forget about any undo for this verb
 			transaction->rollforwardSavepoint(tdbb);
+			// Preserve savepoint for reuse
+			fb_assert(savepoint == transaction->tra_save_free);
+			transaction->tra_save_free = savepoint->moveToStack(request->req_savepoints);
+			fb_assert(savepoint != transaction->tra_save_free);
 		}
 	}
 }
