@@ -327,7 +327,7 @@ class dsql_udf : public pool_alloc<dsql_type_udf>
 {
 public:
 	explicit dsql_udf(MemoryPool& p)
-		: udf_name(p), udf_arguments(p)
+		: udf_name(p), udf_arguments(p), udf_fld_system_arguments(p)
 	{
 	}
 
@@ -340,6 +340,7 @@ public:
     USHORT      udf_flags;
 	Firebird::QualifiedName udf_name;
 	Firebird::Array<dsc> udf_arguments;
+	Firebird::Array<bool> udf_fld_system_arguments;
 	bool		udf_private;	// Packaged private function
 	SSHORT		udf_def_count;	// number of inputs with default values
 };

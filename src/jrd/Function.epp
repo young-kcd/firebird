@@ -30,6 +30,7 @@
 #include "../jrd/blb.h"
 #include "../jrd/met.h"
 #include "../jrd/align.h"
+#include "../jrd/DataTypeUtil.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
 #include "../jrd/blb_proto.h"
@@ -301,6 +302,10 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 											F.RDB$FIELD_SCALE, F.RDB$FIELD_LENGTH,
 											F.RDB$FIELD_SUB_TYPE, F.RDB$CHARACTER_SET_ID,
 											(collation_id_null ? F.RDB$COLLATION_ID : collation_id));
+
+						// UNICODE_FSS_HACK
+						if (F.RDB$SYSTEM_FLAG == 1)
+							DataTypeUtilBase::adjustSysFieldLength(&parameter->prm_desc);
 
 						if (default_value_null && fb_utils::implicit_domain(F.RDB$FIELD_NAME))
 						{

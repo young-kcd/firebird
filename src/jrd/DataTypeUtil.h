@@ -40,6 +40,7 @@ public:
 public:
 	static SSHORT getResultBlobSubType(const dsc* value1, const dsc* value2);
 	static USHORT getResultTextType(const dsc* value1, const dsc* value2);
+	static void adjustSysFieldLength(dsc* desc);	//// UNICODE_FSS_HACK
 
 public:
 	void makeFromList(dsc* result, const char* expressionName, int argsCount, const dsc** args);

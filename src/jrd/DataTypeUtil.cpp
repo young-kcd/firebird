@@ -75,6 +75,24 @@ USHORT DataTypeUtilBase::getResultTextType(const dsc* value1, const dsc* value2)
 }
 
 
+void DataTypeUtilBase::adjustSysFieldLength(dsc* desc)
+{
+	if (INTL_GET_CHARSET(desc) != CS_UNICODE_FSS)
+		return;
+
+	USHORT adjust = 0;
+
+	if (desc->dsc_dtype == dtype_varying)
+		adjust = sizeof(USHORT);
+	else if (desc->dsc_dtype == dtype_cstring)
+		adjust = 1;
+
+	desc->dsc_length -= adjust;
+	desc->dsc_length *= 3;
+	desc->dsc_length += adjust;
+}
+
+
 // This function is made to determine a output descriptor from a given list
 // of expressions according to the latest SQL-standard that was available.
 // (ISO/ANSI SQL:200n WG3:DRS-013 H2-2002-358 August, 2002).

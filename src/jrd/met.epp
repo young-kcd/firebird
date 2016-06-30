@@ -61,6 +61,7 @@
 #include "../jrd/intl.h"
 #include "../jrd/align.h"
 #include "../jrd/flu.h"
+#include "../jrd/DataTypeUtil.h"
 #include "../jrd/blob_filter.h"
 #include "../dsql/StmtNodes.h"
 #include "../intl/charsets.h"
@@ -224,6 +225,10 @@ void MET_get_domain(thread_db* tdbb, MemoryPool& csbPool, const MetaName& name, 
 		{
 			found = true;
 
+			// UNICODE_FSS_HACK
+			if (FLD.RDB$SYSTEM_FLAG == 1)
+				DataTypeUtilBase::adjustSysFieldLength(desc);
+
 			if (fieldInfo)
 			{
 				fieldInfo->nullable = FLD.RDB$NULL_FLAG.NULL || FLD.RDB$NULL_FLAG == 0;
@@ -291,6 +296,11 @@ MetaName MET_get_relation_field(thread_db* tdbb, MemoryPool& csbPool, const Meta
 								(RFL.RDB$COLLATION_ID.NULL ? FLD.RDB$COLLATION_ID : RFL.RDB$COLLATION_ID)))
 		{
 			found = true;
+
+			// UNICODE_FSS_HACK
+			if (FLD.RDB$SYSTEM_FLAG == 1)
+				DataTypeUtilBase::adjustSysFieldLength(desc);
+
 			sourceName = RFL.RDB$FIELD_SOURCE;
 
 			if (fieldInfo)
@@ -3369,6 +3379,10 @@ jrd_prc* MET_procedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
 									F.RDB$FIELD_SCALE, F.RDB$FIELD_LENGTH,
 									F.RDB$FIELD_SUB_TYPE, F.RDB$CHARACTER_SET_ID,
 									(pa_collation_id_null ? F.RDB$COLLATION_ID : pa_collation_id));
+
+				// UNICODE_FSS_HACK
+				if (F.RDB$SYSTEM_FLAG == 1)
+					DataTypeUtilBase::adjustSysFieldLength(&parameter->prm_desc);
 
 				if (PA.RDB$PARAMETER_TYPE == 0 &&
 					(!pa_default_value_null ||

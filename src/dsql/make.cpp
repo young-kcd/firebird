@@ -63,21 +63,6 @@ using namespace Jrd;
 using namespace Firebird;
 
 
-static void adjustLength(dsc* desc)
-{
-	USHORT adjust = 0;
-
-	if (desc->dsc_dtype == dtype_varying)
-		adjust = sizeof(USHORT);
-	else if (desc->dsc_dtype == dtype_cstring)
-		adjust = 1;
-
-	desc->dsc_length -= adjust;
-	desc->dsc_length *= 3;
-	desc->dsc_length += adjust;
-}
-
-
 LiteralNode* MAKE_const_slong(SLONG value)
 {
 	thread_db* tdbb = JRD_get_thread_data();
@@ -277,7 +262,7 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 	// UNICODE_FSS_HACK
 	// check if the field is a system domain and CHARACTER SET is UNICODE_FSS
 	if (desc->isText() && (INTL_GET_CHARSET(desc) == CS_UNICODE_FSS) && (field->flags & FLD_system))
-		adjustLength(desc);
+		DataTypeUtilBase::adjustSysFieldLength(desc);
 }
 
 
@@ -350,7 +335,7 @@ FieldNode* MAKE_field(dsql_ctx* context, dsql_fld* field, ValueListNode* indices
 			if ((field->flags & FLD_system) && node->nodDesc.dsc_dtype <= dtype_varying &&
 				INTL_GET_CHARSET(&node->nodDesc) == CS_METADATA)
 			{
-				adjustLength(&node->nodDesc);
+				DataTypeUtilBase::adjustSysFieldLength(&node->nodDesc);
 			}
 		}
 		else

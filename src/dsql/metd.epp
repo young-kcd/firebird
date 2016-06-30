@@ -980,6 +980,8 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 					}
 
 					userFunc->udf_arguments.add(d);
+					userFunc->udf_fld_system_arguments.add(
+						isSystemDomain(tdbb, transaction, X.RDB$FIELD_SOURCE));
 				}
 			}
 			END_FOR
@@ -1052,6 +1054,7 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 				}
 
 				userFunc->udf_arguments.add(d);
+				userFunc->udf_fld_system_arguments.add(false);
 			}
 		}
 	}
