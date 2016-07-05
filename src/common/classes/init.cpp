@@ -29,6 +29,14 @@
 #include "alloc.h"
 #include "../common/SimpleStatusVector.h"
 #include "../common/dllinst.h"
+#include "../common/os/os_utils.h"
+
+#ifdef HAVE_DLADDR
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <dlfcn.h>
+#endif // HAVE_DLADDR
 
 // Setting this define helps (with AV at exit time) detect globals
 // with destructors, declared not using InstanceControl.
@@ -100,6 +108,34 @@ namespace
 
 		try
 		{
+#ifdef DEBUG_GDS_ALLOC
+			// In Debug mode - this will report all server-side memory leaks due to remote access
+			FILE* file = NULL;
+			{
+				Firebird::PathName name = fb_utils::getPrefix(
+					Firebird::IConfigManager::DIR_LOG, "memdebug.log");
+#ifdef HAVE_DLADDR
+				Dl_info path;
+				if (dladdr((void *)(&allClean), &path))
+				{
+					name = path.dli_fname;
+					name += ".memdebug";
+				}
+				else
+				{
+					fprintf(stderr, "dladdr: %s\n", dlerror());
+				}
+#endif
+				file = os_utils::fopen(name.c_str(), "w+t");
+			}
+
+			if (file)
+			{
+				getDefaultMemoryPool()->print_contents(file,
+					Firebird::MemoryPool::PRINT_USED_ONLY | Firebird::MemoryPool::PRINT_RECURSIVE);
+				fclose(file);
+			}
+#endif
 			Firebird::MemoryPool::cleanup();
 		}
 		catch (...)

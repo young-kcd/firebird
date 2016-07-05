@@ -121,7 +121,7 @@ private:
 };
 
 template <typename Impl, typename Intf>
-class YHelper : public Firebird::StdPlugin<Intf>, public YObject
+class YHelper : public Firebird::RefCntIface<Intf>, public YObject
 {
 public:
 	typedef typename Intf::Declaration NextInterface;
@@ -129,10 +129,15 @@ public:
 
 	static const unsigned DF_RELEASE =		0x1;
 
-	explicit YHelper(NextInterface* aNext);
+	explicit YHelper(NextInterface* aNext
+#ifdef DEV_BUILD
+										, const char* M = NULL
+#endif
+										);
 
 	int release()
 	{
+		Firebird::RefCntIface<Intf>::RefCntDPrt('-');
 		int rc = --(this->refCounter);
 		if (rc == 0)
 		{
