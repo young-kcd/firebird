@@ -77,8 +77,8 @@ bool openDb(const char* securityDb, RefPtr<IAttachment>& att, RefPtr<ITransactio
 	embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
 
 	FbLocalStatus st;
-	att = prov->attachDatabase(&st, securityDb,
-		embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
+	att.assignRefNoIncr(prov->attachDatabase(&st, securityDb,
+		embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer()));
 	if (st->getState() & IStatus::STATE_ERRORS)
 	{
 		if (!fb_utils::containsErrorCode(st->getErrors(), isc_io_error))
@@ -91,7 +91,7 @@ bool openDb(const char* securityDb, RefPtr<IAttachment>& att, RefPtr<ITransactio
 	ClumpletWriter readOnly(ClumpletWriter::Tpb, MAX_DPB_SIZE, isc_tpb_version1);
 	readOnly.insertTag(isc_tpb_read);
 	readOnly.insertTag(isc_tpb_wait);
-	tra = att->startTransaction(&st, readOnly.getBufferLength(), readOnly.getBuffer());
+	tra.assignRefNoIncr(att->startTransaction(&st, readOnly.getBufferLength(), readOnly.getBuffer()));
 	check("IAttachment::startTransaction", &st);
 
 	return true;
@@ -260,7 +260,7 @@ RecordBuffer* DbCreatorsList::getList(thread_db* tdbb, jrd_rel* relation)
 	Field<Varying> u(gr, MAX_SQL_IDENTIFIER_LEN);
 
 	FbLocalStatus st;
-	RefPtr<IResultSet> curs(att->openCursor(&st, tra, 0,
+	RefPtr<IResultSet> curs(REF_NO_INCR, att->openCursor(&st, tra, 0,
 		"select RDB$USER_TYPE, RDB$USER from RDB$DB_CREATORS",
 		SQL_DIALECT_V6, NULL, NULL, gr.getMetadata(), NULL, 0));
 

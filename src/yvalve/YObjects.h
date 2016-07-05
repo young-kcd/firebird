@@ -121,7 +121,7 @@ private:
 };
 
 template <typename Impl, typename Intf>
-class YHelper : public Firebird::StdPlugin<Intf>, public YObject
+class YHelper : public Firebird::RefCntIface<Intf>, public YObject
 {
 public:
 	typedef typename Intf::Declaration NextInterface;
