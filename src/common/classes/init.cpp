@@ -92,6 +92,43 @@ namespace
 		if (dontCleanup)
 			return;
 
+#ifdef DEBUG_GDS_ALLOC
+		Firebird::AutoPtr<FILE, Firebird::FileClose> file;
+		{
+			Firebird::PathName name = fb_utils::getPrefix(
+				Firebird::IConfigManager::DIR_LOG, "memdebug.log");
+#ifdef HAVE_DLADDR
+			Dl_info path;
+			if (dladdr((void *)(&allClean), &path))
+			{
+				name = path.dli_fname;
+				name += ".memdebug";
+			}
+			else
+			{
+				fprintf(stderr, "dladdr: %s\n", dlerror());
+			}
+#else if defined(WIN_32)
+			HMODULE hmod = 0;
+			GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+				(LPCTSTR) &allClean,
+				&hmod);
+
+			if (hmod)
+			{
+				char moduleName[MAX_PATH];
+				DWORD len = GetModuleFileName(hmod, moduleName, MAX_PATH);
+				if (len < MAX_PATH)
+				{
+					name = moduleName;
+					name += ".memdebug.log";
+				}
+			}
+#endif	// HAVE_DLADDR
+			file = os_utils::fopen(name.c_str(), "w+t");
+		}
+#endif	// DEBUG_GDS_ALLOC
+
 		Firebird::InstanceControl::destructors();
 
 		if (dontCleanup)
@@ -110,30 +147,12 @@ namespace
 		{
 #ifdef DEBUG_GDS_ALLOC
 			// In Debug mode - this will report all server-side memory leaks due to remote access
-			FILE* file = NULL;
-			{
-				Firebird::PathName name = fb_utils::getPrefix(
-					Firebird::IConfigManager::DIR_LOG, "memdebug.log");
-#ifdef HAVE_DLADDR
-				Dl_info path;
-				if (dladdr((void *)(&allClean), &path))
-				{
-					name = path.dli_fname;
-					name += ".memdebug";
-				}
-				else
-				{
-					fprintf(stderr, "dladdr: %s\n", dlerror());
-				}
-#endif
-				file = os_utils::fopen(name.c_str(), "w+t");
-			}
-
 			if (file)
 			{
 				getDefaultMemoryPool()->print_contents(file,
 					Firebird::MemoryPool::PRINT_USED_ONLY | Firebird::MemoryPool::PRINT_RECURSIVE);
 				fclose(file);
+				file = NULL;
 			}
 #endif
 			Firebird::MemoryPool::cleanup();
