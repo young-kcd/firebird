@@ -11207,8 +11207,11 @@ ValueExprNode* UdfCallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		dsc desc = node->dsqlFunction->udf_arguments[pos];
 
 		// UNICODE_FSS_HACK
-		if (node->dsqlFunction->udf_fld_system_arguments[pos])
+		if ((pos < node->dsqlFunction->udf_fld_system_arguments.getCount()) && 
+			node->dsqlFunction->udf_fld_system_arguments[pos])
+		{
 			DataTypeUtilBase::adjustSysFieldLength(&desc);
+		}
 
 		if (pos < node->dsqlFunction->udf_arguments.getCount())
 			PASS1_set_parameter_type(dsqlScratch, *ptr, &desc, false);
