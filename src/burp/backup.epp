@@ -4379,7 +4379,8 @@ void write_user_privileges()
 		// msg 152 writing privilege for user %s
 		PUT_TEXT (att_priv_grantor, X.RDB$GRANTOR);
 		PUT_TEXT (att_priv_privilege, X.RDB$PRIVILEGE);
-		put_int32 (att_priv_grant_option, X.RDB$GRANT_OPTION);
+		if (!X.RDB$GRANT_OPTION.NULL)
+			put_int32 (att_priv_grant_option, X.RDB$GRANT_OPTION);
 		PUT_TEXT (att_priv_object_name, X.RDB$RELATION_NAME);
 		if (!X.RDB$FIELD_NAME.NULL)
 		   PUT_TEXT (att_priv_field_name, X.RDB$FIELD_NAME);
