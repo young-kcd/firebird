@@ -95,14 +95,13 @@ namespace
 #ifdef DEBUG_GDS_ALLOC
 		Firebird::AutoPtr<FILE, Firebird::FileClose> file;
 		{
-			Firebird::PathName name = fb_utils::getPrefix(
-				Firebird::IConfigManager::DIR_LOG, "memdebug.log");
+			Firebird::PathName name = "memdebug.log";
 #ifdef HAVE_DLADDR
 			Dl_info path;
 			if (dladdr((void *)(&allClean), &path))
 			{
 				name = path.dli_fname;
-				name += ".memdebug";
+				name += ".memdebug.log";
 			}
 			else
 			{
@@ -151,7 +150,6 @@ namespace
 			{
 				getDefaultMemoryPool()->print_contents(file,
 					Firebird::MemoryPool::PRINT_USED_ONLY | Firebird::MemoryPool::PRINT_RECURSIVE);
-				fclose(file);
 				file = NULL;
 			}
 #endif
