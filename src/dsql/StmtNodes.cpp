@@ -1540,6 +1540,7 @@ DeclareSubFuncNode* DeclareSubFuncNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	{
 		// ASF: dsqlFunction->udf_arguments is only checked for its count for now.
 		dsqlFunction->udf_arguments.add(dsc());
+		dsqlFunction->udf_fld_system_arguments.add(false);
 
 		const ParameterClause* param = *i;
 
