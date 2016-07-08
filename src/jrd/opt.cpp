@@ -2356,6 +2356,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			BoolExprNode* node = tail->opt_conjunct_node;
 
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+				!(node->nodFlags & ExprNode::FLAG_RESIDUAL) &&
 				node->computable(csb, INVALID_STREAM, false))
 			{
 				compose(*tdbb->getDefaultPool(), return_boolean, node);
