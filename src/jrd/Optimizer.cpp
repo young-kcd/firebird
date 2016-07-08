@@ -137,9 +137,6 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(node, type_nod);
 
-	if (node->nod_flags & (nod_deoptimize | nod_residual))
-		return false;
-
 	// Recurse thru interesting sub-nodes
 
 	switch (node->nod_type)

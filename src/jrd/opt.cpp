@@ -1318,6 +1318,7 @@ int OPT_match_index(OptimizerBlk* opt, USHORT stream, index_desc* idx)
 	{
 		jrd_nod* node = tail->opt_conjunct_node;
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+			!(node->nod_flags & nod_residual) &&
 			OPT_computable(csb, node, -1, true, false))
 		{
 			n += match_index(tdbb, opt, stream, node, idx);
@@ -5065,6 +5066,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 				}
 				jrd_nod* node = tail->opt_conjunct_node;
 				if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+					!(node->nod_flags & nod_residual) &&
 				    OPT_computable(csb, node, -1, (inner_flag || outer_flag), false))
 				{
 					match_index(tdbb, opt, stream, node, idx);
@@ -5148,6 +5150,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 					// Setting opt_lower and/or opt_upper values
 					jrd_nod* node = tail->opt_conjunct_node;
 					if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+						!(node->nod_flags & nod_residual) &&
 						 OPT_computable(csb, node, -1, (inner_flag || outer_flag), false))
 					{
 						if (match_index(tdbb, opt, stream, node, idx))
@@ -5251,6 +5254,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		{
 			jrd_nod* node = tail->opt_conjunct_node;
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+				!(node->nod_flags & nod_residual) &&
 				OPT_computable(csb, node, -1, false, false))
 			{
 				compose(return_boolean, node, nod_and);
@@ -5277,6 +5281,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			compose(&inversion, OPT_make_dbkey(opt, node, stream), nod_bit_and);
 		}
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+			!(node->nod_flags & nod_residual) &&
 			OPT_computable(csb, node, -1, false, false))
 		{
 			// Don't waste time trying to match OR to available indices
@@ -5986,6 +5991,7 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 		{
 			jrd_nod* node1 = tail->opt_conjunct_node;
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+				!(node1->nod_flags & nod_residual) &&
 				OPT_computable(opt->opt_csb, node1, -1, false, false))
 			{
 				compose(&node, node1, nod_and);
@@ -6321,6 +6327,7 @@ static IndexedRelationship* indexed_relationship(thread_db* tdbb, OptimizerBlk* 
 		{
 			jrd_nod* node = tail->opt_conjunct_node;
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+				!(node->nod_flags & nod_residual) &&
 				OPT_computable(csb, node, -1, false, false))
 			{
 				// AB: Why only check for AND structures ?
