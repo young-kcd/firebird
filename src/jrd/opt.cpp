@@ -212,6 +212,7 @@ namespace
 				BoolExprNode* const node = tail->opt_conjunct_node;
 
 				if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+					!(node->nodFlags & ExprNode::FLAG_RESIDUAL) &&
 					node->computable(csb, INVALID_STREAM, false))
 				{
 					compose(csb->csb_pool, &boolean, node);
@@ -279,8 +280,9 @@ namespace
 
 				if (rsbs.getCount() < riverCount)
 				{
-					// Ideally, we should never get here. Now it's possible only if some booleans
-					// were faked to be non-computable (FLAG_DEOPTIMIZE and FLAG_RESIDUAL).
+					// Ideally, we should never get here. But just in case it happened, handle it.
+
+					fb_assert(false);
 
 					for (River** iter = rivers.begin(); iter < rivers.end(); iter++)
 					{
@@ -2378,6 +2380,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		BoolExprNode* const node = tail->opt_conjunct_node;
 
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+			!(node->nodFlags & ExprNode::FLAG_RESIDUAL) &&
 			node->computable(csb, INVALID_STREAM, false))
 		{
 			// If inversion is available, utilize all conjuncts that refer to
@@ -3029,6 +3032,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 		BoolExprNode* const node = tail->opt_conjunct_node;
 
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+			!(node->nodFlags & ExprNode::FLAG_RESIDUAL) &&
 			node->computable(csb, INVALID_STREAM, false))
 		{
 			compose(*tdbb->getDefaultPool(), &boolean, node);
