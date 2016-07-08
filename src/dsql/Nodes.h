@@ -743,9 +743,6 @@ public:
 		return this;
 	}
 
-	virtual bool computable(CompilerScratch* csb, StreamType stream,
-		bool allowOnlyCurrentStream, ValueExprNode* value = NULL);
-
 	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb)
 	{
 		ExprNode::pass1(tdbb, csb);
