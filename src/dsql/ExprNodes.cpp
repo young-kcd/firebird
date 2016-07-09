@@ -7778,7 +7778,7 @@ bool ParameterNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 			dsqlParameter->par_desc.dsc_dtype = dtype_varying;
 			// The error msgs is inaccurate, but causing dsc_length
 			// to be outsise range can be worse.
-			if (dsqlParameter->par_desc.dsc_length > MAX_COLUMN_SIZE - sizeof(USHORT))
+			if (dsqlParameter->par_desc.dsc_length > MAX_VARY_COLUMN_SIZE)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 							//Arg::Gds(isc_dsql_datatype_err)
