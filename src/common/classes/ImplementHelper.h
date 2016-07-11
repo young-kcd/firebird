@@ -90,8 +90,8 @@ class RefCntIface : public VersionedIface<C>, public GlobalStorage
 #ifdef DEV_BUILD
 
 public:
-	RefCntIface(const char* M = NULL)
-		: refCounter(0), mark(M)
+	RefCntIface(const char* m = NULL)
+		: refCounter(0), mark(m)
 	{
 		refCntDPrt('^');
 	}
@@ -153,9 +153,9 @@ private:
 	IReferenceCounted* owner;
 
 public:
-	StdPlugin(const char* M = NULL)
+	StdPlugin(const char* m = NULL)
 #ifdef DEV_BUILD
-		: RefCntIface<C>(M), owner(NULL)
+		: RefCntIface<C>(m), owner(NULL)
 #else
 		: owner(NULL)
 #endif

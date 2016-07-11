@@ -3847,8 +3847,8 @@ ITransaction* MasterImplementation::registerTransaction(IAttachment* attachment,
 
 template <typename Impl, typename Intf>
 #ifdef DEV_BUILD
-YHelper<Impl, Intf>::YHelper(NextInterface* aNext, const char* Mark)
-	: RefCntIface<Intf>(Mark)
+YHelper<Impl, Intf>::YHelper(NextInterface* aNext, const char* m)
+	: RefCntIface<Intf>(m)
 #else
 YHelper<Impl, Intf>::YHelper(NextInterface* aNext)
 #endif

@@ -131,7 +131,7 @@ public:
 
 	explicit YHelper(NextInterface* aNext
 #ifdef DEV_BUILD
-										, const char* M = NULL
+										, const char* m = NULL
 #endif
 										);
 
