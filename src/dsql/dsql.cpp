@@ -1088,6 +1088,8 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 				}
 			}
 
+			const bool notNull = (!flag || *flag >= 0);
+
 			dsc parDesc = parameter->par_desc;
 			parDesc.dsc_address = msgBuffer + (IPTR) parDesc.dsc_address;
 
@@ -1095,19 +1097,16 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 			{
 				desc.dsc_address = dsql_msg_buf + (IPTR) desc.dsc_address;
 
-				if (!flag || *flag >= 0)
+				if (notNull)
 					MOVD_move(tdbb, &parDesc, &desc);
 				else
 					memset(desc.dsc_address, 0, desc.dsc_length);
 			}
-			else if (!flag || *flag >= 0)
+			else if (notNull && !parDesc.isNull())
 			{
-				if (!(parDesc.dsc_flags & DSC_null))
-				{
-					// Safe cast because desc is used as source only.
-					desc.dsc_address = const_cast<UCHAR*>(in_dsql_msg_buf) + (IPTR) desc.dsc_address;
-					MOVD_move(tdbb, &desc, &parDesc);
-				}
+				// Safe cast because desc is used as source only.
+				desc.dsc_address = const_cast<UCHAR*>(in_dsql_msg_buf) + (IPTR) desc.dsc_address;
+				MOVD_move(tdbb, &desc, &parDesc);
 			}
 			else
 				memset(parDesc.dsc_address, 0, parDesc.dsc_length);
