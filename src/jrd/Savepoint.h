@@ -300,7 +300,7 @@ namespace Jrd
 		bool isLarge() const;
 		Savepoint* release(Savepoint* prior = NULL);
 
-		jrd_tra* const m_transaction; 		// transaction this savepoint belongs to
+		jrd_tra* const m_transaction; 	// transaction this savepoint belongs to
 		SavNumber m_number;				// savepoint number
 		USHORT m_flags;					// misc flags
 		USHORT m_count;					// active verb count

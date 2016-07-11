@@ -93,13 +93,13 @@ public:
 	RefCntIface(const char* M = NULL)
 		: refCounter(0), mark(M)
 	{
-		RefCntDPrt('^');
+		refCntDPrt('^');
 	}
 
 protected:
 	~RefCntIface()
 	{
-		RefCntDPrt('_');
+		refCntDPrt('_');
 		fb_assert(refCounter.value() == 0);
 	}
 
@@ -107,15 +107,14 @@ public:
 
 	void addRef()
 	{
-		RefCntDPrt('+');
+		refCntDPrt('+');
 		++refCounter;
 	}
 
 	//// TODO: can move release method to here, cause C has virtual destructor.
 
 protected:
-
-	void RefCntDPrt(char f)
+	void refCntDPrt(char f)
 	{
 		if (mark)
 			fprintf(stderr, "%s %p %c %lld\n", mark, this, f, refCounter.value());
@@ -139,7 +138,7 @@ public:
 protected:
 	AtomicCounter refCounter;
 
-	void RefCntDPrt(char)
+	void refCntDPrt(char)
 	{ }
 
 #endif

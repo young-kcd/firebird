@@ -137,7 +137,7 @@ public:
 
 	int release()
 	{
-		Firebird::RefCntIface<Intf>::RefCntDPrt('-');
+		Firebird::RefCntIface<Intf>::refCntDPrt('-');
 		int rc = --(this->refCounter);
 		if (rc == 0)
 		{

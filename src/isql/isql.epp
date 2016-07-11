@@ -4205,7 +4205,8 @@ static processing_state edit(const TEXT* const* cmd)
 		Ofp.close();
 		PathName tmpfile = Ofp.fileName(false);
 		gds__edit(tmpfile.c_str(), 0);
-		Ofp.init(os_utils::fopen(tmpfile.c_str(), "r+"), tmpfile.c_str(), tmpfile.c_str()); // We don't check for failure.
+		Ofp.init(os_utils::fopen(tmpfile.c_str(), "r+"),
+			tmpfile.c_str(), tmpfile.c_str()); // We don't check for failure.
 		Filelist->Ifp().init(Ofp);
 		Input_file = true;
 		getColumn = -1;

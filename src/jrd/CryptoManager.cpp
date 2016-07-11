@@ -1220,7 +1220,7 @@ namespace Jrd {
 
 	void CryptoManager::calcDigitalSignature(string& signature, const Header& hdr)
 	{
-	   /*
+		/*
 		We use the following items to calculate digital signature (hash of encrypted string)
 		for database:
 			hdr_flags & (hdr_crypt_process | hdr_encrypted)

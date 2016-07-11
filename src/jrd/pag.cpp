@@ -2065,6 +2065,7 @@ ULONG PageSpace::maxAlloc()
 	const USHORT pageSize = dbb->dbb_page_size;
 	const jrd_file* f = file;
 	ULONG nPages = PIO_get_number_of_pages(f, pageSize);
+
 	while (f->fil_next && nPages == f->fil_max_page - f->fil_min_page + 1 + f->fil_fudge)
 	{
 		f = f->fil_next;

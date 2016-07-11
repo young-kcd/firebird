@@ -1778,4 +1778,3 @@ USHORT SCL_convert_privilege(thread_db* tdbb, jrd_tra* transaction, const Firebi
 
 	return rc;
 }
-

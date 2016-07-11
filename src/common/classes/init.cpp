@@ -94,11 +94,12 @@ namespace
 
 #ifdef DEBUG_GDS_ALLOC
 		Firebird::AutoPtr<FILE, Firebird::FileClose> file;
-		{
+
+		{	// scope
 			Firebird::PathName name = "memdebug.log";
 #ifdef HAVE_DLADDR
 			Dl_info path;
-			if (dladdr((void *)(&allClean), &path))
+			if (dladdr((void*) &allClean, &path))
 			{
 				name = path.dli_fname;
 				name += ".memdebug.log";
