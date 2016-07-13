@@ -2666,11 +2666,13 @@ static processing_state bulk_insert_hack(const char* command)
 	if (!statement_type)
 		return ps_ERR;
 
+	/*** ASF: This is util to test others commands too.
 	if (statement_type != isc_info_sql_stmt_insert)
 	{
 		isqlGlob.printf("Only INSERT commands are accepted in bulk mode.%s", NEWLINE);
 		return ps_ERR;
 	}
+	***/
 
 	Firebird::RefPtr<Firebird::IMessageMetadata> message(global_Stmt->getInputMetadata(fbStatus));
 	if (ISQL_errmsg(fbStatus))
