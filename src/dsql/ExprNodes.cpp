@@ -7918,6 +7918,55 @@ dsc* ParameterNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	if (!(*impure_flags & VLU_checked))
 	{
+		if (!(request->req_flags & req_null))
+		{
+			desc = &impure->vlu_desc;
+
+			if (DTYPE_IS_TEXT(desc->dsc_dtype))
+			{
+				const UCHAR* p = desc->dsc_address;
+				USHORT maxLen = desc->dsc_length;
+				USHORT len;
+
+				switch (desc->dsc_dtype)
+				{
+					case dtype_cstring:
+						len = strnlen((const char*) p, maxLen);
+						--maxLen;
+						break;
+
+					case dtype_text:
+						len = desc->dsc_length;
+						break;
+
+					case dtype_varying:
+						len = reinterpret_cast<const vary*>(p)->vary_length;
+						p += sizeof(USHORT);
+						maxLen -= sizeof(USHORT);
+						break;
+				}
+
+				CharSet* charSet = INTL_charset_lookup(tdbb, DSC_GET_CHARSET(desc));
+
+				EngineCallbacks::instance->validateData(charSet, len, p);
+				EngineCallbacks::instance->validateLength(charSet, len, p, maxLen);
+			}
+			else if (desc->isBlob())
+			{
+				if (desc->getCharSet() != CS_NONE && desc->getCharSet() != CS_BINARY)
+				{
+					const Jrd::bid* bid = request->getImpure<Jrd::bid>(
+						message->impureOffset + (ULONG)(IPTR) desc->dsc_address);
+
+					if (!bid->isEmpty())
+					{
+						AutoBlb blob(tdbb, blb::open(tdbb, tdbb->getTransaction(), bid));
+						blob.getBlb()->BLB_check_well_formed(tdbb, desc);
+					}
+				}
+			}
+		}
+
 		if (argInfo)
 		{
 			EVL_validate(tdbb, Item(Item::TYPE_PARAMETER, message->messageNumber, argNumber),
