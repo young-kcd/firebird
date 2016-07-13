@@ -2134,7 +2134,8 @@ void JBlob::close(CheckStatusWrapper* user_status)
 
 		try
 		{
-			getHandle()->BLB_close(tdbb);
+			if (!getHandle()->BLB_close(tdbb))
+				getHandle()->blb_interface = NULL;
 			blob = NULL;
 		}
 		catch (const Exception& ex)
