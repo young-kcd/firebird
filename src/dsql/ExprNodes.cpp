@@ -7935,7 +7935,7 @@ dsc* ParameterNode::execute(thread_db* tdbb, jrd_req* request) const
 				switch (desc->dsc_dtype)
 				{
 					case dtype_cstring:
-						len = strlen((const char*) p);
+						len = strnlen((const char*) p, maxLen);
 						--maxLen;
 						break;
 
