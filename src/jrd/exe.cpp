@@ -786,50 +786,6 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 
 	memcpy(request->getImpure<UCHAR>(message->impureOffset), buffer, length);
 
-	for (USHORT i = 0; i < format->fmt_count; ++i)
-	{
-		const DSC* desc = &format->fmt_desc[i];
-
-		// ASF: I'll not test for dtype_cstring because usage is only internal
-		if (desc->dsc_dtype == dtype_text || desc->dsc_dtype == dtype_varying)
-		{
-			const UCHAR* p = request->getImpure<UCHAR>(message->impureOffset +
-				(ULONG)(IPTR) desc->dsc_address);
-			USHORT len;
-
-			switch (desc->dsc_dtype)
-			{
-				case dtype_text:
-					len = desc->dsc_length;
-					break;
-
-				case dtype_varying:
-					len = reinterpret_cast<const vary*>(p)->vary_length;
-					p += sizeof(USHORT);
-					break;
-			}
-
-			CharSet* charSet = INTL_charset_lookup(tdbb, DSC_GET_CHARSET(desc));
-
-			if (!charSet->wellFormed(len, p))
-				ERR_post(Arg::Gds(isc_malformed_string));
-		}
-		else if (desc->isBlob())
-		{
-			if (desc->getCharSet() != CS_NONE && desc->getCharSet() != CS_BINARY)
-			{
-				const Jrd::bid* bid = request->getImpure<Jrd::bid>(
-					message->impureOffset + (ULONG)(IPTR) desc->dsc_address);
-
-				if (!bid->isEmpty())
-				{
-					AutoBlb blob(tdbb, blb::open(tdbb, transaction/*tdbb->getTransaction()*/, bid));
-					blob.getBlb()->BLB_check_well_formed(tdbb, desc);
-				}
-			}
-		}
-	}
-
 	execute_looper(tdbb, request, transaction, request->req_next, jrd_req::req_proceed);
 }
 
