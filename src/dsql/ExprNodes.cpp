@@ -7959,12 +7959,11 @@ dsc* ParameterNode::execute(thread_db* tdbb, jrd_req* request) const
 			{
 				if (desc->getCharSet() != CS_NONE && desc->getCharSet() != CS_BINARY)
 				{
-					const Jrd::bid* bid = request->getImpure<Jrd::bid>(
-						message->impureOffset + (ULONG)(IPTR) desc->dsc_address);
+					const bid* const blobId = reinterpret_cast<bid*>(desc->dsc_address);
 
-					if (!bid->isEmpty())
+					if (!blobId->isEmpty())
 					{
-						AutoBlb blob(tdbb, blb::open(tdbb, tdbb->getTransaction(), bid));
+						AutoBlb blob(tdbb, blb::open(tdbb, tdbb->getTransaction(), blobId));
 						blob.getBlb()->BLB_check_well_formed(tdbb, desc);
 					}
 				}
