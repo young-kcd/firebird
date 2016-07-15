@@ -345,7 +345,7 @@ void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const 
 				if (SYSCALL_INTERRUPTED(err))
 					continue;
 
-				if (err == EOPNOTSUPP || err == ENOSYS)
+				if (err == EOPNOTSUPP || err == ENOSYS || err == ENODEV)
 					file->fil_flags |= FIL_no_fast_extend;
 				else
 					unix_error("fallocate", file, isc_io_write_err);
