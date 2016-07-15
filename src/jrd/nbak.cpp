@@ -348,36 +348,7 @@ ULONG BackupManager::getPageCount(thread_db* tdbb)
 		return 0;
 	}
 
-	class PioCount : public Jrd::PageCountCallback
-	{
-	private:
-	    BufferDesc temp_bdb;
-		PageSpace* pageSpace;
-
-	public:
-		explicit PioCount(Database* dbb)
-			: temp_bdb(dbb->dbb_bcb)
-		{
-			pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-			fb_assert(pageSpace);
-		}
-
-		virtual void newPage(thread_db* tdbb, const SLONG pageNum, Ods::pag* buf)
-		{
-			temp_bdb.bdb_buffer = buf;
-			temp_bdb.bdb_page = pageNum;
-			FbLocalStatus status;
-			// It's PIP - therefore no need to try to decrypt
-			if (!PIO_read(tdbb, pageSpace->file, &temp_bdb, temp_bdb.bdb_buffer, &status))
-			{
-				Firebird::status_exception::raise(&status);
-			}
-		}
-	};
-
-	PioCount pioCount(tdbb->getDatabase());
-
-	return PAG_page_count(tdbb, &pioCount);
+	return PAG_page_count(tdbb);
 }
 
 

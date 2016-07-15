@@ -2447,7 +2447,7 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 	return tempPageSpaceID;
 }
 
-ULONG PAG_page_count(thread_db* tdbb, PageCountCallback* cb)
+ULONG PAG_page_count(thread_db* tdbb)
 {
 /*********************************************
  *
@@ -2456,13 +2456,11 @@ ULONG PAG_page_count(thread_db* tdbb, PageCountCallback* cb)
  *********************************************
  *
  * Functional description
- *	Count pages, used by database
+ *	Count pages, used by primary database file
+ *	(for nbackup purposes)
  *
  *********************************************/
-	fb_assert(cb);
-
 	Database* const dbb = tdbb->getDatabase();
-
 	Array<UCHAR> temp;
 	page_inv_page* pip = reinterpret_cast<Ods::page_inv_page*>
 		(FB_ALIGN(temp.getBuffer(dbb->dbb_page_size + PAGE_ALIGNMENT), PAGE_ALIGNMENT));
@@ -2472,10 +2470,18 @@ ULONG PAG_page_count(thread_db* tdbb, PageCountCallback* cb)
 
 	ULONG pageNo = pageSpace->pipFirst;
 	const ULONG pagesPerPip = dbb->dbb_page_manager.pagesPerPIP;
+	BufferDesc temp_bdb(dbb->dbb_bcb);
+	temp_bdb.bdb_buffer = &pip->pip_header;
 
 	for (ULONG sequence = 0; true; pageNo = (pagesPerPip * ++sequence) - 1)
 	{
-		cb->newPage(tdbb, pageNo, &pip->pip_header);
+		temp_bdb.bdb_page = pageNo;
+
+		FbLocalStatus status;
+		// It's PIP - therefore no need to try to decrypt
+		if (!PIO_read(tdbb, pageSpace->file, &temp_bdb, temp_bdb.bdb_buffer, &status))
+			status_exception::raise(&status);
+
 		fb_assert(pip->pip_header.pag_type == pag_pages);
 		if (pip->pip_used == pagesPerPip)
 		{
