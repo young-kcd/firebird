@@ -1501,41 +1501,12 @@ SLONG PAG_last_page(thread_db* tdbb)
  *	shadow stuff to dump a database.
  *
  **************************************/
+
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	PageManager& pageMgr = dbb->dbb_page_manager;
-	PageSpace* pageSpace = pageMgr.findPageSpace(DB_PAGE_SPACE);
-	fb_assert(pageSpace);
-
-	const ULONG pages_per_pip = pageMgr.pagesPerPIP;
-	WIN window(DB_PAGE_SPACE, -1);
-
-	// Find the last page allocated
-
-	ULONG relative_bit = 0;
-	USHORT sequence;
-	for (sequence = 0; true; ++sequence)
-	{
-		window.win_page = (!sequence) ? pageSpace->pipFirst : sequence * pages_per_pip - 1;
-		const page_inv_page* page = (page_inv_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_pages);
-		const UCHAR* bits = page->pip_bits + (pages_per_pip >> 3) - 1;
-		while (*bits == (UCHAR) - 1)
-			--bits;
-		SSHORT bit;
-		for (bit = 7; bit >= 0; --bit)
-		{
-			if (!(*bits & (1 << bit)))
-				break;
-		}
-		relative_bit = (bits - page->pip_bits) * 8 + bit;
-		CCH_RELEASE(tdbb, &window);
-		if (relative_bit != pages_per_pip - 1)
-			break;
-	}
-
-	return sequence * pages_per_pip + relative_bit;
+	return PageSpace::lastUsedPage(dbb);
 }
 
 
@@ -2064,15 +2035,66 @@ ULONG PageSpace::maxAlloc()
  **************************************/
 	const USHORT pageSize = dbb->dbb_page_size;
 	const jrd_file* f = file;
-	ULONG nPages = PIO_get_number_of_pages(f, pageSize);
+	ULONG nPages = 0;
 
-	while (f->fil_next && nPages == f->fil_max_page - f->fil_min_page + 1 + f->fil_fudge)
+	if (maxPageNumber == 0 && !PIO_on_raw_device(f->fil_string))
 	{
-		f = f->fil_next;
 		nPages = PIO_get_number_of_pages(f, pageSize);
+
+		while (f->fil_next && nPages == f->fil_max_page - f->fil_min_page + 1 + f->fil_fudge)
+		{
+			f = f->fil_next;
+			if (PIO_on_raw_device(f->fil_string))
+			{
+				nPages = 0;
+				break;
+			}
+			nPages = PIO_get_number_of_pages(f, pageSize);
+		}
+
+		if (nPages)
+			nPages += f->fil_min_page - f->fil_fudge;
 	}
 
-	nPages += f->fil_min_page - f->fil_fudge;
+	if (!nPages)
+	{
+		thread_db* tdbb = JRD_get_thread_data();
+		const ULONG pagesPerPip = dbb->dbb_page_manager.pagesPerPIP;
+		WIN window(pageSpaceID, -1);
+
+		// Find the last page allocated
+
+		for (USHORT sequence = maxPageNumber / pagesPerPip; true; ++sequence)
+		{
+			window.win_page = (!sequence) ? pipFirst : sequence * pagesPerPip - 1;
+			ULONG pipUsed = 0;
+			const page_inv_page* page = NULL;
+
+			for (FB_SIZE_T n = 0; n < tdbb->tdbb_bdbs.getCount(); ++n)
+			{
+				BufferDesc *bdb = tdbb->tdbb_bdbs[n];
+				if (bdb && bdb->isLocked() && bdb->bdb_page == window.win_page && bdb->bdb_buffer)
+				{
+					page = (page_inv_page*)(bdb->bdb_buffer);
+					pipUsed = page->pip_used;
+					break;
+				}
+			}
+
+			if (!page)
+			{
+				page = (page_inv_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_pages);
+				pipUsed = page->pip_used;
+				CCH_RELEASE(tdbb, &window);
+			}
+
+			if (pipUsed != pagesPerPip)
+			{
+				nPages = sequence * pagesPerPip + pipUsed;
+				break;
+			}
+		}
+	}
 
 	if (maxPageNumber < nPages)
 		maxPageNumber = nPages;
