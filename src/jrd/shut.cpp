@@ -513,7 +513,7 @@ static void shutdown(thread_db* tdbb, SSHORT flag, bool force)
 	if (force)
 	{
 		bool found = false;
-		for (Attachment* attachment = attachment = dbb->dbb_attachments;
+		for (Attachment* attachment = dbb->dbb_attachments;
 			attachment; attachment = attachment->att_next)
 		{
 			if (!(attachment->att_flags & ATT_shutdown_manager))
