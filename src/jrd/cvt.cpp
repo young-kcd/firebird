@@ -419,9 +419,7 @@ void EngineCallbacks::validateData(CharSet* toCharSet, SLONG length, const UCHAR
 void EngineCallbacks::validateLength(CharSet* toCharSet, SLONG toLength, const UCHAR* start,
 	const USHORT to_size)
 {
-	if (toCharSet &&
-		toCharSet->isMultiByte() &&
-		!(toCharSet->getFlags() & CHARSET_LEGACY_SEMANTICS))
+	if (toCharSet && toCharSet->isMultiByte())
 	{
 		Jrd::thread_db* tdbb = NULL;
 		SET_TDBB(tdbb);
