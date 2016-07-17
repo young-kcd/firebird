@@ -818,8 +818,22 @@ dsc* ListAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 
 AggNode* ListAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 {
-	return FB_NEW_POOL(getPool()) ListAggNode(getPool(), distinct,
+	thread_db* tdbb = JRD_get_thread_data();
+
+	AggNode* node = FB_NEW_POOL(getPool()) ListAggNode(getPool(), distinct,
 		doDsqlPass(dsqlScratch, arg), doDsqlPass(dsqlScratch, delimiter));
+
+	dsc argDesc;
+	node->arg->make(dsqlScratch, &argDesc);
+
+	CharSet* charSet = INTL_charset_lookup(tdbb, argDesc.getCharSet());
+
+	dsc desc;
+	desc.makeText(charSet->maxBytesPerChar(), argDesc.getCharSet());
+
+	node->setParameterType(dsqlScratch, &desc, false);
+
+	return node;
 }
 
 
