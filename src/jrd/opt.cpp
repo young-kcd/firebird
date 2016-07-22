@@ -248,8 +248,9 @@ namespace
 
 			if (riverCount == 1)
 			{
-				River* const sub_river = rivers.front();
+				River* const sub_river = rivers.pop();
 				m_rsb = sub_river->getRecordSource();
+				sub_river->activate(csb);
 			}
 			else
 			{
@@ -257,27 +258,30 @@ namespace
 
 				// Reorder input rivers according to their possible inter-dependencies
 
-				while (rsbs.getCount() < riverCount)
+				while (rivers.hasData())
 				{
 					for (River** iter = rivers.begin(); iter < rivers.end(); iter++)
 					{
 						River* const sub_river = *iter;
 						RecordSource* const sub_rsb = sub_river->getRecordSource();
 
-						if (!rsbs.exist(sub_rsb) && sub_river->isComputable(csb))
+						fb_assert(!rsbs.exist(sub_rsb));
+
+						sub_river->activate(csb);
+
+						if (sub_river->isComputable(csb))
 						{
 							rsbs.add(sub_rsb);
-							sub_river->activate(csb);
+							rivers.remove(iter);
+							break;
 						}
+
+						sub_river->deactivate(csb);
 					}
 				}
 
-				m_rsb = FB_NEW_POOL(csb->csb_pool) NestedLoopJoin(csb, riverCount, rsbs.begin());
+				m_rsb = FB_NEW_POOL(csb->csb_pool) NestedLoopJoin(csb, rsbs.getCount(), rsbs.begin());
 			}
-
-			// Clear the input rivers list
-
-			rivers.clear();
 		}
 	};
 } // namespace
@@ -729,9 +733,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 				// Generate one river which holds a cross join rsb between
 				// all currently available rivers
 
-				River* const river = FB_NEW_POOL(*pool) CrossJoin(csb, rivers);
-				river->activate(csb);
-				rivers.add(river);
+				rivers.add(FB_NEW_POOL(*pool) CrossJoin(csb, rivers));
 			}
 			else
 			{
