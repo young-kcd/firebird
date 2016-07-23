@@ -743,8 +743,8 @@ namespace
 			rs->fetch(tdbb);
 
 			UserId* u = attachment->att_user;
-			Arg::Gds err(isc_miss_prvlg);
-			err << missPriv;
+			Arg::Gds err(isc_adm_task_denied);
+			err << Arg::Gds(isc_miss_prvlg) << missPriv;
 			if (u->testFlag(USR_mapdown))
 				err << Arg::Gds(isc_map_down);
 

@@ -10365,7 +10365,7 @@ void MappingNode::runInSecurityDb(SecDbContext* secDbContext)
 void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
 {
 	if (!(tdbb->getAttachment() && tdbb->getAttachment()->locksmith(tdbb, CHANGE_MAPPING_RULES)))
-		(Arg::Gds(isc_miss_prvlg) << "CHANGE_MAPPING_RULES").raise();
+		(Arg::Gds(isc_adm_task_denied) << Arg::Gds(isc_miss_prvlg) << "CHANGE_MAPPING_RULES").raise();
 
 	if (global)
 	{
