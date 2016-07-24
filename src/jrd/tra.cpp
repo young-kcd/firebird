@@ -3096,7 +3096,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	// of four, which puts the transaction on a byte boundary.
 
 	TraNumber base = oldest & ~TRA_MASK;
-	const ULONG top = (dbb->dbb_flags & DBB_read_only) ?
+	const TraNumber top = (dbb->dbb_flags & DBB_read_only) ?
 		dbb->dbb_next_transaction : number;
 
 	if (!(trans->tra_flags & TRA_read_committed) && (top >= oldest))
@@ -3297,7 +3297,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	if (oldest >= top && dbb->dbb_flags & DBB_read_only)
 		oldest = number;
 
-	if (--oldest > (ULONG) dbb->dbb_oldest_transaction)
+	if (--oldest > dbb->dbb_oldest_transaction)
 		dbb->dbb_oldest_transaction = oldest;
 
 	if (oldest_active > dbb->dbb_oldest_active)
