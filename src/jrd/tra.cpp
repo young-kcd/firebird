@@ -3383,7 +3383,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	if (oldest >= top && dbb->dbb_flags & DBB_read_only)
 		oldest = number;
 
-	if (--oldest > (ULONG) dbb->dbb_oldest_transaction)
+	if (--oldest > dbb->dbb_oldest_transaction)
 		dbb->dbb_oldest_transaction = oldest;
 
 	if (oldest_active > dbb->dbb_oldest_active)
