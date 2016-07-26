@@ -7924,12 +7924,12 @@ dsc* ParameterNode::execute(thread_db* tdbb, jrd_req* request) const
 	{
 		if (!(request->req_flags & req_null))
 		{
+			USHORT maxLen = desc->dsc_length;	// not adjusted length
 			desc = &impure->vlu_desc;
 
 			if (DTYPE_IS_TEXT(desc->dsc_dtype))
 			{
 				const UCHAR* p = desc->dsc_address;
-				USHORT maxLen = desc->dsc_length;
 				USHORT len;
 
 				switch (desc->dsc_dtype)
