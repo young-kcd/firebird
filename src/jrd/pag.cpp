@@ -2035,66 +2035,15 @@ ULONG PageSpace::maxAlloc()
  **************************************/
 	const USHORT pageSize = dbb->dbb_page_size;
 	const jrd_file* f = file;
-	ULONG nPages = 0;
+	ULONG nPages = PIO_get_number_of_pages(f, pageSize);
 
-	if (maxPageNumber == 0 && !PIO_on_raw_device(f->fil_string))
+	while (f->fil_next && nPages == f->fil_max_page - f->fil_min_page + 1 + f->fil_fudge)
 	{
+		f = f->fil_next;
 		nPages = PIO_get_number_of_pages(f, pageSize);
-
-		while (f->fil_next && nPages == f->fil_max_page - f->fil_min_page + 1 + f->fil_fudge)
-		{
-			f = f->fil_next;
-			if (PIO_on_raw_device(f->fil_string))
-			{
-				nPages = 0;
-				break;
-			}
-			nPages = PIO_get_number_of_pages(f, pageSize);
-		}
-
-		if (nPages)
-			nPages += f->fil_min_page - f->fil_fudge;
 	}
 
-	if (!nPages)
-	{
-		thread_db* tdbb = JRD_get_thread_data();
-		const ULONG pagesPerPip = dbb->dbb_page_manager.pagesPerPIP;
-		WIN window(pageSpaceID, -1);
-
-		// Find the last page allocated
-
-		for (USHORT sequence = maxPageNumber / pagesPerPip; true; ++sequence)
-		{
-			window.win_page = (!sequence) ? pipFirst : sequence * pagesPerPip - 1;
-			ULONG pipUsed = 0;
-			const page_inv_page* page = NULL;
-
-			for (FB_SIZE_T n = 0; n < tdbb->tdbb_bdbs.getCount(); ++n)
-			{
-				BufferDesc *bdb = tdbb->tdbb_bdbs[n];
-				if (bdb && bdb->isLocked() && bdb->bdb_page == window.win_page && bdb->bdb_buffer)
-				{
-					page = (page_inv_page*)(bdb->bdb_buffer);
-					pipUsed = page->pip_used;
-					break;
-				}
-			}
-
-			if (!page)
-			{
-				page = (page_inv_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_pages);
-				pipUsed = page->pip_used;
-				CCH_RELEASE(tdbb, &window);
-			}
-
-			if (pipUsed != pagesPerPip)
-			{
-				nPages = sequence * pagesPerPip + pipUsed;
-				break;
-			}
-		}
-	}
+	nPages += f->fil_min_page - f->fil_fudge;
 
 	if (maxPageNumber < nPages)
 		maxPageNumber = nPages;
@@ -2108,30 +2057,75 @@ ULONG PageSpace::maxAlloc(const Database* dbb)
 	return pgSpace->maxAlloc();
 }
 
+bool PageSpace::onRawDevice() const
+{
+#ifdef SUPPORT_RAW_DEVICES
+	for (const jrd_file* f = file; f != NULL; f = f->fil_next)
+	{
+		if (f->fil_flags & FIL_raw_device)
+			return true;
+	}
+#endif
+
+	return false;
+}
+
 ULONG PageSpace::lastUsedPage()
 {
 	const PageManager& pageMgr = dbb->dbb_page_manager;
-	ULONG pipLast = (maxAlloc() / pageMgr.pagesPerPIP) * pageMgr.pagesPerPIP;
+	ULONG pipLast = pipMaxKnown;
+	bool moveUp = true;
 
-	pipLast = pipLast ? pipLast - 1 : pipFirst;
+	if (!pipLast)
+	{
+		if (!onRawDevice())
+		{
+			pipLast = (maxAlloc() / pageMgr.pagesPerPIP) * pageMgr.pagesPerPIP;
+			pipLast = pipLast ? pipLast - 1 : pipFirst;
+			moveUp = false;
+		}
+	}
+
 	win window(pageSpaceID, pipLast);
-
 	thread_db* tdbb = JRD_get_thread_data();
 
 	while (true)
 	{
 		pag* page = CCH_FETCH(tdbb, &window, LCK_read, pag_undefined);
-		if (page->pag_type == pag_pages)
+
+		if (moveUp)
+		{
+			fb_assert(page->pag_type == pag_pages);
+
+			page_inv_page* pip = (page_inv_page*) page;
+
+			if (pip->pip_used != pageMgr.pagesPerPIP)
+				break;
+			UCHAR lastByte = pip->pip_bits[pageMgr.bytesBitPIP - 1];
+			if (lastByte & 0x80)
+				break;
+		}
+		else if (page->pag_type == pag_pages)
 			break;
 
 		CCH_RELEASE(tdbb, &window);
 
-		if (pipLast > pageMgr.pagesPerPIP)
-			pipLast -= pageMgr.pagesPerPIP;
-		else if (pipLast == pipFirst)
-			return 0;	// can't find PIP page !
+		if (moveUp)
+		{
+			if (pipLast == pipFirst)
+				pipLast = pageMgr.pagesPerPIP - 1;
+			else
+				pipLast += pageMgr.pagesPerPIP;
+		}
 		else
-			pipLast = pipFirst;
+		{
+			if (pipLast > pageMgr.pagesPerPIP)
+				pipLast -= pageMgr.pagesPerPIP;
+			else if (pipLast == pipFirst)
+				return 0;	// can't find PIP page !
+			else
+				pipLast = pipFirst;
+		}
 
 		window.win_page = pipLast;
 	}
@@ -2156,10 +2150,10 @@ ULONG PageSpace::lastUsedPage()
 	}
 
 	CCH_RELEASE(tdbb, &window);
+	pipMaxKnown = pipLast;
 
 	if (pipLast == pipFirst)
 		return last_bit + 1;
-
 	return last_bit + pipLast + 1;
 }
 

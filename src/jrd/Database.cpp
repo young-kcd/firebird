@@ -48,11 +48,8 @@ namespace Jrd
 {
 	bool Database::onRawDevice() const
 	{
-#ifdef SUPPORT_RAW_DEVICES
-		return PIO_on_raw_device(dbb_filename);
-#else
-		return false;
-#endif
+		const PageSpace* const pageSpace = dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+		return pageSpace->onRawDevice();
 	}
 
 	string Database::getUniqueFileId() const
