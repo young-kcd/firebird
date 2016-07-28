@@ -818,6 +818,8 @@ Data source : @4"},		/* eds_statement */
 	{335545111, "System privilege @1 does not exist"},		/* wrong_prvlg */
 	{335545112, "System privilege @1 is missing"},		/* miss_prvlg */
 	{335545113, "Invalid or missing checksum of encrypted database"},		/* crypt_checksum */
+	{335545114, "You must have SYSDBA rights at this server"},		/* not_dba */
+	{335545115, "Cannot open cursor for non-SELECT statement"},		/* no_cursor */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

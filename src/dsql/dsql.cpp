@@ -208,7 +208,7 @@ DsqlCursor* DSQL_open(thread_db* tdbb,
 	// Validate statement type
 
 	if (!reqTypeWithCursor(statement->getType()))
-		(Arg::Gds(isc_random) << "Cannot open non-SELECT statement").raise();
+		Arg::Gds(isc_no_cursor).raise();
 
 	// Validate cursor being not already open
 

@@ -2066,7 +2066,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	// Do not let everyone look at server log
 	if (svc_id == isc_action_svc_get_fb_log && !(svc_user_flag & SVC_user_dba))
     {
-       	status_exception::raise(Arg::Gds(isc_adm_task_denied));
+       	status_exception::raise(Arg::Gds(isc_adm_task_denied) << Arg::Gds(isc_not_dba));
     }
 
 	// Break up the command line into individual arguments.
