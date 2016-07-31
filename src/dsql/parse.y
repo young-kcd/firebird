@@ -7027,7 +7027,7 @@ window_function
 		{ $$ = newNode<LeadWinNode>($3, $5, newNode<NullNode>()); }
 	| LEAD '(' value ')'
 		{ $$ = newNode<LeadWinNode>($3, MAKE_const_slong(1), newNode<NullNode>()); }
-	| NTILE '(' u_numeric_constant ')'
+	| NTILE '(' ntile_arg ')'
 		{ $$ = newNode<NTileWinNode>($3); }
 	;
 
@@ -7036,6 +7036,13 @@ nth_from
 	: /* nothing */	{ $$ = MAKE_const_slong(NthValueWinNode::FROM_FIRST); }
 	| FROM FIRST	{ $$ = MAKE_const_slong(NthValueWinNode::FROM_FIRST); }
 	| FROM LAST		{ $$ = MAKE_const_slong(NthValueWinNode::FROM_LAST); }
+	;
+
+%type <valueExprNode> ntile_arg
+ntile_arg
+	: u_numeric_constant
+	| variable
+	| parameter
 	;
 
 %type <aggNode> aggregate_window_function

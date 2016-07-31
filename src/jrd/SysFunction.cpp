@@ -644,8 +644,11 @@ void makeBin(DataTypeUtilBase*, const SysFunction* function, dsc* result,
 		}
 
 		if (!args[i]->isExact() || args[i]->dsc_scale != 0)
-			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
-										Arg::Gds(isc_sysf_argmustbe_exact) << Arg::Str(function->name));
+		{
+			status_exception::raise(
+				Arg::Gds(isc_expression_eval_err) <<
+				Arg::Gds(isc_sysf_argmustbe_exact) << Arg::Str(function->name));
+		}
 
 		if (first)
 		{

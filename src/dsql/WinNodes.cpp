@@ -890,6 +890,15 @@ string NTileWinNode::internalPrint(NodePrinter& printer) const
 
 void NTileWinNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
+	dsc argDesc;
+	MAKE_desc(dsqlScratch, &argDesc, arg);
+
+	if (!argDesc.isExact() || argDesc.dsc_scale != 0)
+	{
+		status_exception::raise(
+			Arg::Gds(isc_sysf_argmustbe_exact) << "NTILE");
+	}
+
 	if (dsqlScratch->clientDialect == 1)
 		desc->makeDouble();
 	else
@@ -984,7 +993,14 @@ dsc* NTileWinNode::winPass(thread_db* /*tdbb*/, jrd_req* request, SlidingWindow*
 
 AggNode* NTileWinNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 {
-	return FB_NEW_POOL(getPool()) NTileWinNode(getPool(), doDsqlPass(dsqlScratch, arg));
+	NTileWinNode* node = FB_NEW_POOL(getPool()) NTileWinNode(getPool(),
+		doDsqlPass(dsqlScratch, arg));
+
+	dsc argDesc;
+	argDesc.makeInt64(0);
+	PASS1_set_parameter_type(dsqlScratch, node->arg, &argDesc, false);
+
+	return node;
 }
 
 

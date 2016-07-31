@@ -185,7 +185,8 @@ after the duplicate salary. On the other hand, ROW_NUMBER always assigns sequent
 when there is duplicate values.
 PERCENT_RANK is a ratio of RANK to group count.
 CUME_DIST is cumulative distribution of a value in a group.
-NTILE distributes the rows into a specified number of groups.
+NTILE distributes the rows into a specified number of groups. NTILE argument is restricted to
+integral positive literal, variable (:var) and DSQL parameter (question mark).
 
 4.2 Navigational functions
 --------------------------
