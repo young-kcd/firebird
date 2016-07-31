@@ -2101,6 +2101,7 @@ ULONG PageSpace::lastUsedPage()
 
 			if (pip->pip_used != pageMgr.pagesPerPIP)
 				break;
+
 			UCHAR lastByte = pip->pip_bits[pageMgr.bytesBitPIP - 1];
 			if (lastByte & 0x80)
 				break;
