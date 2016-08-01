@@ -2714,7 +2714,10 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS* user_status,
 			handle = t->handle;
 		}
 
-		statement->checkPrepared();
+		if (SSHORT(in_msg_type) != -1)		// support old esql code
+		{
+			statement->checkPrepared();
+		}
 
 		CALL(PROC_DSQL_EXECUTE2, statement->implementation) (status,
 														     &handle,
