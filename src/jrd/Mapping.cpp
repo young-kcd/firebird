@@ -1124,16 +1124,16 @@ private:
 					return true;
 				}
 
-				string zRole;
-				zRole += ROLESEP;
-				zRole += role;
-				zRole += ROLESEP;
-
 				string* r = get(name);
 				if (!r)
 					return false;
 
-				granted = r->find(zRole);
+				string zRole;
+				zRole += ROLESEP;
+				zRole += role;
+				zRole += ROLESEP;
+				MAP_DEBUG(fprintf(stderr, "isRoleGranted '%s' '%s'\n", r->c_str(), role.c_str()));
+				granted = r->find(zRole) != string::npos;
 				return true;
 			}
 
@@ -1164,8 +1164,10 @@ private:
 				z += ROLESEP;
 				while(curs->fetchNext(&st, buffer) == IStatus::RESULT_OK)
 				{
-					MAP_DEBUG(fprintf(stderr, "populate 2 %s\n", (const char*) role));
-					z += role;
+					string r = (const char*) role;
+					r.trim();
+					MAP_DEBUG(fprintf(stderr, "populate 2 %s\n", r.c_str()));
+					z += r;
 					z += ROLESEP;
 				}
 
