@@ -7094,7 +7094,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 		{
 			if (mapUser(true, name, trusted_role, &auth_method, &user.usr_auth_block, NULL,
 				options.dpb_auth_block, aliasName, dbName,
-				(config ? (*config)->getSecurityDatabase() : NULL), cryptCb, NULL) & MAPUSER_MAP_DOWN)
+				(config ? (*config)->getSecurityDatabase() : NULL), "", cryptCb, NULL) & MAPUSER_MAP_DOWN)
 			{
 				user.setFlag(USR_mapdown);
 			}
