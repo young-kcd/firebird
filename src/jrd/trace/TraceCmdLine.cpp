@@ -419,7 +419,6 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 
 		pwd = "";
 		user = "";
-		role = "";
 		adminRole = false;
 	}
 

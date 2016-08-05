@@ -2050,7 +2050,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 #ifdef DEV_BUILD
 	if (svc_debug)
 	{
-		::printf("%s %s\n", svc_service_run->serv_name, svc_switches.c_str());
+		::fprintf(stderr, "%s %s\n", svc_service_run->serv_name, svc_switches.c_str());
 		return;
 	}
 #endif

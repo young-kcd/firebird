@@ -1438,6 +1438,7 @@ ULONG mapUser(const bool throwNotFoundError,
 			Sync sync(spCache().getSync(), FB_FUNCTION);
 			sync.lock(SYNC_SHARED);
 
+			MAP_DEBUG(fprintf(stderr, "GP: name=%s sql=%s trusted=%s\n", name.c_str(), sql_role.c_str(), trusted_role.c_str()));
 			if (!spCache().getPrivileges(db, name, sql_role, trusted_role, *system_privileges))
 			{
 				sync.unlock();
