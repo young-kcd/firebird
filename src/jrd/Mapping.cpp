@@ -1017,13 +1017,15 @@ private:
 			system_privileges.clearAll();
 			if (!logins.getPrivileges(name, system_privileges))
 				return false;
+
 			MAP_DEBUG(fprintf(stderr, "name=%s\n", name.c_str()));
+
 			bool granted = false;
 			if (!pairs.isRoleGranted(name, sql_role, granted))
 				return false;
 
 			MAP_DEBUG(fprintf(stderr, "granted=%d\n", granted));
-			return roles.getPrivileges(granted ? sql_role : trusted_role, system_privileges);
+			return roles.getPrivileges((granted ? sql_role : trusted_role), system_privileges);
 		}
 
 		void populate(DbHandle& iDb, const string& name, const string& sql_role,
@@ -1132,7 +1134,9 @@ private:
 				zRole += ROLESEP;
 				zRole += role;
 				zRole += ROLESEP;
+
 				MAP_DEBUG(fprintf(stderr, "isRoleGranted '%s' '%s'\n", r->c_str(), role.c_str()));
+
 				granted = r->find(zRole) != string::npos;
 				return true;
 			}
@@ -1162,7 +1166,8 @@ private:
 				void* buffer = cols.getBuffer();
 				string z;
 				z += ROLESEP;
-				while(curs->fetchNext(&st, buffer) == IStatus::RESULT_OK)
+
+				while (curs->fetchNext(&st, buffer) == IStatus::RESULT_OK)
 				{
 					string r = (const char*) role;
 					r.trim();
@@ -1438,15 +1443,19 @@ ULONG mapUser(const bool throwNotFoundError,
 			Sync sync(spCache().getSync(), FB_FUNCTION);
 			sync.lock(SYNC_SHARED);
 
-			MAP_DEBUG(fprintf(stderr, "GP: name=%s sql=%s trusted=%s\n", name.c_str(), sql_role.c_str(), trusted_role.c_str()));
+			MAP_DEBUG(fprintf(stderr, "GP: name=%s sql=%s trusted=%s\n",
+				name.c_str(), sql_role.c_str(), trusted_role.c_str()));
+
 			if (!spCache().getPrivileges(db, name, sql_role, trusted_role, *system_privileges))
 			{
 				sync.unlock();
 				sync.lock(SYNC_EXCLUSIVE);
+
 				if (!spCache().getPrivileges(db, name, sql_role, trusted_role, *system_privileges))
 				{
 					if (!iDb)
 						iDb.attach(st, alias, cryptCb);
+
 					if (iDb)
 					{
 						spCache().populate(db, iDb, name, sql_role, trusted_role);
