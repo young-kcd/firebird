@@ -165,6 +165,7 @@ static void protect_system_table_delupd(thread_db* tdbb, const jrd_rel* relation
 	bool force_flag = false);
 static void purge(thread_db*, record_param*);
 static void replace_record(thread_db*, record_param*, PageStack*, const jrd_tra*);
+static void refresh_fk_fields(thread_db*, Record*, record_param*, record_param*);
 static SSHORT set_metadata_id(thread_db*, Record*, USHORT, drq_type_t, const char*);
 static void set_owner_name(thread_db*, Record*, USHORT);
 static bool set_security_class(thread_db*, Record*, USHORT);
@@ -2537,9 +2538,20 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 
 	if (org_rpb->rpb_runtime_flags & (RPB_refetch | RPB_undo_read))
 	{
+		const bool undo_read = (org_rpb->rpb_runtime_flags & RPB_undo_read);
+		AutoGCRecord old_record;
+		if (undo_read)
+		{
+			old_record = VIO_gc_record(tdbb, relation);
+			old_record->copyFrom(org_rpb->rpb_record);
+		}
+
 		VIO_refetch_record(tdbb, org_rpb, transaction, false, true);
 		org_rpb->rpb_runtime_flags &= ~RPB_refetch;
 		fb_assert(!(org_rpb->rpb_runtime_flags & RPB_undo_read));
+
+		if (undo_read)
+			refresh_fk_fields(tdbb, old_record, org_rpb, new_rpb);
 	}
 
 	// If we're the system transaction, modify stuff in place.  This saves
@@ -5992,6 +6004,88 @@ static void replace_record(thread_db*		tdbb,
 
 	if ((rpb->rpb_flags & rpb_delta) && !rpb->rpb_prior)
 		rpb->rpb_prior = rpb->rpb_record;
+}
+
+
+static void refresh_fk_fields(thread_db* tdbb, Record* old_rec, record_param* cur_rpb, record_param* new_rpb)
+{
+/**************************************
+ *
+ *	r e f r e s h _ f k _ f i e l d s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Update new_rpb with foreign key fields values changed by cascade triggers. 
+ *  Consider self-referenced foreign keys only.
+ *
+ *  old_rec - old record before modify
+ *  cur_rpb - just read record with possibly changed FK fields
+ *  new_rpb - new record evaluated by modify statement and before-triggers
+ *
+ **************************************/
+	jrd_rel* relation = cur_rpb->rpb_relation;
+
+	MET_scan_partners(tdbb, relation);
+
+	if (!(relation->rel_foreign_refs.frgn_relations))
+		return;
+
+	const FB_SIZE_T frgnCount = relation->rel_foreign_refs.frgn_relations->count();
+	if (!frgnCount)
+		return;
+
+	RelationPages* relPages = cur_rpb->rpb_relation->getPages(tdbb);
+
+	// Collect all fields of all foreign keys
+	SortedArray<int, InlineStorage<int, 16> > fields;
+
+	for (int i = 0; i < frgnCount; i++)
+	{
+		// We need self-referenced FK's only
+		if ((*relation->rel_foreign_refs.frgn_relations)[i] == relation->rel_id)
+		{
+			index_desc idx;
+			idx.idx_id = idx_invalid;
+
+			if (BTR_lookup(tdbb, relation, (*relation->rel_foreign_refs.frgn_reference_ids)[i],
+				&idx, relPages))
+			{
+				fb_assert(idx.idx_flags & idx_foreign);
+
+				for (int fld = 0; fld < idx.idx_count; fld++)
+				{
+					const int fldNum = idx.idx_rpt[fld].idx_field;
+					if (!fields.exist(fldNum))
+						fields.add(fldNum);
+				}
+			}
+		}
+	}
+
+	if (fields.isEmpty())
+		return;
+
+	DSC desc1, desc2;
+	for (int idx = 0; idx < fields.getCount(); idx++)
+	{
+		// Detect if user changed FK field by himself.
+		const int fld = fields[idx];
+		const bool flag_old = EVL_field(relation, old_rec, fld, &desc1);
+		const bool flag_new = EVL_field(relation, new_rpb->rpb_record, fld, &desc2);
+
+		// If field was not changed by user - pick up possible modification by 
+		// system cascade trigger
+		if (flag_old == flag_new &&
+			(!flag_old || flag_old && MOV_compare(&desc1, &desc2) == 0))
+		{
+			const bool flag_tmp = EVL_field(relation, cur_rpb->rpb_record, fld, &desc1);
+			if (flag_tmp)
+				MOV_move(tdbb, &desc1, &desc2);
+			else
+				new_rpb->rpb_record->setNull(fld);
+		}
+	}
 }
 
 
