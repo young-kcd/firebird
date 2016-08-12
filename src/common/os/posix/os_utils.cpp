@@ -272,7 +272,7 @@ int open(const char* pathname, int flags, mode_t mode)
 	if (fd < 0 && errno == EINVAL)	// probably O_CLOEXEC not accepted
 	{
 		do {
-			fd = ::open(pathname, flags | O_CLOEXEC, mode);
+			fd = ::open(pathname, flags, mode);
 		} while (fd < 0 && SYSCALL_INTERRUPTED(errno));
 	}
 
