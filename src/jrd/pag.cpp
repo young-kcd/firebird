@@ -104,7 +104,7 @@ using namespace Ods;
 using namespace Firebird;
 
 static void add_clump(thread_db* tdbb, USHORT type, USHORT len, const UCHAR* entry, ClumpOper mode);
-static ULONG ensureDiskSpace(thread_db* tdbb, WIN* pip_window, const PageNumber pageNum);
+static ULONG ensureDiskSpace(thread_db* tdbb, WIN* pip_window, const PageNumber pageNum, ULONG pipUsed);
 static void find_clump_space(thread_db* tdbb, WIN*, pag**, USHORT, USHORT, const UCHAR*);
 static bool find_type(thread_db* tdbb, WIN*, pag**, USHORT, USHORT, UCHAR**, const UCHAR**);
 
@@ -563,7 +563,7 @@ PAG PAG_allocate_pages(thread_db* tdbb, WIN* window, int cntAlloc, bool aligned)
 					window->win_page = pageNum;
 
 					if (lastBit + 1 > pipUsed)
-						pipUsed = ensureDiskSpace(tdbb, &pip_window, window->win_page);
+						pipUsed = ensureDiskSpace(tdbb, &pip_window, window->win_page, pipUsed);
 
 					pag* new_page = CCH_fake(tdbb, window, 1);
 
@@ -630,7 +630,8 @@ PAG PAG_allocate_pages(thread_db* tdbb, WIN* window, int cntAlloc, bool aligned)
 
 			if (lastBit + 1 > pipUsed) {
 				pipUsed = ensureDiskSpace(tdbb, &pip_window,
-					PageNumber(pageSpace->pageSpaceID, lastBit + sequence * pageMgr.pagesPerPIP));
+					PageNumber(pageSpace->pageSpaceID, lastBit + sequence * pageMgr.pagesPerPIP),
+					pipUsed);
 			}
 
 			window->win_page = firstBit + sequence * pageMgr.pagesPerPIP;
@@ -737,14 +738,12 @@ PAG PAG_allocate_pages(thread_db* tdbb, WIN* window, int cntAlloc, bool aligned)
 }
 
 
-static ULONG ensureDiskSpace(thread_db* tdbb, WIN* pip_window, const PageNumber pageNum)
+static ULONG ensureDiskSpace(thread_db* tdbb, WIN* pip_window, const PageNumber pageNum, ULONG pipUsed)
 {
 	Database* dbb = tdbb->getDatabase();
 	PageManager& pageMgr = dbb->dbb_page_manager;
 	PageSpace* pageSpace = pageMgr.findPageSpace(pageNum.getPageSpaceID());
 
-	const page_inv_page* pip_page = (page_inv_page*) pip_window->win_buffer;
-	ULONG pipUsed = pip_page->pip_used;
 	const ULONG sequence = pageNum.getPageNum() / pageMgr.pagesPerPIP;
 	const ULONG relative_bit = pageNum.getPageNum() - sequence * pageMgr.pagesPerPIP;
 
@@ -753,9 +752,9 @@ static ULONG ensureDiskSpace(thread_db* tdbb, WIN* pip_window, const PageNumber 
 
 	USHORT next_init_pages = 1;
 	// ensure there are space on disk for faked page
-	if (relative_bit + 1 > pip_page->pip_used)
+	if (relative_bit + 1 > pipUsed)
 	{
-		fb_assert(relative_bit >= pip_page->pip_used);
+		fb_assert(relative_bit >= pipUsed);
 
 		USHORT init_pages = 0;
 		if (!nbak_stalled)
@@ -765,24 +764,24 @@ static ULONG ensureDiskSpace(thread_db* tdbb, WIN* pip_window, const PageNumber 
 			{
 				const int minExtendPages = MIN_EXTEND_BYTES / dbb->dbb_page_size;
 
-				init_pages = sequence ? 64 : MIN(pip_page->pip_used / 16, 64);
+				init_pages = sequence ? 64 : MIN(pipUsed / 16, 64);
 
 				// don't touch pages belongs to the next PIP
-				init_pages = MIN(init_pages, pageMgr.pagesPerPIP - pip_page->pip_used);
+				init_pages = MIN(init_pages, pageMgr.pagesPerPIP - pipUsed);
 
 				if (init_pages < minExtendPages)
 					init_pages = 1;
 			}
 
-			if (init_pages < relative_bit + 1 - pip_page->pip_used)
-				init_pages = relative_bit + 1 - pip_page->pip_used;
+			if (init_pages < relative_bit + 1 - pipUsed)
+				init_pages = relative_bit + 1 - pipUsed;
 
 			//init_pages = FB_ALIGN(init_pages, PAGES_IN_EXTENT);
 
 			next_init_pages = init_pages;
 
 			FbLocalStatus status;
-			const ULONG start = sequence * pageMgr.pagesPerPIP + pip_page->pip_used;
+			const ULONG start = sequence * pageMgr.pagesPerPIP + pipUsed;
 
 			init_pages = PIO_init_data(tdbb, pageSpace->file, &status, start, init_pages);
 		}
@@ -822,7 +821,7 @@ static ULONG ensureDiskSpace(thread_db* tdbb, WIN* pip_window, const PageNumber 
 
 	if (!(dbb->dbb_flags & DBB_no_reserve) && !nbak_stalled)
 	{
-		const ULONG initialized = sequence * pageMgr.pagesPerPIP + pip_page->pip_used;
+		const ULONG initialized = sequence * pageMgr.pagesPerPIP + pipUsed;
 
 		// At this point we ensure database has at least "initialized" pages
 		// allocated. To avoid file growth by few pages when all this space
