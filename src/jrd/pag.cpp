@@ -744,6 +744,7 @@ static ULONG ensureDiskSpace(thread_db* tdbb, WIN* pip_window, const PageNumber 
 	PageManager& pageMgr = dbb->dbb_page_manager;
 	PageSpace* pageSpace = pageMgr.findPageSpace(pageNum.getPageSpaceID());
 
+	ULONG newUsed = pipUsed;
 	const ULONG sequence = pageNum.getPageNum() / pageMgr.pagesPerPIP;
 	const ULONG relative_bit = pageNum.getPageNum() - sequence * pageMgr.pagesPerPIP;
 
@@ -788,7 +789,7 @@ static ULONG ensureDiskSpace(thread_db* tdbb, WIN* pip_window, const PageNumber 
 
 		if (init_pages)
 		{
-			pipUsed += init_pages;
+			newUsed += init_pages;
 		}
 		else
 		{
@@ -815,7 +816,7 @@ static ULONG ensureDiskSpace(thread_db* tdbb, WIN* pip_window, const PageNumber 
 				throw;
 			}
 
-			pipUsed = relative_bit + 1;
+			newUsed = relative_bit + 1;
 		}
 	}
 
@@ -829,7 +830,7 @@ static ULONG ensureDiskSpace(thread_db* tdbb, WIN* pip_window, const PageNumber 
 		pageSpace->extend(tdbb, initialized + next_init_pages, false);
 	}
 
-	return pipUsed;
+	return newUsed;
 }
 
 
