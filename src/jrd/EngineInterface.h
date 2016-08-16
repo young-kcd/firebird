@@ -364,9 +364,16 @@ public:
 	jrd_tra* getEngineTransaction(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* tra);
 
 private:
+	friend class StableAttachmentPart;
+
 	StableAttachmentPart* att;
 
 	void freeEngineData(Firebird::CheckStatusWrapper* status, bool forceFree);
+
+	void detachEngine()
+	{
+		att = NULL;
+	}
 };
 
 class JService FB_FINAL :

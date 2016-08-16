@@ -4369,6 +4369,9 @@ SysStableAttachment::SysStableAttachment(Attachment* handle)
 	: StableAttachmentPart(handle)
 {
 	handle->att_flags |= ATT_system;
+
+	m_JAttachment = FB_NEW JAttachment(this);
+	this->setInterface(m_JAttachment);
 }
 
 
@@ -4403,6 +4406,7 @@ void SysStableAttachment::destroy(Attachment* attachment)
 	MutexLockGuard async(*getMutex(true), FB_FUNCTION);
 	MutexLockGuard sync(*getMutex(), FB_FUNCTION);
 
+	setInterface(NULL);
 	Jrd::Attachment::destroy(attachment);
 }
 

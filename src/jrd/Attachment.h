@@ -140,6 +140,9 @@ public:
 
 	void setInterface(JAttachment* ja)
 	{
+		if (jAtt)
+			jAtt->detachEngine();
+
 		jAtt = ja;
 	}
 
@@ -552,6 +555,9 @@ public:
 
 private:
 	void destroy(Attachment* attachment);
+
+	// "public" interface for internal (system) attachment
+	Firebird::RefPtr<JAttachment> m_JAttachment;
 };
 
 
