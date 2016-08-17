@@ -634,10 +634,6 @@ PAG PAG_allocate_pages(thread_db* tdbb, WIN* window, int cntAlloc, bool aligned)
 					pipUsed);
 			}
 
-			window->win_page = firstBit + sequence * pageMgr.pagesPerPIP;
-			new_page = CCH_fake(tdbb, window, 1);
-			fb_assert(new_page);
-
 			CCH_MARK(tdbb, &pip_window);
 
 			for (ULONG i = firstBit; i <= lastBit; i++)
@@ -730,8 +726,14 @@ PAG PAG_allocate_pages(thread_db* tdbb, WIN* window, int cntAlloc, bool aligned)
 
 		CCH_RELEASE(tdbb, &pip_window);
 
-		if (new_page)
+		if (!toAlloc)
+		{
+			window->win_page = firstBit + sequence * pageMgr.pagesPerPIP;
+			new_page = CCH_fake(tdbb, window, LCK_WAIT);
+			fb_assert(new_page);
+
 			CCH_precedence(tdbb, window, pip_window.win_page);
+		}
 	}
 
 	return new_page;
@@ -2512,8 +2514,11 @@ void PAG_set_page_scn(thread_db* tdbb, win* window)
 	win scn_window(pageSpace->pageSpaceID, scn_page);
 
 	scns_page* page = (scns_page*) CCH_FETCH(tdbb, &scn_window, LCK_write, pag_scns);
-	CCH_MARK(tdbb, &scn_window);
-	page->scn_pages[scn_slot] = curr_scn;
+	if (page->scn_pages[scn_slot] != curr_scn)
+	{
+		CCH_MARK(tdbb, &scn_window);
+		page->scn_pages[scn_slot] = curr_scn;
+	}
 	CCH_RELEASE(tdbb, &scn_window);
 
 	CCH_precedence(tdbb, window, scn_page);
