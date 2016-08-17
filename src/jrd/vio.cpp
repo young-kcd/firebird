@@ -4988,6 +4988,11 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	try
 	{
 		// Notify the finalization caller that we're finishing.
+		if (dbb->dbb_flags & DBB_gc_starting)
+		{
+			dbb->dbb_flags &= ~DBB_gc_starting;
+			dbb->dbb_gc_init.release();
+		}
 		dbb->dbb_gc_fini.release();
 	}
 	catch (const Firebird::Exception& ex)

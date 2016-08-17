@@ -2963,10 +2963,15 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		iscDbLogStatus(dbb->dbb_filename.c_str(), &status_vector);
 	}
 
-	bcb->bcb_flags &= ~(BCB_cache_writer | BCB_writer_start);
+	bcb->bcb_flags &= ~BCB_cache_writer;
 
 	try
 	{
+		if (bcb->bcb_flags & BCB_writer_start)
+		{
+			bcb->bcb_flags &= ~BCB_writer_start;
+			bcb->bcb_writer_init.release();
+		}
 		bcb->bcb_writer_fini.release();
 	}
 	catch (const Firebird::Exception& ex)
