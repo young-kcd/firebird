@@ -4661,10 +4661,15 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 	event->rvnt_rdb = rdb;
 
 	rem_port* asyncPort = rdb->rdb_port->port_async;
-	RefMutexGuard portGuard(*asyncPort->port_sync, FB_FUNCTION);
+	if (!asyncPort || (asyncPort->port_flags & PORT_detached))
+		Arg::Gds(isc_net_event_connect_err).copyTo(&status_vector);
+	else
+	{
+		RefMutexGuard portGuard(*asyncPort->port_sync, FB_FUNCTION);
 
-	event->rvnt_iface = rdb->rdb_iface->queEvents(&status_vector, event->rvnt_callback,
-		stuff->p_event_items.cstr_length, stuff->p_event_items.cstr_address);
+		event->rvnt_iface = rdb->rdb_iface->queEvents(&status_vector, event->rvnt_callback,
+			stuff->p_event_items.cstr_length, stuff->p_event_items.cstr_address);
+	}
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);
 }
