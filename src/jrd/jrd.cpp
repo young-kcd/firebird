@@ -807,6 +807,8 @@ void Trigger::compile(thread_db* tdbb)
 			AutoPtr<CompilerScratch> auto_csb(FB_NEW_POOL(*new_pool) CompilerScratch(*new_pool));
 			CompilerScratch* csb = auto_csb;
 
+			csb->csb_g_flags |= par_flags;
+
 			if (engine.isEmpty())
 			{
 				if (debugInfo.hasData())
