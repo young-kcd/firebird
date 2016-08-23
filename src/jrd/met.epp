@@ -4610,6 +4610,8 @@ static BoolExprNode* parse_field_validation_blr(thread_db* tdbb, bid* blob_id, c
 	AutoPtr<CompilerScratch> auto_csb(FB_NEW_POOL(pool) CompilerScratch(pool));
 	CompilerScratch* csb = auto_csb;
 
+	csb->csb_domain_validation = name;
+
 	blb* blob = blb::open(tdbb, attachment->getSysTransaction(), blob_id);
 	ULONG length = blob->blb_length + 10;
 	HalfStaticArray<UCHAR, 512> temp;
