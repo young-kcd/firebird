@@ -285,6 +285,11 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	if (!xdr_enum(xdrs, reinterpret_cast<xdr_op*>(&p->p_operation)))
 		return P_FALSE(xdrs, p);
 
+#if COMPRESS_DEBUG>1
+	fprintf(stderr, "operation=%d %c\n", p->p_operation,
+		xdrs->x_op == XDR_ENCODE ? 'E' : xdrs->x_op == XDR_DECODE ? 'D' : xdrs->x_op == XDR_FREE ? 'F' : 'U');
+#endif
+
 	switch (p->p_operation)
 	{
 	case op_reject:
