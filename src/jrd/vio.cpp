@@ -5562,7 +5562,8 @@ static void replace_record(thread_db*		tdbb,
 }
 
 
-static void refresh_fk_fields(thread_db* tdbb, Record* old_rec, record_param* cur_rpb, record_param* new_rpb)
+static void refresh_fk_fields(thread_db* tdbb, Record* old_rec, record_param* cur_rpb,
+	record_param* new_rpb)
 {
 /**************************************
  *
@@ -5571,7 +5572,7 @@ static void refresh_fk_fields(thread_db* tdbb, Record* old_rec, record_param* cu
  **************************************
  *
  * Functional description
- *	Update new_rpb with foreign key fields values changed by cascade triggers. 
+ *	Update new_rpb with foreign key fields values changed by cascade triggers.
  *  Consider self-referenced foreign keys only.
  *
  *  old_rec - old record before modify
@@ -5604,7 +5605,7 @@ static void refresh_fk_fields(thread_db* tdbb, Record* old_rec, record_param* cu
 			idx.idx_id = idx_invalid;
 
 			if (BTR_lookup(tdbb, relation, (*relation->rel_foreign_refs.frgn_reference_ids)[i],
-				&idx, relPages))
+					&idx, relPages))
 			{
 				fb_assert(idx.idx_flags & idx_foreign);
 
@@ -5629,7 +5630,7 @@ static void refresh_fk_fields(thread_db* tdbb, Record* old_rec, record_param* cu
 		const bool flag_old = EVL_field(relation, old_rec, fld, &desc1);
 		const bool flag_new = EVL_field(relation, new_rpb->rpb_record, fld, &desc2);
 
-		// If field was not changed by user - pick up possible modification by 
+		// If field was not changed by user - pick up possible modification by
 		// system cascade trigger
 		if (flag_old == flag_new &&
 			(!flag_old || flag_old && MOV_compare(&desc1, &desc2) == 0))

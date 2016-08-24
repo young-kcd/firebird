@@ -1731,8 +1731,8 @@ bool set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 
 			// At PAG_set_page_scn() below we could dirty SCN page and thus acquire
 			// nbackup state lock recursively. Since RWLock allows it, we are safe.
-			// Else we should release just taken state lock before call of 
-			// PAG_set_page_scn() and acquire it again. If current SCN changes meanwile
+			// Else we should release just taken state lock before call of
+			// PAG_set_page_scn() and acquire it again. If current SCN changes meanwhile
 			// we should repeat whole process again...
 
 			win window(bdb->bdb_page);
@@ -4988,7 +4988,9 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 
 static void clear_dirty_flag_and_nbak_state(thread_db* tdbb, BufferDesc* bdb)
 {
-	const AtomicCounter::counter_type oldFlags = bdb->bdb_flags.exchangeBitAnd(~(BDB_dirty | BDB_nbak_state_lock));
+	const AtomicCounter::counter_type oldFlags = bdb->bdb_flags.exchangeBitAnd(
+		~(BDB_dirty | BDB_nbak_state_lock));
+
 	if (oldFlags & BDB_nbak_state_lock)
 	{
 		NBAK_TRACE(("unlock state for dirty page %d:%06d",

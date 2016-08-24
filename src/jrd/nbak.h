@@ -502,7 +502,7 @@ private:
 	bool shutDown;
 	bool allocIsValid;			// true, if alloc table cache is completely read from disk
 	bool master;				// this instance performs current begin\end backup process
-	bool stateBlocking;			// blolcking AST handler doesn't released stateLock
+	bool stateBlocking;			// blocking AST handler doesn't released stateLock
 
 	NBackupStateLock* stateLock;
 	Firebird::RWLock localStateLock;	// must be acquired before global stateLock
