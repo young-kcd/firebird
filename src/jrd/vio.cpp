@@ -3226,7 +3226,6 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_rcon:
 		case rel_refc:
 		case rel_ccon:
-		case rel_roles:
 		case rel_sec_users:
 		case rel_sec_user_attributes:
 		case rel_msgs:
@@ -3238,6 +3237,12 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_segments:
 			protect_system_table_insert(tdbb, request, relation);
 			break;
+
+		case rel_roles:
+			protect_system_table_insert(tdbb, request, relation);
+			EVL_field(0, rpb->rpb_record, f_rol_name, &desc);
+			if (set_security_class(tdbb, rpb->rpb_record, f_rol_class))
+				DFW_post_work(transaction, dfw_grant, &desc, obj_sql_role);
 
 		case rel_db_creators:
 			if (!tdbb->getAttachment()->locksmith())

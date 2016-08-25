@@ -10521,6 +10521,9 @@ void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 		ERASE ROL;
 
 		found = true;
+
+		if (!ROL.RDB$SECURITY_CLASS.NULL)
+			deleteSecurityClass(tdbb, transaction, ROL.RDB$SECURITY_CLASS);
 	}
 	END_FOR
 

@@ -63,7 +63,7 @@ Jrd::SecurityClass::flags_t SCL_get_object_mask(const int object_type);
 namespace Jrd {
 typedef Firebird::Array<UCHAR> Acl;
 }
-void SCL_move_priv(Jrd::SecurityClass::flags_t, Jrd::Acl&);
+bool SCL_move_priv(Jrd::SecurityClass::flags_t, Jrd::Acl&);
 
 
 #endif // JRD_SCL_PROTO_H
