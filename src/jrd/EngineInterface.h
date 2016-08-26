@@ -39,6 +39,7 @@ class JrdStatement;
 class StableAttachmentPart;
 class Attachment;
 class Service;
+class UserId;
 
 // forward declarations
 class JStatement;
@@ -391,8 +392,6 @@ private:
 	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-const static int INTERNAL_ATT_OVERWRITE_CHECK = 0x01;
-
 class JProvider FB_FINAL :
 	public Firebird::StdPlugin<Firebird::IProviderImpl<JProvider, Firebird::CheckStatusWrapper> >
 {
@@ -428,7 +427,7 @@ public:
 
 private:
 	JAttachment* internalAttach(Firebird::CheckStatusWrapper* status, const char* fileName,
-		unsigned int dpbLength, const unsigned char* dpb, unsigned int internalFlags);
+		unsigned int dpbLength, const unsigned char* dpb, const UserId* existingId);
 	Firebird::ICryptKeyCallback* cryptCallback;
 	Firebird::IPluginConfig* pluginConfig;
 };
