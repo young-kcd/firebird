@@ -35,7 +35,7 @@
   Contributor(s): Dmitry Yemanov
 
 * [CORE-749](http://tracker.firebirdsql.org/browse/CORE-749): Increase maximum length of object names to 63 characters  
-  Contributor(s): Adriano dos Santos Ferdandes
+  Contributor(s): Adriano dos Santos Fernandes
 
 ## New features
 
@@ -49,7 +49,7 @@
   Contributor(s): Roman Simakov
 
 * [CORE-1688](http://tracker.firebirdsql.org/browse/CORE-1688): More ANSI SQL:2003 window functions (PERCENK_RANK, CUME_DIST, NTILE)  
-  Contributor(s): Adriano dos Santos Ferdandes
+  Contributor(s): Hajime Nakagami, Adriano dos Santos Fernandes
 
 * [CORE-751](http://tracker.firebirdsql.org/browse/CORE-751): Implicitly active roles (and their permissions summarized)  
   Contributor(s): Roman Simakov
