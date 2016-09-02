@@ -19,6 +19,7 @@
  */
 
 #include "firebird.h"
+#include <initializer_list>
 #include "../jrd/align.h"
 #include "../jrd/RecordSourceNodes.h"
 #include "../jrd/DataTypeUtil.h"
@@ -2395,7 +2396,7 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			PASS1_expand_select_node(dsqlScratch, streamList->items[1], &rightStack, true);
 
 			// verify columns that exist in both sides
-			for (int i = 0; i < 2; ++i)
+			for (int i : {0, 1})
 			{
 				ValueListNode& currentStack = i == 0 ? leftStack : rightStack;
 
