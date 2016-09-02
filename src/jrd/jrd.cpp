@@ -6360,7 +6360,9 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	attachment->mergeStats();
 
 	// avoid races with crypt thread
-	MutexEnsureUnlock cryptGuard(dbb->dbb_crypto_manager->cryptAttMutex, FB_FUNCTION);
+	Mutex dummyMutex;
+	MutexEnsureUnlock cryptGuard(dbb->dbb_crypto_manager ? dbb->dbb_crypto_manager->cryptAttMutex :
+		dummyMutex, FB_FUNCTION);
 	cryptGuard.enter();
 
 	Sync sync(&dbb->dbb_sync, "jrd.cpp: release_attachment");
