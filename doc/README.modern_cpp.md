@@ -19,3 +19,4 @@ Only ones mentioned in this document could be used, but as necessities appears, 
 - [polymorphic function wrappers](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2002/n1402.html)
 - [function object binders](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2003/n1455.htm)
 - [function template mem_fn](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2003/n1432.htm)
+- [rvalue references](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2006/n2027.html)
