@@ -4,7 +4,7 @@ By the SQL specification, window functions (also know as analytical functions) a
 
 That sort of functions are used with the `OVER` clause. Window functions may appear only in the select list or the `ORDER BY` clause of a query.
 
-Additional to the `OVER` clause, Firebird window functions may use partitions, order and frames (v4).
+Additional to the `OVER` clause, Firebird window functions may use partitions, order and frames (FB 4.0).
 
 Syntax:
 
@@ -243,7 +243,7 @@ And the result set:
 
 `LAG` and `LEAD` get the value within a distance respect to the current row and the offset (which defaults to 1) passed. In the case the offset points to outside of the partition, the default parameter (which defaults to NULL) is returned. `LAG` looks for a preceding row, and `LEAD` for a following row.
 
-## 5. Frames (v4)
+## 5. Frames (FB 4.0)
 
 It's possible to specify the frame that some window functions work. The frame is divided in three piecies: unit, start bound and end bound.
 
