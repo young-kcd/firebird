@@ -927,10 +927,10 @@ namespace Jrd {
 		// Therefore use old (status vector based) method
 		try
 		{
+			// Normal case (almost always get here)
+			// Take shared lock on crypto manager and read data
 			if (!slowIO)
 			{
-				// Normal case (almost always get here)
-				// Take shared lock on crypto manager and read data
 				BarSync::IoGuard ioGuard(tdbb, sync);
 				if (!slowIO)
 					return internalRead(tdbb, sv, page, io) == SUCCESS_ALL;
@@ -1008,10 +1008,18 @@ namespace Jrd {
 		// Therefore use old (status vector based) method
 		try
 		{
+			// Sanity check
+			if (page->pag_type > pag_max)
+				Arg::Gds(isc_page_type_err).raise();
+
+			// Page is never going to be encrypted. No locks needed.
+			if (!Ods::pag_crypt_page[page->pag_type])
+				return internalWrite(tdbb, sv, page, io) == SUCCESS_ALL;
+
+			// Normal case (almost always get here)
+			// Take shared lock on crypto manager and write data
 			if (!slowIO)
 			{
-				// Normal case (almost always get here)
-				// Take shared lock on crypto manager and write data
 				BarSync::IoGuard ioGuard(tdbb, sync);
 				if (!slowIO)
 					return internalWrite(tdbb, sv, page, io) == SUCCESS_ALL;
@@ -1061,7 +1069,7 @@ namespace Jrd {
 		Ods::pag* dest = page;
 		UCHAR savedFlags = page->pag_flags;
 
-		if (crypt && Ods::pag_crypt_page[page->pag_type % (pag_max + 1)])
+		if (crypt && Ods::pag_crypt_page[page->pag_type])
 		{
 			fb_assert(cryptPlugin);
 			if (!cryptPlugin)
