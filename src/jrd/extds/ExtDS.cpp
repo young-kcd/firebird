@@ -283,7 +283,7 @@ Connection::Connection(Provider& prov) :
 	PermanentStorage(prov.getPool()),
 	m_provider(prov),
 	m_dbName(getPool()),
-	m_dpb(getPool(), ClumpletReader::Tagged, MAX_DPB_SIZE),
+	m_dpb(getPool(), ClumpletReader::dpbList, MAX_DPB_SIZE),
 	m_transactions(getPool()),
 	m_statements(getPool()),
 	m_freeStatements(NULL),
