@@ -394,19 +394,23 @@ inline bool DSC_EQUIV(const dsc* d1, const dsc* d2, bool check_collate)
 {
 	if (((alt_dsc*) d1)->dsc_combined_type == ((alt_dsc*) d2)->dsc_combined_type)
 	{
-		if (d1->dsc_dtype >= dtype_text && d1->dsc_dtype <= dtype_varying)
+		if ((d1->dsc_dtype >= dtype_text && d1->dsc_dtype <= dtype_varying) ||
+			d1->dsc_dtype == dtype_blob)
 		{
-			if (DSC_GET_CHARSET(d1) == DSC_GET_CHARSET(d2))
+			if (d1->getCharSet() == d2->getCharSet())
 			{
-				if (check_collate) {
-					return (DSC_GET_COLLATE(d1) == DSC_GET_COLLATE(d2));
-				}
+				if (check_collate)
+					return d1->getCollation() == d2->getCollation();
+
 				return true;
 			}
+
 			return false;
 		}
+
 		return true;
 	}
+
 	return false;
 }
 

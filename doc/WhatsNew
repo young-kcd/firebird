@@ -12,6 +12,11 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix CORE-5341
+        User collate doesn't work with blobs
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
     * Bugfix CORE-5339
         Assertion in createDatabase() when doing overwrite check
       Contributor(s):
