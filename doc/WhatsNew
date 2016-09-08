@@ -2,10 +2,176 @@
   * v3.0.1
   **************************
 
+    * Bugfix CORE-5348
+        Databases created at build process are owned by Windows administrator, not SYSDBA
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5347
+        Races when initializing wire compression
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5339
+        Assertion in createDatabase() when doing overwrite check
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5335
+        Segfault when op_que_events is used on a port not prepared for events processing
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5329
+        Database gets partially corrupted in the "no-reserve" mode
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5327
+        BUGCHECK 165 (cannot find tip page)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5322
+        Cascade deletion in self-referencing table could raise "no current record for fetch operation" error
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5313
+        Data type unknown error with LIST
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5308
+        ISQL hangs in BLOBVIEW command
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5307
+        Random "invalid transaction handle" errors are returned from the engine
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5305
+        CASCADE UPDATE fails for self-referencing FK
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5302
+        Performance regression when bulk inserting into table with indices
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5296
+        Error in network protocol when performing callback to client for database crypt key
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5295
+        Validation could read after the end-of-file when handle multifile database
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5294
+        Memory leak when use SHOW GRANTS on new empty database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5292
+        Database corrupted when trying to encrypt it but appropriate key is missing
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5289
+        Small memory leak when resultset is empty
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5285
+        Segfault when attachment is closed before it's request/statement/etc.
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5284
+        Firebird fails to build with USE_VALGRIND
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5279
+        Granting access rights to view is broken
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5278
+        Some SPB parameters fail in FB 3.0
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5277
+        Parameters with multibyte character sets allow to bypass the character limit of VARCHAR fields
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5275
+        Expression index may become inconsistent if CREATE INDEX was interrupted after b-tree creation but before commiting
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5270
+        FBSVCMGR does not produce error while attempting to shutdown a database without specified timeout (prp_force_shutdown N)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5268
+        Nested OR conditions may lead to incorrest results
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5264
+        Database cannot be unlocked (nbackup) if located on a raw device
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5249
+        Incorrect use of readlink() system call
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5248
+        Improve consistency in GRANT syntax between roles and privileges according to SQL standard
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5246
+        String truncation error while selecting from MON$ tables if some user-defined context variable exceeds 255 bytes in length
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5244
+        Wrong error message when trying to execute SELECT statement using isc_dsql_execute_immediate()
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-5241
         Affected rows are not counted for some update operations with views
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5236
+        IN/ANY/ALL predicates may cause sub-optimal (late filtering) execution of joins
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5234
+        Access violation on UDF crashes server
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5233
+        Unaligned memory access in MET_format() causes segfault on big-endian machines
+      Contributor(s):
+        James Clarke <jrtc27 at jrtc27.com>
 
     * Bugfix CORE-5232
         32-bit locks on big-endian systems lead to deadlock
@@ -26,6 +192,11 @@
         Incorrect result set (missing records) may be returned by the ORDER plan query navigating on a descending index
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5225
+        Authentication end with first plugin that has the user but auth fails (should continue with next plugin)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-5224
         Transaction id tags for services API do not support new 48 bit transaction ids
@@ -52,6 +223,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-5213
+        Database may get decrypted after changing couple of bytes in database header w/o 'agreement' from crypt plugin
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-5210
         Firebird 3.0 + fbclient 3.0 - POST_EVENT won't work
       Contributor(s):
@@ -77,10 +253,30 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-5154
+        Services API don't work with non-ASCII database names
+      Contributor(s):
+        Dimitry Sibiryakov <sd at ibphoenix.com>
+
+    * Bugfix CORE-5142
+        Error "no current record to fetch" if some record is to be deleted both by the statement itself and by some trigger fired during statement execution
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-1746
         Expression index can be created while doing inserts into table
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-5266
+        Allow statement 'create OR ALTER user sysdba password ...' to initialize empty securityN.fdb as 'CREATE user ...' 
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-5257
+        Enable nested keys in plugin configuration
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Improvement CORE-5229
         Allow to enforce IPv4 or IPv6 in URL-like connection strings
