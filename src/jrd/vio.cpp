@@ -719,7 +719,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 	// Take care about modifications performed by our own transaction
 
-	rpb->rpb_runtime_flags &= ~(RPB_undo_data | RPB_undo_read);
+	rpb->rpb_runtime_flags &= ~RPB_UNDO_FLAGS;
 	int forceBack = 0;
 
 	if (state == tra_us && !noundo && !(transaction->tra_flags & TRA_system))
@@ -4624,6 +4624,8 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
 			return udNone;
 
 		rpb->rpb_runtime_flags |= RPB_undo_read;
+		if (rpb->rpb_flags & rpb_deleted)
+			rpb->rpb_runtime_flags |= RPB_undo_deleted;
 
 		if (!action->vct_undo || !action->vct_undo->locate(recno))
 			return udForceBack;

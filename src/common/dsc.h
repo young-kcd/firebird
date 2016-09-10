@@ -69,7 +69,7 @@ inline bool DTYPE_IS_APPROX(UCHAR d)
 
 inline bool DTYPE_IS_NUMERIC(UCHAR d)
 {
-	return (d >= dtype_byte && d <= dtype_d_float) || d  == dtype_int64;
+	return (d >= dtype_byte && d <= dtype_d_float) || d == dtype_int64;
 }
 
 // Descriptor format
@@ -133,6 +133,11 @@ typedef struct dsc
 	bool isExact() const
 	{
 		return dsc_dtype == dtype_int64 || dsc_dtype == dtype_long || dsc_dtype == dtype_short;
+	}
+
+	bool isNumeric() const
+	{
+		return (dsc_dtype >= dtype_byte && dsc_dtype <= dtype_d_float) || dsc_dtype == dtype_int64;
 	}
 
 	bool isText() const
@@ -394,19 +399,23 @@ inline bool DSC_EQUIV(const dsc* d1, const dsc* d2, bool check_collate)
 {
 	if (((alt_dsc*) d1)->dsc_combined_type == ((alt_dsc*) d2)->dsc_combined_type)
 	{
-		if (d1->dsc_dtype >= dtype_text && d1->dsc_dtype <= dtype_varying)
+		if ((d1->dsc_dtype >= dtype_text && d1->dsc_dtype <= dtype_varying) ||
+			d1->dsc_dtype == dtype_blob)
 		{
-			if (DSC_GET_CHARSET(d1) == DSC_GET_CHARSET(d2))
+			if (d1->getCharSet() == d2->getCharSet())
 			{
-				if (check_collate) {
-					return (DSC_GET_COLLATE(d1) == DSC_GET_COLLATE(d2));
-				}
+				if (check_collate)
+					return d1->getCollation() == d2->getCollation();
+
 				return true;
 			}
+
 			return false;
 		}
+
 		return true;
 	}
+
 	return false;
 }
 

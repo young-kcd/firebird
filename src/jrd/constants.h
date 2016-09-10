@@ -287,6 +287,8 @@ enum InfoType
 	INFO_TYPE_ROWS_AFFECTED = 5,
 	INFO_TYPE_TRIGGER_ACTION = 6,
 	INFO_TYPE_SQLSTATE = 7,
+	INFO_TYPE_EXCEPTION = 8,
+	INFO_TYPE_ERROR_MSG = 9,
 	MAX_INFO_TYPE
 };
 
@@ -451,5 +453,8 @@ const int OPT_STATIC_ITEMS = 64;
 
 const int WITH_GRANT_OPTION = 1;
 const int WITH_ADMIN_OPTION = 2;
+
+// Max length of the string returned by ERROR_TEXT context variable
+const USHORT MAX_ERROR_MSG_LENGTH = 1024 * METADATA_BYTES_PER_CHAR; // 1024 UTF-8 characters
 
 #endif // JRD_CONSTANTS_H

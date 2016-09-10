@@ -37,9 +37,9 @@ namespace
 {
 	const int HASH_SIZE = 1021;
 
-	struct KeywordVersion
+	struct Keyword
 	{
-		KeywordVersion(int aKeyword, MetaName* aStr)
+		Keyword(int aKeyword, MetaName* aStr)
 			: keyword(aKeyword), str(aStr)
 		{}
 
@@ -47,16 +47,16 @@ namespace
 		MetaName* str;
 	};
 
-	class KeywordsMap : public GenericMap<Pair<Left<MetaName, KeywordVersion> > >
+	class KeywordsMap : public GenericMap<Pair<Left<MetaName, Keyword> > >
 	{
 	public:
 		explicit KeywordsMap(MemoryPool& pool)
-			: GenericMap<Pair<Left<MetaName, KeywordVersion> > >(pool)
+			: GenericMap<Pair<Left<MetaName, Keyword> > >(pool)
 		{
 			for (const TOK* token = KEYWORD_getTokens(); token->tok_string; ++token)
 			{
 				MetaName* str = FB_NEW_POOL(pool) MetaName(token->tok_string);
-				put(*str, KeywordVersion(token->tok_ident, str));
+				put(*str, Keyword(token->tok_ident, str));
 			}
 		}
 
@@ -400,7 +400,7 @@ int Parser::yylexAux()
 	Database* const dbb = tdbb->getDatabase();
 	MemoryPool& pool = *tdbb->getDefaultPool();
 
-	int maxByteLength, maxCharLength;
+	unsigned maxByteLength, maxCharLength;
 
 	if (scratch->flags & DsqlCompilerScratch::FLAG_INTERNAL_REQUEST)
 	{
@@ -542,9 +542,9 @@ int Parser::yylexAux()
 					yyabandon(-104, isc_dyn_zero_len_id);
 				}
 
-				Attachment* attachment = tdbb->getAttachment();
-				MetaName name(attachment->nameToMetaCharSet(tdbb, MetaName(buffer, p - buffer)));
-				int charLength = metadataCharSet->length(
+				Attachment* const attachment = tdbb->getAttachment();
+				const MetaName name(attachment->nameToMetaCharSet(tdbb, MetaName(buffer, p - buffer)));
+				const unsigned charLength = metadataCharSet->length(
 					name.length(), (const UCHAR*) name.c_str(), true);
 
 				if (name.length() > maxByteLength || charLength > maxCharLength)
@@ -1105,8 +1105,8 @@ int Parser::yylexAux()
 		if (p > &string[maxByteLength] || p > &string[maxCharLength])
 			yyabandon(-104, isc_dyn_name_longer);
 
-		MetaName str(string, p - string);
-		KeywordVersion* keyVer = keywordsMap->get(str);
+		const MetaName str(string, p - string);
+		const Keyword* const keyVer = keywordsMap->get(str);
 
 		if (keyVer && (keyVer->keyword != COMMENT || lex.prev_keyword == -1))
 		{
@@ -1128,8 +1128,8 @@ int Parser::yylexAux()
 
 	if (lex.last_token + 1 < lex.end && !isspace(UCHAR(lex.last_token[1])))
 	{
-		Firebird::string str(lex.last_token, 2);
-		KeywordVersion* keyVer = keywordsMap->get(str);
+		const MetaName str(lex.last_token, 2);
+		const Keyword* const keyVer = keywordsMap->get(str);
 
 		if (keyVer)
 		{

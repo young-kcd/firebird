@@ -457,8 +457,8 @@ ISC_PASSWD=$NewPasswd
 #
 # generated on $FB_HOST at time $FB_TIME
 #
-# Your password can be changed to a more suitable one using the
-# @FB_BINDIR@/gsec utility.
+# Your password can be changed to a more suitable one using
+# SQL operator ALTER USER.
 #
 EOT
 

@@ -2403,6 +2403,9 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 		rpb->rpb_runtime_flags &= ~RPB_refetch;
 	}
 
+	if (rpb->rpb_runtime_flags & RPB_undo_deleted)
+		return parentStmt;
+
 	SavepointChangeMarker scMarker(transaction);
 
 	// Handle pre-operation trigger.
@@ -6198,6 +6201,12 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 	{
 		VIO_refetch_record(tdbb, orgRpb, transaction, false, false);
 		orgRpb->rpb_runtime_flags &= ~RPB_refetch;
+	}
+
+	if (orgRpb->rpb_runtime_flags & RPB_undo_deleted)
+	{
+		request->req_operation = jrd_req::req_return;
+		return parentStmt;
 	}
 
 	// Fall thru on evaluate to set up for modify before executing sub-statement.
