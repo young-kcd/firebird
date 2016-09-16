@@ -21,13 +21,13 @@ define([XE_APPEND],[[$2]="$[$2] [$1]"])
 dnl XE_PREPEND(value, varname)
 define([XE_PREPEND],[[$2]="[$1] $[$2]"])
 
-HAS_CONF_DIR=no
+CHANGE_PATH_SUPPORT=yes
 dnl XE_CONF_DIR(param, help, variable, default)
 define([XE_CONF_DIR],[
 AC_ARG_WITH([$1],
 	[AS_HELP_STRING([--with-$1],[$2])],
 	[[$3]="$withval"
-	 HAS_CONF_DIR=yes
+	 CHANGE_PATH_SUPPORT=no
 	 AC_DEFINE_UNQUOTED([$3], "$[$3]", [$2])],
 	[[$3]='${fb_install_prefix}[$4]'
 	 AC_DEFINE_UNQUOTED([$3], [""], [$2])]
@@ -482,6 +482,10 @@ if test "$INSTALL_PREFIX" = ""; then
 fi
 
 AM_BINRELOC
+if test -z "$BINRELOC_CFLAGS"
+then
+	CHANGE_PATH_SUPPORT=no
+fi
 
 AC_SUBST(MAKEFILE_PREFIX)
 AC_SUBST(AR_OPTIONS)
@@ -649,7 +653,7 @@ XE_CONF_DIR(fblog, [log files DIR (PREFIX)], FB_LOGDIR)
 XE_CONF_FILE(fblogfilename, [log file name within log dir (firebird.log)], FB_LOGFILENAME, firebird.log)
 XE_CONF_DIR(fbglock, [guardian lock DIR (PREFIX)], FB_GUARDDIR)
 XE_CONF_DIR(fbplugins, [plugins DIR (PREFIX)], FB_PLUGDIR, /plugins)
-AC_SUBST(HAS_CONF_DIR)
+AC_SUBST(CHANGE_PATH_SUPPORT)
 
 dnl gpre built-in language support (C/C++ are mandatory)
 GPRE_LANGUAGE_MODULES=""

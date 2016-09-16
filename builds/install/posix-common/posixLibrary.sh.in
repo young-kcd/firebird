@@ -1039,7 +1039,7 @@ updateInetdServiceEntry() {
 
 fbUsage() {
 	pf=""
-	if [ "@HAS_CONF_DIR@" = "no" ]
+	if [ "@CHANGE_PATH_SUPPORT@" = "yes" ]
 	then
 		pf=', -path <install path>'
 	fi
@@ -1063,7 +1063,7 @@ parseArgs() {
 				flSilent=1
 				;;
 			-path)
-				if [ "@HAS_CONF_DIR@" = "no" ]
+				if [ "@CHANGE_PATH_SUPPORT@" = "yes" ]
 				then
 					{ fb_install_prefix="$2"; }
 					if [ -z "${fb_install_prefix}" ]
