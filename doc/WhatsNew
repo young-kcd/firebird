@@ -298,11 +298,6 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
-    * Improvement CORE-5204
-        Build the Linux code with --enable-binreloc and create an option in the installer to install in different locations than /opt/firebird
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
     * Improvement CORE-5201
         Return nonzero result code when restore fails on activating and creating deferred user index
       Contributor(s):
