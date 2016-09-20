@@ -104,11 +104,11 @@ set FBBUILD_PROD_STATUS=PROD)
 :: Make sure we have everything we need. If something is missing then
 :: let's bail out now.
 
-sed --version | findstr version > nul
-@if %ERRORLEVEL% GEQ 1 (
-    call :ERROR Could not locate sed
-    goto :EOF
-) else (@echo     o sed found.)
+@echo     o Checking for sed...
+(cmd /c "sed.exe --version      2>&1 | findstr version > nul ") || ( call :ERROR Could not locate sed && @goto :EOF )
+
+@echo     o Checking for unix2dos...
+(cmd /c "unix2dos.exe --version 2>&1 | findstr version > nul" ) || ( call :ERROR Could not locate unix2dos && @goto :EOF )
 
 if %FBBUILD_ZIP_PACK% EQU 1 (
   if not defined SEVENZIP (
@@ -142,7 +142,6 @@ if not DEFINED FB_EXTERNAL_DOCS (
  goto :EOF
 )
 
-)
 
 ::End of CHECK_ENVIRONMENT
 ::------------------------
@@ -497,6 +496,31 @@ copy %FB_ROOT_PATH%\builds\install\misc\databases.conf.in %FB_OUTPUT_DIR%\databa
 @goto :EOF
 
 
+:SET_CRLF
+:: Make sure all our text files have Windows EOL
+:: This section can almost certainly be made more 
+:: elegant and less repetitive with a little of 
+:: that crazy msdos FOR and IF syntax. Whether
+:: it will make the code easier to maintain 
+:: is another matter.
+::===============================================
+for /R %FB_OUTPUT_DIR% %%v in (.) do (
+  pushd %%v
+  for /F %%W in ( 'dir /B /A-D' ) do (
+    for %%X in ( txt conf sql c cpp hpp h bat pas e def rc) do (
+      if /I "%%~xW" EQU ".%%X" (
+        unix2dos -D %%W       
+      )
+    )
+  )
+  popd
+)
+
+::End of SET_CRLF
+::-------------
+@goto :EOF
+
+
 :GEN_ZIP
 ::======
 if %FBBUILD_ZIP_PACK% EQU 0 goto :EOF
@@ -769,6 +793,10 @@ if defined WIX (
 @Echo.
 @Echo   Copying firebird.msg
 @(@call :FB_MSG ) || (@echo Error calling FB_MSG & @goto :EOF)
+@Echo.
+
+@Echo   Fix up line endingings
+@(@call :SET_CRLF ) || (@echo Error calling SET_CRLF & @goto :EOF)
 @Echo.
 
 
