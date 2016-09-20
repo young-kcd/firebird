@@ -1,5 +1,6 @@
-﻿Firebird Database Server $MAJOR.$MINOR.$RELEASE (Release Candidate 2)
+﻿Firebird Database Server $MAJOR.$MINOR.$RELEASE
 ========================================================
+
 
 Ovaj dokument je vodic za instalaciju ovog paketa
 Firebird-a $MAJOR.$MINOR za Windows platformu. Ovaj tekst
@@ -45,20 +46,15 @@ Deployment gds32.dll
 -----------------------
 
 Ova compatibility biblioteka se vise ne deploy-a u 
-windows system direktorij po default-u. Ne mozemo
-garantovati da ce potrebne MSVC runtime biblioteke biti 
-dostupne. U svakom slucaju  postoji opcija za ovo u vrijeme
-instalacije, zajedno sa sistemskim deployment-om fbclient.dll.
-
-Obavezno provjerite da Vas ciljni sistem ima adekvatne
-MSVC10 runtime biblioteke ako koristite ove opcije.
+windows system direktorij po default-u. U svakom 
+slucaju  postoji opcija za ovo u vrijeme instalacije.
 
 
 Instalacija Guardian-a
 ----------------------------
 
-Nadamo se da izbacimo Guardian. On ne radi s 
-Classic serverom i instalacija ga ne nudi 
+Namjeravamo da izbacimo Guardian iz upotrebe. On ne 
+radi s Classic serverom i instalacija ga ne nudi 
 ako je Classic izabran. Ako su izabrani
 SuperServer ili SuperClassic, onda je ponudjen
 ali nije izabran po default-u.
@@ -97,10 +93,6 @@ o Obavezno instalirajte kao administrator. tj,
   instalacioni program mozda nece moci pokrenuti 
   Firebird service na kraju instalacije.
 
-o Biblioteke deploy-ane putem instclient programa se mozda 
-  nece moci ucitati ako MS runtime biblioteke nisu instalirane. 
-  Ovo moze biti problem ako instalirate na starije Windows
-  platforme. 
 
 Deinstalacija
 --------------
@@ -150,4 +142,3 @@ Molimo da pogledate ovaj dokument:
     installation_scripted.txt
 
 za sve detalje.
-
