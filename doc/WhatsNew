@@ -7,6 +7,11 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix CORE-5351
+        LEFT JOIN incorrectly pushes UDF into the inner stream causing wrong results
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-5348
         Databases created at build process are owned by Windows administrator, not SYSDBA
       Contributor(s):
