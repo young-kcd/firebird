@@ -19,6 +19,7 @@
  */
 
 #include "firebird.h"
+#include <initializer_list>
 #include "../jrd/align.h"
 #include "../jrd/RecordSourceNodes.h"
 #include "../jrd/DataTypeUtil.h"
@@ -2585,30 +2586,22 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			PASS1_expand_select_node(dsqlScratch, streamList->items[1], &rightStack, true);
 
 			// verify columns that exist in both sides
-			for (int i = 0; i < 2; ++i)
+			for (const auto* currentStack : {&leftStack, &rightStack})
 			{
-				ValueListNode& currentStack = i == 0 ? leftStack : rightStack;
-
-				for (NestConst<ValueExprNode>* j = currentStack.items.begin();
-					 j != currentStack.items.end();
-					 ++j)
+				for (auto& item : currentStack->items)
 				{
 					const TEXT* name = NULL;
-					ValueExprNode* item = *j;
-					DsqlAliasNode* aliasNode;
-					FieldNode* fieldNode;
-					DerivedFieldNode* derivedField;
 
-					if ((aliasNode = item->as<DsqlAliasNode>()))
+					if (auto* aliasNode = item->as<DsqlAliasNode>())
 						name = aliasNode->name.c_str();
-					else if ((fieldNode = item->as<FieldNode>()))
+					else if (auto* fieldNode = item->as<FieldNode>())
 						name = fieldNode->dsqlField->fld_name.c_str();
-					else if ((derivedField = item->as<DerivedFieldNode>()))
+					else if (auto* derivedField = item->as<DerivedFieldNode>())
 						name = derivedField->name.c_str();
 
 					if (name)
 					{
-						if (i == 0)	// left
+						if (currentStack == &leftStack)
 							leftNames.add(name);
 						else	// right
 						{
