@@ -2,6 +2,11 @@
   * v3.0.1
   **************************
 
+    * Bugfix CORE-5355
+        XpbBuilder fails to create new TPB
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-5348
         Databases created at build process are owned by Windows administrator, not SYSDBA
       Contributor(s):
