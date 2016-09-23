@@ -606,6 +606,7 @@ using namespace Firebird;
 %token <metaNamePtr> SYSTEM
 %token <metaNamePtr> TIES
 %token <metaNamePtr> UNBOUNDED
+%token <metaNamePtr> WINDOW
 
 // precedence declarations for expression evaluation
 
@@ -687,6 +688,8 @@ using namespace Firebird;
 	Jrd::DecodeNode* decodeNode;
 	Firebird::Array<Jrd::FieldNode*>* fieldArray;
 	Firebird::Array<NestConst<Jrd::FieldNode> >* nestFieldArray;
+	Jrd::NamedWindowClause* namedWindowClause;
+	Jrd::NamedWindowsClause* namedWindowsClause;
 	Jrd::TransactionNode* traNode;
 	Firebird::Array<Jrd::PrivilegeClause>* privilegeArray;
 	Jrd::GranteeClause* granteeClause;
@@ -3972,6 +3975,7 @@ keyword_or_column
 	| VAR_SAMP
 	| VAR_POP
 	| UNBOUNDED				// added in FB 4.0
+	| WINDOW
 	;
 
 col_opt
@@ -5198,6 +5202,7 @@ query_spec
 			 where_clause
 			 group_clause
 			 having_clause
+			 named_windows_clause
 			 plan_clause
 		{
 			RseNode* rse = newNode<RseNode>();
@@ -5209,7 +5214,8 @@ query_spec
 			rse->dsqlWhere = $6;
 			rse->dsqlGroup = $7;
 			rse->dsqlHaving = $8;
-			rse->rse_plan = $9;
+			rse->dsqlNamedWindows = $9;
+			rse->rse_plan = $10;
 			$$ = rse;
 		}
 	;
@@ -5510,6 +5516,42 @@ having_clause
 where_clause
 	: /* nothing */				{ $$ = NULL; }
 	| WHERE search_condition	{ $$ = $2; }
+	;
+
+%type <namedWindowsClause> named_windows_clause
+named_windows_clause
+	: /* nothing */					{ $$ = NULL; }
+	| WINDOW window_definition_list	{ $$ = $2; }
+	;
+
+%type <namedWindowsClause> window_definition_list
+window_definition_list
+	: window_definition
+		{
+			NamedWindowsClause* node = newNode<NamedWindowsClause>();
+			node->add(*$1);
+			$$ = node;
+		}
+	| window_definition_list ',' window_definition
+		{
+			NamedWindowsClause* node = $1;
+			node->add(*$3);
+			$$ = node;
+		}
+	;
+
+%type <namedWindowClause> window_definition
+window_definition
+	: symbol_window_name AS '(' window_clause ')'
+		{
+			$$ = newNode<NamedWindowClause>(*$1, $4);
+		}
+	;
+
+%type <metaNamePtr> symbol_window_name_opt
+symbol_window_name_opt
+	: /* nothing */			{ $$ = NULL; }
+	| symbol_window_name
 	;
 
 
@@ -7075,22 +7117,28 @@ aggregate_window_function
 
 %type <valueExprNode> over_clause
 over_clause
-	: aggregate_window_function OVER '(' window_partition_opt window_clause ')'
-		{ $$ = newNode<OverNode>($1, $4, $5); }
+	: aggregate_window_function OVER symbol_window_name
+		{ $$ = newNode<OverNode>($1, $3); }
+	| aggregate_window_function OVER '(' window_clause ')'
+		{ $$ = newNode<OverNode>($1, $4); }
+	;
+
+%type <windowClause> window_clause
+window_clause
+	: symbol_window_name_opt
+			window_partition_opt
+			order_clause_opt
+			window_frame_extent
+			window_frame_exclusion_opt
+		{
+			$$ = newNode<WindowClause>($1, $2, $3, $4, $5);
+		}
 	;
 
 %type <valueListNode> window_partition_opt
 window_partition_opt
 	: /* nothing */				{ $$ = NULL; }
 	| PARTITION BY value_list	{ $$ = $3; }
-	;
-
-%type <windowClause> window_clause
-window_clause
-	: /* nothing */
-		{ $$ = NULL; }
-	| order_clause window_frame_extent window_frame_exclusion_opt
-		{ $$ = newNode<WindowClause>($1, $2, $3); }
 	;
 
 %type <windowClauseFrameExtent> window_frame_extent
@@ -7734,6 +7782,11 @@ symbol_savepoint_name
 
 %type <metaNamePtr> symbol_package_name
 symbol_package_name
+	: valid_symbol_name
+	;
+
+%type <metaNamePtr> symbol_window_name
+symbol_window_name
 	: valid_symbol_name
 	;
 

@@ -1333,7 +1333,7 @@ void AggregateSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 				((*i)->window->extent ||
 				 (*i)->window->exclusion != WindowClause::EXCLUDE_NO_OTHERS));
 
-			ValueListNode* partition = (*i)->partition;
+			ValueListNode* partition = (*i)->window ? (*i)->window->partition : NULL;
 			ValueListNode* partitionRemapped = (*i)->partitionRemapped;
 			ValueListNode* order = (*i)->window ? (*i)->window->order : NULL;
 

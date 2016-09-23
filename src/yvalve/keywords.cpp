@@ -467,6 +467,7 @@ static const TOK tokens[] =
 	{WHEN, "WHEN", false},
 	{WHERE, "WHERE", false},
 	{WHILE, "WHILE", false},
+	{WINDOW, "WINDOW", false},
 	{WITH, "WITH", false},
 	{WORK, "WORK", false},
 	{WRITE, "WRITE", false},

@@ -5261,10 +5261,7 @@ bool FieldNode::dsqlFieldFinder(FieldFinder& visitor)
 ValueExprNode* FieldNode::dsqlFieldRemapper(FieldRemapper& visitor)
 {
 	if (dsqlContext->ctx_scope_level == visitor.context->ctx_scope_level)
-	{
-		return PASS1_post_map(visitor.dsqlScratch, this, visitor.context,
-			visitor.partitionNode, visitor.windowNode);
-	}
+		return PASS1_post_map(visitor.dsqlScratch, this, visitor.context, visitor.windowNode);
 
 	return this;
 }
@@ -6783,10 +6780,7 @@ ValueExprNode* DsqlMapNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	}
 
 	if (visitor.window && context->ctx_scope_level == visitor.context->ctx_scope_level)
-	{
-		return PASS1_post_map(visitor.dsqlScratch, this,
-			visitor.context, visitor.partitionNode, visitor.windowNode);
-	}
+		return PASS1_post_map(visitor.dsqlScratch, this, visitor.context, visitor.windowNode);
 
 	return this;
 }
@@ -6978,10 +6972,7 @@ ValueExprNode* DerivedFieldNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	// the given context (of course only if we're in the same scope-level).
 
 	if (scope == visitor.context->ctx_scope_level)
-	{
-		return PASS1_post_map(visitor.dsqlScratch, this,
-			visitor.context, visitor.partitionNode, visitor.windowNode);
-	}
+		return PASS1_post_map(visitor.dsqlScratch, this, visitor.context, visitor.windowNode);
 	else if (visitor.context->ctx_scope_level < scope)
 		doDsqlFieldRemapper(visitor, value);
 
@@ -7500,10 +7491,50 @@ WindowClause::FrameExtent* WindowClause::FrameExtent::copy(thread_db* tdbb, Node
 
 WindowClause* WindowClause::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
+	NestConst<WindowClause> window;
+
+	if (name)
+	{
+		fb_assert(dsqlScratch->context->hasData());
+		dsql_ctx* context = dsqlScratch->context->object();
+
+		if (!context->ctx_named_windows.get(*name, window))
+		{
+			ERRD_post(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+				Arg::Gds(isc_dsql_window_not_found) << *name);
+		}
+
+		if (partition)
+		{
+			ERRD_post(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+				Arg::Gds(isc_dsql_window_cant_overr_part) << *name);
+		}
+
+		if (order && window->order)
+		{
+			ERRD_post(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+				Arg::Gds(isc_dsql_window_cant_overr_order) << *name);
+		}
+
+		if (window->extent)
+		{
+			ERRD_post(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+				Arg::Gds(isc_dsql_window_cant_overr_frame) << *name);
+		}
+	}
+	else
+		window = this;
+
 	WindowClause* node = FB_NEW_POOL(getPool()) WindowClause(getPool(),
-		doDsqlPass(dsqlScratch, order),
-		doDsqlPass(dsqlScratch, extent),
-		exclusion);
+		window->name,
+		doDsqlPass(dsqlScratch, window->partition),
+		doDsqlPass(dsqlScratch, window->order),
+		doDsqlPass(dsqlScratch, window->extent),
+		window->exclusion);
 
 	if (node->order && node->extent && node->extent->unit == FrameExtent::UNIT_RANGE &&
 		(node->extent->frame1->value || (node->extent->frame2 && node->extent->frame2->value)))
@@ -7556,15 +7587,23 @@ WindowClause* WindowClause::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 //--------------------
 
 
-OverNode::OverNode(MemoryPool& pool, AggNode* aAggExpr, ValueListNode* aPartition,
-			WindowClause* aWindow)
+OverNode::OverNode(MemoryPool& pool, AggNode* aAggExpr, const MetaName* aWindowName)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_OVER>(pool),
 	  aggExpr(aAggExpr),
-	  partition(aPartition),
+	  windowName(aWindowName),
+	  window(NULL)
+{
+	addDsqlChildNode(aggExpr);
+	addDsqlChildNode(window);
+}
+
+OverNode::OverNode(MemoryPool& pool, AggNode* aAggExpr, WindowClause* aWindow)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_OVER>(pool),
+	  aggExpr(aAggExpr),
+	  windowName(NULL),
 	  window(aWindow)
 {
 	addDsqlChildNode(aggExpr);
-	addDsqlChildNode(partition);
 	addDsqlChildNode(window);
 }
 
@@ -7573,7 +7612,6 @@ string OverNode::internalPrint(NodePrinter& printer) const
 	ValueExprNode::internalPrint(printer);
 
 	NODE_PRINT(printer, aggExpr);
-	NODE_PRINT(printer, partition);
 	NODE_PRINT(printer, window);
 
 	return "OverNode";
@@ -7593,7 +7631,6 @@ bool OverNode::dsqlAggregateFinder(AggregateFinder& visitor)
 	else
 		aggregate |= visitor.visit(aggExpr);
 
-	aggregate |= visitor.visit(partition);
 	aggregate |= visitor.visit(window);
 
 	return aggregate;
@@ -7608,7 +7645,6 @@ bool OverNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
 		found |= visitor.visit(aggExpr);
 	}
 
-	found |= visitor.visit(partition);
 	found |= visitor.visit(window);
 
 	return found;
@@ -7622,7 +7658,6 @@ bool OverNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
 	AutoSetRestore<bool> autoInsideHigherMap(&visitor.insideHigherMap, true);
 
 	invalid |= visitor.visit(aggExpr);
-	invalid |= visitor.visit(partition);
 	invalid |= visitor.visit(window);
 
 	return invalid;
@@ -7636,32 +7671,26 @@ bool OverNode::dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
 ValueExprNode* OverNode::dsqlFieldRemapper(FieldRemapper& visitor)
 {
 	// Save the values to restore them in the end.
-	AutoSetRestore<ValueListNode*> autoPartitionNode(&visitor.partitionNode, visitor.partitionNode);
 	AutoSetRestore<WindowClause*> autoWindowNode(&visitor.windowNode, visitor.windowNode);
 
-	if (partition)
+	if (window->partition)
 	{
 		if (Aggregate2Finder::find(visitor.context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
-				true, partition))
+				true, window->partition))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  Arg::Gds(isc_dsql_agg_nested_err));
 		}
-
-		visitor.partitionNode = partition;
 	}
 
-	if (window)
+	if (Aggregate2Finder::find(visitor.context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
+			true, window))
 	{
-		if (Aggregate2Finder::find(visitor.context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
-				true, window))
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  Arg::Gds(isc_dsql_agg_nested_err));
-		}
-
-		visitor.windowNode = window;
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				  Arg::Gds(isc_dsql_agg_nested_err));
 	}
+
+	visitor.windowNode = window;
 
 	// Before remap, aggExpr must always be an AggNode;
 	AggNode* aggNode = static_cast<AggNode*>(aggExpr.getObject());
@@ -7685,30 +7714,27 @@ ValueExprNode* OverNode::dsqlFieldRemapper(FieldRemapper& visitor)
 		if (!visitor.window)
 		{
 			{	// scope
-				AutoSetRestore<ValueListNode*> autoPartitionNode2(&visitor.partitionNode, NULL);
 				AutoSetRestore<WindowClause*> autoWindowNode2(&visitor.windowNode, NULL);
 
 				for (auto& child : aggNode->dsqlChildNodes)
 					child->remap(visitor);
 			}
 
-			if (partition)
+			if (window->partition)
 			{
-				for (unsigned i = 0; i < partition->items.getCount(); ++i)
+				for (unsigned i = 0; i < window->partition->items.getCount(); ++i)
 				{
-					AutoSetRestore<ValueListNode*> autoPartitionNode2(&visitor.partitionNode, NULL);
 					AutoSetRestore<WindowClause*> autoWindowNode2(&visitor.windowNode, NULL);
 
-					doDsqlFieldRemapper(visitor, partition->items[i]);
+					doDsqlFieldRemapper(visitor, window->partition->items[i]);
 				}
 			}
 
 			// ASF: I'm not sure if this is enough or frame values needs to be remapped as well.
-			if (window && window->order)
+			if (window->order)
 			{
 				for (unsigned i = 0; i < window->order->items.getCount(); ++i)
 				{
-					AutoSetRestore<ValueListNode*> autoPartitionNode(&visitor.partitionNode, NULL);
 					AutoSetRestore<WindowClause*> autoWindowNode2(&visitor.windowNode, NULL);
 
 					doDsqlFieldRemapper(visitor, window->order->items[i]);
@@ -7719,7 +7745,7 @@ ValueExprNode* OverNode::dsqlFieldRemapper(FieldRemapper& visitor)
 		{
 
 			return PASS1_post_map(visitor.dsqlScratch, aggNode, visitor.context,
-				visitor.partitionNode, visitor.windowNode);
+				visitor.windowNode);
 		}
 	}
 
@@ -7761,15 +7787,30 @@ dsc* OverNode::execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 
 ValueExprNode* OverNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
+	NestConst<WindowClause> refWindow;
+
+	if (windowName)
+	{
+		fb_assert(dsqlScratch->context->hasData());
+		dsql_ctx* context = dsqlScratch->context->object();
+
+		if (!context->ctx_named_windows.get(*windowName, refWindow))
+		{
+			ERRD_post(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+				Arg::Gds(isc_dsql_window_not_found) << *windowName);
+		}
+	}
+	else
+		refWindow = window;
+
 	OverNode* node = FB_NEW_POOL(getPool()) OverNode(getPool(),
-		static_cast<AggNode*>(doDsqlPass(dsqlScratch, aggExpr)),
-		doDsqlPass(dsqlScratch, partition),
-		doDsqlPass(dsqlScratch, window));
+		static_cast<AggNode*>(doDsqlPass(dsqlScratch, aggExpr)), doDsqlPass(dsqlScratch, refWindow));
 
 	const AggNode* aggNode = node->aggExpr->as<AggNode>();
 
-	if (window &&
-		window->extent &&
+	if (node->window &&
+		node->window->extent &&
 		aggNode &&
 		(aggNode->getCapabilities() & AggNode::CAP_RESPECTS_WINDOW_FRAME) !=
 			AggNode::CAP_RESPECTS_WINDOW_FRAME)
@@ -8342,8 +8383,7 @@ bool RecordKeyNode::dsqlFieldFinder(FieldFinder& /*visitor*/)
 
 ValueExprNode* RecordKeyNode::dsqlFieldRemapper(FieldRemapper& visitor)
 {
-	return PASS1_post_map(visitor.dsqlScratch, this,
-		visitor.context, visitor.partitionNode, visitor.windowNode);
+	return PASS1_post_map(visitor.dsqlScratch, this, visitor.context, visitor.windowNode);
 }
 
 void RecordKeyNode::setParameterName(dsql_par* parameter) const

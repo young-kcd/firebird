@@ -1131,13 +1131,20 @@ public:
 	};
 
 public:
-	explicit WindowClause(MemoryPool& p, ValueListNode* aOrder, FrameExtent* aFrameExtent,
-			Exclusion aExclusion)
+	explicit WindowClause(MemoryPool& p,
+			const Firebird::MetaName* aName = NULL,
+			ValueListNode* aPartition = NULL,
+			ValueListNode* aOrder = NULL,
+			FrameExtent* aFrameExtent = NULL,
+			Exclusion aExclusion = EXCLUDE_NO_OTHERS)
 		: DsqlNode(p),
+		  name(aName),
+		  partition(aPartition),
 		  order(aOrder),
 		  extent(aFrameExtent),
 		  exclusion(aExclusion)
 	{
+		addDsqlChildNode(partition);
 		addDsqlChildNode(order);
 		addDsqlChildNode(extent);
 	}
@@ -1145,6 +1152,7 @@ public:
 public:
 	virtual Firebird::string internalPrint(NodePrinter& printer) const
 	{
+		NODE_PRINT(printer, partition);
 		NODE_PRINT(printer, order);
 		NODE_PRINT(printer, extent);
 
@@ -1183,6 +1191,8 @@ public:
 	}
 
 public:
+	const Firebird::MetaName* name;
+	NestConst<ValueListNode> partition;
 	NestConst<ValueListNode> order;
 	NestConst<FrameExtent> extent;
 	Exclusion exclusion;
@@ -1193,8 +1203,8 @@ public:
 class OverNode : public TypedNode<ValueExprNode, ExprNode::TYPE_OVER>
 {
 public:
-	explicit OverNode(MemoryPool& pool, AggNode* aAggExpr = NULL, ValueListNode* aPartition = NULL,
-		WindowClause* aWindow = NULL);
+	explicit OverNode(MemoryPool& pool, AggNode* aAggExpr, const Firebird::MetaName* aWindowName);
+	explicit OverNode(MemoryPool& pool, AggNode* aAggExpr, WindowClause* aWindow);
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -1215,7 +1225,7 @@ public:
 
 public:
 	NestConst<ValueExprNode> aggExpr;
-	NestConst<ValueListNode> partition;
+	const Firebird::MetaName* windowName;
 	NestConst<WindowClause> window;
 };
 
