@@ -187,11 +187,11 @@ using namespace Firebird;
 %token <metaNamePtr> DECIMAL
 %token <metaNamePtr> DECLARE
 %token <metaNamePtr> DEFAULT
-%token <metaNamePtr> KW_DELETE
+%token <metaNamePtr> DELETE
 %token <metaNamePtr> DESC
 %token <metaNamePtr> DISTINCT
 %token <metaNamePtr> DO
-%token <metaNamePtr> KW_DOMAIN
+%token <metaNamePtr> DOMAIN
 %token <metaNamePtr> DROP
 %token <metaNamePtr> ELSE
 %token <metaNamePtr> END
@@ -216,7 +216,7 @@ using namespace Firebird;
 %token <metaNamePtr> GROUP
 %token <metaNamePtr> HAVING
 %token <metaNamePtr> IF
-%token <metaNamePtr> KW_IN
+%token <metaNamePtr> IN
 %token <metaNamePtr> INACTIVE
 %token <metaNamePtr> INNER
 %token <metaNamePtr> INPUT_TYPE
@@ -228,17 +228,17 @@ using namespace Firebird;
 %token <metaNamePtr> ISOLATION
 %token <metaNamePtr> JOIN
 %token <metaNamePtr> KEY
-%token <metaNamePtr> KW_CHAR
-%token <metaNamePtr> KW_DEC
-%token <metaNamePtr> KW_DOUBLE
-%token <metaNamePtr> KW_FILE
-%token <metaNamePtr> KW_FLOAT
-%token <metaNamePtr> KW_INT
-%token <metaNamePtr> KW_LONG
-%token <metaNamePtr> KW_NULL
-%token <metaNamePtr> KW_NUMERIC
-%token <metaNamePtr> KW_UPPER
-%token <metaNamePtr> KW_VALUE
+%token <metaNamePtr> CHAR
+%token <metaNamePtr> DEC
+%token <metaNamePtr> DOUBLE
+%token <metaNamePtr> FILE
+%token <metaNamePtr> FLOAT
+%token <metaNamePtr> INT
+%token <metaNamePtr> LONG
+%token <metaNamePtr> NULL
+%token <metaNamePtr> NUMERIC
+%token <metaNamePtr> UPPER
+%token <metaNamePtr> VALUE
 %token <metaNamePtr> LENGTH
 %token <metaNamePtr> LEFT
 %token <metaNamePtr> LEQ
@@ -266,10 +266,10 @@ using namespace Firebird;
 %token <metaNamePtr> ORDER
 %token <metaNamePtr> OUTER
 %token <metaNamePtr> OUTPUT_TYPE
-%token <metaNamePtr> KW_OVERFLOW
+%token <metaNamePtr> OVERFLOW
 %token <metaNamePtr> PAGE
 %token <metaNamePtr> PAGES
-%token <metaNamePtr> KW_PAGE_SIZE
+%token <metaNamePtr> PAGE_SIZE
 %token <metaNamePtr> PARAMETER
 %token <metaNamePtr> PASSWORD
 %token <metaNamePtr> PLAN
@@ -294,9 +294,9 @@ using namespace Firebird;
 %token <metaNamePtr> SELECT
 %token <metaNamePtr> SET
 %token <metaNamePtr> SHADOW
-%token <metaNamePtr> KW_SHARED
+%token <metaNamePtr> SHARED
 %token <metaNamePtr> SINGULAR
-%token <metaNamePtr> KW_SIZE
+%token <metaNamePtr> SIZE
 %token <metaNamePtr> SMALLINT
 %token <metaNamePtr> SNAPSHOT
 %token <metaNamePtr> SOME
@@ -351,7 +351,7 @@ using namespace Firebird;
 // New tokens added v6.0
 
 %token <metaNamePtr> COLUMN
-%token <metaNamePtr> KW_TYPE
+%token <metaNamePtr> TYPE
 %token <metaNamePtr> EXTRACT
 %token <metaNamePtr> YEAR
 %token <metaNamePtr> MONTH
@@ -375,10 +375,10 @@ using namespace Firebird;
 
 %token <metaNamePtr> CURRENT_USER
 %token <metaNamePtr> CURRENT_ROLE
-%token <metaNamePtr> KW_BREAK
+%token <metaNamePtr> BREAK
 %token <metaNamePtr> SUBSTRING
 %token <metaNamePtr> RECREATE
-%token <metaNamePtr> KW_DESCRIPTOR
+%token <metaNamePtr> DESCRIPTOR
 %token <metaNamePtr> FIRST
 %token <metaNamePtr> SKIP
 
@@ -406,7 +406,7 @@ using namespace Firebird;
 // tokens added for Firebird 2.0
 
 %token <metaNamePtr> BACKUP
-%token <metaNamePtr> KW_DIFFERENCE
+%token <metaNamePtr> DIFFERENCE
 %token <metaNamePtr> OPEN
 %token <metaNamePtr> CLOSE
 %token <metaNamePtr> FETCH
@@ -425,12 +425,12 @@ using namespace Firebird;
 %token <metaNamePtr> CHAR_LENGTH
 %token <metaNamePtr> CHARACTER_LENGTH
 %token <metaNamePtr> LEADING
-%token <metaNamePtr> KW_LOWER
+%token <metaNamePtr> LOWER
 %token <metaNamePtr> OCTET_LENGTH
 %token <metaNamePtr> TRAILING
 %token <metaNamePtr> TRIM
 %token <metaNamePtr> RETURNING
-%token <metaNamePtr> KW_IGNORE
+%token <metaNamePtr> IGNORE
 %token <metaNamePtr> LIMBO
 %token <metaNamePtr> UNDO
 %token <metaNamePtr> REQUESTS
@@ -541,8 +541,8 @@ using namespace Firebird;
 %token <metaNamePtr> RDB_SET_CONTEXT
 %token <metaNamePtr> SCROLL
 %token <metaNamePtr> PRIOR
-%token <metaNamePtr> KW_ABSOLUTE
-%token <metaNamePtr> KW_RELATIVE
+%token <metaNamePtr> ABSOLUTE
+%token <metaNamePtr> RELATIVE
 %token <metaNamePtr> ACOSH
 %token <metaNamePtr> ASINH
 %token <metaNamePtr> ATANH
@@ -558,9 +558,9 @@ using namespace Firebird;
 %token <metaNamePtr> RANK
 %token <metaNamePtr> ROW_NUMBER
 %token <metaNamePtr> SQLSTATE
-%token <metaNamePtr> KW_BOOLEAN
-%token <metaNamePtr> KW_FALSE
-%token <metaNamePtr> KW_TRUE
+%token <metaNamePtr> BOOLEAN
+%token <metaNamePtr> FALSE
+%token <metaNamePtr> TRUE
 %token <metaNamePtr> UNKNOWN
 %token <metaNamePtr> USAGE
 %token <metaNamePtr> RDB_RECORD_VERSION
@@ -613,7 +613,7 @@ using namespace Firebird;
 %left	OR
 %left	AND
 %left	NOT
-%left	'=' '<' '>' BETWEEN LIKE CONTAINING STARTING SIMILAR KW_IN NEQ GEQ LEQ NOT_GTR NOT_LSS
+%left	'=' '<' '>' BETWEEN LIKE CONTAINING STARTING SIMILAR IN NEQ GEQ LEQ NOT_GTR NOT_LSS
 %left	IS
 %left	'+' '-'
 %left	'*' '/'
@@ -864,7 +864,7 @@ grant0($node)
 			$node->grantor = $8;
 		}
 	/***
-	| usage_privilege(NOTRIAL(&$node->privileges)) ON KW_DOMAIN symbol_domain_name
+	| usage_privilege(NOTRIAL(&$node->privileges)) ON DOMAIN symbol_domain_name
 			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
 		{
 			$node->object = newNode<GranteeClause>(obj_field, *$4);
@@ -926,7 +926,7 @@ object
 		{ $$ = newNode<GranteeClause>(obj_generators, get_object_name(obj_generators)); }
 	| SEQUENCE 
 		{ $$ = newNode<GranteeClause>(obj_generators, get_object_name(obj_generators)); }
-	| KW_DOMAIN 
+	| DOMAIN 
 		{ $$ = newNode<GranteeClause>(obj_domains, get_object_name(obj_domains)); }
 	| EXCEPTION
 		{ $$ = newNode<GranteeClause>(obj_exceptions, get_object_name(obj_exceptions)); }
@@ -971,7 +971,7 @@ usage_privilege($privilegeArray)
 privilege($privilegeArray)
 	: SELECT						{ $privilegeArray->add(PrivilegeClause('S', NULL)); }
 	| INSERT						{ $privilegeArray->add(PrivilegeClause('I', NULL)); }
-	| KW_DELETE						{ $privilegeArray->add(PrivilegeClause('D', NULL)); }
+	| DELETE						{ $privilegeArray->add(PrivilegeClause('D', NULL)); }
 	| UPDATE column_parens_opt		{ $privilegeArray->add(PrivilegeClause('U', $2)); }
 	| REFERENCES column_parens_opt	{ $privilegeArray->add(PrivilegeClause('R', $2)); }
 	;
@@ -1121,7 +1121,7 @@ revoke0($node)
 			$node->grantor = $8;
 		}
 	/***
-	| rev_grant_option usage_privilege(NOTRIAL(&$node->privileges)) ON KW_DOMAIN symbol_domain_name
+	| rev_grant_option usage_privilege(NOTRIAL(&$node->privileges)) ON DOMAIN symbol_domain_name
 			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
 		{
 			$node->object = newNode<GranteeClause>(obj_field, *$5);
@@ -1324,9 +1324,9 @@ arg_desc($parameters)
 %type <nullableIntVal> param_mechanism
 param_mechanism
 	: /* nothing */		{ $$ = Nullable<int>::empty(); }	// Beware: This means FUN_reference or FUN_blob_struct.
-	| BY KW_DESCRIPTOR	{ $$ = Nullable<int>::val(FUN_descriptor); }
+	| BY DESCRIPTOR		{ $$ = Nullable<int>::val(FUN_descriptor); }
 	| BY SCALAR_ARRAY	{ $$ = Nullable<int>::val(FUN_scalar_array); }
-	| KW_NULL			{ $$ = Nullable<int>::val(FUN_ref_with_null); }
+	| NULL				{ $$ = Nullable<int>::val(FUN_ref_with_null); }
 	;
 
 %type return_value1(<createAlterFunctionNode>)
@@ -1349,11 +1349,11 @@ return_value($function)
 %type <int32Val> return_mechanism
 return_mechanism
 	: /* nothing */				{ $$ = FUN_reference; }
-	| BY KW_VALUE				{ $$ = FUN_value; }
-	| BY KW_DESCRIPTOR			{ $$ = FUN_descriptor; }
+	| BY VALUE					{ $$ = FUN_value; }
+	| BY DESCRIPTOR				{ $$ = FUN_descriptor; }
 	// FUN_refrence with FREE_IT is -ve
 	| FREE_IT					{ $$ = -1 * FUN_reference; }
-	| BY KW_DESCRIPTOR FREE_IT	{ $$ = -1 * FUN_descriptor; }
+	| BY DESCRIPTOR FREE_IT		{ $$ = -1 * FUN_descriptor; }
 	;
 
 
@@ -1412,7 +1412,7 @@ create_clause
 	| GENERATOR generator_clause				{ $$ = $2; }
 	| SEQUENCE generator_clause					{ $$ = $2; }
 	| DATABASE db_clause						{ $$ = $2; }
-	| KW_DOMAIN domain_clause					{ $$ = $2; }
+	| DOMAIN domain_clause						{ $$ = $2; }
 	| SHADOW shadow_clause						{ $$ = $2; }
 	| ROLE role_clause							{ $2->createFlag = true; $$ = $2; }
 	| COLLATION collation_clause				{ $$ = $2; }
@@ -1638,7 +1638,7 @@ domain_default_opt
 	;
 
 null_constraint
-	: NOT KW_NULL
+	: NOT NULL
 	;
 
 %type <boolSourceClause> check_constraint
@@ -1970,7 +1970,7 @@ db_initial_desc($alterDatabaseNode)
 // With the exception of LENGTH, all clauses here are handled only at the client.
 %type db_initial_option(<alterDatabaseNode>)
 db_initial_option($alterDatabaseNode)
-	: KW_PAGE_SIZE equals pos_short_integer
+	: PAGE_SIZE equals pos_short_integer
 	| USER symbol_user_name
 	| USER utf_string
 	| ROLE valid_symbol_name
@@ -2004,13 +2004,13 @@ db_rem_option($alterDatabaseNode)
 			$alterDatabaseNode->setDefaultCharSet = *$4;
 			$alterDatabaseNode->setDefaultCollation = *$6;
 		}
-	| KW_DIFFERENCE KW_FILE utf_string
+	| DIFFERENCE FILE utf_string
 		{ $alterDatabaseNode->differenceFile = *$3; }
 	;
 
 %type <dbFileClause> db_file
 db_file
-	: KW_FILE utf_string
+	: FILE utf_string
 			{
 				DbFileClause* clause = newNode<DbFileClause>(*$2);
 				$$ = clause;
@@ -2076,14 +2076,14 @@ gtt_table_clause
 %type <intVal> gtt_scope
 gtt_scope
 	: /* nothing */				{ $$ = rel_global_temp_delete; }
-	| ON COMMIT KW_DELETE ROWS	{ $$ = rel_global_temp_delete; }
+	| ON COMMIT DELETE ROWS		{ $$ = rel_global_temp_delete; }
 	| ON COMMIT PRESERVE ROWS	{ $$ = rel_global_temp_preserve; }
 	;
 
 %type <stringPtr> external_file
 external_file
 	: /* nothing */					{ $$ = NULL; }
-	| EXTERNAL KW_FILE utf_string	{ $$ = $3; }
+	| EXTERNAL FILE utf_string		{ $$ = $3; }
 	| EXTERNAL utf_string			{ $$ = $2; }
 	;
 
@@ -2211,12 +2211,12 @@ collate_clause
 %type <legacyField> data_type_descriptor
 data_type_descriptor
 	: data_type
-	| KW_TYPE OF symbol_column_name
+	| TYPE OF symbol_column_name
 		{
 			$$ = newNode<dsql_fld>();
 			$$->typeOfName = *$3;
 		}
-	| KW_TYPE OF COLUMN symbol_column_name '.' symbol_column_name
+	| TYPE OF COLUMN symbol_column_name '.' symbol_column_name
 		{
 			$$ = newNode<dsql_fld>();
 			$$->typeOfTable = *$4;
@@ -2434,14 +2434,14 @@ update_rule
 
 %type <uintVal> delete_rule
 delete_rule
-	: ON KW_DELETE referential_action	{ $$ = $3;}
+	: ON DELETE referential_action		{ $$ = $3;}
 	;
 
 %type <uintVal>	referential_action
 referential_action
 	: CASCADE		{ $$ = RelationNode::RefActionClause::ACTION_CASCADE; }
 	| SET DEFAULT	{ $$ = RelationNode::RefActionClause::ACTION_SET_DEFAULT; }
-	| SET KW_NULL	{ $$ = RelationNode::RefActionClause::ACTION_SET_NULL; }
+	| SET NULL		{ $$ = RelationNode::RefActionClause::ACTION_SET_NULL; }
 	| NO ACTION		{ $$ = RelationNode::RefActionClause::ACTION_NONE; }
 	;
 
@@ -2978,7 +2978,7 @@ complex_proc_statement
 
 %type <stmtNode> in_autonomous_transaction
 in_autonomous_transaction
-	: KW_IN AUTONOMOUS TRANSACTION DO proc_block
+	: IN AUTONOMOUS TRANSACTION DO proc_block
 		{
 			InAutonomousTransactionNode* node = newNode<InAutonomousTransactionNode>();
 			node->action = $5;
@@ -3242,7 +3242,7 @@ label_def_opt
 
 %type <stmtNode> breakleave
 breakleave
-	: KW_BREAK
+	: BREAK
 		{ $$ = newNode<ContinueLeaveNode>(blr_leave); }
 	| LEAVE label_use_opt
 		{
@@ -3389,12 +3389,12 @@ fetch_scroll($cursorStmtNode)
 		{ $cursorStmtNode->scrollOp = blr_scroll_backward; }
 	| NEXT
 		{ $cursorStmtNode->scrollOp = blr_scroll_forward; }
-	| KW_ABSOLUTE value
+	| ABSOLUTE value
 		{
 			$cursorStmtNode->scrollOp = blr_scroll_absolute;
 			$cursorStmtNode->scrollExpr = $2;
 		}
-	| KW_RELATIVE value
+	| RELATIVE value
 		{
 			$cursorStmtNode->scrollOp = blr_scroll_relative;
 			$cursorStmtNode->scrollExpr = $2;
@@ -3641,9 +3641,9 @@ trigger_ddl_type_items
 	| CREATE VIEW			{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_CREATE_VIEW); }
 	| ALTER VIEW			{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_ALTER_VIEW); }
 	| DROP VIEW				{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_DROP_VIEW); }
-	| CREATE KW_DOMAIN		{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_CREATE_DOMAIN); }
-	| ALTER KW_DOMAIN		{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_ALTER_DOMAIN); }
-	| DROP KW_DOMAIN		{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_DROP_DOMAIN); }
+	| CREATE DOMAIN			{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_CREATE_DOMAIN); }
+	| ALTER DOMAIN			{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_ALTER_DOMAIN); }
+	| DROP DOMAIN			{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_DROP_DOMAIN); }
 	| CREATE ROLE			{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_CREATE_ROLE); }
 	| ALTER ROLE			{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_ALTER_ROLE); }
 	| DROP ROLE				{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_DROP_ROLE); }
@@ -3681,19 +3681,19 @@ trigger_type_prefix
 trigger_type_suffix
 	: INSERT							{ $$ = trigger_type_suffix(1, 0, 0); }
 	| UPDATE							{ $$ = trigger_type_suffix(2, 0, 0); }
-	| KW_DELETE							{ $$ = trigger_type_suffix(3, 0, 0); }
+	| DELETE							{ $$ = trigger_type_suffix(3, 0, 0); }
 	| INSERT OR UPDATE					{ $$ = trigger_type_suffix(1, 2, 0); }
-	| INSERT OR KW_DELETE				{ $$ = trigger_type_suffix(1, 3, 0); }
+	| INSERT OR DELETE					{ $$ = trigger_type_suffix(1, 3, 0); }
 	| UPDATE OR INSERT					{ $$ = trigger_type_suffix(2, 1, 0); }
-	| UPDATE OR KW_DELETE				{ $$ = trigger_type_suffix(2, 3, 0); }
-	| KW_DELETE OR INSERT				{ $$ = trigger_type_suffix(3, 1, 0); }
-	| KW_DELETE OR UPDATE				{ $$ = trigger_type_suffix(3, 2, 0); }
-	| INSERT OR UPDATE OR KW_DELETE		{ $$ = trigger_type_suffix(1, 2, 3); }
-	| INSERT OR KW_DELETE OR UPDATE		{ $$ = trigger_type_suffix(1, 3, 2); }
-	| UPDATE OR INSERT OR KW_DELETE		{ $$ = trigger_type_suffix(2, 1, 3); }
-	| UPDATE OR KW_DELETE OR INSERT		{ $$ = trigger_type_suffix(2, 3, 1); }
-	| KW_DELETE OR INSERT OR UPDATE		{ $$ = trigger_type_suffix(3, 1, 2); }
-	| KW_DELETE OR UPDATE OR INSERT		{ $$ = trigger_type_suffix(3, 2, 1); }
+	| UPDATE OR DELETE					{ $$ = trigger_type_suffix(2, 3, 0); }
+	| DELETE OR INSERT					{ $$ = trigger_type_suffix(3, 1, 0); }
+	| DELETE OR UPDATE					{ $$ = trigger_type_suffix(3, 2, 0); }
+	| INSERT OR UPDATE OR DELETE		{ $$ = trigger_type_suffix(1, 2, 3); }
+	| INSERT OR DELETE OR UPDATE		{ $$ = trigger_type_suffix(1, 3, 2); }
+	| UPDATE OR INSERT OR DELETE		{ $$ = trigger_type_suffix(2, 1, 3); }
+	| UPDATE OR DELETE OR INSERT		{ $$ = trigger_type_suffix(2, 3, 1); }
+	| DELETE OR INSERT OR UPDATE		{ $$ = trigger_type_suffix(3, 1, 2); }
+	| DELETE OR UPDATE OR INSERT		{ $$ = trigger_type_suffix(3, 2, 1); }
 	;
 
 %type <nullableIntVal> trigger_position
@@ -3725,7 +3725,7 @@ alter_clause
 			{ $<alterDatabaseNode>$ = newNode<AlterDatabaseNode>(); }
 		alter_db($<alterDatabaseNode>2)
 			{ $$ = $<alterDatabaseNode>2; }
-	| KW_DOMAIN alter_domain				{ $$ = $2; }
+	| DOMAIN alter_domain					{ $$ = $2; }
 	| INDEX alter_index_clause				{ $$ = $2; }
 	| EXTERNAL FUNCTION alter_udf_clause	{ $$ = $3; }
 	| FUNCTION alter_function_clause		{ $$ = $2; }
@@ -3765,13 +3765,13 @@ alter_domain_op($alterDomainNode)
 		{ setClause($alterDomainNode->dropDefault, "DOMAIN DROP DEFAULT"); }
 	| DROP CONSTRAINT
 		{ setClause($alterDomainNode->dropConstraint, "DOMAIN DROP CONSTRAINT"); }
-	| DROP NOT KW_NULL
+	| DROP NOT NULL
 		{ setClause($alterDomainNode->notNullFlag, "{SET | DROP} NOT NULL", false); }
-	| SET NOT KW_NULL
+	| SET NOT NULL
 		{ setClause($alterDomainNode->notNullFlag, "{SET | DROP} NOT NULL", true); }
 	| TO symbol_column_name
 		{ setClause($alterDomainNode->renameTo, "DOMAIN NAME", *$2); }
-	| KW_TYPE non_array_type
+	| TYPE non_array_type
 		{
 			//// FIXME: ALTER DOMAIN doesn't support collations, and altered domain's
 			//// collation is always lost.
@@ -3818,28 +3818,28 @@ alter_op($relationNode)
 			clause->toName = *$4;
 			$relationNode->clauses.add(clause);
 		}
-	| col_opt alter_column_name DROP NOT KW_NULL
+	| col_opt alter_column_name DROP NOT NULL
 		{
 			RelationNode::AlterColNullClause* clause = newNode<RelationNode::AlterColNullClause>();
 			clause->name = *$2;
 			clause->notNullFlag = false;
 			$relationNode->clauses.add(clause);
 		}
-	| col_opt alter_column_name SET NOT KW_NULL
+	| col_opt alter_column_name SET NOT NULL
 		{
 			RelationNode::AlterColNullClause* clause = newNode<RelationNode::AlterColNullClause>();
 			clause->name = *$2;
 			clause->notNullFlag = true;
 			$relationNode->clauses.add(clause);
 		}
-	| col_opt symbol_column_name KW_TYPE alter_data_type_or_domain
+	| col_opt symbol_column_name TYPE alter_data_type_or_domain
 		{
 			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
 			clause->field = $4;
 			clause->field->fld_name = *$2;
 			$relationNode->clauses.add(clause);
 		}
-	| col_opt symbol_column_name KW_TYPE non_array_type def_computed
+	| col_opt symbol_column_name TYPE non_array_type def_computed
 		{
 			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
 			clause->field = $4;
@@ -3931,7 +3931,7 @@ keyword_or_column
 	| CHARACTER_LENGTH
 	| COMMENT
 	| LEADING
-	| KW_LOWER
+	| LOWER
 	| OCTET_LENGTH
 	| TRAILING
 	| TRIM
@@ -3943,13 +3943,13 @@ keyword_or_column
 	| SENSITIVE
 	| START
 	| SIMILAR				// added in FB 2.5
-	| KW_BOOLEAN			// added in FB 3.0
+	| BOOLEAN				// added in FB 3.0
 	| CORR
 	| COVAR_POP
 	| COVAR_SAMP
 	| DELETING
 	| DETERMINISTIC
-	| KW_FALSE
+	| FALSE
 	| INSERTING
 	| OFFSET
 	| OVER
@@ -3969,7 +3969,7 @@ keyword_or_column
 	| SQLSTATE
 	| STDDEV_SAMP
 	| STDDEV_POP
-	| KW_TRUE
+	| TRUE
 	| UNKNOWN
 	| UPDATING
 	| VAR_SAMP
@@ -4072,9 +4072,9 @@ alter_db($alterDatabaseNode)
 %type db_alter_clause(<alterDatabaseNode>)
 db_alter_clause($alterDatabaseNode)
 	: ADD db_file_list(NOTRIAL(&$alterDatabaseNode->files))
-	| ADD KW_DIFFERENCE KW_FILE utf_string
+	| ADD DIFFERENCE FILE utf_string
 		{ $alterDatabaseNode->differenceFile = *$4; }
-	| DROP KW_DIFFERENCE KW_FILE
+	| DROP DIFFERENCE FILE
 		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_DROP_DIFFERENCE; }
 	| BEGIN BACKUP
 		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_BEGIN_BACKUP; }
@@ -4174,7 +4174,7 @@ drop_clause
 		{ $$ = newNode<DropRelationNode>(*$2, true); }
 	| FILTER symbol_filter_name
 		{ $$ = newNode<DropFilterNode>(*$2); }
-	| KW_DOMAIN symbol_domain_name
+	| DOMAIN symbol_domain_name
 		{ $$ = newNode<DropDomainNode>(*$2); }
 	| EXTERNAL FUNCTION symbol_UDF_name
 		{ $$ = newNode<DropFunctionNode>(*$3); }
@@ -4207,8 +4207,8 @@ drop_clause
 %type <boolVal> opt_no_file_delete
 opt_no_file_delete
 	: /* nothing */			{ $$ = false; }
-	| PRESERVE KW_FILE		{ $$ = true; }
-	| KW_DELETE KW_FILE		{ $$ = false; }
+	| PRESERVE FILE			{ $$ = true; }
+	| DELETE FILE			{ $$ = false; }
 	;
 
 // these are the allowable datatypes
@@ -4222,7 +4222,7 @@ data_type
 %type <legacyField> domain_or_non_array_type
 domain_or_non_array_type
 	: domain_or_non_array_type_name
-	| domain_or_non_array_type_name NOT KW_NULL
+	| domain_or_non_array_type_name NOT NULL
 		{
 			$$ = $1;
 			$$->notNull = true;
@@ -4237,12 +4237,12 @@ domain_or_non_array_type_name
 
 %type <legacyField> domain_type
 domain_type
-	: KW_TYPE OF symbol_column_name
+	: TYPE OF symbol_column_name
 		{
 			$$ = newNode<dsql_fld>();
 			$$->typeOfName = *$3;
 		}
-	| KW_TYPE OF COLUMN symbol_column_name '.' symbol_column_name
+	| TYPE OF COLUMN symbol_column_name '.' symbol_column_name
 		{
 			$$ = newNode<dsql_fld>();
 			$$->typeOfName = *$6;
@@ -4396,7 +4396,7 @@ non_charset_simple_type
 			$$->dtype = dtype_timestamp;
 			$$->length = sizeof(GDS_TIMESTAMP);
 		}
-	| KW_BOOLEAN
+	| BOOLEAN
 		{
 			$$ = newNode<dsql_fld>();
 			$$->dtype = dtype_boolean;
@@ -4406,7 +4406,7 @@ non_charset_simple_type
 
 integer_keyword
 	: INTEGER
-	| KW_INT
+	| INT
 	;
 
 
@@ -4452,7 +4452,7 @@ blob_type
 %type <uintVal> blob_segsize
 blob_segsize
 	: /* nothing */								{ $$ = (USHORT) 80; }
-	| SEGMENT KW_SIZE unsigned_short_integer	{ $$ = (USHORT) $3; }
+	| SEGMENT SIZE unsigned_short_integer		{ $$ = (USHORT) $3; }
 	;
 
 %type blob_subtype(<legacyField>)
@@ -4525,18 +4525,18 @@ character_type
 varying_keyword
 	: VARCHAR
 	| CHARACTER VARYING
-	| KW_CHAR VARYING
+	| CHAR VARYING
 	;
 
 character_keyword
 	: CHARACTER
-	| KW_CHAR
+	| CHAR
 	;
 
 national_character_keyword
 	: NCHAR
 	| NATIONAL CHARACTER
-	| NATIONAL KW_CHAR
+	| NATIONAL CHAR
 	;
 
 
@@ -4544,7 +4544,7 @@ national_character_keyword
 
 %type <legacyField> numeric_type
 numeric_type
-	: KW_NUMERIC prec_scale
+	: NUMERIC prec_scale
 		{
 			$$ = $2;
 			$$->subType = dsc_num_type_numeric;
@@ -4679,7 +4679,7 @@ prec_scale
 
 decimal_keyword
 	: DECIMAL
-	| KW_DEC
+	| DEC
 	;
 
 
@@ -4687,7 +4687,7 @@ decimal_keyword
 
 %type <legacyField> float_type
 float_type
-	: KW_FLOAT precision_opt
+	: FLOAT precision_opt
 		{
 			$$ = newNode<dsql_fld>();
 
@@ -4702,7 +4702,7 @@ float_type
 				$$->length = sizeof(float);
 			}
 		}
-	| KW_LONG KW_FLOAT precision_opt
+	| LONG FLOAT precision_opt
 		{
 			$$ = newNode<dsql_fld>();
 			$$->dtype = dtype_double;
@@ -4714,7 +4714,7 @@ float_type
 			$$->dtype = dtype_real;
 			$$->length = sizeof(float);
 		}
-	| KW_DOUBLE PRECISION
+	| DOUBLE PRECISION
 		{
 			$$ = newNode<dsql_fld>();
 			$$->dtype = dtype_double;
@@ -4856,7 +4856,7 @@ tran_option($setTransactionNode)
 	// misc options
 	| NO AUTO UNDO
 		{ setClause($setTransactionNode->noAutoUndo, "NO AUTO UNDO", true); }
-	| KW_IGNORE LIMBO
+	| IGNORE LIMBO
 		{ setClause($setTransactionNode->ignoreLimbo, "IGNORE LIMBO", true); }
 	| RESTART REQUESTS
 		{ setClause($setTransactionNode->restartRequests, "RESTART REQUESTS", true); }
@@ -4901,7 +4901,7 @@ version_mode
 %type <uintVal> lock_type
 lock_type
 	: /* nothing */		{ $$ = 0; }
-	| KW_SHARED			{ $$ = SetTransactionNode::LOCK_MODE_SHARED; }
+	| SHARED			{ $$ = SetTransactionNode::LOCK_MODE_SHARED; }
 	| PROTECTED			{ $$ = SetTransactionNode::LOCK_MODE_PROTECTED; }
 	;
 
@@ -4983,7 +4983,7 @@ ddl_type0
 
 %type <intVal> ddl_type1
 ddl_type1
-	: KW_DOMAIN				{ $$ = obj_field; }
+	: DOMAIN				{ $$ = obj_field; }
 	| TABLE					{ $$ = obj_relation; }
 	| VIEW					{ $$ = obj_view; }
 	| TRIGGER				{ $$ = obj_trigger; }
@@ -5034,7 +5034,7 @@ ddl_qualified_name
 %type <stringPtr> ddl_desc
 ddl_desc
     : utf_string	{ $$ = $1; }
-	| KW_NULL		{ $$ = newString(""); }
+	| NULL			{ $$ = newString(""); }
 	;
 
 
@@ -5835,8 +5835,8 @@ merge_update_specification($mergeMatchedClause)
 			$mergeMatchedClause->condition = $2;
 			$mergeMatchedClause->assignments = $6;
 		}
-	| THEN KW_DELETE
-	| AND search_condition THEN KW_DELETE
+	| THEN DELETE
+	| AND search_condition THEN DELETE
 		{ $mergeMatchedClause->condition = $2; }
 	;
 
@@ -5864,7 +5864,7 @@ delete
 
 %type <stmtNode> delete_searched
 delete_searched
-	: KW_DELETE FROM table_name where_clause plan_clause order_clause_opt rows_clause_optional returning_clause
+	: DELETE FROM table_name where_clause plan_clause order_clause_opt rows_clause_optional returning_clause
 		{
 			EraseNode* node = newNode<EraseNode>();
 			node->dsqlRelation = $3;
@@ -5879,7 +5879,7 @@ delete_searched
 
 %type <stmtNode> delete_positioned
 delete_positioned
-	: KW_DELETE FROM table_name cursor_clause returning_clause
+	: DELETE FROM table_name cursor_clause returning_clause
 		{
 			EraseNode* node = newNode<EraseNode>();
 			node->dsqlRelation = $3;
@@ -6282,14 +6282,14 @@ ternary_pattern_predicate
 
 %type <boolExprNode> in_predicate
 in_predicate
-	: value KW_IN in_predicate_value
+	: value IN in_predicate_value
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_eql, $1);
 			node->dsqlFlag = ComparativeBoolNode::DFLAG_ANSI_ANY;
 			node->dsqlSpecialArg = $3;
 			$$ = node;
 		}
-	| value NOT KW_IN in_predicate_value
+	| value NOT IN in_predicate_value
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_eql, $1);
 			node->dsqlFlag = ComparativeBoolNode::DFLAG_ANSI_ANY;
@@ -6334,11 +6334,11 @@ trigger_action_predicate
 
 %type <boolExprNode> null_predicate
 null_predicate
-	: value IS KW_NULL
+	: value IS NULL
 		{ $$ = newNode<MissingBoolNode>($1); }
 	| value IS UNKNOWN
 		{ $$ = newNode<MissingBoolNode>($1, true); }
-	| value IS NOT KW_NULL
+	| value IS NOT NULL
 		{ $$ = newNode<NotBoolNode>(newNode<MissingBoolNode>($1)); }
 	| value IS NOT UNKNOWN
 		{ $$ = newNode<NotBoolNode>(newNode<MissingBoolNode>($1, true)); }
@@ -6597,7 +6597,7 @@ map_using($node)
 %type <metaNamePtr> map_in
 map_in
 	: /* nothing */				{ $$ = NULL; }
-	| KW_IN valid_symbol_name	{ $$ = $2; }
+	| IN valid_symbol_name		{ $$ = $2; }
 	;
 
 %type map_to(<mappingNode>)
@@ -6688,7 +6688,7 @@ nonparenthesized_value
 		{ $$ = newNode<RecordKeyNode>($1); }
 	| symbol_table_alias_name '.' recordKeyType
 		{ $$ = newNode<RecordKeyNode>($3, *$1); }
-	| KW_VALUE
+	| VALUE
 		{ $$ = newNode<DomainValidationNode>(); }
 	| datetime_value_expression
 		{ $$ = $1; }
@@ -6847,8 +6847,8 @@ u_constant
 
 %type <valueExprNode> boolean_literal
 boolean_literal
-	: KW_FALSE	{ $$ = MAKE_constant("", CONSTANT_BOOLEAN); }
-	| KW_TRUE	{ $$ = MAKE_constant("1", CONSTANT_BOOLEAN); }
+	: FALSE		{ $$ = MAKE_constant("", CONSTANT_BOOLEAN); }
+	| TRUE		{ $$ = MAKE_constant("1", CONSTANT_BOOLEAN); }
 	;
 
 %type <valueExprNode> parameter
@@ -7355,7 +7355,7 @@ system_function_special_syntax
 				newNode<ValueListNode>($3)->add($5)->add($7));
 			$$->dsqlSpecialSyntax = true;
 		}
-	| POSITION '(' value KW_IN value ')'
+	| POSITION '(' value IN value ')'
 		{
 			$$ = newNode<SysFuncCallNode>(*$1, newNode<ValueListNode>($3)->add($5));
 			$$->dsqlSpecialSyntax = true;
@@ -7373,9 +7373,9 @@ system_function_special_syntax
 string_value_function
 	: substring_function
 	| trim_function
-	| KW_UPPER '(' value ')'
+	| UPPER '(' value ')'
 		{ $$ = newNode<StrCaseNode>(blr_upcase, $3); }
-	| KW_LOWER '(' value ')'
+	| LOWER '(' value ')'
 		{ $$ = newNode<StrCaseNode>(blr_lowcase, $3); }
 	;
 
@@ -7594,7 +7594,7 @@ decode_pairs
 
 %type <valueExprNode> next_value_expression
 next_value_expression
-	: NEXT KW_VALUE FOR symbol_generator_name
+	: NEXT VALUE FOR symbol_generator_name
 		{
 			$$ = newNode<GenIdNode>((client_dialect < SQL_DIALECT_V6_TRANSITION),
 				*$4, ((Jrd::ValueExprNode*) NULL), true, false);
@@ -7633,7 +7633,7 @@ distinct_noise
 
 %type <valueExprNode> null_value
 null_value
-	: KW_NULL
+	: NULL
 		{ $$ = newNode<NullNode>(); }
 	| UNKNOWN
 		{
@@ -7807,9 +7807,9 @@ non_reserved_word
 	| FREE_IT
 	| RESTRICT
 	| ROLE
-	| KW_TYPE				// added in IB 6.0
-	| KW_BREAK				// added in FB 1.0
-	| KW_DESCRIPTOR
+	| TYPE				// added in IB 6.0
+	| BREAK				// added in FB 1.0
+	| DESCRIPTOR
 	| SUBSTRING
 	| COALESCE				// added in FB 1.5
 	| LAST
@@ -7822,7 +7822,7 @@ non_reserved_word
 	| SKIP
 	| BLOCK					// added in FB 2.0
 	| BACKUP
-	| KW_DIFFERENCE
+	| DIFFERENCE
 	| IIF
 	| SCALAR_ARRAY
 	| WEEKDAY
@@ -7832,7 +7832,7 @@ non_reserved_word
 	| RESTART
 	| COLLATION
 	| RETURNING
-	| KW_IGNORE
+	| IGNORE
 	| LIMBO
 	| UNDO
 	| REQUESTS
@@ -7925,11 +7925,11 @@ non_reserved_word
 //	| DB_KEY
 	| DESC
 	| DO
-	| KW_DOMAIN
+	| DOMAIN
 	| ENTRY_POINT
 	| EXCEPTION
 	| EXIT
-	| KW_FILE
+	| FILE
 //	| GDSCODE
 	| GENERATOR
 	| GEN_ID
@@ -7941,16 +7941,16 @@ non_reserved_word
 	| KEY
 	| LENGTH
 	| LEVEL
-//	| KW_LONG
+//	| LONG
 	| MANUAL
 	| MODULE_NAME
 	| NAMES
 	| OPTION
 	| OUTPUT_TYPE
-	| KW_OVERFLOW
+	| OVERFLOW
 	| PAGE
 	| PAGES
-	| KW_PAGE_SIZE
+	| PAGE_SIZE
 	| PASSWORD
 //	| PLAN
 //	| POST_EVENT
@@ -7962,9 +7962,9 @@ non_reserved_word
 //	| RETURNING_VALUES
 	| SEGMENT
 	| SHADOW
-	| KW_SHARED
+	| SHARED
 	| SINGULAR
-	| KW_SIZE
+	| SIZE
 	| SNAPSHOT
 	| SORT
 //	| SQLCODE
@@ -7982,7 +7982,7 @@ non_reserved_word
 //	| WHILE
 	| WORK
 	| WRITE				// end of old keywords, that were reserved pre-Firebird.2.5
-	| KW_ABSOLUTE		// added in FB 3.0
+	| ABSOLUTE			// added in FB 3.0
 	| ACOSH
 	| ASINH
 	| ATANH
@@ -7999,7 +7999,7 @@ non_reserved_word
 	| PRIOR
 	| RDB_GET_CONTEXT
 	| RDB_SET_CONTEXT
-	| KW_RELATIVE
+	| RELATIVE
 	| DENSE_RANK
 	| FIRST_VALUE
 	| NTH_VALUE
