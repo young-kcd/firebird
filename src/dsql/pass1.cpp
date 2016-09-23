@@ -2225,15 +2225,15 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, RecordSourceNod
 		// Remap the nodes to the partition context
 		for (FB_SIZE_T i = 0, mapCount = parent_context->ctx_win_maps.getCount(); i < mapCount; ++i)
 		{
-			PartitionMap* partitionMap = parent_context->ctx_win_maps[i];
+			WindowMap* windowMap = parent_context->ctx_win_maps[i];
 
-			if (partitionMap->window && partitionMap->window->partition)
+			if (windowMap->window && windowMap->window->partition)
 			{
-				partitionMap->partitionRemapped = Node::doDsqlPass(dsqlScratch,
-					partitionMap->window->partition);
+				windowMap->partitionRemapped = Node::doDsqlPass(dsqlScratch,
+					windowMap->window->partition);
 
-				FieldRemapper remapper2(dsqlScratch, parent_context, true, partitionMap->window);
-				ExprNode::doDsqlFieldRemapper(remapper2, partitionMap->partitionRemapped);
+				FieldRemapper remapper2(dsqlScratch, parent_context, true, windowMap->window);
+				ExprNode::doDsqlFieldRemapper(remapper2, windowMap->partitionRemapped);
 			}
 		}
 
@@ -2539,7 +2539,7 @@ static RseNode* pass1_union(DsqlCompilerScratch* dsqlScratch, UnionSourceNode* i
 			fb_assert(count != 0); // no wrap, please!
 			map->map_node = *uptr++;
 			map->map_next = union_context->ctx_map;
-			map->map_partition = NULL;
+			map->map_window = NULL;
 			union_context->ctx_map = map;
 
 		    *ptr = FB_NEW_POOL(pool) DsqlMapNode(pool, union_context, map);
@@ -2828,13 +2828,13 @@ DsqlMapNode* PASS1_post_map(DsqlCompilerScratch* dsqlScratch, ValueExprNode* nod
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	PartitionMap* partitionMap = NULL;
+	WindowMap* windowMap = NULL;
 	dsql_map* map = NULL;
 
 	if (dsqlScratch->processingWindow)
 	{
-		partitionMap = context->getPartitionMap(dsqlScratch, windowNode);
-		map = partitionMap->map;
+		windowMap = context->getWindowMap(dsqlScratch, windowNode);
+		map = windowMap->map;
 	}
 	else
 		map = context->ctx_map;
@@ -2852,7 +2852,7 @@ DsqlMapNode* PASS1_post_map(DsqlCompilerScratch* dsqlScratch, ValueExprNode* nod
 
 	if (!map)
 	{
-		dsql_map** next = partitionMap ? &partitionMap->map : &context->ctx_map;
+		dsql_map** next = windowMap ? &windowMap->map : &context->ctx_map;
 
 		if (*next)
 		{
@@ -2863,7 +2863,7 @@ DsqlMapNode* PASS1_post_map(DsqlCompilerScratch* dsqlScratch, ValueExprNode* nod
 		map = *next = FB_NEW_POOL(*tdbb->getDefaultPool()) dsql_map;
 		map->map_position = count;
 		map->map_node = node;
-		map->map_partition = partitionMap;
+		map->map_window = windowMap;
 	}
 
 	MAKE_desc(dsqlScratch, &node->nodDesc, node);
@@ -2948,8 +2948,8 @@ bool dsql_ctx::getImplicitJoinField(const MetaName& name, NestConst<ValueExprNod
 	return true;
 }
 
-// Returns (creating, if necessary) the PartitionMap of a given partition (that may be NULL).
-PartitionMap* dsql_ctx::getPartitionMap(DsqlCompilerScratch* dsqlScratch, WindowClause* windowNode)
+// Returns (creating, if necessary) the WindowMap of a given partition (that may be NULL).
+WindowMap* dsql_ctx::getWindowMap(DsqlCompilerScratch* dsqlScratch, WindowClause* windowNode)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 	MemoryPool& pool = *tdbb->getDefaultPool();
@@ -2960,19 +2960,19 @@ PartitionMap* dsql_ctx::getPartitionMap(DsqlCompilerScratch* dsqlScratch, Window
 	if (isNullWindow)
 		windowNode = &nullWindow;
 
-	PartitionMap* partitionMap = NULL;
+	WindowMap* windowMap = NULL;
 
-	for (Array<PartitionMap*>::iterator i = ctx_win_maps.begin();
-		 !partitionMap && i != ctx_win_maps.end();
+	for (Array<WindowMap*>::iterator i = ctx_win_maps.begin();
+		 !windowMap && i != ctx_win_maps.end();
 		 ++i)
 	{
 		if (PASS1_node_match((*i)->window, windowNode, false))
 		{
-			partitionMap = *i;
+			windowMap = *i;
 		}
 	}
 
-	if (!partitionMap)
+	if (!windowMap)
 	{
 		if (isNullWindow)
 		{
@@ -2980,10 +2980,10 @@ PartitionMap* dsql_ctx::getPartitionMap(DsqlCompilerScratch* dsqlScratch, Window
 				WindowClause::EXCLUDE_NO_OTHERS);
 		}
 
-		partitionMap = FB_NEW_POOL(*tdbb->getDefaultPool()) PartitionMap(windowNode);
-		ctx_win_maps.add(partitionMap);
-		partitionMap->context = dsqlScratch->contextNumber++;
+		windowMap = FB_NEW_POOL(*tdbb->getDefaultPool()) WindowMap(windowNode);
+		ctx_win_maps.add(windowMap);
+		windowMap->context = dsqlScratch->contextNumber++;
 	}
 
-	return partitionMap;
+	return windowMap;
 }

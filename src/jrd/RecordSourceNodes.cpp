@@ -1325,7 +1325,7 @@ void AggregateSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		fb_assert(dsqlContext->ctx_win_maps.hasData());
 		dsqlScratch->appendUChar(dsqlContext->ctx_win_maps.getCount());	// number of windows
 
-		for (Array<PartitionMap*>::iterator i = dsqlContext->ctx_win_maps.begin();
+		for (Array<WindowMap*>::iterator i = dsqlContext->ctx_win_maps.begin();
 			 i != dsqlContext->ctx_win_maps.end();
 			 ++i)
 		{

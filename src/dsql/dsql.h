@@ -678,9 +678,9 @@ public:
 	dsql_ctx* visibleInContext;
 };
 
-struct PartitionMap
+struct WindowMap
 {
-	PartitionMap(WindowClause* aWindow)
+	WindowMap(WindowClause* aWindow)
 		: partitionRemapped(NULL),
 		  window(aWindow),
 		  map(NULL),
@@ -726,7 +726,7 @@ public:
 	DsqlContextStack	ctx_childs_derived_table;	// Childs derived table context
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		Firebird::MetaName, ImplicitJoin*> > > ctx_imp_join;	// Map of USING fieldname to ImplicitJoin
-	Firebird::Array<PartitionMap*> ctx_win_maps;	// Maps for window functions
+	Firebird::Array<WindowMap*> ctx_win_maps;	// Maps for window functions
 	Firebird::GenericMap<NamedWindowClause> ctx_named_windows;
 
 	dsql_ctx& operator=(dsql_ctx& v)
@@ -762,7 +762,7 @@ public:
 	}
 
 	bool getImplicitJoinField(const Firebird::MetaName& name, NestConst<ValueExprNode>& node);
-	PartitionMap* getPartitionMap(DsqlCompilerScratch* dsqlScratch, WindowClause* windowNode);
+	WindowMap* getWindowMap(DsqlCompilerScratch* dsqlScratch, WindowClause* windowNode);
 };
 
 // Flag values for ctx_flags
@@ -784,7 +784,7 @@ public:
 	dsql_map* map_next;						// Next map in item
 	NestConst<ValueExprNode> map_node;		// Value for map item
 	USHORT map_position;					// Position in map
-	NestConst<PartitionMap> map_partition;	// Partition
+	NestConst<WindowMap> map_window;		// Partition
 };
 
 // Message block used in communicating with a running request

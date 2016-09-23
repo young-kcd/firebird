@@ -6847,8 +6847,8 @@ void DsqlMapNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_fid);
 
-	if (map->map_partition)
-		dsqlScratch->appendUChar(map->map_partition->context);
+	if (map->map_window)
+		dsqlScratch->appendUChar(map->map_window->context);
 	else
 		GEN_stuff_context(dsqlScratch, context);
 
