@@ -982,12 +982,12 @@ public:
 	class Frame : public TypedNode<ListExprNode, ExprNode::TYPE_WINDOW_CLAUSE_FRAME>
 	{
 	public:
-		enum Bound
+		enum class Bound : UCHAR
 		{
 			// Warning: used in BLR
-			BOUND_PRECEDING = 0,
-			BOUND_FOLLOWING,
-			BOUND_CURRENT_ROW
+			PRECEDING = 0,
+			FOLLOWING,
+			CURRENT_ROW
 		};
 
 	public:
@@ -1002,7 +1002,7 @@ public:
 	public:
 		virtual Firebird::string internalPrint(NodePrinter& printer) const
 		{
-			NODE_PRINT(printer, bound);
+			NODE_PRINT_ENUM(printer, bound);
 			NODE_PRINT(printer, value);
 
 			return "WindowClause::Frame";
@@ -1054,11 +1054,11 @@ public:
 	class FrameExtent : public TypedNode<ListExprNode, ExprNode::TYPE_WINDOW_CLAUSE_FRAME_EXTENT>
 	{
 	public:
-		enum Unit
+		enum class Unit : UCHAR
 		{
 			// Warning: used in BLR
-			UNIT_RANGE = 0,
-			UNIT_ROWS
+			RANGE = 0,
+			ROWS
 			//// TODO: SQL-2013: GROUPS
 		};
 
@@ -1075,16 +1075,16 @@ public:
 
 		static FrameExtent* createDefault(MemoryPool& p)
 		{
-			FrameExtent* frameExtent = FB_NEW_POOL(p) WindowClause::FrameExtent(p, UNIT_RANGE);
-			frameExtent->frame1 = FB_NEW_POOL(p) WindowClause::Frame(p, Frame::BOUND_PRECEDING);
-			frameExtent->frame2 = FB_NEW_POOL(p) WindowClause::Frame(p, Frame::BOUND_CURRENT_ROW);
+			FrameExtent* frameExtent = FB_NEW_POOL(p) WindowClause::FrameExtent(p, Unit::RANGE);
+			frameExtent->frame1 = FB_NEW_POOL(p) WindowClause::Frame(p, Frame::Bound::PRECEDING);
+			frameExtent->frame2 = FB_NEW_POOL(p) WindowClause::Frame(p, Frame::Bound::CURRENT_ROW);
 			return frameExtent;
 		}
 
 	public:
 		virtual Firebird::string internalPrint(NodePrinter& printer) const
 		{
-			NODE_PRINT(printer, unit);
+			NODE_PRINT_ENUM(printer, unit);
 			NODE_PRINT(printer, frame1);
 			NODE_PRINT(printer, frame2);
 
@@ -1121,13 +1121,13 @@ public:
 		NestConst<Frame> frame2;
 	};
 
-	enum Exclusion
+	enum Exclusion : UCHAR
 	{
 		// Warning: used in BLR
-		EXCLUDE_NO_OTHERS = 0,
-		EXCLUDE_CURRENT_ROW,
-		EXCLUDE_GROUP,
-		EXCLUDE_TIES
+		NO_OTHERS = 0,
+		CURRENT_ROW,
+		GROUP,
+		TIES
 	};
 
 public:
@@ -1136,7 +1136,7 @@ public:
 			ValueListNode* aPartition = NULL,
 			ValueListNode* aOrder = NULL,
 			FrameExtent* aFrameExtent = NULL,
-			Exclusion aExclusion = EXCLUDE_NO_OTHERS)
+			Exclusion aExclusion = Exclusion::NO_OTHERS)
 		: DsqlNode(p),
 		  name(aName),
 		  partition(aPartition),
@@ -1155,6 +1155,7 @@ public:
 		NODE_PRINT(printer, partition);
 		NODE_PRINT(printer, order);
 		NODE_PRINT(printer, extent);
+		NODE_PRINT_ENUM(printer, exclusion);
 
 		return "WindowClause";
 	}

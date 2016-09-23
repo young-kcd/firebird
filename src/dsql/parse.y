@@ -7146,11 +7146,11 @@ window_frame_extent
 	: /* nothing */
 		{ $$ = NULL; }
 	| RANGE
-		{ $$ = newNode<WindowClause::FrameExtent>(WindowClause::FrameExtent::UNIT_RANGE); }
+		{ $$ = newNode<WindowClause::FrameExtent>(WindowClause::FrameExtent::Unit::RANGE); }
 		window_frame($2)
 		{ $$ = $2; }
 	| ROWS
-		{ $$ = newNode<WindowClause::FrameExtent>(WindowClause::FrameExtent::UNIT_ROWS); }
+		{ $$ = newNode<WindowClause::FrameExtent>(WindowClause::FrameExtent::Unit::ROWS); }
 		window_frame($2)
 		{ $$ = $2; }
 	;
@@ -7161,7 +7161,7 @@ window_frame($frameExtent)
 		{
 			$frameExtent->frame1 = $1;
 			$frameExtent->frame2 =
-				newNode<WindowClause::Frame>(WindowClause::Frame::BOUND_CURRENT_ROW);
+				newNode<WindowClause::Frame>(WindowClause::Frame::Bound::CURRENT_ROW);
 		}
 	| BETWEEN window_frame_between_bound1 AND window_frame_between_bound2
 		{
@@ -7173,44 +7173,44 @@ window_frame($frameExtent)
 %type <windowClauseFrame> window_frame_start
 window_frame_start
 	: UNBOUNDED PRECEDING
-		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::BOUND_PRECEDING); }
+		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::Bound::PRECEDING); }
 	| CURRENT ROW
-		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::BOUND_CURRENT_ROW); }
+		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::Bound::CURRENT_ROW); }
 	| value PRECEDING
-		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::BOUND_PRECEDING, $1); }
+		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::Bound::PRECEDING, $1); }
 	;
 
 %type <windowClauseFrame> window_frame_between_bound1
 window_frame_between_bound1
 	: UNBOUNDED PRECEDING
-		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::BOUND_PRECEDING); }
+		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::Bound::PRECEDING); }
 	| CURRENT ROW
-		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::BOUND_CURRENT_ROW); }
+		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::Bound::CURRENT_ROW); }
 	| value PRECEDING
-		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::BOUND_PRECEDING, $1); }
+		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::Bound::PRECEDING, $1); }
 	| value FOLLOWING
-		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::BOUND_FOLLOWING, $1); }
+		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::Bound::FOLLOWING, $1); }
 	;
 
 %type <windowClauseFrame> window_frame_between_bound2
 window_frame_between_bound2
 	: UNBOUNDED FOLLOWING
-		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::BOUND_FOLLOWING); }
+		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::Bound::FOLLOWING); }
 	| CURRENT ROW
-		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::BOUND_CURRENT_ROW); }
+		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::Bound::CURRENT_ROW); }
 	| value PRECEDING
-		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::BOUND_PRECEDING, $1); }
+		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::Bound::PRECEDING, $1); }
 	| value FOLLOWING
-		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::BOUND_FOLLOWING, $1); }
+		{ $$ = newNode<WindowClause::Frame>(WindowClause::Frame::Bound::FOLLOWING, $1); }
 	;
 
 %type <windowClauseExclusion> window_frame_exclusion_opt
 window_frame_exclusion_opt
-	: /* nothing */			{ $$ = WindowClause::EXCLUDE_NO_OTHERS; }
-	| EXCLUDE NO OTHERS		{ $$ = WindowClause::EXCLUDE_NO_OTHERS; }
-	| EXCLUDE CURRENT ROW	{ $$ = WindowClause::EXCLUDE_CURRENT_ROW; }
-	| EXCLUDE GROUP			{ $$ = WindowClause::EXCLUDE_GROUP; }
-	| EXCLUDE TIES			{ $$ = WindowClause::EXCLUDE_TIES; }
+	: /* nothing */			{ $$ = WindowClause::Exclusion::NO_OTHERS; }
+	| EXCLUDE NO OTHERS		{ $$ = WindowClause::Exclusion::NO_OTHERS; }
+	| EXCLUDE CURRENT ROW	{ $$ = WindowClause::Exclusion::CURRENT_ROW; }
+	| EXCLUDE GROUP			{ $$ = WindowClause::Exclusion::GROUP; }
+	| EXCLUDE TIES			{ $$ = WindowClause::Exclusion::TIES; }
 	;
 
 %type <valueExprNode> delimiter_opt

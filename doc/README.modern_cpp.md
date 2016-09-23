@@ -20,3 +20,4 @@ Only ones mentioned in this document could be used, but as necessities appears, 
 - [function object binders](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2003/n1455.htm)
 - [function template mem_fn](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2003/n1432.htm)
 - [rvalue references](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2006/n2027.html)
+- [strongly-typed enum](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2347.pdf)

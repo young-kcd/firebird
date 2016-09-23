@@ -556,7 +556,7 @@ public:
 	{
 		explicit Window(MemoryPool&)
 			: stream(INVALID_STREAM),
-			  exclusion(WindowClause::EXCLUDE_NO_OTHERS)
+			  exclusion(WindowClause::Exclusion::NO_OTHERS)
 		{
 		}
 

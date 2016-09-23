@@ -2955,7 +2955,7 @@ WindowMap* dsql_ctx::getWindowMap(DsqlCompilerScratch* dsqlScratch, WindowClause
 	MemoryPool& pool = *tdbb->getDefaultPool();
 
 	bool isNullWindow = windowNode == NULL;
-	WindowClause nullWindow(pool, NULL, NULL, NULL, NULL, WindowClause::EXCLUDE_NO_OTHERS);
+	WindowClause nullWindow(pool, NULL, NULL, NULL, NULL, WindowClause::Exclusion::NO_OTHERS);
 
 	if (isNullWindow)
 		windowNode = &nullWindow;
@@ -2977,7 +2977,7 @@ WindowMap* dsql_ctx::getWindowMap(DsqlCompilerScratch* dsqlScratch, WindowClause
 		if (isNullWindow)
 		{
 			windowNode = FB_NEW_POOL(pool) WindowClause(pool, NULL, NULL, NULL, NULL,
-				WindowClause::EXCLUDE_NO_OTHERS);
+				WindowClause::Exclusion::NO_OTHERS);
 		}
 
 		windowMap = FB_NEW_POOL(*tdbb->getDefaultPool()) WindowMap(windowNode);

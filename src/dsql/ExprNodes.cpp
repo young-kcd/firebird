@@ -7447,13 +7447,13 @@ WindowClause::FrameExtent* WindowClause::FrameExtent::dsqlPass(DsqlCompilerScrat
 {
 	if (frame1 && frame2)
 	{
-		if (frame1->bound == Frame::BOUND_CURRENT_ROW && frame2->bound == Frame::BOUND_PRECEDING)
+		if (frame1->bound == Frame::Bound::CURRENT_ROW && frame2->bound == Frame::Bound::PRECEDING)
 		{
 			status_exception::raise(
 				Arg::Gds(isc_dsql_window_incompat_frames) << "CURRENT ROW" << "PRECEDING");
 		}
 
-		if (frame1->bound == Frame::BOUND_FOLLOWING && frame2->bound != Frame::BOUND_FOLLOWING)
+		if (frame1->bound == Frame::Bound::FOLLOWING && frame2->bound != Frame::Bound::FOLLOWING)
 		{
 			status_exception::raise(
 				Arg::Gds(isc_dsql_window_incompat_frames) <<
@@ -7536,7 +7536,7 @@ WindowClause* WindowClause::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		doDsqlPass(dsqlScratch, window->extent),
 		window->exclusion);
 
-	if (node->order && node->extent && node->extent->unit == FrameExtent::UNIT_RANGE &&
+	if (node->order && node->extent && node->extent->unit == FrameExtent::Unit::RANGE &&
 		(node->extent->frame1->value || (node->extent->frame2 && node->extent->frame2->value)))
 	{
 		if (node->order->items.getCount() > 1)
@@ -7816,7 +7816,7 @@ ValueExprNode* OverNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			AggNode::CAP_RESPECTS_WINDOW_FRAME)
 	{
 		node->window->extent = WindowClause::FrameExtent::createDefault(getPool());
-		node->window->exclusion = WindowClause::EXCLUDE_NO_OTHERS;
+		node->window->exclusion = WindowClause::Exclusion::NO_OTHERS;
 	}
 
 	return node;
