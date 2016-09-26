@@ -32,6 +32,11 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix CORE-5337
+        Subquery in the insert list expression ignores the changes made earlier in the same executable block
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-5335
         Segfault when op_que_events is used on a port not prepared for events processing
       Contributor(s):
