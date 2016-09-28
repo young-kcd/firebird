@@ -1612,6 +1612,14 @@ DdlNode* CreateAlterFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	if (returnType && returnType->type)
 		returnType->type->resolve(dsqlScratch);
 
+	// check SQL SECURITY is not set if function declared in package
+	if (package.hasData() && ssDefiner.specified)
+	{
+		// parameter without default value after parameters with default
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+				  Arg::Gds(isc_invalid_clause) << Arg::Str("SQL SECURITY for functions is prohibit in packages"));
+	}
+
 	return DdlNode::dsqlPass(dsqlScratch);
 }
 
@@ -1802,6 +1810,14 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 				FUN.RDB$DETERMINISTIC_FLAG.NULL = FALSE;
 				FUN.RDB$DETERMINISTIC_FLAG = deterministic ? TRUE : FALSE;
+
+				if (ssDefiner.specified)
+				{
+					FUN.RDB$SQL_SECURITY.NULL = FALSE;
+					FUN.RDB$SQL_SECURITY = ssDefiner.value ? 1 : 0;
+				}
+				else
+					FUN.RDB$SQL_SECURITY.NULL = TRUE;
 
 				if (isUdf())
 				{
@@ -2601,6 +2617,14 @@ DdlNode* CreateAlterProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	for (unsigned i = 0; i < returns.getCount(); ++i)
 		returns[i]->type->resolve(dsqlScratch);
 
+	// check SQL SECURITY is not set if function declared in package
+	if (package.hasData() && ssDefiner.specified)
+	{
+		// parameter without default value after parameters with default
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+				  Arg::Gds(isc_invalid_clause) << Arg::Str("SQL SECURITY for procedures is prohibit in packages"));
+	}
+
 	return DdlNode::dsqlPass(dsqlScratch);
 }
 
@@ -2790,6 +2814,14 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 				}
 				else
 					P.RDB$PRIVATE_FLAG.NULL = TRUE;
+
+				if (ssDefiner.specified)
+				{
+					P.RDB$SQL_SECURITY.NULL = FALSE;
+					P.RDB$SQL_SECURITY = ssDefiner.value ? 1 : 0;
+				}
+				else
+					P.RDB$SQL_SECURITY.NULL = TRUE;
 			}
 
 			if (external)
@@ -3403,6 +3435,17 @@ bool TriggerDefinition::modify(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 				attachment->storeMetaDataBlob(tdbb, transaction, &TRG.RDB$TRIGGER_SOURCE, source);
 			}
 
+			if (ssDefiner.specified)
+			{
+				if (ssDefiner.value != SS_DROP)
+				{
+					TRG.RDB$SQL_SECURITY.NULL = FALSE;
+					TRG.RDB$SQL_SECURITY = ssDefiner.value == SS_DEFINER ? 1 : 0;
+				}
+				else
+					TRG.RDB$SQL_SECURITY.NULL = TRUE;
+			}
+
 			modified = true;
 		END_MODIFY
 	}
@@ -3450,6 +3493,9 @@ DdlNode* CreateAlterTriggerNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				Arg::Gds(isc_dsql_incompatible_trigger_type));
 		}
 	}
+
+	if (create && ssDefiner.specified && ssDefiner.value == TriggerDefinition::SS_DROP)
+		status_exception::raise(Arg::Gds(isc_dsql_command_err) << Arg::Gds(isc_dsql_invalid_drop_ss_clause));
 
 	return DdlNode::dsqlPass(dsqlScratch);
 }
@@ -7207,6 +7253,14 @@ void CreateRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScrat
 		REL.RDB$FLAGS = REL_sql;
 		REL.RDB$RELATION_TYPE = relationType;
 
+		if (ssDefiner.specified)
+		{
+			REL.RDB$SQL_SECURITY.NULL = FALSE;
+			REL.RDB$SQL_SECURITY = ssDefiner.value ? 1 : 0;
+		}
+		else
+			REL.RDB$SQL_SECURITY.NULL = TRUE;
+
 		REL.RDB$VIEW_BLR.NULL = TRUE;
 		REL.RDB$VIEW_SOURCE.NULL = TRUE;
 		REL.RDB$EXTERNAL_FILE.NULL = TRUE;
@@ -7525,6 +7579,36 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 					CreateDropConstraint& dropConstraint = constraints.add();
 					dropConstraint.name =
 						static_cast<const DropConstraintClause*>(i->getObject())->name;
+					break;
+				}
+
+				case Clause::TYPE_ALTER_SQL_SECURITY:
+				{
+					AutoRequest request;
+					bool found = false;
+
+					FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+						REL IN RDB$RELATIONS
+						WITH REL.RDB$RELATION_NAME EQ name.c_str()
+					{
+						found = true;
+
+						MODIFY REL
+						{
+							const Nullable<bool> ssDefiner = static_cast<const AlterSqlSecurityClause*>(
+										i->getObject())->ssDefiner;
+
+							if (ssDefiner.specified)
+							{
+								REL.RDB$SQL_SECURITY.NULL = FALSE;
+								REL.RDB$SQL_SECURITY = ssDefiner.value ? TRUE : FALSE;
+							}
+							else
+								REL.RDB$SQL_SECURITY.NULL = TRUE;
+						}
+						END_MODIFY
+					}
+					END_FOR
 					break;
 				}
 

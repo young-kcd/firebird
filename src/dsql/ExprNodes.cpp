@@ -5481,8 +5481,11 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	// the nodes in the subtree are involved in a validation
 	// clause only, the subtree is a validate_subtree in our notation.
 
-	const SLONG viewId = tail->csb_view ?
+	SLONG ssRelationId = tail->csb_view ?
 		tail->csb_view->rel_id : (csb->csb_view ? csb->csb_view->rel_id : 0);
+
+	if (!ssRelationId && relation->rel_ss_definer.value)
+		ssRelationId = relation->rel_id;
 
 	if (tail->csb_flags & csb_modify)
 	{
@@ -5490,29 +5493,29 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		{
 			SecurityClass::flags_t priv = csb->csb_returning_expr ?
 				SCL_select : SCL_update;
-			CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
+			CMP_post_access(tdbb, csb, relation->rel_security_name, ssRelationId,
 				priv, SCL_object_table, relation->rel_name);
-			CMP_post_access(tdbb, csb, field->fld_security_name, viewId,
+			CMP_post_access(tdbb, csb, field->fld_security_name, ssRelationId,
 				priv, SCL_object_column, field->fld_name, relation->rel_name);
 		}
 	}
 	else if (tail->csb_flags & csb_erase)
 	{
-		CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
+		CMP_post_access(tdbb, csb, relation->rel_security_name, ssRelationId,
 			SCL_delete, SCL_object_table, relation->rel_name);
 	}
 	else if (tail->csb_flags & csb_store)
 	{
-		CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
+		CMP_post_access(tdbb, csb, relation->rel_security_name, ssRelationId,
 			SCL_insert, SCL_object_table, relation->rel_name);
-		CMP_post_access(tdbb, csb, field->fld_security_name, viewId,
+		CMP_post_access(tdbb, csb, field->fld_security_name, ssRelationId,
 			SCL_insert, SCL_object_column, field->fld_name, relation->rel_name);
 	}
 	else
 	{
-		CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
+		CMP_post_access(tdbb, csb, relation->rel_security_name, ssRelationId,
 			SCL_select, SCL_object_table, relation->rel_name);
-		CMP_post_access(tdbb, csb, field->fld_security_name, viewId,
+		CMP_post_access(tdbb, csb, field->fld_security_name, ssRelationId,
 			SCL_select, SCL_object_column, field->fld_name, relation->rel_name);
 	}
 
@@ -5577,6 +5580,8 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 		sub = cast;
 	}
+
+	AutoSetRestore<jrd_rel*> autoRelationStream(&csb->csb_parent_relation, relation->rel_ss_definer.value ? relation : 0);
 
 	if (relation->rel_view_rse)
 	{
@@ -11191,8 +11196,15 @@ ValueExprNode* UdfCallNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		{
 			if (function->getName().package.isEmpty())
 			{
-				CMP_post_access(tdbb, csb, function->getSecurityName(),
-					(csb->csb_view ? csb->csb_view->rel_id : 0),
+				SLONG ssRelationId = csb->csb_view ? csb->csb_view->rel_id : 0;
+
+				if (!ssRelationId && csb->csb_parent_relation)
+				{
+					fb_assert(csb->csb_parent_relation->rel_ss_definer.value);
+					ssRelationId = csb->csb_parent_relation->rel_id;
+				}
+
+				CMP_post_access(tdbb, csb, function->getSecurityName(), ssRelationId,
 					SCL_execute, SCL_object_function, function->getName().identifier);
 			}
 			else

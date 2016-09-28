@@ -156,6 +156,7 @@ public:
 	Firebird::string	entryPoint;			// External trigger entrypoint
 	Firebird::string	extBody;			// External trigger body
 	ExtEngineManager::Trigger* extTrigger;	// External trigger
+	Nullable<bool> ssDefiner;
 
 	void compile(thread_db*);				// Ensure that trigger is compiled
 	void release(thread_db*);				// Try to free trigger request
@@ -185,7 +186,7 @@ class jrd_prc : public Routine
 {
 public:
 	const Format*	prc_record_format;
-	prc_t		prc_type;					// procedure type
+	prc_t			prc_type;					// procedure type
 
 	const ExtEngineManager::Procedure* getExternal() const { return prc_external; }
 	void setExternal(ExtEngineManager::Procedure* value) { prc_external = value; }

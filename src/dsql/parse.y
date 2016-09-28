@@ -607,6 +607,10 @@ using namespace Firebird;
 %token <metaNamePtr> TIES
 %token <metaNamePtr> UNBOUNDED
 %token <metaNamePtr> WINDOW
+%token <metaNamePtr> SQL
+%token <metaNamePtr> SECURITY
+%token <metaNamePtr> INVOKER
+%token <metaNamePtr> DEFINER
 
 // precedence declarations for expression evaluation
 
@@ -638,6 +642,7 @@ using namespace Firebird;
 {
 	BaseNullable<int> nullableIntVal;
 	BaseNullable<bool> nullableBoolVal;
+	BaseNullable<Jrd::TriggerDefinition::SqlSecurity> nullableSqlSecurityVal;
 	bool boolVal;
 	int intVal;
 	unsigned uintVal;
@@ -2057,20 +2062,36 @@ page_noise
 %type <createRelationNode> table_clause
 table_clause
 	: simple_table_name external_file
-			{ $<createRelationNode>$ = newNode<CreateRelationNode>($1, $2); }
-		'(' table_elements($3) ')'
-			{ $$ = $3; }
+			{
+				$<createRelationNode>$ = newNode<CreateRelationNode>($1, $2);
+			}
+		'(' table_elements($3) ')' sql_security_clause
+			{
+				$$ = $3;
+				$$->ssDefiner = $7;
+			}
 	;
 
 %type <createRelationNode> gtt_table_clause
 gtt_table_clause
 	: simple_table_name
 			{ $<createRelationNode>$ = newNode<CreateRelationNode>($1); }
-		'(' table_elements($2) ')' gtt_scope
+		'(' table_elements($2) ')' gtt_ops($2)
 			{
 				$$ = $2;
-				$$->relationType = static_cast<rel_t>($6);
 			}
+	;
+
+%type gtt_ops(<createRelationNode>)
+gtt_ops($createRelationNode)
+	: gtt_op($createRelationNode)
+	| gtt_ops ',' gtt_op($createRelationNode)
+	;
+
+%type gtt_op(<createRelationNode>)
+gtt_op($createRelationNode)
+	: sql_security_clause	{ $createRelationNode->ssDefiner = $1; }
+	| gtt_scope		{ $createRelationNode->relationType = static_cast<rel_t>($1); }
 	;
 
 %type <intVal> gtt_scope
@@ -2098,7 +2119,6 @@ table_element($createRelationNode)
 	: column_def($createRelationNode)
 	| table_constraint_definition($createRelationNode)
 	;
-
 
 // column definition
 
@@ -2457,12 +2477,13 @@ procedure_clause
 
 %type <createAlterProcedureNode> psql_procedure_clause
 psql_procedure_clause
-	: procedure_clause_start AS local_declaration_list full_proc_block
+	: procedure_clause_start sql_security_clause AS local_declaration_list full_proc_block
 		{
 			$$ = $1;
-			$$->source = makeParseStr(YYPOSNARG(3), YYPOSNARG(4));
-			$$->localDeclList = $3;
-			$$->body = $4;
+			$$->ssDefiner = $2;
+			$$->source = makeParseStr(YYPOSNARG(4), YYPOSNARG(5));
+			$$->localDeclList = $4;
+			$$->body = $5;
 		}
 	;
 
@@ -2480,9 +2501,21 @@ external_procedure_clause
 %type <createAlterProcedureNode> procedure_clause_start
 procedure_clause_start
 	: symbol_procedure_name
-			{ $$ = newNode<CreateAlterProcedureNode>(*$1); }
-		input_parameters(NOTRIAL(&$2->parameters)) output_parameters(NOTRIAL(&$2->returns))
+		{
+			$$ = newNode<CreateAlterProcedureNode>(*$1);
+		}
+	input_parameters(NOTRIAL(&$2->parameters)) output_parameters(NOTRIAL(&$2->returns))
 			{ $$ = $2; }
+	;
+
+%type <nullableBoolVal> sql_security_clause
+sql_security_clause
+	: SQL SECURITY DEFINER
+		{ $$ = Nullable<bool>::val(true); }
+	| SQL SECURITY INVOKER
+		{ $$ = Nullable<bool>::val(false); }
+	|	// nothing
+		{ $$ = Nullable<bool>::empty(); }
 	;
 
 %type <createAlterProcedureNode> alter_procedure_clause
@@ -2580,12 +2613,13 @@ function_clause
 
 %type <createAlterFunctionNode> psql_function_clause
 psql_function_clause
-	: function_clause_start AS local_declaration_list full_proc_block
+	: function_clause_start sql_security_clause AS local_declaration_list full_proc_block
 		{
 			$$ = $1;
-			$$->source = makeParseStr(YYPOSNARG(3), YYPOSNARG(4));
-			$$->localDeclList = $3;
-			$$->body = $4;
+			$$->ssDefiner = $2;
+			$$->source = makeParseStr(YYPOSNARG(4), YYPOSNARG(5));
+			$$->localDeclList = $4;
+			$$->body = $5;
 		}
 	;
 
@@ -2603,7 +2637,9 @@ external_function_clause
 %type <createAlterFunctionNode> function_clause_start
 function_clause_start
 	: symbol_UDF_name
-			{ $$ = newNode<CreateAlterFunctionNode>(*$1); }
+			{
+				$$ = newNode<CreateAlterFunctionNode>(*$1);
+			}
 		input_parameters(NOTRIAL(&$2->parameters))
 		RETURNS domain_or_non_array_type collate_clause deterministic_opt
 			{
@@ -2665,11 +2701,12 @@ replace_function_clause
 
 %type <createAlterPackageNode> package_clause
 package_clause
-	: symbol_package_name AS BEGIN package_items_opt END
+	: symbol_package_name sql_security_clause AS BEGIN package_items_opt END
 		{
 			CreateAlterPackageNode* node = newNode<CreateAlterPackageNode>(*$1);
-			node->source = makeParseStr(YYPOSNARG(3), YYPOSNARG(5));
-			node->items = $4;
+			node->ssDefiner = $2;
+			node->source = makeParseStr(YYPOSNARG(4), YYPOSNARG(6));
+			node->items = $5;
 			$$ = node;
 		}
 	;
@@ -3505,16 +3542,17 @@ check_opt
 
 %type <createAlterTriggerNode> trigger_clause
 trigger_clause
-	: symbol_trigger_name trigger_active trigger_type trigger_position
+	: symbol_trigger_name trigger_active trigger_type trigger_position trg_sql_security_clause
 			AS local_declaration_list full_proc_block
 		{
 			$$ = newNode<CreateAlterTriggerNode>(*$1);
 			$$->active = $2;
 			$$->type = $3;
 			$$->position = $4;
-			$$->source = makeParseStr(YYPOSNARG(5), YYPOSNARG(7));
-			$$->localDeclList = $6;
-			$$->body = $7;
+			$$->ssDefiner = $5;
+			$$->source = makeParseStr(YYPOSNARG(6), YYPOSNARG(8));
+			$$->localDeclList = $7;
+			$$->body = $8;
 		}
 	| symbol_trigger_name trigger_active trigger_type trigger_position
 			external_clause external_body_clause_opt
@@ -3527,7 +3565,7 @@ trigger_clause
 			if ($6)
 				$$->source = *$6;
 		}
-	| symbol_trigger_name trigger_active trigger_type trigger_position ON symbol_table_name
+	| symbol_trigger_name trigger_active trigger_type trigger_position ON symbol_table_name trg_sql_security_clause
 			AS local_declaration_list full_proc_block
 		{
 			$$ = newNode<CreateAlterTriggerNode>(*$1);
@@ -3535,9 +3573,10 @@ trigger_clause
 			$$->type = $3;
 			$$->position = $4;
 			$$->relationName = *$6;
-			$$->source = makeParseStr(YYPOSNARG(7), YYPOSNARG(9));
-			$$->localDeclList = $8;
-			$$->body = $9;
+			$$->ssDefiner = $7;
+			$$->source = makeParseStr(YYPOSNARG(8), YYPOSNARG(10));
+			$$->localDeclList = $9;
+			$$->body = $10;
 		}
 	| symbol_trigger_name trigger_active trigger_type trigger_position ON symbol_table_name
 			external_clause external_body_clause_opt
@@ -3551,7 +3590,7 @@ trigger_clause
 			if ($8)
 				$$->source = *$8;
 		}
-	| symbol_trigger_name FOR symbol_table_name trigger_active trigger_type trigger_position
+	| symbol_trigger_name FOR symbol_table_name trigger_active trigger_type trigger_position trg_sql_security_clause
 			AS local_declaration_list full_proc_block
 		{
 			$$ = newNode<CreateAlterTriggerNode>(*$1);
@@ -3559,9 +3598,10 @@ trigger_clause
 			$$->type = $5;
 			$$->position = $6;
 			$$->relationName = *$3;
-			$$->source = makeParseStr(YYPOSNARG(7), YYPOSNARG(9));
-			$$->localDeclList = $8;
-			$$->body = $9;
+			$$->ssDefiner = $7;
+			$$->source = makeParseStr(YYPOSNARG(8), YYPOSNARG(10));
+			$$->localDeclList = $9;
+			$$->body = $10;
 		}
 	| symbol_trigger_name FOR symbol_table_name trigger_active trigger_type trigger_position
 			external_clause external_body_clause_opt
@@ -3882,6 +3922,27 @@ alter_op($relationNode)
 			clause->identityRestartValue = $4;
 			$relationNode->clauses.add(clause);
 		}
+	| ALTER SQL SECURITY DEFINER
+			{
+				RelationNode::AlterSqlSecurityClause* clause =
+					newNode<RelationNode::AlterSqlSecurityClause>();
+				clause->ssDefiner = Nullable<bool>::val(true);
+				$relationNode->clauses.add(clause);
+			}
+	| ALTER SQL SECURITY INVOKER
+			{
+				RelationNode::AlterSqlSecurityClause* clause =
+					newNode<RelationNode::AlterSqlSecurityClause>();
+				clause->ssDefiner = Nullable<bool>::val(false);
+				$relationNode->clauses.add(clause);
+			}
+	| DROP SQL SECURITY
+			{
+				RelationNode::AlterSqlSecurityClause* clause =
+					newNode<RelationNode::AlterSqlSecurityClause>();
+				clause->ssDefiner = Nullable<bool>::empty();
+				$relationNode->clauses.add(clause);
+			}
 	;
 
 %type <metaNamePtr> alter_column_name
@@ -4105,7 +4166,7 @@ crypt_key_clause($alterDatabaseNode)
 
 %type <createAlterTriggerNode> alter_trigger_clause
 alter_trigger_clause
-	: symbol_trigger_name trigger_active trigger_type_opt trigger_position
+	: symbol_trigger_name trigger_active trigger_type_opt trigger_position trg_sql_security_clause
 			AS local_declaration_list full_proc_block
 		{
 			$$ = newNode<CreateAlterTriggerNode>(*$1);
@@ -4114,9 +4175,10 @@ alter_trigger_clause
 			$$->active = $2;
 			$$->type = $3;
 			$$->position = $4;
-			$$->source = makeParseStr(YYPOSNARG(5), YYPOSNARG(7));
-			$$->localDeclList = $6;
-			$$->body = $7;
+			$$->ssDefiner = $5;
+			$$->source = makeParseStr(YYPOSNARG(6), YYPOSNARG(8));
+			$$->localDeclList = $7;
+			$$->body = $8;
 		}
 	| symbol_trigger_name trigger_active trigger_type_opt trigger_position
 			external_clause external_body_clause_opt
@@ -4131,7 +4193,7 @@ alter_trigger_clause
 			if ($6)
 				$$->source = *$6;
 		}
-	| symbol_trigger_name trigger_active trigger_type_opt trigger_position
+	| symbol_trigger_name trigger_active trigger_type_opt trigger_position trg_sql_security_clause
 		{
 			$$ = newNode<CreateAlterTriggerNode>(*$1);
 			$$->alter = true;
@@ -4139,6 +4201,7 @@ alter_trigger_clause
 			$$->active = $2;
 			$$->type = $3;
 			$$->position = $4;
+			$$->ssDefiner = $5;
 		}
 	;
 
@@ -4150,6 +4213,17 @@ trigger_type_opt	// we do not allow alter database triggers, hence we do not use
 		{ $$ = Nullable<FB_UINT64>::empty(); }
 	;
 
+%type <nullableSqlSecurityVal> trg_sql_security_clause
+trg_sql_security_clause
+	: SQL SECURITY DEFINER
+		{ $$ = Nullable<TriggerDefinition::SqlSecurity>::val(TriggerDefinition::SS_DEFINER); }
+	| SQL SECURITY INVOKER
+		{ $$ = Nullable<TriggerDefinition::SqlSecurity>::val(TriggerDefinition::SS_INVOKER); }
+	| DROP SQL SECURITY
+		{ $$ = Nullable<TriggerDefinition::SqlSecurity>::val(TriggerDefinition::SS_DROP); }
+	| // nothing
+		{ $$ = Nullable<TriggerDefinition::SqlSecurity>::empty(); }
+	;
 
 // DROP metadata operations
 
@@ -8029,7 +8103,11 @@ non_reserved_word
 	| SYSTEM
 	| ERROR_MESSAGE
 	| TIES
-;
+	| SQL
+	| SECURITY
+	| INVOKER
+	| DEFINER
+	;
 
 %%
 

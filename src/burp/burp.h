@@ -197,9 +197,11 @@ Version 9: FB2.5.
 
 Version 10: FB3.0.
 			See backup_capabilities in OdsDetection.h.
+
+Version 11: FB 4.0
 */
 
-const int ATT_BACKUP_FORMAT		= 10;
+const int ATT_BACKUP_FORMAT		= 11;
 
 // format version number for ranges for arrays
 
@@ -267,6 +269,7 @@ enum att_type {
 	att_relation_flags,
 	att_relation_ext_file_name, // name of file for external tables
 	att_relation_type,
+	att_relation_sql_security,
 
 	// Field attributes (used for both global and local fields)
 
@@ -400,6 +403,7 @@ enum att_type {
 	att_trig_engine_name,
 	att_trig_entrypoint,
 	att_trig_type2,
+	att_trig_sql_security,
 
 	// Function attributes
 
@@ -423,6 +427,7 @@ enum att_type {
 	att_function_owner_name,
 	att_function_legacy_flag,
 	att_function_deterministic_flag,
+	att_function_sql_security,
 
 	// Function argument attributes
 
@@ -518,6 +523,7 @@ enum att_type {
 	att_procedure_entrypoint,
 	att_procedure_package_name,
 	att_procedure_private_flag,
+	att_procedure_sql_security,
 
 	// Stored procedure parameter attributes
 
@@ -617,7 +623,8 @@ enum att_type {
 	att_package_valid_body_flag,
 	att_package_security_class,
 	att_package_owner_name,
-	att_package_description
+	att_package_description,
+	att_package_sql_security
 };
 
 

@@ -409,6 +409,7 @@ public:
 	bool privateScope;
 	bool preserveDefaults;
 	SLONG udfReturnPos;
+	Nullable<bool> ssDefiner;
 };
 
 
@@ -542,6 +543,7 @@ public:
 	Firebird::MetaName packageOwner;
 	bool privateScope;
 	bool preserveDefaults;
+	Nullable<bool> ssDefiner;
 };
 
 
@@ -586,6 +588,13 @@ typedef RecreateNode<CreateAlterProcedureNode, DropProcedureNode, isc_dsql_recre
 class TriggerDefinition
 {
 public:
+	enum SqlSecurity
+	{
+		SS_INVOKER,
+		SS_DEFINER,
+		SS_DROP
+	};
+
 	explicit TriggerDefinition(MemoryPool& p)
 		: name(p),
 		  relationName(p),
@@ -626,6 +635,7 @@ public:
 	Firebird::ByteChunk debugData;
 	USHORT systemFlag;
 	bool fkTrigger;
+	Nullable<SqlSecurity> ssDefiner;
 };
 
 
@@ -1230,7 +1240,8 @@ public:
 			TYPE_ALTER_COL_POS,
 			TYPE_ALTER_COL_TYPE,
 			TYPE_DROP_COLUMN,
-			TYPE_DROP_CONSTRAINT
+			TYPE_DROP_CONSTRAINT,
+			TYPE_ALTER_SQL_SECURITY
 		};
 
 		explicit Clause(MemoryPool& p, Type aType)
@@ -1401,6 +1412,16 @@ public:
 		Firebird::MetaName name;
 	};
 
+	struct AlterSqlSecurityClause : public Clause
+	{
+		explicit AlterSqlSecurityClause(MemoryPool& p)
+			: Clause(p, TYPE_ALTER_SQL_SECURITY)
+		{
+		}
+
+		Nullable<bool> ssDefiner;
+	};
+
 	RelationNode(MemoryPool& p, RelationSourceNode* aDsqlNode);
 
 	static void deleteLocalField(thread_db* tdbb, jrd_tra* transaction,
@@ -1448,6 +1469,7 @@ public:
 	NestConst<RelationSourceNode> dsqlNode;
 	Firebird::MetaName name;
 	Firebird::Array<NestConst<Clause> > clauses;
+	Nullable<bool> ssDefiner;
 };
 
 
@@ -2298,5 +2320,15 @@ public:
 
 
 } // namespace
+
+template <>
+class NullableClear<Jrd::TriggerDefinition::SqlSecurity>	// TriggerDefinition::SqlSecurity especialization for NullableClear
+{
+public:
+	static void clear(Jrd::TriggerDefinition::SqlSecurity& v)
+	{
+		v = Jrd::TriggerDefinition::SS_INVOKER;
+	}
+};
 
 #endif // DSQL_DDL_NODES_H
