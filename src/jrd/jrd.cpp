@@ -1159,6 +1159,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		attachment->att_flags |= ATT_lck_init_done;
 	}
 
+	// Basic DBB initialization complete
+	initGuard.leave();
+
 	// Attachments to a ReadOnly database need NOT do garbage collection
 	if (dbb->dbb_flags & DBB_read_only) {
 		attachment->att_flags |= ATT_no_cleanup;
@@ -1457,8 +1460,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 #endif
 
 	CCH_release_exclusive(tdbb);
-
-	initGuard.leave();
 
 	if (attachment->att_trace_manager->needs().event_attach)
 	{
