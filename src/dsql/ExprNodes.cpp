@@ -7678,16 +7678,6 @@ ValueExprNode* OverNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	// Save the values to restore them in the end.
 	AutoSetRestore<WindowClause*> autoWindowNode(&visitor.windowNode, visitor.windowNode);
 
-	if (window->partition)
-	{
-		if (Aggregate2Finder::find(visitor.context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
-				true, window->partition))
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  Arg::Gds(isc_dsql_agg_nested_err));
-		}
-	}
-
 	if (Aggregate2Finder::find(visitor.context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
 			true, window))
 	{
@@ -7718,37 +7708,15 @@ ValueExprNode* OverNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	{
 		if (!visitor.window)
 		{
-			{	// scope
-				AutoSetRestore<WindowClause*> autoWindowNode2(&visitor.windowNode, NULL);
+			AutoSetRestore<WindowClause*> autoWindowNode2(&visitor.windowNode, NULL);
 
-				for (auto& child : aggNode->dsqlChildNodes)
-					child->remap(visitor);
-			}
+			for (auto& child : aggNode->dsqlChildNodes)
+				child->remap(visitor);
 
-			if (window->partition)
-			{
-				for (unsigned i = 0; i < window->partition->items.getCount(); ++i)
-				{
-					AutoSetRestore<WindowClause*> autoWindowNode2(&visitor.windowNode, NULL);
-
-					doDsqlFieldRemapper(visitor, window->partition->items[i]);
-				}
-			}
-
-			// ASF: I'm not sure if this is enough or frame values needs to be remapped as well.
-			if (window->order)
-			{
-				for (unsigned i = 0; i < window->order->items.getCount(); ++i)
-				{
-					AutoSetRestore<WindowClause*> autoWindowNode2(&visitor.windowNode, NULL);
-
-					doDsqlFieldRemapper(visitor, window->order->items[i]);
-				}
-			}
+			doDsqlFieldRemapper(visitor, window);
 		}
 		else if (visitor.dsqlScratch->scopeLevel == aggFinder.deepestLevel)
 		{
-
 			return PASS1_post_map(visitor.dsqlScratch, aggNode, visitor.context,
 				visitor.windowNode);
 		}
