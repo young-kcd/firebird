@@ -1972,9 +1972,12 @@ void MET_load_trigger(thread_db* tdbb,
 		if (!TRG.RDB$ENTRYPOINT.NULL)	// ODS_12_0
 			entryPoint = TRG.RDB$ENTRYPOINT;
 
+		Nullable<bool> ssDefiner;
 
-		const Nullable<bool> ssDefiner = TRG.RDB$SQL_SECURITY.NULL ?
-					relation->rel_ss_definer : Nullable<bool>(static_cast<bool>(TRG.RDB$SQL_SECURITY));
+		if (!TRG.RDB$SQL_SECURITY.NULL)
+			ssDefiner = Nullable<bool>::val(TRG.RDB$SQL_SECURITY);
+		else if (relation)
+			ssDefiner = relation->rel_ss_definer;
 
 		if (TRG.RDB$RELATION_NAME.NULL)
 		{
@@ -3793,7 +3796,9 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 
 		relation->rel_name = REL.RDB$RELATION_NAME;
 		relation->rel_owner_name = REL.RDB$OWNER_NAME;
-		relation->rel_ss_definer = REL.RDB$SQL_SECURITY;
+
+		if (!REL.RDB$SQL_SECURITY.NULL)
+			relation->rel_ss_definer = Nullable<bool>::val(REL.RDB$SQL_SECURITY);
 
 		if (!REL.RDB$VIEW_BLR.isEmpty())
 		{
