@@ -844,9 +844,8 @@ void Trigger::compile(thread_db* tdbb)
 		}
 
 		statement->triggerName = name;
-		const Nullable<bool>& ss = ssDefiner.specified ? ssDefiner : relation->rel_ss_definer;
-		if (ss.specified && ss.value)
-			statement->triggerOwner = relation->rel_owner_name;
+		if (ssDefiner.specified && ssDefiner.value)
+			statement->triggerOwner = owner;
 
 		if (sys_trigger)
 			statement->flags |= JrdStatement::FLAG_SYS_TRIGGER;

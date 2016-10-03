@@ -30,7 +30,7 @@ it will take effect next time trigger will be loaded into metadata cache.
 For procedures and functions defined in package explicit SQL SECURITY clause is prohibit.
 
 
-Example 1. It's enought to grant only SELECT privilege to user US for table T.
+Example 1. It's enough to grant only SELECT privilege to user US for table T.
 In case of INVOKER it will require also EXECUTE for function F.
 
 set term ^;

@@ -157,6 +157,7 @@ public:
 	Firebird::string	extBody;			// External trigger body
 	ExtEngineManager::Trigger* extTrigger;	// External trigger
 	Nullable<bool> ssDefiner;
+	Firebird::MetaName	owner;				// Owner for SQL SECURITY
 
 	void compile(thread_db*);				// Ensure that trigger is compiled
 	void release(thread_db*);				// Try to free trigger request

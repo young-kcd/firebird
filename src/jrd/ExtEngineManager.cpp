@@ -1274,8 +1274,7 @@ void ExtEngineManager::makeTrigger(thread_db* tdbb, CompilerScratch* csb, Jrd::T
 	entryPointTrimmed.trim();
 
 	EngineAttachmentInfo* attInfo = getEngineAttachment(tdbb, engine);
-	Nullable<bool>& ssDefiner = trg->ssDefiner.specified ? trg->ssDefiner : trg->relation->rel_ss_definer;
-	const MetaName& userName = ssDefiner.specified && ssDefiner.value ? trg->relation->rel_owner_name : "";
+	const MetaName& userName = trg->ssDefiner.specified && trg->ssDefiner.value ? trg->owner : "";
 	ContextManager<IExternalTrigger> ctxManager(tdbb, attInfo, attInfo->adminCharSet,
 		CallerName(obj_trigger, trg->name, userName));
 

@@ -664,7 +664,7 @@ void JrdStatement::verifyTriggerAccess(thread_db* tdbb, jrd_rel* ownerRelation,
 					userName = view->rel_owner_name;
 			}
 			else if (t.ssDefiner.specified && t.ssDefiner.value)
-				userName = ownerRelation->rel_owner_name;
+				userName = t.owner;
 
 			const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
 			SCL_check_access(tdbb, sec_class, userName, id_trigger,

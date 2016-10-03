@@ -4900,6 +4900,7 @@ static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation
 	t.engine = engine;
 	t.entryPoint = entryPoint;
 	t.ssDefiner = ssDefiner;
+	t.owner = relation ? relation->rel_owner_name : tdbb->getDatabase()->dbb_owner;
 }
 
 
