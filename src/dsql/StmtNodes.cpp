@@ -6440,7 +6440,7 @@ DmlNode* StoreNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 	return node;
 }
 
-StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, 
+StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch,
 	bool updateOrInsert, bool& needSavePoint)
 {
 	thread_db* tdbb = JRD_get_thread_data(); // necessary?
@@ -6608,7 +6608,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch,
 StmtNode* StoreNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	bool needSavePoint;
-	StmtNode* node = SavepointEncloseNode::make(getPool(), dsqlScratch, 
+	StmtNode* node = SavepointEncloseNode::make(getPool(), dsqlScratch,
 		internalDsqlPass(dsqlScratch, false, needSavePoint));
 
 	if (!needSavePoint || node->is<SavepointEncloseNode>())

@@ -198,7 +198,8 @@ Version 9: FB2.5.
 Version 10: FB3.0.
 			See backup_capabilities in OdsDetection.h.
 
-Version 11: FB 4.0
+Version 11: FB4.0.
+			SQL SECURITY feature.
 */
 
 const int ATT_BACKUP_FORMAT		= 11;

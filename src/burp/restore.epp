@@ -7333,7 +7333,7 @@ bool get_relation(BurpGlobals* tdgbl)
 				rel_desc = isc_blob_null, ext_desc = isc_blob_null;
 	bool		view_blr_null = true, view_src_null = true, rel_desc_null = true,
 				ext_desc_null = true;
-	FB_BOOLEAN	sql_security = 0;
+	FB_BOOLEAN	sql_security = FB_FALSE;
 	bool		sql_security_null = true;
 
 	BASED_ON RDB$RELATIONS.RDB$SECURITY_CLASS sec_class;

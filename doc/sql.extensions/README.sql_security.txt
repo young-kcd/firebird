@@ -18,7 +18,7 @@ CREATE [OR ALTER] PACKAGE <PACKAGENAME> [SQL SECURITY {DEFINER | INVOKER}] AS ..
 Description:
 
 Makes it possible to execute some objects with permissions of either definer or invoker.
-By default INVOKER is used to keep backword compatibility.
+By default INVOKER is used to keep backward compatibility.
 
 If INVOKER is specified a current set of privileges of the current user will be used.
 If DEFINER - a set of privileges of object owner will be used to check an access to database objects used by this object.
@@ -153,6 +153,7 @@ commit;
 
 connect 'localhost:/tmp/69.fdb' user us password 'pas';
 select pk.f(3) from rdb$database;
+
 
 Example 6. Altering explicit option SQL SECURITY for triggers.
 To remove explicit SQL SECURITY OPTION from trigger you can execute:

@@ -2012,15 +2012,15 @@ void put_int64(att_type attribute, SINT64 value)
 
 void put_boolean(att_type attribute, const FB_BOOLEAN value)
 {
-	/**************************************
-	 *
-	 *	p u t _ b o o l e a n
-	 *
-	 **************************************
-	 *
-	 * Functional description
-	 *	Write a FB_BOOLEAN value as an attribute.
-	 **************************************/
+/**************************************
+ *
+ *	p u t _ b o o l e a n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Write a FB_BOOLEAN value as an attribute.
+ **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	put(tdgbl, attribute);
