@@ -3807,6 +3807,59 @@ ValueExprNode* DecodeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	node->label = label;
 	node->make(dsqlScratch, &node->nodDesc);	// Set descriptor for output node.
 	node->setParameterType(dsqlScratch, &node->nodDesc, false);
+
+	// Workaround for DECODE/CASE supporting only 255 items - see CORE-5366.
+
+	const static unsigned MAX_COUNT = 254;
+
+	if (node->values->items.getCount() > MAX_COUNT)
+	{
+		NestValueArray conditions(node->conditions->items.getCount() - MAX_COUNT);
+		conditions.push(node->conditions->items.begin() + MAX_COUNT, conditions.getCapacity());
+		node->conditions->items.shrink(MAX_COUNT);
+
+		NestValueArray values(node->values->items.getCount() - MAX_COUNT);
+		values.push(node->values->items.begin() + MAX_COUNT, values.getCapacity());
+		node->values->items.shrink(MAX_COUNT + 1);
+
+		DecodeNode* innerNode = node;
+		bool hasElse = values.getCount() != conditions.getCount();
+		unsigned index = 0;
+		bool last;
+
+		do
+		{
+			unsigned count = conditions.getCount() - index;
+			last = count <= MAX_COUNT;
+			unsigned valuesCount = MIN(MAX_COUNT, count) + (last && hasElse ? 1 : 0);
+			unsigned conditionsCount = MIN(MAX_COUNT, count);
+
+			if (last && conditionsCount == 0)
+			{
+				fb_assert(valuesCount == 1);
+				innerNode->values->items.back() = values[index];
+			}
+			else
+			{
+				DecodeNode* newNode = FB_NEW_POOL(getPool()) DecodeNode(getPool(),
+					doDsqlPass(dsqlScratch, test),
+					FB_NEW_POOL(getPool()) ValueListNode(getPool(), conditionsCount),
+					FB_NEW_POOL(getPool()) ValueListNode(getPool(), valuesCount + (last ? 0 : 1)));
+
+				newNode->conditions->items.assign(conditions.begin() + index, conditionsCount);
+				newNode->values->items.assign(values.begin() + index, valuesCount);
+
+				if (!last)
+					newNode->values->items.push(NULL);
+
+				innerNode->values->items.back() = newNode;
+				innerNode = newNode;
+
+				index += conditionsCount;
+			}
+		} while (!last);
+	}
+
 	return node;
 }
 
