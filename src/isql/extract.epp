@@ -352,10 +352,12 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 				isqlGlob.printf("%s ", new_name ? new_name : relation_name);
 
 			if (!REL.RDB$SQL_SECURITY.NULL)
+			{
 				if (REL.RDB$SQL_SECURITY)
 					strcpy(ss, "SQL SECURITY DEFINER");
 				else
 					strcpy(ss, "SQL SECURITY INVOKER");
+			}
 
 			if (!REL.RDB$EXTERNAL_FILE.NULL)
 			{

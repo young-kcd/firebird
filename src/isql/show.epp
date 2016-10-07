@@ -6149,7 +6149,7 @@ static processing_state show_trigger(const SCHAR* object, bool show_source, bool
 				 TRG.RDB$TRIGGER_SEQUENCE,
 				 SHOW_trigger_action(TRG.RDB$TRIGGER_TYPE).c_str(),
 				 (TRG.RDB$TRIGGER_INACTIVE ? "Inactive" : "Active"),
-				ss,
+				 ss,
 				 NEWLINE);
 
 		if (show_source)

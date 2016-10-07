@@ -1372,8 +1372,10 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 			if (existingId)
 				userId = *existingId;
 			else
+			{
 				getUserInfo(userId, options, org_filename.c_str(), expanded_name.c_str(),
 					&config, false, cryptCallback);
+			}
 
 #ifdef WIN_NT
 			guardDbInit.enter();		// Required to correctly expand name of just created database
@@ -6351,8 +6353,10 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	// avoid races with crypt thread
 	Mutex dummyMutex;
-	MutexEnsureUnlock cryptGuard(dbb->dbb_crypto_manager ? dbb->dbb_crypto_manager->cryptAttMutex :
-		dummyMutex, FB_FUNCTION);
+	MutexEnsureUnlock cryptGuard(dbb->dbb_crypto_manager ?
+			dbb->dbb_crypto_manager->cryptAttMutex :
+			dummyMutex,
+		FB_FUNCTION);
 	cryptGuard.enter();
 
 	Sync sync(&dbb->dbb_sync, "jrd.cpp: release_attachment");
@@ -6361,24 +6365,29 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	// stop the crypt thread if we release last regular attachment
 	Jrd::Attachment* crypt_att = NULL;
 	CRYPT_DEBUG(fprintf(stderr, "\nrelease attachment=%p\n", attachment));
+
 	for (Jrd::Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
 	{
 		CRYPT_DEBUG(fprintf(stderr, "att=%p crypt_att=%p F=%c ", att, crypt_att, att->att_flags & ATT_crypt_thread ? '1' : '0'));
+
 		if (att == attachment)
 		{
 			CRYPT_DEBUG(fprintf(stderr, "self\n"));
 			continue;
 		}
+
 		if (att->att_flags & ATT_crypt_thread)
 		{
 			crypt_att = att;
 			CRYPT_DEBUG(fprintf(stderr, "found crypt_att=%p\n", crypt_att));
 			continue;
 		}
+
 		crypt_att = NULL;
 		CRYPT_DEBUG(fprintf(stderr, "other\n"));
 		break;
 	}
+
 	cryptGuard.leave();
 
 	if (crypt_att)

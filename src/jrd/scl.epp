@@ -198,7 +198,7 @@ static void raiseError(SecurityClass::flags_t mask, SLONG type, const Firebird::
 
 void SCL_check_access(thread_db* tdbb,
 					  const SecurityClass* s_class,
-					  MetaName userName,
+					  const MetaName& userName,
 					  SLONG obj_type,
 					  const Firebird::MetaName& obj_name,
 					  SecurityClass::flags_t mask,
@@ -231,8 +231,8 @@ void SCL_check_access(thread_db* tdbb,
 	}
 
 	// Check global DDL permissions with ANY option which allow user to make changes non owned objects
-	if ( (type > obj_last_non_ddl) && (mask & SCL_get_object_mask(type)))
-			return;
+	if ((type > obj_last_non_ddl) && (mask & SCL_get_object_mask(type)))
+		return;
 
 	if (!s_class || (userName.isEmpty() && (mask & s_class->scl_flags)))
 		return;
@@ -1587,8 +1587,8 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 					// generated for SQL.
 
 					hit = false;
-//					if (!view)
-//						hit = false;
+					//if (!view)
+					//	hit = false;
 					break;
 
 				case id_user:

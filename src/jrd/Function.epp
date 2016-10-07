@@ -241,13 +241,13 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 					// SQL SECURITY of function must be the same if it's defined in package
 					if (!PKG.RDB$SQL_SECURITY.NULL)
-						function->ssDefiner = Nullable<bool>::val(PKG.RDB$SQL_SECURITY);
+						function->ssDefiner = (bool) PKG.RDB$SQL_SECURITY;
 
 				END_FOR
 			}
 
 			if (!function->ssDefiner.specified && !X.RDB$SQL_SECURITY.NULL)
-				function->ssDefiner = Nullable<bool>::val(X.RDB$SQL_SECURITY);
+				function->ssDefiner = (bool) X.RDB$SQL_SECURITY;
 
 			size_t count = 0;
 			ULONG length = 0;

@@ -355,7 +355,7 @@ ULONG CMP_impure(CompilerScratch* csb, ULONG size)
 void CMP_post_access(thread_db* tdbb,
 					 CompilerScratch* csb,
 					 const Firebird::MetaName& security_name,
-					 SLONG ssRelationId,			// SQL SECURITY relation in which contex permissions should be check
+					 SLONG ssRelationId,			// SQL SECURITY relation in which context permissions should be check
 					 SecurityClass::flags_t mask,
 					 SLONG type_name,
 					 const Firebird::MetaName& name,

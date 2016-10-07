@@ -1560,7 +1560,7 @@ void CCH_must_write(thread_db* tdbb, WIN* window)
 	}
 
 	bdb->bdb_flags |= BDB_must_write | BDB_dirty;
-	fb_assert(bdb->bdb_flags & BDB_nbak_state_lock ||
+	fb_assert((bdb->bdb_flags & BDB_nbak_state_lock) ||
 			  PageSpace::isTemporary(bdb->bdb_page.getPageSpaceID()));
 }
 
