@@ -592,9 +592,11 @@ using namespace Firebird;
 // tokens added for Firebird 4.0
 
 %token <metaNamePtr> CUME_DIST
+%token <metaNamePtr> DEFINER
 %token <metaNamePtr> ERROR_MESSAGE
 %token <metaNamePtr> EXCLUDE
 %token <metaNamePtr> FOLLOWING
+%token <metaNamePtr> INVOKER
 %token <metaNamePtr> NTILE
 %token <metaNamePtr> OTHERS
 %token <metaNamePtr> PERCENT_RANK
@@ -603,14 +605,12 @@ using namespace Firebird;
 %token <metaNamePtr> RANGE
 %token <metaNamePtr> RDB_ROLE_IN_USE
 %token <metaNamePtr> RDB_SYSTEM_PRIVILEGE
+%token <metaNamePtr> SECURITY
+%token <metaNamePtr> SQL
 %token <metaNamePtr> SYSTEM
 %token <metaNamePtr> TIES
 %token <metaNamePtr> UNBOUNDED
 %token <metaNamePtr> WINDOW
-%token <metaNamePtr> SQL
-%token <metaNamePtr> SECURITY
-%token <metaNamePtr> INVOKER
-%token <metaNamePtr> DEFINER
 
 // precedence declarations for expression evaluation
 
@@ -2091,7 +2091,7 @@ gtt_ops($createRelationNode)
 %type gtt_op(<createRelationNode>)
 gtt_op($createRelationNode)
 	: sql_security_clause	{ $createRelationNode->ssDefiner = $1; }
-	| gtt_scope		{ $createRelationNode->relationType = static_cast<rel_t>($1); }
+	| gtt_scope				{ $createRelationNode->relationType = static_cast<rel_t>($1); }
 	;
 
 %type <intVal> gtt_scope
@@ -2501,21 +2501,16 @@ external_procedure_clause
 %type <createAlterProcedureNode> procedure_clause_start
 procedure_clause_start
 	: symbol_procedure_name
-		{
-			$$ = newNode<CreateAlterProcedureNode>(*$1);
-		}
-	input_parameters(NOTRIAL(&$2->parameters)) output_parameters(NOTRIAL(&$2->returns))
+			{ $$ = newNode<CreateAlterProcedureNode>(*$1); }
+		input_parameters(NOTRIAL(&$2->parameters)) output_parameters(NOTRIAL(&$2->returns))
 			{ $$ = $2; }
 	;
 
 %type <nullableBoolVal> sql_security_clause
 sql_security_clause
-	: SQL SECURITY DEFINER
-		{ $$ = Nullable<bool>::val(true); }
-	| SQL SECURITY INVOKER
-		{ $$ = Nullable<bool>::val(false); }
-	|	// nothing
-		{ $$ = Nullable<bool>::empty(); }
+	: /* nothing */				{ $$ = Nullable<bool>::empty(); }
+	| SQL SECURITY DEFINER		{ $$ = Nullable<bool>::val(true); }
+	| SQL SECURITY INVOKER		{ $$ = Nullable<bool>::val(false); }
 	;
 
 %type <createAlterProcedureNode> alter_procedure_clause
@@ -2637,9 +2632,7 @@ external_function_clause
 %type <createAlterFunctionNode> function_clause_start
 function_clause_start
 	: symbol_UDF_name
-			{
-				$$ = newNode<CreateAlterFunctionNode>(*$1);
-			}
+			{ $$ = newNode<CreateAlterFunctionNode>(*$1); }
 		input_parameters(NOTRIAL(&$2->parameters))
 		RETURNS domain_or_non_array_type collate_clause deterministic_opt
 			{
@@ -3923,26 +3916,26 @@ alter_op($relationNode)
 			$relationNode->clauses.add(clause);
 		}
 	| ALTER SQL SECURITY DEFINER
-			{
-				RelationNode::AlterSqlSecurityClause* clause =
-					newNode<RelationNode::AlterSqlSecurityClause>();
-				clause->ssDefiner = Nullable<bool>::val(true);
-				$relationNode->clauses.add(clause);
-			}
+		{
+			RelationNode::AlterSqlSecurityClause* clause =
+				newNode<RelationNode::AlterSqlSecurityClause>();
+			clause->ssDefiner = Nullable<bool>::val(true);
+			$relationNode->clauses.add(clause);
+		}
 	| ALTER SQL SECURITY INVOKER
-			{
-				RelationNode::AlterSqlSecurityClause* clause =
-					newNode<RelationNode::AlterSqlSecurityClause>();
-				clause->ssDefiner = Nullable<bool>::val(false);
-				$relationNode->clauses.add(clause);
-			}
+		{
+			RelationNode::AlterSqlSecurityClause* clause =
+				newNode<RelationNode::AlterSqlSecurityClause>();
+			clause->ssDefiner = Nullable<bool>::val(false);
+			$relationNode->clauses.add(clause);
+		}
 	| DROP SQL SECURITY
-			{
-				RelationNode::AlterSqlSecurityClause* clause =
-					newNode<RelationNode::AlterSqlSecurityClause>();
-				clause->ssDefiner = Nullable<bool>::empty();
-				$relationNode->clauses.add(clause);
-			}
+		{
+			RelationNode::AlterSqlSecurityClause* clause =
+				newNode<RelationNode::AlterSqlSecurityClause>();
+			clause->ssDefiner = Nullable<bool>::empty();
+			$relationNode->clauses.add(clause);
+		}
 	;
 
 %type <metaNamePtr> alter_column_name
@@ -4215,14 +4208,14 @@ trigger_type_opt	// we do not allow alter database triggers, hence we do not use
 
 %type <nullableSqlSecurityVal> trg_sql_security_clause
 trg_sql_security_clause
-	: SQL SECURITY DEFINER
+	: // nothing
+		{ $$ = Nullable<TriggerDefinition::SqlSecurity>::empty(); }
+	| SQL SECURITY DEFINER
 		{ $$ = Nullable<TriggerDefinition::SqlSecurity>::val(TriggerDefinition::SS_DEFINER); }
 	| SQL SECURITY INVOKER
 		{ $$ = Nullable<TriggerDefinition::SqlSecurity>::val(TriggerDefinition::SS_INVOKER); }
 	| DROP SQL SECURITY
 		{ $$ = Nullable<TriggerDefinition::SqlSecurity>::val(TriggerDefinition::SS_DROP); }
-	| // nothing
-		{ $$ = Nullable<TriggerDefinition::SqlSecurity>::empty(); }
 	;
 
 // DROP metadata operations
@@ -8090,8 +8083,11 @@ non_reserved_word
 	| INCREMENT
 	| TRUSTED
 	| CUME_DIST				// added in FB 4.0
+	| DEFINER
+	| ERROR_MESSAGE
 	| EXCLUDE
 	| FOLLOWING
+	| INVOKER
 	| NTILE
 	| OTHERS
 	| PERCENT_RANK
@@ -8100,14 +8096,10 @@ non_reserved_word
 	| RANGE
 	| RDB_ROLE_IN_USE
 	| RDB_SYSTEM_PRIVILEGE
-	| SYSTEM
-	| ERROR_MESSAGE
-	| TIES
-	| SQL
 	| SECURITY
-	| INVOKER
-	| DEFINER
+	| SQL
+	| SYSTEM
+	| TIES
 	;
 
 %%
-

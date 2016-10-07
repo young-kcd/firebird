@@ -5581,7 +5581,8 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		sub = cast;
 	}
 
-	AutoSetRestore<jrd_rel*> autoRelationStream(&csb->csb_parent_relation, relation->rel_ss_definer.value ? relation : 0);
+	AutoSetRestore<jrd_rel*> autoRelationStream(&csb->csb_parent_relation,
+		relation->rel_ss_definer.value ? relation : NULL);
 
 	if (relation->rel_view_rse)
 	{

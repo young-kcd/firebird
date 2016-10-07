@@ -516,7 +516,7 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch*
 		if (ssDefiner.specified)
 		{
 			PKG.RDB$SQL_SECURITY.NULL = FALSE;
-			PKG.RDB$SQL_SECURITY = ssDefiner.value ? 1 : 0;
+			PKG.RDB$SQL_SECURITY = ssDefiner.value ? FB_TRUE : FB_FALSE;
 		}
 		else
 			PKG.RDB$SQL_SECURITY.NULL = TRUE;
@@ -589,7 +589,7 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* 
 			if (ssDefiner.specified)
 			{
 				PKG.RDB$SQL_SECURITY.NULL = FALSE;
-				PKG.RDB$SQL_SECURITY = ssDefiner.value ? 1 : 0;
+				PKG.RDB$SQL_SECURITY = ssDefiner.value ? FB_TRUE : FB_FALSE;
 			}
 			else
 				PKG.RDB$SQL_SECURITY.NULL = TRUE;
