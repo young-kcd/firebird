@@ -3129,6 +3129,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_rol_name, &desc);
 			if (set_security_class(tdbb, rpb->rpb_record, f_rol_class))
 				DFW_post_work(transaction, dfw_grant, &desc, obj_sql_role);
+			break;
 
 		case rel_db_creators:
 			if (!tdbb->getAttachment()->locksmith(tdbb, GRANT_REVOKE_ANY_DDL_RIGHT))
