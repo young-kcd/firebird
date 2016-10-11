@@ -567,8 +567,10 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 	const char* gtt_scope = (rel_type == rel_global_temp_preserve) ? "ON COMMIT PRESERVE ROWS" :
 							((rel_type == rel_global_temp_delete) ? "ON COMMIT DELETE ROWS" : "");
 
+	const char* opt_delim = *gtt_scope && *ss ? ", " : "";
+
 	if (*gtt_scope || *ss)
-		isqlGlob.printf(")%s%s%s", NEWLINE, gtt_scope, ss);
+		isqlGlob.printf(")%s%s%s%s", NEWLINE, gtt_scope, opt_delim , ss);
 	else
 		isqlGlob.printf(")");
 

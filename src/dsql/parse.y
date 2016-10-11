@@ -2075,7 +2075,10 @@ table_clause
 %type <createRelationNode> gtt_table_clause
 gtt_table_clause
 	: simple_table_name
-			{ $<createRelationNode>$ = newNode<CreateRelationNode>($1); }
+			{
+				$<createRelationNode>$ = newNode<CreateRelationNode>($1);
+				$<createRelationNode>$->deleteRowsOpt = true;
+			}
 		'(' table_elements($2) ')' gtt_ops($2)
 			{
 				$$ = $2;
@@ -2090,15 +2093,10 @@ gtt_ops($createRelationNode)
 
 %type gtt_op(<createRelationNode>)
 gtt_op($createRelationNode)
-	: sql_security_clause	{ $createRelationNode->ssDefiner = $1; }
-	| gtt_scope				{ $createRelationNode->relationType = static_cast<rel_t>($1); }
-	;
-
-%type <intVal> gtt_scope
-gtt_scope
-	: /* nothing */				{ $$ = rel_global_temp_delete; }
-	| ON COMMIT DELETE ROWS		{ $$ = rel_global_temp_delete; }
-	| ON COMMIT PRESERVE ROWS	{ $$ = rel_global_temp_preserve; }
+	: // nothing by default. Will be set "on commit delete rows" in dsqlPass
+	| sql_security_clause	{ $createRelationNode->ssDefiner = $1; }
+	| ON COMMIT DELETE ROWS		{ $createRelationNode->deleteRowsOpt = true; }
+	| ON COMMIT PRESERVE ROWS	{ $createRelationNode->preserveRowsOpt = true; }
 	;
 
 %type <stringPtr> external_file
@@ -3933,7 +3931,6 @@ alter_op($relationNode)
 		{
 			RelationNode::AlterSqlSecurityClause* clause =
 				newNode<RelationNode::AlterSqlSecurityClause>();
-			clause->ssDefiner = Nullable<bool>::empty();
 			$relationNode->clauses.add(clause);
 		}
 	;
