@@ -266,6 +266,7 @@ namespace Jrd {
 		  sync(this),
 		  keyName(getPool()),
 		  keyHolderPlugins(getPool()),
+		  dbInfo(FB_NEW DbInfo(this)),
 		  cryptThreadId(0),
 		  cryptPlugin(NULL),
 		  dbb(*tdbb->getDatabase()),
@@ -288,6 +289,8 @@ namespace Jrd {
 
 		delete stateLock;
 		delete threadLock;
+
+		dbInfo->destroy();
 	}
 
 	void CryptoManager::shutdown(thread_db* tdbb)
@@ -396,6 +399,16 @@ namespace Jrd {
 
 		// do not assign cryptPlugin directly before key init complete
 		IDbCryptPlugin* p = cryptControl.plugin();
+
+		FbLocalStatus status;
+		p->setInfo(&status, dbInfo);
+		if (status->getState() & IStatus::STATE_ERRORS)
+		{
+			const ISC_STATUS* v = status->getErrors();
+			if (v[0] == isc_arg_gds && v[1] != isc_arg_end && v[1] != isc_interface_version_too_old)
+				status_exception::raise(&status);
+		}
+
 		keyHolderPlugins.init(p, keyName.c_str());
 		cryptPlugin = p;
 		cryptPlugin->addRef();
@@ -1317,6 +1330,13 @@ namespace Jrd {
 			if (sig1 != sig2)
 				Arg::Gds(isc_crypt_checksum).raise();
 		}
+	}
+
+	const char* CryptoManager::DbInfo::getDatabaseFullPath(Firebird::CheckStatusWrapper* status)
+	{
+		if (!cryptoManager)
+			return NULL;
+		return cryptoManager->dbb.dbb_filename.c_str();
 	}
 
 } // namespace Jrd
