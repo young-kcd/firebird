@@ -312,7 +312,7 @@ public:
 	void setSubType(CheckStatusWrapper* status, unsigned index, int subType);
 	void setLength(CheckStatusWrapper* status, unsigned index, unsigned length);
 	void setCharSet(CheckStatusWrapper* status, unsigned index, unsigned charSet);
-	void setScale(CheckStatusWrapper* status, unsigned index, unsigned scale);
+	void setScale(CheckStatusWrapper* status, unsigned index, int scale);
 	void truncate(CheckStatusWrapper* status, unsigned count);
 	void remove(CheckStatusWrapper* status, unsigned index);
 	void moveNameToIndex(CheckStatusWrapper* status, const char* name, unsigned index);

@@ -370,7 +370,7 @@ interface MetadataBuilder : ReferenceCounted
 	void setSubType(Status status, uint index, int subType);
 	void setLength(Status status, uint index, uint length);
 	void setCharSet(Status status, uint index, uint charSet);
-	void setScale(Status status, uint index, uint scale);
+	void setScale(Status status, uint index, int scale);
 
 	void truncate(Status status, uint count);
 	void moveNameToIndex(Status status, const string name, uint index);
