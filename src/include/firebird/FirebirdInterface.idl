@@ -725,6 +725,13 @@ interface KeyHolderPlugin : PluginBase
 }
 
 
+// Information calls available for crypt plugin
+interface DbCryptInfo : ReferenceCounted
+{
+	const string getDatabaseFullPath(Status status);
+}
+
+
 interface DbCryptPlugin : PluginBase
 {
 	// When database crypt plugin is loaded, setKey() is called to provide information
@@ -735,6 +742,10 @@ interface DbCryptPlugin : PluginBase
 	void setKey(Status status, uint length, KeyHolderPlugin* sources, const string keyName);
 	void encrypt(Status status, uint length, const void* from, void* to);
 	void decrypt(Status status, uint length, const void* from, void* to);
+
+version:		// 3.0.1 => 3.0.2
+	// Crypto manager may pass some additional info to plugin
+	void setInfo(Status status, DbCryptInfo info);
 }
 
 

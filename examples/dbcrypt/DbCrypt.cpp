@@ -81,6 +81,13 @@ public:
 	void decrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to);
 	void setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolderPlugin** sources,
 		const char* keyName);
+	// One if free to ignore passed info when not needed
+	void setInfo(CheckStatusWrapper* status, IDbCryptInfo* info)
+	{
+#ifdef NEVERDEF
+		fprintf(stderr, "DbInfo: name is %s\n", info->getDatabaseFullPath(status));
+#endif
+	}
 
 	int release()
 	{

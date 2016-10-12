@@ -57,6 +57,7 @@ type
 	IWireCryptPlugin = class;
 	ICryptKeyCallback = class;
 	IKeyHolderPlugin = class;
+	IDbCryptInfo = class;
 	IDbCryptPlugin = class;
 	IExternalContext = class;
 	IExternalResultSet = class;
@@ -361,9 +362,11 @@ type
 	ICryptKeyCallback_callbackPtr = function(this: ICryptKeyCallback; dataLength: Cardinal; data: Pointer; bufferLength: Cardinal; buffer: Pointer): Cardinal; cdecl;
 	IKeyHolderPlugin_keyCallbackPtr = function(this: IKeyHolderPlugin; status: IStatus; callback: ICryptKeyCallback): Integer; cdecl;
 	IKeyHolderPlugin_keyHandlePtr = function(this: IKeyHolderPlugin; status: IStatus; keyName: PAnsiChar): ICryptKeyCallback; cdecl;
+	IDbCryptInfo_getDatabaseFullPathPtr = function(this: IDbCryptInfo; status: IStatus): PAnsiChar; cdecl;
 	IDbCryptPlugin_setKeyPtr = procedure(this: IDbCryptPlugin; status: IStatus; length: Cardinal; sources: IKeyHolderPluginPtr; keyName: PAnsiChar); cdecl;
 	IDbCryptPlugin_encryptPtr = procedure(this: IDbCryptPlugin; status: IStatus; length: Cardinal; from: Pointer; to_: Pointer); cdecl;
 	IDbCryptPlugin_decryptPtr = procedure(this: IDbCryptPlugin; status: IStatus; length: Cardinal; from: Pointer; to_: Pointer); cdecl;
+	IDbCryptPlugin_setInfoPtr = procedure(this: IDbCryptPlugin; status: IStatus; info: IDbCryptInfo); cdecl;
 	IExternalContext_getMasterPtr = function(this: IExternalContext): IMaster; cdecl;
 	IExternalContext_getEnginePtr = function(this: IExternalContext; status: IStatus): IExternalEngine; cdecl;
 	IExternalContext_getAttachmentPtr = function(this: IExternalContext; status: IStatus): IAttachment; cdecl;
@@ -1919,18 +1922,38 @@ type
 		function keyHandle(status: IStatus; keyName: PAnsiChar): ICryptKeyCallback; virtual; abstract;
 	end;
 
+	DbCryptInfoVTable = class(ReferenceCountedVTable)
+		getDatabaseFullPath: IDbCryptInfo_getDatabaseFullPathPtr;
+	end;
+
+	IDbCryptInfo = class(IReferenceCounted)
+		const VERSION = 3;
+
+		function getDatabaseFullPath(status: IStatus): PAnsiChar;
+	end;
+
+	IDbCryptInfoImpl = class(IDbCryptInfo)
+		constructor create;
+
+		procedure addRef(); virtual; abstract;
+		function release(): Integer; virtual; abstract;
+		function getDatabaseFullPath(status: IStatus): PAnsiChar; virtual; abstract;
+	end;
+
 	DbCryptPluginVTable = class(PluginBaseVTable)
 		setKey: IDbCryptPlugin_setKeyPtr;
 		encrypt: IDbCryptPlugin_encryptPtr;
 		decrypt: IDbCryptPlugin_decryptPtr;
+		setInfo: IDbCryptPlugin_setInfoPtr;
 	end;
 
 	IDbCryptPlugin = class(IPluginBase)
-		const VERSION = 7;
+		const VERSION = 8;
 
 		procedure setKey(status: IStatus; length: Cardinal; sources: IKeyHolderPluginPtr; keyName: PAnsiChar);
 		procedure encrypt(status: IStatus; length: Cardinal; from: Pointer; to_: Pointer);
 		procedure decrypt(status: IStatus; length: Cardinal; from: Pointer; to_: Pointer);
+		procedure setInfo(status: IStatus; info: IDbCryptInfo);
 	end;
 
 	IDbCryptPluginImpl = class(IDbCryptPlugin)
@@ -1943,6 +1966,7 @@ type
 		procedure setKey(status: IStatus; length: Cardinal; sources: IKeyHolderPluginPtr; keyName: PAnsiChar); virtual; abstract;
 		procedure encrypt(status: IStatus; length: Cardinal; from: Pointer; to_: Pointer); virtual; abstract;
 		procedure decrypt(status: IStatus; length: Cardinal; from: Pointer; to_: Pointer); virtual; abstract;
+		procedure setInfo(status: IStatus; info: IDbCryptInfo); virtual; abstract;
 	end;
 
 	ExternalContextVTable = class(VersionedVTable)
@@ -5919,6 +5943,12 @@ begin
 	FbException.checkException(status);
 end;
 
+function IDbCryptInfo.getDatabaseFullPath(status: IStatus): PAnsiChar;
+begin
+	Result := DbCryptInfoVTable(vTable).getDatabaseFullPath(Self, status);
+	FbException.checkException(status);
+end;
+
 procedure IDbCryptPlugin.setKey(status: IStatus; length: Cardinal; sources: IKeyHolderPluginPtr; keyName: PAnsiChar);
 begin
 	DbCryptPluginVTable(vTable).setKey(Self, status, length, sources, keyName);
@@ -5934,6 +5964,12 @@ end;
 procedure IDbCryptPlugin.decrypt(status: IStatus; length: Cardinal; from: Pointer; to_: Pointer);
 begin
 	DbCryptPluginVTable(vTable).decrypt(Self, status, length, from, to_);
+	FbException.checkException(status);
+end;
+
+procedure IDbCryptPlugin.setInfo(status: IStatus; info: IDbCryptInfo);
+begin
+	DbCryptPluginVTable(vTable).setInfo(Self, status, info);
 	FbException.checkException(status);
 end;
 
@@ -9826,6 +9862,41 @@ begin
 	vTable := IKeyHolderPluginImpl_vTable;
 end;
 
+procedure IDbCryptInfoImpl_addRefDispatcher(this: IDbCryptInfo); cdecl;
+begin
+	try
+		IDbCryptInfoImpl(this).addRef();
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+function IDbCryptInfoImpl_releaseDispatcher(this: IDbCryptInfo): Integer; cdecl;
+begin
+	try
+		Result := IDbCryptInfoImpl(this).release();
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+function IDbCryptInfoImpl_getDatabaseFullPathDispatcher(this: IDbCryptInfo; status: IStatus): PAnsiChar; cdecl;
+begin
+	try
+		Result := IDbCryptInfoImpl(this).getDatabaseFullPath(status);
+	except
+		on e: Exception do FbException.catchException(status, e);
+	end
+end;
+
+var
+	IDbCryptInfoImpl_vTable: DbCryptInfoVTable;
+
+constructor IDbCryptInfoImpl.create;
+begin
+	vTable := IDbCryptInfoImpl_vTable;
+end;
+
 procedure IDbCryptPluginImpl_addRefDispatcher(this: IDbCryptPlugin); cdecl;
 begin
 	try
@@ -9884,6 +9955,15 @@ procedure IDbCryptPluginImpl_decryptDispatcher(this: IDbCryptPlugin; status: ISt
 begin
 	try
 		IDbCryptPluginImpl(this).decrypt(status, length, from, to_);
+	except
+		on e: Exception do FbException.catchException(status, e);
+	end
+end;
+
+procedure IDbCryptPluginImpl_setInfoDispatcher(this: IDbCryptPlugin; status: IStatus; info: IDbCryptInfo); cdecl;
+begin
+	try
+		IDbCryptPluginImpl(this).setInfo(status, info);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
@@ -12574,8 +12654,14 @@ initialization
 	IKeyHolderPluginImpl_vTable.keyCallback := @IKeyHolderPluginImpl_keyCallbackDispatcher;
 	IKeyHolderPluginImpl_vTable.keyHandle := @IKeyHolderPluginImpl_keyHandleDispatcher;
 
+	IDbCryptInfoImpl_vTable := DbCryptInfoVTable.create;
+	IDbCryptInfoImpl_vTable.version := 3;
+	IDbCryptInfoImpl_vTable.addRef := @IDbCryptInfoImpl_addRefDispatcher;
+	IDbCryptInfoImpl_vTable.release := @IDbCryptInfoImpl_releaseDispatcher;
+	IDbCryptInfoImpl_vTable.getDatabaseFullPath := @IDbCryptInfoImpl_getDatabaseFullPathDispatcher;
+
 	IDbCryptPluginImpl_vTable := DbCryptPluginVTable.create;
-	IDbCryptPluginImpl_vTable.version := 7;
+	IDbCryptPluginImpl_vTable.version := 8;
 	IDbCryptPluginImpl_vTable.addRef := @IDbCryptPluginImpl_addRefDispatcher;
 	IDbCryptPluginImpl_vTable.release := @IDbCryptPluginImpl_releaseDispatcher;
 	IDbCryptPluginImpl_vTable.setOwner := @IDbCryptPluginImpl_setOwnerDispatcher;
@@ -12583,6 +12669,7 @@ initialization
 	IDbCryptPluginImpl_vTable.setKey := @IDbCryptPluginImpl_setKeyDispatcher;
 	IDbCryptPluginImpl_vTable.encrypt := @IDbCryptPluginImpl_encryptDispatcher;
 	IDbCryptPluginImpl_vTable.decrypt := @IDbCryptPluginImpl_decryptDispatcher;
+	IDbCryptPluginImpl_vTable.setInfo := @IDbCryptPluginImpl_setInfoDispatcher;
 
 	IExternalContextImpl_vTable := ExternalContextVTable.create;
 	IExternalContextImpl_vTable.version := 10;
@@ -12952,6 +13039,7 @@ finalization
 	IWireCryptPluginImpl_vTable.destroy;
 	ICryptKeyCallbackImpl_vTable.destroy;
 	IKeyHolderPluginImpl_vTable.destroy;
+	IDbCryptInfoImpl_vTable.destroy;
 	IDbCryptPluginImpl_vTable.destroy;
 	IExternalContextImpl_vTable.destroy;
 	IExternalResultSetImpl_vTable.destroy;

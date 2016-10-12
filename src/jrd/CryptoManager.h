@@ -357,6 +357,37 @@ private:
 		Firebird::ObjectsArray<HolderAttachments> knownHolders;
 	};
 
+	class DbInfo;
+	friend class DbInfo;
+
+	class DbInfo FB_FINAL : public Firebird::RefCntIface<Firebird::IDbCryptInfoImpl<DbInfo, Firebird::CheckStatusWrapper> >
+	{
+	public:
+		DbInfo(CryptoManager* cm)
+			: cryptoManager(cm)
+		{ }
+
+		void destroy()
+		{
+			cryptoManager = NULL;
+		}
+
+		// IDbCryptInfo implementation
+		const char* getDatabaseFullPath(Firebird::CheckStatusWrapper* status);
+
+		int release()
+		{
+			if (--refCounter != 0)
+				return 1;
+
+			delete this;
+			return 0;
+		}
+
+	private:
+		CryptoManager* cryptoManager;
+	};
+
 	static int blockingAstChangeCryptState(void*);
 	void blockingAstChangeCryptState();
 
@@ -383,6 +414,7 @@ private:
 	ULONG currentPage;
 	Firebird::Mutex pluginLoadMtx, cryptThreadMtx;
 	KeyHolderPlugins keyHolderPlugins;
+	Firebird::RefPtr<DbInfo> dbInfo;
 	Thread::Handle cryptThreadId;
 	Firebird::IDbCryptPlugin* cryptPlugin;
 	Database& dbb;

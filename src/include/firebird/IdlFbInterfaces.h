@@ -72,6 +72,7 @@ namespace Firebird
 	class IWireCryptPlugin;
 	class ICryptKeyCallback;
 	class IKeyHolderPlugin;
+	class IDbCryptInfo;
 	class IDbCryptPlugin;
 	class IExternalContext;
 	class IExternalResultSet;
@@ -2873,6 +2874,36 @@ namespace Firebird
 		}
 	};
 
+	class IDbCryptInfo : public IReferenceCounted
+	{
+	public:
+		struct VTable : public IReferenceCounted::VTable
+		{
+			const char* (CLOOP_CARG *getDatabaseFullPath)(IDbCryptInfo* self, IStatus* status) throw();
+		};
+
+	protected:
+		IDbCryptInfo(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
+		{
+		}
+
+		~IDbCryptInfo()
+		{
+		}
+
+	public:
+		static const unsigned VERSION = 3;
+
+		template <typename StatusType> const char* getDatabaseFullPath(StatusType* status)
+		{
+			StatusType::clearException(status);
+			const char* ret = static_cast<VTable*>(this->cloopVTable)->getDatabaseFullPath(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
+	};
+
 	class IDbCryptPlugin : public IPluginBase
 	{
 	public:
@@ -2881,6 +2912,7 @@ namespace Firebird
 			void (CLOOP_CARG *setKey)(IDbCryptPlugin* self, IStatus* status, unsigned length, IKeyHolderPlugin** sources, const char* keyName) throw();
 			void (CLOOP_CARG *encrypt)(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw();
 			void (CLOOP_CARG *decrypt)(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw();
+			void (CLOOP_CARG *setInfo)(IDbCryptPlugin* self, IStatus* status, IDbCryptInfo* info) throw();
 		};
 
 	protected:
@@ -2894,7 +2926,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static const unsigned VERSION = 5;
 
 		template <typename StatusType> void setKey(StatusType* status, unsigned length, IKeyHolderPlugin** sources, const char* keyName)
 		{
@@ -2914,6 +2946,19 @@ namespace Firebird
 		{
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->decrypt(this, status, length, from, to);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void setInfo(StatusType* status, IDbCryptInfo* info)
+		{
+			if (cloopVTable->version < 5)
+			{
+				StatusType::setVersionError(status, "IDbCryptPlugin", cloopVTable->version, 5);
+				StatusType::checkException(status);
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->setInfo(this, status, info);
 			StatusType::checkException(status);
 		}
 	};
@@ -11075,6 +11120,85 @@ namespace Firebird
 	};
 
 	template <typename Name, typename StatusType, typename Base>
+	class IDbCryptInfoBaseImpl : public Base
+	{
+	public:
+		typedef IDbCryptInfo Declaration;
+
+		IDbCryptInfoBaseImpl(DoNotInherit = DoNotInherit())
+		{
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->addRef = &Name::cloopaddRefDispatcher;
+					this->release = &Name::cloopreleaseDispatcher;
+					this->getDatabaseFullPath = &Name::cloopgetDatabaseFullPathDispatcher;
+				}
+			} vTable;
+
+			this->cloopVTable = &vTable;
+		}
+
+		static const char* CLOOP_CARG cloopgetDatabaseFullPathDispatcher(IDbCryptInfo* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getDatabaseFullPath(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<const char*>(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::addRef();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::release();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<int>(0);
+			}
+		}
+	};
+
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IDbCryptInfo> > > > >
+	class IDbCryptInfoImpl : public IDbCryptInfoBaseImpl<Name, StatusType, Base>
+	{
+	protected:
+		IDbCryptInfoImpl(DoNotInherit = DoNotInherit())
+		{
+		}
+
+	public:
+		virtual ~IDbCryptInfoImpl()
+		{
+		}
+
+		virtual const char* getDatabaseFullPath(StatusType* status) = 0;
+	};
+
+	template <typename Name, typename StatusType, typename Base>
 	class IDbCryptPluginBaseImpl : public Base
 	{
 	public:
@@ -11094,6 +11218,7 @@ namespace Firebird
 					this->setKey = &Name::cloopsetKeyDispatcher;
 					this->encrypt = &Name::cloopencryptDispatcher;
 					this->decrypt = &Name::cloopdecryptDispatcher;
+					this->setInfo = &Name::cloopsetInfoDispatcher;
 				}
 			} vTable;
 
@@ -11135,6 +11260,20 @@ namespace Firebird
 			try
 			{
 				static_cast<Name*>(self)->Name::decrypt(&status2, length, from, to);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopsetInfoDispatcher(IDbCryptPlugin* self, IStatus* status, IDbCryptInfo* info) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::setInfo(&status2, info);
 			}
 			catch (...)
 			{
@@ -11209,6 +11348,7 @@ namespace Firebird
 		virtual void setKey(StatusType* status, unsigned length, IKeyHolderPlugin** sources, const char* keyName) = 0;
 		virtual void encrypt(StatusType* status, unsigned length, const void* from, void* to) = 0;
 		virtual void decrypt(StatusType* status, unsigned length, const void* from, void* to) = 0;
+		virtual void setInfo(StatusType* status, IDbCryptInfo* info) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
