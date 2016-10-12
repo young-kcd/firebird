@@ -1327,7 +1327,7 @@ namespace Firebird
 			void (CLOOP_CARG *setSubType)(IMetadataBuilder* self, IStatus* status, unsigned index, int subType) throw();
 			void (CLOOP_CARG *setLength)(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned length) throw();
 			void (CLOOP_CARG *setCharSet)(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned charSet) throw();
-			void (CLOOP_CARG *setScale)(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned scale) throw();
+			void (CLOOP_CARG *setScale)(IMetadataBuilder* self, IStatus* status, unsigned index, int scale) throw();
 			void (CLOOP_CARG *truncate)(IMetadataBuilder* self, IStatus* status, unsigned count) throw();
 			void (CLOOP_CARG *moveNameToIndex)(IMetadataBuilder* self, IStatus* status, const char* name, unsigned index) throw();
 			void (CLOOP_CARG *remove)(IMetadataBuilder* self, IStatus* status, unsigned index) throw();
@@ -1376,7 +1376,7 @@ namespace Firebird
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> void setScale(StatusType* status, unsigned index, unsigned scale)
+		template <typename StatusType> void setScale(StatusType* status, unsigned index, int scale)
 		{
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setScale(this, status, index, scale);
@@ -7651,7 +7651,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetScaleDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned scale) throw()
+		static void CLOOP_CARG cloopsetScaleDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, int scale) throw()
 		{
 			StatusType status2(status);
 
@@ -7780,7 +7780,7 @@ namespace Firebird
 		virtual void setSubType(StatusType* status, unsigned index, int subType) = 0;
 		virtual void setLength(StatusType* status, unsigned index, unsigned length) = 0;
 		virtual void setCharSet(StatusType* status, unsigned index, unsigned charSet) = 0;
-		virtual void setScale(StatusType* status, unsigned index, unsigned scale) = 0;
+		virtual void setScale(StatusType* status, unsigned index, int scale) = 0;
 		virtual void truncate(StatusType* status, unsigned count) = 0;
 		virtual void moveNameToIndex(StatusType* status, const char* name, unsigned index) = 0;
 		virtual void remove(StatusType* status, unsigned index) = 0;
