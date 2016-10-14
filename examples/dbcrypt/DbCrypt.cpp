@@ -84,9 +84,8 @@ public:
 	// One if free to ignore passed info when not needed
 	void setInfo(CheckStatusWrapper* status, IDbCryptInfo* info)
 	{
-#ifdef NEVERDEF
-		fprintf(stderr, "DbInfo: name is %s\n", info->getDatabaseFullPath(status));
-#endif
+		// You may uncomment next line in a case of embedded connection
+		// fprintf(stderr, "DbInfo: name is %s\n", info->getDatabaseFullPath(status));
 	}
 
 	int release()
