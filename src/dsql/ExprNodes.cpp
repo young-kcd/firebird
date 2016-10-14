@@ -5537,9 +5537,6 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	SLONG ssRelationId = tail->csb_view ?
 		tail->csb_view->rel_id : (csb->csb_view ? csb->csb_view->rel_id : 0);
 
-	if (!ssRelationId && relation->rel_ss_definer.value)
-		ssRelationId = relation->rel_id;
-
 	if (tail->csb_flags & csb_modify)
 	{
 		if (!csb->csb_validate_expr)
