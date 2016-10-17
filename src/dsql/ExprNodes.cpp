@@ -11062,7 +11062,7 @@ ValueExprNode* UdfCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
 
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(Impure));
 
 	if (function->isDefined() && !function->fun_entrypoint)
 	{
@@ -11084,7 +11084,8 @@ ValueExprNode* UdfCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	UCHAR* impure = request->getImpure<UCHAR>(impureOffset);
-	impure_value* value = request->getImpure<impure_value>(impureOffset);
+	Impure* impureArea = request->getImpure<Impure>(impureOffset);
+	impure_value* value = &impureArea->value;
 
 	USHORT& invariantFlags = value->vlu_flags;
 
@@ -11149,7 +11150,13 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 		else
 			value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc;
 
-		FUN_evaluate(tdbb, function, args->items, value);
+		if (!impureArea->temp)
+		{
+			impureArea->temp =
+				FB_NEW_POOL(*tdbb->getDefaultPool()) Array<UCHAR>(*tdbb->getDefaultPool());
+		}
+
+		FUN_evaluate(tdbb, function, args->items, value, *impureArea->temp);
 	}
 	else
 	{

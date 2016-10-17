@@ -1488,6 +1488,13 @@ public:
 
 class UdfCallNode : public TypedNode<ValueExprNode, ExprNode::TYPE_UDF_CALL>
 {
+private:
+	struct Impure
+	{
+		impure_value value;	// must be first
+		Firebird::Array<UCHAR>* temp;
+	};
+
 public:
 	explicit UdfCallNode(MemoryPool& pool, const Firebird::QualifiedName& aName,
 		ValueListNode* aArgs = NULL);
