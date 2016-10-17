@@ -303,7 +303,7 @@ static bool private_move(Jrd::thread_db* tdbb, dsc* from, dsc* to);
 
 
 void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArray& node,
-	impure_value* value)
+	impure_value* value, Array<UCHAR>& temp)
 {
 /**************************************
  *
@@ -370,7 +370,6 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 	try {
 
 	UDF_ARG args[MAX_UDF_ARGUMENTS + 1];
-	HalfStaticArray<UCHAR, 800> temp;
 
 	// Start by constructing argument list
 	UCHAR* temp_ptr = temp.getBuffer(function->fun_temp_length + FB_DOUBLE_ALIGN);
