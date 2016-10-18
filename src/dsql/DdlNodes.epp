@@ -7214,23 +7214,6 @@ string CreateRelationNode::internalPrint(NodePrinter& printer) const
 	return "CreateRelationNode";
 }
 
-DdlNode* CreateRelationNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
-{
-	if (preserveRowsOpt)
-	{
-		if (deleteRowsOpt)
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
-				Arg::Gds(isc_invalid_clause) << Arg::Str("You cannot specify ON COMMIT DELETE ROWS and ON COMMIT PRESERVE ROWS in the same time"));
-		}
-		relationType = rel_global_temp_preserve;
-	}
-	else if (deleteRowsOpt)
-		relationType = rel_global_temp_delete;
-
-	return RelationNode::dsqlPass(dsqlScratch);
-}
-
 bool CreateRelationNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	SCL_check_create_access(tdbb, SCL_object_table);
@@ -7256,7 +7239,8 @@ void CreateRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScrat
 
 	DYN_UTIL_check_unique_name(tdbb, transaction, name, obj_relation);
 
-	checkRelationTempScope(tdbb, transaction, name, relationType);
+	fb_assert(relationType.specified);
+	checkRelationTempScope(tdbb, transaction, name, relationType.value);
 
 	AutoCacheRequest request(tdbb, drq_s_rels2, DYN_REQUESTS);
 
@@ -7266,7 +7250,7 @@ void CreateRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScrat
 		strcpy(REL.RDB$RELATION_NAME, name.c_str());
 		REL.RDB$SYSTEM_FLAG = 0;
 		REL.RDB$FLAGS = REL_sql;
-		REL.RDB$RELATION_TYPE = relationType;
+		REL.RDB$RELATION_TYPE = relationType.value;
 
 		if (ssDefiner.specified)
 		{

@@ -99,16 +99,15 @@ public:
 	}
 };
 
-template <typename T>
-class NullableClear<BaseNullable<T> >
+template <>
+class NullableClear<rel_t>
 {
 public:
-	static void clear(BaseNullable<T>& v)
+	static void clear(rel_t& v)
 	{
-		v.specified = false;
+		v = rel_persistent;
 	}
 };
-
 
 // Actual Nullable template.
 template <typename T> class Nullable : public BaseNullable<T>

@@ -1480,15 +1480,12 @@ public:
 				const Firebird::string* aExternalFile = NULL)
 		: RelationNode(p, aDsqlNode),
 		  externalFile(aExternalFile),
-		  relationType(rel_persistent),
-		  preserveRowsOpt(false),
-		  deleteRowsOpt(false)
+		  relationType(rel_persistent)
 	{
 	}
 
 public:
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
-	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1503,7 +1500,7 @@ private:
 
 public:
 	const Firebird::string* externalFile;
-	rel_t relationType;
+	Nullable<rel_t> relationType;
 	bool preserveRowsOpt;
 	bool deleteRowsOpt;
 };

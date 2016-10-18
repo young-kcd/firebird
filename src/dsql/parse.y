@@ -2077,7 +2077,7 @@ gtt_table_clause
 	: simple_table_name
 			{
 				$<createRelationNode>$ = newNode<CreateRelationNode>($1);
-				$<createRelationNode>$->deleteRowsOpt = true;
+				$<createRelationNode>$->relationType = Nullable<rel_t>::empty();
 			}
 		'(' table_elements($2) ')' gtt_ops($2)
 			{
@@ -2095,8 +2095,8 @@ gtt_ops($createRelationNode)
 gtt_op($createRelationNode)
 	: // nothing by default. Will be set "on commit delete rows" in dsqlPass
 	| sql_security_clause	{ $createRelationNode->ssDefiner = $1; }
-	| ON COMMIT DELETE ROWS		{ $createRelationNode->deleteRowsOpt = true; }
-	| ON COMMIT PRESERVE ROWS	{ $createRelationNode->preserveRowsOpt = true; }
+	| ON COMMIT DELETE ROWS		{ setClause($createRelationNode->relationType, "ON COMMIT DELETE ROWS", rel_global_temp_delete); }
+	| ON COMMIT PRESERVE ROWS	{ setClause($createRelationNode->relationType, "ON COMMIT PRESERVE ROWS", rel_global_temp_preserve); }
 	;
 
 %type <stringPtr> external_file
