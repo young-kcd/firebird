@@ -1217,7 +1217,7 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNod
 	blob->blb_relation = relation;
 	blob->blb_sub_type = to_desc->getBlobSubType();
 	blob->blb_charset = to_desc->getCharSet();
-#ifdef CHECK_BLOB_SELECT
+#ifdef CHECK_BLOB_FIELD_ACCESS_FOR_SELECT
 	blob->blb_fld_id = fieldNode->fieldId;
 #endif
 	destination->set_permanent(relation->rel_id, DPM_store_blob(tdbb, blob, record));
@@ -1414,7 +1414,7 @@ blb* blb::open2(thread_db* tdbb,
 		blob->blb_pg_space_id = blob->blb_relation->getPages(tdbb)->rel_pg_space_id;
 		DPM_get_blob(tdbb, blob, blobId.get_permanent_number(), false, 0);
 
-#ifdef CHECK_BLOB_SELECT
+#ifdef CHECK_BLOB_FIELD_ACCESS_FOR_SELECT
 		if (!blob->blb_relation->isSystem() && blob->blb_fld_id < blob->blb_relation->rel_fields->count())
 		{
 			jrd_fld* fld = (*blob->blb_relation->rel_fields)[blob->blb_fld_id];
@@ -2907,7 +2907,7 @@ void blb::fromPageHeader(const Ods::blh* header)
 	blb_level = header->blh_level;
 	blb_sub_type = header->blh_sub_type;
 	blb_charset = header->blh_charset;
-#ifdef CHECK_BLOB_SELECT
+#ifdef CHECK_BLOB_FIELD_ACCESS_FOR_SELECT
 	blb_fld_id = header->blh_fld_id;
 #endif
 }
@@ -2922,7 +2922,7 @@ void blb::toPageHeader(Ods::blh* header) const
 	header->blh_level = blb_level;
 	header->blh_sub_type = blb_sub_type;
 	header->blh_charset = blb_charset;
-#ifdef CHECK_BLOB_SELECT
+#ifdef CHECK_BLOB_FIELD_ACCESS_FOR_SELECT
 	header->blh_fld_id = blb_fld_id;
 #endif
 }
