@@ -70,25 +70,31 @@ class RelationPages
 {
 public:
 	typedef SINT64 RP_INSTANCE_ID;
+
 	vcl* rel_pages;				// vector of pointer page numbers
 	RP_INSTANCE_ID rel_instance_id;		// 0 or att_attachment_id or tra_number
+
 	// Vlad asked for this compile-time check to make sure we can contain a txn number here
 	typedef int RangeCheck1[sizeof(RP_INSTANCE_ID) >= sizeof(TraNumber)];
 	typedef int RangeCheck2[sizeof(RP_INSTANCE_ID) >= sizeof(AttNumber)];
 
-	SLONG rel_index_root;		// index root page number
-	SLONG rel_data_pages;		// count of relation data pages
+	ULONG rel_index_root;		// index root page number
+	ULONG rel_data_pages;		// count of relation data pages
 	ULONG rel_slot_space;		// lowest pointer page with slot space
 	ULONG rel_pri_data_space;	// lowest pointer page with primary data page space
 	ULONG rel_sec_data_space;	// lowest pointer page with secondary data page space
+	ULONG rel_last_free_pri_dp;	// last primary data page found with space
 	USHORT rel_pg_space_id;
 
 	RelationPages()
 		: rel_pages(NULL), rel_instance_id(0),
 		  rel_index_root(0), rel_data_pages(0), rel_slot_space(0),
 		  rel_pri_data_space(0), rel_sec_data_space(0),
+		  rel_last_free_pri_dp(0),
 		  rel_pg_space_id(DB_PAGE_SPACE), rel_next_free(NULL),
-		  useCount(0)
+		  useCount(0),
+		  dpMap(*getDefaultMemoryPool()),
+		  dpMapMark(0)
 	{}
 
 	inline SLONG addRef()
@@ -103,9 +109,82 @@ public:
 		return item->rel_instance_id;
 	}
 
+	ULONG getDPNumber(ULONG dpSequence)
+	{
+		FB_SIZE_T pos;
+		if (dpMap.find(dpSequence, pos))
+		{
+			if (dpMap[pos].mark != dpMapMark)
+				dpMap[pos].mark = ++dpMapMark;
+			return dpMap[pos].physNum;
+		}
+
+		return 0;
+	}
+
+	void setDPNumber(ULONG dpSequence, ULONG dpNumber)
+	{
+		FB_SIZE_T pos;
+		if (dpMap.find(dpSequence, pos))
+		{
+			if (dpNumber)
+			{
+				dpMap[pos].physNum = dpNumber;
+				dpMap[pos].mark = ++dpMapMark;
+			}
+			else
+				dpMap.remove(pos);
+		}
+		else if (dpNumber)
+		{
+			dpMap.insert(pos, {dpSequence, dpNumber, ++dpMapMark});
+
+			if (dpMap.getCount() == MAX_DPMAP_ITEMS)
+				freeOldestMapItems();
+		}
+	}
+
+	void freeOldestMapItems()
+	{
+		ULONG minMark = MAX_ULONG;
+		FB_SIZE_T i;
+		for (i = 0; i < dpMap.getCount(); i++)
+			if (minMark > dpMap[i].mark)
+				minMark = dpMap[i].mark;
+
+		minMark = (minMark + dpMapMark) / 2;
+
+		i = 0;
+		while (i < dpMap.getCount())
+		{
+			if (dpMap[i].mark > minMark)
+				dpMap[i++].mark -= minMark;
+			else
+				dpMap.remove(i);
+		}
+		dpMapMark -= minMark;
+	}
+
 private:
 	RelationPages*	rel_next_free;
 	SLONG	useCount;
+
+	static const ULONG MAX_DPMAP_ITEMS = 64;
+
+	struct DPItem
+	{
+		ULONG seqNum;
+		ULONG physNum;
+		ULONG mark;
+
+		static ULONG generate(const DPItem& item)
+		{
+			return item.seqNum;
+		}
+	};
+
+	Firebird::SortedArray<DPItem, Firebird::InlineStorage<DPItem, MAX_DPMAP_ITEMS>, ULONG, DPItem> dpMap;
+	ULONG dpMapMark;
 
 friend class jrd_rel;
 };
