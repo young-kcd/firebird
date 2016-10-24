@@ -1109,7 +1109,7 @@ IConfig* PluginManager::getConfig(CheckStatusWrapper* status, const char* filena
 	try
 	{
 		IConfig* rc = FB_NEW ConfigAccess(RefPtr<ConfigFile>(
-			FB_NEW_POOL(*getDefaultMemoryPool()) ConfigFile(*getDefaultMemoryPool(), filename)));
+			FB_NEW_POOL(*getDefaultMemoryPool()) ConfigFile(*getDefaultMemoryPool(), filename, ConfigFile::HAS_SUB_CONF)));
 		rc->addRef();
 		return rc;
 	}
