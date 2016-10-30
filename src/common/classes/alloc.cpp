@@ -1385,7 +1385,7 @@ void MemoryPool::deletePool(MemoryPool* pool)
 	while (large)
 	{
 		MemoryBlock* next = block_list_large(large)->mrl_next;
-		size_t ext_size = large->mbk_large_length;
+		size_t ext_size = large->mbk_large_length + MEM_ALIGN(sizeof(MemoryBlock));
 		external_free(large, ext_size, true);
 		large = next;
 	}
