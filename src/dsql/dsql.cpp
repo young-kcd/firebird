@@ -1320,8 +1320,6 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	if (text && textLength == 0)
 		textLength = static_cast<ULONG>(strlen(text));
 
-	textLength = MIN(textLength, MAX_SQL_LENGTH);
-
 	TraceDSQLPrepare trace(database->dbb_attachment, transaction, textLength, text);
 
 	if (clientDialect > SQL_DIALECT_CURRENT)
@@ -1348,6 +1346,16 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 				textLength = p - text;
 			break;
 		}
+	}
+
+	if (textLength > MAX_SQL_LENGTH)
+	{
+		string error;
+		error.printf("SQL statement is too long. Maximum size is %u bytes.", MAX_SQL_LENGTH);
+
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-902) <<
+				  Arg::Gds(isc_imp_exc) <<
+				  Arg::Gds(isc_random) << Arg::Str(error));
 	}
 
 	// allocate the statement block, then prepare the statement
