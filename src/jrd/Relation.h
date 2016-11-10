@@ -86,14 +86,14 @@ public:
 	ULONG rel_last_free_pri_dp;	// last primary data page found with space
 	USHORT rel_pg_space_id;
 
-	RelationPages()
+	RelationPages(Firebird::MemoryPool& pool)
 		: rel_pages(NULL), rel_instance_id(0),
 		  rel_index_root(0), rel_data_pages(0), rel_slot_space(0),
 		  rel_pri_data_space(0), rel_sec_data_space(0),
 		  rel_last_free_pri_dp(0),
 		  rel_pg_space_id(DB_PAGE_SPACE), rel_next_free(NULL),
 		  useCount(0),
-		  dpMap(*getDefaultMemoryPool()),
+		  dpMap(pool),
 		  dpMapMark(0)
 	{}
 
@@ -273,12 +273,12 @@ public:
 		return &rel_pages_base;
 	}
 
-	bool			delPages(thread_db* tdbb, TraNumber tran = MAX_TRA_NUMBER, RelationPages* aPages = NULL);
+	bool	delPages(thread_db* tdbb, TraNumber tran = MAX_TRA_NUMBER, RelationPages* aPages = NULL);
 
-	void			getRelLockKey(thread_db* tdbb, UCHAR* key);
-	USHORT			getRelLockKeyLength() const;
+	void	getRelLockKey(thread_db* tdbb, UCHAR* key);
+	USHORT	getRelLockKeyLength() const;
 
-	void			cleanUp();
+	void	cleanUp();
 
 	class RelPagesSnapshot : public Firebird::Array<RelationPages*>
 	{
@@ -398,7 +398,7 @@ const ULONG REL_gc_lockneed				= 0x80000;	// gc lock should be acquired
 inline jrd_rel::jrd_rel(MemoryPool& p)
 	: rel_pool(&p), rel_flags(REL_gc_lockneed),
 	  rel_name(p), rel_owner_name(p), rel_security_name(p),
-	  rel_view_contexts(p), rel_gc_records(p)
+	  rel_view_contexts(p), rel_gc_records(p), rel_pages_base(p)
 {
 }
 

@@ -73,16 +73,8 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool a
 			return 0;
 
 		RelationPages* newPages = rel_pages_free;
-		if (!newPages)
-		{
-			const size_t BULK_ALLOC = 8;
-
-			RelationPages* allocatedPages = newPages =
-				FB_NEW_POOL(*rel_pool) RelationPages[BULK_ALLOC];
-
-			rel_pages_free = ++allocatedPages;
-			for (size_t i = 1; i < BULK_ALLOC - 1; i++, allocatedPages++)
-				allocatedPages->rel_next_free = allocatedPages + 1;
+		if (!newPages) {
+			newPages = FB_NEW_POOL(*rel_pool) RelationPages(*rel_pool);
 		}
 		else
 		{
