@@ -2218,7 +2218,7 @@ bool BTR_types_comparable(const dsc& target, const dsc& source)
 		return (source.dsc_dtype <= dtype_long || source.dsc_dtype == dtype_int64);
 
 	if (DTYPE_IS_NUMERIC(target.dsc_dtype))
-		return (source.dsc_dtype <= dtype_double || source.dsc_dtype == dtype_int64);
+		return (source.dsc_dtype <= dtype_double || source.dsc_dtype == dtype_int64);		//!!!!!!!!
 
 	if (target.dsc_dtype == dtype_sql_date)
 		return (source.dsc_dtype <= dtype_sql_date || source.dsc_dtype == dtype_timestamp);
@@ -2446,7 +2446,7 @@ static void compress(thread_db* tdbb,
 			length = INTL_string_to_key(tdbb, itype, desc, &to, key_type);
 		}
 		else
-			length = MOV_get_string(desc, &ptr, &buffer, MAX_KEY);
+			length = MOV_get_string(tdbb, desc, &ptr, &buffer, MAX_KEY);
 
 		if (length)
 		{
@@ -2500,7 +2500,7 @@ static void compress(thread_db* tdbb,
 
 	if (itype == idx_numeric)
 	{
-		temp.temp_double = MOV_get_double(desc);
+		temp.temp_double = MOV_get_double(tdbb, desc);
 		temp_is_negative = (temp.temp_double < 0);
 
 #ifdef DEBUG_INDEXKEY
@@ -2510,7 +2510,7 @@ static void compress(thread_db* tdbb,
 	else if (itype == idx_numeric2)
 	{
 		int64_key_op = true;
-		temp.temp_int64_key = make_int64_key(MOV_get_int64(desc, desc->dsc_scale), desc->dsc_scale);
+		temp.temp_int64_key = make_int64_key(MOV_get_int64(tdbb, desc, desc->dsc_scale), desc->dsc_scale);
 		temp_copy_length = sizeof(temp.temp_int64_key.d_part);
 		temp_is_negative = (temp.temp_int64_key.d_part < 0);
 
@@ -2585,7 +2585,7 @@ static void compress(thread_db* tdbb,
 	}
 	else
 	{
-		temp.temp_double = MOV_get_double(desc);
+		temp.temp_double = MOV_get_double(tdbb, desc);
 		temp_is_negative = (temp.temp_double < 0);
 
 #ifdef DEBUG_INDEXKEY

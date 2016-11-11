@@ -366,6 +366,14 @@ void GEN_descriptor( DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool tex
 		dsqlScratch->appendUChar(blr_double);
 		break;
 
+	case dtype_dec64:
+		dsqlScratch->appendUChar(blr_dec64);
+		break;
+
+	case dtype_dec128:
+		dsqlScratch->appendUChar(blr_dec128);
+		break;
+
 	case dtype_sql_date:
 		dsqlScratch->appendUChar(blr_sql_date);
 		break;

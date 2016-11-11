@@ -831,6 +831,7 @@ Data source : @4"},		/* eds_statement */
 	{335545124, "Cannot override the window @1 because it has a frame clause. Tip: it can be used without parenthesis in OVER"},		/* dsql_window_cant_overr_frame */
 	{335545125, "Duplicate window definition for @1"},		/* dsql_window_duplicate */
 	{335545126, "SQL statement is too long. Maximum size is @1 bytes."},		/* sql_too_long */
+	{335545127, "DecFloat precision must be 16 or 34"},		/* decprecision_err */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

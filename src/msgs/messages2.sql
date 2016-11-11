@@ -914,6 +914,7 @@ Data source : @4', NULL, NULL)
 ('dsql_window_cant_overr_frame', NULL, 'ExprNodes.cpp', NULL, 0, 804, NULL, 'Cannot override the window @1 because it has a frame clause. Tip: it can be used without parenthesis in OVER', NULL, NULL);
 ('dsql_window_duplicate', NULL, 'ExprNodes.cpp', NULL, 0, 805, NULL, 'Duplicate window definition for @1', NULL, NULL);
 ('sql_too_long', 'prepareStatement', 'dsql.cpp', NULL, 0, 806, NULL, 'SQL statement is too long. Maximum size is @1 bytes.', NULL, NULL);
+('decprecision_err', NULL, 'dsql parse.y', NULL, 0, 807, NULL, 'DecFloat precision must be 16 or 34', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

@@ -302,6 +302,7 @@ public:
 	Firebird::Array<JrdStatement*>	att_internal;			// internal statements
 	Firebird::Array<JrdStatement*>	att_dyn_req;			// internal dyn statements
 	Firebird::ICryptKeyCallback*	att_crypt_callback;		// callback for DB crypt
+	Firebird::DecimalStatus			att_dec_status;			// error handling and rounding
 
 	jrd_req* findSystemRequest(thread_db* tdbb, USHORT id, USHORT which);
 

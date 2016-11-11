@@ -1664,6 +1664,8 @@ C --
       PARAMETER (GDS__dsql_window_duplicate            = 335545125)
       INTEGER*4 GDS__sql_too_long                    
       PARAMETER (GDS__sql_too_long                     = 335545126)
+      INTEGER*4 GDS__decprecision_err                
+      PARAMETER (GDS__decprecision_err                 = 335545127)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

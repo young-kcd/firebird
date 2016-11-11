@@ -157,6 +157,7 @@ static const TOK tokens[] =
 	{TOK_DAY, "DAY", false},
 	{TOK_DDL, "DDL", false},
 	{TOK_DEC, "DEC", false},
+	{TOK_DECFLOAT, "DECFLOAT", true},
 	{TOK_DECIMAL, "DECIMAL", false},
 	{TOK_DECLARE, "DECLARE", false},
 	{TOK_DECODE, "DECODE", false},

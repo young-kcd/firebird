@@ -169,7 +169,7 @@ ValueExprNode* MAKE_constant(const char* str, dsql_constant_type numeric_flag)
 
 			// Now invoke the string_to_date/time/timestamp routines
 
-			CVT_move(&tmp, &literal->litDesc, ERRD_post);
+			CVT_move(&tmp, &literal->litDesc, tdbb->getAttachment()->att_dec_status, ERRD_post);
 			break;
 		}
 

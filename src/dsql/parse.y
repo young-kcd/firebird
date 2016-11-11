@@ -611,6 +611,7 @@ using namespace Firebird;
 %token <metaNamePtr> TIES
 %token <metaNamePtr> UNBOUNDED
 %token <metaNamePtr> WINDOW
+%token <metaNamePtr> DECFLOAT
 
 // precedence declarations for expression evaluation
 
@@ -4029,6 +4030,7 @@ keyword_or_column
 	| VAR_POP
 	| UNBOUNDED				// added in FB 4.0
 	| WINDOW
+	| DECFLOAT
 	;
 
 col_opt
@@ -4385,6 +4387,7 @@ non_charset_simple_type
 	: national_character_type
 	| numeric_type
 	| float_type
+	| decfloat_type
 	| BIGINT
 		{
 			$$ = newNode<dsql_fld>();
@@ -4609,6 +4612,27 @@ national_character_keyword
 
 
 // numeric type
+
+%type <legacyField> decfloat_type
+decfloat_type
+	: DECFLOAT
+		{
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_dec64;
+			$$->length = sizeof(Decimal64);
+			$$->precision = 16;
+		}
+	| DECFLOAT '(' signed_long_integer ')'
+		{
+			if ($3 != 16 && $3 != 34)
+				yyabandon(-842, isc_decprecision_err);	// DecFloat precision must be 16 or 34.
+
+			$$ = newNode<dsql_fld>();
+			$$->precision = $3;
+			$$->dtype = $3 == 16 ? dtype_dec64 : dtype_dec128;
+			$$->length = $3 == 16 ? sizeof(Decimal64) : sizeof(Decimal128);
+		}
+	;
 
 %type <legacyField> numeric_type
 numeric_type

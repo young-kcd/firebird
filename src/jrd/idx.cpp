@@ -1102,7 +1102,7 @@ static idx_e check_duplicates(thread_db* tdbb,
 				bool flag_rec = false;
 				const dsc* desc_rec = BTR_eval_expression(tdbb, insertion_idx, rpb.rpb_record, flag_rec);
 
-				if (flag_rec && flag_idx && (MOV_compare(desc_rec, &desc1) == 0))
+				if (flag_rec && flag_idx && (MOV_compare(tdbb, desc_rec, &desc1) == 0))
 				{
 					result = idx_e_duplicate;
 					break;
@@ -1123,7 +1123,7 @@ static idx_e check_duplicates(thread_db* tdbb,
 					field_id = record_idx->idx_rpt[i].idx_field;
 					const bool flag_idx = EVL_field(relation_2, record, field_id, &desc2);
 
-					if (flag_rec != flag_idx || (flag_rec && (MOV_compare(&desc1, &desc2) != 0) ))
+					if (flag_rec != flag_idx || (flag_rec && (MOV_compare(tdbb, &desc1, &desc2) != 0) ))
 						break;
 
 					all_nulls = all_nulls && !flag_rec && !flag_idx;
@@ -1556,7 +1556,7 @@ void IDX_modify_flag_uk_modified(thread_db* tdbb,
 			const bool flag_org = EVL_field(org_rpb->rpb_relation, org_rpb->rpb_record, idx_desc->idx_field, &desc1);
 			const bool flag_new = EVL_field(new_rpb->rpb_relation, new_rpb->rpb_record, idx_desc->idx_field, &desc2);
 
-			if (flag_org != flag_new || MOV_compare(&desc1, &desc2) != 0)
+			if (flag_org != flag_new || MOV_compare(tdbb, &desc1, &desc2) != 0)
 			{
 				new_rpb->rpb_flags |= rpb_uk_modified;
 				CCH_RELEASE(tdbb, &window);

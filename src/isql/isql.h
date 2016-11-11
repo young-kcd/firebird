@@ -35,6 +35,7 @@
 
 #include "../jrd/flags.h"
 #include <stdlib.h>
+#include "../common/DecFloat.h"
 
 // Define lengths used in isql.e
 
@@ -294,6 +295,8 @@ const int BLOB			= 261;
 //const int SQL_TIME	= 13;
 const int BIGINT		= 16;
 const int BOOLEAN_TYPE	= 23;
+const int DEC64_TYPE	= 24;
+const int DEC128_TYPE	= 25;
 
 static const sqltypes Column_types[] = {
 	{SMALLINT, "SMALLINT"},		// keyword
@@ -311,6 +314,8 @@ static const sqltypes Column_types[] = {
 	{blr_timestamp, "TIMESTAMP"},	// keyword
 	{BIGINT, "BIGINT"},			// keyword
 	{BOOLEAN_TYPE, "BOOLEAN"},	// keyword
+	{DEC64_TYPE, "DECIMAL(16)"},
+	{DEC128_TYPE, "DECIMAL(34)"},
 	{0, ""}
 };
 
@@ -379,8 +384,13 @@ public:
 	USHORT major_ods;
 	USHORT minor_ods;
 	USHORT att_charset;
+	Firebird::DecimalStatus decStatus;
 	void printf(const char* buffer, ...);
 	void prints(const char* buffer);
+
+	IsqlGlobals()
+		: decStatus(DEC_Errors)
+	{ }
 };
 
 extern IsqlGlobals isqlGlob;
@@ -434,6 +444,8 @@ struct IsqlVar
 		ISC_QUAD* blobid;
 		vary* asVary;
 		char* asChar;
+		Firebird::Decimal64* asDec64;
+		Firebird::Decimal128* asDec128;
 		void* setPtr;
 	};
 	TypeMix value;

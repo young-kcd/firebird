@@ -827,6 +827,7 @@ static const struct {
 	{335545124, -833}, /* 804 dsql_window_cant_overr_frame */
 	{335545125, -833}, /* 805 dsql_window_duplicate */
 	{335545126, -902}, /* 806 sql_too_long */
+	{335545127, -842}, /* 807 decprecision_err */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

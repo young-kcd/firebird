@@ -26,12 +26,11 @@
 
 #include "firebird.h"
 #include <string.h>
-//#include "../remote/remote.h"
 #include "../common/xdr.h"
-//#include "../remote/proto_proto.h"
 #include "../common/xdr_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/gdsassert.h"
+#include "../common/DecFloat.h"
 
 inline UCHAR* XDR_ALLOC(ULONG size)
 {
@@ -261,6 +260,18 @@ bool_t xdr_datum( XDR* xdrs, const dsc* desc, UCHAR* buffer)
 			return FALSE;
 		break;
 
+	case dtype_dec64:
+		fb_assert(desc->dsc_length >= sizeof(Firebird::Decimal64));
+		if (!xdr_dec64(xdrs, reinterpret_cast<Firebird::Decimal64*>(p)))
+			return FALSE;
+		break;
+
+	case dtype_dec128:
+		fb_assert(desc->dsc_length >= sizeof(Firebird::Decimal128));
+		if (!xdr_dec128(xdrs, reinterpret_cast<Firebird::Decimal128*>(p)))
+			return FALSE;
+		break;
+
 	case dtype_timestamp:
 		fb_assert(desc->dsc_length >= 2 * sizeof(SLONG));
 		if (!xdr_long(xdrs, &((SLONG*) p)[0]))
@@ -337,6 +348,46 @@ bool_t xdr_double(XDR* xdrs, double* ip)
 
 	return FALSE;
 }
+
+
+#ifndef WORDS_BIGENDIAN			// Only little-endian HW is currently supported! FixMe!!!
+
+bool_t	xdr_dec64(XDR* xdrs, Firebird::Decimal64* ip)
+{
+	switch (xdrs->x_op)
+	{
+	case XDR_ENCODE:
+		return PUTBYTES(xdrs, ip->getBytes(), sizeof(*ip));
+
+	case XDR_DECODE:
+		return GETBYTES(xdrs, ip->getBytes(), sizeof(*ip));
+
+	case XDR_FREE:
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+
+bool_t xdr_dec128(XDR* xdrs, Firebird::Decimal128* ip)
+{
+	switch (xdrs->x_op)
+	{
+	case XDR_ENCODE:
+		return PUTBYTES(xdrs, ip->getBytes(), sizeof(*ip));
+
+	case XDR_DECODE:
+		return GETBYTES(xdrs, ip->getBytes(), sizeof(*ip));
+
+	case XDR_FREE:
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+#endif
 
 
 bool_t xdr_enum(XDR* xdrs, xdr_op* ip)

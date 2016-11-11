@@ -117,6 +117,16 @@ void BlrFromMessage::buildBlr(IMessageMetadata* metadata)
 				dtype = dtype_text;
 				break;
 
+			case SQL_DEC64:
+				appendUChar(blr_dec64);
+				dtype = dtype_dec64;
+				break;
+
+			case SQL_DEC128:
+				appendUChar(blr_dec128);
+				dtype = dtype_dec128;
+				break;
+
 			case SQL_DOUBLE:
 				appendUChar(blr_double);
 				dtype = dtype_double;

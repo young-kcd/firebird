@@ -136,7 +136,7 @@ double CVT_date_to_double(const dsc* desc)
 			temp_desc.dsc_length = sizeof(temp);
 			date = temp;
 			temp_desc.dsc_address = (UCHAR*) date;
-			CVT_move(desc, &temp_desc);
+			CVT_move(desc, &temp_desc, 0);
 		}
 	}
 
@@ -262,7 +262,7 @@ UCHAR CVT_get_numeric(const UCHAR* string, const USHORT length, SSHORT* scale, d
 		((value < 0) && (sign != -1))) // MAX_SINT64+1 wrapped around
 	{
 		// convert to double
-		*ptr = CVT_get_double(&desc, ERR_post);
+		*ptr = CVT_get_double(&desc, 0, ERR_post);
 		return dtype_double;
 	}
 
@@ -313,7 +313,7 @@ GDS_DATE CVT_get_sql_date(const dsc* desc)
 	memset(&temp_desc, 0, sizeof(temp_desc));
 	temp_desc.dsc_dtype = dtype_sql_date;
 	temp_desc.dsc_address = (UCHAR *) &value;
-	CVT_move(desc, &temp_desc);
+	CVT_move(desc, &temp_desc, 0);
 	return value;
 }
 
@@ -338,7 +338,7 @@ GDS_TIME CVT_get_sql_time(const dsc* desc)
 	memset(&temp_desc, 0, sizeof(temp_desc));
 	temp_desc.dsc_dtype = dtype_sql_time;
 	temp_desc.dsc_address = (UCHAR *) &value;
-	CVT_move(desc, &temp_desc);
+	CVT_move(desc, &temp_desc, 0);
 	return value;
 }
 
@@ -363,7 +363,7 @@ GDS_TIMESTAMP CVT_get_timestamp(const dsc* desc)
 	memset(&temp_desc, 0, sizeof(temp_desc));
 	temp_desc.dsc_dtype = dtype_timestamp;
 	temp_desc.dsc_address = (UCHAR *) &value;
-	CVT_move(desc, &temp_desc);
+	CVT_move(desc, &temp_desc, 0);
 	return value;
 }
 

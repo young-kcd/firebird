@@ -1187,7 +1187,7 @@ const StmtNode* CursorStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeSt
 
 						const dsc* desc = EVL_expr(tdbb, request, scrollExpr);
 						const bool unknown = !desc || (request->req_flags & req_null);
-						const SINT64 offset = unknown ? 0 : MOV_get_int64(desc, 0);
+						const SINT64 offset = unknown ? 0 : MOV_get_int64(tdbb, desc, 0);
 
 						switch (scrollOp)
 						{
@@ -7503,7 +7503,7 @@ const StmtNode* SetGeneratorNode::execute(thread_db* tdbb, jrd_req* request, Exe
 			DDL_TRIGGER_ALTER_SEQUENCE, generator.name, NULL, *request->getStatement()->sqlText);
 
 		dsc* const desc = EVL_expr(tdbb, request, value);
-		DPM_gen_id(tdbb, generator.id, true, MOV_get_int64(desc, 0));
+		DPM_gen_id(tdbb, generator.id, true, MOV_get_int64(tdbb, desc, 0));
 
 		DdlNode::executeDdlTrigger(tdbb, transaction, DdlNode::DTW_AFTER,
 			DDL_TRIGGER_ALTER_SEQUENCE, generator.name, NULL, *request->getStatement()->sqlText);
@@ -9242,7 +9242,7 @@ static void validateExpressions(thread_db* tdbb, const Array<ValidateInfo>& vali
 
 			const dsc* desc = EVL_expr(tdbb, request, i->value);
 			const USHORT length = (desc && !(request->req_flags & req_null)) ?
-				MOV_make_string(desc, ttype_dynamic, &value, &temp, sizeof(temp) - 1) : 0;
+				MOV_make_string(tdbb, desc, ttype_dynamic, &value, &temp, sizeof(temp) - 1) : 0;
 
 			if (!desc || (request->req_flags & req_null))
 				value = NULL_STRING_MARK;

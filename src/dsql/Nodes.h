@@ -470,7 +470,8 @@ public:
 	// Value flags.
 	static const unsigned FLAG_DOUBLE		= 0x10;
 	static const unsigned FLAG_DATE			= 0x20;
-	static const unsigned FLAG_VALUE		= 0x40;	// Full value area required in impure space.
+	static const unsigned FLAG_DECFLOAT		= 0x40;
+	static const unsigned FLAG_VALUE		= 0x80;	// Full value area required in impure space.
 
 	explicit ExprNode(Type aType, MemoryPool& pool, Kind aKind)
 		: DmlNode(pool, aKind),
