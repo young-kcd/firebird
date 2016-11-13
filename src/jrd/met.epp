@@ -5393,7 +5393,7 @@ int MET_get_linger(thread_db* tdbb)
 	return rc;
 }
 
-Nullable<bool>	MET_get_ss_definer(Jrd::thread_db* tdbb)
+Nullable<bool> MET_get_ss_definer(Jrd::thread_db* tdbb)
 {
 /**************************************
  *
