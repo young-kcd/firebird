@@ -62,7 +62,7 @@ public:
 		init(DEC_INIT_DECIMAL128);
 	}
 
-	~DecimalContext()
+	~DecimalContext() noexcept(false)
 	{
 		// Typically excptions should better be not thrown from destructors.
 		// But in our case there should never be any exception raised inside
@@ -82,10 +82,11 @@ public:
 		{
 			if (mask & unmaskedExceptions)
 			{
-				decContextRestoreStatus(this, mask, ~0);
+				decContextSetStatusQuiet(this, mask);
 				const char* statusString = decContextStatusToString(this);
-				(Arg::Gds(isc_random) << "DecFloat error" <<
-				 Arg::Gds(isc_random) << statusString).raise();
+				decContextSetStatusQuiet(this, 0);
+				(Arg::Gds(isc_random) << "Decimal float error" <<
+					Arg::Gds(isc_random) << statusString).raise();
 			}
 		}
 	}
