@@ -356,14 +356,14 @@ void ConfigStorage::touchThreadFunc()
 			time_t now;
 			time(&now);
 
-			if (!m_base->touch_time || m_base->touch_time < now)
+			if (!m_base->touch_time || m_base->touch_time <= now)
 			{
 				touchFile();
 				m_base->touch_time = now + TOUCH_INTERVAL;
 			}
 
 			delay = difftime(m_base->touch_time, now);
-		} 
+		}
 	} // scope
 	m_touchStop.release();
 }
@@ -394,7 +394,7 @@ void ConfigStorage::release()
 
 	const FB_THREAD_ID currTID = getThreadId();
 	fb_assert(m_mutexTID == currTID);
-	
+
 	if (--m_recursive == 0)
 	{
 		checkDirty();
