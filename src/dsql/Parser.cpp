@@ -1206,7 +1206,7 @@ void Parser::yyerrorIncompleteCmd()
 void Parser::check_bound(const char* const to, const char* const string)
 {
 	if ((to - string) >= Parser::MAX_TOKEN_LEN)
-		yyabandon(yyposn, -104, isc_token_too_long);	//// FIXME:
+		yyabandon(yyposn, -104, isc_token_too_long);
 }
 
 void Parser::check_copy_incr(char*& to, const char ch, const char* const string)
