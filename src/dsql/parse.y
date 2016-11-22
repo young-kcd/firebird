@@ -4435,7 +4435,7 @@ non_charset_simple_type
 				$$->length = sizeof(GDS_TIMESTAMP);
 			}
 			else if (client_dialect == SQL_DIALECT_V6_TRANSITION)
-				yyabandon(-104, isc_transitional_date);
+				yyabandon(YYPOSNARG(1), -104, isc_transitional_date);
 			else
 			{
 				$$->dtype = dtype_sql_date;
@@ -4647,7 +4647,7 @@ prec_scale
 			$$ = newNode<dsql_fld>();
 
 			if ($2 < 1 || $2 > 18)
-				yyabandon(-842, isc_precision_err);	// Precision must be between 1 and 18.
+				yyabandon(YYPOSNARG(2), -842, isc_precision_err);	// Precision must be between 1 and 18.
 
 			if ($2 > 9)
 			{
@@ -4697,10 +4697,10 @@ prec_scale
 			$$ = newNode<dsql_fld>();
 
 			if ($2 < 1 || $2 > 18)
-				yyabandon (-842, isc_precision_err);	// Precision should be between 1 and 18
+				yyabandon(YYPOSNARG(2), -842, isc_precision_err);	// Precision should be between 1 and 18
 
 			if ($4 > $2 || $4 < 0)
-				yyabandon (-842, isc_scale_nogt);	// Scale must be between 0 and precision
+				yyabandon(YYPOSNARG(4), -842, isc_scale_nogt);	// Scale must be between 0 and precision
 
 			if ($2 > 9)
 			{
@@ -6991,7 +6991,7 @@ nonneg_short_integer
 	: NUMBER
 		{
 			if ($1 > SHRT_POS_MAX)
-				yyabandon(-842, isc_expec_short);	// Short integer expected
+				yyabandon(YYPOSNARG(1), -842, isc_expec_short);	// Short integer expected
 
 			$$ = $1;
 		}
@@ -7002,7 +7002,7 @@ neg_short_integer
 	: NUMBER
 		{
 			if ($1 > SHRT_NEG_MAX)
-				yyabandon(-842, isc_expec_short);	// Short integer expected
+				yyabandon(YYPOSNARG(1), -842, isc_expec_short);	// Short integer expected
 
 			$$ = $1;
 		}
@@ -7013,7 +7013,7 @@ pos_short_integer
 	: nonneg_short_integer
 		{
 			if ($1 == 0)
-				yyabandon(-842, isc_expec_positive);	// Positive number expected
+				yyabandon(YYPOSNARG(1), -842, isc_expec_positive);	// Positive number expected
 
 			$$ = $1;
 		}
@@ -7024,7 +7024,7 @@ unsigned_short_integer
 	: NUMBER
 		{
 			if ($1 > SHRT_UNSIGNED_MAX)
-				yyabandon(-842, isc_expec_ushort);	// Unsigned short integer expected
+				yyabandon(YYPOSNARG(1), -842, isc_expec_ushort);	// Unsigned short integer expected
 
 			$$ = $1;
 		}
