@@ -137,8 +137,7 @@ public:
 		}
 		else if (dpNumber)
 		{
-			const DPItem item = {dpSequence, dpNumber, ++dpMapMark};
-			dpMap.insert(pos, item);
+			dpMap.insert(pos, DPItem(dpSequence, dpNumber, ++dpMapMark));
 
 			if (dpMap.getCount() == MAX_DPMAP_ITEMS)
 				freeOldestMapItems();
@@ -177,6 +176,14 @@ private:
 		ULONG seqNum;
 		ULONG physNum;
 		ULONG mark;
+
+		DPItem()
+			: seqNum(0), physNum(0), mark(0)
+		{}
+
+		DPItem(ULONG sn, ULONG pn, ULONG mk)
+			: seqNum(sn), physNum(pn), mark(mk)
+		{}
 
 		static ULONG generate(const DPItem& item)
 		{
