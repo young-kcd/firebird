@@ -137,7 +137,8 @@ public:
 		}
 		else if (dpNumber)
 		{
-			dpMap.insert(pos, {dpSequence, dpNumber, ++dpMapMark});
+			const DPItem item = {dpSequence, dpNumber, ++dpMapMark};
+			dpMap.insert(pos, item);
 
 			if (dpMap.getCount() == MAX_DPMAP_ITEMS)
 				freeOldestMapItems();
