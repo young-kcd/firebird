@@ -593,7 +593,7 @@ using namespace Firebird;
 
 %token <metaNamePtr> CUME_DIST
 %token <metaNamePtr> DEFINER
-%token <metaNamePtr> ERROR_MESSAGE
+%token <metaNamePtr> MESSAGE
 %token <metaNamePtr> EXCLUDE
 %token <metaNamePtr> FOLLOWING
 %token <metaNamePtr> INVOKER
@@ -603,6 +603,7 @@ using namespace Firebird;
 %token <metaNamePtr> PRECEDING
 %token <metaNamePtr> PRIVILEGE
 %token <metaNamePtr> RANGE
+%token <metaNamePtr> RDB_ERROR
 %token <metaNamePtr> RDB_ROLE_IN_USE
 %token <metaNamePtr> RDB_SYSTEM_PRIVILEGE
 %token <metaNamePtr> SECURITY
@@ -6952,11 +6953,24 @@ internal_info
 		{ $$ = newNode<InternalInfoNode>(MAKE_const_slong(INFO_TYPE_SQLSTATE)); }
 	| ROW_COUNT
 		{ $$ = newNode<InternalInfoNode>(MAKE_const_slong(INFO_TYPE_ROWS_AFFECTED)); }
-	| EXCEPTION
-		{ $$ = newNode<InternalInfoNode>(MAKE_const_slong(INFO_TYPE_EXCEPTION)); }
-	| ERROR_MESSAGE
-		{ $$ = newNode<InternalInfoNode>(MAKE_const_slong(INFO_TYPE_ERROR_MSG)); }
+	| RDB_ERROR '(' error_context ')'
+		{ $$ = newNode<InternalInfoNode>(MAKE_const_slong($3)); }
 	;
+
+%type <int32Val> error_context
+error_context
+	: GDSCODE
+		{ $$ = INFO_TYPE_GDSCODE; }
+	| SQLCODE
+		{ $$ = INFO_TYPE_SQLCODE; }
+	| SQLSTATE
+		{ $$ = INFO_TYPE_SQLSTATE; }
+	| EXCEPTION
+		{ $$ = INFO_TYPE_EXCEPTION; }
+	| MESSAGE
+		{ $$ = INFO_TYPE_ERROR_MSG; }
+	;
+
 
 %type <intlStringPtr> sql_string
 sql_string
@@ -8088,16 +8102,17 @@ non_reserved_word
 	| TRUSTED
 	| CUME_DIST				// added in FB 4.0
 	| DEFINER
-	| ERROR_MESSAGE
 	| EXCLUDE
 	| FOLLOWING
 	| INVOKER
+	| MESSAGE
 	| NTILE
 	| OTHERS
 	| PERCENT_RANK
 	| PRECEDING
 	| PRIVILEGE
 	| RANGE
+	| RDB_ERROR
 	| RDB_ROLE_IN_USE
 	| RDB_SYSTEM_PRIVILEGE
 	| SECURITY

@@ -6125,7 +6125,9 @@ const InternalInfoNode::InfoAttr InternalInfoNode::INFO_TYPE_ATTRIBUTES[MAX_INFO
 	{"SQLCODE", DsqlCompilerScratch::FLAG_BLOCK},
 	{"ROW_COUNT", DsqlCompilerScratch::FLAG_BLOCK},
 	{"INSERTING/UPDATING/DELETING", DsqlCompilerScratch::FLAG_TRIGGER},
-	{"SQLSTATE", DsqlCompilerScratch::FLAG_BLOCK}
+	{"SQLSTATE", DsqlCompilerScratch::FLAG_BLOCK},
+	{"EXCEPTION", DsqlCompilerScratch::FLAG_BLOCK},
+	{"MESSAGE", DsqlCompilerScratch::FLAG_BLOCK}
 };
 
 InternalInfoNode::InternalInfoNode(MemoryPool& pool, ValueExprNode* aArg)
