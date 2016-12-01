@@ -608,6 +608,13 @@ extern "C" int remove(const char* path);
 #define FB_EXPORTED
 #endif
 
+#ifdef HAS_NOEXCEPT
+#define NOEXCEPT noexcept
+#define NOEXCEPT_ARG(X) noexcept((X))
+#else
+#define NOEXCEPT
+#define NOEXCEPT_ARG(X) 
+#endif
 
 /* alignment macros */
 

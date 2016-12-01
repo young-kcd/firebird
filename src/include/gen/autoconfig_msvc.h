@@ -213,14 +213,6 @@
 #endif
 #endif
 
-#ifdef HAS_NOEXCEPT
-#define NOEXCEPT noexcept
-#define NOEXCEPT_ARG(X) noexcept((X))
-#else
-#define NOEXCEPT
-#define NOEXCEPT_ARG(X) 
-#endif
-
 /* Types */
 #undef HAVE_SOCKLEN_T
 #undef HAVE_INFINITY
