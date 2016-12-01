@@ -62,7 +62,7 @@ public:
 		init(DEC_INIT_DECIMAL128);
 	}
 
-	~DecimalContext() noexcept(false)
+	~DecimalContext() NOEXCEPT_ARG(false)
 	{
 		// Typically excptions should better be not thrown from destructors.
 		// But in our case there should never be any exception raised inside
