@@ -1382,7 +1382,7 @@ DmlNode* DeclareSubFuncNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 
 	{	// scope
 		CompilerScratch* const subCsb = node->subCsb = CompilerScratch::newCsb(csb->csb_pool, 5);
-		subCsb->csb_g_flags |= csb_subroutine;
+		subCsb->csb_g_flags |= csb_subroutine | (csb->csb_g_flags & csb_get_dependencies);
 		subCsb->csb_blr_reader = csb->csb_blr_reader;
 
 		BlrReader& reader = subCsb->csb_blr_reader;
@@ -1657,7 +1657,7 @@ DmlNode* DeclareSubProcNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 
 	{	// scope
 		CompilerScratch* const subCsb = node->subCsb = CompilerScratch::newCsb(csb->csb_pool, 5);
-		subCsb->csb_g_flags |= csb_subroutine;
+		subCsb->csb_g_flags |= csb_subroutine | (csb->csb_g_flags & csb_get_dependencies);
 		subCsb->csb_blr_reader = csb->csb_blr_reader;
 
 		BlrReader& reader = subCsb->csb_blr_reader;
