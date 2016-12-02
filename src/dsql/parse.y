@@ -4020,7 +4020,6 @@ keyword_or_column
 	| REGR_SXY
 	| REGR_SYY
 	| RETURN
-	| RDB_RECORD_VERSION
 	| ROW
 	| SCROLL
 	| SQLSTATE
@@ -8007,7 +8006,6 @@ non_reserved_word
 	| CONTAINING
 	| CSTRING
 	| DATABASE
-//	| DB_KEY
 	| DESC
 	| DO
 	| DOMAIN
@@ -8082,8 +8080,6 @@ non_reserved_word
 	| PACKAGE
 	| PARTITION
 	| PRIOR
-	| RDB_GET_CONTEXT
-	| RDB_SET_CONTEXT
 	| RELATIVE
 	| DENSE_RANK
 	| FIRST_VALUE
@@ -8112,9 +8108,6 @@ non_reserved_word
 	| PRECEDING
 	| PRIVILEGE
 	| RANGE
-	| RDB_ERROR
-	| RDB_ROLE_IN_USE
-	| RDB_SYSTEM_PRIVILEGE
 	| SECURITY
 	| SQL
 	| SYSTEM
