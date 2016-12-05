@@ -88,27 +88,17 @@ static void store_big_record(thread_db*, record_param*, PageStack&, const UCHAR*
 
 namespace
 {
-	Lock* lock_gc_active(thread_db* tdbb, const jrd_tra* transaction, record_param* rpb)
+	inline Lock* lockGCActive(thread_db* tdbb, const jrd_tra* transaction, record_param* rpb)
 	{
 		AutoPtr<Lock> lock(FB_NEW_RPT(*tdbb->getDefaultPool(), 0)
 			Lock(tdbb, sizeof(SINT64), LCK_record_gc));
 		lock->setKey(((SINT64) rpb->rpb_page << 16) | rpb->rpb_line);
 		lock->lck_data = transaction->tra_number;
 
-		ThreadStatusGuard temp_status(tdbb);
-
-		if (LCK_lock(tdbb, lock, LCK_EX, LCK_NO_WAIT))
-			return lock.release();
-
-		if (lock->lck_data != LCK_read_data(tdbb, lock))
-		{
-			fb_assert(false);
-			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
-			temp_status.copyToOriginal();
+		if (!LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT))
 			ERR_punt();
-		}
 
-		return NULL;
+		return lock.release();
 	}
 }
 
@@ -2645,7 +2635,7 @@ static void fragment(thread_db* tdbb,
 
 	header->rhdf_flags |= rhd_gc_active;
 
-	AutoLock gcLockGuard(tdbb, lock_gc_active(tdbb, transaction, rpb));
+	AutoLock gcLockGuard(tdbb, lockGCActive(tdbb, transaction, rpb));
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
