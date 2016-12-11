@@ -593,10 +593,10 @@ using namespace Firebird;
 
 %token <metaNamePtr> CUME_DIST
 %token <metaNamePtr> DEFINER
-%token <metaNamePtr> MESSAGE
 %token <metaNamePtr> EXCLUDE
 %token <metaNamePtr> FOLLOWING
 %token <metaNamePtr> INVOKER
+%token <metaNamePtr> MESSAGE
 %token <metaNamePtr> NTILE
 %token <metaNamePtr> OTHERS
 %token <metaNamePtr> PERCENT_RANK
@@ -6958,16 +6958,11 @@ internal_info
 
 %type <int32Val> error_context
 error_context
-	: GDSCODE
-		{ $$ = INFO_TYPE_GDSCODE; }
-	| SQLCODE
-		{ $$ = INFO_TYPE_SQLCODE; }
-	| SQLSTATE
-		{ $$ = INFO_TYPE_SQLSTATE; }
-	| EXCEPTION
-		{ $$ = INFO_TYPE_EXCEPTION; }
-	| MESSAGE
-		{ $$ = INFO_TYPE_ERROR_MSG; }
+	: GDSCODE		{ $$ = INFO_TYPE_GDSCODE; }
+	| SQLCODE		{ $$ = INFO_TYPE_SQLCODE; }
+	| SQLSTATE		{ $$ = INFO_TYPE_SQLSTATE; }
+	| EXCEPTION		{ $$ = INFO_TYPE_EXCEPTION; }
+	| MESSAGE		{ $$ = INFO_TYPE_ERROR_MSG; }
 	;
 
 

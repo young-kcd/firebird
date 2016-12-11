@@ -148,9 +148,12 @@ public:
 	{
 		ULONG minMark = MAX_ULONG;
 		FB_SIZE_T i;
+
 		for (i = 0; i < dpMap.getCount(); i++)
+		{
 			if (minMark > dpMap[i].mark)
 				minMark = dpMap[i].mark;
+		}
 
 		minMark = (minMark + dpMapMark) / 2;
 
@@ -162,6 +165,7 @@ public:
 			else
 				dpMap.remove(i);
 		}
+
 		dpMapMark -= minMark;
 	}
 
@@ -399,7 +403,7 @@ const ULONG REL_gc_lockneed				= 0x80000;	// gc lock should be acquired
 inline jrd_rel::jrd_rel(MemoryPool& p)
 	: rel_pool(&p), rel_flags(REL_gc_lockneed),
 	  rel_name(p), rel_owner_name(p), rel_security_name(p),
-	  rel_view_contexts(p), rel_gc_records(p), rel_ss_definer(false), 
+	  rel_view_contexts(p), rel_gc_records(p), rel_ss_definer(false),
 	  rel_pages_base(p)
 {
 }
