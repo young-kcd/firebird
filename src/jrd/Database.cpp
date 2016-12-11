@@ -75,16 +75,21 @@ namespace Jrd
 
 	int Database::blocking_ast_sweep(void* ast_object)
 	{
-		Database* dbb = static_cast<Database*>(ast_object);
-
-		AstContextHolder tdbb(dbb);
-		Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
-
-		if (dbb->dbb_flags & DBB_sweep_starting && !(dbb->dbb_flags &  DBB_sweep_in_progress))
+		try
 		{
-			dbb->dbb_flags &= ~DBB_sweep_starting;
-			LCK_release(tdbb, dbb->dbb_sweep_lock);
+			Database* dbb = static_cast<Database*>(ast_object);
+
+			AstContextHolder tdbb(dbb);
+			Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+
+			if (dbb->dbb_flags & DBB_sweep_starting && !(dbb->dbb_flags &  DBB_sweep_in_progress))
+			{
+				dbb->dbb_flags &= ~DBB_sweep_starting;
+				LCK_release(tdbb, dbb->dbb_sweep_lock);
+			}
 		}
+		catch (const Firebird::Exception&)
+		{} // no-op
 
 		return 0;
 	}
