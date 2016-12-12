@@ -2343,8 +2343,8 @@ void Service::readFbLog()
 			setDataMode(true);
 			while (!feof(file) && !ferror(file))
 			{
-				fgets(buffer, sizeof(buffer), file);
-				outputData(buffer);
+				if (fgets(buffer, sizeof(buffer), file))
+					outputData(buffer);
 			}
 			setDataMode(false);
 		}
