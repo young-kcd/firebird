@@ -6285,20 +6285,15 @@ distinct_predicate
 
 %type <boolExprNode> between_predicate
 between_predicate
-	: value BETWEEN value_between AND value_between %prec BETWEEN
-		{ $$ = newNode<ComparativeBoolNode>(blr_between, $1, $3, $5); }
-	| value NOT BETWEEN value_between AND value_between %prec BETWEEN
+	: value BETWEEN value AND value %prec BETWEEN
+		{
+			$$ = newNode<ComparativeBoolNode>(blr_between, $1, $3, $5);
+		}
+	| value NOT BETWEEN value AND value %prec BETWEEN
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_between, $1, $4, $6);
 			$$ = newNode<NotBoolNode>(node);
 		}
-	;
-
-// Special value for BETWEEN, to avoid conflicts with boolean expressions.
-%type <valueExprNode> value_between
-value_between
-	: value_primary
-	| '(' boolean_value_expression ')'		{ $$ = newNode<BoolAsValueNode>($2); }
 	;
 
 %type <boolExprNode> binary_pattern_predicate
@@ -6731,21 +6726,21 @@ nonparenthesized_value
 		{ $$ = $1; }
 	| udf
 		{ $$ = $1; }
-	| '-' value_primary %prec UMINUS
+	| '-' value %prec UMINUS
 		{ $$ = newNode<NegateNode>($2); }
-	| '+' value_primary %prec UPLUS
+	| '+' value %prec UPLUS
 		{ $$ = $2; }
-	| value_primary '+' value_primary
+	| value '+' value
 		{ $$ = newNode<ArithmeticNode>(blr_add, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3); }
-	| value_primary CONCATENATE value_primary
+	| value CONCATENATE value
 		{ $$ = newNode<ConcatenateNode>($1, $3); }
-	| value_primary COLLATE symbol_collation_name
+	| value COLLATE symbol_collation_name
 		{ $$ = newNode<CollateNode>($1, *$3); }
-	| value_primary '-' value_primary
+	| value '-' value
 		{ $$ = newNode<ArithmeticNode>(blr_subtract, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3); }
-	| value_primary '*' value_primary
+	| value '*' value
 		{ $$ = newNode<ArithmeticNode>(blr_multiply, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3); }
-	| value_primary '/' value_primary
+	| value '/' value
 		{ $$ = newNode<ArithmeticNode>(blr_divide, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3); }
 	| '(' column_singleton ')'
 		{ $$ = $2; }
