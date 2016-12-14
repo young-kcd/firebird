@@ -1512,7 +1512,15 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 					// Here we do not let anyone except SYSDBA (like DBO) to change dbb_page_buffers,
 					// cause other flags is UserId can be set only when DB is opened.
 					// No idea how to test for other cases before init is complete.
-					if ((config->getServerMode() != MODE_SUPER) || userId.locksmith(tdbb, CHANGE_HEADER_SETTINGS))
+					//
+					// ATTN! dimitr 14-DEC-2016
+					// We cannot call locksmith() here anymore because it queries the database
+					// which is not initialized at this point yet. I'd suggest to initialize the cache
+					// with the default settings and call CCH_expand() later if dpb_set_page_buffers
+					// is specified.
+					//
+					// if ((config->getServerMode() != MODE_SUPER) || userId.locksmith(tdbb, CHANGE_HEADER_SETTINGS))
+					if (config->getServerMode() != MODE_SUPER)
 						dbb->dbb_page_buffers = options.dpb_page_buffers;
 				}
 
