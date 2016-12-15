@@ -7968,7 +7968,6 @@ non_reserved_word
 	| TANH
 	| TEMPORARY
 	| TRUNC
-	| WEEK
 	| AUTONOMOUS			// added in FB 2.5
 	| CHAR_TO_UUID
 	| FIRSTNAME
@@ -8051,7 +8050,7 @@ non_reserved_word
 //	| VARIABLE
 //	| VIEW
 	| WAIT
-//	| WEEK
+	| WEEK
 //	| WHILE
 	| WORK
 	| WRITE				// end of old keywords, that were reserved pre-Firebird.2.5
