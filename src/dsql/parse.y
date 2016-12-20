@@ -6285,11 +6285,11 @@ distinct_predicate
 
 %type <boolExprNode> between_predicate
 between_predicate
-	: value BETWEEN value AND value %prec BETWEEN
+	: value BETWEEN value_special AND value_special %prec BETWEEN
 		{
 			$$ = newNode<ComparativeBoolNode>(blr_between, $1, $3, $5);
 		}
-	| value NOT BETWEEN value AND value %prec BETWEEN
+	| value NOT BETWEEN value_special AND value_special %prec BETWEEN
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_between, $1, $4, $6);
 			$$ = newNode<NotBoolNode>(node);
@@ -6695,6 +6695,13 @@ value
 		{ $$ = newNode<BoolAsValueNode>($1); }
 	;
 
+// Used in situations that is not possible to use non-parenthesized boolean expressions.
+%type <valueExprNode> value_special
+value_special
+	: value_primary
+	| '(' boolean_value_expression ')'	{ $$ = newNode<BoolAsValueNode>($2); }
+	;
+
 %type <valueExprNode> value_primary
 value_primary
 	: nonparenthesized_value
@@ -6726,21 +6733,21 @@ nonparenthesized_value
 		{ $$ = $1; }
 	| udf
 		{ $$ = $1; }
-	| '-' value %prec UMINUS
+	| '-' value_special %prec UMINUS
 		{ $$ = newNode<NegateNode>($2); }
-	| '+' value %prec UPLUS
+	| '+' value_special %prec UPLUS
 		{ $$ = $2; }
-	| value '+' value
+	| value_special '+' value_special
 		{ $$ = newNode<ArithmeticNode>(blr_add, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3); }
-	| value CONCATENATE value
+	| value_special CONCATENATE value_special
 		{ $$ = newNode<ConcatenateNode>($1, $3); }
-	| value COLLATE symbol_collation_name
+	| value_special COLLATE symbol_collation_name
 		{ $$ = newNode<CollateNode>($1, *$3); }
-	| value '-' value
+	| value_special '-' value_special
 		{ $$ = newNode<ArithmeticNode>(blr_subtract, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3); }
-	| value '*' value
+	| value_special '*' value_special
 		{ $$ = newNode<ArithmeticNode>(blr_multiply, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3); }
-	| value '/' value
+	| value_special '/' value_special
 		{ $$ = newNode<ArithmeticNode>(blr_divide, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3); }
 	| '(' column_singleton ')'
 		{ $$ = $2; }
