@@ -5873,11 +5873,8 @@ dsc* FieldNode::execute(thread_db* tdbb, jrd_req* request) const
 		MOV_move(tdbb, &desc, &impure->vlu_desc);
 	}
 
-	if (!relation || !(relation->rel_flags & REL_system))
-	{
-		if (impure->vlu_desc.dsc_dtype == dtype_text)
-			INTL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
-	}
+	if (impure->vlu_desc.dsc_dtype == dtype_text)
+		INTL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
 
 	return &impure->vlu_desc;
 }
