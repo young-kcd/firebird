@@ -119,6 +119,41 @@ static const UCHAR sweep_tpb[] =
 };
 
 
+namespace
+{
+	struct SweepLock
+	{
+		SweepLock(MemoryPool&)
+			: database(NULL), shutdown(false)
+		{ }
+
+		void* database;
+		FB_THREAD_ID thd;
+		bool shutdown;
+	};
+	GlobalPtr<SweepLock> sweepLock;
+	GlobalPtr<Mutex> sweepLockMutex;
+}
+
+
+void TRA_sweep_shutdown()
+{
+	for (;;)
+	{
+		MutexEnsureUnlock g(sweepLockMutex);
+		g.enter();
+		sweepLock->shutdown = true;
+
+		if (sweepLock->database)
+		{
+			g.leave();
+			THREAD_SLEEP(1);
+			continue;
+		}
+		break;
+	}
+}
+
 void TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request)
 {
 	// When request finishes normally transaction reference is not cleared.
@@ -1781,6 +1816,12 @@ void TRA_sweep(thread_db* tdbb)
 	Database* const dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
+ 	{
+ 		MutexLockGuard g(sweepLockMutex);
+		if (sweepLock->database && sweepLock->thd == getThreadId())
+			sweepLock->database = NULL;
+	}
+
 	if (!dbb->allowSweepRun(tdbb))
 	{
 		dbb->clearSweepFlags(tdbb);
@@ -2723,6 +2764,29 @@ static void start_sweeper(thread_db* tdbb)
 	if (database)
 	{
 		strcpy(database, pszFilename);
+		for (;;)
+		{
+			MutexEnsureUnlock g(sweepLockMutex);
+			g.enter();
+
+			if (sweepLock->shutdown)
+			{
+				// silent return not starting sweep - shutdown in progress
+				gds__free(database);
+				return;
+			}
+
+			if (sweepLock->database)
+			{
+				g.leave();
+				THREAD_SLEEP(1);
+				continue;
+			}
+
+			sweepLock->database = database;
+			break;
+		}
+
 		if (!gds__thread_start(sweep_database, database, THREAD_medium, 0, 0))
 			return;
 
@@ -2749,6 +2813,12 @@ static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
  *	Sweep database.
  *
  **************************************/
+ 	{
+ 		MutexLockGuard g(sweepLockMutex);
+		fb_assert(sweepLock->database == database);
+		sweepLock->thd = getThreadId();
+	}
+
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 	dpb.insertByte(isc_dpb_sweep, isc_dpb_records);
@@ -2765,12 +2835,18 @@ static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
 						&db_handle, dpb.getBufferLength(),
 						reinterpret_cast<const char*>(dpb.getBuffer()));
 
+	gds__free(database);
 	if (db_handle)
 	{
 		isc_detach_database(status_vector, &db_handle);
 	}
 
-	gds__free(database);
+ 	{
+ 		MutexLockGuard g(sweepLockMutex);
+		if (sweepLock->database && sweepLock->thd == getThreadId())
+			sweepLock->database = NULL;
+	}
+
 	return 0;
 }
 

@@ -6687,6 +6687,9 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 			engineShutdown = true;
 		}
 
+		// Make sure no sweep is starting
+		TRA_sweep_shutdown();
+
 		HalfStaticArray<Attachment*, 128> attachments;
 
 		{ // scope
