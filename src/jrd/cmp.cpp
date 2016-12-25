@@ -147,7 +147,7 @@ static void pass1_modify(thread_db*, CompilerScratch*, jrd_nod*);
 static RecordSelExpr* pass1_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
 static void pass1_source(thread_db*, CompilerScratch*, RecordSelExpr*, jrd_nod*, jrd_nod**, NodeStack&);
 static bool pass1_store(thread_db*, CompilerScratch*, jrd_nod*);
-static jrd_nod* pass1_update(thread_db*, CompilerScratch*, jrd_rel*, const trig_vec*, USHORT, USHORT,
+static jrd_nod* pass1_update(thread_db*, CompilerScratch*, jrd_rel*, const TrigVector*, USHORT, USHORT,
 	SecurityClass::flags_t, jrd_rel*, USHORT, USHORT);
 static void pass2_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
 static jrd_nod* pass2_union(thread_db*, CompilerScratch*, jrd_nod*);
@@ -161,7 +161,7 @@ static void process_map(thread_db*, CompilerScratch*, jrd_nod*, Format**);
 static SSHORT strcmp_space(const char*, const char*);
 static bool stream_in_rse(USHORT, const RecordSelExpr*);
 static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd_req* request);
-static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig_vec* triggers, jrd_rel* view);
+static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, TrigVector* triggers, jrd_rel* view);
 
 #ifdef CMP_DEBUG
 #include <stdarg.h>
@@ -249,7 +249,7 @@ jrd_nod* CMP_clone_node_opt(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 }
 
 
-inline void triggers_external_access(thread_db* tdbb, ExternalAccessList& list, trig_vec* tvec)
+inline void triggers_external_access(thread_db* tdbb, ExternalAccessList& list, TrigVector* tvec)
 /**************************************
  *
  *	t r i g g e r s _ e x t e r n a l _ a c c e s s
@@ -266,9 +266,9 @@ inline void triggers_external_access(thread_db* tdbb, ExternalAccessList& list, 
 		{
 			Trigger& t = (*tvec)[i];
 			t.compile(tdbb);
-			if (t.request)
+			if (t.trig_request)
 			{
-				build_external_access(tdbb, list, t.request);
+				build_external_access(tdbb, list, t.trig_request);
 			}
 		}
 	}
@@ -308,7 +308,7 @@ static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd
 			if (!relation)
 				continue;
 
-			trig_vec *vec1, *vec2;
+			RefPtr<TrigVector> vec1, vec2;
 			switch (item->exa_action)
 			{
 			case ExternalAccess::exa_insert:
@@ -333,7 +333,7 @@ static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd
 }
 
 
-static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig_vec* triggers, jrd_rel* view)
+static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, TrigVector* triggers, jrd_rel* view)
 {
 /**************************************
  *
@@ -355,13 +355,13 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 	{
 		Trigger& t = (*triggers)[i];
 		t.compile(tdbb);
-		if (!t.request)
+		if (!t.trig_request)
 		{
 			continue;
 		}
 
-		for (const AccessItem* access = t.request->req_access.begin();
-			access < t.request->req_access.end(); access++)
+		for (const AccessItem* access = t.trig_request->req_access.begin();
+			access < t.trig_request->req_access.end(); access++)
 		{
 			// If this is not a system relation, we don't post access check if:
 			//
@@ -390,7 +390,7 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 			const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
 			SCL_check_access(tdbb, sec_class,
 							(access->acc_view_id) ? access->acc_view_id : (view ? view->rel_id : 0),
-							t.request->req_trg_name, NULL, access->acc_mask,
+							t.trig_request->req_trg_name, NULL, access->acc_mask,
 							access->acc_type, access->acc_name, access->acc_r_name);
 		}
 	}
@@ -4414,8 +4414,8 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			priv |= SCL_read;
 		}
 
-		const trig_vec* trigger = (relation->rel_pre_erase) ?
-			relation->rel_pre_erase : relation->rel_post_erase;
+		RefPtr<TrigVector> trigger(relation->rel_pre_erase ?
+			relation->rel_pre_erase : relation->rel_post_erase);
 
 		// if we have a view with triggers, let's expand it
 
@@ -4599,7 +4599,7 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			priv |= SCL_read;
 		}
 
-		const trig_vec* trigger = (relation->rel_pre_modify) ?
+		const TrigVector* trigger = (relation->rel_pre_modify) ?
 			relation->rel_pre_modify : relation->rel_post_modify;
 
 		// if we have a view with triggers, let's expand it
@@ -5118,7 +5118,7 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		post_trigger_access(csb, relation, ExternalAccess::exa_insert, view);
 
-		const trig_vec* trigger = (relation->rel_pre_store) ?
+		const TrigVector* trigger = (relation->rel_pre_store) ?
 			relation->rel_pre_store : relation->rel_post_store;
 
 		// Check out insert. If this is an insert thru a view, verify the
@@ -5203,7 +5203,7 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 static jrd_nod* pass1_update(thread_db* tdbb,
 							CompilerScratch* csb,
 							jrd_rel* relation,
-							const trig_vec* trigger,
+							const TrigVector* trigger,
 							USHORT stream,
 							USHORT update_stream,
 							SecurityClass::flags_t priv,
@@ -6543,3 +6543,26 @@ static bool stream_in_rse(USHORT stream, const RecordSelExpr* rse)
 
 	return false;					// mark this RecordSelExpr as variant
 }
+
+
+void TrigVector::release()
+{
+	release(JRD_get_thread_data());
+}
+
+
+void TrigVector::release(thread_db* tdbb)
+{
+	if (--useCount == 0)
+	{
+		const iterator e = end();
+		for (iterator t = begin(); t != e; ++t)
+		{
+			if (t->trig_request)
+				CMP_release(tdbb, t->trig_request);
+		}
+
+		delete this;
+	}
+}
+

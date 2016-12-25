@@ -78,7 +78,30 @@ namespace Jrd
 	class BackupManager;
 	class vcl;
 
-	typedef Firebird::ObjectsArray<Trigger> trig_vec;
+	class TrigVector : public Firebird::ObjectsArray<Trigger>
+	{
+	public:
+		TrigVector(Firebird::MemoryPool& pool)
+			: Firebird::ObjectsArray<Trigger>(pool),
+			  useCount(0)
+		{ }
+
+		void addRef()
+		{
+			++useCount;
+		}
+
+		void release();
+		void release(thread_db* tdbb);
+
+	private:
+		Firebird::AtomicCounter useCount;
+
+		~TrigVector()
+		{
+			fb_assert(useCount.value() == 0);
+		}
+	};
 
 
 //
@@ -449,7 +472,7 @@ public:
 	vcl*		dbb_t_pages;			// pages number for transactions
 	vcl*		dbb_gen_id_pages;		// known pages for gen_id
 	BlobFilter*	dbb_blob_filters;		// known blob filters
-	trig_vec*	dbb_triggers[DB_TRIGGER_MAX];
+	TrigVector*	dbb_triggers[DB_TRIGGER_MAX];
 
 	DatabaseSnapshot::SharedData*	dbb_monitoring_data;	// monitoring data
 

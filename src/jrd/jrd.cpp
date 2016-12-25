@@ -438,7 +438,7 @@ private:
 
 void Jrd::Trigger::compile(thread_db* tdbb)
 {
-	if (!request /*&& !compile_in_progress*/)
+	if (!trig_request /*&& !compile_in_progress*/)
 	{
 		SET_TDBB(tdbb);
 
@@ -446,7 +446,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 
 		Database::CheckoutLockGuard guard(dbb, dbb->dbb_meta_mutex);
 
-		if (request)
+		if (trig_request)
 		{
 			return;
 		}
@@ -473,17 +473,17 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 									 csb->csb_dbg_info);
 			}
 
-			PAR_blr(tdbb, relation, blr.begin(), (ULONG) blr.getCount(), NULL, csb, &request,
+			PAR_blr(tdbb, relation, blr.begin(), (ULONG) blr.getCount(), NULL, csb, &trig_request,
 				(relation ? true : false), par_flags);
 		}
 		catch (const Exception&)
 		{
 			compile_in_progress = false;
 
-			if (request)
+			if (trig_request)
 			{
-				CMP_release(tdbb, request);
-				request = NULL;
+				CMP_release(tdbb, trig_request);
+				trig_request = NULL;
 			}
 			else {
 				dbb->deletePool(new_pool);
@@ -492,15 +492,15 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 			throw;
 		}
 
-		request->req_trg_name = name;
+		trig_request->req_trg_name = name;
 
 		if (sys_trigger)
 		{
-			request->req_flags |= req_sys_trigger;
+			trig_request->req_flags |= req_sys_trigger;
 		}
 		if (flags & TRG_ignore_perm)
 		{
-			request->req_flags |= req_ignore_perm;
+			trig_request->req_flags |= req_ignore_perm;
 		}
 
 		compile_in_progress = false;
@@ -509,13 +509,13 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 
 void Jrd::Trigger::release(thread_db* tdbb)
 {
-	if (blr.getCount() == 0 || !request || CMP_clone_is_active(request))
+	if (blr.getCount() == 0 || !trig_request || CMP_clone_is_active(trig_request))
 	{
 		return; // FALSE;
 	}
 
-	CMP_release(tdbb, request);
-	request = NULL;
+	CMP_release(tdbb, trig_request);
+	trig_request = NULL;
 	return; // TRUE;
 }
 
@@ -1495,7 +1495,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 			MET_load_db_triggers(tdbb, DB_TRIGGER_TRANS_COMMIT);
 			MET_load_db_triggers(tdbb, DB_TRIGGER_TRANS_ROLLBACK);
 
-			const trig_vec* trig_connect = dbb->dbb_triggers[DB_TRIGGER_CONNECT];
+			const TrigVector* trig_connect = dbb->dbb_triggers[DB_TRIGGER_CONNECT];
 			if (trig_connect && !trig_connect->isEmpty())
 			{
 				// Start a transaction to execute ON CONNECT triggers.
@@ -6292,7 +6292,7 @@ static void purge_attachment(thread_db* tdbb, Attachment* attachment, const bool
 	{
 		try
 		{
-			const trig_vec* trig_disconnect = dbb->dbb_triggers[DB_TRIGGER_DISCONNECT];
+			const TrigVector* trig_disconnect = dbb->dbb_triggers[DB_TRIGGER_DISCONNECT];
 			if (!(attachment->att_flags & ATT_no_db_triggers) &&
 				!(attachment->att_flags & ATT_shutdown) &&
 				trig_disconnect && !trig_disconnect->isEmpty())

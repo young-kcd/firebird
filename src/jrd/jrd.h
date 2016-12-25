@@ -148,7 +148,7 @@ class Trigger
 public:
 	Firebird::HalfStaticArray<UCHAR, 128> blr;	// BLR code
 	Firebird::HalfStaticArray<UCHAR, 128> debugInfo;	// debug info
-	jrd_req*	request;					// Compiled request. Gets filled on first invocation
+	jrd_req*	trig_request;				// Compiled request. Gets filled on first invocation
 	bool		compile_in_progress;
 	bool		sys_trigger;
 	UCHAR		type;						// Trigger type

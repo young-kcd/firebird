@@ -194,7 +194,7 @@ static void execute_looper(thread_db*, jrd_req*, jrd_tra*, jrd_nod*, jrd_req::re
 static void exec_sql(thread_db*, jrd_req*, DSC *);
 static void execute_procedure(thread_db*, jrd_nod*);
 static jrd_nod* execute_statement(thread_db*, jrd_req*, jrd_nod*);
-static jrd_req* execute_triggers(thread_db*, trig_vec**, record_param*, record_param*,
+static jrd_req* execute_triggers(thread_db*, TrigVector**, record_param*, record_param*,
 	jrd_req::req_ta, SSHORT);
 static void get_string(thread_db*, jrd_req*, jrd_nod*, Firebird::string&, bool = false);
 static void looper_seh(thread_db*, jrd_req*, jrd_nod*);
@@ -215,7 +215,7 @@ static bool test_and_fixup_error(thread_db*, const PsqlException*, jrd_req*);
 static void trigger_failure(thread_db*, jrd_req*);
 static void validate(thread_db*, jrd_nod*);
 inline void verb_cleanup(thread_db*, jrd_tra*);
-inline void PreModifyEraseTriggers(thread_db*, trig_vec**, SSHORT, record_param*,
+inline void PreModifyEraseTriggers(thread_db*, TrigVector**, SSHORT, record_param*,
 	record_param*, jrd_req::req_ta);
 static void stuff_stack_trace(const jrd_req*);
 
@@ -1183,7 +1183,7 @@ static void cleanup_rpb(thread_db* tdbb, record_param* rpb)
 }
 
 inline void PreModifyEraseTriggers(thread_db* tdbb,
-								   trig_vec** trigs,
+								   TrigVector** trigs,
 								   SSHORT which_trig,
 								   record_param* rpb,
 								   record_param* rec,
@@ -1611,7 +1611,7 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 
 
 static jrd_req* execute_triggers(thread_db* tdbb,
-								trig_vec** triggers,
+								TrigVector** triggers,
 								record_param* old_rpb,
 								record_param* new_rpb,
 								jrd_req::req_ta trigger_action, SSHORT which_trig)
@@ -1636,7 +1636,7 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 	jrd_req* const request = tdbb->getRequest();
 	jrd_tra* const transaction = request ? request->req_transaction : tdbb->getTransaction();
 
-	trig_vec* vector = *triggers;
+	TrigVector* vector = *triggers;
 	jrd_req* result = NULL;
 	Record* const old_rec = old_rpb ? old_rpb->rpb_record : NULL;
 	Record* const new_rec = new_rpb ? new_rpb->rpb_record : NULL;
@@ -1664,10 +1664,10 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 
 	try
 	{
-		for (trig_vec::iterator ptr = vector->begin(); ptr != vector->end(); ++ptr)
+		for (TrigVector::iterator ptr = vector->begin(); ptr != vector->end(); ++ptr)
 		{
 			ptr->compile(tdbb);
-			trigger = EXE_find_request(tdbb, ptr->request, false);
+			trigger = EXE_find_request(tdbb, ptr->trig_request, false);
 
 			if (!is_db_trigger)
 			{
