@@ -588,7 +588,7 @@ void JrdStatement::release(thread_db* tdbb)
 
 // Check that we have enough rights to access all resources this list of triggers touches.
 void JrdStatement::verifyTriggerAccess(thread_db* tdbb, jrd_rel* ownerRelation,
-	trig_vec* triggers, jrd_rel* view)
+	TrigVector* triggers, jrd_rel* view)
 {
 	if (!triggers)
 		return;
@@ -640,7 +640,7 @@ void JrdStatement::verifyTriggerAccess(thread_db* tdbb, jrd_rel* ownerRelation,
 
 // Invoke buildExternalAccess for triggers in vector
 inline void JrdStatement::triggersExternalAccess(thread_db* tdbb, ExternalAccessList& list,
-	trig_vec* tvec)
+	TrigVector* tvec)
 {
 	if (!tvec)
 		return;
@@ -687,7 +687,7 @@ void JrdStatement::buildExternalAccess(thread_db* tdbb, ExternalAccessList& list
 			if (!relation)
 				continue;
 
-			trig_vec *vec1, *vec2;
+			RefPtr<TrigVector> vec1, vec2;
 
 			switch (item->exa_action)
 			{

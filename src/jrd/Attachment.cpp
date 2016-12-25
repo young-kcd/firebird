@@ -758,3 +758,4 @@ JAttachment* Attachment::getInterface() throw()
 {
 	return att_stable->getInterface();
 }
+

@@ -1869,7 +1869,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 					// load DDL triggers
 					MET_load_ddl_triggers(tdbb);
 
-					const trig_vec* trig_connect = attachment->att_triggers[DB_TRIGGER_CONNECT];
+					const TrigVector* trig_connect = attachment->att_triggers[DB_TRIGGER_CONNECT];
 					if (trig_connect && !trig_connect->isEmpty())
 					{
 						// Start a transaction to execute ON CONNECT triggers.
@@ -6902,7 +6902,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 	{
 		try
 		{
-			const trig_vec* const trig_disconnect =
+			const TrigVector* const trig_disconnect =
 				attachment->att_triggers[DB_TRIGGER_DISCONNECT];
 
 			if (!forcedPurge &&
@@ -8077,3 +8077,29 @@ void JRD_cancel_operation(thread_db* /*tdbb*/, Jrd::Attachment* attachment, int 
 		fb_assert(false);
 	}
 }
+
+
+void TrigVector::release() const
+{
+	release(JRD_get_thread_data());
+}
+
+
+void TrigVector::release(thread_db* tdbb) const
+{
+	if (--useCount == 0)
+	{
+		const const_iterator e = end();
+		for (const_iterator t = begin(); t != e; ++t)
+		{
+			JrdStatement* stmt = t->statement;
+			if (stmt)
+				stmt->release(tdbb);
+
+			delete t->extTrigger;
+		}
+
+		delete this;
+	}
+}
+

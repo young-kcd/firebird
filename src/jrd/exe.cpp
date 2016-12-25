@@ -544,10 +544,10 @@ void EXE_execute_ddl_triggers(thread_db* tdbb, jrd_tra* transaction, bool preTri
 
 		try
 		{
-			trig_vec triggers;
-			trig_vec* triggersPtr = &triggers;
+			TrigVector triggers;
+			TrigVector* triggersPtr = &triggers;
 
-			for (trig_vec::iterator i = attachment->att_ddl_triggers->begin();
+			for (TrigVector::iterator i = attachment->att_ddl_triggers->begin();
 				 i != attachment->att_ddl_triggers->end();
 				 ++i)
 			{
@@ -988,7 +988,7 @@ static void execute_looper(thread_db* tdbb,
 
 
 void EXE_execute_triggers(thread_db* tdbb,
-								trig_vec** triggers,
+								TrigVector** triggers,
 								record_param* old_rpb,
 								record_param* new_rpb,
 								TriggerAction trigger_action, StmtNode::WhichTrigger which_trig)
@@ -1012,7 +1012,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 	jrd_req* const request = tdbb->getRequest();
 	jrd_tra* const transaction = request ? request->req_transaction : tdbb->getTransaction();
 
-	trig_vec* vector = *triggers;
+	TrigVector* vector = *triggers;
 	Record* const old_rec = old_rpb ? old_rpb->rpb_record : NULL;
 	Record* const new_rec = new_rpb ? new_rpb->rpb_record : NULL;
 
@@ -1038,7 +1038,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 
 	try
 	{
-		for (trig_vec::iterator ptr = vector->begin(); ptr != vector->end(); ++ptr)
+		for (TrigVector::iterator ptr = vector->begin(); ptr != vector->end(); ++ptr)
 		{
 			ptr->compile(tdbb);
 

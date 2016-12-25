@@ -77,7 +77,7 @@ namespace Jrd
 	class jrd_rel;
 	class jrd_prc;
 	class Trigger;
-	typedef Firebird::ObjectsArray<Trigger> trig_vec;
+	class TrigVector;
 	class Function;
 	class JrdStatement;
 	class Validation;
@@ -292,8 +292,8 @@ public:
 
 	vec<jrd_rel*>*					att_relations;			// relation vector
 	Firebird::Array<jrd_prc*>		att_procedures;			// scanned procedures
-	trig_vec*						att_triggers[DB_TRIGGER_MAX];
-	trig_vec*						att_ddl_triggers;
+	TrigVector*						att_triggers[DB_TRIGGER_MAX];
+	TrigVector*						att_ddl_triggers;
 	Firebird::Array<Function*>		att_functions;			// User defined functions
 
 	Firebird::Array<JrdStatement*>	att_internal;			// internal statements
@@ -555,7 +555,6 @@ public:
 private:
 	void destroy(Attachment* attachment);
 };
-
 
 } // namespace Jrd
 

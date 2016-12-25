@@ -135,8 +135,6 @@ class PreparedStatement;
 class TraceManager;
 class MessageNode;
 
-// The database block, the topmost block in the metadata
-// cache for a database
 
 // Relation trigger definition
 
@@ -169,6 +167,39 @@ public:
 		  extBody(p),
 		  extTrigger(NULL)
 	{}
+};
+
+
+// Array of triggers (suppose separate arrays for triggers of different types)
+
+class TrigVector : public Firebird::ObjectsArray<Trigger>
+{
+public:
+	explicit TrigVector(Firebird::MemoryPool& pool)
+		: Firebird::ObjectsArray<Trigger>(pool),
+		  useCount(0)
+	{ }
+
+	TrigVector()
+		: Firebird::ObjectsArray<Trigger>(),
+		  useCount(0)
+	{ }
+
+	void addRef() const
+	{
+		++useCount;
+	}
+
+	void release() const;
+	void release(thread_db* tdbb) const;
+
+	~TrigVector()
+	{
+		fb_assert(useCount.value() == 0);
+	}
+
+private:
+	mutable Firebird::AtomicCounter useCount;
 };
 
 

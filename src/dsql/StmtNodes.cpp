@@ -87,12 +87,12 @@ static void makeValidation(thread_db* tdbb, CompilerScratch* csb, StreamType str
 static StmtNode* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, StreamType orgStream,
 	StreamType newStream, bool remap);
 static RelationSourceNode* pass1Update(thread_db* tdbb, CompilerScratch* csb, jrd_rel* relation,
-	const trig_vec* trigger, StreamType stream, StreamType updateStream, SecurityClass::flags_t priv,
+	const TrigVector* trigger, StreamType stream, StreamType updateStream, SecurityClass::flags_t priv,
 	jrd_rel* view, StreamType viewStream, StreamType viewUpdateStream);
 static void pass1Validations(thread_db* tdbb, CompilerScratch* csb, Array<ValidateInfo>& validations);
 static void postTriggerAccess(CompilerScratch* csb, jrd_rel* ownerRelation,
 	ExternalAccess::exa_act operation, jrd_rel* view);
-static void preModifyEraseTriggers(thread_db* tdbb, trig_vec** trigs,
+static void preModifyEraseTriggers(thread_db* tdbb, TrigVector** trigs,
 	StmtNode::WhichTrigger whichTrig, record_param* rpb, record_param* rec, TriggerAction op);
 static void validateExpressions(thread_db* tdbb, const Array<ValidateInfo>& validations);
 
@@ -2224,8 +2224,8 @@ void EraseNode::pass1Erase(thread_db* tdbb, CompilerScratch* csb, EraseNode* nod
 		if (parent)
 			priv |= SCL_select;
 
-		const trig_vec* trigger = relation->rel_pre_erase ?
-			relation->rel_pre_erase : relation->rel_post_erase;
+		RefPtr<const TrigVector> trigger(relation->rel_pre_erase ?
+			relation->rel_pre_erase : relation->rel_post_erase);
 
 		// If we have a view with triggers, let's expand it.
 
@@ -5928,8 +5928,8 @@ void ModifyNode::pass1Modify(thread_db* tdbb, CompilerScratch* csb, ModifyNode* 
 		if (parent)
 			priv |= SCL_select;
 
-		const trig_vec* trigger = (relation->rel_pre_modify) ?
-			relation->rel_pre_modify : relation->rel_post_modify;
+		RefPtr<const TrigVector> trigger(relation->rel_pre_modify ?
+			relation->rel_pre_modify : relation->rel_post_modify);
 
 		// If we have a view with triggers, let's expand it.
 
@@ -6693,8 +6693,8 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 
 		postTriggerAccess(csb, relation, ExternalAccess::exa_insert, view);
 
-		const trig_vec* trigger = relation->rel_pre_store ?
-			relation->rel_pre_store : relation->rel_post_store;
+		RefPtr<const TrigVector> trigger(relation->rel_pre_store ?
+			relation->rel_pre_store : relation->rel_post_store);
 
 		// Check out insert. If this is an insert thru a view, verify the view by checking for read
 		// access on the base table. If field-level select privileges are implemented, this needs
@@ -9092,7 +9092,7 @@ static StmtNode* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, StreamTy
 // If it's a view update, make sure the view is updatable, and return the view source for redirection.
 // If it's a simple relation, return NULL.
 static RelationSourceNode* pass1Update(thread_db* tdbb, CompilerScratch* csb, jrd_rel* relation,
-	const trig_vec* trigger, StreamType stream, StreamType updateStream, SecurityClass::flags_t priv,
+	const TrigVector* trigger, StreamType stream, StreamType updateStream, SecurityClass::flags_t priv,
 	jrd_rel* view, StreamType viewStream, StreamType viewUpdateStream)
 {
 	SET_TDBB(tdbb);
@@ -9219,7 +9219,7 @@ static void postTriggerAccess(CompilerScratch* csb, jrd_rel* ownerRelation,
 }
 
 // Perform operation's pre-triggers, storing active rpb in chain.
-static void preModifyEraseTriggers(thread_db* tdbb, trig_vec** trigs,
+static void preModifyEraseTriggers(thread_db* tdbb, TrigVector** trigs,
 	StmtNode::WhichTrigger whichTrig, record_param* rpb, record_param* rec, TriggerAction op)
 {
 	if (!tdbb->getTransaction()->tra_rpblist)

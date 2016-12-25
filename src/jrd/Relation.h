@@ -257,12 +257,12 @@ public:
 	Lock*		rel_gc_lock;		// garbage collection lock
 	IndexLock*	rel_index_locks;	// index existence locks
 	IndexBlock*	rel_index_blocks;	// index blocks for caching index info
-	trig_vec*	rel_pre_erase; 		// Pre-operation erase trigger
-	trig_vec*	rel_post_erase;		// Post-operation erase trigger
-	trig_vec*	rel_pre_modify;		// Pre-operation modify trigger
-	trig_vec*	rel_post_modify;	// Post-operation modify trigger
-	trig_vec*	rel_pre_store;		// Pre-operation store trigger
-	trig_vec*	rel_post_store;		// Post-operation store trigger
+	TrigVector*	rel_pre_erase; 		// Pre-operation erase trigger
+	TrigVector*	rel_post_erase;		// Post-operation erase trigger
+	TrigVector*	rel_pre_modify;		// Pre-operation modify trigger
+	TrigVector*	rel_post_modify;	// Post-operation modify trigger
+	TrigVector*	rel_pre_store;		// Pre-operation store trigger
+	TrigVector*	rel_post_store;		// Post-operation store trigger
 	prim		rel_primary_dpnds;	// foreign dependencies on this relation's primary key
 	frgn		rel_foreign_refs;	// foreign references to other relations' primary keys
 
