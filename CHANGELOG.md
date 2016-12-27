@@ -25,6 +25,9 @@
 
 ## Improvements
 
+* [CORE-5430](http://tracker.firebirdsql.org/browse/CORE-5430): Support for INCREMENT option in identity columns  
+  Contributor(s): Adriano dos Santos Fernandes
+
 * [CORE-5119](http://tracker.firebirdsql.org/browse/CORE-5119): Support autocommit mode in SET TRANSACTION statement  
   Contributor(s): Dmitry Yemanov
 

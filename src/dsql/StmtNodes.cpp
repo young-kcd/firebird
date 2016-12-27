@@ -6839,17 +6839,13 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 
 			if (generatorName.hasData())
 			{
-				// Make a gen_id(<generator name>, 1) expression.
+				// Make a (next value for <generator name>) expression.
 
-				LiteralNode* literal = FB_NEW_POOL(csb->csb_pool) LiteralNode(csb->csb_pool);
-				SLONG* increment = FB_NEW_POOL(csb->csb_pool) SLONG(1);
-				literal->litDesc.makeLong(0, increment);
-
-				GenIdNode* const genNode = FB_NEW_POOL(csb->csb_pool)
-					GenIdNode(csb->csb_pool, (csb->blrVersion == 4), generatorName, literal, false, true);
+				GenIdNode* const genNode = FB_NEW_POOL(csb->csb_pool) GenIdNode(
+					csb->csb_pool, (csb->blrVersion == 4), generatorName, NULL, true, true);
 
 				bool sysGen = false;
-				if (!MET_load_generator(tdbb, genNode->generator, &sysGen))
+				if (!MET_load_generator(tdbb, genNode->generator, &sysGen, &genNode->step))
 					PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(generatorName));
 
 				if (sysGen)

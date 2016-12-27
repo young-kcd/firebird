@@ -698,9 +698,9 @@ public:
 	const bool dialect1;
 	GeneratorItem generator;
 	NestConst<ValueExprNode> arg;
+	SLONG step;
 
 private:
-	SLONG step;
 	bool sysGen;
 	const bool implicit;
 	const bool identity;

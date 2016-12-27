@@ -1943,6 +1943,8 @@ const
 	gds_dyn_cant_use_in_foreignkey       = 336068897;
 	isc_dyn_defvaldecl_package_func      = 336068898;
 	gds_dyn_defvaldecl_package_func      = 336068898;
+	isc_dyn_cant_use_zero_inc_ident      = 336068904;
+	gds_dyn_cant_use_zero_inc_ident      = 336068904;
 	isc_gbak_unknown_switch              = 336330753;
 	gds_gbak_unknown_switch              = 336330753;
 	isc_gbak_page_size_missing           = 336330754;

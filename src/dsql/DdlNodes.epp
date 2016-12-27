@@ -6279,6 +6279,13 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 		if (clause->identity)
 		{
+			if (clause->identity->increment.orElse(1) == 0)
+			{
+				status_exception::raise(Arg::Gds(isc_dyn_cant_use_zero_inc_ident) <<
+					Arg::Str(field->fld_name) <<
+					Arg::Str(name));
+			}
+
 			dsc desc;
 			MET_get_domain(tdbb, *tdbb->getDefaultPool(), fieldDefinition.fieldSource, &desc, NULL);
 
@@ -6291,7 +6298,9 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 			DYN_UTIL_generate_generator_name(tdbb, fieldDefinition.identitySequence);
 
 			CreateAlterSequenceNode::store(tdbb, transaction, fieldDefinition.identitySequence,
-				fb_sysflag_identity_generator, clause->identityStart, 1);
+				fb_sysflag_identity_generator,
+				clause->identity->start.orElse(0),
+				clause->identity->increment.orElse(1));
 		}
 
 		BlrDebugWriter::BlrData defaultValue;
@@ -7838,7 +7847,7 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 					}
 				END_MODIFY
 			}
-			else if (clause->identityRestart)
+			else if (clause->identityRestart || clause->identityIncrement.specified)
 			{
 				bool found = false;
 				AutoRequest request2;
@@ -7849,11 +7858,29 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 				{
 					const SLONG id = GEN.RDB$GENERATOR_ID;
 					const MetaName genName(RFR.RDB$GENERATOR_NAME);
-					const SINT64 val = clause->identityRestartValue.specified ?
-						clause->identityRestartValue.value :
-						(!GEN.RDB$INITIAL_VALUE.NULL ? GEN.RDB$INITIAL_VALUE : 0);
 
-					transaction->getGenIdCache()->put(id, val);
+					if (clause->identityRestart)
+					{
+						const SINT64 val = clause->identityRestartValue.specified ?
+							clause->identityRestartValue.value :
+							(!GEN.RDB$INITIAL_VALUE.NULL ? GEN.RDB$INITIAL_VALUE : 0);
+
+						transaction->getGenIdCache()->put(id, val);
+					}
+					else if (clause->identityIncrement.specified)
+					{
+						if (clause->identityIncrement.value == 0)
+						{
+							status_exception::raise(Arg::Gds(isc_dyn_cant_use_zero_inc_ident) <<
+								Arg::Str(field->fld_name) <<
+								Arg::Str(name));
+						}
+
+						MET_update_generator_increment(tdbb, id, clause->identityIncrement.value);
+					}
+					else
+						fb_assert(false);
+
 					dsc desc;
 					desc.makeText((USHORT) genName.length(), ttype_metadata,
 						(UCHAR*) genName.c_str());

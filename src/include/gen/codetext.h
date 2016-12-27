@@ -970,6 +970,7 @@ static const struct {
 	{"dyn_cant_use_zero_increment", 336068896},
 	{"dyn_cant_use_in_foreignkey", 336068897},
 	{"dyn_defvaldecl_package_func", 336068898},
+	{"dyn_cant_use_zero_inc_ident", 336068904},
 	{"gbak_unknown_switch", 336330753},
 	{"gbak_page_size_missing", 336330754},
 	{"gbak_page_size_toobig", 336330755},

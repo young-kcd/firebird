@@ -958,6 +958,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, '42', '000', 8, 288, 'dyn_cant_use_zero_increment', NULL, NULL)
 (-901, '42', '000', 8, 289, 'dyn_cant_use_in_foreignkey', NULL, NULL)
 (-901, '42', '000', 8, 290, 'dyn_defvaldecl_package_func', NULL, NULL)
+(-901, '42', '000', 8, 296, 'dyn_cant_use_zero_inc_ident', NULL, NULL)
 --  GBAK
 (-901, '00', '000', 12, 1, 'gbak_unknown_switch', NULL, NULL)
 (-901, '00', '000', 12, 2, 'gbak_page_size_missing', NULL, NULL)

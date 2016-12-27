@@ -1948,6 +1948,8 @@ C --
       PARAMETER (GDS__dyn_cant_use_in_foreignkey       = 336068897)
       INTEGER*4 GDS__dyn_defvaldecl_package_func     
       PARAMETER (GDS__dyn_defvaldecl_package_func      = 336068898)
+      INTEGER*4 GDS__dyn_cant_use_zero_inc_ident     
+      PARAMETER (GDS__dyn_cant_use_zero_inc_ident      = 336068904)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          
