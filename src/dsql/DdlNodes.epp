@@ -7847,6 +7847,21 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 					}
 				END_MODIFY
 			}
+			else if (clause->dropIdentity)
+			{
+				if (RFR.RDB$GENERATOR_NAME.NULL)
+				{
+					// msg 285: "Column @1 is not an identity column"
+					status_exception::raise(Arg::PrivateDyn(285) << field->fld_name);
+				}
+
+				DropSequenceNode::deleteIdentity(tdbb, transaction, RFR.RDB$GENERATOR_NAME);
+
+				MODIFY RFR
+					RFR.RDB$GENERATOR_NAME.NULL = TRUE;
+					RFR.RDB$IDENTITY_TYPE.NULL = TRUE;
+				END_MODIFY
+			}
 			else if (clause->identityRestart || clause->identityIncrement.specified)
 			{
 				bool found = false;

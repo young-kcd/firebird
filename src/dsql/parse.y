@@ -3944,6 +3944,14 @@ alter_op($relationNode)
 			clause->identityIncrement = $6;
 			$relationNode->clauses.add(clause);
 		}
+	| col_opt symbol_column_name DROP IDENTITY
+		{
+			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
+			clause->field = newNode<dsql_fld>();
+			clause->field->fld_name = *$2;
+			clause->dropIdentity = true;
+			$relationNode->clauses.add(clause);
+		}
 	| ALTER SQL SECURITY DEFINER
 		{
 			RelationNode::AlterSqlSecurityClause* clause =

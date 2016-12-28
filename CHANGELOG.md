@@ -25,6 +25,9 @@
 
 ## Improvements
 
+* [CORE-5430](http://tracker.firebirdsql.org/browse/CORE-5431): Support for DROP IDENTITY clause  
+  Contributor(s): Adriano dos Santos Fernandes
+
 * [CORE-5430](http://tracker.firebirdsql.org/browse/CORE-5430): Support for INCREMENT option in identity columns  
   Contributor(s): Adriano dos Santos Fernandes
 

@@ -19,7 +19,8 @@ Syntax:
 
     <alter column definition> ::=
         <name> RESTART [ WITH <value> ] |
-        <name> SET INCREMENT [ BY ] <value>
+        <name> SET INCREMENT [ BY ] <value> |
+        <name> DROP IDENTITY
 
 Syntax rules:
     - The type of an identity column must be an exact number type with zero scale. That includes:
@@ -74,3 +75,9 @@ select * from objects order by id;
            2 Book
           10 Computer
           15 Pencil
+
+alter table objects
+  alter id set increment by 2;
+
+alter table objects
+  alter id drop identity;
