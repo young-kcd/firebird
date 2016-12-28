@@ -1,4 +1,60 @@
   **************************
+  * v2.5.7
+  **************************
+
+    * Bugfix CORE-5429
+        Segfault when attachment is abandoned for some reason during sweep thread startup
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5428
+        Rare segfault when preparing SQL statement working with a table with triggers
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5418
+        Inconsistent output when retrieving the server log via Services API
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5417
+        Engine could hang up if auto-sweep is starting while database is shutting down
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5401
+        High load in touch thread
+      Contributor(s):
+        David Hollings <david.hollings at parcelperfect.com>
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5387
+        Memory leak - a lot of 4Kb-sized regions remain mapped till the death of the process
+      Contributor(s):
+        Dmitriy Starodubov <dmitry.starodubov at red-soft.biz>
+
+    * Bugfix CORE-5318
+        Bug in ESQL applications
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5236
+        IN/ANY/ALL predicates may cause sub-optimal (late filtering) execution of joins
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5120
+        Configure: snprintf function is already defined on MSVC 2015
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4742
+        gfix -shut single -force 0 ..... not working as documented with 2.5.3 & 2.5.4
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+
+  **************************
   * v2.5.6
   **************************
 
