@@ -1094,8 +1094,6 @@ IPluginSet* PluginManager::getPlugins(CheckStatusWrapper* status, unsigned int i
 
 void PluginManager::releasePlugin(IPluginBase* plugin)
 {
-	MutexLockGuard g(plugins->mutex, FB_FUNCTION);
-
 	IReferenceCounted* parent = plugin->getOwner();
 
 	if (plugin->release() == 0)
@@ -1103,6 +1101,8 @@ void PluginManager::releasePlugin(IPluginBase* plugin)
 		///fb_assert(parent);
 		if (parent)
 		{
+			MutexLockGuard g(plugins->mutex, FB_FUNCTION);
+
 			parent->release();
 			if (plugins->wakeIt)
 			{
