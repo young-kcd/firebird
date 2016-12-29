@@ -2,6 +2,9 @@
 
 ## Bugfixes
 
+* [CORE-5408](http://tracker.firebirdsql.org/browse/CORE-5408): Result of boolean expression can not be concatenated with string literal  
+  Contributor(s): Adriano dos Santos Fernandes
+
 * [CORE-5237](http://tracker.firebirdsql.org/browse/CORE-5237): Invalid handling of dot (.) and asterisk (*) in config file name and path for include clause  
   Contributor(s): Dimitry Sibiryakov
 
@@ -37,7 +40,16 @@
 * [CORE-2557](http://tracker.firebirdsql.org/browse/CORE-2557): Grants on MON$ tables  
   Contributor(s): Alex Peshkoff
 
+* [CORE-2216](http://tracker.firebirdsql.org/browse/CORE-2216): NBackup as online dump  
+  Contributor(s): Roman Simakov, Vlad Khorsun
+
 * [CORE-2192](http://tracker.firebirdsql.org/browse/CORE-2192): Extend maximum database page size to 32KB  
+  Contributor(s): Dmitry Yemanov
+
+* [CORE-2040](http://tracker.firebirdsql.org/browse/CORE-2040): Allow exception name and possibly exception text to be determined within a "WHEN ANY" error handling block  
+  Contributor(s): Dmitry Yemanov
+
+* [CORE-1132](http://tracker.firebirdsql.org/browse/CORE-1132): Exception context in PSQL exception handlers  
   Contributor(s): Dmitry Yemanov
 
 * [CORE-749](http://tracker.firebirdsql.org/browse/CORE-749): Increase maximum length of object names to 63 characters  
@@ -45,14 +57,17 @@
 
 ## New features
 
-* [CORE-5346](http://tracker.firebirdsql.org/browse/CORE-5346): Named windows
+* [CORE-5346](http://tracker.firebirdsql.org/browse/CORE-5346): Named windows  
   Contributor(s): Adriano dos Santos Fernandes
 
 * [CORE-5343](http://tracker.firebirdsql.org/browse/CORE-5343): Allow particular DBA privileges to be transferred to regular users  
   Contributor(s): Alex Peshkoff
 
-* [CORE-3647](http://tracker.firebirdsql.org/browse/CORE-3647): Frames for window functions
+* [CORE-3647](http://tracker.firebirdsql.org/browse/CORE-3647): Frames for window functions  
   Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-2990](http://tracker.firebirdsql.org/browse/CORE-2990): Physical (page-level) standby replication / page shipping  
+  Contributor(s): Roman Simakov, Vlad Khorsun
 
 * [CORE-2762](http://tracker.firebirdsql.org/browse/CORE-2762): New built-in function to check whether some role is implicitly active  
   Contributor(s): Roman Simakov
