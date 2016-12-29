@@ -1,4 +1,135 @@
   **************************
+  * v3.0.2
+  **************************
+
+    * Bugfix CORE-5432
+        Performance regression in Classic Server: too much time is spent during context switches
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5428
+        Rare segfault when preparing request working with a table with triggers
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5425
+        Server hangs under load test
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5417
+        Engine could hang up if auto-sweep is starting while database is shutting down
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5410
+        Dependencies are not stored when using some type of contructions in subroutines
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5393
+        Bad optimization of some operations with views containing subqueries
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5392
+        BUGCHECK 179 (decompression overran buffer) or unexpected lock conflict may happen during record versions backout
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5390
+        ISQL crashes corrupting memory when statement length is greater than 10 MB
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5384
+        Plugin manager fails to provide appropriate config information when name of configuration file is set in plugins.conf
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5383
+        Dependencies in PSQL packages are not recognised
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5382
+        Incorrect processing (truncation) of SQL statement longer than 10MB
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5381
+        Regression: could not execute query (select from view with nested view)
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5367
+        Regression: (boolean) parameters as search condition no longer allowed
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5366
+        Regression: could not use CASE expression with more than 255 conditions
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5359
+        New API - MessageMetadata's getScale() returns int but MetadataBuilder's setScale() wants unsigned
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5350
+        Assertion in CachedMasterInterface::set
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5314
+        UDFs declared with large varchars take excessive time to execute
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5120
+        Configure: snprintf function is already defined on MSVC 2015
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1894
+        Circular dependencies between computed fields crashs the engine
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Improvement CORE-5374
+        Make database name available to crypt plugin
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-5257
+        Enable nested keys in plugin configuration
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-5204
+        Build the Linux code with --enable-binreloc and create an option in the installer
+        to install in different locations than /opt/firebird
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-3637
+        Port for Linux/m68k
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * New feature CORE-5332
+        libfbclient.so for Android (x86/x86-64/arm64)
+      Contributor(s):
+        Marius Adrian Popa <mapopa at gmail.com>
+
+    * New feature CORE-3885
+        Android port (arm32)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+
+  **************************
   * v3.0.1
   **************************
 
