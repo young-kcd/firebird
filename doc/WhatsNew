@@ -23,7 +23,7 @@
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-5410
-        Dependencies are not stored when using some type of contructions in subroutines
+        Dependencies are not stored when using some type of constructions in subroutines
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
