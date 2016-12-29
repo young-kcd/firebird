@@ -7447,16 +7447,8 @@ void thread_db::setDatabase(Database* val)
 {
 	if (database != val)
 	{
-		const bool wasActive = database && (priorThread || nextThread || database->dbb_active_threads == this);
-
-		if (wasActive)
-			deactivate();
-
 		database = val;
 		dbbStat = val ? &val->dbb_stats : RuntimeStatistics::getDummy();
-
-		if (wasActive)
-			activate();
 	}
 }
 

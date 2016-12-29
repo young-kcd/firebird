@@ -96,14 +96,6 @@ namespace Jrd
 		delete dbb_monitoring_data;
 		delete dbb_backup_manager;
 		delete dbb_crypto_manager;
-
-		while (dbb_active_threads)
-		{
-			thread_db* tdbb = dbb_active_threads;
-			tdbb->deactivate();
-			tdbb->setDatabase(NULL);
-		}
-
 		delete dbb_tip_cache;
 
 		fb_assert(!locked());
