@@ -18,9 +18,12 @@ Syntax:
         INCREMENT [ BY ] <value>
 
     <alter column definition> ::=
-        <name> RESTART [ WITH <value> ] |
-        <name> SET INCREMENT [ BY ] <value> |
+        <name> <alter identity column option>... |
         <name> DROP IDENTITY
+
+    <alter identity column option> ::=
+        RESTART [ WITH <value> ] |
+        SET INCREMENT [ BY ] <value>
 
 Syntax rules:
     - The type of an identity column must be an exact number type with zero scale. That includes:

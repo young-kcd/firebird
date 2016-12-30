@@ -6214,7 +6214,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		ObjectsArray<CreateDropConstraint> constraints;
 		bool notNullFlag = false;
 
-		if (clause->identity)
+		if (clause->identityOptions)
 			notNullFlag = true;	// identity columns are implicitly not null
 
 		for (ObjectsArray<AddConstraintClause>::iterator ptr = clause->constraints.begin();
@@ -6277,9 +6277,9 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		if (clause->collate.hasData())
 			DDL_resolve_intl_type(dsqlScratch, field, clause->collate);
 
-		if (clause->identity)
+		if (clause->identityOptions)
 		{
-			if (clause->identity->increment.orElse(1) == 0)
+			if (clause->identityOptions->increment.orElse(1) == 0)
 			{
 				status_exception::raise(Arg::Gds(isc_dyn_cant_use_zero_inc_ident) <<
 					Arg::Str(field->fld_name) <<
@@ -6299,8 +6299,8 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 			CreateAlterSequenceNode::store(tdbb, transaction, fieldDefinition.identitySequence,
 				fb_sysflag_identity_generator,
-				clause->identity->start.orElse(0),
-				clause->identity->increment.orElse(1));
+				clause->identityOptions->startValue.orElse(0),
+				clause->identityOptions->increment.orElse(1));
 		}
 
 		BlrDebugWriter::BlrData defaultValue;
@@ -7862,7 +7862,7 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 					RFR.RDB$IDENTITY_TYPE.NULL = TRUE;
 				END_MODIFY
 			}
-			else if (clause->identityRestart || clause->identityIncrement.specified)
+			else if (clause->identityOptions)
 			{
 				bool found = false;
 				AutoRequest request2;
@@ -7874,27 +7874,26 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 					const SLONG id = GEN.RDB$GENERATOR_ID;
 					const MetaName genName(RFR.RDB$GENERATOR_NAME);
 
-					if (clause->identityRestart)
+					if (clause->identityOptions->restart)
 					{
-						const SINT64 val = clause->identityRestartValue.specified ?
-							clause->identityRestartValue.value :
-							(!GEN.RDB$INITIAL_VALUE.NULL ? GEN.RDB$INITIAL_VALUE : 0);
+						const SINT64 val = clause->identityOptions->startValue
+							.orElse(!GEN.RDB$INITIAL_VALUE.NULL ? GEN.RDB$INITIAL_VALUE : 0);
 
 						transaction->getGenIdCache()->put(id, val);
 					}
-					else if (clause->identityIncrement.specified)
+
+					if (clause->identityOptions->increment.specified)
 					{
-						if (clause->identityIncrement.value == 0)
+						if (clause->identityOptions->increment.value == 0)
 						{
 							status_exception::raise(Arg::Gds(isc_dyn_cant_use_zero_inc_ident) <<
 								Arg::Str(field->fld_name) <<
 								Arg::Str(name));
 						}
 
-						MET_update_generator_increment(tdbb, id, clause->identityIncrement.value);
+						MET_update_generator_increment(tdbb, id,
+							clause->identityOptions->increment.value);
 					}
-					else
-						fb_assert(false);
 
 					dsc desc;
 					desc.makeText((USHORT) genName.length(), ttype_metadata,

@@ -2149,7 +2149,7 @@ column_def($relationNode)
 					newNode<RelationNode::AddColumnClause>();
 				clause->field = $2;
 				clause->field->fld_name = *$1;
-				clause->identity = $3;
+				clause->identityOptions = $3;
 				$relationNode->clauses.add(clause);
 			}
 		column_constraint_clause(NOTRIAL($<addColumnClause>4)) collate_clause
@@ -2200,7 +2200,7 @@ identity_clause_options($identityOptions)
 %type identity_clause_option(<identityOptions>)
 identity_clause_option($identityOptions)
 	: START WITH sequence_value
-		{ setClause($identityOptions->start, "START WITH", $3); }
+		{ setClause($identityOptions->startValue, "START WITH", $3); }
 	| INCREMENT by_noise signed_long_integer
 		{ setClause($identityOptions->increment, "INCREMENT BY", $3); }
 	;
@@ -3927,23 +3927,16 @@ alter_op($relationNode)
 			clause->dropDefault = true;
 			$relationNode->clauses.add(clause);
 		}
-	| col_opt symbol_column_name RESTART with_opt
-		{
-			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
-			clause->field = newNode<dsql_fld>();
-			clause->field->fld_name = *$2;
-			clause->identityRestart = true;
-			clause->identityRestartValue = $4;
-			$relationNode->clauses.add(clause);
-		}
-	| col_opt symbol_column_name SET INCREMENT by_noise signed_long_integer
-		{
-			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
-			clause->field = newNode<dsql_fld>();
-			clause->field->fld_name = *$2;
-			clause->identityIncrement = $6;
-			$relationNode->clauses.add(clause);
-		}
+	| col_opt symbol_column_name
+			{ $<identityOptions>$ = newNode<RelationNode::IdentityOptions>(); }
+		alter_identity_clause_options($<identityOptions>3)
+			{
+				RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
+				clause->field = newNode<dsql_fld>();
+				clause->field->fld_name = *$2;
+				clause->identityOptions = $<identityOptions>3;
+				$relationNode->clauses.add(clause);
+			}
 	| col_opt symbol_column_name DROP IDENTITY
 		{
 			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
@@ -4080,6 +4073,23 @@ alter_data_type_or_domain
 			$$ = newNode<dsql_fld>();
 			$$->typeOfName = *$1;
 		}
+	;
+
+%type alter_identity_clause_options(<identityOptions>)
+alter_identity_clause_options($identityOptions)
+	: alter_identity_clause_options alter_identity_clause_option($identityOptions)
+	| alter_identity_clause_option($identityOptions)
+	;
+
+%type alter_identity_clause_option(<identityOptions>)
+alter_identity_clause_option($identityOptions)
+	: RESTART with_opt
+		{
+			setClause($identityOptions->restart, "RESTART");
+			$identityOptions->startValue = $2;
+		}
+	| SET INCREMENT by_noise signed_long_integer
+		{ setClause($identityOptions->increment, "SET INCREMENT BY", $4); }
 	;
 
 %type <boolVal> drop_behaviour
