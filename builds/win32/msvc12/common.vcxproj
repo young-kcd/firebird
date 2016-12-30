@@ -30,6 +30,7 @@
     <ClCompile Include="..\..\..\src\common\classes\ClumpletWriter.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\DbImplementation.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\fb_string.cpp" />
+    <ClCompile Include="..\..\..\src\common\classes\Hash.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\ImplementHelper.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\init.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\InternalMessageBuffer.cpp" />
@@ -49,6 +50,12 @@
     <ClCompile Include="..\..\..\src\common\config\ConfigCache.cpp" />
     <ClCompile Include="..\..\..\src\common\config\config_file.cpp" />
     <ClCompile Include="..\..\..\src\common\config\dir_list.cpp" />
+    <ClCompile Include="..\..\..\src\common\CRC32C.cpp">
+      <IntrinsicFunctions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</IntrinsicFunctions>
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <IntrinsicFunctions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</IntrinsicFunctions>
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\common\cvt.cpp" />
     <ClCompile Include="..\..\..\src\common\db_alias.cpp" />
     <ClCompile Include="..\..\..\src\common\dllinst.cpp" />

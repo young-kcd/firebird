@@ -21,6 +21,7 @@
  */
 
 #include "firebird.h"
+#include "../common/classes/Hash.h"
 #include "../jrd/jrd.h"
 #include "../jrd/btr.h"
 #include "../jrd/req.h"
@@ -249,7 +250,7 @@ class HashJoin::HashTable : public PermanentStorage
 	};
 
 public:
-	HashTable(MemoryPool& pool, size_t streamCount, size_t tableSize = HASH_SIZE)
+	HashTable(MemoryPool& pool, size_t streamCount, unsigned int tableSize = HASH_SIZE)
 		: PermanentStorage(pool), m_streamCount(streamCount),
 		  m_tableSize(tableSize), m_slot(0)
 	{
@@ -265,28 +266,12 @@ public:
 		delete[] m_collisions;
 	}
 
-	size_t hash(ULONG length, const UCHAR* buffer) const
-	{
-		ULONG hash_value = 0;
-
-		UCHAR* p = NULL;
-		const UCHAR* q = buffer;
-		for (size_t l = 0; l < length; l++)
-		{
-			if (!(l & 3))
-				p = (UCHAR*) &hash_value;
-
-			*p++ += *q++;
-		}
-
-		return (hash_value % m_tableSize);
-	}
-
 	void put(size_t stream,
 			 ULONG keyLength, const KeyBuffer* keyBuffer,
 			 ULONG offset, ULONG position)
 	{
-		const size_t slot = hash(keyLength, keyBuffer->begin() + offset);
+		const unsigned int slot =
+			InternalHash::hash(keyLength, keyBuffer->begin() + offset, m_tableSize);
 
 		fb_assert(stream < m_streamCount);
 		fb_assert(slot < m_tableSize);
@@ -304,7 +289,7 @@ public:
 
 	bool setup(ULONG length, const UCHAR* data)
 	{
-		const size_t slot = hash(length, data);
+		const unsigned int slot = InternalHash::hash(length, data, m_tableSize);
 
 		for (size_t i = 0; i < m_streamCount; i++)
 		{
@@ -350,7 +335,7 @@ public:
 
 private:
 	const size_t m_streamCount;
-	const size_t m_tableSize;
+	const unsigned int m_tableSize;
 	CollisionList** m_collisions;
 	size_t m_slot;
 };
