@@ -127,6 +127,11 @@ using namespace Firebird;
 #include <process.h>
 #include <signal.h>
 #include "../utilities/install/install_nt.h"
+#include <mstcpip.h>
+
+#ifndef SIO_LOOPBACK_FAST_PATH
+#define SIO_LOOPBACK_FAST_PATH              _WSAIOW(IOC_VENDOR,16)
+#endif
 
 #define INET_RETRY_ERRNO	WSAEINPROGRESS
 #define INET_ADDR_IN_USE	WSAEADDRINUSE
@@ -476,6 +481,7 @@ static int		send_partial(rem_port*, PACKET *);
 
 static int		xdrinet_create(XDR*, rem_port*, UCHAR *, USHORT, enum xdr_op);
 static bool		setNoNagleOption(rem_port*);
+static bool		setFastLoopbackOption(SOCKET s);
 static FPTR_INT	tryStopMainThread = 0;
 
 
@@ -886,6 +892,8 @@ rem_port* INET_connect(const TEXT* name,
 				goto err_close;
 			}
 
+			setFastLoopbackOption(port->port_handle);
+
 			n = connect(port->port_handle, pai->ai_addr, pai->ai_addrlen);
 			if (n != -1)
 			{
@@ -1009,6 +1017,8 @@ static rem_port* listener_socket(rem_port* port, USHORT flag, const addrinfo* pa
 	{
 		inet_error(false, port, "listen", isc_net_connect_listen_err, INET_ERRNO);
 	}
+
+	setFastLoopbackOption(port->port_handle);
 
 	inet_ports->registerPort(port);
 
@@ -1430,6 +1440,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 
 	int optval = 1;
 	setsockopt(n, SOL_SOCKET, SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
+	setFastLoopbackOption(n);
 
 	status = address.connect(n);
 	if (status < 0)
@@ -1510,6 +1521,8 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 	{
 		inet_error(false, port, "listen", isc_net_event_listen_err, INET_ERRNO);
 	}
+
+	setFastLoopbackOption(n);
 
 	rem_port* const new_port = alloc_port(port->port_parent,
 		(port->port_flags & PORT_no_oob) | PORT_async | PORT_connecting);
@@ -3157,6 +3170,21 @@ static bool setNoNagleOption(rem_port* port)
 		}
 	}
 	return true;
+}
+
+bool setFastLoopbackOption(SOCKET s)
+{
+#ifdef WIN_NT
+	int optval = 1;
+	DWORD bytes = 0;
+
+	int ret = WSAIoctl(s, SIO_LOOPBACK_FAST_PATH, &optval, sizeof(optval), 
+					   NULL, 0, &bytes, 0, 0);
+
+	return (ret == 0);
+#else
+	return false;
+#endif
 }
 
 void setStopMainThread(FPTR_INT func)
