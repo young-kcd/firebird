@@ -114,9 +114,35 @@ struct DdlTriggerContext
 };
 
 
-struct bid;
+// Attachment flags
+
+const ULONG ATT_no_cleanup			= 0x00001L;	// Don't expunge, purge, or garbage collect
+const ULONG ATT_shutdown			= 0x00002L;	// attachment has been shutdown
+const ULONG ATT_shutdown_manager	= 0x00004L;	// attachment requesting shutdown
+const ULONG ATT_exclusive			= 0x00008L;	// attachment wants exclusive database access
+const ULONG ATT_attach_pending		= 0x00010L;	// Indicate attachment is only pending
+const ULONG ATT_exclusive_pending	= 0x00020L;	// Indicate exclusive attachment pending
+const ULONG ATT_notify_gc			= 0x00040L;	// Notify garbage collector to expunge, purge ..
+const ULONG ATT_garbage_collector	= 0x00080L;	// I'm a garbage collector
+const ULONG ATT_cancel_raise		= 0x00100L;	// Cancel currently running operation
+const ULONG ATT_cancel_disable		= 0x00200L;	// Disable cancel operations
+const ULONG ATT_no_db_triggers		= 0x00400L;	// Don't execute database triggers
+const ULONG ATT_manual_lock			= 0x00800L;	// Was locked manually
+const ULONG ATT_async_manual_lock	= 0x01000L;	// Async mutex was locked manually
+//const ULONG ATT_purge_started		= 0x02000L; // Purge already started - avoid 2 purges at once
+const ULONG ATT_overwrite_check		= 0x02000L;	// Attachment checks is it possible to overwrite DB
+const ULONG ATT_system				= 0x04000L; // Special system attachment
+const ULONG ATT_creator				= 0x08000L; // This attachment created the DB
+const ULONG ATT_monitor_done		= 0x10000L; // Monitoring data is refreshed
+const ULONG ATT_security_db			= 0x20000L; // Attachment used for security purposes
+const ULONG ATT_mapping				= 0x40000L; // Attachment used for mapping auth block
+const ULONG ATT_crypt_thread		= 0x80000L; // Attachment from crypt thread
+
+const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
 
 class Attachment;
+struct bid;
+
 
 //
 // RefCounted part of Attachment object, placed into permanent pool
@@ -172,7 +198,7 @@ public:
 		return getInterface()->getTransactionInterface(status, tra);
 	}
 
-	void manualLock(ULONG& flags);
+	void manualLock(ULONG& flags, const ULONG whatLock = ATT_manual_lock | ATT_async_manual_lock);
 	void manualUnlock(ULONG& flags);
 	void manualAsyncUnlock(ULONG& flags);
 
@@ -382,33 +408,6 @@ private:
 	Attachment(MemoryPool* pool, Database* dbb);
 	~Attachment();
 };
-
-
-// Attachment flags
-
-const ULONG ATT_no_cleanup			= 0x00001L;	// Don't expunge, purge, or garbage collect
-const ULONG ATT_shutdown			= 0x00002L;	// attachment has been shutdown
-const ULONG ATT_shutdown_manager	= 0x00004L;	// attachment requesting shutdown
-const ULONG ATT_exclusive			= 0x00008L;	// attachment wants exclusive database access
-const ULONG ATT_attach_pending		= 0x00010L;	// Indicate attachment is only pending
-const ULONG ATT_exclusive_pending	= 0x00020L;	// Indicate exclusive attachment pending
-const ULONG ATT_notify_gc			= 0x00040L;	// Notify garbage collector to expunge, purge ..
-const ULONG ATT_garbage_collector	= 0x00080L;	// I'm a garbage collector
-const ULONG ATT_cancel_raise		= 0x00100L;	// Cancel currently running operation
-const ULONG ATT_cancel_disable		= 0x00200L;	// Disable cancel operations
-const ULONG ATT_no_db_triggers		= 0x00400L;	// Don't execute database triggers
-const ULONG ATT_manual_lock			= 0x00800L;	// Was locked manually
-const ULONG ATT_async_manual_lock	= 0x01000L;	// Async mutex was locked manually
-//const ULONG ATT_purge_started		= 0x02000L; // Purge already started - avoid 2 purges at once
-const ULONG ATT_overwrite_check		= 0x02000L;	// Attachment checks is it possible to overwrite DB
-const ULONG ATT_system				= 0x04000L; // Special system attachment
-const ULONG ATT_creator				= 0x08000L; // This attachment created the DB
-const ULONG ATT_monitor_done		= 0x10000L; // Monitoring data is refreshed
-const ULONG ATT_security_db			= 0x20000L; // Attachment used for security purposes
-const ULONG ATT_mapping				= 0x40000L; // Attachment used for mapping auth block
-const ULONG ATT_crypt_thread		= 0x80000L; // Attachment from crypt thread
-
-const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
 
 
 inline bool Attachment::locksmith(thread_db* tdbb, SystemPrivilege sp) const

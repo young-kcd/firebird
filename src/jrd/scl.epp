@@ -1517,8 +1517,10 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 
 	if (userName.hasData())
 		user.setUserName(userName);
-	else
+	else if (attachment->att_user)
 		user = *attachment->att_user;
+	else
+		user.setUserName("");
 
 	SecurityClass::flags_t privilege = 0;
 	const UCHAR* a = acl.begin();

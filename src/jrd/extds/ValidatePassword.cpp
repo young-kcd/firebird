@@ -172,6 +172,8 @@ void validatePassword(thread_db* tdbb, const PathName& file, ClumpletWriter& dpb
 	if (ISC_check_if_remote(file, false))	// check for remote connection
 		return;
 	UserId* usr = tdbb->getAttachment()->att_user;
+	if (!usr)
+		return;
 	if (!usr->usr_auth_block.hasData())		// check for embedded attachment
 		return;
 

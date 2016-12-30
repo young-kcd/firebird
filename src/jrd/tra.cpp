@@ -3632,7 +3632,8 @@ void jrd_tra::checkBlob(thread_db* tdbb, const bid* blob_id)
 	USHORT rel_id = blob_id->bid_internal.bid_relation_id;
 
 	if (tra_attachment->isGbak() ||
-		tra_attachment->att_user->locksmith(tdbb, SELECT_ANY_OBJECT_IN_DATABASE) ||
+		(tra_attachment->att_user &&
+		 tra_attachment->att_user->locksmith(tdbb, SELECT_ANY_OBJECT_IN_DATABASE)) ||
 		rel_id == 0)
 	{
 		return;
@@ -3677,7 +3678,7 @@ TraceSweepEvent::TraceSweepEvent(thread_db* tdbb)
 	gds__log("Sweep is started by %s\n"
 		"\tDatabase \"%s\" \n"
 		"\tOIT %" SQUADFORMAT", OAT %" SQUADFORMAT", OST %" SQUADFORMAT", Next %" SQUADFORMAT,
-		att->att_user->getUserName().c_str(),
+		att->att_user ? att->att_user->getUserName().c_str() : "<Unknown user>",
 		att->att_filename.c_str(),
 		m_sweep_info.getOIT(),
 		m_sweep_info.getOAT(),

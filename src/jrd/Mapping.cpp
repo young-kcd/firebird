@@ -903,7 +903,10 @@ public:
 		: AutoPtr(att)
 	{
 		if (att)
+		{
+			MAP_DEBUG(fprintf(stderr, "Using existing db handle %p\n", att));
 			att->addRef();
+		}
 	}
 
 	bool attach(FbLocalStatus& st, const char* aliasDb, ICryptKeyCallback* cryptCb)
@@ -911,7 +914,10 @@ public:
 		bool down = false;		// true if on attach db is shutdown
 
 		if (hasData())
+		{
+			MAP_DEBUG(fprintf(stderr, "Already attached %s\n", aliasDb));
 			return down;
+		}
 
 		DispatcherPtr prov;
 		if (cryptCb)
@@ -1337,7 +1343,11 @@ ULONG mapUser(const bool throwNotFoundError,
 				}
 
 				if (cDb)
+				{
+					MAP_DEBUG(fprintf(stderr, "Populate cache for main DB %p\n", iDb.get()));
 					cDb->populate(iDb, dbDown);
+				}
+				MAP_DEBUG(fprintf(stderr, "Populate cache for sec DB %p\n", iSec.get()));
 				cSec->populate(iSec, secDown);
 
 				sSec.downgrade(SYNC_SHARED);

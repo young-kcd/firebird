@@ -3900,10 +3900,13 @@ static void check_owner(thread_db* tdbb,
 		return;
 
 	const Jrd::Attachment* const attachment = tdbb->getAttachment();
-	const Firebird::MetaName name(attachment->att_user->getUserName());
-	desc2.makeText((USHORT) name.length(), CS_METADATA, (UCHAR*) name.c_str());
-	if (!MOV_compare(&desc1, &desc2))
-		return;
+	if (attachment->att_user)
+	{
+		const Firebird::MetaName name(attachment->att_user->getUserName());
+		desc2.makeText((USHORT) name.length(), CS_METADATA, (UCHAR*) name.c_str());
+		if (!MOV_compare(&desc1, &desc2))
+			return;
+	}
 
 	ERR_post(Arg::Gds(isc_protect_ownership));
 }
@@ -3925,7 +3928,8 @@ static bool check_user(thread_db* tdbb, const dsc* desc)
 
 	const TEXT* p = (TEXT *) desc->dsc_address;
 	const TEXT* const end = p + desc->dsc_length;
-	const TEXT* q = tdbb->getAttachment()->att_user->getUserName().c_str();
+	const UserId* user = tdbb->getAttachment()->att_user;
+	const TEXT* q = user ? user->getUserName().c_str() : "";
 
 	// It is OK to not internationalize this function for v4.00 as
 	// User names are limited to 7-bit ASCII for v4.00
@@ -5699,12 +5703,15 @@ static void set_owner_name(thread_db* tdbb, Record* record, USHORT field_id)
 
 	if (!EVL_field(0, record, field_id, &desc1))
 	{
-		const Jrd::Attachment* const attachment = tdbb->getAttachment();
-		const Firebird::MetaName name(attachment->att_user->getUserName());
-		dsc desc2;
-		desc2.makeText((USHORT) name.length(), CS_METADATA, (UCHAR*) name.c_str());
-		MOV_move(tdbb, &desc2, &desc1);
-		record->clearNull(field_id);
+		const Jrd::UserId* const user = tdbb->getAttachment()->att_user;
+		if (user)
+		{
+			const Firebird::MetaName name(user->getUserName());
+			dsc desc2;
+			desc2.makeText((USHORT) name.length(), CS_METADATA, (UCHAR*) name.c_str());
+			MOV_move(tdbb, &desc2, &desc1);
+			record->clearNull(field_id);
+		}
 	}
 }
 
