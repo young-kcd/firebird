@@ -1273,6 +1273,16 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					matches.add(segment->matches[j]);
 			}
 		}
+
+		// If the navigational candidate includes any matching segments,
+		// reset the selectivity/cost prerequisites to account these matches
+		if (matchedSegments)
+		{
+			totalSelectivity = navigationCandidate->selectivity;
+			totalIndexCost = DEFAULT_INDEX_COST + totalSelectivity * navigationCandidate->cardinality;
+			previousTotalCost = totalIndexCost + totalSelectivity * streamCardinality;
+			firstCandidate = false;
+		}
 	}
 
 	for (i = 0; i < inversions->getCount(); i++)
