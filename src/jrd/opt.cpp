@@ -313,7 +313,6 @@ static bool augment_stack(BoolExprNode*, BoolExprNodeStack&);
 static void check_indices(const CompilerScratch::csb_repeat*);
 static void check_sorts(RseNode*);
 static void class_mask(USHORT, ValueExprNode**, ULONG*);
-static bool check_for_nod_from(const ValueExprNode*);
 static SLONG decompose(thread_db* tdbb, BoolExprNode* boolNode, BoolExprNodeStack& stack,
 	CompilerScratch* csb);
 static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratch* csb,
@@ -1337,29 +1336,6 @@ static void class_mask(USHORT count, ValueExprNode** eq_class, ULONG* mask)
 }
 
 
-static bool check_for_nod_from(const ValueExprNode* node)
-{
-/**************************************
- *
- *	c h e c k _ f o r _ n o d _ f r o m
- *
- **************************************
- *
- * Functional description
- *	Check for nod_from under >=0 CastNode nodes.
- *
- **************************************/
-	const CastNode* castNode;
-	const SubQueryNode* subQueryNode;
-
-	if ((castNode = node->as<CastNode>()))
-		return check_for_nod_from(castNode->source);
-	else if ((subQueryNode = node->as<SubQueryNode>()) && subQueryNode->blrOp == blr_via)
-		return true;
-
-	return false;
-}
-
 static SLONG decompose(thread_db* tdbb, BoolExprNode* boolNode, BoolExprNodeStack& stack,
 	CompilerScratch* csb)
 {
@@ -1429,14 +1405,6 @@ static SLONG decompose(thread_db* tdbb, BoolExprNode* boolNode, BoolExprNodeStac
 
 		if (cmpNode->blrOp == blr_between)
 		{
-			if (check_for_nod_from(cmpNode->arg1))
-			{
-				// Without this ERR_punt(), server was crashing with sub queries
-				// under "between" predicate, Bug No. 73766
-				ERR_post(Arg::Gds(isc_optimizer_between_err));
-				// Msg 493: Unsupported field type specified in BETWEEN predicate
-			}
-
 			ComparativeBoolNode* newCmpNode = FB_NEW_POOL(csb->csb_pool) ComparativeBoolNode(
 				csb->csb_pool, blr_geq);
 			newCmpNode->arg1 = cmpNode->arg1;
