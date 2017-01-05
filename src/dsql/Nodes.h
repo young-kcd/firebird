@@ -1595,6 +1595,22 @@ public:
 	Firebird::MetaName secName;
 };
 
+typedef Firebird::Array<StreamType> StreamMap;
+
+// Copy sub expressions (including subqueries).
+class SubExprNodeCopier : private StreamMap, public NodeCopier
+{
+public:
+	SubExprNodeCopier(CompilerScratch* aCsb)
+		: NodeCopier(aCsb, getBuffer(STREAM_MAP_LENGTH))
+	{
+		// Initialize the map so all streams initially resolve to the original number.
+		// As soon as copy creates new streams, the map is being overwritten.
+		for (unsigned i = 0; i < STREAM_MAP_LENGTH; ++i)
+			remap[i] = i;
+	}
+};
+
 
 } // namespace
 

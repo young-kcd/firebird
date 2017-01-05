@@ -58,36 +58,6 @@ static const int TEMP_LENGTH = 128;
 //--------------------
 
 
-namespace
-{
-	// Copy sub expressions (including subqueries).
-	class SubExprNodeCopier : public NodeCopier
-	{
-	public:
-		explicit SubExprNodeCopier(thread_db* tdbb, CompilerScratch* aCsb)
-			//: NodeCopier(aCsb, localMap)
-			: NodeCopier(aCsb, FB_NEW_POOL(*tdbb->getDefaultPool()) StreamType[STREAM_MAP_LENGTH])
-		{
-			// Initialize the map so all streams initially resolve to the original number. As soon as
-			// copy creates new streams, the map are being overwritten.
-			// CVC: better in the heap, because we need larger map.
-			localMap = remap;
-			for (unsigned i = 0; i < STREAM_MAP_LENGTH; ++i)
-				localMap[i] = i;
-		}
-
-		~SubExprNodeCopier()
-		{
-			delete[] localMap;
-		}
-
-	private:
-		//StreamType localMap[JrdStatement::MAP_LENGTH];
-		StreamType* localMap;
-	};
-}	// namespace
-
-
 //--------------------
 
 
@@ -1951,8 +1921,7 @@ BoolExprNode* RseBoolNode::convertNeqAllToNotAny(thread_db* tdbb, CompilerScratc
 
 	newInnerRse->rse_boolean = boolean;
 
-	SubExprNodeCopier copier(tdbb, csb);
-
+	SubExprNodeCopier copier(csb);
 	return copier.copy(tdbb, static_cast<BoolExprNode*>(newNode));
 }
 
