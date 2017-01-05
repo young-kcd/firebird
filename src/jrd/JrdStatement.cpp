@@ -203,9 +203,9 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 
 		DmlNode::doPass1(tdbb, csb, &csb->csb_node);
 
-		// CVC: I'm going to allocate the map before the loop to avoid alloc/dealloc calls.
-		AutoPtr<StreamType, ArrayDelete<StreamType> > localMap(FB_NEW_POOL(*tdbb->getDefaultPool())
-			StreamType[STREAM_MAP_LENGTH]);
+		// CVC: I'm going to preallocate the map before the loop to avoid alloc/dealloc calls.
+		StreamMap localMap;
+		StreamType* const map = localMap.getBuffer(STREAM_MAP_LENGTH);
 
 		// Copy and compile (pass1) domains DEFAULT and constraints.
 		MapFieldInfo::Accessor accessor(&csb->csb_map_field_info);
@@ -213,18 +213,17 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 		for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 		{
 			FieldInfo& fieldInfo = accessor.current()->second;
-			//StreamType local_map[MAP_LENGTH];
 
 			AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
 				(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
 
-			fieldInfo.defaultValue = NodeCopier::copy(tdbb, csb, fieldInfo.defaultValue, localMap);
+			fieldInfo.defaultValue = NodeCopier::copy(tdbb, csb, fieldInfo.defaultValue, map);
 
 			csb->csb_remap_variable = (csb->csb_variables ? csb->csb_variables->count() : 0) + 1;
 
 			if (fieldInfo.validationExpr)
 			{
-				NodeCopier copier(csb, localMap);
+				NodeCopier copier(csb, map);
 				fieldInfo.validationExpr = copier.copy(tdbb, fieldInfo.validationExpr);
 			}
 

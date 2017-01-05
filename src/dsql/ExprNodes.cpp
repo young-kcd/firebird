@@ -5695,16 +5695,14 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 			return ValueExprNode::pass1(tdbb, csb);
 	}
 
-	//StreamType local_map[JrdStatement::MAP_LENGTH];
-	AutoPtr<StreamType, ArrayDelete<StreamType> > localMap;
+	StreamMap localMap;
 	StreamType* map = tail->csb_map;
 
 	if (!map)
 	{
-		localMap = FB_NEW_POOL(*tdbb->getDefaultPool()) StreamType[STREAM_MAP_LENGTH];
-		map = localMap;
+		map = localMap.getBuffer(STREAM_MAP_LENGTH);
 		fb_assert(stream + 2u <= MAX_STREAMS);
-		localMap[0] = stream;
+		map[0] = stream;
 		map[1] = stream + 1;
 		map[2] = stream + 2;
 	}
