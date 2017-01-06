@@ -329,12 +329,23 @@ public:
 			dataFlag = true;
 			downFlag = false;
 		}
-		catch (const Exception&)
+		catch (const Exception& ex)
 		{
 			if (curs)
 				curs->release();
 			if (tra)
 				tra->release();
+
+			// If database is shutdown it's not a reason to fail mapping
+			StaticStatusVector status;
+			ex.stuffException(status);
+			const ISC_STATUS* s = status.begin();
+			if (fb_utils::containsErrorCode(s, isc_shutdown))
+			{
+				downFlag = true;
+				return;
+			}
+
 			throw;
 		}
 	}
