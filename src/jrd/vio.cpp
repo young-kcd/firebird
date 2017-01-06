@@ -1303,10 +1303,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 	const UCHAR* tail_end;
 	UCHAR differences[MAX_DIFFERENCES];
 	
-	// If the record is a primary version, prior should be NULL.
-	if (!(rpb->rpb_flags & rpb_chained))
-		fb_assert(rpb->rpb_prior == NULL);
-
+	// Primary record version not uses prior version
 	Record* prior = (rpb->rpb_flags & rpb_chained) ? rpb->rpb_prior : NULL;
 
 	if (prior)
