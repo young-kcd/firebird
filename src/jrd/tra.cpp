@@ -1452,7 +1452,8 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, TraNumber number, int 
 	CCH_MARK(tdbb, &window);
 	const ULONG generation = tip->tip_header.pag_generation;
 #else
-	if (!(dbb->dbb_flags & DBB_shared) || transaction->tra_flags & TRA_write ||
+	if (!(dbb->dbb_flags & DBB_shared) || !transaction  || 
+		transaction->tra_flags & TRA_write ||
 		old_state != tra_active || state != tra_committed)
 	{
 		CCH_MARK_MUST_WRITE(tdbb, &window);
