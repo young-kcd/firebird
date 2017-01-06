@@ -1103,6 +1103,8 @@ bool DPM_fetch(thread_db* tdbb, record_param* rpb, USHORT lock)
 		rpb->rpb_f_line, rpb->rpb_flags);
 #endif
 	rpb->rpb_number = number;
+	if (!(rpb->rpb_flags & rpb_chained))
+		rpb->rpb_prior = NULL;
 
 	return true;
 }
