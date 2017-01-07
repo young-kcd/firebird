@@ -12,6 +12,11 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix CORE-5422
+        Decompression overran buffer after rollback
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-5418
         Inconsistent output when retrieving the server log via Services API
       Contributor(s):
@@ -50,6 +55,11 @@
 
     * Bugfix CORE-4742
         gfix -shut single -force 0 ..... not working as documented with 2.5.3 & 2.5.4
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-4563
+        Add support for Windows 8/2012 fast/low-latency "TCP Loopback Fast Path" functionality
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
