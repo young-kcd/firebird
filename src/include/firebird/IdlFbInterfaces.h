@@ -2905,6 +2905,7 @@ namespace Firebird
 		{
 			int (CLOOP_CARG *keyCallback)(IKeyHolderPlugin* self, IStatus* status, ICryptKeyCallback* callback) throw();
 			ICryptKeyCallback* (CLOOP_CARG *keyHandle)(IKeyHolderPlugin* self, IStatus* status, const char* keyName) throw();
+			FB_BOOLEAN (CLOOP_CARG *useOnlyOwnKeys)(IKeyHolderPlugin* self, IStatus* status) throw();
 		};
 
 	protected:
@@ -2918,7 +2919,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static const unsigned VERSION = 5;
 
 		template <typename StatusType> int keyCallback(StatusType* status, ICryptKeyCallback* callback)
 		{
@@ -2932,6 +2933,20 @@ namespace Firebird
 		{
 			StatusType::clearException(status);
 			ICryptKeyCallback* ret = static_cast<VTable*>(this->cloopVTable)->keyHandle(this, status, keyName);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> FB_BOOLEAN useOnlyOwnKeys(StatusType* status)
+		{
+			if (cloopVTable->version < 5)
+			{
+				StatusType::setVersionError(status, "IKeyHolderPlugin", cloopVTable->version, 5);
+				StatusType::checkException(status);
+				return 0;
+			}
+			StatusType::clearException(status);
+			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->useOnlyOwnKeys(this, status);
 			StatusType::checkException(status);
 			return ret;
 		}
@@ -11230,6 +11245,7 @@ namespace Firebird
 					this->getOwner = &Name::cloopgetOwnerDispatcher;
 					this->keyCallback = &Name::cloopkeyCallbackDispatcher;
 					this->keyHandle = &Name::cloopkeyHandleDispatcher;
+					this->useOnlyOwnKeys = &Name::cloopuseOnlyOwnKeysDispatcher;
 				}
 			} vTable;
 
@@ -11263,6 +11279,21 @@ namespace Firebird
 			{
 				StatusType::catchException(&status2);
 				return static_cast<ICryptKeyCallback*>(0);
+			}
+		}
+
+		static FB_BOOLEAN CLOOP_CARG cloopuseOnlyOwnKeysDispatcher(IKeyHolderPlugin* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::useOnlyOwnKeys(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
 
@@ -11332,6 +11363,7 @@ namespace Firebird
 
 		virtual int keyCallback(StatusType* status, ICryptKeyCallback* callback) = 0;
 		virtual ICryptKeyCallback* keyHandle(StatusType* status, const char* keyName) = 0;
+		virtual FB_BOOLEAN useOnlyOwnKeys(StatusType* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

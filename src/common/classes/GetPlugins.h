@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:		Firebird interface.
- *	MODULE:			ImplementHelper.h
+ *	MODULE:			GetPlugins.h
  *	DESCRIPTION:	Tools to help access plugins.
  *
  *  The contents of this file are subject to the Initial
@@ -80,6 +80,16 @@ public:
 	P* plugin() const
 	{
 		return currentPlugin;
+	}
+
+	P* makeInstance()
+	{
+		if (!hasData())
+			return NULL;
+
+		P* p = (P*) pluginSet->getPlugin(&status);
+		check(&status);
+		return p;
 	}
 
 	void next()
