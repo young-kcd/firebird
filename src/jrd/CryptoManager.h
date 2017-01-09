@@ -294,6 +294,8 @@ public:
 
 	void cryptThread();
 
+	bool checkValidation(Firebird::IDbCryptPlugin* crypt);
+
 	ULONG getCurrentPage() const;
 	UCHAR getCurrentState() const;
 
@@ -319,42 +321,28 @@ private:
 		char buf[MAX_PAGE_SIZE + PAGE_ALIGNMENT - 1];
 	};
 
-	class HolderAttachments
-	{
-	public:
-		explicit HolderAttachments(Firebird::MemoryPool& p);
-		~HolderAttachments();
-
-		void registerAttachment(Attachment* att);
-		bool unregisterAttachment(Attachment* att);
-
-		void setPlugin(Firebird::IKeyHolderPlugin* kh);
-		Firebird::IKeyHolderPlugin* getPlugin() const
-		{
-			return keyHolder;
-		}
-
-		bool operator==(Firebird::IKeyHolderPlugin* kh) const;
-
-	private:
-		Firebird::IKeyHolderPlugin* keyHolder;
-		Firebird::HalfStaticArray<Attachment*, 32> attachments;
-	};
-
 	class KeyHolderPlugins
 	{
 	public:
-		explicit KeyHolderPlugins(Firebird::MemoryPool& p)
-			: knownHolders(p)
+		explicit KeyHolderPlugins(Firebird::MemoryPool& p, CryptoManager* m)
+			: knownHolders(p), mgr(m)
 		{ }
 
 		void attach(Attachment* att, Config* config);
+		void init(Firebird::IDbCryptPlugin* crypt, const Firebird::MetaName& keyName);
+		bool validate(Firebird::IDbCryptPlugin* crypt, Attachment*, const Firebird::MetaName& keyName);
+		void validate(Firebird::IDbCryptPlugin* crypt, const Firebird::MetaName& keyName);
 		void detach(Attachment* att);
-		void init(Firebird::IDbCryptPlugin* crypt, const char* keyName);
 
 	private:
 		Firebird::Mutex holdersMutex;
-		Firebird::ObjectsArray<HolderAttachments> knownHolders;
+		typedef Firebird::Pair<Firebird::Right<Attachment*,
+			Firebird::HalfStaticArray<Firebird::IKeyHolderPlugin*, 4> > > PerAttHolders;
+		Firebird::ObjectsArray<PerAttHolders> knownHolders;
+		CryptoManager* mgr;
+
+		bool validateHoldersGroup(PerAttHolders& pa, Firebird::IDbCryptPlugin* crypt, const Firebird::MetaName& keyName);
+		void releaseHolders(PerAttHolders& pa);
 	};
 
 	class DbInfo;
@@ -398,7 +386,8 @@ private:
 	void loadPlugin(const char* pluginName);
 	ULONG getLastPage(thread_db* tdbb);
 	void writeDbHeader(thread_db* tdbb, ULONG runpage);
-	void calcValidation(Firebird::string& valid);
+	void calcValidation(Firebird::string& valid, Firebird::IDbCryptPlugin* plugin);
+	void checkValidation();
 
 	void lockAndReadHeader(thread_db* tdbb, unsigned flags = 0);
 	static const unsigned CRYPT_HDR_INIT =		0x01;
@@ -414,9 +403,11 @@ private:
 	ULONG currentPage;
 	Firebird::Mutex pluginLoadMtx, cryptThreadMtx;
 	KeyHolderPlugins keyHolderPlugins;
+	Firebird::string hash;
 	Firebird::RefPtr<DbInfo> dbInfo;
 	Thread::Handle cryptThreadId;
 	Firebird::IDbCryptPlugin* cryptPlugin;
+	Firebird::IDbCryptPlugin* checkPlugin;
 	Database& dbb;
 	Lock* stateLock;
 	Lock* threadLock;

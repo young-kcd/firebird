@@ -7,7 +7,8 @@
 	<META NAME="AUTHOR" CONTENT="alex ">
 	<META NAME="CREATED" CONTENT="20130531;10003100">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
-	<META NAME="CHANGED" CONTENT="20160905;13133900">
+	<META NAME="CHANGED" CONTENT="20170109;20260900">
+	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
 	<STYLE TYPE="text/css">
@@ -587,10 +588,10 @@ namespace Firebird), timestamp – with class FbTimestamp, containing
 two public data members date and time of appropriate class, char -
 with struct <A HREF="#FbChar">FbChar</A> and varchar – with struct
 <A HREF="#FbVarChar">FbVarChar</A>. For each field preprocessor
-creates two data members in the message – </FONT><FONT SIZE=4><I>name</I></FONT><FONT SIZE=4>
-for field/parameter value and </FONT><FONT SIZE=4><I>nameNull</I></FONT><FONT SIZE=4>
-for NULL indicator. Message constructor has 2 parameters – pointer
-to status wrapper and master interface:</FONT></P>
+creates two data members in the message – </FONT><FONT SIZE=4><I>name</I></FONT>
+<FONT SIZE=4>for field/parameter value and </FONT><FONT SIZE=4><I>nameNull</I></FONT>
+<FONT SIZE=4>for NULL indicator. Message constructor has 2 parameters
+– pointer to status wrapper and master interface:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>FB_MESSAGE(Output,
 ThrowStatusWrapper,</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>(FB_SMALLINT,
@@ -748,16 +749,15 @@ completed in FB3, we expect to have something more interesting in
 next version. The minimum existing support is as follows: <A HREF="#Attachment">IAttachment</A>
 contains call queEvents() which performs almost same functions as
 isc_que_events() call. Instead the pair of parameters
-</FONT><FONT SIZE=4><I>FPTR_EVENT_CALLBACK ast</I></FONT><FONT SIZE=4>
-and </FONT><FONT SIZE=4><I>void* arg</I></FONT><FONT SIZE=4>,
-required to invoke user code when event happens in firebird engine,
-callback interface IEventCallback is used. This is traditional
-approach which helps to avoid non-safe casts from void* in user
-function. Another important difference is that instead event
-identifier (a kind of handler) this function returns reference
-counted interface <A HREF="#Events">IEvents</A> having method
-cancel() used when waiting for event should be stopped. Unlike
-identifier which is automatically destroyed when event arrives
+</FONT><FONT SIZE=4><I>FPTR_EVENT_CALLBACK ast</I></FONT> <FONT SIZE=4>and
+</FONT><FONT SIZE=4><I>void* arg</I></FONT><FONT SIZE=4>, required to
+invoke user code when event happens in firebird engine, callback
+interface IEventCallback is used. This is traditional approach which
+helps to avoid non-safe casts from void* in user function. Another
+important difference is that instead event identifier (a kind of
+handler) this function returns reference counted interface <A HREF="#Events">IEvents</A>
+having method cancel() used when waiting for event should be stopped.
+Unlike identifier which is automatically destroyed when event arrives
 interface can not be automatically destroyed – in case when event
 is received right before canceling interface call to cancel() would
 cause segfault when interface is already destroyed. Therefore
@@ -890,7 +890,7 @@ services tasks do not forget to close an interface:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>To write a plugin means to
 implement some interfaces and place your implementation into dynamic
 library (.dll in windows or .so in linux) later referenced as </FONT><FONT SIZE=4><I>plugin
-module</I></FONT><FONT SIZE=4> or just </FONT><FONT SIZE=4><I>module</I></FONT><FONT SIZE=4>.
+module</I></FONT> <FONT SIZE=4>or just </FONT><FONT SIZE=4><I>module</I></FONT><FONT SIZE=4>.
 In most cases single plugin is place in dynamic library but in common
 case. One of that interfaces – <A HREF="#PluginModule">IPluginModule</A>
 – is module-wide (as more or less clear from it's name), others are
@@ -920,9 +920,9 @@ be aware what plugin modules were loaded and must be notified if
 operating system tries to unload one of that modules without explicit
 plugin manager command (this may happen first of all when using
 embedded access – when exit() is called in a program or main
-firebird library </FONT><FONT SIZE=4><I><SPAN STYLE="font-weight: normal">fbclient</SPAN></I></FONT><FONT SIZE=4>
-is unloaded). Primary task of IPluginModule interface is that
-notification. First of all one must decide - how to detect that
+firebird library </FONT><FONT SIZE=4><I><SPAN STYLE="font-weight: normal">fbclient</SPAN></I></FONT>
+<FONT SIZE=4>is unloaded). Primary task of IPluginModule interface is
+that notification. First of all one must decide - how to detect that
 module is going to be unloaded? When dynamic library is unloaded for
 some reason a lot of OS-dependent actions is performed and some of
 that actions may be used to detect this fact in the program. When
@@ -2073,8 +2073,8 @@ moment when given timer should alarm.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void
 	start(StatusType* status, ITimer* timer, ISC_UINT64 microSeconds) –
 	start <A HREF="#Timer">ITimer</A> to alarm after given delay (in
-	microseconds, 10</FONT><SUP><FONT SIZE=4>-6</FONT></SUP><FONT SIZE=4>
-	seconds). Timer will be waked up only once after this call.</FONT></P>
+	microseconds, 10</FONT><SUP><FONT SIZE=4>-6</FONT></SUP> <FONT SIZE=4>seconds).
+	Timer will be waked up only once after this call.</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>void stop(StatusType*
 	status, ITimer* timer) – stop <A HREF="#Timer">ITimer</A>. It's
 	not an error to stop not started timer thus avoiding problems with
@@ -2706,6 +2706,14 @@ interface is main interface of database crypt key holder plugin.</FONT></P>
 	(for example) check digital signature of crypt plugin before sending
 	a key to it in order to avoid use of modified crypt plugin able to
 	steal secret key.</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>FB_BOOLEAN
+	useOnlyOwnKeys(StatusType* status) – informs firebird engine can a
+	key, provided by another key holder, be used or not. Makes sense
+	only for SuperServer – only it can share database crypt keys
+	between attachments. Returning FB_TRUE from this method enforces
+	firebird to make sure that this particular key holder (and therefore
+	in turn attachment related to it) provides correct crypt key before
+	letting it to work with database.</FONT></P>
 </OL>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>

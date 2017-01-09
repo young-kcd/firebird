@@ -362,6 +362,7 @@ type
 	ICryptKeyCallback_callbackPtr = function(this: ICryptKeyCallback; dataLength: Cardinal; data: Pointer; bufferLength: Cardinal; buffer: Pointer): Cardinal; cdecl;
 	IKeyHolderPlugin_keyCallbackPtr = function(this: IKeyHolderPlugin; status: IStatus; callback: ICryptKeyCallback): Integer; cdecl;
 	IKeyHolderPlugin_keyHandlePtr = function(this: IKeyHolderPlugin; status: IStatus; keyName: PAnsiChar): ICryptKeyCallback; cdecl;
+	IKeyHolderPlugin_useOnlyOwnKeysPtr = function(this: IKeyHolderPlugin; status: IStatus): Boolean; cdecl;
 	IDbCryptInfo_getDatabaseFullPathPtr = function(this: IDbCryptInfo; status: IStatus): PAnsiChar; cdecl;
 	IDbCryptPlugin_setKeyPtr = procedure(this: IDbCryptPlugin; status: IStatus; length: Cardinal; sources: IKeyHolderPluginPtr; keyName: PAnsiChar); cdecl;
 	IDbCryptPlugin_encryptPtr = procedure(this: IDbCryptPlugin; status: IStatus; length: Cardinal; from: Pointer; to_: Pointer); cdecl;
@@ -1902,13 +1903,15 @@ type
 	KeyHolderPluginVTable = class(PluginBaseVTable)
 		keyCallback: IKeyHolderPlugin_keyCallbackPtr;
 		keyHandle: IKeyHolderPlugin_keyHandlePtr;
+		useOnlyOwnKeys: IKeyHolderPlugin_useOnlyOwnKeysPtr;
 	end;
 
 	IKeyHolderPlugin = class(IPluginBase)
-		const VERSION = 6;
+		const VERSION = 7;
 
 		function keyCallback(status: IStatus; callback: ICryptKeyCallback): Integer;
 		function keyHandle(status: IStatus; keyName: PAnsiChar): ICryptKeyCallback;
+		function useOnlyOwnKeys(status: IStatus): Boolean;
 	end;
 
 	IKeyHolderPluginImpl = class(IKeyHolderPlugin)
@@ -1920,6 +1923,7 @@ type
 		function getOwner(): IReferenceCounted; virtual; abstract;
 		function keyCallback(status: IStatus; callback: ICryptKeyCallback): Integer; virtual; abstract;
 		function keyHandle(status: IStatus; keyName: PAnsiChar): ICryptKeyCallback; virtual; abstract;
+		function useOnlyOwnKeys(status: IStatus): Boolean; virtual; abstract;
 	end;
 
 	DbCryptInfoVTable = class(ReferenceCountedVTable)
@@ -5943,6 +5947,12 @@ begin
 	FbException.checkException(status);
 end;
 
+function IKeyHolderPlugin.useOnlyOwnKeys(status: IStatus): Boolean;
+begin
+	Result := KeyHolderPluginVTable(vTable).useOnlyOwnKeys(Self, status);
+	FbException.checkException(status);
+end;
+
 function IDbCryptInfo.getDatabaseFullPath(status: IStatus): PAnsiChar;
 begin
 	Result := DbCryptInfoVTable(vTable).getDatabaseFullPath(Self, status);
@@ -9854,6 +9864,15 @@ begin
 	end
 end;
 
+function IKeyHolderPluginImpl_useOnlyOwnKeysDispatcher(this: IKeyHolderPlugin; status: IStatus): Boolean; cdecl;
+begin
+	try
+		Result := IKeyHolderPluginImpl(this).useOnlyOwnKeys(status);
+	except
+		on e: Exception do FbException.catchException(status, e);
+	end
+end;
+
 var
 	IKeyHolderPluginImpl_vTable: KeyHolderPluginVTable;
 
@@ -12646,13 +12665,14 @@ initialization
 	ICryptKeyCallbackImpl_vTable.callback := @ICryptKeyCallbackImpl_callbackDispatcher;
 
 	IKeyHolderPluginImpl_vTable := KeyHolderPluginVTable.create;
-	IKeyHolderPluginImpl_vTable.version := 6;
+	IKeyHolderPluginImpl_vTable.version := 7;
 	IKeyHolderPluginImpl_vTable.addRef := @IKeyHolderPluginImpl_addRefDispatcher;
 	IKeyHolderPluginImpl_vTable.release := @IKeyHolderPluginImpl_releaseDispatcher;
 	IKeyHolderPluginImpl_vTable.setOwner := @IKeyHolderPluginImpl_setOwnerDispatcher;
 	IKeyHolderPluginImpl_vTable.getOwner := @IKeyHolderPluginImpl_getOwnerDispatcher;
 	IKeyHolderPluginImpl_vTable.keyCallback := @IKeyHolderPluginImpl_keyCallbackDispatcher;
 	IKeyHolderPluginImpl_vTable.keyHandle := @IKeyHolderPluginImpl_keyHandleDispatcher;
+	IKeyHolderPluginImpl_vTable.useOnlyOwnKeys := @IKeyHolderPluginImpl_useOnlyOwnKeysDispatcher;
 
 	IDbCryptInfoImpl_vTable := DbCryptInfoVTable.create;
 	IDbCryptInfoImpl_vTable.version := 3;

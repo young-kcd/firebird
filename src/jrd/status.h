@@ -100,6 +100,11 @@ namespace Jrd
 			return localStatusVector.isEmpty();
 		}
 
+		bool isSuccess() const
+		{
+			return localStatusVector.isEmpty();
+		}
+
 	private:
 		Firebird::LocalStatus localStatus;
 		FbStatusVector localStatusVector;

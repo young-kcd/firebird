@@ -722,6 +722,11 @@ interface KeyHolderPlugin : PluginBase
 	// Missing key with given name is not an error condition for keyHandle().
 	// It should just return NULL in this case
 	CryptKeyCallback keyHandle(Status status, const string keyName);
+
+version:		// 3.0.1 => 3.0.2
+	// With returning true here KeyHolder attachment can use only keys, provided by this KeyHolder.
+	// Use of keys, got by database crypt plugin from other attachments, is prohibited.
+	boolean useOnlyOwnKeys(Status status);
 }
 
 

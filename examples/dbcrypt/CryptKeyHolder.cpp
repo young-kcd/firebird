@@ -108,6 +108,17 @@ public:
 		return key;
 	}
 
+	FB_BOOLEAN useOnlyOwnKeys(CheckStatusWrapper* status)
+	{
+		IConfigEntry* e = getEntry(status, "OnlyOwnKey");
+		if (!e)
+			return FB_TRUE;	// safe default
+
+		FB_BOOLEAN rc = e->getBoolValue();
+		e->release();
+		return rc;
+	}
+
 private:
 	class CallbackInterface : public ICryptKeyCallbackImpl<CallbackInterface, CheckStatusWrapper>
 	{
