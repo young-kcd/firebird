@@ -56,6 +56,7 @@
 #include "../common/classes/UserBlob.h"
 #include "../common/os/os_utils.h"
 #include "../common/StatusHolder.h"
+#include "../common/ThreadStart.h"
 
 using MsgFormat::SafeArg;
 

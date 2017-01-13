@@ -39,6 +39,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
+#include "../common/ThreadStart.h"
 
 #include "../jrd/EngineInterface.h"
 

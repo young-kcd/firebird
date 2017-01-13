@@ -26,9 +26,7 @@
 
 #include "firebird.h"
 #include <string.h>
-//#include "../remote/remote.h"
 #include "../common/xdr.h"
-//#include "../remote/proto_proto.h"
 #include "../common/xdr_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/gdsassert.h"
