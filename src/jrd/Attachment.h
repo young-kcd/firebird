@@ -153,7 +153,7 @@ public:
 		return useAsync ? &asyncMutex : &mainMutex;
 	}
 
-	Firebird::Mutex* getBlocking()
+	Firebird::Mutex* getBlockingMutex()
 	{
 		return &blockingMutex;
 	}

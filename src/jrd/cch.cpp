@@ -2980,7 +2980,7 @@ void BufferControl::cache_writer(BufferControl* bcb)
 }
 
 
-void BufferControl::exceptionHandler(const Firebird::Exception& ex, BcbSync::ThreadRoutine* /*routine*/)
+void BufferControl::exceptionHandler(const Firebird::Exception& ex, BcbThreadSync::ThreadRoutine*)
 {
 	FbLocalStatus status_vector;
 	ex.stuffException(&status_vector);
