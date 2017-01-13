@@ -146,23 +146,23 @@ public:
 	Firebird::SyncObject	bcb_syncLRU;
 	//Firebird::SyncObject	bcb_syncPageWrite;
 
-	typedef ThreadFinishSync<BufferControl*> BcbSync;
+	typedef ThreadFinishSync<BufferControl*> BcbThreadSync;
 
 	static void cache_writer(BufferControl* bcb);
 	Firebird::Semaphore bcb_writer_sem;		// Wake up cache writer
 	Firebird::Semaphore bcb_writer_init;	// Cache writer initialization
-	BcbSync bcb_writer_fini;				// Cache writer finalization
+	BcbThreadSync bcb_writer_fini;			// Cache writer finalization
 #ifdef SUPERSERVER_V2
 	static void cache_reader(BufferControl* bcb);
 	// the code in cch.cpp is not tested for semaphore instead event !!!
 	Firebird::Semaphore bcb_reader_sem;		// Wake up cache reader
 	Firebird::Semaphore bcb_reader_init;	// Cache reader initialization
-	BcbSync bcb_reader_fini;				// Cache reader finalization
+	BcbThreadSync bcb_reader_fini;			// Cache reader finalization
 
 	PageBitmap*	bcb_prefetch;		// Bitmap of pages to prefetch
 #endif
 
-	void exceptionHandler(const Firebird::Exception& ex, BcbSync::ThreadRoutine* routine);
+	void exceptionHandler(const Firebird::Exception& ex, BcbThreadSync::ThreadRoutine* routine);
 
 	bcb_repeat*	bcb_rpt;
 };

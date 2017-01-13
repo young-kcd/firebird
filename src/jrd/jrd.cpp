@@ -663,7 +663,7 @@ namespace
 			  blocking(!(lockFlags & ATT_NON_BLOCKING))
 		{
 			if (blocking)
-				sAtt->getBlocking()->enter(from);
+				sAtt->getBlockingMutex()->enter(from);
 
 			try
 			{
@@ -700,7 +700,7 @@ namespace
 			catch (const Firebird::Exception&)
 			{
 				if (blocking)
-					sAtt->getBlocking()->leave();
+					sAtt->getBlockingMutex()->leave();
 				throw;
 			}
 		}
@@ -716,7 +716,7 @@ namespace
 				sAtt->getMutex(async)->leave();
 
 			if (blocking)
-				sAtt->getBlocking()->leave();
+				sAtt->getBlockingMutex()->leave();
 		}
 
 	private:
