@@ -595,7 +595,8 @@ class MappingIpc FB_FINAL : public Firebird::IpcObject
 
 public:
 	explicit MappingIpc(MemoryPool&)
-		: processId(getpid())
+		: processId(getpid()),
+		  cleanupSync(*getDefaultMemoryPool(), clearDelivery, THREAD_high)
 	{ }
 
 	~MappingIpc()
@@ -618,7 +619,7 @@ public:
 			(void)  // Ignore errors in cleanup
 				sharedMemory->eventPost(&sMem->process[process].notifyEvent);
 
-			cleanupSemaphore.tryEnter(5);
+			cleanupSync.waitForCompletion();
 
 			// Ignore errors in cleanup
 			sharedMemory->eventFini(&sMem->process[process].notifyEvent);
@@ -774,13 +775,19 @@ public:
 
 		try
 		{
-			Thread::start(clearDelivery, this, THREAD_high);
+			cleanupSync.run(this);
 		}
 		catch (const Exception&)
 		{
 			sMem->process[process].flags &= ~MappingHeader::FLAG_ACTIVE;
 			throw;
 		}
+	}
+
+	void exceptionHandler(const Exception& ex, ThreadFinishSync<MappingIpc*>::ThreadRoutine*)
+	{
+		iscLogException("Fatal error in clearDeliveryThread", ex);
+		fb_utils::logAndDie("Fatal error in clearDeliveryThread");
 	}
 
 private:
@@ -820,13 +827,10 @@ private:
 			}
 			if (startup)
 				startupSemaphore.release();
-
-			cleanupSemaphore.release();
 		}
 		catch (const Exception& ex)
 		{
-			iscLogException("Fatal error in clearDeliveryThread", ex);
-			fb_utils::logAndDie("Fatal error in clearDeliveryThread");
+			exceptionHandler(ex, NULL);
 		}
 	}
 
@@ -881,11 +885,9 @@ private:
 		MappingIpc* const data;
 	};
 
-	static THREAD_ENTRY_DECLARE clearDelivery(THREAD_ENTRY_PARAM par)
+	static void clearDelivery(MappingIpc* mapping)
 	{
-		MappingIpc* m = (MappingIpc*)par;
-		m->clearDeliveryThread();
-		return 0;
+		mapping->clearDeliveryThread();
 	}
 
 	AutoPtr<SharedMemory<MappingHeader> > sharedMemory;
@@ -893,7 +895,7 @@ private:
 	const SLONG processId;
 	unsigned process;
 	Semaphore startupSemaphore;
-	Semaphore cleanupSemaphore;
+	ThreadFinishSync<MappingIpc*> cleanupSync;
 };
 
 GlobalPtr<MappingIpc, InstanceControl::PRIORITY_DELETE_FIRST> mappingIpc;

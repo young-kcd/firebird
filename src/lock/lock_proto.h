@@ -418,6 +418,8 @@ public:
 	SINT64 readData2(USHORT, const UCHAR*, USHORT, SRQ_PTR);
 	SINT64 writeData(SRQ_PTR, SINT64);
 
+	void exceptionHandler(const Firebird::Exception& ex, ThreadFinishSync<LockManager*>::ThreadRoutine* routine);
+
 private:
 	explicit LockManager(const Firebird::string&, Firebird::RefPtr<Config>);
 	~LockManager();
@@ -471,11 +473,9 @@ private:
 	void detach_shared_file(Firebird::CheckStatusWrapper*);
 	void get_shared_file_name(Firebird::PathName&, ULONG extend = 0) const;
 
-	static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
+	static void blocking_action_thread(LockManager* lockMgr)
 	{
-		LockManager* const lockMgr = static_cast<LockManager*>(arg);
 		lockMgr->blocking_action_thread();
-		return 0;
 	}
 
 	bool initialize(Firebird::SharedMemoryBase* sm, bool init);
@@ -490,7 +490,7 @@ private:
 	Firebird::RWLock m_remapSync;
 	Firebird::AtomicCounter m_waitingOwners;
 
-	Firebird::Semaphore m_cleanupSemaphore;
+	ThreadFinishSync<LockManager*> m_cleanupSync;
 	Firebird::Semaphore m_startupSemaphore;
 
 public:

@@ -58,6 +58,7 @@
 #include "../common/classes/init.h"
 #include "../common/classes/TempFile.h"
 #include "../common/utils_proto.h"
+#include "../common/ThreadStart.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

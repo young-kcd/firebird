@@ -106,7 +106,6 @@ static void expunge(thread_db*, record_param*, const jrd_tra*, ULONG);
 static bool dfw_should_know(record_param* org_rpb, record_param* new_rpb,
 	USHORT irrelevant_field, bool void_update_is_relevant = false);
 static void garbage_collect(thread_db*, record_param*, ULONG, RecordStack&);
-static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM);
 
 
 #ifdef VIO_DEBUG
@@ -1922,7 +1921,7 @@ void VIO_fini(thread_db* tdbb)
 	{
 		dbb->dbb_flags &= ~DBB_garbage_collector;
 		dbb->dbb_gc_sem.release(); // Wake up running thread
-		dbb->dbb_gc_fini.enter();
+		dbb->dbb_gc_fini.waitForCompletion();
 	}
 }
 
@@ -2384,7 +2383,7 @@ void VIO_init(thread_db* tdbb)
 			{
 				try
 				{
-					Thread::start(garbage_collector, dbb, THREAD_medium);
+					dbb->dbb_gc_fini.run(dbb);
 				}
 				catch (const Exception&)
 				{
@@ -4307,7 +4306,7 @@ void VIO_garbage_collect_idx(thread_db* tdbb, jrd_tra* transaction,
 	clearRecordStack(staying);
 }
 
-static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
+void Database::garbage_collector(Database* dbb)
 {
 /**************************************
  *
@@ -4324,7 +4323,6 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 	FbLocalStatus status_vector;
-	Database* const dbb = (Database*) arg;
 
 	try
 	{
@@ -4555,8 +4553,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		ex.stuffException(&status_vector);
-		iscDbLogStatus(dbb->dbb_filename.c_str(), &status_vector);
+		dbb->exceptionHandler(ex, NULL);
 	}
 
 	dbb->dbb_flags &= ~(DBB_garbage_collector | DBB_gc_active | DBB_gc_pending);
@@ -4569,15 +4566,19 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 			dbb->dbb_flags &= ~DBB_gc_starting;
 			dbb->dbb_gc_init.release();
 		}
-		dbb->dbb_gc_fini.release();
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		ex.stuffException(&status_vector);
-		iscDbLogStatus(dbb->dbb_filename.c_str(), &status_vector);
+		dbb->exceptionHandler(ex, NULL);
 	}
+}
 
-	return 0;
+
+void Database::exceptionHandler(const Firebird::Exception& ex, ThreadFinishSync<Database*>::ThreadRoutine* /*routine*/)
+{
+	FbLocalStatus status_vector;
+	ex.stuffException(&status_vector);
+	iscDbLogStatus(dbb_filename.c_str(), &status_vector);
 }
 
 
