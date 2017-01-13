@@ -181,6 +181,11 @@ public:
 		return useAsync ? &asyncMutex : &mainMutex;
 	}
 
+	Firebird::Mutex* getBlocking()
+	{
+		return &blockingMutex;
+	}
+
 	void cancel()
 	{
 		fb_assert(asyncMutex.locked());
@@ -209,6 +214,8 @@ private:
 	// These mutexes guarantee attachment existence. After releasing both of them with possibly
 	// zero att_use_count one should check does attachment still exists calling getHandle().
 	Firebird::Mutex mainMutex, asyncMutex;
+	// This mutex guarantees attachment is not accessed by more than single external thread.
+	Firebird::Mutex blockingMutex;
 };
 
 //
