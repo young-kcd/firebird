@@ -3181,7 +3181,7 @@ bool setFastLoopbackOption(SOCKET s)
 	int optval = 1;
 	DWORD bytes = 0;
 
-	int ret = WSAIoctl(s, SIO_LOOPBACK_FAST_PATH, &optval, sizeof(optval), 
+	int ret = WSAIoctl(s, SIO_LOOPBACK_FAST_PATH, &optval, sizeof(optval),
 					   NULL, 0, &bytes, 0, 0);
 
 	return (ret == 0);

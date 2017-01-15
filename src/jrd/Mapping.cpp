@@ -339,7 +339,9 @@ public:
 			// If database is shutdown it's not a reason to fail mapping
 			StaticStatusVector status;
 			ex.stuffException(status);
+
 			const ISC_STATUS* s = status.begin();
+
 			if (fb_utils::containsErrorCode(s, isc_shutdown))
 			{
 				downFlag = true;
@@ -1360,7 +1362,9 @@ ULONG mapUser(const bool throwNotFoundError,
 					MAP_DEBUG(fprintf(stderr, "Populate cache for main DB %p\n", iDb.get()));
 					cDb->populate(iDb, dbDown);
 				}
+
 				MAP_DEBUG(fprintf(stderr, "Populate cache for sec DB %p\n", iSec.get()));
+
 				cSec->populate(iSec, secDown);
 
 				sSec.downgrade(SYNC_SHARED);

@@ -1452,8 +1452,8 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, TraNumber number, int 
 	CCH_MARK(tdbb, &window);
 	const ULONG generation = tip->tip_header.pag_generation;
 #else
-	if (!(dbb->dbb_flags & DBB_shared) || !transaction  || 
-		transaction->tra_flags & TRA_write ||
+	if (!(dbb->dbb_flags & DBB_shared) || !transaction  ||
+		(transaction->tra_flags & TRA_write) ||
 		old_state != tra_active || state != tra_committed)
 	{
 		CCH_MARK_MUST_WRITE(tdbb, &window);
@@ -3094,7 +3094,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	else
 	{
 		const bool dontWrite = (dbb->dbb_flags & DBB_shared) &&
-						 (trans->tra_flags & TRA_readonly);
+			(trans->tra_flags & TRA_readonly);
 
 		const header_page* header = bump_transaction_id(tdbb, &window, dontWrite);
 		number = Ods::getNT(header);

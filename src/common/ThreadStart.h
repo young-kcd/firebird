@@ -147,7 +147,7 @@ private:
 
 	static THREAD_ENTRY_DECLARE internalRun(THREAD_ENTRY_PARAM arg)
 	{
-		((ThreadFinishSync*)arg)->internalRun();
+		((ThreadFinishSync*) arg)->internalRun();
 		return 0;
 	}
 

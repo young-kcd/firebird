@@ -667,7 +667,6 @@ namespace
 
 			try
 			{
-
 				if (!nolock)
 					sAtt->getMutex(async)->enter(from);
 
@@ -1653,6 +1652,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 					jAtt->getStable()->manualLock(attachment->att_flags, ATT_manual_lock);
 					throw;
 				}
+
 				jAtt->getStable()->manualLock(attachment->att_flags, ATT_manual_lock);
 			}
 
@@ -8117,6 +8117,7 @@ void TrigVector::release(thread_db* tdbb) const
 	if (--useCount == 0)
 	{
 		const const_iterator e = end();
+
 		for (const_iterator t = begin(); t != e; ++t)
 		{
 			JrdStatement* stmt = t->statement;
@@ -8129,4 +8130,3 @@ void TrigVector::release(thread_db* tdbb) const
 		delete this;
 	}
 }
-

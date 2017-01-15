@@ -422,6 +422,7 @@ namespace Jrd {
 			PluginManagerInterfacePtr()->releasePlugin(checkPlugin);
 			checkPlugin = NULL;
 		}
+
 		if (dbb.dbb_config->getServerMode() == MODE_SUPER)
 		{
 			checkPlugin = cryptControl.makeInstance();
@@ -1171,6 +1172,7 @@ namespace Jrd {
 			IKeyHolderPlugin* keyPlugin = keyControl.plugin();
 			FbLocalStatus st;
 			bool flProvide = false;
+
 			if (keyPlugin->keyCallback(&st, att->att_crypt_callback))
 				flProvide = true;
 			else
@@ -1227,10 +1229,10 @@ namespace Jrd {
 	void CryptoManager::KeyHolderPlugins::releaseHolders(PerAttHolders& pa)
 	{
 		unsigned j = 0;
+
 		for (; j < pa.second.getCount(); ++j)
-		{
 			PluginManagerInterfacePtr()->releasePlugin(pa.second[j]);
-		}
+
 		pa.second.removeCount(0, j);
 	}
 
@@ -1239,6 +1241,7 @@ namespace Jrd {
 		MutexLockGuard g(holdersMutex, FB_FUNCTION);
 
 		Firebird::HalfStaticArray<Firebird::IKeyHolderPlugin*, 64> holdersVector;
+
 		for (unsigned i = 0; i < knownHolders.getCount(); ++i)
 		{
 			PerAttHolders pa = knownHolders[i];
@@ -1266,6 +1269,7 @@ namespace Jrd {
 			if (st.isSuccess() && mgr->checkValidation(crypt))
 				return true;
 		}
+
 		return true;
 	}
 
@@ -1278,6 +1282,7 @@ namespace Jrd {
 		for (unsigned i = 0; i < knownHolders.getCount(); ++i)
 		{
 			PerAttHolders& pa = knownHolders[i];
+
 			if (pa.first == att)
 			{
 				bool empty = (pa.second.getCount() == 0);
@@ -1320,6 +1325,7 @@ namespace Jrd {
 				if (knownHolders[i].first == att)
 					goto found;
 			}
+
 			att->signalCancel();
 found:;
 		}

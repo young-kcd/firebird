@@ -3855,8 +3855,11 @@ static processing_state show_domains(const SCHAR* domain_name)
 				isqlGlob.printf("%s                                ", NEWLINE);
 			}
 
-			if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SUB_TYPE, FLD.RDB$FIELD_PRECISION, FLD.RDB$FIELD_SCALE))
+			if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SUB_TYPE,
+					FLD.RDB$FIELD_PRECISION, FLD.RDB$FIELD_SCALE))
+			{
 				return ps_ERR;
+			}
 
 			// Length for CHARs
 			if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) {
@@ -4351,8 +4354,11 @@ static processing_state show_func(const SCHAR* funcname)
 				}
 			}
 
-			if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SUB_TYPE, FLD.RDB$FIELD_PRECISION, FLD.RDB$FIELD_SCALE))
+			if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SUB_TYPE,
+					FLD.RDB$FIELD_PRECISION, FLD.RDB$FIELD_SCALE))
+			{
 				return ps_ERR;
+			}
 
 			// Use RDB$CHARACTER_LENGTH instead of RDB$FIELD_LENGTH
 			//   FSG 19.Nov.2000
@@ -5244,8 +5250,11 @@ static processing_state show_proc(const SCHAR* procname)
 				}
 			}
 
-			if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SUB_TYPE, FLD.RDB$FIELD_PRECISION, FLD.RDB$FIELD_SCALE))
+			if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SUB_TYPE,
+					FLD.RDB$FIELD_PRECISION, FLD.RDB$FIELD_SCALE))
+			{
 				return ps_ERR;
+			}
 
 			// Use RDB$CHARACTER_LENGTH instead of RDB$FIELD_LENGTH
 			//   FSG 19.Nov.2000
@@ -5775,8 +5784,11 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
 			continue;
 		}
 
-		if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SUB_TYPE, FLD.RDB$FIELD_PRECISION, FLD.RDB$FIELD_SCALE))
+		if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SUB_TYPE,
+				FLD.RDB$FIELD_PRECISION, FLD.RDB$FIELD_SCALE))
+		{
 			return ps_ERR;
+		}
 
 		if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) {
 			isqlGlob.printf("(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));

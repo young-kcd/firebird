@@ -1552,7 +1552,8 @@ void LockManager::blocking_action_thread()
 }
 
 
-void LockManager::exceptionHandler(const Firebird::Exception& ex, ThreadFinishSync<LockManager*>::ThreadRoutine* /*routine*/)
+void LockManager::exceptionHandler(const Firebird::Exception& ex,
+	ThreadFinishSync<LockManager*>::ThreadRoutine* /*routine*/)
 {
 /**************************************
  *

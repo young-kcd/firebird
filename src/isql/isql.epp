@@ -1803,7 +1803,8 @@ bool ISQL_is_domain(const TEXT* field_name)
 
 // Print the numeric type as accurately as possible, depending on the ODS.
 // If it isn't numeric/decimal or is another non-numeric data type, print only the type.
-bool ISQL_printNumericType(const char* fieldName, const int fieldType, const int fieldSubType, const int fieldPrecision, const int fieldScale)
+bool ISQL_printNumericType(const char* fieldName, const int fieldType, const int fieldSubType,
+	const int fieldPrecision, const int fieldScale)
 {
 	// Look through types array
 	int i = 0;
@@ -1826,7 +1827,8 @@ bool ISQL_printNumericType(const char* fieldName, const int fieldType, const int
 		// We are ODS >= 10 and could be any Dialect
 
 		// We are Dialect >=3 since FIELD_PRECISION is non-NULL
-		if (isqlGlob.major_ods >= ODS_VERSION10 && fieldPrecision != 0 && fieldSubType > 0 && fieldSubType <= MAX_INTSUBTYPES)
+		if (isqlGlob.major_ods >= ODS_VERSION10 && fieldPrecision != 0 &&
+			fieldSubType > 0 && fieldSubType <= MAX_INTSUBTYPES)
 		{
 			isqlGlob.printf("%s(%d, %d)",
 				Integral_subtypes[fieldSubType],

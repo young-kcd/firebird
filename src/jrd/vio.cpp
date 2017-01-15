@@ -1301,7 +1301,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 	UCHAR* tail;
 	const UCHAR* tail_end;
 	UCHAR differences[MAX_DIFFERENCES];
-	
+
 	// Primary record version not uses prior version
 	Record* prior = (rpb->rpb_flags & rpb_chained) ? rpb->rpb_prior : NULL;
 
@@ -4574,7 +4574,8 @@ void Database::garbage_collector(Database* dbb)
 }
 
 
-void Database::exceptionHandler(const Firebird::Exception& ex, ThreadFinishSync<Database*>::ThreadRoutine* /*routine*/)
+void Database::exceptionHandler(const Firebird::Exception& ex,
+	ThreadFinishSync<Database*>::ThreadRoutine* /*routine*/)
 {
 	FbLocalStatus status_vector;
 	ex.stuffException(&status_vector);
