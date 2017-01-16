@@ -143,7 +143,6 @@ private:
 	TA threadArg;
 	ThreadRoutine* threadRoutine;
 	int threadPriority;
-	bool starting;
 
 	static THREAD_ENTRY_DECLARE internalRun(THREAD_ENTRY_PARAM arg)
 	{
