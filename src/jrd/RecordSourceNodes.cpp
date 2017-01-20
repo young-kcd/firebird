@@ -1108,7 +1108,7 @@ ProcedureSourceNode* ProcedureSourceNode::copy(thread_db* tdbb, NodeCopier& copi
 	newSource->procedure = procedure;
 	newSource->view = view;
 	CompilerScratch::csb_repeat* element = CMP_csb_element(copier.csb, newSource->stream);
-	element->csb_procedure = newSource->procedure;
+	element->csb_procedure = MET_lookup_procedure_id(tdbb, procedure->getId(), false, false, 0);
 	element->csb_view = newSource->view;
 	element->csb_view_stream = copier.remap[0];
 
