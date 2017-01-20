@@ -897,7 +897,7 @@ grant0($node)
 	***/
 	| ddl_privileges(NOTRIAL(&$node->privileges)) object
 			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
-		{ 
+		{
 			$node->object = $2;
 			$node->grantAdminOption = $5;
 			$node->grantor = $6;
@@ -931,11 +931,11 @@ object
 		{ $$ = newNode<GranteeClause>(obj_functions, get_object_name(obj_functions)); }
 	| PACKAGE
 		{ $$ = newNode<GranteeClause>(obj_packages, get_object_name(obj_packages)); }
-	| GENERATOR 
+	| GENERATOR
 		{ $$ = newNode<GranteeClause>(obj_generators, get_object_name(obj_generators)); }
-	| SEQUENCE 
+	| SEQUENCE
 		{ $$ = newNode<GranteeClause>(obj_generators, get_object_name(obj_generators)); }
-	| DOMAIN 
+	| DOMAIN
 		{ $$ = newNode<GranteeClause>(obj_domains, get_object_name(obj_domains)); }
 	| EXCEPTION
 		{ $$ = newNode<GranteeClause>(obj_exceptions, get_object_name(obj_exceptions)); }
@@ -948,7 +948,7 @@ object
 	| FILTER
 		{ $$ = newNode<GranteeClause>(obj_filters, get_object_name(obj_filters)); }
 	;
-	
+
 table_noise
 	: // nothing
 	| TABLE
@@ -1718,7 +1718,7 @@ replace_sequence_clause
 			$$ = $2;
 		}
 	;
-	
+
 %type replace_sequence_options(<createAlterSequenceNode>)
 replace_sequence_options($seqNode)
 	: /* nothing */
