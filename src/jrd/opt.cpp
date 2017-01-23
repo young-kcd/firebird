@@ -250,7 +250,6 @@ namespace
 			{
 				River* const sub_river = rivers.pop();
 				m_rsb = sub_river->getRecordSource();
-				sub_river->activate(csb);
 			}
 			else
 			{
@@ -733,6 +732,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 				// all currently available rivers
 
 				rivers.add(FB_NEW_POOL(*pool) CrossJoin(csb, rivers));
+				rivers.back()->activate(csb);
 			}
 			else
 			{
