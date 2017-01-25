@@ -87,7 +87,7 @@ typedef Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<USHORT, UCHAR> >
 #ifdef SUPERSERVER_V2
 static TraNumber bump_transaction_id(thread_db*, WIN*);
 #else
-static header_page* bump_transaction_id(thread_db*, WIN*);
+static header_page* bump_transaction_id(thread_db*, WIN*, bool);
 #endif
 static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, int state);
 static void expand_view_lock(thread_db* tdbb, jrd_tra*, jrd_rel*, UCHAR lock_type,
@@ -1505,16 +1505,25 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, TraNumber number, int 
 	WIN window(DB_PAGE_SPACE, -1);
 	tx_inv_page* tip = fetch_inventory_page(tdbb, &window, sequence, LCK_write);
 
+	UCHAR* address = tip->tip_transactions + byte;
+	const int old_state = ((*address) >> shift) & TRA_MASK;
+
 #ifdef SUPERSERVER_V2
 	CCH_MARK(tdbb, &window);
 	const ULONG generation = tip->tip_header.pag_generation;
 #else
-	CCH_MARK_MUST_WRITE(tdbb, &window);
+	if (!(dbb->dbb_flags & DBB_shared) || !transaction || 
+		transaction->tra_flags & TRA_write ||
+		old_state != tra_active || state != tra_committed)
+	{
+		CCH_MARK_MUST_WRITE(tdbb, &window);
+	}
+	else
+		CCH_MARK(tdbb, &window);
 #endif
 
 	// set the state on the TIP page
 
-	UCHAR* address = tip->tip_transactions + byte;
 	*address &= ~(TRA_MASK << shift);
 	*address |= state << shift;
 
@@ -2004,7 +2013,7 @@ static TraNumber bump_transaction_id(thread_db* tdbb, WIN* window)
 #else
 
 
-static header_page* bump_transaction_id(thread_db* tdbb, WIN* window)
+static header_page* bump_transaction_id(thread_db* tdbb, WIN* window, bool dontWrite)
 {
 /**************************************
  *
@@ -2059,7 +2068,11 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN* window)
 
 	// Extend, if necessary, has apparently succeeded.  Next, update header page
 
-	CCH_MARK_MUST_WRITE(tdbb, window);
+	if (dontWrite && !new_tip)
+		CCH_MARK(tdbb, window);
+	else
+		CCH_MARK_MUST_WRITE(tdbb, window);
+
 	dbb->dbb_next_transaction = number;
 
 	Ods::writeNT(header, number);
@@ -2451,7 +2464,10 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 		new_number = dbb->dbb_next_transaction + dbb->generateTransactionId(tdbb);
 	else
 	{
-		const header_page* const header = bump_transaction_id(tdbb, &window);
+		const bool dontWrite = (dbb->dbb_flags & DBB_shared) &&
+			(transaction->tra_flags & TRA_readonly);
+
+		const header_page* const header = bump_transaction_id(tdbb, &window, dontWrite);
 		new_number = Ods::getNT(header);
 	}
 #endif
@@ -3162,7 +3178,10 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	}
 	else
 	{
-		const header_page* header = bump_transaction_id(tdbb, &window);
+		const bool dontWrite = (dbb->dbb_flags & DBB_shared) &&
+						 (trans->tra_flags & TRA_readonly);
+
+		const header_page* header = bump_transaction_id(tdbb, &window, dontWrite);
 		number = Ods::getNT(header);
 		oldest = Ods::getOIT(header);
 		oldest_active = Ods::getOAT(header);
