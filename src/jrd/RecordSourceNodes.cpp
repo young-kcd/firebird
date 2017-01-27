@@ -1093,13 +1093,16 @@ ProcedureSourceNode* ProcedureSourceNode::copy(thread_db* tdbb, NodeCopier& copi
 		newSource->targetList = copier.copy(tdbb, targetList);
 	}
 
+	jrd_prc* const new_procedure =
+		MET_lookup_procedure_id(tdbb, procedure->getId(), false, false, 0);
+
 	newSource->stream = copier.csb->nextStream();
 	copier.remap[stream] = newSource->stream;
 	newSource->context = context;
-	newSource->procedure = procedure;
+	newSource->procedure = new_procedure;
 	newSource->view = view;
 	CompilerScratch::csb_repeat* element = CMP_csb_element(copier.csb, newSource->stream);
-	element->csb_procedure = MET_lookup_procedure_id(tdbb, procedure->getId(), false, false, 0);
+	element->csb_procedure = new_procedure;
 	element->csb_view = newSource->view;
 	element->csb_view_stream = copier.remap[0];
 
