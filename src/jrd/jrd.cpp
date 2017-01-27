@@ -4402,8 +4402,18 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 
 	if (dbb->dbb_sync->hasContention())
 	{
-		Database::Checkout dcoHolder(dbb);
-		THREAD_YIELD();
+		const FB_UINT64 counter = dbb->dbb_sync->getLockCounter();
+		{
+			Database::Checkout dcoHolder(dbb);
+			THREAD_YIELD();
+
+			// if nobody was able to lock dbb_sync, sleep a bit longer
+			while (dbb->dbb_sync->hasContention() &&
+				   counter == dbb->dbb_sync->getLockCounter())
+			{
+				THREAD_SLEEP(1);
+			}
+		}
 	}
 
 	try {

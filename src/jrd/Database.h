@@ -150,7 +150,7 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 	class Sync : public Firebird::RefCounted
 	{
 	public:
-		Sync() : threadId(0), isAst(false)
+		Sync() : threadId(0), isAst(false), lockCounter(0)
 #ifdef DEV_BUILD
 			, lockCount(0)
 #endif
@@ -164,6 +164,7 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 			--waiters;
 			threadId = getThreadId();
 			isAst = ast;
+			lockCounter++;
 #ifdef DEV_BUILD
 			++lockCount;
 #endif
@@ -184,6 +185,11 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 		bool hasContention() const
 		{
 			return (waiters.value() > 0);
+		}
+
+		FB_UINT64 getLockCounter() const
+		{
+			return lockCounter;
 		}
 
 #ifdef DEV_BUILD
@@ -222,6 +228,7 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 		Firebird::AtomicCounter waiters;
 		FB_THREAD_ID threadId;
 		bool isAst;
+		volatile FB_UINT64 lockCounter;
 #ifdef DEV_BUILD
 		int lockCount;
 #endif
