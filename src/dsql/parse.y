@@ -7837,6 +7837,7 @@ symbol_blob_subtype_name
 %type <metaNamePtr> symbol_character_set_name
 symbol_character_set_name
 	: valid_symbol_name
+	| BINARY
 	;
 
 %type <metaNamePtr> symbol_collation_name
