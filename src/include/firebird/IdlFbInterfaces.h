@@ -73,6 +73,7 @@ namespace Firebird
 	class IWireCryptPlugin;
 	class ICryptKeyCallback;
 	class IKeyHolderPlugin;
+	class IDbCryptInfo;
 	class IDbCryptPlugin;
 	class IExternalContext;
 	class IExternalResultSet;
@@ -1327,7 +1328,7 @@ namespace Firebird
 			void (CLOOP_CARG *setSubType)(IMetadataBuilder* self, IStatus* status, unsigned index, int subType) throw();
 			void (CLOOP_CARG *setLength)(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned length) throw();
 			void (CLOOP_CARG *setCharSet)(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned charSet) throw();
-			void (CLOOP_CARG *setScale)(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned scale) throw();
+			void (CLOOP_CARG *setScale)(IMetadataBuilder* self, IStatus* status, unsigned index, int scale) throw();
 			void (CLOOP_CARG *truncate)(IMetadataBuilder* self, IStatus* status, unsigned count) throw();
 			void (CLOOP_CARG *moveNameToIndex)(IMetadataBuilder* self, IStatus* status, const char* name, unsigned index) throw();
 			void (CLOOP_CARG *remove)(IMetadataBuilder* self, IStatus* status, unsigned index) throw();
@@ -1376,7 +1377,7 @@ namespace Firebird
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> void setScale(StatusType* status, unsigned index, unsigned scale)
+		template <typename StatusType> void setScale(StatusType* status, unsigned index, int scale)
 		{
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setScale(this, status, index, scale);
@@ -2401,6 +2402,7 @@ namespace Firebird
 		struct VTable : public IAuth::VTable
 		{
 			int (CLOOP_CARG *authenticate)(IServer* self, IStatus* status, IServerBlock* sBlock, IWriter* writerInterface) throw();
+			void (CLOOP_CARG *setDbCryptCallback)(IServer* self, IStatus* status, ICryptKeyCallback* cryptCallback) throw();
 		};
 
 	protected:
@@ -2414,7 +2416,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 5;
+		static const unsigned VERSION = 6;
 
 		template <typename StatusType> int authenticate(StatusType* status, IServerBlock* sBlock, IWriter* writerInterface)
 		{
@@ -2422,6 +2424,19 @@ namespace Firebird
 			int ret = static_cast<VTable*>(this->cloopVTable)->authenticate(this, status, sBlock, writerInterface);
 			StatusType::checkException(status);
 			return ret;
+		}
+
+		template <typename StatusType> void setDbCryptCallback(StatusType* status, ICryptKeyCallback* cryptCallback)
+		{
+			if (cloopVTable->version < 6)
+			{
+				StatusType::setVersionError(status, "IServer", cloopVTable->version, 6);
+				StatusType::checkException(status);
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->setDbCryptCallback(this, status, cryptCallback);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -2904,6 +2919,8 @@ namespace Firebird
 		{
 			int (CLOOP_CARG *keyCallback)(IKeyHolderPlugin* self, IStatus* status, ICryptKeyCallback* callback) throw();
 			ICryptKeyCallback* (CLOOP_CARG *keyHandle)(IKeyHolderPlugin* self, IStatus* status, const char* keyName) throw();
+			FB_BOOLEAN (CLOOP_CARG *useOnlyOwnKeys)(IKeyHolderPlugin* self, IStatus* status) throw();
+			ICryptKeyCallback* (CLOOP_CARG *chainHandle)(IKeyHolderPlugin* self, IStatus* status) throw();
 		};
 
 	protected:
@@ -2917,7 +2934,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static const unsigned VERSION = 5;
 
 		template <typename StatusType> int keyCallback(StatusType* status, ICryptKeyCallback* callback)
 		{
@@ -2934,6 +2951,64 @@ namespace Firebird
 			StatusType::checkException(status);
 			return ret;
 		}
+
+		template <typename StatusType> FB_BOOLEAN useOnlyOwnKeys(StatusType* status)
+		{
+			if (cloopVTable->version < 5)
+			{
+				StatusType::setVersionError(status, "IKeyHolderPlugin", cloopVTable->version, 5);
+				StatusType::checkException(status);
+				return 0;
+			}
+			StatusType::clearException(status);
+			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->useOnlyOwnKeys(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> ICryptKeyCallback* chainHandle(StatusType* status)
+		{
+			if (cloopVTable->version < 5)
+			{
+				StatusType::setVersionError(status, "IKeyHolderPlugin", cloopVTable->version, 5);
+				StatusType::checkException(status);
+				return 0;
+			}
+			StatusType::clearException(status);
+			ICryptKeyCallback* ret = static_cast<VTable*>(this->cloopVTable)->chainHandle(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
+	};
+
+	class IDbCryptInfo : public IReferenceCounted
+	{
+	public:
+		struct VTable : public IReferenceCounted::VTable
+		{
+			const char* (CLOOP_CARG *getDatabaseFullPath)(IDbCryptInfo* self, IStatus* status) throw();
+		};
+
+	protected:
+		IDbCryptInfo(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
+		{
+		}
+
+		~IDbCryptInfo()
+		{
+		}
+
+	public:
+		static const unsigned VERSION = 3;
+
+		template <typename StatusType> const char* getDatabaseFullPath(StatusType* status)
+		{
+			StatusType::clearException(status);
+			const char* ret = static_cast<VTable*>(this->cloopVTable)->getDatabaseFullPath(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
 	};
 
 	class IDbCryptPlugin : public IPluginBase
@@ -2944,6 +3019,7 @@ namespace Firebird
 			void (CLOOP_CARG *setKey)(IDbCryptPlugin* self, IStatus* status, unsigned length, IKeyHolderPlugin** sources, const char* keyName) throw();
 			void (CLOOP_CARG *encrypt)(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw();
 			void (CLOOP_CARG *decrypt)(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw();
+			void (CLOOP_CARG *setInfo)(IDbCryptPlugin* self, IStatus* status, IDbCryptInfo* info) throw();
 		};
 
 	protected:
@@ -2957,7 +3033,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static const unsigned VERSION = 5;
 
 		template <typename StatusType> void setKey(StatusType* status, unsigned length, IKeyHolderPlugin** sources, const char* keyName)
 		{
@@ -2977,6 +3053,19 @@ namespace Firebird
 		{
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->decrypt(this, status, length, from, to);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void setInfo(StatusType* status, IDbCryptInfo* info)
+		{
+			if (cloopVTable->version < 5)
+			{
+				StatusType::setVersionError(status, "IDbCryptPlugin", cloopVTable->version, 5);
+				StatusType::checkException(status);
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->setInfo(this, status, info);
 			StatusType::checkException(status);
 		}
 	};
@@ -7684,7 +7773,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetScaleDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned scale) throw()
+		static void CLOOP_CARG cloopsetScaleDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, int scale) throw()
 		{
 			StatusType status2(status);
 
@@ -7813,7 +7902,7 @@ namespace Firebird
 		virtual void setSubType(StatusType* status, unsigned index, int subType) = 0;
 		virtual void setLength(StatusType* status, unsigned index, unsigned length) = 0;
 		virtual void setCharSet(StatusType* status, unsigned index, unsigned charSet) = 0;
-		virtual void setScale(StatusType* status, unsigned index, unsigned scale) = 0;
+		virtual void setScale(StatusType* status, unsigned index, int scale) = 0;
 		virtual void truncate(StatusType* status, unsigned count) = 0;
 		virtual void moveNameToIndex(StatusType* status, const char* name, unsigned index) = 0;
 		virtual void remove(StatusType* status, unsigned index) = 0;
@@ -9953,6 +10042,7 @@ namespace Firebird
 					this->setOwner = &Name::cloopsetOwnerDispatcher;
 					this->getOwner = &Name::cloopgetOwnerDispatcher;
 					this->authenticate = &Name::cloopauthenticateDispatcher;
+					this->setDbCryptCallback = &Name::cloopsetDbCryptCallbackDispatcher;
 				}
 			} vTable;
 
@@ -9971,6 +10061,20 @@ namespace Firebird
 			{
 				StatusType::catchException(&status2);
 				return static_cast<int>(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopsetDbCryptCallbackDispatcher(IServer* self, IStatus* status, ICryptKeyCallback* cryptCallback) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::setDbCryptCallback(&status2, cryptCallback);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -10039,6 +10143,7 @@ namespace Firebird
 		}
 
 		virtual int authenticate(StatusType* status, IServerBlock* sBlock, IWriter* writerInterface) = 0;
+		virtual void setDbCryptCallback(StatusType* status, ICryptKeyCallback* cryptCallback) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
@@ -11185,6 +11290,8 @@ namespace Firebird
 					this->getOwner = &Name::cloopgetOwnerDispatcher;
 					this->keyCallback = &Name::cloopkeyCallbackDispatcher;
 					this->keyHandle = &Name::cloopkeyHandleDispatcher;
+					this->useOnlyOwnKeys = &Name::cloopuseOnlyOwnKeysDispatcher;
+					this->chainHandle = &Name::cloopchainHandleDispatcher;
 				}
 			} vTable;
 
@@ -11213,6 +11320,36 @@ namespace Firebird
 			try
 			{
 				return static_cast<Name*>(self)->Name::keyHandle(&status2, keyName);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<ICryptKeyCallback*>(0);
+			}
+		}
+
+		static FB_BOOLEAN CLOOP_CARG cloopuseOnlyOwnKeysDispatcher(IKeyHolderPlugin* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::useOnlyOwnKeys(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<FB_BOOLEAN>(0);
+			}
+		}
+
+		static ICryptKeyCallback* CLOOP_CARG cloopchainHandleDispatcher(IKeyHolderPlugin* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::chainHandle(&status2);
 			}
 			catch (...)
 			{
@@ -11287,6 +11424,87 @@ namespace Firebird
 
 		virtual int keyCallback(StatusType* status, ICryptKeyCallback* callback) = 0;
 		virtual ICryptKeyCallback* keyHandle(StatusType* status, const char* keyName) = 0;
+		virtual FB_BOOLEAN useOnlyOwnKeys(StatusType* status) = 0;
+		virtual ICryptKeyCallback* chainHandle(StatusType* status) = 0;
+	};
+
+	template <typename Name, typename StatusType, typename Base>
+	class IDbCryptInfoBaseImpl : public Base
+	{
+	public:
+		typedef IDbCryptInfo Declaration;
+
+		IDbCryptInfoBaseImpl(DoNotInherit = DoNotInherit())
+		{
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->addRef = &Name::cloopaddRefDispatcher;
+					this->release = &Name::cloopreleaseDispatcher;
+					this->getDatabaseFullPath = &Name::cloopgetDatabaseFullPathDispatcher;
+				}
+			} vTable;
+
+			this->cloopVTable = &vTable;
+		}
+
+		static const char* CLOOP_CARG cloopgetDatabaseFullPathDispatcher(IDbCryptInfo* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getDatabaseFullPath(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<const char*>(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::addRef();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::release();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<int>(0);
+			}
+		}
+	};
+
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IDbCryptInfo> > > > >
+	class IDbCryptInfoImpl : public IDbCryptInfoBaseImpl<Name, StatusType, Base>
+	{
+	protected:
+		IDbCryptInfoImpl(DoNotInherit = DoNotInherit())
+		{
+		}
+
+	public:
+		virtual ~IDbCryptInfoImpl()
+		{
+		}
+
+		virtual const char* getDatabaseFullPath(StatusType* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
@@ -11309,6 +11527,7 @@ namespace Firebird
 					this->setKey = &Name::cloopsetKeyDispatcher;
 					this->encrypt = &Name::cloopencryptDispatcher;
 					this->decrypt = &Name::cloopdecryptDispatcher;
+					this->setInfo = &Name::cloopsetInfoDispatcher;
 				}
 			} vTable;
 
@@ -11350,6 +11569,20 @@ namespace Firebird
 			try
 			{
 				static_cast<Name*>(self)->Name::decrypt(&status2, length, from, to);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopsetInfoDispatcher(IDbCryptPlugin* self, IStatus* status, IDbCryptInfo* info) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::setInfo(&status2, info);
 			}
 			catch (...)
 			{
@@ -11424,6 +11657,7 @@ namespace Firebird
 		virtual void setKey(StatusType* status, unsigned length, IKeyHolderPlugin** sources, const char* keyName) = 0;
 		virtual void encrypt(StatusType* status, unsigned length, const void* from, void* to) = 0;
 		virtual void decrypt(StatusType* status, unsigned length, const void* from, void* to) = 0;
+		virtual void setInfo(StatusType* status, IDbCryptInfo* info) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

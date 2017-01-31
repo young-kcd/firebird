@@ -55,7 +55,7 @@
 **   Here the Firebird history begins:
 **   ODS 10.0 is for FB1.0 and ODS 10.1 is for FB1.5.
 **   ODS 11.0 is for FB2.0, ODS11.1 is for FB2.1 and ODS11.2 is for FB2.5.
-**   ODS 12.0 is for FB3.
+**   ODS 12.0 is for FB3, ODS 13.0 is for FB4.
 **
 ***********************************************************************/
 
@@ -69,6 +69,7 @@ const USHORT ODS_VERSION10	= 10;		// V6.0 features. SQL delimited idetifier,
 										// SQLDATE, and 64-bit exact numeric type
 const USHORT ODS_VERSION11	= 11;		// Firebird 2.x features
 const USHORT ODS_VERSION12	= 12;		// Firebird 3.x features
+const USHORT ODS_VERSION13	= 13;		// Firebird 4.x features
 
 // ODS minor version -- minor versions ARE compatible, but may be
 // increasingly functional.  Add new minor versions, but leave previous
@@ -119,6 +120,11 @@ const USHORT ODS_VERSION12	= 12;		// Firebird 3.x features
 const USHORT ODS_CURRENT12_0	= 0;	// Firebird 3.0 features
 const USHORT ODS_CURRENT12		= 0;
 
+// Minor versions for ODS 13
+
+const USHORT ODS_CURRENT13_0	= 0;	// Firebird 4.0 features
+const USHORT ODS_CURRENT13		= 0;
+
 // useful ODS macros. These are currently used to flag the version of the
 // system triggers and system indices in ini.e
 
@@ -137,6 +143,7 @@ const USHORT ODS_11_0		= ENCODE_ODS(ODS_VERSION11, 0);
 const USHORT ODS_11_1		= ENCODE_ODS(ODS_VERSION11, 1);
 const USHORT ODS_11_2		= ENCODE_ODS(ODS_VERSION11, 2);
 const USHORT ODS_12_0		= ENCODE_ODS(ODS_VERSION12, 0);
+const USHORT ODS_13_0		= ENCODE_ODS(ODS_VERSION13, 0);
 
 const USHORT ODS_FIREBIRD_FLAG = 0x8000;
 
@@ -155,16 +162,16 @@ inline USHORT DECODE_ODS_MINOR(USHORT ods_version)
 
 // Set current ODS major and minor version
 
-const USHORT ODS_VERSION = ODS_VERSION12;		// Current ODS major version -- always
+const USHORT ODS_VERSION = ODS_VERSION13;		// Current ODS major version -- always
 												// the highest.
 
-const USHORT ODS_RELEASED = ODS_CURRENT12_0;	// The lowest stable minor version
+const USHORT ODS_RELEASED = ODS_CURRENT13_0;	// The lowest stable minor version
 												// number for this ODS_VERSION!
 
-const USHORT ODS_CURRENT = ODS_CURRENT12;		// The highest defined minor version
+const USHORT ODS_CURRENT = ODS_CURRENT13;		// The highest defined minor version
 												// number for this ODS_VERSION!
 
-const USHORT ODS_CURRENT_VERSION = ODS_12_0;	// Current ODS version in use which includes
+const USHORT ODS_CURRENT_VERSION = ODS_13_0;	// Current ODS version in use which includes
 												// both major and minor ODS versions!
 
 
@@ -406,7 +413,6 @@ struct header_page
 	ULONG hdr_oldest_snapshot;		// Oldest snapshot of active transactions
 	SLONG hdr_backup_pages; 		// The amount of pages in files locked for backup
 	ULONG hdr_crypt_page;			// Page at which processing is in progress
-	ULONG hdr_top_crypt;			// Last page to crypt
 	TEXT hdr_crypt_plugin[32];		// Name of plugin used to crypt this DB
 	SLONG hdr_att_high;				// High word of the next attachment counter
 	USHORT hdr_tra_high[4];			// High words of the transaction counters
@@ -426,7 +432,7 @@ const UCHAR HDR_root_file_name		= 1;	// Original name of root file
 const UCHAR HDR_file				= 2;	// Secondary file
 const UCHAR HDR_last_page			= 3;	// Last logical page number of file
 const UCHAR HDR_sweep_interval		= 4;	// Transactions between sweeps
-const UCHAR HDR_password_file_key	= 5;	// Key to compare to password db
+const UCHAR HDR_crypt_checksum		= 5;	// Checksum of critical crypt parameters
 const UCHAR HDR_difference_file		= 6;	// Delta file that is used during backup lock
 const UCHAR HDR_backup_guid			= 7;	// UID generated on each switch into backup mode
 const UCHAR HDR_crypt_key			= 8;	// Name of a key used to crypt database
@@ -437,7 +443,6 @@ const UCHAR HDR_max					= 10;	// Maximum HDR_clump value
 
 const USHORT hdr_active_shadow		= 0x1;		// 1	file is an active shadow file
 const USHORT hdr_force_write		= 0x2;		// 2	database is forced write
-// const USHORT hdr_no_checksums	= 0x4;		// 4	don't calculate checksums, not used since ODS 12
 const USHORT hdr_crypt_process		= 0x4;		// 4	Encryption status is changing now
 const USHORT hdr_no_reserve			= 0x8;		// 8	don't reserve space for versions
 const USHORT hdr_SQL_dialect_3		= 0x10;		// 16	database SQL dialect 3
@@ -626,6 +631,9 @@ struct blh
 	ULONG blh_length;			// Total length of data
 	USHORT blh_sub_type;		// Blob sub-type
 	UCHAR blh_charset;			// Blob charset (since ODS 11.1)
+#ifdef CHECK_BLOB_FIELD_ACCESS_FOR_SELECT
+	USHORT blh_fld_id;			// Field ID
+#endif
 	UCHAR blh_unused;
 	ULONG blh_page[1];			// Page vector for blob pages
 };

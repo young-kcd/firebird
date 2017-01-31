@@ -192,6 +192,30 @@ void StatusXcp::as_sqlstate(char* sqlstate) const
 	fb_sqlstate(sqlstate, status->getErrors());
 }
 
+SLONG StatusXcp::as_xcpcode() const
+{
+	return (status->getErrors()[1] == isc_except) ? (SLONG) status->getErrors()[3] : 0;
+}
+
+string StatusXcp::as_text() const
+{
+	const ISC_STATUS* status_ptr = status->getErrors();
+
+	string errorText;
+
+	TEXT buffer[BUFFER_LARGE];
+	while (fb_interpret(buffer, sizeof(buffer), &status_ptr))
+	{
+		if (errorText.hasData())
+			errorText += "\n";
+
+		errorText += buffer;
+	}
+
+	return errorText;
+}
+
+
 static void execute_looper(thread_db*, jrd_req*, jrd_tra*, const StmtNode*, jrd_req::req_s);
 static void looper_seh(thread_db*, jrd_req*, const StmtNode*);
 static void release_blobs(thread_db*, jrd_req*);
@@ -543,10 +567,10 @@ void EXE_execute_ddl_triggers(thread_db* tdbb, jrd_tra* transaction, bool preTri
 
 		try
 		{
-			trig_vec triggers;
-			trig_vec* triggersPtr = &triggers;
+			TrigVector triggers;
+			TrigVector* triggersPtr = &triggers;
 
-			for (trig_vec::iterator i = attachment->att_ddl_triggers->begin();
+			for (TrigVector::iterator i = attachment->att_ddl_triggers->begin();
 				 i != attachment->att_ddl_triggers->end();
 				 ++i)
 			{
@@ -792,50 +816,6 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 
 	memcpy(request->getImpure<UCHAR>(message->impureOffset), buffer, length);
 
-	for (USHORT i = 0; i < format->fmt_count; ++i)
-	{
-		const DSC* desc = &format->fmt_desc[i];
-
-		// ASF: I'll not test for dtype_cstring because usage is only internal
-		if (desc->dsc_dtype == dtype_text || desc->dsc_dtype == dtype_varying)
-		{
-			const UCHAR* p = request->getImpure<UCHAR>(message->impureOffset +
-				(ULONG)(IPTR) desc->dsc_address);
-			USHORT len;
-
-			switch (desc->dsc_dtype)
-			{
-				case dtype_text:
-					len = desc->dsc_length;
-					break;
-
-				case dtype_varying:
-					len = reinterpret_cast<const vary*>(p)->vary_length;
-					p += sizeof(USHORT);
-					break;
-			}
-
-			CharSet* charSet = INTL_charset_lookup(tdbb, DSC_GET_CHARSET(desc));
-
-			if (!charSet->wellFormed(len, p))
-				ERR_post(Arg::Gds(isc_malformed_string));
-		}
-		else if (desc->isBlob())
-		{
-			if (desc->getCharSet() != CS_NONE && desc->getCharSet() != CS_BINARY)
-			{
-				const Jrd::bid* bid = request->getImpure<Jrd::bid>(
-					message->impureOffset + (ULONG)(IPTR) desc->dsc_address);
-
-				if (!bid->isEmpty())
-				{
-					AutoBlb blob(tdbb, blb::open(tdbb, transaction/*tdbb->getTransaction()*/, bid));
-					blob.getBlb()->BLB_check_well_formed(tdbb, desc);
-				}
-			}
-		}
-	}
-
 	execute_looper(tdbb, request, transaction, request->req_next, jrd_req::req_proceed);
 }
 
@@ -1019,7 +999,14 @@ static void execute_looper(thread_db* tdbb,
 	if (!(request->req_flags & req_proc_fetch) && request->req_transaction)
 	{
 		if (transaction && !(transaction->tra_flags & TRA_system))
-			transaction->startSavepoint();
+		{
+			if (request->req_savepoints)
+			{
+				request->req_savepoints = request->req_savepoints->moveToStack(transaction->tra_save_point);
+			}
+			else
+				transaction->startSavepoint();
+		}
 	}
 
 	request->req_flags &= ~req_stall;
@@ -1036,15 +1023,20 @@ static void execute_looper(thread_db* tdbb,
 			transaction->tra_save_point->isSystem() &&
 			!transaction->tra_save_point->isChanging())
 		{
+			Savepoint* savepoint = transaction->tra_save_point;
 			// Forget about any undo for this verb
 			transaction->rollforwardSavepoint(tdbb);
+			// Preserve savepoint for reuse
+			fb_assert(savepoint == transaction->tra_save_free);
+			transaction->tra_save_free = savepoint->moveToStack(request->req_savepoints);
+			fb_assert(savepoint != transaction->tra_save_free);
 		}
 	}
 }
 
 
 void EXE_execute_triggers(thread_db* tdbb,
-								trig_vec** triggers,
+								TrigVector** triggers,
 								record_param* old_rpb,
 								record_param* new_rpb,
 								TriggerAction trigger_action, StmtNode::WhichTrigger which_trig)
@@ -1068,7 +1060,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 	jrd_req* const request = tdbb->getRequest();
 	jrd_tra* const transaction = request ? request->req_transaction : tdbb->getTransaction();
 
-	trig_vec* vector = *triggers;
+	TrigVector* vector = *triggers;
 	Record* const old_rec = old_rpb ? old_rpb->rpb_record : NULL;
 	Record* const new_rec = new_rpb ? new_rpb->rpb_record : NULL;
 
@@ -1094,7 +1086,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 
 	try
 	{
-		for (trig_vec::iterator ptr = vector->begin(); ptr != vector->end(); ++ptr)
+		for (TrigVector::iterator ptr = vector->begin(); ptr != vector->end(); ++ptr)
 		{
 			ptr->compile(tdbb);
 

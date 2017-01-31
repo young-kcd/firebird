@@ -36,17 +36,28 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/condition.h"
 #include "../common/classes/MetaName.h"
+#include "../common/classes/GetPlugins.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/ods.h"
 #include "../jrd/status.h"
 #include "firebird/Interface.h"
+
+#define CRYPT_DEBUG(A)
 
 // forward
 
 class Config;
 
 namespace Ods {
-	struct pag;
+
+struct pag;
+
+}
+
+namespace Firebird {
+
+class ClumpletReader;
+
 }
 
 namespace Jrd {
@@ -258,6 +269,8 @@ private:
 class CryptoManager FB_FINAL : public Firebird::PermanentStorage, public BarSync::IBar
 {
 public:
+	typedef Firebird::GetPlugins<Firebird::IDbCryptPlugin> Factory;
+
 	explicit CryptoManager(thread_db* tdbb);
 	~CryptoManager();
 
@@ -270,7 +283,7 @@ public:
 	void detach(thread_db* tdbb, Attachment* att);
 
 	void startCryptThread(thread_db* tdbb);
-	void terminateCryptThread(thread_db* tdbb);
+	void terminateCryptThread(thread_db* tdbb, bool wait = false);
 	void stopThreadUsing(thread_db* tdbb, Attachment* att);
 
 	class IOCallback
@@ -283,6 +296,8 @@ public:
 	bool write(thread_db* tdbb, FbStatusVector* sv, Ods::pag* page, IOCallback* io);
 
 	void cryptThread();
+
+	bool checkValidation(Firebird::IDbCryptPlugin* crypt);
 
 	ULONG getCurrentPage() const;
 	UCHAR getCurrentState() const;
@@ -309,42 +324,62 @@ private:
 		char buf[MAX_PAGE_SIZE + PAGE_ALIGNMENT - 1];
 	};
 
-	class HolderAttachments
-	{
-	public:
-		explicit HolderAttachments(Firebird::MemoryPool& p);
-		~HolderAttachments();
-
-		void registerAttachment(Attachment* att);
-		bool unregisterAttachment(Attachment* att);
-
-		void setPlugin(Firebird::IKeyHolderPlugin* kh);
-		Firebird::IKeyHolderPlugin* getPlugin() const
-		{
-			return keyHolder;
-		}
-
-		bool operator==(Firebird::IKeyHolderPlugin* kh) const;
-
-	private:
-		Firebird::IKeyHolderPlugin* keyHolder;
-		Firebird::HalfStaticArray<Attachment*, 32> attachments;
-	};
-
 	class KeyHolderPlugins
 	{
 	public:
-		explicit KeyHolderPlugins(Firebird::MemoryPool& p)
-			: knownHolders(p)
+		typedef CryptoManager::Factory Factory;
+
+		explicit KeyHolderPlugins(Firebird::MemoryPool& p, CryptoManager* m)
+			: knownHolders(p), mgr(m)
 		{ }
 
-		void attach(Attachment* att, Config* config);
+		void attach(Attachment* att, const Config* config);
+		void init(Firebird::IDbCryptPlugin* crypt, const Firebird::MetaName& keyName);
+		bool validateNewAttachment(Attachment*, const Firebird::MetaName& keyName);
+		void validateExistingAttachments(const Firebird::MetaName& keyName);
 		void detach(Attachment* att);
-		void init(Firebird::IDbCryptPlugin* crypt, const char* keyName);
 
 	private:
 		Firebird::Mutex holdersMutex;
-		Firebird::ObjectsArray<HolderAttachments> knownHolders;
+		typedef Firebird::Pair<Firebird::Right<Attachment*,
+			Firebird::HalfStaticArray<Firebird::IKeyHolderPlugin*, 4> > > PerAttHolders;
+		Firebird::ObjectsArray<PerAttHolders> knownHolders;
+		CryptoManager* mgr;
+
+		bool validateHoldersGroup(PerAttHolders& pa, const Firebird::MetaName& keyName);
+		bool validateHolder(Firebird::IKeyHolderPlugin* keyHolder, const Firebird::MetaName& keyName);
+		void releaseHolders(PerAttHolders& pa);
+	};
+
+	class DbInfo;
+	friend class DbInfo;
+
+	class DbInfo FB_FINAL : public Firebird::RefCntIface<Firebird::IDbCryptInfoImpl<DbInfo, Firebird::CheckStatusWrapper> >
+	{
+	public:
+		DbInfo(CryptoManager* cm)
+			: cryptoManager(cm)
+		{ }
+
+		void destroy()
+		{
+			cryptoManager = NULL;
+		}
+
+		// IDbCryptInfo implementation
+		const char* getDatabaseFullPath(Firebird::CheckStatusWrapper* status);
+
+		int release()
+		{
+			if (--refCounter != 0)
+				return 1;
+
+			delete this;
+			return 0;
+		}
+
+	private:
+		CryptoManager* cryptoManager;
 	};
 
 	static int blockingAstChangeCryptState(void*);
@@ -354,22 +389,31 @@ private:
 	void doOnTakenWriteSync(thread_db* tdbb);
 	void doOnAst(thread_db* tdbb);
 
-	void loadPlugin(const char* pluginName);
+	void loadPlugin(thread_db* tdbb, const char* pluginName);
 	ULONG getLastPage(thread_db* tdbb);
 	void writeDbHeader(thread_db* tdbb, ULONG runpage);
-	void calcValidation(Firebird::string& valid);
+	void calcValidation(Firebird::string& valid, Firebird::IDbCryptPlugin* plugin);
+	void checkValidation();
 
 	void lockAndReadHeader(thread_db* tdbb, unsigned flags = 0);
 	static const unsigned CRYPT_HDR_INIT =		0x01;
 	static const unsigned CRYPT_HDR_NOWAIT =	0x02;
+
+	void addClumplet(Firebird::string& value, Firebird::ClumpletReader& block, UCHAR tag);
+	void calcDigitalSignature(thread_db* tdbb, Firebird::string& signature, const class Header& hdr);
+	void digitalySignDatabase(thread_db* tdbb, class CchHdr& hdr);
+	void checkDigitalSignature(thread_db* tdbb, const class Header& hdr);
 
 	BarSync sync;
 	Firebird::MetaName keyName;
 	ULONG currentPage;
 	Firebird::Mutex pluginLoadMtx, cryptThreadMtx;
 	KeyHolderPlugins keyHolderPlugins;
+	Firebird::string hash;
+	Firebird::RefPtr<DbInfo> dbInfo;
 	Thread::Handle cryptThreadId;
 	Firebird::IDbCryptPlugin* cryptPlugin;
+	Factory* checkFactory;
 	Database& dbb;
 	Lock* stateLock;
 	Lock* threadLock;
@@ -398,6 +442,9 @@ private:
 
 	SINT64 slowIO;
 	bool crypt, process, down, run;
+
+public:
+	Firebird::Mutex cryptAttMutex;
 };
 
 } // namespace Jrd

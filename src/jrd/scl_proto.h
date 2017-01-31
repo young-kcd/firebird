@@ -33,7 +33,8 @@
 
 struct dsc;
 
-void SCL_check_access(Jrd::thread_db*, const Jrd::SecurityClass*, SLONG, SLONG, const Firebird::MetaName&,
+void SCL_check_access(Jrd::thread_db*, const Jrd::SecurityClass*, const Firebird::MetaName& userName,
+					  SLONG, const Firebird::MetaName&,
 					  Jrd::SecurityClass::flags_t, SLONG type, bool recursive, const Firebird::MetaName&,
 					  const Firebird::MetaName& = "");
 void SCL_check_create_access(Jrd::thread_db*, int type);
@@ -53,19 +54,17 @@ void SCL_check_view(Jrd::thread_db* tdbb, const dsc*, Jrd::SecurityClass::flags_
 void SCL_check_role(Jrd::thread_db* tdbb, const Firebird::MetaName&, Jrd::SecurityClass::flags_t);
 Jrd::SecurityClass* SCL_get_class(Jrd::thread_db*, const TEXT*);
 Jrd::SecurityClass::flags_t SCL_get_mask(Jrd::thread_db* tdbb, const TEXT*, const TEXT*);
-void SCL_init(Jrd::thread_db* tdbb, bool, const Jrd::UserId& tempId);
 Jrd::SecurityClass* SCL_recompute_class(Jrd::thread_db*, const TEXT*);
 void SCL_release_all(Jrd::SecurityClassList*&);
 bool SCL_role_granted(Jrd::thread_db* tdbb, const Jrd::UserId& usr, const TEXT* sql_role);
-void SCL_find_granted_roles(Jrd::thread_db* tdbb, const Firebird::MetaName& object, bool isRole,
-							Firebird::SortedArray<Firebird::MetaName> &grantedRoles, bool defaultOnly);
-bool SCL_admin_role(Jrd::thread_db* tdbb, const Firebird::SortedArray<Firebird::MetaName> &roles);
 Jrd::SecurityClass::flags_t SCL_get_object_mask(const int object_type);
+ULONG SCL_get_number(const UCHAR*);
+USHORT SCL_convert_privilege(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction, const Firebird::string& priv);
 
 namespace Jrd {
 typedef Firebird::Array<UCHAR> Acl;
 }
-void SCL_move_priv(Jrd::SecurityClass::flags_t, Jrd::Acl&);
+bool SCL_move_priv(Jrd::SecurityClass::flags_t, Jrd::Acl&);
 
 
 #endif // JRD_SCL_PROTO_H

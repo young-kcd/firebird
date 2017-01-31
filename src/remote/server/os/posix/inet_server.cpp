@@ -179,8 +179,8 @@ int CLIB_ROUTINE main( int argc, char** argv)
 
 		// It's very easy to detect that we are spawned - just check fd 0 to be a socket.
 		const int channel = 0;
-		struct stat stat0;
-		if (fstat(channel, &stat0) == 0 && S_ISSOCK(stat0.st_mode))
+		struct STAT stat0;
+		if (os_utils::fstat(channel, &stat0) == 0 && S_ISSOCK(stat0.st_mode))
 		{
 			// classic server mode
 			classic = true;
@@ -399,7 +399,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			ISC_STATUS_ARRAY status;
 			isc_db_handle db_handle = 0L;
 
-			const Firebird::RefPtr<Config> defConf(Config::getDefaultConfig());
+			const Firebird::RefPtr<const Config> defConf(Config::getDefaultConfig());
 			const char* path = defConf->getSecurityDatabase();
 			const char dpb[] = {isc_dpb_version1, isc_dpb_sec_attach, 1, 1, isc_dpb_address_path, 0};
 
@@ -507,12 +507,12 @@ static void raiseLimit(int resource)
 {
 	struct rlimit lim;
 
-	if (getrlimit(resource, &lim) == 0)
+	if (os_utils::getrlimit(resource, &lim) == 0)
 	{
 		if (lim.rlim_cur != lim.rlim_max)
 		{
 			lim.rlim_cur = lim.rlim_max;
-			if (setrlimit(resource, &lim) != 0)
+			if (os_utils::setrlimit(resource, &lim) != 0)
 			{
 				gds__log("setrlimit() failed, errno=%d", errno);
 			}

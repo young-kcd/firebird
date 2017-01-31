@@ -113,17 +113,17 @@ static int blocking_ast_relation(void*);
 static int partners_ast_relation(void*);
 static int rescan_ast_relation(void*);
 static ULONG get_rel_flags_from_FLAGS(USHORT);
-static void get_trigger(thread_db*, jrd_rel*, bid*, bid*, trig_vec**, const TEXT*, FB_UINT64, bool,
-	USHORT, const MetaName&, const string&, const bid*);
+static void get_trigger(thread_db*, jrd_rel*, bid*, bid*, TrigVector**, const TEXT*, FB_UINT64, bool,
+	USHORT, const MetaName&, const string&, const bid*, Nullable<bool> ssDefiner);
 static bool get_type(thread_db*, USHORT*, const UCHAR*, const TEXT*);
 static void lookup_view_contexts(thread_db*, jrd_rel*);
 static void make_relation_scope_name(const TEXT*, const USHORT, string& str);
 static ValueExprNode* parse_field_default_blr(thread_db* tdbb, bid* blob_id);
 static BoolExprNode* parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const MetaName name);
 static bool resolve_charset_and_collation(thread_db*, USHORT*, const UCHAR*, const UCHAR*);
-static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, JrdStatement*, blb*, blb*,
+static void save_trigger_data(thread_db*, TrigVector**, jrd_rel*, JrdStatement*, blb*, blb*,
 	const TEXT*, FB_UINT64, bool, USHORT, const MetaName&, const string&,
-	const bid*);
+	const bid*, Nullable<bool> ssDefiner);
 static void scan_partners(thread_db*, jrd_rel*);
 static void store_dependencies(thread_db*, CompilerScratch*, const jrd_rel*,
 	const MetaName&, int, jrd_tra*);
@@ -131,7 +131,7 @@ static bool verify_TRG_ignore_perm(thread_db*, const MetaName&);
 
 
 // Decompile all triggers from vector
-static void release_cached_triggers(thread_db* tdbb, trig_vec* vector)
+static void release_cached_triggers(thread_db* tdbb, TrigVector* vector)
 {
 	if (!vector)
 		return;
@@ -178,7 +178,7 @@ static void inc_int_use_count(JrdStatement* statement)
 
 
 // Increment int_use_count for all procedures used by triggers
-static void post_used_procedures(trig_vec* vector)
+static void post_used_procedures(TrigVector* vector)
 {
 	if (!vector)
 		return;
@@ -1480,16 +1480,20 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 		count = p[0] | (p[1] << 8);
 		p += 2;
 
+		Array<UCHAR> tmpArray;	// must be aligned for the maximum datatype align requirement
 		while (count-- > 0)
 		{
 			USHORT offset = p[0] | (p[1] << 8);
 			p += 2;
 
-			const Ods::Descriptor* odsDflDesc = (Ods::Descriptor*) p;
-			p = (UCHAR*) (odsDflDesc + 1);
+			Ods::Descriptor odsDflDesc;
+			memcpy(&odsDflDesc, p, sizeof(odsDflDesc));
+			p += sizeof(Ods::Descriptor);
 
-			dsc desc = *odsDflDesc;
-			desc.dsc_address = const_cast<UCHAR*>(p);
+			dsc desc = odsDflDesc;
+
+			desc.dsc_address = tmpArray.getBuffer(desc.dsc_length, false);
+			memcpy(desc.dsc_address, p, desc.dsc_length);
 			EVL_make_value(tdbb, &desc, &format->fmt_defaults[offset], relation->rel_pool);
 
 			p += desc.dsc_length;
@@ -1669,8 +1673,12 @@ DmlNode* MET_get_dependencies(thread_db* tdbb,
 
 	fb_assert(domain_validation.isEmpty() || object_name == domain_validation); // for now
 
-	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5, domain_validation);
+	MemoryPool& pool = *tdbb->getDefaultPool();
+	AutoPtr<CompilerScratch> auto_csb(FB_NEW_POOL(pool) CompilerScratch(pool));
+	CompilerScratch* csb = auto_csb;
+
 	csb->csb_g_flags |= (csb_get_dependencies | flags);
+	csb->csb_domain_validation = domain_validation;
 
 	DmlNode* node;
 
@@ -1702,19 +1710,21 @@ DmlNode* MET_get_dependencies(thread_db* tdbb,
 		}
 		END_FOR
 
-		MET_delete_dependencies(tdbb, domainName, type, transaction);
+		if (type != obj_package_body)
+			MET_delete_dependencies(tdbb, domainName, type, transaction);
+
 		store_dependencies(tdbb, csb, relation, domainName, type, transaction);
 	}
 	else
 	{
-		MET_delete_dependencies(tdbb, object_name, type, transaction);
+		if (type != obj_package_body)
+			MET_delete_dependencies(tdbb, object_name, type, transaction);
+
 		store_dependencies(tdbb, csb, relation, object_name, type, transaction);
 	}
 
 	if (csb_ptr)
-		*csb_ptr = csb;
-	else
-		delete csb;
+		*csb_ptr = auto_csb.release();
 
 	return node;
 }
@@ -1833,7 +1843,8 @@ void MET_load_db_triggers(thread_db* tdbb, int type)
 	}
 
 	attachment->att_triggers[type] = FB_NEW_POOL(*attachment->att_pool)
-		trig_vec(*attachment->att_pool);
+		TrigVector(*attachment->att_pool);
+	attachment->att_triggers[type]->addRef();
 
 	AutoRequest trigger_request;
 	int encoded_type = type | TRIGGER_TYPE_DB;
@@ -1866,7 +1877,7 @@ void MET_load_ddl_triggers(thread_db* tdbb)
 	}
 
 	attachment->att_ddl_triggers = FB_NEW_POOL(*attachment->att_pool)
-		trig_vec(*attachment->att_pool);
+		TrigVector(*attachment->att_pool);
 
 	AutoRequest trigger_request;
 
@@ -1889,7 +1900,7 @@ void MET_load_ddl_triggers(thread_db* tdbb)
 void MET_load_trigger(thread_db* tdbb,
 					  jrd_rel* relation,
 					  const MetaName& trigger_name,
-					  trig_vec** triggers)
+					  TrigVector** triggers)
 {
 /**************************************
  *
@@ -1966,6 +1977,14 @@ void MET_load_trigger(thread_db* tdbb,
 		if (!TRG.RDB$ENTRYPOINT.NULL)	// ODS_12_0
 			entryPoint = TRG.RDB$ENTRYPOINT;
 
+		Nullable<bool> ssDefiner;
+
+		// If SQL SECURITY for relation was not specified it will re-use DB default so we should not care about it
+		if (!TRG.RDB$SQL_SECURITY.NULL)
+			ssDefiner = (bool) TRG.RDB$SQL_SECURITY;
+		else if (relation)
+			ssDefiner = relation->rel_ss_definer;
+
 		if (TRG.RDB$RELATION_NAME.NULL)
 		{
 			if ((TRG.RDB$TRIGGER_TYPE & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB ||
@@ -1983,7 +2002,8 @@ void MET_load_trigger(thread_db* tdbb,
 							trig_flags,
 							engine,
 							entryPoint,
-							&extBodyId);
+							&extBodyId,
+							ssDefiner);
 			}
 		}
 		else
@@ -2003,7 +2023,8 @@ void MET_load_trigger(thread_db* tdbb,
 							trig_flags,
 							engine,
 							entryPoint,
-							&extBodyId);
+							&extBodyId,
+							ssDefiner);
 			}
 		}
 	}
@@ -3099,7 +3120,7 @@ void MET_parse_sys_trigger(thread_db* tdbb, jrd_rel* relation)
 		const USHORT trig_flags = TRG.RDB$FLAGS;
 		const TEXT* name = TRG.RDB$TRIGGER_NAME;
 
-		trig_vec** ptr;
+		TrigVector** ptr;
 
 		switch (type)
 		{
@@ -3153,7 +3174,7 @@ void MET_parse_sys_trigger(thread_db* tdbb, jrd_rel* relation)
 				statement->flags |= JrdStatement::FLAG_IGNORE_PERM;
 
 			save_trigger_data(tdbb, ptr, relation, statement, NULL, NULL, NULL, type, true, 0, "",
-				"", NULL);
+				"", NULL, Nullable<bool>());
 		}
 	}
 	END_FOR
@@ -3321,10 +3342,22 @@ jrd_prc* MET_procedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
 				{
 					if (!PKG.RDB$SECURITY_CLASS.NULL)
 						procedure->setSecurityName(PKG.RDB$SECURITY_CLASS);
+
+					if (!PKG.RDB$SQL_SECURITY.NULL)
+						procedure->ssDefiner = (bool) PKG.RDB$SQL_SECURITY;
 				}
 				END_FOR
 			}
 
+			if (!procedure->ssDefiner.specified)
+			{
+				if (!P.RDB$SQL_SECURITY.NULL)
+					procedure->ssDefiner = (bool) P.RDB$SQL_SECURITY;
+				else
+					procedure->ssDefiner = MET_get_ss_definer(tdbb);
+			}
+
+			procedure->owner = P.RDB$OWNER_NAME;
 			procedure->setImplemented(true);
 			procedure->getInputFields().resize(P.RDB$PROCEDURE_INPUTS);
 			procedure->getOutputFields().resize(P.RDB$PROCEDURE_OUTPUTS);
@@ -3431,7 +3464,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
 
 				try
 				{
-					AutoPtr<CompilerScratch> csb(CompilerScratch::newCsb(*csb_pool, 5));
+					AutoPtr<CompilerScratch> csb(FB_NEW_POOL(*csb_pool) CompilerScratch(*csb_pool));
 
 					if (external)
 					{
@@ -3731,7 +3764,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	trig_vec* triggers[TRIGGER_MAX];
+	TrigVector* triggers[TRIGGER_MAX];
 	Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	Jrd::ContextPoolHolder context(tdbb, attachment->att_pool);
@@ -3776,6 +3809,11 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 
 		relation->rel_name = REL.RDB$RELATION_NAME;
 		relation->rel_owner_name = REL.RDB$OWNER_NAME;
+
+		if (!REL.RDB$SQL_SECURITY.NULL)
+			relation->rel_ss_definer = (bool) REL.RDB$SQL_SECURITY;
+		else
+			relation->rel_ss_definer = MET_get_ss_definer(tdbb);
 
 		if (!REL.RDB$VIEW_BLR.isEmpty())
 		{
@@ -4028,7 +4066,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 		// We have just loaded the triggers onto the local vector triggers.
 		// Its now time to place them at their rightful place ie the relation block.
 
-		trig_vec* tmp_vector;
+		TrigVector* tmp_vector;
 
 		tmp_vector = relation->rel_pre_store;
 		relation->rel_pre_store = triggers[TRIGGER_PRE_STORE];
@@ -4421,11 +4459,11 @@ ULONG MET_get_rel_flags_from_TYPE(USHORT type)
 
 
 static void get_trigger(thread_db* tdbb, jrd_rel* relation,
-						bid* blob_id, bid* debug_blob_id, trig_vec** ptr,
+						bid* blob_id, bid* debug_blob_id, TrigVector** ptr,
 						const TEXT* name, FB_UINT64 type,
 						bool sys_trigger, USHORT flags,
 						const MetaName& engine, const string& entryPoint,
-						const bid* body)
+						const bid* body, Nullable<bool> ssDefiner)
 {
 /**************************************
  *
@@ -4453,7 +4491,7 @@ static void get_trigger(thread_db* tdbb, jrd_rel* relation,
 		debugInfoBlob = blb::open(tdbb, attachment->getSysTransaction(), debug_blob_id);
 
 	save_trigger_data(tdbb, ptr, relation, NULL, blrBlob, debugInfoBlob,
-					  name, type, sys_trigger, flags, engine, entryPoint, body);
+					  name, type, sys_trigger, flags, engine, entryPoint, body, ssDefiner);
 }
 
 
@@ -4579,7 +4617,9 @@ static ValueExprNode* parse_field_default_blr(thread_db* tdbb, bid* blob_id)
 	SET_TDBB(tdbb);
 	Attachment* attachment = tdbb->getAttachment();
 
-	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
+	MemoryPool& pool = *tdbb->getDefaultPool();
+	AutoPtr<CompilerScratch> auto_csb(FB_NEW_POOL(pool) CompilerScratch(pool));
+	CompilerScratch* csb = auto_csb;
 
 	blb* blob = blb::open(tdbb, attachment->getSysTransaction(), blob_id);
 	ULONG length = blob->blb_length + 10;
@@ -4587,11 +4627,7 @@ static ValueExprNode* parse_field_default_blr(thread_db* tdbb, bid* blob_id)
 
 	length = blob->BLB_get_data(tdbb, temp.getBuffer(length), length);
 
-	DmlNode* node = PAR_blr(tdbb, NULL, temp.begin(), length, NULL, &csb, NULL, false, 0);
-
-	csb->csb_blr_reader = BlrReader();
-	delete csb;
-
+	DmlNode* const node = PAR_blr(tdbb, NULL, temp.begin(), length, NULL, &csb, NULL, false, 0);
 	return static_cast<ValueExprNode*>(node);
 }
 
@@ -4602,7 +4638,11 @@ static BoolExprNode* parse_field_validation_blr(thread_db* tdbb, bid* blob_id, c
 	SET_TDBB(tdbb);
 	Attachment* attachment = tdbb->getAttachment();
 
-	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5, name);
+	MemoryPool& pool = *tdbb->getDefaultPool();
+	AutoPtr<CompilerScratch> auto_csb(FB_NEW_POOL(pool) CompilerScratch(pool));
+	CompilerScratch* csb = auto_csb;
+
+	csb->csb_domain_validation = name;
 
 	blb* blob = blb::open(tdbb, attachment->getSysTransaction(), blob_id);
 	ULONG length = blob->blb_length + 10;
@@ -4610,17 +4650,11 @@ static BoolExprNode* parse_field_validation_blr(thread_db* tdbb, bid* blob_id, c
 
 	length = blob->BLB_get_data(tdbb, temp.getBuffer(length), length);
 
-	BoolExprNode* expr = PAR_validation_blr(tdbb, NULL,
-		temp.begin(), length, NULL, &csb, 0);
-
-	csb->csb_blr_reader = BlrReader();
-	delete csb;
-
-	return expr;
+	return PAR_validation_blr(tdbb, NULL, temp.begin(), length, NULL, &csb, 0);
 }
 
 
-void MET_release_trigger(thread_db* tdbb, trig_vec** vector_ptr, const MetaName& name)
+void MET_release_trigger(thread_db* tdbb, TrigVector** vector_ptr, const MetaName& name)
 {
 /***********************************************
  *
@@ -4637,7 +4671,7 @@ void MET_release_trigger(thread_db* tdbb, trig_vec** vector_ptr, const MetaName&
 	if (!*vector_ptr)
 		return;
 
-	trig_vec& vector = **vector_ptr;
+	TrigVector& vector = **vector_ptr;
 
 	SET_TDBB(tdbb);
 
@@ -4659,7 +4693,7 @@ void MET_release_trigger(thread_db* tdbb, trig_vec** vector_ptr, const MetaName&
 }
 
 
-void MET_release_triggers( thread_db* tdbb, trig_vec** vector_ptr)
+void MET_release_triggers( thread_db* tdbb, TrigVector** vector_ptr)
 {
 /***********************************************
  *
@@ -4673,7 +4707,7 @@ void MET_release_triggers( thread_db* tdbb, trig_vec** vector_ptr)
  *      else do the work.
  *
  **************************************/
-	trig_vec* vector = *vector_ptr;
+	TrigVector* vector = *vector_ptr;
 
 	if (!vector)
 		return;
@@ -4689,16 +4723,7 @@ void MET_release_triggers( thread_db* tdbb, trig_vec** vector_ptr)
 			return;
 	}
 
-	for (FB_SIZE_T i = 0; i < vector->getCount(); i++)
-	{
-		JrdStatement* stmt = (*vector)[i].statement;
-		if (stmt)
-			stmt->release(tdbb);
-
-		delete (*vector)[i].extTrigger;
-	}
-
-	delete vector;
+	vector->release(tdbb);
 }
 
 
@@ -4815,12 +4840,12 @@ static bool resolve_charset_and_collation(thread_db* tdbb,
 }
 
 
-static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation,
+static void save_trigger_data(thread_db* tdbb, TrigVector** ptr, jrd_rel* relation,
 							  JrdStatement* statement, blb* blrBlob, blb* debugInfoBlob,
 							  const TEXT* name, FB_UINT64 type,
 							  bool sys_trigger, USHORT flags,
 							  const MetaName& engine, const string& entryPoint,
-							  const bid* body)
+							  const bid* body, Nullable<bool> ssDefiner)
 {
 /**************************************
  *
@@ -4833,12 +4858,13 @@ static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation
  *
  **************************************/
 	Attachment* attachment = tdbb->getAttachment();
-	trig_vec* vector = *ptr;
+	TrigVector* vector = *ptr;
 
 	if (!vector)
 	{
 		MemoryPool* pool = relation ? relation->rel_pool : attachment->att_pool;
-		vector = FB_NEW_POOL(*pool) trig_vec(*pool);
+		vector = FB_NEW_POOL(*pool) TrigVector(*pool);
+		vector->addRef();
 		*ptr = vector;
 	}
 
@@ -4880,14 +4906,16 @@ static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation
 	t.relation = relation;
 	t.engine = engine;
 	t.entryPoint = entryPoint;
+	t.ssDefiner = ssDefiner;
+	t.owner = relation ? relation->rel_owner_name : tdbb->getDatabase()->dbb_owner;
 }
 
 
-const Trigger* findTrigger(trig_vec* triggers, const MetaName& trig_name)
+const Trigger* findTrigger(TrigVector* triggers, const MetaName& trig_name)
 {
 	if (triggers)
 	{
-		for (trig_vec::iterator t = triggers->begin(); t != triggers->end(); ++t)
+		for (TrigVector::iterator t = triggers->begin(); t != triggers->end(); ++t)
 		{
 			if (t->name.compare(trig_name) == 0)
 				return &(*t);
@@ -5356,4 +5384,33 @@ int MET_get_linger(thread_db* tdbb)
 	END_FOR
 
 	return rc;
+}
+
+Nullable<bool> MET_get_ss_definer(Jrd::thread_db* tdbb)
+{
+/**************************************
+ *
+ *	M E T _ s s _ d e f i n e r
+ *
+ **************************************
+ *
+ * Functional description
+ *      Return sql security value for current database
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Attachment* attachment = tdbb->getAttachment();
+	Nullable<bool> r;
+
+	AutoCacheRequest request(tdbb, irq_dbb_ss_definer, IRQ_REQUESTS);
+
+	FOR(REQUEST_HANDLE request)
+		DBB IN RDB$DATABASE
+	{
+		if (!DBB.RDB$SQL_SECURITY.NULL)
+			r = DBB.RDB$SQL_SECURITY;
+	}
+	END_FOR
+
+	return r;
 }

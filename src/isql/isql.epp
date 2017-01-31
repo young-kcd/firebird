@@ -46,7 +46,6 @@
 #include "firebird.h"
 #include <stdio.h>
 #include "../yvalve/keywords.h"
-//#include "../yvalve/gds_proto.h"
 #include "../jrd/intl.h"
 #include <stdlib.h>
 #include <stdarg.h>
@@ -62,6 +61,7 @@
 #include "../common/classes/TempFile.h"
 #include "../common/classes/FpeControl.h"
 #include "../common/classes/GenericMap.h"
+#include "../common/os/os_utils.h"
 #include "../common/os/path_utils.h"
 #include "../common/StatusHolder.h"
 #include "../common/Tokens.h"
@@ -78,10 +78,6 @@
 #ifdef HAVE_LOCALE_H
 #include <locale.h>
 #endif
-
-//#ifdef HAVE_IO_H
-//#include <io.h> // mktemp
-//#endif
 
 #ifdef HAVE_EDITLINE_H
 // This is a local file included in our distribution - but not always
@@ -366,7 +362,7 @@ static void frontend_load_parms(const TEXT* p, TEXT* parms[], TEXT* lparms[],
 static processing_state do_set_command(const TEXT*, bool*);
 static processing_state get_dialect(const char* const dialect_str,
 	char* const bad_dialect_buf, bool& bad_dialect);
-static processing_state get_statement(TEXT* const, const size_t, const TEXT*);
+static processing_state get_statement(Firebird::string&, const TEXT*);
 static bool get_numeric(const UCHAR*, USHORT, SSHORT*, SINT64*);
 static void print_set(const char* str, bool v);
 static processing_state print_sets();
@@ -1807,7 +1803,8 @@ bool ISQL_is_domain(const TEXT* field_name)
 
 // Print the numeric type as accurately as possible, depending on the ODS.
 // If it isn't numeric/decimal or is another non-numeric data type, print only the type.
-bool ISQL_printNumericType(const char* fieldName, const int fieldType, const int fieldScale)
+bool ISQL_printNumericType(const char* fieldName, const int fieldType, const int fieldSubType,
+	const int fieldPrecision, const int fieldScale)
 {
 	// Look through types array
 	int i = 0;
@@ -1821,62 +1818,68 @@ bool ISQL_printNumericType(const char* fieldName, const int fieldType, const int
 		return false;
 	}
 
-	bool precision_known = false;
-
-	if (isqlGlob.major_ods >= ODS_VERSION10 &&
-		(fieldType == SMALLINT || fieldType == INTEGER || fieldType == BIGINT))
+	switch (fieldType)
 	{
+	case SMALLINT:
+	case INTEGER:
+	case BIGINT:
 		// Handle Integral subtypes NUMERIC and DECIMAL
 		// We are ODS >= 10 and could be any Dialect
-		FOR FLD1 IN RDB$FIELDS WITH
-			FLD1.RDB$FIELD_NAME EQ fieldName
-			AND NOT FLD1.RDB$FIELD_PRECISION EQ 0
 
-			// We are Dialect >=3 since FIELD_PRECISION is non-NULL
-			if (FLD1.RDB$FIELD_SUB_TYPE > 0 && FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
-			{
-				isqlGlob.printf("%s(%d, %d)",
-						 Integral_subtypes[FLD1.RDB$FIELD_SUB_TYPE],
-						 FLD1.RDB$FIELD_PRECISION,
-						 -FLD1.RDB$FIELD_SCALE);
-				precision_known = true;
-			}
-		END_FOR
-		ON_ERROR
-			ISQL_errmsg (fbStatus);
-			return false;
-		END_ERROR;
-	}
-
-	if (!precision_known)
-	{
-		if (fieldScale < 0)
+		// We are Dialect >=3 since FIELD_PRECISION is non-NULL
+		if (isqlGlob.major_ods >= ODS_VERSION10 && fieldPrecision != 0 &&
+			fieldSubType > 0 && fieldSubType <= MAX_INTSUBTYPES)
 		{
-			// Take a stab at numerics and decimals
-			switch (fieldType)
-			{
-			case SMALLINT:
-				isqlGlob.printf("NUMERIC(4, %d)", -fieldScale);
-				break;
-			case INTEGER:
-				isqlGlob.printf("NUMERIC(9, %d)", -fieldScale);
-				break;
-			case BIGINT:
-				isqlGlob.printf("NUMERIC(18, %d)", -fieldScale);
-				break;
-			case DOUBLE_PRECISION:
-				isqlGlob.printf("NUMERIC(15, %d)", -fieldScale);
-				break;
-			default:
-				isqlGlob.printf("%s", Column_types[i].type_name);
-			}
+			isqlGlob.printf("%s(%d, %d)",
+				Integral_subtypes[fieldSubType],
+				fieldPrecision,
+				-fieldScale);
 		}
 		else
 		{
-			// This is a non-numeric data type
-			isqlGlob.printf("%s", Column_types[i].type_name);
+			if (fieldScale < 0)
+			{
+				// Take a stab at numerics and decimals
+				switch (fieldType)
+				{
+				case SMALLINT:
+					isqlGlob.printf("NUMERIC(4, %d)", -fieldScale);
+					break;
+				case INTEGER:
+					isqlGlob.printf("NUMERIC(9, %d)", -fieldScale);
+					break;
+				case BIGINT:
+					isqlGlob.printf("NUMERIC(18, %d)", -fieldScale);
+					break;
+				case DOUBLE_PRECISION:
+					isqlGlob.printf("NUMERIC(15, %d)", -fieldScale);
+					break;
+				}
+			}
+			else
+			{
+				break;
+			}
 		}
+		return true;
+	case T_CHAR:
+		if (fieldSubType >= 0 && fieldSubType <= MAX_TEXTSUBTYPES)
+		{
+			isqlGlob.printf("%s", Text_subtypes[fieldSubType]);
+			return true;
+		}
+		break;
+	case VARCHAR:
+		if (fieldSubType >= 0 && fieldSubType <= MAX_VARYINGSUBTYPES)
+		{
+			isqlGlob.printf("%s", Varying_subtypes[fieldSubType]);
+			return true;
+		}
+		break;
 	}
+
+	// Field type without recognizable subtypes
+	isqlGlob.printf("%s", Column_types[i].type_name);
 
 	return true;
 }
@@ -2665,11 +2668,13 @@ static processing_state bulk_insert_hack(const char* command)
 	if (!statement_type)
 		return ps_ERR;
 
+	/*** ASF: This is util to test others commands too.
 	if (statement_type != isc_info_sql_stmt_insert)
 	{
 		isqlGlob.printf("Only INSERT commands are accepted in bulk mode.%s", NEWLINE);
 		return ps_ERR;
 	}
+	***/
 
 	Firebird::RefPtr<Firebird::IMessageMetadata> message(global_Stmt->getInputMetadata(fbStatus));
 	if (ISQL_errmsg(fbStatus))
@@ -3533,7 +3538,7 @@ static processing_state copy_table(TEXT* source,
 	const bool domain_flag = otherdb[0];
 
 	const Firebird::PathName ftmp = TempFile::create(SCRATCH);
-	isqlGlob.Out = fopen(ftmp.c_str(), "w+b");
+	isqlGlob.Out = os_utils::fopen(ftmp.c_str(), "w+b");
 	if (!isqlGlob.Out)
 	{
 		// If we can't open a temp file then bail
@@ -3638,7 +3643,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
  *	Parameters:  statement == the entire statement for processing.
  *
  * Note: SQL ROLE setting must be taken into an account no matter
- *	that the newly created database will not have any roles defined
+ *	that the newly created database will not have any user roles defined
  *	in it. Role may affect right to create new database.
  *
  **************************************/
@@ -3845,9 +3850,7 @@ static void do_isql()
 	// Read statements and process them from Ifp until the ret
 	// code tells us we are done
 
-	Firebird::Array<TEXT> stmt;
-	const size_t stmtLength = MAX_SQL_LENGTH;
-	TEXT* statement = stmt.getBuffer(stmtLength);
+	Firebird::string stmt;
 	processing_state ret;
 
 	bool done = false;
@@ -3913,7 +3916,7 @@ static void do_isql()
 			}
 		}
 
-		ret = get_statement(statement, stmtLength, sql_prompt);
+		ret = get_statement(stmt, sql_prompt);
 
 		// If there is no database yet, remind us of the need to connect
 
@@ -3935,7 +3938,7 @@ static void do_isql()
 		switch (ret)
 		{
 		case CONT:
-			if (process_statement(statement) == ps_ERR)
+			if (process_statement(stmt.c_str()) == ps_ERR)
 			{
 				Exit_value = FINI_ERROR;
 				if (!Interactive && setValues.BailOnError)
@@ -4153,7 +4156,7 @@ static processing_state edit(const TEXT* const* cmd)
 	{
 		TEXT path[MAXPATHLEN];
 		strip_quotes(file, path);
-		FILE* fp = fopen(path, "r");
+		FILE* fp = os_utils::fopen(path, "r");
 		if (fp)
 		{
 			// Push the current ifp on the indev
@@ -4185,7 +4188,7 @@ static processing_state edit(const TEXT* const* cmd)
 			// File used to edit sessions
 			const Firebird::PathName filename = TempFile::create(SCRATCH);
 			const char* Tmpfile = filename.c_str();
-			FILE* f = fopen(Tmpfile, "w+"); // It was w+b
+			FILE* f = os_utils::fopen(Tmpfile, "w+"); // It was w+b
 			if (f)
 			{
 				Ofp.init(f, Tmpfile, Tmpfile);
@@ -4204,7 +4207,8 @@ static processing_state edit(const TEXT* const* cmd)
 		Ofp.close();
 		PathName tmpfile = Ofp.fileName(false);
 		gds__edit(tmpfile.c_str(), 0);
-		Ofp.init(fopen(tmpfile.c_str(), "r+"), tmpfile.c_str(), tmpfile.c_str()); // We don't check for failure.
+		Ofp.init(os_utils::fopen(tmpfile.c_str(), "r+"),
+			tmpfile.c_str(), tmpfile.c_str()); // We don't check for failure.
 		Filelist->Ifp().init(Ofp);
 		Input_file = true;
 		getColumn = -1;
@@ -5113,8 +5117,7 @@ static processing_state get_dialect(const char* const dialect_str,
 }
 
 
-static processing_state get_statement(TEXT* const statement,
-							const size_t bufsize,
+static processing_state get_statement(Firebird::string& statement,
 							const TEXT* statement_prompt)
 {
 /**************************************
@@ -5140,13 +5143,10 @@ static processing_state get_statement(TEXT* const statement,
 	}
 
 	// Clear out statement buffer
-
-	TEXT* p = statement;
-	*p = '\0';
+	statement.resize(0);
 
 	// Set count of characters to zero
 
-	size_t count = 0;
 	size_t valuable_count = 0; // counter of valuable (non-space) chars
 	size_t comment_pos = 0; // position of block comment start
 	size_t non_comment_pos = 0; // position of char after block comment
@@ -5228,7 +5228,7 @@ static processing_state get_statement(TEXT* const statement,
 			}
 
 			// Catch the help ? without a terminator
-			if (*statement == '?' && count == 1)
+			if (statement.length() == 1 && statement[0] == '?')
 			{
 				c = 0;
 				done = true;
@@ -5258,7 +5258,8 @@ static processing_state get_statement(TEXT* const statement,
 
 		case '-':
 			// Could this the be start of a single-line comment.
-			if (state == normal && count > 0 && p[-1] == '-')
+			if (state == normal && statement.length() > 0 &&
+				statement[statement.length() - 1] == '-')
 			{
 				state = in_single_line_comment;
 				if (valuable_count == 1)
@@ -5271,10 +5272,11 @@ static processing_state get_statement(TEXT* const statement,
 			// not forward.
 			// Ignore possibilities of a comment beginning inside
 			// quoted strings.
-			if (state == normal && count > 0 && p[-1] == '/' && count != non_comment_pos)
+			if (state == normal && statement.length() > 0 &&
+				statement[statement.length() - 1] == '/' && statement.length() != non_comment_pos)
 			{
 				state = in_block_comment;
-				comment_pos = count - 1;
+				comment_pos = statement.length() - 1;
 				if (valuable_count == 1)
 					valuable_count = 0;
 			}
@@ -5285,10 +5287,11 @@ static processing_state get_statement(TEXT* const statement,
 			// Ignore possibilities of a comment ending inside
 			// quoted strings.
 			// Ignore things like /*/ since it isn't a block comment; only the start of it. Or end.
-			if (state == in_block_comment && count > 2 && p[-1] == '*' && count > comment_pos + 2)
+			if (state == in_block_comment && statement.length() > 2 &&
+				statement[statement.length() - 1] == '*' && statement.length() > comment_pos + 2)
 			{
 				state = normal;
-				non_comment_pos = count + 1; // mark start of non-comment to track this: /**/*
+				non_comment_pos = statement.length() + 1; // mark start of non-comment to track this: /**/*
 				valuable_count--; // This char is not valuable
 			}
 			break;
@@ -5299,8 +5302,7 @@ static processing_state get_statement(TEXT* const statement,
 				case normal:
 					if (lastChar == 'q' || lastChar == 'Q')
 					{
-						*p++ = lastChar = c;
-						count++;
+						statement += (lastChar = c);
 						altQuoteChar = c = getNextInputChar();
 
 						switch (altQuoteChar)
@@ -5349,12 +5351,12 @@ static processing_state get_statement(TEXT* const statement,
 				// one-char terminator or the beginning also match
 				(isqlGlob.Termlen == 1u ||
 				 (valuable_count >= term_length &&
-				  strncmp(p - term_length, isqlGlob.global_Term, term_length) == 0)))
+				  strncmp(&statement[statement.length() - term_length],
+				  	isqlGlob.global_Term, term_length) == 0)))
 			{
 				c = 0;
 				done = true;
-				p -= term_length;
-				count -= term_length;
+				statement.resize(statement.length() - term_length);
 			}
 		}
 
@@ -5367,42 +5369,27 @@ static processing_state get_statement(TEXT* const statement,
 			if (valuable_count == 1) // this is the first valuable char in stream
 			{
 				// ignore all previous crap
-				p = statement;
-				count = 0;
+				statement.resize(0);
 				non_comment_pos = 0;
 			}
 		}
 
-		*p++ = lastChar = c;
-		count++;
-
-		if (count > bufsize && !done)
-		{
-				ret = ERR_BUFFER_OVERFLOW;
-
-				// move some content to start of buffer just in case if
-				// the overflow has splitted terminator
-				count = MAX(isqlGlob.Termlen, 2u);
-				memcpy(statement, p - count, count);
-				p = statement + count;
-				*p = '\0';
-		}
-
+		statement += (lastChar = c);
 	}
 
 	// If this was a null statement, skip it
-	if (ret == CONT && !*statement)
+	if (ret == CONT && statement.isEmpty())
 		ret = SKIP;
 
 	if (ret == CONT)
-		ret = frontend(statement);
+		ret = frontend(statement.c_str());
 
 	if (ret == CONT)
 	{
 		// Place each non frontend statement in the temp file if we are reading
 		// from stdin.
 
-		Filelist->saveCommand(statement, isqlGlob.global_Term);
+		Filelist->saveCommand(statement.c_str(), isqlGlob.global_Term);
 	}
 
 	return ret;
@@ -6270,7 +6257,7 @@ static processing_state newinput(const TEXT* infile)
 	// the linked list before discarding the current Ifp.
 	// Filelist is a global pointing to base of list.
 
-	FILE* fp = fopen(file.c_str(), "r");
+	FILE* fp = os_utils::fopen(file.c_str(), "r");
 	if (fp)
 	{
 		Filelist->insertIfp();
@@ -6310,7 +6297,7 @@ static processing_state newoutput(const TEXT* outfile)
 		TEXT path[MAXPATHLEN];
 		strip_quotes(outfile, path);
 		outfile = path;
-		FILE* fp = fopen(outfile, "a");
+		FILE* fp = os_utils::fopen(outfile, "a");
 		if (fp)
 		{
 			if (isqlGlob.Out && isqlGlob.Out != stdout)

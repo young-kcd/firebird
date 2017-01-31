@@ -38,6 +38,7 @@
 #include "firebird/Interface.h"
 #include "../common/os/mod_loader.h"
 #include "../jrd/license.h"
+#include "../common/classes/ImplementHelper.h"
 
 #ifdef DEV_BUILD
 Firebird::AtomicCounter rem_port::portCounter;
@@ -603,7 +604,12 @@ void rem_port::linkParent(rem_port* const parent)
 	parent->port_clients = parent->port_next = this;
 }
 
-const Firebird::RefPtr<Config>& rem_port::getPortConfig() const
+const Firebird::RefPtr<const Config>& rem_port::getPortConfig() const
+{
+	return port_config.hasData() ? port_config : Config::getDefaultConfig();
+}
+
+Firebird::RefPtr<const Config> rem_port::getPortConfig()
 {
 	return port_config.hasData() ? port_config : Config::getDefaultConfig();
 }
@@ -1005,7 +1011,7 @@ void ClntAuthBlock::resetClnt(const Firebird::PathName* fileName, const CSTRING*
 	plugins.set(final.c_str());
 }
 
-Firebird::RefPtr<Config>* ClntAuthBlock::getConfig()
+Firebird::RefPtr<const Config>* ClntAuthBlock::getConfig()
 {
 	return clntConfig.hasData() ? &clntConfig : NULL;
 }
@@ -1016,10 +1022,10 @@ void ClntAuthBlock::storeDataForPlugin(unsigned int length, const unsigned char*
 	HANDSHAKE_DEBUG(fprintf(stderr, "Cli: accepted data for plugin length=%d\n", length));
 }
 
-Firebird::RefPtr<Config> REMOTE_get_config(const Firebird::PathName* dbName,
+Firebird::RefPtr<const Config> REMOTE_get_config(const Firebird::PathName* dbName,
 	const Firebird::string* dpb_config)
 {
-	Firebird::RefPtr<Config> config;
+	Firebird::RefPtr<const Config> config;
 
 	if (dbName && dbName->hasData())
 	{
@@ -1491,11 +1497,11 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 #endif
 }
 
-bool REMOTE_deflate(XDR* xdrs, ProtoWrite* proto_write, PacketSend* packet_send, bool flash)
+bool REMOTE_deflate(XDR* xdrs, ProtoWrite* proto_write, PacketSend* packet_send, bool flush)
 {
 #ifdef WIRE_COMPRESS_SUPPORT
 	rem_port* port = (rem_port*) xdrs->x_public;
-	if (!port->port_compressed)
+	if (!(port->port_compressed && (port->port_flags & PORT_compressed)))
 		return proto_write(xdrs);
 
 	z_stream& strm = port->port_send_stream;
@@ -1508,7 +1514,7 @@ bool REMOTE_deflate(XDR* xdrs, ProtoWrite* proto_write, PacketSend* packet_send,
 		strm.next_out = (Bytef*) &port->port_compressed[REM_SEND_OFFSET(port->port_buff_size)];
 	}
 
-	bool expectMoreOut = flash;
+	bool expectMoreOut = flush;
 
 	while (strm.avail_in || expectMoreOut)
 	{
@@ -1519,7 +1525,7 @@ bool REMOTE_deflate(XDR* xdrs, ProtoWrite* proto_write, PacketSend* packet_send,
 		fprintf(stderr, "\n");
 #endif
 #endif
-		int ret = zlib().deflate(&strm, flash ? Z_SYNC_FLUSH : Z_NO_FLUSH);
+		int ret = zlib().deflate(&strm, flush ? Z_SYNC_FLUSH : Z_NO_FLUSH);
 		if (ret == Z_BUF_ERROR)
 			ret = 0;
 		if (ret != 0)
@@ -1540,8 +1546,11 @@ bool REMOTE_deflate(XDR* xdrs, ProtoWrite* proto_write, PacketSend* packet_send,
 #endif
 
 		expectMoreOut = !strm.avail_out;
-		if ((port->port_buff_size != strm.avail_out) && (flash || !strm.avail_out))
+		if ((port->port_buff_size != strm.avail_out) && (flush || !strm.avail_out))
 		{
+#if COMPRESS_DEBUG > 1
+			fprintf(stderr, "Send packet %d bytes size\n", port->port_buff_size - strm.avail_out);
+#endif
 			if (!packet_send(port, (SCHAR*) &port->port_compressed[REM_SEND_OFFSET(port->port_buff_size)],
 				(SSHORT) (port->port_buff_size - strm.avail_out)))
 			{

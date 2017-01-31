@@ -278,7 +278,7 @@ void ConfigStorage::checkFile()
 				gds__log("Audit configuration file \"%s\" is empty", configFileName.c_str());
 			}
 
-			session.ses_user = SYSDBA_USER_NAME;
+			session.ses_user = DBA_USER_NAME;
 			session.ses_name = "Firebird Audit";
 			session.ses_flags = trs_admin | trs_system;
 
@@ -335,7 +335,7 @@ void ConfigStorage::addSession(TraceSession& session)
 	session.ses_flags |= trs_active;
 	time(&session.ses_start);
 
-	const long pos1 = lseek(m_cfg_file, 0, SEEK_END);
+	const long pos1 = os_utils::lseek(m_cfg_file, 0, SEEK_END);
 	if (pos1 < 0)
 	{
 		const char* fn = m_sharedMemory->getHeader()->cfg_file_name;
@@ -351,6 +351,9 @@ void ConfigStorage::addSession(TraceSession& session)
 		putItem(tagAuthBlock, session.ses_auth.getCount(), session.ses_auth.begin());
 	}
 	putItem(tagUserName, session.ses_user.length(), session.ses_user.c_str());
+	if (session.ses_role.hasData()) {
+		putItem(tagRole, session.ses_role.length(), session.ses_role.c_str());
+	}
 	putItem(tagFlags, sizeof(session.ses_flags), &session.ses_flags);
 	putItem(tagConfig, session.ses_config.length(), session.ses_config.c_str());
 	putItem(tagStartTS, sizeof(session.ses_start), &session.ses_start);
@@ -359,7 +362,7 @@ void ConfigStorage::addSession(TraceSession& session)
 	}
 	putItem(tagEnd, 0, NULL);
 
-	// const long pos2 = lseek(m_cfg_file, 0, SEEK_END);
+	// const long pos2 = os_utils::lseek(m_cfg_file, 0, SEEK_END);
 	// m_sharedMemory->getHeader()->used_space += pos2 - pos1;
 }
 
@@ -428,6 +431,11 @@ bool ConfigStorage::getNextSession(TraceSession& session)
 					p = session.ses_auth.getBuffer(len);
 				break;
 
+			case tagRole:
+				if (session.ses_id)
+					p = session.ses_role.getBuffer(len);
+				break;
+
 			default:
 				fb_assert(false);
 		}
@@ -439,7 +447,7 @@ bool ConfigStorage::getNextSession(TraceSession& session)
 		}
 		else
 		{
-			if (lseek(m_cfg_file, len, SEEK_CUR) < 0)
+			if (os_utils::lseek(m_cfg_file, len, SEEK_CUR) < 0)
 				checkFileError(m_sharedMemory->getHeader()->cfg_file_name, "lseek", isc_io_read_err);
 		}
 	}
@@ -473,7 +481,7 @@ void ConfigStorage::removeSession(ULONG id)
 				// warning C4146: unary minus operator applied to unsigned type, result still unsigned
 				// but we need a negative offset here.
 				const long local_len = len;
-				if (lseek(m_cfg_file, -local_len, SEEK_CUR) < 0)
+				if (os_utils::lseek(m_cfg_file, -local_len, SEEK_CUR) < 0)
 					checkFileError(m_sharedMemory->getHeader()->cfg_file_name, "lseek", isc_io_read_err);
 
 				if (write(m_cfg_file, &currID, len) != len)
@@ -484,7 +492,7 @@ void ConfigStorage::removeSession(ULONG id)
 		}
 		else
 		{
-			if (lseek(m_cfg_file, len, SEEK_CUR) < 0)
+			if (os_utils::lseek(m_cfg_file, len, SEEK_CUR) < 0)
 				checkFileError(m_sharedMemory->getHeader()->cfg_file_name, "lseek", isc_io_read_err);
 		}
 	}
@@ -495,7 +503,7 @@ void ConfigStorage::restart()
 {
 	checkDirty();
 
-	if (lseek(m_cfg_file, 0, SEEK_SET) < 0)
+	if (os_utils::lseek(m_cfg_file, 0, SEEK_SET) < 0)
 		checkFileError(m_sharedMemory->getHeader()->cfg_file_name, "lseek", isc_io_read_err);
 }
 
@@ -542,7 +550,7 @@ void ConfigStorage::updateSession(TraceSession& session)
 		}
 		else if (len)
 		{
-			if (lseek(m_cfg_file, len, SEEK_CUR) < 0)
+			if (os_utils::lseek(m_cfg_file, len, SEEK_CUR) < 0)
 				checkFileError(m_sharedMemory->getHeader()->cfg_file_name, "lseek", isc_io_read_err);
 		}
 	}

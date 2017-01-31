@@ -811,6 +811,22 @@ static const struct {
 	{335545108, -902}, /* 788 bad_crypt_key */
 	{335545109, -901}, /* 789 encrypt_error */
 	{335545110, -904}, /* 790 max_idx_depth */
+	{335545111, -901}, /* 791 wrong_prvlg */
+	{335545112, -902}, /* 792 miss_prvlg */
+	{335545113, -902}, /* 793 crypt_checksum */
+	{335545114, -902}, /* 794 not_dba */
+	{335545115, -901}, /* 795 no_cursor */
+	{335545116, -104}, /* 796 dsql_window_incompat_frames */
+	{335545117, -104}, /* 797 dsql_window_range_multi_key */
+	{335545118, -104}, /* 798 dsql_window_range_inv_key_type */
+	{335545119, -104}, /* 799 dsql_window_frame_value_inv_type */
+	{335545120, -833}, /* 800 window_frame_value_invalid */
+	{335545121, -833}, /* 801 dsql_window_not_found */
+	{335545122, -833}, /* 802 dsql_window_cant_overr_part */
+	{335545123, -833}, /* 803 dsql_window_cant_overr_order */
+	{335545124, -833}, /* 804 dsql_window_cant_overr_frame */
+	{335545125, -833}, /* 805 dsql_window_duplicate */
+	{335545126, -902}, /* 806 sql_too_long */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */
@@ -876,6 +892,7 @@ static const struct {
 	{336003109, -802}, /*  37 dsql_no_input_sqlda */
 	{336003110, -802}, /*  38 dsql_no_output_sqlda */
 	{336003111, -313}, /*  39 dsql_wrong_param_num */
+	{336003112, -817}, /*  40 dsql_invalid_drop_ss_clause */
 	{336068645, -901}, /*  37 dyn_filter_not_found */
 	{336068649, -901}, /*  41 dyn_func_not_found */
 	{336068656, -901}, /*  48 dyn_index_not_found */
@@ -952,6 +969,7 @@ static const struct {
 	{336068896, -901}, /* 288 dyn_cant_use_zero_increment */
 	{336068897, -901}, /* 289 dyn_cant_use_in_foreignkey */
 	{336068898, -901}, /* 290 dyn_defvaldecl_package_func */
+	{336068904, -901}, /* 296 dyn_cant_use_zero_inc_ident */
 	{336330753, -901}, /*   1 gbak_unknown_switch */
 	{336330754, -901}, /*   2 gbak_page_size_missing */
 	{336330755, -901}, /*   3 gbak_page_size_toobig */

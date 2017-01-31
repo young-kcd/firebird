@@ -50,19 +50,22 @@
 //const int BLOB_max_predefined_subtype = 9;
 //
 
-// Column Limits
+// Column Limits (in bytes)
 
-const ULONG MAX_COLUMN_SIZE = 32767;	// Bytes
-const ULONG MAX_STR_SIZE = 65535;		// Bytes
+const ULONG MAX_COLUMN_SIZE = 32767;
+const ULONG MAX_VARY_COLUMN_SIZE = MAX_COLUMN_SIZE - sizeof(USHORT);
+
+const ULONG MAX_STR_SIZE = 65535;
 
 // Metadata constants
 
-const unsigned METADATA_IDENTIFIER_CHAR_LEN	= 31;
-const unsigned METADATA_BYTES_PER_CHAR		= 1;	// UNICODE_FSS_HACK
+// When changing these constants, change MaxIdentifierByteLength and MaxIdentifierCharLength in
+// firebird.conf.in too.
+const unsigned METADATA_IDENTIFIER_CHAR_LEN	= 63;
+const unsigned METADATA_BYTES_PER_CHAR		= 4;
 
 // Misc constant values
 
-// Characters; beware that USER_NAME_LEN = 133 in gsec.h
 const unsigned int USERNAME_LENGTH	= METADATA_IDENTIFIER_CHAR_LEN * METADATA_BYTES_PER_CHAR;
 
 const FB_SIZE_T MAX_SQL_IDENTIFIER_LEN = METADATA_IDENTIFIER_CHAR_LEN * METADATA_BYTES_PER_CHAR;
@@ -86,7 +89,7 @@ const char* const NULL_ROLE = "NONE";
 // User name assigned to any user granted USR_locksmith rights.
 // If this name is changed, modify also the trigger in
 // jrd/grant.gdl (which turns into jrd/trig.h.
-const char* const SYSDBA_USER_NAME = "SYSDBA";
+const char* const DBA_USER_NAME		= "SYSDBA";
 
 const char* const PRIMARY_KEY		= "PRIMARY KEY";
 const char* const FOREIGN_KEY		= "FOREIGN KEY";
@@ -284,6 +287,8 @@ enum InfoType
 	INFO_TYPE_ROWS_AFFECTED = 5,
 	INFO_TYPE_TRIGGER_ACTION = 6,
 	INFO_TYPE_SQLSTATE = 7,
+	INFO_TYPE_EXCEPTION = 8,
+	INFO_TYPE_ERROR_MSG = 9,
 	MAX_INFO_TYPE
 };
 
@@ -444,6 +449,12 @@ const TraNumber MAX_TRA_NUMBER = 0x0000FFFFFFFFFFFF;	// ~2.8 * 10^14
 // CVC: I think we need to have a special, higher value for streams.
 const int OPT_STATIC_ITEMS = 64;
 
-#define CURRENT_ENGINE "Engine12"
+#define CURRENT_ENGINE "Engine13"
+
+const int WITH_GRANT_OPTION = 1;
+const int WITH_ADMIN_OPTION = 2;
+
+// Max length of the string returned by ERROR_TEXT context variable
+const USHORT MAX_ERROR_MSG_LENGTH = 1024 * METADATA_BYTES_PER_CHAR; // 1024 UTF-8 characters
 
 #endif // JRD_CONSTANTS_H

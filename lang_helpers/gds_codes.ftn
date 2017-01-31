@@ -1632,6 +1632,38 @@ C --
       PARAMETER (GDS__encrypt_error                    = 335545109)
       INTEGER*4 GDS__max_idx_depth                   
       PARAMETER (GDS__max_idx_depth                    = 335545110)
+      INTEGER*4 GDS__wrong_prvlg                     
+      PARAMETER (GDS__wrong_prvlg                      = 335545111)
+      INTEGER*4 GDS__miss_prvlg                      
+      PARAMETER (GDS__miss_prvlg                       = 335545112)
+      INTEGER*4 GDS__crypt_checksum                  
+      PARAMETER (GDS__crypt_checksum                   = 335545113)
+      INTEGER*4 GDS__not_dba                         
+      PARAMETER (GDS__not_dba                          = 335545114)
+      INTEGER*4 GDS__no_cursor                       
+      PARAMETER (GDS__no_cursor                        = 335545115)
+      INTEGER*4 GDS__dsql_window_incompat_frames     
+      PARAMETER (GDS__dsql_window_incompat_frames      = 335545116)
+      INTEGER*4 GDS__dsql_window_range_multi_key     
+      PARAMETER (GDS__dsql_window_range_multi_key      = 335545117)
+      INTEGER*4 GDS__dsql_window_range_inv_key_type  
+      PARAMETER (GDS__dsql_window_range_inv_key_type   = 335545118)
+      INTEGER*4 GDS__dsql_window_frame_value_inv_type
+      PARAMETER (GDS__dsql_window_frame_value_inv_type = 335545119)
+      INTEGER*4 GDS__window_frame_value_invalid      
+      PARAMETER (GDS__window_frame_value_invalid       = 335545120)
+      INTEGER*4 GDS__dsql_window_not_found           
+      PARAMETER (GDS__dsql_window_not_found            = 335545121)
+      INTEGER*4 GDS__dsql_window_cant_overr_part     
+      PARAMETER (GDS__dsql_window_cant_overr_part      = 335545122)
+      INTEGER*4 GDS__dsql_window_cant_overr_order    
+      PARAMETER (GDS__dsql_window_cant_overr_order     = 335545123)
+      INTEGER*4 GDS__dsql_window_cant_overr_frame    
+      PARAMETER (GDS__dsql_window_cant_overr_frame     = 335545124)
+      INTEGER*4 GDS__dsql_window_duplicate           
+      PARAMETER (GDS__dsql_window_duplicate            = 335545125)
+      INTEGER*4 GDS__sql_too_long                    
+      PARAMETER (GDS__sql_too_long                     = 335545126)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
@@ -1762,6 +1794,8 @@ C --
       PARAMETER (GDS__dsql_no_output_sqlda             = 336003110)
       INTEGER*4 GDS__dsql_wrong_param_num            
       PARAMETER (GDS__dsql_wrong_param_num             = 336003111)
+      INTEGER*4 GDS__dsql_invalid_drop_ss_clause     
+      PARAMETER (GDS__dsql_invalid_drop_ss_clause      = 336003112)
       INTEGER*4 GDS__dyn_filter_not_found            
       PARAMETER (GDS__dyn_filter_not_found             = 336068645)
       INTEGER*4 GDS__dyn_func_not_found              
@@ -1914,6 +1948,8 @@ C --
       PARAMETER (GDS__dyn_cant_use_in_foreignkey       = 336068897)
       INTEGER*4 GDS__dyn_defvaldecl_package_func     
       PARAMETER (GDS__dyn_defvaldecl_package_func      = 336068898)
+      INTEGER*4 GDS__dyn_cant_use_zero_inc_ident     
+      PARAMETER (GDS__dyn_cant_use_zero_inc_ident      = 336068904)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          

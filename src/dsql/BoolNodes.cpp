@@ -58,47 +58,8 @@ static const int TEMP_LENGTH = 128;
 //--------------------
 
 
-namespace
-{
-	// Copy sub expressions (including subqueries).
-	class SubExprNodeCopier : public NodeCopier
-	{
-	public:
-		explicit SubExprNodeCopier(thread_db* tdbb, CompilerScratch* aCsb)
-			//: NodeCopier(aCsb, localMap)
-			: NodeCopier(aCsb, FB_NEW_POOL(*tdbb->getDefaultPool()) StreamType[STREAM_MAP_LENGTH])
-		{
-			// Initialize the map so all streams initially resolve to the original number. As soon as
-			// copy creates new streams, the map are being overwritten.
-			// CVC: better in the heap, because we need larger map.
-			localMap = remap;
-			for (unsigned i = 0; i < STREAM_MAP_LENGTH; ++i)
-				localMap[i] = i;
-		}
-
-		~SubExprNodeCopier()
-		{
-			delete[] localMap;
-		}
-
-	private:
-		//StreamType localMap[JrdStatement::MAP_LENGTH];
-		StreamType* localMap;
-	};
-}	// namespace
-
-
 //--------------------
 
-
-bool BoolExprNode::computable(CompilerScratch* csb, StreamType stream,
-	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
-{
-	if (nodFlags & (FLAG_DEOPTIMIZE | FLAG_RESIDUAL))
-		return false;
-
-	return ExprNode::computable(csb, stream, allowOnlyCurrentStream);
-}
 
 BoolExprNode* BoolExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
@@ -460,7 +421,7 @@ BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		dsc desc;
 		MAKE_desc(dsqlScratch, &desc, node->arg1);
 
-		if (desc.dsc_dtype != dtype_boolean && !desc.isNull())
+		if (desc.dsc_dtype != dtype_boolean && desc.dsc_dtype != dtype_unknown && !desc.isNull())
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				Arg::Gds(isc_invalid_boolean_usage));
@@ -1960,8 +1921,7 @@ BoolExprNode* RseBoolNode::convertNeqAllToNotAny(thread_db* tdbb, CompilerScratc
 
 	newInnerRse->rse_boolean = boolean;
 
-	SubExprNodeCopier copier(tdbb, csb);
-
+	SubExprNodeCopier copier(csb);
 	return copier.copy(tdbb, static_cast<BoolExprNode*>(newNode));
 }
 

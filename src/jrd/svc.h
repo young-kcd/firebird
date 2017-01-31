@@ -238,11 +238,17 @@ private:
 	static ULONG		add_one(ULONG i);
 	static ULONG		add_val(ULONG i, ULONG val);
 	// Convert spb flags to utility switches
-	static void			conv_switches(Firebird::ClumpletReader& spb, Firebird::string& switches);
+#ifndef DEV_BUILD
+	static
+#endif
+	void				conv_switches(Firebird::ClumpletReader& spb, Firebird::string& switches);
 	// Find spb switch in switch table
-	static const TEXT*	find_switch(int in_spb_sw, const Switches::in_sw_tab_t* table);
+	static const TEXT*	find_switch(int in_spb_sw, const Switches::in_sw_tab_t* table, bool bitmask);
 	// Loop through the appropriate switch table looking for the text for the given command switch
-	static bool			process_switches(Firebird::ClumpletReader& spb, Firebird::string& switches);
+#ifndef DEV_BUILD
+	static
+#endif
+	bool				process_switches(Firebird::ClumpletReader& spb, Firebird::string& switches);
 	// Get bitmask from within spb buffer, find corresponding switches within specified table,
 	// add them to the command line
 	static bool get_action_svc_bitmask(const Firebird::ClumpletReader& spb,
@@ -385,6 +391,10 @@ private:
 	// Size of data, placed into svc_stdin_buffer (set in put)
 	ULONG svc_stdin_user_size;
 	static const ULONG PRELOAD_BUFFER_SIZE = SVC_IO_BUFFER_SIZE;
+
+#ifdef DEV_BUILD
+	bool svc_debug;
+#endif
 };
 
 } //namespace Jrd

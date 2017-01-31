@@ -508,7 +508,7 @@ int SecurityDatabaseManagement::execute(Firebird::CheckStatusWrapper* st, Firebi
 
 			found = false;
 			// Do not allow SYSDBA user to be deleted
-			if (!fb_utils::stricmp(user->userName()->get(), SYSDBA_USER_NAME))
+			if (!fb_utils::stricmp(user->userName()->get(), DBA_USER_NAME))
 				ret = GsecMsg23;
 			else
 			{

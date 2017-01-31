@@ -85,6 +85,7 @@ static bool isNetworkError(const IStatus* status);
 static void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code);
 //static void saveErrorString(ISC_STATUS* status);
 static void badSqldaVersion(const short version);
+static int sqldaTruncateString(char* buffer, FB_SIZE_T size, const char* s);
 static void sqldaDescribeParameters(XSQLDA* sqlda, IMessageMetadata* parameters);
 static ISC_STATUS openOrCreateBlob(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle,
 	FB_API_HANDLE* traHandle, FB_API_HANDLE* blobHandle, ISC_QUAD* blobId,
@@ -329,7 +330,7 @@ int SQLDAMetadata::getSubType(CheckStatusWrapper* status, unsigned index)
 		fb_assert(sqlda->sqld > (int) index);
 		ISC_SHORT sqltype = sqlda->sqlvar[index].sqltype & ~1;
 		if (sqltype == SQL_VARYING || sqltype == SQL_TEXT)
-			return 0;
+			return sqlda->sqlvar[index].sqlsubtype == CS_BINARY ? fb_text_subtype_binary : fb_text_subtype_text;
 		return sqlda->sqlvar[index].sqlsubtype;
 	}
 
@@ -1459,6 +1460,12 @@ static void setTextType(XSQLVAR* var, unsigned charSet)
 	}
 }
 
+static int sqldaTruncateString(char* buffer, FB_SIZE_T size, const char* s)
+{
+	int ret = fb_utils::snprintf(buffer, size, "%s", s);
+	return MIN(ret, size - 1);
+}
+
 // Describe parameters metadata in an sqlda.
 static void sqldaDescribeParameters(XSQLDA* sqlda, IMessageMetadata* parameters)
 {
@@ -1505,19 +1512,19 @@ static void sqldaDescribeParameters(XSQLDA* sqlda, IMessageMetadata* parameters)
 
 		s = parameters->getField(&statusWrapper, i);
 		status.check();
-		var->sqlname_length = fb_utils::snprintf(var->sqlname, sizeof(var->sqlname), "%s", s);
+		var->sqlname_length = sqldaTruncateString(var->sqlname, sizeof(var->sqlname), s);
 
 		s = parameters->getRelation(&statusWrapper, i);
 		status.check();
-		var->relname_length = fb_utils::snprintf(var->relname, sizeof(var->relname), "%s", s);
+		var->relname_length = sqldaTruncateString(var->relname, sizeof(var->relname), s);
 
 		s = parameters->getOwner(&statusWrapper, i);
 		status.check();
-		var->ownname_length = fb_utils::snprintf(var->ownname, sizeof(var->ownname), "%s", s);
+		var->ownname_length = sqldaTruncateString(var->ownname, sizeof(var->ownname), s);
 
 		s = parameters->getAlias(&statusWrapper, i);
 		status.check();
-		var->aliasname_length = fb_utils::snprintf(var->aliasname, sizeof(var->aliasname), "%s", s);
+		var->aliasname_length = sqldaTruncateString(var->aliasname, sizeof(var->aliasname), s);
 	}
 }
 
@@ -3839,7 +3846,12 @@ ITransaction* MasterImplementation::registerTransaction(IAttachment* attachment,
 }
 
 template <typename Impl, typename Intf>
+#ifdef DEV_BUILD
+YHelper<Impl, Intf>::YHelper(NextInterface* aNext, const char* m)
+	: RefCntIface<Intf>(m)
+#else
 YHelper<Impl, Intf>::YHelper(NextInterface* aNext)
+#endif
 {
 	next.assignRefNoIncr(aNext);
 }
@@ -3866,6 +3878,7 @@ FB_API_HANDLE& YEvents::getHandle()
 void YEvents::destroy(unsigned dstrFlags)
 {
 	attachment->childEvents.remove(this);
+	attachment = NULL;
 	removeHandle(&events, handle);
 
 	if (!(dstrFlags & DF_RELEASE))
@@ -3927,6 +3940,7 @@ void YRequest::destroy(unsigned dstrFlags)
 	}
 
 	attachment->childRequests.remove(this);
+	attachment = NULL;
 
 	removeHandle(&requests, handle);
 
@@ -4061,7 +4075,9 @@ FB_API_HANDLE& YBlob::getHandle()
 void YBlob::destroy(unsigned dstrFlags)
 {
 	attachment->childBlobs.remove(this);
+	attachment = NULL;
 	transaction->childBlobs.remove(this);
+	transaction = NULL;
 
 	removeHandle(&blobs, handle);
 
@@ -4183,6 +4199,7 @@ void YStatement::destroy(unsigned dstrFlags)
 	}
 
 	attachment->childStatements.remove(this);
+	attachment = NULL;
 
 	removeHandle(&statements, handle);
 
@@ -4469,6 +4486,7 @@ void YResultSet::destroy(unsigned dstrFlags)
 
 	fb_assert(transaction);
 	transaction->childCursors.remove(this);
+	transaction = NULL;
 
 	destroy2(dstrFlags);
 }
@@ -4699,7 +4717,10 @@ void YTransaction::destroy(unsigned dstrFlags)
 	childCursors.destroy(dstrFlags & ~DF_RELEASE);
 
 	if (attachment)
+	{
 		attachment->childTransactions.remove(this);
+		attachment = NULL;
+	}
 
 	removeHandle(&transactions, handle);
 
@@ -4903,7 +4924,10 @@ YTransaction* YTransaction::enterDtc(CheckStatusWrapper* status)
 		next->addRef();		// We use NoIncr in YTransaction ctor
 
 		if (attachment)
+		{
 			attachment->childTransactions.remove(this);
+			attachment = NULL;
+		}
 
 		removeHandle(&transactions, handle);
 		next = NULL;
@@ -5639,7 +5663,7 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::CheckStatusWrapper* st
 		orgFilename.rtrim();
 
 		PathName expandedFilename;
-		RefPtr<Config> config;
+		RefPtr<const Config> config;
 		if (expandDatabaseName(orgFilename, expandedFilename, &config))
 		{
 			expandedFilename = orgFilename;
@@ -5766,7 +5790,7 @@ YService* Dispatcher::attachServiceManager(CheckStatusWrapper* status, const cha
 		}
 
 		// Build correct config
-		RefPtr<Config> config(Config::getDefaultConfig());
+		RefPtr<const Config> config(Config::getDefaultConfig());
 		if (spbWriter.find(isc_spb_config))
 		{
 			string spb_config;

@@ -108,9 +108,10 @@ typedef Firebird::BePlusTree<BlobIndex, ULONG, MemoryPool, BlobIndex> BlobIndexT
 
 struct CallerName
 {
-	CallerName(int aType, const Firebird::MetaName& aName)
+	CallerName(int aType, const Firebird::MetaName& aName, const Firebird::MetaName& aUserName)
 		: type(aType),
-		  name(aName)
+		  name(aName),
+		  userName(aUserName)
 	{
 	}
 
@@ -121,7 +122,8 @@ struct CallerName
 
 	CallerName(const CallerName& o)
 		: type(o.type),
-		  name(o.name)
+		  name(o.name),
+		  userName(o.userName)
 	{
 	}
 
@@ -131,11 +133,13 @@ struct CallerName
 		{
 			type = o.type;
 			name = o.name;
+			userName = o.userName;
 		}
 	}
 
 	int type;
 	Firebird::MetaName name;
+	Firebird::MetaName userName;
 };
 
 const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
@@ -389,6 +393,7 @@ public:
 	void rollbackToSavepoint(thread_db* tdbb, SavNumber number);
 	void rollforwardSavepoint(thread_db* tdbb);
 	DbCreatorsList* getDbCreatorsList();
+	void checkBlob(thread_db* tdbb, const bid* blob_id);
 
 	GenIdCache* getGenIdCache()
 	{
@@ -521,7 +526,7 @@ enum dfw_t {
 	dfw_arg_field_not_null,	// set domain to not nullable
 	dfw_db_crypt,			// change database encryption status
 	dfw_set_linger,			// set database linger
-	dfw_clear_mapping		// clear user mapping cache
+	dfw_clear_cache			// clear user mapping cache
 };
 
 } //namespace Jrd

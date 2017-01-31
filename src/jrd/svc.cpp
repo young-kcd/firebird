@@ -657,6 +657,9 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_existence(FB_NEW_POOL(*getDefaultMemoryPool()) SvcMutex(this)),
 	svc_stdin_size_requested(0), svc_stdin_buffer(NULL), svc_stdin_size_preload(0),
 	svc_stdin_preload_requested(0), svc_stdin_user_size(0)
+#ifdef DEV_BUILD
+	, svc_debug(false)
+#endif
 {
 	initStatus();
 
@@ -676,7 +679,15 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		}
 
 		// Find the service by looking for an exact match.
-		const string svcname(service_name);
+		string svcname(service_name);
+
+#ifdef DEV_BUILD
+		if (svcname == "@@@")
+		{
+			svc_debug = true;
+			svcname = "service_mgr";
+		}
+#endif
 
 		const serv_entry* serv;
 		for (serv = services; serv->serv_name; serv++)
@@ -696,6 +707,16 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		dumpAuthBlock("Jrd::Service() ctor", &spb, isc_spb_auth_block);
 		getOptions(spb);
 
+#ifdef DEV_BUILD
+		if (svc_debug)
+		{
+			svc_trace_manager = FB_NEW_POOL(*getDefaultMemoryPool()) TraceManager(this);
+			svc_user_flag = SVC_user_dba;
+			svc_service = serv;
+			return;
+		}
+#endif
+
 		// Perhaps checkout the user in the security database.
 		USHORT user_flag;
 		if (!strcmp(serv->serv_name, "anonymous")) {
@@ -708,12 +729,13 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 				if (svc_auth_block.hasData())
 				{
 					PathName dummy;
-					RefPtr<Config> config;
+					RefPtr<const Config> config;
 					expandDatabaseName(svc_expected_db, dummy, &config);
 
 					string trusted_role;
-					mapUser(svc_username, trusted_role, NULL, &svc_auth_block, svc_auth_block,
-						"services manager", NULL, config->getSecurityDatabase(), svc_crypt_callback);
+					mapUser(true, svc_username, trusted_role, NULL, &svc_auth_block, NULL,
+						svc_auth_block, "services manager", NULL, config->getSecurityDatabase(), "",
+						svc_crypt_callback, NULL);
 					trusted_role.upper();
 					svc_trusted_role = trusted_role == ADMIN_ROLE;
 				}
@@ -722,7 +744,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 					// we have embedded service connection, check OS auth
 					if (ISC_get_user(&svc_username, NULL, NULL))
 					{
-						svc_username = SYSDBA_USER_NAME;
+						svc_username = DBA_USER_NAME;
 					}
 				}
 			}
@@ -741,7 +763,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 			}
 
 			// Check that the validated user has the authority to access this service
-			if (svc_username != SYSDBA_USER_NAME && !svc_trusted_role) {
+			if (svc_username != DBA_USER_NAME && !svc_trusted_role) {
 				user_flag = SVC_user_any;
 			}
 			else {
@@ -1288,7 +1310,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			{
 				// The path to the user security database (security2.fdb)
 				char* pb = reinterpret_cast<char*>(buffer);
-				const RefPtr<Config> defConf(Config::getDefaultConfig());
+				const RefPtr<const Config> defConf(Config::getDefaultConfig());
 				strcpy(pb, defConf->getSecurityDatabase());
 
 				if (!(info = INF_put_item(item, static_cast<USHORT>(strlen(pb)), buffer, info, end)))
@@ -1742,7 +1764,7 @@ void Service::query(USHORT			send_item_length,
             {
 				// The path to the user security database (security2.fdb)
 				char* pb = reinterpret_cast<char*>(buffer);
-				const RefPtr<Config> defConf(Config::getDefaultConfig());
+				const RefPtr<const Config> defConf(Config::getDefaultConfig());
 				strcpy(pb, defConf->getSecurityDatabase());
 
 				if (!(info = INF_put_item(item, static_cast<USHORT>(strlen(pb)), buffer, info, end)))
@@ -2025,6 +2047,14 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		}
 	}
 
+#ifdef DEV_BUILD
+	if (svc_debug)
+	{
+		::fprintf(stderr, "%s %s\n", svc_service_run->serv_name, svc_switches.c_str());
+		return;
+	}
+#endif
+
 	// All services except for get_ib_log require switches
 	spb.rewind();
 	if ((!svc_switches.hasData()) && actionNeedsArg(svc_id))
@@ -2036,7 +2066,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	// Do not let everyone look at server log
 	if (svc_id == isc_action_svc_get_fb_log && !(svc_user_flag & SVC_user_dba))
     {
-       	status_exception::raise(Arg::Gds(isc_adm_task_denied));
+       	status_exception::raise(Arg::Gds(isc_adm_task_denied) << Arg::Gds(isc_not_dba));
     }
 
 	// Break up the command line into individual arguments.
@@ -2507,13 +2537,18 @@ void Service::conv_switches(ClumpletReader& spb, string& switches)
 }
 
 
-const TEXT* Service::find_switch(int in_spb_sw, const Switches::in_sw_tab_t* table)
+const TEXT* Service::find_switch(int in_spb_sw, const Switches::in_sw_tab_t* table, bool bitmask)
 {
 	for (const Switches::in_sw_tab_t* in_sw_tab = table; in_sw_tab->in_sw_name; in_sw_tab++)
 	{
-		if (in_spb_sw == in_sw_tab->in_spb_sw)
+		if (in_spb_sw == in_sw_tab->in_spb_sw && bitmask == in_sw_tab->in_sw_option)
 			return in_sw_tab->in_sw_name;
 	}
+
+#ifdef DEV_BUILD
+	if (isatty(fileno(stderr)))
+		fprintf(stderr, "Miss %d %s\n", in_spb_sw, bitmask ? "option" : "switch");
+#endif
 
 	return NULL;
 }
@@ -2570,6 +2605,9 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				break;
 
 			case isc_spb_nbk_level:
+#ifdef DEV_BUILD
+				if (!svc_debug)
+#endif
 				if (nbk_level >= 0 || nbk_guid.hasData())
 				{
 					(Arg::Gds(isc_unexp_spb_form) << Arg::Str("only one isc_spb_nbk_level or isc_spb_nbk_guid")).raise();
@@ -2578,6 +2616,9 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				break;
 
 			case isc_spb_nbk_guid:
+#ifdef DEV_BUILD
+				if (!svc_debug)
+#endif
 				if (nbk_level >= 0 || nbk_guid.hasData())
 				{
 					(Arg::Gds(isc_unexp_spb_form) <<
@@ -2680,6 +2721,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 
 			case isc_spb_sec_username:
 				get_action_svc_string_pos(spb, switches, userPos);
+				userPos = string::npos;
 				break;
 
 			default:
@@ -2829,6 +2871,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 			case isc_spb_res_fix_fss_data:
 			case isc_spb_res_fix_fss_metadata:
 			case isc_spb_bkp_stat:
+			case isc_spb_bkp_skip_data:
 				if (!get_action_svc_parameter(spb.getClumpTag(), reference_burp_in_sw_table, switches))
 				{
 					return false;
@@ -3048,7 +3091,7 @@ bool Service::get_action_svc_bitmask(const ClumpletReader& spb,
 	{
 		if (opt & mask)
 		{
-			const TEXT* s_ptr = find_switch((opt & mask), table);
+			const TEXT* s_ptr = find_switch((opt & mask), table, true);
 			if (!s_ptr)
 			{
 				return false;
@@ -3097,7 +3140,7 @@ bool Service::get_action_svc_parameter(UCHAR action,
 									   const Switches::in_sw_tab_t* table,
 									   string& switches)
 {
-	const TEXT* s_ptr = find_switch(action, table);
+	const TEXT* s_ptr = find_switch(action, table, false);
 	if (!s_ptr)
 	{
 		return false;

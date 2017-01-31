@@ -55,7 +55,7 @@ public:
 		: server(NULL), data(getPool()), account(getPool()),
 		  clientPubKey(getPool()), serverPubKey(getPool()),
 		  verifier(getPool()), salt(getPool()), sessionKey(getPool()),
-		  secDbName(NULL)
+		  secDbName(NULL), cryptCallback(NULL)
 	{
 		LocalStatus ls;
 		CheckStatusWrapper s(&ls);
@@ -65,6 +65,7 @@ public:
 
 	// IServer implementation
 	int authenticate(CheckStatusWrapper* status, IServerBlock* sBlock, IWriter* writerInterface);
+	void setDbCryptCallback(CheckStatusWrapper* status, ICryptKeyCallback* callback);
     int release();
 
 private:
@@ -82,6 +83,7 @@ private:
 	UCharBuffer sessionKey;
 	RefPtr<IFirebirdConf> config;
 	const char* secDbName;
+	ICryptKeyCallback* cryptCallback;
 };
 
 int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWriter* writerInterface)
@@ -130,9 +132,15 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 
 			try
 			{
+				if (cryptCallback)
+				{
+					p->setDbCryptCallback(status, cryptCallback);
+					status->init();		// ignore possible errors like missing call in provider
+				}
+
 				ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
 				dpb.insertByte(isc_dpb_sec_attach, TRUE);
-				dpb.insertString(isc_dpb_user_name, SYSDBA_USER_NAME, fb_strlen(SYSDBA_USER_NAME));
+				dpb.insertString(isc_dpb_user_name, DBA_USER_NAME, fb_strlen(DBA_USER_NAME));
 				const char* providers = "Providers=" CURRENT_ENGINE;
 				dpb.insertString(isc_dpb_config, providers, fb_strlen(providers));
 				att = p->attachDatabase(status, secDbName, dpb.getBufferLength(), dpb.getBuffer());
@@ -231,6 +239,29 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 
 			server->serverSessionKey(sessionKey, clientPubKey.c_str(), verifier);
 			dumpIt("Srv: sessionKey", sessionKey);
+			return AUTH_MORE_DATA;
+		}
+
+		unsigned int length;
+		const unsigned char* val = sb->getData(&length);
+		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP: phase2, data length is %d\n", length));
+		string proof;
+		proof.assign(val, length);
+		BigInteger clientProof(proof.c_str());
+		BigInteger serverProof = server->clientProof(account.c_str(), salt.c_str(), sessionKey);
+		if (clientProof == serverProof)
+		{
+			// put the record into authentication block
+			writerInterface->add(status, account.c_str());
+			if (status->getState() & IStatus::STATE_ERRORS)
+			{
+				return AUTH_FAILED;
+			}
+			writerInterface->setDb(status, secDbName);
+			if (status->getState() & IStatus::STATE_ERRORS)
+			{
+				return AUTH_FAILED;
+			}
 
 			// output the key
 			ICryptKey* cKey = sb->newKey(status);
@@ -244,28 +275,6 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 				return AUTH_FAILED;
 			}
 
-			return AUTH_MORE_DATA;
-		}
-
-		unsigned int length;
-		const unsigned char* val = sb->getData(&length);
-		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP: phase2, data length is %d\n", length));
-		string proof;
-		proof.assign(val, length);
-		BigInteger clientProof(proof.c_str());
-		BigInteger serverProof = server->clientProof(account.c_str(), salt.c_str(), sessionKey);
-		if (clientProof == serverProof)
-		{
-			writerInterface->add(status, account.c_str());
-			if (status->getState() & IStatus::STATE_ERRORS)
-			{
-				return AUTH_FAILED;
-			}
-			writerInterface->setDb(status, secDbName);
-			if (status->getState() & IStatus::STATE_ERRORS)
-			{
-				return AUTH_FAILED;
-			}
 			return AUTH_SUCCESS;
 		}
 	}
@@ -276,14 +285,19 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 		switch(status->getErrors()[1])
 		{
 		case isc_stream_eof:	// User name not found in security database
-			status->init();
-			return AUTH_CONTINUE;
-		default:
 			break;
+		default:
+			return AUTH_FAILED;
 		}
 	}
 
-	return AUTH_FAILED;
+	status->init();
+	return AUTH_CONTINUE;
+}
+
+void SrpServer::setDbCryptCallback(CheckStatusWrapper* status, ICryptKeyCallback* callback)
+{
+	cryptCallback = callback;
 }
 
 int SrpServer::release()

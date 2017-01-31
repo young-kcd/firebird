@@ -82,6 +82,13 @@ public:
 	void setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolderPlugin** sources,
 		const char* keyName);
 
+	// One is free to ignore passed info when not needed
+	void setInfo(CheckStatusWrapper* status, IDbCryptInfo* info)
+	{
+		// You may uncomment next line in a case of embedded connection
+		// fprintf(stderr, "DbInfo: name is %s\n", info->getDatabaseFullPath(status));
+	}
+
 	int release()
 	{
 		if (--refCounter == 0)
@@ -229,7 +236,9 @@ void DbCrypt::setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolder
 			return;
 
 		if (callback && callback->callback(0, NULL, 1, &key) == 1)
+		{
 			return;
+		}
 	}
 
 	key = 0;

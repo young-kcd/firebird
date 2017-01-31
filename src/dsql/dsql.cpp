@@ -105,8 +105,6 @@ static inline bool reqTypeWithCursor(DsqlCompiledStatement::Type type)
 	return false;
 }
 
-const USHORT PARSER_VERSION = 2;
-
 #ifdef DSQL_DEBUG
 unsigned DSQL_debug = 0;
 #endif
@@ -210,7 +208,7 @@ DsqlCursor* DSQL_open(thread_db* tdbb,
 	// Validate statement type
 
 	if (!reqTypeWithCursor(statement->getType()))
-		(Arg::Gds(isc_random) << "Cannot open non-SELECT statement").raise();
+		Arg::Gds(isc_no_cursor).raise();
 
 	// Validate cursor being not already open
 
@@ -285,6 +283,7 @@ bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 
 	if (eofReached)
 	{
+		delayedFormat = NULL;
 		trace.fetch(true, ITracePlugin::RESULT_SUCCESS);
 		return false;
 	}
@@ -1087,6 +1086,8 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 				}
 			}
 
+			const bool notNull = (!flag || *flag >= 0);
+
 			dsc parDesc = parameter->par_desc;
 			parDesc.dsc_address = msgBuffer + (IPTR) parDesc.dsc_address;
 
@@ -1094,19 +1095,16 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 			{
 				desc.dsc_address = dsql_msg_buf + (IPTR) desc.dsc_address;
 
-				if (!flag || *flag >= 0)
+				if (notNull)
 					MOVD_move(tdbb, &parDesc, &desc);
 				else
 					memset(desc.dsc_address, 0, desc.dsc_length);
 			}
-			else if (!flag || *flag >= 0)
+			else if (notNull && !parDesc.isNull())
 			{
-				if (!(parDesc.dsc_flags & DSC_null))
-				{
-					// Safe cast because desc is used as source only.
-					desc.dsc_address = const_cast<UCHAR*>(in_dsql_msg_buf) + (IPTR) desc.dsc_address;
-					MOVD_move(tdbb, &desc, &parDesc);
-				}
+				// Safe cast because desc is used as source only.
+				desc.dsc_address = const_cast<UCHAR*>(in_dsql_msg_buf) + (IPTR) desc.dsc_address;
+				MOVD_move(tdbb, &desc, &parDesc);
 			}
 			else
 				memset(parDesc.dsc_address, 0, parDesc.dsc_length);
@@ -1320,8 +1318,6 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	if (text && textLength == 0)
 		textLength = static_cast<ULONG>(strlen(text));
 
-	textLength = MIN(textLength, MAX_SQL_LENGTH);
-
 	TraceDSQLPrepare trace(database->dbb_attachment, transaction, textLength, text);
 
 	if (clientDialect > SQL_DIALECT_CURRENT)
@@ -1350,6 +1346,13 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		}
 	}
 
+	if (textLength > MAX_SQL_LENGTH)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-902) <<
+				  Arg::Gds(isc_imp_exc) <<
+				  Arg::Gds(isc_sql_too_long) << Arg::Num(MAX_SQL_LENGTH));
+	}
+
 	// allocate the statement block, then prepare the statement
 
 	Jrd::ContextPoolHolder context(tdbb, database->createPool());
@@ -1369,8 +1372,8 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	{
 		// Parse the SQL statement.  If it croaks, return
 
-		Parser parser(*tdbb->getDefaultPool(), scratch, clientDialect,
-			scratch->getAttachment()->dbb_db_SQL_dialect, PARSER_VERSION, text, textLength,
+		Parser parser(tdbb, *tdbb->getDefaultPool(), scratch, clientDialect,
+			scratch->getAttachment()->dbb_db_SQL_dialect, text, textLength,
 			tdbb->getAttachment()->att_charset);
 
 		request = parser.parse();

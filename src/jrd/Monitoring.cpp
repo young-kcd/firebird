@@ -391,9 +391,9 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 	// Enumerate active sessions
 
-	const MetaName& user_name = attachment->att_user->usr_user_name;
-	const bool locksmith = attachment->locksmith();
-	const char* user_name_ptr = locksmith ? NULL : user_name.c_str();
+	const bool locksmith = attachment->locksmith(tdbb, MONITOR_ANY_ATTACHMENT);
+	const char* user_name_ptr = locksmith ? NULL : attachment->att_user ?
+		attachment->att_user->getUserName().c_str() : "";
 
 	MonitoringData::SessionList sessions(pool);
 
@@ -856,7 +856,9 @@ void Monitoring::putDatabase(thread_db* tdbb, SnapshotData::DumpRecord& record)
 
 void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Attachment* attachment)
 {
-	fb_assert(attachment && attachment->att_user);
+	fb_assert(attachment);
+	if (!attachment->att_user)
+		return;
 
 	record.reset(rel_mon_attachments);
 
@@ -876,7 +878,7 @@ void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Atta
 	ISC_systemToUtf8(attName);
 
 	// user (MUST BE ALWAYS THE FIRST ITEM PASSED!)
-	record.storeString(f_mon_att_user, attachment->att_user->usr_user_name);
+	record.storeString(f_mon_att_user, attachment->att_user->getUserName());
 	// attachment id
 	record.storeInteger(f_mon_att_id, attachment->att_attachment_id);
 	// process id
@@ -886,7 +888,7 @@ void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Atta
 	// attachment name
 	record.storeString(f_mon_att_name, attName);
 	// role
-	record.storeString(f_mon_att_role, attachment->att_user->usr_sql_role_name);
+	record.storeString(f_mon_att_role, attachment->att_user->getSqlRole());
 	// remote protocol
 	record.storeString(f_mon_att_remote_proto, attachment->att_network_protocol);
 	// remote address
@@ -1240,7 +1242,7 @@ void Monitoring::dumpAttachment(thread_db* tdbb, Attachment* attachment)
 	attachment->mergeStats();
 
 	const AttNumber att_id = attachment->att_attachment_id;
-	const MetaName& user_name = attachment->att_user->usr_user_name;
+	const MetaName& user_name = attachment->att_user->getUserName();
 
 	if (!dbb->dbb_monitoring_data)
 		dbb->dbb_monitoring_data = FB_NEW_POOL(pool) MonitoringData(dbb);
@@ -1309,10 +1311,10 @@ void Monitoring::publishAttachment(thread_db* tdbb)
 	if (!dbb->dbb_monitoring_data)
 		dbb->dbb_monitoring_data = FB_NEW_POOL(*dbb->dbb_permanent) MonitoringData(dbb);
 
-	const MetaName& user_name = attachment->att_user->usr_user_name;
+	const char* user_name = attachment->att_user ? attachment->att_user->getUserName().c_str() : "";
 
 	MonitoringData::Guard guard(dbb->dbb_monitoring_data);
-	dbb->dbb_monitoring_data->setup(attachment->att_attachment_id, user_name.c_str());
+	dbb->dbb_monitoring_data->setup(attachment->att_attachment_id, user_name);
 }
 
 void Monitoring::cleanupAttachment(thread_db* tdbb)

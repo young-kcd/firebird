@@ -27,6 +27,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/DataTypeUtil.h"
 #include "../yvalve/keywords.h"
+#include "../jrd/intl_proto.h"
 
 using namespace Firebird;
 using namespace Jrd;
@@ -36,30 +37,26 @@ namespace
 {
 	const int HASH_SIZE = 1021;
 
-	struct KeywordVersion
+	struct Keyword
 	{
-		KeywordVersion(int aKeyword, MetaName* aStr, USHORT aVersion)
-			: keyword(aKeyword),
-			  str(aStr),
-			  version(aVersion)
-		{
-		}
+		Keyword(int aKeyword, MetaName* aStr)
+			: keyword(aKeyword), str(aStr)
+		{}
 
 		int keyword;
 		MetaName* str;
-		USHORT version;
 	};
 
-	class KeywordsMap : public GenericMap<Pair<Left<MetaName, KeywordVersion> > >
+	class KeywordsMap : public GenericMap<Pair<Left<MetaName, Keyword> > >
 	{
 	public:
 		explicit KeywordsMap(MemoryPool& pool)
-			: GenericMap<Pair<Left<MetaName, KeywordVersion> > >(pool)
+			: GenericMap<Pair<Left<MetaName, Keyword> > >(pool)
 		{
 			for (const TOK* token = KEYWORD_getTokens(); token->tok_string; ++token)
 			{
 				MetaName* str = FB_NEW_POOL(pool) MetaName(token->tok_string);
-				put(*str, KeywordVersion(token->tok_ident, str, token->tok_version));
+				put(*str, Keyword(token->tok_ident, str));
 			}
 		}
 
@@ -75,14 +72,13 @@ namespace
 }
 
 
-Parser::Parser(MemoryPool& pool, DsqlCompilerScratch* aScratch, USHORT aClientDialect,
-			USHORT aDbDialect, USHORT aParserVersion, const TEXT* string, size_t length,
+Parser::Parser(thread_db* tdbb, MemoryPool& pool, DsqlCompilerScratch* aScratch,
+			USHORT aClientDialect, USHORT aDbDialect, const TEXT* string, size_t length,
 			SSHORT characterSet)
 	: PermanentStorage(pool),
 	  scratch(aScratch),
 	  client_dialect(aClientDialect),
 	  db_dialect(aDbDialect),
-	  parser_version(aParserVersion),
 	  transformedString(pool),
 	  strMarks(pool),
 	  stmt_ambiguous(false)
@@ -109,10 +105,13 @@ Parser::Parser(MemoryPool& pool, DsqlCompilerScratch* aScratch, USHORT aClientDi
 	lex.lines_bk = lex.lines;
 	lex.param_number = 1;
 	lex.prev_keyword = -1;
+
 #ifdef DSQL_DEBUG
 	if (DSQL_debug & 32)
 		dsql_trace("Source DSQL string:\n%.*s", (int) length, string);
 #endif
+
+	metadataCharSet = INTL_charset_lookup(tdbb, CS_METADATA);
 }
 
 
@@ -398,7 +397,21 @@ bool Parser::yylexSkipSpaces()
 int Parser::yylexAux()
 {
 	thread_db* tdbb = JRD_get_thread_data();
+	Database* const dbb = tdbb->getDatabase();
 	MemoryPool& pool = *tdbb->getDefaultPool();
+
+	unsigned maxByteLength, maxCharLength;
+
+	if (scratch->flags & DsqlCompilerScratch::FLAG_INTERNAL_REQUEST)
+	{
+		maxByteLength = MAX_SQL_IDENTIFIER_LEN;
+		maxCharLength = METADATA_IDENTIFIER_CHAR_LEN;
+	}
+	else
+	{
+		maxByteLength = dbb->dbb_config->getMaxIdentifierByteLength();
+		maxCharLength = dbb->dbb_config->getMaxIdentifierCharLength();
+	}
 
 	SSHORT c = lex.ptr[-1];
 	UCHAR tok_class = classes(c);
@@ -423,15 +436,15 @@ int Parser::yylexAux()
 
 		check_bound(p, string);
 
-		if (p > string + MAX_SQL_IDENTIFIER_LEN)
-			yyabandon(-104, isc_dyn_name_longer);
+		if (p > string + maxByteLength || p > string + maxCharLength)
+			yyabandon(yyposn, -104, isc_dyn_name_longer);
 
 		*p = 0;
 
 		// make a string value to hold the name, the name is resolved in pass1_constant.
 		yylval.metaNamePtr = FB_NEW_POOL(pool) MetaName(pool, string, p - string);
 
-		return INTRODUCER;
+		return TOK_INTRODUCER;
 	}
 
 	// parse a quoted string, being sure to look for double quotes
@@ -506,7 +519,7 @@ int Parser::yylexAux()
 			{
 				if (buffer != string)
 					gds__free (buffer);
-				yyabandon (-104, isc_invalid_string_constant);
+				yyabandon(yyposn, -104, isc_invalid_string_constant);
 			}
 			else if (client_dialect >= SQL_DIALECT_V6)
 			{
@@ -514,30 +527,35 @@ int Parser::yylexAux()
 				{
 					if (buffer != string)
 						gds__free (buffer);
-					yyabandon(-104, isc_token_too_long);
+					yyabandon(yyposn, -104, isc_token_too_long);
 				}
 				else if (p > &buffer[MAX_SQL_IDENTIFIER_LEN])
 				{
 					if (buffer != string)
 						gds__free (buffer);
-					yyabandon(-104, isc_dyn_name_longer);
+					yyabandon(yyposn, -104, isc_dyn_name_longer);
 				}
 				else if (p - buffer == 0)
 				{
 					if (buffer != string)
 						gds__free (buffer);
-					yyabandon(-104, isc_dyn_zero_len_id);
+					yyabandon(yyposn, -104, isc_dyn_zero_len_id);
 				}
 
-				Attachment* attachment = tdbb->getAttachment();
-				MetaName name(attachment->nameToMetaCharSet(tdbb, MetaName(buffer, p - buffer)));
+				Attachment* const attachment = tdbb->getAttachment();
+				const MetaName name(attachment->nameToMetaCharSet(tdbb, MetaName(buffer, p - buffer)));
+				const unsigned charLength = metadataCharSet->length(
+					name.length(), (const UCHAR*) name.c_str(), true);
+
+				if (name.length() > maxByteLength || charLength > maxCharLength)
+					yyabandon(yyposn, -104, isc_dyn_name_longer);
 
 				yylval.metaNamePtr = FB_NEW_POOL(pool) MetaName(pool, name);
 
 				if (buffer != string)
 					gds__free (buffer);
 
-				return SYMBOL;
+				return TOK_SYMBOL;
 			}
 		}
 		yylval.intlStringPtr = newIntlString(Firebird::string(buffer, p - buffer));
@@ -548,7 +566,7 @@ int Parser::yylexAux()
 		mark.str = yylval.intlStringPtr;
 		strMarks.put(mark.str, mark);
 
-		return STRING;
+		return TOK_STRING;
 	}
 
 	/*
@@ -676,7 +694,7 @@ int Parser::yylexAux()
 
 			yylval.intlStringPtr = newIntlString(temp, "BINARY");
 
-			return STRING;
+			return TOK_STRING;
 		}  // if (!hexerror)...
 
 		// If we got here, there was a parsing error.  Set the
@@ -731,7 +749,7 @@ int Parser::yylexAux()
 				mark.str = yylval.intlStringPtr;
 				strMarks.put(mark.str, mark);
 
-				return STRING;
+				return TOK_STRING;
 			}
 		}
 
@@ -841,7 +859,7 @@ int Parser::yylexAux()
 				}
 
 				// The return value can be a negative number.
-				return NUMBER64BIT;
+				return TOK_NUMBER64BIT;
 			}
 			else
 			{
@@ -890,7 +908,7 @@ int Parser::yylexAux()
 				}
 
 				yylval.int32Val = (SLONG) value;
-				return NUMBER;
+				return TOK_NUMBER;
 			} // integer value
 		}  // if (!hexerror)...
 
@@ -999,7 +1017,7 @@ int Parser::yylexAux()
 				lex.line_start_bk = lex.line_start;
 				lex.lines_bk = lex.lines;
 
-				return FLOAT_NUMBER;
+				return TOK_FLOAT_NUMBER;
 			}
 
 			if (!have_exp)
@@ -1012,7 +1030,7 @@ int Parser::yylexAux()
 				{
 					yylval.int32Val = (SLONG) number;
 					//printf ("parse.y %p %d\n", yylval.legacyStr, number);
-					return NUMBER;
+					return TOK_NUMBER;
 				}
 				else
 				{
@@ -1043,7 +1061,7 @@ int Parser::yylexAux()
 					{
 						yylval.stringPtr = newString(
 							Firebird::string(lex.last_token, lex.ptr - lex.last_token));
-						return FLOAT_NUMBER;
+						return TOK_FLOAT_NUMBER;
 					}
 
 					yylval.scaledNumber.number = number;
@@ -1051,9 +1069,9 @@ int Parser::yylexAux()
 					yylval.scaledNumber.hex = false;
 
 					if (have_decimal)
-						return SCALEDINT;
+						return TOK_SCALEDINT;
 
-					return NUMBER64BIT;
+					return TOK_NUMBER64BIT;
 				}
 			} // else if (!have_exp)
 		} // if (!have_error)
@@ -1084,14 +1102,13 @@ int Parser::yylexAux()
 		check_bound(p, string);
 		*p = 0;
 
-		if (p > &string[MAX_SQL_IDENTIFIER_LEN])
-			yyabandon(-104, isc_dyn_name_longer);
+		if (p > &string[maxByteLength] || p > &string[maxCharLength])
+			yyabandon(yyposn, -104, isc_dyn_name_longer);
 
-		MetaName str(string, p - string);
-		KeywordVersion* keyVer = keywordsMap->get(str);
+		const MetaName str(string, p - string);
+		const Keyword* const keyVer = keywordsMap->get(str);
 
-		if (keyVer && parser_version >= keyVer->version &&
-			(keyVer->keyword != COMMENT || lex.prev_keyword == -1))
+		if (keyVer && (keyVer->keyword != TOK_COMMENT || lex.prev_keyword == -1))
 		{
 			yylval.metaNamePtr = keyVer->str;
 			lex.last_token_bk = lex.last_token;
@@ -1104,17 +1121,17 @@ int Parser::yylexAux()
 		lex.last_token_bk = lex.last_token;
 		lex.line_start_bk = lex.line_start;
 		lex.lines_bk = lex.lines;
-		return SYMBOL;
+		return TOK_SYMBOL;
 	}
 
 	// Must be punctuation -- test for double character punctuation
 
 	if (lex.last_token + 1 < lex.end && !isspace(UCHAR(lex.last_token[1])))
 	{
-		Firebird::string str(lex.last_token, 2);
-		KeywordVersion* keyVer = keywordsMap->get(str);
+		const MetaName str(lex.last_token, 2);
+		const Keyword* const keyVer = keywordsMap->get(str);
 
-		if (keyVer && parser_version >= keyVer->version)
+		if (keyVer)
 		{
 			++lex.ptr;
 			return keyVer->keyword;
@@ -1189,7 +1206,7 @@ void Parser::yyerrorIncompleteCmd()
 void Parser::check_bound(const char* const to, const char* const string)
 {
 	if ((to - string) >= Parser::MAX_TOKEN_LEN)
-		yyabandon(-104, isc_token_too_long);
+		yyabandon(yyposn, -104, isc_token_too_long);
 }
 
 void Parser::check_copy_incr(char*& to, const char ch, const char* const string)
@@ -1199,7 +1216,7 @@ void Parser::check_copy_incr(char*& to, const char ch, const char* const string)
 }
 
 
-void Parser::yyabandon(SLONG sql_code, ISC_STATUS error_symbol)
+void Parser::yyabandon(const Position& position, SLONG sql_code, ISC_STATUS error_symbol)
 {
 /**************************************
  *
@@ -1212,6 +1229,8 @@ void Parser::yyabandon(SLONG sql_code, ISC_STATUS error_symbol)
  *
  **************************************/
 
-	ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(sql_code) <<
-			  Arg::Gds(error_symbol));
+	ERRD_post(
+		Arg::Gds(isc_sqlerr) << Arg::Num(sql_code) << Arg::Gds(error_symbol) <<
+		Arg::Gds(isc_dsql_line_col_error) <<
+			Arg::Num(position.firstLine) << Arg::Num(position.firstColumn));
 }

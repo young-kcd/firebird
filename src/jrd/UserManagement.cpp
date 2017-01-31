@@ -47,12 +47,12 @@ namespace
 		// ILogonInfo implementation
 		const char* name()
 		{
-			return att->att_user->usr_user_name.c_str();
+			return att->att_user ? att->att_user->getUserName().c_str() : "";
 		}
 
 		const char* role()
 		{
-			return att->att_user->usr_sql_role_name.c_str();
+			return att->att_user ? att->att_user->getSqlRole().c_str() : "";
 		}
 
 		const char* networkProtocol()
@@ -67,6 +67,8 @@ namespace
 
 		const unsigned char* authBlock(unsigned* length)
 		{
+			if (!att->att_user)
+				return NULL;
 			const Auth::AuthenticationBlock& aBlock = att->att_user->usr_auth_block;
 			*length = aBlock.getCount();
 			return aBlock.getCount() ? aBlock.begin() : NULL;
@@ -362,12 +364,13 @@ void UserManagement::execute(USHORT id)
 
 		OldAttributes oldAttributes;
 		int ret = manager->execute(&statusWrapper, &cmd, &oldAttributes);
-		checkSecurityResult(ret, &status, command->userName()->get(), command->operation());
+		if (ret == 0 || status.getErrors()[1] != isc_missing_data_structures)
+			checkSecurityResult(ret, &status, command->userName()->get(), command->operation());
+		else
+			statusWrapper.init();
 
 		if (command->op == Auth::ADDMOD_OPER)
-		{
 			command->op = oldAttributes.present ? Auth::MOD_OPER : Auth::ADD_OPER;
-		}
 
 		if (command->attr.entered())
 		{
@@ -384,9 +387,8 @@ void UserManagement::execute(USHORT id)
 			while (cur != curEnd)
 			{
 				if (cur->name == prev)
-				{
 					(Arg::Gds(isc_dup_attribute) << cur->name).raise();
-				}
+
 				prev = cur->name;
 				++cur;
 			}
@@ -479,7 +481,7 @@ void UserManagement::list(IUser* u, unsigned cachePosition)
 		const char* uname = u->userName()->get();
 		putField(threadDbb, record,
 				 DumpField(f_sec_user_name, VALUE_STRING, static_cast<USHORT>(strlen(uname)), uname));
-		su = strcmp(uname, SYSDBA_USER_NAME) == 0;
+		su = strcmp(uname, DBA_USER_NAME) == 0;
 	}
 
 	if (u->firstName()->entered())

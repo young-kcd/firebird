@@ -87,12 +87,12 @@ static void makeValidation(thread_db* tdbb, CompilerScratch* csb, StreamType str
 static StmtNode* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, StreamType orgStream,
 	StreamType newStream, bool remap);
 static RelationSourceNode* pass1Update(thread_db* tdbb, CompilerScratch* csb, jrd_rel* relation,
-	const trig_vec* trigger, StreamType stream, StreamType updateStream, SecurityClass::flags_t priv,
+	const TrigVector* trigger, StreamType stream, StreamType updateStream, SecurityClass::flags_t priv,
 	jrd_rel* view, StreamType viewStream, StreamType viewUpdateStream);
 static void pass1Validations(thread_db* tdbb, CompilerScratch* csb, Array<ValidateInfo>& validations);
 static void postTriggerAccess(CompilerScratch* csb, jrd_rel* ownerRelation,
 	ExternalAccess::exa_act operation, jrd_rel* view);
-static void preModifyEraseTriggers(thread_db* tdbb, trig_vec** trigs,
+static void preModifyEraseTriggers(thread_db* tdbb, TrigVector** trigs,
 	StmtNode::WhichTrigger whichTrig, record_param* rpb, record_param* rec, TriggerAction op);
 static void validateExpressions(thread_db* tdbb, const Array<ValidateInfo>& validations);
 
@@ -1399,8 +1399,9 @@ DmlNode* DeclareSubFuncNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 	subFunc->setImplemented(true);
 
 	{	// scope
-		CompilerScratch* const subCsb = node->subCsb = CompilerScratch::newCsb(csb->csb_pool, 5);
-		subCsb->csb_g_flags |= csb_subroutine;
+		CompilerScratch* const subCsb = node->subCsb =
+			FB_NEW_POOL(csb->csb_pool) CompilerScratch(csb->csb_pool);
+		subCsb->csb_g_flags |= csb_subroutine | (csb->csb_g_flags & csb_get_dependencies);
 		subCsb->csb_blr_reader = csb->csb_blr_reader;
 
 		BlrReader& reader = subCsb->csb_blr_reader;
@@ -1673,8 +1674,9 @@ DmlNode* DeclareSubProcNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 	subProc->setImplemented(true);
 
 	{	// scope
-		CompilerScratch* const subCsb = node->subCsb = CompilerScratch::newCsb(csb->csb_pool, 5);
-		subCsb->csb_g_flags |= csb_subroutine;
+		CompilerScratch* const subCsb = node->subCsb =
+			FB_NEW_POOL(csb->csb_pool) CompilerScratch(csb->csb_pool);
+		subCsb->csb_g_flags |= csb_subroutine | (csb->csb_g_flags & csb_get_dependencies);
 		subCsb->csb_blr_reader = csb->csb_blr_reader;
 
 		BlrReader& reader = subCsb->csb_blr_reader;
@@ -2241,8 +2243,8 @@ void EraseNode::pass1Erase(thread_db* tdbb, CompilerScratch* csb, EraseNode* nod
 		if (parent)
 			priv |= SCL_select;
 
-		const trig_vec* trigger = relation->rel_pre_erase ?
-			relation->rel_pre_erase : relation->rel_post_erase;
+		RefPtr<const TrigVector> trigger(relation->rel_pre_erase ?
+			relation->rel_pre_erase : relation->rel_post_erase);
 
 		// If we have a view with triggers, let's expand it.
 
@@ -2400,6 +2402,9 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 		VIO_refetch_record(tdbb, rpb, transaction, false, false);
 		rpb->rpb_runtime_flags &= ~RPB_refetch;
 	}
+
+	if (rpb->rpb_runtime_flags & RPB_undo_deleted)
+		return parentStmt;
 
 	SavepointChangeMarker scMarker(transaction);
 
@@ -5332,7 +5337,8 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		store->dsqlFields = notMatched->fields;
 		store->dsqlValues = notMatched->values;
 
-		thisIf->trueAction = store = store->internalDsqlPass(dsqlScratch, false)->as<StoreNode>();
+		bool needSavePoint; // unused
+		thisIf->trueAction = store = store->internalDsqlPass(dsqlScratch, false, needSavePoint)->as<StoreNode>();
 		fb_assert(store);
 
 		if (notMatched->condition)
@@ -5930,8 +5936,8 @@ void ModifyNode::pass1Modify(thread_db* tdbb, CompilerScratch* csb, ModifyNode* 
 		if (parent)
 			priv |= SCL_select;
 
-		const trig_vec* trigger = (relation->rel_pre_modify) ?
-			relation->rel_pre_modify : relation->rel_post_modify;
+		RefPtr<const TrigVector> trigger(relation->rel_pre_modify ?
+			relation->rel_pre_modify : relation->rel_post_modify);
 
 		// If we have a view with triggers, let's expand it.
 
@@ -6198,6 +6204,12 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 		orgRpb->rpb_runtime_flags &= ~RPB_refetch;
 	}
 
+	if (orgRpb->rpb_runtime_flags & RPB_undo_deleted)
+	{
+		request->req_operation = jrd_req::req_return;
+		return parentStmt;
+	}
+
 	// Fall thru on evaluate to set up for modify before executing sub-statement.
 	// This involves finding the appropriate format, making sure a record block
 	// exists for the stream and is big enough, and copying fields from the
@@ -6428,7 +6440,8 @@ DmlNode* StoreNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 	return node;
 }
 
-StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool updateOrInsert)
+StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch,
+	bool updateOrInsert, bool& needSavePoint)
 {
 	thread_db* tdbb = JRD_get_thread_data(); // necessary?
 	DsqlContextStack::AutoRestore autoContext(*dsqlScratch->context);
@@ -6452,9 +6465,13 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 		RseNode* rse = PASS1_rse(dsqlScratch, selExpr, false);
 		node->dsqlRse = rse;
 		values = rse->dsqlSelectList;
+		needSavePoint = false;
 	}
 	else
+	{
 		values = doDsqlPass(dsqlScratch, dsqlValues, false);
+		needSavePoint = SubSelectFinder::find(values);
+	}
 
 	// Process relation
 
@@ -6590,7 +6607,14 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 
 StmtNode* StoreNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	return SavepointEncloseNode::make(getPool(), dsqlScratch, internalDsqlPass(dsqlScratch, false));
+	bool needSavePoint;
+	StmtNode* node = SavepointEncloseNode::make(getPool(), dsqlScratch,
+		internalDsqlPass(dsqlScratch, false, needSavePoint));
+
+	if (!needSavePoint || node->is<SavepointEncloseNode>())
+		return node;
+
+	return FB_NEW SavepointEncloseNode(getPool(), node);
 }
 
 string StoreNode::internalPrint(NodePrinter& printer) const
@@ -6673,8 +6697,8 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 
 		postTriggerAccess(csb, relation, ExternalAccess::exa_insert, view);
 
-		const trig_vec* trigger = relation->rel_pre_store ?
-			relation->rel_pre_store : relation->rel_post_store;
+		RefPtr<const TrigVector> trigger(relation->rel_pre_store ?
+			relation->rel_pre_store : relation->rel_post_store);
 
 		// Check out insert. If this is an insert thru a view, verify the view by checking for read
 		// access on the base table. If field-level select privileges are implemented, this needs
@@ -6750,15 +6774,13 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 	if (!vector)
 		return;
 
-	//StreamType localMap[JrdStatement::MAP_LENGTH];
-	AutoPtr<StreamType, ArrayDelete<StreamType> > localMap;
+	StreamMap localMap;
 	StreamType* map = csb->csb_rpt[stream].csb_map;
 
 	if (!map)
 	{
-		localMap = FB_NEW_POOL(*tdbb->getDefaultPool()) StreamType[STREAM_MAP_LENGTH];
-		map = localMap;
-		fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR relevant, too?
+		map = localMap.getBuffer(STREAM_MAP_LENGTH);
+		fb_assert(stream <= MAX_STREAMS);
 		map[0] = stream;
 		map[1] = 1;
 		map[2] = 2;
@@ -6815,17 +6837,13 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 
 			if (generatorName.hasData())
 			{
-				// Make a gen_id(<generator name>, 1) expression.
+				// Make a (next value for <generator name>) expression.
 
-				LiteralNode* literal = FB_NEW_POOL(csb->csb_pool) LiteralNode(csb->csb_pool);
-				SLONG* increment = FB_NEW_POOL(csb->csb_pool) SLONG(1);
-				literal->litDesc.makeLong(0, increment);
-
-				GenIdNode* const genNode = FB_NEW_POOL(csb->csb_pool)
-					GenIdNode(csb->csb_pool, (csb->blrVersion == 4), generatorName, literal, false, true);
+				GenIdNode* const genNode = FB_NEW_POOL(csb->csb_pool) GenIdNode(
+					csb->csb_pool, (csb->blrVersion == 4), generatorName, NULL, true, true);
 
 				bool sysGen = false;
-				if (!MET_load_generator(tdbb, genNode->generator, &sysGen))
+				if (!MET_load_generator(tdbb, genNode->generator, &sysGen, &genNode->step))
 					PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(generatorName));
 
 				if (sysGen)
@@ -7916,35 +7934,15 @@ void SetRoleNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** transact
 	UserId* user = attachment->att_user;
 	fb_assert(user);
 
-	user->usr_granted_roles.clear();
-
 	if (trusted)
-	{
-		if (!user->usr_trusted_role.hasData())
-			Arg::Gds(isc_miss_trusted_role).raise();
-		user->usr_sql_role_name = user->usr_trusted_role;
-	}
+		user->setRoleTrusted();
 	else
 	{
 		if (!SCL_role_granted(tdbb, *user, roleName.c_str()))
 			(Arg::Gds(isc_set_invalid_role) << roleName).raise();
-		user->usr_sql_role_name = roleName.c_str();
+
+		user->setSqlRole(roleName.c_str());
 	}
-
-	if (!user->usr_sql_role_name.isEmpty() || user->usr_sql_role_name != NULL_ROLE)
-	{
-		// Add role itself and all roles cumulatively granted to it. Not only default.
-		user->usr_granted_roles.add(user->usr_sql_role_name);
-		SCL_find_granted_roles(tdbb, user->usr_sql_role_name, true, user->usr_granted_roles, false);
-	}
-	// Add all default roles granted to user
-	SCL_find_granted_roles(tdbb, user->usr_user_name, false, user->usr_granted_roles, true);
-
-
-	if (SCL_admin_role(tdbb, user->usr_granted_roles))
-		user->usr_flags |= USR_dba;
-	else
-		user->usr_flags &= ~USR_dba;
 
 	SCL_release_all(attachment->att_security_classes);
 }
@@ -7964,13 +7962,15 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	const MetaName& relation_name = relation->as<RelationSourceNode>()->dsqlName;
 	MetaName base_name = relation_name;
 
+	bool needSavePoint;
+
 	// Build the INSERT node.
 	StoreNode* insert = FB_NEW_POOL(pool) StoreNode(pool);
 	insert->dsqlRelation = relation;
 	insert->dsqlFields = fields;
 	insert->dsqlValues = values;
 	insert->dsqlReturning = returning;
-	insert = insert->internalDsqlPass(dsqlScratch, true)->as<StoreNode>();
+	insert = insert->internalDsqlPass(dsqlScratch, true, needSavePoint)->as<StoreNode>();
 	fb_assert(insert);
 
 	dsql_ctx* context = insert->dsqlRelation->dsqlContext;
@@ -8150,7 +8150,11 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	if (!returning)
 		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_INSERT);
 
-	return SavepointEncloseNode::make(getPool(), dsqlScratch, list);
+	StmtNode* ret = SavepointEncloseNode::make(getPool(), dsqlScratch, list);
+	if (!needSavePoint || ret->is<SavepointEncloseNode>())
+		return ret;
+
+	return FB_NEW SavepointEncloseNode(getPool(), ret);
 }
 
 string UpdateOrInsertNode::internalPrint(NodePrinter& printer) const
@@ -8184,7 +8188,8 @@ static void dsqlExplodeFields(dsql_rel* relation, Array<NestConst<T> >& fields)
 	for (dsql_fld* field = relation->rel_fields; field; field = field->fld_next)
 	{
 		// CVC: Ann Harrison requested to skip COMPUTED fields in INSERT w/o field list.
-		if (field->flags & FLD_computed)
+		// ASF: But not for views - CORE-5454
+		if (!(relation->rel_flags & REL_view) && (field->flags & FLD_computed))
 			continue;
 
 		FieldNode* fieldNode = FB_NEW_POOL(pool) FieldNode(pool);
@@ -8957,14 +8962,13 @@ static void makeValidation(thread_db* tdbb, CompilerScratch* csb, StreamType str
 	if (!vector)
 		return;
 
-	//StreamType local_map[JrdStatement::MAP_LENGTH];
-	AutoPtr<StreamType, ArrayDelete<StreamType> > localMap;
+	StreamMap localMap;
 	StreamType* map = csb->csb_rpt[stream].csb_map;
+
 	if (!map)
 	{
-		localMap = FB_NEW_POOL(*tdbb->getDefaultPool()) StreamType[STREAM_MAP_LENGTH];
-		map = localMap;
-		fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR still relevant for the bitmap?
+		map = localMap.getBuffer(STREAM_MAP_LENGTH);
+		fb_assert(stream <= MAX_STREAMS);
 		map[0] = stream;
 	}
 
@@ -9059,7 +9063,7 @@ static StmtNode* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, StreamTy
 // If it's a view update, make sure the view is updatable, and return the view source for redirection.
 // If it's a simple relation, return NULL.
 static RelationSourceNode* pass1Update(thread_db* tdbb, CompilerScratch* csb, jrd_rel* relation,
-	const trig_vec* trigger, StreamType stream, StreamType updateStream, SecurityClass::flags_t priv,
+	const TrigVector* trigger, StreamType stream, StreamType updateStream, SecurityClass::flags_t priv,
 	jrd_rel* view, StreamType viewStream, StreamType viewUpdateStream)
 {
 	SET_TDBB(tdbb);
@@ -9186,7 +9190,7 @@ static void postTriggerAccess(CompilerScratch* csb, jrd_rel* ownerRelation,
 }
 
 // Perform operation's pre-triggers, storing active rpb in chain.
-static void preModifyEraseTriggers(thread_db* tdbb, trig_vec** trigs,
+static void preModifyEraseTriggers(thread_db* tdbb, TrigVector** trigs,
 	StmtNode::WhichTrigger whichTrig, record_param* rpb, record_param* rec, TriggerAction op)
 {
 	if (!tdbb->getTransaction()->tra_rpblist)

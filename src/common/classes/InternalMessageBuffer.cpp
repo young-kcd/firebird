@@ -211,6 +211,7 @@ InternalMessageBuffer::InternalMessageBuffer(unsigned aBlrLength, const unsigned
 	unsigned aBufferLength, unsigned char* aBuffer)
 {
 	buffer = aBuffer;
+
 	if (aBlr)
 	{
 		metadata = FB_NEW MetadataFromBlr(aBlrLength, aBlr, aBufferLength);

@@ -58,6 +58,14 @@ else
   Process := master_process
 endif
 
+ifeq ($(LSB_FLG),Y)
+  GCC=/opt/lsb/bin/lsbcc
+  export CC
+  export CXX
+else
+  GCC=gcc
+endif
+
 .PHONY:	master_process cross_process firebird Debug Release extern
 
 all:	firebird
@@ -127,7 +135,7 @@ extern:
 	$(MAKE) -C $(ROOT)/extern/cloop TARGET=release WITH_FPC=0 BUILD_DIR=$(TMP_ROOT)/cloop OUT_DIR=$(GEN_ROOT)/$(TARGET)/cloop
 
 ifeq ($(TOMBUILD_FLG),Y)
-	$(MAKE) -C $(ROOT)/extern/libtommath -f makefile.shared
+	CFLAGS="$(CFLAGS)" $(MAKE) -C $(ROOT)/extern/libtommath -f makefile.shared GCC=$(GCC)
 	ln -sf $(TOMMATH_SO).$(TOMMATH_VER) $(LIB)
 	ln -sf $(TOMMATH_SO) $(LIB)
 endif
@@ -567,7 +575,7 @@ $(FIREBIRD_MSG):	$(BUILD_FILE) msg.timestamp
 	$(CHMOD_6) $@
 
 $(BUILD_FILE):	$(BUILD_Objects) $(COMMON_LIB)
-	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+	$(EXE_LINK) $(EXE_LINK_OPTIONS) $(LSB_UNDEF) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
 gbak_files: $(GBAK_FILES)
 

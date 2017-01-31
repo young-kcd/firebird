@@ -693,7 +693,8 @@ static Rvnt* add_event(rem_port*);
 static void add_other_params(rem_port*, ClumpletWriter&, const ParametersSet&);
 static void add_working_directory(ClumpletWriter&, const PathName&);
 static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned flags,
-	ClumpletWriter& pb, const ParametersSet& parSet, PathName& node_name, PathName* ref_db_name);
+	ClumpletWriter& pb, const ParametersSet& parSet, PathName& node_name, PathName* ref_db_name,
+	Firebird::ICryptKeyCallback* cryptCb);
 static void batch_gds_receive(rem_port*, struct rmtque *, USHORT);
 static void batch_dsql_fetch(rem_port*, struct rmtque *, USHORT);
 static void clear_queue(rem_port*);
@@ -798,7 +799,7 @@ IAttachment* RProvider::attach(CheckStatusWrapper* status, const char* filename,
 		PathName node_name;
 
 		ClntAuthBlock cBlock(&expanded_name, &newDpb, &dpbParam);
-		rem_port* port = analyze(cBlock, expanded_name, flags, newDpb, dpbParam, node_name, NULL);
+		rem_port* port = analyze(cBlock, expanded_name, flags, newDpb, dpbParam, node_name, NULL, cryptCallback);
 
 		if (!port)
 		{
@@ -1420,7 +1421,7 @@ Firebird::IAttachment* RProvider::create(CheckStatusWrapper* status, const char*
 		PathName node_name;
 
 		ClntAuthBlock cBlock(&expanded_name, &newDpb, &dpbParam);
-		rem_port* port = analyze(cBlock, expanded_name, flags, newDpb, dpbParam, node_name, NULL);
+		rem_port* port = analyze(cBlock, expanded_name, flags, newDpb, dpbParam, node_name, NULL, cryptCallback);
 
 		if (!port)
 		{
@@ -4631,7 +4632,7 @@ Firebird::IService* RProvider::attachSvc(CheckStatusWrapper* status, const char*
 		if (newSpb.find(isc_spb_expected_db))
 			newSpb.getPath(refDbName);
 
-		rem_port* port = analyze(cBlock, expanded_name, flags, newSpb, spbParam, node_name, &refDbName);
+		rem_port* port = analyze(cBlock, expanded_name, flags, newSpb, spbParam, node_name, &refDbName, cryptCallback);
 
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 		Rdb* rdb = port->port_context;
@@ -5400,7 +5401,8 @@ static void secureAuthentication(ClntAuthBlock& cBlock, rem_port* port)
 
 
 static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned flags,
-	ClumpletWriter& pb, const ParametersSet& parSet, PathName& node_name, PathName* ref_db_name)
+	ClumpletWriter& pb, const ParametersSet& parSet, PathName& node_name, PathName* ref_db_name,
+	Firebird::ICryptKeyCallback* cryptCb)
 {
 /**************************************
  *
@@ -5464,7 +5466,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 		}
 
 		port = INET_analyze(&cBlock, attach_name, node_name.c_str(), flags & ANALYZE_UV, pb,
-			cBlock.getConfig(), ref_db_name, inet_af);
+			cBlock.getConfig(), ref_db_name, cryptCb, inet_af);
 	}
 
 	// We have a local connection string. If it's a file on a network share,
@@ -5498,7 +5500,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 				ISC_utf8ToSystem(node_name);
 
 				port = INET_analyze(&cBlock, expanded_name, node_name.c_str(), flags & ANALYZE_UV, pb,
-					cBlock.getConfig(), ref_db_name);
+					cBlock.getConfig(), ref_db_name, cryptCb);
 			}
 		}
 #endif
@@ -5527,7 +5529,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 			if (!port)
 			{
 				port = INET_analyze(&cBlock, attach_name, INET_LOCALHOST, flags & ANALYZE_UV, pb,
-					cBlock.getConfig(), ref_db_name);
+					cBlock.getConfig(), ref_db_name, cryptCb);
 			}
 		}
 	}
@@ -6300,7 +6302,10 @@ static void authReceiveResponse(bool havePacket, ClntAuthBlock& cBlock, rem_port
 				d->cstr_length, n->cstr_length,
 				n->cstr_length, n->cstr_address, n->cstr_address ? n->cstr_address[0] : 0));
 			if (packet->p_acpd.p_acpt_type & pflag_compress)
+			{
 				port->initCompression();
+				port->port_flags |= PORT_compressed;
+			}
 			packet->p_acpd.p_acpt_type &= ptype_MASK;
 			break;
 
@@ -6639,6 +6644,7 @@ static void receive_packet_with_callback(rem_port* port, PACKET* packet)
  *
  **************************************/
 
+	UCharBuffer buf;
 	for (;;)
 	{
 		if (!port->receive(packet))
@@ -6651,7 +6657,6 @@ static void receive_packet_with_callback(rem_port* port, PACKET* packet)
 		case op_crypt_key_callback:
 			{
 				P_CRYPT_CALLBACK* cc = &packet->p_cc;
-				UCharBuffer buf;
 
 				if (port->port_client_crypt_callback)
 				{
@@ -6662,15 +6667,19 @@ static void receive_packet_with_callback(rem_port* port, PACKET* packet)
 					UCHAR* reply = buf.getBuffer(cc->p_cc_reply);
 					unsigned l = port->port_client_crypt_callback->callback(cc->p_cc_data.cstr_length,
 						cc->p_cc_data.cstr_address, cc->p_cc_reply, reply);
+
+					REMOTE_free_packet(port, packet, true);
 					cc->p_cc_data.cstr_length = l;
 					cc->p_cc_data.cstr_address = reply;
 				}
 				else
 				{
+					REMOTE_free_packet(port, packet, true);
 					cc->p_cc_data.cstr_length = 0;
 				}
-				cc->p_cc_data.cstr_allocated = 0;
 
+				packet->p_operation = op_crypt_key_callback;
+				cc->p_cc_reply = 0;
 				port->send(packet);
 			}
 			break;

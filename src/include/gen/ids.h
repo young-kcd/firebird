@@ -40,6 +40,7 @@
 	const USHORT  f_dat_class = 2;
 	const USHORT  f_dat_charset = 3;
 	const USHORT  f_dat_linger = 4;
+	const USHORT  f_dat_sql_security = 5;
 
 
 // Relation 2 (RDB$FIELDS)
@@ -145,6 +146,7 @@
 	const USHORT  f_rel_def_class = 14;
 	const USHORT  f_rel_flags = 15;
 	const USHORT  f_rel_type = 16;
+	const USHORT  f_rel_sql_security = 17;
 
 
 // Relation 7 (RDB$VIEW_RELATIONS)
@@ -206,6 +208,7 @@
 	const USHORT  f_trg_debug_info = 11;
 	const USHORT  f_trg_engine_name = 12;
 	const USHORT  f_trg_entry = 13;
+	const USHORT  f_trg_sql_security = 14;
 
 
 // Relation 13 (RDB$DEPENDENCIES)
@@ -240,6 +243,7 @@
 	const USHORT  f_fun_owner = 17;
 	const USHORT  f_fun_legacy_flag = 18;
 	const USHORT  f_fun_deterministic_flag = 19;
+	const USHORT  f_fun_sql_security = 20;
 
 
 // Relation 15 (RDB$FUNCTION_ARGUMENTS)
@@ -383,6 +387,7 @@
 	const USHORT  f_prc_entry = 15;
 	const USHORT  f_prc_pkg_name = 16;
 	const USHORT  f_prc_private_flag = 17;
+	const USHORT  f_prc_sql_security = 18;
 
 
 // Relation 27 (RDB$PROCEDURE_PARAMETERS)
@@ -452,6 +457,7 @@
 	const USHORT  f_rol_desc = 2;
 	const USHORT  f_rol_sys_flag = 3;
 	const USHORT  f_rol_class = 4;
+	const USHORT  f_rol_sys_priv = 5;
 
 
 // Relation 32 (RDB$BACKUP_HISTORY)
@@ -615,6 +621,7 @@
 	const USHORT  f_pkg_owner = 5;
 	const USHORT  f_pkg_sys_flag = 6;
 	const USHORT  f_pkg_desc = 7;
+	const USHORT  f_pkg_sql_security = 8;
 
 
 // Relation 43 (SEC$USERS)

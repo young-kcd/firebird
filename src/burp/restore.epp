@@ -182,6 +182,11 @@ static inline int get(BurpGlobals* tdgbl)
 	return MVOL_read(&tdgbl->io_cnt, &tdgbl->io_ptr);
 }
 
+static inline FB_BOOLEAN get_boolean(BurpGlobals* tdgbl)
+{
+	return get(tdgbl) ? FB_TRUE : FB_FALSE;
+}
+
 static inline att_type get_attribute(att_type* att, BurpGlobals* tdgbl)
 {
 	*att = (att_type) get(tdgbl);
@@ -4181,6 +4186,8 @@ bool get_function(BurpGlobals* tdgbl)
 			X.RDB$LEGACY_FLAG.NULL = FALSE;
 			X.RDB$LEGACY_FLAG = 1;
 
+			X.RDB$SQL_SECURITY.NULL = TRUE;
+
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
@@ -4350,6 +4357,16 @@ bool get_function(BurpGlobals* tdgbl)
 						bad_attribute(scan_next_attr, attribute, 89);
 					break;
 
+				case att_function_sql_security:
+					if (tdgbl->RESTORE_format >= 11)
+					{
+						X.RDB$SQL_SECURITY = get_boolean(tdgbl);
+						X.RDB$SQL_SECURITY.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
+					break;
+
 				default:
 					bad_attribute(scan_next_attr, attribute, 89);
 					// msg 89 function
@@ -4467,6 +4484,13 @@ bool get_function(BurpGlobals* tdgbl)
 				case att_function_deterministic_flag:
 					if (tdgbl->RESTORE_format >= 10)
 						get_int32(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 89);
+					break;
+
+				case att_function_sql_security:
+					if (tdgbl->RESTORE_format >= 11)
+						get_boolean(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 89);
 					break;
@@ -6551,6 +6575,7 @@ bool get_package(BurpGlobals* tdgbl)
 		X.RDB$SYSTEM_FLAG = 0;
 		X.RDB$SYSTEM_FLAG.NULL = FALSE;
 		X.RDB$DESCRIPTION.NULL = TRUE;
+		X.RDB$SQL_SECURITY.NULL = TRUE;
 
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -6592,6 +6617,16 @@ bool get_package(BurpGlobals* tdgbl)
 			case att_package_description:
 				get_source_blob(tdgbl, X.RDB$DESCRIPTION, true);
 				X.RDB$DESCRIPTION.NULL = FALSE;
+				break;
+
+			case att_package_sql_security:
+				if (tdgbl->RESTORE_format >= 11)
+				{
+					X.RDB$SQL_SECURITY = get_boolean(tdgbl);
+					X.RDB$SQL_SECURITY.NULL = FALSE;
+				}
+				else
+					bad_attribute(scan_next_attr, attribute, 338);
 				break;
 
 			default:
@@ -6656,6 +6691,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 			X.RDB$ENTRYPOINT.NULL = TRUE;
 			X.RDB$PACKAGE_NAME.NULL = TRUE;
 			X.RDB$PRIVATE_FLAG.NULL = TRUE;
+			X.RDB$SQL_SECURITY.NULL = TRUE;
 
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -6800,6 +6836,16 @@ bool get_procedure(BurpGlobals* tdgbl)
 						bad_attribute(scan_next_attr, attribute, 290);
 					break;
 
+				case att_procedure_sql_security:
+					if (tdgbl->RESTORE_format >= 11)
+					{
+						X.RDB$SQL_SECURITY = get_boolean(tdgbl);
+						X.RDB$SQL_SECURITY.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 290);
+					break;
+
 				default:
 					bad_attribute(scan_next_attr, attribute, 290);
 					// msg 290 procedure
@@ -6911,6 +6957,13 @@ bool get_procedure(BurpGlobals* tdgbl)
 				case att_procedure_private_flag:
 					if (tdgbl->RESTORE_format >= 10)
 						get_int32(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 290);
+					break;
+
+				case att_procedure_sql_security:
+					if (tdgbl->RESTORE_format >= 11)
+						get_boolean(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 290);
 					break;
@@ -7280,6 +7333,8 @@ bool get_relation(BurpGlobals* tdgbl)
 				rel_desc = isc_blob_null, ext_desc = isc_blob_null;
 	bool		view_blr_null = true, view_src_null = true, rel_desc_null = true,
 				ext_desc_null = true;
+	FB_BOOLEAN	sql_security = FB_FALSE;
+	bool		sql_security_null = true;
 
 	BASED_ON RDB$RELATIONS.RDB$SECURITY_CLASS sec_class;
 	sec_class[0] = '\0';
@@ -7399,6 +7454,11 @@ bool get_relation(BurpGlobals* tdgbl)
 				bad_attribute(scan_next_attr, attribute, 111);
 			break;
 
+		case att_relation_sql_security:
+			sql_security_null = false;
+			sql_security = get_boolean(tdgbl);
+			break;
+
 		default:
 			bad_attribute(scan_next_attr, attribute, 111);
 			// msg 111 table
@@ -7429,6 +7489,7 @@ bool get_relation(BurpGlobals* tdgbl)
 			X.RDB$EXTERNAL_DESCRIPTION.NULL = ext_desc_null;
 			X.RDB$EXTERNAL_FILE.NULL = ext_file_name_null;
 			X.RDB$RELATION_TYPE.NULL = type_null;
+			X.RDB$SQL_SECURITY.NULL = sql_security_null;
 
 			X.RDB$SYSTEM_FLAG = (USHORT) sys_flag;
 			X.RDB$FLAGS = (USHORT) rel_flags;
@@ -7442,6 +7503,7 @@ bool get_relation(BurpGlobals* tdgbl)
 			strcpy(X.RDB$EXTERNAL_FILE, ext_file_name);
 
 			X.RDB$RELATION_TYPE = (USHORT) type;
+			X.RDB$SQL_SECURITY = (FB_BOOLEAN) sql_security;
 
 		END_STORE;
 		ON_ERROR
@@ -7768,6 +7830,17 @@ bool get_sql_roles(BurpGlobals* tdgbl)
 					else
 						bad_attribute(scan_next_attr, attribute, 250);
 				    break;
+
+				case att_role_sys_priveleges:
+					{
+						const ULONG l = get(tdgbl);
+						if (l > sizeof(X.RDB$SYSTEM_PRIVILEGES))
+							BURP_error_redirect(NULL, 46);	// msg 46 string truncated
+
+						if (l)
+							get_block(tdgbl, (UCHAR*) (X.RDB$SYSTEM_PRIVILEGES), l);
+					}
+					break;
 
 				default:
 					// msg 250 SQL role
@@ -8471,6 +8544,7 @@ bool get_trigger(BurpGlobals* tdgbl)
 			X.RDB$DEBUG_INFO.NULL = TRUE;
 			X.RDB$ENGINE_NAME.NULL = TRUE;
 			X.RDB$ENTRYPOINT.NULL = TRUE;
+			X.RDB$SQL_SECURITY.NULL = TRUE;
 
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -8578,6 +8652,16 @@ bool get_trigger(BurpGlobals* tdgbl)
 					{
 						GET_TEXT(X.RDB$ENTRYPOINT);
 						X.RDB$ENTRYPOINT.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 134);
+					break;
+
+				case att_trig_sql_security:
+					if (tdgbl->RESTORE_format >= 11)
+					{
+						X.RDB$SQL_SECURITY = get_boolean(tdgbl);
+						X.RDB$SQL_SECURITY.NULL = FALSE;
 					}
 					else
 						bad_attribute(scan_next_attr, attribute, 134);
@@ -8697,6 +8781,13 @@ bool get_trigger(BurpGlobals* tdgbl)
 				case att_trig_type2:
 					if (tdgbl->RESTORE_format >= 10)
 						get_int64(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 134);
+					break;
+
+				case att_trig_sql_security:
+					if (tdgbl->RESTORE_format >= 11)
+						get_boolean(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 134);
 					break;
@@ -9090,6 +9181,7 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 
 			X.RDB$FIELD_NAME.NULL = TRUE;
 			X.RDB$OBJECT_TYPE.NULL = TRUE;
+			X.RDB$GRANT_OPTION.NULL = TRUE;
 
 			if (flags & USER_PRIV_USER)
 				strcpy (X.RDB$USER, user);
@@ -9102,11 +9194,8 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 
 			if (flags & USER_PRIV_GRANT_OPTION)
 			{
+				X.RDB$GRANT_OPTION.NULL = FALSE;
 				X.RDB$GRANT_OPTION = grant_option;
-				if (grant_option == 0)
-					X.RDB$GRANT_OPTION.NULL = TRUE;
-				else
-					X.RDB$GRANT_OPTION.NULL = FALSE;
 			}
 
 			if (flags & USER_PRIV_OBJECT_NAME)
@@ -9691,7 +9780,7 @@ bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_nam
 	// msg 129 started transaction
 
 	att_type	attribute;
-	isc_req_handle  req_handle2 = 0, req_handle3 = 0, req_handle4 = 0;
+	isc_req_handle  req_handle2 = 0, req_handle3 = 0, req_handle4 = 0, req_handle5 = 0;
 
 	while (get_attribute(&attribute, tdgbl) != att_end)
 	{
@@ -9768,6 +9857,35 @@ bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_nam
 			}
 			break;
 
+		case att_database_sql_security:
+			if (tdgbl->RESTORE_format >= 11)
+			{
+				if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
+				{
+					FOR (REQUEST_HANDLE req_handle5)
+						X IN RDB$DATABASE
+						MODIFY X USING
+							X.RDB$SQL_SECURITY = get_boolean(tdgbl);
+						END_MODIFY;
+						ON_ERROR
+							general_on_error();
+						END_ERROR;
+					END_FOR;
+					ON_ERROR
+						general_on_error();
+					END_ERROR;
+				}
+				else
+					get_boolean(tdgbl);
+			}
+			else
+			{
+				// Functions that use scan_next_attr initialize it to NO_SKIP using skip_init().
+				// Here we don't use that logic, hence the first param to bad_attribute is hardcoded.
+				bad_attribute(NO_SKIP, attribute, 352);
+			}
+			break;
+
 		default:
 			{
 			SSHORT l = get(tdgbl);
@@ -9781,6 +9899,7 @@ bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_nam
 	MISC_release_request_silent(req_handle2);
 	MISC_release_request_silent(req_handle3);
 	MISC_release_request_silent(req_handle4);
+	MISC_release_request_silent(req_handle5);
 
 	if (tdgbl->gbl_sw_fix_fss_data)
 	{

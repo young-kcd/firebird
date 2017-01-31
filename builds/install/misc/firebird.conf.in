@@ -99,7 +99,7 @@
 # Relative paths are treated relative to the root directory of firebird.
 # Default value 'Full' gives full access to all files on your site.
 # To specify access to specific trees, enum all required paths 
-# (for Win32 this may be something like 'C:\DataBase;D:\Mirror',
+# (for Windows this may be something like 'C:\DataBase;D:\Mirror',
 # for unix - '/db;/mnt/mirrordb'). If you choose 'None', then only
 # databases listed in databases.conf can be attached.
 #
@@ -148,7 +148,7 @@
 # are stored. Relative paths are treated relative to the root directory 
 # of firebird. Default value 'None' disables any use of external files
 # on your site. To specify access to specific trees, enum all required
-# paths (for Win32 this may be something like 'C:\ExternalTables',
+# paths (for Windows this may be something like 'C:\ExternalTables',
 # for unix - '/db/extern;/mnt/extern').
 #
 # Per-database configurable.
@@ -174,7 +174,7 @@
 #
 # Default value 'Restrict UDF' provides the same restrictions
 # as in FB 1.0. To specify access to specific trees, enum all required
-# paths (for Win32 this may be something like 'C:\ExternalFunctions',
+# paths (for Windows this may be something like 'C:\ExternalFunctions',
 # for unix - '/db/extern;/mnt/extern').
 @UDF_COMMENT@
 # NOTE: THE EXTERNAL FUNCTION ENGINE FEATURE COULD BE USED TO COMPROMISE
@@ -380,6 +380,33 @@
 #
 #TempCacheLimit = 64M
 
+# ----------------------------
+# Maximum allowed identifier name length in bytes
+#
+# Sets a limit for the number of bytes in an identifier.
+#
+# Set to 31 to limit as Firebird 3 and previous versions.
+# Setting this value for all databases (including the security database) may cause problems.
+#
+# Per-database configurable.
+#
+# Type: integer
+#
+#MaxIdentifierByteLength = 252
+
+# ----------------------------
+# Maximum allowed identifier name length in characters
+#
+# Sets a limit for the number of characters in an identifier.
+#
+# Setting this value for all databases (including the security database) may cause problems.
+#
+# Per-database configurable.
+#
+# Type: integer
+#
+#MaxIdentifierCharLength = 63
+
 
 # ----------------------------
 #
@@ -439,6 +466,37 @@
 #
 #KeyHolderPlugin =
 
+# ----------------------------
+#
+# Ability to use encrypted security database
+#
+# If one relies on network encryption feature with crypt key generated
+# by authentication plugin (like SRP does) to transfer database crypt
+# keys over the wire then use of encrypted security databases is a kind of
+# vicious circle. In order to send DB crypt key over the wire in secure way
+# wire transfers should be already encrypted but this requires wire crypt key
+# from authentication plugin which needs to open security database for hash
+# validation which in turn requires DB crypt key. Luckily in most cases there
+# is no big need to encrypt security database - it protects itself quite well
+# if you use high quality passwords. But in some cases it's desired to have
+# security database encrypted, for example if one wants to use self security
+# database feature for encrypted database. In that case special care should be
+# taken to encrypt that key before passing it to server using callback. Make
+# sure your keys are well encrypted before enabling this parameter. Take into
+# account that with CryptSecurityDatabase=TRUE unencrypted by firebird protocol
+# key transfer may take place even with not encrypted security database.
+# This feature is not supported by legacy authentication plugin - if you care
+# about security please never use legacy authentication.
+#
+# Type: boolean
+#
+# Per-database configurable.
+#
+#########################################################################
+# Please understand what are you doing before enabling this feature !!! #
+#########################################################################
+#
+#CryptSecurityDatabase = false
 
 # ----------------------------
 #
@@ -450,7 +508,7 @@
 #
 # Per-database & per-connection configurable.
 #
-#Providers = Remote,Engine12,Loopback
+#Providers = Remote,Engine13,Loopback
 
 
 # ----------------------------
@@ -474,7 +532,7 @@
 # (for databases with ForcedWrites=Off only)
 #
 # Number of unflushed writes which will accumulate before they are
-# flushed, at the next transaction commit.  For non-Win32 ports,
+# flushed, at the next transaction commit.  For non-Windows ports,
 # the default value is -1 (Disabled)
 #
 # Per-database configurable.
@@ -485,7 +543,7 @@
 
 #
 # Number of seconds during which unflushed writes will accumulate
-# before they are flushed, at the next transaction commit. For non-Win32
+# before they are flushed, at the next transaction commit. For non-Windows
 # ports, the default value is -1 (Disabled)
 #
 # Per-database configurable.

@@ -106,7 +106,6 @@ static void expunge(thread_db*, record_param*, const jrd_tra*, ULONG);
 static bool dfw_should_know(record_param* org_rpb, record_param* new_rpb,
 	USHORT irrelevant_field, bool void_update_is_relevant = false);
 static void garbage_collect(thread_db*, record_param*, ULONG, RecordStack&);
-static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM);
 
 
 #ifdef VIO_DEBUG
@@ -164,6 +163,7 @@ static void protect_system_table_delupd(thread_db* tdbb, const jrd_rel* relation
 	bool force_flag = false);
 static void purge(thread_db*, record_param*);
 static void replace_record(thread_db*, record_param*, PageStack*, const jrd_tra*);
+static void refresh_fk_fields(thread_db*, Record*, record_param*, record_param*);
 static SSHORT set_metadata_id(thread_db*, Record*, USHORT, drq_type_t, const char*);
 static void set_owner_name(thread_db*, Record*, USHORT);
 static bool set_security_class(thread_db*, Record*, USHORT);
@@ -275,7 +275,7 @@ inline bool checkGCActive(thread_db* tdbb, record_param* rpb, int& state)
 	if (!LCK_lock(tdbb, &temp_lock, LCK_SR, LCK_NO_WAIT))
 	{
 		rpb->rpb_transaction_nr = LCK_read_data(tdbb, &temp_lock);
-		state = TRA_is_active(tdbb, rpb->rpb_transaction_nr) ? tra_precommitted : tra_active;
+		state = tra_active;
 		return true;
 	}
 
@@ -621,6 +621,8 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 			rpb->rpb_prior = data;
 	}
 
+	gcLockGuard.release();
+
 	if (samePage)
 	{
 		DPM_backout(tdbb, rpb);
@@ -725,7 +727,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 	// Take care about modifications performed by our own transaction
 
-	rpb->rpb_runtime_flags &= ~(RPB_undo_data | RPB_undo_read);
+	rpb->rpb_runtime_flags &= ~RPB_UNDO_FLAGS;
 	int forceBack = 0;
 
 	if (state == tra_us && !noundo && !(transaction->tra_flags & TRA_system))
@@ -1312,7 +1314,10 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 	UCHAR* tail;
 	const UCHAR* tail_end;
 	UCHAR differences[MAX_DIFFERENCES];
-	Record* prior = rpb->rpb_prior;
+
+	// Primary record version not uses prior version
+	Record* prior = (rpb->rpb_flags & rpb_chained) ? rpb->rpb_prior : NULL;
+
 	if (prior)
 	{
 		tail = differences;
@@ -1477,14 +1482,14 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_types:
-		 	if (!tdbb->getAttachment()->locksmith())
+		 	if (!tdbb->getAttachment()->locksmith(tdbb, CREATE_USER_TYPES))
 		 		protect_system_table_delupd(tdbb, relation, "DELETE", true);
 		 	if (EVL_field(0, rpb->rpb_record, f_typ_sys_flag, &desc) && MOV_get_long(&desc, 0))
 		 		protect_system_table_delupd(tdbb, relation, "DELETE", true);
 			break;
 
 		case rel_db_creators:
-			if (!tdbb->getAttachment()->locksmith())
+			if (!tdbb->getAttachment()->locksmith(tdbb, GRANT_REVOKE_ANY_DDL_RIGHT))
 				protect_system_table_delupd(tdbb, relation, "DELETE");
 			break;
 
@@ -1886,7 +1891,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		EVL_field(0, rpb->rpb_record, f_prv_rname, &desc);
 		MOV_get_metaname(&desc, object_name);
 		EVL_field(0, rpb->rpb_record, f_prv_grant, &desc2);
-		if (MOV_get_long(&desc2, 0))
+		if (MOV_get_long(&desc2, 0) == WITH_GRANT_OPTION)		// ADMIN option should not cause cascade
 		{
 			EVL_field(0, rpb->rpb_record, f_prv_user, &desc2);
 			MetaName revokee;
@@ -1929,7 +1934,7 @@ void VIO_fini(thread_db* tdbb)
 	{
 		dbb->dbb_flags &= ~DBB_garbage_collector;
 		dbb->dbb_gc_sem.release(); // Wake up running thread
-		dbb->dbb_gc_fini.enter();
+		dbb->dbb_gc_fini.waitForCompletion();
 	}
 }
 
@@ -2643,7 +2648,7 @@ void VIO_init(thread_db* tdbb)
 			{
 				try
 				{
-					Thread::start(garbage_collector, dbb, THREAD_medium);
+					dbb->dbb_gc_fini.run(dbb);
 				}
 				catch (const Exception&)
 				{
@@ -2712,9 +2717,20 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 
 	if (org_rpb->rpb_runtime_flags & (RPB_refetch | RPB_undo_read))
 	{
+		const bool undo_read = (org_rpb->rpb_runtime_flags & RPB_undo_read);
+		AutoGCRecord old_record;
+		if (undo_read)
+		{
+			old_record = VIO_gc_record(tdbb, relation);
+			old_record->copyFrom(org_rpb->rpb_record);
+		}
+
 		VIO_refetch_record(tdbb, org_rpb, transaction, false, true);
 		org_rpb->rpb_runtime_flags &= ~RPB_refetch;
 		fb_assert(!(org_rpb->rpb_runtime_flags & RPB_undo_read));
+
+		if (undo_read)
+			refresh_fk_fields(tdbb, old_record, org_rpb, new_rpb);
 	}
 
 	// If we're the system transaction, modify stuff in place.  This saves
@@ -2751,14 +2767,14 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			break;
 
 		case rel_types:
-		 	if (!tdbb->getAttachment()->locksmith())
+		 	if (!tdbb->getAttachment()->locksmith(tdbb, CREATE_USER_TYPES))
 		 		protect_system_table_delupd(tdbb, relation, "UPDATE", true);
 			if (EVL_field(0, org_rpb->rpb_record, f_typ_sys_flag, &desc1) && MOV_get_long(&desc1, 0))
 		 		protect_system_table_delupd(tdbb, relation, "UPDATE", true);
 			break;
 
 		case rel_db_creators:
-			if (!tdbb->getAttachment()->locksmith())
+			if (!tdbb->getAttachment()->locksmith(tdbb, GRANT_REVOKE_ANY_DDL_RIGHT))
 				protect_system_table_delupd(tdbb, relation, "UPDATE");
 			break;
 
@@ -3365,7 +3381,6 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_rcon:
 		case rel_refc:
 		case rel_ccon:
-		case rel_roles:
 		case rel_sec_users:
 		case rel_sec_user_attributes:
 		case rel_msgs:
@@ -3378,15 +3393,22 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			protect_system_table_insert(tdbb, request, relation);
 			break;
 
+		case rel_roles:
+			protect_system_table_insert(tdbb, request, relation);
+			EVL_field(0, rpb->rpb_record, f_rol_name, &desc);
+			if (set_security_class(tdbb, rpb->rpb_record, f_rol_class))
+				DFW_post_work(transaction, dfw_grant, &desc, obj_sql_role);
+			break;
+
 		case rel_db_creators:
-			if (!tdbb->getAttachment()->locksmith())
+			if (!tdbb->getAttachment()->locksmith(tdbb, GRANT_REVOKE_ANY_DDL_RIGHT))
 				protect_system_table_insert(tdbb, request, relation);
 			break;
 
 		case rel_types:
 			if (!(tdbb->getDatabase()->dbb_flags & DBB_creating))
 			{
-				if (!tdbb->getAttachment()->locksmith())
+				if (!tdbb->getAttachment()->locksmith(tdbb, CREATE_USER_TYPES))
 					protect_system_table_insert(tdbb, request, relation, true);
 				else if (EVL_field(0, rpb->rpb_record, f_typ_sys_flag, &desc) && MOV_get_long(&desc, 0))
 		 			protect_system_table_insert(tdbb, request, relation, true);
@@ -3655,7 +3677,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_backup_history:
-			if (!tdbb->getAttachment()->locksmith())
+			if (!tdbb->getAttachment()->locksmith(tdbb, USE_NBACKUP_UTILITY))
 				protect_system_table_insert(tdbb, request, relation);
 			set_metadata_id(tdbb, rpb->rpb_record,
 							f_backup_id, drq_g_nxt_nbakhist_id, "RDB$BACKUP_HISTORY");
@@ -4088,7 +4110,7 @@ static void check_class(thread_db* tdbb,
 static bool check_nullify_source(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 								 int field_id_1, int field_id_2)
 {
-	if (!tdbb->getAttachment()->locksmith())
+	if (!tdbb->getAttachment()->locksmith(tdbb, NULL_PRIVILEGE))	// legacy right - no system privilege tuning !!!
 		return false;
 
 	bool nullify_found = false;
@@ -4145,10 +4167,13 @@ static void check_owner(thread_db* tdbb,
 		return;
 
 	const Jrd::Attachment* const attachment = tdbb->getAttachment();
-	const Firebird::MetaName name(attachment->att_user->usr_user_name);
-	desc2.makeText((USHORT) name.length(), CS_METADATA, (UCHAR*) name.c_str());
-	if (!MOV_compare(&desc1, &desc2))
-		return;
+	if (attachment->att_user)
+	{
+		const Firebird::MetaName name(attachment->att_user->getUserName());
+		desc2.makeText((USHORT) name.length(), CS_METADATA, (UCHAR*) name.c_str());
+		if (!MOV_compare(&desc1, &desc2))
+			return;
+	}
 
 	ERR_post(Arg::Gds(isc_protect_ownership));
 }
@@ -4170,7 +4195,8 @@ static bool check_user(thread_db* tdbb, const dsc* desc)
 
 	const TEXT* p = (TEXT *) desc->dsc_address;
 	const TEXT* const end = p + desc->dsc_length;
-	const TEXT* q = tdbb->getAttachment()->att_user->usr_user_name.c_str();
+	const UserId* user = tdbb->getAttachment()->att_user;
+	const TEXT* q = user ? user->getUserName().c_str() : "";
 
 	// It is OK to not internationalize this function for v4.00 as
 	// User names are limited to 7-bit ASCII for v4.00
@@ -4545,7 +4571,7 @@ void VIO_garbage_collect_idx(thread_db* tdbb, jrd_tra* transaction,
 	clearRecordStack(staying);
 }
 
-static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
+void Database::garbage_collector(Database* dbb)
 {
 /**************************************
  *
@@ -4562,12 +4588,11 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 	FbLocalStatus status_vector;
-	Database* const dbb = (Database*) arg;
 
 	try
 	{
 		UserId user;
-		user.usr_user_name = "Garbage Collector";
+		user.setUserName("Garbage Collector");
 
 		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
 		RefPtr<SysStableAttachment> sAtt(FB_NEW SysStableAttachment(attachment));
@@ -4793,8 +4818,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		ex.stuffException(&status_vector);
-		iscDbLogStatus(dbb->dbb_filename.c_str(), &status_vector);
+		dbb->exceptionHandler(ex, NULL);
 	}
 
 	dbb->dbb_flags &= ~(DBB_garbage_collector | DBB_gc_active | DBB_gc_pending);
@@ -4802,15 +4826,25 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	try
 	{
 		// Notify the finalization caller that we're finishing.
-		dbb->dbb_gc_fini.release();
+		if (dbb->dbb_flags & DBB_gc_starting)
+		{
+			dbb->dbb_flags &= ~DBB_gc_starting;
+			dbb->dbb_gc_init.release();
+		}
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		ex.stuffException(&status_vector);
-		iscDbLogStatus(dbb->dbb_filename.c_str(), &status_vector);
+		dbb->exceptionHandler(ex, NULL);
 	}
+}
 
-	return 0;
+
+void Database::exceptionHandler(const Firebird::Exception& ex,
+	ThreadFinishSync<Database*>::ThreadRoutine* /*routine*/)
+{
+	FbLocalStatus status_vector;
+	ex.stuffException(&status_vector);
+	iscDbLogStatus(dbb_filename.c_str(), &status_vector);
 }
 
 
@@ -4867,6 +4901,8 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
 			return udNone;
 
 		rpb->rpb_runtime_flags |= RPB_undo_read;
+		if (rpb->rpb_flags & rpb_deleted)
+			rpb->rpb_runtime_flags |= RPB_undo_deleted;
 
 		if (!action->vct_undo || !action->vct_undo->locate(recno))
 			return udForceBack;
@@ -5826,6 +5862,89 @@ static void replace_record(thread_db*		tdbb,
 }
 
 
+static void refresh_fk_fields(thread_db* tdbb, Record* old_rec, record_param* cur_rpb,
+	record_param* new_rpb)
+{
+/**************************************
+ *
+ *	r e f r e s h _ f k _ f i e l d s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Update new_rpb with foreign key fields values changed by cascade triggers.
+ *  Consider self-referenced foreign keys only.
+ *
+ *  old_rec - old record before modify
+ *  cur_rpb - just read record with possibly changed FK fields
+ *  new_rpb - new record evaluated by modify statement and before-triggers
+ *
+ **************************************/
+	jrd_rel* relation = cur_rpb->rpb_relation;
+
+	MET_scan_partners(tdbb, relation);
+
+	if (!(relation->rel_foreign_refs.frgn_relations))
+		return;
+
+	const FB_SIZE_T frgnCount = relation->rel_foreign_refs.frgn_relations->count();
+	if (!frgnCount)
+		return;
+
+	RelationPages* relPages = cur_rpb->rpb_relation->getPages(tdbb);
+
+	// Collect all fields of all foreign keys
+	SortedArray<int, InlineStorage<int, 16> > fields;
+
+	for (int i = 0; i < frgnCount; i++)
+	{
+		// We need self-referenced FK's only
+		if ((*relation->rel_foreign_refs.frgn_relations)[i] == relation->rel_id)
+		{
+			index_desc idx;
+			idx.idx_id = idx_invalid;
+
+			if (BTR_lookup(tdbb, relation, (*relation->rel_foreign_refs.frgn_reference_ids)[i],
+					&idx, relPages))
+			{
+				fb_assert(idx.idx_flags & idx_foreign);
+
+				for (int fld = 0; fld < idx.idx_count; fld++)
+				{
+					const int fldNum = idx.idx_rpt[fld].idx_field;
+					if (!fields.exist(fldNum))
+						fields.add(fldNum);
+				}
+			}
+		}
+	}
+
+	if (fields.isEmpty())
+		return;
+
+	DSC desc1, desc2;
+	for (int idx = 0; idx < fields.getCount(); idx++)
+	{
+		// Detect if user changed FK field by himself.
+		const int fld = fields[idx];
+		const bool flag_old = EVL_field(relation, old_rec, fld, &desc1);
+		const bool flag_new = EVL_field(relation, new_rpb->rpb_record, fld, &desc2);
+
+		// If field was not changed by user - pick up possible modification by
+		// system cascade trigger
+		if (flag_old == flag_new &&
+			(!flag_old || flag_old && MOV_compare(&desc1, &desc2) == 0))
+		{
+			const bool flag_tmp = EVL_field(relation, cur_rpb->rpb_record, fld, &desc1);
+			if (flag_tmp)
+				MOV_move(tdbb, &desc1, &desc2);
+			else
+				new_rpb->rpb_record->setNull(fld);
+		}
+	}
+}
+
+
 static SSHORT set_metadata_id(thread_db* tdbb, Record* record, USHORT field_id, drq_type_t dyn_id,
 	const char* name)
 {
@@ -5870,12 +5989,15 @@ static void set_owner_name(thread_db* tdbb, Record* record, USHORT field_id)
 
 	if (!EVL_field(0, record, field_id, &desc1))
 	{
-		const Jrd::Attachment* const attachment = tdbb->getAttachment();
-		const Firebird::MetaName name(attachment->att_user->usr_user_name);
-		dsc desc2;
-		desc2.makeText((USHORT) name.length(), CS_METADATA, (UCHAR*) name.c_str());
-		MOV_move(tdbb, &desc2, &desc1);
-		record->clearNull(field_id);
+		const Jrd::UserId* const user = tdbb->getAttachment()->att_user;
+		if (user)
+		{
+			const Firebird::MetaName name(user->getUserName());
+			dsc desc2;
+			desc2.makeText((USHORT) name.length(), CS_METADATA, (UCHAR*) name.c_str());
+			MOV_move(tdbb, &desc2, &desc1);
+			record->clearNull(field_id);
+		}
 	}
 }
 

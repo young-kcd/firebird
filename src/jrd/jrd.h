@@ -135,8 +135,6 @@ class PreparedStatement;
 class TraceManager;
 class MessageNode;
 
-// The database block, the topmost block in the metadata
-// cache for a database
 
 // Relation trigger definition
 
@@ -156,6 +154,8 @@ public:
 	Firebird::string	entryPoint;			// External trigger entrypoint
 	Firebird::string	extBody;			// External trigger body
 	ExtEngineManager::Trigger* extTrigger;	// External trigger
+	Nullable<bool> ssDefiner;
+	Firebird::MetaName	owner;				// Owner for SQL SECURITY
 
 	void compile(thread_db*);				// Ensure that trigger is compiled
 	void release(thread_db*);				// Try to free trigger request
@@ -172,6 +172,39 @@ public:
 };
 
 
+// Array of triggers (suppose separate arrays for triggers of different types)
+
+class TrigVector : public Firebird::ObjectsArray<Trigger>
+{
+public:
+	explicit TrigVector(Firebird::MemoryPool& pool)
+		: Firebird::ObjectsArray<Trigger>(pool),
+		  useCount(0)
+	{ }
+
+	TrigVector()
+		: Firebird::ObjectsArray<Trigger>(),
+		  useCount(0)
+	{ }
+
+	void addRef() const
+	{
+		++useCount;
+	}
+
+	void release() const;
+	void release(thread_db* tdbb) const;
+
+	~TrigVector()
+	{
+		fb_assert(useCount.value() == 0);
+	}
+
+private:
+	mutable Firebird::AtomicCounter useCount;
+};
+
+
 //
 // Flags to indicate normal internal requests vs. dyn internal requests
 //
@@ -185,7 +218,7 @@ class jrd_prc : public Routine
 {
 public:
 	const Format*	prc_record_format;
-	prc_t		prc_type;					// procedure type
+	prc_t			prc_type;					// procedure type
 
 	const ExtEngineManager::Procedure* getExternal() const { return prc_external; }
 	void setExternal(ExtEngineManager::Procedure* value) { prc_external = value; }
@@ -334,6 +367,7 @@ const USHORT TDBB_wait_cancel_disable	= 1024;		// don't cancel current waiting o
 const USHORT TDBB_cache_unwound			= 2048;		// page cache was unwound
 const USHORT TDBB_trusted_ddl			= 4096;		// skip DDL permission checks. Set after DDL permission check and clear after DDL execution
 const USHORT TDBB_reset_stack			= 8192;		// stack should be reset after stack overflow exception
+const USHORT TDBB_dfw_cleanup			= 16384;	// DFW cleanup phase is active
 
 class thread_db : public Firebird::ThreadData
 {
@@ -349,7 +383,6 @@ private:
 	jrd_tra*	transaction;
 	jrd_req*	request;
 	RuntimeStatistics *reqStat, *traStat, *attStat, *dbbStat;
-	thread_db	*priorThread, *nextThread;
 
 public:
 	explicit thread_db(FbStatusVector* status)
@@ -359,8 +392,6 @@ public:
 		  attachment(NULL),
 		  transaction(NULL),
 		  request(NULL),
-		  priorThread(NULL),
-		  nextThread(NULL),
 		  tdbb_status_vector(status),
 		  tdbb_quantum(QUANTUM),
 		  tdbb_flags(0),
@@ -544,54 +575,6 @@ public:
 		}
 
 		return true;
-	}
-
-	void activate()
-	{
-		fb_assert(!priorThread && !nextThread);
-
-		if (database)
-		{
-			Firebird::SyncLockGuard sync(&database->dbb_threads_sync, Firebird::SYNC_EXCLUSIVE,
-										 "thread_db::activate");
-
-			if (database->dbb_active_threads)
-			{
-				fb_assert(!database->dbb_active_threads->priorThread);
-				database->dbb_active_threads->priorThread = this;
-				nextThread = database->dbb_active_threads;
-			}
-
-			database->dbb_active_threads = this;
-		}
-	}
-
-	void deactivate()
-	{
-		if (database)
-		{
-			Firebird::SyncLockGuard sync(&database->dbb_threads_sync, Firebird::SYNC_EXCLUSIVE,
-										 "thread_db::deactivate");
-
-			if (nextThread)
-			{
-				fb_assert(nextThread->priorThread == this);
-				nextThread->priorThread = priorThread;
-			}
-
-			if (priorThread)
-			{
-				fb_assert(priorThread->nextThread == this);
-				priorThread->nextThread = nextThread;
-			}
-			else
-			{
-				fb_assert(database->dbb_active_threads == this);
-				database->dbb_active_threads = nextThread;
-			}
-		}
-
-		priorThread = nextThread = NULL;
 	}
 
 	void resetStack()
@@ -828,23 +811,13 @@ namespace Jrd {
 	{
 	public:
 		explicit DatabaseContextHolder(thread_db* tdbb)
-			: Jrd::ContextPoolHolder(tdbb, tdbb->getDatabase()->dbb_permanent),
-			  savedTdbb(tdbb)
-		{
-			savedTdbb->activate();
-		}
-
-		~DatabaseContextHolder()
-		{
-			savedTdbb->deactivate();
-		}
+			: Jrd::ContextPoolHolder(tdbb, tdbb->getDatabase()->dbb_permanent)
+		{}
 
 	private:
 		// copying is prohibited
 		DatabaseContextHolder(const DatabaseContextHolder&);
 		DatabaseContextHolder& operator=(const DatabaseContextHolder&);
-
-		thread_db* const savedTdbb;
 	};
 
 	class BackgroundContextHolder : public ThreadContextHolder, public DatabaseContextHolder,

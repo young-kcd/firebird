@@ -53,6 +53,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/ini.h"
+#include "../jrd/scl_proto.h"
 #include "../common/dsc_proto.h"
 #include "../common/cvt.h"
 #include "../yvalve/why_proto.h"
@@ -61,21 +62,6 @@
 
 using namespace Jrd;
 using namespace Firebird;
-
-
-static void adjustLength(dsc* desc)
-{
-	USHORT adjust = 0;
-
-	if (desc->dsc_dtype == dtype_varying)
-		adjust = sizeof(USHORT);
-	else if (desc->dsc_dtype == dtype_cstring)
-		adjust = 1;
-
-	desc->dsc_length -= adjust;
-	desc->dsc_length *= 3;
-	desc->dsc_length += adjust;
-}
 
 
 LiteralNode* MAKE_const_slong(SLONG value)
@@ -273,11 +259,6 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 
 	if (desc->isText() || desc->isBlob())
 		desc->setTextType(INTL_CS_COLL_TO_TTYPE(field->charSetId, field->collationId));
-
-	// UNICODE_FSS_HACK
-	// check if the field is a system domain and CHARACTER SET is UNICODE_FSS
-	if (desc->isText() && (INTL_GET_CHARSET(desc) == CS_UNICODE_FSS) && (field->flags & FLD_system))
-		adjustLength(desc);
 }
 
 
@@ -341,17 +322,6 @@ FieldNode* MAKE_field(dsql_ctx* context, dsql_fld* field, ValueListNode* indices
 			MAKE_desc_from_field(&node->nodDesc, field);
 			node->nodDesc.dsc_dtype = static_cast<UCHAR>(field->elementDtype);
 			node->nodDesc.dsc_length = field->elementLength;
-
-			// node->nodDesc.dsc_scale = field->scale;
-			// node->nodDesc.dsc_sub_type = field->subType;
-
-			// UNICODE_FSS_HACK
-			// check if the field is a system domain and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
-			if ((field->flags & FLD_system) && node->nodDesc.dsc_dtype <= dtype_varying &&
-				INTL_GET_CHARSET(&node->nodDesc) == CS_METADATA)
-			{
-				adjustLength(&node->nodDesc);
-			}
 		}
 		else
 		{
@@ -491,4 +461,27 @@ void MAKE_parameter_names(dsql_par* parameter, const ValueExprNode* item)
 {
 	fb_assert(parameter && item);
 	item->setParameterName(parameter);
+}
+
+
+LiteralNode* MAKE_system_privilege(const char* privilege)
+{
+	thread_db* tdbb = JRD_get_thread_data();
+	Attachment* att = tdbb->getAttachment();
+	jrd_tra* tra = att->getSysTransaction();
+
+	string p(privilege);
+	p.upper();
+	USHORT value = SCL_convert_privilege(tdbb, tra, p);
+
+	USHORT* valuePtr = FB_NEW_POOL(*tdbb->getDefaultPool()) USHORT(value);
+
+	LiteralNode* literal = FB_NEW_POOL(*tdbb->getDefaultPool()) LiteralNode(*tdbb->getDefaultPool());
+	literal->litDesc.dsc_dtype = dtype_short;
+	literal->litDesc.dsc_length = sizeof(USHORT);
+	literal->litDesc.dsc_scale = 0;
+	literal->litDesc.dsc_sub_type = 0;
+	literal->litDesc.dsc_address = reinterpret_cast<UCHAR*>(valuePtr);
+
+	return literal;
 }

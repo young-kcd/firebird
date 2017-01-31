@@ -74,6 +74,10 @@
 #include "fb_macros.h"
 #include "fb_types.h"
 
+#if (__cplusplus >= 201103L)
+#define CPP_11
+#endif
+
 /*****************************************************
 * Linux platforms
 *****************************************************/
@@ -194,6 +198,10 @@
 #ifdef PPC64
 #define FB_CPU CpuPowerPc64
 #endif /* PPC64 */
+
+#ifdef M68K
+#define FB_CPU CpuM68k
+#endif /* M68K */
 
 #endif /* LINUX */
 
@@ -869,7 +877,11 @@ void GDS_breakpoint(int);
 
 /* The default lseek offset type.  Changed from nothing to (off_t) to correctly support 64 bit IO */
 #ifndef LSEEK_OFFSET_CAST
+#ifdef LSB_BUILD
+#define LSEEK_OFFSET_CAST (loff_t)
+#else
 #define LSEEK_OFFSET_CAST (off_t)
+#endif
 #endif
 
 #define STRINGIZE_AUX(x)	#x
@@ -882,6 +894,9 @@ void GDS_breakpoint(int);
 #endif
 
 // Check for "final" keyword support
+#ifdef CPP_11
+#define FB_FINAL final
+#else
 #ifdef __GNUC__
 #if ((__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || (__GNUC__ >= 5))
 #define FB_FINAL __final
@@ -890,6 +905,7 @@ void GDS_breakpoint(int);
 // Please add support for other compilers here
 #ifndef FB_FINAL
 #define FB_FINAL
+#endif
 #endif
 
 #define FB_UNUSED(value) do { if (value) {} } while (false)

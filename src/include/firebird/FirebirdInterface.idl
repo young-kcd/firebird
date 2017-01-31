@@ -370,7 +370,7 @@ interface MetadataBuilder : ReferenceCounted
 	void setSubType(Status status, uint index, int subType);
 	void setLength(Status status, uint index, uint length);
 	void setCharSet(Status status, uint index, uint charSet);
-	void setScale(Status status, uint index, uint scale);
+	void setScale(Status status, uint index, int scale);
 
 	void truncate(Status status, uint count);
 	void moveNameToIndex(Status status, const string name, uint index);
@@ -599,6 +599,8 @@ interface Server : Auth
 {
 	[notImplemented(Auth::AUTH_FAILED)]
 	int authenticate(Status status, ServerBlock sBlock, Writer writerInterface);
+version:		// 3.0.1 => 4.0
+	void setDbCryptCallback(Status status, CryptKeyCallback cryptCallback);
 }
 
 // .. and corresponding client
@@ -732,6 +734,20 @@ interface KeyHolderPlugin : PluginBase
 	// Missing key with given name is not an error condition for keyHandle().
 	// It should just return NULL in this case
 	CryptKeyCallback keyHandle(Status status, const string keyName);
+
+version:		// 3.0.1 => 4.0
+	// With returning true here KeyHolder attachment can use only keys, provided by this KeyHolder.
+	// Use of keys, got by database crypt plugin from other attachments, is prohibited.
+	boolean useOnlyOwnKeys(Status status);
+	// Communication in a chain of key holders - get callback interface for chaining holders
+	CryptKeyCallback chainHandle(Status status);
+}
+
+
+// Information calls available for crypt plugin
+interface DbCryptInfo : ReferenceCounted
+{
+	const string getDatabaseFullPath(Status status);
 }
 
 
@@ -745,6 +761,10 @@ interface DbCryptPlugin : PluginBase
 	void setKey(Status status, uint length, KeyHolderPlugin* sources, const string keyName);
 	void encrypt(Status status, uint length, const void* from, void* to);
 	void decrypt(Status status, uint length, const void* from, void* to);
+
+version:		// 3.0.1 => 4.0
+	// Crypto manager may pass some additional info to plugin
+	void setInfo(Status status, DbCryptInfo info);
 }
 
 

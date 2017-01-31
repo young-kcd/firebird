@@ -1273,6 +1273,16 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					matches.add(segment->matches[j]);
 			}
 		}
+
+		// If the navigational candidate includes any matching segments,
+		// reset the selectivity/cost prerequisites to account these matches
+		if (matchedSegments)
+		{
+			totalSelectivity = navigationCandidate->selectivity;
+			totalIndexCost = DEFAULT_INDEX_COST + totalSelectivity * navigationCandidate->cardinality;
+			previousTotalCost = totalIndexCost + totalSelectivity * streamCardinality;
+			firstCandidate = false;
+		}
 	}
 
 	for (i = 0; i < inversions->getCount(); i++)
@@ -2183,13 +2193,35 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 
 		if (invCandidate1)
 		{
-			invCandidate1->condition = binaryNode->arg2;
+			BoolExprNode* condition = binaryNode->arg2;
+
+			if (invCandidate1->condition)
+			{
+				BinaryBoolNode* const newNode =
+					FB_NEW_POOL(*tdbb->getDefaultPool()) BinaryBoolNode(*tdbb->getDefaultPool(), blr_or);
+				newNode->arg1 = invCandidate1->condition;
+				newNode->arg2 = condition;
+				condition = newNode;
+			}
+
+			invCandidate1->condition = condition;
 			return invCandidate1;
 		}
 
 		if (invCandidate2)
 		{
-			invCandidate2->condition = binaryNode->arg1;
+			BoolExprNode* condition = binaryNode->arg1;
+
+			if (invCandidate2->condition)
+			{
+				BinaryBoolNode* const newNode =
+					FB_NEW_POOL(*tdbb->getDefaultPool()) BinaryBoolNode(*tdbb->getDefaultPool(), blr_or);
+				newNode->arg1 = invCandidate2->condition;
+				newNode->arg2 = condition;
+				condition = newNode;
+			}
+
+			invCandidate2->condition = condition;
 			return invCandidate2;
 		}
 

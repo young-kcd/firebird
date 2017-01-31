@@ -1304,11 +1304,12 @@ int gbak(Firebird::UtilSvc* uSvc)
 			if (file->fil_fd != INVALID_HANDLE_VALUE)
 			{
 				close_platf(file->fil_fd);
-			}
-			if (exit_code != FINI_OK &&
-				(tdgbl->action->act_action == ACT_backup_split || tdgbl->action->act_action == ACT_backup))
-			{
-				unlink_platf(tdgbl->toSystem(file->fil_name).c_str());
+
+				if (exit_code != FINI_OK &&
+					(tdgbl->action->act_action == ACT_backup_split || tdgbl->action->act_action == ACT_backup))
+				{
+					unlink_platf(tdgbl->toSystem(file->fil_name).c_str());
+				}
 			}
 		}
 	}
@@ -2122,7 +2123,7 @@ static gbak_action open_files(const TEXT* file1,
 			else
 				SetTapePosition(fil->fil_fd, TAPE_REWIND, 0, 0, 0, FALSE);
 #else
-			lseek(fil->fil_fd, 0, SEEK_SET);
+			os_utils::lseek(fil->fil_fd, 0, SEEK_SET);
 #endif
 			tdgbl->file_desc = fil->fil_fd;
 			tdgbl->gbl_sw_files = fil->fil_next;
@@ -2381,10 +2382,10 @@ void close_platf(DESC file)
 #define O_ACCMODE 3
 #endif
 
-		off_t fileSize = lseek(file, 0, SEEK_CUR);
+		off_t fileSize = os_utils::lseek(file, 0, SEEK_CUR);
 		if (fileSize != (off_t)(-1))
 		{
-			FB_UNUSED(ftruncate(file, fileSize));
+			FB_UNUSED(os_utils::ftruncate(file, fileSize));
 		}
 	}
 

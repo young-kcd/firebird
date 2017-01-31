@@ -60,6 +60,11 @@ public:
 		return nullable;
 	}
 
+	T orElse(T elseValue) const
+	{
+		return specified ? value : elseValue;
+	}
+
 	bool operator ==(const BaseNullable<T>& o) const
 	{
 		return (!specified && !o.specified) || (specified == o.specified && value == o.value);
@@ -109,6 +114,15 @@ public:
 	}
 };
 
+template <>
+class NullableClear<rel_t>
+{
+public:
+	static void clear(rel_t& v)
+	{
+		v = rel_persistent;
+	}
+};
 
 // Actual Nullable template.
 template <typename T> class Nullable : public BaseNullable<T>

@@ -254,13 +254,14 @@ void dump(CheckStatusWrapper* status, ISC_QUAD* blobId, IAttachment* att, ITrans
 	SCHAR buffer[256];
 	const SSHORT short_length = sizeof(buffer);
 
-	for (;;)
+	for (bool cond = true; cond; )
 	{
 		unsigned l = 0;
 		switch (blob->getSegment(status, short_length, buffer, &l))
 		{
 		case Firebird::IStatus::RESULT_ERROR:
 		case Firebird::IStatus::RESULT_NO_DATA:
+			cond = false;
 			break;
 		}
 
@@ -738,6 +739,7 @@ public:
 		: pb(NULL), strVal(getPool())
 	{
 		ClumpletReader::Kind k;
+		UCHAR tag = 0;
 		const ClumpletReader::KindList* kl = NULL;
 
 		switch(kind)
@@ -753,6 +755,7 @@ public:
 			break;
 		case TPB:
 			k = ClumpletReader::Tpb;
+			tag = isc_tpb_version3;
 			break;
 		default:
 			fatal_exception::raiseFmt("Wrong parameters block kind %d, should be from %d to %d", kind, DPB, TPB);
@@ -764,7 +767,7 @@ public:
 			if (kl)
 				pb = FB_NEW_POOL(getPool()) ClumpletWriter(getPool(), kl, MAX_DPB_SIZE);
 			else
-				pb = FB_NEW_POOL(getPool()) ClumpletWriter(getPool(), k, MAX_DPB_SIZE);
+				pb = FB_NEW_POOL(getPool()) ClumpletWriter(getPool(), k, MAX_DPB_SIZE, tag);
 		}
 		else
 		{
@@ -1554,8 +1557,8 @@ int API_ROUTINE gds__edit(const TEXT* file_name, USHORT /*type*/)
 		editor = "Notepad";
 #endif
 
-	struct stat before;
-	stat(file_name, &before);
+	struct STAT before;
+	os_utils::stat(file_name, &before);
 	// The path of the editor + the path of the file + quotes + one space.
 	// We aren't using quotes around the editor for now.
 	TEXT buffer[MAXPATHLEN * 2 + 5];
@@ -1563,8 +1566,8 @@ int API_ROUTINE gds__edit(const TEXT* file_name, USHORT /*type*/)
 
 	FB_UNUSED(system(buffer));
 
-	struct stat after;
-	stat(file_name, &after);
+	struct STAT after;
+	os_utils::stat(file_name, &after);
 
 	return (before.st_mtime != after.st_mtime || before.st_size != after.st_size);
 }

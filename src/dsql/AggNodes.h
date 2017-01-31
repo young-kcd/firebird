@@ -37,6 +37,11 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual unsigned getCapabilities() const
+	{
+		return CAP_RESPECTS_WINDOW_FRAME | CAP_WANTS_AGG_CALLS;
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
@@ -62,20 +67,17 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual unsigned getCapabilities() const
+	{
+		return CAP_WANTS_AGG_CALLS;
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
 		const dsc* desc, bool forceVarChar);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-
-	virtual void checkOrderedWindowCapable() const
-	{
-		Firebird::status_exception::raise(
-			Firebird::Arg::Gds(isc_wish_list) <<
-			Firebird::Arg::Gds(isc_random) <<
-				"LIST is not supported in ordered windows");
-	}
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
@@ -94,6 +96,11 @@ public:
 	explicit CountAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, ValueExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual unsigned getCapabilities() const
+	{
+		return CAP_RESPECTS_WINDOW_FRAME | CAP_WANTS_AGG_CALLS;
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
@@ -115,6 +122,11 @@ public:
 	explicit SumAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, ValueExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual unsigned getCapabilities() const
+	{
+		return CAP_RESPECTS_WINDOW_FRAME | CAP_WANTS_AGG_CALLS;
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
@@ -141,6 +153,11 @@ public:
 	explicit MaxMinAggNode(MemoryPool& pool, MaxMinType aType, ValueExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual unsigned getCapabilities() const
+	{
+		return CAP_RESPECTS_WINDOW_FRAME | CAP_WANTS_AGG_CALLS;
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
@@ -175,6 +192,11 @@ public:
 	};
 
 	explicit StdDevAggNode(MemoryPool& pool, StdDevType aType, ValueExprNode* aArg = NULL);
+
+	virtual unsigned getCapabilities() const
+	{
+		return CAP_RESPECTS_WINDOW_FRAME | CAP_WANTS_AGG_CALLS;
+	}
 
 	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
 
@@ -215,6 +237,11 @@ public:
 
 	explicit CorrAggNode(MemoryPool& pool, CorrType aType,
 		ValueExprNode* aArg = NULL, ValueExprNode* aArg2 = NULL);
+
+	virtual unsigned getCapabilities() const
+	{
+		return CAP_RESPECTS_WINDOW_FRAME | CAP_WANTS_AGG_CALLS;
+	}
 
 	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
 
@@ -263,6 +290,11 @@ public:
 	explicit RegrAggNode(MemoryPool& pool, RegrType aType,
 		ValueExprNode* aArg = NULL, ValueExprNode* aArg2 = NULL);
 
+	virtual unsigned getCapabilities() const
+	{
+		return CAP_RESPECTS_WINDOW_FRAME | CAP_WANTS_AGG_CALLS;
+	}
+
 	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
@@ -292,6 +324,11 @@ class RegrCountAggNode : public AggNode
 public:
 	explicit RegrCountAggNode(MemoryPool& pool,
 		ValueExprNode* aArg = NULL, ValueExprNode* aArg2 = NULL);
+
+	virtual unsigned getCapabilities() const
+	{
+		return CAP_RESPECTS_WINDOW_FRAME | CAP_WANTS_AGG_CALLS;
+	}
 
 	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
 

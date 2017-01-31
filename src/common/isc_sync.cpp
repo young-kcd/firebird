@@ -62,6 +62,7 @@
 #include "../common/utils_proto.h"
 #include "../common/StatusArg.h"
 #include "../common/ThreadData.h"
+#include "../common/ThreadStart.h"
 #include "../common/classes/rwlock.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/RefMutex.h"
@@ -258,8 +259,8 @@ namespace {
 
 	DevNode getNode(const char* name)
 	{
-		struct stat statistics;
-		if (stat(name, &statistics) != 0)
+		struct STAT statistics;
+		if (os_utils::stat(name, &statistics) != 0)
 		{
 			if (errno == ENOENT)
 			{
@@ -275,11 +276,9 @@ namespace {
 
 	DevNode getNode(int fd)
 	{
-		struct stat statistics;
-		if (fstat(fd, &statistics) != 0)
-		{
+		struct STAT statistics;
+		if (os_utils::fstat(fd, &statistics) != 0)
 			system_call_failed::raise("stat");
-		}
 
 		return DevNode(statistics.st_dev, statistics.st_ino);
 	}
@@ -450,7 +449,7 @@ int FileLock::setlock(const LockMode mode)
 
 #ifdef USE_FCNTL
 	// Take lock on a file
-	struct flock lock;
+	struct FLOCK lock;
 	lock.l_type = shared ? F_RDLCK : F_WRLCK;
 	lock.l_whence = SEEK_SET;
 	lock.l_start = lStart;
@@ -548,7 +547,7 @@ void FileLock::unlock()
 	}
 
 #ifdef USE_FCNTL
-	struct flock lock;
+	struct FLOCK lock;
 	lock.l_type = F_UNLCK;
 	lock.l_whence = SEEK_SET;
 	lock.l_start = lStart;
@@ -722,7 +721,7 @@ namespace {
 				return;
 			}
 
-			FB_UNUSED(ftruncate(fdSem, sizeof(*this)));
+			FB_UNUSED(os_utils::ftruncate(fdSem, sizeof(*this)));
 
 			for (int i = 0; i < N_SETS; ++i)
 			{
@@ -1519,7 +1518,7 @@ ULONG ISC_exception_post(ULONG sig_num, const TEXT* err_msg, ISC_STATUS& /*isc_e
 	case SIGILL:
 
 		sprintf(log_msg, "%s Illegal Instruction.\n"
-				"\t\tThe code attempted to perfrom an\n"
+				"\t\tThe code attempted to perform an\n"
 				"\t\tillegal operation."
 				"\tThis exception will cause the Firebird server\n"
 				"\tto terminate abnormally.", err_msg);
@@ -1843,11 +1842,10 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	public:
 		static void init(int fd)
 		{
-			void* sTab = mmap(0, sizeof(SemTable), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+			void* sTab = os_utils::mmap(0, sizeof(SemTable), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
 			if ((U_IPTR) sTab == (U_IPTR) -1)
-			{
 				system_call_failed::raise("mmap");
-			}
 
 			semTable = (SemTable*) sTab;
 			initCache();
@@ -1882,11 +1880,11 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	if (length == 0)
 	{
 		// Get and use the existing length of the shared segment
-		struct stat file_stat;
-		if (fstat(mainLock->getFd(), &file_stat) == -1)
-		{
+		struct STAT file_stat;
+
+		if (os_utils::fstat(mainLock->getFd(), &file_stat) == -1)
 			system_call_failed::raise("fstat");
-		}
+
 		length = file_stat.st_size;
 
 		if (length == 0)
@@ -1897,7 +1895,9 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	}
 
 	// map file to memory
-	void* const address = mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, mainLock->getFd(), 0);
+	void* const address = os_utils::mmap(0, length,
+		PROT_READ | PROT_WRITE, MAP_SHARED, mainLock->getFd(), 0);
+
 	if ((U_IPTR) address == (U_IPTR) -1)
 	{
 		system_call_failed::raise("mmap", errno);
@@ -1962,7 +1962,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	if (mainLock->setlock(&statusVector, FileLock::FLM_TRY_EXCLUSIVE))
 	{
 		if (trunc_flag)
-			FB_UNUSED(ftruncate(mainLock->getFd(), length));
+			FB_UNUSED(os_utils::ftruncate(mainLock->getFd(), length));
 
 		if (callback->initialize(this, true))
 		{
@@ -2474,7 +2474,8 @@ UCHAR* SharedMemoryBase::mapObject(CheckStatusWrapper* statusVector, ULONG objec
 	const ULONG end = FB_ALIGN(object_offset + object_length, page_size);
 	const ULONG length = end - start;
 
-	UCHAR* address = (UCHAR*) mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, mainLock->getFd(), start);
+	UCHAR* address = (UCHAR*) os_utils::mmap(0, length,
+		PROT_READ | PROT_WRITE, MAP_SHARED, mainLock->getFd(), start);
 
 	if ((U_IPTR) address == (U_IPTR) -1)
 	{
@@ -3089,10 +3090,11 @@ bool SharedMemoryBase::remapFile(CheckStatusWrapper* statusVector, ULONG new_len
 	}
 
 	if (flag)
-		FB_UNUSED(ftruncate(mainLock->getFd(), new_length));
+		FB_UNUSED(os_utils::ftruncate(mainLock->getFd(), new_length));
 
-	MemoryHeader* const address = (MemoryHeader*)
-		mmap(0, new_length, PROT_READ | PROT_WRITE, MAP_SHARED, mainLock->getFd(), 0);
+	MemoryHeader* const address = (MemoryHeader*) os_utils::mmap(0, new_length,
+		PROT_READ | PROT_WRITE, MAP_SHARED, mainLock->getFd(), 0);
+
 	if ((U_IPTR) address == (U_IPTR) -1)
 	{
 		error(statusVector, "mmap() failed", errno);
@@ -3294,8 +3296,8 @@ static SLONG create_semaphores(CheckStatusWrapper* statusVector, SLONG key, int 
 			// We want to limit access to semaphores, created here
 			// Reasonable access rights to them - exactly like security database has
 			const char* secDb = Config::getDefaultConfig()->getSecurityDatabase();
-			struct stat st;
-			if (stat(secDb, &st) == 0)
+			struct STAT st;
+			if (os_utils::stat(secDb, &st) == 0)
 			{
 				union semun arg;
 				semid_ds ds;

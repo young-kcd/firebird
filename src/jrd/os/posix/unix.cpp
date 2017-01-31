@@ -49,6 +49,15 @@
 #include <linux/falloc.h>
 #endif
 
+#ifdef SUPPORT_RAW_DEVICES
+#include <sys/ioctl.h>
+
+#ifdef LINUX
+#include <linux/fs.h>
+#endif
+
+#endif //SUPPORT_RAW_DEVICES
+
 #include "../jrd/jrd.h"
 #include "../jrd/os/pio.h"
 #include "../jrd/ods.h"
@@ -104,6 +113,10 @@ using namespace Firebird;
 #define O_BINARY	0
 #endif
 
+#if !defined(O_DIRECT) && defined(LSB_BUILD)
+#define O_DIRECT 00040000
+#endif
+
 // please undefine FCNTL_BROKEN for operating systems,
 // that can successfully change BOTH O_DIRECT and O_SYNC using fcntl()
 
@@ -111,7 +124,7 @@ static const mode_t MASK = 0660;
 
 #define FCNTL_BROKEN
 static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64*, FbStatusVector*);
-static jrd_file* setup_file(Database*, const PathName&, const int, const bool, const bool);
+static jrd_file* setup_file(Database*, const PathName&, const int, const bool, const bool, const bool);
 static void lockDatabaseFile(int& desc, const bool shareMode, const bool temporary,
 							 const char* fileName, ISC_STATUS operation);
 static bool unix_error(const TEXT*, const jrd_file*, ISC_STATUS, FbStatusVector* = NULL);
@@ -260,14 +273,14 @@ jrd_file* PIO_create(thread_db* tdbb, const PathName& file_name,
 #endif
 	}
 
-	// posix_fadvise(desc, 0, 0, POSIX_FADV_RANDOM);
+	// os_utils::posix_fadvise(desc, 0, 0, POSIX_FADV_RANDOM);
 
 	// File open succeeded.  Now expand the file name.
 
 	PathName expanded_name(file_name);
 	ISC_expand_filename(expanded_name, false);
 
-	return setup_file(dbb, expanded_name, desc, false, shareMode);
+	return setup_file(dbb, expanded_name, desc, false, shareMode, !(flag & O_CREAT));
 }
 
 
@@ -472,14 +485,46 @@ ULONG PIO_get_number_of_pages(const jrd_file* file, const USHORT pagesize)
 		return (0);
 	}
 
-	struct stat statistics;
-	if (fstat(file->fil_desc, &statistics)) {
+	struct STAT statistics;
+	if (os_utils::fstat(file->fil_desc, &statistics))
 		unix_error("fstat", file, isc_io_access_err);
+
+	FB_UINT64 length = statistics.st_size;
+
+#ifdef SUPPORT_RAW_DEVICES
+	if (S_ISCHR(statistics.st_mode) || S_ISBLK(statistics.st_mode))
+	{
+// This place is highly OS-dependent
+// Looks like any OS needs own ioctl() to determine raw device size
+#undef HAS_RAW_SIZE
+
+#ifdef LINUX
+#ifdef BLKGETSIZE64
+		if (ioctl(file->fil_desc, BLKGETSIZE64, &length) != 0)
+#endif /*BLKGETSIZE64*/
+		{
+			unsigned long sectorCount;
+			if (ioctl(file->fil_desc, BLKGETSIZE, &sectorCount) != 0)
+				unix_error("ioctl(BLKGETSIZE)", file, isc_io_access_err);
+
+			unsigned int sectorSize;
+			if (ioctl(file->fil_desc, BLKSSZGET, &sectorSize) != 0)
+				unix_error("ioctl(BLKSSZGET)", file, isc_io_access_err);
+
+			length = sectorCount;
+			length *= sectorSize;
+		}
+#define HAS_RAW_SIZE
+#endif /*LINUX*/
+
+#ifndef HAS_RAW_SIZE
+error: Raw device support for your OS is missing. Fix it or turn off raw device support.
+#endif
+#undef HAS_RAW_SIZE
 	}
+#endif /*SUPPORT_RAW_DEVICES*/
 
-	const FB_UINT64 length = statistics.st_size;
-
-	return (length + pagesize - 1) / pagesize;
+	return length / pagesize;
 }
 
 
@@ -508,7 +553,7 @@ void PIO_header(thread_db* tdbb, UCHAR* address, int length)
 
 	for (i = 0; i < IO_RETRY; i++)
 	{
-		if ((bytes = pread(file->fil_desc, address, length, 0)) == (FB_UINT64) -1)
+		if ((bytes = os_utils::pread(file->fil_desc, address, length, 0)) == (FB_UINT64) -1)
 		{
 			if (SYSCALL_INTERRUPTED(errno))
 				continue;
@@ -597,7 +642,7 @@ USHORT PIO_init_data(thread_db* tdbb, jrd_file* main_file, FbStatusVector* statu
 		{
 			if (!(file = seek_file(file, &bdb, &offset, status_vector)))
 				return false;
-			if ((written = pwrite(file->fil_desc, zero_buff, to_write, LSEEK_OFFSET_CAST offset)) == to_write)
+			if ((written = os_utils::pwrite(file->fil_desc, zero_buff, to_write, LSEEK_OFFSET_CAST offset)) == to_write)
 				break;
 			if (written == (SLONG) -1 && !SYSCALL_INTERRUPTED(errno))
 				return unix_error("write", file, isc_io_write_err, status_vector);
@@ -649,8 +694,8 @@ jrd_file* PIO_open(thread_db* tdbb,
 	else if (geteuid() == 0)
 	{
 		// root has too many rights - therefore artificially check for readonly file
-		struct stat st;
-		if (fstat(desc, &st) == 0)
+		struct STAT st;
+		if (os_utils::fstat(desc, &st) == 0)
 		{
 			readOnly = ((st.st_mode & 0222) == 0);	// nobody has write permissions
 		}
@@ -670,21 +715,26 @@ jrd_file* PIO_open(thread_db* tdbb,
 	const bool shareMode = dbb->dbb_config->getServerMode() != MODE_SUPER;
 	lockDatabaseFile(desc, shareMode || readOnly, false, file_name.c_str(), isc_io_open_err);
 
-	// posix_fadvise(desc, 0, 0, POSIX_FADV_RANDOM);
+	// os_utils::posix_fadvise(desc, 0, 0, POSIX_FADV_RANDOM);
 
+	bool raw = false;
 #ifdef SUPPORT_RAW_DEVICES
 	// At this point the file has successfully been opened in either RW or RO
 	// mode. Check if it is a special file (i.e. raw block device) and if a
 	// valid database is on it. If not, return an error.
 
-	if (PIO_on_raw_device(file_name) && !raw_devices_validate_database(desc, file_name))
+	if (PIO_on_raw_device(file_name))
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << Arg::Str(file_name) <<
-				 Arg::Gds(isc_io_open_err) << Arg::Unix(ENOENT));
+		raw = true;
+		if (!raw_devices_validate_database(desc, file_name))
+		{
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << Arg::Str(file_name) <<
+					 Arg::Gds(isc_io_open_err) << Arg::Unix(ENOENT));
+		}
 	}
 #endif // SUPPORT_RAW_DEVICES
 
-	return setup_file(dbb, string, desc, readOnly, shareMode);
+	return setup_file(dbb, string, desc, readOnly, shareMode, raw);
 }
 
 
@@ -716,7 +766,7 @@ bool PIO_read(thread_db* tdbb, jrd_file* file, BufferDesc* bdb, Ods::pag* page, 
 	{
 		if (!(file = seek_file(file, bdb, &offset, status_vector)))
 			return false;
-		if ((bytes = pread(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
+		if ((bytes = os_utils::pread(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
 			break;
 		if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
 			return unix_error("read", file, isc_io_read_err, status_vector);
@@ -741,7 +791,7 @@ bool PIO_read(thread_db* tdbb, jrd_file* file, BufferDesc* bdb, Ods::pag* page, 
 		}
 	}
 
-	// posix_fadvise(file->desc, offset, size, POSIX_FADV_NOREUSE);
+	// os_utils::posix_fadvise(file->desc, offset, size, POSIX_FADV_NOREUSE);
 	return true;
 }
 
@@ -775,14 +825,14 @@ bool PIO_write(thread_db* tdbb, jrd_file* file, BufferDesc* bdb, Ods::pag* page,
 	{
 		if (!(file = seek_file(file, bdb, &offset, status_vector)))
 			return false;
-		if ((bytes = pwrite(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
+		if ((bytes = os_utils::pwrite(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
 			break;
 		if (bytes == (SLONG) -1 && !SYSCALL_INTERRUPTED(errno))
 			return unix_error("write", file, isc_io_write_err, status_vector);
 	}
 
 
-	// posix_fadvise(file->desc, offset, size, POSIX_FADV_DONTNEED);
+	// os_utils::posix_fadvise(file->desc, offset, size, POSIX_FADV_DONTNEED);
 	return true;
 }
 
@@ -891,7 +941,8 @@ static jrd_file* setup_file(Database* dbb,
 							const PathName& file_name,
 							const int desc,
 							const bool readOnly,
-							const bool shareMode)
+							const bool shareMode,
+							const bool onRawDev)
 {
 /**************************************
  *
@@ -916,6 +967,8 @@ static jrd_file* setup_file(Database* dbb,
 			file->fil_flags |= FIL_readonly;
 		if (shareMode)
 			file->fil_flags |= FIL_sh_write;
+		if (onRawDev)
+			file->fil_flags |= FIL_raw_device;
 	}
 	catch (const Exception&)
 	{
@@ -938,7 +991,7 @@ static void lockDatabaseFile(int& desc, const bool share, const bool temporary,
 	do
 	{
 #ifndef HAVE_FLOCK
-		struct flock lck;
+		struct FLOCK lck;
 		lck.l_type = shared ? F_RDLCK : F_WRLCK;
 		lck.l_whence = SEEK_SET;
 		lck.l_start = 0;
@@ -1112,9 +1165,9 @@ bool PIO_on_raw_device(const PathName& file_name)
  *	Checks if the supplied file name is a special file
  *
  **************************************/
-	struct stat s;
+	struct STAT s;
 
-	return (stat(file_name.c_str(), &s) == 0 && (S_ISCHR(s.st_mode) || S_ISBLK(s.st_mode)));
+	return (os_utils::stat(file_name.c_str(), &s) == 0 && (S_ISCHR(s.st_mode) || S_ISBLK(s.st_mode)));
 }
 
 
@@ -1145,7 +1198,7 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 
 	for (int i = 0; i < IO_RETRY; i++)
 	{
-		if (lseek(desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
+		if (os_utils::lseek(desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
 		{
 			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
@@ -1167,7 +1220,7 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 
   read_finished:
 	// Rewind file pointer
-	if (lseek(desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
+	if (os_utils::lseek(desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
 	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << Arg::Str(file_name) <<
 				 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));

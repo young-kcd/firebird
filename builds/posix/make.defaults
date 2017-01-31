@@ -133,6 +133,11 @@ CAS_OPTIONS=@CAS_OPTIONS@
 # multiple-precision integer library
 MATHLIB=@MATHLIB@
 
+LSB_FLG=@LSB_FLG@
+ifeq ($(LSB_FLG), Y)
+  LSB_UNDEF=-Wl,--allow-shlib-undefined
+endif
+
 # switch to make sed edit files inplace
 INLINE_EDIT_SED:= -i
 
@@ -161,6 +166,9 @@ CLOOP=$(GEN_ROOT)/$(TARGET)/cloop/release/bin/cloop
 CC =	@CC@
 CXX =	@CXX@
 LD =	@CXX@
+
+CFLAGS =	@CFLAGS@
+CXXFLAGS =	@CXXFLAGS@
 
 # LINKER COMMANDS
 
@@ -313,7 +321,7 @@ LINK_IB_UTIL = $(LIB_LINK) $(LINK_IBUTIL_SYMBOLS) $(LIB_LINK_OPTIONS) $(UNDEF_FL
 LINK_IB_UTIL_LIBS = $(THR_LIBS)
 
 LINK_INTL = $(LIB_LINK) $(LINK_FBINTL_SYMBOLS) $(LIB_LINK_OPTIONS) $(UNDEF_FLAGS)\
- $(call LIB_LINK_SONAME,libintl.$(SHRLIB_EXT).1) $(call LIB_LINK_RPATH,lib)
+ $(call LIB_LINK_SONAME,libfbintl.$(SHRLIB_EXT).1) $(call LIB_LINK_RPATH,lib)
 LINK_INTL_LIBS = -L$(LIB) $(SO_LINK_LIBS) $(FIREBIRD_LIBRARY_LINK)
 
 LINK_TRACE = $(LIB_LINK) $(LINK_PLUGIN_SYMBOLS) $(LIB_LINK_OPTIONS) $(UNDEF_FLAGS)\

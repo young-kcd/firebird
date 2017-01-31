@@ -39,23 +39,24 @@ namespace Jrd
 {
 	typedef Firebird::CheckStatusWrapper FbStatusVector;
 
-	class FbLocalStatus
+	template <class SW>
+	class LocalStatusWrapper
 	{
 	public:
-		FbLocalStatus()
+		LocalStatusWrapper()
 			: localStatusVector(&localStatus)
 		{ }
 
-		explicit FbLocalStatus(Firebird::MemoryPool& p)
+		explicit LocalStatusWrapper(Firebird::MemoryPool& p)
 			: localStatus(p), localStatusVector(&localStatus)
 		{ }
 
-		FbStatusVector* operator->()
+		SW* operator->()
 		{
 			return &localStatusVector;
 		}
 
-		FbStatusVector* operator&()
+		SW* operator&()
 		{
 			return &localStatusVector;
 		}
@@ -66,12 +67,12 @@ namespace Jrd
 			return localStatusVector.getErrors()[n];
 		}
 
-		const FbStatusVector* operator->() const
+		const SW* operator->() const
 		{
 			return &localStatusVector;
 		}
 
-		const FbStatusVector* operator&() const
+		const SW* operator&() const
 		{
 			return &localStatusVector;
 		}
@@ -85,7 +86,7 @@ namespace Jrd
 			}
 		}
 
-		void copyTo(FbStatusVector* to) const
+		void copyTo(SW* to) const
 		{
 			fb_utils::copyStatus(to, &localStatusVector);
 		}
@@ -100,11 +101,18 @@ namespace Jrd
 			return localStatusVector.isEmpty();
 		}
 
+		bool isSuccess() const
+		{
+			return localStatusVector.isEmpty();
+		}
+
 	private:
 		Firebird::LocalStatus localStatus;
-		FbStatusVector localStatusVector;
+		SW localStatusVector;
 	};
 
+	typedef LocalStatusWrapper<FbStatusVector> FbLocalStatus;
+	typedef LocalStatusWrapper<Firebird::ThrowStatusWrapper> ThrowLocalStatus;
 }
 
 #endif // JRD_STATUS_H

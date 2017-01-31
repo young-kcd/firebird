@@ -39,6 +39,8 @@
 
 namespace Jrd {
 
+class CharSet;
+
 class Parser : public Firebird::PermanentStorage
 {
 private:
@@ -119,8 +121,8 @@ public:
 	static const int MAX_TOKEN_LEN = 256;
 
 public:
-	Parser(MemoryPool& pool, DsqlCompilerScratch* aScratch, USHORT aClientDialect,
-		USHORT aDbDialect, USHORT aParserVersion, const TEXT* string, size_t length,
+	Parser(thread_db* tdbb, MemoryPool& pool, DsqlCompilerScratch* aScratch, USHORT aClientDialect,
+		USHORT aDbDialect, const TEXT* string, size_t length,
 		SSHORT characterSet);
 	~Parser();
 
@@ -232,7 +234,7 @@ private:
 	void check_bound(const char* const to, const char* const string);
 	void check_copy_incr(char*& to, const char ch, const char* const string);
 
-	void yyabandon(SLONG, ISC_STATUS);
+	void yyabandon(const Position& position, SLONG, ISC_STATUS);
 
 	Firebird::MetaName optName(Firebird::MetaName* name)
 	{
@@ -345,6 +347,7 @@ private:
 	USHORT db_dialect;
 	USHORT parser_version;
 
+	CharSet* metadataCharSet;
 	Firebird::string transformedString;
 	Firebird::GenericMap<Firebird::NonPooled<IntlString*, StrMark> > strMarks;
 	bool stmt_ambiguous;

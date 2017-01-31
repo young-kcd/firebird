@@ -243,7 +243,7 @@ BtrPageGCLock::~BtrPageGCLock()
 		LCK_release(JRD_get_thread_data(), this);
 }
 
-void BtrPageGCLock::disablePageGC(thread_db* tdbb, const PageNumber &page)
+void BtrPageGCLock::disablePageGC(thread_db* tdbb, const PageNumber& page)
 {
 	page.getLockStr(getKeyPtr());
 	LCK_lock(tdbb, this, LCK_read, LCK_WAIT);
@@ -1230,9 +1230,7 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 				//
 				isNull = !EVL_field(relation, record, tail->idx_field, desc_ptr);
 
-				if (!isNull &&
-					!(relation->rel_flags & REL_system) &&	// UNICODE_FSS_HACK
-					desc_ptr->dsc_dtype == dtype_text)
+				if (!isNull && desc_ptr->dsc_dtype == dtype_text)
 				{
 					// That's necessary for NO-PAD collations.
 					INTL_adjust_text_descriptor(tdbb, desc_ptr);
@@ -1271,8 +1269,7 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 					key->key_nulls |= 1 << n;
 				else
 				{
-					if (!(relation->rel_flags & REL_system) &&	// UNICODE_FSS_HACK
-						desc_ptr->dsc_dtype == dtype_text)
+					if (desc_ptr->dsc_dtype == dtype_text)
 					{
 						// That's necessary for NO-PAD collations.
 						INTL_adjust_text_descriptor(tdbb, desc_ptr);
@@ -5144,7 +5141,7 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
 			// more difficult then needed.
 			jumpNode.offset = node.nodePointer - (UCHAR*) page;
 			jumpNode.prefix = IndexNode::computePrefix(jumpData, jumpLength,
-														   currentData, node.prefix);
+													   currentData, node.prefix);
 			jumpNode.length = node.prefix - jumpNode.prefix;
 
 			// make sure split page has enough space for new jump node
@@ -5181,17 +5178,14 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
 			}
 
 			// Set new position for generating jumpnode
-			if (newAreaPosition < halfpoint && newAreaPosition + jumpAreaSize >= halfpoint)
-				newAreaPosition = halfpoint;
-			else
-				newAreaPosition += jumpAreaSize;
+			newAreaPosition += jumpAreaSize;
 
 			*jumpersSize += jumpNode.getJumpNodeSize();
 
 			if (splitIndex && *splitIndex < jumpNodes->getCount())
 			{
 				splitPageSize += jumpNode.getJumpNodeSize();
-				if (*splitIndex + 1 == jumpNodes->getCount())
+				if (*splitIndex + 1u == jumpNodes->getCount())
 					splitPageSize += jumpNode.prefix;
 			}
 		}

@@ -846,6 +846,22 @@ const ISC_STATUS isc_already_opened                   = 335545107L;
 const ISC_STATUS isc_bad_crypt_key                    = 335545108L;
 const ISC_STATUS isc_encrypt_error                    = 335545109L;
 const ISC_STATUS isc_max_idx_depth                    = 335545110L;
+const ISC_STATUS isc_wrong_prvlg                      = 335545111L;
+const ISC_STATUS isc_miss_prvlg                       = 335545112L;
+const ISC_STATUS isc_crypt_checksum                   = 335545113L;
+const ISC_STATUS isc_not_dba                          = 335545114L;
+const ISC_STATUS isc_no_cursor                        = 335545115L;
+const ISC_STATUS isc_dsql_window_incompat_frames      = 335545116L;
+const ISC_STATUS isc_dsql_window_range_multi_key      = 335545117L;
+const ISC_STATUS isc_dsql_window_range_inv_key_type   = 335545118L;
+const ISC_STATUS isc_dsql_window_frame_value_inv_type = 335545119L;
+const ISC_STATUS isc_window_frame_value_invalid       = 335545120L;
+const ISC_STATUS isc_dsql_window_not_found            = 335545121L;
+const ISC_STATUS isc_dsql_window_cant_overr_part      = 335545122L;
+const ISC_STATUS isc_dsql_window_cant_overr_order     = 335545123L;
+const ISC_STATUS isc_dsql_window_cant_overr_frame     = 335545124L;
+const ISC_STATUS isc_dsql_window_duplicate            = 335545125L;
+const ISC_STATUS isc_sql_too_long                     = 335545126L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -911,6 +927,7 @@ const ISC_STATUS isc_dsql_no_sqldata                  = 336003108L;
 const ISC_STATUS isc_dsql_no_input_sqlda              = 336003109L;
 const ISC_STATUS isc_dsql_no_output_sqlda             = 336003110L;
 const ISC_STATUS isc_dsql_wrong_param_num             = 336003111L;
+const ISC_STATUS isc_dsql_invalid_drop_ss_clause      = 336003112L;
 const ISC_STATUS isc_dyn_filter_not_found             = 336068645L;
 const ISC_STATUS isc_dyn_func_not_found               = 336068649L;
 const ISC_STATUS isc_dyn_index_not_found              = 336068656L;
@@ -987,6 +1004,7 @@ const ISC_STATUS isc_dyn_cant_modify_sysobj           = 336068895L;
 const ISC_STATUS isc_dyn_cant_use_zero_increment      = 336068896L;
 const ISC_STATUS isc_dyn_cant_use_in_foreignkey       = 336068897L;
 const ISC_STATUS isc_dyn_defvaldecl_package_func      = 336068898L;
+const ISC_STATUS isc_dyn_cant_use_zero_inc_ident      = 336068904L;
 const ISC_STATUS isc_gbak_unknown_switch              = 336330753L;
 const ISC_STATUS isc_gbak_page_size_missing           = 336330754L;
 const ISC_STATUS isc_gbak_page_size_toobig            = 336330755L;
@@ -1317,7 +1335,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1261;
+const ISC_STATUS isc_err_max                          = 1279;
 
 #else /* c definitions */
 
@@ -2133,6 +2151,22 @@ const ISC_STATUS isc_err_max                          = 1261;
 #define isc_bad_crypt_key                    335545108L
 #define isc_encrypt_error                    335545109L
 #define isc_max_idx_depth                    335545110L
+#define isc_wrong_prvlg                      335545111L
+#define isc_miss_prvlg                       335545112L
+#define isc_crypt_checksum                   335545113L
+#define isc_not_dba                          335545114L
+#define isc_no_cursor                        335545115L
+#define isc_dsql_window_incompat_frames      335545116L
+#define isc_dsql_window_range_multi_key      335545117L
+#define isc_dsql_window_range_inv_key_type   335545118L
+#define isc_dsql_window_frame_value_inv_type 335545119L
+#define isc_window_frame_value_invalid       335545120L
+#define isc_dsql_window_not_found            335545121L
+#define isc_dsql_window_cant_overr_part      335545122L
+#define isc_dsql_window_cant_overr_order     335545123L
+#define isc_dsql_window_cant_overr_frame     335545124L
+#define isc_dsql_window_duplicate            335545125L
+#define isc_sql_too_long                     335545126L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -2198,6 +2232,7 @@ const ISC_STATUS isc_err_max                          = 1261;
 #define isc_dsql_no_input_sqlda              336003109L
 #define isc_dsql_no_output_sqlda             336003110L
 #define isc_dsql_wrong_param_num             336003111L
+#define isc_dsql_invalid_drop_ss_clause      336003112L
 #define isc_dyn_filter_not_found             336068645L
 #define isc_dyn_func_not_found               336068649L
 #define isc_dyn_index_not_found              336068656L
@@ -2274,6 +2309,7 @@ const ISC_STATUS isc_err_max                          = 1261;
 #define isc_dyn_cant_use_zero_increment      336068896L
 #define isc_dyn_cant_use_in_foreignkey       336068897L
 #define isc_dyn_defvaldecl_package_func      336068898L
+#define isc_dyn_cant_use_zero_inc_ident      336068904L
 #define isc_gbak_unknown_switch              336330753L
 #define isc_gbak_page_size_missing           336330754L
 #define isc_gbak_page_size_toobig            336330755L
@@ -2604,7 +2640,7 @@ const ISC_STATUS isc_err_max                          = 1261;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1261
+#define isc_err_max                          1279
 
 #endif
 

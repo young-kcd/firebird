@@ -267,10 +267,7 @@ ValueExprNode* AggNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	if (dsqlAggregateFinder(aggFinder))
 	{
 		if (!visitor.window && visitor.dsqlScratch->scopeLevel == aggFinder.deepestLevel)
-		{
-			return PASS1_post_map(visitor.dsqlScratch, this,
-				visitor.context, visitor.partitionNode, visitor.orderNode);
-		}
+			return PASS1_post_map(visitor.dsqlScratch, this, visitor.context, visitor.windowNode);
 	}
 
 	for (NodeRef** i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
@@ -818,8 +815,22 @@ dsc* ListAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 
 AggNode* ListAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 {
-	return FB_NEW_POOL(getPool()) ListAggNode(getPool(), distinct,
+	thread_db* tdbb = JRD_get_thread_data();
+
+	AggNode* node = FB_NEW_POOL(getPool()) ListAggNode(getPool(), distinct,
 		doDsqlPass(dsqlScratch, arg), doDsqlPass(dsqlScratch, delimiter));
+
+	dsc argDesc;
+	node->arg->make(dsqlScratch, &argDesc);
+
+	CharSet* charSet = INTL_charset_lookup(tdbb, argDesc.getCharSet());
+
+	dsc desc;
+	desc.makeText(charSet->maxBytesPerChar(), argDesc.getCharSet());
+
+	node->setParameterType(dsqlScratch, &desc, false);
+
+	return node;
 }
 
 
@@ -1218,8 +1229,8 @@ void MaxMinAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 void MaxMinAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
-
 	++impure->vlux_count;
+
 	if (!impure->vlu_desc.dsc_dtype)
 	{
 		EVL_make_value(tdbb, desc, impure);
@@ -1465,6 +1476,8 @@ void CorrAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 
 bool CorrAggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 {
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+
 	dsc* desc = NULL;
 	dsc* desc2 = NULL;
 
@@ -1476,7 +1489,6 @@ bool CorrAggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 	if (request->req_flags & req_null)
 		return false;
 
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	++impure->vlux_count;
 
 	const double y = MOV_get_double(desc);
@@ -1650,6 +1662,8 @@ void RegrAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 
 bool RegrAggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 {
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+
 	dsc* desc = NULL;
 	dsc* desc2 = NULL;
 
@@ -1661,7 +1675,6 @@ bool RegrAggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 	if (request->req_flags & req_null)
 		return false;
 
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	++impure->vlux_count;
 
 	const double y = MOV_get_double(desc);
@@ -1820,6 +1833,8 @@ void RegrCountAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 
 bool RegrCountAggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 {
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+
 	dsc* desc = EVL_expr(tdbb, request, arg);
 	if (request->req_flags & req_null)
 		return false;
@@ -1828,7 +1843,6 @@ bool RegrCountAggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 	if (request->req_flags & req_null)
 		return false;
 
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	++impure->vlu_misc.vlu_int64;
 
 	return true;

@@ -16,3 +16,4 @@ libtool
 *.bak
 *.tmp
 src/dsql/parse.cpp
+.vscode/.browse.VC.db

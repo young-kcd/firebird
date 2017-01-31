@@ -491,7 +491,7 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch*
 	jrd_tra* transaction)
 {
 	Attachment* attachment = transaction->getAttachment();
-	const MetaName& userName = attachment->att_user->usr_user_name;
+	const MetaName& userName = attachment->att_user->getUserName();
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
 		DDL_TRIGGER_CREATE_PACKAGE, name, NULL);
@@ -512,6 +512,14 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch*
 
 		PKG.RDB$PACKAGE_HEADER_SOURCE.NULL = FALSE;
 		attachment->storeMetaDataBlob(tdbb, transaction, &PKG.RDB$PACKAGE_HEADER_SOURCE, source);
+
+		if (ssDefiner.specified)
+		{
+			PKG.RDB$SQL_SECURITY.NULL = FALSE;
+			PKG.RDB$SQL_SECURITY = ssDefiner.value ? FB_TRUE : FB_FALSE;
+		}
+		else
+			PKG.RDB$SQL_SECURITY.NULL = TRUE;
 	}
 	END_STORE
 
@@ -577,6 +585,12 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* 
 
 			if (!PKG.RDB$VALID_BODY_FLAG.NULL)
 				PKG.RDB$VALID_BODY_FLAG = FALSE;
+
+			if (ssDefiner.specified)
+			{
+				PKG.RDB$SQL_SECURITY.NULL = FALSE;
+				PKG.RDB$SQL_SECURITY = ssDefiner.value ? FB_TRUE : FB_FALSE;
+			}
 		END_MODIFY
 
 		owner = PKG.RDB$OWNER_NAME;

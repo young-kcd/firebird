@@ -29,6 +29,7 @@
 #include "../common/classes/RefCounted.h"
 #include "../common/classes/semaphore.h"
 #include "../common/classes/SyncObject.h"
+#include "../common/ThreadStart.h"
 #ifdef SUPERSERVER_V2
 #include "../jrd/sbm.h"
 #include "../jrd/pag.h"
@@ -85,7 +86,8 @@ class BufferControl : public pool_alloc<type_bcb>
 	BufferControl(MemoryPool& p, Firebird::MemoryStats& parentStats)
 		: bcb_bufferpool(&p),
 		  bcb_memory_stats(&parentStats),
-		  bcb_memory(p)
+		  bcb_memory(p),
+		  bcb_writer_fini(p, cache_writer, THREAD_medium)
 	{
 		bcb_database = NULL;
 		QUE_INIT(bcb_in_use);
@@ -144,17 +146,23 @@ public:
 	Firebird::SyncObject	bcb_syncLRU;
 	//Firebird::SyncObject	bcb_syncPageWrite;
 
+	typedef ThreadFinishSync<BufferControl*> BcbThreadSync;
+
+	static void cache_writer(BufferControl* bcb);
 	Firebird::Semaphore bcb_writer_sem;		// Wake up cache writer
 	Firebird::Semaphore bcb_writer_init;	// Cache writer initialization
-	Firebird::Semaphore bcb_writer_fini;	// Cache writer finalization
+	BcbThreadSync bcb_writer_fini;			// Cache writer finalization
 #ifdef SUPERSERVER_V2
+	static void cache_reader(BufferControl* bcb);
 	// the code in cch.cpp is not tested for semaphore instead event !!!
 	Firebird::Semaphore bcb_reader_sem;		// Wake up cache reader
 	Firebird::Semaphore bcb_reader_init;	// Cache reader initialization
-	Firebird::Semaphore bcb_reader_fini;	// Cache reader finalization
+	BcbThreadSync bcb_reader_fini;			// Cache reader finalization
 
 	PageBitmap*	bcb_prefetch;		// Bitmap of pages to prefetch
 #endif
+
+	void exceptionHandler(const Firebird::Exception& ex, BcbThreadSync::ThreadRoutine* routine);
 
 	bcb_repeat*	bcb_rpt;
 };
@@ -275,6 +283,7 @@ const int BDB_db_dirty 			= 0x1000;	// page must be written to database
 const int BDB_prefetch			= 0x4000;	// page has been prefetched but not yet referenced
 const int BDB_no_blocking_ast	= 0x8000;	// No blocking AST registered with page lock
 const int BDB_lru_chained		= 0x10000;	// buffer is in pending LRU chain
+const int BDB_nbak_state_lock	= 0x20000;	// nbak state lock should be released after buffer is written
 
 // bdb_ast_flags
 

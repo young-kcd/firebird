@@ -53,8 +53,7 @@ set(epp_boot_gds_files
     jrd/fun.epp
     jrd/grant.epp
     jrd/ini.epp
-    jrd/met.epp
-    jrd/pcmet.epp
+    jrd/met.epp    
     jrd/scl.epp
     jrd/Function.epp
 )
@@ -483,8 +482,7 @@ set(engine_generated_src
     jrd/Function.epp
     jrd/grant.epp
     jrd/ini.epp
-    jrd/met.epp
-    jrd/pcmet.epp
+    jrd/met.epp    
     jrd/scl.epp
     utilities/gstat/dba.epp
 )
@@ -502,7 +500,7 @@ add_library                 (boot_engine SHARED ${engine_generated_src_boot} ${V
 target_link_libraries       (boot_engine engine_common boot_alice boot_burp common boot_yvalve)
 set_output_directory        (boot_engine plugins CURRENT_DIR)
 set_exported_symbols        (boot_engine fbplugin)
-copy_and_rename_lib         (boot_engine Engine12)
+copy_and_rename_lib         (boot_engine Engine13)
 project_group               (boot_engine Boot)
 
 endif() # if (NOT CMAKE_CROSSCOMPILING)
@@ -514,7 +512,7 @@ endif() # if (NOT CMAKE_CROSSCOMPILING)
 
 add_library                 (engine SHARED ${engine_generated_src_master} ${VERSION_RC})
 target_link_libraries       (engine engine_common alice burp common yvalve)
-set_target_properties       (engine PROPERTIES OUTPUT_NAME Engine12)
+set_target_properties       (engine PROPERTIES OUTPUT_NAME Engine13)
 set_output_directory        (engine plugins)
 set_exported_symbols        (engine fbplugin)
 

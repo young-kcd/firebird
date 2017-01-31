@@ -94,10 +94,7 @@ namespace
 		{
 			if (!(csb_ptr && (m_csb = *csb_ptr)))
 			{
-				FB_SIZE_T count = 5;
-				if (view_csb)
-					count += view_csb->csb_rpt.getCapacity();
-				m_csb = CompilerScratch::newCsb(pool, count);
+				m_csb = FB_NEW_POOL(pool) CompilerScratch(pool);
 				m_csb->csb_g_flags |= flags;
 			}
 
@@ -669,7 +666,9 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, ULONG blr_length,
  **************************************/
 	SET_TDBB(tdbb);
 
-	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
+	MemoryPool& pool = *tdbb->getDefaultPool();
+	AutoPtr<CompilerScratch> csb(FB_NEW_POOL(pool) CompilerScratch(pool));
+
 	csb->csb_blr_reader = BlrReader(blr, blr_length);
 
 	if (internal_flag)
@@ -686,7 +685,7 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, ULONG blr_length,
 	if (csb->csb_blr_reader.getByte() != (UCHAR) blr_eoc)
 		PAR_syntax_error(csb, "end_of_command");
 
-	return csb;
+	return csb.release();
 }
 
 
@@ -1403,7 +1402,7 @@ SortNode* PAR_sort(thread_db* tdbb, CompilerScratch* csb, UCHAR expectedBlr,
 	if (count == 0 && nullForEmpty)
 		return NULL;
 
-	SortNode* sort = PAR_sort_internal(tdbb, csb, blrOp, count);
+	SortNode* sort = PAR_sort_internal(tdbb, csb, blrOp == blr_sort, count);
 
 	if (blrOp != blr_sort)
 		sort->unique = true;
@@ -1414,8 +1413,7 @@ SortNode* PAR_sort(thread_db* tdbb, CompilerScratch* csb, UCHAR expectedBlr,
 
 // Parse the internals of a sort clause. This is used for blr_sort, blr_project, blr_group_by
 // and blr_partition_by.
-SortNode* PAR_sort_internal(thread_db* tdbb, CompilerScratch* csb, UCHAR blrOp,
-	USHORT count)
+SortNode* PAR_sort_internal(thread_db* tdbb, CompilerScratch* csb, bool allClauses, USHORT count)
 {
 	SET_TDBB(tdbb);
 
@@ -1428,7 +1426,7 @@ SortNode* PAR_sort_internal(thread_db* tdbb, CompilerScratch* csb, UCHAR blrOp,
 
 	while (count-- > 0)
 	{
-		if (blrOp == blr_sort)
+		if (allClauses)
 		{
 			UCHAR code = csb->csb_blr_reader.getByte();
 

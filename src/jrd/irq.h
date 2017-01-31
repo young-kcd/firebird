@@ -106,6 +106,7 @@ enum irq_type_t
 	irq_l_check2,			// lookup constraint for index
 	irq_c_trg_perm,			// check if trig can ignore perm. checks
 	irq_get_role_name,		// get SQL role name
+	irq_get_priv_bit,		// get privilege bit by name
 	irq_is_admin_role, 		// check is current role admin or not
 	irq_get_att_class,		// get security class for current attachment
 	irq_format6,			// make a new format for a record
@@ -144,8 +145,6 @@ enum irq_type_t
 	irq_charset,			// DSQL/METD: lookup a character set
 	irq_domain,				// DSQL/METD: lookup a domain
 	irq_type,				// DSQL/METD: lookup a symbolic name in RDB$TYPES
-	irq_col_default,		// DSQL/METD: lookup default for a column
-	irq_domain_2,			// DSQL/METD: lookup a domain
 	irq_cs_name,			// DSQL/METD: lookup a charset name
 	irq_default_cs,			// DSQL/METD: lookup the default charset
 	irq_rel_ids,			// DSQL/METD: check relation/field ids
@@ -174,9 +173,11 @@ enum irq_type_t
 	irq_grant16,			// process grant option (domains)
 	irq_grant17,			// process grant option (database)
 	irq_grant18,			// process grant option (filters)
+	irq_grant19,			// process grant option (roles)
 	irq_l_curr_format,		// lookup table's current format
 
 	irq_linger,				// get database linger value
+	irq_dbb_ss_definer,		// get database sql security value
 
 	irq_MAX
 };

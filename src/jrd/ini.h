@@ -160,6 +160,13 @@ static const int relfields[] =
 #undef END_RELATION
 
 //******************************
+// SystemPrivileges.h
+//	should go before types.h
+//******************************
+
+#include "SystemPrivileges.h"
+
+//******************************
 // types.h
 //******************************
 

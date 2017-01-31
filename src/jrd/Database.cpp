@@ -48,11 +48,8 @@ namespace Jrd
 {
 	bool Database::onRawDevice() const
 	{
-#ifdef SUPPORT_RAW_DEVICES
-		return PIO_on_raw_device(dbb_filename);
-#else
-		return false;
-#endif
+		const PageSpace* const pageSpace = dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+		return pageSpace->onRawDevice();
 	}
 
 	AttNumber Database::generateAttachmentId() 
@@ -130,14 +127,6 @@ namespace Jrd
 		delete dbb_monitoring_data;
 		delete dbb_backup_manager;
 		delete dbb_crypto_manager;
-
-		while (dbb_active_threads)
-		{
-			thread_db* tdbb = dbb_active_threads;
-			tdbb->deactivate();
-			tdbb->setDatabase(NULL);
-		}
-
 		fb_assert(!locked());
 		// This line decrements the usage counter and may cause the destructor to be called.
 		// It should happen with the dbb_sync unlocked.
@@ -163,14 +152,19 @@ namespace Jrd
 
 	int Database::blocking_ast_sweep(void* ast_object)
 	{
-		Database* dbb = static_cast<Database*>(ast_object);
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION);
-
-		if ((dbb->dbb_flags & DBB_sweep_starting) && !(dbb->dbb_flags & DBB_sweep_in_progress))
+		try
 		{
-			dbb->dbb_flags &= ~DBB_sweep_starting;
-			LCK_release(tdbb, dbb->dbb_sweep_lock);
+			Database* dbb = static_cast<Database*>(ast_object);
+			AsyncContextHolder tdbb(dbb, FB_FUNCTION);
+
+			if ((dbb->dbb_flags & DBB_sweep_starting) && !(dbb->dbb_flags & DBB_sweep_in_progress))
+			{
+				dbb->dbb_flags &= ~DBB_sweep_starting;
+				LCK_release(tdbb, dbb->dbb_sweep_lock);
+			}
 		}
+		catch (const Exception&)
+		{} // no-op
 
 		return 0;
 	}

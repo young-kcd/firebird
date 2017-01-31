@@ -61,6 +61,7 @@
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/jrd_proto.h"
+#include "../jrd/scl_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/TriState.h"
 #include "../common/utils_proto.h"
@@ -88,7 +89,7 @@ typedef Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<USHORT, UCHAR> >
 #ifdef SUPERSERVER_V2
 static TraNumber bump_transaction_id(thread_db*, WIN*);
 #else
-static header_page* bump_transaction_id(thread_db*, WIN*);
+static header_page* bump_transaction_id(thread_db*, WIN*, bool);
 #endif
 static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, int state);
 static void expand_view_lock(thread_db* tdbb, jrd_tra*, jrd_rel*, UCHAR lock_type,
@@ -237,7 +238,13 @@ void TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request)
 void TRA_detach_request(Jrd::jrd_req* request)
 {
 	if (!request->req_transaction)
+	{
+		fb_assert(!request->req_savepoints);
 		return;
+	}
+
+	// Release stored looper savepoints
+	Savepoint::destroy(request->req_savepoints);
 
 	// Remove request from the doubly linked list
 	if (request->req_tra_next)
@@ -479,7 +486,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 			status_exception::raise(&st);
 
 		secContext->tra = NULL;
-		clearMap(tdbb->getDatabase()->dbb_config->getSecurityDatabase());
+		clearMappingCache(tdbb->getDatabase()->dbb_config->getSecurityDatabase(), MAPPING_CACHE);
 
 		transaction->eraseSecDbContext();
 	}
@@ -1467,16 +1474,25 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, TraNumber number, int 
 	WIN window(DB_PAGE_SPACE, -1);
 	tx_inv_page* tip = fetch_inventory_page(tdbb, &window, sequence, LCK_write);
 
+	UCHAR* address = tip->tip_transactions + byte;
+	const int old_state = ((*address) >> shift) & TRA_MASK;
+
 #ifdef SUPERSERVER_V2
 	CCH_MARK(tdbb, &window);
 	const ULONG generation = tip->tip_header.pag_generation;
 #else
-	CCH_MARK_MUST_WRITE(tdbb, &window);
+	if (!(dbb->dbb_flags & DBB_shared) || !transaction  ||
+		(transaction->tra_flags & TRA_write) ||
+		old_state != tra_active || state != tra_committed)
+	{
+		CCH_MARK_MUST_WRITE(tdbb, &window);
+	}
+	else
+		CCH_MARK(tdbb, &window);
 #endif
 
 	// set the state on the TIP page
 
-	UCHAR* address = tip->tip_transactions + byte;
 	*address &= ~(TRA_MASK << shift);
 	*address |= state << shift;
 
@@ -2004,7 +2020,7 @@ static TraNumber bump_transaction_id(thread_db* tdbb, WIN* window)
 #else
 
 
-static header_page* bump_transaction_id(thread_db* tdbb, WIN* window)
+static header_page* bump_transaction_id(thread_db* tdbb, WIN* window, bool dontWrite)
 {
 /**************************************
  *
@@ -2059,7 +2075,11 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN* window)
 
 	// Extend, if necessary, has apparently succeeded.  Next, update header page
 
-	CCH_MARK_MUST_WRITE(tdbb, window);
+	if (dontWrite && !new_tip)
+		CCH_MARK(tdbb, window);
+	else
+		CCH_MARK_MUST_WRITE(tdbb, window);
+
 	//dbb->assignLatestTransactionId(number);
 
 	Ods::writeNT(header, number);
@@ -2449,7 +2469,10 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 		new_number = dbb->generateTransactionId();
 	else
 	{
-		const header_page* const header = bump_transaction_id(tdbb, &window);
+		const bool dontWrite = (dbb->dbb_flags & DBB_shared) &&
+			(transaction->tra_flags & TRA_readonly);
+
+		const header_page* const header = bump_transaction_id(tdbb, &window, dontWrite);
 		new_number = Ods::getNT(header);
 	}
 #endif
@@ -3137,7 +3160,10 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	}
 	else
 	{
-		const header_page* header = bump_transaction_id(tdbb, &window);
+		const bool dontWrite = (dbb->dbb_flags & DBB_shared) &&
+			(trans->tra_flags & TRA_readonly);
+
+		const header_page* header = bump_transaction_id(tdbb, &window, dontWrite);
 		number = Ods::getNT(header);
 		oldest = Ods::getOIT(header);
 		oldest_active = Ods::getOAT(header);
@@ -3628,6 +3654,40 @@ void jrd_tra::rollforwardSavepoint(thread_db* tdbb)
 	}
 }
 
+void jrd_tra::checkBlob(thread_db* tdbb, const bid* blob_id)
+{
+	USHORT rel_id = blob_id->bid_internal.bid_relation_id;
+
+	if (tra_attachment->isGbak() ||
+		(tra_attachment->att_user &&
+		 tra_attachment->att_user->locksmith(tdbb, SELECT_ANY_OBJECT_IN_DATABASE)) ||
+		rel_id == 0)
+	{
+		return;
+	}
+
+	if (!tra_blobs->locate(blob_id->bid_temp_id()))
+	{
+		vec<jrd_rel*>* vector = tra_attachment->att_relations;
+		jrd_rel* blb_relation;
+
+		if (rel_id < vector->count() &&	(blb_relation = (*vector)[rel_id]))
+		{
+			if (blb_relation->rel_security_name.isEmpty())
+				MET_scan_relation(tdbb, blb_relation);
+
+			SecurityClass* s_class = SCL_get_class(tdbb, blb_relation->rel_security_name.c_str());
+
+			if (s_class && !s_class->scl_blb_access)
+			{
+				SCL_check_access(tdbb, s_class, 0, 0, NULL, SCL_select, SCL_object_table, false,
+					blb_relation->rel_name);
+				s_class->scl_blb_access = true;
+			}
+		}
+	}
+}
+
 /// class TraceSweepEvent
 
 TraceSweepEvent::TraceSweepEvent(thread_db* tdbb)
@@ -3645,7 +3705,7 @@ TraceSweepEvent::TraceSweepEvent(thread_db* tdbb)
 	gds__log("Sweep is started by %s\n"
 		"\tDatabase \"%s\" \n"
 		"\tOIT %" SQUADFORMAT", OAT %" SQUADFORMAT", OST %" SQUADFORMAT", Next %" SQUADFORMAT,
-		att->att_user->usr_user_name.c_str(),
+		att->att_user ? att->att_user->getUserName().c_str() : "<Unknown user>",
 		att->att_filename.c_str(),
 		m_sweep_info.getOIT(),
 		m_sweep_info.getOAT(),

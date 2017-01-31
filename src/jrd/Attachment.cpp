@@ -601,9 +601,6 @@ void Jrd::Attachment::detachLocks()
 	if (!att_long_locks)
 		return;
 
-	Sync lckSync(&att_database->dbb_lck_sync, "Attachment::detachLocks");
-	lckSync.lock(SYNC_EXCLUSIVE);
-
 	Lock* long_lock = att_long_locks;
 	while (long_lock)
 		long_lock = long_lock->detach();
@@ -727,12 +724,21 @@ void AttachmentsRefHolder::debugHelper(const char* from)
 	RefDeb(DEB_RLS_JATT, from);
 }
 
-void StableAttachmentPart::manualLock(ULONG& flags)
+void StableAttachmentPart::manualLock(ULONG& flags, const ULONG whatLock)
 {
-	fb_assert(!(flags & ATT_manual_lock));
-	asyncMutex.enter(FB_FUNCTION);
-	mainMutex.enter(FB_FUNCTION);
-	flags |= (ATT_manual_lock | ATT_async_manual_lock);
+	fb_assert(!(flags & whatLock));
+
+	if (whatLock & ATT_async_manual_lock)
+	{
+		asyncMutex.enter(FB_FUNCTION);
+		flags |= ATT_async_manual_lock;
+	}
+
+	if (whatLock & ATT_manual_lock)
+	{
+		mainMutex.enter(FB_FUNCTION);
+		flags |= ATT_manual_lock;
+	}
 }
 
 void StableAttachmentPart::manualUnlock(ULONG& flags)
@@ -758,3 +764,4 @@ JAttachment* Attachment::getInterface() throw()
 {
 	return att_stable->getInterface();
 }
+

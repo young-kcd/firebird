@@ -79,12 +79,14 @@ public:
 		}
 	}
 
-/*	void changeDefaultConfig(Config* newConfig)
+/*	It was a kind of getting ready for changing config remotely...
+
+	void changeDefaultConfig(Config* newConfig)
 	{
 		defaultConfig = newConfig;
 	}
  */
-	const Firebird::RefPtr<Config>& getDefaultConfig() const
+	Firebird::RefPtr<const Config>& getDefaultConfig()
 	{
 		return defaultConfig;
 	}
@@ -102,7 +104,7 @@ public:
 	}
 
 private:
-	Firebird::RefPtr<Config> defaultConfig;
+	Firebird::RefPtr<const Config> defaultConfig;
 
     ConfigImpl(const ConfigImpl&);
     void operator=(const ConfigImpl&);
@@ -203,6 +205,9 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_BOOLEAN,		"RemoteAccess",				(ConfigValue) true},
 	{TYPE_BOOLEAN,		"IPv6V6Only",				(ConfigValue) false},
 	{TYPE_BOOLEAN,		"WireCompression",			(ConfigValue) false},
+	{TYPE_INTEGER,		"MaxIdentifierByteLength",	(ConfigValue) -1},
+	{TYPE_INTEGER,		"MaxIdentifierCharLength",	(ConfigValue) -1},
+	{TYPE_BOOLEAN,		"CryptSecurityDatabase",	(ConfigValue) false},
 	{TYPE_INTEGER,		"SnapshotsMemSize",			(ConfigValue) 65536}, // bytes
 	{TYPE_INTEGER,		"TpcBlockSize",				(ConfigValue) 4194304}, // bytes
 	{TYPE_BOOLEAN,		"ReadConsistency",			(ConfigValue) true}
@@ -267,7 +272,7 @@ Config::Config(const ConfigFile& file, const Config& base, const Firebird::PathN
 	notifyDatabase = notify;
 }
 
-void Config::notify()
+void Config::notify() const
 {
 	if (!notifyDatabase.hasData())
 		return;
@@ -275,7 +280,7 @@ void Config::notify()
 		notifyDatabase.erase();
 }
 
-void Config::merge(Firebird::RefPtr<Config>& config, const Firebird::string* dpbConfig)
+void Config::merge(Firebird::RefPtr<const Config>& config, const Firebird::string* dpbConfig)
 {
 	if (dpbConfig && dpbConfig->hasData())
 	{
@@ -349,7 +354,7 @@ Config::~Config()
  *	Public interface
  */
 
-const Firebird::RefPtr<Config>& Config::getDefaultConfig()
+const Firebird::RefPtr<const Config>& Config::getDefaultConfig()
 {
 	return firebirdConf().getDefaultConfig();
 }
@@ -820,6 +825,31 @@ bool Config::getRemoteAccess() const
 bool Config::getWireCompression() const
 {
 	return get<bool>(KEY_WIRE_COMPRESSION);
+}
+
+int Config::getMaxIdentifierByteLength() const
+{
+	int rc = get<int>(KEY_MAX_IDENTIFIER_BYTE_LENGTH);
+
+	if (rc < 0)
+		rc = MAX_SQL_IDENTIFIER_LEN;
+
+	return MIN(MAX(rc, 1), MAX_SQL_IDENTIFIER_LEN);
+}
+
+int Config::getMaxIdentifierCharLength() const
+{
+	int rc = get<int>(KEY_MAX_IDENTIFIER_CHAR_LENGTH);
+
+	if (rc < 0)
+		rc = METADATA_IDENTIFIER_CHAR_LEN;
+
+	return MIN(MAX(rc, 1), METADATA_IDENTIFIER_CHAR_LEN);
+}
+
+bool Config::getCryptSecurityDatabase() const
+{
+	return get<bool>(KEY_ENCRYPT_SECURITY_DATABASE);
 }
 
 bool Config::getReadConsistency() const

@@ -65,5 +65,6 @@ Jrd::FieldNode* MAKE_field(Jrd::dsql_ctx*, Jrd::dsql_fld*, Jrd::ValueListNode*);
 Jrd::FieldNode* MAKE_field_name(const char*);
 Jrd::dsql_par* MAKE_parameter(Jrd::dsql_msg*, bool, bool, USHORT, const Jrd::ValueExprNode*);
 void MAKE_parameter_names(Jrd::dsql_par*, const Jrd::ValueExprNode*);
+Jrd::LiteralNode* MAKE_system_privilege(const char*);
 
 #endif // DSQL_MAKE_PROTO_H

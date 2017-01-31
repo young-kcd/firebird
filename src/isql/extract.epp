@@ -59,7 +59,6 @@
 #include "../jrd/ods.h"
 #include "../common/utils_proto.h"
 #include "../jrd/constants.h"
-//#include "../common/classes/ImplementHelper.h"
 
 using MsgFormat::SafeArg;
 
@@ -303,6 +302,7 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 	bool first = true;
 	SCHAR char_sets[86];
 	rel_t rel_type = rel_persistent;
+	char ss[28] = "";
 
 	// Query to obtain relation detail information
 
@@ -349,6 +349,14 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			}
 			else
 				isqlGlob.printf("%s ", new_name ? new_name : relation_name);
+
+			if (!REL.RDB$SQL_SECURITY.NULL)
+			{
+				if (REL.RDB$SQL_SECURITY)
+					strcpy(ss, "SQL SECURITY DEFINER");
+				else
+					strcpy(ss, "SQL SECURITY INVOKER");
+			}
 
 			if (!REL.RDB$EXTERNAL_FILE.NULL)
 			{
@@ -401,8 +409,11 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 		}
 		else
 		{
-			if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SCALE))
+			if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE,
+					FLD.RDB$FIELD_SUB_TYPE, FLD.RDB$FIELD_PRECISION, FLD.RDB$FIELD_SCALE))
+			{
 				return FINI_ERROR;
+			}
 
 			if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
 			{
@@ -431,7 +442,8 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 			}
 
 			// International character sets
-			if ((FLD.RDB$FIELD_TYPE == T_CHAR || FLD.RDB$FIELD_TYPE == VARCHAR ||
+			if ((((FLD.RDB$FIELD_TYPE == T_CHAR || FLD.RDB$FIELD_TYPE == VARCHAR) &&
+				  FLD.RDB$FIELD_SUB_TYPE == fb_text_subtype_text) ||
 				 FLD.RDB$FIELD_TYPE == BLOB) &&
 				!FLD.RDB$CHARACTER_SET_ID.NULL)
 			{
@@ -555,10 +567,13 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 	if (first) // we extracted nothing
 		return FINI_ERROR;
 
-	if (rel_type == rel_global_temp_preserve)
-		isqlGlob.printf(")%sON COMMIT PRESERVE ROWS", NEWLINE);
-	else if (rel_type == rel_global_temp_delete)
-		isqlGlob.printf(")%sON COMMIT DELETE ROWS", NEWLINE);
+	const char* gtt_scope = (rel_type == rel_global_temp_preserve) ? "ON COMMIT PRESERVE ROWS" :
+							((rel_type == rel_global_temp_delete) ? "ON COMMIT DELETE ROWS" : "");
+
+	const char* opt_delim = *gtt_scope && *ss ? ", " : "";
+
+	if (*gtt_scope || *ss)
+		isqlGlob.printf(")%s%s%s%s", NEWLINE, gtt_scope, opt_delim , ss);
 	else
 		isqlGlob.printf(")");
 
@@ -789,8 +804,11 @@ static void get_procedure_args(const char* proc_name)
 			}
 			else
 			{
-				if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SCALE))
+				if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SUB_TYPE,
+						FLD.RDB$FIELD_PRECISION, FLD.RDB$FIELD_SCALE))
+				{
 					return; // ps_ERR;
+				}
 
 				// Changed this to return RDB$CHARACTER_LENGTH if available
 				// Fix for Bug #122563
@@ -804,7 +822,9 @@ static void get_procedure_args(const char* proc_name)
 				}
 
 				// Show international character sets and collations
-				if (!FLD.RDB$COLLATION_ID.NULL || !FLD.RDB$CHARACTER_SET_ID.NULL)
+				if ((!FLD.RDB$COLLATION_ID.NULL || !FLD.RDB$CHARACTER_SET_ID.NULL) &&
+					!(((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) &&
+					  FLD.RDB$FIELD_SUB_TYPE != fb_text_subtype_text))
 				{
 					char_sets[0] = 0;
 
@@ -1005,8 +1025,11 @@ static void get_function_args_ods12(const char* func_name, USHORT out_arg)
 			}
 			else
 			{
-				if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SCALE))
+				if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SUB_TYPE,
+						FLD.RDB$FIELD_PRECISION, FLD.RDB$FIELD_SCALE))
+				{
 					return; // ps_ERR;
+				}
 
 				// Changed this to return RDB$CHARACTER_LENGTH if available
 				// Fix for Bug #122563
@@ -1020,7 +1043,9 @@ static void get_function_args_ods12(const char* func_name, USHORT out_arg)
 				}
 
 				// Show international character sets and collations
-				if (!FLD.RDB$COLLATION_ID.NULL || !FLD.RDB$CHARACTER_SET_ID.NULL)
+				if ((!FLD.RDB$COLLATION_ID.NULL || !FLD.RDB$CHARACTER_SET_ID.NULL) &&
+					!(((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) &&
+					  FLD.RDB$FIELD_SUB_TYPE != fb_text_subtype_text))
 				{
 					char_sets[0] = 0;
 
@@ -1150,10 +1175,13 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 				{
 					IUTILS_copy_SQL_id (XX.RDB$ROLE_NAME, SQL_identifier, DBL_QUOTE);
-					isqlGlob.printf("CREATE ROLE %s;%s", SQL_identifier, NEWLINE);
+					isqlGlob.printf("CREATE ROLE %s", SQL_identifier);
 				}
 				else
-					isqlGlob.printf("CREATE ROLE %s;%s", XX.RDB$ROLE_NAME, NEWLINE);
+					isqlGlob.printf("CREATE ROLE %s", XX.RDB$ROLE_NAME);
+
+				SHOW_system_privileges(XX.RDB$ROLE_NAME, " SET SYSTEM PRIVILEGES TO", false);
+				isqlGlob.printf(";%s", NEWLINE);
 			}
 
 		END_FOR
@@ -1529,6 +1557,12 @@ static void list_procedure_bodies()
 			isqlGlob.printf("EXTERNAL NAME %s%s", SQL_identifier2, NEWLINE);
 		}
 
+		if (!PRC.RDB$SQL_SECURITY.NULL)
+		{
+			const char* ss = PRC.RDB$SQL_SECURITY ? "SQL SECURITY DEFINER" : "SQL SECURITY INVOKER";
+			isqlGlob.printf("%s%s", ss, NEWLINE);
+		}
+
 		if (!PRC.RDB$ENGINE_NAME.NULL)
 		{
 			fb_utils::exact_name(PRC.RDB$ENGINE_NAME);
@@ -1655,6 +1689,12 @@ static void list_all_triggers()
 				 SHOW_trigger_action(TRG.RDB$TRIGGER_TYPE).c_str(), TRG.RDB$TRIGGER_SEQUENCE,
 				 NEWLINE);
 
+		if (!TRG.RDB$SQL_SECURITY.NULL)
+		{
+			const char* ss = TRG.RDB$SQL_SECURITY ? "SQL SECURITY DEFINER" : "SQL SECURITY INVOKER";
+			isqlGlob.printf("%s%s", ss, NEWLINE);
+		}
+
 		if (!TRG.RDB$ENTRYPOINT.NULL)
 		{
 			fb_utils::exact_name(TRG.RDB$ENTRYPOINT);
@@ -1733,6 +1773,12 @@ static void list_all_triggers()
 				 (TRG.RDB$TRIGGER_INACTIVE ? "INACTIVE" : "ACTIVE"),
 				 SHOW_trigger_action(TRG.RDB$TRIGGER_TYPE).c_str(), TRG.RDB$TRIGGER_SEQUENCE,
 				 NEWLINE);
+
+		if (!TRG.RDB$SQL_SECURITY.NULL)
+		{
+			const char* ss = TRG.RDB$SQL_SECURITY ? "SQL SECURITY DEFINER" : "SQL SECURITY INVOKER";
+			isqlGlob.printf("%s%s", ss, NEWLINE);
+		}
 
 		if (!TRG.RDB$ENTRYPOINT.NULL)
 		{
@@ -2043,6 +2089,15 @@ static void list_create_db()
 		return;
 	END_ERROR;
 
+	FOR DBPSS IN RDB$DATABASE
+		WITH DBPSS.RDB$SQL_SECURITY NOT MISSING
+		AND DBPSS.RDB$SQL_SECURITY == FB_TRUE
+		isqlGlob.printf("%sALTER DATABASE SET DEFAULT SQL SECURITY DEFINER%s", NEWLINE, isqlGlob.global_Term);
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(fbStatus);
+		return;
+	END_ERROR;
 
 	if (nodb)
 		isqlGlob.printf(" */%s", NEWLINE);
@@ -2193,8 +2248,11 @@ static void list_domain_table(const SCHAR* table_name, SSHORT default_char_set_i
 
 		isqlGlob.printf("CREATE DOMAIN %s AS ", FLD.RDB$FIELD_NAME);
 
-		if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SCALE))
+		if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SUB_TYPE,
+				FLD.RDB$FIELD_PRECISION, FLD.RDB$FIELD_SCALE))
+		{
 			return; // ps_ERR;
+		}
 
 		if (FLD.RDB$FIELD_TYPE == BLOB)
 		{
@@ -2223,7 +2281,9 @@ static void list_domain_table(const SCHAR* table_name, SSHORT default_char_set_i
 		// do, then the domain syntax when printed is not correct.
 
 		// Since the character set is part of the field type, display that information now.
-		if (!FLD.RDB$CHARACTER_SET_ID.NULL)
+		if (!FLD.RDB$CHARACTER_SET_ID.NULL &&
+			!(((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) &&
+			  FLD.RDB$FIELD_SUB_TYPE != fb_text_subtype_text))
 		{
 
 			char_sets[0] = 0;
@@ -2315,8 +2375,11 @@ static void list_domains(SSHORT default_char_set_id)
 		else
 			isqlGlob.printf("CREATE DOMAIN %s AS ", FLD.RDB$FIELD_NAME);
 
-		if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SCALE))
+		if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SUB_TYPE,
+				FLD.RDB$FIELD_PRECISION, FLD.RDB$FIELD_SCALE))
+		{
 			return; // ps_ERR;
+		}
 
 		if (FLD.RDB$FIELD_TYPE == BLOB)
 		{
@@ -2346,7 +2409,9 @@ static void list_domains(SSHORT default_char_set_id)
 		// do, then the domain syntax when printed is not correct.
 
 		// Since the character set is part of the field type, display that information now.
-		if (!FLD.RDB$CHARACTER_SET_ID.NULL)
+		if (!FLD.RDB$CHARACTER_SET_ID.NULL &&
+			!(((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) &&
+			  FLD.RDB$FIELD_SUB_TYPE != fb_text_subtype_text))
 		{
 			char_sets[0] = 0;
 			if ((FLD.RDB$CHARACTER_SET_ID != default_char_set_id) ||
@@ -2533,8 +2598,11 @@ static void listRelationComputed(LegacyTables flag, SSHORT default_char_set_id)
 			}
 			else
 			{
-				if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SCALE))
+				if (!ISQL_printNumericType(FLD.RDB$FIELD_NAME, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SUB_TYPE,
+						FLD.RDB$FIELD_PRECISION, FLD.RDB$FIELD_SCALE))
+				{
 					return;
+				}
 
 				if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR))
 				{
@@ -2563,7 +2631,8 @@ static void listRelationComputed(LegacyTables flag, SSHORT default_char_set_id)
 				}
 
 				// International character sets
-				if ((FLD.RDB$FIELD_TYPE == T_CHAR || FLD.RDB$FIELD_TYPE == VARCHAR ||
+				if ((((FLD.RDB$FIELD_TYPE == T_CHAR || FLD.RDB$FIELD_TYPE == VARCHAR) &&
+					  FLD.RDB$FIELD_SUB_TYPE == fb_text_subtype_text) ||
 					 FLD.RDB$FIELD_TYPE == BLOB) &&
 					!FLD.RDB$CHARACTER_SET_ID.NULL)
 				{
@@ -3086,6 +3155,12 @@ static void list_functions_ods12_bodies()
 			isqlGlob.printf("EXTERNAL NAME %s%s", SQL_identifier2, NEWLINE);
 		}
 
+		if (!FUN.RDB$SQL_SECURITY.NULL)
+		{
+			const char* ss = FUN.RDB$SQL_SECURITY ? "SQL SECURITY DEFINER" : "SQL SECURITY INVOKER";
+			isqlGlob.printf("%s%s", ss, NEWLINE);
+		}
+
 		if (!FUN.RDB$ENGINE_NAME.NULL)
 		{
 			fb_utils::exact_name(FUN.RDB$ENGINE_NAME);
@@ -3369,7 +3444,11 @@ static void list_package_headers()
 				 PACK.RDB$PACKAGE_NAME,
 				 PACK.RDB$OWNER_NAME,
 				 NEWLINE);
-		isqlGlob.printf("CREATE PACKAGE %s AS%s", SQL_identifier, NEWLINE);
+
+		const char* ss = PACK.RDB$SQL_SECURITY.NULL ? "" :
+						(PACK.RDB$SQL_SECURITY ? " SQL SECURITY DEFINER" : " SQL SECURITY INVOKER");
+
+		isqlGlob.printf("CREATE PACKAGE %s%s AS%s", SQL_identifier, ss, NEWLINE);
 
 		if (!PACK.RDB$PACKAGE_HEADER_SOURCE.NULL)
 			SHOW_print_metadata_text_blob(isqlGlob.Out, &PACK.RDB$PACKAGE_HEADER_SOURCE);

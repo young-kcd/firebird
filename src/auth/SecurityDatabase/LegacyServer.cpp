@@ -134,6 +134,7 @@ public:
 	// IServer implementation
 	int authenticate(Firebird::CheckStatusWrapper* status, Firebird::IServerBlock* sBlock,
 		Firebird::IWriter* writerInterface);
+	void setDbCryptCallback(Firebird::CheckStatusWrapper*, Firebird::ICryptKeyCallback*) { }	// ignore
 	int release();
 
 private:
@@ -289,7 +290,7 @@ void SecurityDatabase::prepare()
 	dpb.insertByte(isc_dpb_sec_attach, TRUE);
 
 	// Attach as SYSDBA
-	dpb.insertString(isc_dpb_trusted_auth, SYSDBA_USER_NAME, fb_strlen(SYSDBA_USER_NAME));
+	dpb.insertString(isc_dpb_trusted_auth, DBA_USER_NAME, fb_strlen(DBA_USER_NAME));
 
 	// Do not use other providers except current engine
 	const char* providers = "Providers=" CURRENT_ENGINE;
@@ -368,7 +369,7 @@ int SecurityDatabase::verify(IWriter* authBlock, IServerBlock* sBlock)
 		}
 		if (!legacyHash)
 		{
-			return IAuth::AUTH_FAILED;
+			return IAuth::AUTH_CONTINUE;
 		}
 	}
 

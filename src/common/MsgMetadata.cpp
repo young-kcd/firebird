@@ -129,7 +129,7 @@ void MetadataBuilder::setCharSet(CheckStatusWrapper* status, unsigned index, uns
 	}
 }
 
-void MetadataBuilder::setScale(CheckStatusWrapper* status, unsigned index, unsigned scale)
+void MetadataBuilder::setScale(CheckStatusWrapper* status, unsigned index, int scale)
 {
 	try
 	{

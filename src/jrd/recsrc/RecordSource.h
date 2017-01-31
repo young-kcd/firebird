@@ -30,6 +30,7 @@
 #include "../jrd/req.h"
 #include "../jrd/rse.h"
 #include "../jrd/inf_pub.h"
+#include "../jrd/evl_proto.h"
 
 namespace Jrd
 {
@@ -125,14 +126,14 @@ namespace Jrd
 	public:
 		RecordStream(CompilerScratch* csb, StreamType stream, const Format* format = NULL);
 
-		virtual bool refetchRecord(thread_db* tdbb) const;
-		virtual bool lockRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
-		virtual void markRecursive();
-		virtual void invalidateRecords(jrd_req* request) const;
+		void markRecursive() override;
+		void invalidateRecords(jrd_req* request) const override;
 
-		virtual void findUsedStreams(StreamList& streams, bool expandAll = false) const;
-		virtual void nullRecords(thread_db* tdbb) const;
+		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
+		void nullRecords(thread_db* tdbb) const override;
 
 	protected:
 		const StreamType m_stream;
@@ -148,13 +149,13 @@ namespace Jrd
 		FullTableScan(CompilerScratch* csb, const Firebird::string& alias,
 					  StreamType stream, jrd_rel* relation);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
 	private:
 		const Firebird::string m_alias;
@@ -172,13 +173,13 @@ namespace Jrd
 		BitmapTableScan(CompilerScratch* csb, const Firebird::string& alias,
 						StreamType stream, jrd_rel* relation, InversionNode* inversion);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
 	private:
 		const Firebird::string m_alias;
@@ -207,13 +208,13 @@ namespace Jrd
 					   StreamType stream, jrd_rel* relation,
 					   InversionNode* index, USHORT keyLength);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
 		void setInversion(InversionNode* inversion, BoolExprNode* condition)
 		{
@@ -252,15 +253,15 @@ namespace Jrd
 		ExternalTableScan(CompilerScratch* csb, const Firebird::string& alias,
 						  StreamType stream, jrd_rel* relation);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
 	private:
 		jrd_rel* const m_relation;
@@ -273,15 +274,15 @@ namespace Jrd
 		VirtualTableScan(CompilerScratch* csb, const Firebird::string& alias,
 						 StreamType stream, jrd_rel* relation);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
 	protected:
 		virtual const Format* getFormat(thread_db* tdbb, jrd_rel* relation) const = 0;
@@ -306,15 +307,15 @@ namespace Jrd
 					  const jrd_prc* procedure, const ValueListNode* sourceList,
 					  const ValueListNode* targetList, MessageNode* message);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
 	private:
 		void assignParams(thread_db* tdbb, const dsc* from_desc, const dsc* flag_desc,
@@ -335,21 +336,21 @@ namespace Jrd
 	public:
 		SingularStream(CompilerScratch* csb, RecordSource* next);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
-		void markRecursive();
-		void invalidateRecords(jrd_req* request) const;
+		void markRecursive() override;
+		void invalidateRecords(jrd_req* request) const override;
 
-		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
-		void nullRecords(thread_db* tdbb) const;
+		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
+		void nullRecords(thread_db* tdbb) const override;
 
 	private:
 		void doGetRecord(thread_db* tdbb) const;
@@ -363,21 +364,21 @@ namespace Jrd
 	public:
 		LockedStream(CompilerScratch* csb, RecordSource* next);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
-		void markRecursive();
-		void invalidateRecords(jrd_req* request) const;
+		void markRecursive() override;
+		void invalidateRecords(jrd_req* request) const override;
 
-		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
-		void nullRecords(thread_db* tdbb) const;
+		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
+		void nullRecords(thread_db* tdbb) const override;
 
 	private:
 		NestConst<RecordSource> m_next;
@@ -393,23 +394,23 @@ namespace Jrd
 	public:
 		FirstRowsStream(CompilerScratch* csb, RecordSource* next, ValueExprNode* value);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
-		void markRecursive();
-		void invalidateRecords(jrd_req* request) const;
+		void markRecursive() override;
+		void invalidateRecords(jrd_req* request) const override;
 
-		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
-		void nullRecords(thread_db* tdbb) const;
+		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
+		void nullRecords(thread_db* tdbb) const override;
 
-		void setAnyBoolean(BoolExprNode* anyBoolean, bool ansiAny, bool ansiNot)
+		void setAnyBoolean(BoolExprNode* anyBoolean, bool ansiAny, bool ansiNot) override
 		{
 			m_next->setAnyBoolean(anyBoolean, ansiAny, ansiNot);
 		}
@@ -429,23 +430,23 @@ namespace Jrd
 	public:
 		SkipRowsStream(CompilerScratch* csb, RecordSource* next, ValueExprNode* value);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
-		void markRecursive();
-		void invalidateRecords(jrd_req* request) const;
+		void markRecursive() override;
+		void invalidateRecords(jrd_req* request) const override;
 
-		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
-		void nullRecords(thread_db* tdbb) const;
+		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
+		void nullRecords(thread_db* tdbb) const override;
 
-		void setAnyBoolean(BoolExprNode* anyBoolean, bool ansiAny, bool ansiNot)
+		void setAnyBoolean(BoolExprNode* anyBoolean, bool ansiAny, bool ansiNot) override
 		{
 			m_next->setAnyBoolean(anyBoolean, ansiAny, ansiNot);
 		}
@@ -460,23 +461,23 @@ namespace Jrd
 	public:
 		FilteredStream(CompilerScratch* csb, RecordSource* next, BoolExprNode* boolean);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
-		void markRecursive();
-		void invalidateRecords(jrd_req* request) const;
+		void markRecursive() override;
+		void invalidateRecords(jrd_req* request) const override;
 
-		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
-		void nullRecords(thread_db* tdbb) const;
+		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
+		void nullRecords(thread_db* tdbb) const override;
 
-		void setAnyBoolean(BoolExprNode* anyBoolean, bool ansiAny, bool ansiNot)
+		void setAnyBoolean(BoolExprNode* anyBoolean, bool ansiAny, bool ansiNot) override
 		{
 			fb_assert(!m_anyBoolean);
 			m_anyBoolean = anyBoolean;
@@ -554,23 +555,23 @@ namespace Jrd
 
 		SortedStream(CompilerScratch* csb, RecordSource* next, SortMap* map);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
-		void markRecursive();
-		void invalidateRecords(jrd_req* request) const;
+		void markRecursive() override;
+		void invalidateRecords(jrd_req* request) const override;
 
-		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
-		void nullRecords(thread_db* tdbb) const;
+		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
+		void nullRecords(thread_db* tdbb) const override;
 
-		void setAnyBoolean(BoolExprNode* anyBoolean, bool ansiAny, bool ansiNot)
+		void setAnyBoolean(BoolExprNode* anyBoolean, bool ansiAny, bool ansiNot) override
 		{
 			m_next->setAnyBoolean(anyBoolean, ansiAny, ansiNot);
 		}
@@ -601,103 +602,277 @@ namespace Jrd
 	class SlidingWindow
 	{
 	public:
-		SlidingWindow(thread_db* aTdbb, const BaseBufferedStream* aStream,
-			const NestValueArray* aGroup, jrd_req* aRequest);
+		SlidingWindow(thread_db* aTdbb, const BaseBufferedStream* aStream, jrd_req* request,
+			FB_UINT64 aPartitionStart, FB_UINT64 aPartitionEnd,
+			FB_UINT64 aFrameStart, FB_UINT64 aFrameEnd);
 		~SlidingWindow();
 
-		bool move(SINT64 delta);
+		FB_UINT64 getPartitionStart() const
+		{
+			return partitionStart;
+		}
+
+		FB_UINT64 getPartitionEnd() const
+		{
+			return partitionEnd;
+		}
+
+		FB_UINT64 getPartitionSize() const
+		{
+			return partitionEnd - partitionStart + 1;
+		}
+
+		FB_UINT64 getFrameStart() const
+		{
+			return frameStart;
+		}
+
+		FB_UINT64 getFrameEnd() const
+		{
+			return frameEnd;
+		}
+
+		FB_UINT64 getFrameSize() const
+		{
+			return frameEnd - frameStart + 1;
+		}
+
+		FB_UINT64 getRecordPosition() const
+		{
+			return savedPosition;
+		}
+
+		bool moveWithinPartition(SINT64 delta);
+		bool moveWithinFrame(SINT64 delta);
 
 	private:
 		thread_db* tdbb;
 		const BaseBufferedStream* const stream;
-		const NestValueArray* group;
-		jrd_req* request;
-		Firebird::Array<impure_value> partitionKeys;
-		bool moved;
+		FB_UINT64 partitionStart;
+		FB_UINT64 partitionEnd;
+		FB_UINT64 frameStart;
+		FB_UINT64 frameEnd;
 		FB_UINT64 savedPosition;
+		bool moved;
 	};
 
-	class AggregatedStream : public RecordStream
+	template <typename ThisType, typename NextType>
+	class BaseAggWinStream : public RecordStream
 	{
+	protected:
 		enum State
 		{
-			STATE_PROCESS_EOF = 0,	// We processed everything now process (EOF)
-			STATE_PENDING,			// Values are pending from a prior fetch
-			STATE_EOF_FOUND,		// We encountered EOF from the last attempted fetch
-			STATE_GROUPING			// Entering EVL group before fetching the first record
+			STATE_EOF,			// We processed everything now process EOF
+			STATE_FETCHED,		// Values are pending from a prior fetch
+			STATE_GROUPING		// Entering EVL group before fetching the first record
 		};
 
 		struct Impure : public RecordSource::Impure
 		{
+			impure_value* groupValues;
 			State state;
-			FB_UINT64 pending;
-			impure_value* impureValues;
+		};
+
+		struct DummyAdjustFunctor
+		{
+			void operator ()(impure_value* target)
+			{
+			}
 		};
 
 	public:
-		AggregatedStream(thread_db* tdbb, CompilerScratch* csb, StreamType stream,
-			const NestValueArray* group, MapNode* map, BaseBufferedStream* next,
-			const NestValueArray* order);
+		BaseAggWinStream(thread_db* tdbb, CompilerScratch* csb, StreamType stream,
+			const NestValueArray* group, MapNode* groupMap, bool oneRowWhenEmpty, NextType* next);
 
+	public:
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
+
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
+
+		void markRecursive() override;
+		void invalidateRecords(jrd_req* request) const override;
+
+		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
+
+	protected:
+		Impure* getImpure(jrd_req* request) const
+		{
+			return request->getImpure<typename ThisType::Impure>(m_impure);
+		}
+
+		bool evaluateGroup(thread_db* tdbb) const;
+
+		void aggInit(thread_db* tdbb, jrd_req* request, const MapNode* map) const;
+		bool aggPass(thread_db* tdbb, jrd_req* request,
+			const NestValueArray& sourceList, const NestValueArray& targetList) const;
+		void aggExecute(thread_db* tdbb, jrd_req* request,
+			const NestValueArray& sourceList, const NestValueArray& targetList) const;
+		void aggFinish(thread_db* tdbb, jrd_req* request, const MapNode* map) const;
+
+		// Cache the values of a group/order in the impure.
+		template <typename AdjustFunctor>
+		void cacheValues(thread_db* tdbb, jrd_req* request,
+			const NestValueArray* group, impure_value* values,
+			AdjustFunctor adjustFunctor) const
+		{
+			if (!group)
+				return;
+
+			Impure* const impure = getImpure(request);
+
+			for (const NestConst<ValueExprNode>* ptrValue = group->begin(), *endValue = group->end();
+				 ptrValue != endValue;
+				 ++ptrValue)
+			{
+				const ValueExprNode* from = *ptrValue;
+				impure_value* target = &values[ptrValue - group->begin()];
+
+				dsc* desc = EVL_expr(tdbb, request, from);
+
+				if (request->req_flags & req_null)
+					target->vlu_desc.dsc_address = NULL;
+				else
+				{
+					EVL_make_value(tdbb, desc, target);
+					adjustFunctor(target);
+				}
+			}
+		}
+
+		int lookForChange(thread_db* tdbb, jrd_req* request,
+			const NestValueArray* group, const SortNode* sort, impure_value* values) const;
+
+	private:
+		bool getNextRecord(thread_db* tdbb, jrd_req* request) const;
+
+	protected:
+		NestConst<NextType> m_next;
+		const NestValueArray* const m_group;
+		NestConst<MapNode> m_groupMap;
+		bool m_oneRowWhenEmpty;
+	};
+
+	class AggregatedStream : public BaseAggWinStream<AggregatedStream, RecordSource>
+	{
+	public:
 		AggregatedStream(thread_db* tdbb, CompilerScratch* csb, StreamType stream,
 			const NestValueArray* group, MapNode* map, RecordSource* next);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
-
+	public:
+		void print(thread_db* tdbb, Firebird::string& plan, bool detailed, unsigned level) const;
 		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
-
-		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
-
-		void markRecursive();
-		void invalidateRecords(jrd_req* request) const;
-
-		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
-		void nullRecords(thread_db* tdbb) const;
-
-	private:
-		void init(thread_db* tdbb, CompilerScratch* csb);
-
-		State evaluateGroup(thread_db* tdbb, State state) const;
-		void cacheValues(thread_db* tdbb, jrd_req* request,
-			const NestValueArray* group, unsigned impureOffset) const;
-		bool lookForChange(thread_db* tdbb, jrd_req* request,
-			const NestValueArray* group, unsigned impureOffset) const;
-		void finiDistinct(thread_db* tdbb, jrd_req* request) const;
-
-		NestConst<BaseBufferedStream> m_bufferedStream;
-		NestConst<RecordSource> m_next;
-		const NestValueArray* const m_group;
-		NestConst<MapNode> m_map;
-		const NestValueArray* const m_order;
-		NestValueArray m_winPassSources;
-		NestValueArray m_winPassTargets;
 	};
 
 	class WindowedStream : public RecordSource
 	{
 	public:
+		class WindowStream : public BaseAggWinStream<WindowStream, BaseBufferedStream>
+		{
+		private:
+			struct AdjustFunctor
+			{
+				AdjustFunctor(const ArithmeticNode* aArithNode, const dsc* aOffsetDesc)
+					: arithNode(aArithNode),
+					  offsetDesc(aOffsetDesc)
+				{
+				}
+
+				void operator ()(impure_value* target)
+				{
+					ArithmeticNode::add2(offsetDesc, target, arithNode, arithNode->blrOp);
+				}
+
+				const ArithmeticNode* arithNode;
+				const dsc* offsetDesc;
+			};
+
+			struct Block
+			{
+				SINT64 startPosition;
+				SINT64 endPosition;
+
+				void invalidate()
+				{
+					startPosition = endPosition = MIN_SINT64;
+				}
+
+				bool isValid() const
+				{
+					return !(startPosition == MIN_SINT64 && endPosition == MIN_SINT64);
+				}
+			};
+
+		public:
+			struct Impure : public BaseAggWinStream::Impure
+			{
+				impure_value* orderValues;
+				SINT64 partitionPending, rangePending;
+				Block partitionBlock, windowBlock;
+				impure_value_ex startOffset, endOffset;
+			};
+
+		public:
+			WindowStream(thread_db* tdbb, CompilerScratch* csb, StreamType stream,
+				const NestValueArray* group, BaseBufferedStream* next,
+				SortNode* order, MapNode* windowMap,
+				WindowClause::FrameExtent* frameExtent,
+				WindowClause::Exclusion exclusion);
+
+		public:
+			void open(thread_db* tdbb) const;
+			void close(thread_db* tdbb) const;
+
+			bool getRecord(thread_db* tdbb) const;
+
+			void print(thread_db* tdbb, Firebird::string& plan, bool detailed, unsigned level) const;
+			void findUsedStreams(StreamList& streams, bool expandAll = false) const;
+			void nullRecords(thread_db* tdbb) const;
+
+		protected:
+			Impure* getImpure(jrd_req* request) const
+			{
+				return request->getImpure<Impure>(m_impure);
+			}
+
+		private:
+			const void getFrameValue(thread_db* tdbb, jrd_req* request,
+				const WindowClause::Frame* frame, impure_value_ex* impureValue) const;
+
+			SINT64 locateFrameRange(thread_db* tdbb, jrd_req* request, Impure* impure,
+				const WindowClause::Frame* frame, const dsc* offsetDesc, SINT64 position) const;
+
+		private:
+			NestConst<SortNode> m_order;
+			const MapNode* m_windowMap;
+			NestConst<WindowClause::FrameExtent> m_frameExtent;
+			Firebird::Array<NestConst<ArithmeticNode> > m_arithNodes;
+			NestValueArray m_aggSources, m_aggTargets;
+			NestValueArray m_winPassSources, m_winPassTargets;
+			WindowClause::Exclusion m_exclusion;
+			UCHAR m_invariantOffsets;	// 0x1 | 0x2 bitmask
+		};
+
+	public:
 		WindowedStream(thread_db* tdbb, CompilerScratch* csb,
-			Firebird::ObjectsArray<WindowSourceNode::Partition>& partitions, RecordSource* next);
+			Firebird::ObjectsArray<WindowSourceNode::Window>& windows, RecordSource* next);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+			bool detailed, unsigned level) const override;
 
-		void markRecursive();
-		void invalidateRecords(jrd_req* request) const;
+		void markRecursive() override;
+		void invalidateRecords(jrd_req* request) const override;
 
-		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
-		void nullRecords(thread_db* tdbb) const;
+		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
+		void nullRecords(thread_db* tdbb) const override;
 
 	private:
 		NestConst<BufferedStream> m_next;
@@ -743,26 +918,26 @@ namespace Jrd
 	public:
 		BufferedStream(CompilerScratch* csb, RecordSource* next);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
-		void markRecursive();
-		void invalidateRecords(jrd_req* request) const;
+		void markRecursive() override;
+		void invalidateRecords(jrd_req* request) const override;
 
-		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
-		void nullRecords(thread_db* tdbb) const;
+		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
+		void nullRecords(thread_db* tdbb) const override;
 
-		void locate(thread_db* tdbb, FB_UINT64 position) const;
-		FB_UINT64 getCount(thread_db* tdbb) const;
+		void locate(thread_db* tdbb, FB_UINT64 position) const override;
+		FB_UINT64 getCount(thread_db* tdbb) const override;
 
-		FB_UINT64 getPosition(jrd_req* request) const
+		FB_UINT64 getPosition(jrd_req* request) const override
 		{
 			Impure* const impure = request->getImpure<Impure>(m_impure);
 			return impure->irsb_position;
@@ -774,7 +949,6 @@ namespace Jrd
 		const Format* m_format;
 	};
 
-
 	// Multiplexing (many -> one) access methods
 
 	class NestedLoopJoin : public RecordSource
@@ -784,21 +958,21 @@ namespace Jrd
 		NestedLoopJoin(CompilerScratch* csb, RecordSource* outer, RecordSource* inner,
 					   BoolExprNode* boolean, JoinType joinType);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
-		void markRecursive();
-		void invalidateRecords(jrd_req* request) const;
+		void markRecursive() override;
+		void invalidateRecords(jrd_req* request) const override;
 
-		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
-		void nullRecords(thread_db* tdbb) const;
+		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
+		void nullRecords(thread_db* tdbb) const override;
 
 	private:
 		bool fetchRecord(thread_db*, FB_SIZE_T) const;
@@ -813,21 +987,21 @@ namespace Jrd
 	public:
 		FullOuterJoin(CompilerScratch* csb, RecordSource* arg1, RecordSource* arg2);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
-		void markRecursive();
-		void invalidateRecords(jrd_req* request) const;
+		void markRecursive() override;
+		void invalidateRecords(jrd_req* request) const override;
 
-		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
-		void nullRecords(thread_db* tdbb) const;
+		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
+		void nullRecords(thread_db* tdbb) const override;
 
 	private:
 		NestConst<RecordSource> m_arg1;
@@ -866,21 +1040,21 @@ namespace Jrd
 		HashJoin(thread_db* tdbb, CompilerScratch* csb, FB_SIZE_T count,
 				 RecordSource* const* args, NestValueArray* const* keys);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
-		void markRecursive();
-		void invalidateRecords(jrd_req* request) const;
+		void markRecursive() override;
+		void invalidateRecords(jrd_req* request) const override;
 
-		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
-		void nullRecords(thread_db* tdbb) const;
+		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
+		void nullRecords(thread_db* tdbb) const override;
 
 	private:
 		void computeKeys(thread_db* tdbb, jrd_req* request,
@@ -926,21 +1100,21 @@ namespace Jrd
 				  SortedStream* const* args,
 				  const NestValueArray* const* keys);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
-		void markRecursive();
-		void invalidateRecords(jrd_req* request) const;
+		void markRecursive() override;
+		void invalidateRecords(jrd_req* request) const override;
 
-		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
-		void nullRecords(thread_db* tdbb) const;
+		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
+		void nullRecords(thread_db* tdbb) const override;
 
 	private:
 		int compare(thread_db* tdbb, const NestValueArray* node1,
@@ -965,19 +1139,19 @@ namespace Jrd
 			  FB_SIZE_T argCount, RecordSource* const* args, NestConst<MapNode>* maps,
 			  FB_SIZE_T streamCount, const StreamType* streams);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
-		void markRecursive();
-		void invalidateRecords(jrd_req* request) const;
-		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
+		void markRecursive() override;
+		void invalidateRecords(jrd_req* request) const override;
+		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 
 	private:
 		Firebird::Array<NestConst<RecordSource> > m_args;
@@ -1006,19 +1180,19 @@ namespace Jrd
 					    FB_SIZE_T streamCount, const StreamType* innerStreams,
 					    ULONG saveOffset);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
-		void markRecursive();
-		void invalidateRecords(jrd_req* request) const;
-		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
+		void markRecursive() override;
+		void invalidateRecords(jrd_req* request) const override;
+		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
 
 	private:
 		void cleanupLevel(jrd_req* request, Impure* impure) const;
@@ -1044,21 +1218,21 @@ namespace Jrd
 		ConditionalStream(CompilerScratch* csb, RecordSource* first, RecordSource* second,
 						  BoolExprNode* boolean);
 
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
 
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
 
 		void print(thread_db* tdbb, Firebird::string& plan,
-				   bool detailed, unsigned level) const;
+				   bool detailed, unsigned level) const override;
 
-		void markRecursive();
-		void invalidateRecords(jrd_req* request) const;
+		void markRecursive() override;
+		void invalidateRecords(jrd_req* request) const override;
 
-		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
-		void nullRecords(thread_db* tdbb) const;
+		void findUsedStreams(StreamList& streams, bool expandAll = false) const override;
+		void nullRecords(thread_db* tdbb) const override;
 
 	private:
 		NestConst<RecordSource> m_first;

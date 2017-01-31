@@ -84,13 +84,13 @@ const char* TraceConnectionImpl::getDatabaseName()
 const char* TraceConnectionImpl::getUserName()
 {
 	const UserId* user = m_att->att_user;
-	return user ? user->usr_user_name.c_str() : NULL;
+	return user ? user->getUserName().c_str() : NULL;
 }
 
 const char* TraceConnectionImpl::getRoleName()
 {
 	const UserId* user = m_att->att_user;
-	return user ? user->usr_sql_role_name.c_str() : NULL;
+	return user ? user->getSqlRole().c_str() : NULL;
 }
 
 const char* TraceConnectionImpl::getCharSet()

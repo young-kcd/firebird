@@ -409,6 +409,7 @@ public:
 	bool privateScope;
 	bool preserveDefaults;
 	SLONG udfReturnPos;
+	Nullable<bool> ssDefiner;
 };
 
 
@@ -542,6 +543,7 @@ public:
 	Firebird::MetaName packageOwner;
 	bool privateScope;
 	bool preserveDefaults;
+	Nullable<bool> ssDefiner;
 };
 
 
@@ -586,6 +588,13 @@ typedef RecreateNode<CreateAlterProcedureNode, DropProcedureNode, isc_dsql_recre
 class TriggerDefinition
 {
 public:
+	enum SqlSecurity
+	{
+		SS_INVOKER,
+		SS_DEFINER,
+		SS_DROP
+	};
+
 	explicit TriggerDefinition(MemoryPool& p)
 		: name(p),
 		  relationName(p),
@@ -626,6 +635,7 @@ public:
 	Firebird::ByteChunk debugData;
 	USHORT systemFlag;
 	bool fkTrigger;
+	Nullable<SqlSecurity> ssDefiner;
 };
 
 
@@ -1230,7 +1240,8 @@ public:
 			TYPE_ALTER_COL_POS,
 			TYPE_ALTER_COL_TYPE,
 			TYPE_DROP_COLUMN,
-			TYPE_DROP_CONSTRAINT
+			TYPE_DROP_CONSTRAINT,
+			TYPE_ALTER_SQL_SECURITY
 		};
 
 		explicit Clause(MemoryPool& p, Type aType)
@@ -1293,6 +1304,18 @@ public:
 		NestConst<BoolSourceClause> check;
 	};
 
+	struct IdentityOptions
+	{
+		IdentityOptions(MemoryPool&)
+			: restart(false)
+		{
+		}
+
+		Nullable<SINT64> startValue;
+		Nullable<SLONG> increment;
+		bool restart;	// used in ALTER
+	};
+
 	struct AddColumnClause : public Clause
 	{
 		explicit AddColumnClause(MemoryPool& p)
@@ -1302,8 +1325,7 @@ public:
 			  constraints(p),
 			  collate(p),
 			  computed(NULL),
-			  identity(false),
-			  identityStart(0),
+			  identityOptions(NULL),
 			  notNullSpecified(false)
 		{
 		}
@@ -1313,8 +1335,7 @@ public:
 		Firebird::ObjectsArray<AddConstraintClause> constraints;
 		Firebird::MetaName collate;
 		NestConst<ValueSourceClause> computed;
-		bool identity;
-		SINT64 identityStart;
+		NestConst<IdentityOptions> identityOptions;
 		bool notNullSpecified;
 	};
 
@@ -1364,7 +1385,8 @@ public:
 			  field(NULL),
 			  defaultValue(NULL),
 			  dropDefault(false),
-			  identityRestart(false),
+			  dropIdentity(false),
+			  identityOptions(NULL),
 			  computed(NULL)
 		{
 		}
@@ -1372,8 +1394,8 @@ public:
 		dsql_fld* field;
 		NestConst<ValueSourceClause> defaultValue;
 		bool dropDefault;
-		bool identityRestart;
-		Nullable<SINT64> identityRestartValue;
+		bool dropIdentity;
+		NestConst<IdentityOptions> identityOptions;
 		NestConst<ValueSourceClause> computed;
 	};
 
@@ -1399,6 +1421,16 @@ public:
 		}
 
 		Firebird::MetaName name;
+	};
+
+	struct AlterSqlSecurityClause : public Clause
+	{
+		explicit AlterSqlSecurityClause(MemoryPool& p)
+			: Clause(p, TYPE_ALTER_SQL_SECURITY)
+		{
+		}
+
+		Nullable<bool> ssDefiner;
 	};
 
 	RelationNode(MemoryPool& p, RelationSourceNode* aDsqlNode);
@@ -1448,6 +1480,7 @@ public:
 	NestConst<RelationSourceNode> dsqlNode;
 	Firebird::MetaName name;
 	Firebird::Array<NestConst<Clause> > clauses;
+	Nullable<bool> ssDefiner;
 };
 
 
@@ -1478,7 +1511,9 @@ private:
 
 public:
 	const Firebird::string* externalFile;
-	rel_t relationType;
+	Nullable<rel_t> relationType;
+	bool preserveRowsOpt;
+	bool deleteRowsOpt;
 };
 
 
@@ -1890,12 +1925,28 @@ public:
 };
 
 
-class CreateRoleNode : public DdlNode
+class PrivilegesNode : public DdlNode
 {
 public:
-	CreateRoleNode(MemoryPool& p, const Firebird::MetaName& aName)
-		: DdlNode(p),
-		  name(p, aName)
+	PrivilegesNode(MemoryPool& p)
+		: DdlNode(p)
+	{
+	}
+
+protected:
+	static USHORT convertPrivilegeFromString(thread_db* tdbb, jrd_tra* transaction,
+		Firebird::MetaName privilege);
+};
+
+class CreateAlterRoleNode : public PrivilegesNode
+{
+public:
+	CreateAlterRoleNode(MemoryPool& p, const Firebird::MetaName& aName)
+		: PrivilegesNode(p),
+		  name(p, aName),
+		  createFlag(false),
+		  sysPrivDrop(false),
+		  privileges(p)
 	{
 	}
 
@@ -1907,7 +1958,8 @@ public:
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
 	{
-		statusVector << Firebird::Arg::Gds(isc_dsql_create_role_failed) << name;
+		statusVector << Firebird::Arg::Gds(createFlag ? isc_dsql_create_role_failed :
+			isc_dsql_alter_role_failed) << name;
 	}
 
 private:
@@ -1915,6 +1967,16 @@ private:
 
 public:
 	Firebird::MetaName name;
+	bool createFlag, sysPrivDrop;
+
+	void addPrivilege(const Firebird::MetaName* privName)
+	{
+		fb_assert(privName);
+		privileges.push(*privName);
+	}
+
+private:
+	Firebird::HalfStaticArray<Firebird::MetaName, 4> privileges;
 };
 
 
@@ -2109,11 +2171,11 @@ public:
 typedef Firebird::Pair<Firebird::NonPooled<char, ValueListNode*> > PrivilegeClause;
 typedef Firebird::Pair<Firebird::NonPooled<SSHORT, Firebird::MetaName> > GranteeClause;
 
-class GrantRevokeNode : public DdlNode, private ExecInSecurityDb
+class GrantRevokeNode : public PrivilegesNode, private ExecInSecurityDb
 {
 public:
 	GrantRevokeNode(MemoryPool& p, bool aIsGrant)
-		: DdlNode(p),
+		: PrivilegesNode(p),
 		  createDbJobs(p),
 		  isGrant(aIsGrant),
 		  privileges(p),
@@ -2267,9 +2329,20 @@ public:
 	Firebird::Array<NestConst<DbFileClause> > files;
 	Firebird::MetaName cryptPlugin;
 	Firebird::MetaName keyName;
+	Nullable<bool> ssDefiner;
 };
 
 
 } // namespace
+
+template <>
+class NullableClear<Jrd::TriggerDefinition::SqlSecurity>	// TriggerDefinition::SqlSecurity especialization for NullableClear
+{
+public:
+	static void clear(Jrd::TriggerDefinition::SqlSecurity& v)
+	{
+		v = Jrd::TriggerDefinition::SS_INVOKER;
+	}
+};
 
 #endif // DSQL_DDL_NODES_H

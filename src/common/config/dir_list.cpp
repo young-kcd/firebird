@@ -35,30 +35,34 @@ void ParsedPath::parse(const PathName& path)
 
 	PathName oldpath = path;
 	int toSkip = 0;
-	do {
+
+	do
+	{
 		PathName newpath, elem;
 		PathUtils::splitLastComponent(newpath, elem, oldpath);
 		oldpath = newpath;
-		if (elem.isEmpty() && !oldpath.isEmpty()) // Skip double dir separator
-		{
+
+		if (elem.isEmpty()) // Skip double dir separator
 			continue;
-		}
+
 		if (elem == PathUtils::curr_dir_link) // Skip current dir reference
-		{
 			continue;
-		}
+
 		if (elem == PathUtils::up_dir_link) // skip next up dir
 		{
 			toSkip++;
 			continue;
 		}
+
 		if (toSkip > 0)
 		{
 			toSkip--;
 			continue;
 		}
+
 		insert(0, elem);
-	} while (oldpath.length() > 0);
+	} while (oldpath.hasData());
+
 	if (toSkip != 0)
 	{
 		// Malformed path, attempt to hack?..
@@ -68,15 +72,18 @@ void ParsedPath::parse(const PathName& path)
 
 PathName ParsedPath::subPath(FB_SIZE_T n) const
 {
-	PathName rc = (*this)[0];
-	if (rc.isEmpty())
-		rc = PathUtils::dir_sep;
-	for (FB_SIZE_T i = 1; i < n; i++)
+	PathName rc;
+#ifndef WIN_NT
+	// Code in DirectoryList::initialize() ensured that the path is absolute
+	rc = PathUtils::dir_sep;
+#endif
+	for (FB_SIZE_T i = 0; i < n; i++)
 	{
 		PathName newpath;
 		PathUtils::concatPath(newpath, rc, (*this)[i]);
 		rc = newpath;
 	}
+
 	return rc;
 }
 
@@ -175,20 +182,25 @@ void DirectoryList::initialize(bool simple_mode)
 	}
 
 	PathName root = Config::getRootDirectory();
-	while (!val.isEmpty())
+
+	while (val.hasData())
 	{
 		string::size_type sep = val.find(';');
 		if (sep == string::npos)
 			sep = val.length();
+
 		PathName dir(val.c_str(), sep);
 		dir.alltrim(" \t\r");
+
 		val.erase(0, sep + 1);
+
 		if (PathUtils::isRelative(dir))
 		{
 			PathName fullPath;
 			PathUtils::concatPath(fullPath, root, dir);
 			dir = fullPath;
 		}
+
 		add(ParsedPath(dir));
 	}
 }

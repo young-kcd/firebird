@@ -87,15 +87,17 @@ private:
 			"CREATE VIEW PLG$SRP_VIEW AS "
 			"SELECT PLG$USER_NAME, PLG$VERIFIER, PLG$SALT, PLG$COMMENT, "
 			"   PLG$FIRST, PLG$MIDDLE, PLG$LAST, PLG$ATTRIBUTES, PLG$ACTIVE "
-			"FROM PLG$SRP WHERE CURRENT_USER = 'SYSDBA' "
-			"   OR CURRENT_ROLE = '" ADMIN_ROLE "' OR CURRENT_USER = PLG$SRP.PLG$USER_NAME"
+			"FROM PLG$SRP WHERE RDB$SYSTEM_PRIVILEGE(USER_MANAGEMENT) "
+			"   OR CURRENT_USER = PLG$SRP.PLG$USER_NAME"
 			,
-			"GRANT ALL ON PLG$SRP to VIEW PLG$SRP_VIEW"
+			"GRANT ALL ON PLG$SRP TO VIEW PLG$SRP_VIEW"
 			,
-			"GRANT SELECT ON PLG$SRP_VIEW to PUBLIC"
+			"GRANT SELECT ON PLG$SRP_VIEW TO PUBLIC"
 			,
 			"GRANT UPDATE(PLG$VERIFIER, PLG$SALT, PLG$FIRST, PLG$MIDDLE, PLG$LAST, "
 			"   PLG$COMMENT, PLG$ATTRIBUTES) ON PLG$SRP_VIEW TO PUBLIC"
+			,
+			"GRANT ALL ON PLG$SRP_VIEW TO SYSTEM PRIVILEGE USER_MANAGEMENT"
 			,
 			NULL
 		};
@@ -106,10 +108,20 @@ private:
 
 		try
 		{
-			for (const char** sql = script; *sql; ++sql)
+			for (const char** s = script; *s; ++s)
 			{
-				att->execute(&statusWrapper, ddlTran, 0, *sql, SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
-				check(&statusWrapper);
+				const char* sql = *s;
+				bool err = false;
+				if (sql[0] == '*')
+				{
+					++sql;
+					err = true;
+				}
+
+				att->execute(&statusWrapper, ddlTran, 0, sql, SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
+
+				if (!err)
+					check(&statusWrapper);
 			}
 
 			ddlTran->commit(&statusWrapper);

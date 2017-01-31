@@ -197,9 +197,12 @@ Version 9: FB2.5.
 
 Version 10: FB3.0.
 			See backup_capabilities in OdsDetection.h.
+
+Version 11: FB4.0.
+			SQL SECURITY feature.
 */
 
-const int ATT_BACKUP_FORMAT		= 10;
+const int ATT_BACKUP_FORMAT		= 11;
 
 // format version number for ranges for arrays
 
@@ -246,6 +249,7 @@ enum att_type {
 	att_SQL_dialect,		// SQL dialect that it speaks
 	att_db_read_only,		// Is the database ReadOnly?
 	att_database_linger,	// Disconnection timeout
+	att_database_sql_security,// default sql security value
 
 	// Relation attributes
 
@@ -267,6 +271,7 @@ enum att_type {
 	att_relation_flags,
 	att_relation_ext_file_name, // name of file for external tables
 	att_relation_type,
+	att_relation_sql_security,
 
 	// Field attributes (used for both global and local fields)
 
@@ -400,6 +405,7 @@ enum att_type {
 	att_trig_engine_name,
 	att_trig_entrypoint,
 	att_trig_type2,
+	att_trig_sql_security,
 
 	// Function attributes
 
@@ -423,6 +429,7 @@ enum att_type {
 	att_function_owner_name,
 	att_function_legacy_flag,
 	att_function_deterministic_flag,
+	att_function_sql_security,
 
 	// Function argument attributes
 
@@ -518,6 +525,7 @@ enum att_type {
 	att_procedure_entrypoint,
 	att_procedure_package_name,
 	att_procedure_private_flag,
+	att_procedure_sql_security,
 
 	// Stored procedure parameter attributes
 
@@ -566,6 +574,7 @@ enum att_type {
 	att_role_name = SERIES,
 	att_role_owner_name,
 	att_role_description,
+	att_role_sys_priveleges,
 
 	// Check constraints attributes
 	att_chk_constraint_name = SERIES,
@@ -616,7 +625,8 @@ enum att_type {
 	att_package_valid_body_flag,
 	att_package_security_class,
 	att_package_owner_name,
-	att_package_description
+	att_package_description,
+	att_package_sql_security
 };
 
 
@@ -768,8 +778,6 @@ struct burp_meta_obj
 // CVC: Could use MAXPATHLEN, but what about restoring in a different system?
 // I need to review if we tolerate different lengths for different OS's here.
 const unsigned int MAX_FILE_NAME_SIZE		= 256;
-
-//#include "../jrd/svc.h"
 
 #include "../burp/std_desc.h"
 

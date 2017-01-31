@@ -320,7 +320,7 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 	dpb.insertInt(isc_dpb_ext_call_depth, attachment->att_ext_call_depth + 1);
 
 	if ((m_provider.getFlags() & prvTrustedAuth) &&
-		user.isEmpty() && pwd.isEmpty() && role.isEmpty())
+		user.isEmpty() && pwd.isEmpty() && role.isEmpty() && attachment->att_user)
 	{
 		attachment->att_user->populateDpb(dpb);
 	}
@@ -346,7 +346,7 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 }
 
 bool Connection::isSameDatabase(thread_db* tdbb, const PathName& dbName,
-	const MetaName &user, const string& pwd, const MetaName &role) const
+	const MetaName& user, const string& pwd, const MetaName& role) const
 {
 	if (m_dbName != dbName)
 		return false;

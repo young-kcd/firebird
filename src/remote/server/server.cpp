@@ -105,7 +105,175 @@ public:
 
 namespace {
 
+// DB crypt key passthrough
+
+class NetworkCallback : public VersionedIface<ICryptKeyCallbackImpl<NetworkCallback, CheckStatusWrapper> >
+{
+public:
+	explicit NetworkCallback(rem_port* prt)
+		: port(prt), l(0), d(NULL), stopped(false), wake(false)
+	{ }
+
+	unsigned int callback(unsigned int dataLength, const void* data,
+		unsigned int bufferLength, void* buffer)
+	{
+		if (stopped)
+			return 0;
+
+		if (port->port_protocol < PROTOCOL_VERSION13)
+			return 0;
+
+		Reference r(*port);
+
+		d = buffer;
+		l = bufferLength;
+
+		PACKET p;
+		p.p_operation = op_crypt_key_callback;
+		p.p_cc.p_cc_data.cstr_length = dataLength;
+		p.p_cc.p_cc_data.cstr_address = (UCHAR*) data;
+		p.p_cc.p_cc_reply = bufferLength;
+		port->send(&p);
+
+		if (!sem.tryEnter(60))
+			return 0;
+
+		return l;
+	}
+
+	void wakeup(unsigned int length, const void* data)
+	{
+		if (l > length)
+			l = length;
+		memcpy(d, data, l);
+
+		wake = true;
+		sem.release();
+	}
+
+	void stop()
+	{
+		stopped = true;
+	}
+
+	bool isStopped() const
+	{
+		return stopped;
+	}
+
+private:
+	rem_port* port;
+	Semaphore sem;
+	unsigned int l;
+	void* d;
+	bool stopped;
+
+public:
+	bool wake;
+};
+
+class CryptKeyCallback : public VersionedIface<ICryptKeyCallbackImpl<CryptKeyCallback, CheckStatusWrapper> >
+{
+public:
+	explicit CryptKeyCallback(rem_port* prt)
+		: port(prt), networkCallback(prt), keyHolder(NULL), keyCallback(NULL)
+	{ }
+
+	~CryptKeyCallback()
+	{
+		if (keyHolder)
+			PluginManagerInterfacePtr()->releasePlugin(keyHolder);
+	}
+
+	unsigned int callback(unsigned int dataLength, const void* data,
+		unsigned int bufferLength, void* buffer)
+	{
+		if (keyCallback)
+			return keyCallback->callback(dataLength, data, bufferLength, buffer);
+
+		if (networkCallback.isStopped())
+			return 0;
+
+		Reference r(*port);
+
+		for (GetPlugins<IKeyHolderPlugin> kh(IPluginManager::TYPE_KEY_HOLDER, port->getPortConfig());
+			kh.hasData(); kh.next())
+		{
+			IKeyHolderPlugin* keyPlugin = kh.plugin();
+			LocalStatus ls;
+			CheckStatusWrapper st(&ls);
+
+			networkCallback.wake = false;
+			if (keyPlugin->keyCallback(&st, &networkCallback) && networkCallback.wake)
+			{
+				// current holder has a key and it seems to be from the client
+				keyHolder = keyPlugin;
+				keyHolder->addRef();
+				keyCallback = keyHolder->chainHandle(&st);
+
+				if (st.isEmpty() && keyCallback)
+					break;
+			}
+		}
+
+		unsigned rc = keyCallback ?
+			keyCallback->callback(dataLength, data, bufferLength, buffer) :
+			// use legacy behavior if holders to do wish to accept keys from client
+			networkCallback.callback(dataLength, data, bufferLength, buffer);
+
+		//stop();
+		return rc;
+	}
+
+	void wakeup(unsigned int length, const void* data)
+	{
+		networkCallback.wakeup(length, data);
+	}
+
+	void stop()
+	{
+		networkCallback.stop();
+	}
+
+private:
+	rem_port* port;
+	NetworkCallback networkCallback;
+	IKeyHolderPlugin* keyHolder;
+	ICryptKeyCallback* keyCallback;
+};
+
+class ServerCallback : public ServerCallbackBase, public GlobalStorage
+{
+public:
+	explicit ServerCallback(rem_port* prt)
+		: cryptCallback(prt)
+	{ }
+
+	~ServerCallback()
+	{ }
+
+	void wakeup(unsigned int length, const void* data)
+	{
+		cryptCallback.wakeup(length, data);
+	}
+
+	ICryptKeyCallback* getInterface()
+	{
+		return &cryptCallback;
+	}
+
+	void stop()
+	{
+		cryptCallback.stop();
+	}
+
+private:
+	CryptKeyCallback cryptCallback;
+};
+
+
 // Disable attempts to brute-force logins/passwords
+
 class FailedLogin
 {
 public:
@@ -287,6 +455,7 @@ static void getMultiPartConnectParameter(T& putTo, Firebird::ClumpletReader& id,
 
 
 // delayed authentication block for auth callback
+
 class ServerAuth : public GlobalStorage, public ServerAuthBase
 {
 public:
@@ -379,6 +548,11 @@ public:
 			authPort->port_srv_auth_block->setDataForPlugin(u);
 		}
 #endif
+
+		if (!authPort->port_server_crypt_callback)
+		{
+			authPort->port_server_crypt_callback = FB_NEW ServerCallback(authPort);
+		}
 	}
 
 	~ServerAuth()
@@ -425,6 +599,13 @@ public:
 			{
 				authServer = authItr->plugin();
 				authPort->port_srv_auth_block->authBlockWriter.setPlugin(authItr->name());
+
+				if (authPort->getPortConfig()->getCryptSecurityDatabase() &&
+					authPort->port_protocol >= PROTOCOL_VERSION15 &&
+					authPort->port_server_crypt_callback)
+				{
+					authServer->setDbCryptCallback(&st, authPort->port_server_crypt_callback->getInterface());
+				}
 			}
 
 			// if we asked for more data but received nothing switch to next plugin
@@ -501,9 +682,11 @@ public:
 					}
 				}
 
-				authPort->send(send);
 				if (send->p_acpt.p_acpt_type & pflag_compress)
 					authPort->initCompression();
+				authPort->send(send);
+				if (send->p_acpt.p_acpt_type & pflag_compress)
+					authPort->port_flags |= PORT_compressed;
 				memset(&send->p_auth_cont, 0, sizeof send->p_auth_cont);
 				return false;
 
@@ -652,7 +835,7 @@ public:
 				system_call_failed::raise("open");
 			}
 
-			struct flock lock;
+			struct FLOCK lock;
 			lock.l_type = F_WRLCK;
 			lock.l_whence = 0;
 			lock.l_start = 0;
@@ -671,7 +854,7 @@ public:
 	{
 		if (fd != -1)
 		{
-			struct flock lock;
+			struct FLOCK lock;
 			lock.l_type = F_UNLCK;
 			lock.l_whence = 0;
 			lock.l_start = 0;
@@ -772,6 +955,9 @@ private:
 	Rvnt* event;
 };
 
+
+// Stores types of known wire crypt keys
+
 class CryptKeyTypeManager : public PermanentStorage
 {
 	class CryptKeyType : public PermanentStorage
@@ -866,91 +1052,6 @@ private:
 
 InitInstance<CryptKeyTypeManager> knownCryptKeyTypes;
 
-class CryptKeyCallback : public VersionedIface<ICryptKeyCallbackImpl<CryptKeyCallback, CheckStatusWrapper> >
-{
-public:
-	explicit CryptKeyCallback(rem_port* prt)
-		: port(prt), l(0), d(NULL), stopped(false)
-	{ }
-
-	unsigned int callback(unsigned int dataLength, const void* data,
-		unsigned int bufferLength, void* buffer)
-	{
-		if (stopped)
-			return 0;
-
-		Reference r(*port);
-
-		PACKET p;
-		p.p_operation = op_crypt_key_callback;
-		p.p_cc.p_cc_data.cstr_length = dataLength;
-		p.p_cc.p_cc_data.cstr_address = (UCHAR*) data;
-		p.p_cc.p_cc_reply = bufferLength;
-		port->send(&p);
-
-		if (!sem.tryEnter(10))
-			return 0;
-
-		if (bufferLength > l)
-			bufferLength = l;
-		memcpy(buffer, d, bufferLength);
-		if (l)
-			sem2.release();
-
-		return l;
-	}
-
-	void wakeup(unsigned int length, const void* data)
-	{
-		l = length;
-		d = data;
-		sem.release();
-		if (l)
-			sem2.enter();
-	}
-
-	void stop()
-	{
-		stopped = true;
-	}
-
-private:
-	rem_port* port;
-	Semaphore sem, sem2;
-	unsigned int l;
-	const void* d;
-	bool stopped;
-};
-
-class ServerCallback : public ServerCallbackBase, public GlobalStorage
-{
-public:
-	explicit ServerCallback(rem_port* prt)
-		: cryptCallback(prt)
-	{ }
-
-	~ServerCallback()
-	{ }
-
-	void wakeup(unsigned int length, const void* data)
-	{
-		cryptCallback.wakeup(length, data);
-	}
-
-	ICryptKeyCallback* getInterface()
-	{
-		return &cryptCallback;
-	}
-
-	void stop()
-	{
-		cryptCallback.stop();
-	}
-
-private:
-	CryptKeyCallback cryptCallback;
-};
-
 } // anonymous
 
 static void		free_request(server_req_t*);
@@ -981,7 +1082,7 @@ static void		ping_connection(rem_port*, PACKET*);
 static bool		process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_port** result);
 static void		release_blob(Rbl*);
 static void		release_event(Rvnt*);
-static void		release_request(Rrq*);
+static void		release_request(Rrq*, bool rlsIface = false);
 static void		release_statement(Rsr**);
 static void		release_sql_request(Rsr*);
 static void		release_transaction(Rtr*);
@@ -1713,10 +1814,8 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	for (const p_cnct::p_cnct_repeat* const end = protocol + connect->p_cnct_count;
 		protocol < end; protocol++)
 	{
-		if ((protocol->p_cnct_version == PROTOCOL_VERSION10 ||
-			 protocol->p_cnct_version == PROTOCOL_VERSION11 ||
-			 protocol->p_cnct_version == PROTOCOL_VERSION12 ||
-			 protocol->p_cnct_version == PROTOCOL_VERSION13) &&
+		if ((protocol->p_cnct_version >= PROTOCOL_VERSION10 &&
+			 protocol->p_cnct_version <= PROTOCOL_VERSION15) &&
 			 (protocol->p_cnct_architecture == arch_generic ||
 			  protocol->p_cnct_architecture == ARCHITECTURE) &&
 			protocol->p_cnct_weight >= weight)
@@ -1908,9 +2007,11 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	HANDSHAKE_DEBUG(fprintf(stderr, "Srv: accept_connection: accepted ud=%d protocol=%x\n", returnData, port->port_protocol));
 
 	send->p_operation = returnData ? op_accept_data : op_accept;
-	port->send(send);
 	if (send->p_acpt.p_acpt_type & pflag_compress)
 		port->initCompression();
+	port->send(send);
+	if (send->p_acpt.p_acpt_type & pflag_compress)
+		port->port_flags |= PORT_compressed;
 
 	return true;
 }
@@ -1935,9 +2036,11 @@ void ConnectAuth::accept(PACKET* send, Auth::WriterImplementation*)
 		CSTRING* const s = &send->p_acpd.p_acpt_keys;
 		authPort->extractNewKeys(s);
 		send->p_acpd.p_acpt_authenticated = 1;
-		authPort->send(send);
 		if (send->p_acpt.p_acpt_type & pflag_compress)
 			authPort->initCompression();
+		authPort->send(send);
+		if (send->p_acpt.p_acpt_type & pflag_compress)
+			authPort->port_flags |= PORT_compressed;
 	}
 }
 
@@ -2232,13 +2335,10 @@ void DatabaseAuth::accept(PACKET* send, Auth::WriterImplementation* authBlock)
 	const UCHAR* dpb = pb->getBuffer();
 	unsigned int dl = (ULONG) pb->getBufferLength();
 
-	if (!authPort->port_server_crypt_callback)
-	{
-		authPort->port_server_crypt_callback = FB_NEW ServerCallback(authPort);
-	}
-
 	LocalStatus ls;
 	CheckStatusWrapper status_vector(&ls);
+
+	fb_assert(authPort->port_server_crypt_callback);
 	provider->setDbCryptCallback(&status_vector, authPort->port_server_crypt_callback->getInterface());
 
 	if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
@@ -2710,7 +2810,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		rdb->rdb_iface->cancelOperation(&status_vector, fb_cancel_disable);
 
 		while (rdb->rdb_requests)
-			release_request(rdb->rdb_requests);
+			release_request(rdb->rdb_requests, true);
 
 		while (rdb->rdb_sql_requests)
 			release_sql_request(rdb->rdb_sql_requests);
@@ -2827,7 +2927,7 @@ void rem_port::drop_database(P_RLSE* /*release*/, PACKET* sendL)
 		release_event(rdb->rdb_events);
 
 	while (rdb->rdb_requests)
-		release_request(rdb->rdb_requests);
+		release_request(rdb->rdb_requests, true);
 
 	while (rdb->rdb_sql_requests)
 		release_sql_request(rdb->rdb_sql_requests);
@@ -2909,7 +3009,7 @@ ISC_STATUS rem_port::end_database(P_RLSE* /*release*/, PACKET* sendL)
 	rdb->rdb_iface = NULL;
 
 	while (rdb->rdb_requests)
-		release_request(rdb->rdb_requests);
+		release_request(rdb->rdb_requests, true);
 
 	while (rdb->rdb_sql_requests)
 		release_sql_request(rdb->rdb_sql_requests);
@@ -4660,10 +4760,15 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 	event->rvnt_rdb = rdb;
 
 	rem_port* asyncPort = rdb->rdb_port->port_async;
-	RefMutexGuard portGuard(*asyncPort->port_sync, FB_FUNCTION);
+	if (!asyncPort || (asyncPort->port_flags & PORT_detached))
+		Arg::Gds(isc_net_event_connect_err).copyTo(&status_vector);
+	else
+	{
+		RefMutexGuard portGuard(*asyncPort->port_sync, FB_FUNCTION);
 
-	event->rvnt_iface = rdb->rdb_iface->queEvents(&status_vector, event->rvnt_callback,
-		stuff->p_event_items.cstr_length, stuff->p_event_items.cstr_address);
+		event->rvnt_iface = rdb->rdb_iface->queEvents(&status_vector, event->rvnt_callback,
+			stuff->p_event_items.cstr_length, stuff->p_event_items.cstr_address);
+	}
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);
 }
@@ -4949,7 +5054,7 @@ static void release_event( Rvnt* event)
 }
 
 
-static void release_request( Rrq* request)
+static void release_request( Rrq* request, bool rlsIface)
 {
 /**************************************
  *
@@ -4961,6 +5066,12 @@ static void release_request( Rrq* request)
  *	Release a request block.
  *
  **************************************/
+	if (rlsIface && request->rrq_iface)
+	{
+		request->rrq_iface->release();
+		request->rrq_iface = NULL;
+	}
+
 	Rdb* rdb = request->rrq_rdb;
 	rdb->rdb_port->releaseObject(request->rrq_id);
 	REMOTE_release_request(request);
@@ -5360,16 +5471,13 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 	// they will be stuffed in the SPB if so.
 	REMOTE_get_timeout_params(this, spb);
 
-	if (!port_server_crypt_callback)
-	{
-		port_server_crypt_callback = FB_NEW ServerCallback(this);
-	}
-
 	DispatcherPtr provider;
 	LocalStatus ls;
 	CheckStatusWrapper status_vector(&ls);
 
+	fb_assert(port_server_crypt_callback);
 	provider->setDbCryptCallback(&status_vector, port_server_crypt_callback->getInterface());
+
 	if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
 	{
 		dumpAuthBlock("rem_port::service_attach()", spb, isc_spb_auth_block);
@@ -6000,6 +6108,7 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 
 		port_async_receive->clearRecvQue();
 		port_async_receive->port_receive.x_handy = 0;
+		port_async_receive->port_protocol = port_protocol;
 		memcpy(port_async_receive->port_queue.add().getBuffer(dataSize), buffer, dataSize);
 
 		// It's required, that async packets follow simple rule:
@@ -6481,7 +6590,7 @@ void SrvAuthBlock::createPluginsItr()
 
 	REMOTE_makeList(pluginList, final);
 
-	RefPtr<Config> portConf(port->getPortConfig());
+	RefPtr<const Config> portConf(port->getPortConfig());
 	plugins = FB_NEW AuthServerPlugins(IPluginManager::TYPE_AUTH_SERVER, portConf, pluginList.c_str());
 }
 

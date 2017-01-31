@@ -220,6 +220,8 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			function->setName(QualifiedName(X.RDB$FUNCTION_NAME,
 				(X.RDB$PACKAGE_NAME.NULL ? NULL : X.RDB$PACKAGE_NAME)));
 
+			function->owner = X.RDB$OWNER_NAME;
+
 			if (!X.RDB$SECURITY_CLASS.NULL)
 			{
 				function->setSecurityName(X.RDB$SECURITY_CLASS);
@@ -237,7 +239,19 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 						function->setSecurityName(PKG.RDB$SECURITY_CLASS);
 					}
 
+					// SQL SECURITY of function must be the same if it's defined in package
+					if (!PKG.RDB$SQL_SECURITY.NULL)
+						function->ssDefiner = (bool) PKG.RDB$SQL_SECURITY;
+
 				END_FOR
+			}
+
+			if (!function->ssDefiner.specified)
+			{
+				if (!X.RDB$SQL_SECURITY.NULL)
+					function->ssDefiner = (bool) X.RDB$SQL_SECURITY;
+				else
+					function->ssDefiner = MET_get_ss_definer(tdbb);
 			}
 
 			size_t count = 0;
@@ -395,7 +409,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 				try
 				{
-					AutoPtr<CompilerScratch> csb(CompilerScratch::newCsb(*csb_pool, 5));
+					AutoPtr<CompilerScratch> csb(FB_NEW_POOL(*csb_pool) CompilerScratch(*csb_pool));
 
 					if (!X.RDB$ENGINE_NAME.NULL)
 					{

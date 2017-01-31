@@ -34,11 +34,11 @@
 
 static const char* const EVENT_FILE		= "fb_event_%s";
 static const char* const LOCK_FILE		= "fb_lock_%s";
-static const char* const MONITOR_FILE	= "fb12_monitor_%s";
-static const char* const TRACE_FILE		= "fb12_trace";
-static const char* const TPC_HDR_FILE	= "fb12_tpc_%s";
-static const char* const TPC_BLOCK_FILE	= "fb12_tpc_%s_%d";
-static const char* const SNAPSHOTS_FILE	= "fb12_snap_%s";
+static const char* const MONITOR_FILE	= "fb_monitor_%s";
+static const char* const TRACE_FILE		= "fb13_trace";
+static const char* const TPC_HDR_FILE	= "fb13_tpc_%s";
+static const char* const TPC_BLOCK_FILE	= "fb13_tpc_%s_%d";
+static const char* const SNAPSHOTS_FILE	= "fb13_snap_%s";
 
 #ifdef UNIX
 static const char* const INIT_FILE		= "fb_init";
