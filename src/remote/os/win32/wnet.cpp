@@ -72,7 +72,7 @@ static void		disconnect(rem_port*);
 static void		exit_handler(void*);
 #endif
 static void		force_close(rem_port*);
-static rem_str*		make_pipe_name(const RefPtr<Config>&, const TEXT*, const TEXT*, const TEXT*);
+static rem_str*		make_pipe_name(const RefPtr<const Config>&, const TEXT*, const TEXT*, const TEXT*);
 static rem_port*	receive(rem_port*, PACKET*);
 static int		send_full(rem_port*, PACKET*);
 static int		send_partial(rem_port*, PACKET*);
@@ -104,7 +104,7 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 					   const PathName& file_name,
 					   const TEXT* node_name,
 					   bool uv_flag,
-					   RefPtr<Config>* config,
+					   RefPtr<const Config>* config,
 					   const Firebird::PathName* ref_db_name)
 {
 /**************************************
@@ -269,7 +269,7 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 }
 
 
-rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag, Firebird::RefPtr<Config>* config)
+rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag, Firebird::RefPtr<const Config>* config)
 {
 /**************************************
  *
@@ -800,7 +800,7 @@ static void exit_handler(void* main_port)
 #endif
 
 
-static rem_str* make_pipe_name(const RefPtr<Config>& config, const TEXT* connect_name,
+static rem_str* make_pipe_name(const RefPtr<const Config>& config, const TEXT* connect_name,
 	const TEXT* suffix_name, const TEXT* str_pid)
 {
 /**************************************

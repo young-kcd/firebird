@@ -599,6 +599,8 @@ interface Server : Auth
 {
 	[notImplemented(Auth::AUTH_FAILED)]
 	int authenticate(Status status, ServerBlock sBlock, Writer writerInterface);
+version:		// 3.0.1 => 4.0
+	void setDbCryptCallback(Status status, CryptKeyCallback cryptCallback);
 }
 
 // .. and corresponding client
@@ -737,6 +739,8 @@ version:		// 3.0.1 => 4.0
 	// With returning true here KeyHolder attachment can use only keys, provided by this KeyHolder.
 	// Use of keys, got by database crypt plugin from other attachments, is prohibited.
 	boolean useOnlyOwnKeys(Status status);
+	// Communication in a chain of key holders - get callback interface for chaining holders
+	CryptKeyCallback chainHandle(Status status);
 }
 
 

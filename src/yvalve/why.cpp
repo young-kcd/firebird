@@ -5663,7 +5663,7 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::CheckStatusWrapper* st
 		orgFilename.rtrim();
 
 		PathName expandedFilename;
-		RefPtr<Config> config;
+		RefPtr<const Config> config;
 		if (expandDatabaseName(orgFilename, expandedFilename, &config))
 		{
 			expandedFilename = orgFilename;
@@ -5790,7 +5790,7 @@ YService* Dispatcher::attachServiceManager(CheckStatusWrapper* status, const cha
 		}
 
 		// Build correct config
-		RefPtr<Config> config(Config::getDefaultConfig());
+		RefPtr<const Config> config(Config::getDefaultConfig());
 		if (spbWriter.find(isc_spb_config))
 		{
 			string spb_config;

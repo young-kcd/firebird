@@ -693,7 +693,8 @@ static Rvnt* add_event(rem_port*);
 static void add_other_params(rem_port*, ClumpletWriter&, const ParametersSet&);
 static void add_working_directory(ClumpletWriter&, const PathName&);
 static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned flags,
-	ClumpletWriter& pb, const ParametersSet& parSet, PathName& node_name, PathName* ref_db_name);
+	ClumpletWriter& pb, const ParametersSet& parSet, PathName& node_name, PathName* ref_db_name,
+	Firebird::ICryptKeyCallback* cryptCb);
 static void batch_gds_receive(rem_port*, struct rmtque *, USHORT);
 static void batch_dsql_fetch(rem_port*, struct rmtque *, USHORT);
 static void clear_queue(rem_port*);
@@ -798,7 +799,7 @@ IAttachment* RProvider::attach(CheckStatusWrapper* status, const char* filename,
 		PathName node_name;
 
 		ClntAuthBlock cBlock(&expanded_name, &newDpb, &dpbParam);
-		rem_port* port = analyze(cBlock, expanded_name, flags, newDpb, dpbParam, node_name, NULL);
+		rem_port* port = analyze(cBlock, expanded_name, flags, newDpb, dpbParam, node_name, NULL, cryptCallback);
 
 		if (!port)
 		{
@@ -1420,7 +1421,7 @@ Firebird::IAttachment* RProvider::create(CheckStatusWrapper* status, const char*
 		PathName node_name;
 
 		ClntAuthBlock cBlock(&expanded_name, &newDpb, &dpbParam);
-		rem_port* port = analyze(cBlock, expanded_name, flags, newDpb, dpbParam, node_name, NULL);
+		rem_port* port = analyze(cBlock, expanded_name, flags, newDpb, dpbParam, node_name, NULL, cryptCallback);
 
 		if (!port)
 		{
@@ -4631,7 +4632,7 @@ Firebird::IService* RProvider::attachSvc(CheckStatusWrapper* status, const char*
 		if (newSpb.find(isc_spb_expected_db))
 			newSpb.getPath(refDbName);
 
-		rem_port* port = analyze(cBlock, expanded_name, flags, newSpb, spbParam, node_name, &refDbName);
+		rem_port* port = analyze(cBlock, expanded_name, flags, newSpb, spbParam, node_name, &refDbName, cryptCallback);
 
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 		Rdb* rdb = port->port_context;
@@ -5400,7 +5401,8 @@ static void secureAuthentication(ClntAuthBlock& cBlock, rem_port* port)
 
 
 static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned flags,
-	ClumpletWriter& pb, const ParametersSet& parSet, PathName& node_name, PathName* ref_db_name)
+	ClumpletWriter& pb, const ParametersSet& parSet, PathName& node_name, PathName* ref_db_name,
+	Firebird::ICryptKeyCallback* cryptCb)
 {
 /**************************************
  *
@@ -5464,7 +5466,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 		}
 
 		port = INET_analyze(&cBlock, attach_name, node_name.c_str(), flags & ANALYZE_UV, pb,
-			cBlock.getConfig(), ref_db_name, inet_af);
+			cBlock.getConfig(), ref_db_name, cryptCb, inet_af);
 	}
 
 	// We have a local connection string. If it's a file on a network share,
@@ -5498,7 +5500,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 				ISC_utf8ToSystem(node_name);
 
 				port = INET_analyze(&cBlock, expanded_name, node_name.c_str(), flags & ANALYZE_UV, pb,
-					cBlock.getConfig(), ref_db_name);
+					cBlock.getConfig(), ref_db_name, cryptCb);
 			}
 		}
 #endif
@@ -5527,7 +5529,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 			if (!port)
 			{
 				port = INET_analyze(&cBlock, attach_name, INET_LOCALHOST, flags & ANALYZE_UV, pb,
-					cBlock.getConfig(), ref_db_name);
+					cBlock.getConfig(), ref_db_name, cryptCb);
 			}
 		}
 	}

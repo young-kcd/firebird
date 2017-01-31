@@ -134,6 +134,7 @@ public:
 	// IServer implementation
 	int authenticate(Firebird::CheckStatusWrapper* status, Firebird::IServerBlock* sBlock,
 		Firebird::IWriter* writerInterface);
+	void setDbCryptCallback(Firebird::CheckStatusWrapper*, Firebird::ICryptKeyCallback*) { }	// ignore
 	int release();
 
 private:

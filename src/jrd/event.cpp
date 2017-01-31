@@ -120,7 +120,7 @@ void EventManager::destroy(EventManager* eventMgr)
 }
 
 
-EventManager::EventManager(const Firebird::string& id, Firebird::RefPtr<Config> conf)
+EventManager::EventManager(const Firebird::string& id, Firebird::RefPtr<const Config> conf)
 	: PID(getpid()),
 	  m_process(NULL),
 	  m_processOffset(0),

@@ -969,7 +969,7 @@ public:
 
 	void get(const UCHAR*, USHORT, bool&);
 
-	void setBuffers(RefPtr<Config> config)
+	void setBuffers(RefPtr<const Config> config)
 	{
 		if (dpb_buffers == 0)
 		{
@@ -1046,7 +1046,7 @@ static VdnResult	verifyDatabaseName(const PathName&, FbStatusVector*, bool);
 
 static void		unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* userStatus,
 	Jrd::Attachment* attachment, Database* dbb, bool internalFlag);
-static JAttachment*	initAttachment(thread_db*, const PathName&, const PathName&, RefPtr<Config>, bool,
+static JAttachment*	initAttachment(thread_db*, const PathName&, const PathName&, RefPtr<const Config>, bool,
 	const DatabaseOptions&, RefMutexUnlock&, IPluginConfig*, JProvider*);
 static JAttachment*	create_attachment(const PathName&, Database*, const DatabaseOptions&, bool newDb);
 static void		prepare_tra(thread_db*, jrd_tra*, USHORT, const UCHAR*);
@@ -1056,7 +1056,7 @@ static void		release_attachment(thread_db*, Jrd::Attachment*);
 static void		rollback(thread_db*, jrd_tra*, const bool);
 static void		purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsigned flags = 0);
 static void		getUserInfo(UserId&, const DatabaseOptions&, const char*, const char*,
-	const RefPtr<Config>*, bool, IAttachment*, ICryptKeyCallback*);
+	const RefPtr<const Config>*, bool, IAttachment*, ICryptKeyCallback*);
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
 
@@ -1343,7 +1343,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 		ThreadContextHolder tdbb(user_status);
 
 		DatabaseOptions options;
-		RefPtr<Config> config;
+		RefPtr<const Config> config;
 		bool invalid_client_SQL_dialect = false;
 		PathName org_filename, expanded_name;
 		bool is_alias = false;
@@ -2427,7 +2427,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 		DatabaseOptions options;
 		PathName org_filename, expanded_name;
 		bool is_alias = false;
-		Firebird::RefPtr<Config> config;
+		Firebird::RefPtr<const Config> config;
 
 		try
 		{
@@ -5981,7 +5981,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 
 static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_name,
-	const PathName& alias_name, RefPtr<Config> config, bool attach_flag,
+	const PathName& alias_name, RefPtr<const Config> config, bool attach_flag,
 	const DatabaseOptions& options, RefMutexUnlock& initGuard, IPluginConfig* pConf,
 	JProvider* provider)
 {
@@ -7126,7 +7126,7 @@ static VdnResult verifyDatabaseName(const PathName& name, FbStatusVector* status
 
 	if (!securityNameBuffer->hasData())
 	{
-		const RefPtr<Config> defConf(Config::getDefaultConfig());
+		const RefPtr<const Config> defConf(Config::getDefaultConfig());
 		securityNameBuffer->assign(defConf->getSecurityDatabase());
 		expandedSecurityNameBuffer->assign(securityNameBuffer);
 		ISC_expand_filename(expandedSecurityNameBuffer, false);
@@ -7166,7 +7166,7 @@ static VdnResult verifyDatabaseName(const PathName& name, FbStatusVector* status
 
  **/
 static void getUserInfo(UserId& user, const DatabaseOptions& options,
-	const char* aliasName, const char* dbName, const RefPtr<Config>* config, bool creating,
+	const char* aliasName, const char* dbName, const RefPtr<const Config>* config, bool creating,
 	IAttachment* iAtt, ICryptKeyCallback* cryptCb)
 {
 	bool wheel = false;

@@ -285,7 +285,7 @@ void TraceManager::update_session(const TraceSession& session)
 			if (session.ses_auth.hasData())
 			{
 				PathName dummy;
-				RefPtr<Config> config;
+				RefPtr<const Config> config;
 				expandDatabaseName(service->getExpectedDb(), dummy, &config);
 
 				if (mapUser(false, s_user, t_role, NULL, NULL, NULL, session.ses_auth, "services manager",

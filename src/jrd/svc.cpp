@@ -729,7 +729,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 				if (svc_auth_block.hasData())
 				{
 					PathName dummy;
-					RefPtr<Config> config;
+					RefPtr<const Config> config;
 					expandDatabaseName(svc_expected_db, dummy, &config);
 
 					string trusted_role;
@@ -1310,7 +1310,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			{
 				// The path to the user security database (security2.fdb)
 				char* pb = reinterpret_cast<char*>(buffer);
-				const RefPtr<Config> defConf(Config::getDefaultConfig());
+				const RefPtr<const Config> defConf(Config::getDefaultConfig());
 				strcpy(pb, defConf->getSecurityDatabase());
 
 				if (!(info = INF_put_item(item, static_cast<USHORT>(strlen(pb)), buffer, info, end)))
@@ -1764,7 +1764,7 @@ void Service::query(USHORT			send_item_length,
             {
 				// The path to the user security database (security2.fdb)
 				char* pb = reinterpret_cast<char*>(buffer);
-				const RefPtr<Config> defConf(Config::getDefaultConfig());
+				const RefPtr<const Config> defConf(Config::getDefaultConfig());
 				strcpy(pb, defConf->getSecurityDatabase());
 
 				if (!(info = INF_put_item(item, static_cast<USHORT>(strlen(pb)), buffer, info, end)))
