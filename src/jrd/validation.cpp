@@ -1830,6 +1830,7 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 						CCH_MARK(vdr_tdbb, &window);
 						marked = true;
 					}
+
 					header->rhd_flags |= rhd_damaged;
 					vdr_fixed++;
 				}
@@ -1844,6 +1845,7 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 	if (primary_versions && (dp_flags & dpg_secondary))
 	{
 		corrupt(VAL_DATA_PAGE_SEC_PRI, relation, page_number, sequence);
+
 		if (vdr_flags & VDR_update)
 		{
 			if (!marked)
@@ -1851,6 +1853,7 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 				CCH_MARK(vdr_tdbb, &window);
 				marked = true;
 			}
+
 			page->dpg_header.pag_flags &= ~dpg_secondary;
 			pp_bits &= ~ppg_dp_secondary;
 			vdr_fixed++;

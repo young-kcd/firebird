@@ -1436,7 +1436,7 @@ static SecurityClass::flags_t get_sys_privileges(thread_db* tdbb)
 		return 0;
 
 	SecurityClass::flags_t flags = 0;
-	
+
 	if (attachment->locksmith(tdbb, ACCESS_ANY_OBJECT_IN_DATABASE))
 		flags |= SCL_ACCESS_ANY;
 	else if (attachment->locksmith(tdbb, SELECT_ANY_OBJECT_IN_DATABASE))
