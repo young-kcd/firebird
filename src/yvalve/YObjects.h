@@ -49,6 +49,7 @@ class YRequest;
 class YResultSet;
 class YService;
 class YStatement;
+class IscStatement;
 class YTransaction;
 
 class YObject
@@ -98,10 +99,13 @@ public:
 	void destroy(unsigned dstrFlags)
 	{
 		Firebird::MutexLockGuard guard(mtx, FB_FUNCTION);
-		FB_SIZE_T i;
 
-		while ((i = array.getCount()) > 0)
-			array[i - 1]->destroy(dstrFlags);
+		// Call destroy() only once even if handle is not removed from array
+		// by this call for any reason
+		for (int i = array.getCount() - 1; i >= 0; i--)
+			array[i]->destroy(dstrFlags);
+
+		clear();
 	}
 
 	void assign(HandleArray& from)
@@ -468,6 +472,7 @@ public:
 	HandleArray<YEvents> childEvents;
 	HandleArray<YRequest> childRequests;
 	HandleArray<YStatement> childStatements;
+	HandleArray<IscStatement> childIscStatements;
 	HandleArray<YTransaction> childTransactions;
 	Firebird::Array<CleanupCallback*> cleanupHandlers;
 	Firebird::StatusHolder savedStatus;	// Do not use raise() method of this class in yValve.
