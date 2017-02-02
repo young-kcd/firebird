@@ -126,16 +126,24 @@ void IscConnection::attach(thread_db* tdbb, const PathName& dbName, const MetaNa
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 
 		ICryptKeyCallback* cb = tdbb->getAttachment()->att_crypt_callback;
-		m_iscProvider.fb_database_crypt_callback(&status, cb);
-		if (status->getState() & IStatus::STATE_ERRORS) {
-			raise(&status, tdbb, "crypt_callback");
-		}
+		try
+		{
+			m_iscProvider.fb_database_crypt_callback(&status, cb);
+			if (status->getState() & IStatus::STATE_ERRORS) {
+				raise(&status, tdbb, "crypt_callback");
+			}
 
-		m_iscProvider.isc_attach_database(&status, m_dbName.length(), m_dbName.c_str(),
-			&m_handle, newDpb.getBufferLength(),
-			reinterpret_cast<const char*>(newDpb.getBuffer()));
-		if (status->getState() & IStatus::STATE_ERRORS) {
-			raise(&status, tdbb, "attach");
+			m_iscProvider.isc_attach_database(&status, m_dbName.length(), m_dbName.c_str(),
+				&m_handle, newDpb.getBufferLength(),
+				reinterpret_cast<const char*>(newDpb.getBuffer()));
+			if (status->getState() & IStatus::STATE_ERRORS) {
+				raise(&status, tdbb, "attach");
+			}
+		}
+		catch(const Exception&)
+		{
+			m_iscProvider.fb_database_crypt_callback(&status, NULL);
+			throw;
 		}
 
 		m_iscProvider.fb_database_crypt_callback(&status, NULL);
