@@ -5827,7 +5827,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 											 FLD.RDB$FIELD_SUB_TYPE,
 											 FLD.RDB$CHARACTER_SET_ID, collation))
 					{
-						if (REL.RDB$FORMAT.NULL)
+						if (null_view && REL.RDB$FORMAT.NULL)
 							DPM_delete_relation(tdbb, relation);
 
 						ERR_post(Arg::Gds(isc_no_meta_update) <<
@@ -5837,7 +5837,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 					// Make sure the text type specified is implemented
 					if (!validate_text_type(tdbb, tfb))
 					{
-						if (REL.RDB$FORMAT.NULL)
+						if (null_view && REL.RDB$FORMAT.NULL)
 							DPM_delete_relation(tdbb, relation);
 
 						ERR_post_nothrow(Arg::Gds(isc_no_meta_update) <<
