@@ -313,6 +313,11 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 	setlocale(LC_CTYPE, "");
 #endif
 
+#ifdef WIN_NT
+	int binout = fileno(stdout);
+	_setmode(binout, _O_BINARY);
+#endif
+
 	atexit(&atexit_fb_shutdown);
 
 	AutoPtr<UtilSvc> uSvc(UtilSvc::createStandalone(argc, argv));
