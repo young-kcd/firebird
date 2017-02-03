@@ -88,7 +88,8 @@ TraceManager::TraceManager(Attachment* in_att) :
 	attachment(in_att),
 	service(NULL),
 	filename(NULL),
-	trace_sessions(*in_att->att_pool)
+	trace_sessions(*in_att->att_pool),
+	active(false)
 {
 	init();
 }
@@ -97,7 +98,8 @@ TraceManager::TraceManager(Service* in_svc) :
 	attachment(NULL),
 	service(in_svc),
 	filename(NULL),
-	trace_sessions(in_svc->getPool())
+	trace_sessions(in_svc->getPool()),
+	active(true)
 {
 	init();
 }
@@ -106,7 +108,8 @@ TraceManager::TraceManager(const char* in_filename) :
 	attachment(NULL),
 	service(NULL),
 	filename(in_filename),
-	trace_sessions(*getDefaultMemoryPool())
+	trace_sessions(*getDefaultMemoryPool()),
+	active(true)
 {
 	init();
 }
