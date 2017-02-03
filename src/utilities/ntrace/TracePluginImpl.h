@@ -169,8 +169,9 @@ private:
 	Firebird::RWLock renameLock;
 
 	UnicodeCollationHolder unicodeCollation;
-	Firebird::AutoPtr<Firebird::SimilarToMatcher<UCHAR, Jrd::UpcaseConverter<> > >
-		include_matcher, exclude_matcher;
+	typedef Firebird::SimilarToMatcher <ULONG, Jrd::UpcaseConverter<Jrd::CanonicalConverter<> > >
+		TraceSimilarToMatcher;
+	Firebird::AutoPtr<TraceSimilarToMatcher> include_matcher, exclude_matcher;
 
 	void appendGlobalCounts(const PerformanceInfo* info);
 	void appendTableCounts(const PerformanceInfo* info);
