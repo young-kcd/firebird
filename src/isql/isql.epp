@@ -516,6 +516,11 @@ static const ri_actions ri_actions_all[] =
 };
 
 
+static void atexit_fb_shutdown()
+{
+	fb_shutdown(0, fb_shutrsn_app_stopped);
+}
+
 int CLIB_ROUTINE main(int argc, char* argv[])
 {
 /**************************************
@@ -579,6 +584,7 @@ int ISQL_main(int argc, char* argv[])
 #endif	// MU_ISQL
 
 	setlocale(LC_CTYPE, "");
+	atexit(&atexit_fb_shutdown);
 
 	TEXT tabname[WORDLENGTH];
 	tabname[0] = '\0';

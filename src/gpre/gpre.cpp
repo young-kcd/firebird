@@ -237,6 +237,11 @@ const UCHAR CHR_INTRODUCER	= 32;
 const UCHAR CHR_DBLQUOTE	= 64;
 
 
+static void atexit_fb_shutdown()
+{
+	fb_shutdown(0, fb_shutrsn_app_stopped);
+}
+
 //____________________________________________________________
 //
 //	Main line routine for C preprocessor.  Initializes
@@ -246,6 +251,8 @@ const UCHAR CHR_DBLQUOTE	= 64;
 
 int main(int argc, char* argv[])
 {
+	atexit(&atexit_fb_shutdown);
+
 	gpre_sym* symbol;
 	const ext_table_t* ext_tab;
 	sw_tab_t sw_table[IN_SW_GPRE_COUNT];
