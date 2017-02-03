@@ -40,6 +40,10 @@
 #include <locale.h>
 #endif
 
+#ifdef WIN_NT
+#include <fcntl.h>
+#endif
+
 namespace Firebird {
 
 class TraceSvcUtil : public TraceSvcIntf
@@ -308,6 +312,11 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 #ifdef HAVE_LOCALE_H
 	// Pick up the system locale to allow SYSTEM<->UTF8 conversions
 	setlocale(LC_CTYPE, "");
+#endif
+
+#ifdef WIN_NT
+	int binout = fileno(stdout);
+	_setmode(binout, _O_BINARY);
 #endif
 
 	atexit(&atexit_fb_shutdown);
