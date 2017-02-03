@@ -35,6 +35,11 @@
 #include "../../jrd/trace/TraceService.h"
 #include "../../jrd/ibase.h"
 
+#ifdef WIN_NT
+#include <io.h>
+#include <fcntl.h>
+#endif
+
 namespace Firebird {
 
 class TraceSvcUtil : public TraceSvcIntf
@@ -351,6 +356,11 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 
 	prevCtrlCHandler = signal(SIGINT, ctrl_c_handler);
 	fb_shutdown_callback(NULL, shutdownCallback, fb_shut_confirmation, NULL);
+
+#ifdef WIN_NT
+	int binout = fileno(stdout);
+	_setmode(binout, _O_BINARY);
+#endif
 
 	AutoPtr<UtilSvc> uSvc(UtilSvc::createStandalone(argc, argv));
 	try
