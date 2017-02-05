@@ -135,7 +135,7 @@ TracePluginImpl::TracePluginImpl(IPluginBase* plugin,
 			string filter(config.include_filter);
 			ISC_systemToUtf8(filter);
 
-			include_matcher = FB_NEW SimilarToMatcher<UCHAR, UpcaseConverter<> >(
+			include_matcher = FB_NEW TraceSimilarToMatcher(
 				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
 				filter.length(), '\\', true);
 		}
@@ -146,7 +146,7 @@ TracePluginImpl::TracePluginImpl(IPluginBase* plugin,
 			string filter(config.exclude_filter);
 			ISC_systemToUtf8(filter);
 
-			exclude_matcher = FB_NEW SimilarToMatcher<UCHAR, UpcaseConverter<> >(
+			exclude_matcher = FB_NEW TraceSimilarToMatcher(
 				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
 				filter.length(), '\\', true);
 		}
