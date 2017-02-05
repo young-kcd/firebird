@@ -1701,6 +1701,7 @@ COMMIT WORK;
 ('dsql_wrong_param_num', NULL, NULL, NULL, 7, 39, NULL, 'Wrong number of parameters (expected @1, got @2)', NULL, NULL);
 -- Do not change the arguments of the previous DSQL messages.
 ('dsql_invalid_drop_ss_clause', 'CreateAlterTriggerNode::dsqlPass', 'DdlNodes.epp', NULL, 7, 40, NULL, 'Invalid DROP SQL SECURITY clause', NULL, NULL);
+('upd_ins_cannot_default', 'pass1_update_or_insert', 'pass1.cpp', NULL, 7, 41, NULL, 'UPDATE OR INSERT value for field @1, part of the implicit or explicit MATCHING clause, cannot be DEFAULT', NULL, NULL);
 -- Write the new DSQL messages here.
 -- DYN
 (NULL, NULL, 'dyn.c', NULL, 8, 1, NULL, 'ODS version not supported by DYN', NULL, NULL);

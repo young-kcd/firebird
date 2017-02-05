@@ -881,6 +881,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-802, '07', '002', 7, 38, 'dsql_no_output_sqlda', NULL, NULL)
 (-313, '07', '001', 7, 39, 'dsql_wrong_param_num', NULL, NULL)
 (-817, '42', '000', 7, 40, 'dsql_invalid_drop_ss_clause', NULL, NULL)
+(-313, '42', '000', 7, 41, 'upd_ins_cannot_default', NULL, NULL)
 --  DYN
 (-901, '42', '000', 8, 37, 'dyn_filter_not_found', NULL, NULL)
 (-901, '42', '000', 8, 41, 'dyn_func_not_found', NULL, NULL)

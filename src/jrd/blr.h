@@ -420,4 +420,6 @@
 #define blr_window_win_extent_frame_value	(unsigned char) 6
 #define blr_window_win_exclusion			(unsigned char) 7
 
+#define blr_default					(unsigned char) 212
+
 #endif // JRD_BLR_H

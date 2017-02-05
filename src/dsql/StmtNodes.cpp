@@ -5877,6 +5877,51 @@ void ModifyNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 ModifyNode* ModifyNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
+	CompoundStmtNode* compoundNode = statement->as<CompoundStmtNode>();
+
+	// Remove assignments of DEFAULT to computed fields.
+	if (compoundNode)
+	{
+		for (size_t i = compoundNode->statements.getCount(); i--; )
+		{
+			const AssignmentNode* assign = compoundNode->statements[i]->as<AssignmentNode>();
+			fb_assert(assign);
+			if (!assign)
+				continue;
+
+			const ExprNode* assignFrom = assign->asgnFrom;
+			const FieldNode* assignToField = assign->asgnTo->as<FieldNode>();
+
+			if (assignToField && assignFrom->is<DefaultNode>())
+			{
+				jrd_rel* relation = csb->csb_rpt[newStream].csb_relation;
+				int fieldId = assignToField->fieldId;
+
+				while (true)
+				{
+					jrd_fld* fld;
+
+					if (assignToField->fieldStream == newStream &&
+						relation &&
+						relation->rel_fields &&
+						(fld = (*relation->rel_fields)[fieldId]))
+					{
+						if (fld->fld_computation)
+							compoundNode->statements.remove(i);
+						else if (relation->rel_view_rse && fld->fld_source_rel_field.first.hasData())
+						{
+							relation = MET_lookup_relation(tdbb, fld->fld_source_rel_field.first);
+							if ((fieldId = MET_lookup_field(tdbb, relation, fld->fld_source_rel_field.second)) >= 0)
+								continue;
+						}
+					}
+
+					break;
+				}
+			}
+		}
+	}
+
 	pass1Modify(tdbb, csb, this);
 
 	doPass1(tdbb, csb, statement.getAddress());
@@ -6557,12 +6602,15 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch,
 		NestConst<ValueExprNode>* ptr2 = values->items.begin();
 		for (const NestConst<ValueExprNode>* end = fields.end(); ptr != end; ++ptr, ++ptr2)
 		{
-			AssignmentNode* temp = FB_NEW_POOL(getPool()) AssignmentNode(getPool());
-			temp->asgnFrom = *ptr2;
-			temp->asgnTo = *ptr;
-			assignStatements->statements.add(temp);
+			if (*ptr2)	// it's NULL for DEFAULT
+			{
+				AssignmentNode* temp = FB_NEW_POOL(getPool()) AssignmentNode(getPool());
+				temp->asgnFrom = *ptr2;
+				temp->asgnTo = *ptr;
+				assignStatements->statements.add(temp);
 
-			PASS1_set_parameter_type(dsqlScratch, *ptr2, temp->asgnTo, false);
+				PASS1_set_parameter_type(dsqlScratch, *ptr2, temp->asgnTo, false);
+			}
 		}
 	}
 
@@ -6830,32 +6878,9 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 			AssignmentNode* assign = FB_NEW_POOL(*tdbb->getDefaultPool()) AssignmentNode(
 				*tdbb->getDefaultPool());
 			assign->asgnTo = PAR_gen_field(tdbb, stream, fieldId);
+			assign->asgnFrom = DefaultNode::createFromField(tdbb, csb, map, *ptr1);
 
 			stack.push(assign);
-
-			const MetaName& generatorName = (*ptr1)->fld_generator_name;
-
-			if (generatorName.hasData())
-			{
-				// Make a (next value for <generator name>) expression.
-
-				GenIdNode* const genNode = FB_NEW_POOL(csb->csb_pool) GenIdNode(
-					csb->csb_pool, (csb->blrVersion == 4), generatorName, NULL, true, true);
-
-				bool sysGen = false;
-				if (!MET_load_generator(tdbb, genNode->generator, &sysGen, &genNode->step))
-					PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(generatorName));
-
-				if (sysGen)
-					PAR_error(csb, Arg::Gds(isc_cant_modify_sysobj) << "generator" << generatorName);
-
-				assign->asgnFrom = genNode;
-			}
-			else //if (value)
-			{
-				// Clone the field default value.
-				assign->asgnFrom = RemapFieldNodeCopier(csb, map, fieldId).copy(tdbb, value);
-			}
 		}
 	}
 
@@ -8047,7 +8072,10 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	for (; fieldPtr != fieldsCopy.end(); ++fieldPtr, ++valuePtr)
 	{
 		AssignmentNode* assign = FB_NEW_POOL(pool) AssignmentNode(pool);
-		assign->asgnFrom = *valuePtr;
+
+		if (!(assign->asgnFrom = *valuePtr))	// it's NULL for DEFAULT
+			assign->asgnFrom = FB_NEW_POOL(pool) DefaultNode(pool, relation_name, (*fieldPtr)->dsqlName);
+
 		assign->asgnTo = *fieldPtr;
 		assignments->statements.add(assign);
 
@@ -8071,6 +8099,9 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 				if (testField == fieldName)
 				{
+					if (!*valuePtr)	// it's NULL for DEFAULT
+						ERRD_post(Arg::Gds(isc_upd_ins_cannot_default) << fieldName);
+
 					++matchCount;
 
 					const FB_SIZE_T fieldPos = fieldPtr - fieldsCopy.begin();

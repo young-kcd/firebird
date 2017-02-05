@@ -4118,6 +4118,155 @@ dsc* DecodeNode::execute(thread_db* tdbb, jrd_req* request) const
 //--------------------
 
 
+static RegisterNode<DefaultNode> regDefaultNode(blr_default);
+
+DefaultNode::DefaultNode(MemoryPool& pool, const Firebird::MetaName& aRelationName,
+		const Firebird::MetaName& aFieldName)
+	: DsqlNode<DefaultNode, ExprNode::TYPE_DEFAULT>(pool),
+	  relationName(aRelationName),
+	  fieldName(aFieldName),
+	  field(NULL)
+{
+}
+
+DmlNode* DefaultNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
+{
+	MetaName relationName, fieldName;
+	csb->csb_blr_reader.getMetaName(relationName);
+	csb->csb_blr_reader.getMetaName(fieldName);
+
+	CompilerScratch::Dependency dependency(obj_relation);
+	dependency.relation = MET_lookup_relation(tdbb, relationName);
+	dependency.subName = FB_NEW_POOL(pool) MetaName(fieldName);
+	csb->csb_dependencies.push(dependency);
+
+	jrd_fld* fld = NULL;
+
+	while (true)
+	{
+		jrd_rel* relation = MET_lookup_relation(tdbb, relationName);
+
+		if (relation && relation->rel_fields)
+		{
+			int fieldId = MET_lookup_field(tdbb, relation, fieldName);
+
+			if (fieldId >= 0)
+			{
+				fld = (*relation->rel_fields)[fieldId];
+
+				if (fld)
+				{
+					if (fld->fld_source_rel_field.first.hasData())
+					{
+						relationName = fld->fld_source_rel_field.first;
+						fieldName = fld->fld_source_rel_field.second;
+						continue;
+					}
+					else
+					{
+						DefaultNode* node = FB_NEW_POOL(pool) DefaultNode(pool, relationName, fieldName);
+						node->field = fld;
+						return node;
+					}
+				}
+			}
+		}
+
+		return FB_NEW_POOL(pool) NullNode(pool);
+	}
+}
+
+ValueExprNode* DefaultNode::createFromField(thread_db* tdbb, CompilerScratch* csb,
+	StreamType* map, jrd_fld* fld)
+{
+	if (fld->fld_generator_name.hasData())
+	{
+		// Make a (next value for <generator name>) expression.
+
+		GenIdNode* const genNode = FB_NEW_POOL(csb->csb_pool) GenIdNode(
+			csb->csb_pool, (csb->blrVersion == 4), fld->fld_generator_name, NULL, true, true);
+
+		bool sysGen = false;
+		if (!MET_load_generator(tdbb, genNode->generator, &sysGen, &genNode->step))
+			PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(fld->fld_generator_name));
+
+		if (sysGen)
+			PAR_error(csb, Arg::Gds(isc_cant_modify_sysobj) << "generator" << fld->fld_generator_name);
+
+		return genNode;
+	}
+	else if (fld->fld_default_value)
+	{
+		StreamMap localMap;
+		if (!map)
+			map = localMap.getBuffer(STREAM_MAP_LENGTH);
+
+		return NodeCopier(csb, map).copy(tdbb, fld->fld_default_value);
+	}
+	else
+		return FB_NEW_POOL(csb->csb_pool) NullNode(csb->csb_pool);
+}
+
+string DefaultNode::internalPrint(NodePrinter& printer) const
+{
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, relationName);
+	NODE_PRINT(printer, fieldName);
+
+	return "DefaultNode";
+}
+
+ValueExprNode* DefaultNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	DefaultNode* node = FB_NEW_POOL(getPool()) DefaultNode(getPool(),
+		relationName, fieldName);
+	return node;
+}
+
+void DefaultNode::setParameterName(dsql_par* parameter) const
+{
+	parameter->par_name = parameter->par_alias = "DEFAULT";
+}
+
+bool DefaultNode::setParameterType(DsqlCompilerScratch* /*dsqlScratch*/, const dsc* /*desc*/, bool /*forceVarChar*/)
+{
+	return false;
+}
+
+void DefaultNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->appendUChar(blr_default);
+	dsqlScratch->appendMetaString(relationName.c_str());
+	dsqlScratch->appendMetaString(fieldName.c_str());
+}
+
+void DefaultNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* /*desc*/)
+{
+}
+
+bool DefaultNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+		return false;
+
+	const DefaultNode* o = other->as<DefaultNode>();
+	fb_assert(o);
+
+	return relationName == o->relationName && fieldName == o->fieldName;
+}
+
+ValueExprNode* DefaultNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	ValueExprNode* node = createFromField(tdbb, csb, NULL, field);
+	doPass1(tdbb, csb, &node);
+	return node;
+}
+
+
+//--------------------
+
+
 static RegisterNode<DerivedExprNode> regDerivedExprNode(blr_derived_expr);
 
 DmlNode* DerivedExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)

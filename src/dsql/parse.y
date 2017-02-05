@@ -5913,7 +5913,7 @@ fetch_first_clause
 // IBO hack: replace column_parens_opt by ins_column_parens_opt.
 %type <storeNode> insert
 insert
-	: insert_start ins_column_parens_opt(NOTRIAL(&$1->dsqlFields)) VALUES '(' value_list ')'
+	: insert_start ins_column_parens_opt(NOTRIAL(&$1->dsqlFields)) VALUES '(' value_or_default_list ')'
 			returning_clause
 		{
 			StoreNode* node = $$ = $1;
@@ -5943,6 +5943,18 @@ insert_start
 			node->dsqlRelation = $3;
 			$$ = node;
 		}
+	;
+
+%type <valueListNode> value_or_default_list
+value_or_default_list
+	: value_or_default								{ $$ = newNode<ValueListNode>($1); }
+	| value_or_default_list ',' value_or_default	{ $$ = $1->add($3); }
+	;
+
+%type <valueExprNode> value_or_default
+value_or_default
+	: value
+	| DEFAULT	{ $$ = NULL; }
 	;
 
 
@@ -5975,7 +5987,7 @@ merge_when_clause($mergeNode)
 merge_when_matched_clause($mergeNode)
 	: WHEN MATCHED
 			{ $<mergeMatchedClause>$ = &$mergeNode->whenMatched.add(); }
-		merge_update_specification(NOTRIAL($<mergeMatchedClause>3))
+		merge_update_specification(NOTRIAL($<mergeMatchedClause>3), NOTRIAL(&$mergeNode->relation->dsqlName))
 	;
 
 %type merge_when_not_matched_clause(<mergeNode>)
@@ -5985,11 +5997,11 @@ merge_when_not_matched_clause($mergeNode)
 		merge_insert_specification(NOTRIAL($<mergeNotMatchedClause>4))
 	;
 
-%type merge_update_specification(<mergeMatchedClause>)
-merge_update_specification($mergeMatchedClause)
-	: THEN UPDATE SET assignments
+%type merge_update_specification(<mergeMatchedClause>, <metaNamePtr>)
+merge_update_specification($mergeMatchedClause, $relationName)
+	: THEN UPDATE SET update_assignments(NOTRIAL($relationName))
 		{ $mergeMatchedClause->assignments = $4; }
-	| AND search_condition THEN UPDATE SET assignments
+	| AND search_condition THEN UPDATE SET update_assignments(NOTRIAL($relationName))
 		{
 			$mergeMatchedClause->condition = $2;
 			$mergeMatchedClause->assignments = $6;
@@ -6002,10 +6014,10 @@ merge_update_specification($mergeMatchedClause)
 %type merge_insert_specification(<mergeNotMatchedClause>)
 merge_insert_specification($mergeNotMatchedClause)
 	: THEN INSERT ins_column_parens_opt(NOTRIAL(&$mergeNotMatchedClause->fields))
-			VALUES '(' value_list ')'
+			VALUES '(' value_or_default_list ')'
 		{ $mergeNotMatchedClause->values = $6; }
 	| AND search_condition THEN INSERT ins_column_parens_opt(NOTRIAL(&$mergeNotMatchedClause->fields))
-			VALUES '(' value_list ')'
+			VALUES '(' value_or_default_list ')'
 		{
 			$mergeNotMatchedClause->values = $8;
 			$mergeNotMatchedClause->condition = $2;
@@ -6059,7 +6071,7 @@ update
 
 %type <stmtNode> update_searched
 update_searched
-	: UPDATE table_name SET assignments where_clause plan_clause
+	: UPDATE table_name SET update_assignments(NOTRIAL(&$2->dsqlName)) where_clause plan_clause
 			order_clause_opt rows_clause_optional returning_clause
 		{
 			ModifyNode* node = newNode<ModifyNode>();
@@ -6076,7 +6088,7 @@ update_searched
 
 %type <stmtNode> update_positioned
 update_positioned
-	: UPDATE table_name SET assignments cursor_clause returning_clause
+	: UPDATE table_name SET update_assignments(NOTRIAL(&$2->dsqlName)) cursor_clause returning_clause
 		{
 			ModifyNode* node = newNode<ModifyNode>();
 			node->dsqlRelation = $2;
@@ -6097,7 +6109,7 @@ update_or_insert
 				UpdateOrInsertNode* node = $$ = newNode<UpdateOrInsertNode>();
 				node->relation = $5;
 			}
-		ins_column_parens_opt(NOTRIAL(&$6->fields)) VALUES '(' value_list ')'
+		ins_column_parens_opt(NOTRIAL(&$6->fields)) VALUES '(' value_or_default_list ')'
 				update_or_insert_matching_opt(NOTRIAL(&$6->matching)) returning_clause
 			{
 				UpdateOrInsertNode* node = $$ = $6;
@@ -6165,6 +6177,38 @@ assignment
 			AssignmentNode* node = newNode<AssignmentNode>();
 			node->asgnTo = $1;
 			node->asgnFrom = $3;
+			$$ = node;
+		}
+	;
+
+%type <compoundStmtNode> update_assignments(<metaNamePtr>)
+update_assignments($relationName)
+	: update_assignment($relationName)
+		{
+			$$ = newNode<CompoundStmtNode>();
+			$$->statements.add($1);
+		}
+	| update_assignments ',' update_assignment($relationName)
+		{
+			$1->statements.add($3);
+			$$ = $1;
+		}
+	;
+
+%type <stmtNode> update_assignment(<metaNamePtr>)
+update_assignment($relationName)
+	: update_column_name '=' value
+		{
+			AssignmentNode* node = newNode<AssignmentNode>();
+			node->asgnTo = $1;
+			node->asgnFrom = $3;
+			$$ = node;
+		}
+	| update_column_name '=' DEFAULT
+		{
+			AssignmentNode* node = newNode<AssignmentNode>();
+			node->asgnTo = $1;
+			node->asgnFrom = newNode<DefaultNode>(*$relationName, $1->dsqlName);
 			$$ = node;
 		}
 	;
