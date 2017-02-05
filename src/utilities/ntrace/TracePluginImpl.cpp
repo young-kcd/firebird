@@ -599,6 +599,8 @@ bool TracePluginImpl::filterStatus(const ISC_STATUS* status, GdsCodesArray& arr)
 }
 
 
+namespace {
+
 class GdsName2CodeMap
 {
 public:
@@ -626,6 +628,8 @@ private:
 
 	GenericMap<Pair<NonPooled<const char*, ISC_STATUS> >, NocaseCmp > m_map;
 };
+
+}; // namespace
 
 static InitInstance<GdsName2CodeMap> gdsNamesMap;
 
