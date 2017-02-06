@@ -28,6 +28,7 @@
 #include "firebird.h"
 #include "../jrd/os/mod_loader.h"
 #include "../../common.h"
+#include "../jrd/os/path_utils.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -47,14 +48,16 @@
 class DlfcnModule : public ModuleLoader::Module
 {
 public:
-	DlfcnModule(void* m)
-		: module(m)
+	DlfcnModule(MemoryPool& pool, const Firebird::PathName& aFileName, void* m)
+		: fileName(pool, aFileName),
+		  module(m)
 	{}
 
 	~DlfcnModule();
 	void *findSymbol(const Firebird::string&);
 
 private:
+	Firebird::PathName fileName;
 	void *module;
 };
 
@@ -95,7 +98,7 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath
 		return 0;
 	}
 
-	return FB_NEW(*getDefaultMemoryPool()) DlfcnModule(module);
+	return FB_NEW(*getDefaultMemoryPool()) DlfcnModule(*getDefaultMemoryPool(), modPath, module);
 }
 
 DlfcnModule::~DlfcnModule()
@@ -113,6 +116,18 @@ void *DlfcnModule::findSymbol(const Firebird::string& symName)
 
 		result = dlsym(module, newSym.c_str());
 	}
+
+#ifdef HAVE_DLADDR
+	if (!PathUtils::isRelative(fileName))
+	{
+		Dl_info info;
+		if (!dladdr(result, &info))
+			return NULL;
+		if (fileName != info.dli_fname)
+			return NULL;
+	}
+#endif
+
 	return result;
 }
 
