@@ -40,6 +40,11 @@
 #include <locale.h>
 #endif
 
+#ifdef WIN_NT
+#include <fcntl.h>
+#include <io.h>
+#endif
+
 namespace Firebird {
 
 class TraceSvcUtil : public TraceSvcIntf
