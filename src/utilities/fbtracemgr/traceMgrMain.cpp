@@ -42,6 +42,7 @@
 
 #ifdef WIN_NT
 #include <fcntl.h>
+#include <io.h>
 #endif
 
 namespace Firebird {
