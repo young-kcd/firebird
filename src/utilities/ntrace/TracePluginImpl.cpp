@@ -172,7 +172,7 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 			string filter(config.include_filter);
 			ISC_systemToUtf8(filter);
 
-			include_matcher = new SimilarToMatcher<UpcaseConverter<NullStrConverter>, UCHAR>(
+			include_matcher = new TraceSimilarToMatcher(
 				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
 				filter.length(), '\\', true);
 		}
@@ -183,7 +183,7 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 			string filter(config.exclude_filter);
 			ISC_systemToUtf8(filter);
 
-			exclude_matcher = new SimilarToMatcher<UpcaseConverter<NullStrConverter>, UCHAR>(
+			exclude_matcher = new TraceSimilarToMatcher(
 				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
 				filter.length(), '\\', true);
 		}
