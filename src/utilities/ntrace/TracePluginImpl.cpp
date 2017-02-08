@@ -957,14 +957,20 @@ void TracePluginImpl::appendServiceQueryParams(size_t send_item_length,
 
 void TracePluginImpl::log_init()
 {
-	record.printf("\tSESSION_%d %s" NEWLINE "\t%s" NEWLINE, session_id, session_name.c_str(), config.db_filename.c_str());
-	logRecord("TRACE_INIT");
+	if (config.log_initfini)
+	{
+		record.printf("\tSESSION_%d %s" NEWLINE "\t%s" NEWLINE, session_id, session_name.c_str(), config.db_filename.c_str());
+		logRecord("TRACE_INIT");
+	}
 }
 
 void TracePluginImpl::log_finalize()
 {
-	record.printf("\tSESSION_%d %s" NEWLINE "\t%s" NEWLINE, session_id, session_name.c_str(), config.db_filename.c_str());
-	logRecord("TRACE_FINI");
+	if (config.log_initfini)
+	{
+		record.printf("\tSESSION_%d %s" NEWLINE "\t%s" NEWLINE, session_id, session_name.c_str(), config.db_filename.c_str());
+		logRecord("TRACE_FINI");
+	}
 
 	logWriter->release();
 	logWriter = NULL;
@@ -1986,13 +1992,10 @@ void TracePluginImpl::log_event_trigger_execute(TraceDatabaseConnection* connect
 
 void TracePluginImpl::log_event_error(TraceBaseConnection* connection, TraceStatusVector* status, const char* function)
 {
-	if (!config.log_errors)
-		return;
-
 	string event_type;
-	if (status->hasError())
+	if (config.log_errors && status->hasError())
 		event_type.printf("ERROR AT %s", function);
-	else if (status->hasWarning())
+	else if (config.log_warnings && status->hasWarning())
 		event_type.printf("WARNING AT %s", function);
 	else
 		return;
