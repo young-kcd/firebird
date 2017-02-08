@@ -2,6 +2,17 @@
   * v2.5.7
   **************************
 
+    * Bugfix CORE-5477
+        Trace duplicates ascii_char(13) in its output (Windows only)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5474
+        'Restrict UDF' is not effective, because fbudf.so is dynamically linked against libc
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
     * Bugfix CORE-5429
         Segfault when attachment is abandoned for some reason during sweep thread startup
       Contributor(s):
@@ -14,6 +25,11 @@
 
     * Bugfix CORE-5422
         Decompression overran buffer after rollback
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5419
+        Index garbage collection on varchar column causes server to hang
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
