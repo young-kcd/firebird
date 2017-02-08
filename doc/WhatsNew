@@ -13,6 +13,11 @@
         Alex Peshkov <peshkoff at mail.ru>
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
+    * Bugfix CORE-5470
+        Trace INCLUDE_FILTER with [[:WHITESPACE:]]+ does not work when statement contains newline is issued
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-5429
         Segfault when attachment is abandoned for some reason during sweep thread startup
       Contributor(s):
@@ -71,6 +76,11 @@
 
     * Bugfix CORE-4742
         gfix -shut single -force 0 ..... not working as documented with 2.5.3 & 2.5.4
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-5475
+        Provide ability to filter out info and warnings from trace log
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
