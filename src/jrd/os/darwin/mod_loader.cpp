@@ -29,6 +29,7 @@
 
 #include "../jrd/os/mod_loader.h"
 #include "../../common.h"
+#include "../jrd/os/path_utils.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -40,14 +41,16 @@
 class DlfcnModule : public ModuleLoader::Module
 {
 public:
-	DlfcnModule(void* m) 
-		: module(m)
+	DlfcnModule(MemoryPool& pool, const Firebird::PathName& aFileName, void* m)
+		: fileName(pool, aFileName),
+		  module(m)
 	{}
 
 	~DlfcnModule();
-	void *findSymbol (const Firebird::string&);
+	void *findSymbol(const Firebird::string&);
 
 private:
+	Firebird::PathName fileName;
 	void *module;
 };
 
@@ -72,9 +75,9 @@ void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 }
 
 #ifdef DEV_BUILD
-#define FB_RTLD_MODE RTLD_NOW
+#define FB_RTLD_MODE RTLD_NOW	// make sure nothing left unresolved
 #else
-#define FB_RTLD_MODE RTLD_LAZY
+#define FB_RTLD_MODE RTLD_LAZY	// save time when loading library
 #endif
 
 ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath)
@@ -83,21 +86,19 @@ ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath
 	if (module == NULL)
 	{
 #ifdef DEBUG_LOADER
-	fprintf(stderr, "load error: %s: %s\n", modPath.c_str(), dlerror());
+		fprintf(stderr, "load error: %s: %s\n", modPath.c_str(), dlerror());
 #endif // DEBUG_LOADER
-	return 0;
+		return 0;
 	}
-	
-	return FB_NEW(*getDefaultMemoryPool()) DlfcnModule(module);
+
+	return FB_NEW(*getDefaultMemoryPool()) DlfcnModule(*getDefaultMemoryPool(), modPath, module);
 }
 
 
 DlfcnModule::~DlfcnModule()
 {
 	if (module)
-	{
 		dlclose(module);
-	}
 }
 
 void* DlfcnModule::findSymbol(const Firebird::string& symName)
@@ -108,8 +109,17 @@ void* DlfcnModule::findSymbol(const Firebird::string& symName)
 		Firebird::string newSym = '_' + symName;
 		result = dlsym(module, newSym.c_str());
 	}
-	return result;
 
+	if (!PathUtils::isRelative(fileName))
+	{
+		Dl_info info;
+		if (!dladdr(result, &info))
+			return NULL;
+		if (fileName != info.dli_fname)
+			return NULL;
+	}
+
+	return result;
 }
 
 
