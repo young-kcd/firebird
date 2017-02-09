@@ -87,7 +87,7 @@ void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 #define FB_RTLD_MODE RTLD_LAZY	// save time when loading library
 #endif
 
-ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath)
+ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath)
 {
 	void* module = dlopen(modPath.c_str(), FB_RTLD_MODE);
 	if (module == NULL)
@@ -107,7 +107,7 @@ DlfcnModule::~DlfcnModule()
 		dlclose(module);
 }
 
-void *DlfcnModule::findSymbol(const Firebird::string& symName)
+void* DlfcnModule::findSymbol(const Firebird::string& symName)
 {
 	void *result = dlsym(module, symName.c_str());
 	if (result == NULL)
