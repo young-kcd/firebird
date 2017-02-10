@@ -54,7 +54,7 @@ INTL_Files1=	ld.cpp       cv_narrow.cpp \
 
 # use INTL_Files2 in prefix file for host-specific additional files
 INTL_Sources= $(addprefix intl/, $(INTL_Files1)) $(INTL_Files2) \
-	jrd/IntlUtil.cpp jrd/unicode_util.cpp jrd/CharSet.cpp jrd/mod_loader.cpp
+	jrd/IntlUtil.cpp jrd/unicode_util.cpp jrd/CharSet.cpp jrd/mod_loader.cpp jrd/path_utils.cpp
 
 INTL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INTL_Sources))))
 
