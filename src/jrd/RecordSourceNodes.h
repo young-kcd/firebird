@@ -354,7 +354,8 @@ public:
 		  sourceList(NULL),
 		  targetList(NULL),
 		  in_msg(NULL),
-		  procedure(NULL),
+		  procedureId(0),
+		  isSubRoutine(false),
 		  view(NULL),
 		  context(0)
 	{
@@ -416,7 +417,26 @@ public:
 
 private:
 	NestConst<MessageNode> in_msg;
+/* was:
 	jrd_prc* procedure;
+
+	dimitr: Referencing procedures via a pointer is not currently reliable, because
+			procedures can be removed from the metadata cache after ALTER/DROP.
+			Usually, this is prevented via the reference counting, but it's incremented
+			only for compiled requests. Node trees without requests (e.g. computed fields)
+			are not protected and may end with dead procedure pointers, causing problems
+			(up to crashing) when they're copied the next time. See CORE-5456 / CORE-5457.
+
+			ExecProcedureNode is a lucky exception because it's never (directly) used in
+			expressions.
+
+			A better (IMO) solution would be to add a second-level reference counting for
+			metadata objects since the parsing stage till either request creation or
+			explicit unload from the metadata cache. But we don't have clearly established
+			cache management policies yet, so I leave it for the other day.
+*/
+	USHORT procedureId;
+	bool isSubRoutine;
 	jrd_rel* view;
 	SSHORT context;
 };
