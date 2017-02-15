@@ -57,6 +57,7 @@
 #include "../common/classes/Aligner.h"
 #include "../common/utils_proto.h"
 #include "../common/os/os_utils.h"
+#include "../common/os/path_utils.h"
 
 #include <sys/types.h>
 #ifdef HAVE_SYS_IPC_H
@@ -83,6 +84,10 @@
 #endif
 #ifdef HAVE_ICONV_H
 #include <iconv.h>
+#endif
+#ifdef LINUX
+#include <sys/sysmacros.h>
+#include <sys/stat.h>
 #endif
 
 #include "../common/config/config.h"
@@ -227,6 +232,28 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
 	if (Config::getRemoteFileOpenAbility()) {
 		return false;
 	}
+
+#ifdef LINUX
+	// In order to avoid analyzing mtab in most cases check for non-device mounts first
+	struct stat fileStat;
+	unsigned m = 1;		// use something that is known to be not non-device major
+	if (stat(expanded_filename.c_str(), &fileStat) == 0) {
+		m = major(fileStat.st_dev);
+	}
+	else {		// stat error - let's try with path component
+		tstring path, name;
+		PathUtils::splitLastComponent(path, name, expanded_filename);
+		if (path.hasData() && stat(path.c_str(), &fileStat) == 0)
+			m = major(fileStat.st_dev);
+	}
+
+	if (m != 0 && m != 144 && m != 145 && m != 146)	{
+		// device mount or stat for file/path is impossible - definitely not NFS
+		return false;
+	}
+
+	// proceed with deeper analysis
+#endif
 
 	tstring max_node, max_path;
 	size_t len = 0;
