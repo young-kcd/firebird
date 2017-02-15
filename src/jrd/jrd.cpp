@@ -1372,7 +1372,7 @@ JAttachment* JProvider::attachDatabase(CheckStatusWrapper* user_status, const ch
 	return internalAttach(user_status, filename, dpb_length, dpb, NULL);
 }
 
-JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const char* filename,
+JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const char* const filename,
 		unsigned int dpb_length, const unsigned char* dpb, const UserId* existingId)
 {
 /**************************************
@@ -1440,7 +1440,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 			if (existingId)
 				userId = *existingId;
 			else
-				getUserInfo(userId, options, org_filename.c_str(), expanded_name.c_str(),
+				getUserInfo(userId, options, filename, expanded_name.c_str(),
 					&config, false, cryptCallback);
 
 #ifdef WIN_NT
@@ -2476,7 +2476,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 				ERR_post(Arg::Gds(isc_unavailable));
 
 			// Check for correct credentials supplied
-			getUserInfo(userId, options, org_filename.c_str(), NULL, &config, true, cryptCallback);
+			getUserInfo(userId, options, filename, NULL, &config, true, cryptCallback);
 
 #ifdef WIN_NT
 			guardDbInit.enter();		// Required to correctly expand name of just created database

@@ -920,12 +920,14 @@ public:
 		embeddedSysdba.insertByte(isc_dpb_map_attach, TRUE);
 		embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
 
+		MAP_DEBUG(fprintf(stderr, "Attach %s\n", aliasDb));
 		IAttachment* att = prov->attachDatabase(&st, aliasDb,
 			embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
 
 		if (st->getState() & IStatus::STATE_ERRORS)
 		{
 			const ISC_STATUS* s = st->getErrors();
+			MAP_DEBUG(isc_print_status(s));
 			bool missing = fb_utils::containsErrorCode(s, isc_io_error);
 			down = fb_utils::containsErrorCode(s, isc_shutdown);
 			if (!(missing || down))
@@ -935,6 +937,7 @@ public:
 		}
 		else
 			reset(att);
+		MAP_DEBUG(fprintf(stderr, "Att=%p\n", att));
 
 		return down;
 	}
