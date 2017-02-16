@@ -1351,14 +1351,18 @@ namespace Jrd {
 		SyncLockGuard dsGuard(&mgr->dbb.dbb_sync, SYNC_EXCLUSIVE, FB_FUNCTION);
 		for (Attachment* att = mgr->dbb.dbb_attachments; att; att = att->att_next)
 		{
+			bool found = false;
 			for (unsigned i = 0; i < knownHolders.getCount(); ++i)
 			{
 				if (knownHolders[i].first == att)
-					goto found;
+				{
+					found = true;
+					break;
+				}
 			}
 
-			att->signalShutdown();
-found:;
+			if (!found)
+				att->signalShutdown();
 		}
 
 		// Loop through internal attachments list closing one missing valid holders
