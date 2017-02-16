@@ -6156,20 +6156,6 @@ cursor_clause
 
 // Assignments
 
-%type <compoundStmtNode> assignments
-assignments
-	: assignment
-		{
-			$$ = newNode<CompoundStmtNode>();
-			$$->statements.add($1);
-		}
-	| assignments ',' assignment
-		{
-			$1->statements.add($3);
-			$$ = $1;
-		}
-	;
-
 %type <stmtNode> assignment
 assignment
 	: update_column_name '=' value
