@@ -1798,6 +1798,8 @@ C --
       PARAMETER (GDS__dsql_wrong_param_num             = 336003111)
       INTEGER*4 GDS__dsql_invalid_drop_ss_clause     
       PARAMETER (GDS__dsql_invalid_drop_ss_clause      = 336003112)
+      INTEGER*4 GDS__upd_ins_cannot_default          
+      PARAMETER (GDS__upd_ins_cannot_default           = 336003113)
       INTEGER*4 GDS__dyn_filter_not_found            
       PARAMETER (GDS__dyn_filter_not_found             = 336068645)
       INTEGER*4 GDS__dyn_func_not_found              
@@ -1950,6 +1952,8 @@ C --
       PARAMETER (GDS__dyn_cant_use_in_foreignkey       = 336068897)
       INTEGER*4 GDS__dyn_defvaldecl_package_func     
       PARAMETER (GDS__dyn_defvaldecl_package_func      = 336068898)
+      INTEGER*4 GDS__dyn_cant_use_zero_inc_ident     
+      PARAMETER (GDS__dyn_cant_use_zero_inc_ident      = 336068904)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          

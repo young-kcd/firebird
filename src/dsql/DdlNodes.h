@@ -1304,6 +1304,18 @@ public:
 		NestConst<BoolSourceClause> check;
 	};
 
+	struct IdentityOptions
+	{
+		IdentityOptions(MemoryPool&)
+			: restart(false)
+		{
+		}
+
+		Nullable<SINT64> startValue;
+		Nullable<SLONG> increment;
+		bool restart;	// used in ALTER
+	};
+
 	struct AddColumnClause : public Clause
 	{
 		explicit AddColumnClause(MemoryPool& p)
@@ -1313,8 +1325,7 @@ public:
 			  constraints(p),
 			  collate(p),
 			  computed(NULL),
-			  identity(false),
-			  identityStart(0),
+			  identityOptions(NULL),
 			  notNullSpecified(false)
 		{
 		}
@@ -1324,8 +1335,7 @@ public:
 		Firebird::ObjectsArray<AddConstraintClause> constraints;
 		Firebird::MetaName collate;
 		NestConst<ValueSourceClause> computed;
-		bool identity;
-		SINT64 identityStart;
+		NestConst<IdentityOptions> identityOptions;
 		bool notNullSpecified;
 	};
 
@@ -1375,7 +1385,8 @@ public:
 			  field(NULL),
 			  defaultValue(NULL),
 			  dropDefault(false),
-			  identityRestart(false),
+			  dropIdentity(false),
+			  identityOptions(NULL),
 			  computed(NULL)
 		{
 		}
@@ -1383,8 +1394,8 @@ public:
 		dsql_fld* field;
 		NestConst<ValueSourceClause> defaultValue;
 		bool dropDefault;
-		bool identityRestart;
-		Nullable<SINT64> identityRestartValue;
+		bool dropIdentity;
+		NestConst<IdentityOptions> identityOptions;
 		NestConst<ValueSourceClause> computed;
 	};
 

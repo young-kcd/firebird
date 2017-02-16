@@ -270,12 +270,15 @@ namespace
 	{
 		LocalStatus ls;
 		CheckStatusWrapper s(&ls);
+
 		if (pluginLoaderConfig)
 		{
 			const ConfigFile::Parameter* p = pluginLoaderConfig->findParameter("Config");
+
 			if (p)
 			{
 				RefPtr<ConfigFile> configSection(findInPluginsConf("Config", p->value.c_str()));
+
 				if (configSection.hasData())
 				{
 					IConfig* rc = FB_NEW ConfigAccess(configSection);
@@ -560,7 +563,7 @@ namespace
 			{
 				if (!firebirdConf.hasData())
 				{
-					RefPtr<Config> specificConf(Config::getDefaultConfig());
+					RefPtr<const Config> specificConf(Config::getDefaultConfig());
 					firebirdConf = FB_NEW FirebirdConf(specificConf);
 				}
 
@@ -1026,7 +1029,7 @@ void PluginManager::registerPluginFactory(unsigned int interfaceType, const char
 		changeExtension(plugConfigFile, "conf");
 
 		ConfiguredPlugin* p = FB_NEW ConfiguredPlugin(RefPtr<PluginModule>(builtin), r,
-									findInPluginsConf("Plugin", defaultName), plugConfigFile, defaultName);
+			findInPluginsConf("Plugin", defaultName), plugConfigFile, defaultName);
 		p->addRef();  // Will never be unloaded
 		plugins->put(MapKey(interfaceType, defaultName), p);
 	}
@@ -1091,8 +1094,6 @@ IPluginSet* PluginManager::getPlugins(CheckStatusWrapper* status, unsigned int i
 
 void PluginManager::releasePlugin(IPluginBase* plugin)
 {
-	MutexLockGuard g(plugins->mutex, FB_FUNCTION);
-
 	IReferenceCounted* parent = plugin->getOwner();
 
 	if (plugin->release() == 0)
@@ -1100,6 +1101,8 @@ void PluginManager::releasePlugin(IPluginBase* plugin)
 		///fb_assert(parent);
 		if (parent)
 		{
+			MutexLockGuard g(plugins->mutex, FB_FUNCTION);
+
 			parent->release();
 			if (plugins->wakeIt)
 			{
@@ -1116,7 +1119,8 @@ IConfig* PluginManager::getConfig(CheckStatusWrapper* status, const char* filena
 	try
 	{
 		IConfig* rc = FB_NEW ConfigAccess(RefPtr<ConfigFile>(
-			FB_NEW_POOL(*getDefaultMemoryPool()) ConfigFile(*getDefaultMemoryPool(), filename, ConfigFile::HAS_SUB_CONF)));
+			FB_NEW_POOL(*getDefaultMemoryPool()) ConfigFile(*getDefaultMemoryPool(),
+				filename, ConfigFile::HAS_SUB_CONF)));
 		rc->addRef();
 		return rc;
 	}
@@ -1253,7 +1257,7 @@ public:
 		try
 		{
 			PathName dummy;
-			Firebird::RefPtr<Config> config;
+			Firebird::RefPtr<const Config> config;
 			expandDatabaseName(dbName, dummy, &config);
 
 			IFirebirdConf* firebirdConf = FB_NEW FirebirdConf(config);

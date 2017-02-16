@@ -120,14 +120,11 @@ static BufferDesc* alloc_bdb(thread_db*, BufferControl*, UCHAR **);
 static Lock* alloc_page_lock(Jrd::thread_db*, BufferDesc*);
 static int blocking_ast_bdb(void*);
 #ifdef CACHE_READER
-static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM);
-
 static void prefetch_epilogue(Prefetch*, FbStatusVector *);
 static void prefetch_init(Prefetch*, thread_db*);
 static void prefetch_io(Prefetch*, FbStatusVector *);
 static void prefetch_prologue(Prefetch*, SLONG *);
 #endif
-static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM);
 static void check_precedence(thread_db*, WIN*, PageNumber);
 static void clear_precedence(thread_db*, BufferDesc*);
 static BufferDesc* dealloc_bdb(BufferDesc*);
@@ -1438,7 +1435,7 @@ void CCH_init2(thread_db* tdbb)
 
 		try
 		{
-			Thread::start(cache_writer, dbb, THREAD_medium);
+			bcb->bcb_writer_fini.run(bcb);
 		}
 		catch (const Exception&)
 		{
@@ -2017,7 +2014,7 @@ void CCH_shutdown(thread_db* tdbb)
 	{
 		bcb->bcb_flags &= ~BCB_cache_writer;
 		bcb->bcb_writer_sem.release(); // Wake up running thread
-		bcb->bcb_writer_fini.enter();
+		bcb->bcb_writer_fini.waitForCompletion();
 	}
 
 	SyncLockGuard bcbSync(&bcb->bcb_syncObject, SYNC_EXCLUSIVE, "CCH_shutdown");
@@ -2692,7 +2689,7 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 
 
 #ifdef CACHE_READER
-static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
+void BufferControl::cache_reader(BufferControl* bcb)
 {
 /**************************************
  *
@@ -2706,7 +2703,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
  *	busy at a time.
  *
  **************************************/
-	Database* dbb = (Database*) arg;
+	Database* dbb = bcb->bcb_database;
 	Database::SyncGuard dsGuard(dbb);
 
 	FbLocalStatus status_vector;
@@ -2846,7 +2843,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 #endif
 
 
-static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
+void BufferControl::cache_writer(BufferControl* bcb)
 {
 /**************************************
  *
@@ -2859,8 +2856,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 	FbLocalStatus status_vector;
-	Database* const dbb = (Database*) arg;
-	BufferControl* const bcb = dbb->dbb_bcb;
+	Database* const dbb = bcb->bcb_database;
 
 	try
 	{
@@ -2964,8 +2960,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		ex.stuffException(&status_vector);
-		iscDbLogStatus(dbb->dbb_filename.c_str(), &status_vector);
+		bcb->exceptionHandler(ex, cache_writer);
 	}
 
 	bcb->bcb_flags &= ~BCB_cache_writer;
@@ -2977,15 +2972,19 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 			bcb->bcb_flags &= ~BCB_writer_start;
 			bcb->bcb_writer_init.release();
 		}
-		bcb->bcb_writer_fini.release();
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		ex.stuffException(&status_vector);
-		iscDbLogStatus(dbb->dbb_filename.c_str(), &status_vector);
+		bcb->exceptionHandler(ex, cache_writer);
 	}
+}
 
-	return 0;
+
+void BufferControl::exceptionHandler(const Firebird::Exception& ex, BcbThreadSync::ThreadRoutine*)
+{
+	FbLocalStatus status_vector;
+	ex.stuffException(&status_vector);
+	iscDbLogStatus(bcb_database->dbb_filename.c_str(), &status_vector);
 }
 
 

@@ -894,6 +894,7 @@ static const struct {
 	{336003110, -802}, /*  38 dsql_no_output_sqlda */
 	{336003111, -313}, /*  39 dsql_wrong_param_num */
 	{336003112, -817}, /*  40 dsql_invalid_drop_ss_clause */
+	{336003113, -313}, /*  41 upd_ins_cannot_default */
 	{336068645, -901}, /*  37 dyn_filter_not_found */
 	{336068649, -901}, /*  41 dyn_func_not_found */
 	{336068656, -901}, /*  48 dyn_index_not_found */
@@ -970,6 +971,7 @@ static const struct {
 	{336068896, -901}, /* 288 dyn_cant_use_zero_increment */
 	{336068897, -901}, /* 289 dyn_cant_use_in_foreignkey */
 	{336068898, -901}, /* 290 dyn_defvaldecl_package_func */
+	{336068904, -901}, /* 296 dyn_cant_use_zero_inc_ident */
 	{336330753, -901}, /*   1 gbak_unknown_switch */
 	{336330754, -901}, /*   2 gbak_page_size_missing */
 	{336330755, -901}, /*   3 gbak_page_size_toobig */

@@ -81,7 +81,8 @@ public:
 	void decrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to);
 	void setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolderPlugin** sources,
 		const char* keyName);
-	// One if free to ignore passed info when not needed
+
+	// One is free to ignore passed info when not needed
 	void setInfo(CheckStatusWrapper* status, IDbCryptInfo* info)
 	{
 		// You may uncomment next line in a case of embedded connection
@@ -235,7 +236,9 @@ void DbCrypt::setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolder
 			return;
 
 		if (callback && callback->callback(0, NULL, 1, &key) == 1)
+		{
 			return;
+		}
 	}
 
 	key = 0;

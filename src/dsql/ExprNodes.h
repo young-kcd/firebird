@@ -476,6 +476,36 @@ public:
 };
 
 
+class DefaultNode : public DsqlNode<DefaultNode, ExprNode::TYPE_DEFAULT>
+{
+public:
+	explicit DefaultNode(MemoryPool& pool, const Firebird::MetaName& aRelationName,
+		const Firebird::MetaName& aFieldName);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+	static ValueExprNode* createFromField(thread_db* tdbb, CompilerScratch* csb, StreamType* map, jrd_fld* fld);
+
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void setParameterName(dsql_par* parameter) const;
+	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
+		const dsc* desc, bool forceVarChar);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
+
+	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+
+	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+
+public:
+	const Firebird::MetaName relationName;
+	const Firebird::MetaName fieldName;
+
+private:
+	jrd_fld* field;
+};
+
+
 class DerivedExprNode : public TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_EXPR>
 {
 public:
@@ -698,9 +728,9 @@ public:
 	const bool dialect1;
 	GeneratorItem generator;
 	NestConst<ValueExprNode> arg;
+	SLONG step;
 
 private:
-	SLONG step;
 	bool sysGen;
 	const bool implicit;
 	const bool identity;

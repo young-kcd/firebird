@@ -58,6 +58,7 @@
 #include "../common/classes/init.h"
 #include "../common/classes/TempFile.h"
 #include "../common/utils_proto.h"
+#include "../common/ThreadStart.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -341,7 +342,9 @@ static const UCHAR
 				 op_line, op_args, 0},
 	subproc_decl[] = { op_subproc_decl, 0},
 	subfunc_decl[] = { op_subfunc_decl, 0},
-	window_win[] = { op_byte, op_window_win, 0};
+	window_win[] = { op_byte, op_window_win, 0},
+	relation_field[] = { op_line, op_indent, op_byte, op_literal,
+						 op_line, op_indent, op_byte, op_literal, op_pad, op_line, 0};
 
 
 #include "../jrd/blp.h"

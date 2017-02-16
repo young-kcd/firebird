@@ -1793,6 +1793,8 @@ const
 	gds_dsql_wrong_param_num             = 336003111;
 	isc_dsql_invalid_drop_ss_clause      = 336003112;
 	gds_dsql_invalid_drop_ss_clause      = 336003112;
+	isc_upd_ins_cannot_default           = 336003113;
+	gds_upd_ins_cannot_default           = 336003113;
 	isc_dyn_filter_not_found             = 336068645;
 	gds_dyn_filter_not_found             = 336068645;
 	isc_dyn_func_not_found               = 336068649;
@@ -1945,6 +1947,8 @@ const
 	gds_dyn_cant_use_in_foreignkey       = 336068897;
 	isc_dyn_defvaldecl_package_func      = 336068898;
 	gds_dyn_defvaldecl_package_func      = 336068898;
+	isc_dyn_cant_use_zero_inc_ident      = 336068904;
+	gds_dyn_cant_use_zero_inc_ident      = 336068904;
 	isc_gbak_unknown_switch              = 336330753;
 	gds_gbak_unknown_switch              = 336330753;
 	isc_gbak_page_size_missing           = 336330754;

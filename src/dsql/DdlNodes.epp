@@ -6214,7 +6214,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		ObjectsArray<CreateDropConstraint> constraints;
 		bool notNullFlag = false;
 
-		if (clause->identity)
+		if (clause->identityOptions)
 			notNullFlag = true;	// identity columns are implicitly not null
 
 		for (ObjectsArray<AddConstraintClause>::iterator ptr = clause->constraints.begin();
@@ -6277,8 +6277,15 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		if (clause->collate.hasData())
 			DDL_resolve_intl_type(dsqlScratch, field, clause->collate);
 
-		if (clause->identity)
+		if (clause->identityOptions)
 		{
+			if (clause->identityOptions->increment.orElse(1) == 0)
+			{
+				status_exception::raise(Arg::Gds(isc_dyn_cant_use_zero_inc_ident) <<
+					Arg::Str(field->fld_name) <<
+					Arg::Str(name));
+			}
+
 			dsc desc;
 			MET_get_domain(tdbb, *tdbb->getDefaultPool(), fieldDefinition.fieldSource, &desc, NULL);
 
@@ -6291,7 +6298,9 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 			DYN_UTIL_generate_generator_name(tdbb, fieldDefinition.identitySequence);
 
 			CreateAlterSequenceNode::store(tdbb, transaction, fieldDefinition.identitySequence,
-				fb_sysflag_identity_generator, clause->identityStart, 1);
+				fb_sysflag_identity_generator,
+				clause->identityOptions->startValue.orElse(0),
+				clause->identityOptions->increment.orElse(1));
 		}
 
 		BlrDebugWriter::BlrData defaultValue;
@@ -6859,104 +6868,78 @@ void RelationNode::defineSetDefaultTrigger(DsqlCompilerScratch* dsqlScratch,
 	Constraint::BlrWriter& blrWriter = constraint.blrWritersHolder.add();
 	blrWriter.init(dsqlScratch);
 
-	generateUnnamedTriggerBeginning(constraint, onUpdate, blrWriter);
+	blrWriter.appendUChar(blr_begin);
 
-	const int BLOB_BUFFER_SIZE = 4096;	// to read in blr blob for default values
-	UCHAR defaultVal[BLOB_BUFFER_SIZE];
+	USHORT index = 0;
 
 	for (ObjectsArray<MetaName>::const_iterator column(constraint.columns.begin());
 		 column != constraint.columns.end();
-		 ++column)
+		 ++column, index += 2)
+	{
+		// If the FK table's column is NOT NULL without DEFAULT, we want to avoid the engine throwing a constraint
+		// violation on our trigger's variable, so we declare two variables, one with blr_domain_type_of (don't use
+		// DEFAULT and null flag) and another blr_domain_full with DEFAULT and null flag. We swallow the error when
+		// transfering the value from the second to the first variable.
+
+		// This could be better done with blr_default, but let's maintain backward compatible BLR for now.
+
+		blrWriter.appendUChar(blr_dcl_variable);
+		blrWriter.appendUShort(index);
+
+		blrWriter.appendUChar(blr_column_name);
+		blrWriter.appendUChar(blr_domain_type_of);
+		blrWriter.appendNullString(0, name.c_str());
+		blrWriter.appendNullString(0, column->c_str());
+
+		blrWriter.appendUChar(blr_dcl_variable);
+		blrWriter.appendUShort(index + 1);
+
+		blrWriter.appendUChar(blr_column_name);
+		blrWriter.appendUChar(blr_domain_full);
+		blrWriter.appendNullString(0, name.c_str());
+		blrWriter.appendNullString(0, column->c_str());
+
+		blrWriter.appendUChar(blr_assignment);
+		blrWriter.appendUChar(blr_null);
+		blrWriter.appendUChar(blr_variable);
+		blrWriter.appendUShort(index);
+
+		blrWriter.appendUChar(blr_block);	// 1
+
+		blrWriter.appendUChar(blr_begin);	// 2
+
+		blrWriter.appendUChar(blr_init_variable);
+		blrWriter.appendUShort(index + 1);
+
+		blrWriter.appendUChar(blr_assignment);
+		blrWriter.appendUChar(blr_variable);
+		blrWriter.appendUShort(index + 1);
+		blrWriter.appendUChar(blr_variable);
+		blrWriter.appendUShort(index);
+
+		blrWriter.appendUChar(blr_end);		// 2
+
+		blrWriter.appendUChar(blr_error_handler);
+		blrWriter.appendUShort(1);
+		blrWriter.appendUChar(blr_default_code);
+		blrWriter.appendUChar(blr_begin);	// 3
+		blrWriter.appendUChar(blr_end);		// 3
+
+		blrWriter.appendUChar(blr_end);		// 1
+	}
+
+	generateUnnamedTriggerBeginning(constraint, onUpdate, blrWriter);
+
+	index = 0;
+
+	for (ObjectsArray<MetaName>::const_iterator column(constraint.columns.begin());
+		 column != constraint.columns.end();
+		 ++column, index += 2)
 	{
 		blrWriter.appendUChar(blr_assignment);
 
-		// ASF: This is wrong way to do the thing. See CORE-3073.
-
-		// Here stuff the default value as blr_literal .... or blr_null
-		// if this column does not have an applicable default.
-		// The default is determined in many cases:
-		// (1) the info. for the column is in memory. (This is because
-		// the column is being created in this ddl statement).
-		// (1-a) the table has a column level default. We get this by
-		// searching the dsql parse tree.
-		// (1-b) the table does not have a column level default, but
-		// has a domain default. We get the domain name from the dsql
-		// parse tree and call METD_get_domain_default to read the
-		// default from the system tables.
-		// (2) The default-info for this column is not in memory (This is
-		// because this is an alter table ddl statement). The table
-		// already exists; therefore we get the column and/or domain
-		// default value from the system tables by calling:
-		// METD_get_col_default().
-
-		bool foundDefault = false;
-		bool searchForDefault = true;
-
-		// Search the parse tree to find the column
-
-		for (NestConst<Clause>* ptr = clauses.begin(); ptr != clauses.end(); ++ptr)
-		{
-			if ((*ptr)->type != Clause::TYPE_ADD_COLUMN)
-				continue;
-
-			AddColumnClause* clause = static_cast<AddColumnClause*>(ptr->getObject());
-
-			if (*column != clause->field->fld_name)
-				continue;
-
-			// Now we have the right column in the parse tree. case (1) above
-
-			if (clause->defaultValue)
-			{
-				// case (1-a) above: There is a column level default
-
-				dsqlScratch->getBlrData().clear();
-				dsqlScratch->getDebugData().clear();
-
-				GEN_expr(dsqlScratch, clause->defaultValue->value);
-
-				foundDefault = true;
-				searchForDefault = false;
-
-				// Move the blr to the constraint blrWriter.
-				blrWriter.getBlrData().join(dsqlScratch->getBlrData());
-			}
-			else
-			{
-				if (!clause->field->typeOfName.hasData())
-					break;
-
-				// case: (1-b): Domain name is available. Column level default
-				// is not declared. So get the domain default.
-				const USHORT defaultLen = METD_get_domain_default(dsqlScratch->getTransaction(),
-					clause->field->typeOfName, &foundDefault, defaultVal, sizeof(defaultVal));
-
-				searchForDefault = false;
-
-				if (foundDefault)
-					stuffDefaultBlr(ByteChunk(defaultVal, defaultLen), blrWriter);
-				else
-				{
-					// Neither column level nor domain level default exists.
-					blrWriter.appendUChar(blr_null);
-				}
-			}
-
-			break;
-		}
-
-		if (searchForDefault)
-		{
-			// case 2: See if the column/domain has already been created.
-
-			const USHORT defaultLen = METD_get_col_default(dsqlScratch->getTransaction(),
-				name.c_str(), column->c_str(), &foundDefault, defaultVal, sizeof(defaultVal));
-
-			if (foundDefault)
-				stuffDefaultBlr(ByteChunk(defaultVal, defaultLen), blrWriter);
-			else
-				blrWriter.appendUChar(blr_null);
-		}
+		blrWriter.appendUChar(blr_variable);
+		blrWriter.appendUShort(index);
 
 		// The context for the foreign key relation.
 		blrWriter.appendUChar(blr_field);
@@ -6968,6 +6951,8 @@ void RelationNode::defineSetDefaultTrigger(DsqlCompilerScratch* dsqlScratch,
 
 	if (onUpdate)
 		blrWriter.appendUCharRepeated(blr_end, 3);
+
+	blrWriter.appendUChar(blr_end);
 
 	blrWriter.appendUChar(blr_eoc);	// end of the blr
 
@@ -7838,7 +7823,22 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 					}
 				END_MODIFY
 			}
-			else if (clause->identityRestart)
+			else if (clause->dropIdentity)
+			{
+				if (RFR.RDB$GENERATOR_NAME.NULL)
+				{
+					// msg 285: "Column @1 is not an identity column"
+					status_exception::raise(Arg::PrivateDyn(285) << field->fld_name);
+				}
+
+				DropSequenceNode::deleteIdentity(tdbb, transaction, RFR.RDB$GENERATOR_NAME);
+
+				MODIFY RFR
+					RFR.RDB$GENERATOR_NAME.NULL = TRUE;
+					RFR.RDB$IDENTITY_TYPE.NULL = TRUE;
+				END_MODIFY
+			}
+			else if (clause->identityOptions)
 			{
 				bool found = false;
 				AutoRequest request2;
@@ -7849,11 +7849,28 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 				{
 					const SLONG id = GEN.RDB$GENERATOR_ID;
 					const MetaName genName(RFR.RDB$GENERATOR_NAME);
-					const SINT64 val = clause->identityRestartValue.specified ?
-						clause->identityRestartValue.value :
-						(!GEN.RDB$INITIAL_VALUE.NULL ? GEN.RDB$INITIAL_VALUE : 0);
 
-					transaction->getGenIdCache()->put(id, val);
+					if (clause->identityOptions->restart)
+					{
+						const SINT64 val = clause->identityOptions->startValue
+							.orElse(!GEN.RDB$INITIAL_VALUE.NULL ? GEN.RDB$INITIAL_VALUE : 0);
+
+						transaction->getGenIdCache()->put(id, val);
+					}
+
+					if (clause->identityOptions->increment.specified)
+					{
+						if (clause->identityOptions->increment.value == 0)
+						{
+							status_exception::raise(Arg::Gds(isc_dyn_cant_use_zero_inc_ident) <<
+								Arg::Str(field->fld_name) <<
+								Arg::Str(name));
+						}
+
+						MET_update_generator_increment(tdbb, id,
+							clause->identityOptions->increment.value);
+					}
+
 					dsc desc;
 					desc.makeText((USHORT) genName.length(), ttype_metadata,
 						(UCHAR*) genName.c_str());

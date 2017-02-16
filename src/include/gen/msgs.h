@@ -898,6 +898,7 @@ Data source : @4"},		/* eds_statement */
 	{336003110, "No SQLDA for output values provided"},		/* dsql_no_output_sqlda */
 	{336003111, "Wrong number of parameters (expected @1, got @2)"},		/* dsql_wrong_param_num */
 	{336003112, "Invalid DROP SQL SECURITY clause"},		/* dsql_invalid_drop_ss_clause */
+	{336003113, "UPDATE OR INSERT value for field @1, part of the implicit or explicit MATCHING clause, cannot be DEFAULT"},		/* upd_ins_cannot_default */
 	{336068645, "BLOB Filter @1 not found"},		/* dyn_filter_not_found */
 	{336068649, "Function @1 not found"},		/* dyn_func_not_found */
 	{336068656, "Index not found"},		/* dyn_index_not_found */
@@ -974,6 +975,7 @@ Data source : @4"},		/* eds_statement */
 	{336068896, "INCREMENT BY 0 is an illegal option for sequence @1"},		/* dyn_cant_use_zero_increment */
 	{336068897, "Can't use @1 in FOREIGN KEY constraint"},		/* dyn_cant_use_in_foreignkey */
 	{336068898, "Default values for parameters are allowed only in declaration of packaged function @1.@2"},		/* dyn_defvaldecl_package_func */
+	{336068904, "INCREMENT BY 0 is an illegal option for identity column @1 of table @2"},		/* dyn_cant_use_zero_inc_ident */
 	{336330753, "found unknown switch"},		/* gbak_unknown_switch */
 	{336330754, "page size parameter missing"},		/* gbak_page_size_missing */
 	{336330755, "Page size specified (@1) greater than limit (32768 bytes)"},		/* gbak_page_size_toobig */

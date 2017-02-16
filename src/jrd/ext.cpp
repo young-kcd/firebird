@@ -109,7 +109,7 @@ namespace Jrd
 		}
 
 	private:
-		RefPtr<Config> config;
+		RefPtr<const Config> config;
 	};
 }
 

@@ -408,6 +408,7 @@ public:
 		TYPE_CURRENT_USER,
 		TYPE_DERIVED_EXPR,
 		TYPE_DECODE,
+		TYPE_DEFAULT,
 		TYPE_DERIVED_FIELD,
 		TYPE_DOMAIN_VALIDATION,
 		TYPE_EXTRACT,
@@ -854,13 +855,13 @@ public:
 		fb_assert(false);
 	}
 
-	virtual DsqlNode* pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
+	virtual ValueExprNode* pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 	{
 		fb_assert(false);
 		return NULL;
 	}
 
-	virtual DsqlNode* pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
+	virtual ValueExprNode* pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 	{
 		fb_assert(false);
 		return NULL;
@@ -1659,6 +1660,22 @@ public:
 	SLONG id;
 	Firebird::MetaName name;
 	Firebird::MetaName secName;
+};
+
+typedef Firebird::Array<StreamType> StreamMap;
+
+// Copy sub expressions (including subqueries).
+class SubExprNodeCopier : private StreamMap, public NodeCopier
+{
+public:
+	SubExprNodeCopier(CompilerScratch* aCsb)
+		: NodeCopier(aCsb, getBuffer(STREAM_MAP_LENGTH))
+	{
+		// Initialize the map so all streams initially resolve to the original number.
+		// As soon as copy creates new streams, the map is being overwritten.
+		for (unsigned i = 0; i < STREAM_MAP_LENGTH; ++i)
+			remap[i] = i;
+	}
 };
 
 

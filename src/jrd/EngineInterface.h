@@ -433,7 +433,7 @@ public:
 	int release();
 
 private:
-	JAttachment* internalAttach(Firebird::CheckStatusWrapper* status, const char* fileName,
+	JAttachment* internalAttach(Firebird::CheckStatusWrapper* status, const char* const fileName,
 		unsigned int dpbLength, const unsigned char* dpb, const UserId* existingId);
 	Firebird::ICryptKeyCallback* cryptCallback;
 	Firebird::IPluginConfig* pluginConfig;

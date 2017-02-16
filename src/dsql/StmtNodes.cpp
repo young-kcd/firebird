@@ -87,12 +87,12 @@ static void makeValidation(thread_db* tdbb, CompilerScratch* csb, StreamType str
 static StmtNode* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, StreamType orgStream,
 	StreamType newStream, bool remap);
 static RelationSourceNode* pass1Update(thread_db* tdbb, CompilerScratch* csb, jrd_rel* relation,
-	const trig_vec* trigger, StreamType stream, StreamType updateStream, SecurityClass::flags_t priv,
+	const TrigVector* trigger, StreamType stream, StreamType updateStream, SecurityClass::flags_t priv,
 	jrd_rel* view, StreamType viewStream, StreamType viewUpdateStream);
 static void pass1Validations(thread_db* tdbb, CompilerScratch* csb, Array<ValidateInfo>& validations);
 static void postTriggerAccess(CompilerScratch* csb, jrd_rel* ownerRelation,
 	ExternalAccess::exa_act operation, jrd_rel* view);
-static void preModifyEraseTriggers(thread_db* tdbb, trig_vec** trigs,
+static void preModifyEraseTriggers(thread_db* tdbb, TrigVector** trigs,
 	StmtNode::WhichTrigger whichTrig, record_param* rpb, record_param* rec, TriggerAction op);
 static void validateExpressions(thread_db* tdbb, const Array<ValidateInfo>& validations);
 
@@ -1401,7 +1401,7 @@ DmlNode* DeclareSubFuncNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 	{	// scope
 		CompilerScratch* const subCsb = node->subCsb =
 			FB_NEW_POOL(csb->csb_pool) CompilerScratch(csb->csb_pool);
-		subCsb->csb_g_flags |= csb_subroutine;
+		subCsb->csb_g_flags |= csb_subroutine | (csb->csb_g_flags & csb_get_dependencies);
 		subCsb->csb_blr_reader = csb->csb_blr_reader;
 
 		BlrReader& reader = subCsb->csb_blr_reader;
@@ -1676,7 +1676,7 @@ DmlNode* DeclareSubProcNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 	{	// scope
 		CompilerScratch* const subCsb = node->subCsb =
 			FB_NEW_POOL(csb->csb_pool) CompilerScratch(csb->csb_pool);
-		subCsb->csb_g_flags |= csb_subroutine;
+		subCsb->csb_g_flags |= csb_subroutine | (csb->csb_g_flags & csb_get_dependencies);
 		subCsb->csb_blr_reader = csb->csb_blr_reader;
 
 		BlrReader& reader = subCsb->csb_blr_reader;
@@ -2243,8 +2243,8 @@ void EraseNode::pass1Erase(thread_db* tdbb, CompilerScratch* csb, EraseNode* nod
 		if (parent)
 			priv |= SCL_select;
 
-		const trig_vec* trigger = relation->rel_pre_erase ?
-			relation->rel_pre_erase : relation->rel_post_erase;
+		RefPtr<const TrigVector> trigger(relation->rel_pre_erase ?
+			relation->rel_pre_erase : relation->rel_post_erase);
 
 		// If we have a view with triggers, let's expand it.
 
@@ -5877,6 +5877,51 @@ void ModifyNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 ModifyNode* ModifyNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
+	CompoundStmtNode* compoundNode = statement->as<CompoundStmtNode>();
+
+	// Remove assignments of DEFAULT to computed fields.
+	if (compoundNode)
+	{
+		for (size_t i = compoundNode->statements.getCount(); i--; )
+		{
+			const AssignmentNode* assign = compoundNode->statements[i]->as<AssignmentNode>();
+			fb_assert(assign);
+			if (!assign)
+				continue;
+
+			const ExprNode* assignFrom = assign->asgnFrom;
+			const FieldNode* assignToField = assign->asgnTo->as<FieldNode>();
+
+			if (assignToField && assignFrom->is<DefaultNode>())
+			{
+				jrd_rel* relation = csb->csb_rpt[newStream].csb_relation;
+				int fieldId = assignToField->fieldId;
+
+				while (true)
+				{
+					jrd_fld* fld;
+
+					if (assignToField->fieldStream == newStream &&
+						relation &&
+						relation->rel_fields &&
+						(fld = (*relation->rel_fields)[fieldId]))
+					{
+						if (fld->fld_computation)
+							compoundNode->statements.remove(i);
+						else if (relation->rel_view_rse && fld->fld_source_rel_field.first.hasData())
+						{
+							relation = MET_lookup_relation(tdbb, fld->fld_source_rel_field.first);
+							if ((fieldId = MET_lookup_field(tdbb, relation, fld->fld_source_rel_field.second)) >= 0)
+								continue;
+						}
+					}
+
+					break;
+				}
+			}
+		}
+	}
+
 	pass1Modify(tdbb, csb, this);
 
 	doPass1(tdbb, csb, statement.getAddress());
@@ -5936,8 +5981,8 @@ void ModifyNode::pass1Modify(thread_db* tdbb, CompilerScratch* csb, ModifyNode* 
 		if (parent)
 			priv |= SCL_select;
 
-		const trig_vec* trigger = (relation->rel_pre_modify) ?
-			relation->rel_pre_modify : relation->rel_post_modify;
+		RefPtr<const TrigVector> trigger(relation->rel_pre_modify ?
+			relation->rel_pre_modify : relation->rel_post_modify);
 
 		// If we have a view with triggers, let's expand it.
 
@@ -6557,12 +6602,15 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch,
 		NestConst<ValueExprNode>* ptr2 = values->items.begin();
 		for (const NestConst<ValueExprNode>* end = fields.end(); ptr != end; ++ptr, ++ptr2)
 		{
-			AssignmentNode* temp = FB_NEW_POOL(getPool()) AssignmentNode(getPool());
-			temp->asgnFrom = *ptr2;
-			temp->asgnTo = *ptr;
-			assignStatements->statements.add(temp);
+			if (*ptr2)	// it's NULL for DEFAULT
+			{
+				AssignmentNode* temp = FB_NEW_POOL(getPool()) AssignmentNode(getPool());
+				temp->asgnFrom = *ptr2;
+				temp->asgnTo = *ptr;
+				assignStatements->statements.add(temp);
 
-			PASS1_set_parameter_type(dsqlScratch, *ptr2, temp->asgnTo, false);
+				PASS1_set_parameter_type(dsqlScratch, *ptr2, temp->asgnTo, false);
+			}
 		}
 	}
 
@@ -6697,8 +6745,8 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 
 		postTriggerAccess(csb, relation, ExternalAccess::exa_insert, view);
 
-		const trig_vec* trigger = relation->rel_pre_store ?
-			relation->rel_pre_store : relation->rel_post_store;
+		RefPtr<const TrigVector> trigger(relation->rel_pre_store ?
+			relation->rel_pre_store : relation->rel_post_store);
 
 		// Check out insert. If this is an insert thru a view, verify the view by checking for read
 		// access on the base table. If field-level select privileges are implemented, this needs
@@ -6774,15 +6822,13 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 	if (!vector)
 		return;
 
-	//StreamType localMap[JrdStatement::MAP_LENGTH];
-	AutoPtr<StreamType, ArrayDelete<StreamType> > localMap;
+	StreamMap localMap;
 	StreamType* map = csb->csb_rpt[stream].csb_map;
 
 	if (!map)
 	{
-		localMap = FB_NEW_POOL(*tdbb->getDefaultPool()) StreamType[STREAM_MAP_LENGTH];
-		map = localMap;
-		fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR relevant, too?
+		map = localMap.getBuffer(STREAM_MAP_LENGTH);
+		fb_assert(stream <= MAX_STREAMS);
 		map[0] = stream;
 		map[1] = 1;
 		map[2] = 2;
@@ -6832,36 +6878,9 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 			AssignmentNode* assign = FB_NEW_POOL(*tdbb->getDefaultPool()) AssignmentNode(
 				*tdbb->getDefaultPool());
 			assign->asgnTo = PAR_gen_field(tdbb, stream, fieldId);
+			assign->asgnFrom = DefaultNode::createFromField(tdbb, csb, map, *ptr1);
 
 			stack.push(assign);
-
-			const MetaName& generatorName = (*ptr1)->fld_generator_name;
-
-			if (generatorName.hasData())
-			{
-				// Make a gen_id(<generator name>, 1) expression.
-
-				LiteralNode* literal = FB_NEW_POOL(csb->csb_pool) LiteralNode(csb->csb_pool);
-				SLONG* increment = FB_NEW_POOL(csb->csb_pool) SLONG(1);
-				literal->litDesc.makeLong(0, increment);
-
-				GenIdNode* const genNode = FB_NEW_POOL(csb->csb_pool)
-					GenIdNode(csb->csb_pool, (csb->blrVersion == 4), generatorName, literal, false, true);
-
-				bool sysGen = false;
-				if (!MET_load_generator(tdbb, genNode->generator, &sysGen))
-					PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(generatorName));
-
-				if (sysGen)
-					PAR_error(csb, Arg::Gds(isc_cant_modify_sysobj) << "generator" << generatorName);
-
-				assign->asgnFrom = genNode;
-			}
-			else //if (value)
-			{
-				// Clone the field default value.
-				assign->asgnFrom = RemapFieldNodeCopier(csb, map, fieldId).copy(tdbb, value);
-			}
 		}
 	}
 
@@ -8053,7 +8072,10 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	for (; fieldPtr != fieldsCopy.end(); ++fieldPtr, ++valuePtr)
 	{
 		AssignmentNode* assign = FB_NEW_POOL(pool) AssignmentNode(pool);
-		assign->asgnFrom = *valuePtr;
+
+		if (!(assign->asgnFrom = *valuePtr))	// it's NULL for DEFAULT
+			assign->asgnFrom = FB_NEW_POOL(pool) DefaultNode(pool, relation_name, (*fieldPtr)->dsqlName);
+
 		assign->asgnTo = *fieldPtr;
 		assignments->statements.add(assign);
 
@@ -8077,6 +8099,9 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 				if (testField == fieldName)
 				{
+					if (!*valuePtr)	// it's NULL for DEFAULT
+						ERRD_post(Arg::Gds(isc_upd_ins_cannot_default) << fieldName);
+
 					++matchCount;
 
 					const FB_SIZE_T fieldPos = fieldPtr - fieldsCopy.begin();
@@ -8194,7 +8219,8 @@ static void dsqlExplodeFields(dsql_rel* relation, Array<NestConst<T> >& fields)
 	for (dsql_fld* field = relation->rel_fields; field; field = field->fld_next)
 	{
 		// CVC: Ann Harrison requested to skip COMPUTED fields in INSERT w/o field list.
-		if (field->flags & FLD_computed)
+		// ASF: But not for views - CORE-5454
+		if (!(relation->rel_flags & REL_view) && (field->flags & FLD_computed))
 			continue;
 
 		FieldNode* fieldNode = FB_NEW_POOL(pool) FieldNode(pool);
@@ -8967,14 +8993,13 @@ static void makeValidation(thread_db* tdbb, CompilerScratch* csb, StreamType str
 	if (!vector)
 		return;
 
-	//StreamType local_map[JrdStatement::MAP_LENGTH];
-	AutoPtr<StreamType, ArrayDelete<StreamType> > localMap;
+	StreamMap localMap;
 	StreamType* map = csb->csb_rpt[stream].csb_map;
+
 	if (!map)
 	{
-		localMap = FB_NEW_POOL(*tdbb->getDefaultPool()) StreamType[STREAM_MAP_LENGTH];
-		map = localMap;
-		fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR still relevant for the bitmap?
+		map = localMap.getBuffer(STREAM_MAP_LENGTH);
+		fb_assert(stream <= MAX_STREAMS);
 		map[0] = stream;
 	}
 
@@ -9069,7 +9094,7 @@ static StmtNode* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, StreamTy
 // If it's a view update, make sure the view is updatable, and return the view source for redirection.
 // If it's a simple relation, return NULL.
 static RelationSourceNode* pass1Update(thread_db* tdbb, CompilerScratch* csb, jrd_rel* relation,
-	const trig_vec* trigger, StreamType stream, StreamType updateStream, SecurityClass::flags_t priv,
+	const TrigVector* trigger, StreamType stream, StreamType updateStream, SecurityClass::flags_t priv,
 	jrd_rel* view, StreamType viewStream, StreamType viewUpdateStream)
 {
 	SET_TDBB(tdbb);
@@ -9196,7 +9221,7 @@ static void postTriggerAccess(CompilerScratch* csb, jrd_rel* ownerRelation,
 }
 
 // Perform operation's pre-triggers, storing active rpb in chain.
-static void preModifyEraseTriggers(thread_db* tdbb, trig_vec** trigs,
+static void preModifyEraseTriggers(thread_db* tdbb, TrigVector** trigs,
 	StmtNode::WhichTrigger whichTrig, record_param* rpb, record_param* rec, TriggerAction op)
 {
 	if (!tdbb->getTransaction()->tra_rpblist)

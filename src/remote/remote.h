@@ -703,7 +703,7 @@ private:
 	Firebird::UCharBuffer dataForPlugin, dataFromPlugin;
 	Firebird::HalfStaticArray<InternalCryptKey*, 1> cryptKeys;		// Wire crypt keys that came from plugin(s) last time
 	Firebird::string dpbConfig;				// Used to recreate config with new filename
-	Firebird::RefPtr<Config> clntConfig;	// Used to get plugins list and pass to port
+	Firebird::RefPtr<const Config> clntConfig;	// Used to get plugins list and pass to port
 	unsigned nextKey;						// First key to be analyzed
 
 	bool hasCryptKey;						// DPB contains disk crypt key, may be passed only over encrypted wire
@@ -733,7 +733,7 @@ public:
 	Firebird::PathName getPluginName();
 	void tryNewKeys(rem_port*);
 	void releaseKeys(unsigned from);
-	Firebird::RefPtr<Config>* getConfig();
+	Firebird::RefPtr<const Config>* getConfig();
 
 	// Firebird::IClientBlock implementation
 	int release();
@@ -947,7 +947,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	OBJCT			port_last_object_id;	// cached last id
 	Firebird::ObjectsArray< Firebird::Array<char> > port_queue;
 	FB_SIZE_T		port_qoffset;			// current packet in the queue
-	Firebird::RefPtr<Config> port_config;	// connection-specific configuration info
+	Firebird::RefPtr<const Config> port_config;	// connection-specific configuration info
 
 	// Authentication and crypt stuff
 	ServerAuthBase*							port_srv_auth;
@@ -1023,7 +1023,8 @@ public:
 	static bool checkCompression();
 	void linkParent(rem_port* const parent);
 	void unlinkParent();
-	const Firebird::RefPtr<Config>& getPortConfig() const;
+	Firebird::RefPtr<const Config> getPortConfig();
+	const Firebird::RefPtr<const Config>& getPortConfig() const;
 	void versionInfo(Firebird::string& version) const;
 
 	bool extractNewKeys(CSTRING* to, bool flagPlugList = false)

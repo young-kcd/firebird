@@ -5184,7 +5184,7 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
 			if (splitIndex && *splitIndex < jumpNodes->getCount())
 			{
 				splitPageSize += jumpNode.getJumpNodeSize();
-				if (*splitIndex + 1 == jumpNodes->getCount())
+				if (*splitIndex + 1u == jumpNodes->getCount())
 					splitPageSize += jumpNode.prefix;
 			}
 		}

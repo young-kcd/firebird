@@ -104,7 +104,6 @@
 #include "../intl/charsets.h"
 #include "../intl/country_codes.h"
 #include "../common/gdsassert.h"
-//#include "../jrd/license.h"
 #ifdef INTL_BUILTIN
 #include "../intl/ld_proto.h"
 #endif

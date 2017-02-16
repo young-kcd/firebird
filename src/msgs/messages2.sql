@@ -1702,6 +1702,7 @@ COMMIT WORK;
 ('dsql_wrong_param_num', NULL, NULL, NULL, 7, 39, NULL, 'Wrong number of parameters (expected @1, got @2)', NULL, NULL);
 -- Do not change the arguments of the previous DSQL messages.
 ('dsql_invalid_drop_ss_clause', 'CreateAlterTriggerNode::dsqlPass', 'DdlNodes.epp', NULL, 7, 40, NULL, 'Invalid DROP SQL SECURITY clause', NULL, NULL);
+('upd_ins_cannot_default', 'pass1_update_or_insert', 'pass1.cpp', NULL, 7, 41, NULL, 'UPDATE OR INSERT value for field @1, part of the implicit or explicit MATCHING clause, cannot be DEFAULT', NULL, NULL);
 -- Write the new DSQL messages here.
 -- DYN
 (NULL, NULL, 'dyn.c', NULL, 8, 1, NULL, 'ODS version not supported by DYN', NULL, NULL);
@@ -1993,6 +1994,7 @@ COMMIT WORK;
 (NULL, 'CreateAlterRoleNode::execute', 'DdlNodes.epp', NULL, 8, 293, NULL, 'DROP SYSTEM PRIVILEGES should not be used in CREATE ROLE operator', NULL, NULL);
 (NULL, 'CreateAlterRoleNode::execute', 'DdlNodes.epp', NULL, 8, 294, NULL, 'Access to SYSTEM PRIVILEGES in ROLES denied to @1', NULL, NULL);
 (NULL, 'grant/revoke', 'DdlNode.epp', NULL, 8, 295, NULL, 'Only @1, DB owner @2 or user with privilege USE_GRANTED_BY_CLAUSE can use GRANTED BY clause', NULL, NULL);
+('dyn_cant_use_zero_inc_ident', NULL, 'DdlNodes.epp', NULL, 8, 296, NULL, 'INCREMENT BY 0 is an illegal option for identity column @1 of table @2', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);

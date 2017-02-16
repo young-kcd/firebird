@@ -250,7 +250,6 @@ namespace
 			{
 				River* const sub_river = rivers.pop();
 				m_rsb = sub_river->getRecordSource();
-				sub_river->activate(csb);
 			}
 			else
 			{
@@ -291,7 +290,6 @@ static bool augment_stack(BoolExprNode*, BoolExprNodeStack&);
 static void check_indices(const CompilerScratch::csb_repeat*);
 static void check_sorts(RseNode*);
 static void class_mask(USHORT, ValueExprNode**, ULONG*);
-static bool check_for_nod_from(const ValueExprNode*);
 static SLONG decompose(thread_db* tdbb, BoolExprNode* boolNode, BoolExprNodeStack& stack,
 	CompilerScratch* csb);
 static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratch* csb,
@@ -736,6 +734,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 				// all currently available rivers
 
 				rivers.add(FB_NEW_POOL(*pool) CrossJoin(csb, rivers));
+				rivers.back()->activate(csb);
 			}
 			else
 			{
@@ -1315,29 +1314,6 @@ static void class_mask(USHORT count, ValueExprNode** eq_class, ULONG* mask)
 }
 
 
-static bool check_for_nod_from(const ValueExprNode* node)
-{
-/**************************************
- *
- *	c h e c k _ f o r _ n o d _ f r o m
- *
- **************************************
- *
- * Functional description
- *	Check for nod_from under >=0 CastNode nodes.
- *
- **************************************/
-	const CastNode* castNode;
-	const SubQueryNode* subQueryNode;
-
-	if ((castNode = node->as<CastNode>()))
-		return check_for_nod_from(castNode->source);
-	else if ((subQueryNode = node->as<SubQueryNode>()) && subQueryNode->blrOp == blr_via)
-		return true;
-
-	return false;
-}
-
 static SLONG decompose(thread_db* tdbb, BoolExprNode* boolNode, BoolExprNodeStack& stack,
 	CompilerScratch* csb)
 {
@@ -1407,14 +1383,6 @@ static SLONG decompose(thread_db* tdbb, BoolExprNode* boolNode, BoolExprNodeStac
 
 		if (cmpNode->blrOp == blr_between)
 		{
-			if (check_for_nod_from(cmpNode->arg1))
-			{
-				// Without this ERR_punt(), server was crashing with sub queries
-				// under "between" predicate, Bug No. 73766
-				ERR_post(Arg::Gds(isc_optimizer_between_err));
-				// Msg 493: Unsupported field type specified in BETWEEN predicate
-			}
-
 			ComparativeBoolNode* newCmpNode = FB_NEW_POOL(csb->csb_pool) ComparativeBoolNode(
 				csb->csb_pool, blr_geq);
 			newCmpNode->arg1 = cmpNode->arg1;
@@ -1478,12 +1446,13 @@ static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratc
  **************************************/
 
 	// dimitr:	Dumb protection against too many injected conjuncts (see CORE-5381).
+	//			Don't produce more additional conjuncts than we originally had
+	//			(i.e. this routine should never more than double the number of conjuncts).
 	//			Ideally, we need two separate limits here:
 	//				1) number of injected conjuncts (affects required impure size)
 	//				2) number of input conjuncts (affects search time inside this routine)
-	const ULONG threshold = base_count * 2;
 
-	if (threshold > MAX_CONJUNCTS)
+	if (base_count * 2 > MAX_CONJUNCTS)
 		return 0;
 
 	ObjectsArray<ValueExprNodeStack> classes;
@@ -1493,23 +1462,23 @@ static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratc
 
 	// Zip thru stack of booleans looking for field equalities
 
-	for (BoolExprNodeStack::iterator stack1(org_stack); stack1.hasData(); ++stack1)
+	for (BoolExprNodeStack::iterator iter(org_stack); iter.hasData(); ++iter)
 	{
-		BoolExprNode* boolean = stack1.object();
+		BoolExprNode* const boolean = iter.object();
 
 		if (boolean->nodFlags & ExprNode::FLAG_DEOPTIMIZE)
 			continue;
 
-		ComparativeBoolNode* cmpNode = boolean->as<ComparativeBoolNode>();
+		ComparativeBoolNode* const cmpNode = boolean->as<ComparativeBoolNode>();
 
 		if (!cmpNode || cmpNode->blrOp != blr_eql)
 			continue;
 
-		ValueExprNode* node1 = cmpNode->arg1;
+		ValueExprNode* const node1 = cmpNode->arg1;
 		if (!node1->is<FieldNode>())
 			continue;
 
-		ValueExprNode* node2 = cmpNode->arg2;
+		ValueExprNode* const node2 = cmpNode->arg2;
 		if (!node2->is<FieldNode>())
 			continue;
 
@@ -1536,7 +1505,7 @@ static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratc
 		}
 	}
 
-	if (classes.getCount() == 0)
+	if (classes.isEmpty())
 		return 0;
 
 	// Make another pass looking for any equality relationships that may have crept
@@ -1544,12 +1513,12 @@ static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratc
 
 	for (eq_class = classes.begin(); eq_class != classes.end(); ++eq_class)
 	{
-		for (ValueExprNodeStack::const_iterator stack2(*eq_class); stack2.hasData(); ++stack2)
+		for (ValueExprNodeStack::const_iterator iter(*eq_class); iter.hasData(); ++iter)
 		{
 			for (ObjectsArray<ValueExprNodeStack>::iterator eq_class2(eq_class);
 				 ++eq_class2 != classes.end();)
 			{
-				if (search_stack(stack2.object(), *eq_class2))
+				if (search_stack(iter.object(), *eq_class2))
 				{
 					while (eq_class2->hasData())
 						augment_stack(eq_class2->pop(), *eq_class);
@@ -1570,15 +1539,19 @@ static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratc
 			{
 				for (ValueExprNodeStack::iterator inner(outer); (++inner).hasData(); )
 				{
-					ComparativeBoolNode* cmpNode =
-						FB_NEW_POOL(csb->csb_pool) ComparativeBoolNode(csb->csb_pool, blr_eql);
-					cmpNode->arg1 = outer.object();
-					cmpNode->arg2 = inner.object();
+					if (count < base_count)
+					{
+						AutoPtr<ComparativeBoolNode> cmpNode(FB_NEW_POOL(csb->csb_pool)
+							ComparativeBoolNode(csb->csb_pool, blr_eql));
+						cmpNode->arg1 = outer.object();
+						cmpNode->arg2 = inner.object();
 
-					if (count < threshold && augment_stack(cmpNode, org_stack))
-						count++;
-					else
-						delete cmpNode;
+						if (augment_stack(cmpNode, org_stack))
+						{
+							count++;
+							cmpNode.release();
+						}
+					}
 				}
 			}
 		}
@@ -1586,10 +1559,10 @@ static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratc
 
 	// Now make a second pass looking for non-field equalities
 
-	for (BoolExprNodeStack::iterator stack3(org_stack); stack3.hasData(); ++stack3)
+	for (BoolExprNodeStack::iterator iter(org_stack); iter.hasData(); ++iter)
 	{
-		BoolExprNode* boolean = stack3.object();
-		ComparativeBoolNode* cmpNode = boolean->as<ComparativeBoolNode>();
+		BoolExprNode* const boolean = iter.object();
+		ComparativeBoolNode* const cmpNode = boolean->as<ComparativeBoolNode>();
 		ValueExprNode* node1;
 		ValueExprNode* node2;
 
@@ -1627,7 +1600,7 @@ static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratc
 			{
 				for (ValueExprNodeStack::iterator temp(*eq_class); temp.hasData(); ++temp)
 				{
-					if (!node_equality(node1, temp.object()))
+					if (!node_equality(node1, temp.object()) && count < base_count)
 					{
 						ValueExprNode* arg1;
 						ValueExprNode* arg2;
@@ -1644,12 +1617,13 @@ static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratc
 						}
 
 						// From the conjuncts X(A,B) and A=C, infer the conjunct X(C,B)
-						BoolExprNode* newNode = make_inference_node(csb, boolean, arg1, arg2);
+						AutoPtr<BoolExprNode> newNode(make_inference_node(csb, boolean, arg1, arg2));
 
-						if (count < threshold && augment_stack(newNode, org_stack))
+						if (augment_stack(newNode, org_stack))
+						{
 							++count;
-						else
-							delete newNode;
+							newNode.release();
+						}
 					}
 				}
 
