@@ -728,7 +728,7 @@ public:
 		try
 		{
 			sharedMemory.reset(FB_NEW_POOL(*getDefaultMemoryPool())
-				SharedMemory<MappingHeader>("fb_user_mapping", DEFAULT_SIZE, this));
+				SharedMemory<MappingHeader>(USER_MAP_FILE, DEFAULT_SIZE, this));
 		}
 		catch (const Exception& ex)
 		{
