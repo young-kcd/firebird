@@ -74,6 +74,9 @@ public:
 	bool isInf() const;
 	bool isNan() const;
 
+	void makeKey(unsigned int* key) const;
+	void grabKey(unsigned int* key);
+
 #ifdef DEV_BUILD
 	int show();
 #endif
@@ -121,6 +124,9 @@ public:
 	int compare(DecimalStatus decSt, Decimal128 tgt) const;
 	bool isInf() const;
 	bool isNan() const;
+
+	void makeKey(unsigned int* key) const;
+	void grabKey(unsigned int* key);
 
 #ifdef DEV_BUILD
 	int show();

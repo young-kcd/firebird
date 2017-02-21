@@ -314,16 +314,14 @@ void IDX_create_index(thread_db* tdbb,
 
 	sort_key_def key_desc[2];
 	// Key sort description
-	key_desc[0].skd_dtype = SKD_bytes;
+	key_desc[0].setSkdLength(SKD_bytes, key_length);
 	key_desc[0].skd_flags = SKD_ascending;
-	key_desc[0].skd_length = key_length;
-	key_desc[0].skd_offset = 0;
+	key_desc[0].setSkdOffset();
 	key_desc[0].skd_vary_offset = 0;
 	// RecordNumber sort description
-	key_desc[1].skd_dtype = SKD_int64;
+	key_desc[1].setSkdLength(SKD_int64, sizeof(RecordNumber));
 	key_desc[1].skd_flags = SKD_ascending;
-	key_desc[1].skd_length = sizeof(RecordNumber);
-	key_desc[1].skd_offset = key_length;
+	key_desc[1].setSkdOffset(key_desc);
 	key_desc[1].skd_vary_offset = 0;
 
 	FPTR_REJECT_DUP_CALLBACK callback = (idx->idx_flags & idx_unique) ? duplicate_key : NULL;

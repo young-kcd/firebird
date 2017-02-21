@@ -385,7 +385,7 @@ bool AggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 				to.dsc_sub_type = 0;
 				to.dsc_scale = 0;
 				to.dsc_ttype() = ttype_sort_key;
-				to.dsc_length = asb->keyItems[0].skd_length;
+				to.dsc_length = asb->keyItems[0].getSkdLength();
 				to.dsc_address = data;
 				INTL_string_to_key(tdbb, INTL_TEXT_TO_INDEX(desc->getTextType()),
 					desc, &to, INTL_KEY_UNIQUE);
@@ -393,7 +393,7 @@ bool AggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 
 			dsc toDesc = asb->desc;
 			toDesc.dsc_address = data +
-				(asb->intl ? asb->keyItems[1].skd_offset : 0);
+				(asb->intl ? asb->keyItems[1].getSkdOffset() : 0);
 			MOV_move(tdbb, desc, &toDesc);
 
 			// dimitr:	Here we add a monotonically increasing value to the sort record.
@@ -455,7 +455,7 @@ dsc* AggNode::execute(thread_db* tdbb, jrd_req* request) const
 				break;
 			}
 
-			desc.dsc_address = data + (asb->intl ? asb->keyItems[1].skd_offset : 0);
+			desc.dsc_address = data + (asb->intl ? asb->keyItems[1].getSkdOffset() : 0);
 
 			aggPass(tdbb, request, &desc);
 		}

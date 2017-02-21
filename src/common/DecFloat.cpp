@@ -106,6 +106,90 @@ private:
 
 CDecimal128 dmax(DBL_MAX, DecimalStatus(0)), dmin(-DBL_MAX, DecimalStatus(0));
 
+void make(unsigned int* key,
+	const unsigned pMax, const int bias, const unsigned decSize,
+	unsigned char* coeff, int sign, int exp)
+{
+	// normalize coeff & exponent
+	bool zero = true;
+	for (unsigned i = 0; i < pMax; ++i)
+	{
+		if (coeff[i])
+		{
+			if (i)
+			{
+				memmove(coeff, &coeff[i], pMax - i);
+				memset(&coeff[pMax - i], 0, i);
+				exp -= i;
+			}
+			zero = false;
+			break;
+		}
+	}
+
+	// exponent bias and sign
+	exp += (bias + 2);
+	if (zero)
+		exp = 1;
+	if (sign)
+		exp = -exp;
+	*key++ = exp;
+
+	// convert to SLONG
+	fb_assert(pMax / 9 < decSize / sizeof(int));
+	memset(key, 0, decSize);
+	for (unsigned i = 0; i < pMax; ++i)
+	{
+		unsigned c = i / 9;
+		key[c] *= 10;
+		key[c] += (sign ? 9 - coeff[i] : coeff[i]);
+	}
+}
+
+void grab(unsigned int* key,
+	const unsigned pMax, const int bias, const unsigned decSize,
+	unsigned char* bcd, int& sign, int& exp)
+{
+	exp = *key++;
+	sign = 0;
+
+	// parse exp
+	if (exp < 0)
+	{
+		sign = DECFLOAT_Sign;
+		exp = -exp;
+	}
+	if (exp == 1)
+		exp = 0;
+	else
+		exp -= (bias + 2);
+
+	// convert from SLONG
+	for (int i = pMax; i--;)
+	{
+		int c = i / 9;
+		bcd[i] = key[c] % 10;
+		key[c] /= 10;
+		if (sign)
+			bcd[i] = 9 - bcd[i];
+	}
+
+	// normalize
+	for (unsigned i = pMax; i--; )
+	{
+		if (bcd[i])
+		{
+			if (i < pMax - 1)
+			{
+				memmove(&bcd[pMax - 1 - i], bcd, i + 1);
+				memset(bcd, 0, pMax - 1 - i);
+				exp += (pMax - 1 - i);
+			}
+			break;
+		}
+	}
+}
+
 } // anonymous namespace
 
 
@@ -573,6 +657,44 @@ Decimal128 Decimal128::log10(DecimalStatus decSt) const
 	Decimal128 rc;
 	decQuadFromNumber(&rc.dec, &dn, &context);
 	return rc;
+}
+
+void Decimal128::makeKey(unsigned int* key) const
+{
+	unsigned char coeff[DECQUAD_Pmax];
+	int sign = decQuadGetCoefficient(&dec, coeff);
+	int exp = decQuadGetExponent(&dec);
+
+	make(key, DECQUAD_Pmax, DECQUAD_Bias, sizeof(dec), coeff, sign, exp);
+}
+
+void Decimal128::grabKey(unsigned int* key)
+{
+	int exp, sign;
+	unsigned char bcd[DECQUAD_Pmax];
+
+	grab(key, DECQUAD_Pmax, DECQUAD_Bias, sizeof(dec), bcd, sign, exp);
+
+	decQuadFromBCD(&dec, exp, bcd, sign);
+}
+
+void Decimal64::makeKey(unsigned int* key) const
+{
+	unsigned char coeff[DECDOUBLE_Pmax];
+	int sign = decDoubleGetCoefficient(&dec, coeff);
+	int exp = decDoubleGetExponent(&dec);
+
+	make(key, DECDOUBLE_Pmax, DECDOUBLE_Bias, sizeof(dec), coeff, sign, exp);
+}
+
+void Decimal64::grabKey(unsigned int* key)
+{
+	int exp, sign;
+	unsigned char bcd[DECDOUBLE_Pmax];
+
+	grab(key, DECDOUBLE_Pmax, DECDOUBLE_Bias, sizeof(dec), bcd, sign, exp);
+
+	decDoubleFromBCD(&dec, exp, bcd, sign);
 }
 
 } // namespace Firebird
