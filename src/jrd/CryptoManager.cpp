@@ -1362,14 +1362,14 @@ namespace Jrd {
 			}
 
 			if (!found)
-				att->signalShutdown();
+				att->signalShutdown(0 /* no special shutdown code */);
 		}
 
 		// Loop through internal attachments list closing one missing valid holders
 		for (unsigned i = 0; i < knownHolders.getCount(); ++i)
 		{
 			if (!validateHoldersGroup(knownHolders[i], keyName))
-				knownHolders[i].first->signalShutdown();
+				knownHolders[i].first->signalShutdown(0);
 		}
 	}
 

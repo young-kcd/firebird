@@ -1664,6 +1664,20 @@ C --
       PARAMETER (GDS__dsql_window_duplicate            = 335545125)
       INTEGER*4 GDS__sql_too_long                    
       PARAMETER (GDS__sql_too_long                     = 335545126)
+      INTEGER*4 GDS__cfg_stmt_timeout                
+      PARAMETER (GDS__cfg_stmt_timeout                 = 335545127)
+      INTEGER*4 GDS__att_stmt_timeout                
+      PARAMETER (GDS__att_stmt_timeout                 = 335545128)
+      INTEGER*4 GDS__req_stmt_timeout                
+      PARAMETER (GDS__req_stmt_timeout                 = 335545129)
+      INTEGER*4 GDS__att_shut_killed                 
+      PARAMETER (GDS__att_shut_killed                  = 335545130)
+      INTEGER*4 GDS__att_shut_idle                   
+      PARAMETER (GDS__att_shut_idle                    = 335545131)
+      INTEGER*4 GDS__att_shut_db_down                
+      PARAMETER (GDS__att_shut_db_down                 = 335545132)
+      INTEGER*4 GDS__att_shut_engine                 
+      PARAMETER (GDS__att_shut_engine                  = 335545133)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

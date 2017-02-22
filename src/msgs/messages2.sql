@@ -914,6 +914,13 @@ Data source : @4', NULL, NULL)
 ('dsql_window_cant_overr_frame', NULL, 'ExprNodes.cpp', NULL, 0, 804, NULL, 'Cannot override the window @1 because it has a frame clause. Tip: it can be used without parenthesis in OVER', NULL, NULL);
 ('dsql_window_duplicate', NULL, 'ExprNodes.cpp', NULL, 0, 805, NULL, 'Duplicate window definition for @1', NULL, NULL);
 ('sql_too_long', 'prepareStatement', 'dsql.cpp', NULL, 0, 806, NULL, 'SQL statement is too long. Maximum size is @1 bytes.', NULL, NULL);
+('cfg_stmt_timeout', 'thread_db::checkCancelState', 'jrd.cpp', NULL, 0, 807, NULL, 'Config level timeout expired.', NULL, NULL);
+('att_stmt_timeout', 'thread_db::checkCancelState', 'jrd.cpp', NULL, 0, 808, NULL, 'Attachment level timeout expired.', NULL, NULL);
+('req_stmt_timeout', 'thread_db::checkCancelState', 'jrd.cpp', NULL, 0, 809, NULL, 'Statement level timeout expired.', NULL, NULL);
+('att_shut_killed', NULL, 'jrd.cpp', NULL, 0, 810, NULL, 'Killed by database administrator.', NULL, NULL);
+('att_shut_idle', NULL, 'jrd.cpp', NULL, 0, 811, NULL, 'Idle timeout expired.', NULL, NULL);
+('att_shut_db_down', NULL, 'jrd.cpp', NULL, 0, 812, NULL, 'Database is shutdown.', NULL, NULL);
+('att_shut_engine', NULL, 'jrd.cpp', NULL, 0, 813, NULL, 'Engine is shutdown.', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

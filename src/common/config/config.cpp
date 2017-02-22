@@ -197,7 +197,9 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_BOOLEAN,		"WireCompression",			(ConfigValue) false},
 	{TYPE_INTEGER,		"MaxIdentifierByteLength",	(ConfigValue) -1},
 	{TYPE_INTEGER,		"MaxIdentifierCharLength",	(ConfigValue) -1},
-	{TYPE_BOOLEAN,		"CryptSecurityDatabase",	(ConfigValue) false}
+	{TYPE_BOOLEAN,		"CryptSecurityDatabase",	(ConfigValue) false},
+	{TYPE_INTEGER,		"StatementTimeout",			(ConfigValue) 0},
+	{TYPE_INTEGER,		"ConnectionIdleTimeout",	(ConfigValue) 0}
 };
 
 /******************************************************************************
@@ -817,4 +819,14 @@ int Config::getMaxIdentifierCharLength() const
 bool Config::getCryptSecurityDatabase() const
 {
 	return get<bool>(KEY_ENCRYPT_SECURITY_DATABASE);
+}
+
+unsigned int Config::getStatementTimeout() const
+{
+	return get<unsigned int>(KEY_STMT_TIMEOUT);
+}
+
+unsigned int Config::getConnIdleTimeout() const
+{
+	return get<unsigned int>(KEY_CONN_IDLE_TIMEOUT);
 }

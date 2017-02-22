@@ -2661,6 +2661,29 @@ ISC_STATUS API_ROUTINE isc_dsql_set_cursor_name(ISC_STATUS* userStatus, FB_API_H
 }
 
 
+// Set statement timeout.
+ISC_STATUS API_ROUTINE fb_dsql_set_timeout(ISC_STATUS* userStatus, FB_API_HANDLE* stmtHandle,
+	ULONG timeout)
+{
+	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
+
+	try
+	{
+		RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
+
+		if (statement->statement)
+			statement->statement->setTimeout(&statusWrapper, timeout);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(&statusWrapper);
+	}
+
+	return status[1];
+}
+
+
 // Provide information on sql statement.
 ISC_STATUS API_ROUTINE isc_dsql_sql_info(ISC_STATUS* userStatus, FB_API_HANDLE* stmtHandle,
 	SSHORT itemLength, const SCHAR* items, SSHORT bufferLength, SCHAR* buffer)
@@ -4464,6 +4487,36 @@ FB_BOOLEAN IscStatement::fetch(CheckStatusWrapper* status, IMessageMetadata* out
 	return statement->cursor->fetchNext(status, outBuffer) == IStatus::RESULT_OK;
 }
 
+unsigned int YStatement::getTimeout(CheckStatusWrapper* status)
+{
+	try
+	{
+		YEntry<YStatement> entry(status, this);
+		return entry.next()->getTimeout(status);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return 0;
+}
+
+
+void YStatement::setTimeout(CheckStatusWrapper* status, unsigned int timeOut)
+{
+	try
+	{
+		YEntry<YStatement> entry(status, this);
+		entry.next()->setTimeout(status, timeOut);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+}
+
+
 //-------------------------------------
 
 
@@ -5536,6 +5589,66 @@ void YAttachment::getNextTransaction(CheckStatusWrapper* status, ITransaction* t
 	next = getTransaction(status, tra)->next;
 	if (!next.hasData())
 		Arg::Gds(isc_bad_trans_handle).raise();
+}
+
+
+unsigned int YAttachment::getIdleTimeout(CheckStatusWrapper* status)
+{
+	try
+	{
+		YEntry<YAttachment> entry(status, this);
+		return entry.next()->getIdleTimeout(status);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return 0;
+}
+
+
+void YAttachment::setIdleTimeout(CheckStatusWrapper* status, unsigned int timeOut)
+{
+	try
+	{
+		YEntry<YAttachment> entry(status, this);
+		entry.next()->setIdleTimeout(status, timeOut);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+}
+
+
+unsigned int YAttachment::getStatementTimeout(CheckStatusWrapper* status)
+{
+	try
+	{
+		YEntry<YAttachment> entry(status, this);
+		return entry.next()->getStatementTimeout(status);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return 0;
+}
+
+
+void YAttachment::setStatementTimeout(CheckStatusWrapper* status, unsigned int timeOut)
+{
+	try
+	{
+		YEntry<YAttachment> entry(status, this);
+		entry.next()->setStatementTimeout(status, timeOut);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
 }
 
 

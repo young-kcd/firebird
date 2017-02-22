@@ -827,6 +827,13 @@ static const struct {
 	{335545124, -833}, /* 804 dsql_window_cant_overr_frame */
 	{335545125, -833}, /* 805 dsql_window_duplicate */
 	{335545126, -902}, /* 806 sql_too_long */
+	{335545127, -901}, /* 807 cfg_stmt_timeout */
+	{335545128, -901}, /* 808 att_stmt_timeout */
+	{335545129, -901}, /* 809 req_stmt_timeout */
+	{335545130, -902}, /* 810 att_shut_killed */
+	{335545131, -902}, /* 811 att_shut_idle */
+	{335545132, -902}, /* 812 att_shut_db_down */
+	{335545133, -902}, /* 813 att_shut_engine */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

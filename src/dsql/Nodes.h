@@ -281,6 +281,24 @@ public:
 };
 
 
+class SetSessionNode : public Node
+{
+public:
+	enum Type {TYPE_IDLE_TIMEOUT, TYPE_STMT_TIMEOUT};
+
+	SetSessionNode(MemoryPool& pool, Type aType, ULONG aVal, UCHAR blr_timepart);
+
+public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
+	virtual SetSessionNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void execute(thread_db* tdbb, dsql_req* request) const;
+
+private:
+	Type	m_type;
+	ULONG	m_value;
+};
+
+
 class DmlNode : public Node
 {
 public:

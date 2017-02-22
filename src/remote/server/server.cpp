@@ -3383,6 +3383,9 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 	unsigned flags = statement->rsr_iface->getFlags(&status_vector);
 	check(&status_vector);
 
+	statement->rsr_iface->setTimeout(&status_vector, sqldata->p_sqldata_timeout);
+	check(&status_vector);
+
 	if ((flags & IStatement::FLAG_HAS_CURSOR) && (out_msg_length == 0))
 	{
 		statement->rsr_cursor =

@@ -3448,6 +3448,10 @@ const StmtNode* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, Ex
 		const MetaName* const* inpNames = inputNames ? inputNames->begin() : NULL;
 		stmt->prepare(tdbb, tran, sSql, inputNames != NULL);
 
+		const TimeoutTimer* timer = tdbb->getTimeoutTimer();
+		if (timer)
+			stmt->setTimeout(tdbb, timer->timeToExpire());
+
 		if (stmt->isSelectable())
 			stmt->open(tdbb, tran, inpNames, inputs, !innerStmt);
 		else
@@ -7970,6 +7974,78 @@ void SetRoleNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** transact
 	}
 
 	SCL_release_all(attachment->att_security_classes);
+}
+
+
+//--------------------
+SetSessionNode::SetSessionNode(MemoryPool& pool, Type aType, ULONG aVal, UCHAR blr_timepart)
+	: Node(pool),
+	m_type(aType),
+	m_value(0)
+{
+	// TYPE_IDLE_TIMEOUT should be set in seconds
+	// TYPE_STMT_TIMEOUT should be set in milliseconds
+
+	ULONG mult = 1;
+
+	switch (blr_timepart)
+	{
+	case blr_extract_hour:
+		mult = (aType == TYPE_IDLE_TIMEOUT) ? 3660 : 3660000;
+		break;
+
+	case blr_extract_minute:
+		mult = (aType == TYPE_IDLE_TIMEOUT) ? 60 : 60000;
+		break;
+
+	case blr_extract_second:
+		mult = (aType == TYPE_IDLE_TIMEOUT) ? 1 : 1000;
+		break;
+
+	case blr_extract_millisecond:
+		if (aType == TYPE_IDLE_TIMEOUT)
+			Arg::Gds(isc_invalid_extractpart_time).raise();
+		mult = 1;
+		break;
+
+	default:
+		Arg::Gds(isc_invalid_extractpart_time).raise();
+		break;
+	}
+	m_value = aVal * mult;
+}
+
+string SetSessionNode::internalPrint(NodePrinter& printer) const
+{
+	Node::internalPrint(printer);
+
+	NODE_PRINT(printer, m_type);
+	NODE_PRINT(printer, m_value);
+
+	return "SetSessionNode";
+}
+
+
+SetSessionNode* SetSessionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SET_SESSION);
+	return this;
+}
+
+
+void SetSessionNode::execute(thread_db* tdbb, dsql_req* request) const
+{
+	Attachment* att = tdbb->getAttachment();
+	switch (m_type)
+	{
+	case TYPE_IDLE_TIMEOUT:
+		att->setIdleTimeout(m_value);
+		break;
+
+	case TYPE_STMT_TIMEOUT:
+		att->setStatementTimeout(m_value);
+		break;
+	}
 }
 
 

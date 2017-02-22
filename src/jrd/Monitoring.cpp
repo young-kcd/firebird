@@ -922,6 +922,15 @@ void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Atta
 	temp = (attachment->att_flags & ATT_system) ? 1 : 0;
 	record.storeInteger(f_mon_att_sys_flag, temp);
 
+	// session idle timeout, seconds
+	record.storeInteger(f_mon_att_idle_timeout, attachment->getIdleTimeout());
+	// when idle timer expires, NULL if not running
+	TimeStamp idleTimer;
+	if (attachment->getIdleTimerTimestamp(idleTimer))
+		record.storeTimestamp(f_mon_att_idle_timer, idleTimer);
+	// statement timeout, milliseconds
+	record.storeInteger(f_mon_att_stmt_timeout, attachment->getStatementTimeout());
+
 	record.write();
 
 	if (attachment->att_database->dbb_flags & DBB_shared)
@@ -1020,6 +1029,13 @@ void Monitoring::putRequest(SnapshotData::DumpRecord& record, const jrd_req* req
 		if (request->req_transaction)
 			record.storeInteger(f_mon_stmt_tra_id, request->req_transaction->tra_number);
 		record.storeTimestamp(f_mon_stmt_timestamp, request->req_timestamp);
+
+		ISC_TIMESTAMP ts;
+		if (request->req_timer &&
+			request->req_timer->getExpireTimestamp(request->req_timestamp.value(), ts))
+		{
+			record.storeTimestamp(f_mon_stmt_timer, ts);
+		}
 	}
 	else
 		record.storeInteger(f_mon_stmt_state, mon_state_idle);
@@ -1038,6 +1054,8 @@ void Monitoring::putRequest(SnapshotData::DumpRecord& record, const jrd_req* req
 	const int stat_id = fb_utils::genUniqueId();
 	record.storeGlobalId(f_mon_stmt_stat_id, getGlobalId(stat_id));
 
+	// statement timeout, milliseconds
+	record.storeInteger(f_mon_stmt_timeout, request->req_timeout);
 	record.write();
 
 	putStatistics(record, request->req_stats, stat_id, stat_statement);

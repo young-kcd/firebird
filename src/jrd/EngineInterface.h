@@ -205,6 +205,9 @@ public:
 	void setCursorName(Firebird::CheckStatusWrapper* status, const char* name);
 	unsigned getFlags(Firebird::CheckStatusWrapper* status);
 
+	unsigned int getTimeout(Firebird::CheckStatusWrapper* status);
+	void setTimeout(Firebird::CheckStatusWrapper* status, unsigned int timeOut);
+
 public:
 	JStatement(dsql_req* handle, StableAttachmentPart* sa, Firebird::Array<UCHAR>& meta);
 
@@ -344,6 +347,11 @@ public:
 	void ping(Firebird::CheckStatusWrapper* status);
 	void detach(Firebird::CheckStatusWrapper* status);
 	void dropDatabase(Firebird::CheckStatusWrapper* status);
+
+	unsigned int getIdleTimeout(Firebird::CheckStatusWrapper* status);
+	void setIdleTimeout(Firebird::CheckStatusWrapper* status, unsigned int timeOut);
+	unsigned int getStatementTimeout(Firebird::CheckStatusWrapper* status);
+	void setStatementTimeout(Firebird::CheckStatusWrapper* status, unsigned int timeOut);
 
 public:
 	explicit JAttachment(StableAttachmentPart* js);

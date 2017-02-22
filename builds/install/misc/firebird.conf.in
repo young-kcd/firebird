@@ -528,6 +528,30 @@
 
 # ----------------------------
 #
+# Set number of seconds after which statement execution will be automatically
+# cancelled by the engine. Zero means no timeout is set.
+#
+# Per-database configurable.
+#
+# Type: integer
+#
+#StatementTimeout = 0
+
+
+# ----------------------------
+#
+# Set number of minutes after which idle attachment will be disconnected by the
+# engine. Zero means no timeout is set.
+#
+# Per-database configurable.
+#
+# Type: integer
+#
+#ConnectionIdleTimeout = 0
+
+
+# ----------------------------
+#
 # How often the pages are flushed on disk
 # (for databases with ForcedWrites=Off only)
 #

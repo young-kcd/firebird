@@ -831,6 +831,13 @@ Data source : @4"},		/* eds_statement */
 	{335545124, "Cannot override the window @1 because it has a frame clause. Tip: it can be used without parenthesis in OVER"},		/* dsql_window_cant_overr_frame */
 	{335545125, "Duplicate window definition for @1"},		/* dsql_window_duplicate */
 	{335545126, "SQL statement is too long. Maximum size is @1 bytes."},		/* sql_too_long */
+	{335545127, "Config level timeout expired."},		/* cfg_stmt_timeout */
+	{335545128, "Attachment level timeout expired."},		/* att_stmt_timeout */
+	{335545129, "Statement level timeout expired."},		/* req_stmt_timeout */
+	{335545130, "Killed by database administrator."},		/* att_shut_killed */
+	{335545131, "Idle timeout expired."},		/* att_shut_idle */
+	{335545132, "Database is shutdown."},		/* att_shut_db_down */
+	{335545133, "Engine is shutdown."},		/* att_shut_engine */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

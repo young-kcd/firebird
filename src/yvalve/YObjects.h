@@ -379,6 +379,9 @@ public:
 	void free(Firebird::CheckStatusWrapper* status);
 	unsigned getFlags(Firebird::CheckStatusWrapper* status);
 
+	unsigned int getTimeout(Firebird::CheckStatusWrapper* status);
+	void setTimeout(Firebird::CheckStatusWrapper* status, unsigned int timeOut);
+
 public:
 	Firebird::Mutex statementMutex;
 	YAttachment* attachment;
@@ -469,6 +472,11 @@ public:
 		unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
 		Firebird::IMessageMetadata* inMetadata, void* inBuffer,
 		Firebird::IMessageMetadata* outMetadata, void* outBuffer);
+
+	unsigned int getIdleTimeout(Firebird::CheckStatusWrapper* status);
+	void setIdleTimeout(Firebird::CheckStatusWrapper* status, unsigned int timeOut);
+	unsigned int getStatementTimeout(Firebird::CheckStatusWrapper* status);
+	void setStatementTimeout(Firebird::CheckStatusWrapper* status, unsigned int timeOut);
 
 public:
 	Firebird::IProvider* provider;
