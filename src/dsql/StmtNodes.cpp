@@ -94,6 +94,8 @@ static void postTriggerAccess(CompilerScratch* csb, jrd_rel* ownerRelation,
 	ExternalAccess::exa_act operation, jrd_rel* view);
 static void preModifyEraseTriggers(thread_db* tdbb, TrigVector** trigs,
 	StmtNode::WhichTrigger whichTrig, record_param* rpb, record_param* rec, TriggerAction op);
+static void preprocessAssignments(thread_db* tdbb, CompilerScratch* csb,
+	StreamType stream, CompoundStmtNode* compoundNode, const Nullable<OverrideClause>* insertOverride);
 static void validateExpressions(thread_db* tdbb, const Array<ValidateInfo>& validations);
 
 }	// namespace Jrd
@@ -5340,6 +5342,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		store->dsqlRelation = relation;
 		store->dsqlFields = notMatched->fields;
 		store->dsqlValues = notMatched->values;
+		store->overrideClause = notMatched->overrideClause;
 
 		bool needSavePoint; // unused
 		thisIf->trueAction = store = store->internalDsqlPass(dsqlScratch, false, needSavePoint)->as<StoreNode>();
@@ -5881,50 +5884,7 @@ void ModifyNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 ModifyNode* ModifyNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	CompoundStmtNode* compoundNode = statement->as<CompoundStmtNode>();
-
-	// Remove assignments of DEFAULT to computed fields.
-	if (compoundNode)
-	{
-		for (size_t i = compoundNode->statements.getCount(); i--; )
-		{
-			const AssignmentNode* assign = compoundNode->statements[i]->as<AssignmentNode>();
-			fb_assert(assign);
-			if (!assign)
-				continue;
-
-			const ExprNode* assignFrom = assign->asgnFrom;
-			const FieldNode* assignToField = assign->asgnTo->as<FieldNode>();
-
-			if (assignToField && assignFrom->is<DefaultNode>())
-			{
-				jrd_rel* relation = csb->csb_rpt[newStream].csb_relation;
-				int fieldId = assignToField->fieldId;
-
-				while (true)
-				{
-					jrd_fld* fld;
-
-					if (assignToField->fieldStream == newStream &&
-						relation &&
-						relation->rel_fields &&
-						(fld = (*relation->rel_fields)[fieldId]))
-					{
-						if (fld->fld_computation)
-							compoundNode->statements.remove(i);
-						else if (relation->rel_view_rse && fld->fld_source_rel_field.first.hasData())
-						{
-							relation = MET_lookup_relation(tdbb, fld->fld_source_rel_field.first);
-							if ((fieldId = MET_lookup_field(tdbb, relation, fld->fld_source_rel_field.second)) >= 0)
-								continue;
-						}
-					}
-
-					break;
-				}
-			}
-		}
-	}
+	preprocessAssignments(tdbb, csb, newStream, statement->as<CompoundStmtNode>(), NULL);
 
 	pass1Modify(tdbb, csb, this);
 
@@ -6463,6 +6423,7 @@ const StmtNode* ReceiveNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeS
 
 static RegisterNode<StoreNode> regStoreNode(blr_store);
 static RegisterNode<StoreNode> regStoreNode2(blr_store2);
+static RegisterNode<StoreNode> regStoreNode3(blr_store3);
 
 // Parse a store statement.
 DmlNode* StoreNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
@@ -6470,6 +6431,21 @@ DmlNode* StoreNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 	StoreNode* node = FB_NEW_POOL(pool) StoreNode(pool);
 
 	AutoSetRestore<StmtNode*> autoCurrentDMLNode(&csb->csb_currentDMLNode, node);
+
+	if (blrOp == blr_store3)
+	{
+		node->overrideClause = static_cast<OverrideClause>(csb->csb_blr_reader.getByte());
+
+		switch (node->overrideClause.value)
+		{
+			case OverrideClause::USER_VALUE:
+			case OverrideClause::SYSTEM_VALUE:
+				break;
+
+			default:
+				PAR_syntax_error(csb, "invalid blr_store3 override clause");
+		}
+	}
 
 	const UCHAR* blrPos = csb->csb_blr_reader.getPos();
 
@@ -6485,6 +6461,13 @@ DmlNode* StoreNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 
 	if (blrOp == blr_store2)
 		node->statement2 = PAR_parse_stmt(tdbb, csb);
+	else if (blrOp == blr_store3)
+	{
+		if (csb->csb_blr_reader.peekByte() == blr_null)
+			csb->csb_blr_reader.getByte();
+		else
+			node->statement2 = PAR_parse_stmt(tdbb, csb);
+	}
 
 	return node;
 }
@@ -6498,6 +6481,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch,
 	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_INSERT);
 
 	StoreNode* node = FB_NEW_POOL(getPool()) StoreNode(getPool());
+	node->overrideClause = overrideClause;
 
 	// Process SELECT expression, if present
 
@@ -6606,7 +6590,21 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch,
 		NestConst<ValueExprNode>* ptr2 = values->items.begin();
 		for (const NestConst<ValueExprNode>* end = fields.end(); ptr != end; ++ptr, ++ptr2)
 		{
-			if (*ptr2)	// it's NULL for DEFAULT
+			// *ptr2 is NULL for DEFAULT
+
+			if (!*ptr2)
+			{
+				const FieldNode* field = (*ptr)->as<FieldNode>();
+
+				if (field && field->dsqlField)
+				{
+					*ptr2 = FB_NEW_POOL(getPool()) DefaultNode(getPool(),
+						relation->rel_name, field->dsqlField->fld_name);
+					*ptr2 = doDsqlPass(dsqlScratch, *ptr2, false);
+				}
+			}
+
+			if (*ptr2)
 			{
 				AssignmentNode* temp = FB_NEW_POOL(getPool()) AssignmentNode(getPool());
 				temp->asgnFrom = *ptr2;
@@ -6691,12 +6689,19 @@ void StoreNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	const dsql_msg* message = dsqlGenDmlHeader(dsqlScratch, dsqlRse->as<RseNode>());
 
-	dsqlScratch->appendUChar(statement2 ? blr_store2 : blr_store);
+	dsqlScratch->appendUChar(overrideClause.specified ? blr_store3 : (statement2 ? blr_store2 : blr_store));
+
+	if (overrideClause.specified)
+		dsqlScratch->appendUChar(UCHAR(overrideClause.value));
+
 	GEN_expr(dsqlScratch, dsqlRelation);
+
 	statement->genBlr(dsqlScratch);
 
 	if (statement2)
 		statement2->genBlr(dsqlScratch);
+	else if (overrideClause.specified)
+		dsqlScratch->appendUChar(blr_null);
 
 	if (message)
 		dsqlScratch->appendUChar(blr_end);
@@ -6704,6 +6709,8 @@ void StoreNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 StoreNode* StoreNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
+	preprocessAssignments(tdbb, csb, relationSource->getStream(), statement->as<CompoundStmtNode>(), &overrideClause);
+
 	if (pass1Store(tdbb, csb, this))
 		makeDefaults(tdbb, csb);
 
@@ -6839,7 +6846,6 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 	}
 
 	StmtNodeStack stack;
-
 	USHORT fieldId = 0;
 	vec<jrd_fld*>::iterator ptr1 = vector->begin();
 
@@ -6869,10 +6875,7 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 					fb_assert(fieldNode);
 
 					if (fieldNode && fieldNode->fieldStream == stream && fieldNode->fieldId == fieldId)
-					{
-						inList = true;
 						break;
-					}
 				}
 			}
 
@@ -8071,6 +8074,7 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	insert->dsqlFields = fields;
 	insert->dsqlValues = values;
 	insert->dsqlReturning = returning;
+	insert->overrideClause = overrideClause;
 	insert = insert->internalDsqlPass(dsqlScratch, true, needSavePoint)->as<StoreNode>();
 	fb_assert(insert);
 
@@ -9322,6 +9326,99 @@ static void preModifyEraseTriggers(thread_db* tdbb, TrigVector** trigs,
 	}
 
 	tdbb->getTransaction()->tra_rpblist->PopRpb(rpb, rpblevel);
+}
+
+// 1. Remove assignments of DEFAULT to computed fields.
+// 2. Remove assignments to identity column when OVERRIDING USER VALUE is specified in INSERT.
+static void preprocessAssignments(thread_db* tdbb, CompilerScratch* csb,
+	StreamType stream, CompoundStmtNode* compoundNode, const Nullable<OverrideClause>* insertOverride)
+{
+	if (!compoundNode)
+		return;
+
+	jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
+
+	fb_assert(relation);
+	if (!relation)
+		return;
+
+	Nullable<IdentityType> identityType;
+
+	for (size_t i = compoundNode->statements.getCount(); i--; )
+	{
+		const AssignmentNode* assign = compoundNode->statements[i]->as<AssignmentNode>();
+		fb_assert(assign);
+		if (!assign)
+			continue;
+
+		const ExprNode* assignFrom = assign->asgnFrom;
+		const FieldNode* assignToField = assign->asgnTo->as<FieldNode>();
+
+		if (assignToField)
+		{
+			int fieldId = assignToField->fieldId;
+			jrd_fld* fld;
+
+			while (true)
+			{
+				if (assignToField->fieldStream == stream &&
+					relation->rel_fields &&
+					(fld = (*relation->rel_fields)[fieldId]))
+				{
+					if (insertOverride && fld->fld_identity_type.specified)
+					{
+						if (insertOverride->specified || !assignFrom->is<DefaultNode>())
+							identityType = fld->fld_identity_type;
+
+						if (*insertOverride == OverrideClause::USER_VALUE)
+						{
+							compoundNode->statements.remove(i);
+							break;
+						}
+					}
+
+					if (fld->fld_computation)
+					{
+						if (assignFrom->is<DefaultNode>())
+							compoundNode->statements.remove(i);
+					}
+					else if (relation->rel_view_rse && fld->fld_source_rel_field.first.hasData())
+					{
+						relation = MET_lookup_relation(tdbb, fld->fld_source_rel_field.first);
+
+						fb_assert(relation);
+						if (!relation)
+							return;
+
+						if ((fieldId = MET_lookup_field(tdbb, relation, fld->fld_source_rel_field.second)) >= 0)
+							continue;
+					}
+				}
+
+				break;
+			}
+		}
+	}
+
+	if (!insertOverride)
+		return;
+
+	if (insertOverride->specified)
+	{
+		if (!identityType.specified)
+			ERR_post(Arg::Gds(isc_overriding_without_identity) << relation->rel_name);
+
+		if (identityType == IDENT_TYPE_BY_DEFAULT && *insertOverride == OverrideClause::SYSTEM_VALUE)
+			ERR_post(Arg::Gds(isc_overriding_system_invalid) << relation->rel_name);
+
+		if (identityType == IDENT_TYPE_ALWAYS && *insertOverride == OverrideClause::USER_VALUE)
+			ERR_post(Arg::Gds(isc_overriding_user_invalid) << relation->rel_name);
+	}
+	else
+	{
+		if (identityType == IDENT_TYPE_ALWAYS)
+			ERR_post(Arg::Gds(isc_overriding_system_missing) << relation->rel_name);
+	}
 }
 
 // Execute a list of validation expressions.

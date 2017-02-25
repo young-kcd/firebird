@@ -1140,6 +1140,7 @@ public:
 		Firebird::MetaName relationName;
 		Firebird::MetaName fieldSource;
 		Firebird::MetaName identitySequence;
+		Nullable<IdentityType> identityType;
 		Nullable<USHORT> collationId;
 		Nullable<bool> notNullFlag;	// true = NOT NULL / false = NULL
 		Nullable<USHORT> position;
@@ -1306,11 +1307,18 @@ public:
 
 	struct IdentityOptions
 	{
+		IdentityOptions(MemoryPool&, IdentityType aType)
+			: type(aType),
+			  restart(false)
+		{
+		}
+
 		IdentityOptions(MemoryPool&)
 			: restart(false)
 		{
 		}
 
+		Nullable<IdentityType> type;
 		Nullable<SINT64> startValue;
 		Nullable<SLONG> increment;
 		bool restart;	// used in ALTER

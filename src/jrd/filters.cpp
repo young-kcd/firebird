@@ -449,6 +449,10 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 		sprintf(line, "    field_generator_name: %s", p);
 		break;
 
+	case RSR_field_identity_type:
+		sprintf(line, "Field identity type: %d", n);
+		break;
+
 	default:
 		sprintf(line, "*** unknown verb %d ***", (int) buff[0]);
 	}

@@ -4046,6 +4046,12 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 
 			case RSR_field_generator_name:
 				field->fld_generator_name = (const TEXT*) p;
+				if (!field->fld_identity_type.specified)
+					field->fld_identity_type = IDENT_TYPE_BY_DEFAULT;
+				break;
+
+			case RSR_field_identity_type:
+				field->fld_identity_type = static_cast<IdentityType>(n);
 				break;
 
 			default:    // Shut up compiler warning

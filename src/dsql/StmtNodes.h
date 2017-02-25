@@ -112,6 +112,14 @@ struct ValidateInfo
 };
 
 
+enum OverrideClause : UCHAR
+{
+	// Warning: used in BLR
+	USER_VALUE = 1,
+	SYSTEM_VALUE
+};
+
+
 class AssignmentNode : public TypedNode<StmtNode, StmtNode::TYPE_ASSIGNMENT>
 {
 public:
@@ -1048,6 +1056,7 @@ public:
 		Firebird::Array<NestConst<FieldNode> > fields;
 		NestConst<ValueListNode> values;
 		NestConst<BoolExprNode> condition;
+		Nullable<OverrideClause> overrideClause;
 	};
 
 	explicit MergeNode(MemoryPool& pool)
@@ -1267,6 +1276,7 @@ public:
 	NestConst<StmtNode> subStore;
 	Firebird::Array<ValidateInfo> validations;
 	NestConst<RelationSourceNode> relationSource;
+	Nullable<OverrideClause> overrideClause;
 };
 
 
@@ -1609,6 +1619,7 @@ public:
 	NestConst<ValueListNode> values;
 	Firebird::Array<NestConst<FieldNode> > matching;
 	NestConst<ReturningClause> returning;
+	Nullable<OverrideClause> overrideClause;
 };
 
 

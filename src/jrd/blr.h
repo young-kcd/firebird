@@ -421,5 +421,6 @@
 #define blr_window_win_exclusion			(unsigned char) 7
 
 #define blr_default					(unsigned char) 212
+#define blr_store3					(unsigned char) 213
 
 #endif // JRD_BLR_H

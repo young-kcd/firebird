@@ -344,7 +344,8 @@ static const UCHAR
 	subfunc_decl[] = { op_subfunc_decl, 0},
 	window_win[] = { op_byte, op_window_win, 0},
 	relation_field[] = { op_line, op_indent, op_byte, op_literal,
-						 op_line, op_indent, op_byte, op_literal, op_pad, op_line, 0};
+						 op_line, op_indent, op_byte, op_literal, op_pad, op_line, 0},
+	store3[] = { op_line, op_byte, op_line, op_verb, op_verb, op_verb, 0};
 
 
 #include "../jrd/blp.h"

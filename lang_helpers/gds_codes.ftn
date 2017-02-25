@@ -1678,6 +1678,14 @@ C --
       PARAMETER (GDS__att_shut_db_down                 = 335545132)
       INTEGER*4 GDS__att_shut_engine                 
       PARAMETER (GDS__att_shut_engine                  = 335545133)
+      INTEGER*4 GDS__overriding_without_identity     
+      PARAMETER (GDS__overriding_without_identity      = 335545134)
+      INTEGER*4 GDS__overriding_system_invalid       
+      PARAMETER (GDS__overriding_system_invalid        = 335545135)
+      INTEGER*4 GDS__overriding_user_invalid         
+      PARAMETER (GDS__overriding_user_invalid          = 335545136)
+      INTEGER*4 GDS__overriding_system_missing       
+      PARAMETER (GDS__overriding_system_missing        = 335545137)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
