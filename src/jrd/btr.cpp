@@ -1373,11 +1373,11 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 			length = sizeof(UCHAR);
 			break;
 
-		case dtype_dec64:
+		case idx_dec64:
 			length = Decimal64::getIndexKeyLength();
 			break;
 
-		case dtype_dec128:
+		case idx_dec128:
 			length = Decimal128::getIndexKeyLength();
 			break;
 
@@ -1433,10 +1433,10 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 		case idx_boolean:
 			length = sizeof(UCHAR);
 			break;
-		case dtype_dec64:
+		case idx_dec64:
 			length = Decimal64::getIndexKeyLength();
 			break;
-		case dtype_dec128:
+		case idx_dec128:
 			length = Decimal128::getIndexKeyLength();
 			break;
 		default:
