@@ -76,6 +76,8 @@ public:
 
 	void makeKey(unsigned int* key) const;
 	void grabKey(unsigned int* key);
+	static ULONG getIndexKeyLength();
+	ULONG makeIndexKey(vary* buf);
 
 #ifdef DEV_BUILD
 	int show();
@@ -127,6 +129,8 @@ public:
 
 	void makeKey(unsigned int* key) const;
 	void grabKey(unsigned int* key);
+	static ULONG getIndexKeyLength();
+	ULONG makeIndexKey(vary* buf);
 
 #ifdef DEV_BUILD
 	int show();
