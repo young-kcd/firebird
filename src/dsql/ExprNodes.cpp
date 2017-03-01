@@ -10347,7 +10347,7 @@ dsc* SubstringNode::perform(thread_db* tdbb, impure_value* impure, const dsc* va
 	if (sStart < 0)
 	{
 		sLength = MAX(sLength + sStart, 0);
-		sStart = 1;
+		sStart = 0;
 	}
 
 	FB_UINT64 start = FB_UINT64(sStart);
@@ -10378,7 +10378,7 @@ dsc* SubstringNode::perform(thread_db* tdbb, impure_value* impure, const dsc* va
 		CharSet* charSet = INTL_charset_lookup(tdbb, valueDsc->getCharSet());
 
 		const FB_UINT64 byte_offset = start * charSet->maxBytesPerChar();
-		const FB_UINT64 byte_length = FB_UINT64(length) * charSet->maxBytesPerChar();
+		const FB_UINT64 byte_length = length * charSet->maxBytesPerChar();
 
 		if (charSet->isMultiByte())
 		{
