@@ -7932,6 +7932,7 @@ symbol_UDF_name
 %type <metaNamePtr> symbol_blob_subtype_name
 symbol_blob_subtype_name
 	: valid_symbol_name
+	| BINARY
 	;
 
 %type <metaNamePtr> symbol_character_set_name
