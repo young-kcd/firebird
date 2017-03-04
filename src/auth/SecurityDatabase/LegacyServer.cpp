@@ -353,6 +353,7 @@ int SecurityDatabase::verify(IWriter* authBlock, IServerBlock* sBlock)
 	pw1[MAX_LEGACY_PASSWORD_LENGTH] = 0;
 	string storedHash(pw1, MAX_LEGACY_PASSWORD_LENGTH);
 	storedHash.rtrim();
+	storedHash.recalculate_length();
 
 	string newHash;
 	LegacyHash::hash(newHash, login, passwordEnc, storedHash);
