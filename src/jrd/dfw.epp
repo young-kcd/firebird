@@ -1242,9 +1242,8 @@ USHORT DFW_assign_index_type(thread_db* tdbb, const Firebird::MetaName& name, SS
 	case dtype_boolean:
 		return idx_boolean;
 	case dtype_dec64:
-		return idx_dec64;
 	case dtype_dec128:
-		return idx_dec128;
+		return idx_decimal;
 	default:
 		return idx_numeric;
 	}

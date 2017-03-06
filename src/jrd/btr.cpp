@@ -1373,11 +1373,7 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 			length = sizeof(UCHAR);
 			break;
 
-		case idx_dec64:
-			length = Decimal64::getIndexKeyLength();
-			break;
-
-		case idx_dec128:
+		case idx_decimal:
 			length = Decimal128::getIndexKeyLength();
 			break;
 
@@ -1433,10 +1429,7 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 		case idx_boolean:
 			length = sizeof(UCHAR);
 			break;
-		case idx_dec64:
-			length = Decimal64::getIndexKeyLength();
-			break;
-		case idx_dec128:
+		case idx_decimal:
 			length = Decimal128::getIndexKeyLength();
 			break;
 		default:
@@ -2437,8 +2430,7 @@ static void compress(thread_db* tdbb,
 	}
 
 	if (itype == idx_string || itype == idx_byte_array || itype == idx_metadata ||
-		itype == idx_dec64 || itype == idx_dec128 ||
-		itype >= idx_first_intl_string)
+		itype == idx_decimal || itype >= idx_first_intl_string)
 	{
 		VaryStr<MAX_KEY> buffer;
 		const UCHAR pad = (itype == idx_string) ? ' ' : 0;
@@ -2446,13 +2438,7 @@ static void compress(thread_db* tdbb,
 
 		size_t length;
 
-		if (itype == idx_dec64)
-		{
-			Decimal64 dec = MOV_get_dec64(tdbb, desc);
-			length = dec.makeIndexKey(&buffer);
-			ptr = reinterpret_cast<UCHAR*>(buffer.vary_string);
-		}
-		else if (itype == idx_dec128)
+		if (itype == idx_decimal)
 		{
 			Decimal128 dec = MOV_get_dec128(tdbb, desc);
 			length = dec.makeIndexKey(&buffer);

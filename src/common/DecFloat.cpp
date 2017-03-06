@@ -158,75 +158,6 @@ void make(unsigned int* key,
 	}
 }
 
-struct tab { UCHAR rshift, lshift; };
-tab table[4] =
-{
-	{ 2, 6 },
-	{ 4, 4 },
-	{ 6, 2 },
-	{ 8, 0 }
-};
-
-ULONG indexKey(char* key, unsigned pMax, const int bias, unsigned char* coeff, int sign, int exp)
-{
-	// normalize coeff & exponent
-	unsigned dig = digits(pMax, coeff, exp);
-
-	// exponent bias and sign
-	exp += (bias + 1);
-	if (!dig)
-		exp = 0;
-	if (sign)
-		exp = -exp;
-	exp += 2 * (bias + 1);	// make it positive
-	fb_assert(exp >= 0 && exp < 64 * 1024);
-
-	// encode exp
-	char* k = key;
-	*k++ = exp >> 8;
-	*k++ = exp & 0xff;
-
-	// invert negative
-	unsigned char* const end = &coeff[dig];
-	if (sign && dig)
-	{
-		fb_assert(end[-1]);
-		--end[-1];
-
-		for (unsigned char* p = coeff; p < end; ++p)
-			*p = 9 - *p;
-	}
-
-	// Some 0's in the end - caller, do not forget to reserve additional space on stack
-	end[0] = end[1] = 0;
-
-	// Avoid bad data in k in case when coeff is zero
-	*k = 0;
-
-	// compress coeff - 3 decimal digits (999) per 10 bits (1023)
-	unsigned char* p = coeff;
-	for (tab* t = table; p < end; p += 3)
-	{
-		USHORT val = p[0] * 100 + p[1] * 10 + p[2];
-		fb_assert(val < 1000);	// 1024, 10 bit
-		*k |= (val >> t->rshift);
-		++k;
-		*k = (val << t->lshift);
-		if (!t->lshift)
-		{
-			++k;
-			*k = 0;
-			t = table;
-		}
-		else
-			++t;
-	}
-	if (*k)
-		++k;
-
-	return k - key;
-}
-
 void grab(unsigned int* key,
 	const unsigned pMax, const int bias, const unsigned decSize,
 	unsigned char* bcd, int& sign, int& exp)
@@ -445,22 +376,6 @@ void Decimal64::grabKey(unsigned int* key)
 
 	decDoubleFromBCD(&dec, exp, bcd, sign);
 }
-
-ULONG Decimal64::getIndexKeyLength()
-{
-	return 9;
-}
-
-ULONG Decimal64::makeIndexKey(vary* buf)
-{
-	unsigned char coeff[DECDOUBLE_Pmax + 2];
-	int sign = decDoubleGetCoefficient(&dec, coeff);
-	int exp = decDoubleGetExponent(&dec);
-
-	buf->vary_length = indexKey(buf->vary_string, DECDOUBLE_Pmax, DECDOUBLE_Bias, coeff, sign, exp);
-	return buf->vary_length;
-}
-
 
 Decimal128 Decimal128::set(Decimal64 d64)
 {
@@ -802,8 +717,76 @@ ULONG Decimal128::makeIndexKey(vary* buf)
 	unsigned char coeff[DECQUAD_Pmax + 2];
 	int sign = decQuadGetCoefficient(&dec, coeff);
 	int exp = decQuadGetExponent(&dec);
+	const int bias = DECQUAD_Bias;
+	const unsigned pMax = DECQUAD_Pmax;
 
-	buf->vary_length = indexKey(buf->vary_string, DECQUAD_Pmax, DECQUAD_Bias, coeff, sign, exp);
+	// normalize coeff & exponent
+	unsigned dig = digits(pMax, coeff, exp);
+
+	// exponent bias and sign
+	exp += (bias + 1);
+	if (!dig)
+		exp = 0;
+	if (sign)
+		exp = -exp;
+	exp += 2 * (bias + 1);	// make it positive
+	fb_assert(exp >= 0 && exp < 64 * 1024);
+
+	// encode exp
+	char* k = buf->vary_string;
+	*k++ = exp >> 8;
+	*k++ = exp & 0xff;
+
+	// invert negative
+	unsigned char* const end = &coeff[dig];
+	if (sign && dig)
+	{
+		fb_assert(end[-1]);
+		--end[-1];
+
+		for (unsigned char* p = coeff; p < end; ++p)
+			*p = 9 - *p;
+	}
+
+	// Some 0's in the end - caller, do not forget to reserve additional space on stack
+	end[0] = end[1] = 0;
+
+	// Avoid bad data in k in case when coeff is zero
+	*k = 0;
+
+	// 
+	struct tab { UCHAR rshift, lshift; };
+	static tab table[4] =
+	{
+		{ 2, 6 },
+		{ 4, 4 },
+		{ 6, 2 },
+		{ 8, 0 }
+	};
+
+	// compress coeff - 3 decimal digits (999) per 10 bits (1023)
+	unsigned char* p = coeff;
+	for (tab* t = table; p < end; p += 3)
+	{
+		USHORT val = p[0] * 100 + p[1] * 10 + p[2];
+		fb_assert(val < 1000);	// 1024, 10 bit
+		*k |= (val >> t->rshift);
+		++k;
+		*k = (val << t->lshift);
+		if (!t->lshift)
+		{
+			++k;
+			*k = 0;
+			t = table;
+		}
+		else
+			++t;
+	}
+	if (*k)
+		++k;
+
+	// done
+	buf->vary_length = k - buf->vary_string;
 	return buf->vary_length;
 }
 
