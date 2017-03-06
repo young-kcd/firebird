@@ -700,6 +700,7 @@ using namespace Firebird;
 	Jrd::NamedWindowClause* namedWindowClause;
 	Jrd::NamedWindowsClause* namedWindowsClause;
 	Jrd::TransactionNode* traNode;
+	Jrd::SessionManagementNode* mngNode;
 	Firebird::Array<Jrd::PrivilegeClause>* privilegeArray;
 	Jrd::GranteeClause* granteeClause;
 	Firebird::Array<Jrd::GranteeClause>* granteeArray;
@@ -755,6 +756,7 @@ using namespace Firebird;
 	Jrd::MappingNode* mappingNode;
 	Jrd::MappingNode::OP mappingOp;
 	Jrd::SetRoleNode* setRoleNode;
+	Jrd::SetRoundNode* setRoundNode;
 	Jrd::CreateAlterRoleNode* createAlterRoleNode;
 }
 
@@ -774,6 +776,7 @@ statement
 	: dml_statement		{ $$ = newNode<DsqlDmlRequest>($1); }
 	| ddl_statement		{ $$ = newNode<DsqlDdlRequest>($1); }
 	| tra_statement		{ $$ = newNode<DsqlTransactionRequest>($1); }
+	| mng_statement		{ $$ = newNode<DsqlSessionManagementRequest>($1); }
 	;
 
 %type <stmtNode> dml_statement
@@ -808,6 +811,12 @@ tra_statement
 	: set_transaction							{ $$ = $1; }
 	| commit									{ $$ = $1; }
 	| rollback									{ $$ = $1; }
+	;
+
+%type <mngNode> mng_statement
+mng_statement
+	: set_round									{ $$ = $1; }
+//	| set_traps									{ $$ = $1; }
 	| set_role									{ $$ = $1; }
 	;
 
@@ -5007,6 +5016,12 @@ set_role
 		{ $$ = newNode<SetRoleNode>($3); }
 	| SET TRUSTED ROLE
 		{ $$ = newNode<SetRoleNode>(); }
+	;
+
+%type <setRoundNode> set_round
+set_round
+	: SET DECFLOAT ROUND valid_symbol_name
+		{ $$ = newNode<SetRoundNode>($4); }
 	;
 
 %type tran_option_list_opt(<setTransactionNode>)

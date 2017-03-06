@@ -4859,6 +4859,7 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		{SetOptions::maxrows, "MAXROWS", 0},
 		{SetOptions::sqlCont, "ROLE", 0},
 		{SetOptions::sqlCont, "TRUSTED", 0},	// TRUSTED ROLE, will get DSQL error other case
+		{SetOptions::sqlCont, "DECFLOAT", 0},
 	};
 
 	// Display current set options

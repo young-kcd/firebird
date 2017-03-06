@@ -1545,22 +1545,18 @@ public:
 };
 
 
-// This node should better be session management node,
-// but as long as we do not have other session management and
-// node is rather similiar internally to transaction management
-// let it for now be transaction management node.
-class SetRoleNode : public TransactionNode
+class SetRoleNode : public SessionManagementNode
 {
 public:
 	explicit SetRoleNode(MemoryPool& pool)
-		: TransactionNode(pool),
+		: SessionManagementNode(pool),
 		  trusted(true),
 		  roleName(pool)
 	{
 	}
 
 	SetRoleNode(MemoryPool& pool, Firebird::MetaName* name)
-		: TransactionNode(pool),
+		: SessionManagementNode(pool),
 		  trusted(false),
 		  roleName(pool, *name)
 	{
@@ -1569,7 +1565,7 @@ public:
 public:
 	virtual Firebird::string internalPrint(NodePrinter& printer) const
 	{
-		TransactionNode::internalPrint(printer);
+		SessionManagementNode::internalPrint(printer);
 
 		NODE_PRINT(printer, trusted);
 		NODE_PRINT(printer, roleName);
@@ -1577,12 +1573,37 @@ public:
 		return "SetRoleNode";
 	}
 
-	virtual SetRoleNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
-	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** transaction) const;
+	virtual void execute(thread_db* tdbb, dsql_req* request) const;
 
 public:
 	bool trusted;
 	Firebird::MetaName roleName;
+};
+
+
+class SetRoundNode : public SessionManagementNode
+{
+public:
+	SetRoundNode(MemoryPool& pool, Firebird::MetaName* name)
+		: SessionManagementNode(pool),
+		  rndName(pool, *name)
+	{
+	}
+
+public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
+	{
+		SessionManagementNode::internalPrint(printer);
+
+		NODE_PRINT(printer, rndName);
+
+		return "SetRoundNode";
+	}
+
+	virtual void execute(thread_db* tdbb, dsql_req* request) const;
+
+public:
+	Firebird::MetaName rndName;
 };
 
 

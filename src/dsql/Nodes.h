@@ -281,6 +281,28 @@ public:
 };
 
 
+class SessionManagementNode : public Node
+{
+public:
+	explicit SessionManagementNode(MemoryPool& pool)
+		: Node(pool)
+	{
+	}
+
+public:
+	virtual SessionManagementNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
+	{
+		Node::dsqlPass(dsqlScratch);
+
+		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SESSION_MANAGEMENT);
+
+		return this;
+	}
+
+	virtual void execute(thread_db* tdbb, dsql_req* request) const = 0;
+};
+
+
 class DmlNode : public Node
 {
 public:

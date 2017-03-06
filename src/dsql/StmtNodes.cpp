@@ -7945,14 +7945,7 @@ void SetTransactionNode::genTableLock(DsqlCompilerScratch* dsqlScratch,
 //--------------------
 
 
-SetRoleNode* SetRoleNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
-{
-	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SET_ROLE);
-
-	return this;
-}
-
-void SetRoleNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** transaction) const
+void SetRoleNode::execute(thread_db* tdbb, dsql_req* request) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -7970,6 +7963,58 @@ void SetRoleNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** transact
 	}
 
 	SCL_release_all(attachment->att_security_classes);
+}
+
+
+//--------------------
+
+
+namespace
+{
+
+struct RoundMode
+{
+	const char* name;
+	USHORT val;
+};
+
+#define FB_RMODE(x) { STRINGIZE(x), x }
+
+const RoundMode roundModes[] = {
+	FB_RMODE(DEC_ROUND_CEILING),
+	FB_RMODE(DEC_ROUND_UP),
+	FB_RMODE(DEC_ROUND_HALF_UP),
+	FB_RMODE(DEC_ROUND_HALF_EVEN),
+	FB_RMODE(DEC_ROUND_HALF_DOWN),
+	FB_RMODE(DEC_ROUND_DOWN),
+	FB_RMODE(DEC_ROUND_FLOOR),
+	{ "DEC_ROUND_REROUND", DEC_ROUND_05UP },
+	{ NULL, 0 }
+};
+
+#undef FB_RMODE
+
+//DEC_ROUND_
+//0123456789
+const unsigned FB_RMODE_OFFSET = 10;
+
+}
+
+void SetRoundNode::execute(thread_db* tdbb, dsql_req* request) const
+{
+	SET_TDBB(tdbb);
+	Attachment* const attachment = tdbb->getAttachment();
+
+	for (const RoundMode* r = roundModes; r->name; ++r)
+	{
+		if (rndName == &r->name[FB_RMODE_OFFSET])
+		{
+			attachment->att_dec_status.roundingMode = r->val;
+			return;
+		}
+	}
+
+	(Arg::Gds(isc_random) << "Invalid round mode for decfloat").raise();
 }
 
 

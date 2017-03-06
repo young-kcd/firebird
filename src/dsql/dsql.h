@@ -80,6 +80,7 @@ namespace Jrd
 	class RseNode;
 	class StmtNode;
 	class TransactionNode;
+	class SessionManagementNode;
 	class ValueExprNode;
 	class ValueListNode;
 	class WindowClause;
@@ -431,7 +432,7 @@ public:
 		TYPE_SELECT, TYPE_SELECT_UPD, TYPE_INSERT, TYPE_DELETE, TYPE_UPDATE, TYPE_UPDATE_CURSOR,
 		TYPE_DELETE_CURSOR, TYPE_COMMIT, TYPE_ROLLBACK, TYPE_CREATE_DB, TYPE_DDL, TYPE_START_TRANS,
 		TYPE_EXEC_PROCEDURE, TYPE_COMMIT_RETAIN, TYPE_ROLLBACK_RETAIN, TYPE_SET_GENERATOR,
-		TYPE_SAVEPOINT, TYPE_EXEC_BLOCK, TYPE_SELECT_BLOCK, TYPE_SET_ROLE
+		TYPE_SAVEPOINT, TYPE_EXEC_BLOCK, TYPE_SELECT_BLOCK, TYPE_SESSION_MANAGEMENT
 	};
 
 	// Statement flags.
@@ -668,6 +669,28 @@ public:
 
 private:
 	NestConst<TransactionNode> node;
+};
+
+class DsqlSessionManagementRequest : public dsql_req
+{
+public:
+	explicit DsqlSessionManagementRequest(MemoryPool& pool, SessionManagementNode* aNode)
+		: dsql_req(pool),
+		  node(aNode)
+	{
+		req_traced = false;
+	}
+
+	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
+		ntrace_result_t* traceResult);
+
+	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
+		Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
+		Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
+		bool singleton);
+
+private:
+	NestConst<SessionManagementNode> node;
 };
 
 //! Implicit (NATURAL and USING) joins

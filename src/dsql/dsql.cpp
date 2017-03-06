@@ -906,6 +906,25 @@ void DsqlTransactionRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 }
 
 
+void DsqlSessionManagementRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
+	ntrace_result_t* /*traceResult*/)
+{
+	node = Node::doDsqlPass(scratch, node);
+
+	// Don't trace pseudo-statements (without requests associated).
+	req_traced = false;
+}
+
+// Execute a dynamic SQL statement.
+void DsqlSessionManagementRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
+	Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
+	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
+	bool singleton)
+{
+	node->execute(tdbb, this);
+}
+
+
 /**
 
  	get_request_info
@@ -1756,7 +1775,6 @@ static void sql_info(thread_db* tdbb,
 				break;
 			case DsqlCompiledStatement::TYPE_CREATE_DB:
 			case DsqlCompiledStatement::TYPE_DDL:
-			case DsqlCompiledStatement::TYPE_SET_ROLE:
 				number = isc_info_sql_stmt_ddl;
 				break;
 			case DsqlCompiledStatement::TYPE_COMMIT:
@@ -1769,6 +1787,9 @@ static void sql_info(thread_db* tdbb,
 				break;
 			case DsqlCompiledStatement::TYPE_START_TRANS:
 				number = isc_info_sql_stmt_start_trans;
+				break;
+			case DsqlCompiledStatement::TYPE_SESSION_MANAGEMENT:
+				number = isc_info_sql_stmt_ddl;		// ?????????????????
 				break;
 			case DsqlCompiledStatement::TYPE_INSERT:
 				number = isc_info_sql_stmt_insert;
