@@ -1584,9 +1584,31 @@ public:
 class SetRoundNode : public SessionManagementNode
 {
 public:
-	SetRoundNode(MemoryPool& pool, Firebird::MetaName* name)
+	SetRoundNode(MemoryPool& pool, Firebird::MetaName* name);
+
+public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
+	{
+		SessionManagementNode::internalPrint(printer);
+
+		NODE_PRINT(printer, rndMode);
+
+		return "SetRoundNode";
+	}
+
+	virtual void execute(thread_db* tdbb, dsql_req* request) const;
+
+public:
+	USHORT rndMode;
+};
+
+
+class SetTrapsNode : public SessionManagementNode
+{
+public:
+	SetTrapsNode(MemoryPool& pool)
 		: SessionManagementNode(pool),
-		  rndName(pool, *name)
+		  traps(0u)
 	{
 	}
 
@@ -1595,15 +1617,17 @@ public:
 	{
 		SessionManagementNode::internalPrint(printer);
 
-		NODE_PRINT(printer, rndName);
+		NODE_PRINT(printer, traps);
 
-		return "SetRoundNode";
+		return "SetTrapsNode";
 	}
 
 	virtual void execute(thread_db* tdbb, dsql_req* request) const;
 
+	void trap(Firebird::MetaName* name);
+
 public:
-	Firebird::MetaName rndName;
+	USHORT traps;
 };
 
 

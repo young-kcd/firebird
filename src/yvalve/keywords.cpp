@@ -440,6 +440,7 @@ static const TOK tokens[] =
 	{TOK_TO, "TO", false},
 	{TOK_TRAILING, "TRAILING", false},
 	{TOK_TRANSACTION, "TRANSACTION", true},
+	{TOK_TRAPS, "TRAPS", true},
 	{TOK_TRIGGER, "TRIGGER", false},
 	{TOK_TRIM, "TRIM", false},
 	{TOK_TRUE, "TRUE", false},

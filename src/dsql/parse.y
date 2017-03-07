@@ -611,6 +611,7 @@ using namespace Firebird;
 %token <metaNamePtr> SQL
 %token <metaNamePtr> SYSTEM
 %token <metaNamePtr> TIES
+%token <metaNamePtr> TRAPS
 %token <metaNamePtr> UNBOUNDED
 %token <metaNamePtr> VARBINARY
 %token <metaNamePtr> WINDOW
@@ -756,8 +757,9 @@ using namespace Firebird;
 	Jrd::MappingNode* mappingNode;
 	Jrd::MappingNode::OP mappingOp;
 	Jrd::SetRoleNode* setRoleNode;
-	Jrd::SetRoundNode* setRoundNode;
 	Jrd::CreateAlterRoleNode* createAlterRoleNode;
+	Jrd::SetRoundNode* setRoundNode;
+	Jrd::SetTrapsNode* setTrapsNode;
 }
 
 %include types.y
@@ -816,7 +818,7 @@ tra_statement
 %type <mngNode> mng_statement
 mng_statement
 	: set_round									{ $$ = $1; }
-//	| set_traps									{ $$ = $1; }
+	| set_traps									{ $$ = $1; }
 	| set_role									{ $$ = $1; }
 	;
 
@@ -5024,6 +5026,32 @@ set_round
 		{ $$ = newNode<SetRoundNode>($4); }
 	;
 
+%type <setTrapsNode> set_traps
+set_traps
+	: SET DECFLOAT TRAPS TO
+			{ $$ = newNode<SetTrapsNode>(); }
+		traps_list_opt($5)
+			{ $$ = $5; }
+	;
+
+%type traps_list_opt(<setTrapsNode>)
+traps_list_opt($setTrapsNode)
+	: // nothing
+	| traps_list($setTrapsNode)
+	;
+
+%type traps_list(<setTrapsNode>)
+traps_list($setTrapsNode)
+	: trap($setTrapsNode)
+	| traps_list ',' trap($setTrapsNode)
+	;
+
+%type trap(<setTrapsNode>)
+trap($setTrapsNode)
+	: valid_symbol_name
+		{ $setTrapsNode->trap($1); }
+	;
+
 %type tran_option_list_opt(<setTransactionNode>)
 tran_option_list_opt($setTransactionNode)
 	: // nothing
@@ -8280,6 +8308,7 @@ non_reserved_word
 	| SQL
 	| SYSTEM
 	| TIES
+	| TRAPS
 	;
 
 %%

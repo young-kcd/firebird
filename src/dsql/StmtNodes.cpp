@@ -7972,49 +7972,100 @@ void SetRoleNode::execute(thread_db* tdbb, dsql_req* request) const
 namespace
 {
 
-struct RoundMode
+struct TextCode
 {
 	const char* name;
 	USHORT val;
 };
 
-#define FB_RMODE(x) { STRINGIZE(x), x }
+//#define FB_TEXTCODE(x) { STRINGIZE(x), x }
+#define FB_TEXTCODE(x) { #x, x }
 
-const RoundMode roundModes[] = {
-	FB_RMODE(DEC_ROUND_CEILING),
-	FB_RMODE(DEC_ROUND_UP),
-	FB_RMODE(DEC_ROUND_HALF_UP),
-	FB_RMODE(DEC_ROUND_HALF_EVEN),
-	FB_RMODE(DEC_ROUND_HALF_DOWN),
-	FB_RMODE(DEC_ROUND_DOWN),
-	FB_RMODE(DEC_ROUND_FLOOR),
+const TextCode roundModes[] = {
+	FB_TEXTCODE(DEC_ROUND_CEILING),
+	FB_TEXTCODE(DEC_ROUND_UP),
+	FB_TEXTCODE(DEC_ROUND_HALF_UP),
+	FB_TEXTCODE(DEC_ROUND_HALF_EVEN),
+	FB_TEXTCODE(DEC_ROUND_HALF_DOWN),
+	FB_TEXTCODE(DEC_ROUND_DOWN),
+	FB_TEXTCODE(DEC_ROUND_FLOOR),
 	{ "DEC_ROUND_REROUND", DEC_ROUND_05UP },
 	{ NULL, 0 }
 };
-
-#undef FB_RMODE
 
 //DEC_ROUND_
 //0123456789
 const unsigned FB_RMODE_OFFSET = 10;
 
+const TextCode ieeeTraps[] = {
+	FB_TEXTCODE(DEC_IEEE_754_Division_by_zero),
+	FB_TEXTCODE(DEC_IEEE_754_Inexact),
+	FB_TEXTCODE(DEC_IEEE_754_Invalid_operation),
+	FB_TEXTCODE(DEC_IEEE_754_Overflow),
+	FB_TEXTCODE(DEC_IEEE_754_Underflow),
+	{ NULL, 0 }
+};
+
+//DEC_IEEE_754_
+//0123456789012
+const unsigned FB_TRAPS_OFFSET = 13;
+
+#undef FB_TEXTCODE
+
+const TextCode* getCodeByText(const MetaName& text, const TextCode* textCode, unsigned offset)
+{
+	NoCaseString name(text.c_str(), text.length());
+
+	for (const TextCode* tc = textCode; tc->name; ++tc)
+	{
+		if (name == &tc->name[offset])
+			return tc;
+	}
+
+	return nullptr;
 }
 
-void SetRoundNode::execute(thread_db* tdbb, dsql_req* request) const
+}
+
+
+//--------------------
+
+
+SetRoundNode::SetRoundNode(MemoryPool& pool, Firebird::MetaName* name)
+		: SessionManagementNode(pool)
+{
+	fb_assert(name);
+	const TextCode* mode = getCodeByText(*name, roundModes, FB_RMODE_OFFSET);
+	if (!mode)
+		(Arg::Gds(isc_random) << "Invalid round mode for decfloat").raise();
+	rndMode = mode->val;
+}
+
+void SetRoundNode::execute(thread_db* tdbb, dsql_req* /*request*/) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
+	attachment->att_dec_status.roundingMode = rndMode;
+}
 
-	for (const RoundMode* r = roundModes; r->name; ++r)
-	{
-		if (rndName == &r->name[FB_RMODE_OFFSET])
-		{
-			attachment->att_dec_status.roundingMode = r->val;
-			return;
-		}
-	}
 
-	(Arg::Gds(isc_random) << "Invalid round mode for decfloat").raise();
+//--------------------
+
+
+void SetTrapsNode::trap(Firebird::MetaName* name)
+{
+	fb_assert(name);
+	const TextCode* trap = getCodeByText(*name, ieeeTraps, FB_TRAPS_OFFSET);
+	if (!trap)
+		(Arg::Gds(isc_random) << "Invalid decfloat trap").raise();
+	traps |= trap->val;
+}
+
+void SetTrapsNode::execute(thread_db* tdbb, dsql_req* /*request*/) const
+{
+	SET_TDBB(tdbb);
+	Attachment* const attachment = tdbb->getAttachment();
+	attachment->att_dec_status.decExtFlag = traps;
 }
 
 
