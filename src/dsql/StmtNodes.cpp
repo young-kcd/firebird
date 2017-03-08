@@ -6875,7 +6875,10 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 					fb_assert(fieldNode);
 
 					if (fieldNode && fieldNode->fieldStream == stream && fieldNode->fieldId == fieldId)
+					{
+						inList = true;
 						break;
+					}
 				}
 			}
 
