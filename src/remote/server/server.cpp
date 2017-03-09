@@ -111,7 +111,7 @@ class NetworkCallback : public VersionedIface<ICryptKeyCallbackImpl<NetworkCallb
 {
 public:
 	explicit NetworkCallback(rem_port* prt)
-		: port(prt), l(0), d(NULL), stopped(false), wake(false)
+		: port(prt), replyLength(0), replyData(NULL), stopped(false), wake(false)
 	{ }
 
 	unsigned int callback(unsigned int dataLength, const void* data,
@@ -125,8 +125,8 @@ public:
 
 		Reference r(*port);
 
-		d = buffer;
-		l = bufferLength;
+		replyData = buffer;
+		replyLength = bufferLength;
 
 		PACKET p;
 		p.p_operation = op_crypt_key_callback;
@@ -138,14 +138,14 @@ public:
 		if (!sem.tryEnter(60))
 			return 0;
 
-		return l;
+		return replyLength;
 	}
 
-	void wakeup(unsigned int length, const void* data)
+	void wakeup(unsigned int wakeLength, const void* wakeData)
 	{
-		if (l > length)
-			l = length;
-		memcpy(d, data, l);
+		if (replyLength > wakeLength)
+			replyLength = wakeLength;
+		memcpy(replyData, wakeData, replyLength);
 
 		wake = true;
 		sem.release();
@@ -164,8 +164,8 @@ public:
 private:
 	rem_port* port;
 	Semaphore sem;
-	unsigned int l;
-	void* d;
+	unsigned int replyLength;
+	void* replyData;
 	bool stopped;
 
 public:
