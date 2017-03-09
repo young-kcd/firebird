@@ -140,7 +140,7 @@ void IscConnection::attach(thread_db* tdbb, const PathName& dbName, const MetaNa
 				raise(&status, tdbb, "attach");
 			}
 		}
-		catch(const Exception&)
+		catch (const Exception&)
 		{
 			m_iscProvider.fb_database_crypt_callback(&status, NULL);
 			throw;
@@ -496,13 +496,15 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 void IscStatement::doSetTimeout(thread_db* tdbb, unsigned int timeout)
 {
 	FbLocalStatus status;
+
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		m_iscProvider.fb_dsql_set_timeout(&status, &m_handle, timeout);
 	}
+
 	if (status->getState() & IStatus::STATE_ERRORS)
 	{
-		// silently ignore error if timeouts is not supported by remote server 
+		// silently ignore error if timeouts is not supported by remote server
 		// or loaded client library
 		if (status[0] == isc_arg_gds && (status[1] == isc_wish_list || status[1] == isc_unavailable))
 			return;

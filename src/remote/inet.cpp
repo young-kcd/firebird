@@ -638,7 +638,7 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 	rem_port* port = inet_try_connect(packet, rdb, file_name, node_name, dpb, config, ref_db_name, af);
 	P_ACPT* accept;
 
-	for(;;)
+	for (;;)
 	{
 		accept = NULL;
 		switch (packet->p_operation)

@@ -1802,7 +1802,7 @@ void Attachment::execWithCheck(CheckStatusWrapper* status, const string& stmt)
 		if (!(status->getState() & IStatus::STATE_ERRORS))
 			return;
 
-		// handle isc_dsql_token_unk_err 
+		// handle isc_dsql_token_unk_err
 		const ISC_STATUS* errs = status->getErrors();
 
 		if (!fb_utils::containsErrorCode(errs, isc_sqlerr) ||
@@ -1813,6 +1813,7 @@ void Attachment::execWithCheck(CheckStatusWrapper* status, const string& stmt)
 
 		status->init();
 	}
+
 	status->setErrors(Arg::Gds(isc_wish_list).value());
 }
 

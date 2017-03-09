@@ -149,7 +149,8 @@ void DSQL_execute(thread_db* tdbb,
 
 	// Only allow NULL trans_handle if we're starting a transaction or set session properties
 
-	if (!*tra_handle && statement->getType() != DsqlCompiledStatement::TYPE_START_TRANS &&
+	if (!*tra_handle &&
+		statement->getType() != DsqlCompiledStatement::TYPE_START_TRANS &&
 		statement->getType() != DsqlCompiledStatement::TYPE_SET_SESSION)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
@@ -545,7 +546,8 @@ void DSQL_execute_immediate(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tr
 
 		// Only allow NULL trans_handle if we're starting a transaction or set session properties
 
-		if (!*tra_handle && statement->getType() != DsqlCompiledStatement::TYPE_START_TRANS &&
+		if (!*tra_handle &&
+			statement->getType() != DsqlCompiledStatement::TYPE_START_TRANS &&
 			statement->getType() != DsqlCompiledStatement::TYPE_SET_SESSION)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
@@ -910,7 +912,6 @@ void DsqlTransactionRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scra
 	req_traced = false;
 }
 
-
 // Execute a dynamic SQL statement.
 void DsqlTransactionRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	IMessageMetadata* /*inMetadata*/, const UCHAR* /*inMsg*/,
@@ -928,7 +929,6 @@ void SetSessionRequest::execute(thread_db* tdbb, jrd_tra** /*traHandle*/,
 {
 	node->execute(tdbb, this);
 }
-
 
 void SetSessionRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 	ntrace_result_t* /*traceResult*/)
@@ -1599,7 +1599,6 @@ bool dsql_req::fetch(thread_db* /*tdbb*/, UCHAR* /*msgBuffer*/)
 	return false;	// avoid warning
 }
 
-
 unsigned int dsql_req::getTimeout()
 {
 	return req_timeout;
@@ -1612,7 +1611,6 @@ unsigned int dsql_req::getActualTimeout()
 
 	return 0;
 }
-
 
 void dsql_req::setTimeout(unsigned int timeOut)
 {
@@ -1952,8 +1950,7 @@ static void sql_info(thread_db* tdbb,
 
 		case isc_info_sql_stmt_timeout_user:
 		case isc_info_sql_stmt_timeout_run:
-			value = (item == isc_info_sql_stmt_timeout_user) ? 
-					request->getTimeout() : request->getActualTimeout();
+			value = (item == isc_info_sql_stmt_timeout_user) ? request->getTimeout() : request->getActualTimeout();
 
 			length = put_vax_long(buffer, value);
 			if (!(info = put_item(item, length, buffer, info, end_info)))

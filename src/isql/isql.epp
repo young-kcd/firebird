@@ -8153,7 +8153,6 @@ static processing_state process_statement(const TEXT* str2)
 	if (ISQL_errmsg(fbStatus))
 		setValues.StmtTimeout = 0;
 
-
 	// Find out what kind of statement this is
 	const int statement_type = process_request_type();
 	if (!statement_type)

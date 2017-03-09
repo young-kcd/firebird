@@ -83,7 +83,7 @@ const USHORT PROTOCOL_VERSION13	= (FB_PROTOCOL_FLAG | 13);
 const USHORT PROTOCOL_VERSION14	= (FB_PROTOCOL_FLAG | 14);
 
 // Protocol 15:
-//	- supports crypt key callback at connect phaze
+//	- supports crypt key callback at connect phase
 //	- supports statement timeouts
 
 const USHORT PROTOCOL_VERSION15	= (FB_PROTOCOL_FLAG | 15);

@@ -1192,24 +1192,27 @@ namespace Why
 
 		explicit IscStatement(YAttachment* aAttachment)
 			: cursorName(getPool()),
-			attachment(aAttachment),
-			statement(NULL),
-			userHandle(NULL),
-			pseudoOpened(false),
-			delayedFormat(false)
+			  attachment(aAttachment),
+			  statement(NULL),
+			  userHandle(NULL),
+			  pseudoOpened(false),
+			  delayedFormat(false)
 		{ }
 
 		~IscStatement() override;
 
 		FB_API_HANDLE& getHandle();
 		void destroy(unsigned);
+
 		void openCursor(CheckStatusWrapper* status, FB_API_HANDLE* traHandle,
 			IMessageMetadata* inMetadata, UCHAR* buffer, IMessageMetadata* outMetadata);
+
 		void closeCursor(CheckStatusWrapper* status, bool raise);
 		void closeStatement(CheckStatusWrapper* status);
 
 		void execute(CheckStatusWrapper* status, FB_API_HANDLE* traHandle,
 			IMessageMetadata* inMetadata, UCHAR* inBuffer, IMessageMetadata* outMetadata, UCHAR* outBuffer);
+
 		FB_BOOLEAN fetch(CheckStatusWrapper* status, IMessageMetadata* outMetadata, UCHAR* outBuffer);
 
 		void checkPrepared(ISC_STATUS code = isc_unprepared_stmt) const
@@ -4375,6 +4378,7 @@ IscStatement::~IscStatement()
 		*userHandle = 0;
 		userHandle = nullptr;
 	}
+
 	removeHandle(&statements, handle);
 }
 
@@ -4469,8 +4473,7 @@ void IscStatement::execute(CheckStatusWrapper* status, FB_API_HANDLE* traHandle,
 	}
 }
 
-FB_BOOLEAN IscStatement::fetch(CheckStatusWrapper* status, IMessageMetadata* outMetadata,
-	UCHAR* outBuffer)
+FB_BOOLEAN IscStatement::fetch(CheckStatusWrapper* status, IMessageMetadata* outMetadata, UCHAR* outBuffer)
 {
 	checkCursorOpened();
 

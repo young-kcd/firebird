@@ -868,7 +868,7 @@ static SSHORT adjust_wait(thread_db* tdbb, SSHORT wait)
  **************************************
  *
  * Functional description
- *	If wait is cancellable and if statement timer was started - calc new wait 
+ *	If wait is cancellable and if statement timer was started - calc new wait
  *	time to ensure it will not take longer than rest of timeout.
  *
  **************************************/

@@ -560,6 +560,7 @@ public:
 
 	// Get session-level timeout, milliseconds
 	unsigned int getTimeout();
+
 	// Set session-level timeout, milliseconds
 	void setTimeout(unsigned int timeOut);
 
@@ -690,7 +691,7 @@ class SetSessionRequest : public dsql_req
 public:
 	explicit SetSessionRequest(MemoryPool& pool, SetSessionNode* aNode)
 		: dsql_req(pool),
-		node(aNode)
+		  node(aNode)
 	{
 		req_traced = false;
 	}

@@ -860,7 +860,7 @@ int Attachment::IdleTimer::release()
 
 void Attachment::IdleTimer::reset(unsigned int timeout)
 {
-	// Start timer if necessary. If timer was already started, don't restart 
+	// Start timer if necessary. If timer was already started, don't restart
 	// (or stop) it - handler() will take care about it.
 
 	if (!timeout)

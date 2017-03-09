@@ -442,8 +442,8 @@ typedef ISC_STATUS API_ROUTINE prototype_fb_cancel_operation(ISC_STATUS *,
 typedef ISC_STATUS API_ROUTINE prototype_fb_database_crypt_callback(ISC_STATUS *,
 											void *);
 
-typedef ISC_STATUS API_ROUTINE prototype_fb_dsql_set_timeout(ISC_STATUS*, 
-										isc_stmt_handle*, 
+typedef ISC_STATUS API_ROUTINE prototype_fb_dsql_set_timeout(ISC_STATUS*,
+										isc_stmt_handle*,
 										ULONG);
 
 

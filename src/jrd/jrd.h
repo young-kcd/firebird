@@ -354,11 +354,11 @@ class TimeoutTimer FB_FINAL :
 	public Firebird::RefCntIface<Firebird::ITimerImpl<TimeoutTimer, Firebird::CheckStatusWrapper> >
 {
 public:
-	explicit TimeoutTimer() :
-		m_started(0),
-		m_expired(false),
-		m_value(0),
-		m_error(0)
+	explicit TimeoutTimer()
+		: m_started(0),
+		  m_expired(false),
+		  m_value(0),
+		  m_error(0)
 	{ }
 
 	// ITimer implementation
@@ -383,7 +383,7 @@ public:
 	// milliseconds left before timer expiration
 	unsigned int timeToExpire() const;
 
-	// evaluate expire timestamp using start timestamp 
+	// evaluate expire timestamp using start timestamp
 	bool getExpireTimestamp(const ISC_TIMESTAMP start, ISC_TIMESTAMP& exp) const;
 
 	// set timeout value in milliseconds and secondary error code
@@ -406,10 +406,10 @@ private:
 class TimeoutTimer : public Firebird::RefCounted
 {
 public:
-	explicit TimeoutTimer() :
-		m_start(0),
-		m_value(0),
-		m_error(0)
+	explicit TimeoutTimer()
+		: m_start(0),
+		  m_value(0),
+		  m_error(0)
 	{ }
 
 	bool expired() const;
@@ -427,7 +427,7 @@ public:
 	// milliseconds left before timer expiration
 	unsigned int timeToExpire() const;
 
-	// evaluate expire timestamp using start timestamp 
+	// evaluate expire timestamp using start timestamp
 	bool getExpireTimestamp(const ISC_TIMESTAMP start, ISC_TIMESTAMP& exp) const;
 
 	// set timeout value in milliseconds and secondary error code
@@ -699,9 +699,9 @@ public:
 	class TimerGuard
 	{
 	public:
-		TimerGuard(thread_db* tdbb, TimeoutTimer* timer, bool autoStop) :
-			m_tdbb(tdbb),
-			m_autoStop(autoStop && timer)
+		TimerGuard(thread_db* tdbb, TimeoutTimer* timer, bool autoStop)
+			: m_tdbb(tdbb),
+			  m_autoStop(autoStop && timer)
 		{
 			fb_assert(m_tdbb->tdbb_reqTimer == NULL);
 

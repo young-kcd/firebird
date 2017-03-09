@@ -426,11 +426,11 @@ public:
 	JAttachment* getInterface() throw();
 
 	unsigned int getIdleTimeout() const
-	{ 
-		return att_idle_timeout; 
+	{
+		return att_idle_timeout;
 	}
 
-	void setIdleTimeout(unsigned int timeOut) 
+	void setIdleTimeout(unsigned int timeOut)
 	{
 		att_idle_timeout = timeOut;
 	}
@@ -438,11 +438,11 @@ public:
 	unsigned int getActualIdleTimeout() const;
 
 	unsigned int getStatementTimeout() const
-	{ 
-		return att_stmt_timeout; 
+	{
+		return att_stmt_timeout;
 	}
 
-	void setStatementTimeout(unsigned int timeOut) 
+	void setStatementTimeout(unsigned int timeOut)
 	{
 		att_stmt_timeout = timeOut;
 	}
@@ -484,7 +484,6 @@ private:
 		time_t m_fireTime;		// when ITimer will fire, could be less than m_expTime
 		time_t m_expTime;		// when actual idle timeout will expire
 	};
-
 
 	unsigned int att_idle_timeout;		// seconds
 	unsigned int att_stmt_timeout;		// milliseconds

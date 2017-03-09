@@ -596,6 +596,7 @@ using namespace Firebird;
 %token <metaNamePtr> DEFINER
 %token <metaNamePtr> EXCLUDE
 %token <metaNamePtr> FOLLOWING
+%token <metaNamePtr> IDLE
 %token <metaNamePtr> INVOKER
 %token <metaNamePtr> MESSAGE
 %token <metaNamePtr> NTILE
@@ -609,14 +610,13 @@ using namespace Firebird;
 %token <metaNamePtr> RDB_ROLE_IN_USE
 %token <metaNamePtr> RDB_SYSTEM_PRIVILEGE
 %token <metaNamePtr> SECURITY
+%token <metaNamePtr> SESSION
 %token <metaNamePtr> SQL
 %token <metaNamePtr> SYSTEM
 %token <metaNamePtr> TIES
 %token <metaNamePtr> UNBOUNDED
 %token <metaNamePtr> VARBINARY
 %token <metaNamePtr> WINDOW
-%token <metaNamePtr> IDLE
-%token <metaNamePtr> SESSION
 
 // precedence declarations for expression evaluation
 
@@ -5026,7 +5026,7 @@ session_statement
 
 %type <blrOp> timepart_sesion_idle_tout
 timepart_sesion_idle_tout
-	:				{ $$ = blr_extract_minute; }
+	: /* nothing */	{ $$ = blr_extract_minute; }
 	| HOUR			{ $$ = blr_extract_hour; }
 	| MINUTE		{ $$ = blr_extract_minute; }
 	| SECOND		{ $$ = blr_extract_second; }
@@ -5034,7 +5034,7 @@ timepart_sesion_idle_tout
 
 %type <blrOp> timepart_ses_stmt_tout
 timepart_ses_stmt_tout
-	:				{ $$ = blr_extract_second; }
+	: /* nothing */	{ $$ = blr_extract_second; }
 	| HOUR			{ $$ = blr_extract_hour; }
 	| MINUTE		{ $$ = blr_extract_minute; }
 	| SECOND		{ $$ = blr_extract_second; }
@@ -8286,6 +8286,7 @@ non_reserved_word
 	| DEFINER
 	| EXCLUDE
 	| FOLLOWING
+	| IDLE
 	| INVOKER
 	| MESSAGE
 	| NTILE
@@ -8296,11 +8297,10 @@ non_reserved_word
 	| PRIVILEGE
 	| RANGE
 	| SECURITY
+	| SESSION
 	| SQL
 	| SYSTEM
 	| TIES
-	| SESSION
-	| IDLE
 	;
 
 %%

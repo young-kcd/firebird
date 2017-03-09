@@ -69,13 +69,15 @@ public:
 		}
 	}
 
-/*	It was a kind of getting ready for changing config remotely...
+	/***
+	It was a kind of getting ready for changing config remotely...
 
 	void changeDefaultConfig(Config* newConfig)
 	{
 		defaultConfig = newConfig;
 	}
- */
+	***/
+
 	Firebird::RefPtr<const Config>& getDefaultConfig()
 	{
 		return defaultConfig;

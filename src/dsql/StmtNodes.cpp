@@ -7984,10 +7984,12 @@ void SetRoleNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** transact
 
 
 //--------------------
+
+
 SetSessionNode::SetSessionNode(MemoryPool& pool, Type aType, ULONG aVal, UCHAR blr_timepart)
 	: Node(pool),
-	m_type(aType),
-	m_value(0)
+	  m_type(aType),
+	  m_value(0)
 {
 	// TYPE_IDLE_TIMEOUT should be set in seconds
 	// TYPE_STMT_TIMEOUT should be set in milliseconds
@@ -8018,6 +8020,7 @@ SetSessionNode::SetSessionNode(MemoryPool& pool, Type aType, ULONG aVal, UCHAR b
 		Arg::Gds(isc_invalid_extractpart_time).raise();
 		break;
 	}
+
 	m_value = aVal * mult;
 }
 
@@ -8031,17 +8034,16 @@ string SetSessionNode::internalPrint(NodePrinter& printer) const
 	return "SetSessionNode";
 }
 
-
 SetSessionNode* SetSessionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SET_SESSION);
 	return this;
 }
 
-
 void SetSessionNode::execute(thread_db* tdbb, dsql_req* request) const
 {
 	Attachment* att = tdbb->getAttachment();
+
 	switch (m_type)
 	{
 	case TYPE_IDLE_TIMEOUT:

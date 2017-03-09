@@ -613,6 +613,7 @@ interface Server : Auth
 {
 	[notImplemented(Auth::AUTH_FAILED)]
 	int authenticate(Status status, ServerBlock sBlock, Writer writerInterface);
+
 version:		// 3.0.1 => 4.0
 	void setDbCryptCallback(Status status, CryptKeyCallback cryptCallback);
 }
