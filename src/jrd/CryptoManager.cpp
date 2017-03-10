@@ -1028,7 +1028,6 @@ namespace Jrd {
 
 		if (page->pag_flags & Ods::crypted_page)
 		{
-			fb_assert(cryptPlugin);
 			if (!cryptPlugin)
 			{
 				Arg::Gds(isc_decrypt_error).copyTo(sv);
