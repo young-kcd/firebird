@@ -316,7 +316,7 @@ int Decimal64::compare(DecimalStatus decSt, Decimal64 tgt) const
 	DecimalContext context(this, decSt);
 	decDouble r;
 	decDoubleCompare(&r, &dec, &tgt.dec, &context);
-	return decDoubleToInt32(&r, &context, DEC_ROUND_UP);
+	return decDoubleToInt32(&r, &context, DEC_ROUND_HALF_UP);
 }
 
 bool Decimal64::isInf() const
@@ -375,6 +375,53 @@ void Decimal64::grabKey(unsigned int* key)
 	grab(key, DECDOUBLE_Pmax, DECDOUBLE_Bias, sizeof(dec), bcd, sign, exp);
 
 	decDoubleFromBCD(&dec, exp, bcd, sign);
+}
+
+Decimal64 Decimal64::quantize(DecimalStatus decSt, Decimal64 op2) const
+{
+	DecimalContext context(this, decSt);
+	Decimal64 rc;
+	decDoubleQuantize(&rc.dec, &dec, &op2.dec, &context);
+	return rc;
+}
+
+Decimal64 Decimal64::normalize(DecimalStatus decSt) const
+{
+	DecimalContext context(this, decSt);
+	Decimal64 rc;
+	decDoubleReduce(&rc.dec, &dec, &context);
+	return rc;
+}
+
+short Decimal64::totalOrder(Decimal64 op2) const
+{
+	decDouble r;
+	decDoubleCompareTotal(&r, &dec, &op2.dec);
+	fb_assert(!decDoubleIsNaN(&r));
+
+	DecimalContext context2(this, 0);
+	return decDoubleToInt32(&r, &context2, DEC_ROUND_HALF_UP);
+}
+
+short Decimal64::decCompare(Decimal64 op2) const
+{
+	if (decDoubleIsNaN(&dec) || decDoubleIsNaN(&op2.dec))
+		return 3;
+
+	switch (totalOrder(op2))
+	{
+	case -1:
+		return 1;
+	case 0:
+		return 0;
+	case 1:
+		return 2;
+	default:
+		fb_assert(false);
+	}
+
+	// warning silencer
+	return 3;
 }
 
 Decimal128 Decimal128::set(Decimal64 d64)
@@ -530,7 +577,7 @@ int Decimal128::compare(DecimalStatus decSt, Decimal128 tgt) const
 	DecimalContext context(this, decSt);
 	decQuad r;
 	decQuadCompare(&r, &dec, &tgt.dec, &context);
-	return decQuadToInt32(&r, &context, DEC_ROUND_UP);
+	return decQuadToInt32(&r, &context, DEC_ROUND_HALF_UP);
 }
 
 bool Decimal128::isInf() const
@@ -754,9 +801,9 @@ ULONG Decimal128::makeIndexKey(vary* buf)
 	// Avoid bad data in k in case when coeff is zero
 	*k = 0;
 
-	// 
-	struct tab { UCHAR rshift, lshift; };
-	static tab table[4] =
+	// Shifts for moving 10-bit values to bytes buffer
+	struct ShiftTable { UCHAR rshift, lshift; };
+	static ShiftTable table[4] =
 	{
 		{ 2, 6 },
 		{ 4, 4 },
@@ -766,7 +813,7 @@ ULONG Decimal128::makeIndexKey(vary* buf)
 
 	// compress coeff - 3 decimal digits (999) per 10 bits (1023)
 	unsigned char* p = coeff;
-	for (tab* t = table; p < end; p += 3)
+	for (ShiftTable* t = table; p < end; p += 3)
 	{
 		USHORT val = p[0] * 100 + p[1] * 10 + p[2];
 		fb_assert(val < 1000);	// 1024, 10 bit
@@ -788,6 +835,53 @@ ULONG Decimal128::makeIndexKey(vary* buf)
 	// done
 	buf->vary_length = k - buf->vary_string;
 	return buf->vary_length;
+}
+
+Decimal128 Decimal128::quantize(DecimalStatus decSt, Decimal128 op2) const
+{
+	DecimalContext context(this, decSt);
+	Decimal128 rc;
+	decQuadQuantize(&rc.dec, &dec, &op2.dec, &context);
+	return rc;
+}
+
+Decimal128 Decimal128::normalize(DecimalStatus decSt) const
+{
+	DecimalContext context(this, decSt);
+	Decimal128 rc;
+	decQuadReduce(&rc.dec, &dec, &context);
+	return rc;
+}
+
+short Decimal128::totalOrder(Decimal128 op2) const
+{
+	decQuad r;
+	decQuadCompareTotal(&r, &dec, &op2.dec);
+	fb_assert(!decQuadIsNaN(&r));
+
+	DecimalContext context2(this, 0);
+	return decQuadToInt32(&r, &context2, DEC_ROUND_HALF_UP);
+}
+
+short Decimal128::decCompare(Decimal128 op2) const
+{
+	if (decQuadIsNaN(&dec) || decQuadIsNaN(&op2.dec))
+		return 3;
+
+	switch (totalOrder(op2))
+	{
+	case -1:
+		return 1;
+	case 0:
+		return 0;
+	case 1:
+		return 2;
+	default:
+		fb_assert(false);
+	}
+
+	// warning silencer
+	return 3;
 }
 
 } // namespace Firebird

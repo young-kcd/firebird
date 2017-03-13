@@ -590,19 +590,22 @@ using namespace Firebird;
 %token <metaNamePtr> REGR_SYY
 
 // tokens added for Firebird 4.0
-
 %token <metaNamePtr> BINARY
+%token <metaNamePtr> COMPARE_DECFLOAT
 %token <metaNamePtr> CUME_DIST
+%token <metaNamePtr> DECFLOAT
 %token <metaNamePtr> DEFINER
 %token <metaNamePtr> EXCLUDE
 %token <metaNamePtr> FOLLOWING
 %token <metaNamePtr> INVOKER
 %token <metaNamePtr> MESSAGE
+%token <metaNamePtr> NORMALIZE_DECFLOAT
 %token <metaNamePtr> NTILE
 %token <metaNamePtr> OTHERS
 %token <metaNamePtr> PERCENT_RANK
 %token <metaNamePtr> PRECEDING
 %token <metaNamePtr> PRIVILEGE
+%token <metaNamePtr> QUANTIZE
 %token <metaNamePtr> RANGE
 %token <metaNamePtr> RDB_ERROR
 %token <metaNamePtr> RDB_ROLE_IN_USE
@@ -611,11 +614,11 @@ using namespace Firebird;
 %token <metaNamePtr> SQL
 %token <metaNamePtr> SYSTEM
 %token <metaNamePtr> TIES
+%token <metaNamePtr> TOTALORDER
 %token <metaNamePtr> TRAPS
 %token <metaNamePtr> UNBOUNDED
 %token <metaNamePtr> VARBINARY
 %token <metaNamePtr> WINDOW
-%token <metaNamePtr> DECFLOAT
 
 // precedence declarations for expression evaluation
 
@@ -6223,20 +6226,6 @@ cursor_clause
 
 // Assignments
 
-%type <compoundStmtNode> assignments
-assignments
-	: assignment
-		{
-			$$ = newNode<CompoundStmtNode>();
-			$$->statements.add($1);
-		}
-	| assignments ',' assignment
-		{
-			$1->statements.add($3);
-			$$ = $1;
-		}
-	;
-
 %type <stmtNode> assignment
 assignment
 	: update_column_name '=' value
@@ -7595,6 +7584,10 @@ system_function_std_syntax
 	| TANH
 	| TRUNC
 	| UUID_TO_CHAR
+	| QUANTIZE
+	| TOTALORDER
+	| NORMALIZE_DECFLOAT
+	| COMPARE_DECFLOAT
 	;
 
 %type <sysFuncCallNode> system_function_special_syntax
@@ -8309,6 +8302,10 @@ non_reserved_word
 	| SYSTEM
 	| TIES
 	| TRAPS
+	| QUANTIZE
+	| TOTALORDER
+	| NORMALIZE_DECFLOAT
+	| COMPARE_DECFLOAT
 	;
 
 %%

@@ -77,6 +77,11 @@ public:
 	void makeKey(unsigned int* key) const;
 	void grabKey(unsigned int* key);
 
+	Decimal64 quantize(DecimalStatus decSt, Decimal64 op2) const;
+	Decimal64 normalize(DecimalStatus decSt) const;
+	short totalOrder(Decimal64 op2) const;
+	short decCompare(Decimal64 op2) const;
+
 #ifdef DEV_BUILD
 	int show();
 #endif
@@ -129,6 +134,11 @@ public:
 	void grabKey(unsigned int* key);
 	static ULONG getIndexKeyLength();
 	ULONG makeIndexKey(vary* buf);
+
+	Decimal128 quantize(DecimalStatus decSt, Decimal128 op2) const;
+	Decimal128 normalize(DecimalStatus decSt) const;
+	short totalOrder(Decimal128 op2) const;
+	short decCompare(Decimal128 op2) const;
 
 #ifdef DEV_BUILD
 	int show();

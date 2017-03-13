@@ -76,7 +76,9 @@ enum Function
 	funLPad,
 	funRPad,
 	funLnat,
-	funLog10
+	funLog10,
+	funTotalOrd,
+	funCmpDec
 };
 
 enum TrigonFunction
@@ -108,6 +110,7 @@ double fbcot(double value) throw();
 // generic setParams functions
 void setParamsDouble(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsDblDec(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
+void setParamsDecFloat(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsFromList(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsInteger(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsSecondInteger(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
@@ -126,6 +129,7 @@ void setParamsUuidToChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* func
 // generic make functions
 void makeDoubleResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeDblDecResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeDecFloatResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeFromListResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeInt64Result(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeLongResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
@@ -338,6 +342,23 @@ void setParamsDblDec(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc**
 }
 
 
+void setParamsDecFloat(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
+{
+	bool f64 = (args[0]->dsc_dtype == dtype_dec64);
+
+	for (int i = 0; i < argsCount; ++i)
+	{
+		if (args[i]->isUnknown())
+		{
+			if (f64)
+				args[i]->makeDecimal64();
+			else
+				args[i]->makeDecimal128();
+		}
+	}
+}
+
+
 void setParamsFromList(DataTypeUtilBase* dataTypeUtil, const SysFunction* function,
 	int argsCount, dsc** args)
 {
@@ -530,6 +551,22 @@ void makeDblDecResult(DataTypeUtilBase*, const SysFunction*, dsc* result,
 		result->makeDouble();
 	else
 		result->makeDecimal128();
+
+	bool isNullable;
+	if (initResult(result, argsCount, args, &isNullable))
+		return;
+
+	result->setNullable(isNullable);
+}
+
+
+void makeDecFloatResult(DataTypeUtilBase*, const SysFunction*, dsc* result,
+	int argsCount, const dsc** args)
+{
+	if (argsCount == 0 || args[0]->dsc_dtype == dtype_dec128)
+		result->makeDecimal128();
+	else
+		result->makeDecimal64();
 
 	bool isNullable;
 	if (initResult(result, argsCount, args, &isNullable))
@@ -2796,6 +2833,131 @@ dsc* evlLog(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 }
 
 
+dsc* evlQuantize(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
+	impure_value* impure)
+{
+	fb_assert(args.getCount() == 2);
+
+	jrd_req* request = tdbb->getRequest();
+
+	const dsc* value[2];
+	value[0] = EVL_expr(tdbb, request, args[0]);
+	if (request->req_flags & req_null)	// return NULL if value is NULL
+		return NULL;
+
+	value[1] = EVL_expr(tdbb, request, args[1]);
+	if (request->req_flags & req_null)	// return NULL if value is NULL
+		return NULL;
+
+	DecimalStatus decSt = tdbb->getAttachment()->att_dec_status;
+
+	if (value[0]->dsc_dtype == dtype_dec64)
+	{
+		Decimal64 v1 = MOV_get_dec64(tdbb, value[0]);
+		Decimal64 v2 = MOV_get_dec64(tdbb, value[1]);
+
+		impure->vlu_misc.vlu_dec64 = v1.quantize(decSt, v2);
+		impure->vlu_desc.makeDecimal64(&impure->vlu_misc.vlu_dec64);
+	}
+	else {
+		Decimal128 v1 = MOV_get_dec128(tdbb, value[0]);
+		Decimal128 v2 = MOV_get_dec128(tdbb, value[1]);
+
+		impure->vlu_misc.vlu_dec128 = v1.quantize(decSt, v2);
+		impure->vlu_desc.makeDecimal128(&impure->vlu_misc.vlu_dec128);
+	}
+
+	return &impure->vlu_desc;
+}
+
+
+dsc* evlCompare(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
+	impure_value* impure)
+{
+	fb_assert(args.getCount() == 2);
+
+	jrd_req* request = tdbb->getRequest();
+
+	const dsc* value[2];
+	value[0] = EVL_expr(tdbb, request, args[0]);
+	if (request->req_flags & req_null)	// return NULL if value is NULL
+		return NULL;
+
+	value[1] = EVL_expr(tdbb, request, args[1]);
+	if (request->req_flags & req_null)	// return NULL if value is NULL
+		return NULL;
+
+	if (value[0]->dsc_dtype == dtype_dec64)
+	{
+		Decimal64 v1 = MOV_get_dec64(tdbb, value[0]);
+		Decimal64 v2 = MOV_get_dec64(tdbb, value[1]);
+
+		switch ((Function)(IPTR) function->misc)
+		{
+		case funTotalOrd:
+			impure->vlu_misc.vlu_short = v1.totalOrder(v2);
+			break;
+		case funCmpDec:
+			impure->vlu_misc.vlu_short = v1.decCompare(v2);
+			break;
+		default:
+			fb_assert(false);
+		}
+	}
+	else {
+		Decimal128 v1 = MOV_get_dec128(tdbb, value[0]);
+		Decimal128 v2 = MOV_get_dec128(tdbb, value[1]);
+
+		switch ((Function)(IPTR) function->misc)
+		{
+		case funTotalOrd:
+			impure->vlu_misc.vlu_short = v1.totalOrder(v2);
+			break;
+		case funCmpDec:
+			impure->vlu_misc.vlu_short = v1.decCompare(v2);
+			break;
+		default:
+			fb_assert(false);
+		}
+	}
+
+	impure->vlu_desc.makeShort(0, &impure->vlu_misc.vlu_short);
+	return &impure->vlu_desc;
+}
+
+
+dsc* evlNormDec(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
+	impure_value* impure)
+{
+	fb_assert(args.getCount() == 1);
+
+	jrd_req* request = tdbb->getRequest();
+
+	const dsc* value;
+	value = EVL_expr(tdbb, request, args[0]);
+	if (request->req_flags & req_null)	// return NULL if value is NULL
+		return NULL;
+
+	DecimalStatus decSt = tdbb->getAttachment()->att_dec_status;
+
+	if (value->dsc_dtype == dtype_dec64)
+	{
+		Decimal64 v = MOV_get_dec64(tdbb, value);
+
+		impure->vlu_misc.vlu_dec64 = v.normalize(decSt);
+		impure->vlu_desc.makeDecimal64(&impure->vlu_misc.vlu_dec64);
+	}
+	else {
+		Decimal128 v = MOV_get_dec128(tdbb, value);
+
+		impure->vlu_misc.vlu_dec128 = v.normalize(decSt);
+		impure->vlu_desc.makeDecimal128(&impure->vlu_misc.vlu_dec128);
+	}
+
+	return &impure->vlu_desc;
+}
+
+
 dsc* evlMaxMinValue(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value*)
 {
@@ -4068,6 +4230,7 @@ const SysFunction SysFunction::functions[] =
 		{"CEIL", 1, 1, setParamsDblDec, makeCeilFloor, evlCeil, NULL},
 		{"CEILING", 1, 1, setParamsDblDec, makeCeilFloor, evlCeil, NULL},
 		{"CHAR_TO_UUID", 1, 1, setParamsCharToUuid, makeUuid, evlCharToUuid, NULL},
+		{"COMPARE_DECFLOAT", 2, 2, setParamsDecFloat, makeShortResult, evlCompare, (void*) funCmpDec},
 		{"COS", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCos},
 		{"COSH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCosh},
 		{"COT", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCot},
@@ -4085,10 +4248,12 @@ const SysFunction SysFunction::functions[] =
 		{"MAXVALUE", 1, -1, setParamsFromList, makeFromListResult, evlMaxMinValue, (void*) funMaxValue},
 		{"MINVALUE", 1, -1, setParamsFromList, makeFromListResult, evlMaxMinValue, (void*) funMinValue},
 		{"MOD", 2, 2, setParamsFromList, makeMod, evlMod, NULL},
+		{"NORMALIZE_DECFLOAT", 1, 1, setParamsDecFloat, makeDecFloatResult, evlNormDec, NULL},
 		{"OVERLAY", 3, 4, setParamsOverlay, makeOverlay, evlOverlay, NULL},
 		{"PI", 0, 0, NULL, makePi, evlPi, NULL},
 		{"POSITION", 2, 3, setParamsPosition, makeLongResult, evlPosition, NULL},
 		{"POWER", 2, 2, setParamsDblDec, makeDblDecResult, evlPower, NULL},
+		{"QUANTIZE", 2, 2, setParamsDecFloat, makeDecFloatResult, evlQuantize, NULL},
 		{"RAND", 0, 0, NULL, makeDoubleResult, evlRand, NULL},
 		{RDB_GET_CONTEXT, 2, 2, setParamsGetSetContext, makeGetSetContext, evlGetContext, NULL},
 		{"RDB$ROLE_IN_USE", 1, 1, setParamsAsciiVal, makeBooleanResult, evlRoleInUse, NULL},
@@ -4105,6 +4270,7 @@ const SysFunction SysFunction::functions[] =
 		{"SQRT", 1, 1, setParamsDblDec, makeDblDecResult, evlSqrt, NULL},
 		{"TAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfTan},
 		{"TANH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfTanh},
+		{"TOTALORDER", 2, 2, setParamsDecFloat, makeShortResult, evlCompare, (void*) funTotalOrd},
 		{"TRUNC", 1, 2, setParamsRoundTrunc, makeTrunc, evlTrunc, NULL},
 		{"UUID_TO_CHAR", 1, 1, setParamsUuidToChar, makeUuidToChar, evlUuidToChar, NULL},
 		{"", 0, 0, NULL, NULL, NULL, NULL}
