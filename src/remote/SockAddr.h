@@ -56,6 +56,8 @@ private:
 	socklen_t len;
 	static const unsigned MAX_LEN = sizeof(sa_data);
 
+	void checkAndFixFamily();
+
 public:
 	void clear();
 	const SockAddr& operator = (const SockAddr& x);
@@ -84,6 +86,19 @@ public:
 };
 
 
+inline void SockAddr::checkAndFixFamily()
+{
+#if AF_INET6 == 10 
+	if (data.sock.sa_family == 23)
+#elif AF_INET6 == 23
+	if (data.sock.sa_family == 10)
+#else
+	#error Unknown value of AF_INET6 !
+#endif
+		data.sock.sa_family = AF_INET6;
+}
+
+
 inline void SockAddr::clear()
 {
 	len = 0;
@@ -95,6 +110,8 @@ inline const SockAddr& SockAddr::operator = (const SockAddr& x)
 {
 	memcpy(&data, &x.data, MAX_LEN);
 	len = x.len;
+
+	checkAndFixFamily();
 	return *this;
 }
 
@@ -105,6 +122,8 @@ inline SockAddr::SockAddr(const unsigned char* p_data, unsigned p_len)
 		p_len = MAX_LEN;
 	memcpy(&data, p_data, p_len);
 	len = p_len;
+
+	checkAndFixFamily();
 }
 
 
