@@ -85,17 +85,25 @@ public:
 	void unmapV4();
 };
 
+// Definitions below taken from sources at correspondent operating systems.
+// If something else arrives, it should be added here and into checkAndFixFamily() also.
+
+#define AF_INET6_POSIX		10
+#define AF_INET6_WINDOWS	23
 
 inline void SockAddr::checkAndFixFamily()
 {
-#if AF_INET6 == 10 
-	if (data.sock.sa_family == 23)
-#elif AF_INET6 == 23
-	if (data.sock.sa_family == 10)
+#if AF_INET6 == AF_INET6_POSIX
+	if (data.sock.sa_family == AF_INET6_WINDOWS)
+#elif AF_INET6 == AF_INET6_WINDOWS
+	if (data.sock.sa_family == AF_INET6_POSIX)
 #else
-	#error Unknown value of AF_INET6 !
+#error Unknown value of AF_INET6 !
 #endif
+	{
 		data.sock.sa_family = AF_INET6;
+		fb_assert(len == sizeof(sockaddr_in6));
+	}
 }
 
 
