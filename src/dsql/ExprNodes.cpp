@@ -10935,7 +10935,8 @@ UdfCallNode::UdfCallNode(MemoryPool& pool, const QualifiedName& aName, ValueList
 	  name(pool, aName),
 	  args(aArgs),
 	  function(NULL),
-	  dsqlFunction(NULL)
+	  dsqlFunction(NULL),
+	  isSubRoutine(false)
 {
 	addChildNode(args, args);
 }
@@ -10996,6 +10997,8 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 		csb->csb_blr_reader.seekBackward(count);
 		PAR_error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name.toString()));
 	}
+
+	node->isSubRoutine = function->isSubRoutine();
 
 	const UCHAR argCount = csb->csb_blr_reader.getByte();
 
@@ -11096,7 +11099,7 @@ ValueExprNode* UdfCallNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	UdfCallNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) UdfCallNode(*tdbb->getDefaultPool(), name);
 	node->args = copier.copy(tdbb, args);
-	node->function = function;
+	node->function = isSubRoutine ? function : Function::lookup(tdbb, name, false);
 	return node;
 }
 
