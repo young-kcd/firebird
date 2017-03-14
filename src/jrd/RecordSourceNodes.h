@@ -354,8 +354,9 @@ public:
 		  sourceList(NULL),
 		  targetList(NULL),
 		  in_msg(NULL),
-		  procedureId(0),
+		  procedure(NULL),
 		  isSubRoutine(false),
+		  procedureId(0),
 		  view(NULL),
 		  context(0)
 	{
@@ -417,9 +418,7 @@ public:
 
 private:
 	NestConst<MessageNode> in_msg;
-/* was:
-	jrd_prc* procedure;
-
+/*
 	dimitr: Referencing procedures via a pointer is not currently reliable, because
 			procedures can be removed from the metadata cache after ALTER/DROP.
 			Usually, this is prevented via the reference counting, but it's incremented
@@ -428,15 +427,17 @@ private:
 			(up to crashing) when they're copied the next time. See CORE-5456 / CORE-5457.
 
 			ExecProcedureNode is a lucky exception because it's never (directly) used in
-			expressions.
+			expressions. Sub-procedures are safe too. In other cases the procedure object
+			must be refetched from the metadata cache while copying the node.
 
 			A better (IMO) solution would be to add a second-level reference counting for
 			metadata objects since the parsing stage till either request creation or
 			explicit unload from the metadata cache. But we don't have clearly established
 			cache management policies yet, so I leave it for the other day.
 */
-	USHORT procedureId;
+	jrd_prc* procedure;
 	bool isSubRoutine;
+	USHORT procedureId;
 	jrd_rel* view;
 	SSHORT context;
 };

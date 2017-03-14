@@ -939,8 +939,9 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 	ProcedureSourceNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) ProcedureSourceNode(
 		*tdbb->getDefaultPool());
 
-	node->procedureId = procedure->getId();
+	node->procedure = procedure;
 	node->isSubRoutine = procedure->isSubRoutine();
+	node->procedureId = node->isSubRoutine ? 0 : procedure->getId();
 	node->stream = PAR_context(csb, &node->context);
 
 	csb->csb_rpt[node->stream].csb_procedure = procedure;
@@ -1112,11 +1113,14 @@ ProcedureSourceNode* ProcedureSourceNode::copy(thread_db* tdbb, NodeCopier& copi
 	newSource->stream = copier.csb->nextStream();
 	copier.remap[stream] = newSource->stream;
 	newSource->context = context;
-	newSource->procedureId = procedureId;
+	newSource->procedure = isSubRoutine ? procedure :
+		MET_lookup_procedure_id(tdbb, procedureId, false, false, 0);
 	newSource->isSubRoutine = isSubRoutine;
+	newSource->procedureId = procedureId;
 	newSource->view = view;
+
 	CompilerScratch::csb_repeat* element = CMP_csb_element(copier.csb, newSource->stream);
-	element->csb_procedure = MET_lookup_procedure_id(tdbb, procedureId, false, false, 0);
+	element->csb_procedure = newSource->procedure;
 	element->csb_view = newSource->view;
 	element->csb_view_stream = copier.remap[0];
 
@@ -1149,9 +1153,8 @@ void ProcedureSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, Rse
 
 	if (!isSubRoutine)
 	{
-		jrd_prc* const procedure = MET_lookup_procedure_id(tdbb, procedureId, false, false, 0);
 		CMP_post_procedure_access(tdbb, csb, procedure);
-		CMP_post_resource(&csb->csb_resources, procedure, Resource::rsc_procedure, procedure->getId());
+		CMP_post_resource(&csb->csb_resources, procedure, Resource::rsc_procedure, procedureId);
 	}
 
 	jrd_rel* const parentView = csb->csb_view;
@@ -1211,8 +1214,6 @@ ProcedureScan* ProcedureSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt)
 	CompilerScratch* const csb = opt->opt_csb;
 	CompilerScratch::csb_repeat* const csbTail = &csb->csb_rpt[stream];
 	const string alias = OPT_make_alias(tdbb, csb, csbTail);
-
-	jrd_prc* const procedure = MET_lookup_procedure_id(tdbb, procedureId, false, false, 0);
 
 	return FB_NEW_POOL(*tdbb->getDefaultPool()) ProcedureScan(csb, alias, stream, procedure,
 		sourceList, targetList, in_msg);
