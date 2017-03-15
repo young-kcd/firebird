@@ -140,11 +140,17 @@ void make(unsigned int* key,
 	unsigned dig = digits(pMax, coeff, exp);
 
 	// exponent bias and sign
-	exp += (bias + 2);
 	if (!dig)
-		exp = 1;
-	if (sign)
-		exp = -exp;
+	{
+		exp = 0;
+		sign = 0;
+	}
+	else
+	{
+		exp += (bias + 2);
+		if (sign)
+			exp = -exp;
+	}
 	*key++ = exp;
 
 	// convert to SLONG
@@ -171,9 +177,7 @@ void grab(unsigned int* key,
 		sign = DECFLOAT_Sign;
 		exp = -exp;
 	}
-	if (exp == 1)
-		exp = 0;
-	else
+	if (exp != 0)
 		exp -= (bias + 2);
 
 	// convert from SLONG

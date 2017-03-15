@@ -2453,7 +2453,8 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 						fieldNode->getDesc(tdbb, csb, desc);
 
 						// International type text has a computed key
-						if (IS_INTL_DATA(desc))
+						// Different decimal float values sometimes have same keys
+						if (IS_INTL_DATA(desc) || desc->isDecFloat())
 							break;
 
 						--items;

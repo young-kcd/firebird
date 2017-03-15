@@ -339,7 +339,7 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 		// a sort key, there is a later nod_field in the item
 		// list that contains the data to send back
 
-		if (IS_INTL_DATA(&item->desc) &&
+		if ((IS_INTL_DATA(&item->desc) || item->desc.isDecFloat()) &&
 			(ULONG)(IPTR) item->desc.dsc_address < m_map->keyLength)
 		{
 			continue;
