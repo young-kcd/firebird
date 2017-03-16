@@ -2,6 +2,97 @@
   * v3.0.2
   **************************
 
+    * Bugfix CORE-5503
+        Classic Server has a maximum of 64 connections when using systemd init scripts
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5501
+        CORE-5501: Unclear gstat's diagnostics when damaged page in DB file appears encrypted
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5498
+        Cannot create connection for events processing
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5496
+        Creating SRP SYSDBA with explicit admin (-admin yes in gsec or grant admin role in create user) creates two SYSDBA accounts
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5489
+        Bad performance for NULLs filtering inside a navigational index scan
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5484
+        Database on NFS share is unavailable when accessed using mount point path
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5477
+        Trace duplicates ascii_char(13) in its output (Windows only)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5474
+        'Restrict UDF' is not effective, because fbudf.so is dynamically linked against libc
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5472
+        Problems with dbcrypt key transfer
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5470
+        Trace INCLUDE_FILTER with [[:WHITESPACE:]]+ does not work when statement contains newline is issued
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5464
+        AV in fbclient when reading blob stored in incompatible encoding
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5458
+        Connections fail due to dead NFS mount points
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5457
+        Bugcheck 167 (invalid SEND request)
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5456
+        Migrating Firebird 2.5.2 to 3.0.1 gbak restore crashes at the end always
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5452
+        Segfault when engine's dynamic library is unloaded right after closing worker threads (GC and/or cache writer)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5448
+        FB3 bugchecks when creating view on table which has column with character set NONE, database default charset is UTF8, and default collation is UNICODE
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5447
+        EXECUTE STATEMENT <e> when <e> starts with '--' (comment) issues "Unexpected end of command" error with wrong column number
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5435
+        Badly selective index could be used for extra filtering even if selective index is used for sorting
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-5432
         Performance regression in Classic Server: too much time is spent during context switches
       Contributor(s):
@@ -17,10 +108,25 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix CORE-5422
+        Decompression overran buffer after rollback
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5421
+        Performance degradation in FB 3.0.2 compared to FB 2.5.7
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-5417
         Engine could hang up if auto-sweep is starting while database is shutting down
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5414
+        Error restoring on FB 3.0 from FB 2.5: bugcheck 221 (cannot remap)
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-5410
         Dependencies are not stored when using some type of constructions in subroutines
@@ -62,6 +168,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-5368
+        Regression: client application hangs or throw AV on selecting from multiple threads using 1 embedded connection
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-5367
         Regression: (boolean) parameters as search condition no longer allowed
       Contributor(s):
@@ -92,10 +203,35 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-3530
+        BETWEEN operand/clause not supported for COMPUTED columns -- "feature is not supported"
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-1894
         Circular dependencies between computed fields crashs the engine
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Improvement CORE-5475
+        Provide ability to filter out info and warnings from trace log
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-5442
+        Enhance control upon ability to share database crypt key between attachments in SS
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-5441
+        Cache physical numbers of often used data pages to reduce number of fetches of pointer pages
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-5434
+        Read-only transactions in SuperServer could avoid immediate write of Header and TIP pages after change
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Improvement CORE-5374
         Make database name available to crypt plugin
@@ -113,15 +249,30 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Improvement CORE-4486
+        Trace: provide filter to INCLUDE / EXCLUDE errors by their mnemonical names
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Improvement CORE-3637
         Port for Linux/m68k
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Improvement CORE-1095
+        Support BETWEEN predicate for select expressions
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * New feature CORE-5332
         libfbclient.so for Android (x86/x86-64/arm64)
       Contributor(s):
         Marius Adrian Popa <mapopa at gmail.com>
+
+    * New feature CORE-4563
+        Add support for Windows 8/2012 fast/low-latency "TCP Loopback Fast Path" functionality
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * New feature CORE-3885
         Android port (arm32)
