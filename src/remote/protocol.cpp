@@ -798,7 +798,9 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			MAP(xdr_cstring, cc->p_cc_data);
 
 			rem_port* port = (rem_port*) xdrs->x_public;
-			if (port->port_protocol >= PROTOCOL_VERSION14)
+			// If the protocol is 0 we are in the process of establishing a connection.
+			// crypt_key_callback at this phaze means server protocol is at least P15
+			if (port->port_protocol >= PROTOCOL_VERSION14 || port->port_protocol == 0)
 				MAP(xdr_short, reinterpret_cast<SSHORT&>(cc->p_cc_reply));
 
 			DEBUG_PRINTSIZE(xdrs, p->p_operation);

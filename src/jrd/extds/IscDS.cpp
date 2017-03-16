@@ -124,12 +124,32 @@ void IscConnection::attach(thread_db* tdbb, const PathName& dbName, const string
 	FbLocalStatus status;
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-		m_iscProvider.isc_attach_database(&status, m_dbName.length(), m_dbName.c_str(),
-			&m_handle, newDpb.getBufferLength(),
-			reinterpret_cast<const char*>(newDpb.getBuffer()));
-	}
-	if (status->getState() & IStatus::STATE_ERRORS) {
-		raise(&status, tdbb, "attach");
+
+		ICryptKeyCallback* cb = tdbb->getAttachment()->att_crypt_callback;
+		try
+		{
+			m_iscProvider.fb_database_crypt_callback(&status, cb);
+			if (status->getState() & IStatus::STATE_ERRORS) {
+				raise(&status, tdbb, "crypt_callback");
+			}
+
+			m_iscProvider.isc_attach_database(&status, m_dbName.length(), m_dbName.c_str(),
+				&m_handle, newDpb.getBufferLength(),
+				reinterpret_cast<const char*>(newDpb.getBuffer()));
+			if (status->getState() & IStatus::STATE_ERRORS) {
+				raise(&status, tdbb, "attach");
+			}
+		}
+		catch(const Exception&)
+		{
+			m_iscProvider.fb_database_crypt_callback(&status, NULL);
+			throw;
+		}
+
+		m_iscProvider.fb_database_crypt_callback(&status, NULL);
+		if (status->getState() & IStatus::STATE_ERRORS) {
+			raise(&status, tdbb, "crypt_callback");
+		}
 	}
 
 	char buff[16];
@@ -1474,6 +1494,15 @@ ISC_STATUS ISC_EXPORT IscProvider::fb_cancel_operation(FbStatusVector* user_stat
 	return notImplemented(user_status);
 }
 
+ISC_STATUS ISC_EXPORT IscProvider::fb_database_crypt_callback(FbStatusVector* user_status,
+										void* cb)
+{
+	if (m_api.fb_database_crypt_callback)
+		return m_api.fb_database_crypt_callback(IscStatus(user_status), cb);
+
+	return notImplemented(user_status);
+}
+
 void IscProvider::loadAPI()
 {
 	FbLocalStatus status;
@@ -1565,7 +1594,8 @@ static FirebirdApiPointers isc_callbacks =
 	PROTO(isc_service_detach),
 	PROTO(isc_service_query),
 	PROTO(isc_service_start),
-	PROTO(fb_cancel_operation)
+	PROTO(fb_cancel_operation),
+	PROTO(fb_database_crypt_callback)
 };
 
 

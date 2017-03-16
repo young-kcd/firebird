@@ -398,7 +398,7 @@ class LockManager : private Firebird::RefCounted,
 	const int PID;
 
 public:
-	static LockManager* create(const Firebird::string&, Firebird::RefPtr<Config>);
+	static LockManager* create(const Firebird::string&, Firebird::RefPtr<const Config>);
 	static void destroy(LockManager*);
 
 	bool initializeOwner(Firebird::CheckStatusWrapper*, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
@@ -421,7 +421,7 @@ public:
 	void exceptionHandler(const Firebird::Exception& ex, ThreadFinishSync<LockManager*>::ThreadRoutine* routine);
 
 private:
-	explicit LockManager(const Firebird::string&, Firebird::RefPtr<Config>);
+	explicit LockManager(const Firebird::string&, Firebird::RefPtr<const Config>);
 	~LockManager();
 
 	void acquire_shmem(SRQ_PTR);
@@ -500,7 +500,7 @@ private:
 	bool m_blockage;
 
 	Firebird::string m_dbId;
-	Firebird::RefPtr<Config> m_config;
+	Firebird::RefPtr<const Config> m_config;
 
 	// configurations parameters - cached values
 	const ULONG m_acquireSpins;

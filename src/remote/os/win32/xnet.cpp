@@ -148,7 +148,7 @@ namespace Remote
 		{
 		}
 
-		rem_port* connect_client(PACKET*, const RefPtr<Config>*);
+		rem_port* connect_client(PACKET*, const RefPtr<const Config>*);
 		void server_shutdown(rem_port* port);
 
 	private:
@@ -238,7 +238,7 @@ static void xnet_log_error(const char* err_msg)
 rem_port* XNET_analyze(ClntAuthBlock* cBlock,
 					   const PathName& file_name,
 					   bool uv_flag,
-					   RefPtr<Config>* config,
+					   RefPtr<const Config>* config,
 					   const Firebird::PathName* ref_db_name)
 {
 /**************************************
@@ -403,7 +403,7 @@ rem_port* XNET_analyze(ClntAuthBlock* cBlock,
 
 rem_port* XNET_connect(PACKET* packet,
 					   USHORT flag,
-					   Firebird::RefPtr<Config>* config)
+					   Firebird::RefPtr<const Config>* config)
 {
 /**************************************
  *
@@ -1087,7 +1087,7 @@ static void raise_lostconn_or_syserror(const char* msg)
 }
 
 
-rem_port* XnetClientEndPoint::connect_client(PACKET* packet, const RefPtr<Config>* config)
+rem_port* XnetClientEndPoint::connect_client(PACKET* packet, const RefPtr<const Config>* config)
 {
 /**************************************
  *
@@ -1100,7 +1100,7 @@ rem_port* XnetClientEndPoint::connect_client(PACKET* packet, const RefPtr<Config
  *
  **************************************/
 
-	const Firebird::RefPtr<Config>& conf(config ? *config : Config::getDefaultConfig());
+	const Firebird::RefPtr<const Config>& conf(config ? *config : Config::getDefaultConfig());
 
 	if (!xnet_initialized)
 	{

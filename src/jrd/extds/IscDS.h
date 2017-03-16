@@ -482,6 +482,9 @@ public:
 	virtual ISC_STATUS ISC_EXPORT fb_cancel_operation(Jrd::FbStatusVector*,
 											isc_db_handle*,
 											USHORT);
+
+	virtual ISC_STATUS ISC_EXPORT fb_database_crypt_callback(Jrd::FbStatusVector*,
+											void*);
 };
 
 

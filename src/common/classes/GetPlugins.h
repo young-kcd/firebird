@@ -54,7 +54,7 @@ public:
 	}
 
 	GetPlugins(unsigned int interfaceType,
-			   Config* knownConfig, const char* namesList = NULL)
+			   const Config* knownConfig, const char* namesList = NULL)
 		: masterInterface(), pluginInterface(),
 		  pluginSet(NULL), currentPlugin(NULL),
 		  ls(*getDefaultMemoryPool()), status(&ls)

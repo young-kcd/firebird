@@ -461,7 +461,7 @@ public:
 	BackupManager*	dbb_backup_manager;						// physical backup manager
 	Firebird::TimeStamp dbb_creation_date; 					// creation date
 	ExternalFileDirectoryList* dbb_external_file_directory_list;
-	Firebird::RefPtr<Config> dbb_config;
+	Firebird::RefPtr<const Config> dbb_config;
 
 	SharedCounter dbb_shared_counter;
 	CryptoManager* dbb_crypto_manager;

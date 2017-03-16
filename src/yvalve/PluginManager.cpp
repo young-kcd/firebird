@@ -560,7 +560,7 @@ namespace
 			{
 				if (!firebirdConf.hasData())
 				{
-					RefPtr<Config> specificConf(Config::getDefaultConfig());
+					RefPtr<const Config> specificConf(Config::getDefaultConfig());
 					firebirdConf = FB_NEW FirebirdConf(specificConf);
 				}
 
@@ -1253,7 +1253,7 @@ public:
 		try
 		{
 			PathName dummy;
-			Firebird::RefPtr<Config> config;
+			Firebird::RefPtr<const Config> config;
 			expandDatabaseName(dbName, dummy, &config);
 
 			IFirebirdConf* firebirdConf = FB_NEW FirebirdConf(config);

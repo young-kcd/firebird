@@ -36,6 +36,7 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/condition.h"
 #include "../common/classes/MetaName.h"
+#include "../common/classes/GetPlugins.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/ods.h"
 #include "../jrd/status.h"
@@ -268,6 +269,8 @@ private:
 class CryptoManager FB_FINAL : public Firebird::PermanentStorage, public BarSync::IBar
 {
 public:
+	typedef Firebird::GetPlugins<Firebird::IDbCryptPlugin> Factory;
+
 	explicit CryptoManager(thread_db* tdbb);
 	~CryptoManager();
 
@@ -324,14 +327,16 @@ private:
 	class KeyHolderPlugins
 	{
 	public:
+		typedef CryptoManager::Factory Factory;
+
 		explicit KeyHolderPlugins(Firebird::MemoryPool& p, CryptoManager* m)
 			: knownHolders(p), mgr(m)
 		{ }
 
-		void attach(Attachment* att, Config* config);
+		void attach(Attachment* att, const Config* config);
 		void init(Firebird::IDbCryptPlugin* crypt, const Firebird::MetaName& keyName);
-		bool validate(Firebird::IDbCryptPlugin* crypt, Attachment*, const Firebird::MetaName& keyName);
-		void validate(Firebird::IDbCryptPlugin* crypt, const Firebird::MetaName& keyName);
+		bool validateNewAttachment(Attachment*, const Firebird::MetaName& keyName);
+		void validateExistingAttachments(const Firebird::MetaName& keyName);
 		void detach(Attachment* att);
 
 	private:
@@ -341,7 +346,8 @@ private:
 		Firebird::ObjectsArray<PerAttHolders> knownHolders;
 		CryptoManager* mgr;
 
-		bool validateHoldersGroup(PerAttHolders& pa, Firebird::IDbCryptPlugin* crypt, const Firebird::MetaName& keyName);
+		bool validateHoldersGroup(PerAttHolders& pa, const Firebird::MetaName& keyName);
+		bool validateHolder(Firebird::IKeyHolderPlugin* keyHolder, const Firebird::MetaName& keyName);
 		void releaseHolders(PerAttHolders& pa);
 	};
 
@@ -383,7 +389,7 @@ private:
 	void doOnTakenWriteSync(thread_db* tdbb);
 	void doOnAst(thread_db* tdbb);
 
-	void loadPlugin(const char* pluginName);
+	void loadPlugin(thread_db* tdbb, const char* pluginName);
 	ULONG getLastPage(thread_db* tdbb);
 	void writeDbHeader(thread_db* tdbb, ULONG runpage);
 	void calcValidation(Firebird::string& valid, Firebird::IDbCryptPlugin* plugin);
@@ -394,9 +400,9 @@ private:
 	static const unsigned CRYPT_HDR_NOWAIT =	0x02;
 
 	void addClumplet(Firebird::string& value, Firebird::ClumpletReader& block, UCHAR tag);
-	void calcDigitalSignature(Firebird::string& signature, const class Header& hdr);
-	void digitalySignDatabase(class CchHdr& hdr);
-	void checkDigitalSignature(const class Header& hdr);
+	void calcDigitalSignature(thread_db* tdbb, Firebird::string& signature, const class Header& hdr);
+	void digitalySignDatabase(thread_db* tdbb, class CchHdr& hdr);
+	void checkDigitalSignature(thread_db* tdbb, const class Header& hdr);
 
 	BarSync sync;
 	Firebird::MetaName keyName;
@@ -407,7 +413,7 @@ private:
 	Firebird::RefPtr<DbInfo> dbInfo;
 	Thread::Handle cryptThreadId;
 	Firebird::IDbCryptPlugin* cryptPlugin;
-	Firebird::IDbCryptPlugin* checkPlugin;
+	Factory* checkFactory;
 	Database& dbb;
 	Lock* stateLock;
 	Lock* threadLock;

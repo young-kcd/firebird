@@ -326,6 +326,7 @@ type
 	IClientBlock_putDataPtr = procedure(this: IClientBlock; status: IStatus; length: Cardinal; data: Pointer); cdecl;
 	IClientBlock_newKeyPtr = function(this: IClientBlock; status: IStatus): ICryptKey; cdecl;
 	IServer_authenticatePtr = function(this: IServer; status: IStatus; sBlock: IServerBlock; writerInterface: IWriter): Integer; cdecl;
+	IServer_setDbCryptCallbackPtr = procedure(this: IServer; status: IStatus; cryptCallback: ICryptKeyCallback); cdecl;
 	IClient_authenticatePtr = function(this: IClient; status: IStatus; cBlock: IClientBlock): Integer; cdecl;
 	IUserField_enteredPtr = function(this: IUserField): Integer; cdecl;
 	IUserField_specifiedPtr = function(this: IUserField): Integer; cdecl;
@@ -363,6 +364,7 @@ type
 	IKeyHolderPlugin_keyCallbackPtr = function(this: IKeyHolderPlugin; status: IStatus; callback: ICryptKeyCallback): Integer; cdecl;
 	IKeyHolderPlugin_keyHandlePtr = function(this: IKeyHolderPlugin; status: IStatus; keyName: PAnsiChar): ICryptKeyCallback; cdecl;
 	IKeyHolderPlugin_useOnlyOwnKeysPtr = function(this: IKeyHolderPlugin; status: IStatus): Boolean; cdecl;
+	IKeyHolderPlugin_chainHandlePtr = function(this: IKeyHolderPlugin; status: IStatus): ICryptKeyCallback; cdecl;
 	IDbCryptInfo_getDatabaseFullPathPtr = function(this: IDbCryptInfo; status: IStatus): PAnsiChar; cdecl;
 	IDbCryptPlugin_setKeyPtr = procedure(this: IDbCryptPlugin; status: IStatus; length: Cardinal; sources: IKeyHolderPluginPtr; keyName: PAnsiChar); cdecl;
 	IDbCryptPlugin_encryptPtr = procedure(this: IDbCryptPlugin; status: IStatus; length: Cardinal; from: Pointer; to_: Pointer); cdecl;
@@ -1626,12 +1628,14 @@ type
 
 	ServerVTable = class(AuthVTable)
 		authenticate: IServer_authenticatePtr;
+		setDbCryptCallback: IServer_setDbCryptCallbackPtr;
 	end;
 
 	IServer = class(IAuth)
-		const VERSION = 5;
+		const VERSION = 6;
 
 		function authenticate(status: IStatus; sBlock: IServerBlock; writerInterface: IWriter): Integer;
+		procedure setDbCryptCallback(status: IStatus; cryptCallback: ICryptKeyCallback);
 	end;
 
 	IServerImpl = class(IServer)
@@ -1642,6 +1646,7 @@ type
 		procedure setOwner(r: IReferenceCounted); virtual; abstract;
 		function getOwner(): IReferenceCounted; virtual; abstract;
 		function authenticate(status: IStatus; sBlock: IServerBlock; writerInterface: IWriter): Integer; virtual; abstract;
+		procedure setDbCryptCallback(status: IStatus; cryptCallback: ICryptKeyCallback); virtual; abstract;
 	end;
 
 	ClientVTable = class(AuthVTable)
@@ -1904,14 +1909,16 @@ type
 		keyCallback: IKeyHolderPlugin_keyCallbackPtr;
 		keyHandle: IKeyHolderPlugin_keyHandlePtr;
 		useOnlyOwnKeys: IKeyHolderPlugin_useOnlyOwnKeysPtr;
+		chainHandle: IKeyHolderPlugin_chainHandlePtr;
 	end;
 
 	IKeyHolderPlugin = class(IPluginBase)
-		const VERSION = 7;
+		const VERSION = 8;
 
 		function keyCallback(status: IStatus; callback: ICryptKeyCallback): Integer;
 		function keyHandle(status: IStatus; keyName: PAnsiChar): ICryptKeyCallback;
 		function useOnlyOwnKeys(status: IStatus): Boolean;
+		function chainHandle(status: IStatus): ICryptKeyCallback;
 	end;
 
 	IKeyHolderPluginImpl = class(IKeyHolderPlugin)
@@ -1924,6 +1931,7 @@ type
 		function keyCallback(status: IStatus; callback: ICryptKeyCallback): Integer; virtual; abstract;
 		function keyHandle(status: IStatus; keyName: PAnsiChar): ICryptKeyCallback; virtual; abstract;
 		function useOnlyOwnKeys(status: IStatus): Boolean; virtual; abstract;
+		function chainHandle(status: IStatus): ICryptKeyCallback; virtual; abstract;
 	end;
 
 	DbCryptInfoVTable = class(ReferenceCountedVTable)
@@ -5751,6 +5759,12 @@ begin
 	FbException.checkException(status);
 end;
 
+procedure IServer.setDbCryptCallback(status: IStatus; cryptCallback: ICryptKeyCallback);
+begin
+	ServerVTable(vTable).setDbCryptCallback(Self, status, cryptCallback);
+	FbException.checkException(status);
+end;
+
 function IClient.authenticate(status: IStatus; cBlock: IClientBlock): Integer;
 begin
 	Result := ClientVTable(vTable).authenticate(Self, status, cBlock);
@@ -5950,6 +5964,12 @@ end;
 function IKeyHolderPlugin.useOnlyOwnKeys(status: IStatus): Boolean;
 begin
 	Result := KeyHolderPluginVTable(vTable).useOnlyOwnKeys(Self, status);
+	FbException.checkException(status);
+end;
+
+function IKeyHolderPlugin.chainHandle(status: IStatus): ICryptKeyCallback;
+begin
+	Result := KeyHolderPluginVTable(vTable).chainHandle(Self, status);
 	FbException.checkException(status);
 end;
 
@@ -9254,6 +9274,15 @@ begin
 	end
 end;
 
+procedure IServerImpl_setDbCryptCallbackDispatcher(this: IServer; status: IStatus; cryptCallback: ICryptKeyCallback); cdecl;
+begin
+	try
+		IServerImpl(this).setDbCryptCallback(status, cryptCallback);
+	except
+		on e: Exception do FbException.catchException(status, e);
+	end
+end;
+
 var
 	IServerImpl_vTable: ServerVTable;
 
@@ -9868,6 +9897,15 @@ function IKeyHolderPluginImpl_useOnlyOwnKeysDispatcher(this: IKeyHolderPlugin; s
 begin
 	try
 		Result := IKeyHolderPluginImpl(this).useOnlyOwnKeys(status);
+	except
+		on e: Exception do FbException.catchException(status, e);
+	end
+end;
+
+function IKeyHolderPluginImpl_chainHandleDispatcher(this: IKeyHolderPlugin; status: IStatus): ICryptKeyCallback; cdecl;
+begin
+	try
+		Result := IKeyHolderPluginImpl(this).chainHandle(status);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
@@ -12575,12 +12613,13 @@ initialization
 	IClientBlockImpl_vTable.newKey := @IClientBlockImpl_newKeyDispatcher;
 
 	IServerImpl_vTable := ServerVTable.create;
-	IServerImpl_vTable.version := 5;
+	IServerImpl_vTable.version := 6;
 	IServerImpl_vTable.addRef := @IServerImpl_addRefDispatcher;
 	IServerImpl_vTable.release := @IServerImpl_releaseDispatcher;
 	IServerImpl_vTable.setOwner := @IServerImpl_setOwnerDispatcher;
 	IServerImpl_vTable.getOwner := @IServerImpl_getOwnerDispatcher;
 	IServerImpl_vTable.authenticate := @IServerImpl_authenticateDispatcher;
+	IServerImpl_vTable.setDbCryptCallback := @IServerImpl_setDbCryptCallbackDispatcher;
 
 	IClientImpl_vTable := ClientVTable.create;
 	IClientImpl_vTable.version := 5;
@@ -12665,7 +12704,7 @@ initialization
 	ICryptKeyCallbackImpl_vTable.callback := @ICryptKeyCallbackImpl_callbackDispatcher;
 
 	IKeyHolderPluginImpl_vTable := KeyHolderPluginVTable.create;
-	IKeyHolderPluginImpl_vTable.version := 7;
+	IKeyHolderPluginImpl_vTable.version := 8;
 	IKeyHolderPluginImpl_vTable.addRef := @IKeyHolderPluginImpl_addRefDispatcher;
 	IKeyHolderPluginImpl_vTable.release := @IKeyHolderPluginImpl_releaseDispatcher;
 	IKeyHolderPluginImpl_vTable.setOwner := @IKeyHolderPluginImpl_setOwnerDispatcher;
@@ -12673,6 +12712,7 @@ initialization
 	IKeyHolderPluginImpl_vTable.keyCallback := @IKeyHolderPluginImpl_keyCallbackDispatcher;
 	IKeyHolderPluginImpl_vTable.keyHandle := @IKeyHolderPluginImpl_keyHandleDispatcher;
 	IKeyHolderPluginImpl_vTable.useOnlyOwnKeys := @IKeyHolderPluginImpl_useOnlyOwnKeysDispatcher;
+	IKeyHolderPluginImpl_vTable.chainHandle := @IKeyHolderPluginImpl_chainHandleDispatcher;
 
 	IDbCryptInfoImpl_vTable := DbCryptInfoVTable.create;
 	IDbCryptInfoImpl_vTable.version := 3;

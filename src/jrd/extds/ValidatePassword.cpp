@@ -178,7 +178,7 @@ void validatePassword(thread_db* tdbb, const PathName& file, ClumpletWriter& dpb
 	Arg::Gds loginError(isc_login_error);
 
 	// Build list of client/server plugins
-	RefPtr<Config> config;
+	RefPtr<const Config> config;
 	PathName list;
 	expandDatabaseName(file, list /* unused value */, &config);
 	PathName serverList = config->getPlugins(IPluginManager::TYPE_AUTH_SERVER);

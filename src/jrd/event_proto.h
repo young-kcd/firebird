@@ -51,7 +51,7 @@ public:
 	static void init(Attachment*);
 	static void destroy(EventManager*);
 
-	EventManager(const Firebird::string& id, Firebird::RefPtr<Config> conf);
+	EventManager(const Firebird::string& id, Firebird::RefPtr<const Config> conf);
 	~EventManager();
 
 	void deleteSession(SLONG);
@@ -104,7 +104,7 @@ private:
 	SLONG m_processOffset;
 
 	Firebird::string m_dbId;
-	Firebird::RefPtr<Config> m_config;
+	Firebird::RefPtr<const Config> m_config;
 	Firebird::AutoPtr<Firebird::SharedMemory<evh> > m_sharedMemory;
 
 	Firebird::Semaphore m_startupSemaphore;

@@ -77,6 +77,7 @@ public:
 	// IKeyHolderPlugin implementation
 	int keyCallback(CheckStatusWrapper* status, ICryptKeyCallback* callback);
 	ICryptKeyCallback* keyHandle(CheckStatusWrapper* status, const char* keyName);
+	ICryptKeyCallback* chainHandle(CheckStatusWrapper* status);
 
 	int release()
 	{
@@ -200,8 +201,6 @@ IConfigEntry* CryptKeyHolder::getEntry(CheckStatusWrapper* status, const char* e
 
 int CryptKeyHolder::keyCallback(CheckStatusWrapper* status, ICryptKeyCallback* callback)
 {
-	status->init();
-
 	if (key != 0)
 		return 1;
 
@@ -257,6 +256,12 @@ ICryptKeyCallback* CryptKeyHolder::keyHandle(CheckStatusWrapper* status, const c
 
 	return NULL;
 }
+
+ICryptKeyCallback* CryptKeyHolder::chainHandle(CheckStatusWrapper* status)
+{
+	return &callbackInterface;
+}
+
 
 class Factory : public IPluginFactoryImpl<Factory, CheckStatusWrapper>
 {
