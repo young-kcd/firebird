@@ -195,7 +195,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_BOOLEAN,		"RemoteAccess",				(ConfigValue) true},
 	{TYPE_BOOLEAN,		"IPv6V6Only",				(ConfigValue) false},
 	{TYPE_BOOLEAN,		"WireCompression",			(ConfigValue) false},
-	{TYPE_BOOLEAN,		"CryptSecurityDatabase",	(ConfigValue) false}
+	{TYPE_BOOLEAN,		"AllowEncryptedSecurityDatabase", (ConfigValue) false}
 };
 
 /******************************************************************************
