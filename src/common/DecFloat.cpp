@@ -407,6 +407,15 @@ short Decimal64::totalOrder(Decimal64 op2) const
 	return decDoubleToInt32(&r, &context2, DEC_ROUND_HALF_UP);
 }
 
+/*
+ *	decCompare() implements SQL function COMPARE_DECFLOAT() which has non-traditional return values.
+ *	COMPARE_DECFLOAT (X, Y)
+ *		0 - X == Y
+ *		1 - X < Y
+ *		2 - X > Y
+ *		3 - values unordered
+ */
+
 short Decimal64::decCompare(Decimal64 op2) const
 {
 	if (decDoubleIsNaN(&dec) || decDoubleIsNaN(&op2.dec))
@@ -866,6 +875,15 @@ short Decimal128::totalOrder(Decimal128 op2) const
 	DecimalContext context2(this, 0);
 	return decQuadToInt32(&r, &context2, DEC_ROUND_HALF_UP);
 }
+
+/*
+ *	decCompare() implements SQL function COMPARE_DECFLOAT() which has non-traditional return values.
+ *	COMPARE_DECFLOAT (X, Y)
+ *		0 - X == Y
+ *		1 - X < Y
+ *		2 - X > Y
+ *		3 - values unordered
+ */
 
 short Decimal128::decCompare(Decimal128 op2) const
 {
