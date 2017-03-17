@@ -1047,6 +1047,13 @@ void Sort::diddleKey(UCHAR* record, bool direction)
 			}
 			else
 			{
+				if (complement && n)
+				{
+					UCHAR* pp = p;
+					do {
+						*pp++ ^= -1;
+					} while (--n);
+				}
 				p[3] ^= 1 << 7;
 				((Decimal64*)p)->grabKey(lwp);
 			}
@@ -1060,6 +1067,13 @@ void Sort::diddleKey(UCHAR* record, bool direction)
 			}
 			else
 			{
+				if (complement && n)
+				{
+					UCHAR* pp = p;
+					do {
+						*pp++ ^= -1;
+					} while (--n);
+				}
 				p[3] ^= 1 << 7;
 				((Decimal128*)p)->grabKey(lwp);
 			}
