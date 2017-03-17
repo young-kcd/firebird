@@ -105,20 +105,13 @@ bool_t xdr_hyper( XDR* xdrs, void* pi64)
 {
 /**************************************
  *
- *	x d r _ h y p e r       ( n o n - S O L A R I S )
+ *	x d r _ h y p e r
  *
  **************************************
  *
  * Functional description
  *	Map a 64-bit Integer from external to internal representation
  *      (or vice versa).
- *
- *      Enable this for all platforms except Solaris (since it is
- *      available in the XDR library on Solaris). This function (normally)
- *      would have been implemented in REMOTE/xdr.c. Since some system
- *      XDR libraries (HP-UX) do not implement this function, we have it
- *      in this module. At a later date, when the function is available
- *      on all platforms, we can start using the system-provided version.
  *
  *      Handles "swapping" of the 2 long's to be "Endian" sensitive.
  *
@@ -350,44 +343,24 @@ bool_t xdr_double(XDR* xdrs, double* ip)
 }
 
 
-#ifndef WORDS_BIGENDIAN			// Only little-endian HW is currently supported! FixMe!!!
 
-bool_t	xdr_dec64(XDR* xdrs, Firebird::Decimal64* ip)
+bool_t xdr_dec64(XDR* xdrs, Firebird::Decimal64* ip)
 {
-	switch (xdrs->x_op)
-	{
-	case XDR_ENCODE:
-		return PUTBYTES(xdrs, ip->getBytes(), sizeof(*ip));
-
-	case XDR_DECODE:
-		return GETBYTES(xdrs, ip->getBytes(), sizeof(*ip));
-
-	case XDR_FREE:
-		return TRUE;
-	}
-
-	return FALSE;
+	return xdr_hyper(xdrs, ip->getBytes());
 }
 
 
 bool_t xdr_dec128(XDR* xdrs, Firebird::Decimal128* ip)
 {
-	switch (xdrs->x_op)
-	{
-	case XDR_ENCODE:
-		return PUTBYTES(xdrs, ip->getBytes(), sizeof(*ip));
+	UCHAR* bytes = ip->getBytes();
 
-	case XDR_DECODE:
-		return GETBYTES(xdrs, ip->getBytes(), sizeof(*ip));
-
-	case XDR_FREE:
-		return TRUE;
-	}
-
-	return FALSE;
-}
-
+#ifndef WORDS_BIGENDIAN
+	return xdr_hyper(xdrs, &bytes[8]) && xdr_hyper(xdrs, &bytes[0]);
+#else
+	fb_assert(false);			// Dec64/128 XDR not tested on bigendians!
+	return xdr_hyper(xdrs, &bytes[0]) && xdr_hyper(xdrs, &bytes[8]);
 #endif
+}
 
 
 bool_t xdr_enum(XDR* xdrs, xdr_op* ip)

@@ -806,6 +806,47 @@ void Sort::diddleKey(UCHAR* record, bool direction)
 			*p ^= 1 << 7;
 			break;
 
+		case SKD_dec64:
+			if (direction)
+			{
+				((Decimal64*)p)->makeKey(lwp);
+				*p ^= 1 << 7;
+			}
+			else
+			{
+				if (complement && n)
+				{
+					UCHAR* pp = p;
+					do {
+						*pp++ ^= -1;
+					} while (--n);
+				}
+				*p ^= 1 << 7;
+				((Decimal64*)p)->grabKey(lwp);
+			}
+			break;
+
+		case SKD_dec128:
+			fb_assert(false);		// diddleKey for Dec64/128 not tested on bigendians!
+			if (direction)
+			{
+				((Decimal128*)p)->makeKey(lwp);
+				*p ^= 1 << 7;
+			}
+			else
+			{
+				if (complement && n)
+				{
+					UCHAR* pp = p;
+					do {
+						*pp++ ^= -1;
+					} while (--n);
+				}
+				*p ^= 1 << 7;
+				((Decimal128*)p)->grabKey(lwp);
+			}
+			break;
+
 		default:
 			fb_assert(false);
 			break;

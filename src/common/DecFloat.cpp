@@ -287,9 +287,9 @@ void Decimal64::toString(string& to) const
 	to.recalculate_length();
 }
 
-SCHAR* Decimal64::getBytes()
+UCHAR* Decimal64::getBytes()
 {
-	return reinterpret_cast<SCHAR*>(dec.bytes);
+	return dec.bytes;
 }
 
 Decimal64 Decimal64::abs() const
@@ -562,9 +562,9 @@ SINT64 Decimal128::toInt64(DecimalStatus decSt, int scale) const
 	return high + decQuadToInt32(&rem, &context, DEC_ROUND_DOWN);
 }
 
-SCHAR* Decimal128::getBytes()
+UCHAR* Decimal128::getBytes()
 {
-	return reinterpret_cast<SCHAR*>(dec.bytes);
+	return dec.bytes;
 }
 
 Decimal64 Decimal128::toDecimal64(DecimalStatus decSt) const

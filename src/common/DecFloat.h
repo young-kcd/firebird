@@ -61,7 +61,7 @@ public:
 	Decimal64 set(const char* value, DecimalStatus decSt);
 	Decimal64 set(double value, DecimalStatus decSt);
 
-	SCHAR* getBytes();			// Use of SCHAR* is XDR requirement
+	UCHAR* getBytes();
 	Decimal64 abs() const;
 	Decimal64 ceil(DecimalStatus decSt) const;
 	Decimal64 floor(DecimalStatus decSt) const;
@@ -110,7 +110,7 @@ public:
 	void toString(string& to) const;
 	double toDouble(DecimalStatus decSt) const;
 	SINT64 toInt64(DecimalStatus decSt, int scale) const;
-	SCHAR* getBytes();			// Use of SCHAR* is XDR requirement
+	UCHAR* getBytes();
 	Decimal64 toDecimal64(DecimalStatus decSt) const;
 	Decimal128 abs() const;
 	Decimal128 ceil(DecimalStatus decSt) const;
