@@ -325,6 +325,26 @@ bool areParamsDouble(int argsCount, DSC** args)
 }
 
 
+bool areParamsDec64(int argsCount, dsc** args)
+{
+	bool f64 = false;
+
+	for (int i = 0; i < argsCount; ++i)
+	{
+		switch (args[i]->dsc_dtype)
+		{
+		case dtype_dec64:
+			f64 = true;
+			break;
+		case dtype_dec128:
+			return false;
+		}
+	}
+
+	return f64;
+}
+
+
 void setParamsDblDec(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
 {
 	bool fDbl = areParamsDouble(argsCount, args);
@@ -344,7 +364,7 @@ void setParamsDblDec(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc**
 
 void setParamsDecFloat(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
 {
-	bool f64 = (args[0]->dsc_dtype == dtype_dec64);
+	bool f64 = areParamsDec64(argsCount, args);
 
 	for (int i = 0; i < argsCount; ++i)
 	{
