@@ -51,6 +51,18 @@ struct DecimalStatus
 	USHORT decExtFlag, roundingMode;
 };
 
+struct DecimalBinding
+{
+	DecimalBinding()
+		: bind(DEC_NATIVE), numScale(0)
+	{ }
+
+	enum Bind { DEC_NATIVE, DEC_TEXT, DEC_DOUBLE, DEC_NUMERIC };
+
+	Bind bind;
+	SCHAR numScale;
+};
+
 class Decimal64
 {
 	friend class Decimal128;

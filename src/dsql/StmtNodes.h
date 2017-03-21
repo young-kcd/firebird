@@ -1631,6 +1631,32 @@ public:
 };
 
 
+class SetBindNode : public SessionManagementNode
+{
+public:
+	SetBindNode(MemoryPool& pool)
+		: SessionManagementNode(pool)
+	{
+	}
+
+public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
+	{
+		SessionManagementNode::internalPrint(printer);
+
+		NODE_PRINT(printer, bind.bind);
+		NODE_PRINT(printer, bind.numScale);
+
+		return "SetBindNode";
+	}
+
+	virtual void execute(thread_db* tdbb, dsql_req* request) const;
+
+public:
+	Firebird::DecimalBinding bind;
+};
+
+
 class UpdateOrInsertNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_UPDATE_OR_INSERT>
 {
 public:

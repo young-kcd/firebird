@@ -8072,6 +8072,17 @@ void SetTrapsNode::execute(thread_db* tdbb, dsql_req* /*request*/) const
 //--------------------
 
 
+void SetBindNode::execute(thread_db* tdbb, dsql_req* /*request*/) const
+{
+	SET_TDBB(tdbb);
+	Attachment* const attachment = tdbb->getAttachment();
+	attachment->att_dec_binding = bind;
+}
+
+
+//--------------------
+
+
 StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	thread_db* tdbb = JRD_get_thread_data(); // necessary?

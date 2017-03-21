@@ -591,6 +591,7 @@ using namespace Firebird;
 
 // tokens added for Firebird 4.0
 %token <metaNamePtr> BINARY
+%token <metaNamePtr> BIND
 %token <metaNamePtr> COMPARE_DECFLOAT
 %token <metaNamePtr> CUME_DIST
 %token <metaNamePtr> DECFLOAT
@@ -599,6 +600,7 @@ using namespace Firebird;
 %token <metaNamePtr> FOLLOWING
 %token <metaNamePtr> INVOKER
 %token <metaNamePtr> MESSAGE
+%token <metaNamePtr> NATIVE
 %token <metaNamePtr> NORMALIZE_DECFLOAT
 %token <metaNamePtr> NTILE
 %token <metaNamePtr> OTHERS
@@ -763,6 +765,7 @@ using namespace Firebird;
 	Jrd::CreateAlterRoleNode* createAlterRoleNode;
 	Jrd::SetRoundNode* setRoundNode;
 	Jrd::SetTrapsNode* setTrapsNode;
+	Jrd::SetBindNode* setBindNode;
 }
 
 %include types.y
@@ -822,6 +825,7 @@ tra_statement
 mng_statement
 	: set_round									{ $$ = $1; }
 	| set_traps									{ $$ = $1; }
+	| set_bind									{ $$ = $1; }
 	| set_role									{ $$ = $1; }
 	;
 
@@ -4075,7 +4079,6 @@ keyword_or_column
 	| VAR_POP
 	| UNBOUNDED				// added in FB 4.0
 	| WINDOW
-	| DECFLOAT
 	;
 
 col_opt
@@ -4720,14 +4723,7 @@ varbinary_character_keyword
 
 %type <legacyField> decfloat_type
 decfloat_type
-	: DECFLOAT
-		{
-			$$ = newNode<dsql_fld>();
-			$$->dtype = dtype_dec64;
-			$$->length = sizeof(Decimal64);
-			$$->precision = 16;
-		}
-	| DECFLOAT '(' signed_long_integer ')'
+	: DECFLOAT '(' signed_long_integer ')'
 		{
 			if ($3 != 16 && $3 != 34)
 				yyabandon(YYPOSNARG(3), -842, isc_decprecision_err);	// DecFloat precision must be 16 or 34.
@@ -5037,6 +5033,14 @@ set_traps
 			{ $$ = $5; }
 	;
 
+%type <setBindNode> set_bind
+set_bind
+	: SET DECFLOAT BIND
+			{ $$ = newNode<SetBindNode>(); }
+		bind_clause($4)
+			{ $$ = $4; }
+	;
+
 %type traps_list_opt(<setTrapsNode>)
 traps_list_opt($setTrapsNode)
 	: // nothing
@@ -5053,6 +5057,29 @@ traps_list($setTrapsNode)
 trap($setTrapsNode)
 	: valid_symbol_name
 		{ $setTrapsNode->trap($1); }
+	;
+
+%type bind_clause(<setBindNode>)
+bind_clause($setBindNode)
+	: NATIVE
+		// do nothing
+	| character_keyword
+		{ $setBindNode->bind.bind = DecimalBinding::DEC_TEXT; }
+	| DOUBLE PRECISION
+		{ $setBindNode->bind.bind = DecimalBinding::DEC_DOUBLE; }
+	| BIGINT scale_clause($setBindNode)
+		{ $setBindNode->bind.bind = DecimalBinding::DEC_NUMERIC; }
+	;
+
+%type scale_clause(<setBindNode>)
+scale_clause($setBindNode)
+	: // nothing
+	| ',' signed_long_integer
+		{
+			if ($2 > 18 || $2 < 0)
+				yyabandon(YYPOSNARG(2), -842, isc_scale_nogt);	// Scale must be between 0 and precision
+			$setBindNode->bind.numScale = -$2;
+		}
 	;
 
 %type tran_option_list_opt(<setTransactionNode>)
@@ -8285,27 +8312,30 @@ non_reserved_word
 	| SERVERWIDE
 	| INCREMENT
 	| TRUSTED
-	| CUME_DIST				// added in FB 4.0
+	| BIND					// added in FB 4.0
+	| COMPARE_DECFLOAT
+	| CUME_DIST
+	| DECFLOAT
 	| DEFINER
 	| EXCLUDE
 	| FOLLOWING
 	| INVOKER
 	| MESSAGE
+	| NATIVE
+	| NORMALIZE_DECFLOAT
 	| NTILE
 	| OTHERS
 	| PERCENT_RANK
 	| PRECEDING
 	| PRIVILEGE
+	| QUANTIZE
 	| RANGE
 	| SECURITY
 	| SQL
 	| SYSTEM
 	| TIES
-	| TRAPS
-	| QUANTIZE
 	| TOTALORDER
-	| NORMALIZE_DECFLOAT
-	| COMPARE_DECFLOAT
+	| TRAPS
 	;
 
 %%
