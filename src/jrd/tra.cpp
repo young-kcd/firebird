@@ -255,9 +255,9 @@ void TRA_cleanup(thread_db* tdbb)
 		window.win_page = inventory_page(tdbb, sequence);
 		tx_inv_page* tip = (tx_inv_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_transactions);
 		TraNumber max = ceiling - (TraNumber) sequence * trans_per_tip;
-		if (max > trans_per_tip)
-			max = trans_per_tip;
-		for (; number < max; number++)
+		if (max >= trans_per_tip)
+			max = trans_per_tip - 1;
+		for (; number <= max; number++)
 		{
 			const ULONG trans_offset = TRANS_OFFSET(number);
 			UCHAR* byte = tip->tip_transactions + trans_offset;
