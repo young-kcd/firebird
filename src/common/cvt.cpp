@@ -1725,7 +1725,7 @@ void CVT_move_common(const dsc* from, dsc* to, DecimalStatus decSt, Callbacks* c
 				intermediate.makeText(static_cast<USHORT>(strlen(text)), CS_ASCII,
 					reinterpret_cast<UCHAR*>(text));
 
-				CVT_move_common(&intermediate, to, 0, cb);
+				CVT_move_common(&intermediate, to, decSt, cb);
 				return;
 			}
 
@@ -1760,7 +1760,7 @@ void CVT_move_common(const dsc* from, dsc* to, DecimalStatus decSt, Callbacks* c
 
 	case dtype_short:
 		{
-			ULONG lval = CVT_get_long(from, (SSHORT) to->dsc_scale, 0, cb->err);
+			ULONG lval = CVT_get_long(from, (SSHORT) to->dsc_scale, decSt, cb->err);
 			// TMN: Here we should really have the following fb_assert
 			// fb_assert(lval <= MAX_SSHORT);
 			*(SSHORT*) p = (SSHORT) lval;
@@ -1770,11 +1770,11 @@ void CVT_move_common(const dsc* from, dsc* to, DecimalStatus decSt, Callbacks* c
 		return;
 
 	case dtype_long:
-		*(SLONG *) p = CVT_get_long(from, (SSHORT) to->dsc_scale, 0, cb->err);
+		*(SLONG *) p = CVT_get_long(from, (SSHORT) to->dsc_scale, decSt, cb->err);
 		return;
 
 	case dtype_int64:
-		*(SINT64 *) p = CVT_get_int64(from, (SSHORT) to->dsc_scale, 0, cb->err);
+		*(SINT64 *) p = CVT_get_int64(from, (SSHORT) to->dsc_scale, decSt, cb->err);
 		return;
 
 	case dtype_quad:
@@ -1784,12 +1784,12 @@ void CVT_move_common(const dsc* from, dsc* to, DecimalStatus decSt, Callbacks* c
 			((SLONG *) p)[1] = ((SLONG *) q)[1];
 			return;
 		}
-		*(SQUAD *) p = CVT_get_quad(from, (SSHORT) to->dsc_scale, 0, cb->err);
+		*(SQUAD *) p = CVT_get_quad(from, (SSHORT) to->dsc_scale, decSt, cb->err);
 		return;
 
 	case dtype_real:
 		{
-			double d_value = CVT_get_double(from, 0, cb->err);
+			double d_value = CVT_get_double(from, decSt, cb->err);
 			if (ABSOLUT(d_value) > FLOAT_MAX)
 				cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 			*(float*) p = (float) d_value;
@@ -1801,7 +1801,7 @@ void CVT_move_common(const dsc* from, dsc* to, DecimalStatus decSt, Callbacks* c
 		{
 			USHORT strtype_unused;
 			UCHAR* ptr;
-			USHORT len = CVT_get_string_ptr_common(from, &strtype_unused, &ptr, NULL, 0, 0, cb);
+			USHORT len = CVT_get_string_ptr_common(from, &strtype_unused, &ptr, NULL, 0, decSt, cb);
 
 			if (len == to->dsc_length)
 			{
@@ -2503,7 +2503,7 @@ Decimal64 CVT_get_dec64(const dsc* desc, DecimalStatus decSt, ErrorFunction err)
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
-			CVT_make_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer) - 1, 0, err);
+			CVT_make_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer) - 1, decSt, err);
 			buffer.vary_string[buffer.vary_length] = 0;
 			return d64.set(buffer.vary_string, decSt);
 
@@ -2588,7 +2588,7 @@ Decimal128 CVT_get_dec128(const dsc* desc, DecimalStatus decSt, ErrorFunction er
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
-			CVT_make_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer) - 1, 0, err);
+			CVT_make_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer) - 1, decSt, err);
 			buffer.vary_string[buffer.vary_length] = 0;
 			return d128.set(buffer.vary_string, decSt);
 
@@ -2680,7 +2680,7 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, DecimalStatus decSt, ErrorFunc
 	case dtype_text:
 		{
 			USHORT length =
-				CVT_make_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer), 0, err);
+				CVT_make_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer), decSt, err);
 			scale -= CVT_decompose(p, length, dtype_quad, &value.gds_quad_high, err);
 		}
 		break;
