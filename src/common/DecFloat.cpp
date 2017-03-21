@@ -105,6 +105,7 @@ private:
 };
 
 CDecimal128 dmax(DBL_MAX, DecimalStatus(0)), dmin(-DBL_MAX, DecimalStatus(0));
+CDecimal128 i64max(MAX_SINT64, DecimalStatus(0)), i64min(MIN_SINT64, DecimalStatus(0));
 
 unsigned digits(const unsigned pMax, unsigned char* const coeff, int& exp)
 {
@@ -548,18 +549,31 @@ double Decimal128::toDouble(DecimalStatus decSt) const
 
 SINT64 Decimal128::toInt64(DecimalStatus decSt, int scale) const
 {
+	static CDecimal128 quant(1);
+
 	Decimal128 wrk(*this);
 	wrk.setScale(decSt, -scale);
+	wrk = wrk.quantize(decSt, quant);
 
-	DecimalContext context(this, decSt);
-	decQuad pow2_32, div, rem;
-	decQuadFromString(&pow2_32, "4294967296", &context);
-	decQuadDivideInteger(&div, &wrk.dec, &pow2_32, &context);
-	decQuadRemainder(&rem, &wrk.dec, &pow2_32, &context);
+	if (wrk.compare(decSt, i64min) < 0 || wrk.compare(decSt, i64max) > 0)
+	{
+		DecimalContext context(this, decSt);
+		decContextSetStatus(&context, DEC_Invalid_operation);
+		return 0;	// in case of no trap on invalid operation
+	}
 
-	SINT64 high = decQuadToInt32(&div, &context, DEC_ROUND_DOWN);
-	high <<= 32;
-	return high + decQuadToInt32(&rem, &context, DEC_ROUND_DOWN);
+	unsigned char coeff[DECQUAD_Pmax];
+	int sign = decQuadGetCoefficient(&wrk.dec, coeff);
+	SINT64 rc = 0;
+	for (int i = 0; i < DECQUAD_Pmax; ++i)
+	{
+		rc *= 10;
+		if (sign)
+			rc -= coeff[i];
+		else
+			rc += coeff[i];
+	}
+	return rc;
 }
 
 UCHAR* Decimal128::getBytes()
