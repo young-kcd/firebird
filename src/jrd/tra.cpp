@@ -354,8 +354,8 @@ void TRA_cleanup(thread_db* tdbb)
 		tx_inv_page* tip = (tx_inv_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_transactions);
 		SLONG max = ceiling - (sequence * trans_per_tip);
 		if (max > trans_per_tip)
-			max = trans_per_tip - 1;
-		for (; number <= max; number++)
+			max = trans_per_tip;
+		for (; number < max; number++)
 		{
 			const SLONG trans_offset = TRANS_OFFSET(number);
 			UCHAR* byte = tip->tip_transactions + trans_offset;
