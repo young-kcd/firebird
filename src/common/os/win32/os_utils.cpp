@@ -336,6 +336,14 @@ void getUniqueFileId(HANDLE fd, Firebird::UCharBuffer& id)
 }
 
 
+void protectMemory(void* addr, size_t size, bool readOnly)
+{
+	DWORD oldFlag;
+	const DWORD newFlag = readOnly ? PAGE_READONLY : PAGE_READWRITE;
+	if (!VirtualProtect(addr, size, newFlag, &oldFlag))
+		Firebird::system_call_failed::raise("VirtualProtect");
+}
+
 /// class CtrlCHandler
 
 bool CtrlCHandler::terminated = false;

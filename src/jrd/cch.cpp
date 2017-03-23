@@ -579,13 +579,14 @@ pag* CCH_fake(thread_db* tdbb, WIN* window, int wait)
 	// Here the page must not be dirty and have no backup lock owner
 	fb_assert((bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)) == 0);
 
-	bdb->bdb_flags &= BDB_lru_chained;	// yes, clear all except BDB_lru_chained
+	bdb->bdb_flags &= BDB_lru_chained | BDB_protected;	// yes, clear all except BDB_lru_chained and BDB_protected
 	bdb->bdb_flags |= (BDB_writer | BDB_faked);
 	bdb->bdb_scan_count = 0;
 
 	if (!(bcb->bcb_flags & BCB_exclusive))
 		lock_buffer(tdbb, bdb, LCK_WAIT, pag_undefined);
 
+	bdb->protect(false);
 	MOVE_CLEAR(bdb->bdb_buffer, (SLONG) dbb->dbb_page_size);
 	window->win_buffer = bdb->bdb_buffer;
 	window->win_bdb = bdb;
@@ -907,7 +908,7 @@ void CCH_forget_page(thread_db* tdbb, WIN* window)
 		dbb->dbb_flags &= ~DBB_suspend_bgio;
 
 	clear_dirty_flag_and_nbak_state(tdbb, bdb);
-	bdb->bdb_flags = 0;
+	bdb->bdb_flags &= BDB_protected;	// clear all except of BDB_protected
 	BufferControl* bcb = dbb->dbb_bcb;
 
 	removeDirty(bcb, bdb);
@@ -940,6 +941,8 @@ void CCH_fini(thread_db* tdbb)
 	if (!bcb)
 		return;
 
+	bcb->bcb_flags |= BCB_fini;
+
 	bcb_repeat* tail = bcb->bcb_rpt;
 	const bcb_repeat* const end = tail + bcb->bcb_count;
 
@@ -947,6 +950,7 @@ void CCH_fini(thread_db* tdbb)
 	{
 		if (tail->bcb_bdb)
 		{
+			tail->bcb_bdb->protect(false);
 			delete tail->bcb_bdb;
 			tail->bcb_bdb = NULL;
 		}
@@ -1252,6 +1256,7 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, ULONG page, int lock, SCHAR page_
 	if (bdb->bdb_writers == 1 && (bdb->bdb_flags & BDB_marked))
 	{
 		bdb->bdb_flags &= ~BDB_marked;
+		bdb->protect(true);
 		bdb->unLockIO(tdbb);
 	}
 
@@ -1478,7 +1483,10 @@ void CCH_mark(thread_db* tdbb, WIN* window, bool mark_system, bool must_write)
 	// This prevents a write while the page is being modified.
 
 	if (!(bdb->bdb_flags & BDB_marked))
+	{
 		bdb->lockIO(tdbb);
+		bdb->protect(false);
+	}
 
 	fb_assert(bdb->ourIOLock());
 
@@ -1829,7 +1837,10 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 		bdb->bdb_flags &= ~(BDB_writer | BDB_marked | BDB_faked);
 
 		if (marked)
+		{
+			bdb->protect(true);
 			bdb->unLockIO(tdbb);
+		}
 
 		if (mustWrite)
 		{
@@ -2150,6 +2161,7 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 			++bdb->bdb_use_count;
 			clear_dirty_flag_and_nbak_state(tdbb, bdb);
 			bdb->bdb_flags &= ~(BDB_writer | BDB_marked | BDB_faked | BDB_db_dirty);
+			bdb->protect(true);
 			PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
 			--bdb->bdb_use_count;
 		}
@@ -2384,6 +2396,9 @@ static BufferDesc* alloc_bdb(thread_db* tdbb, BufferControl* bcb, UCHAR** memory
 	*memory += bcb->bcb_page_size;
 
 	QUE_INSERT(bcb->bcb_empty, bdb->bdb_que);
+
+	// buffer memory is already protected after allocation
+	bdb->bdb_flags |= BDB_protected;
 
 	return bdb;
 }
@@ -3489,6 +3504,10 @@ static bool expand_buffers(thread_db* tdbb, ULONG number)
 			bcb->bcb_memory.push(memory);
 			memory = FB_ALIGN(memory, dbb->dbb_page_size);
 
+#ifdef CCH_PROTECT_BUFFERS
+			os_utils::protectMemory(memory, dbb->dbb_page_size * num_per_seg, true);
+#endif
+
 			num_in_seg = num_per_seg;
 			left_to_do -= num_per_seg;
 			if (num_per_seg > left_to_do)
@@ -3744,7 +3763,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 				BUGCHECK(301);	// msg 301 Non-zero use_count of a buffer in the empty que_inst
 
 			bdb->bdb_page = page;
-			bdb->bdb_flags = BDB_read_pending;	// we have buffer exclusively, this is safe
+			bdb->bdb_flags = BDB_read_pending | (bdb->bdb_flags & BDB_protected);	// we have buffer exclusively, this is safe
 			bdb->bdb_scan_count = 0;
 
 			if (page != FREE_PAGE)
@@ -3907,7 +3926,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 				BUGCHECK(301);	/* msg 301 Non-zero use_count of a buffer in the empty Que */
 
 			bdb->bdb_page = page;
-			bdb->bdb_flags &= BDB_lru_chained; // yes, clear all except BDB_lru_chained
+			bdb->bdb_flags &= BDB_lru_chained | BDB_protected; // yes, clear all except BDB_lru_chained and BDB_protected
 			bdb->bdb_flags |= BDB_read_pending;
 			bdb->bdb_scan_count = 0;
 
@@ -4221,6 +4240,10 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, SLONG number)
 			memory = FB_ALIGN(memory, page_size);
 			old_tail = tail;
 			old_buffers = buffers;
+
+#ifdef CCH_PROTECT_BUFFERS
+			os_utils::protectMemory(memory, dbb->dbb_page_size * number, true);
+#endif
 		}
 
 		QUE_INIT(tail->bcb_page_mod);
@@ -4817,7 +4840,11 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 		}
 	}
 
-	page->pag_generation++;
+	{
+		BufferDesc::Unprotect unprot(bdb);
+		page->pag_generation++;
+		page->pag_pageno = bdb->bdb_page.getPageNum();
+	}
 	bool result = true;
 
 	//if (!dbb->dbb_wal || write_thru) becomes
@@ -4835,7 +4862,6 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 		/// ASF: Always true: if (bdb->bdb_page.getPageNum() >= 0)
 		{
 			fb_assert(backup_state != Ods::hdr_nbak_unknown);
-			page->pag_pageno = bdb->bdb_page.getPageNum();
 
 #ifdef NBAK_DEBUG
 			// We cannot call normal trace functions here as they are signal-unsafe

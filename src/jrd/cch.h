@@ -30,6 +30,7 @@
 #include "../common/classes/semaphore.h"
 #include "../common/classes/SyncObject.h"
 #include "../common/ThreadStart.h"
+#include "../common/os/os_utils.h"
 #ifdef SUPERSERVER_V2
 #include "../jrd/sbm.h"
 #include "../jrd/pag.h"
@@ -48,6 +49,10 @@ DEFINE_TRACE_ROUTINE(cch_trace);
 #else
 #define CCH_TRACE(args) 		// nothing
 #define CCH_TRACEE_AST(message) // nothing
+#endif
+
+#ifdef DEBUG
+#define CCH_PROTECT_BUFFERS
 #endif
 
 namespace Ods {
@@ -74,6 +79,18 @@ const ULONG MAX_PAGE_BUFFERS = MAX_SLONG - 1;
 
 
 // BufferControl -- Buffer control block -- one per system
+
+const int BCB_keep_pages	= 1;	// set during btc_flush(), pages not removed from dirty binary tree
+const int BCB_cache_writer	= 2;	// cache writer thread has been started
+const int BCB_writer_start	= 4;    // cache writer thread is starting now
+const int BCB_writer_active	= 8;	// no need to post writer event count
+#ifdef SUPERSERVER_V2
+const int BCB_cache_reader	= 16;	// cache reader thread has been started
+const int BCB_reader_active	= 32;	// cache reader not blocked on event
+#endif
+const int BCB_free_pending	= 64;	// request cache writer to free pages
+const int BCB_exclusive		= 128;	// there is only BCB in whole system
+const int BCB_fini			= 256;	// BufferControl is destroying now
 
 struct bcb_repeat
 {
@@ -167,19 +184,37 @@ public:
 	bcb_repeat*	bcb_rpt;
 };
 
-const int BCB_keep_pages	= 1;	// set during btc_flush(), pages not removed from dirty binary tree
-const int BCB_cache_writer	= 2;	// cache writer thread has been started
-const int BCB_writer_start  = 4;    // cache writer thread is starting now
-const int BCB_writer_active	= 8;	// no need to post writer event count
-#ifdef SUPERSERVER_V2
-const int BCB_cache_reader	= 16;	// cache reader thread has been started
-const int BCB_reader_active	= 32;	// cache reader not blocked on event
-#endif
-const int BCB_free_pending	= 64;	// request cache writer to free pages
-const int BCB_exclusive		= 128;	// there is only BCB in whole system
-
 
 // BufferDesc -- Buffer descriptor block
+
+
+// bdb_flags
+
+// to set/clear BDB_dirty use set_dirty_flag()/clear_dirty_flag()
+// These constants should really be of type USHORT.
+const int BDB_dirty				= 0x0001;	// page has been updated but not written yet
+const int BDB_garbage_collect	= 0x0002;	// left by scan for garbage collector
+const int BDB_writer			= 0x0004;	// someone is updating the page
+const int BDB_marked			= 0x0008;	// page has been updated
+const int BDB_must_write		= 0x0010;	// forces a write as soon as the page is released
+const int BDB_faked				= 0x0020;	// page was just allocated
+//const int BDB_merge			= 0x0040;
+const int BDB_system_dirty		= 0x0080;	// system transaction has marked dirty
+const int BDB_io_error			= 0x0100;	// page i/o error
+const int BDB_read_pending		= 0x0200;	// read is pending
+const int BDB_free_pending		= 0x0400;	// buffer being freed for reuse
+const int BDB_not_valid			= 0x0800;	// i/o error invalidated buffer
+const int BDB_db_dirty			= 0x1000;	// page must be written to database
+//const int BDB_checkpoint		= 0x2000;	// page must be written by next checkpoint
+const int BDB_prefetch			= 0x4000;	// page has been prefetched but not yet referenced
+const int BDB_no_blocking_ast	= 0x8000;	// No blocking AST registered with page lock
+const int BDB_lru_chained		= 0x10000;	// buffer is in pending LRU chain
+const int BDB_nbak_state_lock	= 0x20000;	// nbak state lock should be released after buffer is written
+const int BDB_protected			= 0x40000;	// buffer memory is read-only
+
+// bdb_ast_flags
+
+const int BDB_blocking = 0x01;		// a blocking ast was sent while page locked
 
 class BufferDesc : public pool_alloc<type_bdb>
 {
@@ -230,6 +265,28 @@ public:
 		return bdb_syncIO.ourExclusiveLock();
 	}
 
+	void BufferDesc::protect(bool readOnly)
+	{
+#ifdef CCH_PROTECT_BUFFERS
+
+		fb_assert(bdb_bcb->bcb_flags & BCB_fini ||
+			bdb_flags & (BDB_faked | BDB_read_pending) ||
+			ourIOLock());
+
+		const bool isProtected = (bdb_flags & BDB_protected);
+		if (isProtected == readOnly)
+			return;
+
+		os_utils::protectMemory(bdb_buffer, bdb_bcb->bcb_page_size, readOnly);
+
+		if (readOnly)
+			bdb_flags |= BDB_protected;
+		else
+			bdb_flags &= ~BDB_protected;
+
+#endif // CCH_PROTECT_BUFFERS
+	}
+
 	BufferControl*	bdb_bcb;
 	Firebird::SyncObject	bdb_syncPage;
 	Lock*		bdb_lock;				// Lock block for buffer
@@ -260,34 +317,30 @@ public:
 	Firebird::AtomicCounter	bdb_scan_count;		// concurrent sequential scans
 	ULONG       bdb_difference_page;			// Number of page in difference file, NBAK
 	ULONG		bdb_prec_walk_mark;				// mark value used in precedence graph walk
+
+	class Unprotect
+	{
+	public:
+		Unprotect(BufferDesc* bdb) :
+			m_bdb(bdb),
+			m_saveProtected(m_bdb->bdb_flags & BDB_protected)
+		{
+			if (m_saveProtected)
+				m_bdb->protect(false);
+		}
+
+		~Unprotect()
+		{
+			if (m_saveProtected)
+				m_bdb->protect(true);
+		}
+
+	private:
+		BufferDesc* m_bdb;
+		const bool m_saveProtected;
+	};
 };
 
-// bdb_flags
-
-// to set/clear BDB_dirty use set_dirty_flag()/clear_dirty_flag()
-// These constants should really be of type USHORT.
-const int BDB_dirty				= 0x0001;	// page has been updated but not written yet
-const int BDB_garbage_collect	= 0x0002;	// left by scan for garbage collector
-const int BDB_writer			= 0x0004;	// someone is updating the page
-const int BDB_marked			= 0x0008;	// page has been updated
-const int BDB_must_write		= 0x0010;	// forces a write as soon as the page is released
-const int BDB_faked				= 0x0020;	// page was just allocated
-//const int BDB_merge			= 0x0040;
-const int BDB_system_dirty 		= 0x0080;	// system transaction has marked dirty
-const int BDB_io_error	 		= 0x0100;	// page i/o error
-const int BDB_read_pending 		= 0x0200;	// read is pending
-const int BDB_free_pending 		= 0x0400;	// buffer being freed for reuse
-const int BDB_not_valid			= 0x0800;	// i/o error invalidated buffer
-const int BDB_db_dirty 			= 0x1000;	// page must be written to database
-//const int BDB_checkpoint		= 0x2000;	// page must be written by next checkpoint
-const int BDB_prefetch			= 0x4000;	// page has been prefetched but not yet referenced
-const int BDB_no_blocking_ast	= 0x8000;	// No blocking AST registered with page lock
-const int BDB_lru_chained		= 0x10000;	// buffer is in pending LRU chain
-const int BDB_nbak_state_lock	= 0x20000;	// nbak state lock should be released after buffer is written
-
-// bdb_ast_flags
-
-const int BDB_blocking 			= 0x01;		// a blocking ast was sent while page locked
 
 
 // PRE -- Precedence block

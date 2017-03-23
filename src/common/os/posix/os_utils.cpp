@@ -330,6 +330,13 @@ void getUniqueFileId(const char* name, UCharBuffer& id)
 	makeUniqueFileId(statistics, id);
 }
 
+void protectMemory(void* addr, size_t size, bool readOnly)
+{
+	const int flag = readOnly ? PROT_READ : PROT_READ | PROT_WRITE;
+	if (mprotect(addr, size, flag) != 0)
+		Firebird::system_call_failed::raise("mprotect");
+}
+
 /// class CtrlCHandler
 
 bool CtrlCHandler::terminated = false;

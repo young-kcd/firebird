@@ -1141,17 +1141,21 @@ namespace Jrd {
 			if (sv->getState() & IStatus::STATE_ERRORS)
 				return FAILED_CRYPT;
 
-			to->pag_flags |= Ods::crypted_page;		// Mark page that is going to be written as encrypted
-			page->pag_flags |= Ods::crypted_page;	// Set the mark for page in cache as well
+			if (!(savedFlags & Ods::crypted_page))
+			{	// todo: unprotect
+				to->pag_flags |= Ods::crypted_page;		// Mark page that is going to be written as encrypted
+				page->pag_flags |= Ods::crypted_page;	// Set the mark for page in cache as well
+			}
 			dest = to;								// Choose correct destination
 		}
 		else
 		{
-			page->pag_flags &= ~Ods::crypted_page;
+			if (savedFlags & Ods::crypted_page)
+				page->pag_flags &= ~Ods::crypted_page;	// todo: unprotect
 		}
 
 		if (!io->callback(tdbb, sv, dest))
-		{
+		{	// todo: unprotect
 			page->pag_flags = savedFlags;
 			return FAILED_IO;
 		}

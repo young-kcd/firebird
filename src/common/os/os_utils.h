@@ -70,6 +70,8 @@ namespace os_utils
 	void getUniqueFileId(const char* name, Firebird::UCharBuffer& id);
 #endif
 
+	// set read-only or read-write memory protection
+	void protectMemory(void* addr, size_t size, bool readOnly);
 
 	class CtrlCHandler
 	{

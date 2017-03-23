@@ -620,6 +620,8 @@ bool PIO_read(thread_db* tdbb, jrd_file* file, BufferDesc* bdb, Ods::pag* page, 
 
 	HANDLE desc = file->fil_desc;
 
+	BufferDesc::Unprotect unprot(bdb);
+
 	DWORD actual_length;
 	if (!ReadFile(desc, page, size, &actual_length, overlapped_ptr) ||
 		actual_length != size)
