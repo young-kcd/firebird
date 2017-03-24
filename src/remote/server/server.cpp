@@ -1815,7 +1815,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 		protocol < end; protocol++)
 	{
 		if ((protocol->p_cnct_version >= PROTOCOL_VERSION10 &&
-			 protocol->p_cnct_version <= PROTOCOL_VERSION15) &&
+			 protocol->p_cnct_version <= PROTOCOL_VERSION16) &&
 			 (protocol->p_cnct_architecture == arch_generic ||
 			  protocol->p_cnct_architecture == ARCHITECTURE) &&
 			protocol->p_cnct_weight >= weight)
