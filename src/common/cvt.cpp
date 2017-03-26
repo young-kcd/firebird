@@ -2551,7 +2551,7 @@ Decimal128 CVT_get_dec128(const dsc* desc, DecimalStatus decSt, ErrorFunction er
 {
 /**************************************
  *
- *      C V T _ g e t _ d e c 6 4
+ *      C V T _ g e t _ d e c 1 2 8
  *
  **************************************
  *
