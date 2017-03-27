@@ -5287,7 +5287,7 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 	char* p = buffer;
 	char* bufferEnd = p + sizeof(buffer);
 	// Set limit of status vector size since old client 2.5 and below cannot correctly handle them
-	const FB_SIZE_T limit = port_protocol < PROTOCOL_VERSION14 ? 20 : 0;
+	const FB_SIZE_T limit = port_protocol < PROTOCOL_VERSION13 ? ISC_STATUS_LENGTH : 0;
 
 	for (bool sw = true; *old_vector && sw;)
 	{
