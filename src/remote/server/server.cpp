@@ -5289,6 +5289,8 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 	char buffer[1024];
 	char* p = buffer;
 	char* bufferEnd = p + sizeof(buffer);
+	// Set limit of status vector size since old client 2.5 and below cannot correctly handle them
+	const FB_SIZE_T limit = port_protocol < PROTOCOL_VERSION14 ? 20 : 0;
 
 	for (bool sw = true; *old_vector && sw;)
 	{
@@ -5296,6 +5298,8 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 		{
 		case isc_arg_warning:
 		case isc_arg_gds:
+			if (limit && new_vector.getCount() > limit - 3) // 2 for numbers and 1 reserved for isc_arg_end
+				break;
 			new_vector.push(*old_vector++);
 
 			// The status codes are converted to their offsets so that they
@@ -5312,11 +5316,15 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 				switch (*old_vector)
 				{
 				case isc_arg_cstring:
+					if (limit && new_vector.getCount() > limit - 4)
+						break;
 					new_vector.push(*old_vector++);
 					// fall through ...
 
 				case isc_arg_string:
 				case isc_arg_number:
+					if (limit && new_vector.getCount() > limit - 3)
+						break;
 					new_vector.push(*old_vector++);
 					new_vector.push(*old_vector++);
 					continue;
@@ -5327,11 +5335,15 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 
 		case isc_arg_interpreted:
 		case isc_arg_sql_state:
+			if (limit && new_vector.getCount() > limit - 3)
+				break;
 			new_vector.push(*old_vector++);
 			new_vector.push(*old_vector++);
 			continue;
 		}
 
+		if (limit && new_vector.getCount() > limit - 3)
+			break;
 		const int l = (p < bufferEnd) ? fb_interpret(p, bufferEnd - p, &old_vector) : 0;
 		if (l == 0)
 			break;
