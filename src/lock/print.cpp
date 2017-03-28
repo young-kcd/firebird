@@ -1232,8 +1232,7 @@ static void prt_lock(OUTFILE outfile, const lhb* LOCK_header, const lbl* lock, U
 			"\tSeries: %d, State: %d, Size: %d, Length: %d, Data: %" SQUADFORMAT"\n",
 			lock->lbl_series, lock->lbl_state, lock->lbl_size, lock->lbl_length, lock->lbl_data);
 
-	if ((lock->lbl_series == Jrd::LCK_bdb ||
-		lock->lbl_series == Jrd::LCK_btr_dont_gc) &&
+	if ((lock->lbl_series == Jrd::LCK_bdb || lock->lbl_series == Jrd::LCK_btr_dont_gc) &&
 		lock->lbl_length == Jrd::PageNumber::getLockLen())
 	{
 		// Since fb 2.1 lock keys for page numbers (series == 3) contains
@@ -1250,8 +1249,7 @@ static void prt_lock(OUTFILE outfile, const lhb* LOCK_header, const lbl* lock, U
 
 		FPRINTF(outfile, "\tKey: %04" ULONGFORMAT":%06" ULONGFORMAT",", pg_space, pageno);
 	}
-	else if ((lock->lbl_series == Jrd::LCK_relation ||
-		lock->lbl_series == Jrd::LCK_rel_gc) &&
+	else if ((lock->lbl_series == Jrd::LCK_relation || lock->lbl_series == Jrd::LCK_rel_gc) &&
 		lock->lbl_length == sizeof(ULONG) + sizeof(SINT64)) // Jrd::jrd_rel::getRelLockKeyLength()
 	{
 		const UCHAR* q = lock->lbl_key;
@@ -1266,11 +1264,11 @@ static void prt_lock(OUTFILE outfile, const lhb* LOCK_header, const lbl* lock, U
 		FPRINTF(outfile, "\tKey: %04" ULONGFORMAT":%09" SQUADFORMAT",", rel_id, instance_id);
 	}
 	else if ((lock->lbl_series == Jrd::LCK_tra ||
-		lock->lbl_series == Jrd::LCK_tra_pc ||
-		lock->lbl_series == Jrd::LCK_attachment ||
-		lock->lbl_series == Jrd::LCK_monitor ||
-		lock->lbl_series == Jrd::LCK_cancel) &&
-		lock->lbl_length == sizeof(SINT64))
+			  lock->lbl_series == Jrd::LCK_tra_pc ||
+			  lock->lbl_series == Jrd::LCK_attachment ||
+			  lock->lbl_series == Jrd::LCK_monitor ||
+			  lock->lbl_series == Jrd::LCK_cancel) &&
+			 lock->lbl_length == sizeof(SINT64))
 	{
 		SINT64 key;
 		memcpy(&key, lock->lbl_key, lock->lbl_length);
@@ -1288,8 +1286,7 @@ static void prt_lock(OUTFILE outfile, const lhb* LOCK_header, const lbl* lock, U
 
 		FPRINTF(outfile, "\tKey: %06" ULONGFORMAT":%04" ULONGFORMAT",", pageno, line);
 	}
-	else if ((lock->lbl_series == Jrd::LCK_idx_exist ||
-		lock->lbl_series == Jrd::LCK_expression) &&
+	else if ((lock->lbl_series == Jrd::LCK_idx_exist || lock->lbl_series == Jrd::LCK_expression) &&
 		lock->lbl_length == sizeof(SLONG))
 	{
 		SLONG key;

@@ -418,7 +418,8 @@ public:
 
 private:
 	NestConst<MessageNode> in_msg;
-/*
+
+	/***
 	dimitr: Referencing procedures via a pointer is not currently reliable, because
 			procedures can be removed from the metadata cache after ALTER/DROP.
 			Usually, this is prevented via the reference counting, but it's incremented
@@ -434,7 +435,7 @@ private:
 			metadata objects since the parsing stage till either request creation or
 			explicit unload from the metadata cache. But we don't have clearly established
 			cache management policies yet, so I leave it for the other day.
-*/
+	***/
 	jrd_prc* procedure;
 	bool isSubRoutine;
 	USHORT procedureId;

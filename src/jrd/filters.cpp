@@ -302,7 +302,7 @@ ISC_STATUS filter_format(USHORT action, BlobControl* control)
 	if (action != isc_blob_filter_open)
 		return string_filter(action, control);
 
-	//                           1         2         3         4         5         6    
+	//                           1         2         3         4         5         6
 	//                  12345678901234567890123456789012345678901234567890123456789012345678
 	const char* head1 = " id offset type           length sub_type flags";	// descriptors
 	const char* sep1  = "--- ------ -------------- ------ -------- -----";
@@ -358,7 +358,7 @@ ISC_STATUS filter_format(USHORT action, BlobControl* control)
 		string_put(control, str.c_str());
 	}
 
-	// read number of default values 
+	// read number of default values
 	num = 0;
 	status = caller(isc_blob_filter_get_segment, control,
 		sizeof(USHORT), reinterpret_cast<UCHAR*>(&num), &length);

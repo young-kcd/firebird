@@ -54,6 +54,7 @@ void	MOV_move(Jrd::thread_db*, /*const*/ dsc*, dsc*);
 
 namespace Jrd
 {
+
 class DescPrinter
 {
 public:
@@ -69,6 +70,6 @@ private:
 	int maxLen;
 };
 
-}; // namespace Jrd
+}	// namespace Jrd
 
 #endif // JRD_MOV_PROTO_H

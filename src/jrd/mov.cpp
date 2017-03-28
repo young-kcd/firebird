@@ -416,8 +416,8 @@ void MOV_move(Jrd::thread_db* tdbb, /*const*/ dsc* from, dsc* to)
 namespace Jrd
 {
 
-DescPrinter::DescPrinter(thread_db* tdbb, const dsc* desc, int mLen) :
-  maxLen(mLen)
+DescPrinter::DescPrinter(thread_db* tdbb, const dsc* desc, int mLen)
+	: maxLen(mLen)
 {
 	const char* const NULL_KEY_STRING = "NULL";
 
@@ -431,7 +431,7 @@ DescPrinter::DescPrinter(thread_db* tdbb, const dsc* desc, int mLen) :
 
 	value = MOV_make_string2(tdbb, desc, ttype_dynamic);
 
-	const int len = (int)value.length();
+	const int len = (int) value.length();
 	const char* const str = value.c_str();
 
 	if (desc->isText() || desc->isDateTime())
@@ -446,17 +446,17 @@ DescPrinter::DescPrinter(thread_db* tdbb, const dsc* desc, int mLen) :
 		{
 			Firebird::string hex;
 			char* s = hex.getBuffer(2 * len);
+
 			for (int i = 0; i < len; i++)
 			{
-				sprintf(s, "%02X", (int)(unsigned char)str[i]);
+				sprintf(s, "%02X", (int)(unsigned char) str[i]);
 				s += 2;
 			}
+
 			value = "x'" + hex + "'";
 		}
 		else
-		{
 			value = "'" + value + "'";
-		}
 	}
 
 	if (value.length() > maxLen)
@@ -467,11 +467,11 @@ DescPrinter::DescPrinter(thread_db* tdbb, const dsc* desc, int mLen) :
 
 		const CharSet* const cs = INTL_charset_lookup(tdbb, desc->getCharSet());
 
-		while (value.hasData() && !cs->wellFormed(value.length(), (const UCHAR*)value.c_str()))
+		while (value.hasData() && !cs->wellFormed(value.length(), (const UCHAR*) value.c_str()))
 			value.resize(value.length() - 1);
 
 		value += "...";
 	}
 }
 
-}; // namespace Jrd
+}	// namespace Jrd
