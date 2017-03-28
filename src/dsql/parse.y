@@ -333,6 +333,7 @@ using namespace Firebird;
 %token <metaNamePtr> WRITE
 
 %token <stringPtr> FLOAT_NUMBER
+%token <stringPtr> DECIMAL_NUMBER
 %token <metaNamePtr> SYMBOL
 %token <int32Val> NUMBER
 
@@ -7079,6 +7080,8 @@ u_numeric_constant
 		{ $$ = MAKE_const_slong($1); }
 	| FLOAT_NUMBER
 		{ $$ = MAKE_constant($1->c_str(), CONSTANT_DOUBLE); }
+	| DECIMAL_NUMBER
+		{ $$ = MAKE_constant($1->c_str(), CONSTANT_DECIMAL); }
 	| NUMBER64BIT
 		{
 			SINT64 signedNumber = (SINT64) $1.number;

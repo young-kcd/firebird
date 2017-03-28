@@ -1124,7 +1124,7 @@ bool CVT_get_boolean(const dsc* desc, ErrorFunction err)
 }
 
 
-double CVT_get_double(const dsc* desc, DecimalStatus decSt, ErrorFunction err)
+double CVT_get_double(const dsc* desc, DecimalStatus decSt, ErrorFunction err, bool* getNumericOverflow)
 {
 /**************************************
  *
@@ -1271,7 +1271,14 @@ double CVT_get_double(const dsc* desc, DecimalStatus decSt, ErrorFunction err)
 						// later in this routine.
 
 						if (exp >= SHORT_LIMIT)
+						{
+							if (getNumericOverflow)
+							{
+								*getNumericOverflow = true;
+								return 0;
+							}
 							err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+						}
 					}
 					else if (*p == '-' && !digit_seen && !sign)
 						sign = -1;
@@ -1304,8 +1311,14 @@ double CVT_get_double(const dsc* desc, DecimalStatus decSt, ErrorFunction err)
 			// the user know...
 
 			if (ABSOLUT(scale) > DBL_MAX_10_EXP)
+			{
+				if (getNumericOverflow)
+				{
+					*getNumericOverflow = true;
+					return 0;
+				}
 				err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-
+			}
 
 			//  Repeated division is a good way to mung the least significant bits
 			//  of your value, so we have replaced this iterative multiplication/division
@@ -1320,7 +1333,14 @@ double CVT_get_double(const dsc* desc, DecimalStatus decSt, ErrorFunction err)
 				value *= CVT_power_of_ten(-scale);
 
 			if (isinf(value))
+			{
+				if (getNumericOverflow)
+				{
+					*getNumericOverflow = true;
+					return 0;
+				}
 				err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+			}
 		}
 		return value;
 
@@ -2054,6 +2074,41 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 }
 
 
+void CVT_make_null_string(const dsc*    desc,
+						  USHORT        to_interp,
+						  const char**  address,
+						  vary*         temp,
+						  USHORT        length,
+						  DecimalStatus decSt,
+						  ErrorFunction err)
+{
+/**************************************
+ *
+ *      C V T _ m a k e _ n u l l _ s t r i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *     Convert the data from the desc to a zero-terminated string.
+ *     The pointer to this string is returned in address.
+ *	   Data always placed to temp buffer.
+ *
+ **************************************/
+	fb_assert(temp);
+
+	USHORT len = CVT_make_string(desc, to_interp, address, temp, --length, decSt, err);
+	if (*address != temp->vary_string)
+	{
+		if (len > length)
+			len = length;
+		memcpy(temp->vary_string, *address, len);
+		temp->vary_length = len;
+	}
+	fb_assert(temp->vary_length == len);
+	temp->vary_string[len] = 0;
+}
+
+
 USHORT CVT_make_string(const dsc*    desc,
 					   USHORT        to_interp,
 					   const char**  address,
@@ -2503,8 +2558,7 @@ Decimal64 CVT_get_dec64(const dsc* desc, DecimalStatus decSt, ErrorFunction err)
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
-			CVT_make_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer) - 1, decSt, err);
-			buffer.vary_string[buffer.vary_length] = 0;
+			CVT_make_null_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer) - 1, decSt, err);
 			return d64.set(buffer.vary_string, decSt);
 
 		case dtype_blob:
@@ -2588,8 +2642,7 @@ Decimal128 CVT_get_dec128(const dsc* desc, DecimalStatus decSt, ErrorFunction er
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
-			CVT_make_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer) - 1, decSt, err);
-			buffer.vary_string[buffer.vary_length] = 0;
+			CVT_make_null_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer) - 1, decSt, err);
 			return d128.set(buffer.vary_string, decSt);
 
 		case dtype_blob:

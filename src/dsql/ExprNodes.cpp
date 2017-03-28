@@ -6749,11 +6749,14 @@ DmlNode* LiteralNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 	PAR_desc(tdbb, csb, &node->litDesc);
 
-	UCHAR* p = FB_NEW_POOL(csb->csb_pool) UCHAR[node->litDesc.dsc_length];
+	USHORT l = node->litDesc.dsc_length;
+	USHORT dataLen = l;
+	if (node->litDesc.dsc_dtype == dtype_double && dataLen < sizeof(Decimal128))
+		dataLen = sizeof(Decimal128);
+	UCHAR* p = FB_NEW_POOL(csb->csb_pool) UCHAR[dataLen];
 	node->litDesc.dsc_address = p;
 	node->litDesc.dsc_flags = 0;
 	const UCHAR* q = csb->csb_blr_reader.getPos();
-	USHORT l = node->litDesc.dsc_length;
 
 	switch (node->litDesc.dsc_dtype)
 	{
@@ -6783,6 +6786,7 @@ DmlNode* LiteralNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 			break;
 
 		case dtype_double:
+		case dtype_dec128:
 		{
 			SSHORT scale;
 			UCHAR dtype;
@@ -6793,13 +6797,16 @@ DmlNode* LiteralNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 			l = csb->csb_blr_reader.getWord();
 			q = csb->csb_blr_reader.getPos();
-			dtype = CVT_get_numeric(q, l, &scale, (double*) p);			// use decfloat to pass literal ???
+			dtype = CVT_get_numeric(q, l, &scale, p);			// use decfloat to pass literal ???
 			node->litDesc.dsc_dtype = dtype;
 
 			switch (dtype)
 			{
 				case dtype_double:
 					node->litDesc.dsc_length = sizeof(double);
+					break;
+				case dtype_dec128:
+					node->litDesc.dsc_length = sizeof(Decimal128);
 					break;
 				case dtype_long:
 					node->litDesc.dsc_length = sizeof(SLONG);
@@ -6868,6 +6875,7 @@ void LiteralNode::genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc,
 			break;
 
 		case dtype_double:
+		case dtype_dec128:
 		{
 			// this is used for approximate/large numeric literal
 			// which is transmitted to the engine as a string.

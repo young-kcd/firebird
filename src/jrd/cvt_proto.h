@@ -30,7 +30,7 @@
 
 double		CVT_date_to_double(const dsc*);
 void		CVT_double_to_date(double, SLONG[2]);
-UCHAR		CVT_get_numeric(const UCHAR*, const USHORT, SSHORT*, double*);
+UCHAR		CVT_get_numeric(const UCHAR*, const USHORT, SSHORT*, void*);
 GDS_DATE	CVT_get_sql_date(const dsc*);
 GDS_TIME	CVT_get_sql_time(const dsc*);
 GDS_TIMESTAMP CVT_get_timestamp(const dsc*);
