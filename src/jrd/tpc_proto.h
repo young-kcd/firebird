@@ -249,8 +249,8 @@ private:
 	SnapshotsInitializer snapshotsInitializer;
 	MemBlockInitializer memBlockInitializer;
 
-    // Cache contents (points to array of pointers). 
-	// Reads use barriers. Writes to contents are protected with m_sync_status.
+	// Tree with TIP cache memory blocks
+	// Reads and writes to the tree are protected with m_sync_status.
 	BlocksMemoryMap m_blocks_memory;
 
 	Firebird::SyncObject m_sync_status;
