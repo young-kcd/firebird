@@ -110,7 +110,7 @@ bool TipCache::MemBlockInitializer::initialize(Firebird::SharedMemoryBase* sm, b
 TipCache::TipCache(Database* dbb)
 	: m_dbb(dbb), m_tpcHeader(NULL), m_snapshots(NULL), m_blockSize(0), m_transactionsPerBlock(0), 
 	globalTpcInitializer(this), snapshotsInitializer(this), memBlockInitializer(this),
-	m_status_blocks(NULL), m_blocks_memory(*dbb->dbb_permanent)
+	m_blocks_memory(*dbb->dbb_permanent)
 {
 }
 
@@ -118,7 +118,6 @@ TipCache::~TipCache()
 {
 	// Make sure that object is finalized before being deleted
 	fb_assert(!m_blocks_memory.getFirst());
-	fb_assert(!m_status_blocks);
 	fb_assert(!m_snapshots);
 	fb_assert(!m_tpcHeader);
 	fb_assert(m_transactionsPerBlock == 0);
@@ -136,9 +135,6 @@ void TipCache::finalizeTpc(thread_db* tdbb)
 			StatusBlockData* cur = m_blocks_memory.current();
 			delete cur;
 		} while (m_blocks_memory.getNext());
-
-	delete[] m_status_blocks;
-	m_status_blocks = NULL;
 
 	if (m_snapshots)
 	{
@@ -201,12 +197,6 @@ void TipCache::initializeTpc(thread_db *tdbb)
 
 	m_transactionsPerBlock = 
 		static_cast<ULONG>((m_blockSize - offsetof(TransactionStatusBlock, data[0])) / sizeof(CommitNumber));
-
-	int blockCount = MAX_SLONG / m_transactionsPerBlock + 1; // hvlad: MAX_SLONG ?
-
-	PTransactionStatusBlock* status_blocks = FB_NEW_POOL(*m_dbb->dbb_permanent) PTransactionStatusBlock[blockCount];
-	memset(status_blocks, 0, sizeof(PTransactionStatusBlock) * blockCount);
-	m_status_blocks = status_blocks;
 
 	string fileName;
 
@@ -374,21 +364,28 @@ TipCache::TransactionStatusBlock* TipCache::createTransactionStatusBlock(int blo
 
 TipCache::TransactionStatusBlock* TipCache::getTransactionStatusBlock(int blockNumber) 
 {
-	// This is a double-checked locking pattern with barriers
-	TransactionStatusBlock* block = ((std::atomic<TransactionStatusBlock*>*) (m_status_blocks + blockNumber))->load(std::memory_order_acquire);
+	// This is a double-checked locking pattern. SyncLockGuard uses atomic ops internally and should be cheap
+	TransactionStatusBlock* block = NULL;
+	{
+		SyncLockGuard sync(&m_sync_status, SYNC_SHARED, "TipCache::getTransactionStatusBlock");
+		BlocksMemoryMap::ConstAccessor acc(&m_blocks_memory);
+		if (acc.locate(blockNumber))
+			block = acc.current()->memory->getHeader();
+	}
 
-	if (!block) 
+	if (!block)
 	{
 		SyncLockGuard sync(&m_sync_status, SYNC_EXCLUSIVE, "TipCache::getTransactionStatusBlock");
-		block = m_status_blocks[blockNumber];
-		if (!block)
+		BlocksMemoryMap::ConstAccessor acc(&m_blocks_memory);
+		if (acc.locate(blockNumber))
+			block = acc.current()->memory->getHeader();
+		else
 		{
 			// Check if block might be too old to be created.
 			TraNumber oldest = m_tpcHeader->getHeader()->oldest_transaction.load(std::memory_order_relaxed);
 			if (blockNumber >= static_cast<int>(oldest / m_transactionsPerBlock)) 
 			{
 				block = createTransactionStatusBlock(blockNumber);
-				((std::atomic<TransactionStatusBlock*>*)(m_status_blocks + blockNumber))->store(block, std::memory_order_release);
 			}
 		}
 	}
@@ -624,8 +621,6 @@ void TipCache::releaseSharedMemory(thread_db *tdbb, TraNumber oldest_old, TraNum
 
 		if (m_blocks_memory.locate(blockNumber))
 		{
-			((std::atomic<TransactionStatusBlock*>*)(m_status_blocks + blockNumber))->store(NULL, std::memory_order_release);
-
 			StatusBlockData* cur = m_blocks_memory.current();
 			m_blocks_memory.fastRemove();
 

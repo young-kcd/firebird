@@ -251,7 +251,6 @@ private:
 
     // Cache contents (points to array of pointers). 
 	// Reads use barriers. Writes to contents are protected with m_sync_status.
-	volatile PTransactionStatusBlock* m_status_blocks; // final
 	BlocksMemoryMap m_blocks_memory;
 
 	Firebird::SyncObject m_sync_status;
