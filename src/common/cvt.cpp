@@ -2655,6 +2655,12 @@ Decimal128 CVT_get_dec128(const dsc* desc, DecimalStatus decSt, ErrorFunction er
 			CVT_conversion_error(desc, err);
 			break;
 
+		case dtype_real:
+			return d128.set(*((float*) p), decSt);
+
+		case dtype_double:
+			return d128.set(*((double*) p), decSt);
+
 		case dtype_dec64:
 			return (d128 = (*(Decimal64*) p));			// cast to higher precision never cause rounding/traps
 
