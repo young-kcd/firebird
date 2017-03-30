@@ -159,6 +159,9 @@ private:
 		std::atomic<TraNumber> latest_transaction_id;
 		std::atomic<AttNumber> latest_attachment_id;
 		std::atomic<StmtNumber> latest_statement_id;
+
+		// Size of memory chunk with TransactionStatusBlock
+		ULONG tpc_block_size; // final
 	};
 
 	struct SnapshotData 
@@ -242,7 +245,6 @@ private:
 	Database* m_dbb; // final
 	Firebird::SharedMemory<GlobalTpcHeader>* m_tpcHeader; // final
 	Firebird::SharedMemory<SnapshotList>* m_snapshots; // final
-	ULONG m_blockSize; // final
 	ULONG m_transactionsPerBlock; // final. When set, we assume TPC has been initialized.
 
 	GlobalTpcInitializer globalTpcInitializer;
@@ -254,6 +256,8 @@ private:
 	BlocksMemoryMap m_blocks_memory;
 
 	Firebird::SyncObject m_sync_status;
+
+	void initTransactionsPerBlock();
 
 	// Returns block holding transaction state.
 	// Returns NULL if requested block is too old and is no longer cached.
