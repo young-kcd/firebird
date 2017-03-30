@@ -159,9 +159,9 @@ public:
 	// our list of snapshots. It means GC is not possible for this version.
 	CommitNumber getSnapshotForVersion(CommitNumber version_cn);
 private:
-	UInt32Bitmap m_snapshots; // List of active snapshots as of the moment of time
-	CommitNumber m_lastCommit; // CN_ACTIVE here means object is not populated
-	ULONG m_releaseCount; // Release event counter when list was last updated
+	UInt32Bitmap m_snapshots;		// List of active snapshots as of the moment of time
+	CommitNumber m_lastCommit;		// CN_ACTIVE here means object is not populated
+	ULONG m_releaseCount;			// Release event counter when list was last updated
 	friend class TipCache;
 };
 
