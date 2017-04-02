@@ -485,6 +485,7 @@ public:
 	Firebird::MetaName	fld_security_name;	// security class name for field
 	Firebird::MetaName	fld_generator_name;	// identity generator name
 	Firebird::MetaNamePair	fld_source_rel_field;	// Relation/field source name
+	Nullable<IdentityType> fld_identity_type;
 
 public:
 	explicit jrd_fld(MemoryPool& p)

@@ -439,6 +439,11 @@ interface Statement : ReferenceCounted
 	void setCursorName(Status status, const string name);
 	void free(Status status);
 	uint getFlags(Status status);
+
+version:	// 3.0 => 4.0
+	// Statement execution timeout, milliseconds
+	uint getTimeout(Status status);
+	void setTimeout(Status status, uint timeOut);
 }
 
 interface Request : ReferenceCounted
@@ -516,6 +521,15 @@ interface Attachment : ReferenceCounted
 	void ping(Status status);
 	void detach(Status status);
 	void dropDatabase(Status status);
+
+version:	// 3.0 => 4.0
+	// Idle attachment timeout, seconds
+	uint getIdleTimeout(Status status);
+	void setIdleTimeout(Status status, uint timeOut);
+
+	// Statement execution timeout, milliseconds
+	uint getStatementTimeout(Status status);
+	void setStatementTimeout(Status status, uint timeOut);
 }
 
 interface Service : ReferenceCounted
@@ -599,6 +613,7 @@ interface Server : Auth
 {
 	[notImplemented(Auth::AUTH_FAILED)]
 	int authenticate(Status status, ServerBlock sBlock, Writer writerInterface);
+
 version:		// 3.0.1 => 4.0
 	void setDbCryptCallback(Status status, CryptKeyCallback cryptCallback);
 }

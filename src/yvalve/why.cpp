@@ -1192,24 +1192,27 @@ namespace Why
 
 		explicit IscStatement(YAttachment* aAttachment)
 			: cursorName(getPool()),
-			attachment(aAttachment),
-			statement(NULL),
-			userHandle(NULL),
-			pseudoOpened(false),
-			delayedFormat(false)
+			  attachment(aAttachment),
+			  statement(NULL),
+			  userHandle(NULL),
+			  pseudoOpened(false),
+			  delayedFormat(false)
 		{ }
 
 		~IscStatement() override;
 
 		FB_API_HANDLE& getHandle();
 		void destroy(unsigned);
+
 		void openCursor(CheckStatusWrapper* status, FB_API_HANDLE* traHandle,
 			IMessageMetadata* inMetadata, UCHAR* buffer, IMessageMetadata* outMetadata);
+
 		void closeCursor(CheckStatusWrapper* status, bool raise);
 		void closeStatement(CheckStatusWrapper* status);
 
 		void execute(CheckStatusWrapper* status, FB_API_HANDLE* traHandle,
 			IMessageMetadata* inMetadata, UCHAR* inBuffer, IMessageMetadata* outMetadata, UCHAR* outBuffer);
+
 		FB_BOOLEAN fetch(CheckStatusWrapper* status, IMessageMetadata* outMetadata, UCHAR* outBuffer);
 
 		void checkPrepared(ISC_STATUS code = isc_unprepared_stmt) const
@@ -2651,6 +2654,29 @@ ISC_STATUS API_ROUTINE isc_dsql_set_cursor_name(ISC_STATUS* userStatus, FB_API_H
 		statement->cursorName = cursorName;
 		if (statement->statement)
 			statement->statement->setCursorName(&statusWrapper, cursorName);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(&statusWrapper);
+	}
+
+	return status[1];
+}
+
+
+// Set statement timeout.
+ISC_STATUS API_ROUTINE fb_dsql_set_timeout(ISC_STATUS* userStatus, FB_API_HANDLE* stmtHandle,
+	ULONG timeout)
+{
+	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
+
+	try
+	{
+		RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
+
+		if (statement->statement)
+			statement->statement->setTimeout(&statusWrapper, timeout);
 	}
 	catch (const Exception& e)
 	{
@@ -4352,6 +4378,7 @@ IscStatement::~IscStatement()
 		*userHandle = 0;
 		userHandle = nullptr;
 	}
+
 	removeHandle(&statements, handle);
 }
 
@@ -4446,8 +4473,7 @@ void IscStatement::execute(CheckStatusWrapper* status, FB_API_HANDLE* traHandle,
 	}
 }
 
-FB_BOOLEAN IscStatement::fetch(CheckStatusWrapper* status, IMessageMetadata* outMetadata,
-	UCHAR* outBuffer)
+FB_BOOLEAN IscStatement::fetch(CheckStatusWrapper* status, IMessageMetadata* outMetadata, UCHAR* outBuffer)
 {
 	checkCursorOpened();
 
@@ -4463,6 +4489,36 @@ FB_BOOLEAN IscStatement::fetch(CheckStatusWrapper* status, IMessageMetadata* out
 
 	return statement->cursor->fetchNext(status, outBuffer) == IStatus::RESULT_OK;
 }
+
+unsigned int YStatement::getTimeout(CheckStatusWrapper* status)
+{
+	try
+	{
+		YEntry<YStatement> entry(status, this);
+		return entry.next()->getTimeout(status);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return 0;
+}
+
+
+void YStatement::setTimeout(CheckStatusWrapper* status, unsigned int timeOut)
+{
+	try
+	{
+		YEntry<YStatement> entry(status, this);
+		entry.next()->setTimeout(status, timeOut);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+}
+
 
 //-------------------------------------
 
@@ -5536,6 +5592,66 @@ void YAttachment::getNextTransaction(CheckStatusWrapper* status, ITransaction* t
 	next = getTransaction(status, tra)->next;
 	if (!next.hasData())
 		Arg::Gds(isc_bad_trans_handle).raise();
+}
+
+
+unsigned int YAttachment::getIdleTimeout(CheckStatusWrapper* status)
+{
+	try
+	{
+		YEntry<YAttachment> entry(status, this);
+		return entry.next()->getIdleTimeout(status);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return 0;
+}
+
+
+void YAttachment::setIdleTimeout(CheckStatusWrapper* status, unsigned int timeOut)
+{
+	try
+	{
+		YEntry<YAttachment> entry(status, this);
+		entry.next()->setIdleTimeout(status, timeOut);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+}
+
+
+unsigned int YAttachment::getStatementTimeout(CheckStatusWrapper* status)
+{
+	try
+	{
+		YEntry<YAttachment> entry(status, this);
+		return entry.next()->getStatementTimeout(status);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return 0;
+}
+
+
+void YAttachment::setStatementTimeout(CheckStatusWrapper* status, unsigned int timeOut)
+{
+	try
+	{
+		YEntry<YAttachment> entry(status, this);
+		entry.next()->setStatementTimeout(status, timeOut);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
 }
 
 

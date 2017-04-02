@@ -849,6 +849,11 @@ void Statement::prepare(thread_db* tdbb, Transaction* tran, const string& sql, b
 	m_preparedByReq = m_callerPrivileges ? tdbb->getRequest() : NULL;
 }
 
+void Statement::setTimeout(thread_db* tdbb, unsigned int timeout)
+{
+	doSetTimeout(tdbb, timeout);
+}
+
 void Statement::execute(thread_db* tdbb, Transaction* tran,
 	const MetaName* const* in_names, const ValueListNode* in_params,
 	const ValueListNode* out_params)

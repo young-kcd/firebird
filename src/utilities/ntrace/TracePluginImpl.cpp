@@ -166,7 +166,7 @@ TracePluginImpl::TracePluginImpl(IPluginBase* plugin,
 		}
 	}
 
-	// parse filters for gds error codes 
+	// parse filters for gds error codes
 	if (!config.include_gds_codes.isEmpty())
 		str2Array(config.include_gds_codes, include_codes);
 
@@ -515,7 +515,8 @@ void TracePluginImpl::appendTableCounts(const PerformanceInfo *info)
 		FB_SIZE_T len = fb_strlen(trc->trc_relation_name);
 		if (max_len < len)
 			max_len = len;
-	};
+	}
+
 	if (max_len < 32)
 		max_len = 32;
 
@@ -573,9 +574,11 @@ void TracePluginImpl::formatStringArgument(string& result, const UCHAR* str, siz
 bool TracePluginImpl::filterStatus(const ISC_STATUS* status, GdsCodesArray& arr)
 {
 	FB_SIZE_T pos;
+
 	while (*status != isc_arg_end)
 	{
 		const ISC_STATUS s = *status;
+
 		switch (s)
 		{
 		case isc_arg_gds:
@@ -629,7 +632,7 @@ private:
 	GenericMap<Pair<NonPooled<const char*, ISC_STATUS> >, NocaseCmp > m_map;
 };
 
-}; // namespace
+}	// namespace
 
 static InitInstance<GdsName2CodeMap> gdsNamesMap;
 
@@ -652,11 +655,13 @@ void TracePluginImpl::str2Array(const Firebird::string& str, GdsCodesArray& arr)
 		ISC_STATUS code = atol(s.c_str());
 
 		if (!code && !gdsNamesMap().find(s.c_str(), code))
+		{
 			fatal_exception::raiseFmt(
 				"Error parsing error codes filter: \n"
 				"\t%s\n"
 				"\tbad item is: %s, at position: %d",
 				str.c_str(), s.c_str(), p1 + 1);
+		}
 
 		// avoid duplicates
 
@@ -1069,7 +1074,8 @@ void TracePluginImpl::log_init()
 {
 	if (config.log_initfini)
 	{
-		record.printf("\tSESSION_%d %s" NEWLINE "\t%s" NEWLINE, session_id, session_name.c_str(), config.db_filename.c_str());
+		record.printf("\tSESSION_%d %s" NEWLINE "\t%s" NEWLINE,
+			session_id, session_name.c_str(), config.db_filename.c_str());
 		logRecord("TRACE_INIT");
 	}
 }
@@ -1078,7 +1084,8 @@ void TracePluginImpl::log_finalize()
 {
 	if (config.log_initfini)
 	{
-		record.printf("\tSESSION_%d %s" NEWLINE "\t%s" NEWLINE, session_id, session_name.c_str(), config.db_filename.c_str());
+		record.printf("\tSESSION_%d %s" NEWLINE "\t%s" NEWLINE,
+			session_id, session_name.c_str(), config.db_filename.c_str());
 		logRecord("TRACE_FINI");
 	}
 

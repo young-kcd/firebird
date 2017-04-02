@@ -453,6 +453,7 @@ public:
 		ExplainPlan = false;
 		Heading = true;
 		BailOnError = false;
+		StmtTimeout = 0;
 		ISQL_charset[0] = 0;
 	}
 
@@ -473,6 +474,7 @@ public:
 	bool ExplainPlan;
 	bool Heading;
 	bool BailOnError;
+	unsigned int StmtTimeout;
 	SCHAR ISQL_charset[MAXCHARSET_SIZE];
 };
 
@@ -4821,7 +4823,8 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 			sqlda_display,
 //#endif
 			sql, warning, sqlCont, heading, bail,
-			bulk_insert, maxrows, wrong
+			bulk_insert, maxrows, stmtTimeout,
+			wrong
 		};
 		SetOptions(const optionsMap* inmap, size_t insize, int wrongval)
 			: OptionsBase(inmap, insize, wrongval)
@@ -4859,6 +4862,7 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		{SetOptions::maxrows, "MAXROWS", 0},
 		{SetOptions::sqlCont, "ROLE", 0},
 		{SetOptions::sqlCont, "TRUSTED", 0},	// TRUSTED ROLE, will get DSQL error other case
+		{SetOptions::stmtTimeout, "LOCAL_TIMEOUT", 0},
 		{SetOptions::sqlCont, "DECFLOAT", 0},
 	};
 
@@ -5021,14 +5025,28 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		ret = newMaxRows((*lparms[2]) ? lparms[2] : "0");
 		break;
 
-	default:
+	case SetOptions::stmtTimeout:
 		{
-			TEXT msg_string[MSG_LENGTH];
-			IUTILS_msg_get(VALID_OPTIONS, msg_string);
-			isqlGlob.printf("%s\n", msg_string);
+			int val = strtol(parms[2], NULL, 10);
+			if (val < 0)
+				ret = ps_ERR;
+			else
+			{
+				setValues.StmtTimeout = val;
+				ret = SKIP;
+			}
 		}
-		setoptions.showCommands(isqlGlob.Out);
-		ret = ps_ERR;
+		break;
+
+	default:
+		//{
+		//	TEXT msg_string[MSG_LENGTH];
+		//	IUTILS_msg_get(VALID_OPTIONS, msg_string);
+		//	isqlGlob.printf("%s\n", msg_string);
+		//}
+		//setoptions.showCommands(isqlGlob.Out);
+		//ret = ps_ERR;
+		ret = CONT;	// pass unknown SET command to server as is
 		break;
 	}
 
@@ -5850,6 +5868,7 @@ static processing_state print_sets()
 	print_set("Time:", setValues.Time_display);
 	print_set("Warnings:", setValues.Warnings);
 	print_set("Bail on error:", setValues.BailOnError);
+	isqlGlob.printf("%-25s%lu%s", "Local statement timeout:", setValues.StmtTimeout, NEWLINE);
 	return SKIP;
 }
 
@@ -8217,6 +8236,10 @@ static processing_state process_statement(const TEXT* str2)
 	// check for warnings
 	ISQL_warning(fbStatus);
 
+	global_Stmt->setTimeout(fbStatus, setValues.StmtTimeout);
+	if (ISQL_errmsg(fbStatus))
+		setValues.StmtTimeout = 0;
+
 	// Find out what kind of statement this is
 	const int statement_type = process_request_type();
 	if (!statement_type)
@@ -8280,6 +8303,7 @@ static processing_state process_statement(const TEXT* str2)
 			 statement_type == isc_info_sql_stmt_set_generator))
 		{
 			DB->execute(fbStatus, D__trans, 0, str2, isqlGlob.SQL_dialect, NULL, NULL, NULL, NULL);
+			setValues.StmtTimeout = 0;
 			if (ISQL_errmsg(fbStatus))
 			{
 				ret = ps_ERR;
@@ -8322,6 +8346,7 @@ static processing_state process_statement(const TEXT* str2)
 		//  This is a non-select DML statement or trans
 
 		M__trans = global_Stmt->execute(fbStatus, M__trans, NULL, NULL, NULL, NULL);
+		setValues.StmtTimeout = 0;
 		if (ISQL_errmsg(fbStatus))
 		{
 			// CVC: Make this conditional if it causes problems. For example
@@ -8424,6 +8449,7 @@ static processing_state process_statement(const TEXT* str2)
 	if (statement_type == isc_info_sql_stmt_exec_procedure)
 	{
 		global_Stmt->execute(fbStatus, M__trans, NULL, NULL, message, buffer);
+		setValues.StmtTimeout = 0;
 		if (ISQL_errmsg(fbStatus))
 		{
 			ret = ps_ERR;
@@ -8453,6 +8479,7 @@ static processing_state process_statement(const TEXT* str2)
 
 		Firebird::IResultSet* curs = global_Stmt->openCursor(fbStatus, M__trans,
 			NULL, NULL, message, 0);
+		setValues.StmtTimeout = 0;
 		if (ISQL_errmsg(fbStatus))
 		{
 			return ps_ERR;
@@ -8614,7 +8641,8 @@ static bool stdin_redirected()
 {
 #ifdef WIN_NT
 	HANDLE in = GetStdHandle(STD_INPUT_HANDLE);
-	if (GetFileType(in) == FILE_TYPE_CHAR) //FILE_TYPE_DISK)
+	const DWORD file_type = GetFileType(in);
+	if (file_type == FILE_TYPE_CHAR || file_type == FILE_TYPE_PIPE)
 		return false;
 #else
 	if (isatty(fileno(stdin)))

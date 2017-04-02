@@ -94,6 +94,7 @@ namespace Jrd
 	class dsql_par;
 	class dsql_map;
 	class dsql_intlsym;
+	class TimeoutTimer;
 
 	typedef Firebird::Stack<dsql_ctx*> DsqlContextStack;
 
@@ -557,6 +558,19 @@ public:
 
 	virtual void setDelayedFormat(thread_db* tdbb, Firebird::IMessageMetadata* metadata);
 
+	// Get session-level timeout, milliseconds
+	unsigned int getTimeout();
+
+	// Set session-level timeout, milliseconds
+	void setTimeout(unsigned int timeOut);
+
+	// Get actual timeout, milliseconds
+	unsigned int getActualTimeout();
+
+	// Evaluate actual timeout value, consider config- and session-level timeout values,
+	// setup and start timer
+	void setupTimer(thread_db* tdbb);
+
 	static void destroy(thread_db* tdbb, dsql_req* request, bool drop);
 
 private:
@@ -581,11 +595,12 @@ public:
 	bool req_traced;				// request is traced via TraceAPI
 
 protected:
+	unsigned int req_timeout;					// query timeout in milliseconds, set by the user
+	Firebird::RefPtr<TimeoutTimer> req_timer;	// timeout timer
+
 	// Request should never be destroyed using delete.
 	// It dies together with it's pool in release_request().
-	~dsql_req()
-	{
-	}
+	~dsql_req();
 
 	// To avoid posix warning about missing public destructor declare
 	// MemoryPool as friend class. In fact IT releases request memory!

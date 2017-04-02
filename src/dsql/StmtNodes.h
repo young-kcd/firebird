@@ -112,6 +112,14 @@ struct ValidateInfo
 };
 
 
+enum OverrideClause : UCHAR
+{
+	// Warning: used in BLR
+	USER_VALUE = 1,
+	SYSTEM_VALUE
+};
+
+
 class AssignmentNode : public TypedNode<StmtNode, StmtNode::TYPE_ASSIGNMENT>
 {
 public:
@@ -1048,6 +1056,7 @@ public:
 		Firebird::Array<NestConst<FieldNode> > fields;
 		NestConst<ValueListNode> values;
 		NestConst<BoolExprNode> condition;
+		Nullable<OverrideClause> overrideClause;
 	};
 
 	explicit MergeNode(MemoryPool& pool)
@@ -1267,6 +1276,7 @@ public:
 	NestConst<StmtNode> subStore;
 	Firebird::Array<ValidateInfo> validations;
 	NestConst<RelationSourceNode> relationSource;
+	Nullable<OverrideClause> overrideClause;
 };
 
 
@@ -1581,6 +1591,23 @@ public:
 };
 
 
+class SetSessionNode : public SessionManagementNode
+{
+public:
+	enum Type { TYPE_IDLE_TIMEOUT, TYPE_STMT_TIMEOUT };
+
+	SetSessionNode(MemoryPool& pool, Type aType, ULONG aVal, UCHAR blr_timepart);
+
+public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
+	virtual void execute(thread_db* tdbb, dsql_req* request) const;
+
+private:
+	Type m_type;
+	ULONG m_value;
+};
+
+
 class SetRoundNode : public SessionManagementNode
 {
 public:
@@ -1680,6 +1707,7 @@ public:
 	NestConst<ValueListNode> values;
 	Firebird::Array<NestConst<FieldNode> > matching;
 	NestConst<ReturningClause> returning;
+	Nullable<OverrideClause> overrideClause;
 };
 
 

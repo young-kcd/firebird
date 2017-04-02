@@ -111,7 +111,7 @@ class NetworkCallback : public VersionedIface<ICryptKeyCallbackImpl<NetworkCallb
 {
 public:
 	explicit NetworkCallback(rem_port* prt)
-		: port(prt), l(0), d(NULL), stopped(false), wake(false)
+		: port(prt), replyLength(0), replyData(NULL), stopped(false), wake(false)
 	{ }
 
 	unsigned int callback(unsigned int dataLength, const void* data,
@@ -125,8 +125,8 @@ public:
 
 		Reference r(*port);
 
-		d = buffer;
-		l = bufferLength;
+		replyData = buffer;
+		replyLength = bufferLength;
 
 		PACKET p;
 		p.p_operation = op_crypt_key_callback;
@@ -138,14 +138,14 @@ public:
 		if (!sem.tryEnter(60))
 			return 0;
 
-		return l;
+		return replyLength;
 	}
 
-	void wakeup(unsigned int length, const void* data)
+	void wakeup(unsigned int wakeLength, const void* wakeData)
 	{
-		if (l > length)
-			l = length;
-		memcpy(d, data, l);
+		if (replyLength > wakeLength)
+			replyLength = wakeLength;
+		memcpy(replyData, wakeData, replyLength);
 
 		wake = true;
 		sem.release();
@@ -164,8 +164,8 @@ public:
 private:
 	rem_port* port;
 	Semaphore sem;
-	unsigned int l;
-	void* d;
+	unsigned int replyLength;
+	void* replyData;
 	bool stopped;
 
 public:
@@ -1815,7 +1815,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 		protocol < end; protocol++)
 	{
 		if ((protocol->p_cnct_version >= PROTOCOL_VERSION10 &&
-			 protocol->p_cnct_version <= PROTOCOL_VERSION15) &&
+			 protocol->p_cnct_version <= PROTOCOL_VERSION16) &&
 			 (protocol->p_cnct_architecture == arch_generic ||
 			  protocol->p_cnct_architecture == ARCHITECTURE) &&
 			protocol->p_cnct_weight >= weight)
@@ -3381,6 +3381,9 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 	ITransaction* newTra = tra;
 
 	unsigned flags = statement->rsr_iface->getFlags(&status_vector);
+	check(&status_vector);
+
+	statement->rsr_iface->setTimeout(&status_vector, sqldata->p_sqldata_timeout);
 	check(&status_vector);
 
 	if ((flags & IStatement::FLAG_HAS_CURSOR) && (out_msg_length == 0))
@@ -5286,6 +5289,8 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 	char buffer[1024];
 	char* p = buffer;
 	char* bufferEnd = p + sizeof(buffer);
+	// Set limit of status vector size since old client 2.5 and below cannot correctly handle them
+	const FB_SIZE_T limit = port_protocol < PROTOCOL_VERSION13 ? ISC_STATUS_LENGTH : 0;
 
 	for (bool sw = true; *old_vector && sw;)
 	{
@@ -5293,6 +5298,8 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 		{
 		case isc_arg_warning:
 		case isc_arg_gds:
+			if (limit && new_vector.getCount() > limit - 3) // 2 for numbers and 1 reserved for isc_arg_end
+				break;
 			new_vector.push(*old_vector++);
 
 			// The status codes are converted to their offsets so that they
@@ -5309,11 +5316,15 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 				switch (*old_vector)
 				{
 				case isc_arg_cstring:
+					if (limit && new_vector.getCount() > limit - 4)
+						break;
 					new_vector.push(*old_vector++);
 					// fall through ...
 
 				case isc_arg_string:
 				case isc_arg_number:
+					if (limit && new_vector.getCount() > limit - 3)
+						break;
 					new_vector.push(*old_vector++);
 					new_vector.push(*old_vector++);
 					continue;
@@ -5324,11 +5335,15 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 
 		case isc_arg_interpreted:
 		case isc_arg_sql_state:
+			if (limit && new_vector.getCount() > limit - 3)
+				break;
 			new_vector.push(*old_vector++);
 			new_vector.push(*old_vector++);
 			continue;
 		}
 
+		if (limit && new_vector.getCount() > limit - 3)
+			break;
 		const int l = (p < bufferEnd) ? fb_interpret(p, bufferEnd - p, &old_vector) : 0;
 		if (l == 0)
 			break;

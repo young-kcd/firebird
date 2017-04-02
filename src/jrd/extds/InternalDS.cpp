@@ -507,6 +507,21 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 }
 
 
+void InternalStatement::doSetTimeout(thread_db* tdbb, unsigned int timeout)
+{
+	FbLocalStatus status;
+
+	{
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+
+		m_request->setTimeout(&status, timeout);
+	}
+
+	if (status->getState() & IStatus::STATE_ERRORS)
+		raise(&status, tdbb, "JStatement::setTimeout");
+}
+
+
 void InternalStatement::doExecute(thread_db* tdbb)
 {
 	JTransaction* transaction = getIntTransaction()->getJrdTran();

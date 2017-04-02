@@ -450,3 +450,65 @@ Decimal128 MOV_get_dec128(Jrd::thread_db* tdbb, const dsc* desc)
 }
 
 
+namespace Jrd
+{
+
+DescPrinter::DescPrinter(thread_db* tdbb, const dsc* desc, int mLen)
+	: maxLen(mLen)
+{
+	const char* const NULL_KEY_STRING = "NULL";
+
+	if (!desc)
+	{
+		value = NULL_KEY_STRING;
+		return;
+	}
+
+	fb_assert(!desc->isBlob());
+
+	value = MOV_make_string2(tdbb, desc, ttype_dynamic);
+
+	const int len = (int) value.length();
+	const char* const str = value.c_str();
+
+	if (desc->isText() || desc->isDateTime())
+	{
+		if (desc->dsc_dtype == dtype_text)
+		{
+			const char* const pad = (desc->dsc_sub_type == ttype_binary) ? "\0" : " ";
+			value.rtrim(pad);
+		}
+
+		if (desc->isText() && desc->getTextType() == ttype_binary)
+		{
+			Firebird::string hex;
+			char* s = hex.getBuffer(2 * len);
+
+			for (int i = 0; i < len; i++)
+			{
+				sprintf(s, "%02X", (int)(unsigned char) str[i]);
+				s += 2;
+			}
+
+			value = "x'" + hex + "'";
+		}
+		else
+			value = "'" + value + "'";
+	}
+
+	if (value.length() > maxLen)
+	{
+		fb_assert(desc->isText());
+
+		value.resize(maxLen);
+
+		const CharSet* const cs = INTL_charset_lookup(tdbb, desc->getCharSet());
+
+		while (value.hasData() && !cs->wellFormed(value.length(), (const UCHAR*) value.c_str()))
+			value.resize(value.length() - 1);
+
+		value += "...";
+	}
+}
+
+}	// namespace Jrd

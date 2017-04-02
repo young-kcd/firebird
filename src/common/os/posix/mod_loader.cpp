@@ -143,4 +143,3 @@ void* DlfcnModule::findSymbol(const Firebird::string& symName)
 
 	return result;
 }
-

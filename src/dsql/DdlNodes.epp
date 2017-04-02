@@ -5991,7 +5991,7 @@ void RelationNode::FieldDefinition::store(thread_db* tdbb, jrd_tra* transaction)
 			strcpy(RFR.RDB$GENERATOR_NAME, identitySequence.c_str());
 
 			RFR.RDB$IDENTITY_TYPE.NULL = FALSE;
-			RFR.RDB$IDENTITY_TYPE = IDENT_TYPE_BY_DEFAULT;
+			RFR.RDB$IDENTITY_TYPE = identityType.value;
 		}
 
 		if (notNullFlag.specified)
@@ -6336,6 +6336,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 			}
 
 			DYN_UTIL_generate_generator_name(tdbb, fieldDefinition.identitySequence);
+			fieldDefinition.identityType = clause->identityOptions->type;
 
 			CreateAlterSequenceNode::store(tdbb, transaction, fieldDefinition.identitySequence,
 				fb_sysflag_identity_generator,
@@ -7896,6 +7897,13 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 							.orElse(!GEN.RDB$INITIAL_VALUE.NULL ? GEN.RDB$INITIAL_VALUE : 0);
 
 						transaction->getGenIdCache()->put(id, val);
+					}
+
+					if (clause->identityOptions->type.specified)
+					{
+						MODIFY RFR
+							RFR.RDB$IDENTITY_TYPE = clause->identityOptions->type.value;
+						END_MODIFY
 					}
 
 					if (clause->identityOptions->increment.specified)

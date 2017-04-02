@@ -53,4 +53,24 @@ void	MOV_move(Jrd::thread_db*, /*const*/ dsc*, dsc*);
 Firebird::Decimal64 MOV_get_dec64(Jrd::thread_db*, const dsc*);
 Firebird::Decimal128 MOV_get_dec128(Jrd::thread_db*, const dsc*);
 
+namespace Jrd
+{
+
+class DescPrinter
+{
+public:
+	DescPrinter(thread_db* tdbb, const dsc* desc, int mLen);
+
+	const Firebird::string& get() const
+	{
+		return value;
+	}
+
+private:
+	Firebird::string value;
+	int maxLen;
+};
+
+}	// namespace Jrd
+
 #endif // JRD_MOV_PROTO_H

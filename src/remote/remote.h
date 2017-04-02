@@ -476,6 +476,7 @@ struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rsr>
 
 	Firebird::string rsr_cursor_name;	// Name for cursor to be set on open
 	bool			rsr_delayed_format;	// Out format was delayed on execute, set it on fetch
+	unsigned int	rsr_timeout;		// Statement timeout to be set on open\execute
 	Rsr**			rsr_self;
 
 public:
@@ -498,7 +499,7 @@ public:
 		rsr_format(0), rsr_message(0), rsr_buffer(0), rsr_status(0),
 		rsr_id(0), rsr_fmt_length(0),
 		rsr_rows_pending(0), rsr_msgs_waiting(0), rsr_reorder_level(0), rsr_batch_count(0),
-		rsr_cursor_name(getPool()), rsr_delayed_format(false), rsr_self(NULL)
+		rsr_cursor_name(getPool()), rsr_delayed_format(false), rsr_timeout(0), rsr_self(NULL)
 	{ }
 
 	~Rsr()

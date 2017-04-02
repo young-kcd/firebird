@@ -5838,7 +5838,11 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
 		}
 
 		if (!RFR.RDB$GENERATOR_NAME.NULL)
-			isqlGlob.printf("Identity (by default)");
+		{
+			isqlGlob.printf("Identity (%s)",
+				(RFR.RDB$IDENTITY_TYPE == IDENT_TYPE_BY_DEFAULT ? "by default" :
+				 RFR.RDB$IDENTITY_TYPE == IDENT_TYPE_ALWAYS ? "always" : ""));
+		}
 
 		// Handle defaults for columns
 

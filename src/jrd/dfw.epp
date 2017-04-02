@@ -5757,6 +5757,10 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 										   (UCHAR*) RFR.RDB$GENERATOR_NAME, n);
 					}
 
+					n = RFR.RDB$IDENTITY_TYPE;
+					if (!RFR.RDB$IDENTITY_TYPE.NULL)
+						put_summary_record(tdbb, blob, RSR_field_identity_type, (UCHAR*) &n, sizeof(n));
+
 					// Make a temporary field block
 
 					TemporaryField* tfb = FB_NEW_POOL(*tdbb->getDefaultPool()) TemporaryField;

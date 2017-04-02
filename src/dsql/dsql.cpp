@@ -147,9 +147,11 @@ void DSQL_execute(thread_db* tdbb,
 		          Arg::Gds(isc_bad_req_handle));
 	}
 
-	// Only allow NULL trans_handle if we're starting a transaction
+	// Only allow NULL trans_handle if we're starting a transaction or set session properties
 
-	if (!*tra_handle && statement->getType() != DsqlCompiledStatement::TYPE_START_TRANS)
+	if (!*tra_handle &&
+		statement->getType() != DsqlCompiledStatement::TYPE_START_TRANS &&
+		statement->getType() != DsqlCompiledStatement::TYPE_SESSION_MANAGEMENT)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_bad_trans_handle));
@@ -274,6 +276,10 @@ bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 	Jrd::Attachment* att = req_dbb->dbb_attachment;
 	TraceDSQLFetch trace(att, this);
 
+	thread_db::TimerGuard timerGuard(tdbb, req_timer, false);
+	if (req_timer && req_timer->expired())
+		tdbb->checkCancelState(true);
+
 	UCHAR* dsqlMsgBuffer = req_msg_buffers[message->msg_buffer_number];
 	JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, dsqlMsgBuffer);
 
@@ -283,6 +289,9 @@ bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 
 	if (eofReached)
 	{
+		if (req_timer)
+			req_timer->stop();
+
 		delayedFormat = NULL;
 		trace.fetch(true, ITracePlugin::RESULT_SUCCESS);
 		return false;
@@ -535,9 +544,11 @@ void DSQL_execute_immediate(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tr
 
 		const DsqlCompiledStatement* statement = request->getStatement();
 
-		// Only allow NULL trans_handle if we're starting a transaction
+		// Only allow NULL trans_handle if we're starting a transaction or set session properties
 
-		if (!*tra_handle && statement->getType() != DsqlCompiledStatement::TYPE_START_TRANS)
+		if (!*tra_handle &&
+			statement->getType() != DsqlCompiledStatement::TYPE_START_TRANS &&
+			statement->getType() != DsqlCompiledStatement::TYPE_SESSION_MANAGEMENT)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 					  Arg::Gds(isc_bad_trans_handle));
@@ -676,6 +687,12 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	// manager know statement parameters values
 	TraceDSQLExecute trace(req_dbb->dbb_attachment, this);
 
+	// Setup and start timeout timer
+	const bool have_cursor = reqTypeWithCursor(statement->getType()) && !singleton;
+
+	setupTimer(tdbb);
+	thread_db::TimerGuard timerGuard(tdbb, req_timer, !have_cursor);
+
 	if (!message)
 		JRD_start(tdbb, req_request, req_transaction);
 	else
@@ -798,7 +815,6 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 			break;
 	}
 
-	const bool have_cursor = reqTypeWithCursor(statement->getType()) && !singleton;
 	trace.finish(have_cursor, ITracePlugin::RESULT_SUCCESS);
 }
 
@@ -898,9 +914,9 @@ void DsqlTransactionRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scra
 
 // Execute a dynamic SQL statement.
 void DsqlTransactionRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
-	Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
-	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
-	bool singleton)
+	IMessageMetadata* /*inMetadata*/, const UCHAR* /*inMsg*/,
+	IMessageMetadata* /*outMetadata*/, UCHAR* /*outMsg*/,
+	bool /*singleton*/)
 {
 	node->execute(tdbb, this, traHandle);
 }
@@ -1549,7 +1565,12 @@ dsql_req::dsql_req(MemoryPool& pool)
 	  req_cursor_name(req_pool),
 	  req_cursor(NULL),
 	  req_user_descs(req_pool),
-	  req_traced(false)
+	  req_traced(false),
+	  req_timeout(0)
+{
+}
+
+dsql_req::~dsql_req()
 {
 }
 
@@ -1579,10 +1600,90 @@ bool dsql_req::fetch(thread_db* /*tdbb*/, UCHAR* /*msgBuffer*/)
 	return false;	// avoid warning
 }
 
+unsigned int dsql_req::getTimeout()
+{
+	return req_timeout;
+}
+
+unsigned int dsql_req::getActualTimeout()
+{
+	if (req_timer)
+		return req_timer->getValue();
+
+	return 0;
+}
+
+void dsql_req::setTimeout(unsigned int timeOut)
+{
+	req_timeout = timeOut;
+}
+
+void dsql_req::setupTimer(thread_db* tdbb)
+{
+	if (statement->getFlags() & JrdStatement::FLAG_INTERNAL)
+		return;
+
+	if (req_request)
+	{
+		req_request->req_timeout = this->req_timeout;
+
+		fb_assert(!req_request->req_caller);
+		if (req_request->req_caller)
+		{
+			if (req_timer)
+				req_timer->setup(0, 0);
+			return;
+		}
+	}
+
+	Database* dbb = tdbb->getDatabase();
+	Attachment* att = tdbb->getAttachment();
+
+	ISC_STATUS toutErr = isc_cfg_stmt_timeout;
+	unsigned int timeOut = dbb->dbb_config->getStatementTimeout() * 1000;
+
+	if (req_timeout)
+	{
+		if (!timeOut || req_timeout < timeOut)
+		{
+			timeOut = req_timeout;
+			toutErr = isc_req_stmt_timeout;
+		}
+	}
+	else
+	{
+		const unsigned int attTout = att->getStatementTimeout();
+
+		if (!timeOut || attTout && attTout < timeOut)
+		{
+			timeOut = attTout;
+			toutErr = isc_att_stmt_timeout;
+		}
+	}
+
+	if (!req_timer && timeOut)
+	{
+		req_timer = FB_NEW TimeoutTimer();
+		req_request->req_timer = this->req_timer;
+	}
+
+	if (req_timer)
+	{
+		req_timer->setup(timeOut, toutErr);
+		req_timer->start();
+	}
+}
+
 // Release a dynamic request.
 void dsql_req::destroy(thread_db* tdbb, dsql_req* request, bool drop)
 {
 	SET_TDBB(tdbb);
+
+	if (request->req_timer)
+	{
+		request->req_timer->stop();
+		request->req_timer = NULL;
+	}
 
 	// If request is parent, orphan the children and release a portion of their requests
 
@@ -1846,6 +1947,15 @@ static void sql_info(thread_db* tdbb,
 		case isc_info_sql_records:
 			length = get_request_info(tdbb, request, sizeof(buffer), buffer);
 			if (length && !(info = put_item(item, length, buffer, info, end_info)))
+				return;
+			break;
+
+		case isc_info_sql_stmt_timeout_user:
+		case isc_info_sql_stmt_timeout_run:
+			value = (item == isc_info_sql_stmt_timeout_user) ? request->getTimeout() : request->getActualTimeout();
+
+			length = put_vax_long(buffer, value);
+			if (!(info = put_item(item, length, buffer, info, end_info)))
 				return;
 			break;
 

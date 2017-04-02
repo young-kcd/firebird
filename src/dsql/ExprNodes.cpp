@@ -10519,17 +10519,6 @@ void SubstringNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 		desc->dsc_flags |= DSC_null;
 	else
 	{
-		if (offsetNode->is<LiteralNode>() && desc1.dsc_dtype == dtype_long)
-		{
-			SLONG offset = MOV_get_long(tdbb, &desc1, 0);
-
-			if (decrementNode && decrementNode->is<LiteralNode>() && desc3.dsc_dtype == dtype_long)
-				offset -= MOV_get_long(tdbb, &desc3, 0);
-
-			if (offset < 0)
-				ERR_post(Arg::Gds(isc_bad_substring_offset) << Arg::Num(offset + 1));
-		}
-
 		if (length->is<LiteralNode>() && desc2.dsc_dtype == dtype_long)
 		{
 			const SLONG len = MOV_get_long(tdbb, &desc2, 0);
@@ -10586,19 +10575,23 @@ dsc* SubstringNode::execute(thread_db* tdbb, jrd_req* request) const
 dsc* SubstringNode::perform(thread_db* tdbb, impure_value* impure, const dsc* valueDsc,
 	const dsc* startDsc, const dsc* lengthDsc)
 {
-	const SLONG sStart = MOV_get_long(tdbb, startDsc, 0);
-	const SLONG sLength = MOV_get_long(tdbb, lengthDsc, 0);
+	SINT64 sStart = MOV_get_long(tdbb, startDsc, 0);
+	SINT64 sLength = MOV_get_long(tdbb, lengthDsc, 0);
+
+	if (sLength < 0)
+		status_exception::raise(Arg::Gds(isc_bad_substring_length) << Arg::Num(sLength));
 
 	if (sStart < 0)
-		status_exception::raise(Arg::Gds(isc_bad_substring_offset) << Arg::Num(sStart + 1));
-	else if (sLength < 0)
-		status_exception::raise(Arg::Gds(isc_bad_substring_length) << Arg::Num(sLength));
+	{
+		sLength = MAX(sLength + sStart, 0);
+		sStart = 0;
+	}
+
+	FB_UINT64 start = FB_UINT64(sStart);
+	FB_UINT64 length = FB_UINT64(sLength);
 
 	dsc desc;
 	DataTypeUtil(tdbb).makeSubstr(&desc, valueDsc, startDsc, lengthDsc);
-
-	ULONG start = (ULONG) sStart;
-	ULONG length = (ULONG) sLength;
 
 	if (desc.isText() && length > MAX_STR_SIZE)
 		length = MAX_STR_SIZE;
@@ -10621,8 +10614,8 @@ dsc* SubstringNode::perform(thread_db* tdbb, impure_value* impure, const dsc* va
 		HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
 		CharSet* charSet = INTL_charset_lookup(tdbb, valueDsc->getCharSet());
 
-		const FB_UINT64 byte_offset = FB_UINT64(start) * charSet->maxBytesPerChar();
-		const FB_UINT64 byte_length = FB_UINT64(length) * charSet->maxBytesPerChar();
+		const FB_UINT64 byte_offset = start * charSet->maxBytesPerChar();
+		const FB_UINT64 byte_length = length * charSet->maxBytesPerChar();
 
 		if (charSet->isMultiByte())
 		{
@@ -11520,7 +11513,8 @@ UdfCallNode::UdfCallNode(MemoryPool& pool, const QualifiedName& aName, ValueList
 	  name(pool, aName),
 	  args(aArgs),
 	  function(NULL),
-	  dsqlFunction(NULL)
+	  dsqlFunction(NULL),
+	  isSubRoutine(false)
 {
 	addChildNode(args, args);
 }
@@ -11582,6 +11576,8 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 		csb->csb_blr_reader.seekBackward(count);
 		PAR_error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name.toString()));
 	}
+
+	node->isSubRoutine = function->isSubRoutine();
 
 	const UCHAR argCount = csb->csb_blr_reader.getByte();
 
@@ -11675,7 +11671,7 @@ ValueExprNode* UdfCallNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	UdfCallNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) UdfCallNode(*tdbb->getDefaultPool(), name);
 	node->args = copier.copy(tdbb, args);
-	node->function = function;
+	node->function = isSubRoutine ? function : Function::lookup(tdbb, name, false);
 	return node;
 }
 

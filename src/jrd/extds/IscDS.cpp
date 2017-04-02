@@ -139,7 +139,7 @@ void IscConnection::attach(thread_db* tdbb, const PathName& dbName, const MetaNa
 				raise(&status, tdbb, "attach");
 			}
 		}
-		catch(const Exception&)
+		catch (const Exception&)
 		{
 			m_iscProvider.fb_database_crypt_callback(&status, NULL);
 			throw;
@@ -489,6 +489,26 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 			sWhereError = "isc_dsql_prepare";
 			raise(&status, tdbb, sWhereError, &sql);
 		}
+	}
+}
+
+void IscStatement::doSetTimeout(thread_db* tdbb, unsigned int timeout)
+{
+	FbLocalStatus status;
+
+	{
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+		m_iscProvider.fb_dsql_set_timeout(&status, &m_handle, timeout);
+	}
+
+	if (status->getState() & IStatus::STATE_ERRORS)
+	{
+		// silently ignore error if timeouts is not supported by remote server
+		// or loaded client library
+		if (status[0] == isc_arg_gds && (status[1] == isc_wish_list || status[1] == isc_unavailable))
+			return;
+
+		raise(&status, tdbb, "fb_dsql_set_timeout");
 	}
 }
 
@@ -1502,6 +1522,16 @@ ISC_STATUS ISC_EXPORT IscProvider::fb_database_crypt_callback(FbStatusVector* us
 	return notImplemented(user_status);
 }
 
+ISC_STATUS ISC_EXPORT IscProvider::fb_dsql_set_timeout(Jrd::FbStatusVector* user_status,
+	isc_stmt_handle* stmt_handle,
+	ULONG timeout)
+{
+	if (m_api.fb_dsql_set_timeout)
+		return m_api.fb_dsql_set_timeout(IscStatus(user_status), stmt_handle, timeout);
+
+	return notImplemented(user_status);
+}
+
 void IscProvider::loadAPI()
 {
 	FbLocalStatus status;
@@ -1594,7 +1624,8 @@ static FirebirdApiPointers isc_callbacks =
 	PROTO(isc_service_query),
 	PROTO(isc_service_start),
 	PROTO(fb_cancel_operation),
-	PROTO(fb_database_crypt_callback)
+	PROTO(fb_database_crypt_callback),
+	PROTO(fb_dsql_set_timeout)
 };
 
 
