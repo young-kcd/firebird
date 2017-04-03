@@ -145,7 +145,7 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
 
 static void invalidate_cursor_records(jrd_tra*, record_param*);
 static void list_staying(thread_db*, record_param*, RecordStack&, bool active_rpb = false);
-static void list_staying_fast(thread_db*, record_param*, RecordStack&, record_param* = NULL);
+static void list_staying_fast(thread_db*, record_param*, RecordStack&, record_param* = NULL, bool active_rpb = false);
 static void notify_garbage_collector(thread_db* tdbb, record_param* rpb,
 	TraNumber tranid = MAX_TRA_NUMBER);
 
@@ -792,7 +792,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 		if (!int_gc_done && 
 			((prev_snapshot_number && prev_snapshot_number == current_snapshot_number) || 
 			 ((tdbb->tdbb_flags & TDBB_sweeper) && state == tra_committed && 
-				rpb->rpb_b_page != 0 && rpb->rpb_transaction_nr >= oldest_snapshot))) 
+				rpb->rpb_b_page != 0 && rpb->rpb_transaction_nr >= oldest_snapshot)))
 		{
 			VIO_intermediate_gc(tdbb, rpb, transaction);
 			int_gc_done = true;
@@ -4962,7 +4962,7 @@ static void invalidate_cursor_records(jrd_tra* transaction, record_param* mod_rp
 }
 
 
-static void list_staying_fast(thread_db* tdbb, record_param* rpb, RecordStack& staying, record_param* back_rpb)
+static void list_staying_fast(thread_db* tdbb, record_param* rpb, RecordStack& staying, record_param* back_rpb, bool active_rpb)
 {
 /**************************************
 *
@@ -4979,7 +4979,7 @@ static void list_staying_fast(thread_db* tdbb, record_param* rpb, RecordStack& s
 **************************************/
 	record_param temp = *rpb;
 
-	if (!DPM_fetch(tdbb, &temp, LCK_read))
+	if (!active_rpb && !DPM_fetch(tdbb, &temp, LCK_read))
 	{
 		// It is impossible as our transaction owns the record
 		BUGCHECK(186);	// msg 186 record disappeared
@@ -5101,7 +5101,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 		jrd_tra* transaction = tdbb->getTransaction();
 		if (transaction && transaction->tra_number == rpb->rpb_transaction_nr)
 		{
-			list_staying_fast(tdbb, rpb, staying);
+			list_staying_fast(tdbb, rpb, staying, NULL, active_rpb);
 			return;
 		}
 	}
