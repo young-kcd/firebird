@@ -1040,7 +1040,6 @@ namespace Jrd {
 
 		if (page->pag_flags & Ods::crypted_page)
 		{
-			fb_assert(cryptPlugin);
 			if (!cryptPlugin)
 			{
 				Arg::Gds(isc_decrypt_error).copyTo(sv);
@@ -1351,21 +1350,25 @@ namespace Jrd {
 		SyncLockGuard dsGuard(&mgr->dbb.dbb_sync, SYNC_EXCLUSIVE, FB_FUNCTION);
 		for (Attachment* att = mgr->dbb.dbb_attachments; att; att = att->att_next)
 		{
+			bool found = false;
 			for (unsigned i = 0; i < knownHolders.getCount(); ++i)
 			{
 				if (knownHolders[i].first == att)
-					goto found;
+				{
+					found = true;
+					break;
+				}
 			}
 
-			att->signalShutdown();
-found:;
+			if (!found)
+				att->signalShutdown(0 /* no special shutdown code */);
 		}
 
 		// Loop through internal attachments list closing one missing valid holders
 		for (unsigned i = 0; i < knownHolders.getCount(); ++i)
 		{
 			if (!validateHoldersGroup(knownHolders[i], keyName))
-				knownHolders[i].first->signalShutdown();
+				knownHolders[i].first->signalShutdown(0);
 		}
 	}
 

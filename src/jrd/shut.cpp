@@ -532,7 +532,7 @@ static bool shutdown(thread_db* tdbb, SSHORT flag, bool force)
 			{
 				if (!(attachment->att_flags & ATT_shutdown))
 				{
-					attachment->signalShutdown();
+					attachment->signalShutdown(isc_att_shut_db_down);
 					found = true;
 				}
 			}

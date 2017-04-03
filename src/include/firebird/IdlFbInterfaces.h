@@ -1556,6 +1556,8 @@ namespace Firebird
 			void (CLOOP_CARG *setCursorName)(IStatement* self, IStatus* status, const char* name) throw();
 			void (CLOOP_CARG *free)(IStatement* self, IStatus* status) throw();
 			unsigned (CLOOP_CARG *getFlags)(IStatement* self, IStatus* status) throw();
+			unsigned (CLOOP_CARG *getTimeout)(IStatement* self, IStatus* status) throw();
+			void (CLOOP_CARG *setTimeout)(IStatement* self, IStatus* status, unsigned timeOut) throw();
 		};
 
 	protected:
@@ -1569,7 +1571,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static const unsigned VERSION = 4;
 
 		static const unsigned PREPARE_PREFETCH_NONE = 0;
 		static const unsigned PREPARE_PREFETCH_TYPE = 1;
@@ -1668,6 +1670,33 @@ namespace Firebird
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getFlags(this, status);
 			StatusType::checkException(status);
 			return ret;
+		}
+
+		template <typename StatusType> unsigned getTimeout(StatusType* status)
+		{
+			if (cloopVTable->version < 4)
+			{
+				StatusType::setVersionError(status, "IStatement", cloopVTable->version, 4);
+				StatusType::checkException(status);
+				return 0;
+			}
+			StatusType::clearException(status);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getTimeout(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> void setTimeout(StatusType* status, unsigned timeOut)
+		{
+			if (cloopVTable->version < 4)
+			{
+				StatusType::setVersionError(status, "IStatement", cloopVTable->version, 4);
+				StatusType::checkException(status);
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->setTimeout(this, status, timeOut);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -1862,6 +1891,10 @@ namespace Firebird
 			void (CLOOP_CARG *ping)(IAttachment* self, IStatus* status) throw();
 			void (CLOOP_CARG *detach)(IAttachment* self, IStatus* status) throw();
 			void (CLOOP_CARG *dropDatabase)(IAttachment* self, IStatus* status) throw();
+			unsigned (CLOOP_CARG *getIdleTimeout)(IAttachment* self, IStatus* status) throw();
+			void (CLOOP_CARG *setIdleTimeout)(IAttachment* self, IStatus* status, unsigned timeOut) throw();
+			unsigned (CLOOP_CARG *getStatementTimeout)(IAttachment* self, IStatus* status) throw();
+			void (CLOOP_CARG *setStatementTimeout)(IAttachment* self, IStatus* status, unsigned timeOut) throw();
 		};
 
 	protected:
@@ -1875,7 +1908,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static const unsigned VERSION = 4;
 
 		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
@@ -2010,6 +2043,60 @@ namespace Firebird
 		{
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->dropDatabase(this, status);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> unsigned getIdleTimeout(StatusType* status)
+		{
+			if (cloopVTable->version < 4)
+			{
+				StatusType::setVersionError(status, "IAttachment", cloopVTable->version, 4);
+				StatusType::checkException(status);
+				return 0;
+			}
+			StatusType::clearException(status);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getIdleTimeout(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> void setIdleTimeout(StatusType* status, unsigned timeOut)
+		{
+			if (cloopVTable->version < 4)
+			{
+				StatusType::setVersionError(status, "IAttachment", cloopVTable->version, 4);
+				StatusType::checkException(status);
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->setIdleTimeout(this, status, timeOut);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> unsigned getStatementTimeout(StatusType* status)
+		{
+			if (cloopVTable->version < 4)
+			{
+				StatusType::setVersionError(status, "IAttachment", cloopVTable->version, 4);
+				StatusType::checkException(status);
+				return 0;
+			}
+			StatusType::clearException(status);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getStatementTimeout(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> void setStatementTimeout(StatusType* status, unsigned timeOut)
+		{
+			if (cloopVTable->version < 4)
+			{
+				StatusType::setVersionError(status, "IAttachment", cloopVTable->version, 4);
+				StatusType::checkException(status);
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->setStatementTimeout(this, status, timeOut);
 			StatusType::checkException(status);
 		}
 	};
@@ -8183,6 +8270,8 @@ namespace Firebird
 					this->setCursorName = &Name::cloopsetCursorNameDispatcher;
 					this->free = &Name::cloopfreeDispatcher;
 					this->getFlags = &Name::cloopgetFlagsDispatcher;
+					this->getTimeout = &Name::cloopgetTimeoutDispatcher;
+					this->setTimeout = &Name::cloopsetTimeoutDispatcher;
 				}
 			} vTable;
 
@@ -8351,6 +8440,35 @@ namespace Firebird
 			}
 		}
 
+		static unsigned CLOOP_CARG cloopgetTimeoutDispatcher(IStatement* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getTimeout(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<unsigned>(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopsetTimeoutDispatcher(IStatement* self, IStatus* status, unsigned timeOut) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::setTimeout(&status2, timeOut);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
 		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
@@ -8401,6 +8519,8 @@ namespace Firebird
 		virtual void setCursorName(StatusType* status, const char* name) = 0;
 		virtual void free(StatusType* status) = 0;
 		virtual unsigned getFlags(StatusType* status) = 0;
+		virtual unsigned getTimeout(StatusType* status) = 0;
+		virtual void setTimeout(StatusType* status, unsigned timeOut) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
@@ -8825,6 +8945,10 @@ namespace Firebird
 					this->ping = &Name::clooppingDispatcher;
 					this->detach = &Name::cloopdetachDispatcher;
 					this->dropDatabase = &Name::cloopdropDatabaseDispatcher;
+					this->getIdleTimeout = &Name::cloopgetIdleTimeoutDispatcher;
+					this->setIdleTimeout = &Name::cloopsetIdleTimeoutDispatcher;
+					this->getStatementTimeout = &Name::cloopgetStatementTimeoutDispatcher;
+					this->setStatementTimeout = &Name::cloopsetStatementTimeoutDispatcher;
 				}
 			} vTable;
 
@@ -9093,6 +9217,64 @@ namespace Firebird
 			}
 		}
 
+		static unsigned CLOOP_CARG cloopgetIdleTimeoutDispatcher(IAttachment* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getIdleTimeout(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<unsigned>(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopsetIdleTimeoutDispatcher(IAttachment* self, IStatus* status, unsigned timeOut) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::setIdleTimeout(&status2, timeOut);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static unsigned CLOOP_CARG cloopgetStatementTimeoutDispatcher(IAttachment* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getStatementTimeout(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<unsigned>(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopsetStatementTimeoutDispatcher(IAttachment* self, IStatus* status, unsigned timeOut) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::setStatementTimeout(&status2, timeOut);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
 		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
@@ -9150,6 +9332,10 @@ namespace Firebird
 		virtual void ping(StatusType* status) = 0;
 		virtual void detach(StatusType* status) = 0;
 		virtual void dropDatabase(StatusType* status) = 0;
+		virtual unsigned getIdleTimeout(StatusType* status) = 0;
+		virtual void setIdleTimeout(StatusType* status, unsigned timeOut) = 0;
+		virtual unsigned getStatementTimeout(StatusType* status) = 0;
+		virtual void setStatementTimeout(StatusType* status, unsigned timeOut) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

@@ -143,6 +143,8 @@ public:
 		KEY_MAX_IDENTIFIER_BYTE_LENGTH,
 		KEY_MAX_IDENTIFIER_CHAR_LENGTH,
 		KEY_ENCRYPT_SECURITY_DATABASE,
+		KEY_STMT_TIMEOUT,
+		KEY_CONN_IDLE_TIMEOUT,
 		KEY_SNAPSHOTS_MEM_SIZE,
 		KEY_TPC_BLOCK_SIZE,
 		KEY_READ_CONSISTENCY,
@@ -355,7 +357,12 @@ public:
 	int getMaxIdentifierCharLength() const;
 
 	bool getCryptSecurityDatabase() const;
-	
+
+	// set in seconds
+	unsigned int getStatementTimeout() const;
+	// set in minutes
+	unsigned int getConnIdleTimeout() const;
+
 	ULONG getSnapshotsMemSize() const;
 
 	ULONG getTpcBlockSize() const;

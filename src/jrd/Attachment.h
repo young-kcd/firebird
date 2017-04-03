@@ -152,7 +152,7 @@ class StableAttachmentPart : public Firebird::RefCounted, public Firebird::Globa
 {
 public:
 	explicit StableAttachmentPart(Attachment* handle)
-		: att(handle), jAtt(NULL)
+		: att(handle), jAtt(NULL), shutError(0)
 	{ }
 
 	Attachment* getHandle() throw()
@@ -171,6 +171,7 @@ public:
 			jAtt->detachEngine();
 
 		jAtt = ja;
+		shutError = 0;
 	}
 
 	Firebird::Mutex* getMutex(bool useAsync = false, bool forceAsync = false)
@@ -208,9 +209,21 @@ public:
 	void manualUnlock(ULONG& flags);
 	void manualAsyncUnlock(ULONG& flags);
 
+	void setShutError(ISC_STATUS code)
+	{
+		if (!shutError)
+			shutError = code;
+	}
+
+	ISC_STATUS getShutError() const
+	{
+		return shutError;
+	}
+
 private:
 	Attachment* att;
 	JAttachment* jAtt;
+	ISC_STATUS shutError;
 
 	// These mutexes guarantee attachment existence. After releasing both of them with possibly
 	// zero att_use_count one should check does attachment still exists calling getHandle().
@@ -391,7 +404,7 @@ public:
 		const Firebird::ByteChunk& chunk);
 
 	void signalCancel();
-	void signalShutdown();
+	void signalShutdown(ISC_STATUS code);
 
 	void mergeStats();
 
@@ -412,9 +425,69 @@ public:
 
 	JAttachment* getInterface() throw();
 
+	unsigned int getIdleTimeout() const
+	{
+		return att_idle_timeout;
+	}
+
+	void setIdleTimeout(unsigned int timeOut)
+	{
+		att_idle_timeout = timeOut;
+	}
+
+	unsigned int getActualIdleTimeout() const;
+
+	unsigned int getStatementTimeout() const
+	{
+		return att_stmt_timeout;
+	}
+
+	void setStatementTimeout(unsigned int timeOut)
+	{
+		att_stmt_timeout = timeOut;
+	}
+
+	// evaluate new value or clear idle timer
+	void setupIdleTimer(bool clear);
+
+	// returns time when idle timer will be expired, if set
+	bool getIdleTimerTimestamp(Firebird::TimeStamp& ts) const;
+
 private:
 	Attachment(MemoryPool* pool, Database* dbb);
 	~Attachment();
+
+	class IdleTimer FB_FINAL :
+		public Firebird::RefCntIface<Firebird::ITimerImpl<IdleTimer, Firebird::CheckStatusWrapper> >
+	{
+	public:
+		explicit IdleTimer(JAttachment* jAtt) :
+			m_attachment(jAtt),
+			m_fireTime(0),
+			m_expTime(0)
+		{ }
+
+		// ITimer implementation
+		void handler();
+		int release();
+
+		// Set timeout, seconds
+		void reset(unsigned int timeout);
+
+		time_t getExpiryTime() const
+		{
+			return m_expTime;
+		}
+
+	private:
+		Firebird::RefPtr<JAttachment> m_attachment;
+		time_t m_fireTime;		// when ITimer will fire, could be less than m_expTime
+		time_t m_expTime;		// when actual idle timeout will expire
+	};
+
+	unsigned int att_idle_timeout;		// seconds
+	unsigned int att_stmt_timeout;		// milliseconds
+	Firebird::RefPtr<IdleTimer> att_idle_timer;
 };
 
 

@@ -97,7 +97,7 @@ Parser::Parser(thread_db* tdbb, MemoryPool& pool, DsqlCompilerScratch* aScratch,
 	yylexemes = 0;
 
 	lex.start = string;
-	lex.line_start = lex.ptr = string;
+	lex.line_start = lex.last_token = lex.ptr = string;
 	lex.end = string + length;
 	lex.lines = 1;
 	lex.att_charset = characterSet;

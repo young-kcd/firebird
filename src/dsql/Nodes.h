@@ -281,6 +281,24 @@ public:
 };
 
 
+class SetSessionNode : public Node
+{
+public:
+	enum Type { TYPE_IDLE_TIMEOUT, TYPE_STMT_TIMEOUT };
+
+	SetSessionNode(MemoryPool& pool, Type aType, ULONG aVal, UCHAR blr_timepart);
+
+public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
+	virtual SetSessionNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void execute(thread_db* tdbb, dsql_req* request) const;
+
+private:
+	Type m_type;
+	ULONG m_value;
+};
+
+
 class DmlNode : public Node
 {
 public:
@@ -408,6 +426,7 @@ public:
 		TYPE_CURRENT_USER,
 		TYPE_DERIVED_EXPR,
 		TYPE_DECODE,
+		TYPE_DEFAULT,
 		TYPE_DERIVED_FIELD,
 		TYPE_DOMAIN_VALIDATION,
 		TYPE_EXTRACT,
@@ -853,13 +872,13 @@ public:
 		fb_assert(false);
 	}
 
-	virtual DsqlNode* pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
+	virtual ValueExprNode* pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 	{
 		fb_assert(false);
 		return NULL;
 	}
 
-	virtual DsqlNode* pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
+	virtual ValueExprNode* pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 	{
 		fb_assert(false);
 		return NULL;

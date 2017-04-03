@@ -3972,6 +3972,18 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 				}
 				else
 					field->fld_source = PAR_make_field(tdbb, csb, view_context, (TEXT*) p);
+
+				{	// scope
+					const ViewContexts& ctx = relation->rel_view_contexts;
+					FB_SIZE_T pos;
+
+					if (ctx.find(view_context, pos) &&
+						(ctx[pos]->vcx_type == VCT_TABLE || ctx[pos]->vcx_type == VCT_VIEW))
+					{
+						field->fld_source_rel_field = MetaNamePair(ctx[pos]->vcx_relation_name, (TEXT*) p);
+					}
+				}
+
 				break;
 
 			case RSR_computed_blr:
@@ -4034,6 +4046,12 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 
 			case RSR_field_generator_name:
 				field->fld_generator_name = (const TEXT*) p;
+				if (!field->fld_identity_type.specified)
+					field->fld_identity_type = IDENT_TYPE_BY_DEFAULT;
+				break;
+
+			case RSR_field_identity_type:
+				field->fld_identity_type = static_cast<IdentityType>(n);
 				break;
 
 			default:    // Shut up compiler warning

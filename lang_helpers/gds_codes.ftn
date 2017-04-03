@@ -1664,6 +1664,28 @@ C --
       PARAMETER (GDS__dsql_window_duplicate            = 335545125)
       INTEGER*4 GDS__sql_too_long                    
       PARAMETER (GDS__sql_too_long                     = 335545126)
+      INTEGER*4 GDS__cfg_stmt_timeout                
+      PARAMETER (GDS__cfg_stmt_timeout                 = 335545127)
+      INTEGER*4 GDS__att_stmt_timeout                
+      PARAMETER (GDS__att_stmt_timeout                 = 335545128)
+      INTEGER*4 GDS__req_stmt_timeout                
+      PARAMETER (GDS__req_stmt_timeout                 = 335545129)
+      INTEGER*4 GDS__att_shut_killed                 
+      PARAMETER (GDS__att_shut_killed                  = 335545130)
+      INTEGER*4 GDS__att_shut_idle                   
+      PARAMETER (GDS__att_shut_idle                    = 335545131)
+      INTEGER*4 GDS__att_shut_db_down                
+      PARAMETER (GDS__att_shut_db_down                 = 335545132)
+      INTEGER*4 GDS__att_shut_engine                 
+      PARAMETER (GDS__att_shut_engine                  = 335545133)
+      INTEGER*4 GDS__overriding_without_identity     
+      PARAMETER (GDS__overriding_without_identity      = 335545134)
+      INTEGER*4 GDS__overriding_system_invalid       
+      PARAMETER (GDS__overriding_system_invalid        = 335545135)
+      INTEGER*4 GDS__overriding_user_invalid         
+      PARAMETER (GDS__overriding_user_invalid          = 335545136)
+      INTEGER*4 GDS__overriding_system_missing       
+      PARAMETER (GDS__overriding_system_missing        = 335545137)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
@@ -1796,6 +1818,8 @@ C --
       PARAMETER (GDS__dsql_wrong_param_num             = 336003111)
       INTEGER*4 GDS__dsql_invalid_drop_ss_clause     
       PARAMETER (GDS__dsql_invalid_drop_ss_clause      = 336003112)
+      INTEGER*4 GDS__upd_ins_cannot_default          
+      PARAMETER (GDS__upd_ins_cannot_default           = 336003113)
       INTEGER*4 GDS__dyn_filter_not_found            
       PARAMETER (GDS__dyn_filter_not_found             = 336068645)
       INTEGER*4 GDS__dyn_func_not_found              

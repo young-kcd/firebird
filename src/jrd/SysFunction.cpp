@@ -218,6 +218,8 @@ const char
 	CLIENT_PROCESS_NAME[] = "CLIENT_PROCESS",
 	CURRENT_USER_NAME[] = "CURRENT_USER",
 	CURRENT_ROLE_NAME[] = "CURRENT_ROLE",
+	SESSION_IDLE_TIMEOUT[] = "SESSION_IDLE_TIMEOUT",
+	STATEMENT_TIMEOUT[] = "STATEMENT_TIMEOUT",
 	// SYSTEM namespace: transaction wise items
 	TRANSACTION_ID_NAME[] = "TRANSACTION_ID",
 	ISOLATION_LEVEL_NAME[] = "ISOLATION_LEVEL",
@@ -2254,6 +2256,10 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 				return NULL;
 			resultStr = role.c_str();
 		}
+		else if (nameStr == SESSION_IDLE_TIMEOUT)
+			resultStr.printf("%" ULONGFORMAT, attachment->getIdleTimeout());
+		else if (nameStr == STATEMENT_TIMEOUT)
+			resultStr.printf("%" ULONGFORMAT, attachment->getStatementTimeout());
 		else if (nameStr == TRANSACTION_ID_NAME)
 			resultStr.printf("%" SQUADFORMAT, transaction->tra_number);
 		else if (nameStr == ISOLATION_LEVEL_NAME)

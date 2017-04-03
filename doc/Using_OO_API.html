@@ -5,8 +5,10 @@
 	<title></title>
 	<meta name="generator" content="LibreOffice 5.2.3.3 (Linux)"/>
 	<meta name="author" content="alex "/>
-	<meta name="created" content="2013-05-31T00:00:00.010003100"/>
-	<meta name="changed" content="2017-01-31T17:08:57.272616325"/>
+	<meta name="created" content="00:00:00"/>
+	<meta name="changed" content="2017-02-02T17:00:07.121995034"/>
+	<meta name="created" content="2013-05-31T00:00:00.010003100">
+	<meta name="changed" content="2017-01-31T17:08:57.272616325">
 	<meta name="CHANGEDBY" content="Alex Peshkoff">
 	<meta name="CHANGEDBY" content="Alex Peshkoff">
 	<meta name="CHANGEDBY" content="Alex Peshkoff">
@@ -3161,8 +3163,7 @@ or using some own encryption of a key is also very good idea in case
 when network access to the server is used. All this job should be
 done in plugin (and application working with it) i.e. database block
 encryption algorithm by itself may happen to be easiest part of db
-crypt plugin, </font><font size="4" style="font-size: 14pt">specially
-when some standard library is used for it.</font></p>
+crypt plugin, specially when some standard library is used for it.</font></p>
 <p style="margin-bottom: 0in"><br/>
 
 </p>
@@ -3177,6 +3178,19 @@ plugin or key holder plugin.</font></p>
 	is passed in both directions. The source of a key receives
 	dataLength bytes of data and may send up to bufferLength bytes into
 	buffer returning actual number of bytes placed into buffer.</font></p>
+</ol>
+<p style="margin-bottom: 0in"><br/>
+
+</p>
+<p style="margin-bottom: 0in"><a name="DbCryptInfo"></a><font size="4" style="font-size: 14pt">DbCryptInfo
+interface is passed to DbCryptPlugin by engine. Plugin may save this
+interface and use when needed to obtain additional informatio about
+database.</font></p>
+<ol>
+	<li/>
+<p style="margin-bottom: 0in"><font size="4" style="font-size: 14pt">const
+	char* getDatabaseFullPath(StatusType* status) – returns full
+	(including path) name of primary database file.</font></p>
 </ol>
 <p style="margin-bottom: 0in"><br/>
 
@@ -3202,6 +3216,10 @@ interface is main interface of database crypt plugin.</font></p>
 <p style="margin-bottom: 0in"><font size="4" style="font-size: 14pt">void
 	decrypt(StatusType* status, unsigned length, const void* from, void*
 	to) – decrypts data after reading block from database file.</font></p>
+	<li/>
+<p style="margin-bottom: 0in"><font size="4" style="font-size: 14pt">void
+	setInfo(StatusType* status, IDbCryptInfo* info) – in this method
+	crypt plugin typically saves informational interface for future use.</font></p>
 </ol>
 <p style="margin-bottom: 0in"><br/>
 
@@ -3251,11 +3269,11 @@ interface is main interface of database crypt key holder plugin.</font></p>
 	letting it to work with database.</font></p>
 	<li/>
 <p style="margin-bottom: 0in"><font size="4" style="font-size: 14pt">ICryptKeyCallback*
-	chainHandle(StatusType* status) – support of a chain of key holders. In
-	some cases key has to pass through more than single key holder
-	before it reaches db crypt plugin. This is needed (for example) to
-	support execute statement in encrypted database. This is just a
-	sample – chains are also used in some other cases. Callback
+	chainHandle(StatusType* status) – support of a chain of key
+	holders. In some cases key has to pass through more than single key
+	holder before it reaches db crypt plugin. This is needed (for
+	example) to support execute statement in encrypted database. This is
+	just a sample – chains are also used in some other cases. Callback
 	interface, returned by this method, may differ from one returned by
 	keyHandle() function (see above). Typically is should be able to
 	duplicate one-to-one keys, received by KeyHolderPlugin when

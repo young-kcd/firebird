@@ -81,6 +81,12 @@ public:
 	}
 
 	enum Action {NONE, ENC, DEC, EX_LCL, EX_RMT};
+	// Switches/actions have the following meanings:
+	// ENC(-e) - encrypt database
+	// DEC(-d) - decrypt database
+	// EX_LCL(-l) - execute some predefined select command (demonstrates that database can respond to select request)
+	// EX_RMT(-r) - execute select using execute statement in remote datasource (demonstrates that dbcrypt key is
+	//				passed to target database when using execute statement)
 
 	void execute(const char* dbName, const Action a)
 	{

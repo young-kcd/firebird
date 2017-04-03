@@ -680,14 +680,21 @@ namespace
 						// with the flag set cause shutdownMutex mutex is not locked here.
 						// That's not a danger cause check of att_use_count
 						// in shutdown code makes it anyway safe.
-						status_exception::raise(Arg::Gds(isc_att_shutdown));
+						Arg::Gds err(isc_att_shutdown);
+						if (sAtt->getShutError())
+							err << Arg::Gds(sAtt->getShutError());
+
+						err.raise();
 					}
 
 					tdbb->setAttachment(attachment);
 					tdbb->setDatabase(attachment->att_database);
 
 					if (!async)
+					{
 						attachment->att_use_count++;
+						attachment->setupIdleTimer(true);
+					}
 				}
 				catch (const Firebird::Exception&)
 				{
@@ -709,7 +716,11 @@ namespace
 			Jrd::Attachment* attachment = sAtt->getHandle();
 
 			if (attachment && !async)
+			{
 				attachment->att_use_count--;
+				if (!attachment->att_use_count)
+					attachment->setupIdleTimer(false);
+			}
 
 			if (!nolock)
 				sAtt->getMutex(async)->leave();
@@ -1322,7 +1333,7 @@ JAttachment* JProvider::attachDatabase(CheckStatusWrapper* user_status, const ch
 	return internalAttach(user_status, filename, dpb_length, dpb, NULL);
 }
 
-JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const char* filename,
+JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const char* const filename,
 		unsigned int dpb_length, const unsigned char* dpb, const UserId* existingId)
 {
 /**************************************
@@ -1647,7 +1658,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				jAtt->getStable()->manualUnlock(attachment->att_flags);
 				try
 				{
-					getUserInfo(userId, options, org_filename.c_str(), expanded_name.c_str(),
+					getUserInfo(userId, options, filename, expanded_name.c_str(),
 						&config, false, jAtt, cryptCallback);
 				}
 				catch(const Exception&)
@@ -1684,8 +1695,12 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 				if (attachment->att_flags & ATT_shutdown)
 				{
+					const ISC_STATUS err = jAtt->getStable()->getShutError();
+
 					if (dbb->dbb_ast_flags & DBB_shutdown)
 						ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(org_filename));
+					else if (err)
+						ERR_post(Arg::Gds(isc_att_shutdown) << Arg::Gds(err));
 					else
 						ERR_post(Arg::Gds(isc_att_shutdown));
 				}
@@ -1850,6 +1865,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 			CCH_release_exclusive(tdbb);
 
+			attachment->att_trace_manager->activate();
 			if (attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_ATTACH))
 			{
 				TraceConnectionImpl conn(attachment);
@@ -2474,7 +2490,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 				ERR_post(Arg::Gds(isc_unavailable));
 
 			// Check for correct credentials supplied
-			getUserInfo(userId, options, org_filename.c_str(), NULL, &config, true, nullptr, cryptCallback);
+			getUserInfo(userId, options, filename, NULL, &config, true, nullptr, cryptCallback);
 
 #ifdef WIN_NT
 			guardDbInit.enter();		// Required to correctly expand name of just created database
@@ -2784,6 +2800,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			guardDbInit.leave();
 
 			// Report that we created attachment to Trace API
+			attachment->att_trace_manager->activate();
 			if (attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_ATTACH))
 			{
 				TraceConnectionImpl conn(attachment);
@@ -2918,7 +2935,15 @@ void JAttachment::freeEngineData(CheckStatusWrapper* user_status, bool forceFree
 			if (forceFree)
 				flags |= PURGE_NOCHECK;
 
-			attachment->signalShutdown();
+			ISC_STATUS reason = 0;
+			if (!forceFree)
+				reason = 0;
+			else if (engineShutdown)
+				reason = isc_att_shut_engine;
+			else if (dbb->dbb_ast_flags & DBB_shutdown)
+				reason = isc_att_shut_db_down;
+
+			attachment->signalShutdown(reason);
 			purge_attachment(tdbb, getStable(), flags);
 
 			att->release();
@@ -2988,15 +3013,15 @@ void JAttachment::dropDatabase(CheckStatusWrapper* user_status)
 
 				if (attachment->att_flags & ATT_shutdown)
 				{
+					const ISC_STATUS err = getStable()->getShutError();
+
 					if (dbb->dbb_ast_flags & DBB_shutdown)
-					{
 						ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(file_name));
-					}
+					else if (err)
+						ERR_post(Arg::Gds(isc_att_shutdown) << Arg::Gds(err));
 					else
-					{
 						ERR_post(Arg::Gds(isc_att_shutdown));
 					}
-				}
 
 				if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD, NULL))
 				{
@@ -4334,6 +4359,82 @@ void JAttachment::transactRequest(CheckStatusWrapper* user_status, ITransaction*
 	successful_completion(user_status);
 }
 
+unsigned int JAttachment::getIdleTimeout(Firebird::CheckStatusWrapper* user_status)
+{
+	unsigned int result = 0;
+	try
+	{
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		result = getHandle()->getIdleTimeout();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return 0;
+	}
+
+	successful_completion(user_status);
+	return result;
+}
+
+void JAttachment::setIdleTimeout(Firebird::CheckStatusWrapper* user_status, unsigned int timeOut)
+{
+	try
+	{
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		getHandle()->setIdleTimeout(timeOut);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return;
+	}
+
+	successful_completion(user_status);
+}
+
+unsigned int JAttachment::getStatementTimeout(Firebird::CheckStatusWrapper* user_status)
+{
+	unsigned int result = 0;
+	try
+	{
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		result = getHandle()->getStatementTimeout();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return 0;
+	}
+
+	successful_completion(user_status);
+	return result;
+}
+
+void JAttachment::setStatementTimeout(Firebird::CheckStatusWrapper* user_status, unsigned int timeOut)
+{
+	try
+	{
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		getHandle()->setStatementTimeout(timeOut);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return;
+	}
+
+	successful_completion(user_status);
+}
+
 
 void JTransaction::getInfo(CheckStatusWrapper* user_status,
 	unsigned int itemsLength, const unsigned char* items,
@@ -5290,6 +5391,66 @@ void JStatement::getInfo(CheckStatusWrapper* user_status,
 	successful_completion(user_status);
 }
 
+
+unsigned int JStatement::getTimeout(CheckStatusWrapper* user_status)
+{
+	try
+	{
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			Jrd::dsql_req* req = getHandle();
+			return req->getTimeout();
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, user_status, FB_FUNCTION);
+			return 0;
+		}
+		trace_warning(tdbb, user_status, FB_FUNCTION);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return 0;
+	}
+
+	successful_completion(user_status);
+	return 0;
+}
+
+
+void JStatement::setTimeout(CheckStatusWrapper* user_status, unsigned int timeOut)
+{
+	try
+	{
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			Jrd::dsql_req* req = getHandle();
+			req->setTimeout(timeOut);
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, user_status, FB_FUNCTION);
+			return;
+		}
+		trace_warning(tdbb, user_status, FB_FUNCTION);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return;
+	}
+
+	successful_completion(user_status);
+}
+
+
 void JAttachment::ping(CheckStatusWrapper* user_status)
 {
 /**************************************
@@ -5445,7 +5606,11 @@ static void check_database(thread_db* tdbb, bool async)
 		}
 		else
 		{
-			status_exception::raise(Arg::Gds(isc_att_shutdown));
+			Arg::Gds err(isc_att_shutdown);
+			if (attachment->getStable() && attachment->getStable()->getShutError())
+				err << Arg::Gds(attachment->getStable()->getShutError());
+
+			err.raise();
 		}
 	}
 
@@ -7343,7 +7508,7 @@ namespace
 				Attachment* attachment = sAtt->getHandle();
 
 				if (attachment)
-					attachment->signalShutdown();
+					attachment->signalShutdown(isc_att_shut_engine);
 			}
 		}
 
@@ -7483,6 +7648,139 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 }
 
 
+/// TimeoutTimer
+#ifdef USE_ITIMER
+void TimeoutTimer::handler()
+{
+	m_expired = true;
+	m_started = 0;
+}
+
+int TimeoutTimer::release()
+{
+	if (--refCounter == 0)
+	{
+		delete this;
+		return 0;
+	}
+
+	return 1;
+}
+
+unsigned int TimeoutTimer::timeToExpire() const
+{
+	if (!m_started || m_expired)
+		return 0;
+
+	const SINT64 t = fb_utils::query_performance_counter() * 1000 / fb_utils::query_performance_frequency();
+	const SINT64 r = m_started + m_value - t;
+	return r > 0 ? r : 0;
+}
+
+bool TimeoutTimer::getExpireTimestamp(const ISC_TIMESTAMP start, ISC_TIMESTAMP& exp) const
+{
+	if (!m_started || m_expired)
+		return false;
+
+	static const SINT64 ISC_TICKS_PER_DAY = 24 * 60 * 60 * ISC_TIME_SECONDS_PRECISION;
+
+	SINT64 ticks = start.timestamp_date * ISC_TICKS_PER_DAY + start.timestamp_time;
+	ticks += m_value * ISC_TIME_SECONDS_PRECISION / 1000;
+
+	exp.timestamp_date = ticks / ISC_TICKS_PER_DAY;
+	exp.timestamp_time = ticks % ISC_TICKS_PER_DAY;
+
+	return true;
+}
+
+void TimeoutTimer::start()
+{
+	FbLocalStatus s;
+	ITimerControl* timerCtrl = Firebird::TimerInterfacePtr();
+
+	m_expired = false;
+
+	// todo: timerCtrl->restart to avoid 2 times acquire timerCtrl mutex
+
+	if (m_started)
+	{
+		timerCtrl->stop(&s, this);
+		m_started = 0;
+	}
+
+	if (m_value != 0)
+	{
+		timerCtrl->start(&s, this, m_value * 1000);
+		check(&s); // ?? todo
+		m_started = fb_utils::query_performance_counter() * 1000 / fb_utils::query_performance_frequency();
+	}
+
+	fb_assert(m_value && m_started || !m_value && !m_started);
+}
+
+void TimeoutTimer::stop()
+{
+	if (m_started)
+	{
+		m_started = 0;
+
+		FbLocalStatus s;
+		ITimerControl* timerCtrl = Firebird::TimerInterfacePtr();
+		timerCtrl->stop(&s, this);
+	}
+}
+#else
+bool TimeoutTimer::expired() const
+{
+	if (!m_start)
+		return false;
+
+	const SINT64 t = currTime();
+	return t > m_start + m_value;
+}
+
+unsigned int TimeoutTimer::timeToExpire() const
+{
+	if (!m_start)
+		return 0;
+
+	const SINT64 t = currTime();
+	const SINT64 r = m_start + m_value - t;
+	return r > 0 ? r : 0;
+}
+
+bool TimeoutTimer::getExpireTimestamp(const ISC_TIMESTAMP start, ISC_TIMESTAMP& exp) const
+{
+	if (!m_start)
+		return false;
+
+	static const SINT64 ISC_TICKS_PER_DAY = 24 * 60 * 60 * ISC_TIME_SECONDS_PRECISION;
+
+	SINT64 ticks = start.timestamp_date * ISC_TICKS_PER_DAY + start.timestamp_time;
+	ticks += m_value * ISC_TIME_SECONDS_PRECISION / 1000;
+
+	exp.timestamp_date = ticks / ISC_TICKS_PER_DAY;
+	exp.timestamp_time = ticks % ISC_TICKS_PER_DAY;
+
+	return true;
+}
+
+void TimeoutTimer::start()
+{
+	m_start = 0;
+
+	if (m_value != 0)
+		m_start = currTime();
+}
+
+void TimeoutTimer::stop()
+{
+	m_start = 0;
+}
+
+
+#endif // USE_ITIMER
+
 // begin thread_db methods
 
 void thread_db::setDatabase(Database* val)
@@ -7520,7 +7818,7 @@ SSHORT thread_db::getCharSet() const
 	return attachment->att_charset;
 }
 
-ISC_STATUS thread_db::checkCancelState()
+ISC_STATUS thread_db::checkCancelState(ISC_STATUS* secondary)
 {
 	// Test for asynchronous shutdown/cancellation requests.
 	// But do that only if we're neither in the verb cleanup state
@@ -7540,7 +7838,12 @@ ISC_STATUS thread_db::checkCancelState()
 			if (database->dbb_ast_flags & DBB_shutdown)
 				return isc_shutdown;
 			else if (!(tdbb_flags & TDBB_shutdown_manager))
+			{
+				if (secondary)
+					*secondary = attachment->getStable() ? attachment->getStable()->getShutError() : 0;
+
 				return isc_att_shutdown;
+			}
 		}
 
 		// If a cancel has been raised, defer its acknowledgement
@@ -7561,6 +7864,14 @@ ISC_STATUS thread_db::checkCancelState()
 		}
 	}
 
+	if (tdbb_reqTimer && tdbb_reqTimer->expired())
+	{
+		if (secondary)
+			*secondary = tdbb_reqTimer->getErrCode();
+
+		return isc_cancelled;
+	}
+
 	// Check the thread state for already posted system errors. If any still persists,
 	// then someone tries to ignore our attempts to interrupt him. Let's insist.
 
@@ -7572,7 +7883,8 @@ ISC_STATUS thread_db::checkCancelState()
 
 bool thread_db::checkCancelState(bool punt)
 {
-	const ISC_STATUS error = checkCancelState();
+	ISC_STATUS secondary = 0;
+	const ISC_STATUS error = checkCancelState(&secondary);
 
 	if (!error)
 		return false;
@@ -7581,6 +7893,9 @@ bool thread_db::checkCancelState(bool punt)
 
 	if (error == isc_shutdown)
 		status << Arg::Str(attachment->att_filename);
+
+	if (secondary)
+		status << Arg::Gds(secondary);
 
 	if (attachment)
 		attachment->att_flags &= ~ATT_cancel_raise;
