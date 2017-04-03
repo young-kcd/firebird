@@ -621,9 +621,10 @@
 #RelaxedAliasChecking = 0
 
 # ----------------------------
-# Firebird 3.0 engine provides statement-level read consistency in READ COMMITTED
+# Engine currently provides statement-level read consistency in READ COMMITTED
 # mode by default. In this mode rec_version/no_rec_version transaction flags have
-# no effect. This setting allows to re-enable legacy behavior.
+# no effect. Setting this parameter to 0 effectively reverts engine to legacy
+# behavior.
 # 
 # CAUTION!
 # There is no guarantee that legacy behavior will be available in future Firebird
