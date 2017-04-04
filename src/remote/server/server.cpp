@@ -2966,7 +2966,10 @@ ISC_STATUS rem_port::end_blob(P_OP operation, P_RLSE * release, PACKET* sendL)
 		blob->rbl_iface->cancel(&status_vector);
 
 	if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
+	{
+		blob->rbl_iface = NULL;
 		release_blob(blob);
+	}
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);
 }
@@ -3045,7 +3048,10 @@ ISC_STATUS rem_port::end_request(P_RLSE * release, PACKET* sendL)
 	requestL->rrq_iface->free(&status_vector);
 
 	if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
+	{
+		requestL->rrq_iface = NULL;
 		release_request(requestL);
+	}
 
 	return this->send_response(sendL, 0, 0, &status_vector, true);
 }
@@ -5165,6 +5171,7 @@ static void release_transaction( Rtr* transaction)
 	{
 		Rsr* const statement = transaction->rtr_cursors.pop();
 		fb_assert(statement->rsr_cursor);
+		statement->rsr_cursor->release();
 		statement->rsr_cursor = NULL;
 	}
 
@@ -5951,7 +5958,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 						// It is very important to not release port_que_sync before
 						// port_sync, else we can miss data arrived at time between
 						// releasing locks and will never handle it. Therefore we
-						// can't ise MutexLockGuard here
+						// can't use MutexLockGuard here
 						portQueGuard.enter();
 						if (port->haveRecvData())
 						{
