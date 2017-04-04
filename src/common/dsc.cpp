@@ -1338,12 +1338,12 @@ void dsc::getSqlInfo(SLONG* sqlLength, SLONG* sqlSubType, SLONG* sqlScale, SLONG
 			break;
 
 		case dtype_dec64:
-			*sqlType = SQL_DEC64;
+			*sqlType = SQL_DEC16;
 			*sqlScale = 0;
 			break;
 
 		case dtype_dec128:
-			*sqlType = SQL_DEC128;
+			*sqlType = SQL_DEC34;
 			*sqlScale = 0;
 			break;
 

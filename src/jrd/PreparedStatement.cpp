@@ -100,12 +100,12 @@ namespace
 				break;
 
 			case dtype_dec64:
-				item.type = SQL_DEC64;
+				item.type = SQL_DEC16;
 				item.length = sizeof(Decimal64);
 				break;
 
 			case dtype_dec128:
-				item.type = SQL_DEC128;
+				item.type = SQL_DEC34;
 				item.length = sizeof(Decimal128);
 				break;
 

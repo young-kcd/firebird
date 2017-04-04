@@ -1516,9 +1516,9 @@ UCHAR sqlTypeToDscType(SSHORT sqlType)
 		return dtype_quad;
 	case SQL_BOOLEAN:
 		return dtype_boolean;
-	case SQL_DEC64:
+	case SQL_DEC16:
 		return dtype_dec64;
-	case SQL_DEC128:
+	case SQL_DEC34:
 		return dtype_dec128;
 	default:
 		return dtype_unknown;

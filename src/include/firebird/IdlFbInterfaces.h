@@ -111,6 +111,8 @@ namespace Firebird
 	class IUdrProcedureFactory;
 	class IUdrTriggerFactory;
 	class IUdrPlugin;
+	class IDecFloat16;
+	class IDecFloat34;
 
 	// Interfaces declarations
 
@@ -3695,6 +3697,8 @@ namespace Firebird
 			IXpbBuilder* (CLOOP_CARG *getXpbBuilder)(IUtil* self, IStatus* status, unsigned kind, const unsigned char* buf, unsigned len) throw();
 			unsigned (CLOOP_CARG *setOffsets)(IUtil* self, IStatus* status, IMessageMetadata* metadata, IOffsetsCallback* callback) throw();
 			IEventBlock* (CLOOP_CARG *createEventBlock)(IUtil* self, IStatus* status, const char** events) throw();
+			IDecFloat16* (CLOOP_CARG *getDecFloat16)(IUtil* self, IStatus* status) throw();
+			IDecFloat34* (CLOOP_CARG *getDecFloat34)(IUtil* self, IStatus* status) throw();
 		};
 
 	protected:
@@ -3806,6 +3810,34 @@ namespace Firebird
 			}
 			StatusType::clearException(status);
 			IEventBlock* ret = static_cast<VTable*>(this->cloopVTable)->createEventBlock(this, status, events);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> IDecFloat16* getDecFloat16(StatusType* status)
+		{
+			if (cloopVTable->version < 3)
+			{
+				StatusType::setVersionError(status, "IUtil", cloopVTable->version, 3);
+				StatusType::checkException(status);
+				return 0;
+			}
+			StatusType::clearException(status);
+			IDecFloat16* ret = static_cast<VTable*>(this->cloopVTable)->getDecFloat16(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> IDecFloat34* getDecFloat34(StatusType* status)
+		{
+			if (cloopVTable->version < 3)
+			{
+				StatusType::setVersionError(status, "IUtil", cloopVTable->version, 3);
+				StatusType::checkException(status);
+				return 0;
+			}
+			StatusType::clearException(status);
+			IDecFloat34* ret = static_cast<VTable*>(this->cloopVTable)->getDecFloat34(this, status);
 			StatusType::checkException(status);
 			return ret;
 		}
@@ -5265,6 +5297,106 @@ namespace Firebird
 		{
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->registerTrigger(this, status, name, factory);
+			StatusType::checkException(status);
+		}
+	};
+
+	class IDecFloat16 : public IVersioned
+	{
+	public:
+		struct VTable : public IVersioned::VTable
+		{
+			void (CLOOP_CARG *scatter)(IDecFloat16* self, const FB_DEC16* from, int* sign, unsigned char* bcd, int* exp) throw();
+			void (CLOOP_CARG *toStr)(IDecFloat16* self, const FB_DEC16* from, char* to) throw();
+			void (CLOOP_CARG *gather)(IDecFloat16* self, int sign, const unsigned char* bcd, int exp, FB_DEC16* to) throw();
+			void (CLOOP_CARG *fromStr)(IDecFloat16* self, IStatus* status, const char* from, FB_DEC16* to) throw();
+		};
+
+	protected:
+		IDecFloat16(DoNotInherit)
+			: IVersioned(DoNotInherit())
+		{
+		}
+
+		~IDecFloat16()
+		{
+		}
+
+	public:
+		static const unsigned VERSION = 2;
+
+		static const unsigned BCD_SIZE = 16;
+		static const unsigned STRING_SIZE = 25;
+
+		void scatter(const FB_DEC16* from, int* sign, unsigned char* bcd, int* exp)
+		{
+			static_cast<VTable*>(this->cloopVTable)->scatter(this, from, sign, bcd, exp);
+		}
+
+		void toStr(const FB_DEC16* from, char* to)
+		{
+			static_cast<VTable*>(this->cloopVTable)->toStr(this, from, to);
+		}
+
+		void gather(int sign, const unsigned char* bcd, int exp, FB_DEC16* to)
+		{
+			static_cast<VTable*>(this->cloopVTable)->gather(this, sign, bcd, exp, to);
+		}
+
+		template <typename StatusType> void fromStr(StatusType* status, const char* from, FB_DEC16* to)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->fromStr(this, status, from, to);
+			StatusType::checkException(status);
+		}
+	};
+
+	class IDecFloat34 : public IVersioned
+	{
+	public:
+		struct VTable : public IVersioned::VTable
+		{
+			void (CLOOP_CARG *scatter)(IDecFloat34* self, const FB_DEC34* from, int* sign, unsigned char* bcd, int* exp) throw();
+			void (CLOOP_CARG *toStr)(IDecFloat34* self, const FB_DEC34* from, char* to) throw();
+			void (CLOOP_CARG *gather)(IDecFloat34* self, int sign, const unsigned char* bcd, int exp, FB_DEC34* to) throw();
+			void (CLOOP_CARG *fromStr)(IDecFloat34* self, IStatus* status, const char* from, FB_DEC34* to) throw();
+		};
+
+	protected:
+		IDecFloat34(DoNotInherit)
+			: IVersioned(DoNotInherit())
+		{
+		}
+
+		~IDecFloat34()
+		{
+		}
+
+	public:
+		static const unsigned VERSION = 2;
+
+		static const unsigned BCD_SIZE = 34;
+		static const unsigned STRING_SIZE = 43;
+
+		void scatter(const FB_DEC34* from, int* sign, unsigned char* bcd, int* exp)
+		{
+			static_cast<VTable*>(this->cloopVTable)->scatter(this, from, sign, bcd, exp);
+		}
+
+		void toStr(const FB_DEC34* from, char* to)
+		{
+			static_cast<VTable*>(this->cloopVTable)->toStr(this, from, to);
+		}
+
+		void gather(int sign, const unsigned char* bcd, int exp, FB_DEC34* to)
+		{
+			static_cast<VTable*>(this->cloopVTable)->gather(this, sign, bcd, exp, to);
+		}
+
+		template <typename StatusType> void fromStr(StatusType* status, const char* from, FB_DEC34* to)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->fromStr(this, status, from, to);
 			StatusType::checkException(status);
 		}
 	};
@@ -12940,6 +13072,8 @@ namespace Firebird
 					this->getXpbBuilder = &Name::cloopgetXpbBuilderDispatcher;
 					this->setOffsets = &Name::cloopsetOffsetsDispatcher;
 					this->createEventBlock = &Name::cloopcreateEventBlockDispatcher;
+					this->getDecFloat16 = &Name::cloopgetDecFloat16Dispatcher;
+					this->getDecFloat34 = &Name::cloopgetDecFloat34Dispatcher;
 				}
 			} vTable;
 
@@ -13137,6 +13271,36 @@ namespace Firebird
 				return static_cast<IEventBlock*>(0);
 			}
 		}
+
+		static IDecFloat16* CLOOP_CARG cloopgetDecFloat16Dispatcher(IUtil* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getDecFloat16(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<IDecFloat16*>(0);
+			}
+		}
+
+		static IDecFloat34* CLOOP_CARG cloopgetDecFloat34Dispatcher(IUtil* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getDecFloat34(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<IDecFloat34*>(0);
+			}
+		}
 	};
 
 	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUtil> > >
@@ -13166,6 +13330,8 @@ namespace Firebird
 		virtual IXpbBuilder* getXpbBuilder(StatusType* status, unsigned kind, const unsigned char* buf, unsigned len) = 0;
 		virtual unsigned setOffsets(StatusType* status, IMessageMetadata* metadata, IOffsetsCallback* callback) = 0;
 		virtual IEventBlock* createEventBlock(StatusType* status, const char** events) = 0;
+		virtual IDecFloat16* getDecFloat16(StatusType* status) = 0;
+		virtual IDecFloat34* getDecFloat34(StatusType* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
@@ -16355,6 +16521,192 @@ namespace Firebird
 		virtual void registerFunction(StatusType* status, const char* name, IUdrFunctionFactory* factory) = 0;
 		virtual void registerProcedure(StatusType* status, const char* name, IUdrProcedureFactory* factory) = 0;
 		virtual void registerTrigger(StatusType* status, const char* name, IUdrTriggerFactory* factory) = 0;
+	};
+
+	template <typename Name, typename StatusType, typename Base>
+	class IDecFloat16BaseImpl : public Base
+	{
+	public:
+		typedef IDecFloat16 Declaration;
+
+		IDecFloat16BaseImpl(DoNotInherit = DoNotInherit())
+		{
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->scatter = &Name::cloopscatterDispatcher;
+					this->toStr = &Name::clooptoStrDispatcher;
+					this->gather = &Name::cloopgatherDispatcher;
+					this->fromStr = &Name::cloopfromStrDispatcher;
+				}
+			} vTable;
+
+			this->cloopVTable = &vTable;
+		}
+
+		static void CLOOP_CARG cloopscatterDispatcher(IDecFloat16* self, const FB_DEC16* from, int* sign, unsigned char* bcd, int* exp) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::scatter(from, sign, bcd, exp);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static void CLOOP_CARG clooptoStrDispatcher(IDecFloat16* self, const FB_DEC16* from, char* to) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::toStr(from, to);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopgatherDispatcher(IDecFloat16* self, int sign, const unsigned char* bcd, int exp, FB_DEC16* to) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::gather(sign, bcd, exp, to);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopfromStrDispatcher(IDecFloat16* self, IStatus* status, const char* from, FB_DEC16* to) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::fromStr(&status2, from, to);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+	};
+
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IDecFloat16> > >
+	class IDecFloat16Impl : public IDecFloat16BaseImpl<Name, StatusType, Base>
+	{
+	protected:
+		IDecFloat16Impl(DoNotInherit = DoNotInherit())
+		{
+		}
+
+	public:
+		virtual ~IDecFloat16Impl()
+		{
+		}
+
+		virtual void scatter(const FB_DEC16* from, int* sign, unsigned char* bcd, int* exp) = 0;
+		virtual void toStr(const FB_DEC16* from, char* to) = 0;
+		virtual void gather(int sign, const unsigned char* bcd, int exp, FB_DEC16* to) = 0;
+		virtual void fromStr(StatusType* status, const char* from, FB_DEC16* to) = 0;
+	};
+
+	template <typename Name, typename StatusType, typename Base>
+	class IDecFloat34BaseImpl : public Base
+	{
+	public:
+		typedef IDecFloat34 Declaration;
+
+		IDecFloat34BaseImpl(DoNotInherit = DoNotInherit())
+		{
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->scatter = &Name::cloopscatterDispatcher;
+					this->toStr = &Name::clooptoStrDispatcher;
+					this->gather = &Name::cloopgatherDispatcher;
+					this->fromStr = &Name::cloopfromStrDispatcher;
+				}
+			} vTable;
+
+			this->cloopVTable = &vTable;
+		}
+
+		static void CLOOP_CARG cloopscatterDispatcher(IDecFloat34* self, const FB_DEC34* from, int* sign, unsigned char* bcd, int* exp) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::scatter(from, sign, bcd, exp);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static void CLOOP_CARG clooptoStrDispatcher(IDecFloat34* self, const FB_DEC34* from, char* to) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::toStr(from, to);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopgatherDispatcher(IDecFloat34* self, int sign, const unsigned char* bcd, int exp, FB_DEC34* to) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::gather(sign, bcd, exp, to);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopfromStrDispatcher(IDecFloat34* self, IStatus* status, const char* from, FB_DEC34* to) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::fromStr(&status2, from, to);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+	};
+
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IDecFloat34> > >
+	class IDecFloat34Impl : public IDecFloat34BaseImpl<Name, StatusType, Base>
+	{
+	protected:
+		IDecFloat34Impl(DoNotInherit = DoNotInherit())
+		{
+		}
+
+	public:
+		virtual ~IDecFloat34Impl()
+		{
+		}
+
+		virtual void scatter(const FB_DEC34* from, int* sign, unsigned char* bcd, int* exp) = 0;
+		virtual void toStr(const FB_DEC34* from, char* to) = 0;
+		virtual void gather(int sign, const unsigned char* bcd, int exp, FB_DEC34* to) = 0;
+		virtual void fromStr(StatusType* status, const char* from, FB_DEC34* to) = 0;
 	};
 };
 

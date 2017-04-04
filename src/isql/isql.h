@@ -35,7 +35,7 @@
 
 #include "../jrd/flags.h"
 #include <stdlib.h>
-#include "../common/DecFloat.h"
+#include <firebird/Interface.h>
 
 // Define lengths used in isql.e
 
@@ -402,13 +402,12 @@ public:
 	USHORT major_ods;
 	USHORT minor_ods;
 	USHORT att_charset;
-	Firebird::DecimalStatus decStatus;
+	Firebird::IDecFloat16* df16;
+	Firebird::IDecFloat34* df34;
 	void printf(const char* buffer, ...);
 	void prints(const char* buffer);
 
-	IsqlGlobals()
-		: decStatus(DEC_Errors)
-	{ }
+	IsqlGlobals();
 };
 
 extern IsqlGlobals isqlGlob;
@@ -462,8 +461,8 @@ struct IsqlVar
 		ISC_QUAD* blobid;
 		vary* asVary;
 		char* asChar;
-		Firebird::Decimal64* asDec64;
-		Firebird::Decimal128* asDec128;
+		FB_DEC16* asDec16;
+		FB_DEC34* asDec34;
 		void* setPtr;
 	};
 	TypeMix value;

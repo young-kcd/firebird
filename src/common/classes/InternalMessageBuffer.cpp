@@ -173,12 +173,12 @@ MetadataFromBlr::MetadataFromBlr(unsigned aBlrLength, const unsigned char* aBlr,
 			break;
 
 		case blr_dec64:
-			item->type = SQL_DEC64;
+			item->type = SQL_DEC16;
 			item->length = sizeof(Decimal64);
 			break;
 
 		case blr_dec128:
-			item->type = SQL_DEC128;
+			item->type = SQL_DEC34;
 			item->length = sizeof(Decimal128);
 			break;
 
