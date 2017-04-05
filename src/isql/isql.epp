@@ -2304,7 +2304,7 @@ static processing_state add_row(TEXT* tabname)
 				case SQL_DEC16:
 					d64value = (FB_DEC16*) datap;
 					if (isqlGlob.df16)
-						isqlGlob.df16->fromStr(fbStatus, lastInputLine, d64value);
+						isqlGlob.df16->fromString(fbStatus, lastInputLine, d64value);
 					if ((!isqlGlob.df16) || (fbStatus->getState() & Firebird::IStatus::STATE_ERRORS))
 					{
 						STDERROUT("Input parsing problem");
@@ -2315,7 +2315,7 @@ static processing_state add_row(TEXT* tabname)
 				case SQL_DEC34:
 					d128value = (FB_DEC34*) datap;
 					if (isqlGlob.df34)
-						isqlGlob.df34->fromStr(fbStatus, lastInputLine, d128value);
+						isqlGlob.df34->fromString(fbStatus, lastInputLine, d128value);
 					if ((!isqlGlob.df34) || (fbStatus->getState() & Firebird::IStatus::STATE_ERRORS))
 					{
 						STDERROUT("Input parsing problem");
@@ -3076,7 +3076,7 @@ static processing_state bulk_insert_hack(const char* command)
 				case SQL_DEC16:
 					d64value = (FB_DEC16*) datap;
 					if (isqlGlob.df16)
-						isqlGlob.df16->fromStr(fbStatus, lastInputLine, d64value);
+						isqlGlob.df16->fromString(fbStatus, lastInputLine, d64value);
 					if ((!isqlGlob.df16) || (fbStatus->getState() & Firebird::IStatus::STATE_ERRORS))
 					{
 						STDERROUT("Input parsing problem");
@@ -3087,7 +3087,7 @@ static processing_state bulk_insert_hack(const char* command)
 				case SQL_DEC34:
 					d128value = (FB_DEC34*) datap;
 					if (isqlGlob.df34)
-						isqlGlob.df34->fromStr(fbStatus, lastInputLine, d128value);
+						isqlGlob.df34->fromString(fbStatus, lastInputLine, d128value);
 					if ((!isqlGlob.df34) || (fbStatus->getState() & Firebird::IStatus::STATE_ERRORS))
 					{
 						STDERROUT("Input parsing problem");
@@ -7236,7 +7236,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 			{
 				char decStr[Firebird::IDecFloat16::STRING_SIZE];
 				if (isqlGlob.df16)
-					isqlGlob.df16->toStr(var->value.asDec16, decStr);
+					isqlGlob.df16->toString(var->value.asDec16, decStr);
 				else
 					strcpy(decStr, "Conversion error");
 
@@ -7251,7 +7251,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 			{
 				char decStr[Firebird::IDecFloat34::STRING_SIZE];
 				if (isqlGlob.df34)
-					isqlGlob.df34->toStr(var->value.asDec34, decStr);
+					isqlGlob.df34->toString(var->value.asDec34, decStr);
 				else
 					strcpy(decStr, "Conversion error");
 

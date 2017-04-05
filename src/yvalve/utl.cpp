@@ -1061,22 +1061,22 @@ class DecFloat16 FB_FINAL : public AutoIface<IDecFloat16Impl<DecFloat16, CheckSt
 {
 public:
 	// IDecFloat16 implementation
-	void scatter(const FB_DEC16* from, int* sign, unsigned char* bcd, int* exp)
+	void toBcd(const FB_DEC16* from, int* sign, unsigned char* bcd, int* exp)
 	{
 		*sign = decDoubleToBCD(reinterpret_cast<const decDouble*>(from), exp, bcd);
 	}
 
-	void toStr(const FB_DEC16* from, char* to)
+	void toString(const FB_DEC16* from, char* to)
 	{
 		decDoubleToString(reinterpret_cast<const decDouble*>(from), to);
 	}
 
-	void gather(int sign, const unsigned char* bcd, int exp, FB_DEC16* to)
+	void fromBcd(int sign, const unsigned char* bcd, int exp, FB_DEC16* to)
 	{
 		decDoubleFromBCD(reinterpret_cast<decDouble*>(to), exp, bcd, sign ? DECFLOAT_Sign : 0);
 	}
 
-	void fromStr(CheckStatusWrapper* status, const char* from, FB_DEC16* to)
+	void fromString(CheckStatusWrapper* status, const char* from, FB_DEC16* to)
 	{
 		try
 		{
@@ -1101,22 +1101,22 @@ class DecFloat34 FB_FINAL : public AutoIface<IDecFloat34Impl<DecFloat34, CheckSt
 {
 public:
 	// IDecFloat34 implementation
-	void scatter(const FB_DEC34* from, int* sign, unsigned char* bcd, int* exp)
+	void toBcd(const FB_DEC34* from, int* sign, unsigned char* bcd, int* exp)
 	{
 		*sign = decQuadToBCD(reinterpret_cast<const decQuad*>(from), exp, bcd);
 	}
 
-	void toStr(const FB_DEC34* from, char* to)
+	void toString(const FB_DEC34* from, char* to)
 	{
 		decQuadToString(reinterpret_cast<const decQuad*>(from), to);
 	}
 
-	void gather(int sign, const unsigned char* bcd, int exp, FB_DEC34* to)
+	void fromBcd(int sign, const unsigned char* bcd, int exp, FB_DEC34* to)
 	{
 		decQuadFromBCD(reinterpret_cast<decQuad*>(to), exp, bcd, sign ? DECFLOAT_Sign : 0);
 	}
 
-	void fromStr(CheckStatusWrapper* status, const char* from, FB_DEC34* to)
+	void fromString(CheckStatusWrapper* status, const char* from, FB_DEC34* to)
 	{
 		try
 		{
