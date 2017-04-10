@@ -917,6 +917,19 @@ public:
 		if (!allowCancel)
 			return;
 
+		if (!(port->port_flags & PORT_disconnect))
+		{
+			PACKET packet;
+			packet.p_operation = op_event;
+			P_EVENT* p_event = &packet.p_event;
+			p_event->p_event_database = rdb->rdb_id;
+			p_event->p_event_items.cstr_length = length;
+			p_event->p_event_items.cstr_address = items;
+			p_event->p_event_rid = event->rvnt_id;
+
+			port->send(&packet);
+		}
+
 		if (event->rvnt_iface)
 		{
 			LocalStatus ls;
@@ -924,19 +937,6 @@ public:
 			event->rvnt_iface->cancel(&status_vector);
 			event->rvnt_iface = NULL;
 		}
-
-		if (port->port_flags & PORT_disconnect)
-			return;
-
-		PACKET packet;
-		packet.p_operation = op_event;
-		P_EVENT* p_event = &packet.p_event;
-		p_event->p_event_database = rdb->rdb_id;
-		p_event->p_event_items.cstr_length = length;
-		p_event->p_event_items.cstr_address = items;
-		p_event->p_event_rid = event->rvnt_id;
-
-		port->send(&packet);
 	}
 
 	int release()
@@ -4749,8 +4749,8 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 	{
 		if (!event->rvnt_iface)
 		{
-			event->rvnt_destroyed = 0;
-			break;
+			if (event->rvnt_destroyed.compareExchange(1, 0))
+				break;
 		}
 	}
 
