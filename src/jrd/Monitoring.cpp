@@ -978,8 +978,10 @@ void Monitoring::putTransaction(SnapshotData::DumpRecord& record, const jrd_tra*
 		temp = iso_mode_consistency;
 	else if (transaction->tra_flags & TRA_read_committed)
 	{
-		temp = (transaction->tra_flags & TRA_rec_version) ?
-			iso_mode_rc_version : iso_mode_rc_no_version;
+		temp = (transaction->tra_flags & TRA_read_consistency) ?
+			iso_mode_rc_read_consistency :
+			(transaction->tra_flags & TRA_rec_version) ?
+				iso_mode_rc_version : iso_mode_rc_no_version;
 	}
 	else
 		temp = iso_mode_concurrency;
