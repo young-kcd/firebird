@@ -288,7 +288,7 @@ public:
 	USHORT charSetId;						// "client" character set of the request
 	TriggerAction req_trigger_action;		// action that caused trigger to fire
 
-	// Fields to support READ COMMITTED cursor stability
+	// Fields to support read consistency in READ COMMITTED transactions
 	jrd_req*		req_snapshot_owner;
 	SnapshotHandle	req_snapshot_handle;
 	CommitNumber	req_snapshot_number;

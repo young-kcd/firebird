@@ -133,7 +133,7 @@ CommitNumber ActiveSnapshots::getSnapshotForVersion(CommitNumber version_cn)
 void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request) 
 {
 	// This function is called whenever request is started in a transaction.
-	// Setup context to preserve cursor stability in READ COMMITTED transactions.
+	// Setup context to preserve read consistency in READ COMMITTED transactions.
 
 	Jrd::jrd_tra* transaction = request->req_transaction;
 
@@ -179,7 +179,7 @@ void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
 	}
 
 	// If we are a top-level request or caller is executed in a different transaction,
-	// we need to set up statement snapshot for cursor stability and own it
+	// we need to set up statement snapshot for read consistency and own it
 
 	request->req_snapshot_owner = request;
 
@@ -1592,7 +1592,7 @@ int TRA_snapshot_state(thread_db* tdbb, jrd_tra* trans, TraNumber number, Commit
 			default: 
 				state = tra_committed; 
 				if (snapshot)
-					*snapshot = trans->tra_active_snapshots.getSnapshotForVersion(CN_PREHISTORIC);
+					*snapshot = trans->tra_active_snapshots.getSnapshotForVersion(stateCn);
 				break;
 		}
 	} 
@@ -3375,8 +3375,8 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 
 	// If the transaction is read-only and read committed, it can be
 	// precommitted because it can't modify any records.
-	// 2014-08-26 NS XXX: with latest changes in TIP cache semantics and cursors
-	// stability changes precommitted transactions offer almost no benefit, but
+	// 2014-08-26 NS XXX: with latest changes in TIP cache semantics and read 
+	// consistency changes precommitted transactions offer almost no benefit, but
 	// complicate implementation considerably. It might make sense to remove
 	// precommitted transactions logic completely.
 
