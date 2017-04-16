@@ -4697,11 +4697,12 @@ static void server_ast(void* event_void, USHORT length, const UCHAR* items)
  **************************************/
 	Rvnt* event = static_cast<Rvnt*>(event_void);
 
-	event->rvnt_id = 0;
 	Rdb* rdb = event->rvnt_rdb;
 
 	rem_port* port = rdb->rdb_port->port_async;
-	if (!port) {
+	if (!port) 
+	{
+		event->rvnt_id = 0;
 		return;
 	}
 
@@ -4722,6 +4723,8 @@ static void server_ast(void* event_void, USHORT length, const UCHAR* items)
 	p_event->p_event_rid = event->rvnt_rid;
 
 	port->send(&packet);
+
+	event->rvnt_id = 0;
 }
 
 
