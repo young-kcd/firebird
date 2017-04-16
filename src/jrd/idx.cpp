@@ -1679,6 +1679,11 @@ void IDX_modify_flag_uk_modified(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 
+	// System relations have no foreign keys - so don't waste time looking for
+	// partners. Also, avoid possible self-blockage if relation is RDB$INDICES.
+	if (org_rpb->rpb_relation->isSystem())
+		return;
+
 	if ((org_rpb->rpb_flags & rpb_uk_modified) &&
 		(org_rpb->rpb_transaction_nr == new_rpb->rpb_transaction_nr))
 	{
