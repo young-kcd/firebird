@@ -2472,8 +2472,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 
 	invalidate_cursor_records(transaction, new_rpb);
 
-	if (relation->rel_flags & REL_check_partners)
-		MET_scan_partners(tdbb, relation);
+	MET_scan_partners(tdbb, relation);
 
 	/* We're almost ready to go.  To modify the record, we must first
 	make a copy of the old record someplace else.  Then we must re-fetch
