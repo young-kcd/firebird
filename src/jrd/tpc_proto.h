@@ -121,7 +121,7 @@ public:
 	SnapshotHandle beginSnapshot(thread_db* tdbb, AttNumber attachmentId, CommitNumber *commitNumber_out);
 
 	// Deallocate snapshot.
-	void endSnapshot(thread_db* tdbb, SnapshotHandle handle);
+	void endSnapshot(thread_db* tdbb, SnapshotHandle handle, AttNumber attachmentId);
 
 	// Get the list of active snapshots for GC purposes. This function can be 
 	// called multiple times with the same object to obtain most recent information.

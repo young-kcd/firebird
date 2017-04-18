@@ -778,7 +778,7 @@ void TipCache::deallocateSnapshotSlot(SnapshotHandle slotNumber)
 	}
 }
 
-void TipCache::endSnapshot(thread_db* tdbb, SnapshotHandle handle) 
+void TipCache::endSnapshot(thread_db* tdbb, SnapshotHandle handle, AttNumber attachmentId)
 {
 	// Can only be called on initialized TipCache
 	fb_assert(m_tpcHeader);
@@ -793,10 +793,15 @@ void TipCache::endSnapshot(thread_db* tdbb, SnapshotHandle handle)
 	// Perform some sanity checks on a handle
 	SnapshotList *snapshots = m_snapshots->getHeader();
 	SnapshotData *slot = snapshots->slots + handle;
-	if (handle >= snapshots->slots_used.load(std::memory_order_relaxed) || 
-		slot->attachment_id.load(std::memory_order_relaxed) != tdbb->getAttachment()->att_attachment_id)
+
+	if (handle >= snapshots->slots_used.load(std::memory_order_relaxed))
 	{
-		ERR_bugcheck_msg("Incorrect snapshot deallocation");
+		ERR_bugcheck_msg("Incorrect snapshot deallocation - too few slots");
+	}
+
+	if (slot->attachment_id.load(std::memory_order_relaxed) != attachmentId)
+	{
+		ERR_bugcheck_msg("Incorrect snapshot deallocation - attachment mismatch");
 	}
 
 	// Deallocate slot

@@ -199,7 +199,8 @@ void TRA_release_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
 
 	if (request->req_snapshot_handle) 
 	{
-		tdbb->getDatabase()->dbb_tip_cache->endSnapshot(tdbb, request->req_snapshot_handle);
+		tdbb->getDatabase()->dbb_tip_cache->endSnapshot(tdbb, request->req_snapshot_handle, 
+			request->req_attachment->att_attachment_id);
 		request->req_snapshot_handle = 0;
 	}
 
@@ -1312,7 +1313,8 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 
 	if (!(transaction->tra_flags & TRA_read_committed)) 
 	{
-		dbb->dbb_tip_cache->endSnapshot(tdbb, transaction->tra_snapshot_handle);
+		dbb->dbb_tip_cache->endSnapshot(tdbb, transaction->tra_snapshot_handle,
+			transaction->tra_attachment->att_attachment_id);
 	}
 
 	// Release the transaction and its pool
