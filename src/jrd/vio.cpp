@@ -1431,7 +1431,6 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	jrd_rel* relation = rpb->rpb_relation;
 
 	tdbb->bumpRelStats(RuntimeStatistics::RECORD_DELETES, relation->rel_id);
-	tdbb->bumpStats(RuntimeStatistics::RECORD_DELETES);
 
 	// Special case system transaction
 
