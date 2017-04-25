@@ -133,7 +133,7 @@ unsigned digits(const unsigned pMax, unsigned char* const coeff, int& exp)
 	return 0;
 }
 
-void make(unsigned int* key,
+void make(ULONG* key,
 	const unsigned pMax, const int bias, const unsigned decSize,
 	unsigned char* coeff, int sign, int exp)
 {
@@ -165,7 +165,7 @@ void make(unsigned int* key,
 	}
 }
 
-void grab(unsigned int* key,
+void grab(ULONG* key,
 	const unsigned pMax, const int bias, const unsigned decSize,
 	unsigned char* bcd, int& sign, int& exp)
 {
@@ -363,7 +363,7 @@ Decimal64 Decimal64::neg() const
 	return rc;
 }
 
-void Decimal64::makeKey(unsigned int* key) const
+void Decimal64::makeKey(ULONG* key) const
 {
 	unsigned char coeff[DECDOUBLE_Pmax];
 	int sign = decDoubleGetCoefficient(&dec, coeff);
@@ -372,7 +372,7 @@ void Decimal64::makeKey(unsigned int* key) const
 	make(key, DECDOUBLE_Pmax, DECDOUBLE_Bias, sizeof(dec), coeff, sign, exp);
 }
 
-void Decimal64::grabKey(unsigned int* key)
+void Decimal64::grabKey(ULONG* key)
 {
 	int exp, sign;
 	unsigned char bcd[DECDOUBLE_Pmax];
@@ -762,7 +762,7 @@ Decimal128 Decimal128::log10(DecimalStatus decSt) const
 	return rc;
 }
 
-void Decimal128::makeKey(unsigned int* key) const
+void Decimal128::makeKey(ULONG* key) const
 {
 	unsigned char coeff[DECQUAD_Pmax];
 	int sign = decQuadGetCoefficient(&dec, coeff);
@@ -771,7 +771,7 @@ void Decimal128::makeKey(unsigned int* key) const
 	make(key, DECQUAD_Pmax, DECQUAD_Bias, sizeof(dec), coeff, sign, exp);
 }
 
-void Decimal128::grabKey(unsigned int* key)
+void Decimal128::grabKey(ULONG* key)
 {
 	int exp, sign;
 	unsigned char bcd[DECQUAD_Pmax];

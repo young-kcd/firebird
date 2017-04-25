@@ -86,8 +86,8 @@ public:
 	bool isInf() const;
 	bool isNan() const;
 
-	void makeKey(unsigned int* key) const;
-	void grabKey(unsigned int* key);
+	void makeKey(ULONG* key) const;
+	void grabKey(ULONG* key);
 
 	Decimal64 quantize(DecimalStatus decSt, Decimal64 op2) const;
 	Decimal64 normalize(DecimalStatus decSt) const;
@@ -142,8 +142,8 @@ public:
 	bool isInf() const;
 	bool isNan() const;
 
-	void makeKey(unsigned int* key) const;
-	void grabKey(unsigned int* key);
+	void makeKey(ULONG* key) const;
+	void grabKey(ULONG* key);
 	static ULONG getIndexKeyLength();
 	ULONG makeIndexKey(vary* buf);
 
@@ -168,6 +168,11 @@ public:
 	CDecimal128(double value, DecimalStatus decSt)
 	{
 		set(value, decSt);
+	}
+
+	CDecimal128(SINT64 value, DecimalStatus decSt)
+	{
+		set(value, decSt, 0);
 	}
 
 	CDecimal128(int value)
