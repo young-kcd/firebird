@@ -2331,6 +2331,11 @@ bool VIO_get_current(thread_db* tdbb,
 			VIO_data(tdbb, rpb, pool);
 			return true;
 
+		case tra_limbo:
+			if (!(transaction->tra_flags & TRA_ignore_limbo))
+				ERR_post(Arg::Gds(isc_rec_in_limbo) << Arg::Num(rpb->rpb_transaction_nr));
+			// fall thru
+
 		case tra_active:
 			// clear lock error from status vector
 			fb_utils::init_status(tdbb->tdbb_status_vector);
@@ -2375,9 +2380,6 @@ bool VIO_get_current(thread_db* tdbb,
 			}
 			break;
 
-		case tra_limbo:
-			BUGCHECK(184);		// limbo impossible
-			break;
 
 		default:
 			fb_assert(false);
@@ -5811,7 +5813,7 @@ static int prepare_update(	thread_db*		tdbb,
 				return PREPARE_LOCKERR;
 
 			case tra_limbo:
-				ERR_post(Arg::Gds(isc_deadlock) << Arg::Gds(isc_trainlim));
+				ERR_post(Arg::Gds(isc_trainlim) << Arg::Gds(isc_rec_in_limbo) << Arg::Num(rpb->rpb_transaction_nr));
 
 			case tra_dead:
 				break;
