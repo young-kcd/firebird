@@ -880,7 +880,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 	{
 		const JrdStatement* statement = request->getStatement();
 
-		if (statement->fors.getCount() || request->req_ext_stmt)
+		if (statement->fors.getCount() || request->req_ext_resultset || request->req_ext_stmt)
 		{
 			Jrd::ContextPoolHolder context(tdbb, request->req_pool);
 			jrd_req* old_request = tdbb->getRequest();
@@ -896,7 +896,10 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 				}
 
 				if (request->req_ext_resultset)
+				{
 					delete request->req_ext_resultset;
+					request->req_ext_resultset = NULL;
+				}
 
 				while (request->req_ext_stmt)
 					request->req_ext_stmt->close(tdbb);
