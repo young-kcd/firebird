@@ -1604,7 +1604,7 @@ void CorrAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 	if (nodFlags & FLAG_DECFLOAT)
 	{
 		impure->make_decimal128(CDecimal128(0));
-		impure2->dec.x = impure2->dec.x2 = CDecimal128(0);
+		impure2->dec.x = impure2->dec.x2 = impure2->dec.y = impure2->dec.y2 = impure2->dec.xy = CDecimal128(0);
 	}
 	else
 	{
