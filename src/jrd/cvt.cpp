@@ -258,6 +258,9 @@ UCHAR CVT_get_numeric(const UCHAR* string, const USHORT length, SSHORT* scale, v
 	if (!digit_seen)
 		CVT_conversion_error(&desc, ERR_post);
 
+	if ((local_scale > MAX_SCHAR) || (local_scale < MIN_SCHAR))
+		over = true;
+
 	if ((!over) && ((p < end) ||		// there is an exponent
 		((value < 0) && (sign != -1)))) // MAX_SINT64+1 wrapped around
 	{

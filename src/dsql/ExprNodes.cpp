@@ -6797,7 +6797,7 @@ DmlNode* LiteralNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 			l = csb->csb_blr_reader.getWord();
 			q = csb->csb_blr_reader.getPos();
-			dtype = CVT_get_numeric(q, l, &scale, p);			// use decfloat to pass literal ???
+			dtype = CVT_get_numeric(q, l, &scale, p);
 			node->litDesc.dsc_dtype = dtype;
 
 			switch (dtype)
@@ -6881,8 +6881,9 @@ void LiteralNode::genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc,
 			// which is transmitted to the engine as a string.
 
 			GEN_descriptor(dsqlScratch, desc, true);
-			// Length of string literal, cast because it could be > 127 bytes.
-			const USHORT l = (USHORT)(UCHAR) desc->dsc_scale;
+
+			// Length of string literal
+			const USHORT l = desc->dsc_length;
 
 			if (negateValue)
 			{

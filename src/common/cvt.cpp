@@ -2103,8 +2103,13 @@ void CVT_make_null_string(const dsc*    desc,
 
 	if (*address != temp->vary_string)
 	{
+		length -= sizeof(USHORT);	// Take into an account VaryStr specifics
 		if (len > length)
-			len = length;
+		{
+			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
+				Arg::Gds(isc_imp_exc) <<
+				Arg::Gds(isc_trunc_limits) << Arg::Num(length) << Arg::Num(len));
+		}
 		memcpy(temp->vary_string, *address, len);
 		temp->vary_length = len;
 	}
@@ -2534,7 +2539,7 @@ Decimal64 CVT_get_dec64(const dsc* desc, DecimalStatus decSt, ErrorFunction err)
  *      Convert something arbitrary to a DecFloat(16) / (64 bit).
  *
  **************************************/
-	VaryStr<50> buffer;			// long enough to represent largest decimal float in ASCII
+	VaryStr<512> buffer;			// long enough to represent largest decimal float in ASCII
 	Decimal64 d64;
 
 	// adjust exact numeric values to same scaling
@@ -2618,7 +2623,7 @@ Decimal128 CVT_get_dec128(const dsc* desc, DecimalStatus decSt, ErrorFunction er
  *      Convert something arbitrary to a DecFloat(34) / (128 bit).
  *
  **************************************/
-	VaryStr<50> buffer;			// long enough to represent largest decimal float in ASCII
+	VaryStr<1024> buffer;			// represents unreasonably long decfloat literal in ASCII
 	Decimal128 d128;
 
 	// adjust exact numeric values to same scaling

@@ -941,7 +941,7 @@ int Parser::yylexAux()
 		FB_UINT64 number = 0;
 		FB_UINT64 expVal = 0;
 		FB_UINT64 limit_by_10 = MAX_SINT64 / 10;
-		SCHAR scale = 0;
+		int scale = 0;
 
 		for (--lex.ptr; lex.ptr < lex.end; lex.ptr++)
 		{
@@ -1029,6 +1029,9 @@ int Parser::yylexAux()
 		if (!have_error)
 		{
 			fb_assert(have_digit);
+
+			if (scale < MIN_SCHAR || scale > MAX_SCHAR)
+				have_overflow = true;
 
 			if (have_exp_digit || have_overflow)
 			{
