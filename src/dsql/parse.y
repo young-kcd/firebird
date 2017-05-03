@@ -591,6 +591,7 @@ using namespace Firebird;
 %token <metaNamePtr> REGR_SYY
 
 // tokens added for Firebird 4.0
+
 %token <metaNamePtr> BINARY
 %token <metaNamePtr> BIND
 %token <metaNamePtr> COMPARE_DECFLOAT

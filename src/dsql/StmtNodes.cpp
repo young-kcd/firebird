@@ -8039,7 +8039,7 @@ const TextCode* getCodeByText(const MetaName& text, const TextCode* textCode, un
 
 
 SetRoundNode::SetRoundNode(MemoryPool& pool, Firebird::MetaName* name)
-		: SessionManagementNode(pool)
+	: SessionManagementNode(pool)
 {
 	fb_assert(name);
 	const TextCode* mode = getCodeByText(*name, roundModes, FB_RMODE_OFFSET);

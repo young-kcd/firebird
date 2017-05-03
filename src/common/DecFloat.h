@@ -184,4 +184,4 @@ public:
 } // namespace Firebird
 
 
-#endif // FB_DYNAMIC_STRINGS
+#endif // FB_DECIMAL_FLOAT

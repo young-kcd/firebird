@@ -1879,7 +1879,6 @@ void RegrAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	RegrImpure* impure2 = request->getImpure<RegrImpure>(impure2Offset);
 
-
 	if (nodFlags & FLAG_DECFLOAT)
 	{
 		impure->make_decimal128(CDecimal128(0));

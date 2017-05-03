@@ -179,4 +179,3 @@ DECFLOAT (FB 4.0)
 				but poor precision) or scaled integers (good support for further processing and
 				required precision but range of values is very limited). When using is a tool like
 				generic purporse GUI client choice of CHAR binding is OK in most cases.
-

@@ -608,7 +608,7 @@ extern "C" int remove(const char* path);
 #define NOEXCEPT_ARG(X) noexcept((X))
 #else
 #define NOEXCEPT
-#define NOEXCEPT_ARG(X) 
+#define NOEXCEPT_ARG(X)
 #endif
 
 /* alignment macros */
