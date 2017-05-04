@@ -210,7 +210,7 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
 				break;
 			case DecimalBinding::DEC_TEXT:
 				parameter->par_desc.makeText((parameter->par_desc.dsc_dtype == dtype_dec64 ?
-					DECDOUBLE_String : DECQUAD_String) - 1, ttype_ascii);
+					IDecFloat16::STRING_SIZE : IDecFloat34::STRING_SIZE) - 1, ttype_ascii);
 				break;
 			case DecimalBinding::DEC_DOUBLE:
 				parameter->par_desc.makeDouble();

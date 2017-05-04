@@ -8069,10 +8069,10 @@ static unsigned process_message_display(Firebird::IMessageMetadata* message, uns
 			disp_length = DOUBLE_LEN;
 			break;
 		case SQL_DEC16:
-			disp_length = DECDOUBLE_String - 1;
+			disp_length = Firebird::IDecFloat16::STRING_SIZE - 1;
 			break;
 		case SQL_DEC34:
-			disp_length = DECQUAD_String - 1;
+			disp_length = Firebird::IDecFloat34::STRING_SIZE - 1;
 			break;
 		case SQL_TEXT:
 			alignment = 1;

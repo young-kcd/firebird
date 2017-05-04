@@ -1373,7 +1373,7 @@ interface UdrPlugin : Versioned
 interface DecFloat16 : Versioned
 {
 	const uint BCD_SIZE = 16;
-	const uint STRING_SIZE = 25;	// includes terminating \0
+	const uint STRING_SIZE = 24;	// includes terminating \0
 	void toBcd(const FB_DEC16* from, int* sign, uchar* bcd, int* exp);
 	void toString(const FB_DEC16* from, string to);
 	void fromBcd(int sign, const uchar* bcd, int exp, FB_DEC16* to);

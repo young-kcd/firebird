@@ -5326,7 +5326,7 @@ namespace Firebird
 		static const unsigned VERSION = 2;
 
 		static const unsigned BCD_SIZE = 16;
-		static const unsigned STRING_SIZE = 25;
+		static const unsigned STRING_SIZE = 24;
 
 		void toBcd(const FB_DEC16* from, int* sign, unsigned char* bcd, int* exp)
 		{

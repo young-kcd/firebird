@@ -277,7 +277,7 @@ void Decimal64::toString(DecimalStatus decSt, unsigned length, char* to) const
 	if (length)
 	{
 		--length;
-		char s[DECDOUBLE_String];
+		char s[IDecFloat16::STRING_SIZE];
 		memset(s, 0, sizeof(s));
 		decDoubleToString(&dec, s);
 
@@ -294,7 +294,7 @@ void Decimal64::toString(DecimalStatus decSt, unsigned length, char* to) const
 
 void Decimal64::toString(string& to) const
 {
-	to.grow(DECDOUBLE_String);
+	to.grow(IDecFloat16::STRING_SIZE);
 	toString(DecimalStatus(0), to.length(), to.begin());		// provide long enough string, i.e. no traps
 	to.recalculate_length();
 }
@@ -525,7 +525,7 @@ void Decimal128::toString(DecimalStatus decSt, unsigned length, char* to) const
 	if (length)
 	{
 		--length;
-		char s[DECQUAD_String];
+		char s[IDecFloat34::STRING_SIZE];
 		memset(s, 0, sizeof(s));
 		decQuadToString(&dec, s);
 
@@ -542,7 +542,7 @@ void Decimal128::toString(DecimalStatus decSt, unsigned length, char* to) const
 
 void Decimal128::toString(string& to) const
 {
-	to.grow(DECQUAD_String);
+	to.grow(IDecFloat34::STRING_SIZE);
 	toString(DecimalStatus(0), to.length(), to.begin());		// provide long enough string, i.e. no traps
 	to.recalculate_length();
 }
@@ -555,7 +555,7 @@ double Decimal128::toDouble(DecimalStatus decSt) const
 		decContextSetStatus(&context, DEC_Overflow);
 	else
 	{
-		char s[DECQUAD_String];
+		char s[IDecFloat34::STRING_SIZE];
 		memset(s, 0, sizeof(s));
 		decQuadToString(&dec, s);
 		return atof(s);
