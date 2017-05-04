@@ -1096,7 +1096,7 @@ static void wnet_gen_error (rem_port* port, const Firebird::Arg::StatusVector& v
 	error << Arg::Str(node_name) << v;
 
 	ISC_STATUS* status_vector = NULL;
-	if (port->port_context != NULL) {
+	if (port->port_context != NULL && !(port->port_flags & PORT_async)) {
 		status_vector = port->port_context->get_status_vector();
 	}
 	if (status_vector == NULL) {
