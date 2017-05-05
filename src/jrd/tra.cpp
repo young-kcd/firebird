@@ -820,20 +820,31 @@ void TRA_update_counters(thread_db* tdbb, Database* dbb)
 	WIN window(HEADER_PAGE_NUMBER);
 	header_page* header = (header_page*)CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 
-	if (dbb->dbb_oldest_active > header->hdr_oldest_active ||
-		dbb->dbb_oldest_transaction > header->hdr_oldest_transaction ||
-		dbb->dbb_oldest_snapshot > header->hdr_oldest_snapshot)
+	const TraNumber next_transaction = Ods::getNT(header);
+	const TraNumber oldest_transaction = Ods::getOIT(header);
+	const TraNumber oldest_active = Ods::getOAT(header);
+	const TraNumber oldest_snapshot = Ods::getOST(header);
+
+	fb_assert(dbb->dbb_next_transaction <= next_transaction);
+
+	if (dbb->dbb_oldest_active > oldest_active ||
+		dbb->dbb_oldest_transaction > oldest_transaction ||
+		dbb->dbb_oldest_snapshot > oldest_snapshot ||
+		dbb->dbb_next_transaction > next_transaction)
 	{
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 
 		if (dbb->dbb_oldest_active > header->hdr_oldest_active)
-			header->hdr_oldest_active = dbb->dbb_oldest_active;
+			Ods::writeOAT(header, dbb->dbb_oldest_active);
 
 		if (dbb->dbb_oldest_transaction > header->hdr_oldest_transaction)
-			header->hdr_oldest_transaction = dbb->dbb_oldest_transaction;
+			Ods::writeOIT(header, dbb->dbb_oldest_transaction);
 
 		if (dbb->dbb_oldest_snapshot > header->hdr_oldest_snapshot)
-			header->hdr_oldest_snapshot = dbb->dbb_oldest_snapshot;
+			Ods::writeOST(header, dbb->dbb_oldest_snapshot);
+
+		if (dbb->dbb_next_transaction > next_transaction)
+			Ods::writeNT(header, dbb->dbb_next_transaction);
 	}
 
 	CCH_RELEASE(tdbb, &window);
