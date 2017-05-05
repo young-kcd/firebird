@@ -5307,7 +5307,7 @@ namespace Firebird
 		struct VTable : public IVersioned::VTable
 		{
 			void (CLOOP_CARG *toBcd)(IDecFloat16* self, const FB_DEC16* from, int* sign, unsigned char* bcd, int* exp) throw();
-			void (CLOOP_CARG *toString)(IDecFloat16* self, const FB_DEC16* from, char* to) throw();
+			void (CLOOP_CARG *toString)(IDecFloat16* self, IStatus* status, const FB_DEC16* from, unsigned bufferLength, char* buffer) throw();
 			void (CLOOP_CARG *fromBcd)(IDecFloat16* self, int sign, const unsigned char* bcd, int exp, FB_DEC16* to) throw();
 			void (CLOOP_CARG *fromString)(IDecFloat16* self, IStatus* status, const char* from, FB_DEC16* to) throw();
 		};
@@ -5333,9 +5333,11 @@ namespace Firebird
 			static_cast<VTable*>(this->cloopVTable)->toBcd(this, from, sign, bcd, exp);
 		}
 
-		void toString(const FB_DEC16* from, char* to)
+		template <typename StatusType> void toString(StatusType* status, const FB_DEC16* from, unsigned bufferLength, char* buffer)
 		{
-			static_cast<VTable*>(this->cloopVTable)->toString(this, from, to);
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->toString(this, status, from, bufferLength, buffer);
+			StatusType::checkException(status);
 		}
 
 		void fromBcd(int sign, const unsigned char* bcd, int exp, FB_DEC16* to)
@@ -5357,7 +5359,7 @@ namespace Firebird
 		struct VTable : public IVersioned::VTable
 		{
 			void (CLOOP_CARG *toBcd)(IDecFloat34* self, const FB_DEC34* from, int* sign, unsigned char* bcd, int* exp) throw();
-			void (CLOOP_CARG *toString)(IDecFloat34* self, const FB_DEC34* from, char* to) throw();
+			void (CLOOP_CARG *toString)(IDecFloat34* self, IStatus* status, const FB_DEC34* from, unsigned bufferLength, char* buffer) throw();
 			void (CLOOP_CARG *fromBcd)(IDecFloat34* self, int sign, const unsigned char* bcd, int exp, FB_DEC34* to) throw();
 			void (CLOOP_CARG *fromString)(IDecFloat34* self, IStatus* status, const char* from, FB_DEC34* to) throw();
 		};
@@ -5383,9 +5385,11 @@ namespace Firebird
 			static_cast<VTable*>(this->cloopVTable)->toBcd(this, from, sign, bcd, exp);
 		}
 
-		void toString(const FB_DEC34* from, char* to)
+		template <typename StatusType> void toString(StatusType* status, const FB_DEC34* from, unsigned bufferLength, char* buffer)
 		{
-			static_cast<VTable*>(this->cloopVTable)->toString(this, from, to);
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->toString(this, status, from, bufferLength, buffer);
+			StatusType::checkException(status);
 		}
 
 		void fromBcd(int sign, const unsigned char* bcd, int exp, FB_DEC34* to)
@@ -16558,15 +16562,17 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG clooptoStringDispatcher(IDecFloat16* self, const FB_DEC16* from, char* to) throw()
+		static void CLOOP_CARG clooptoStringDispatcher(IDecFloat16* self, IStatus* status, const FB_DEC16* from, unsigned bufferLength, char* buffer) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::toString(from, to);
+				static_cast<Name*>(self)->Name::toString(&status2, from, bufferLength, buffer);
 			}
 			catch (...)
 			{
-				StatusType::catchException(0);
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -16611,7 +16617,7 @@ namespace Firebird
 		}
 
 		virtual void toBcd(const FB_DEC16* from, int* sign, unsigned char* bcd, int* exp) = 0;
-		virtual void toString(const FB_DEC16* from, char* to) = 0;
+		virtual void toString(StatusType* status, const FB_DEC16* from, unsigned bufferLength, char* buffer) = 0;
 		virtual void fromBcd(int sign, const unsigned char* bcd, int exp, FB_DEC16* to) = 0;
 		virtual void fromString(StatusType* status, const char* from, FB_DEC16* to) = 0;
 	};
@@ -16651,15 +16657,17 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG clooptoStringDispatcher(IDecFloat34* self, const FB_DEC34* from, char* to) throw()
+		static void CLOOP_CARG clooptoStringDispatcher(IDecFloat34* self, IStatus* status, const FB_DEC34* from, unsigned bufferLength, char* buffer) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::toString(from, to);
+				static_cast<Name*>(self)->Name::toString(&status2, from, bufferLength, buffer);
 			}
 			catch (...)
 			{
-				StatusType::catchException(0);
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -16704,7 +16712,7 @@ namespace Firebird
 		}
 
 		virtual void toBcd(const FB_DEC34* from, int* sign, unsigned char* bcd, int* exp) = 0;
-		virtual void toString(const FB_DEC34* from, char* to) = 0;
+		virtual void toString(StatusType* status, const FB_DEC34* from, unsigned bufferLength, char* buffer) = 0;
 		virtual void fromBcd(int sign, const unsigned char* bcd, int exp, FB_DEC34* to) = 0;
 		virtual void fromString(StatusType* status, const char* from, FB_DEC34* to) = 0;
 	};

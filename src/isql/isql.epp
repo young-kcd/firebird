@@ -7007,8 +7007,8 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
  *	Print an SQL data item as described.
  *
  **************************************/
+	const char* convErr = "Conversion error";
  	TEXT d[32];
-
 	TEXT* p = *s;
 	*p = '\0';
 
@@ -7239,9 +7239,13 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 			{
 				char decStr[Firebird::IDecFloat16::STRING_SIZE];
 				if (isqlGlob.df16)
-					isqlGlob.df16->toString(var->value.asDec16, decStr);
+				{
+					isqlGlob.df16->toString(fbStatus, var->value.asDec16, sizeof(decStr), decStr);
+					if (ISQL_errmsg(fbStatus))
+						strcpy(decStr, convErr);
+				}
 				else
-					strcpy(decStr, "Conversion error");
+					strcpy(decStr, convErr);
 
 				if (setValues.List)
 					isqlGlob.printf("%*.*s%s", sizeof(decStr) - 1, sizeof(decStr) - 1, decStr, NEWLINE);
@@ -7254,9 +7258,13 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 			{
 				char decStr[Firebird::IDecFloat34::STRING_SIZE];
 				if (isqlGlob.df34)
-					isqlGlob.df34->toString(var->value.asDec34, decStr);
+				{
+					isqlGlob.df34->toString(fbStatus, var->value.asDec34, sizeof(decStr), decStr);
+					if (ISQL_errmsg(fbStatus))
+						strcpy(decStr, convErr);
+				}
 				else
-					strcpy(decStr, "Conversion error");
+					strcpy(decStr, convErr);
 
 				if (setValues.List)
 					isqlGlob.printf("%*.*s%s", sizeof(decStr) - 1, sizeof(decStr) - 1, decStr, NEWLINE);
