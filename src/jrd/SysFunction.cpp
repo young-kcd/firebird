@@ -316,6 +316,7 @@ template <typename DSC>
 bool areParamsDouble(int argsCount, DSC** args)
 {
 	bool decSeen = false;
+
 	for (int i = 0; i < argsCount; ++i)
 	{
 		if (args[i]->isApprox())
@@ -323,6 +324,7 @@ bool areParamsDouble(int argsCount, DSC** args)
 		if (args[i]->isDecFloat())
 			decSeen = true;
 	}
+
 	return !decSeen;
 }
 
@@ -2885,7 +2887,8 @@ dsc* evlQuantize(thread_db* tdbb, const SysFunction* function, const NestValueAr
 		impure->vlu_misc.vlu_dec64 = v1.quantize(decSt, v2);
 		impure->vlu_desc.makeDecimal64(&impure->vlu_misc.vlu_dec64);
 	}
-	else {
+	else
+	{
 		Decimal128 v1 = MOV_get_dec128(tdbb, value[0]);
 		Decimal128 v2 = MOV_get_dec128(tdbb, value[1]);
 
@@ -2930,7 +2933,8 @@ dsc* evlCompare(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			fb_assert(false);
 		}
 	}
-	else {
+	else
+	{
 		Decimal128 v1 = MOV_get_dec128(tdbb, value[0]);
 		Decimal128 v2 = MOV_get_dec128(tdbb, value[1]);
 
@@ -2973,7 +2977,8 @@ dsc* evlNormDec(thread_db* tdbb, const SysFunction* function, const NestValueArr
 		impure->vlu_misc.vlu_dec64 = v.normalize(decSt);
 		impure->vlu_desc.makeDecimal64(&impure->vlu_misc.vlu_dec64);
 	}
-	else {
+	else
+	{
 		Decimal128 v = MOV_get_dec128(tdbb, value);
 
 		impure->vlu_misc.vlu_dec128 = v.normalize(decSt);

@@ -265,7 +265,7 @@ UCHAR CVT_get_numeric(const UCHAR* string, const USHORT length, SSHORT* scale, v
 		((value < 0) && (sign != -1)))) // MAX_SINT64+1 wrapped around
 	{
 		// convert to double
-		*(double *) ptr = CVT_get_double(&desc, 0, ERR_post, &over);
+		*(double*) ptr = CVT_get_double(&desc, 0, ERR_post, &over);
 		if (!over)
 			return dtype_double;
 	}
@@ -273,7 +273,7 @@ UCHAR CVT_get_numeric(const UCHAR* string, const USHORT length, SSHORT* scale, v
 	if (over)
 	{
 		thread_db* tdbb = JRD_get_thread_data();
-		*(Decimal128 *) ptr = CVT_get_dec128(&desc, tdbb->getAttachment()->att_dec_status, ERR_post);
+		*(Decimal128*) ptr = CVT_get_dec128(&desc, tdbb->getAttachment()->att_dec_status, ERR_post);
 		return dtype_dec128;
 	}
 
