@@ -985,7 +985,7 @@ interface Util : Versioned
 	XpbBuilder getXpbBuilder(Status status, uint kind, const uchar* buf, uint len);
 	uint setOffsets(Status status, MessageMetadata metadata, OffsetsCallback callback);
 
-version:
+version:	// 3.0 => 4.0
 	EventBlock createEventBlock(Status status, const string* events);
 	DecFloat16 getDecFloat16(Status status);
 	DecFloat34 getDecFloat34(Status status);
