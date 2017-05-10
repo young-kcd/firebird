@@ -348,10 +348,19 @@ TipCache::StatusBlockData::StatusBlockData(thread_db* tdbb, TipCache* tipCache, 
 TipCache::StatusBlockData::~StatusBlockData()
 {
 	thread_db* tdbb = JRD_get_thread_data();
+	clear(tdbb);
+}
 
+void TipCache::StatusBlockData::clear(thread_db* tdbb)
+{
+	// memory could be already released at tpc_block_blocking_ast
+	if (memory)
+	{
+		memory->removeMapFile();
+		delete memory;
+		memory = NULL;
+	}
 	LCK_release(tdbb, &existenceLock);
-	memory->removeMapFile();
-	delete memory;
 }
 
 TipCache::TransactionStatusBlock* TipCache::createTransactionStatusBlock(int blockNumber) 
@@ -573,9 +582,7 @@ int TipCache::tpc_block_blocking_ast(void* arg)
 	TraNumber oldest = cache->m_tpcHeader->getHeader()->oldest_transaction.load(std::memory_order_relaxed);
 
 	// Release shared memory
-	delete data->memory;
-	data->memory = NULL;
-	LCK_release(tdbb, &data->existenceLock);
+	data->clear(tdbb);
 
 	// Check if there is a bug in cleanup code and we were requested to 
 	// release memory that might be in use
@@ -725,6 +732,7 @@ SnapshotHandle TipCache::beginSnapshot(thread_db* tdbb, AttNumber attachmentId, 
 {
 	// Can only be called on initialized TipCache
 	fb_assert(m_tpcHeader);
+	fb_assert(attachmentId);
 
 	// Lock mutex
 	SharedMutexGuard guard(m_snapshots);
@@ -744,7 +752,7 @@ SnapshotHandle TipCache::beginSnapshot(thread_db* tdbb, AttNumber attachmentId, 
 	slot->snapshot.store(*commitNumber_out, std::memory_order_release);
 
 	// Only assign attachment_id after we completed all other work
-	slot->attachment_id.store(tdbb->getAttachment()->att_attachment_id, std::memory_order_release);
+	slot->attachment_id.store(attachmentId, std::memory_order_release);
 
 	// And now move allocator watermark position after we used slot for sure
 	snapshots->min_free_slot = slotNumber + 1;

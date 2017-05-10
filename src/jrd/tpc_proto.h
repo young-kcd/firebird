@@ -205,6 +205,8 @@ private:
 		{
 			return item->blockNumber;
 		}
+
+		void clear(Jrd::thread_db* tdbb);
 	};
 
 	class MemoryInitializer : public Firebird::IpcObject 
