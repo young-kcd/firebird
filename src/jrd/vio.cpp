@@ -1991,11 +1991,7 @@ static void delete_version_chain(thread_db* tdbb, record_param* rpb, bool delete
 }
 
 
-void VIO_intermediate_gc(
-	thread_db* tdbb, 
-	record_param* rpb, 
-	jrd_tra* transaction
-)
+void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -2011,14 +2007,16 @@ void VIO_intermediate_gc(
 	Database *dbb = tdbb->getDatabase();
 
 	// If current record is not a primary version, release it and fetch primary version
-	if (rpb->rpb_flags & rpb_chained) {
+	if (rpb->rpb_flags & rpb_chained)
+	{
 		CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 		if (!DPM_get(tdbb, rpb, LCK_read))
 			return;
 	}
 
 	// If head version is being backed out - do not interfere with this process
-	if (rpb->rpb_flags & rpb_gc_active) {
+	if (rpb->rpb_flags & rpb_gc_active)
+	{
 		CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 		return;
 	}
@@ -2028,7 +2026,8 @@ void VIO_intermediate_gc(
 	list_staying(tdbb, rpb, staying, true);
 
 	// We can only garbage collect here if there is more than one version of a record
-	if (!staying.hasMore(1)) {
+	if (!staying.hasMore(1))
+	{
 		clearRecordStack(staying);
 		return;
 	}
@@ -2063,15 +2062,18 @@ void VIO_intermediate_gc(
 		else
 			current_snapshot_number = 0;
 
-		if (current_snapshot_number && current_snapshot_number == prev_snapshot_number) {
+		if (current_snapshot_number && current_snapshot_number == prev_snapshot_number)
+		{
 			going.push(record);
 			rev_i.remove();
-		} else
+		}
+		else
 			++rev_i;
 	}
 
 	// If there is no garbage to collect - leave now
-	if (!going.hasData()) {
+	if (!going.hasData())
+	{
 		clearRecordStack(staying);
 		return;
 	}
@@ -2088,7 +2090,8 @@ void VIO_intermediate_gc(
 	Record* current_record = const_i.object(), *org_record;
 	++const_i;
 	bool prior_delta = false;
-	while (const_i.hasData()) {
+	while (const_i.hasData())
+	{
 		org_record = current_record;
 		current_record = const_i.object();
 		
@@ -2105,14 +2108,17 @@ void VIO_intermediate_gc(
 			staying_chain_rpb.rpb_address = differences;
 			staying_chain_rpb.rpb_length = (ULONG) l;
 			prior_delta = true;
-		} else {
+		}
+		else
+		{
 			staying_chain_rpb.rpb_address = org_record->getData();
 			staying_chain_rpb.rpb_length = org_record->getLength();
 			prior_delta = false;
 		}
 		staying_chain_rpb.rpb_transaction_nr = org_record->getTransaction_nr();
 		staying_chain_rpb.rpb_format_number = org_record->getFormat()->fmt_version;
-		if (staying_chain_rpb.rpb_page) {
+		if (staying_chain_rpb.rpb_page)
+		{
 			staying_chain_rpb.rpb_b_page = staying_chain_rpb.rpb_page;
 			staying_chain_rpb.rpb_b_line = staying_chain_rpb.rpb_line;
 			staying_chain_rpb.rpb_page = 0;
@@ -2123,14 +2129,16 @@ void VIO_intermediate_gc(
 	}
 
 	// If primary version has been deleted then chain first staying version too
-	if (rpb->rpb_flags & rpb_deleted) {
+	if (rpb->rpb_flags & rpb_deleted)
+	{
 		staying_chain_rpb.rpb_address = current_record->getData();
 		staying_chain_rpb.rpb_length = current_record->getLength();
 		staying_chain_rpb.rpb_flags = rpb_chained | (prior_delta ? rpb_delta : 0);
 		prior_delta = false;
 		staying_chain_rpb.rpb_transaction_nr = current_record->getTransaction_nr();
 		staying_chain_rpb.rpb_format_number = current_record->getFormat()->fmt_version;
-		if (staying_chain_rpb.rpb_page) {
+		if (staying_chain_rpb.rpb_page)
+		{
 			staying_chain_rpb.rpb_b_page = staying_chain_rpb.rpb_page;
 			staying_chain_rpb.rpb_b_line = staying_chain_rpb.rpb_line;
 			staying_chain_rpb.rpb_page = 0;
@@ -2143,7 +2151,8 @@ void VIO_intermediate_gc(
 	record_param temp_rpb = *rpb;
 
 	// If record no longer exists - return
-	if (!DPM_get(tdbb, &temp_rpb, LCK_write)) {
+	if (!DPM_get(tdbb, &temp_rpb, LCK_write))
+	{
 		delete_version_chain(tdbb, &staying_chain_rpb, true);
 		clearRecordStack(staying);
 		clearRecordStack(going);
@@ -2164,9 +2173,7 @@ void VIO_intermediate_gc(
 	// Ensure that new versions are written to disk before we update back-pointer 
 	// of primary version to point to them
 	while (precedence_stack.hasData())
-	{
 		CCH_precedence(tdbb, &temp_rpb.getWindow(tdbb), precedence_stack.pop());
-	}
 
 	// Update back-pointer to point to new versions chain (if any)
 	temp_rpb.rpb_b_page = staying_chain_rpb.rpb_page;
@@ -5464,8 +5471,8 @@ static int prepare_update(	thread_db*		tdbb,
 		int state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr, &current_snapshot_number);
 
 		// Attempt to perform intermediate GC if there is more than one committed version of a record
-
-		if (!int_gc_done && current_snapshot_number && rpb->rpb_b_page != 0) {
+		if (!int_gc_done && current_snapshot_number && rpb->rpb_b_page != 0)
+		{
 			VIO_intermediate_gc(tdbb, rpb, transaction);
 			int_gc_done = true;
 			continue;
