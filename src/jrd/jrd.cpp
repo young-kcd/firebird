@@ -1610,6 +1610,8 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 					dbb->dbb_linger_seconds = 0;
 			}
 
+			PAG_attachment_id(tdbb);
+
 			if (!options.dpb_verify && CCH_exclusive(tdbb, LCK_PW, LCK_NO_WAIT, NULL))
 				TRA_cleanup(tdbb);
 
@@ -1860,8 +1862,6 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 			CCH_init2(tdbb);
 			VIO_init(tdbb);
-
-			PAG_attachment_id(tdbb);
 
 			CCH_release_exclusive(tdbb);
 
