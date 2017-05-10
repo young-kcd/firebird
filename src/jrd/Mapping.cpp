@@ -746,7 +746,7 @@ public:
 		{
 			if (!(sMem->process[process].flags & MappingHeader::FLAG_ACTIVE))
 				break;
-			if (!ISC_check_process_existence(processId))
+			if (!ISC_check_process_existence(sMem->process[process].id))
 			{
 				sharedMemory->eventFini(&sMem->process[process].notifyEvent);
 				sharedMemory->eventFini(&sMem->process[process].callbackEvent);
