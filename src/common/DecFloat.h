@@ -68,7 +68,10 @@ class Decimal64
 	friend class Decimal128;
 
 public:
+#if SIZEOF_LONG < 8
 	Decimal64 set(int value, DecimalStatus decSt, int scale);
+#endif
+	Decimal64 set(SLONG value, DecimalStatus decSt, int scale);
 	Decimal64 set(SINT64 value, DecimalStatus decSt, int scale);
 	Decimal64 set(const char* value, DecimalStatus decSt);
 	Decimal64 set(double value, DecimalStatus decSt);
@@ -110,7 +113,10 @@ class Decimal128
 
 public:
 	Decimal128 set(Decimal64 d64);
+#if SIZEOF_LONG < 8
 	Decimal128 set(int value, DecimalStatus decSt, int scale);
+#endif
+	Decimal128 set(SLONG value, DecimalStatus decSt, int scale);
 	Decimal128 set(SINT64 value, DecimalStatus decSt, int scale);
 	Decimal128 set(const char* value, DecimalStatus decSt);
 	Decimal128 set(double value, DecimalStatus decSt);

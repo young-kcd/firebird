@@ -230,7 +230,14 @@ void Decimal64::setScale(DecimalStatus decSt, int scale)
 	}
 }
 
+#if SIZEOF_LONG < 8
 Decimal64 Decimal64::set(int value, DecimalStatus decSt, int scale)
+{
+	return set(SLONG(value), decSt, scale);
+}
+#endif
+
+Decimal64 Decimal64::set(SLONG value, DecimalStatus decSt, int scale)
 {
 	decDoubleFromInt32(&dec, value);
 	setScale(decSt, -scale);
@@ -456,7 +463,14 @@ Decimal128 Decimal128::set(Decimal64 d64)
 	return *this;
 }
 
+#if SIZEOF_LONG < 8
 Decimal128 Decimal128::set(int value, DecimalStatus decSt, int scale)
+{
+	return set(SLONG(value), decSt, scale);
+}
+#endif
+
+Decimal128 Decimal128::set(SLONG value, DecimalStatus decSt, int scale)
 {
 	decQuadFromInt32(&dec, value);
 	setScale(decSt, -scale);

@@ -126,7 +126,7 @@
 #define FB_CPU CpuPowerPc
 #endif
 
-#ifdef i386
+#if defined(i386) || defined(__i386) || defined(__i386__)
 #define I386
 #define FB_CPU CpuIntel
 #endif /* i386 */
