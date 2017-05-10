@@ -1300,7 +1300,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 	// Release the transaction and its pool
 
 	tdbb->setTransaction(NULL);
-	JTransaction* jTra = transaction->getInterface();
+	JTransaction* jTra = transaction->getInterface(true);	// ASF: maybe it's better to pass false?
 	if (jTra)
 	{
 		jTra->setHandle(NULL);
@@ -3423,9 +3423,9 @@ jrd_tra::~jrd_tra()
 }
 
 
-JTransaction* jrd_tra::getInterface()
+JTransaction* jrd_tra::getInterface(bool create)
 {
-	if (!tra_interface)
+	if (!tra_interface && create)
 	{
 		tra_flags |= TRA_own_interface;
 		tra_interface = FB_NEW JTransaction(this, tra_attachment->getStable());
