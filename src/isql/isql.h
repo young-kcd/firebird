@@ -314,8 +314,8 @@ static const sqltypes Column_types[] = {
 	{blr_timestamp, "TIMESTAMP"},	// keyword
 	{BIGINT, "BIGINT"},			// keyword
 	{BOOLEAN_TYPE, "BOOLEAN"},	// keyword
-	{DEC64_TYPE, "DECIMAL(16)"},
-	{DEC128_TYPE, "DECIMAL(34)"},
+	{DEC64_TYPE, "DECFLOAT(16)"},
+	{DEC128_TYPE, "DECFLOAT(34)"},
 	{0, ""}
 };
 
