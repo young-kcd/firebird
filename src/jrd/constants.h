@@ -452,5 +452,6 @@ const TraNumber MAX_TRA_NUMBER = 0x0000FFFFFFFFFFFF;	// ~2.8 * 10^14
 const int OPT_STATIC_ITEMS = 64;
 
 #define CURRENT_ENGINE "Engine12"
+#define EMBEDDED_PROVIDERS "Providers=" CURRENT_ENGINE
 
 #endif // JRD_CONSTANTS_H

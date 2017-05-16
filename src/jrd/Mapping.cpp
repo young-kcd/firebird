@@ -917,6 +917,7 @@ public:
 		ClumpletWriter embeddedSysdba(ClumpletWriter::Tagged, 1024, isc_dpb_version1);
 		embeddedSysdba.insertString(isc_dpb_user_name, SYSDBA_USER_NAME, fb_strlen(SYSDBA_USER_NAME));
 		embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
+		embeddedSysdba.insertString(isc_dpb_config, EMBEDDED_PROVIDERS, fb_strlen(EMBEDDED_PROVIDERS));
 		embeddedSysdba.insertByte(isc_dpb_map_attach, TRUE);
 		embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
 
@@ -1213,6 +1214,7 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 		embeddedSysdba.insertString(isc_dpb_user_name, SYSDBA_USER_NAME,
 			fb_strlen(SYSDBA_USER_NAME));
 		embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
+		embeddedSysdba.insertString(isc_dpb_config, EMBEDDED_PROVIDERS, fb_strlen(EMBEDDED_PROVIDERS));
 		embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
 
 		const char* dbName = tdbb->getDatabase()->dbb_config->getSecurityDatabase();
