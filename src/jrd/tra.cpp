@@ -392,7 +392,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 			status_exception::raise(&st);
 
 		secContext->tra = NULL;
-		clearMappingCache(tdbb->getDatabase()->dbb_config->getSecurityDatabase(), MAPPING_CACHE);
+		Mapping::clearCache(tdbb->getDatabase()->dbb_config->getSecurityDatabase(), Mapping::MAPPING_CACHE);
 
 		transaction->eraseSecDbContext();
 	}

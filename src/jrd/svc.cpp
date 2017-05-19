@@ -727,14 +727,20 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 			{
 				if (svc_auth_block.hasData())
 				{
+					// remote connection - use svc_auth_block
 					PathName dummy;
 					RefPtr<const Config> config;
 					expandDatabaseName(svc_expected_db, dummy, &config);
 
+					Mapping mapping(Mapping::MAP_THROW_NOT_FOUND, svc_crypt_callback);
+					mapping.needAuthBlock(svc_auth_block);
+
+					mapping.setAuthBlock(svc_auth_block);
+					mapping.setErrorMessagesContextName("services manager");
+					mapping.setSecurityDbAlias(config->getSecurityDatabase(), nullptr);
+
 					string trusted_role;
-					mapUser(true, svc_username, trusted_role, NULL, &svc_auth_block, NULL,
-						svc_auth_block, "services manager", NULL, config->getSecurityDatabase(), "",
-						svc_crypt_callback, NULL);
+					mapping.mapUser(svc_username, trusted_role);
 					trusted_role.upper();
 					svc_trusted_role = trusted_role == ADMIN_ROLE;
 				}

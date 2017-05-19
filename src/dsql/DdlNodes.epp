@@ -10655,7 +10655,7 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 	if (ddlTriggerAction > 0)
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, ddlTriggerAction, name, NULL);
 
-	DFW_post_work(transaction, dfw_clear_cache, NULL, MAPPING_CACHE);
+	DFW_post_work(transaction, dfw_clear_cache, NULL, Mapping::MAPPING_CACHE);
 	savePoint.release();	// everything is ok
 }
 
@@ -11047,7 +11047,7 @@ void GrantRevokeNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 			}
 
 			// Invalidate system privileges cache
-			DFW_post_work(transaction, dfw_clear_cache, NULL, SYSTEM_PRIVILEGES_CACHE);
+			DFW_post_work(transaction, dfw_clear_cache, NULL, Mapping::SYSTEM_PRIVILEGES_CACHE);
 		}
 	}
 

@@ -2267,7 +2267,7 @@ static bool clear_cache(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_t
 		return true;
 
 	case 3:
-		clearMappingCache(dbb->dbb_filename.c_str(), work->dfw_id);
+		Mapping::clearCache(dbb->dbb_filename.c_str(), work->dfw_id);
 		break;
 	}
 
