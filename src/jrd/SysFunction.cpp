@@ -602,7 +602,7 @@ void makeDecFloatResult(DataTypeUtilBase*, const SysFunction*, dsc* result,
 
 void makePi(DataTypeUtilBase*, const SysFunction*, dsc* result, int, const dsc**)
 {
-	result->makeDecimal128();
+	result->makeDouble();
 	result->clearNull();
 	result->setNullable(false);
 }
@@ -3426,14 +3426,13 @@ dsc* evlPad(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 }
 
 
-dsc* evlPi(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
+dsc* evlPi(thread_db* /*tdbb*/, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
 	fb_assert(args.getCount() == 0);
 
-	impure->vlu_misc.vlu_dec128.set("3.141592653589793238462643383279502884197",
-		tdbb->getAttachment()->att_dec_status);
-	impure->vlu_desc.makeDecimal128(&impure->vlu_misc.vlu_dec128);
+	impure->vlu_misc.vlu_double = 3.14159265358979323846;
+	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
 
 	return &impure->vlu_desc;
 }
