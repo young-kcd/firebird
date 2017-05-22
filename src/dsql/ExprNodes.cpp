@@ -6882,8 +6882,8 @@ void LiteralNode::genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc,
 
 			GEN_descriptor(dsqlScratch, desc, true);
 
-			// Length of string literal
-			const USHORT l = desc->dsc_length;
+			// Length of string literal - keep it in sub_type which is unused
+			const USHORT l = desc->dsc_sub_type;
 
 			if (negateValue)
 			{
