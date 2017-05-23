@@ -47,6 +47,21 @@ using namespace Firebird;
 
 namespace {
 
+struct Dec2fb
+{
+	USHORT decError;
+	ISC_STATUS fbError;
+};
+
+Dec2fb dec2fb[] = {
+	{ DEC_IEEE_754_Division_by_zero, isc_decfloat_divide_by_zero },
+	{ DEC_IEEE_754_Inexact, isc_decfloat_inexact_result },
+	{ DEC_IEEE_754_Invalid_operation, isc_decfloat_invalid_operation },
+	{ DEC_IEEE_754_Overflow, isc_decfloat_overflow },
+	{ DEC_IEEE_754_Underflow, isc_decfloat_underflow },
+	{ 0, 0 }
+};
+
 class DecimalContext : public decContext
 {
 public:
@@ -78,16 +93,13 @@ public:
 		if (!unmaskedExceptions)
 			return;
 
-		for (USHORT mask = 1; mask; mask <<= 1)
+		decContextZeroStatus(this);
+
+		for (Dec2fb* e = dec2fb; e->decError; ++e)
 		{
-			if (mask & unmaskedExceptions)
-			{
-				decContextSetStatusQuiet(this, mask);
-				const char* statusString = decContextStatusToString(this);
-				decContextSetStatusQuiet(this, 0);
-				(Arg::Gds(isc_random) << "Decimal float error" <<
-					Arg::Gds(isc_random) << statusString).raise();
-			}
+			// Arg::Gds(isc_arith_except) as first vector element ?
+			if (e->decError & unmaskedExceptions)
+				Arg::Gds(e->fbError).raise();
 		}
 	}
 
