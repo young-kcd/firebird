@@ -713,6 +713,9 @@ LockState CCH_fetch_lock(thread_db* tdbb, WIN* window, int lock_type, int wait, 
 	// lock_buffer returns 0 or 1 or -1.
 	const LockState lock_result = lock_buffer(tdbb, bdb, wait, page_type);
 
+	if (lock_result == lsLocked)
+		bdb->bdb_flags |= BDB_read_pending;
+
 	return lock_result;
 }
 
