@@ -22,6 +22,7 @@
 
 #include "firebird.h"
 #include <ctype.h>
+#include <math.h>
 #include "../dsql/Parser.h"
 #include "../dsql/chars.h"
 #include "../jrd/jrd.h"
@@ -942,6 +943,7 @@ int Parser::yylexAux()
 		FB_UINT64 expVal = 0;
 		FB_UINT64 limit_by_10 = MAX_SINT64 / 10;
 		int scale = 0;
+		int expSign = 1;
 
 		for (--lex.ptr; lex.ptr < lex.end; lex.ptr++)
 		{
@@ -961,7 +963,11 @@ int Parser::yylexAux()
 			{
 				// We've seen e or E, but nothing beyond that.
 				if ( ('-' == c) || ('+' == c) )
+				{
 					have_exp_sign = true;
+					if ('-' == c)
+						expSign = -1;
+				}
 				else if ( classes(c) & CHR_DIGIT )
 				{
 					// We have a digit: we haven't seen a sign yet, but it's too late now.
@@ -1033,6 +1039,16 @@ int Parser::yylexAux()
 			if (scale < MIN_SCHAR || scale > MAX_SCHAR)
 				have_overflow = true;
 
+			// check for a more complex overflow case
+			if ((!have_overflow) && (expSign > 0))
+			{
+				expVal += scale;
+				double maxNum = DBL_MAX / pow(10.0, expVal);
+				if (double(number) > maxNum)
+					have_overflow = true;
+			}
+
+			// Should we use floating point type?
 			if (have_exp_digit || have_overflow)
 			{
 				yylval.stringPtr = newString(
