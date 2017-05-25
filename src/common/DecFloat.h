@@ -88,6 +88,7 @@ public:
 	int compare(DecimalStatus decSt, Decimal64 tgt) const;
 	bool isInf() const;
 	bool isNan() const;
+	int sign() const;
 
 	void makeKey(ULONG* key) const;
 	void grabKey(ULONG* key);
@@ -147,6 +148,7 @@ public:
 	int compare(DecimalStatus decSt, Decimal128 tgt) const;
 	bool isInf() const;
 	bool isNan() const;
+	int sign() const;
 
 	void makeKey(ULONG* key) const;
 	void grabKey(ULONG* key);

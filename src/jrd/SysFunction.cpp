@@ -4000,14 +4000,19 @@ dsc* evlSign(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	const double val = MOV_get_double(tdbb, value);
+	if (value->isDecFloat())
+		impure->vlu_misc.vlu_short = MOV_get_dec128(tdbb, value).sign();
+	else
+	{
+		const double val = MOV_get_double(tdbb, value);
 
-	if (val > 0)
-		impure->vlu_misc.vlu_short = 1;
-	else if (val < 0)
-		impure->vlu_misc.vlu_short = -1;
-	else	// val == 0
-		impure->vlu_misc.vlu_short = 0;
+		if (val > 0)
+			impure->vlu_misc.vlu_short = 1;
+		else if (val < 0)
+			impure->vlu_misc.vlu_short = -1;
+		else	// val == 0
+			impure->vlu_misc.vlu_short = 0;
+	}
 
 	impure->vlu_desc.makeShort(0, &impure->vlu_misc.vlu_short);
 

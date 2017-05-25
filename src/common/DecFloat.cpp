@@ -378,6 +378,15 @@ bool Decimal64::isNan() const
 	return false;
 }
 
+int Decimal64::sign() const
+{
+	if (decDoubleIsZero(&dec))
+		return 0;
+	if (decDoubleIsSigned(&dec))
+		return -1;
+	return 1;
+}
+
 #ifdef DEV_BUILD
 int Decimal64::show()
 {
@@ -674,6 +683,15 @@ bool Decimal128::isNan() const
 	}
 
 	return false;
+}
+
+int Decimal128::sign() const
+{
+	if (decQuadIsZero(&dec))
+		return 0;
+	if (decQuadIsSigned(&dec))
+		return -1;
+	return 1;
 }
 
 Decimal128 Decimal128::abs() const
