@@ -797,6 +797,8 @@ public:
 		return *reinterpret_cast<SLONG*>(litDesc.dsc_address);
 	}
 
+	void fixMinSInt64();
+
 public:
 	const IntlString* dsqlStr;
 	dsc litDesc;

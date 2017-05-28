@@ -1007,7 +1007,7 @@ int Parser::yylexAux()
 					if (number >= limit_by_10)
 					{
 						// possibility of an overflow
-						if ((number > limit_by_10) || (c > '8'))
+						if ((number > limit_by_10) || (c >= '8'))
 						{
 							have_overflow = true;
 						}
@@ -1040,7 +1040,7 @@ int Parser::yylexAux()
 				have_overflow = true;
 
 			// check for a more complex overflow case
-			if ((!have_overflow) && (expSign > 0))
+			if ((!have_overflow) && (expSign > 0) && (expVal > -scale))
 			{
 				expVal += scale;
 				double maxNum = DBL_MAX / pow(10.0, expVal);
