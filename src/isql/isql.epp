@@ -516,10 +516,15 @@ static const ri_actions ri_actions_all[] =
 };
 
 
-static void atexit_fb_shutdown()
+class FbShudown
 {
-	fb_shutdown(0, fb_shutrsn_app_stopped);
-}
+public:
+	~FbShudown()
+	{
+		fb_shutdown(0, fb_shutrsn_app_stopped);
+	}
+};
+
 
 int CLIB_ROUTINE main(int argc, char* argv[])
 {
@@ -584,7 +589,9 @@ int ISQL_main(int argc, char* argv[])
 #endif	// MU_ISQL
 
 	setlocale(LC_CTYPE, "");
-	atexit(&atexit_fb_shutdown);
+
+	// Must call fb_shutdown at the end of main before call destructors of global variables
+	FbShudown fbShudown;
 
 	TEXT tabname[WORDLENGTH];
 	tabname[0] = '\0';
