@@ -3684,7 +3684,10 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 		case PREPARE_LOCKERR:
 			// We got some kind of locking error (deadlock, timeout or lock_conflict)
 			// Error details should be stuffed into status vector at this point
-			ERR_post(Arg::Gds(isc_concurrent_transaction) << Arg::Num(org_rpb->rpb_transaction_nr));
+			// hvlad: we have no details as TRA_wait has alreay cleared the status vector
+			ERR_post(Arg::Gds(isc_deadlock) <<
+					 Arg::Gds(isc_update_conflict) <<
+					 Arg::Gds(isc_concurrent_transaction) << Arg::Num(org_rpb->rpb_transaction_nr));
 	}
 
 	// Old record was restored and re-fetched for write.  Now replace it.
