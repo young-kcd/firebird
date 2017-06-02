@@ -617,6 +617,7 @@ using namespace Firebird;
 %token <metaNamePtr> UNBOUNDED
 %token <metaNamePtr> VARBINARY
 %token <metaNamePtr> WINDOW
+%token <metaNamePtr> CONSISTENCY
 
 // precedence declarations for expression evaluation
 
@@ -5108,9 +5109,10 @@ snap_shot
 
 %type <uintVal>	version_mode
 version_mode
-	: /* nothing */	{ $$ = SetTransactionNode::ISO_LEVEL_READ_COMMITTED_NO_REC_VERSION; }
-	| VERSION		{ $$ = SetTransactionNode::ISO_LEVEL_READ_COMMITTED_REC_VERSION; }
-	| NO VERSION	{ $$ = SetTransactionNode::ISO_LEVEL_READ_COMMITTED_NO_REC_VERSION; }
+	: /* nothing */		{ $$ = SetTransactionNode::ISO_LEVEL_READ_COMMITTED_NO_REC_VERSION; }
+	| VERSION			{ $$ = SetTransactionNode::ISO_LEVEL_READ_COMMITTED_REC_VERSION; }
+	| NO VERSION		{ $$ = SetTransactionNode::ISO_LEVEL_READ_COMMITTED_NO_REC_VERSION; }
+	| READ CONSISTENCY	{ $$ = SetTransactionNode::ISO_LEVEL_READ_COMMITTED_READ_CONSISTENCY; }
 	;
 
 %type <uintVal> lock_type
@@ -8301,6 +8303,7 @@ non_reserved_word
 	| SQL
 	| SYSTEM
 	| TIES
+	| CONSISTENCY
 	;
 
 %%

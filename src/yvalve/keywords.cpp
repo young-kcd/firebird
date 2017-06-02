@@ -128,6 +128,7 @@ static const TOK tokens[] =
 	{TOK_CONDITIONAL, "CONDITIONAL", true},
 	{TOK_CONNECT, "CONNECT", false},
 	{TOK_CONSTRAINT, "CONSTRAINT", false},
+	{TOK_CONSISTENCY, "CONSISTENCY", true},
 	{TOK_CONTAINING, "CONTAINING", true},
 	{TOK_CONTINUE, "CONTINUE", true},
 	{TOK_CORR, "CORR", false},

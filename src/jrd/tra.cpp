@@ -2772,6 +2772,7 @@ static void transaction_options(thread_db* tdbb,
 						 Arg::Gds(isc_tpb_multiple_spec) << Arg::Str("isc_tpb_rec_version"));
 			}
 
+			transaction->tra_flags &= ~TRA_read_consistency;
 			transaction->tra_flags |= TRA_rec_version;
 			break;
 
@@ -2788,7 +2789,25 @@ static void transaction_options(thread_db* tdbb,
 						 Arg::Gds(isc_tpb_multiple_spec) << Arg::Str("isc_tpb_no_rec_version"));
 			}
 
+			transaction->tra_flags &= ~(TRA_rec_version | TRA_read_consistency);
+			;
+			break;
+
+		case isc_tpb_read_consistency:
+			if (isolation.isAssigned() && !(transaction->tra_flags & TRA_read_committed))
+			{
+				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+					Arg::Gds(isc_tpb_option_without_rc) << Arg::Str("isc_tpb_read_consistency"));
+			}
+
+			if (!rec_version.assignOnce(false))
+			{
+				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+					Arg::Gds(isc_tpb_multiple_spec) << Arg::Str("isc_tpb_read_consistency"));
+			}
+
 			transaction->tra_flags &= ~TRA_rec_version;
+			transaction->tra_flags |= TRA_read_consistency;
 			break;
 
 		case isc_tpb_nowait:
