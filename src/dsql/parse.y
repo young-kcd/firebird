@@ -3592,78 +3592,45 @@ check_opt
 
 %type <createAlterTriggerNode> trigger_clause
 trigger_clause
-	: symbol_trigger_name trigger_active trigger_type trigger_position trg_sql_security_clause
-			AS local_declaration_list full_proc_block
+	: create_trigger_start trg_sql_security_clause AS local_declaration_list full_proc_block
 		{
-			$$ = newNode<CreateAlterTriggerNode>(*$1);
-			$$->active = $2;
-			$$->type = $3;
-			$$->position = $4;
-			$$->ssDefiner = $5;
-			$$->source = makeParseStr(YYPOSNARG(6), YYPOSNARG(8));
-			$$->localDeclList = $7;
-			$$->body = $8;
+			$$ = $1;
+			$$->ssDefiner = $2;
+			$$->source = makeParseStr(YYPOSNARG(3), YYPOSNARG(5));
+			$$->localDeclList = $4;
+			$$->body = $5;
 		}
-	| symbol_trigger_name trigger_active trigger_type trigger_position
-			external_clause external_body_clause_opt
+	| create_trigger_start external_clause external_body_clause_opt
 		{
-			$$ = newNode<CreateAlterTriggerNode>(*$1);
-			$$->active = $2;
-			$$->type = $3;
-			$$->position = $4;
-			$$->external = $5;
-			if ($6)
-				$$->source = *$6;
+			$$ = $1;
+			$$->external = $2;
+			if ($3)
+				$$->source = *$3;
 		}
-	| symbol_trigger_name trigger_active trigger_type trigger_position ON symbol_table_name trg_sql_security_clause
-			AS local_declaration_list full_proc_block
+	;
+
+%type <createAlterTriggerNode> create_trigger_start
+create_trigger_start
+	: symbol_trigger_name
+			{ $$ = newNode<CreateAlterTriggerNode>(*$1); }
+		create_trigger_common(NOTRIAL($2))
+			{ $$ = $2; }
+	;
+
+%type create_trigger_common(<createAlterTriggerNode>)
+create_trigger_common($trigger)
+	: trigger_active trigger_type(NOTRIAL($trigger)) trigger_position
 		{
-			$$ = newNode<CreateAlterTriggerNode>(*$1);
-			$$->active = $2;
-			$$->type = $3;
-			$$->position = $4;
-			$$->relationName = *$6;
-			$$->ssDefiner = $7;
-			$$->source = makeParseStr(YYPOSNARG(8), YYPOSNARG(10));
-			$$->localDeclList = $9;
-			$$->body = $10;
+			$trigger->active = $1;
+			$trigger->type = $2;
+			$trigger->position = $3;
 		}
-	| symbol_trigger_name trigger_active trigger_type trigger_position ON symbol_table_name
-			external_clause external_body_clause_opt
+	| FOR symbol_table_name trigger_active table_trigger_type trigger_position
 		{
-			$$ = newNode<CreateAlterTriggerNode>(*$1);
-			$$->active = $2;
-			$$->type = $3;
-			$$->position = $4;
-			$$->relationName = *$6;
-			$$->external = $7;
-			if ($8)
-				$$->source = *$8;
-		}
-	| symbol_trigger_name FOR symbol_table_name trigger_active trigger_type trigger_position trg_sql_security_clause
-			AS local_declaration_list full_proc_block
-		{
-			$$ = newNode<CreateAlterTriggerNode>(*$1);
-			$$->active = $4;
-			$$->type = $5;
-			$$->position = $6;
-			$$->relationName = *$3;
-			$$->ssDefiner = $7;
-			$$->source = makeParseStr(YYPOSNARG(8), YYPOSNARG(10));
-			$$->localDeclList = $9;
-			$$->body = $10;
-		}
-	| symbol_trigger_name FOR symbol_table_name trigger_active trigger_type trigger_position
-			external_clause external_body_clause_opt
-		{
-			$$ = newNode<CreateAlterTriggerNode>(*$1);
-			$$->active = $4;
-			$$->type = $5;
-			$$->position = $6;
-			$$->relationName = *$3;
-			$$->external = $7;
-			if ($8)
-				$$->source = *$8;
+			$trigger->relationName = *$2;
+			$trigger->active = $3;
+			$trigger->type = $4;
+			$trigger->position = $5;
 		}
 	;
 
@@ -3686,11 +3653,22 @@ trigger_active
 		{ $$ = Nullable<bool>::empty(); }
 	;
 
-%type <uint64Val> trigger_type
-trigger_type
+%type <uint64Val> trigger_type(<createAlterTriggerNode>)
+trigger_type($trigger)
+	: table_trigger_type ON symbol_table_name
+		{
+			$$ = $1;
+			$trigger->relationName = *$3;
+		}
+	| ON trigger_db_type
+		{ $$ = $2; }
+	| trigger_type_prefix trigger_ddl_type
+		{ $$ = $1 + $2; }
+	;
+
+%type <uint64Val> table_trigger_type
+table_trigger_type
 	: trigger_type_prefix trigger_type_suffix	{ $$ = $1 + $2 - 1; }
-	| ON trigger_db_type						{ $$ = $2; }
-	| trigger_type_prefix trigger_ddl_type		{ $$ = $1 + $2; }
 	;
 
 %type <uint64Val> trigger_db_type
