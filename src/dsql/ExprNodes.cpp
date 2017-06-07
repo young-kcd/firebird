@@ -7206,6 +7206,7 @@ void LiteralNode::fixMinSInt64()
 		else
 			return;
 	}
+
 	if (*minSInt64)
 		return;
 
