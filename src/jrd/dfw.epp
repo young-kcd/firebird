@@ -1277,7 +1277,7 @@ void DFW_delete_deferred( jrd_tra* transaction, SavNumber sav_number)
 	if (sav_number == -1)
 	{
 		DeferredWork* work;
-		while (work = transaction->tra_deferred_job->work)
+		while ((work = transaction->tra_deferred_job->work))
 		{
 			delete work;
 		}
