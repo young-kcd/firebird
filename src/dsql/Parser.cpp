@@ -940,7 +940,7 @@ int Parser::yylexAux()
 		bool have_exp_digit = false; // digit ... [eE] ... digit
 		bool have_overflow = false;	// value of digits > MAX_SINT64
 		FB_UINT64 number = 0;
-		FB_UINT64 expVal = 0;
+		int expVal = 0;
 		FB_UINT64 limit_by_10 = MAX_SINT64 / 10;
 		int scale = 0;
 		int expSign = 1;
