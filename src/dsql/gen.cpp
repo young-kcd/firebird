@@ -108,7 +108,7 @@ void GEN_hidden_variables(DsqlCompilerScratch* dsqlScratch)
  **/
 void GEN_expr(DsqlCompilerScratch* dsqlScratch, ExprNode* node)
 {
-	RseNode* rseNode = node->as<RseNode>();
+	RseNode* rseNode = nodeAs<RseNode>(node);
 	if (rseNode)
 	{
 		GEN_rse(dsqlScratch, rseNode);
@@ -625,7 +625,7 @@ void GEN_sort(DsqlCompilerScratch* dsqlScratch, UCHAR blrVerb, ValueListNode* li
 
 		for (const NestConst<ValueExprNode>* const end = list->items.end(); ptr != end; ++ptr)
 		{
-			OrderNode* orderNode = (*ptr)->as<OrderNode>();
+			OrderNode* orderNode = nodeAs<OrderNode>(*ptr);
 
 			switch (orderNode->nullsPlacement)
 			{

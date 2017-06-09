@@ -330,7 +330,7 @@ void TraceDscFromValues::fillParams()
 		const VariableNode* var;
 		const LiteralNode* literal;
 
-		if ((param = prm->as<ParameterNode>()))
+		if ((param = nodeAs<ParameterNode>(prm)))
 		{
 			//const impure_value* impure = m_request->getImpure<impure_value>(param->impureOffset)
 			const MessageNode* message = param->message;
@@ -350,14 +350,14 @@ void TraceDscFromValues::fillParams()
 					desc.dsc_flags |= DSC_null;
 			}
 		}
-		else if ((var = prm->as<VariableNode>()))
+		else if ((var = nodeAs<VariableNode>(prm)))
 		{
 			impure_value* impure = m_request->getImpure<impure_value>(var->impureOffset);
 			from_desc = &impure->vlu_desc;
 		}
-		else if ((literal = prm->as<LiteralNode>()))
+		else if ((literal = nodeAs<LiteralNode>(prm)))
 			from_desc = &literal->litDesc;
-		else if (prm->is<NullNode>())
+		else if (nodeIs<NullNode>(prm))
 		{
 			desc.clear();
 			desc.setNull();

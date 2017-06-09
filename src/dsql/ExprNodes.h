@@ -1061,7 +1061,7 @@ public:
 			if (!ListExprNode::dsqlMatch(other, ignoreMapCast))
 				return false;
 
-			const Frame* o = other->as<Frame>();
+			const Frame* o = nodeAs<Frame>(other);
 			fb_assert(o);
 
 			return bound == o->bound;
@@ -1130,7 +1130,7 @@ public:
 			if (!ListExprNode::dsqlMatch(other, ignoreMapCast))
 				return false;
 
-			const FrameExtent* o = other->as<FrameExtent>();
+			const FrameExtent* o = nodeAs<FrameExtent>(other);
 			fb_assert(o);
 
 			return unit == o->unit;
@@ -1199,7 +1199,7 @@ public:
 		if (!DsqlNode::dsqlMatch(other, ignoreMapCast))
 			return false;
 
-		const WindowClause* o = other->as<WindowClause>();
+		const WindowClause* o = nodeAs<WindowClause>(other);
 		fb_assert(o);
 
 		return exclusion == o->exclusion;

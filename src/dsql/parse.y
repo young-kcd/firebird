@@ -2369,7 +2369,7 @@ column_constraint($addColumnClause)
 				const NestConst<ValueExprNode>* ptr = refColumns->items.begin();
 
 				for (const NestConst<ValueExprNode>* const end = refColumns->items.end(); ptr != end; ++ptr)
-					constraint.refColumns.add((*ptr)->as<FieldNode>()->dsqlName);
+					constraint.refColumns.add(nodeAs<FieldNode>(*ptr)->dsqlName);
 			}
 
 			constraint.index = $5;
@@ -2420,7 +2420,7 @@ table_constraint($relationNode)
 			const NestConst<ValueExprNode>* ptr = columns->items.begin();
 
 			for (const NestConst<ValueExprNode>* const end = columns->items.end(); ptr != end; ++ptr)
-				constraint.columns.add((*ptr)->as<FieldNode>()->dsqlName);
+				constraint.columns.add(nodeAs<FieldNode>(*ptr)->dsqlName);
 
 			constraint.index = $3;
 
@@ -2435,7 +2435,7 @@ table_constraint($relationNode)
 			const NestConst<ValueExprNode>* ptr = columns->items.begin();
 
 			for (const NestConst<ValueExprNode>* const end = columns->items.end(); ptr != end; ++ptr)
-				constraint.columns.add((*ptr)->as<FieldNode>()->dsqlName);
+				constraint.columns.add(nodeAs<FieldNode>(*ptr)->dsqlName);
 
 			constraint.index = $4;
 
@@ -2451,7 +2451,7 @@ table_constraint($relationNode)
 			const NestConst<ValueExprNode>* ptr = columns->items.begin();
 
 			for (const NestConst<ValueExprNode>* const end = columns->items.end(); ptr != end; ++ptr)
-				constraint.columns.add((*ptr)->as<FieldNode>()->dsqlName);
+				constraint.columns.add(nodeAs<FieldNode>(*ptr)->dsqlName);
 
 			constraint.refRelation = *$5;
 			constraint.refAction = $7;
@@ -2462,7 +2462,7 @@ table_constraint($relationNode)
 				const NestConst<ValueExprNode>* ptr = refColumns->items.begin();
 
 				for (const NestConst<ValueExprNode>* const end = refColumns->items.end(); ptr != end; ++ptr)
-					constraint.refColumns.add((*ptr)->as<FieldNode>()->dsqlName);
+					constraint.refColumns.add(nodeAs<FieldNode>(*ptr)->dsqlName);
 			}
 
 			constraint.index = $8;
@@ -5454,7 +5454,7 @@ select_expr_body
 		{ $$ = $1; }
 	| select_expr_body UNION distinct_noise query_term
 		{
-			UnionSourceNode* node = $1->as<UnionSourceNode>();
+			UnionSourceNode* node = nodeAs<UnionSourceNode>($1);
 			if (node && !node->dsqlAll)
 				node->dsqlClauses->add($4);
 			else
@@ -5466,7 +5466,7 @@ select_expr_body
 		}
 	| select_expr_body UNION ALL query_term
 		{
-			UnionSourceNode* node = $1->as<UnionSourceNode>();
+			UnionSourceNode* node = nodeAs<UnionSourceNode>($1);
 			if (node && node->dsqlAll)
 				node->dsqlClauses->add($4);
 			else
@@ -7888,10 +7888,10 @@ searched_case
 			ValueIfNode* last = $2;
 			ValueIfNode* next;
 
-			while ((next = last->falseValue->as<ValueIfNode>()))
+			while ((next = nodeAs<ValueIfNode>(last->falseValue)))
 				last = next;
 
-			fb_assert(last->falseValue->is<NullNode>());
+			fb_assert(nodeIs<NullNode>(last->falseValue));
 
 			last->falseValue = $4;
 			$$ = $2;
@@ -7908,10 +7908,10 @@ searched_when_clause
 			ValueIfNode* last = $1;
 			ValueIfNode* next;
 
-			while ((next = last->falseValue->as<ValueIfNode>()))
+			while ((next = nodeAs<ValueIfNode>(last->falseValue)))
 				last = next;
 
-			fb_assert(last->falseValue->is<NullNode>());
+			fb_assert(nodeIs<NullNode>(last->falseValue));
 
 			last->falseValue = cond;
 			$$ = $1;

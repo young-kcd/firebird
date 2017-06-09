@@ -209,7 +209,7 @@ private:
 
 	BoolExprNode* valueToBool(ValueExprNode* value)
 	{
-		BoolAsValueNode* node = value->as<BoolAsValueNode>();
+		BoolAsValueNode* node = nodeAs<BoolAsValueNode>(value);
 		if (node)
 			return node->boolean;
 

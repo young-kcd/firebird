@@ -148,7 +148,7 @@ namespace
 		for (ExprNode** node = csb->csb_current_nodes.end() - 1;
 			 node >= csb->csb_current_nodes.begin(); --node)
 		{
-			RseNode* const rseNode = (*node)->as<RseNode>();
+			RseNode* const rseNode = nodeAs<RseNode>(*node);
 
 			if (rseNode)
 			{
@@ -195,7 +195,7 @@ void NodeRef::pass2(thread_db* tdbb, CompilerScratch* csb)
 	{
 		if (csb->csb_current_nodes.hasData())
 		{
-			RseNode* topRseNode = csb->csb_current_nodes[0]->as<RseNode>();
+			RseNode* topRseNode = nodeAs<RseNode>(csb->csb_current_nodes[0]);
 			fb_assert(topRseNode);
 
 			if (!topRseNode->rse_invariants)
@@ -486,7 +486,7 @@ void ArithmeticNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 		desc2.setNull();
 	}
 
-	if (arg1->is<NullNode>() && arg2->is<NullNode>())
+	if (nodeIs<NullNode>(arg1) && nodeIs<NullNode>(arg2))
 	{
 		// NULL + NULL = NULL of INT
 		desc->makeLong(0);
@@ -1606,7 +1606,7 @@ bool ArithmeticNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
 		return false;
 
-	const ArithmeticNode* o = other->as<ArithmeticNode>();
+	const ArithmeticNode* o = nodeAs<ArithmeticNode>(other);
 	fb_assert(o);
 
 	return dialect1 == o->dialect1 && blrOp == o->blrOp;
@@ -1614,7 +1614,7 @@ bool ArithmeticNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 
 bool ArithmeticNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 {
-	const ArithmeticNode* const otherNode = other->as<ArithmeticNode>();
+	const ArithmeticNode* const otherNode = nodeAs<ArithmeticNode>(other);
 
 	if (!otherNode || blrOp != otherNode->blrOp || dialect1 != otherNode->dialect1)
 		return false;
@@ -1738,15 +1738,15 @@ dsc* ArithmeticNode::execute(thread_db* tdbb, jrd_req* request) const
  // This function can be removed when dialect-3 becomes the lowest supported dialect. (Version 7.0?)
 dsc* ArithmeticNode::add(const dsc* desc, impure_value* value, const ValueExprNode* node, const UCHAR blrOp)
 {
-	const ArithmeticNode* arithmeticNode = node->as<ArithmeticNode>();
+	const ArithmeticNode* arithmeticNode = nodeAs<ArithmeticNode>(node);
 	thread_db* tdbb = JRD_get_thread_data();
 
 #ifdef DEV_BUILD
-	const SubQueryNode* subQueryNode = node->as<SubQueryNode>();
+	const SubQueryNode* subQueryNode = nodeAs<SubQueryNode>(node);
 	fb_assert(
 		(arithmeticNode && arithmeticNode->dialect1 &&
 			(arithmeticNode->blrOp == blr_add || arithmeticNode->blrOp == blr_subtract)) ||
-		node->is<AggNode>() ||
+		nodeIs<AggNode>(node) ||
 		(subQueryNode && (subQueryNode->blrOp == blr_total || subQueryNode->blrOp == blr_average)));
 #endif
 
@@ -1821,12 +1821,12 @@ dsc* ArithmeticNode::add(const dsc* desc, impure_value* value, const ValueExprNo
 // the blr_add, blr_subtract, and blr_agg_total verbs following a blr_version5.
 dsc* ArithmeticNode::add2(const dsc* desc, impure_value* value, const ValueExprNode* node, const UCHAR blrOp)
 {
-	const ArithmeticNode* arithmeticNode = node->as<ArithmeticNode>();
+	const ArithmeticNode* arithmeticNode = nodeAs<ArithmeticNode>(node);
 
 	fb_assert(
 		(arithmeticNode && !arithmeticNode->dialect1 &&
 			(arithmeticNode->blrOp == blr_add || arithmeticNode->blrOp == blr_subtract)) ||
-		node->is<AggNode>());
+		nodeIs<AggNode>(node));
 
 	dsc* result = &value->vlu_desc;
 
@@ -2902,7 +2902,7 @@ bool CastNode::setParameterType(DsqlCompilerScratch* /*dsqlScratch*/,
 {
 	// ASF: Attention: CastNode::dsqlPass calls us with NULL node.
 
-	ParameterNode* paramNode = source->as<ParameterNode>();
+	ParameterNode* paramNode = nodeAs<ParameterNode>(source);
 
 	if (paramNode)
 	{
@@ -2980,7 +2980,7 @@ bool CastNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
 		return false;
 
-	const CastNode* o = other->as<CastNode>();
+	const CastNode* o = nodeAs<CastNode>(other);
 	fb_assert(o);
 
 	return dsqlField == o->dsqlField;
@@ -2991,7 +2991,7 @@ bool CastNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	const CastNode* const otherNode = other->as<CastNode>();
+	const CastNode* const otherNode = nodeAs<CastNode>(other);
 	fb_assert(otherNode);
 
 	return DSC_EQUIV(&castDesc, &otherNode->castDesc, true);
@@ -4167,13 +4167,13 @@ bool DecodeNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 	const dsc* desc, bool /*forceVarChar*/)
 {
 	// Check if there is a parameter in the test/conditions.
-	bool setParameters = test->is<ParameterNode>();
+	bool setParameters = nodeIs<ParameterNode>(test);
 
 	if (!setParameters)
 	{
 		for (auto& condition : conditions->items)
 		{
-			if (condition->is<ParameterNode>())
+			if (nodeIs<ParameterNode>(condition))
 			{
 				setParameters = true;
 				break;
@@ -4450,7 +4450,7 @@ bool DefaultNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
 		return false;
 
-	const DefaultNode* o = other->as<DefaultNode>();
+	const DefaultNode* o = nodeAs<DefaultNode>(other);
 	fb_assert(o);
 
 	return relationName == o->relationName && fieldName == o->fieldName;
@@ -4768,7 +4768,7 @@ ValueExprNode* ExtractNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		case blr_extract_weekday:
 		case blr_extract_yearday:
 		case blr_extract_week:
-			if (!ExprNode::is<NullNode>(sub1) &&
+			if (!nodeIs<NullNode>(sub1) &&
 				sub1->nodDesc.dsc_dtype != dtype_sql_date &&
 				sub1->nodDesc.dsc_dtype != dtype_timestamp)
 			{
@@ -4781,7 +4781,7 @@ ValueExprNode* ExtractNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		case blr_extract_minute:
 		case blr_extract_second:
 		case blr_extract_millisecond:
-			if (!ExprNode::is<NullNode>(sub1) &&
+			if (!nodeIs<NullNode>(sub1) &&
 				sub1->nodDesc.dsc_dtype != dtype_sql_time &&
 				sub1->nodDesc.dsc_dtype != dtype_timestamp)
 			{
@@ -4871,7 +4871,7 @@ bool ExtractNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
 		return false;
 
-	const ExtractNode* o = other->as<ExtractNode>();
+	const ExtractNode* o = nodeAs<ExtractNode>(other);
 	fb_assert(o);
 
 	return blrSubOp == o->blrSubOp;
@@ -4882,7 +4882,7 @@ bool ExtractNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	const ExtractNode* const otherNode = other->as<ExtractNode>();
+	const ExtractNode* const otherNode = nodeAs<ExtractNode>(other);
 	fb_assert(otherNode);
 
 	return blrSubOp == otherNode->blrSubOp;
@@ -5533,7 +5533,7 @@ ValueExprNode* FieldNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, Rec
 
 					for (auto& rseItem : rseItems->items)
 					{
-						DerivedFieldNode* selectItem = rseItem->as<DerivedFieldNode>();
+						DerivedFieldNode* selectItem = nodeAs<DerivedFieldNode>(rseItem);
 
 						// select-item should always be a alias!
 						if (selectItem)
@@ -5814,7 +5814,7 @@ bool FieldNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
 		return false;
 
-	const FieldNode* o = other->as<FieldNode>();
+	const FieldNode* o = nodeAs<FieldNode>(other);
 	fb_assert(o);
 
 	if (dsqlField != o->dsqlField || dsqlContext != o->dsqlContext)
@@ -5831,7 +5831,7 @@ bool FieldNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	const FieldNode* const otherNode = other->as<FieldNode>();
+	const FieldNode* const otherNode = nodeAs<FieldNode>(other);
 	fb_assert(otherNode);
 
 	return fieldId == otherNode->fieldId &&
@@ -6373,7 +6373,7 @@ bool GenIdNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
 		return false;
 
-	const GenIdNode* o = other->as<GenIdNode>();
+	const GenIdNode* o = nodeAs<GenIdNode>(other);
 	fb_assert(o);
 
 	// I'm not sure if I should include "implicit" in the comparison, but it means different BLR code
@@ -6387,7 +6387,7 @@ bool GenIdNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	const GenIdNode* const otherNode = other->as<GenIdNode>();
+	const GenIdNode* const otherNode = nodeAs<GenIdNode>(other);
 	fb_assert(otherNode);
 
 	// I'm not sure if I should include "implicit" in the comparison, but it means different BLR code
@@ -6489,7 +6489,7 @@ DmlNode* InternalInfoNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 
 	node->arg = PAR_parse_value(tdbb, csb);
 
-	LiteralNode* literal = node->arg->as<LiteralNode>();
+	LiteralNode* literal = nodeAs<LiteralNode>(node->arg);
 
 	if (!literal || literal->litDesc.dsc_dtype != dtype_long)
 	{
@@ -6511,7 +6511,7 @@ string InternalInfoNode::internalPrint(NodePrinter& printer) const
 
 void InternalInfoNode::setParameterName(dsql_par* parameter) const
 {
-	SLONG infoType = arg->as<LiteralNode>()->getSlong();
+	SLONG infoType = nodeAs<LiteralNode>(arg)->getSlong();
 	parameter->par_name = parameter->par_alias = INFO_TYPE_ATTRIBUTES[infoType].alias;
 }
 
@@ -6523,7 +6523,7 @@ void InternalInfoNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void InternalInfoNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 {
-	const InfoType infoType = static_cast<InfoType>(arg->as<LiteralNode>()->getSlong());
+	const InfoType infoType = static_cast<InfoType>(nodeAs<LiteralNode>(arg)->getSlong());
 
 	switch (infoType)
 	{
@@ -6558,7 +6558,7 @@ void InternalInfoNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 
 void InternalInfoNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	fb_assert(arg->is<LiteralNode>());
+	fb_assert(nodeIs<LiteralNode>(arg));
 
 	dsc argDesc;
 	arg->getDesc(tdbb, csb, &argDesc);
@@ -6715,7 +6715,7 @@ dsc* InternalInfoNode::execute(thread_db* tdbb, jrd_req* request) const
 
 ValueExprNode* InternalInfoNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	SLONG infoType = arg->as<LiteralNode>()->getSlong();
+	SLONG infoType = nodeAs<LiteralNode>(arg)->getSlong();
 	const InfoAttr& attr = INFO_TYPE_ATTRIBUTES[infoType];
 
 	if (attr.mask && !(dsqlScratch->flags & attr.mask))
@@ -7142,7 +7142,7 @@ bool LiteralNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
 		return false;
 
-	const LiteralNode* o = other->as<LiteralNode>();
+	const LiteralNode* o = nodeAs<LiteralNode>(other);
 	fb_assert(o);
 
 	if (!DSC_EQUIV(&litDesc, &o->litDesc, true))
@@ -7158,7 +7158,7 @@ bool LiteralNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	const LiteralNode* const otherNode = other->as<LiteralNode>();
+	const LiteralNode* const otherNode = nodeAs<LiteralNode>(other);
 	fb_assert(otherNode);
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -7348,7 +7348,7 @@ void DsqlMapNode::setParameterName(dsql_par* parameter) const
 	const ValueExprNode* nestNode = map->map_node;
 	const DsqlMapNode* mapNode;
 
-	while ((mapNode = ExprNode::as<DsqlMapNode>(nestNode)))
+	while ((mapNode = nodeAs<DsqlMapNode>(nestNode)))
 	{
 		// Skip all the DsqlMapNodes.
 		nestNode = mapNode->map->map_node;
@@ -7364,25 +7364,25 @@ void DsqlMapNode::setParameterName(dsql_par* parameter) const
 	const DerivedFieldNode* derivedField;
 	const RecordKeyNode* dbKeyNode;
 
-	if ((aggNode = ExprNode::as<AggNode>(nestNode)))
+	if ((aggNode = nodeAs<AggNode>(nestNode)))
 		aggNode->setParameterName(parameter);
-	else if ((aliasNode = ExprNode::as<DsqlAliasNode>(nestNode)))
+	else if ((aliasNode = nodeAs<DsqlAliasNode>(nestNode)))
 	{
 		parameter->par_alias = aliasNode->name;
 		alias = aliasNode->value;
-		fieldNode = ExprNode::as<FieldNode>(alias);
+		fieldNode = nodeAs<FieldNode>(alias);
 	}
-	else if ((literalNode = ExprNode::as<LiteralNode>(nestNode)))
+	else if ((literalNode = nodeAs<LiteralNode>(nestNode)))
 		literalNode->setParameterName(parameter);
-	else if ((dbKeyNode = ExprNode::as<RecordKeyNode>(nestNode)))
+	else if ((dbKeyNode = nodeAs<RecordKeyNode>(nestNode)))
 		nameAlias = dbKeyNode->getAlias(false);
-	else if ((derivedField = ExprNode::as<DerivedFieldNode>(nestNode)))
+	else if ((derivedField = nodeAs<DerivedFieldNode>(nestNode)))
 	{
 		parameter->par_alias = derivedField->name;
 		alias = derivedField->value;
-		fieldNode = ExprNode::as<FieldNode>(alias);
+		fieldNode = nodeAs<FieldNode>(alias);
 	}
-	else if ((fieldNode = ExprNode::as<FieldNode>(nestNode)))
+	else if ((fieldNode = nodeAs<FieldNode>(nestNode)))
 		nameAlias = fieldNode->dsqlField->fld_name.c_str();
 
 	const dsql_ctx* context = NULL;
@@ -7424,7 +7424,7 @@ void DsqlMapNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 
 bool DsqlMapNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 {
-	const DsqlMapNode* o = other->as<DsqlMapNode>();
+	const DsqlMapNode* o = nodeAs<DsqlMapNode>(other);
 	return o && PASS1_node_match(map->map_node, o->map->map_node, ignoreMapCast);
 }
 
@@ -7543,12 +7543,12 @@ void DerivedFieldNode::setParameterName(dsql_par* parameter) const
 	const FieldNode* fieldNode;
 	const RecordKeyNode* dbKeyNode;
 
-	if ((fieldNode = value->as<FieldNode>()))
+	if ((fieldNode = nodeAs<FieldNode>(value)))
 	{
 		parameter->par_name = fieldNode->dsqlField->fld_name.c_str();
 		context = fieldNode->dsqlContext;
 	}
-	else if ((dbKeyNode = value->as<RecordKeyNode>()))
+	else if ((dbKeyNode = nodeAs<RecordKeyNode>(value)))
 		dbKeyNode->setParameterName(parameter);
 
 	parameter->par_alias = name;
@@ -7564,11 +7564,11 @@ void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 	ValueExprNode* val = value;
 
-	while (val->is<DsqlAliasNode>())
-		val = val->as<DsqlAliasNode>()->value;
+	while (nodeIs<DsqlAliasNode>(val))
+		val = nodeAs<DsqlAliasNode>(val)->value;
 
-	if (!val->is<FieldNode>() && !val->is<DerivedFieldNode>() &&
-		!val->is<RecordKeyNode>() && !val->is<DsqlMapNode>())
+	if (!nodeIs<FieldNode>(val) && !nodeIs<DerivedFieldNode>(val) &&
+		!nodeIs<RecordKeyNode>(val) && !nodeIs<DsqlMapNode>(val))
 	{
 		if (context->ctx_main_derived_contexts.hasData())
 		{
@@ -7615,7 +7615,7 @@ void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	else if (!(dsqlScratch->flags & DsqlCompilerScratch::FLAG_FETCH) &&
 			 !(context->ctx_flags & CTX_system) &&
 			 (context->ctx_flags & CTX_cursor) &&
-			 val->is<FieldNode>())
+			 nodeIs<FieldNode>(val))
 	{
 		// ASF: FieldNode::execute does not verify rpb_number.isValid(), and due to system triggers
 		// and also singular queries, we cannot start to do it. So to fix CORE-4488, we introduce
@@ -7623,7 +7623,7 @@ void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		// FieldNode::execute by a test of rpb_number.isValid().
 		dsqlScratch->appendUChar(blr_derived_expr);
 		dsqlScratch->appendUChar(1);
-		GEN_stuff_context(dsqlScratch, val->as<FieldNode>()->dsqlContext);
+		GEN_stuff_context(dsqlScratch, nodeAs<FieldNode>(val)->dsqlContext);
 	}
 
 	GEN_expr(dsqlScratch, value);
@@ -7646,7 +7646,7 @@ NegateNode::NegateNode(MemoryPool& pool, ValueExprNode* aArg)
 {
 	addChildNode(arg, arg);
 
-	LiteralNode* literal = arg->as<LiteralNode>();
+	LiteralNode* literal = nodeAs<LiteralNode>(arg);
 	if (literal && literal->litDesc.dsc_dtype == dtype_dec128)
 		literal->fixMinSInt64();
 }
@@ -7679,17 +7679,17 @@ void NegateNode::setParameterName(dsql_par* parameter) const
 	const ValueExprNode* innerNode = arg;
 	const NegateNode* innerNegateNode;
 
-	while ((innerNegateNode = ExprNode::as<NegateNode>(innerNode)))
+	while ((innerNegateNode = nodeAs<NegateNode>(innerNode)))
 	{
 		innerNode = innerNegateNode->arg;
 		++level;
 	}
 
-	if (ExprNode::is<NullNode>(innerNode) || ExprNode::is<LiteralNode>(innerNode))
+	if (nodeIs<NullNode>(innerNode) || nodeIs<LiteralNode>(innerNode))
 		parameter->par_name = parameter->par_alias = "CONSTANT";
 	else if (!level)
 	{
-		const ArithmeticNode* arithmeticNode = ExprNode::as<ArithmeticNode>(innerNode);
+		const ArithmeticNode* arithmeticNode = nodeAs<ArithmeticNode>(innerNode);
 
 		if (arithmeticNode && (
 			/*arithmeticNode->blrOp == blr_add ||
@@ -7710,7 +7710,7 @@ bool NegateNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 
 void NegateNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
-	LiteralNode* literal = arg->as<LiteralNode>();
+	LiteralNode* literal = nodeAs<LiteralNode>(arg);
 
 	if (literal && DTYPE_IS_NUMERIC(literal->litDesc.dsc_dtype))
 		LiteralNode::genConstant(dsqlScratch, &literal->litDesc, true);
@@ -7725,7 +7725,7 @@ void NegateNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	MAKE_desc(dsqlScratch, desc, arg);
 
-	if (arg->is<NullNode>())
+	if (nodeIs<NullNode>(arg))
 	{
 		// -NULL = NULL of INT
 		desc->makeLong(0);
@@ -7961,7 +7961,7 @@ bool OrderNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
 		return false;
 
-	const OrderNode* o = other->as<OrderNode>();
+	const OrderNode* o = nodeAs<OrderNode>(other);
 
 	return o && descending == o->descending && nullsPlacement == o->nullsPlacement;
 }
@@ -7975,7 +7975,7 @@ bool WindowClause::Frame::sameAs(const ExprNode* other, bool ignoreStreams) cons
 	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	const Frame* const otherNode = other->as<Frame>();
+	const Frame* const otherNode = nodeAs<Frame>(other);
 	fb_assert(otherNode);
 
 	return bound == otherNode->bound;
@@ -8007,7 +8007,7 @@ bool WindowClause::FrameExtent::sameAs(const ExprNode* other, bool ignoreStreams
 	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	const FrameExtent* const otherNode = other->as<FrameExtent>();
+	const FrameExtent* const otherNode = nodeAs<FrameExtent>(other);
 	fb_assert(otherNode);
 
 	return unit == otherNode->unit;
@@ -8116,7 +8116,7 @@ WindowClause* WindowClause::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		}
 		else
 		{
-			OrderNode* key = node->order->items[0]->as<OrderNode>();
+			OrderNode* key = nodeAs<OrderNode>(node->order->items[0]);
 			fb_assert(key);
 
 			dsc desc;
@@ -8345,7 +8345,7 @@ ValueExprNode* OverNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	OverNode* node = FB_NEW_POOL(getPool()) OverNode(getPool(),
 		static_cast<AggNode*>(doDsqlPass(dsqlScratch, aggExpr)), doDsqlPass(dsqlScratch, refWindow));
 
-	const AggNode* aggNode = node->aggExpr->as<AggNode>();
+	const AggNode* aggNode = nodeAs<AggNode>(node->aggExpr);
 
 	if (node->window &&
 		node->window->extent &&
@@ -8605,7 +8605,7 @@ void ParameterNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 
 bool ParameterNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
 {
-	const ParameterNode* o = other->as<ParameterNode>();
+	const ParameterNode* o = nodeAs<ParameterNode>(other);
 
 	return o && dsqlParameter->par_index == o->dsqlParameter->par_index;
 }
@@ -9047,7 +9047,7 @@ bool RecordKeyNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
 		return false;
 
-	const RecordKeyNode* o = other->as<RecordKeyNode>();
+	const RecordKeyNode* o = nodeAs<RecordKeyNode>(other);
 	fb_assert(o);
 
 	return blrOp == o->blrOp;
@@ -9058,7 +9058,7 @@ bool RecordKeyNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	const RecordKeyNode* const otherNode = other->as<RecordKeyNode>();
+	const RecordKeyNode* const otherNode = nodeAs<RecordKeyNode>(other);
 	fb_assert(otherNode);
 
 	return blrOp == otherNode->blrOp && (ignoreStreams || recStream == otherNode->recStream);
@@ -9095,7 +9095,7 @@ ValueExprNode* RecordKeyNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 			for (ValueExprNodeStack::iterator i(stack); i.hasData(); ++i)
 			{
 #ifdef CMP_DEBUG
-				csb->dump(" %d", ExprNode::as<RecordKeyNode>(i.object())->recStream);
+				csb->dump(" %d", nodeAs<RecordKeyNode>(i.object())->recStream);
 #endif
 
 				ValueIfNode* valueIfNode = FB_NEW_POOL(csb->csb_pool) ValueIfNode(csb->csb_pool);
@@ -9349,7 +9349,7 @@ DmlNode* ScalarNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 
 void ScalarNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* csb, dsc* desc)
 {
-	FieldNode* fieldNode = field->as<FieldNode>();
+	FieldNode* fieldNode = nodeAs<FieldNode>(field);
 	fb_assert(fieldNode);
 
 	jrd_rel* relation = csb->csb_rpt[fieldNode->fieldStream].csb_relation;
@@ -9435,18 +9435,18 @@ DmlNode* StmtExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 	node->expr = PAR_parse_value(tdbb, csb);
 
 	// Avoid blr_stmt_expr in a BLR expression header
-	CompoundStmtNode* const stmt = node->stmt->as<CompoundStmtNode>();
+	CompoundStmtNode* const stmt = nodeAs<CompoundStmtNode>(node->stmt);
 
 	if (stmt)
 	{
 		if (stmt->statements.getCount() != 2 ||
-			!stmt->statements[0]->is<DeclareVariableNode>() ||
-			!stmt->statements[1]->is<AssignmentNode>())
+			!nodeIs<DeclareVariableNode>(stmt->statements[0]) ||
+			!nodeIs<AssignmentNode>(stmt->statements[1]))
 		{
 			return node->expr;
 		}
 	}
-	else if (!node->stmt->is<AssignmentNode>())
+	else if (!nodeIs<AssignmentNode>(node->stmt))
 		return node->expr;
 
 	return node;
@@ -9575,7 +9575,7 @@ bool StrCaseNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
 		return false;
 
-	const StrCaseNode* o = other->as<StrCaseNode>();
+	const StrCaseNode* o = nodeAs<StrCaseNode>(other);
 	fb_assert(o);
 
 	return blrOp == o->blrOp;
@@ -9586,7 +9586,7 @@ bool StrCaseNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	const StrCaseNode* const otherNode = other->as<StrCaseNode>();
+	const StrCaseNode* const otherNode = nodeAs<StrCaseNode>(other);
 	fb_assert(otherNode);
 
 	return blrOp == otherNode->blrOp;
@@ -9790,7 +9790,7 @@ bool StrLenNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
 		return false;
 
-	const StrLenNode* o = other->as<StrLenNode>();
+	const StrLenNode* o = nodeAs<StrLenNode>(other);
 	fb_assert(o);
 
 	return blrSubOp == o->blrSubOp;
@@ -9801,7 +9801,7 @@ bool StrLenNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	const StrLenNode* const otherNode = other->as<StrLenNode>();
+	const StrLenNode* const otherNode = nodeAs<StrLenNode>(other);
 	fb_assert(otherNode);
 
 	return blrSubOp == otherNode->blrSubOp;
@@ -9993,7 +9993,7 @@ ValueExprNode* SubQueryNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	const DsqlContextStack::iterator base(*dsqlScratch->context);
 
-	RseNode* rse = PASS1_rse(dsqlScratch, dsqlRse->as<SelectExprNode>(), false);
+	RseNode* rse = PASS1_rse(dsqlScratch, nodeAs<SelectExprNode>(dsqlRse), false);
 
 	SubQueryNode* node = FB_NEW_POOL(getPool()) SubQueryNode(getPool(), blrOp, rse,
 		rse->dsqlSelectList->items[0], FB_NEW_POOL(getPool()) NullNode(getPool()));
@@ -10050,7 +10050,7 @@ bool SubQueryNode::dsqlFieldFinder(FieldFinder& visitor)
 ValueExprNode* SubQueryNode::dsqlFieldRemapper(FieldRemapper& visitor)
 {
 	doDsqlFieldRemapper(visitor, dsqlRse);
-	value1 = dsqlRse->as<RseNode>()->dsqlSelectList->items[0];
+	value1 = nodeAs<RseNode>(dsqlRse)->dsqlSelectList->items[0];
 	return this;
 }
 
@@ -10244,7 +10244,7 @@ ValueExprNode* SubQueryNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	// Bind values of invariant nodes to top-level RSE (if present).
 	if ((nodFlags & FLAG_INVARIANT) && csb->csb_current_nodes.hasData())
 	{
-		RseNode* topRseNode = csb->csb_current_nodes[0]->as<RseNode>();
+		RseNode* topRseNode = nodeAs<RseNode>(csb->csb_current_nodes[0]);
 		fb_assert(topRseNode);
 
 		if (!topRseNode->rse_invariants)
@@ -10522,7 +10522,7 @@ void SubstringNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 	{
 		MAKE_desc(dsqlScratch, &desc3, length);
 
-		if (!length->is<LiteralNode>())
+		if (!nodeIs<LiteralNode>(length))
 			desc3.dsc_address = NULL;
 	}
 
@@ -10537,7 +10537,7 @@ void SubstringNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 
 	ValueExprNode* offsetNode = start;
 	ValueExprNode* decrementNode = NULL;
-	ArithmeticNode* arithmeticNode = offsetNode->as<ArithmeticNode>();
+	ArithmeticNode* arithmeticNode = nodeAs<ArithmeticNode>(offsetNode);
 
 	// ASF: This code is very strange. The DSQL node is created as dialect 1, but only the dialect
 	// 3 is verified here. Also, this task seems unnecessary here, as it must be done during
@@ -10561,7 +10561,7 @@ void SubstringNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 		desc->dsc_flags |= DSC_null;
 	else
 	{
-		if (length->is<LiteralNode>() && desc2.dsc_dtype == dtype_long)
+		if (nodeIs<LiteralNode>(length) && desc2.dsc_dtype == dtype_long)
 		{
 			const SLONG len = MOV_get_long(tdbb, &desc2, 0);
 
@@ -10867,11 +10867,11 @@ ValueExprNode* SubstringSimilarNode::pass1(thread_db* tdbb, CompilerScratch* csb
 
 	// If there is no top-level RSE present and patterns are not constant, unmark node as invariant
 	// because it may be dependent on data or variables.
-	if ((nodFlags & FLAG_INVARIANT) && (!pattern->is<LiteralNode>() || !escape->is<LiteralNode>()))
+	if ((nodFlags & FLAG_INVARIANT) && (!nodeIs<LiteralNode>(pattern) || !nodeIs<LiteralNode>(escape)))
 	{
 		for (const auto& ctxNode : csb->csb_current_nodes)
 		{
-			if (ctxNode->as<RseNode>())
+			if (nodeAs<RseNode>(ctxNode))
 				return this;
 		}
 
@@ -11100,7 +11100,7 @@ void SysFuncCallNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 		// dsc_address is verified in makeFunc to get literals. If the node is not a
 		// literal, set it to NULL, to prevent wrong interpretation of offsets as
 		// pointers - CORE-2612.
-		if (!arg->is<LiteralNode>())
+		if (!nodeIs<LiteralNode>(arg))
 			targetDesc->dsc_address = NULL;
 	}
 
@@ -11125,7 +11125,7 @@ bool SysFuncCallNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
 		return false;
 
-	const SysFuncCallNode* otherNode = other->as<SysFuncCallNode>();
+	const SysFuncCallNode* otherNode = nodeAs<SysFuncCallNode>(other);
 
 	return name == otherNode->name;
 }
@@ -11135,7 +11135,7 @@ bool SysFuncCallNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	const SysFuncCallNode* const otherNode = other->as<SysFuncCallNode>();
+	const SysFuncCallNode* const otherNode = nodeAs<SysFuncCallNode>(other);
 	fb_assert(otherNode);
 
 	return function && function == otherNode->function;
@@ -11356,7 +11356,7 @@ bool TrimNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
 		return false;
 
-	const TrimNode* o = other->as<TrimNode>();
+	const TrimNode* o = nodeAs<TrimNode>(other);
 	fb_assert(o);
 
 	return where == o->where;
@@ -11367,7 +11367,7 @@ bool TrimNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	const TrimNode* const otherNode = other->as<TrimNode>();
+	const TrimNode* const otherNode = nodeAs<TrimNode>(other);
 	fb_assert(otherNode);
 
 	return where == otherNode->where;
@@ -11722,7 +11722,7 @@ bool UdfCallNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
 		return false;
 
-	const UdfCallNode* otherNode = other->as<UdfCallNode>();
+	const UdfCallNode* otherNode = nodeAs<UdfCallNode>(other);
 
 	return name == otherNode->name;
 }
@@ -11732,7 +11732,7 @@ bool UdfCallNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 	if (!ExprNode::sameAs(other, ignoreStreams))
 		return false;
 
-	const UdfCallNode* const otherNode = other->as<UdfCallNode>();
+	const UdfCallNode* const otherNode = nodeAs<UdfCallNode>(other);
 	fb_assert(otherNode);
 
 	return function && function == otherNode->function;
@@ -12084,31 +12084,31 @@ DmlNode* ValueIfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	// Get rid of blr_stmt_expr expressions.
 
 	// Coalesce.
-	MissingBoolNode* missing = node->condition->as<MissingBoolNode>();
+	MissingBoolNode* missing = nodeAs<MissingBoolNode>(node->condition);
 	if (missing)
 	{
-		StmtExprNode* missingCond = missing->arg->as<StmtExprNode>();
+		StmtExprNode* missingCond = nodeAs<StmtExprNode>(missing->arg);
 		if (!missingCond)
 			return node;
 
-		CompoundStmtNode* stmt = missingCond->stmt->as<CompoundStmtNode>();
+		CompoundStmtNode* stmt = nodeAs<CompoundStmtNode>(missingCond->stmt);
 		DeclareVariableNode* declStmt = NULL;
 		AssignmentNode* assignStmt;
 
 		if (stmt)
 		{
 			if (stmt->statements.getCount() != 2 ||
-				!(declStmt = stmt->statements[0]->as<DeclareVariableNode>()) ||
-				!(assignStmt = stmt->statements[1]->as<AssignmentNode>()))
+				!(declStmt = nodeAs<DeclareVariableNode>(stmt->statements[0])) ||
+				!(assignStmt = nodeAs<AssignmentNode>(stmt->statements[1])))
 			{
 				return node;
 			}
 		}
-		else if (!(assignStmt = missingCond->stmt->as<AssignmentNode>()))
+		else if (!(assignStmt = nodeAs<AssignmentNode>(missingCond->stmt)))
 			return node;
 
-		VariableNode* var = node->falseValue->as<VariableNode>();
-		VariableNode* var2 = assignStmt->asgnTo->as<VariableNode>();
+		VariableNode* var = nodeAs<VariableNode>(node->falseValue);
+		VariableNode* var2 = nodeAs<VariableNode>(assignStmt->asgnTo);
 
 		if (!var || !var2 || var->varId != var2->varId || (declStmt && declStmt->varId != var->varId))
 			return node;
@@ -12122,30 +12122,30 @@ DmlNode* ValueIfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	}
 
 	// Decode.
-	ComparativeBoolNode* cmp = node->condition->as<ComparativeBoolNode>();
+	ComparativeBoolNode* cmp = nodeAs<ComparativeBoolNode>(node->condition);
 	if (cmp && cmp->blrOp == blr_eql)
 	{
-		StmtExprNode* cmpCond = cmp->arg1->as<StmtExprNode>();
+		StmtExprNode* cmpCond = nodeAs<StmtExprNode>(cmp->arg1);
 		if (!cmpCond)
 			return node;
 
-		CompoundStmtNode* stmt = cmpCond->stmt->as<CompoundStmtNode>();
+		CompoundStmtNode* stmt = nodeAs<CompoundStmtNode>(cmpCond->stmt);
 		DeclareVariableNode* declStmt = NULL;
 		AssignmentNode* assignStmt;
 
 		if (stmt)
 		{
 			if (stmt->statements.getCount() != 2 ||
-				!(declStmt = stmt->statements[0]->as<DeclareVariableNode>()) ||
-				!(assignStmt = stmt->statements[1]->as<AssignmentNode>()))
+				!(declStmt = nodeAs<DeclareVariableNode>(stmt->statements[0])) ||
+				!(assignStmt = nodeAs<AssignmentNode>(stmt->statements[1])))
 			{
 				return node;
 			}
 		}
-		else if (!(assignStmt = cmpCond->stmt->as<AssignmentNode>()))
+		else if (!(assignStmt = nodeAs<AssignmentNode>(cmpCond->stmt)))
 			return node;
 
-		VariableNode* var = assignStmt->asgnTo->as<VariableNode>();
+		VariableNode* var = nodeAs<VariableNode>(assignStmt->asgnTo);
 
 		if (!var || (declStmt && declStmt->varId != var->varId))
 			return node;
@@ -12159,13 +12159,13 @@ DmlNode* ValueIfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 		decodeNode->values->add(node->trueValue);
 
 		ValueExprNode* last = node->falseValue;
-		while ((node = last->as<ValueIfNode>()))
+		while ((node = nodeAs<ValueIfNode>(last)))
 		{
-			ComparativeBoolNode* cmp = node->condition->as<ComparativeBoolNode>();
+			ComparativeBoolNode* cmp = nodeAs<ComparativeBoolNode>(node->condition);
 			if (!cmp || cmp->blrOp != blr_eql)
 				break;
 
-			VariableNode* var2 = cmp->arg1->as<VariableNode>();
+			VariableNode* var2 = nodeAs<VariableNode>(cmp->arg1);
 
 			if (!var2 || var2->varId != var->varId)
 				break;
@@ -12248,7 +12248,7 @@ void ValueIfNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 
 void ValueIfNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	ValueExprNode* val = trueValue->is<NullNode>() ? falseValue : trueValue;
+	ValueExprNode* val = nodeIs<NullNode>(trueValue) ? falseValue : trueValue;
 	val->getDesc(tdbb, csb, desc);
 }
 
@@ -12367,7 +12367,7 @@ void VariableNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 
 bool VariableNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
 {
-	const VariableNode* o = other->as<VariableNode>();
+	const VariableNode* o = nodeAs<VariableNode>(other);
 	if (!o)
 		return false;
 

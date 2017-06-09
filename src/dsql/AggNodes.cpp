@@ -281,7 +281,7 @@ bool AggNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
 		return false;
 
-	const AggNode* o = other->as<AggNode>();
+	const AggNode* o = nodeAs<AggNode>(other);
 	fb_assert(o);
 
 	// ASF: We compare name address. That should be ok, as we have only one AggInfo instance
