@@ -734,7 +734,7 @@ void ArithmeticNode::makeDialect1(dsc* desc, dsc& desc1, dsc& desc2)
 				break;
 			}
 
-			if (!DTYPE_IS_NUMERIC(type))
+			if (!DTYPE_IS_NUMERIC(dtype))
 			{
 				ERRD_post(Arg::Gds(isc_expression_eval_err) <<
 						  Arg::Gds(isc_dsql_mustuse_numeric_div_dial1));
@@ -1296,15 +1296,15 @@ void ArithmeticNode::getDescDialect1(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 			break;
 
 		case blr_divide:
-			if (desc1.isDecOrInt() && desc2.isDecOrInt())
+			/* (desc1.isDecOrInt() && desc2.isDecOrInt())
 			{
 				desc->dsc_dtype = dtype_dec128;
 				desc->dsc_length = sizeof(Decimal128);
 				desc->dsc_scale = 0;
 				desc->dsc_sub_type = 0;
 				desc->dsc_flags = 0;
-				break;
-			}
+				return;
+			} */
 
 			// for compatibility with older versions of the product, we accept
 			// text types for division in blr_version4 (dialect <= 1) only
