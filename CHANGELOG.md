@@ -2,6 +2,10 @@
 
 ## New features
 
+* [CORE-5568](http://tracker.firebirdsql.org/browse/CORE-5568): SQL SECURITY feature  
+  Reference(s): [/doc/sql.extentions/README.sql_security](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.sql_security.txt)  
+  Contributor(s): Roman Simakov
+
 * [CORE-5525](http://tracker.firebirdsql.org/browse/CORE-5525): Create high-precision floating point datatype named DECFLOAT  
   Reference(s): [/doc/sql.extentions/README.data_types](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.data_types)  
   Contributor(s): Alex Peshkoff
