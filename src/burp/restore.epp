@@ -7289,6 +7289,24 @@ bool get_relation(BurpGlobals* tdgbl)
 	ext_file_name[0] = '\0';
 	bool		ext_file_name_null = true;
 
+	// Before starting to restore relations, commit everything that was restored
+	// prior to this point. This ensures that no pending error can later affect
+	// other metadata being restored.
+
+	if (!tdgbl->relations)
+	{
+		BURP_verbose (68);
+		// msg 68 committing meta data
+		COMMIT
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+
+		EXEC SQL SET TRANSACTION NO_AUTO_UNDO;
+		if (gds_status[1])
+			EXEC SQL SET TRANSACTION;
+	}
+
 	// Pick up relation attributes
 
 	burp_rel* relation = (burp_rel*) BURP_alloc_zero (sizeof(burp_rel));
