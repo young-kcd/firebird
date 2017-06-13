@@ -202,7 +202,7 @@ dsc* EVL_assign_to(thread_db* tdbb, const ValueExprNode* node)
 		return &impure->vlu_desc;
 	}
 
-	BUGCHECK(229);	// msg 229 EVL_assign_to: invalid operation
+	SOFT_BUGCHECK(229);	// msg 229 EVL_assign_to: invalid operation
 	return NULL;
 }
 
@@ -290,7 +290,7 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, const InversionNode* node, RecordBitm
 		}
 
 	default:
-		BUGCHECK(230);			// msg 230 EVL_bitmap: invalid operation
+		SOFT_BUGCHECK(230);			// msg 230 EVL_bitmap: invalid operation
 	}
 
 	return NULL;

@@ -1730,7 +1730,7 @@ dsc* ArithmeticNode::execute(thread_db* tdbb, jrd_req* request) const
 		}
 	}
 
-	BUGCHECK(232);	// msg 232 EVL_expr: invalid operation
+	SOFT_BUGCHECK(232);	// msg 232 EVL_expr: invalid operation
 	return NULL;
 }
 
@@ -6699,7 +6699,7 @@ dsc* InternalInfoNode::execute(thread_db* tdbb, jrd_req* request) const
 			result32 = request->req_trigger_action;
 			break;
 		default:
-			BUGCHECK(232);	// msg 232 EVL_expr: invalid operation
+			SOFT_BUGCHECK(232);	// msg 232 EVL_expr: invalid operation
 	}
 
 	dsc desc;
@@ -10388,7 +10388,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 				break;
 
 			default:
-				BUGCHECK(233);	// msg 233 eval_statistical: invalid operation
+				SOFT_BUGCHECK(233);	// msg 233 eval_statistical: invalid operation
 		}
 	}
 	catch (const Exception&)

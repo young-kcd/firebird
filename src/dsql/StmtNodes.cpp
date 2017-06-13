@@ -7205,7 +7205,7 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 			}
 
 			default:
-				BUGCHECK(232);
+				SOFT_BUGCHECK(232);	// msg 232 EVL_expr: invalid operation
 				break;
 		}
 

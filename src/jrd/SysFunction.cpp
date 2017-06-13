@@ -3627,6 +3627,7 @@ dsc* evlPower(thread_db* tdbb, const SysFunction* function, const NestValueArray
 dsc* evlRand(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
+SOFT_BUGCHECK(232);	//// FIXME:
 	fb_assert(args.getCount() == 0);
 
 	SINT64 n;
