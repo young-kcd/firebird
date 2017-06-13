@@ -682,7 +682,7 @@ void NBackup::create_backup()
 	}
 	else
 	{
-		backup = CreateFile(nm.c_str(), GENERIC_WRITE, FILE_SHARE_DELETE,
+		backup = CreateFile(nm.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_DELETE,
 			NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	}
 	if (backup != INVALID_HANDLE_VALUE)
