@@ -3862,6 +3862,7 @@ void CreateCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		{
 			if (MET_get_char_coll_subtype_info(tdbb,
 					INTL_CS_COLL_TO_TTYPE(forCharSetId, fromCollationId), &info) &&
+				forCharSetId != CS_METADATA &&
 				info.specificAttributes.hasData())
 			{
 				UCharBuffer temp;
