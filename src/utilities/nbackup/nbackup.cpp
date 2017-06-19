@@ -683,11 +683,11 @@ void NBackup::create_backup()
 	else
 	{
 		// See CORE-4913 and "Create File" article on MSDN:
-		// When an application creates a file across a network, it is better to use 
-		// GENERIC_READ | GENERIC_WRITE for dwDesiredAccess than to use GENERIC_WRITE 
-		// alone. The resulting code is faster, because the redirector can use the 
-		// cache manager and send fewer SMBs with more data. This combination also 
-		// avoids an issue where writing to a file across a network can occasionally 
+		// When an application creates a file across a network, it is better to use
+		// GENERIC_READ | GENERIC_WRITE for dwDesiredAccess than to use GENERIC_WRITE
+		// alone. The resulting code is faster, because the redirector can use the
+		// cache manager and send fewer SMBs with more data. This combination also
+		// avoids an issue where writing to a file across a network can occasionally
 		// return ERROR_ACCESS_DENIED.
 
 		backup = CreateFile(nm.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_DELETE,

@@ -3834,9 +3834,7 @@ static ValueExprNode* resolveUsingField(DsqlCompilerScratch* dsqlScratch, const 
 	else if ((derivedField = nodeAs<DerivedFieldNode>(node)))
 		ctx = derivedField->context;
 	else
-	{
 		fb_assert(false);
-	}
 
 	return node;
 }
