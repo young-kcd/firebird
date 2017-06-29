@@ -2083,6 +2083,7 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN* window, bool dontW
 		CCH_MARK_MUST_WRITE(tdbb, window);
 
 	//dbb->assignLatestTransactionId(number);
+	dbb->dbb_next_transaction = number;
 
 	Ods::writeNT(header, number);
 
