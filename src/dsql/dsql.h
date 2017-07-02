@@ -983,6 +983,23 @@ private:
 	Firebird::string s;
 };
 
+class Lim64String : public Firebird::string
+{
+public:
+	Lim64String(Firebird::MemoryPool& p, const Firebird::string& str, int sc)
+		: Firebird::string(p, str),
+		  scale(sc)
+	{ }
+
+	int getScale()
+	{
+		return scale;
+	}
+
+private:
+	int scale;
+};
+
 } // namespace
 
 /*! \var unsigned DSQL_debug

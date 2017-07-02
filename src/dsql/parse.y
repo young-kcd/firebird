@@ -332,8 +332,8 @@ using namespace Firebird;
 %token <metaNamePtr> WORK
 %token <metaNamePtr> WRITE
 
-%token <stringPtr> FLOAT_NUMBER
-%token <stringPtr> DECIMAL_NUMBER
+%token <stringPtr> FLOAT_NUMBER DECIMAL_NUMBER LIMIT64_INT
+%token <lim64ptr> LIMIT64_NUMBER
 %token <metaNamePtr> SYMBOL
 %token <int32Val> NUMBER
 
@@ -681,6 +681,7 @@ using namespace Firebird;
 	Firebird::QualifiedName* qualifiedNamePtr;
 	Firebird::string* stringPtr;
 	Jrd::IntlString* intlStringPtr;
+	Jrd::Lim64String* lim64ptr;
 	Jrd::DbFileClause* dbFileClause;
 	Firebird::Array<NestConst<Jrd::DbFileClause> >* dbFilesClause;
 	Jrd::ExternalClause* externalClause;
@@ -1845,6 +1846,10 @@ sequence_value
 				ERRD_post(Arg::Gds(isc_exception_integer_overflow));
 
 			$$ = -signedNumber;
+		}
+	| '-' LIMIT64_INT
+		{
+			$$ = MIN_SINT64;
 		}
 	;
 
@@ -7118,12 +7123,24 @@ value_list
 %type <valueExprNode> constant
 constant
 	: u_constant
-	| '-' u_numeric_constant	{ $$ = newNode<NegateNode>($2); }
+	| '-' ul_numeric_constant	{ $$ = newNode<NegateNode>($2); }
+	| '-' LIMIT64_INT			{ $$ = MAKE_const_sint64(MIN_SINT64, 0); }
+	| '-' LIMIT64_NUMBER		{ $$ = MAKE_const_sint64(MIN_SINT64, $2->getScale()); }
 	| boolean_literal
 	;
 
 %type <valueExprNode> u_numeric_constant
 u_numeric_constant
+	: ul_numeric_constant
+		{ $$ = $1; }
+	| LIMIT64_NUMBER
+		{ $$ = MAKE_constant($1->c_str(), CONSTANT_DECIMAL); }
+	| LIMIT64_INT
+		{ $$ = MAKE_constant($1->c_str(), CONSTANT_DECIMAL); }
+	;
+
+%type <valueExprNode> ul_numeric_constant
+ul_numeric_constant
 	: NUMBER
 		{ $$ = MAKE_const_slong($1); }
 	| FLOAT_NUMBER
