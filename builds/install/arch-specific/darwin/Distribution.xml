@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <installer-gui-script minSpecVersion="1">
-    <title>Firebird Database Server</title>
+    <title>Firebird Database Server (Classic)</title>
     <welcome file="Welcome.txt" mime-type="text/plain"/>
     <license file="License.txt" mime-type="text/plain"/>
     <pkg-ref id="com.firebirdsql.Firebird"/>
