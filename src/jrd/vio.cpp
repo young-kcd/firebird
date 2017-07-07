@@ -712,11 +712,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 #endif
 
 	CommitNumber current_snapshot_number, prev_snapshot_number = 0;
-	bool int_gc_done = false;
-
-	// Handle the fast path first.  If the record is committed, isn't deleted,
-	// and doesn't have an old version that is a candidate for garbage collection,
-	// return without further ado
+	bool int_gc_done = (attachment->att_flags & ATT_no_cleanup);
 
 	int state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr, &current_snapshot_number);
 
@@ -790,19 +786,24 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 		// Worry about intermediate GC if necessary
 		if (!int_gc_done && 
-			((prev_snapshot_number && prev_snapshot_number == current_snapshot_number) || 
+			(//(prev_snapshot_number && prev_snapshot_number == current_snapshot_number) || 
 			 ((tdbb->tdbb_flags & TDBB_sweeper) && state == tra_committed && 
 				rpb->rpb_b_page != 0 && rpb->rpb_transaction_nr >= oldest_snapshot)))
 		{
-			VIO_intermediate_gc(tdbb, rpb, transaction);
+			jrd_rel::GCShared gcGuard(tdbb, rpb->rpb_relation);
+
 			int_gc_done = true;
+			if (gcGuard.gcEnabled())
+			{
+				VIO_intermediate_gc(tdbb, rpb, transaction);
 
-			// Go back to be primary record version and chase versions all over again.
-			if (!DPM_get(tdbb, rpb, LCK_read))
-				return false;
+				// Go back to be primary record version and chase versions all over again.
+				if (!DPM_get(tdbb, rpb, LCK_read))
+					return false;
 
-			state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
-			continue;
+				state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
+				continue;
+			}
 		}
 
 		prev_snapshot_number = current_snapshot_number; 
@@ -1849,6 +1850,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		return;
 	}
 
+	const bool backVersion = (rpb->rpb_b_page != 0);
 	const TraNumber tid_fetch = rpb->rpb_transaction_nr;
 	if (DPM_chain(tdbb, rpb, &temp))
 	{
@@ -1911,8 +1913,23 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		transaction->tra_flags |= TRA_perform_autocommit;
 
 	// VIO_erase
-	if ((tdbb->getDatabase()->dbb_flags & DBB_gc_background) && !rpb->rpb_relation->isTemporary())
+
+	Database* dbb = tdbb->getDatabase();
+	if (backVersion && !(tdbb->getAttachment()->att_flags & ATT_no_cleanup) &&
+		(dbb->dbb_flags & DBB_gc_cooperative))
+	{
+		jrd_rel::GCShared gcGuard(tdbb, rpb->rpb_relation);
+		if (gcGuard.gcEnabled())
+		{
+			temp = *rpb;
+			if (DPM_get(tdbb, &temp, LCK_read))
+				VIO_intermediate_gc(tdbb, &temp, transaction);
+		}
+	}
+	else if ((dbb->dbb_flags & DBB_gc_background) && !rpb->rpb_relation->isTemporary())
+	{
 		notify_garbage_collector(tdbb, rpb, transaction->tra_number);
+	}
 }
 
 
@@ -1974,11 +1991,13 @@ static void delete_version_chain(thread_db* tdbb, record_param* rpb, bool delete
 
 	while (rpb->rpb_b_page != 0)
 	{
-		if (delete_head == false) {
+		if (delete_head == false) 
+		{
 			prior_page = rpb->rpb_page;
 			rpb->rpb_page = rpb->rpb_b_page;
 			rpb->rpb_line = rpb->rpb_b_line;
-		} else
+		} 
+		else
 			delete_head = false;
 
 		if (!DPM_fetch(tdbb, rpb, LCK_write))
@@ -2075,14 +2094,16 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 	if (!going.hasData())
 	{
 		clearRecordStack(staying);
+		tdbb->bumpRelStats(RuntimeStatistics::RECORD_IMGC_FAIL, rpb->rpb_relation->rel_id);
 		return;
 	}
 
 	// Delta-compress and store new versions chain for staying records (iterate oldest->newest)
 	record_param staying_chain_rpb;
-	staying_chain_rpb.getWindow(tdbb).win_flags = WIN_secondary;
 	staying_chain_rpb.rpb_relation = rpb->rpb_relation;
-
+	staying_chain_rpb.getWindow(tdbb).win_flags = WIN_secondary;
+	
+	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb);
 	PageStack precedence_stack;
 
 	RecordStack::const_iterator const_i(staying);
@@ -2125,6 +2146,7 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 			staying_chain_rpb.rpb_line = 0;
 		}
 		DPM_store(tdbb, &staying_chain_rpb, precedence_stack, DPM_secondary);
+		precedence_stack.push(PageNumber(relPages->rel_pg_space_id, staying_chain_rpb.rpb_page));
 		++const_i;
 	}
 
@@ -2145,6 +2167,7 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 			staying_chain_rpb.rpb_line = 0;
 		}
 		DPM_store(tdbb, &staying_chain_rpb, precedence_stack, DPM_secondary);
+		precedence_stack.push(PageNumber(relPages->rel_pg_space_id, staying_chain_rpb.rpb_page));
 	}
 
 	// Read head version with write lock and check if it is still the same version
@@ -2156,6 +2179,7 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 		delete_version_chain(tdbb, &staying_chain_rpb, true);
 		clearRecordStack(staying);
 		clearRecordStack(going);
+		tdbb->bumpRelStats(RuntimeStatistics::RECORD_IMGC_FAIL, rpb->rpb_relation->rel_id);
 		return;
 	}
 
@@ -2167,6 +2191,7 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 		delete_version_chain(tdbb, &staying_chain_rpb, true);
 		clearRecordStack(staying);
 		clearRecordStack(going);
+		tdbb->bumpRelStats(RuntimeStatistics::RECORD_IMGC_FAIL, rpb->rpb_relation->rel_id);
 		return;
 	}
 
@@ -2196,6 +2221,8 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 	// Free memory for record versions we fetched during list_staying
 	clearRecordStack(staying);
 	clearRecordStack(going);
+
+	tdbb->bumpRelStats(RuntimeStatistics::RECORD_IMGC, rpb->rpb_relation->rel_id);
 }
 
 bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
@@ -3109,7 +3136,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		tdbb->bumpRelStats(RuntimeStatistics::RECORD_UPDATES, relation->rel_id);
 		return;
 	}
-
+	const bool backVersion = (org_rpb->rpb_b_page != 0);
 	record_param temp;
 	PageStack stack;
 	if (prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr, org_rpb, &temp, new_rpb,
@@ -3149,8 +3176,21 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		transaction->tra_flags |= TRA_perform_autocommit;
 
 	// VIO_modify
-	if ((tdbb->getDatabase()->dbb_flags & DBB_gc_background) &&
-		!org_rpb->rpb_relation->isTemporary())
+
+	Database* dbb = tdbb->getDatabase();
+
+	if (backVersion && !(tdbb->getAttachment()->att_flags & ATT_no_cleanup) &&
+		(dbb->dbb_flags & DBB_gc_cooperative))
+	{
+		jrd_rel::GCShared gcGuard(tdbb, org_rpb->rpb_relation);
+		if (gcGuard.gcEnabled())
+		{
+			temp.rpb_number = org_rpb->rpb_number;
+			if (DPM_get(tdbb, &temp, LCK_read))
+				VIO_intermediate_gc(tdbb, &temp, transaction);
+		}
+	}
+	else if ((dbb->dbb_flags & DBB_gc_background) && !org_rpb->rpb_relation->isTemporary())
 	{
 		notify_garbage_collector(tdbb, org_rpb, transaction->tra_number);
 	}
@@ -3817,6 +3857,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 					gc->sweptRelation(transaction->tra_oldest_active, relation->rel_id);
 				}
 
+
 				while (VIO_next_record(tdbb, &rpb, transaction, 0, false))
 				{
 					CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
@@ -3828,6 +3869,8 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 						JRD_reschedule(tdbb, SWEEP_QUANTUM, true);
 
 					transaction->tra_oldest_active = dbb->dbb_oldest_snapshot;
+					if (TipCache* cache = dbb->dbb_tip_cache)
+						cache->updateActiveSnapshots(tdbb, &transaction->tra_active_snapshots);
 				}
 
 				traceSweep->endSweepRelation(relation);
@@ -4715,14 +4758,6 @@ void Database::garbage_collector(Database* dbb)
 								transaction = TRA_start(tdbb, sizeof(gc_tpb), gc_tpb);
 								tdbb->setTransaction(transaction);
 							}
-							else
-							{
-								// Refresh our notion of the oldest transactions for
-								// efficient garbage collection. This is very cheap.
-
-								transaction->tra_oldest = dbb->dbb_oldest_transaction;
-								transaction->tra_oldest_active = dbb->dbb_oldest_snapshot;
-							}
 
 							found = flush = true;
 							rpb.rpb_number.setValue(((SINT64) dp_sequence * dbb->dbb_max_records) - 1);
@@ -4759,6 +4794,15 @@ void Database::garbage_collector(Database* dbb)
 
 								if (rpb.rpb_number >= last)
 									break;
+
+								// Refresh our notion of the oldest transactions for
+								// efficient garbage collection. This is very cheap.
+
+								transaction->tra_oldest = dbb->dbb_oldest_transaction;
+								transaction->tra_oldest_active = dbb->dbb_oldest_snapshot;
+
+								if (TipCache* cache = dbb->dbb_tip_cache)
+									cache->updateActiveSnapshots(tdbb, &transaction->tra_active_snapshots);
 							}
 
 							if (gc_exit || rel_exit)
@@ -5044,7 +5088,7 @@ static void list_staying_fast(thread_db* tdbb, record_param* rpb, RecordStack& s
 		staying.push(temp.rpb_record);
 
 		++backversions;
-
+/**
 		if (temp.rpb_transaction_nr < oldest_active && temp.rpb_b_page)
 		{
 			temp.rpb_page = page;
@@ -5072,7 +5116,7 @@ static void list_staying_fast(thread_db* tdbb, record_param* rpb, RecordStack& s
 				break;
 			}
 		}
-
+**/
 		// Don't monopolize the server while chasing long back version chains.
 		if (--tdbb->tdbb_quantum < 0)
 			JRD_reschedule(tdbb, 0, true);
@@ -5127,6 +5171,13 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 	RuntimeStatistics::Accumulator backversions(tdbb, rpb->rpb_relation,
 												RuntimeStatistics::RECORD_BACKVERSION_READS);
 
+	
+	// Limit number of restarts if primary version constantly changed. Currently, 
+	// active_rpb = true only for VIO_intermediate_gc and it is ok to return empty 
+	// staying in this case. 
+	// Should think more before merge this into Firebrid tree.
+
+	int n = 0, max = active_rpb ? 3 : 0;
 	for (;;)
 	{
 		// Each time thru the loop, start from the latest version of the record
@@ -5159,6 +5210,14 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 			next_line = temp.rpb_line;
 			max_depth = 0;
 			*rpb = temp;
+		}
+
+		if (!max_depth && max && ++n > max)
+		{
+			fb_assert(staying.isEmpty());
+			fb_assert(backout_rec == NULL);
+			CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
+			return;
 		}
 
 		depth++;
@@ -5438,7 +5497,6 @@ static int prepare_update(	thread_db*		tdbb,
 	// was the same one we stored above.
 	record_param org_rpb;
 	TraNumber update_conflict_trans = MAX_TRA_NUMBER; //-1;
-	bool int_gc_done = false;
 	while (true)
 	{
 		org_rpb.rpb_flags = rpb->rpb_flags;
@@ -5466,17 +5524,7 @@ static int prepare_update(	thread_db*		tdbb,
 			}
 		}
 
-		CommitNumber current_snapshot_number;
-
-		int state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr, &current_snapshot_number);
-
-		// Attempt to perform intermediate GC if there is more than one committed version of a record
-		if (!int_gc_done && current_snapshot_number && rpb->rpb_b_page != 0)
-		{
-			VIO_intermediate_gc(tdbb, rpb, transaction);
-			int_gc_done = true;
-			continue;
-		}
+		int state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 
 		// Reset the garbage collect active flag if the transaction state is
 		// in a terminal state. If committed it must have been a precommitted
