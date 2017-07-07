@@ -1162,6 +1162,8 @@ void Monitoring::putStatistics(SnapshotData::DumpRecord& record, const RuntimeSt
 	record.storeInteger(f_mon_rec_bkver_reads, statistics.getValue(RuntimeStatistics::RECORD_BACKVERSION_READS));
 	record.storeInteger(f_mon_rec_frg_reads, statistics.getValue(RuntimeStatistics::RECORD_FRAGMENT_READS));
 	record.storeInteger(f_mon_rec_rpt_reads, statistics.getValue(RuntimeStatistics::RECORD_RPT_READS));
+	record.storeInteger(f_mon_rec_rpt_imgc, statistics.getValue(RuntimeStatistics::RECORD_IMGC));
+	record.storeInteger(f_mon_rec_rpt_imgc_fail, statistics.getValue(RuntimeStatistics::RECORD_IMGC_FAIL));
 	record.write();
 
 	// logical I/O statistics (table wise)
@@ -1194,6 +1196,8 @@ void Monitoring::putStatistics(SnapshotData::DumpRecord& record, const RuntimeSt
 		record.storeInteger(f_mon_rec_bkver_reads, (*iter).getCounter(RuntimeStatistics::RECORD_BACKVERSION_READS));
 		record.storeInteger(f_mon_rec_frg_reads, (*iter).getCounter(RuntimeStatistics::RECORD_FRAGMENT_READS));
 		record.storeInteger(f_mon_rec_rpt_reads, (*iter).getCounter(RuntimeStatistics::RECORD_RPT_READS));
+		record.storeInteger(f_mon_rec_rpt_imgc, (*iter).getCounter(RuntimeStatistics::RECORD_IMGC));
+		record.storeInteger(f_mon_rec_rpt_imgc_fail, (*iter).getCounter(RuntimeStatistics::RECORD_IMGC_FAIL));
 		record.write();
 	}
 }
