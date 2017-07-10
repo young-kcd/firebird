@@ -278,7 +278,7 @@ void DsqlCompilerScratch::putLocalVariables(CompoundStmtNode* parameters, USHORT
 
 		DeclareVariableNode* varNode;
 
-		if ((varNode = parameter->as<DeclareVariableNode>()))
+		if ((varNode = nodeAs<DeclareVariableNode>(parameter)))
 		{
 			dsql_fld* field = varNode->dsqlDef->type;
 			const NestConst<StmtNode>* rest = ptr;
@@ -287,7 +287,7 @@ void DsqlCompilerScratch::putLocalVariables(CompoundStmtNode* parameters, USHORT
 			{
 				const DeclareVariableNode* varNode2;
 
-				if ((varNode2 = (*rest)->as<DeclareVariableNode>()))
+				if ((varNode2 = nodeAs<DeclareVariableNode>(*rest)))
 				{
 					const dsql_fld* rest_field = varNode2->dsqlDef->type;
 
@@ -607,11 +607,11 @@ void DsqlCompilerScratch::checkUnusedCTEs() const
 SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 {
 	RecordSourceNode* const query = input->querySpec;
-	UnionSourceNode* unionQuery = query->as<UnionSourceNode>();
+	UnionSourceNode* unionQuery = nodeAs<UnionSourceNode>(query);
 
 	if (!unionQuery)
 	{
-		if (!pass1RseIsRecursive(query->as<RseNode>()))
+		if (!pass1RseIsRecursive(nodeAs<RseNode>(query)))
 			return input;
 
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -640,7 +640,7 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 
 		if (iter == unionQuery->dsqlClauses->items.begin())
 		{
-			unionQuery = clause->as<UnionSourceNode>();
+			unionQuery = nodeAs<UnionSourceNode>(clause);
 
 			if (unionQuery)
 			{
@@ -654,7 +654,7 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 			}
 		}
 
-		RseNode* const rse = clause->as<RseNode>();
+		RseNode* const rse = nodeAs<RseNode>(clause);
 		fb_assert(rse);
 		RseNode* const newRse = pass1RseIsRecursive(rse);
 
@@ -815,7 +815,7 @@ RseNode* DsqlCompilerScratch::pass1RseIsRecursive(RseNode* input)
 	{
 		*prev++ = *pDstTable = *pSrcTable;
 
-		RseNode* rseNode = (*pDstTable)->as<RseNode>();
+		RseNode* rseNode = nodeAs<RseNode>(*pDstTable);
 
 		if (rseNode)
 		{
@@ -841,7 +841,7 @@ RseNode* DsqlCompilerScratch::pass1RseIsRecursive(RseNode* input)
 				result->dsqlWhere = PASS1_compose(result->dsqlWhere, joinBool, blr_and);
 			}
 		}
-		else if ((*pDstTable)->is<ProcedureSourceNode>() || (*pDstTable)->is<RelationSourceNode>())
+		else if (nodeIs<ProcedureSourceNode>(*pDstTable) || nodeIs<RelationSourceNode>(*pDstTable))
 		{
 			if (pass1RelProcIsRecursive(*pDstTable))
 			{
@@ -858,9 +858,7 @@ RseNode* DsqlCompilerScratch::pass1RseIsRecursive(RseNode* input)
 			}
 		}
 		else
-		{
-			fb_assert((*pDstTable)->is<SelectExprNode>());
-		}
+			fb_assert(nodeIs<SelectExprNode>(*pDstTable));
 	}
 
 	if (found)
@@ -877,12 +875,12 @@ bool DsqlCompilerScratch::pass1RelProcIsRecursive(RecordSourceNode* input)
 	ProcedureSourceNode* procNode;
 	RelationSourceNode* relNode;
 
-	if ((procNode = input->as<ProcedureSourceNode>()))
+	if ((procNode = nodeAs<ProcedureSourceNode>(input)))
 	{
 		relName = procNode->dsqlName.identifier;
 		relAlias = procNode->alias;
 	}
-	else if ((relNode = input->as<RelationSourceNode>()))
+	else if ((relNode = nodeAs<RelationSourceNode>(input)))
 	{
 		relName = relNode->dsqlName;
 		relAlias = relNode->alias;
@@ -906,7 +904,7 @@ bool DsqlCompilerScratch::pass1RelProcIsRecursive(RecordSourceNode* input)
 // outer join or more than one recursive reference is found
 BoolExprNode* DsqlCompilerScratch::pass1JoinIsRecursive(RecordSourceNode*& input)
 {
-	RseNode* inputRse = input->as<RseNode>();
+	RseNode* inputRse = nodeAs<RseNode>(input);
 	fb_assert(inputRse);
 
 	const UCHAR joinType = inputRse->rse_jointype;
@@ -917,7 +915,7 @@ BoolExprNode* DsqlCompilerScratch::pass1JoinIsRecursive(RecordSourceNode*& input
 	NestConst<RecordSourceNode>* joinTable = &inputRse->dsqlFrom->items[0];
 	RseNode* joinRse;
 
-	if ((joinRse = (*joinTable)->as<RseNode>()) && joinRse->dsqlExplicitJoin)
+	if ((joinRse = nodeAs<RseNode>(*joinTable)) && joinRse->dsqlExplicitJoin)
 	{
 		leftBool = pass1JoinIsRecursive(*joinTable->getAddress());
 		leftRecursive = (leftBool != NULL);
@@ -943,7 +941,7 @@ BoolExprNode* DsqlCompilerScratch::pass1JoinIsRecursive(RecordSourceNode*& input
 
 	joinTable = &inputRse->dsqlFrom->items[1];
 
-	if ((joinRse = (*joinTable)->as<RseNode>()) && joinRse->dsqlExplicitJoin)
+	if ((joinRse = nodeAs<RseNode>(*joinTable)) && joinRse->dsqlExplicitJoin)
 	{
 		rightBool = pass1JoinIsRecursive(*joinTable->getAddress());
 		rightRecursive = (rightBool != NULL);

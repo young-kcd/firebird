@@ -309,6 +309,16 @@ static inline int fb_isdigit(const char c)
 }
 
 
+IsqlGlobals::IsqlGlobals()
+{
+	Firebird::AutoPtr<Firebird::IStatus, Firebird::SimpleDispose<Firebird::IStatus> >
+		status_vector(fbMaster->getStatus());
+	Firebird::CheckStatusWrapper statusWrapper(status_vector);
+
+	df16 = Firebird::UtilInterfacePtr()->getDecFloat16(&statusWrapper);
+	df34 = Firebird::UtilInterfacePtr()->getDecFloat34(&statusWrapper);
+}
+
 // I s q l G l o b a l s : : p r i n t f
 // Output to the Out stream.
 void IsqlGlobals::printf(const char* buffer, ...)
@@ -1825,11 +1835,14 @@ bool ISQL_printNumericType(const char* fieldName, const int fieldType, const int
 	case SMALLINT:
 	case INTEGER:
 	case BIGINT:
+	case DOUBLE_PRECISION:
 		// Handle Integral subtypes NUMERIC and DECIMAL
 		// We are ODS >= 10 and could be any Dialect
 
 		// We are Dialect >=3 since FIELD_PRECISION is non-NULL
-		if (isqlGlob.major_ods >= ODS_VERSION10 && fieldPrecision != 0 &&
+		if (isqlGlob.major_ods >= ODS_VERSION10 &&
+			fieldPrecision != 0 &&
+			fieldType != DOUBLE_PRECISION &&
 			fieldSubType > 0 && fieldSubType <= MAX_INTSUBTYPES)
 		{
 			isqlGlob.printf("%s(%d, %d)",
@@ -2223,6 +2236,8 @@ static processing_state add_row(TEXT* tabname)
 				SINT64 n;
 				float* fvalue;
 				double* dvalue;
+				FB_DEC16* d64value;
+				FB_DEC34* d128value;
 				UCHAR* boolean;
 				ISC_QUAD* blobid;
 				vary* avary;
@@ -2283,6 +2298,28 @@ static processing_state add_row(TEXT* tabname)
 				case SQL_DOUBLE:
 					dvalue = (double*) datap;
 					if (sscanf(lastInputLine, "%lg", dvalue) != 1)
+					{
+						STDERROUT("Input parsing problem");
+						done = true;
+					}
+					break;
+
+				case SQL_DEC16:
+					d64value = (FB_DEC16*) datap;
+					if (isqlGlob.df16)
+						isqlGlob.df16->fromString(fbStatus, lastInputLine, d64value);
+					if ((!isqlGlob.df16) || (fbStatus->getState() & Firebird::IStatus::STATE_ERRORS))
+					{
+						STDERROUT("Input parsing problem");
+						done = true;
+					}
+					break;
+
+				case SQL_DEC34:
+					d128value = (FB_DEC34*) datap;
+					if (isqlGlob.df34)
+						isqlGlob.df34->fromString(fbStatus, lastInputLine, d128value);
+					if ((!isqlGlob.df34) || (fbStatus->getState() & Firebird::IStatus::STATE_ERRORS))
 					{
 						STDERROUT("Input parsing problem");
 						done = true;
@@ -2978,6 +3015,8 @@ static processing_state bulk_insert_hack(const char* command)
 				vary* avary;
 				char* achar;
 				tm times;
+				FB_DEC16* d64value;
+				FB_DEC34* d128value;
 				// Initialize the time structure.
 				memset(&times, 0, sizeof(times));
 				char msec_str[5] = "";
@@ -3033,6 +3072,28 @@ static processing_state bulk_insert_hack(const char* command)
 					if (sscanf(lastPos, "%lg", dvalue) != 1)
 					{
 						STDERROUT("Input parsing problem in 'double' value");
+						done = true;
+					}
+					break;
+
+				case SQL_DEC16:
+					d64value = (FB_DEC16*) datap;
+					if (isqlGlob.df16)
+						isqlGlob.df16->fromString(fbStatus, lastInputLine, d64value);
+					if ((!isqlGlob.df16) || (fbStatus->getState() & Firebird::IStatus::STATE_ERRORS))
+					{
+						STDERROUT("Input parsing problem");
+						done = true;
+					}
+					break;
+
+				case SQL_DEC34:
+					d128value = (FB_DEC34*) datap;
+					if (isqlGlob.df34)
+						isqlGlob.df34->fromString(fbStatus, lastInputLine, d128value);
+					if ((!isqlGlob.df34) || (fbStatus->getState() & Firebird::IStatus::STATE_ERRORS))
+					{
+						STDERROUT("Input parsing problem");
 						done = true;
 					}
 					break;
@@ -4807,6 +4868,7 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		{SetOptions::sqlCont, "ROLE", 0},
 		{SetOptions::sqlCont, "TRUSTED", 0},	// TRUSTED ROLE, will get DSQL error other case
 		{SetOptions::stmtTimeout, "LOCAL_TIMEOUT", 0},
+		{SetOptions::sqlCont, "DECFLOAT", 0},
 	};
 
 	// Display current set options
@@ -5433,7 +5495,7 @@ void ISQL_get_version(bool call_by_create_db)
 		isc_info_ods_minor_version,
 		isc_info_db_sql_dialect,
 		frb_info_att_charset,
-		Version_info ? isc_info_firebird_version: isc_info_end,
+		UCHAR(Version_info ? isc_info_firebird_version: isc_info_end),
 		isc_info_end
 	};
 	/*
@@ -6945,8 +7007,8 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
  *	Print an SQL data item as described.
  *
  **************************************/
+	const char* convErr = "Conversion error";
  	TEXT d[32];
-
 	TEXT* p = *s;
 	*p = '\0';
 
@@ -7170,6 +7232,44 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 					}
 #endif
 				}
+			}
+			break;
+
+		case SQL_DEC16:
+			{
+				char decStr[Firebird::IDecFloat16::STRING_SIZE];
+				if (isqlGlob.df16)
+				{
+					isqlGlob.df16->toString(fbStatus, var->value.asDec16, sizeof(decStr), decStr);
+					if (ISQL_errmsg(fbStatus))
+						strcpy(decStr, convErr);
+				}
+				else
+					strcpy(decStr, convErr);
+
+				if (setValues.List)
+					isqlGlob.printf("%*.*s%s", sizeof(decStr) - 1, sizeof(decStr) - 1, decStr, NEWLINE);
+				else
+					sprintf(p, "%*.*s ", sizeof(decStr) - 1, sizeof(decStr) - 1, decStr);
+			}
+			break;
+
+		case SQL_DEC34:
+			{
+				char decStr[Firebird::IDecFloat34::STRING_SIZE];
+				if (isqlGlob.df34)
+				{
+					isqlGlob.df34->toString(fbStatus, var->value.asDec34, sizeof(decStr), decStr);
+					if (ISQL_errmsg(fbStatus))
+						strcpy(decStr, convErr);
+				}
+				else
+					strcpy(decStr, convErr);
+
+				if (setValues.List)
+					isqlGlob.printf("%*.*s%s", sizeof(decStr) - 1, sizeof(decStr) - 1, decStr, NEWLINE);
+				else
+					sprintf(p, "%*.*s ", sizeof(decStr) - 1, sizeof(decStr) - 1, decStr);
 			}
 			break;
 
@@ -7949,6 +8049,7 @@ static unsigned process_message_display(Firebird::IMessageMetadata* message, uns
 			namelength = NULL_DISP_LEN;
 
 		const unsigned type = var.type;
+		const SSHORT charSet = TTYPE_TO_CHARSET(var.charSet);
 
 		switch (type)
 		{
@@ -7976,26 +8077,32 @@ static unsigned process_message_display(Firebird::IMessageMetadata* message, uns
 		case SQL_DOUBLE:
 			disp_length = DOUBLE_LEN;
 			break;
+		case SQL_DEC16:
+			disp_length = Firebird::IDecFloat16::STRING_SIZE - 1;
+			break;
+		case SQL_DEC34:
+			disp_length = Firebird::IDecFloat34::STRING_SIZE - 1;
+			break;
 		case SQL_TEXT:
 			alignment = 1;
 			data_length++;
 			// OCTETS data is displayed in hex
-			if (var.charSet == CS_BINARY)
+			if (charSet == CS_BINARY)
 				disp_length = 2 * var.length;
-			else if (var.charSet == CS_UNICODE_FSS)
+			else if (charSet == CS_UNICODE_FSS)
 				disp_length /= 3;
-			else if (var.charSet == CS_UTF8)
+			else if (charSet == CS_UTF8)
 				disp_length /= 4;
 			break;
 		case SQL_VARYING:
 			data_length += sizeof(USHORT) + 1;
 			alignment = sizeof(USHORT);
 			// OCTETS data is displayed in hex
-			if (var.charSet == CS_BINARY)
+			if (charSet == CS_BINARY)
 				disp_length = 2 * var.length;
-			else if (var.charSet == CS_UNICODE_FSS)
+			else if (charSet == CS_UNICODE_FSS)
 				disp_length /= 3;
-			else if (var.charSet == CS_UTF8)
+			else if (charSet == CS_UTF8)
 				disp_length /= 4;
 			break;
 		case SQL_SHORT:
@@ -8037,7 +8144,7 @@ static unsigned process_message_display(Firebird::IMessageMetadata* message, uns
 				pad[i] = setValues.global_Col_default;
 			disp_length = pad[i];
 
-			if (var.charSet == 4)
+			if (charSet == CS_UTF8)
 				disp_length *= 4;
 		}
 
@@ -8628,6 +8735,10 @@ static const char* sqltype_to_string(unsigned sqltype)
 		return "FLOAT";
 	case SQL_DOUBLE:
 		return "DOUBLE";
+	case SQL_DEC16:
+		return "DECFLOAT(16)";
+	case SQL_DEC34:
+		return "DECFLOAT(34)";
 	case SQL_D_FLOAT:
 		return "D_FLOAT";
 	case SQL_TIMESTAMP:

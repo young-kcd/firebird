@@ -280,14 +280,14 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 
 	SSHORT null = from_null ? -1 : 0;
 
-	if (!null && missing && MOV_compare(missing, from_desc) == 0)
+	if (!null && missing && MOV_compare(tdbb, missing, from_desc) == 0)
 		null = -1;
 
 	USHORT* impure_flags = NULL;
 	const ParameterNode* toParam;
 	const VariableNode* toVar;
 
-	if ((toParam = ExprNode::as<ParameterNode>(to)))
+	if ((toParam = nodeAs<ParameterNode>(to)))
 	{
 		const MessageNode* message = toParam->message;
 
@@ -300,7 +300,7 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 		impure_flags = request->getImpure<USHORT>(
 			message->impureFlags + (sizeof(USHORT) * toParam->argNumber));
 	}
-	else if ((toVar = ExprNode::as<VariableNode>(to)))
+	else if ((toVar = nodeAs<VariableNode>(to)))
 	{
 		if (toVar->varInfo)
 		{
@@ -432,7 +432,7 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 	// Handle the null flag as appropriate for fields and message arguments.
 
 
-	const FieldNode* toField = ExprNode::as<FieldNode>(to);
+	const FieldNode* toField = nodeAs<FieldNode>(to);
 	if (toField)
 	{
 		Record* record = request->req_rpb[toField->fieldStream].rpb_record;
@@ -793,10 +793,10 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 
 		for (const NestConst<StmtNode>* end = selectNode->statements.end(); ptr != end; ++ptr)
 		{
-			const ReceiveNode* receiveNode = (*ptr)->as<ReceiveNode>();
+			const ReceiveNode* receiveNode = nodeAs<ReceiveNode>(*ptr);
 			message = receiveNode->message;
 
-			if (message->as<MessageNode>()->messageNumber == msg)
+			if (nodeAs<MessageNode>(message)->messageNumber == msg)
 			{
 				request->req_next = *ptr;
 				break;
@@ -911,7 +911,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 	{
 		const JrdStatement* statement = request->getStatement();
 
-		if (statement->fors.getCount() || request->req_ext_stmt)
+		if (statement->fors.getCount() || request->req_ext_resultset || request->req_ext_stmt)
 		{
 			Jrd::ContextPoolHolder context(tdbb, request->req_pool);
 			jrd_req* old_request = tdbb->getRequest();
@@ -927,7 +927,10 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 				}
 
 				if (request->req_ext_resultset)
+				{
 					delete request->req_ext_resultset;
+					request->req_ext_resultset = NULL;
+				}
 
 				while (request->req_ext_stmt)
 					request->req_ext_stmt->close(tdbb);

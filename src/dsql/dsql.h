@@ -80,7 +80,7 @@ namespace Jrd
 	class RseNode;
 	class StmtNode;
 	class TransactionNode;
-	class SetSessionNode;
+	class SessionManagementNode;
 	class ValueExprNode;
 	class ValueListNode;
 	class WindowClause;
@@ -235,6 +235,31 @@ public:
 
 	virtual ~TypeClause()
 	{
+	}
+
+public:
+	void setExactPrecision()
+	{
+		if (precision != 0)
+			return;
+
+		switch (dtype)
+		{
+			case dtype_short:
+				precision = 4;
+				break;
+
+			case dtype_long:
+				precision = 9;
+				break;
+
+			case dtype_int64:
+				precision = 18;
+				break;
+
+			default:
+				fb_assert(!DTYPE_IS_EXACT(dtype));
+		}
 	}
 
 public:
@@ -433,7 +458,7 @@ public:
 		TYPE_SELECT, TYPE_SELECT_UPD, TYPE_INSERT, TYPE_DELETE, TYPE_UPDATE, TYPE_UPDATE_CURSOR,
 		TYPE_DELETE_CURSOR, TYPE_COMMIT, TYPE_ROLLBACK, TYPE_CREATE_DB, TYPE_DDL, TYPE_START_TRANS,
 		TYPE_EXEC_PROCEDURE, TYPE_COMMIT_RETAIN, TYPE_ROLLBACK_RETAIN, TYPE_SET_GENERATOR,
-		TYPE_SAVEPOINT, TYPE_EXEC_BLOCK, TYPE_SELECT_BLOCK, TYPE_SET_ROLE, TYPE_SET_SESSION
+		TYPE_SAVEPOINT, TYPE_EXEC_BLOCK, TYPE_SELECT_BLOCK, TYPE_SESSION_MANAGEMENT
 	};
 
 	// Statement flags.
@@ -686,10 +711,10 @@ private:
 	NestConst<TransactionNode> node;
 };
 
-class SetSessionRequest : public dsql_req
+class DsqlSessionManagementRequest : public dsql_req
 {
 public:
-	explicit SetSessionRequest(MemoryPool& pool, SetSessionNode* aNode)
+	explicit DsqlSessionManagementRequest(MemoryPool& pool, SessionManagementNode* aNode)
 		: dsql_req(pool),
 		  node(aNode)
 	{
@@ -705,7 +730,7 @@ public:
 		bool singleton);
 
 private:
-	NestConst<SetSessionNode> node;
+	NestConst<SessionManagementNode> node;
 };
 
 //! Implicit (NATURAL and USING) joins
@@ -956,6 +981,23 @@ public:
 private:
 	Firebird::MetaName charset;
 	Firebird::string s;
+};
+
+class Lim64String : public Firebird::string
+{
+public:
+	Lim64String(Firebird::MemoryPool& p, const Firebird::string& str, int sc)
+		: Firebird::string(p, str),
+		  scale(sc)
+	{ }
+
+	int getScale()
+	{
+		return scale;
+	}
+
+private:
+	int scale;
 };
 
 } // namespace

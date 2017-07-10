@@ -126,7 +126,7 @@
 #define FB_CPU CpuPowerPc
 #endif
 
-#ifdef i386
+#if defined(i386) || defined(__i386) || defined(__i386__)
 #define I386
 #define FB_CPU CpuIntel
 #endif /* i386 */
@@ -603,6 +603,13 @@ extern "C" int remove(const char* path);
 #define FB_EXPORTED
 #endif
 
+#ifdef HAS_NOEXCEPT
+#define NOEXCEPT noexcept
+#define NOEXCEPT_ARG(X) noexcept((X))
+#else
+#define NOEXCEPT
+#define NOEXCEPT_ARG(X)
+#endif
 
 /* alignment macros */
 

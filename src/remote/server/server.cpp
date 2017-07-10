@@ -917,6 +917,19 @@ public:
 		if (!allowCancel)
 			return;
 
+		if (!(port->port_flags & PORT_disconnect))
+		{
+			PACKET packet;
+			packet.p_operation = op_event;
+			P_EVENT* p_event = &packet.p_event;
+			p_event->p_event_database = rdb->rdb_id;
+			p_event->p_event_items.cstr_length = length;
+			p_event->p_event_items.cstr_address = items;
+			p_event->p_event_rid = event->rvnt_id;
+
+			port->send(&packet);
+		}
+
 		if (event->rvnt_iface)
 		{
 			LocalStatus ls;
@@ -924,19 +937,6 @@ public:
 			event->rvnt_iface->cancel(&status_vector);
 			event->rvnt_iface = NULL;
 		}
-
-		if (port->port_flags & PORT_disconnect)
-			return;
-
-		PACKET packet;
-		packet.p_operation = op_event;
-		P_EVENT* p_event = &packet.p_event;
-		p_event->p_event_database = rdb->rdb_id;
-		p_event->p_event_items.cstr_length = length;
-		p_event->p_event_items.cstr_address = items;
-		p_event->p_event_rid = event->rvnt_id;
-
-		port->send(&packet);
 	}
 
 	int release()
@@ -2966,7 +2966,10 @@ ISC_STATUS rem_port::end_blob(P_OP operation, P_RLSE * release, PACKET* sendL)
 		blob->rbl_iface->cancel(&status_vector);
 
 	if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
+	{
+		blob->rbl_iface = NULL;
 		release_blob(blob);
+	}
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);
 }
@@ -3045,7 +3048,10 @@ ISC_STATUS rem_port::end_request(P_RLSE * release, PACKET* sendL)
 	requestL->rrq_iface->free(&status_vector);
 
 	if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
+	{
+		requestL->rrq_iface = NULL;
 		release_request(requestL);
+	}
 
 	return this->send_response(sendL, 0, 0, &status_vector, true);
 }
@@ -4743,8 +4749,8 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 	{
 		if (!event->rvnt_iface)
 		{
-			event->rvnt_destroyed = 0;
-			break;
+			if (event->rvnt_destroyed.compareExchange(1, 0))
+				break;
 		}
 	}
 
@@ -5168,6 +5174,7 @@ static void release_transaction( Rtr* transaction)
 	{
 		Rsr* const statement = transaction->rtr_cursors.pop();
 		fb_assert(statement->rsr_cursor);
+		statement->rsr_cursor->release();
 		statement->rsr_cursor = NULL;
 	}
 

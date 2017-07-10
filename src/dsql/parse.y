@@ -332,7 +332,8 @@ using namespace Firebird;
 %token <metaNamePtr> WORK
 %token <metaNamePtr> WRITE
 
-%token <stringPtr> FLOAT_NUMBER
+%token <stringPtr> FLOAT_NUMBER DECIMAL_NUMBER LIMIT64_INT
+%token <lim64ptr> LIMIT64_NUMBER
 %token <metaNamePtr> SYMBOL
 %token <int32Val> NUMBER
 
@@ -592,19 +593,25 @@ using namespace Firebird;
 // tokens added for Firebird 4.0
 
 %token <metaNamePtr> BINARY
+%token <metaNamePtr> BIND
+%token <metaNamePtr> COMPARE_DECFLOAT
 %token <metaNamePtr> CUME_DIST
+%token <metaNamePtr> DECFLOAT
 %token <metaNamePtr> DEFINER
 %token <metaNamePtr> EXCLUDE
 %token <metaNamePtr> FOLLOWING
 %token <metaNamePtr> IDLE
 %token <metaNamePtr> INVOKER
 %token <metaNamePtr> MESSAGE
+%token <metaNamePtr> NATIVE
+%token <metaNamePtr> NORMALIZE_DECFLOAT
 %token <metaNamePtr> NTILE
 %token <metaNamePtr> OTHERS
 %token <metaNamePtr> OVERRIDING
 %token <metaNamePtr> PERCENT_RANK
 %token <metaNamePtr> PRECEDING
 %token <metaNamePtr> PRIVILEGE
+%token <metaNamePtr> QUANTIZE
 %token <metaNamePtr> RANGE
 %token <metaNamePtr> RDB_ERROR
 %token <metaNamePtr> RDB_ROLE_IN_USE
@@ -614,6 +621,8 @@ using namespace Firebird;
 %token <metaNamePtr> SQL
 %token <metaNamePtr> SYSTEM
 %token <metaNamePtr> TIES
+%token <metaNamePtr> TOTALORDER
+%token <metaNamePtr> TRAPS
 %token <metaNamePtr> UNBOUNDED
 %token <metaNamePtr> VARBINARY
 %token <metaNamePtr> WINDOW
@@ -673,6 +682,7 @@ using namespace Firebird;
 	Firebird::QualifiedName* qualifiedNamePtr;
 	Firebird::string* stringPtr;
 	Jrd::IntlString* intlStringPtr;
+	Jrd::Lim64String* lim64ptr;
 	Jrd::DbFileClause* dbFileClause;
 	Firebird::Array<NestConst<Jrd::DbFileClause> >* dbFilesClause;
 	Jrd::ExternalClause* externalClause;
@@ -704,6 +714,7 @@ using namespace Firebird;
 	Jrd::NamedWindowClause* namedWindowClause;
 	Jrd::NamedWindowsClause* namedWindowsClause;
 	Jrd::TransactionNode* traNode;
+	Jrd::SessionManagementNode* mngNode;
 	Firebird::Array<Jrd::PrivilegeClause>* privilegeArray;
 	Jrd::GranteeClause* granteeClause;
 	Firebird::Array<Jrd::GranteeClause>* granteeArray;
@@ -762,6 +773,9 @@ using namespace Firebird;
 	Jrd::SetRoleNode* setRoleNode;
 	Jrd::SetSessionNode* setSessionNode;
 	Jrd::CreateAlterRoleNode* createAlterRoleNode;
+	Jrd::SetRoundNode* setRoundNode;
+	Jrd::SetTrapsNode* setTrapsNode;
+	Jrd::SetBindNode* setBindNode;
 }
 
 %include types.y
@@ -780,7 +794,7 @@ statement
 	: dml_statement		{ $$ = newNode<DsqlDmlRequest>($1); }
 	| ddl_statement		{ $$ = newNode<DsqlDdlRequest>($1); }
 	| tra_statement		{ $$ = newNode<DsqlTransactionRequest>($1); }
-	| session_statement	{ $$ = newNode<SetSessionRequest>($1); }
+	| mng_statement		{ $$ = newNode<DsqlSessionManagementRequest>($1); }
 	;
 
 %type <stmtNode> dml_statement
@@ -815,6 +829,14 @@ tra_statement
 	: set_transaction							{ $$ = $1; }
 	| commit									{ $$ = $1; }
 	| rollback									{ $$ = $1; }
+	;
+
+%type <mngNode> mng_statement
+mng_statement
+	: set_round									{ $$ = $1; }
+	| set_traps									{ $$ = $1; }
+	| set_bind									{ $$ = $1; }
+	| session_statement							{ $$ = $1; }
 	| set_role									{ $$ = $1; }
 	;
 
@@ -1826,6 +1848,10 @@ sequence_value
 
 			$$ = -signedNumber;
 		}
+	| '-' LIMIT64_INT
+		{
+			$$ = MIN_SINT64;
+		}
 	;
 
 
@@ -2349,7 +2375,7 @@ column_constraint($addColumnClause)
 				const NestConst<ValueExprNode>* ptr = refColumns->items.begin();
 
 				for (const NestConst<ValueExprNode>* const end = refColumns->items.end(); ptr != end; ++ptr)
-					constraint.refColumns.add((*ptr)->as<FieldNode>()->dsqlName);
+					constraint.refColumns.add(nodeAs<FieldNode>(*ptr)->dsqlName);
 			}
 
 			constraint.index = $5;
@@ -2400,7 +2426,7 @@ table_constraint($relationNode)
 			const NestConst<ValueExprNode>* ptr = columns->items.begin();
 
 			for (const NestConst<ValueExprNode>* const end = columns->items.end(); ptr != end; ++ptr)
-				constraint.columns.add((*ptr)->as<FieldNode>()->dsqlName);
+				constraint.columns.add(nodeAs<FieldNode>(*ptr)->dsqlName);
 
 			constraint.index = $3;
 
@@ -2415,7 +2441,7 @@ table_constraint($relationNode)
 			const NestConst<ValueExprNode>* ptr = columns->items.begin();
 
 			for (const NestConst<ValueExprNode>* const end = columns->items.end(); ptr != end; ++ptr)
-				constraint.columns.add((*ptr)->as<FieldNode>()->dsqlName);
+				constraint.columns.add(nodeAs<FieldNode>(*ptr)->dsqlName);
 
 			constraint.index = $4;
 
@@ -2431,7 +2457,7 @@ table_constraint($relationNode)
 			const NestConst<ValueExprNode>* ptr = columns->items.begin();
 
 			for (const NestConst<ValueExprNode>* const end = columns->items.end(); ptr != end; ++ptr)
-				constraint.columns.add((*ptr)->as<FieldNode>()->dsqlName);
+				constraint.columns.add(nodeAs<FieldNode>(*ptr)->dsqlName);
 
 			constraint.refRelation = *$5;
 			constraint.refAction = $7;
@@ -2442,7 +2468,7 @@ table_constraint($relationNode)
 				const NestConst<ValueExprNode>* ptr = refColumns->items.begin();
 
 				for (const NestConst<ValueExprNode>* const end = refColumns->items.end(); ptr != end; ++ptr)
-					constraint.refColumns.add((*ptr)->as<FieldNode>()->dsqlName);
+					constraint.refColumns.add(nodeAs<FieldNode>(*ptr)->dsqlName);
 			}
 
 			constraint.index = $8;
@@ -3572,78 +3598,45 @@ check_opt
 
 %type <createAlterTriggerNode> trigger_clause
 trigger_clause
-	: symbol_trigger_name trigger_active trigger_type trigger_position trg_sql_security_clause
-			AS local_declaration_list full_proc_block
+	: create_trigger_start trg_sql_security_clause AS local_declaration_list full_proc_block
 		{
-			$$ = newNode<CreateAlterTriggerNode>(*$1);
-			$$->active = $2;
-			$$->type = $3;
-			$$->position = $4;
-			$$->ssDefiner = $5;
-			$$->source = makeParseStr(YYPOSNARG(6), YYPOSNARG(8));
-			$$->localDeclList = $7;
-			$$->body = $8;
+			$$ = $1;
+			$$->ssDefiner = $2;
+			$$->source = makeParseStr(YYPOSNARG(3), YYPOSNARG(5));
+			$$->localDeclList = $4;
+			$$->body = $5;
 		}
-	| symbol_trigger_name trigger_active trigger_type trigger_position
-			external_clause external_body_clause_opt
+	| create_trigger_start external_clause external_body_clause_opt
 		{
-			$$ = newNode<CreateAlterTriggerNode>(*$1);
-			$$->active = $2;
-			$$->type = $3;
-			$$->position = $4;
-			$$->external = $5;
-			if ($6)
-				$$->source = *$6;
+			$$ = $1;
+			$$->external = $2;
+			if ($3)
+				$$->source = *$3;
 		}
-	| symbol_trigger_name trigger_active trigger_type trigger_position ON symbol_table_name trg_sql_security_clause
-			AS local_declaration_list full_proc_block
+	;
+
+%type <createAlterTriggerNode> create_trigger_start
+create_trigger_start
+	: symbol_trigger_name
+			{ $$ = newNode<CreateAlterTriggerNode>(*$1); }
+		create_trigger_common(NOTRIAL($2))
+			{ $$ = $2; }
+	;
+
+%type create_trigger_common(<createAlterTriggerNode>)
+create_trigger_common($trigger)
+	: trigger_active trigger_type(NOTRIAL($trigger)) trigger_position
 		{
-			$$ = newNode<CreateAlterTriggerNode>(*$1);
-			$$->active = $2;
-			$$->type = $3;
-			$$->position = $4;
-			$$->relationName = *$6;
-			$$->ssDefiner = $7;
-			$$->source = makeParseStr(YYPOSNARG(8), YYPOSNARG(10));
-			$$->localDeclList = $9;
-			$$->body = $10;
+			$trigger->active = $1;
+			$trigger->type = $2;
+			$trigger->position = $3;
 		}
-	| symbol_trigger_name trigger_active trigger_type trigger_position ON symbol_table_name
-			external_clause external_body_clause_opt
+	| FOR symbol_table_name trigger_active table_trigger_type trigger_position
 		{
-			$$ = newNode<CreateAlterTriggerNode>(*$1);
-			$$->active = $2;
-			$$->type = $3;
-			$$->position = $4;
-			$$->relationName = *$6;
-			$$->external = $7;
-			if ($8)
-				$$->source = *$8;
-		}
-	| symbol_trigger_name FOR symbol_table_name trigger_active trigger_type trigger_position trg_sql_security_clause
-			AS local_declaration_list full_proc_block
-		{
-			$$ = newNode<CreateAlterTriggerNode>(*$1);
-			$$->active = $4;
-			$$->type = $5;
-			$$->position = $6;
-			$$->relationName = *$3;
-			$$->ssDefiner = $7;
-			$$->source = makeParseStr(YYPOSNARG(8), YYPOSNARG(10));
-			$$->localDeclList = $9;
-			$$->body = $10;
-		}
-	| symbol_trigger_name FOR symbol_table_name trigger_active trigger_type trigger_position
-			external_clause external_body_clause_opt
-		{
-			$$ = newNode<CreateAlterTriggerNode>(*$1);
-			$$->active = $4;
-			$$->type = $5;
-			$$->position = $6;
-			$$->relationName = *$3;
-			$$->external = $7;
-			if ($8)
-				$$->source = *$8;
+			$trigger->relationName = *$2;
+			$trigger->active = $3;
+			$trigger->type = $4;
+			$trigger->position = $5;
 		}
 	;
 
@@ -3666,11 +3659,22 @@ trigger_active
 		{ $$ = Nullable<bool>::empty(); }
 	;
 
-%type <uint64Val> trigger_type
-trigger_type
+%type <uint64Val> trigger_type(<createAlterTriggerNode>)
+trigger_type($trigger)
+	: table_trigger_type ON symbol_table_name
+		{
+			$$ = $1;
+			$trigger->relationName = *$3;
+		}
+	| ON trigger_db_type
+		{ $$ = $2; }
+	| trigger_type_prefix trigger_ddl_type
+		{ $$ = $1 + $2; }
+	;
+
+%type <uint64Val> table_trigger_type
+table_trigger_type
 	: trigger_type_prefix trigger_type_suffix	{ $$ = $1 + $2 - 1; }
-	| ON trigger_db_type						{ $$ = $2; }
-	| trigger_type_prefix trigger_ddl_type		{ $$ = $1 + $2; }
 	;
 
 %type <uint64Val> trigger_db_type
@@ -4466,6 +4470,7 @@ non_charset_simple_type
 	| binary_character_type
 	| numeric_type
 	| float_type
+	| decfloat_type
 	| BIGINT
 		{
 			$$ = newNode<dsql_fld>();
@@ -4732,6 +4737,20 @@ varbinary_character_keyword
 	;
 
 // numeric type
+
+%type <legacyField> decfloat_type
+decfloat_type
+	: DECFLOAT '(' signed_long_integer ')'
+		{
+			if ($3 != 16 && $3 != 34)
+				yyabandon(YYPOSNARG(3), -842, isc_decprecision_err);	// DecFloat precision must be 16 or 34.
+
+			$$ = newNode<dsql_fld>();
+			$$->precision = $3;
+			$$->dtype = $3 == 16 ? dtype_dec64 : dtype_dec128;
+			$$->length = $3 == 16 ? sizeof(Decimal64) : sizeof(Decimal128);
+		}
+	;
 
 %type <legacyField> numeric_type
 numeric_type
@@ -5016,6 +5035,68 @@ set_role
 	| SET TRUSTED ROLE
 		{ $$ = newNode<SetRoleNode>(); }
 	;
+
+%type <setRoundNode> set_round
+set_round
+	: SET DECFLOAT ROUND valid_symbol_name
+		{ $$ = newNode<SetRoundNode>($4); }
+	;
+
+%type <setTrapsNode> set_traps
+set_traps
+	: SET DECFLOAT TRAPS TO
+			{ $$ = newNode<SetTrapsNode>(); }
+		traps_list_opt($5)
+			{ $$ = $5; }
+	;
+
+%type <setBindNode> set_bind
+set_bind
+	: SET DECFLOAT BIND
+			{ $$ = newNode<SetBindNode>(); }
+		bind_clause($4)
+			{ $$ = $4; }
+	;
+
+%type traps_list_opt(<setTrapsNode>)
+traps_list_opt($setTrapsNode)
+	: // nothing
+	| traps_list($setTrapsNode)
+	;
+
+%type traps_list(<setTrapsNode>)
+traps_list($setTrapsNode)
+	: trap($setTrapsNode)
+	| traps_list ',' trap($setTrapsNode)
+	;
+
+%type trap(<setTrapsNode>)
+trap($setTrapsNode)
+	: valid_symbol_name
+		{ $setTrapsNode->trap($1); }
+	;
+
+%type bind_clause(<setBindNode>)
+bind_clause($setBindNode)
+	: NATIVE
+		// do nothing
+	| character_keyword
+		{ $setBindNode->bind.bind = DecimalBinding::DEC_TEXT; }
+	| DOUBLE PRECISION
+		{ $setBindNode->bind.bind = DecimalBinding::DEC_DOUBLE; }
+	| BIGINT scale_clause($setBindNode)
+		{ $setBindNode->bind.bind = DecimalBinding::DEC_NUMERIC; }
+	;
+
+%type scale_clause(<setBindNode>)
+scale_clause($setBindNode)
+	: // nothing
+	| ',' signed_long_integer
+		{
+			if ($2 > 18 || $2 < 0)
+				yyabandon(YYPOSNARG(2), -842, isc_scale_nogt);	// Scale must be between 0 and precision
+			$setBindNode->bind.numScale = -$2;
+		}
 
 %type <setSessionNode> session_statement
 session_statement
@@ -5380,7 +5461,7 @@ select_expr_body
 		{ $$ = $1; }
 	| select_expr_body UNION distinct_noise query_term
 		{
-			UnionSourceNode* node = $1->as<UnionSourceNode>();
+			UnionSourceNode* node = nodeAs<UnionSourceNode>($1);
 			if (node && !node->dsqlAll)
 				node->dsqlClauses->add($4);
 			else
@@ -5392,7 +5473,7 @@ select_expr_body
 		}
 	| select_expr_body UNION ALL query_term
 		{
-			UnionSourceNode* node = $1->as<UnionSourceNode>();
+			UnionSourceNode* node = nodeAs<UnionSourceNode>($1);
 			if (node && node->dsqlAll)
 				node->dsqlClauses->add($4);
 			else
@@ -7044,16 +7125,30 @@ value_list
 %type <valueExprNode> constant
 constant
 	: u_constant
-	| '-' u_numeric_constant	{ $$ = newNode<NegateNode>($2); }
+	| '-' ul_numeric_constant	{ $$ = newNode<NegateNode>($2); }
+	| '-' LIMIT64_INT			{ $$ = MAKE_const_sint64(MIN_SINT64, 0); }
+	| '-' LIMIT64_NUMBER		{ $$ = MAKE_const_sint64(MIN_SINT64, $2->getScale()); }
 	| boolean_literal
 	;
 
 %type <valueExprNode> u_numeric_constant
 u_numeric_constant
+	: ul_numeric_constant
+		{ $$ = $1; }
+	| LIMIT64_NUMBER
+		{ $$ = MAKE_constant($1->c_str(), CONSTANT_DECIMAL); }
+	| LIMIT64_INT
+		{ $$ = MAKE_constant($1->c_str(), CONSTANT_DECIMAL); }
+	;
+
+%type <valueExprNode> ul_numeric_constant
+ul_numeric_constant
 	: NUMBER
 		{ $$ = MAKE_const_slong($1); }
 	| FLOAT_NUMBER
 		{ $$ = MAKE_constant($1->c_str(), CONSTANT_DOUBLE); }
+	| DECIMAL_NUMBER
+		{ $$ = MAKE_constant($1->c_str(), CONSTANT_DECIMAL); }
 	| NUMBER64BIT
 		{
 			SINT64 signedNumber = (SINT64) $1.number;
@@ -7586,6 +7681,10 @@ system_function_std_syntax
 	| TANH
 	| TRUNC
 	| UUID_TO_CHAR
+	| QUANTIZE
+	| TOTALORDER
+	| NORMALIZE_DECFLOAT
+	| COMPARE_DECFLOAT
 	;
 
 %type <sysFuncCallNode> system_function_special_syntax
@@ -7808,10 +7907,10 @@ searched_case
 			ValueIfNode* last = $2;
 			ValueIfNode* next;
 
-			while ((next = last->falseValue->as<ValueIfNode>()))
+			while ((next = nodeAs<ValueIfNode>(last->falseValue)))
 				last = next;
 
-			fb_assert(last->falseValue->is<NullNode>());
+			fb_assert(nodeIs<NullNode>(last->falseValue));
 
 			last->falseValue = $4;
 			$$ = $2;
@@ -7828,10 +7927,10 @@ searched_when_clause
 			ValueIfNode* last = $1;
 			ValueIfNode* next;
 
-			while ((next = last->falseValue->as<ValueIfNode>()))
+			while ((next = nodeAs<ValueIfNode>(last->falseValue)))
 				last = next;
 
-			fb_assert(last->falseValue->is<NullNode>());
+			fb_assert(nodeIs<NullNode>(last->falseValue));
 
 			last->falseValue = cond;
 			$$ = $1;
@@ -8284,25 +8383,33 @@ non_reserved_word
 	| SERVERWIDE
 	| INCREMENT
 	| TRUSTED
-	| CUME_DIST				// added in FB 4.0
+	| BIND					// added in FB 4.0
+	| COMPARE_DECFLOAT
+	| CUME_DIST
+	| DECFLOAT
 	| DEFINER
 	| EXCLUDE
 	| FOLLOWING
 	| IDLE
 	| INVOKER
 	| MESSAGE
+	| NATIVE
+	| NORMALIZE_DECFLOAT
 	| NTILE
 	| OTHERS
 	| OVERRIDING
 	| PERCENT_RANK
 	| PRECEDING
 	| PRIVILEGE
+	| QUANTIZE
 	| RANGE
 	| SECURITY
 	| SESSION
 	| SQL
 	| SYSTEM
 	| TIES
+	| TOTALORDER
+	| TRAPS
 	| CONSISTENCY
 	;
 

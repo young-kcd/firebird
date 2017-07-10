@@ -6616,7 +6616,7 @@ static void mov_dsql_message(const UCHAR* from_msg,
 		// Safe const cast, we are going to move from it to anywhere.
 		from.dsc_address = const_cast<UCHAR*>(from_msg) + (IPTR) from.dsc_address;
 		to.dsc_address = to_msg + (IPTR) to.dsc_address;
-		CVT_move(&from, &to, move_error);
+		CVT_move(&from, &to, DecimalStatus(DEC_Errors), move_error);
 	}
 }
 

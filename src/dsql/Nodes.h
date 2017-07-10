@@ -281,21 +281,25 @@ public:
 };
 
 
-class SetSessionNode : public Node
+class SessionManagementNode : public Node
 {
 public:
-	enum Type { TYPE_IDLE_TIMEOUT, TYPE_STMT_TIMEOUT };
-
-	SetSessionNode(MemoryPool& pool, Type aType, ULONG aVal, UCHAR blr_timepart);
+	explicit SessionManagementNode(MemoryPool& pool)
+		: Node(pool)
+	{
+	}
 
 public:
-	virtual Firebird::string internalPrint(NodePrinter& printer) const;
-	virtual SetSessionNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
-	virtual void execute(thread_db* tdbb, dsql_req* request) const;
+	virtual SessionManagementNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
+	{
+		Node::dsqlPass(dsqlScratch);
 
-private:
-	Type m_type;
-	ULONG m_value;
+		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SESSION_MANAGEMENT);
+
+		return this;
+	}
+
+	virtual void execute(thread_db* tdbb, dsql_req* request) const = 0;
 };
 
 
@@ -350,6 +354,37 @@ public:
 public:
 	const static typename T::Type TYPE = typeConst;
 };
+
+
+template <typename To, typename From> static To* nodeAs(From* fromNode)
+{
+	return fromNode && fromNode->type == To::TYPE ? static_cast<To*>(fromNode) : NULL;
+}
+
+template <typename To, typename From> static To* nodeAs(NestConst<From>& fromNode)
+{
+	return fromNode && fromNode->type == To::TYPE ? static_cast<To*>(fromNode.getObject()) : NULL;
+}
+
+template <typename To, typename From> static const To* nodeAs(const From* fromNode)
+{
+	return fromNode && fromNode->type == To::TYPE ? static_cast<const To*>(fromNode) : NULL;
+}
+
+template <typename To, typename From> static const To* nodeAs(const NestConst<From>& fromNode)
+{
+	return fromNode && fromNode->type == To::TYPE ? static_cast<const To*>(fromNode.getObject()) : NULL;
+}
+
+template <typename To, typename From> static bool nodeIs(const From* fromNode)
+{
+	return fromNode && fromNode->type == To::TYPE;
+}
+
+template <typename To, typename From> static bool nodeIs(const NestConst<From>& fromNode)
+{
+	return fromNode && fromNode->type == To::TYPE;
+}
 
 
 // Stores a reference to a specialized ExprNode.
@@ -489,7 +524,8 @@ public:
 	// Value flags.
 	static const unsigned FLAG_DOUBLE		= 0x10;
 	static const unsigned FLAG_DATE			= 0x20;
-	static const unsigned FLAG_VALUE		= 0x40;	// Full value area required in impure space.
+	static const unsigned FLAG_DECFLOAT		= 0x40;
+	static const unsigned FLAG_VALUE		= 0x80;	// Full value area required in impure space.
 
 	explicit ExprNode(Type aType, MemoryPool& pool, Kind aKind)
 		: DmlNode(pool, aKind),
@@ -500,39 +536,6 @@ public:
 		  dsqlChildNodes(pool),
 		  jrdChildNodes(pool)
 	{
-	}
-
-	template <typename T> T* as()
-	{
-		const ExprNode* const thisPointer = this;	// avoid warning
-		return thisPointer && type == T::TYPE ? static_cast<T*>(this) : NULL;
-	}
-
-	template <typename T> const T* as() const
-	{
-		const ExprNode* const thisPointer = this;	// avoid warning
-		return thisPointer && type == T::TYPE ? static_cast<const T*>(this) : NULL;
-	}
-
-	template <typename T> bool is() const
-	{
-		const ExprNode* const thisPointer = this;	// avoid warning
-		return thisPointer && type == T::TYPE;
-	}
-
-	template <typename T, typename LegacyType> static T* as(LegacyType* node)
-	{
-		return node ? node->template as<T>() : NULL;
-	}
-
-	template <typename T, typename LegacyType> static const T* as(const LegacyType* node)
-	{
-		return node ? node->template as<T>() : NULL;
-	}
-
-	template <typename T, typename LegacyType> static bool is(const LegacyType* node)
-	{
-		return node ? node->template is<T>() : false;
 	}
 
 	// Allocate and assign impure space for various nodes.
