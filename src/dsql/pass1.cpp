@@ -367,7 +367,10 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, RecordSourceNode*
 	else if (procNode && (procNode->dsqlName.package.hasData() || procNode->sourceList))
 	{
 		if (procNode->dsqlName.package.isEmpty())
-			procedure = dsqlScratch->getSubProcedure(procNode->dsqlName.identifier);
+		{
+			DeclareSubProcNode* subProcedure = dsqlScratch->getSubProcedure(procNode->dsqlName.identifier);
+			procedure = subProcedure ? subProcedure->dsqlProcedure : NULL;
+		}
 
 		if (!procedure)
 		{
@@ -390,7 +393,10 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, RecordSourceNode*
 	else
 	{
 		if (procNode && procNode->dsqlName.package.isEmpty())
-			procedure = dsqlScratch->getSubProcedure(procNode->dsqlName.identifier);
+		{
+			DeclareSubProcNode* subProcedure = dsqlScratch->getSubProcedure(procNode->dsqlName.identifier);
+			procedure = subProcedure ? subProcedure->dsqlProcedure : NULL;
+		}
 
 		if (!procedure)
 			relation = METD_get_relation(dsqlScratch->getTransaction(), dsqlScratch, relation_name);

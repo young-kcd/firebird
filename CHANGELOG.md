@@ -58,6 +58,10 @@
   Reference(s): [doc/sql.extensions/README.identity_columns](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.identity_columns.txt)  
   Contributor(s): Adriano dos Santos Fernandes
 
+* [CORE-5380](http://tracker.firebirdsql.org/browse/CORE-5380): Allow subroutines to call others subroutines and themself recursively  
+  Reference(s): [doc/sql.extensions/README.subroutines.txt](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.subroutines.txt)  
+  Contributor(s): Adriano dos Santos Fernandes
+
 * [CORE-5119](http://tracker.firebirdsql.org/browse/CORE-5119): Support autocommit mode in SET TRANSACTION statement  
   Contributor(s): Dmitry Yemanov
 

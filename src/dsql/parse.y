@@ -2539,7 +2539,7 @@ procedure_clause
 
 %type <createAlterProcedureNode> psql_procedure_clause
 psql_procedure_clause
-	: procedure_clause_start sql_security_clause AS local_declaration_list full_proc_block
+	: procedure_clause_start sql_security_clause AS local_declarations_opt full_proc_block
 		{
 			$$ = $1;
 			$$->ssDefiner = $2;
@@ -2670,7 +2670,7 @@ function_clause
 
 %type <createAlterFunctionNode> psql_function_clause
 psql_function_clause
-	: function_clause_start sql_security_clause AS local_declaration_list full_proc_block
+	: function_clause_start sql_security_clause AS local_declarations_opt full_proc_block
 		{
 			$$ = $1;
 			$$->ssDefiner = $2;
@@ -2869,71 +2869,129 @@ package_body_item
 	;
 
 
-%type <compoundStmtNode> local_declaration_list
-local_declaration_list
-	: /* nothing */			{ $$ = NULL; }
-	| local_declarations
+%type <compoundStmtNode> local_declarations_opt
+local_declarations_opt
+	: local_forward_declarations_opt local_nonforward_declarations_opt
+		{
+			CompoundStmtNode* forward = $1;
+			CompoundStmtNode* nonForward = $2;
+
+			if (!forward)
+				$$ = nonForward;
+			else
+			{
+				if (nonForward)
+					forward->statements.add(nonForward->statements.begin(), nonForward->statements.getCount());
+
+				$$ = forward;
+			}
+		}
 	;
 
-%type <compoundStmtNode> local_declarations
-local_declarations
-	: local_declaration
+%type <compoundStmtNode> local_forward_declarations_opt
+local_forward_declarations_opt
+	: /* nothing */					{ $$ = NULL; }
+	| local_forward_declarations
+	;
+
+%type <compoundStmtNode> local_forward_declarations
+local_forward_declarations
+	: local_forward_declaration
 		{
 			$$ = newNode<CompoundStmtNode>();
 			$$->statements.add($1);
 		}
-	| local_declarations local_declaration
+	| local_forward_declarations local_forward_declaration
 		{
 			$1->statements.add($2);
 			$$ = $1;
 		}
 	;
 
-%type <stmtNode> local_declaration
-local_declaration
+%type <stmtNode> local_forward_declaration
+local_forward_declaration
+	: local_declaration_subproc_start ';'	{ $$ = $1; }
+	| local_declaration_subfunc_start ';'	{ $$ = $1; }
+	;
+
+%type <compoundStmtNode> local_nonforward_declarations_opt
+local_nonforward_declarations_opt
+	: /* nothing */						{ $$ = NULL; }
+	| local_nonforward_declarations
+	;
+
+%type <compoundStmtNode> local_nonforward_declarations
+local_nonforward_declarations
+	: local_nonforward_declaration
+		{
+			$$ = newNode<CompoundStmtNode>();
+			$$->statements.add($1);
+		}
+	| local_nonforward_declarations local_nonforward_declaration
+		{
+			$1->statements.add($2);
+			$$ = $1;
+		}
+	;
+
+%type <stmtNode> local_nonforward_declaration
+local_nonforward_declaration
 	: DECLARE var_decl_opt local_declaration_item ';'
 		{
 			$$ = $3;
 			$$->line = YYPOSNARG(1).firstLine;
 			$$->column = YYPOSNARG(1).firstColumn;
 		}
-	| DECLARE PROCEDURE symbol_procedure_name
-			{ $<execBlockNode>$ = newNode<ExecBlockNode>(); }
-			input_parameters(NOTRIAL(&$<execBlockNode>4->parameters))
-			output_parameters(NOTRIAL(&$<execBlockNode>4->returns)) AS
-			local_declaration_list
-			full_proc_block
+	| local_declaration_subproc_start AS local_declarations_opt full_proc_block
 		{
-			DeclareSubProcNode* node = newNode<DeclareSubProcNode>(*$3);
-			node->dsqlBlock = $<execBlockNode>4;
-			node->dsqlBlock->localDeclList = $8;
-			node->dsqlBlock->body = $9;
+			DeclareSubProcNode* node = $1;
+			node->dsqlBlock = newNode<ExecBlockNode>();
+			node->dsqlBlock->parameters = node->dsqlParameters;
+			node->dsqlBlock->returns = node->dsqlReturns;
+			node->dsqlBlock->localDeclList = $3;
+			node->dsqlBlock->body = $4;
 
 			for (FB_SIZE_T i = 0; i < node->dsqlBlock->parameters.getCount(); ++i)
 				node->dsqlBlock->parameters[i]->parameterExpr = make_parameter();
 
 			$$ = node;
 		}
-	| DECLARE FUNCTION symbol_UDF_name
-			{ $<execBlockNode>$ = newNode<ExecBlockNode>(); }
-			input_parameters(NOTRIAL(&$<execBlockNode>4->parameters))
-			RETURNS domain_or_non_array_type collate_clause deterministic_opt AS
-			local_declaration_list
-			full_proc_block
+	| local_declaration_subfunc_start AS local_declarations_opt full_proc_block
 		{
-			DeclareSubFuncNode* node = newNode<DeclareSubFuncNode>(*$3);
-			node->dsqlDeterministic = $9;
-			node->dsqlBlock = $<execBlockNode>4;
-			node->dsqlBlock->localDeclList = $11;
-			node->dsqlBlock->body = $12;
+			DeclareSubFuncNode* node = $1;
+			node->dsqlBlock = newNode<ExecBlockNode>();
+			node->dsqlBlock->parameters = node->dsqlParameters;
+			node->dsqlBlock->returns = node->dsqlReturns;
+			node->dsqlBlock->localDeclList = $3;
+			node->dsqlBlock->body = $4;
 
 			for (FB_SIZE_T i = 0; i < node->dsqlBlock->parameters.getCount(); ++i)
 				node->dsqlBlock->parameters[i]->parameterExpr = make_parameter();
 
-			node->dsqlBlock->returns.add(newNode<ParameterClause>($<legacyField>7, optName($8)));
-
 			$$ = node;
 		}
+	;
+
+%type <declareSubProcNode> local_declaration_subproc_start
+local_declaration_subproc_start
+	: DECLARE PROCEDURE symbol_procedure_name
+			{ $$ = newNode<DeclareSubProcNode>(NOTRIAL(*$3)); }
+		input_parameters(NOTRIAL(&$4->dsqlParameters))
+		output_parameters(NOTRIAL(&$4->dsqlReturns))
+			{ $$ = $4; }
+	;
+
+%type <declareSubFuncNode> local_declaration_subfunc_start
+local_declaration_subfunc_start
+	: DECLARE FUNCTION symbol_UDF_name
+			{ $$ = newNode<DeclareSubFuncNode>(NOTRIAL(*$3)); }
+		input_parameters(NOTRIAL(&$4->dsqlParameters))
+		RETURNS domain_or_non_array_type collate_clause deterministic_opt
+			{
+				$$ = $4;
+				$$->dsqlReturns.add(newNode<ParameterClause>($<legacyField>7, optName($8)));
+				$$->dsqlDeterministic = $9;
+			}
 	;
 
 %type <stmtNode> local_declaration_item
@@ -3526,7 +3584,7 @@ exec_block
 			{ $<execBlockNode>$ = newNode<ExecBlockNode>(); }
 			block_input_params(NOTRIAL(&$3->parameters))
 			output_parameters(NOTRIAL(&$3->returns)) AS
-			local_declaration_list
+			local_declarations_opt
 			full_proc_block
 		{
 			ExecBlockNode* node = $3;
@@ -3597,7 +3655,7 @@ check_opt
 
 %type <createAlterTriggerNode> trigger_clause
 trigger_clause
-	: create_trigger_start trg_sql_security_clause AS local_declaration_list full_proc_block
+	: create_trigger_start trg_sql_security_clause AS local_declarations_opt full_proc_block
 		{
 			$$ = $1;
 			$$->ssDefiner = $2;
@@ -4244,7 +4302,7 @@ crypt_key_clause($alterDatabaseNode)
 %type <createAlterTriggerNode> alter_trigger_clause
 alter_trigger_clause
 	: symbol_trigger_name trigger_active trigger_type_opt trigger_position trg_sql_security_clause
-			AS local_declaration_list full_proc_block
+			AS local_declarations_opt full_proc_block
 		{
 			$$ = newNode<CreateAlterTriggerNode>(*$1);
 			$$->alter = true;

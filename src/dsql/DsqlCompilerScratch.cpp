@@ -320,6 +320,37 @@ void DsqlCompilerScratch::putLocalVariables(CompoundStmtNode* parameters, USHORT
 		else
 			fb_assert(false);
 	}
+
+	if (!(flags & DsqlCompilerScratch::FLAG_SUB_ROUTINE))
+	{
+		// Check not implemented sub-functions.
+
+		GenericMap<Left<MetaName, DeclareSubFuncNode*> >::ConstAccessor funcAccessor(&subFunctions);
+
+		for (bool found = funcAccessor.getFirst(); found; found = funcAccessor.getNext())
+		{
+			if (!funcAccessor.current()->second->dsqlBlock)
+			{
+				status_exception::raise(
+					Arg::Gds(isc_subfunc_not_impl) <<
+					funcAccessor.current()->first.c_str());
+			}
+		}
+
+		// Check not implemented sub-procedures.
+
+		GenericMap<Left<MetaName, DeclareSubProcNode*> >::ConstAccessor procAccessor(&subProcedures);
+
+		for (bool found = procAccessor.getFirst(); found; found = procAccessor.getNext())
+		{
+			if (!procAccessor.current()->second->dsqlBlock)
+			{
+				status_exception::raise(
+					Arg::Gds(isc_subproc_not_impl) <<
+					procAccessor.current()->first.c_str());
+			}
+		}
+	}
 }
 
 // Write out local variable field data type.
@@ -584,6 +615,50 @@ void DsqlCompilerScratch::checkUnusedCTEs() const
 					  Arg::Gds(isc_dsql_cte_not_used) << cte->alias);
 		}
 	}
+}
+
+DeclareSubFuncNode* DsqlCompilerScratch::getSubFunction(const Firebird::MetaName& name)
+{
+	DeclareSubFuncNode* subFunc = NULL;
+	subFunctions.get(name, subFunc);
+
+	if (!subFunc && mainScratch)
+		subFunc = mainScratch->getSubFunction(name);
+
+	return subFunc;
+}
+
+void DsqlCompilerScratch::putSubFunction(DeclareSubFuncNode* subFunc, bool replace)
+{
+	if (!replace && subFunctions.exist(subFunc->name))
+	{
+		status_exception::raise(
+			Arg::Gds(isc_dsql_duplicate_spec) << subFunc->name);
+	}
+
+	subFunctions.put(subFunc->name, subFunc);
+}
+
+DeclareSubProcNode* DsqlCompilerScratch::getSubProcedure(const Firebird::MetaName& name)
+{
+	DeclareSubProcNode* subProc = NULL;
+	subProcedures.get(name, subProc);
+
+	if (!subProc && mainScratch)
+		subProc = mainScratch->getSubProcedure(name);
+
+	return subProc;
+}
+
+void DsqlCompilerScratch::putSubProcedure(DeclareSubProcNode* subProc, bool replace)
+{
+	if (!replace && subProcedures.exist(subProc->name))
+	{
+		status_exception::raise(
+			Arg::Gds(isc_dsql_duplicate_spec) << subProc->name);
+	}
+
+	subProcedures.put(subProc->name, subProc);
 }
 
 // Process derived table which can be recursive CTE.

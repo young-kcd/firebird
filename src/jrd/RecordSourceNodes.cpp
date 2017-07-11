@@ -910,9 +910,13 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 
 			if (blrOp == blr_subproc)
 			{
-				DeclareSubProcNode* node;
-				if (csb->subProcedures.get(name.identifier, node))
-					procedure = node->routine;
+				DeclareSubProcNode* declareNode;
+
+				for (auto curCsb = csb; curCsb && !procedure; curCsb = curCsb->mainCsb)
+				{
+					if (curCsb->subProcedures.get(name.identifier, declareNode))
+						procedure = declareNode->routine;
+				}
 			}
 			else
 				procedure = MET_lookup_procedure(tdbb, name, false);
