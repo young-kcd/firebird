@@ -65,18 +65,19 @@ framework darwin_finish_framework:
 	cp ../gen/Release/firebird/lib/libicuuc.dylib $(FB_FW)/Versions/A/Libraries/libicuuc.dylib
 	cp ../gen/Release/firebird/lib/libib_util.dylib $(FB_FW)/Versions/A/Libraries/libib_util.dylib
 	cp ../gen/Release/firebird/firebird.msg \
-			$(FB_FW)/Resources/English.lproj/var/firebird.msg
-	cp -r ../gen/Release/firebird/UDF $(FB_FW)/Resources/English.lproj/var/UDF
-	mkdir -p $(FB_FW)/Resources/English.lproj/var/intl
+                        $(FB_FW)/Versions/A/Resources/firebird.msg
+	cp -r ../gen/Release/firebird/UDF $(FB_FW)/Versions/A/Resources/UDF
+	mkdir -p $(FB_FW)/Versions/A/Resources/intl
 	cp -r ../gen/Release/firebird/intl/libfbintl.dylib \
-		$(FB_FW)/Resources/English.lproj/var/intl/fbintl
+		$(FB_FW)/Versions/A/Resources/intl/fbintl
 	cp ../gen/Release/firebird/intl/fbintl.conf \
-		$(FB_FW)/Resources/English.lproj/var/intl/fbintl.conf
-	chmod a+rx $(FB_FW)/Resources/English.lproj/var/intl/fbintl
+		$(FB_FW)/Versions/A/Resources/fbintl.conf
+	chmod a+rx $(FB_FW)/Versions/A/Resources/intl/fbintl
 	cp -r ../gen/Release/firebird/plugins \
-		$(FB_FW)/Resources/English.lproj/var/plugins
-	cp -r ../gen/Release/firebird/help $(FB_FW)/Resources/English.lproj/var/help
-	cp ../gen/Release/firebird/security3.fdb $(FB_FW)/Resources/English.lproj/var
+		$(FB_FW)/Versions/A/Resources/plugins
+	cp ../gen/Release/firebird/security3.fdb \
+                        $(FB_FW)/Versions/A/Resources/security3.fdb
+	cp -r ../gen/Release/firebird/help $(FB_FW)/Versions/A/Resources/help
 	mkdir -p $(FB_FW)/Resources/doc
 	cp -r ../doc $(FB_FW)/Resources
 	mkdir -p $(FB_FW)/Resources/examples
@@ -84,45 +85,47 @@ framework darwin_finish_framework:
 	mkdir -p $(FB_FW)/Resources/bin
 	touch $(FB_FW)/Resources/SuperServer
 	chflags hidden $(FB_FW)/Resources/SuperServer 
-	ln -s ../../bin $(FB_FW)/Resources/English.lproj/var/bin
-	cp ../gen/Release/firebird/bin/gfix $(FB_FW)/Resources/bin
-	cp ../gen/Release/firebird/bin/gbak $(FB_FW)/Resources/bin
-	cp ../gen/Release/firebird/bin/isql $(FB_FW)/Resources/bin
-	cp ../gen/Release/firebird/bin/gpre $(FB_FW)/Resources/bin
-	cp ../gen/Release/firebird/bin/qli $(FB_FW)/Resources/bin
-	cp ../gen/Release/firebird/bin/fb_lock_print $(FB_FW)/Resources/bin
-	cp ../gen/Release/firebird/bin/gsec $(FB_FW)/Resources/bin
-	cp ../gen/Release/firebird/bin/gstat $(FB_FW)/Resources/bin
-	cp ../gen/Release/firebird/bin/nbackup $(FB_FW)/Resources/bin
-	cp ../gen/Release/firebird/bin/fbguard $(FB_FW)/Resources/bin
-	cp ../gen/Release/firebird/bin/fbtracemgr $(FB_FW)/Resources/bin
-	cp ../gen/Release/firebird/bin/firebird $(FB_FW)/Resources/bin
+#	ln -s ../../bin $(FB_FW)/Versions/A/Resources/English.lproj/var/bin
+	cp ../gen/Release/firebird/bin/gfix $(FB_FW)/Versions/A/Resources/bin
+	cp ../gen/Release/firebird/bin/gbak $(FB_FW)/Versions/A/Resources/bin
+	cp ../gen/Release/firebird/bin/isql $(FB_FW)/Versions/A/Resources/bin
+	cp ../gen/Release/firebird/bin/gpre $(FB_FW)/Versions/A/Resources/bin
+	cp ../gen/Release/firebird/bin/qli $(FB_FW)/Versions/A/Resources/bin
+	cp ../gen/Release/firebird/bin/fb_lock_print $(FB_FW)/Versions/A/Resources/bin
+	cp ../gen/Release/firebird/bin/gsec $(FB_FW)/Versions/A/Resources/bin
+	cp ../gen/Release/firebird/bin/gstat $(FB_FW)/Versions/A/Resources/bin
+	cp ../gen/Release/firebird/bin/nbackup $(FB_FW)/Versions/A/Resources/bin
+	cp ../gen/Release/firebird/bin/fbguard $(FB_FW)/Versions/A/Resources/bin
+	cp ../gen/Release/firebird/bin/fbtracemgr $(FB_FW)/Versions/A/Resources/bin
+	cp ../gen/Release/firebird/bin/firebird $(FB_FW)/Versions/A/Resources/bin
 	chmod +x ../builds/install/arch-specific/darwin/changeServerMode
 	cp ../builds/install/arch-specific/darwin/changeServerMode \
-			$(FB_FW)/Resources/bin/changeServerMode.sh
-	cp ../src/extlib/ib_udf.sql $(FB_FW)/Resources/English.lproj/var/UDF
-	cp ../src/extlib/fbudf/fbudf.sql $(FB_FW)/Resources/English.lproj/var/UDF
+			$(FB_FW)/Versions/A/Resources/bin/changeServerMode.sh
+	cp ../src/extlib/ib_udf.sql $(FB_FW)/Versions/A/Resources/UDF
+	cp ../src/extlib/fbudf/fbudf.sql $(FB_FW)/Versions/A/Resources/UDF
 	cp ../builds/install/arch-specific/darwin/FrameworkInfo.plist \
-			$(FB_FW)/Resources/Info.plist
+			$(FB_FW)/Versions/A/Resources/Info.plist
 	cp ../builds/install/arch-specific/darwin/launchd.org.firebird.gds.plist \
-			$(FB_FW)/Resources/org.firebird.gds.plist
+			$(FB_FW)/Versions/A/Resources/org.firebird.gds.plist
 	cp ../builds/install/arch-specific/darwin/launchdcs.org.firebird.gds.plist \
-			$(FB_FW)/Resources/cs.org.firebird.gds.plist
+			$(FB_FW)/Versions/A/Resources/cs.org.firebird.gds.plist
 	cp ../builds/install/arch-specific/darwin/Readme.txt \
-			$(FB_FW)/Resources/Readme.txt
+			$(FB_FW)/Versions/A/Resources/Readme.txt
 	cp ../builds/install/arch-specific/darwin/License.txt \
-			$(FB_FW)/Resources/License.txt
-	cp ../gen/Release/firebird/firebird.conf $(FB_FW)/Resources/English.lproj/var
+			$(FB_FW)/Versions/A/Resources/License.txt
+	cp ../gen/Release/firebird/firebird.conf \
+                        $(FB_FW)/Versions/A/Resources//firebird.conf
+#	cp ../gen/Release/firebird/firebird.conf $(FB_FW)/Resources/English.lproj/var
 	cp ../builds/install/arch-specific/darwin/aliases.conf.in \
-		$(FB_FW)/Resources/English.lproj/var/aliases.conf
+		$(FB_FW)/Versions/A/Resources/aliases.conf
 	cp ../gen/Release/firebird/fbtrace.conf \
-			$(FB_FW)/Resources/English.lproj/var/fbtrace.conf
+			$(FB_FW)/Versions/A/Resources/fbtrace.conf
 	cp ../gen/Release/firebird/plugins.conf \
-			$(FB_FW)/Resources/English.lproj/var/plugins.conf
-	mkdir $(FB_FW)/Resources/English.lproj/var/misc
-	mkdir $(FB_FW)/Resources/English.lproj/var/misc/upgrade
+			$(FB_FW)/Versions/A/Resources/plugins.conf
+	mkdir $(FB_FW)/Versions/A/Resources/misc
+	mkdir $(FB_FW)/Versions/A/Resources/misc/upgrade
 	cp -r ../src/misc/upgrade/v3.0 \
-		$(FB_FW)/Resources/English.lproj/var/misc/upgrade
+		$(FB_FW)/Versions/A/Resources/misc/upgrade
 
 otool: bin lib plugins intl
 
@@ -156,14 +159,14 @@ lib:
 
 plugins:
 
-	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(PLUGLOC)libCryptKeyHolder_example.dylib
-	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(PLUGLOC)libDbCrypt_example.dylib
+#	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(PLUGLOC)libCryptKeyHolder_example.dylib
+#	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(PLUGLOC)libDbCrypt_example.dylib
 	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(PLUGLOC)libEngine12.dylib
 	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(PLUGLOC)libLegacy_Auth.dylib
 	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(PLUGLOC)libLegacy_UserManager.dylib
 	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(PLUGLOC)libSrp.dylib
 	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(PLUGLOC)libudr_engine.dylib
-	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(UDRPLUGLOC)libudrcpp_example.dylib
+#	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(UDRPLUGLOC)libudrcpp_example.dylib
 
 intl:
 
