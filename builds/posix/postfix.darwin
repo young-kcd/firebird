@@ -85,7 +85,6 @@ framework darwin_finish_framework:
 	mkdir -p $(FB_FW)/Resources/bin
 	touch $(FB_FW)/Resources/SuperServer
 	chflags hidden $(FB_FW)/Resources/SuperServer 
-#	ln -s ../../bin $(FB_FW)/Versions/A/Resources/English.lproj/var/bin
 	cp ../gen/Release/firebird/bin/gfix $(FB_FW)/Versions/A/Resources/bin
 	cp ../gen/Release/firebird/bin/gbak $(FB_FW)/Versions/A/Resources/bin
 	cp ../gen/Release/firebird/bin/isql $(FB_FW)/Versions/A/Resources/bin
@@ -115,7 +114,6 @@ framework darwin_finish_framework:
 			$(FB_FW)/Versions/A/Resources/License.txt
 	cp ../gen/Release/firebird/firebird.conf \
                         $(FB_FW)/Versions/A/Resources//firebird.conf
-#	cp ../gen/Release/firebird/firebird.conf $(FB_FW)/Resources/English.lproj/var
 	cp ../builds/install/arch-specific/darwin/aliases.conf.in \
 		$(FB_FW)/Versions/A/Resources/aliases.conf
 	cp ../gen/Release/firebird/fbtrace.conf \
@@ -159,14 +157,14 @@ lib:
 
 plugins:
 
-#	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(PLUGLOC)libCryptKeyHolder_example.dylib
-#	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(PLUGLOC)libDbCrypt_example.dylib
+	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(PLUGLOC)libCryptKeyHolder_example.dylib
+	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(PLUGLOC)libDbCrypt_example.dylib
 	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(PLUGLOC)libEngine12.dylib
 	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(PLUGLOC)libLegacy_Auth.dylib
 	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(PLUGLOC)libLegacy_UserManager.dylib
 	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(PLUGLOC)libSrp.dylib
 	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(PLUGLOC)libudr_engine.dylib
-#	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(UDRPLUGLOC)libudrcpp_example.dylib
+	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(UDRPLUGLOC)libudrcpp_example.dylib
 
 intl:
 
