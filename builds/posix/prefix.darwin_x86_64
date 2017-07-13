@@ -27,6 +27,9 @@
 # configure using --with-builtin-tommath
 # or add the relevant -I, -L for an installed version of libtommath
 
+DYLD_LIBRARY_PATH=$(HOME)/icu54/icu/source/lib
+export DYLD_LIBRARY_PATH
+
 #DYLD_PRINT_ENV=1
 #export DYLD_PRINT_ENV
 
