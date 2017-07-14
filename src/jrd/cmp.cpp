@@ -739,7 +739,10 @@ void CMP_fini(thread_db* tdbb)
 	{
 		if (*itr)
 		{
+			fb_assert((*itr)->req_transaction == NULL)
+
 			(*itr)->req_attachment = NULL;
+			(*itr)->req_transaction = NULL;
 			CMP_release(tdbb, *itr);
 		}
 	}
@@ -748,7 +751,10 @@ void CMP_fini(thread_db* tdbb)
 	{
 		if (*itr)
 		{
+			fb_assert((*itr)->req_transaction == NULL)
+
 			(*itr)->req_attachment = NULL;
+			(*itr)->req_transaction = NULL;
 			CMP_release(tdbb, *itr);
 		}
 	}
