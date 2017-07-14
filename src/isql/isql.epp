@@ -395,8 +395,7 @@ static processing_state print_performance(const SINT64* perf_before);
 static void print_message(Firebird::IMessageMetadata* msg, const char* dir);
 static void process_header(Firebird::IMessageMetadata*, const unsigned pad[], TEXT header[], TEXT header2[]);
 static void process_plan();
-static SINT64 process_record_count(const int statement_type);
-static int process_request_type();
+static SINT64 process_record_count(const unsigned statement_type);
 static unsigned process_message_display(Firebird::IMessageMetadata* msg, unsigned pad[]);
 static processing_state process_statement(const TEXT*);
 #ifdef WIN_NT
@@ -2703,7 +2702,7 @@ static processing_state bulk_insert_hack(const char* command)
 	ISQL_warning(fbStatus);
 
 	// Find out what kind of statement this is
-	const int statement_type = process_request_type();
+	const unsigned statement_type = global_Stmt->getType(fbStatus);
 	if (!statement_type)
 		return ps_ERR;
 
@@ -7933,7 +7932,7 @@ static void process_plan()
 // Get number of records affected for updates, deletions and insertions.
 // Return -1 if the statement is not one of those or if there's an error
 // retrieving the information from the server.
-static SINT64 process_record_count(const int statement_type)
+static SINT64 process_record_count(const unsigned statement_type)
 {
 	if (!global_Stmt)
 		return -1;
@@ -7985,34 +7984,6 @@ static SINT64 process_record_count(const int statement_type)
 		}
 	}
 	return -1;
-}
-
-
-// ***************************************
-// p r o c e s s _ r e q u e s t _ t y p e
-// ***************************************
-// Retrieve the statement type according to the DSQL layer.
-// A failure is indicated by returning zero.
-static int process_request_type()
-{
-	if (!global_Stmt)
-		return 0;
-	const UCHAR sqlda_info[] = { isc_info_sql_stmt_type };
-	UCHAR info_buffer[16];
-	global_Stmt->getInfo(fbStatus, sizeof(sqlda_info), sqlda_info, sizeof(info_buffer), info_buffer);
-	if (!ISQL_errmsg(fbStatus))
-	{
-		if (info_buffer[0] == isc_info_sql_stmt_type)
-		{
-		    const UCHAR* b = info_buffer;
-			const SSHORT len = gds__vax_integer(b + 1, 2);
-			return gds__vax_integer(b + 3, len);
-		}
-
-		//IUTILS_msg_get(UNKNOWN_STATEMENT_TYPE, errmsg);
-		STDERROUT("Cannot determine statement type");
-	}
-	return 0;
 }
 
 
@@ -8261,7 +8232,7 @@ static processing_state process_statement(const TEXT* str2)
 		setValues.StmtTimeout = 0;
 
 	// Find out what kind of statement this is
-	const int statement_type = process_request_type();
+	const unsigned statement_type = global_Stmt->getType(fbStatus);
 	if (!statement_type)
 		return ps_ERR;
 
