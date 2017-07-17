@@ -932,9 +932,6 @@ case $host in
                 ;;
 esac
 
-dnl AC_SEARCH_LIBS(clock_gettime, rt)
-dnl AC_CHECK_FUNCS(clock_gettime)
-
 dnl Checks for pthread functions
 AC_CHECK_FUNCS(pthread_mutexattr_setprotocol)
 AC_CHECK_FUNCS(pthread_mutexattr_setrobust_np)
