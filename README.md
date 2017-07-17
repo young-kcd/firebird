@@ -26,14 +26,14 @@ The source code is released under variants of the Mozilla Public Licence 1.1 (MP
 
 ## Development
 
-The source code can be found at:
+The source code can be found at:  
 https://github.com/FirebirdSQL/firebird
 
 Build instructions are here:
 http://www.firebirdsql.org/en/building-the-code/
 
-Bugs and feature requests should be submitted at:
+Bugs and feature requests should be submitted at:  
 http://tracker.firebirdsql.org/
 
-You may find more details at:
+You may find more details at:  
 http://www.firebirdsql.org/en/development/
