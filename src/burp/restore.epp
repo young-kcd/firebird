@@ -3077,6 +3077,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 
 			records--;
 		}
+
 		if (record != rec_data)
 			break;
 	} // while (true)
