@@ -1145,7 +1145,7 @@ struct Signature
 	Signature(MemoryPool& p, const Signature& o)
 		: name(p, o.name),
 		  parameters(p),
-		  flags(0),
+		  flags(o.flags),
 		  defined(o.defined)
 	{
 		for (Firebird::SortedObjectsArray<SignatureParameter>::const_iterator i = o.parameters.begin();

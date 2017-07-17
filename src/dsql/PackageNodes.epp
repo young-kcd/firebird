@@ -67,6 +67,9 @@ namespace
 			Signature function(FUN.RDB$FUNCTION_NAME);
 			function.defined = !FUN.RDB$FUNCTION_BLR.NULL || !FUN.RDB$ENTRYPOINT.NULL;
 
+			if (!FUN.RDB$DETERMINISTIC_FLAG.NULL && FUN.RDB$DETERMINISTIC_FLAG != 0)
+				function.flags |= Signature::FLAG_DETERMINISTIC;
+
 			if (details)
 			{
 				FOR (REQUEST_HANDLE requestHandle2 TRANSACTION_HANDLE transaction)
