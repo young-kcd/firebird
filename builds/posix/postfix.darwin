@@ -133,7 +133,7 @@ framework darwin_finish_framework:
 	cp -r ../gen/Release/firebird/intl/libfbintl.dylib \
 		$(FB_FW)/Versions/A/Resources/intl/fbintl
 	cp ../gen/Release/firebird/intl/fbintl.conf \
-		$(FB_FW)/Versions/A/Resources/fbintl.conf
+		$(FB_FW)/Versions/A/Resources/intl/fbintl.conf
 	chmod a+rx $(FB_FW)/Versions/A/Resources/intl/fbintl
 	cp -r ../gen/Release/firebird/plugins \
 		$(FB_FW)/Versions/A/Resources/plugins
