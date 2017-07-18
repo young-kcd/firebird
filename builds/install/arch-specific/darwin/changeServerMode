@@ -24,7 +24,7 @@
 #
 
 FB_FW=/Library/Frameworks/Firebird.framework
-DAEMONLOC=/Library/LaunchDaemons/
+DAEMONLOC=/Library/LaunchDaemons
 
 #------------------------------------------------------------------------
 # add a line in the (usually) /etc/services or /etc/inetd.conf file
@@ -70,7 +70,7 @@ MakeTemp() {
 }
 
 cat <<EOF
-Firebird 3.x can operate in three different server modes. By default it is installed in SuperServer mode with full SMP support. However it can also run in Classic mode.
+Firebird 3.x can operate in different server modes. By default it is installed in SuperServer mode with full SMP support. However it can also run in Classic mode.
 SuperServer offers better performance whilst Classic offers better availability.
 This script will allow you to switch between SuperServer and the Classic variant.
 
@@ -89,7 +89,7 @@ exit 1
 fi
 
 launchctl unload $DAEMONLOC/org.firebird.gds.plist
-fbconf=$FB_FW/Resources/English.lproj/var/firebird.conf
+fbconf=$FB_FW/Resources/firebird.conf
 replaceLineInFile $fbconf "ServerMode=Classic" "ServerMode"
 
 if [ -f "$FB_FW/Resources/SuperServer" ]; then
@@ -112,7 +112,7 @@ exit 1
 fi
 
 launchctl unload $DAEMONLOC/org.firebird.gds.plist
-fbconf=$FB_FW/Resources/English.lproj/var/firebird.conf
+fbconf=$FB_FW/Resources/firebird.conf
 replaceLineInFile $fbconf "ServerMode=Super" "ServerMode"
 
 if [ -f "$FB_FW/Resources/Classic" ]; then
