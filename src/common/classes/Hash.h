@@ -28,7 +28,7 @@
 #ifndef CLASSES_HASH_H
 #define CLASSES_HASH_H
 
-#include "../common/classes/vector.h"
+#include "../common/classes/array.h"
 
 namespace Firebird
 {
@@ -341,7 +341,31 @@ namespace Firebird
 		}
 	};
 
+
+	class HashContext
+	{
+	public:
+		typedef HalfStaticArray<UCHAR, 256> Buffer;
+
+	public:
+		virtual ~HashContext()
+		{
+		}
+
+	public:
+		virtual void update(const void* data, FB_SIZE_T length) = 0;
+		virtual void finish(Buffer& result) = 0;
+	};
+
+	class WeakHashContext FB_FINAL : public HashContext
+	{
+	public:
+		virtual void update(const void* data, FB_SIZE_T length);
+		virtual void finish(Buffer& result);
+
+	private:
+		SINT64 hashNumber = 0;
+	};
 } // namespace Firebird
 
 #endif // CLASSES_HASH_H
-

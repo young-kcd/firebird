@@ -30,6 +30,7 @@
 
 #include "firebird.h"
 #include "../common/classes/VaryStr.h"
+#include "../common/classes/Hash.h"
 #include "../jrd/SysFunction.h"
 #include "../jrd/DataTypeUtil.h"
 #include "../include/fb_blk.h"
@@ -2647,9 +2648,8 @@ dsc* evlHash(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
+	WeakHashContext hashContext;
 	impure->vlu_misc.vlu_int64 = 0;
-
-	UCHAR* address;
 
 	if (value->isBlob())
 	{
@@ -2659,37 +2659,25 @@ dsc* evlHash(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 
 		while (!(blob->blb_flags & BLB_eof))
 		{
-			address = buffer;
-			const ULONG length = blob->BLB_get_data(tdbb, address, sizeof(buffer), false);
-
-			for (const UCHAR* end = address + length; address < end; ++address)
-			{
-				impure->vlu_misc.vlu_int64 = (impure->vlu_misc.vlu_int64 << 4) + *address;
-
-				const SINT64 n = impure->vlu_misc.vlu_int64 & FB_CONST64(0xF000000000000000);
-				if (n)
-					impure->vlu_misc.vlu_int64 ^= n >> 56;
-				impure->vlu_misc.vlu_int64 &= ~n;
-			}
+			const ULONG length = blob->BLB_get_data(tdbb, buffer, sizeof(buffer), false);
+			hashContext.update(buffer, length);
 		}
 
 		blob->BLB_close(tdbb);
 	}
 	else
 	{
+		UCHAR* address;
 		MoveBuffer buffer;
 		const ULONG length = MOV_make_string2(tdbb, value, value->getTextType(), &address, buffer, false);
-
-		for (const UCHAR* end = address + length; address < end; ++address)
-		{
-			impure->vlu_misc.vlu_int64 = (impure->vlu_misc.vlu_int64 << 4) + *address;
-
-			const SINT64 n = impure->vlu_misc.vlu_int64 & FB_CONST64(0xF000000000000000);
-			if (n)
-				impure->vlu_misc.vlu_int64 ^= n >> 56;
-			impure->vlu_misc.vlu_int64 &= ~n;
-		}
+		hashContext.update(address, length);
 	}
+
+	HashContext::Buffer resultBuffer;
+	hashContext.finish(resultBuffer);
+
+	fb_assert(resultBuffer.getCount() == sizeof(SINT64));
+	memcpy(&impure->vlu_misc.vlu_int64, resultBuffer.begin(), sizeof(SINT64));
 
 	// make descriptor for return value
 	impure->vlu_desc.makeInt64(0, &impure->vlu_misc.vlu_int64);
