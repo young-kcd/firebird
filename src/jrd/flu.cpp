@@ -113,11 +113,11 @@ namespace {
 		{MOD_SUFFIX, "." SHRLIB_EXT, true},
 		{MOD_PREFIX, "lib", true},
 #endif
-/*
+
 #ifdef DARWIN
 		{MOD_SUFFIX, ".dylib", true},
 #endif
-*/
+
 	};
 
 	// UDF/BLOB filter verifier
