@@ -366,6 +366,53 @@ namespace Firebird
 	private:
 		SINT64 hashNumber = 0;
 	};
+
+	class LibTomCryptHashContext : public HashContext
+	{
+	public:
+		struct Descriptor;
+
+	private:
+		struct State;
+
+	protected:
+		LibTomCryptHashContext(MemoryPool& pool, const Descriptor* descriptor);
+
+	public:
+		virtual ~LibTomCryptHashContext();
+
+	public:
+		virtual void update(const void* data, FB_SIZE_T length);
+		virtual void finish(Buffer& result);
+
+	private:
+		const Descriptor* descriptor;
+		State* statePtr;
+	};
+
+	class Md5HashContext FB_FINAL : public LibTomCryptHashContext
+	{
+	public:
+		Md5HashContext(MemoryPool& pool);
+	};
+
+	class Sha1HashContext FB_FINAL : public LibTomCryptHashContext
+	{
+	public:
+		Sha1HashContext(MemoryPool& pool);
+	};
+
+	class Sha256HashContext FB_FINAL : public LibTomCryptHashContext
+	{
+	public:
+		Sha256HashContext(MemoryPool& pool);
+	};
+
+	class Sha512HashContext FB_FINAL : public LibTomCryptHashContext
+	{
+	public:
+		Sha512HashContext(MemoryPool& pool);
+	};
 } // namespace Firebird
 
 #endif // CLASSES_HASH_H
