@@ -3,6 +3,8 @@
 
 /*** Firebird customizations - begin ***/
 
+#define LTC_NO_ASM	// ASF: Defined to not use assembly
+
 #define LTC_NO_CIPHERS
 #define LTC_NO_HASHES
 #define LTC_NO_MODES
