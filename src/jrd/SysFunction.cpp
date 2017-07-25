@@ -53,7 +53,6 @@
 #include "../jrd/trace/TraceObjects.h"
 #include "../jrd/Collation.h"
 #include "../common/classes/FpeControl.h"
-#include <functional>
 #include <math.h>
 
 using namespace Firebird;
@@ -106,16 +105,37 @@ struct HashAlgorithmDescriptor
 {
 	const char* name;
 	USHORT length;
-	std::function<HashContext* (MemoryPool&)> create;
+	HashContext* (*create)(MemoryPool&);
 
 	static const HashAlgorithmDescriptor* find(const char* name);
 };
 
-static const HashAlgorithmDescriptor hashAlgorithmDescriptors[] = {
-	{"MD5", 16, [](MemoryPool& pool) { return FB_NEW_POOL(pool) Md5HashContext(pool); }},
-	{"SHA1", 20, [](MemoryPool& pool) { return FB_NEW_POOL(pool) Sha1HashContext(pool); }},
-	{"SHA256", 32, [](MemoryPool& pool) { return FB_NEW_POOL(pool) Sha256HashContext(pool); }},
-	{"SHA512", 64, [](MemoryPool& pool) { return FB_NEW_POOL(pool) Sha512HashContext(pool); }}
+template <typename T>
+struct HashAlgorithmDescriptorFactory
+{
+	static HashAlgorithmDescriptor* getInstance(const char* name, USHORT length)
+	{
+		desc.name = name;
+		desc.length = length;
+		desc.create = createContext;
+		return &desc;
+	}
+
+	static HashContext* createContext(MemoryPool& pool)
+	{
+		return FB_NEW_POOL(pool) T(pool);
+	}
+
+	static HashAlgorithmDescriptor desc;
+};
+
+template <typename T> HashAlgorithmDescriptor HashAlgorithmDescriptorFactory<T>::desc;
+
+static const HashAlgorithmDescriptor* hashAlgorithmDescriptors[] = {
+	HashAlgorithmDescriptorFactory<Md5HashContext>::getInstance("MD5", 16),
+	HashAlgorithmDescriptorFactory<Sha1HashContext>::getInstance("SHA1", 20),
+	HashAlgorithmDescriptorFactory<Sha256HashContext>::getInstance("SHA256", 32),
+	HashAlgorithmDescriptorFactory<Sha512HashContext>::getInstance("SHA512", 64)
 };
 
 const HashAlgorithmDescriptor* HashAlgorithmDescriptor::find(const char* name)
@@ -124,8 +144,8 @@ const HashAlgorithmDescriptor* HashAlgorithmDescriptor::find(const char* name)
 
 	for (unsigned i = 0; i < count; ++i)
 	{
-		if (strcmp(name, hashAlgorithmDescriptors[i].name) == 0)
-			return &hashAlgorithmDescriptors[i];
+		if (strcmp(name, hashAlgorithmDescriptors[i]->name) == 0)
+			return hashAlgorithmDescriptors[i];
 	}
 
 	status_exception::raise(Arg::Gds(isc_sysf_invalid_hash_algorithm) << name);
