@@ -17,6 +17,8 @@
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 #
+# Default build from 10.7 using Clang
+#
 # Build instructions
 # set CFLAGS='-I ICUDIR/icu/source/commoni -m32 -arch i386' (ucnv.h)
 # set LDFLAGS='-L ICUDIR/icu/source/lib -m32 -arch i386' (-licuuc)
