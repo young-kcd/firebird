@@ -93,7 +93,7 @@
     <ClCompile Include="..\..\..\src\common\ThreadData.cpp" />
     <ClCompile Include="..\..\..\src\common\ThreadStart.cpp" />
     <ClCompile Include="..\..\..\src\common\Tokens.cpp" />
-    <ClCompile Include="..\..\..\src\common\tomcrypt\crypt_argchk.c">
+    <ClCompile Include="..\..\..\src\common\tomcrypt\crypt_argchk.c" />
     <ClCompile Include="..\..\..\src\common\tomcrypt\md5.c" />
     <ClCompile Include="..\..\..\src\common\tomcrypt\sha1.c" />
     <ClCompile Include="..\..\..\src\common\tomcrypt\sha256.c" />
