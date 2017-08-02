@@ -184,7 +184,12 @@ public:
 	SLONG tra_oldest_active;			// record versions older than this can be
 										// gargage-collected by this tx
 	SLONG tra_att_oldest_active;		// oldest active transaction in the same attachment
-	jrd_tra*	tra_next;				// next transaction in database
+	jrd_tra* tra_next;					// next transaction in database
+
+	void unlinkFromAttachment();
+	void linkToAttachment(Attachment* attachment);
+	static void tra_abort(const char* reason);
+
 	jrd_tra*	tra_sibling;			// next transaction in group
 	MemoryPool* const tra_pool;			// pool for transaction
 	Firebird::MemoryStats	tra_memory_stats;

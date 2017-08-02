@@ -74,6 +74,7 @@
 #include "../common/StatusArg.h"
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceJrdHelpers.h"
+#include "../jrd/os/fbsyslog.h"
 
 
 const int DYN_MSG_FAC	= 8;
@@ -105,7 +106,6 @@ static tx_inv_page* fetch_inventory_page(thread_db*, WIN *, SLONG, USHORT);
 static const char* get_lockname_v3(const UCHAR lock);
 static SLONG inventory_page(thread_db*, SLONG);
 static SSHORT limbo_transaction(thread_db*, SLONG);
-static void link_transaction(thread_db*, jrd_tra*);
 static void restart_requests(thread_db*, jrd_tra*);
 static void start_sweeper(thread_db*);
 static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM);
@@ -1202,7 +1202,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 	trans->tra_number = number;
 	trans->tra_flags |= TRA_prepared | TRA_reconnected | TRA_write;
 
-	link_transaction(tdbb, trans);
+	trans->linkToAttachment(attachment);
 
 	return trans;
 }
@@ -1225,6 +1225,8 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, TraceTransac
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 	Attachment* attachment = tdbb->getAttachment();
+
+	fb_assert(dbb->locked());
 
 	if (!transaction->tra_outer)
 	{
@@ -1326,14 +1328,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, TraceTransac
 
 	// Unlink the transaction from the database block
 
-	for (jrd_tra** ptr = &attachment->att_transactions; *ptr; ptr = &(*ptr)->tra_next)
-	{
-		if (*ptr == transaction)
-		{
-			*ptr = transaction->tra_next;
-			break;
-		}
-	}
+	transaction->unlinkFromAttachment();
 
 	// Release transaction's under-modification-rpb list
 
@@ -2519,7 +2514,27 @@ static SSHORT limbo_transaction(thread_db* tdbb, SLONG id)
 }
 
 
-static void link_transaction(thread_db* tdbb, jrd_tra* transaction)
+void jrd_tra::unlinkFromAttachment()
+{
+#ifdef DEV_BUILD
+	if (!tra_attachment->att_database->locked())
+		tra_abort("DBB not locked in unlinkFromAttachment");
+#endif
+
+	for (jrd_tra** ptr = &tra_attachment->att_transactions; *ptr; ptr = &(*ptr)->tra_next)
+	{
+		if (*ptr == this)
+		{
+			*ptr = tra_next;
+			return;
+		}
+	}
+
+	tra_abort("transaction to unlink is missing in the attachment");
+}
+
+
+void jrd_tra::linkToAttachment(Attachment* attachment)
 {
 /**************************************
  *
@@ -2531,11 +2546,25 @@ static void link_transaction(thread_db* tdbb, jrd_tra* transaction)
  *	Link transaction block into database attachment.
  *
  **************************************/
-	SET_TDBB(tdbb);
+#ifdef DEV_BUILD
+	if (!attachment->att_database->locked())
+		tra_abort("DBB not locked in link");
+#endif
 
-	Attachment* attachment = tdbb->getAttachment();
-	transaction->tra_next = attachment->att_transactions;
-	attachment->att_transactions = transaction;
+	tra_next = attachment->att_transactions;
+	attachment->att_transactions = this;
+}
+
+
+void jrd_tra::tra_abort(const char* reason)
+{
+	string buff;
+	buff.printf("Failure working with transactions list: %s", reason);
+	Syslog::Record(Syslog::Error, buff.c_str());
+	gds__log(buff.c_str());
+#ifdef DEV_BUILD
+	abort();
+#endif
 }
 
 
@@ -3407,7 +3436,10 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	// Link the transaction to the attachment block before releasing
 	// header page for handling signals.
 
-	link_transaction(tdbb, trans);
+	trans->linkToAttachment(attachment);
+
+	try
+	{
 
 #ifndef SUPERSERVER_V2
 	if (!(dbb->dbb_flags & DBB_read_only))
@@ -3651,7 +3683,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 			jrd_tra::destroy(dbb, trans);
 			ERR_post(Arg::Gds(isc_lock_conflict));
 		}
-		
+
 		trans->tra_flags |= TRA_precommitted;
 	}
 
@@ -3659,6 +3691,13 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 		TRA_precommited(tdbb, 0, trans->tra_number);
 
 	return trans;
+
+	}	// try
+	catch (const Firebird::Exception&)
+	{
+		trans->unlinkFromAttachment();
+		throw;
+	}
 }
 
 
