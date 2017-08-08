@@ -424,7 +424,7 @@ TraNumber TipCache::findLimbo(TraNumber minNumber, TraNumber maxNumber)
 		blockNumber = minNumber / m_transactionsPerBlock;
 		transOffset = minNumber % m_transactionsPerBlock;
 		statusBlock = getTransactionStatusBlock(blockNumber);
-	} while(!statusBlock);
+	} while (!statusBlock);
 
 	for (TraNumber t = minNumber; ; ) 
 	{

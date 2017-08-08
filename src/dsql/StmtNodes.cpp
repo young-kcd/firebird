@@ -1402,7 +1402,8 @@ DmlNode* DeclareSubFuncNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 
 	{	// scope
 		CompilerScratch* const subCsb = node->subCsb =
-			FB_NEW_POOL(csb->csb_pool) CompilerScratch(csb->csb_pool);
+			FB_NEW_POOL(csb->csb_pool) CompilerScratch(csb->csb_pool, csb);
+
 		subCsb->csb_g_flags |= csb_subroutine | (csb->csb_g_flags & csb_get_dependencies);
 		subCsb->csb_blr_reader = csb->csb_blr_reader;
 
@@ -1520,6 +1521,97 @@ DeclareSubFuncNode* DeclareSubFuncNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_SUB_ROUTINE)
 		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) << "nested sub function");
 
+	DeclareSubFuncNode* prevDecl = dsqlScratch->getSubFunction(name);
+	bool implemetingForward = prevDecl && !prevDecl->dsqlBlock && dsqlBlock;
+
+	dsqlFunction = implemetingForward ? prevDecl->dsqlFunction : FB_NEW_POOL(pool) dsql_udf(pool);
+
+	dsqlFunction->udf_flags = UDF_subfunc;
+	dsqlFunction->udf_name.identifier = name;
+
+	fb_assert(dsqlReturns.getCount() == 1);
+	const TypeClause* returnType = dsqlReturns[0]->type;
+
+	dsqlFunction->udf_dtype = returnType->dtype;
+	dsqlFunction->udf_scale = returnType->scale;
+	dsqlFunction->udf_sub_type = returnType->subType;
+	dsqlFunction->udf_length = returnType->length;
+	dsqlFunction->udf_character_set_id = returnType->charSetId;
+
+	if (dsqlDeterministic)
+		dsqlSignature.flags |= Signature::FLAG_DETERMINISTIC;
+
+	SignatureParameter sigRet(pool);
+	sigRet.type = 1;
+	sigRet.number = -1;
+	sigRet.fromType(returnType);
+	dsqlSignature.parameters.add(sigRet);
+
+	Array<NestConst<ParameterClause> >& paramArray = dsqlParameters;
+	bool defaultFound = false;
+
+	for (NestConst<ParameterClause>* i = paramArray.begin(); i != paramArray.end(); ++i)
+	{
+		ParameterClause* param = *i;
+		const unsigned paramIndex = i - paramArray.begin();
+
+		SignatureParameter sigParam(pool);
+		sigParam.type = 0;
+		sigParam.number = (SSHORT) dsqlSignature.parameters.getCount();
+		sigParam.name = param->name;
+		sigParam.fromType(param->type);
+		dsqlSignature.parameters.add(sigParam);
+
+		if (!implemetingForward)
+		{
+			// ASF: dsqlFunction->udf_arguments is only checked for its count for now.
+			dsqlFunction->udf_arguments.add(dsc());
+		}
+
+		if (param->defaultClause)
+		{
+			if (prevDecl)
+			{
+				status_exception::raise(
+					Arg::Gds(isc_subfunc_defvaldecl) <<
+					name.c_str());
+			}
+
+			defaultFound = true;
+
+			if (!implemetingForward && dsqlFunction->udf_def_count == 0)
+				dsqlFunction->udf_def_count = paramArray.end() - i;
+		}
+		else
+		{
+			if (defaultFound)
+			{
+				// Parameter without default value after parameters with default.
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+						Arg::Gds(isc_bad_default_value) <<
+						Arg::Gds(isc_invalid_clause) << Arg::Str("defaults must be last"));
+			}
+
+			if (prevDecl && paramIndex < prevDecl->dsqlParameters.getCount())
+				param->defaultClause = prevDecl->dsqlParameters[paramIndex]->defaultClause;
+		}
+	}
+
+	if (!implemetingForward)
+		dsqlScratch->putSubFunction(this);
+	else if (dsqlSignature != prevDecl->dsqlSignature)
+	{
+		status_exception::raise(
+			Arg::Gds(isc_subfunc_signat) <<
+			name.c_str());
+	}
+
+	if (!dsqlBlock)	// forward decl
+		return this;
+
+	if (prevDecl)
+		dsqlScratch->putSubFunction(this, true);
+
 	DsqlCompiledStatement* statement = FB_NEW_POOL(pool) DsqlCompiledStatement(pool);
 
 	if (dsqlScratch->clientDialect > SQL_DIALECT_V5)
@@ -1535,58 +1627,23 @@ DeclareSubFuncNode* DeclareSubFuncNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	statement->setType(DsqlCompiledStatement::TYPE_SELECT);
 
 	blockScratch = FB_NEW_POOL(pool) DsqlCompilerScratch(pool,
-		dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), statement);
+		dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), statement, dsqlScratch);
 	blockScratch->clientDialect = dsqlScratch->clientDialect;
-	blockScratch->flags |= DsqlCompilerScratch::FLAG_FUNCTION | DsqlCompilerScratch::FLAG_SUB_ROUTINE;
-	blockScratch->flags |= dsqlScratch->flags & DsqlCompilerScratch::FLAG_DDL;
+	blockScratch->flags |=
+		DsqlCompilerScratch::FLAG_FUNCTION |
+		DsqlCompilerScratch::FLAG_SUB_ROUTINE |
+		(dsqlScratch->flags & DsqlCompilerScratch::FLAG_DDL);
 
 	dsqlBlock = dsqlBlock->dsqlPass(blockScratch);
-
-	dsqlFunction = FB_NEW_POOL(pool) dsql_udf(pool);
-	dsqlFunction->udf_flags = UDF_subfunc;
-	dsqlFunction->udf_name.identifier = name;
-
-	fb_assert(dsqlBlock->returns.getCount() == 1);
-	const TypeClause* returnType = dsqlBlock->returns[0]->type;
-	dsqlFunction->udf_dtype = returnType->dtype;
-	dsqlFunction->udf_scale = returnType->scale;
-	dsqlFunction->udf_sub_type = returnType->subType;
-	dsqlFunction->udf_length = returnType->length;
-	dsqlFunction->udf_character_set_id = returnType->charSetId;
-
-	const Array<NestConst<ParameterClause> >& paramArray = dsqlBlock->parameters;
-	bool defaultFound = false;
-
-	for (const NestConst<ParameterClause>* i = paramArray.begin(); i != paramArray.end(); ++i)
-	{
-		// ASF: dsqlFunction->udf_arguments is only checked for its count for now.
-		dsqlFunction->udf_arguments.add(dsc());
-
-		const ParameterClause* param = *i;
-
-		if (param->defaultClause)
-		{
-			defaultFound = true;
-
-			if (dsqlFunction->udf_def_count == 0)
-				dsqlFunction->udf_def_count = paramArray.end() - i;
-		}
-		else if (defaultFound)
-		{
-			// Parameter without default value after parameters with default.
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
-					  Arg::Gds(isc_bad_default_value) <<
-					  Arg::Gds(isc_invalid_clause) << Arg::Str("defaults must be last"));
-		}
-	}
-
-	dsqlScratch->putSubFunction(dsqlFunction);
 
 	return this;
 }
 
 void DeclareSubFuncNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
+	if (!dsqlBlock)	// forward decl
+		return;
+
 	GEN_request(blockScratch, dsqlBlock);
 
 	dsqlScratch->appendUChar(blr_subfunc_decl);
@@ -1677,7 +1734,8 @@ DmlNode* DeclareSubProcNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 
 	{	// scope
 		CompilerScratch* const subCsb = node->subCsb =
-			FB_NEW_POOL(csb->csb_pool) CompilerScratch(csb->csb_pool);
+			FB_NEW_POOL(csb->csb_pool) CompilerScratch(csb->csb_pool, csb);
+
 		subCsb->csb_g_flags |= csb_subroutine | (csb->csb_g_flags & csb_get_dependencies);
 		subCsb->csb_blr_reader = csb->csb_blr_reader;
 
@@ -1803,6 +1861,100 @@ DeclareSubProcNode* DeclareSubProcNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_SUB_ROUTINE)
 		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) << "nested sub procedure");
 
+	DeclareSubProcNode* prevDecl = dsqlScratch->getSubProcedure(name);
+	bool implemetingForward = prevDecl && !prevDecl->dsqlBlock && dsqlBlock;
+
+	dsqlProcedure = implemetingForward ? prevDecl->dsqlProcedure : FB_NEW_POOL(pool) dsql_prc(pool);
+
+	dsqlProcedure->prc_flags = PRC_subproc;
+	dsqlProcedure->prc_name.identifier = name;
+	dsqlProcedure->prc_in_count = USHORT(dsqlParameters.getCount());
+	dsqlProcedure->prc_out_count = USHORT(dsqlReturns.getCount());
+
+	if (dsqlParameters.hasData())
+	{
+		Array<NestConst<ParameterClause> >& paramArray = dsqlParameters;
+		bool defaultFound = false;
+
+		dsqlProcedure->prc_inputs = paramArray.front()->type;
+
+		for (NestConst<ParameterClause>* i = paramArray.begin(); i != paramArray.end(); ++i)
+		{
+			ParameterClause* param = *i;
+			const unsigned paramIndex = i - paramArray.begin();
+
+			SignatureParameter sigParam(pool);
+			sigParam.type = 0;	// input
+			sigParam.number = (SSHORT) dsqlSignature.parameters.getCount();
+			sigParam.name = param->name;
+			sigParam.fromType(param->type);
+			dsqlSignature.parameters.add(sigParam);
+
+			if (param->defaultClause)
+			{
+				if (prevDecl)
+				{
+					status_exception::raise(
+						Arg::Gds(isc_subproc_defvaldecl) <<
+						name.c_str());
+				}
+
+				defaultFound = true;
+
+				if (!implemetingForward && dsqlProcedure->prc_def_count == 0)
+					dsqlProcedure->prc_def_count = paramArray.end() - i;
+			}
+			else
+			{
+				if (defaultFound)
+				{
+					// Parameter without default value after parameters with default.
+					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+							Arg::Gds(isc_bad_default_value) <<
+							Arg::Gds(isc_invalid_clause) << Arg::Str("defaults must be last"));
+				}
+
+				if (prevDecl && paramIndex < prevDecl->dsqlParameters.getCount())
+					param->defaultClause = prevDecl->dsqlParameters[paramIndex]->defaultClause;
+			}
+		}
+	}
+
+	if (dsqlReturns.hasData())
+	{
+		Array<NestConst<ParameterClause> >& paramArray = dsqlReturns;
+
+		dsqlProcedure->prc_outputs = paramArray.front()->type;
+
+		for (NestConst<ParameterClause>* i = paramArray.begin(); i != paramArray.end(); ++i)
+		{
+			ParameterClause* param = *i;
+			const unsigned paramIndex = i - paramArray.begin();
+
+			SignatureParameter sigParam(pool);
+			sigParam.type = 1;	// output
+			sigParam.number = (SSHORT) dsqlSignature.parameters.getCount();
+			sigParam.name = param->name;
+			sigParam.fromType(param->type);
+			dsqlSignature.parameters.add(sigParam);
+		}
+	}
+
+	if (!implemetingForward)
+		dsqlScratch->putSubProcedure(this);
+	else if (dsqlSignature != prevDecl->dsqlSignature)
+	{
+		status_exception::raise(
+			Arg::Gds(isc_subproc_signat) <<
+			name.c_str());
+	}
+
+	if (!dsqlBlock)	// forward decl
+		return this;
+
+	if (prevDecl)
+		dsqlScratch->putSubProcedure(this, true);
+
 	DsqlCompiledStatement* statement = FB_NEW_POOL(pool) DsqlCompiledStatement(pool);
 
 	if (dsqlScratch->clientDialect > SQL_DIALECT_V5)
@@ -1818,54 +1970,21 @@ DeclareSubProcNode* DeclareSubProcNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	statement->setType(DsqlCompiledStatement::TYPE_SELECT);
 
 	blockScratch = FB_NEW_POOL(pool) DsqlCompilerScratch(pool,
-		dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), statement);
+		dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), statement, dsqlScratch);
 	blockScratch->clientDialect = dsqlScratch->clientDialect;
 	blockScratch->flags |= DsqlCompilerScratch::FLAG_PROCEDURE | DsqlCompilerScratch::FLAG_SUB_ROUTINE;
 	blockScratch->flags |= dsqlScratch->flags & DsqlCompilerScratch::FLAG_DDL;
 
 	dsqlBlock = dsqlBlock->dsqlPass(blockScratch);
 
-	dsqlProcedure = FB_NEW_POOL(pool) dsql_prc(pool);
-	dsqlProcedure->prc_flags = PRC_subproc;
-	dsqlProcedure->prc_name.identifier = name;
-	dsqlProcedure->prc_in_count = USHORT(dsqlBlock->parameters.getCount());
-	dsqlProcedure->prc_out_count = USHORT(dsqlBlock->returns.getCount());
-
-	if (dsqlBlock->parameters.hasData())
-	{
-		Array<NestConst<ParameterClause> >& paramArray = dsqlBlock->parameters;
-
-		dsqlProcedure->prc_inputs = paramArray.front()->type;
-
-		for (const NestConst<ParameterClause>* i = paramArray.begin(); i != paramArray.end(); ++i)
-		{
-			const ParameterClause* param = *i;
-
-			if (param->defaultClause)
-			{
-				if (dsqlProcedure->prc_def_count == 0)
-					dsqlProcedure->prc_def_count = paramArray.end() - i;
-			}
-			else if (dsqlProcedure->prc_def_count != 0)
-			{
-				// Parameter without default value after parameters with default.
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
-						  Arg::Gds(isc_bad_default_value) <<
-						  Arg::Gds(isc_invalid_clause) << Arg::Str("defaults must be last"));
-			}
-		}
-	}
-
-	if (dsqlBlock->returns.hasData())
-		dsqlProcedure->prc_outputs = dsqlBlock->returns.front()->type;
-
-	dsqlScratch->putSubProcedure(dsqlProcedure);
-
 	return this;
 }
 
 void DeclareSubProcNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
+	if (!dsqlBlock)	// forward decl
+		return;
+
 	GEN_request(blockScratch, dsqlBlock);
 
 	dsqlScratch->appendUChar(blr_subproc_decl);
@@ -2636,8 +2755,12 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 		if (blrOp == blr_exec_subproc)
 		{
 			DeclareSubProcNode* declareNode;
-			if (csb->subProcedures.get(name.identifier, declareNode))
-				procedure = declareNode->routine;
+
+			for (auto curCsb = csb; curCsb && !procedure; curCsb = curCsb->mainCsb)
+			{
+				if (curCsb->subProcedures.get(name.identifier, declareNode))
+					procedure = declareNode->routine;
+			}
 		}
 		else
 			procedure = MET_lookup_procedure(tdbb, name, false);
@@ -2669,7 +2792,10 @@ ExecProcedureNode* ExecProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	dsql_prc* procedure = NULL;
 
 	if (dsqlName.package.isEmpty())
-		procedure = dsqlScratch->getSubProcedure(dsqlName.identifier);
+	{
+		DeclareSubProcNode* subProcedure = dsqlScratch->getSubProcedure(dsqlName.identifier);
+		procedure = subProcedure ? subProcedure->dsqlProcedure : NULL;
+	}
 
 	if (!procedure)
 		procedure = METD_get_procedure(dsqlScratch->getTransaction(), dsqlScratch, dsqlName);
@@ -2683,10 +2809,7 @@ ExecProcedureNode* ExecProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	if (!dsqlScratch->isPsql())
-	{
-		dsqlScratch->procedure = procedure;
 		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_EXEC_PROCEDURE);
-	}
 
 	ExecProcedureNode* node = FB_NEW_POOL(getPool()) ExecProcedureNode(getPool(), dsqlName);
 	node->dsqlProcedure = procedure;
@@ -2740,7 +2863,7 @@ ExecProcedureNode* ExecProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 					  Arg::Gds(isc_random) << Arg::Str("RETURNING_VALUES"));
 		}
 
-		node->outputSources = explodeOutputs(dsqlScratch, dsqlScratch->procedure);
+		node->outputSources = explodeOutputs(dsqlScratch, procedure);
 	}
 
 	if (node->outputSources)

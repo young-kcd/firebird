@@ -6829,9 +6829,8 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 
 	CCH_shutdown(tdbb);
 
-	if (dbb->dbb_tip_cache) {
+	if (dbb->dbb_tip_cache)
 		dbb->dbb_tip_cache->finalizeTpc(tdbb);
-	}
 
 	if (dbb->dbb_backup_manager)
 		dbb->dbb_backup_manager->shutdown(tdbb);

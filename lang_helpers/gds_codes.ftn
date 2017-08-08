@@ -1698,6 +1698,24 @@ C --
       PARAMETER (GDS__decfloat_overflow                = 335545142)
       INTEGER*4 GDS__decfloat_underflow              
       PARAMETER (GDS__decfloat_underflow               = 335545143)
+      INTEGER*4 GDS__subfunc_notdef                  
+      PARAMETER (GDS__subfunc_notdef                   = 335545144)
+      INTEGER*4 GDS__subproc_notdef                  
+      PARAMETER (GDS__subproc_notdef                   = 335545145)
+      INTEGER*4 GDS__subfunc_signat                  
+      PARAMETER (GDS__subfunc_signat                   = 335545146)
+      INTEGER*4 GDS__subproc_signat                  
+      PARAMETER (GDS__subproc_signat                   = 335545147)
+      INTEGER*4 GDS__subfunc_defvaldecl              
+      PARAMETER (GDS__subfunc_defvaldecl               = 335545148)
+      INTEGER*4 GDS__subproc_defvaldecl              
+      PARAMETER (GDS__subproc_defvaldecl               = 335545149)
+      INTEGER*4 GDS__subfunc_not_impl                
+      PARAMETER (GDS__subfunc_not_impl                 = 335545150)
+      INTEGER*4 GDS__subproc_not_impl                
+      PARAMETER (GDS__subproc_not_impl                 = 335545151)
+      INTEGER*4 GDS__sysf_invalid_hash_algorithm     
+      PARAMETER (GDS__sysf_invalid_hash_algorithm      = 335545152)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

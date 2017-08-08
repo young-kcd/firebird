@@ -3869,7 +3869,6 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 					gc->sweptRelation(transaction->tra_oldest_active, relation->rel_id);
 				}
 
-
 				while (VIO_next_record(tdbb, &rpb, transaction, 0, false))
 				{
 					CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
@@ -5551,11 +5550,7 @@ static int prepare_update(	thread_db*		tdbb,
 
 		int state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 
-		// Reset the garbage collect active flag if the transaction state is
-		// in a terminal state. If committed it must have been a precommitted
-		// transaction that was backing out a dead record version and the
-		// system crashed. Clear the flag and set the state to tra_dead to
-		// reattempt the backout.
+		// Reset (if appropriate) the garbage collect active flag to reattempt the backout
 
 		if (rpb->rpb_flags & rpb_gc_active)
 		{
