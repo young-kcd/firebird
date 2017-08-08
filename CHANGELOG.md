@@ -62,6 +62,9 @@
   Reference(s): [doc/sql.extensions/README.subroutines.txt](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.subroutines.txt)  
   Contributor(s): Adriano dos Santos Fernandes
 
+* [CORE-5238](http://tracker.firebirdsql.org/browse/CORE-5238): Replace xinetd support with the native listener
+  Contributor(s): Alex Peshkoff
+
 * [CORE-5119](http://tracker.firebirdsql.org/browse/CORE-5119): Support autocommit mode in SET TRANSACTION statement  
   Contributor(s): Dmitry Yemanov
 
