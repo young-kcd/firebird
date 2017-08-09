@@ -666,8 +666,7 @@ begin
   { Create a page to grab the new SYSDBA password }
   AdminUserPage := CreateInputQueryPage(wpSelectTasks,
       'Create a password for the Database System Administrator'
-    , 'Or click through to use the default password of ''masterkey''. ' +  #13#10
-     ' *** Note - in Firebird 3 masterkey and masterke are different passwords. ***'
+    , 'Or click through to use the default password of ''masterkey''. '
     , ''
     );
   AdminUserPage.Add('SYSDBA Name:', False);
