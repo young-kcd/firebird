@@ -1845,11 +1845,8 @@ void TRA_sweep(thread_db* tdbb)
 
 		int oldest_state = 0;
 		const TraNumber oldest_limbo =
-			TPC_find_limbo(tdbb, transaction->tra_oldest, transaction->tra_top - 1);
-/*
 			TPC_find_states(tdbb, transaction->tra_oldest, transaction->tra_top - 1,
 							1 << tra_limbo, oldest_state);
-*/
 
 		const TraNumber active = oldest_limbo ? oldest_limbo : transaction->tra_top;
 
@@ -3304,7 +3301,15 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 
 		for (; active < number; active++)
 		{
-			oldest_state = TPC_cache_state(tdbb, active);
+			//oldest_state = TPC_cache_state(tdbb, active);
+			const ULONG mask = (1 << tra_active);
+			active = TPC_find_states(tdbb, active, number, mask, oldest_state);
+			if (!active)
+			{
+				active = number;
+				break;
+			}
+			fb_assert(oldest_state == tra_active);
 
 			if (oldest_state == tra_active)
 			{
@@ -3376,7 +3381,16 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 
 		for (oldest = trans->tra_oldest; oldest < number; oldest++)
 		{
-			oldest_state = TPC_cache_state(tdbb, oldest);
+			//oldest_state = TPC_cache_state(tdbb, oldest);
+			const ULONG mask = ~((1 << tra_committed) | (1 << tra_precommitted));
+			oldest = TPC_find_states(tdbb, trans->tra_oldest, number, mask, oldest_state);
+			if (!oldest)
+			{
+				oldest = number;
+				break;
+			}
+			fb_assert(oldest_state != tra_committed && oldest_state != tra_precommitted);
+
 			if (oldest_state != tra_committed && oldest_state != tra_precommitted)
 				break;
 		}

@@ -407,7 +407,7 @@ TipCache::TransactionStatusBlock* TipCache::getTransactionStatusBlock(int blockN
 	return block;
 }
 
-TraNumber TipCache::findLimbo(TraNumber minNumber, TraNumber maxNumber) 
+TraNumber TipCache::findStates(TraNumber minNumber, TraNumber maxNumber, ULONG mask, int& state)
 {
 	// Can only be called on initialized TipCache
 	fb_assert(m_tpcHeader);
@@ -431,10 +431,34 @@ TraNumber TipCache::findLimbo(TraNumber minNumber, TraNumber maxNumber)
 		// Barrier is not needed here. Slightly out-dated information shall be ok here.
 		// Such transaction shall already be considered active by our caller.
 		// TODO: check if this assumption is indeed correct.
-		if (((std::atomic<CommitNumber>*)(statusBlock->data + transOffset))->load(std::memory_order_relaxed) == CN_LIMBO)
+		
+		CommitNumber cn = ((std::atomic<CommitNumber>*)(statusBlock->data + transOffset))->load(std::memory_order_relaxed);
+		switch (cn)
+		{
+		case CN_ACTIVE:
+			state = tra_active;
+			break;
+
+		case CN_LIMBO:
+			state = tra_limbo;
+			break;
+
+		case CN_DEAD:
+			state = tra_dead;
+			break;
+
+		case CN_MAX_NUMBER:	
+			fb_assert(false);	// fall thru
+
+		default:
+			state = tra_committed;
+			break;
+		}
+
+		if (((1 << state) & mask) != 0)
 			return t;
 
-		if (++t > maxNumber)
+		if (++t >= maxNumber)
 			break;
 
 		if (++transOffset == m_transactionsPerBlock)

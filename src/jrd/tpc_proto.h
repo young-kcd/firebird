@@ -68,9 +68,10 @@ public:
 	// Get the current state of a transaction in the cache
 	CommitNumber cacheState(TraNumber number);
 
-	// Return the oldest cached limbo transaction in the given boundaries.
+	// Return the oldest transaction in the given state.
+	// Lookup in the [min_number, max_number) bounds.
 	// If not found, return zero.
-	TraNumber findLimbo(TraNumber minNumber, TraNumber maxNumber);
+	TraNumber findStates(TraNumber minNumber, TraNumber maxNumber, ULONG mask, int& state);
 
 	// Set state for a transaction in cache. If new state is tra_committed and
 	// commit# is not assigned yet, then assign it now.
@@ -289,16 +290,17 @@ inline int TPC_cache_state(thread_db* tdbb, TraNumber number)
 	CommitNumber stateCn = tdbb->getDatabase()->dbb_tip_cache->cacheState(number);
 	switch(stateCn) 
 	{
-		case CN_ACTIVE:	return tra_active;
-		case CN_LIMBO:	return tra_limbo;
-		case CN_DEAD:	return tra_dead;
-		default:		return tra_committed;
+	case CN_ACTIVE:	return tra_active;
+	case CN_LIMBO:	return tra_limbo;
+	case CN_DEAD:	return tra_dead;
+	default:		return tra_committed;
 	}
 }
 
-inline TraNumber TPC_find_limbo(thread_db* tdbb, TraNumber minNumber, TraNumber maxNumber)
+inline TraNumber TPC_find_states(thread_db* tdbb, TraNumber minNumber, TraNumber maxNumber,
+	ULONG mask, int& state)
 {
-	return tdbb->getDatabase()->dbb_tip_cache->findLimbo(minNumber, maxNumber);
+	return tdbb->getDatabase()->dbb_tip_cache->findStates(minNumber, maxNumber, mask, state);
 }
 
 inline void TPC_set_state(thread_db* tdbb, TraNumber number, SSHORT state)
