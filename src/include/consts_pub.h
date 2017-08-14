@@ -148,6 +148,7 @@
  <address-element> ::=
 	isc_dpb_addr_protocol <byte-clumplet-length> <protocol-string> |
 	isc_dpb_addr_endpoint <byte-clumplet-length> <remote-endpoint-string>
+	isc_dpb_addr_flags <byte-clumplet-length> <link-flags_int>
 
  <protocol-string> ::=
 	"TCPv4" |
@@ -161,12 +162,20 @@
 	<IPv6-address> | // such as "2001:0:13FF:09FF::1"
 	<xnet-process-id> | // such as "17864"
 	...
+
+ <link-flags_int> ::=
+ 	bitmask of possible flags of a link
 */
 
 #define isc_dpb_address 1
 
 #define isc_dpb_addr_protocol 1
 #define isc_dpb_addr_endpoint 2
+#define isc_dpb_addr_flags 3
+
+/* possible addr flags */
+#define isc_dpb_addr_flag_compress	0x01
+#define isc_dpb_addr_flag_crypt		0x02
 
 /*********************************/
 /* isc_dpb_verify specific flags */

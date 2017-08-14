@@ -149,6 +149,8 @@ enum db_info_types
 	fb_info_ses_idle_timeout_att,
 	fb_info_ses_idle_timeout_run,
 
+	fb_info_conn_flags,
+
 	isc_info_db_last_value   /* Leave this LAST! */
 };
 
