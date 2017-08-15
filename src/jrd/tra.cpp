@@ -1457,18 +1457,18 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, TraNumber number, int 
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
+	// If it is a ReadOnly DB, set the new state in the TIP cache and return
+	if (dbb->readOnly() && dbb->dbb_tip_cache)
+	{
+		TPC_set_state(tdbb, number, state);
+		return;
+	}
+
 	// If we're terminating ourselves and we've been precommitted then just return.
 
 	if (transaction && transaction->tra_number == number &&
 		(transaction->tra_flags & TRA_precommitted))
 	{
-		return;
-	}
-
-	// If it is a ReadOnly DB, set the new state in the TIP cache and return
-	if (dbb->readOnly() && dbb->dbb_tip_cache)
-	{
-		TPC_set_state(tdbb, number, state);
 		return;
 	}
 
@@ -3395,7 +3395,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 				break;
 		}
 
-		if (oldest >= number && dbb->dbb_flags & DBB_read_only)
+		if (oldest > number && dbb->dbb_flags & DBB_read_only)
 			oldest = number;
 
 		if (--oldest > dbb->dbb_oldest_transaction)
