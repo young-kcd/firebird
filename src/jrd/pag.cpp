@@ -1713,6 +1713,13 @@ void PAG_set_db_readonly(thread_db* tdbb, bool flag)
 		header->hdr_flags &= ~hdr_read_only;
 		dbb->dbb_flags &= ~DBB_read_only;
 
+		// Take into account current attachment ID, else next attachment 
+		// (cache writer, for examle) will get the same att ID and wait 
+		// for att lock indefinitely.
+		Attachment* att = tdbb->getAttachment();
+		if (att->att_attachment_id)
+			Ods::writeAttID(header, att->att_attachment_id);
+
 		// This is necessary as dbb's Next could be less than OAT.
 		// And this is safe as we currently in exclusive attachment and
 		// all executed transactions was read-only.
