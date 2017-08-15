@@ -247,7 +247,7 @@ namespace Jrd {
 				while (!PIO_read(tdbb, file, &bdb, page, status))
 		 		{
 					if (!CCH_rollover_to_shadow(tdbb, dbb, file, false))
- 						ERR_punt();;
+						ERR_punt();
 
 					if (file != pageSpace->file)
 						file = pageSpace->file;

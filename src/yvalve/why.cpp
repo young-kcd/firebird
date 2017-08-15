@@ -4402,7 +4402,7 @@ void IscStatement::openCursor(CheckStatusWrapper* status, FB_API_HANDLE* traHand
 	checkCursorClosed();
 
 	// Transaction is not optional for statement returning result set
-	RefPtr<YTransaction> transaction = translateHandle(transactions, traHandle);;
+	RefPtr<YTransaction> transaction = translateHandle(transactions, traHandle);
 
 	statement->openCursor(status, transaction, inMetadata, buffer, outMetadata, 0);
 
