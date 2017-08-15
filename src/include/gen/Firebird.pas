@@ -3155,6 +3155,9 @@ const
 	isc_dpb_address = byte(1);
 	isc_dpb_addr_protocol = byte(1);
 	isc_dpb_addr_endpoint = byte(2);
+	isc_dpb_addr_flags = byte(3);
+	isc_dpb_addr_flag_conn_compressed = $01;
+	isc_dpb_addr_flag_conn_encrypted = $02;
 	isc_dpb_pages = byte(1);
 	isc_dpb_records = byte(2);
 	isc_dpb_indices = byte(4);
