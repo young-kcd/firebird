@@ -6117,7 +6117,6 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 						}
 						address.moveNext();
 					}
-					dpb_remote_flags |= Attachment::DPB_REMOTE_PRESENT;
 					break;
 				}
 			}

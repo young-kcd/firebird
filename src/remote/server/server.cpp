@@ -2191,10 +2191,10 @@ static void addClumplets(ClumpletWriter* dpb_buffer,
 		int flags = 0;
 #ifdef WIRE_COMPRESS_SUPPORT
 		if (port->port_compressed)
-			flags |= isc_dpb_addr_flag_compress;
+			flags |= isc_dpb_addr_flag_conn_compressed;
 #endif
 		if (port->port_crypt_plugin)
-			flags |= isc_dpb_addr_flag_crypt;
+			flags |= isc_dpb_addr_flag_conn_encrypted;
 
 		address_record.insertInt(isc_dpb_addr_flags, flags);
 	}

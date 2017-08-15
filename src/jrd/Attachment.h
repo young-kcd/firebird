@@ -316,7 +316,7 @@ public:
 	Firebird::string att_network_protocol;	// Network protocol used by client for connection
 	Firebird::string att_remote_address;	// Protocol-specific address of remote client
 	SLONG att_remote_pid;					// Process id of remote client
-	ULONG att_remote_flags;					// Connection flags
+	ULONG att_remote_flags;					// Flags specific for server/client link
 	Firebird::PathName att_remote_process;	// Process name of remote client
 	Firebird::string att_client_version;	// Version of the client library
 	Firebird::string att_remote_protocol;	// Details about the remote protocol
@@ -335,7 +335,6 @@ public:
 	ULONG att_ext_call_depth;				// external connection call depth, 0 for user attachment
 	TraceManager* att_trace_manager;		// Trace API manager
 
-	static const ULONG DPB_REMOTE_PRESENT = 0x80000000;		// Special flag in att_remote_flags
 	enum UtilType { UTIL_NONE, UTIL_GBAK, UTIL_GFIX, UTIL_GSTAT };
 
 	UtilType att_utility;

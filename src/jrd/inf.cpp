@@ -770,8 +770,7 @@ void INF_database_info(thread_db* tdbb,
 			break;
 
 		case fb_info_conn_flags:
-			length = INF_convert(tdbb->getAttachment()->att_remote_flags &
-				~Attachment::DPB_REMOTE_PRESENT, buffer);
+			length = INF_convert(tdbb->getAttachment()->att_remote_flags, buffer);
 			break;
 
 		case fb_info_statement_timeout_db:

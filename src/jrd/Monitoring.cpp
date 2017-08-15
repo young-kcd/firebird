@@ -899,12 +899,12 @@ void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Atta
 	// remote process name
 	record.storeString(f_mon_att_remote_process, attachment->att_remote_process);
 	// remote connection flags
-	if (attachment->att_remote_flags & Attachment::DPB_REMOTE_PRESENT)
+	if (attachment->att_remote_address.hasData())
 	{
 		record.storeBoolean(f_mon_att_conn_compressed,
-			attachment->att_remote_flags & isc_dpb_addr_flag_compress);
+			attachment->att_remote_flags & isc_dpb_addr_flag_conn_compressed);
 		record.storeBoolean(f_mon_att_conn_encrypted,
-			attachment->att_remote_flags & isc_dpb_addr_flag_crypt);
+			attachment->att_remote_flags & isc_dpb_addr_flag_conn_encrypted);
 	}
 	// charset
 	record.storeInteger(f_mon_att_charset_id, attachment->att_charset);
