@@ -2103,7 +2103,6 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 	if (!going.hasData())
 	{
 		clearRecordStack(staying);
-		tdbb->bumpRelStats(RuntimeStatistics::RECORD_IMGC_FAIL, rpb->rpb_relation->rel_id);
 		return;
 	}
 
@@ -2190,7 +2189,6 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 		delete_version_chain(tdbb, &staying_chain_rpb, true);
 		clearRecordStack(staying);
 		clearRecordStack(going);
-		tdbb->bumpRelStats(RuntimeStatistics::RECORD_IMGC_FAIL, rpb->rpb_relation->rel_id);
 		return;
 	}
 
@@ -2202,7 +2200,6 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 		delete_version_chain(tdbb, &staying_chain_rpb, true);
 		clearRecordStack(staying);
 		clearRecordStack(going);
-		tdbb->bumpRelStats(RuntimeStatistics::RECORD_IMGC_FAIL, rpb->rpb_relation->rel_id);
 		return;
 	}
 
