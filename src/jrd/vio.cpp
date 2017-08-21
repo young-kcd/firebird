@@ -158,6 +158,7 @@ const int PREPARE_OK		= 0;
 const int PREPARE_CONFLICT	= 1;
 const int PREPARE_DELETE	= 2;
 const int PREPARE_LOCKERR	= 3;
+const int PREPARE_DEADLOCK  = 4;
 
 static int prepare_update(thread_db*, jrd_tra*, TraNumber commit_tid_read, record_param*,
 	record_param*, record_param*, PageStack&, bool);
@@ -262,12 +263,12 @@ inline void check_gbak_cheating_delete(thread_db* tdbb, const jrd_rel* relation)
 	}
 }
 
-inline int wait(thread_db* tdbb, jrd_tra* transaction, const record_param* rpb)
+inline int wait(thread_db* tdbb, jrd_tra* transaction, const record_param* rpb, bool* deadlock_flag = NULL)
 {
 	if (transaction->getLockWait())
 		tdbb->bumpRelStats(RuntimeStatistics::RECORD_WAITS, rpb->rpb_relation->rel_id);
 
-	return TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, jrd_tra::tra_wait);
+	return TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, jrd_tra::tra_wait, deadlock_flag);
 }
 
 inline bool checkGCActive(thread_db* tdbb, record_param* rpb, int& state)
@@ -840,7 +841,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 				// of a dead record version.
 
 				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
-				state = wait(tdbb, transaction, rpb);
+				bool deadlock_flag;
+				state = wait(tdbb, transaction, rpb, &deadlock_flag);
 
 				if (state == tra_precommitted)
 					state = check_precommitted(transaction, rpb);
@@ -849,9 +851,13 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 				{
 					tdbb->bumpRelStats(RuntimeStatistics::RECORD_CONFLICTS, relation->rel_id);
 
-					ERR_post(Arg::Gds(isc_deadlock) <<
-							 Arg::Gds(isc_read_conflict) <<
-							 Arg::Gds(isc_concurrent_transaction) << Arg::Num(rpb->rpb_transaction_nr));
+					if (deadlock_flag)
+							ERR_post(Arg::Gds(isc_deadlock) <<
+									 Arg::Gds(isc_read_conflict) <<
+									 Arg::Gds(isc_concurrent_transaction) << Arg::Num(rpb->rpb_transaction_nr));
+					else
+							ERR_post(Arg::Gds(isc_read_conflict) <<
+									 Arg::Gds(isc_concurrent_transaction) << Arg::Num(rpb->rpb_transaction_nr));
 				}
 
 				// refetch the record and try again.  The active transaction
@@ -1872,11 +1878,16 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	{
 		// Update stub didn't find one page -- do a long, hard update
 		PageStack stack;
-		if (prepare_update(tdbb, transaction, tid_fetch, rpb, &temp, 0, stack, false))
+		int error_code;
+		if ((error_code = prepare_update(tdbb, transaction, tid_fetch, rpb, &temp, 0, stack, false)))
 		{
-			ERR_post(Arg::Gds(isc_deadlock) <<
-					 Arg::Gds(isc_update_conflict) <<
-					 Arg::Gds(isc_concurrent_transaction) << Arg::Num(rpb->rpb_transaction_nr));
+			if (error_code == PREPARE_DEADLOCK)
+				ERR_post(Arg::Gds(isc_deadlock) <<
+						 Arg::Gds(isc_update_conflict) <<
+						 Arg::Gds(isc_concurrent_transaction) << Arg::Num(rpb->rpb_transaction_nr));
+			else
+				ERR_post(Arg::Gds(isc_update_conflict) <<
+						 Arg::Gds(isc_concurrent_transaction) << Arg::Num(rpb->rpb_transaction_nr));
 		}
 
 		// Old record was restored and re-fetched for write.  Now replace it.
@@ -3148,12 +3159,17 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 	const bool backVersion = (org_rpb->rpb_b_page != 0);
 	record_param temp;
 	PageStack stack;
-	if (prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr, org_rpb, &temp, new_rpb,
-					   stack, false))
+	int error_code;
+	if ((error_code = prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr, org_rpb, &temp, new_rpb,
+					   stack, false)))
 	{
-		ERR_post(Arg::Gds(isc_deadlock) <<
-				 Arg::Gds(isc_update_conflict) <<
-				 Arg::Gds(isc_concurrent_transaction) << Arg::Num(org_rpb->rpb_transaction_nr));
+		if (error_code == PREPARE_DEADLOCK)
+			ERR_post(Arg::Gds(isc_deadlock) <<
+					 Arg::Gds(isc_update_conflict) <<
+					 Arg::Gds(isc_concurrent_transaction) << Arg::Num(org_rpb->rpb_transaction_nr));
+		else
+			ERR_post(Arg::Gds(isc_update_conflict) <<
+					 Arg::Gds(isc_concurrent_transaction) << Arg::Num(org_rpb->rpb_transaction_nr));
 	}
 
 	IDX_modify_flag_uk_modified(tdbb, org_rpb, new_rpb, transaction);
@@ -3385,8 +3401,7 @@ bool VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction
 	{
 		tdbb->bumpRelStats(RuntimeStatistics::RECORD_CONFLICTS, rpb->rpb_relation->rel_id);
 
-		ERR_post(Arg::Gds(isc_deadlock) <<
-				 Arg::Gds(isc_update_conflict) <<
+		ERR_post(Arg::Gds(isc_update_conflict) <<
 				 Arg::Gds(isc_concurrent_transaction) << Arg::Num(rpb->rpb_transaction_nr));
 	}
 
@@ -4005,9 +4020,9 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 			org_rpb->rpb_runtime_flags |= RPB_refetch;
 			return false;
 		case PREPARE_LOCKERR:
-			// We got some kind of locking error (deadlock, timeout or lock_conflict)
-			// Error details should be stuffed into status vector at this point
-			// hvlad: we have no details as TRA_wait has already cleared the status vector
+			ERR_post(Arg::Gds(isc_update_conflict) <<
+					 Arg::Gds(isc_concurrent_transaction) << Arg::Num(org_rpb->rpb_transaction_nr));
+		case PREPARE_DEADLOCK:
 			ERR_post(Arg::Gds(isc_deadlock) <<
 					 Arg::Gds(isc_update_conflict) <<
 					 Arg::Gds(isc_concurrent_transaction) << Arg::Num(org_rpb->rpb_transaction_nr));
@@ -5679,7 +5694,8 @@ static int prepare_update(	thread_db*		tdbb,
 			// Wait as long as it takes for an active transaction which has modified
 			// the record.
 
-			state = wait(tdbb, transaction, rpb);
+			bool deadlock_flag;
+			state = wait(tdbb, transaction, rpb, &deadlock_flag);
 
 			if (state == tra_precommitted)
 				state = check_precommitted(transaction, rpb);
@@ -5712,8 +5728,7 @@ static int prepare_update(	thread_db*		tdbb,
 				{
 					tdbb->bumpRelStats(RuntimeStatistics::RECORD_CONFLICTS, relation->rel_id);
 
-					ERR_post(Arg::Gds(isc_deadlock) <<
-							 Arg::Gds(isc_update_conflict) <<
+					ERR_post(Arg::Gds(isc_update_conflict) <<
 							 Arg::Gds(isc_concurrent_transaction) << Arg::Num(update_conflict_trans));
 				}
 
@@ -5723,7 +5738,7 @@ static int prepare_update(	thread_db*		tdbb,
 				// fall thru
 
 			case tra_active:
-				return PREPARE_LOCKERR;
+				return deadlock_flag ? PREPARE_DEADLOCK : PREPARE_LOCKERR;
 
 			case tra_dead:
 				break;

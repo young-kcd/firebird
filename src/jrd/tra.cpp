@@ -1909,7 +1909,7 @@ void TRA_sweep(thread_db* tdbb)
 }
 
 
-int TRA_wait(thread_db* tdbb, jrd_tra* trans, TraNumber number, jrd_tra::wait_t wait)
+int TRA_wait(thread_db* tdbb, jrd_tra* trans, TraNumber number, jrd_tra::wait_t wait, bool* deadlock_flag)
 {
 /**************************************
  *
@@ -1944,6 +1944,9 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, TraNumber number, jrd_tra::wait_t 
 
 		if (!LCK_lock(tdbb, &temp_lock, LCK_read, timeout))
 		{
+			if (deadlock_flag)
+				*deadlock_flag = tdbb->tdbb_status_vector->getErrors()[1] == isc_deadlock;
+
 			fb_utils::init_status(tdbb->tdbb_status_vector);
 			return tra_active;
 		}

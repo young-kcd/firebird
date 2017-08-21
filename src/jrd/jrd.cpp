@@ -8062,7 +8062,28 @@ void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
  *
  **************************************/
 	EXE_unwind(tdbb, request);
-	EXE_start(tdbb, request, transaction);
+
+	// Repeat execution to handle update conflicts, if any
+	int numTries = 0;
+	while (true) {
+		try {
+			EXE_start(tdbb, request, transaction);
+			break;
+		} catch (const status_exception &ex) {
+			const ISC_STATUS* v = ex.value();
+			if ((transaction->tra_flags & TRA_read_committed) && 
+				v[0] == isc_arg_gds &&
+				v[1] == isc_update_conflict)
+			{
+				if (++numTries < 10) {
+					fb_utils::init_status(tdbb->tdbb_status_vector);
+					EXE_unwind(tdbb, request);
+					continue;
+				}
+			}
+			throw;
+		}
+	}
 
 	check_autocommit(tdbb, request);
 
@@ -8152,8 +8173,29 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
  *
  **************************************/
 	EXE_unwind(tdbb, request);
-	EXE_start(tdbb, request, transaction);
-	EXE_send(tdbb, request, msg_type, msg_length, msg);
+
+	// Repeat execution to handle update conflicts, if any
+	int numTries = 0;
+	while (true) {
+		try {
+			EXE_start(tdbb, request, transaction);
+			EXE_send(tdbb, request, msg_type, msg_length, msg);
+			break;
+		} catch (const status_exception &ex) {
+			const ISC_STATUS* v = ex.value();
+			if ((transaction->tra_flags & TRA_read_committed) && 
+				v[0] == isc_arg_gds &&
+				v[1] == isc_update_conflict)
+			{
+				if (++numTries < 10) {
+					fb_utils::init_status(tdbb->tdbb_status_vector);
+					EXE_unwind(tdbb, request);
+					continue;
+				}
+			}
+			throw;
+		}
+	}
 
 	check_autocommit(tdbb, request);
 
