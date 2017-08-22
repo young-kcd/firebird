@@ -130,25 +130,7 @@ CommitNumber ActiveSnapshots::getSnapshotForVersion(CommitNumber version_cn)
 	return m_lastCommit;
 }
 
-void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request) 
-{
-	// This function is called whenever request is started in a transaction.
-	// Setup context to preserve read consistency in READ COMMITTED transactions.
-
-	Jrd::jrd_tra* transaction = request->req_transaction;
-
-	// We assume that request is already attached to a transaction
-	fb_assert(transaction);
-
-	// Initialize or update list of active snapshots in a transaction
-	// so this request can effectively perform intermediate GC
-	if (TipCache* cache = tdbb->getDatabase()->dbb_tip_cache)
-		cache->updateActiveSnapshots(tdbb, &transaction->tra_active_snapshots);
-
-	// If we are not READ COMMITTED or stable cursors are not needed then nothing to do here
-	if (!(transaction->tra_flags & TRA_read_committed) || !(transaction->tra_flags & TRA_read_consistency)) 
-		return;
-
+jrd_req* TRA_get_prior_request(thread_db* tdbb) {
 	// See if there is any request right above us in the call stack
 	jrd_req* org_request;
 	thread_db* jrd_ctx = tdbb;
@@ -170,6 +152,31 @@ void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
 			}
 		}
 	} while (jrd_ctx);
+
+	return org_request;
+}
+
+void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request) 
+{
+	// This function is called whenever request is started in a transaction.
+	// Setup context to preserve read consistency in READ COMMITTED transactions.
+
+	Jrd::jrd_tra* transaction = request->req_transaction;
+
+	// We assume that request is already attached to a transaction
+	fb_assert(transaction);
+
+	// Initialize or update list of active snapshots in a transaction
+	// so this request can effectively perform intermediate GC
+	if (TipCache* cache = tdbb->getDatabase()->dbb_tip_cache)
+		cache->updateActiveSnapshots(tdbb, &transaction->tra_active_snapshots);
+
+	// If we are not READ COMMITTED or stable cursors are not needed then nothing to do here
+	if (!(transaction->tra_flags & TRA_read_committed) || !(transaction->tra_flags & TRA_read_consistency)) 
+		return;
+
+	// See if there is any request right above us in the call stack
+	jrd_req* org_request = TRA_get_prior_request(tdbb);
 
 	if (org_request && org_request->req_transaction == transaction) 
 	{
