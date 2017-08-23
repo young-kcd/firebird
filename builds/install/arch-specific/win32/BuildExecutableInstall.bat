@@ -382,7 +382,7 @@ for /R %FB_OUTPUT_DIR%\doc %%v in (.) do (
 :: This requires WiX 3.0 to be installed
 ::============
 :: This is only relevent if we are shipping packages built with Visual Studio 2010 (MSVC10)
-:: for Firebird 3.0 there are no plans to ship oficial builds with other MSVC runtimes. But we could.
+:: for Firebird 3.0 there are no plans to ship official builds with other MSVC runtimes. But we could.
 if %MSVC_VERSION% EQU 10 (
 if not exist %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi (
     "%WIX%\bin\candle.exe" -v -sw1091 %FB_ROOT_PATH%\builds\win32\msvc%MSVC_VERSION%\VCCRT_%FB_TARGET_PLATFORM%.wxs -out %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj

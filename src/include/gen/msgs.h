@@ -848,6 +848,15 @@ Data source : @4"},		/* eds_statement */
 	{335545141, "Decimal float invalid operation.  An indeterminant error occurred during an operation."},		/* decfloat_invalid_operation */
 	{335545142, "Decimal float overflow.  The exponent of a result is greater than the magnitude allowed."},		/* decfloat_overflow */
 	{335545143, "Decimal float underflow.  The exponent of a result is less than the magnitude allowed."},		/* decfloat_underflow */
+	{335545144, "Sub-function @1 has not been defined"},		/* subfunc_notdef */
+	{335545145, "Sub-procedure @1 has not been defined"},		/* subproc_notdef */
+	{335545146, "Sub-function @1 has a signature mismatch with its forward declaration"},		/* subfunc_signat */
+	{335545147, "Sub-procedure @1 has a signature mismatch with its forward declaration"},		/* subproc_signat */
+	{335545148, "Default values for parameters are not allowed in definition of the previously declared sub-function @1"},		/* subfunc_defvaldecl */
+	{335545149, "Default values for parameters are not allowed in definition of the previously declared sub-procedure @1"},		/* subproc_defvaldecl */
+	{335545150, "Sub-function @1 was declared but not implemented"},		/* subfunc_not_impl */
+	{335545151, "Sub-procedure @1 was declared but not implemented"},		/* subproc_not_impl */
+	{335545152, "Invalid HASH algorithm @1"},		/* sysf_invalid_hash_algorithm */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */
@@ -976,7 +985,7 @@ Data source : @4"},		/* eds_statement */
 	{336068872, "Procedure @1 has not been defined on the package body @2"},		/* dyn_procnotdef_package */
 	{336068873, "Function @1 has a signature mismatch on package body @2"},		/* dyn_funcsignat_package */
 	{336068874, "Procedure @1 has a signature mismatch on package body @2"},		/* dyn_procsignat_package */
-	{336068875, "Default values for parameters are allowed only in declaration of packaged procedure @1.@2"},		/* dyn_defvaldecl_package_proc */
+	{336068875, "Default values for parameters are not allowed in the definition of a previously declared packaged procedure @1.@2"},		/* dyn_defvaldecl_package_proc */
 	{336068877, "Package body @1 already exists"},		/* dyn_package_body_exists */
 	{336068878, "Invalid DDL statement for function @1"},		/* dyn_invalid_ddl_func */
 	{336068879, "Cannot alter new style function @1 with ALTER EXTERNAL FUNCTION. Use ALTER FUNCTION instead."},		/* dyn_newfc_oldsyntax */
@@ -990,7 +999,7 @@ Data source : @4"},		/* eds_statement */
 	{336068895, "System @1 @2 cannot be modified"},		/* dyn_cant_modify_sysobj */
 	{336068896, "INCREMENT BY 0 is an illegal option for sequence @1"},		/* dyn_cant_use_zero_increment */
 	{336068897, "Can't use @1 in FOREIGN KEY constraint"},		/* dyn_cant_use_in_foreignkey */
-	{336068898, "Default values for parameters are allowed only in declaration of packaged function @1.@2"},		/* dyn_defvaldecl_package_func */
+	{336068898, "Default values for parameters are not allowed in the definition of a previously declared packaged function @1.@2"},		/* dyn_defvaldecl_package_func */
 	{336068904, "INCREMENT BY 0 is an illegal option for identity column @1 of table @2"},		/* dyn_cant_use_zero_inc_ident */
 	{336330753, "found unknown switch"},		/* gbak_unknown_switch */
 	{336330754, "page size parameter missing"},		/* gbak_page_size_missing */

@@ -11589,8 +11589,12 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	if (blrOp == blr_subfunc)
 	{
 		DeclareSubFuncNode* declareNode;
-		if (csb->subFunctions.get(name.identifier, declareNode))
-			node->function = declareNode->routine;
+
+		for (auto curCsb = csb; curCsb && !node->function; curCsb = curCsb->mainCsb)
+		{
+			if (curCsb->subFunctions.get(name.identifier, declareNode))
+				node->function = declareNode->routine;
+		}
 	}
 
 	Function* function = node->function;
@@ -12023,7 +12027,10 @@ ValueExprNode* UdfCallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		doDsqlPass(dsqlScratch, args));
 
 	if (name.package.isEmpty())
-		node->dsqlFunction = dsqlScratch->getSubFunction(name.identifier);
+	{
+		DeclareSubFuncNode* subFunction = dsqlScratch->getSubFunction(name.identifier);
+		node->dsqlFunction = subFunction ? subFunction->dsqlFunction : NULL;
+	}
 
 	if (!node->dsqlFunction)
 		node->dsqlFunction = METD_get_function(dsqlScratch->getTransaction(), dsqlScratch, name);

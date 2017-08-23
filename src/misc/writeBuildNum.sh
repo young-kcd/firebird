@@ -9,7 +9,7 @@ BuildType=T
 MajorVer=4
 MinorVer=0
 RevNo=0
-BuildNum=685
+BuildNum=722
 
 NowAt=`pwd`
 cd `dirname $0`
@@ -94,10 +94,11 @@ eof
 
 createMakeVersion() {
 
+TmpDir="${TMPDIR:-/tmp}"
 OdsH="${Root}/src/jrd/ods.h"
-Mini="/tmp/miniods.h"
-TestCpp="/tmp/test.cpp"
-AOut="/tmp/a.out"
+Mini="${TmpDir}/miniods.h"
+TestCpp="${TmpDir}/test.cpp"
+AOut="${TmpDir}/a.out"
 
 grep ODS_VERSION $OdsH | grep -v ENCODE_ODS >$Mini
 

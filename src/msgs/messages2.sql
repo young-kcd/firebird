@@ -931,6 +931,15 @@ Data source : @4', NULL, NULL)
 ('decfloat_invalid_operation', 'DecimalContext::checkForExceptions', 'DecFloat.cpp', NULL, 0, 821, NULL, 'Decimal float invalid operation.  An indeterminant error occurred during an operation.', NULL, NULL);
 ('decfloat_overflow', 'DecimalContext::checkForExceptions', 'DecFloat.cpp', NULL, 0, 822, NULL, 'Decimal float overflow.  The exponent of a result is greater than the magnitude allowed.', NULL, NULL);
 ('decfloat_underflow', 'DecimalContext::checkForExceptions', 'DecFloat.cpp', NULL, 0, 823, NULL, 'Decimal float underflow.  The exponent of a result is less than the magnitude allowed.', NULL, NULL);
+('subfunc_notdef', NULL, 'StmtNodes.cpp', NULL, 0, 824, NULL, 'Sub-function @1 has not been defined', NULL, NULL);
+('subproc_notdef', NULL, 'StmtNodes.cpp', NULL, 0, 825, NULL, 'Sub-procedure @1 has not been defined', NULL, NULL);
+('subfunc_signat', NULL, 'StmtNodes.cpp', NULL, 0, 826, NULL, 'Sub-function @1 has a signature mismatch with its forward declaration', NULL, NULL);
+('subproc_signat', NULL, 'StmtNodes.cpp', NULL, 0, 827, NULL, 'Sub-procedure @1 has a signature mismatch with its forward declaration', NULL, NULL);
+('subfunc_defvaldecl', NULL, 'StmtNodes.cpp', NULL, 0, 828, NULL, 'Default values for parameters are not allowed in definition of the previously declared sub-function @1', NULL, NULL);
+('subproc_defvaldecl', NULL, 'StmtNodes.cpp', NULL, 0, 829, NULL, 'Default values for parameters are not allowed in definition of the previously declared sub-procedure @1', NULL, NULL);
+('subfunc_not_impl', NULL, 'StmtNodes.cpp', NULL, 0, 830, NULL, 'Sub-function @1 was declared but not implemented', NULL, NULL);
+('subproc_not_impl', NULL, 'StmtNodes.cpp', NULL, 0, 831, NULL, 'Sub-procedure @1 was declared but not implemented', NULL, NULL);
+('sysf_invalid_hash_algorithm', NULL, 'SysFunction.cpp', NULL, 0, 832, NULL, 'Invalid HASH algorithm @1', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
@@ -1981,7 +1990,7 @@ COMMIT WORK;
 ('dyn_procnotdef_package', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 264, NULL, 'Procedure @1 has not been defined on the package body @2', NULL, NULL);
 ('dyn_funcsignat_package', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 265, NULL, 'Function @1 has a signature mismatch on package body @2', NULL, NULL);
 ('dyn_procsignat_package', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 266, NULL, 'Procedure @1 has a signature mismatch on package body @2', NULL, NULL);
-('dyn_defvaldecl_package_proc', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 267, NULL, 'Default values for parameters are allowed only in declaration of packaged procedure @1.@2', NULL, NULL);
+('dyn_defvaldecl_package_proc', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 267, NULL, 'Default values for parameters are not allowed in the definition of a previously declared packaged procedure @1.@2', NULL, NULL);
 ('dyn_dup_function', 'DYN_define_function', 'dyn_def.epp', NULL, 8, 268, NULL, 'Function @1 already exists', NULL, NULL);
 ('dyn_package_body_exists', NULL, 'DdlNodes.epp/PackageNodes.epp', NULL, 8, 269, NULL, 'Package body @1 already exists', NULL, NULL);
 ('dyn_invalid_ddl_func', 'CreateAlterFunctionNode::compile', 'DdlNodes.epp', NULL, 8, 270, NULL, 'Invalid DDL statement for function @1', NULL, NULL);
@@ -2004,7 +2013,7 @@ COMMIT WORK;
 ('dyn_cant_modify_sysobj', NULL, 'DdlNodes.epp', NULL, 8, 287, NULL, 'System @1 @2 cannot be modified', NULL, 'Ex: System generator rdb$... cannot be modified');
 ('dyn_cant_use_zero_increment', NULL, 'DdlNodes.epp', NULL, 8, 288, NULL, 'INCREMENT BY 0 is an illegal option for sequence @1', NULL, NULL);
 ('dyn_cant_use_in_foreignkey', NULL, 'DdlNodes.epp', NULL, 8, 289, NULL, 'Can''t use @1 in FOREIGN KEY constraint', NULL, NULL);
-('dyn_defvaldecl_package_func', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 290, NULL, 'Default values for parameters are allowed only in declaration of packaged function @1.@2', NULL, NULL);
+('dyn_defvaldecl_package_func', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 290, NULL, 'Default values for parameters are not allowed in the definition of a previously declared packaged function @1.@2', NULL, NULL);
 ('dyn_create_user_no_password', 'CreateAlterUserNode', 'DdlNodes.epp', NULL, 8, 291, NULL, 'Password must be specified when creating user', NULL, NULL);
 ('dyn_cyclic_role', 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 292, NULL, 'role @1 can not be granted to role @2', NULL, NULL);
 (NULL, 'CreateAlterRoleNode::execute', 'DdlNodes.epp', NULL, 8, 293, NULL, 'DROP SYSTEM PRIVILEGES should not be used in CREATE ROLE operator', NULL, NULL);
@@ -2926,7 +2935,7 @@ This message begins with a TAB (''\t'') and ends with a newline (''\n'').', 17, 
 ('REPORT1', 'process_statement', 'isql.e', 'Each of these 4 items is followed by a newline (''\n'').', 17, 44, NULL, 'Current memory = !c
 Delta memory = !d
 Max memory = !x
-Elapsed time= !e sec
+Elapsed time = !e sec
 ', NULL, NULL);
 ('REPORT2', 'process_statement', 'isql.e', 'Each of these 5 items is followed by a newline (''\n'').', 17, 45, NULL, 'Cpu = !u sec
 Buffers = !b
@@ -3074,7 +3083,7 @@ Fetches = !f', NULL, NULL);
 ('REPORT_NEW1', 'print_performance', 'isql.epp', 'Each of these 4 items is followed by a newline (''\n'').', 17, 181, NULL, 'Current memory = !
 Delta memory = !
 Max memory = !
-Elapsed time= ~ sec
+Elapsed time = ~ sec
 ', NULL, NULL);
 ('REPORT_NEW2', 'print_performance', 'isql.epp', 'Each of these 5 items is followed by a newline (''\n'').', 17, 182, NULL, 'Cpu = ~ sec
 ', NULL, NULL);
