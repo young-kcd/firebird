@@ -8060,12 +8060,12 @@ void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
  *	Get a record from the host program.
  *
  **************************************/
-	EXE_unwind(tdbb, request);
 
 	// Repeat execution to handle update conflicts, if any
 	int numTries = 0;
 	while (true) {
 		try {
+			EXE_unwind(tdbb, request);
 			EXE_start(tdbb, request, transaction);
 			break;
 		} catch (const status_exception &ex) {
@@ -8082,7 +8082,6 @@ void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 			{
 				if (++numTries < 10) {
 					fb_utils::init_status(tdbb->tdbb_status_vector);
-					EXE_unwind(tdbb, request);
 					continue;
 				}
 			}
@@ -8177,12 +8176,12 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
  *	Get a record from the host program.
  *
  **************************************/
-	EXE_unwind(tdbb, request);
 
 	// Repeat execution to handle update conflicts, if any
 	int numTries = 0;
 	while (true) {
 		try {
+			EXE_unwind(tdbb, request);
 			EXE_start(tdbb, request, transaction);
 			EXE_send(tdbb, request, msg_type, msg_length, msg);
 			break;
@@ -8200,7 +8199,6 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
 			{
 				if (++numTries < 10) {
 					fb_utils::init_status(tdbb->tdbb_status_vector);
-					EXE_unwind(tdbb, request);
 					continue;
 				}
 			}
