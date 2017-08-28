@@ -260,9 +260,10 @@ copy  "%VCINSTALLDIR%\redist\%PROCESSOR_ARCHITECTURE%\Microsoft.VC%MSVC_VERSION%
 
 :: grab some missing bits'n'pieces from different parts of the source tree
 ::=========================================================================
-@echo   Copying ib_util etc
+@echo   Copying ib_util, include\firebird etc
 copy %FB_ROOT_PATH%\src\extlib\ib_util.h %FB_OUTPUT_DIR%\include > nul || (call :WARNING Copying ib_util.h failed.)
 copy %FB_ROOT_PATH%\lang_helpers\ib_util.pas %FB_OUTPUT_DIR%\include > nul || (call :WARNING Copying ib_util.pas failed.)
+copy /Y %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\include\firebird %FB_OUTPUT_DIR%\include > nul || (call :ERROR Copying include\firebird failed.)
 
 @implib.exe | findstr "Borland" > nul
 @if errorlevel 0 (
@@ -513,8 +514,8 @@ if not "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
   @del /q %FBBUILD_ZIP_PACK_ROOT%\*.pdb > nul 2>&1
 )
 
-:: grab install notes for zip pack
-@copy %FB_ROOT_PATH%\doc\install_win32.txt %FBBUILD_ZIP_PACK_ROOT%\doc\README_installation.txt > nul
+::@echo     grab install notes for zip pack
+::@copy %FB_ROOT_PATH%\doc\install_win32.txt %FBBUILD_ZIP_PACK_ROOT%\doc\README_installation.txt > nul
 
 ::End of GEN_ZIP
 ::--------------
