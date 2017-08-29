@@ -104,11 +104,11 @@ set FBBUILD_PROD_STATUS=PROD)
 :: Make sure we have everything we need. If something is missing then
 :: let's bail out now.
 
-sed --version | findstr version > nul
-@if %ERRORLEVEL% GEQ 1 (
-    call :ERROR Could not locate sed
-    goto :EOF
-) else (@echo     o sed found.)
+@echo     o Checking for sed...
+(cmd /c "sed.exe --version 2>&1 | findstr version > nul ") || ( call :ERROR Could not locate sed && @goto :EOF )
+
+@echo     o Checking for unix2dos...
+(cmd /c "unix2dos.exe --version 2>&1 | findstr version > nul" ) || ( call :ERROR Could not locate unix2dos && @goto :EOF )
 
 if %FBBUILD_ZIP_PACK% EQU 1 (
   if not defined SEVENZIP (
@@ -142,7 +142,6 @@ if not DEFINED FB_EXTERNAL_DOCS (
  goto :EOF
 )
 
-)
 
 ::End of CHECK_ENVIRONMENT
 ::------------------------
@@ -260,10 +259,9 @@ copy  "%VCINSTALLDIR%\redist\%PROCESSOR_ARCHITECTURE%\Microsoft.VC%MSVC_VERSION%
 
 :: grab some missing bits'n'pieces from different parts of the source tree
 ::=========================================================================
-@echo   Copying ib_util, include\firebird etc
+@echo   Copying ib_util etc
 copy %FB_ROOT_PATH%\src\extlib\ib_util.h %FB_OUTPUT_DIR%\include > nul || (call :WARNING Copying ib_util.h failed.)
 copy %FB_ROOT_PATH%\lang_helpers\ib_util.pas %FB_OUTPUT_DIR%\include > nul || (call :WARNING Copying ib_util.pas failed.)
-copy /Y %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\include\firebird %FB_OUTPUT_DIR%\include > nul || (call :ERROR Copying include\firebird failed.)
 
 @implib.exe | findstr "Borland" > nul
 @if errorlevel 0 (
@@ -322,6 +320,18 @@ mkdir %FB_OUTPUT_DIR%\misc\upgrade\security 2>nul
 
 @echo   Copying other documentation...
 @copy  %FB_GEN_DIR%\readmes\installation_readme.txt %FB_OUTPUT_DIR%\doc\installation_readme.txt > nul
+@copy %FB_OUTPUT_DIR%\doc\WhatsNew %FB_OUTPUT_DIR%\doc\WhatsNew.txt > nul
+@del %FB_OUTPUT_DIR%\doc\WhatsNew
+
+
+:: FIX ME - we now have some .md files and ChangeLog is no longer a monster.
+:: Maybe we can just do nothing here.
+:: If we are not doing a final release then include stuff that is
+:: likely to be of use to testers, especially as our release notes
+:: may be incomplete or non-existent
+::@if /I "%FBBUILD_PROD_STATUS%"=="DEV" (
+::  @copy %FB_ROOT_PATH%\ChangeLog %FB_OUTPUT_DIR%\doc\ChangeLog.txt  > nul
+::)
 
 
 @mkdir %FB_OUTPUT_DIR%\doc\sql.extensions 2>nul
@@ -434,6 +444,22 @@ endlocal
 @goto :EOF
 
 
+:INCLUDE_DIR
+:: Prepare other files needed for deployment to /include dir
+setlocal
+@echo Copying other include files required for development...
+set OUTPATH=%FB_OUTPUT_DIR%\include
+@copy %FB_ROOT_PATH%\src\yvalve\perf.h %OUTPATH%\
+@copy %FB_ROOT_PATH%\src\include\gen\firebird.pas %OUTPATH%\firebird\
+@xcopy /e /i /y %FB_ROOT_PATH%\src\include\firebird\* %OUTPATH%\firebird\
+
+endlocal
+
+::End of INCLUDE_DIR
+::------------------
+@goto :EOF
+
+
 :DB_CONF
 :: Generate sample databases file
 ::===============================
@@ -476,6 +502,31 @@ copy %FB_ROOT_PATH%\builds\install\misc\databases.conf.in %FB_OUTPUT_DIR%\databa
 @goto :EOF
 
 
+:SET_CRLF
+:: Make sure all our text files have Windows EOL
+:: This section can almost certainly be made more 
+:: elegant and less repetitive with a little of 
+:: that crazy msdos FOR and IF syntax. Whether
+:: it will make the code easier to maintain 
+:: is another matter.
+::===============================================
+for /R %FB_OUTPUT_DIR% %%v in (.) do (
+  pushd %%v
+  for /F %%W in ( 'dir /B /A-D' ) do (
+    for %%X in ( txt conf sql c cpp hpp h bat pas e def rc md ) do (
+      if /I "%%~xW" EQU ".%%X" (
+        unix2dos -D %%W       
+      )
+    )
+  )
+  popd
+)
+
+::End of SET_CRLF
+::-------------
+@goto :EOF
+
+
 :GEN_ZIP
 ::======
 if %FBBUILD_ZIP_PACK% EQU 0 goto :EOF
@@ -500,7 +551,7 @@ for %%v in (doc doc\sql.extensions help include intl lib udf misc misc\upgrade\s
 
 @echo Now remove stuff from zip tree that is not needed.
 setlocal
-set FB_RM_FILE_LIST=doc\installation_readme.txt icudt52l_empty.dat
+set FB_RM_FILE_LIST=doc\installation_readme.txt system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.wixpdb icudt52l_empty.dat
 for %%v in ( %FB_RM_FILE_LIST% ) do (
   @del %FBBUILD_ZIP_PACK_ROOT%\%%v > nul 2>&1
 )
@@ -514,7 +565,7 @@ if not "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
   @del /q %FBBUILD_ZIP_PACK_ROOT%\*.pdb > nul 2>&1
 )
 
-::@echo     grab install notes for zip pack
+:: Don't grab old install notes for zip pack - document needs a complete re-write.
 ::@copy %FB_ROOT_PATH%\doc\install_win32.txt %FBBUILD_ZIP_PACK_ROOT%\doc\README_installation.txt > nul
 
 ::End of GEN_ZIP
@@ -737,6 +788,10 @@ if defined WIX (
 @(@call :IBASE_H ) || (@echo Error calling IBASE_H & @goto :EOF)
 @Echo.
 
+@Echo   Prepare include directory
+@(@call :INCLUDE_DIR ) || (@echo Error calling INCLUDE_DIR & @goto :EOF)
+@Echo.
+
 @Echo   Writing databases conf
 @(@call :DB_CONF ) || (@echo Error calling DB_CONF & @goto :EOF)
 @Echo.
@@ -745,6 +800,10 @@ if defined WIX (
 @Echo.
 @Echo   Copying firebird.msg
 @(@call :FB_MSG ) || (@echo Error calling FB_MSG & @goto :EOF)
+@Echo.
+
+@Echo   Fix up line endings
+@(@call :SET_CRLF ) || (@echo Error calling SET_CRLF & @goto :EOF)
 @Echo.
 
 
