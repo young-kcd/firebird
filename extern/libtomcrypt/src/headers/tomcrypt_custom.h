@@ -1,6 +1,25 @@
 #ifndef TOMCRYPT_CUSTOM_H_
 #define TOMCRYPT_CUSTOM_H_
 
+/*** Firebird customizations - begin ***/
+
+#define LTC_NO_CIPHERS
+#define LTC_NO_HASHES
+#define LTC_NO_MODES
+#define LTC_NO_MACS
+#define LTC_NO_PRNGS
+#define LTC_NO_MATH
+#define LTC_NO_PK
+#define LTC_NO_PKCS
+#define LTC_NO_CURVES
+
+#define LTC_MD5
+#define LTC_SHA1
+#define LTC_SHA256
+#define LTC_SHA512
+
+/*** Firebird customizations - end ***/
+
 /* macros for various libc functions you can change for embedded targets */
 #ifndef XMALLOC
    #ifdef malloc 
