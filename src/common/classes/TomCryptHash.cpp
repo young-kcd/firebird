@@ -24,7 +24,11 @@
 
 #include "firebird.h"
 #include "../common/classes/Hash.h"
-#include "../common/tomcrypt/tomcrypt.h"
+
+#if !defined(__GNUC__) || defined(__clang__)
+#define LTC_NO_ASM	// disable ASM in tomcrypt headers
+#endif
+#include <tomcrypt.h>
 
 using namespace Firebird;
 
