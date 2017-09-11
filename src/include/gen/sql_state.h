@@ -853,6 +853,7 @@ static const struct {
 	{335545150, "42000"}, // 830 subfunc_not_impl
 	{335545151, "42000"}, // 831 subproc_not_impl
 	{335545152, "42000"}, // 832 sysf_invalid_hash_algorithm
+	{335545153, "42000"}, // 833 expression_eval_index
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

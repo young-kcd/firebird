@@ -274,7 +274,7 @@ void IndexErrorContext::raise(thread_db* tdbb, idx_e result, Record* record)
 {
 	fb_assert(result != idx_e_ok);
 
-	if (result == idx_e_conversion || result == idx_e_interrupt)
+	if (result == idx_e_interrupt)
 		ERR_punt();
 
 	const MetaName& relationName = isLocationDefined ? m_location.relation->rel_name : m_relation->rel_name;
@@ -297,6 +297,21 @@ void IndexErrorContext::raise(thread_db* tdbb, idx_e result, Record* record)
 
 	switch (result)
 	{
+	case idx_e_conversion:
+		{
+			Arg::StatusVector newVector;
+
+			newVector << Arg::Gds(isc_expression_eval_index) <<
+				Arg::Str(indexName) <<
+				Arg::Str(relationName);
+
+			newVector.append(Arg::StatusVector(tdbb->tdbb_status_vector));
+
+			fb_utils::init_status(tdbb->tdbb_status_vector);
+			ERR_post(newVector);
+		}
+		break;
+
 	case idx_e_keytoobig:
 		ERR_post_nothrow(Arg::Gds(isc_imp_exc) <<
 						 Arg::Gds(isc_keytoobig) << Arg::Str(indexName));

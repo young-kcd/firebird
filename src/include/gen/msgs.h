@@ -857,6 +857,7 @@ Data source : @4"},		/* eds_statement */
 	{335545150, "Sub-function @1 was declared but not implemented"},		/* subfunc_not_impl */
 	{335545151, "Sub-procedure @1 was declared but not implemented"},		/* subproc_not_impl */
 	{335545152, "Invalid HASH algorithm @1"},		/* sysf_invalid_hash_algorithm */
+	{335545153, "Expression evaluation error for index \"@1\" on table \"@2\""},		/* expression_eval_index */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */
