@@ -274,7 +274,7 @@ void IndexErrorContext::raise(thread_db* tdbb, idx_e result, Record* record)
 {
 	fb_assert(result != idx_e_ok);
 
-	if (result == idx_e_interrupt)
+	if (result == idx_e_conversion || result == idx_e_interrupt)
 		ERR_punt();
 
 	const MetaName& relationName = isLocationDefined ? m_location.relation->rel_name : m_relation->rel_name;
@@ -297,21 +297,6 @@ void IndexErrorContext::raise(thread_db* tdbb, idx_e result, Record* record)
 
 	switch (result)
 	{
-	case idx_e_conversion:
-		{
-			Arg::StatusVector newVector;
-
-			newVector << Arg::Gds(isc_expression_eval_index) <<
-				Arg::Str(indexName) <<
-				Arg::Str(relationName);
-
-			newVector.append(Arg::StatusVector(tdbb->tdbb_status_vector));
-
-			fb_utils::init_status(tdbb->tdbb_status_vector);
-			ERR_post(newVector);
-		}
-		break;
-
 	case idx_e_keytoobig:
 		ERR_post_nothrow(Arg::Gds(isc_imp_exc) <<
 						 Arg::Gds(isc_keytoobig) << Arg::Str(indexName));
@@ -1327,8 +1312,32 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 	}	// try
 	catch (const Exception& ex)
 	{
-		ex.stuffException(tdbb->tdbb_status_vector);
+		if (!(tdbb->tdbb_flags & TDBB_sys_error))
+		{
+			Arg::StatusVector error(ex);
+
+			if (!(error.length() > 1 &&
+				  error.value()[0] == isc_arg_gds &&
+				  error.value()[1] == isc_expression_eval_index))
+			{
+				MetaName indexName;
+				MET_lookup_index(tdbb, indexName, relation->rel_name, idx->idx_id + 1);
+
+				if (indexName.isEmpty())
+					indexName = "***unknown***";
+
+				error.prepend(Arg::Gds(isc_expression_eval_index) <<
+					Arg::Str(indexName) <<
+					Arg::Str(relation->rel_name));
+			}
+
+			error.copyTo(tdbb->tdbb_status_vector);
+		}
+		else
+			ex.stuffException(tdbb->tdbb_status_vector);
+
 		key->key_length = 0;
+
 		return (tdbb->tdbb_flags & TDBB_sys_error) ? idx_e_interrupt : idx_e_conversion;
 	}
 
