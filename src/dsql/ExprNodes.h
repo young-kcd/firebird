@@ -47,6 +47,28 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual const char* getCompatDialectVerb()
+	{
+		switch (blrOp)
+		{
+			case blr_add:
+				return "add";
+
+			case blr_subtract:
+				return "subtract";
+
+			case blr_multiply:
+				return "multiply";
+
+			case blr_divide:
+				return "divide";
+
+			default:
+				fb_assert(false);
+				return NULL;
+		}
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;

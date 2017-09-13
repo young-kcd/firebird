@@ -37,6 +37,11 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual const char* getCompatDialectVerb()
+	{
+		return "avg";
+	}
+
 	virtual unsigned getCapabilities() const
 	{
 		return CAP_RESPECTS_WINDOW_FRAME | CAP_WANTS_AGG_CALLS;
@@ -122,6 +127,11 @@ public:
 	explicit SumAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, ValueExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual const char* getCompatDialectVerb()
+	{
+		return "sum";
+	}
 
 	virtual unsigned getCapabilities() const
 	{

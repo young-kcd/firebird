@@ -533,10 +533,14 @@ public:
 		  type(aType),
 		  nodFlags(0),
 		  impureOffset(0),
-		  dsqlCompatDialectVerb(NULL),
 		  dsqlChildNodes(pool),
 		  jrdChildNodes(pool)
 	{
+	}
+
+	virtual const char* getCompatDialectVerb()
+	{
+		return NULL;
 	}
 
 	// Allocate and assign impure space for various nodes.
@@ -711,7 +715,6 @@ public:
 	const Type type;
 	unsigned nodFlags;
 	ULONG impureOffset;
-	const char* dsqlCompatDialectVerb;
 	Firebird::Array<NodeRef*> dsqlChildNodes;
 	Firebird::Array<NodeRef*> jrdChildNodes;
 };
@@ -1074,10 +1077,10 @@ protected:
 
 public:
 	const AggInfo& aggInfo;
-	bool distinct;
-	bool dialect1;
 	NestConst<ValueExprNode> arg;
 	const AggregateSort* asb;
+	bool distinct;
+	bool dialect1;
 	bool indexed;
 
 private:
