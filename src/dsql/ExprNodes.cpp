@@ -413,29 +413,7 @@ ArithmeticNode::ArithmeticNode(MemoryPool& pool, UCHAR aBlrOp, bool aDialect1,
 	  arg1(aArg1),
 	  arg2(aArg2)
 {
-	switch (blrOp)
-	{
-		case blr_add:
-			dsqlCompatDialectVerb = "add";
-			break;
-
-		case blr_subtract:
-			dsqlCompatDialectVerb = "subtract";
-			break;
-
-		case blr_multiply:
-			dsqlCompatDialectVerb = "multiply";
-			break;
-
-		case blr_divide:
-			dsqlCompatDialectVerb = "divide";
-			break;
-
-		default:
-			fb_assert(false);
-	}
-
-	label = dsqlCompatDialectVerb;
+	label = getCompatDialectVerb();
 	label.upper();
 
 	addChildNode(arg1, arg1);

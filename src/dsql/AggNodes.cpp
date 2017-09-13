@@ -56,10 +56,10 @@ AggNode::AggNode(MemoryPool& pool, const AggInfo& aAggInfo, bool aDistinct, bool
 			ValueExprNode* aArg)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_AGGREGATE>(pool),
 	  aggInfo(aAggInfo),
-	  distinct(aDistinct),
-	  dialect1(aDialect1),
 	  arg(aArg),
 	  asb(NULL),
+	  distinct(aDistinct),
+	  dialect1(aDialect1),
 	  indexed(false)
 {
 	addChildNode(arg, arg);
@@ -477,7 +477,6 @@ AvgAggNode::AvgAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, ValueEx
 	: AggNode(pool, avgAggInfo, aDistinct, aDialect1, aArg),
 	  tempImpure(0)
 {
-	dsqlCompatDialectVerb = "avg";
 }
 
 DmlNode* AvgAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
@@ -943,7 +942,6 @@ static AggNode::Register<SumAggNode> sumAggInfo("SUM", blr_agg_total, blr_agg_to
 SumAggNode::SumAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, ValueExprNode* aArg)
 	: AggNode(pool, sumAggInfo, aDistinct, aDialect1, aArg)
 {
-	dsqlCompatDialectVerb = "sum";
 }
 
 DmlNode* SumAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
