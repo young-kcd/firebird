@@ -126,7 +126,7 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, ExprNode* node)
 
 	const char* compatDialectVerb;
 
-	if (node->kind == DmlNode::KIND_VALUE && dsqlScratch->clientDialect == SQL_DIALECT_V6_TRANSITION &&
+	if (node->getKind() == DmlNode::KIND_VALUE && dsqlScratch->clientDialect == SQL_DIALECT_V6_TRANSITION &&
 		(compatDialectVerb = node->getCompatDialectVerb()))
 	{
 		dsc desc;

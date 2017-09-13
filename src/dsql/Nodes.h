@@ -285,9 +285,8 @@ public:
 		KIND_LIST
 	};
 
-	explicit DmlNode(MemoryPool& pool, Kind aKind)
-		: Node(pool),
-		  kind(aKind)
+	explicit DmlNode(MemoryPool& pool)
+		: Node(pool)
 	{
 	}
 
@@ -301,13 +300,11 @@ public:
 	}
 
 public:
+	virtual Kind getKind() = 0;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch) = 0;
 	virtual DmlNode* pass1(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual DmlNode* pass2(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual DmlNode* copy(thread_db* tdbb, NodeCopier& copier) const = 0;
-
-public:
-	const Kind kind;
 };
 
 
@@ -460,8 +457,8 @@ public:
 	static const unsigned FLAG_DATE			= 0x20;
 	static const unsigned FLAG_VALUE		= 0x40;	// Full value area required in impure space.
 
-	explicit ExprNode(Type aType, MemoryPool& pool, Kind aKind)
-		: DmlNode(pool, aKind),
+	explicit ExprNode(Type aType, MemoryPool& pool)
+		: DmlNode(pool),
 		  type(aType),
 		  nodFlags(0),
 		  impureOffset(0),
@@ -721,8 +718,13 @@ class BoolExprNode : public ExprNode
 {
 public:
 	BoolExprNode(Type aType, MemoryPool& pool)
-		: ExprNode(aType, pool, KIND_BOOLEAN)
+		: ExprNode(aType, pool)
 	{
+	}
+
+	virtual Kind getKind()
+	{
+		return KIND_BOOLEAN;
 	}
 
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -761,7 +763,7 @@ class ValueExprNode : public ExprNode
 {
 public:
 	ValueExprNode(Type aType, MemoryPool& pool)
-		: ExprNode(aType, pool, KIND_VALUE),
+		: ExprNode(aType, pool),
 		  nodScale(0)
 	{
 		nodDesc.clear();
@@ -769,6 +771,11 @@ public:
 
 public:
 	virtual Firebird::string internalPrint(NodePrinter& printer) const = 0;
+
+	virtual Kind getKind()
+	{
+		return KIND_VALUE;
+	}
 
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
@@ -1021,11 +1028,16 @@ public:
 	static const unsigned DFLAG_CURSOR					= 0x40;
 
 	RecordSourceNode(Type aType, MemoryPool& pool)
-		: ExprNode(aType, pool, KIND_REC_SOURCE),
+		: ExprNode(aType, pool),
 		  dsqlFlags(0),
 		  dsqlContext(NULL),
 		  stream(INVALID_STREAM)
 	{
+	}
+
+	virtual Kind getKind()
+	{
+		return KIND_REC_SOURCE;
 	}
 
 	virtual StreamType getStream() const
@@ -1110,8 +1122,13 @@ class ListExprNode : public ExprNode
 {
 public:
 	ListExprNode(Type aType, MemoryPool& pool)
-		: ExprNode(aType, pool, KIND_LIST)
+		: ExprNode(aType, pool)
 	{
+	}
+
+	virtual Kind getKind()
+	{
+		return KIND_LIST;
 	}
 
 	virtual void genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
@@ -1399,7 +1416,7 @@ public:
 
 public:
 	explicit StmtNode(Type aType, MemoryPool& pool)
-		: DmlNode(pool, KIND_STATEMENT),
+		: DmlNode(pool),
 		  type(aType),
 		  parentStmt(NULL),
 		  impureOffset(0),
@@ -1448,6 +1465,11 @@ public:
 			(*node)->parentStmt = parentStmt;
 
 		*node = (*node)->pass2(tdbb, csb);
+	}
+
+	virtual Kind getKind()
+	{
+		return KIND_STATEMENT;
 	}
 
 	virtual StmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
