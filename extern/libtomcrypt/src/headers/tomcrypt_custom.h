@@ -18,6 +18,10 @@
 #define LTC_SHA256
 #define LTC_SHA512
 
+#if defined(_MSC_VER)
+#define LTC_NO_PROTOTYPES
+#endif
+
 /*** Firebird customizations - end ***/
 
 /* macros for various libc functions you can change for embedded targets */

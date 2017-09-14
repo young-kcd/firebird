@@ -8,10 +8,14 @@
  *
  * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
  */
+#include "tomcrypt.h"
+
 /** 
    @param sha384.c
    LTC_SHA384 hash included in sha512.c, Tom St Denis
 */
+
+#ifdef LTC_SHA384
 
 const struct ltc_hash_descriptor sha384_desc =
 {
@@ -125,6 +129,7 @@ int  sha384_test(void)
  #endif
 }
 
+#endif
 
 
 

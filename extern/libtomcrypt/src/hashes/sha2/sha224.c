@@ -8,10 +8,13 @@
  *
  * Tom St Denis, tomstdenis@gmail.com, http://libtom.org
  */
+#include "tomcrypt.h"
+
 /**
    @param sha224.c
    LTC_SHA-224 new NIST standard based off of LTC_SHA-256 truncated to 224 bits (Tom St Denis)
 */
+#ifdef LTC_SHA224
 
 const struct ltc_hash_descriptor sha224_desc =
 {
@@ -119,6 +122,7 @@ int  sha224_test(void)
  #endif
 }
 
+#endif
 
 /* $Source$ */
 /* $Revision$ */
