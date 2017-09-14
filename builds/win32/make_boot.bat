@@ -35,7 +35,7 @@ for %%v in ( alice auth burp dsql gpre isql jrd misc msgs qli examples yvalve) d
 call :btyacc
 if "%ERRLEV%"=="1" goto :END
 
-call :LibTomMath
+call :LibTom
 if "%ERRLEV%"=="1" goto :END
 
 call :decNumber
@@ -120,19 +120,27 @@ if errorlevel 1 call :boot2 btyacc
 goto :EOF
 
 ::===================
-:: BUILD LibTomMath
+:: BUILD LibTom
 :: NS: Note we need both debug and non-debug version as it is a static library linked to CRT
 :: and linking executable with both debug and non-debug CRT results in undefined behavior
-:LibTomMath
+:LibTom
 @echo.
 @call set_build_target.bat %* RELEASE
 @echo Building LibTomMath (%FB_OBJ_DIR%)...
 @call compile.bat %FB_ROOT_PATH%\extern\libtommath\libtommath_MSVC%MSVC_VERSION% libtommath_%FB_OBJ_DIR%_%FB_TARGET_PLATFORM%.log libtommath
 if errorlevel 1 call :boot2 libtommath_%FB_OBJ_DIR%
+@echo Building LibTomCrypt (%FB_OBJ_DIR%)...
+@call compile.bat %FB_ROOT_PATH%\extern\libtomcrypt\libtomcrypt_MSVC%MSVC_VERSION% libtomcrypt_%FB_OBJ_DIR%_%FB_TARGET_PLATFORM%.log libtomcrypt
+if errorlevel 1 call :boot2 libtomcrypt_%FB_OBJ_DIR%
+
 @call set_build_target.bat %* DEBUG
 @echo Building LibTomMath (%FB_OBJ_DIR%)...
 @call compile.bat %FB_ROOT_PATH%\extern\libtommath\libtommath_MSVC%MSVC_VERSION% libtommath_%FB_OBJ_DIR%_%FB_TARGET_PLATFORM%.log libtommath
 if errorlevel 1 call :boot2 libtommath_%FB_OBJ_DIR%
+@echo Building LibTomCrypt (%FB_OBJ_DIR%)...
+@call compile.bat %FB_ROOT_PATH%\extern\libtomcrypt\libtomcrypt_MSVC%MSVC_VERSION% libtomcrypt_%FB_OBJ_DIR%_%FB_TARGET_PLATFORM%.log libtomcrypt
+if errorlevel 1 call :boot2 libtomcrypt_%FB_OBJ_DIR%
+
 @call set_build_target.bat %*
 goto :EOF
 
