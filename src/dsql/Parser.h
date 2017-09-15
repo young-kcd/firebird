@@ -231,6 +231,11 @@ private:
 		return cmpNode;
 	}
 
+	MemoryPool& getStatementPool()
+	{
+		return scratch->getStatement()->getPool();
+	}
+
 	void yyReducePosn(YYPOSN& ret, YYPOSN* termPosns, YYSTYPE* termVals,
 		int termNo, int stkPos, int yychar, YYPOSN& yyposn, void*);
 
