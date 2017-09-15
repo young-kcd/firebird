@@ -592,7 +592,7 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 
 		// Allocate buffer for message
 		const ULONG newLen = message->msg_length + FB_DOUBLE_ALIGN - 1;
-		UCHAR* msgBuffer = FB_NEW_POOL(*tdbb->getDefaultPool()) UCHAR[newLen];
+		UCHAR* msgBuffer = FB_NEW_POOL(scratch->getStatement()->getPool()) UCHAR[newLen];
 		msgBuffer = FB_ALIGN(msgBuffer, FB_DOUBLE_ALIGN);
 		message->msg_buffer_number = req_msg_buffers.add(msgBuffer);
 	}
@@ -654,6 +654,10 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 
 	if (status)
 		status_exception::raise(tdbb->tdbb_status_vector);
+
+	// Delete the scratch pool to reclaim memory.
+	node = NULL;
+	req_dbb->deletePool(&scratch->getPool());
 }
 
 // Execute a dynamic SQL statement.
@@ -1360,11 +1364,14 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 
 	// allocate the statement block, then prepare the statement
 
-	Jrd::ContextPoolHolder context(tdbb, database->createPool());
-	MemoryPool& pool = *tdbb->getDefaultPool();
+	Jrd::ContextPoolHolder statementContext(tdbb, database->createPool());
+	MemoryPool& statementPool = *tdbb->getDefaultPool();
 
-	DsqlCompiledStatement* statement = FB_NEW_POOL(pool) DsqlCompiledStatement(pool);
-	DsqlCompilerScratch* scratch = FB_NEW_POOL(pool) DsqlCompilerScratch(pool, database,
+	DsqlCompiledStatement* statement = FB_NEW_POOL(statementPool) DsqlCompiledStatement(statementPool);
+
+	MemoryPool* scratchPool = database->createPool(&statementPool);
+
+	DsqlCompilerScratch* scratch = FB_NEW_POOL(*scratchPool) DsqlCompilerScratch(*scratchPool, database,
 		transaction, statement);
 	scratch->clientDialect = clientDialect;
 
@@ -1375,22 +1382,25 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 
 	try
 	{
-		// Parse the SQL statement.  If it croaks, return
-
-		Parser parser(*tdbb->getDefaultPool(), scratch, clientDialect,
+		Parser* parser = FB_NEW_POOL(*scratchPool) Parser(*scratchPool, scratch, clientDialect,
 			scratch->getAttachment()->dbb_db_SQL_dialect, PARSER_VERSION, text, textLength,
 			tdbb->getAttachment()->att_charset);
 
-		request = parser.parse();
+		{	// scope
+			Jrd::ContextPoolHolder scratchContext(tdbb, scratchPool);
+
+			// Parse the SQL statement.  If it croaks, return
+			request = parser->parse();
+		}
 
 		request->req_dbb = scratch->getAttachment();
 		request->req_transaction = scratch->getTransaction();
 		request->statement = scratch->getStatement();
 
-		if (parser.isStmtAmbiguous())
+		if (parser->isStmtAmbiguous())
 			scratch->flags |= DsqlCompilerScratch::FLAG_AMBIGUOUS_STMT;
 
-		string transformedText = parser.getTransformedString();
+		string transformedText = parser->getTransformedString();
 		SSHORT charSetId = database->dbb_attachment->att_charset;
 
 		// If the attachment charset is NONE, replace non-ASCII characters by question marks, so
@@ -1424,12 +1434,12 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 			transformedText.assign(temp.begin(), temp.getCount());
 		}
 
-		statement->setSqlText(FB_NEW_POOL(pool) RefString(pool, transformedText));
+		statement->setSqlText(FB_NEW_POOL(statementPool) RefString(statementPool, transformedText));
 
 		// allocate the send and receive messages
 
-		statement->setSendMsg(FB_NEW_POOL(pool) dsql_msg(pool));
-		dsql_msg* message = FB_NEW_POOL(pool) dsql_msg(pool);
+		statement->setSendMsg(FB_NEW_POOL(statementPool) dsql_msg(statementPool));
+		dsql_msg* message = FB_NEW_POOL(statementPool) dsql_msg(statementPool);
 		statement->setReceiveMsg(message);
 		message->msg_number = 1;
 
@@ -1441,6 +1451,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		ntrace_result_t traceResult = ITracePlugin::RESULT_SUCCESS;
 		try
 		{
+			///Jrd::ContextPoolHolder scratchContext(tdbb, scratchPool);	// scope
 			request->dsqlPass(tdbb, scratch, &traceResult);
 		}
 		catch (const Exception&)

@@ -155,9 +155,9 @@ public:
 
 	~dsql_dbb();
 
-	MemoryPool* createPool()
+	MemoryPool* createPool(MemoryPool* parent = NULL)
 	{
-		return dbb_attachment->createPool();
+		return dbb_attachment->createPool(parent);
 	}
 
 	void deletePool(MemoryPool* pool)
