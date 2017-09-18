@@ -576,7 +576,10 @@ void DSQL_execute_immediate(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tr
 void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 	ntrace_result_t* traceResult)
 {
-	node = Node::doDsqlPass(scratch, node);
+	{	// scope
+		Jrd::ContextPoolHolder scratchContext(tdbb, &scratch->getPool());
+		node = Node::doDsqlPass(scratch, node);
+	}
 
 	if (scratch->clientDialect > SQL_DIALECT_V5)
 		scratch->getStatement()->setBlrVersion(5);
@@ -1451,7 +1454,6 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		ntrace_result_t traceResult = ITracePlugin::RESULT_SUCCESS;
 		try
 		{
-			///Jrd::ContextPoolHolder scratchContext(tdbb, scratchPool);	// scope
 			request->dsqlPass(tdbb, scratch, &traceResult);
 		}
 		catch (const Exception&)
