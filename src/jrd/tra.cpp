@@ -1730,84 +1730,87 @@ void TRA_sweep(thread_db* tdbb)
 
 	try {
 
-	// Identify ourselves as a sweeper thread. This accomplishes two goals:
-	// 1) Sweep transaction is started "precommitted" and
-	// 2) Execution is throttled in JRD_reschedule() by
-	// yielding the processor when our quantum expires.
+		// Identify ourselves as a sweeper thread. This accomplishes two goals:
+		// 1) Sweep transaction is started "precommitted" and
+		// 2) Execution is throttled in JRD_reschedule() by
+		// yielding the processor when our quantum expires.
 
-	tdbb->tdbb_flags |= TDBB_sweeper;
+		tdbb->tdbb_flags |= TDBB_sweeper;
 
-	TraceSweepEvent traceSweep(tdbb);
+		TraceSweepEvent traceSweep(tdbb);
 
-	// Start a transaction, if necessary, to perform the sweep.
-	// Save the transaction's oldest snapshot as it is refreshed
-	// during the course of the database sweep. Since it is used
-	// below to advance the OIT we must save it before it changes.
+		// Start a transaction, if necessary, to perform the sweep.
+		// Save the transaction's oldest snapshot as it is refreshed
+		// during the course of the database sweep. Since it is used
+		// below to advance the OIT we must save it before it changes.
 
-	transaction = TRA_start(tdbb, sizeof(sweep_tpb), sweep_tpb);
+		transaction = TRA_start(tdbb, sizeof(sweep_tpb), sweep_tpb);
 
-	TraNumber transaction_oldest_active = transaction->tra_oldest_active;
-	tdbb->setTransaction(transaction);
+		TraNumber transaction_oldest_active = transaction->tra_oldest_active;
+		tdbb->setTransaction(transaction);
 
-	// The garbage collector runs asynchronously with respect to
-	// our database sweep. This isn't good enough since we must
-	// be absolutely certain that all dead transactions have been
-	// swept from the database before advancing the OIT. Turn off
-	// the "notify garbage collector" flag for the attachment and
-	// synchronously perform the garbage collection ourselves.
+		// The garbage collector runs asynchronously with respect to
+		// our database sweep. This isn't good enough since we must
+		// be absolutely certain that all dead transactions have been
+		// swept from the database before advancing the OIT. Turn off
+		// the "notify garbage collector" flag for the attachment and
+		// synchronously perform the garbage collection ourselves.
 
-	attachment->att_flags &= ~ATT_notify_gc;
+		attachment->att_flags &= ~ATT_notify_gc;
 
-	if (VIO_sweep(tdbb, transaction, &traceSweep))
-	{
-		// At this point, we know that no record versions belonging to dead
-		// transactions remain anymore. However, there may still be limbo
-		// transactions, so we need to find the oldest one between tra_oldest and tra_top.
-		// As our transaction is read-committed (see sweep_tpb), we have to scan
-		// the global TIP cache.
-
-		int oldest_state = 0;
-		const TraNumber oldest_limbo =
-			TPC_find_states(tdbb, transaction->tra_oldest, transaction->tra_top - 1,
-							1 << tra_limbo, oldest_state);
-
-		const TraNumber active = oldest_limbo ? oldest_limbo : transaction->tra_top;
-
-		// Flush page buffers to insure that no dangling records from
-		// dead transactions are left on-disk. This must be done before
-		// the OIT is advanced and the header page is written to disk.
-		// If the header page was written before flushing the page buffers
-		// and there was a server crash, the dead records would appear
-		// committed since their TID would now be less than the OIT recorded
-		// in the database.
-
-		CCH_flush(tdbb, FLUSH_SWEEP, 0);
-
-		WIN window(HEADER_PAGE_NUMBER);
-		header_page* const header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
-
-		if (Ods::getOIT(header) < --transaction_oldest_active)
+		if (VIO_sweep(tdbb, transaction, &traceSweep))
 		{
-			CCH_MARK_MUST_WRITE(tdbb, &window);
-			Ods::writeOIT(header, MIN(active, transaction_oldest_active));
+			// At this point, we know that no record versions belonging to dead
+			// transactions remain anymore. However, there may still be limbo
+			// transactions, so we need to find the oldest one between tra_oldest and tra_top.
+			// As our transaction is read-committed (see sweep_tpb), we have to scan
+			// the global TIP cache.
+
+			int oldest_state = 0;
+			const TraNumber oldest_limbo =
+				TPC_find_states(tdbb, transaction->tra_oldest, transaction->tra_top - 1,
+								1 << tra_limbo, oldest_state);
+
+			const TraNumber active = oldest_limbo ? oldest_limbo : transaction->tra_top;
+
+			// Flush page buffers to insure that no dangling records from
+			// dead transactions are left on-disk. This must be done before
+			// the OIT is advanced and the header page is written to disk.
+			// If the header page was written before flushing the page buffers
+			// and there was a server crash, the dead records would appear
+			// committed since their TID would now be less than the OIT recorded
+			// in the database.
+
+			CCH_flush(tdbb, FLUSH_SWEEP, 0);
+
+			WIN window(HEADER_PAGE_NUMBER);
+			header_page* const header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+
+			if (Ods::getOIT(header) < --transaction_oldest_active)
+			{
+				CCH_MARK_MUST_WRITE(tdbb, &window);
+				Ods::writeOIT(header, MIN(active, transaction_oldest_active));
+			}
+
+			traceSweep.update(header);
+
+			CCH_RELEASE(tdbb, &window);
+
+			traceSweep.finish();
 		}
 
-		traceSweep.update(header);
+		TRA_commit(tdbb, transaction, false);
 
-		CCH_RELEASE(tdbb, &window);
-
-		traceSweep.finish();
+		tdbb->tdbb_flags &= ~TDBB_sweeper;
+		tdbb->setTransaction(tdbb_old_trans);
+		dbb->clearSweepFlags(tdbb);
 	}
-
-	TRA_commit(tdbb, transaction, false);
-
-	tdbb->tdbb_flags &= ~TDBB_sweeper;
-	tdbb->setTransaction(tdbb_old_trans);
-	dbb->clearSweepFlags(tdbb);
-	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		iscLogException("Error during sweep:", ex);
+		PathName message = "Error during sweep of ";
+		message += dbb->dbb_database_name;
+		message += ':';
+		iscLogException(message.c_str(), ex);
 
 		ex.stuffException(tdbb->tdbb_status_vector);
 
