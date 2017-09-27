@@ -658,19 +658,11 @@ public:
 		  rse_relations(pool),
 		  flags(0)
 	{
-		addDsqlChildNode(dsqlStreams);
-		addDsqlChildNode(dsqlWhere);
-		addDsqlChildNode(dsqlJoinUsing);
-		addDsqlChildNode(dsqlOrder);
-		addDsqlChildNode(dsqlDistinct);
-		addDsqlChildNode(dsqlSelectList);
-		addDsqlChildNode(dsqlFirst);
-		addDsqlChildNode(dsqlSkip);
 	}
 
-	RseNode* clone()
+	RseNode* clone(MemoryPool& pool)
 	{
-		RseNode* obj = FB_NEW_POOL(getPool()) RseNode(getPool());
+		RseNode* obj = FB_NEW_POOL(pool) RseNode(pool);
 
 		obj->dsqlFirst = dsqlFirst;
 		obj->dsqlSkip = dsqlSkip;
@@ -699,6 +691,23 @@ public:
 		obj->rse_relations = rse_relations;
 
 		return obj;
+	}
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		RecordSourceNode::getChildren(holder, dsql);
+
+		if (dsql)
+		{
+			holder.add(dsqlStreams);
+			holder.add(dsqlWhere);
+			holder.add(dsqlJoinUsing);
+			holder.add(dsqlOrder);
+			holder.add(dsqlDistinct);
+			holder.add(dsqlSelectList);
+			holder.add(dsqlFirst);
+			holder.add(dsqlSkip);
+		}
 	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;

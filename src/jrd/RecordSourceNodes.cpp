@@ -220,11 +220,13 @@ MapNode* MapNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 PlanNode* PlanNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	PlanNode* node = FB_NEW_POOL(getPool()) PlanNode(getPool(), type);
+	MemoryPool& pool = dsqlScratch->getPool();
+
+	PlanNode* node = FB_NEW_POOL(pool) PlanNode(pool, type);
 
 	if (accessType)
 	{
-		node->accessType = FB_NEW_POOL(getPool()) AccessType(getPool(), accessType->type);
+		node->accessType = FB_NEW_POOL(pool) AccessType(pool, accessType->type);
 		node->accessType->items = accessType->items;
 	}
 
@@ -235,14 +237,14 @@ PlanNode* PlanNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	if (dsqlNames)
 	{
-		node->dsqlNames = FB_NEW_POOL(getPool()) ObjectsArray<MetaName>(getPool());
+		node->dsqlNames = FB_NEW_POOL(pool) ObjectsArray<MetaName>(pool);
 		*node->dsqlNames = *dsqlNames;
 
 		dsql_ctx* context = dsqlPassAliasList(dsqlScratch);
 
 		if (context->ctx_relation)
 		{
-			RelationSourceNode* relNode = FB_NEW_POOL(getPool()) RelationSourceNode(getPool());
+			RelationSourceNode* relNode = FB_NEW_POOL(pool) RelationSourceNode(pool);
 			relNode->dsqlContext = context;
 			node->dsqlRecordSourceNode = relNode;
 		}
@@ -250,7 +252,7 @@ PlanNode* PlanNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		{
 			// ASF: Note that usage of procedure name in a PLAN clause causes errors when
 			// parsing the BLR.
-			ProcedureSourceNode* procNode = FB_NEW_POOL(getPool()) ProcedureSourceNode(getPool());
+			ProcedureSourceNode* procNode = FB_NEW_POOL(pool) ProcedureSourceNode(pool);
 			procNode->dsqlContext = context;
 			node->dsqlRecordSourceNode = procNode;
 		}
@@ -311,7 +313,7 @@ dsql_ctx* PlanNode::dsqlPassAliasList(DsqlCompilerScratch* dsqlScratch)
 				{
 					// AB: Pretty ugly huh?
 					// make up a dummy context to hold the resultant relation.
-					dsql_ctx* newContext = FB_NEW_POOL(getPool()) dsql_ctx(getPool());
+					dsql_ctx* newContext = FB_NEW_POOL(dsqlScratch->getPool()) dsql_ctx(dsqlScratch->getPool());
 					newContext->ctx_context = context->ctx_context;
 					newContext->ctx_relation = relation;
 
@@ -424,20 +426,20 @@ RecSourceListNode::RecSourceListNode(MemoryPool& pool, unsigned count)
 	items.resize(count);
 
 	for (unsigned i = 0; i < count; ++i)
-		addDsqlChildNode((items[i] = NULL));
+		items[i] = NULL;
 }
 
 RecSourceListNode::RecSourceListNode(MemoryPool& pool, RecordSourceNode* arg1)
 	: TypedNode<ListExprNode, ExprNode::TYPE_REC_SOURCE_LIST>(pool),
 	  items(pool)
 {
-	items.resize(1);
-	addDsqlChildNode((items[0] = arg1));
+	items.push(arg1);
 }
 
 RecSourceListNode* RecSourceListNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	RecSourceListNode* node = FB_NEW_POOL(getPool()) RecSourceListNode(getPool(), items.getCount());
+	RecSourceListNode* node = FB_NEW_POOL(dsqlScratch->getPool()) RecSourceListNode(dsqlScratch->getPool(),
+		items.getCount());
 
 	NestConst<RecordSourceNode>* dst = node->items.begin();
 
@@ -732,7 +734,7 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 		viewRse->rse_sorted || viewRse->rse_projection || viewRse->rse_first ||
 		viewRse->rse_skip || viewRse->rse_plan)
 	{
-		NodeCopier copier(csb, map);
+		NodeCopier copier(csb->csb_pool, csb, map);
 		RseNode* copy = viewRse->copy(tdbb, copier);
 		DEBUG;
 		doPass1(tdbb, csb, &copy);
@@ -759,7 +761,7 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 	for (const NestConst<RecordSourceNode>* const end = viewRse->rse_relations.end(); arg != end; ++arg)
 	{
 		// this call not only copies the node, it adds any streams it finds to the map
-		NodeCopier copier(csb, map);
+		NodeCopier copier(csb->csb_pool, csb, map);
 		RecordSourceNode* node = (*arg)->copy(tdbb, copier);
 
 		// Now go out and process the base table itself. This table might also be a view,
@@ -777,7 +779,7 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 
 	if (viewRse->rse_projection)
 	{
-		NodeCopier copier(csb, map);
+		NodeCopier copier(csb->csb_pool, csb, map);
 		rse->rse_projection = viewRse->rse_projection->copy(tdbb, copier);
 		doPass1(tdbb, csb, rse->rse_projection.getAddress());
 	}
@@ -787,7 +789,7 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 
 	if (viewRse->rse_boolean)
 	{
-		NodeCopier copier(csb, map);
+		NodeCopier copier(csb->csb_pool, csb, map);
 		BoolExprNode* node = copier.copy(tdbb, viewRse->rse_boolean);
 
 		doPass1(tdbb, csb, &node);
@@ -2308,6 +2310,7 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	// that it includes system (e.g. trigger) contexts (if present),
 	// as well as any outer (from other levels) contexts.
 
+	MemoryPool& pool = dsqlScratch->getPool();
 	DsqlContextStack* const base_context = dsqlScratch->context;
 	DsqlContextStack temp;
 	dsqlScratch->context = &temp;
@@ -2325,10 +2328,10 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	const size_t visibleContexts = temp.getCount();
 
 	RecSourceListNode* fromList = dsqlFrom;
-	RecSourceListNode* streamList = FB_NEW_POOL(getPool()) RecSourceListNode(
-		getPool(), fromList->items.getCount());
+	RecSourceListNode* streamList = FB_NEW_POOL(pool) RecSourceListNode(
+		pool, fromList->items.getCount());
 
-	RseNode* node = FB_NEW_POOL(getPool()) RseNode(getPool());
+	RseNode* node = FB_NEW_POOL(pool) RseNode(pool);
 	node->dsqlExplicitJoin = dsqlExplicitJoin;
 	node->rse_jointype = rse_jointype;
 	node->dsqlStreams = streamList;
@@ -2377,13 +2380,13 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 					  Arg::Gds(isc_dsql_unsupp_feature_dialect) << Arg::Num(dsqlScratch->clientDialect));
 		}
 
-		ValueListNode leftStack(dsqlScratch->getPool(), 0u);
-		ValueListNode rightStack(dsqlScratch->getPool(), 0u);
+		ValueListNode leftStack(pool, 0u);
+		ValueListNode rightStack(pool, 0u);
 
 		if (usingList->items.isEmpty())	// NATURAL JOIN
 		{
-			StrArray leftNames(dsqlScratch->getPool());
-			ValueListNode* matched = FB_NEW_POOL(getPool()) ValueListNode(getPool(), 0u);
+			StrArray leftNames(pool);
+			ValueListNode* matched = FB_NEW_POOL(pool) ValueListNode(pool, 0u);
 
 			PASS1_expand_select_node(dsqlScratch, streamList->items[0], &leftStack, true);
 			PASS1_expand_select_node(dsqlScratch, streamList->items[1], &rightStack, true);
@@ -2438,7 +2441,7 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		if (usingList)	// JOIN ... USING
 		{
 			BoolExprNode* newBoolean = NULL;
-			StrArray usedColumns(dsqlScratch->getPool());
+			StrArray usedColumns(pool);
 
 			for (FB_SIZE_T i = 0; i < usingList->items.getCount(); ++i)
 			{
@@ -2472,7 +2475,7 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				ValueExprNode* arg2 = resolveUsingField(dsqlScratch, field->dsqlName, &rightStack,
 					field, "right", rightCtx);
 
-				ComparativeBoolNode* eqlNode = FB_NEW_POOL(getPool()) ComparativeBoolNode(getPool(),
+				ComparativeBoolNode* eqlNode = FB_NEW_POOL(pool) ComparativeBoolNode(pool,
 					blr_eql, arg1, arg2);
 
 				fb_assert(leftCtx);
@@ -2482,7 +2485,7 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				ImplicitJoin* impJoinLeft;
 				if (!leftCtx->ctx_imp_join.get(field->dsqlName, impJoinLeft))
 				{
-					impJoinLeft = FB_NEW_POOL(dsqlScratch->getPool()) ImplicitJoin();
+					impJoinLeft = FB_NEW_POOL(pool) ImplicitJoin();
 					impJoinLeft->value = eqlNode->arg1;
 					impJoinLeft->visibleInContext = leftCtx;
 				}
@@ -2492,14 +2495,14 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				ImplicitJoin* impJoinRight;
 				if (!rightCtx->ctx_imp_join.get(field->dsqlName, impJoinRight))
 				{
-					impJoinRight = FB_NEW_POOL(dsqlScratch->getPool()) ImplicitJoin();
+					impJoinRight = FB_NEW_POOL(pool) ImplicitJoin();
 					impJoinRight->value = arg2;
 				}
 				else
 					fb_assert(impJoinRight->visibleInContext == rightCtx);
 
 				// create the COALESCE
-				ValueListNode* stack = FB_NEW_POOL(getPool()) ValueListNode(getPool(), 0u);
+				ValueListNode* stack = FB_NEW_POOL(pool) ValueListNode(pool, 0u);
 
 				NestConst<ValueExprNode> tempNode = impJoinLeft->value;
 				NestConst<DsqlAliasNode> aliasNode = tempNode->as<DsqlAliasNode>();
@@ -2545,9 +2548,9 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 						stack->add(doDsqlPass(dsqlScratch, tempNode));
 				}
 
-				coalesceNode = FB_NEW_POOL(getPool()) CoalesceNode(getPool(), stack);
+				coalesceNode = FB_NEW_POOL(pool) CoalesceNode(pool, stack);
 
-				aliasNode = FB_NEW_POOL(getPool()) DsqlAliasNode(getPool(), field->dsqlName, coalesceNode);
+				aliasNode = FB_NEW_POOL(pool) DsqlAliasNode(pool, field->dsqlName, coalesceNode);
 				aliasNode->implicitJoin = impJoinLeft;
 
 				impJoinLeft->value = aliasNode;
