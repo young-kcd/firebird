@@ -295,7 +295,7 @@ const char* TraceSQLStatementImpl::DSQLParamsImpl::getTextUTF8(CheckStatusWrappe
 
 	case dtype_varying:
 		address = param->dsc_address + sizeof(USHORT);
-		length = *(USHORT*)param->dsc_address;
+		length = *(USHORT*) param->dsc_address;
 		break;
 
 	default:
@@ -352,7 +352,7 @@ const char* TraceParamsImpl::getTextUTF8(CheckStatusWrapper* status, FB_SIZE_T i
 
 	case dtype_varying:
 		address = param->dsc_address + sizeof(USHORT);
-		length = *(USHORT*)param->dsc_address;
+		length = *(USHORT*) param->dsc_address;
 		break;
 
 	default:
