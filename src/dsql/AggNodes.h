@@ -77,6 +77,12 @@ public:
 		return CAP_WANTS_AGG_CALLS;
 	}
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		AggNode::getChildren(holder, dsql);
+		holder.add(delimiter);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
@@ -269,6 +275,12 @@ public:
 
 	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		AggNode::getChildren(holder, dsql);
+		holder.add(arg2);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
@@ -328,6 +340,12 @@ public:
 
 	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		AggNode::getChildren(holder, dsql);
+		holder.add(arg2);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
@@ -362,6 +380,12 @@ public:
 	}
 
 	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		AggNode::getChildren(holder, dsql);
+		holder.add(arg2);
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);

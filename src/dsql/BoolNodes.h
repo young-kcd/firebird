@@ -39,6 +39,14 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		BoolExprNode::getChildren(holder, dsql);
+
+		holder.add(arg1);
+		holder.add(arg2);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -73,6 +81,15 @@ public:
 		ValueExprNode* aArg2 = NULL, ValueExprNode* aArg3 = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		BoolExprNode::getChildren(holder, dsql);
+
+		holder.add(arg1);
+		holder.add(arg2);
+		holder.add(arg3);
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -118,6 +135,12 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		BoolExprNode::getChildren(holder, dsql);
+		holder.add(arg);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -144,6 +167,12 @@ public:
 	explicit NotBoolNode(MemoryPool& pool, BoolExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		BoolExprNode::getChildren(holder, dsql);
+		holder.add(arg);
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -172,6 +201,16 @@ public:
 	RseBoolNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDsqlRse = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		BoolExprNode::getChildren(holder, dsql);
+
+		if (dsql)
+			holder.add(dsqlRse);
+		else
+			holder.add(rse);
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);

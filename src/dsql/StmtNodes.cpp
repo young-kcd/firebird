@@ -108,7 +108,7 @@ namespace
 	{
 	public:
 		RemapFieldNodeCopier(CompilerScratch* aCsb, StreamType* aRemap, USHORT aFldId)
-			: NodeCopier(aCsb, aRemap),
+			: NodeCopier(aCsb->csb_pool, aCsb, aRemap),
 			  fldId(aFldId)
 		{
 		}
@@ -328,7 +328,7 @@ void AssignmentNode::dsqlValidateTarget(const ValueExprNode* target)
 
 AssignmentNode* AssignmentNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	AssignmentNode* node = FB_NEW_POOL(getPool()) AssignmentNode(getPool());
+	AssignmentNode* node = FB_NEW_POOL(dsqlScratch->getPool()) AssignmentNode(dsqlScratch->getPool());
 	node->asgnFrom = doDsqlPass(dsqlScratch, asgnFrom);
 	node->asgnTo = doDsqlPass(dsqlScratch, asgnTo);
 
@@ -460,12 +460,12 @@ StmtNode* BlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	if (!handlers && !dsqlScratch->errorHandlers)
 	{
-		CompoundStmtNode* node = FB_NEW_POOL(getPool()) CompoundStmtNode(getPool());
+		CompoundStmtNode* node = FB_NEW_POOL(dsqlScratch->getPool()) CompoundStmtNode(dsqlScratch->getPool());
 		node->statements.add(action->dsqlPass(dsqlScratch));
 		return node;
 	}
 
-	BlockNode* node = FB_NEW_POOL(getPool()) BlockNode(getPool());
+	BlockNode* node = FB_NEW_POOL(dsqlScratch->getPool()) BlockNode(dsqlScratch->getPool());
 
 	if (handlers)
 		++dsqlScratch->errorHandlers;
@@ -800,7 +800,7 @@ CompoundStmtNode* CompoundStmtNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				  Arg::Gds(isc_dsql_max_nesting) << Arg::Num(DsqlCompilerScratch::MAX_NESTING));
 	}
 
-	CompoundStmtNode* node = FB_NEW_POOL(getPool()) CompoundStmtNode(getPool());
+	CompoundStmtNode* node = FB_NEW_POOL(dsqlScratch->getPool()) CompoundStmtNode(dsqlScratch->getPool());
 
 	for (NestConst<StmtNode>* i = statements.begin(); i != statements.end(); ++i)
 	{
@@ -1261,7 +1261,7 @@ DeclareCursorNode* DeclareCursorNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	// Make sure the cursor doesn't exist.
 	PASS1_cursor_name(dsqlScratch, dsqlName, CUR_TYPE_ALL, false);
 
-	SelectExprNode* dt = FB_NEW_POOL(getPool()) SelectExprNode(getPool());
+	SelectExprNode* dt = FB_NEW_POOL(dsqlScratch->getPool()) SelectExprNode(dsqlScratch->getPool());
 	dt->dsqlFlags = RecordSourceNode::DFLAG_DERIVED | RecordSourceNode::DFLAG_CURSOR;
 	dt->querySpec = dsqlSelect->dsqlExpr;
 	dt->alias = dsqlName.c_str();
@@ -1516,7 +1516,7 @@ string DeclareSubFuncNode::internalPrint(NodePrinter& printer) const
 
 DeclareSubFuncNode* DeclareSubFuncNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	MemoryPool& pool = getPool();
+	MemoryPool& pool = dsqlScratch->getPool();
 
 	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_SUB_ROUTINE)
 		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) << "nested sub function");
@@ -1856,7 +1856,7 @@ string DeclareSubProcNode::internalPrint(NodePrinter& printer) const
 
 DeclareSubProcNode* DeclareSubProcNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	MemoryPool& pool = getPool();
+	MemoryPool& pool = dsqlScratch->getPool();
 
 	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_SUB_ROUTINE)
 		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) << "nested sub procedure");
@@ -2183,7 +2183,7 @@ StmtNode* EraseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	NestConst<RelationSourceNode> relation = dsqlRelation;
 
-	EraseNode* node = FB_NEW_POOL(getPool()) EraseNode(getPool());
+	EraseNode* node = FB_NEW_POOL(dsqlScratch->getPool()) EraseNode(dsqlScratch->getPool());
 
 	if (dsqlCursorName.hasData() && dsqlScratch->isPsql())
 	{
@@ -2198,7 +2198,7 @@ StmtNode* EraseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		--dsqlScratch->scopeLevel;
 		dsqlScratch->context->pop();
 
-		return SavepointEncloseNode::make(getPool(), dsqlScratch, node);
+		return SavepointEncloseNode::make(dsqlScratch->getPool(), dsqlScratch, node);
 	}
 
 	dsqlScratch->getStatement()->setType(dsqlCursorName.hasData() ?
@@ -2212,9 +2212,9 @@ StmtNode* EraseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		rse = dsqlPassCursorReference(dsqlScratch, dsqlCursorName, relation);
 	else
 	{
-		rse = FB_NEW_POOL(getPool()) RseNode(getPool());
+		rse = FB_NEW_POOL(dsqlScratch->getPool()) RseNode(dsqlScratch->getPool());
 
-		rse->dsqlStreams = FB_NEW_POOL(getPool()) RecSourceListNode(getPool(), 1);
+		rse->dsqlStreams = FB_NEW_POOL(dsqlScratch->getPool()) RecSourceListNode(dsqlScratch->getPool(), 1);
 		doDsqlPass(dsqlScratch, rse->dsqlStreams->items[0], relation, false);
 
 		if (dsqlBoolean)
@@ -2242,7 +2242,7 @@ StmtNode* EraseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	dsqlScratch->context->pop();
 
-	return SavepointEncloseNode::make(getPool(), dsqlScratch, ret);
+	return SavepointEncloseNode::make(dsqlScratch->getPool(), dsqlScratch, ret);
 }
 
 string EraseNode::internalPrint(NodePrinter& printer) const
@@ -2630,7 +2630,7 @@ DmlNode* ErrorHandlerNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 
 ErrorHandlerNode* ErrorHandlerNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	ErrorHandlerNode* node = FB_NEW_POOL(getPool()) ErrorHandlerNode(getPool());
+	ErrorHandlerNode* node = FB_NEW_POOL(dsqlScratch->getPool()) ErrorHandlerNode(dsqlScratch->getPool());
 	node->conditions = conditions;
 	node->action = action->dsqlPass(dsqlScratch);
 	return node;
@@ -2811,7 +2811,7 @@ ExecProcedureNode* ExecProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	if (!dsqlScratch->isPsql())
 		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_EXEC_PROCEDURE);
 
-	ExecProcedureNode* node = FB_NEW_POOL(getPool()) ExecProcedureNode(getPool(), dsqlName);
+	ExecProcedureNode* node = FB_NEW_POOL(dsqlScratch->getPool()) ExecProcedureNode(dsqlScratch->getPool(), dsqlName);
 	node->dsqlProcedure = procedure;
 
 	if (node->dsqlName.package.isEmpty() && procedure->prc_name.package.hasData())
@@ -2887,14 +2887,14 @@ ValueListNode* ExecProcedureNode::explodeOutputs(DsqlCompilerScratch* dsqlScratc
 	DEV_BLKCHK(procedure, dsql_type_prc);
 
 	const USHORT count = procedure->prc_out_count;
-	ValueListNode* output = FB_NEW_POOL(getPool()) ValueListNode(getPool(), count);
+	ValueListNode* output = FB_NEW_POOL(dsqlScratch->getPool()) ValueListNode(dsqlScratch->getPool(), count);
 	NestConst<ValueExprNode>* ptr = output->items.begin();
 
 	for (const dsql_fld* field = procedure->prc_outputs; field; field = field->fld_next, ++ptr)
 	{
 		DEV_BLKCHK(field, dsql_type_fld);
 
-		ParameterNode* paramNode = FB_NEW_POOL(getPool()) ParameterNode(getPool());
+		ParameterNode* paramNode = FB_NEW_POOL(dsqlScratch->getPool()) ParameterNode(dsqlScratch->getPool());
 		*ptr = paramNode;
 
 		dsql_par* parameter = paramNode->dsqlParameter = MAKE_parameter(
@@ -3293,7 +3293,7 @@ DmlNode* ExecStatementNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 
 StmtNode* ExecStatementNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	ExecStatementNode* node = FB_NEW_POOL(getPool()) ExecStatementNode(getPool());
+	ExecStatementNode* node = FB_NEW_POOL(dsqlScratch->getPool()) ExecStatementNode(dsqlScratch->getPool());
 
 	node->sql = doDsqlPass(dsqlScratch, sql);
 	node->inputs = doDsqlPass(dsqlScratch, inputs);
@@ -3351,7 +3351,7 @@ StmtNode* ExecStatementNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	node->traScope = traScope;
 	node->useCallerPrivs = useCallerPrivs;
 
-	return SavepointEncloseNode::make(getPool(), dsqlScratch, node);
+	return SavepointEncloseNode::make(dsqlScratch->getPool(), dsqlScratch, node);
 }
 
 string ExecStatementNode::internalPrint(NodePrinter& printer) const
@@ -3662,7 +3662,7 @@ DmlNode* IfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, 
 
 IfNode* IfNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	IfNode* node = FB_NEW_POOL(getPool()) IfNode(getPool());
+	IfNode* node = FB_NEW_POOL(dsqlScratch->getPool()) IfNode(dsqlScratch->getPool());
 	node->condition = doDsqlPass(dsqlScratch, condition);
 	node->trueAction = trueAction->dsqlPass(dsqlScratch);
 	if (falseAction)
@@ -3755,7 +3755,8 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::dsqlPass(DsqlCompilerS
 	const bool autoTrans = dsqlScratch->flags & DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK;
 	dsqlScratch->flags |= DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK;
 
-	InAutonomousTransactionNode* node = FB_NEW_POOL(getPool()) InAutonomousTransactionNode(getPool());
+	InAutonomousTransactionNode* node = FB_NEW_POOL(dsqlScratch->getPool()) InAutonomousTransactionNode(
+		dsqlScratch->getPool());
 	node->action = action->dsqlPass(dsqlScratch);
 
 	if (!autoTrans)
@@ -4047,7 +4048,7 @@ ExecBlockNode* ExecBlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	dsqlScratch->flags |= DsqlCompilerScratch::FLAG_BLOCK;
 
-	ExecBlockNode* node = FB_NEW_POOL(getPool()) ExecBlockNode(getPool());
+	ExecBlockNode* node = FB_NEW_POOL(dsqlScratch->getPool()) ExecBlockNode(dsqlScratch->getPool());
 
 	for (NestConst<ParameterClause>* param = parameters.begin(); param != parameters.end(); ++param)
 	{
@@ -4369,13 +4370,13 @@ StmtNode* ExceptionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				Arg::Num(MsgFormat::SAFEARG_MAX_ARG));
 	}
 
-	ExceptionNode* node = FB_NEW_POOL(getPool()) ExceptionNode(getPool());
+	ExceptionNode* node = FB_NEW_POOL(dsqlScratch->getPool()) ExceptionNode(dsqlScratch->getPool());
 	if (exception)
-		node->exception = FB_NEW_POOL(getPool()) ExceptionItem(getPool(), *exception);
+		node->exception = FB_NEW_POOL(dsqlScratch->getPool()) ExceptionItem(dsqlScratch->getPool(), *exception);
 	node->messageExpr = doDsqlPass(dsqlScratch, messageExpr);
 	node->parameters = doDsqlPass(dsqlScratch, parameters);
 
-	return SavepointEncloseNode::make(getPool(), dsqlScratch, node);
+	return SavepointEncloseNode::make(dsqlScratch->getPool(), dsqlScratch, node);
 }
 
 string ExceptionNode::internalPrint(NodePrinter& printer) const
@@ -4654,7 +4655,7 @@ DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 
 ForNode* ForNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	ForNode* node = FB_NEW_POOL(getPool()) ForNode(getPool());
+	ForNode* node = FB_NEW_POOL(dsqlScratch->getPool()) ForNode(dsqlScratch->getPool());
 
 	node->dsqlCursor = dsqlCursor;
 
@@ -4665,7 +4666,7 @@ ForNode* ForNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		fb_assert(dsqlCursor->dsqlCursorType != DeclareCursorNode::CUR_TYPE_NONE);
 		PASS1_cursor_name(dsqlScratch, dsqlCursor->dsqlName, DeclareCursorNode::CUR_TYPE_ALL, false);
 
-		SelectExprNode* dt = FB_NEW_POOL(getPool()) SelectExprNode(getPool());
+		SelectExprNode* dt = FB_NEW_POOL(dsqlScratch->getPool()) SelectExprNode(dsqlScratch->getPool());
 		dt->dsqlFlags = RecordSourceNode::DFLAG_DERIVED | RecordSourceNode::DFLAG_CURSOR;
 		dt->querySpec = dsqlSelect->dsqlExpr;
 		dt->alias = dsqlCursor->dsqlName.c_str();
@@ -5052,7 +5053,7 @@ DmlNode* LoopNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb
 
 LoopNode* LoopNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	LoopNode* node = FB_NEW_POOL(getPool()) LoopNode(getPool());
+	LoopNode* node = FB_NEW_POOL(dsqlScratch->getPool()) LoopNode(dsqlScratch->getPool());
 
 	node->dsqlExpr = doDsqlPass(dsqlScratch, dsqlExpr);
 
@@ -5261,7 +5262,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		}
 	}
 
-	SelectExprNode* select_expr = FB_NEW_POOL(getPool()) SelectExprNode(getPool());
+	SelectExprNode* select_expr = FB_NEW_POOL(dsqlScratch->getPool()) SelectExprNode(dsqlScratch->getPool());
 	select_expr->querySpec = querySpec;
 
 	// build a FOR SELECT node
@@ -5560,7 +5561,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	StmtNode* sendNode = (FB_NEW_POOL(pool) MergeSendNode(pool, mergeStmt))->dsqlPass(dsqlScratch);
 
-	return SavepointEncloseNode::make(getPool(), dsqlScratch, sendNode);
+	return SavepointEncloseNode::make(dsqlScratch->getPool(), dsqlScratch, sendNode);
 }
 
 string MergeNode::internalPrint(NodePrinter& printer) const
@@ -5768,7 +5769,7 @@ DmlNode* ModifyNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool updateOrInsert)
 {
 	thread_db* tdbb = JRD_get_thread_data(); // necessary?
-	MemoryPool& pool = getPool();
+	MemoryPool& pool = dsqlScratch->getPool();
 
 	// Separate old and new context references.
 
@@ -5944,7 +5945,7 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 
 StmtNode* ModifyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	return SavepointEncloseNode::make(getPool(), dsqlScratch, internalDsqlPass(dsqlScratch, false));
+	return SavepointEncloseNode::make(dsqlScratch->getPool(), dsqlScratch, internalDsqlPass(dsqlScratch, false));
 }
 
 string ModifyNode::internalPrint(NodePrinter& printer) const
@@ -6104,7 +6105,7 @@ void ModifyNode::pass1Modify(thread_db* tdbb, CompilerScratch* csb, ModifyNode* 
 		// Copy the view source.
 
 		map = CMP_alloc_map(tdbb, csb, node->newStream);
-		NodeCopier copier(csb, map);
+		NodeCopier copier(csb->csb_pool, csb, map);
 		source = source->copy(tdbb, copier);
 
 		if (trigger)
@@ -6395,7 +6396,7 @@ DmlNode* PostEventNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 
 PostEventNode* PostEventNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	PostEventNode* node = FB_NEW_POOL(getPool()) PostEventNode(getPool());
+	PostEventNode* node = FB_NEW_POOL(dsqlScratch->getPool()) PostEventNode(dsqlScratch->getPool());
 
 	node->event = doDsqlPass(dsqlScratch, event);
 	node->argument = doDsqlPass(dsqlScratch, argument);
@@ -6610,7 +6611,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch,
 
 	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_INSERT);
 
-	StoreNode* node = FB_NEW_POOL(getPool()) StoreNode(getPool());
+	StoreNode* node = FB_NEW_POOL(dsqlScratch->getPool()) StoreNode(dsqlScratch->getPool());
 	node->overrideClause = overrideClause;
 
 	// Process SELECT expression, if present
@@ -6633,7 +6634,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch,
 	else
 	{
 		values = doDsqlPass(dsqlScratch, dsqlValues, false);
-		needSavePoint = SubSelectFinder::find(values);
+		needSavePoint = SubSelectFinder::find(dsqlScratch->getPool(), values);
 	}
 
 	// Process relation
@@ -6704,7 +6705,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch,
 
 	// Match field fields and values
 
-	CompoundStmtNode* assignStatements = FB_NEW_POOL(getPool()) CompoundStmtNode(getPool());
+	CompoundStmtNode* assignStatements = FB_NEW_POOL(dsqlScratch->getPool()) CompoundStmtNode(dsqlScratch->getPool());
 	node->statement = assignStatements;
 
 	if (values)
@@ -6728,7 +6729,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch,
 
 				if (field && field->dsqlField)
 				{
-					*ptr2 = FB_NEW_POOL(getPool()) DefaultNode(getPool(),
+					*ptr2 = FB_NEW_POOL(dsqlScratch->getPool()) DefaultNode(dsqlScratch->getPool(),
 						relation->rel_name, field->dsqlField->fld_name);
 					*ptr2 = doDsqlPass(dsqlScratch, *ptr2, false);
 				}
@@ -6736,7 +6737,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch,
 
 			if (*ptr2)
 			{
-				AssignmentNode* temp = FB_NEW_POOL(getPool()) AssignmentNode(getPool());
+				AssignmentNode* temp = FB_NEW_POOL(dsqlScratch->getPool()) AssignmentNode(dsqlScratch->getPool());
 				temp->asgnFrom = *ptr2;
 				temp->asgnTo = *ptr;
 				assignStatements->statements.add(temp);
@@ -6788,13 +6789,13 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch,
 StmtNode* StoreNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	bool needSavePoint;
-	StmtNode* node = SavepointEncloseNode::make(getPool(), dsqlScratch,
+	StmtNode* node = SavepointEncloseNode::make(dsqlScratch->getPool(), dsqlScratch,
 		internalDsqlPass(dsqlScratch, false, needSavePoint));
 
 	if (!needSavePoint || nodeIs<SavepointEncloseNode>(node))
 		return node;
 
-	return FB_NEW SavepointEncloseNode(getPool(), node);
+	return FB_NEW SavepointEncloseNode(dsqlScratch->getPool(), node);
 }
 
 string StoreNode::internalPrint(NodePrinter& printer) const
@@ -6920,7 +6921,7 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 		parentStream = stream;
 
 		StreamType* map = CMP_alloc_map(tdbb, csb, stream);
-		NodeCopier copier(csb, map);
+		NodeCopier copier(csb->csb_pool, csb, map);
 
 		if (trigger)
 		{
@@ -7372,7 +7373,7 @@ DmlNode* SelectNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 
 SelectNode* SelectNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	SelectNode* node = FB_NEW_POOL(getPool()) SelectNode(getPool());
+	SelectNode* node = FB_NEW_POOL(dsqlScratch->getPool()) SelectNode(dsqlScratch->getPool());
 	node->dsqlForUpdate = dsqlForUpdate;
 
 	const DsqlContextStack::iterator base(*dsqlScratch->context);
@@ -7872,7 +7873,7 @@ ReturnNode* ReturnNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				  Arg::Gds(isc_dsql_unsupported_in_auto_trans) << Arg::Str("RETURN"));
 	}
 
-	ReturnNode* node = FB_NEW_POOL(getPool()) ReturnNode(getPool());
+	ReturnNode* node = FB_NEW_POOL(dsqlScratch->getPool()) ReturnNode(dsqlScratch->getPool());
 	node->value = doDsqlPass(dsqlScratch, value);
 
 	return node;
@@ -8294,7 +8295,7 @@ void SetSessionNode::execute(thread_db* tdbb, dsql_req* request) const
 StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	thread_db* tdbb = JRD_get_thread_data(); // necessary?
-	MemoryPool& pool = getPool();
+	MemoryPool& pool = dsqlScratch->getPool();
 
 	if (!dsqlScratch->isPsql())
 		dsqlScratch->flags |= DsqlCompilerScratch::FLAG_UPDATE_OR_INSERT;
@@ -8497,11 +8498,11 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	if (!returning)
 		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_INSERT);
 
-	StmtNode* ret = SavepointEncloseNode::make(getPool(), dsqlScratch, list);
+	StmtNode* ret = SavepointEncloseNode::make(dsqlScratch->getPool(), dsqlScratch, list);
 	if (!needSavePoint || nodeIs<SavepointEncloseNode>(ret))
 		return ret;
 
-	return FB_NEW SavepointEncloseNode(getPool(), ret);
+	return FB_NEW SavepointEncloseNode(dsqlScratch->getPool(), ret);
 }
 
 string UpdateOrInsertNode::internalPrint(NodePrinter& printer) const
@@ -8794,7 +8795,7 @@ static ValueListNode* dsqlPassArray(DsqlCompilerScratch* dsqlScratch, ValueListN
 	if (!input)
 		return NULL;
 
-	MemoryPool& pool = dsqlScratch->getStatement()->getPool();
+	MemoryPool& pool = dsqlScratch->getPool();
 	ValueListNode* output = FB_NEW_POOL(pool) ValueListNode(pool, input->items.getCount());
 	NestConst<ValueExprNode>* ptr = input->items.begin();
 	NestConst<ValueExprNode>* ptr2 = output->items.begin();
@@ -9206,9 +9207,16 @@ static void dsqlSetParameterName(ExprNode* exprNode, const ValueExprNode* fld_no
 		case ExprNode::TYPE_SUBSTRING:
 		case ExprNode::TYPE_SUBSTRING_SIMILAR:
 		case ExprNode::TYPE_TRIM:
-			for (NodeRef** i = exprNode->dsqlChildNodes.begin(); i != exprNode->dsqlChildNodes.end(); ++i)
-				dsqlSetParameterName((*i)->getExpr(), fld_node, relation);
+		{
+			thread_db* tdbb = JRD_get_thread_data();	//// FIXME:
+			NodeRefsHolder holder(*tdbb->getDefaultPool());
+			exprNode->getChildren(holder, true);
+
+			for (auto ref : holder.refs)
+				dsqlSetParameterName(ref->getExpr(), fld_node, relation);
+
 			break;
+		}
 
 		case ExprNode::TYPE_PARAMETER:
 		{

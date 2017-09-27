@@ -223,7 +223,7 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 
 			if (fieldInfo.validationExpr)
 			{
-				NodeCopier copier(csb, map);
+				NodeCopier copier(csb->csb_pool, csb, map);
 				fieldInfo.validationExpr = copier.copy(tdbb, fieldInfo.validationExpr);
 			}
 

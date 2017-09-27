@@ -1162,7 +1162,7 @@ public:
 		bool descending;
 	};
 
-	struct Constraint : public PermanentStorage
+	struct Constraint
 	{
 		enum Type { TYPE_CHECK, TYPE_NOT_NULL, TYPE_PK, TYPE_UNIQUE, TYPE_FK };
 
@@ -1194,8 +1194,7 @@ public:
 		};
 
 		explicit Constraint(MemoryPool& p)
-			: PermanentStorage(p),
-			  type(TYPE_CHECK),	// Just something to initialize. Do not assume it.
+			: type(TYPE_CHECK),	// Just something to initialize. Do not assume it.
 			  columns(p),
 			  index(NULL),
 			  refRelation(p),
@@ -1218,11 +1217,10 @@ public:
 		Firebird::ObjectsArray<BlrWriter> blrWritersHolder;
 	};
 
-	struct CreateDropConstraint : public PermanentStorage
+	struct CreateDropConstraint
 	{
 		explicit CreateDropConstraint(MemoryPool& p)
-			: PermanentStorage(p),
-			  name(p)
+			: name(p)
 		{
 		}
 
@@ -1230,7 +1228,7 @@ public:
 		Firebird::AutoPtr<Constraint> create;
 	};
 
-	struct Clause : public PermanentStorage
+	struct Clause
 	{
 		enum Type
 		{
@@ -1246,8 +1244,7 @@ public:
 		};
 
 		explicit Clause(MemoryPool& p, Type aType)
-			: PermanentStorage(p),
-			  type(aType)
+			: type(aType)
 		{
 		}
 
@@ -2109,12 +2106,11 @@ protected:
 	}
 
 public:
-	class Property : public PermanentStorage
+	class Property
 	{
 	public:
 		explicit Property(MemoryPool& p)
-			: PermanentStorage(p),
-			  value(p)
+			: value(p)
 		{ }
 
 		Firebird::MetaName property;

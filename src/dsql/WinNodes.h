@@ -41,6 +41,11 @@ public:
 		return CAP_SUPPORTS_WINDOW_FRAME | CAP_WANTS_AGG_CALLS;
 	}
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		// nothing
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
@@ -63,6 +68,11 @@ public:
 	virtual unsigned getCapabilities() const
 	{
 		return CAP_SUPPORTS_WINDOW_FRAME | CAP_WANTS_AGG_CALLS;
+	}
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		// nothing
 	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
@@ -91,6 +101,11 @@ public:
 	virtual unsigned getCapabilities() const
 	{
 		return CAP_SUPPORTS_WINDOW_FRAME | CAP_WANTS_AGG_CALLS | CAP_WANTS_WIN_PASS_CALL;
+	}
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		// nothing
 	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
@@ -123,6 +138,11 @@ public:
 		return CAP_SUPPORTS_WINDOW_FRAME | CAP_WANTS_WIN_PASS_CALL;
 	}
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		// nothing
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
@@ -146,6 +166,11 @@ public:
 	virtual unsigned getCapabilities() const
 	{
 		return CAP_SUPPORTS_WINDOW_FRAME | CAP_WANTS_WIN_PASS_CALL;
+	}
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		// nothing
 	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
@@ -232,6 +257,13 @@ public:
 		return CAP_RESPECTS_WINDOW_FRAME | CAP_WANTS_WIN_PASS_CALL;
 	}
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		WinFuncNode::getChildren(holder, dsql);
+		holder.add(row);
+		holder.add(from);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
@@ -261,6 +293,13 @@ public:
 	virtual unsigned getCapabilities() const
 	{
 		return CAP_SUPPORTS_WINDOW_FRAME | CAP_WANTS_WIN_PASS_CALL;
+	}
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		WinFuncNode::getChildren(holder, dsql);
+		holder.add(rows);
+		holder.add(outExpr);
 	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const = 0;
