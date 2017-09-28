@@ -219,9 +219,14 @@ checkLibrary() {
 #------------------------------------------------------------------------
 # Make sure we have required libraries installed
 checkLibraries() {
-	if [ "@TOMBUILD@" != "Y" ]
+	if [ "@TOMMATH_BUILD@" != "Y" ]
 	then
 		checkLibrary tommath
+	fi
+
+	if [ "@TOMCRYPT_BUILD@" != "Y" ]
+	then
+		checkLibrary tomcrypt
 	fi
 }
 
@@ -285,21 +290,21 @@ checkIfServerRunning() {
 # The following check for running interbase or firebird 1.0 servers.
 
     checkString=`grepProcess "ibserver|ibguard"`
-    if [ ! -z "$checkString" ] 
+    if [ ! -z "$checkString" ]
     then
-        echo "An instance of the Firebird/InterBase Super server seems to be running." 
+        echo "An instance of the Firebird/InterBase Super server seems to be running."
         echo "(the ibserver or ibguard process was detected running on your system)"
         echo "Please quit all Firebird applications and then proceed."
-        exit 1 
+        exit 1
     fi
 
     checkString=`grepProcess "gds_inet_server|gds_pipe"`
-    if [ ! -z "$checkString" ] 
+    if [ ! -z "$checkString" ]
     then
-        echo "An instance of the Firebird/InterBase Classic server seems to be running." 
+        echo "An instance of the Firebird/InterBase Classic server seems to be running."
         echo "(the gds_inet_server or gds_pipe process was detected running on your system)"
-        echo "Please quit all Firebird applications and then proceed." 
-        exit 1 
+        echo "Please quit all Firebird applications and then proceed."
+        exit 1
     fi
 }
 
@@ -344,7 +349,7 @@ replaceLineInFile() {
     newLine="$2"
     oldLine=`grep "$3" $FileName`
 
-    if [ -z "$oldLine" ] 
+    if [ -z "$oldLine" ]
       then
         echo "$newLine" >> "$FileName"
     elif [ "$oldLine" != "$newLine"  ]
@@ -702,7 +707,7 @@ archivePriorInstallSystemFiles() {
         echo "    The installation target directory $DestFile already exists."
         echo "    This and other related files found will be"
         echo "    archived in the file : ${tarArc}"
-        echo "" 
+        echo ""
 
         if [ ! -z "$InteractiveInstall" ]
         then
@@ -797,7 +802,7 @@ removeInstalledFiles() {
 
 #------------------------------------------------------------------------
 # removeUninstallFiles
-# Under the install directory remove all the empty directories 
+# Under the install directory remove all the empty directories
 # If some files remain then
 
 removeUninstallFiles() {
@@ -809,7 +814,7 @@ removeUninstallFiles() {
 
 #------------------------------------------------------------------------
 # removeEmptyDirs
-# Under the install directory remove all the empty directories 
+# Under the install directory remove all the empty directories
 # This routine loops, since deleting a directory possibly makes
 # the parent empty as well
 
