@@ -129,17 +129,18 @@ public:
 // thus a valid field reference. For the sake of argument, we'll match qualified to unqualified
 // reference, but qualified reference must match completely.
 // A list element containing a simple CAST for collation purposes is allowed.
-class InvalidReferenceFinder : public Firebird::PermanentStorage
+class InvalidReferenceFinder
 {
 public:
-	InvalidReferenceFinder(Firebird::MemoryPool& pool, const dsql_ctx* aContext, const ValueListNode* aList);
+	InvalidReferenceFinder(DsqlCompilerScratch* aDsqlScratch, const dsql_ctx* aContext, const ValueListNode* aList);
 
-	static bool find(Firebird::MemoryPool& pool, const dsql_ctx* context,
+	static bool find(DsqlCompilerScratch* dsqlScratch, const dsql_ctx* context,
 		const ValueListNode* list, ExprNode* node);
 
 	bool visit(ExprNode* node);
 
 public:
+	DsqlCompilerScratch* dsqlScratch;
 	const dsql_ctx* const context;
 	const ValueListNode* const list;
 	bool insideOwnMap;
