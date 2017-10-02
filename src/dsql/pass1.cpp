@@ -255,8 +255,9 @@ bool FieldFinder::visit(ExprNode* node)
 }
 
 
-InvalidReferenceFinder::InvalidReferenceFinder(MemoryPool& pool, const dsql_ctx* aContext, const ValueListNode* aList)
-	: PermanentStorage(pool),
+InvalidReferenceFinder::InvalidReferenceFinder(DsqlCompilerScratch* aDsqlScratch,
+		const dsql_ctx* aContext, const ValueListNode* aList)
+	: dsqlScratch(aDsqlScratch),
 	  context(aContext),
 	  list(aList),
 	  insideOwnMap(false),
@@ -265,9 +266,10 @@ InvalidReferenceFinder::InvalidReferenceFinder(MemoryPool& pool, const dsql_ctx*
 	DEV_BLKCHK(list, dsql_type_nod);
 }
 
-bool InvalidReferenceFinder::find(MemoryPool& pool, const dsql_ctx* context, const ValueListNode* list, ExprNode* node)
+bool InvalidReferenceFinder::find(DsqlCompilerScratch* dsqlScratch, const dsql_ctx* context,
+	const ValueListNode* list, ExprNode* node)
 {
-	InvalidReferenceFinder visitor(pool, context, list);
+	InvalidReferenceFinder visitor(dsqlScratch, context, list);
 	return visitor.visit(node);
 }
 
@@ -295,7 +297,7 @@ bool InvalidReferenceFinder::visit(ExprNode* node)
 		const NestConst<ValueExprNode>* ptr = list->items.begin();
 		for (const NestConst<ValueExprNode>* const end = list->items.end(); ptr != end; ++ptr)
 		{
-			if (PASS1_node_match(node, *ptr, true))
+			if (PASS1_node_match(dsqlScratch, node, *ptr, true))
 				return false;
 		}
 	}
@@ -787,7 +789,8 @@ void PASS1_field_unknown(const TEXT* qualifier_name, const TEXT* field_name,
     @param ignoreMapCast
 
  **/
-bool PASS1_node_match(const ExprNode* node1, const ExprNode* node2, bool ignoreMapCast)
+bool PASS1_node_match(DsqlCompilerScratch* dsqlScratch, const ExprNode* node1, const ExprNode* node2,
+	bool ignoreMapCast)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -816,10 +819,10 @@ bool PASS1_node_match(const ExprNode* node1, const ExprNode* node2, bool ignoreM
 			castNode1->castDesc.dsc_length == castNode2->castDesc.dsc_length &&
 			castNode1->castDesc.dsc_sub_type == castNode2->castDesc.dsc_sub_type)
 		{
-			return PASS1_node_match(castNode1->source, castNode2->source, ignoreMapCast);
+			return PASS1_node_match(dsqlScratch, castNode1->source, castNode2->source, ignoreMapCast);
 		}
 
-		return PASS1_node_match(castNode1->source, node2, ignoreMapCast);
+		return PASS1_node_match(dsqlScratch, castNode1->source, node2, ignoreMapCast);
 	}
 
 	const DsqlMapNode* mapNode1 = node1->as<DsqlMapNode>();
@@ -833,10 +836,10 @@ bool PASS1_node_match(const ExprNode* node1, const ExprNode* node2, bool ignoreM
 			if (mapNode1->context != mapNode2->context)
 				return false;
 
-			return PASS1_node_match(mapNode1->map->map_node, mapNode2->map->map_node, ignoreMapCast);
+			return PASS1_node_match(dsqlScratch, mapNode1->map->map_node, mapNode2->map->map_node, ignoreMapCast);
 		}
 
-		return PASS1_node_match(mapNode1->map->map_node, node2, ignoreMapCast);
+		return PASS1_node_match(dsqlScratch, mapNode1->map->map_node, node2, ignoreMapCast);
 	}
 
 	const DsqlAliasNode* aliasNode1 = node1->as<DsqlAliasNode>();
@@ -846,13 +849,13 @@ bool PASS1_node_match(const ExprNode* node1, const ExprNode* node2, bool ignoreM
 	if (aliasNode1 || aliasNode2)
 	{
 		if (aliasNode1 && aliasNode2)
-			return PASS1_node_match(aliasNode1->value, aliasNode2->value, ignoreMapCast);
+			return PASS1_node_match(dsqlScratch, aliasNode1->value, aliasNode2->value, ignoreMapCast);
 
 		if (aliasNode1)
-			return PASS1_node_match(aliasNode1->value, node2, ignoreMapCast);
+			return PASS1_node_match(dsqlScratch, aliasNode1->value, node2, ignoreMapCast);
 
 		if (aliasNode2)
-			return PASS1_node_match(node1, aliasNode2->value, ignoreMapCast);
+			return PASS1_node_match(dsqlScratch, node1, aliasNode2->value, ignoreMapCast);
 	}
 
 	// Handle derived fields.
@@ -870,17 +873,17 @@ bool PASS1_node_match(const ExprNode* node1, const ExprNode* node2, bool ignoreM
 				return false;
 			}
 
-			return PASS1_node_match(derivedField1->value, derivedField2->value, ignoreMapCast);
+			return PASS1_node_match(dsqlScratch, derivedField1->value, derivedField2->value, ignoreMapCast);
 		}
 
 		if (derivedField1)
-			return PASS1_node_match(derivedField1->value, node2, ignoreMapCast);
+			return PASS1_node_match(dsqlScratch, derivedField1->value, node2, ignoreMapCast);
 
 		if (derivedField2)
-			return PASS1_node_match(node1, derivedField2->value, ignoreMapCast);
+			return PASS1_node_match(dsqlScratch, node1, derivedField2->value, ignoreMapCast);
 	}
 
-	return node1->type == node2->type && node1->dsqlMatch(node2, ignoreMapCast);
+	return node1->type == node2->type && node1->dsqlMatch(dsqlScratch, node2, ignoreMapCast);
 }
 
 
@@ -2042,7 +2045,7 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, RecordSourceNod
 			NestConst<ValueExprNode>* ptr = valueList->items.begin();
 			for (const NestConst<ValueExprNode>* const end = valueList->items.end(); ptr != end; ++ptr)
 			{
-				if (InvalidReferenceFinder::find(dsqlScratch->getPool(), parent_context, aggregate->dsqlGroup, *ptr))
+				if (InvalidReferenceFinder::find(dsqlScratch, parent_context, aggregate->dsqlGroup, *ptr))
 				{
 					// Invalid expression in the select list
 					// (not contained in either an aggregate or the GROUP BY clause)
@@ -2064,7 +2067,7 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, RecordSourceNod
 			NestConst<ValueExprNode>* ptr = valueList->items.begin();
 			for (const NestConst<ValueExprNode>* const end = valueList->items.end(); ptr != end; ++ptr)
 			{
-				if (InvalidReferenceFinder::find(dsqlScratch->getPool(), parent_context, aggregate->dsqlGroup, *ptr))
+				if (InvalidReferenceFinder::find(dsqlScratch, parent_context, aggregate->dsqlGroup, *ptr))
 				{
 					// Invalid expression in the ORDER BY clause
 					// (not contained in either an aggregate or the GROUP BY clause)
@@ -2090,7 +2093,7 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, RecordSourceNod
 
 			// AB: Check for invalid contructions inside the HAVING clause
 
-			if (InvalidReferenceFinder::find(dsqlScratch->getPool(), parent_context, aggregate->dsqlGroup,
+			if (InvalidReferenceFinder::find(dsqlScratch, parent_context, aggregate->dsqlGroup,
 					parentRse->dsqlWhere))
 			{
 				// Invalid expression in the HAVING clause
@@ -2168,7 +2171,7 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, RecordSourceNod
 			NestConst<ValueExprNode>* ptr = valueList->items.begin();
 			for (const NestConst<ValueExprNode>* const end = valueList->items.end(); ptr != end; ++ptr)
 			{
-				if (InvalidReferenceFinder::find(dsqlScratch->getPool(), parent_context, aggregate->dsqlGroup, *ptr))
+				if (InvalidReferenceFinder::find(dsqlScratch, parent_context, aggregate->dsqlGroup, *ptr))
 				{
 					// Invalid expression in the select list
 					// (not contained in either an aggregate or the GROUP BY clause)
@@ -2192,7 +2195,7 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, RecordSourceNod
 				NestConst<ValueExprNode>* ptr = valueList->items.begin();
 				for (const NestConst<ValueExprNode>* const end = valueList->items.end(); ptr != end; ++ptr)
 				{
-					if (InvalidReferenceFinder::find(dsqlScratch->getPool(), parent_context, aggregate->dsqlGroup, *ptr))
+					if (InvalidReferenceFinder::find(dsqlScratch, parent_context, aggregate->dsqlGroup, *ptr))
 					{
 						// Invalid expression in the ORDER BY list
 						// (not contained in either an aggregate or the GROUP BY clause)
@@ -2844,7 +2847,7 @@ DsqlMapNode* PASS1_post_map(DsqlCompilerScratch* dsqlScratch, ValueExprNode* nod
 
 	while (map)
 	{
-		if (PASS1_node_match(node, map->map_node, false))
+		if (PASS1_node_match(dsqlScratch, node, map->map_node, false))
 			break;
 
 		++count;
@@ -2950,8 +2953,8 @@ PartitionMap* dsql_ctx::getPartitionMap(DsqlCompilerScratch* dsqlScratch, ValueL
 		 !partitionMap && i != ctx_win_maps.end();
 		 ++i)
 	{
-		if (PASS1_node_match((*i)->partition, partitionNode, false) &&
-			PASS1_node_match((*i)->order, orderNode, false))
+		if (PASS1_node_match(dsqlScratch, (*i)->partition, partitionNode, false) &&
+			PASS1_node_match(dsqlScratch, (*i)->order, orderNode, false))
 		{
 			partitionMap = *i;
 		}

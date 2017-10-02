@@ -583,7 +583,7 @@ public:
 	{
 		bool ret = false;
 
-		NodeRefsHolder holder(visitor.getPool());
+		NodeRefsHolder holder(visitor.dsqlScratch->getPool());
 		getChildren(holder, true);
 
 		for (NodeRef* const* i = holder.refs.begin(); i != holder.refs.end(); ++i)
@@ -630,63 +630,23 @@ public:
 	}
 
 	// Check if expression could return NULL or expression can turn NULL into a true/false.
-	virtual bool possiblyUnknown()
-	{
-		thread_db* tdbb = JRD_get_thread_data();	//// FIXME:
-
-		NodeRefsHolder holder(*tdbb->getDefaultPool());
-		getChildren(holder, false);
-
-		for (NodeRef** i = holder.refs.begin(); i != holder.refs.end(); ++i)
-		{
-			if (**i && (*i)->getExpr()->possiblyUnknown())
-				return true;
-		}
-
-		return false;
-	}
+	virtual bool possiblyUnknown(OptimizerBlk* opt);
 
 	// Verify if this node is allowed in an unmapped boolean.
-	virtual bool unmappable(const MapNode* mapNode, StreamType shellStream)
-	{
-		thread_db* tdbb = JRD_get_thread_data();	//// FIXME:
-
-		NodeRefsHolder holder(*tdbb->getDefaultPool());
-		getChildren(holder, false);
-
-		for (NodeRef** i = holder.refs.begin(); i != holder.refs.end(); ++i)
-		{
-			if (**i && !(*i)->getExpr()->unmappable(mapNode, shellStream))
-				return false;
-		}
-
-		return true;
-	}
+	virtual bool unmappable(CompilerScratch* csb, const MapNode* mapNode, StreamType shellStream);
 
 	// Return all streams referenced by the expression.
-	virtual void collectStreams(SortedStreamList& streamList) const
-	{
-		thread_db* tdbb = JRD_get_thread_data();	//// FIXME:
+	virtual void collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const;
 
-		NodeRefsHolder holder(*tdbb->getDefaultPool());
-		getChildren(holder, false);
-
-		for (const NodeRef* const* i = holder.refs.begin(); i != holder.refs.end(); ++i)
-		{
-			if (**i)
-				(*i)->getExpr()->collectStreams(streamList);
-		}
-	}
-
-	virtual bool findStream(StreamType stream)
+	virtual bool findStream(CompilerScratch* csb, StreamType stream)
 	{
 		SortedStreamList streams;
-		collectStreams(streams);
+		collectStreams(csb, streams);
 
 		return streams.exist(stream);
 	}
 
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 
 	virtual ExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
@@ -695,7 +655,7 @@ public:
 	}
 
 	// Determine if two expression trees are the same.
-	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
+	virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
 
 	// See if node is presently computable.
 	// A node is said to be computable, if all the streams involved
@@ -975,7 +935,7 @@ public:
 	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor);
 	virtual ValueExprNode* dsqlFieldRemapper(FieldRemapper& visitor);
 
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
@@ -987,19 +947,19 @@ public:
 
 	virtual AggNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
-	virtual bool possiblyUnknown()
+	virtual bool possiblyUnknown(OptimizerBlk* /*opt*/)
 	{
 		return true;
 	}
 
-	virtual void collectStreams(SortedStreamList& /*streamList*/) const
+	virtual void collectStreams(CompilerScratch* /*csb*/, SortedStreamList& /*streamList*/) const
 	{
 		// ASF: Although in v2.5 the visitor happens normally for the node childs, nod_count has
 		// been set to 0 in CMP_pass2, so that doesn't happens.
 		return;
 	}
 
-	virtual bool unmappable(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
+	virtual bool unmappable(CompilerScratch* /*csb*/, const MapNode* /*mapNode*/, StreamType /*shellStream*/)
 	{
 		return false;
 	}
@@ -1125,23 +1085,23 @@ public:
 		fb_assert(false);
 	}
 
-	virtual bool possiblyUnknown()
+	virtual bool possiblyUnknown(OptimizerBlk* /*opt*/)
 	{
 		return true;
 	}
 
-	virtual bool unmappable(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
+	virtual bool unmappable(CompilerScratch* /*csb*/, const MapNode* /*mapNode*/, StreamType /*shellStream*/)
 	{
 		return false;
 	}
 
-	virtual void collectStreams(SortedStreamList& streamList) const
+	virtual void collectStreams(CompilerScratch* /*csb*/, SortedStreamList& streamList) const
 	{
 		if (!streamList.exist(getStream()))
 			streamList.add(getStream());
 	}
 
-	virtual bool sameAs(const ExprNode* /*other*/, bool /*ignoreStreams*/) const
+	virtual bool sameAs(CompilerScratch* /*csb*/, const ExprNode* /*other*/, bool /*ignoreStreams*/) const
 	{
 		return false;
 	}

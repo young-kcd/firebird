@@ -245,7 +245,7 @@ bool AggNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
 
 	if (!visitor.insideHigherMap)
 	{
-		NodeRefsHolder holder(visitor.getPool());
+		NodeRefsHolder holder(visitor.dsqlScratch->getPool());
 		getChildren(holder, true);
 
 		for (NodeRef** i = holder.refs.begin(); i != holder.refs.end(); ++i)
@@ -254,7 +254,7 @@ bool AggNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
 			// an higher one then it's a invalid aggregate, because
 			// aggregate-functions from the same context can't
 			// be part of each other.
-			if (Aggregate2Finder::find(visitor.getPool(), visitor.context->ctx_scope_level,
+			if (Aggregate2Finder::find(visitor.dsqlScratch->getPool(), visitor.context->ctx_scope_level,
 					FIELD_MATCH_TYPE_EQUAL, false, (*i)->getExpr()))
 			{
 				// Nested aggregate functions are not allowed
@@ -296,9 +296,9 @@ ValueExprNode* AggNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	return this;
 }
 
-bool AggNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool AggNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+	if (!ExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 		return false;
 
 	const AggNode* o = other->as<AggNode>();

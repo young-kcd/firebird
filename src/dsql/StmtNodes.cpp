@@ -80,8 +80,8 @@ static RseNode* dsqlPassCursorReference(DsqlCompilerScratch*, const MetaName&, R
 static VariableNode* dsqlPassHiddenVariable(DsqlCompilerScratch* dsqlScratch, ValueExprNode* expr);
 static USHORT dsqlPassLabel(DsqlCompilerScratch* dsqlScratch, bool breakContinue, MetaName* label);
 static StmtNode* dsqlProcessReturning(DsqlCompilerScratch*, ReturningClause*, StmtNode*);
-static void dsqlSetParameterName(ExprNode*, const ValueExprNode*, const dsql_rel*);
-static void dsqlSetParametersName(CompoundStmtNode*, const RecordSourceNode*);
+static void dsqlSetParameterName(DsqlCompilerScratch*, ExprNode*, const ValueExprNode*, const dsql_rel*);
+static void dsqlSetParametersName(DsqlCompilerScratch*, CompoundStmtNode*, const RecordSourceNode*);
 
 static void cleanupRpb(thread_db* tdbb, record_param* rpb);
 static void makeValidation(thread_db* tdbb, CompilerScratch* csb, StreamType stream,
@@ -5864,7 +5864,7 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 	// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
 	dsqlFieldAppearsOnce(newValues, "UPDATE");
 
-	dsqlSetParametersName(assignStatements, node->dsqlRelation);
+	dsqlSetParametersName(dsqlScratch, assignStatements, node->dsqlRelation);
 
 	StmtNode* ret = node;
 	if (!updateOrInsert)
@@ -6656,7 +6656,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 		dsqlScratch->context->pop();
 	}
 
-	dsqlSetParametersName(assignStatements, node->dsqlRelation);
+	dsqlSetParametersName(dsqlScratch, assignStatements, node->dsqlRelation);
 
 	StmtNode* ret = node;
 	if (!updateOrInsert)
@@ -8926,7 +8926,7 @@ static StmtNode* dsqlProcessReturning(DsqlCompilerScratch* dsqlScratch, Returnin
 // the parameter is assigned the name of the field it is being inserted (or updated). The same goes
 // to the name of a relation.
 // The names are assigned to the parameter only if the field is of array data type.
-static void dsqlSetParameterName(ExprNode* exprNode, const ValueExprNode* fld_node,
+static void dsqlSetParameterName(DsqlCompilerScratch* dsqlScratch, ExprNode* exprNode, const ValueExprNode* fld_node,
 	const dsql_rel* relation)
 {
 	DEV_BLKCHK(fld_node, dsql_type_nod);
@@ -8953,12 +8953,11 @@ static void dsqlSetParameterName(ExprNode* exprNode, const ValueExprNode* fld_no
 		case ExprNode::TYPE_SUBSTRING_SIMILAR:
 		case ExprNode::TYPE_TRIM:
 		{
-			thread_db* tdbb = JRD_get_thread_data();	//// FIXME:
-			NodeRefsHolder holder(*tdbb->getDefaultPool());
+			NodeRefsHolder holder(dsqlScratch->getPool());
 			exprNode->getChildren(holder, true);
 
 			for (NodeRef** ref = holder.refs.begin(); ref != holder.refs.end(); ++ref)
-				dsqlSetParameterName((*ref)->getExpr(), fld_node, relation);
+				dsqlSetParameterName(dsqlScratch, (*ref)->getExpr(), fld_node, relation);
 
 			break;
 		}
@@ -8975,7 +8974,8 @@ static void dsqlSetParameterName(ExprNode* exprNode, const ValueExprNode* fld_no
 }
 
 // Setup parameter parameters name.
-static void dsqlSetParametersName(CompoundStmtNode* statements, const RecordSourceNode* relNode)
+static void dsqlSetParametersName(DsqlCompilerScratch* dsqlScratch, CompoundStmtNode* statements,
+	const RecordSourceNode* relNode)
 {
 	const dsql_ctx* context = relNode->dsqlContext;
 	DEV_BLKCHK(context, dsql_type_ctx);
@@ -8989,11 +8989,9 @@ static void dsqlSetParametersName(CompoundStmtNode* statements, const RecordSour
 		AssignmentNode* assign = (*ptr)->as<AssignmentNode>();
 
 		if (assign)
-			dsqlSetParameterName(assign->asgnFrom, assign->asgnTo, relation);
+			dsqlSetParameterName(dsqlScratch, assign->asgnFrom, assign->asgnTo, relation);
 		else
-		{
 			fb_assert(false);
-		}
 	}
 }
 

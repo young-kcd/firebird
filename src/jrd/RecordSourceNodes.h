@@ -283,7 +283,7 @@ public:
 		return false;
 	}
 
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
 	virtual RelationSourceNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -368,7 +368,7 @@ public:
 	virtual bool dsqlFieldFinder(FieldFinder& visitor);
 	virtual RecordSourceNode* dsqlFieldRemapper(FieldRemapper& visitor);
 
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
 	virtual ProcedureSourceNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -397,7 +397,7 @@ public:
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
 
-	virtual void collectStreams(SortedStreamList& streamList) const;
+	virtual void collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const;
 
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
@@ -460,7 +460,7 @@ public:
 	virtual bool dsqlFieldFinder(FieldFinder& visitor);
 	virtual RecordSourceNode* dsqlFieldRemapper(FieldRemapper& visitor);
 
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
 	virtual AggregateSourceNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -610,7 +610,7 @@ public:
 	virtual RecordSourceNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool containsStream(StreamType checkStream) const;
-	virtual void collectStreams(SortedStreamList& streamList) const;
+	virtual void collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const;
 
 	virtual void computeDbKeyStreams(StreamList& /*streamList*/) const
 	{
@@ -718,7 +718,7 @@ public:
 	virtual bool dsqlFieldFinder(FieldFinder& visitor);
 	virtual RseNode* dsqlFieldRemapper(FieldRemapper& visitor);
 
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 	virtual RseNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
 	virtual RseNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -741,7 +741,7 @@ public:
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
 
-	virtual void collectStreams(SortedStreamList& streamList) const;
+	virtual void collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const;
 
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 

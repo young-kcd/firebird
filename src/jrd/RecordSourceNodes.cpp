@@ -49,7 +49,7 @@ static int strcmpSpace(const char* p, const char* q);
 static void processSource(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	RecordSourceNode* source, BoolExprNode** boolean, RecordSourceNodeStack& stack);
 static void processMap(thread_db* tdbb, CompilerScratch* csb, MapNode* map, Format** inputFormat);
-static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack, MapNode* map,
+static void genDeliverUnmapped(CompilerScratch* csb, BoolExprNodeStack* deliverStack, MapNode* map,
 	BoolExprNodeStack* parentStack, StreamType shellStream);
 static ValueExprNode* resolveUsingField(DsqlCompilerScratch* dsqlScratch, const MetaName& name,
 	ValueListNode* list, const FieldNode* flawedNode, const TEXT* side, dsql_ctx*& ctx);
@@ -559,7 +559,8 @@ RecordSourceNode* RelationSourceNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return dsqlPassRelProc(dsqlScratch, this);
 }
 
-bool RelationSourceNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
+bool RelationSourceNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other,
+	bool /*ignoreMapCast*/) const
 {
 	const RelationSourceNode* o = other->as<RelationSourceNode>();
 	return o && dsqlContext == o->dsqlContext;
@@ -1015,7 +1016,8 @@ RecordSourceNode* ProcedureSourceNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	return this;
 }
 
-bool ProcedureSourceNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
+bool ProcedureSourceNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other,
+	bool /*ignoreMapCast*/) const
 {
 	const ProcedureSourceNode* o = other->as<ProcedureSourceNode>();
 	return o && dsqlContext == o->dsqlContext;
@@ -1241,15 +1243,15 @@ void ProcedureSourceNode::findDependentFromStreams(const OptimizerRetrieval* opt
 		targetList->findDependentFromStreams(optRet, streamList);
 }
 
-void ProcedureSourceNode::collectStreams(SortedStreamList& streamList) const
+void ProcedureSourceNode::collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const
 {
-	RecordSourceNode::collectStreams(streamList);
+	RecordSourceNode::collectStreams(csb, streamList);
 
 	if (sourceList)
-		sourceList->collectStreams(streamList);
+		sourceList->collectStreams(csb, streamList);
 
 	if (targetList)
-		targetList->collectStreams(streamList);
+		targetList->collectStreams(csb, streamList);
 }
 
 
@@ -1318,13 +1320,13 @@ RecordSourceNode* AggregateSourceNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	return this;
 }
 
-bool AggregateSourceNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool AggregateSourceNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
 	const AggregateSourceNode* o = other->as<AggregateSourceNode>();
 
 	return o && dsqlContext == o->dsqlContext &&
-		PASS1_node_match(dsqlGroup, o->dsqlGroup, ignoreMapCast) &&
-		PASS1_node_match(dsqlRse, o->dsqlRse, ignoreMapCast);
+		PASS1_node_match(dsqlScratch, dsqlGroup, o->dsqlGroup, ignoreMapCast) &&
+		PASS1_node_match(dsqlScratch, dsqlRse, o->dsqlRse, ignoreMapCast);
 }
 
 void AggregateSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -1543,7 +1545,7 @@ RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
 	// Those fields are mappings. Mappings that hold a plain field may be used
 	// to distribute. Handle the simple cases only.
 	BoolExprNodeStack deliverStack;
-	genDeliverUnmapped(tdbb, &deliverStack, map, parentStack, shellStream);
+	genDeliverUnmapped(csb, &deliverStack, map, parentStack, shellStream);
 
 	// try to optimize MAX and MIN to use an index; for now, optimize
 	// only the simplest case, although it is probably possible
@@ -1909,7 +1911,7 @@ RecordSource* UnionSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt, cons
 		// hvlad: don't do it for recursive unions else they will work wrong !
 		BoolExprNodeStack deliverStack;
 		if (!recursive)
-			genDeliverUnmapped(tdbb, &deliverStack, map, parentStack, shellStream);
+			genDeliverUnmapped(csb, &deliverStack, map, parentStack, shellStream);
 
 		rsbs.add(OPT_compile(tdbb, csb, rse, &deliverStack));
 
@@ -2160,7 +2162,7 @@ bool WindowSourceNode::containsStream(StreamType checkStream) const
 	return false;
 }
 
-void WindowSourceNode::collectStreams(SortedStreamList& streamList) const
+void WindowSourceNode::collectStreams(CompilerScratch* /*csb*/, SortedStreamList& streamList) const
 {
 	for (ObjectsArray<Partition>::const_iterator partition = partitions.begin();
 		 partition != partitions.end();
@@ -2290,7 +2292,7 @@ RseNode* RseNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	return this;
 }
 
-bool RseNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool RseNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
 	const RseNode* o = other->as<RseNode>();
 
@@ -2300,7 +2302,7 @@ bool RseNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	// ASF: Commented-out code "Fixed assertion when subquery is used in group by" to make
 	// CORE-4084 work again.
 	return /***dsqlContext &&***/ dsqlContext == o->dsqlContext &&
-		RecordSourceNode::dsqlMatch(other, ignoreMapCast);
+		RecordSourceNode::dsqlMatch(dsqlScratch, other, ignoreMapCast);
 }
 
 // Make up join node and mark relations as "possibly NULL" if they are in outer joins (inOuterJoin).
@@ -3173,27 +3175,27 @@ void RseNode::findDependentFromStreams(const OptimizerRetrieval* optRet,
 		(*ptr)->findDependentFromStreams(optRet, streamList);
 }
 
-void RseNode::collectStreams(SortedStreamList& streamList) const
+void RseNode::collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const
 {
 	if (rse_first)
-		rse_first->collectStreams(streamList);
+		rse_first->collectStreams(csb, streamList);
 
 	if (rse_skip)
-		rse_skip->collectStreams(streamList);
+		rse_skip->collectStreams(csb, streamList);
 
 	if (rse_boolean)
-		rse_boolean->collectStreams(streamList);
+		rse_boolean->collectStreams(csb, streamList);
 
 	// ASF: The legacy code used to visit rse_sorted and rse_projection, but the nod_sort was never
 	// handled.
-	// rse_sorted->collectStreams(streamList);
-	// rse_projection->collectStreams(streamList);
+	// rse_sorted->collectStreams(csb, streamList);
+	// rse_projection->collectStreams(csb, streamList);
 
 	const NestConst<RecordSourceNode>* ptr;
 	const NestConst<RecordSourceNode>* end;
 
 	for (ptr = rse_relations.begin(), end = rse_relations.end(); ptr != end; ++ptr)
-		(*ptr)->collectStreams(streamList);
+		(*ptr)->collectStreams(csb, streamList);
 }
 
 
@@ -3455,12 +3457,10 @@ static void processMap(thread_db* tdbb, CompilerScratch* csb, MapNode* map, Form
 
 // Make new boolean nodes from nodes that contain a field from the given shellStream.
 // Those fields are references (mappings) to other nodes and are used by aggregates and union rse's.
-static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack, MapNode* map,
+static void genDeliverUnmapped(CompilerScratch* csb, BoolExprNodeStack* deliverStack, MapNode* map,
 	BoolExprNodeStack* parentStack, StreamType shellStream)
 {
-	SET_TDBB(tdbb);
-
-	MemoryPool& pool = *tdbb->getDefaultPool();
+	MemoryPool& pool = csb->csb_pool;
 
 	for (BoolExprNodeStack::iterator stack1(*parentStack); stack1.hasData(); ++stack1)
 	{
@@ -3476,7 +3476,7 @@ static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack,
 			orgStack.push(binaryNode->arg1);
 			orgStack.push(binaryNode->arg2);
 
-			genDeliverUnmapped(tdbb, &newStack, map, &orgStack, shellStream);
+			genDeliverUnmapped(csb, &newStack, map, &orgStack, shellStream);
 
 			if (newStack.getCount() == 2)
 			{
@@ -3581,7 +3581,7 @@ static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack,
 					// Check also the expression inside the map, because aggregate
 					// functions aren't allowed to be delivered to the WHERE clause.
 					ValueExprNode* value = map->sourceList[fieldId];
-					okNode = value->unmappable(map, shellStream);
+					okNode = value->unmappable(csb, map, shellStream);
 
 					if (okNode)
 						*newChildren[indexArg] = map->sourceList[fieldId];
@@ -3589,7 +3589,7 @@ static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack,
 			}
 			else
 			{
-				if ((okNode = children[indexArg]->unmappable(map, shellStream)))
+				if ((okNode = children[indexArg]->unmappable(csb, map, shellStream)))
 					*newChildren[indexArg] = children[indexArg];
 			}
 		}

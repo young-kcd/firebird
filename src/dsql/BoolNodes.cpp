@@ -137,9 +137,9 @@ void BinaryBoolNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, arg2);
 }
 
-bool BinaryBoolNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool BinaryBoolNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (!BoolExprNode::dsqlMatch(other, ignoreMapCast))
+	if (!BoolExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 		return false;
 
 	const BinaryBoolNode* o = other->as<BinaryBoolNode>();
@@ -148,22 +148,22 @@ bool BinaryBoolNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return blrOp == o->blrOp;
 }
 
-bool BinaryBoolNode::sameAs(const ExprNode* other, bool ignoreStreams) const
+bool BinaryBoolNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
 	const BinaryBoolNode* const otherNode = other->as<BinaryBoolNode>();
 
 	if (!otherNode || blrOp != otherNode->blrOp)
 		return false;
 
-	if (arg1->sameAs(otherNode->arg1, ignoreStreams) &&
-		arg2->sameAs(otherNode->arg2, ignoreStreams))
+	if (arg1->sameAs(csb, otherNode->arg1, ignoreStreams) &&
+		arg2->sameAs(csb, otherNode->arg2, ignoreStreams))
 	{
 		return true;
 	}
 
 	// A AND B is equivalent to B AND A, ditto for A OR B and B OR A.
-	return arg1->sameAs(otherNode->arg2, ignoreStreams) &&
-		arg2->sameAs(otherNode->arg1, ignoreStreams);
+	return arg1->sameAs(csb, otherNode->arg2, ignoreStreams) &&
+		arg2->sameAs(csb, otherNode->arg1, ignoreStreams);
 }
 
 BoolExprNode* BinaryBoolNode::copy(thread_db* tdbb, NodeCopier& copier) const
@@ -485,9 +485,9 @@ void ComparativeBoolNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		GEN_expr(dsqlScratch, arg3);
 }
 
-bool ComparativeBoolNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool ComparativeBoolNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (!BoolExprNode::dsqlMatch(other, ignoreMapCast))
+	if (!BoolExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 		return false;
 
 	const ComparativeBoolNode* o = other->as<ComparativeBoolNode>();
@@ -496,20 +496,20 @@ bool ComparativeBoolNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) c
 	return dsqlFlag == o->dsqlFlag && blrOp == o->blrOp;
 }
 
-bool ComparativeBoolNode::sameAs(const ExprNode* other, bool ignoreStreams) const
+bool ComparativeBoolNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
 	const ComparativeBoolNode* const otherNode = other->as<ComparativeBoolNode>();
 
 	if (!otherNode || blrOp != otherNode->blrOp)
 		return false;
 
-	bool matching = arg1->sameAs(otherNode->arg1, ignoreStreams) &&
-		arg2->sameAs(otherNode->arg2, ignoreStreams);
+	bool matching = arg1->sameAs(csb, otherNode->arg1, ignoreStreams) &&
+		arg2->sameAs(csb, otherNode->arg2, ignoreStreams);
 
 	if (matching)
 	{
 		matching = (!arg3 == !otherNode->arg3) &&
-			(!arg3 || arg3->sameAs(otherNode->arg3, ignoreStreams));
+			(!arg3 || arg3->sameAs(csb, otherNode->arg3, ignoreStreams));
 
 		if (matching)
 			return true;
@@ -520,8 +520,8 @@ bool ComparativeBoolNode::sameAs(const ExprNode* other, bool ignoreStreams) cons
 	if (blrOp == blr_eql || blrOp == blr_equiv || blrOp == blr_neq)
 	{
 		// A = B is equivalent to B = A, etc.
-		if (arg1->sameAs(otherNode->arg2, ignoreStreams) &&
-			arg2->sameAs(otherNode->arg1, ignoreStreams))
+		if (arg1->sameAs(csb, otherNode->arg2, ignoreStreams) &&
+			arg2->sameAs(csb, otherNode->arg1, ignoreStreams))
 		{
 			return true;
 		}
@@ -1661,9 +1661,9 @@ void RseBoolNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_rse(dsqlScratch, dsqlRse->as<RseNode>());
 }
 
-bool RseBoolNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool RseBoolNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (!BoolExprNode::dsqlMatch(other, ignoreMapCast))
+	if (!BoolExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 		return false;
 
 	const RseBoolNode* o = other->as<RseBoolNode>();
@@ -1672,9 +1672,9 @@ bool RseBoolNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return blrOp == o->blrOp;
 }
 
-bool RseBoolNode::sameAs(const ExprNode* other, bool ignoreStreams) const
+bool RseBoolNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
-	if (!BoolExprNode::sameAs(other, ignoreStreams))
+	if (!BoolExprNode::sameAs(csb, other, ignoreStreams))
 		return false;
 
 	const RseBoolNode* const otherNode = other->as<RseBoolNode>();
