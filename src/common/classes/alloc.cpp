@@ -67,19 +67,19 @@
 #define VALGRIND_FIX_IT		// overrides suspicious valgrind behavior
 #endif	// USE_VALGRIND
 
-void* operator new(size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION)
+void* operator new(size_t s ALLOC_PARAMS) FB_THROW (OOM_EXCEPTION)
 {
 	return MemoryPool::globalAlloc(s ALLOC_PASS_ARGS);
 }
-void* operator new[](size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION)
+void* operator new[](size_t s ALLOC_PARAMS) FB_THROW (OOM_EXCEPTION)
 {
 	return MemoryPool::globalAlloc(s ALLOC_PASS_ARGS);
 }
-void operator delete(void* mem ALLOC_PARAMS) throw()
+void operator delete(void* mem ALLOC_PARAMS) FB_NOTHROW
 {
 	MemoryPool::globalFree(mem);
 }
-void operator delete[](void* mem ALLOC_PARAMS) throw()
+void operator delete[](void* mem ALLOC_PARAMS) FB_NOTHROW
 {
 	MemoryPool::globalFree(mem);
 }
@@ -108,7 +108,7 @@ static const int GUARD_BYTES = 0;
 #endif
 
 template <typename T>
-T absVal(T n) throw ()
+T absVal(T n) FB_NOTHROW
 {
 	return n < 0 ? -n : n;
 }
@@ -142,7 +142,7 @@ const size_t DEFAULT_ALLOCATION = 65536;
 
 Firebird::Vector<void*, MAP_CACHE_SIZE> extents_cache;
 
-void corrupt(const char* text) throw ()
+void corrupt(const char* text) FB_NOTHROW
 {
 #ifdef DEV_BUILD
 	fprintf(stderr, "%s\n", text);
@@ -309,7 +309,7 @@ public:
 
 #ifdef MEM_DEBUG
 	void print_contents(bool used, FILE* file, bool used_only,
-		const char* filter_path, const size_t filter_len) throw ()
+		const char* filter_path, const size_t filter_len) FB_NOTHROW
 	{
 		if (used || !used_only)
 		{
@@ -434,7 +434,7 @@ public:
 
 #ifdef MEM_DEBUG
 	void print_contents(FILE* file, MemPool* pool, bool used_only,
-		const char* filter_path, const size_t filter_len) throw()
+		const char* filter_path, const size_t filter_len) FB_NOTHROW
 	{
 		UCHAR* m = ((UCHAR*) this) + hdrSize();
 		fprintf(file, "Small hunk %p: memory=[%p:%p) spaceRemaining=%" SIZEFORMAT " length=%" SIZEFORMAT "\n",
@@ -507,7 +507,7 @@ public:
 
 #ifdef MEM_DEBUG
 	void print_contents(FILE* file, MemPool* pool, bool used_only,
-		const char* filter_path, const size_t filter_len) throw()
+		const char* filter_path, const size_t filter_len) FB_NOTHROW
 	{
 		UCHAR* m = ((UCHAR*) this) + hdrSize();
 		fprintf(file, "Medium hunk %p: memory=[%p:%p) spaceRemaining=%" SIZEFORMAT " length=%" SIZEFORMAT "\n",
@@ -539,7 +539,7 @@ public:
 
 #ifdef MEM_DEBUG
 	void print_contents(FILE* file, MemPool* pool, bool used_only,
-		const char* filter_path, const size_t filter_len) throw()
+		const char* filter_path, const size_t filter_len) FB_NOTHROW
 	{
 		fprintf(file, "Big hunk %p: memory=%p length=%" SIZEFORMAT "\n",
 			this, &block, length);
@@ -1379,7 +1379,7 @@ public:
 	void decrUsage(MemSmallHunk*, MemPool*)
 	{ }
 
-	static void validate(MemBlock* block, unsigned length) throw ()
+	static void validate(MemBlock* block, unsigned length) FB_NOTHROW
 	{
 		for (; block; block = block->next)
 		{
@@ -1415,7 +1415,7 @@ public:
 
 	void putElement(MemBlock** to, MemBlock* block);
 
-	static void validate(MemBlock* block, unsigned length) throw ()
+	static void validate(MemBlock* block, unsigned length) FB_NOTHROW
 	{
 		for (; block; block = block->next)
 		{
@@ -1450,7 +1450,7 @@ public:
 
 	~FreeObjects();
 
-	FreeObjPtr allocateBlock(MemPool* pool, size_t from, size_t& size) throw (OOM_EXCEPTION)
+	FreeObjPtr allocateBlock(MemPool* pool, size_t from, size_t& size) FB_THROW (OOM_EXCEPTION)
 	{
 		size_t full_size = size + (from ? 0 : ListBuilder::MEM_OVERHEAD);
 		if (full_size > Limits::TOP_LIMIT)
@@ -1499,14 +1499,14 @@ public:
 
 #ifdef MEM_DEBUG
 	void print_contents(FILE* file, MemPool* pool, bool used_only,
-						const char* filter_path, const size_t filter_len) throw()
+						const char* filter_path, const size_t filter_len) FB_NOTHROW
 	{
 		if (currentExtent)
 			currentExtent->print_contents(file, pool, used_only, filter_path, filter_len);
 	}
 #endif
 
-	void validate(void) throw ()
+	void validate(void) FB_NOTHROW
 	{
 		for (unsigned int slot = 0; slot < Limits::TOTAL_ELEMENTS; ++slot)
 			ListBuilder::validate(freeObjects[slot], Limits::getSize(slot));
@@ -1517,7 +1517,7 @@ private:
 	ListBuilder listBuilder;
 	Extent* currentExtent;
 
-	MemBlock* newBlock(MemPool* pool, unsigned slot) throw (OOM_EXCEPTION);
+	MemBlock* newBlock(MemPool* pool, unsigned slot) FB_THROW (OOM_EXCEPTION);
 };
 
 
@@ -1557,26 +1557,26 @@ private:
 	AtomicCounter used_memory, mapped_memory;
 
 private:
-	MemBlock* alloc(size_t from, size_t& length, bool flagRedirect) throw (OOM_EXCEPTION);
-	void releaseBlock(MemBlock *block) throw ();
+	MemBlock* alloc(size_t from, size_t& length, bool flagRedirect) FB_THROW (OOM_EXCEPTION);
+	void releaseBlock(MemBlock *block) FB_NOTHROW;
 
 public:
-	void* allocate(size_t size ALLOC_PARAMS) throw (OOM_EXCEPTION);
-	MemBlock* allocate2(size_t from, size_t& size ALLOC_PARAMS) throw (OOM_EXCEPTION);
+	void* allocate(size_t size ALLOC_PARAMS) FB_THROW (OOM_EXCEPTION);
+	MemBlock* allocate2(size_t from, size_t& size ALLOC_PARAMS) FB_THROW (OOM_EXCEPTION);
 
 private:
-	virtual void memoryIsExhausted(void) throw (OOM_EXCEPTION);
-	void* allocRaw(size_t length) throw (OOM_EXCEPTION);
-	static void release(void* block, bool flagDecr) throw ();
-	static void releaseRaw(bool destroying, void *block, size_t size, bool use_cache = true) throw ();
-	void* getExtent(size_t from, size_t& to) throw (OOM_EXCEPTION);
+	virtual void memoryIsExhausted(void) FB_THROW (OOM_EXCEPTION);
+	void* allocRaw(size_t length) FB_THROW (OOM_EXCEPTION);
+	static void release(void* block, bool flagDecr) FB_NOTHROW;
+	static void releaseRaw(bool destroying, void *block, size_t size, bool use_cache = true) FB_NOTHROW;
+	void* getExtent(size_t from, size_t& to) FB_THROW (OOM_EXCEPTION);
 
 public:
-	static void releaseExtent(bool destroying, void *block, size_t size, MemPool* pool) throw ();
+	static void releaseExtent(bool destroying, void *block, size_t size, MemPool* pool) FB_NOTHROW;
 
 	// pass desired size, return actual extent size
 	template <class Extent>
-	void newExtent(size_t& size, Extent** linkedList) throw (OOM_EXCEPTION);
+	void newExtent(size_t& size, Extent** linkedList) FB_THROW (OOM_EXCEPTION);
 
 private:
 #ifdef USE_VALGRIND
@@ -1588,17 +1588,17 @@ private:
 
 public:
 	static void deletePool(MemPool* pool);
-	static void globalFree(void* block) throw ();
+	static void globalFree(void* block) FB_NOTHROW;
 
-	static void deallocate(void* block) throw ();
-	void validate(void) throw ();
+	static void deallocate(void* block) FB_NOTHROW;
+	void validate(void) FB_NOTHROW;
 
 	// Create memory pool instance
 	static MemPool* createPool(MemPool* parent, MemoryStats& stats);
 
 	// Set statistics group for pool. Usage counters will be decremented from
 	// previously set group and added to new
-	void setStatsGroup(MemoryStats& stats) throw ();
+	void setStatsGroup(MemoryStats& stats) FB_NOTHROW;
 
 	// Initialize and finalize global memory pool
 	static MemPool* init()
@@ -1620,25 +1620,25 @@ public:
 	}
 
 	// Statistics
-	void increment_usage(size_t size) throw ()
+	void increment_usage(size_t size) FB_NOTHROW
 	{
 		stats->increment_usage(size);
 		used_memory += size;
 	}
 
-	void decrement_usage(size_t size) throw ()
+	void decrement_usage(size_t size) FB_NOTHROW
 	{
 		stats->decrement_usage(size);
 		used_memory -= size;
 	}
 
-	void increment_mapping(size_t size) throw ()
+	void increment_mapping(size_t size) FB_NOTHROW
 	{
 		stats->increment_mapping(size);
 		mapped_memory += size;
 	}
 
-	void decrement_mapping(size_t size) throw ()
+	void decrement_mapping(size_t size) FB_NOTHROW
 	{
 		stats->decrement_mapping(size);
 		mapped_memory -= size;
@@ -1646,9 +1646,9 @@ public:
 
 #ifdef MEM_DEBUG
 	// Print out pool contents. This is debugging routine
-	void print_contents(FILE*, unsigned flags, const char* filter_path) throw ();
+	void print_contents(FILE*, unsigned flags, const char* filter_path) FB_NOTHROW;
 	// The same routine, but more easily callable from the debugger
-	void print_contents(const char* filename, unsigned flags, const char* filter_path) throw ();
+	void print_contents(const char* filename, unsigned flags, const char* filter_path) FB_NOTHROW;
 
 private:
 	MemPool* next;
@@ -1686,7 +1686,7 @@ void DoubleLinkedList::decrUsage(MemMediumHunk* hunk, MemPool* pool)
 
 
 template <class ListBuilder, class Limits>
-MemBlock* FreeObjects<ListBuilder, Limits>::newBlock(MemPool* pool, unsigned slot) throw (OOM_EXCEPTION)
+MemBlock* FreeObjects<ListBuilder, Limits>::newBlock(MemPool* pool, unsigned slot) FB_THROW (OOM_EXCEPTION)
 {
 	size_t size = Limits::getSize(slot);
 
@@ -1921,7 +1921,7 @@ MemPool::~MemPool(void)
 }
 
 template <class Extent>
-void MemPool::newExtent(size_t& size, Extent** linkedList) throw(OOM_EXCEPTION)
+void MemPool::newExtent(size_t& size, Extent** linkedList) FB_THROW(OOM_EXCEPTION)
 {
 	// No large enough block found. We need to extend the pool
 	void* memory = NULL;
@@ -1965,7 +1965,7 @@ MemoryPool* MemoryPool::createPool(MemoryPool* parentPool, MemoryStats& stats)
 	return FB_NEW_POOL(*parentPool) MemoryPool(p);
 }
 
-void MemPool::setStatsGroup(MemoryStats& newStats) throw ()
+void MemPool::setStatsGroup(MemoryStats& newStats) FB_NOTHROW
 {
 	MutexLockGuard guard(mutex, "MemPool::setStatsGroup");
 
@@ -1981,12 +1981,12 @@ void MemPool::setStatsGroup(MemoryStats& newStats) throw ()
 	stats->increment_usage(sav_used_memory);
 }
 
-void MemoryPool::setStatsGroup(MemoryStats& newStats) throw ()
+void MemoryPool::setStatsGroup(MemoryStats& newStats) FB_NOTHROW
 {
 	pool->setStatsGroup(newStats);
 }
 
-MemBlock* MemPool::alloc(size_t from, size_t& length, bool flagRedirect) throw (OOM_EXCEPTION)
+MemBlock* MemPool::alloc(size_t from, size_t& length, bool flagRedirect) FB_THROW (OOM_EXCEPTION)
 {
 	MutexEnsureUnlock guard(mutex, "MemPool::alloc");
 	guard.enter();
@@ -2045,7 +2045,7 @@ MemBlock* MemPool::allocate2(size_t from, size_t& size
 #ifdef DEBUG_GDS_ALLOC
 	, const char* fileName, int line
 #endif
-) throw (OOM_EXCEPTION)
+) FB_THROW (OOM_EXCEPTION)
 {
 	size_t length = from ? size : ROUNDUP(size + VALGRIND_REDZONE, roundingSize) + GUARD_BYTES;
 	MemBlock* memory = alloc(from, length, true);
@@ -2074,7 +2074,7 @@ MemBlock* MemPool::allocate2(size_t from, size_t& size
 }
 
 
-void* MemPool::allocate(size_t size ALLOC_PARAMS) throw (OOM_EXCEPTION)
+void* MemPool::allocate(size_t size ALLOC_PARAMS) FB_THROW (OOM_EXCEPTION)
 {
 	MemBlock* memory = allocate2(0, size ALLOC_PASS_ARGS);
 
@@ -2084,7 +2084,7 @@ void* MemPool::allocate(size_t size ALLOC_PARAMS) throw (OOM_EXCEPTION)
 }
 
 
-void MemPool::release(void* object, bool flagDecr) throw ()
+void MemPool::release(void* object, bool flagDecr) FB_NOTHROW
 {
 	if (object)
 	{
@@ -2146,7 +2146,7 @@ void MemPool::release(void* object, bool flagDecr) throw ()
 	}
 }
 
-void MemPool::releaseBlock(MemBlock* block) throw ()
+void MemPool::releaseBlock(MemBlock* block) FB_NOTHROW
 {
 	if (block->pool != this)
 		corrupt("bad block released");
@@ -2199,12 +2199,12 @@ void MemPool::releaseBlock(MemBlock* block) throw ()
 	releaseRaw(pool_destroying, hunk, hunk->length, false);
 }
 
-void MemPool::memoryIsExhausted(void) throw (OOM_EXCEPTION)
+void MemPool::memoryIsExhausted(void) FB_THROW (OOM_EXCEPTION)
 {
 	Firebird::BadAlloc::raise();
 }
 
-void* MemPool::allocRaw(size_t size) throw (OOM_EXCEPTION)
+void* MemPool::allocRaw(size_t size) FB_THROW (OOM_EXCEPTION)
 {
 #ifndef USE_VALGRIND
 	if (size == DEFAULT_ALLOCATION)
@@ -2264,14 +2264,14 @@ void* MemPool::allocRaw(size_t size) throw (OOM_EXCEPTION)
 }
 
 
-void* MemPool::getExtent(size_t from, size_t& to) throw(OOM_EXCEPTION)		// pass desired minimum size, return actual extent size
+void* MemPool::getExtent(size_t from, size_t& to) FB_THROW(OOM_EXCEPTION)		// pass desired minimum size, return actual extent size
 {
 	MemBlock* extent = allocate2(from, to ALLOC_ARGS);
 	return &extent->body;
 }
 
 
-void MemPool::releaseExtent(bool destroying, void* block, size_t size, MemPool* pool) throw ()
+void MemPool::releaseExtent(bool destroying, void* block, size_t size, MemPool* pool) FB_NOTHROW
 {
 	if (size < DEFAULT_ALLOCATION)
 		release(block, false);
@@ -2284,7 +2284,7 @@ void MemPool::releaseExtent(bool destroying, void* block, size_t size, MemPool* 
 }
 
 
-void MemPool::releaseRaw(bool destroying, void* block, size_t size, bool use_cache) throw ()
+void MemPool::releaseRaw(bool destroying, void* block, size_t size, bool use_cache) FB_NOTHROW
 {
 #ifndef USE_VALGRIND
 	if (use_cache && (size == DEFAULT_ALLOCATION))
@@ -2362,19 +2362,19 @@ void MemPool::releaseRaw(bool destroying, void* block, size_t size, bool use_cac
 		corrupt("OS memory deallocation error");
 }
 
-void MemPool::globalFree(void* block) throw ()
+void MemPool::globalFree(void* block) FB_NOTHROW
 {
 	deallocate(block);
 }
 
-void* MemoryPool::calloc(size_t size ALLOC_PARAMS) throw (OOM_EXCEPTION)
+void* MemoryPool::calloc(size_t size ALLOC_PARAMS) FB_THROW (OOM_EXCEPTION)
 {
 	void* block = allocate(size ALLOC_PASS_ARGS);
 	memset(block, 0, size);
 	return block;
 }
 
-void MemPool::deallocate(void* block) throw ()
+void MemPool::deallocate(void* block) FB_NOTHROW
 {
 	release(block, true);
 }
@@ -2384,7 +2384,7 @@ void MemPool::deletePool(MemPool* pool)
 	delete pool;
 }
 
-void MemPool::validate(void) throw ()
+void MemPool::validate(void) FB_NOTHROW
 {
 	smallObjects.validate();
 	mediumObjects.validate();
@@ -2397,7 +2397,7 @@ void MemPool::validate(void) throw ()
 }
 
 #ifdef MEM_DEBUG
-void MemPool::print_contents(const char* filename, unsigned flags, const char* filter_path) throw ()
+void MemPool::print_contents(const char* filename, unsigned flags, const char* filter_path) FB_NOTHROW
 {
 	FILE* out = os_utils::fopen(filename, "w");
 	if (!out)
@@ -2409,7 +2409,7 @@ void MemPool::print_contents(const char* filename, unsigned flags, const char* f
 
 
 // This member function can't be const because there are calls to the mutex.
-void MemPool::print_contents(FILE* file, unsigned flags, const char* filter_path) throw ()
+void MemPool::print_contents(FILE* file, unsigned flags, const char* filter_path) FB_NOTHROW
 {
 	bool used_only = flags & MemoryPool::PRINT_USED_ONLY;
 
@@ -2490,7 +2490,7 @@ MemoryPool& AutoStorage::getAutoMemoryPool()
 }
 
 #ifdef LIBC_CALLS_NEW
-void* MemoryPool::globalAlloc(size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION)
+void* MemoryPool::globalAlloc(size_t s ALLOC_PARAMS) FB_THROW (OOM_EXCEPTION)
 {
 	if (!defaultMemoryManager)
 	{
@@ -2503,17 +2503,17 @@ void* MemoryPool::globalAlloc(size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION)
 }
 #endif // LIBC_CALLS_NEW
 
-void MemoryPool::globalFree(void* block) throw ()
+void MemoryPool::globalFree(void* block) FB_NOTHROW
 {
 	MemPool::globalFree(block);
 }
 
-void* MemoryPool::allocate(size_t size ALLOC_PARAMS) throw (OOM_EXCEPTION)
+void* MemoryPool::allocate(size_t size ALLOC_PARAMS) FB_THROW (OOM_EXCEPTION)
 {
 	return pool->allocate(size ALLOC_PASS_ARGS);
 }
 
-void MemoryPool::deallocate(void* block) throw ()
+void MemoryPool::deallocate(void* block) FB_NOTHROW
 {
 	pool->deallocate(block);
 }
@@ -2525,14 +2525,14 @@ void MemoryPool::deletePool(MemoryPool* pool)
 	delete pool;
 }
 
-void MemoryPool::print_contents(FILE* file, unsigned flags, const char* filter_path) throw ()
+void MemoryPool::print_contents(FILE* file, unsigned flags, const char* filter_path) FB_NOTHROW
 {
 #ifdef MEM_DEBUG
 	pool->print_contents(file, flags, filter_path);
 #endif
 }
 
-void MemoryPool::print_contents(const char* filename, unsigned flags, const char* filter_path) throw ()
+void MemoryPool::print_contents(const char* filename, unsigned flags, const char* filter_path) FB_NOTHROW
 {
 #ifdef MEM_DEBUG
 	pool->print_contents(filename, flags, filter_path);
@@ -2566,11 +2566,11 @@ void AutoStorage::ProbeStack() const
 // in a case when we actually need "new" only with file/line information
 // this version should be also present as a pair for "delete".
 #ifdef DEBUG_GDS_ALLOC
-void* operator new(size_t s) throw (OOM_EXCEPTION)
+void* operator new(size_t s) FB_THROW (OOM_EXCEPTION)
 {
 	return MemoryPool::globalAlloc(s ALLOC_ARGS);
 }
-void* operator new[](size_t s) throw (OOM_EXCEPTION)
+void* operator new[](size_t s) FB_THROW (OOM_EXCEPTION)
 {
 	return MemoryPool::globalAlloc(s ALLOC_ARGS);
 }
