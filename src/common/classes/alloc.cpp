@@ -67,6 +67,23 @@
 #define VALGRIND_FIX_IT		// overrides suspicious valgrind behavior
 #endif	// USE_VALGRIND
 
+void* operator new(size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION)
+{
+	return MemoryPool::globalAlloc(s ALLOC_PASS_ARGS);
+}
+void* operator new[](size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION)
+{
+	return MemoryPool::globalAlloc(s ALLOC_PASS_ARGS);
+}
+void operator delete(void* mem ALLOC_PARAMS) throw()
+{
+	MemoryPool::globalFree(mem);
+}
+void operator delete[](void* mem ALLOC_PARAMS) throw()
+{
+	MemoryPool::globalFree(mem);
+}
+
 namespace {
 
 /*** emergency debugging stuff

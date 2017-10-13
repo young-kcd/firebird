@@ -294,15 +294,11 @@ private:
 using Firebird::MemoryPool;
 
 // operators new and delete
+extern void* operator new(size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION);
+extern void* operator new[](size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION);
+extern void operator delete(void* mem ALLOC_PARAMS) throw();
+extern void operator delete[](void* mem ALLOC_PARAMS) throw();
 
-inline void* operator new(size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION)
-{
-	return MemoryPool::globalAlloc(s ALLOC_PASS_ARGS);
-}
-inline void* operator new[](size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION)
-{
-	return MemoryPool::globalAlloc(s ALLOC_PASS_ARGS);
-}
 
 inline void* operator new(size_t s, Firebird::MemoryPool& pool ALLOC_PARAMS) throw (OOM_EXCEPTION)
 {
@@ -311,15 +307,6 @@ inline void* operator new(size_t s, Firebird::MemoryPool& pool ALLOC_PARAMS) thr
 inline void* operator new[](size_t s, Firebird::MemoryPool& pool ALLOC_PARAMS) throw (OOM_EXCEPTION)
 {
 	return pool.allocate(s ALLOC_PASS_ARGS);
-}
-
-inline void operator delete(void* mem ALLOC_PARAMS) throw()
-{
-	MemoryPool::globalFree(mem);
-}
-inline void operator delete[](void* mem ALLOC_PARAMS) throw()
-{
-	MemoryPool::globalFree(mem);
 }
 
 inline void operator delete(void* mem, Firebird::MemoryPool& pool ALLOC_PARAMS) throw()
