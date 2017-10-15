@@ -1327,7 +1327,7 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 		icu->ucolSetAttribute(compareCollator, UCOL_STRENGTH, UCOL_IDENTICAL, &status);
 		icu->ucolSetAttribute(sortCollator, UCOL_STRENGTH, UCOL_IDENTICAL, &status);
 
-		tt->texttype_flags = TEXTTYPE_UNSORTED_UNIQUE;
+		tt->texttype_flags |= TEXTTYPE_UNSORTED_UNIQUE;
 	}
 	else
 	{
