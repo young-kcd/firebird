@@ -1024,7 +1024,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	DatabaseContextHolder dbbHolder(tdbb);
 
+#ifdef SUPERSERVER
 	if (!(dbb->dbb_flags & DBB_new))
+#endif
 	{
 		// That's already initialized DBB
 		// No need keeping dbInitMutex locked any more
@@ -1143,7 +1145,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 		// Init complete - we can release dbInitMutex
 		dbb->dbb_flags &= ~DBB_new;
+#ifdef SUPERSERVER
 		guardDbInit.leave();
+#endif
 	}
 	else
 	{
