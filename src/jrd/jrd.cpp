@@ -6779,6 +6779,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 		// Extra shutdown operations
 		Service::shutdownServices();
 		TraceManager::shutdown();
+		TRA_wait_for_sweep_completion();
 	}
 	catch (const Exception&)
 	{

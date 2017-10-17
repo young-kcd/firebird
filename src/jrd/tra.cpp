@@ -124,12 +124,13 @@ namespace
 	struct SweepLock
 	{
 		SweepLock(MemoryPool&)
-			: database(NULL), shutdown(false)
+			: database(NULL), shutdown(false), counter(0)
 		{ }
 
 		void* database;
 		FB_THREAD_ID thd;
 		bool shutdown;
+		unsigned counter;
 	};
 	GlobalPtr<SweepLock> sweepLock;
 	GlobalPtr<Mutex> sweepLockMutex;
@@ -145,6 +146,24 @@ void TRA_sweep_shutdown()
 		sweepLock->shutdown = true;
 
 		if (sweepLock->database)
+		{
+			g.leave();
+			THREAD_SLEEP(1);
+			continue;
+		}
+		break;
+	}
+}
+
+void TRA_wait_for_sweep_completion()
+{
+	for (;;)
+	{
+		MutexEnsureUnlock g(sweepLockMutex);
+		g.enter();
+		sweepLock->shutdown = true;
+
+		if (sweepLock->counter > 0)
 		{
 			g.leave();
 			THREAD_SLEEP(1);
@@ -2860,6 +2879,11 @@ static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
 	ISC_STATUS_ARRAY status_vector = {0};
 	isc_db_handle db_handle = 0;
 
+ 	{
+ 		MutexLockGuard g(sweepLockMutex);
+		sweepLock->counter++;
+	}
+
 	isc_attach_database(status_vector, 0, (const char*) database,
 						&db_handle, dpb.getBufferLength(),
 						reinterpret_cast<const char*>(dpb.getBuffer()));
@@ -2874,6 +2898,7 @@ static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
  		MutexLockGuard g(sweepLockMutex);
 		if (sweepLock->database && sweepLock->thd == getThreadId())
 			sweepLock->database = NULL;
+		sweepLock->counter--;
 	}
 
 	return 0;

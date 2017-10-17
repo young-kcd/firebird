@@ -65,6 +65,7 @@ int		TRA_wait(Jrd::thread_db*, Jrd::jrd_tra*, SLONG, Jrd::jrd_tra::wait_t);
 void	TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request);
 void	TRA_detach_request(Jrd::jrd_req* request);
 void	TRA_sweep_shutdown();
+void	TRA_wait_for_sweep_completion();
 
 #endif // JRD_TRA_PROTO_H
 
