@@ -108,4 +108,5 @@ Samples (suppose UserManager=Srp,Legacy_UserManager in firebird.conf):
 
 Notice!
 This feature highly depends upon user management plugin. Take into an account that some options
-are ignored when using legacy user management plugin.
+are ignored when using legacy user management plugin. For example attributes GID and UID are
+uppercased (i.e. one gets 'GID' when enters 'gId') by legacy user manager, other - silently ignored.
