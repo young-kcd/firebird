@@ -1385,25 +1385,28 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 
 	try
 	{
-		Parser* parser = FB_NEW_POOL(*scratchPool) Parser(*scratchPool, scratch, clientDialect,
-			scratch->getAttachment()->dbb_db_SQL_dialect, PARSER_VERSION, text, textLength,
-			tdbb->getAttachment()->att_charset);
+		string transformedText;
 
-		{	// scope
+		{	// scope to delete parser before the scratch pool is gone
 			Jrd::ContextPoolHolder scratchContext(tdbb, scratchPool);
 
+			Parser parser(*scratchPool, scratch, clientDialect,
+				scratch->getAttachment()->dbb_db_SQL_dialect, PARSER_VERSION, text, textLength,
+				tdbb->getAttachment()->att_charset);
+
 			// Parse the SQL statement.  If it croaks, return
-			request = parser->parse();
+			request = parser.parse();
+
+			if (parser.isStmtAmbiguous())
+				scratch->flags |= DsqlCompilerScratch::FLAG_AMBIGUOUS_STMT;
+
+			transformedText = parser.getTransformedString();
 		}
 
 		request->req_dbb = scratch->getAttachment();
 		request->req_transaction = scratch->getTransaction();
 		request->statement = scratch->getStatement();
 
-		if (parser->isStmtAmbiguous())
-			scratch->flags |= DsqlCompilerScratch::FLAG_AMBIGUOUS_STMT;
-
-		string transformedText = parser->getTransformedString();
 		SSHORT charSetId = database->dbb_attachment->att_charset;
 
 		// If the attachment charset is NONE, replace non-ASCII characters by question marks, so
