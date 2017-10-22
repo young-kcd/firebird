@@ -331,7 +331,7 @@ public:
 
 	Firebird::Array<MemoryPool*>	att_pools;		// pools
 
-	MemoryPool* createPool(MemoryPool* parent = NULL);
+	MemoryPool* createPool();
 	void deletePool(MemoryPool* pool);
 
 	/// former Database members - end
