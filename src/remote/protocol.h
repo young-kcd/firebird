@@ -276,6 +276,15 @@ enum P_OP
 	op_cond_accept			= 98,	// Server accepts connection, returns some data to client
 									// and asks client to continue authentication before attach call
 
+	op_batch_create			= 99,
+	op_batch_msg			= 100,
+	op_batch_exec			= 101,
+	op_batch_rls			= 102,
+	op_batch_cs				= 103,
+	op_batch_regblob		= 104,
+	op_batch_blob_stream	= 105,
+	op_batch_set_bpb		= 106,
+
 	op_max
 };
 
@@ -645,6 +654,63 @@ typedef struct p_crypt_callback
 } P_CRYPT_CALLBACK;
 
 
+// Batch definitions
+
+typedef struct p_batch_create
+{
+    OBJCT			p_batch_statement;	// statement object
+    CSTRING_CONST	p_batch_blr;		// blr describing input messages
+    ULONG			p_batch_msglen;		// explicit message length
+    CSTRING_CONST   p_batch_pb;			// parameters block
+} P_BATCH_CREATE;
+
+typedef struct p_batch_msg
+{
+	OBJCT	p_batch_statement;			// statement object
+	ULONG	p_batch_messages;			// number of messages
+	CSTRING p_batch_data;
+} P_BATCH_MSG;
+
+typedef struct p_batch_exec
+{
+	OBJCT	p_batch_statement;			// statement object
+	OBJCT   p_batch_transaction;		// transaction object
+} P_BATCH_EXEC;
+
+typedef struct p_batch_cs				// completion state
+{
+    OBJCT	p_batch_statement;			// statement object
+	ULONG	p_batch_reccount;			// total records
+	ULONG	p_batch_updates;			// update counters
+	ULONG	p_batch_vectors;			// recnum + status vector pairs
+	ULONG	p_batch_errors;				// error's recnums
+} P_BATCH_CS;
+
+typedef struct p_batch_free
+{
+	OBJCT	p_batch_statement;			// statement object
+} P_BATCH_FREE;
+
+typedef struct p_batch_blob
+{
+	OBJCT			p_batch_statement;	// statement object
+	CSTRING			p_batch_blob_data;	// data
+} P_BATCH_BLOB;
+
+typedef struct p_batch_regblob
+{
+	OBJCT			p_batch_statement;	// statement object
+	SQUAD			p_batch_exist_id;	// id of blob to register
+	SQUAD			p_batch_blob_id;	// blob id
+} P_BATCH_REGBLOB;
+
+typedef struct p_batch_setbpb
+{
+	OBJCT			p_batch_statement;	// statement object
+	CSTRING_CONST	p_batch_blob_bpb;	// BPB
+} P_BATCH_SETBPB;
+
+
 // Generalize packet (sic!)
 
 typedef struct packet
@@ -688,6 +754,14 @@ typedef struct packet
 	P_AUTH_CONT p_auth_cont;	// Request more auth data
 	P_CRYPT p_crypt;			// Start wire crypt
 	P_CRYPT_CALLBACK p_cc;		// Database crypt callback
+	P_BATCH_CREATE p_batch_create; // Create batch interface
+	P_BATCH_MSG p_batch_msg;	// Add messages to batch
+	P_BATCH_EXEC p_batch_exec;	// Run batch
+	P_BATCH_FREE p_batch_free;	// Destroy batch
+	P_BATCH_CS p_batch_cs;		// Batch completion state
+	P_BATCH_BLOB p_batch_blob;	// BLOB stream portion in batch
+	P_BATCH_REGBLOB p_batch_regblob;	// Register already existing BLOB in batch
+	P_BATCH_SETBPB p_batch_setbpb;		// Set default BPB for batch
 
 public:
 	packet()

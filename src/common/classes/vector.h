@@ -36,7 +36,7 @@
 namespace Firebird {
 
 // Very fast static array of simple types
-template <typename T, FB_SIZE_T Capacity>
+template <typename T, FB_SIZE_T Capacity, typename A = char>
 class Vector
 {
 public:
@@ -85,6 +85,14 @@ public:
 		return &data[index];
 	}
 
+	T* removeCount(const FB_SIZE_T index, const FB_SIZE_T n) throw()
+	{
+  		fb_assert(index + n <= count);
+  		memmove(data + index, data + index + n, sizeof(T) * (count - index - n));
+		count -= n;
+		return &data[index];
+	}
+
 	void shrink(FB_SIZE_T newCount) throw()
 	{
 		fb_assert(newCount <= count);
@@ -118,6 +126,20 @@ public:
 		return data[count];
 	}
 
+	void push(const T* items, const FB_SIZE_T itemsCount)
+	{
+		fb_assert(count <= FB_MAX_SIZEOF - itemsCount);
+		fb_assert(count + itemsCount <= Capacity);
+		memcpy(data + count, items, sizeof(T) * itemsCount);
+		count += itemsCount;
+	}
+
+	void append(const T* items, const FB_SIZE_T itemsCount)
+	{
+		push(items, itemsCount);
+	}
+
+
 	// This method only assigns "pos" if the element is found.
 	// Maybe we should modify it to iterate directy with "pos".
 	bool find(const T& item, FB_SIZE_T& pos) const
@@ -134,7 +156,13 @@ public:
 	}
 
 protected:
-	FB_SIZE_T count;
+	union
+	{
+		FB_SIZE_T count;
+		A align;
+	};
+	// Do not insert data members between align and data:
+	// alignment of data is ensured by preceding union
 	T data[Capacity];
 };
 

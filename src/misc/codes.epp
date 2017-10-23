@@ -430,7 +430,7 @@ static void build_iberror_h()
 		if (last_code + 1 != N.CODE && N.FAC_CODE == 0)
 		{
 			fprintf(stderr,
-				"Warning: missing codes between %d and %d (exclusive)\n",
+				"Warning: 1 missing codes between %d and %d (exclusive)\n",
 				last_code, (int) N.CODE);
 		}
 		last_code = N.CODE;
@@ -474,7 +474,7 @@ static void build_iberror_h()
 		if (last_code + 1 != N.CODE && N.FAC_CODE == 0)
 		{
 			fprintf(stderr,
-				"Warning: missing codes between %d and %d (exclusive)\n",
+				"Warning: 2 missing codes between %d and %d (exclusive)\n",
 				last_code, (int) N.CODE);
 		}
 		last_code = N.CODE;
@@ -539,7 +539,7 @@ static void build_iberror_h()
 //		if (last_code + 1 != N.CODE && N.FAC_CODE == 0)
 //		{
 //			fprintf(stderr,
-//					   "Warning: missing codes between %d and %d (exclusive)\n",
+//					   "Warning: 3 missing codes between %d and %d (exclusive)\n",
 //					   last_code, (int) N.CODE);
 //		}
 //		last_code = N.CODE;
@@ -610,7 +610,7 @@ static void build_iberror_h()
 //		if (last_code + 1 != N.CODE && N.FAC_CODE == 0)
 //		{
 //			fprintf(stderr,
-//					   "Warning: missing codes between %d and %d (exclusive)\n",
+//					   "Warning: 4 missing codes between %d and %d (exclusive)\n",
 //					   last_code, (int) N.CODE);
 //		}
 //		last_code = N.CODE;
@@ -820,7 +820,7 @@ static void build_other_headers()
 		if (last_code + 1 != N.CODE && N.FAC_CODE == 0)
 		{
 			fprintf(stderr,
-					   "Warning: missing codes between %d and %d (exclusive)\n",
+					   "Warning: 5 missing codes between %d and %d (exclusive)\n",
 					   last_code, (int) N.CODE);
 		}
 		last_code = N.CODE;

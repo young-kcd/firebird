@@ -99,20 +99,26 @@ public:
 public:
 	explicit MsgMetadata(MsgMetadata* from)
 		: items(getPool(), from->items),
-		  length(from->length)
+		  length(from->length),
+		  alignment(from->alignment),
+		  alignedLength(from->alignedLength)
 	{
 	}
 
 	explicit MsgMetadata(IMessageMetadata* from)
 		: items(getPool()),
-		  length(0)
+		  length(0),
+		  alignment(0),
+		  alignedLength(0)
 	{
 		assign(from);
 	}
 
 	MsgMetadata()
 		: items(getPool()),
-		  length(0)
+		  length(0),
+		  alignment(0),
+		  alignedLength(0)
 	{
 	}
 
@@ -266,6 +272,16 @@ public:
 		return length;
 	}
 
+	unsigned getAlignment(CheckStatusWrapper* /*status*/)
+	{
+		return alignment;
+	}
+
+	unsigned getAlignedLength(CheckStatusWrapper* /*status*/)
+	{
+		return alignedLength;
+	}
+
 public:
 	void addItem(const MetaName& name, bool nullable, const dsc& desc);
 	unsigned makeOffsets();
@@ -281,7 +297,7 @@ private:
 
 private:
 	ObjectsArray<Item> items;
-	unsigned length;
+	unsigned length, alignment, alignedLength;
 };
 
 //class AttMetadata : public IMessageMetadataBaseImpl<AttMetadata, CheckStatusWrapper, MsgMetadata>

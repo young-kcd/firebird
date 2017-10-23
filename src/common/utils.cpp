@@ -52,6 +52,8 @@
 #include "../common/StatusArg.h"
 #include "../common/os/os_utils.h"
 #include "../dsql/sqlda_pub.h"
+#include "../common/classes/ClumpletReader.h"
+#include "../common/StatusArg.h"
 
 #ifdef WIN_NT
 #include <direct.h>
@@ -1169,7 +1171,7 @@ unsigned int mergeStatus(ISC_STATUS* const dest, unsigned int space,
 	return copied;
 }
 
-void copyStatus(Firebird::CheckStatusWrapper* to, const Firebird::CheckStatusWrapper* from) throw()
+void copyStatus(Firebird::CheckStatusWrapper* to, const Firebird::IStatus* from) throw()
 {
 	to->init();
 
@@ -1623,6 +1625,23 @@ const char* dpbItemUpper(const char* s, FB_SIZE_T l, Firebird::string& buf)
 	}
 
 	return buf.c_str();
+}
+
+bool isBpbSegmented(unsigned parLength, const unsigned char* par)
+{
+	if (parLength && !par)
+		(Firebird::Arg::Gds(isc_random) << "Malformed BPB").raise();
+
+	Firebird::ClumpletReader bpb(Firebird::ClumpletReader::Tagged, par, parLength);
+	if (bpb.getBufferTag() != isc_bpb_version1)
+		(Firebird::Arg::Gds(isc_random) << "Malformed BPB").raise();
+
+	if (!bpb.find(isc_bpb_type))
+	{
+		return true;
+	}
+	int type = bpb.getInt();
+	return type & isc_bpb_type_stream ? false : true;
 }
 
 } // namespace fb_utils

@@ -292,7 +292,7 @@ void GEN_request(DsqlCompilerScratch* scratch, DmlNode* node)
 				else
 				{
 					GEN_port(scratch, message);
-					scratch->appendUChar(blr_receive);
+					scratch->appendUChar(blr_receive_batch);
 					scratch->appendUChar(message->msg_number);
 				}
 				message = statement->getReceiveMsg();

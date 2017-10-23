@@ -462,6 +462,9 @@
     <ClCompile Include="..\..\..\src\jrd\Savepoint.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\dsql\DsqlBatch.cpp">
+      <Filter>DSQL</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\jrd\recsrc\RecordSource.h">
@@ -987,6 +990,9 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\extds\ValidatePassword.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\dsql\DsqlBatch.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -430,6 +430,7 @@ enum info_db_provider
 #define isc_info_sql_stmt_flags         27
 #define isc_info_sql_stmt_timeout_user	28
 #define isc_info_sql_stmt_timeout_run	29
+#define isc_info_sql_stmt_blob_align	30
 
 /*********************************/
 /* SQL information return values */

@@ -129,8 +129,9 @@
 #define blr_maximum		(unsigned char)29
 #define blr_minimum		(unsigned char)30
 #define blr_total		(unsigned char)31
+#define blr_receive_batch	(unsigned char)32
 
-// unused codes: 32..33
+// unused code: 33
 
 #define blr_add			(unsigned char)34
 #define blr_subtract		(unsigned char)35

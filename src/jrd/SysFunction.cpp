@@ -2529,44 +2529,44 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 		if (!attachment->ddlTriggersContext.hasData())
 			status_exception::raise(Arg::Gds(isc_sysf_invalid_trig_namespace));
 
-		const DdlTriggerContext& context = Stack<DdlTriggerContext>::const_iterator(
+		const DdlTriggerContext* context = Stack<DdlTriggerContext*>::const_iterator(
 			attachment->ddlTriggersContext).object();
 
 		if (nameStr == EVENT_TYPE_NAME)
-			resultStr = context.eventType;
+			resultStr = context->eventType;
 		else if (nameStr == OBJECT_TYPE_NAME)
-			resultStr = context.objectType;
+			resultStr = context->objectType;
 		else if (nameStr == DDL_EVENT_NAME)
-			resultStr = context.eventType + " " + context.objectType;
+			resultStr = context->eventType + " " + context->objectType;
 		else if (nameStr == OBJECT_NAME)
 		{
-			resultStr = context.objectName.c_str();
+			resultStr = context->objectName.c_str();
 			resultType = ttype_metadata;
 		}
 		else if (nameStr == OLD_OBJECT_NAME)
 		{
-			if (context.oldObjectName.isEmpty())
+			if (context->oldObjectName.isEmpty())
 				return NULL;
 
-			resultStr = context.oldObjectName.c_str();
+			resultStr = context->oldObjectName.c_str();
 			resultType = ttype_metadata;
 		}
 		else if (nameStr == NEW_OBJECT_NAME)
 		{
-			if (context.newObjectName.isEmpty())
+			if (context->newObjectName.isEmpty())
 				return NULL;
 
-			resultStr = context.newObjectName.c_str();
+			resultStr = context->newObjectName.c_str();
 			resultType = ttype_metadata;
 		}
 		else if (nameStr == SQL_TEXT_NAME)
 		{
-			if (context.sqlText.isEmpty())
+			if (context->sqlText.isEmpty())
 				return NULL;
 
 			blb* blob = blb::create(tdbb, transaction, &impure->vlu_misc.vlu_bid);
-			blob->BLB_put_data(tdbb, reinterpret_cast<const UCHAR*>(context.sqlText.c_str()),
-				context.sqlText.length());
+			blob->BLB_put_data(tdbb, reinterpret_cast<const UCHAR*>(context->sqlText.c_str()),
+				context->sqlText.length());
 			blob->BLB_close(tdbb);
 
 			dsc result;

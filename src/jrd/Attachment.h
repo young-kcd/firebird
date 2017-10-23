@@ -312,7 +312,7 @@ public:
 	Firebird::PathName	att_filename;			// alias used to attach the database
 	const Firebird::TimeStamp	att_timestamp;	// Connection date and time
 	Firebird::StringMap att_context_vars;	// Context variables for the connection
-	Firebird::Stack<DdlTriggerContext> ddlTriggersContext;	// Context variables for DDL trigger event
+	Firebird::Stack<DdlTriggerContext*> ddlTriggersContext;	// Context variables for DDL trigger event
 	Firebird::string att_network_protocol;	// Network protocol used by client for connection
 	Firebird::string att_remote_address;	// Protocol-specific address of remote client
 	SLONG att_remote_pid;					// Process id of remote client

@@ -295,21 +295,34 @@ void MsgMetadata::addItem(const MetaName& name, bool nullable, const dsc& desc)
 // returns ~0 on success or index of not finished item
 unsigned MsgMetadata::makeOffsets()
 {
-	length = 0;
+	length = alignedLength = 0;
+	alignment = type_alignments[dtype_short];	// NULL indicator
 
 	for (unsigned n = 0; n < items.getCount(); ++n)
 	{
 		Item* param = &items[n];
 		if (!param->finished)
 		{
-			length = 0;
+			length = alignment = 0;
 			return n;
 		}
+
+		unsigned dtype;
 		length = fb_utils::sqlTypeToDsc(length, param->type, param->length,
-			NULL /*dtype*/, NULL /*length*/, &param->offset, &param->nullInd);
+			&dtype, NULL /*length*/, &param->offset, &param->nullInd);
+
+		if (dtype >= DTYPE_TYPE_MAX)
+		{
+			length = alignment = 0;
+			return n;
+		}
+
+		alignment = MAX(alignment, type_alignments[dtype]);
 	}
 
-	return ~0;
+	alignedLength = FB_ALIGN(length, alignment);
+
+	return ~0u;
 }
 
 

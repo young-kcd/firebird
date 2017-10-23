@@ -64,6 +64,8 @@
 //#define COMPRESS_DEBUG 1
 #endif // WIRE_COMPRESS_SUPPORT
 
+#define DEB_BATCH(x)
+
 #define REM_SEND_OFFSET(bs) (0)
 #define REM_RECV_OFFSET(bs) (bs)
 
@@ -103,6 +105,7 @@ const ULONG MAX_BATCH_CACHE_SIZE = 1024 * 1024; // 1 MB
 // fwd. decl.
 namespace Firebird {
 	class Exception;
+	class BatchCompletionState;
 }
 
 #ifdef WIN_NT
@@ -127,6 +130,7 @@ typedef Firebird::RefPtr<Firebird::IBlob> ServBlob;
 typedef Firebird::RefPtr<Firebird::ITransaction> ServTransaction;
 typedef Firebird::RefPtr<Firebird::IStatement> ServStatement;
 typedef Firebird::RefPtr<Firebird::IResultSet> ServCursor;
+typedef Firebird::RefPtr<Firebird::IBatch> ServBatch;
 typedef Firebird::RefPtr<Firebird::IRequest> ServRequest;
 typedef Firebird::RefPtr<Firebird::IEvents> ServEvents;
 typedef Firebird::RefPtr<Firebird::IService> ServService;
@@ -464,6 +468,7 @@ struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rsr>
 	Rtr*			rsr_rtr;
 	ServStatement	rsr_iface;
 	ServCursor		rsr_cursor;
+	ServBatch		rsr_batch;
 	rem_fmt*		rsr_bind_format;		// Format of bind message
 	rem_fmt*		rsr_select_format;		// Format of select message
 	rem_fmt*		rsr_user_select_format; // Format of user's select message
@@ -485,6 +490,41 @@ struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rsr>
 	unsigned int	rsr_timeout;		// Statement timeout to be set on open\execute
 	Rsr**			rsr_self;
 
+	ULONG			rsr_batch_size;		// Aligned message size for IBatch operations
+	ULONG			rsr_batch_flags;	// Flags for batch processing
+	union								// BatchCS passed to XDR protocol
+	{
+		Firebird::IBatchCompletionState* rsr_batch_ics;	// server
+		Firebird::BatchCompletionState* rsr_batch_cs;	// client
+	};
+
+	struct BatchStream
+	{
+		BatchStream()
+			: curBpb(*getDefaultMemoryPool()), hdrPrevious(0), segmented(false)
+		{ }
+
+		static const ULONG SIZEOF_BLOB_HEAD = sizeof(ISC_QUAD) + 2 * sizeof(ULONG);
+
+		typedef Firebird::HalfStaticArray<UCHAR, 64> Bpb;
+		Bpb curBpb;
+		UCHAR hdr[SIZEOF_BLOB_HEAD];
+		ULONG blobRemaining;			// Remaining to transfer size of blob data
+		ULONG bpbRemaining;				// Remaining to transfer size of BPB
+		ULONG segRemaining;				// Remaining to transfer size of segment data
+		USHORT alignment;				// Alignment in BLOB stream
+		USHORT hdrPrevious;				// Header data left from previous block (in hdr)
+		bool segmented;					// Current blob kind
+
+		void saveData(const UCHAR* data, ULONG size)
+		{
+			fb_assert(size + hdrPrevious <= SIZEOF_BLOB_HEAD);
+			memcpy(&hdr[hdrPrevious], data, size);
+			hdrPrevious += size;
+		}
+	};
+	BatchStream		rsr_batch_stream;
+
 public:
 	// Values for rsr_flags.
 	enum {
@@ -500,7 +540,7 @@ public:
 
 public:
 	Rsr() :
-		rsr_next(0), rsr_rdb(0), rsr_rtr(0), rsr_iface(NULL), rsr_cursor(NULL),
+		rsr_next(0), rsr_rdb(0), rsr_rtr(0), rsr_iface(NULL), rsr_cursor(NULL), rsr_batch(NULL),
 		rsr_bind_format(0), rsr_select_format(0), rsr_user_select_format(0),
 		rsr_format(0), rsr_message(0), rsr_buffer(0), rsr_status(0),
 		rsr_id(0), rsr_fmt_length(0),
@@ -532,6 +572,7 @@ public:
 	static ISC_STATUS badHandle() { return isc_bad_req_handle; }
 	void checkIface(ISC_STATUS code = isc_unprepared_stmt);
 	void checkCursor();
+	void checkBatch();
 };
 
 
@@ -1211,6 +1252,13 @@ public:
 	ISC_STATUS	transact_request(P_TRRQ *, PACKET*);
 	SSHORT		asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT dataSize);
 	void		start_crypt(P_CRYPT*, PACKET*);
+	void		batch_create(P_BATCH_CREATE*, PACKET*);
+	void		batch_msg(P_BATCH_MSG*, PACKET*);
+	void		batch_blob_stream(P_BATCH_BLOB*, PACKET*);
+	void		batch_regblob(P_BATCH_REGBLOB*, PACKET*);
+	void		batch_exec(P_BATCH_EXEC*, PACKET*);
+	void		batch_rls(P_BATCH_FREE*, PACKET*);
+	void		batch_bpb(P_BATCH_SETBPB*, PACKET*);
 
 	Firebird::string getRemoteId() const;
 	void auxAcceptError(PACKET* packet);

@@ -335,6 +335,34 @@ public:
 	YStatement* statement;
 };
 
+class YBatch FB_FINAL :
+	public YHelper<YBatch, Firebird::IBatchImpl<YBatch, Firebird::CheckStatusWrapper> >
+{
+public:
+	static const ISC_STATUS ERROR_CODE = isc_bad_result_set;	// isc_bad_batch
+
+	YBatch(YAttachment* anAttachment, Firebird::IBatch* aNext);
+
+	void destroy(unsigned dstrFlags);
+
+	// IBatch implementation
+	void add(Firebird::CheckStatusWrapper* status, unsigned count, const void* inBuffer);
+	void addBlob(Firebird::CheckStatusWrapper* status, unsigned length, const void* inBuffer, ISC_QUAD* blobId,
+		unsigned parLength, const unsigned char* par);
+	void appendBlobData(Firebird::CheckStatusWrapper* status, unsigned length, const void* inBuffer);
+	void addBlobStream(Firebird::CheckStatusWrapper* status, unsigned length, const void* inBuffer);
+	unsigned getBlobAlignment(Firebird::CheckStatusWrapper* status);
+	Firebird::IMessageMetadata* getMetadata(Firebird::CheckStatusWrapper* status);
+	void registerBlob(Firebird::CheckStatusWrapper* status, const ISC_QUAD* existingBlob, ISC_QUAD* blobId);
+	Firebird::IBatchCompletionState* execute(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction);
+	void cancel(Firebird::CheckStatusWrapper* status);
+	void setDefaultBpb(Firebird::CheckStatusWrapper* status, unsigned parLength, const unsigned char* par);
+
+public:
+	YAttachment* attachment;
+};
+
+
 class YMetadata
 {
 public:
@@ -381,6 +409,8 @@ public:
 
 	unsigned int getTimeout(Firebird::CheckStatusWrapper* status);
 	void setTimeout(Firebird::CheckStatusWrapper* status, unsigned int timeOut);
+	YBatch* createBatch(Firebird::CheckStatusWrapper* status, Firebird::IMessageMetadata* inMetadata,
+		unsigned parLength, const unsigned char* par);
 
 public:
 	Firebird::Mutex statementMutex;
@@ -477,6 +507,9 @@ public:
 	void setIdleTimeout(Firebird::CheckStatusWrapper* status, unsigned int timeOut);
 	unsigned int getStatementTimeout(Firebird::CheckStatusWrapper* status);
 	void setStatementTimeout(Firebird::CheckStatusWrapper* status, unsigned int timeOut);
+	YBatch* createBatch(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction,
+		unsigned stmtLength, const char* sqlStmt, unsigned dialect,
+		Firebird::IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par);
 
 public:
 	Firebird::IProvider* provider;

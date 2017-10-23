@@ -598,7 +598,11 @@ public:
 
 	// Evaluate actual timeout value, consider config- and session-level timeout values,
 	// setup and start timer
-	void setupTimer(thread_db* tdbb);
+	TimeoutTimer* setupTimer(thread_db* tdbb);
+
+	USHORT parseMetadata(Firebird::IMessageMetadata* meta, const Firebird::Array<dsql_par*>& parameters_list);
+	void mapInOut(Jrd::thread_db* tdbb, bool toExternal, const dsql_msg* message, Firebird::IMessageMetadata* meta,
+		UCHAR* dsql_msg_buf, const UCHAR* in_dsql_msg_buf = NULL);
 
 	static void destroy(thread_db* tdbb, dsql_req* request, bool drop);
 
@@ -616,6 +620,7 @@ public:
 	Firebird::Array<UCHAR*>	req_msg_buffers;
 	Firebird::string req_cursor_name;	// Cursor name, if any
 	DsqlCursor* req_cursor;		// Open cursor, if any
+	DsqlBatch* req_batch;		// Active batch, if any
 	Firebird::GenericMap<Firebird::NonPooled<const dsql_par*, dsc> > req_user_descs; // SQLDA data type
 
 	Firebird::AutoPtr<Jrd::RuntimeStatistics> req_fetch_baseline; // State of request performance counters when we reported it last time

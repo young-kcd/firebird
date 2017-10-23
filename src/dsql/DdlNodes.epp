@@ -931,7 +931,7 @@ void DdlNode::executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction, DdlTrigge
 		context.newObjectName = when == DTW_BEFORE ? oldNewObjectName : objectName;
 	}
 
-	Stack<DdlTriggerContext>::AutoPushPop autoContext(attachment->ddlTriggersContext, context);
+	Stack<DdlTriggerContext*>::AutoPushPop autoContext(attachment->ddlTriggersContext, &context);
 	AutoSavePoint savePoint(tdbb, transaction);
 
 	EXE_execute_ddl_triggers(tdbb, transaction, when == DTW_BEFORE, action);

@@ -145,6 +145,7 @@ public:
 		KEY_ENCRYPT_SECURITY_DATABASE,
 		KEY_STMT_TIMEOUT,
 		KEY_CONN_IDLE_TIMEOUT,
+		KEY_CLIENT_BATCH_BUFFER,
 		MAX_CONFIG_KEY		// keep it last
 	};
 
@@ -359,6 +360,8 @@ public:
 	unsigned int getStatementTimeout() const;
 	// set in minutes
 	unsigned int getConnIdleTimeout() const;
+
+	unsigned int getClientBatchBuffer() const;
 };
 
 // Implementation of interface to access master configuration file

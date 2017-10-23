@@ -136,7 +136,7 @@ namespace fb_utils
 
 	unsigned int copyStatus(ISC_STATUS* const to, const unsigned int space,
 							const ISC_STATUS* const from, const unsigned int count) throw();
-	void copyStatus(Firebird::CheckStatusWrapper* to, const Firebird::CheckStatusWrapper* from) throw();
+	void copyStatus(Firebird::CheckStatusWrapper* to, const Firebird::IStatus* from) throw();
 	unsigned int mergeStatus(ISC_STATUS* const to, unsigned int space, const Firebird::IStatus* from) throw();
 	void setIStatus(Firebird::CheckStatusWrapper* to, const ISC_STATUS* from) throw();
 	unsigned int statusLength(const ISC_STATUS* const status) throw();
@@ -206,6 +206,9 @@ namespace fb_utils
 		if (up)
 			name = up;
 	}
+
+	// Frequently used actions with clumplets
+	bool isBpbSegmented(unsigned parLength, const unsigned char* par);
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H
