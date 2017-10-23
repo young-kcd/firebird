@@ -542,47 +542,7 @@
     <ClInclude Include="..\..\..\src\common\DecFloat.h">
       <Filter>headers</Filter>
     </ClInclude>
-<<<<<<< HEAD
     <ClInclude Include="..\..\..\src\common\classes\BatchCompletionState.h">
-=======
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_argchk.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_cfg.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_cipher.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_custom.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_hash.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_mac.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_macros.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_math.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_misc.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_pk.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_pkcs.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_prng.h">
->>>>>>> master
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>
