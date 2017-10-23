@@ -941,6 +941,8 @@ Data source : @4', NULL, NULL)
 ('subproc_not_impl', NULL, 'StmtNodes.cpp', NULL, 0, 831, NULL, 'Sub-procedure @1 was declared but not implemented', NULL, NULL);
 ('sysf_invalid_hash_algorithm', NULL, 'SysFunction.cpp', NULL, 0, 832, NULL, 'Invalid HASH algorithm @1', NULL, NULL);
 ('expression_eval_index', NULL, 'btr.cpp', NULL, 0, 833, NULL, 'Expression evaluation error for index "@1" on table "@2"', NULL, NULL);
+('decfloat_trap', NULL, 'StmtNodes.cpp', NULL, 0, 834, NULL, 'Invalid decfloat trap state @1', NULL, NULL);
+('decfloat_round', NULL, 'StmtNodes.cpp', NULL, 0, 835, NULL, 'Invalid decfloat rounding mode @1', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

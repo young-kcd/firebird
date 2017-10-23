@@ -8167,7 +8167,7 @@ SetRoundNode::SetRoundNode(MemoryPool& pool, Firebird::MetaName* name)
 	fb_assert(name);
 	const TextCode* mode = getCodeByText(*name, roundModes, FB_RMODE_OFFSET);
 	if (!mode)
-		(Arg::Gds(isc_random) << "Invalid round mode for decfloat").raise();
+		(Arg::Gds(isc_decfloat_round) << *name).raise();
 	rndMode = mode->val;
 }
 
@@ -8187,7 +8187,7 @@ void SetTrapsNode::trap(Firebird::MetaName* name)
 	fb_assert(name);
 	const TextCode* trap = getCodeByText(*name, ieeeTraps, FB_TRAPS_OFFSET);
 	if (!trap)
-		(Arg::Gds(isc_random) << "Invalid decfloat trap").raise();
+		(Arg::Gds(isc_decfloat_trap) << *name).raise();
 	traps |= trap->val;
 }
 

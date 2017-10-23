@@ -1718,6 +1718,10 @@ C --
       PARAMETER (GDS__sysf_invalid_hash_algorithm      = 335545152)
       INTEGER*4 GDS__expression_eval_index           
       PARAMETER (GDS__expression_eval_index            = 335545153)
+      INTEGER*4 GDS__decfloat_trap                   
+      PARAMETER (GDS__decfloat_trap                    = 335545154)
+      INTEGER*4 GDS__decfloat_round                  
+      PARAMETER (GDS__decfloat_round                   = 335545155)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

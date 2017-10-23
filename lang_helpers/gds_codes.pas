@@ -1713,6 +1713,10 @@ const
 	gds_sysf_invalid_hash_algorithm      = 335545152;
 	isc_expression_eval_index            = 335545153;
 	gds_expression_eval_index            = 335545153;
+	isc_decfloat_trap                    = 335545154;
+	gds_decfloat_trap                    = 335545154;
+	isc_decfloat_round                   = 335545155;
+	gds_decfloat_round                   = 335545155;
 	isc_gfix_db_name                     = 335740929;
 	gds_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;

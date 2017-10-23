@@ -855,6 +855,8 @@ static const struct {
 	{"subproc_not_impl", 335545151},
 	{"sysf_invalid_hash_algorithm", 335545152},
 	{"expression_eval_index", 335545153},
+	{"decfloat_trap", 335545154},
+	{"decfloat_round", 335545155},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},
