@@ -1586,7 +1586,7 @@ void Statement::unBindFromRequest()
 void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn, const char* from)
 {
 	m_tdbb = tdbb;
-	m_mutex = conn.isConnected() ? &conn.m_mutex : &conn.m_provider.m_mutex;
+	m_mutex = &conn.m_mutex;
 	m_saveConnection = NULL;
 
 	if (m_tdbb)
