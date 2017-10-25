@@ -420,16 +420,16 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 	{
 		if (item->exa_action == ExternalAccess::exa_procedure) {
 			jrd_prc* prc = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
-			if (!prc->prc_request)
-				continue;
-
-			for (const AccessItem* access = prc->prc_request->req_access.begin();
-				 access < prc->prc_request->req_access.end();
-				 access++)
+			if (prc && prc->prc_request)
 			{
-				const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
-				SCL_check_access(tdbb, sec_class, access->acc_view_id, NULL, prc->prc_name,
-								access->acc_mask, access->acc_type, access->acc_name, access->acc_r_name);
+				for (const AccessItem* access = prc->prc_request->req_access.begin();
+					 access < prc->prc_request->req_access.end();
+					 access++)
+				{
+					const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
+					SCL_check_access(tdbb, sec_class, access->acc_view_id, NULL, prc->prc_name,
+									access->acc_mask, access->acc_type, access->acc_name, access->acc_r_name);
+				}
 			}
 		}
 		else {
@@ -3177,10 +3177,16 @@ static jrd_nod* copy(thread_db* tdbb,
 			node->nod_arg[e_prc_context] = input->nod_arg[e_prc_context];
 			node->nod_arg[e_prc_procedure] = input->nod_arg[e_prc_procedure];
 			node->nod_arg[e_prc_view] = input->nod_arg[e_prc_view];
+
 			CompilerScratch::csb_repeat* element = CMP_csb_element(csb, new_stream);
-			// SKIDDER: Maybe we need to check if we really found a procedure?
 			element->csb_procedure = MET_lookup_procedure_id(tdbb,
 			  (SSHORT)(IPTR) node->nod_arg[e_prc_procedure], false, false, 0);
+			if (!element->csb_procedure)
+			{
+				string name;
+				name.printf("id %d", (SSHORT)(IPTR) node->nod_arg[e_prc_procedure]);
+				ERR_post(Arg::Gds(isc_prcnotdef) << name);
+			}
 			element->csb_view = (jrd_rel*) node->nod_arg[e_prc_view];
 			element->csb_view_stream = remap[0];
 
@@ -4929,8 +4935,11 @@ static void pass1_source(thread_db*			tdbb,
 		CMP_pass1(tdbb, csb, source);
 		jrd_prc* const procedure =
 			MET_lookup_procedure_id(tdbb, (SSHORT)(IPTR) source->nod_arg[e_prc_procedure], false, false, 0);
-		post_procedure_access(tdbb, csb, procedure);
-		CMP_post_resource(&csb->csb_resources, procedure, Resource::rsc_procedure, procedure->prc_id);
+		if (procedure)
+		{
+			post_procedure_access(tdbb, csb, procedure);
+			CMP_post_resource(&csb->csb_resources, procedure, Resource::rsc_procedure, procedure->prc_id);
+		}
 		source->nod_arg[e_prc_view] = (jrd_nod*) parent_view;
 
 		if (parent_view)
