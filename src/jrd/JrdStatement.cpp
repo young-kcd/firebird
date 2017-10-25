@@ -405,6 +405,12 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 		if (item->exa_action == ExternalAccess::exa_procedure)
 		{
 			routine = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
+			if (!routine)
+			{
+				string name;
+				name.printf("id %d", item->exa_prc_id);
+				ERR_post(Arg::Gds(isc_prcnotdef) << name);
+			}
 			aclType = id_procedure;
 		}
 		else if (item->exa_action == ExternalAccess::exa_function)

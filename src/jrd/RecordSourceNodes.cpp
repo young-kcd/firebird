@@ -1090,6 +1090,20 @@ ProcedureSourceNode* ProcedureSourceNode::copy(thread_db* tdbb, NodeCopier& copi
 	ProcedureSourceNode* newSource = FB_NEW_POOL(*tdbb->getDefaultPool()) ProcedureSourceNode(
 		*tdbb->getDefaultPool());
 
+	if (isSubRoutine)
+		newSource->procedure = procedure;
+	else
+	{
+		newSource->procedure = MET_lookup_procedure_id(tdbb, procedureId, false, false, 0);
+		if (!newSource->procedure)
+		{
+			string name;
+			name.printf("id %d", procedureId);
+			delete newSource;
+			ERR_post(Arg::Gds(isc_prcnotdef) << name);
+		}
+	}
+
 	// dimitr: See the appropriate code and comment in NodeCopier (in nod_argument).
 	// We must copy the message first and only then use the new pointer to
 	// copy the inputs properly.
@@ -1104,8 +1118,6 @@ ProcedureSourceNode* ProcedureSourceNode::copy(thread_db* tdbb, NodeCopier& copi
 	newSource->stream = copier.csb->nextStream();
 	copier.remap[stream] = newSource->stream;
 	newSource->context = context;
-	newSource->procedure = isSubRoutine ? procedure :
-		MET_lookup_procedure_id(tdbb, procedureId, false, false, 0);
 	newSource->isSubRoutine = isSubRoutine;
 	newSource->procedureId = procedureId;
 	newSource->view = view;
