@@ -630,7 +630,7 @@ void ExtEngineManager::ExternalContextImpl::releaseTransaction()
 
 void ExtEngineManager::ExternalContextImpl::setTransaction(thread_db* tdbb)
 {
-	ITransaction* newTransaction = tdbb->getTransaction() ? tdbb->getTransaction()->getInterface(false) : NULL;
+	ITransaction* newTransaction = tdbb->getTransaction() ? tdbb->getTransaction()->getInterface(true) : NULL;
 
 	if (newTransaction == internalTransaction)
 		return;
