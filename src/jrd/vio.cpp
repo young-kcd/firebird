@@ -1242,7 +1242,12 @@ void VIO_copy_record(thread_db* tdbb, record_param* org_rpb, record_param* new_r
 			if (EVL_field(new_rpb->rpb_relation, new_record, i, &new_desc))
 			{
 				if (EVL_field(org_rpb->rpb_relation, org_record, i, &org_desc))
-					MOV_move(tdbb, &org_desc, &new_desc);
+				{
+					if (DTYPE_IS_BLOB_OR_QUAD(org_desc.dsc_dtype) || DTYPE_IS_BLOB_OR_QUAD(new_desc.dsc_dtype))
+						Jrd::blb::move(tdbb, &org_desc, &new_desc, new_rpb, i);
+					else
+						MOV_move(tdbb, &org_desc, &new_desc);
+				}
 				else
 				{
 					new_record->setNull(i);
