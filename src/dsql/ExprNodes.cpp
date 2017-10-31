@@ -2885,7 +2885,7 @@ dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
 		return NULL;
 
 	if (DTYPE_IS_BLOB(value->dsc_dtype) || DTYPE_IS_BLOB(impure->vlu_desc.dsc_dtype))
-		blb::move(tdbb, value, &impure->vlu_desc, NULL);
+		blb::move(tdbb, value, &impure->vlu_desc);
 	else
 		MOV_move(tdbb, value, &impure->vlu_desc);
 

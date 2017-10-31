@@ -446,7 +446,7 @@ void MOV_move(Jrd::thread_db* tdbb, /*const*/ dsc* from, dsc* to)
  **************************************/
 
 	if (DTYPE_IS_BLOB_OR_QUAD(from->dsc_dtype) || DTYPE_IS_BLOB_OR_QUAD(to->dsc_dtype))
-		Jrd::blb::move(tdbb, from, to, NULL);
+		Jrd::blb::move(tdbb, from, to);
 	else
 		CVT_move(from, to);
 }
