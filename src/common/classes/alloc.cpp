@@ -2245,6 +2245,7 @@ void* MemPool::allocRaw(size_t size) throw (OOM_EXCEPTION)
 
 	void* result = VirtualAlloc(NULL, size, MEM_COMMIT, PAGE_READWRITE);
 	if (!result)
+	{
 
 #else // WIN_NT
 
