@@ -125,6 +125,17 @@ const size_t DEFAULT_ALLOCATION = 65536;
 
 Firebird::Vector<void*, MAP_CACHE_SIZE> extents_cache;
 
+#ifndef WIN_NT
+struct FailedBlock
+{
+	size_t blockSize;
+	FailedBlock* next;
+	FailedBlock** prev;
+};
+
+FailedBlock* failedList = NULL;
+#endif
+
 void corrupt(const char* text) throw ()
 {
 #ifdef DEV_BUILD
@@ -1600,6 +1611,32 @@ public:
 
 		while (extents_cache.getCount())
 			releaseRaw(true, extents_cache.pop(), DEFAULT_ALLOCATION, false);
+
+#ifndef WIN_NT
+		unsigned oldCount = 0;
+		for(;;)
+		{
+			unsigned newCount = 0;
+			FailedBlock* oldList = failedList;
+			if (oldList)
+			{
+				fb_assert(oldList->prev);
+				oldList->prev = &oldList;
+				failedList = NULL;
+			}
+			while (oldList)
+			{
+				++newCount;
+				FailedBlock* fb = oldList;
+				SemiDoubleLink::pop(oldList);
+				releaseRaw(true, fb, fb->blockSize, false);
+			}
+			if (newCount == oldCount)
+				break;
+			oldCount = newCount;
+		}
+#endif // WIN_NT
+
 	}
 
 	// Statistics
@@ -2211,30 +2248,49 @@ void* MemPool::allocRaw(size_t size) throw (OOM_EXCEPTION)
 
 #else // WIN_NT
 
+	void* result = NULL;
+	if (failedList)
+	{
+		MutexLockGuard guard(*cache_mutex, "MemPool::allocRaw");
+		for (FailedBlock* fb = failedList; fb; fb = fb->next)
+		{
+			if (fb->blockSize == size)
+			{
+				result = fb;
+				SemiDoubleLink::pop(fb);
+				break;
+			}
+		}
+	}
+
+	if (!result)
+	{
+
 #if defined(MAP_ANON) && !defined(MAP_ANONYMOUS)
 #define MAP_ANONYMOUS MAP_ANON
 #endif
 
 #ifdef MAP_ANONYMOUS
 
-	void* result = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+		result = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
 #else // MAP_ANONYMOUS
 
-	if (dev_zero_fd < 0)
-		dev_zero_fd = os_utils::open("/dev/zero", O_RDWR);
-	void* result = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE, dev_zero_fd, 0);
+		if (dev_zero_fd < 0)
+			dev_zero_fd = os_utils::open("/dev/zero", O_RDWR);
+		result = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE, dev_zero_fd, 0);
 
 #endif // MAP_ANONYMOUS
 
-	if (result == MAP_FAILED)
+		if (result == MAP_FAILED)
 
 #endif // WIN_NT
 
-	{
-		// failure happens!
-		memoryIsExhausted();
-		return NULL;
+		{
+			// failure happens!
+			memoryIsExhausted();
+			return NULL;
+		}
 	}
 
 #ifdef USE_VALGRIND
@@ -2335,14 +2391,30 @@ void MemPool::releaseRaw(bool destroying, void* block, size_t size, bool use_cac
 	size = FB_ALIGN(size, get_map_page_size());
 #ifdef WIN_NT
 	if (!VirtualFree(block, 0, MEM_RELEASE))
+	{
 #else // WIN_NT
+
 #if (defined SOLARIS) && (defined HAVE_CADDR_T)
-	if (munmap((caddr_t) block, size))
+	int rc = munmap((caddr_t) block, size);
 #else
-	if (munmap(block, size))
+	int rc = munmap(block, size);
 #endif
+	if (rc)
+	{
+		if (errno == ENOMEM)
+		{
+			FailedBlock* failed = (FailedBlock*) block;
+			failed->blockSize = size;
+
+			MutexLockGuard guard(*cache_mutex, "MemPool::releaseRaw");
+			SemiDoubleLink::push(&failedList, failed);
+
+			return;
+		}
 #endif // WIN_NT
+
 		corrupt("OS memory deallocation error");
+	}
 }
 
 void MemPool::globalFree(void* block) throw ()
