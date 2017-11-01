@@ -1722,6 +1722,10 @@ C --
       PARAMETER (GDS__decfloat_trap                    = 335545154)
       INTEGER*4 GDS__decfloat_round                  
       PARAMETER (GDS__decfloat_round                   = 335545155)
+      INTEGER*4 GDS__sysf_invalid_first_last_part    
+      PARAMETER (GDS__sysf_invalid_first_last_part     = 335545156)
+      INTEGER*4 GDS__sysf_invalid_date_timestamp     
+      PARAMETER (GDS__sysf_invalid_date_timestamp      = 335545157)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

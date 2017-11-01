@@ -599,9 +599,11 @@ using namespace Firebird;
 %token <metaNamePtr> DECFLOAT
 %token <metaNamePtr> DEFINER
 %token <metaNamePtr> EXCLUDE
+%token <metaNamePtr> FIRST_DAY
 %token <metaNamePtr> FOLLOWING
 %token <metaNamePtr> IDLE
 %token <metaNamePtr> INVOKER
+%token <metaNamePtr> LAST_DAY
 %token <metaNamePtr> MESSAGE
 %token <metaNamePtr> NATIVE
 %token <metaNamePtr> NORMALIZE_DECFLOAT
@@ -7778,12 +7780,24 @@ system_function_special_syntax
 				newNode<ValueListNode>(MAKE_const_slong($3))->add($5)->add($7));
 			$$->dsqlSpecialSyntax = true;
 		}
+	| FIRST_DAY '(' of_first_last_day_part FROM value ')'
+		{
+			$$ = newNode<SysFuncCallNode>(*$1,
+				newNode<ValueListNode>(MAKE_const_slong($3))->add($5));
+			$$->dsqlSpecialSyntax = true;
+		}
 	| HASH '(' value ')'
 		{ $$ = newNode<SysFuncCallNode>(*$1, newNode<ValueListNode>($3)); }
 	| HASH '(' value USING valid_symbol_name ')'
 		{
 			$$ = newNode<SysFuncCallNode>(*$1,
 				newNode<ValueListNode>($3)->add(MAKE_str_constant(newIntlString($5->c_str()), CS_ASCII)));
+			$$->dsqlSpecialSyntax = true;
+		}
+	| LAST_DAY '(' of_first_last_day_part FROM value ')'
+		{
+			$$ = newNode<SysFuncCallNode>(*$1,
+				newNode<ValueListNode>(MAKE_const_slong($3))->add($5));
 			$$->dsqlSpecialSyntax = true;
 		}
 	| OVERLAY '(' value PLACING value FROM value FOR value ')'
@@ -7810,6 +7824,13 @@ system_function_special_syntax
 			ValueExprNode* v = MAKE_system_privilege($3->c_str());
 			$$ = newNode<SysFuncCallNode>(*$1, newNode<ValueListNode>(v));
 		}
+	;
+
+%type <blrOp> of_first_last_day_part
+of_first_last_day_part
+	: OF YEAR			{ $$ = blr_extract_year; }
+	| OF MONTH			{ $$ = blr_extract_month; }
+	| OF WEEK			{ $$ = blr_extract_week; }
 	;
 
 %type <valueExprNode> string_value_function
@@ -8462,9 +8483,11 @@ non_reserved_word
 	| DECFLOAT
 	| DEFINER
 	| EXCLUDE
+	| FIRST_DAY
 	| FOLLOWING
 	| IDLE
 	| INVOKER
+	| LAST_DAY
 	| MESSAGE
 	| NATIVE
 	| NORMALIZE_DECFLOAT

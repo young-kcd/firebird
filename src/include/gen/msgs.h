@@ -860,6 +860,8 @@ Data source : @4"},		/* eds_statement */
 	{335545153, "Expression evaluation error for index \"@1\" on table \"@2\""},		/* expression_eval_index */
 	{335545154, "Invalid decfloat trap state @1"},		/* decfloat_trap */
 	{335545155, "Invalid decfloat rounding mode @1"},		/* decfloat_round */
+	{335545156, "Invalid part @1 to calculate the @1 of a DATE/TIMESTAMP"},		/* sysf_invalid_first_last_part */
+	{335545157, "Expected DATE/TIMESTAMP value in @1"},		/* sysf_invalid_date_timestamp */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

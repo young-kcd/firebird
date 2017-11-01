@@ -1717,6 +1717,10 @@ const
 	gds_decfloat_trap                    = 335545154;
 	isc_decfloat_round                   = 335545155;
 	gds_decfloat_round                   = 335545155;
+	isc_sysf_invalid_first_last_part     = 335545156;
+	gds_sysf_invalid_first_last_part     = 335545156;
+	isc_sysf_invalid_date_timestamp      = 335545157;
+	gds_sysf_invalid_date_timestamp      = 335545157;
 	isc_gfix_db_name                     = 335740929;
 	gds_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;

@@ -891,6 +891,8 @@ const ISC_STATUS isc_sysf_invalid_hash_algorithm      = 335545152L;
 const ISC_STATUS isc_expression_eval_index            = 335545153L;
 const ISC_STATUS isc_decfloat_trap                    = 335545154L;
 const ISC_STATUS isc_decfloat_round                   = 335545155L;
+const ISC_STATUS isc_sysf_invalid_first_last_part     = 335545156L;
+const ISC_STATUS isc_sysf_invalid_date_timestamp      = 335545157L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -1365,7 +1367,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1309;
+const ISC_STATUS isc_err_max                          = 1311;
 
 #else /* c definitions */
 
@@ -2226,6 +2228,8 @@ const ISC_STATUS isc_err_max                          = 1309;
 #define isc_expression_eval_index            335545153L
 #define isc_decfloat_trap                    335545154L
 #define isc_decfloat_round                   335545155L
+#define isc_sysf_invalid_first_last_part     335545156L
+#define isc_sysf_invalid_date_timestamp      335545157L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -2700,7 +2704,7 @@ const ISC_STATUS isc_err_max                          = 1309;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1309
+#define isc_err_max                          1311
 
 #endif
 

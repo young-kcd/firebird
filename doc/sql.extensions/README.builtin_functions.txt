@@ -265,7 +265,7 @@ CEIL | CEILING
 --------------
 
 Function:
-    Returns a value representing the smallest integer that is greater 
+    Returns a value representing the smallest integer that is greater
     than or equal to the input argument.
 
 Format:
@@ -429,12 +429,32 @@ Example:
     select exp(x) from y;
 
 
+---------
+FIRST_DAY
+---------
+
+Function:
+    Returns the first day of the year/month/week of a given date/timestamp value.
+
+Format:
+    FIRST_DAY( OF { YEAR | MONTH | WEEK } FROM <date_or_timestamp> )
+
+Notes:
+    1) The first day of the week is considered as Sunday, per the same rules of EXTRACT with WEEKDAY.
+    2) When a timestamp is passed the return value preserves the time part.
+
+Example:
+    select first_day(of month from current_date) from rdb$database;
+    select first_day(of year from current_timestamp) from rdb$database;
+    select first_day(of week from date '2017-11-01') from rdb$database;
+
+
 -----
 FLOOR
 -----
 
 Function:
-    Returns a value representing the largest integer that is less 
+    Returns a value representing the largest integer that is less
     than or equal to the input argument.
 
 Format:
@@ -488,6 +508,26 @@ Important:
 Example:
     select hash(x) from y;
     select hash(x using sha256) from y;
+
+
+--------
+LAST_DAY
+--------
+
+Function:
+    Returns the last day of the year/month/week of a given date/timestamp value.
+
+Format:
+    LAST_DAY( OF { YEAR | MONTH | WEEK } FROM <date_or_timestamp> )
+
+Notes:
+    1) The last day of the week is considered as Saturday, per the same rules of EXTRACT with WEEKDAY.
+    2) When a timestamp is passed the return value preserves the time part.
+
+Example:
+    select last_day(of month from current_date) from rdb$database;
+    select last_day(of year from current_timestamp) from rdb$database;
+    select last_day(of week from date '2017-11-01') from rdb$database;
 
 
 ----
@@ -802,7 +842,7 @@ SIGN
 ----
 
 Function:
-    Returns 1, 0, or -1 depending on whether the input value is positive, zero or 
+    Returns 1, 0, or -1 depending on whether the input value is positive, zero or
     negative, respectively.
 
 Format:

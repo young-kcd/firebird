@@ -842,6 +842,8 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, '42', '000', 0, 833, 'expression_eval_index', NULL, NULL)
 (-901, '42', '000', 0, 834, 'decfloat_trap', NULL, NULL)
 (-901, '42', '000', 0, 835, 'decfloat_round', NULL, NULL)
+(-833, '42', '000', 0, 836, 'sysf_invalid_first_last_part', NULL, NULL)
+(-833, '42', '000', 0, 837, 'sysf_invalid_date_timestamp', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)

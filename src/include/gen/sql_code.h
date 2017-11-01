@@ -856,6 +856,8 @@ static const struct {
 	{335545153, -901}, /* 833 expression_eval_index */
 	{335545154, -901}, /* 834 decfloat_trap */
 	{335545155, -901}, /* 835 decfloat_round */
+	{335545156, -833}, /* 836 sysf_invalid_first_last_part */
+	{335545157, -833}, /* 837 sysf_invalid_date_timestamp */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */
