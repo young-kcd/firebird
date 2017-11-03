@@ -239,7 +239,7 @@ cross2:
 	$(MAKE) utilities
 	$(MAKE) $(GPRE)
 	$(MAKE) plugins
-	$(MAKE) -f Makefile.plugins_examples -C $(GEN_ROOT)/examples/
+	$(MAKE) -f Makefile.plugins_examples
 	$(MAKE) cross_rest
 
 #___________________________________________________________________________
@@ -559,7 +559,7 @@ $(QLI):		$(QLI_Objects) $(COMMON_LIB)
 
 examples: include_generic
 	$(MAKE) -f Makefile.examples -C $(GEN_ROOT)/examples/
-	$(MAKE) -f Makefile.plugins_examples -C $(GEN_ROOT)/examples/
+	$(MAKE) -f Makefile.plugins_examples
 
 message_file:	$(FIREBIRD_MSG)
 
