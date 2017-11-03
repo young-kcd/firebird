@@ -1232,16 +1232,16 @@ dnl ### TEMP ### directories for generated .cpp, .o and .d by module name
     	mkdir -p temp/\$fb_tgt/\$src_dir
 	done
 
+	for src_dir in `ls -R -1 examples | grep : | tr -d : | tr "\n" " "`; do
+   		mkdir -p temp/\$fb_tgt/\$src_dir
+	done
+
 	src/misc/writeBuildNum.sh createMakeVersion gen/Make.Version
 
 dnl # sql files for UDF declarations
 	for sql_file in ib_udf.sql fbudf/fbudf.sql ib_udf2.sql; do
 		cp src/extlib/\$sql_file gen/\$fb_tgt/firebird/UDF
 	done
-done
-
-for src_dir in `ls -R -1 examples | grep : | tr -d : | tr "\n" " "`; do
-   	mkdir -p temp/\$src_dir
 done
 
 dnl # rebuild version header if needed
@@ -1393,7 +1393,7 @@ gen/make.shared.variables:${MAKE_SRC_DIR}/make.shared.variables
 gen/make.shared.targets:${MAKE_SRC_DIR}/make.shared.targets
 gen/Makefile:${MAKE_SRC_DIR}/Makefile.in
 gen/examples/Makefile.examples:${MAKE_SRC_DIR}/Makefile.in.examples
-gen/examples/Makefile.plugins_examples:${MAKE_SRC_DIR}/Makefile.in.plugins_examples
+gen/Makefile.plugins_examples:${MAKE_SRC_DIR}/Makefile.in.plugins_examples
 gen/Makefile.install:builds/install/arch-specific/${INSTALL_PREFIX}/Makefile.in
 Makefile:Makefile.in
 )
