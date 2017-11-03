@@ -1038,11 +1038,24 @@ static rem_port* listener_socket(rem_port* port, USHORT flag, const addrinfo* pa
 			inet_error(true, port, "setsockopt LINGER", isc_net_connect_listen_err, INET_ERRNO);
 		}
 
+#ifdef WIN_NT
+		// RS: for Window I leave it as is but I guess it makes sense to completely move the set of the option
+		// out of nere.
 		if (! setNoNagleOption(port))
 		{
 			inet_error(true, port, "setsockopt TCP_NODELAY", isc_net_connect_listen_err, INET_ERRNO);
 		}
+#endif
 	}
+
+#ifndef WIN_NT
+	// RS: In linux sockets inherit this option from listener. Previously CLASSIC had no its own listen socket
+	// Now it's necessary to respect the option via listen socket.
+	if (! setNoNagleOption(port))
+	{
+		inet_error(true, port, "setsockopt TCP_NODELAY", isc_net_connect_listen_err, INET_ERRNO);
+	}
+#endif
 
 	// On Linux platform, when the server dies the system holds a port
 	// for some time (we don't set SO_REUSEADDR for standalone server).
