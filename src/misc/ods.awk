@@ -46,6 +46,7 @@ BEGIN {
 	print ""
 	print "#include \"fb_types.h\""
 	print "#define ODS_TESTING"
+	print "#include \"../common/common.h\""
 	print "#include \"../jrd/ods.h\""
 	print ""
 	print "using namespace Ods;"

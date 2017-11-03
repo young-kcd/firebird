@@ -5674,8 +5674,16 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			null_view = blob_id.isEmpty();
 			external_flag = REL.RDB$EXTERNAL_FILE[0];
 
-			if (REL.RDB$FORMAT == MAX_TABLE_VERSIONS)
-				raiseTooManyVersionsError(obj_relation, work->dfw_name);
+			if (REL.RDB$VIEW_BLR.NULL)
+			{
+				if (REL.RDB$FORMAT == MAX_TABLE_VERSIONS)
+					raiseTooManyVersionsError(obj_relation, work->dfw_name);
+			}
+			else
+			{
+				if (REL.RDB$FORMAT == MAX_VIEW_VERSIONS)
+					raiseTooManyVersionsError(obj_view, work->dfw_name);
+			}
 
 			MODIFY REL USING
 				blb* blob = blb::create(tdbb, transaction, &REL.RDB$RUNTIME);
