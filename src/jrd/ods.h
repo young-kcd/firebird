@@ -718,4 +718,7 @@ const USHORT RAW_HEADER_SIZE = 1024;	// ROUNDUP(HDR_SIZE, PAGE_ALIGNMENT);
 // max number of table formats (aka versions), limited by "UCHAR rhd_format"
 const int MAX_TABLE_VERSIONS = 255;
 
+// max number of view formats (aka versions), limited by "SSHORT RDB$FORMAT"
+const int MAX_VIEW_VERSIONS = MAX_SSHORT;
+
 #endif // JRD_ODS_H
