@@ -5931,6 +5931,7 @@ YBatch* YAttachment::createBatch(CheckStatusWrapper* status, ITransaction* trans
 
 //-------------------------------------
 
+
 YService::YService(IProvider* aProvider, IService* aNext, bool utf8)
 	: YHelper(aNext),
 	  provider(aProvider),

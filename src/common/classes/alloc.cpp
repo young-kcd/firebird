@@ -1631,16 +1631,19 @@ public:
 
 #ifndef WIN_NT
 		unsigned oldCount = 0;
-		for(;;)
+
+		for (;;)
 		{
 			unsigned newCount = 0;
 			FailedBlock* oldList = failedList;
+
 			if (oldList)
 			{
 				fb_assert(oldList->prev);
 				oldList->prev = &oldList;
 				failedList = NULL;
 			}
+
 			while (oldList)
 			{
 				++newCount;
@@ -1648,8 +1651,10 @@ public:
 				SemiDoubleLink::pop(oldList);
 				releaseRaw(true, fb, fb->blockSize, false);
 			}
+
 			if (newCount == oldCount)
 				break;
+
 			oldCount = newCount;
 		}
 #endif // WIN_NT

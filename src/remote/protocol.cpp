@@ -1101,7 +1101,6 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			return P_TRUE(xdrs, p);
 		}
 
-
 	///case op_insert:
 	default:
 #ifdef DEV_BUILD
@@ -2432,4 +2431,3 @@ private:
 
 	return TRUE;
 }
-

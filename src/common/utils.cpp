@@ -1637,10 +1637,10 @@ bool isBpbSegmented(unsigned parLength, const unsigned char* par)
 		(Firebird::Arg::Gds(isc_random) << "Malformed BPB").raise();
 
 	if (!bpb.find(isc_bpb_type))
-	{
 		return true;
-	}
+
 	int type = bpb.getInt();
+
 	return type & isc_bpb_type_stream ? false : true;
 }
 

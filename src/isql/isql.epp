@@ -3172,9 +3172,8 @@ static processing_state bulk_insert_hack(const char* command)
 
 					dfixvalue = (FB_DEC_FIXED*) datap;
 					if (isqlGlob.dfix)
-					{
 						isqlGlob.dfix->fromString(fbStatus, get_numeric_value(lastPos).c_str(), scale, dfixvalue);
-					}
+
 					if ((!isqlGlob.dfix) || (fbStatus->getState() & Firebird::IStatus::STATE_ERRORS))
 					{
 						STDERROUT("Input parsing problem");

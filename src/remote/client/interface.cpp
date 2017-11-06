@@ -2361,7 +2361,7 @@ void Batch::addBlob(CheckStatusWrapper* status, unsigned length, const void* inB
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		// Policy check
-		switch(blobPolicy)
+		switch (blobPolicy)
 		{
 		case IBatch::BLOB_ID_ENGINE:
 			genBlobId(blobId);
@@ -2404,7 +2404,7 @@ void Batch::appendBlobData(CheckStatusWrapper* status, unsigned length, const vo
 		}
 
 		// Policy check
-		switch(blobPolicy)
+		switch (blobPolicy)
 		{
 		case IBatch::BLOB_ID_USER:
 		case IBatch::BLOB_ID_ENGINE:

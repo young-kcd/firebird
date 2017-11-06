@@ -434,7 +434,8 @@ FIRST_DAY
 ---------
 
 Function:
-    Returns the first day of the year/month/week of a given date/timestamp value.
+    Returns a date/timestamp with the first day of the year/month/week of a given
+    date/timestamp value.
 
 Format:
     FIRST_DAY( OF { YEAR | MONTH | WEEK } FROM <date_or_timestamp> )
@@ -515,7 +516,8 @@ LAST_DAY
 --------
 
 Function:
-    Returns the last day of the year/month/week of a given date/timestamp value.
+    Returns a date/timestamp with the last day of the year/month/week of a given
+    date/timestamp value.
 
 Format:
     LAST_DAY( OF { YEAR | MONTH | WEEK } FROM <date_or_timestamp> )

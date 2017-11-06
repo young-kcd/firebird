@@ -35,7 +35,7 @@ namespace Firebird {
 	};
 
 	class BatchCompletionState FB_FINAL :
-    	public DisposeIface<Firebird::IBatchCompletionStateImpl<BatchCompletionState, CheckStatusWrapper> >
+		public DisposeIface<IBatchCompletionStateImpl<BatchCompletionState, CheckStatusWrapper> >
 	{
 	public:
 		BatchCompletionState(bool storeCounts, ULONG lim)
