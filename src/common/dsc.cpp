@@ -67,7 +67,7 @@ static const USHORT _DSC_convert_to_text_length[DTYPE_TYPE_MAX] =
 	5,							// dtype_boolean
 	23,							// dtype_dec64		1 + 1 + 1 + 1 + 16(34) + 3(4)
 	42,							// dtype_dec128		+-  .   e   +-  coeff  + exp
-	35							// dtype_dec_fixed	coeff(34) + 1(+-)
+	36							// dtype_dec_fixed	coeff(34) + 1(+-) + 1(.)
 };
 
 // blr to dsc type conversions
