@@ -196,11 +196,14 @@ AllObjects += $(UDRENG_Objects)
 
 
 # UDF support
-IBUDF_Objects:= $(call makeObjects,extlib,ib_udf.cpp)
-FBUDF_Objects:= $(call makeObjects,extlib/fbudf,fbudf.cpp)
 UTIL_Objects:= $(call makeObjects,extlib,ib_util.cpp)
 
-AllObjects += $(IBUDF_Objects) $(FBUDF_Objects) $(UTIL_Objects)
+# UDR backward compatible with distributed UDFs
+COMPAT_Objects:= $(call makeObjects,extlib,UdfBackwardCompatibility.cpp)
+SRC_COMPAT_SQL:= $(SRC_ROOT)/extlib/UdfBackwardCompatibility.sql
+COMPAT_SQL:= $(PLUGINS)/udr/udf_compat.sql
+
+AllObjects += $(UTIL_Objects) $(COMPAT_Objects)
 
 
 # Regenerate error codes

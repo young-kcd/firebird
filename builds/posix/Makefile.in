@@ -396,27 +396,10 @@ msg.timestamp:	$(MSG_FILES)
 	$(TOUCH) $@
 
 
-.PHONY:	udfs ibutil ibudf fbudf udfsupport
+.PHONY:	ibutil udfsupport
 
 udfsupport:
 	$(MAKE) ibutil
-	$(MAKE) udfs
-
-udfs:	ibudf fbudf
-
-UDF = $(FB_BUILD)/UDF
-IBUDF_SO = $(UDF)/ib_udf.$(SHRLIB_EXT)
-FBUDF_SO = $(UDF)/fbudf.$(SHRLIB_EXT)
-
-ibudf:	$(IBUDF_SO)
-
-$(IBUDF_SO):	$(IBUDF_Objects)
-	$(call LINK_UDF,ib_udf) -o $@ $^ $(LINK_UDF_LIBS)
-
-fbudf:	$(FBUDF_SO)
-
-$(FBUDF_SO):	$(FBUDF_Objects) $(COMMON_LIB)
-	$(call LINK_UDF,fbudf) -o $@ $^ $(LINK_UDF_LIBS) $(FIREBIRD_LIBRARY_LINK)
 
 ibutil: $(LIBIBUTIL_SO)
 
@@ -425,7 +408,7 @@ $(LIBIBUTIL_SO): $(UTIL_Objects)
 
 
 #___________________________________________________________________________
-# most of utilities, including network server and UDFs
+# most of utilities, including network server and UDF support
 # qli is not here cause it needs special database (help.fdb), therefore needs gbak
 #
 
@@ -498,20 +481,22 @@ $(NBACKUP):		$(NBACKUP_Objects) $(COMMON_LIB)
 # plugins - some of them are required to build examples, use separate entry for them
 #
 
-.PHONY:	udr legacy_user_management legacy_auth_server trace auth_debug
+.PHONY:	udr legacy_user_management legacy_auth_server trace auth_debug udf_compat
 UDR_PLUGIN = $(call makePluginName,udr_engine)
 LEGACY_USER_MANAGER = $(call makePluginName,Legacy_UserManager)
 LEGACY_AUTH_SERVER = $(call makePluginName,Legacy_Auth)
 SRP_USER_MANAGER = $(call makePluginName,Srp)
 FBTRACE = $(call makePluginName,fbtrace)
 AUTH_DEBUGGER = $(call makePluginName,Auth_Debug)
+UDF_BACKWARD_COMPATIBILITY_BASENAME = $(LIB_PREFIX)udf_compat.$(SHRLIB_EXT)
+UDF_BACKWARD_COMPATIBILITY = $(PLUGINS)/udr/$(UDF_BACKWARD_COMPATIBILITY_BASENAME)
 
 BUILD_DEBUG:=
 ifeq ($(TARGET),Debug)
 	BUILD_DEBUG:=auth_debug
 endif
 
-plugins: udr legacy_user_management legacy_auth_server srp_user_management trace $(BUILD_DEBUG)
+plugins: udr legacy_user_management legacy_auth_server srp_user_management trace $(BUILD_DEBUG) udf_compat
 
 udr:	$(UDR_PLUGIN) $(PLUGINS)/udr_engine.conf
 
@@ -545,6 +530,15 @@ srp_user_management: $(SRP_USER_MANAGER)
 
 $(SRP_USER_MANAGER):	$(SRP_USERS_MANAGE_Objects) $(COMMON_LIB)
 	$(LINK_PLUGIN) $(call LIB_LINK_SONAME,$(notdir $@).0) -o $@ $^ $(LINK_PLUG_LIBS) $(FIREBIRD_LIBRARY_LINK)
+
+udf_compat:	$(UDF_BACKWARD_COMPATIBILITY) $(COMPAT_SQL)
+
+$(UDF_BACKWARD_COMPATIBILITY):	$(COMPAT_Objects)
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(call LIB_LINK_SONAME,$(UDF_BACKWARD_COMPATIBILITY_BASENAME)) \
+		$(LINK_UDR_PLUGIN_SYMBOLS) $(LIB_PATH_OPTS) $(UNDEF_FLAGS) -o $@ $^ $(THR_LIBS)
+
+$(COMPAT_SQL):	$(SRC_COMPAT_SQL)
+	cp $^ $@
 
 #___________________________________________________________________________
 # codes - developers change them sometimes

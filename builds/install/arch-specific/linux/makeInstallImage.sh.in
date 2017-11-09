@@ -262,17 +262,8 @@ copyFiles() {
 	chmod 0755 ${TargetDir}@FB_INTLDIR@/fbintl
 	chmod 0644 ${TargetDir}@FB_INTLDIR@/fbintl.conf
 
-	#UDF
-    cp $BuiltFBDir/UDF/ib_udf.so ${TargetDir}@FB_UDFDIR@
-    cp $BuiltFBDir/UDF/fbudf.so ${TargetDir}@FB_UDFDIR@
 #	Note that the following items copy files from outside the build tree.
 #   Copy the sql-declarations into the UDF-directory
-    cp $BuildRootDir/src/extlib/ib_udf.sql ${TargetDir}@FB_UDFDIR@
-    cp $BuildRootDir/src/extlib/ib_udf2.sql ${TargetDir}@FB_UDFDIR@
-    cp $BuildRootDir/src/extlib/fbudf/fbudf.sql ${TargetDir}@FB_UDFDIR@
-
-	chmod 0755 ${TargetDir}@FB_UDFDIR@/*.so
-	chmod 0644 ${TargetDir}@FB_UDFDIR@/*.sql
 
 	#doc
     cp $BuildRootDir/doc/*.pdf ${TargetDir}@FB_DOCDIR@

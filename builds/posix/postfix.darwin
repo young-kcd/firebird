@@ -96,8 +96,6 @@ darwin_finish_cs_framework:
 	chmod +x ../builds/install/arch-specific/darwin/changeMultiConnectMode
 	cp ../builds/install/arch-specific/darwin/changeMultiConnectMode \
 			$(FB_FW)/Resources/bin/changeMultiConnectMode.sh
-	cp ../src/extlib/ib_udf.sql $(FB_FW)/Resources/English.lproj/var/UDF
-	cp ../src/extlib/fbudf/fbudf.sql $(FB_FW)/Resources/English.lproj/var/UDF
 	cp ../builds/install/arch-specific/darwin/FrameworkInfo.plist \
 			$(FB_FW)/Resources/Info.plist
 	cp ../builds/install/arch-specific/darwin/launchd.org.firebird.gds.plist \
@@ -165,8 +163,6 @@ darwin_finish_ss_framework:
 	cp ../gen/firebird/bin/gdef $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fbsvcmgr $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fbtracemgr $(FB_FW)/Resources/bin
-	cp ../src/extlib/ib_udf.sql $(FB_FW)/Resources/English.lproj/var/UDF
-	cp ../src/extlib/fbudf/fbudf.sql $(FB_FW)/Resources/English.lproj/var/UDF
 	cp ../builds/install/arch-specific/darwin/FrameworkInfo.plist \
 			$(FB_FW)/Resources/Info.plist
 	cp ../builds/install/arch-specific/darwin/launchdss.org.firebird.gds.plist \

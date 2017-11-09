@@ -287,23 +287,6 @@ if "%PROCESSOR_ARCHITECTURE%"=="x86" (
   goto :EOF
 )
 
-@echo   Copying udf library scripts...
-for %%v in ( ib_udf.sql ib_udf2.sql ) do (
-  @copy /Y %FB_ROOT_PATH%\src\extlib\%%v  %FB_OUTPUT_DIR%\udf\%%v > nul
-  @if %ERRORLEVEL% GEQ 1 (
-    call :ERROR copy /Y %FB_ROOT_PATH%\src\extlib\%%v  %FB_OUTPUT_DIR%\udf\%%v failed with error %ERRORLEVEL%.
-    goto :EOF
-  )
-)
-
-for %%v in ( fbudf.sql fbudf.txt ) do (
-  @copy /Y %FB_ROOT_PATH%\src\extlib\fbudf\%%v  %FB_OUTPUT_DIR%\UDF\%%v > nul
-  @if %ERRORLEVEL% GEQ 1 (
-    call :ERROR copy /Y %FB_ROOT_PATH%\src\extlib\fbudf\%%v  %FB_OUTPUT_DIR%\UDF\%%v failed with error %ERRORLEVEL%.
-    goto :EOF
-  )
-)
-
 :: Various upgrade scripts and docs
 mkdir %FB_OUTPUT_DIR%\misc\upgrade\security 2>nul
 @copy %FB_ROOT_PATH%\src\misc\upgrade\v3.0\security_* %FB_OUTPUT_DIR%\misc\upgrade\security > nul
