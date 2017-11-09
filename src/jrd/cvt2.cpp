@@ -220,6 +220,9 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2, Firebird::DecimalStatus decSt
 
 	// Handle the simple (matched) ones first
 
+	ISC_TIME time1, time2;
+	ISC_TIMESTAMP timestamp1, timestamp2;
+
 	if (arg1->dsc_dtype == arg2->dsc_dtype && arg1->dsc_scale == arg2->dsc_scale)
 	{
 		const UCHAR* p1 = arg1->dsc_address;
@@ -233,6 +236,13 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2, Firebird::DecimalStatus decSt
 			if (*(SSHORT *) p1 > *(SSHORT *) p2)
 				return 1;
 			return -1;
+
+		case dtype_sql_time_tz:
+			time1 = TimeStamp::timeTzAtZone(*(ISC_TIME_TZ*) p1, 0);
+			p1 = (const UCHAR*) &time1;
+			time2 = TimeStamp::timeTzAtZone(*(ISC_TIME_TZ*) p2, 0);
+			p2 = (const UCHAR*) &time2;
+			// fall into
 
 		case dtype_sql_time:
 			if (*(ULONG *) p1 == *(ULONG *) p2)
@@ -270,6 +280,13 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2, Firebird::DecimalStatus decSt
 				}
 				return (arg1->dsc_length > l) ? 1 : (arg2->dsc_length > l) ? -1 : 0;
 			}
+
+		case dtype_timestamp_tz:
+			timestamp1 = TimeStamp::timeStampTzAtZone(*(ISC_TIMESTAMP_TZ*) p1, 0);
+			p1 = (const UCHAR*) &timestamp1;
+			timestamp2 = TimeStamp::timeStampTzAtZone(*(ISC_TIMESTAMP_TZ*) p2, 0);
+			p2 = (const UCHAR*) &timestamp2;
+			// fall into
 
 		case dtype_timestamp:
 			if (((SLONG *) p1)[0] > ((SLONG *) p2)[0])
@@ -419,6 +436,18 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2, Firebird::DecimalStatus decSt
 
 	switch (arg1->dsc_dtype)
 	{
+	case dtype_timestamp_tz:
+		{
+			DSC desc;
+			MOVE_CLEAR(&desc, sizeof(desc));
+			desc.dsc_dtype = dtype_timestamp_tz;
+			ISC_TIMESTAMP_TZ datetime;
+			desc.dsc_length = sizeof(datetime);
+			desc.dsc_address = (UCHAR*) &datetime;
+			CVT_move(arg2, &desc, 0);
+			return CVT2_compare(arg1, &desc, 0);
+		}
+
 	case dtype_timestamp:
 		{
 			DSC desc;
@@ -427,6 +456,18 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2, Firebird::DecimalStatus decSt
 			SLONG datetime[2];
 			desc.dsc_length = sizeof(datetime);
 			desc.dsc_address = (UCHAR*) datetime;
+			CVT_move(arg2, &desc, 0);
+			return CVT2_compare(arg1, &desc, 0);
+		}
+
+	case dtype_sql_time_tz:
+		{
+			DSC desc;
+			MOVE_CLEAR(&desc, sizeof(desc));
+			desc.dsc_dtype = dtype_sql_time_tz;
+			ISC_TIME_TZ atime;
+			desc.dsc_length = sizeof(atime);
+			desc.dsc_address = (UCHAR*) &atime;
 			CVT_move(arg2, &desc, 0);
 			return CVT2_compare(arg1, &desc, 0);
 		}
