@@ -38,7 +38,6 @@ if errorlevel 1 call :ERROR build failed - see make_all_%FB_TARGET_PLATFORM%.log
 
 @mkdir %FB_OUTPUT_DIR% 2>nul
 @mkdir %FB_OUTPUT_DIR%\intl 2>nul
-@mkdir %FB_OUTPUT_DIR%\udf 2>nul
 @mkdir %FB_OUTPUT_DIR%\help 2>nul
 @mkdir %FB_OUTPUT_DIR%\doc 2>nul
 @mkdir %FB_OUTPUT_DIR%\doc\sql.extensions 2>nul
@@ -47,12 +46,13 @@ if errorlevel 1 call :ERROR build failed - see make_all_%FB_TARGET_PLATFORM%.log
 @mkdir %FB_OUTPUT_DIR%\lib 2>nul
 @mkdir %FB_OUTPUT_DIR%\system32 2>nul
 @mkdir %FB_OUTPUT_DIR%\plugins 2>nul
+@mkdir %FB_OUTPUT_DIR%\plugins\udr 2>nul
 
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\* %FB_OUTPUT_DIR% >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\intl\* %FB_OUTPUT_DIR%\intl >nul
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\udf\* %FB_OUTPUT_DIR%\udf >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\system32\* %FB_OUTPUT_DIR%\system32 >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\plugins\*.dll %FB_OUTPUT_DIR%\plugins >nul
+@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\plugins\udr\*.dll %FB_OUTPUT_DIR%\plugins\udr >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\yvalve\fbclient.lib %FB_OUTPUT_DIR%\lib\fbclient_ms.lib >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\ib_util\ib_util.lib %FB_OUTPUT_DIR%\lib\ib_util_ms.lib >nul
 
@@ -110,10 +110,8 @@ copy %FB_ROOT_PATH%\src\include\gen\iberror.h %FB_OUTPUT_DIR%\include > nul
 :: New API headers
 copy %FB_ROOT_PATH%\src\include\firebird\*.h %FB_OUTPUT_DIR%\include\firebird > nul
 
-:: UDF
-copy %FB_ROOT_PATH%\src\extlib\ib_udf.sql %FB_OUTPUT_DIR%\udf > nul
-copy %FB_ROOT_PATH%\src\extlib\ib_udf2.sql %FB_OUTPUT_DIR%\udf > nul
-copy %FB_ROOT_PATH%\src\extlib\fbudf\fbudf.sql %FB_OUTPUT_DIR%\udf > nul
+:: UDR
+copy %FB_ROOT_PATH%\src\extlib\*.sql %FB_OUTPUT_DIR%\plugins\udr > nul
 
 :: Installers
 @copy %FB_INSTALL_SCRIPTS%\install_service.bat %FB_OUTPUT_DIR% >nul
