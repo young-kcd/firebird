@@ -153,7 +153,13 @@ namespace
 
 		// set wday/yday
 		time_t tt = mktime(to);
+#if defined(HAVE_LOCALTIME_R)
 		localtime_r(&tt, to);
+#elif defined(HAVE_LOCALTIME_S)
+		localtime_s(to, &tt);
+#else
+		error: missing thread-safe version of localtime()
+#endif
 	}
 
 	template <typename VC>
