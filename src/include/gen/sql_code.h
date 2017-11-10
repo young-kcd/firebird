@@ -858,6 +858,52 @@ static const struct {
 	{335545155, -901}, /* 835 decfloat_round */
 	{335545156, -833}, /* 836 sysf_invalid_first_last_part */
 	{335545157, -833}, /* 837 sysf_invalid_date_timestamp */
+	{335545158, -842}, /* 838 precision_err2 */
+	{335545159, -901}, /* 839 bad_batch_handle */
+	{335545160, -901}, /* 840 intl_char */
+	{335545161, -901}, /* 841 null_block */
+	{335545162, -901}, /* 842 mixed_info */
+	{335545163, -901}, /* 843 unknown_info */
+	{335545164, -901}, /* 844 bpb_version */
+	{335545165, -901}, /* 845 user_manager */
+	{335545166, -902}, /* 846 icu_entrypoint */
+	{335545167, -902}, /* 847 icu_library */
+	{335545168, -901}, /* 848 metadata_name */
+	{335545169, -901}, /* 849 tokens_parse */
+	{335545170, -902}, /* 850 iconv_open */
+	{335545171, -901}, /* 851 batch_compl_range */
+	{335545172, -901}, /* 852 batch_compl_detail */
+	{335545173, -902}, /* 853 deflate_init */
+	{335545174, -902}, /* 854 inflate_init */
+	{335545175, -901}, /* 855 big_segment */
+	{335545176, -901}, /* 856 batch_policy */
+	{335545177, -901}, /* 857 batch_defbpb */
+	{335545178, -901}, /* 858 batch_align */
+	{335545179, -901}, /* 859 multi_segment_dup */
+	{335545180, -902}, /* 860 non_plugin_protocol */
+	{335545181, -901}, /* 861 message_format */
+	{335545182, -901}, /* 862 batch_param_version */
+	{335545183, -901}, /* 863 batch_msg_long */
+	{335545184, -901}, /* 864 batch_open */
+	{335545185, -901}, /* 865 batch_type */
+	{335545186, -901}, /* 866 batch_param */
+	{335545187, -901}, /* 867 batch_blobs */
+	{335545188, -901}, /* 868 batch_blob_append */
+	{335545189, -901}, /* 869 batch_stream_align */
+	{335545190, -901}, /* 870 batch_rpt_blob */
+	{335545191, -901}, /* 871 batch_blob_buf */
+	{335545192, -901}, /* 872 batch_small_data */
+	{335545193, -901}, /* 873 batch_cont_bpb */
+	{335545194, -901}, /* 874 batch_big_bpb */
+	{335545195, -901}, /* 875 batch_big_segment */
+	{335545196, -901}, /* 876 batch_big_seg2 */
+	{335545197, -901}, /* 877 batch_blob_id */
+	{335545198, -901}, /* 878 batch_too_big */
+	{335545199, -901}, /* 879 num_literal */
+	{335545200, -902}, /* 880 map_event */
+	{335545201, -902}, /* 881 map_overflow */
+	{335545202, -901}, /* 882 hdr_overflow */
+	{335545203, -901}, /* 883 vld_plugins */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

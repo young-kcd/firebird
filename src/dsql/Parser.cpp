@@ -1297,3 +1297,21 @@ void Parser::yyabandon(const Position& position, SLONG sql_code, ISC_STATUS erro
 		Arg::Gds(isc_dsql_line_col_error) <<
 			Arg::Num(position.firstLine) << Arg::Num(position.firstColumn));
 }
+
+void Parser::yyabandon(const Position& position, SLONG sql_code, const Arg::StatusVector& status)
+{
+/**************************************
+ *
+ *	y y a b a n d o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Abandon the parsing outputting the supplied string
+ *
+ **************************************/
+	ERRD_post(
+		Arg::Gds(isc_sqlerr) << Arg::Num(sql_code) << status <<
+		Arg::Gds(isc_dsql_line_col_error) <<
+			Arg::Num(position.firstLine) << Arg::Num(position.firstColumn));
+}

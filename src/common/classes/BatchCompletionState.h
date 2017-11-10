@@ -103,8 +103,8 @@ namespace Firebird {
 		{
 			try
 			{
-				if (pos >= reccount)
-					(Arg::Gds(isc_random) << "Position is out of range").raise();
+				checkRange(pos);
+
 				if (array)
 					return (*array)[pos];
 
@@ -138,8 +138,7 @@ namespace Firebird {
 		{
 			try
 			{
-				if (pos >= reccount)
-					(Arg::Gds(isc_random) << "Position is out of range").raise();
+				checkRange(pos);
 
 				ULONG index = find(pos);
 				if (index < rare.getCount() && rare[index].first == pos)
@@ -150,7 +149,7 @@ namespace Firebird {
 						fb_utils::copyStatus(&w, rare[index].second);
 						return;
 					}
-					(Arg::Gds(isc_random) << "Detailed error info is missing in batch").raise();
+					(Arg::Gds(isc_batch_compl_detail) << Arg::Num(pos)).raise();
 				}
 			}
 			catch (const Exception& ex)
@@ -180,6 +179,12 @@ namespace Firebird {
 			}
 
 			return low;
+		}
+
+		void checkRange(unsigned pos)
+		{
+			if (pos >= reccount)
+				(Arg::Gds(isc_batch_compl_range) << Arg::Num(pos) << Arg::Num(reccount)).raise();
 		}
 	};
 }

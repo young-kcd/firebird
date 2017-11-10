@@ -90,7 +90,7 @@ DsqlBatch::DsqlBatch(dsql_req* req, const dsql_msg* /*message*/, IMessageMetadat
 	if (m_messageSize > RAM_BATCH)		// hops - message does not fit in our buffer
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-				  Arg::Gds(isc_random) << "Message too long");
+				  Arg::Gds(isc_batch_msg_long) << Arg::Num(m_messageSize) << Arg::Num(RAM_BATCH));
 	}
 
 	for (pb.rewind(); !pb.isEof(); pb.moveNext())
@@ -205,7 +205,7 @@ DsqlBatch* DsqlBatch::open(thread_db* tdbb, dsql_req* req, IMessageMetadata* inM
 	if (req->req_batch)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
-				  Arg::Gds(isc_random) << "Request has active batch");
+				  Arg::Gds(isc_batch_open));
 	}
 
 	// Sanity checks before creating batch
@@ -235,21 +235,21 @@ DsqlBatch* DsqlBatch::open(thread_db* tdbb, dsql_req* req, IMessageMetadata* inM
 
 		default:
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
-					  Arg::Gds(isc_random) << "Invalid type of statement used in batch");
+					  Arg::Gds(isc_batch_type));
 	}
 
 	const dsql_msg* message = statement->getSendMsg();
 	if (! (inMetadata && message && req->parseMetadata(inMetadata, message->msg_parameters)))
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
-				  Arg::Gds(isc_random) << "Statement used in batch must have parameters");
+				  Arg::Gds(isc_batch_param));
 	}
 
 	// Open reader for parameters block
 
 	ClumpletReader pb(ClumpletReader::WideTagged, par, parLength);
 	if (pb.getBufferLength() && (pb.getBufferTag() != IBatch::VERSION1))
-		ERRD_post(Arg::Gds(isc_random) << "Invalid tag in parameters block");
+		ERRD_post(Arg::Gds(isc_batch_param_version));
 
 	// Create batch
 
@@ -277,7 +277,7 @@ void DsqlBatch::blobCheckMeta()
 	if (!m_blobMeta.hasData())
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-			Arg::Gds(isc_random) << "There are no blobs in associated statement");
+			Arg::Gds(isc_batch_blobs));
 	}
 }
 
@@ -299,8 +299,7 @@ void DsqlBatch::blobCheckMode(bool stream, const char* fname)
 	}
 
 	ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-		Arg::Gds(isc_random) << "This *** call can't be used with current blob policy" <<
-		Arg::Gds(isc_random) << fname);
+		Arg::Gds(isc_batch_policy) << fname);
 }
 
 void DsqlBatch::blobSetSize()
@@ -328,7 +327,7 @@ void DsqlBatch::setDefaultBpb(thread_db* tdbb, unsigned parLength, const unsigne
 	if (m_blobs.getSize())
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-			Arg::Gds(isc_random) << "setDefaultBpb() call can be used only with empty batch (no blobs added)");
+			Arg::Gds(isc_batch_defbpb));
 	}
 	setDefBpb(parLength, par);
 }
@@ -378,8 +377,7 @@ void DsqlBatch::appendBlobData(thread_db* tdbb, ULONG length, const void* inBuff
 	if (m_lastBlob == MAX_ULONG)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-			Arg::Gds(isc_random) << "appendBlobData() is used to append data to last blob "
-									"but no such blob was added to the batch");
+			Arg::Gds(isc_batch_blob_append));
 	}
 
 	m_setBlobSize = true;
@@ -393,7 +391,7 @@ void DsqlBatch::putSegment(ULONG length, const void* inBuffer)
 		if (length > MAX_USHORT)
 		{
 			ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blobtoobig) <<
-					 Arg::Gds(isc_random) << "Segment size >= 64Kb");
+					 Arg::Gds(isc_big_segment) << Arg::Num(length));
 		}
 		USHORT l = length;
 		m_blobs.align(IBatch::BLOB_SEGHDR_ALIGN);
@@ -411,8 +409,7 @@ void DsqlBatch::addBlobStream(thread_db* tdbb, unsigned length, const void* inBu
 	if (length % BLOB_STREAM_ALIGN)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-			Arg::Gds(isc_random) << "Portions of data, passed as blob stream, should have size "
-				"multiple to the alignment required for blobs");
+			Arg::Gds(isc_batch_stream_align));
 	}
 
 	blobCheckMode(true, "addBlobStream");
@@ -443,7 +440,7 @@ void DsqlBatch::registerBlob(const ISC_QUAD* engineBlob, const ISC_QUAD* batchBl
 	if (!idPtr)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-			Arg::Gds(isc_random) << "Repeated BlobId in registerBlob(): is ***");
+			Arg::Gds(isc_batch_rpt_blob) << Arg::Quad(batchBlob));
 	}
 
 	*idPtr = *engineBlob;
@@ -460,11 +457,7 @@ Firebird::IBatchCompletionState* DsqlBatch::execute(thread_db* tdbb)
 	thread_db::TimerGuard timerGuard(tdbb, m_request->setupTimer(tdbb), true);
 
 	// sync internal buffers
-	if (!m_messages.done())
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-			  Arg::Gds(isc_random) << "Internal message buffer overflow - batch too big");
-	}
+	m_messages.done();
 
 	// insert blobs here
 	if (m_blobMeta.hasData())
@@ -472,13 +465,8 @@ Firebird::IBatchCompletionState* DsqlBatch::execute(thread_db* tdbb)
 		// This code expects the following to work correctly
 		fb_assert(RAM_BATCH % BLOB_STREAM_ALIGN == 0);
 
-		blobSetSize();		// Needed after appendBlobData()
-
-		if (!m_blobs.done())
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-				  Arg::Gds(isc_random) << "Internal BLOB buffer overflow - batch too big");
-		}
+		blobSetSize();		// needed after appendBlobData()
+		m_blobs.done();		// sync internal buffers
 
 		struct BlobFlow
 		{
@@ -545,7 +533,8 @@ private:
 						if (flow.remains < SIZEOF_BLOB_HEAD)
 						{
 							ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-								Arg::Gds(isc_random) << "Blob buffer format error: useless data remained in buffer");
+								Arg::Gds(isc_batch_blob_buf) <<
+								Arg::Gds(isc_batch_small_data) << "BLOB");
 						}
 
 						// parse blob header
@@ -562,7 +551,7 @@ private:
 							if (*bpbSize)
 							{
 								ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-									Arg::Gds(isc_random) << "Blob buffer format error: blob continuation should not contain BPB");
+									Arg::Gds(isc_batch_blob_buf) << Arg::Gds(isc_batch_cont_bpb));
 							}
 						}
 						else
@@ -578,7 +567,8 @@ private:
 								if (currentBpbSize > flow.remains)
 								{
 									ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-										Arg::Gds(isc_random) << "Blob buffer format error: size of BPB greater than remaining data");	// <<currentBpbSize
+										Arg::Gds(isc_batch_blob_buf) <<
+										Arg::Gds(isc_batch_big_bpb) << Arg::Num(currentBpbSize) << Arg::Num(flow.remains));
 								}
 								localBpb.add(flow.data, currentBpbSize);
 								bpb = &localBpb;
@@ -622,7 +612,8 @@ private:
 							if (dataSize > flow.currentBlobSize)
 							{
 								ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-									Arg::Gds(isc_random) << "Blob buffer format error: size of segment exceeds remaining data");	// <<dataSize, currentBlobSize
+									Arg::Gds(isc_batch_blob_buf) <<
+									Arg::Gds(isc_batch_big_segment) << Arg::Num(dataSize) << Arg::Num(flow.currentBlobSize));
 							}
 							if (dataSize > flow.remains)
 							{
@@ -630,7 +621,8 @@ private:
 								if (dataSize > flow.remains)
 								{
 									ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-										Arg::Gds(isc_random) << "Blob buffer format error: size of segment exceeds RAM buffer");	// <<dataSize, flow.remains
+									Arg::Gds(isc_batch_blob_buf) <<
+									Arg::Gds(isc_batch_big_seg2) << Arg::Num(dataSize) << Arg::Num(flow.remains));
 								}
 							}
 						}
@@ -679,7 +671,8 @@ private:
 		if (remains < m_messageSize)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-				Arg::Gds(isc_random) << "Internal error: useless data remained in batch buffer");
+				Arg::Gds(isc_batch_blob_buf) <<
+				Arg::Gds(isc_batch_small_data) << "messages");
 		}
 
 		while (remains >= m_messageSize)
@@ -713,9 +706,7 @@ private:
 				if (!m_blobMap.get(*id, newId))
 				{
 					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						Arg::Gds(isc_random) << "Unknown blob ID in the message: is ***" <<
-						Arg::Gds(isc_random) << Arg::Num(id->gds_quad_high) <<
-						Arg::Gds(isc_random) << Arg::Num(id->gds_quad_low));
+						Arg::Gds(isc_batch_blob_id) << Arg::Quad(id));
 				}
 
 				m_blobMap.remove(*id);
@@ -823,7 +814,7 @@ void DsqlBatch::DataCache::put(const void* d, ULONG dataSize)
 	if (m_used + (m_cache ? m_cache->getCount() : 0) + dataSize > m_limit)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-			  Arg::Gds(isc_random) << "Internal buffer overflow - batch too big");
+			  Arg::Gds(isc_batch_too_big));
 	}
 
 	const UCHAR* data = reinterpret_cast<const UCHAR*>(d);
@@ -880,12 +871,9 @@ void DsqlBatch::DataCache::align(ULONG alignment)
 	}
 }
 
-bool DsqlBatch::DataCache::done()
+void DsqlBatch::DataCache::done()
 {
 	fb_assert(m_cache);
-
-	if (m_cache->getCount() == 0 && m_used == 0)
-		return true;	// false?
 
 	if (m_cache->getCount() && m_used)
 	{
@@ -896,8 +884,6 @@ bool DsqlBatch::DataCache::done()
 		m_used += m_cache->getCount();
 		m_cache->clear();
 	}
-
-	return true;
 }
 
 ULONG DsqlBatch::DataCache::get(UCHAR** buffer)

@@ -116,7 +116,7 @@ private:
 		void put(const void* data, ULONG dataSize);
 		void put3(const void* data, ULONG dataSize, ULONG offset);
 		void align(ULONG alignment);
-		bool done();
+		void done();
 		ULONG get(UCHAR** buffer);
 		ULONG reget(ULONG size, UCHAR** buffer, ULONG alignment);
 		void remained(ULONG size, ULONG alignment = 0);

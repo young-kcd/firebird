@@ -183,7 +183,7 @@ namespace Jrd {
 			const unsigned length = writer.getBufferLength();
 			fb_assert(length <= limit);
 			if (length > limit)
-				(Arg::Gds(isc_random) << "HDR page clumplets overflow").raise();
+				Arg::Gds(isc_hdr_overflow).raise();
 
 			memcpy(to, writer.getBuffer(), length);
 			to[length] = Ods::HDR_end;

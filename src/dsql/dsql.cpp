@@ -221,7 +221,7 @@ DsqlCursor* DSQL_open(thread_db* tdbb,
 	if (request->req_batch)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
-				  Arg::Gds(isc_random) << "Request has active batch");
+				  Arg::Gds(isc_batch_open));
 	}
 
 	request->req_transaction = *tra_handle;

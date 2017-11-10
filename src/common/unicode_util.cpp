@@ -108,8 +108,7 @@ public:
 				return;
 		}
 
-		(Arg::Gds(isc_random) << "Missing entrypoint in ICU library" <<
-		 Arg::Gds(isc_random) << name).raise();
+		(Arg::Gds(isc_icu_entrypoint) << name).raise();
 	}
 
 	int majorVersion;
@@ -1163,12 +1162,9 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 	}
 
 	if (lastError.getState() & Firebird::IStatus::STATE_ERRORS)
-	{
-		(Arg::Gds(isc_random) << "Could not find acceptable ICU library"
-			 << Arg::StatusVector(lastError.getErrors())).raise();
-	}
+		(Arg::Gds(isc_icu_library) << Arg::StatusVector(lastError.getErrors())).raise();
 	else
-		(Arg::Gds(isc_random) << "Could not find acceptable ICU library").raise();
+		Arg::Gds(isc_icu_library).raise();
 
 	// compiler warning silencer
 	return *convIcu;

@@ -431,7 +431,7 @@ static void getMultiPartConnectParameter(T& putTo, Firebird::ClumpletReader& id,
 					top = offset + 1;
 				if (checkBytes[offset])
 				{
-					(Arg::Gds(isc_random) << "Invalid CNCT block: repeated data").raise();	// print offset No here
+					(Arg::Gds(isc_multi_segment_dup) << Arg::Num(offset)).raise();
 				}
 				checkBytes[offset] = 1;
 
@@ -641,7 +641,7 @@ public:
 				{
 					authServer = NULL;
 					working = false;
-					(Arg::Gds(isc_random) << "Plugin not supported by network protocol").copyTo(&st);		// add port_protocol parameter
+					Arg::Gds(isc_non_plugin_protocol).copyTo(&st);
 					break;
 				}
 
@@ -677,7 +677,7 @@ public:
 					{
 						authServer = NULL;
 						working = false;
-						(Arg::Gds(isc_random) << "Plugin not supported by network protocol").copyTo(&st);		// add port_protocol parameter
+						Arg::Gds(isc_non_plugin_protocol).copyTo(&st);
 						break;
 					}
 				}
@@ -2062,7 +2062,7 @@ void Rsr::checkCursor()
 void Rsr::checkBatch()
 {
 	if (!rsr_batch)
-		(Arg::Gds(isc_random) << "Batch is not created").raise();
+		Arg::Gds(isc_bad_batch_handle).raise();
 }
 
 
@@ -3336,7 +3336,7 @@ void rem_port::batch_create(P_BATCH_CREATE* batch, PACKET* sendL)
 	const ULONG blr_length = batch->p_batch_blr.cstr_length;
 	const UCHAR* blr = batch->p_batch_blr.cstr_address;
 	if (!blr)
-		(Arg::Gds(isc_random) << "Missing required format info in createBatch()").raise();
+		(Arg::Gds(isc_random) << "Missing required format info in createBatch()").raise();	// signals internal protocol error
 	InternalMessageBuffer msgBuffer(blr_length, blr, batch->p_batch_msglen, NULL);
 
 	// Flush out any previous format information
@@ -3373,7 +3373,7 @@ void rem_port::batch_create(P_BATCH_CREATE* batch, PACKET* sendL)
 	ClumpletWriter wrt(ClumpletReader::WideTagged, MAX_DPB_SIZE,
 		batch->p_batch_pb.cstr_address, batch->p_batch_pb.cstr_length);
 	if (wrt.getBufferLength() && (wrt.getBufferTag() != IBatch::VERSION1))
-		(Arg::Gds(isc_random) << "Invalid tag in parameters block").raise();
+		(Arg::Gds(isc_batch_param_version) << Arg::Num(wrt.getBufferTag()) << Arg::Num(IBatch::VERSION1)).raise();
 	statement->rsr_batch_flags = (wrt.find(IBatch::TAG_RECORD_COUNTS) && wrt.getInt()) ?
 		(1 << IBatch::TAG_RECORD_COUNTS) : 0;
 	if (wrt.find(IBatch::TAG_BLOB_POLICY) && (wrt.getInt() != IBatch::BLOB_STREAM))
@@ -4871,7 +4871,7 @@ static bool continue_authentication(rem_port* port, PACKET* send, PACKET* receiv
 			 receive->p_operation == op_trusted_auth && port->port_protocol >= PROTOCOL_VERSION13 ||
 			 receive->p_operation == op_cont_auth && port->port_protocol < PROTOCOL_VERSION13)
 	{
-		send_error(port, send, (Arg::Gds(isc_random) << "Operation not supported for network protocol"));
+		send_error(port, send, Arg::Gds(isc_non_plugin_protocol));
 	}
 	else
 	{

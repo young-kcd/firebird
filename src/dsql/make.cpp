@@ -131,7 +131,7 @@ ValueExprNode* MAKE_constant(const char* str, dsql_constant_type numeric_flag)
 			size_t l = strlen(str);
 			if (l > MAX_SSHORT)
 			{
-				ERRD_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_random) << "Numeric literal too long");
+				ERRD_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_num_literal));
 			}
 			literal->litDesc.dsc_sub_type = static_cast<SSHORT>(l);	// Keep length in sub_type which is unused
 			literal->litDesc.dsc_length = numeric_flag == CONSTANT_DOUBLE ? sizeof(double) : sizeof(Decimal128);

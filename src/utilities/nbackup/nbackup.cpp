@@ -123,8 +123,6 @@ namespace
 
 		if (uSvc->isService())
 		{
-			//fb_assert(message != NULL);
-			//(Arg::Gds(isc_random) << msg).raise();
 			fb_assert(code);
 			Arg::Gds gds(code);
 			if (message)

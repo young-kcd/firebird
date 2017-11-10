@@ -862,6 +862,52 @@ Data source : @4"},		/* eds_statement */
 	{335545155, "Invalid decfloat rounding mode @1"},		/* decfloat_round */
 	{335545156, "Invalid part @1 to calculate the @1 of a DATE/TIMESTAMP"},		/* sysf_invalid_first_last_part */
 	{335545157, "Expected DATE/TIMESTAMP value in @1"},		/* sysf_invalid_date_timestamp */
+	{335545158, "Precision must be from @1 to @2"},		/* precision_err2 */
+	{335545159, "invalid batch handle"},		/* bad_batch_handle */
+	{335545160, "Bad international character in tag @1"},		/* intl_char */
+	{335545161, "Null data in parameters block with non-zero length"},		/* null_block */
+	{335545162, "Items working with running service and getting generic server information should not be mixed in single info block"},		/* mixed_info */
+	{335545163, "Unknown information item, code @1"},		/* unknown_info */
+	{335545164, "Wrong version of blob parameters block @1, should be @2"},		/* bpb_version */
+	{335545165, "User management plugin is missing or failed to load"},		/* user_manager */
+	{335545166, "Missing entrypoint @1 in ICU library"},		/* icu_entrypoint */
+	{335545167, "Could not find acceptable ICU library"},		/* icu_library */
+	{335545168, "Name @1 not found in system MetadataBuilder"},		/* metadata_name */
+	{335545169, "Parse to tokens error"},		/* tokens_parse */
+	{335545170, "Error opening international conversion descriptor from @1 to @2"},		/* iconv_open */
+	{335545171, "Message @1 is out of range, only @2 messages in batch"},		/* batch_compl_range */
+	{335545172, "Detailed error info for message @1 is missing in batch"},		/* batch_compl_detail */
+	{335545173, "Compression stream init error @1"},		/* deflate_init */
+	{335545174, "Decompression stream init error @1"},		/* inflate_init */
+	{335545175, "Segment size (@1) should not exceed 65535 (64K - 1) when using segmented blob"},		/* big_segment */
+	{335545176, "Invalid blob policy in the batch for @1() call"},		/* batch_policy */
+	{335545177, "Can't change default BPB after adding any data to batch"},		/* batch_defbpb */
+	{335545178, "Unexpected info buffer structure querying for default blob alignment"},		/* batch_align */
+	{335545179, "Duplicated segment @1 in multisegment connect block parameter"},		/* multi_segment_dup */
+	{335545180, "Plugin not supported by network protocol"},		/* non_plugin_protocol */
+	{335545181, "Error parsing message format"},		/* message_format */
+	{335545182, "Wrong version of batch parameters block @1, should be @2"},		/* batch_param_version */
+	{335545183, "Message size (@1) in batch exceeds internal buffer size (@2)"},		/* batch_msg_long */
+	{335545184, "Batch already opened for this statement"},		/* batch_open */
+	{335545185, "Invalid type of statement used in batch"},		/* batch_type */
+	{335545186, "Statement used in batch must have parameters"},		/* batch_param */
+	{335545187, "There are no blobs in associated with batch statement"},		/* batch_blobs */
+	{335545188, "appendBlobData() is used to append data to last blob but no such blob was added to the batch"},		/* batch_blob_append */
+	{335545189, "Portions of data, passed as blob stream, should have size multiple to the alignment required for blobs"},		/* batch_stream_align */
+	{335545190, "Repeated blob id @1 in registerBlob()"},		/* batch_rpt_blob */
+	{335545191, "Blob buffer format error"},		/* batch_blob_buf */
+	{335545192, "Unusable (too small) data remained in @1 buffer"},		/* batch_small_data */
+	{335545193, "Blob continuation should not contain BPB"},		/* batch_cont_bpb */
+	{335545194, "Size of BPB (@1) greater than remaining data (@2)"},		/* batch_big_bpb */
+	{335545195, "Size of segment (@1) greater than current BLOB data (@2)"},		/* batch_big_segment */
+	{335545196, "Size of segment (@1) greater than available data (@2)"},		/* batch_big_seg2 */
+	{335545197, "Unknown blob ID @1 in the batch message"},		/* batch_blob_id */
+	{335545198, "Internal buffer overflow - batch too big"},		/* batch_too_big */
+	{335545199, "Numeric literal too long"},		/* num_literal */
+	{335545200, "Error using events in mapping shared memory: @1"},		/* map_event */
+	{335545201, "Global mapping memory overflow"},		/* map_overflow */
+	{335545202, "Header page overflow - too many clumplets on it"},		/* hdr_overflow */
+	{335545203, "No matching client/server authentication plugins configured for execute statement in embedded datasource"},		/* vld_plugins */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

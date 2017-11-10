@@ -893,6 +893,52 @@ const ISC_STATUS isc_decfloat_trap                    = 335545154L;
 const ISC_STATUS isc_decfloat_round                   = 335545155L;
 const ISC_STATUS isc_sysf_invalid_first_last_part     = 335545156L;
 const ISC_STATUS isc_sysf_invalid_date_timestamp      = 335545157L;
+const ISC_STATUS isc_precision_err2                   = 335545158L;
+const ISC_STATUS isc_bad_batch_handle                 = 335545159L;
+const ISC_STATUS isc_intl_char                        = 335545160L;
+const ISC_STATUS isc_null_block                       = 335545161L;
+const ISC_STATUS isc_mixed_info                       = 335545162L;
+const ISC_STATUS isc_unknown_info                     = 335545163L;
+const ISC_STATUS isc_bpb_version                      = 335545164L;
+const ISC_STATUS isc_user_manager                     = 335545165L;
+const ISC_STATUS isc_icu_entrypoint                   = 335545166L;
+const ISC_STATUS isc_icu_library                      = 335545167L;
+const ISC_STATUS isc_metadata_name                    = 335545168L;
+const ISC_STATUS isc_tokens_parse                     = 335545169L;
+const ISC_STATUS isc_iconv_open                       = 335545170L;
+const ISC_STATUS isc_batch_compl_range                = 335545171L;
+const ISC_STATUS isc_batch_compl_detail               = 335545172L;
+const ISC_STATUS isc_deflate_init                     = 335545173L;
+const ISC_STATUS isc_inflate_init                     = 335545174L;
+const ISC_STATUS isc_big_segment                      = 335545175L;
+const ISC_STATUS isc_batch_policy                     = 335545176L;
+const ISC_STATUS isc_batch_defbpb                     = 335545177L;
+const ISC_STATUS isc_batch_align                      = 335545178L;
+const ISC_STATUS isc_multi_segment_dup                = 335545179L;
+const ISC_STATUS isc_non_plugin_protocol              = 335545180L;
+const ISC_STATUS isc_message_format                   = 335545181L;
+const ISC_STATUS isc_batch_param_version              = 335545182L;
+const ISC_STATUS isc_batch_msg_long                   = 335545183L;
+const ISC_STATUS isc_batch_open                       = 335545184L;
+const ISC_STATUS isc_batch_type                       = 335545185L;
+const ISC_STATUS isc_batch_param                      = 335545186L;
+const ISC_STATUS isc_batch_blobs                      = 335545187L;
+const ISC_STATUS isc_batch_blob_append                = 335545188L;
+const ISC_STATUS isc_batch_stream_align               = 335545189L;
+const ISC_STATUS isc_batch_rpt_blob                   = 335545190L;
+const ISC_STATUS isc_batch_blob_buf                   = 335545191L;
+const ISC_STATUS isc_batch_small_data                 = 335545192L;
+const ISC_STATUS isc_batch_cont_bpb                   = 335545193L;
+const ISC_STATUS isc_batch_big_bpb                    = 335545194L;
+const ISC_STATUS isc_batch_big_segment                = 335545195L;
+const ISC_STATUS isc_batch_big_seg2                   = 335545196L;
+const ISC_STATUS isc_batch_blob_id                    = 335545197L;
+const ISC_STATUS isc_batch_too_big                    = 335545198L;
+const ISC_STATUS isc_num_literal                      = 335545199L;
+const ISC_STATUS isc_map_event                        = 335545200L;
+const ISC_STATUS isc_map_overflow                     = 335545201L;
+const ISC_STATUS isc_hdr_overflow                     = 335545202L;
+const ISC_STATUS isc_vld_plugins                      = 335545203L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -1367,7 +1413,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1311;
+const ISC_STATUS isc_err_max                          = 1357;
 
 #else /* c definitions */
 
@@ -2230,6 +2276,52 @@ const ISC_STATUS isc_err_max                          = 1311;
 #define isc_decfloat_round                   335545155L
 #define isc_sysf_invalid_first_last_part     335545156L
 #define isc_sysf_invalid_date_timestamp      335545157L
+#define isc_precision_err2                   335545158L
+#define isc_bad_batch_handle                 335545159L
+#define isc_intl_char                        335545160L
+#define isc_null_block                       335545161L
+#define isc_mixed_info                       335545162L
+#define isc_unknown_info                     335545163L
+#define isc_bpb_version                      335545164L
+#define isc_user_manager                     335545165L
+#define isc_icu_entrypoint                   335545166L
+#define isc_icu_library                      335545167L
+#define isc_metadata_name                    335545168L
+#define isc_tokens_parse                     335545169L
+#define isc_iconv_open                       335545170L
+#define isc_batch_compl_range                335545171L
+#define isc_batch_compl_detail               335545172L
+#define isc_deflate_init                     335545173L
+#define isc_inflate_init                     335545174L
+#define isc_big_segment                      335545175L
+#define isc_batch_policy                     335545176L
+#define isc_batch_defbpb                     335545177L
+#define isc_batch_align                      335545178L
+#define isc_multi_segment_dup                335545179L
+#define isc_non_plugin_protocol              335545180L
+#define isc_message_format                   335545181L
+#define isc_batch_param_version              335545182L
+#define isc_batch_msg_long                   335545183L
+#define isc_batch_open                       335545184L
+#define isc_batch_type                       335545185L
+#define isc_batch_param                      335545186L
+#define isc_batch_blobs                      335545187L
+#define isc_batch_blob_append                335545188L
+#define isc_batch_stream_align               335545189L
+#define isc_batch_rpt_blob                   335545190L
+#define isc_batch_blob_buf                   335545191L
+#define isc_batch_small_data                 335545192L
+#define isc_batch_cont_bpb                   335545193L
+#define isc_batch_big_bpb                    335545194L
+#define isc_batch_big_segment                335545195L
+#define isc_batch_big_seg2                   335545196L
+#define isc_batch_blob_id                    335545197L
+#define isc_batch_too_big                    335545198L
+#define isc_num_literal                      335545199L
+#define isc_map_event                        335545200L
+#define isc_map_overflow                     335545201L
+#define isc_hdr_overflow                     335545202L
+#define isc_vld_plugins                      335545203L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -2704,7 +2796,7 @@ const ISC_STATUS isc_err_max                          = 1311;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1311
+#define isc_err_max                          1357
 
 #endif
 

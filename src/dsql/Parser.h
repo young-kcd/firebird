@@ -37,6 +37,12 @@
 
 #include "gen/parse.h"
 
+namespace Firebird {
+namespace Arg {
+	class StatusVector;
+} // namespace
+} // namespace
+
 namespace Jrd {
 
 class CharSet;
@@ -240,6 +246,7 @@ private:
 	void check_copy_incr(char*& to, const char ch, const char* const string);
 
 	void yyabandon(const Position& position, SLONG, ISC_STATUS);
+	void yyabandon(const Position& position, SLONG, const Firebird::Arg::StatusVector& status);
 
 	Firebird::MetaName optName(Firebird::MetaName* name)
 	{

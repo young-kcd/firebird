@@ -654,7 +654,7 @@ namespace
 	inline void validateHandle(thread_db* tdbb, DsqlBatch* const batch)
 	{
 		if (!batch)
-			status_exception::raise(Arg::Gds(isc_bad_req_handle));		// isc_bad_batch_handle !!!!!!!!!!
+			status_exception::raise(Arg::Gds(isc_bad_batch_handle));
 
 		validateHandle(tdbb, batch->getAttachment());
 	}
@@ -3374,7 +3374,7 @@ void JBlob::putSegment(CheckStatusWrapper* user_status, unsigned int buffer_leng
 			else
 			{
 				ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blobtoobig) <<
-						 Arg::Gds(isc_random) << "Segment size >= 64Kb");
+						 Arg::Gds(isc_big_segment) << Arg::Num(buffer_length));
 			}
 		}
 		catch (const Exception& ex)

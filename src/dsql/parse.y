@@ -4845,7 +4845,8 @@ prec_scale
 			$$ = newNode<dsql_fld>();
 
 			if ($2 < 1 || $2 > 34)
-				yyabandon(YYPOSNARG(2), -842, isc_precision_err/*2!!!!!*/);	// Precision must be between 1 and 34.
+				yyabandon(YYPOSNARG(2), -842, Arg::Gds(isc_precision_err2) << Arg::Num(1) << Arg::Num(34));
+																// Precision must be between 1 and 34
 
 			if ($2 > 18)
 			{
@@ -4900,7 +4901,8 @@ prec_scale
 			$$ = newNode<dsql_fld>();
 
 			if ($2 < 1 || $2 > 34)
-				yyabandon(YYPOSNARG(2), -842, isc_precision_err/*2!!!!!*/);	// Precision must be between 1 and 34.
+				yyabandon(YYPOSNARG(2), -842, Arg::Gds(isc_precision_err2) << Arg::Num(1) << Arg::Num(34));
+																// Precision must be between 1 and 34
 
 			if ($4 > $2 || $4 < 0)
 				yyabandon(YYPOSNARG(4), -842, isc_scale_nogt);	// Scale must be between 0 and precision

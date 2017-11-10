@@ -451,7 +451,7 @@ private:
 			if (size > MAX_USHORT)
 			{
 				(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blobtoobig)
-					<< Arg::Gds(isc_random) << "Segment size >= 64Kb").raise();
+					<< Arg::Gds(isc_big_segment) << Arg::Num(size)).raise();
 			}
 
 			alignBlobBuffer(BLOB_SEGHDR_ALIGN, sizePointer);
@@ -2369,7 +2369,7 @@ void Batch::addBlob(CheckStatusWrapper* status, unsigned length, const void* inB
 		case IBatch::BLOB_ID_USER:
 			break;
 		default:
-			(Arg::Gds(isc_random) << "Invalid blob policy for appendBlobData call").raise();
+			(Arg::Gds(isc_batch_policy) << "addBlob").raise();
 		}
 
 		// Build blob HDR in stream
@@ -2410,7 +2410,7 @@ void Batch::appendBlobData(CheckStatusWrapper* status, unsigned length, const vo
 		case IBatch::BLOB_ID_ENGINE:
 			break;
 		default:
-			(Arg::Gds(isc_random) << "Invalid blob policy for appendBlobData call").raise();
+			(Arg::Gds(isc_batch_policy) << "appendBlobData").raise();
 		}
 
 		Rsr* statement = stmt->getStatement();
@@ -2443,7 +2443,7 @@ void Batch::addBlobStream(CheckStatusWrapper* status, unsigned length, const voi
 		// Policy check
 		if (blobPolicy != IBatch::BLOB_STREAM)
 		{
-			(Arg::Gds(isc_random) << "Invalid blob policy for addBlobStream() call").raise();
+			(Arg::Gds(isc_batch_policy) << "addBlobStream").raise();
 		}
 
 		Rsr* statement = stmt->getStatement();
@@ -2503,7 +2503,7 @@ void Batch::setDefaultBpb(CheckStatusWrapper* status, unsigned parLength, const 
 
 		// Check for presence of any data in batch buffers
 		if (batchHasData())
-			(Arg::Gds(isc_random) << "Can't change default BPB after adding any data to batch").raise();
+			Arg::Gds(isc_batch_defbpb).raise();
 
 		// Set default segmentation flag
 		defSegmented = fb_utils::isBpbSegmented(parLength, par);
@@ -2570,7 +2570,7 @@ void Batch::setBlobAlignment()
 
 	// Extract from buffer
 	if (buffer[0] != item)
-		(Arg::Gds(isc_random) << "Unexpected info buffer structure").raise();
+		Arg::Gds(isc_batch_align).raise();
 
 	int len = gds__vax_integer(&buffer[1], 2);
 	statement->rsr_batch_stream.alignment = blobAlign = gds__vax_integer(&buffer[3], len);
@@ -2670,19 +2670,10 @@ IBatchCompletionState* Batch::execute(CheckStatusWrapper* status, ITransaction* 
 		receive_packet(port, packet);
 		statement->rsr_batch_cs = nullptr;
 
-		switch (packet->p_operation)
-		{
-		case op_response:
-			REMOTE_check_response(status, rdb, packet);
-			break;
-
-		case op_batch_cs:
+		if (packet->p_operation == op_batch_cs)
 			return cs.release();
 
-		default:
-			(Arg::Gds(isc_random) << "Unexpected packet type").raise();
-			break;
-		}
+		REMOTE_check_response(status, rdb, packet);
 	}
 	catch (const Exception& ex)
 	{

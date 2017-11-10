@@ -307,6 +307,12 @@ PrivateDyn::PrivateDyn(ISC_STATUS codeWithoutFacility) throw() :
 Num::Num(ISC_STATUS s) throw() :
 	Base(isc_arg_number, s) { }
 
+Quad::Quad(const ISC_QUAD* quad) throw() :
+	Str(text)
+{
+	sprintf(text, "%x:%x", quad->gds_quad_high, quad->gds_quad_low);
+}
+
 Interpreted::Interpreted(const char* text) throw() :
 	StatusVector(isc_arg_interpreted, (ISC_STATUS)(IPTR) text) { }
 

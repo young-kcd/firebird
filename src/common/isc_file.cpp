@@ -1697,11 +1697,7 @@ private:
 	{
 		iconv_t ret = iconv_open(tocode, fromcode);
 		if (ret == (iconv_t) -1)
-		{
-			(Arg::Gds(isc_random) << "Error opening conversion descriptor" <<
-			 Arg::Unix(errno)).raise();
-			// adding text "from @1 to @2" is good idea
-		}
+			(Arg::Gds(isc_iconv_open) << fromcode << tocode << Arg::Unix(errno)).raise();
 
 		return ret;
 	}

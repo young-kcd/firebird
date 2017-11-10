@@ -198,7 +198,7 @@ void MetadataBuilder::moveNameToIndex(CheckStatusWrapper* status, const char* na
 			}
 		}
 
-		(Arg::Gds(isc_random) << (string("Name not found in IMetadataBuilder: ") + name)).raise();
+		(Arg::Gds(isc_metadata_name) << name).raise();
 	}
 	catch (const Exception& ex)
 	{

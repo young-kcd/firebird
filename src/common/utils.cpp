@@ -1373,7 +1373,7 @@ bool isRunningCheck(const UCHAR* items, unsigned int length)
 	{
 		if (!items)
 		{
-			(Firebird::Arg::Gds(isc_random) << "Missing info items block of non-zero length").raise();
+			Firebird::Arg::Gds(isc_null_block).raise();
 		}
 
 		switch (*items++)
@@ -1396,7 +1396,7 @@ bool isRunningCheck(const UCHAR* items, unsigned int length)
 		case isc_info_svc_stdin:
 			if (state == S_INF)
 			{
-				(Firebird::Arg::Gds(isc_random) << "Wrong info items combination").raise();
+				Firebird::Arg::Gds(isc_mixed_info).raise();
 			}
 			state = S_RUN;
 			break;
@@ -1416,13 +1416,13 @@ bool isRunningCheck(const UCHAR* items, unsigned int length)
 		case isc_info_svc_get_licensed_users:
 			if (state == S_RUN)
 			{
-				(Firebird::Arg::Gds(isc_random) << "Wrong info items combination").raise();
+				Firebird::Arg::Gds(isc_mixed_info).raise();
 			}
 			state = S_INF;
 			break;
 
 		default:
-			(Firebird::Arg::Gds(isc_random) << "Unknown info item").raise();
+			(Firebird::Arg::Gds(isc_unknown_info) << Firebird::Arg::Num(ULONG(items[-1]))).raise();
 			break;
 		}
 	}
@@ -1630,11 +1630,14 @@ const char* dpbItemUpper(const char* s, FB_SIZE_T l, Firebird::string& buf)
 bool isBpbSegmented(unsigned parLength, const unsigned char* par)
 {
 	if (parLength && !par)
-		(Firebird::Arg::Gds(isc_random) << "Malformed BPB").raise();
+		Firebird::Arg::Gds(isc_null_block).raise();
 
 	Firebird::ClumpletReader bpb(Firebird::ClumpletReader::Tagged, par, parLength);
 	if (bpb.getBufferTag() != isc_bpb_version1)
-		(Firebird::Arg::Gds(isc_random) << "Malformed BPB").raise();
+	{
+		(Firebird::Arg::Gds(isc_bpb_version) << Firebird::Arg::Num(bpb.getBufferTag()) <<
+			Firebird::Arg::Num(isc_bpb_version1)).raise();
+	}
 
 	if (!bpb.find(isc_bpb_type))
 		return true;

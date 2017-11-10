@@ -34,7 +34,7 @@ namespace {
 
 void raise()
 {
-	(Arg::Gds(isc_random) << "Missing user management plugin").raise();
+	Arg::Gds(isc_user_manager).raise();
 }
 
 } // anonymous namespace
