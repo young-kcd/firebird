@@ -416,6 +416,12 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 		else if (item->exa_action == ExternalAccess::exa_function)
 		{
 			routine = Function::lookup(tdbb, item->exa_fun_id, false, false, 0);
+			if (!routine)
+			{
+				string name;
+				name.printf("id %d", item->exa_fun_id);
+				ERR_post(Arg::Gds(isc_funnotdef) << name);
+			}
 			aclType = id_function;
 		}
 		else
