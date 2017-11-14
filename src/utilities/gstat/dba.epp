@@ -1162,8 +1162,11 @@ int gstat(Firebird::UtilSvc* uSvc)
 	// This is isc_detach_database
 	FINISH;
 
-	getDateTime(datetime, sizeof(datetime));
-	dba_print(false, 60, SafeArg() << datetime);	// msg 60: Gstat completion time @1
+	if (fl_print_complete)
+	{
+		getDateTime(datetime, sizeof(datetime));
+		dba_print(false, 60, SafeArg() << datetime);	// msg 60: Gstat completion time @1
+	}
 
 	uSvc->started();
 	dba_mem* alloced = tddba->head_of_mem_list;
