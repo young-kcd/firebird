@@ -58,6 +58,17 @@
 #include "../jrd/ods_proto.h"
 #include "../common/classes/MsgPrint.h"
 
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+
 using MsgFormat::SafeArg;
 
 
@@ -238,6 +249,19 @@ public:
 };
 
 
+static void getDateTime(char* datetime, unsigned sizeof_datetime)
+{
+	time_t t;
+	time(&t);
+#if defined(HAVE_CTIME_R)
+	ctime_r(&t, datetime);
+#elif defined(HAVE_CTIME_S)
+	ctime_s(datetime, sizeof_datetime, &t);
+#else
+	error: missing thread-safe version of ctime()
+#endif
+}
+
 void inline dba_exit(int code, tdba* tddba)
 {
 	tddba->exit_code = code;
@@ -342,6 +366,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 	const char** argv = uSvc->argv.begin();
 
 	ISC_STATUS* status_vector = NULL;
+
+	char datetime[32];
 
 	try {
 
@@ -580,8 +606,10 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	char file_name[1024];
 	fileName.copyTo(file_name, sizeof(file_name));
+	dba_print(false, 6, SafeArg() << file_name);	// msg 6: \nDatabase \"@1\"\n
 
-	dba_print(false, 6, SafeArg() << file_name);	// msg 6: \nDatabase \"%s\"\n
+	getDateTime(datetime, sizeof(datetime));
+	uSvc->printf(false, "Gstat execution time %s\n", datetime);
 
 	tddba->page_size = header->hdr_page_size;
 	tddba->buffer1 = (pag*) alloc(tddba->page_size);
