@@ -26,6 +26,7 @@
 #include "../../common/classes/auto.h"
 #include "../../common/config/config_file.h"
 #include "../jrd/os/fbsyslog.h"
+#include "../jrd/os/path_utils.h"
 #include <stdio.h>
 
 #ifdef HAVE_STDLIB_H
@@ -39,6 +40,23 @@
 
 // config_file works with OS case-sensitivity
 typedef Firebird::PathName string;
+
+namespace {
+
+void replace_dir_sep(string& s)
+{
+	const char correct_dir_sep = PathUtils::dir_sep;
+	const char incorrect_dir_sep = (correct_dir_sep == '/') ? '\\' : '/';
+	for (char* itr = s.begin(); itr < s.end(); ++itr)
+	{
+		if (*itr == incorrect_dir_sep)
+		{
+			*itr = correct_dir_sep;
+		}
+	}
+}
+
+} // anonymous namespace
 
 /******************************************************************************
  *
@@ -239,8 +257,13 @@ void ConfigFile::loadConfig()
 		string key = parseKeyFrom(inputLine, endPos);
 		key.rtrim(" \t\r");
 		// TODO: here we must check for correct parameter spelling !
-		const string value = parseValueFrom(inputLine, endPos);
+		string value = parseValueFrom(inputLine, endPos);
 
+		if (parsingAliases)
+		{
+			replace_dir_sep(key);
+			replace_dir_sep(value);
+		}
 		parameters.add(Parameter(getPool(), key, value));
 	}
 	if (BadLinesCount)
