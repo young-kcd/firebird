@@ -184,6 +184,7 @@ static inline void removeDirty(BufferControl* bcb, BufferDesc* bdb)
 
 static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_only);
 static void flushAll(thread_db* tdbb, USHORT flush_flag);
+static void flushPages(thread_db* tdbb, USHORT flush_flag, BufferDesc** begin, FB_SIZE_T count);
 
 static void recentlyUsed(BufferDesc* bdb);
 static void requeueRecentlyUsed(BufferControl* bcb);
@@ -2475,24 +2476,6 @@ static int blocking_ast_bdb(void* ast_object)
 }
 
 
-// Used in qsort below
-extern "C" {
-static int cmpBdbs(const void* a, const void* b)
-{
-	const BufferDesc* bdbA = *(BufferDesc**) a;
-	const BufferDesc* bdbB = *(BufferDesc**) b;
-
-	if (bdbA->bdb_page > bdbB->bdb_page)
-		return 1;
-
-	if (bdbA->bdb_page < bdbB->bdb_page)
-		return -1;
-
-	return 0;
-}
-} // extern C
-
-
 // Remove cleared precedence blocks from high precedence queue
 static void purgePrecedence(BufferControl* bcb, BufferDesc* bdb)
 {
@@ -2515,18 +2498,11 @@ static void purgePrecedence(BufferControl* bcb, BufferDesc* bdb)
 	}
 }
 
-// Write pages modified by given or system transaction to disk. First sort all
-// corresponding pages by their numbers to make writes physically ordered and
-// thus faster. At every iteration of while loop write pages which have no high
-// precedence pages to ensure order preserved. If after some iteration there are
-// no such pages (i.e. all of not written yet pages have high precedence pages)
-// then write them all at last iteration (of course write_buffer will also check
-// for precedence before write)
-
+// Collect pages modified by given or system transaction and write it to disk.
+// See also comments in flushPages.
 static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_only)
 {
 	SET_TDBB(tdbb);
-	FbStatusVector* const status = tdbb->tdbb_status_vector;
 	Database* dbb = tdbb->getDatabase();
 	BufferControl* bcb = dbb->dbb_bcb;
 	Firebird::HalfStaticArray<BufferDesc*, 1024> flush;
@@ -2557,56 +2533,18 @@ static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_o
 		}
 	}
 
-	qsort(flush.begin(), flush.getCount(), sizeof(BufferDesc*), cmpBdbs);
-
-	bool writeAll = false;
-	while (flush.getCount())
-	{
-		BufferDesc** ptr = flush.begin();
-		const size_t cnt = flush.getCount();
-
-		while (ptr < flush.end())
-		{
-			BufferDesc* bdb = *ptr;
-
-			bdb->addRef(tdbb, SYNC_SHARED);
-
-			if (!writeAll)
-				purgePrecedence(bcb, bdb);
-
-			if (writeAll || QUE_EMPTY(bdb->bdb_higher))
-			{
-				const PageNumber page = bdb->bdb_page;
-
-				if (!write_buffer(tdbb, bdb, page, false, status, true))
-					CCH_unwind(tdbb, true);
-
-				// re-post the lock only if it was really written
-				bdb->release(tdbb, !(bdb->bdb_flags & BDB_dirty));
-
-				flush.remove(ptr);
-			}
-			else
-			{
-				bdb->release(tdbb, false);
-				ptr++;
-			}
-		}
-
-		if (cnt == flush.getCount())
-			writeAll = true;
-	}
+	flushPages(tdbb, FLUSH_TRAN, flush.begin(), flush.getCount());
 }
 
 
-// Write pages modified by garbage collector or all dirty pages or release page
-// locks - depending of flush_flag. See also comments in flushDirty
+// Collect pages modified by garbage collector or all dirty pages or release page
+// locks - depending of flush_flag, and write it to disk. 
+// See also comments in flushPages.
 static void flushAll(thread_db* tdbb, USHORT flush_flag)
 {
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 	BufferControl* bcb = dbb->dbb_bcb;
-	FbStatusVector* status = tdbb->tdbb_status_vector;
 	Firebird::HalfStaticArray<BufferDesc*, 1024> flush(bcb->bcb_dirty_count);
 
 	const bool all_flag = (flush_flag & FLUSH_ALL) != 0;
@@ -2643,18 +2581,62 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 		}
 	}
 
-	qsort(flush.begin(), flush.getCount(), sizeof(BufferDesc*), cmpBdbs);
+	flushPages(tdbb, flush_flag, flush.begin(), flush.getCount());
+}
 
-	bool writeAll = false;
-	while (flush.getCount())
+
+// Used in qsort below
+extern "C" {
+	static int cmpBdbs(const void* a, const void* b)
 	{
-		BufferDesc** ptr = flush.begin();
-		const size_t cnt = flush.getCount();
-		while (ptr < flush.end())
+		const BufferDesc* bdbA = *(BufferDesc**)a;
+		const BufferDesc* bdbB = *(BufferDesc**)b;
+
+		if (bdbA->bdb_page > bdbB->bdb_page)
+			return 1;
+
+		if (bdbA->bdb_page < bdbB->bdb_page)
+			return -1;
+
+		return 0;
+	}
+} // extern C
+
+
+// Write array of pages to disk in efficient order. 
+// First, sort pages by their numbers to make writes physically ordered and
+// thus faster. At every iteration of while loop write pages which have no high
+// precedence pages to ensure order preserved. If after some iteration there are
+// no such pages (i.e. all of not written yet pages have high precedence pages)
+// then write them all at last iteration (of course write_buffer will also check
+// for precedence before write).
+static void flushPages(thread_db* tdbb, USHORT flush_flag, BufferDesc** begin, FB_SIZE_T count)
+{
+	FbStatusVector* const status = tdbb->tdbb_status_vector;
+	const bool all_flag = (flush_flag & FLUSH_ALL) != 0;
+	const bool release_flag = (flush_flag & FLUSH_RLSE) != 0;
+	const bool write_thru = release_flag;
+
+	qsort(begin, count, sizeof(BufferDesc*), cmpBdbs);
+
+	MarkIterator<BufferDesc*> iter(begin, count);
+
+	FB_SIZE_T written = 0;
+	bool writeAll = false;
+
+	while (!iter.isEmpty())
+	{
+		bool found = false;
+		for (; !iter.isEof(); ++iter)
 		{
-			BufferDesc* bdb = *ptr;
+			BufferDesc* bdb = *iter;
+			fb_assert(bdb);
+			if (!bdb)
+				continue;
+
 			bdb->addRef(tdbb, release_flag ? SYNC_EXCLUSIVE : SYNC_SHARED);
 
+			BufferControl* bcb = bdb->bdb_bcb;
 			if (!writeAll)
 				purgePrecedence(bcb, bdb);
 
@@ -2666,7 +2648,7 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 						BUGCHECK(210);	// msg 210 page in use during flush
 				}
 
-				if (bdb->bdb_flags & (BDB_db_dirty | BDB_dirty))
+				if (!all_flag || bdb->bdb_flags & (BDB_db_dirty | BDB_dirty))
 				{
 					if (!write_buffer(tdbb, bdb, bdb->bdb_page, write_thru, status, true))
 						CCH_unwind(tdbb, true);
@@ -2678,18 +2660,23 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 					PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
 
 				bdb->release(tdbb, !release_flag && !(bdb->bdb_flags & BDB_dirty));
-				flush.remove(ptr);
+
+				iter.mark();
+				found = true;
+				written++;
 			}
 			else
 			{
 				bdb->release(tdbb, false);
-				ptr++;
 			}
 		}
 
-		if (cnt == flush.getCount())
+		if (!found)
 			writeAll = true;
+
+		iter.rewind();
 	}
+	fb_assert(count == written);
 }
 
 
