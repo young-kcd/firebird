@@ -2627,7 +2627,7 @@ static void flushPages(thread_db* tdbb, USHORT flush_flag, BufferDesc** begin, F
 	while (!iter.isEmpty())
 	{
 		bool found = false;
-		for (; iter; ++iter)
+		for (; !iter.isEof(); ++iter)
 		{
 			BufferDesc* bdb = *iter;
 			fb_assert(bdb);
@@ -3410,7 +3410,7 @@ static bool expand_buffers(thread_db* tdbb, ULONG number)
  *	it's already that big, don't do anything.
  *
  * Nickolay Samofatov, 08-Mar-2004.
- *  This function does not mark exceptions correctly,
+ *  This function does not handle exceptions correctly,
  *  it looks like good handling requires rewrite.
  *
  **************************************/

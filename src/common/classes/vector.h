@@ -217,7 +217,7 @@ public:
 		*item = MarkValue::getMarkValue();
 	};
 
-	static bool marked(const T* const item)
+	static bool isMarked(const T* const item)
 	{
 		return *item == MarkValue::getMarkValue();
 	};
@@ -268,7 +268,7 @@ public:
 		const bool at_begin = (m_begin == m_curr);
 		m_curr++;
 
-		while (Marker::marked(m_curr) && m_curr < m_end)
+		while (Marker::isMarked(m_curr) && m_curr < m_end)
 			m_curr++;
 
 		if (m_curr == m_end)
@@ -276,7 +276,7 @@ public:
 
 		if (at_begin)
 		{
-			if (Marker::marked(m_begin))
+			if (Marker::isMarked(m_begin))
 				m_begin = m_curr;
 			else if (m_begin != m_curr - 1)
 			{
@@ -285,16 +285,16 @@ public:
 			}
 		}
 
-		if (!Marker::marked(m_curr))
+		if (!Marker::isMarked(m_curr))
 			m_last = m_curr;
 
 		return;
 	}
 
 	// Show if current position is valid
-	operator bool() const
+	bool isEof() const
 	{
-		return m_curr < m_end;
+		return m_curr >= m_end;
 	}
 
 	// Show if not processed items still exists
