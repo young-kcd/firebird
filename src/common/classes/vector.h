@@ -198,18 +198,28 @@ public:
 // moving. Also, iterator is able to move upper and lower bounds of array if 
 // last (or first) items are marked, making next iterations more efficient.
 
-template <typename T, const T MARK_VALUE = (T)0>
+template <typename T>
+class DefaultMarkValue
+{
+public:
+	static T getMarkValue()
+	{
+		return T(0);
+	}
+};
+
+template <typename T, typename MarkValue = DefaultMarkValue<T> >
 class DefaultMarker
 {
 public:
 	static void mark(T* const item)
 	{
-		*item = MARK_VALUE;
+		*item = MarkValue::getMarkValue();
 	};
 
 	static bool marked(const T* const item)
 	{
-		return (*item == MARK_VALUE);
+		return *item == MarkValue::getMarkValue();
 	};
 };
 
