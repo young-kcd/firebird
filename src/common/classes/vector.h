@@ -191,6 +191,115 @@ public:
 	}
 };
 
+
+// Templates to allow to iterate thru array\vector of values and process items 
+// in some way. Processed items are marked and skipped at next iteration circle.
+// Idea is to not remove processed items from array and avoid costly memory 
+// moving. Also, iterator is able to move upper and lower bounds of array if 
+// last (or first) items are marked, making next iterations more efficient.
+
+template <typename T, const T MARK_VALUE = (T)0>
+class DefaultMarker
+{
+public:
+	static void mark(T* const item)
+	{
+		*item = MARK_VALUE;
+	};
+
+	static bool marked(const T* const item)
+	{
+		return (*item == MARK_VALUE);
+	};
+};
+
+template <typename T, typename Marker = DefaultMarker<T> >
+class MarkIterator
+{
+public:
+	MarkIterator(T* begin, FB_SIZE_T count) :
+		m_begin(begin),
+		m_end(begin + count),
+		m_curr(begin),
+		m_last(begin)
+	{
+	}
+
+	// Mark current item as processed
+	void mark()
+	{
+		Marker::mark(m_curr);
+
+		if (m_last == m_curr)
+			m_last--;
+	}
+
+	// Move iterator position to the first not processed item
+	void rewind()
+	{
+		m_curr = m_begin;
+		m_end = m_last + 1;
+		m_last = m_begin;
+	}
+
+	T& operator*() const
+	{
+		fb_assert(m_begin <= m_curr);
+		fb_assert(m_curr < m_end);
+		return *m_curr;
+	}
+
+	// Advance iterator to the next not processed item, if exist
+	void operator++()
+	{
+		fb_assert(m_begin <= m_curr);
+		fb_assert(m_curr < m_end);
+
+		const bool at_begin = (m_begin == m_curr);
+		m_curr++;
+
+		while (Marker::marked(m_curr) && m_curr < m_end)
+			m_curr++;
+
+		if (m_curr == m_end)
+			return;
+
+		if (at_begin)
+		{
+			if (Marker::marked(m_begin))
+				m_begin = m_curr;
+			else if (m_begin != m_curr - 1)
+			{
+				m_curr[-1] = *m_begin;
+				m_begin = m_curr - 1;
+			}
+		}
+
+		if (!Marker::marked(m_curr))
+			m_last = m_curr;
+
+		return;
+	}
+
+	// Show if current position is valid
+	operator bool() const
+	{
+		return m_curr < m_end;
+	}
+
+	// Show if not processed items still exists
+	bool isEmpty() const
+	{
+		return (m_begin >= m_end);
+	}
+
+private:
+	T* m_begin;
+	T* m_end;
+	T* m_curr;
+	T* m_last;
+};
+
 } // namespace Firebird
 
 #endif
