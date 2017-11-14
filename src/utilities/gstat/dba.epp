@@ -58,6 +58,17 @@
 #include "../common/StatusHolder.h"
 #include "../common/ThreadStart.h"
 
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+
 using MsgFormat::SafeArg;
 
 
@@ -310,6 +321,19 @@ namespace
 			dba_exit(FINI_OK, tddba);
 		}
 	}
+
+	void getDateTime(char* datetime, FB_SIZE_T sizeof_datetime)
+	{
+		time_t t;
+		time(&t);
+#if defined(HAVE_CTIME_R)
+		ctime_r(&t, datetime);
+#elif defined(HAVE_CTIME_S)
+		ctime_s(datetime, sizeof_datetime, &t);
+#else
+		error: missing thread-safe version of ctime()
+#endif
+	}
 } // namespace
 
 const USHORT GSTAT_MSG_FAC	= 21;
@@ -380,6 +404,9 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	ISC_STATUS* status_vector = NULL;
 	Firebird::DynamicStatusVector permStatus;
+
+	bool fl_print_complete = false;
+	char datetime[32];
 
 	try {
 
@@ -602,8 +629,11 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	char file_name[1024];
 	fileName.copyTo(file_name, sizeof(file_name));
+	dba_print(false, 6, SafeArg() << file_name);	// msg 6: \nDatabase \"@1\"\n
 
-	dba_print(false, 6, SafeArg() << file_name);	// msg 6: \nDatabase \"%s\"\n
+	getDateTime(datetime, sizeof(datetime));
+	dba_print(false, 59, SafeArg() << datetime);	// msg 59: Gstat execution time @1
+	fl_print_complete = true;
 
 	tddba->page_size = header->hdr_page_size;
 	tddba->dp_per_pp = Ods::dataPagesPerPP(tddba->page_size);
@@ -1131,6 +1161,9 @@ int gstat(Firebird::UtilSvc* uSvc)
 	// if there still exists a database handle, disconnect from the server
 	// This is isc_detach_database
 	FINISH;
+
+	getDateTime(datetime, sizeof(datetime));
+	dba_print(false, 60, SafeArg() << datetime);	// msg 60: Gstat completion time @1
 
 	uSvc->started();
 	dba_mem* alloced = tddba->head_of_mem_list;
