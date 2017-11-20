@@ -2205,34 +2205,42 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		{
 			BoolExprNode* condition = binaryNode->arg2;
 
-			if (invCandidate1->condition)
+			if (condition->computable(csb, INVALID_STREAM, false) && !condition->findStream(stream))
 			{
-				BinaryBoolNode* const newNode =
-					FB_NEW_POOL(*tdbb->getDefaultPool()) BinaryBoolNode(*tdbb->getDefaultPool(), blr_or);
-				newNode->arg1 = invCandidate1->condition;
-				newNode->arg2 = condition;
-				condition = newNode;
-			}
+				if (invCandidate1->condition)
+				{
+					BinaryBoolNode* const newNode =
+						FB_NEW_POOL(*tdbb->getDefaultPool())
+							BinaryBoolNode(*tdbb->getDefaultPool(), blr_or);
+					newNode->arg1 = invCandidate1->condition;
+					newNode->arg2 = condition;
+					condition = newNode;
+				}
 
-			invCandidate1->condition = condition;
-			return invCandidate1;
+				invCandidate1->condition = condition;
+				return invCandidate1;
+			}
 		}
 
 		if (invCandidate2)
 		{
 			BoolExprNode* condition = binaryNode->arg1;
 
-			if (invCandidate2->condition)
+			if (condition->computable(csb, INVALID_STREAM, false) && !condition->findStream(stream))
 			{
-				BinaryBoolNode* const newNode =
-					FB_NEW_POOL(*tdbb->getDefaultPool()) BinaryBoolNode(*tdbb->getDefaultPool(), blr_or);
-				newNode->arg1 = invCandidate2->condition;
-				newNode->arg2 = condition;
-				condition = newNode;
-			}
+				if (invCandidate2->condition)
+				{
+					BinaryBoolNode* const newNode =
+						FB_NEW_POOL(*tdbb->getDefaultPool())
+							BinaryBoolNode(*tdbb->getDefaultPool(), blr_or);
+					newNode->arg1 = invCandidate2->condition;
+					newNode->arg2 = condition;
+					condition = newNode;
+				}
 
-			invCandidate2->condition = condition;
-			return invCandidate2;
+				invCandidate2->condition = condition;
+				return invCandidate2;
+			}
 		}
 
 		return NULL;
