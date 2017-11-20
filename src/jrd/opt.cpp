@@ -2281,10 +2281,14 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			inversion = candidate->inversion;
 			condition = candidate->condition;
 
+			// Just for safety sake, this condition must be already checked
+			// inside OptimizerRetrieval::matchOnIndexes()
+
 			if (inversion && condition &&
 				(!condition->computable(csb, INVALID_STREAM, false) ||
 				condition->findStream(stream)))
 			{
+				fb_assert(false);
 				inversion = NULL;
 				condition = NULL;
 			}
