@@ -477,6 +477,14 @@ public:
 		return csb_n_stream++;
 	}
 
+	void inheritViewFlags(StreamType stream, USHORT flags)
+	{
+		if (csb_view)
+		{
+			csb_rpt[stream].csb_flags |= csb_rpt[csb_view_stream].csb_flags & flags;
+		}
+	}
+
 #ifdef CMP_DEBUG
 	void dump(const char* format, ...)
 	{
