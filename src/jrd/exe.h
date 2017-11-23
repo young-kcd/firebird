@@ -86,10 +86,11 @@ class MessageNode;
 class PlanNode;
 class RecordSource;
 
+// Direction for each column in sort order
+enum SortDirection { ORDER_ANY, ORDER_ASC, ORDER_DESC };
+
 // Types of nulls placement for each column in sort order
-const int rse_nulls_default	= 0;
-const int rse_nulls_first	= 1;
-const int rse_nulls_last	= 2;
+enum NullsPlacement { NULLS_DEFAULT, NULLS_FIRST, NULLS_LAST };
 
 
 // Aggregate Sort Block (for DISTINCT aggregates)

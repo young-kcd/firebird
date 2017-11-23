@@ -53,7 +53,7 @@ public:
 		: PermanentStorage(pool),
 		  unique(false),
 		  expressions(pool),
-		  descending(pool),
+		  direction(pool),
 		  nullOrder(pool)
 	{
 	}
@@ -71,19 +71,22 @@ public:
 	bool computable(CompilerScratch* csb, StreamType stream, bool allowOnlyCurrentStream);
 	void findDependentFromStreams(const OptimizerRetrieval* optRet, SortedStreamList* streamList);
 
-	int getEffectiveNullOrder(unsigned index) const
+	NullsPlacement getEffectiveNullOrder(unsigned index) const
 	{
-		if (descending[index])
-			return nullOrder[index] == rse_nulls_default ? rse_nulls_last : nullOrder[index];
-		else
-			return nullOrder[index] == rse_nulls_default ? rse_nulls_first : nullOrder[index];
+		if (direction[index] == ORDER_ASC)
+			return (nullOrder[index] == NULLS_DEFAULT) ? NULLS_FIRST : nullOrder[index];
+		else if (direction[index] == ORDER_DESC)
+			return (nullOrder[index] == NULLS_DEFAULT) ? NULLS_LAST : nullOrder[index];
+
+		fb_assert(false);
+		return NULLS_DEFAULT;
 	}
 
 public:
-	bool unique;						// sorts using unique key - for distinct and group by
+	bool unique;						// sort uses unique key - for DISTINCT and GROUP BY
 	NestValueArray expressions;			// sort expressions
-	Firebird::Array<bool> descending;	// true = descending / false = ascending
-	Firebird::Array<int> nullOrder;		// rse_nulls_*
+	Firebird::Array<SortDirection> direction;	// rse_order_*
+	Firebird::Array<NullsPlacement> nullOrder;	// rse_nulls_*
 };
 
 class MapNode : public Firebird::PermanentStorage, public Printable

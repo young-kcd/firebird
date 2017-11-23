@@ -308,17 +308,18 @@ int BaseAggWinStream<ThisType, NextType>::lookForChange(thread_db* tdbb, jrd_req
 		 ptrValue != endValue;
 		 ++ptrValue)
 	{
-		int direction = 1;
-		int nullDirection = 1;
+		int sortDirection = 1;
+		int nullsPlacement = 1;
 
 		if (sort)
 		{
 			unsigned index = ptrValue - group->begin();
 
-			if (sort->descending[index])
-				direction = -1;
+			if (sort->direction[index] == ORDER_DESC)
+				sortDirection = -1;
 
-			nullDirection = (sort->getEffectiveNullOrder(index) == rse_nulls_first ? 1 : -1);
+			if (sort->getEffectiveNullOrder(index) == NULLS_LAST)
+				nullsPlacement = -1;
 		}
 
 		const ValueExprNode* from = *ptrValue;
@@ -330,12 +331,12 @@ int BaseAggWinStream<ThisType, NextType>::lookForChange(thread_db* tdbb, jrd_req
 		if (request->req_flags & req_null)
 		{
 			if (vtemp->vlu_desc.dsc_address)
-				return -1 * nullDirection;
+				return -1 * nullsPlacement;
 		}
 		else if (!vtemp->vlu_desc.dsc_address)
-			return 1 * nullDirection;
+			return 1 * nullsPlacement;
 		else if ((n = MOV_compare(tdbb, desc, &vtemp->vlu_desc)) != 0)
-			return n * direction;
+			return n * sortDirection;
 	}
 
 	return 0;

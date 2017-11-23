@@ -687,12 +687,12 @@ void OptimizerRetrieval::analyzeNavigation()
 		const index_desc::idx_repeat* idx_tail = idx->idx_rpt;
 		const index_desc::idx_repeat* const idx_end = idx_tail + idx->idx_count;
 		NestConst<ValueExprNode>* ptr = sort->expressions.begin();
-		const bool* descending = sort->descending.begin();
-		const int* nullOrder = sort->nullOrder.begin();
+		const SortDirection* direction = sort->direction.begin();
+		const NullsPlacement* nullOrder = sort->nullOrder.begin();
 
 		for (const NestConst<ValueExprNode>* const end = sort->expressions.end();
 			 ptr != end;
-			 ++ptr, ++descending, ++nullOrder, ++idx_tail)
+			 ++ptr, ++direction, ++nullOrder, ++idx_tail)
 		{
 			ValueExprNode* const node = *ptr;
 			FieldNode* fieldNode;
@@ -727,10 +727,10 @@ void OptimizerRetrieval::analyzeNavigation()
 				}
 			}
 
-			if ((*descending && !(idx->idx_flags & idx_descending)) ||
-				(!*descending && (idx->idx_flags & idx_descending)) ||
-				((*nullOrder == rse_nulls_first && *descending) ||
-				 (*nullOrder == rse_nulls_last && !*descending)))
+			if ((*direction == ORDER_DESC && !(idx->idx_flags & idx_descending)) ||
+				(*direction == ORDER_ASC && (idx->idx_flags & idx_descending)) ||
+				((*nullOrder == NULLS_FIRST && *direction == ORDER_DESC) ||
+				 (*nullOrder == NULLS_LAST && *direction == ORDER_ASC)))
 			{
 				usableIndex = false;
 				break;

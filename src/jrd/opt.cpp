@@ -2491,12 +2491,12 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 
 	SortedStream::SortMap::Item* map_item = map->items.getBuffer(items);
 	sort_key_def* sort_key = map->keyItems.getBuffer(2 * sort->expressions.getCount());
-	int* nullOrder = sort->nullOrder.begin();
-	const bool* descending = sort->descending.begin();
+	const SortDirection* direction = sort->direction.begin();
+	const NullsPlacement* nullOrder = sort->nullOrder.begin();
 
 	for (NestConst<ValueExprNode>* node_ptr = sort->expressions.begin();
 		 node_ptr != end_node;
-		 ++node_ptr, ++nullOrder, ++descending, ++map_item)
+		 ++node_ptr, ++nullOrder, ++direction, ++map_item)
 	{
 		// Pick up sort key expression.
 
@@ -2531,7 +2531,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 		sort_key->skd_flags = SKD_ascending;
 
 		// Have SQL-compliant nulls ordering for ODS11+
-		if ((*nullOrder == rse_nulls_default && !*descending) || *nullOrder == rse_nulls_first)
+		if ((*nullOrder == NULLS_DEFAULT && *direction != ORDER_DESC) || *nullOrder == NULLS_FIRST)
 			sort_key->skd_flags |= SKD_descending;
 
 		prev_key = sort_key++;
@@ -2541,7 +2541,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 		sort_key->setSkdLength(sort_dtypes[desc->dsc_dtype], desc->dsc_length);
 		sort_key->setSkdOffset(&sort_key[-1], desc);
 		sort_key->skd_flags = SKD_ascending;
-		if (*descending)
+		if (*direction == ORDER_DESC)
 			sort_key->skd_flags |= SKD_descending;
 
 		if (!sort_key->skd_dtype)
@@ -2921,8 +2921,8 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 			for (selected_class = selected_classes.begin();
 				 selected_class != selected_classes.end(); ++selected_class)
 			{
-				key->descending.add(false);	// Ascending sort
-				key->nullOrder.add(rse_nulls_default);	// Default nulls placement
+				key->direction.add(ORDER_ASC);	// Ascending sort
+				key->nullOrder.add(NULLS_DEFAULT);	// Default nulls placement
 				key->expressions.add((*selected_class)[number]);
 			}
 
@@ -3499,14 +3499,14 @@ static void set_direction(SortNode* fromClause, SortNode* toClause)
 	const size_t fromCount = fromClause->expressions.getCount();
 
 	fb_assert(fromCount <= toClause->expressions.getCount());
-	fb_assert(fromCount == fromClause->descending.getCount() &&
+	fb_assert(fromCount == fromClause->direction.getCount() &&
 		fromCount == fromClause->nullOrder.getCount());
-	fb_assert(toClause->expressions.getCount() == toClause->descending.getCount() &&
+	fb_assert(toClause->expressions.getCount() == toClause->direction.getCount() &&
 		toClause->expressions.getCount() == toClause->nullOrder.getCount());
 
 	for (FB_SIZE_T i = 0; i < fromCount; ++i)
 	{
-		toClause->descending[i] = fromClause->descending[i];
+		toClause->direction[i] = fromClause->direction[i];
 		toClause->nullOrder[i] = fromClause->nullOrder[i];
 	}
 }

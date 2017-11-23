@@ -1437,8 +1437,8 @@ SortNode* PAR_sort_internal(thread_db* tdbb, CompilerScratch* csb, bool allClaus
 		*tdbb->getDefaultPool());
 
 	NestConst<ValueExprNode>* ptr = sort->expressions.getBuffer(count);
-	bool* ptr2 = sort->descending.getBuffer(count);
-	int* ptr3 = sort->nullOrder.getBuffer(count);
+	SortDirection* ptr2 = sort->direction.getBuffer(count);
+	NullsPlacement* ptr3 = sort->nullOrder.getBuffer(count);
 
 	while (count-- > 0)
 	{
@@ -1449,25 +1449,25 @@ SortNode* PAR_sort_internal(thread_db* tdbb, CompilerScratch* csb, bool allClaus
 			switch (code)
 			{
 				case blr_nullsfirst:
-					*ptr3++ = rse_nulls_first;
+					*ptr3++ = NULLS_FIRST;
 					code = csb->csb_blr_reader.getByte();
 					break;
 
 				case blr_nullslast:
-					*ptr3++ = rse_nulls_last;
+					*ptr3++ = NULLS_LAST;
 					code = csb->csb_blr_reader.getByte();
 					break;
 
 				default:
-					*ptr3++ = rse_nulls_default;
+					*ptr3++ = NULLS_DEFAULT;
 			}
 
-			*ptr2++ = (code == blr_descending);
+			*ptr2++ = (code == blr_descending) ? ORDER_DESC : ORDER_ASC;
 		}
 		else
 		{
-			*ptr2++ = false;	// ascending
-			*ptr3++ = rse_nulls_default;
+			*ptr2++ = ORDER_ANY;
+			*ptr3++ = NULLS_DEFAULT;
 		}
 
 		*ptr++ = PAR_parse_value(tdbb, csb);

@@ -121,7 +121,7 @@ SortNode* SortNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	for (const NestConst<ValueExprNode>* i = expressions.begin(); i != expressions.end(); ++i)
 		newSort->expressions.add(copier.copy(tdbb, *i));
 
-	newSort->descending = descending;
+	newSort->direction = direction;
 	newSort->nullOrder = nullOrder;
 
 	return newSort;
@@ -1616,10 +1616,12 @@ RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
 			FB_NEW_POOL(*tdbb->getDefaultPool()) SortNode(*tdbb->getDefaultPool());
 
 		aggregate->expressions.add(aggNode->arg);
-		// in the max case, flag the sort as descending
-		aggregate->descending.add(aggNode->aggInfo.blr == blr_agg_max);
+		// For MAX(), mark the sort as descending. For MIN(), mark as ascending.
+		const SortDirection direction =
+			(aggNode->aggInfo.blr == blr_agg_max) ? ORDER_DESC : ORDER_ASC;
+		aggregate->direction.add(direction);
 		// 10-Aug-2004. Nickolay Samofatov - Unneeded nulls seem to be skipped somehow.
-		aggregate->nullOrder.add(rse_nulls_default);
+		aggregate->nullOrder.add(NULLS_DEFAULT);
 
 		rse->flags |= RseNode::FLAG_OPT_FIRST_ROWS;
 	}

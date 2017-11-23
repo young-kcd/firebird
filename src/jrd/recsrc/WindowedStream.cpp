@@ -271,18 +271,18 @@ WindowedStream::WindowedStream(thread_db* tdbb, CompilerScratch* csb,
 		{
 			if (window->order)
 			{
-				Array<int>::iterator nullIt = window->order->nullOrder.begin();
+				Array<NullsPlacement>::iterator nullIt = window->order->nullOrder.begin();
 
-				for (Array<bool>::iterator descIt = window->order->descending.begin();
-					 descIt != window->order->descending.end();
+				for (Array<SortDirection>::iterator descIt = window->order->direction.begin();
+					 descIt != window->order->direction.end();
 					 ++descIt, ++nullIt)
 				{
 					*descIt = !*descIt;
 
-					if (*nullIt == rse_nulls_first)
-						*nullIt = rse_nulls_last;
-					else if (*nullIt == rse_nulls_last)
-						*nullIt = rse_nulls_first;
+					if (*nullIt == NULLS_FIRST)
+						*nullIt = NULLS_LAST;
+					else if (*nullIt == NULLS_LAST)
+						*nullIt = NULLS_FIRST;
 				}
 			}
 
@@ -305,13 +305,13 @@ WindowedStream::WindowedStream(thread_db* tdbb, CompilerScratch* csb,
 		{
 			windowOrder = FB_NEW_POOL(csb->csb_pool) SortNode(csb->csb_pool);
 			windowOrder->expressions.join(window->group->expressions);
-			windowOrder->descending.join(window->group->descending);
+			windowOrder->direction.join(window->group->direction);
 			windowOrder->nullOrder.join(window->group->nullOrder);
 
 			if (window->order)
 			{
 				windowOrder->expressions.join(window->order->expressions);
-				windowOrder->descending.join(window->order->descending);
+				windowOrder->direction.join(window->order->direction);
 				windowOrder->nullOrder.join(window->order->nullOrder);
 			}
 		}
@@ -478,7 +478,7 @@ WindowedStream::WindowStream::WindowStream(thread_db* tdbb, CompilerScratch* csb
 			{
 				int direction = frame->bound == WindowClause::Frame::Bound::FOLLOWING ? 1 : -1;
 
-				if (m_order->descending[0])
+				if (m_order->direction[0] == ORDER_DESC)
 					direction *= -1;
 
 				m_arithNodes[i] = FB_NEW_POOL(csb->csb_pool) ArithmeticNode(csb->csb_pool,
@@ -953,7 +953,7 @@ SINT64 WindowedStream::WindowStream::locateFrameRange(thread_db* tdbb, jrd_req* 
 	{
 		int direction = (frame->bound == WindowClause::Frame::Bound::FOLLOWING ? 1 : -1);
 
-		if (m_order->descending[0])
+		if (m_order->direction[0] == ORDER_DESC)
 			direction *= -1;
 
 		cacheValues(tdbb, request, &m_order->expressions, impure->orderValues,
