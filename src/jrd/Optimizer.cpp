@@ -472,20 +472,6 @@ InversionCandidate* OptimizerRetrieval::generateInversion()
 	{
 		InversionCandidateList inversions;
 
-		// Check for any DB_KEY comparisons
-		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
-		{
-			BoolExprNode* const node = tail->opt_conjunct_node;
-
-			if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node)
-			{
-				invCandidate = matchDbKey(node);
-
-				if (invCandidate)
-					inversions.add(invCandidate);
-			}
-		}
-
 		// First, handle "AND" comparisons (all nodes except OR)
 		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
 		{
@@ -495,7 +481,10 @@ InversionCandidate* OptimizerRetrieval::generateInversion()
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node &&
 				(!booleanNode || booleanNode->blrOp != blr_or))
 			{
-				matchOnIndexes(&indexScratches, node, 1);
+				invCandidate = matchOnIndexes(&indexScratches, node, 1);
+
+				if (invCandidate)
+					inversions.add(invCandidate);
 			}
 		}
 
@@ -2089,7 +2078,6 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 	if (binaryNode && binaryNode->blrOp == blr_or)
 	{
 		InversionCandidateList inversions;
-		inversions.shrink(0);
 
 		// Make list for index matches
 		IndexScratchList indexOrScratches;
@@ -2252,7 +2240,6 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		// and finally get candidate inversions.
 		// Normally we come here from within a OR conjunction.
 		InversionCandidateList inversions;
-		inversions.shrink(0);
 
 		InversionCandidate* invCandidate = matchOnIndexes(
 			inputIndexScratches, binaryNode->arg1, scope);
@@ -2268,6 +2255,9 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		return makeInversion(&inversions);
 	}
 
+	// Check for DB_KEY comparison
+	InversionCandidate* const invCandidate = matchDbKey(boolean);
+
 	// Walk through indexes
 	for (FB_SIZE_T i = 0; i < inputIndexScratches->getCount(); i++)
 	{
@@ -2281,7 +2271,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		}
 	}
 
-	return NULL;
+	return invCandidate;
 }
 
 
