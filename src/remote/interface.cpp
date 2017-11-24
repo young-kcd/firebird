@@ -4678,7 +4678,11 @@ static rem_port* analyze(PathName& file_name,
 	// quietly (sic) return.
 
 #if defined(WIN_NT)
-	if (ISC_analyze_pclan(file_name, node_name)) {
+	if (ISC_analyze_pclan(file_name, node_name))
+	{
+		ISC_unescape(node_name);
+		ISC_utf8ToSystem(node_name);
+
 		return WNET_analyze(file_name, status_vector, node_name.c_str(), /*user_string,*/ uv_flag);
 	}
 #endif
@@ -4687,6 +4691,9 @@ static rem_port* analyze(PathName& file_name,
 	{
 		if (ISC_analyze_tcp(file_name, node_name))
 		{
+			ISC_unescape(node_name);
+			ISC_utf8ToSystem(node_name);
+
 			port = INET_analyze(file_name, status_vector,
 								node_name.c_str(), user_string, uv_flag, dpb);
 
@@ -4705,6 +4712,9 @@ static rem_port* analyze(PathName& file_name,
 			{
 				if (ISC_analyze_nfs(file_name, node_name))
 				{
+					ISC_unescape(node_name);
+					ISC_utf8ToSystem(node_name);
+
 					port = INET_analyze(file_name, status_vector,
 										node_name.c_str(), user_string, uv_flag, dpb);
 					if (!port)
@@ -4797,7 +4807,11 @@ static rem_port* analyze_service(PathName& service_name,
 	// quietly (sic) return.
 
 #if defined(WIN_NT)
-	if (ISC_analyze_pclan(service_name, node_name)) {
+	if (ISC_analyze_pclan(service_name, node_name))
+	{
+		ISC_unescape(node_name);
+		ISC_utf8ToSystem(node_name);
+
 		return WNET_analyze(service_name, status_vector, node_name.c_str(), /*user_string,*/ uv_flag);
 	}
 #endif
@@ -4805,6 +4819,9 @@ static rem_port* analyze_service(PathName& service_name,
 	{
 		if (ISC_analyze_tcp(service_name, node_name))
 		{
+			ISC_unescape(node_name);
+			ISC_utf8ToSystem(node_name);
+
 			port = INET_analyze(service_name, status_vector,
 								node_name.c_str(), user_string, uv_flag, spb);
 		}
