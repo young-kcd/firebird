@@ -112,7 +112,7 @@ void Jrd::Attachment::destroy(Attachment* const attachment)
 
 MemoryPool* Jrd::Attachment::createPool()
 {
-	MemoryPool* const pool = MemoryPool::createPool(NULL, att_memory_stats);
+	MemoryPool* const pool = MemoryPool::createPool(att_pool, att_memory_stats);
 	att_pools.add(pool);
 	return pool;
 }
