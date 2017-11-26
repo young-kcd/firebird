@@ -1487,11 +1487,8 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		}
 		else
 		{
-			if (scratchPool)
-				database->deletePool(scratchPool);
-
-			if (statementPool)
-				database->deletePool(statementPool);
+			database->deletePool(scratchPool);
+			database->deletePool(statementPool);
 		}
 
 		throw;
@@ -1664,9 +1661,7 @@ void dsql_req::destroy(thread_db* tdbb, dsql_req* request, bool drop)
 	if (drop)
 	{
 		request->req_dbb->deletePool(&request->getPool());
-
-		if (request->liveScratchPool)
-			request->req_dbb->deletePool(request->liveScratchPool);
+		request->req_dbb->deletePool(request->liveScratchPool);
 	}
 }
 
