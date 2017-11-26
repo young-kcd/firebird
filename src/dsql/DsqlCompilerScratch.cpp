@@ -896,7 +896,7 @@ RseNode* DsqlCompilerScratch::pass1RseIsRecursive(RseNode* input)
 		{
 			fb_assert(rseNode->dsqlExplicitJoin);
 
-			RseNode* dstRse = rseNode->clone();
+			RseNode* dstRse = rseNode->clone(getPool());
 
 			*pDstTable = dstRse;
 

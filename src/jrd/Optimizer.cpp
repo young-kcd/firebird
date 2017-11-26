@@ -60,7 +60,7 @@ namespace Jrd {
 
 // Check the index for being an expression one and
 // matching both the given stream and the given expression tree
-bool checkExpressionIndex(const index_desc* idx, ValueExprNode* node, StreamType stream)
+bool checkExpressionIndex(CompilerScratch* csb, const index_desc* idx, ValueExprNode* node, StreamType stream)
 {
 	fb_assert(idx);
 
@@ -68,7 +68,7 @@ bool checkExpressionIndex(const index_desc* idx, ValueExprNode* node, StreamType
 	{
 		// The desired expression can be hidden inside a derived expression node,
 		// so try to recover it (see CORE-4118).
-		while (!idx->idx_expression->sameAs(node, true))
+		while (!idx->idx_expression->sameAs(csb, node, true))
 		{
 			DerivedExprNode* const derivedExpr = nodeAs<DerivedExprNode>(node);
 			CastNode* const cast = nodeAs<CastNode>(node);
@@ -82,8 +82,8 @@ bool checkExpressionIndex(const index_desc* idx, ValueExprNode* node, StreamType
 		}
 
 		SortedStreamList exprStreams, nodeStreams;
-		idx->idx_expression->collectStreams(exprStreams);
-		node->collectStreams(nodeStreams);
+		idx->idx_expression->collectStreams(csb, exprStreams);
+		node->collectStreams(csb, nodeStreams);
 
 		if (exprStreams.getCount() == 1 && exprStreams[0] == 0 &&
 			nodeStreams.getCount() == 1 && nodeStreams[0] == stream)
@@ -699,7 +699,7 @@ void OptimizerRetrieval::analyzeNavigation()
 
 			if (idx->idx_flags & idx_expressn)
 			{
-				if (!checkExpressionIndex(idx, node, stream))
+				if (!checkExpressionIndex(csb, idx, node, stream))
 				{
 					usableIndex = false;
 					break;
@@ -1673,11 +1673,11 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 
 	    fb_assert(indexScratch->idx->idx_expression != NULL);
 
-		if (!checkExpressionIndex(indexScratch->idx, match, stream) ||
+		if (!checkExpressionIndex(csb, indexScratch->idx, match, stream) ||
 			(value && !value->computable(csb, stream, false)))
 		{
 			if ((!cmpNode || cmpNode->blrOp != blr_starting) && value &&
-				checkExpressionIndex(indexScratch->idx, value, stream) &&
+				checkExpressionIndex(csb, indexScratch->idx, value, stream) &&
 				match->computable(csb, stream, false))
 			{
 				ValueExprNode* temp = match;
@@ -2193,7 +2193,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		{
 			BoolExprNode* condition = binaryNode->arg2;
 
-			if (condition->computable(csb, INVALID_STREAM, false) && !condition->findStream(stream))
+			if (condition->computable(csb, INVALID_STREAM, false) && !condition->findStream(csb, stream))
 			{
 				if (invCandidate1->condition)
 				{
@@ -2214,7 +2214,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		{
 			BoolExprNode* condition = binaryNode->arg1;
 
-			if (condition->computable(csb, INVALID_STREAM, false) && !condition->findStream(stream))
+			if (condition->computable(csb, INVALID_STREAM, false) && !condition->findStream(csb, stream))
 			{
 				if (invCandidate2->condition)
 				{
@@ -2384,13 +2384,13 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 		// we use starting with against it? Is that allowed?
 		fb_assert(indexScratch->idx->idx_expression != NULL);
 
-		if (!(checkExpressionIndex(indexScratch->idx, field, stream) ||
+		if (!(checkExpressionIndex(csb, indexScratch->idx, field, stream) ||
 			(value && !value->computable(csb, stream, false))))
 		{
 			// AB: Can we swap de left and right sides by a starting with?
 			// X STARTING WITH 'a' that is never the same as 'a' STARTING WITH X
 			if (value &&
-				checkExpressionIndex(indexScratch->idx, value, stream) &&
+				checkExpressionIndex(csb, indexScratch->idx, value, stream) &&
 				field->computable(csb, stream, false))
 			{
 				field = value;
