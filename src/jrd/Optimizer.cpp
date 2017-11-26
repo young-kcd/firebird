@@ -2193,7 +2193,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		{
 			BoolExprNode* condition = binaryNode->arg2;
 
-			if (condition->computable(csb, INVALID_STREAM, false) && !condition->findStream(stream))
+			if (condition->computable(csb, INVALID_STREAM, false) && !condition->findStream(csb, stream))
 			{
 				if (invCandidate1->condition)
 				{
@@ -2214,7 +2214,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		{
 			BoolExprNode* condition = binaryNode->arg1;
 
-			if (condition->computable(csb, INVALID_STREAM, false) && !condition->findStream(stream))
+			if (condition->computable(csb, INVALID_STREAM, false) && !condition->findStream(csb, stream))
 			{
 				if (invCandidate2->condition)
 				{
