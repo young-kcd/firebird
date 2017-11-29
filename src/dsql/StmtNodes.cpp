@@ -3384,7 +3384,8 @@ void ExecStatementNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	// If no new features of EXECUTE STATEMENT are used, lets generate old BLR.
-	if (!dataSource && !userName && !password && !role && !useCallerPrivs && !inputs && !traScope)
+	if (!dataSource && !userName && !password && !role && !useCallerPrivs && !inputs && 
+		 traScope == EDS::traNotSet)
 	{
 		if (outputs)
 		{
@@ -3445,7 +3446,7 @@ void ExecStatementNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		genOptionalExpr(dsqlScratch, blr_exec_stmt_role, role);
 
 		// dsqlScratch's transaction behavior.
-		if (traScope)
+		if (traScope != EDS::traNotSet)
 		{
 			// Transaction parameters equal to current transaction.
 			dsqlScratch->appendUChar(blr_exec_stmt_tran_clone);
