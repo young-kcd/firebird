@@ -603,16 +603,25 @@ void DsqlCompilerScratch::clearCTEs()
 	cteAliases.clear();
 }
 
-void DsqlCompilerScratch::checkUnusedCTEs() const
+void DsqlCompilerScratch::checkUnusedCTEs()
 {
+	bool sqlWarn = false;
 	for (FB_SIZE_T i = 0; i < ctes.getCount(); ++i)
 	{
-		const SelectExprNode* cte = ctes[i];
+		SelectExprNode* cte = ctes[i];
 
 		if (!(cte->dsqlFlags & RecordSourceNode::DFLAG_DT_CTE_USED))
 		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  Arg::Gds(isc_dsql_cte_not_used) << cte->alias);
+			// Make pass to check all references and initialize input parameters.
+			// Result is unused, of course.
+			cte->dsqlPass(this);
+
+			if (!sqlWarn)
+			{
+				ERRD_post_warning(Arg::Warning(isc_sqlwarn) << Arg::Num(-104));
+				sqlWarn = true;
+			}
+			ERRD_post_warning(Arg::Warning(isc_dsql_cte_not_used) << cte->alias);
 		}
 	}
 }
