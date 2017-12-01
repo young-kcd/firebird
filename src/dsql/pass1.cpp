@@ -10905,18 +10905,27 @@ void CompiledStatement::clearCTEs()
 }
 
 
-void CompiledStatement::checkUnusedCTEs() const
+void CompiledStatement::checkUnusedCTEs()
 {
+	bool sqlWarn = false;
 	for (size_t i = 0; i < req_ctes.getCount(); i++)
 	{
-		const dsql_nod* cte = req_ctes[i];
+		dsql_nod* cte = req_ctes[i];
 
 		if (!(cte->nod_flags & NOD_DT_CTE_USED))
 		{
-			const dsql_str* cte_name = (dsql_str*) cte->nod_arg[e_derived_table_alias];
+			// Make pass to check all references and initialize input parameters.
+			// Result is unused, of course.
+			pass1_derived_table(this, cte, NULL);
 
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  Arg::Gds(isc_dsql_cte_not_used) << Arg::Str(cte_name->str_data));
+			if (!sqlWarn)
+			{
+				ERRD_post_warning(Arg::Warning(isc_sqlwarn) << Arg::Num(-104));
+				sqlWarn = true;
+			}
+
+			const dsql_str* cte_name = (dsql_str*) cte->nod_arg[e_derived_table_alias];
+			ERRD_post_warning(Arg::Warning(isc_dsql_cte_not_used) << Arg::Str(cte_name->str_data));
 		}
 	}
 }
