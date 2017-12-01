@@ -1987,7 +1987,7 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 
 	ComparativeBoolNode* cmpNode = boolean->as<ComparativeBoolNode>();
 
-	if (!cmpNode || cmpNode->blrOp != blr_eql)
+	if (!cmpNode || (cmpNode->blrOp != blr_eql && cmpNode->blrOp != blr_equiv))
 		return NULL;
 
 	// Find the side of the equality that is potentially a dbkey.  If
