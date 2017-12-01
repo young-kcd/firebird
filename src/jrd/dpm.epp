@@ -2529,7 +2529,7 @@ static void delete_tail(thread_db* tdbb, rhdf* header, const USHORT page_space, 
 			window.win_page = *page1;
 			blob_page* bpage = (blob_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_blob);
 			ULONG* page2 = bpage->blp_page;
-			const ULONG* const end2 = page2 + ((bpage->blp_length - BLP_SIZE) / sizeof(ULONG));
+			const ULONG* const end2 = page2 + ((bpage->blp_length) / sizeof(ULONG));
 
 			while (page2 < end2)
 				PAG_release_page(tdbb, PageNumber(page_space, *page2++), ZERO_PAGE_NUMBER);
