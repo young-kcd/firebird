@@ -212,7 +212,7 @@ if (UNIX)
     set(OS_DIR posix)
 
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -msse4 -std=c++11")
 
     if (NOT CMAKE_CROSSCOMPILING)
         set(LIB_readline readline)
@@ -322,6 +322,8 @@ endif() # if (NOT CMAKE_CROSSCOMPILING)
 crosscompile_prebuild_steps()
 
 include_directories("extern/libtommath")
+include_directories("extern/libtomcrypt/src/headers")
+include_directories("extern/decNumber")
 include_directories("extern/icu/include")
 include_directories("extern/zlib")
 
@@ -338,6 +340,33 @@ file(GLOB libtommath_src "extern/libtommath/*.c" "extern/libtommath/*.h")
 
 add_library             (libtommath ${libtommath_src})
 project_group           (libtommath Extern)
+
+
+########################################
+# LIBRARY libtomcrypt
+########################################
+
+file(GLOB_RECURSE libtomcrypt_src "extern/libtomcrypt/src/*")
+list(FILTER libtomcrypt_src EXCLUDE REGEX ".*aes_tab.c")
+list(FILTER libtomcrypt_src EXCLUDE REGEX ".*whirltab.c")
+list(FILTER libtomcrypt_src EXCLUDE REGEX ".*sober128tab.c")
+
+add_library                 (libtomcrypt ${libtomcrypt_src})
+target_compile_definitions  (libtomcrypt PRIVATE LTC_NO_ROLC)
+project_group               (libtomcrypt Extern)
+
+
+########################################
+# LIBRARY decNumber
+########################################
+
+file(GLOB_RECURSE decNumber_src "extern/decNumber/*.c" "extern/decNumber/*.h")
+list(FILTER decNumber_src EXCLUDE REGEX ".*decBasic.c")
+list(FILTER decNumber_src EXCLUDE REGEX ".*decCommon.c")
+
+add_library                 (decNumber ${decNumber_src})
+project_group               (decNumber Extern)
+
 
 ########################################
 # EXECUTABLE btyacc
