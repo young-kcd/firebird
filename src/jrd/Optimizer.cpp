@@ -694,77 +694,106 @@ void OptimizerRetrieval::analyzeNavigation()
 			 ptr != end;
 			 ++ptr, ++direction, ++nullOrder, ++idx_tail)
 		{
-			ValueExprNode* const node = *ptr;
+			ValueExprNode* const orgNode = *ptr;
 			FieldNode* fieldNode;
+			bool nodeMatched = false;
 
-			if (idx->idx_flags & idx_expressn)
-			{
-				if (!checkExpressionIndex(csb, idx, node, stream))
-				{
-					usableIndex = false;
-					break;
-				}
-			}
-			else if (!(fieldNode = nodeAs<FieldNode>(node)) || fieldNode->fieldStream != stream)
-			{
-				usableIndex = false;
-				break;
-			}
-			else
-			{
-				for (; idx_tail < idx_end && fieldNode->fieldId != idx_tail->idx_field; idx_tail++)
-				{
-					const int segmentNumber = idx_tail - idx->idx_rpt;
+			// Collect nodes equivalent to the given sort node
 
-					if (segmentNumber >= equalSegments)
-						break;
-				}
+			HalfStaticArray<ValueExprNode*, OPT_STATIC_ITEMS> nodes;
+			nodes.add(orgNode);
 
-				if (idx_tail >= idx_end || fieldNode->fieldId != idx_tail->idx_field)
+			for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
+				tail < optimizer->opt_conjuncts.end(); tail++)
+			{
+				BoolExprNode* const boolean = tail->opt_conjunct_node;
+				fb_assert(boolean);
+
+				ComparativeBoolNode* const cmpNode = nodeAs<ComparativeBoolNode>(boolean);
+
+				if (cmpNode && (cmpNode->blrOp == blr_eql || cmpNode->blrOp == blr_equiv))
 				{
-					usableIndex = false;
-					break;
+					ValueExprNode* const node1 = cmpNode->arg1;
+					ValueExprNode* const node2 = cmpNode->arg2;
+
+					if (node1->sameAs(csb, orgNode, false))
+						nodes.add(node2);
+
+					if (node2->sameAs(csb, orgNode, false))
+						nodes.add(node1);
 				}
 			}
 
-			if ((*direction == ORDER_DESC && !(idx->idx_flags & idx_descending)) ||
-				(*direction == ORDER_ASC && (idx->idx_flags & idx_descending)) ||
-				((*nullOrder == NULLS_FIRST && *direction == ORDER_DESC) ||
-				 (*nullOrder == NULLS_LAST && *direction == ORDER_ASC)))
+			// Check whether any of the equivalent nodes is suitable for index navigation
+
+			for (ValueExprNode** iter = nodes.begin(); iter != nodes.end(); ++iter)
 			{
-				usableIndex = false;
-				break;
-			}
+				ValueExprNode* const node = *iter;
 
-			dsc desc;
-			node->getDesc(tdbb, csb, &desc);
-
-			// ASF: "desc.dsc_ttype() > ttype_last_internal" is to avoid recursion
-			// when looking for charsets/collations
-
-			if (DTYPE_IS_TEXT(desc.dsc_dtype) && desc.dsc_ttype() > ttype_last_internal)
-			{
-				const TextType* const tt = INTL_texttype_lookup(tdbb, desc.dsc_ttype());
-
-				if (idx->idx_flags & idx_unique)
+				if (idx->idx_flags & idx_expressn)
 				{
-					if (tt->getFlags() & TEXTTYPE_UNSORTED_UNIQUE)
-					{
-						usableIndex = false;
-						break;
-					}
+					if (!checkExpressionIndex(csb, idx, node, stream))
+						continue;
+				}
+				else if (!(fieldNode = nodeAs<FieldNode>(node)) || fieldNode->fieldStream != stream)
+				{
+					continue;
 				}
 				else
 				{
-					// ASF: We currently can't use non-unique index for GROUP BY and DISTINCT with
-					// multi-level and insensitive collation. In NAV, keys are verified with memcmp
-					// but there we don't know length of each level.
-					if (sort->unique && (tt->getFlags() & TEXTTYPE_SEPARATE_UNIQUE))
+					for (; idx_tail < idx_end && fieldNode->fieldId != idx_tail->idx_field; idx_tail++)
 					{
-						usableIndex = false;
-						break;
+						const int segmentNumber = idx_tail - idx->idx_rpt;
+
+						if (segmentNumber >= equalSegments)
+							break;
+					}
+
+					if (idx_tail >= idx_end || fieldNode->fieldId != idx_tail->idx_field)
+						continue;
+				}
+
+				if ((*direction == ORDER_DESC && !(idx->idx_flags & idx_descending)) ||
+					(*direction == ORDER_ASC && (idx->idx_flags & idx_descending)) ||
+					((*nullOrder == NULLS_FIRST && *direction == ORDER_DESC) ||
+					 (*nullOrder == NULLS_LAST && *direction == ORDER_ASC)))
+				{
+					continue;
+				}
+
+				dsc desc;
+				node->getDesc(tdbb, csb, &desc);
+
+				// ASF: "desc.dsc_ttype() > ttype_last_internal" is to avoid recursion
+				// when looking for charsets/collations
+
+				if (DTYPE_IS_TEXT(desc.dsc_dtype) && desc.dsc_ttype() > ttype_last_internal)
+				{
+					const TextType* const tt = INTL_texttype_lookup(tdbb, desc.dsc_ttype());
+
+					if (idx->idx_flags & idx_unique)
+					{
+						if (tt->getFlags() & TEXTTYPE_UNSORTED_UNIQUE)
+							continue;
+					}
+					else
+					{
+						// ASF: We currently can't use non-unique index for GROUP BY and DISTINCT with
+						// multi-level and insensitive collation. In NAV, keys are verified with memcmp
+						// but there we don't know length of each level.
+						if (sort->unique && (tt->getFlags() & TEXTTYPE_SEPARATE_UNIQUE))
+							continue;
 					}
 				}
+
+				nodeMatched = true;
+				break;
+			}
+
+			if (!nodeMatched)
+			{
+				usableIndex = false;
+				break;
 			}
 		}
 
