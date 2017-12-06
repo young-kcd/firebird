@@ -29,90 +29,13 @@
 #ifndef JRD_STATUS_H
 #define JRD_STATUS_H
 
-#include "../common/StatusHolder.h"
-#include "../common/utils_proto.h"
-
-const int MAX_ERRMSG_LEN	= 128;
-const int MAX_ERRSTR_LEN	= 1024;
+#include "../common/status.h"
 
 namespace Jrd
 {
 	typedef Firebird::CheckStatusWrapper FbStatusVector;
-
-	template <class SW>
-	class LocalStatusWrapper
-	{
-	public:
-		LocalStatusWrapper()
-			: localStatusVector(&localStatus)
-		{ }
-
-		explicit LocalStatusWrapper(Firebird::MemoryPool& p)
-			: localStatus(p), localStatusVector(&localStatus)
-		{ }
-
-		SW* operator->()
-		{
-			return &localStatusVector;
-		}
-
-		SW* operator&()
-		{
-			return &localStatusVector;
-		}
-
-		ISC_STATUS operator[](unsigned n) const
-		{
-			fb_assert(n < fb_utils::statusLength(localStatusVector.getErrors()));
-			return localStatusVector.getErrors()[n];
-		}
-
-		const SW* operator->() const
-		{
-			return &localStatusVector;
-		}
-
-		const SW* operator&() const
-		{
-			return &localStatusVector;
-		}
-
-		void check() const
-		{
-			if (localStatusVector.isDirty())
-			{
-				if (localStatus.getState() & Firebird::IStatus::STATE_ERRORS)
-					raise();
-			}
-		}
-
-		void copyTo(SW* to) const
-		{
-			fb_utils::copyStatus(to, &localStatusVector);
-		}
-
-		void raise() const
-		{
-			Firebird::status_exception::raise(&localStatus);
-		}
-
-		bool isEmpty() const
-		{
-			return localStatusVector.isEmpty();
-		}
-
-		bool isSuccess() const
-		{
-			return localStatusVector.isEmpty();
-		}
-
-	private:
-		Firebird::LocalStatus localStatus;
-		SW localStatusVector;
-	};
-
-	typedef LocalStatusWrapper<FbStatusVector> FbLocalStatus;
-	typedef LocalStatusWrapper<Firebird::ThrowStatusWrapper> ThrowLocalStatus;
+	typedef Firebird::FbLocalStatus FbLocalStatus;
+	typedef Firebird::ThrowLocalStatus ThrowLocalStatus;
 }
 
 #endif // JRD_STATUS_H

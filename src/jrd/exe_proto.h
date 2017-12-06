@@ -46,9 +46,9 @@ const Jrd::StmtNode* EXE_looper(Jrd::thread_db* tdbb, Jrd::jrd_req* request,
 void EXE_execute_triggers(Jrd::thread_db*, Jrd::TrigVector**, Jrd::record_param*, Jrd::record_param*,
 	enum TriggerAction, Jrd::StmtNode::WhichTrigger);
 
-void EXE_receive(Jrd::thread_db*, Jrd::jrd_req*, USHORT, ULONG, UCHAR*, bool = false);
+void EXE_receive(Jrd::thread_db*, Jrd::jrd_req*, USHORT, ULONG, void*, bool = false);
 void EXE_release(Jrd::thread_db*, Jrd::jrd_req*);
-void EXE_send(Jrd::thread_db*, Jrd::jrd_req*, USHORT, ULONG, const UCHAR*);
+void EXE_send(Jrd::thread_db*, Jrd::jrd_req*, USHORT, ULONG, const void*);
 void EXE_start(Jrd::thread_db*, Jrd::jrd_req*, Jrd::jrd_tra*);
 void EXE_unwind(Jrd::thread_db*, Jrd::jrd_req*);
 

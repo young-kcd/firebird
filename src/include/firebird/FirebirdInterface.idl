@@ -514,15 +514,15 @@ interface Pipe : ReferenceCounted
 interface Request : ReferenceCounted
 {
 	void receive(Status status, int level, uint msgType,
-						 uint length, uchar* message);
+						 uint length, void* message);
 	void send(Status status, int level, uint msgType,
-					  uint length, const uchar* message);
+					  uint length, const void* message);
 	void getInfo(Status status, int level,
 						 uint itemsLength, const uchar* items,
 						 uint bufferLength, uchar* buffer);
 	void start(Status status, Transaction tra, int level);
 	void startAndSend(Status status, Transaction tra, int level, uint msgType,
-							  uint length, const uchar* message);
+							  uint length, const void* message);
 	void unwind(Status status, int level);
 	void free(Status status);
 }

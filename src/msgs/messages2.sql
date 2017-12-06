@@ -970,7 +970,7 @@ Data source : @4', NULL, NULL)
 ('non_plugin_protocol', NULL, 'server.cpp', NULL, 0, 860, NULL, 'Plugin not supported by network protocol', NULL, NULL);
 ('message_format', NULL, 'server.cpp', NULL, 0, 861, NULL, 'Error parsing message format', NULL, NULL);
 ('batch_param_version', NULL, NULL, NULL, 0, 862, NULL, 'Wrong version of batch parameters block @1, should be @2', NULL, NULL);
-('batch_msg_long', NULL, 'DsqlBatch.cpp', NULL, 0, 863, NULL, 'Message size (@1) in batch exceeds internal buffer size (@2)', NULL, NULL);
+('batch_msg_long', NULL, '** Unused **', NULL, 0, 863, NULL, 'Message size (@1) in batch exceeds internal buffer size (@2)', NULL, NULL);
 ('batch_open', NULL, 'DsqlBatch.cpp', NULL, 0, 864, NULL, 'Batch already opened for this statement', NULL, NULL);
 ('batch_type', NULL, 'DsqlBatch.cpp', NULL, 0, 865, NULL, 'Invalid type of statement used in batch', NULL, NULL);
 ('batch_param', NULL, 'DsqlBatch.cpp', NULL, 0, 866, NULL, 'Statement used in batch must have parameters', NULL, NULL);

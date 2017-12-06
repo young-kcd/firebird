@@ -31,6 +31,8 @@
 
 #include <stdio.h>
 #include "../jrd/ibase.h"
+#include "firebird/Interface.h"
+#include "firebird/Message.h"
 #include "../common/dsc.h"
 #include "../burp/misc_proto.h"
 #include "../yvalve/gds_proto.h"
@@ -40,6 +42,8 @@
 #include "../common/classes/fb_pair.h"
 #include "../common/classes/MetaName.h"
 #include "../../jrd/SimilarToMatcher.h"
+#include "../common/status.h"
+#include "../common/classes/ImplementHelper.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -928,7 +932,6 @@ public:
 		// this is VERY dirty hack to keep current behaviour
 		memset (&gbl_database_file_name, 0,
 			&veryEnd - reinterpret_cast<char*>(&gbl_database_file_name));
-		memset(status_vector, 0, sizeof(status_vector));
 
 		gbl_stat_flags = 0;
 		gbl_stat_header = false;
@@ -1001,11 +1004,10 @@ public:
 	SCHAR		mvol_old_file [MAX_FILE_NAME_SIZE];
 	int			mvol_volume_count;
 	bool		mvol_empty_file;
-	isc_db_handle	db_handle;
-	isc_tr_handle	tr_handle;
-	isc_tr_handle	global_trans;
+	Firebird::IAttachment*	db_handle;
+	Firebird::ITransaction*	tr_handle;
+	Firebird::ITransaction*	global_trans;
 	DESC		file_desc;
-	ISC_STATUS_ARRAY status_vector;
 	int			exit_code;
 	UCHAR*		head_of_mem_list;
 	FILE*		output_file;
@@ -1015,59 +1017,59 @@ public:
 	// burp_fld*	v3_cvt_fld_list;
 
 	// The handles_get... are for restore.
-	isc_req_handle	handles_get_character_sets_req_handle1;
-	isc_req_handle	handles_get_chk_constraint_req_handle1;
-	isc_req_handle	handles_get_collation_req_handle1;
-	isc_req_handle	handles_get_exception_req_handle1;
-	isc_req_handle	handles_get_field_dimensions_req_handle1;
-	isc_req_handle	handles_get_field_req_handle1;
-	isc_req_handle	handles_get_fields_req_handle1;
-	isc_req_handle	handles_get_fields_req_handle2;
-	isc_req_handle	handles_get_fields_req_handle3;
-	isc_req_handle	handles_get_fields_req_handle4;
-	isc_req_handle	handles_get_fields_req_handle5;
-	isc_req_handle	handles_get_fields_req_handle6;
-	isc_req_handle	handles_get_files_req_handle1;
-	isc_req_handle	handles_get_filter_req_handle1;
-	isc_req_handle	handles_get_function_arg_req_handle1;
-	isc_req_handle	handles_get_function_req_handle1;
-	isc_req_handle	handles_get_global_field_req_handle1;
-	isc_req_handle	handles_get_index_req_handle1;
-	isc_req_handle	handles_get_index_req_handle2;
-	isc_req_handle	handles_get_index_req_handle3;
-	isc_req_handle	handles_get_index_req_handle4;
-	isc_req_handle	handles_get_package_req_handle1;
-	isc_req_handle	handles_get_procedure_prm_req_handle1;
-	isc_req_handle	handles_get_procedure_req_handle1;
-	isc_req_handle	handles_get_ranges_req_handle1;
-	isc_req_handle	handles_get_ref_constraint_req_handle1;
-	isc_req_handle	handles_get_rel_constraint_req_handle1;
-	isc_req_handle	handles_get_relation_req_handle1;
-	isc_req_handle	handles_get_security_class_req_handle1;
-	isc_req_handle	handles_get_sql_roles_req_handle1;
-	isc_req_handle	handles_get_mapping_req_handle1;
-	isc_req_handle	handles_get_trigger_message_req_handle1;
-	isc_req_handle	handles_get_trigger_message_req_handle2;
-	isc_req_handle	handles_get_trigger_old_req_handle1;
-	isc_req_handle	handles_get_trigger_req_handle1;
-	isc_req_handle	handles_get_type_req_handle1;
-	isc_req_handle	handles_get_user_privilege_req_handle1;
-	isc_req_handle	handles_get_view_req_handle1;
+	Firebird::IRequest*	handles_get_character_sets_req_handle1;
+	Firebird::IRequest*	handles_get_chk_constraint_req_handle1;
+	Firebird::IRequest*	handles_get_collation_req_handle1;
+	Firebird::IRequest*	handles_get_exception_req_handle1;
+	Firebird::IRequest*	handles_get_field_dimensions_req_handle1;
+	Firebird::IRequest*	handles_get_field_req_handle1;
+	Firebird::IRequest*	handles_get_fields_req_handle1;
+	Firebird::IRequest*	handles_get_fields_req_handle2;
+	Firebird::IRequest*	handles_get_fields_req_handle3;
+	Firebird::IRequest*	handles_get_fields_req_handle4;
+	Firebird::IRequest*	handles_get_fields_req_handle5;
+	Firebird::IRequest*	handles_get_fields_req_handle6;
+	Firebird::IRequest*	handles_get_files_req_handle1;
+	Firebird::IRequest*	handles_get_filter_req_handle1;
+	Firebird::IRequest*	handles_get_function_arg_req_handle1;
+	Firebird::IRequest*	handles_get_function_req_handle1;
+	Firebird::IRequest*	handles_get_global_field_req_handle1;
+	Firebird::IRequest*	handles_get_index_req_handle1;
+	Firebird::IRequest*	handles_get_index_req_handle2;
+	Firebird::IRequest*	handles_get_index_req_handle3;
+	Firebird::IRequest*	handles_get_index_req_handle4;
+	Firebird::IRequest*	handles_get_package_req_handle1;
+	Firebird::IRequest*	handles_get_procedure_prm_req_handle1;
+	Firebird::IRequest*	handles_get_procedure_req_handle1;
+	Firebird::IRequest*	handles_get_ranges_req_handle1;
+	Firebird::IRequest*	handles_get_ref_constraint_req_handle1;
+	Firebird::IRequest*	handles_get_rel_constraint_req_handle1;
+	Firebird::IRequest*	handles_get_relation_req_handle1;
+	Firebird::IRequest*	handles_get_security_class_req_handle1;
+	Firebird::IRequest*	handles_get_sql_roles_req_handle1;
+	Firebird::IRequest*	handles_get_mapping_req_handle1;
+	Firebird::IRequest*	handles_get_trigger_message_req_handle1;
+	Firebird::IRequest*	handles_get_trigger_message_req_handle2;
+	Firebird::IRequest*	handles_get_trigger_old_req_handle1;
+	Firebird::IRequest*	handles_get_trigger_req_handle1;
+	Firebird::IRequest*	handles_get_type_req_handle1;
+	Firebird::IRequest*	handles_get_user_privilege_req_handle1;
+	Firebird::IRequest*	handles_get_view_req_handle1;
 	// The handles_put.. are for backup.
-	isc_req_handle	handles_put_index_req_handle1;
-	isc_req_handle	handles_put_index_req_handle2;
-	isc_req_handle	handles_put_index_req_handle3;
-	isc_req_handle	handles_put_index_req_handle4;
-	isc_req_handle	handles_put_index_req_handle5;
-	isc_req_handle	handles_put_index_req_handle6;
-	isc_req_handle	handles_put_index_req_handle7;
-	isc_req_handle	handles_put_relation_req_handle1;
-	isc_req_handle	handles_put_relation_req_handle2;
-	isc_req_handle	handles_store_blr_gen_id_req_handle1;
-	isc_req_handle	handles_write_function_args_req_handle1;
-	isc_req_handle	handles_write_function_args_req_handle2;
-	isc_req_handle	handles_write_procedure_prms_req_handle1;
-	isc_req_handle	handles_fix_security_class_name_req_handle1;
+	Firebird::IRequest*	handles_put_index_req_handle1;
+	Firebird::IRequest*	handles_put_index_req_handle2;
+	Firebird::IRequest*	handles_put_index_req_handle3;
+	Firebird::IRequest*	handles_put_index_req_handle4;
+	Firebird::IRequest*	handles_put_index_req_handle5;
+	Firebird::IRequest*	handles_put_index_req_handle6;
+	Firebird::IRequest*	handles_put_index_req_handle7;
+	Firebird::IRequest*	handles_put_relation_req_handle1;
+	Firebird::IRequest*	handles_put_relation_req_handle2;
+	Firebird::IRequest*	handles_store_blr_gen_id_req_handle1;
+	Firebird::IRequest*	handles_write_function_args_req_handle1;
+	Firebird::IRequest*	handles_write_function_args_req_handle2;
+	Firebird::IRequest*	handles_write_procedure_prms_req_handle1;
+	Firebird::IRequest*	handles_fix_security_class_name_req_handle1;
 	bool			hdr_forced_writes;
 	TEXT			database_security_class[GDS_NAME_LEN]; // To save database security class for deferred update
 
@@ -1088,6 +1090,9 @@ public:
 
 	char veryEnd;
 	//starting after this members must be initialized in constructor explicitly
+
+	Firebird::FbLocalStatus status_vector;
+	Firebird::ThrowLocalStatus throwStatus;
 
 	Firebird::Array<Firebird::Pair<Firebird::NonPooled<Firebird::MetaName, Firebird::MetaName> > >
 		defaultCollations;
@@ -1161,5 +1166,52 @@ enum burp_messages_vals {
 
 // BLOB buffer
 typedef Firebird::HalfStaticArray<UCHAR, 1024> BlobBuffer;
+
+class BurpSql : public Firebird::AutoStorage
+{
+public:
+	BurpSql(BurpGlobals* g, const char* sql)
+		: Firebird::AutoStorage(),
+		  tdgbl(g), stmt(nullptr)
+	{
+		stmt = tdgbl->db_handle->prepare(&tdgbl->throwStatus, tdgbl->tr_handle, 0, sql, 3, 0);
+	}
+
+	template <typename M>
+	void singleSelect(Firebird::ITransaction* trans, M* msg)
+	{
+		stmt->execute(&tdgbl->throwStatus, tdgbl->tr_handle, nullptr, nullptr, msg->getMetadata(), msg->getData());
+	}
+
+	template <typename M>
+	void execute(Firebird::ITransaction* trans, M* msg)
+	{
+		stmt->execute(&tdgbl->throwStatus, tdgbl->tr_handle, msg->getMetadata(), msg->getData(), nullptr, nullptr);
+	}
+
+	void execute(Firebird::ITransaction* trans)
+	{
+		stmt->execute(&tdgbl->throwStatus, tdgbl->tr_handle, nullptr, nullptr, nullptr, nullptr);
+	}
+
+private:
+	BurpGlobals* tdgbl;
+	Firebird::IStatement* stmt;
+};
+
+class OutputVersion : public Firebird::IVersionCallbackImpl<OutputVersion, Firebird::CheckStatusWrapper>
+{
+public:
+	OutputVersion(const char* printFormat)
+		: format(printFormat)
+	{ }
+
+	void callback(Firebird::CheckStatusWrapper* status, const char* text);
+
+private:
+	const char* format;
+};
+
+
 
 #endif // BURP_BURP_H

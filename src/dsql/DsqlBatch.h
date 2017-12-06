@@ -108,10 +108,10 @@ private:
 	public:
 		DataCache(MemoryPool& p)
 			: PermanentStorage(p),
-			  m_used(0), m_got(0), m_limit(0), m_shift(0)
+			  m_used(0), m_got(0), m_limit(0), m_shift(0), m_cacheCapacity(0)
 		{ }
 
-		void setBuf(ULONG size);
+		void setBuf(ULONG size, ULONG cacheCapacity);
 
 		void put(const void* data, ULONG dataSize);
 		void put3(const void* data, ULONG dataSize, ULONG offset);
@@ -124,10 +124,10 @@ private:
 		void clear();
 
 	private:
-		typedef Firebird::Vector<UCHAR, DsqlBatch::RAM_BATCH, SINT64> Cache;
-		Firebird::AutoPtr<Cache> m_cache;
+		typedef Firebird::Array<UCHAR> Cache;
+		Cache m_cache;
 		Firebird::AutoPtr<TempSpace> m_space;
-		ULONG m_used, m_got, m_limit, m_shift;
+		ULONG m_used, m_got, m_limit, m_shift, m_cacheCapacity;
 	};
 
 	struct BlobMeta

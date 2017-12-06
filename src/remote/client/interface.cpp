@@ -621,15 +621,15 @@ public:
 	// IRequest implementation
 	int release();
 	void receive(CheckStatusWrapper* status, int level, unsigned int msg_type,
-						 unsigned int length, unsigned char* message);
+						 unsigned int length, void* message);
 	void send(CheckStatusWrapper* status, int level, unsigned int msg_type,
-					  unsigned int length, const unsigned char* message);
+					  unsigned int length, const void* message);
 	void getInfo(CheckStatusWrapper* status, int level,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
 	void start(CheckStatusWrapper* status, Firebird::ITransaction* tra, int level);
 	void startAndSend(CheckStatusWrapper* status, Firebird::ITransaction* tra, int level, unsigned int msg_type,
-							  unsigned int length, const unsigned char* message);
+							  unsigned int length, const void* message);
 	void unwind(CheckStatusWrapper* status, int level);
 	void free(CheckStatusWrapper* status);
 
@@ -5057,7 +5057,7 @@ Firebird::IEvents* Attachment::queEvents(CheckStatusWrapper* status, Firebird::I
 
 
 void Request::receive(CheckStatusWrapper* status, int level, unsigned int msg_type,
-					  unsigned int msg_length, unsigned char* msg)
+					  unsigned int msg_length, void* msg)
 {
 /**************************************
  *
@@ -5570,7 +5570,7 @@ int Blob::seek(CheckStatusWrapper* status, int mode, int offset)
 
 
 void Request::send(CheckStatusWrapper* status, int level, unsigned int msg_type,
-				   unsigned int /*length*/, const unsigned char* msg)
+				   unsigned int /*length*/, const void* msg)
 {
 /**************************************
  *
@@ -5601,7 +5601,7 @@ void Request::send(CheckStatusWrapper* status, int level, unsigned int msg_type,
 
 		RMessage* message = request->rrq_rpt[msg_type].rrq_message;
 		// We are lying here, but the interface shows for years this param as const
-		message->msg_address = const_cast<UCHAR*>(msg);
+		message->msg_address = const_cast<unsigned char*>(reinterpret_cast<const unsigned char*>(msg));
 
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_send;
@@ -5852,7 +5852,7 @@ void Service::start(CheckStatusWrapper* status,
 
 
 void Request::startAndSend(CheckStatusWrapper* status, Firebird::ITransaction* apiTra, int level,
-						   unsigned int msg_type, unsigned int /*length*/, const unsigned char* msg)
+						   unsigned int msg_type, unsigned int /*length*/, const void* msg)
 {
 /**************************************
  *
@@ -5894,7 +5894,7 @@ void Request::startAndSend(CheckStatusWrapper* status, Firebird::ITransaction* a
 
 		REMOTE_reset_request(request, 0);
 		RMessage* message = request->rrq_rpt[msg_type].rrq_message;
-		message->msg_address = const_cast<unsigned char*>(msg);
+		message->msg_address = const_cast<unsigned char*>(reinterpret_cast<const unsigned char*>(msg));
 
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_start_send_and_receive;

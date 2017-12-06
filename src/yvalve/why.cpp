@@ -3922,7 +3922,7 @@ void YRequest::destroy(unsigned dstrFlags)
 }
 
 void YRequest::receive(CheckStatusWrapper* status, int level, unsigned int msgType,
-	unsigned int length, unsigned char* message)
+	unsigned int length, void* message)
 {
 	try
 	{
@@ -3936,7 +3936,7 @@ void YRequest::receive(CheckStatusWrapper* status, int level, unsigned int msgTy
 }
 
 void YRequest::send(CheckStatusWrapper* status, int level, unsigned int msgType,
-	unsigned int length, const unsigned char* message)
+	unsigned int length, const void* message)
 {
 	try
 	{
@@ -3980,7 +3980,7 @@ void YRequest::start(CheckStatusWrapper* status, ITransaction* transaction, int 
 }
 
 void YRequest::startAndSend(CheckStatusWrapper* status, ITransaction* transaction, int level,
-	unsigned int msgType, unsigned int length, const unsigned char* message)
+	unsigned int msgType, unsigned int length, const void* message)
 {
 	try
 	{
