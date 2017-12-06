@@ -1941,36 +1941,25 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		context = (dsql_ctx*) item->nod_arg[0]->nod_arg[0];
 		break;
 	case nod_alias:
+		alias = item->nod_arg[e_alias_value];
+		make_parameter_names(parameter, alias);
 		string = (dsql_str*) item->nod_arg[e_alias_alias];
 		parameter->par_alias = string->str_data;
-		alias = item->nod_arg[e_alias_value];
-		if (alias->nod_type == nod_field) {
-			field = (dsql_fld*) alias->nod_arg[e_fld_field];
-			parameter->par_name = field->fld_name.c_str();
-			context = (dsql_ctx*) alias->nod_arg[e_fld_context];
-		}
-		else if (alias->nod_type == nod_dbkey) {
-			parameter->par_name = DB_KEY_NAME;
-			context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
-		}
 		break;
 	case nod_via:
 		// subquery, aka sub-select
 		make_parameter_names(parameter, item->nod_arg[e_via_value_1]);
 		break;
 	case nod_derived_field:
+		alias = item->nod_arg[e_derived_field_value];
+		while (alias->nod_type == nod_derived_field) 
+			alias = alias->nod_arg[e_derived_field_value];
+		make_parameter_names(parameter, alias);
 		string = (dsql_str*) item->nod_arg[e_derived_field_name];
 		parameter->par_alias = string->str_data;
-		alias = item->nod_arg[e_derived_field_value];
-		if (alias->nod_type == nod_field) {
-			field = (dsql_fld*) alias->nod_arg[e_fld_field];
-			parameter->par_name = field->fld_name.c_str();
-			context = (dsql_ctx*) alias->nod_arg[e_fld_context];
-		}
-		else if (alias->nod_type == nod_dbkey) {
-			parameter->par_name = DB_KEY_NAME;
-			context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
-		}
+		context = (dsql_ctx*) item->nod_arg[e_derived_field_context];
+		parameter->par_rel_alias = context->ctx_alias;
+		context = NULL;
 		break;
 	case nod_map:
 		{
