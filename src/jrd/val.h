@@ -50,7 +50,8 @@ public:
 };
 
 const UCHAR DEFAULT_DOUBLE  = dtype_double;
-const ULONG MAX_RECORD_SIZE	= 65535;
+
+const ULONG MAX_RECORD_SIZE	= 1024 * 1024; // 1MB
 
 namespace Jrd {
 
