@@ -2721,7 +2721,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 	// Start by counting the interesting fields
 
 	RCRD_OFFSET offset = 0;
-	ULONG length = 0;
+	RCRD_LENGTH length = 0;
 	USHORT count = 0;
 
 	burp_fld* field;
@@ -2943,7 +2943,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 	{
 		if (get(tdgbl) != att_data_length)
 			BURP_error_redirect(NULL, 39); // msg 39 expected record length
-		USHORT len = (USHORT) get_int32(tdgbl);
+		RCRD_LENGTH len = get_int32(tdgbl);
 		if (!tdgbl->gbl_sw_transportable && len != length)
 		{
 #ifdef sparc

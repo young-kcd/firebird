@@ -1405,13 +1405,7 @@ void put_data(burp_rel* relation)
  *
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
-
-	// CVC: A signed short isn't enough if the engine allows near 32K fields,
-	// each being char(1) ASCII in the worst case. Looking at BLR generation
-	// below, it's clear an extreme case won't compile => blr_length >= 32K.
-	// However, SSHORT is the limit for request_length in isc_compile_request.
-	SSHORT field_count = 1;
-
+	USHORT field_count = 1;	// eof field
 	burp_fld* field;
 	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
@@ -1433,7 +1427,7 @@ void put_data(burp_rel* relation)
 	add_word(blr, field_count);		// Number of fields, counting eof
 
 	RCRD_OFFSET offset = 0;
-	SSHORT count = 0;   // This is param count.
+	USHORT count = 0;   // This is param count.
 
 	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
@@ -1569,7 +1563,7 @@ void put_data(burp_rel* relation)
 	RCRD_OFFSET record_length = offset;
 	RCRD_OFFSET eof_offset = FB_ALIGN(offset, sizeof(SSHORT));
 	// To be used later for the buffer size to receive data
-	const FLD_LENGTH length = (USHORT) (eof_offset + sizeof(SSHORT));
+	const RCRD_LENGTH length = (RCRD_LENGTH) (eof_offset + sizeof(SSHORT));
 
 	// Build FOR loop, body, and eof handler
 
@@ -1623,7 +1617,7 @@ void put_data(burp_rel* relation)
 	add_byte(blr, blr_end);
 	add_byte(blr, blr_eoc);
 
-	SSHORT blr_length = blr - blr_buffer;
+	unsigned blr_length = blr - blr_buffer;
 
 #ifdef DEBUG
 	if (debug_on)
