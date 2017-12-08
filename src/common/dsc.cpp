@@ -70,32 +70,6 @@ static const USHORT _DSC_convert_to_text_length[DTYPE_TYPE_MAX] =
 	36							// dtype_dec_fixed	coeff(34) + 1(+-) + 1(.)
 };
 
-// blr to dsc type conversions
-static const USHORT DSC_blr_type_mapping[] =
-{
-	blr_null,
-	blr_text,
-	blr_cstring,
-	blr_varying,
-	blr_null,
-	blr_null,
-	blr_null,
-	blr_null,
-	blr_short,
-	blr_long,
-	blr_double,
-	blr_d_float,
-	blr_sql_date,
-	blr_sql_time,
-	blr_timestamp,
-	blr_blob,
-	blr_blob,
-	blr_int64,
-	blr_null,
-	blr_bool,
-	blr_dec64,
-	blr_dec128
-};
 
 // Unimplemented names are in lowercase & <brackets>
 // Datatypes that represent a range of SQL datatypes are in lowercase
@@ -124,7 +98,8 @@ static const TEXT* const DSC_dtype_names[] =
 	"DB_KEY",
 	"BOOLEAN",
 	"DECFLOAT(16)",
-	"DECFLOAT(34)"
+	"DECFLOAT(34)",
+	"DECIMAL(34)"
 };
 
 

@@ -2796,6 +2796,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 		case blr_long:
 		case blr_quad:
 		case blr_int64:
+		case blr_dec_fixed:
 			add_byte(blr, field->fld_type);
 			add_byte(blr, field->fld_scale);
 			break;
