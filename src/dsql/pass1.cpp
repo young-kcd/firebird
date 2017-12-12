@@ -10905,19 +10905,21 @@ void CompiledStatement::clearCTEs()
 }
 
 
+// Look for unused CTEs and issue a warning about its presence. Also, make DSQL 
+// pass of every found unused CTE to check all references and initialize input 
+// parameters. Note, when passing some unused CTE which refers to another unused 
+// (by the main query) CTE, "unused" flag of the second one is cleared. Therefore 
+// names is collected in separate step.
 void CompiledStatement::checkUnusedCTEs()
 {
 	bool sqlWarn = false;
-	for (size_t i = 0; i < req_ctes.getCount(); i++)
+	size_t i;
+	for (i = 0; i < req_ctes.getCount(); i++)
 	{
 		dsql_nod* cte = req_ctes[i];
 
 		if (!(cte->nod_flags & NOD_DT_CTE_USED))
 		{
-			// Make pass to check all references and initialize input parameters.
-			// Result is unused, of course.
-			pass1_derived_table(this, cte, NULL);
-
 			if (!sqlWarn)
 			{
 				ERRD_post_warning(Arg::Warning(isc_sqlwarn) << Arg::Num(-104));
@@ -10927,6 +10929,14 @@ void CompiledStatement::checkUnusedCTEs()
 			const dsql_str* cte_name = (dsql_str*) cte->nod_arg[e_derived_table_alias];
 			ERRD_post_warning(Arg::Warning(isc_dsql_cte_not_used) << Arg::Str(cte_name->str_data));
 		}
+	}
+
+	for (i = 0; i < req_ctes.getCount(); i++)
+	{
+		dsql_nod* cte = req_ctes[i];
+
+		if (!(cte->nod_flags & NOD_DT_CTE_USED))
+			pass1_derived_table(this, cte, NULL);
 	}
 }
 
