@@ -469,7 +469,7 @@ void compress(const UCHAR* data, ULONG length)
 	{
 		for (q = p + 2; q < end && (q[-2] != q[-1] || q[-1] != q[0]); q++)
 			;
-		USHORT run = (q < end) ? q - p - 2 : end - p;
+		ULONG run = (q < end) ? q - p - 2 : end - p;
 		if (run)
 		{
 			for (; run > 127; run -= 127)

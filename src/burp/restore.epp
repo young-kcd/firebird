@@ -100,7 +100,7 @@ void	add_access_dpb(BurpGlobals* tdgbl, Firebird::ClumpletWriter& dpb);
 void	add_files(BurpGlobals* tdgbl, const char*);
 void	bad_attribute(scan_attr_t, att_type, USHORT);
 void	create_database(BurpGlobals* tdgbl, const TEXT*);
-void	decompress(BurpGlobals* tdgbl, UCHAR*, USHORT);
+void	decompress(BurpGlobals* tdgbl, UCHAR*, ULONG);
 void	eat_blob(BurpGlobals* tdgbl);
 void	eat_text(BurpGlobals* tdgbl);
 void	eat_text2(BurpGlobals* tdgbl);
@@ -968,7 +968,7 @@ void create_database(BurpGlobals* tdgbl, const TEXT* file_name)
 	// msg 74 created database %s, page_size %ld bytes
 }
 
-void decompress(BurpGlobals* tdgbl, UCHAR* buffer, USHORT length)
+void decompress(BurpGlobals* tdgbl, UCHAR* buffer, ULONG length)
 {
 /**************************************
  *
@@ -2902,7 +2902,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 
 	// Compile request
 
-	USHORT blr_length = blr - blr_buffer;
+	ULONG blr_length = blr - blr_buffer;
 
 #ifdef DEBUG
 	fb_print_blr(blr_buffer, blr_length, NULL, NULL, 0);
@@ -2968,7 +2968,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 				// msg 55 Expected XDR record length
 			else
 			{
-				data.lstr_length = len = (USHORT) get_int32(tdgbl);
+				data.lstr_length = len = get_int32(tdgbl);
 				if (len > data.lstr_allocated)
 				{
 					data.lstr_allocated = len;
