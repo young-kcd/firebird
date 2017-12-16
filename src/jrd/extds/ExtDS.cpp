@@ -365,8 +365,24 @@ Transaction* Connection::createTransaction()
 	return tran;
 }
 
-void Connection::deleteTransaction(Transaction* tran)
+void Connection::deleteTransaction(thread_db* tdbb, Transaction* tran)
 {
+	// Close all active statements in tran context avoiding commit of already 
+	// deleted transaction
+	Statement** stmt_ptr = m_statements.begin();
+	while (stmt_ptr < m_statements.end())
+	{
+		Statement* stmt = *stmt_ptr;
+		if (stmt->getTransaction() == tran)
+		{
+			if (stmt->isActive())
+				stmt->close(tdbb, true);
+		}
+		// close() above could destroy statement and remove it from m_statements
+		if (stmt_ptr < m_statements.end() && *stmt_ptr == stmt)
+			stmt_ptr++;
+	}
+
 	FB_SIZE_T pos;
 	if (m_transactions.find(tran, pos))
 	{
@@ -378,7 +394,7 @@ void Connection::deleteTransaction(Transaction* tran)
 	}
 
 	if (!m_used_stmts && m_transactions.getCount() == 0 && !m_deleting)
-		m_provider.releaseConnection(JRD_get_thread_data(), *this);
+		m_provider.releaseConnection(tdbb, *this);
 }
 
 Statement* Connection::createStatement(const string& sql)
@@ -657,7 +673,7 @@ void Transaction::commit(thread_db* tdbb, bool retain)
 	if (!retain)
 	{
 		detachFromJrdTran();
-		m_connection.deleteTransaction(this);
+		m_connection.deleteTransaction(tdbb, this);
 	}
 }
 
@@ -670,7 +686,7 @@ void Transaction::rollback(thread_db* tdbb, bool retain)
 	if (!retain)
 	{
 		detachFromJrdTran();
-		m_connection.deleteTransaction(this);
+		m_connection.deleteTransaction(tdbb, this);
 	}
 
 	if (status->getState() & IStatus::STATE_ERRORS) {
@@ -710,7 +726,7 @@ Transaction* Transaction::getTransaction(thread_db* tdbb, Connection* conn, TraS
 		}
 		catch (const Exception&)
 		{
-			conn->deleteTransaction(ext_tran);
+			conn->deleteTransaction(tdbb, ext_tran);
 			throw;
 		}
 	}
@@ -908,7 +924,7 @@ bool Statement::fetch(thread_db* tdbb, const ValueListNode* out_params)
 	return true;
 }
 
-void Statement::close(thread_db* tdbb)
+void Statement::close(thread_db* tdbb, bool invalidTran)
 {
 	// we must stuff exception if and only if this is the first time it occurs
 	// once we stuff exception we must punt
@@ -936,6 +952,9 @@ void Statement::close(thread_db* tdbb)
 	if (m_boundReq) {
 		unBindFromRequest();
 	}
+
+	if (invalidTran)
+		m_transaction = NULL;
 
 	if (m_transaction && m_transaction->getScope() == traAutonomous)
 	{

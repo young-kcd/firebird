@@ -201,7 +201,7 @@ public:
 	// transaction into m_transactions array and delete not needed transaction
 	// immediately (as we didn't pool transactions)
 	Transaction* createTransaction();
-	void deleteTransaction(Transaction* tran);
+	void deleteTransaction(Jrd::thread_db* tdbb, Transaction* tran);
 
 	// Statements management within connection scope : put newly created
 	// statement into m_statements array, but don't delete freed statement
@@ -324,7 +324,7 @@ public:
 	void open(Jrd::thread_db* tdbb, Transaction* tran,
 		const Firebird::MetaName* const* in_names, const Jrd::ValueListNode* in_params, bool singleton);
 	bool fetch(Jrd::thread_db* tdbb, const Jrd::ValueListNode* out_params);
-	void close(Jrd::thread_db* tdbb);
+	void close(Jrd::thread_db* tdbb, bool invalidTran = false);
 	void deallocate(Jrd::thread_db* tdbb);
 
 	const Firebird::string& getSql() const { return m_sql; }
