@@ -9,7 +9,7 @@ BuildType=V
 MajorVer=2
 MinorVer=5
 RevNo=8
-BuildNum=27083
+BuildNum=27084
 
 if [ "$SPECIAL_BUILD_SUFFIX" = "" ]; then
 # Normal builds
