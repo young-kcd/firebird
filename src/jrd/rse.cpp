@@ -2737,7 +2737,15 @@ static void map_sort_data(thread_db* tdbb, jrd_req* request, SortMap* map, UCHAR
 			default:
 				fb_assert(false);
 			}
-			rpb->rpb_stream_flags |= RPB_s_refetch;
+
+			if (rpb->rpb_relation &&
+				!rpb->rpb_relation->rel_file &&
+				!rpb->rpb_relation->rel_view_rse &&
+				!rpb->rpb_relation->isVirtual())
+			{
+				rpb->rpb_stream_flags |= RPB_s_refetch;
+			}
+
 			continue;
 		}
 
