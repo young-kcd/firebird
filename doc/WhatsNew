@@ -1,4 +1,120 @@
   **************************
+  * v2.5.8
+  **************************
+
+    * Bugfix CORE-5684
+        Error "no current record for fetch operation" is raised while deleting record from MON$ATTACHMENTS using ORDER BY clause
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5681
+        AV when external statement is executed and local transaction is rolled back
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5655
+        isc_info_sql_relation_alias reports incorrect alias for CTE or nested queries
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5650
+        Segfault when procedure is dropped on classic server
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5643
+        Message "Operating system call munmap failed. Error code 12" can appear in firebird.log under heavy load (2.5.x, CS, SC)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5641
+        Segfault when exiting classic server with running sweep thread
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5624
+        using backslash in alias on linux does not work
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5591
+        Engine hangs soon after some errors during transaction start
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5579
+        request synchronization error in the GBAK utility (during restore)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5566
+        Server crashes while restoring backup if the shadow file already exists
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5530
+        Random AV at client application using events when connection was broken
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5528
+        internal Firebird consistency check (limbo impossible (184), file: vio.cpp line: 2379)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5522
+        Engine could freeze up to 2 minutes and raise deadlock error when updating RDB$INDICES if it contains backversions
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5521
+        Race condition between event notification and event registration
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5415
+        [security3.fdb] wrong page type page 22 is of wrong type (expected pointer, found index root)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3596
+        Client library cannot connect to the non-ASCII host name
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-2731
+        Recursive EXECUTE STATEMENT works wrong
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2502
+        Aliases and error about cyclic dependencies in CTE
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-5674
+        Allow unused Common Table Expressions
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-5640
+        New connections to database are slow when multiple connects happen at the same moment
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-5629
+        gstat output does not include datetime of analysis
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-5543
+        Restore of pre ODS 11.1 database can leave RDB$RELATION_TYPE null
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+
+  **************************
   * v2.5.7
   **************************
 
