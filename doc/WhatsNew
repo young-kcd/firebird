@@ -2,6 +2,11 @@
   * v2.5.8
   **************************
 
+    * Bugfix CORE-5685
+        Sometimes it's impossible to cancel/kill connection executing external query
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-5684
         Error "no current record for fetch operation" is raised while deleting record from MON$ATTACHMENTS using ORDER BY clause
       Contributor(s):
@@ -11,6 +16,11 @@
         AV when external statement is executed and local transaction is rolled back
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5675
+        isc_vax_integer() and isc_portable_integer() work wrongly with short negative numbers
+      Contributor(s):
+        Dimitry Sibiryakov <sd at ibphoenix.com>
 
     * Bugfix CORE-5655
         isc_info_sql_relation_alias reports incorrect alias for CTE or nested queries
