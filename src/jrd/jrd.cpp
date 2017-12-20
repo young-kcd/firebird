@@ -1728,6 +1728,11 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status, Attachment** handle, USH
 				attachment->signalCancel(tdbb);
 			break;
 
+		case fb_cancel_abort:
+			if (!(attachment->att_flags & ATT_shutdown))
+				attachment->signalShutdown(tdbb);
+			break;
+
 		default:
 			fb_assert(false);
 		}
@@ -5727,7 +5732,7 @@ void Attachment::signalCancel(thread_db* tdbb)
 	att_flags |= ATT_cancel_raise;
 
 	if (att_ext_connection)
-		att_ext_connection->cancelExecution(tdbb);
+		att_ext_connection->cancelExecution(tdbb, false);
 
 	LCK_cancel_wait(this);
 }
@@ -5737,7 +5742,7 @@ void Attachment::signalShutdown(thread_db* tdbb)
 	att_flags |= ATT_shutdown;
 
 	if (att_ext_connection)
-		att_ext_connection->cancelExecution(tdbb);
+		att_ext_connection->cancelExecution(tdbb, true);
 
 	LCK_cancel_wait(this);
 }

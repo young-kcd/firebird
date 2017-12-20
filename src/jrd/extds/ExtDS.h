@@ -162,7 +162,7 @@ public:
 		const Firebird::string& role) = 0;
 	virtual void detach(Jrd::thread_db* tdbb);
 
-	virtual bool cancelExecution(Jrd::thread_db* tdbb) = 0;
+	virtual bool cancelExecution(Jrd::thread_db* tdbb, bool forced) = 0;
 
 	int getSqlDialect() const { return m_sqlDialect; }
 

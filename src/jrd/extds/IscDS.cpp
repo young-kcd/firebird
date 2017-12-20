@@ -193,14 +193,15 @@ void IscConnection::doDetach(thread_db* tdbb)
 		raise(status, tdbb, "detach");
 }
 
-bool IscConnection::cancelExecution(thread_db* /*tdbb*/)
+bool IscConnection::cancelExecution(thread_db* /*tdbb*/, bool forced)
 {
 	ISC_STATUS_ARRAY status = {0, 0, 0};
 	if (m_handle)
 	{
-		m_iscProvider.fb_cancel_operation(status, &m_handle, fb_cancel_raise);
+		m_iscProvider.fb_cancel_operation(status, &m_handle, 
+			forced ? fb_cancel_abort : fb_cancel_raise);
 
-		if (m_handle && status[1] == isc_wish_list)
+		if (!forced && m_handle && status[1] != FB_SUCCESS && status[1] != isc_bad_db_handle)
 		{
 			fb_utils::init_status(status);
 			m_iscProvider.fb_cancel_operation(status, &m_handle, fb_cancel_abort);

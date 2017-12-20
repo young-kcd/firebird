@@ -277,7 +277,7 @@ void Provider::cancelConnections(thread_db* tdbb)
 	Connection** end = m_connections.end();
 
 	for (; ptr < end; ptr++) {
-		(*ptr)->cancelExecution(tdbb);
+		(*ptr)->cancelExecution(tdbb, true);
 	}
 }
 
