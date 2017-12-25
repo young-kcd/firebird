@@ -273,7 +273,7 @@ void Provider::cancelConnections()
 	Connection** end = m_connections.end();
 
 	for (; ptr < end; ptr++) {
-		(*ptr)->cancelExecution();
+		(*ptr)->cancelExecution(true);
 	}
 }
 
@@ -1618,8 +1618,13 @@ void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn, const char* fr
 		if (attachment)
 		{
 			m_saveConnection = attachment->att_ext_connection;
-			attachment->att_ext_connection = &conn;
-			attachment->getStable()->getMutex()->leave();
+			m_stable = attachment->getStable();
+			m_stable->getMutex()->leave();
+
+			MutexLockGuard guardAsync(*m_stable->getMutex(true, true), FB_FUNCTION);
+			MutexLockGuard guardMain(*m_stable->getMutex(), FB_FUNCTION);
+			if (m_stable->getHandle() == attachment)
+				attachment->att_ext_connection = &conn;
 		}
 	}
 
@@ -1637,11 +1642,15 @@ EngineCallbackGuard::~EngineCallbackGuard()
 	if (m_tdbb)
 	{
 		Jrd::Attachment* attachment = m_tdbb->getAttachment();
-
-		if (attachment)
+		if (attachment && m_stable.hasData())
 		{
-			attachment->getStable()->getMutex()->enter(FB_FUNCTION);
-			attachment->att_ext_connection = m_saveConnection;
+			MutexLockGuard guardAsync(*m_stable->getMutex(true, true), FB_FUNCTION);
+			m_stable->getMutex()->enter(FB_FUNCTION);
+
+			if (m_stable->getHandle() == attachment)
+				attachment->att_ext_connection = m_saveConnection;
+			else
+				m_stable->getMutex()->leave();
 		}
 
 		jrd_tra* transaction = m_tdbb->getTransaction();
