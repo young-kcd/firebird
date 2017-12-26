@@ -707,6 +707,13 @@ void EventManager::create_process()
  **************************************/
 	acquire_shmem();
 
+	if (m_processOffset)
+	{
+		fb_assert(m_process);
+		release_shmem();
+		return;
+	}
+
 	prb* const process = (prb*) alloc_global(type_prb, sizeof(prb), false);
 	process->prb_process_id = PID;
 	insert_tail(&m_header->evh_processes, &process->prb_processes);
@@ -1471,6 +1478,16 @@ void EventManager::watcher_thread()
 		}
 
 		m_cleanupSemaphore.release();
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		iscLogException("Error in event watcher thread\n", ex);
+	}
+
+	try
+	{
+		if (startup)
+			m_startupSemaphore.release();
 	}
 	catch (const Firebird::Exception& ex)
 	{
