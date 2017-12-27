@@ -5931,6 +5931,22 @@ YBatch* YAttachment::createBatch(CheckStatusWrapper* status, ITransaction* trans
 	return NULL;
 }
 
+unsigned int YAttachment::getRemoteProtocolVersion(CheckStatusWrapper* status)
+{
+	try
+	{
+		YEntry<YAttachment> entry(status, this);
+
+		return entry.next()->getRemoteProtocolVersion(status);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return 0;
+}
+
 
 //-------------------------------------
 

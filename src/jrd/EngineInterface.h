@@ -396,6 +396,7 @@ public:
 	Firebird::IBatch* createBatch(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction,
 		unsigned stmtLength, const char* sqlStmt, unsigned dialect,
 		Firebird::IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par);
+	unsigned int getRemoteProtocolVersion(Firebird::CheckStatusWrapper* status);
 
 public:
 	explicit JAttachment(StableAttachmentPart* js);

@@ -599,6 +599,8 @@ version:	// 3.0 => 4.0
 	// Batch API
 	Batch createBatch(Status status, Transaction transaction, uint stmtLength, const string sqlStmt,
 		uint dialect, MessageMetadata inMetadata, uint parLength, const uchar* par);
+
+	uint getRemoteProtocolVersion(Status status);
 	/*
 	Pipe createPipe(Status status, uint stmtLength, const string sqlStmt, uint dialect,
 		Transaction transaction, MessageMetadata inMetadata, void* inBuffer,

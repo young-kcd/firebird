@@ -371,6 +371,7 @@ private:
 	// working with blob stream buffer
 	void newBlob()
 	{
+		setBlobAlignment();
 		alignBlobBuffer(blobAlign);
 
 		fb_assert(blobStream - blobStreamBuffer <= blobBufferSize);
@@ -384,6 +385,8 @@ private:
 
 	void alignBlobBuffer(unsigned alignment, ULONG* bs = NULL)
 	{
+		fb_assert(alignment);
+
 		FB_UINT64 zeroFill = 0;
 		UCHAR* newPointer = FB_ALIGN(blobStream, alignment);
 		ULONG align = FB_ALIGN(blobStream, alignment) - blobStream;
@@ -464,12 +467,19 @@ private:
 
 	void flashBatch()
 	{
+		setBlobAlignment();
 		alignBlobBuffer(blobAlign);
 		ULONG size = blobStream - blobStreamBuffer;
 		if (size)
 		{
 			sendBlobPacket(size, blobStreamBuffer);
 			blobStream = blobStreamBuffer;
+		}
+
+		if (messageStream)
+		{
+			sendMessagePacket(messageStream, messageStreamBuffer);
+			messageStream = 0;
 		}
 
 		batchActive = false;
@@ -759,6 +769,11 @@ public:
 	Batch* createBatch(Firebird::CheckStatusWrapper* status, ITransaction* transaction,
 		unsigned stmtLength, const char* sqlStmt, unsigned dialect,
 		IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par);
+
+	unsigned getRemoteProtocolVersion(CheckStatusWrapper* status)
+	{
+		return rdb->rdb_port->port_protocol & FB_PROTOCOL_MASK;
+	}
 
 public:
 	Attachment(Rdb* handle, const PathName& path)

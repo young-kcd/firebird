@@ -664,12 +664,14 @@ struct burp_fld
 	SSHORT		fld_type;
 	SSHORT		fld_sub_type;
 	FLD_LENGTH	fld_length;
+	FLD_LENGTH	fld_total_len;	// including additional 2 bytes for VARYING CHAR
 	SSHORT		fld_scale;
 	SSHORT		fld_position;
 	SSHORT		fld_parameter;
 	SSHORT		fld_missing_parameter;
 	SSHORT		fld_id;
 	RCRD_OFFSET	fld_offset;
+	RCRD_OFFSET	fld_missing_offset;
 	RCRD_OFFSET	fld_old_offset;
 	SSHORT		fld_number;
 	SSHORT		fld_system_flag;
@@ -698,6 +700,8 @@ struct burp_fld
 	ISC_QUAD	fld_default_source;
 	SSHORT		fld_character_set_id;
 	SSHORT		fld_collation_id;
+	RCRD_OFFSET	fld_sql;
+	RCRD_OFFSET	fld_null;
 };
 
 enum fld_flags_vals {
@@ -958,6 +962,7 @@ public:
 	bool		gbl_sw_deactivate_indexes;
 	bool		gbl_sw_kill;
 	USHORT		gbl_sw_blk_factor;
+	USHORT		gbl_dialect;
 	const SCHAR*	gbl_sw_fix_fss_data;
 	USHORT			gbl_sw_fix_fss_data_id;
 	const SCHAR*	gbl_sw_fix_fss_metadata;
@@ -976,6 +981,7 @@ public:
 	burp_fil*	gbl_sw_files;
 	burp_fil*	gbl_sw_backup_files;
 	gfld*		gbl_global_fields;
+	unsigned	gbl_network_protocol;
 	burp_act*	action;
 	ULONG		io_buffer_size;
 	redirect_vals	sw_redirect;

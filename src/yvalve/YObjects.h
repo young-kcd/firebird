@@ -510,6 +510,7 @@ public:
 	YBatch* createBatch(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction,
 		unsigned stmtLength, const char* sqlStmt, unsigned dialect,
 		Firebird::IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par);
+	unsigned int getRemoteProtocolVersion(Firebird::CheckStatusWrapper* status);
 
 public:
 	Firebird::IProvider* provider;

@@ -89,7 +89,7 @@ bool BlobWrapper::getSegment(FB_SIZE_T len, void* buffer, FB_SIZE_T& real_len)
 	if (!m_blob || m_direction != dir_read)
 		return false;
 
-	if (!len || !buffer)
+	if (len && !buffer)
 		return false;
 
 	unsigned ilen = len > SEGMENT_LIMIT ? SEGMENT_LIMIT : static_cast<unsigned>(len);

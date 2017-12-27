@@ -2122,6 +2122,7 @@ namespace Firebird
 			unsigned (CLOOP_CARG *getStatementTimeout)(IAttachment* self, IStatus* status) throw();
 			void (CLOOP_CARG *setStatementTimeout)(IAttachment* self, IStatus* status, unsigned timeOut) throw();
 			IBatch* (CLOOP_CARG *createBatch)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par) throw();
+			unsigned (CLOOP_CARG *getRemoteProtocolVersion)(IAttachment* self, IStatus* status) throw();
 		};
 
 	protected:
@@ -2337,6 +2338,20 @@ namespace Firebird
 			}
 			StatusType::clearException(status);
 			IBatch* ret = static_cast<VTable*>(this->cloopVTable)->createBatch(this, status, transaction, stmtLength, sqlStmt, dialect, inMetadata, parLength, par);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> unsigned getRemoteProtocolVersion(StatusType* status)
+		{
+			if (cloopVTable->version < 4)
+			{
+				StatusType::setVersionError(status, "IAttachment", cloopVTable->version, 4);
+				StatusType::checkException(status);
+				return 0;
+			}
+			StatusType::clearException(status);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getRemoteProtocolVersion(this, status);
 			StatusType::checkException(status);
 			return ret;
 		}
@@ -9800,6 +9815,7 @@ namespace Firebird
 					this->getStatementTimeout = &Name::cloopgetStatementTimeoutDispatcher;
 					this->setStatementTimeout = &Name::cloopsetStatementTimeoutDispatcher;
 					this->createBatch = &Name::cloopcreateBatchDispatcher;
+					this->getRemoteProtocolVersion = &Name::cloopgetRemoteProtocolVersionDispatcher;
 				}
 			} vTable;
 
@@ -10141,6 +10157,21 @@ namespace Firebird
 			}
 		}
 
+		static unsigned CLOOP_CARG cloopgetRemoteProtocolVersionDispatcher(IAttachment* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getRemoteProtocolVersion(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<unsigned>(0);
+			}
+		}
+
 		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
@@ -10203,6 +10234,7 @@ namespace Firebird
 		virtual unsigned getStatementTimeout(StatusType* status) = 0;
 		virtual void setStatementTimeout(StatusType* status, unsigned timeOut) = 0;
 		virtual IBatch* createBatch(StatusType* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par) = 0;
+		virtual unsigned getRemoteProtocolVersion(StatusType* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

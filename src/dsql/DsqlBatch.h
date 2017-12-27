@@ -107,7 +107,7 @@ private:
 	{
 	public:
 		DataCache(MemoryPool& p)
-			: PermanentStorage(p),
+			: PermanentStorage(p), m_cache(getPool()),
 			  m_used(0), m_got(0), m_limit(0), m_shift(0), m_cacheCapacity(0)
 		{ }
 

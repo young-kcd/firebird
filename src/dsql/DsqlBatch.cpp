@@ -140,7 +140,6 @@ DsqlBatch::DsqlBatch(dsql_req* req, const dsql_msg* /*message*/, IMessageMetadat
 		switch (t)
 		{
 		case SQL_BLOB:
-		case SQL_ARRAY:
 			{
 				BlobMeta bm;
 				bm.offset = m_meta->getOffset(&st, i);
@@ -264,6 +263,7 @@ void DsqlBatch::add(thread_db* tdbb, ULONG count, const void* inBuffer)
 		return;
 	m_messages.align(m_alignment);
 	m_messages.put(inBuffer, (count - 1) * m_alignedMessage + m_messageSize);
+	DEB_BATCH(fprintf(stderr, "Put to batch %d messages\n", count));
 }
 
 void DsqlBatch::blobCheckMeta()
@@ -413,6 +413,7 @@ void DsqlBatch::addBlobStream(thread_db* tdbb, unsigned length, const void* inBu
 	m_lastBlob = MAX_ULONG;
 
 	// store stream for further processing
+	DEB_BATCH(fprintf(stderr, "Store stream %d\n", length));
 	fb_assert(m_blobs.getSize() % BLOB_STREAM_ALIGN == 0);
 	m_blobs.put(inBuffer, length);
 }
@@ -533,13 +534,13 @@ private:
 
 						// parse blob header
 						fb_assert(intptr_t(flow.data) % BLOB_STREAM_ALIGN == 0);
-						ISC_QUAD* batchBlobId = reinterpret_cast<ISC_QUAD*>(flow.data);
+						ISC_QUAD batchBlobId = *reinterpret_cast<ISC_QUAD*>(flow.data);
 						ULONG* blobSize = reinterpret_cast<ULONG*>(flow.data + sizeof(ISC_QUAD));
 						ULONG* bpbSize = reinterpret_cast<ULONG*>(flow.data + sizeof(ISC_QUAD) + sizeof(ULONG));
 						flow.newHdr(*blobSize);
 						ULONG currentBpbSize = *bpbSize;
 
-						if (batchBlobId->gds_quad_high == 0 && batchBlobId->gds_quad_low == 0)
+						if (batchBlobId.gds_quad_high == 0 && batchBlobId.gds_quad_low == 0)
 						{
 							// Sanity check
 							if (*bpbSize)
@@ -585,7 +586,8 @@ private:
 							bid engineBlobId;
 							blob = blb::create2(tdbb, transaction, &engineBlobId, bpb->getCount(),
 								bpb->begin(), true);
-							registerBlob(reinterpret_cast<ISC_QUAD*>(&engineBlobId), batchBlobId);
+							//DEB_BATCH(fprintf(stderr, "B-ID: (%x,%x)\n", batchBlobId.gds_quad_high, batchBlobId.gds_quad_low));
+							registerBlob(reinterpret_cast<ISC_QUAD*>(&engineBlobId), &batchBlobId);
 						}
 					}
 
@@ -696,6 +698,9 @@ private:
 					continue;
 
 				ISC_QUAD* id = reinterpret_cast<ISC_QUAD*>(&data[m_blobMeta[i].offset]);
+				if (id->gds_quad_high == 0 && id->gds_quad_low == 0)
+					continue;
+
 				ISC_QUAD newId;
 				if (!m_blobMap.get(*id, newId))
 				{
@@ -713,9 +718,9 @@ private:
 			remains -= m_messageSize;
 
 			UCHAR* msgBuffer = m_request->req_msg_buffers[message->msg_buffer_number];
-			DEB_BATCH(fprintf(stderr, "\n\n+++ Send\n\n"));
 			try
 			{
+				// runsend data to request and collect stats
 				ULONG before = req->req_records_inserted + req->req_records_updated +
 					req->req_records_deleted;
 				EXE_send(tdbb, req, message->msg_number, message->msg_length, msgBuffer);
@@ -747,6 +752,15 @@ private:
 		m_messages.remained(remains, alignedData - data);
 	}
 
+	DEB_BATCH(fprintf(stderr, "Sent %d messages\n", completionState->getSize(tdbb->tdbb_status_vector)));
+
+	// make sure all blobs were used in messages
+	if (m_blobMap.count())
+	{
+		DEB_BATCH(fprintf(stderr, "BLOBs %d were not used in messages\n", m_blobMap.count()));
+		ERR_post_warning(Arg::Warning(isc_random) << "m_blobMap.count() BLOBs were not used in messages");		// !!!!!!! new warning
+	}
+
 	// reset to initial state
 	cancel(tdbb);
 
@@ -756,14 +770,11 @@ private:
 void DsqlBatch::cancel(thread_db* tdbb)
 {
 	m_messages.clear();
-	if (m_blobMeta.hasData())
-	{
-		m_blobs.clear();
-		m_setBlobSize = false;
-		m_lastBlob = MAX_ULONG;
-		memset(&m_genId, 0, sizeof(m_genId));
-		m_blobMap.clear();
-	}
+	m_blobs.clear();
+	m_setBlobSize = false;
+	m_lastBlob = MAX_ULONG;
+	memset(&m_genId, 0, sizeof(m_genId));
+	m_blobMap.clear();
 }
 
 void DsqlBatch::genBlobId(ISC_QUAD* blobId)
@@ -805,7 +816,7 @@ void DsqlBatch::DataCache::put3(const void* data, ULONG dataSize, ULONG offset)
 
 void DsqlBatch::DataCache::put(const void* d, ULONG dataSize)
 {
-	if (m_used + m_cache.getCount() + dataSize > m_limit)
+	if (m_limit && (m_used + m_cache.getCount() + dataSize > m_limit))
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 			  Arg::Gds(isc_batch_too_big));

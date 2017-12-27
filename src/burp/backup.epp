@@ -1089,7 +1089,7 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 			lstring xdr_slice;
 			xdr_slice.lstr_allocated = xdr_slice.lstr_length = return_length;
 			xdr_slice.lstr_address = slice;
-			return_length = CAN_slice(&xdr_buffer, &xdr_slice, TRUE, /*blr_length,*/ blr_buffer);
+			return_length = CAN_slice(&xdr_buffer, &xdr_slice, true, blr_buffer);
 			put(tdgbl, att_xdr_array);
 			put(tdgbl, (UCHAR) (return_length));
 			put(tdgbl, (UCHAR) (return_length >> 8));
@@ -1684,7 +1684,7 @@ void put_data(burp_rel* relation)
 		const UCHAR* p;
 		if (tdgbl->gbl_sw_transportable)
 		{
-			record_length = CAN_encode_decode(relation, &xdr_buffer, buffer, TRUE);
+			record_length = CAN_encode_decode(relation, &xdr_buffer, buffer, true);
 			put_int32(att_xdr_length, record_length);
 			p = xdr_buffer.lstr_address;
 		}
