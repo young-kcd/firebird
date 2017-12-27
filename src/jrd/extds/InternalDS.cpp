@@ -219,7 +219,7 @@ void InternalConnection::doDetach(thread_db* tdbb)
 	fb_assert(!m_attachment);
 }
 
-bool InternalConnection::cancelExecution()
+bool InternalConnection::cancelExecution(bool /*forced*/)
 {
 	if (!m_attachment->getHandle())
 		return false;

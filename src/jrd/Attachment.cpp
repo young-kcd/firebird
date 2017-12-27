@@ -369,7 +369,7 @@ void Jrd::Attachment::signalCancel()
 	att_flags |= ATT_cancel_raise;
 
 	if (att_ext_connection && att_ext_connection->isConnected())
-		att_ext_connection->cancelExecution();
+		att_ext_connection->cancelExecution(false);
 
 	LCK_cancel_wait(this);
 }
@@ -382,7 +382,7 @@ void Jrd::Attachment::signalShutdown(ISC_STATUS code)
 		getStable()->setShutError(code);
 
 	if (att_ext_connection && att_ext_connection->isConnected())
-		att_ext_connection->cancelExecution();
+		att_ext_connection->cancelExecution(true);
 
 	LCK_cancel_wait(this);
 }

@@ -160,7 +160,7 @@ public:
 		const Firebird::MetaName& role) = 0;
 	virtual void detach(Jrd::thread_db* tdbb);
 
-	virtual bool cancelExecution() = 0;
+	virtual bool cancelExecution(bool forced) = 0;
 
 	int getSqlDialect() const { return m_sqlDialect; }
 
@@ -470,6 +470,7 @@ private:
 	void init(Jrd::thread_db* tdbb, Connection& conn, const char* from);
 
 	Jrd::thread_db* m_tdbb;
+	Firebird::RefPtr<Jrd::StableAttachmentPart> m_stable;
 	Firebird::Mutex* m_mutex;
 	Connection* m_saveConnection;
 };

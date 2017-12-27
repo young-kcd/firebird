@@ -2924,6 +2924,9 @@ void JAttachment::detach(CheckStatusWrapper* user_status)
  *	Close down a database.
  *
  **************************************/
+	if (!att->getHandle())
+		return;				// already detached
+
 	RefDeb(DEB_RLS_JATT, "JAttachment::detach");
 	freeEngineData(user_status, false);
 }
@@ -8837,6 +8840,11 @@ void JRD_cancel_operation(thread_db* /*tdbb*/, Jrd::Attachment* attachment, int 
 	case fb_cancel_raise:
 		if (!(attachment->att_flags & ATT_cancel_disable))
 			attachment->signalCancel();
+		break;
+
+	case fb_cancel_abort:
+		if (!(attachment->att_flags & ATT_shutdown))
+			attachment->signalShutdown(isc_att_shut_killed);
 		break;
 
 	default:

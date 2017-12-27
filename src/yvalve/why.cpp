@@ -1349,7 +1349,7 @@ static void badHandle(ISC_STATUS code)
 static bool isNetworkError(const IStatus* status)
 {
 	ISC_STATUS code = status->getErrors()[1];
-	return code == isc_network_error || code == isc_net_write_err || code == isc_net_read_err;
+	return fb_utils::isNetworkError(code);
 }
 
 static void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code)
@@ -5766,6 +5766,9 @@ void YAttachment::detach(CheckStatusWrapper* status)
 
 		if (entry.next())
 			entry.next()->detach(status);
+
+		if (isNetworkError(status))
+			status->init();
 
 		if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
 			destroy(DF_RELEASE);
