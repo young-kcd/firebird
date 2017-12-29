@@ -260,6 +260,19 @@ namespace Jrd
 		dbb_flags &= ~(DBB_sweep_in_progress | DBB_sweep_starting);
 	}
 
+	void Database::registerModule(Module& module)
+	{
+		Sync sync(&dbb_modules_sync, FB_FUNCTION);
+		sync.lock(SYNC_SHARED);
+		if (dbb_modules.exist(module))
+			return;
+
+		sync.unlock();
+		sync.lock(SYNC_EXCLUSIVE);
+		if (!dbb_modules.exist(module))
+			dbb_modules.add(module);
+	}
+
 	void Database::Linger::handler()
 	{
 		JRD_shutdown_database(dbb, SHUT_DBB_RELEASE_POOLS);

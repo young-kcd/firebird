@@ -52,7 +52,6 @@
 #include "../common/sdl.h"
 #include "../jrd/intl.h"
 #include "../jrd/cch.h"
-#include "../dsql/ExprNodes.h"
 #include "../common/gdsassert.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/blf_proto.h"
@@ -88,7 +87,7 @@ static ArrayField* find_array(jrd_tra*, const bid*);
 static BlobFilter* find_filter(thread_db*, SSHORT, SSHORT);
 //static blob_page* get_next_page(thread_db*, blb*, WIN *);
 //static void insert_page(thread_db*, blb*);
-static void move_from_string(Jrd::thread_db*, const dsc*, dsc*, const ValueExprNode*);
+static void move_from_string(Jrd::thread_db*, const dsc*, dsc*, const record_param* rpb, USHORT fieldId);
 static void move_to_string(Jrd::thread_db*, dsc*, dsc*);
 static void slice_callback(array_slice*, ULONG, dsc*);
 static blb* store_array(thread_db*, jrd_tra*, bid*);
@@ -948,7 +947,7 @@ SLONG blb::BLB_lseek(USHORT mode, SLONG offset)
 // which in turn calls blb::create2 that writes in the blob id. Although the
 // compiler allows to modify from_desc->dsc_address' contents when from_desc is
 // constant, this is misleading so I didn't make the source descriptor constant.
-void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNode* field)
+void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const record_param* rpb, USHORT fieldId)
 {
 /**************************************
  *
@@ -979,7 +978,7 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNod
 		if (!DTYPE_IS_BLOB_OR_QUAD(from_desc->dsc_dtype))
 		{
 			// anything that can be copied into a string can be copied into a blob
-			move_from_string(tdbb, from_desc, to_desc, field);
+			move_from_string(tdbb, from_desc, to_desc, rpb, fieldId);
 			return;
 		}
 	}
@@ -991,23 +990,11 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNod
 	else
 		fb_assert(false);
 
-	bool simpleMove = true;
-
 	// If the target node is a field, we need more work to do.
 
-	const FieldNode* fieldNode = NULL;
-
-	if (field)
-	{
-		if ((fieldNode = nodeAs<FieldNode>(field)))
-		{
-			// We should not materialize the blob if the destination field
-			// stream (nod_union, for example) doesn't have a relation.
-			simpleMove = tdbb->getRequest()->req_rpb[fieldNode->fieldStream].rpb_relation == NULL;
-		}
-		else if (!(nodeIs<ParameterNode>(field) || nodeIs<VariableNode>(field)))
-			BUGCHECK(199);	// msg 199 expected field node
-	}
+	// We should not materialize the blob if the destination field
+	// stream (nod_union, for example) doesn't have a relation.
+	const bool simpleMove = !rpb || (rpb->rpb_relation == NULL);
 
 	// Use local copy of source blob id to not change contents of from_desc in
 	// a case when it points to materialized temporary blob (see below for
@@ -1063,8 +1050,6 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNod
 	}
 
 	jrd_req* request = tdbb->getRequest();
-	const USHORT id = fieldNode->fieldId;
-	record_param* rpb = &request->req_rpb[fieldNode->fieldStream];
 	jrd_rel* relation = rpb->rpb_relation;
 
 	if (relation->isVirtual()) {
@@ -1079,12 +1064,12 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNod
 
 	if ((request->req_flags & req_null) || source->isEmpty())
 	{
-		record->setNull(id);
+		record->setNull(fieldId);
 		destination->clear();
 		return;
 	}
 
-	record->clearNull(id);
+	record->clearNull(fieldId);
 	jrd_tra* transaction = request->req_transaction;
 	transaction = transaction->getOuter();
 
@@ -1218,7 +1203,7 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNod
 	blob->blb_sub_type = to_desc->getBlobSubType();
 	blob->blb_charset = to_desc->getCharSet();
 #ifdef CHECK_BLOB_FIELD_ACCESS_FOR_SELECT
-	blob->blb_fld_id = fieldNode->fieldId;
+	blob->blb_fld_id = fieldId;
 #endif
 	destination->set_permanent(relation->rel_id, DPM_store_blob(tdbb, blob, record));
 	// This is the only place in the engine where blobs are materialized
@@ -2524,7 +2509,7 @@ void blb::insert_page(thread_db* tdbb)
 
 
 static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc,
-	const ValueExprNode* field)
+	const record_param* rpb, USHORT fieldId)
 {
 /**************************************
  *
@@ -2578,7 +2563,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	blob->BLB_put_segment(tdbb, fromstr, length);
 	blob->BLB_close(tdbb);
 	ULONG blob_temp_id = blob->getTempId();
-	blb::move(tdbb, &blob_desc, to_desc, field);
+	blb::move(tdbb, &blob_desc, to_desc, rpb, fieldId);
 
 	// 14-June-2004. Nickolay Samofatov
 	// The code below saves a lot of memory when bunches of records are

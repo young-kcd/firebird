@@ -757,8 +757,16 @@ public:
 			k = ClumpletReader::Tpb;
 			tag = isc_tpb_version3;
 			break;
+		case BATCH:
+			k = ClumpletReader::WideTagged;
+			tag = IBatch::VERSION1;
+			break;
+		case BPB:
+			k = ClumpletReader::Tagged;
+			tag = isc_bpb_version1;
+			break;
 		default:
-			fatal_exception::raiseFmt("Wrong parameters block kind %d, should be from %d to %d", kind, DPB, TPB);
+			fatal_exception::raiseFmt("Wrong parameters block kind %d, should be from %d to %d", kind, DPB, BPB);
 			break;
 		}
 
@@ -1076,7 +1084,7 @@ public:
 			{
 				char temp[STRING_SIZE];
 				decDoubleToString(reinterpret_cast<const decDouble*>(from), temp);
-				int len = strlen(temp);
+				unsigned int len = strlen(temp);
 				if (len < bufSize)
 					strncpy(buffer, temp, bufSize);
 				else
@@ -1137,7 +1145,7 @@ public:
 			{
 				char temp[STRING_SIZE];
 				decQuadToString(reinterpret_cast<const decQuad*>(from), temp);
-				int len = strlen(temp);
+				unsigned int len = strlen(temp);
 				if (len < bufSize)
 					strncpy(buffer, temp, bufSize);
 				else
@@ -1177,6 +1185,56 @@ IDecFloat34* UtilInterface::getDecFloat34(CheckStatusWrapper* status)
 {
 	static DecFloat34 decFloat34;
 	return &decFloat34;
+}
+
+class DecFixed FB_FINAL : public AutoIface<IDecFixedImpl<DecFixed, CheckStatusWrapper> >
+{
+public:
+	// IDecFixed implementation
+	void toBcd(const FB_DEC_FIXED* from, int* sign, unsigned char* bcd)
+	{
+		int exp = 0;
+		*sign = decQuadToBCD(reinterpret_cast<const decQuad*>(from), &exp, bcd);
+		fb_assert(exp == 0);
+	}
+
+	void toString(CheckStatusWrapper* status, const FB_DEC_FIXED* from, int scale, unsigned bufSize, char* buffer)
+	{
+		try
+		{
+			DecimalStatus decSt(DEC_Errors);
+			reinterpret_cast<const DecimalFixed*>(from)->toString(decSt, scale, bufSize, buffer);
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+	}
+
+	void fromBcd(int sign, const unsigned char* bcd, FB_DEC_FIXED* to)
+	{
+		decQuadFromBCD(reinterpret_cast<decQuad*>(to), 0, bcd, sign ? DECFLOAT_Sign : 0);
+	}
+
+	void fromString(CheckStatusWrapper* status, const char* from, int scale, FB_DEC_FIXED* to)
+	{
+		try
+		{
+			DecimalStatus decSt(DEC_Errors);
+			DecimalFixed* val = reinterpret_cast<DecimalFixed*>(to);
+			val->set(from, scale, decSt);
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+	}
+};
+
+IDecFixed* UtilInterface::getDecFixed(CheckStatusWrapper* /*status*/)
+{
+	static DecFixed decFixed;
+	return &decFixed;
 }
 
 unsigned UtilInterface::setOffsets(CheckStatusWrapper* status, IMessageMetadata* metadata,

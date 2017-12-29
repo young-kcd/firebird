@@ -136,7 +136,7 @@ namespace fb_utils
 
 	unsigned int copyStatus(ISC_STATUS* const to, const unsigned int space,
 							const ISC_STATUS* const from, const unsigned int count) throw();
-	void copyStatus(Firebird::CheckStatusWrapper* to, const Firebird::CheckStatusWrapper* from) throw();
+	void copyStatus(Firebird::CheckStatusWrapper* to, const Firebird::IStatus* from) throw();
 	unsigned int mergeStatus(ISC_STATUS* const to, unsigned int space, const Firebird::IStatus* from) throw();
 	void setIStatus(Firebird::CheckStatusWrapper* to, const ISC_STATUS* from) throw();
 	unsigned int statusLength(const ISC_STATUS* const status) throw();
@@ -194,6 +194,14 @@ namespace fb_utils
 	// Check does vector contain particular code or not
 	bool containsErrorCode(const ISC_STATUS* v, ISC_STATUS code);
 
+	bool inline isNetworkError(ISC_STATUS code)
+	{
+		return code == isc_network_error || 
+			code == isc_net_write_err || 
+			code == isc_net_read_err ||
+			code == isc_lost_db_connection;
+	}
+
 	// Uppercase/strip string according to login rules
 	const char* dpbItemUpper(const char* s, FB_SIZE_T l, Firebird::string& buf);
 
@@ -206,6 +214,9 @@ namespace fb_utils
 		if (up)
 			name = up;
 	}
+
+	// Frequently used actions with clumplets
+	bool isBpbSegmented(unsigned parLength, const unsigned char* par);
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

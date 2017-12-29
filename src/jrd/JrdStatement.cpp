@@ -68,7 +68,7 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 		makeSubRoutines(tdbb, this, csb, csb->subProcedures);
 		makeSubRoutines(tdbb, this, csb, csb->subFunctions);
 
-		topNode = (csb->csb_node->kind == DmlNode::KIND_STATEMENT) ?
+		topNode = (csb->csb_node->getKind() == DmlNode::KIND_STATEMENT) ?
 			static_cast<StmtNode*>(csb->csb_node) : NULL;
 
 		accessList = csb->csb_access;
@@ -223,7 +223,7 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 
 			if (fieldInfo.validationExpr)
 			{
-				NodeCopier copier(csb, map);
+				NodeCopier copier(csb->csb_pool, csb, map);
 				fieldInfo.validationExpr = copier.copy(tdbb, fieldInfo.validationExpr);
 			}
 
@@ -231,7 +231,7 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 			DmlNode::doPass1(tdbb, csb, fieldInfo.validationExpr.getAddress());
 		}
 
-		if (csb->csb_node->kind == DmlNode::KIND_STATEMENT)
+		if (csb->csb_node->getKind() == DmlNode::KIND_STATEMENT)
 			StmtNode::doPass2(tdbb, csb, reinterpret_cast<StmtNode**>(&csb->csb_node), NULL);
 		else
 			ExprNode::doPass2(tdbb, csb, &csb->csb_node);
@@ -406,11 +406,23 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 		if (item->exa_action == ExternalAccess::exa_procedure)
 		{
 			routine = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
+			if (!routine)
+			{
+				string name;
+				name.printf("id %d", item->exa_prc_id);
+				ERR_post(Arg::Gds(isc_prcnotdef) << name);
+			}
 			aclType = id_procedure;
 		}
 		else if (item->exa_action == ExternalAccess::exa_function)
 		{
 			routine = Function::lookup(tdbb, item->exa_fun_id, false, false, 0);
+			if (!routine)
+			{
+				string name;
+				name.printf("id %d", item->exa_fun_id);
+				ERR_post(Arg::Gds(isc_funnotdef) << name);
+			}
 			aclType = id_function;
 		}
 		else

@@ -148,6 +148,8 @@ public:
 
 	IMetadataBuilder* getBuilder(CheckStatusWrapper* status);
 	unsigned getMessageLength(CheckStatusWrapper* status);
+	unsigned getAlignment(CheckStatusWrapper* status);
+	unsigned getAlignedLength(CheckStatusWrapper* status);
 
 	void gatherData(DataBuffer& to);	// Copy data from SQLDA into target buffer.
 	void scatterData(DataBuffer& from);
@@ -170,7 +172,7 @@ private:
 		unsigned indOffset;
 	} *offsets;
 
-	unsigned length;
+	unsigned length, alignment;
 	bool speedHackEnabled; // May be user by stupid luck use right buffer format even with SQLDA interface?..
 };
 
@@ -223,7 +225,7 @@ private:
 };
 
 SQLDAMetadata::SQLDAMetadata(const XSQLDA* aSqlda)
-	: sqlda(aSqlda), count(0), offsets(NULL), length(0), speedHackEnabled(false)
+	: sqlda(aSqlda), count(0), offsets(NULL), length(0), alignment(0), speedHackEnabled(false)
 {
 	if (sqlda && sqlda->version != SQLDA_VERSION1)
 	{
@@ -457,10 +459,14 @@ void SQLDAMetadata::assign()
 		}
 		// No matter how good or bad is the way data is placed in message buffer, it cannot be changed
 		// because changing of it on current codebase will completely kill remote module and may be the engine as well
+		unsigned dtype;
 		length = fb_utils::sqlTypeToDsc(length, var.sqltype, var.sqllen,
-			NULL /*dtype*/, NULL /*length*/, &it.offset, &it.indOffset);
+			&dtype, NULL /*length*/, &it.offset, &it.indOffset);
 		if (it.offset != var.sqldata - base || it.indOffset != ((ISC_SCHAR*) (var.sqlind)) - base)
 			speedHackEnabled = false; // No luck
+
+		if (dtype < DTYPE_TYPE_MAX)
+			alignment = MAX(alignment, type_alignments[dtype]);
 	}
 }
 
@@ -469,6 +475,20 @@ unsigned SQLDAMetadata::getMessageLength(CheckStatusWrapper* status)
 	if (!offsets)
 		assign();
 	return length;
+}
+
+unsigned SQLDAMetadata::getAlignment(CheckStatusWrapper* status)
+{
+	if (!offsets)
+		assign();
+	return alignment;
+}
+
+unsigned SQLDAMetadata::getAlignedLength(CheckStatusWrapper* status)
+{
+	if (!offsets)
+		assign();
+	return FB_ALIGN(length, alignment);
 }
 
 void SQLDAMetadata::gatherData(DataBuffer& to)
@@ -1329,7 +1349,7 @@ static void badHandle(ISC_STATUS code)
 static bool isNetworkError(const IStatus* status)
 {
 	ISC_STATUS code = status->getErrors()[1];
-	return code == isc_network_error || code == isc_net_write_err || code == isc_net_read_err;
+	return fb_utils::isNetworkError(code);
 }
 
 static void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code)
@@ -2686,6 +2706,32 @@ ISC_STATUS API_ROUTINE fb_dsql_set_timeout(ISC_STATUS* userStatus, FB_API_HANDLE
 	return status[1];
 }
 
+
+// Get interface by legacy handle
+/*ISC_STATUS API_ROUTINE fb_get_statement_interface(ISC_STATUS* userStatus, FB_API_HANDLE* stmtHandle,
+	void** stmtIface)
+{
+	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
+
+	try
+	{
+		RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
+		statement->checkPrepared();
+
+		fb_assert(statement->statement);
+		IStatement* rc = statement->statement;
+		rc->addRef();
+		*stmtIface = rc;
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(&statusWrapper);
+	}
+
+	return status[1];
+}
+*/
 
 // Provide information on sql statement.
 ISC_STATUS API_ROUTINE isc_dsql_sql_info(ISC_STATUS* userStatus, FB_API_HANDLE* stmtHandle,
@@ -4317,7 +4363,7 @@ ITransaction* YStatement::execute(CheckStatusWrapper* status, ITransaction* tran
 	return transaction;
 }
 
-IResultSet* YStatement::openCursor(Firebird::CheckStatusWrapper* status, ITransaction* transaction,
+IResultSet* YStatement::openCursor(CheckStatusWrapper* status, ITransaction* transaction,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, unsigned int flags)
 {
 	try
@@ -4369,6 +4415,31 @@ void YStatement::free(CheckStatusWrapper* status)
 	}
 }
 
+YBatch* YStatement::createBatch(CheckStatusWrapper* status, IMessageMetadata* inMetadata, unsigned parLength,
+	const unsigned char* par)
+{
+	try
+	{
+		YEntry<YStatement> entry(status, this);
+
+		IBatch* batch = entry.next()->createBatch(status, inMetadata, parLength, par);
+		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+		{
+			return NULL;
+		}
+
+		YBatch*	newBatch = FB_NEW YBatch(attachment, batch);
+		newBatch->addRef();
+		return newBatch;
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return NULL;
+}
+
 //-------------------------------------
 
 IscStatement::~IscStatement()
@@ -4402,7 +4473,7 @@ void IscStatement::openCursor(CheckStatusWrapper* status, FB_API_HANDLE* traHand
 	checkCursorClosed();
 
 	// Transaction is not optional for statement returning result set
-	RefPtr<YTransaction> transaction = translateHandle(transactions, traHandle);;
+	RefPtr<YTransaction> transaction = translateHandle(transactions, traHandle);
 
 	statement->openCursor(status, transaction, inMetadata, buffer, outMetadata, 0);
 
@@ -4749,6 +4820,177 @@ void YResultSet::close(CheckStatusWrapper* status)
 
 		if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
 			destroy(DF_RELEASE);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+}
+
+//-------------------------------------
+
+
+YBatch::YBatch(YAttachment* anAttachment, IBatch* aNext)
+	: YHelper(aNext),
+	  attachment(anAttachment)
+{ }
+
+
+void YBatch::destroy(unsigned dstrFlags)
+{
+	destroy2(dstrFlags);
+}
+
+
+void YBatch::add(CheckStatusWrapper* status, unsigned count, const void* inBuffer)
+{
+	try
+	{
+		YEntry<YBatch> entry(status, this);
+
+		entry.next()->add(status, count, inBuffer);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+}
+
+
+void YBatch::addBlob(CheckStatusWrapper* status, unsigned length, const void* inBuffer, ISC_QUAD* blobId,
+	unsigned parLength, const unsigned char* par)
+{
+	try
+	{
+		YEntry<YBatch> entry(status, this);
+
+		entry.next()->addBlob(status, length, inBuffer, blobId, parLength, par);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+}
+
+
+void YBatch::appendBlobData(CheckStatusWrapper* status, unsigned length, const void* inBuffer)
+{
+	try
+	{
+		YEntry<YBatch> entry(status, this);
+
+		entry.next()->appendBlobData(status, length, inBuffer);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+}
+
+
+void YBatch::addBlobStream(CheckStatusWrapper* status, unsigned length, const void* inBuffer)
+{
+	try
+	{
+		YEntry<YBatch> entry(status, this);
+
+		entry.next()->addBlobStream(status, length, inBuffer);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+}
+
+
+unsigned YBatch::getBlobAlignment(CheckStatusWrapper* status)
+{
+	try
+	{
+		YEntry<YBatch> entry(status, this);
+
+		return entry.next()->getBlobAlignment(status);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return 0;
+}
+
+
+void YBatch::setDefaultBpb(CheckStatusWrapper* status, unsigned parLength, const unsigned char* par)
+{
+	try
+	{
+		YEntry<YBatch> entry(status, this);
+
+		entry.next()->setDefaultBpb(status, parLength, par);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+}
+
+
+IMessageMetadata* YBatch::getMetadata(CheckStatusWrapper* status)
+{
+	try
+	{
+		YEntry<YBatch> entry(status, this);
+
+		return entry.next()->getMetadata(status);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return 0;
+}
+
+
+void YBatch::registerBlob(CheckStatusWrapper* status, const ISC_QUAD* existingBlob, ISC_QUAD* blobId)
+{
+	try
+	{
+		YEntry<YBatch> entry(status, this);
+
+		entry.next()->registerBlob(status, existingBlob, blobId);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+}
+
+
+IBatchCompletionState* YBatch::execute(CheckStatusWrapper* status, ITransaction* transaction)
+{
+	try
+	{
+		YEntry<YBatch> entry(status, this);
+
+		return entry.next()->execute(status, transaction);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return NULL;
+}
+
+
+void YBatch::cancel(CheckStatusWrapper* status)
+{
+	try
+	{
+		YEntry<YBatch> entry(status, this);
+
+		entry.next()->cancel(status);
 	}
 	catch (const Exception& e)
 	{
@@ -5525,6 +5767,9 @@ void YAttachment::detach(CheckStatusWrapper* status)
 		if (entry.next())
 			entry.next()->detach(status);
 
+		if (isNetworkError(status))
+			status->init();
+
 		if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
 			destroy(DF_RELEASE);
 	}
@@ -5652,6 +5897,38 @@ void YAttachment::setStatementTimeout(CheckStatusWrapper* status, unsigned int t
 	{
 		e.stuffException(status);
 	}
+}
+
+
+YBatch* YAttachment::createBatch(CheckStatusWrapper* status, ITransaction* transaction,
+	unsigned stmtLength, const char* sqlStmt, unsigned dialect,
+	IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par)
+{
+	try
+	{
+		YEntry<YAttachment> entry(status, this);
+
+		NextTransaction trans;
+		if (transaction)
+			getNextTransaction(status, transaction, trans);
+
+		IBatch* batch = entry.next()->createBatch(status, trans, stmtLength, sqlStmt, dialect,
+			inMetadata, parLength, par);
+		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+		{
+			return NULL;
+		}
+
+		YBatch*	newBatch = FB_NEW YBatch(this, batch);
+		newBatch->addRef();
+		return newBatch;
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return NULL;
 }
 
 

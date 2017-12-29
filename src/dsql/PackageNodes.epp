@@ -214,15 +214,17 @@ string CreateAlterPackageNode::internalPrint(NodePrinter& printer) const
 
 DdlNode* CreateAlterPackageNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
+	MemoryPool& pool = dsqlScratch->getPool();
+
 	source.ltrim("\n\r\t ");
 
 	// items
 	for (unsigned i = 0; i < items->getCount(); ++i)
 	{
-		DsqlCompiledStatement* itemStatement = FB_NEW_POOL(getPool()) DsqlCompiledStatement(getPool());
+		DsqlCompiledStatement* itemStatement = FB_NEW_POOL(pool) DsqlCompiledStatement(pool);
 
 		DsqlCompilerScratch* itemScratch = (*items)[i].dsqlScratch =
-			FB_NEW_POOL(getPool()) DsqlCompilerScratch(getPool(), dsqlScratch->getAttachment(),
+			FB_NEW_POOL(pool) DsqlCompilerScratch(pool, dsqlScratch->getAttachment(),
 				dsqlScratch->getTransaction(), itemStatement);
 
 		itemScratch->clientDialect = dsqlScratch->clientDialect;
@@ -372,6 +374,7 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch*
 bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
+	MemoryPool& pool = dsqlScratch->getPool();
 	Attachment* attachment = transaction->getAttachment();
 	AutoCacheRequest requestHandle(tdbb, drq_m_pkg, DYN_REQUESTS);
 	bool modified = false;
@@ -385,8 +388,8 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* 
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
 			DDL_TRIGGER_ALTER_PACKAGE, name, NULL);
 
-		SortedObjectsArray<Signature> existingFuncs(getPool());
-		SortedObjectsArray<Signature> existingProcs(getPool());
+		SortedObjectsArray<Signature> existingFuncs(pool);
+		SortedObjectsArray<Signature> existingProcs(pool);
 		collectPackagedItems(tdbb, transaction, name, existingFuncs, existingProcs, false);
 
 		for (SortedObjectsArray<Signature>::iterator i = existingFuncs.begin();
@@ -394,7 +397,7 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* 
 		{
 			if (!functionNames.exist(i->name))
 			{
-				DropFunctionNode dropNode(getPool(), i->name);
+				DropFunctionNode dropNode(pool, i->name);
 				dropNode.package = name;
 				dropNode.dsqlPass(dsqlScratch);
 				dropNode.executeDdl(tdbb, dsqlScratch, transaction);
@@ -406,7 +409,7 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* 
 		{
 			if (!procedureNames.exist(i->name))
 			{
-				DropProcedureNode dropNode(getPool(), i->name);
+				DropProcedureNode dropNode(pool, i->name);
 				dropNode.package = name;
 				dropNode.dsqlPass(dsqlScratch);
 				dropNode.executeDdl(tdbb, dsqlScratch, transaction);
@@ -496,6 +499,8 @@ bool DropPackageNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 void DropPackageNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
+	MemoryPool& pool = dsqlScratch->getPool();
+
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
@@ -530,14 +535,14 @@ void DropPackageNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 			Arg::Gds(isc_dyn_package_not_found) << Arg::Str(name));
 	}
 
-	SortedObjectsArray<Signature> existingFuncs(getPool());
-	SortedObjectsArray<Signature> existingProcs(getPool());
+	SortedObjectsArray<Signature> existingFuncs(pool);
+	SortedObjectsArray<Signature> existingProcs(pool);
 	collectPackagedItems(tdbb, transaction, name, existingFuncs, existingProcs, false);
 
 	for (SortedObjectsArray<Signature>::iterator i = existingFuncs.begin();
 		 i != existingFuncs.end(); ++i)
 	{
-		DropFunctionNode dropNode(getPool(), i->name);
+		DropFunctionNode dropNode(pool, i->name);
 		dropNode.package = name;
 		dropNode.dsqlPass(dsqlScratch);
 		dropNode.executeDdl(tdbb, dsqlScratch, transaction);
@@ -546,7 +551,7 @@ void DropPackageNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	for (SortedObjectsArray<Signature>::iterator i = existingProcs.begin();
 		 i != existingProcs.end(); ++i)
 	{
-		DropProcedureNode dropNode(getPool(), i->name);
+		DropProcedureNode dropNode(pool, i->name);
 		dropNode.package = name;
 		dropNode.dsqlPass(dsqlScratch);
 		dropNode.executeDdl(tdbb, dsqlScratch, transaction);
@@ -593,6 +598,8 @@ string CreatePackageBodyNode::internalPrint(NodePrinter& printer) const
 
 DdlNode* CreatePackageBodyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
+	MemoryPool& pool = dsqlScratch->getPool();
+
 	source.ltrim("\n\r\t ");
 
 	// process declaredItems and items
@@ -607,10 +614,10 @@ DdlNode* CreatePackageBodyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 		for (unsigned j = 0; j < arrays[i]->getCount(); ++j)
 		{
-			DsqlCompiledStatement* itemStatement = FB_NEW_POOL(getPool()) DsqlCompiledStatement(getPool());
+			DsqlCompiledStatement* itemStatement = FB_NEW_POOL(pool) DsqlCompiledStatement(pool);
 
 			DsqlCompilerScratch* itemScratch = (*arrays[i])[j].dsqlScratch =
-				FB_NEW_POOL(getPool()) DsqlCompilerScratch(getPool(), dsqlScratch->getAttachment(),
+				FB_NEW_POOL(pool) DsqlCompilerScratch(pool, dsqlScratch->getAttachment(),
 					dsqlScratch->getTransaction(), itemStatement);
 
 			itemScratch->clientDialect = dsqlScratch->clientDialect;
@@ -686,6 +693,7 @@ bool CreatePackageBodyNode::checkPermission(thread_db* tdbb, jrd_tra* transactio
 void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
+	MemoryPool& pool = dsqlScratch->getPool();
 	Attachment* attachment = transaction->getAttachment();
 
 	// run all statements under savepoint control
@@ -729,12 +737,12 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 			Arg::Gds(isc_dyn_package_not_found) << Arg::Str(name));
 	}
 
-	SortedObjectsArray<Signature> headerFuncs(getPool());
-	SortedObjectsArray<Signature> headerProcs(getPool());
+	SortedObjectsArray<Signature> headerFuncs(pool);
+	SortedObjectsArray<Signature> headerProcs(pool);
 	collectPackagedItems(tdbb, transaction, name, headerFuncs, headerProcs, false);
 
-	SortedObjectsArray<Signature> existingFuncs(getPool());
-	SortedObjectsArray<Signature> existingProcs(getPool());
+	SortedObjectsArray<Signature> existingFuncs(pool);
+	SortedObjectsArray<Signature> existingProcs(pool);
 
 	// process declaredItems and items
 	Array<CreateAlterPackageNode::Item>* arrays[] = {declaredItems, items};
@@ -803,15 +811,15 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 		}
 	}
 
-	SortedObjectsArray<Signature> newFuncs(getPool());
-	SortedObjectsArray<Signature> newProcs(getPool());
+	SortedObjectsArray<Signature> newFuncs(pool);
+	SortedObjectsArray<Signature> newProcs(pool);
 	collectPackagedItems(tdbb, transaction, name, newFuncs, newProcs, true);
 
 	for (SortedObjectsArray<Signature>::iterator i = existingFuncs.begin();
 		 i != existingFuncs.end(); ++i)
 	{
 		FB_SIZE_T pos;
-		bool found = newFuncs.find(Signature(getPool(), i->name), pos);
+		bool found = newFuncs.find(Signature(pool, i->name), pos);
 
 		if (!found || !newFuncs[pos].defined)
 		{
@@ -829,7 +837,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 		 i != existingProcs.end(); ++i)
 	{
 		FB_SIZE_T pos;
-		bool found = newProcs.find(Signature(getPool(), i->name), pos);
+		bool found = newProcs.find(Signature(pool, i->name), pos);
 
 		if (!found || !newProcs[pos].defined)
 		{
@@ -876,6 +884,8 @@ bool DropPackageBodyNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 void DropPackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
+	MemoryPool& pool = dsqlScratch->getPool();
+
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
@@ -918,7 +928,7 @@ void DropPackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	{
 		if (!FUN.RDB$PRIVATE_FLAG.NULL && FUN.RDB$PRIVATE_FLAG != 0)
 		{
-			DropFunctionNode dropNode(getPool(), FUN.RDB$FUNCTION_NAME);
+			DropFunctionNode dropNode(pool, FUN.RDB$FUNCTION_NAME);
 			dropNode.package = name;
 			dropNode.dsqlPass(dsqlScratch);
 			dropNode.executeDdl(tdbb, dsqlScratch, transaction);
@@ -945,7 +955,7 @@ void DropPackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	{
 		if (!PRC.RDB$PRIVATE_FLAG.NULL && PRC.RDB$PRIVATE_FLAG != 0)
 		{
-			DropProcedureNode dropNode(getPool(), PRC.RDB$PROCEDURE_NAME);
+			DropProcedureNode dropNode(pool, PRC.RDB$PROCEDURE_NAME);
 			dropNode.package = name;
 			dropNode.dsqlPass(dsqlScratch);
 			dropNode.executeDdl(tdbb, dsqlScratch, transaction);

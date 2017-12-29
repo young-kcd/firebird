@@ -599,9 +599,11 @@ using namespace Firebird;
 %token <metaNamePtr> DECFLOAT
 %token <metaNamePtr> DEFINER
 %token <metaNamePtr> EXCLUDE
+%token <metaNamePtr> FIRST_DAY
 %token <metaNamePtr> FOLLOWING
 %token <metaNamePtr> IDLE
 %token <metaNamePtr> INVOKER
+%token <metaNamePtr> LAST_DAY
 %token <metaNamePtr> MESSAGE
 %token <metaNamePtr> NATIVE
 %token <metaNamePtr> NORMALIZE_DECFLOAT
@@ -791,10 +793,10 @@ top
 
 %type <dsqlReq> statement
 statement
-	: dml_statement		{ $$ = newNode<DsqlDmlRequest>($1); }
-	| ddl_statement		{ $$ = newNode<DsqlDdlRequest>($1); }
-	| tra_statement		{ $$ = newNode<DsqlTransactionRequest>($1); }
-	| mng_statement		{ $$ = newNode<DsqlSessionManagementRequest>($1); }
+	: dml_statement		{ $$ = FB_NEW_POOL(getStatementPool()) DsqlDmlRequest(getStatementPool(), $1); }
+	| ddl_statement		{ $$ = FB_NEW_POOL(getStatementPool()) DsqlDdlRequest(getStatementPool(), $1); }
+	| tra_statement		{ $$ = FB_NEW_POOL(getStatementPool()) DsqlTransactionRequest(getStatementPool(), $1); }
+	| mng_statement		{ $$ = FB_NEW_POOL(getStatementPool()) DsqlSessionManagementRequest(getStatementPool(), $1); }
 	;
 
 %type <stmtNode> dml_statement
@@ -4843,10 +4845,16 @@ prec_scale
 		{
 			$$ = newNode<dsql_fld>();
 
-			if ($2 < 1 || $2 > 18)
-				yyabandon(YYPOSNARG(2), -842, isc_precision_err);	// Precision must be between 1 and 18.
+			if ($2 < 1 || $2 > 34)
+				yyabandon(YYPOSNARG(2), -842, Arg::Gds(isc_precision_err2) << Arg::Num(1) << Arg::Num(34));
+																// Precision must be between 1 and 34
 
-			if ($2 > 9)
+			if ($2 > 18)
+			{
+				$$->dtype = dtype_dec_fixed;
+				$$->length = sizeof(DecimalFixed);
+			}
+			else if ($2 > 9)
 			{
 				if ( ( (client_dialect <= SQL_DIALECT_V5) && (db_dialect > SQL_DIALECT_V5) ) ||
 					( (client_dialect > SQL_DIALECT_V5) && (db_dialect <= SQL_DIALECT_V5) ) )
@@ -4893,13 +4901,19 @@ prec_scale
 		{
 			$$ = newNode<dsql_fld>();
 
-			if ($2 < 1 || $2 > 18)
-				yyabandon(YYPOSNARG(2), -842, isc_precision_err);	// Precision should be between 1 and 18
+			if ($2 < 1 || $2 > 34)
+				yyabandon(YYPOSNARG(2), -842, Arg::Gds(isc_precision_err2) << Arg::Num(1) << Arg::Num(34));
+																// Precision must be between 1 and 34
 
 			if ($4 > $2 || $4 < 0)
 				yyabandon(YYPOSNARG(4), -842, isc_scale_nogt);	// Scale must be between 0 and precision
 
-			if ($2 > 9)
+			if ($2 > 18)
+			{
+				$$->dtype = dtype_dec_fixed;
+				$$->length = sizeof(DecimalFixed);
+			}
+			else if ($2 > 9)
 			{
 				if ( ( (client_dialect <= SQL_DIALECT_V5) && (db_dialect > SQL_DIALECT_V5) ) ||
 					( (client_dialect > SQL_DIALECT_V5) && (db_dialect <= SQL_DIALECT_V5) ) )
@@ -5477,10 +5491,10 @@ with_list
 			$$ = newNode<WithClause>();
 			$$->add($1);
 		}
-	| with_item ',' with_list
+	| with_list ',' with_item 
 		{
-			$$ = $3;
-			$$->add($1);
+			$$ = $1;
+			$$->add($3);
 		}
 	;
 
@@ -7770,12 +7784,24 @@ system_function_special_syntax
 				newNode<ValueListNode>(MAKE_const_slong($3))->add($5)->add($7));
 			$$->dsqlSpecialSyntax = true;
 		}
+	| FIRST_DAY '(' of_first_last_day_part FROM value ')'
+		{
+			$$ = newNode<SysFuncCallNode>(*$1,
+				newNode<ValueListNode>(MAKE_const_slong($3))->add($5));
+			$$->dsqlSpecialSyntax = true;
+		}
 	| HASH '(' value ')'
 		{ $$ = newNode<SysFuncCallNode>(*$1, newNode<ValueListNode>($3)); }
 	| HASH '(' value USING valid_symbol_name ')'
 		{
 			$$ = newNode<SysFuncCallNode>(*$1,
 				newNode<ValueListNode>($3)->add(MAKE_str_constant(newIntlString($5->c_str()), CS_ASCII)));
+			$$->dsqlSpecialSyntax = true;
+		}
+	| LAST_DAY '(' of_first_last_day_part FROM value ')'
+		{
+			$$ = newNode<SysFuncCallNode>(*$1,
+				newNode<ValueListNode>(MAKE_const_slong($3))->add($5));
 			$$->dsqlSpecialSyntax = true;
 		}
 	| OVERLAY '(' value PLACING value FROM value FOR value ')'
@@ -7802,6 +7828,13 @@ system_function_special_syntax
 			ValueExprNode* v = MAKE_system_privilege($3->c_str());
 			$$ = newNode<SysFuncCallNode>(*$1, newNode<ValueListNode>(v));
 		}
+	;
+
+%type <blrOp> of_first_last_day_part
+of_first_last_day_part
+	: OF YEAR			{ $$ = blr_extract_year; }
+	| OF MONTH			{ $$ = blr_extract_month; }
+	| OF WEEK			{ $$ = blr_extract_week; }
 	;
 
 %type <valueExprNode> string_value_function
@@ -8454,9 +8487,11 @@ non_reserved_word
 	| DECFLOAT
 	| DEFINER
 	| EXCLUDE
+	| FIRST_DAY
 	| FOLLOWING
 	| IDLE
 	| INVOKER
+	| LAST_DAY
 	| MESSAGE
 	| NATIVE
 	| NORMALIZE_DECFLOAT

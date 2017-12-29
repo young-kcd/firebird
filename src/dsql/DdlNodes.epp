@@ -931,7 +931,7 @@ void DdlNode::executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction, DdlTrigge
 		context.newObjectName = when == DTW_BEFORE ? oldNewObjectName : objectName;
 	}
 
-	Stack<DdlTriggerContext>::AutoPushPop autoContext(attachment->ddlTriggersContext, context);
+	Stack<DdlTriggerContext*>::AutoPushPop autoContext(attachment->ddlTriggersContext, &context);
 	AutoSavePoint savePoint(tdbb, transaction);
 
 	EXE_execute_ddl_triggers(tdbb, transaction, when == DTW_BEFORE, action);
@@ -3586,8 +3586,8 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 
 		if (relationName.hasData())
 		{
-			RelationSourceNode* relationNode = FB_NEW_POOL(getPool()) RelationSourceNode(getPool(),
-				relationName);
+			RelationSourceNode* relationNode = FB_NEW_POOL(dsqlScratch->getPool()) RelationSourceNode(
+				dsqlScratch->getPool(), relationName);
 
 			const string temp = relationNode->alias;	// always empty?
 
@@ -4462,6 +4462,7 @@ void AlterDomainNode::checkUpdate(const dyn_fld& origFld, const dyn_fld& newFld)
 	case blr_float:
 	case blr_dec64:
 	case blr_dec128:
+	case blr_dec_fixed:
 		switch (newFld.dyn_dtype)
 		{
 		case blr_blob:
@@ -4587,6 +4588,23 @@ void AlterDomainNode::checkUpdate(const dyn_fld& origFld, const dyn_fld& newFld)
 			case blr_double:
 			case blr_dec64:
 			case blr_dec128:
+			case blr_dec_fixed:
+				break;
+
+			default:
+				// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
+				errorCode = isc_dyn_invalid_dtype_conversion;
+				break;
+			}
+			break;
+
+		case blr_dec_fixed:
+			switch (origFld.dyn_dtype)
+			{
+			case blr_short:
+			case blr_long:
+			case blr_int64:
+			case blr_dec_fixed:
 				break;
 
 			default:
@@ -4855,7 +4873,7 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 					status_exception::raise(Arg::PrivateDyn(160));
 				}
 
-				dsql_fld localField(dsqlScratch->getStatement()->getPool());
+				dsql_fld localField(dsqlScratch->getPool());
 
 				// Get the attributes of the domain, and set any occurrences of
 				// keyword VALUE to the correct type, length, scale, etc.
@@ -6398,7 +6416,7 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 	jrd_tra* transaction, AddConstraintClause* clause,
 	ObjectsArray<CreateDropConstraint>& constraints, bool* notNull)
 {
-	MemoryPool& pool = constraints.getPool();
+	MemoryPool& pool = dsqlScratch->getPool();
 
 	switch (clause->constraintType)
 	{
@@ -10394,7 +10412,7 @@ void MappingNode::runInSecurityDb(SecDbContext* secDbContext)
 
 			// check presence of such record in the table
 			Message msgCheck;
-			Field<Varying> nm(msgCheck, 1);
+			Field<Varying> nm(msgCheck, MAX_SQL_IDENTIFIER_LEN);
 			nm = name.c_str();
 
 			Message result;
@@ -11987,7 +12005,7 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 
 			if (!DBB.RDB$CHARACTER_SET_NAME.NULL && setDefaultCollation.hasData())
 			{
-				AlterCharSetNode alterCharSetNode(getPool(), setDefaultCharSet, setDefaultCollation);
+				AlterCharSetNode alterCharSetNode(dsqlScratch->getPool(), setDefaultCharSet, setDefaultCollation);
 				alterCharSetNode.execute(tdbb, dsqlScratch, transaction);
 			}
 

@@ -69,6 +69,7 @@
 #define blr_bool			(unsigned char)23
 #define blr_dec64			(unsigned char)24
 #define blr_dec128			(unsigned char)25
+#define blr_dec_fixed		(unsigned char)26
 
 // first sub parameter for blr_domain_name[2]
 #define blr_domain_type_of	(unsigned char)0
@@ -128,8 +129,9 @@
 #define blr_maximum		(unsigned char)29
 #define blr_minimum		(unsigned char)30
 #define blr_total		(unsigned char)31
+#define blr_receive_batch	(unsigned char)32
 
-// unused codes: 32..33
+// unused code: 33
 
 #define blr_add			(unsigned char)34
 #define blr_subtract		(unsigned char)35

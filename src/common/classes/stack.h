@@ -129,7 +129,7 @@ namespace Firebird {
 			delete stk_cache;
 		}
 
-		void push(Object e)
+		void push(const Object& e)
 		{
 			if (!stk && stk_cache)
 			{
@@ -184,7 +184,7 @@ namespace Firebird {
 		class AutoPushPop
 		{
 		public:
-			AutoPushPop(Stack<Object, Capacity>& s, Object& o)
+			AutoPushPop(Stack<Object, Capacity>& s, const Object& o)
 				: stack(s)
 			{
 				stack.push(o);

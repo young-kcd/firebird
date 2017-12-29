@@ -431,7 +431,7 @@ static void getMultiPartConnectParameter(T& putTo, Firebird::ClumpletReader& id,
 					top = offset + 1;
 				if (checkBytes[offset])
 				{
-					(Arg::Gds(isc_random) << "Invalid CNCT block: repeated data").raise();	// print offset No here
+					(Arg::Gds(isc_multi_segment_dup) << Arg::Num(offset)).raise();
 				}
 				checkBytes[offset] = 1;
 
@@ -641,7 +641,7 @@ public:
 				{
 					authServer = NULL;
 					working = false;
-					(Arg::Gds(isc_random) << "Plugin not supported by network protocol").copyTo(&st);		// add port_protocol parameter
+					Arg::Gds(isc_non_plugin_protocol).copyTo(&st);
 					break;
 				}
 
@@ -677,7 +677,7 @@ public:
 					{
 						authServer = NULL;
 						working = false;
-						(Arg::Gds(isc_random) << "Plugin not supported by network protocol").copyTo(&st);		// add port_protocol parameter
+						Arg::Gds(isc_non_plugin_protocol).copyTo(&st);
 						break;
 					}
 				}
@@ -1814,8 +1814,9 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	for (const p_cnct::p_cnct_repeat* const end = protocol + connect->p_cnct_count;
 		protocol < end; protocol++)
 	{
-		if ((protocol->p_cnct_version >= PROTOCOL_VERSION10 &&
-			 protocol->p_cnct_version <= PROTOCOL_VERSION16) &&
+		if ((protocol->p_cnct_version == PROTOCOL_VERSION10 ||
+			 (protocol->p_cnct_version >= PROTOCOL_VERSION11 &&
+			  protocol->p_cnct_version <= PROTOCOL_VERSION16)) &&
 			 (protocol->p_cnct_architecture == arch_generic ||
 			  protocol->p_cnct_architecture == ARCHITECTURE) &&
 			protocol->p_cnct_weight >= weight)
@@ -2059,6 +2060,13 @@ void Rsr::checkCursor()
 }
 
 
+void Rsr::checkBatch()
+{
+	if (!rsr_batch)
+		Arg::Gds(isc_bad_batch_handle).raise();
+}
+
+
 static ISC_STATUS allocate_statement( rem_port* port, /*P_RLSE* allocate,*/ PACKET* send)
 {
 /**************************************
@@ -2181,6 +2189,17 @@ static void addClumplets(ClumpletWriter* dpb_buffer,
 
 	if (port->port_address.hasData())
 		address_record.insertString(isc_dpb_addr_endpoint, port->port_address);
+
+	int flags = 0;
+#ifdef WIRE_COMPRESS_SUPPORT
+	if (port->port_compressed)
+		flags |= isc_dpb_addr_flag_conn_compressed;
+#endif
+	if (port->port_crypt_plugin)
+		flags |= isc_dpb_addr_flag_conn_encrypted;
+
+	if (flags)
+		address_record.insertInt(isc_dpb_addr_flags, flags);
 
 	// We always insert remote address descriptor as a first element
 	// of appropriate clumplet so user cannot fake it and engine may somewhat trust it.
@@ -3304,6 +3323,231 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 
 	return this->send_response(sendL, (OBJCT) (transaction ? transaction->rtr_id : 0),
 		0, &status_vector, false);
+}
+
+
+void rem_port::batch_create(P_BATCH_CREATE* batch, PACKET* sendL)
+{
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
+	Rsr* statement;
+	getHandle(statement, batch->p_batch_statement);
+	statement->checkIface();
+
+	const ULONG blr_length = batch->p_batch_blr.cstr_length;
+	const UCHAR* blr = batch->p_batch_blr.cstr_address;
+	if (!blr)
+		(Arg::Gds(isc_random) << "Missing required format info in createBatch()").raise();	// signals internal protocol error
+	InternalMessageBuffer msgBuffer(blr_length, blr, batch->p_batch_msglen, NULL);
+
+	// Flush out any previous format information
+	// that might be hanging around from an earlier execution.
+
+	delete statement->rsr_bind_format;
+	statement->rsr_bind_format = PARSE_msg_format(blr, blr_length);
+
+	// If we know the length of the message, make sure there is a buffer
+	// large enough to hold it.
+
+	if (!(statement->rsr_format = statement->rsr_bind_format))
+		(Arg::Gds(isc_random) << "Error parsing message format in createBatch()").raise();
+
+	RMessage* message = statement->rsr_buffer;
+	if (!message || statement->rsr_format->fmt_length > statement->rsr_fmt_length)
+	{
+		RMessage* const org_message = message;
+		const ULONG org_length = message ? statement->rsr_fmt_length : 0;
+		statement->rsr_fmt_length = statement->rsr_format->fmt_length;
+		statement->rsr_buffer = message = FB_NEW RMessage(statement->rsr_fmt_length);
+		statement->rsr_message = message;
+		message->msg_next = message;
+		if (org_length)
+		{
+			// dimitr:	the original buffer might have something useful inside
+			//			(filled by a prior xdr_sql_message() call, for example),
+			//			so its contents must be preserved (see CORE-3730)
+			memcpy(message->msg_buffer, org_message->msg_buffer, org_length);
+		}
+		REMOTE_release_messages(org_message);
+	}
+
+	ClumpletWriter wrt(ClumpletReader::WideTagged, MAX_DPB_SIZE,
+		batch->p_batch_pb.cstr_address, batch->p_batch_pb.cstr_length);
+	if (wrt.getBufferLength() && (wrt.getBufferTag() != IBatch::VERSION1))
+		(Arg::Gds(isc_batch_param_version) << Arg::Num(wrt.getBufferTag()) << Arg::Num(IBatch::VERSION1)).raise();
+	statement->rsr_batch_flags = (wrt.find(IBatch::TAG_RECORD_COUNTS) && wrt.getInt()) ?
+		(1 << IBatch::TAG_RECORD_COUNTS) : 0;
+	if (wrt.find(IBatch::TAG_BLOB_POLICY) && (wrt.getInt() != IBatch::BLOB_STREAM))
+	{
+		// we always send blobs in a stream therefore change policy
+		wrt.deleteClumplet();
+		wrt.insertInt(IBatch::TAG_BLOB_POLICY, IBatch::BLOB_STREAM);
+	}
+
+	statement->rsr_batch =
+		statement->rsr_iface->createBatch(&status_vector, msgBuffer.metadata,
+			wrt.getBufferLength(), wrt.getBuffer());
+
+	statement->rsr_batch_size = 0;
+	statement->rsr_batch_stream.blobRemaining = 0;
+	if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
+	{
+		if (msgBuffer.metadata)
+		{
+			statement->rsr_batch_size = msgBuffer.metadata->getAlignedLength(&status_vector);
+			check(&status_vector);
+		}
+		else
+		{
+			IMessageMetadata* m = statement->rsr_iface->getInputMetadata(&status_vector);
+			check(&status_vector);
+			statement->rsr_batch_size = m->getAlignedLength(&status_vector);
+			m->release();
+			check(&status_vector);
+		}
+
+		statement->rsr_batch_stream.alignment = statement->rsr_batch->getBlobAlignment(&status_vector);
+		check(&status_vector);
+	}
+
+	this->send_response(sendL, 0, 0, &status_vector, true);
+}
+
+void rem_port::batch_msg(P_BATCH_MSG* batch, PACKET* sendL)
+{
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
+
+	Rsr* statement;
+	getHandle(statement, batch->p_batch_statement);
+	statement->checkIface();
+	statement->checkBatch();
+
+	const ULONG count = batch->p_batch_messages;
+	const void* data = batch->p_batch_data.cstr_address;
+
+	statement->rsr_batch->add(&status_vector, count, data);
+
+	this->send_response(sendL, 0, 0, &status_vector, true);
+}
+
+
+void rem_port::batch_blob_stream(P_BATCH_BLOB* batch, PACKET* sendL)
+{
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
+
+	Rsr* statement;
+	getHandle(statement, batch->p_batch_statement);
+	statement->checkIface();
+	statement->checkBatch();
+
+	statement->rsr_batch->addBlobStream(&status_vector,
+		batch->p_batch_blob_data.cstr_length, batch->p_batch_blob_data.cstr_address);
+
+	this->send_response(sendL, 0, 0, &status_vector, true);
+}
+
+void rem_port::batch_bpb(P_BATCH_SETBPB* batch, PACKET* sendL)
+{
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
+
+	Rsr* statement;
+	getHandle(statement, batch->p_batch_statement);
+	statement->checkIface();
+	statement->checkBatch();
+
+	statement->rsr_batch->setDefaultBpb(&status_vector,
+		batch->p_batch_blob_bpb.cstr_length, batch->p_batch_blob_bpb.cstr_address);
+
+	this->send_response(sendL, 0, 0, &status_vector, true);
+}
+
+
+void rem_port::batch_regblob(P_BATCH_REGBLOB* batch, PACKET* sendL)
+{
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
+
+	Rsr* statement;
+	getHandle(statement, batch->p_batch_statement);
+	statement->checkIface();
+	statement->checkBatch();
+
+	statement->rsr_batch->registerBlob(&status_vector, &batch->p_batch_exist_id,
+		&batch->p_batch_blob_id);
+
+	this->send_response(sendL, 0, 0, &status_vector, true);
+}
+
+
+void rem_port::batch_exec(P_BATCH_EXEC* batch, PACKET* sendL)
+{
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
+
+	Rsr* statement;
+	getHandle(statement, batch->p_batch_statement);
+	statement->checkIface();
+	statement->checkBatch();
+
+	Rtr* transaction = NULL;
+	getHandle(transaction, batch->p_batch_transaction);
+
+	AutoPtr<IBatchCompletionState, SimpleDispose<IBatchCompletionState> >
+		ics(statement->rsr_batch->execute(&status_vector, transaction->rtr_iface));
+
+	if (status_vector.getState() & IStatus::STATE_ERRORS)
+	{
+		this->send_response(sendL, 0, 0, &status_vector, false);
+		return;
+	}
+
+	bool recordCounts = statement->rsr_batch_flags & (1 << IBatch::TAG_RECORD_COUNTS);
+	P_BATCH_CS* pcs = &sendL->p_batch_cs;
+	sendL->p_operation = op_batch_cs;
+	pcs->p_batch_statement = statement->rsr_id;
+	pcs->p_batch_reccount = ics->getSize(&status_vector);
+	check(&status_vector);
+	pcs->p_batch_updates = recordCounts ? pcs->p_batch_reccount : 0;
+	pcs->p_batch_errors = pcs->p_batch_vectors = 0;
+
+	for (unsigned int pos = 0u;
+		 (pos = ics->findError(&status_vector, pos)) != IBatchCompletionState::NO_MORE_ERRORS;
+		 ++pos)
+	{
+		check(&status_vector);
+
+		LocalStatus dummy;
+		ics->getStatus(&status_vector, &dummy, pos);
+		if (status_vector.getState() & IStatus::STATE_ERRORS)
+			pcs->p_batch_errors++;
+		else
+			pcs->p_batch_vectors++;
+	}
+
+	check(&status_vector);
+
+	statement->rsr_batch_ics = ics;
+	this->send(sendL);
+}
+
+
+void rem_port::batch_rls(P_BATCH_FREE* batch, PACKET* sendL)
+{
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
+
+	Rsr* statement;
+	getHandle(statement, batch->p_batch_statement);
+	statement->checkIface();
+	statement->checkBatch();
+
+	statement->rsr_batch->release();
+	statement->rsr_batch = nullptr;
+
+	this->send_response(sendL, 0, 0, &status_vector, true);
 }
 
 
@@ -4522,6 +4766,33 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 			port->start_crypt(&receive->p_crypt, sendL);
 			break;
 
+		case op_batch_create:
+			port->batch_create(&receive->p_batch_create, sendL);
+			break;
+
+		case op_batch_msg:
+			port->batch_msg(&receive->p_batch_msg, sendL);
+			break;
+
+		case op_batch_exec:
+			port->batch_exec(&receive->p_batch_exec, sendL);
+			break;
+
+		case op_batch_rls:
+			port->batch_rls(&receive->p_batch_free, sendL);
+			break;
+
+		case op_batch_blob_stream:
+			port->batch_blob_stream(&receive->p_batch_blob, sendL);
+			break;
+
+		case op_batch_regblob:
+			port->batch_regblob(&receive->p_batch_regblob, sendL);
+			break;
+
+		case op_batch_set_bpb:
+			port->batch_bpb(&receive->p_batch_setbpb, sendL);
+
 		///case op_insert:
 		default:
 			gds__log("SERVER/process_packet: don't understand packet type %d", receive->p_operation);
@@ -4601,7 +4872,7 @@ static bool continue_authentication(rem_port* port, PACKET* send, PACKET* receiv
 			 receive->p_operation == op_trusted_auth && port->port_protocol >= PROTOCOL_VERSION13 ||
 			 receive->p_operation == op_cont_auth && port->port_protocol < PROTOCOL_VERSION13)
 	{
-		send_error(port, send, (Arg::Gds(isc_random) << "Operation not supported for network protocol"));
+		send_error(port, send, Arg::Gds(isc_non_plugin_protocol));
 	}
 	else
 	{

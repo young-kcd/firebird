@@ -104,11 +104,11 @@ set FBBUILD_PROD_STATUS=PROD)
 :: Make sure we have everything we need. If something is missing then
 :: let's bail out now.
 
-sed --version | findstr version > nul
-@if %ERRORLEVEL% GEQ 1 (
-    call :ERROR Could not locate sed
-    goto :EOF
-) else (@echo     o sed found.)
+@echo     o Checking for sed...
+(cmd /c "sed.exe --version 2>&1 | findstr version > nul ") || ( call :ERROR Could not locate sed && @goto :EOF )
+
+@echo     o Checking for unix2dos...
+(cmd /c "unix2dos.exe --version 2>&1 | findstr version > nul" ) || ( call :ERROR Could not locate unix2dos && @goto :EOF )
 
 if %FBBUILD_ZIP_PACK% EQU 1 (
   if not defined SEVENZIP (
@@ -142,7 +142,6 @@ if not DEFINED FB_EXTERNAL_DOCS (
  goto :EOF
 )
 
-)
 
 ::End of CHECK_ENVIRONMENT
 ::------------------------
@@ -188,15 +187,15 @@ set FBBUILD_FILE_ID=%FBBUILD_PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_%FB_TA
 @echo s/define compression/define %ISS_COMPRESS%/ >> %temp%.\b$3.txt
 @echo s/FBBUILD_PRODUCT_VER_STRING/%FBBUILD_PRODUCT_VER_STRING%/ >> %temp%.\b$3.txt
 
-sed -f  %temp%.\b$3.txt FirebirdInstall_30.iss > FirebirdInstall_%FBBUILD_FILE_ID%.iss
+sed -f  %temp%.\b$3.txt FirebirdInstall.iss > FirebirdInstall_%FBBUILD_FILE_ID%.iss
 
 :: This is a better way of achieving what is done in make_all.bat, but we don't
 :: test for sed in that script.
 @sed /@UDF_COMMENT@/s/@UDF_COMMENT@/#/ < %FB_ROOT_PATH%\builds\install\misc\firebird.conf.in >  %FB_OUTPUT_DIR%\firebird.conf
 
-set FBBUILD_FB30_CUR_VER=%FB_MAJOR_VER%.%FB_MINOR_VER%.%FB_REV_NO%
-set FBBUILD_FB_CUR_VER=%FBBUILD_FB30_CUR_VER%
-set FBBUILD_FB_LAST_VER=%FBBUILD_FB25_CUR_VER%
+set FBBUILD_FB40_CUR_VER=%FB_MAJOR_VER%.%FB_MINOR_VER%.%FB_REV_NO%
+set FBBUILD_FB_CUR_VER=%FBBUILD_FB40_CUR_VER%
+set FBBUILD_FB_LAST_VER=%FBBUILD_FB30_CUR_VER%
 
 :: Now set some version strings of our legacy releases.
 :: This helps us copy the correct documentation,
@@ -204,7 +203,8 @@ set FBBUILD_FB_LAST_VER=%FBBUILD_FB25_CUR_VER%
 set FBBUILD_FB15_CUR_VER=1.5.6
 set FBBUILD_FB20_CUR_VER=2.0.7
 set FBBUILD_FB21_CUR_VER=2.1.7
-set FBBUILD_FB25_CUR_VER=2.5.5
+set FBBUILD_FB25_CUR_VER=2.5.7
+set FBBUILD_FB30_CUR_VER=3.0.2
 
 :: Now fix up the major.minor version strings in the readme files.
 :: We place output in %FB_GEN_DIR%\readmes
@@ -216,6 +216,8 @@ set FBBUILD_FB25_CUR_VER=2.5.5
 @echo s/\$MAJOR/%FB_MAJOR_VER%/g >  %temp%.\b$4.txt
 @echo s/\$MINOR/%FB_MINOR_VER%/g >> %temp%.\b$4.txt
 @echo s/\$RELEASE/%FB_REV_NO%/g  >> %temp%.\b$4.txt
+@echo   %FBBUILD_PROD_STATUS% release. Copying Readme_%FBBUILD_PROD_STATUS%.txt Readme.txt 
+@copy Readme_%FBBUILD_PROD_STATUS%.txt Readme.txt 
 @for %%f in (Readme.txt installation_readme.txt After_Installation.url) do (
 	@echo   Processing version strings in %%f
 	@sed -f  %temp%.\b$4.txt %%f > %FB_GEN_DIR%\readmes\%%f
@@ -243,23 +245,12 @@ del %temp%.\b$?.txt
 ::=====================
 @echo   Copying MSVC runtime libraries...
 if not exist %FB_OUTPUT_DIR%\system32 (mkdir %FB_OUTPUT_DIR%\system32)
-@echo on
 @for %%f in ( msvcp%MSVC_VERSION%?.dll msvcr%MSVC_VERSION%?.dll  ) do ( 
 if exist "%VCINSTALLDIR%\redist\%PROCESSOR_ARCHITECTURE%\Microsoft.VC%MSVC_VERSION%0.CRT\%%f" (
 copy  "%VCINSTALLDIR%\redist\%PROCESSOR_ARCHITECTURE%\Microsoft.VC%MSVC_VERSION%0.CRT\%%f" %FB_OUTPUT_DIR%\ 
 )
 )
-
-@echo off
-
-
-@if %ERRORLEVEL% GEQ 1 ( (call :ERROR Copying MSVC runtime library failed with error %ERRORLEVEL% ) & (goto :EOF))
-
-:: grab some missing bits'n'pieces from different parts of the source tree
-::=========================================================================
-@echo   Copying ib_util etc
-copy %FB_ROOT_PATH%\src\extlib\ib_util.h %FB_OUTPUT_DIR%\include > nul || (call :WARNING Copying ib_util.h failed.)
-copy %FB_ROOT_PATH%\lang_helpers\ib_util.pas %FB_OUTPUT_DIR%\include > nul || (call :WARNING Copying ib_util.pas failed.)
+@if %errorlevel% GEQ 1 ( (call :ERROR Copying MSVC runtime library failed with error %errorlevel% ) && (goto :EOF))
 
 @implib.exe | findstr "Borland" > nul
 @if errorlevel 0 (
@@ -280,6 +271,11 @@ if "%PROCESSOR_ARCHITECTURE%"=="x86" (
   @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\srp\srp.pdb %FB_OUTPUT_DIR%\ > nul
   @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\udr_engine\udr_engine.pdb %FB_OUTPUT_DIR%\ > nul
 )
+:: Maybe include these and other executables, one day ?
+::  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\gbak\gbak.pdb %FB_OUTPUT_DIR%\ > nul
+::  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\gfix\gfix.pdb %FB_OUTPUT_DIR%\ > nul
+::  @copy %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\isql\isql.pdb %FB_OUTPUT_DIR%\ > nul
+
 
 @echo   Started copying docs...
 @rmdir /S /Q %FB_OUTPUT_DIR%\doc 2>nul
@@ -291,33 +287,37 @@ if "%PROCESSOR_ARCHITECTURE%"=="x86" (
   goto :EOF
 )
 
-@echo   Copying udf library scripts...
-for %%v in ( ib_udf.sql ib_udf2.sql ) do (
-  @copy %FB_ROOT_PATH%\src\extlib\%%v  %FB_OUTPUT_DIR%\UDF\%%v > nul
-  @if %ERRORLEVEL% GEQ 1 (
-    call :ERROR Copying %FB_ROOT_PATH%\src\extlib\%%v failed.
-    goto :EOF
-  )
-)
-
-for %%v in ( fbudf.sql fbudf.txt ) do (
-  copy %FB_ROOT_PATH%\src\extlib\fbudf\%%v  %FB_OUTPUT_DIR%\UDF\%%v > nul
-  @if %ERRORLEVEL% GEQ 1 (
-    call :ERROR Copying %FB_ROOT_PATH%\src\extlib\%%v failed with error %ERRORLEVEL%
-    goto :EOF
-  )
-)
-
 :: Various upgrade scripts and docs
 mkdir %FB_OUTPUT_DIR%\misc\upgrade\security 2>nul
 @copy %FB_ROOT_PATH%\src\misc\upgrade\v3.0\security_* %FB_OUTPUT_DIR%\misc\upgrade\security > nul
+@if %ERRORLEVEL% GEQ 1 (
+  call :ERROR copy %FB_ROOT_PATH%\src\misc\upgrade\v3.0\security_* %FB_OUTPUT_DIR%\misc\upgrade\security failed with error %ERRORLEVEL%.
+  goto :EOF
+)
 
 :: INTL script
 @copy %FB_ROOT_PATH%\src\misc\intl.sql %FB_OUTPUT_DIR%\misc\ > nul
+@if %ERRORLEVEL% GEQ 1 (
+  call :ERROR copy %FB_ROOT_PATH%\src\misc\intl.sql %FB_OUTPUT_DIR%\misc failed with error %ERRORLEVEL%.
+  goto :EOF
+)
 
 
 @echo   Copying other documentation...
 @copy  %FB_GEN_DIR%\readmes\installation_readme.txt %FB_OUTPUT_DIR%\doc\installation_readme.txt > nul
+:: WhatsNew doesn't exist at the moment (Alpha1) - perhaps it will turn up later in the release cycle.
+:: In any case, if it is not an error if it doesn't exist
+@ren %FB_OUTPUT_DIR%\doc\WhatsNew %FB_OUTPUT_DIR%\doc\WhatsNew.txt
+
+
+:: FIX ME - we now have some .md files and ChangeLog is no longer a monster.
+:: Maybe we can just do nothing here.
+:: If we are not doing a final release then include stuff that is
+:: likely to be of use to testers, especially as our release notes
+:: may be incomplete or non-existent
+::@if /I "%FBBUILD_PROD_STATUS%"=="DEV" (
+::  @copy %FB_ROOT_PATH%\ChangeLog %FB_OUTPUT_DIR%\doc\ChangeLog.txt  > nul
+::)
 
 
 @mkdir %FB_OUTPUT_DIR%\doc\sql.extensions 2>nul
@@ -334,6 +334,8 @@ if defined FB_EXTERNAL_DOCS (
   @echo     ... %%v
   (@copy /Y %FB_EXTERNAL_DOCS%\%%v %FB_OUTPUT_DIR%\doc\%%v > nul) || (call :WARNING Copying %FB_EXTERNAL_DOCS%\%%v failed.)
 )
+@echo   Finished copying pdf docs...
+@echo.
 )
 
 :: Clean out text notes that are either not relevant to Windows or
@@ -382,8 +384,8 @@ for /R %FB_OUTPUT_DIR%\doc %%v in (.) do (
 :: This requires WiX 3.0 to be installed
 ::============
 :: This is only relevent if we are shipping packages built with Visual Studio 2010 (MSVC10)
-:: for Firebird 3.0 there are no plans to ship oficial builds with other MSVC runtimes. But we could.
-if %MSVC_VERSION% EQU 10 (
+:: for Firebird 3.0 there are no plans to ship official builds with other MSVC runtimes. But we could.
+if %MSVC_VERSION% EQU 12 (
 if not exist %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi (
     "%WIX%\bin\candle.exe" -v -sw1091 %FB_ROOT_PATH%\builds\win32\msvc%MSVC_VERSION%\VCCRT_%FB_TARGET_PLATFORM%.wxs -out %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj
     "%WIX%\bin\light.exe" -sw1076 %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj -out %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi
@@ -430,6 +432,29 @@ endlocal
 @goto :EOF
 
 
+:INCLUDE_DIR
+:: Prepare other files needed for deployment to /include dir
+setlocal
+:: grab some missing bits'n'pieces from different parts of the source tree
+::=========================================================================
+@echo   Copying ib_util etc
+@copy %FB_ROOT_PATH%\src\extlib\ib_util.h %FB_OUTPUT_DIR%\include > nul || (call :WARNING Copying ib_util.h failed. && @goto :EOF )
+@copy %FB_ROOT_PATH%\lang_helpers\ib_util.pas %FB_OUTPUT_DIR%\include > nul || (call :WARNING Copying ib_util.pas failed. && @goto :EOF )
+
+@echo   Copying other include files required for development...
+set OUTPATH=%FB_OUTPUT_DIR%\include
+@copy %FB_ROOT_PATH%\src\yvalve\perf.h %OUTPATH%\ > nul
+@copy %FB_ROOT_PATH%\src\include\gen\firebird.pas %OUTPATH%\firebird\ > nul || (@call :ERROR Failure executing copy %FB_ROOT_PATH%\src\include\gen\firebird.pas %OUTPATH%\firebird\ && @goto :EOF )
+@xcopy /e /i /y %FB_ROOT_PATH%\src\include\firebird\impl %OUTPATH%\firebird\  > nul || (@call :ERROR Failure executing @xcopy /e /i /y %FB_ROOT_PATH%\src\include\firebird\* %OUTPATH%\firebird\ && @goto :EOF )
+@if %ERRLEV% GEQ 1 goto :END
+
+endlocal
+
+::End of INCLUDE_DIR
+::------------------
+@goto :EOF
+
+
 :DB_CONF
 :: Generate sample databases file
 ::===============================
@@ -472,30 +497,47 @@ copy %FB_ROOT_PATH%\builds\install\misc\databases.conf.in %FB_OUTPUT_DIR%\databa
 @goto :EOF
 
 
+:SET_CRLF
+:: Get a list of all files in the tree make sure 
+:: that and they all have windows EOL
+::===============================================
+for /F %%W in ( 'dir %FB_OUTPUT_DIR% /b /a-d /s' ) do (
+  for %%X in ( txt conf sql c cpp hpp h bat pas e def rc md ) do (
+    if /I "%%~xW" EQU ".%%X" ( unix2dos --u2d --safe %%W  2>nul >nul )
+  )
+)
+::End of SET_CRLF
+::-------------
+@goto :EOF
+
+
 :GEN_ZIP
 ::======
 if %FBBUILD_ZIP_PACK% EQU 0 goto :EOF
-:: Generate the directory tree to be zipped
+@echo   - Generate the directory tree to be zipped
 set FBBUILD_ZIP_PACK_ROOT=%FB_ROOT_PATH%\builds\zip_pack_%FB_TARGET_PLATFORM%
 if not exist %FBBUILD_ZIP_PACK_ROOT% @mkdir %FBBUILD_ZIP_PACK_ROOT% 2>nul
 @del /s /q %FBBUILD_ZIP_PACK_ROOT%\ > nul
-@copy /Y %FB_OUTPUT_DIR% %FBBUILD_ZIP_PACK_ROOT% > nul
-for %%v in (doc doc\sql.extensions help include intl lib udf misc misc\upgrade misc\upgrade\ib_udf misc\upgrade\security misc\upgrade\metadata system32 plugins ) do (
-    @mkdir %FBBUILD_ZIP_PACK_ROOT%\%%v 2>nul
-    @dir /A-D %FB_OUTPUT_DIR%\%%v\*.* > nul 2>nul
-    if not ERRORLEVEL 1 @copy /Y %FB_OUTPUT_DIR%\%%v\*.* %FBBUILD_ZIP_PACK_ROOT%\%%v\ > nul
-)
+::@copy /Y %FB_OUTPUT_DIR% %FBBUILD_ZIP_PACK_ROOT% > nul
+::for %%v in (doc doc\sql.extensions help include intl lib udf misc misc\upgrade\security plugins system32 ) do (
+::    @mkdir %FBBUILD_ZIP_PACK_ROOT%\%%v 2>nul
+::    @dir /b /a-d /s %FB_OUTPUT_DIR%\%%v\*.* >nul 2>nul
+::    if not ERRORLEVEL 1 @copy /Y %FB_OUTPUT_DIR%\%%v\*.* %FBBUILD_ZIP_PACK_ROOT%\%%v\ > nul
+::)
+@xcopy /Y /E /S %FB_OUTPUT_DIR% %FBBUILD_ZIP_PACK_ROOT% > nul
 
-@if %FB2_EXAMPLES% equ 1 for %%v in (examples examples\api examples\build_win32 examples\dbcrypt examples\empbuild examples\include examples\interfaces examples\package examples\stat examples\udf examples\udr ) do (
-    @mkdir %FBBUILD_ZIP_PACK_ROOT%\%%v 2>nul
-    dir %FB_OUTPUT_DIR%\%%v\*.* > nul 2>nul
-    if not ERRORLEVEL 1 @copy /Y %FB_OUTPUT_DIR%\%%v\*.* %FBBUILD_ZIP_PACK_ROOT%\%%v\ > nul
-)
+@echo   - Add examples to zip tree
+@xcopy /Y /E /S %FB_OUTPUT_DIR%\examples\*.* %FBBUILD_ZIP_PACK_ROOT%\examples > nul 
+::@if %FB2_EXAMPLES% equ 1 for %%v in (examples examples\api examples\build_win32 examples\dbcrypt examples\empbuild examples\include examples\interfaces examples\package examples\stat examples\udf examples\udr ) do (
+::    @mkdir %FBBUILD_ZIP_PACK_ROOT%\%%v 2>nul
+::    dir %FB_OUTPUT_DIR%\%%v\*.* > nul 2>nul
+::    if not ERRORLEVEL 1 @copy /Y %FB_OUTPUT_DIR%\%%v\*.* %FBBUILD_ZIP_PACK_ROOT%\%%v\ > nul
+::)
 
 
-:: Now remove stuff that is not needed.
+@echo   - Now remove stuff from zip tree that is not needed...
 setlocal
-set FB_RM_FILE_LIST=doc\installation_readme.txt bin\gpre_boot.exe bin\gpre_static.exe bin\gpre_embed.exe bin\gbak_embed.exe bin\isql_embed.exe bin\gds32.dll bin\btyacc.exe
+set FB_RM_FILE_LIST=doc\installation_readme.txt system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.wixpdb icudt52l_empty.dat 
 for %%v in ( %FB_RM_FILE_LIST% ) do (
   @del %FBBUILD_ZIP_PACK_ROOT%\%%v > nul 2>&1
 )
@@ -509,8 +551,10 @@ if not "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
   @del /q %FBBUILD_ZIP_PACK_ROOT%\*.pdb > nul 2>&1
 )
 
-:: grab install notes for zip pack
-@copy %FB_ROOT_PATH%\doc\install_win32.txt %FBBUILD_ZIP_PACK_ROOT%\doc\README_installation.txt > nul
+rmdir /s /q %FBBUILD_ZIP_PACK_ROOT%\examples\build_unix 
+
+:: Don't grab old install notes for zip pack - document needs a complete re-write.
+::@copy %FB_ROOT_PATH%\doc\install_win32.txt %FBBUILD_ZIP_PACK_ROOT%\doc\README_installation.txt > nul
 
 ::End of GEN_ZIP
 ::--------------
@@ -566,8 +610,8 @@ endlocal
 ::
 ::=================================================
 if %FBBUILD_ISX_PACK% NEQ 1 goto :EOF
-@Echo   Now let's compile the InnoSetup scripts
-@Echo.
+@echo   Now let's compile the InnoSetup scripts
+@echo.
 %INNO5_SETUP_PATH%\iscc %FB_ROOT_PATH%\builds\install\arch-specific\win32\FirebirdInstall_%FBBUILD_FILE_ID%.iss
 @echo.
 
@@ -649,16 +693,12 @@ if NOT DEFINED GNU_TOOLCHAIN (
 
 :ERROR
 ::====
+:: errorlevel gets reset automatically so capture it before we lose it.
+set ERRLEV=%errorlevel%
 @echo.
-@echo   Error in BuildExecutableInstall
+@echo   Error %ERRLEV% in BuildExecutableInstall 
 @echo     %*
 @echo.
-popd
-:: Attempt to execute a phony command. This will ensure
-:: that ERRORLEVEL is set on exit.
-cancel_script > nul 2>&1
-:: And set ERRLEV in case we are called by run_all.bat
-set ERRLEV=1
 ::End of ERROR
 ::------------
 @goto :EOF
@@ -666,25 +706,22 @@ set ERRLEV=1
 
 :WARNING
 ::======
+set ERRLEV=%errorlevel%
 @echo.
-@echo   **** WARNING - Execution of a non-critical component failed.
+@echo   **** WARNING - Execution of a non-critical component failed with error level %ERRLEV%. ****
 @echo   %*
 @echo.
 if "%FBBUILD_PROD_STATUS%"=="PROD" (
 @echo.
 @echo   Production status is Final or Release Candidate
-@echo   Error must be fixed before continuing
+@echo   Error %ERRLEV% must be fixed before continuing
 @echo.
-cancel_script > nul 2>&1
-) else (
-@set | findstr win > nul 2>&1
 )
 @goto :EOF
 
 
 :MAIN
 ::====
-
 ::Check if on-line help is required
 for %%v in ( %1 %2 %3 %4 %5 %6 %7 %8 %9 )  do (
   ( @if /I "%%v"=="-h" (goto :HELP & goto :EOF) )
@@ -701,73 +738,81 @@ popd
 @if not defined FB2_ISS_DEBUG (set FB2_ISS_DEBUG=0)
 @if not defined FB2_EXAMPLES (set FB2_EXAMPLES=1)
 
-@Echo.
-@Echo   Reading command-line parameters...
+@echo.
+@echo   Reading command-line parameters...
 @(@call :SET_PARAMS %* )
-@if "%ERRLEV%"=="1" (goto :ERROR %errorlevel% calling SET_PARAMS )
+@if "%ERRLEV%"=="1" (@goto :ERROR %errorlevel% calling SET_PARAMS && @goto :END)
 
-@Echo.
-@Echo   Checking that all required components are available...
-@(@call :CHECK_ENVIRONMENT ) || (@echo Error calling CHECK_ENVIRONMENT & @goto :EOF)
-@Echo.
+@echo.
+@echo   Checking that all required components are available...
+@(@call :CHECK_ENVIRONMENT ) || (@echo Error calling CHECK_ENVIRONMENT && @goto :END)
+@echo.
 
-@Echo   Setting version number...
-@(@call :SED_MAGIC ) || (@echo Error calling SED_MAGIC & @goto :EOF)
-@Echo.
+@echo   Setting version number...
+@(@call :SED_MAGIC ) || (@echo Error calling SED_MAGIC && @goto :END)
+@echo.
 
-@Echo   Copying additional files needed for installation, documentation etc.
-@(@call :COPY_XTRA ) || (@echo Error calling COPY_XTRA & @goto :EOF)
-@Echo.
+@echo   Copying additional files needed for installation, documentation etc.
+@(@call :COPY_XTRA )  || (@echo Error calling COPY_XTRA && @goto :END )
+@echo.
 
 :: WIX is not necessary for a snapshot build, so we don't throw
 :: an error if WIX is not defined. On the other hand,
 :: if it is there anyway, use it.
 if defined WIX (
-@Echo   Building MSI runtimes
-@(@call :BUILD_CRT_MSI ) || (@echo Error calling BUILD_CRT_MSI & @goto :EOF)
-@Echo.
+@echo   Building MSI runtimes
+@(@call :BUILD_CRT_MSI ) || (@echo Error calling BUILD_CRT_MSI && @goto :END)
+@echo.
 )
 
-@Echo   Concatenating header files for ibase.h
-@(@call :IBASE_H ) || (@echo Error calling IBASE_H & @goto :EOF)
-@Echo.
+@echo   Concatenating header files for ibase.h
+@(@call :IBASE_H ) || (@echo Error calling IBASE_H && @goto :END)
+@echo.
 
-@Echo   Writing databases conf
-@(@call :DB_CONF ) || (@echo Error calling DB_CONF & @goto :EOF)
-@Echo.
-@Echo   Copying miscellany such as the QLI help database
-@(@call :MISC ) || (@echo Error calling MISC & @goto :EOF)
-@Echo.
-@Echo   Copying firebird.msg
-@(@call :FB_MSG ) || (@echo Error calling FB_MSG & @goto :EOF)
-@Echo.
+@echo   Prepare include directory
+@(@call :INCLUDE_DIR ) || (@echo Error calling INCLUDE_DIR && @goto :END)
+@echo.
+
+@echo   Writing databases conf
+@(@call :DB_CONF ) || (@echo Error calling DB_CONF && @goto :END)
+@echo.
+@echo   Copying miscellany such as the QLI help database
+@(@call :MISC ) || (@echo Error calling MISC & @goto :END)
+@echo.
+@echo   Copying firebird.msg
+@(@call :FB_MSG ) || (@echo Error calling FB_MSG && @goto :END)
+@echo.
+
+@echo   Fix up line endings...
+@(@call :SET_CRLF ) || (@echo Error calling SET_CRLF && @goto :EOF)
+@echo.
 
 
 if %FBBUILD_ZIP_PACK% EQU 1 (
 @echo   Generating image of zipped install
-@(@call :GEN_ZIP ) || (@echo Error calling GEN_ZIP & @goto :EOF)
+@(@call :GEN_ZIP ) || (@echo Error calling GEN_ZIP && @goto :END)
 @echo.
 )
 
-::@Echo Creating .local files for libraries
-::@(@call :TOUCH_LOCAL ) || (@echo Error calling TOUCH_LOCAL & @goto :EOF)
-::@Echo.
+::@echo Creating .local files for libraries
+::@(@call :TOUCH_LOCAL ) || (@echo Error calling TOUCH_LOCAL & @goto :END)
+::@echo.
 
-@(@call :TOUCH_ALL ) || (@echo Error calling TOUCH_ALL & @goto :EOF)
+@(@call :TOUCH_ALL ) || (@echo Error calling TOUCH_ALL && @goto :END)
 @echo.
 
 if %FBBUILD_ZIP_PACK% EQU 1 (
 @echo   Zipping files for zip pack
-@(@call :ZIP_PACK ) || (@echo Error calling ZIP_PACK & @goto :EOF)
+@(@call :ZIP_PACK ) || (@echo Error calling ZIP_PACK && @goto :END)
 @echo.
 )
 
 if %FBBUILD_ISX_PACK% EQU 1 (
-@(@call :ISX_PACK ) || (@echo Error calling ISX_PACK & @goto :EOF)
+@(@call :ISX_PACK ) || (@echo Error calling ISX_PACK && @goto :END)
 @echo.
 )
 
-@(@call :DO_MD5SUMS ) || (@echo Error calling DO_MD5SUMS & @goto :EOF)
+@(@call :DO_MD5SUMS ) || (@echo Error calling DO_MD5SUMS && @goto :END)
 
 
 @echo.
@@ -777,10 +822,11 @@ if %FBBUILD_ISX_PACK% EQU 1 (
 ::@if %FB2_ISS_DEBUG% equ 0 (ENDLOCAL)
 ::End of MAIN
 ::-----------
-@goto :EOF
+@goto :END
 
 
 :END
-
+popd
+exit /b
 
 

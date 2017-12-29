@@ -145,6 +145,7 @@ public:
 		KEY_ENCRYPT_SECURITY_DATABASE,
 		KEY_STMT_TIMEOUT,
 		KEY_CONN_IDLE_TIMEOUT,
+		KEY_CLIENT_BATCH_BUFFER,
 		KEY_SNAPSHOTS_MEM_SIZE,
 		KEY_TPC_BLOCK_SIZE,
 		KEY_READ_CONSISTENCY,
@@ -362,6 +363,8 @@ public:
 	unsigned int getStatementTimeout() const;
 	// set in minutes
 	unsigned int getConnIdleTimeout() const;
+
+	unsigned int getClientBatchBuffer() const;
 
 	ULONG getSnapshotsMemSize() const;
 

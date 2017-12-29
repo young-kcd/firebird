@@ -72,6 +72,8 @@ enum Function
 	funBinShrRot,
 	funBinXor,
 	funBinNot,
+	funFirstDay,
+	funLastDay,
 	funMaxValue,
 	funMinValue,
 	funLPad,
@@ -173,6 +175,7 @@ void setParamsAsciiVal(DataTypeUtilBase* dataTypeUtil, const SysFunction* functi
 void setParamsCharToUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsDateDiff(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
+void setParamsFirstLastDay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsGetSetContext(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsPosition(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
@@ -196,6 +199,7 @@ void makeBin(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* r
 void makeBinShift(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeCeilFloor(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeFirstLastDayResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeGetSetContext(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeHash(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeLeftRight(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
@@ -225,6 +229,7 @@ dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const NestValue
 dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlExp(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlFirstLastDay(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlFloor(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlGenUuid(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlGetContext(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
@@ -516,6 +521,16 @@ void setParamsDateDiff(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc
 			*args[1] = *args[2];
 		else if (args[2]->isUnknown())
 			*args[2] = *args[1];
+	}
+}
+
+
+void setParamsFirstLastDay(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
+{
+	if (argsCount >= 2)
+	{
+		if (args[1]->isUnknown())
+			args[1]->makeTimestamp();
 	}
 }
 
@@ -935,6 +950,22 @@ void makeDateAdd(DataTypeUtilBase*, const SysFunction*, dsc* result, int argsCou
 		return;
 
 	*result = *args[2];
+	result->setNullable(isNullable);
+}
+
+
+void makeFirstLastDayResult(DataTypeUtilBase*, const SysFunction*, dsc* result,
+	int argsCount, const dsc** args)
+{
+	bool isNullable;
+	if (initResult(result, argsCount, args, &isNullable))
+		return;
+
+	result->makeDate();
+
+	if (argsCount >= 2 && args[1]->dsc_dtype == dtype_timestamp)
+		result->makeTimestamp();
+
 	result->setNullable(isNullable);
 }
 
@@ -2307,6 +2338,122 @@ dsc* evlExp(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 }
 
 
+dsc* evlFirstLastDay(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
+	impure_value* impure)
+{
+	fb_assert(args.getCount() >= 2);
+
+	jrd_req* request = tdbb->getRequest();
+
+	const dsc* partDsc = EVL_expr(tdbb, request, args[0]);
+	if (request->req_flags & req_null)	// return NULL if partDsc is NULL
+		return NULL;
+
+	const dsc* valueDsc = EVL_expr(tdbb, request, args[1]);
+	if (request->req_flags & req_null)	// return NULL if valueDsc is NULL
+		return NULL;
+
+	TimeStamp timestamp;
+	tm times = {0};
+	int fractions = 0;
+
+	switch (valueDsc->dsc_dtype)
+	{
+		case dtype_sql_date:
+			timestamp.value().timestamp_date = *(GDS_DATE*) valueDsc->dsc_address;
+			timestamp.value().timestamp_time = 0;
+			timestamp.decode(&times, &fractions);
+			break;
+
+		case dtype_timestamp:
+			timestamp.value() = *(GDS_TIMESTAMP*) valueDsc->dsc_address;
+			timestamp.decode(&times, &fractions);
+			break;
+
+		default:
+			status_exception::raise(
+				Arg::Gds(isc_expression_eval_err) <<
+				Arg::Gds(isc_sysf_invalid_date_timestamp) <<
+				Arg::Str(function->name));
+			break;
+	}
+
+	const SLONG part = MOV_get_long(tdbb, partDsc, 0);
+
+	switch (part)
+	{
+		case blr_extract_year:
+			times.tm_mon = 0;
+			// fall through
+
+		case blr_extract_month:
+			times.tm_mday = 1;
+			break;
+
+		case blr_extract_week:
+			break;
+
+		default:
+			status_exception::raise(
+				Arg::Gds(isc_expression_eval_err) <<
+				Arg::Gds(isc_sysf_invalid_first_last_part) <<
+				Arg::Str(function->name));
+			break;
+	}
+
+	const bool last = (Function)(IPTR) function->misc == funLastDay;
+	int adjust = 0;
+
+	if (last)
+	{
+		switch (part)
+		{
+			case blr_extract_year:
+				++times.tm_year;
+				adjust = -1;
+				break;
+
+			case blr_extract_month:
+				if (++times.tm_mon == 12)
+				{
+					times.tm_mon = 0;
+					++times.tm_year;
+				}
+
+				adjust = -1;
+				break;
+
+			case blr_extract_week:
+				adjust = 6 - times.tm_wday;
+				break;
+		}
+	}
+	else if (part == blr_extract_week)
+		adjust = -times.tm_wday;
+
+	timestamp.encode(&times, fractions);
+	timestamp.value().timestamp_date += adjust;
+
+	if (!TimeStamp::isValidTimeStamp(timestamp.value()))
+		status_exception::raise(Arg::Gds(isc_datetime_range_exceeded));
+
+	EVL_make_value(tdbb, valueDsc, impure);
+
+	switch (impure->vlu_desc.dsc_dtype)
+	{
+		case dtype_sql_date:
+			impure->vlu_misc.vlu_sql_date = timestamp.value().timestamp_date;
+			break;
+
+		case dtype_timestamp:
+			impure->vlu_misc.vlu_timestamp = timestamp.value();
+			break;
+	}
+
+	return &impure->vlu_desc;
+}
+
+
 dsc* evlFloor(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
@@ -2529,44 +2676,44 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 		if (!attachment->ddlTriggersContext.hasData())
 			status_exception::raise(Arg::Gds(isc_sysf_invalid_trig_namespace));
 
-		const DdlTriggerContext& context = Stack<DdlTriggerContext>::const_iterator(
+		const DdlTriggerContext* context = Stack<DdlTriggerContext*>::const_iterator(
 			attachment->ddlTriggersContext).object();
 
 		if (nameStr == EVENT_TYPE_NAME)
-			resultStr = context.eventType;
+			resultStr = context->eventType;
 		else if (nameStr == OBJECT_TYPE_NAME)
-			resultStr = context.objectType;
+			resultStr = context->objectType;
 		else if (nameStr == DDL_EVENT_NAME)
-			resultStr = context.eventType + " " + context.objectType;
+			resultStr = context->eventType + " " + context->objectType;
 		else if (nameStr == OBJECT_NAME)
 		{
-			resultStr = context.objectName.c_str();
+			resultStr = context->objectName.c_str();
 			resultType = ttype_metadata;
 		}
 		else if (nameStr == OLD_OBJECT_NAME)
 		{
-			if (context.oldObjectName.isEmpty())
+			if (context->oldObjectName.isEmpty())
 				return NULL;
 
-			resultStr = context.oldObjectName.c_str();
+			resultStr = context->oldObjectName.c_str();
 			resultType = ttype_metadata;
 		}
 		else if (nameStr == NEW_OBJECT_NAME)
 		{
-			if (context.newObjectName.isEmpty())
+			if (context->newObjectName.isEmpty())
 				return NULL;
 
-			resultStr = context.newObjectName.c_str();
+			resultStr = context->newObjectName.c_str();
 			resultType = ttype_metadata;
 		}
 		else if (nameStr == SQL_TEXT_NAME)
 		{
-			if (context.sqlText.isEmpty())
+			if (context->sqlText.isEmpty())
 				return NULL;
 
 			blb* blob = blb::create(tdbb, transaction, &impure->vlu_misc.vlu_bid);
-			blob->BLB_put_data(tdbb, reinterpret_cast<const UCHAR*>(context.sqlText.c_str()),
-				context.sqlText.length());
+			blob->BLB_put_data(tdbb, reinterpret_cast<const UCHAR*>(context->sqlText.c_str()),
+				context->sqlText.length());
 			blob->BLB_close(tdbb);
 
 			dsc result;
@@ -4362,9 +4509,11 @@ const SysFunction SysFunction::functions[] =
 		{"DATEADD", 3, 3, setParamsDateAdd, makeDateAdd, evlDateAdd, NULL},
 		{"DATEDIFF", 3, 3, setParamsDateDiff, makeInt64Result, evlDateDiff, NULL},
 		{"EXP", 1, 1, setParamsDblDec, makeDblDecResult, evlExp, NULL},
+		{"FIRST_DAY", 2, 2, setParamsFirstLastDay, makeFirstLastDayResult, evlFirstLastDay, (void*) funFirstDay},
 		{"FLOOR", 1, 1, setParamsDblDec, makeCeilFloor, evlFloor, NULL},
 		{"GEN_UUID", 0, 0, NULL, makeUuid, evlGenUuid, NULL},
 		{"HASH", 1, 2, NULL, makeHash, evlHash, NULL},
+		{"LAST_DAY", 2, 2, setParamsFirstLastDay, makeFirstLastDayResult, evlFirstLastDay, (void*) funLastDay},
 		{"LEFT", 2, 2, setParamsSecondInteger, makeLeftRight, evlLeft, NULL},
 		{"LN", 1, 1, setParamsDblDec, makeDblDecResult, evlLnLog10, (void*) funLnat},
 		{"LOG", 2, 2, setParamsDblDec, makeDblDecResult, evlLog, NULL},

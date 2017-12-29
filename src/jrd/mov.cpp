@@ -410,7 +410,7 @@ void MOV_move(Jrd::thread_db* tdbb, /*const*/ dsc* from, dsc* to)
  **************************************/
 
 	if (DTYPE_IS_BLOB_OR_QUAD(from->dsc_dtype) || DTYPE_IS_BLOB_OR_QUAD(to->dsc_dtype))
-		Jrd::blb::move(tdbb, from, to, NULL);
+		Jrd::blb::move(tdbb, from, to);
 	else
 		CVT_move(from, to, tdbb->getAttachment()->att_dec_status);
 }
@@ -437,6 +437,18 @@ Decimal128 MOV_get_dec128(Jrd::thread_db* tdbb, const dsc* desc)
  **************************************/
 
 	return CVT_get_dec128(desc, tdbb->getAttachment()->att_dec_status, ERR_post);
+}
+
+
+DecimalFixed MOV_get_dec_fixed(Jrd::thread_db* tdbb, const dsc* desc, SSHORT scale)
+{
+/**************************************
+ *
+ *	M O V _ g e t _ d e c _ f i x e d
+ *
+ **************************************/
+
+	return CVT_get_dec_fixed(desc, scale, tdbb->getAttachment()->att_dec_status, ERR_post);
 }
 
 

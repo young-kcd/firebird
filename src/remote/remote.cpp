@@ -1590,7 +1590,7 @@ void rem_port::initCompression()
 		port_send_stream.opaque = Z_NULL;
 		int ret = zlib().deflateInit(&port_send_stream, Z_DEFAULT_COMPRESSION);
 		if (ret != Z_OK)
-			(Firebird::Arg::Gds(isc_random) << "compression stream init error").raise();		// add error code
+			(Firebird::Arg::Gds(isc_deflate_init) << Firebird::Arg::Num(ret)).raise();
 		port_send_stream.next_out = NULL;
 
 		port_recv_stream.zalloc = allocFunc;
@@ -1602,7 +1602,7 @@ void rem_port::initCompression()
 		if (ret != Z_OK)
 		{
 			zlib().deflateEnd(&port_send_stream);
-			(Firebird::Arg::Gds(isc_random) << "decompression stream init error").raise();		// add error code
+			(Firebird::Arg::Gds(isc_inflate_init) << Firebird::Arg::Num(ret)).raise();
 		}
 
 		try

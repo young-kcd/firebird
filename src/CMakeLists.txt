@@ -256,6 +256,10 @@ add_custom_command(
     COMMAND sed -n "/%type .*/p" ${CMAKE_CURRENT_SOURCE_DIR}/dsql/parse.y > types.y
     COMMAND sed "s/%type .*//" ${CMAKE_CURRENT_SOURCE_DIR}/dsql/parse.y > y.y
     COMMAND btyacc -l -d -S ${CMAKE_CURRENT_SOURCE_DIR}/dsql/btyacc_fb.ske y.y
+
+    COMMAND sed -i "s/#define \\([A-Z].*\\)/#define TOK_\\1/g" y_tab.h
+    COMMAND sed -i "s/#define TOK_YY\\(.*\\)/#define YY\\1/g" y_tab.h
+
     COMMAND ${CMAKE_COMMAND} -E copy_if_different y_tab.h include/gen/parse.h
     COMMAND ${CMAKE_COMMAND} -E copy_if_different y_tab.c dsql/parse.cpp
     COMMENT "Generating parse.cpp, parse.h"
@@ -263,7 +267,7 @@ add_custom_command(
 )
 add_custom_target(parse
     DEPENDS y_tab.h y_tab.c
-    SOURCES ${parse_src}
+    SOURCES ${parse_src} y_tab.h y_tab.c
 )
 project_group(parse "Boot/Custom build steps")
 set_source_files_properties(dsql/parse.cpp include/gen/parse.h PROPERTIES GENERATED TRUE)
@@ -369,8 +373,11 @@ if (APPLE)
 endif()
 
 add_library                 (common ${common_src} ${common_os_src} ${common_include})
-target_link_libraries       (common ${LIB_mpr})
+target_link_libraries       (common ${LIB_mpr} libtommath libtomcrypt decNumber)
 add_dependencies_cc         (common UpdateCloopInterfaces)
+if (UNIX)
+target_link_libraries       (common dl)
+endif()
 
 
 ################################################################################
@@ -412,7 +419,6 @@ add_library                 (boot_yvalve SHARED $<TARGET_OBJECTS:yvalve_common> 
 target_link_libraries       (boot_yvalve
     PRIVATE remote
     PRIVATE common
-    PUBLIC libtommath
     PUBLIC ${LIB_Ws2_32}
     PUBLIC ${LIB_readline}
     PUBLIC ${LIB_dl}
@@ -435,7 +441,6 @@ add_library                 (yvalve SHARED $<TARGET_OBJECTS:yvalve_common> ${yva
 target_link_libraries       (yvalve
     PRIVATE remote
     PRIVATE common
-    PUBLIC libtommath
     PUBLIC ${LIB_Ws2_32}
     PUBLIC ${LIB_readline}
     PUBLIC ${LIB_dl}
@@ -539,17 +544,6 @@ set_output_directory_unix   (ib_util lib)
 
 
 ########################################
-# SHARED LIBRARY ib_udf
-########################################
-
-add_library                 (ib_udf SHARED extlib/ib_udf.cpp extlib/ib_udf.h ${VERSION_RC})
-target_link_libraries       (ib_udf ib_util)
-set_target_properties       (ib_udf PROPERTIES PREFIX "")
-set_exported_symbols        (ib_udf ib_udf)
-set_output_directory        (ib_udf UDF)
-
-
-########################################
 # SHARED LIBRARY legacy_usermanager
 ########################################
 
@@ -576,27 +570,6 @@ add_library                 (udr_engine SHARED ${udr_engine_src} ${VERSION_RC})
 target_link_libraries       (udr_engine common yvalve)
 set_output_directory        (udr_engine plugins)
 set_exported_symbols        (udr_engine fbplugin)
-
-
-########################################
-# SHARED LIBRARY fbudf
-########################################
-
-set(fbudf_src
-    extlib/fbudf/fbudf.cpp
-    extlib/fbudf/stdafx.cpp
-
-    extlib/fbudf/fbudf.txt
-    extlib/fbudf/fbudf.sql
-
-    jrd/ibase.h
-)
-file(GLOB fbudf_include "extlib/fbudf/*.h")
-
-add_library                 (fbudf SHARED ${fbudf_src} ${fbudf_include} ${VERSION_RC})
-target_link_libraries       (fbudf common yvalve)
-set_target_properties       (fbudf PROPERTIES PREFIX "")
-set_output_directory        (fbudf UDF)
 
 
 ########################################
@@ -945,10 +918,6 @@ add_custom_target(copy_files
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/builds/install/misc/IDPLicense.txt ${output_dir}/IDPLicense.txt
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/src/utilities/ntrace/fbtrace.conf ${output_dir}/fbtrace.conf
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/src/plugins/udr_engine/udr_engine.conf ${output_dir}/plugins/udr_engine.conf
-    # udf
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/src/extlib/ib_udf.sql ${output_dir}/UDF/ib_udf.sql
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/src/extlib/ib_udf2.sql ${output_dir}/UDF/ib_udf2.sql
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/src/extlib/fbudf/fbudf.sql ${output_dir}/UDF/fbudf.sql
     # docs
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/CHANGELOG.md ${output_dir}/doc/CHANGELOG.md
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/README.md ${output_dir}/doc/README.md
@@ -1048,15 +1017,6 @@ if (WIN32)
         COMMAND sed -f ${CMAKE_SOURCE_DIR}/src/misc/headers.sed < ${output_dir}/include/ibase.tmp > ${output_dir}/include/ibase.h
         COMMAND ${CMAKE_COMMAND} -E remove ${output_dir}/include/ibase.tmp
     )
-    file(GLOB files
-        "${CMAKE_SOURCE_DIR}/src/extlib/ib_udf*"
-        "${CMAKE_SOURCE_DIR}/src/extlib/fbudf/*"
-    )
-    foreach(F ${files})
-        get_filename_component(name ${F} NAME)
-        add_custom_command(TARGET copy_files POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${F} ${output_dir}/examples/udf/${name})
-    endforeach()
 endif()
 
 

@@ -2165,9 +2165,7 @@ ULONG PageSpace::lastUsedPage()
 	CCH_RELEASE(tdbb, &window);
 	pipMaxKnown = pipLast;
 
-	if (pipLast == pipFirst)
-		return last_bit + 1;
-	return last_bit + pipLast + 1;
+	return last_bit + (pipLast == pipFirst ? 0 : pipLast);
 }
 
 ULONG PageSpace::lastUsedPage(const Database* dbb)

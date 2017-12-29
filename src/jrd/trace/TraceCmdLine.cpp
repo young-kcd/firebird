@@ -65,21 +65,8 @@ namespace
 
 	void usage(UtilSvc* uSvc, const ISC_STATUS code, const char* msg1 = NULL, const char* msg2 = NULL)
 	{
-		/*
-		string msg;
-		va_list params;
-		if (message)
-		{
-			va_start(params, message);
-			msg.vprintf(message, params);
-			va_end(params);
-		}
-		*/
-
 		if (uSvc->isService())
 		{
-			//fb_assert(message != NULL);
-			//(Arg::Gds(isc_random) << msg).raise();
 			fb_assert(code);
 			Arg::Gds gds(code);
 			if (msg1)
@@ -89,8 +76,6 @@ namespace
 			gds.raise();
 		}
 
-		//if (message)
-		//	fprintf(stderr, "ERROR: %s.\n\n", msg.c_str());
 		if (code)
 		{
 			printMsg(2, false); // ERROR:

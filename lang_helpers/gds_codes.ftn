@@ -1716,6 +1716,108 @@ C --
       PARAMETER (GDS__subproc_not_impl                 = 335545151)
       INTEGER*4 GDS__sysf_invalid_hash_algorithm     
       PARAMETER (GDS__sysf_invalid_hash_algorithm      = 335545152)
+      INTEGER*4 GDS__expression_eval_index           
+      PARAMETER (GDS__expression_eval_index            = 335545153)
+      INTEGER*4 GDS__decfloat_trap                   
+      PARAMETER (GDS__decfloat_trap                    = 335545154)
+      INTEGER*4 GDS__decfloat_round                  
+      PARAMETER (GDS__decfloat_round                   = 335545155)
+      INTEGER*4 GDS__sysf_invalid_first_last_part    
+      PARAMETER (GDS__sysf_invalid_first_last_part     = 335545156)
+      INTEGER*4 GDS__sysf_invalid_date_timestamp     
+      PARAMETER (GDS__sysf_invalid_date_timestamp      = 335545157)
+      INTEGER*4 GDS__precision_err2                  
+      PARAMETER (GDS__precision_err2                   = 335545158)
+      INTEGER*4 GDS__bad_batch_handle                
+      PARAMETER (GDS__bad_batch_handle                 = 335545159)
+      INTEGER*4 GDS__intl_char                       
+      PARAMETER (GDS__intl_char                        = 335545160)
+      INTEGER*4 GDS__null_block                      
+      PARAMETER (GDS__null_block                       = 335545161)
+      INTEGER*4 GDS__mixed_info                      
+      PARAMETER (GDS__mixed_info                       = 335545162)
+      INTEGER*4 GDS__unknown_info                    
+      PARAMETER (GDS__unknown_info                     = 335545163)
+      INTEGER*4 GDS__bpb_version                     
+      PARAMETER (GDS__bpb_version                      = 335545164)
+      INTEGER*4 GDS__user_manager                    
+      PARAMETER (GDS__user_manager                     = 335545165)
+      INTEGER*4 GDS__icu_entrypoint                  
+      PARAMETER (GDS__icu_entrypoint                   = 335545166)
+      INTEGER*4 GDS__icu_library                     
+      PARAMETER (GDS__icu_library                      = 335545167)
+      INTEGER*4 GDS__metadata_name                   
+      PARAMETER (GDS__metadata_name                    = 335545168)
+      INTEGER*4 GDS__tokens_parse                    
+      PARAMETER (GDS__tokens_parse                     = 335545169)
+      INTEGER*4 GDS__iconv_open                      
+      PARAMETER (GDS__iconv_open                       = 335545170)
+      INTEGER*4 GDS__batch_compl_range               
+      PARAMETER (GDS__batch_compl_range                = 335545171)
+      INTEGER*4 GDS__batch_compl_detail              
+      PARAMETER (GDS__batch_compl_detail               = 335545172)
+      INTEGER*4 GDS__deflate_init                    
+      PARAMETER (GDS__deflate_init                     = 335545173)
+      INTEGER*4 GDS__inflate_init                    
+      PARAMETER (GDS__inflate_init                     = 335545174)
+      INTEGER*4 GDS__big_segment                     
+      PARAMETER (GDS__big_segment                      = 335545175)
+      INTEGER*4 GDS__batch_policy                    
+      PARAMETER (GDS__batch_policy                     = 335545176)
+      INTEGER*4 GDS__batch_defbpb                    
+      PARAMETER (GDS__batch_defbpb                     = 335545177)
+      INTEGER*4 GDS__batch_align                     
+      PARAMETER (GDS__batch_align                      = 335545178)
+      INTEGER*4 GDS__multi_segment_dup               
+      PARAMETER (GDS__multi_segment_dup                = 335545179)
+      INTEGER*4 GDS__non_plugin_protocol             
+      PARAMETER (GDS__non_plugin_protocol              = 335545180)
+      INTEGER*4 GDS__message_format                  
+      PARAMETER (GDS__message_format                   = 335545181)
+      INTEGER*4 GDS__batch_param_version             
+      PARAMETER (GDS__batch_param_version              = 335545182)
+      INTEGER*4 GDS__batch_msg_long                  
+      PARAMETER (GDS__batch_msg_long                   = 335545183)
+      INTEGER*4 GDS__batch_open                      
+      PARAMETER (GDS__batch_open                       = 335545184)
+      INTEGER*4 GDS__batch_type                      
+      PARAMETER (GDS__batch_type                       = 335545185)
+      INTEGER*4 GDS__batch_param                     
+      PARAMETER (GDS__batch_param                      = 335545186)
+      INTEGER*4 GDS__batch_blobs                     
+      PARAMETER (GDS__batch_blobs                      = 335545187)
+      INTEGER*4 GDS__batch_blob_append               
+      PARAMETER (GDS__batch_blob_append                = 335545188)
+      INTEGER*4 GDS__batch_stream_align              
+      PARAMETER (GDS__batch_stream_align               = 335545189)
+      INTEGER*4 GDS__batch_rpt_blob                  
+      PARAMETER (GDS__batch_rpt_blob                   = 335545190)
+      INTEGER*4 GDS__batch_blob_buf                  
+      PARAMETER (GDS__batch_blob_buf                   = 335545191)
+      INTEGER*4 GDS__batch_small_data                
+      PARAMETER (GDS__batch_small_data                 = 335545192)
+      INTEGER*4 GDS__batch_cont_bpb                  
+      PARAMETER (GDS__batch_cont_bpb                   = 335545193)
+      INTEGER*4 GDS__batch_big_bpb                   
+      PARAMETER (GDS__batch_big_bpb                    = 335545194)
+      INTEGER*4 GDS__batch_big_segment               
+      PARAMETER (GDS__batch_big_segment                = 335545195)
+      INTEGER*4 GDS__batch_big_seg2                  
+      PARAMETER (GDS__batch_big_seg2                   = 335545196)
+      INTEGER*4 GDS__batch_blob_id                   
+      PARAMETER (GDS__batch_blob_id                    = 335545197)
+      INTEGER*4 GDS__batch_too_big                   
+      PARAMETER (GDS__batch_too_big                    = 335545198)
+      INTEGER*4 GDS__num_literal                     
+      PARAMETER (GDS__num_literal                      = 335545199)
+      INTEGER*4 GDS__map_event                       
+      PARAMETER (GDS__map_event                        = 335545200)
+      INTEGER*4 GDS__map_overflow                    
+      PARAMETER (GDS__map_overflow                     = 335545201)
+      INTEGER*4 GDS__hdr_overflow                    
+      PARAMETER (GDS__hdr_overflow                     = 335545202)
+      INTEGER*4 GDS__vld_plugins                     
+      PARAMETER (GDS__vld_plugins                      = 335545203)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

@@ -732,7 +732,7 @@ public:
 			p->flags |= MappingHeader::FLAG_DELIVER;
 			if (sharedMemory->eventPost(&p->notifyEvent) != FB_SUCCESS)
 			{
-				(Arg::Gds(isc_random) << "Error posting notifyEvent in mapping shared memory").raise();
+				(Arg::Gds(isc_map_event) << "POST").raise();
 			}
 			while (sharedMemory->eventWait(&current->callbackEvent, value, 10000) != FB_SUCCESS)
 			{
@@ -792,7 +792,7 @@ public:
 			if (((U_IPTR) &sMem->process[sMem->processes]) - ((U_IPTR) sMem) > DEFAULT_SIZE)
 			{
 				sMem->processes--;
-				(Arg::Gds(isc_random) << "Global mapping memory overflow").raise();
+				(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_map_overflow)).raise();
 			}
 		}
 
@@ -800,11 +800,11 @@ public:
 		sMem->process[process].flags = MappingHeader::FLAG_ACTIVE;
 		if (sharedMemory->eventInit(&sMem->process[process].notifyEvent) != FB_SUCCESS)
 		{
-			(Arg::Gds(isc_random) << "Error initializing notifyEvent in mapping shared memory").raise();
+			(Arg::Gds(isc_map_event) << "INIT").raise();
 		}
 		if (sharedMemory->eventInit(&sMem->process[process].callbackEvent) != FB_SUCCESS)
 		{
-			(Arg::Gds(isc_random) << "Error initializing callbackEvent in mapping shared memory").raise();
+			(Arg::Gds(isc_map_event) << "INIT").raise();
 		}
 
 		try
@@ -843,7 +843,7 @@ private:
 					MappingHeader::Process* cur = &sMem->process[sMem->currentProcess];
 					if (sharedMemory->eventPost(&cur->callbackEvent) != FB_SUCCESS)
 					{
-						(Arg::Gds(isc_random) << "Error posting callbackEvent in mapping shared memory").raise();
+						(Arg::Gds(isc_map_event) << "POST").raise();
 					}
 					p->flags &= ~MappingHeader::FLAG_DELIVER;
 				}
@@ -856,7 +856,7 @@ private:
 
 				if (sharedMemory->eventWait(&p->notifyEvent, value, 0) != FB_SUCCESS)
 				{
-					(Arg::Gds(isc_random) << "Error waiting for notifyEvent in mapping shared memory").raise();
+					(Arg::Gds(isc_map_event) << "WAIT").raise();
 				}
 			}
 			if (startup)

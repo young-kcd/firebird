@@ -1582,6 +1582,12 @@ void put_data(burp_rel* relation)
 			add_byte(blr, field->fld_scale);
 			break;
 
+		case blr_dec_fixed:
+			alignment = type_alignments[dtype_dec_fixed];
+			add_byte(blr, field->fld_type);
+			add_byte(blr, field->fld_scale);
+			break;
+
 		case blr_double:
 			alignment = type_alignments[dtype_double];
 			add_byte(blr, field->fld_type);

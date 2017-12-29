@@ -114,6 +114,7 @@
     <ClInclude Include="..\..\..\src\common\classes\array.h" />
     <ClInclude Include="..\..\..\src\common\classes\auto.h" />
     <ClInclude Include="..\..\..\src\common\classes\BaseStream.h" />
+    <ClInclude Include="..\..\..\src\common\classes\BatchCompletionState.h" />
     <ClInclude Include="..\..\..\src\common\classes\BlrReader.h" />
     <ClInclude Include="..\..\..\src\common\classes\BlrWriter.h" />
     <ClInclude Include="..\..\..\src\common\classes\ByteChunk.h" />

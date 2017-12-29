@@ -394,7 +394,22 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 		{
 			// ASF: Don't let MOV_move call blb::move because MOV
 			// will not pass the destination field to blb::_move.
-			blb::move(tdbb, from_desc, to_desc, to);
+
+			record_param* rpb = NULL;
+			USHORT fieldId = 0;
+			if (to)
+			{
+				const FieldNode* toField = nodeAs<FieldNode>(to);
+				if (toField)
+				{
+					fieldId = toField->fieldId;
+					rpb = &request->req_rpb[toField->fieldStream];
+				}
+				else if (!(nodeAs<ParameterNode>(to) || nodeAs<VariableNode>(to)))
+					BUGCHECK(199);	// msg 199 expected field node
+			}
+
+			blb::move(tdbb, from_desc, to_desc, rpb, fieldId);
 		}
 		else if (!DSC_EQUIV(from_desc, to_desc, false))
 		{
@@ -1255,7 +1270,8 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	if (!node || node->kind != DmlNode::KIND_STATEMENT)
+	// ASF: It's already a StmtNode, so do not do a virtual call in execution.
+	if (!node)	/// if (!node || node->getKind() != DmlNode::KIND_STATEMENT
 		BUGCHECK(147);
 
 	// Save the old pool and request to restore on exit

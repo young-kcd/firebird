@@ -1243,6 +1243,7 @@ USHORT DFW_assign_index_type(thread_db* tdbb, const Firebird::MetaName& name, SS
 		return idx_boolean;
 	case dtype_dec64:
 	case dtype_dec128:
+	case dtype_dec_fixed:
 		return idx_decimal;
 	default:
 		return idx_numeric;
@@ -3550,6 +3551,30 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 	switch (phase)
 	{
 	case 0:
+		// We need to cleanup RDB$PAGES and pages if they were added at phase 3.
+		request.reset(tdbb, irq_c_relation3, IRQ_REQUESTS);
+
+		FOR(REQUEST_HANDLE request)
+			X IN RDB$RELATIONS WITH
+				X.RDB$RELATION_NAME EQ work->dfw_name.c_str()
+		{
+			rel_id = X.RDB$RELATION_ID;
+			if ( (relation = MET_lookup_relation_id(tdbb, rel_id, false)) )
+			{
+				RelationPages* const relPages = relation->getBasePages();
+
+				if (relPages->rel_index_root)
+				  IDX_delete_indices(tdbb, relation, relPages);
+
+				if (relPages->rel_pages)
+					DPM_delete_relation(tdbb, relation);
+
+				// Mark relation in the cache as dropped
+				relation->rel_flags |= REL_deleted;
+			}
+		}
+		END_FOR
+
 		if (work->dfw_lock)
 		{
 			LCK_release(tdbb, work->dfw_lock);
@@ -3594,7 +3619,9 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 				if (rel_id < local_min_relation_id || rel_id > MAX_RELATION_ID)
 					rel_id = X.RDB$RELATION_ID = local_min_relation_id;
 
-				while ( (relation = MET_lookup_relation_id(tdbb, rel_id++, false)) )
+				// Roman Simakov: We need to return deleted relations to skip them.
+				// This maybe result of cleanup failure after phase 3.
+				while ( (relation = MET_lookup_relation_id(tdbb, rel_id++, true)) )
 				{
 					if (rel_id < local_min_relation_id || rel_id > MAX_RELATION_ID)
 						rel_id = local_min_relation_id;
@@ -4795,7 +4822,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 		    EXT_fini(relation, false);
 		}
 
-		RelationPages* relPages = relation->getBasePages();
+		RelationPages* const relPages = relation->getBasePages();
 		if (relPages->rel_index_root) {
 			IDX_delete_indices(tdbb, relation, relPages);
 		}
@@ -5614,8 +5641,16 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			null_view = blob_id.isEmpty();
 			external_flag = REL.RDB$EXTERNAL_FILE[0];
 
-			if (REL.RDB$FORMAT == MAX_TABLE_VERSIONS)
-				raiseTooManyVersionsError(obj_relation, work->dfw_name);
+			if (REL.RDB$VIEW_BLR.NULL)
+			{
+				if (REL.RDB$FORMAT == MAX_TABLE_VERSIONS)
+					raiseTooManyVersionsError(obj_relation, work->dfw_name);
+			}
+			else
+			{
+				if (REL.RDB$FORMAT == MAX_VIEW_VERSIONS)
+					raiseTooManyVersionsError(obj_view, work->dfw_name);
+			}
 
 			MODIFY REL USING
 				blb* blob = blb::create(tdbb, transaction, &REL.RDB$RUNTIME);

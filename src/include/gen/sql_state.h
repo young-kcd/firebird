@@ -853,6 +853,57 @@ static const struct {
 	{335545150, "42000"}, // 830 subfunc_not_impl
 	{335545151, "42000"}, // 831 subproc_not_impl
 	{335545152, "42000"}, // 832 sysf_invalid_hash_algorithm
+	{335545153, "42000"}, // 833 expression_eval_index
+	{335545154, "42000"}, // 834 decfloat_trap
+	{335545155, "42000"}, // 835 decfloat_round
+	{335545156, "42000"}, // 836 sysf_invalid_first_last_part
+	{335545157, "42000"}, // 837 sysf_invalid_date_timestamp
+	{335545158, "HY104"}, // 838 precision_err2
+	{335545159, "08003"}, // 839 bad_batch_handle
+	{335545160, "22021"}, // 840 intl_char
+	{335545161, "22000"}, // 841 null_block
+	{335545162, "22000"}, // 842 mixed_info
+	{335545163, "22000"}, // 843 unknown_info
+	{335545164, "22000"}, // 844 bpb_version
+	{335545165, "28000"}, // 845 user_manager
+	{335545166, "XX000"}, // 846 icu_entrypoint
+	{335545167, "XX000"}, // 847 icu_library
+	{335545168, "02000"}, // 848 metadata_name
+	{335545169, "42000"}, // 849 tokens_parse
+	{335545170, "08006"}, // 850 iconv_open
+	{335545171, "07002"}, // 851 batch_compl_range
+	{335545172, "07002"}, // 852 batch_compl_detail
+	{335545173, "08006"}, // 853 deflate_init
+	{335545174, "08006"}, // 854 inflate_init
+	{335545175, "22026"}, // 855 big_segment
+	{335545176, "22000"}, // 856 batch_policy
+	{335545177, "22000"}, // 857 batch_defbpb
+	{335545178, "22000"}, // 858 batch_align
+	{335545179, "22000"}, // 859 multi_segment_dup
+	{335545180, "08004"}, // 860 non_plugin_protocol
+	{335545181, "22000"}, // 861 message_format
+	{335545182, "22000"}, // 862 batch_param_version
+	{335545183, "54000"}, // 863 batch_msg_long
+	{335545184, "08002"}, // 864 batch_open
+	{335545185, "07003"}, // 865 batch_type
+	{335545186, "07001"}, // 866 batch_param
+	{335545187, "07001"}, // 867 batch_blobs
+	{335545188, "22000"}, // 868 batch_blob_append
+	{335545189, "22000"}, // 869 batch_stream_align
+	{335545190, "22000"}, // 870 batch_rpt_blob
+	{335545191, "22000"}, // 871 batch_blob_buf
+	{335545192, "22000"}, // 872 batch_small_data
+	{335545193, "22000"}, // 873 batch_cont_bpb
+	{335545194, "22000"}, // 874 batch_big_bpb
+	{335545195, "22000"}, // 875 batch_big_segment
+	{335545196, "22000"}, // 876 batch_big_seg2
+	{335545197, "22000"}, // 877 batch_blob_id
+	{335545198, "54000"}, // 878 batch_too_big
+	{335545199, "54000"}, // 879 num_literal
+	{335545200, "XX000"}, // 880 map_event
+	{335545201, "54000"}, // 881 map_overflow
+	{335545202, "54000"}, // 882 hdr_overflow
+	{335545203, "28000"}, // 883 vld_plugins
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

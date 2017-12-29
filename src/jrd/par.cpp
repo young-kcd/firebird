@@ -177,7 +177,7 @@ namespace
 				*tdbb->getDefaultPool());
 
 			DmlNode* relationNode = PAR_parse_node(tdbb, csb);
-			if (relationNode->kind != DmlNode::KIND_REC_SOURCE)
+			if (relationNode->getKind() != DmlNode::KIND_REC_SOURCE)
 				PAR_syntax_error(csb, "TABLE");
 
 			RelationSourceNode* relationSource = static_cast<RelationSourceNode*>(relationNode);
@@ -393,6 +393,12 @@ USHORT PAR_datatype(BlrReader& blrReader, dsc* desc)
 		case blr_dec128:
 			desc->dsc_dtype = dtype_dec128;
 			desc->dsc_length = sizeof(Decimal128);
+			break;
+
+		case blr_dec_fixed:
+			desc->dsc_dtype = dtype_dec_fixed;
+			desc->dsc_length = sizeof(DecimalFixed);
+			desc->dsc_scale = (int) blrReader.getByte();
 			break;
 
 		case blr_blob2:
@@ -1431,8 +1437,8 @@ SortNode* PAR_sort_internal(thread_db* tdbb, CompilerScratch* csb, bool allClaus
 		*tdbb->getDefaultPool());
 
 	NestConst<ValueExprNode>* ptr = sort->expressions.getBuffer(count);
-	bool* ptr2 = sort->descending.getBuffer(count);
-	int* ptr3 = sort->nullOrder.getBuffer(count);
+	SortDirection* ptr2 = sort->direction.getBuffer(count);
+	NullsPlacement* ptr3 = sort->nullOrder.getBuffer(count);
 
 	while (count-- > 0)
 	{
@@ -1443,25 +1449,25 @@ SortNode* PAR_sort_internal(thread_db* tdbb, CompilerScratch* csb, bool allClaus
 			switch (code)
 			{
 				case blr_nullsfirst:
-					*ptr3++ = rse_nulls_first;
+					*ptr3++ = NULLS_FIRST;
 					code = csb->csb_blr_reader.getByte();
 					break;
 
 				case blr_nullslast:
-					*ptr3++ = rse_nulls_last;
+					*ptr3++ = NULLS_LAST;
 					code = csb->csb_blr_reader.getByte();
 					break;
 
 				default:
-					*ptr3++ = rse_nulls_default;
+					*ptr3++ = NULLS_DEFAULT;
 			}
 
-			*ptr2++ = (code == blr_descending);
+			*ptr2++ = (code == blr_descending) ? ORDER_DESC : ORDER_ASC;
 		}
 		else
 		{
-			*ptr2++ = false;	// ascending
-			*ptr3++ = rse_nulls_default;
+			*ptr2++ = ORDER_ANY;
+			*ptr3++ = NULLS_DEFAULT;
 		}
 
 		*ptr++ = PAR_parse_value(tdbb, csb);
@@ -1476,7 +1482,7 @@ BoolExprNode* PAR_parse_boolean(thread_db* tdbb, CompilerScratch* csb)
 {
 	DmlNode* node = PAR_parse_node(tdbb, csb);
 
-	if (node->kind != DmlNode::KIND_BOOLEAN)
+	if (node->getKind() != DmlNode::KIND_BOOLEAN)
 		PAR_syntax_error(csb, "boolean");
 
 	return static_cast<BoolExprNode*>(node);
@@ -1487,7 +1493,7 @@ ValueExprNode* PAR_parse_value(thread_db* tdbb, CompilerScratch* csb)
 {
 	DmlNode* node = PAR_parse_node(tdbb, csb);
 
-	if (node->kind != DmlNode::KIND_VALUE)
+	if (node->getKind() != DmlNode::KIND_VALUE)
 		PAR_syntax_error(csb, "value");
 
 	return static_cast<ValueExprNode*>(node);
@@ -1498,7 +1504,7 @@ StmtNode* PAR_parse_stmt(thread_db* tdbb, CompilerScratch* csb)
 {
 	DmlNode* node = PAR_parse_node(tdbb, csb);
 
-	if (node->kind != DmlNode::KIND_STATEMENT)
+	if (node->getKind() != DmlNode::KIND_STATEMENT)
 		PAR_syntax_error(csb, "statement");
 
 	return static_cast<StmtNode*>(node);
@@ -1555,7 +1561,7 @@ DmlNode* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb)
 	DmlNode* node = blr_parsers[blr_operator](tdbb, *tdbb->getDefaultPool(), csb, blr_operator);
 	FB_SIZE_T pos = 0;
 
-	if (node->kind == DmlNode::KIND_STATEMENT && csb->csb_dbg_info->blrToSrc.find(blr_offset, pos))
+	if (node->getKind() == DmlNode::KIND_STATEMENT && csb->csb_dbg_info->blrToSrc.find(blr_offset, pos))
 	{
 		MapBlrToSrcItem& i = csb->csb_dbg_info->blrToSrc[pos];
 		StmtNode* stmt = static_cast<StmtNode*>(node);

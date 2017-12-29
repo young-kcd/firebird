@@ -47,6 +47,36 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+
+		holder.add(arg1);
+		holder.add(arg2);
+	}
+
+	virtual const char* getCompatDialectVerb()
+	{
+		switch (blrOp)
+		{
+			case blr_add:
+				return "add";
+
+			case blr_subtract:
+				return "subtract";
+
+			case blr_multiply:
+				return "multiply";
+
+			case blr_divide:
+				return "divide";
+
+			default:
+				fb_assert(false);
+				return NULL;
+		}
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
@@ -57,8 +87,8 @@ public:
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
-	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
@@ -145,6 +175,12 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+		holder.add(boolean);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
@@ -172,6 +208,12 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+		holder.add(source);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
@@ -182,8 +224,8 @@ public:
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
-	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
@@ -205,10 +247,15 @@ public:
 		: TypedNode<ValueExprNode, ExprNode::TYPE_COALESCE>(pool),
 		  args(aArgs)
 	{
-		addChildNode(args, args);
 	}
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+		holder.add(args);
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -223,7 +270,7 @@ public:
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
-	virtual bool possiblyUnknown()
+	virtual bool possiblyUnknown(OptimizerBlk* /*opt*/)
 	{
 		return true;
 	}
@@ -237,6 +284,14 @@ class CollateNode : public TypedNode<ValueExprNode, ExprNode::TYPE_COLLATE>
 {
 public:
 	CollateNode(MemoryPool& pool, ValueExprNode* aArg, const Firebird::MetaName& aCollation);
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+
+		if (dsql)
+			holder.add(arg);
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -293,6 +348,13 @@ public:
 	explicit ConcatenateNode(MemoryPool& pool, ValueExprNode* aArg1 = NULL, ValueExprNode* aArg2 = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+		holder.add(arg1);
+		holder.add(arg2);
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -446,14 +508,19 @@ public:
 		  conditions(aConditions),
 		  values(aValues)
 	{
-		addChildNode(test, test);
-		addChildNode(conditions, conditions);
-		addChildNode(values, values);
-
 		label = "DECODE";
 	}
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+
+		holder.add(test);
+		holder.add(conditions);
+		holder.add(values);
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -493,7 +560,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 
 	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 
@@ -514,12 +581,17 @@ public:
 		  arg(NULL),
 		  internalStreamList(pool)
 	{
-		addChildNode(arg);
 	}
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
 	// This is a non-DSQL node.
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+		holder.add(arg);
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const
 	{
@@ -547,7 +619,7 @@ public:
 		fb_assert(false);
 	}
 
-	virtual void collectStreams(SortedStreamList& streamList) const;
+	virtual void collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const;
 
 	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
@@ -604,6 +676,12 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+		holder.add(arg);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
@@ -614,8 +692,8 @@ public:
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
-	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
@@ -648,21 +726,21 @@ public:
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
-	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
 
-	virtual bool possiblyUnknown()
+	virtual bool possiblyUnknown(OptimizerBlk* /*opt*/)
 	{
 		return false;
 	}
 
-	virtual void collectStreams(SortedStreamList& streamList) const
+	virtual void collectStreams(CompilerScratch* /*csb*/, SortedStreamList& streamList) const
 	{
 		if (!streamList.exist(fieldStream))
 			streamList.add(fieldStream);
 	}
 
-	virtual bool unmappable(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
+	virtual bool unmappable(CompilerScratch* /*csb*/, const MapNode* /*mapNode*/, StreamType /*shellStream*/)
 	{
 		return true;
 	}
@@ -708,6 +786,12 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+		holder.add(arg);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
@@ -718,8 +802,8 @@ public:
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
-	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
@@ -751,6 +835,12 @@ public:
 	explicit InternalInfoNode(MemoryPool& pool, ValueExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+		holder.add(arg);
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -786,8 +876,8 @@ public:
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
-	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
@@ -797,7 +887,7 @@ public:
 		return *reinterpret_cast<SLONG*>(litDesc.dsc_address);
 	}
 
-	void fixMinSInt64();
+	void fixMinSInt64(MemoryPool& pool);
 
 public:
 	const IntlString* dsqlStr;
@@ -814,7 +904,12 @@ public:
 		  value(aValue),
 		  implicitJoin(NULL)
 	{
-		addDsqlChildNode(value);
+	}
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+		holder.add(value);
 	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
@@ -866,7 +961,7 @@ public:
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 
 	virtual void getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* /*desc*/)
 	{
@@ -896,6 +991,14 @@ class DerivedFieldNode : public TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_
 public:
 	DerivedFieldNode(MemoryPool& pool, const Firebird::MetaName& aName, USHORT aScope,
 		ValueExprNode* aValue);
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+
+		if (dsql)
+			holder.add(value);
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -942,6 +1045,12 @@ public:
 	explicit NegateNode(MemoryPool& pool, ValueExprNode* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+		holder.add(arg);
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -995,9 +1104,15 @@ public:
 
 	OrderNode(MemoryPool& pool, ValueExprNode* aValue);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		DsqlNode::getChildren(holder, dsql);
+		holder.add(value);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual OrderNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 
 public:
 	NestConst<ValueExprNode> value;
@@ -1023,15 +1138,20 @@ public:
 		};
 
 	public:
-		explicit Frame(MemoryPool& p, Bound aBound, ValueExprNode* aValue = NULL)
-			: TypedNode(p),
+		explicit Frame(MemoryPool& pool, Bound aBound, ValueExprNode* aValue = NULL)
+			: TypedNode(pool),
 			  bound(aBound),
 			  value(aValue)
 		{
-			addChildNode(value, value);
 		}
 
 	public:
+		virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+		{
+			ListExprNode::getChildren(holder, dsql);
+			holder.add(value);
+		}
+
 		virtual Firebird::string internalPrint(NodePrinter& printer) const
 		{
 			NODE_PRINT_ENUM(printer, bound);
@@ -1042,7 +1162,7 @@ public:
 
 		virtual Frame* dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		{
-			Frame* node = FB_NEW_POOL(getPool()) Frame(getPool(), bound,
+			Frame* node = FB_NEW_POOL(dsqlScratch->getPool()) Frame(dsqlScratch->getPool(), bound,
 				doDsqlPass(dsqlScratch, value));
 
 			if (node->value)
@@ -1056,9 +1176,9 @@ public:
 			return node;
 		}
 
-		bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+		bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 		{
-			if (!ListExprNode::dsqlMatch(other, ignoreMapCast))
+			if (!ListExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 				return false;
 
 			const Frame* o = nodeAs<Frame>(other);
@@ -1073,7 +1193,7 @@ public:
 			return this;
 		}
 
-		virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
+		virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
 		virtual Frame* pass1(thread_db* tdbb, CompilerScratch* csb);
 		virtual Frame* pass2(thread_db* tdbb, CompilerScratch* csb);
 		virtual Frame* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -1095,14 +1215,12 @@ public:
 		};
 
 	public:
-		explicit FrameExtent(MemoryPool& p, Unit aUnit, Frame* aFrame1 = NULL, Frame* aFrame2 = NULL)
-			: TypedNode(p),
+		explicit FrameExtent(MemoryPool& pool, Unit aUnit, Frame* aFrame1 = NULL, Frame* aFrame2 = NULL)
+			: TypedNode(pool),
 			  unit(aUnit),
 			  frame1(aFrame1),
 			  frame2(aFrame2)
 		{
-			addChildNode(frame1, frame1);
-			addChildNode(frame2, frame2);
 		}
 
 		static FrameExtent* createDefault(MemoryPool& p)
@@ -1114,6 +1232,13 @@ public:
 		}
 
 	public:
+		virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+		{
+			ListExprNode::getChildren(holder, dsql);
+			holder.add(frame1);
+			holder.add(frame2);
+		}
+
 		virtual Firebird::string internalPrint(NodePrinter& printer) const
 		{
 			NODE_PRINT_ENUM(printer, unit);
@@ -1125,9 +1250,9 @@ public:
 
 		virtual FrameExtent* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
-		bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+		bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 		{
-			if (!ListExprNode::dsqlMatch(other, ignoreMapCast))
+			if (!ListExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 				return false;
 
 			const FrameExtent* o = nodeAs<FrameExtent>(other);
@@ -1142,7 +1267,7 @@ public:
 			return this;
 		}
 
-		virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
+		virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
 		virtual FrameExtent* pass1(thread_db* tdbb, CompilerScratch* csb);
 		virtual FrameExtent* pass2(thread_db* tdbb, CompilerScratch* csb);
 		virtual FrameExtent* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -1163,25 +1288,31 @@ public:
 	};
 
 public:
-	explicit WindowClause(MemoryPool& p,
+	explicit WindowClause(MemoryPool& pool,
 			const Firebird::MetaName* aName = NULL,
 			ValueListNode* aPartition = NULL,
 			ValueListNode* aOrder = NULL,
 			FrameExtent* aFrameExtent = NULL,
 			Exclusion aExclusion = Exclusion::NO_OTHERS)
-		: DsqlNode(p),
+		: DsqlNode(pool),
 		  name(aName),
 		  partition(aPartition),
 		  order(aOrder),
 		  extent(aFrameExtent),
 		  exclusion(aExclusion)
 	{
-		addDsqlChildNode(partition);
-		addDsqlChildNode(order);
-		addDsqlChildNode(extent);
 	}
 
 public:
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+
+		holder.add(partition);
+		holder.add(order);
+		holder.add(extent);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const
 	{
 		NODE_PRINT(printer, partition);
@@ -1194,9 +1325,9 @@ public:
 
 	virtual WindowClause* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
-	bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+	bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 	{
-		if (!DsqlNode::dsqlMatch(other, ignoreMapCast))
+		if (!DsqlNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 			return false;
 
 		const WindowClause* o = nodeAs<WindowClause>(other);
@@ -1239,6 +1370,17 @@ public:
 	explicit OverNode(MemoryPool& pool, AggNode* aAggExpr, const Firebird::MetaName* aWindowName);
 	explicit OverNode(MemoryPool& pool, AggNode* aAggExpr, WindowClause* aWindow);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+
+		if (dsql)
+		{
+			holder.add(aggExpr);
+			holder.add(window);
+		}
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
@@ -1275,6 +1417,17 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+
+		if (!dsql)
+		{
+			holder.add(argFlag);
+			holder.add(argIndicator);
+		}
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
@@ -1286,7 +1439,7 @@ public:
 		const dsc* desc, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -1311,6 +1464,14 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+
+		if (dsql)
+			holder.add(dsqlRelation);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
@@ -1324,12 +1485,12 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
-	virtual bool possiblyUnknown()
+	virtual bool possiblyUnknown(OptimizerBlk* /*opt*/)
 	{
 		return false;
 	}
 
-	virtual void collectStreams(SortedStreamList& streamList) const
+	virtual void collectStreams(CompilerScratch* /*csb*/, SortedStreamList& streamList) const
 	{
 		if (!streamList.exist(recStream))
 			streamList.add(recStream);
@@ -1343,8 +1504,8 @@ public:
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
-	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
@@ -1382,13 +1543,19 @@ public:
 		  field(NULL),
 		  subscripts(NULL)
 	{
-		addChildNode(field);
-		addChildNode(subscripts);
 	}
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
 	// This is a non-DSQL node.
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+
+		holder.add(field);
+		holder.add(subscripts);
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const
 	{
@@ -1434,13 +1601,19 @@ public:
 		  stmt(NULL),
 		  expr(NULL)
 	{
-		// Do not add the statement. We'll manually handle it in pass1 and pass2.
-		addChildNode(expr);
 	}
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
 	// This is a non-DSQL node.
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+
+		// Do not add the statement. We'll manually handle it in pass1 and pass2.
+		holder.add(expr);
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const
 	{
@@ -1486,6 +1659,12 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+		holder.add(arg);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
@@ -1496,8 +1675,8 @@ public:
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
-	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
@@ -1514,6 +1693,12 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+		holder.add(arg);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
@@ -1524,8 +1709,8 @@ public:
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
-	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
@@ -1544,6 +1729,8 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const;
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
@@ -1556,17 +1743,17 @@ public:
 	virtual bool dsqlFieldFinder(FieldFinder& visitor);
 	virtual ValueExprNode* dsqlFieldRemapper(FieldRemapper& visitor);
 
-	virtual bool unmappable(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
+	virtual bool unmappable(CompilerScratch* /*csb*/, const MapNode* /*mapNode*/, StreamType /*shellStream*/)
 	{
 		return false;
 	}
 
-	virtual bool possiblyUnknown()
+	virtual bool possiblyUnknown(OptimizerBlk* /*opt*/)
 	{
 		return true;
 	}
 
-	virtual void collectStreams(SortedStreamList& streamList) const;
+	virtual void collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const;
 
 	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
@@ -1576,7 +1763,7 @@ public:
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
+	virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
@@ -1599,6 +1786,15 @@ public:
 		ValueExprNode* aStart = NULL, ValueExprNode* aLength = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+
+		holder.add(expr);
+		holder.add(start);
+		holder.add(length);
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -1631,6 +1827,15 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+
+		holder.add(expr);
+		holder.add(pattern);
+		holder.add(escape);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
@@ -1660,6 +1865,12 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+		holder.add(args);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
@@ -1668,8 +1879,8 @@ public:
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
-	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
@@ -1689,6 +1900,14 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+
+		holder.add(value);
+		holder.add(trimChars);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
@@ -1699,8 +1918,8 @@ public:
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
-	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
@@ -1726,21 +1945,27 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+		holder.add(args);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
-	virtual bool possiblyUnknown()
+	virtual bool possiblyUnknown(OptimizerBlk* /*opt*/)
 	{
 		return true;
 	}
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
-	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
@@ -1764,6 +1989,15 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
+	{
+		ValueExprNode::getChildren(holder, dsql);
+
+		holder.add(condition);
+		holder.add(trueValue);
+		holder.add(falseValue);
+	}
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
@@ -1772,7 +2006,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
-	virtual bool possiblyUnknown()
+	virtual bool possiblyUnknown(OptimizerBlk* /*opt*/)
 	{
 		return true;
 	}
@@ -1801,7 +2035,7 @@ public:
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
-	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;

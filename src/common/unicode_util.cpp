@@ -108,8 +108,7 @@ public:
 				return;
 		}
 
-		(Arg::Gds(isc_random) << "Missing entrypoint in ICU library" <<
-		 Arg::Gds(isc_random) << name).raise();
+		(Arg::Gds(isc_icu_entrypoint) << name).raise();
 	}
 
 	int majorVersion;
@@ -1163,12 +1162,9 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 	}
 
 	if (lastError.getState() & Firebird::IStatus::STATE_ERRORS)
-	{
-		(Arg::Gds(isc_random) << "Could not find acceptable ICU library"
-			 << Arg::StatusVector(lastError.getErrors())).raise();
-	}
+		(Arg::Gds(isc_icu_library) << Arg::StatusVector(lastError.getErrors())).raise();
 	else
-		(Arg::Gds(isc_random) << "Could not find acceptable ICU library").raise();
+		Arg::Gds(isc_icu_library).raise();
 
 	// compiler warning silencer
 	return *convIcu;
@@ -1327,7 +1323,7 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 		icu->ucolSetAttribute(compareCollator, UCOL_STRENGTH, UCOL_IDENTICAL, &status);
 		icu->ucolSetAttribute(sortCollator, UCOL_STRENGTH, UCOL_IDENTICAL, &status);
 
-		tt->texttype_flags = TEXTTYPE_UNSORTED_UNIQUE;
+		tt->texttype_flags |= TEXTTYPE_UNSORTED_UNIQUE;
 	}
 	else
 	{

@@ -189,8 +189,7 @@ void validatePassword(thread_db* tdbb, const PathName& file, ClumpletWriter& dpb
 
 	if (!list.hasData())
 	{
-		Arg::Gds noPlugins(isc_random);
-		noPlugins << "No matching client/server authentication plugins configured for execute statement in embedded datasource";
+		Arg::Gds noPlugins(isc_vld_plugins);
 		iscLogStatus(NULL, noPlugins.value());
 
 #ifdef DEV_BUILD

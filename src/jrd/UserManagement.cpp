@@ -205,9 +205,7 @@ IManagement* UserManagement::getManager(const char* name)
 		}
 	}
 	if (!plugName.hasData())
-	{
-		(Arg::Gds(isc_random) << "Missing requested management plugin").raise();
-	}
+		Arg::Gds(isc_user_manager).raise();
 
 	// Search for it in cache of already loaded plugins
 	for (unsigned i = 0; i < managers.getCount(); ++i)
@@ -298,7 +296,7 @@ USHORT UserManagement::put(Auth::DynamicUserData* userData)
 	const FB_SIZE_T ret = commands.getCount();
 	if (ret > MAX_USHORT)
 	{
-		status_exception::raise(Arg::Gds(isc_random) << "Too many user management DDL per transaction)");
+		status_exception::raise(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_random) << "Too many user management DDL per transaction");
 	}
 	commands.push(userData);
 	return ret;

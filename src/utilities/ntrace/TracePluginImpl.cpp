@@ -755,6 +755,9 @@ void TracePluginImpl::appendParams(ITraceParams* params)
 			case dtype_dec128:
 				paramtype = "decfloat(34)";
 				break;
+			case dtype_dec_fixed:
+				paramtype = "decimal";
+				break;
 
 			case dtype_sql_date:
 				paramtype = "date";
@@ -800,7 +803,7 @@ void TracePluginImpl::appendParams(ITraceParams* params)
 							parameters->dsc_address, parameters->dsc_length);
 					}
 					else
-						formatStringArgument(paramvalue, (UCHAR*)text, strlen(text));
+						formatStringArgument(paramvalue, (UCHAR*) text, strlen(text));
 
 					break;
 				}
@@ -821,7 +824,7 @@ void TracePluginImpl::appendParams(ITraceParams* params)
 							*(USHORT*)parameters->dsc_address);
 					}
 					else
-						formatStringArgument(paramvalue, (UCHAR*)text, strlen(text));
+						formatStringArgument(paramvalue, (UCHAR*) text, strlen(text));
 
 					break;
 				}
@@ -875,6 +878,20 @@ void TracePluginImpl::appendParams(ITraceParams* params)
 
 				case dtype_dec128:
 					((Decimal128*) parameters->dsc_address)->toString(paramvalue);
+					break;
+
+				case dtype_dec_fixed:
+					try
+					{
+						DecimalStatus decSt(DEC_Errors);
+						((DecimalFixed*) parameters->dsc_address)->toString(decSt, parameters->dsc_scale, paramvalue);
+					}
+					catch (const Exception& ex)
+					{
+						StaticStatusVector status;
+						ex.stuffException(status);
+						paramvalue.printf("Conversion error %d\n", status[1]);
+					}
 					break;
 
 				case dtype_sql_date:
@@ -1243,10 +1260,6 @@ void TracePluginImpl::register_transaction(ITraceTransaction* transaction)
 		trans_data.description->append("READ_COMMITTED | NO_REC_VERSION");
 		break;
 
-	case ITraceTransaction::ISOLATION_READ_COMMITTED_READ_CONSISTENCY:
-		trans_data.description->append("READ_COMMITTED | READ_CONSISTENCY");
-		break;
-
 	default:
 		trans_data.description->append("<unknown>");
 	}
@@ -1523,14 +1536,14 @@ void TracePluginImpl::register_sql_statement(ITraceSQLStatement* statement)
 	if (config.include_filter.hasData())
 	{
 		include_matcher->reset();
-		include_matcher->process((const UCHAR*)sql, sql_length);
+		include_matcher->process((const UCHAR*) sql, sql_length);
 		need_statement = include_matcher->result();
 	}
 
 	if (need_statement && config.exclude_filter.hasData())
 	{
 		exclude_matcher->reset();
-		exclude_matcher->process((const UCHAR*)sql, sql_length);
+		exclude_matcher->process((const UCHAR*) sql, sql_length);
 		need_statement = !exclude_matcher->result();
 	}
 

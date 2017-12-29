@@ -686,7 +686,7 @@ public:
 		  inputs(NULL),
 		  outputs(NULL),
 		  useCallerPrivs(false),
-		  traScope(EDS::TraScope(0)),	// not defined
+		  traScope(EDS::traNotSet),	// not defined
 		  inputNames(NULL)
 	{
 	}
@@ -1223,7 +1223,8 @@ public:
 	explicit ReceiveNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_RECEIVE>(pool),
 		  statement(NULL),
-		  message(NULL)
+		  message(NULL),
+		  batchFlag(false)
 	{
 	}
 
@@ -1240,6 +1241,7 @@ public:
 public:
 	NestConst<StmtNode> statement;
 	NestConst<MessageNode> message;
+	bool batchFlag;
 };
 
 

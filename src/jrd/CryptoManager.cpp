@@ -183,7 +183,7 @@ namespace Jrd {
 			const unsigned length = writer.getBufferLength();
 			fb_assert(length <= limit);
 			if (length > limit)
-				(Arg::Gds(isc_random) << "HDR page clumplets overflow").raise();
+				Arg::Gds(isc_hdr_overflow).raise();
 
 			memcpy(to, writer.getBuffer(), length);
 			to[length] = Ods::HDR_end;
@@ -247,7 +247,7 @@ namespace Jrd {
 				while (!PIO_read(tdbb, file, &bdb, page, status))
 		 		{
 					if (!CCH_rollover_to_shadow(tdbb, dbb, file, false))
- 						ERR_punt();;
+						ERR_punt();
 
 					if (file != pageSpace->file)
 						file = pageSpace->file;
@@ -1050,10 +1050,14 @@ namespace Jrd {
 				return FAILED_CRYPT;
 			}
 
-			cryptPlugin->decrypt(sv, dbb.dbb_page_size - sizeof(Ods::pag),
+			FbLocalStatus ls;
+			cryptPlugin->decrypt(&ls, dbb.dbb_page_size - sizeof(Ods::pag),
 				&page[1], &page[1]);
-			if (sv->getState() & IStatus::STATE_ERRORS)
+			if (ls->getState() & IStatus::STATE_ERRORS)
+			{
+				ERR_post_nothrow(&ls, sv);
 				return FAILED_CRYPT;
+			}
 		}
 
 		return SUCCESS_ALL;
@@ -1135,11 +1139,15 @@ namespace Jrd {
 				return FAILED_CRYPT;
 			}
 
+			FbLocalStatus ls;
 			to[0] = page[0];
-			cryptPlugin->encrypt(sv, dbb.dbb_page_size - sizeof(Ods::pag),
+			cryptPlugin->encrypt(&ls, dbb.dbb_page_size - sizeof(Ods::pag),
 				&page[1], &to[1]);
-			if (sv->getState() & IStatus::STATE_ERRORS)
+			if (ls->getState() & IStatus::STATE_ERRORS)
+			{
+				ERR_post_nothrow(&ls, sv);
 				return FAILED_CRYPT;
+			}
 
 			to->pag_flags |= Ods::crypted_page;		// Mark page that is going to be written as encrypted
 			page->pag_flags |= Ods::crypted_page;	// Set the mark for page in cache as well

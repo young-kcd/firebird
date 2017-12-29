@@ -165,7 +165,7 @@ namespace Jrd
 	}
 
 
-	FPTR_INT Module::lookup(const char* module, const char* name, DatabaseModules& interest)
+	FPTR_INT Module::lookup(const char* module, const char* name, Database* dbb)
 	{
 		// Try to find loadable module
 		Module m = lookupModule(module);
@@ -178,12 +178,7 @@ namespace Jrd
 		terminate_at_space(symbol, name);
 		void* rc = m.lookupSymbol(symbol);
 		if (rc)
-		{
-			if (!interest.exist(m))
-			{
-				interest.add(m);
-			}
-		}
+			dbb->registerModule(m);
 
 		return (FPTR_INT)rc;
 	}

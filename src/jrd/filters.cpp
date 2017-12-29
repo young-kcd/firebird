@@ -142,7 +142,10 @@ static const TEXT dtypes[DTYPE_TYPE_MAX][36] =
 	"ARRAY",
 	"BIGINT",
 	"DBKEY",	// internal
-	"BOOLEAN"
+	"BOOLEAN",
+	"DECFLOAT(16)",
+	"DECFLOAT(34)",
+	"DECIMAL(34)"
 };
 
 

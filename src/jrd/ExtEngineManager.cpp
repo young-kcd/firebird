@@ -352,10 +352,10 @@ namespace
 		{
 			SuspendNode* suspend = FB_NEW_POOL(pool) SuspendNode(pool);
 			suspend->message = intOutMessageNode;
-			suspend->statement = FB_NEW_POOL(getPool()) MessageMoverNode(pool, extOutMessageNode, intOutMessageNode);
+			suspend->statement = FB_NEW_POOL(pool) MessageMoverNode(pool, extOutMessageNode, intOutMessageNode);
 
 			statements.add(suspend);
-			statements.add(FB_NEW_POOL(getPool()) StallNode(pool));
+			statements.add(FB_NEW_POOL(pool) StallNode(pool));
 		}
 
 		virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
@@ -630,21 +630,16 @@ void ExtEngineManager::ExternalContextImpl::releaseTransaction()
 
 void ExtEngineManager::ExternalContextImpl::setTransaction(thread_db* tdbb)
 {
-	jrd_tra* newTransaction = tdbb->getTransaction();
+	ITransaction* newTransaction = tdbb->getTransaction() ? tdbb->getTransaction()->getInterface(true) : NULL;
 
 	if (newTransaction == internalTransaction)
 		return;
 
 	releaseTransaction();
-	fb_assert(!externalTransaction);
+	fb_assert(!externalTransaction && !internalTransaction);
 
 	if ((internalTransaction = newTransaction))
-	{
-		internalTransaction->getInterface(true)->addRef();
-
-		externalTransaction = MasterInterfacePtr()->registerTransaction(externalAttachment,
-			internalTransaction->getInterface(true));
-	}
+		externalTransaction = MasterInterfacePtr()->registerTransaction(externalAttachment, internalTransaction);
 }
 
 IMaster* ExtEngineManager::ExternalContextImpl::getMaster()
@@ -900,7 +895,8 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, unsigned action,
 	record_param* oldRpb, record_param* newRpb) const
 {
 	EngineAttachmentInfo* attInfo = extManager->getEngineAttachment(tdbb, engine);
-	const Nullable<bool>& ssDefiner = trg->ssDefiner.specified ? trg->ssDefiner : trg->relation->rel_ss_definer;
+	const Nullable<bool>& ssDefiner = trg->ssDefiner.specified ? trg->ssDefiner :
+		(trg->relation && trg->relation->rel_ss_definer.specified ? trg->relation->rel_ss_definer : Nullable<bool>() );
 	const MetaName& userName = ssDefiner.specified && ssDefiner.value ? trg->relation->rel_owner_name : "";
 	ContextManager<IExternalTrigger> ctxManager(tdbb, attInfo, trigger,
 		CallerName(obj_trigger, trg->name, userName));

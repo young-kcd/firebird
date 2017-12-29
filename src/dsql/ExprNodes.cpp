@@ -249,20 +249,26 @@ string ExprNode::internalPrint(NodePrinter& printer) const
 }
 
 
-bool ExprNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool ExprNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
 	if (other->type != type)
 		return false;
 
-	size_t count = dsqlChildNodes.getCount();
-	if (other->dsqlChildNodes.getCount() != count)
+	NodeRefsHolder thisHolder(dsqlScratch->getPool());
+	getChildren(thisHolder, true);
+
+	NodeRefsHolder otherHolder(dsqlScratch->getPool());
+	other->getChildren(otherHolder, true);
+
+	size_t count = thisHolder.refs.getCount();
+	if (otherHolder.refs.getCount() != count)
 		return false;
 
-	const auto* j = other->dsqlChildNodes.begin();
+	const auto* j = otherHolder.refs.begin();
 
-	for (const auto& i : dsqlChildNodes)
+	for (const auto& i : thisHolder.refs)
 	{
-		if (!*i != !**j || !PASS1_node_match(i->getExpr(), (*j)->getExpr(), ignoreMapCast))
+		if (!*i != !**j || !PASS1_node_match(dsqlScratch, i->getExpr(), (*j)->getExpr(), ignoreMapCast))
 			return false;
 
 		++j;
@@ -271,35 +277,84 @@ bool ExprNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return true;
 }
 
-bool ExprNode::sameAs(const ExprNode* other, bool ignoreStreams) const
+bool ExprNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
 	if (other->type != type)
 		return false;
 
-	size_t count = jrdChildNodes.getCount();
-	if (other->jrdChildNodes.getCount() != count)
+	NodeRefsHolder thisHolder(csb->csb_pool);
+	getChildren(thisHolder, false);
+
+	NodeRefsHolder otherHolder(csb->csb_pool);
+	other->getChildren(otherHolder, false);
+
+	size_t count = thisHolder.refs.getCount();
+	if (otherHolder.refs.getCount() != count)
 		return false;
 
-	const auto* j = other->jrdChildNodes.begin();
+	const auto* j = otherHolder.refs.begin();
 
-	for (const auto& i : jrdChildNodes)
+	for (const auto& i : thisHolder.refs)
 	{
 		if (!*i && !**j)
 			continue;
 
-		if (!*i || !**j || !i->getExpr()->sameAs((*j)->getExpr(), ignoreStreams))
+		if (!*i || !**j || !i->getExpr()->sameAs(csb, (*j)->getExpr(), ignoreStreams))
 			return false;
 
 		++j;
 	}
 
 	return true;
+}
+
+bool ExprNode::possiblyUnknown(OptimizerBlk* opt)
+{
+	NodeRefsHolder holder(opt->getPool());
+	getChildren(holder, false);
+
+	for (NodeRef** i = holder.refs.begin(); i != holder.refs.end(); ++i)
+	{
+		if (**i && (*i)->getExpr()->possiblyUnknown(opt))
+			return true;
+	}
+
+	return false;
+}
+
+bool ExprNode::unmappable(CompilerScratch* csb, const MapNode* mapNode, StreamType shellStream)
+{
+	NodeRefsHolder holder(csb->csb_pool);
+	getChildren(holder, false);
+
+	for (NodeRef** i = holder.refs.begin(); i != holder.refs.end(); ++i)
+	{
+		if (**i && !(*i)->getExpr()->unmappable(csb, mapNode, shellStream))
+			return false;
+	}
+
+	return true;
+}
+
+void ExprNode::collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const
+{
+	NodeRefsHolder holder(csb->csb_pool);
+	getChildren(holder, false);
+
+	for (const NodeRef* const* i = holder.refs.begin(); i != holder.refs.end(); ++i)
+	{
+		if (**i)
+			(*i)->getExpr()->collectStreams(csb, streamList);
+	}
 }
 
 bool ExprNode::computable(CompilerScratch* csb, StreamType stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
-	for (auto& i : jrdChildNodes)
+	NodeRefsHolder holder(csb->csb_pool);
+	getChildren(holder, false);
+
+	for (auto& i : holder.refs)
 	{
 		if (*i && !i->getExpr()->computable(csb, stream, allowOnlyCurrentStream))
 			return false;
@@ -310,7 +365,10 @@ bool ExprNode::computable(CompilerScratch* csb, StreamType stream,
 
 void ExprNode::findDependentFromStreams(const OptimizerRetrieval* optRet, SortedStreamList* streamList)
 {
-	for (auto& i : jrdChildNodes)
+	NodeRefsHolder holder(optRet->getPool());
+	getChildren(holder, false);
+
+	for (auto& i : holder.refs)
 	{
 		if (*i)
 			i->getExpr()->findDependentFromStreams(optRet, streamList);
@@ -319,7 +377,10 @@ void ExprNode::findDependentFromStreams(const OptimizerRetrieval* optRet, Sorted
 
 ExprNode* ExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	for (auto& i : jrdChildNodes)
+	NodeRefsHolder holder(csb->csb_pool);
+	getChildren(holder, false);
+
+	for (auto& i : holder.refs)
 	{
 		if (*i)
 			i->pass1(tdbb, csb);
@@ -330,7 +391,10 @@ ExprNode* ExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 ExprNode* ExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	for (auto& i : jrdChildNodes)
+	NodeRefsHolder holder(csb->csb_pool);
+	getChildren(holder, false);
+
+	for (auto& i : holder.refs)
 	{
 		if (*i)
 			i->pass2(tdbb, csb);
@@ -397,33 +461,8 @@ ArithmeticNode::ArithmeticNode(MemoryPool& pool, UCHAR aBlrOp, bool aDialect1,
 	  arg1(aArg1),
 	  arg2(aArg2)
 {
-	switch (blrOp)
-	{
-		case blr_add:
-			dsqlCompatDialectVerb = "add";
-			break;
-
-		case blr_subtract:
-			dsqlCompatDialectVerb = "subtract";
-			break;
-
-		case blr_multiply:
-			dsqlCompatDialectVerb = "multiply";
-			break;
-
-		case blr_divide:
-			dsqlCompatDialectVerb = "divide";
-			break;
-
-		default:
-			fb_assert(false);
-	}
-
-	label = dsqlCompatDialectVerb;
+	label = getCompatDialectVerb();
 	label.upper();
-
-	addChildNode(arg1, arg1);
-	addChildNode(arg2, arg2);
 }
 
 DmlNode* ArithmeticNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
@@ -466,6 +505,82 @@ void ArithmeticNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, arg1);
 	GEN_expr(dsqlScratch, arg2);
 }
+
+namespace
+{
+
+const UCHAR DSC_ZTYPE_FLT64 = 0;
+const UCHAR DSC_ZTYPE_FLT128 = 1;
+const UCHAR DSC_ZTYPE_FIXED = 2;
+const UCHAR DSC_ZTYPE_INT = 3;
+const UCHAR DSC_ZTYPE_OTHER = 4;
+const UCHAR DSC_ZTYPE_BAD = 5;
+
+const UCHAR decimalDescTable[5][5] = {
+/*							 DSC_ZTYPE_FLT64	DSC_ZTYPE_FLT128	DSC_ZTYPE_FIXED		DSC_ZTYPE_INT		DSC_ZTYPE_OTHER	*/
+/*	DSC_ZTYPE_FLT64		*/	{DSC_ZTYPE_FLT64,	DSC_ZTYPE_FLT128,	DSC_ZTYPE_FLT128,	DSC_ZTYPE_FLT128,	DSC_ZTYPE_FLT128},
+/*	DSC_ZTYPE_FLT128	*/	{DSC_ZTYPE_FLT128,	DSC_ZTYPE_FLT128,	DSC_ZTYPE_FLT128,	DSC_ZTYPE_FLT128,	DSC_ZTYPE_FLT128},
+/*	DSC_ZTYPE_FIXED		*/	{DSC_ZTYPE_FLT128,	DSC_ZTYPE_FLT128,	DSC_ZTYPE_FIXED,	DSC_ZTYPE_FIXED,	DSC_ZTYPE_FLT128},
+/*	DSC_ZTYPE_INT		*/	{DSC_ZTYPE_FLT128,	DSC_ZTYPE_FLT128,	DSC_ZTYPE_FIXED,	DSC_ZTYPE_BAD,		DSC_ZTYPE_BAD},
+/*	DSC_ZTYPE_OTHER		*/	{DSC_ZTYPE_FLT128,	DSC_ZTYPE_FLT128,	DSC_ZTYPE_FLT128,	DSC_ZTYPE_BAD,		DSC_ZTYPE_BAD}
+};
+
+UCHAR getFType(const dsc& desc)
+{
+	switch (desc.dsc_dtype)
+	{
+	case dtype_dec64:
+		return DSC_ZTYPE_FLT64;
+	case dtype_dec128:
+		return DSC_ZTYPE_FLT128;
+	case dtype_dec_fixed:
+		return DSC_ZTYPE_FIXED;
+	}
+
+	if (DTYPE_IS_EXACT(desc.dsc_dtype))
+		return DSC_ZTYPE_INT;
+
+	return DSC_ZTYPE_OTHER;
+}
+
+enum Scaling { SCALE_MIN, SCALE_SUM };
+
+unsigned setDecDesc(dsc* desc, const dsc& desc1, const dsc& desc2, Scaling sc, SCHAR* nodScale = nullptr)
+{
+	UCHAR zipType = decimalDescTable[getFType(desc1)][getFType(desc2)];
+	fb_assert(zipType <= DSC_ZTYPE_FIXED);
+	if (zipType > DSC_ZTYPE_FIXED)
+		zipType = DSC_ZTYPE_FLT128;		// In production case fallback to Decimal128
+
+	desc->dsc_dtype = zipType == DSC_ZTYPE_FLT64 ? dtype_dec64 :
+		zipType == DSC_ZTYPE_FLT128 ? dtype_dec128 : dtype_dec_fixed;
+	desc->dsc_sub_type = 0;
+	desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
+	desc->dsc_scale = 0;
+
+	if (zipType == DSC_ZTYPE_FIXED)
+	{
+		switch (sc)
+		{
+		case SCALE_MIN:
+			desc->dsc_scale = MIN(NUMERIC_SCALE(desc1), NUMERIC_SCALE(desc2));
+			break;
+		case SCALE_SUM:
+			desc->dsc_scale = NUMERIC_SCALE(desc1) + NUMERIC_SCALE(desc2);
+			break;
+		}
+	}
+
+	if (nodScale)
+		*nodScale = desc->dsc_scale;
+
+	desc->dsc_length = zipType == DSC_ZTYPE_FLT64 ? sizeof(Decimal64) :
+		zipType == DSC_ZTYPE_FLT128 ? sizeof(Decimal128) : sizeof(DecimalFixed);
+
+	return zipType == DSC_ZTYPE_FIXED ? ExprNode::FLAG_DECFIXED : ExprNode::FLAG_DECFLOAT;
+}
+
+} // anon namespace
 
 void ArithmeticNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
@@ -650,10 +765,8 @@ void ArithmeticNode::makeDialect1(dsc* desc, dsc& desc1, dsc& desc2)
 
 				case dtype_dec64:
 				case dtype_dec128:
-					desc->dsc_dtype = dtype_dec128;
-					desc->dsc_sub_type = 0;
-					desc->dsc_scale = 0;
-					desc->dsc_length = sizeof(Decimal128);
+				case dtype_dec_fixed:
+					setDecDesc(desc, desc1, desc2, SCALE_MIN);
 					break;
 
 				default:
@@ -680,10 +793,8 @@ void ArithmeticNode::makeDialect1(dsc* desc, dsc& desc1, dsc& desc2)
 			switch (dtype)
 			{
 				case dtype_dec128:
-					desc->dsc_dtype = dtype_dec128;
-					desc->dsc_sub_type = 0;
-					desc->dsc_scale = 0;
-					desc->dsc_length = sizeof(Decimal128);
+				case dtype_dec_fixed:
+					setDecDesc(desc, desc1, desc2, SCALE_SUM);
 					break;
 
 				case dtype_double:
@@ -727,10 +838,7 @@ void ArithmeticNode::makeDialect1(dsc* desc, dsc& desc1, dsc& desc2)
 
 			if (DTYPE_IS_DECFLOAT(dtype))
 			{
-				desc->dsc_dtype = dtype_dec128;
-				desc->dsc_length = sizeof(Decimal128);
-				desc->dsc_scale = 0;
-				desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
+				setDecDesc(desc, desc1, desc2, SCALE_SUM);
 				break;
 			}
 
@@ -779,7 +887,12 @@ void ArithmeticNode::makeDialect3(dsc* desc, dsc& desc1, dsc& desc2)
 			// the operation, as <timestamp>-<timestamp> uses
 			// <timestamp> arithmetic, but returns a <double>
 			if (DTYPE_IS_EXACT(dtype1) && DTYPE_IS_EXACT(dtype2))
-				dtype = dtype_int64;
+			{
+				if (desc1.isDecFixed() || desc2.isDecFixed())
+					dtype = dtype_dec_fixed;
+				else
+					dtype = dtype_int64;
+			}
 			else if (desc1.isDecOrInt() && desc2.isDecOrInt())
 				dtype = dtype_dec128;
 			else if (DTYPE_IS_NUMERIC(dtype1) && DTYPE_IS_NUMERIC(dtype2))
@@ -904,10 +1017,8 @@ void ArithmeticNode::makeDialect3(dsc* desc, dsc& desc1, dsc& desc2)
 
 				case dtype_dec64:
 				case dtype_dec128:
-					desc->dsc_dtype = dtype_dec128;
-					desc->dsc_sub_type = 0;
-					desc->dsc_scale = 0;
-					desc->dsc_length = sizeof(Decimal128);
+				case dtype_dec_fixed:
+					setDecDesc(desc, desc1, desc2, SCALE_MIN);
 					break;
 
 				case dtype_short:
@@ -955,11 +1066,9 @@ void ArithmeticNode::makeDialect3(dsc* desc, dsc& desc1, dsc& desc2)
 
 			switch (dtype)
 			{
+				case dtype_dec_fixed:
 				case dtype_dec128:
-					desc->dsc_dtype = dtype_dec128;
-					desc->dsc_sub_type = 0;
-					desc->dsc_scale = 0;
-					desc->dsc_length = sizeof(Decimal128);
+					setDecDesc(desc, desc1, desc2, SCALE_SUM);
 					break;
 
 				case dtype_double:
@@ -1016,8 +1125,8 @@ void ArithmeticNode::makeDialect3(dsc* desc, dsc& desc1, dsc& desc2)
 					break;
 
 				case dtype_dec128:
-					desc->dsc_length = sizeof(Decimal128);
-					desc->dsc_scale = 0;
+				case dtype_dec_fixed:
+					setDecDesc(desc, desc1, desc2, SCALE_SUM);
 					break;
 
 				default:
@@ -1217,12 +1326,8 @@ void ArithmeticNode::getDescDialect1(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 
 				case dtype_dec64:
 				case dtype_dec128:
-					nodFlags |= FLAG_DECFLOAT;
-					desc->dsc_dtype = dtype_dec128;
-					desc->dsc_length = sizeof(Decimal128);
-					desc->dsc_scale = 0;
-					desc->dsc_sub_type = 0;
-					desc->dsc_flags = 0;
+				case dtype_dec_fixed:
+					nodFlags |= setDecDesc(desc, desc1, desc2, SCALE_MIN, &nodScale);
 					break;
 
 				case dtype_unknown:
@@ -1268,12 +1373,8 @@ void ArithmeticNode::getDescDialect1(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 					return;
 
 				case dtype_dec128:
-					nodFlags |= FLAG_DECFLOAT;
-					desc->dsc_dtype = dtype_dec128;
-					desc->dsc_length = sizeof(Decimal128);
-					desc->dsc_scale = 0;
-					desc->dsc_sub_type = 0;
-					desc->dsc_flags = 0;
+				case dtype_dec_fixed:
+					nodFlags |= setDecDesc(desc, desc1, desc2, SCALE_SUM, &nodScale);
 					break;
 
 				case dtype_unknown:
@@ -1357,8 +1458,13 @@ void ArithmeticNode::getDescDialect3(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 			// the result dtype. The rule is that two exact numeric operands yield an int64
 			// result, while an approximate numeric and anything yield a double result.
 
-			if (DTYPE_IS_EXACT(desc1.dsc_dtype) && DTYPE_IS_EXACT(desc2.dsc_dtype))
-				dtype = dtype_int64;
+			if (DTYPE_IS_EXACT(dtype1) && DTYPE_IS_EXACT(dtype2))
+			{
+				if (desc1.isDecFixed() || desc2.isDecFixed())
+					dtype = dtype_dec_fixed;
+				else
+					dtype = dtype_int64;
+			}
 			else if (desc1.isDecOrInt() && desc2.isDecOrInt())
 				dtype = dtype_dec128;
 			else if (DTYPE_IS_NUMERIC(desc1.dsc_dtype) && DTYPE_IS_NUMERIC(desc2.dsc_dtype))
@@ -1493,12 +1599,8 @@ void ArithmeticNode::getDescDialect3(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 
 				case dtype_dec64:
 				case dtype_dec128:
-					nodFlags |= FLAG_DECFLOAT;
-					desc->dsc_dtype = dtype_dec128;
-					desc->dsc_length = sizeof(Decimal128);
-					desc->dsc_scale = 0;
-					desc->dsc_sub_type = 0;
-					desc->dsc_flags = 0;
+				case dtype_dec_fixed:
+					nodFlags |= setDecDesc(desc, desc1, desc2, SCALE_MIN, &nodScale);
 					return;
 
 				case dtype_short:
@@ -1551,12 +1653,8 @@ void ArithmeticNode::getDescDialect3(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 					return;
 
 				case dtype_dec128:
-					nodFlags |= FLAG_DECFLOAT;
-					desc->dsc_dtype = dtype_dec128;
-					desc->dsc_length = sizeof(Decimal128);
-					desc->dsc_scale = 0;
-					desc->dsc_sub_type = 0;
-					desc->dsc_flags = 0;
+				case dtype_dec_fixed:
+					nodFlags |= setDecDesc(desc, desc1, desc2, SCALE_SUM, &nodScale);
 					return;
 
 				case dtype_int64:
@@ -1603,9 +1701,9 @@ ValueExprNode* ArithmeticNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-bool ArithmeticNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool ArithmeticNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+	if (!ExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 		return false;
 
 	const ArithmeticNode* o = nodeAs<ArithmeticNode>(other);
@@ -1614,15 +1712,15 @@ bool ArithmeticNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return dialect1 == o->dialect1 && blrOp == o->blrOp;
 }
 
-bool ArithmeticNode::sameAs(const ExprNode* other, bool ignoreStreams) const
+bool ArithmeticNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
 	const ArithmeticNode* const otherNode = nodeAs<ArithmeticNode>(other);
 
 	if (!otherNode || blrOp != otherNode->blrOp || dialect1 != otherNode->dialect1)
 		return false;
 
-	if (arg1->sameAs(otherNode->arg1, ignoreStreams) &&
-		arg2->sameAs(otherNode->arg2, ignoreStreams))
+	if (arg1->sameAs(csb, otherNode->arg1, ignoreStreams) &&
+		arg2->sameAs(csb, otherNode->arg2, ignoreStreams))
 	{
 		return true;
 	}
@@ -1632,8 +1730,8 @@ bool ArithmeticNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 		// A + B is equivalent to B + A, ditto for A * B and B * A.
 		// Note: If one expression is A + B + C, but the other is B + C + A we won't
 		// necessarily match them.
-		if (arg1->sameAs(otherNode->arg2, ignoreStreams) &&
-			arg2->sameAs(otherNode->arg1, ignoreStreams))
+		if (arg1->sameAs(csb, otherNode->arg2, ignoreStreams) &&
+			arg2->sameAs(csb, otherNode->arg1, ignoreStreams))
 		{
 			return true;
 		}
@@ -1737,7 +1835,7 @@ dsc* ArithmeticNode::execute(thread_db* tdbb, jrd_req* request) const
 }
 
 // Add (or subtract) the contents of a descriptor to value block, with dialect-1 semantics.
- // This function can be removed when dialect-3 becomes the lowest supported dialect. (Version 7.0?)
+// This function can be removed when dialect-3 becomes the lowest supported dialect. (Version 7.0?)
 dsc* ArithmeticNode::add(const dsc* desc, impure_value* value, const ValueExprNode* node, const UCHAR blrOp)
 {
 	const ArithmeticNode* arithmeticNode = nodeAs<ArithmeticNode>(node);
@@ -1777,6 +1875,23 @@ dsc* ArithmeticNode::add(const dsc* desc, impure_value* value, const ValueExprNo
 		result->dsc_scale = 0;
 		result->dsc_sub_type = 0;
 		result->dsc_address = (UCHAR*) &value->vlu_misc.vlu_dec128;
+
+		return result;
+	}
+
+	if (node->nodFlags & FLAG_DECFIXED)
+	{
+		const DecimalFixed d1 = MOV_get_dec_fixed(tdbb, desc, node->nodScale);
+		const DecimalFixed d2 = MOV_get_dec_fixed(tdbb, &value->vlu_desc, node->nodScale);
+
+		DecimalStatus decSt = tdbb->getAttachment()->att_dec_status;
+		value->vlu_misc.vlu_dec_fixed = (blrOp == blr_subtract) ? d2.sub(decSt, d1) : d1.add(decSt, d2);
+
+		result->dsc_dtype = dtype_dec_fixed;
+		result->dsc_length = sizeof(DecimalFixed);
+		result->dsc_scale = node->nodScale;
+		result->dsc_sub_type = 0;
+		result->dsc_address = (UCHAR*) &value->vlu_misc.vlu_dec_fixed;
 
 		return result;
 	}
@@ -1857,6 +1972,23 @@ dsc* ArithmeticNode::add2(const dsc* desc, impure_value* value, const ValueExprN
 		result->dsc_scale = 0;
 		result->dsc_sub_type = 0;
 		result->dsc_address = (UCHAR*) &value->vlu_misc.vlu_dec128;
+
+		return result;
+	}
+
+	if (node->nodFlags & FLAG_DECFIXED)
+	{
+		const DecimalFixed d1 = MOV_get_dec_fixed(tdbb, desc, node->nodScale);
+		const DecimalFixed d2 = MOV_get_dec_fixed(tdbb, &value->vlu_desc, node->nodScale);
+
+		DecimalStatus decSt = tdbb->getAttachment()->att_dec_status;
+		value->vlu_misc.vlu_dec_fixed = (blrOp == blr_subtract) ? d2.sub(decSt, d1) : d1.add(decSt, d2);
+
+		result->dsc_dtype = dtype_dec_fixed;
+		result->dsc_length = sizeof(DecimalFixed);
+		result->dsc_scale = node->nodScale;
+		result->dsc_sub_type = 0;
+		result->dsc_address = (UCHAR*) &value->vlu_misc.vlu_dec_fixed;
 
 		return result;
 	}
@@ -1943,6 +2075,23 @@ dsc* ArithmeticNode::multiply(const dsc* desc, impure_value* value) const
 		value->vlu_desc.dsc_scale = 0;
 		value->vlu_desc.dsc_sub_type = 0;
 		value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc.vlu_dec128;
+
+		return &value->vlu_desc;
+	}
+
+	if (nodFlags & FLAG_DECFIXED)
+	{
+		const DecimalFixed d1 = MOV_get_dec_fixed(tdbb, desc, nodScale);
+		const DecimalFixed d2 = MOV_get_dec_fixed(tdbb, &value->vlu_desc, nodScale);
+
+		DecimalStatus decSt = tdbb->getAttachment()->att_dec_status;
+		value->vlu_misc.vlu_dec_fixed = d1.mul(decSt, d2);
+
+		value->vlu_desc.dsc_dtype = dtype_dec_fixed;
+		value->vlu_desc.dsc_length = sizeof(DecimalFixed);
+		value->vlu_desc.dsc_scale = nodScale;
+		value->vlu_desc.dsc_sub_type = 0;
+		value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc.vlu_dec_fixed;
 
 		return &value->vlu_desc;
 	}
@@ -2041,6 +2190,24 @@ dsc* ArithmeticNode::multiply2(const dsc* desc, impure_value* value) const
 		return &value->vlu_desc;
 	}
 
+	if (nodFlags & FLAG_DECFIXED)
+	{
+		const SSHORT scale = NUMERIC_SCALE(*desc);
+		const DecimalFixed d1 = MOV_get_dec_fixed(tdbb, desc, scale);
+		const DecimalFixed d2 = MOV_get_dec_fixed(tdbb, &value->vlu_desc, nodScale - scale);
+
+		DecimalStatus decSt = tdbb->getAttachment()->att_dec_status;
+		value->vlu_misc.vlu_dec_fixed = d1.mul(decSt, d2);
+
+		value->vlu_desc.dsc_dtype = dtype_dec_fixed;
+		value->vlu_desc.dsc_length = sizeof(DecimalFixed);
+		value->vlu_desc.dsc_scale = nodScale;
+		value->vlu_desc.dsc_sub_type = 0;
+		value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc.vlu_dec_fixed;
+
+		return &value->vlu_desc;
+	}
+
 	// Handle floating arithmetic
 
 	if (nodFlags & FLAG_DOUBLE)
@@ -2133,6 +2300,24 @@ dsc* ArithmeticNode::divide2(const dsc* desc, impure_value* value) const
 		value->vlu_desc.dsc_scale = 0;
 		value->vlu_desc.dsc_sub_type = 0;
 		value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc.vlu_dec128;
+
+		return &value->vlu_desc;
+	}
+
+	if (nodFlags & FLAG_DECFIXED)
+	{
+		const SSHORT scale = NUMERIC_SCALE(*desc);
+		const DecimalFixed d2 = MOV_get_dec_fixed(tdbb, desc, scale);
+		const DecimalFixed d1 = MOV_get_dec_fixed(tdbb, &value->vlu_desc, nodScale - scale);
+
+		DecimalStatus decSt = tdbb->getAttachment()->att_dec_status;
+		value->vlu_misc.vlu_dec_fixed = d1.div(decSt, d2, scale * 2);
+
+		value->vlu_desc.dsc_dtype = dtype_dec_fixed;
+		value->vlu_desc.dsc_length = sizeof(DecimalFixed);
+		value->vlu_desc.dsc_scale = nodScale;
+		value->vlu_desc.dsc_sub_type = 0;
+		value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc.vlu_dec_fixed;
 
 		return &value->vlu_desc;
 	}
@@ -2699,8 +2884,8 @@ dsc* ArithmeticNode::addTimeStamp(const dsc* desc, impure_value* value) const
 
 ValueExprNode* ArithmeticNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	return FB_NEW_POOL(getPool()) ArithmeticNode(getPool(), blrOp, dialect1,
-		doDsqlPass(dsqlScratch, arg1), doDsqlPass(dsqlScratch, arg2));
+	return FB_NEW_POOL(dsqlScratch->getPool()) ArithmeticNode(dsqlScratch->getPool(),
+		blrOp, dialect1, doDsqlPass(dsqlScratch, arg1), doDsqlPass(dsqlScratch, arg2));
 }
 
 
@@ -2743,7 +2928,6 @@ BoolAsValueNode::BoolAsValueNode(MemoryPool& pool, BoolExprNode* aBoolean)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_BOOL_AS_VALUE>(pool),
 	  boolean(aBoolean)
 {
-	addChildNode(boolean, boolean);
 }
 
 DmlNode* BoolAsValueNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
@@ -2764,8 +2948,8 @@ string BoolAsValueNode::internalPrint(NodePrinter& printer) const
 
 ValueExprNode* BoolAsValueNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	BoolAsValueNode* node = FB_NEW_POOL(getPool()) BoolAsValueNode(getPool(),
-		doDsqlPass(dsqlScratch, boolean));
+	BoolAsValueNode* node = FB_NEW_POOL(dsqlScratch->getPool()) BoolAsValueNode(
+		dsqlScratch->getPool(), doDsqlPass(dsqlScratch, boolean));
 
 	return node;
 }
@@ -2837,7 +3021,6 @@ CastNode::CastNode(MemoryPool& pool, ValueExprNode* aSource, dsql_fld* aDsqlFiel
 	  artificial(false)
 {
 	castDesc.clear();
-	addChildNode(source, source);
 }
 
 // Parse a datatype cast.
@@ -2878,7 +3061,7 @@ string CastNode::internalPrint(NodePrinter& printer) const
 
 ValueExprNode* CastNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	CastNode* node = FB_NEW_POOL(getPool()) CastNode(getPool());
+	CastNode* node = FB_NEW_POOL(dsqlScratch->getPool()) CastNode(dsqlScratch->getPool());
 	node->dsqlAlias = dsqlAlias;
 	node->source = doDsqlPass(dsqlScratch, source);
 	node->dsqlField = dsqlField;
@@ -2968,7 +3151,7 @@ void CastNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 
 ValueExprNode* CastNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	CastNode* node = FB_NEW_POOL(getPool()) CastNode(getPool());
+	CastNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
 
 	node->source = copier.copy(tdbb, source);
 	node->castDesc = castDesc;
@@ -2977,9 +3160,9 @@ ValueExprNode* CastNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-bool CastNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool CastNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+	if (!ExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 		return false;
 
 	const CastNode* o = nodeAs<CastNode>(other);
@@ -2988,9 +3171,9 @@ bool CastNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return dsqlField == o->dsqlField;
 }
 
-bool CastNode::sameAs(const ExprNode* other, bool ignoreStreams) const
+bool CastNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(other, ignoreStreams))
+	if (!ExprNode::sameAs(csb, other, ignoreStreams))
 		return false;
 
 	const CastNode* const otherNode = nodeAs<CastNode>(other);
@@ -3091,7 +3274,7 @@ dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
 		return NULL;
 
 	if (DTYPE_IS_BLOB(value->dsc_dtype) || DTYPE_IS_BLOB(impure->vlu_desc.dsc_dtype))
-		blb::move(tdbb, value, &impure->vlu_desc, NULL);
+		blb::move(tdbb, value, &impure->vlu_desc);
 	else
 		MOV_move(tdbb, value, &impure->vlu_desc);
 
@@ -3125,8 +3308,8 @@ string CoalesceNode::internalPrint(NodePrinter& printer) const
 
 ValueExprNode* CoalesceNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	CoalesceNode* node = FB_NEW_POOL(getPool()) CoalesceNode(getPool(),
-		doDsqlPass(dsqlScratch, args));
+	CoalesceNode* node = FB_NEW_POOL(dsqlScratch->getPool()) CoalesceNode(
+		dsqlScratch->getPool(), doDsqlPass(dsqlScratch, args));
 	node->make(dsqlScratch, &node->nodDesc);	// Set descriptor for output node.
 	node->setParameterType(dsqlScratch, &node->nodDesc, false);
 	return node;
@@ -3226,7 +3409,6 @@ CollateNode::CollateNode(MemoryPool& pool, ValueExprNode* aArg, const Firebird::
 	  arg(aArg),
 	  collation(pool, aCollation)
 {
-	addDsqlChildNode(arg);
 }
 
 string CollateNode::internalPrint(NodePrinter& printer) const
@@ -3314,8 +3496,6 @@ ConcatenateNode::ConcatenateNode(MemoryPool& pool, ValueExprNode* aArg1, ValueEx
 	  arg1(aArg1),
 	  arg2(aArg2)
 {
-	addChildNode(arg1, arg1);
-	addChildNode(arg2, arg2);
 }
 
 DmlNode* ConcatenateNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
@@ -3572,7 +3752,7 @@ dsc* ConcatenateNode::execute(thread_db* tdbb, jrd_req* request) const
 
 ValueExprNode* ConcatenateNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	return FB_NEW_POOL(getPool()) ConcatenateNode(getPool(),
+	return FB_NEW_POOL(dsqlScratch->getPool()) ConcatenateNode(dsqlScratch->getPool(),
 		doDsqlPass(dsqlScratch, arg1), doDsqlPass(dsqlScratch, arg2));
 }
 
@@ -3972,9 +4152,9 @@ dsc* CurrentRoleNode::execute(thread_db* tdbb, jrd_req* request) const
 	return &impure->vlu_desc;
 }
 
-ValueExprNode* CurrentRoleNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
+ValueExprNode* CurrentRoleNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	return FB_NEW_POOL(getPool()) CurrentRoleNode(getPool());
+	return FB_NEW_POOL(dsqlScratch->getPool()) CurrentRoleNode(dsqlScratch->getPool());
 }
 
 
@@ -4065,9 +4245,9 @@ dsc* CurrentUserNode::execute(thread_db* tdbb, jrd_req* request) const
 	return &impure->vlu_desc;
 }
 
-ValueExprNode* CurrentUserNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
+ValueExprNode* CurrentUserNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	return FB_NEW_POOL(getPool()) CurrentUserNode(getPool());
+	return FB_NEW_POOL(dsqlScratch->getPool()) CurrentUserNode(dsqlScratch->getPool());
 }
 
 
@@ -4099,8 +4279,8 @@ string DecodeNode::internalPrint(NodePrinter& printer) const
 
 ValueExprNode* DecodeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	DecodeNode* node = FB_NEW_POOL(getPool()) DecodeNode(getPool(), doDsqlPass(dsqlScratch, test),
-		doDsqlPass(dsqlScratch, conditions), doDsqlPass(dsqlScratch, values));
+	DecodeNode* node = FB_NEW_POOL(dsqlScratch->getPool()) DecodeNode(dsqlScratch->getPool(),
+		doDsqlPass(dsqlScratch, test), doDsqlPass(dsqlScratch, conditions), doDsqlPass(dsqlScratch, values));
 	node->label = label;
 	node->make(dsqlScratch, &node->nodDesc);	// Set descriptor for output node.
 	node->setParameterType(dsqlScratch, &node->nodDesc, false);
@@ -4138,10 +4318,11 @@ ValueExprNode* DecodeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			}
 			else
 			{
-				DecodeNode* newNode = FB_NEW_POOL(getPool()) DecodeNode(getPool(),
+				DecodeNode* newNode = FB_NEW_POOL(dsqlScratch->getPool()) DecodeNode(dsqlScratch->getPool(),
 					doDsqlPass(dsqlScratch, test),
-					FB_NEW_POOL(getPool()) ValueListNode(getPool(), conditionsCount),
-					FB_NEW_POOL(getPool()) ValueListNode(getPool(), valuesCount + (last ? 0 : 1)));
+					FB_NEW_POOL(dsqlScratch->getPool()) ValueListNode(dsqlScratch->getPool(), conditionsCount),
+					FB_NEW_POOL(dsqlScratch->getPool()) ValueListNode(dsqlScratch->getPool(),
+						valuesCount + (last ? 0 : 1)));
 
 				newNode->conditions->items.assign(conditions.begin() + index, conditionsCount);
 				newNode->values->items.assign(values.begin() + index, valuesCount);
@@ -4186,7 +4367,7 @@ bool DecodeNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 	if (setParameters)
 	{
 		// Build list to make describe information for the test and conditions expressions.
-		AutoPtr<ValueListNode> node1(FB_NEW_POOL(getPool()) ValueListNode(getPool(),
+		AutoPtr<ValueListNode> node1(FB_NEW_POOL(dsqlScratch->getPool()) ValueListNode(dsqlScratch->getPool(),
 			conditions->items.getCount() + 1));
 
 		dsc node1Desc;
@@ -4403,7 +4584,7 @@ ValueExprNode* DefaultNode::createFromField(thread_db* tdbb, CompilerScratch* cs
 		if (!map)
 			map = localMap.getBuffer(STREAM_MAP_LENGTH);
 
-		return NodeCopier(csb, map).copy(tdbb, fld->fld_default_value);
+		return NodeCopier(csb->csb_pool, csb, map).copy(tdbb, fld->fld_default_value);
 	}
 	else
 		return FB_NEW_POOL(csb->csb_pool) NullNode(csb->csb_pool);
@@ -4421,7 +4602,7 @@ string DefaultNode::internalPrint(NodePrinter& printer) const
 
 ValueExprNode* DefaultNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	DefaultNode* node = FB_NEW_POOL(getPool()) DefaultNode(getPool(),
+	DefaultNode* node = FB_NEW_POOL(dsqlScratch->getPool()) DefaultNode(dsqlScratch->getPool(),
 		relationName, fieldName);
 	return node;
 }
@@ -4447,9 +4628,9 @@ void DefaultNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* /*desc*/)
 {
 }
 
-bool DefaultNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool DefaultNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+	if (!ExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 		return false;
 
 	const DefaultNode* o = nodeAs<DefaultNode>(other);
@@ -4489,9 +4670,9 @@ DmlNode* DerivedExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScrat
 	return node;
 }
 
-void DerivedExprNode::collectStreams(SortedStreamList& streamList) const
+void DerivedExprNode::collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const
 {
-	arg->collectStreams(streamList);
+	arg->collectStreams(csb, streamList);
 
 	for (const auto i : internalStreamList)
 	{
@@ -4507,7 +4688,7 @@ bool DerivedExprNode::computable(CompilerScratch* csb, StreamType stream,
 		return false;
 
 	SortedStreamList argStreams;
-	arg->collectStreams(argStreams);
+	arg->collectStreams(csb, argStreams);
 
 	for (const auto n : internalStreamList)
 	{
@@ -4668,7 +4849,7 @@ ValueExprNode* DomainValidationNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				  Arg::Gds(isc_dsql_domain_err));
 	}
 
-	DomainValidationNode* node = FB_NEW_POOL(getPool()) DomainValidationNode(getPool());
+	DomainValidationNode* node = FB_NEW_POOL(dsqlScratch->getPool()) DomainValidationNode(dsqlScratch->getPool());
 	node->domDesc = dsqlScratch->domainValue;
 
 	return node;
@@ -4732,7 +4913,6 @@ ExtractNode::ExtractNode(MemoryPool& pool, UCHAR aBlrSubOp, ValueExprNode* aArg)
 	  blrSubOp(aBlrSubOp),
 	  arg(aArg)
 {
-	addChildNode(arg, arg);
 }
 
 DmlNode* ExtractNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
@@ -4797,7 +4977,7 @@ ValueExprNode* ExtractNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			break;
 	}
 
-	return FB_NEW_POOL(getPool()) ExtractNode(getPool(), blrSubOp, sub1);
+	return FB_NEW_POOL(dsqlScratch->getPool()) ExtractNode(dsqlScratch->getPool(), blrSubOp, sub1);
 }
 
 void ExtractNode::setParameterName(dsql_par* parameter) const
@@ -4868,9 +5048,9 @@ ValueExprNode* ExtractNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-bool ExtractNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool ExtractNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+	if (!ExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 		return false;
 
 	const ExtractNode* o = nodeAs<ExtractNode>(other);
@@ -4879,9 +5059,9 @@ bool ExtractNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return blrSubOp == o->blrSubOp;
 }
 
-bool ExtractNode::sameAs(const ExprNode* other, bool ignoreStreams) const
+bool ExtractNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(other, ignoreStreams))
+	if (!ExprNode::sameAs(csb, other, ignoreStreams))
 		return false;
 
 	const ExtractNode* const otherNode = nodeAs<ExtractNode>(other);
@@ -5301,7 +5481,7 @@ ValueExprNode* FieldNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	if (dsqlScratch->isPsql() && !dsqlQualifier.hasData())
 	{
-		VariableNode* node = FB_NEW_POOL(getPool()) VariableNode(getPool());
+		VariableNode* node = FB_NEW_POOL(dsqlScratch->getPool()) VariableNode(dsqlScratch->getPool());
 		node->line = line;
 		node->column = column;
 		node->dsqlName = dsqlName;
@@ -5811,9 +5991,9 @@ void FieldNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 	}
 }
 
-bool FieldNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool FieldNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+	if (!ExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 		return false;
 
 	const FieldNode* o = nodeAs<FieldNode>(other);
@@ -5823,14 +6003,14 @@ bool FieldNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 		return false;
 
 	if (dsqlIndices || o->dsqlIndices)
-		return PASS1_node_match(dsqlIndices, o->dsqlIndices, ignoreMapCast);
+		return PASS1_node_match(dsqlScratch, dsqlIndices, o->dsqlIndices, ignoreMapCast);
 
 	return true;
 }
 
-bool FieldNode::sameAs(const ExprNode* other, bool ignoreStreams) const
+bool FieldNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(other, ignoreStreams))
+	if (!ExprNode::sameAs(csb, other, ignoreStreams))
 		return false;
 
 	const FieldNode* const otherNode = nodeAs<FieldNode>(other);
@@ -6102,7 +6282,7 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		// ASF: If the view field doesn't reference any of the view streams,
 		// evaluate it based on the view dbkey - CORE-1245.
 		SortedStreamList streams;
-		sub->collectStreams(streams);
+		sub->collectStreams(csb, streams);
 
 		bool view_refs = false;
 		for (FB_SIZE_T i = 0; i < streams.getCount(); i++)
@@ -6248,7 +6428,6 @@ GenIdNode::GenIdNode(MemoryPool& pool, bool aDialect1,
 	  implicit(aImplicit),
 	  identity(aIdentity)
 {
-	addChildNode(arg, arg);
 }
 
 DmlNode* GenIdNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
@@ -6300,9 +6479,8 @@ string GenIdNode::internalPrint(NodePrinter& printer) const
 
 ValueExprNode* GenIdNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	GenIdNode* const node = FB_NEW_POOL(getPool())
-		GenIdNode(getPool(), dialect1, generator.name,
-				  doDsqlPass(dsqlScratch, arg), implicit, identity);
+	GenIdNode* const node = FB_NEW_POOL(dsqlScratch->getPool()) GenIdNode(dsqlScratch->getPool(),
+		dialect1, generator.name, doDsqlPass(dsqlScratch, arg), implicit, identity);
 	node->generator = generator;
 	node->step = step;
 	node->sysGen = sysGen;
@@ -6370,9 +6548,9 @@ ValueExprNode* GenIdNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-bool GenIdNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool GenIdNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+	if (!ExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 		return false;
 
 	const GenIdNode* o = nodeAs<GenIdNode>(other);
@@ -6384,9 +6562,9 @@ bool GenIdNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 		implicit == o->implicit;
 }
 
-bool GenIdNode::sameAs(const ExprNode* other, bool ignoreStreams) const
+bool GenIdNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(other, ignoreStreams))
+	if (!ExprNode::sameAs(csb, other, ignoreStreams))
 		return false;
 
 	const GenIdNode* const otherNode = nodeAs<GenIdNode>(other);
@@ -6480,7 +6658,6 @@ InternalInfoNode::InternalInfoNode(MemoryPool& pool, ValueExprNode* aArg)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_INTERNAL_INFO>(pool),
 	  arg(aArg)
 {
-	addChildNode(arg, arg);
 }
 
 DmlNode* InternalInfoNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
@@ -6728,7 +6905,7 @@ ValueExprNode* InternalInfoNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			Arg::Gds(isc_random) << attr.alias);
 	}
 
-	return FB_NEW_POOL(getPool()) InternalInfoNode(getPool(), doDsqlPass(dsqlScratch, arg));
+	return FB_NEW_POOL(dsqlScratch->getPool()) InternalInfoNode(dsqlScratch->getPool(), doDsqlPass(dsqlScratch, arg));
 }
 
 
@@ -7001,7 +7178,7 @@ ValueExprNode* LiteralNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	if (litDesc.dsc_dtype > dtype_any_text)
 		return this;
 
-	LiteralNode* constant = FB_NEW_POOL(getPool()) LiteralNode(getPool());
+	LiteralNode* constant = FB_NEW_POOL(dsqlScratch->getPool()) LiteralNode(dsqlScratch->getPool());
 	constant->dsqlStr = dsqlStr;
 	constant->litDesc = litDesc;
 
@@ -7139,9 +7316,9 @@ ValueExprNode* LiteralNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
 	return node;
 }
 
-bool LiteralNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool LiteralNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+	if (!ExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 		return false;
 
 	const LiteralNode* o = nodeAs<LiteralNode>(other);
@@ -7155,9 +7332,9 @@ bool LiteralNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return memcmp(litDesc.dsc_address, o->litDesc.dsc_address, len) == 0;
 }
 
-bool LiteralNode::sameAs(const ExprNode* other, bool ignoreStreams) const
+bool LiteralNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(other, ignoreStreams))
+	if (!ExprNode::sameAs(csb, other, ignoreStreams))
 		return false;
 
 	const LiteralNode* const otherNode = nodeAs<LiteralNode>(other);
@@ -7183,7 +7360,7 @@ dsc* LiteralNode::execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 	return const_cast<dsc*>(&litDesc);
 }
 
-void LiteralNode::fixMinSInt64()
+void LiteralNode::fixMinSInt64(MemoryPool& pool)
 {
 	// MIN_SINT64 should be stored as BIGINT, not DECFLOAT
 
@@ -7212,7 +7389,7 @@ void LiteralNode::fixMinSInt64()
 	if (*minSInt64)
 		return;
 
-	SINT64* valuePtr = FB_NEW_POOL(getPool()) SINT64(QUADCONST(0x8000000000000000));
+	SINT64* valuePtr = FB_NEW_POOL(pool) SINT64(QUADCONST(0x8000000000000000));
 	litDesc.dsc_dtype = dtype_int64;
 	litDesc.dsc_length = sizeof(SINT64);
 	litDesc.dsc_scale = scale;
@@ -7237,7 +7414,7 @@ string DsqlAliasNode::internalPrint(NodePrinter& printer) const
 
 ValueExprNode* DsqlAliasNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	DsqlAliasNode* node = FB_NEW_POOL(getPool()) DsqlAliasNode(getPool(), name,
+	DsqlAliasNode* node = FB_NEW_POOL(dsqlScratch->getPool()) DsqlAliasNode(dsqlScratch->getPool(), name,
 		doDsqlPass(dsqlScratch, value));
 	MAKE_desc(dsqlScratch, &node->value->nodDesc, node->value);
 	return node;
@@ -7280,9 +7457,9 @@ string DsqlMapNode::internalPrint(NodePrinter& printer) const
 	return "DsqlMapNode";
 }
 
-ValueExprNode* DsqlMapNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
+ValueExprNode* DsqlMapNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	return FB_NEW_POOL(getPool()) DsqlMapNode(getPool(), context, map);
+	return FB_NEW_POOL(dsqlScratch->getPool()) DsqlMapNode(dsqlScratch->getPool(), context, map);
 }
 
 bool DsqlMapNode::dsqlAggregateFinder(AggregateFinder& visitor)
@@ -7424,10 +7601,10 @@ void DsqlMapNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 		desc->setNullable(true);
 }
 
-bool DsqlMapNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool DsqlMapNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
 	const DsqlMapNode* o = nodeAs<DsqlMapNode>(other);
-	return o && PASS1_node_match(map->map_node, o->map->map_node, ignoreMapCast);
+	return o && PASS1_node_match(dsqlScratch, map->map_node, o->map->map_node, ignoreMapCast);
 }
 
 
@@ -7442,7 +7619,6 @@ DerivedFieldNode::DerivedFieldNode(MemoryPool& pool, const MetaName& aName, USHO
 	  value(aValue),
 	  context(NULL)
 {
-	addDsqlChildNode(value);
 }
 
 string DerivedFieldNode::internalPrint(NodePrinter& printer) const
@@ -7542,19 +7718,33 @@ ValueExprNode* DerivedFieldNode::dsqlFieldRemapper(FieldRemapper& visitor)
 void DerivedFieldNode::setParameterName(dsql_par* parameter) const
 {
 	const dsql_ctx* context = NULL;
-	const FieldNode* fieldNode;
-	const RecordKeyNode* dbKeyNode;
+	const FieldNode* fieldNode = NULL;
+	const RecordKeyNode* dbKeyNode = NULL;
 
-	if ((fieldNode = nodeAs<FieldNode>(value)))
+	const DerivedFieldNode* drvField = nodeAs<DerivedFieldNode>(value);
+	while (drvField)
+	{
+		if (fieldNode = nodeAs<FieldNode>(drvField->value))
+			break;
+
+		if (dbKeyNode = nodeAs<RecordKeyNode>(drvField->value))
+			break;
+
+		drvField = nodeAs<DerivedFieldNode>(drvField->value);
+	};
+
+	if (fieldNode || (fieldNode = nodeAs<FieldNode>(value)))
 	{
 		parameter->par_name = fieldNode->dsqlField->fld_name.c_str();
 		context = fieldNode->dsqlContext;
 	}
-	else if ((dbKeyNode = nodeAs<RecordKeyNode>(value)))
+	else if (dbKeyNode || (dbKeyNode = nodeAs<RecordKeyNode>(value)))
 		dbKeyNode->setParameterName(parameter);
 
 	parameter->par_alias = name;
 	setParameterInfo(parameter, context);
+
+	parameter->par_rel_alias = this->context->ctx_alias;
 }
 
 void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -7646,11 +7836,9 @@ NegateNode::NegateNode(MemoryPool& pool, ValueExprNode* aArg)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_NEGATE>(pool),
 	  arg(aArg)
 {
-	addChildNode(arg, arg);
-
 	LiteralNode* literal = nodeAs<LiteralNode>(arg);
 	if (literal && literal->litDesc.dsc_dtype == dtype_dec128)
-		literal->fixMinSInt64();
+		literal->fixMinSInt64(pool);
 }
 
 DmlNode* NegateNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
@@ -7829,6 +8017,10 @@ dsc* NegateNode::execute(thread_db* tdbb, jrd_req* request) const
 			impure->vlu_misc.vlu_dec128 = impure->vlu_misc.vlu_dec128.neg();
 			break;
 
+		case dtype_dec_fixed:
+			impure->vlu_misc.vlu_dec_fixed = impure->vlu_misc.vlu_dec_fixed.neg();
+			break;
+
 		case dtype_int64:
 			if (impure->vlu_misc.vlu_int64 == MIN_SINT64)
 				ERR_post(Arg::Gds(isc_exception_integer_overflow));
@@ -7848,7 +8040,7 @@ dsc* NegateNode::execute(thread_db* tdbb, jrd_req* request) const
 
 ValueExprNode* NegateNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	return FB_NEW_POOL(getPool()) NegateNode(getPool(), doDsqlPass(dsqlScratch, arg));
+	return FB_NEW_POOL(dsqlScratch->getPool()) NegateNode(dsqlScratch->getPool(), doDsqlPass(dsqlScratch, arg));
 }
 
 
@@ -7936,7 +8128,6 @@ OrderNode::OrderNode(MemoryPool& pool, ValueExprNode* aValue)
 	  descending(false),
 	  nullsPlacement(NULLS_DEFAULT)
 {
-	addDsqlChildNode(value);
 }
 
 string OrderNode::internalPrint(NodePrinter& printer) const
@@ -7952,15 +8143,16 @@ string OrderNode::internalPrint(NodePrinter& printer) const
 
 OrderNode* OrderNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	OrderNode* node = FB_NEW_POOL(getPool()) OrderNode(getPool(), doDsqlPass(dsqlScratch, value));
+	OrderNode* node = FB_NEW_POOL(dsqlScratch->getPool()) OrderNode(dsqlScratch->getPool(),
+		doDsqlPass(dsqlScratch, value));
 	node->descending = descending;
 	node->nullsPlacement = nullsPlacement;
 	return node;
 }
 
-bool OrderNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool OrderNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+	if (!ExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 		return false;
 
 	const OrderNode* o = nodeAs<OrderNode>(other);
@@ -7972,9 +8164,9 @@ bool OrderNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 //--------------------
 
 
-bool WindowClause::Frame::sameAs(const ExprNode* other, bool ignoreStreams) const
+bool WindowClause::Frame::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(other, ignoreStreams))
+	if (!ExprNode::sameAs(csb, other, ignoreStreams))
 		return false;
 
 	const Frame* const otherNode = nodeAs<Frame>(other);
@@ -8004,9 +8196,9 @@ WindowClause::Frame* WindowClause::Frame::copy(thread_db* tdbb, NodeCopier& copi
 
 //--------------------
 
-bool WindowClause::FrameExtent::sameAs(const ExprNode* other, bool ignoreStreams) const
+bool WindowClause::FrameExtent::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(other, ignoreStreams))
+	if (!ExprNode::sameAs(csb, other, ignoreStreams))
 		return false;
 
 	const FrameExtent* const otherNode = nodeAs<FrameExtent>(other);
@@ -8033,7 +8225,7 @@ WindowClause::FrameExtent* WindowClause::FrameExtent::dsqlPass(DsqlCompilerScrat
 		}
 	}
 
-	return FB_NEW_POOL(getPool()) FrameExtent(getPool(), unit,
+	return FB_NEW_POOL(dsqlScratch->getPool()) FrameExtent(dsqlScratch->getPool(), unit,
 		doDsqlPass(dsqlScratch, frame1),
 		doDsqlPass(dsqlScratch, frame2));
 }
@@ -8101,7 +8293,7 @@ WindowClause* WindowClause::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	else
 		window = this;
 
-	WindowClause* node = FB_NEW_POOL(getPool()) WindowClause(getPool(),
+	WindowClause* node = FB_NEW_POOL(dsqlScratch->getPool()) WindowClause(dsqlScratch->getPool(),
 		window->name,
 		doDsqlPass(dsqlScratch, window->partition),
 		doDsqlPass(dsqlScratch, window->order),
@@ -8165,8 +8357,6 @@ OverNode::OverNode(MemoryPool& pool, AggNode* aAggExpr, const MetaName* aWindowN
 	  windowName(aWindowName),
 	  window(NULL)
 {
-	addDsqlChildNode(aggExpr);
-	addDsqlChildNode(window);
 }
 
 OverNode::OverNode(MemoryPool& pool, AggNode* aAggExpr, WindowClause* aWindow)
@@ -8175,8 +8365,6 @@ OverNode::OverNode(MemoryPool& pool, AggNode* aAggExpr, WindowClause* aWindow)
 	  windowName(NULL),
 	  window(aWindow)
 {
-	addDsqlChildNode(aggExpr);
-	addDsqlChildNode(window);
 }
 
 string OverNode::internalPrint(NodePrinter& printer) const
@@ -8197,7 +8385,10 @@ bool OverNode::dsqlAggregateFinder(AggregateFinder& visitor)
 
 	if (!wereWindow)
 	{
-		for (auto& child : aggExpr->dsqlChildNodes)
+		NodeRefsHolder holder(visitor.getPool());
+		aggExpr->getChildren(holder, true);
+
+		for (auto& child : holder.refs)
 			aggregate |= visitor.visit(child->getExpr());
 	}
 	else
@@ -8245,7 +8436,7 @@ ValueExprNode* OverNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	// Save the values to restore them in the end.
 	AutoSetRestore<WindowClause*> autoWindowNode(&visitor.windowNode, visitor.windowNode);
 
-	if (Aggregate2Finder::find(visitor.context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
+	if (Aggregate2Finder::find(visitor.getPool(), visitor.context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
 			true, window))
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -8257,9 +8448,12 @@ ValueExprNode* OverNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	// Before remap, aggExpr must always be an AggNode;
 	AggNode* aggNode = static_cast<AggNode*>(aggExpr.getObject());
 
-	for (auto& child : aggNode->dsqlChildNodes)
+	NodeRefsHolder holder(visitor.getPool());
+	aggNode->getChildren(holder, true);
+
+	for (auto& child : holder.refs)
 	{
-		if (Aggregate2Finder::find(visitor.context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
+		if (Aggregate2Finder::find(visitor.getPool(), visitor.context->ctx_scope_level, FIELD_MATCH_TYPE_EQUAL,
 				true, child->getExpr()))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -8267,7 +8461,7 @@ ValueExprNode* OverNode::dsqlFieldRemapper(FieldRemapper& visitor)
 		}
 	}
 
-	AggregateFinder aggFinder(visitor.dsqlScratch, false);
+	AggregateFinder aggFinder(visitor.getPool(), visitor.dsqlScratch, false);
 	aggFinder.deepestLevel = visitor.dsqlScratch->scopeLevel;
 	aggFinder.currentLevel = visitor.currentLevel;
 
@@ -8277,7 +8471,10 @@ ValueExprNode* OverNode::dsqlFieldRemapper(FieldRemapper& visitor)
 		{
 			AutoSetRestore<WindowClause*> autoWindowNode2(&visitor.windowNode, NULL);
 
-			for (auto& child : aggNode->dsqlChildNodes)
+			NodeRefsHolder holder(visitor.getPool());
+			aggNode->getChildren(holder, true);
+
+			for (auto& child : holder.refs)
 				child->remap(visitor);
 
 			doDsqlFieldRemapper(visitor, window);
@@ -8344,7 +8541,7 @@ ValueExprNode* OverNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	else
 		refWindow = window;
 
-	OverNode* node = FB_NEW_POOL(getPool()) OverNode(getPool(),
+	OverNode* node = FB_NEW_POOL(dsqlScratch->getPool()) OverNode(dsqlScratch->getPool(),
 		static_cast<AggNode*>(doDsqlPass(dsqlScratch, aggExpr)), doDsqlPass(dsqlScratch, refWindow));
 
 	const AggNode* aggNode = nodeAs<AggNode>(node->aggExpr);
@@ -8355,7 +8552,7 @@ ValueExprNode* OverNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		(aggNode->getCapabilities() & AggNode::CAP_RESPECTS_WINDOW_FRAME) !=
 			AggNode::CAP_RESPECTS_WINDOW_FRAME)
 	{
-		node->window->extent = WindowClause::FrameExtent::createDefault(getPool());
+		node->window->extent = WindowClause::FrameExtent::createDefault(dsqlScratch->getPool());
 		node->window->exclusion = WindowClause::Exclusion::NO_OTHERS;
 	}
 
@@ -8380,8 +8577,6 @@ ParameterNode::ParameterNode(MemoryPool& pool)
 	  argIndicator(NULL),
 	  argInfo(NULL)
 {
-	addChildNode(argFlag);
-	addChildNode(argIndicator);
 }
 
 DmlNode* ParameterNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
@@ -8455,7 +8650,7 @@ ValueExprNode* ParameterNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	dsql_msg* tempMsg = dsqlParameter ?
 		dsqlParameter->par_message : dsqlScratch->getStatement()->getSendMsg();
 
-	ParameterNode* node = FB_NEW_POOL(getPool()) ParameterNode(getPool());
+	ParameterNode* node = FB_NEW_POOL(dsqlScratch->getPool()) ParameterNode(dsqlScratch->getPool());
 	node->dsqlParameter = MAKE_parameter(tempMsg, true, true, dsqlParameterIndex, NULL);
 	node->dsqlParameterIndex = dsqlParameterIndex;
 
@@ -8605,7 +8800,7 @@ void ParameterNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 		*desc = dsqlParameter->par_desc;
 }
 
-bool ParameterNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
+bool ParameterNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool /*ignoreMapCast*/) const
 {
 	const ParameterNode* o = nodeAs<ParameterNode>(other);
 
@@ -8774,7 +8969,6 @@ RecordKeyNode::RecordKeyNode(MemoryPool& pool, UCHAR aBlrOp, const MetaName& aDs
 	  aggregate(false)
 {
 	fb_assert(blrOp == blr_dbkey || blrOp == blr_record_version || blrOp == blr_record_version2);
-	addDsqlChildNode(dsqlRelation);
 }
 
 DmlNode* RecordKeyNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
@@ -8838,10 +9032,11 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 			PASS1_ambiguity_check(dsqlScratch, getAlias(true), contexts);
 
-			RelationSourceNode* relNode = FB_NEW_POOL(getPool()) RelationSourceNode(getPool());
+			RelationSourceNode* relNode = FB_NEW_POOL(dsqlScratch->getPool()) RelationSourceNode(
+				dsqlScratch->getPool());
 			relNode->dsqlContext = context;
 
-			RecordKeyNode* node = FB_NEW_POOL(getPool()) RecordKeyNode(getPool(), blrOp);
+			RecordKeyNode* node = FB_NEW_POOL(dsqlScratch->getPool()) RecordKeyNode(dsqlScratch->getPool(), blrOp);
 			node->dsqlRelation = relNode;
 
 			return node;
@@ -8873,10 +9068,11 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				if (context->ctx_flags & CTX_null)
 					return FB_NEW_POOL(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
 
-				RelationSourceNode* relNode = FB_NEW_POOL(getPool()) RelationSourceNode(getPool());
+				RelationSourceNode* relNode = FB_NEW_POOL(dsqlScratch->getPool()) RelationSourceNode(
+					dsqlScratch->getPool());
 				relNode->dsqlContext = context;
 
-				RecordKeyNode* node = FB_NEW_POOL(getPool()) RecordKeyNode(getPool(), blrOp);
+				RecordKeyNode* node = FB_NEW_POOL(dsqlScratch->getPool()) RecordKeyNode(dsqlScratch->getPool(), blrOp);
 				node->dsqlRelation = relNode;
 
 				return node;
@@ -9044,9 +9240,9 @@ ValueExprNode* RecordKeyNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-bool RecordKeyNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool RecordKeyNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+	if (!ExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 		return false;
 
 	const RecordKeyNode* o = nodeAs<RecordKeyNode>(other);
@@ -9055,9 +9251,9 @@ bool RecordKeyNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return blrOp == o->blrOp;
 }
 
-bool RecordKeyNode::sameAs(const ExprNode* other, bool ignoreStreams) const
+bool RecordKeyNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(other, ignoreStreams))
+	if (!ExprNode::sameAs(csb, other, ignoreStreams))
 		return false;
 
 	const RecordKeyNode* const otherNode = nodeAs<RecordKeyNode>(other);
@@ -9495,7 +9691,6 @@ StrCaseNode::StrCaseNode(MemoryPool& pool, UCHAR aBlrOp, ValueExprNode* aArg)
 	  blrOp(aBlrOp),
 	  arg(aArg)
 {
-	addChildNode(arg, arg);
 }
 
 DmlNode* StrCaseNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
@@ -9517,7 +9712,7 @@ string StrCaseNode::internalPrint(NodePrinter& printer) const
 
 ValueExprNode* StrCaseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	return FB_NEW_POOL(getPool()) StrCaseNode(getPool(), blrOp, doDsqlPass(dsqlScratch, arg));
+	return FB_NEW_POOL(dsqlScratch->getPool()) StrCaseNode(dsqlScratch->getPool(), blrOp, doDsqlPass(dsqlScratch, arg));
 }
 
 void StrCaseNode::setParameterName(dsql_par* parameter) const
@@ -9572,9 +9767,9 @@ ValueExprNode* StrCaseNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-bool StrCaseNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool StrCaseNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+	if (!ExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 		return false;
 
 	const StrCaseNode* o = nodeAs<StrCaseNode>(other);
@@ -9583,9 +9778,9 @@ bool StrCaseNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return blrOp == o->blrOp;
 }
 
-bool StrCaseNode::sameAs(const ExprNode* other, bool ignoreStreams) const
+bool StrCaseNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(other, ignoreStreams))
+	if (!ExprNode::sameAs(csb, other, ignoreStreams))
 		return false;
 
 	const StrCaseNode* const otherNode = nodeAs<StrCaseNode>(other);
@@ -9689,7 +9884,6 @@ StrLenNode::StrLenNode(MemoryPool& pool, UCHAR aBlrSubOp, ValueExprNode* aArg)
 	  blrSubOp(aBlrSubOp),
 	  arg(aArg)
 {
-	addChildNode(arg, arg);
 }
 
 DmlNode* StrLenNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
@@ -9713,7 +9907,8 @@ string StrLenNode::internalPrint(NodePrinter& printer) const
 
 ValueExprNode* StrLenNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	return FB_NEW_POOL(getPool()) StrLenNode(getPool(), blrSubOp, doDsqlPass(dsqlScratch, arg));
+	return FB_NEW_POOL(dsqlScratch->getPool()) StrLenNode(dsqlScratch->getPool(),
+		blrSubOp, doDsqlPass(dsqlScratch, arg));
 }
 
 void StrLenNode::setParameterName(dsql_par* parameter) const
@@ -9787,9 +9982,9 @@ ValueExprNode* StrLenNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-bool StrLenNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool StrLenNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+	if (!ExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 		return false;
 
 	const StrLenNode* o = nodeAs<StrLenNode>(other);
@@ -9798,9 +9993,9 @@ bool StrLenNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return blrSubOp == o->blrSubOp;
 }
 
-bool StrLenNode::sameAs(const ExprNode* other, bool ignoreStreams) const
+bool StrLenNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(other, ignoreStreams))
+	if (!ExprNode::sameAs(csb, other, ignoreStreams))
 		return false;
 
 	const StrLenNode* const otherNode = nodeAs<StrLenNode>(other);
@@ -9941,9 +10136,6 @@ SubQueryNode::SubQueryNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDs
 	  value2(aValue2),
 	  subQuery(NULL)
 {
-	addChildNode(dsqlRse, rse);
-	addChildNode(value1, value1);
-	addChildNode(value2, value2);
 }
 
 DmlNode* SubQueryNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
@@ -9968,6 +10160,19 @@ DmlNode* SubQueryNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 	}
 
 	return node;
+}
+
+void SubQueryNode::getChildren(NodeRefsHolder& holder, bool dsql) const
+{
+	ValueExprNode::getChildren(holder, dsql);
+
+	if (dsql)
+		holder.add(dsqlRse);
+	else
+		holder.add(rse);
+
+	holder.add(value1);
+	holder.add(value2);
 }
 
 string SubQueryNode::internalPrint(NodePrinter& printer) const
@@ -9997,8 +10202,8 @@ ValueExprNode* SubQueryNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	RseNode* rse = PASS1_rse(dsqlScratch, nodeAs<SelectExprNode>(dsqlRse), false);
 
-	SubQueryNode* node = FB_NEW_POOL(getPool()) SubQueryNode(getPool(), blrOp, rse,
-		rse->dsqlSelectList->items[0], FB_NEW_POOL(getPool()) NullNode(getPool()));
+	SubQueryNode* node = FB_NEW_POOL(dsqlScratch->getPool()) SubQueryNode(dsqlScratch->getPool(), blrOp, rse,
+		rse->dsqlSelectList->items[0], FB_NEW_POOL(dsqlScratch->getPool()) NullNode(dsqlScratch->getPool()));
 
 	// Finish off by cleaning up contexts.
 	dsqlScratch->context->clear(base);
@@ -10056,13 +10261,13 @@ ValueExprNode* SubQueryNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	return this;
 }
 
-void SubQueryNode::collectStreams(SortedStreamList& streamList) const
+void SubQueryNode::collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const
 {
 	if (rse)
-		rse->collectStreams(streamList);
+		rse->collectStreams(csb, streamList);
 
 	if (value1)
-		value1->collectStreams(streamList);
+		value1->collectStreams(csb, streamList);
 }
 
 bool SubQueryNode::computable(CompilerScratch* csb, StreamType stream,
@@ -10158,6 +10363,7 @@ void SubQueryNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 
 			case dtype_dec64:
 			case dtype_dec128:
+			case dtype_dec_fixed:
 				desc->dsc_dtype = dtype_dec128;
 				desc->dsc_length = sizeof(Decimal128);
 				desc->dsc_scale = 0;
@@ -10199,7 +10405,7 @@ ValueExprNode* SubQueryNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-bool SubQueryNode::sameAs(const ExprNode* /*other*/, bool /*ignoreStreams*/) const
+bool SubQueryNode::sameAs(CompilerScratch* /*csb*/, const ExprNode* /*other*/, bool /*ignoreStreams*/) const
 {
 	return false;
 }
@@ -10445,9 +10651,6 @@ SubstringNode::SubstringNode(MemoryPool& pool, ValueExprNode* aExpr, ValueExprNo
 	  start(aStart),
 	  length(aLength)
 {
-	addChildNode(expr, expr);
-	addChildNode(start, start);
-	addChildNode(length, length);
 }
 
 DmlNode* SubstringNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
@@ -10473,7 +10676,7 @@ string SubstringNode::internalPrint(NodePrinter& printer) const
 
 ValueExprNode* SubstringNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	SubstringNode* node = FB_NEW_POOL(getPool()) SubstringNode(getPool(),
+	SubstringNode* node = FB_NEW_POOL(dsqlScratch->getPool()) SubstringNode(dsqlScratch->getPool(),
 		doDsqlPass(dsqlScratch, expr),
 		doDsqlPass(dsqlScratch, start),
 		doDsqlPass(dsqlScratch, length));
@@ -10782,9 +10985,6 @@ SubstringSimilarNode::SubstringSimilarNode(MemoryPool& pool, ValueExprNode* aExp
 	  pattern(aPattern),
 	  escape(aEscape)
 {
-	addChildNode(expr, expr);
-	addChildNode(pattern, pattern);
-	addChildNode(escape, escape);
 }
 
 DmlNode* SubstringSimilarNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
@@ -10987,7 +11187,7 @@ dsc* SubstringSimilarNode::execute(thread_db* tdbb, jrd_req* request) const
 
 ValueExprNode* SubstringSimilarNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	SubstringSimilarNode* node = FB_NEW_POOL(getPool()) SubstringSimilarNode(getPool(),
+	SubstringSimilarNode* node = FB_NEW_POOL(dsqlScratch->getPool()) SubstringSimilarNode(dsqlScratch->getPool(),
 		doDsqlPass(dsqlScratch, expr),
 		doDsqlPass(dsqlScratch, pattern),
 		doDsqlPass(dsqlScratch, escape));
@@ -11017,7 +11217,6 @@ SysFuncCallNode::SysFuncCallNode(MemoryPool& pool, const MetaName& aName, ValueL
 	  args(aArgs),
 	  function(NULL)
 {
-	addChildNode(args, args);
 }
 
 DmlNode* SysFuncCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
@@ -11122,9 +11321,9 @@ ValueExprNode* SysFuncCallNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-bool SysFuncCallNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool SysFuncCallNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+	if (!ExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 		return false;
 
 	const SysFuncCallNode* otherNode = nodeAs<SysFuncCallNode>(other);
@@ -11132,9 +11331,9 @@ bool SysFuncCallNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return name == otherNode->name;
 }
 
-bool SysFuncCallNode::sameAs(const ExprNode* other, bool ignoreStreams) const
+bool SysFuncCallNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(other, ignoreStreams))
+	if (!ExprNode::sameAs(csb, other, ignoreStreams))
 		return false;
 
 	const SysFuncCallNode* const otherNode = nodeAs<SysFuncCallNode>(other);
@@ -11168,11 +11367,11 @@ ValueExprNode* SysFuncCallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	if (!dsqlSpecialSyntax && METD_get_function(dsqlScratch->getTransaction(), dsqlScratch, qualifName))
 	{
-		UdfCallNode* node = FB_NEW_POOL(getPool()) UdfCallNode(getPool(), qualifName, args);
+		UdfCallNode* node = FB_NEW_POOL(dsqlScratch->getPool()) UdfCallNode(dsqlScratch->getPool(), qualifName, args);
 		return node->dsqlPass(dsqlScratch);
 	}
 
-	SysFuncCallNode* node = FB_NEW_POOL(getPool()) SysFuncCallNode(getPool(), name,
+	SysFuncCallNode* node = FB_NEW_POOL(dsqlScratch->getPool()) SysFuncCallNode(dsqlScratch->getPool(), name,
 		doDsqlPass(dsqlScratch, args));
 	node->dsqlSpecialSyntax = dsqlSpecialSyntax;
 
@@ -11216,8 +11415,6 @@ TrimNode::TrimNode(MemoryPool& pool, UCHAR aWhere, ValueExprNode* aValue, ValueE
 	  value(aValue),
 	  trimChars(aTrimChars)
 {
-	addChildNode(value, value);
-	addChildNode(trimChars, trimChars);
 }
 
 DmlNode* TrimNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
@@ -11248,7 +11445,7 @@ string TrimNode::internalPrint(NodePrinter& printer) const
 
 ValueExprNode* TrimNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	TrimNode* node = FB_NEW_POOL(getPool()) TrimNode(getPool(), where,
+	TrimNode* node = FB_NEW_POOL(dsqlScratch->getPool()) TrimNode(dsqlScratch->getPool(), where,
 		doDsqlPass(dsqlScratch, value), doDsqlPass(dsqlScratch, trimChars));
 
 	// Try to force trimChars to be same type as value: TRIM(? FROM FIELD)
@@ -11353,9 +11550,9 @@ ValueExprNode* TrimNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-bool TrimNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool TrimNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+	if (!ExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 		return false;
 
 	const TrimNode* o = nodeAs<TrimNode>(other);
@@ -11364,9 +11561,9 @@ bool TrimNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return where == o->where;
 }
 
-bool TrimNode::sameAs(const ExprNode* other, bool ignoreStreams) const
+bool TrimNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(other, ignoreStreams))
+	if (!ExprNode::sameAs(csb, other, ignoreStreams))
 		return false;
 
 	const TrimNode* const otherNode = nodeAs<TrimNode>(other);
@@ -11560,7 +11757,6 @@ UdfCallNode::UdfCallNode(MemoryPool& pool, const QualifiedName& aName, ValueList
 	  dsqlFunction(NULL),
 	  isSubRoutine(false)
 {
-	addChildNode(args, args);
 }
 
 DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
@@ -11723,9 +11919,9 @@ ValueExprNode* UdfCallNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-bool UdfCallNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+bool UdfCallNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+	if (!ExprNode::dsqlMatch(dsqlScratch, other, ignoreMapCast))
 		return false;
 
 	const UdfCallNode* otherNode = nodeAs<UdfCallNode>(other);
@@ -11733,9 +11929,9 @@ bool UdfCallNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return name == otherNode->name;
 }
 
-bool UdfCallNode::sameAs(const ExprNode* other, bool ignoreStreams) const
+bool UdfCallNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
-	if (!ExprNode::sameAs(other, ignoreStreams))
+	if (!ExprNode::sameAs(csb, other, ignoreStreams))
 		return false;
 
 	const UdfCallNode* const otherNode = nodeAs<UdfCallNode>(other);
@@ -12023,7 +12219,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 
 ValueExprNode* UdfCallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	UdfCallNode* node = FB_NEW_POOL(getPool()) UdfCallNode(getPool(), name,
+	UdfCallNode* node = FB_NEW_POOL(dsqlScratch->getPool()) UdfCallNode(dsqlScratch->getPool(), name,
 		doDsqlPass(dsqlScratch, args));
 
 	if (name.package.isEmpty())
@@ -12078,9 +12274,6 @@ ValueIfNode::ValueIfNode(MemoryPool& pool, BoolExprNode* aCondition, ValueExprNo
 	  trueValue(aTrueValue),
 	  falseValue(aFalseValue)
 {
-	addChildNode(condition, condition);
-	addChildNode(trueValue, trueValue);
-	addChildNode(falseValue, falseValue);
 }
 
 DmlNode* ValueIfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
@@ -12206,7 +12399,7 @@ string ValueIfNode::internalPrint(NodePrinter& printer) const
 
 ValueExprNode* ValueIfNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	ValueIfNode* node = FB_NEW_POOL(getPool()) ValueIfNode(getPool(),
+	ValueIfNode* node = FB_NEW_POOL(dsqlScratch->getPool()) ValueIfNode(dsqlScratch->getPool(),
 		doDsqlPass(dsqlScratch, condition),
 		doDsqlPass(dsqlScratch, trueValue),
 		doDsqlPass(dsqlScratch, falseValue));
@@ -12331,7 +12524,7 @@ string VariableNode::internalPrint(NodePrinter& printer) const
 
 ValueExprNode* VariableNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	VariableNode* node = FB_NEW_POOL(getPool()) VariableNode(getPool());
+	VariableNode* node = FB_NEW_POOL(dsqlScratch->getPool()) VariableNode(dsqlScratch->getPool());
 	node->dsqlName = dsqlName;
 	node->dsqlVar = dsqlVar ? dsqlVar.getObject() : dsqlScratch->resolveVariable(dsqlName);
 
@@ -12374,7 +12567,7 @@ void VariableNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 	*desc = dsqlVar->desc;
 }
 
-bool VariableNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
+bool VariableNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool /*ignoreMapCast*/) const
 {
 	const VariableNode* o = nodeAs<VariableNode>(other);
 	if (!o)

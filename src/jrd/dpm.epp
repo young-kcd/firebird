@@ -232,53 +232,83 @@ double DPM_cardinality(thread_db* tdbb, jrd_rel* relation, const Format* format)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 
-	// Estimated number of total records for this relation,
-	// we assume that the records are compressed to 50%
-	// Every record has also a header and a jump section (13 + 4)
-
-	USHORT minRecordSize = static_cast<USHORT>(sizeof(Ods::data_page::dpg_repeat) + RHD_SIZE);
-	if (!(dbb->dbb_flags & DBB_no_reserve)) {
-		minRecordSize += RHDF_SIZE;
-	}
-
-	// Get the number of data-pages for this relation
+	// Get the number of data pages for this relation
 
 	const ULONG dataPages = DPM_data_pages(tdbb, relation);
 
-	// AB: If we have only 1 data-page then the cardinality calculation
-	// is to worse to be useful, therefore rely on the record count
-	// from the data-page.
+	// Calculate record count and total compressed record length
+	// on the first data page
 
-	if (dataPages == 1)
+	ULONG recordCount = 0, recordLength = 0;
+
+	const RelationPages* const relPages = relation->getPages(tdbb);
+	const vcl* const vector = relPages->rel_pages;
+	if (vector)
 	{
-		RelationPages* relPages = relation->getPages(tdbb);
-		vcl* vector = relPages->rel_pages;
-		if (vector)
+		WIN window(relPages->rel_pg_space_id, (*vector)[0]);
+
+		Ods::pointer_page* ppage =
+			(Ods::pointer_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_pointer);
+		if (!ppage)
 		{
-			WIN window(relPages->rel_pg_space_id, (*vector)[0]);
-			Ods::pointer_page* ppage =
-				(Ods::pointer_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_pointer);
-			USHORT recordCount = 0;
-			const ULONG* page = ppage->ppg_page;
+			 BUGCHECK(243);
+			 // msg 243 missing pointer page in DPM_data_pages
+		}
+
+		const ULONG* page = ppage->ppg_page;
+		const ULONG* const end_page = page + ppage->ppg_count;
+		while (page < end_page)
+		{
 			if (*page)
 			{
 				Ods::data_page* dpage =
 					(Ods::data_page*) CCH_HANDOFF(tdbb, &window, *page, LCK_read, pag_data);
-				recordCount = dpage->dpg_count;
+
+				const data_page::dpg_repeat* index = dpage->dpg_rpt;
+				const data_page::dpg_repeat* const end = index + dpage->dpg_count;
+				for (; index < end; index++)
+				{
+					if (index->dpg_offset)
+					{
+						recordCount++;
+						recordLength += index->dpg_length - RHD_SIZE;
+					}
+				}
+
+				break;
 			}
 
-			CCH_RELEASE(tdbb, &window);
-			return (double) recordCount;
+			page++;
 		}
+
+		CCH_RELEASE(tdbb, &window);
 	}
 
-	if (!format)
-		format = relation->rel_current_format;
+	// AB: If we have only 1 data-page then the cardinality calculation
+	// is too imprecise to be useful, therefore rely on the record count
+	// from the data-page.
 
-	return (double) dataPages * (dbb->dbb_page_size - DPG_SIZE) /
-		(minRecordSize + (format->fmt_length * 0.5));
+	if (dataPages == 1)
+		return (double) recordCount;
+
+	// Estimate total number of records for this relation
+
+	if (!format)
+		format = MET_current(tdbb, relation);
+
+	static const double DEFAULT_COMPRESSION_RATIO = 0.5;
+
+	const ULONG compressedSize =
+		recordCount ? recordLength / recordCount :
+		format->fmt_length * DEFAULT_COMPRESSION_RATIO;
+
+	const ULONG recordSize = sizeof(Ods::data_page::dpg_repeat) +
+		ROUNDUP(compressedSize + RHD_SIZE, ODS_ALIGNMENT) +
+		((dbb->dbb_flags & DBB_no_reserve) ? 0 : SPACE_FUDGE);
+
+	return (double) dataPages * (dbb->dbb_page_size - DPG_SIZE) / recordSize;
 }
 
 
@@ -2499,7 +2529,7 @@ static void delete_tail(thread_db* tdbb, rhdf* header, const USHORT page_space, 
 			window.win_page = *page1;
 			blob_page* bpage = (blob_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_blob);
 			ULONG* page2 = bpage->blp_page;
-			const ULONG* const end2 = page2 + ((bpage->blp_length - BLP_SIZE) / sizeof(ULONG));
+			const ULONG* const end2 = page2 + ((bpage->blp_length) / sizeof(ULONG));
 
 			while (page2 < end2)
 				PAG_release_page(tdbb, PageNumber(page_space, *page2++), ZERO_PAGE_NUMBER);

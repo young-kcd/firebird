@@ -360,7 +360,11 @@ public:
 
 	MonitoringData*			dbb_monitoring_data;	// monitoring data
 
+private:
+	Firebird::SyncObject dbb_modules_sync;
 	DatabaseModules	dbb_modules;		// external function/filter modules
+
+public:
 	ExtEngineManager dbb_extManager;	// external engine manager
 
 	Firebird::SyncObject	dbb_flush_count_mutex;
@@ -455,6 +459,8 @@ public:
 	}
 
 	void deletePool(MemoryPool* pool);
+
+	void registerModule(Module&);
 
 private:
 	Database(MemoryPool* p, Firebird::IPluginConfig* pConf, bool shared)

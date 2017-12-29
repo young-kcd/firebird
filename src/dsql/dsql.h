@@ -257,6 +257,10 @@ public:
 				precision = 18;
 				break;
 
+			case dtype_dec_fixed:
+				precision = 34;
+				break;
+
 			default:
 				fb_assert(!DTYPE_IS_EXACT(dtype));
 		}
@@ -486,8 +490,6 @@ public:
 	}
 
 public:
-	MemoryPool& getPool() { return PermanentStorage::getPool(); }
-
 	Type getType() const { return type; }
 	void setType(Type value) { type = value; }
 
@@ -569,7 +571,7 @@ public:
 		return statement;
 	}
 
-	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
+	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, bool* destroyScratchPool,
 		ntrace_result_t* traceResult) = 0;
 
 	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
@@ -594,7 +596,11 @@ public:
 
 	// Evaluate actual timeout value, consider config- and session-level timeout values,
 	// setup and start timer
-	void setupTimer(thread_db* tdbb);
+	TimeoutTimer* setupTimer(thread_db* tdbb);
+
+	USHORT parseMetadata(Firebird::IMessageMetadata* meta, const Firebird::Array<dsql_par*>& parameters_list);
+	void mapInOut(Jrd::thread_db* tdbb, bool toExternal, const dsql_msg* message, Firebird::IMessageMetadata* meta,
+		UCHAR* dsql_msg_buf, const UCHAR* in_dsql_msg_buf = NULL);
 
 	static void destroy(thread_db* tdbb, dsql_req* request, bool drop);
 
@@ -603,6 +609,7 @@ private:
 
 public:
 	const DsqlCompiledStatement* statement;
+	MemoryPool* liveScratchPool;
 	Firebird::Array<DsqlCompiledStatement*> cursors;	// Cursor update statements
 
 	dsql_dbb* req_dbb;			// DSQL attachment
@@ -612,6 +619,7 @@ public:
 	Firebird::Array<UCHAR*>	req_msg_buffers;
 	Firebird::string req_cursor_name;	// Cursor name, if any
 	DsqlCursor* req_cursor;		// Open cursor, if any
+	DsqlBatch* req_batch;		// Active batch, if any
 	Firebird::GenericMap<Firebird::NonPooled<const dsql_par*, dsc> > req_user_descs; // SQLDA data type
 
 	Firebird::AutoPtr<Jrd::RuntimeStatistics> req_fetch_baseline; // State of request performance counters when we reported it last time
@@ -642,7 +650,7 @@ public:
 	{
 	}
 
-	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
+	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, bool* destroyScratchPool,
 		ntrace_result_t* traceResult);
 
 	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
@@ -672,7 +680,7 @@ public:
 	{
 	}
 
-	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
+	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, bool* destroyScratchPool,
 		ntrace_result_t* traceResult);
 
 	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
@@ -699,7 +707,7 @@ public:
 		req_traced = false;
 	}
 
-	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
+	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, bool* destroyScratchPool,
 		ntrace_result_t* traceResult);
 
 	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
@@ -721,7 +729,7 @@ public:
 		req_traced = false;
 	}
 
-	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
+	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, bool* destroyScratchPool,
 		ntrace_result_t* traceResult);
 
 	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,

@@ -55,6 +55,7 @@
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_f_proto.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/classes/BatchCompletionState.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/DbImplementation.h"
@@ -68,9 +69,8 @@
 #include "../auth/SecureRemotePassword/client/SrpClient.h"
 #include "../auth/trusted/AuthSspi.h"
 #include "../plugins/crypt/arc4/Arc4.h"
-
 #include "BlrFromMessage.h"
-
+#include "../dsql/DsqlBatch.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -299,6 +299,218 @@ int ResultSet::release()
 	return 0;
 }
 
+class Batch FB_FINAL : public RefCntIface<IBatchImpl<Batch, CheckStatusWrapper> >
+{
+public:
+	Batch(Statement* s, IMessageMetadata* inFmt, unsigned parLength, const unsigned char* par);
+
+	// IResultSet implementation
+	int release();
+	void add(Firebird::CheckStatusWrapper* status, unsigned count, const void* inBuffer);
+	void addBlob(Firebird::CheckStatusWrapper* status, unsigned length, const void* inBuffer, ISC_QUAD* blobId,
+		unsigned parLength, const unsigned char* par);
+	void appendBlobData(Firebird::CheckStatusWrapper* status, unsigned length, const void* inBuffer);
+	void addBlobStream(Firebird::CheckStatusWrapper* status, unsigned length, const void* inBuffer);
+	void registerBlob(Firebird::CheckStatusWrapper* status, const ISC_QUAD* existingBlob, ISC_QUAD* blobId);
+	Firebird::IBatchCompletionState* execute(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction);
+	void cancel(Firebird::CheckStatusWrapper* status);
+	unsigned getBlobAlignment(Firebird::CheckStatusWrapper* status);
+	void setDefaultBpb(Firebird::CheckStatusWrapper* status, unsigned parLength, const unsigned char* par);
+	Firebird::IMessageMetadata* getMetadata(Firebird::CheckStatusWrapper* status);
+
+private:
+	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void releaseStatement();
+	void setBlobAlignment();
+
+	void genBlobId(ISC_QUAD* blobId)
+	{
+		if (++genId.gds_quad_low == 0)
+			++genId.gds_quad_high;
+		memcpy(blobId, &genId, sizeof(genId));
+	}
+
+	bool batchHasData()
+	{
+		return batchActive;
+	}
+
+	// working with message stream buffer
+	void putMessageData(ULONG count, const void* p)
+	{
+		fb_assert(messageStreamBuffer);
+
+		const UCHAR* ptr = reinterpret_cast<const UCHAR*>(p);
+
+		while(count)
+		{
+			ULONG remainSpace = messageBufferSize - messageStream;
+			ULONG step = MIN(count, remainSpace);
+			if (step == messageBufferSize)
+			{
+				// direct packet sent
+				sendMessagePacket(step, ptr);
+			}
+			else
+			{
+				// use buffer
+				memcpy(&messageStreamBuffer[messageStream * alignedSize], ptr, step * alignedSize);
+				messageStream += step;
+				if (messageStream == messageBufferSize)
+				{
+					sendMessagePacket(messageBufferSize, messageStreamBuffer);
+					messageStream = 0;
+				}
+			}
+
+			count -= step;
+			ptr += step * alignedSize;
+		}
+	}
+
+	// working with blob stream buffer
+	void newBlob()
+	{
+		alignBlobBuffer(blobAlign);
+
+		fb_assert(blobStream - blobStreamBuffer <= blobBufferSize);
+		ULONG space = blobBufferSize - (blobStream - blobStreamBuffer);
+		if (space < Rsr::BatchStream::SIZEOF_BLOB_HEAD)
+		{
+			sendBlobPacket(blobStream - blobStreamBuffer, blobStreamBuffer);
+			blobStream = blobStreamBuffer;
+		}
+	}
+
+	void alignBlobBuffer(unsigned alignment, ULONG* bs = NULL)
+	{
+		FB_UINT64 zeroFill = 0;
+		UCHAR* newPointer = FB_ALIGN(blobStream, alignment);
+		ULONG align = FB_ALIGN(blobStream, alignment) - blobStream;
+		putBlobData(align, &zeroFill);
+		if (bs)
+			*bs += align;
+	}
+
+	void putBlobData(ULONG size, const void* p)
+	{
+		fb_assert(blobStreamBuffer);
+
+		const UCHAR* ptr = reinterpret_cast<const UCHAR*>(p);
+
+		while(size)
+		{
+			ULONG space = blobBufferSize - (blobStream - blobStreamBuffer);
+			ULONG step = MIN(size, space);
+			if (step == blobBufferSize)
+			{
+				// direct packet sent
+				sendBlobPacket(blobBufferSize, ptr);
+			}
+			else
+			{
+				// use buffer
+				memcpy(blobStream, ptr, step);
+				blobStream += step;
+				if (blobStream - blobStreamBuffer == blobBufferSize)
+				{
+					sendBlobPacket(blobBufferSize, blobStreamBuffer);
+					blobStream = blobStreamBuffer;
+					sizePointer = NULL;
+				}
+			}
+
+			size -= step;
+			ptr += step;
+		}
+	}
+
+	void setSizePointer()
+	{
+		fb_assert(FB_ALIGN(blobStream, sizeof(*sizePointer)) == blobStream);
+		sizePointer = reinterpret_cast<ULONG*>(blobStream);
+	}
+
+	void putSegment(ULONG size, const void* ptr)
+	{
+		if (!sizePointer)
+		{
+			newBlob();
+
+			ISC_QUAD zero = {0, 0};
+			putBlobData(sizeof zero, &zero);
+			setSizePointer();
+			ULONG z2 = 0;
+			putBlobData(sizeof z2, &z2);
+			putBlobData(sizeof z2, &z2);
+		}
+
+		*sizePointer += size;
+		if (segmented)
+		{
+			if (size > MAX_USHORT)
+			{
+				(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blobtoobig)
+					<< Arg::Gds(isc_big_segment) << Arg::Num(size)).raise();
+			}
+
+			alignBlobBuffer(BLOB_SEGHDR_ALIGN, sizePointer);
+			*sizePointer += sizeof(USHORT);
+			USHORT segSize = size;
+			putBlobData(sizeof segSize, &segSize);
+		}
+		putBlobData(size, ptr);
+	}
+
+	void flashBatch()
+	{
+		alignBlobBuffer(blobAlign);
+		ULONG size = blobStream - blobStreamBuffer;
+		if (size)
+		{
+			sendBlobPacket(size, blobStreamBuffer);
+			blobStream = blobStreamBuffer;
+		}
+
+		batchActive = false;
+	}
+
+	void sendBlobPacket(unsigned size, const UCHAR* ptr);
+	void sendMessagePacket(unsigned size, const UCHAR* ptr);
+
+	Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete<UCHAR> > messageStreamBuffer, blobStreamBuffer;
+	ULONG messageStream;
+	UCHAR* blobStream;
+	ULONG* sizePointer;
+
+	ULONG messageSize, alignedSize, blobBufferSize, messageBufferSize, flags;
+	Statement* stmt;
+	RefPtr<IMessageMetadata> format;
+	ISC_QUAD genId;
+	int blobAlign;
+	UCHAR blobPolicy;
+	bool segmented, defSegmented, batchActive;
+
+public:
+	bool tmpStatement;
+};
+
+int Batch::release()
+{
+	if (--refCounter != 0)
+		return 1;
+
+	if (stmt)
+	{
+		LocalStatus ls;
+		CheckStatusWrapper status(&ls);
+		freeClientData(&status, true);
+	}
+	delete this;
+
+	return 0;
+}
+
 class Statement FB_FINAL : public RefCntIface<IStatementImpl<Statement, CheckStatusWrapper> >
 {
 public:
@@ -344,6 +556,9 @@ public:
 		statement->rsr_timeout = timeOut;
 	}
 
+	Batch* createBatch(CheckStatusWrapper* status, IMessageMetadata* inMetadata,
+		unsigned parLength, const unsigned char* par);
+
 public:
 	Statement(Rsr* handle, Attachment* a, unsigned aDialect)
 		: metadata(getPool(), this, NULL),
@@ -357,6 +572,11 @@ public:
 	Rsr* getStatement()
 	{
 		return statement;
+	}
+
+	Attachment* getAttachment()
+	{
+		return remAtt;
 	}
 
 	void parseMetadata(const Array<UCHAR>& buffer)
@@ -535,6 +755,10 @@ public:
 	void setIdleTimeout(CheckStatusWrapper* status, unsigned int timeOut);
 	unsigned int getStatementTimeout(CheckStatusWrapper* status);
 	void setStatementTimeout(CheckStatusWrapper* status, unsigned int timeOut);
+
+	Batch* createBatch(Firebird::CheckStatusWrapper* status, ITransaction* transaction,
+		unsigned stmtLength, const char* sqlStmt, unsigned dialect,
+		IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par);
 
 public:
 	Attachment(Rdb* handle, const PathName& path)
@@ -1642,7 +1866,8 @@ void Attachment::freeClientData(CheckStatusWrapper* status, bool force)
 			// telling the user that an unrecoverable network error occurred and that
 			// if there was any uncommitted work, its gone......  Oh well....
 			ex.stuffException(status);
-			if ((status->getErrors()[1] != isc_network_error) && (!force))
+			
+			if (!fb_utils::isNetworkError(status->getErrors()[1]) && (!force))
 			{
 				return;
 			}
@@ -1856,7 +2081,684 @@ void Attachment::setStatementTimeout(CheckStatusWrapper* status, unsigned int ti
 }
 
 
-Firebird::ITransaction* Statement::execute(CheckStatusWrapper* status, Firebird::ITransaction* apiTra,
+Batch* Attachment::createBatch(CheckStatusWrapper* status, ITransaction* transaction,
+	unsigned stmtLength, const char* sqlStmt, unsigned dialect,
+	IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par)
+{
+/**************************************
+ *
+ *	c r e a t e B a t c h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Create jdbc-style batch for SQL statement.
+ *
+ **************************************/
+	Statement* stmt = prepare(status, transaction, stmtLength, sqlStmt, dialect, 0);
+	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+	{
+		return NULL;
+	}
+
+	Batch* rc = stmt->createBatch(status, inMetadata, parLength, par);
+	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+	{
+		stmt->release();
+		return NULL;
+	}
+
+	rc->tmpStatement = true;
+	return rc;
+}
+
+
+Batch* Statement::createBatch(CheckStatusWrapper* status, IMessageMetadata* inMetadata,
+	unsigned parLength, const unsigned char* par)
+{
+/**************************************
+ *
+ *	c r e a t e B a t c h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Create jdbc-style batch for prepared statement.
+ *
+ **************************************/
+
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		CHECK_HANDLE(rdb, isc_bad_db_handle);
+		rem_port* port = rdb->rdb_port;
+
+		if (port->port_protocol < PROTOCOL_VERSION16)
+			unsupported();
+
+		// Build input BLR
+		RefPtr<IMessageMetadata> meta;
+		if (!inMetadata)
+		{
+			meta.assignRefNoIncr(getInputMetadata(status));
+			check(status);
+			inMetadata = meta;
+		}
+
+		BlrFromMessage inBlr(inMetadata, dialect, port->port_protocol);
+		const unsigned int in_blr_length = inBlr.getLength();
+		const UCHAR* const in_blr = inBlr.getBytes();
+
+		// Validate data length
+		CHECK_LENGTH(port, in_blr_length);
+
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		delete statement->rsr_bind_format;
+		statement->rsr_bind_format = NULL;
+
+		if (port->port_statement)
+		{
+			delete port->port_statement->rsr_select_format;
+			port->port_statement->rsr_select_format = NULL;
+		}
+
+		// Parse the blr describing the message, if there is any.
+		if (in_blr_length)
+			statement->rsr_bind_format = PARSE_msg_format(in_blr, in_blr_length);
+
+		RMessage* message = NULL;
+		if (!statement->rsr_buffer)
+		{
+			statement->rsr_buffer = message = FB_NEW RMessage(0);
+			statement->rsr_message = message;
+
+			message->msg_next = message;
+
+			statement->rsr_fmt_length = 0;
+		}
+		else
+			message = statement->rsr_message = statement->rsr_buffer;
+
+		statement->rsr_flags.clear(Rsr::FETCHED);
+		statement->rsr_format = statement->rsr_bind_format;
+		statement->rsr_batch_stream.blobRemaining = 0;
+		statement->clearException();
+
+		// set up the packet for the other guy...
+
+		PACKET* packet = &rdb->rdb_packet;
+		packet->p_operation = op_batch_create;
+		P_BATCH_CREATE* batch = &packet->p_batch_create;
+		batch->p_batch_statement = statement->rsr_id;
+		batch->p_batch_blr.cstr_length = in_blr_length;
+		batch->p_batch_blr.cstr_address = in_blr;
+		batch->p_batch_msglen = inMetadata->getMessageLength(status);
+		check(status);
+		batch->p_batch_pb.cstr_length = parLength;
+		batch->p_batch_pb.cstr_address = par;
+
+		send_partial_packet(port, packet);
+		defer_packet(port, packet, true);
+		message->msg_address = NULL;
+
+		Batch* b = FB_NEW Batch(this, inMetadata, parLength, par);
+		b->addRef();
+		return b;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return NULL;
+}
+
+
+Batch::Batch(Statement* s, IMessageMetadata* inFmt, unsigned parLength, const unsigned char* par)
+	: messageStream(0), blobStream(nullptr), sizePointer(nullptr),
+	  messageSize(0), alignedSize(0), blobBufferSize(0), messageBufferSize(0), flags(0),
+	  stmt(s), format(inFmt), blobAlign(0), blobPolicy(BLOB_NONE),
+	  segmented(false), defSegmented(false), batchActive(false), tmpStatement(false)
+{
+	LocalStatus ls;
+	CheckStatusWrapper st(&ls);
+
+	messageSize = format->getMessageLength(&st);
+	check(&st);
+	alignedSize = format->getAlignedLength(&st);
+	check(&st);
+
+	memset(&genId, 0, sizeof(genId));
+
+	ClumpletReader rdr(ClumpletReader::WideTagged, par, parLength);
+
+	for (rdr.rewind(); !rdr.isEof(); rdr.moveNext())
+	{
+		UCHAR t = rdr.getClumpTag();
+
+		switch (t)
+		{
+		case TAG_MULTIERROR:
+		case TAG_RECORD_COUNTS:
+			if (rdr.getInt())
+				flags |= (1 << t);
+			else
+				flags &= ~(1 << t);
+			break;
+
+		case TAG_BLOB_POLICY:
+			blobPolicy = rdr.getInt();
+
+			switch (blobPolicy)
+			{
+			case BLOB_ID_ENGINE:
+			case BLOB_ID_USER:
+			case BLOB_STREAM:
+				break;
+			default:
+				blobPolicy = BLOB_NONE;
+				break;
+			}
+
+			break;
+		}
+	}
+	s->getStatement()->rsr_batch_flags = flags;
+
+	// allocate buffers
+	Rsr* statement = stmt->getStatement();
+	CHECK_HANDLE(statement, isc_bad_req_handle);
+	Rdb* rdb = statement->rsr_rdb;
+	CHECK_HANDLE(rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	blobBufferSize = port->getPortConfig()->getClientBatchBuffer();
+	messageBufferSize = blobBufferSize / alignedSize;
+	if (!messageBufferSize)
+		messageBufferSize = 1;
+
+	messageStreamBuffer.reset(FB_NEW UCHAR[messageBufferSize * alignedSize]);
+	if (blobPolicy != BLOB_NONE)
+	{
+		blobStreamBuffer.reset(FB_NEW UCHAR[blobBufferSize]);
+		blobStream = blobStreamBuffer;
+	}
+}
+
+
+void Batch::add(CheckStatusWrapper* status, unsigned count, const void* inBuffer)
+{
+	try
+	{
+		// Check and validate handles, etc.
+
+		if (!stmt)
+		{
+			Arg::Gds(isc_bad_req_handle).raise();
+		}
+
+		Rsr* statement = stmt->getStatement();
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		CHECK_HANDLE(rdb, isc_bad_db_handle);
+		rem_port* port = rdb->rdb_port;
+
+		if (count == 0)
+			return;
+
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+		putMessageData(count, inBuffer);
+
+		batchActive = true;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+
+void Batch::sendMessagePacket(unsigned count, const UCHAR* ptr)
+{
+	Rsr* statement = stmt->getStatement();
+	CHECK_HANDLE(statement, isc_bad_req_handle);
+	Rdb* rdb = statement->rsr_rdb;
+	CHECK_HANDLE(rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+
+	PACKET* packet = &rdb->rdb_packet;
+	packet->p_operation = op_batch_msg;
+	P_BATCH_MSG* batch = &packet->p_batch_msg;
+	batch->p_batch_statement = statement->rsr_id;
+	batch->p_batch_messages = count;
+	batch->p_batch_data.cstr_address = const_cast<UCHAR*>(ptr);
+	statement->rsr_batch_size = alignedSize;
+
+	send_partial_packet(port, packet);
+	defer_packet(port, packet, true);
+}
+
+
+void Batch::addBlob(CheckStatusWrapper* status, unsigned length, const void* inBuffer, ISC_QUAD* blobId,
+	unsigned parLength, const unsigned char* par)
+{
+	try
+	{
+		// Check and validate handles, etc.
+		if (!stmt)
+		{
+			Arg::Gds(isc_bad_req_handle).raise();
+		}
+
+		Rsr* statement = stmt->getStatement();
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		CHECK_HANDLE(rdb, isc_bad_db_handle);
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		// Policy check
+		switch (blobPolicy)
+		{
+		case IBatch::BLOB_ID_ENGINE:
+			genBlobId(blobId);
+			break;
+		case IBatch::BLOB_ID_USER:
+			break;
+		default:
+			(Arg::Gds(isc_batch_policy) << "addBlob").raise();
+		}
+
+		// Build blob HDR in stream
+		newBlob();
+		putBlobData(sizeof *blobId, blobId);
+		setSizePointer();
+		putBlobData(sizeof parLength, &parLength);
+		putBlobData(sizeof parLength, &parLength);
+		putBlobData(parLength, par);
+		segmented = parLength ? fb_utils::isBpbSegmented(parLength, par) : defSegmented;
+
+		// Store blob data
+		putSegment(length, inBuffer);
+
+		batchActive = true;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+
+void Batch::appendBlobData(CheckStatusWrapper* status, unsigned length, const void* inBuffer)
+{
+	try
+	{
+		// Check and validate handles, etc.
+		if (!stmt)
+		{
+			Arg::Gds(isc_bad_req_handle).raise();
+		}
+
+		// Policy check
+		switch (blobPolicy)
+		{
+		case IBatch::BLOB_ID_USER:
+		case IBatch::BLOB_ID_ENGINE:
+			break;
+		default:
+			(Arg::Gds(isc_batch_policy) << "appendBlobData").raise();
+		}
+
+		Rsr* statement = stmt->getStatement();
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		CHECK_HANDLE(rdb, isc_bad_db_handle);
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		// Store blob data
+		putSegment(length, inBuffer);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+
+void Batch::addBlobStream(CheckStatusWrapper* status, unsigned length, const void* inBuffer)
+{
+	try
+	{
+		// Check and validate handles, etc.
+		if (!stmt)
+		{
+			Arg::Gds(isc_bad_req_handle).raise();
+		}
+
+		// Policy check
+		if (blobPolicy != IBatch::BLOB_STREAM)
+		{
+			(Arg::Gds(isc_batch_policy) << "addBlobStream").raise();
+		}
+
+		Rsr* statement = stmt->getStatement();
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		CHECK_HANDLE(rdb, isc_bad_db_handle);
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		// Store stream data
+		putBlobData(length, inBuffer);
+
+		batchActive = true;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+
+void Batch::sendBlobPacket(unsigned size, const UCHAR* ptr)
+{
+	Rsr* statement = stmt->getStatement();
+	Rdb* rdb = statement->rsr_rdb;
+	rem_port* port = rdb->rdb_port;
+
+	setBlobAlignment();
+	fb_assert(!(size % blobAlign));
+
+	PACKET* packet = &rdb->rdb_packet;
+	packet->p_operation = op_batch_blob_stream;
+	P_BATCH_BLOB* batch = &packet->p_batch_blob;
+	batch->p_batch_statement = statement->rsr_id;
+	batch->p_batch_blob_data.cstr_address = const_cast<UCHAR*>(ptr);
+	batch->p_batch_blob_data.cstr_length = size;
+
+	send_partial_packet(port, packet);
+	defer_packet(port, packet, true);
+}
+
+
+void Batch::setDefaultBpb(CheckStatusWrapper* status, unsigned parLength, const unsigned char* par)
+{
+	try
+	{
+		// Check and validate handles, etc.
+		if (!stmt)
+			Arg::Gds(isc_bad_req_handle).raise();
+
+		Rsr* statement = stmt->getStatement();
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		CHECK_HANDLE(rdb, isc_bad_db_handle);
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		// Check for presence of any data in batch buffers
+		if (batchHasData())
+			Arg::Gds(isc_batch_defbpb).raise();
+
+		// Set default segmentation flag
+		defSegmented = fb_utils::isBpbSegmented(parLength, par);
+
+		// Prepare and send the packet
+		PACKET* packet = &rdb->rdb_packet;
+		packet->p_operation = op_batch_set_bpb;
+		P_BATCH_SETBPB* batch = &packet->p_batch_setbpb;
+		batch->p_batch_statement = statement->rsr_id;
+		batch->p_batch_blob_bpb.cstr_address = par;
+		batch->p_batch_blob_bpb.cstr_length = parLength;
+
+		send_partial_packet(port, packet);
+		defer_packet(port, packet, true);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+
+unsigned Batch::getBlobAlignment(CheckStatusWrapper* status)
+{
+	try
+	{
+		setBlobAlignment();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return blobAlign;
+}
+
+
+void Batch::setBlobAlignment()
+{
+	if (blobAlign)
+		return;
+
+	// Check and validate handles, etc.
+	if (!stmt)
+	{
+		Arg::Gds(isc_bad_req_handle).raise();
+	}
+
+	Rsr* statement = stmt->getStatement();
+	CHECK_HANDLE(statement, isc_bad_req_handle);
+	Rdb* rdb = statement->rsr_rdb;
+	CHECK_HANDLE(rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+	// Perform info call to server
+	LocalStatus ls;
+	CheckStatusWrapper s(&ls);
+	UCHAR item = isc_info_sql_stmt_blob_align;
+	UCHAR buffer[16];
+	info(&s, rdb, op_info_sql, statement->rsr_id, 0,
+		 1, &item, 0, 0, sizeof(buffer), buffer);
+	check(&s);
+
+	// Extract from buffer
+	if (buffer[0] != item)
+		Arg::Gds(isc_batch_align).raise();
+
+	int len = gds__vax_integer(&buffer[1], 2);
+	statement->rsr_batch_stream.alignment = blobAlign = gds__vax_integer(&buffer[3], len);
+}
+
+
+IMessageMetadata* Batch::getMetadata(CheckStatusWrapper* status)
+{
+	reset(status);
+
+	format->addRef();
+	return format;
+}
+
+
+void Batch::registerBlob(CheckStatusWrapper* status, const ISC_QUAD* existingBlob, ISC_QUAD* blobId)
+{
+	try
+	{
+		// Check and validate handles, etc.
+
+		if (!stmt)
+		{
+			Arg::Gds(isc_bad_req_handle).raise();
+		}
+
+		Rsr* statement = stmt->getStatement();
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		CHECK_HANDLE(rdb, isc_bad_db_handle);
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		if (blobPolicy == IBatch::BLOB_ID_ENGINE)
+			genBlobId(blobId);
+
+		PACKET* packet = &rdb->rdb_packet;
+		packet->p_operation = op_batch_regblob;
+		P_BATCH_REGBLOB* batch = &packet->p_batch_regblob;
+		batch->p_batch_statement = statement->rsr_id;
+		batch->p_batch_exist_id = *existingBlob;
+		batch->p_batch_blob_id = *blobId;
+
+		send_partial_packet(port, packet);
+		defer_packet(port, packet, true);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+
+IBatchCompletionState* Batch::execute(CheckStatusWrapper* status, ITransaction* apiTra)
+{
+	try
+	{
+		// Check and validate handles, etc.
+
+		if (!stmt)
+		{
+			Arg::Gds(isc_bad_req_handle).raise();
+		}
+
+		Rsr* statement = stmt->getStatement();
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+
+		Rdb* rdb = statement->rsr_rdb;
+		CHECK_HANDLE(rdb, isc_bad_db_handle);
+
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		Rtr* transaction = NULL;
+		Transaction* rt = stmt->getAttachment()->remoteTransactionInterface(apiTra);
+		if (rt)
+		{
+			transaction = rt->getTransaction();
+			CHECK_HANDLE(transaction, isc_bad_trans_handle);
+		}
+
+		// Sanity checks complete - flash data in buffers
+		flashBatch();
+
+		// Prepare and send execute packet
+		PACKET* packet = &rdb->rdb_packet;
+		packet->p_operation = op_batch_exec;
+		P_BATCH_EXEC* batch = &packet->p_batch_exec;
+		batch->p_batch_statement = statement->rsr_id;
+		batch->p_batch_transaction = transaction->rtr_id;
+		send_packet(port, packet);
+
+		statement->rsr_batch_size = alignedSize;
+		AutoPtr<BatchCompletionState, SimpleDispose<BatchCompletionState> >
+			cs(FB_NEW BatchCompletionState(flags & (1 << IBatch::TAG_RECORD_COUNTS), 256));
+		statement->rsr_batch_cs = cs;
+		receive_packet(port, packet);
+		statement->rsr_batch_cs = nullptr;
+
+		if (packet->p_operation == op_batch_cs)
+			return cs.release();
+
+		REMOTE_check_response(status, rdb, packet);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return nullptr;
+}
+
+
+void Batch::cancel(CheckStatusWrapper* status)
+{
+	try
+	{
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+
+void Batch::freeClientData(CheckStatusWrapper* status, bool force)
+{
+	try
+	{
+		// Check and validate handles, etc.
+
+		if (!stmt)
+		{
+			Arg::Gds(isc_dsql_cursor_err).raise();
+		}
+
+		Rsr* statement = stmt->getStatement();
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		PACKET* packet = &rdb->rdb_packet;
+		packet->p_operation = op_batch_rls;
+
+		P_BATCH_FREE* batch = &packet->p_batch_free;
+		batch->p_batch_statement = statement->rsr_id;
+
+		if (rdb->rdb_port->port_flags & PORT_lazy)
+		{
+			defer_packet(rdb->rdb_port, packet);
+			packet->p_resp.p_resp_object = statement->rsr_id;
+		}
+		else
+		{
+			try
+			{
+				send_and_receive(status, rdb, packet);
+			}
+			catch (const Exception&)
+			{
+				if (!force)
+					throw;
+			}
+		}
+
+		releaseStatement();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+
+void Batch::releaseStatement()
+{
+	if (tmpStatement)
+	{
+		stmt->release();
+	}
+
+	stmt = NULL;
+}
+
+
+ITransaction* Statement::execute(CheckStatusWrapper* status, ITransaction* apiTra,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 {
 /**************************************
@@ -7321,7 +8223,8 @@ static void send_packet(rem_port* port, PACKET* packet)
 			if (!p->sent)
 			{
 				if (!port->send_partial(&p->packet))
-					Arg::Gds(isc_net_write_err).raise();
+					(Arg::Gds(isc_net_write_err) <<
+					 Arg::Gds(isc_random) << "send_packet/send_partial").raise();
 
 				p->sent = true;
 			}
@@ -7330,7 +8233,7 @@ static void send_packet(rem_port* port, PACKET* packet)
 
 	if (!port->send(packet))
 	{
-		Arg::Gds(isc_net_write_err).raise();
+		(Arg::Gds(isc_net_write_err)<< Arg::Gds(isc_random) << "send_packet/send").raise();
 	}
 }
 
@@ -7368,7 +8271,8 @@ static void send_partial_packet(rem_port* port, PACKET* packet)
 		{
 			if (!port->send_partial(&p->packet))
 			{
-				Arg::Gds(isc_net_write_err).raise();
+				(Arg::Gds(isc_net_write_err) <<
+				 Arg::Gds(isc_random) << "send_partial_packet/send_partial").raise();
 			}
 			p->sent = true;
 		}
@@ -7376,7 +8280,8 @@ static void send_partial_packet(rem_port* port, PACKET* packet)
 
 	if (!port->send_partial(packet))
 	{
-		Arg::Gds(isc_net_write_err).raise();
+		(Arg::Gds(isc_net_write_err) <<
+		 Arg::Gds(isc_random) << "send_partial_packet/send").raise();
 	}
 }
 

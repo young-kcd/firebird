@@ -245,6 +245,15 @@ public:
 	explicit Num(ISC_STATUS s) throw();
 };
 
+class Quad : public Str
+{
+public:
+	explicit Quad(const ISC_QUAD* quad) throw();
+private:
+	//		high  :  low  \0
+	char text[8 + 1 + 8 + 1];
+};
+
 class Interpreted : public StatusVector
 {
 public:

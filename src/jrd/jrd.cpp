@@ -132,6 +132,7 @@
 
 #include "../dsql/dsql.h"
 #include "../dsql/dsql_proto.h"
+#include "../dsql/DsqlBatch.h"
 
 using namespace Jrd;
 using namespace Firebird;
@@ -650,6 +651,14 @@ namespace
 		validateHandle(tdbb, cursor->getAttachment());
 	}
 
+	inline void validateHandle(thread_db* tdbb, DsqlBatch* const batch)
+	{
+		if (!batch)
+			status_exception::raise(Arg::Gds(isc_bad_batch_handle));
+
+		validateHandle(tdbb, batch->getAttachment());
+	}
+
 	class AttachmentHolder
 	{
 	public:
@@ -949,6 +958,7 @@ public:
 	bool	dpb_nolinger;
 	bool	dpb_reset_icu;
 	bool	dpb_map_attach;
+	ULONG	dpb_remote_flags;
 
 	// here begin compound objects
 	// for constructor to work properly dpb_user_name
@@ -1157,12 +1167,21 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, FbStatus
 		attachment->att_trace_manager->event_error(&conn, &traceStatus, func);
 	}
 
+	JRD_transliterate(tdbb, vector);
 
+	return vector->getErrors()[1];
+}
+
+
+// Transliterate status vector to the client charset.
+void JRD_transliterate(thread_db* tdbb, Firebird::IStatus* vector) throw()
+{
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	USHORT charSet;
 	if (!attachment || (charSet = attachment->att_client_charset) == CS_METADATA ||
 		charSet == CS_NONE)
 	{
-		return vector->getErrors()[1];
+		return;
 	}
 
 	const ISC_STATUS* const vectorStart = vector->getErrors();
@@ -1235,12 +1254,10 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, FbStatus
 	}
 	catch (...)
 	{
-		ex.stuffException(vector);
-		return vector->getErrors()[1];
+		return;
 	}
 
 	vector->setErrors2(newVector.getCount() - 1, newVector.begin());
-	return vector->getErrors()[1];
 }
 
 
@@ -2912,6 +2929,9 @@ void JAttachment::detach(CheckStatusWrapper* user_status)
  *	Close down a database.
  *
  **************************************/
+	if (!att->getHandle())
+		return;				// already detached
+
 	RefDeb(DEB_RLS_JATT, "JAttachment::detach");
 	freeEngineData(user_status, false);
 }
@@ -3362,7 +3382,7 @@ void JBlob::putSegment(CheckStatusWrapper* user_status, unsigned int buffer_leng
 			else
 			{
 				ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blobtoobig) <<
-						 Arg::Gds(isc_random) << "Segment size >= 64Kb");
+						 Arg::Gds(isc_big_segment) << Arg::Num(buffer_length));
 			}
 		}
 		catch (const Exception& ex)
@@ -4797,6 +4817,21 @@ ITransaction* JAttachment::execute(CheckStatusWrapper* user_status, ITransaction
 }
 
 
+IBatch* JAttachment::createBatch(CheckStatusWrapper* status, ITransaction* transaction,
+	unsigned stmtLength, const char* sqlStmt, unsigned dialect,
+	IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par)
+{
+	RefPtr<IStatement> tmpStatement(REF_NO_INCR, prepare(status, transaction, stmtLength, sqlStmt,
+		dialect, 0));
+	if (status->getState() & IStatus::STATE_ERRORS)
+	{
+		return NULL;
+	}
+
+	return tmpStatement->createBatch(status, inMetadata, parLength, par);
+}
+
+
 int JResultSet::fetchNext(CheckStatusWrapper* user_status, void* buffer)
 {
 	try
@@ -5476,6 +5511,369 @@ void JStatement::setTimeout(CheckStatusWrapper* user_status, unsigned int timeOu
 }
 
 
+JBatch* JStatement::createBatch(Firebird::CheckStatusWrapper* status, Firebird::IMessageMetadata* inMetadata,
+	unsigned parLength, const unsigned char* par)
+{
+	JBatch* batch = NULL;
+
+	try
+	{
+		EngineContextHolder tdbb(status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			RefPtr<IMessageMetadata> defaultIn;
+			if (!inMetadata)
+			{
+				defaultIn.assignRefNoIncr(metadata.getInputMetadata());
+				if (defaultIn)
+				{
+					inMetadata = defaultIn;
+				}
+			}
+
+			DsqlBatch* const b = DsqlBatch::open(tdbb, getHandle(), inMetadata, parLength, par);
+
+			batch = FB_NEW JBatch(b, this);
+			batch->addRef();
+			b->setInterfacePtr(batch);
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, status, "JStatement::createBatch");
+			return NULL;
+		}
+
+		trace_warning(tdbb, status, "JStatement::createBatch");
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+		return NULL;
+	}
+
+	successful_completion(status);
+	return batch;
+}
+
+
+JBatch::JBatch(DsqlBatch* handle, JStatement* aStatement)
+	: batch(handle),
+	  statement(aStatement)
+{ }
+
+
+StableAttachmentPart* JBatch::getAttachment()
+{
+	return statement->getAttachment();
+}
+
+
+int JBatch::release()
+{
+	if (--refCounter != 0)
+		return 1;
+
+	if (batch)
+		delete batch;
+
+	delete this;
+	return 0;
+}
+
+
+void JBatch::add(CheckStatusWrapper* status, unsigned count, const void* inBuffer)
+{
+	try
+	{
+		EngineContextHolder tdbb(status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			DsqlBatch* b = getHandle();
+			b->add(tdbb, count, inBuffer);
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, status, "JBatch::add");
+			return;
+		}
+
+		trace_warning(tdbb, status, "JBatch::add");
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+		return;
+	}
+
+	successful_completion(status);
+}
+
+
+void JBatch::addBlob(CheckStatusWrapper* status, unsigned length, const void* inBuffer, ISC_QUAD* blobId,
+	unsigned parLength, const unsigned char* par)
+{
+	try
+	{
+		EngineContextHolder tdbb(status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			DsqlBatch* b = getHandle();
+			b->addBlob(tdbb, length, inBuffer, blobId, parLength, par);
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, status, "JBatch::addBlob");
+			return;
+		}
+
+		trace_warning(tdbb, status, "JBatch::addBlob");
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+		return;
+	}
+
+	successful_completion(status);
+}
+
+
+void JBatch::appendBlobData(CheckStatusWrapper* status, unsigned length, const void* inBuffer)
+{
+	try
+	{
+		EngineContextHolder tdbb(status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			DsqlBatch* b = getHandle();
+			b->appendBlobData(tdbb, length, inBuffer);
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, status, "JBatch::appendBlobData");
+			return;
+		}
+
+		trace_warning(tdbb, status, "JBatch::appendBlobData");
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+		return;
+	}
+
+	successful_completion(status);
+}
+
+
+void JBatch::addBlobStream(CheckStatusWrapper* status, unsigned length, const void* inBuffer)
+{
+	try
+	{
+		EngineContextHolder tdbb(status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			DsqlBatch* b = getHandle();
+			b->addBlobStream(tdbb, length, inBuffer);
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, status, "JBatch::addBlobStream");
+			return;
+		}
+
+		trace_warning(tdbb, status, "JBatch::addBlobStream");
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+		return;
+	}
+
+	successful_completion(status);
+}
+
+
+void JBatch::setDefaultBpb(CheckStatusWrapper* status, unsigned parLength, const unsigned char* par)
+{
+	try
+	{
+		EngineContextHolder tdbb(status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			DsqlBatch* b = getHandle();
+			b->setDefaultBpb(tdbb, parLength, par);
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, status, "JBatch::setDefaultBpb");
+			return;
+		}
+
+		trace_warning(tdbb, status, "JBatch::setDefaultBpb");
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+		return;
+	}
+
+	successful_completion(status);
+}
+
+
+unsigned JBatch::getBlobAlignment(CheckStatusWrapper*)
+{
+	return DsqlBatch::BLOB_STREAM_ALIGN;
+}
+
+
+IMessageMetadata* JBatch::getMetadata(CheckStatusWrapper* status)
+{
+	IMessageMetadata* meta;
+	try
+	{
+		EngineContextHolder tdbb(status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			DsqlBatch* b = getHandle();
+			meta = b->getMetadata(tdbb);
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, status, "JBatch::getMetadata");
+			return NULL;
+		}
+
+		trace_warning(tdbb, status, "JBatch::getMetadata");
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+		return NULL;
+	}
+
+	successful_completion(status);
+	return meta;
+}
+
+
+void JBatch::registerBlob(CheckStatusWrapper* status, const ISC_QUAD* existingBlob, ISC_QUAD* blobId)
+{
+	try
+	{
+		EngineContextHolder tdbb(status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			DsqlBatch* b = getHandle();
+			b->registerBlob(tdbb, existingBlob, blobId);
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, status, "JBatch::registerBlob");
+			return;
+		}
+
+		trace_warning(tdbb, status, "JBatch::registerBlob");
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+		return;
+	}
+
+	successful_completion(status);
+}
+
+
+IBatchCompletionState* JBatch::execute(CheckStatusWrapper* status, ITransaction* transaction)
+{
+	IBatchCompletionState* cs;
+	try
+	{
+		EngineContextHolder tdbb(status, this, FB_FUNCTION);
+
+		jrd_tra* tra = nullptr;
+		if (transaction)
+		{
+			JTransaction* jt = getAttachment()->getTransactionInterface(status, transaction);
+			if (jt)
+				tra = jt->getHandle();
+		}
+
+		validateHandle(tdbb, tra);
+		check_database(tdbb);
+
+		try
+		{
+			DsqlBatch* b = getHandle();
+			cs = b->execute(tdbb);
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, status, "JBatch::execute");
+			return NULL;
+		}
+
+		trace_warning(tdbb, status, "JBatch::execute");
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+		return NULL;
+	}
+
+	successful_completion(status);
+	return cs;
+}
+
+
+void JBatch::cancel(CheckStatusWrapper* status)
+{
+	try
+	{
+		EngineContextHolder tdbb(status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			DsqlBatch* b = getHandle();
+			b->cancel(tdbb);
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, status, "JBatch::cancel");
+			return;
+		}
+
+		trace_warning(tdbb, status, "JBatch::cancel");
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+		return;
+	}
+
+	successful_completion(status);
+}
+
+
 void JAttachment::ping(CheckStatusWrapper* user_status)
 {
 /**************************************
@@ -6113,6 +6511,9 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 							case isc_dpb_addr_endpoint:
 								address.getString(dpb_remote_address);
 								break;
+							case isc_dpb_addr_flags:
+								dpb_remote_flags = address.getInt();
+								break;
 							default:
 								break;
 						}
@@ -6393,6 +6794,7 @@ static JAttachment* create_attachment(const PathName& alias_name,
 	attachment->att_network_protocol = options.dpb_network_protocol;
 	attachment->att_remote_address = options.dpb_remote_address;
 	attachment->att_remote_pid = options.dpb_remote_pid;
+	attachment->att_remote_flags = options.dpb_remote_flags;
 	attachment->att_remote_process = options.dpb_remote_process;
 	attachment->att_remote_host = options.dpb_remote_host;
 	attachment->att_remote_os_user = options.dpb_remote_os_user;
@@ -8048,6 +8450,7 @@ void JRD_send(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_leng
 	}
 }
 
+
 void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 {
 /**************************************
@@ -8495,6 +8898,11 @@ void JRD_cancel_operation(thread_db* /*tdbb*/, Jrd::Attachment* attachment, int 
 	case fb_cancel_raise:
 		if (!(attachment->att_flags & ATT_cancel_disable))
 			attachment->signalCancel();
+		break;
+
+	case fb_cancel_abort:
+		if (!(attachment->att_flags & ATT_shutdown))
+			attachment->signalShutdown(isc_att_shut_killed);
 		break;
 
 	default:

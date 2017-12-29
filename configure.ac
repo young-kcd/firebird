@@ -237,7 +237,7 @@ dnl CPU_TYPE=ppc64
     STD_EDITLINE=true
     ;;
 
-  aarch64*-*-linux*)                           
+  aarch64*-*-linux*)
     MAKEFILE_PREFIX=linux_arm64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
@@ -249,7 +249,7 @@ dnl CPU_TYPE=ppc64
     libdir=/usr/lib64
     ;;
 
-  powerpc64le-*-linux*)                           
+  powerpc64le-*-linux*)
     MAKEFILE_PREFIX=linux_powerpc64el
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
@@ -261,7 +261,7 @@ dnl CPU_TYPE=ppc64
     libdir=/usr/lib64
     ;;
 
-  powerpc64-*-linux*)                           
+  powerpc64-*-linux*)
     MAKEFILE_PREFIX=linux_powerpc64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
@@ -525,11 +525,17 @@ AC_ARG_WITH(cross-build,
    IS_CROSS=Y])
 AC_SUBST(IS_CROSS)
 
-TOMBUILD=N
+TOMMATH_BUILD=N
 AC_ARG_WITH(builtin-tommath,
   [  --with-builtin-tommath  build libtommath library from firebird tree],
-  [TOMBUILD=Y])
-AC_SUBST(TOMBUILD)
+  [TOMMATH_BUILD=Y])
+AC_SUBST(TOMMATH_BUILD)
+
+TOMCRYPT_BUILD=N
+AC_ARG_WITH(builtin-tomcrypt,
+  [  --with-builtin-tomcrypt  build libtomcrypt library from firebird tree],
+  [TOMCRYPT_BUILD=Y])
+AC_SUBST(TOMCRYPT_BUILD)
 
 dnl Avoid dumb '-g -O2' autoconf's default
 dnl Debugging information and optimization flags should be set in prefix.$platform file
@@ -582,9 +588,10 @@ AC_ARG_ENABLE(lsb-build,
    esac])
 AC_SUBST(LSB_FLG)
 if test "$LSB_FLG" = "Y"; then
-  CFLAGS="$CFLAGS --lsb-besteffort --lsb-shared-libs=fbclient:ib_util:tommath --lsb-target-version=4.1"
-  CXXFLAGS="$CXXFLAGS --lsb-besteffort  --lsb-shared-libs=fbclient:ib_util:tommath --lsb-target-version=4.1"
-  AC_SUBST(TOMBUILD, Y)
+  CFLAGS="$CFLAGS --lsb-besteffort --lsb-shared-libs=fbclient:ib_util:tommath:tomcrypt --lsb-target-version=4.1"
+  CXXFLAGS="$CXXFLAGS --lsb-besteffort  --lsb-shared-libs=fbclient:ib_util:tommath:tomcrypt --lsb-target-version=4.1"
+  AC_SUBST(TOMMATH_BUILD, Y)
+  AC_SUBST(TOMCRYPT_BUILD, Y)
   AC_PATH_PROG(CC, lsbcc, "", [$PATH$PATH_SEPARATOR/opt/lsb/bin$PATH_SEPARATOR])
   AC_PATH_PROG(CXX, lsbc++, "", [$PATH$PATH_SEPARATOR/opt/lsb/bin$PATH_SEPARATOR])
   if test "x$CC" = "x" || test "x$CXX" = "x" ; then
@@ -812,7 +819,7 @@ AC_CHECK_LIB(icuuc, main, ICU_OK=yes, AC_MSG_ERROR(ICU support not found - pleas
 fi
 
 dnl check for tommath presence
-if test "$TOMBUILD" = "Y"; then
+if test "$TOMMATH_BUILD" = "Y"; then
 	MATHLIB=-ltommath
 else
 	AC_CHECK_HEADER(tommath.h,,
@@ -824,6 +831,23 @@ else
 	XE_RESTORE_ENV()
 fi
 AC_SUBST(MATHLIB)
+
+dnl check for tomcrypt presence
+if test "$TOMCRYPT_BUILD" = "Y"; then
+	CRYPTLIB=-ltomcrypt
+else
+	XE_SAVE_ENV()
+	CFLAGS="$CFLAGS -DLTC_NO_ASM"
+	AC_CHECK_HEADER(tomcrypt.h,,
+		AC_MSG_ERROR(Include file for tomcrypt not found - please install development tomcrypt package or use --with-builtin-tomcrypt))
+	XE_RESTORE_ENV()
+	XE_SAVE_ENV()
+	LIBS=
+	AC_CHECK_LIB(tomcrypt, sha1_init, CRYPTLIB=-ltomcrypt,
+		AC_MSG_ERROR(Library tomcrypt not found - please install development tomcrypt package or use --with-builtin-tomcrypt))
+	XE_RESTORE_ENV()
+fi
+AC_SUBST(CRYPTLIB)
 
 dnl Check for libraries
 AC_SEARCH_LIBS(dlopen, dl)
@@ -860,7 +884,7 @@ AC_COMPILE_IFELSE(
 dnl check for va_copy() in stdarg.h
 AC_COMPILE_IFELSE(
 	[AC_LANG_PROGRAM([[#include <stdarg.h>
-		void vafun(const char* fmt, ...) {va_list par, par2; va_start(par, fmt); va_copy(par2, par); va_end(par2); va_end(par);}]], 
+		void vafun(const char* fmt, ...) {va_list par, par2; va_start(par, fmt); va_copy(par2, par); va_end(par2); va_end(par);}]],
 		[[return 0;]])],
 	AC_DEFINE(HAVE_VA_COPY, 1, [Define this if va_copy() is defined in stdarg.h]))
 
@@ -933,6 +957,7 @@ AC_CHECK_FUNCS(pthread_keycreate pthread_key_create)
 AC_CHECK_FUNCS(llrint)
 AC_CHECK_FUNCS(localtime_r)
 AC_CHECK_FUNCS(gmtime_r)
+AC_CHECK_FUNCS(ctime_r)
 AC_CHECK_FUNCS(fchmod)
 AC_CHECK_FUNCS(semtimedop)
 AC_CHECK_FUNCS(fegetenv)
@@ -1208,16 +1233,16 @@ dnl ### TEMP ### directories for generated .cpp, .o and .d by module name
     	mkdir -p temp/\$fb_tgt/\$src_dir
 	done
 
+	for src_dir in `ls -R -1 examples | grep : | tr -d : | tr "\n" " "`; do
+   		mkdir -p temp/\$fb_tgt/\$src_dir
+	done
+
 	src/misc/writeBuildNum.sh createMakeVersion gen/Make.Version
 
 dnl # sql files for UDF declarations
 	for sql_file in ib_udf.sql fbudf/fbudf.sql ib_udf2.sql; do
 		cp src/extlib/\$sql_file gen/\$fb_tgt/firebird/UDF
 	done
-done
-
-for src_dir in `ls -R -1 examples | grep : | tr -d : | tr "\n" " "`; do
-   	mkdir -p temp/\$src_dir
 done
 
 dnl # rebuild version header if needed
@@ -1369,7 +1394,7 @@ gen/make.shared.variables:${MAKE_SRC_DIR}/make.shared.variables
 gen/make.shared.targets:${MAKE_SRC_DIR}/make.shared.targets
 gen/Makefile:${MAKE_SRC_DIR}/Makefile.in
 gen/examples/Makefile.examples:${MAKE_SRC_DIR}/Makefile.in.examples
-gen/examples/Makefile.plugins_examples:${MAKE_SRC_DIR}/Makefile.in.plugins_examples
+gen/Makefile.plugins_examples:${MAKE_SRC_DIR}/Makefile.in.plugins_examples
 gen/Makefile.install:builds/install/arch-specific/${INSTALL_PREFIX}/Makefile.in
 Makefile:Makefile.in
 )
