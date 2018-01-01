@@ -489,7 +489,7 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 		if (gds_status->hasData())
 			general_on_error ();
 		// Check to see if there is a warning
-		if (gds_status->getState() && Firebird::IStatus::STATE_WARNINGS)
+		if (gds_status->getState() & Firebird::IStatus::STATE_WARNINGS)
 		{
 			BURP_print_warning(gds_status);
 		}
@@ -544,7 +544,7 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 	END_ERROR;
 
 	// Check to see if there is a warning
-	if (gds_status->getState() && Firebird::IStatus::STATE_WARNINGS)
+	if (gds_status->getState() & Firebird::IStatus::STATE_WARNINGS)
 	{
 		BURP_print_warning(gds_status);
 	}
@@ -3130,7 +3130,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 				continue;
 
 			Firebird::AutoDispose<Firebird::IBatchCompletionState> cs(batch->execute(&tdgbl->throwStatus, gds_trans));
-			if (tdgbl->throwStatus->getState() && Firebird::IStatus::STATE_WARNINGS)
+			if (tdgbl->throwStatus->getState() & Firebird::IStatus::STATE_WARNINGS)
 				BURP_print_warning(&tdgbl->throwStatus);
 
 			for (unsigned pos = 0; pos = cs->findError(&tdgbl->throwStatus, pos),
