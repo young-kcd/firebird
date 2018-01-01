@@ -7722,6 +7722,7 @@ void DerivedFieldNode::setParameterName(dsql_par* parameter) const
 	const RecordKeyNode* dbKeyNode = NULL;
 
 	const DerivedFieldNode* drvField = nodeAs<DerivedFieldNode>(value);
+
 	while (drvField)
 	{
 		if (fieldNode = nodeAs<FieldNode>(drvField->value))
@@ -7731,7 +7732,7 @@ void DerivedFieldNode::setParameterName(dsql_par* parameter) const
 			break;
 
 		drvField = nodeAs<DerivedFieldNode>(drvField->value);
-	};
+	}
 
 	if (fieldNode || (fieldNode = nodeAs<FieldNode>(value)))
 	{

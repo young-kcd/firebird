@@ -3559,12 +3559,13 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 				X.RDB$RELATION_NAME EQ work->dfw_name.c_str()
 		{
 			rel_id = X.RDB$RELATION_ID;
+
 			if ( (relation = MET_lookup_relation_id(tdbb, rel_id, false)) )
 			{
 				RelationPages* const relPages = relation->getBasePages();
 
 				if (relPages->rel_index_root)
-				  IDX_delete_indices(tdbb, relation, relPages);
+					IDX_delete_indices(tdbb, relation, relPages);
 
 				if (relPages->rel_pages)
 					DPM_delete_relation(tdbb, relation);

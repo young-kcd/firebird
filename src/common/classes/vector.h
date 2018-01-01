@@ -220,10 +220,10 @@ public:
 };
 
 
-// Templates to allow to iterate thru array\vector of values and process items 
+// Templates to allow to iterate thru array\vector of values and process items
 // in some way. Processed items are marked and skipped at next iteration circle.
-// Idea is to not remove processed items from array and avoid costly memory 
-// moving. Also, iterator is able to move upper and lower bounds of array if 
+// Idea is to not remove processed items from array and avoid costly memory
+// moving. Also, iterator is able to move upper and lower bounds of array if
 // last (or first) items are marked, making next iterations more efficient.
 
 template <typename T>
@@ -243,12 +243,12 @@ public:
 	static void mark(T* const item)
 	{
 		*item = MarkValue::getMarkValue();
-	};
+	}
 
 	static bool isMarked(const T* const item)
 	{
 		return *item == MarkValue::getMarkValue();
-	};
+	}
 };
 
 template <typename T, typename Marker = DefaultMarker<T> >
@@ -315,8 +315,6 @@ public:
 
 		if (!Marker::isMarked(m_curr))
 			m_last = m_curr;
-
-		return;
 	}
 
 	// Show if current position is valid
@@ -328,7 +326,7 @@ public:
 	// Show if not processed items still exists
 	bool isEmpty() const
 	{
-		return (m_begin >= m_end);
+		return m_begin >= m_end;
 	}
 
 private:

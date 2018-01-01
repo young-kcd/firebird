@@ -5489,7 +5489,7 @@ with_list
 			$$ = newNode<WithClause>();
 			$$->add($1);
 		}
-	| with_list ',' with_item 
+	| with_list ',' with_item
 		{
 			$$ = $1;
 			$$->add($3);

@@ -611,7 +611,7 @@ RelationSourceNode* RelationSourceNode::copy(thread_db* tdbb, NodeCopier& copier
 	element->csb_view = newSource->view;
 	element->csb_view_stream = copier.remap[0];
 
-/*
+	/*
 	If there was a parent stream no., then copy the flags
 	from that stream to its children streams. (Bug 10164/10166)
 	For e.g. consider a view V1 with 2 streams:
@@ -648,7 +648,7 @@ RelationSourceNode* RelationSourceNode::copy(thread_db* tdbb, NodeCopier& copier
 	Since we didn't do this properly before, V1's children got
 	tagged with whatever flags X possesed leading to various
 	errors.
-*/
+	*/
 
 	copier.csb->inheritViewFlags(newSource->stream, csb_no_dbkey);
 
@@ -2254,7 +2254,6 @@ WindowSourceNode* WindowSourceNode::copy(thread_db* tdbb, NodeCopier& copier) co
 
 		copyWindow.map = inputWindow->map->copy(tdbb, copier);
 		copyWindow.exclusion = inputWindow->exclusion;
-
 	}
 
 	return newSource;

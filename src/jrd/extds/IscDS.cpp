@@ -226,11 +226,11 @@ bool IscConnection::cancelExecution(bool forced)
 
 	if (m_handle)
 	{
-		m_iscProvider.fb_cancel_operation(&status, &m_handle, 
+		m_iscProvider.fb_cancel_operation(&status, &m_handle,
 			forced ? fb_cancel_abort : fb_cancel_raise);
 
-		if (!forced && m_handle && 
-			(status->getState() & IStatus::STATE_ERRORS) && 
+		if (!forced && m_handle &&
+			(status->getState() & IStatus::STATE_ERRORS) &&
 			(status->getErrors()[1] != isc_bad_db_handle))
 		{
 			status->init();

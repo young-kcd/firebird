@@ -1866,7 +1866,7 @@ void Attachment::freeClientData(CheckStatusWrapper* status, bool force)
 			// telling the user that an unrecoverable network error occurred and that
 			// if there was any uncommitted work, its gone......  Oh well....
 			ex.stuffException(status);
-			
+
 			if (!fb_utils::isNetworkError(status->getErrors()[1]) && (!force))
 			{
 				return;

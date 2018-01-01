@@ -603,15 +603,16 @@ void DsqlCompilerScratch::clearCTEs()
 	cteAliases.clear();
 }
 
-// Look for unused CTEs and issue a warning about its presence. Also, make DSQL 
-// pass of every found unused CTE to check all references and initialize input 
-// parameters. Note, when passing some unused CTE which refers to another unused 
-// (by the main query) CTE, "unused" flag of the second one is cleared. Therefore 
+// Look for unused CTEs and issue a warning about its presence. Also, make DSQL
+// pass of every found unused CTE to check all references and initialize input
+// parameters. Note, when passing some unused CTE which refers to another unused
+// (by the main query) CTE, "unused" flag of the second one is cleared. Therefore
 // names is collected in separate step.
 void DsqlCompilerScratch::checkUnusedCTEs()
 {
 	bool sqlWarn = false;
 	FB_SIZE_T i;
+
 	for (i = 0; i < ctes.getCount(); ++i)
 	{
 		SelectExprNode* cte = ctes[i];
@@ -623,6 +624,7 @@ void DsqlCompilerScratch::checkUnusedCTEs()
 				ERRD_post_warning(Arg::Warning(isc_sqlwarn) << Arg::Num(-104));
 				sqlWarn = true;
 			}
+
 			ERRD_post_warning(Arg::Warning(isc_dsql_cte_not_used) << cte->alias);
 		}
 	}

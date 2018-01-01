@@ -3384,7 +3384,7 @@ void ExecStatementNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	// If no new features of EXECUTE STATEMENT are used, lets generate old BLR.
-	if (!dataSource && !userName && !password && !role && !useCallerPrivs && !inputs && 
+	if (!dataSource && !userName && !password && !role && !useCallerPrivs && !inputs &&
 		 traScope == EDS::traNotSet)
 	{
 		if (outputs)

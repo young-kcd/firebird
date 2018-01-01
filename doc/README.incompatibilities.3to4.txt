@@ -18,7 +18,7 @@ Deprecating UDF
 	fixed in FB 1.5. But even after it incorrectly declared (using SQL statement
 	DECLARE EXTERNAL FUNCTION) UDF can easily cause various security issues like
 	server crash or execution of arbitrary code. Therefore UDFs are deprecated
-	in v.4. That means that UDFs can't be used with default configuration
+	in v4. That means that UDFs can't be used with default configuration
 	(parameter "UdfAccess" set to "None") and all sample UDF libraries (ib_udf,
 	fbudf) are not distributed any more. Most of functions in that libraries
 	were replaced with builtin analogs in previous versions and therefore
@@ -29,4 +29,3 @@ Deprecating UDF
 	path-list is just UDF and resulting line in firebird.conf should be:
 	UdfAccess = Restrict UDF
 	Recommended long-term solution is replacing of UDF with UDR.
-
