@@ -14,13 +14,13 @@ create function frac (
 
 create function dow (
     val timestamp
-) returns varchar(14) collate none
+) returns varchar(14) character set ascii
     external name 'udf_compat!UC_dow'
     engine udr;
 
 create function sdow (
     val timestamp
-) returns varchar(4) collate none
+) returns varchar(4) character set ascii
     external name 'udf_compat!UC_sdow'
     engine udr;
 
