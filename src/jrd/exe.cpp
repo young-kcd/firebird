@@ -692,7 +692,7 @@ void EXE_receive(thread_db* tdbb,
 
 			if (desc->isBlob())
 			{
-				const bid* id = (bid*) (reinterpret_cast<UCHAR*>(buffer) + (ULONG)(IPTR)desc->dsc_address);
+				const bid* id = (bid*) (reinterpret_cast<UCHAR*>(buffer) + (ULONG)(IPTR) desc->dsc_address);
 
 				if (transaction->tra_blobs->locate(id->bid_temp_id()))
 				{

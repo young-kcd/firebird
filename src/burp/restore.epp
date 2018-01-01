@@ -2002,24 +2002,24 @@ void get_blob(BurpGlobals* tdgbl, Firebird::IBatch* batch, const burp_fld* field
 
 	// Eat up blob segments
 
-	for (; segments > 0; --segments )
+	for (; segments > 0; --segments)
 	{
 		USHORT length = get(tdgbl);
 		length |= get(tdgbl) << 8;
 		if (length)
-		{
 			get_block(tdgbl, buffer, length);
-		}
 
 		if (first)
 			batch->addBlob(&status_vector, length, buffer, blob_id, sizeof(blob_desc), blob_desc);
 		else
 			batch->appendBlobData(&status_vector, length, buffer);
+
 		if (status_vector->hasData())
 		{
 			BURP_error_redirect(&status_vector, 38);		// !!!!!!!!! new message
 			// msg 38 isc_put_segment failed
 		}
+
 		first = false;
 	}
 }
@@ -2049,6 +2049,7 @@ void get_blob_old(BurpGlobals* tdgbl, const burp_fld* fields, UCHAR* record_buff
 	att_type	attribute;
 	scan_attr_t	scan_next_attr;
 	skip_init(&scan_next_attr);
+
 	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_blob_data)
 	{
 		switch (attribute)
@@ -2842,7 +2843,8 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 	if (tdgbl->gbl_network_protocol == 0)
 	{
 		bool sysDomFlag = false;
-		for (field = relation->rel_fields; field && (!sysDomFlag); field = field->fld_next)
+
+		for (field = relation->rel_fields; field && !sysDomFlag; field = field->fld_next)
 		{
 			if (field->fld_flags & FLD_computed)
 				continue;
@@ -3011,7 +3013,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 		UCHAR* buffer = NULL;
 		Firebird::Array<UCHAR> requestBuffer;
 
-		BURP_verbose (124, relation->rel_name); // msg 124  restoring data for relation %s
+		BURP_verbose(124, relation->rel_name); // msg 124  restoring data for relation %s
 
 		lstring data;
 		data.lstr_allocated = 0;
@@ -3072,9 +3074,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 			if (tdgbl->gbl_sw_compress)
 				decompress (tdgbl, p, len);
 			else
-			{
 				get_block(tdgbl, p, len);
-			}
 
 			if (old_length)
 				realign (tdgbl, buffer, relation);
@@ -3082,7 +3082,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 			if (tdgbl->gbl_sw_transportable)
 			{
 				buffer = sql;
-				CAN_encode_decode (relation, &data, buffer, false, true);
+				CAN_encode_decode(relation, &data, buffer, false, true);
 			}
 
 			if ((++records % tdgbl->verboseInterval) == 0)
@@ -3133,8 +3133,10 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 			if (tdgbl->throwStatus->getState() & Firebird::IStatus::STATE_WARNINGS)
 				BURP_print_warning(&tdgbl->throwStatus);
 
-			for (unsigned pos = 0; pos = cs->findError(&tdgbl->throwStatus, pos),
-				pos != Firebird::IBatchCompletionState::NO_MORE_ERRORS; ++pos)
+			for (unsigned pos = 0;
+				 pos = cs->findError(&tdgbl->throwStatus, pos),
+					pos != Firebird::IBatchCompletionState::NO_MORE_ERRORS;
+				 ++pos)
 			{
 				Firebird::LocalStatus status_vector;
 				cs->getStatus(&tdgbl->throwStatus, &status_vector, pos);
@@ -3185,7 +3187,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 				break;
 		} // while (true)
 	}
-	catch(const Firebird::FbException& ex)
+	catch (const Firebird::FbException& ex)
 	{
 		BURP_print_status (true, ex.getStatus());
 		BURP_abort();
@@ -3193,7 +3195,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 
 	if (tdgbl->gbl_sw_incremental)
 	{
-		BURP_verbose (72, relation->rel_name);
+		BURP_verbose(72, relation->rel_name);
 		// msg 72  committing data for relation %s
 		COMMIT
 		// existing ON_ERROR continues past error, beck
@@ -3215,10 +3217,13 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 				{
 					case isc_sort_mem_err:
 					case isc_no_dup:
-						strcpy(index_name, (TEXT *)tdgbl->status_vector[3]);
+						strcpy(index_name, (TEXT*) tdgbl->status_vector[3]);
 						BURP_print_status(false, &tdgbl->status_vector);
+
 						FOR (REQUEST_HANDLE req_handle)
-						 IDX IN RDB$INDICES WITH IDX.RDB$INDEX_NAME EQ index_name
+							IDX IN RDB$INDICES
+							WITH IDX.RDB$INDEX_NAME EQ index_name
+						{
 							MODIFY IDX USING
 								IDX.RDB$INDEX_INACTIVE = TRUE;
 								BURP_print(false, 240, index_name);
@@ -3240,6 +3245,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 								BURP_print(false, 243, index_name);
 								// msg 243 ALTER INDEX \"%s\" ACTIVE
 							END_MODIFY;
+						}
 						END_FOR;
 						// commit one more time
 						COMMIT
@@ -3248,12 +3254,12 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 						END_ERROR
 						break;
 					default:
-						BURP_print (false, 69, relation->rel_name);
+						BURP_print(false, 69, relation->rel_name);
 						// msg 69 commit failed on relation %s
 						BURP_print_status (false, &tdgbl->status_vector);
 						ROLLBACK;
 						ON_ERROR
-							general_on_error ();
+							general_on_error();
 						END_ERROR;
 						break;
 				} // end of switch
@@ -3264,7 +3270,8 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 		if (gds_status->hasData())
 			EXEC SQL SET TRANSACTION;
 	}
-	BURP_verbose (107, SafeArg() << records);
+
+	BURP_verbose(107, SafeArg() << records);
 	// msg 107 %ld records restored
 
 	return record;
@@ -3291,6 +3298,7 @@ void fix_exception(BurpGlobals* tdgbl, const char* exc_name, scan_attr_t& scan_n
 			bad_attribute(scan_next_attr, failed_attrib, 287);
 			return;
 		}
+
 		const unsigned int remaining = FIELD_LIMIT - l2;
 
 		*msg_ptr++ = char(attribute); // (1)
@@ -3317,7 +3325,7 @@ rec_type get_data_old(BurpGlobals* tdgbl, burp_rel* relation)
 {
 /**************************************
  *
- *	g e t _ d a t a
+ *	g e t _ d a t a _ o l d
  *
  **************************************
  *
@@ -3542,7 +3550,9 @@ rec_type get_data_old(BurpGlobals* tdgbl, burp_rel* relation)
 	{
 		if (get(tdgbl) != att_data_length)
 			BURP_error_redirect(NULL, 39); // msg 39 expected record length
+
 		RCRD_LENGTH len = get_int32(tdgbl);
+
 		if (!tdgbl->gbl_sw_transportable && len != length)
 		{
 #ifdef sparc
@@ -3555,9 +3565,9 @@ rec_type get_data_old(BurpGlobals* tdgbl, burp_rel* relation)
 				// msg 40 wrong length record, expected %ld encountered %ld
 			}
 		}
-		if (!buffer) {
+
+		if (!buffer)
 			buffer = (SSHORT *) BURP_alloc (MAX (length, len));
-		}
 
 		UCHAR* p;
 		if (tdgbl->gbl_sw_transportable)
@@ -3575,26 +3585,26 @@ rec_type get_data_old(BurpGlobals* tdgbl, burp_rel* relation)
 						BURP_free (data.lstr_address);
 					data.lstr_address = BURP_alloc(data.lstr_allocated);
 				}
+
 				p = data.lstr_address;
 			}
 		}
 		else
 			p = reinterpret_cast<UCHAR*>(buffer);
+
 		if (get(tdgbl) != att_data_data)
 			BURP_error_redirect(NULL, 41); // msg 41 expected data attribute
 
 		if (tdgbl->gbl_sw_compress)
 			decompress (tdgbl, p, len);
 		else
-		{
 			get_block(tdgbl, p, len);
-		}
 
 		if (old_length)
 			realign (tdgbl, (UCHAR*) buffer, relation);
 
 		if (tdgbl->gbl_sw_transportable)
-			CAN_encode_decode (relation, &data, (UCHAR *)buffer, false);
+			CAN_encode_decode(relation, &data, (UCHAR *)buffer, false);
 
 		records++;
 
@@ -3618,9 +3628,9 @@ rec_type get_data_old(BurpGlobals* tdgbl, burp_rel* relation)
 		while (record == rec_blob || record == rec_array)
 		{
 			if (record == rec_blob)
-				get_blob_old (tdgbl, relation->rel_fields, (UCHAR *) buffer);
+				get_blob_old(tdgbl, relation->rel_fields, (UCHAR *) buffer);
 			else if (record == rec_array)
-				get_array (tdgbl, relation, (UCHAR *) buffer);
+				get_array(tdgbl, relation, (UCHAR *) buffer);
 			get_record(&record, tdgbl);
 		}
 
@@ -3637,6 +3647,7 @@ rec_type get_data_old(BurpGlobals* tdgbl, burp_rel* relation)
 		{
 			resync = true;
 			ISC_STATUS code = status_vector->getErrors()[1];
+
 			if (code == isc_not_valid)
 			{
 				if (tdgbl->gbl_sw_incremental)
@@ -3671,8 +3682,7 @@ rec_type get_data_old(BurpGlobals* tdgbl, burp_rel* relation)
 					BURP_print_status (false, &status_vector);
 				}
 				else
-					BURP_error_redirect(&status_vector, 48);
-					// msg 48 isc_send failed
+					BURP_error_redirect(&status_vector, 48);	// msg 48 isc_send failed
 			}
 
 			records--;
@@ -3687,6 +3697,7 @@ rec_type get_data_old(BurpGlobals* tdgbl, burp_rel* relation)
 		BURP_free (data.lstr_address);
 
 	request->release();
+
 	if (tdgbl->gbl_sw_incremental)
 	{
 		BURP_verbose (72, relation->rel_name);
@@ -3743,7 +3754,7 @@ rec_type get_data_old(BurpGlobals* tdgbl, burp_rel* relation)
 					default:
 						BURP_print (false, 69, relation->rel_name);
 						// msg 69 commit failed on relation %s
-						BURP_print_status (false, &tdgbl->status_vector);
+						BURP_print_status(false, &tdgbl->status_vector);
 						ROLLBACK;
 						ON_ERROR
 							general_on_error ();
@@ -9081,7 +9092,7 @@ bool get_trigger_old (BurpGlobals* tdgbl, burp_rel* relation)
 		ON_ERROR
 			BURP_print (false, 94, name);
 			// msg 94 trigger %s is invalid
-			BURP_print_status (false, &tdgbl->status_vector);
+			BURP_print_status(false, &tdgbl->status_vector);
 			ROLLBACK;
 			ON_ERROR
 				general_on_error ();
@@ -9397,7 +9408,7 @@ bool get_trigger(BurpGlobals* tdgbl)
 		ON_ERROR
 			BURP_print (false, 94, name);
 			// msg 94 trigger %s is invalid
-			BURP_print_status (false, &tdgbl->status_vector);
+			BURP_print_status(false, &tdgbl->status_vector);
 			ROLLBACK;
 			ON_ERROR
 				general_on_error ();
@@ -9493,7 +9504,7 @@ bool get_trigger_message(BurpGlobals* tdgbl)
 		ON_ERROR
 			BURP_print (false, 94, name);
 			// msg 94 trigger %s is invalid
-			BURP_print_status (false, &tdgbl->status_vector);
+			BURP_print_status(false, &tdgbl->status_vector);
 			ROLLBACK;
 			ON_ERROR
 				general_on_error ();
@@ -10356,7 +10367,7 @@ bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_nam
 	// msg 129 started transaction
 
 	att_type	attribute;
-	Firebird::IRequest* req_handle2 =nullptr;
+	Firebird::IRequest* req_handle2 = nullptr;
 	Firebird::IRequest* req_handle3 = nullptr;
 	Firebird::IRequest* req_handle4 = nullptr;
 	Firebird::IRequest* req_handle5 = nullptr;

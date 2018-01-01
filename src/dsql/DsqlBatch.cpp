@@ -586,6 +586,7 @@ private:
 							bid engineBlobId;
 							blob = blb::create2(tdbb, transaction, &engineBlobId, bpb->getCount(),
 								bpb->begin(), true);
+
 							//DEB_BATCH(fprintf(stderr, "B-ID: (%x,%x)\n", batchBlobId.gds_quad_high, batchBlobId.gds_quad_low));
 							registerBlob(reinterpret_cast<ISC_QUAD*>(&engineBlobId), &batchBlobId);
 						}

@@ -368,8 +368,8 @@ static int svc_api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 		const UCHAR* sl;
 		do {
 			svc_handle->query(&status, 0, NULL,
-								  sizeof(sendbuf), sendbuf,
-								  sizeof(respbuf), respbuf);
+							  sizeof(sendbuf), sendbuf,
+							  sizeof(respbuf), respbuf);
 			if (!status.isSuccess())
 			{
 				BURP_print_status(true, &status);

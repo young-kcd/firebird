@@ -126,17 +126,20 @@ bool BlobWrapper::getData(FB_SIZE_T len, void* buffer, FB_SIZE_T& real_len,
 			len -= olen;
 			buf2 += olen;
 			real_len += olen;
+
 			if (len && use_sep) // Append the segment separator.
 			{
 				--len;
 				*buf2++ = separator;
 				++real_len;
 			}
+
 			rc = true;
 		}
 		else
 			break;
 	}
+
 	return rc;
 }
 
@@ -168,6 +171,7 @@ bool BlobWrapper::putSegment(FB_SIZE_T len, const void* buffer, FB_SIZE_T& real_
 	real_len = 0;
 	unsigned ilen = len > SEGMENT_LIMIT ? SEGMENT_LIMIT : static_cast<unsigned>(len);
 	m_blob->putSegment(m_status, ilen, buffer);
+
 	if (!m_status->isEmpty())
 		return false;
 
@@ -185,6 +189,7 @@ bool BlobWrapper::putData(FB_SIZE_T len, const void* buffer, FB_SIZE_T& real_len
 
 	real_len = 0;
 	m_blob->putSegment(m_status, len, buffer);
+
 	if (!m_status->isEmpty())
 		return false;
 
@@ -199,6 +204,7 @@ bool BlobWrapper::getInfo(FB_SIZE_T items_size, const UCHAR* items,
 		return false;
 
 	m_blob->getInfo(m_status, items_size, items, info_size, blob_info);
+
 	return m_status->isEmpty();
 }
 
@@ -231,12 +237,14 @@ bool BlobWrapper::getSize(SLONG* size, SLONG* seg_count, SLONG* max_seg) const
 
 	const UCHAR* p = buffer;
 	const UCHAR* const end = buffer + sizeof(buffer);
+
 	for (UCHAR item = *p++; item != isc_info_end && p < end; item = *p++)
 	{
 		const USHORT l = gds__vax_integer(p, 2);
 		p += 2;
 		const SLONG n = gds__vax_integer(p, l);
 		p += l;
+
 		switch (item)
 		{
 		case isc_info_blob_max_segment:
