@@ -112,6 +112,11 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-5598
+        Error "block size exceeds implementation restriction" while inner joining large datasets with a long key using the HASH JOIN plan
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-5591
         Engine hangs soon after some errors during transaction start
       Contributor(s):
