@@ -522,7 +522,7 @@ ULONG HashJoin::computeHash(thread_db* tdbb,
 	return InternalHash::hash(sub.totalKeyLength, keyBuffer);
 }
 
-bool HashJoin::fetchRecord(thread_db* tdbb, Impure* impure, ULONG stream) const
+bool HashJoin::fetchRecord(thread_db* tdbb, Impure* impure, FB_SIZE_T stream) const
 {
 	HashTable* const hashTable = impure->irsb_hash_table;
 
