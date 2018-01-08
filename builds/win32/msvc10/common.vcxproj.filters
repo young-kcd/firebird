@@ -13,9 +13,6 @@
     <Filter Include="headers">
       <UniqueIdentifier>{03f83331-723e-4ba5-9ebb-348f0554a088}</UniqueIdentifier>
     </Filter>
-    <Filter Include="tomcrypt">
-      <UniqueIdentifier>{dd0bb92e-0a1e-4406-96ff-5265e8d28258}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\common\xdr.cpp">
