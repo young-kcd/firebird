@@ -1370,6 +1370,13 @@ void Validation::garbage_collect()
 						CCH_MARK(vdr_tdbb, &window);
 						p[-1] |= 1 << (number & 7);
 						vdr_fixed++;
+
+						const ULONG bit = number - sequence * pageSpaceMgr.pagesPerPIP;
+						if (page->pip_min > bit)
+							page->pip_min = bit;
+
+						if (p[-1] == 0xFF && page->pip_extent > bit)
+							page->pip_extent = bit & ((ULONG)~7);
 					}
 					DEBUG;
 				}
