@@ -1247,6 +1247,9 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 
 	// Release the locks associated with the transaction
 
+	if (transaction->tra_alter_db_lock)
+		LCK_release(tdbb, transaction->tra_alter_db_lock);
+
 	vec<Lock*>* vector = transaction->tra_relation_locks;
 	if (vector)
 	{
