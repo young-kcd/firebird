@@ -48,6 +48,7 @@
 #include "../jrd/exe_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../common/isc_f_proto.h"
+#include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/vio_proto.h"
@@ -11959,34 +11960,65 @@ bool AlterDatabaseNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
+	// Take a LCK_alter_database lock to prevent altering of the database from 
+	// parallel transactions
+
+	if (!transaction->tra_alter_db_lock)
+	{
+		Lock* lock = FB_NEW_RPT(*transaction->tra_pool, 0) Lock(tdbb, 0, LCK_alter_database);
+		lock->lck_data = transaction->tra_number;
+		if (LCK_lock(tdbb, lock, LCK_write, transaction->getLockWait()))
+			transaction->tra_alter_db_lock = lock;
+		else
+		{
+			const TraNumber conflict_trans = LCK_read_data(tdbb, lock);
+			delete lock;
+
+			// msg 297: Concurrent ALTER DATABASE is not supported
+			Arg::PrivateDyn status(297);
+
+			if (conflict_trans)
+				status << Arg::Gds(isc_concurrent_transaction) << Arg::Num(conflict_trans);
+
+			status_exception::raise(status);
+		}
+	}
+
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
-	Attachment* const attachment = transaction->tra_attachment;
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
+	if (clauses & CLAUSE_DROP_DIFFERENCE)
+		changeBackupMode(tdbb, transaction, CLAUSE_DROP_DIFFERENCE);
+
 	SLONG dbAlloc = PageSpace::maxAlloc(tdbb->getDatabase());
 	SLONG start = create ? createLength + 1 : 0;
-	AutoCacheRequest request(tdbb, drq_m_database, DYN_REQUESTS);
-
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-		DBB IN RDB$DATABASE
+	for (NestConst<DbFileClause>* i = files.begin(); i != files.end(); ++i)
 	{
-		MODIFY DBB USING
-			if (clauses & CLAUSE_DROP_DIFFERENCE)
-				changeBackupMode(tdbb, transaction, CLAUSE_DROP_DIFFERENCE);
+		DbFileClause* file = *i;
 
-			for (NestConst<DbFileClause>* i = files.begin(); i != files.end(); ++i)
-			{
-				DbFileClause* file = *i;
+		start = MAX(start, file->start);
+		defineFile(tdbb, transaction, 0, false, false, dbAlloc,
+			file->name.c_str(), start, file->length);
+		start += file->length;
+	}
 
-				start = MAX(start, file->start);
-				defineFile(tdbb, transaction, 0, false, false, dbAlloc,
-					file->name.c_str(), start, file->length);
-				start += file->length;
-			}
+	if (differenceFile.hasData())
+		defineDifference(tdbb, transaction, differenceFile.c_str());
 
-			if (differenceFile.hasData())
-				defineDifference(tdbb, transaction, differenceFile.c_str());
+	if (clauses & CLAUSE_BEGIN_BACKUP)
+		changeBackupMode(tdbb, transaction, CLAUSE_BEGIN_BACKUP);
+
+	if (clauses & CLAUSE_END_BACKUP)
+		changeBackupMode(tdbb, transaction, CLAUSE_END_BACKUP);
+
+	if (setDefaultCharSet.hasData() || setDefaultCollation.hasData() || linger >= 0 ||
+		ssDefiner.specified)
+	{
+		AutoCacheRequest request(tdbb, drq_m_database, DYN_REQUESTS);
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			DBB IN RDB$DATABASE
+		{
+			MODIFY DBB USING
 
 			if (setDefaultCharSet.hasData())
 			{
@@ -12000,6 +12032,7 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 				DBB.RDB$CHARACTER_SET_NAME.NULL = FALSE;
 				strcpy(DBB.RDB$CHARACTER_SET_NAME, setDefaultCharSet.c_str());
 
+				dsql_dbb* dbb = transaction->getDsqlAttachment();
 				dbb->dbb_dfl_charset = "";	// reset in the cache
 			}
 
@@ -12021,17 +12054,12 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 				DBB.RDB$SQL_SECURITY = ssDefiner.value ? FB_TRUE : FB_FALSE;
 			}
 
-			if (clauses & CLAUSE_BEGIN_BACKUP)
-				changeBackupMode(tdbb, transaction, CLAUSE_BEGIN_BACKUP);
-
-			if (clauses & CLAUSE_END_BACKUP)
-				changeBackupMode(tdbb, transaction, CLAUSE_END_BACKUP);
-		END_MODIFY
+			END_MODIFY
+		}
+		END_FOR
 	}
-	END_FOR
 
-	// Allow update above to work as a lock, preventing altering of the database from parallel transactions
-	// Moreover, it should load crypt plugin if it (by a miracle) wasn't already loaded yet
+	// Load crypt plugin if it (by a miracle) wasn't already loaded yet
 	if (clauses & CLAUSE_CRYPT)
 	{
 		Database* const db = tdbb->getDatabase();
