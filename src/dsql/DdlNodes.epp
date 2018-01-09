@@ -11656,8 +11656,12 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 			delete lock;
 
 			// msg 297: Concurrent ALTER DATABASE is not supported
-			status_exception::raise(Arg::PrivateDyn(297) <<
-				Arg::Gds(isc_concurrent_transaction) << Arg::Num(conflict_trans));
+			Arg::PrivateDyn status(297);
+
+			if (conflict_trans)
+				status << Arg::Gds(isc_concurrent_transaction) << Arg::Num(conflict_trans);
+
+			status_exception::raise(status);
 		}
 	}
 
