@@ -1971,6 +1971,7 @@ COMMIT WORK;
 ('dyn_defvaldecl_package_func', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 290, NULL, 'Default values for parameters are allowed only in declaration of packaged function @1.@2', NULL, NULL);
 ('dyn_create_user_no_password', 'CreateAlterUserNode', 'DdlNodes.epp', NULL, 8, 291, NULL, 'Password must be specified when creating user', NULL, NULL);
 ('dyn_concur_alter_database', 'AlterDatabaseNode::execute', 'DdlNodes.epp', NULL, 8, 297, NULL, 'Concurrent ALTER DATABASE is not supported', NULL, NULL);
+('dyn_incompat_alter_database', 'AlterDatabaseNode::execute', 'DdlNodes.epp', NULL, 8, 298, NULL, 'Incompatible ALTER DATABASE clauses: ''@1'' and ''@2''', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);
