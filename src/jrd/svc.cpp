@@ -1128,7 +1128,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 				{
 					if (!(info = INF_put_item(isc_spb_dbname,
 											  (USHORT) databases[i].length(),
-											  (const UCHAR*) databases[i].c_str(),
+											  databases[i].c_str(),
 											  info, end)))
 					{
 						return 0;
@@ -1268,8 +1268,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 		case isc_info_svc_server_version:
 			// The version of the server engine
 			{ // scope
-				static const UCHAR* pv = reinterpret_cast<const UCHAR*>(FB_VERSION);
-				info = INF_put_item(item, static_cast<USHORT>(strlen(FB_VERSION)), pv, info, end);
+				info = INF_put_item(item, static_cast<USHORT>(strlen(FB_VERSION)), FB_VERSION, info, end);
 				if (!info) {
 					return 0;
 				}
@@ -1280,8 +1279,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			// The server implementation - e.g. Firebird/sun4
 			{ // scope
 				string buf2 = DbImplementation::current.implementation();
-				info = INF_put_item(item, buf2.length(),
-									reinterpret_cast<const UCHAR*>(buf2.c_str()), info, end);
+				info = INF_put_item(item, buf2.length(), buf2.c_str(), info, end);
 				if (!info) {
 					return 0;
 				}
@@ -1307,11 +1305,10 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			if (svc_user_flag & SVC_user_dba)
 			{
 				// The path to the user security database (security2.fdb)
-				char* pb = reinterpret_cast<char*>(buffer);
 				const RefPtr<const Config> defConf(Config::getDefaultConfig());
-				strcpy(pb, defConf->getSecurityDatabase());
+				const char* secDb = defConf->getSecurityDatabase();
 
-				if (!(info = INF_put_item(item, static_cast<USHORT>(strlen(pb)), buffer, info, end)))
+				if (!(info = INF_put_item(item, static_cast<USHORT>(strlen(secDb)), secDb, info, end)))
 				{
 					return 0;
 				}
@@ -1660,8 +1657,7 @@ void Service::query(USHORT			send_item_length,
 				// Note: it is safe to use strlen to get a length of "buffer"
 				// because gds_prefix[_lock|_msg] return a zero-terminated
 				// string.
-				const UCHAR* pb = reinterpret_cast<const UCHAR*>(PathBuffer);
-				if (!(info = INF_put_item(item, static_cast<USHORT>(strlen(PathBuffer)), pb, info, end)))
+				if (!(info = INF_put_item(item, static_cast<USHORT>(strlen(PathBuffer)), PathBuffer, info, end)))
 					return;
 			}
 			// Can not return error for service v.1 => simply ignore request
@@ -1761,11 +1757,10 @@ void Service::query(USHORT			send_item_length,
             if (svc_user_flag & SVC_user_dba)
             {
 				// The path to the user security database (security2.fdb)
-				char* pb = reinterpret_cast<char*>(buffer);
 				const RefPtr<const Config> defConf(Config::getDefaultConfig());
-				strcpy(pb, defConf->getSecurityDatabase());
+				const char* secDb = defConf->getSecurityDatabase();
 
-				if (!(info = INF_put_item(item, static_cast<USHORT>(strlen(pb)), buffer, info, end)))
+				if (!(info = INF_put_item(item, static_cast<USHORT>(strlen(secDb)), secDb, info, end)))
 				{
 					return;
 				}
