@@ -302,6 +302,7 @@ public:
 
 	ULONG getCurrentPage() const;
 	UCHAR getCurrentState() const;
+	const char* getKeyName() const;
 
 private:
 	enum IoResult {SUCCESS_ALL, FAILED_CRYPT, FAILED_IO};

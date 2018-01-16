@@ -1188,6 +1188,11 @@ namespace Jrd {
 		return (crypt ? fb_info_crypt_encrypted : 0) | (process ? fb_info_crypt_process : 0);
 	}
 
+	const char* CryptoManager::getKeyName() const
+	{
+		return keyName.c_str();
+	}
+
 	void CryptoManager::KeyHolderPlugins::attach(Attachment* att, const Config* config)
 	{
 		MutexLockGuard g(holdersMutex, FB_FUNCTION);
