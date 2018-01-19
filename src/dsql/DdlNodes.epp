@@ -2802,7 +2802,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 				{
 					P.RDB$SQL_SECURITY.NULL = FALSE;
 					P.RDB$SQL_SECURITY = ssDefiner.value ? FB_TRUE : FB_FALSE;
-			}
+				}
 				else
 					P.RDB$SQL_SECURITY.NULL = TRUE;
 			}
@@ -6971,7 +6971,7 @@ void RelationNode::defineSetDefaultTrigger(DsqlCompilerScratch* dsqlScratch,
 		blrWriter.appendUChar(blr_end);		// 3
 
 		blrWriter.appendUChar(blr_end);		// 1
-			}
+	}
 
 	generateUnnamedTriggerBeginning(constraint, onUpdate, blrWriter);
 
@@ -6980,7 +6980,7 @@ void RelationNode::defineSetDefaultTrigger(DsqlCompilerScratch* dsqlScratch,
 	for (ObjectsArray<MetaName>::const_iterator column(constraint.columns.begin());
 		 column != constraint.columns.end();
 		 ++column, index += 2)
-				{
+	{
 		blrWriter.appendUChar(blr_assignment);
 
 		blrWriter.appendUChar(blr_variable);
@@ -7900,7 +7900,7 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 						const SINT64 val = clause->identityOptions->startValue
 							.orElse(!GEN.RDB$INITIAL_VALUE.NULL ? GEN.RDB$INITIAL_VALUE : 0);
 
-					transaction->getGenIdCache()->put(id, val);
+						transaction->getGenIdCache()->put(id, val);
 					}
 
 					if (clause->identityOptions->type.specified)
@@ -10132,7 +10132,7 @@ string CreateAlterRoleNode::internalPrint(NodePrinter& printer) const
 bool CreateAlterRoleNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	if (createFlag)
-	SCL_check_create_access(tdbb, SCL_object_role);
+		SCL_check_create_access(tdbb, SCL_object_role);
 	else
 		SCL_check_role(tdbb, name, SCL_alter);
 
@@ -11187,9 +11187,9 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 {
 	SSHORT userType = userNod->first;
 	MetaName user(userNod->second);
-    MetaName dummyName;
+	MetaName dummyName;
 	const SSHORT objType = object ? object->first : obj_type_MAX;
-    bool crdb = false;
+	bool crdb = false;
 
 	char privileges[16];
 	strcpy(privileges, privs ? privs : "");
@@ -11256,7 +11256,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 			{
 				USHORT p = convertPrivilegeFromString(tdbb, transaction, user);
 				user.printf("%d", p);
-	}
+			}
 			break;
 
 	}
@@ -11393,7 +11393,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 					// We have to reset duplicate to add DEFAULT ROLE and keep options to prevent reset of ADMIN OPTION
 					duplicate = false;
 					options = PRIV.RDB$GRANT_OPTION;
-			}
+				}
 
 
 				if (!duplicate)
@@ -11418,8 +11418,8 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 					{
 						// 292: role @1 can not be granted to role @2
 						status_exception::raise(Arg::PrivateDyn(292) << objName.c_str() << user.c_str());
+					}
 				}
-			}
 			}
 			else
 			{
@@ -11532,23 +11532,23 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				}
 				else if (options)
 				{
-				// Add the privilege without the grant option. There is a modify trigger on the
-				// rdb$user_privileges which disallows the table from being updated. It would have
-				// to be changed such that only the grant_option field can be updated.
+					// Add the privilege without the grant option. There is a modify trigger on the
+					// rdb$user_privileges which disallows the table from being updated. It would have
+					// to be changed such that only the grant_option field can be updated.
 
 					storePrivilege(tdbb, transaction, objName, user, curField, pr, userType, objType,
-					0, grantorRevoker);
-			}
+						0, grantorRevoker);
+				}
 			}
 			else
 			{
 				if (badGrantor)
 				{
-				// msg 246: @1 is not grantor of @2 on @3 to @4.
-				status_exception::raise(Arg::PrivateDyn(246) <<
-					grantorRevoker.c_str() << privilegeName(priv[0]) << objName.c_str() <<
-					user.c_str());
-			}
+					// msg 246: @1 is not grantor of @2 on @3 to @4.
+					status_exception::raise(Arg::PrivateDyn(246) <<
+						grantorRevoker.c_str() << privilegeName(priv[0]) << objName.c_str() <<
+						user.c_str());
+				}
 
 				// msg 247: Warning: @1 on @2 is not granted to @3.
 				ERR_post_warning(
