@@ -2322,6 +2322,7 @@ protected:
 private:
 	static void changeBackupMode(thread_db* tdbb, jrd_tra* transaction, unsigned clause);
 	static void defineDifference(thread_db* tdbb, jrd_tra* transaction, const Firebird::PathName& file);
+	void checkClauses(thread_db* tdbb);
 
 public:
 	bool create;	// Is the node created with a CREATE DATABASE command?

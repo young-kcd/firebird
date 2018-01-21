@@ -11957,9 +11957,33 @@ bool AlterDatabaseNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 	return true;
 }
 
+void AlterDatabaseNode::checkClauses(thread_db* tdbb)
+{
+	if (clauses & CLAUSE_END_BACKUP)
+	{
+		// msg 298: Incompatible ALTER DATABASE clauses: '@1' and '@2'
+		if (clauses & CLAUSE_BEGIN_BACKUP)
+			(Arg::PrivateDyn(298) << Arg::Str("BEGIN BACKUP") << Arg::Str("END BACKUP")).raise();
+
+		if (differenceFile.hasData())
+			(Arg::PrivateDyn(298) << Arg::Str("END BACKUP") << Arg::Str("ADD DIFFERENCE FILE")).raise();
+
+		if (clauses & CLAUSE_DROP_DIFFERENCE)
+			(Arg::PrivateDyn(298) << Arg::Str("END BACKUP") << Arg::Str("DROP DIFFERENCE FILE")).raise();
+	}
+
+	if ((clauses & CLAUSE_DROP_DIFFERENCE) && differenceFile.hasData())
+	{
+		// msg 298: Incompatible ALTER DATABASE clauses: '@1' and '@2'
+		(Arg::PrivateDyn(298) << Arg::Str("ADD DIFFERENCE FILE") << Arg::Str("DROP DIFFERENCE FILE")).raise();
+	}
+}
+
 void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
+	checkClauses(tdbb);
+
 	// Take a LCK_alter_database lock to prevent altering of the database from 
 	// parallel transactions
 
