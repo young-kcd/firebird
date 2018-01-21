@@ -1827,8 +1827,7 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 	const bool mustWrite = (bdb->bdb_flags & BDB_must_write) ||
 		bcb->bcb_database->dbb_backup_manager->databaseFlushInProgress();
 
-//	if (bdb->bdb_writers == 1 || bdb->bdb_use_count == 1)
-	if (bdb->bdb_writers == 1 ||
+	if (bdb->bdb_writers == 1 || bdb->bdb_use_count == 1 ||
 		(bdb->bdb_writers == 0 && mustWrite))
 	{
 		const bool marked = bdb->bdb_flags & BDB_marked;
