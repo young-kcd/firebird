@@ -228,7 +228,7 @@ public:
 	static int getTempBlockSize();
 
 	// Caching limit for the temporary data
-	static FB_UINT64 getTempCacheLimit();
+	FB_UINT64 getTempCacheLimit() const;
 
 	// Whether remote (NFS) files can be opened
 	static bool getRemoteFileOpenAbility();

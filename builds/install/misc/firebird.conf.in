@@ -375,6 +375,8 @@
 # Although it can be increased, the value applies to each client
 # connection/server instance and thus consumes a lot of memory.
 #
+# Per-database configurable.
+#
 # Type: integer
 #
 #TempCacheLimit = 64M

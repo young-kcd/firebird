@@ -434,6 +434,9 @@ public:
 	Firebird::SyncObject			dbb_sortbuf_sync;
 	Firebird::Array<UCHAR*>			dbb_sort_buffers;	// sort buffers ready for reuse
 
+	Firebird::Mutex dbb_temp_cache_mutex;
+	FB_UINT64 dbb_temp_cache_size;		// total size of in-memory temp space chunks (see TempSpace class)
+
 	TraNumber dbb_oldest_active;		// Cached "oldest active" transaction
 	TraNumber dbb_oldest_transaction;	// Cached "oldest interesting" transaction
 	TraNumber dbb_oldest_snapshot;		// Cached "oldest snapshot" of all active transactions
