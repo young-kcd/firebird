@@ -6371,6 +6371,7 @@ dsc* FieldNode::execute(thread_db* tdbb, jrd_req* request) const
 	if (format &&
 		record->getFormat()->fmt_version != format->fmt_version &&
 		fieldId < format->fmt_desc.getCount() &&
+		!format->fmt_desc[fieldId].isUnknown() &&
 		!DSC_EQUIV(&impure->vlu_desc, &format->fmt_desc[fieldId], true))
 	{
 		dsc desc = impure->vlu_desc;
