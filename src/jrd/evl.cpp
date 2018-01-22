@@ -926,6 +926,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 				if (compileFormat &&
 					record->rec_format->fmt_version != compileFormat->fmt_version &&
 					id < compileFormat->fmt_desc.getCount() &&
+					!compileFormat->fmt_desc[id].isUnknown() &&
 					!DSC_EQUIV(&impure->vlu_desc, &compileFormat->fmt_desc[id], true))
 				{
 					dsc desc = impure->vlu_desc;
