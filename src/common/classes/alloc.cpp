@@ -2199,6 +2199,13 @@ void* MemoryPool::globalAlloc(size_t s) THROW_BAD_ALLOC
 }
 #endif // LIBC_CALLS_NEW
 
+void* MemoryPool::calloc(size_t size ALLOC_PARAMS)
+{
+	void* block = allocate(size ALLOC_PASS_ARGS);
+	memset(block, 0, size);
+	return block;
+}
+
 #if defined(DEV_BUILD)
 void AutoStorage::ProbeStack() const
 {
@@ -2224,11 +2231,11 @@ void AutoStorage::ProbeStack() const
 
 void* operator new(size_t s) THROW_BAD_ALLOC
 {
-	return Firebird::MemoryPool::globalAlloc(s);
+	return Firebird::MemoryPool::globalAlloc(s ALLOC_ARGS);
 }
 void* operator new[](size_t s) THROW_BAD_ALLOC
 {
-	return Firebird::MemoryPool::globalAlloc(s);
+	return Firebird::MemoryPool::globalAlloc(s ALLOC_ARGS);
 }
 
 void operator delete(void* mem) throw()

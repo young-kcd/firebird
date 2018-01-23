@@ -28,7 +28,7 @@
 #include <stdlib.h>		// abort()
 #include <stdio.h>
 
-#define FB_ASSERT_FAILURE_STRING	"Assertion (%s) failure: %s %"LINEFORMAT"\n"
+#define FB_ASSERT_FAILURE_STRING	"Assertion (%s) failure: %s %" LINEFORMAT "\n"
 
 #ifdef SUPERCLIENT
 

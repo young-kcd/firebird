@@ -73,6 +73,16 @@
 
 #endif
 
+#ifdef DEBUG_GDS_ALLOC
+#define ALLOC_ARGS , __FILE__, __LINE__
+#define ALLOC_PARAMS , const char* file, int line
+#define ALLOC_PASS_ARGS , file, line
+#else
+#define ALLOC_ARGS
+#define ALLOC_PARAMS
+#define ALLOC_PASS_ARGS
+#endif // DEBUG_GDS_ALLOC
+
 namespace Firebird {
 
 // Maximum number of B+ tree pages kept spare for tree allocation
@@ -395,15 +405,11 @@ public:
 	// This method is needed when C++ runtime can call
 	// redefined by us operator new before initialization of global variables.
 #ifdef LIBC_CALLS_NEW
-	static void* globalAlloc(size_t s) THROW_BAD_ALLOC;
+	static void* globalAlloc(size_t s ALLOC_PARAMS) THROW_BAD_ALLOC;
 #else // LIBC_CALLS_NEW
-	static void* globalAlloc(size_t s) THROW_BAD_ALLOC
+	static void* globalAlloc(size_t s ALLOC_PARAMS) THROW_BAD_ALLOC
 	{
-		return processMemoryPool->allocate(s
-#ifdef DEBUG_GDS_ALLOC
-	  		,__FILE__, __LINE__
-#endif
-		);
+		return processMemoryPool->allocate(s ALLOC_PASS_ARGS);
 	}
 #endif // LIBC_CALLS_NEW
 
@@ -424,19 +430,7 @@ public:
 	}
 
 	// Allocate zero-initialized block of memory
-	void* calloc(size_t size
-#ifdef DEBUG_GDS_ALLOC
-		, const char* file = NULL, int line = 0
-#endif
-	) {
-		void* result = allocate(size
-#ifdef DEBUG_GDS_ALLOC
-			, file, line
-#endif
-		);
-		memset(result, 0, size);
-		return result;
-	}
+	void* calloc(size_t size ALLOC_PARAMS);
 
 	// Initialize and finalize global memory pool
 	static void init();
@@ -498,40 +492,58 @@ using Firebird::MemoryPool;
 
 inline static MemoryPool* getDefaultMemoryPool() { return Firebird::MemoryPool::processMemoryPool; }
 
-#if (( ! __GNUC__ ) || ( __GNUC__ < 6 ))
+// operators new and delete
 
-// Global versions of operators new and delete
 void* operator new(size_t s) THROW_BAD_ALLOC;
 void* operator new[](size_t s) THROW_BAD_ALLOC;
-
-#endif
 
 void operator delete(void* mem) throw();
 void operator delete[](void* mem) throw();
 
+inline void* operator new(size_t s, Firebird::MemoryPool& pool ALLOC_PARAMS) THROW_BAD_ALLOC
+{
+	return pool.allocate(s ALLOC_PASS_ARGS);
+}
+inline void* operator new[](size_t s, Firebird::MemoryPool& pool ALLOC_PARAMS) THROW_BAD_ALLOC
+{
+	return pool.allocate(s ALLOC_PASS_ARGS);
+}
+
+inline void operator delete(void* mem, Firebird::MemoryPool& pool ALLOC_PARAMS) throw()
+{
+	MemoryPool::globalFree(mem);
+}
+inline void operator delete[](void* mem, Firebird::MemoryPool& pool ALLOC_PARAMS) throw()
+{
+	MemoryPool::globalFree(mem);
+}
+
 #ifdef DEBUG_GDS_ALLOC
-inline void* operator new(size_t s, Firebird::MemoryPool& pool, const char* file, int line)
+
+inline void* operator new(size_t s ALLOC_PARAMS) THROW_BAD_ALLOC
 {
-	return pool.allocate(s, file, line);
+	return MemoryPool::globalAlloc(s ALLOC_PASS_ARGS);
 }
-inline void* operator new[](size_t s, Firebird::MemoryPool& pool, const char* file, int line)
+inline void* operator new[](size_t s ALLOC_PARAMS) THROW_BAD_ALLOC
 {
-	return pool.allocate(s, file, line);
+	return MemoryPool::globalAlloc(s ALLOC_PASS_ARGS);
 }
+
+inline void operator delete(void* mem ALLOC_PARAMS) throw()
+{
+	MemoryPool::globalFree(mem);
+}
+inline void operator delete[](void* mem ALLOC_PARAMS) throw()
+{
+	MemoryPool::globalFree(mem);
+}
+
 #define FB_NEW(pool) new(pool, __FILE__, __LINE__)
 #define FB_NEW_RPT(pool, count) new(pool, count, __FILE__, __LINE__)
-#else
-inline void* operator new(size_t s, Firebird::MemoryPool& pool)
-{
-	return pool.allocate(s);
-}
-inline void* operator new[](size_t s, Firebird::MemoryPool& pool)
-{
-	return pool.allocate(s);
-}
+#else // DEBUG_GDS_ALLOC
 #define FB_NEW(pool) new(pool)
 #define FB_NEW_RPT(pool, count) new(pool, count)
-#endif
+#endif // DEBUG_GDS_ALLOC
 
 
 namespace Firebird
