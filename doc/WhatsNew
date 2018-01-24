@@ -2,6 +2,41 @@
   * v3.0.3
   **************************
 
+    * Bugfix CORE-5721
+        Information items isc_info_length and fb_info_crypt_state have the same code
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5720
+        Sweep in Firebird 3 in CS mode could run too slow when there is big load on server
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5713
+        Field alias disappears in complex query
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5707
+        Begin and end of physical backup in the same transaction could crash engine
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5706
+        Trace config with misplaced "{" lead Firebird to crash
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-5695
+        Position function does not consider the collation for blob
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5694
+        Duplicate values in columns with a unique constraint
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-5686
         Firebird 3.0.2 allows any protocol version >= 10 to connect, including interbase protocol 14
       Contributor(s):
@@ -282,6 +317,16 @@
       Contributor(s):
         Roman Simakov <roman.simakov at red-soft.biz>
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-5712
+        Access to the name of DB encryption key
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-5704
+        Avoid UPDATE of RDB$DATABASE by ALTER DATABASE statement when possible
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Improvement CORE-5676
         Consider equivalence classes for index navigation
