@@ -12291,36 +12291,73 @@ DmlNode* ValueIfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	MissingBoolNode* missing = nodeAs<MissingBoolNode>(node->condition);
 	if (missing)
 	{
-		StmtExprNode* missingCond = nodeAs<StmtExprNode>(missing->arg);
-		if (!missingCond)
+		StmtExprNode* stmtExpr = nodeAs<StmtExprNode>(missing->arg);
+		if (!stmtExpr)
 			return node;
 
-		CompoundStmtNode* stmt = nodeAs<CompoundStmtNode>(missingCond->stmt);
-		DeclareVariableNode* declStmt = NULL;
+		bool firstAssign = true;
 		AssignmentNode* assignStmt;
+		Array<USHORT> nullVariables;
 
-		if (stmt)
+		do
 		{
-			if (stmt->statements.getCount() != 2 ||
-				!(declStmt = nodeAs<DeclareVariableNode>(stmt->statements[0])) ||
-				!(assignStmt = nodeAs<AssignmentNode>(stmt->statements[1])))
+			CompoundStmtNode* stmt = nodeAs<CompoundStmtNode>(stmtExpr->stmt);
+			VariableNode* var = NULL;
+
+			if (stmt)
+			{
+				DeclareVariableNode* declStmt;
+
+				if (stmt->statements.getCount() != 2 ||
+					!(declStmt = nodeAs<DeclareVariableNode>(stmt->statements[0])) ||
+					!(assignStmt = nodeAs<AssignmentNode>(stmt->statements[1])) ||
+					!(var = nodeAs<VariableNode>(assignStmt->asgnTo)) ||
+					var->varId != declStmt->varId)
+				{
+					return node;
+				}
+			}
+			else if (!(assignStmt = nodeAs<AssignmentNode>(stmtExpr->stmt)) ||
+				!(var = nodeAs<VariableNode>(assignStmt->asgnTo)))
 			{
 				return node;
 			}
-		}
-		else if (!(assignStmt = nodeAs<AssignmentNode>(missingCond->stmt)))
-			return node;
 
-		VariableNode* var = nodeAs<VariableNode>(node->falseValue);
-		VariableNode* var2 = nodeAs<VariableNode>(assignStmt->asgnTo);
+			nullVariables.add(var->varId);
 
-		if (!var || !var2 || var->varId != var2->varId || (declStmt && declStmt->varId != var->varId))
-			return node;
+			if (firstAssign)
+			{
+				firstAssign = false;
+
+				VariableNode* var2 = nodeAs<VariableNode>(node->falseValue);
+
+				if (!var2 || var->varId != var2->varId)
+					return node;
+			}
+
+			stmtExpr = nodeAs<StmtExprNode>(assignStmt->asgnFrom);
+		} while (stmtExpr);
 
 		CoalesceNode* coalesceNode = FB_NEW_POOL(pool) CoalesceNode(pool);
 		coalesceNode->args = FB_NEW_POOL(pool) ValueListNode(pool, 2);
 		coalesceNode->args->items[0] = assignStmt->asgnFrom;
 		coalesceNode->args->items[1] = node->trueValue;
+
+		// Variables known to be NULL may be removed from the coalesce. This is not only an optimization!
+		// If not removed, error will happen as they correspondents declare nodes were removed.
+		if (CoalesceNode* subCoalesceNode = nodeAs<CoalesceNode>(node->trueValue))
+		{
+			NestValueArray& childItems = subCoalesceNode->args->items;
+
+			for (int i = childItems.getCount() - 1; i >= 0; --i)
+			{
+				if (VariableNode* childVar = nodeAs<VariableNode>(childItems[i]))
+				{
+					if (nullVariables.exist(childVar->varId))
+						childItems.remove(i);
+				}
+			}
+		}
 
 		return coalesceNode;
 	}
