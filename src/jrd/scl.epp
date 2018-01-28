@@ -288,6 +288,11 @@ void SCL_check_create_access(thread_db* tdbb, int type)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
+
+	// Allow the locksmith any access to database
+	if (attachment->locksmith())
+		return;
 
 	const SecurityClass::flags_t obj_mask = SCL_get_object_mask(type);
 
