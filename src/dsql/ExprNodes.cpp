@@ -11440,7 +11440,7 @@ ValueExprNode* UdfCallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		dsc desc = node->dsqlFunction->udf_arguments[pos];
 
 		// UNICODE_FSS_HACK
-		if ((pos < node->dsqlFunction->udf_fld_system_arguments.getCount()) && 
+		if ((pos < node->dsqlFunction->udf_fld_system_arguments.getCount()) &&
 			node->dsqlFunction->udf_fld_system_arguments[pos])
 		{
 			DataTypeUtilBase::adjustSysFieldLength(&desc);
@@ -11489,36 +11489,73 @@ DmlNode* ValueIfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	MissingBoolNode* missing = node->condition->as<MissingBoolNode>();
 	if (missing)
 	{
-		StmtExprNode* missingCond = missing->arg->as<StmtExprNode>();
-		if (!missingCond)
+		StmtExprNode* stmtExpr = missing->arg->as<StmtExprNode>();
+		if (!stmtExpr)
 			return node;
 
-		CompoundStmtNode* stmt = missingCond->stmt->as<CompoundStmtNode>();
-		DeclareVariableNode* declStmt = NULL;
+		bool firstAssign = true;
 		AssignmentNode* assignStmt;
+		Array<USHORT> nullVariables;
 
-		if (stmt)
+		do
 		{
-			if (stmt->statements.getCount() != 2 ||
-				!(declStmt = stmt->statements[0]->as<DeclareVariableNode>()) ||
-				!(assignStmt = stmt->statements[1]->as<AssignmentNode>()))
+			CompoundStmtNode* stmt = stmtExpr->stmt->as<CompoundStmtNode>();
+			VariableNode* var = NULL;
+
+			if (stmt)
+			{
+				DeclareVariableNode* declStmt;
+
+				if (stmt->statements.getCount() != 2 ||
+					!(declStmt = stmt->statements[0]->as<DeclareVariableNode>()) ||
+					!(assignStmt = stmt->statements[1]->as<AssignmentNode>()) ||
+					!(var = assignStmt->asgnTo->as<VariableNode>()) ||
+					var->varId != declStmt->varId)
+				{
+					return node;
+				}
+			}
+			else if (!(assignStmt = stmtExpr->stmt->as<AssignmentNode>()) ||
+				!(var = assignStmt->asgnTo->as<VariableNode>()))
 			{
 				return node;
 			}
-		}
-		else if (!(assignStmt = missingCond->stmt->as<AssignmentNode>()))
-			return node;
 
-		VariableNode* var = node->falseValue->as<VariableNode>();
-		VariableNode* var2 = assignStmt->asgnTo->as<VariableNode>();
+			nullVariables.add(var->varId);
 
-		if (!var || !var2 || var->varId != var2->varId || (declStmt && declStmt->varId != var->varId))
-			return node;
+			if (firstAssign)
+			{
+				firstAssign = false;
+
+				VariableNode* var2 = node->falseValue->as<VariableNode>();
+
+				if (!var2 || var->varId != var2->varId)
+					return node;
+			}
+
+			stmtExpr = assignStmt->asgnFrom->as<StmtExprNode>();
+		} while (stmtExpr);
 
 		CoalesceNode* coalesceNode = FB_NEW_POOL(pool) CoalesceNode(pool);
 		coalesceNode->args = FB_NEW_POOL(pool) ValueListNode(pool, 2);
 		coalesceNode->args->items[0] = assignStmt->asgnFrom;
 		coalesceNode->args->items[1] = node->trueValue;
+
+		// Variables known to be NULL may be removed from the coalesce. This is not only an optimization!
+		// If not removed, error will happen as they correspondents declare nodes were removed.
+		if (CoalesceNode* subCoalesceNode = node->trueValue->as<CoalesceNode>())
+		{
+			NestValueArray& childItems = subCoalesceNode->args->items;
+
+			for (int i = childItems.getCount() - 1; i >= 0; --i)
+			{
+				if (VariableNode* childVar = childItems[i]->as<VariableNode>())
+				{
+					if (nullVariables.exist(childVar->varId))
+						childItems.remove(i);
+				}
+			}
+		}
 
 		return coalesceNode;
 	}
