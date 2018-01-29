@@ -120,7 +120,7 @@ public:
 		if (stopped)
 			return 0;
 
-		if (port->port_protocol < PROTOCOL_VERSION13)
+		if (port->port_protocol < PROTOCOL_VERSION13 || port->port_type != rem_port::INET)
 			return 0;
 
 		Reference r(*port);
