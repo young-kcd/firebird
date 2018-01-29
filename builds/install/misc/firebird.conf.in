@@ -51,8 +51,12 @@
 # Per-database configuration is done in file databases.conf (former aliases.conf).
 # Per-connection configuration is primarily client tool and done using
 # isc_dpb_config parameter in DPB (isc_spb_config for services).
-# Notice that per-database entries also may be tuned using DPB in case of
-# embedded engine when attaching to database first time.
+# Configuration data, added to parameters block, has same format as this file.
+# Pay attention that since firebird3 there is no hard limit of 255 bytes per entry
+# provided you are using isc_dpb_version2 format of DPB. The simplest way to create
+# DPB/SPB is to use IXpbBuilder - when needed you will have >255 bytes entries in
+# parameters block. Notice that per-database entries also may be tuned using DPB
+# in case of embedded engine when attaching to database first time.
 #
 # Macro substitution
 # ------------------
