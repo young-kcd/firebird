@@ -397,7 +397,7 @@ static const UCHAR sort_dtypes[] =
 	SKD_bytes,					// dtype_boolean
 	SKD_dec64,					// dtype_dec64
 	SKD_dec128,					// dtype_dec128
-	SKD_dec_fixed				// dtype_dec_fixed
+	SKD_dec128					// dtype_dec_fixed
 };
 
 
