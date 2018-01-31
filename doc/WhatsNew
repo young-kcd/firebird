@@ -2,6 +2,16 @@
   * v3.0.3
   **************************
 
+    * Bugfix CORE-5735
+        Additional keyholder opens unauthorized connections to encrypted database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5730
+        Connection to server may hang when working with encrypted databases over non-TCP protocol
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-5721
         Information items isc_info_length and fb_info_crypt_state have the same code
       Contributor(s):
@@ -11,6 +21,11 @@
         Sweep in Firebird 3 in CS mode could run too slow when there is big load on server
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5719
+        FB 3 crashes when restoring backup made by FB 2.5
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Bugfix CORE-5713
         Field alias disappears in complex query
@@ -317,6 +332,11 @@
       Contributor(s):
         Roman Simakov <roman.simakov at red-soft.biz>
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-5727
+        Faster engine response on cancel/shutdown signals when scanning long list of pointer pages
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Improvement CORE-5712
         Access to the name of DB encryption key
