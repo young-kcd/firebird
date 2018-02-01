@@ -4187,6 +4187,7 @@ keyword_or_column
 	| TIMEZONE_MINUTE
 	| UNBOUNDED
 	| WINDOW
+	| WITHOUT
 	;
 
 col_opt
@@ -4634,7 +4635,7 @@ non_charset_simple_type
 				$$->length = sizeof(ULONG);
 			}
 		}
-	| TIME
+	| TIME without_time_zone_opt
 		{
 			$$ = newNode<dsql_fld>();
 
@@ -4672,7 +4673,7 @@ non_charset_simple_type
 			$$->dtype = dtype_sql_time_tz;
 			$$->length = sizeof(ISC_TIME_TZ);
 		}
-	| TIMESTAMP
+	| TIMESTAMP without_time_zone_opt
 		{
 			$$ = newNode<dsql_fld>();
 			$$->dtype = dtype_timestamp;
@@ -4695,6 +4696,11 @@ non_charset_simple_type
 integer_keyword
 	: INTEGER
 	| INT
+	;
+
+without_time_zone_opt
+	: // nothing
+	| WITHOUT TIME ZONE
 	;
 
 
