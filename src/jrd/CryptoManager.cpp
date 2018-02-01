@@ -278,7 +278,8 @@ namespace Jrd {
 		: PermanentStorage(*tdbb->getDatabase()->dbb_permanent),
 		  sync(this),
 		  keyName(getPool()),
-		  keyHolderPlugins(getPool(), this),
+		  keyProviders(getPool()),
+		  keyConsumers(getPool()),
 		  hash(getPool()),
 		  dbInfo(FB_NEW DbInfo(this)),
 		  cryptThreadId(0),
@@ -430,7 +431,47 @@ namespace Jrd {
 		IDbCryptPlugin* p = cryptControl->plugin();
 		setDbInfo(p);
 
-		keyHolderPlugins.init(p, keyName);
+		bool fLoad = false, fTry = false;
+		bool holderLess = false;
+		for (GetPlugins<IKeyHolderPlugin> keyControl(IPluginManager::TYPE_KEY_HOLDER, dbb.dbb_config);
+			keyControl.hasData(); keyControl.next())
+		{
+			IKeyHolderPlugin* keyPlugin = keyControl.plugin();
+
+			FbLocalStatus st;
+			int keyCallbackRc = keyPlugin->keyCallback(&st, tdbb->getAttachment()->att_crypt_callback);
+			st.check();
+			if (!keyCallbackRc)
+				continue;
+
+			fTry = true;
+			p->setKey(&st, 1, &keyPlugin, keyName.c_str());
+			if (st.isSuccess())
+			{
+				if (!keyPlugin->useOnlyOwnKeys(&st))
+				{
+					MutexLockGuard g(holdersMutex, FB_FUNCTION);
+					keyProviders.push(tdbb->getAttachment());
+				}
+				fLoad = true;
+				break;
+			}
+		}
+
+		if (!fTry)
+		{
+			FbLocalStatus status;
+			p->setKey(&status, 0, NULL, keyName.c_str());
+			if (status.isSuccess())
+			{
+				holderLess = true;
+				fLoad = true;
+			}
+		}
+
+		if (!fLoad)
+			Arg::Gds(isc_db_crypt_key).raise();
+
 		cryptPlugin = p;
 		cryptPlugin->addRef();
 
@@ -439,11 +480,8 @@ namespace Jrd {
 		checkFactory = NULL;
 
 		// store new one
-		if (dbb.dbb_config->getServerMode() == MODE_SUPER)
-		{
+		if (dbb.dbb_config->getServerMode() == MODE_SUPER && !holderLess)
 			checkFactory = cryptControl.release();
-			keyHolderPlugins.validateNewAttachment(tdbb->getAttachment(), keyName);
-		}
 	}
 
 	void CryptoManager::prepareChangeCryptState(thread_db* tdbb, const MetaName& plugName,
@@ -598,7 +636,25 @@ namespace Jrd {
 					hc.insertString(Ods::HDR_crypt_key, keyName);
 
 				if (checkFactory)
-					keyHolderPlugins.validateExistingAttachments(keyName);
+				{
+					// Create local copy of existing attachments
+					AttVector existing;
+					{
+						SyncLockGuard dsGuard(&dbb.dbb_sync, SYNC_EXCLUSIVE, FB_FUNCTION);
+						for (Attachment* att = dbb.dbb_attachments; att; att = att->att_next)
+							existing.push(att);
+					}
+
+					// Loop through attachments
+					MutexLockGuard g(holdersMutex, FB_FUNCTION);
+
+					for (unsigned n = 0; n < existing.getCount(); ++n)
+						validateAttachment(tdbb, existing[n], true);
+
+					// In case of missing providers close consumers
+					if (keyProviders.getCount() == 0)
+						shutdownConsumers(tdbb);
+				}
 			}
 			else
 				header->hdr_flags &= ~Ods::hdr_encrypted;
@@ -640,6 +696,16 @@ namespace Jrd {
 		startCryptThread(tdbb);
 	}
 
+	void CryptoManager::shutdownConsumers(thread_db* tdbb)
+	{
+		MutexLockGuard g(holdersMutex, FB_FUNCTION);
+
+		for (unsigned i = 0; i < keyConsumers.getCount(); ++i)
+			keyConsumers[i]->signalShutdown(isc_db_crypt_key);
+
+		keyConsumers.clear();
+	}
+
 	void CryptoManager::blockingAstChangeCryptState()
 	{
 		AsyncContextHolder tdbb(&dbb, FB_FUNCTION);
@@ -656,18 +722,94 @@ namespace Jrd {
 		LCK_convert(tdbb, stateLock, CRYPT_RELEASE, LCK_NO_WAIT);
 	}
 
+	bool CryptoManager::validateAttachment(thread_db* tdbb, Attachment* att, bool consume)
+	{
+		bool fLoad = false, fProvide = false;
+		for (GetPlugins<IKeyHolderPlugin> keyControl(IPluginManager::TYPE_KEY_HOLDER, dbb.dbb_config);
+			keyControl.hasData(); keyControl.next())
+		{
+			// check does keyHolder want to provide a key for us
+			IKeyHolderPlugin* keyHolder = keyControl.plugin();
+
+			FbLocalStatus st;
+			int keyCallbackRc = keyHolder->keyCallback(&st, att->att_crypt_callback);
+			st.check();
+			if (!keyCallbackRc)
+				continue;
+
+			// validate a key
+			AutoPtr<IDbCryptPlugin, ReleasePlugin> crypt(checkFactory->makeInstance());
+			setDbInfo(crypt);
+			crypt->setKey(&st, 1, &keyHolder, keyName.c_str());
+
+			if (st.isSuccess())
+			{
+				try
+				{
+					if (checkValidation(crypt))
+						fLoad = true;
+				}
+				catch (const Exception&)
+				{ }		// Ignore possible errors, continue analysis
+
+				if (fLoad)
+					fProvide = !keyHolder->useOnlyOwnKeys(&st);
+				break;
+			}
+		}
+
+		// Apply results
+
+		if (fProvide)
+			keyProviders.push(att);
+		else if (consume && !fLoad)
+			keyConsumers.push(att);
+
+		return fLoad;
+	}
+
 	void CryptoManager::attach(thread_db* tdbb, Attachment* att)
 	{
-		keyHolderPlugins.attach(att, dbb.dbb_config);
+		if (checkFactory)
+		{
+			MutexLockGuard g(holdersMutex, FB_FUNCTION);
 
-		Factory* f = checkFactory;
+			if (!validateAttachment(tdbb, att, false))
+			{
+				if (keyProviders.getCount() == 0)
+					Arg::Gds(isc_db_crypt_key).raise();
+
+				keyConsumers.push(att);
+			}
+		}
 
 		lockAndReadHeader(tdbb, CRYPT_HDR_INIT);
+	}
 
-		if (f && f == checkFactory)
+	void CryptoManager::detach(thread_db* tdbb, Attachment* att)
+	{
+		if (!checkFactory)
+			return;
+
+		MutexLockGuard g(holdersMutex, FB_FUNCTION);
+		for (unsigned n = 0; n < keyConsumers.getCount(); ++n)
 		{
-			if (!keyHolderPlugins.validateNewAttachment(att, keyName))
-				(Arg::Gds(isc_bad_crypt_key) << keyName).raise();
+			if (keyConsumers[n] == att)
+			{
+				keyConsumers.remove(n);
+				return;
+			}
+		}
+
+		for (unsigned n = 0; n < keyProviders.getCount(); ++n)
+		{
+			if (keyProviders[n] == att)
+			{
+				keyProviders.remove(n);
+				if (keyProviders.getCount() == 0)
+					shutdownConsumers(tdbb);
+				return;
+			}
 		}
 	}
 
@@ -1191,203 +1333,6 @@ namespace Jrd {
 	const char* CryptoManager::getKeyName() const
 	{
 		return keyName.c_str();
-	}
-
-	void CryptoManager::KeyHolderPlugins::attach(Attachment* att, const Config* config)
-	{
-		MutexLockGuard g(holdersMutex, FB_FUNCTION);
-
-		for (GetPlugins<IKeyHolderPlugin> keyControl(IPluginManager::TYPE_KEY_HOLDER, config);
-			keyControl.hasData(); keyControl.next())
-		{
-			IKeyHolderPlugin* keyPlugin = keyControl.plugin();
-			FbLocalStatus st;
-			bool flProvide = false;
-
-			if (keyPlugin->keyCallback(&st, att->att_crypt_callback))
-				flProvide = true;
-			else
-			{
-				st.check();
-				flProvide = !keyPlugin->useOnlyOwnKeys(&st);
-				// Ignore error condition to support old plugins
-			}
-
-			if (flProvide)
-			{
-				// holder is going to provide a key
-				PerAttHolders* pa = NULL;
-
-				for (unsigned i = 0; i < knownHolders.getCount(); ++i)
-				{
-					if (knownHolders[i].first == att)
-					{
-						pa = &knownHolders[i];
-						break;
-					}
-				}
-
-				if (!pa)
-				{
-					pa = &(knownHolders.add());
-					pa->first = att;
-				}
-
-				if (pa)
-				{
-					pa->second.add(keyPlugin);
-					keyPlugin->addRef();
-				}
-			}
-		}
-	}
-
-	void CryptoManager::KeyHolderPlugins::detach(Attachment* att)
-	{
-		MutexLockGuard g(holdersMutex, FB_FUNCTION);
-
-		for (unsigned i = 0; i < knownHolders.getCount(); ++i)
-		{
-			if (knownHolders[i].first == att)
-			{
-				releaseHolders(knownHolders[i]);
-				knownHolders.remove(i);
-				break;
-			}
-		}
-	}
-
-	void CryptoManager::KeyHolderPlugins::releaseHolders(PerAttHolders& pa)
-	{
-		unsigned j = 0;
-
-		for (; j < pa.second.getCount(); ++j)
-			PluginManagerInterfacePtr()->releasePlugin(pa.second[j]);
-
-		pa.second.removeCount(0, j);
-	}
-
-	void CryptoManager::KeyHolderPlugins::init(IDbCryptPlugin* crypt, const MetaName& keyName)
-	{
-		MutexLockGuard g(holdersMutex, FB_FUNCTION);
-
-		Firebird::HalfStaticArray<Firebird::IKeyHolderPlugin*, 64> holdersVector;
-
-		for (unsigned i = 0; i < knownHolders.getCount(); ++i)
-		{
-			PerAttHolders pa = knownHolders[i];
-			for (unsigned j = 0; j < pa.second.getCount(); ++j)
-				holdersVector.push(pa.second[j]);
-		}
-
-		FbLocalStatus st;
-		crypt->setKey(&st, holdersVector.getCount(), holdersVector.begin(), keyName.c_str());
-		st.check();
-	}
-
-	bool CryptoManager::KeyHolderPlugins::validateHoldersGroup(PerAttHolders& pa, const MetaName& keyName)
-	{
-		FbLocalStatus st;
-		fb_assert(holdersMutex.locked());
-
-		for (unsigned j = 0; j < pa.second.getCount(); ++j)
-		{
-			IKeyHolderPlugin* keyHolder = pa.second[j];
-			if (!keyHolder->useOnlyOwnKeys(&st))
-				return true;
-
-			if (validateHolder(keyHolder, keyName))
-				return true;
-		}
-
-		return false;
-	}
-
-	bool CryptoManager::KeyHolderPlugins::validateNewAttachment(Attachment* att, const MetaName& keyName)
-	{
-		FbLocalStatus st;
-		MutexLockGuard g(holdersMutex, FB_FUNCTION);
-
-		// Check for current attachment
-		for (unsigned i = 0; i < knownHolders.getCount(); ++i)
-		{
-			PerAttHolders& pa = knownHolders[i];
-
-			if (pa.first == att)
-			{
-				bool empty = (pa.second.getCount() == 0);
-				bool result = empty ? false : validateHoldersGroup(pa, keyName);
-
-				if (empty)
-					break;
-
-				return result;
-			}
-		}
-
-		// Special case - holders not needed at all
-		return validateHolder(NULL, keyName);
-	}
-
-	bool CryptoManager::KeyHolderPlugins::validateHolder(IKeyHolderPlugin* keyHolder, const MetaName& keyName)
-	{
-		fb_assert(mgr->checkFactory);
-		if (!mgr->checkFactory)
-			return false;
-
-		FbLocalStatus st;
-
-		AutoPtr<IDbCryptPlugin, ReleasePlugin> crypt(mgr->checkFactory->makeInstance());
-		mgr->setDbInfo(crypt);
-		crypt->setKey(&st, keyHolder ? 1 : 0, &keyHolder, keyName.c_str());
-
-		if (st.isSuccess())
-		{
-			try
-			{
-				if (mgr->checkValidation(crypt))
-					return true;
-			}
-			catch (const Exception&)
-			{ }		// Ignore possible errors, continue analysis
-		}
-		return false;
-	}
-
-	void CryptoManager::KeyHolderPlugins::validateExistingAttachments(const MetaName& keyName)
-	{
-		FbLocalStatus st;
-
-		// Special case - holders not needed at all
-		if (validateHolder(NULL, keyName))
-			return;
-
-		// Loop through whole attachments list of DBB, shutdown attachments missing any holders
-		fb_assert(!mgr->dbb.dbb_sync.isLocked());
-		MutexLockGuard g(holdersMutex, FB_FUNCTION);
-		SyncLockGuard dsGuard(&mgr->dbb.dbb_sync, SYNC_EXCLUSIVE, FB_FUNCTION);
-		for (Attachment* att = mgr->dbb.dbb_attachments; att; att = att->att_next)
-		{
-			bool found = false;
-			for (unsigned i = 0; i < knownHolders.getCount(); ++i)
-			{
-				if (knownHolders[i].first == att)
-				{
-					found = true;
-					break;
-				}
-			}
-
-			if (!found)
-				att->signalShutdown(0 /* no special shutdown code */);
-		}
-
-		// Loop through internal attachments list closing one missing valid holders
-		for (unsigned i = 0; i < knownHolders.getCount(); ++i)
-		{
-			if (!validateHoldersGroup(knownHolders[i], keyName))
-				knownHolders[i].first->signalShutdown(0);
-		}
 	}
 
 	void CryptoManager::addClumplet(string& signature, ClumpletReader& block, UCHAR tag)
