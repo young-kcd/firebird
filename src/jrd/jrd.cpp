@@ -6341,6 +6341,9 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	if (!attachment)
 		return;
 
+	if (dbb->dbb_crypto_manager)
+		dbb->dbb_crypto_manager->detach(tdbb, attachment);
+
 	Monitoring::cleanupAttachment(tdbb);
 
 	dbb->dbb_extManager.closeAttachment(tdbb, attachment);

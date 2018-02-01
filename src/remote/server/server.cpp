@@ -195,6 +195,21 @@ public:
 			return 0;
 
 		Reference r(*port);
+		loadClientKey();
+		unsigned rc = keyCallback ?
+			keyCallback->callback(dataLength, data, bufferLength, buffer) :
+			// use legacy behavior if holders to do wish to accept keys from client
+			networkCallback.callback(dataLength, data, bufferLength, buffer);
+
+		return rc;
+	}
+
+	void loadClientKey()
+	{
+		if (keyCallback)
+			return;
+
+		Reference r(*port);
 
 		for (GetPlugins<IKeyHolderPlugin> kh(IPluginManager::TYPE_KEY_HOLDER, port->getPortConfig());
 			kh.hasData(); kh.next())
@@ -215,14 +230,6 @@ public:
 					break;
 			}
 		}
-
-		unsigned rc = keyCallback ?
-			keyCallback->callback(dataLength, data, bufferLength, buffer) :
-			// use legacy behavior if holders to do wish to accept keys from client
-			networkCallback.callback(dataLength, data, bufferLength, buffer);
-
-		//stop();
-		return rc;
 	}
 
 	void wakeup(unsigned int length, const void* data)
@@ -259,6 +266,7 @@ public:
 
 	ICryptKeyCallback* getInterface()
 	{
+		cryptCallback.loadClientKey();
 		return &cryptCallback;
 	}
 
