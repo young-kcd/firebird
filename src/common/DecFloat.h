@@ -44,6 +44,11 @@ extern "C"
 
 namespace Firebird {
 
+static const USHORT FB_DEC_Errors =
+	DEC_IEEE_754_Division_by_zero |
+	DEC_IEEE_754_Invalid_operation |
+	DEC_IEEE_754_Overflow;
+
 struct DecimalStatus
 {
 	DecimalStatus(USHORT exc)

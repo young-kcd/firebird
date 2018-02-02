@@ -883,7 +883,7 @@ void TracePluginImpl::appendParams(ITraceParams* params)
 				case dtype_dec_fixed:
 					try
 					{
-						DecimalStatus decSt(DEC_Errors);
+						DecimalStatus decSt(FB_DEC_Errors);
 						((DecimalFixed*) parameters->dsc_address)->toString(decSt, parameters->dsc_scale, paramvalue);
 					}
 					catch (const Exception& ex)
