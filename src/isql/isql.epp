@@ -594,7 +594,7 @@ static bool D_Transaction()
 // Transaction for all frontend commands
 static bool frontendTransaction()
 {
-	return startTransaction(&fbTrans, sizeof(default_tpb), default_tpb);
+	return startTransaction(&fbTrans);
 }
 
 static void atexit_fb_shutdown()
