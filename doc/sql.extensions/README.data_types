@@ -166,7 +166,7 @@ DECFLOAT (FB 4.0)
 			SET DECFLOAT TRAPS TO <comma-separated traps list - may be empty> - controls which
 				exceptional conditions cause a trap. Valid traps are: Division_by_zero, Inexact,
 				Invalid_operation, Overflow and Underflow. By default traps are set to:
-				Division_by_zero, Invalid_operation, Overflow, Underflow.
+				Division_by_zero, Invalid_operation, Overflow.
 
 			SET DECFLOAT BIND <bind-type> - controls how are DECFLOAT values represented in outer
 				world (i.e. in messages or in XSQLDA). Valid binding types are: NATIVE (use IEEE754
