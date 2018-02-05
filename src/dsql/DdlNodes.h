@@ -295,6 +295,65 @@ private:
 };
 
 
+class AlterEDSPoolSetNode : public DdlNode
+{
+public:
+	enum PARAM {POOL_SIZE, POOL_LIFETIME};
+
+	AlterEDSPoolSetNode(MemoryPool& pool, PARAM prm, int val) : 
+	  DdlNode(pool),
+	  m_param(prm),
+	  m_value(val)
+	{
+	}
+
+public:
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		// TODO: statusVector << Firebird::Arg::Gds(??); 
+	}
+
+private:
+	PARAM m_param;
+	int m_value;
+};
+
+
+class AlterEDSPoolClearNode : public DdlNode
+{
+public:
+	enum PARAM {POOL_ALL, POOL_OLDEST, POOL_DB};
+
+	AlterEDSPoolClearNode(MemoryPool& pool, PARAM prm, const Firebird::string& val = "") :
+	  DdlNode(pool),
+	  m_param(prm),
+	  m_value(pool)
+	{
+		m_value = val;
+	}
+
+public:
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		// TODO: statusVector << Firebird::Arg::Gds(??); 
+	}
+
+private:
+	PARAM m_param;
+	Firebird::string m_value;
+};
+
+
 class CommentOnNode : public DdlNode
 {
 public:

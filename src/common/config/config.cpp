@@ -202,7 +202,9 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_BOOLEAN,		"AllowEncryptedSecurityDatabase", (ConfigValue) false},
 	{TYPE_INTEGER,		"StatementTimeout",			(ConfigValue) 0},
 	{TYPE_INTEGER,		"ConnectionIdleTimeout",	(ConfigValue) 0},
-	{TYPE_INTEGER,		"ClientBatchBuffer",		(ConfigValue) (128 * 1024)}
+	{TYPE_INTEGER,		"ClientBatchBuffer",		(ConfigValue) (128 * 1024)},
+	{TYPE_INTEGER,		"ExtConnPoolSize",			(ConfigValue) 0},
+	{TYPE_INTEGER,		"ExtConnPoolLifeTime",		(ConfigValue) 7200}
 };
 
 /******************************************************************************
@@ -839,3 +841,12 @@ unsigned int Config::getClientBatchBuffer() const
 	return get<unsigned int>(KEY_CLIENT_BATCH_BUFFER);
 }
 
+int Config::getExtConnPoolSize()
+{
+	return getDefaultConfig()->get<int>(KEY_EXT_CONN_POOL_SIZE);
+}
+
+int Config::getExtConnPoolLifeTime()
+{
+	return getDefaultConfig()->get<int>(KEY_EXT_CONN_POOL_LIFETIME);
+}

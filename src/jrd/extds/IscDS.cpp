@@ -110,15 +110,14 @@ IscConnection::~IscConnection()
 {
 }
 
-void IscConnection::attach(thread_db* tdbb, const PathName& dbName, const MetaName& user,
-	const string& pwd, const MetaName& role)
+void IscConnection::attach(thread_db* tdbb)
 {
-	m_dbName = dbName;
-	generateDPB(tdbb, m_dpb, user, pwd, role);
+	Attachment* attachment = tdbb->getAttachment();
 
 	// Avoid change of m_dpb by validatePassword() below
-	ClumpletWriter newDpb(m_dpb);
+	ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE, m_dpb.begin(), m_dpb.getCount(), 0);
 	validatePassword(tdbb, m_dbName, newDpb);
+	newDpb.insertInt(isc_dpb_ext_call_depth, attachment->att_ext_call_depth + 1);
 
 	FbLocalStatus status;
 	{
@@ -258,6 +257,22 @@ bool IscConnection::isAvailable(thread_db* tdbb, TraScope traScope) const
 	}
 
 	return true;
+}
+
+bool IscConnection::validate(Jrd::thread_db* tdbb)
+{
+	if (!m_handle)
+		return false;
+
+	FbLocalStatus status;
+
+	EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+
+	char info[] = {isc_info_attachment_id, isc_info_end};
+	char buff[32];
+
+	return m_iscProvider.isc_database_info(&status, &m_handle, 
+		sizeof(info), info, sizeof(buff), buff) == 0;
 }
 
 Blob* IscConnection::createBlob()
@@ -1641,8 +1656,17 @@ void FBProvider::loadAPI()
 
 static bool isConnectionBrokenError(FbStatusVector* status)
 {
-	ISC_STATUS code = status->getErrors()[1];
-	return (fb_utils::isNetworkError(code) || code == isc_att_shutdown);
+	const ISC_STATUS code = status->getErrors()[1];
+	switch (code)
+	{
+	case isc_shutdown:
+	case isc_att_shutdown:
+	case isc_bad_db_handle:
+		return true;
+
+	default:
+		return fb_utils::isNetworkError(code);
+	}
 }
 
 

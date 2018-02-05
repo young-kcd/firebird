@@ -63,6 +63,7 @@
 #include "../common/StatusArg.h"
 #include "../auth/SecureRemotePassword/Message.h"
 #include "../jrd/Mapping.h"
+#include "../jrd/extds/ExtDS.h"
 
 namespace Jrd {
 
@@ -1151,6 +1152,82 @@ void AlterCharSetNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		DDL_TRIGGER_ALTER_CHARACTER_SET, charSet, NULL);
 }
 
+
+bool AlterEDSPoolSetNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
+{
+	SCL_check_database(tdbb, SCL_alter); // TODO
+	return true;
+}
+
+string AlterEDSPoolSetNode::internalPrint(NodePrinter& printer) const
+{
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, m_param);
+	NODE_PRINT(printer, m_value);
+
+	return "AlterEDSPoolSetNode";
+}
+
+void AlterEDSPoolSetNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/, jrd_tra* /*transaction*/)
+{
+	switch (m_param)
+	{
+	case POOL_SIZE:
+		EDS::Manager::getConnPool()->setMaxCount(m_value);
+		break;
+
+	case POOL_LIFETIME:
+		EDS::Manager::getConnPool()->setLifeTime(m_value);
+		break;
+
+	default:
+		status_exception::raise(
+			Arg::Gds(isc_random) << Arg::Str("Unknown param for ALTER EXTERNAL CONNECTIONS POOL statement"));
+	}
+}
+
+
+bool AlterEDSPoolClearNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
+{
+	SCL_check_database(tdbb, SCL_alter); // TODO
+	return true;
+}
+
+string AlterEDSPoolClearNode::internalPrint(NodePrinter& printer) const
+{
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, m_param);
+	NODE_PRINT(printer, m_value);
+
+	return "AlterEDSPoolClearNode";
+}
+
+void AlterEDSPoolClearNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/, jrd_tra* /*transaction*/)
+{
+	switch (m_param)
+	{
+	case POOL_ALL:
+	{
+		EDS::Manager::getConnPool()->clearIdle(tdbb, true);
+		break;
+	}
+
+	case POOL_OLDEST:
+	{
+		EDS::Manager::getConnPool()->clearIdle(tdbb, false);
+		break;
+	}
+
+	case POOL_DB:
+		//break;
+
+	default:
+		status_exception::raise(
+			Arg::Gds(isc_random) << Arg::Str("Unknown param for ALTER EXTERNAL CONNECTIONS POOL statement"));
+	}
+}
 
 //----------------------
 

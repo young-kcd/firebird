@@ -4176,6 +4176,8 @@ void JProvider::shutdown(CheckStatusWrapper* status, unsigned int timeout, const
 
 		ThreadContextHolder tdbb;
 
+		EDS::Manager::shutdown();
+
 		ULONG attach_count, database_count, svc_count;
 		JRD_enum_attachments(NULL, attach_count, database_count, svc_count);
 
@@ -7595,7 +7597,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 	try
 	{
 		// allow to free resources used by dynamic statements
-		EDS::Manager::jrdAttachmentEnd(tdbb, attachment);
+		EDS::Manager::jrdAttachmentEnd(tdbb, attachment, forcedPurge);
 
 		if (!(dbb->dbb_flags & DBB_bugcheck))
 		{
@@ -8015,9 +8017,6 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 
 	try
 	{
-		// Shutdown external datasets manager
-		EDS::Manager::shutdown();
-
 		{ // scope
 			MutexLockGuard guard(databases_mutex, FB_FUNCTION);
 
