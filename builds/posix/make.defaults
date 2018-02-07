@@ -133,7 +133,7 @@ CAS_OPTIONS=@CAS_OPTIONS@
 
 # multiple-precision integer library
 MATHLIB=@MATHLIB@
-DECLIB=-ldecFloat
+DECLIB=-ldecFloat$(CROSS)
 
 # crypt library
 CRYPTLIB=@CRYPTLIB@
