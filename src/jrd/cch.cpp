@@ -5518,6 +5518,9 @@ static SSHORT lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait, c
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
 	ISC_STATUS* const status = tdbb->tdbb_status_vector;
 
+	ISC_STATUS_ARRAY temp_status = {0};
+	AutoSetRestore<ISC_STATUS*> autoStatus(&tdbb->tdbb_status_vector, temp_status);
+
 	if (lock->lck_logical == LCK_none)
 	{
 		// Prevent header and TIP pages from generating blocking AST
@@ -5560,9 +5563,8 @@ static SSHORT lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait, c
 
 		// Case: a timeout was specified, or the caller didn't want to wait, return the error.
 
-		if ((wait == LCK_NO_WAIT) || ((wait < 0) && (status[1] == isc_lock_timeout)))
+		if ((wait == LCK_NO_WAIT) || ((wait < 0) && (temp_status[1] == isc_lock_timeout)))
 		{
-			fb_utils::init_status(status);
 			release_bdb(tdbb, bdb, false, false, false);
 			return -1;
 		}
@@ -5579,6 +5581,7 @@ static SSHORT lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait, c
 		// CCH_unwind releases all the BufferDesc's and calls ERR_punt()
 		// ERR_punt will longjump.
 
+		tdbb->tdbb_status_vector = status;
 		CCH_unwind(tdbb, true);
 	}
 
@@ -5587,9 +5590,6 @@ static SSHORT lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait, c
 	// status vector just in case
 
 	const SSHORT must_read = (lock->lck_logical < LCK_read) ? 1 : 0;
-
-	ISC_STATUS_ARRAY alt_status;
-	memcpy(alt_status, tdbb->tdbb_status_vector, sizeof(alt_status));
 
 	if (LCK_convert_opt(tdbb, lock, lock_type)) {
 		return must_read;
@@ -5601,17 +5601,14 @@ static SSHORT lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait, c
 		return -1;
 	}
 
-	memcpy(tdbb->tdbb_status_vector, alt_status, sizeof(alt_status));
-
 	if (LCK_lock(tdbb, lock, lock_type, wait)) {
 		return 1;
 	}
 
 	// Case: a timeout was specified, or the caller didn't want to wait, return the error.
 
-	if ((wait < 0) && (status[1] == isc_lock_timeout))
+	if ((wait < 0) && (temp_status[1] == isc_lock_timeout))
 	{
-		fb_utils::init_status(status);
 		release_bdb(tdbb, bdb, false, false, false);
 		return -1;
 	}
@@ -5625,6 +5622,7 @@ static SSHORT lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait, c
 	ERR_append_status(status, Arg::Gds(isc_random) << Arg::Str(errmsg));
 	ERR_log(JRD_BUGCHK, 215, errmsg);	// msg 215 page %ld, page type %ld lock conversion denied
 
+	tdbb->tdbb_status_vector = status;
 	CCH_unwind(tdbb, true);
 	return 0;					// Added to get rid of Compiler Warning
 #endif
