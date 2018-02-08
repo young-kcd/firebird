@@ -65,6 +65,7 @@ CROSS_CONFIG=android.arme
 LDFLAGS += --sysroot=$(CROSS_PLATFORM) -L$(NDK)/sources/cxx-stl/gnu-libstdc++/$(NDK_TOOLCHAIN_VERSION)/libs/armeabi \
 	-L$(NDK)/sources/cxx-stl/gnu-libstdc++/libs/armeabi
 DroidLibs := -lm -ldl -lsupc++ $(DECLIB)
+UDR_SUPPORT_LIBS := -lgnustl_shared
 
 LINK_LIBS = $(DroidLibs)
 SO_LINK_LIBS = $(DroidLibs)

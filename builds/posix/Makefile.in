@@ -192,10 +192,10 @@ $(TOMMATH_LIB):	$(TOM_Objs)
 .PHONY:	tomcrypt
 TOMCRYPT_LIB=$(LIB)/libtomcrypt.a
 
-TOM_Src:=hashes\md5.c hashes\sha1.c hashes\sha2\sha256.c hashes\sha2\sha512.c misc\crypt\crypt_argchk.c
-TOM_Src:=$(addprefix ../extern/libtomcrypt/src, $(TOM_Src))
+TOM_Src:=hashes/md5.c hashes/sha1.c hashes/sha2/sha256.c hashes/sha2/sha512.c misc/crypt/crypt_argchk.c
+TOM_Src:=$(addprefix ../extern/libtomcrypt/src/, $(TOM_Src))
 
-TOM_Objs=$(addprefix ../extern/libtomcrypt/,$(call doObjects,$(TOM_Src)))
+TOM_Objs=$(call doObjects,$(TOM_Src))
 
 tomcrypt:	$(TOMCRYPT_LIB)
 
@@ -547,7 +547,7 @@ udf_compat:	$(UDF_BACKWARD_COMPATIBILITY) $(COMPAT_SQL)
 
 $(UDF_BACKWARD_COMPATIBILITY):	$(COMPAT_Objects)
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(call LIB_LINK_SONAME,$(UDF_BACKWARD_COMPATIBILITY_BASENAME)) \
-		$(LINK_UDR_PLUGIN_SYMBOLS) $(LIB_PATH_OPTS) $(UNDEF_FLAGS) -o $@ $^ $(THR_LIBS)
+		$(LINK_UDR_PLUGIN_SYMBOLS) $(LIB_PATH_OPTS) $(UNDEF_FLAGS) -o $@ $^ $(THR_LIBS) $(UDR_SUPPORT_LIBS)
 
 $(COMPAT_SQL):	$(SRC_COMPAT_SQL)
 	cp $^ $@
