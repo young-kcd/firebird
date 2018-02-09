@@ -6772,7 +6772,16 @@ bool LiteralNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 	const LiteralNode* const otherNode = other->as<LiteralNode>();
 	fb_assert(otherNode);
 
-	return !MOV_compare(&litDesc, &otherNode->litDesc);
+	try
+	{
+		return MOV_compare(&litDesc, &otherNode->litDesc) == 0;
+	}
+	catch (const status_exception&)
+	{
+		thread_db* tdbb = JRD_get_thread_data();
+		fb_utils::init_status(tdbb->tdbb_status_vector);
+		return false;
+	}
 }
 
 ValueExprNode* LiteralNode::pass2(thread_db* tdbb, CompilerScratch* csb)
