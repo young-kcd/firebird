@@ -7342,7 +7342,15 @@ bool LiteralNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignor
 	fb_assert(otherNode);
 	thread_db* tdbb = JRD_get_thread_data();
 
-	return !MOV_compare(tdbb, &litDesc, &otherNode->litDesc);
+	try
+	{
+		return MOV_compare(tdbb, &litDesc, &otherNode->litDesc) == 0;
+	}
+	catch (const status_exception&)
+	{
+		fb_utils::init_status(tdbb->tdbb_status_vector);
+		return false;
+	}
 }
 
 ValueExprNode* LiteralNode::pass2(thread_db* tdbb, CompilerScratch* csb)
