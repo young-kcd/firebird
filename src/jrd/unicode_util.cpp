@@ -37,6 +37,12 @@
 #include "../common/classes/init.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/rwlock.h"
+
+#undef U_SHOW_CPLUSPLUS_API
+#define U_SHOW_CPLUSPLUS_API 0
+#undef UCHAR_TYPE
+#define UCHAR_TYPE uint16_t
+
 #include "unicode/ustring.h"
 #include "unicode/utrans.h"
 #include "unicode/uchar.h"

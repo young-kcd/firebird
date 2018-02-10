@@ -28,6 +28,11 @@
 #include "../intl/ldcommon.h"
 #include "cs_icu.h"
 #include "cv_icu.h"
+
+#undef U_SHOW_CPLUSPLUS_API
+#define U_SHOW_CPLUSPLUS_API 0
+#undef UCHAR_TYPE
+#define UCHAR_TYPE uint16_t
 #include "unicode/ucnv.h"
 
 
