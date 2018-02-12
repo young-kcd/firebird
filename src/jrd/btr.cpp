@@ -2008,6 +2008,10 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 		CCH_RELEASE(tdbb, &window);
 		return;
 	}
+
+	const bool descending = (root->irt_rpt[id].irt_flags & irt_descending);
+	const ULONG segments = root->irt_rpt[id].irt_keys;
+
 	window.win_flags = WIN_large_scan;
 	window.win_scans = 1;
 	btree_page* bucket = (btree_page*) CCH_HANDOFF(tdbb, &window, page, LCK_read, pag_index);
@@ -2030,8 +2034,6 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 	key.key_length = 0;
 	SSHORT l;
 	bool firstNode = true;
-	const bool descending = (root->irt_rpt[id].irt_flags & irt_descending);
-	const ULONG segments = root->irt_rpt[id].irt_keys;
 
 	// SSHORT count, stuff_count, pos, i;
 	Firebird::HalfStaticArray<FB_UINT64, 4> duplicatesList;
