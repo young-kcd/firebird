@@ -140,7 +140,7 @@ enum db_info_types
 	fb_info_pages_used = 124,
 	fb_info_pages_free = 125,
 
-	// codes 126 and 127 are used for special purporses
+	// codes 126 and 127 are used for special purposes
 	// do not use them here
 
 	fb_info_ses_idle_timeout_db = 129,

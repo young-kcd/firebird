@@ -1648,23 +1648,23 @@ void Service::query(USHORT			send_item_length,
 		case isc_info_svc_get_env_msg:
 			if (svc_user_flag & SVC_user_dba)
 			{
-				TEXT PathBuffer[MAXPATHLEN];
+				TEXT pathBuffer[MAXPATHLEN];
 				switch (item)
 				{
 				case isc_info_svc_get_env:
-					gds__prefix(PathBuffer, "");
+					gds__prefix(pathBuffer, "");
 					break;
 				case isc_info_svc_get_env_lock:
-					iscPrefixLock(PathBuffer, "", false);
+					iscPrefixLock(pathBuffer, "", false);
 					break;
 				case isc_info_svc_get_env_msg:
-					gds__prefix_msg(PathBuffer, "");
+					gds__prefix_msg(pathBuffer, "");
 				}
 
 				// Note: it is safe to use strlen to get a length of "buffer"
 				// because gds_prefix[_lock|_msg] return a zero-terminated
 				// string.
-				if (!(info = INF_put_item(item, static_cast<USHORT>(strlen(PathBuffer)), PathBuffer, info, end)))
+				if (!(info = INF_put_item(item, static_cast<USHORT>(strlen(pathBuffer)), pathBuffer, info, end)))
 					return;
 			}
 			// Can not return error for service v.1 => simply ignore request

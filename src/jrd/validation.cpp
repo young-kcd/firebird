@@ -1376,7 +1376,7 @@ void Validation::garbage_collect()
 							page->pip_min = bit;
 
 						if (p[-1] == 0xFF && page->pip_extent > bit)
-							page->pip_extent = bit & ((ULONG)~7);
+							page->pip_extent = bit & ((ULONG) ~7);
 					}
 					DEBUG;
 				}

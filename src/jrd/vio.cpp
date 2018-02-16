@@ -571,6 +571,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 			if (rpb->rpb_flags & rpb_delta)
 				rpb->rpb_prior = data;
 		}
+
 		gcLockGuard.release();
 		delete_record(tdbb, rpb, 0, NULL);
 

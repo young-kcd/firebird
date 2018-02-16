@@ -11984,7 +11984,7 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 {
 	checkClauses(tdbb);
 
-	// Take a LCK_alter_database lock to prevent altering of the database from 
+	// Take a LCK_alter_database lock to prevent altering of the database from
 	// parallel transactions
 
 	if (!transaction->tra_alter_db_lock)
