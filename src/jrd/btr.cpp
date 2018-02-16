@@ -2250,7 +2250,7 @@ bool BTR_types_comparable(const dsc& target, const dsc& source)
 		return (source.dsc_dtype <= dtype_long || source.dsc_dtype == dtype_int64);
 
 	if (DTYPE_IS_NUMERIC(target.dsc_dtype))
-		return (source.dsc_dtype <= dtype_double || source.dsc_dtype == dtype_int64);
+		return (source.dsc_dtype <= dtype_double || source.dsc_dtype == dtype_int64);		//!!!!!!!!
 
 	if (target.dsc_dtype == dtype_sql_date)
 		return (source.dsc_dtype <= dtype_sql_date || source.dsc_dtype == dtype_timestamp);

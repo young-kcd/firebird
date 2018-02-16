@@ -1931,11 +1931,11 @@ namespace Firebird
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *receive)(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, void* message) throw();
-			void (CLOOP_CARG *send)(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, const void* message) throw();
+			void (CLOOP_CARG *receive)(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, unsigned char* message) throw();
+			void (CLOOP_CARG *send)(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, const unsigned char* message) throw();
 			void (CLOOP_CARG *getInfo)(IRequest* self, IStatus* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw();
 			void (CLOOP_CARG *start)(IRequest* self, IStatus* status, ITransaction* tra, int level) throw();
-			void (CLOOP_CARG *startAndSend)(IRequest* self, IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const void* message) throw();
+			void (CLOOP_CARG *startAndSend)(IRequest* self, IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message) throw();
 			void (CLOOP_CARG *unwind)(IRequest* self, IStatus* status, int level) throw();
 			void (CLOOP_CARG *free)(IRequest* self, IStatus* status) throw();
 		};
@@ -1953,14 +1953,14 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 3;
 
-		template <typename StatusType> void receive(StatusType* status, int level, unsigned msgType, unsigned length, void* message)
+		template <typename StatusType> void receive(StatusType* status, int level, unsigned msgType, unsigned length, unsigned char* message)
 		{
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->receive(this, status, level, msgType, length, message);
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> void send(StatusType* status, int level, unsigned msgType, unsigned length, const void* message)
+		template <typename StatusType> void send(StatusType* status, int level, unsigned msgType, unsigned length, const unsigned char* message)
 		{
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->send(this, status, level, msgType, length, message);
@@ -1981,7 +1981,7 @@ namespace Firebird
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> void startAndSend(StatusType* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const void* message)
+		template <typename StatusType> void startAndSend(StatusType* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message)
 		{
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->startAndSend(this, status, tra, level, msgType, length, message);
@@ -2122,7 +2122,6 @@ namespace Firebird
 			unsigned (CLOOP_CARG *getStatementTimeout)(IAttachment* self, IStatus* status) throw();
 			void (CLOOP_CARG *setStatementTimeout)(IAttachment* self, IStatus* status, unsigned timeOut) throw();
 			IBatch* (CLOOP_CARG *createBatch)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par) throw();
-			unsigned (CLOOP_CARG *getRemoteProtocolVersion)(IAttachment* self, IStatus* status) throw();
 		};
 
 	protected:
@@ -2338,20 +2337,6 @@ namespace Firebird
 			}
 			StatusType::clearException(status);
 			IBatch* ret = static_cast<VTable*>(this->cloopVTable)->createBatch(this, status, transaction, stmtLength, sqlStmt, dialect, inMetadata, parLength, par);
-			StatusType::checkException(status);
-			return ret;
-		}
-
-		template <typename StatusType> unsigned getRemoteProtocolVersion(StatusType* status)
-		{
-			if (cloopVTable->version < 4)
-			{
-				StatusType::setVersionError(status, "IAttachment", cloopVTable->version, 4);
-				StatusType::checkException(status);
-				return 0;
-			}
-			StatusType::clearException(status);
-			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getRemoteProtocolVersion(this, status);
 			StatusType::checkException(status);
 			return ret;
 		}
@@ -9416,7 +9401,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopreceiveDispatcher(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, void* message) throw()
+		static void CLOOP_CARG cloopreceiveDispatcher(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, unsigned char* message) throw()
 		{
 			StatusType status2(status);
 
@@ -9430,7 +9415,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsendDispatcher(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, const void* message) throw()
+		static void CLOOP_CARG cloopsendDispatcher(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, const unsigned char* message) throw()
 		{
 			StatusType status2(status);
 
@@ -9472,7 +9457,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopstartAndSendDispatcher(IRequest* self, IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const void* message) throw()
+		static void CLOOP_CARG cloopstartAndSendDispatcher(IRequest* self, IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message) throw()
 		{
 			StatusType status2(status);
 
@@ -9553,11 +9538,11 @@ namespace Firebird
 		{
 		}
 
-		virtual void receive(StatusType* status, int level, unsigned msgType, unsigned length, void* message) = 0;
-		virtual void send(StatusType* status, int level, unsigned msgType, unsigned length, const void* message) = 0;
+		virtual void receive(StatusType* status, int level, unsigned msgType, unsigned length, unsigned char* message) = 0;
+		virtual void send(StatusType* status, int level, unsigned msgType, unsigned length, const unsigned char* message) = 0;
 		virtual void getInfo(StatusType* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
 		virtual void start(StatusType* status, ITransaction* tra, int level) = 0;
-		virtual void startAndSend(StatusType* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const void* message) = 0;
+		virtual void startAndSend(StatusType* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message) = 0;
 		virtual void unwind(StatusType* status, int level) = 0;
 		virtual void free(StatusType* status) = 0;
 	};
@@ -9815,7 +9800,6 @@ namespace Firebird
 					this->getStatementTimeout = &Name::cloopgetStatementTimeoutDispatcher;
 					this->setStatementTimeout = &Name::cloopsetStatementTimeoutDispatcher;
 					this->createBatch = &Name::cloopcreateBatchDispatcher;
-					this->getRemoteProtocolVersion = &Name::cloopgetRemoteProtocolVersionDispatcher;
 				}
 			} vTable;
 
@@ -10157,21 +10141,6 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetRemoteProtocolVersionDispatcher(IAttachment* self, IStatus* status) throw()
-		{
-			StatusType status2(status);
-
-			try
-			{
-				return static_cast<Name*>(self)->Name::getRemoteProtocolVersion(&status2);
-			}
-			catch (...)
-			{
-				StatusType::catchException(&status2);
-				return static_cast<unsigned>(0);
-			}
-		}
-
 		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
@@ -10234,7 +10203,6 @@ namespace Firebird
 		virtual unsigned getStatementTimeout(StatusType* status) = 0;
 		virtual void setStatementTimeout(StatusType* status, unsigned timeOut) = 0;
 		virtual IBatch* createBatch(StatusType* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par) = 0;
-		virtual unsigned getRemoteProtocolVersion(StatusType* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

@@ -3922,7 +3922,7 @@ void YRequest::destroy(unsigned dstrFlags)
 }
 
 void YRequest::receive(CheckStatusWrapper* status, int level, unsigned int msgType,
-	unsigned int length, void* message)
+	unsigned int length, unsigned char* message)
 {
 	try
 	{
@@ -3936,7 +3936,7 @@ void YRequest::receive(CheckStatusWrapper* status, int level, unsigned int msgTy
 }
 
 void YRequest::send(CheckStatusWrapper* status, int level, unsigned int msgType,
-	unsigned int length, const void* message)
+	unsigned int length, const unsigned char* message)
 {
 	try
 	{
@@ -3980,7 +3980,7 @@ void YRequest::start(CheckStatusWrapper* status, ITransaction* transaction, int 
 }
 
 void YRequest::startAndSend(CheckStatusWrapper* status, ITransaction* transaction, int level,
-	unsigned int msgType, unsigned int length, const void* message)
+	unsigned int msgType, unsigned int length, const unsigned char* message)
 {
 	try
 	{
@@ -5929,22 +5929,6 @@ YBatch* YAttachment::createBatch(CheckStatusWrapper* status, ITransaction* trans
 	}
 
 	return NULL;
-}
-
-unsigned int YAttachment::getRemoteProtocolVersion(CheckStatusWrapper* status)
-{
-	try
-	{
-		YEntry<YAttachment> entry(status, this);
-
-		return entry.next()->getRemoteProtocolVersion(status);
-	}
-	catch (const Exception& e)
-	{
-		e.stuffException(status);
-	}
-
-	return 0;
 }
 
 

@@ -57,12 +57,11 @@
 #include "../common/prett_proto.h"
 #endif
 
-#include "../common/classes/BlobWrapper.h"
+#include "../common/classes/UserBlob.h"
 #include "../common/classes/MsgPrint.h"
 #include "../burp/OdsDetection.h"
 
 using MsgFormat::SafeArg;
-using Firebird::FbLocalStatus;
 
 
 // For service APIs the follow DB handle is a value stored
@@ -73,11 +72,8 @@ using Firebird::FbLocalStatus;
 DATABASE DB = STATIC FILENAME "yachts.lnk" RUNTIME * dbb_file;
 
 #define DB			tdgbl->db_handle
-#define fbTrans		tdgbl->tr_handle
 #define gds_trans	tdgbl->tr_handle
-#define fbStatus	(&tdgbl->status_vector)
-#define isc_status	(&tdgbl->status_vector)
-#define gds_status	(&tdgbl->status_vector)
+#define isc_status	tdgbl->status_vector
 
 namespace // unnamed, private
 {
@@ -177,7 +173,7 @@ const UCHAR source_items[] =
 	isc_info_blob_total_length,
 	isc_info_blob_num_segments
 };
-const UCHAR db_info_items[] =
+const SCHAR db_info_items[] =
 {
 	isc_info_db_sql_dialect,
 	isc_info_page_size,
@@ -188,12 +184,12 @@ const UCHAR db_info_items[] =
 	isc_info_db_read_only,
 	isc_info_end
 };
-const UCHAR limbo_tpb[] =
+const SCHAR limbo_tpb[] =
 {
 	isc_tpb_version1,
 	isc_tpb_ignore_limbo
 };
-const UCHAR limbo_nau_tpb[] =
+const SCHAR limbo_nau_tpb[] =
 {
 	isc_tpb_version1,
 	isc_tpb_ignore_limbo,
@@ -215,7 +211,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
  *	Backup a database.
  *
  **************************************/
-	FbLocalStatus status_vector;
+	ISC_STATUS_ARRAY status_vector;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -233,23 +229,23 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 
 	if (tdgbl->gbl_sw_ignore_limbo)
 	{
-		gds_trans = DB->startTransaction(&status_vector, sizeof(limbo_nau_tpb), limbo_nau_tpb);
-		if (status_vector->getState() & Firebird::IStatus::STATE_ERRORS)
+		if (isc_start_transaction(status_vector, &gds_trans, 1, &DB,
+								  sizeof(limbo_nau_tpb), limbo_nau_tpb))
 		{
-			gds_trans = DB->startTransaction(&status_vector, sizeof(limbo_tpb), limbo_tpb);
+			isc_start_transaction(status_vector, &gds_trans, 1, &DB, sizeof(limbo_tpb), limbo_tpb);
 		}
 	}
 	else
 	{
 		EXEC SQL SET TRANSACTION NO_AUTO_UNDO;
-		if (isc_status->getState() & Firebird::IStatus::STATE_ERRORS)
+		if (isc_status[1])
 			EXEC SQL SET TRANSACTION;
 	}
 
 	if (!gds_trans)
 	{
 		EXEC SQL SET TRANSACTION NAME gds_trans NO_AUTO_UNDO;
-		if (isc_status->getState() & Firebird::IStatus::STATE_ERRORS)
+		if (isc_status[1])
 			EXEC SQL SET TRANSACTION NAME gds_trans;
 	}
 
@@ -469,7 +465,7 @@ void compress(const UCHAR* data, ULONG length)
 	{
 		for (q = p + 2; q < end && (q[-2] != q[-1] || q[-1] != q[0]); q++)
 			;
-		ULONG run = (q < end) ? q - p - 2 : end - p;
+		USHORT run = (q < end) ? q - p - 2 : end - p;
 		if (run)
 		{
 			for (; run > 127; run -= 127)
@@ -831,32 +827,125 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
  *	Read id for a generator;
  *
  **************************************/
-	try
+	UCHAR blr_buffer[100];	// enough to fit blr
+
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+
+	FB_API_HANDLE gen_id_reqh = 0;
+	UCHAR* blr = blr_buffer;
+
+	// If this is ODS 10 (IB version 6.0) or greater, build BLR to retrieve
+	// the 64-bit value of the generator.  If not, build BLR to retrieve the
+	// 32-bit value, which we will cast to the expected INT64 format.
+
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL10)
 	{
-		Firebird::string nm, sql;
-		nm.assign(name, name_len);
-		sql = "select first(1) gen_id(" + nm + ", 0) from rdb$database";
-
-		BurpGlobals* tdgbl = BurpGlobals::getSpecific();
-		BurpSql getGenerator(tdgbl, sql.c_str());
-		FB_MESSAGE(GetGen, Firebird::ThrowStatusWrapper, (FB_BIGINT, id));
-		GetGen getGen(&tdgbl->throwStatus, Firebird::MasterInterfacePtr());
-
-		getGenerator.singleSelect(tdgbl->tr_handle, &getGen);
-		return getGen->id;
+		// build the blr with the right relation name and 64-bit results.
+		add_byte(blr, blr_version5);
+		add_byte(blr, blr_begin);
+		add_byte(blr, blr_message);
+		add_byte(blr, 0);
+		add_word(blr, 1);
+		add_byte(blr, blr_int64);
+		add_byte(blr, 0);
+		add_byte(blr, blr_send);
+		add_byte(blr, 0);
+		add_byte(blr, blr_assignment);
+		add_byte(blr, blr_gen_id);
+		add_byte(blr, name_len);
+		while (name_len--)
+		{
+			const UCHAR c = *name++;
+			add_byte(blr, c);
+		}
+		add_byte(blr, blr_literal);
+		add_byte(blr, blr_long);
+		add_byte(blr, 0);
+		add_word(blr, 0);
+		add_word(blr, 0);
+		add_byte(blr, blr_parameter);
+		add_byte(blr, 0);
+		add_word(blr, 0);
+		add_byte(blr, blr_end);
+		add_byte(blr, blr_eoc);
 	}
-	catch (const Firebird::FbException& ex)
+	else
 	{
-		Firebird::IStatus* st = ex.getStatus();
+		// build the blr with the right relation name and 32-bit results
+		add_byte(blr, blr_version4);
+		add_byte(blr, blr_begin);
+		add_byte(blr, blr_message);
+		add_byte(blr, 0);
+		add_word(blr, 1);
+		add_byte(blr, blr_long);
+		add_byte(blr, 0);
+		add_byte(blr, blr_send);
+		add_byte(blr, 0);
+		add_byte(blr, blr_assignment);
+		add_byte(blr, blr_gen_id);
+		add_byte(blr, name_len);
+		while (name_len--)
+		{
+			const UCHAR c = *name++;
+			add_byte(blr, c);
+		}
+		add_byte(blr, blr_literal);
+		add_byte(blr, blr_long);
+		add_byte(blr, 0);
+		add_word(blr, 0);
+		add_word(blr, 0);
+		add_byte(blr, blr_parameter);
+		add_byte(blr, 0);
+		add_word(blr, 0);
+		add_byte(blr, blr_end);
+		add_byte(blr, blr_eoc);
+	}
 
+	const SSHORT blr_length = blr - blr_buffer;
+
+#ifdef DEBUG
+	if (debug_on)
+		fb_print_blr(blr_buffer, blr_length, NULL, NULL, 0);
+#endif
+
+	ISC_STATUS_ARRAY status_vector;
+	if (isc_compile_request(status_vector, &DB, &gen_id_reqh, blr_length, (const char*) blr_buffer))
+	{
 		// if there's no gen_id, never mind ...
-		if (st->getErrors()[1] == isc_dsql_error)
-			return 0;
+		return 0;
+	}
 
-		BURP_error_redirect(st, 25);
+	// use the same gds_trans generated by gpre
+	if (isc_start_request(status_vector, &gen_id_reqh, &gds_trans, 0))
+	{
+		BURP_error_redirect(status_vector, 25);
 		// msg 25 Failed in put_blr_gen_id
 	}
-	return 0;	// warning silencer
+
+
+	SINT64 read_msg1;
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL10)
+	{
+		if (isc_receive(status_vector, &gen_id_reqh, 0, sizeof(read_msg1), &read_msg1, 0))
+		{
+			BURP_error_redirect(status_vector, 25);
+			// msg 25 Failed in put_blr_gen_id
+		}
+	}
+	else
+	{
+		SLONG read_msg0;
+		if (isc_receive(status_vector, &gen_id_reqh, 0, sizeof(read_msg0), &read_msg0, 0))
+		{
+			BURP_error_redirect(status_vector, 25);
+			// msg 25 Failed in put_blr_gen_id
+		}
+		read_msg1 = (SINT64) read_msg0;
+	}
+
+	isc_release_request(status_vector, &gen_id_reqh);
+
+	return read_msg1;
 }
 
 
@@ -1018,16 +1107,16 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 		xdr_buffer.lstr_allocated = xdr_buffer.lstr_length;
 	}
 
-	FbLocalStatus status_vector;
-	unsigned return_length = DB->getSlice(&status_vector, gds_trans, blob_id, blr_length, blr_buffer,
-		0, nullptr,		// parameters for subset of an array handling
-		slice_length, slice);
-
-	if (!status_vector.isSuccess())
+	ISC_STATUS_ARRAY status_vector;
+	ULONG return_length = 0;
+	if (isc_get_slice(status_vector, &DB, &gds_trans, blob_id, blr_length, (const char*) blr_buffer,
+					  0,	// param length for subset of an array handling
+					  NULL,	// param for subset of an array handling
+					  slice_length, slice, (SLONG*) &return_length))
 	{
 		BURP_print(false, 81, field->fld_name);
 		// msg 81 error accessing blob field %s -- continuing
-		BURP_print_status(false, &status_vector);
+		BURP_print_status(false, status_vector);
 #ifdef DEBUG
 		PRETTY_print_sdl(blr_buffer, NULL, NULL, 0);
 #endif
@@ -1090,7 +1179,7 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 			lstring xdr_slice;
 			xdr_slice.lstr_allocated = xdr_slice.lstr_length = return_length;
 			xdr_slice.lstr_address = slice;
-			return_length = CAN_slice(&xdr_buffer, &xdr_slice, true, blr_buffer);
+			return_length = CAN_slice(&xdr_buffer, &xdr_slice, TRUE, /*blr_length,*/ blr_buffer);
 			put(tdgbl, att_xdr_array);
 			put(tdgbl, (UCHAR) (return_length));
 			put(tdgbl, (UCHAR) (return_length >> 8));
@@ -1155,31 +1244,31 @@ void put_blob( burp_fld* field, ISC_QUAD& blob_id)
  *	This is for user data blobs.
  *
  **************************************/
-	FbLocalStatus status_vector;
+	ISC_STATUS_ARRAY status_vector;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// If the blob is null, don't store it.  It will be restored as null.
 
-	if (BlobWrapper::blobIsNull(blob_id))
+	if (UserBlob::blobIsNull(blob_id))
 		return;
 
 	// Open the blob and get it's vital statistics
 
-	BlobWrapper blob(&status_vector);
+	UserBlob blob(status_vector);
 
 	if (!blob.open(DB, gds_trans, blob_id))
 	{
 		BURP_print(false, 81, field->fld_name);
 		// msg 81 error accessing blob field %s -- continuing
-		BURP_print_status(false, &status_vector);
+		BURP_print_status(false, status_vector);
 		return;
 	}
 
 	UCHAR blob_info[32];
 	if (!blob.getInfo(sizeof(blob_items), blob_items, sizeof(blob_info), blob_info))
 	{
-		BURP_error_redirect(&status_vector, 20);
+		BURP_error_redirect(status_vector, 20);
 		// msg 20 isc_blob_info failed
 	}
 
@@ -1253,9 +1342,13 @@ void put_blob( burp_fld* field, ISC_QUAD& blob_id)
 	while (segments > 0)
 	{
 		FB_SIZE_T segment_length;
-		if (!blob.getSegment(max_segment, buffer, segment_length))
+		blob.getSegment(max_segment, buffer, segment_length);
+
+		const ISC_STATUS status = blob.getCode();
+		// Handle the errors. For stream blob isc_segment is not error here.
+		if (status && (status != isc_segment || blob_type == 0))
 		{
-			BURP_error_redirect(&status_vector, 22);
+			BURP_error_redirect(status_vector, 22);
 			// msg 22 isc_get_segment failed
 		}
 
@@ -1269,7 +1362,7 @@ void put_blob( burp_fld* field, ISC_QUAD& blob_id)
 	}
 
 	if (!blob.close())
-		BURP_error_redirect(&status_vector, 23);
+		BURP_error_redirect(status_vector, 23);
 		// msg 23 isc_close_blob failed
 
 	if (buffer != static_buffer)
@@ -1290,28 +1383,28 @@ bool put_blr_blob( att_type attribute, ISC_QUAD& blob_id)
  *	Return true if the blob was present, false otherwise.
  *
  **************************************/
-	FbLocalStatus status_vector;
+	ISC_STATUS_ARRAY status_vector;
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// If the blob is null, don't store it.  It will be restored as null.
 
-	if (BlobWrapper::blobIsNull(blob_id))
+	if (UserBlob::blobIsNull(blob_id))
 		return false;
 
 	// Open the blob and get it's vital statistics
 
-	BlobWrapper blob(&status_vector);
+	UserBlob blob(status_vector);
 
 	if (!blob.open(DB, gds_trans, blob_id))
 	{
-		BURP_error_redirect(&status_vector, 24);
+		BURP_error_redirect(status_vector, 24);
 		// msg 24 isc_open_blob failed
 	}
 
 	UCHAR blob_info[32];
 	if (!blob.getInfo(sizeof(blr_items), blr_items, sizeof(blob_info), blob_info))
 	{
-		BURP_error_redirect(&status_vector, 20);
+		BURP_error_redirect(status_vector, 20);
 		// msg 20 isc_blob_info failed
 	}
 
@@ -1340,7 +1433,7 @@ bool put_blr_blob( att_type attribute, ISC_QUAD& blob_id)
 			BURP_print(true, 79, SafeArg() << int(item));
 			// msg 79 don't understand blob info item %ld
 			if (!blob.close())
-				BURP_error_redirect(&status_vector, 23);
+				BURP_error_redirect(status_vector, 23);
 				// msg 23 isc_close_blob failed
 			return false;
 		}
@@ -1349,7 +1442,7 @@ bool put_blr_blob( att_type attribute, ISC_QUAD& blob_id)
 	if (!length)
 	{
 		if (!blob.close())
-			BURP_error_redirect(&status_vector, 23);
+			BURP_error_redirect(status_vector, 23);
 			// msg 23 isc_close_blob failed
 		return false;
 	}
@@ -1382,7 +1475,7 @@ bool put_blr_blob( att_type attribute, ISC_QUAD& blob_id)
 
 	if (!blob.close())
 	{
-		BURP_error_redirect(&status_vector, 23);
+		BURP_error_redirect(status_vector, 23);
 		// msg 23 isc_close_blob failed
 	}
 
@@ -1405,9 +1498,17 @@ void put_data(burp_rel* relation)
  *	Write relation meta-data and data.
  *
  **************************************/
-	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
-	USHORT field_count = 1;	// eof field
 	burp_fld* field;
+	ISC_STATUS_ARRAY status_vector;
+
+	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+
+	// CVC: A signed short isn't enough if the engine allows near 32K fields,
+	// each being char(1) ASCII in the worst case. Looking at BLR generation
+	// below, it's clear an extreme case won't compile => blr_length >= 32K.
+	// However, SSHORT is the limit for request_length in isc_compile_request.
+	SSHORT field_count = 1;
+
 	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
 		if (!(field->fld_flags & FLD_computed))
@@ -1428,7 +1529,7 @@ void put_data(burp_rel* relation)
 	add_word(blr, field_count);		// Number of fields, counting eof
 
 	RCRD_OFFSET offset = 0;
-	USHORT count = 0;   // This is param count.
+	SSHORT count = 0;   // This is param count.
 
 	for (field = relation->rel_fields; field; field = field->fld_next)
 	{
@@ -1564,7 +1665,7 @@ void put_data(burp_rel* relation)
 	RCRD_OFFSET record_length = offset;
 	RCRD_OFFSET eof_offset = FB_ALIGN(offset, sizeof(SSHORT));
 	// To be used later for the buffer size to receive data
-	const RCRD_LENGTH length = (RCRD_LENGTH) (eof_offset + sizeof(SSHORT));
+	const FLD_LENGTH length = (USHORT) (eof_offset + sizeof(SSHORT));
 
 	// Build FOR loop, body, and eof handler
 
@@ -1618,7 +1719,7 @@ void put_data(burp_rel* relation)
 	add_byte(blr, blr_end);
 	add_byte(blr, blr_eoc);
 
-	unsigned blr_length = blr - blr_buffer;
+	SSHORT blr_length = blr - blr_buffer;
 
 #ifdef DEBUG
 	if (debug_on)
@@ -1627,11 +1728,10 @@ void put_data(burp_rel* relation)
 
 	// Compile request
 
-	FbLocalStatus status_vector;
-	Firebird::IRequest* request = DB->compileRequest(&status_vector, blr_length, blr_buffer);
-	if (!status_vector.isSuccess())
+	FB_API_HANDLE request = 0;
+	if (isc_compile_request(status_vector, &DB, &request, blr_length, (const SCHAR*) blr_buffer))
 	{
-		BURP_error_redirect(&status_vector, 27);
+		BURP_error_redirect(status_vector, 27);
 		// msg 27 isc_compile_request failed
 		fb_print_blr(blr_buffer, blr_length, NULL, NULL, 0);
 	}
@@ -1641,10 +1741,9 @@ void put_data(burp_rel* relation)
 	BURP_verbose(142, relation->rel_name);
 	// msg 142  writing data for relation %s
 
-	request->start(&status_vector, gds_trans, 0);
-	if (!status_vector.isSuccess())
+	if (isc_start_request(status_vector, &request, &gds_trans, 0))
 	{
-		BURP_error_redirect(&status_vector, 28);
+		BURP_error_redirect(status_vector, 28);
 		// msg 28 isc_start_request failed
 	}
 
@@ -1667,10 +1766,9 @@ void put_data(burp_rel* relation)
 	ULONG records = 0;
 	while (true)
 	{
-		request->receive(&status_vector, 0, 0, length, buffer);
-		if (!status_vector.isSuccess())
+		if (isc_receive(status_vector, &request, 0, length, buffer, 0))
 		{
-			BURP_error_redirect(&status_vector, 29);
+			BURP_error_redirect(status_vector, 29);
 			// msg 29 isc_receive failed
 		}
 		if (!*eof)
@@ -1685,7 +1783,7 @@ void put_data(burp_rel* relation)
 		const UCHAR* p;
 		if (tdgbl->gbl_sw_transportable)
 		{
-			record_length = CAN_encode_decode(relation, &xdr_buffer, buffer, true);
+			record_length = CAN_encode_decode(relation, &xdr_buffer, buffer, TRUE);
 			put_int32(att_xdr_length, record_length);
 			p = xdr_buffer.lstr_address;
 		}
@@ -1727,9 +1825,8 @@ void put_data(burp_rel* relation)
 	BURP_verbose(108, SafeArg() << records);
 	// msg 108 %ld records written
 
-	request->free(&status_vector);
-	if (!status_vector.isSuccess())
-		BURP_error_redirect(&status_vector, 30);
+	if (isc_release_request(status_vector, &request))
+		BURP_error_redirect(status_vector, 30);
 	// msg 30 isc_release_request failed
 }
 
@@ -2158,12 +2255,12 @@ bool put_source_blob(att_type attribute, att_type old_attribute, ISC_QUAD& blob_
  *	Include the NULL character to separate each segment.
  *
  **************************************/
-	FbLocalStatus status_vector;
+	ISC_STATUS_ARRAY status_vector;
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	// If the blob is null, don't store it.  It will be restored as null.
 
-	if (BlobWrapper::blobIsNull(blob_id))
+	if (UserBlob::blobIsNull(blob_id))
 		return false;
 
 	if (tdgbl->gbl_sw_old_descriptions && attribute != att_field_query_header)
@@ -2171,18 +2268,18 @@ bool put_source_blob(att_type attribute, att_type old_attribute, ISC_QUAD& blob_
 
 	// Open the blob and get it's vital statistics
 
-	BlobWrapper blob(&status_vector);
+	UserBlob blob(status_vector);
 
 	if (!blob.open(DB, gds_trans, blob_id))
 	{
-		BURP_error_redirect(&status_vector, 24);
+		BURP_error_redirect(status_vector, 24);
 		// msg 24 isc_open_blob failed
 	}
 
 	UCHAR blob_info[48];
 	if (!blob.getInfo(sizeof(source_items), source_items, sizeof(blob_info), blob_info))
 	{
-		BURP_error_redirect(&status_vector, 20);
+		BURP_error_redirect(status_vector, 20);
 		// msg 20 isc_blob_info failed
 	}
 
@@ -2217,7 +2314,7 @@ bool put_source_blob(att_type attribute, att_type old_attribute, ISC_QUAD& blob_
 			// msg 79 don't understand blob info item %ld
 			if (!blob.close())
 			{
-				BURP_error_redirect(&status_vector, 23);
+				BURP_error_redirect(status_vector, 23);
 				// msg 23 isc_close_blob failed
 			}
 			return false;
@@ -2228,7 +2325,7 @@ bool put_source_blob(att_type attribute, att_type old_attribute, ISC_QUAD& blob_
 	{
 		if (!blob.close())
 		{
-			BURP_error_redirect(&status_vector, 23);
+			BURP_error_redirect(status_vector, 23);
 			// msg 23 isc_close_blob failed
 		}
 		return false;
@@ -2263,7 +2360,7 @@ bool put_source_blob(att_type attribute, att_type old_attribute, ISC_QUAD& blob_
 	}
 
 	if (!blob.close())
-		BURP_error_redirect(&status_vector, 23);
+		BURP_error_redirect(status_vector, 23);
 	// msg 23 isc_close_blob failed
 
 	if (buffer != static_buffer)
@@ -2323,7 +2420,7 @@ void write_character_sets()
  *	each user defined character set.
  *
  **************************************/
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -2421,7 +2518,7 @@ void write_check_constraints()
  *	each check constraint.
  *
  **************************************/
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -2455,7 +2552,7 @@ void write_collations()
  *	each user defined collation
  *
  **************************************/
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -2555,29 +2652,28 @@ void write_database( const TEXT* dbb_file)
  *	the database itself.
  *
  **************************************/
-	FbLocalStatus status_vector;
-	UCHAR buffer[256];
-	Firebird::IRequest* req_handle1 = nullptr;
+	ISC_STATUS_ARRAY status_vector;
+	SCHAR buffer[256];
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	put(tdgbl, (UCHAR) rec_physical_db);
 
-	DB->getInfo(&status_vector, sizeof(db_info_items), db_info_items,
-						  sizeof(buffer), buffer);
-	if (!status_vector.isSuccess())
+	if (isc_database_info(status_vector, &DB, sizeof(db_info_items), db_info_items,
+						  sizeof(buffer), buffer))
 	{
-		BURP_error_redirect(&status_vector, 31);
+		BURP_error_redirect(status_vector, 31);
 		// msg 31 isc_database_info failed
 	}
 
 	USHORT page_size = 0, forced_writes, no_reserve, SQL_dialect, db_read_only;
  	ULONG sweep_interval, page_buffers;
  	USHORT length = 0;
-	for (const UCHAR* d = buffer; *d != isc_info_end; d += length)
+	for (const SCHAR* d = buffer; *d != isc_info_end; d += length)
 	{
 		const UCHAR item = *d++;
-		length = (USHORT) gds__vax_integer(d, 2);
+		length = (USHORT) isc_vax_integer(d, 2);
 		d += 2;
 		switch (item)
 		{
@@ -2585,27 +2681,27 @@ void write_database( const TEXT* dbb_file)
 			break;
 
 		case isc_info_page_size:
-			page_size = (USHORT) gds__vax_integer(d, length);
+			page_size = (USHORT) isc_vax_integer(d, length);
 			put_int32(att_page_size, page_size);
 			break;
 
 		case isc_info_sweep_interval:
-			sweep_interval = gds__vax_integer(d, length);
+			sweep_interval = isc_vax_integer(d, length);
 			put_int32(att_sweep_interval, sweep_interval);
 			break;
 
 		case isc_info_forced_writes:
-			forced_writes = (USHORT) gds__vax_integer(d, length);
+			forced_writes = (USHORT) isc_vax_integer(d, length);
 			put_int32(att_forced_writes, forced_writes);
 			break;
 
 		case isc_info_no_reserve:
-			if (no_reserve = (USHORT) gds__vax_integer(d, length))
+			if (no_reserve = (USHORT) isc_vax_integer(d, length))
 				put_int32(att_no_reserve, no_reserve);
 			break;
 
 		case isc_info_set_page_buffers:
-			if (page_buffers = gds__vax_integer(d, length))
+			if (page_buffers = isc_vax_integer(d, length))
 				put_int32(att_page_buffers, page_buffers);
 			break;
 
@@ -2613,17 +2709,17 @@ void write_database( const TEXT* dbb_file)
 			break;				// parameter and returns isc_info_error. skip it
 
 		case isc_info_db_sql_dialect:
-			SQL_dialect = (USHORT) gds__vax_integer(d, length);
+			SQL_dialect = (USHORT) isc_vax_integer(d, length);
 			put_int32(att_SQL_dialect, SQL_dialect);
 			break;
 
 		case isc_info_db_read_only:
-			if (db_read_only = (USHORT) gds__vax_integer(d, length))
+			if (db_read_only = (USHORT) isc_vax_integer(d, length))
 				put_int32(att_db_read_only, db_read_only);
 			break;
 
 		default:
-			BURP_error_redirect(&status_vector, 31);
+			BURP_error_redirect(status_vector, 31);
 			// msg 31 isc_database_info failed
 			break;
 		}
@@ -2691,7 +2787,7 @@ void write_exceptions()
  *
  **************************************/
 	TEXT temp[GDS_NAME_LEN];
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -2755,7 +2851,7 @@ void write_field_dimensions()
  *	each array field dimension.
  *
  **************************************/
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -2790,7 +2886,7 @@ void write_filters()
  *
  **************************************/
 	TEXT temp[GDS_NAME_LEN];
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -2832,7 +2928,7 @@ void write_functions()
  **************************************/
 	GDS_NAME func;
 	TEXT temp[GDS_NAME_LEN * 2];
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -3086,7 +3182,7 @@ void write_generators()
  *	Write any defined generators.
  *
  **************************************/
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 	TEXT temp[GDS_NAME_LEN];
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
@@ -3195,7 +3291,7 @@ void write_global_fields()
  *
  **************************************/
 	TEXT temp[GDS_NAME_LEN];
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -3426,7 +3522,7 @@ void write_packages()
  *
  **************************************/
 	TEXT temp[GDS_NAME_LEN];
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -3493,7 +3589,7 @@ void write_procedures()
  **************************************/
 	GDS_NAME proc;
 	TEXT temp[GDS_NAME_LEN * 2];
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -3683,7 +3779,7 @@ void write_ref_constraints()
  *	each referential constraint.
  *
  **************************************/
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -3719,7 +3815,7 @@ void write_rel_constraints()
  *
  **************************************/
 	TEXT temp[GDS_NAME_LEN];
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -3763,7 +3859,7 @@ void write_relations()
  *
  **************************************/
 	TEXT temp[GDS_NAME_LEN];
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -3893,7 +3989,7 @@ void write_relations()
 void write_secclasses()
 {
 	TEXT temp[GDS_NAME_LEN];
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -3929,7 +4025,7 @@ void write_shadow_files()
  *
  **************************************/
 	BASED ON RDB$FILES.RDB$FILE_NAME temp;
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -3970,7 +4066,7 @@ void write_sql_roles()
  *	each SQL roles.
  *
  **************************************/
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 	TEXT temp[GDS_NAME_LEN];
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
@@ -4039,7 +4135,7 @@ void write_mapping()
  *	each names mapping.
  *
  **************************************/
-	Firebird::IRequest* req_handle = nullptr;
+	isc_req_handle req_handle = 0;
 	TEXT temp[GDS_NAME_LEN];
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
@@ -4122,7 +4218,7 @@ void write_triggers()
  *
  **************************************/
 	TEXT temp[GDS_NAME_LEN];
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -4239,7 +4335,7 @@ void write_trigger_messages()
  *
  **************************************/
 	TEXT temp[GDS_NAME_LEN];
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -4278,7 +4374,7 @@ void write_types()
  *	each type.
  *
  **************************************/
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -4318,7 +4414,7 @@ void write_user_privileges()
  *
  **************************************/
 	TEXT temp[GDS_NAME_LEN];
-	Firebird::IRequest* req_handle1 = nullptr;
+	isc_req_handle req_handle1 = 0;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 

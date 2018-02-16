@@ -514,15 +514,15 @@ interface Pipe : ReferenceCounted
 interface Request : ReferenceCounted
 {
 	void receive(Status status, int level, uint msgType,
-						 uint length, void* message);
+						 uint length, uchar* message);
 	void send(Status status, int level, uint msgType,
-					  uint length, const void* message);
+					  uint length, const uchar* message);
 	void getInfo(Status status, int level,
 						 uint itemsLength, const uchar* items,
 						 uint bufferLength, uchar* buffer);
 	void start(Status status, Transaction tra, int level);
 	void startAndSend(Status status, Transaction tra, int level, uint msgType,
-							  uint length, const void* message);
+							  uint length, const uchar* message);
 	void unwind(Status status, int level);
 	void free(Status status);
 }
@@ -599,8 +599,6 @@ version:	// 3.0 => 4.0
 	// Batch API
 	Batch createBatch(Status status, Transaction transaction, uint stmtLength, const string sqlStmt,
 		uint dialect, MessageMetadata inMetadata, uint parLength, const uchar* par);
-
-	uint getRemoteProtocolVersion(Status status);
 	/*
 	Pipe createPipe(Status status, uint stmtLength, const string sqlStmt, uint dialect,
 		Transaction transaction, MessageMetadata inMetadata, void* inBuffer,

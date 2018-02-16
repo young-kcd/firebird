@@ -277,15 +277,15 @@ public:
 	// IRequest implementation
 	int release();
 	void receive(Firebird::CheckStatusWrapper* status, int level, unsigned int msg_type,
-		unsigned int length, void* message);
+		unsigned int length, unsigned char* message);
 	void send(Firebird::CheckStatusWrapper* status, int level, unsigned int msg_type,
-		unsigned int length, const void* message);
+		unsigned int length, const unsigned char* message);
 	void getInfo(Firebird::CheckStatusWrapper* status, int level,
 		unsigned int itemsLength, const unsigned char* items,
 		unsigned int bufferLength, unsigned char* buffer);
 	void start(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* tra, int level);
 	void startAndSend(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* tra, int level,
-		unsigned int msg_type, unsigned int length, const void* message);
+		unsigned int msg_type, unsigned int length, const unsigned char* message);
 	void unwind(Firebird::CheckStatusWrapper* status, int level);
 	void free(Firebird::CheckStatusWrapper* status);
 
@@ -396,7 +396,6 @@ public:
 	Firebird::IBatch* createBatch(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction,
 		unsigned stmtLength, const char* sqlStmt, unsigned dialect,
 		Firebird::IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par);
-	unsigned int getRemoteProtocolVersion(Firebird::CheckStatusWrapper* status);
 
 public:
 	explicit JAttachment(StableAttachmentPart* js);

@@ -210,14 +210,14 @@ public:
 
 	// IRequest implementation
 	void receive(Firebird::CheckStatusWrapper* status, int level, unsigned int msgType,
-		unsigned int length, void* message);
+		unsigned int length, unsigned char* message);
 	void send(Firebird::CheckStatusWrapper* status, int level, unsigned int msgType,
-		unsigned int length, const void* message);
+		unsigned int length, const unsigned char* message);
 	void getInfo(Firebird::CheckStatusWrapper* status, int level, unsigned int itemsLength,
 		const unsigned char* items, unsigned int bufferLength, unsigned char* buffer);
 	void start(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction, int level);
 	void startAndSend(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction, int level,
-		unsigned int msgType, unsigned int length, const void* message);
+		unsigned int msgType, unsigned int length, const unsigned char* message);
 	void unwind(Firebird::CheckStatusWrapper* status, int level);
 	void free(Firebird::CheckStatusWrapper* status);
 
@@ -510,7 +510,6 @@ public:
 	YBatch* createBatch(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction,
 		unsigned stmtLength, const char* sqlStmt, unsigned dialect,
 		Firebird::IMessageMetadata* inMetadata, unsigned parLength, const unsigned char* par);
-	unsigned int getRemoteProtocolVersion(Firebird::CheckStatusWrapper* status);
 
 public:
 	Firebird::IProvider* provider;

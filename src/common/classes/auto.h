@@ -168,16 +168,6 @@ private:
 };
 
 
-template <typename ID>
-class AutoDispose : public AutoPtr<ID, SimpleDispose<ID> >
-{
-public:
-	AutoDispose(ID* v = nullptr)
-		: AutoPtr<ID, SimpleDispose<ID> >(v)
-	{ }
-};
-
-
 template <typename T>
 class AutoSetRestore
 {
