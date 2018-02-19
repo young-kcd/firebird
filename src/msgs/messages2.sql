@@ -2462,6 +2462,8 @@ ERROR: Backup incomplete', NULL, NULL);
 ('gbak_wrong_perf', 'api_gbak/gbak', 'burp.cpp', NULL, 12, 367, NULL, 'wrong char "@1" at statistics parameter', NULL, NULL);
 ('gbak_too_long_perf', 'api_gbak/gbak', 'burp.cpp', NULL, 12, 368, NULL, 'too many chars at statistics parameter', NULL, NULL);
 (NULL, 'api_gbak/gbak', 'burp.cpp', NULL, 12, 369, NULL, 'total statistics', NULL, NULL);
+(NULL, 'get_blob', 'restore.epp', NULL, 12, 370, NULL, 'could not append BLOB data to batch', NULL, NULL);
+(NULL, 'get_data', 'restore.epp', NULL, 12, 371, NULL, 'could not start batch when restoring table @1, trying old way', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);

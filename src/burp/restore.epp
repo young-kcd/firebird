@@ -2051,8 +2051,8 @@ void get_blob(BurpGlobals* tdgbl, Firebird::IBatch* batch, const burp_fld* field
 
 		if (status_vector->hasData())
 		{
-			BURP_error_redirect(&status_vector, 38);		// !!!!!!!!! new message
-			// msg 38 isc_put_segment failed
+			BURP_error_redirect(&status_vector, 370);
+			// msg 370 could not append BLOB data to batch
 		}
 
 		first = false;
@@ -3042,9 +3042,11 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 				meta, pb->getBufferLength(&tdgbl->throwStatus), pb->getBuffer(&tdgbl->throwStatus)));
 		if (fbStatus->hasData())
 		{
-			// Possible reason of fail - use of keywords as fields in old backup
+			BURP_print(false, 371, relation->rel_name);
+			// msg 371 could not start batch when restoring table @1, trying old way
+
+			// Possible reason of fail - use of keywords as fields in old backup of dialect1 DB
 			// Try to roll back to use of old version (fieldnames independent)
-			BURP_print(false, 27/*, sqlStatement.c_str()*/);	// msg 27 isc_compile_request failed     !!!!!!!! new WARNING
 			return get_data_old(tdgbl, relation);
 		}
 
