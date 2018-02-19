@@ -224,7 +224,7 @@ checkLibraries() {
 		checkLibrary tommath
 	fi
 
-	checkLibrary icu
+	checkLibrary icudata
 }
 
 
