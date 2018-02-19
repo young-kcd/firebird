@@ -93,7 +93,7 @@ namespace
 			return;
 
 #ifdef DEBUG_GDS_ALLOC
-		Firebird::AutoPtr<FILE, Firebird::FileClose> file;
+		Firebird::AutoPtr<FILE> file;
 
 		{	// scope
 			Firebird::PathName name = "memdebug.log";

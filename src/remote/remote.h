@@ -64,7 +64,7 @@
 //#define COMPRESS_DEBUG 1
 #endif // WIRE_COMPRESS_SUPPORT
 
-#define DEB_BATCH(x)
+#define DEB_RBATCH(x)
 
 #define REM_SEND_OFFSET(bs) (0)
 #define REM_RECV_OFFSET(bs) (bs)
@@ -123,7 +123,7 @@ namespace os_utils
 
 struct rem_port;
 
-typedef Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete<UCHAR> > UCharArrayAutoPtr;
+typedef Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete > UCharArrayAutoPtr;
 
 typedef Firebird::RefPtr<Firebird::IAttachment> ServAttachment;
 typedef Firebird::RefPtr<Firebird::IBlob> ServBlob;

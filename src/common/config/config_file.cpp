@@ -109,7 +109,7 @@ public:
 	}
 
 private:
-	AutoPtr<FILE, FileClose> file;
+	AutoPtr<FILE> file;
 	Firebird::PathName fileName;
 	unsigned int l;
 };

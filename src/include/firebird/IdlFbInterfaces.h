@@ -1931,11 +1931,11 @@ namespace Firebird
 	public:
 		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *receive)(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, unsigned char* message) throw();
-			void (CLOOP_CARG *send)(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, const unsigned char* message) throw();
+			void (CLOOP_CARG *receive)(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, void* message) throw();
+			void (CLOOP_CARG *send)(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, const void* message) throw();
 			void (CLOOP_CARG *getInfo)(IRequest* self, IStatus* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw();
 			void (CLOOP_CARG *start)(IRequest* self, IStatus* status, ITransaction* tra, int level) throw();
-			void (CLOOP_CARG *startAndSend)(IRequest* self, IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message) throw();
+			void (CLOOP_CARG *startAndSend)(IRequest* self, IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const void* message) throw();
 			void (CLOOP_CARG *unwind)(IRequest* self, IStatus* status, int level) throw();
 			void (CLOOP_CARG *free)(IRequest* self, IStatus* status) throw();
 		};
@@ -1953,14 +1953,14 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 3;
 
-		template <typename StatusType> void receive(StatusType* status, int level, unsigned msgType, unsigned length, unsigned char* message)
+		template <typename StatusType> void receive(StatusType* status, int level, unsigned msgType, unsigned length, void* message)
 		{
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->receive(this, status, level, msgType, length, message);
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> void send(StatusType* status, int level, unsigned msgType, unsigned length, const unsigned char* message)
+		template <typename StatusType> void send(StatusType* status, int level, unsigned msgType, unsigned length, const void* message)
 		{
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->send(this, status, level, msgType, length, message);
@@ -1981,7 +1981,7 @@ namespace Firebird
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> void startAndSend(StatusType* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message)
+		template <typename StatusType> void startAndSend(StatusType* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const void* message)
 		{
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->startAndSend(this, status, tra, level, msgType, length, message);
@@ -9401,7 +9401,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopreceiveDispatcher(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, unsigned char* message) throw()
+		static void CLOOP_CARG cloopreceiveDispatcher(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, void* message) throw()
 		{
 			StatusType status2(status);
 
@@ -9415,7 +9415,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsendDispatcher(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, const unsigned char* message) throw()
+		static void CLOOP_CARG cloopsendDispatcher(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, const void* message) throw()
 		{
 			StatusType status2(status);
 
@@ -9457,7 +9457,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopstartAndSendDispatcher(IRequest* self, IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message) throw()
+		static void CLOOP_CARG cloopstartAndSendDispatcher(IRequest* self, IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const void* message) throw()
 		{
 			StatusType status2(status);
 
@@ -9538,11 +9538,11 @@ namespace Firebird
 		{
 		}
 
-		virtual void receive(StatusType* status, int level, unsigned msgType, unsigned length, unsigned char* message) = 0;
-		virtual void send(StatusType* status, int level, unsigned msgType, unsigned length, const unsigned char* message) = 0;
+		virtual void receive(StatusType* status, int level, unsigned msgType, unsigned length, void* message) = 0;
+		virtual void send(StatusType* status, int level, unsigned msgType, unsigned length, const void* message) = 0;
 		virtual void getInfo(StatusType* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
 		virtual void start(StatusType* status, ITransaction* tra, int level) = 0;
-		virtual void startAndSend(StatusType* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message) = 0;
+		virtual void startAndSend(StatusType* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const void* message) = 0;
 		virtual void unwind(StatusType* status, int level) = 0;
 		virtual void free(StatusType* status) = 0;
 	};

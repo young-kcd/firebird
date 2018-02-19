@@ -3490,7 +3490,7 @@ JEvents* JAttachment::queEvents(CheckStatusWrapper* user_status, IEventCallback*
 
 
 void JRequest::receive(CheckStatusWrapper* user_status, int level, unsigned int msg_type,
-					   unsigned int msg_length, unsigned char* msg)
+					   unsigned int msg_length, void* msg)
 {
 /**************************************
  *
@@ -3803,7 +3803,7 @@ int JBlob::seek(CheckStatusWrapper* user_status, int mode, int offset)
 
 
 void JRequest::send(CheckStatusWrapper* user_status, int level, unsigned int msg_type,
-	unsigned int msg_length, const unsigned char* msg)
+	unsigned int msg_length, const void* msg)
 {
 /**************************************
  *
@@ -4028,7 +4028,7 @@ void JService::start(CheckStatusWrapper* user_status, unsigned int spbLength, co
 
 
 void JRequest::startAndSend(CheckStatusWrapper* user_status, ITransaction* tra, int level,
-	unsigned int msg_type, unsigned int msg_length, const unsigned char* msg)
+	unsigned int msg_type, unsigned int msg_length, const void* msg)
 {
 /**************************************
  *
@@ -8400,7 +8400,7 @@ void JRD_autocommit_ddl(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_length, UCHAR* msg)
+void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_length, void* msg)
 {
 /**************************************
  *
@@ -8424,7 +8424,7 @@ void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_l
 }
 
 
-void JRD_send(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_length, const UCHAR* msg)
+void JRD_send(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_length, const void* msg)
 {
 /**************************************
  *
@@ -8538,7 +8538,7 @@ void JRD_rollback_retaining(thread_db* tdbb, jrd_tra* transaction)
 
 
 void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
-	USHORT msg_type, ULONG msg_length, const UCHAR* msg)
+	USHORT msg_type, ULONG msg_length, const void* msg)
 {
 /**************************************
  *

@@ -277,7 +277,7 @@ private:
 	static THREAD_ENTRY_DECLARE run(THREAD_ENTRY_PARAM arg);
 
 private:
-	FbLocalStatus svc_status;						// status vector for running service
+	Firebird::FbLocalStatus svc_status;				// status vector for running service
 	Firebird::string svc_parsed_sw;					// Here point elements of argv
 	ULONG	svc_stdout_head;
 	ULONG	svc_stdout_tail;

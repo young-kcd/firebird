@@ -1525,7 +1525,7 @@ ISC_STATUS ISC_EXPORT IscProvider::fb_database_crypt_callback(FbStatusVector* us
 	return notImplemented(user_status);
 }
 
-ISC_STATUS ISC_EXPORT IscProvider::fb_dsql_set_timeout(Jrd::FbStatusVector* user_status,
+ISC_STATUS ISC_EXPORT IscProvider::fb_dsql_set_timeout(FbStatusVector* user_status,
 	isc_stmt_handle* stmt_handle,
 	ULONG timeout)
 {

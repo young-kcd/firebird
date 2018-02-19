@@ -70,18 +70,16 @@ namespace {
 
 	const int MAX_PLUGIN_NAME_LEN = 31;
 
+	template <typename P>
 	class ReleasePlugin
 	{
 	public:
-		static void clear(IPluginBase* ptr)
+		static void clear(P* ptr)
 		{
 			if (ptr)
-			{
 				PluginManagerInterfacePtr()->releasePlugin(ptr);
-			}
 		}
 	};
-
 }
 
 
@@ -271,7 +269,7 @@ namespace Jrd {
 		}
 
 	private:
-		AutoPtr<UCHAR, ArrayDelete<UCHAR> > buffer;
+		AutoPtr<UCHAR, ArrayDelete> buffer;
 	};
 
 	CryptoManager::CryptoManager(thread_db* tdbb)

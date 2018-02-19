@@ -3503,7 +3503,7 @@ void rem_port::batch_exec(P_BATCH_EXEC* batch, PACKET* sendL)
 	Rtr* transaction = NULL;
 	getHandle(transaction, batch->p_batch_transaction);
 
-	AutoPtr<IBatchCompletionState, SimpleDispose<IBatchCompletionState> >
+	AutoPtr<IBatchCompletionState, SimpleDispose>
 		ics(statement->rsr_batch->execute(&status_vector, transaction->rtr_iface));
 
 	if (status_vector.getState() & IStatus::STATE_ERRORS)

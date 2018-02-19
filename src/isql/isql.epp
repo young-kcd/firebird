@@ -311,7 +311,7 @@ static inline int fb_isdigit(const char c)
 
 IsqlGlobals::IsqlGlobals()
 {
-	Firebird::AutoPtr<Firebird::IStatus, Firebird::SimpleDispose<Firebird::IStatus> >
+	Firebird::AutoPtr<Firebird::IStatus, Firebird::SimpleDispose>
 		status_vector(fbMaster->getStatus());
 	Firebird::CheckStatusWrapper statusWrapper(status_vector);
 

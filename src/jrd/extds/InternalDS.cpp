@@ -118,7 +118,7 @@ InternalConnection::~InternalConnection()
 }
 
 // Status helper
-class IntStatus : public Jrd::FbLocalStatus
+class IntStatus : public Firebird::FbLocalStatus
 {
 public:
 	explicit IntStatus(FbStatusVector *p)
