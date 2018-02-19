@@ -229,7 +229,7 @@ checkLibraries() {
 		checkLibrary tomcrypt
 	fi
 
-	checkLibrary icu
+	checkLibrary icudata
 }
 
 
