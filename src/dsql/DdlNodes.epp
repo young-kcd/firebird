@@ -11286,7 +11286,9 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 		}
 	}
 
-	if (grantor && !tdbb->getAttachment()->locksmith(tdbb, USE_GRANTED_BY_CLAUSE))
+	const Attachment* attachment = tdbb->getAttachment();
+
+	if (grantor && !attachment->locksmith(tdbb, USE_GRANTED_BY_CLAUSE))
 	{
 		const Firebird::MetaName& owner(tdbb->getDatabase()->dbb_owner);
 
@@ -11296,7 +11298,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 			(Arg::PrivateDyn(295) << DBA_USER_NAME << owner).raise();
 	}
 
-	MetaName currentUser(tdbb->getAttachment()->att_user->getUserName());
+	MetaName currentUser(attachment->att_user->getUserName());
 	MetaName grantorRevoker(grantor ? *grantor : currentUser);
 
 	if (!isGrant && !privs)	// REVOKE ALL ON ALL
@@ -11312,7 +11314,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				 PRIV.RDB$USER_TYPE = userType AND
 				 PRIV.RDB$GRANTOR NOT MISSING
 		{
-			if (tdbb->getAttachment()->att_user->locksmith(tdbb, GRANT_REVOKE_ON_ANY_OBJECT) ||
+			if (attachment->att_user->locksmith(tdbb, GRANT_REVOKE_ON_ANY_OBJECT) ||
 				grantorRevoker == PRIV.RDB$GRANTOR)
 			{
 				ERASE PRIV;
@@ -11434,17 +11436,32 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				// As long as only locksmith can use GRANTED BY, no need specially checking
 				// for privileges of current user. AP-2008
 
-				if (objType == 0)
+				switch (objType)
 				{
-					// Relation or view because we cannot distinguish at this point.
-					checkGrantorCanGrant(tdbb, transaction,
-						tdbb->getAttachment()->att_user->getUserName().c_str(), priv, objName,
-						field, true);
-				}
-				else if (objType >= obj_database)
-				{
-					checkGrantorCanGrantDdl(tdbb, transaction,
-						tdbb->getAttachment()->att_user->getUserName().c_str(), priv, objName);
+					case obj_relation:
+					{
+						// Relation or view because we cannot distinguish at this point.
+						checkGrantorCanGrantRelation(tdbb, transaction, currentUser.c_str(), priv, objName,
+							field, true);
+						break;
+					}
+
+					case obj_exception:
+					case obj_generator:
+					{
+						checkGrantorCanGrantObject(tdbb, transaction, currentUser.c_str(), priv, objName, objType);
+						break;
+					}
+
+					default:
+						if (objType >= obj_database)
+						{
+							checkGrantorCanGrantDdl(tdbb, transaction, currentUser.c_str(), priv, objName);
+						}
+					// Prevent silent eating checks. In this case we can remove RDB$TRIGGER_9 (trigger1)
+					// but add every object type above in switch
+					//	else
+					//		fb_assert(false);
 				}
 			}
 
@@ -11507,7 +11524,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 						((objType == obj_sql_role) && (PRIV.RDB$PRIVILEGE[0] == 'M') &&		// This is ROLE to USER grant
 						 (currentUser != user) &&						// And current user does not revoke his own grant
 						 ((isItSqlRole(tdbb, transaction, objName, owner) &&		// Pick up role owner name
-						   (tdbb->getAttachment()->locksmith(tdbb, GRANT_REVOKE_ON_ANY_OBJECT) ||	// God-like check
+						   (attachment->locksmith(tdbb, GRANT_REVOKE_ON_ANY_OBJECT) ||	// God-like check
 						    (owner == currentUser))) ||					// Current user is role owner
 						  (getGrantorOption(tdbb, transaction, currentUser, obj_user, objName) == 2))))	// or has ADMIN option
 					{
@@ -11560,7 +11577,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 }
 
 // Check if the grantor has grant privilege on the relation/field.
-void GrantRevokeNode::checkGrantorCanGrant(thread_db* tdbb, jrd_tra* transaction,
+void GrantRevokeNode::checkGrantorCanGrantRelation(thread_db* tdbb, jrd_tra* transaction,
 	const char* grantor, const char* privilege, const MetaName& relationName,
 	const MetaName& fieldName, bool topLevel)
 {
@@ -11744,13 +11761,13 @@ void GrantRevokeNode::checkGrantorCanGrant(thread_db* tdbb, jrd_tra* transaction
 		{
 			if (fieldName == G_FLD.RDB$FIELD_NAME)
 			{
-				checkGrantorCanGrant(tdbb, transaction, grantor, privilege,
+				checkGrantorCanGrantRelation(tdbb, transaction, grantor, privilege,
 					G_VIEW.RDB$RELATION_NAME, G_FLD.RDB$BASE_FIELD, false);
 			}
 		}
 		else
 		{
-			checkGrantorCanGrant(tdbb, transaction, grantor, privilege,
+			checkGrantorCanGrantRelation(tdbb, transaction, grantor, privilege,
 				G_VIEW.RDB$RELATION_NAME, G_FLD.RDB$BASE_FIELD, false);
 		}
 	}
@@ -11838,7 +11855,9 @@ void GrantRevokeNode::checkGrantorCanGrantRole(thread_db* tdbb, jrd_tra* transac
 void GrantRevokeNode::checkGrantorCanGrantDdl(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName& grantor, const char* privilege, const MetaName& objName)
 {
-	if (tdbb->getAttachment()->locksmith(tdbb, GRANT_REVOKE_ANY_DDL_RIGHT))
+	const Attachment* attachment = tdbb->getAttachment();
+
+	if (attachment->locksmith(tdbb, GRANT_REVOKE_ANY_DDL_RIGHT))
 		return;
 
 	AutoCacheRequest request(tdbb, drq_l_grant_option, DYN_REQUESTS);
@@ -11846,22 +11865,61 @@ void GrantRevokeNode::checkGrantorCanGrantDdl(thread_db* tdbb, jrd_tra* transact
 
 	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		PRV IN RDB$USER_PRIVILEGES
-		WITH PRV.RDB$USER = UPPERCASE(grantor.c_str()) AND
-			 PRV.RDB$USER_TYPE = obj_user AND
+		WITH ((PRV.RDB$USER = UPPERCASE(grantor.c_str()) AND
+				PRV.RDB$USER_TYPE = obj_user) OR (PRV.RDB$USER_TYPE = obj_sql_role)) AND
 			 PRV.RDB$RELATION_NAME EQ objName.c_str() AND
 			 PRV.RDB$OBJECT_TYPE >= obj_database AND
 			 PRV.RDB$PRIVILEGE EQ privilege
 	{
-		grantable = PRV.RDB$GRANT_OPTION == WITH_GRANT_OPTION;
+		if ( (PRV.RDB$USER_TYPE == obj_sql_role) && !attachment->att_user->roleInUse(tdbb, PRV.RDB$USER))
+			continue;
+		if (PRV.RDB$GRANT_OPTION == WITH_GRANT_OPTION)
+			grantable = true;
 	}
 	END_FOR
 
 	if (!grantable)
 	{
-		// no .. privilege with grant option on DDL ..
-		status_exception::raise(Arg::PrivateDyn(174) << privilege << objName.c_str());
+		// no @1 privilege with grant option on DDL @2
+		status_exception::raise(Arg::PrivateDyn(299) << privilege << objName.c_str());
 	}
 }
+
+
+// Check if the grantor has grant option on generator privilege
+void GrantRevokeNode::checkGrantorCanGrantObject(thread_db* tdbb, jrd_tra* transaction, const char* grantor,
+		const char* privilege, const Firebird::MetaName& objName, SSHORT objType)
+{
+	const Attachment* attachment = tdbb->getAttachment();
+
+	if (attachment->locksmith(tdbb, GRANT_REVOKE_ON_ANY_OBJECT))
+		return;
+
+	AutoCacheRequest request(tdbb, drq_l_grant_object, DYN_REQUESTS);
+	bool grantable = false;
+
+	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		PRV IN RDB$USER_PRIVILEGES
+		WITH ((PRV.RDB$USER = UPPERCASE(grantor) AND
+				PRV.RDB$USER_TYPE = obj_user) OR (PRV.RDB$USER_TYPE = obj_sql_role)) AND
+			 PRV.RDB$RELATION_NAME EQ objName.c_str() AND
+			 PRV.RDB$OBJECT_TYPE = objType AND
+			 PRV.RDB$PRIVILEGE EQ privilege
+	{
+		if ( (PRV.RDB$USER_TYPE == obj_sql_role) && !attachment->att_user->roleInUse(tdbb, PRV.RDB$USER))
+			continue;
+		if (PRV.RDB$GRANT_OPTION == WITH_GRANT_OPTION)
+			grantable = true;
+	}
+	END_FOR
+
+	if (!grantable)
+	{
+		// no @1 privilege with grant option on object @2
+		status_exception::raise(Arg::PrivateDyn(300) << privilege << objName.c_str());
+	}
+}
+
 
 void GrantRevokeNode::storePrivilege(thread_db* tdbb, jrd_tra* transaction, const MetaName& object,
 	const MetaName& user, const MetaName& field, const TEXT* privilege, SSHORT userType,
