@@ -3438,6 +3438,26 @@ DdlNode* CreateAlterTriggerNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 bool CreateAlterTriggerNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
+	if (!create)
+	{
+		AutoRequest requestHandle;
+
+		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+			TRG IN RDB$TRIGGERS
+			WITH TRG.RDB$TRIGGER_NAME EQ name.c_str()
+		{
+			if (!type.specified && !TRG.RDB$TRIGGER_TYPE.NULL)
+				type = TRG.RDB$TRIGGER_TYPE;
+
+			if (relationName.isEmpty() && !TRG.RDB$RELATION_NAME.NULL)
+				relationName = TRG.RDB$RELATION_NAME;
+		}
+		END_FOR
+
+		if (!type.specified)
+			status_exception::raise(Arg::Gds(isc_dyn_trig_not_found) << Arg::Str(name));
+	}
+
 	if (relationName.hasData())
 	{
 		dsc dscName;
@@ -3461,26 +3481,6 @@ void CreateAlterTriggerNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlS
 
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
-
-	if (!create)
-	{
-		AutoRequest requestHandle;
-
-		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
-			TRG IN RDB$TRIGGERS
-			WITH TRG.RDB$TRIGGER_NAME EQ name.c_str()
-		{
-			if (!type.specified && !TRG.RDB$TRIGGER_TYPE.NULL)
-				type = TRG.RDB$TRIGGER_TYPE;
-
-			if (relationName.isEmpty() && !TRG.RDB$RELATION_NAME.NULL)
-				relationName = TRG.RDB$RELATION_NAME;
-		}
-		END_FOR
-
-		if (!type.specified)
-			status_exception::raise(Arg::Gds(isc_dyn_trig_not_found) << Arg::Str(name));
-	}
 
 	compile(tdbb, dsqlScratch);
 
