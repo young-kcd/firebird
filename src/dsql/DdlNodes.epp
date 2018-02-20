@@ -11466,10 +11466,10 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 						{
 							checkGrantorCanGrantDdl(tdbb, transaction, currentUser.c_str(), priv, objName);
 						}
-					// Prevent silent eating checks. In this case we can remove RDB$TRIGGER_9 (trigger1)
-					// but add every object type above in switch
-					//	else
-					//		fb_assert(false);
+						// Prevent silent eating checks. In this case we can remove RDB$TRIGGER_9 (trigger1)
+						// but add every object type above in switch
+						//	else
+						//		fb_assert(false);
 				}
 			}
 
