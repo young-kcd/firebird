@@ -3042,7 +3042,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 				meta, pb->getBufferLength(&tdgbl->throwStatus), pb->getBuffer(&tdgbl->throwStatus)));
 		if (fbStatus->hasData())
 		{
-			BURP_print(false, 371, relation->rel_name);
+			BURP_verbose(371, relation->rel_name);
 			// msg 371 could not start batch when restoring table @1, trying old way
 
 			// Possible reason of fail - use of keywords as fields in old backup of dialect1 DB
