@@ -780,6 +780,7 @@ void INF_database_info(thread_db* tdbb,
 
 					return;
 				}
+				continue;
 			}
 
 			buffer[0] = item;
