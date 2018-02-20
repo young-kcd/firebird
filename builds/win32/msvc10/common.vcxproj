@@ -25,6 +25,7 @@
     <ClCompile Include="..\..\..\src\common\CharSet.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\alloc.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\BaseStream.cpp" />
+    <ClCompile Include="..\..\..\src\common\classes\BlobWrapper.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\BlrWriter.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\ClumpletReader.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\ClumpletWriter.cpp" />
@@ -56,10 +57,10 @@
       <IntrinsicFunctions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</IntrinsicFunctions>
       <IntrinsicFunctions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</IntrinsicFunctions>
       <IntrinsicFunctions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</IntrinsicFunctions>
-      <DebugInformationFormat Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ProgramDatabase</DebugInformationFormat>
-      <DebugInformationFormat Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">ProgramDatabase</DebugInformationFormat>
-      <DebugInformationFormat Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ProgramDatabase</DebugInformationFormat>
-      <DebugInformationFormat Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ProgramDatabase</DebugInformationFormat>
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <ClCompile Include="..\..\..\src\common\cvt.cpp" />
     <ClCompile Include="..\..\..\src\common\db_alias.cpp" />
@@ -93,11 +94,6 @@
     <ClCompile Include="..\..\..\src\common\ThreadData.cpp" />
     <ClCompile Include="..\..\..\src\common\ThreadStart.cpp" />
     <ClCompile Include="..\..\..\src\common\Tokens.cpp" />
-    <ClCompile Include="..\..\..\src\common\tomcrypt\crypt_argchk.c" />
-    <ClCompile Include="..\..\..\src\common\tomcrypt\md5.c" />
-    <ClCompile Include="..\..\..\src\common\tomcrypt\sha1.c" />
-    <ClCompile Include="..\..\..\src\common\tomcrypt\sha256.c" />
-    <ClCompile Include="..\..\..\src\common\tomcrypt\sha512.c" />
     <ClCompile Include="..\..\..\src\common\unicode_util.cpp" />
     <ClCompile Include="..\..\..\src\common\utils.cpp" />
     <ClCompile Include="..\..\..\src\common\UtilSvc.cpp" />
@@ -115,6 +111,7 @@
     <ClInclude Include="..\..\..\src\common\classes\auto.h" />
     <ClInclude Include="..\..\..\src\common\classes\BaseStream.h" />
     <ClInclude Include="..\..\..\src\common\classes\BatchCompletionState.h" />
+    <ClInclude Include="..\..\..\src\common\classes\BlobWrapper.h" />
     <ClInclude Include="..\..\..\src\common\classes\BlrReader.h" />
     <ClInclude Include="..\..\..\src\common\classes\BlrWriter.h" />
     <ClInclude Include="..\..\..\src\common\classes\ByteChunk.h" />
@@ -205,19 +202,6 @@
     <ClInclude Include="..\..\..\src\common\ThreadData.h" />
     <ClInclude Include="..\..\..\src\common\ThreadStart.h" />
     <ClInclude Include="..\..\..\src\common\Tokens.h" />
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt.h" />
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_argchk.h" />
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_cfg.h" />
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_cipher.h" />
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_custom.h" />
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_hash.h" />
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_mac.h" />
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_macros.h" />
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_math.h" />
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_misc.h" />
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_pk.h" />
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_pkcs.h" />
-    <ClInclude Include="..\..\..\src\common\tomcrypt\tomcrypt_prng.h" />
     <ClInclude Include="..\..\..\src\common\unicode_util.h" />
     <ClInclude Include="..\..\..\src\common\UtilSvc.h" />
     <ClInclude Include="..\..\..\src\common\utils_proto.h" />
@@ -305,7 +289,7 @@
       <Culture>0x041d</Culture>
     </ResourceCompile>
     <Lib>
-      <AdditionalDependencies>ws2_32.lib;../../../extern/libtommath/lib/$(PlatformName)\$(Configuration)\tommath.lib;../../../extern/decNumber/lib/$(PlatformName)\$(Configuration)\decnumber.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;../../../extern/libtommath/lib/$(PlatformName)\$(Configuration)\tommath.lib;../../../extern/libtomcrypt/lib/$(PlatformName)\$(Configuration)\tomcrypt.lib;../../../extern/decNumber/lib/$(PlatformName)\$(Configuration)\decnumber.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -321,7 +305,7 @@
       <Culture>0x041d</Culture>
     </ResourceCompile>
     <Lib>
-      <AdditionalDependencies>ws2_32.lib;../../../extern/libtommath/lib/$(PlatformName)\$(Configuration)\tommath.lib;../../../extern/decNumber/lib/$(PlatformName)\$(Configuration)\decnumber.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;../../../extern/libtommath/lib/$(PlatformName)\$(Configuration)\tommath.lib;../../../extern/libtomcrypt/lib/$(PlatformName)\$(Configuration)\tomcrypt.lib;../../../extern/decNumber/lib/$(PlatformName)\$(Configuration)\decnumber.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -340,7 +324,7 @@
       <Culture>0x041d</Culture>
     </ResourceCompile>
     <Lib>
-      <AdditionalDependencies>ws2_32.lib;../../../extern/libtommath/lib/$(PlatformName)\$(Configuration)\tommath.lib;../../../extern/decNumber/lib/$(PlatformName)\$(Configuration)\decnumber.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;../../../extern/libtommath/lib/$(PlatformName)\$(Configuration)\tommath.lib;../../../extern/libtomcrypt/lib/$(PlatformName)\$(Configuration)\tomcrypt.lib;../../../extern/decNumber/lib/$(PlatformName)\$(Configuration)\decnumber.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -358,7 +342,7 @@
       <Culture>0x041d</Culture>
     </ResourceCompile>
     <Lib>
-      <AdditionalDependencies>ws2_32.lib;../../../extern/libtommath/lib/$(PlatformName)\$(Configuration)\tommath.lib;../../../extern/decNumber/lib/$(PlatformName)\$(Configuration)\decnumber.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;../../../extern/libtommath/lib/$(PlatformName)\$(Configuration)\tommath.lib;../../../extern/libtomcrypt/lib/$(PlatformName)\$(Configuration)\tomcrypt.lib;../../../extern/decNumber/lib/$(PlatformName)\$(Configuration)\decnumber.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

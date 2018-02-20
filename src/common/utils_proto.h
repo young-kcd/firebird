@@ -196,8 +196,8 @@ namespace fb_utils
 
 	bool inline isNetworkError(ISC_STATUS code)
 	{
-		return code == isc_network_error || 
-			code == isc_net_write_err || 
+		return code == isc_network_error ||
+			code == isc_net_write_err ||
 			code == isc_net_read_err ||
 			code == isc_lost_db_connection;
 	}

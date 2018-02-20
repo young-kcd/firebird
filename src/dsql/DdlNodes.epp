@@ -48,6 +48,7 @@
 #include "../jrd/exe_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../common/isc_f_proto.h"
+#include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/vio_proto.h"
@@ -3484,6 +3485,26 @@ DdlNode* CreateAlterTriggerNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 bool CreateAlterTriggerNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
+	if (!create)
+	{
+		AutoRequest requestHandle;
+
+		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+			TRG IN RDB$TRIGGERS
+			WITH TRG.RDB$TRIGGER_NAME EQ name.c_str()
+		{
+			if (!type.specified && !TRG.RDB$TRIGGER_TYPE.NULL)
+				type = TRG.RDB$TRIGGER_TYPE;
+
+			if (relationName.isEmpty() && !TRG.RDB$RELATION_NAME.NULL)
+				relationName = TRG.RDB$RELATION_NAME;
+		}
+		END_FOR
+
+		if (!type.specified)
+			status_exception::raise(Arg::Gds(isc_dyn_trig_not_found) << Arg::Str(name));
+	}
+
 	if (relationName.hasData())
 	{
 		dsc dscName;
@@ -3507,26 +3528,6 @@ void CreateAlterTriggerNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlS
 
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
-
-	if (!create)
-	{
-		AutoRequest requestHandle;
-
-		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
-			TRG IN RDB$TRIGGERS
-			WITH TRG.RDB$TRIGGER_NAME EQ name.c_str()
-		{
-			if (!type.specified && !TRG.RDB$TRIGGER_TYPE.NULL)
-				type = TRG.RDB$TRIGGER_TYPE;
-
-			if (relationName.isEmpty() && !TRG.RDB$RELATION_NAME.NULL)
-				relationName = TRG.RDB$RELATION_NAME;
-		}
-		END_FOR
-
-		if (!type.specified)
-			status_exception::raise(Arg::Gds(isc_dyn_trig_not_found) << Arg::Str(name));
-	}
 
 	compile(tdbb, dsqlScratch);
 
@@ -11280,12 +11281,22 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				ERRD_post(Arg::Gds(isc_dsql_cant_grant_option) << Arg::Str("system privileges"));
 				break;
 
+			case obj_udf:
+				ERRD_post(Arg::Gds(isc_dsql_cant_grant_option) << Arg::Str("functions"));
+				break;
+
+			case obj_package_header:
+				ERRD_post(Arg::Gds(isc_dsql_cant_grant_option) << Arg::Str("packages"));
+				break;
+
 			default:
 				break;
 		}
 	}
 
-	if (grantor && !tdbb->getAttachment()->locksmith(tdbb, USE_GRANTED_BY_CLAUSE))
+	const Attachment* attachment = tdbb->getAttachment();
+
+	if (grantor && !attachment->locksmith(tdbb, USE_GRANTED_BY_CLAUSE))
 	{
 		const Firebird::MetaName& owner(tdbb->getDatabase()->dbb_owner);
 
@@ -11295,7 +11306,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 			(Arg::PrivateDyn(295) << DBA_USER_NAME << owner).raise();
 	}
 
-	MetaName currentUser(tdbb->getAttachment()->att_user->getUserName());
+	MetaName currentUser(attachment->att_user->getUserName());
 	MetaName grantorRevoker(grantor ? *grantor : currentUser);
 
 	if (!isGrant && !privs)	// REVOKE ALL ON ALL
@@ -11311,7 +11322,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				 PRIV.RDB$USER_TYPE = userType AND
 				 PRIV.RDB$GRANTOR NOT MISSING
 		{
-			if (tdbb->getAttachment()->att_user->locksmith(tdbb, GRANT_REVOKE_ON_ANY_OBJECT) ||
+			if (attachment->att_user->locksmith(tdbb, GRANT_REVOKE_ON_ANY_OBJECT) ||
 				grantorRevoker == PRIV.RDB$GRANTOR)
 			{
 				ERASE PRIV;
@@ -11433,17 +11444,32 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				// As long as only locksmith can use GRANTED BY, no need specially checking
 				// for privileges of current user. AP-2008
 
-				if (objType == 0)
+				switch (objType)
 				{
-					// Relation or view because we cannot distinguish at this point.
-					checkGrantorCanGrant(tdbb, transaction,
-						tdbb->getAttachment()->att_user->getUserName().c_str(), priv, objName,
-						field, true);
-				}
-				else if (objType >= obj_database)
-				{
-					checkGrantorCanGrantDdl(tdbb, transaction,
-						tdbb->getAttachment()->att_user->getUserName().c_str(), priv, objName);
+					case obj_relation:
+					{
+						// Relation or view because we cannot distinguish at this point.
+						checkGrantorCanGrantRelation(tdbb, transaction, currentUser.c_str(), priv, objName,
+							field, true);
+						break;
+					}
+
+					case obj_exception:
+					case obj_generator:
+					{
+						checkGrantorCanGrantObject(tdbb, transaction, currentUser.c_str(), priv, objName, objType);
+						break;
+					}
+
+					default:
+						if (objType >= obj_database)
+						{
+							checkGrantorCanGrantDdl(tdbb, transaction, currentUser.c_str(), priv, objName);
+						}
+					// Prevent silent eating checks. In this case we can remove RDB$TRIGGER_9 (trigger1)
+					// but add every object type above in switch
+					//	else
+					//		fb_assert(false);
 				}
 			}
 
@@ -11506,7 +11532,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 						((objType == obj_sql_role) && (PRIV.RDB$PRIVILEGE[0] == 'M') &&		// This is ROLE to USER grant
 						 (currentUser != user) &&						// And current user does not revoke his own grant
 						 ((isItSqlRole(tdbb, transaction, objName, owner) &&		// Pick up role owner name
-						   (tdbb->getAttachment()->locksmith(tdbb, GRANT_REVOKE_ON_ANY_OBJECT) ||	// God-like check
+						   (attachment->locksmith(tdbb, GRANT_REVOKE_ON_ANY_OBJECT) ||	// God-like check
 						    (owner == currentUser))) ||					// Current user is role owner
 						  (getGrantorOption(tdbb, transaction, currentUser, obj_user, objName) == 2))))	// or has ADMIN option
 					{
@@ -11559,7 +11585,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 }
 
 // Check if the grantor has grant privilege on the relation/field.
-void GrantRevokeNode::checkGrantorCanGrant(thread_db* tdbb, jrd_tra* transaction,
+void GrantRevokeNode::checkGrantorCanGrantRelation(thread_db* tdbb, jrd_tra* transaction,
 	const char* grantor, const char* privilege, const MetaName& relationName,
 	const MetaName& fieldName, bool topLevel)
 {
@@ -11743,13 +11769,13 @@ void GrantRevokeNode::checkGrantorCanGrant(thread_db* tdbb, jrd_tra* transaction
 		{
 			if (fieldName == G_FLD.RDB$FIELD_NAME)
 			{
-				checkGrantorCanGrant(tdbb, transaction, grantor, privilege,
+				checkGrantorCanGrantRelation(tdbb, transaction, grantor, privilege,
 					G_VIEW.RDB$RELATION_NAME, G_FLD.RDB$BASE_FIELD, false);
 			}
 		}
 		else
 		{
-			checkGrantorCanGrant(tdbb, transaction, grantor, privilege,
+			checkGrantorCanGrantRelation(tdbb, transaction, grantor, privilege,
 				G_VIEW.RDB$RELATION_NAME, G_FLD.RDB$BASE_FIELD, false);
 		}
 	}
@@ -11837,7 +11863,9 @@ void GrantRevokeNode::checkGrantorCanGrantRole(thread_db* tdbb, jrd_tra* transac
 void GrantRevokeNode::checkGrantorCanGrantDdl(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName& grantor, const char* privilege, const MetaName& objName)
 {
-	if (tdbb->getAttachment()->locksmith(tdbb, GRANT_REVOKE_ANY_DDL_RIGHT))
+	const Attachment* attachment = tdbb->getAttachment();
+
+	if (attachment->locksmith(tdbb, GRANT_REVOKE_ANY_DDL_RIGHT))
 		return;
 
 	AutoCacheRequest request(tdbb, drq_l_grant_option, DYN_REQUESTS);
@@ -11845,22 +11873,61 @@ void GrantRevokeNode::checkGrantorCanGrantDdl(thread_db* tdbb, jrd_tra* transact
 
 	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		PRV IN RDB$USER_PRIVILEGES
-		WITH PRV.RDB$USER = UPPERCASE(grantor.c_str()) AND
-			 PRV.RDB$USER_TYPE = obj_user AND
+		WITH ((PRV.RDB$USER = UPPERCASE(grantor.c_str()) AND
+				PRV.RDB$USER_TYPE = obj_user) OR (PRV.RDB$USER_TYPE = obj_sql_role)) AND
 			 PRV.RDB$RELATION_NAME EQ objName.c_str() AND
 			 PRV.RDB$OBJECT_TYPE >= obj_database AND
 			 PRV.RDB$PRIVILEGE EQ privilege
 	{
-		grantable = PRV.RDB$GRANT_OPTION == WITH_GRANT_OPTION;
+		if ( (PRV.RDB$USER_TYPE == obj_sql_role) && !attachment->att_user->roleInUse(tdbb, PRV.RDB$USER))
+			continue;
+		if (PRV.RDB$GRANT_OPTION == WITH_GRANT_OPTION)
+			grantable = true;
 	}
 	END_FOR
 
 	if (!grantable)
 	{
-		// no .. privilege with grant option on DDL ..
-		status_exception::raise(Arg::PrivateDyn(174) << privilege << objName.c_str());
+		// no @1 privilege with grant option on DDL @2
+		status_exception::raise(Arg::PrivateDyn(299) << privilege << objName.c_str());
 	}
 }
+
+
+// Check if the grantor has grant option on generator privilege
+void GrantRevokeNode::checkGrantorCanGrantObject(thread_db* tdbb, jrd_tra* transaction, const char* grantor,
+		const char* privilege, const Firebird::MetaName& objName, SSHORT objType)
+{
+	const Attachment* attachment = tdbb->getAttachment();
+
+	if (attachment->locksmith(tdbb, GRANT_REVOKE_ON_ANY_OBJECT))
+		return;
+
+	AutoCacheRequest request(tdbb, drq_l_grant_object, DYN_REQUESTS);
+	bool grantable = false;
+
+	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		PRV IN RDB$USER_PRIVILEGES
+		WITH ((PRV.RDB$USER = UPPERCASE(grantor) AND
+				PRV.RDB$USER_TYPE = obj_user) OR (PRV.RDB$USER_TYPE = obj_sql_role)) AND
+			 PRV.RDB$RELATION_NAME EQ objName.c_str() AND
+			 PRV.RDB$OBJECT_TYPE = objType AND
+			 PRV.RDB$PRIVILEGE EQ privilege
+	{
+		if ( (PRV.RDB$USER_TYPE == obj_sql_role) && !attachment->att_user->roleInUse(tdbb, PRV.RDB$USER))
+			continue;
+		if (PRV.RDB$GRANT_OPTION == WITH_GRANT_OPTION)
+			grantable = true;
+	}
+	END_FOR
+
+	if (!grantable)
+	{
+		// no @1 privilege with grant option on object @2
+		status_exception::raise(Arg::PrivateDyn(300) << privilege << objName.c_str());
+	}
+}
+
 
 void GrantRevokeNode::storePrivilege(thread_db* tdbb, jrd_tra* transaction, const MetaName& object,
 	const MetaName& user, const MetaName& field, const TEXT* privilege, SSHORT userType,
@@ -11956,37 +12023,92 @@ bool AlterDatabaseNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 	return true;
 }
 
+void AlterDatabaseNode::checkClauses(thread_db* tdbb)
+{
+	if (clauses & CLAUSE_END_BACKUP)
+	{
+		// msg 298: Incompatible ALTER DATABASE clauses: '@1' and '@2'
+		if (clauses & CLAUSE_BEGIN_BACKUP)
+			(Arg::PrivateDyn(298) << Arg::Str("BEGIN BACKUP") << Arg::Str("END BACKUP")).raise();
+
+		if (differenceFile.hasData())
+			(Arg::PrivateDyn(298) << Arg::Str("END BACKUP") << Arg::Str("ADD DIFFERENCE FILE")).raise();
+
+		if (clauses & CLAUSE_DROP_DIFFERENCE)
+			(Arg::PrivateDyn(298) << Arg::Str("END BACKUP") << Arg::Str("DROP DIFFERENCE FILE")).raise();
+	}
+
+	if ((clauses & CLAUSE_DROP_DIFFERENCE) && differenceFile.hasData())
+	{
+		// msg 298: Incompatible ALTER DATABASE clauses: '@1' and '@2'
+		(Arg::PrivateDyn(298) << Arg::Str("ADD DIFFERENCE FILE") << Arg::Str("DROP DIFFERENCE FILE")).raise();
+	}
+}
+
 void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
+	checkClauses(tdbb);
+
+	// Take a LCK_alter_database lock to prevent altering of the database from
+	// parallel transactions
+
+	if (!transaction->tra_alter_db_lock)
+	{
+		Lock* lock = FB_NEW_RPT(*transaction->tra_pool, 0) Lock(tdbb, 0, LCK_alter_database);
+		lock->lck_data = transaction->tra_number;
+		if (LCK_lock(tdbb, lock, LCK_write, transaction->getLockWait()))
+			transaction->tra_alter_db_lock = lock;
+		else
+		{
+			const TraNumber conflict_trans = LCK_read_data(tdbb, lock);
+			delete lock;
+
+			// msg 297: Concurrent ALTER DATABASE is not supported
+			Arg::PrivateDyn status(297);
+
+			if (conflict_trans)
+				status << Arg::Gds(isc_concurrent_transaction) << Arg::Num(conflict_trans);
+
+			status_exception::raise(status);
+		}
+	}
+
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
-	Attachment* const attachment = transaction->tra_attachment;
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
+	if (clauses & CLAUSE_DROP_DIFFERENCE)
+		changeBackupMode(tdbb, transaction, CLAUSE_DROP_DIFFERENCE);
+
 	SLONG dbAlloc = PageSpace::maxAlloc(tdbb->getDatabase());
 	SLONG start = create ? createLength + 1 : 0;
-	AutoCacheRequest request(tdbb, drq_m_database, DYN_REQUESTS);
-
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-		DBB IN RDB$DATABASE
+	for (NestConst<DbFileClause>* i = files.begin(); i != files.end(); ++i)
 	{
-		MODIFY DBB USING
-			if (clauses & CLAUSE_DROP_DIFFERENCE)
-				changeBackupMode(tdbb, transaction, CLAUSE_DROP_DIFFERENCE);
+		DbFileClause* file = *i;
 
-			for (NestConst<DbFileClause>* i = files.begin(); i != files.end(); ++i)
-			{
-				DbFileClause* file = *i;
+		start = MAX(start, file->start);
+		defineFile(tdbb, transaction, 0, false, false, dbAlloc,
+			file->name.c_str(), start, file->length);
+		start += file->length;
+	}
 
-				start = MAX(start, file->start);
-				defineFile(tdbb, transaction, 0, false, false, dbAlloc,
-					file->name.c_str(), start, file->length);
-				start += file->length;
-			}
+	if (differenceFile.hasData())
+		defineDifference(tdbb, transaction, differenceFile.c_str());
 
-			if (differenceFile.hasData())
-				defineDifference(tdbb, transaction, differenceFile.c_str());
+	if (clauses & CLAUSE_BEGIN_BACKUP)
+		changeBackupMode(tdbb, transaction, CLAUSE_BEGIN_BACKUP);
+
+	if (clauses & CLAUSE_END_BACKUP)
+		changeBackupMode(tdbb, transaction, CLAUSE_END_BACKUP);
+
+	if (setDefaultCharSet.hasData() || setDefaultCollation.hasData() || linger >= 0 ||
+		ssDefiner.specified)
+	{
+		AutoCacheRequest request(tdbb, drq_m_database, DYN_REQUESTS);
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			DBB IN RDB$DATABASE
+		{
+			MODIFY DBB USING
 
 			if (setDefaultCharSet.hasData())
 			{
@@ -12000,6 +12122,7 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 				DBB.RDB$CHARACTER_SET_NAME.NULL = FALSE;
 				strcpy(DBB.RDB$CHARACTER_SET_NAME, setDefaultCharSet.c_str());
 
+				dsql_dbb* dbb = transaction->getDsqlAttachment();
 				dbb->dbb_dfl_charset = "";	// reset in the cache
 			}
 
@@ -12021,17 +12144,12 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 				DBB.RDB$SQL_SECURITY = ssDefiner.value ? FB_TRUE : FB_FALSE;
 			}
 
-			if (clauses & CLAUSE_BEGIN_BACKUP)
-				changeBackupMode(tdbb, transaction, CLAUSE_BEGIN_BACKUP);
-
-			if (clauses & CLAUSE_END_BACKUP)
-				changeBackupMode(tdbb, transaction, CLAUSE_END_BACKUP);
-		END_MODIFY
+			END_MODIFY
+		}
+		END_FOR
 	}
-	END_FOR
 
-	// Allow update above to work as a lock, preventing altering of the database from parallel transactions
-	// Moreover, it should load crypt plugin if it (by a miracle) wasn't already loaded yet
+	// Load crypt plugin if it (by a miracle) wasn't already loaded yet
 	if (clauses & CLAUSE_CRYPT)
 	{
 		Database* const db = tdbb->getDatabase();

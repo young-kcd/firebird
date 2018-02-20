@@ -25,6 +25,7 @@
     <ClCompile Include="..\..\..\src\common\CharSet.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\alloc.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\BaseStream.cpp" />
+    <ClCompile Include="..\..\..\src\common\classes\BlobWrapper.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\BlrWriter.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\ClumpletReader.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\ClumpletWriter.cpp" />
@@ -106,6 +107,7 @@
     <ClInclude Include="..\..\..\src\common\classes\auto.h" />
     <ClInclude Include="..\..\..\src\common\classes\BaseStream.h" />
     <ClInclude Include="..\..\..\src\common\classes\BatchCompletionState.h" />
+    <ClInclude Include="..\..\..\src\common\classes\BlobWrapper.h" />
     <ClInclude Include="..\..\..\src\common\classes\BlrReader.h" />
     <ClInclude Include="..\..\..\src\common\classes\BlrWriter.h" />
     <ClInclude Include="..\..\..\src\common\classes\ByteChunk.h" />

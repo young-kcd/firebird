@@ -140,16 +140,21 @@ enum db_info_types
 	fb_info_pages_used = 124,
 	fb_info_pages_free = 125,
 
-	fb_info_crypt_state = 126,
-
-	fb_info_statement_timeout_db = 127,
-	fb_info_statement_timeout_att = 128,
+	// codes 126 and 127 are used for special purposes
+	// do not use them here
 
 	fb_info_ses_idle_timeout_db = 129,
 	fb_info_ses_idle_timeout_att = 130,
 	fb_info_ses_idle_timeout_run = 131,
 
 	fb_info_conn_flags = 132,
+	fb_info_protocol_version = 133,
+
+	fb_info_crypt_key = 133,
+	fb_info_crypt_state = 134,
+
+	fb_info_statement_timeout_db = 135,
+	fb_info_statement_timeout_att = 136,
 
 	isc_info_db_last_value   /* Leave this LAST! */
 };

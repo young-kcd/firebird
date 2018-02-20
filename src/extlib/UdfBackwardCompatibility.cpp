@@ -340,6 +340,7 @@ FB_UDR_BEGIN_FUNCTION(UC_isLeapYear)
 			out->resultNull = true;
 			return;
 		}
+
 		const int ly = in->val.date.getYear(master->getUtilInterface());
 		out->result = ((ly % 4 == 0 && ly % 100 != 0) || ly % 400 == 0) ? FB_TRUE : FB_FALSE;
 		out->resultNull = false;

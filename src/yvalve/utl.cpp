@@ -1109,7 +1109,7 @@ public:
 	{
 		try
 		{
-			DecimalStatus decSt(DEC_Errors);
+			DecimalStatus decSt(FB_DEC_Errors);
 			Decimal64* val = reinterpret_cast<Decimal64*>(to);
 			val->set(from, decSt);
 		}
@@ -1170,7 +1170,7 @@ public:
 	{
 		try
 		{
-			DecimalStatus decSt(DEC_Errors);
+			DecimalStatus decSt(FB_DEC_Errors);
 			Decimal128* val = reinterpret_cast<Decimal128*>(to);
 			val->set(from, decSt);
 		}
@@ -1202,7 +1202,7 @@ public:
 	{
 		try
 		{
-			DecimalStatus decSt(DEC_Errors);
+			DecimalStatus decSt(FB_DEC_Errors);
 			reinterpret_cast<const DecimalFixed*>(from)->toString(decSt, scale, bufSize, buffer);
 		}
 		catch (const Exception& ex)
@@ -1220,7 +1220,7 @@ public:
 	{
 		try
 		{
-			DecimalStatus decSt(DEC_Errors);
+			DecimalStatus decSt(FB_DEC_Errors);
 			DecimalFixed* val = reinterpret_cast<DecimalFixed*>(to);
 			val->set(from, scale, decSt);
 		}

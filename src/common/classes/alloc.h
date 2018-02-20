@@ -224,12 +224,6 @@ public:
 	// previously set group and added to new
 	void setStatsGroup(MemoryStats& stats) FB_NOTHROW;
 
-	// Just a helper for AutoPtr.
-	static void clear(MemoryPool* pool)
-	{
-		deletePool(pool);
-	}
-
 	// Initialize and finalize global memory pool
 	static void init();
 	static void cleanup();
@@ -451,7 +445,14 @@ namespace Firebird
 		explicit AutoStorage(MemoryPool& p) : PermanentStorage(p) { }
 	};
 
-	typedef AutoPtr<MemoryPool, MemoryPool> AutoMemoryPool;
+	template <>
+	inline void SimpleDelete<MemoryPool>::clear(MemoryPool* pool)
+	{
+		if (pool)
+			MemoryPool::deletePool(pool);
+	}
+
+	typedef AutoPtr<MemoryPool> AutoMemoryPool;
 
 } // namespace Firebird
 

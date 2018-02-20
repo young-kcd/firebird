@@ -717,7 +717,8 @@ SINT64 ClumpletReader::fromVaxInteger(const UCHAR* ptr, FB_SIZE_T length)
 		value += ((SINT64) *ptr++) << shift;
 		shift += 8;
 	}
-	value += ((SINT64)(SCHAR)*ptr) << shift;
+
+	value += ((SINT64)(SCHAR) *ptr) << shift;
 
 	return value;
 }

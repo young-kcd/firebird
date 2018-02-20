@@ -647,6 +647,7 @@ SINT64 API_ROUTINE isc_portable_integer(const UCHAR* ptr, SSHORT length)
 		value += ((SINT64) *ptr++) << shift;
 		shift += 8;
 	}
+
 	value += ((SINT64)(SCHAR) *ptr) << shift;
 
 	return value;
@@ -2556,6 +2557,7 @@ SLONG API_ROUTINE gds__vax_integer(const UCHAR* ptr, SSHORT length)
 		value += ((SLONG) *ptr++) << shift;
 		shift += 8;
 	}
+
 	value += ((SLONG)(SCHAR) *ptr) << shift;
 
 	return value;

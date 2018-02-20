@@ -441,9 +441,9 @@ int Config::getTempBlockSize()
 	return (int) getDefaultConfig()->values[KEY_TEMP_BLOCK_SIZE];
 }
 
-FB_UINT64 Config::getTempCacheLimit()
+FB_UINT64 Config::getTempCacheLimit() const
 {
-	SINT64 v = (SINT64) getDefaultConfig()->values[KEY_TEMP_CACHE_LIMIT];
+	SINT64 v = get<SINT64>(KEY_TEMP_CACHE_LIMIT);
 	if (v < 0)
 	{
 		v = getServerMode() != MODE_SUPER ? 8388608 : 67108864;	// bytes

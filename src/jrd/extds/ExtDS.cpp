@@ -367,9 +367,10 @@ Transaction* Connection::createTransaction()
 
 void Connection::deleteTransaction(thread_db* tdbb, Transaction* tran)
 {
-	// Close all active statements in tran context avoiding commit of already 
+	// Close all active statements in tran context avoiding commit of already
 	// deleted transaction
 	Statement** stmt_ptr = m_statements.begin();
+
 	while (stmt_ptr < m_statements.end())
 	{
 		Statement* stmt = *stmt_ptr;
@@ -378,6 +379,7 @@ void Connection::deleteTransaction(thread_db* tdbb, Transaction* tran)
 			if (stmt->isActive())
 				stmt->close(tdbb, true);
 		}
+
 		// close() above could destroy statement and remove it from m_statements
 		if (stmt_ptr < m_statements.end() && *stmt_ptr == stmt)
 			stmt_ptr++;

@@ -87,12 +87,6 @@ DsqlBatch::DsqlBatch(dsql_req* req, const dsql_msg* /*message*/, IMessageMetadat
 	m_alignment = m_meta->getAlignment(&st);
 	check(&st);
 
-	if (m_messageSize > RAM_BATCH)		// hops - message does not fit in our buffer
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-				  Arg::Gds(isc_batch_msg_long) << Arg::Num(m_messageSize) << Arg::Num(RAM_BATCH));
-	}
-
 	for (pb.rewind(); !pb.isEof(); pb.moveNext())
 	{
 		UCHAR t = pb.getClumpTag();
@@ -146,7 +140,6 @@ DsqlBatch::DsqlBatch(dsql_req* req, const dsql_msg* /*message*/, IMessageMetadat
 		switch (t)
 		{
 		case SQL_BLOB:
-		case SQL_ARRAY:
 			{
 				BlobMeta bm;
 				bm.offset = m_meta->getOffset(&st, i);
@@ -160,9 +153,9 @@ DsqlBatch::DsqlBatch(dsql_req* req, const dsql_msg* /*message*/, IMessageMetadat
 	}
 
 	// allocate data buffers
-	m_messages.setBuf(m_bufferSize);
+	m_messages.setBuf(m_bufferSize, MAX(m_alignedMessage * 2, RAM_BATCH));
 	if (m_blobMeta.hasData())
-		m_blobs.setBuf(m_bufferSize);
+		m_blobs.setBuf(m_bufferSize, RAM_BATCH);
 
 	// assign initial default BPB
 	setDefBpb(FB_NELEM(initBlobParameters), initBlobParameters);
@@ -270,6 +263,7 @@ void DsqlBatch::add(thread_db* tdbb, ULONG count, const void* inBuffer)
 		return;
 	m_messages.align(m_alignment);
 	m_messages.put(inBuffer, (count - 1) * m_alignedMessage + m_messageSize);
+	DEB_BATCH(fprintf(stderr, "Put to batch %d messages\n", count));
 }
 
 void DsqlBatch::blobCheckMeta()
@@ -419,6 +413,7 @@ void DsqlBatch::addBlobStream(thread_db* tdbb, unsigned length, const void* inBu
 	m_lastBlob = MAX_ULONG;
 
 	// store stream for further processing
+	DEB_BATCH(fprintf(stderr, "Store stream %d\n", length));
 	fb_assert(m_blobs.getSize() % BLOB_STREAM_ALIGN == 0);
 	m_blobs.put(inBuffer, length);
 }
@@ -539,13 +534,13 @@ private:
 
 						// parse blob header
 						fb_assert(intptr_t(flow.data) % BLOB_STREAM_ALIGN == 0);
-						ISC_QUAD* batchBlobId = reinterpret_cast<ISC_QUAD*>(flow.data);
+						ISC_QUAD batchBlobId = *reinterpret_cast<ISC_QUAD*>(flow.data);
 						ULONG* blobSize = reinterpret_cast<ULONG*>(flow.data + sizeof(ISC_QUAD));
 						ULONG* bpbSize = reinterpret_cast<ULONG*>(flow.data + sizeof(ISC_QUAD) + sizeof(ULONG));
 						flow.newHdr(*blobSize);
 						ULONG currentBpbSize = *bpbSize;
 
-						if (batchBlobId->gds_quad_high == 0 && batchBlobId->gds_quad_low == 0)
+						if (batchBlobId.gds_quad_high == 0 && batchBlobId.gds_quad_low == 0)
 						{
 							// Sanity check
 							if (*bpbSize)
@@ -591,7 +586,9 @@ private:
 							bid engineBlobId;
 							blob = blb::create2(tdbb, transaction, &engineBlobId, bpb->getCount(),
 								bpb->begin(), true);
-							registerBlob(reinterpret_cast<ISC_QUAD*>(&engineBlobId), batchBlobId);
+
+							//DEB_BATCH(fprintf(stderr, "B-ID: (%x,%x)\n", batchBlobId.gds_quad_high, batchBlobId.gds_quad_low));
+							registerBlob(reinterpret_cast<ISC_QUAD*>(&engineBlobId), &batchBlobId);
 						}
 					}
 
@@ -657,7 +654,7 @@ private:
 	fb_assert(req);
 
 	// prepare completion interface
-	AutoPtr<BatchCompletionState, SimpleDispose<BatchCompletionState> > completionState
+	AutoPtr<BatchCompletionState, SimpleDispose> completionState
 		(FB_NEW BatchCompletionState(m_flags & (1 << IBatch::TAG_RECORD_COUNTS), m_detailed));
 	AutoSetRestore<bool> batchFlag(&req->req_batch, true);
 	const dsql_msg* message = m_request->getStatement()->getSendMsg();
@@ -702,6 +699,9 @@ private:
 					continue;
 
 				ISC_QUAD* id = reinterpret_cast<ISC_QUAD*>(&data[m_blobMeta[i].offset]);
+				if (id->gds_quad_high == 0 && id->gds_quad_low == 0)
+					continue;
+
 				ISC_QUAD newId;
 				if (!m_blobMap.get(*id, newId))
 				{
@@ -719,9 +719,9 @@ private:
 			remains -= m_messageSize;
 
 			UCHAR* msgBuffer = m_request->req_msg_buffers[message->msg_buffer_number];
-			DEB_BATCH(fprintf(stderr, "\n\n+++ Send\n\n"));
 			try
 			{
+				// runsend data to request and collect stats
 				ULONG before = req->req_records_inserted + req->req_records_updated +
 					req->req_records_deleted;
 				EXE_send(tdbb, req, message->msg_number, message->msg_length, msgBuffer);
@@ -753,6 +753,15 @@ private:
 		m_messages.remained(remains, alignedData - data);
 	}
 
+	DEB_BATCH(fprintf(stderr, "Sent %d messages\n", completionState->getSize(tdbb->tdbb_status_vector)));
+
+	// make sure all blobs were used in messages
+	if (m_blobMap.count())
+	{
+		DEB_BATCH(fprintf(stderr, "BLOBs %d were not used in messages\n", m_blobMap.count()));
+		ERR_post_warning(Arg::Warning(isc_random) << "m_blobMap.count() BLOBs were not used in messages");		// !!!!!!! new warning
+	}
+
 	// reset to initial state
 	cancel(tdbb);
 
@@ -762,14 +771,11 @@ private:
 void DsqlBatch::cancel(thread_db* tdbb)
 {
 	m_messages.clear();
-	if (m_blobMeta.hasData())
-	{
-		m_blobs.clear();
-		m_setBlobSize = false;
-		m_lastBlob = MAX_ULONG;
-		memset(&m_genId, 0, sizeof(m_genId));
-		m_blobMap.clear();
-	}
+	m_blobs.clear();
+	m_setBlobSize = false;
+	m_lastBlob = MAX_ULONG;
+	memset(&m_genId, 0, sizeof(m_genId));
+	m_blobMap.clear();
 }
 
 void DsqlBatch::genBlobId(ISC_QUAD* blobId)
@@ -779,13 +785,13 @@ void DsqlBatch::genBlobId(ISC_QUAD* blobId)
 	memcpy(blobId, &m_genId, sizeof(m_genId));
 }
 
-void DsqlBatch::DataCache::setBuf(ULONG size)
+void DsqlBatch::DataCache::setBuf(ULONG size, ULONG cacheCapacity)
 {
 	m_limit = size;
 
-	// create ram cache
-	fb_assert(!m_cache);
-	m_cache = FB_NEW_POOL(getPool()) Cache;
+	fb_assert(m_cacheCapacity == 0);
+	fb_assert(cacheCapacity >= RAM_BATCH);
+	m_cacheCapacity = cacheCapacity;
 }
 
 void DsqlBatch::DataCache::put3(const void* data, ULONG dataSize, ULONG offset)
@@ -797,9 +803,9 @@ void DsqlBatch::DataCache::put3(const void* data, ULONG dataSize, ULONG offset)
 	if (offset >= m_used)
 	{
 		// data in cache
-		UCHAR* to = m_cache->begin();
+		UCHAR* to = m_cache.begin();
 		to += (offset - m_used);
-		fb_assert(to < m_cache->end());
+		fb_assert(to < m_cache.end());
 		memcpy(to, data, dataSize);
 	}
 	else
@@ -811,7 +817,7 @@ void DsqlBatch::DataCache::put3(const void* data, ULONG dataSize, ULONG offset)
 
 void DsqlBatch::DataCache::put(const void* d, ULONG dataSize)
 {
-	if (m_used + (m_cache ? m_cache->getCount() : 0) + dataSize > m_limit)
+	if (m_limit && (m_used + m_cache.getCount() + dataSize > m_limit))
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 			  Arg::Gds(isc_batch_too_big));
@@ -823,17 +829,17 @@ void DsqlBatch::DataCache::put(const void* d, ULONG dataSize)
 	const ULONG K = 4;
 
 	// ensure ram cache presence
-	fb_assert(m_cache);
+	fb_assert(m_cacheCapacity);
 
 	// swap to secondary cache if needed
-	if (m_cache->getCount() + dataSize > m_cache->getCapacity())
+	if (m_cache.getCount() + dataSize > m_cacheCapacity)
 	{
 		// store data in the end of ram cache if needed
 		// avoid copy in case of huge buffer passed
-		ULONG delta = m_cache->getCapacity() - m_cache->getCount();
-		if (dataSize - delta < m_cache->getCapacity() / K)
+		ULONG delta = m_cacheCapacity - m_cache.getCount();
+		if (dataSize - delta < m_cacheCapacity / K)
 		{
-			m_cache->append(data, delta);
+			m_cache.append(data, delta);
 			data += delta;
 			dataSize -= delta;
 		}
@@ -842,13 +848,13 @@ void DsqlBatch::DataCache::put(const void* d, ULONG dataSize)
 		if (!m_space)
 			m_space = FB_NEW_POOL(getPool()) TempSpace(getPool(), TEMP_NAME);
 
-		const FB_UINT64 writtenBytes = m_space->write(m_used, m_cache->begin(), m_cache->getCount());
-		fb_assert(writtenBytes == m_cache->getCount());
-		m_used += m_cache->getCount();
-		m_cache->clear();
+		const FB_UINT64 writtenBytes = m_space->write(m_used, m_cache.begin(), m_cache.getCount());
+		fb_assert(writtenBytes == m_cache.getCount());
+		m_used += m_cache.getCount();
+		m_cache.clear();
 
 		// in a case of huge buffer write directly to tempspace
-		if (dataSize > m_cache->getCapacity() / K)
+		if (dataSize > m_cacheCapacity / K)
 		{
 			const FB_UINT64 writtenBytes = m_space->write(m_used, data, dataSize);
 			fb_assert(writtenBytes == dataSize);
@@ -857,7 +863,7 @@ void DsqlBatch::DataCache::put(const void* d, ULONG dataSize)
 		}
 	}
 
-	m_cache->append(data, dataSize);
+	m_cache.append(data, dataSize);
 }
 
 void DsqlBatch::DataCache::align(ULONG alignment)
@@ -873,16 +879,14 @@ void DsqlBatch::DataCache::align(ULONG alignment)
 
 void DsqlBatch::DataCache::done()
 {
-	fb_assert(m_cache);
-
-	if (m_cache->getCount() && m_used)
+	if (m_cache.getCount() && m_used)
 	{
 		fb_assert(m_space);
 
-		const FB_UINT64 writtenBytes = m_space->write(m_used, m_cache->begin(), m_cache->getCount());
-		fb_assert(writtenBytes == m_cache->getCount());
-		m_used += m_cache->getCount();
-		m_cache->clear();
+		const FB_UINT64 writtenBytes = m_space->write(m_used, m_cache.begin(), m_cache.getCount());
+		fb_assert(writtenBytes == m_cache.getCount());
+		m_used += m_cache.getCount();
+		m_cache.clear();
 	}
 }
 
@@ -891,26 +895,26 @@ ULONG DsqlBatch::DataCache::get(UCHAR** buffer)
 	if (m_used > m_got)
 	{
 		// get data from tempspace
-		ULONG dlen = m_cache->getCount();
-		ULONG delta = m_cache->getCapacity() - dlen;
+		ULONG dlen = m_cache.getCount();
+		ULONG delta = m_cacheCapacity - dlen;
 		if (delta > m_used - m_got)
 			delta = m_used - m_got;
-		UCHAR* buf = m_cache->getBuffer(dlen + delta);
+		UCHAR* buf = m_cache.getBuffer(dlen + delta);
 		buf += dlen;
 		const FB_UINT64 readBytes = m_space->read(m_got, buf, delta);
 		fb_assert(readBytes == delta);
 		m_got += delta;
 	}
 
-	if (m_cache->getCount())
+	if (m_cache.getCount())
 	{
 		if (m_shift)
-			m_cache->removeCount(0, m_shift);
+			m_cache.removeCount(0, m_shift);
 
 		// return buffer full of data
-		*buffer = m_cache->begin();
+		*buffer = m_cache.begin();
 		fb_assert(intptr_t(*buffer) % FB_ALIGNMENT == 0);
-		return m_cache->getCount();
+		return m_cache.getCount();
 	}
 
 	// no more data
@@ -926,9 +930,9 @@ ULONG DsqlBatch::DataCache::reget(ULONG remains, UCHAR** buffer, ULONG alignment
 		a = alignment - a;
 		remains += a;
 	}
-	fb_assert(remains < m_cache->getCount());
+	fb_assert(remains < m_cache.getCount());
 
-	m_cache->removeCount(0, m_cache->getCount() - remains);
+	m_cache.removeCount(0, m_cache.getCount() - remains);
 	ULONG size = get(buffer);
 	size -= a;
 	*buffer += a;
@@ -949,25 +953,25 @@ void DsqlBatch::DataCache::remained(ULONG size, ULONG alignment)
 	}
 
 	if (!size)
-		m_cache->clear();
+		m_cache.clear();
 	else
-		m_cache->removeCount(0, m_cache->getCount() - size);
+		m_cache.removeCount(0, m_cache.getCount() - size);
 
 	m_shift = alignment;
 }
 
 ULONG DsqlBatch::DataCache::getSize() const
 {
-	if(!m_cache)
+	if (!m_cacheCapacity)
 		return 0;
 
-	fb_assert((MAX_ULONG - 1) - m_used > m_cache->getCount());
-	return m_used + m_cache->getCount();
+	fb_assert((MAX_ULONG - 1) - m_used > m_cache.getCount());
+	return m_used + m_cache.getCount();
 }
 
 void DsqlBatch::DataCache::clear()
 {
-	m_cache->clear();
+	m_cache.clear();
 	if (m_space && m_used)
 		m_space->releaseSpace(0, m_used);
 	m_used = m_got = m_shift = 0;

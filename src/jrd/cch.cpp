@@ -1827,8 +1827,7 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 	const bool mustWrite = (bdb->bdb_flags & BDB_must_write) ||
 		bcb->bcb_database->dbb_backup_manager->databaseFlushInProgress();
 
-//	if (bdb->bdb_writers == 1 || bdb->bdb_use_count == 1)
-	if (bdb->bdb_writers == 1 ||
+	if (bdb->bdb_writers == 1 || bdb->bdb_use_count == 1 ||
 		(bdb->bdb_writers == 0 && mustWrite))
 	{
 		const bool marked = bdb->bdb_flags & BDB_marked;
@@ -2538,7 +2537,7 @@ static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_o
 
 
 // Collect pages modified by garbage collector or all dirty pages or release page
-// locks - depending of flush_flag, and write it to disk. 
+// locks - depending of flush_flag, and write it to disk.
 // See also comments in flushPages.
 static void flushAll(thread_db* tdbb, USHORT flush_flag)
 {
@@ -2589,8 +2588,8 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 extern "C" {
 	static int cmpBdbs(const void* a, const void* b)
 	{
-		const BufferDesc* bdbA = *(BufferDesc**)a;
-		const BufferDesc* bdbB = *(BufferDesc**)b;
+		const BufferDesc* bdbA = *(BufferDesc**) a;
+		const BufferDesc* bdbB = *(BufferDesc**) b;
 
 		if (bdbA->bdb_page > bdbB->bdb_page)
 			return 1;
@@ -2603,7 +2602,7 @@ extern "C" {
 } // extern C
 
 
-// Write array of pages to disk in efficient order. 
+// Write array of pages to disk in efficient order.
 // First, sort pages by their numbers to make writes physically ordered and
 // thus faster. At every iteration of while loop write pages which have no high
 // precedence pages to ensure order preserved. If after some iteration there are
@@ -2676,6 +2675,7 @@ static void flushPages(thread_db* tdbb, USHORT flush_flag, BufferDesc** begin, F
 
 		iter.rewind();
 	}
+
 	fb_assert(count == written);
 }
 

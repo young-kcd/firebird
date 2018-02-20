@@ -47,7 +47,7 @@ class Statement;
 class Blob;
 
 enum TraModes {traReadCommited, traReadCommitedRecVersions, traConcurrency, traConsistency};
-enum TraScope {traNotSet = 0, traAutonomous = 1, traCommon, traTwoPhase};
+enum TraScope {traNotSet = 0, traAutonomous, traCommon, traTwoPhase};
 
 // Known built-in provider's names
 extern const char* FIREBIRD_PROVIDER_NAME;

@@ -1818,6 +1818,8 @@ C --
       PARAMETER (GDS__hdr_overflow                     = 335545202)
       INTEGER*4 GDS__vld_plugins                     
       PARAMETER (GDS__vld_plugins                      = 335545203)
+      INTEGER*4 GDS__db_crypt_key                    
+      PARAMETER (GDS__db_crypt_key                     = 335545204)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

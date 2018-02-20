@@ -106,6 +106,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <ModuleDefinitionFile>..\defs\plugin.def</ModuleDefinitionFile>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -125,6 +126,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <ModuleDefinitionFile>..\defs\plugin.def</ModuleDefinitionFile>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -143,6 +145,7 @@
       </DataExecutionPrevention>
       <TargetMachine>MachineX64</TargetMachine>
       <ModuleDefinitionFile>..\defs\plugin.def</ModuleDefinitionFile>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -166,6 +169,7 @@
       </DataExecutionPrevention>
       <TargetMachine>MachineX64</TargetMachine>
       <ModuleDefinitionFile>..\defs\plugin.def</ModuleDefinitionFile>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

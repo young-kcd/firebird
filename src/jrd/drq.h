@@ -234,6 +234,7 @@ enum drq_type_t
 	drq_l_trigger_relname,	// lookup relation name for trigger
 	drq_l_grant_option,		// lookup grant option for privilege
 	drq_l_granted_roles,	// lookup granted roles
+	drq_l_grant_object,		// check grantor can grant object
 
 	drq_MAX
 };

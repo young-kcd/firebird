@@ -704,7 +704,7 @@ void OptimizerRetrieval::analyzeNavigation()
 			nodes.add(orgNode);
 
 			for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
-				tail < optimizer->opt_conjuncts.end(); tail++)
+				 tail < optimizer->opt_conjuncts.end(); tail++)
 			{
 				BoolExprNode* const boolean = tail->opt_conjunct_node;
 				fb_assert(boolean);

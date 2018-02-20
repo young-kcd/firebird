@@ -120,7 +120,7 @@ public:
 		if (stopped)
 			return 0;
 
-		if (port->port_protocol < PROTOCOL_VERSION13)
+		if (port->port_protocol < PROTOCOL_VERSION13 || port->port_type != rem_port::INET)
 			return 0;
 
 		Reference r(*port);
@@ -195,6 +195,21 @@ public:
 			return 0;
 
 		Reference r(*port);
+		loadClientKey();
+		unsigned rc = keyCallback ?
+			keyCallback->callback(dataLength, data, bufferLength, buffer) :
+			// use legacy behavior if holders to do wish to accept keys from client
+			networkCallback.callback(dataLength, data, bufferLength, buffer);
+
+		return rc;
+	}
+
+	void loadClientKey()
+	{
+		if (keyCallback)
+			return;
+
+		Reference r(*port);
 
 		for (GetPlugins<IKeyHolderPlugin> kh(IPluginManager::TYPE_KEY_HOLDER, port->getPortConfig());
 			kh.hasData(); kh.next())
@@ -215,14 +230,6 @@ public:
 					break;
 			}
 		}
-
-		unsigned rc = keyCallback ?
-			keyCallback->callback(dataLength, data, bufferLength, buffer) :
-			// use legacy behavior if holders to do wish to accept keys from client
-			networkCallback.callback(dataLength, data, bufferLength, buffer);
-
-		//stop();
-		return rc;
 	}
 
 	void wakeup(unsigned int length, const void* data)
@@ -259,6 +266,7 @@ public:
 
 	ICryptKeyCallback* getInterface()
 	{
+		cryptCallback.loadClientKey();
 		return &cryptCallback;
 	}
 
@@ -3495,7 +3503,7 @@ void rem_port::batch_exec(P_BATCH_EXEC* batch, PACKET* sendL)
 	Rtr* transaction = NULL;
 	getHandle(transaction, batch->p_batch_transaction);
 
-	AutoPtr<IBatchCompletionState, SimpleDispose<IBatchCompletionState> >
+	AutoPtr<IBatchCompletionState, SimpleDispose>
 		ics(statement->rsr_batch->execute(&status_vector, transaction->rtr_iface));
 
 	if (status_vector.getState() & IStatus::STATE_ERRORS)

@@ -883,7 +883,7 @@ void TracePluginImpl::appendParams(ITraceParams* params)
 				case dtype_dec_fixed:
 					try
 					{
-						DecimalStatus decSt(DEC_Errors);
+						DecimalStatus decSt(FB_DEC_Errors);
 						((DecimalFixed*) parameters->dsc_address)->toString(decSt, parameters->dsc_scale, paramvalue);
 					}
 					catch (const Exception& ex)
@@ -1026,7 +1026,7 @@ void TracePluginImpl::appendServiceQueryParams(size_t send_item_length,
 				break;
 
 			case isc_info_svc_get_env_lock:
-				recv_query.printf(NEWLINE "\t\t retrieve the setting of $FIREBIRD_LCK");
+				recv_query.printf(NEWLINE "\t\t retrieve the setting of $FIREBIRD_LOCK");
 				break;
 
 			case isc_info_svc_get_env_msg:

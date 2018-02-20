@@ -2136,7 +2136,7 @@ const StmtNode* DeclareVariableNode::execute(thread_db* tdbb, jrd_req* request, 
 	{
 		impure_value* variable = request->getImpure<impure_value>(impureOffset);
 		variable->vlu_desc = varDesc;
-		variable->vlu_desc.dsc_flags = 0;
+		variable->vlu_desc.clearFlags();
 
 		if (variable->vlu_desc.dsc_dtype <= dtype_varying)
 		{
@@ -3384,7 +3384,7 @@ void ExecStatementNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	// If no new features of EXECUTE STATEMENT are used, lets generate old BLR.
-	if (!dataSource && !userName && !password && !role && !useCallerPrivs && !inputs && 
+	if (!dataSource && !userName && !password && !role && !useCallerPrivs && !inputs &&
 		 traScope == EDS::traNotSet)
 	{
 		if (outputs)

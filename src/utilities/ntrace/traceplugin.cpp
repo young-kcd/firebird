@@ -84,7 +84,7 @@ Firebird::ITracePlugin* TraceFactoryImpl::trace_create(Firebird::CheckStatusWrap
 			return NULL; // Plugin is not needed, no error happened.
 		}
 
-		Firebird::AutoPtr<Firebird::ITraceLogWriter, Firebird::SimpleRelease<Firebird::ITraceLogWriter> >
+		Firebird::AutoPtr<Firebird::ITraceLogWriter, Firebird::SimpleRelease>
 			logWriter(initInfo->getLogWriter());
 
 		if (logWriter)

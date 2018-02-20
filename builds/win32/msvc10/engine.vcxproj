@@ -269,9 +269,9 @@
     <ClInclude Include="..\..\..\src\jrd\license.h" />
     <ClInclude Include="..\..\..\src\jrd\lls.h" />
     <ClInclude Include="..\..\..\src\jrd\Mapping.h" />
+    <ClInclude Include="..\..\..\src\jrd\Monitoring.h" />
     <ClInclude Include="..\..\..\src\jrd\met.h" />
     <ClInclude Include="..\..\..\src\jrd\met_proto.h" />
-    <ClInclude Include="..\..\..\src\jrd\Monitoring.h" />
     <ClInclude Include="..\..\..\src\jrd\mov_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\msg.h" />
     <ClInclude Include="..\..\..\src\jrd\msg_encode.h" />
@@ -485,6 +485,7 @@
       <AdditionalDependencies>mpr.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../../extern/icu/$(Platform)/release/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>..\defs\plugin.def</ModuleDefinitionFile>
+      <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -504,6 +505,7 @@
       <AdditionalDependencies>mpr.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../../extern/icu/$(Platform)/release/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>..\defs\plugin.def</ModuleDefinitionFile>
+      <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -524,6 +526,7 @@
       <AdditionalDependencies>mpr.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../../extern/icu/$(Platform)/$(Configuration)/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>..\defs\plugin.def</ModuleDefinitionFile>
+      <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -548,6 +551,7 @@
       <AdditionalDependencies>mpr.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../../extern/icu/$(Platform)/$(Configuration)/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>..\defs\plugin.def</ModuleDefinitionFile>
+      <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

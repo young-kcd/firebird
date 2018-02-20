@@ -1089,7 +1089,7 @@ private:
 					par.getMetadata(), par.getBuffer(), nullptr, nullptr, 0));
 
 				RefPtr<IMessageMetadata> meta(curs->getMetadata(&st));
-				AutoPtr<UCHAR, ArrayDelete<UCHAR> > buffer(FB_NEW UCHAR[meta->getMessageLength(&st)]);
+				AutoPtr<UCHAR, ArrayDelete> buffer(FB_NEW UCHAR[meta->getMessageLength(&st)]);
 				UCHAR* bits = buffer + meta->getOffset(&st, 0);
 				UserId::Privileges g, l;
 

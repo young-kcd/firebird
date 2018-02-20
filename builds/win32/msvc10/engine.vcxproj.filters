@@ -983,10 +983,10 @@
     <ClInclude Include="..\..\..\src\jrd\Mapping.h">
       <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\dsql\DsqlCursor.h">
+    <ClInclude Include="..\..\..\src\jrd\Monitoring.h">
       <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\jrd\Monitoring.h">
+    <ClInclude Include="..\..\..\src\dsql\DsqlCursor.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\extds\ValidatePassword.h">

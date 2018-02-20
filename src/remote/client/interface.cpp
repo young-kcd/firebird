@@ -371,6 +371,7 @@ private:
 	// working with blob stream buffer
 	void newBlob()
 	{
+		setBlobAlignment();
 		alignBlobBuffer(blobAlign);
 
 		fb_assert(blobStream - blobStreamBuffer <= blobBufferSize);
@@ -384,6 +385,8 @@ private:
 
 	void alignBlobBuffer(unsigned alignment, ULONG* bs = NULL)
 	{
+		fb_assert(alignment);
+
 		FB_UINT64 zeroFill = 0;
 		UCHAR* newPointer = FB_ALIGN(blobStream, alignment);
 		ULONG align = FB_ALIGN(blobStream, alignment) - blobStream;
@@ -464,6 +467,7 @@ private:
 
 	void flashBatch()
 	{
+		setBlobAlignment();
 		alignBlobBuffer(blobAlign);
 		ULONG size = blobStream - blobStreamBuffer;
 		if (size)
@@ -472,13 +476,19 @@ private:
 			blobStream = blobStreamBuffer;
 		}
 
+		if (messageStream)
+		{
+			sendMessagePacket(messageStream, messageStreamBuffer);
+			messageStream = 0;
+		}
+
 		batchActive = false;
 	}
 
 	void sendBlobPacket(unsigned size, const UCHAR* ptr);
 	void sendMessagePacket(unsigned size, const UCHAR* ptr);
 
-	Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete<UCHAR> > messageStreamBuffer, blobStreamBuffer;
+	Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete> messageStreamBuffer, blobStreamBuffer;
 	ULONG messageStream;
 	UCHAR* blobStream;
 	ULONG* sizePointer;
@@ -621,15 +631,15 @@ public:
 	// IRequest implementation
 	int release();
 	void receive(CheckStatusWrapper* status, int level, unsigned int msg_type,
-						 unsigned int length, unsigned char* message);
+						 unsigned int length, void* message);
 	void send(CheckStatusWrapper* status, int level, unsigned int msg_type,
-					  unsigned int length, const unsigned char* message);
+					  unsigned int length, const void* message);
 	void getInfo(CheckStatusWrapper* status, int level,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
 	void start(CheckStatusWrapper* status, Firebird::ITransaction* tra, int level);
 	void startAndSend(CheckStatusWrapper* status, Firebird::ITransaction* tra, int level, unsigned int msg_type,
-							  unsigned int length, const unsigned char* message);
+							  unsigned int length, const void* message);
 	void unwind(CheckStatusWrapper* status, int level);
 	void free(CheckStatusWrapper* status);
 
@@ -1866,7 +1876,7 @@ void Attachment::freeClientData(CheckStatusWrapper* status, bool force)
 			// telling the user that an unrecoverable network error occurred and that
 			// if there was any uncommitted work, its gone......  Oh well....
 			ex.stuffException(status);
-			
+
 			if (!fb_utils::isNetworkError(status->getErrors()[1]) && (!force))
 			{
 				return;
@@ -2665,7 +2675,7 @@ IBatchCompletionState* Batch::execute(CheckStatusWrapper* status, ITransaction* 
 		send_packet(port, packet);
 
 		statement->rsr_batch_size = alignedSize;
-		AutoPtr<BatchCompletionState, SimpleDispose<BatchCompletionState> >
+		AutoPtr<BatchCompletionState, SimpleDispose>
 			cs(FB_NEW BatchCompletionState(flags & (1 << IBatch::TAG_RECORD_COUNTS), 256));
 		statement->rsr_batch_cs = cs;
 		receive_packet(port, packet);
@@ -5057,7 +5067,7 @@ Firebird::IEvents* Attachment::queEvents(CheckStatusWrapper* status, Firebird::I
 
 
 void Request::receive(CheckStatusWrapper* status, int level, unsigned int msg_type,
-					  unsigned int msg_length, unsigned char* msg)
+					  unsigned int msg_length, void* msg)
 {
 /**************************************
  *
@@ -5570,7 +5580,7 @@ int Blob::seek(CheckStatusWrapper* status, int mode, int offset)
 
 
 void Request::send(CheckStatusWrapper* status, int level, unsigned int msg_type,
-				   unsigned int /*length*/, const unsigned char* msg)
+				   unsigned int /*length*/, const void* msg)
 {
 /**************************************
  *
@@ -5601,7 +5611,7 @@ void Request::send(CheckStatusWrapper* status, int level, unsigned int msg_type,
 
 		RMessage* message = request->rrq_rpt[msg_type].rrq_message;
 		// We are lying here, but the interface shows for years this param as const
-		message->msg_address = const_cast<UCHAR*>(msg);
+		message->msg_address = const_cast<unsigned char*>(static_cast<const unsigned char*>(msg));
 
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_send;
@@ -5852,7 +5862,7 @@ void Service::start(CheckStatusWrapper* status,
 
 
 void Request::startAndSend(CheckStatusWrapper* status, Firebird::ITransaction* apiTra, int level,
-						   unsigned int msg_type, unsigned int /*length*/, const unsigned char* msg)
+						   unsigned int msg_type, unsigned int /*length*/, const void* msg)
 {
 /**************************************
  *
@@ -5894,7 +5904,7 @@ void Request::startAndSend(CheckStatusWrapper* status, Firebird::ITransaction* a
 
 		REMOTE_reset_request(request, 0);
 		RMessage* message = request->rrq_rpt[msg_type].rrq_message;
-		message->msg_address = const_cast<unsigned char*>(msg);
+		message->msg_address = const_cast<unsigned char*>(static_cast<const unsigned char*>(msg));
 
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_start_send_and_receive;
@@ -7518,7 +7528,7 @@ static void mov_dsql_message(const UCHAR* from_msg,
 		// Safe const cast, we are going to move from it to anywhere.
 		from.dsc_address = const_cast<UCHAR*>(from_msg) + (IPTR) from.dsc_address;
 		to.dsc_address = to_msg + (IPTR) to.dsc_address;
-		CVT_move(&from, &to, DecimalStatus(DEC_Errors), move_error);
+		CVT_move(&from, &to, DecimalStatus(FB_DEC_Errors), move_error);
 	}
 }
 

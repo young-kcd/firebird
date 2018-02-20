@@ -905,6 +905,7 @@ static const struct {
 	{"map_overflow", 335545201},
 	{"hdr_overflow", 335545202},
 	{"vld_plugins", 335545203},
+	{"db_crypt_key", 335545204},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},
