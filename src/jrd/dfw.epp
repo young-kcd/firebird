@@ -3554,7 +3554,8 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 
 		FOR(REQUEST_HANDLE request)
 			X IN RDB$RELATIONS WITH
-				X.RDB$RELATION_NAME EQ work->dfw_name.c_str()
+				X.RDB$RELATION_NAME EQ work->dfw_name.c_str() AND
+				X.RDB$RELATION_ID NOT MISSING
 		{
 			rel_id = X.RDB$RELATION_ID;
 			if ( (relation = MET_lookup_relation_id(tdbb, rel_id, false)) )
