@@ -589,6 +589,7 @@ const USHORT PORT_lazy			= 0x0100;	// Deferred operations are allowed
 const USHORT PORT_server		= 0x0200;	// Server (not client) port
 const USHORT PORT_detached		= 0x0400;	// op_detach, op_drop_database or op_service_detach was processed
 const USHORT PORT_rdb_shutdown	= 0x0800;	// Database is shut down
+const USHORT PORT_connecting	= 0x1000;	// Aux connection waits for a channel to be activated by client
 
 // Port itself
 

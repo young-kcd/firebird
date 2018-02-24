@@ -155,14 +155,15 @@ const int NOTASOCKET = EBADF;
 
 static void SOCLOSE(SOCKET& socket)
 {
-	if (socket != INVALID_SOCKET)
+	SOCKET s = socket;
+	if (s != INVALID_SOCKET)
 	{
-#ifdef WIN_NT
-		closesocket(socket);
-#else
-		close(socket);
-#endif
 		socket = INVALID_SOCKET;
+#ifdef WIN_NT
+		closesocket(s);
+#else
+		close(s);
+#endif
 	}
 };
 
@@ -422,6 +423,7 @@ static void		alarm_handler(int);
 static rem_port*		alloc_port(rem_port*, const USHORT = 0);
 static rem_port*		aux_connect(rem_port*, PACKET*);
 static rem_port*		aux_request(rem_port*, PACKET*);
+static void				abort_aux_connection(rem_port*);
 
 #if !defined(WIN_NT)
 static bool		check_host(rem_port*);
@@ -1439,6 +1441,17 @@ static rem_port* alloc_port(rem_port* const parent, const USHORT flags)
 	return port;
 }
 
+
+static void abort_aux_connection(rem_port* port)
+{
+	if (port->port_flags & PORT_connecting)
+	{
+		shutdown(port->port_channel, 2);
+		SOCLOSE(port->port_channel);
+	}
+}
+
+
 static rem_port* aux_connect(rem_port* port, PACKET* packet)
 {
 /**************************************
@@ -1491,6 +1504,9 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 			}
 		}
 
+		if (port->port_channel == INVALID_SOCKET)
+			return NULL;
+
 		const SOCKET n = accept(port->port_channel, (struct sockaddr*) &address, &l);
 		inetErrNo = INET_ERRNO;
 
@@ -1513,7 +1529,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 	new_port->port_dummy_packet_interval = port->port_dummy_packet_interval;
 	new_port->port_dummy_timeout = new_port->port_dummy_packet_interval;
 	new_port->port_flags = port->port_flags & PORT_no_oob;
-	new_port->port_flags |= PORT_async;
+	new_port->port_flags |= (PORT_async| PORT_connecting);
 	P_RESP* response = &packet->p_resp;
 
 	// Set up new socket
@@ -1630,14 +1646,14 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 
 	setFastLoopbackOption(n);
 
-    rem_port* const new_port = alloc_port(port->port_parent, PORT_async);
+    rem_port* const new_port = alloc_port(port->port_parent,
+    	(port->port_flags & PORT_no_oob) | PORT_async | PORT_connecting);
 	port->port_async = new_port;
 	new_port->port_dummy_packet_interval = port->port_dummy_packet_interval;
 	new_port->port_dummy_timeout = new_port->port_dummy_packet_interval;
 
 	new_port->port_server_flags = port->port_server_flags;
 	new_port->port_channel = (int) n;
-	new_port->port_flags |= port->port_flags & PORT_no_oob;
 
 	P_RESP* response = &packet->p_resp;
 
@@ -1742,6 +1758,7 @@ static void disconnect(rem_port* const port)
 
 	Firebird::MutexLockGuard guard(port_mutex);
 	port->port_state = rem_port::DISCONNECTED;
+	port->port_flags &= ~PORT_connecting;
 
 	if (port->port_async)
 	{
@@ -1802,6 +1819,9 @@ static void force_close(rem_port* port)
  *	Forcebly close remote connection.
  *
  **************************************/
+
+	if (port->port_async)
+		abort_aux_connection(port->port_async);
 
 	if (port->port_state != rem_port::PENDING)
 		return;
@@ -2217,7 +2237,8 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 
 			if (!packet_receive(port, buffer, bufsize, length))
 			{
-				if (port->port_flags & PORT_disconnect) {
+				if (port->port_flags & (PORT_disconnect | PORT_connecting))
+				{
 					continue;
 				}
 				*length = 0;
@@ -2299,7 +2320,7 @@ static void select_port(rem_port* main_port, Select* selct, RemPortPtr& port)
 		switch (result)
 		{
 		case Select::SEL_BAD:
-			if (port->port_state == rem_port::BROKEN)
+			if (port->port_state == rem_port::BROKEN || (port->port_flags & PORT_connecting))
 				continue;
 			return;
 
