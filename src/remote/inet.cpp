@@ -1529,7 +1529,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 	new_port->port_dummy_packet_interval = port->port_dummy_packet_interval;
 	new_port->port_dummy_timeout = new_port->port_dummy_packet_interval;
 	new_port->port_flags = port->port_flags & PORT_no_oob;
-	new_port->port_flags |= (PORT_async| PORT_connecting);
+	new_port->port_flags |= (PORT_async | PORT_connecting);
 	P_RESP* response = &packet->p_resp;
 
 	// Set up new socket
