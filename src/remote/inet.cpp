@@ -2322,6 +2322,8 @@ static void select_port(rem_port* main_port, Select* selct, RemPortPtr& port)
 		case Select::SEL_BAD:
 			if (port->port_state == rem_port::BROKEN || (port->port_flags & PORT_connecting))
 				continue;
+			if (port->port_flags & PORT_async)
+				continue;
 			return;
 
 		case Select::SEL_DISCONNECTED:
