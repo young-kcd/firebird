@@ -2972,6 +2972,15 @@ static bool get_header( WIN* window, SSHORT line, record_param* rpb)
 		rpb->rpb_b_line = header->rhdf_b_line;
 		rpb->rpb_transaction_nr = header->rhdf_transaction;
 		rpb->rpb_format_number = header->rhdf_format;
+
+		if (rpb->rpb_relation->rel_id == 0 /*i.e.RDB$PAGES*/ && rpb->rpb_transaction_nr != 0)
+		{
+			// RDB$PAGES relation should be modified only by system transaction
+			thread_db* tdbb = JRD_get_thread_data();
+			CCH_unwind(tdbb, false);
+			ERR_post(Arg::Gds(isc_bad_db_format) << Arg::Str(tdbb->getAttachment()->att_filename) <<
+				Arg::Gds(isc_random) << "RDB$PAGES written by non-system transaction, DB appears damaged");
+		}
 	}
 
 	if (rpb->rpb_flags & rpb_incomplete)
