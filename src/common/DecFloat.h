@@ -132,6 +132,8 @@ public:
 	UCHAR* getBytes();
 	int compare(DecimalStatus decSt, Decimal128Base tgt) const;
 
+	void setScale(DecimalStatus decSt, int scale);
+
 	bool isInf() const;
 	bool isNan() const;
 	int sign() const;
@@ -146,8 +148,6 @@ public:
 #endif
 
 private:
-	void setScale(DecimalStatus decSt, int scale);
-
 	decQuad dec;
 };
 

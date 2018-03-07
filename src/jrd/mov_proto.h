@@ -50,6 +50,7 @@ int		MOV_make_string2(Jrd::thread_db*, const dsc*, USHORT, UCHAR**, Jrd::MoveBuf
 Firebird::string MOV_make_string2(Jrd::thread_db* tdbb, const dsc* desc, USHORT ttype,
 	bool limit = true);
 void	MOV_move(Jrd::thread_db*, /*const*/ dsc*, dsc*);
+void	MOV_move_ext(Jrd::thread_db* tdbb, /*const*/ dsc* from, dsc* to, bool toExtern);
 Firebird::Decimal64 MOV_get_dec64(Jrd::thread_db*, const dsc*);
 Firebird::Decimal128 MOV_get_dec128(Jrd::thread_db*, const dsc*);
 Firebird::DecimalFixed MOV_get_dec_fixed(Jrd::thread_db*, const dsc*, SSHORT);
