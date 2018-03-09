@@ -431,17 +431,17 @@ void MOV_move_ext(Jrd::thread_db* tdbb, /*const*/ dsc* from, dsc* to, bool toExt
 
 	MOV_move(tdbb, from, to);
 
-	switch(to->dsc_dtype)
+	switch (to->dsc_dtype)
 	{
 	case dtype_dec_fixed:
 		if (toExtern)
 		{
-			((Decimal128*)(to->dsc_address))->setScale(tdbb->getAttachment()->att_dec_status,
+			((Decimal128*) to->dsc_address)->setScale(tdbb->getAttachment()->att_dec_status,
 				to->dsc_scale);
 		}
 		else
 		{
-			((DecimalFixed*)(to->dsc_address))->exactInt(tdbb->getAttachment()->att_dec_status,
+			((DecimalFixed*) to->dsc_address)->exactInt(tdbb->getAttachment()->att_dec_status,
 				to->dsc_scale);
 		}
 		break;

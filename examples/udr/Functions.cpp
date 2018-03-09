@@ -186,14 +186,14 @@ FB_UDR_BEGIN_FUNCTION(mult)
 			unsigned char bcd[IDecFloat34::BCD_SIZE];
 			int sign, exp;
 
-			void load(void *from, IDecFloat34* df34)
+			void load(void* from, IDecFloat34* df34)
 			{
-				df34->toBcd((FB_DEC34*)from, &sign, bcd, &exp);
+				df34->toBcd((FB_DEC34*) from, &sign, bcd, &exp);
 			}
 
-			void store(void *to, IDecFloat34* df34) const
+			void store(void* to, IDecFloat34* df34) const
 			{
-				df34->fromBcd(sign, bcd, exp, (FB_DEC34*)to);
+				df34->fromBcd(sign, bcd, exp, (FB_DEC34*) to);
 			}
 		};
 
@@ -204,8 +204,10 @@ FB_UDR_BEGIN_FUNCTION(mult)
 		// multiply (trivial example - a lot of features are missing)
 		rc.sign = a.sign ^ b.sign;
 		rc.exp = a.exp + b.exp;
+
 		unsigned char buf[2 * IDecFloat34::BCD_SIZE + 1];
 		memset(buf, 0, sizeof(buf));
+
 		for (unsigned i = IDecFloat34::BCD_SIZE; i--;)
 		{
 			for (unsigned j = IDecFloat34::BCD_SIZE; j--;)
@@ -215,12 +217,15 @@ FB_UDR_BEGIN_FUNCTION(mult)
 				buf[i + j] += v / 10;
 			}
 		}
+
 		unsigned offset = 0;
+
 		for (; offset < IDecFloat34::BCD_SIZE; ++offset)
 		{
 			if (buf[offset])
 				break;
 		}
+
 		memcpy(rc.bcd, buf + offset, sizeof rc.bcd);
 		rc.exp += (IDecFloat34::BCD_SIZE - offset);
 
