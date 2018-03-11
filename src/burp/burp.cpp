@@ -1316,15 +1316,17 @@ int gbak(Firebird::UtilSvc* uSvc)
 	}
 
 	// Detach from database to release system resources
-	if (tdgbl->db_handle != 0)
+	if (tdgbl->db_handle)
 	{
 		close_out_transaction(action, &tdgbl->tr_handle);
 		close_out_transaction(action, &tdgbl->global_trans);
+
 		tdgbl->db_handle->detach(&tdgbl->status_vector);
+
 		if (tdgbl->status_vector->getState() & Firebird::IStatus::STATE_ERRORS)
-		{
 			BURP_print_status(true, &tdgbl->status_vector);
-		}
+		else
+			tdgbl->db_handle = NULL;
 	}
 
 	// Close the status output file
@@ -1822,15 +1824,20 @@ static gbak_action open_files(const TEXT* file1,
 	{
 		tdgbl->db_handle = Firebird::DispatcherPtr()->attachDatabase(status_vector, file1,
 			dpb.getBufferLength(), dpb.getBuffer());
-		if (!status_vector->hasData())
+
+		if (!(status_vector->getState() & Firebird::IStatus::STATE_ERRORS))
 		{
 			if (sw_replace != IN_SW_BURP_B)
 			{
 				// msg 13 REPLACE specified, but the first file %s is a database
 				BURP_error(13, true, file1);
 				tdgbl->db_handle->detach(status_vector);
-				if (status_vector->hasData())
+
+				if (status_vector->getState() & Firebird::IStatus::STATE_ERRORS)
 					BURP_print_status(true, status_vector);
+				else
+					tdgbl->db_handle = NULL;
+
 				return QUIT;
 			}
 			if (tdgbl->gbl_sw_version)
@@ -1968,8 +1975,11 @@ static gbak_action open_files(const TEXT* file1,
 		else
 		{
 			tdgbl->db_handle->detach(status_vector);
-			if (status_vector->hasData())
+
+			if (status_vector->getState() & Firebird::IStatus::STATE_ERRORS)
 				BURP_print_status(true, status_vector);
+			else
+				tdgbl->db_handle = NULL;
 		}
 
 		return flag;
@@ -2144,29 +2154,40 @@ static gbak_action open_files(const TEXT* file1,
 	{
 		tdgbl->db_handle = Firebird::DispatcherPtr()->attachDatabase(status_vector, *file2,
 			dpb.getBufferLength(), dpb.getBuffer());
-		if (status_vector->isEmpty())
+
+		if (!(status_vector->getState() & Firebird::IStatus::STATE_ERRORS))
 		{
 			if (sw_replace == IN_SW_BURP_C)
 			{
 				tdgbl->db_handle->detach(status_vector);
-				if (status_vector->hasData())
+
+				if (status_vector->getState() & Firebird::IStatus::STATE_ERRORS)
 					BURP_print_status(true, status_vector);
+				else
+					tdgbl->db_handle = NULL;
+
 				BURP_error(14, true, *file2);
 				// msg 14 database %s already exists.  To replace it, use the -R switch
 			}
 			else
 			{
 				tdgbl->db_handle->dropDatabase(status_vector);
-				if (status_vector->hasData())
+
+				if (status_vector->getState() & Firebird::IStatus::STATE_ERRORS)
 				{
 					Firebird::FbLocalStatus status2;
 					tdgbl->db_handle->detach(&status2);
-					if (!status2.isSuccess())
+
+					if (status2->getState() & Firebird::IStatus::STATE_ERRORS)
 						BURP_print_status(true, &status2);
+					else
+						tdgbl->db_handle = NULL;
 
 					BURP_error(233, true, *file2);
 					// msg 233 Cannot drop database %s, might be in use
 				}
+				else
+					tdgbl->db_handle = NULL;
 			}
 		}
 		else if (sw_replace == IN_SW_BURP_R && status_vector->getErrors()[1] == isc_adm_task_denied)
