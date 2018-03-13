@@ -386,6 +386,12 @@ static void shutdownBeforeUnload()
 	JProvider::getInstance()->shutdown(&statusWrapper, 0, fb_shutrsn_exit_called);
 };
 
+static void threadDetach()
+{
+	ThreadSync* thd = ThreadSync::findThread();
+	delete thd;
+}
+
 class EngineFactory : public AutoIface<IPluginFactoryImpl<EngineFactory, CheckStatusWrapper> >
 {
 public:
@@ -415,9 +421,12 @@ static Static<EngineFactory> engineFactory;
 
 void registerEngine(IPluginManager* iPlugin)
 {
-	getUnloadDetector()->setCleanup(shutdownBeforeUnload);
+	UnloadDetectorHelper* module = getUnloadDetector();
+	module->setCleanup(shutdownBeforeUnload);
+	module->setThreadDetach(threadDetach);
+
 	iPlugin->registerPluginFactory(IPluginManager::TYPE_PROVIDER, CURRENT_ENGINE, &engineFactory);
-	getUnloadDetector()->registerMe();
+	module->registerMe();
 }
 
 } // namespace Jrd

@@ -731,6 +731,7 @@ namespace Firebird
 		struct VTable : public IVersioned::VTable
 		{
 			void (CLOOP_CARG *doClean)(IPluginModule* self) throw();
+			void (CLOOP_CARG *threadDetach)(IPluginModule* self) throw();
 		};
 
 	protected:
@@ -744,11 +745,20 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static const unsigned VERSION = 3;
 
 		void doClean()
 		{
 			static_cast<VTable*>(this->cloopVTable)->doClean(this);
+		}
+
+		void threadDetach()
+		{
+			if (cloopVTable->version < 3)
+			{
+				return;
+			}
+			static_cast<VTable*>(this->cloopVTable)->threadDetach(this);
 		}
 	};
 
@@ -6463,6 +6473,7 @@ namespace Firebird
 				{
 					this->version = Base::VERSION;
 					this->doClean = &Name::cloopdoCleanDispatcher;
+					this->threadDetach = &Name::cloopthreadDetachDispatcher;
 				}
 			} vTable;
 
@@ -6474,6 +6485,18 @@ namespace Firebird
 			try
 			{
 				static_cast<Name*>(self)->Name::doClean();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopthreadDetachDispatcher(IPluginModule* self) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::threadDetach();
 			}
 			catch (...)
 			{
@@ -6496,6 +6519,7 @@ namespace Firebird
 		}
 
 		virtual void doClean() = 0;
+		virtual void threadDetach() = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
