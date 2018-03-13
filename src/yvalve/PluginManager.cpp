@@ -389,6 +389,14 @@ namespace
 			}
 		}
 
+		void threadDetach()
+		{
+			if (cleanup)
+				cleanup->threadDetach();
+			if (next)
+				next->threadDetach();
+		}
+
 	private:
 		~PluginModule()
 		{
@@ -492,8 +500,6 @@ namespace
 
 		IPluginBase* factory(IFirebirdConf *iFirebirdConf);
 
-		~ConfiguredPlugin();
-
 		const char* getPlugName()
 		{
 			return plugName.c_str();
@@ -519,6 +525,8 @@ namespace
 		int release();
 
 	private:
+		~ConfiguredPlugin();
+
 		RefPtr<PluginModule> module;
 		unsigned int regPlugin;
 		RefPtr<ConfigFile> pluginLoaderConfig;
@@ -682,6 +690,8 @@ namespace
 
 	ConfiguredPlugin::~ConfiguredPlugin()
 	{
+		MutexLockGuard g(plugins->mutex, FB_FUNCTION);
+
 		if (!destroyingPluginsMap)
 		{
 			plugins->remove(MapKey(module->getPlugin(regPlugin).type, plugName));
@@ -718,8 +728,6 @@ namespace
 
 	int ConfiguredPlugin::release()
 	{
-		MutexLockGuard g(plugins->mutex, FB_FUNCTION);
-
 		int x = --refCounter;
 
 #ifdef DEBUG_PLUGINS
@@ -1171,6 +1179,13 @@ void PluginManager::waitForType(unsigned int typeThatMustGoAway)
 		semPtr->enter();
 	}
 }
+
+void PluginManager::threadDetach()
+{
+	MutexLockGuard g(plugins->mutex, FB_FUNCTION);
+	modules->threadDetach();
+}
+
 
 }	// namespace Firebird
 

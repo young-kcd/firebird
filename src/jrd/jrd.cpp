@@ -426,9 +426,12 @@ static Static<EngineFactory> engineFactory;
 
 void registerEngine(IPluginManager* iPlugin)
 {
-	getUnloadDetector()->setCleanup(shutdownBeforeUnload);
+	UnloadDetectorHelper* module = getUnloadDetector();
+	module->setCleanup(shutdownBeforeUnload);
+	module->setThreadDetach(threadDetach);
+
 	iPlugin->registerPluginFactory(IPluginManager::TYPE_PROVIDER, CURRENT_ENGINE, &engineFactory);
-	getUnloadDetector()->registerMe();
+	module->registerMe();
 }
 
 } // namespace Jrd
