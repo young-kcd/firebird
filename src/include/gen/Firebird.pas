@@ -198,6 +198,7 @@ type
 	IPluginConfig_setReleaseDelayPtr = procedure(this: IPluginConfig; status: IStatus; microSeconds: QWord); cdecl;
 	IPluginFactory_createPluginPtr = function(this: IPluginFactory; status: IStatus; factoryParameter: IPluginConfig): IPluginBase; cdecl;
 	IPluginModule_doCleanPtr = procedure(this: IPluginModule); cdecl;
+	IPluginModule_threadDetachPtr = procedure(this: IPluginModule); cdecl;
 	IPluginManager_registerPluginFactoryPtr = procedure(this: IPluginManager; pluginType: Cardinal; defaultName: PAnsiChar; factory: IPluginFactory); cdecl;
 	IPluginManager_registerModulePtr = procedure(this: IPluginManager; cleanup: IPluginModule); cdecl;
 	IPluginManager_unregisterModulePtr = procedure(this: IPluginManager; cleanup: IPluginModule); cdecl;
@@ -870,18 +871,21 @@ type
 
 	PluginModuleVTable = class(VersionedVTable)
 		doClean: IPluginModule_doCleanPtr;
+		threadDetach: IPluginModule_threadDetachPtr;
 	end;
 
 	IPluginModule = class(IVersioned)
-		const VERSION = 1;
+		const VERSION = 2;
 
 		procedure doClean();
+		procedure threadDetach();
 	end;
 
 	IPluginModuleImpl = class(IPluginModule)
 		constructor create;
 
 		procedure doClean(); virtual; abstract;
+		procedure threadDetach(); virtual; abstract;
 	end;
 
 	PluginManagerVTable = class(VersionedVTable)
@@ -4992,6 +4996,11 @@ begin
 	PluginModuleVTable(vTable).doClean(Self);
 end;
 
+procedure IPluginModule.threadDetach();
+begin
+	PluginModuleVTable(vTable).threadDetach(Self);
+end;
+
 procedure IPluginManager.registerPluginFactory(pluginType: Cardinal; defaultName: PAnsiChar; factory: IPluginFactory);
 begin
 	PluginManagerVTable(vTable).registerPluginFactory(Self, pluginType, defaultName, factory);
@@ -7581,6 +7590,15 @@ procedure IPluginModuleImpl_doCleanDispatcher(this: IPluginModule); cdecl;
 begin
 	try
 		IPluginModuleImpl(this).doClean();
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+procedure IPluginModuleImpl_threadDetachDispatcher(this: IPluginModule); cdecl;
+begin
+	try
+		IPluginModuleImpl(this).threadDetach();
 	except
 		on e: Exception do FbException.catchException(nil, e);
 	end
@@ -12408,8 +12426,9 @@ initialization
 	IPluginFactoryImpl_vTable.createPlugin := @IPluginFactoryImpl_createPluginDispatcher;
 
 	IPluginModuleImpl_vTable := PluginModuleVTable.create;
-	IPluginModuleImpl_vTable.version := 1;
+	IPluginModuleImpl_vTable.version := 2;
 	IPluginModuleImpl_vTable.doClean := @IPluginModuleImpl_doCleanDispatcher;
+	IPluginModuleImpl_vTable.threadDetach := @IPluginModuleImpl_threadDetachDispatcher;
 
 	IPluginManagerImpl_vTable := PluginManagerVTable.create;
 	IPluginManagerImpl_vTable.version := 6;
