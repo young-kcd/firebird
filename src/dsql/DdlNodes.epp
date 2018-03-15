@@ -1792,6 +1792,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 				FUN.RDB$DETERMINISTIC_FLAG.NULL = FALSE;
 				FUN.RDB$DETERMINISTIC_FLAG = deterministic ? TRUE : FALSE;
+				FUN.RDB$RETURN_ARGUMENT = 0;
 
 				if (ssDefiner.specified)
 				{
