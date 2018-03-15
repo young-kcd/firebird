@@ -1381,11 +1381,6 @@ namespace {
 
 rem_port::~rem_port()
 {
-	if (port_events_shutdown)
-	{
-		port_events_shutdown(this);
-	}
-
 	delete port_srv_auth;
 	delete port_srv_auth_block;
 	delete port_version;
