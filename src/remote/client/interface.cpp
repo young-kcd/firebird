@@ -1859,7 +1859,7 @@ void Attachment::freeClientData(CheckStatusWrapper* status, bool force)
 	{
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+		RemotePortGuard portGuard(port, FB_FUNCTION);
 
 		try
 		{
@@ -1954,7 +1954,7 @@ void Attachment::dropDatabase(CheckStatusWrapper* status)
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+		RemotePortGuard portGuard(port, FB_FUNCTION);
 
 		try
 		{
@@ -4974,15 +4974,6 @@ void Attachment::putSlice(CheckStatusWrapper* status, ITransaction* apiTra, ISC_
 }
 
 
-namespace {
-	void portEventsShutdown(rem_port* port)
-	{
-		if (port->port_events_thread)
-			Thread::waitForCompletion(port->port_events_thread);
-	}
-}
-
-
 Firebird::IEvents* Attachment::queEvents(CheckStatusWrapper* status, Firebird::IEventCallback* callback,
 									 unsigned int length, const unsigned char* events)
 {
@@ -5024,7 +5015,6 @@ Firebird::IEvents* Attachment::queEvents(CheckStatusWrapper* status, Firebird::I
 
 			Thread::start(event_thread, port->port_async, THREAD_high,
 						  &port->port_async->port_events_thread);
-			port->port_async->port_events_shutdown = portEventsShutdown;
 
 			port->port_async->port_context = rdb;
 		}
@@ -5754,7 +5744,7 @@ void Service::freeClientData(CheckStatusWrapper* status, bool force)
 
 		CHECK_HANDLE(rdb, isc_bad_svc_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+		RemotePortGuard portGuard(port, FB_FUNCTION);
 
 		try
 		{

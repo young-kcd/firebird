@@ -41,6 +41,7 @@
 #include "../common/StatusHolder.h"
 #include "../common/classes/RefCounted.h"
 #include "../common/classes/GetPlugins.h"
+#include "../common/classes/RefMutex.h"
 
 #include "firebird/Interface.h"
 
@@ -915,6 +916,9 @@ const USHORT PORT_connecting	= 0x0400;	// Aux connection waits for a channel to 
 const USHORT PORT_z_data		= 0x0800;	// Zlib incoming buffer has data left after decompression
 const USHORT PORT_compressed	= 0x1000;	// Compress outgoing stream (does not affect incoming)
 
+// forward decl
+class RemotePortGuard;
+
 // Port itself
 
 typedef rem_port* (*t_port_connect)(rem_port*, PACKET*);
@@ -973,7 +977,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	struct linger	port_linger;		// linger value as defined by SO_LINGER
 	Rdb*			port_context;
 	Thread::Handle	port_events_thread;	// handle of thread, handling incoming events
-	void			(*port_events_shutdown)(rem_port*);	// hack - avoid changing API at beta stage
+	RemotePortGuard* port_thread_guard;	// will close port_events_thread in safe way
 #ifdef WIN_NT
 	HANDLE			port_pipe;			// port pipe handle
 	HANDLE			port_event;			// event associated with a port
@@ -1040,7 +1044,7 @@ public:
 		port_server(0), port_server_flags(0), port_protocol(0), port_buff_size(rpt / 2),
 		port_flags(0), port_connect_timeout(0), port_dummy_packet_interval(0),
 		port_dummy_timeout(0), port_handle(INVALID_SOCKET), port_channel(INVALID_SOCKET), port_context(0),
-		port_events_thread(0), port_events_shutdown(0),
+		port_events_thread(0), port_thread_guard(0),
 #ifdef WIN_NT
 		port_pipe(INVALID_HANDLE_VALUE), port_event(INVALID_HANDLE_VALUE),
 #endif
@@ -1268,6 +1272,84 @@ public:
 
 private:
 	bool tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptKey);
+};
+
+
+// Port guard is needed to close events delivery thread in safe way
+class RemotePortGuard
+{
+private:
+	class WaitThread
+	{
+	public:
+		WaitThread(rem_port* async)
+			: asyncPort(async),
+			  waitFlag(false)
+		{ }
+
+		~WaitThread()
+		{
+			if (waitFlag)
+			{
+				//printf("waitForCompletion %p\n", waitHandle);
+				Thread::waitForCompletion(waitHandle);
+				fb_assert(asyncPort);
+				if (asyncPort)
+				{
+				//	printf(" release asyncPort %p\n", asyncPort);
+					asyncPort->release();
+				}
+				//printf("  done\n");
+			}
+			else if (asyncPort)
+				asyncPort->port_thread_guard = nullptr;
+		}
+
+		rem_port* asyncPort;
+		Thread::Handle waitHandle;
+		bool waitFlag;
+	};
+
+public:
+	RemotePortGuard(rem_port* port, const char* f)
+		: wThr(port->port_async),
+		  guard(*port->port_sync, f)
+	{
+		if (wThr.asyncPort)
+			wThr.asyncPort->port_thread_guard = this;
+	}
+
+	void setWait(Thread::Handle& handle)
+	{
+		wThr.waitHandle = handle;
+		wThr.waitFlag = true;
+		fb_assert(wThr.asyncPort);
+		wThr.asyncPort->port_thread_guard = nullptr;
+	}
+
+/*	~RemotePortGuard()
+	{
+		if (waitFlag)
+		{
+			printf("waitForCompletion %p\n", waitHandle);
+			Thread::waitForCompletion(waitHandle);
+		}
+
+		if (asyncPort)
+		{
+			if (asyncPort->port_thread_guard)
+				asyncPort->port_thread_guard = nullptr;
+			else
+			{
+				asyncPort->release();
+				printf("release asyncPort %p\n", asyncPort);
+			}
+		}
+	}
+*/
+private:
+	WaitThread wThr;
+	Firebird::RefMutexGuard guard;
 };
 
 

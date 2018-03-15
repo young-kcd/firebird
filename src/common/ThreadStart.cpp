@@ -208,6 +208,11 @@ ThreadId Thread::getId()
 #endif
 }
 
+bool Thread::isCurrent(Handle& thread)
+{
+	return pthread_self() == thread;
+}
+
 void Thread::sleep(unsigned milliseconds)
 {
 #if defined(HAVE_NANOSLEEP)
@@ -340,6 +345,11 @@ void Thread::kill(Handle& handle)
 ThreadId Thread::getId()
 {
 	return GetCurrentThreadId();
+}
+
+bool Thread::isCurrent(Handle& thread)
+{
+	return GetCurrentThreadId() == GetThreadId(thread);
 }
 
 void Thread::sleep(unsigned milliseconds)

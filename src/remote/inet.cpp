@@ -1695,7 +1695,10 @@ static void disconnect(rem_port* const port)
 		SOCLOSE(port->port_channel);
 	}
 
-	port->release();
+	if (port->port_thread_guard && port->port_events_thread && !Thread::isCurrent(port->port_events_thread))
+		port->port_thread_guard->setWait(port->port_events_thread);
+	else
+		port->release();
 
 #ifdef DEBUG
 	if (INET_trace & TRACE_summary)
