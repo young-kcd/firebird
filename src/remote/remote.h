@@ -1291,15 +1291,10 @@ private:
 		{
 			if (waitFlag)
 			{
-				//printf("waitForCompletion %p\n", waitHandle);
 				Thread::waitForCompletion(waitHandle);
 				fb_assert(asyncPort);
 				if (asyncPort)
-				{
-				//	printf(" release asyncPort %p\n", asyncPort);
 					asyncPort->release();
-				}
-				//printf("  done\n");
 			}
 			else if (asyncPort)
 				asyncPort->port_thread_guard = nullptr;
@@ -1327,26 +1322,6 @@ public:
 		wThr.asyncPort->port_thread_guard = nullptr;
 	}
 
-/*	~RemotePortGuard()
-	{
-		if (waitFlag)
-		{
-			printf("waitForCompletion %p\n", waitHandle);
-			Thread::waitForCompletion(waitHandle);
-		}
-
-		if (asyncPort)
-		{
-			if (asyncPort->port_thread_guard)
-				asyncPort->port_thread_guard = nullptr;
-			else
-			{
-				asyncPort->release();
-				printf("release asyncPort %p\n", asyncPort);
-			}
-		}
-	}
-*/
 private:
 	WaitThread wThr;
 	Firebird::RefMutexGuard guard;
