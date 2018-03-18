@@ -228,7 +228,7 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	  att_ext_parent(NULL),
 	  att_ext_call_depth(0),
 	  att_trace_manager(FB_NEW_POOL(*att_pool) TraceManager(this)),
-	  att_original_timezone(TimeZoneUtil::getCurrent()),
+	  att_original_timezone(TimeZoneUtil::getSystemTimeZone()),
 	  att_current_timezone(att_original_timezone),
 	  att_utility(UTIL_NONE),
 	  att_procedures(*pool),
