@@ -209,7 +209,7 @@ ThreadId Thread::getId()
 #endif
 }
 
-bool Thread::isCurrent(const ThreadId handle threadId)
+bool Thread::isCurrent(const ThreadId threadId)
 {
 	return getId() == threadId;
 }
