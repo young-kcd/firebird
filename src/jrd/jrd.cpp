@@ -8028,7 +8028,7 @@ void JRD_shutdown_attachment(Attachment* attachment)
 		attachment->getStable()->addRef();
 		queue->add(attachment->getStable());
 
-		Thread::start(attachmentShutdownThread, queue, 0);
+		Thread::start(attachmentShutdownThread, queue, THREAD_high);
 	}
 	catch (const Exception&)
 	{} // no-op
@@ -8073,7 +8073,7 @@ void JRD_shutdown_attachments(Database* dbb)
 		}
 
 		if (queue.hasData())
-			Thread::start(attachmentShutdownThread, queue.release(), 0);
+			Thread::start(attachmentShutdownThread, queue.release(), THREAD_high);
 	}
 	catch (const Exception&)
 	{} // no-op
