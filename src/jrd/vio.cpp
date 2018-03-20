@@ -724,6 +724,9 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 	rpb->rpb_runtime_flags &= ~RPB_UNDO_FLAGS;
 	int forceBack = 0;
 
+	if (rpb->rpb_stream_flags & RPB_s_unstable)
+		noundo = true;
+
 	if (state == tra_us && !noundo && !(transaction->tra_flags & TRA_system))
 	{
 		switch (get_undo_data(tdbb, transaction, rpb, pool))

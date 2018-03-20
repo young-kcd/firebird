@@ -1241,9 +1241,13 @@ const StmtNode* CursorStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeSt
 
 static RegisterNode<DeclareCursorNode> regDeclareCursorNode(blr_dcl_cursor);
 
-DmlNode* DeclareCursorNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
+DmlNode* DeclareCursorNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	DeclareCursorNode* node = FB_NEW_POOL(pool) DeclareCursorNode(pool);
+
+	fb_assert(blrOp == blr_dcl_cursor);
+	if (blrOp == blr_dcl_cursor)
+		node->dsqlCursorType = CUR_TYPE_EXPLICIT;
 
 	node->cursorNumber = csb->csb_blr_reader.getWord();
 	node->rse = PAR_rse(tdbb, csb);
@@ -1349,11 +1353,14 @@ DeclareCursorNode* DeclareCursorNode::pass2(thread_db* tdbb, CompilerScratch* cs
 
 	// Activate cursor streams to allow index usage for <cursor>.<field> references, see CORE-4675.
 	// It's also useful for correlated sub-queries in the select list, see CORE-4379.
+	// Mark cursor streams as unstable, see CORE-5773.
 
 	for (StreamList::const_iterator i = cursorStreams.begin(); i != cursorStreams.end(); ++i)
 	{
 		csb->csb_rpt[*i].csb_cursor_number = cursorNumber;
 		csb->csb_rpt[*i].activate();
+		if (dsqlCursorType == CUR_TYPE_EXPLICIT)
+			csb->csb_rpt[*i].csb_flags |= csb_unstable;
 	}
 
 	return this;
