@@ -896,7 +896,7 @@ Data source : @4', NULL, NULL)
 ('login_error', NULL, 'server.cpp', NULL, 0, 786, NULL, 'Error occurred during login, please check server firebird.log for details', NULL, NULL);
 ('already_opened', 'lockDatabaseFile', 'unix.cpp', NULL, 0, 787, NULL, 'Database already opened with engine instance, incompatible with current', NULL, NULL);
 ('bad_crypt_key', NULL, 'CryptoManager.cpp', NULL, 0, 788, NULL, 'Invalid crypt key @1', NULL, NULL);
-('encrypt_error', NULL, 'CryptoManager.cpp', NULL, 0, 789, NULL, 'Page requires encyption but crypt plugin is missing', NULL, NULL);
+('encrypt_error', NULL, 'CryptoManager.cpp', NULL, 0, 789, NULL, 'Page requires encryption but crypt plugin is missing', NULL, NULL);
 ('max_idx_depth', NULL, 'btr.cpp', NULL, 0, 790, NULL, 'Maximum index depth (@1 levels) is reached', NULL, NULL);
 ('wrong_prvlg', 'SCL_convert_privilege', 'scl.epp', NULL, 0, 791, NULL, 'System privilege @1 does not exist', NULL, NULL);
 ('miss_prvlg', 'validateAccess', 'jrd.cpp', NULL, 0, 792, NULL, 'System privilege @1 is missing', NULL, NULL);
