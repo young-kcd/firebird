@@ -813,7 +813,7 @@ Data source : @4"},		/* eds_statement */
 	{335545106, "Error occurred during login, please check server firebird.log for details"},		/* login_error */
 	{335545107, "Database already opened with engine instance, incompatible with current"},		/* already_opened */
 	{335545108, "Invalid crypt key @1"},		/* bad_crypt_key */
-	{335545109, "Page requires encyption but crypt plugin is missing"},		/* encrypt_error */
+	{335545109, "Page requires encryption but crypt plugin is missing"},		/* encrypt_error */
 	{335545110, "Maximum index depth (@1 levels) is reached"},		/* max_idx_depth */
 	{335545111, "System privilege @1 does not exist"},		/* wrong_prvlg */
 	{335545112, "System privilege @1 is missing"},		/* miss_prvlg */
