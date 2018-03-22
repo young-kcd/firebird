@@ -442,7 +442,7 @@ void Provider::releaseConnection(thread_db* tdbb, Connection& conn, bool inPool)
 			m_connections.add(AttToConn(NULL, &conn));
 	}
 
-	if (!inPool || !connPool)
+	if (!inPool || !connPool || !conn.isConnected())
 	{
 		if (connPool)
 			connPool->delConnection(tdbb, &conn, false);
@@ -877,11 +877,18 @@ void ConnectionsPool::putConnection(thread_db* tdbb, Connection* conn)
 		if (!verifyPool())
 		{
 			string str;
-			printPool(str);
 			str.printf("Before put Item 0x%08X into pool\n", item);
+			printPool(str);
 			gds__log("Procces ID %d: connections pool is corrupted\n%s", getpid(), str.c_str());
 		}
 #endif
+
+		if (item->m_lastUsed)
+		{
+			// Item was already put into idle list 
+			fb_assert(item->m_connPool == this);
+			return;
+		}
 
 		if (m_allCount > m_maxCount)
 		{
@@ -893,6 +900,7 @@ void ConnectionsPool::putConnection(thread_db* tdbb, Connection* conn)
 				str.printf("Item 0x%08X to put into pool is oldest", item);
 				gds__log("Procces ID %d: %s", getpid(), str.c_str());
 #endif
+				m_allCount++;
 				oldest = removeOldest();
 			}
 			if (oldest)
@@ -937,8 +945,8 @@ void ConnectionsPool::putConnection(thread_db* tdbb, Connection* conn)
 		if (!verifyPool())
 		{
 			string str;
-			printPool(str);
 			str.printf("After put Item 0x%08X into pool\n", item);
+			printPool(str);
 			gds__log("Procces ID %d: connections pool is corrupted\n%s", getpid(), str.c_str());
 		}
 #endif
@@ -1589,6 +1597,7 @@ void Transaction::detachFromJrdTran()
 		return;
 
 	Transaction** tran_ptr = &m_jrdTran->tra_ext_common;
+	m_jrdTran = NULL;
 	for (; *tran_ptr; tran_ptr = &(*tran_ptr)->m_nextTran)
 	{
 		if (*tran_ptr == this)
