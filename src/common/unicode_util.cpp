@@ -999,7 +999,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const string& icuVersion, const string& c
 		icu->ucModule = formatAndLoad(ucTemplate, majorVersion, minorVersion);
 		if (!icu->ucModule)
 		{
-			gds__log("failed to load UC icu module version %s", configVersion);
+			gds__log("failed to load UC icu module version %s", configVersion.c_str());
 			delete icu;
 			continue;
 		}
@@ -1007,7 +1007,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const string& icuVersion, const string& c
 		icu->inModule = formatAndLoad(inTemplate, majorVersion, minorVersion);
 		if (!icu->inModule)
 		{
-			gds__log("failed to load IN icu module version %s", configVersion);
+			gds__log("failed to load IN icu module version %s", configVersion.c_str());
 			delete icu;
 			continue;
 		}
