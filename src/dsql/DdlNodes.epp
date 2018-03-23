@@ -848,6 +848,12 @@ static void updateRdbFields(const TypeClause* type,
 			fieldSubTypeNull = FALSE;
 			fieldSubType = type->subType;
 		}
+
+		if (DTYPE_IS_DECFLOAT(type->dtype))
+		{
+			fieldPrecisionNull = FALSE;
+			fieldPrecision = type->precision;
+		}
 	}
 
 	if (type->dtype == dtype_varying)
