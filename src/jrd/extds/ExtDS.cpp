@@ -1074,15 +1074,19 @@ static TokenType getToken(const char** begin, const char* end)
 	case '-':
 		if (p < end && *p == '-')
 		{
-			while (p < end)
+			while (++p < end)
 			{
-				if (*p++ == '\n')
+				if (*p == '\r')
 				{
-					p--;
-					ret = ttComment;
+					p++;
+					if (p < end && *p == '\n')
+						p++;
 					break;
 				}
+				else if (*p == '\n')
+					break;
 			}
+			ret = ttComment;
 		}
 		else {
 			ret = ttOther;
