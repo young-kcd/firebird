@@ -50,8 +50,10 @@ Pool management:
   
 	ALTER EXTERNAL CONNECTIONS POOL. 
 	
-  This statement is prepared as DDL statement but have immediate effect on 
-execution (i.e. not at transaction commit).
+  When prepared it desribed as DDL statement but have immediate effect: i.e. 
+it is executed immediately and completely, not waiting for transaction commit. 
+
+  "ALTER DATABASE" permission is required to run the statement.
 
 The full syntax is:
 
