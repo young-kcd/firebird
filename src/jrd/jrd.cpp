@@ -380,6 +380,8 @@ int JProvider::release()
 
 static void shutdownBeforeUnload()
 {
+	ThreadSync thread(FB_FUNCTION);
+
 	LocalStatus status;
 	CheckStatusWrapper statusWrapper(&status);
 
