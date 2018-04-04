@@ -382,14 +382,19 @@ int JProvider::release()
 	return 1;
 }
 
+static void threadDetach()
+{
+	ThreadSync* thd = ThreadSync::findThread();
+	delete thd;
+}
+
 static void shutdownBeforeUnload()
 {
-	ThreadSync thread(FB_FUNCTION);
-
 	LocalStatus status;
 	CheckStatusWrapper statusWrapper(&status);
 
 	JProvider::getInstance()->shutdown(&statusWrapper, 0, fb_shutrsn_exit_called);
+	threadDetach();
 };
 
 class EngineFactory : public AutoIface<IPluginFactoryImpl<EngineFactory, CheckStatusWrapper> >
