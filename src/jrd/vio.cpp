@@ -1652,7 +1652,8 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_indices:
 			protect_system_table_delupd(tdbb, relation, "DELETE");
 			EVL_field(0, rpb->rpb_record, f_idx_relation, &desc);
-			SCL_check_relation(tdbb, &desc, SCL_control);
+			EVL_field(0, rpb->rpb_record, f_idx_sys_flag, &desc2);
+			SCL_check_relation(tdbb, &desc, SCL_control, MOV_get_long(&desc2, 0) == 1);
 			EVL_field(0, rpb->rpb_record, f_idx_id, &desc2);
 			if ( (id = MOV_get_long(&desc2, 0)) )
 			{
@@ -3367,7 +3368,8 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_indices:
 			protect_system_table_insert(tdbb, request, relation);
 			EVL_field(0, rpb->rpb_record, f_idx_relation, &desc);
-			SCL_check_relation(tdbb, &desc, SCL_control);
+			EVL_field(0, rpb->rpb_record, f_idx_sys_flag, &desc2);
+			SCL_check_relation(tdbb, &desc, SCL_control, MOV_get_long(&desc2, 0) == 1);
 			EVL_field(0, rpb->rpb_record, f_idx_name, &desc);
 			if (EVL_field(0, rpb->rpb_record, f_idx_exp_blr, &desc2))
 			{

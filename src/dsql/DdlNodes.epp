@@ -86,7 +86,7 @@ static bool fieldExists(thread_db* tdbb, jrd_tra* transaction, const MetaName& r
 static bool isItSqlRole(thread_db* tdbb, jrd_tra* transaction, const MetaName& inputName,
 	MetaName& outputName);
 static MetaName getIndexRelationName(thread_db* tdbb, jrd_tra* transaction,
-	const MetaName& indexName);
+	const MetaName& indexName, bool& systemIndex);
 static const char* getRelationScopeName(const rel_t type);
 static void makeRelationScopeName(string& to, const MetaName& name, const rel_t type);
 static void checkRelationType(const rel_t type, const MetaName& name);
@@ -535,14 +535,17 @@ static void makeRelationScopeName(string& to, const MetaName& name, const rel_t 
 
 // Get relation name of an index.
 static MetaName getIndexRelationName(thread_db* tdbb, jrd_tra* transaction,
-	const MetaName& indexName)
+	const MetaName& indexName, bool& systemIndex)
 {
+	systemIndex = false;
+
 	AutoCacheRequest request(tdbb, drq_l_index_relname, DYN_REQUESTS);
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		IDX IN RDB$INDICES
 		WITH IDX.RDB$INDEX_NAME EQ indexName.c_str()
 	{
+		systemIndex = IDX.RDB$SYSTEM_FLAG == 1;
 		return IDX.RDB$RELATION_NAME;
 	}
 	END_FOR
@@ -1277,9 +1280,10 @@ bool CommentOnNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 			break;
 
 		case obj_index:
-			relationName = getIndexRelationName(tdbb, transaction, objName.identifier);
+			bool systemIndex;
+			relationName = getIndexRelationName(tdbb, transaction, objName.identifier, systemIndex);
 			dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
-			SCL_check_relation(tdbb, &dscName, SCL_alter);
+			SCL_check_relation(tdbb, &dscName, SCL_alter, systemIndex);
 			break;
 
 		case obj_sql_role:
@@ -9426,7 +9430,7 @@ bool CreateIndexNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 	dsc dscName;
 	const MetaName &relationName = relation->dsqlName;
 	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
-	SCL_check_relation(tdbb, &dscName, SCL_alter);
+	SCL_check_relation(tdbb, &dscName, SCL_alter, false);
 	return true;
 }
 
@@ -9494,12 +9498,13 @@ string AlterIndexNode::internalPrint(NodePrinter& printer) const
 
 bool AlterIndexNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
-	MetaName relationName = getIndexRelationName(tdbb, transaction, name);
+	bool systemIndex;
+	MetaName relationName = getIndexRelationName(tdbb, transaction, name, systemIndex);
 
 	dsc dscName;
 	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
 
-	SCL_check_relation(tdbb, &dscName, SCL_alter);
+	SCL_check_relation(tdbb, &dscName, SCL_alter, systemIndex);
 	return true;
 }
 
@@ -9556,7 +9561,8 @@ string SetStatisticsNode::internalPrint(NodePrinter& printer) const
 
 bool SetStatisticsNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
-	MetaName relationName = getIndexRelationName(tdbb, transaction, name);
+	bool systemIndex;
+	MetaName relationName = getIndexRelationName(tdbb, transaction, name, systemIndex);
 
 	dsc dscName;
 	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
@@ -9637,12 +9643,13 @@ string DropIndexNode::internalPrint(NodePrinter& printer) const
 
 bool DropIndexNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
-	MetaName relationName = getIndexRelationName(tdbb, transaction, name);
+	bool systemIndex;
+	MetaName relationName = getIndexRelationName(tdbb, transaction, name, systemIndex);
 
 	dsc dscName;
 	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
 
-	SCL_check_relation(tdbb, &dscName, SCL_alter);
+	SCL_check_relation(tdbb, &dscName, SCL_alter, systemIndex);
 	return true;
 }
 
