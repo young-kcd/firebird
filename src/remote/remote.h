@@ -1293,7 +1293,9 @@ private:
 			if (waitFlag)
 			{
 				Thread::waitForCompletion(waitHandle);
+
 				fb_assert(asyncPort);
+
 				if (asyncPort)
 					asyncPort->release();
 			}

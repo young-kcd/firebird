@@ -1086,11 +1086,11 @@ static TokenType getToken(const char** begin, const char* end)
 				else if (*p == '\n')
 					break;
 			}
+
 			ret = ttComment;
 		}
-		else {
+		else
 			ret = ttOther;
-		}
 		break;
 
 	default:

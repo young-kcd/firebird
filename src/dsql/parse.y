@@ -4802,13 +4802,15 @@ varbinary_character_keyword
 decfloat_type
 	: DECFLOAT precision_opt_nz
 		{
-			if ($2 != 0 && $2 != 16 && $2 != 34)
+			SLONG precision = $2;
+
+			if (precision != 0 && precision != 16 && precision != 34)
 				yyabandon(YYPOSNARG(2), -842, isc_decprecision_err);	// DecFloat precision must be 16 or 34.
 
 			$$ = newNode<dsql_fld>();
-			$$->precision = $2 == 0 ? 34 : (USHORT) $2;
-			$$->dtype = $2 == 16 ? dtype_dec64 : dtype_dec128;
-			$$->length = $2 == 16 ? sizeof(Decimal64) : sizeof(Decimal128);
+			$$->precision = precision == 0 ? 34 : (USHORT) precision;
+			$$->dtype = precision == 16 ? dtype_dec64 : dtype_dec128;
+			$$->length = precision == 16 ? sizeof(Decimal64) : sizeof(Decimal128);
 		}
 	;
 

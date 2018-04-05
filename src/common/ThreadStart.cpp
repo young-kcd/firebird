@@ -180,6 +180,7 @@ ThreadId Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, H
 #endif
 		*p_handle = thread;
 	}
+
 	return getId();
 }
 

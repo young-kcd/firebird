@@ -6400,6 +6400,7 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 	}
 
 	SLONG original_op = xdr_peek_long(&port_async_receive->port_receive, buffer, dataSize);
+
 	switch (original_op)
 	{
 	case op_cancel:

@@ -394,6 +394,7 @@ bool Parser::yylexSkipEol()
 {
 	bool eol = false;
 	const TEXT c = *lex.ptr;
+
 	if (c == '\r')
 	{
 		lex.ptr++;

@@ -168,9 +168,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		exit(0);
 	}
 
-	//Keep stdout and stderr opened and let server emit output
-	//or redirect stdout/stderr to /dev/null or file by user choice
-	//If we want to daemonize - close all fds and let child to reopen it.
+	// Keep stdout and stderr opened and let server emit output
+	// or redirect stdout/stderr to /dev/null or file by user choice
+	// If we want to daemonize - close all fds and let child to reopen it.
 	int mask = 0; // FD_ZERO(&mask);
 	mask |= daemon ? 0 : (1 << 1 | 1 << 2); // FD_SET(1, &mask); FD_SET(2, &mask);
 	divorce_terminal(mask);

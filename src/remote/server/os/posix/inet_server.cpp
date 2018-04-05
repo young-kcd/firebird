@@ -350,8 +350,8 @@ int CLIB_ROUTINE main( int argc, char** argv)
 
 		if (!(debug || classic))
 		{
-			//Keep stdout and stderr openened always. We decide allow output
-			//from binary or redirect it according to config
+			// Keep stdout and stderr openened always. We decide allow output
+			// from binary or redirect it according to config
 			int mask = 0; // FD_ZERO(&mask);
 			mask |= (1 << 1 | 1 << 2); // FD_SET(1, &mask); FD_SET(2, &mask);
 			divorce_terminal(mask);
@@ -371,11 +371,12 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			int stdout_no = fileno(stdout);
 			int stderr_no = fileno(stderr);
 			const char* dev_null_file = "/dev/null";
-			bool keep_as_is = !redirection_file || redirection_file && (strcmp(redirection_file, "-") == 0 || strcmp(redirection_file, "") == 0);
+			bool keep_as_is = !redirection_file || redirection_file &&
+				(strcmp(redirection_file, "-") == 0 || strcmp(redirection_file, "") == 0);
 
-			//guard close all fds to properly demonize. Detect this case
-			//and if we spawned from daemon we reopen stdout and stderr
-			//and redirect it to /dev/null if user want us to print to stdout
+			// guard close all fds to properly demonize. Detect this case
+			// and if we spawned from daemon we reopen stdout and stderr
+			// and redirect it to /dev/null if user want us to print to stdout
 			if ((!check_fd(stdout_no) || !check_fd(stderr_no)) && keep_as_is)
 			{
 				redirection_file = dev_null_file;
@@ -385,11 +386,13 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			if (!keep_as_is)
 			{
 				int f = open(redirection_file, O_CREAT|O_APPEND|O_WRONLY, 0644);
+
 				if (f >= 0)
 				{
 
 					if (f != stdout_no)
 						dup2(f, stdout_no);
+
 					if (f != stderr_no)
 						dup2(f, stderr_no);
 
@@ -397,9 +400,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 						close(f);
 				}
 				else
-				{
 					gds__log("Unable to open file %s for output redirection", redirection_file);
-				}
 			}
 		}
 
