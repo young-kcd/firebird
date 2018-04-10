@@ -342,9 +342,9 @@ bool Parser::yylexSkipSpaces()
 			lex.ptr++;
 			while (lex.ptr < lex.end)
 			{
-				lex.ptr++;
 				if (yylexSkipEol())
 					break;
+				lex.ptr++;
 			}
 			if (lex.ptr >= lex.end)
 				return false;
