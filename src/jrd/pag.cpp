@@ -970,6 +970,7 @@ void PAG_format_header(thread_db* tdbb)
 
 	dbb->dbb_ods_version = header->hdr_ods_version & ~ODS_FIREBIRD_FLAG;
 	dbb->dbb_minor_version = header->hdr_ods_minor;
+	dbb->dbb_implementation = DbImplementation(header);
 
 	CCH_RELEASE(tdbb, &window);
 }
@@ -1264,7 +1265,7 @@ void PAG_header_init(thread_db* tdbb)
 
 	const USHORT ods_version = header->hdr_ods_version & ~ODS_FIREBIRD_FLAG;
 
-	if (!Ods::isSupported(header->hdr_ods_version, header->hdr_ods_minor))
+	if (!Ods::isSupported(header))
 	{
 		ERR_post(Arg::Gds(isc_wrong_ods) << Arg::Str(attachment->att_filename) <<
 											Arg::Num(ods_version) <<
@@ -1295,6 +1296,7 @@ void PAG_header_init(thread_db* tdbb)
 
 	dbb->dbb_ods_version = ods_version;
 	dbb->dbb_minor_version = header->hdr_ods_minor;
+	dbb->dbb_implementation = DbImplementation(header);
 
 	dbb->dbb_page_size = header->hdr_page_size;
 	dbb->dbb_page_buffers = header->hdr_page_buffers;

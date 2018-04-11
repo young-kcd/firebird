@@ -1346,8 +1346,12 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 	 *  The conditions were commented out 1999-05-14 by ChrisJ, because we
 	 *  decided that the V6 engine would only access an ODS-10 database.
 	 *  (and uncommented 2000-05-05, also by ChrisJ, when minds changed.)
+	 *
+	 *	ODS12.1 - take into an account 12.0 whihc probably has wrong offset
 	 */
-	SINT64* const ptr = ((SINT64*) (page->gpg_values)) + offset;
+	SINT64* ptr = Ods::getGpgValues(page, dbb->dbb_implementation, dbb->dbb_minor_version);
+	fb_assert(ptr);
+	ptr += offset;
 
 	if (val || initialize)
 	{

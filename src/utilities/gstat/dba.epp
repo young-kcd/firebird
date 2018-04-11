@@ -620,7 +620,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	uSvc->started();
 
-	if (!Ods::isSupported(header->hdr_ods_version, header->hdr_ods_minor))
+	if (!Ods::isSupported(header))
 	{
 		const int oversion = (header->hdr_ods_version & ~ODS_FIREBIRD_FLAG);
 		dba_error(3, SafeArg() << ODS_VERSION << oversion);
