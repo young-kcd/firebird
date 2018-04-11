@@ -1135,7 +1135,7 @@ namespace Jrd {
 			}
 
 			// Slow IO - we need exclusive lock on crypto manager.
-			// That may happen only when another process changed DB encyption.
+			// That may happen only when another process changed DB encryption.
 			BarSync::LockGuard lockGuard(tdbb, sync);
 			lockGuard.lock();
 			for (SINT64 previous = slowIO; ; previous = slowIO)
