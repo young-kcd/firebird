@@ -25,7 +25,7 @@
 
 namespace Ods {
 
-	bool isSupported(USHORT, USHORT);
+	bool isSupported(const header_page* hdr);
 
 	// NS: ODS code logic should never depend on host platform pointer size.
 	// this is why data type for these things is ULONG (32-bit unsigned integer)

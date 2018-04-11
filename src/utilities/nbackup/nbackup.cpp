@@ -1089,7 +1089,7 @@ void NBackup::backup_database(int level, Guid& guid, const PathName& fname)
 		if (read_file(dbase, header, SECTOR_ALIGNMENT/*sizeof(*header)*/) != SECTOR_ALIGNMENT/*sizeof(*header)*/)
 			status_exception::raise(Arg::Gds(isc_nbackup_err_eofhdrdb) << dbname.c_str() << Arg::Num(1));
 
-		if (!Ods::isSupported(header->hdr_ods_version, header->hdr_ods_minor))
+		if (!Ods::isSupported(header))
 		{
 			const USHORT ods_version = header->hdr_ods_version & ~ODS_FIREBIRD_FLAG;
 			status_exception::raise(Arg::Gds(isc_wrong_ods) << Arg::Str(database.c_str()) <<
