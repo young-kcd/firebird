@@ -656,6 +656,17 @@ public:
 	Firebird::IDecFloat34* getDecFloat34(Firebird::CheckStatusWrapper* status);
 	Firebird::ITransaction* getTransactionByHandle(Firebird::CheckStatusWrapper* status, isc_tr_handle* hndlPtr);
 	Firebird::IStatement* getStatementByHandle(Firebird::CheckStatusWrapper* status, isc_stmt_handle* hndlPtr);
+	void decodeTimeTz(Firebird::CheckStatusWrapper* status, const ISC_TIME_TZ* timeTz,
+		unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions,
+		unsigned timeZoneBufferLength, char* timeZoneBuffer);
+	void decodeTimeStampTz(Firebird::CheckStatusWrapper* status, const ISC_TIMESTAMP_TZ* timeStampTz,
+		uint* year, uint* month, uint* day, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions,
+		unsigned timeZoneBufferLength, char* timeZoneBuffer);
+	void encodeTimeTz(Firebird::CheckStatusWrapper* status, ISC_TIME_TZ* timeTz,
+		unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone);
+	void encodeTimeStampTz(Firebird::CheckStatusWrapper* status, ISC_TIMESTAMP_TZ* timeStampTz,
+		unsigned year, unsigned month, unsigned day,
+		unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone);
 };
 
 }	// namespace Why

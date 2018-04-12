@@ -29,6 +29,8 @@
 typedef ISC_DATE;
 typedef ISC_QUAD;
 typedef ISC_TIME;
+typedef ISC_TIME_TZ;
+typedef ISC_TIMESTAMP_TZ;
 typedef FB_DEC16;
 typedef FB_DEC34;
 typedef isc_tr_handle;
@@ -217,7 +219,7 @@ interface PluginModule : Versioned
 	void doClean();
 
 version:		// 3.0.3 => 3.0.4
-	// Used to release resources allocated per-thread 
+	// Used to release resources allocated per-thread
 	void threadDetach();
 }
 
@@ -1071,7 +1073,6 @@ interface Util : Versioned
 	void decodeTime(ISC_TIME time, uint* hours, uint* minutes, uint* seconds, uint* fractions);
 	ISC_DATE encodeDate(uint year, uint month, uint day);
 	ISC_TIME encodeTime(uint hours, uint minutes, uint seconds, uint fractions);
-	//// TODO: TZ functions
 	uint formatStatus(string buffer, uint bufferSize, Status status);
 	uint getClientVersion();	// Returns major * 256 + minor
 	XpbBuilder getXpbBuilder(Status status, uint kind, const uchar* buf, uint len);
@@ -1083,6 +1084,14 @@ version:	// 3.0 => 4.0
 	DecFloat34 getDecFloat34(Status status);
 	Transaction getTransactionByHandle(Status status, isc_tr_handle* hndlPtr);
 	Statement getStatementByHandle(Status status, isc_stmt_handle* hndlPtr);
+	void decodeTimeTz(Status status, const ISC_TIME_TZ* timeTz, uint* hours, uint* minutes, uint* seconds,
+		uint* fractions, uint timeZoneBufferLength, string timeZoneBuffer);
+	void decodeTimeStampTz(Status status, const ISC_TIMESTAMP_TZ* timeStampTz, uint* year, uint* month, uint* day,
+		uint* hours, uint* minutes, uint* seconds, uint* fractions, uint timeZoneBufferLength, string timeZoneBuffer);
+	void encodeTimeTz(Status status, ISC_TIME_TZ* timeTz, uint hours, uint minutes, uint seconds,
+		uint fractions, const string timeZone);
+	void encodeTimeStampTz(Status status, ISC_TIMESTAMP_TZ* timeStampTz, uint year, uint month, uint day,
+		uint hours, uint minutes, uint seconds, uint fractions, const string timeZone);
 }
 
 interface OffsetsCallback : Versioned
