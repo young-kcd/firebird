@@ -302,7 +302,7 @@ preliminaryCheck:	$(STD_SIZES) $(RUN_SIZES)
 	diff -u $^
 
 $(RUN_SIZES): $(ODS_H) $(ODS_AWK)
-	gawk -f $(ODS_AWK) <$(ODS_H) >$(ODS_TEST_CPP)
+	awk -f $(ODS_AWK) <$(ODS_H) >$(ODS_TEST_CPP)
 	$(CXX) -o $(ODS_TEST) $(WCXXFLAGS) $(ODS_TEST_CPP)
 	$(ODS_TEST) >$(RUN_SIZES)
 
