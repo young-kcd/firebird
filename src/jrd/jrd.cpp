@@ -2755,6 +2755,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 				dbb, Ods::hdr_nbak_normal);
 			dbb->dbb_backup_manager->dbCreating = true;
 			dbb->dbb_crypto_manager = FB_NEW_POOL(*dbb->dbb_permanent) CryptoManager(tdbb);
+			dbb->dbb_monitoring_data = FB_NEW_POOL(*dbb->dbb_permanent) MonitoringData(dbb);
 
 			PAG_format_header(tdbb);
 			INI_init2(tdbb);
