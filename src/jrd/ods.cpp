@@ -58,7 +58,8 @@ bool isSupported(const header_page* hdr)
 			if (!getGpgValues(&page, DbImplementation(hdr), minorVersion))
 				return false;
 		}
-		return true;
+		if (minorVersion != ODS_CURRENT12_1)
+			return true;
 	}
 
 	// Do not support anything else
@@ -67,7 +68,7 @@ bool isSupported(const header_page* hdr)
 
 SINT64* getGpgValues(generator_page* page, DbImplementation di, USHORT minorVersion)
 {
-	if (minorVersion >= ODS_CURRENT12_1)
+	if (minorVersion >= ODS_CURRENT12_2)
 		return page->gpg_values;
 
 	// ODS_12_0

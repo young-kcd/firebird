@@ -119,8 +119,9 @@ const USHORT ODS_VERSION12	= 12;		// Firebird 3.x features
 // Minor versions for ODS 12
 
 const USHORT ODS_CURRENT12_0	= 0;	// Firebird 3.0 features
-const USHORT ODS_CURRENT12_1	= 1;	// Fix for generator page for linux/x86
-const USHORT ODS_CURRENT12		= 1;
+const USHORT ODS_CURRENT12_1	= 1;	// Skipped due to Avalerion's blunder
+const USHORT ODS_CURRENT12_2	= 2;	// Fix for generator page for linux/x86
+const USHORT ODS_CURRENT12		= 2;
 
 // useful ODS macros. These are currently used to flag the version of the
 // system triggers and system indices in ini.e
@@ -140,7 +141,8 @@ const USHORT ODS_11_0		= ENCODE_ODS(ODS_VERSION11, 0);
 const USHORT ODS_11_1		= ENCODE_ODS(ODS_VERSION11, 1);
 const USHORT ODS_11_2		= ENCODE_ODS(ODS_VERSION11, 2);
 const USHORT ODS_12_0		= ENCODE_ODS(ODS_VERSION12, 0);
-const USHORT ODS_12_1		= ENCODE_ODS(ODS_VERSION12, 1);
+//const USHORT ODS_12_1		= ENCODE_ODS(ODS_VERSION12, 1);		// Skipped due to Avalerion's blunder
+const USHORT ODS_12_2		= ENCODE_ODS(ODS_VERSION12, 2);
 
 const USHORT ODS_FIREBIRD_FLAG = 0x8000;
 
@@ -168,7 +170,7 @@ const USHORT ODS_RELEASED = ODS_CURRENT12_0;	// The lowest stable minor version
 const USHORT ODS_CURRENT = ODS_CURRENT12;		// The highest defined minor version
 												// number for this ODS_VERSION!
 
-const USHORT ODS_CURRENT_VERSION = ODS_12_1;	// Current ODS version in use which includes
+const USHORT ODS_CURRENT_VERSION = ODS_12_2;	// Current ODS version in use which includes
 												// both major and minor ODS versions!
 
 
