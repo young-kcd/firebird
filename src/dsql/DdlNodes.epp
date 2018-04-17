@@ -11389,6 +11389,8 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 		for (const char* pr = privileges; *pr; ++pr)
 		{
 			bool duplicate = false;
+			MetaName newField = field;
+			int newOptions = options;
 			priv[0] = *pr;
 
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
@@ -11402,23 +11404,22 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 					 (PRIV.RDB$FIELD_NAME EQUIV NULLIF(field.c_str(), '') OR
 					  (PRIV.RDB$OBJECT_TYPE EQ obj_sql_role))
 			{
-				if (PRIV.RDB$GRANT_OPTION.NULL ||
-					PRIV.RDB$GRANT_OPTION ||
-					PRIV.RDB$GRANT_OPTION == options)
-				{
-					duplicate = true;
-				}
-				else if (!PRIV.RDB$FIELD_NAME.NULL)
-					field = PRIV.RDB$FIELD_NAME; // Keep DEFAULT ROLE while adding ADMIN OPTION
+				// It means we have such privilege without grant option but
+				// user grants it with grant option. We should re-grant existing privilege.
+				const bool addGrantOption = (!PRIV.RDB$GRANT_OPTION.NULL && !PRIV.RDB$GRANT_OPTION &&
+					PRIV.RDB$GRANT_OPTION != options);
 
-				if (duplicate && objType == obj_sql_role && field == "D" &&
-					PRIV.RDB$FIELD_NAME.NULL)
-				{
-					// We have to reset duplicate to add DEFAULT ROLE and keep options to prevent reset of ADMIN OPTION
-					duplicate = false;
-					options = PRIV.RDB$GRANT_OPTION;
-				}
+				// It means we have such granted role but without DEFAULT but user grants with DEFAULT.
+				// We should re-grant it.
+				const bool addDefaultRole = (objType == obj_sql_role && field == "D" && PRIV.RDB$FIELD_NAME.NULL);
 
+				if (addGrantOption && !addDefaultRole) // Save DEFAULT option for re-grant
+						newField = PRIV.RDB$FIELD_NAME;
+
+				if (addDefaultRole && !addGrantOption) // Add grant option was requested
+						newOptions = PRIV.RDB$GRANT_OPTION;
+
+				duplicate = !addGrantOption && !addDefaultRole;
 
 				if (!duplicate)
 					ERASE PRIV;
@@ -11487,24 +11488,26 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				}
 			}
 
-			storePrivilege(tdbb, transaction, objName, user, field, pr, userType, objType,
-				options, grantorRevoker);
+			storePrivilege(tdbb, transaction, objName, user, newField, pr, userType, objType,
+				newOptions, grantorRevoker);
 		}
 	}
 	else	// REVOKE
 	{
-		const bool revokeRoleDefault = (objType == obj_sql_role) && field.hasData();
-		MetaName curField;
-		int curOptions = options;
+		const bool revokeDefaultRole = (objType == obj_sql_role) && field.hasData();
+		const bool revokeGrantOption = options;
 
-		AutoCacheRequest request(tdbb, (field.hasData() ? drq_e_grant1 : drq_e_grant2), DYN_REQUESTS);
+		// This var must be identical for request (1) and if below (2)
+		const bool withField = field.hasData() && objType != obj_sql_role;
+
+		AutoCacheRequest request(tdbb, (withField ? drq_e_grant1 : drq_e_grant2), DYN_REQUESTS); // (1)
 
 		for (const char* pr = privileges; (priv[0] = *pr); ++pr)
 		{
 			bool grantErased = false;
 			bool badGrantor = false;
 
-			if (field.hasData() && objType != obj_sql_role)
+			if (withField)	// (2)
 			{
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 					PRIV IN RDB$USER_PRIVILEGES
@@ -11518,8 +11521,21 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				{
 					if (grantorRevoker == PRIV.RDB$GRANTOR)
 					{
+						MetaName newField = NULL;
+						int newOptions = 0;
+						if (!revokeGrantOption && !PRIV.RDB$GRANT_OPTION.NULL)
+							newOptions = PRIV.RDB$GRANT_OPTION;
+						if (!revokeDefaultRole && !PRIV.RDB$FIELD_NAME.NULL)
+							newField = PRIV.RDB$FIELD_NAME;
+
 						ERASE PRIV;
 						grantErased = true;
+
+						if (revokeDefaultRole || revokeGrantOption)
+						{
+							storePrivilege(tdbb, transaction, objName, user, newField, pr, userType, objType,
+								newOptions, grantorRevoker);
+						}
 					}
 					else
 						badGrantor = true;
@@ -11550,10 +11566,21 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 						    (owner == currentUser))) ||					// Current user is role owner
 						  (getGrantorOption(tdbb, transaction, currentUser, obj_user, objName) == 2))))	// or has ADMIN option
 					{
-						curOptions = PRIV.RDB$GRANT_OPTION;
-						curField = PRIV.RDB$FIELD_NAME;
+						MetaName newField = NULL;
+						int newOptions = 0;
+						if (!revokeGrantOption && !PRIV.RDB$GRANT_OPTION.NULL)
+							newOptions = PRIV.RDB$GRANT_OPTION;
+						if (!revokeDefaultRole && !PRIV.RDB$FIELD_NAME.NULL)
+							newField = PRIV.RDB$FIELD_NAME;
+
 						ERASE PRIV;
 						grantErased = true;
+
+						if (revokeDefaultRole || revokeGrantOption)
+						{
+							storePrivilege(tdbb, transaction, objName, user, newField, pr, userType, objType,
+								newOptions, grantorRevoker);
+						}
 					}
 					else
 						badGrantor = true;
@@ -11561,25 +11588,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				END_FOR
 			}
 
-			if (grantErased)
-			{
-				if (revokeRoleDefault)
-				{
-					// Add role grant again without default
-					storePrivilege(tdbb, transaction, objName, user, NULL, pr, userType, objType,
-						curOptions, grantorRevoker);
-				}
-				else if (options)
-				{
-					// Add the privilege without the grant option. There is a modify trigger on the
-					// rdb$user_privileges which disallows the table from being updated. It would have
-					// to be changed such that only the grant_option field can be updated.
-
-					storePrivilege(tdbb, transaction, objName, user, curField, pr, userType, objType,
-						0, grantorRevoker);
-				}
-			}
-			else
+			if (!grantErased)
 			{
 				if (badGrantor)
 				{
