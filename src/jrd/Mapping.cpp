@@ -477,7 +477,7 @@ public:
 	bool dataFlag, downFlag;
 };
 
-typedef GenericMap<Pair<Left<NoCaseString, Cache*> > > CacheTree;
+typedef GenericMap<Pair<Left<NoCaseString, AutoPtr<Cache> > > > CacheTree;
 
 InitInstance<CacheTree> tree;
 GlobalPtr<Mutex> treeMutex;
@@ -487,8 +487,8 @@ void setupIpc();
 Cache* locate(const NoCaseString& target)
 {
 	fb_assert(treeMutex->locked());
-	Cache* c;
-	return tree().get(target, c) ? c : NULL;
+	AutoPtr<Cache> *c = tree().get(target);
+	return c ? c->get() : NULL;
 }
 
 Cache* locate(const NoCaseString& alias, const NoCaseString& target)
