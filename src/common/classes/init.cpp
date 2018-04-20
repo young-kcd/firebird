@@ -173,7 +173,7 @@ namespace Firebird
 	{
 		MutexLockGuard guard(*StaticMutex::mutex, "InstanceControl::InstanceList::InstanceList");
 		next = instanceList;
-		prev = nullptr;
+		prev = NULL;
 		if (instanceList)
 			instanceList->prev = this;
 		instanceList = this;
@@ -181,8 +181,8 @@ namespace Firebird
 
 	InstanceControl::InstanceList::~InstanceList()
 	{
-		fb_assert(next == nullptr);
-		fb_assert(prev == nullptr);
+		fb_assert(next == NULL);
+		fb_assert(prev == NULL);
 	}
 
 	void InstanceControl::InstanceList::remove()
@@ -202,8 +202,8 @@ namespace Firebird
 		if (prev)
 			prev->next = this->next;
 
-		prev = nullptr;
-		next = nullptr;
+		prev = NULL;
+		next = NULL;
 	}
 
 	void InstanceControl::destructors()

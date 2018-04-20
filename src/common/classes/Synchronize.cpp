@@ -206,7 +206,7 @@ public:
 	// Used at InstanceControl::dtor
 	void dtor()
 	{
-		m_link = nullptr;
+		m_link = NULL;
 		delete this;
 	}
 
