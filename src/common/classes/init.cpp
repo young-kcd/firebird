@@ -173,12 +173,37 @@ namespace Firebird
 	{
 		MutexLockGuard guard(*StaticMutex::mutex, "InstanceControl::InstanceList::InstanceList");
 		next = instanceList;
+		prev = nullptr;
+		if (instanceList)
+			instanceList->prev = this;
 		instanceList = this;
 	}
 
 	InstanceControl::InstanceList::~InstanceList()
 	{
-		delete next;
+		fb_assert(next == nullptr);
+		fb_assert(prev == nullptr);
+	}
+
+	void InstanceControl::InstanceList::remove()
+	{
+		MutexLockGuard guard(*StaticMutex::mutex, FB_FUNCTION);
+		unlist();
+	}
+
+	void InstanceControl::InstanceList::unlist()
+	{
+		if (instanceList == this)
+			instanceList = next;
+
+		if (next)
+			next->prev = this->prev;
+
+		if (prev)
+			prev->next = this->next;
+
+		prev = nullptr;
+		next = nullptr;
 	}
 
 	void InstanceControl::destructors()
@@ -245,8 +270,13 @@ namespace Firebird
 			}
 		} while (nextPriority != currentPriority);
 
-		delete instanceList;
-		instanceList = 0;
+
+		while (instanceList)
+		{
+			InstanceList* item = instanceList;
+			item->unlist();
+			delete item;
+		}
 	}
 
 	void InstanceControl::registerGdsCleanup(FPTR_VOID cleanup)
