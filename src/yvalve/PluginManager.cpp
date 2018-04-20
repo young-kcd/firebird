@@ -875,6 +875,10 @@ namespace
 				currentPlugin = NULL;
 			}
 
+			// Avoid concurrent load of the same module
+			static Static<Mutex> loadModuleMutex;
+			MutexLockGuard lmGuard(*(&loadModuleMutex), FB_FUNCTION);
+
 			MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
 			while (currentName.getWord(namesList, " \t,;"))
@@ -894,6 +898,7 @@ namespace
 				RefPtr<PluginModule> m(modules->findModule(info.curModule));
 				if (!m.hasData() && !flShutdown)
 				{
+					MutexUnlockGuard cout(plugins->mutex, FB_FUNCTION);
 					m = loadModule(info);
 				}
 				if (!m.hasData())
