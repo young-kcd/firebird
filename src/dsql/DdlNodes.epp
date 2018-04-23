@@ -11243,6 +11243,15 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 					{
 						ERASE PRIV;
 						grantErased = true;
+						if (options)
+						{
+							// Add the privilege without the grant option. There is a modify trigger on the
+							// rdb$user_privileges which disallows the table from being updated. It would have
+							// to be changed such that only the grant_option field can be updated.
+
+							storePrivilege(tdbb, transaction, objName, user, field, pr, userType, objType,
+								0, grantorRevoker);
+						}
 					}
 					else
 						badGrantor = true;
@@ -11268,21 +11277,21 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 					{
 						ERASE PRIV;
 						grantErased = true;
+						if (options)
+						{
+							// Add the privilege without the grant option. There is a modify trigger on the
+							// rdb$user_privileges which disallows the table from being updated. It would have
+							// to be changed such that only the grant_option field can be updated.
+
+							MetaName newField = PRIV.RDB$FIELD_NAME.NULL ? "" : PRIV.RDB$FIELD_NAME;
+							storePrivilege(tdbb, transaction, objName, user, newField, pr, userType, objType,
+								0, grantorRevoker);
+						}
 					}
 					else
 						badGrantor = true;
 				}
 				END_FOR
-			}
-
-			if (options && grantErased)
-			{
-				// Add the privilege without the grant option. There is a modify trigger on the
-				// rdb$user_privileges which disallows the table from being updated. It would have
-				// to be changed such that only the grant_option field can be updated.
-
-				storePrivilege(tdbb, transaction, objName, user, field, pr, userType, objType,
-					0, grantorRevoker);
 			}
 
 			if (badGrantor && !grantErased)
