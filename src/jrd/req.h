@@ -35,6 +35,7 @@
 #include "../jrd/Record.h"
 #include "../jrd/RecordNumber.h"
 #include "../common/classes/timestamp.h"
+#include "../common/TimeZoneUtil.h"
 
 namespace EDS {
 class Statement;
@@ -265,7 +266,7 @@ public:
 	ULONG		req_flags;				// misc request flags
 	Savepoint*	req_savepoints;			// Looper savepoint list
 	Savepoint*	req_proc_sav_point;		// procedure savepoint list
-	Firebird::TimeStamp	req_timestamp;	// Start time of request
+	Firebird::TimeStamp	req_timestamp_utc;	// Start time of request
 	unsigned int req_timeout;					// query timeout in milliseconds, set by the dsql_req::setupTimer
 	Firebird::RefPtr<TimeoutTimer> req_timer;	// timeout timer, shared with dsql_req
 
@@ -356,13 +357,24 @@ public:
 		req_snapshot.init();
 	}
 
-	// Restore transaction and snapshot context 
+	// Restore transaction and snapshot context
 	jrd_tra* popTransaction()
 	{
 		const auto_tran_ctx tmp = req_auto_trans.pop();
 		req_snapshot = tmp.m_snapshot;
 
 		return tmp.m_transaction;
+	}
+
+	Firebird::TimeStamp getLocalTimeStamp() const
+	{
+		ISC_TIMESTAMP_TZ timeStampTz;
+		timeStampTz.timestamp_date = req_timestamp_utc.value().timestamp_date;
+		timeStampTz.timestamp_time = req_timestamp_utc.value().timestamp_time;
+		timeStampTz.timestamp_zone = Firebird::TimeZoneUtil::UTC_ZONE;
+		Firebird::TimeZoneUtil::localTimeStampToUtc(timeStampTz);
+
+		return Firebird::TimeZoneUtil::timeStampTzToTimeStamp(timeStampTz, req_attachment->att_current_timezone);
 	}
 };
 

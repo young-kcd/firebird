@@ -890,7 +890,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	request->req_records_affected.clear();
 
 	// Store request start time for timestamp work
-	request->req_timestamp.validate();
+	TimeZoneUtil::validateTimeStampUtc(request->req_timestamp_utc);
 
 	// Set all invariants to not computed.
 	const ULONG* const* ptr, * const* end;
@@ -983,7 +983,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 
 	request->req_flags &= ~(req_active | req_proc_fetch | req_reserved);
 	request->req_flags |= req_abort | req_stall;
-	request->req_timestamp.invalidate();
+	request->req_timestamp_utc.invalidate();
 	request->req_caller = NULL;
 	request->req_proc_inputs = NULL;
 	request->req_proc_caller = NULL;
@@ -1103,8 +1103,12 @@ void EXE_execute_triggers(thread_db* tdbb,
 		null_rec->nullify();
 	}
 
-	const Firebird::TimeStamp timestamp =
-		request ? request->req_timestamp : Firebird::TimeStamp::getCurrentTimeStamp();
+	TimeStamp timestamp;
+
+	if (request)
+		timestamp = request->req_timestamp_utc;
+	else
+		TimeZoneUtil::validateTimeStampUtc(timestamp);
 
 	jrd_req* trigger = NULL;
 
@@ -1150,7 +1154,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 				}
 			}
 
-			trigger->req_timestamp = timestamp;
+			trigger->req_timestamp_utc = timestamp;
 			trigger->req_trigger_action = trigger_action;
 
 			TraceTrigExecute trace(tdbb, trigger, which_trig);
@@ -1374,7 +1378,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 
 		TRA_release_request_snapshot(tdbb, request);
 		request->req_flags &= ~(req_active | req_reserved);
-		request->req_timestamp.invalidate();
+		request->req_timestamp_utc.invalidate();
 		release_blobs(tdbb, request);
 	}
 
