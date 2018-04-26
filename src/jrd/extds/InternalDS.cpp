@@ -332,6 +332,13 @@ void InternalTransaction::doRollback(FbStatusVector* status, thread_db* tdbb, bo
 {
 	fb_assert(m_transaction);
 
+	if (m_connection.isBroken())
+	{
+		m_transaction = NULL;
+		m_jrdTran = NULL;
+		return;
+	}
+
 	if (m_scope == traCommon && m_IntConnection.isCurrent())
 	{
 		if (!retain) {

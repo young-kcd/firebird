@@ -88,7 +88,6 @@ class Provider : public Firebird::GlobalStorage
 
 public:
 	explicit Provider(const char* prvName);
-	virtual ~Provider();
 
 	// return existing or create new Connection
 	virtual Connection* getConnection(Jrd::thread_db* tdbb, const Firebird::PathName& dbName,
@@ -120,6 +119,7 @@ public:
 	}
 
 protected:
+	virtual ~Provider();
 	void clearConnections(Jrd::thread_db* tdbb);
 	virtual Connection* doCreateConnection() = 0;
 
