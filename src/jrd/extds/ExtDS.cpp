@@ -62,10 +62,13 @@ Manager::Manager(MemoryPool& pool) :
 
 Manager::~Manager()
 {
+	ThreadContextHolder tdbb;
+
 	while (m_providers)
 	{
 		Provider* to_delete = m_providers;
 		m_providers = m_providers->m_next;
+		to_delete->clearConnections(tdbb);
 		delete to_delete;
 	}
 }
@@ -741,7 +744,7 @@ void Transaction::detachFromJrdTran()
 	if (m_scope != traCommon)
 		return;
 
-	fb_assert(m_jrdTran);
+	fb_assert(m_jrdTran || m_connection.isBroken());
 	if (!m_jrdTran)
 		return;
 
