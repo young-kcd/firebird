@@ -7367,7 +7367,7 @@ void JTransaction::freeEngineData(CheckStatusWrapper* user_status)
 	try
 	{
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
-		check_database(tdbb);
+		check_database(tdbb, true);
 
 		try
 		{
@@ -7390,6 +7390,7 @@ void JTransaction::freeEngineData(CheckStatusWrapper* user_status)
 	}
 	catch (const Exception& ex)
 	{
+		transaction = NULL;
 		ex.stuffException(user_status);
 		return;
 	}
