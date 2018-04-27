@@ -63,10 +63,13 @@ Manager::Manager(MemoryPool& pool) :
 
 Manager::~Manager()
 {
+	ThreadContextHolder tdbb;
+
 	while (m_providers)
 	{
 		Provider* to_delete = m_providers;
 		m_providers = m_providers->m_next;
+		to_delete->clearConnections(tdbb);
 		delete to_delete;
 	}
 }
@@ -203,7 +206,11 @@ Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 				conn->isSameDatabase(tdbb, dbName, user, pwd, role) &&
 				conn->isAvailable(tdbb, tra_scope))
 			{
-				return conn;
+				if (!conn->isBroken())
+					return conn;
+
+				ISC_STATUS_ARRAY status = {isc_arg_gds, isc_att_shutdown, isc_arg_end};
+				conn->raise(status, tdbb, "Provider::getConnection");
 			}
 		}
 	}
@@ -296,7 +303,8 @@ Connection::Connection(Provider& prov) :
 	m_free_stmts(0),
 	m_deleting(false),
 	m_sqlDialect(0),
-	m_wrapErrors(true)
+	m_wrapErrors(true),
+	m_broken(false)
 {
 }
 
@@ -493,21 +501,33 @@ void Connection::clearTransactions(Jrd::thread_db* tdbb)
 	while (m_transactions.getCount())
 	{
 		Transaction* tran = m_transactions[0];
-		tran->rollback(tdbb, false);
+		try
+		{
+			tran->rollback(tdbb, false);
+		}
+		catch (const Exception&)
+		{
+			if (!m_deleting)
+				throw;
+		}
 	}
 }
 
 void Connection::clearStatements(thread_db* tdbb)
 {
 	Statement** stmt_ptr = m_statements.begin();
-	Statement** end = m_statements.end();
-
-	for (; stmt_ptr < end; stmt_ptr++)
+	while (stmt_ptr < m_statements.end())
 	{
 		Statement* stmt = *stmt_ptr;
 		if (stmt->isActive())
 			stmt->close(tdbb);
-		Statement::deleteStatement(tdbb, stmt);
+
+		// close() above could destroy statement and remove it from m_statements
+		if (stmt_ptr < m_statements.end() && *stmt_ptr == stmt)
+		{
+			Statement::deleteStatement(tdbb, stmt);
+			stmt_ptr++;
+		}
 	}
 
 	m_statements.clear();
@@ -569,7 +589,7 @@ Transaction* Connection::findTransaction(thread_db* tdbb, TraScope traScope) con
 
 void Connection::raise(ISC_STATUS* status, thread_db* tdbb, const char* sWhere)
 {
-	if (!getWrapErrors())
+	if (!getWrapErrors(status))
 	{
 		ERR_post(Arg::StatusVector(status));
 	}
@@ -581,6 +601,27 @@ void Connection::raise(ISC_STATUS* status, thread_db* tdbb, const char* sWhere)
 	ERR_post(Arg::Gds(isc_eds_connection) << Arg::Str(sWhere) <<
 											 Arg::Str(rem_err) <<
 											 Arg::Str(getDataSourceName()));
+}
+
+bool Connection::getWrapErrors(const ISC_STATUS* status)
+{
+	// Detect if connection is broken
+	switch (status[1])
+	{
+		case isc_network_error:
+		case isc_net_read_err:
+		case isc_net_write_err:
+			m_broken = true;
+			break;
+
+		// Always wrap shutdown errors, else user application will disconnect
+		case isc_att_shutdown:
+		case isc_shutdown:
+			m_broken = true;
+			return true;
+	}
+
+	return m_wrapErrors;
 }
 
 
@@ -749,11 +790,12 @@ void Transaction::detachFromJrdTran()
 	if (m_scope != traCommon)
 		return;
 
-	fb_assert(m_jrdTran);
+	fb_assert(m_jrdTran || m_connection.isBroken());
 	if (!m_jrdTran)
 		return;
 
 	Transaction** tran_ptr = &m_jrdTran->tra_ext_common;
+	m_jrdTran = NULL;
 	for (; *tran_ptr; tran_ptr = &(*tran_ptr)->m_nextTran)
 	{
 		if (*tran_ptr == this)
@@ -833,6 +875,8 @@ Statement::~Statement()
 
 void Statement::deleteStatement(Jrd::thread_db* tdbb, Statement* stmt)
 {
+	if (stmt->m_boundReq)
+		stmt->unBindFromRequest();
 	stmt->deallocate(tdbb);
 	delete stmt;
 }
@@ -1534,7 +1578,7 @@ void Statement::raise(ISC_STATUS* status, thread_db* tdbb, const char* sWhere,
 {
 	m_error = true;
 
-	if (!m_connection.getWrapErrors())
+	if (!m_connection.getWrapErrors(status))
 	{
 		ERR_post(Arg::StatusVector(status));
 	}
