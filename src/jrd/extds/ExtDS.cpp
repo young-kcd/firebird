@@ -464,7 +464,15 @@ void Connection::clearTransactions(Jrd::thread_db* tdbb)
 	while (m_transactions.getCount())
 	{
 		Transaction* tran = m_transactions[0];
-		tran->rollback(tdbb, false);
+		try
+		{
+			tran->rollback(tdbb, false);
+		}
+		catch (const Exception&)
+		{
+			if (!m_deleting)
+				throw;
+		}
 	}
 }
 
@@ -751,6 +759,7 @@ void Transaction::detachFromJrdTran()
 		return;
 
 	Transaction** tran_ptr = &m_jrdTran->tra_ext_common;
+	m_jrdTran = NULL;
 	for (; *tran_ptr; tran_ptr = &(*tran_ptr)->m_nextTran)
 	{
 		if (*tran_ptr == this)
