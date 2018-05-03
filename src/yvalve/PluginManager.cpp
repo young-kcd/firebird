@@ -1109,9 +1109,9 @@ void PluginManager::releasePlugin(IPluginBase* plugin)
 		///fb_assert(parent);
 		if (parent)
 		{
-			MutexLockGuard g(plugins->mutex, FB_FUNCTION);
-
 			parent->release();
+
+			MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 			if (plugins->wakeIt)
 			{
 				plugins->wakeIt->release();
