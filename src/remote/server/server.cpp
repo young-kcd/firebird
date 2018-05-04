@@ -1600,6 +1600,9 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					else
 					{
 						request->req_receive.p_operation = ok ? op_dummy : op_exit;
+
+						if (port->port_server_crypt_callback)
+							port->port_server_crypt_callback->wakeup(0, NULL);
 					}
 
 					request->req_port = port;
