@@ -319,6 +319,17 @@ namespace {
 	private:
 		StackUserData* u;
 	};
+
+	class ReleasePlugin
+	{
+	public:
+		static void clear(Firebird::IManagement* ptr)
+		{
+			if (ptr)
+				Firebird::PluginManagerInterfacePtr()->releasePlugin(ptr);
+		}
+	};
+
 } // anonymous namespace
 
 int gsec(Firebird::UtilSvc* uSvc)
@@ -409,7 +420,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	user_data->database.set(&statusWrapper, databaseName.c_str());
 	check(&statusWrapper);
 
-	Firebird::RefPtr<Firebird::IManagement> manager;
+	Firebird::AutoPtr<Firebird::IManagement, ReleasePlugin> manager;
 	ISC_STATUS_ARRAY status;
 
 	if (!useServices)
@@ -482,6 +493,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 				GsecInfo info(user_data->dba.get(), user_data->role.get(),
 							  network_protocol.c_str(), remote_address.c_str(), &user_data->authenticationBlock);
 				manager->start(&statusManager, &info);
+				check(&statusManager);
+				manager->addRef();
 			}
 			catch (const Firebird::Exception& ex)
 			{
