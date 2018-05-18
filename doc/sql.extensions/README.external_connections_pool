@@ -34,7 +34,7 @@ How pool works:
 
 Key characteristics:
 - absence of "eternal" external connections
-- finite number of inactive (idle) external connections at the pool
+- limited number of inactive (idle) external connections at the pool
 - support a quick search among the connections (using 4 parameters above)
 - the pool is common for all external databases
 - the pool is common for all local connections handled by the given Firebird 
