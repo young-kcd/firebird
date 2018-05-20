@@ -1155,7 +1155,9 @@ void AlterCharSetNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 bool AlterEDSPoolSetNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
-	SCL_check_database(tdbb, SCL_alter); // TODO
+	if (!tdbb->getAttachment()->locksmith(tdbb, MODIFY_EXT_CONN_POOL))
+		status_exception::raise(Arg::Gds(isc_miss_prvlg) << "MODIFY_EXT_CONN_POOL");
+
 	return true;
 }
 
@@ -1190,7 +1192,9 @@ void AlterEDSPoolSetNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlSc
 
 bool AlterEDSPoolClearNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
-	SCL_check_database(tdbb, SCL_alter); // TODO
+	if (!tdbb->getAttachment()->locksmith(tdbb, MODIFY_EXT_CONN_POOL))
+		status_exception::raise(Arg::Gds(isc_miss_prvlg) << "MODIFY_EXT_CONN_POOL");
+
 	return true;
 }
 

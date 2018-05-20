@@ -51,9 +51,13 @@ Pool management:
 	ALTER EXTERNAL CONNECTIONS POOL. 
 	
   When prepared it desribed as DDL statement but have immediate effect: i.e. 
-it is executed immediately and completely, not waiting for transaction commit. 
+it is executed immediately and completely, not waiting for transaction commit.
+Changes applied to the in-memory instance of the pool in current Firebird 
+process. Therefore change in one Classic process doesn't affect other Classic
+processes. Changes is not persistent and after restart Firebird will use pool 
+settings at firebird.conf (see below). 
 
-  "ALTER DATABASE" permission is required to run the statement.
+  New system privilege "MODIFY_EXT_CONN_POOL" is required to run the statement.
 
 The full syntax is:
 
@@ -76,7 +80,7 @@ The full syntax is:
   Disassotiates all active connections off the pool (such connections will be 
   closed immediately when gets unused).
 
-- ALTER EXTERNAL CONNECTIONS POOL CLEAR OLD
+- ALTER EXTERNAL CONNECTIONS POOL CLEAR OLDEST
   Closes expired idle connections. 
 
   The state of external connections pool could be queried using new context
