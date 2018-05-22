@@ -178,12 +178,12 @@ private:
 };
 
 
-template <typename ID>
-class AutoDispose : public AutoPtr<ID, SimpleDispose>
+template <typename Where>
+class AutoDispose : public AutoPtr<Where, SimpleDispose>
 {
 public:
-	AutoDispose(ID* v = NULL)
-		: AutoPtr<ID, SimpleDispose>(v)
+	AutoDispose(Where* v = NULL)
+		: AutoPtr<Where, SimpleDispose>(v)
 	{ }
 };
 

@@ -155,6 +155,15 @@ public:
 	}
 };
 
+template <typename P>
+class AutoPlugin : public AutoPtr<P, ReleasePlugin>
+{
+public:
+	AutoPlugin(P* p = NULL)
+		: AutoPtr<P, ReleasePlugin>(p)
+	{ }
+};
+
 } // namespace Firebird
 
 

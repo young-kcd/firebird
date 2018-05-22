@@ -389,7 +389,7 @@ static void shutdownBeforeUnload()
 	LocalStatus status;
 	CheckStatusWrapper statusWrapper(&status);
 
-	AutoPtr<JProvider, ReleasePlugin>(JProvider::getInstance())->shutdown(&statusWrapper, 0, fb_shutrsn_exit_called);
+	AutoPlugin<JProvider>(JProvider::getInstance())->shutdown(&statusWrapper, 0, fb_shutrsn_exit_called);
 	threadDetach();
 };
 
@@ -6123,9 +6123,10 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 
 		Config::merge(config, &options.dpb_config);
 
-		dbb = Database::create(pConf, provider->getCryptCallback(), shared);
+		dbb = Database::create(pConf, shared);
 		dbb->dbb_config = config;
 		dbb->dbb_filename = expanded_name;
+		dbb->dbb_callback = provider->getCryptCallback();
 #ifdef HAVE_ID_BY_NAME
 		dbb->dbb_id = db_id;		// will be reassigned in create database after PIO operation
 #endif
