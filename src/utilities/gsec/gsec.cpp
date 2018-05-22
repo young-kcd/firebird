@@ -320,16 +320,6 @@ namespace {
 		StackUserData* u;
 	};
 
-	class ReleasePlugin
-	{
-	public:
-		static void clear(Firebird::IManagement* ptr)
-		{
-			if (ptr)
-				Firebird::PluginManagerInterfacePtr()->releasePlugin(ptr);
-		}
-	};
-
 } // anonymous namespace
 
 int gsec(Firebird::UtilSvc* uSvc)

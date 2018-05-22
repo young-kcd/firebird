@@ -389,7 +389,7 @@ static void shutdownBeforeUnload()
 	LocalStatus status;
 	CheckStatusWrapper statusWrapper(&status);
 
-	JProvider::getInstance()->shutdown(&statusWrapper, 0, fb_shutrsn_exit_called);
+	AutoPtr<JProvider, ReleasePlugin>(JProvider::getInstance())->shutdown(&statusWrapper, 0, fb_shutrsn_exit_called);
 	threadDetach();
 };
 
@@ -6123,7 +6123,7 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 
 		Config::merge(config, &options.dpb_config);
 
-		dbb = Database::create(pConf, provider, shared);
+		dbb = Database::create(pConf, provider->getCryptCallback(), shared);
 		dbb->dbb_config = config;
 		dbb->dbb_filename = expanded_name;
 #ifdef HAVE_ID_BY_NAME
