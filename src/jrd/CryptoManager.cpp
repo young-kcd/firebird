@@ -69,19 +69,6 @@ namespace {
 	const UCHAR CRYPT_INIT = LCK_EX;
 
 	const int MAX_PLUGIN_NAME_LEN = 31;
-
-	class ReleasePlugin
-	{
-	public:
-		static void clear(IPluginBase* ptr)
-		{
-			if (ptr)
-			{
-				PluginManagerInterfacePtr()->releasePlugin(ptr);
-			}
-		}
-	};
-
 }
 
 
@@ -280,7 +267,7 @@ namespace Jrd {
 		}
 
 	private:
-		AutoPtr<UCHAR, ArrayDelete<UCHAR> > buffer;
+		AutoPtr<UCHAR, ArrayDelete> buffer;
 	};
 
 	CryptoManager::CryptoManager(thread_db* tdbb)

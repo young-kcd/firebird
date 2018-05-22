@@ -886,7 +886,7 @@ void setupIpc()
 	mappingIpc->setup();
 }
 
-class DbHandle : public AutoPtr<IAttachment, SimpleRelease<IAttachment> >
+class DbHandle : public AutoPtr<IAttachment, SimpleRelease>
 {
 public:
 	DbHandle()

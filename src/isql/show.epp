@@ -392,8 +392,7 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 	UCHAR buffer[BUFFER_LENGTH400];
 	TEXT msg[MSG_LENGTH];
 
-	Firebird::AutoPtr<Firebird::IStatus, Firebird::SimpleDispose<Firebird::IStatus> >
-		status_vector(fbMaster->getStatus());
+	Firebird::AutoPtr<Firebird::IStatus, Firebird::SimpleDispose> status_vector(fbMaster->getStatus());
 	Firebird::CheckStatusWrapper statusWrapper(status_vector);
 	db_handle->getInfo(&statusWrapper, item_length, db_itemsL, sizeof(buffer), buffer);
 	if (ISQL_errmsg(status_vector))

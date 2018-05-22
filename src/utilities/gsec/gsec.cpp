@@ -420,7 +420,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	user_data->database.set(&statusWrapper, databaseName.c_str());
 	check(&statusWrapper);
 
-	Firebird::AutoPtr<Firebird::IManagement, ReleasePlugin> manager;
+	Firebird::AutoPtr<Firebird::IManagement, Firebird::ReleasePlugin> manager;
 	ISC_STATUS_ARRAY status;
 
 	if (!useServices)

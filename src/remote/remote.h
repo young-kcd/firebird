@@ -121,7 +121,7 @@ namespace os_utils
 
 struct rem_port;
 
-typedef Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete<UCHAR> > UCharArrayAutoPtr;
+typedef Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete> UCharArrayAutoPtr;
 
 typedef Firebird::RefPtr<Firebird::IAttachment> ServAttachment;
 typedef Firebird::RefPtr<Firebird::IBlob> ServBlob;
