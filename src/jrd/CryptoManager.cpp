@@ -69,17 +69,6 @@ namespace {
 	const UCHAR CRYPT_INIT = LCK_EX;
 
 	const int MAX_PLUGIN_NAME_LEN = 31;
-
-	template <typename P>
-	class ReleasePlugin
-	{
-	public:
-		static void clear(P* ptr)
-		{
-			if (ptr)
-				PluginManagerInterfacePtr()->releasePlugin(ptr);
-		}
-	};
 }
 
 
@@ -955,7 +944,11 @@ namespace Jrd {
 
 				if (!down)
 				{
-					RefPtr<JAttachment> jAtt(REF_NO_INCR, dbb.dbb_provider->attachDatabase(&status_vector,
+					AutoPtr<JProvider, ReleasePlugin> jInstance(JProvider::getInstance());
+					jInstance->setDbCryptCallback(&status_vector, dbb.dbb_callback);
+					check(&status_vector);
+
+					RefPtr<JAttachment> jAtt(REF_NO_INCR, jInstance->attachDatabase(&status_vector,
 						dbb.dbb_database_name.c_str(), writer.getBufferLength(), writer.getBuffer()));
 					check(&status_vector);
 

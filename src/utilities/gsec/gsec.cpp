@@ -320,17 +320,6 @@ namespace {
 		StackUserData* u;
 	};
 
-	template <typename P>
-	class ReleasePlugin
-	{
-	public:
-		static void clear(P* ptr)
-		{
-			if (ptr)
-				Firebird::PluginManagerInterfacePtr()->releasePlugin(ptr);
-		}
-	};
-
 } // anonymous namespace
 
 int gsec(Firebird::UtilSvc* uSvc)
@@ -421,7 +410,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	user_data->database.set(&statusWrapper, databaseName.c_str());
 	check(&statusWrapper);
 
-	Firebird::AutoPtr<Firebird::IManagement, ReleasePlugin> manager;
+	Firebird::AutoPtr<Firebird::IManagement, Firebird::ReleasePlugin> manager;
 	ISC_STATUS_ARRAY status;
 
 	if (!useServices)
