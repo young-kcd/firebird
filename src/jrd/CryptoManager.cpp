@@ -725,7 +725,7 @@ namespace Jrd {
 				continue;
 
 			// validate a key
-			AutoPtr<IDbCryptPlugin, ReleasePlugin> crypt(checkFactory->makeInstance());
+			AutoPlugin<IDbCryptPlugin> crypt(checkFactory->makeInstance());
 			setDbInfo(crypt);
 			crypt->setKey(&st, 1, &keyHolder, keyName.c_str());
 
@@ -944,7 +944,7 @@ namespace Jrd {
 
 				if (!down)
 				{
-					AutoPtr<JProvider, ReleasePlugin> jInstance(JProvider::getInstance());
+					AutoPlugin<JProvider> jInstance(JProvider::getInstance());
 					jInstance->setDbCryptCallback(&status_vector, dbb.dbb_callback);
 					check(&status_vector);
 

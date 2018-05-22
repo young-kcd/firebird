@@ -330,13 +330,12 @@ public:
 		bool active;
 	};
 
-	static Database* create(Firebird::IPluginConfig* pConf, Firebird::ICryptKeyCallback* cb, bool shared)
+	static Database* create(Firebird::IPluginConfig* pConf, bool shared)
 	{
 		Firebird::MemoryStats temp_stats;
 		MemoryPool* const pool = MemoryPool::createPool(NULL, temp_stats);
 		Database* const dbb = FB_NEW_POOL(*pool) Database(pool, pConf, shared);
 		pool->setStatsGroup(dbb->dbb_memory_stats);
-		dbb->dbb_callback = cb;
 		return dbb;
 	}
 
