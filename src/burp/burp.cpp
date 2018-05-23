@@ -726,6 +726,41 @@ int gbak(Firebird::UtilSvc* uSvc)
 			}
 			tdgbl->gbl_sw_sql_role = argv[itr];
 			break;
+		case IN_SW_BURP_KEYHOLD:
+			if (++itr >= argc)
+			{
+				BURP_error(381, true);
+				// KeyHolder parameter missing
+			}
+			if (tdgbl->gbl_sw_keyholder)
+				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
+			tdgbl->gbl_sw_keyholder = argv[itr];
+			break;
+		case IN_SW_BURP_CRYPT:
+			if (++itr >= argc)
+			{
+				BURP_error(377, true);
+				// CryptPlugin parameter missing
+			}
+			if (tdgbl->gbl_sw_crypt)
+				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
+			tdgbl->gbl_sw_crypt = argv[itr];
+			break;
+		case IN_SW_BURP_KEYNAME:
+			if (++itr >= argc)
+			{
+				BURP_error(375, true);
+				// Key name parameter missing
+			}
+			if (tdgbl->gbl_sw_keyname)
+				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
+			tdgbl->gbl_sw_keyname = argv[itr];
+			break;
+		case IN_SW_BURP_ZIP:
+			if (tdgbl->gbl_sw_zip)
+				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
+			tdgbl->gbl_sw_zip = true;
+			break;
 		case IN_SW_BURP_FA:
 			if (tdgbl->gbl_sw_blk_factor)
 				BURP_error(333, true, SafeArg() << in_sw_tab->in_sw_name << tdgbl->gbl_sw_blk_factor);
@@ -1202,6 +1237,8 @@ int gbak(Firebird::UtilSvc* uSvc)
 		}
 		else if (tdgbl->gbl_sw_old_descriptions)
 			errNum = IN_SW_BURP_OL;
+		else if (tdgbl->gbl_sw_zip)
+			errNum = IN_SW_BURP_ZIP;
 
 		if (errNum != IN_SW_BURP_0)
 		{
@@ -1815,14 +1852,28 @@ static gbak_action open_files(const TEXT* file1,
  *
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
-	FbLocalStatus temp_status;
-	Firebird::CheckStatusWrapper* status_vector = &temp_status;
+	FbLocalStatus status_vector;
 
 	// try to attach the database using the first file_name
 
 	if (sw_replace != IN_SW_BURP_C && sw_replace != IN_SW_BURP_R)
 	{
-		tdgbl->db_handle = Firebird::DispatcherPtr()->attachDatabase(status_vector, file1,
+		Firebird::DispatcherPtr provider;
+
+		// provide crypt key(s) for engine
+
+		if (tdgbl->gbl_sw_keyholder)
+		{
+			tdgbl->gbl_database_file_name = file1;
+			provider->setDbCryptCallback(&status_vector, MVOL_get_crypt(tdgbl));
+			if (!status_vector.isSuccess())
+			{
+				BURP_print_status(true, &status_vector);
+				return QUIT;
+			}
+		}
+
+		tdgbl->db_handle = provider->attachDatabase(&status_vector, file1,
 			dpb.getBufferLength(), dpb.getBuffer());
 
 		if (!(status_vector->getState() & Firebird::IStatus::STATE_ERRORS))
@@ -1831,10 +1882,10 @@ static gbak_action open_files(const TEXT* file1,
 			{
 				// msg 13 REPLACE specified, but the first file %s is a database
 				BURP_error(13, true, file1);
-				tdgbl->db_handle->detach(status_vector);
+				tdgbl->db_handle->detach(&status_vector);
 
 				if (status_vector->getState() & Firebird::IStatus::STATE_ERRORS)
-					BURP_print_status(true, status_vector);
+					BURP_print_status(true, &status_vector);
 				else
 					tdgbl->db_handle = NULL;
 
@@ -1845,14 +1896,58 @@ static gbak_action open_files(const TEXT* file1,
 				// msg 139 Version(s) for database "%s"
 				BURP_print(false, 139, file1);
 				OutputVersion outputVersion("\t%s\n");
-				Firebird::UtilInterfacePtr()->getFbVersion(status_vector, tdgbl->db_handle, &outputVersion);
+				Firebird::UtilInterfacePtr()->getFbVersion(&status_vector, tdgbl->db_handle, &outputVersion);
 			}
 			BURP_verbose(166, file1); // msg 166: readied database %s for backup
+
+			if (tdgbl->gbl_sw_keyholder)
+			{
+				unsigned char info[] = {fb_info_crypt_key, fb_info_crypt_plugin};
+				unsigned char buffer[(1 + 2 + MAX_SQL_IDENTIFIER_SIZE) * 2 + 2];
+				unsigned int len;
+
+				tdgbl->db_handle->getInfo(&status_vector, sizeof(info), info, sizeof(buffer), buffer);
+
+				UCHAR* p = buffer;
+				while(p)
+				{
+					switch(*p++)
+					{
+					case fb_info_crypt_key:
+						len = gds__vax_integer(p, 2);
+						if (len < sizeof(tdgbl->gbl_hdr_keybuffer))
+						{
+							memcpy(tdgbl->gbl_hdr_keybuffer, p + 2, len);
+							tdgbl->gbl_hdr_keybuffer[len] = 0;
+							if (!tdgbl->gbl_sw_keyname)
+								tdgbl->gbl_sw_keyname = tdgbl->gbl_hdr_keybuffer;
+						}
+						break;
+
+					case fb_info_crypt_plugin:
+						len = gds__vax_integer(p, 2);
+						if (len < sizeof(tdgbl->gbl_hdr_cryptbuffer))
+						{
+							memcpy(tdgbl->gbl_hdr_cryptbuffer, p + 2, len);
+							tdgbl->gbl_hdr_cryptbuffer[len] = 0;
+							if (!tdgbl->gbl_sw_crypt)
+								tdgbl->gbl_sw_crypt = tdgbl->gbl_hdr_cryptbuffer;
+						}
+						break;
+
+					default:
+						p = NULL;
+						continue;
+					}
+
+					p += (2 + len);
+				}
+			}
 		}
 		else if (sw_replace == IN_SW_BURP_B ||
 			(status_vector->getErrors()[1] != isc_io_error && status_vector->getErrors()[1] != isc_bad_db_format))
 		{
-			BURP_print_status(true, status_vector);
+			BURP_print_status(true, &status_vector);
 			return QUIT;
 		}
 	}
@@ -1928,7 +2023,7 @@ static gbak_action open_files(const TEXT* file1,
 			{
 				Firebird::string nm = tdgbl->toSystem(fil->fil_name);
 #ifdef WIN_NT
-				if ((fil->fil_fd = MVOL_open(nm.c_str(), MODE_WRITE, CREATE_ALWAYS)) ==
+				if ((fil->fil_fd = NT_tape_open(nm.c_str(), MODE_WRITE, CREATE_ALWAYS)) ==
 					INVALID_HANDLE_VALUE)
 #else
 				if ((fil->fil_fd = os_utils::open(nm.c_str(), MODE_WRITE, open_mask)) == -1)
@@ -1974,10 +2069,10 @@ static gbak_action open_files(const TEXT* file1,
 		}
 		else
 		{
-			tdgbl->db_handle->detach(status_vector);
+			tdgbl->db_handle->detach(&status_vector);
 
 			if (status_vector->getState() & Firebird::IStatus::STATE_ERRORS)
-				BURP_print_status(true, status_vector);
+				BURP_print_status(true, &status_vector);
 			else
 				tdgbl->db_handle = NULL;
 		}
@@ -2038,7 +2133,7 @@ static gbak_action open_files(const TEXT* file1,
 		// open first file
 		Firebird::string nm = tdgbl->toSystem(fil->fil_name);
 #ifdef WIN_NT
-		if ((fil->fil_fd = MVOL_open(nm.c_str(), MODE_READ, OPEN_EXISTING)) ==
+		if ((fil->fil_fd = NT_tape_open(nm.c_str(), MODE_READ, OPEN_EXISTING)) ==
 			INVALID_HANDLE_VALUE)
 #else
 		if ((fil->fil_fd = os_utils::open(nm.c_str(), MODE_READ)) == INVALID_HANDLE_VALUE)
@@ -2084,7 +2179,7 @@ static gbak_action open_files(const TEXT* file1,
 				tdgbl->action->act_file = fil;
 				Firebird::string nm = tdgbl->toSystem(fil->fil_name);
 #ifdef WIN_NT
-				if ((fil->fil_fd = MVOL_open(nm.c_str(), MODE_READ, OPEN_EXISTING)) ==
+				if ((fil->fil_fd = NT_tape_open(nm.c_str(), MODE_READ, OPEN_EXISTING)) ==
 					INVALID_HANDLE_VALUE)
 #else
 				if ((fil->fil_fd = os_utils::open(nm.c_str(), MODE_READ)) == INVALID_HANDLE_VALUE)
@@ -2152,17 +2247,32 @@ static gbak_action open_files(const TEXT* file1,
 
 	if (sw_replace == IN_SW_BURP_C || sw_replace == IN_SW_BURP_R)
 	{
-		tdgbl->db_handle = Firebird::DispatcherPtr()->attachDatabase(status_vector, *file2,
+		Firebird::DispatcherPtr provider;
+
+		// provide crypt key(s) for engine
+
+		if (tdgbl->gbl_sw_keyholder)
+		{
+			tdgbl->gbl_database_file_name = *file2;
+			provider->setDbCryptCallback(&status_vector, MVOL_get_crypt(tdgbl));
+			if (!status_vector.isSuccess())
+			{
+				BURP_print_status(true, &status_vector);
+				return QUIT;
+			}
+		}
+
+		tdgbl->db_handle = provider->attachDatabase(&status_vector, *file2,
 			dpb.getBufferLength(), dpb.getBuffer());
 
 		if (!(status_vector->getState() & Firebird::IStatus::STATE_ERRORS))
 		{
 			if (sw_replace == IN_SW_BURP_C)
 			{
-				tdgbl->db_handle->detach(status_vector);
+				tdgbl->db_handle->detach(&status_vector);
 
 				if (status_vector->getState() & Firebird::IStatus::STATE_ERRORS)
-					BURP_print_status(true, status_vector);
+					BURP_print_status(true, &status_vector);
 				else
 					tdgbl->db_handle = NULL;
 
@@ -2171,7 +2281,7 @@ static gbak_action open_files(const TEXT* file1,
 			}
 			else
 			{
-				tdgbl->db_handle->dropDatabase(status_vector);
+				tdgbl->db_handle->dropDatabase(&status_vector);
 
 				if (status_vector->getState() & Firebird::IStatus::STATE_ERRORS)
 				{

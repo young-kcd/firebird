@@ -393,6 +393,9 @@
 #define isc_spb_bkp_length               7
 #define isc_spb_bkp_skip_data            8
 #define isc_spb_bkp_stat                 15
+#define isc_spb_bkp_keyholder			 16
+#define isc_spb_bkp_keyname				 17
+#define isc_spb_bkp_crypt				 18
 #define isc_spb_bkp_ignore_checksums     0x01
 #define isc_spb_bkp_ignore_limbo         0x02
 #define isc_spb_bkp_metadata_only        0x04
@@ -402,6 +405,7 @@
 #define isc_spb_bkp_convert              0x40
 #define isc_spb_bkp_expand				 0x80
 #define isc_spb_bkp_no_triggers			 0x8000
+#define isc_spb_bkp_zip					 0x010000
 
 /********************************************
  * Parameters for isc_action_svc_properties *
@@ -505,6 +509,9 @@
 #define isc_spb_res_access_mode			12
 #define isc_spb_res_fix_fss_data		13
 #define isc_spb_res_fix_fss_metadata	14
+#define isc_spb_res_keyholder			isc_spb_bkp_keyholder
+#define isc_spb_res_keyname				isc_spb_bkp_keyname
+#define isc_spb_res_crypt				isc_spb_bkp_crypt
 #define isc_spb_res_stat				isc_spb_bkp_stat
 #define isc_spb_res_metadata_only		isc_spb_bkp_metadata_only
 #define isc_spb_res_deactivate_idx		0x0100

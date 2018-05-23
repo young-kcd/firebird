@@ -992,6 +992,7 @@ Data source : @4', NULL, NULL)
 ('hdr_overflow', NULL, 'CryptoManager.cpp', NULL, 0, 882, NULL, 'Header page overflow - too many clumplets on it', NULL, NULL);
 ('vld_plugins', NULL, 'ValidatePassword.cpp', NULL, 0, 883, NULL, 'No matching client/server authentication plugins configured for execute statement in embedded datasource', NULL, NULL);
 ('db_crypt_key', NULL, 'CryptoManager.cpp', NULL, 0, 884, NULL, 'Missing database encryption key for your attachment', NULL, NULL);
+('no_keyholder_plugin', NULL, 'mvol.cpp', NULL, 0, 885, NULL, 'Key holder plugin @1 failed to load', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
@@ -2464,6 +2465,21 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'api_gbak/gbak', 'burp.cpp', NULL, 12, 369, NULL, 'total statistics', NULL, NULL);
 (NULL, 'get_blob', 'restore.epp', NULL, 12, 370, NULL, 'could not append BLOB data to batch', NULL, NULL);
 (NULL, 'get_data', 'restore.epp', NULL, 12, 371, NULL, 'could not start batch when restoring table @1, trying old way', NULL, NULL);
+(NULL, 'burp_usage', 'burp.cpp', NULL, 12, 372, NULL, '    @1KEYNAME              name of a key to be used for encryption', NULL, NULL);
+(NULL, 'burp_usage', 'burp.cpp', NULL, 12, 373, NULL, '    @1CRYPT                crypt plugin name', NULL, NULL);
+(NULL, 'burp_usage', 'burp.cpp', NULL, 12, 374, NULL, '    @1ZIP                  backup file is in zip compressed format', NULL, NULL);
+(NULL, 'gbak', 'burp.cpp', NULL, 12, 375, NULL, 'Keyname parameter missing', NULL, NULL);
+(NULL, 'gbak', 'burp.cpp', NULL, 12, 376, NULL, 'Key holder parameter missing but backup file is encrypted', NULL, NULL);
+(NULL, 'gbak', 'mvol.cpp', NULL, 12, 377, NULL, 'CryptPlugin parameter missing', NULL, NULL);
+(NULL, 'gbak', 'burp.cpp', NULL, 12, 378, NULL, 'Unknown crypt plugin name - use -CRYPT switch', NULL, NULL);
+(NULL, NULL, 'mvol.cpp', NULL, 12, 379, NULL, 'Inflate error @1', NULL, NULL);
+(NULL, NULL, 'mvol.cpp', NULL, 12, 380, NULL, 'Deflate error @1', NULL, NULL);
+(NULL, 'gbak', 'burp.cpp', NULL, 12, 381, NULL, 'Key holder parameter missing', NULL, NULL);
+(NULL, 'burp_usage', 'burp.cpp', NULL, 12, 382, NULL, '    @1KEYHOLDER            name of a key holder plugin', NULL, NULL);
+(NULL, NULL, 'mvol.cpp', NULL, 12, 383, NULL, 'Decompression stream init error @1', NULL, NULL);
+(NULL, NULL, 'mvol.cpp', NULL, 12, 384, NULL, 'Compression stream init error @1', NULL, NULL);
+(NULL, NULL, 'restore.epp', NULL, 12, 385, NULL, 'Invalid reply from getInfo() when waiting for DB encryption', NULL, NULL);
+(NULL, NULL, 'restore.epp', NULL, 12, 386, NULL, 'Problems with just created database encryption', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);

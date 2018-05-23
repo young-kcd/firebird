@@ -265,6 +265,7 @@ namespace Jrd {
 		: PermanentStorage(*tdbb->getDatabase()->dbb_permanent),
 		  sync(this),
 		  keyName(getPool()),
+		  pluginName(getPool()),
 		  keyProviders(getPool()),
 		  keyConsumers(getPool()),
 		  hash(getPool()),
@@ -366,6 +367,7 @@ namespace Jrd {
 				keyName = "";
 
 			loadPlugin(tdbb, hdr->hdr_crypt_plugin);
+			pluginName = hdr->hdr_crypt_plugin;
 
 			string valid;
 			calcValidation(valid, cryptPlugin);
@@ -395,7 +397,7 @@ namespace Jrd {
 		}
 	}
 
-	void CryptoManager::loadPlugin(thread_db* tdbb, const char* pluginName)
+	void CryptoManager::loadPlugin(thread_db* tdbb, const char* plugName)
 	{
 		if (cryptPlugin)
 		{
@@ -408,10 +410,10 @@ namespace Jrd {
 			return;
 		}
 
-		AutoPtr<Factory> cryptControl(FB_NEW Factory(IPluginManager::TYPE_DB_CRYPT, dbb.dbb_config, pluginName));
+		AutoPtr<Factory> cryptControl(FB_NEW Factory(IPluginManager::TYPE_DB_CRYPT, dbb.dbb_config, plugName));
 		if (!cryptControl->hasData())
 		{
-			(Arg::Gds(isc_no_crypt_plugin) << pluginName).raise();
+			(Arg::Gds(isc_no_crypt_plugin) << plugName).raise();
 		}
 
 		// do not assign cryptPlugin directly before key init complete
@@ -461,6 +463,7 @@ namespace Jrd {
 
 		cryptPlugin = p;
 		cryptPlugin->addRef();
+		pluginName = plugName;
 
 		// remove old factory if present
 		delete checkFactory;
@@ -1324,6 +1327,11 @@ namespace Jrd {
 	const char* CryptoManager::getKeyName() const
 	{
 		return keyName.c_str();
+	}
+
+	const char* CryptoManager::getPluginName() const
+	{
+		return pluginName.c_str();
 	}
 
 	void CryptoManager::addClumplet(string& signature, ClumpletReader& block, UCHAR tag)

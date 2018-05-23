@@ -30,6 +30,7 @@
 #define FB_COMMON_CLASSES_GET_PLUGINS
 
 #include "../common/classes/ImplementHelper.h"
+#include "../common/classes/auto.h"
 #include "../common/config/config.h"
 #include "../common/StatusHolder.h"
 

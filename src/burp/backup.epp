@@ -88,18 +88,12 @@ namespace // unnamed, private
 
 inline void put(BurpGlobals* tdgbl, const UCHAR c)
 {
-	if (--(tdgbl->io_cnt) >= 0)
-		*(tdgbl->io_ptr)++ = c;
-	else
-		MVOL_write(c, &tdgbl->io_cnt, &tdgbl->io_ptr);
+	tdgbl->put(c);
 }
 
 inline void put(BurpGlobals* tdgbl, const att_type c)
 {
-	if (--tdgbl->io_cnt >= 0)
-		*(tdgbl->io_ptr)++ = UCHAR(c);
-	else
-		MVOL_write(UCHAR(c), &tdgbl->io_cnt, &tdgbl->io_ptr);
+	put(tdgbl, UCHAR(c));
 }
 
 inline const UCHAR* put_block(BurpGlobals* tdgbl, const UCHAR* p, ULONG n)
@@ -221,11 +215,6 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 
 	tdgbl->gbl_database_file_name = dbb_file;
 
-	tdgbl->io_ptr = NULL;
-	tdgbl->io_cnt = 0;
-	tdgbl->relations = NULL;
-	tdgbl->runtimeODS = 0;
-
 	gds_trans = 0;
 
 	BURP_verbose(130);
@@ -280,7 +269,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		tdgbl->action->act_file = tdgbl->gbl_sw_files;
 	}
 
-	MVOL_init_write(file_name, &tdgbl->io_cnt, &tdgbl->io_ptr);
+	MVOL_init_write(file_name);
 
 	// Write database record
 
@@ -416,7 +405,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 	// Finish up
 
 	put(tdgbl, (UCHAR) rec_end);
-	FB_UINT64 cumul_count = MVOL_fini_write(&tdgbl->io_cnt, &tdgbl->io_ptr);
+	FB_UINT64 cumul_count = MVOL_fini_write();
 	tdgbl->action->act_action = ACT_backup_fini;
 	BURP_verbose(176, SafeArg() << cumul_count);
 	// msg 176 closing file, committing, and finishing.  %ld bytes written

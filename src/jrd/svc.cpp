@@ -647,6 +647,11 @@ bool Service::utf8FileNames()
 	return svc_utf8;
 }
 
+Firebird::ICryptKeyCallback* Service::getCryptCallback()
+{
+	return svc_crypt_callback;
+}
+
 void Service::need_admin_privs(Arg::StatusVector& status, const char* message)
 {
 	status << Arg::Gds(isc_insufficient_svc_privileges) << Arg::Str(message);
@@ -2933,6 +2938,9 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 			case isc_spb_res_fix_fss_metadata:
 			case isc_spb_bkp_stat:
 			case isc_spb_bkp_skip_data:
+			case isc_spb_bkp_keyholder:
+			case isc_spb_bkp_keyname:
+			case isc_spb_bkp_crypt:
 				if (!get_action_svc_parameter(spb.getClumpTag(), reference_burp_in_sw_table, switches))
 				{
 					return false;

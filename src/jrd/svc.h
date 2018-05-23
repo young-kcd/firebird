@@ -141,6 +141,8 @@ public:		// utilities interface with service
 	virtual void fillDpb(Firebird::ClumpletWriter& dpb);
 	// encoding for string parameters passed to utility
 	virtual bool utf8FileNames();
+	// get database encryption key transfer callback routine
+	virtual Firebird::ICryptKeyCallback* getCryptCallback();
 
 	virtual TraceManager* getTraceManager()
 	{
@@ -196,7 +198,6 @@ public:		// external interface with service
 	const Firebird::string&	getRemoteProcess() const	{ return svc_remote_process; }
 	int	getRemotePID() const { return svc_remote_pid; }
 	const Firebird::PathName& getExpectedDb() const		{ return svc_expected_db; }
-	Firebird::ICryptKeyCallback* getCryptCallback()		{ return svc_crypt_callback; }
 
 private:
 	// Service must have private destructor, called from finish
