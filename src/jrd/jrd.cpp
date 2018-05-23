@@ -6940,19 +6940,8 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	dbb->dbb_extManager.closeAttachment(tdbb, attachment);
 
-	if ((dbb->dbb_config->getServerMode() == MODE_SUPER) && attachment->att_relations)
-	{
-		vec<jrd_rel*>& rels = *attachment->att_relations;
-		for (FB_SIZE_T i = 1; i < rels.count(); i++)
-		{
-			jrd_rel* relation = rels[i];
-			if (relation && (relation->rel_flags & REL_temp_conn) &&
-				!(relation->rel_flags & (REL_deleted | REL_deleting)) )
-			{
-				relation->delPages(tdbb);
-			}
-		}
-	}
+	if (dbb->dbb_config->getServerMode() == MODE_SUPER)
+		attachment->releaseGTTs(tdbb);
 
 	if (dbb->dbb_event_mgr && attachment->att_event_session)
 		dbb->dbb_event_mgr->deleteSession(attachment->att_event_session);
