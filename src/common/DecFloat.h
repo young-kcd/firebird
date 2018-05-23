@@ -55,6 +55,12 @@ struct DecimalStatus
 		: decExtFlag(exc), roundingMode(DEC_ROUND_HALF_UP)
 	{ }
 
+	DecimalStatus()
+		: decExtFlag(FB_DEC_Errors), roundingMode(DEC_ROUND_HALF_UP)
+	{ }
+
+	static const DecimalStatus DEFAULT;
+
 	USHORT decExtFlag, roundingMode;
 };
 
@@ -64,15 +70,14 @@ struct DecimalBinding
 		: bind(DEC_NATIVE), numScale(0)
 	{ }
 
+	static const DecimalBinding DEFAULT;
+
 	enum Bind { DEC_NATIVE, DEC_TEXT, DEC_DOUBLE, DEC_NUMERIC };
 
 	Bind bind;
 	SCHAR numScale;
 };
 
-// Default values for user sessions
-const DecimalStatus DefaultDecimalStatus(FB_DEC_Errors);
-const DecimalBinding DefaultDecimalBinding;
 
 class DecimalFixed;
 

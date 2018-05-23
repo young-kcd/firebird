@@ -204,8 +204,8 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	  att_functions(*pool),
 	  att_internal(*pool),
 	  att_dyn_req(*pool),
-	  att_dec_status(DefaultDecimalStatus),
-	  att_dec_binding(DefaultDecimalBinding),
+	  att_dec_status(DecimalStatus::DEFAULT),
+	  att_dec_binding(DecimalBinding::DEFAULT),
 	  att_charsets(*pool),
 	  att_charset_ids(*pool),
 	  att_pools(*pool),
@@ -384,8 +384,8 @@ void Jrd::Attachment::releaseGTTs(thread_db* tdbb)
 void Jrd::Attachment::resetSession(thread_db* tdbb)
 {
 	// reset DecFloat
-	att_dec_status = DefaultDecimalStatus;
-	att_dec_binding = DefaultDecimalBinding;
+	att_dec_status = DecimalStatus::DEFAULT;
+	att_dec_binding = DecimalBinding::DEFAULT;
 
 	// reset timeouts
 	setIdleTimeout(0);
