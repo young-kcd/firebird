@@ -45,6 +45,9 @@ extern "C"
 
 using namespace Firebird;
 
+const DecimalStatus DecimalStatus::DEFAULT(FB_DEC_Errors);
+const DecimalBinding DecimalBinding::DEFAULT;
+
 namespace {
 
 struct Dec2fb

@@ -55,10 +55,6 @@ struct DecimalStatus
 		: decExtFlag(exc), roundingMode(DEC_ROUND_HALF_UP)
 	{ }
 
-	DecimalStatus()
-		: decExtFlag(FB_DEC_Errors), roundingMode(DEC_ROUND_HALF_UP)
-	{ }
-
 	static const DecimalStatus DEFAULT;
 
 	USHORT decExtFlag, roundingMode;
