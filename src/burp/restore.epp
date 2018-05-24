@@ -9306,7 +9306,7 @@ bool get_trigger(BurpGlobals* tdgbl)
 				switch (attribute)
 				{
 				case att_trig_type:
-					X.RDB$TRIGGER_TYPE = (USHORT) get_int32(tdgbl);
+					X.RDB$TRIGGER_TYPE = get_int32(tdgbl);
 					break;
 
 				case att_trig_type2:
