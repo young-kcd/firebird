@@ -428,6 +428,10 @@ public:
 
 static Static<EngineFactory> engineFactory;
 
+
+//-------------------------------
+
+
 void registerEngine(IPluginManager* iPlugin)
 {
 	UnloadDetectorHelper* module = getUnloadDetector();
