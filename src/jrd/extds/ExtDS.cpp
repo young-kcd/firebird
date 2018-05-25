@@ -58,7 +58,7 @@
 #include <windows.h>
 #endif
 
-#define EDS_DEBUG
+//#define EDS_DEBUG
 
 #ifdef EDS_DEBUG
 
