@@ -141,6 +141,8 @@ public:		// utilities interface with service
 	virtual void fillDpb(Firebird::ClumpletWriter& dpb);
 	// encoding for string parameters passed to utility
 	virtual bool utf8FileNames();
+	// get database encryption key transfer callback routine
+	virtual Firebird::ICryptKeyCallback* getCryptCallback();
 
 	virtual TraceManager* getTraceManager()
 	{
@@ -196,7 +198,6 @@ public:		// external interface with service
 	const Firebird::string&	getRemoteProcess() const	{ return svc_remote_process; }
 	int	getRemotePID() const { return svc_remote_pid; }
 	const Firebird::PathName& getExpectedDb() const		{ return svc_expected_db; }
-	Firebird::ICryptKeyCallback* getCryptCallback()		{ return svc_crypt_callback; }
 
 private:
 	// Service must have private destructor, called from finish
@@ -277,7 +278,7 @@ private:
 	static THREAD_ENTRY_DECLARE run(THREAD_ENTRY_PARAM arg);
 
 private:
-	FbLocalStatus svc_status;						// status vector for running service
+	Firebird::FbLocalStatus svc_status;				// status vector for running service
 	Firebird::string svc_parsed_sw;					// Here point elements of argv
 	ULONG	svc_stdout_head;
 	ULONG	svc_stdout_tail;
@@ -391,6 +392,8 @@ private:
 	// Size of data, placed into svc_stdin_buffer (set in put)
 	ULONG svc_stdin_user_size;
 	static const ULONG PRELOAD_BUFFER_SIZE = SVC_IO_BUFFER_SIZE;
+	// Handle of a thread to wait for when closing
+	Thread::Handle svc_thread;
 
 #ifdef DEV_BUILD
 	bool svc_debug;

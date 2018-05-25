@@ -210,14 +210,14 @@ public:
 
 	// IRequest implementation
 	void receive(Firebird::CheckStatusWrapper* status, int level, unsigned int msgType,
-		unsigned int length, unsigned char* message);
+		unsigned int length, void* message);
 	void send(Firebird::CheckStatusWrapper* status, int level, unsigned int msgType,
-		unsigned int length, const unsigned char* message);
+		unsigned int length, const void* message);
 	void getInfo(Firebird::CheckStatusWrapper* status, int level, unsigned int itemsLength,
 		const unsigned char* items, unsigned int bufferLength, unsigned char* buffer);
 	void start(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction, int level);
 	void startAndSend(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction, int level,
-		unsigned int msgType, unsigned int length, const unsigned char* message);
+		unsigned int msgType, unsigned int length, const void* message);
 	void unwind(Firebird::CheckStatusWrapper* status, int level);
 	void free(Firebird::CheckStatusWrapper* status);
 
@@ -623,7 +623,6 @@ public:
 	Firebird::IEventBlock* createEventBlock(Firebird::CheckStatusWrapper* status, const char** events);
 	Firebird::IDecFloat16* getDecFloat16(Firebird::CheckStatusWrapper* status);
 	Firebird::IDecFloat34* getDecFloat34(Firebird::CheckStatusWrapper* status);
-	Firebird::IDecFixed* getDecFixed(Firebird::CheckStatusWrapper* status);
 };
 
 }	// namespace Why

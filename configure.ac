@@ -249,6 +249,18 @@ dnl CPU_TYPE=ppc64
     libdir=/usr/lib64
     ;;
 
+  riscv64*-*-linux*)
+    MAKEFILE_PREFIX=linux_riscv64
+    INSTALL_PREFIX=linux
+    PLATFORM=LINUX
+    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    EDITLINE_FLG=Y
+    SHRLIB_EXT=so
+    STD_EDITLINE=true
+    STD_ICU=true
+    libdir=/usr/lib64
+    ;;
+
   powerpc64le-*-linux*)
     MAKEFILE_PREFIX=linux_powerpc64el
     INSTALL_PREFIX=linux
@@ -1211,7 +1223,6 @@ dnl ### GEN ### directories for databases and misc
 dnl # output
 	mkdir -p gen/\$fb_tgt/include
 	mkdir -p gen/\$fb_tgt/intl
-	mkdir -p gen/\$fb_tgt/firebird/UDF
 	mkdir -p gen/\$fb_tgt/firebird/bin
 	mkdir -p gen/\$fb_tgt/firebird/plugins
 	mkdir -p gen/\$fb_tgt/firebird/examples/api
@@ -1238,11 +1249,6 @@ dnl ### TEMP ### directories for generated .cpp, .o and .d by module name
 	done
 
 	src/misc/writeBuildNum.sh createMakeVersion gen/Make.Version
-
-dnl # sql files for UDF declarations
-	for sql_file in ib_udf.sql fbudf/fbudf.sql ib_udf2.sql; do
-		cp src/extlib/\$sql_file gen/\$fb_tgt/firebird/UDF
-	done
 done
 
 dnl # rebuild version header if needed

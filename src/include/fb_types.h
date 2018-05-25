@@ -125,6 +125,7 @@ typedef void (*ErrorFunction) (const Firebird::Arg::StatusVector& v);
 typedef void (*FPTR_ERROR) (ISC_STATUS, ...);
 
 typedef ULONG RCRD_OFFSET;
+typedef ULONG RCRD_LENGTH;
 typedef USHORT FLD_LENGTH;
 /* CVC: internal usage. I suspect the only reason to return int is that
 vmslock.cpp:LOCK_convert() calls VMS' sys$enq that may require this signature,

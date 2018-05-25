@@ -382,12 +382,19 @@ int JProvider::release()
 	return 1;
 }
 
+static void threadDetach()
+{
+	ThreadSync* thd = ThreadSync::findThread();
+	delete thd;
+}
+
 static void shutdownBeforeUnload()
 {
 	LocalStatus status;
 	CheckStatusWrapper statusWrapper(&status);
 
-	JProvider::getInstance()->shutdown(&statusWrapper, 0, fb_shutrsn_exit_called);
+	AutoPlugin<JProvider>(JProvider::getInstance())->shutdown(&statusWrapper, 0, fb_shutrsn_exit_called);
+	threadDetach();
 };
 
 class EngineFactory : public AutoIface<IPluginFactoryImpl<EngineFactory, CheckStatusWrapper> >
@@ -419,9 +426,12 @@ static Static<EngineFactory> engineFactory;
 
 void registerEngine(IPluginManager* iPlugin)
 {
-	getUnloadDetector()->setCleanup(shutdownBeforeUnload);
+	UnloadDetectorHelper* module = getUnloadDetector();
+	module->setCleanup(shutdownBeforeUnload);
+	module->setThreadDetach(threadDetach);
+
 	iPlugin->registerPluginFactory(IPluginManager::TYPE_PROVIDER, CURRENT_ENGINE, &engineFactory);
-	getUnloadDetector()->registerMe();
+	module->registerMe();
 }
 
 } // namespace Jrd
@@ -1573,6 +1583,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 					dbb, Ods::hdr_nbak_unknown);
 				dbb->dbb_backup_manager->initializeAlloc(tdbb);
 				dbb->dbb_crypto_manager = FB_NEW_POOL(*dbb->dbb_permanent) CryptoManager(tdbb);
+				dbb->dbb_monitoring_data = FB_NEW_POOL(*dbb->dbb_permanent) MonitoringData(dbb);
 
 				PAG_init2(tdbb, 0);
 				PAG_header(tdbb, false);
@@ -2747,6 +2758,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 				dbb, Ods::hdr_nbak_normal);
 			dbb->dbb_backup_manager->dbCreating = true;
 			dbb->dbb_crypto_manager = FB_NEW_POOL(*dbb->dbb_permanent) CryptoManager(tdbb);
+			dbb->dbb_monitoring_data = FB_NEW_POOL(*dbb->dbb_permanent) MonitoringData(dbb);
 
 			PAG_format_header(tdbb);
 			INI_init2(tdbb);
@@ -3036,12 +3048,7 @@ void JAttachment::dropDatabase(CheckStatusWrapper* user_status)
 
 				const PathName& file_name = attachment->att_filename;
 
-				if (!attachment->locksmith(tdbb, DROP_DATABASE))
-				{
-					ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("drop") <<
-													  Arg::Str("database") <<
-													  Arg::Str(file_name));
-				}
+				SCL_check_database(tdbb, SCL_drop);
 
 				if (attachment->att_flags & ATT_shutdown)
 				{
@@ -3490,7 +3497,7 @@ JEvents* JAttachment::queEvents(CheckStatusWrapper* user_status, IEventCallback*
 
 
 void JRequest::receive(CheckStatusWrapper* user_status, int level, unsigned int msg_type,
-					   unsigned int msg_length, unsigned char* msg)
+					   unsigned int msg_length, void* msg)
 {
 /**************************************
  *
@@ -3803,7 +3810,7 @@ int JBlob::seek(CheckStatusWrapper* user_status, int mode, int offset)
 
 
 void JRequest::send(CheckStatusWrapper* user_status, int level, unsigned int msg_type,
-	unsigned int msg_length, const unsigned char* msg)
+	unsigned int msg_length, const void* msg)
 {
 /**************************************
  *
@@ -4028,7 +4035,7 @@ void JService::start(CheckStatusWrapper* user_status, unsigned int spbLength, co
 
 
 void JRequest::startAndSend(CheckStatusWrapper* user_status, ITransaction* tra, int level,
-	unsigned int msg_type, unsigned int msg_length, const unsigned char* msg)
+	unsigned int msg_type, unsigned int msg_length, const void* msg)
 {
 /**************************************
  *
@@ -6698,9 +6705,10 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 
 		Config::merge(config, &options.dpb_config);
 
-		dbb = Database::create(pConf, provider, shared);
+		dbb = Database::create(pConf, shared);
 		dbb->dbb_config = config;
 		dbb->dbb_filename = expanded_name;
+		dbb->dbb_callback = provider->getCryptCallback();
 #ifdef HAVE_ID_BY_NAME
 		dbb->dbb_id = db_id;		// will be reassigned in create database after PIO operation
 #endif
@@ -6934,19 +6942,8 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	dbb->dbb_extManager.closeAttachment(tdbb, attachment);
 
-	if ((dbb->dbb_config->getServerMode() == MODE_SUPER) && attachment->att_relations)
-	{
-		vec<jrd_rel*>& rels = *attachment->att_relations;
-		for (FB_SIZE_T i = 1; i < rels.count(); i++)
-		{
-			jrd_rel* relation = rels[i];
-			if (relation && (relation->rel_flags & REL_temp_conn) &&
-				!(relation->rel_flags & (REL_deleted | REL_deleting)) )
-			{
-				relation->delPages(tdbb);
-			}
-		}
-	}
+	if (dbb->dbb_config->getServerMode() == MODE_SUPER)
+		attachment->releaseGTTs(tdbb);
 
 	if (dbb->dbb_event_mgr && attachment->att_event_session)
 		dbb->dbb_event_mgr->deleteSession(attachment->att_event_session);
@@ -7365,7 +7362,7 @@ void JTransaction::freeEngineData(CheckStatusWrapper* user_status)
 	try
 	{
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
-		check_database(tdbb);
+		check_database(tdbb, true);
 
 		try
 		{
@@ -7388,6 +7385,7 @@ void JTransaction::freeEngineData(CheckStatusWrapper* user_status)
 	}
 	catch (const Exception& ex)
 	{
+		transaction = NULL;
 		ex.stuffException(user_status);
 		return;
 	}
@@ -7943,6 +7941,7 @@ namespace
 		{
 			StableAttachmentPart* const sAtt = *iter;
 
+			MutexLockGuard guardBlocking(*(sAtt->getBlockingMutex()), FB_FUNCTION);
 			MutexLockGuard guard(*(sAtt->getMutex()), FB_FUNCTION);
 			Attachment* attachment = sAtt->getHandle();
 
@@ -8399,7 +8398,7 @@ void JRD_autocommit_ddl(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_length, UCHAR* msg)
+void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_length, void* msg)
 {
 /**************************************
  *
@@ -8423,7 +8422,7 @@ void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_l
 }
 
 
-void JRD_send(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_length, const UCHAR* msg)
+void JRD_send(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_length, const void* msg)
 {
 /**************************************
  *
@@ -8537,7 +8536,7 @@ void JRD_rollback_retaining(thread_db* tdbb, jrd_tra* transaction)
 
 
 void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
-	USHORT msg_type, ULONG msg_length, const UCHAR* msg)
+	USHORT msg_type, ULONG msg_length, const void* msg)
 {
 /**************************************
  *
@@ -8759,7 +8758,7 @@ void JRD_shutdown_attachment(Attachment* attachment)
 		attachment->getStable()->addRef();
 		queue->add(attachment->getStable());
 
-		Thread::start(attachmentShutdownThread, queue, 0);
+		Thread::start(attachmentShutdownThread, queue, THREAD_high);
 	}
 	catch (const Exception&)
 	{} // no-op
@@ -8804,7 +8803,7 @@ void JRD_shutdown_attachments(Database* dbb)
 		}
 
 		if (queue.hasData())
-			Thread::start(attachmentShutdownThread, queue.release(), 0);
+			Thread::start(attachmentShutdownThread, queue.release(), THREAD_high);
 	}
 	catch (const Exception&)
 	{} // no-op

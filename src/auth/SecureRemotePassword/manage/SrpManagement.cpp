@@ -199,7 +199,7 @@ private:
 		}
 		else
 		{
-			sql.printf("GRANT %s TO \"%s\"", ADMIN_ROLE, userName.c_str());
+			sql.printf("GRANT DEFAULT %s TO \"%s\"", ADMIN_ROLE, userName.c_str());
 		}
 
 		att->execute(&statusWrapper, tra, sql.length(), sql.c_str(),

@@ -140,7 +140,7 @@ enum db_info_types
 	fb_info_pages_used = 124,
 	fb_info_pages_free = 125,
 
-	// codes 126 and 127 are used for special purporses
+	// codes 126 and 127 are used for special purposes
 	// do not use them here
 
 	fb_info_ses_idle_timeout_db = 129,
@@ -154,6 +154,9 @@ enum db_info_types
 
 	fb_info_statement_timeout_db = 135,
 	fb_info_statement_timeout_att = 136,
+
+	fb_info_protocol_version = 137,
+	fb_info_crypt_plugin = 138,
 
 	isc_info_db_last_value   /* Leave this LAST! */
 };
@@ -255,7 +258,7 @@ enum  info_db_implementations
 	isc_info_db_impl_linux_ppc64el = 85,
 	isc_info_db_impl_linux_ppc64 = 86,
 	isc_info_db_impl_linux_m68k = 87,
-
+	isc_info_db_impl_linux_riscv64 = 88,
 
 	isc_info_db_impl_last_value   // Leave this LAST!
 };

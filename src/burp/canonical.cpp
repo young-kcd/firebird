@@ -42,11 +42,11 @@
 #include "../common/xdr_proto.h"
 #include "../common/gdsassert.h"
 #include "../common/StatusHolder.h"
+#include "../common/status.h"
 #include "fb_types.h"
 
-// TMN: Currently we can't include remote/remote.h because we'd get
-// conflicting blk_t definitions (we are gonna fix this, in due time).
 
+using Firebird::FbLocalStatus;
 
 static bool_t burp_getbytes(XDR*, SCHAR *, u_int);
 static bool_t burp_putbytes(XDR*, const SCHAR*, u_int);
@@ -63,7 +63,7 @@ static xdr_t::xdr_ops burp_ops =
 const int increment = 1024;
 
 
-ULONG CAN_encode_decode(burp_rel* relation, lstring* buffer, UCHAR* data, bool_t direction)
+ULONG CAN_encode_decode(burp_rel* relation, lstring* buffer, UCHAR* data, bool direction, bool useMissingOffset)
 {
 /**************************************
  *
@@ -203,17 +203,21 @@ ULONG CAN_encode_decode(burp_rel* relation, lstring* buffer, UCHAR* data, bool_t
 	{
 		if (field->fld_flags & FLD_computed)
 			continue;
-		offset = FB_ALIGN(offset, sizeof(SSHORT));
-		UCHAR* p = data + offset;
+		UCHAR* p = data + field->fld_missing_offset;
+		if (!useMissingOffset)
+		{
+			offset = FB_ALIGN(offset, sizeof(SSHORT));
+			p = data + offset;
+			offset += sizeof(SSHORT);
+		}
 		if (!xdr_short(xdrs, (SSHORT*) p))
 			return FALSE;
-		offset += sizeof(SSHORT);
 	}
 	return (xdrs->x_private - xdrs->x_base);
 }
 
 
-ULONG CAN_slice(lstring* buffer, lstring* slice, bool_t direction, /*USHORT sdl_length,*/ UCHAR* sdl)
+ULONG CAN_slice(lstring* buffer, lstring* slice, bool direction, UCHAR* sdl)
 {
 /**************************************
  *
@@ -422,8 +426,7 @@ static bool_t xdr_slice(XDR* xdrs, lstring* slice, /*USHORT sdl_length,*/ const 
 
 	sdl_info info;
 	{
-		Firebird::LocalStatus ls;
-		Firebird::CheckStatusWrapper s(&ls);
+		FbLocalStatus s;
 		if (SDL_info(&s, sdl, &info, 0))
 			return FALSE;
 	}

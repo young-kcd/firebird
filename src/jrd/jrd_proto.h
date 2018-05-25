@@ -59,7 +59,7 @@ void	JRD_print_procedure_info(Jrd::thread_db*, const char*);
 
 void JRD_autocommit_ddl(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction);
 void JRD_receive(Jrd::thread_db* tdbb, Jrd::jrd_req* request, USHORT msg_type, ULONG msg_length,
-	UCHAR* msg);
+	void* msg);
 void JRD_start(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tra* transaction);
 
 void JRD_commit_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction);
@@ -67,9 +67,9 @@ void JRD_commit_retaining(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction);
 void JRD_rollback_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction);
 void JRD_rollback_retaining(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction);
 void JRD_send(Jrd::thread_db* tdbb, Jrd::jrd_req* request, USHORT msg_type, ULONG msg_length,
-	const UCHAR* msg);
+	const void* msg);
 void JRD_start_and_send(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tra* transaction,
-	USHORT msg_type, ULONG msg_length, const UCHAR* msg);
+	USHORT msg_type, ULONG msg_length, const void* msg);
 void JRD_start_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction,
 	Jrd::Attachment* attachment, unsigned int tpb_length, const UCHAR* tpb);
 void JRD_unwind_request(Jrd::thread_db* tdbb, Jrd::jrd_req* request);

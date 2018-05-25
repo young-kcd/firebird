@@ -1397,18 +1397,6 @@ void ArithmeticNode::getDescDialect1(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 			break;
 
 		case blr_divide:
-			/***
-			if (desc1.isDecOrInt() && desc2.isDecOrInt())
-			{
-				desc->dsc_dtype = dtype_dec128;
-				desc->dsc_length = sizeof(Decimal128);
-				desc->dsc_scale = 0;
-				desc->dsc_sub_type = 0;
-				desc->dsc_flags = 0;
-				return;
-			}
-			***/
-
 			// for compatibility with older versions of the product, we accept
 			// text types for division in blr_version4 (dialect <= 1) only
 			if (!(DTYPE_IS_NUMERIC(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc1.dsc_dtype)))
@@ -7342,7 +7330,15 @@ bool LiteralNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignor
 	fb_assert(otherNode);
 	thread_db* tdbb = JRD_get_thread_data();
 
-	return !MOV_compare(tdbb, &litDesc, &otherNode->litDesc);
+	try
+	{
+		return MOV_compare(tdbb, &litDesc, &otherNode->litDesc) == 0;
+	}
+	catch (const status_exception&)
+	{
+		fb_utils::init_status(tdbb->tdbb_status_vector);
+		return false;
+	}
 }
 
 ValueExprNode* LiteralNode::pass2(thread_db* tdbb, CompilerScratch* csb)

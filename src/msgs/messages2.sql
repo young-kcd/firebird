@@ -896,7 +896,7 @@ Data source : @4', NULL, NULL)
 ('login_error', NULL, 'server.cpp', NULL, 0, 786, NULL, 'Error occurred during login, please check server firebird.log for details', NULL, NULL);
 ('already_opened', 'lockDatabaseFile', 'unix.cpp', NULL, 0, 787, NULL, 'Database already opened with engine instance, incompatible with current', NULL, NULL);
 ('bad_crypt_key', NULL, 'CryptoManager.cpp', NULL, 0, 788, NULL, 'Invalid crypt key @1', NULL, NULL);
-('encrypt_error', NULL, 'CryptoManager.cpp', NULL, 0, 789, NULL, 'Page requires encyption but crypt plugin is missing', NULL, NULL);
+('encrypt_error', NULL, 'CryptoManager.cpp', NULL, 0, 789, NULL, 'Page requires encryption but crypt plugin is missing', NULL, NULL);
 ('max_idx_depth', NULL, 'btr.cpp', NULL, 0, 790, NULL, 'Maximum index depth (@1 levels) is reached', NULL, NULL);
 ('wrong_prvlg', 'SCL_convert_privilege', 'scl.epp', NULL, 0, 791, NULL, 'System privilege @1 does not exist', NULL, NULL);
 ('miss_prvlg', 'validateAccess', 'jrd.cpp', NULL, 0, 792, NULL, 'System privilege @1 is missing', NULL, NULL);
@@ -970,7 +970,7 @@ Data source : @4', NULL, NULL)
 ('non_plugin_protocol', NULL, 'server.cpp', NULL, 0, 860, NULL, 'Plugin not supported by network protocol', NULL, NULL);
 ('message_format', NULL, 'server.cpp', NULL, 0, 861, NULL, 'Error parsing message format', NULL, NULL);
 ('batch_param_version', NULL, NULL, NULL, 0, 862, NULL, 'Wrong version of batch parameters block @1, should be @2', NULL, NULL);
-('batch_msg_long', NULL, 'DsqlBatch.cpp', NULL, 0, 863, NULL, 'Message size (@1) in batch exceeds internal buffer size (@2)', NULL, NULL);
+('batch_msg_long', NULL, '** Unused **', NULL, 0, 863, NULL, 'Message size (@1) in batch exceeds internal buffer size (@2)', NULL, NULL);
 ('batch_open', NULL, 'DsqlBatch.cpp', NULL, 0, 864, NULL, 'Batch already opened for this statement', NULL, NULL);
 ('batch_type', NULL, 'DsqlBatch.cpp', NULL, 0, 865, NULL, 'Invalid type of statement used in batch', NULL, NULL);
 ('batch_param', NULL, 'DsqlBatch.cpp', NULL, 0, 866, NULL, 'Statement used in batch must have parameters', NULL, NULL);
@@ -992,6 +992,7 @@ Data source : @4', NULL, NULL)
 ('hdr_overflow', NULL, 'CryptoManager.cpp', NULL, 0, 882, NULL, 'Header page overflow - too many clumplets on it', NULL, NULL);
 ('vld_plugins', NULL, 'ValidatePassword.cpp', NULL, 0, 883, NULL, 'No matching client/server authentication plugins configured for execute statement in embedded datasource', NULL, NULL);
 ('db_crypt_key', NULL, 'CryptoManager.cpp', NULL, 0, 884, NULL, 'Missing database encryption key for your attachment', NULL, NULL);
+('no_keyholder_plugin', NULL, 'mvol.cpp', NULL, 0, 885, NULL, 'Key holder plugin @1 failed to load', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
@@ -2074,6 +2075,8 @@ COMMIT WORK;
 ('dyn_cant_use_zero_inc_ident', NULL, 'DdlNodes.epp', NULL, 8, 296, NULL, 'INCREMENT BY 0 is an illegal option for identity column @1 of table @2', NULL, NULL);
 ('dyn_concur_alter_database', 'AlterDatabaseNode::execute', 'DdlNodes.epp', NULL, 8, 297, NULL, 'Concurrent ALTER DATABASE is not supported', NULL, NULL);
 ('dyn_incompat_alter_database', 'AlterDatabaseNode::execute', 'DdlNodes.epp', NULL, 8, 298, NULL, 'Incompatible ALTER DATABASE clauses: ''@1'' and ''@2''', NULL, NULL);
+(NULL, 'checkGrantorCanGrantObject', 'DdlNodes.epp', NULL, 8, 299, NULL, 'no @1 privilege with grant option on DDL @2', NULL, NULL);
+(NULL, 'checkGrantorCanGrantObject', 'DdlNodes.epp', NULL, 8, 300, NULL, 'no @1 privilege with grant option on object @2', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);
@@ -2406,7 +2409,7 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'get_exception', 'restore.epp', NULL, 12, 313, NULL, 'Trying to recover from unexpected attribute @1 due to wrong message length for exception @2', NULL, NULL);
 (NULL, 'put_exception', 'backup.epp', NULL, 12, 314, NULL, 'Attribute not specified for storing text bigger than 255 bytes', NULL, NULL);
 (NULL, 'put_exception', 'backup.epp', NULL, 12, 315, NULL, 'Unable to store text bigger than 65536 bytes', NULL, NULL);
-(NULL, 'fix_security_class_name', 'restore.epp', NULL, 12, 316, NULL, 'Failed while fixing the security class name', NULL, NULL);
+(NULL, 'fix_security_class_name', 'restore.epp', NULL, 12, 316, NULL, 'Failed while adjusting the security class name', NULL, NULL);
 (NULL, 'burp_usage', 'burp.cpp', NULL, 12, 317, NULL, 'Usage:', NULL, NULL);
 (NULL, 'burp_usage', 'burp.cpp', NULL, 12, 318, NULL, '     gbak -b <db set> <backup set> [backup options] [general options]', NULL, NULL);
 (NULL, 'burp_usage', 'burp.cpp', NULL, 12, 319, NULL, '     gbak -c <backup set> <db set> [restore options] [general options]', NULL, NULL);
@@ -2440,14 +2443,14 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'write_secclasses', 'backup.epp', NULL, 12, 347, NULL, 'writing security classes', NULL, NULL);
 ('gbak_db_format_too_old2', 'BACKUP_backup', 'backup.epp', NULL, 12, 348, NULL, 'database format @1 is too old to backup', NULL, NULL);
 (NULL, 'restore', 'restore.epp', NULL, 12, 349, NULL, 'backup version is @1', NULL, NULL);
-(NULL, 'fix_system_generators', 'restore.epp', NULL, 12, 350, NULL, 'fixing system generators', NULL, NULL);
+(NULL, 'fix_system_generators', 'restore.epp', NULL, 12, 350, NULL, 'adjusting system generators', NULL, NULL);
 (NULL, 'BURP_abort', 'burp.cpp', NULL, 12, 351, NULL, 'Error closing database, but backup file is OK', NULL, NULL);
 (NULL, NULL, 'restore.epp', NULL, 12, 352, NULL, 'database', NULL, NULL);
 (NULL, 'get_mapping', 'restore.epp', NULL, 12, 353, NULL, 'required mapping attributes are missing in backup file', NULL, NULL);
 (NULL, NULL, 'burp.cpp', NULL, 12, 354, NULL, 'missing regular expression to skip tables', NULL, NULL);
 (NULL, 'burp_usage', 'burp.c', NULL, 12, 355, NULL, '    @1SKIP_D(ATA)          skip data for table', NULL, NULL);
 (NULL, NULL, 'burp.cpp', NULL, 12, 356, NULL, 'regular expression to skip tables was already set', NULL, NULL);
-(NULL, 'update_view_dbkey_lengths', 'restore.epp', NULL, 12, 357, NULL, 'fixing views dbkey length', NULL, NULL);
+(NULL, 'update_view_dbkey_lengths', 'restore.epp', NULL, 12, 357, NULL, 'adjusting views dbkey length', NULL, NULL);
 (NULL, 'update_ownership', 'restore.epp', NULL, 12, 358, NULL, 'updating ownership of packages, procedures and tables', NULL, NULL);
 (NULL, 'fix_missing_privileges', 'restore.epp', NULL, 12, 359, NULL, 'adding missing privileges', NULL, NULL);
 (NULL, 'RESTORE_restore', 'restore.epp', NULL, 12, 360, NULL, 'adjusting the ONLINE and FORCED WRITES flags', NULL, NULL);
@@ -2460,6 +2463,23 @@ ERROR: Backup incomplete', NULL, NULL);
 ('gbak_wrong_perf', 'api_gbak/gbak', 'burp.cpp', NULL, 12, 367, NULL, 'wrong char "@1" at statistics parameter', NULL, NULL);
 ('gbak_too_long_perf', 'api_gbak/gbak', 'burp.cpp', NULL, 12, 368, NULL, 'too many chars at statistics parameter', NULL, NULL);
 (NULL, 'api_gbak/gbak', 'burp.cpp', NULL, 12, 369, NULL, 'total statistics', NULL, NULL);
+(NULL, 'get_blob', 'restore.epp', NULL, 12, 370, NULL, 'could not append BLOB data to batch', NULL, NULL);
+(NULL, 'get_data', 'restore.epp', NULL, 12, 371, NULL, 'could not start batch when restoring table @1, trying old way', NULL, NULL);
+(NULL, 'burp_usage', 'burp.cpp', NULL, 12, 372, NULL, '    @1KEYNAME              name of a key to be used for encryption', NULL, NULL);
+(NULL, 'burp_usage', 'burp.cpp', NULL, 12, 373, NULL, '    @1CRYPT                crypt plugin name', NULL, NULL);
+(NULL, 'burp_usage', 'burp.cpp', NULL, 12, 374, NULL, '    @1ZIP                  backup file is in zip compressed format', NULL, NULL);
+(NULL, 'gbak', 'burp.cpp', NULL, 12, 375, NULL, 'Keyname parameter missing', NULL, NULL);
+(NULL, 'gbak', 'burp.cpp', NULL, 12, 376, NULL, 'Key holder parameter missing but backup file is encrypted', NULL, NULL);
+(NULL, 'gbak', 'mvol.cpp', NULL, 12, 377, NULL, 'CryptPlugin parameter missing', NULL, NULL);
+(NULL, 'gbak', 'burp.cpp', NULL, 12, 378, NULL, 'Unknown crypt plugin name - use -CRYPT switch', NULL, NULL);
+(NULL, NULL, 'mvol.cpp', NULL, 12, 379, NULL, 'Inflate error @1', NULL, NULL);
+(NULL, NULL, 'mvol.cpp', NULL, 12, 380, NULL, 'Deflate error @1', NULL, NULL);
+(NULL, 'gbak', 'burp.cpp', NULL, 12, 381, NULL, 'Key holder parameter missing', NULL, NULL);
+(NULL, 'burp_usage', 'burp.cpp', NULL, 12, 382, NULL, '    @1KEYHOLDER            name of a key holder plugin', NULL, NULL);
+(NULL, NULL, 'mvol.cpp', NULL, 12, 383, NULL, 'Decompression stream init error @1', NULL, NULL);
+(NULL, NULL, 'mvol.cpp', NULL, 12, 384, NULL, 'Compression stream init error @1', NULL, NULL);
+(NULL, NULL, 'restore.epp', NULL, 12, 385, NULL, 'Invalid reply from getInfo() when waiting for DB encryption', NULL, NULL);
+(NULL, NULL, 'restore.epp', NULL, 12, 386, NULL, 'Problems with just created database encryption', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);
@@ -2920,6 +2940,7 @@ COMMIT WORK;
 (NULL, 'CMP_get_desc', 'cmp.cpp', NULL, 15, 306, NULL, 'Found array data type with more than 16 dimensions', NULL, NULL);
 -- Do not change the arguments of the previous JRD_BUGCHK messages.
 -- Write the new JRD_BUGCHK messages here.
+(NULL, 'get_header', 'dpm.epp', NULL, 15, 307, NULL, 'RDB$PAGES written by non-system transaction, DB appears to be damaged', NULL, NULL);
 -- ISQL
 ('GEN_ERR', 'errmsg', 'isql.e', NULL, 17, 0, NULL, 'Statement failed, SQLSTATE = @1', NULL, NULL);
 ('USAGE', 'ISQL_main', 'isql.epp', NULL, 17, 1, NULL, 'usage:    isql [options] [<database>]', NULL, NULL);
@@ -3331,6 +3352,7 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'main', 'dba.epp', NULL, 21, 58, NULL, 'Other pages: total @1, ENCRYPTED @2 (DB problem!), non-crypted @3', NULL, NULL)
 (NULL, 'main', 'dba.epp', NULL, 21, 59, NULL, 'Gstat execution time @1', NULL, NULL)
 (NULL, 'main', 'dba.epp', NULL, 21, 60, NULL, 'Gstat completion time @1', NULL, NULL)
+(NULL, 'lastUsedPage', 'dba.epp', NULL, 21, 61, NULL, '    Expected page inventory page @1', NULL, NULL);
 -- FBSVCMGR
 -- All messages use the new format.
 ('fbsvcmgr_bad_am', 'putAccessMode', 'fbsvcmgr.cpp', NULL, 22, 1, NULL, 'Wrong value for access mode', NULL, NULL);

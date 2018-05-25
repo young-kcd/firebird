@@ -35,12 +35,18 @@
 
 ROOT=$(shell cd ..; pwd)
 
+ifeq ($(CROSS_OUT), Y)
+export CROSS:=CrossBuild
+endif
+
 include     make.defaults
+
 ifeq ($(CROSS_OUT), Y)
 include     make.crossPlatform
 else
 include     make.platform
 endif
+
 include     make.rules
 include     make.shared.variables
 
@@ -185,7 +191,11 @@ $(TOMMATH_LIB):	$(TOM_Objs)
 
 .PHONY:	tomcrypt
 TOMCRYPT_LIB=$(LIB)/libtomcrypt.a
-TOM_Objs=$(addprefix ../extern/libtomcrypt/,$(call doObjects,$(call dirFiles,../extern/libtomcrypt)))
+
+TOM_Src:=hashes/md5.c hashes/sha1.c hashes/sha2/sha256.c hashes/sha2/sha512.c misc/crypt/crypt_argchk.c
+TOM_Src:=$(addprefix ../extern/libtomcrypt/src/, $(TOM_Src))
+
+TOM_Objs=$(call doObjects,$(TOM_Src))
 
 tomcrypt:	$(TOMCRYPT_LIB)
 
@@ -194,10 +204,10 @@ $(TOMCRYPT_LIB):	$(TOM_Objs)
 	$(STATICLIB_LINK) $@ $^
 
 #___________________________________________________________________________
-# main build target for both debug abd release builds
+# main build target for both debug and release builds
 #
 
-.PHONY:	cross1 cross2 boot yvalve engine fbintl gpre utilities plugins rest codes ids examples cross_rest
+.PHONY:	cross1 cross2 boot yvalve engine fbintl gpre utilities plugins rest codes ids examples cross_rest preliminaryCheck
 
 master_process:
 	ln -sf $(SRC_ROOT)/include/gen/autoconfig.auto $(SRC_ROOT)/include/gen/autoconfig.h
@@ -205,6 +215,7 @@ master_process:
 	$(MAKE) export_lists
 	$(MAKE) external
 	$(MAKE) updateCloopInterfaces
+	$(MAKE) preliminaryCheck
 	$(MAKE) boot
 	$(MAKE) yvalve
 ifeq ($(IsDeveloper), Y)
@@ -264,6 +275,8 @@ cross2:
 	$(MAKE) prerequisites
 	$(MAKE) tommath
 	$(MAKE) tomcrypt
+	$(MAKE) -C $(ROOT)/extern/decNumber
+	ln -sf $(ROOT)/extern/decNumber/libdecFloat$(CROSS).a $(LIB)
 	$(MAKE) yvalve
 	$(MAKE) engine
 	$(MAKE) fbintl
@@ -272,6 +285,26 @@ cross2:
 	$(MAKE) plugins
 	$(MAKE) -f Makefile.plugins_examples
 	$(MAKE) cross_rest
+
+
+#___________________________________________________________________________
+# preliminary checks - make sure platform is OK to build FB
+#
+
+STD_SIZES:=$(SRC_ROOT)/misc/ods.txt
+RUN_SIZES:=$(GEN_ROOT)/ods.txt
+ODS_H:=$(SRC_ROOT)/jrd/ods.h
+ODS_AWK:=$(SRC_ROOT)/misc/ods.awk
+ODS_TEST_CPP:=$(GEN_ROOT)/odstest.cpp
+ODS_TEST:=$(GEN_ROOT)/odstest$(EXEC_EXT)
+
+preliminaryCheck:	$(STD_SIZES) $(RUN_SIZES)
+	diff -u $^
+
+$(RUN_SIZES): $(ODS_H) $(ODS_AWK)
+	awk -f $(ODS_AWK) <$(ODS_H) >$(ODS_TEST_CPP)
+	$(CXX) -o $(ODS_TEST) $(WCXXFLAGS) $(ODS_TEST_CPP)
+	$(ODS_TEST) >$(RUN_SIZES)
 
 #___________________________________________________________________________
 # static library - various common code, used in different FB projects
@@ -535,7 +568,7 @@ udf_compat:	$(UDF_BACKWARD_COMPATIBILITY) $(COMPAT_SQL)
 
 $(UDF_BACKWARD_COMPATIBILITY):	$(COMPAT_Objects)
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(call LIB_LINK_SONAME,$(UDF_BACKWARD_COMPATIBILITY_BASENAME)) \
-		$(LINK_UDR_PLUGIN_SYMBOLS) $(LIB_PATH_OPTS) $(UNDEF_FLAGS) -o $@ $^ $(THR_LIBS)
+		$(LINK_UDR_PLUGIN_SYMBOLS) $(LIB_PATH_OPTS) $(UNDEF_FLAGS) -o $@ $^ $(THR_LIBS) $(UDR_SUPPORT_LIBS)
 
 $(COMPAT_SQL):	$(SRC_COMPAT_SQL)
 	cp $^ $@

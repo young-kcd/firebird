@@ -371,6 +371,7 @@ private:
 	// working with blob stream buffer
 	void newBlob()
 	{
+		setBlobAlignment();
 		alignBlobBuffer(blobAlign);
 
 		fb_assert(blobStream - blobStreamBuffer <= blobBufferSize);
@@ -384,6 +385,8 @@ private:
 
 	void alignBlobBuffer(unsigned alignment, ULONG* bs = NULL)
 	{
+		fb_assert(alignment);
+
 		FB_UINT64 zeroFill = 0;
 		UCHAR* newPointer = FB_ALIGN(blobStream, alignment);
 		ULONG align = FB_ALIGN(blobStream, alignment) - blobStream;
@@ -464,6 +467,7 @@ private:
 
 	void flashBatch()
 	{
+		setBlobAlignment();
 		alignBlobBuffer(blobAlign);
 		ULONG size = blobStream - blobStreamBuffer;
 		if (size)
@@ -472,13 +476,19 @@ private:
 			blobStream = blobStreamBuffer;
 		}
 
+		if (messageStream)
+		{
+			sendMessagePacket(messageStream, messageStreamBuffer);
+			messageStream = 0;
+		}
+
 		batchActive = false;
 	}
 
 	void sendBlobPacket(unsigned size, const UCHAR* ptr);
 	void sendMessagePacket(unsigned size, const UCHAR* ptr);
 
-	Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete<UCHAR> > messageStreamBuffer, blobStreamBuffer;
+	Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete> messageStreamBuffer, blobStreamBuffer;
 	ULONG messageStream;
 	UCHAR* blobStream;
 	ULONG* sizePointer;
@@ -621,15 +631,15 @@ public:
 	// IRequest implementation
 	int release();
 	void receive(CheckStatusWrapper* status, int level, unsigned int msg_type,
-						 unsigned int length, unsigned char* message);
+						 unsigned int length, void* message);
 	void send(CheckStatusWrapper* status, int level, unsigned int msg_type,
-					  unsigned int length, const unsigned char* message);
+					  unsigned int length, const void* message);
 	void getInfo(CheckStatusWrapper* status, int level,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
 	void start(CheckStatusWrapper* status, Firebird::ITransaction* tra, int level);
 	void startAndSend(CheckStatusWrapper* status, Firebird::ITransaction* tra, int level, unsigned int msg_type,
-							  unsigned int length, const unsigned char* message);
+							  unsigned int length, const void* message);
 	void unwind(CheckStatusWrapper* status, int level);
 	void free(CheckStatusWrapper* status);
 
@@ -1849,7 +1859,7 @@ void Attachment::freeClientData(CheckStatusWrapper* status, bool force)
 	{
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+		RemotePortGuard portGuard(port, FB_FUNCTION);
 
 		try
 		{
@@ -1944,7 +1954,7 @@ void Attachment::dropDatabase(CheckStatusWrapper* status)
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+		RemotePortGuard portGuard(port, FB_FUNCTION);
 
 		try
 		{
@@ -2665,7 +2675,7 @@ IBatchCompletionState* Batch::execute(CheckStatusWrapper* status, ITransaction* 
 		send_packet(port, packet);
 
 		statement->rsr_batch_size = alignedSize;
-		AutoPtr<BatchCompletionState, SimpleDispose<BatchCompletionState> >
+		AutoPtr<BatchCompletionState, SimpleDispose>
 			cs(FB_NEW BatchCompletionState(flags & (1 << IBatch::TAG_RECORD_COUNTS), 256));
 		statement->rsr_batch_cs = cs;
 		receive_packet(port, packet);
@@ -4964,15 +4974,6 @@ void Attachment::putSlice(CheckStatusWrapper* status, ITransaction* apiTra, ISC_
 }
 
 
-namespace {
-	void portEventsShutdown(rem_port* port)
-	{
-		if (port->port_events_thread)
-			Thread::waitForCompletion(port->port_events_thread);
-	}
-}
-
-
 Firebird::IEvents* Attachment::queEvents(CheckStatusWrapper* status, Firebird::IEventCallback* callback,
 									 unsigned int length, const unsigned char* events)
 {
@@ -5012,11 +5013,11 @@ Firebird::IEvents* Attachment::queEvents(CheckStatusWrapper* status, Firebird::I
 			receive_response(status, rdb, packet);
 			port->connect(packet);
 
-			Thread::start(event_thread, port->port_async, THREAD_high,
-						  &port->port_async->port_events_thread);
-			port->port_async->port_events_shutdown = portEventsShutdown;
+			rem_port* port_async = port->port_async;
+			port_async->port_events_threadId =
+				Thread::start(event_thread, port_async, THREAD_high, &port_async->port_events_thread);
 
-			port->port_async->port_context = rdb;
+			port_async->port_context = rdb;
 		}
 
 		// Add event block to port's list of active remote events
@@ -5057,7 +5058,7 @@ Firebird::IEvents* Attachment::queEvents(CheckStatusWrapper* status, Firebird::I
 
 
 void Request::receive(CheckStatusWrapper* status, int level, unsigned int msg_type,
-					  unsigned int msg_length, unsigned char* msg)
+					  unsigned int msg_length, void* msg)
 {
 /**************************************
  *
@@ -5570,7 +5571,7 @@ int Blob::seek(CheckStatusWrapper* status, int mode, int offset)
 
 
 void Request::send(CheckStatusWrapper* status, int level, unsigned int msg_type,
-				   unsigned int /*length*/, const unsigned char* msg)
+				   unsigned int /*length*/, const void* msg)
 {
 /**************************************
  *
@@ -5601,7 +5602,7 @@ void Request::send(CheckStatusWrapper* status, int level, unsigned int msg_type,
 
 		RMessage* message = request->rrq_rpt[msg_type].rrq_message;
 		// We are lying here, but the interface shows for years this param as const
-		message->msg_address = const_cast<UCHAR*>(msg);
+		message->msg_address = const_cast<unsigned char*>(static_cast<const unsigned char*>(msg));
 
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_send;
@@ -5744,7 +5745,7 @@ void Service::freeClientData(CheckStatusWrapper* status, bool force)
 
 		CHECK_HANDLE(rdb, isc_bad_svc_handle);
 		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+		RemotePortGuard portGuard(port, FB_FUNCTION);
 
 		try
 		{
@@ -5852,7 +5853,7 @@ void Service::start(CheckStatusWrapper* status,
 
 
 void Request::startAndSend(CheckStatusWrapper* status, Firebird::ITransaction* apiTra, int level,
-						   unsigned int msg_type, unsigned int /*length*/, const unsigned char* msg)
+						   unsigned int msg_type, unsigned int /*length*/, const void* msg)
 {
 /**************************************
  *
@@ -5894,7 +5895,7 @@ void Request::startAndSend(CheckStatusWrapper* status, Firebird::ITransaction* a
 
 		REMOTE_reset_request(request, 0);
 		RMessage* message = request->rrq_rpt[msg_type].rrq_message;
-		message->msg_address = const_cast<unsigned char*>(msg);
+		message->msg_address = const_cast<unsigned char*>(static_cast<const unsigned char*>(msg));
 
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_start_send_and_receive;

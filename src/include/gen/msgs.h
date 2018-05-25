@@ -813,7 +813,7 @@ Data source : @4"},		/* eds_statement */
 	{335545106, "Error occurred during login, please check server firebird.log for details"},		/* login_error */
 	{335545107, "Database already opened with engine instance, incompatible with current"},		/* already_opened */
 	{335545108, "Invalid crypt key @1"},		/* bad_crypt_key */
-	{335545109, "Page requires encyption but crypt plugin is missing"},		/* encrypt_error */
+	{335545109, "Page requires encryption but crypt plugin is missing"},		/* encrypt_error */
 	{335545110, "Maximum index depth (@1 levels) is reached"},		/* max_idx_depth */
 	{335545111, "System privilege @1 does not exist"},		/* wrong_prvlg */
 	{335545112, "System privilege @1 is missing"},		/* miss_prvlg */
@@ -909,6 +909,7 @@ Data source : @4"},		/* eds_statement */
 	{335545202, "Header page overflow - too many clumplets on it"},		/* hdr_overflow */
 	{335545203, "No matching client/server authentication plugins configured for execute statement in embedded datasource"},		/* vld_plugins */
 	{335545204, "Missing database encryption key for your attachment"},		/* db_crypt_key */
+	{335545205, "Key holder plugin @1 failed to load"},		/* no_keyholder_plugin */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

@@ -15,6 +15,7 @@ libtool
 *.log
 *.bak
 *.tmp
+*.d
 src/dsql/parse.cpp
 .vscode/.browse.VC.db
-extern/decNumber/libdecFloat.a
+extern/decNumber/libdecFloat*.a

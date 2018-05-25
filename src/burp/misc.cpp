@@ -119,12 +119,12 @@ void MISC_free_burp( void *free)
 // in a function visible to all gbak components.
 // Given a request, if it's non-zero (compiled), deallocate it but
 // without caring about a possible error.
-void MISC_release_request_silent(isc_req_handle& req_handle)
+void MISC_release_request_silent(Firebird::IRequest*& req_handle)
 {
 	if (req_handle)
 	{
-		ISC_STATUS_ARRAY req_status;
-		isc_release_request(req_status, &req_handle);
+		req_handle->release();
+		req_handle = nullptr;
 	}
 }
 

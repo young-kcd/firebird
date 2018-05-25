@@ -31,7 +31,6 @@ typedef ISC_QUAD;
 typedef ISC_TIME;
 typedef FB_DEC16;
 typedef FB_DEC34;
-typedef FB_DEC_FIXED;
 
 // Versioned interface - base for all FB interfaces
 interface Versioned
@@ -214,6 +213,10 @@ interface PluginFactory : Versioned
 interface PluginModule : Versioned
 {
 	void doClean();
+
+version:		// 3.0.3 => 3.0.4
+	// Used to release resources allocated per-thread 
+	void threadDetach();
 }
 
 // Interface to deal with plugins here and there, returned by master interface
@@ -514,15 +517,15 @@ interface Pipe : ReferenceCounted
 interface Request : ReferenceCounted
 {
 	void receive(Status status, int level, uint msgType,
-						 uint length, uchar* message);
+						 uint length, void* message);
 	void send(Status status, int level, uint msgType,
-					  uint length, const uchar* message);
+					  uint length, const void* message);
 	void getInfo(Status status, int level,
 						 uint itemsLength, const uchar* items,
 						 uint bufferLength, uchar* buffer);
 	void start(Status status, Transaction tra, int level);
 	void startAndSend(Status status, Transaction tra, int level, uint msgType,
-							  uint length, const uchar* message);
+							  uint length, const void* message);
 	void unwind(Status status, int level);
 	void free(Status status);
 }
@@ -599,6 +602,7 @@ version:	// 3.0 => 4.0
 	// Batch API
 	Batch createBatch(Status status, Transaction transaction, uint stmtLength, const string sqlStmt,
 		uint dialect, MessageMetadata inMetadata, uint parLength, const uchar* par);
+
 	/*
 	Pipe createPipe(Status status, uint stmtLength, const string sqlStmt, uint dialect,
 		Transaction transaction, MessageMetadata inMetadata, void* inBuffer,
@@ -1061,7 +1065,6 @@ version:	// 3.0 => 4.0
 	EventBlock createEventBlock(Status status, const string* events);
 	DecFloat16 getDecFloat16(Status status);
 	DecFloat34 getDecFloat34(Status status);
-	DecFixed getDecFixed(Status status);
 }
 
 interface OffsetsCallback : Versioned
@@ -1466,14 +1469,4 @@ interface DecFloat34 : Versioned
 	void toString(Status status, const FB_DEC34* from, uint bufferLength, string buffer);
 	void fromBcd(int sign, const uchar* bcd, int exp, FB_DEC34* to);
 	void fromString(Status status, const string from, FB_DEC34* to);
-}
-
-interface DecFixed : Versioned
-{
-	const uint BCD_SIZE = 34;
-	const uint STRING_SIZE = 41;	// may include exponent not more than 3 digits
-	void toBcd(const FB_DEC_FIXED* from, int* sign, uchar* bcd);
-	void toString(Status status, const FB_DEC_FIXED* from, int scale, uint bufferLength, string buffer);
-	void fromBcd(int sign, const uchar* bcd, FB_DEC_FIXED* to);
-	void fromString(Status status, const string from, int scale, FB_DEC_FIXED* to);
 }

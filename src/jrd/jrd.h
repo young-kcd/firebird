@@ -768,7 +768,7 @@ private:
 	ThreadContextHolder(const ThreadContextHolder&);
 	ThreadContextHolder& operator= (const ThreadContextHolder&);
 
-	FbLocalStatus localStatus;
+	Firebird::FbLocalStatus localStatus;
 	FbStatusVector* currentStatus;
 	thread_db context;
 };
@@ -808,7 +808,7 @@ public:
 	}
 
 private:
-	FbLocalStatus m_local_status;
+	Firebird::FbLocalStatus m_local_status;
 	thread_db* const m_tdbb;
 	FbStatusVector* const m_old_status;
 

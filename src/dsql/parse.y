@@ -618,6 +618,7 @@ using namespace Firebird;
 %token <metaNamePtr> RDB_ERROR
 %token <metaNamePtr> RDB_ROLE_IN_USE
 %token <metaNamePtr> RDB_SYSTEM_PRIVILEGE
+%token <metaNamePtr> RESET
 %token <metaNamePtr> SECURITY
 %token <metaNamePtr> SESSION
 %token <metaNamePtr> SQL
@@ -784,6 +785,7 @@ using namespace Firebird;
 	Jrd::SetRoundNode* setRoundNode;
 	Jrd::SetTrapsNode* setTrapsNode;
 	Jrd::SetBindNode* setBindNode;
+	Jrd::SessionResetNode* sessionResetNode;
 }
 
 %include types.y
@@ -846,6 +848,7 @@ mng_statement
 	| set_bind									{ $$ = $1; }
 	| session_statement							{ $$ = $1; }
 	| set_role									{ $$ = $1; }
+	| session_reset								{ $$ = $1; }
 	;
 
 
@@ -4166,7 +4169,8 @@ keyword_or_column
 	| UPDATING
 	| VAR_SAMP
 	| VAR_POP
-	| UNBOUNDED				// added in FB 4.0
+	| DECFLOAT				// added in FB 4.0
+	| UNBOUNDED
 	| WINDOW
 	;
 
@@ -4830,15 +4834,17 @@ varbinary_character_keyword
 
 %type <legacyField> decfloat_type
 decfloat_type
-	: DECFLOAT '(' signed_long_integer ')'
+	: DECFLOAT precision_opt_nz
 		{
-			if ($3 != 16 && $3 != 34)
-				yyabandon(YYPOSNARG(3), -842, isc_decprecision_err);	// DecFloat precision must be 16 or 34.
+			SLONG precision = $2;
+
+			if (precision != 0 && precision != 16 && precision != 34)
+				yyabandon(YYPOSNARG(2), -842, isc_decprecision_err);	// DecFloat precision must be 16 or 34.
 
 			$$ = newNode<dsql_fld>();
-			$$->precision = $3;
-			$$->dtype = $3 == 16 ? dtype_dec64 : dtype_dec128;
-			$$->length = $3 == 16 ? sizeof(Decimal64) : sizeof(Decimal128);
+			$$->precision = precision == 0 ? 34 : (USHORT) precision;
+			$$->dtype = precision == 16 ? dtype_dec64 : dtype_dec128;
+			$$->length = precision == 16 ? sizeof(Decimal64) : sizeof(Decimal128);
 		}
 	;
 
@@ -5040,6 +5046,12 @@ precision_opt
 	| '(' nonneg_short_integer ')'	{ $$ = $2; }
 	;
 
+// alternative to precision_opt that does not allow zero
+%type <int32Val> precision_opt_nz
+precision_opt_nz
+	: /* nothing */				{ $$ = 0; }
+	| '(' pos_short_integer ')'	{ $$ = $2; }
+	;
 
 // transaction statements
 
@@ -5128,6 +5140,12 @@ set_transaction
 			{ $$ = newNode<SetTransactionNode>(); }
 		tran_option_list_opt($3)
 			{ $$ = $3; }
+	;
+
+%type <sessionResetNode> session_reset
+session_reset
+	: ALTER SESSION RESET
+		{ $$ = newNode<SessionResetNode>(); }
 	;
 
 %type <setRoleNode> set_role
@@ -8513,7 +8531,6 @@ non_reserved_word
 	| BIND					// added in FB 4.0
 	| COMPARE_DECFLOAT
 	| CUME_DIST
-	| DECFLOAT
 	| DEFINER
 	| EXCLUDE
 	| FIRST_DAY
@@ -8532,6 +8549,7 @@ non_reserved_word
 	| PRIVILEGE
 	| QUANTIZE
 	| RANGE
+	| RESET
 	| SECURITY
 	| SESSION
 	| SQL

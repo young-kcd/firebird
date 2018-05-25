@@ -2046,6 +2046,9 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 		return;
 	}
 
+	const bool descending = (root->irt_rpt[id].irt_flags & irt_descending);
+	const ULONG segments = root->irt_rpt[id].irt_keys;
+
 	window.win_flags = WIN_large_scan;
 	window.win_scans = 1;
 	btree_page* bucket = (btree_page*) CCH_HANDOFF(tdbb, &window, page, LCK_read, pag_index);
@@ -2068,8 +2071,6 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 	key.key_length = 0;
 	SSHORT l;
 	bool firstNode = true;
-	const bool descending = (root->irt_rpt[id].irt_flags & irt_descending);
-	const ULONG segments = root->irt_rpt[id].irt_keys;
 
 	// SSHORT count, stuff_count, pos, i;
 	HalfStaticArray<FB_UINT64, 4> duplicatesList;
@@ -2249,7 +2250,7 @@ bool BTR_types_comparable(const dsc& target, const dsc& source)
 		return (source.dsc_dtype <= dtype_long || source.dsc_dtype == dtype_int64);
 
 	if (DTYPE_IS_NUMERIC(target.dsc_dtype))
-		return (source.dsc_dtype <= dtype_double || source.dsc_dtype == dtype_int64);		//!!!!!!!!
+		return (source.dsc_dtype <= dtype_double || source.dsc_dtype == dtype_int64);
 
 	if (target.dsc_dtype == dtype_sql_date)
 		return (source.dsc_dtype <= dtype_sql_date || source.dsc_dtype == dtype_timestamp);

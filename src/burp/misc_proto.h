@@ -26,7 +26,7 @@
 
 UCHAR*	MISC_alloc_burp(ULONG);
 void	MISC_free_burp(void*);
-void	MISC_release_request_silent(isc_req_handle& req_handle);
+void	MISC_release_request_silent(Firebird::IRequest*& req_handle);
 int		MISC_symbol_length(const TEXT*, ULONG);
 void	MISC_terminate(const TEXT*, TEXT*, ULONG, ULONG);
 

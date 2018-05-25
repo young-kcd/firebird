@@ -127,7 +127,7 @@ InternalConnection::~InternalConnection()
 }
 
 // Status helper
-class IntStatus : public Jrd::FbLocalStatus
+class IntStatus : public Firebird::FbLocalStatus
 {
 public:
 	explicit IntStatus(FbStatusVector *p)
@@ -172,7 +172,7 @@ void InternalConnection::attach(thread_db* tdbb)
 		FbLocalStatus status;
 		{
 			EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-			RefPtr<JProvider> jInstance(JProvider::getInstance());
+			AutoPlugin<JProvider> jInstance(JProvider::getInstance());
 			jInstance->setDbCryptCallback(&status, tdbb->getAttachment()->att_crypt_callback);
 			m_attachment.assignRefNoIncr(jInstance->attachDatabase(&status, m_dbName.c_str(),
 				newDpb.getBufferLength(), newDpb.getBuffer()));
@@ -365,6 +365,13 @@ void InternalTransaction::doCommit(FbStatusVector* status, thread_db* tdbb, bool
 void InternalTransaction::doRollback(FbStatusVector* status, thread_db* tdbb, bool retain)
 {
 	fb_assert(m_transaction);
+
+	if (m_connection.isBroken())
+	{
+		m_transaction = NULL;
+		m_jrdTran = NULL;
+		return;
+	}
 
 	if (m_scope == traCommon && m_IntConnection.isCurrent())
 	{
