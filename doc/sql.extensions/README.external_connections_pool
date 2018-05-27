@@ -9,10 +9,13 @@ Author:
    Vlad Khorsun <hvlad@users.sourceforge.net>
 
 How pool works:
-- every external connection is assotiated with a pool when created
-- pool maintains two lists : idle connections and active connections
-- when some connection gets unused (i.e. it have no active requests and 
-  active transactions), it puts into idle list
+- every external connection is associated with a pool when created
+- pool maintains two lists: idle connections and active connections
+- when some connection become unused (i.e. it have no active requests and no 
+  active transactions), it is resetted and placed into idle list (on successful 
+  reset) or closed (if reset failed).
+  Connection is resetted using ALTER SESSION RESET statement. It is considered 
+  successful if no error occurs.
 - if the pool has reached max. size, the oldest idle connection is closed
 - when engine ask to create a new external connection, the pool first looks 
   for candidate at the idle list. The search is based on 4 parameters:
@@ -26,7 +29,7 @@ How pool works:
     (the error is not reported to the user)
 - found (and alive) connection is moved from idle list to active list and 
   returned to the caller
-- if there are several suitable connections, the most recently used is choosed
+- if there are several suitable connections, the most recently used is chosen
 - if there is no suitable connection, the new one is created (and put into 
   active list)
 - when idle connection gets expired (exceeded the lifetime), it is deleted from 
@@ -41,16 +44,16 @@ Key characteristics:
   process
 
 Pool parameters:
-- connection life time : the time interval from the moment of the last usage of 
+- connection life time: the time interval from the moment of the last usage of 
   connection after which it will be forcibly closed
-- pool size : the maximum allowed number of idle connections in the pool
+- pool size: the maximum allowed number of idle connections in the pool
 
 Pool management:
-  New SQL statement is introduced to manage the pool :
+  New SQL statement is introduced to manage the pool:
   
 	ALTER EXTERNAL CONNECTIONS POOL. 
 	
-  When prepared it desribed as DDL statement but have immediate effect: i.e. 
+  When prepared it is described as DDL statement but have immediate effect: i.e. 
 it is executed immediately and completely, not waiting for transaction commit.
 Changes applied to the in-memory instance of the pool in current Firebird 
 process. Therefore change in one Classic process doesn't affect other Classic
@@ -72,12 +75,12 @@ The full syntax is:
     where <time_part> is SECOND | MINUTE | HOUR
 
   Set idle connection lifetime, in seconds. 
-  Valid valus are from 1 SECOND to 24 HOUR.
+  Valid values are from 1 SECOND to 24 HOUR.
   Default value is set in firebird.conf (see below).
 
 - ALTER EXTERNAL CONNECTIONS POOL CLEAR ALL
   Closes all idle connections. 
-  Disassotiates all active connections off the pool (such connections will be 
+  Disassociates all active connections off the pool (such connections will be 
   closed immediately when gets unused).
 
 - ALTER EXTERNAL CONNECTIONS POOL CLEAR OLDEST
@@ -88,7 +91,7 @@ variables in 'SYSTEM' namespace:
 - EXT_CONN_POOL_SIZE			pool size
 - EXT_CONN_POOL_LIFETIME		idle connection lifetime, in seconds
 - EXT_CONN_POOL_IDLE_COUNT		count of currently inactive connections
-- EXT_CONN_POOL_ACTIVE_COUNT	count of active connections, assotiated with pool
+- EXT_CONN_POOL_ACTIVE_COUNT	count of active connections, associated with pool
 
   
   Firebird configuration (firebird.conf) got two new settings related with pool:

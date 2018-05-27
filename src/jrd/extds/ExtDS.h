@@ -420,6 +420,7 @@ public:
 	virtual void detach(Jrd::thread_db* tdbb);
 
 	virtual bool cancelExecution(bool forced) = 0;
+	virtual bool resetSession() = 0;
 
 	int getSqlDialect() const { return m_sqlDialect; }
 

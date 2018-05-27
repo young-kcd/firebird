@@ -519,6 +519,7 @@ public:
 	virtual void attach(Jrd::thread_db* tdbb);
 
 	virtual bool cancelExecution(bool forced);
+	virtual bool resetSession();
 
 	virtual bool isAvailable(Jrd::thread_db* tdbb, TraScope traScope) const;
 	virtual bool isConnected() const { return (m_handle != 0); }

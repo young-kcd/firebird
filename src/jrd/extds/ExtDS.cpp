@@ -445,10 +445,18 @@ void Provider::releaseConnection(thread_db* tdbb, Connection& conn, bool inPool)
 			m_connections.add(AttToConn(NULL, &conn));
 	}
 
-	if (!inPool || !connPool || !conn.isConnected())
+	if (!inPool || !connPool || !conn.isConnected() || !conn.resetSession())
 	{
 		if (connPool)
+		{
+			{
+				MutexLockGuard guard(m_mutex, FB_FUNCTION);
+				AttToConnMap::Accessor acc(&m_connections);
+				if (acc.locate(AttToConn(NULL, &conn)))
+					acc.fastRemove();
+			}
 			connPool->delConnection(tdbb, &conn, false);
+		}
 
 		Connection::deleteConnection(tdbb, &conn);
 	}

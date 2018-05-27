@@ -239,6 +239,20 @@ bool InternalConnection::cancelExecution(bool /*forced*/)
 	return !(status->getState() & IStatus::STATE_ERRORS);
 }
 
+bool InternalConnection::resetSession()
+{
+	fb_assert(!m_isCurrent);
+
+	if (m_isCurrent)
+		return true;
+
+	FbLocalStatus status;
+	m_attachment->execute(&status, NULL, 0, "ALTER SESSION RESET", 
+		m_sqlDialect, NULL, NULL, NULL, NULL);
+
+	return !(status->getState() & IStatus::STATE_ERRORS);
+}
+
 // this internal connection instance is available for the current execution context if it
 // a) is current connection and current thread's attachment is equal to
 //	  this attachment, or

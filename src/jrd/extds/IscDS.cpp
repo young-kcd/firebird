@@ -239,6 +239,21 @@ bool IscConnection::cancelExecution(bool forced)
 	return !(status->getState() & IStatus::STATE_ERRORS);
 }
 
+bool IscConnection::resetSession()
+{
+	if (!m_handle)
+		return false;
+
+	FbLocalStatus status;
+	m_iscProvider.isc_dsql_execute_immediate(&status, &m_handle,
+		NULL, 0, "ALTER SESSION RESET", m_sqlDialect, NULL);
+
+	if (!(status->getState() & IStatus::STATE_ERRORS))
+		return true;
+
+	return false; // (status->getErrors()[1] == isc_dsql_error);
+}
+
 // this ISC connection instance is available for the current execution context if it
 // a) has no active statements or supports many active statements
 //    and
@@ -1111,14 +1126,14 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_execute2(FbStatusVector* user_status
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_execute_immediate(FbStatusVector* user_status,
-											 isc_db_handle *,
-											 isc_tr_handle *,
-											 unsigned short,
-											 const char*,
-											 unsigned short,
-											 const XSQLDA *)
+	isc_db_handle* db_handle, isc_tr_handle* tra_handle, unsigned short length,
+	const char* str, unsigned short dialect, const XSQLDA* sqlda)
 {
-	return notImplemented(user_status);
+	if (!m_api.isc_dsql_execute_immediate)
+		return notImplemented(user_status);
+
+	return (*m_api.isc_dsql_execute_immediate) (IscStatus(user_status), 
+		db_handle, tra_handle, length, str, dialect, sqlda);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_fetch(FbStatusVector* user_status,
