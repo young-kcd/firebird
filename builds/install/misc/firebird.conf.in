@@ -854,6 +854,18 @@
 #TpcBlockSize = 4M
 
 
+# ----------------------------
+#
+# File to redirect stdout and stderr output of server
+#
+# Default '/dev/null' for *nix and 'nul' for Windows
+# Empty value or '-' keeps stdout and stderr as is.
+#
+# Type: string
+#
+#OutputRedirectionFile = /dev/null
+
+
 # ===========================
 # Engine Settings
 # ===========================

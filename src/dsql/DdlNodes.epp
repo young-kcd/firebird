@@ -89,7 +89,7 @@ static bool isItSqlRole(thread_db* tdbb, jrd_tra* transaction, const MetaName& i
 static int getGrantorOption(thread_db* tdbb, jrd_tra* transaction, const MetaName& grantor,
 	int grantorType, const MetaName& roleName);
 static MetaName getIndexRelationName(thread_db* tdbb, jrd_tra* transaction,
-	const MetaName& indexName);
+	const MetaName& indexName, bool& systemIndex);
 static const char* getRelationScopeName(const rel_t type);
 static void makeRelationScopeName(string& to, const MetaName& name, const rel_t type);
 static void checkRelationType(const rel_t type, const MetaName& name);
@@ -538,14 +538,17 @@ static void makeRelationScopeName(string& to, const MetaName& name, const rel_t 
 
 // Get relation name of an index.
 static MetaName getIndexRelationName(thread_db* tdbb, jrd_tra* transaction,
-	const MetaName& indexName)
+	const MetaName& indexName, bool& systemIndex)
 {
+	systemIndex = false;
+
 	AutoCacheRequest request(tdbb, drq_l_index_relname, DYN_REQUESTS);
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		IDX IN RDB$INDICES
 		WITH IDX.RDB$INDEX_NAME EQ indexName.c_str()
 	{
+		systemIndex = IDX.RDB$SYSTEM_FLAG == 1;
 		return IDX.RDB$RELATION_NAME;
 	}
 	END_FOR
@@ -847,6 +850,12 @@ static void updateRdbFields(const TypeClause* type,
 
 			fieldSubTypeNull = FALSE;
 			fieldSubType = type->subType;
+		}
+
+		if (DTYPE_IS_DECFLOAT(type->dtype))
+		{
+			fieldPrecisionNull = FALSE;
+			fieldPrecision = type->precision;
 		}
 	}
 
@@ -1280,9 +1289,10 @@ bool CommentOnNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 			break;
 
 		case obj_index:
-			relationName = getIndexRelationName(tdbb, transaction, objName.identifier);
+			bool systemIndex;
+			relationName = getIndexRelationName(tdbb, transaction, objName.identifier, systemIndex);
 			dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
-			SCL_check_relation(tdbb, &dscName, SCL_alter);
+			SCL_check_relation(tdbb, &dscName, SCL_alter, systemIndex);
 			break;
 
 		case obj_sql_role:
@@ -1792,6 +1802,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 				FUN.RDB$DETERMINISTIC_FLAG.NULL = FALSE;
 				FUN.RDB$DETERMINISTIC_FLAG = deterministic ? TRUE : FALSE;
+				FUN.RDB$RETURN_ARGUMENT = 0;
 
 				if (ssDefiner.specified)
 				{
@@ -9593,7 +9604,7 @@ bool CreateIndexNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 	dsc dscName;
 	const MetaName &relationName = relation->dsqlName;
 	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
-	SCL_check_relation(tdbb, &dscName, SCL_alter);
+	SCL_check_relation(tdbb, &dscName, SCL_alter, false);
 	return true;
 }
 
@@ -9661,12 +9672,13 @@ string AlterIndexNode::internalPrint(NodePrinter& printer) const
 
 bool AlterIndexNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
-	MetaName relationName = getIndexRelationName(tdbb, transaction, name);
+	bool systemIndex;
+	MetaName relationName = getIndexRelationName(tdbb, transaction, name, systemIndex);
 
 	dsc dscName;
 	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
 
-	SCL_check_relation(tdbb, &dscName, SCL_alter);
+	SCL_check_relation(tdbb, &dscName, SCL_alter, systemIndex);
 	return true;
 }
 
@@ -9723,7 +9735,8 @@ string SetStatisticsNode::internalPrint(NodePrinter& printer) const
 
 bool SetStatisticsNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
-	MetaName relationName = getIndexRelationName(tdbb, transaction, name);
+	bool systemIndex;
+	MetaName relationName = getIndexRelationName(tdbb, transaction, name, systemIndex);
 
 	dsc dscName;
 	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
@@ -9804,12 +9817,13 @@ string DropIndexNode::internalPrint(NodePrinter& printer) const
 
 bool DropIndexNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
-	MetaName relationName = getIndexRelationName(tdbb, transaction, name);
+	bool systemIndex;
+	MetaName relationName = getIndexRelationName(tdbb, transaction, name, systemIndex);
 
 	dsc dscName;
 	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
 
-	SCL_check_relation(tdbb, &dscName, SCL_alter);
+	SCL_check_relation(tdbb, &dscName, SCL_alter, systemIndex);
 	return true;
 }
 
@@ -11375,6 +11389,8 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 		for (const char* pr = privileges; *pr; ++pr)
 		{
 			bool duplicate = false;
+			MetaName newField = field;
+			int newOptions = options;
 			priv[0] = *pr;
 
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
@@ -11388,23 +11404,22 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 					 (PRIV.RDB$FIELD_NAME EQUIV NULLIF(field.c_str(), '') OR
 					  (PRIV.RDB$OBJECT_TYPE EQ obj_sql_role))
 			{
-				if (PRIV.RDB$GRANT_OPTION.NULL ||
-					PRIV.RDB$GRANT_OPTION ||
-					PRIV.RDB$GRANT_OPTION == options)
-				{
-					duplicate = true;
-				}
-				else if (!PRIV.RDB$FIELD_NAME.NULL)
-					field = PRIV.RDB$FIELD_NAME; // Keep DEFAULT ROLE while adding ADMIN OPTION
+				// It means we have such privilege without grant option but
+				// user grants it with grant option. We should re-grant existing privilege.
+				const bool addGrantOption = (!PRIV.RDB$GRANT_OPTION.NULL && !PRIV.RDB$GRANT_OPTION &&
+					PRIV.RDB$GRANT_OPTION != options);
 
-				if (duplicate && objType == obj_sql_role && field == "D" &&
-					PRIV.RDB$FIELD_NAME.NULL)
-				{
-					// We have to reset duplicate to add DEFAULT ROLE and keep options to prevent reset of ADMIN OPTION
-					duplicate = false;
-					options = PRIV.RDB$GRANT_OPTION;
-				}
+				// It means we have such granted role but without DEFAULT but user grants with DEFAULT.
+				// We should re-grant it.
+				const bool addDefaultRole = (objType == obj_sql_role && field == "D" && PRIV.RDB$FIELD_NAME.NULL);
 
+				if (addGrantOption && !addDefaultRole) // Save DEFAULT option for re-grant
+						newField = PRIV.RDB$FIELD_NAME;
+
+				if (addDefaultRole && !addGrantOption) // Add grant option was requested
+						newOptions = PRIV.RDB$GRANT_OPTION;
+
+				duplicate = !addGrantOption && !addDefaultRole;
 
 				if (!duplicate)
 					ERASE PRIV;
@@ -11466,31 +11481,33 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 						{
 							checkGrantorCanGrantDdl(tdbb, transaction, currentUser.c_str(), priv, objName);
 						}
-					// Prevent silent eating checks. In this case we can remove RDB$TRIGGER_9 (trigger1)
-					// but add every object type above in switch
-					//	else
-					//		fb_assert(false);
+						// Prevent silent eating checks. In this case we can remove RDB$TRIGGER_9 (trigger1)
+						// but add every object type above in switch
+						//	else
+						//		fb_assert(false);
 				}
 			}
 
-			storePrivilege(tdbb, transaction, objName, user, field, pr, userType, objType,
-				options, grantorRevoker);
+			storePrivilege(tdbb, transaction, objName, user, newField, pr, userType, objType,
+				newOptions, grantorRevoker);
 		}
 	}
 	else	// REVOKE
 	{
-		const bool revokeRoleDefault = (objType == obj_sql_role) && field.hasData();
-		MetaName curField;
-		int curOptions = options;
+		const bool revokeDefaultRole = (objType == obj_sql_role) && field.hasData();
+		const bool revokeGrantOption = options;
 
-		AutoCacheRequest request(tdbb, (field.hasData() ? drq_e_grant1 : drq_e_grant2), DYN_REQUESTS);
+		// This var must be identical for request (1) and if below (2)
+		const bool withField = field.hasData() && objType != obj_sql_role;
+
+		AutoCacheRequest request(tdbb, (withField ? drq_e_grant1 : drq_e_grant2), DYN_REQUESTS); // (1)
 
 		for (const char* pr = privileges; (priv[0] = *pr); ++pr)
 		{
 			bool grantErased = false;
 			bool badGrantor = false;
 
-			if (field.hasData() && objType != obj_sql_role)
+			if (withField)	// (2)
 			{
 				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 					PRIV IN RDB$USER_PRIVILEGES
@@ -11504,8 +11521,21 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				{
 					if (grantorRevoker == PRIV.RDB$GRANTOR)
 					{
+						MetaName newField = NULL;
+						int newOptions = 0;
+						if (!revokeGrantOption && !PRIV.RDB$GRANT_OPTION.NULL)
+							newOptions = PRIV.RDB$GRANT_OPTION;
+						if (!revokeDefaultRole && !PRIV.RDB$FIELD_NAME.NULL)
+							newField = PRIV.RDB$FIELD_NAME;
+
 						ERASE PRIV;
 						grantErased = true;
+
+						if (revokeDefaultRole || revokeGrantOption)
+						{
+							storePrivilege(tdbb, transaction, objName, user, newField, pr, userType, objType,
+								newOptions, grantorRevoker);
+						}
 					}
 					else
 						badGrantor = true;
@@ -11536,10 +11566,21 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 						    (owner == currentUser))) ||					// Current user is role owner
 						  (getGrantorOption(tdbb, transaction, currentUser, obj_user, objName) == 2))))	// or has ADMIN option
 					{
-						curOptions = PRIV.RDB$GRANT_OPTION;
-						curField = PRIV.RDB$FIELD_NAME;
+						MetaName newField = NULL;
+						int newOptions = 0;
+						if (!revokeGrantOption && !PRIV.RDB$GRANT_OPTION.NULL)
+							newOptions = PRIV.RDB$GRANT_OPTION;
+						if (!revokeDefaultRole && !PRIV.RDB$FIELD_NAME.NULL)
+							newField = PRIV.RDB$FIELD_NAME;
+
 						ERASE PRIV;
 						grantErased = true;
+
+						if (revokeDefaultRole || revokeGrantOption)
+						{
+							storePrivilege(tdbb, transaction, objName, user, newField, pr, userType, objType,
+								newOptions, grantorRevoker);
+						}
 					}
 					else
 						badGrantor = true;
@@ -11547,25 +11588,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				END_FOR
 			}
 
-			if (grantErased)
-			{
-				if (revokeRoleDefault)
-				{
-					// Add role grant again without default
-					storePrivilege(tdbb, transaction, objName, user, NULL, pr, userType, objType,
-						curOptions, grantorRevoker);
-				}
-				else if (options)
-				{
-					// Add the privilege without the grant option. There is a modify trigger on the
-					// rdb$user_privileges which disallows the table from being updated. It would have
-					// to be changed such that only the grant_option field can be updated.
-
-					storePrivilege(tdbb, transaction, objName, user, curField, pr, userType, objType,
-						0, grantorRevoker);
-				}
-			}
-			else
+			if (!grantErased)
 			{
 				if (badGrantor)
 				{

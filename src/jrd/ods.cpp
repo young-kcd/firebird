@@ -36,8 +36,10 @@ namespace
 
 namespace Ods {
 
-bool isSupported(USHORT majorVersion, USHORT minorVersion)
+bool isSupported(const header_page* hdr)
 {
+	USHORT majorVersion = hdr->hdr_ods_version;
+	USHORT minorVersion = hdr->hdr_ods_minor;
 	const bool isFirebird = (majorVersion & ODS_FIREBIRD_FLAG);
 	majorVersion &= ~ODS_FIREBIRD_FLAG;
 

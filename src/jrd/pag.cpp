@@ -1259,7 +1259,7 @@ void PAG_header_init(thread_db* tdbb)
 
 	const USHORT ods_version = header->hdr_ods_version & ~ODS_FIREBIRD_FLAG;
 
-	if (!Ods::isSupported(header->hdr_ods_version, header->hdr_ods_minor))
+	if (!Ods::isSupported(header))
 	{
 		ERR_post(Arg::Gds(isc_wrong_ods) << Arg::Str(attachment->att_filename) <<
 											Arg::Num(ods_version) <<

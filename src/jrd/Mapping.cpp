@@ -979,15 +979,21 @@ public:
 	bool getPrivileges(const PathName& db, const string& name, const string* sqlRole,
 		const string& trusted_role, UserId::Privileges& system_privileges)
 	{
-		DbCache* c;
-		return databases.get(db, c) && c->getPrivileges(name, sqlRole, trusted_role, system_privileges);
+		AutoPtr<DbCache>* c = databases.get(db);
+		return c && (*c)->getPrivileges(name, sqlRole, trusted_role, system_privileges);
 	}
 
 	void populate(const PathName& db, Mapping::DbHandle& iDb, const string& name, const string* sqlRole,
 		const string& trusted_role)
 	{
-		DbCache* c;
-		if (!databases.get(db, c))
+		AutoPtr<DbCache>* ptr = databases.get(db);
+		DbCache* c = nullptr;
+		if (ptr)
+		{
+			c = ptr->get();
+			fb_assert(c);
+		}
+		else 
 		{
 			c = FB_NEW_POOL(getPool()) DbCache(getPool());
 			*(databases.put(db)) = c;
@@ -999,9 +1005,9 @@ public:
 
 	void invalidate(const PathName& db)
 	{
-		DbCache* c;
-		if (databases.get(db, c))
-			c->invalidate();
+		AutoPtr<DbCache>* c = databases.get(db);
+		if (c)
+			(*c)->invalidate();
 	}
 
 private:
@@ -1194,7 +1200,7 @@ private:
 	};
 
 	SyncObject sync;
-	GenericMap<Pair<Left<PathName, DbCache*> > > databases;
+	GenericMap<Pair<Left<PathName, AutoPtr<DbCache> > > > databases;
 };
 
 InitInstance<SysPrivCache> spCache;

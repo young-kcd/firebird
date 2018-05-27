@@ -145,9 +145,15 @@ public:
 	{
 		if (replyLength > wakeLength)
 			replyLength = wakeLength;
-		memcpy(replyData, wakeData, replyLength);
 
-		wake = true;
+		if (wakeData)
+		{
+			memcpy(replyData, wakeData, replyLength);
+			wake = true;
+		}
+		else
+			stop();
+
 		sem.release();
 	}
 
@@ -198,7 +204,7 @@ public:
 		loadClientKey();
 		unsigned rc = keyCallback ?
 			keyCallback->callback(dataLength, data, bufferLength, buffer) :
-			// use legacy behavior if holders to do wish to accept keys from client
+			// use legacy behavior if holders do wish to accept keys from client
 			networkCallback.callback(dataLength, data, bufferLength, buffer);
 
 		return rc;
@@ -1594,6 +1600,9 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					else
 					{
 						request->req_receive.p_operation = ok ? op_dummy : op_exit;
+
+						if (port->port_server_crypt_callback)
+							port->port_server_crypt_callback->wakeup(0, NULL);
 					}
 
 					request->req_port = port;
@@ -1770,13 +1779,8 @@ public:
 static void setErrorStatus(IStatus* status)
 {
 	Arg::Gds loginError(isc_login);
-#ifndef DEV_BUILD
-	if (status->getErrors()[1] == isc_missing_data_structures)
-#endif
-	{
-		loginError << Arg::StatusVector(status->getErrors());
-	}
-	status->setErrors(loginError.value());
+	if (!(status->getState() & IStatus::STATE_ERRORS))
+		status->setErrors(loginError.value());
 }
 
 static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
@@ -1995,12 +1999,27 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 		}
 	}
 
+
 	// Send off out gracious acceptance or flag rejection
 	if (!accepted)
 	{
 		HANDSHAKE_DEBUG(fprintf(stderr, "!accepted, sending reject\n"));
 		if (status.getState() & Firebird::IStatus::STATE_ERRORS)
-			port->send_response(send, 0, 0, &status, false);
+		{
+			if (status.getErrors()[1] != isc_missing_data_structures)
+			{
+				iscLogStatus("Authentication error", &status);
+				Arg::Gds loginError(isc_login_error);
+#ifdef DEV_BUILD
+				loginError << Arg::StatusVector(&status);
+#endif
+				LocalStatus tmp;
+				loginError.copyTo(&tmp);
+				port->send_response(send, 0, 0, &tmp, false);
+			}
+			else
+				port->send_response(send, 0, 0, &status, false);
+		}
 		else
 			port->send(send);
 		return false;
@@ -6393,7 +6412,9 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 		return 0;
 	}
 
-	switch (xdr_peek_long(&port_async_receive->port_receive, buffer, dataSize))
+	SLONG original_op = xdr_peek_long(&port_async_receive->port_receive, buffer, dataSize);
+
+	switch (original_op)
 	{
 	case op_cancel:
 	case op_abort_aux_connection:
@@ -6427,13 +6448,15 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 		break;
 	case op_abort_aux_connection:
 		if (port_async && (port_async->port_flags & PORT_connecting))
-		{
 			port_async->abort_aux_connection();
-		}
 		break;
 	case op_crypt_key_callback:
 		port_server_crypt_callback->wakeup(asyncPacket->p_cc.p_cc_data.cstr_length,
 			asyncPacket->p_cc.p_cc_data.cstr_address);
+		break;
+	case op_partial:
+		if (original_op == op_crypt_key_callback)
+			port_server_crypt_callback->wakeup(0, NULL);
 		break;
 	default:
 		fb_assert(false);

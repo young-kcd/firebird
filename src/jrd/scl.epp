@@ -372,6 +372,9 @@ void SCL_check_database(thread_db* tdbb, SecurityClass::flags_t mask)
 	if (mask == SCL_alter && attachment->locksmith(tdbb, USE_NBACKUP_UTILITY))
 		return;
 
+	if (mask == SCL_drop && attachment->locksmith(tdbb, DROP_DATABASE))
+		return;
+
 	const P_NAMES* names;
 	for (names = p_names; names->p_names_priv; names++)
 	{
@@ -1123,6 +1126,7 @@ void UserId::sclInit(thread_db* tdbb, bool create, const UserId& tempId)
 	MemoryPool& pool = *attachment->att_pool;
 	UserId* const user = FB_NEW_POOL(pool) UserId(pool, tempId);
 	user->setSqlRole(role_name);
+	user->usr_init_role = role_name;
 	attachment->att_user = user;
 
 	if (!create)

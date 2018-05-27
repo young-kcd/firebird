@@ -3106,6 +3106,12 @@ static bool get_header(WIN* window, USHORT line, record_param* rpb)
 		rpb->rpb_b_line = header->rhdf_b_line;
 		rpb->rpb_transaction_nr = Ods::getTraNum(header);
 		rpb->rpb_format_number = header->rhdf_format;
+
+		if (rpb->rpb_relation->rel_id == 0 /*i.e.RDB$PAGES*/ && rpb->rpb_transaction_nr != 0)
+		{
+			// RDB$PAGES relation should be modified only by system transaction
+			BUGCHECK(307);
+		}
 	}
 
 	FB_SIZE_T header_size;

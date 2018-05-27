@@ -1695,7 +1695,10 @@ static void disconnect(rem_port* const port)
 		SOCLOSE(port->port_channel);
 	}
 
-	port->release();
+	if (port->port_thread_guard && port->port_events_thread && !Thread::isCurrent(port->port_events_threadId))
+		port->port_thread_guard->setWait(port->port_events_thread);
+	else
+		port->release();
 
 #ifdef DEBUG
 	if (INET_trace & TRACE_summary)
@@ -2089,6 +2092,8 @@ static void select_port(rem_port* main_port, Select* selct, RemPortPtr& port)
 		{
 		case Select::SEL_BAD:
 			if (port->port_state == rem_port::BROKEN || (port->port_flags & PORT_connecting))
+				continue;
+			if (port->port_flags & PORT_async)
 				continue;
 			return;
 

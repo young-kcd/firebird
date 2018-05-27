@@ -35,6 +35,7 @@
 #include "firebird/Message.h"
 #include "../common/dsc.h"
 #include "../burp/misc_proto.h"
+#include "../burp/mvol_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/ThreadData.h"
 #include "../common/UtilSvc.h"
@@ -43,6 +44,7 @@
 #include "../common/classes/MetaName.h"
 #include "../../jrd/SimilarToMatcher.h"
 #include "../common/status.h"
+#include "../common/sha.h"
 #include "../common/classes/ImplementHelper.h"
 
 #ifdef HAVE_UNISTD_H
@@ -53,6 +55,14 @@
 #include <fcntl.h>
 #endif
 
+#if defined(HAVE_ZLIB_H)
+#define WIRE_COMPRESS_SUPPORT 1
+#endif
+
+#ifdef WIRE_COMPRESS_SUPPORT
+#include <zlib.h>
+//#define COMPRESS_DEBUG 1
+#endif // WIRE_COMPRESS_SUPPORT
 
 static inline UCHAR* BURP_alloc(ULONG size)
 {
@@ -208,10 +218,6 @@ Version 11: FB4.0.
 
 const int ATT_BACKUP_FORMAT		= 11;
 
-// format version number for ranges for arrays
-
-//const int GDS_NDA_VERSION		= 1; // Not used
-
 // max array dimension
 
 const int MAX_DIMENSION			= 16;
@@ -234,6 +240,10 @@ enum att_type {
 	att_backup_blksize,		// backup block size
 	att_backup_file,		// database file name
 	att_backup_volume,		// backup volume number
+	att_backup_keyname,		// name of crypt key
+	att_backup_zip,			// zipped backup file
+	att_backup_hash,		// hash of crypt key
+	att_backup_crypt,		// name of crypt plugin
 
 	// Database attributes
 
@@ -921,6 +931,8 @@ public:
 
 // Global switches and data
 
+struct BurpCrypt;
+
 class BurpGlobals : public Firebird::ThreadData
 {
 public:
@@ -973,6 +985,12 @@ public:
 	bool		gbl_sw_mode;
 	bool		gbl_sw_mode_val;
 	bool		gbl_sw_overwrite;
+	bool		gbl_sw_zip;
+	const SCHAR*	gbl_sw_keyholder;
+	const SCHAR*	gbl_sw_crypt;
+	const SCHAR*	gbl_sw_keyname;
+	SCHAR			gbl_hdr_keybuffer[MAX_SQL_IDENTIFIER_SIZE + 1];
+	SCHAR			gbl_hdr_cryptbuffer[MAX_SQL_IDENTIFIER_SIZE + 1];
 	const SCHAR*	gbl_sw_sql_role;
 	const SCHAR*	gbl_sw_user;
 	const SCHAR*	gbl_sw_password;
@@ -983,11 +1001,42 @@ public:
 	gfld*		gbl_global_fields;
 	unsigned	gbl_network_protocol;
 	burp_act*	action;
+	BurpCrypt*	gbl_crypt;
 	ULONG		io_buffer_size;
 	redirect_vals	sw_redirect;
 	bool		burp_throw;
-	UCHAR*		io_ptr;
-	int			io_cnt;
+
+	UCHAR*		blk_io_ptr;
+	int			blk_io_cnt;
+
+	void put(const UCHAR c)
+	{
+		if (gbl_io_cnt <= 0)
+			MVOL_write(this);
+
+		--gbl_io_cnt;
+		*gbl_io_ptr++ = c;
+	}
+
+	UCHAR get()
+	{
+		if (gbl_io_cnt <= 0)
+			MVOL_read(this);
+
+		--gbl_io_cnt;
+		return *gbl_io_ptr++;
+	}
+
+#ifdef WIRE_COMPRESS_SUPPORT
+	z_stream	gbl_stream;
+#endif
+	UCHAR*		gbl_io_ptr;
+	int			gbl_io_cnt;
+	UCHAR*		gbl_compress_buffer;
+	UCHAR*		gbl_crypt_buffer;
+	ULONG		gbl_crypt_left;
+	UCHAR*      gbl_decompress;
+
 	burp_rel*	relations;
 	burp_pkg*	packages;
 	burp_prc*	procedures;
@@ -1010,6 +1059,11 @@ public:
 	SCHAR		mvol_old_file [MAX_FILE_NAME_SIZE];
 	int			mvol_volume_count;
 	bool		mvol_empty_file;
+	TEXT		mvol_keyname_buffer[MAX_FILE_NAME_SIZE];
+	const TEXT*	mvol_keyname;
+	TEXT		mvol_crypt_buffer[MAX_FILE_NAME_SIZE];
+	const TEXT*	mvol_crypt;
+	TEXT		gbl_key_hash[(Firebird::Sha1::HASH_SIZE + 1) * 4 / 3 + 1];	// take into an account base64
 	Firebird::IAttachment*	db_handle;
 	Firebird::ITransaction*	tr_handle;
 	Firebird::ITransaction*	global_trans;

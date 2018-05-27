@@ -62,10 +62,13 @@ Manager::Manager(MemoryPool& pool) :
 
 Manager::~Manager()
 {
+	ThreadContextHolder tdbb;
+
 	while (m_providers)
 	{
 		Provider* to_delete = m_providers;
 		m_providers = m_providers->m_next;
+		to_delete->clearConnections(tdbb);
 		delete to_delete;
 	}
 }
@@ -463,21 +466,33 @@ void Connection::clearTransactions(Jrd::thread_db* tdbb)
 	while (m_transactions.getCount())
 	{
 		Transaction* tran = m_transactions[0];
-		tran->rollback(tdbb, false);
+		try
+		{
+			tran->rollback(tdbb, false);
+		}
+		catch (const Exception&)
+		{
+			if (!m_deleting)
+				throw;
+		}
 	}
 }
 
 void Connection::clearStatements(thread_db* tdbb)
 {
 	Statement** stmt_ptr = m_statements.begin();
-	Statement** end = m_statements.end();
-
-	for (; stmt_ptr < end; stmt_ptr++)
+	while (stmt_ptr < m_statements.end())
 	{
 		Statement* stmt = *stmt_ptr;
 		if (stmt->isActive())
 			stmt->close(tdbb);
-		Statement::deleteStatement(tdbb, stmt);
+
+		// close() above could destroy statement and remove it from m_statements
+		if (stmt_ptr < m_statements.end() && *stmt_ptr == stmt)
+		{
+			Statement::deleteStatement(tdbb, stmt);
+			stmt_ptr++;
+		}
 	}
 
 	m_statements.clear();
@@ -741,11 +756,12 @@ void Transaction::detachFromJrdTran()
 	if (m_scope != traCommon)
 		return;
 
-	fb_assert(m_jrdTran);
+	fb_assert(m_jrdTran || m_connection.isBroken());
 	if (!m_jrdTran)
 		return;
 
 	Transaction** tran_ptr = &m_jrdTran->tra_ext_common;
+	m_jrdTran = NULL;
 	for (; *tran_ptr; tran_ptr = &(*tran_ptr)->m_nextTran)
 	{
 		if (*tran_ptr == this)
@@ -825,6 +841,8 @@ Statement::~Statement()
 
 void Statement::deleteStatement(Jrd::thread_db* tdbb, Statement* stmt)
 {
+	if (stmt->m_boundReq)
+		stmt->unBindFromRequest();
 	stmt->deallocate(tdbb);
 	delete stmt;
 }
@@ -1074,19 +1092,23 @@ static TokenType getToken(const char** begin, const char* end)
 	case '-':
 		if (p < end && *p == '-')
 		{
-			while (p < end)
+			while (++p < end)
 			{
-				if (*p++ == '\n')
+				if (*p == '\r')
 				{
-					p--;
-					ret = ttComment;
+					p++;
+					if (p < end && *p == '\n')
+						p++;
 					break;
 				}
+				else if (*p == '\n')
+					break;
 			}
+
+			ret = ttComment;
 		}
-		else {
+		else
 			ret = ttOther;
-		}
 		break;
 
 	default:

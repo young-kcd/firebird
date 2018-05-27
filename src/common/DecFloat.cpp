@@ -45,6 +45,9 @@ extern "C"
 
 using namespace Firebird;
 
+const DecimalStatus DecimalStatus::DEFAULT(FB_DEC_Errors);
+const DecimalBinding DecimalBinding::DEFAULT;
+
 namespace {
 
 struct Dec2fb
@@ -359,7 +362,9 @@ Decimal64 Decimal64::floor(DecimalStatus decSt) const
 
 int Decimal64::compare(DecimalStatus decSt, Decimal64 tgt) const
 {
-	DecimalContext context(this, decSt);
+	DecimalStatus cmpStatus(decSt);
+	cmpStatus.decExtFlag &= ~DEC_IEEE_754_Invalid_operation;
+	DecimalContext context(this, cmpStatus);
 	decDouble r;
 	decDoubleCompare(&r, &dec, &tgt.dec, &context);
 	return decDoubleToInt32(&r, &context, DEC_ROUND_HALF_UP);
