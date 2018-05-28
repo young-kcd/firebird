@@ -11194,6 +11194,79 @@ void GrantRevokeNode::modifyPrivileges(thread_db* tdbb, jrd_tra* transaction, SS
 }
 
 
+static bool checkObjectExist(thread_db* tdbb, jrd_tra* transaction, const MetaName& name, int type)
+{
+	bool rc = false;
+
+	switch (type)
+	{
+		case obj_procedure:
+		{
+			AutoCacheRequest request(tdbb, drq_proc_exist, DYN_REQUESTS);
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+				X IN RDB$PROCEDURES
+				WITH X.RDB$PROCEDURE_NAME EQ name.c_str() AND X.RDB$PACKAGE_NAME MISSING
+			{
+				rc = true;
+			}
+			END_FOR
+			break;
+		}
+		case obj_udf:
+		{
+			AutoCacheRequest request(tdbb, drq_udf_exist, DYN_REQUESTS);
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+				X IN RDB$FUNCTIONS
+				WITH X.RDB$FUNCTION_NAME EQ name.c_str() AND X.RDB$PACKAGE_NAME MISSING
+			{
+				rc = true;
+			}
+			END_FOR
+			break;
+		}
+		case obj_package_header:
+		{
+			AutoCacheRequest request(tdbb, drq_package_exist, DYN_REQUESTS);
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+				X IN RDB$PACKAGES
+				WITH X.RDB$PACKAGE_NAME EQ name.c_str()
+			{
+				rc = true;
+			}
+			END_FOR
+			break;
+		}
+		case obj_trigger:
+		{
+			AutoCacheRequest request(tdbb, drq_trigger_exist, DYN_REQUESTS);
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+				X IN RDB$TRIGGERS
+				WITH X.RDB$TRIGGER_NAME EQ name.c_str()
+			{
+				rc = true;
+			}
+			END_FOR
+			break;
+		}
+		case obj_relation:
+		case obj_view:
+		{
+			AutoCacheRequest request(tdbb, drq_rel_exist, DYN_REQUESTS);
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+				X IN RDB$RELATIONS
+				WITH X.RDB$RELATION_NAME EQ name.c_str()
+			{
+				rc =  (type != obj_view) || (X.RDB$RELATION_TYPE == rel_view);
+			}
+			END_FOR
+			break;
+		}
+	}
+
+	return rc;
+}
+
+
 // Execute SQL grant/revoke operation.
 void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const GranteeClause* object,
 	const GranteeClause* userNod, const char* privs,
@@ -11245,12 +11318,36 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				}
 			}
 			else
-			{
 				userType = obj_user;
-			}
 			break;
 
 		case obj_user:
+			// We may grant privilege to non existing user
+			break;
+
+		case obj_udf:
+			if (!checkObjectExist(tdbb, transaction, user, userType))
+				status_exception::raise(Arg::PrivateDyn(301) << user.c_str());
+			break;
+
+		case obj_procedure:
+			if (!checkObjectExist(tdbb, transaction, user, userType))
+				status_exception::raise(Arg::PrivateDyn(302) << user.c_str());
+			break;
+
+		case obj_package_header:
+			if (!checkObjectExist(tdbb, transaction, user, userType))
+				status_exception::raise(Arg::PrivateDyn(303) << user.c_str());
+			break;
+
+		case obj_trigger:
+			if (!checkObjectExist(tdbb, transaction, user, userType))
+				status_exception::raise(Arg::PrivateDyn(304) << user.c_str());
+			break;
+
+		case obj_view:
+			if (!checkObjectExist(tdbb, transaction, user, userType))
+				status_exception::raise(Arg::PrivateDyn(305) << user.c_str());
 			break;
 
 		case obj_sql_role:

@@ -2078,6 +2078,11 @@ COMMIT WORK;
 ('dyn_incompat_alter_database', 'AlterDatabaseNode::execute', 'DdlNodes.epp', NULL, 8, 298, NULL, 'Incompatible ALTER DATABASE clauses: ''@1'' and ''@2''', NULL, NULL);
 (NULL, 'checkGrantorCanGrantObject', 'DdlNodes.epp', NULL, 8, 299, NULL, 'no @1 privilege with grant option on DDL @2', NULL, NULL);
 (NULL, 'checkGrantorCanGrantObject', 'DdlNodes.epp', NULL, 8, 300, NULL, 'no @1 privilege with grant option on object @2', NULL, NULL);
+(NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 301, NULL, 'Function @1 does not exist', NULL, NULL);
+(NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 302, NULL, 'Procedure @1 does not exist', NULL, NULL);
+(NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 303, NULL, 'Package @1 does not exist', NULL, NULL);
+(NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 304, NULL, 'Trigger @1 does not exist', NULL, NULL);
+(NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 305, NULL, 'View @1 does not exist', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);
