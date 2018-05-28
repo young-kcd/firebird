@@ -12,9 +12,9 @@ How pool works:
 - every external connection is associated with a pool when created
 - pool maintains two lists: idle connections and active connections
 - when some connection become unused (i.e. it have no active requests and no 
-  active transactions), it is resetted and placed into idle list (on successful 
+  active transactions), it is reset and placed into idle list (on successful 
   reset) or closed (if reset failed).
-  Connection is resetted using ALTER SESSION RESET statement. It is considered 
+  Connection is reset using ALTER SESSION RESET statement. It is considered 
   successful if no error occurs.
 - if the pool has reached max. size, the oldest idle connection is closed
 - when engine ask to create a new external connection, the pool first looks 
