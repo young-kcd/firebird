@@ -950,9 +950,17 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 
 	CCH_MARK(tdbb, &pwindow);
 
+	const ULONG dpSequence = ppage->ppg_sequence * dbb->dbb_dp_per_pp;
 	s = extent ? firstSlot : slot;
 	for (i = 0; i < pages.getCount(); i++, s++)
+	{
 		ppage->ppg_page[s] = 0;
+
+		if (relPages->rel_last_free_pri_dp == pages[i])
+			relPages->rel_last_free_pri_dp = 0;
+
+		relPages->setDPNumber(dpSequence + s, 0);
+	}
 
 	if (relPages->rel_data_pages)
 		relPages->rel_data_pages -= pages.getCount();
