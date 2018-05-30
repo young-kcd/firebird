@@ -830,7 +830,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 		sql = "select first(1) gen_id(" + nm + ", 0) from rdb$database";
 
 		BurpSql getGenerator(tdgbl, sql.c_str());
-		FB_MESSAGE(GetGen, Firebird::ThrowStatusWrapper, (FB_BIGINT, id));
+		FB_MESSAGE(GetGen, Firebird::ThrowWrapper, (FB_BIGINT, id));
 		GetGen getGen(&tdgbl->throwStatus, Firebird::MasterInterfacePtr());
 
 		getGenerator.singleSelect(tdgbl->tr_handle, &getGen);
