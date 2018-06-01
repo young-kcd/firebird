@@ -1817,6 +1817,8 @@ const
 	gds_db_crypt_key                     = 335545204;
 	isc_no_keyholder_plugin              = 335545205;
 	gds_no_keyholder_plugin              = 335545205;
+	isc_ses_reset_err                    = 335545206;
+	gds_ses_reset_err                    = 335545206;
 	isc_gfix_db_name                     = 335740929;
 	gds_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;

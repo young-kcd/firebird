@@ -907,6 +907,7 @@ static const struct {
 	{"vld_plugins", 335545203},
 	{"db_crypt_key", 335545204},
 	{"no_keyholder_plugin", 335545205},
+	{"ses_reset_err", 335545206},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

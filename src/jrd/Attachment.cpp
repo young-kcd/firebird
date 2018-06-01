@@ -383,6 +383,16 @@ void Jrd::Attachment::releaseGTTs(thread_db* tdbb)
 
 void Jrd::Attachment::resetSession(thread_db* tdbb)
 {
+	if (att_transactions)
+	{
+		int n = 0;
+		for (const jrd_tra* tra = att_transactions; tra; tra = tra->tra_next)
+			n++;
+
+		// Cannot reset user session with open transactions (@1 active)
+		ERR_post(Arg::Gds(isc_ses_reset_err) << Arg::Num(n));
+	}
+
 	// reset DecFloat
 	att_dec_status = DecimalStatus::DEFAULT;
 	att_dec_binding = DecimalBinding::DEFAULT;
