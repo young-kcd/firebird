@@ -7350,9 +7350,9 @@ namespace
 				StableAttachmentPart* const sAtt = *iter;
 
 				MutexLockGuard guard(*(sAtt->getMutex(true)), FB_FUNCTION);
-				Attachment* attachment = sAtt->getHandle();
+				Attachment* const attachment = sAtt->getHandle();
 
-				if (attachment)
+				if (attachment && !(attachment->att_flags & ATT_shutdown))
 					attachment->signalShutdown();
 			}
 		}
@@ -7402,7 +7402,7 @@ namespace
 			MutexLockGuard guard(shutdownMutex, FB_FUNCTION);
 			if (engineShutdown)
 			{
-				// Shutdown was done, all attachmnets are gone
+				// Shutdown was done, all attachments are gone
 				return 0;
 			}
 
@@ -8024,16 +8024,15 @@ void JRD_shutdown_attachment(Attachment* attachment)
 
 	try
 	{
-		fb_assert(attachment->att_flags & ATT_shutdown);
-
 		MemoryPool& pool = *getDefaultMemoryPool();
-		AttachmentsRefHolder* queue = FB_NEW_POOL(pool) AttachmentsRefHolder(pool);
+		AutoPtr<AttachmentsRefHolder> queue(FB_NEW_POOL(pool) AttachmentsRefHolder(pool));
 
-		fb_assert(attachment->getStable());
-		attachment->getStable()->addRef();
 		queue->add(attachment->getStable());
 
-		Thread::start(attachmentShutdownThread, queue, THREAD_high);
+		if (!(attachment->att_flags & ATT_shutdown))
+			attachment->signalShutdown();
+
+		Thread::start(attachmentShutdownThread, queue.release(), THREAD_high);
 	}
 	catch (const Exception&)
 	{} // no-op
@@ -8059,26 +8058,38 @@ void JRD_shutdown_attachments(Database* dbb)
 		MemoryPool& pool = *getDefaultMemoryPool();
 		AutoPtr<AttachmentsRefHolder> queue(FB_NEW_POOL(pool) AttachmentsRefHolder(pool));
 
+		// Collect attachments to shut down
+
 		{	// scope
-			Sync guard(&dbb->dbb_sync, "JRD_shutdown_attachments");
+			Sync guard(&dbb->dbb_sync, FB_FUNCTION);
 			if (!dbb->dbb_sync.ourExclusiveLock())
 				guard.lock(SYNC_SHARED);
 
 			for (Jrd::Attachment* attachment = dbb->dbb_attachments;
-				 attachment;
-				 attachment = attachment->att_next)
+				attachment; attachment = attachment->att_next)
 			{
-				if (attachment->att_flags & ATT_shutdown)
-				{
-					fb_assert(attachment->getStable());
-					attachment->getStable()->addRef();
+				if (!(attachment->att_flags & ATT_shutdown_manager))
 					queue->add(attachment->getStable());
-				}
 			}
 		}
 
-		if (queue.hasData())
+		if (queue->hasData())
+		{
+			// Signal attachments for termination
+
+			for (AttachmentsRefHolder::Iterator iter(*queue); *iter; ++iter)
+			{
+				StableAttachmentPart* const sAtt = *iter;
+
+				MutexLockGuard guard(*(sAtt->getMutex(true)), FB_FUNCTION);
+				Attachment* const attachment = sAtt->getHandle();
+
+				if (attachment && !(attachment->att_flags & ATT_shutdown))
+					attachment->signalShutdown();
+			}
+
 			Thread::start(attachmentShutdownThread, queue.release(), THREAD_high);
+		}
 	}
 	catch (const Exception&)
 	{} // no-op
