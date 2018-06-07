@@ -1654,11 +1654,11 @@ void dsql_req::setTimeout(unsigned int timeOut)
 
 TimeoutTimer* dsql_req::setupTimer(thread_db* tdbb)
 {
-	if (statement->getFlags() & JrdStatement::FLAG_INTERNAL)
-		return req_timer;
-
 	if (req_request)
 	{
+		if (req_request->getStatement()->flags & JrdStatement::FLAG_INTERNAL)
+			return req_timer;
+
 		req_request->req_timeout = this->req_timeout;
 
 		fb_assert(!req_request->req_caller);
