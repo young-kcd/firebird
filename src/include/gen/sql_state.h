@@ -907,6 +907,9 @@ static const struct {
 	{335545204, "08004"}, // 884 db_crypt_key
 	{335545205, "HY024"}, // 885 no_keyholder_plugin
 	{335545206, "01002"}, // 886 ses_reset_err
+	{335545207, "25S02"}, // 887 ses_reset_open_trans
+	{335545208, "01000"}, // 888 ses_reset_warn
+	{335545209, "01102"}, // 889 ses_reset_tran_rollback
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

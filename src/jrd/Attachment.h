@@ -408,7 +408,7 @@ public:
 
 
 	void releaseGTTs(thread_db* tdbb);
-	void resetSession(thread_db* tdbb);
+	void resetSession(thread_db* tdbb, jrd_tra** traHandle);
 
 	void signalCancel();
 	void signalShutdown(ISC_STATUS code);

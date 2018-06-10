@@ -948,7 +948,7 @@ void DsqlSessionManagementRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
 	bool singleton)
 {
-	node->execute(tdbb, this);
+	node->execute(tdbb, this, traHandle);
 }
 
 

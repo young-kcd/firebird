@@ -8094,18 +8094,18 @@ void SetTransactionNode::genTableLock(DsqlCompilerScratch* dsqlScratch,
 //--------------------
 
 
-void SessionResetNode::execute(thread_db* tdbb, dsql_req* request) const
+void SessionResetNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** traHandle) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
-	attachment->resetSession(tdbb);
+	attachment->resetSession(tdbb, traHandle);
 }
 
 
 //--------------------
 
 
-void SetRoleNode::execute(thread_db* tdbb, dsql_req* request) const
+void SetRoleNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -8201,7 +8201,7 @@ SetRoundNode::SetRoundNode(MemoryPool& pool, Firebird::MetaName* name)
 	rndMode = mode->val;
 }
 
-void SetRoundNode::execute(thread_db* tdbb, dsql_req* /*request*/) const
+void SetRoundNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -8221,7 +8221,7 @@ void SetTrapsNode::trap(Firebird::MetaName* name)
 	traps |= trap->val;
 }
 
-void SetTrapsNode::execute(thread_db* tdbb, dsql_req* /*request*/) const
+void SetTrapsNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -8232,7 +8232,7 @@ void SetTrapsNode::execute(thread_db* tdbb, dsql_req* /*request*/) const
 //--------------------
 
 
-void SetBindNode::execute(thread_db* tdbb, dsql_req* /*request*/) const
+void SetBindNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -8291,7 +8291,7 @@ string SetSessionNode::internalPrint(NodePrinter& printer) const
 	return "SetSessionNode";
 }
 
-void SetSessionNode::execute(thread_db* tdbb, dsql_req* request) const
+void SetSessionNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** /*traHandle*/) const
 {
 	Attachment* att = tdbb->getAttachment();
 

@@ -1585,7 +1585,7 @@ public:
 		return "SessionResetNode";
 	}
 
-	virtual void execute(thread_db* tdbb, dsql_req* request) const;
+	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** traHandle) const;
 };
 
 
@@ -1617,7 +1617,7 @@ public:
 		return "SetRoleNode";
 	}
 
-	virtual void execute(thread_db* tdbb, dsql_req* request) const;
+	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** traHandle) const;
 
 public:
 	bool trusted;
@@ -1634,7 +1634,7 @@ public:
 
 public:
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
-	virtual void execute(thread_db* tdbb, dsql_req* request) const;
+	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** traHandle) const;
 
 private:
 	Type m_type;
@@ -1657,7 +1657,7 @@ public:
 		return "SetRoundNode";
 	}
 
-	virtual void execute(thread_db* tdbb, dsql_req* request) const;
+	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** traHandle) const;
 
 public:
 	USHORT rndMode;
@@ -1683,7 +1683,7 @@ public:
 		return "SetTrapsNode";
 	}
 
-	virtual void execute(thread_db* tdbb, dsql_req* request) const;
+	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** traHandle) const;
 
 	void trap(Firebird::MetaName* name);
 
@@ -1711,7 +1711,7 @@ public:
 		return "SetBindNode";
 	}
 
-	virtual void execute(thread_db* tdbb, dsql_req* request) const;
+	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** traHandle) const;
 
 public:
 	Firebird::DecimalBinding bind;
