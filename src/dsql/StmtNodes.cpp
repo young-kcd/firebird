@@ -3823,6 +3823,14 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 											   org_transaction->tra_lock_timeout,
 											   org_transaction);
 
+		{
+			AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
+				tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);
+
+			// run ON TRANSACTION START triggers
+			JRD_run_trans_start_triggers(tdbb, transaction);
+		}
+
 		TRA_attach_request(transaction, request);
 		tdbb->setTransaction(transaction);
 
@@ -3831,12 +3839,6 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 
 		const Savepoint* const savepoint = transaction->startSavepoint();
 		impure->savNumber = savepoint->getNumber();
-
-		if (!(attachment->att_flags & ATT_no_db_triggers))
-		{
-			// run ON TRANSACTION START triggers
-			EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_START);
-		}
 
 		return action;
 	}

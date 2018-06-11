@@ -8623,10 +8623,13 @@ static void start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra
 
 			jrd_tra* transaction = TRA_start(tdbb, tpb_length, tpb);
 
+			// run ON TRANSACTION START triggers
+			JRD_run_trans_start_triggers(tdbb, transaction);
+
 			*tra_handle = transaction;
 
-			// run ON TRANSACTION START triggers
-			EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_START);
+//			// run ON TRANSACTION START triggers
+//			EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_START);
 		}
 		catch (const Exception& ex)
 		{
