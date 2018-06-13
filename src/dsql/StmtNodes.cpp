@@ -3823,16 +3823,20 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 											   org_transaction->tra_lock_timeout,
 											   org_transaction);
 
-		{
-			AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
-				tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);
+		TRA_attach_request(transaction, request);
+		tdbb->setTransaction(transaction);
 
+		try
+		{
 			// run ON TRANSACTION START triggers
 			JRD_run_trans_start_triggers(tdbb, transaction);
 		}
-
-		TRA_attach_request(transaction, request);
-		tdbb->setTransaction(transaction);
+		catch (Exception&)
+		{
+			TRA_attach_request(org_transaction, request);
+			tdbb->setTransaction(org_transaction);
+			throw;
+		}
 
 		request->req_auto_trans.push(org_transaction);
 		impure->traNumber = transaction->tra_number;
