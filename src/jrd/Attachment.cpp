@@ -398,8 +398,10 @@ void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 		// Cannot reset user session 
 		// There are open transactions (@1 active)
 		if (err)
-			ERR_post(Arg::Gds(isc_ses_reset_err) << 
-					 Arg::Gds(isc_ses_reset_open_trans) << Arg::Num(n));
+		{
+			ERR_post(Arg::Gds(isc_ses_reset_err) <<
+				Arg::Gds(isc_ses_reset_open_trans) << Arg::Num(n));
+		}
 	}
 
 	// TODO: trigger before reset
@@ -428,8 +430,10 @@ void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 		// Session was reset with warning(s)
 		// Transaction is rolled back due to session reset, all changes are lost
 		if (oldFlags & TRA_write)
-			ERR_post_warning(Arg::Warning(isc_ses_reset_warn) << 
+		{
+			ERR_post_warning(Arg::Warning(isc_ses_reset_warn) <<
 				Arg::Gds(isc_ses_reset_tran_rollback));
+		}
 	}
 
 	// reset DecFloat
