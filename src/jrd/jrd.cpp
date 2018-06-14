@@ -7837,6 +7837,38 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
 }
 
 
+void JRD_run_trans_start_triggers(thread_db* tdbb, jrd_tra* transaction)
+{
+	/**************************************
+	*
+	*  Run TRIGGER_TRANS_START, rollback transaction on failure.
+	*  Handle rollback error, re-throw trigger error
+	*
+	**************************************/
+
+	try
+	{
+		EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_START);
+	}
+	catch (const Exception&)
+	{
+		try
+		{
+			TRA_rollback(tdbb, transaction, false, false);
+		}
+		catch (const Exception& ex2)
+		{
+			if (tdbb->getDatabase()->dbb_flags & DBB_bugcheck)
+				throw;
+
+			iscLogException("Error rolling back new transaction", ex2);
+		}
+
+		throw;
+	}
+}
+
+
 static void start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
 	Jrd::Attachment* attachment, unsigned int tpb_length, const UCHAR* tpb)
 {
@@ -7865,10 +7897,10 @@ static void start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra
 
 			jrd_tra* transaction = TRA_start(tdbb, tpb_length, tpb);
 
-			*tra_handle = transaction;
-
 			// run ON TRANSACTION START triggers
-			EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_START);
+			JRD_run_trans_start_triggers(tdbb, transaction);
+
+			*tra_handle = transaction;
 		}
 		catch (const Exception& ex)
 		{

@@ -3682,17 +3682,23 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 		TRA_attach_request(transaction, request);
 		tdbb->setTransaction(transaction);
 
+		try
+		{
+			// run ON TRANSACTION START triggers
+			JRD_run_trans_start_triggers(tdbb, transaction);
+		}
+		catch (Exception&)
+		{
+			TRA_attach_request(org_transaction, request);
+			tdbb->setTransaction(org_transaction);
+			throw;
+		}
+
 		request->req_auto_trans.push(org_transaction);
 		impure->traNumber = transaction->tra_number;
 
 		VIO_start_save_point(tdbb, transaction);
 		impure->savNumber = transaction->tra_save_point->sav_number;
-
-		if (!(attachment->att_flags & ATT_no_db_triggers))
-		{
-			// run ON TRANSACTION START triggers
-			EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_START);
-		}
 
 		return action;
 	}
