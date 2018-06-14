@@ -4382,6 +4382,9 @@ void AlterDomainNode::checkUpdate(const dyn_fld& origFld, const dyn_fld& newFld)
 		case blr_d_float:
 		case blr_double:
 		case blr_float:
+		case blr_dec64:
+		case blr_dec128:
+		case blr_dec_fixed:
 			// Cannot convert column %s from character to non-character data.
 			errorCode = isc_dyn_dtype_conv_invalid;
 			break;
