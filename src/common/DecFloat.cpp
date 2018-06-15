@@ -31,6 +31,7 @@
 
 #include "StatusArg.h"
 #include "gen/iberror.h"
+#include "status.h"
 
 extern "C"
 {
@@ -613,9 +614,26 @@ void DecimalFixed::exactInt(DecimalStatus decSt, int scale)
 {
 	setScale(decSt, -scale);
 
-	DecimalContext context(this, decSt);
-	decQuadToIntegralExact(&dec, &dec, &context);
-	decQuadQuantize(&dec, &dec, &c1.dec, &context);
+	try
+	{
+		DecimalContext context(this, decSt);
+		decQuadToIntegralExact(&dec, &dec, &context);
+		decQuadQuantize(&dec, &dec, &c1.dec, &context);
+	}
+	catch(const Exception& ex)
+	{
+		FbLocalStatus st;
+		ex.stuffException(&st);
+		switch(st->getErrors()[1])
+		{
+		case isc_decfloat_invalid_operation:
+			(Arg::Gds(isc_decfloat_invalid_operation) <<
+			 Arg::Gds(isc_numeric_out_of_range)).raise();
+			break;
+		}
+
+		throw;
+	}
 }
 
 Decimal128 Decimal128::operator=(Decimal64 d64)
