@@ -2086,6 +2086,8 @@ COMMIT WORK;
 (NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 303, NULL, 'Package @1 does not exist', NULL, NULL);
 (NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 304, NULL, 'Trigger @1 does not exist', NULL, NULL);
 (NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 305, NULL, 'View @1 does not exist', NULL, NULL);
+(NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 306, NULL, 'Exception @1 does not exist', NULL, NULL);
+(NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 307, NULL, 'Generator/Sequence @1 does not exist', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);

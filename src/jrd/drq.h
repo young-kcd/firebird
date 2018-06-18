@@ -240,6 +240,8 @@ enum drq_type_t
 	drq_package_exist,		// check if package exists
 	drq_trigger_exist,		// check if trigger exists
 	drq_rel_exist,			// check if relation or view exists
+	drq_exception_exist,	// check if exception exists
+	drq_generator_exist,	// check if generator exists
 
 	drq_MAX
 };
