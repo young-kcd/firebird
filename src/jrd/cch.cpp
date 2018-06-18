@@ -275,22 +275,12 @@ int CCH_down_grade_dbb(void* ast_object)
 				for (const bcb_repeat* const end = tail + bcb->bcb_count; tail < end; ++tail)
 				{
 					BufferDesc* bdb = tail->bcb_bdb;
-					if (bdb->bdb_flags & BDB_no_blocking_ast)
-					{
-						// Acquire EX latch to avoid races with LCK_release (called by CCH_release) 
-						// in main thread. See CORE-5436
-						SyncLockGuard guard(&bdb->bdb_syncPage, SYNC_EXCLUSIVE, FB_FUNCTION);
 
-						PAGE_LOCK_ASSERT(tdbb, bcb, bdb->bdb_lock);
-					}
-					else
-					{
-						// CCH_release in main thread can't call LCK_re_post as there is no
-						// page buffers with BDB_blocking flag set as this moment. Thus we don't 
-						// need to protect against race condition.
+					// Acquire EX latch to avoid races with LCK_release (called by CCH_release) 
+					// or LCK_lock (by lock_buffer) in main thread. See CORE-5436
+					SyncLockGuard guard(&bdb->bdb_syncPage, SYNC_EXCLUSIVE, FB_FUNCTION);
 
-						PAGE_LOCK_ASSERT(tdbb, bcb, bdb->bdb_lock);
-					}
+					PAGE_LOCK_ASSERT(tdbb, bcb, bdb->bdb_lock);
 				}
 			}
 		}
