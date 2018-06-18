@@ -53,6 +53,7 @@
 #include "../jrd/trace/TraceObjects.h"
 #include "../jrd/Collation.h"
 #include "../common/classes/FpeControl.h"
+#include "../jrd/extds/ExtDS.h"
 #include <math.h>
 
 using namespace Firebird;
@@ -275,6 +276,10 @@ const char
 	// SYSTEM namespace: global and database wise items
 	ENGINE_VERSION[] = "ENGINE_VERSION",
 	DATABASE_NAME[] = "DB_NAME",
+	EXT_CONN_POOL_SIZE[] = "EXT_CONN_POOL_SIZE",
+	EXT_CONN_POOL_IDLE[] = "EXT_CONN_POOL_IDLE_COUNT",
+	EXT_CONN_POOL_ACTIVE[] = "EXT_CONN_POOL_ACTIVE_COUNT",
+	EXT_CONN_POOL_LIFETIME[] = "EXT_CONN_POOL_LIFETIME",
 	// SYSTEM namespace: connection wise items
 	SESSION_ID_NAME[] = "SESSION_ID",
 	NETWORK_PROTOCOL_NAME[] = "NETWORK_PROTOCOL",
@@ -2664,6 +2669,17 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 			resultStr.printf("%" SLONGFORMAT, transaction->tra_lock_timeout);
 		else if (nameStr == READ_ONLY_NAME)
 			resultStr = (transaction->tra_flags & TRA_readonly) ? TRUE_VALUE : FALSE_VALUE;
+		else if (nameStr == EXT_CONN_POOL_SIZE)
+			resultStr.printf("%d", EDS::Manager::getConnPool()->getMaxCount());
+		else if (nameStr == EXT_CONN_POOL_IDLE)
+			resultStr.printf("%d", EDS::Manager::getConnPool()->getIdleCount());
+		else if (nameStr == EXT_CONN_POOL_ACTIVE)
+		{
+			EDS::ConnectionsPool* connPool = EDS::Manager::getConnPool();
+			resultStr.printf("%d", connPool->getAllCount() - connPool->getIdleCount());
+		}
+		else if (nameStr == EXT_CONN_POOL_LIFETIME)
+			resultStr.printf("%d", EDS::Manager::getConnPool()->getLifeTime());
 		else
 		{
 			// "Context variable %s is not found in namespace %s"

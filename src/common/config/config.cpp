@@ -209,9 +209,11 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 #ifdef WIN_NT
 	{TYPE_STRING,		"OutputRedirectionFile", 	(ConfigValue) "nul"},
 #else
-	{TYPE_STRING,		"OutputRedirectionFile", 	(ConfigValue) "/dev/null"}
+	{TYPE_STRING,		"OutputRedirectionFile", 	(ConfigValue) "/dev/null"},
 #endif
 #endif
+	{TYPE_INTEGER,		"ExtConnPoolSize",			(ConfigValue) 0},
+	{TYPE_INTEGER,		"ExtConnPoolLifeTime",		(ConfigValue) 7200}
 };
 
 /******************************************************************************
@@ -852,4 +854,14 @@ const char* Config::getOutputRedirectionFile()
 {
 	const char* file = (const char*) (getDefaultConfig()->values[KEY_OUTPUT_REDIRECTION_FILE]);
 	return file;
+}
+
+int Config::getExtConnPoolSize()
+{
+	return getDefaultConfig()->get<int>(KEY_EXT_CONN_POOL_SIZE);
+}
+
+int Config::getExtConnPoolLifeTime()
+{
+	return getDefaultConfig()->get<int>(KEY_EXT_CONN_POOL_LIFETIME);
 }

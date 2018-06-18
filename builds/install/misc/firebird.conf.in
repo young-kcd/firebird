@@ -986,3 +986,22 @@
 # Type: string
 #
 #ServerMode = Super
+
+# ============================
+# Settings of External Connections Pool 
+# ============================
+
+# Set the maximum number of inactive (idle) external connections to retain at 
+# the pool. Valid values are between 0 and 1000. If set to zero, pool is disabed, 
+# i.e. external connection is destroyed immediately after the use.
+# 
+# Type: integer
+# 
+#ExtConnPoolSize = 0
+
+# Set the time before destroyng inactive external connection, seconds. 
+# Valid values are between 1 and 86400. 
+# 
+# Type: integer
+# 
+#ExtConnPoolLifeTime = 7200
