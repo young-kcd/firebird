@@ -6803,9 +6803,11 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 
 			fb_assert(!desc->isBlob());
 
+			const bool octets = (DTYPE_IS_TEXT(desc->dsc_dtype) && desc->dsc_sub_type == ttype_binary);
+
 			MoveBuffer buffer;
 			UCHAR* str = NULL;
-			const int len = MOV_make_string2(tdbb, desc, ttype_dynamic, &str, buffer);
+			int len = MOV_make_string2(tdbb, desc, octets ? ttype_binary : ttype_dynamic, &str, buffer);
 
 			value.assign((const char*) str, len);
 
@@ -6817,16 +6819,21 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 					value.rtrim(pad);
 				}
 
-				if (DTYPE_IS_TEXT(desc->dsc_dtype) && desc->dsc_sub_type == ttype_binary)
+				if (octets)
 				{
 					string hex;
+
+					const bool cut = (len > (MAX_KEY_STRING_LEN - 3) / 2);
+					if (cut)
+						len = (MAX_KEY_STRING_LEN - 5) / 2;
+
 					char* s = hex.getBuffer(2 * len);
 					for (int i = 0; i < len; i++)
 					{
 						sprintf(s, "%02X", (int) str[i]);
 						s += 2;
 					}
-					value = "x'" + hex + "'";
+					value = "x'" + hex + (cut ? "..." : "'");
 				}
 				else
 				{
