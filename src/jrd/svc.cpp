@@ -1969,7 +1969,11 @@ THREAD_ENTRY_DECLARE Service::run(THREAD_ENTRY_PARAM arg)
 		RefPtr<SvcMutex> ref(svc->svc_existence);
 		exit_code = svc->svc_service_run->serv_thd(svc);
 
-		threadCollect->add(svc->svc_thread);
+		if (svc->svc_thread)
+		{
+			threadCollect->add(svc->svc_thread);
+			svc->svc_thread = 0;
+		}
 		svc->started();
 		svc->svc_sem_full.release();
 		svc->finish(SVC_finished);
@@ -2260,7 +2264,7 @@ void Service::start(const serv_entry* service_run)
 	}
 
 	svc_service_run = service_run;
-	Thread::start(run, this, THREAD_medium);
+	Thread::start(run, this, THREAD_medium, &svc_thread);
 }
 
 
