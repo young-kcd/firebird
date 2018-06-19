@@ -467,9 +467,9 @@ DescPrinter::DescPrinter(thread_db* tdbb, const dsc* desc, int mLen) :
 
 	fb_assert(!desc->isBlob());
 
-	value = MOV_make_string2(tdbb, desc, ttype_dynamic);
+	const bool octets = (desc->isText() && desc->getTextType() == ttype_binary);
+	value = MOV_make_string2(tdbb, desc, octets ? ttype_binary : ttype_dynamic);
 
-	const int len = (int)value.length();
 	const char* const str = value.c_str();
 
 	if (desc->isText() || desc->isDateTime())
@@ -480,16 +480,22 @@ DescPrinter::DescPrinter(thread_db* tdbb, const dsc* desc, int mLen) :
 			value.rtrim(pad);
 		}
 
-		if (desc->isText() && desc->getTextType() == ttype_binary)
+		if (octets)
 		{
 			Firebird::string hex;
+
+			int len = (int) value.length();
+			const bool cut = (len > (maxLen - 3) / 2);
+			if (cut)
+				len = (maxLen - 5) / 2;
+
 			char* s = hex.getBuffer(2 * len);
 			for (int i = 0; i < len; i++)
 			{
 				sprintf(s, "%02X", (int)(unsigned char)str[i]);
 				s += 2;
 			}
-			value = "x'" + hex + "'";
+			value = "x'" + hex + (cut ? "..." : "'");
 		}
 		else
 		{
@@ -497,7 +503,7 @@ DescPrinter::DescPrinter(thread_db* tdbb, const dsc* desc, int mLen) :
 		}
 	}
 
-	if (value.length() > maxLen)
+	if (value.length() > (FB_SIZE_T) maxLen)
 	{
 		fb_assert(desc->isText());
 
