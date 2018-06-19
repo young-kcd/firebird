@@ -491,7 +491,7 @@ DecimalFixed MOV_get_dec_fixed(Jrd::thread_db* tdbb, const dsc* desc, SSHORT sca
 namespace Jrd
 {
 
-DescPrinter::DescPrinter(thread_db* tdbb, const dsc* desc, int mLen)
+DescPrinter::DescPrinter(thread_db* tdbb, const dsc* desc, FB_SIZE_T mLen)
 	: maxLen(mLen)
 {
 	const char* const NULL_KEY_STRING = "NULL";
@@ -504,8 +504,8 @@ DescPrinter::DescPrinter(thread_db* tdbb, const dsc* desc, int mLen)
 
 	fb_assert(!desc->isBlob());
 
-	const bool octets = (desc->isText() && desc->getTextType() == ttype_binary);
-	value = MOV_make_string2(tdbb, desc, octets ? ttype_binary : ttype_dynamic);
+	const bool isBinary = (desc->isText() && desc->getTextType() == ttype_binary);
+	value = MOV_make_string2(tdbb, desc, isBinary ? ttype_binary : ttype_dynamic);
 
 	const char* const str = value.c_str();
 
@@ -517,18 +517,18 @@ DescPrinter::DescPrinter(thread_db* tdbb, const dsc* desc, int mLen)
 			value.rtrim(pad);
 		}
 
-		if (octets)
+		if (isBinary)
 		{
-			Firebird::string hex;
+			string hex;
 
-			int len = (int) value.length();
+			FB_SIZE_T len = value.length();
 			const bool cut = (len > (maxLen - 3) / 2);
 			if (cut)
 				len = (maxLen - 5) / 2;
 
 			char* s = hex.getBuffer(2 * len);
 
-			for (int i = 0; i < len; i++)
+			for (FB_SIZE_T i = 0; i < len; i++)
 			{
 				sprintf(s, "%02X", (int)(unsigned char) str[i]);
 				s += 2;
@@ -539,7 +539,7 @@ DescPrinter::DescPrinter(thread_db* tdbb, const dsc* desc, int mLen)
 			value = "'" + value + "'";
 	}
 
-	if (value.length() > (FB_SIZE_T) maxLen)
+	if (value.length() > maxLen)
 	{
 		fb_assert(desc->isText());
 

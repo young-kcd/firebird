@@ -61,7 +61,7 @@ namespace Jrd
 class DescPrinter
 {
 public:
-	DescPrinter(thread_db* tdbb, const dsc* desc, int mLen);
+	DescPrinter(thread_db* tdbb, const dsc* desc, FB_SIZE_T mLen);
 
 	const Firebird::string& get() const
 	{
@@ -70,7 +70,7 @@ public:
 
 private:
 	Firebird::string value;
-	int maxLen;
+	FB_SIZE_T maxLen;
 };
 
 }	// namespace Jrd
