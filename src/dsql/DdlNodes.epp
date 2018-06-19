@@ -11783,15 +11783,36 @@ void GrantRevokeNode::checkGrantorCanGrantRelation(thread_db* tdbb, jrd_tra* tra
 	const char* grantor, const char* privilege, const MetaName& relationName,
 	const MetaName& fieldName, bool topLevel)
 {
-	// We've verified that the tagret object exists in grantRevoke method.
-	// Verify the the input field exists.
+	// Verify that the input relation exists.
 
-	AutoCacheRequest request(tdbb, drq_gcg5, DYN_REQUESTS);
+	AutoCacheRequest request(tdbb, drq_gcg4, DYN_REQUESTS);
+
 	bool sqlRelation = false;
+	bool relationExists = false;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		REL IN RDB$RELATIONS WITH
+			REL.RDB$RELATION_NAME = relationName.c_str()
+	{
+		relationExists = true;
+		if (!REL.RDB$FLAGS.NULL && (REL.RDB$FLAGS & REL_sql))
+			sqlRelation = true;
+	}
+	END_FOR
+
+	if (!relationExists)
+	{
+		// table/view .. does not exist
+		status_exception::raise(Arg::PrivateDyn(175) << relationName.c_str());
+	}
+
+	// Verify the the input field exists.
 
 	if (fieldName.hasData())
 	{
 		bool fieldExists = false;
+
+		request.reset(tdbb, drq_gcg5, DYN_REQUESTS);
 
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 			G_FLD IN RDB$RELATION_FIELDS WITH
