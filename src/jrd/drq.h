@@ -242,6 +242,7 @@ enum drq_type_t
 	drq_rel_exist,			// check if relation or view exists
 	drq_exception_exist,	// check if exception exists
 	drq_generator_exist,	// check if generator exists
+	drq_rel_field_exist,	// check if a field of relation or view exists
 
 	drq_MAX
 };

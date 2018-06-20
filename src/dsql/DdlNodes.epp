@@ -11293,6 +11293,22 @@ static bool checkObjectExist(thread_db* tdbb, jrd_tra* transaction, const MetaNa
 	return rc;
 }
 
+static bool checkFieldExist(thread_db* tdbb, jrd_tra* transaction, const MetaName& relation, const MetaName& field)
+{
+	bool rc = false;
+
+	AutoCacheRequest request(tdbb, drq_rel_field_exist, DYN_REQUESTS);
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		X IN RDB$RELATION_FIELDS
+		WITH X.RDB$RELATION_NAME EQ relation.c_str() AND
+			 X.RDB$FIELD_NAME EQ field.c_str()
+	{
+		rc = true;
+	}
+	END_FOR
+
+	return rc;
+}
 
 // Execute SQL grant/revoke operation.
 void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const GranteeClause* object,
@@ -11412,6 +11428,9 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 		case obj_relation:
 			if (!checkObjectExist(tdbb, transaction, objName, objType))
 				status_exception::raise(Arg::PrivateDyn(306) << objName.c_str());	// Table @1 does not exist
+
+			if (field.hasData() && !checkFieldExist(tdbb, transaction, objName, field))
+				status_exception::raise(Arg::PrivateDyn(309) << field.c_str() << objName.c_str());	// Field @1 of table @2 does not exist
 			break;
 
 		case obj_trigger:
