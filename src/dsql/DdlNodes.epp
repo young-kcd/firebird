@@ -807,7 +807,7 @@ static void updateRdbFields(const TypeClause* type,
 		if (type->subType == isc_blob_text)
 		{
 			characterSetIdNull = FALSE;
-			characterSetId = type->charSetId;
+			characterSetId = type->charSetId.value;
 
 			collationIdNull = FALSE;
 			collationId = type->collationId;
@@ -834,7 +834,7 @@ static void updateRdbFields(const TypeClause* type,
 		}
 
 		characterSetIdNull = FALSE;
-		characterSetId = type->charSetId;
+		characterSetId = type->charSetId.value;
 
 		collationIdNull = FALSE;
 		collationId = type->collationId;
@@ -5108,7 +5108,7 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 				}
 
 				DSC_make_descriptor(&newDom.dyn_dsc, blr_dtypes[type->dtype], type->scale,
-					typeLength, type->subType, type->charSetId, type->collationId);
+					typeLength, type->subType, type->charSetId.value, type->collationId);
 
 				newDom.dyn_fld_name = name;
 				newDom.dyn_charbytelen = typeLength;
@@ -8961,7 +8961,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 				const USHORT adjust =
 					(desc.dsc_dtype == dtype_varying) ? sizeof(USHORT) : 0;
 				const USHORT bpc =
-					METD_get_charset_bpc(dsqlScratch->getTransaction(), newField.charSetId);
+					METD_get_charset_bpc(dsqlScratch->getTransaction(), newField.charSetId.value);
 
 				newField.charLength = (newField.length - adjust) / bpc;
 			}
