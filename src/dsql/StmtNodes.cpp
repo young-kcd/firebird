@@ -1538,7 +1538,7 @@ DeclareSubFuncNode* DeclareSubFuncNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	dsqlFunction->udf_scale = returnType->scale;
 	dsqlFunction->udf_sub_type = returnType->subType;
 	dsqlFunction->udf_length = returnType->length;
-	dsqlFunction->udf_character_set_id = returnType->charSetId;
+	dsqlFunction->udf_character_set_id = returnType->charSetId.value;
 
 	const Array<NestConst<ParameterClause> >& paramArray = dsqlBlock->parameters;
 	bool defaultFound = false;
@@ -3252,7 +3252,7 @@ void ExecStatementNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	// If no new features of EXECUTE STATEMENT are used, lets generate old BLR.
-	if (!dataSource && !userName && !password && !role && !useCallerPrivs && !inputs && 
+	if (!dataSource && !userName && !password && !role && !useCallerPrivs && !inputs &&
 		 traScope == EDS::traNotSet)
 	{
 		if (outputs)
@@ -6615,7 +6615,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 StmtNode* StoreNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	bool needSavePoint;
-	StmtNode* node = SavepointEncloseNode::make(getPool(), dsqlScratch, 
+	StmtNode* node = SavepointEncloseNode::make(getPool(), dsqlScratch,
 		internalDsqlPass(dsqlScratch, false, needSavePoint));
 
 	if (!needSavePoint || node->is<SavepointEncloseNode>())
