@@ -225,6 +225,9 @@
     <ClCompile Include="..\..\..\src\common\classes\BlobWrapper.cpp">
       <Filter>classes</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\common\sha2\sha2.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\common\xdr_proto.h">
@@ -546,6 +549,9 @@
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\common\classes\BlobWrapper.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\common\sha2\sha2.h">
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>
