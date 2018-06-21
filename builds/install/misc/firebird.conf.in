@@ -439,12 +439,12 @@
 #
 # Per-database configurable.
 #
-#AuthServer = Srp
+#AuthServer = Srp256
 #
 # Per-connection and per-database configurable.
 #
-#AuthClient = Srp, Srp256, Legacy_Auth           #Non Windows clients
-#AuthClient = Srp, Srp256, Win_Sspi, Legacy_Auth #Windows clients
+#AuthClient = Srp256, Srp, Legacy_Auth           #Non Windows clients
+#AuthClient = Srp256, Srp, Win_Sspi, Legacy_Auth #Windows clients
 #
 # If you need to use server plugins that do not provide encryption key (both Legacy_Auth
 # & Win_Sspi) you should also turn off required encryption on the wire with WireCrypt
