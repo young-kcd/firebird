@@ -960,7 +960,20 @@ void PAG_format_header(thread_db* tdbb)
 	header->hdr_page_size = dbb->dbb_page_size;
 	header->hdr_ods_version = ODS_VERSION | ODS_FIREBIRD_FLAG;
 	DbImplementation::current.store(header);
-	header->hdr_ods_minor = ODS_CURRENT;
+
+#define ODS12_MINOR ODS_CURRENT
+
+#if defined(WIN_NT)
+#undef ODS12_MINOR
+#define ODS12_MINOR ODS_CURRENT12_0
+#endif // WIN_NT
+
+#if defined(LINUX) && SIZEOF_VOID_P == 8
+#undef ODS12_MINOR
+#define ODS12_MINOR ODS_CURRENT12_0
+#endif // LINUX-64bit
+
+	header->hdr_ods_minor = ODS12_MINOR;
 	header->hdr_oldest_transaction = 1;
 	header->hdr_end = HDR_SIZE;
 	header->hdr_data[0] = HDR_end;
