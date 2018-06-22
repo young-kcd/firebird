@@ -11345,11 +11345,51 @@ static bool checkObjectExist(thread_db* tdbb, jrd_tra* transaction, const MetaNa
 			END_FOR
 			break;
 		}
+		case obj_exception:
+		{
+			AutoCacheRequest request(tdbb, drq_exception_exist, DYN_REQUESTS);
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+				X IN RDB$EXCEPTIONS
+				WITH X.RDB$EXCEPTION_NAME EQ name.c_str()
+			{
+				rc = true;
+			}
+			END_FOR
+			break;
+		}
+		case obj_generator:
+		{
+			AutoCacheRequest request(tdbb, drq_generator_exist, DYN_REQUESTS);
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+				X IN RDB$GENERATORS
+				WITH X.RDB$GENERATOR_NAME EQ name.c_str()
+			{
+				rc = true;
+			}
+			END_FOR
+			break;
+		}
 	}
 
 	return rc;
 }
 
+static bool checkFieldExist(thread_db* tdbb, jrd_tra* transaction, const MetaName& relation, const MetaName& field)
+{
+	bool rc = false;
+
+	AutoCacheRequest request(tdbb, drq_rel_field_exist, DYN_REQUESTS);
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		X IN RDB$RELATION_FIELDS
+		WITH X.RDB$RELATION_NAME EQ relation.c_str() AND
+			 X.RDB$FIELD_NAME EQ field.c_str()
+	{
+		rc = true;
+	}
+	END_FOR
+
+	return rc;
+}
 
 // Execute SQL grant/revoke operation.
 void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const GranteeClause* object,
@@ -11360,6 +11400,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 	MetaName user(userNod->second);
 	MetaName dummyName;
 	const SSHORT objType = object ? object->first : obj_type_MAX;
+	const MetaName objName(object->second);
 	bool crdb = false;
 
 	char privileges[16];
@@ -11388,6 +11429,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 		memmove(cPtr, cPtr + 1, len);
 	}
 
+	// Check if grant object exists
 	switch (userType)
 	{
 		case obj_user_or_role:
@@ -11411,27 +11453,27 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 
 		case obj_udf:
 			if (!checkObjectExist(tdbb, transaction, user, userType))
-				status_exception::raise(Arg::PrivateDyn(301) << user.c_str());
+				status_exception::raise(Arg::PrivateDyn(301) << user.c_str());	// Function @1 does not exist
 			break;
 
 		case obj_procedure:
 			if (!checkObjectExist(tdbb, transaction, user, userType))
-				status_exception::raise(Arg::PrivateDyn(302) << user.c_str());
+				status_exception::raise(Arg::PrivateDyn(302) << user.c_str());	// Procedure @1 does not exist
 			break;
 
 		case obj_package_header:
 			if (!checkObjectExist(tdbb, transaction, user, userType))
-				status_exception::raise(Arg::PrivateDyn(303) << user.c_str());
+				status_exception::raise(Arg::PrivateDyn(303) << user.c_str());	// Package @1 does not exist
 			break;
 
 		case obj_trigger:
 			if (!checkObjectExist(tdbb, transaction, user, userType))
-				status_exception::raise(Arg::PrivateDyn(304) << user.c_str());
+				status_exception::raise(Arg::PrivateDyn(304) << user.c_str());	// Trigger @1 does not exist
 			break;
 
 		case obj_view:
 			if (!checkObjectExist(tdbb, transaction, user, userType))
-				status_exception::raise(Arg::PrivateDyn(305) << user.c_str());
+				status_exception::raise(Arg::PrivateDyn(305) << user.c_str());	// View @1 does not exist
 			break;
 
 		case obj_sql_role:
@@ -11454,6 +11496,56 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 			}
 			break;
 
+	}
+
+	// Check if grant subject exists
+	switch (objType)
+	{
+		case obj_view:
+			if (!checkObjectExist(tdbb, transaction, objName, objType))
+				status_exception::raise(Arg::PrivateDyn(305) << objName.c_str());	// View @1 does not exist
+			break;
+
+		case obj_relation:
+			if (!checkObjectExist(tdbb, transaction, objName, objType))
+				status_exception::raise(Arg::PrivateDyn(306) << objName.c_str());	// Table @1 does not exist
+
+			if (field.hasData() && !checkFieldExist(tdbb, transaction, objName, field))
+				status_exception::raise(Arg::PrivateDyn(309) << field.c_str() << objName.c_str());	// Field @1 of table @2 does not exist
+			break;
+
+		case obj_trigger:
+			if (!checkObjectExist(tdbb, transaction, objName, objType))
+				status_exception::raise(Arg::PrivateDyn(304) << objName.c_str());	// Trigger @1 does not exist
+			break;
+
+		case obj_procedure:
+			if (!checkObjectExist(tdbb, transaction, objName, objType))
+				status_exception::raise(Arg::PrivateDyn(302) << objName.c_str());	// Procedure @1 does not exist
+			break;
+
+		case obj_exception:
+			if (!checkObjectExist(tdbb, transaction, objName, objType))
+				status_exception::raise(Arg::PrivateDyn(307) << objName.c_str());	// Exception @1 does not exist
+			break;
+
+		case obj_generator:
+			if (!checkObjectExist(tdbb, transaction, objName, objType))
+				status_exception::raise(Arg::PrivateDyn(308) << objName.c_str());	// Generator/Sequence @1 does not exist
+			break;
+
+		case obj_udf:
+			if (!checkObjectExist(tdbb, transaction, objName, objType))
+				status_exception::raise(Arg::PrivateDyn(301) << objName.c_str());	// Function @1 does not exist
+			break;
+
+		case obj_package_header:
+			if (!checkObjectExist(tdbb, transaction, objName, objType))
+				status_exception::raise(Arg::PrivateDyn(303) << objName.c_str());	// Package @1 does not exist
+			break;
+
+		default:
+			fb_assert(false);
 	}
 
 	if (options == 1)	// with grant option
@@ -11532,8 +11624,6 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 
 		return;
 	}
-
-	const MetaName objName(object->second);
 
 	if (objType == obj_sql_role && objName == NULL_ROLE)
 	{
