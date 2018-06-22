@@ -4459,7 +4459,8 @@ dsc* evlRoleInUse(thread_db* tdbb, const SysFunction*, const NestValueArray& arg
 		return NULL;
 
 	string roleStr(MOV_make_string2(tdbb, value, ttype_none));
-	roleStr.upper();
+	//roleStr.upper();		// sorry - but this breaks role names containing lower case letters
+							// roles to be entered as returned by CURRENT_ROLE
 
 	impure->vlu_misc.vlu_uchar = (attachment->att_user &&
 		attachment->att_user->roleInUse(tdbb, roleStr.c_str())) ? FB_TRUE : FB_FALSE;
