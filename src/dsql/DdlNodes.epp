@@ -326,6 +326,7 @@ void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relati
 	// Save the size of the field if it is specified.
 	dsc saveDesc;
 	saveDesc.dsc_dtype = 0;
+	bool saveCharSetIdSpecified;
 
 	if (field && field->dtype)
 	{
@@ -335,6 +336,7 @@ void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relati
 		fb_assert(field->scale <= MAX_SCHAR);
 		saveDesc.dsc_scale = (SCHAR) field->scale;
 		saveDesc.dsc_sub_type = field->subType;
+		saveCharSetIdSpecified = field->charSetId.specified;
 
 		field->dtype = 0;
 		field->length = 0;
@@ -370,6 +372,7 @@ void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relati
 		if (field->dtype <= dtype_any_text)
 		{
 			field->charSetId = DSC_GET_CHARSET(&saveDesc);
+			field->charSetId.specified = saveCharSetIdSpecified;
 			field->collationId = DSC_GET_COLLATE(&saveDesc);
 		}
 		else
