@@ -11403,7 +11403,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 	MetaName user(userNod->second);
 	MetaName dummyName;
 	const SSHORT objType = object ? object->first : obj_type_MAX;
-	const MetaName objName(object->second);
+	const MetaName objName(object ? object->second : "");
 	bool crdb = false;
 
 	char privileges[16];
@@ -11548,7 +11548,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 			break;
 
 		default:
-			fb_assert(false);
+			fb_assert(object == NULL);
 	}
 
 	if (options == 1)	// with grant option
