@@ -11220,8 +11220,13 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 				status_exception::raise(Arg::PrivateDyn(303) << objName.c_str());	// Package @1 does not exist
 			break;
 
+		case obj_sql_role:
+			if (!isItSqlRole(tdbb, transaction, objName, dummyName))
+				status_exception::raise(Arg::PrivateDyn(188) << objName.c_str());	// Role doesn't exist.
+			break;
+
 		default:
-			fb_assert(object == NULL);
+			fb_assert(object == NULL || objType >= obj_database);
 	}
 
 	if (options == 1)	// with grant option
