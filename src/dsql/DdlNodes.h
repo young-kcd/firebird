@@ -300,7 +300,7 @@ class AlterEDSPoolSetNode : public DdlNode
 public:
 	enum PARAM {POOL_SIZE, POOL_LIFETIME};
 
-	AlterEDSPoolSetNode(MemoryPool& pool, PARAM prm, int val) : 
+	AlterEDSPoolSetNode(MemoryPool& pool, PARAM prm, int val) :
 	  DdlNode(pool),
 	  m_param(prm),
 	  m_value(val)
@@ -315,7 +315,7 @@ public:
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
 	{
-		// TODO: statusVector << Firebird::Arg::Gds(??); 
+		// TODO: statusVector << Firebird::Arg::Gds(??);
 	}
 
 private:
@@ -345,7 +345,7 @@ public:
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
 	{
-		// TODO: statusVector << Firebird::Arg::Gds(??); 
+		// TODO: statusVector << Firebird::Arg::Gds(??);
 	}
 
 private:
@@ -2290,19 +2290,19 @@ private:
 	{
 		switch (UPPER7(symbol))
 		{
-			case 'A': return "All";
-			case 'I': return "Insert";
-			case 'U': return "Update";
-			case 'D': return "Delete";
-			case 'S': return "Select";
-			case 'X': return "Execute";
-			case 'G': return "Usage";
-			case 'M': return "Role";
-			case 'R': return "Reference";
+			case 'A': return "ALL";
+			case 'I': return "INSERT";
+			case 'U': return "UPDATE";
+			case 'D': return "DELETE";
+			case 'S': return "SELECT";
+			case 'X': return "EXECUTE";
+			case 'G': return "USAGE";
+			case 'M': return "ROLE";
+			case 'R': return "REFERENCE";
 			// ddl
-			case 'C': return "Create";
-			case 'L': return "Alter";
-			case 'O': return "Drop";
+			case 'C': return "CREATE";
+			case 'L': return "ALTER";
+			case 'O': return "DROP";
 		}
 
 		return "<Unknown>";
