@@ -1183,7 +1183,8 @@ void PluginManager::waitForType(unsigned int typeThatMustGoAway)
 void PluginManager::threadDetach()
 {
 	MutexLockGuard g(plugins->mutex, FB_FUNCTION);
-	modules->threadDetach();
+	if (modules)
+		modules->threadDetach();
 }
 
 
