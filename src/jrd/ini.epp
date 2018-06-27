@@ -1662,9 +1662,8 @@ static void store_packages(thread_db* tdbb, const MetaName& owner)
 
 	AutoRequest packageHandle, procedureHandle, procedureParameterHandle;
 	AutoRequest functionHandle, functionReturnHandle, functionArgumentHandle;
-	//// FIXME: check negative issue
-	SSHORT procId = 0;
-	SSHORT funcId = 0;
+	SLONG procGen = MET_lookup_generator(tdbb, PROCEDURES_GENERATOR);
+	SLONG funcGen = MET_lookup_generator(tdbb, FUNCTIONS_GENERATOR);
 
 	for (auto& systemPackage : SystemPackage::LIST)
 	{
@@ -1683,8 +1682,6 @@ static void store_packages(thread_db* tdbb, const MetaName& owner)
 
 		for (auto& procedure : systemPackage.procedures)
 		{
-			--procId;
-
 			STORE (REQUEST_HANDLE procedureHandle) PRC IN RDB$PROCEDURES
 			{
 				PAD(systemPackage.name, PRC.RDB$PACKAGE_NAME);
@@ -1693,7 +1690,7 @@ static void store_packages(thread_db* tdbb, const MetaName& owner)
 				PAD(owner.c_str(), PRC.RDB$OWNER_NAME);
 				PRC.RDB$SYSTEM_FLAG = RDB_system;
 
-				PRC.RDB$PROCEDURE_ID = procId;
+				PRC.RDB$PROCEDURE_ID = DPM_gen_id(tdbb, procGen, false, 1);
 
 				PRC.RDB$PROCEDURE_INPUTS = (SSHORT) procedure.inputParameters.size();
 				PRC.RDB$PROCEDURE_OUTPUTS = (SSHORT) procedure.outputParameters.size();
@@ -1734,8 +1731,6 @@ static void store_packages(thread_db* tdbb, const MetaName& owner)
 
 		for (auto& function : systemPackage.functions)
 		{
-			--funcId;
-
 			STORE (REQUEST_HANDLE functionHandle) FUN IN RDB$FUNCTIONS
 			{
 				PAD(systemPackage.name, FUN.RDB$PACKAGE_NAME);
@@ -1744,7 +1739,7 @@ static void store_packages(thread_db* tdbb, const MetaName& owner)
 				PAD(owner.c_str(), FUN.RDB$OWNER_NAME);
 				FUN.RDB$SYSTEM_FLAG = RDB_system;
 
-				FUN.RDB$FUNCTION_ID = procId;
+				FUN.RDB$FUNCTION_ID = DPM_gen_id(tdbb, funcGen, false, 1);
 
 				FUN.RDB$RETURN_ARGUMENT = 0;
 				FUN.RDB$PRIVATE_FLAG = FALSE;
