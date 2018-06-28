@@ -11748,8 +11748,11 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 						break;
 					}
 
+					case obj_procedure:
+					case obj_udf:
 					case obj_exception:
 					case obj_generator:
+					case obj_package_header:
 					{
 						checkGrantorCanGrantObject(tdbb, transaction, currentUser.c_str(), priv, objName, objType);
 						break;
@@ -11760,10 +11763,8 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 						{
 							checkGrantorCanGrantDdl(tdbb, transaction, currentUser.c_str(), priv, objName);
 						}
-						// Prevent silent eating checks. In this case we can remove RDB$TRIGGER_9 (trigger1)
-						// but add every object type above in switch
-						//	else
-						//		fb_assert(false);
+						else
+							fb_assert(false);
 				}
 			}
 
@@ -11891,6 +11892,8 @@ void GrantRevokeNode::checkGrantorCanGrantRelation(thread_db* tdbb, jrd_tra* tra
 	const char* grantor, const char* privilege, const MetaName& relationName,
 	const MetaName& fieldName, bool topLevel)
 {
+	const Attachment* attachment = tdbb->getAttachment();
+
 	// Verify that the input relation exists.
 
 	AutoCacheRequest request(tdbb, drq_gcg4, DYN_REQUESTS);
@@ -11941,7 +11944,7 @@ void GrantRevokeNode::checkGrantorCanGrantRelation(thread_db* tdbb, jrd_tra* tra
 
 	// If the current user is locksmith - allow all grants to occur
 
-	if (tdbb->getAttachment()->locksmith(tdbb, GRANT_REVOKE_ON_ANY_OBJECT))
+	if (attachment->locksmith(tdbb, GRANT_REVOKE_ON_ANY_OBJECT))
 		return;
 
 	// If this is a non-sql table, then the owner will probably not have any
@@ -11978,32 +11981,35 @@ void GrantRevokeNode::checkGrantorCanGrantRelation(thread_db* tdbb, jrd_tra* tra
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		PRV IN RDB$USER_PRIVILEGES WITH
-			PRV.RDB$USER = UPPERCASE(grantor) AND
-			PRV.RDB$USER_TYPE = obj_user AND
+			((PRV.RDB$USER = UPPERCASE(grantor) AND
+				PRV.RDB$USER_TYPE = obj_user) OR (PRV.RDB$USER_TYPE = obj_sql_role)) AND
 			PRV.RDB$RELATION_NAME = relationName.c_str() AND
 			PRV.RDB$OBJECT_TYPE = obj_relation AND
 			PRV.RDB$PRIVILEGE = privilege
 	{
+		if ( (PRV.RDB$USER_TYPE == obj_sql_role) && !attachment->att_user->roleInUse(tdbb, PRV.RDB$USER))
+			continue;
+
+		const bool hasGrantOption = !PRV.RDB$GRANT_OPTION.NULL && PRV.RDB$GRANT_OPTION;
 		if (PRV.RDB$FIELD_NAME.NULL)
 		{
-			if (PRV.RDB$GRANT_OPTION.NULL || !PRV.RDB$GRANT_OPTION)
-				goRel = 0;
-			else if (goRel)
+			if (goRel == -1)
+				goRel = hasGrantOption ? WITH_GRANT_OPTION : 0;
+			else if ((goRel == 0) && hasGrantOption)
 				goRel = WITH_GRANT_OPTION;
 		}
 		else
 		{
-			if (PRV.RDB$GRANT_OPTION.NULL || !PRV.RDB$GRANT_OPTION)
+			if (fieldName.hasData() && fieldName == PRV.RDB$FIELD_NAME)
 			{
-				if (fieldName.hasData() && fieldName == PRV.RDB$FIELD_NAME)
-					goFld = 0;
-			}
-			else
-			{
-				if (fieldName.hasData() && fieldName == PRV.RDB$FIELD_NAME)
-					goFld = 1;
+				if (goFld == -1)
+					goFld = hasGrantOption ? WITH_GRANT_OPTION : 0;
+				else if ((goFld == 0) && hasGrantOption)
+					goFld = WITH_GRANT_OPTION;
 			}
 		}
+		if ( (goRel > 0) && (goFld > 0 || !fieldName.hasData()) )
+			break;	// We've found a privilege with grant option and can break the loop
 	}
 	END_FOR
 
@@ -12013,7 +12019,7 @@ void GrantRevokeNode::checkGrantorCanGrantRelation(thread_db* tdbb, jrd_tra* tra
 		{
 			// no grant option for privilege .. on column .. of [base] table/view ..
 			status_exception::raise(Arg::PrivateDyn(topLevel ? 167 : 168) <<
-				privilege << fieldName.c_str() << relationName.c_str());
+				privilegeName(*privilege) << fieldName.c_str() << relationName.c_str());
 		}
 
 		if (goFld == -1)
@@ -12022,14 +12028,14 @@ void GrantRevokeNode::checkGrantorCanGrantRelation(thread_db* tdbb, jrd_tra* tra
 			{
 				// no grant option for privilege .. on [base] table/view .. (for column ..)
 				status_exception::raise(Arg::PrivateDyn(topLevel ? 169 : 170) <<
-					privilege << relationName.c_str() << fieldName.c_str());
+					privilegeName(*privilege) << relationName.c_str() << fieldName.c_str());
 			}
 
 			if (goRel == -1)
 			{
 				// no .. privilege with grant option on [base] table/view .. (for column ..)
 				status_exception::raise(Arg::PrivateDyn(topLevel ? 171 : 172) <<
-					privilege << relationName.c_str() << fieldName.c_str());
+					privilegeName(*privilege) << relationName.c_str() << fieldName.c_str());
 			}
 		}
 	}
@@ -12038,13 +12044,13 @@ void GrantRevokeNode::checkGrantorCanGrantRelation(thread_db* tdbb, jrd_tra* tra
 		if (goRel == 0)
 		{
 			// no grant option for privilege .. on table/view ..
-			status_exception::raise(Arg::PrivateDyn(173) << privilege << relationName.c_str());
+			status_exception::raise(Arg::PrivateDyn(173) << privilegeName(*privilege) << relationName.c_str());
 		}
 
 		if (goRel == -1)
 		{
 			// no .. privilege with grant option on table/view ..
-			status_exception::raise(Arg::PrivateDyn(174) << privilege << relationName.c_str());
+			status_exception::raise(Arg::PrivateDyn(174) << privilegeName(*privilege) << relationName.c_str());
 		}
 	}
 
@@ -12183,15 +12189,19 @@ void GrantRevokeNode::checkGrantorCanGrantDdl(thread_db* tdbb, jrd_tra* transact
 	{
 		if ( (PRV.RDB$USER_TYPE == obj_sql_role) && !attachment->att_user->roleInUse(tdbb, PRV.RDB$USER))
 			continue;
+
 		if (PRV.RDB$GRANT_OPTION == WITH_GRANT_OPTION)
+		{
 			grantable = true;
+			break;	// We've found a privilege with grant option and can break the loop
+		}
 	}
 	END_FOR
 
 	if (!grantable)
 	{
 		// no @1 privilege with grant option on DDL @2
-		status_exception::raise(Arg::PrivateDyn(299) << privilege << objName.c_str());
+		status_exception::raise(Arg::PrivateDyn(299) << privilegeName(*privilege) << objName.c_str());
 	}
 }
 
@@ -12218,15 +12228,19 @@ void GrantRevokeNode::checkGrantorCanGrantObject(thread_db* tdbb, jrd_tra* trans
 	{
 		if ( (PRV.RDB$USER_TYPE == obj_sql_role) && !attachment->att_user->roleInUse(tdbb, PRV.RDB$USER))
 			continue;
+
 		if (PRV.RDB$GRANT_OPTION == WITH_GRANT_OPTION)
+		{
 			grantable = true;
+			break;	// We've found a privilege with grant option and can break the loop
+		}
 	}
 	END_FOR
 
 	if (!grantable)
 	{
 		// no @1 privilege with grant option on object @2
-		status_exception::raise(Arg::PrivateDyn(300) << privilege << objName.c_str());
+		status_exception::raise(Arg::PrivateDyn(300) << privilegeName(*privilege) << objName.c_str());
 	}
 }
 
