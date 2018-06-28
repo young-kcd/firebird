@@ -9628,8 +9628,7 @@ static void preprocessAssignments(thread_db* tdbb, CompilerScratch* csb,
 			while (true)
 			{
 				if (assignToField->fieldStream == stream &&
-					relation->rel_fields &&
-					(fld = (*relation->rel_fields)[fieldId]))
+					(fld = MET_get_field(relation, fieldId)))
 				{
 					if (insertOverride && fld->fld_identity_type.specified)
 					{
