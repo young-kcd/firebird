@@ -1661,6 +1661,9 @@ static void disconnect(rem_port* const port)
 	}
 
 	MutexLockGuard guard(port_mutex, FB_FUNCTION);
+	if (port->port_state == rem_port::DISCONNECTED)
+		return;
+
 	port->port_state = rem_port::DISCONNECTED;
 	port->port_flags &= ~PORT_connecting;
 
