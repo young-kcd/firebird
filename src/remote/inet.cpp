@@ -1627,7 +1627,7 @@ static THREAD_ENTRY_DECLARE waitThread(THREAD_ENTRY_PARAM)
 }
 #endif // !defined(WIN_NT)
 
-static void disconnect(rem_port* const port)
+static void disconnect(rem_port* port)
 {
 /**************************************
  *
@@ -1982,7 +1982,7 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 		{
 			if (INET_shutting_down)
 			{
-				if (main_port->port_state != rem_port::BROKEN)
+				if (main_port->port_state == rem_port::PENDING)
 				{
 					main_port->port_state = rem_port::BROKEN;
 
@@ -2539,7 +2539,7 @@ static void inet_error(bool releasePort, rem_port* port, const TEXT* function, I
  **************************************/
 	if (status)
 	{
-		if (port->port_state != rem_port::BROKEN)
+		if (port->port_state == rem_port::PENDING)
 		{
 			string err;
 			err.printf("INET/inet_error: %s errno = %d", function, status);
