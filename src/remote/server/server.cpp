@@ -5733,7 +5733,7 @@ void rem_port::start_crypt(P_CRYPT * crypt, PACKET* sendL)
 	catch (const Exception& ex)
 	{
 		iscLogException("start_crypt:", ex);
-		disconnect();
+		disconnect(NULL, NULL);
 	}
 }
 
