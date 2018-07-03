@@ -475,6 +475,9 @@ void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 	att_dec_status = DecimalStatus::DEFAULT;
 	att_dec_binding = DecimalBinding::DEFAULT;
 
+	// reset time zone
+	att_current_timezone = att_original_timezone;
+
 	// reset timeouts
 	setIdleTimeout(0);
 	setStatementTimeout(0);
