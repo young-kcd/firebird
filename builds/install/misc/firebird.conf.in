@@ -396,10 +396,13 @@
 
 # AuthServer and AuthClient determine which authentication methods will be used
 # by network server and client redirector. The Secure remote password plugin
-# using SHA-1 for the client proof is the default for both client and Server.
-# Additionally, the default client configuration (AuthServer) also supports new Srp256
+# using SHA-1 for the client proof is the default for both client and server.
+# Additionally, the default client configuration (AuthClient) also supports new Srp256
 # plugin using SHA-2 for the client proof. This enables backwards compatibility
-# with older Firebird 3 servers but in order to meet NIST requirements Srp256 should be used.
+# with older Firebird 3 servers & clients but in order to meet NIST requirements
+# Srp256 should be used. To enforce NIST requirements on your server set
+# AuthServer=Srp256. Be aware that this breaks compatibility with older
+# than 3.0.4 clients.
 #
 # The default client configuration (AuthClient) also supports the pre-Firebird 3 legacy 
 # authentication protocol (Legacy_Auth). This is again for backwards 
