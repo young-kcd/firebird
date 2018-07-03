@@ -829,7 +829,7 @@
 # Bytes of shared memory allocated for snapshots management.
 # This will grow automatically unless you use an exotic platform
 # that is neither Windows nor supports mmap system call.
-# Each active shapshot uses 8 bytes of memory.
+# Each active shapshot uses 16 bytes of memory.
 #
 # Per-database configurable.
 #
@@ -845,7 +845,7 @@
 # want to conserve some memory. The reason to increase this
 # value is if you need very large cache and approach limits 
 # on kernel objects allocated for each block (files, mutexes, etc).
-# Each cached transaction uses 4 bytes of memory.
+# Each cached transaction uses 8 bytes of memory.
 #
 # Per-database configurable.
 #
