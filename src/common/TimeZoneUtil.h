@@ -52,6 +52,13 @@ class NoThrowTimeStamp;
 class TimeZoneUtil
 {
 public:
+	enum Bind
+	{
+		BIND_LEGACY,
+		BIND_NATIVE
+	};
+
+public:
 	static const USHORT GMT_ZONE = 65535;
 
 	static const unsigned MAX_LEN = 32;

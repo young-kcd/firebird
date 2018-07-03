@@ -8407,6 +8407,17 @@ void SetTimeZoneNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** /*tr
 //--------------------
 
 
+void SetTimeZoneBindNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
+{
+	SET_TDBB(tdbb);
+	Attachment* const attachment = tdbb->getAttachment();
+	attachment->att_timezone_bind = bind;
+}
+
+
+//--------------------
+
+
 StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	thread_db* tdbb = JRD_get_thread_data(); // necessary?

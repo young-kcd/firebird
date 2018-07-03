@@ -222,6 +222,26 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
 				break;
 			}
 		}
+		else if (parameter->par_desc.isDateTimeTz())
+		{
+			switch (tdbb->getAttachment()->att_timezone_bind)
+			{
+				case TimeZoneUtil::BIND_LEGACY:
+					if (parameter->par_desc.isTime())
+						parameter->par_desc.makeTime();
+					else if (parameter->par_desc.isTimeStamp())
+						parameter->par_desc.makeTimestamp();
+					else
+						fb_assert(false);
+					break;
+
+				case TimeZoneUtil::BIND_NATIVE:
+					break;
+
+				default:
+					fb_assert(false);
+			}
+		}
 
 		if (parameter->par_desc.dsc_dtype == dtype_text && parameter->par_index != 0)
 		{

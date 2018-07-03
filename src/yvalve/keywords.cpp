@@ -258,6 +258,7 @@ static const TOK tokens[] =
 	{TOK_LEADING, "LEADING", false},
 	{TOK_LEAVE, "LEAVE", true},
 	{TOK_LEFT, "LEFT", false},
+	{TOK_LEGACY, "LEGACY", true},
 	{TOK_LENGTH, "LENGTH", true},
 	{TOK_LEVEL, "LEVEL", true},
 	{TOK_LIFETIME, "LIFETIME", true},

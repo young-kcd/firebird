@@ -604,6 +604,7 @@ using namespace Firebird;
 %token <metaNamePtr> IDLE
 %token <metaNamePtr> INVOKER
 %token <metaNamePtr> LAST_DAY
+%token <metaNamePtr> LEGACY
 %token <metaNamePtr> LOCAL
 %token <metaNamePtr> LOCALTIME
 %token <metaNamePtr> LOCALTIMESTAMP
@@ -860,6 +861,7 @@ mng_statement
 	| set_role									{ $$ = $1; }
 	| session_reset								{ $$ = $1; }
 	| set_time_zone								{ $$ = $1; }
+	| set_time_zone_bind						{ $$ = $1; }
 	;
 
 
@@ -5293,10 +5295,24 @@ timepart_ses_stmt_tout
 
 %type <mngNode> set_time_zone
 set_time_zone
-	: SET TIME ZONE sql_string
-		{ $$ = newNode<SetTimeZoneNode>($4->getString()); }
-	| SET TIME ZONE LOCAL
-		{ $$ = newNode<SetTimeZoneNode>(); }
+	: SET TIME ZONE set_time_zone_option	{ $$ = $4; }
+	;
+
+%type <mngNode> set_time_zone_option
+set_time_zone_option
+	: sql_string	{ $$ = newNode<SetTimeZoneNode>($1->getString()); }
+	| LOCAL			{ $$ = newNode<SetTimeZoneNode>(); }
+	;
+
+%type <mngNode> set_time_zone_bind
+set_time_zone_bind
+	: SET TIME ZONE BIND set_time_zone_bind_option	{ $$ = $5; }
+	;
+
+%type <mngNode> set_time_zone_bind_option
+set_time_zone_bind_option
+	: LEGACY	{ $$ = newNode<SetTimeZoneBindNode>(TimeZoneUtil::BIND_LEGACY); }
+	| NATIVE	{ $$ = newNode<SetTimeZoneBindNode>(TimeZoneUtil::BIND_NATIVE); }
 	;
 
 %type tran_option_list_opt(<setTransactionNode>)
@@ -8642,6 +8658,7 @@ non_reserved_word
 	| IDLE
 	| INVOKER
 	| LAST_DAY
+	| LEGACY
 	| LIFETIME
 	| MESSAGE
 	| NATIVE
