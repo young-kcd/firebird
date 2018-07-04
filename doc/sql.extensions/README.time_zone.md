@@ -161,9 +161,9 @@ set time zone local;
 
 Changes the session time zone bind for compatibility with old clients.
 
-The default is NATIVE, which means that `TIME WITH TIME ZONE` and `TIMESTAMP WITH TIME ZONE` expressions are returned with they new data types to the client.
+The default is `NATIVE`, which means that `TIME WITH TIME ZONE` and `TIMESTAMP WITH TIME ZONE` expressions are returned with they new data types to the client.
 
-Old clients may not understand the new data types, so it's possible to define the bind to LEGACY and the expressions will be returned as `TIME WITHOUT TIME ZONE` and `TIMESTAMP WITHOUT TIME ZONE`, with appropriate conversion.
+Old clients may not understand the new data types, so it's possible to define the bind to `LEGACY` and the expressions will be returned as `TIME WITHOUT TIME ZONE` and `TIMESTAMP WITHOUT TIME ZONE`, with appropriate conversion.
 
 The bind configuration is also applicable to input parameters.
 
