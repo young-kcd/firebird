@@ -5539,9 +5539,10 @@ JBatch* JStatement::createBatch(Firebird::CheckStatusWrapper* status, Firebird::
 
 			DsqlBatch* const b = DsqlBatch::open(tdbb, getHandle(), inMetadata, parLength, par);
 
-			batch = FB_NEW JBatch(b, this);
+			batch = FB_NEW JBatch(b, this, inMetadata);
 			batch->addRef();
 			b->setInterfacePtr(batch);
+			tdbb->getAttachment()->registerBatch(batch);
 		}
 		catch (const Exception& ex)
 		{
@@ -5562,9 +5563,10 @@ JBatch* JStatement::createBatch(Firebird::CheckStatusWrapper* status, Firebird::
 }
 
 
-JBatch::JBatch(DsqlBatch* handle, JStatement* aStatement)
+JBatch::JBatch(DsqlBatch* handle, JStatement* aStatement, IMessageMetadata* aMetadata)
 	: batch(handle),
-	  statement(aStatement)
+	  statement(aStatement),
+	  m_meta(aMetadata)
 { }
 
 
@@ -5580,7 +5582,12 @@ int JBatch::release()
 		return 1;
 
 	if (batch)
+	{
+		Attachment* att = getAttachment()->getHandle();
+		if (att)
+			att->deregisterBatch(this);
 		delete batch;
+	}
 
 	delete this;
 	return 0;

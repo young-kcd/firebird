@@ -285,7 +285,7 @@ public:
 	} req_operation;				// operation for next node
 
 	StatusXcp req_last_xcp;			// last known exception
-	bool req_batch;
+	bool req_batch_mode;
 
 	template <typename T> T* getImpure(unsigned offset)
 	{

@@ -211,7 +211,8 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	  att_charset_ids(*pool),
 	  att_pools(*pool),
 	  att_idle_timeout(0),
-	  att_stmt_timeout(0)
+	  att_stmt_timeout(0),
+	  att_batches(*pool)
 {
 	att_internal.grow(irq_MAX);
 	att_dyn_req.grow(drq_MAX);
@@ -221,6 +222,9 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 Jrd::Attachment::~Attachment()
 {
 	delete att_trace_manager;
+
+	for (unsigned n = 0; n < att_batches.getCount(); ++n)
+		att_batches[n]->resetHandle();
 
 	while (att_pools.hasData())
 		deletePool(att_pools.pop());

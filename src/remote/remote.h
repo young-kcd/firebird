@@ -557,6 +557,9 @@ public:
 		if (rsr_cursor)
 			rsr_cursor->release();
 
+		if (rsr_batch)
+			rsr_batch->release();
+
 		if (rsr_iface)
 			rsr_iface->release();
 

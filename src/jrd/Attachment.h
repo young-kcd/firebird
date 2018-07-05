@@ -461,6 +461,16 @@ public:
 	// returns time when idle timer will be expired, if set
 	bool getIdleTimerTimestamp(Firebird::TimeStamp& ts) const;
 
+	// batches control
+	void registerBatch(JBatch* b)
+	{
+		att_batches.add(b);
+	}
+	void deregisterBatch(JBatch* b)
+	{
+		att_batches.findAndRemove(b);
+	}
+
 private:
 	Attachment(MemoryPool* pool, Database* dbb);
 	~Attachment();
@@ -496,6 +506,8 @@ private:
 	unsigned int att_idle_timeout;		// seconds
 	unsigned int att_stmt_timeout;		// milliseconds
 	Firebird::RefPtr<IdleTimer> att_idle_timer;
+
+	Firebird::Array<JBatch*> att_batches;
 };
 
 

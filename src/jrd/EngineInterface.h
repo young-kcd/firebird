@@ -201,7 +201,7 @@ public:
 	void setDefaultBpb(Firebird::CheckStatusWrapper* status, unsigned parLength, const unsigned char* par);
 
 public:
-	JBatch(DsqlBatch* handle, JStatement* aStatement);
+	JBatch(DsqlBatch* handle, JStatement* aStatement, Firebird::IMessageMetadata* aMetadata);
 
 	StableAttachmentPart* getAttachment();
 
@@ -218,6 +218,7 @@ public:
 private:
 	DsqlBatch* batch;
 	Firebird::RefPtr<JStatement> statement;
+	Firebird::RefPtr<Firebird::IMessageMetadata> m_meta;
 };
 
 class JStatement FB_FINAL :

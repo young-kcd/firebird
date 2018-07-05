@@ -6541,7 +6541,7 @@ const StmtNode* ReceiveNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeS
 	switch (request->req_operation)
 	{
 		case jrd_req::req_return:
-			if (!(request->req_batch && batchFlag))
+			if (!(request->req_batch_mode && batchFlag))
 				break;
 			// fall into
 

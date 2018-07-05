@@ -3123,7 +3123,12 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
 
 	if (free_stmt->p_sqlfree_option & (DSQL_drop | DSQL_unprepare | DSQL_close))
 	{
-		if (statement->rsr_cursor)
+		if (statement->rsr_batch)
+		{
+			statement->rsr_batch->release();
+			statement->rsr_batch = NULL;
+		}
+		else if (statement->rsr_cursor)
 		{
 			statement->rsr_cursor->close(&status_vector);
 			if (status_vector.getState() & Firebird::IStatus::STATE_ERRORS)
@@ -3647,7 +3652,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 	if (transaction)
 		tra = transaction->rtr_iface;
 
-	if (statement->rsr_cursor)
+	if (statement->rsr_cursor || statement->rsr_batch)
 	{
 		 Arg::Gds(isc_dsql_cursor_open_err).raise();
 	}
@@ -5409,6 +5414,12 @@ static void release_statement( Rsr** statement)
 			transaction->rtr_cursors.remove(pos);
 		else
 			fb_assert(false);
+	}
+
+	if ((*statement)->rsr_batch)
+	{
+		(*statement)->rsr_batch->release();
+		(*statement)->rsr_batch = NULL;
 	}
 
 	delete (*statement)->rsr_select_format;
