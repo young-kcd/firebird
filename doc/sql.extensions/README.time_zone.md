@@ -325,7 +325,7 @@ Firebird stores `WITH TIME ZONE` values translated to UTC time. If a value is cr
 
 Firebird uses the [IANA time zone database](http://www.iana.org/time-zones) through the ICU library. ICU library present in Firebird kit (Windows) or present in OS (Linux, POSIX) sometimes has outdated time zone database.
 
-Update procedure is described in that [ICU page](http://userguide.icu-project.org/datetime/timezone#TOC-Updating-the-Time-Zone-Data). The easiest way to update is downloading the `*.res` files in a directory and set `ICU_TIMEZONE_FILES_DIR` to point to it.
+Update procedure is described in that [ICU page](http://userguide.icu-project.org/datetime/timezone#TOC-Updating-the-Time-Zone-Data). The easiest way to update is downloading the `*.res` files in a directory and set `ICU_TIMEZONE_FILES_DIR` environment variable pointing to it.
 
 
 # Appendix: time zone regions
