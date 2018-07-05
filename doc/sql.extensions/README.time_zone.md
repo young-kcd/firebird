@@ -317,6 +317,16 @@ Returns:
 2018-10-21 03:00:00.0000 GMT 2019-02-17 01:59:59.9999 GMT        -180         60             -120
 ```
 
+# Updating the time zone database
+
+Time zones are often changed and when this happen it's convenient to update the time zone database as soon as possible.
+
+Firebird stores `WITH TIME ZONE` values translated to UTC time. If a value is created with one time zone database and later that database is updated and the update changes the information in the range of a stored value, when reading that value it will be returned as a different than the one initially stored.
+
+Firebird uses the [IANA time zone database](http://www.iana.org/time-zones) through the ICU library. ICU library present in Firebird kit (Windows) or present in OS (Linux, POSIX) sometimes has outdated time zone database.
+
+Update procedure is described in that [ICU page](http://userguide.icu-project.org/datetime/timezone#TOC-Updating-the-Time-Zone-Data). The easiest way to update is downloading the `*.res` files in a directory and set `ICU_TIMEZONE_FILES_DIR` to point to it.
+
 
 # Appendix: time zone regions
 
