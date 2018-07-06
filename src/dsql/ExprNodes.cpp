@@ -4240,7 +4240,7 @@ dsc* CurrentTimeNode::execute(thread_db* tdbb, jrd_req* request) const
 	impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_sql_time_tz;
 
 	impure->vlu_misc.vlu_sql_time_tz.utc_time = time;
-	impure->vlu_misc.vlu_sql_time_tz.time_zone = TimeZoneUtil::getSystemTimeZone();
+	impure->vlu_misc.vlu_sql_time_tz.time_zone = tdbb->getAttachment()->att_current_timezone;
 
 	return &impure->vlu_desc;
 }
