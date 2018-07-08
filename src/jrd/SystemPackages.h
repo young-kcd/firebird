@@ -25,6 +25,9 @@
 
 #include "firebird.h"
 #include "../common/status.h"
+#include "../common/classes/init.h"
+#include "../common/classes/array.h"
+#include "../common/classes/objects_array.h"
 #include "../jrd/constants.h"
 #include "firebird/Interface.h"
 #include <initializer_list>
@@ -41,17 +44,42 @@ namespace Jrd
 
 	struct SystemProcedure
 	{
-		const char* name;
-		std::function<Firebird::IExternalProcedure* (
+		typedef std::function<Firebird::IExternalProcedure* (
 				Firebird::ThrowStatusExceptionWrapper*,
 				Firebird::IExternalContext*,
 				Firebird::IRoutineMetadata*,
 				Firebird::IMetadataBuilder*,
 				Firebird::IMetadataBuilder*
-			)> factory;
+			)> Factory;
+
+		SystemProcedure(
+			Firebird::MemoryPool& pool,
+			const char* aName,
+			Factory aFactory,
+			prc_t aType,
+			std::initializer_list<SystemProcedureParameter> aInputParameters,
+			std::initializer_list<SystemProcedureParameter> aOutputParameters
+		)
+			: name(aName),
+			  factory(aFactory),
+			  type(aType),
+			  inputParameters(pool, aInputParameters),
+			  outputParameters(pool, aOutputParameters)
+		{
+		}
+
+		SystemProcedure(Firebird::MemoryPool& pool, const SystemProcedure& other)
+			: inputParameters(pool),
+			  outputParameters(pool)
+		{
+			*this = other;
+		}
+
+		const char* name;
+		Factory factory;
 		prc_t type;
-		std::initializer_list<SystemProcedureParameter> inputParameters;
-		std::initializer_list<SystemProcedureParameter> outputParameters;
+		Firebird::Array<SystemProcedureParameter> inputParameters;
+		Firebird::Array<SystemProcedureParameter> outputParameters;
 	};
 
 	struct SystemFunctionParameter
@@ -69,26 +97,69 @@ namespace Jrd
 
 	struct SystemFunction
 	{
-		const char* name;
-		std::function<Firebird::IExternalFunction* (
+		typedef std::function<Firebird::IExternalFunction* (
 				Firebird::ThrowStatusExceptionWrapper*,
 				Firebird::IExternalContext*,
 				Firebird::IRoutineMetadata*,
 				Firebird::IMetadataBuilder*,
 				Firebird::IMetadataBuilder*
-			)> factory;
-		std::initializer_list<SystemFunctionParameter> parameters;
+			)> Factory;
+
+		SystemFunction(
+			Firebird::MemoryPool& pool,
+			const char* aName,
+			Factory aFactory,
+			std::initializer_list<SystemFunctionParameter> aParameters,
+			SystemFunctionReturnType aReturnType
+		)
+			: name(aName),
+			  factory(aFactory),
+			  parameters(pool, aParameters),
+			  returnType(aReturnType)
+		{
+		}
+
+		SystemFunction(Firebird::MemoryPool& pool, const SystemFunction& other)
+			: parameters(pool)
+		{
+			*this = other;
+		}
+
+		const char* name;
+		Factory factory;
+		Firebird::Array<SystemFunctionParameter> parameters;
 		SystemFunctionReturnType returnType;
 	};
 
 	struct SystemPackage
 	{
+		SystemPackage(
+			Firebird::MemoryPool& pool,
+			const char* aName,
+			USHORT aOdsVersion,
+			std::initializer_list<SystemProcedure> aProcedures,
+			std::initializer_list<SystemFunction> aFunctions
+		)
+			: name(aName),
+			  odsVersion(aOdsVersion),
+			  procedures(pool, aProcedures),
+			  functions(pool, aFunctions)
+		{
+		}
+
+		SystemPackage(Firebird::MemoryPool& pool, const SystemPackage& other)
+			: procedures(pool),
+			  functions(pool)
+		{
+			*this = other;
+		}
+
 		const char* name;
 		USHORT odsVersion;
-		std::initializer_list<SystemProcedure> procedures;
-		std::initializer_list<SystemFunction> functions;
+		Firebird::ObjectsArray<SystemProcedure> procedures;
+		Firebird::ObjectsArray<SystemFunction> functions;
 
-		static std::initializer_list<SystemPackage> LIST;
+		static Firebird::ObjectsArray<SystemPackage>& get();
 	};
 }	// namespace Jrd
 

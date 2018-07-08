@@ -462,7 +462,7 @@ void INI_format(const char* owner, const char* charset)
 		add_security_to_sys_obj(tdbb, ownerName, obj_collation, collation->name, length, buffer);
 	}
 
-	for (auto& systemPackage : SystemPackage::LIST)
+	for (auto& systemPackage : SystemPackage::get())
 	{
 		if (systemPackage.odsVersion > ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_version))
 			continue;
@@ -1665,7 +1665,7 @@ static void store_packages(thread_db* tdbb, const MetaName& owner)
 	SLONG procGen = MET_lookup_generator(tdbb, PROCEDURES_GENERATOR);
 	SLONG funcGen = MET_lookup_generator(tdbb, FUNCTIONS_GENERATOR);
 
-	for (auto& systemPackage : SystemPackage::LIST)
+	for (auto& systemPackage : SystemPackage::get())
 	{
 		if (systemPackage.odsVersion > ENCODE_ODS(majorVersion, minorVersion))
 			continue;
@@ -1692,8 +1692,8 @@ static void store_packages(thread_db* tdbb, const MetaName& owner)
 
 				PRC.RDB$PROCEDURE_ID = DPM_gen_id(tdbb, procGen, false, 1);
 
-				PRC.RDB$PROCEDURE_INPUTS = (SSHORT) procedure.inputParameters.size();
-				PRC.RDB$PROCEDURE_OUTPUTS = (SSHORT) procedure.outputParameters.size();
+				PRC.RDB$PROCEDURE_INPUTS = (SSHORT) procedure.inputParameters.getCount();
+				PRC.RDB$PROCEDURE_OUTPUTS = (SSHORT) procedure.outputParameters.getCount();
 				PRC.RDB$PROCEDURE_TYPE = (SSHORT) procedure.type;
 				PRC.RDB$PRIVATE_FLAG = FALSE;
 				PRC.RDB$VALID_BLR = TRUE;

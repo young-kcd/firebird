@@ -122,9 +122,6 @@ public:
 };
 
 
-FB_MESSAGE(TimeZoneDatabaseVersionInput, Firebird::ThrowStatusExceptionWrapper,
-);
-
 FB_MESSAGE(TimeZoneDatabaseVersionOutput, Firebird::ThrowStatusExceptionWrapper,
 	(FB_INTL_VARCHAR(10, CS_ASCII), version)
 );
@@ -137,7 +134,6 @@ public:
 	TimeZoneDatabaseVersionFunction(Firebird::ThrowStatusExceptionWrapper* status,
 		Firebird::IMetadataBuilder* inBuilder, Firebird::IMetadataBuilder* outBuilder)
 	{
-		TimeZoneDatabaseVersionInput::setup(status, inBuilder);
 		TimeZoneDatabaseVersionOutput::setup(status, outBuilder);
 	}
 

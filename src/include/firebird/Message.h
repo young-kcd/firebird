@@ -249,8 +249,9 @@ struct FbVarChar
 
 	void set(const char* s)
 	{
-		length = strlen(s);
-		assert(length <= N);
+		size_t len = strlen(s);
+		assert(len <= N);
+		length = (ISC_USHORT) len;
 		memcpy(str, s, (length <= N ? length : N));
 	}
 };

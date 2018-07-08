@@ -1058,7 +1058,7 @@ namespace
 			const char* packageName = metadata->getPackage(status);
 			const char* routineName = metadata->getName(status);
 
-			for (auto& package : SystemPackage::LIST)
+			for (auto& package : SystemPackage::get())
 			{
 				if (strcmp(package.name, packageName) == 0)
 				{
@@ -1080,7 +1080,7 @@ namespace
 			const char* packageName = metadata->getPackage(status);
 			const char* routineName = metadata->getName(status);
 
-			for (auto& package : SystemPackage::LIST)
+			for (auto& package : SystemPackage::get())
 			{
 				if (strcmp(package.name, packageName) == 0)
 				{
