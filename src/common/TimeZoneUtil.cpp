@@ -27,9 +27,6 @@
 //// TODO: Configure ICU time zone data files.
 //// TODO: Update Windows ICU.
 
-// Uncomment to generate list of time zones to be updated in TimeZones.h
-//#define TZ_UPDATE
-
 #include "firebird.h"
 #include "../common/TimeZoneUtil.h"
 #include "../common/StatusHolder.h"

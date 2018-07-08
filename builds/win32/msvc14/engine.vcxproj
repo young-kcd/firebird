@@ -142,6 +142,7 @@
     <ClCompile Include="..\..\..\src\jrd\sqz.cpp" />
     <ClCompile Include="..\..\..\src\jrd\svc.cpp" />
     <ClCompile Include="..\..\..\src\jrd\SysFunction.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\SystemPackages.cpp" />
     <ClCompile Include="..\..\..\src\jrd\TempSpace.cpp" />
     <ClCompile Include="..\..\..\src\jrd\TimeZone.cpp" />
     <ClCompile Include="..\..\..\src\jrd\tpc.cpp" />
@@ -316,6 +317,7 @@
     <ClInclude Include="..\..\..\src\jrd\svc.h" />
     <ClInclude Include="..\..\..\src\jrd\svc_undoc.h" />
     <ClInclude Include="..\..\..\src\jrd\SysFunction.h" />
+    <ClInclude Include="..\..\..\src\jrd\SystemPackages.h" />
     <ClInclude Include="..\..\..\src\jrd\TempSpace.h" />
     <ClInclude Include="..\..\..\src\jrd\TimeZone.h" />
     <ClInclude Include="..\..\..\src\jrd\tpc_proto.h" />

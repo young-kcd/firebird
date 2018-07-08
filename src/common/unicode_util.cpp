@@ -295,7 +295,7 @@ private:
 		getEntryPoint("ucal_getNow", inModule, ucalGetNow);
 		getEntryPoint("ucal_getTimeZoneTransitionDate", inModule, ucalGetTimeZoneTransitionDate);
 
-#ifdef DEV_BUILD
+#if defined DEV_BUILD && defined TZ_UPDATE
 		getEntryPoint("ucal_openTimeZones", inModule, ucalOpenTimeZones);
 
 		getEntryPoint("uenum_close", inModule, uenumClose);

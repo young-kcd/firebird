@@ -713,8 +713,8 @@ void UtilInterface::encodeTimeTz(CheckStatusWrapper* status, ISC_TIME_TZ* timeTz
 }
 
 void UtilInterface::decodeTimeStampTz(CheckStatusWrapper* status, const ISC_TIMESTAMP_TZ* timeStampTz,
-	uint* year, uint* month, uint* day, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions,
-	unsigned timeZoneBufferLength, char* timeZoneBuffer)
+	unsigned* year, unsigned* month, unsigned* day, unsigned* hours, unsigned* minutes, unsigned* seconds,
+	unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer)
 {
 	try
 	{
@@ -753,8 +753,8 @@ void UtilInterface::decodeTimeStampTz(CheckStatusWrapper* status, const ISC_TIME
 }
 
 void UtilInterface::encodeTimeStampTz(CheckStatusWrapper* status, ISC_TIMESTAMP_TZ* timeStampTz,
-	uint year, uint month, uint day, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions,
-	const char* timeZone)
+	unsigned year, unsigned month, unsigned day, unsigned hours, unsigned minutes, unsigned seconds,
+	unsigned fractions, const char* timeZone)
 {
 	try
 	{

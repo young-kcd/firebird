@@ -138,7 +138,7 @@ public:
 		UBool (U_EXPORT2* ucalGetTimeZoneTransitionDate) (const UCalendar* cal, UTimeZoneTransitionType type,
 			UDate* transition, UErrorCode* status);
 
-#ifdef DEV_BUILD
+#if defined DEV_BUILD && defined TZ_UPDATE
 		UEnumeration* (U_EXPORT2* ucalOpenTimeZones) (UErrorCode* ec);
 
 		void (U_EXPORT2* uenumClose) (UEnumeration* en);
