@@ -6327,7 +6327,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 					if (!port)
 					{
 						server_req_t* next;
-						while (next = request->req_chain)
+						while ((next = request->req_chain))
 						{
 							request->req_chain = next->req_chain;
 							free_request(next);

@@ -7722,10 +7722,10 @@ void DerivedFieldNode::setParameterName(dsql_par* parameter) const
 
 	while (drvField)
 	{
-		if (fieldNode = nodeAs<FieldNode>(drvField->value))
+		if ((fieldNode = nodeAs<FieldNode>(drvField->value)))
 			break;
 
-		if (dbKeyNode = nodeAs<RecordKeyNode>(drvField->value))
+		if ((dbKeyNode = nodeAs<RecordKeyNode>(drvField->value)))
 			break;
 
 		drvField = nodeAs<DerivedFieldNode>(drvField->value);

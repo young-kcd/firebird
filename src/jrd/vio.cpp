@@ -5509,7 +5509,7 @@ static void purge(thread_db* tdbb, record_param* rpb)
 	jrd_rel* const relation = rpb->rpb_relation;
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE_ALL,
-		"purge (rel_id %u, record_param %" QUADFORMAT"d)\n", 
+		"purge (rel_id %u, record_param %" QUADFORMAT"d)\n",
 		relation->rel_id, rpb->rpb_number.getValue());
 
 	VIO_trace(DEBUG_TRACE_ALL_INFO,
@@ -5681,7 +5681,7 @@ static void refresh_fk_fields(thread_db* tdbb, Record* old_rec, record_param* cu
 		// If field was not changed by user - pick up possible modification by
 		// system cascade trigger
 		if (flag_old == flag_new &&
-			(!flag_old || flag_old && MOV_compare(tdbb, &desc1, &desc2) == 0))
+			(!flag_old || (flag_old && MOV_compare(tdbb, &desc1, &desc2) == 0)))
 		{
 			const bool flag_tmp = EVL_field(relation, cur_rpb->rpb_record, fld, &desc1);
 			if (flag_tmp)
