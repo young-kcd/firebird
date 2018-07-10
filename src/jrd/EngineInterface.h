@@ -219,6 +219,8 @@ private:
 	DsqlBatch* batch;
 	Firebird::RefPtr<JStatement> statement;
 	Firebird::RefPtr<Firebird::IMessageMetadata> m_meta;
+
+	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
 class JStatement FB_FINAL :

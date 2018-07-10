@@ -5583,14 +5583,51 @@ int JBatch::release()
 
 	if (batch)
 	{
+/*
 		Attachment* att = getAttachment()->getHandle();
 		if (att)
 			att->deregisterBatch(this);
 		delete batch;
+*/
+
+		LocalStatus status;
+		CheckStatusWrapper statusWrapper(&status);
+
+		freeEngineData(&statusWrapper);
+
 	}
 
 	delete this;
 	return 0;
+}
+
+void JBatch::freeEngineData(Firebird::CheckStatusWrapper* user_status)
+{
+	try
+	{
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			Attachment* att = getAttachment()->getHandle();
+			if (att)
+				att->deregisterBatch(this);
+			delete batch;
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, user_status, FB_FUNCTION);
+			return;
+		}
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return;
+	}
+
+	successful_completion(user_status);
 }
 
 
