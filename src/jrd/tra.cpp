@@ -835,13 +835,13 @@ void TRA_update_counters(thread_db* tdbb, Database* dbb)
 	{
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 
-		if (dbb->dbb_oldest_active > header->hdr_oldest_active)
+		if (dbb->dbb_oldest_active > oldest_active)
 			Ods::writeOAT(header, dbb->dbb_oldest_active);
 
-		if (dbb->dbb_oldest_transaction > header->hdr_oldest_transaction)
+		if (dbb->dbb_oldest_transaction > oldest_transaction)
 			Ods::writeOIT(header, dbb->dbb_oldest_transaction);
 
-		if (dbb->dbb_oldest_snapshot > header->hdr_oldest_snapshot)
+		if (dbb->dbb_oldest_snapshot > oldest_snapshot)
 			Ods::writeOST(header, dbb->dbb_oldest_snapshot);
 
 		if (dbb->dbb_next_transaction > next_transaction)
@@ -3236,7 +3236,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	// of four, which puts the transaction on a byte boundary.
 
 	TraNumber base = oldest & ~TRA_MASK;
-	const ULONG top = (dbb->dbb_flags & DBB_read_only) ? 
+	const TraNumber top = (dbb->dbb_flags & DBB_read_only) ?
 		dbb->dbb_next_transaction : number;
 
 	if (!(trans->tra_flags & TRA_read_committed) && (top >= oldest))
