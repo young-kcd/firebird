@@ -5583,18 +5583,10 @@ int JBatch::release()
 
 	if (batch)
 	{
-/*
-		Attachment* att = getAttachment()->getHandle();
-		if (att)
-			att->deregisterBatch(this);
-		delete batch;
-*/
-
 		LocalStatus status;
 		CheckStatusWrapper statusWrapper(&status);
 
 		freeEngineData(&statusWrapper);
-
 	}
 
 	delete this;
