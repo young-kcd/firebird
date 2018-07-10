@@ -181,7 +181,7 @@ void InternalConnection::attach(thread_db* tdbb)
 		if (status->getState() & IStatus::STATE_ERRORS)
 			raise(&status, tdbb, "JProvider::attach");
 
-		attachment->att_ext_parent = this;
+		m_attachment->getHandle()->att_ext_parent = this;
 	}
 
 	m_sqlDialect = (attachment->att_database->dbb_flags & DBB_DB_SQL_dialect_3) ?
