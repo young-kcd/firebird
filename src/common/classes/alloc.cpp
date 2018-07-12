@@ -119,6 +119,10 @@ size_t delayedExtentCount = 0;
 size_t delayedExtentsPos = 0;
 #endif
 
+// Uncomment to validate pool on every alloc\release operation.
+// Could slowdown pool significantly !
+//#define VALIDATE_POOL
+
 // We cache this amount of extents to avoid memory mapping overhead
 const int MAP_CACHE_SIZE = 16; // == 1 MB
 const size_t DEFAULT_ALLOCATION = 65536;
@@ -1551,6 +1555,32 @@ private:
 	AtomicCounter used_memory, mapped_memory;
 
 private:
+
+#ifdef VALIDATE_POOL
+	class Validator
+	{
+	public:
+		Validator(MemPool* p) :
+			m_pool(p)
+		{
+			m_pool->validate();
+		}
+
+		~Validator()
+		{
+			m_pool->validate();
+		}
+	private:
+		MemPool* m_pool;
+	};
+#else
+	class Validator
+	{
+	public:
+		Validator(MemPool*) {}
+	};
+#endif // VALIDATE_POOL
+
 	MemBlock* alloc(size_t from, size_t& length, bool flagRedirect) throw (OOM_EXCEPTION);
 	void releaseBlock(MemBlock *block) throw ();
 
@@ -2011,6 +2041,8 @@ MemBlock* MemPool::alloc(size_t from, size_t& length, bool flagRedirect) throw (
 	MutexEnsureUnlock guard(mutex, "MemPool::alloc");
 	guard.enter();
 
+	Validator vld(this);
+
 	// If this is a small block, look for it there
 
 	MemBlock* block = smallObjects.allocateBlock(this, from, length);
@@ -2184,6 +2216,8 @@ void MemPool::releaseBlock(MemBlock* block) throw ()
 
 	MutexEnsureUnlock guard(mutex, "MemPool::release");
 	guard.enter();
+
+	Validator vld(this);
 
 	// If length is less than threshold, this is a small block
 	if (smallObjects.deallocateBlock(block))
