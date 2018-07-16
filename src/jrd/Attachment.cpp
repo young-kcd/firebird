@@ -197,6 +197,7 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	  att_dsql_cache(*pool),
 	  att_udf_pointers(*pool),
 	  att_ext_connection(NULL),
+	  att_ext_parent(NULL),
 	  att_ext_call_depth(0),
 	  att_trace_manager(FB_NEW_POOL(*att_pool) TraceManager(this)),
 	  att_utility(UTIL_NONE),
@@ -210,7 +211,8 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	  att_charset_ids(*pool),
 	  att_pools(*pool),
 	  att_idle_timeout(0),
-	  att_stmt_timeout(0)
+	  att_stmt_timeout(0),
+	  att_batches(*pool)
 {
 	att_internal.grow(irq_MAX);
 	att_dyn_req.grow(drq_MAX);
@@ -220,6 +222,9 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 Jrd::Attachment::~Attachment()
 {
 	delete att_trace_manager;
+
+	for (unsigned n = 0; n < att_batches.getCount(); ++n)
+		att_batches[n]->resetHandle();
 
 	while (att_pools.hasData())
 		deletePool(att_pools.pop());
@@ -381,8 +386,61 @@ void Jrd::Attachment::releaseGTTs(thread_db* tdbb)
 	}
 }
 
-void Jrd::Attachment::resetSession(thread_db* tdbb)
+void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 {
+	jrd_tra* oldTran = traHandle ? *traHandle : nullptr;
+	if (att_transactions)
+	{
+		int n = 0;
+		bool err = false;
+		for (const jrd_tra* tra = att_transactions; tra; tra = tra->tra_next)
+		{
+			n++;
+			if (tra != oldTran && !(tra->tra_flags & TRA_prepared))
+				err = true;
+		}
+
+		// Cannot reset user session 
+		// There are open transactions (@1 active)
+		if (err)
+		{
+			ERR_post(Arg::Gds(isc_ses_reset_err) <<
+				Arg::Gds(isc_ses_reset_open_trans) << Arg::Num(n));
+		}
+	}
+
+	// TODO: trigger before reset
+
+	ULONG oldFlags = 0;
+	SSHORT oldTimeout = 0;
+	if (oldTran)
+	{
+		oldFlags = oldTran->tra_flags;
+		oldTimeout = oldTran->tra_lock_timeout;
+
+		try
+		{
+			// It will also run run ON TRANSACTION ROLLBACK triggers
+			JRD_rollback_transaction(tdbb, oldTran);
+			*traHandle = nullptr;
+		}
+		catch (const Exception& ex)
+		{
+			Arg::StatusVector error;
+			error.assign(ex);
+			error.prepend(Arg::Gds(isc_ses_reset_err));
+			error.raise();
+		}
+
+		// Session was reset with warning(s)
+		// Transaction is rolled back due to session reset, all changes are lost
+		if (oldFlags & TRA_write)
+		{
+			ERR_post_warning(Arg::Warning(isc_ses_reset_warn) <<
+				Arg::Gds(isc_ses_reset_tran_rollback));
+		}
+	}
+
 	// reset DecFloat
 	att_dec_status = DecimalStatus::DEFAULT;
 	att_dec_binding = DecimalBinding::DEFAULT;
@@ -400,6 +458,29 @@ void Jrd::Attachment::resetSession(thread_db* tdbb)
 
 	// reset GTT's
 	releaseGTTs(tdbb);
+
+	if (oldTran)
+	{
+		try
+		{
+			jrd_tra* newTran = TRA_start(tdbb, oldFlags, oldTimeout);
+
+			// run ON TRANSACTION START triggers
+			JRD_run_trans_start_triggers(tdbb, newTran);
+
+			tdbb->setTransaction(newTran);
+			*traHandle = newTran;
+		}
+		catch (const Exception& ex)
+		{
+			Arg::StatusVector error;
+			error.assign(ex);
+			error.prepend(Arg::Gds(isc_ses_reset_err));
+			error.raise();
+		}
+	}
+
+	// TODO: trigger after reset
 }
 
 

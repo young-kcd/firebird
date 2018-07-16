@@ -993,6 +993,10 @@ Data source : @4', NULL, NULL)
 ('vld_plugins', NULL, 'ValidatePassword.cpp', NULL, 0, 883, NULL, 'No matching client/server authentication plugins configured for execute statement in embedded datasource', NULL, NULL);
 ('db_crypt_key', NULL, 'CryptoManager.cpp', NULL, 0, 884, NULL, 'Missing database encryption key for your attachment', NULL, NULL);
 ('no_keyholder_plugin', NULL, 'mvol.cpp', NULL, 0, 885, NULL, 'Key holder plugin @1 failed to load', NULL, NULL);
+('ses_reset_err', NULL, 'Attachment.cpp', NULL, 0, 886, NULL, 'Cannot reset user session', NULL, NULL);
+('ses_reset_open_trans', NULL, 'Attachment.cpp', NULL, 0, 887, NULL, 'There are open transactions (@1 active)', NULL, NULL);
+('ses_reset_warn', NULL, 'Attachment.cpp', NULL, 0, 888, NULL, 'Session was reset with warning(s)', NULL, NULL);
+('ses_reset_tran_rollback', NULL, 'Attachment.cpp', NULL, 0, 889, NULL, 'Transaction is rolled back due to session reset, all changes are lost', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
@@ -2077,6 +2081,15 @@ COMMIT WORK;
 ('dyn_incompat_alter_database', 'AlterDatabaseNode::execute', 'DdlNodes.epp', NULL, 8, 298, NULL, 'Incompatible ALTER DATABASE clauses: ''@1'' and ''@2''', NULL, NULL);
 (NULL, 'checkGrantorCanGrantObject', 'DdlNodes.epp', NULL, 8, 299, NULL, 'no @1 privilege with grant option on DDL @2', NULL, NULL);
 (NULL, 'checkGrantorCanGrantObject', 'DdlNodes.epp', NULL, 8, 300, NULL, 'no @1 privilege with grant option on object @2', NULL, NULL);
+(NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 301, NULL, 'Function @1 does not exist', NULL, NULL);
+(NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 302, NULL, 'Procedure @1 does not exist', NULL, NULL);
+(NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 303, NULL, 'Package @1 does not exist', NULL, NULL);
+(NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 304, NULL, 'Trigger @1 does not exist', NULL, NULL);
+(NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 305, NULL, 'View @1 does not exist', NULL, NULL);
+(NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 306, NULL, 'Table @1 does not exist', NULL, NULL);
+(NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 307, NULL, 'Exception @1 does not exist', NULL, NULL);
+(NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 308, NULL, 'Generator/Sequence @1 does not exist', NULL, NULL);
+(NULL, 'GrantRevokeNode::grantRevoke', 'DdlNodes.epp', NULL, 8, 309, NULL, 'Field @1 of table @2 does not exist', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);

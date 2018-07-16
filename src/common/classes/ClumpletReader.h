@@ -144,6 +144,9 @@ public:
 		const FB_SIZE_T len = getBufferLength();
 		return (len == other.getBufferLength()) && (memcmp(getBuffer(), other.getBuffer(), len) == 0);
 	}
+	// Methods are virtual so writer can override 'em
+	virtual const UCHAR* getBuffer() const;
+	virtual const UCHAR* getBufferEnd() const;
 
 protected:
 	enum ClumpletType {TraditionalDpb, SingleTpb, StringSpb, IntSpb, BigIntSpb, ByteSpb, Wide};
@@ -154,10 +157,6 @@ protected:
 	FB_SIZE_T cur_offset;
 	Kind kind;
 	UCHAR spbState;		// Reflects state of spb parser/writer
-
-	// Methods are virtual so writer can override 'em
-	virtual const UCHAR* getBuffer() const;
-	virtual const UCHAR* getBufferEnd() const;
 
 	// These functions are called when error condition is detected by this class.
 	// They may throw exceptions. If they don't reader tries to do something

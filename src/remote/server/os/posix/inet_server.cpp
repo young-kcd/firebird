@@ -206,7 +206,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 
 			if (*p++ == '-')
 			{
-				while (c = *p++)
+				while ((c = *p++))
 				{
 					switch (UPPER(c))
 					{
@@ -371,8 +371,8 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			int stdout_no = fileno(stdout);
 			int stderr_no = fileno(stderr);
 			const char* dev_null_file = "/dev/null";
-			bool keep_as_is = !redirection_file || redirection_file &&
-				(strcmp(redirection_file, "-") == 0 || strcmp(redirection_file, "") == 0);
+			bool keep_as_is = !redirection_file ||
+				(redirection_file && (strcmp(redirection_file, "-") == 0 || strcmp(redirection_file, "") == 0));
 
 			// guard close all fds to properly demonize. Detect this case
 			// and if we spawned from daemon we reopen stdout and stderr

@@ -112,7 +112,7 @@ static void garbage_collect(thread_db*, record_param*, ULONG, RecordStack&);
 #include <stdio.h>
 #include <stdarg.h>
 
-int vio_debug_flag = 0;
+int vio_debug_flag = DEBUG_TRACE_ALL_INFO;
 
 void VIO_trace(int level, const char* format, ...)
 {
@@ -390,13 +390,13 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 	fb_assert(assert_gc_enabled(transaction, rpb->rpb_relation));
 
+	jrd_rel* const relation = rpb->rpb_relation;
+
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"VIO_backout (record_param %" QUADFORMAT"d, transaction %" SQUADFORMAT")\n",
-		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
+		"VIO_backout (rel_id %u, record_param %" SQUADFORMAT", transaction %" SQUADFORMAT")\n",
+		relation->rel_id, rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
 #endif
-
-	jrd_rel* const relation = rpb->rpb_relation;
 
 	// If there is data in the record, fetch it now.  If the old version
 	// is a differences record, we will need it sooner.  In any case, we
@@ -516,7 +516,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 #ifdef VIO_DEBUG
 	if (temp2.rpb_b_page != rpb->rpb_b_page || temp.rpb_b_line != rpb->rpb_b_line ||
-			temp.rpb_transaction_nr != rpb->rpb_transaction_nr)
+		temp.rpb_transaction_nr != rpb->rpb_transaction_nr)
 	{
 		VIO_trace(DEBUG_WRITES_INFO,
 			"    record changed!)\n");
@@ -704,8 +704,9 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE_ALL,
-		"VIO_chase_record_version (record_param %" QUADFORMAT"d, transaction %"
+		"VIO_chase_record_version (rel_id %u, record_param %" QUADFORMAT"d, transaction %"
 		SQUADFORMAT", pool %p)\n",
+		relation->rel_id,
 		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
 		(void*) pool);
 
@@ -1302,10 +1303,12 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
  **************************************/
 	SET_TDBB(tdbb);
 
+	jrd_rel* const relation = rpb->rpb_relation;
+
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_READS,
-		"VIO_data (record_param %" QUADFORMAT"d, pool %p)\n",
-		rpb->rpb_number.getValue(), (void*) pool);
+		"VIO_data (rel_id %u, record_param %" QUADFORMAT"d, pool %p)\n",
+		relation->rel_id, rpb->rpb_number.getValue(), (void*)pool);
 
 
 	VIO_trace(DEBUG_READS_INFO,
@@ -1321,7 +1324,6 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 	// the format block and set up the record block.  This is a performance
 	// optimization.
 
-	jrd_rel* const relation = rpb->rpb_relation;
 	Record* const record = VIO_record(tdbb, rpb, NULL, pool);
 	const Format* const format = record->getFormat();
 
@@ -1432,11 +1434,12 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	SET_TDBB(tdbb);
 	jrd_req* request = tdbb->getRequest();
+	jrd_rel* relation = rpb->rpb_relation;
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"VIO_erase (record_param %" QUADFORMAT"d, transaction %" SQUADFORMAT")\n",
-		rpb->rpb_number.getValue(), transaction->tra_number);
+		"VIO_erase (rel_id %u, record_param %" QUADFORMAT"d, transaction %" SQUADFORMAT")\n",
+		relation->rel_id, rpb->rpb_number.getValue(), transaction->tra_number);
 
 	VIO_trace(DEBUG_WRITES_INFO,
 		"   record  %" SLONGFORMAT":%d, rpb_trans %" SQUADFORMAT
@@ -1458,8 +1461,6 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	}
 
 	// deleting tx has updated/inserted this record before
-	jrd_rel* relation = rpb->rpb_relation;
-
 	tdbb->bumpRelStats(RuntimeStatistics::RECORD_DELETES, relation->rel_id);
 
 	// Special case system transaction
@@ -2263,10 +2264,11 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 	Jrd::Attachment* attachment = transaction->tra_attachment;
 
 #ifdef VIO_DEBUG
+	jrd_rel* relation = rpb->rpb_relation;
 	VIO_trace(DEBUG_TRACE,
-		"VIO_garbage_collect (record_param %" QUADFORMAT"d, transaction %"
+		"VIO_garbage_collect (rel_id %u, record_param %" QUADFORMAT"d, transaction %"
 		SQUADFORMAT")\n",
-		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
+		relation->rel_id, rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
 
 	VIO_trace(DEBUG_TRACE_INFO,
 		"   record  %" SLONGFORMAT":%d, rpb_trans %" SQUADFORMAT
@@ -2398,9 +2400,10 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, jrd_tra* transaction, MemoryPoo
 	SET_TDBB(tdbb);
 
 #ifdef VIO_DEBUG
+	jrd_rel* relation = rpb->rpb_relation;
 	VIO_trace(DEBUG_READS,
-		"VIO_get (record_param %" QUADFORMAT"d, transaction %" SQUADFORMAT", pool %p)\n",
-		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
+		"VIO_get (rel_id %u, record_param %" QUADFORMAT"d, transaction %" SQUADFORMAT", pool %p)\n",
+		relation->rel_id, rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
 		(void*) pool);
 #endif
 
@@ -2477,9 +2480,10 @@ bool VIO_get_current(thread_db* tdbb,
 	Attachment* const attachment = tdbb->getAttachment();
 
 #ifdef VIO_DEBUG
+	jrd_rel* relation = rpb->rpb_relation;
 	VIO_trace(DEBUG_TRACE,
-		"VIO_get_current (record_param %" QUADFORMAT"d, transaction %" SQUADFORMAT", pool %p)\n",
-		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
+		"VIO_get_current (rel_id %u, record_param %" QUADFORMAT"d, transaction %" SQUADFORMAT", pool %p)\n",
+		relation->rel_id, rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
 		(void*) pool);
 #endif
 
@@ -2742,12 +2746,13 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 	SET_TDBB(tdbb);
 
 	MetaName object_name, package_name;
+	jrd_rel* relation = org_rpb->rpb_relation;
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"VIO_modify (org_rpb %" QUADFORMAT"d, new_rpb %" QUADFORMAT"d, "
+		"VIO_modify (rel_id %u, org_rpb %" QUADFORMAT"d, new_rpb %" QUADFORMAT"d, "
 		"transaction %" SQUADFORMAT")\n",
-		org_rpb->rpb_number.getValue(), new_rpb->rpb_number.getValue(),
+		relation->rel_id, org_rpb->rpb_number.getValue(), new_rpb->rpb_number.getValue(),
 		transaction ? transaction->tra_number : 0);
 
 	VIO_trace(DEBUG_WRITES_INFO,
@@ -2758,7 +2763,6 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		org_rpb->rpb_f_page, org_rpb->rpb_f_line);
 #endif
 
-	jrd_rel* relation = org_rpb->rpb_relation;
 	transaction->tra_flags |= TRA_write;
 	new_rpb->rpb_transaction_nr = transaction->tra_number;
 	new_rpb->rpb_flags = 0;
@@ -3241,9 +3245,10 @@ bool VIO_next_record(thread_db* tdbb,
 	const USHORT lock_type = (rpb->rpb_stream_flags & RPB_s_update) ? LCK_write : LCK_read;
 
 #ifdef VIO_DEBUG
+	jrd_rel* relation = rpb->rpb_relation;
 	VIO_trace(DEBUG_TRACE,
-		"VIO_next_record (record_param %" QUADFORMAT"d, transaction %" SQUADFORMAT", pool %p)\n",
-		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
+		"VIO_next_record (rel_id %u, record_param %" QUADFORMAT"d, transaction %" SQUADFORMAT", pool %p)\n",
+		relation->rel_id, rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
 		(void*) pool);
 
 	VIO_trace(DEBUG_TRACE_INFO,
@@ -3308,9 +3313,10 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format, Mem
 	SET_TDBB(tdbb);
 
 #ifdef VIO_DEBUG
+	jrd_rel* relation = rpb->rpb_relation;
 	VIO_trace(DEBUG_TRACE,
-		"VIO_record (record_param %" QUADFORMAT"d, format %d, pool %p)\n",
-		rpb->rpb_number.getValue(), format ? format->fmt_version : 0,
+		"VIO_record (rel_id %u, record_param %" QUADFORMAT"d, format %d, pool %p)\n",
+		relation->rel_id, rpb->rpb_number.getValue(), format ? format->fmt_version : 0,
 		(void*) pool);
 #endif
 
@@ -3350,9 +3356,10 @@ bool VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction
  *
  **************************************/
 #ifdef VIO_DEBUG
+	jrd_rel* relation = rpb->rpb_relation;
 	VIO_trace(DEBUG_READS,
-		"VIO_refetch_record (record_param %" QUADFORMAT"d, transaction %" SQUADFORMAT")\n",
-		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
+		"VIO_refetch_record (rel_id %u, record_param %" QUADFORMAT"d, transaction %" SQUADFORMAT")\n",
+		relation->rel_id, rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
 #endif
 
 	const TraNumber tid_fetch = rpb->rpb_transaction_nr;
@@ -3418,6 +3425,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
  **************************************/
 	SET_TDBB(tdbb);
 	jrd_req* const request = tdbb->getRequest();
+	jrd_rel* relation = rpb->rpb_relation;
 
 	DeferredWork* work = NULL;
 	MetaName package_name;
@@ -3426,13 +3434,12 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"VIO_store (record_param %" QUADFORMAT"d, transaction %" SQUADFORMAT
-		")\n", rpb->rpb_number.getValue(),
+		"VIO_store (rel_id %u, record_param %" QUADFORMAT"d, transaction %" SQUADFORMAT
+		")\n", relation->rel_id, rpb->rpb_number.getValue(),
 		transaction ? transaction->tra_number : 0);
 #endif
 
 	transaction->tra_flags |= TRA_write;
-	jrd_rel* relation = rpb->rpb_relation;
 	DSC desc, desc2;
 
 	check_gbak_cheating_insupd(tdbb, relation, "INSERT");
@@ -3785,11 +3792,11 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
-			"   record  %" SLONGFORMAT":%d, rpb_trans %" SQUADFORMAT
-			", flags %d, back %" SLONGFORMAT":%d, fragment %" SLONGFORMAT":%d\n",
-			rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
-			rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
-			rpb->rpb_f_page, rpb->rpb_f_line);
+		"   record  %" SLONGFORMAT":%d, rpb_trans %" SQUADFORMAT
+		", flags %d, back %" SLONGFORMAT":%d, fragment %" SLONGFORMAT":%d\n",
+		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
+		rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
+		rpb->rpb_f_page, rpb->rpb_f_line);
 #endif
 
 	if (!(transaction->tra_flags & TRA_system) &&
@@ -3932,10 +3939,11 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
  **************************************/
 	SET_TDBB(tdbb);
 
+	jrd_rel* const relation = org_rpb->rpb_relation;
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"VIO_writelock (org_rpb %" QUADFORMAT"d, transaction %" SQUADFORMAT")\n",
-		org_rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
+		"VIO_writelock (rel_id %u, org_rpb %" QUADFORMAT"d, transaction %" SQUADFORMAT")\n",
+		relation->rel_id, org_rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
 
 	VIO_trace(DEBUG_WRITES_INFO,
 		"   old record  %" SLONGFORMAT":%d, rpb_trans %" SQUADFORMAT
@@ -3976,8 +3984,6 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 		org_rpb->rpb_length = org_format->fmt_length;
 		org_rpb->rpb_format_number = org_format->fmt_version;
 	}
-
-	jrd_rel* const relation = org_rpb->rpb_relation;
 
 	// Set up the descriptor for the new record version. Initially,
 	// it points to the same record data as the original one.
@@ -4302,9 +4308,10 @@ static void delete_record(thread_db* tdbb, record_param* rpb, ULONG prior_page, 
 	SET_TDBB(tdbb);
 
 #ifdef VIO_DEBUG
+	jrd_rel* relation = rpb->rpb_relation;
 	VIO_trace(DEBUG_WRITES,
-		"delete_record (record_param %" QUADFORMAT"d, prior_page %" SLONGFORMAT", pool %p)\n",
-		rpb->rpb_number.getValue(), prior_page, (void*) pool);
+		"delete_record (rel_id %u, record_param %" QUADFORMAT"d, prior_page %" SLONGFORMAT", pool %p)\n",
+		relation->rel_id, rpb->rpb_number.getValue(), prior_page, (void*)pool);
 
 	VIO_trace(DEBUG_WRITES_INFO,
 		"   delete_record record  %" SLONGFORMAT":%d, rpb_trans %" SQUADFORMAT
@@ -4379,9 +4386,10 @@ static UCHAR* delete_tail(thread_db* tdbb,
 	SET_TDBB(tdbb);
 
 #ifdef VIO_DEBUG
+	jrd_rel* relation = rpb->rpb_relation;
 	VIO_trace(DEBUG_WRITES,
-		"delete_tail (record_param %" QUADFORMAT"d, prior_page %" SLONGFORMAT", tail %p, tail_end %p)\n",
-		rpb->rpb_number.getValue(), prior_page, tail, tail_end);
+		"delete_tail (rel_id %u, record_param %" QUADFORMAT"d, prior_page %" SLONGFORMAT", tail %p, tail_end %p)\n",
+		relation->rel_id, rpb->rpb_number.getValue(), prior_page, tail, tail_end);
 
 	VIO_trace(DEBUG_WRITES_INFO,
 		"   tail of record  %" SLONGFORMAT":%d, rpb_trans %" SQUADFORMAT
@@ -4467,10 +4475,11 @@ static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transacti
 	fb_assert(assert_gc_enabled(transaction, rpb->rpb_relation));
 
 #ifdef VIO_DEBUG
+	jrd_rel* relation = rpb->rpb_relation;
 	VIO_trace(DEBUG_WRITES,
-		"expunge (record_param %" QUADFORMAT"d, transaction %" SQUADFORMAT
+		"expunge (rel_id %u, record_param %" QUADFORMAT"d, transaction %" SQUADFORMAT
 		", prior_page %" SLONGFORMAT")\n",
-		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
+		relation->rel_id, rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
 		prior_page);
 #endif
 
@@ -4552,9 +4561,10 @@ static void garbage_collect(thread_db* tdbb, record_param* rpb, ULONG prior_page
 	SET_TDBB(tdbb);
 
 #ifdef VIO_DEBUG
+	jrd_rel* relation = rpb->rpb_relation;
 	VIO_trace(DEBUG_WRITES,
-		"garbage_collect (record_param %" QUADFORMAT"d, prior_page %" SLONGFORMAT", staying)\n",
-		rpb->rpb_number.getValue(), prior_page);
+		"garbage_collect (rel_id %u, record_param %" QUADFORMAT"d, prior_page %" SLONGFORMAT", staying)\n",
+		relation->rel_id, rpb->rpb_number.getValue(), prior_page);
 
 	VIO_trace(DEBUG_WRITES_INFO,
 		"   record  %" SLONGFORMAT":%d, rpb_trans %" SQUADFORMAT
@@ -5429,12 +5439,13 @@ static int prepare_update(	thread_db*		tdbb,
 	SET_TDBB(tdbb);
 
 	Attachment* const attachment = tdbb->getAttachment();
+	jrd_rel* const relation = rpb->rpb_relation;
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE_ALL,
-		"prepare_update (transaction %" SQUADFORMAT
+		"prepare_update (rel_id %u, transaction %" SQUADFORMAT
 		", commit_tid read %" SQUADFORMAT", record_param %" QUADFORMAT"d, ",
-		transaction ? transaction->tra_number : 0, commit_tid_read,
+		relation->rel_id, transaction ? transaction->tra_number : 0, commit_tid_read,
 		rpb ? rpb->rpb_number.getValue() : 0);
 
 	VIO_trace(DEBUG_TRACE_ALL,
@@ -5467,8 +5478,6 @@ static int prepare_update(	thread_db*		tdbb,
 	the update can take place.  If some other transaction has modified
 	the record and committed, then an update error will be returned.
    */
-
-	jrd_rel* const relation = rpb->rpb_relation;
 
 	*temp = *rpb;
 	Record* const record = rpb->rpb_record;
@@ -5845,9 +5854,11 @@ static void purge(thread_db* tdbb, record_param* rpb)
 
 	fb_assert(assert_gc_enabled(tdbb->getTransaction(), rpb->rpb_relation));
 
+	jrd_rel* const relation = rpb->rpb_relation;
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE_ALL,
-		"purge (record_param %" QUADFORMAT"d)\n", rpb->rpb_number.getValue());
+		"purge (rel_id %u, record_param %" QUADFORMAT"d)\n",
+		relation->rel_id, rpb->rpb_number.getValue());
 
 	VIO_trace(DEBUG_TRACE_ALL_INFO,
 		"   record  %" SLONGFORMAT":%d, rpb_trans %" SQUADFORMAT
@@ -5862,7 +5873,6 @@ static void purge(thread_db* tdbb, record_param* rpb)
 	// the record.
 
 	record_param temp = *rpb;
-	jrd_rel* const relation = rpb->rpb_relation;
 	AutoGCRecord gc_rec(VIO_gc_record(tdbb, relation));
 	Record* record = rpb->rpb_record = gc_rec;
 
@@ -5924,9 +5934,10 @@ static void replace_record(thread_db*		tdbb,
 	SET_TDBB(tdbb);
 
 #ifdef VIO_DEBUG
+	jrd_rel* relation = rpb->rpb_relation;
 	VIO_trace(DEBUG_TRACE_ALL,
-		"replace_record (record_param %" QUADFORMAT"d, transaction %" SQUADFORMAT")\n",
-		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
+		"replace_record (rel_id %u, record_param %" QUADFORMAT"d, transaction %" SQUADFORMAT")\n",
+		relation->rel_id, rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
 
 	VIO_trace(DEBUG_TRACE_ALL_INFO,
 		"   record  %" SLONGFORMAT":%d, rpb_trans %" SQUADFORMAT
@@ -6018,7 +6029,7 @@ static void refresh_fk_fields(thread_db* tdbb, Record* old_rec, record_param* cu
 		// If field was not changed by user - pick up possible modification by
 		// system cascade trigger
 		if (flag_old == flag_new &&
-			(!flag_old || flag_old && MOV_compare(tdbb, &desc1, &desc2) == 0))
+			(!flag_old || (flag_old && MOV_compare(tdbb, &desc1, &desc2) == 0)))
 		{
 			const bool flag_tmp = EVL_field(relation, cur_rpb->rpb_record, fld, &desc1);
 			if (flag_tmp)
@@ -6161,11 +6172,12 @@ void VIO_update_in_place(thread_db* tdbb,
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
+	jrd_rel* const relation = org_rpb->rpb_relation;
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE_ALL,
-		"update_in_place (transaction %" SQUADFORMAT", org_rpb %" QUADFORMAT"d, "
+		"update_in_place (rel_id %u, transaction %" SQUADFORMAT", org_rpb %" QUADFORMAT"d, "
 		"new_rpb %" QUADFORMAT"d)\n",
-		transaction ? transaction->tra_number : 0, org_rpb->rpb_number.getValue(),
+		relation->rel_id, transaction ? transaction->tra_number : 0, org_rpb->rpb_number.getValue(),
 		new_rpb ? new_rpb->rpb_number.getValue() : 0);
 
 	VIO_trace(DEBUG_TRACE_ALL_INFO,
@@ -6186,7 +6198,6 @@ void VIO_update_in_place(thread_db* tdbb,
 		stack = &org_rpb->rpb_record->getPrecedence();
 	}
 
-	jrd_rel* const relation = org_rpb->rpb_relation;
 	Record* const old_data = org_rpb->rpb_record;
 
 	// If the old version has been stored as a delta, things get complicated.  Clearly,

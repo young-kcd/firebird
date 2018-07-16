@@ -4188,6 +4188,8 @@ void JProvider::shutdown(CheckStatusWrapper* status, unsigned int timeout, const
 
 		ThreadContextHolder tdbb;
 
+		EDS::Manager::shutdown();
+
 		ULONG attach_count, database_count, svc_count;
 		JRD_enum_attachments(NULL, attach_count, database_count, svc_count);
 
@@ -5542,9 +5544,10 @@ JBatch* JStatement::createBatch(Firebird::CheckStatusWrapper* status, Firebird::
 
 			DsqlBatch* const b = DsqlBatch::open(tdbb, getHandle(), inMetadata, parLength, par);
 
-			batch = FB_NEW JBatch(b, this);
+			batch = FB_NEW JBatch(b, this, inMetadata);
 			batch->addRef();
 			b->setInterfacePtr(batch);
+			tdbb->getAttachment()->registerBatch(batch);
 		}
 		catch (const Exception& ex)
 		{
@@ -5565,9 +5568,10 @@ JBatch* JStatement::createBatch(Firebird::CheckStatusWrapper* status, Firebird::
 }
 
 
-JBatch::JBatch(DsqlBatch* handle, JStatement* aStatement)
+JBatch::JBatch(DsqlBatch* handle, JStatement* aStatement, IMessageMetadata* aMetadata)
 	: batch(handle),
-	  statement(aStatement)
+	  statement(aStatement),
+	  m_meta(aMetadata)
 { }
 
 
@@ -5583,10 +5587,44 @@ int JBatch::release()
 		return 1;
 
 	if (batch)
-		delete batch;
+	{
+		LocalStatus status;
+		CheckStatusWrapper statusWrapper(&status);
+
+		freeEngineData(&statusWrapper);
+	}
 
 	delete this;
 	return 0;
+}
+
+void JBatch::freeEngineData(Firebird::CheckStatusWrapper* user_status)
+{
+	try
+	{
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			Attachment* att = getAttachment()->getHandle();
+			if (att)
+				att->deregisterBatch(this);
+			delete batch;
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, user_status, FB_FUNCTION);
+			return;
+		}
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return;
+	}
+
+	successful_completion(user_status);
 }
 
 
@@ -7599,7 +7637,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 	try
 	{
 		// allow to free resources used by dynamic statements
-		EDS::Manager::jrdAttachmentEnd(tdbb, attachment);
+		EDS::Manager::jrdAttachmentEnd(tdbb, attachment, forcedPurge);
 
 		if (!(dbb->dbb_flags & DBB_bugcheck))
 		{
@@ -8020,9 +8058,6 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 
 	try
 	{
-		// Shutdown external datasets manager
-		EDS::Manager::shutdown();
-
 		{ // scope
 			MutexLockGuard guard(databases_mutex, FB_FUNCTION);
 
@@ -8631,6 +8666,38 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
 }
 
 
+void JRD_run_trans_start_triggers(thread_db* tdbb, jrd_tra* transaction)
+{
+	/**************************************
+	*
+	*  Run TRIGGER_TRANS_START, rollback transaction on failure.
+	*  Handle rollback error, re-throw trigger error
+	*
+	**************************************/
+
+	try
+	{
+		EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_START);
+	}
+	catch (const Exception&)
+	{
+		try
+		{
+			TRA_rollback(tdbb, transaction, false, false);
+		}
+		catch (const Exception& ex2)
+		{
+			if (tdbb->getDatabase()->dbb_flags & DBB_bugcheck)
+				throw;
+
+			iscLogException("Error rolling back new transaction", ex2);
+		}
+
+		throw;
+	}
+}
+
+
 static void start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
 	Jrd::Attachment* attachment, unsigned int tpb_length, const UCHAR* tpb)
 {
@@ -8659,10 +8726,10 @@ static void start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra
 
 			jrd_tra* transaction = TRA_start(tdbb, tpb_length, tpb);
 
-			*tra_handle = transaction;
-
 			// run ON TRANSACTION START triggers
-			EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_START);
+			JRD_run_trans_start_triggers(tdbb, transaction);
+
+			*tra_handle = transaction;
 		}
 		catch (const Exception& ex)
 		{

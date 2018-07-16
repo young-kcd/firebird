@@ -3529,7 +3529,7 @@ static bool check_date(const tm& times)
 		return false;
 	if (m < 1 || m > 12)
 		return false;
-	const bool leap = y % 4 == 0 && y % 100 != 0 || y % 400 == 0;
+	const bool leap = (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;
 	const int days[] = {0, 31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 	if (d < 1 || d > days[m])
 		return false;
@@ -5267,7 +5267,7 @@ static processing_state get_statement(Firebird::string& statement,
 	TEXT con_prompt[MSG_LENGTH];
 	IUTILS_msg_get(CON_PROMPT, con_prompt);
 
-	if (Interactive && !Input_file || setValues.Echo) {
+	if ((Interactive && !Input_file) || setValues.Echo) {
 		ISQL_prompt(statement_prompt);
 	}
 
@@ -5334,7 +5334,7 @@ static processing_state get_statement(Firebird::string& statement,
 
 			Filelist->removeIntoIfp();
 
-			if (Interactive && !Input_file || setValues.Echo)
+			if ((Interactive && !Input_file) || setValues.Echo)
 				ISQL_prompt(statement_prompt);
 
 			// CVC: Let's detect if we went back to the first level.
@@ -5365,7 +5365,7 @@ static processing_state get_statement(Firebird::string& statement,
 			}
 
 			// If in a comment, keep reading
-			if (Interactive && !Input_file || setValues.Echo)
+			if ((Interactive && !Input_file) || setValues.Echo)
 			{
 				if (state == in_block_comment)
 				{
@@ -6221,15 +6221,15 @@ static processing_state newdb(TEXT* dbname,
 	}
 
     FB_SIZE_T l;
-	if (l = fb_strlen(local_usr)) {
+	if ((l = fb_strlen(local_usr))) {
 		dpb.insertString(isc_dpb_user_name, local_usr, l);
 	}
 
-	if (l = fb_strlen(local_psw)) {
+	if ((l = fb_strlen(local_psw))) {
 		dpb.insertString(isc_dpb_password, local_psw, l);
 	}
 
-	if (l = fb_strlen(local_sql_role))
+	if ((l = fb_strlen(local_sql_role)))
 	{
 		dpb.insertInt(isc_dpb_sql_dialect, isqlGlob.SQL_dialect);
 		dpb.insertString(isc_dpb_sql_role_name, local_sql_role, l);
@@ -6860,6 +6860,8 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 						case fb_utils::FETCH_PASS_FILE_EMPTY:
 							IUTILS_msg_get(EMPTY_PASS, errbuf, SafeArg() << swarg_str);
 							// empty password file @1
+							break;
+						default:
 							break;
 						}
 						STDERROUT(errbuf);
@@ -8564,8 +8566,8 @@ static processing_state process_statement(const TEXT* str2)
 			// command-line ISQL only.
 
 			if (printHead &&
-				(Pagelength && (lines % Pagelength == 0) ||
-				 !Pagelength && !lines) )
+				((Pagelength && (lines % Pagelength == 0)) ||
+				 (!Pagelength && !lines)))
 			{
 				isqlGlob.printf("%s%s%s%s%s",
 								NEWLINE,

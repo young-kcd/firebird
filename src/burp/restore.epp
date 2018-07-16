@@ -3155,7 +3155,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 		pb->insertInt(&tdgbl->throwStatus, Firebird::IBatch::TAG_DETAILED_ERRORS, GBAK_BATCH_STEP);
 		pb->insertInt(&tdgbl->throwStatus, Firebird::IBatch::TAG_BUFFER_BYTES_SIZE, 0);
 
-		Firebird::RefPtr<Firebird::IBatch> batch(DB->
+		Firebird::RefPtr<Firebird::IBatch> batch(Firebird::REF_NO_INCR, DB->
 			createBatch(fbStatus, gds_trans, sqlStatement.length(), sqlStatement.c_str(), tdgbl->gbl_dialect,
 				meta, pb->getBufferLength(&tdgbl->throwStatus), pb->getBuffer(&tdgbl->throwStatus)));
 		if (fbStatus->hasData())

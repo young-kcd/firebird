@@ -191,11 +191,11 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_INTEGER,		"MaxUserTraceLogSize",		(ConfigValue) 10},		// maximum size of user session trace log
 	{TYPE_INTEGER,		"FileSystemCacheSize",		(ConfigValue) 0},		// percent
 	{TYPE_STRING,		"Providers",				(ConfigValue) "Remote, " CURRENT_ENGINE ", Loopback"},
-	{TYPE_STRING,		"AuthServer",				(ConfigValue) "Srp"},
+	{TYPE_STRING,		"AuthServer",				(ConfigValue) "Srp256"},
 #ifdef WIN_NT
-	{TYPE_STRING,		"AuthClient",				(ConfigValue) "Srp, Win_Sspi, Legacy_Auth"},
+	{TYPE_STRING,		"AuthClient",				(ConfigValue) "Srp256, Srp, Win_Sspi, Legacy_Auth"},
 #else
-	{TYPE_STRING,		"AuthClient",				(ConfigValue) "Srp, Legacy_Auth"},
+	{TYPE_STRING,		"AuthClient",				(ConfigValue) "Srp256, Srp, Legacy_Auth"},
 #endif
 	{TYPE_STRING,		"UserManager",				(ConfigValue) "Srp"},
 	{TYPE_STRING,		"TracePlugin",				(ConfigValue) "fbtrace"},
@@ -222,6 +222,8 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_STRING,		"OutputRedirectionFile", 	(ConfigValue) "/dev/null"},
 #endif
 #endif
+	{TYPE_INTEGER,		"ExtConnPoolSize",			(ConfigValue) 0},
+	{TYPE_INTEGER,		"ExtConnPoolLifeTime",		(ConfigValue) 7200},
 	{TYPE_INTEGER,		"SnapshotsMemSize",			(ConfigValue) 65536}, // bytes
 	{TYPE_INTEGER,		"TpcBlockSize",				(ConfigValue) 4194304}, // bytes
 	{TYPE_BOOLEAN,		"ReadConsistency",			(ConfigValue) true}
@@ -885,6 +887,16 @@ const char* Config::getOutputRedirectionFile()
 {
 	const char* file = (const char*) (getDefaultConfig()->values[KEY_OUTPUT_REDIRECTION_FILE]);
 	return file;
+}
+
+int Config::getExtConnPoolSize()
+{
+	return getDefaultConfig()->get<int>(KEY_EXT_CONN_POOL_SIZE);
+}
+
+int Config::getExtConnPoolLifeTime()
+{
+	return getDefaultConfig()->get<int>(KEY_EXT_CONN_POOL_LIFETIME);
 }
 
 bool Config::getReadConsistency() const

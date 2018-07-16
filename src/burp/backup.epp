@@ -830,7 +830,7 @@ SINT64 get_gen_id( const TEXT* name, SSHORT name_len)
 		sql = "select first(1) gen_id(" + nm + ", 0) from rdb$database";
 
 		BurpSql getGenerator(tdgbl, sql.c_str());
-		FB_MESSAGE(GetGen, Firebird::ThrowStatusWrapper, (FB_BIGINT, id));
+		FB_MESSAGE(GetGen, Firebird::ThrowWrapper, (FB_BIGINT, id));
 		GetGen getGen(&tdgbl->throwStatus, Firebird::MasterInterfacePtr());
 
 		getGenerator.singleSelect(tdgbl->tr_handle, &getGen);
@@ -2562,7 +2562,7 @@ void write_database( const TEXT* dbb_file)
 		// msg 31 isc_database_info failed
 	}
 
-	USHORT page_size = 0, forced_writes, no_reserve, SQL_dialect, db_read_only;
+	USHORT page_size = 0, forced_writes, no_reserve, db_read_only;
  	ULONG sweep_interval, page_buffers;
  	USHORT length = 0;
 	for (const UCHAR* d = buffer; *d != isc_info_end; d += length)
@@ -2604,8 +2604,8 @@ void write_database( const TEXT* dbb_file)
 			break;				// parameter and returns isc_info_error. skip it
 
 		case isc_info_db_sql_dialect:
-			SQL_dialect = (USHORT) gds__vax_integer(d, length);
-			put_int32(att_SQL_dialect, SQL_dialect);
+			tdgbl->gbl_dialect = (USHORT) gds__vax_integer(d, length);
+			put_int32(att_SQL_dialect, tdgbl->gbl_dialect);
 			break;
 
 		case isc_info_db_read_only:

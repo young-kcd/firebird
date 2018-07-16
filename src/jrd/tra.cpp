@@ -929,13 +929,13 @@ void TRA_update_counters(thread_db* tdbb, Database* dbb)
 	{
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 
-		if (dbb->dbb_oldest_active > header->hdr_oldest_active)
+		if (dbb->dbb_oldest_active > oldest_active)
 			Ods::writeOAT(header, dbb->dbb_oldest_active);
 
-		if (dbb->dbb_oldest_transaction > header->hdr_oldest_transaction)
+		if (dbb->dbb_oldest_transaction > oldest_transaction)
 			Ods::writeOIT(header, dbb->dbb_oldest_transaction);
 
-		if (dbb->dbb_oldest_snapshot > header->hdr_oldest_snapshot)
+		if (dbb->dbb_oldest_snapshot > oldest_snapshot)
 			Ods::writeOST(header, dbb->dbb_oldest_snapshot);
 
 		if (dbb->dbb_next_transaction > next_transaction)

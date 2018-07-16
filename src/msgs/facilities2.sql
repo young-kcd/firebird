@@ -1,12 +1,12 @@
 /* MAX_NUMBER is the next number to be used, always one more than the highest message number. */
 set bulk_insert INSERT INTO FACILITIES (LAST_CHANGE, FACILITY, FAC_CODE, MAX_NUMBER) VALUES (?, ?, ?, ?);
 --
-('2018-05-05 16:40:00', 'JRD', 0, 886)
+('2018-06-06 11:00:00', 'JRD', 0, 890)
 ('2015-03-17 18:33:00', 'QLI', 1, 533)
 ('2015-01-07 18:01:51', 'GFIX', 3, 134)
 ('1996-11-07 13:39:40', 'GPRE', 4, 1)
 ('2017-02-05 20:37:00', 'DSQL', 7, 41)
-('2018-01-15 00:15:00', 'DYN', 8, 299)
+('2018-01-15 00:15:00', 'DYN', 8, 309)
 ('1996-11-07 13:39:40', 'INSTALL', 10, 1)
 ('1996-11-07 13:38:41', 'TEST', 11, 4)
 ('2018-04-26 20:40:00', 'GBAK', 12, 387)

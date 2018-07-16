@@ -332,6 +332,7 @@ public:
 	ThreadId att_purge_tid;					// ID of thread running purge_attachment()
 
 	EDS::Connection* att_ext_connection;	// external connection executed by this attachment
+	EDS::Connection* att_ext_parent;		// external connection, parent of this attachment
 	ULONG att_ext_call_depth;				// external connection call depth, 0 for user attachment
 	TraceManager* att_trace_manager;		// Trace API manager
 
@@ -408,7 +409,7 @@ public:
 
 
 	void releaseGTTs(thread_db* tdbb);
-	void resetSession(thread_db* tdbb);
+	void resetSession(thread_db* tdbb, jrd_tra** traHandle);
 
 	void signalCancel();
 	void signalShutdown(ISC_STATUS code);
@@ -460,6 +461,16 @@ public:
 	// returns time when idle timer will be expired, if set
 	bool getIdleTimerTimestamp(Firebird::TimeStamp& ts) const;
 
+	// batches control
+	void registerBatch(JBatch* b)
+	{
+		att_batches.add(b);
+	}
+	void deregisterBatch(JBatch* b)
+	{
+		att_batches.findAndRemove(b);
+	}
+
 private:
 	Attachment(MemoryPool* pool, Database* dbb);
 	~Attachment();
@@ -495,6 +506,8 @@ private:
 	unsigned int att_idle_timeout;		// seconds
 	unsigned int att_stmt_timeout;		// milliseconds
 	Firebird::RefPtr<IdleTimer> att_idle_timer;
+
+	Firebird::Array<JBatch*> att_batches;
 };
 
 

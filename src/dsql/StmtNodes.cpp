@@ -1543,7 +1543,7 @@ DeclareSubFuncNode* DeclareSubFuncNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	dsqlFunction->udf_scale = returnType->scale;
 	dsqlFunction->udf_sub_type = returnType->subType;
 	dsqlFunction->udf_length = returnType->length;
-	dsqlFunction->udf_character_set_id = returnType->charSetId;
+	dsqlFunction->udf_character_set_id = returnType->charSetId.value;
 
 	if (dsqlDeterministic)
 		dsqlSignature.flags |= Signature::FLAG_DETERMINISTIC;
@@ -3826,17 +3826,23 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 		TRA_attach_request(transaction, request);
 		tdbb->setTransaction(transaction);
 
+		try
+		{
+			// run ON TRANSACTION START triggers
+			JRD_run_trans_start_triggers(tdbb, transaction);
+		}
+		catch (Exception&)
+		{
+			TRA_attach_request(org_transaction, request);
+			tdbb->setTransaction(org_transaction);
+			throw;
+		}
+
 		request->req_auto_trans.push(org_transaction);
 		impure->traNumber = transaction->tra_number;
 
 		const Savepoint* const savepoint = transaction->startSavepoint();
 		impure->savNumber = savepoint->getNumber();
-
-		if (!(attachment->att_flags & ATT_no_db_triggers))
-		{
-			// run ON TRANSACTION START triggers
-			EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_START);
-		}
 
 		return action;
 	}
@@ -6535,7 +6541,7 @@ const StmtNode* ReceiveNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeS
 	switch (request->req_operation)
 	{
 		case jrd_req::req_return:
-			if (!(request->req_batch && batchFlag))
+			if (!(request->req_batch_mode && batchFlag))
 				break;
 			// fall into
 
@@ -8094,18 +8100,18 @@ void SetTransactionNode::genTableLock(DsqlCompilerScratch* dsqlScratch,
 //--------------------
 
 
-void SessionResetNode::execute(thread_db* tdbb, dsql_req* request) const
+void SessionResetNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** traHandle) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
-	attachment->resetSession(tdbb);
+	attachment->resetSession(tdbb, traHandle);
 }
 
 
 //--------------------
 
 
-void SetRoleNode::execute(thread_db* tdbb, dsql_req* request) const
+void SetRoleNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -8201,7 +8207,7 @@ SetRoundNode::SetRoundNode(MemoryPool& pool, Firebird::MetaName* name)
 	rndMode = mode->val;
 }
 
-void SetRoundNode::execute(thread_db* tdbb, dsql_req* /*request*/) const
+void SetRoundNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -8221,7 +8227,7 @@ void SetTrapsNode::trap(Firebird::MetaName* name)
 	traps |= trap->val;
 }
 
-void SetTrapsNode::execute(thread_db* tdbb, dsql_req* /*request*/) const
+void SetTrapsNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -8232,7 +8238,7 @@ void SetTrapsNode::execute(thread_db* tdbb, dsql_req* /*request*/) const
 //--------------------
 
 
-void SetBindNode::execute(thread_db* tdbb, dsql_req* /*request*/) const
+void SetBindNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -8291,7 +8297,7 @@ string SetSessionNode::internalPrint(NodePrinter& printer) const
 	return "SetSessionNode";
 }
 
-void SetSessionNode::execute(thread_db* tdbb, dsql_req* request) const
+void SetSessionNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** /*traHandle*/) const
 {
 	Attachment* att = tdbb->getAttachment();
 
@@ -9622,8 +9628,7 @@ static void preprocessAssignments(thread_db* tdbb, CompilerScratch* csb,
 			while (true)
 			{
 				if (assignToField->fieldStream == stream &&
-					relation->rel_fields &&
-					(fld = (*relation->rel_fields)[fieldId]))
+					(fld = MET_get_field(relation, fieldId)))
 				{
 					if (insertOverride && fld->fld_identity_type.specified)
 					{

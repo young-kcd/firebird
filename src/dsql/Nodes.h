@@ -303,7 +303,7 @@ public:
 		return this;
 	}
 
-	virtual void execute(thread_db* tdbb, dsql_req* request) const = 0;
+	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** traHandle) const = 0;
 };
 
 

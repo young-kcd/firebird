@@ -631,6 +631,13 @@ using namespace Firebird;
 %token <metaNamePtr> WINDOW
 %token <metaNamePtr> CONSISTENCY
 
+// external connections pool management
+%token <metaNamePtr> CONNECTIONS
+%token <metaNamePtr> POOL
+%token <metaNamePtr> LIFETIME
+%token <metaNamePtr> CLEAR
+%token <metaNamePtr> OLDEST
+
 // precedence declarations for expression evaluation
 
 %left	OR
@@ -1972,6 +1979,29 @@ alter_charset_clause
 	: symbol_character_set_name SET DEFAULT COLLATION symbol_collation_name
 		{ $$ = newNode<AlterCharSetNode>(*$1, *$5); }
 	;
+
+// 
+%type <ddlNode> alter_eds_conn_pool_clause
+alter_eds_conn_pool_clause 
+	: SET SIZE unsigned_short_integer 
+		{ $$ = newNode<AlterEDSPoolSetNode>(AlterEDSPoolSetNode::POOL_SIZE, $3); }
+	| SET LIFETIME unsigned_short_integer eds_pool_lifetime_mult
+		{ $$ = newNode<AlterEDSPoolSetNode>(AlterEDSPoolSetNode::POOL_LIFETIME, $3 * $4); }
+	| CLEAR sql_string
+		{ $$ = newNode<AlterEDSPoolClearNode>(AlterEDSPoolClearNode::POOL_DB, $2->getString()); }
+	| CLEAR ALL
+		{ $$ = newNode<AlterEDSPoolClearNode>(AlterEDSPoolClearNode::POOL_ALL); }
+	| CLEAR OLDEST
+		{ $$ = newNode<AlterEDSPoolClearNode>(AlterEDSPoolClearNode::POOL_OLDEST); }
+	;
+
+%type <intVal> eds_pool_lifetime_mult
+eds_pool_lifetime_mult :
+		  HOUR		{ $$ = 3600; }
+		| MINUTE	{ $$ = 60; }
+		| SECOND	{ $$ = 1; }
+		;
+
 
 // CREATE DATABASE
 // ASF: CREATE DATABASE command is divided in three pieces: name, initial options and
@@ -3874,6 +3904,7 @@ alter_clause
 	| SEQUENCE alter_sequence_clause		{ $$ = $2; }
 	| MAPPING alter_map_clause(false)		{ $$ = $2; }
 	| GLOBAL MAPPING alter_map_clause(true)	{ $$ = $3; }
+	| EXTERNAL CONNECTIONS POOL alter_eds_conn_pool_clause	{ $$ = $4; }
 	;
 
 %type <alterDomainNode> alter_domain
@@ -8528,6 +8559,11 @@ non_reserved_word
 	| TIES
 	| TOTALORDER
 	| TRAPS
+	| CONNECTIONS		// external connections pool management
+	| POOL
+	| LIFETIME
+	| CLEAR
+	| OLDEST
 	| CONSISTENCY
 	;
 
