@@ -63,7 +63,7 @@ to gds_$compile_request matches the BLR string.  If you
 receive this error while using GDML or SQL, please submit
 a bug report.', 'The actual length of a buffer does not correspond to what
 the request language says it should be.');
-('read_only_field', NULL, NULL, NULL, 0, 39, NULL, 'attempted update of read-only column', 'If the read-only field is in a system relation, change your
+('read_only_field', NULL, NULL, NULL, 0, 39, NULL, 'attempted update of read-only column @1', 'If the read-only field is in a system relation, change your
 program.  If the field is a COMPUTED field, you have to
 change the source fields to change its value.  If the field
 takes part in a view, update it in its source relations.', 'Your program tried to change the value of a read-only

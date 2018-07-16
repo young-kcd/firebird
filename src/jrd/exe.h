@@ -458,6 +458,7 @@ public:
 		subProcedures(p),
 		csb_currentForNode(NULL),
 		csb_currentDMLNode(NULL),
+		csb_currentAssignTarget(NULL),
 		csb_rpt(p)
 	{
 		csb_dbg_info = FB_NEW_POOL(p) Firebird::DbgInfo(p);
@@ -538,6 +539,7 @@ public:
 
 	ForNode*	csb_currentForNode;
 	StmtNode*	csb_currentDMLNode;	// could be StoreNode or ModifyNode
+	ExprNode*	csb_currentAssignTarget;
 
 	struct csb_repeat
 	{

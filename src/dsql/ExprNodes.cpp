@@ -6237,6 +6237,14 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	// See CORE-5097.
 	if (field->fld_computation && !relation->rel_view_rse)
 	{
+		if (csb->csb_currentAssignTarget == this)
+		{
+			// This is an assignment to a computed column. Report the error here when we have the field name.
+			ERR_post(
+				Arg::Gds(isc_read_only_field) <<
+				(string(relation->rel_name.c_str()) + "." + field->fld_name.c_str()));
+		}
+
 		FB_SIZE_T pos;
 
 		if (csb->csb_computing_fields.find(field, pos))

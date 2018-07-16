@@ -59,7 +59,7 @@ static const struct {
 	{335544356, "metadata is obsolete"},		/* obsolete_metadata */
 	{335544357, "cannot disconnect database with open transactions (@1 active)"},		/* open_trans */
 	{335544358, "message length error (encountered @1, expected @2)"},		/* port_len */
-	{335544359, "attempted update of read-only column"},		/* read_only_field */
+	{335544359, "attempted update of read-only column @1"},		/* read_only_field */
 	{335544360, "attempted update of read-only table"},		/* read_only_rel */
 	{335544361, "attempted update during read-only transaction"},		/* read_only_trans */
 	{335544362, "cannot update read-only view @1"},		/* read_only_view */

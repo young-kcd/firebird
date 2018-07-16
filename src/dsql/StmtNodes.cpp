@@ -294,25 +294,30 @@ void AssignmentNode::validateTarget(CompilerScratch* csb, const ValueExprNode* t
 	if ((fieldNode = nodeAs<FieldNode>(target)))
 	{
 		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[fieldNode->fieldStream];
+		jrd_fld* field = MET_get_field(tail->csb_relation, fieldNode->fieldId);
+		string fieldName(field ? field->fld_name.c_str() : "<unknown>");
+
+		if (field && tail->csb_relation)
+			fieldName = string(tail->csb_relation->rel_name.c_str()) + "." + fieldName;
 
 		// Assignments to the OLD context are prohibited for all trigger types.
 		if ((tail->csb_flags & csb_trigger) && fieldNode->fieldStream == OLD_CONTEXT_VALUE)
-			ERR_post(Arg::Gds(isc_read_only_field));
+			ERR_post(Arg::Gds(isc_read_only_field) << fieldName.c_str());
 
 		// Assignments to the NEW context are prohibited for post-action triggers.
 		if ((tail->csb_flags & csb_trigger) && fieldNode->fieldStream == NEW_CONTEXT_VALUE &&
 			(csb->csb_g_flags & csb_post_trigger))
 		{
-			ERR_post(Arg::Gds(isc_read_only_field));
+			ERR_post(Arg::Gds(isc_read_only_field) << fieldName.c_str());
 		}
 
 		// Assignment to cursor fields are always prohibited.
 		// But we cannot detect FOR cursors here. They are treated in dsqlPass.
 		if (fieldNode->cursorNumber.specified)
-			ERR_post(Arg::Gds(isc_read_only_field));
+			ERR_post(Arg::Gds(isc_read_only_field) << fieldName.c_str());
 	}
 	else if (!(nodeIs<ParameterNode>(target) || nodeIs<VariableNode>(target) || nodeIs<NullNode>(target)))
-		ERR_post(Arg::Gds(isc_read_only_field));
+		ERR_post(Arg::Gds(isc_read_only_field) << "<unknown>");
 }
 
 void AssignmentNode::dsqlValidateTarget(const ValueExprNode* target)
@@ -322,7 +327,8 @@ void AssignmentNode::dsqlValidateTarget(const ValueExprNode* target)
 	if (fieldNode && fieldNode->context &&
 		(fieldNode->context->ctx_flags & (CTX_system | CTX_cursor)) == CTX_cursor)
 	{
-		ERR_post(Arg::Gds(isc_read_only_field));
+		ERR_post(Arg::Gds(isc_read_only_field) <<
+			(fieldNode->context->ctx_alias + "." + fieldNode->name.c_str()));
 	}
 }
 
@@ -403,7 +409,12 @@ AssignmentNode* AssignmentNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	}
 
 	doPass1(tdbb, csb, asgnFrom.getAddress());
-	doPass1(tdbb, csb, asgnTo.getAddress());
+
+	{	// scope
+		AutoSetRestore<ExprNode*> autoCurrentAssignTarget(&csb->csb_currentAssignTarget, asgnTo);
+		doPass1(tdbb, csb, asgnTo.getAddress());
+	}
+
 	doPass1(tdbb, csb, missing.getAddress());
 	// ASF: No idea why we do not call pass1 for missing2.
 
