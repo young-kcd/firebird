@@ -8468,12 +8468,16 @@ void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 
 	// Repeat execution to handle update conflicts, if any
 	int numTries = 0;
-	while (true) {
-		try {
+	while (true)
+	{
+		try
+		{
 			EXE_unwind(tdbb, request);
 			EXE_start(tdbb, request, transaction);
 			break;
-		} catch (const status_exception &ex) {
+		}
+		catch (const status_exception &ex)
+		{
 			const ISC_STATUS* v = ex.value();
 			if (// Update conflict error
 				v[0] == isc_arg_gds &&
@@ -8485,7 +8489,8 @@ void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 				// it was top-level request
 				!TRA_get_prior_request(tdbb))
 			{
-				if (++numTries < 10) {
+				if (++numTries < 10)
+				{
 					fb_utils::init_status(tdbb->tdbb_status_vector);
 					continue;
 				}
@@ -8584,13 +8589,17 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
 
 	// Repeat execution to handle update conflicts, if any
 	int numTries = 0;
-	while (true) {
-		try {
+	while (true)
+	{
+		try
+		{
 			EXE_unwind(tdbb, request);
 			EXE_start(tdbb, request, transaction);
 			EXE_send(tdbb, request, msg_type, msg_length, msg);
 			break;
-		} catch (const status_exception &ex) {
+		}
+		catch (const status_exception &ex)
+		{
 			const ISC_STATUS* v = ex.value();
 			if (// Update conflict error
 				v[0] == isc_arg_gds &&
@@ -8602,7 +8611,8 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
 				// it was top-level request
 				!TRA_get_prior_request(tdbb))
 			{
-				if (++numTries < 10) {
+				if (++numTries < 10)
+				{
 					fb_utils::init_status(tdbb->tdbb_status_vector);
 					continue;
 				}

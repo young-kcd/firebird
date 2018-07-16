@@ -130,11 +130,13 @@ CommitNumber ActiveSnapshots::getSnapshotForVersion(CommitNumber version_cn)
 	return m_lastCommit;
 }
 
-jrd_req* TRA_get_prior_request(thread_db* tdbb) {
+jrd_req* TRA_get_prior_request(thread_db* tdbb)
+{
 	// See if there is any request right above us in the call stack
 	jrd_req* org_request;
 	thread_db* jrd_ctx = tdbb;
-	do {
+	do
+	{
 		// Check regular request call stack
 		org_request = jrd_ctx->getRequest();
 		if (org_request) 
@@ -143,7 +145,7 @@ jrd_req* TRA_get_prior_request(thread_db* tdbb) {
 		// Check for engine context switch (EXECUTE STATEMENT, etc)
 		ThreadData* ctx = jrd_ctx;
 		jrd_ctx = NULL;
-		while( (ctx = ctx->getPriorContext()) ) 
+		while( (ctx = ctx->getPriorContext()) )
 		{
 			if (ctx->getType() == ThreadData::tddDBB) 
 			{
@@ -1922,7 +1924,7 @@ void TRA_sweep(thread_db* tdbb)
 }
 
 
-int TRA_wait(thread_db* tdbb, jrd_tra* trans, TraNumber number, jrd_tra::wait_t wait, bool* deadlock_flag)
+int TRA_wait(thread_db* tdbb, jrd_tra* trans, TraNumber number, jrd_tra::wait_t wait)
 {
 /**************************************
  *
@@ -1957,9 +1959,6 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, TraNumber number, jrd_tra::wait_t 
 
 		if (!LCK_lock(tdbb, &temp_lock, LCK_read, timeout))
 		{
-			if (deadlock_flag)
-				*deadlock_flag = tdbb->tdbb_status_vector->getErrors()[1] == isc_deadlock;
-
 			fb_utils::init_status(tdbb->tdbb_status_vector);
 			return tra_active;
 		}
