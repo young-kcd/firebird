@@ -127,14 +127,23 @@ So, there are three kinds of read-committed transactions now:
 
 When statement executed within read committed read consistency transaction its database view is 
 not changed (similar to snapshot transaction). Therefore it is useless to wait for commit of 
-concurrent transaction in the hope to re-read new committed record version. Similarly, engine
-doesn't wait and re-read record when update conflict happens. Instead, engine undoes all work
-done up to top-level statement, creates new snapshot and restart top-level statement execution.
+concurrent transaction in the hope to re-read new committed record version. On read, behavior is 
+similar to read committed *no record version* transaction - do not wait for active transaction and
+walk backversions chain looking for record version visible to the current snapshot.
+
+When update conflict happens engine behavior is changed. If concurrent transaction is active, 
+engine waits (according to transaction lock timeout) and if concurrent transaction still not
+committed, update conflict error is returned. If concurrent transaction is committed, engine 
+creates new snapshot and restart top-level statement execution. In both cases all work performed 
+up to the top-level statement is undone.
+
 This is the same logic as user applications uses for update conflict handling usually, but it
 is a bit more efficient as it excludes network roundtrips to\from client host. This restart
 logic is not applied to the selectable stored procedures if update conflict happens after any
 record returned to the client application. In this case *isc_update_conflict* error is returned.
 
+Note: by historical reasons isc_update_conflict reported as secondary error code with primary
+error code isc_deadlock.
 
 ### No more precommitted transactions
 
