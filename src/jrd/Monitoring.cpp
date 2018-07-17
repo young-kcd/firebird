@@ -149,7 +149,7 @@ MonitoringData::~MonitoringData()
 {
 	Guard guard(this);
 
-	if (shared_memory->getHeader()->used == sizeof(Header))
+	if (shared_memory->getHeader()->used == alignOffset(sizeof(Header)))
 		shared_memory->removeMapFile();
 }
 
