@@ -894,10 +894,21 @@ void TipCache::updateActiveSnapshots(thread_db* tdbb, ActiveSnapshots* activeSna
 					att_states.put(slot_attachment_id, isAttachmentDead);
 				}
 
-				if (isAttachmentDead) 
+				if (isAttachmentDead)
 				{
-					if (!guard.isLocked()) 
+					if (!guard.isLocked())
+					{
 						guard.lock();
+
+						// Check if slot was reused while we waited for the mutex
+						AttNumber slot_attachment_id2 = slot->attachment_id.load(std::memory_order_acquire);
+						if (slot_attachment_id != slot_attachment_id2)
+						{
+							slotNumber--;
+							continue;
+						}
+					}
+
 					deallocateSnapshotSlot(slotNumber);
 				}
 				else
