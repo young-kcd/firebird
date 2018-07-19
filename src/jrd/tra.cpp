@@ -113,23 +113,6 @@ static const UCHAR sweep_tpb[] =
 };
 
 
-ActiveSnapshots::ActiveSnapshots(Firebird::MemoryPool& p) : 
-	m_snapshots(p), m_lastCommit(CN_ACTIVE), m_releaseCount(0)
-{
-}
-
-
-CommitNumber ActiveSnapshots::getSnapshotForVersion(CommitNumber version_cn) 
-{
-	if (version_cn > m_lastCommit)
-		return CN_ACTIVE;
-
-	if (m_snapshots.locate(locGreatEqual, version_cn))
-		return m_snapshots.current();
-
-	return m_lastCommit;
-}
-
 jrd_req* TRA_get_prior_request(thread_db* tdbb)
 {
 	// See if there is any request right above us in the call stack
@@ -167,11 +150,6 @@ void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
 
 	// We assume that request is already attached to a transaction
 	fb_assert(transaction);
-
-	// Initialize or update list of active snapshots in a transaction
-	// so this request can effectively perform intermediate GC
-	if (TipCache* cache = tdbb->getDatabase()->dbb_tip_cache)
-		cache->updateActiveSnapshots(tdbb, &transaction->tra_active_snapshots);
 
 	// If we are not READ COMMITTED or stable cursors are not needed then nothing to do here
 	if (!(transaction->tra_flags & TRA_read_committed) || !(transaction->tra_flags & TRA_read_consistency)) 
@@ -1561,6 +1539,8 @@ int TRA_snapshot_state(thread_db* tdbb, jrd_tra* trans, TraNumber number, Commit
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
+	Attachment* att = tdbb->getAttachment();
+
 	// Inhibit intermediate GC by default
 
 	if (snapshot)
@@ -1575,7 +1555,7 @@ int TRA_snapshot_state(thread_db* tdbb, jrd_tra* trans, TraNumber number, Commit
 	if (number < trans->tra_oldest) 
 	{
 		if (snapshot)
-			*snapshot = trans->tra_active_snapshots.getSnapshotForVersion(CN_PREHISTORIC);
+			*snapshot = att->att_active_snapshots.getSnapshotForVersion(CN_PREHISTORIC);
 		return tra_committed;
 	}
 
@@ -1584,7 +1564,7 @@ int TRA_snapshot_state(thread_db* tdbb, jrd_tra* trans, TraNumber number, Commit
 	if (number == TRA_system_transaction) 
 	{
 		if (snapshot)
-			*snapshot = trans->tra_active_snapshots.getSnapshotForVersion(CN_PREHISTORIC);
+			*snapshot = att->att_active_snapshots.getSnapshotForVersion(CN_PREHISTORIC);
 		return tra_committed;
 	}
 
@@ -1610,7 +1590,7 @@ int TRA_snapshot_state(thread_db* tdbb, jrd_tra* trans, TraNumber number, Commit
 			default: 
 				state = tra_committed; 
 				if (snapshot)
-					*snapshot = trans->tra_active_snapshots.getSnapshotForVersion(stateCn);
+					*snapshot = att->att_active_snapshots.getSnapshotForVersion(stateCn);
 				break;
 		}
 	} 

@@ -2044,6 +2044,7 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
  *
  **************************************/
 	Database *dbb = tdbb->getDatabase();
+	Attachment* att = tdbb->getAttachment();
 
 	// If current record is not a primary version, release it and fetch primary version
 	if (rpb->rpb_flags & rpb_chained)
@@ -2085,6 +2086,9 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 		rpb->rpb_f_page, rpb->rpb_f_line);
 #endif
 
+	TipCache* tipCache = dbb->dbb_tip_cache;
+	tipCache->updateActiveSnapshots(tdbb, &att->att_active_snapshots);
+
 	// Determine what records need to stay and which need to go.
 	// For that we iterate all records in newest->oldest order (natural order is oldest->newest)
 	// and move unnecessary records from staying into going stack.
@@ -2095,9 +2099,9 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 		prev_snapshot_number = current_snapshot_number;
 
 		Record *record = rev_i.object();
-		CommitNumber cn = dbb->dbb_tip_cache->cacheState(record->getTransaction_nr());
+		CommitNumber cn = tipCache->cacheState(record->getTransaction_nr());
 		if (cn >= CN_PREHISTORIC && cn <= CN_MAX_NUMBER)
-			current_snapshot_number = transaction->tra_active_snapshots.getSnapshotForVersion(cn);
+			current_snapshot_number = att->att_active_snapshots.getSnapshotForVersion(cn);
 		else
 			current_snapshot_number = 0;
 
@@ -3896,7 +3900,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 
 					transaction->tra_oldest_active = dbb->dbb_oldest_snapshot;
 					if (TipCache* cache = dbb->dbb_tip_cache)
-						cache->updateActiveSnapshots(tdbb, &transaction->tra_active_snapshots);
+						cache->updateActiveSnapshots(tdbb, &attachment->att_active_snapshots);
 				}
 
 				traceSweep->endSweepRelation(relation);
@@ -4833,10 +4837,10 @@ void Database::garbage_collector(Database* dbb)
 
 								transaction->tra_oldest = dbb->dbb_oldest_transaction;
 								transaction->tra_oldest_active = dbb->dbb_oldest_snapshot;
-
-								if (TipCache* cache = dbb->dbb_tip_cache)
-									cache->updateActiveSnapshots(tdbb, &transaction->tra_active_snapshots);
 							}
+
+							if (TipCache* cache = dbb->dbb_tip_cache)
+								cache->updateActiveSnapshots(tdbb, &attachment->att_active_snapshots);
 
 							if (gc_exit || rel_exit)
 								break;

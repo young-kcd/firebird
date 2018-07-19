@@ -39,6 +39,7 @@ namespace Jrd {
 class Database;
 class thread_db;
 class TipCache;
+class ActiveSnapshots;
 
 // Special values of CommitNumber reserved for uncommitted transaction states
 const CommitNumber

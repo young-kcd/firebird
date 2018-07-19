@@ -42,6 +42,7 @@
 #include "../common/ThreadStart.h"
 
 #include "../jrd/EngineInterface.h"
+#include "../jrd/sbm.h"
 
 namespace EDS {
 	class Connection;
@@ -143,6 +144,26 @@ const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
 
 class Attachment;
 struct bid;
+
+
+class ActiveSnapshots
+{
+public:
+	explicit ActiveSnapshots(Firebird::MemoryPool& p);
+
+	// Returns snapshot number given version belongs to.
+	// It is not needed to maintain two versions for the same snapshot, so the latter
+	// version can be garbage-collected.
+	//
+	// Function returns CN_ACTIVE if version was committed after we obtained
+	// our list of snapshots. It means GC is not possible for this version.
+	CommitNumber getSnapshotForVersion(CommitNumber version_cn);
+private:
+	UInt32Bitmap m_snapshots;		// List of active snapshots as of the moment of time
+	CommitNumber m_lastCommit;		// CN_ACTIVE here means object is not populated
+	ULONG m_releaseCount;			// Release event counter when list was last updated
+	friend class TipCache;
+};
 
 
 //
@@ -282,6 +303,7 @@ public:
 	jrd_tra*	att_transactions;			// Transactions belonging to attachment
 	jrd_tra*	att_dbkey_trans;			// transaction to control db-key scope
 	TraNumber	att_oldest_snapshot;		// GTT's record versions older than this can be garbage-collected
+	ActiveSnapshots att_active_snapshots; // List of currently active snapshots for GC purposes
 
 private:
 	jrd_tra*	att_sys_transaction;		// system transaction
