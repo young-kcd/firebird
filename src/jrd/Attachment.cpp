@@ -56,7 +56,9 @@ using namespace Firebird;
 /// class ActiveSnapshots
 
 ActiveSnapshots::ActiveSnapshots(Firebird::MemoryPool& p) :
-m_snapshots(p), m_lastCommit(CN_ACTIVE), m_releaseCount(0)
+	m_snapshots(p), 
+	m_lastCommit(CN_ACTIVE), 
+	m_releaseCount(0)
 {
 }
 
