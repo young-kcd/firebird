@@ -128,7 +128,7 @@ So, there are three kinds of read-committed transactions now:
 When statement executed within read committed read consistency transaction its database view is 
 not changed (similar to snapshot transaction). Therefore it is useless to wait for commit of 
 concurrent transaction in the hope to re-read new committed record version. On read, behavior is 
-similar to read committed *no record version* transaction - do not wait for active transaction and
+similar to read committed *record version* transaction - do not wait for active transaction and
 walk backversions chain looking for record version visible to the current snapshot.
 
 When update conflict happens engine behavior is changed. If concurrent transaction is active, 

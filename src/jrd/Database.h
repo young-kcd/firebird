@@ -499,7 +499,7 @@ public:
 	StmtNumber generateStatementId();
 //	void assignLatestTransactionId(TraNumber number);
 	void assignLatestAttachmentId(AttNumber number);
-	
+
 
 	USHORT getMaxIndexKeyLength() const
 	{

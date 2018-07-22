@@ -5218,7 +5218,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 	RuntimeStatistics::Accumulator backversions(tdbb, rpb->rpb_relation,
 												RuntimeStatistics::RECORD_BACKVERSION_READS);
 
-	
+
 	// Limit number of "restarts" if primary version constantly changed. Currently, 
 	// LS_ACTIVE_RPB is passed by VIO_intermediate_gc only and it is ok to return 
 	// empty staying in this case. 
@@ -5677,7 +5677,7 @@ static int prepare_update(	thread_db*		tdbb,
 				temp->rpb_b_page = rpb->rpb_b_page;
 				temp->rpb_b_line = rpb->rpb_b_line;
 				temp->rpb_flags &= ~rpb_delta;
-				temp->rpb_flags |= rpb->rpb_flags & rpb_delta; // NS 2014-09-10: XXX - what is this code doing?
+				temp->rpb_flags |= rpb->rpb_flags & rpb_delta;
 				temp->rpb_transaction_nr = rpb->rpb_transaction_nr;
 
 				DPM_store(tdbb, temp, stack, DPM_secondary);
@@ -5730,7 +5730,7 @@ static int prepare_update(	thread_db*		tdbb,
 			switch (state)
 			{
 			case tra_committed:
-				// We need to loop waiting in read committed transactions only
+				// We need to loop waiting in read committed with no read consistency transactions only
 				if (!(transaction->tra_flags & TRA_read_committed) ||
 					(transaction->tra_flags & TRA_read_consistency))
 				{

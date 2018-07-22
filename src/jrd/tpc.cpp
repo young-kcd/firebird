@@ -295,7 +295,7 @@ void TipCache::loadInventoryPages(thread_db* tdbb)
 		// At the same time, simple write to a volatile variable is not good
 		// as it is not deterministic. Some compilers generate barriers and some do not.
 		((std::atomic<CommitNumber>*)(statusBlock->data + transOffset))->store(cn, std::memory_order_relaxed);
-		
+
 		if (++t > hdr_next_transaction)
 			break;
 
@@ -431,7 +431,7 @@ TraNumber TipCache::findStates(TraNumber minNumber, TraNumber maxNumber, ULONG m
 		// Barrier is not needed here. Slightly out-dated information shall be ok here.
 		// Such transaction shall already be considered active by our caller.
 		// TODO: check if this assumption is indeed correct.
-		
+
 		CommitNumber cn = ((std::atomic<CommitNumber>*)(statusBlock->data + transOffset))->load(std::memory_order_relaxed);
 		switch (cn)
 		{

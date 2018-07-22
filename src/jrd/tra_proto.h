@@ -54,7 +54,7 @@ Jrd::jrd_tra*	TRA_reconnect(Jrd::thread_db* tdbb, const UCHAR*, USHORT);
 void	TRA_release_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra*, Jrd::TraceTransactionEnd*);
 void	TRA_rollback(Jrd::thread_db* tdbb, Jrd::jrd_tra*, const bool, const bool);
 void	TRA_set_state(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction, TraNumber number, int state);
-int		TRA_snapshot_state(Jrd::thread_db* tdbb, Jrd::jrd_tra* trans, TraNumber number, CommitNumber* snapshot = NULL);
+int		TRA_snapshot_state(Jrd::thread_db* tdbb, const Jrd::jrd_tra* trans, TraNumber number, CommitNumber* snapshot = NULL);
 Jrd::jrd_tra*	TRA_start(Jrd::thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_tra* outer = NULL);
 Jrd::jrd_tra*	TRA_start(Jrd::thread_db* tdbb, int, const UCHAR*, Jrd::jrd_tra* outer = NULL);
 int		TRA_state(const UCHAR*, TraNumber oldest, TraNumber number);

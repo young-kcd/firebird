@@ -151,7 +151,7 @@ void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
 	// We assume that request is already attached to a transaction
 	fb_assert(transaction);
 
-	// If we are not READ COMMITTED or stable cursors are not needed then nothing to do here
+	// If we are not READ COMMITTED or read consistency is not needed then nothing to do here
 	if (!(transaction->tra_flags & TRA_read_committed) || !(transaction->tra_flags & TRA_read_consistency)) 
 		return;
 
@@ -1521,7 +1521,7 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, TraNumber number, int 
 }
 
 
-int TRA_snapshot_state(thread_db* tdbb, jrd_tra* trans, TraNumber number, CommitNumber *snapshot)
+int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, TraNumber number, CommitNumber *snapshot)
 {
 /**************************************
  *
@@ -1552,7 +1552,7 @@ int TRA_snapshot_state(thread_db* tdbb, jrd_tra* trans, TraNumber number, Commit
 	// If the transaction is older than the oldest
 	// interesting transaction, it must be committed.
 
-	if (number < trans->tra_oldest) 
+	if (number < trans->tra_oldest)
 	{
 		if (snapshot)
 			*snapshot = att->att_active_snapshots.getSnapshotForVersion(CN_PREHISTORIC);
@@ -1561,7 +1561,7 @@ int TRA_snapshot_state(thread_db* tdbb, jrd_tra* trans, TraNumber number, Commit
 
 	// If the transaction is the system transaction, it is considered committed.
 
-	if (number == TRA_system_transaction) 
+	if (number == TRA_system_transaction)
 	{
 		if (snapshot)
 			*snapshot = att->att_active_snapshots.getSnapshotForVersion(CN_PREHISTORIC);
@@ -2711,7 +2711,7 @@ static void transaction_options(thread_db* tdbb,
 	RelationLockTypeMap	lockmap;
 
 	TriState wait, lock_timeout;
-	TriState isolation, read_only, rec_version;
+	TriState isolation, read_only, rec_version, read_consistency;
 	bool anylock_write = false;
 
 	++tpb;
@@ -2793,6 +2793,14 @@ static void transaction_options(thread_db* tdbb,
 						 Arg::Gds(isc_tpb_multiple_spec) << Arg::Str("isc_tpb_rec_version"));
 			}
 
+			if (read_consistency.isAssigned())
+			{
+				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+					// 'Option @1 is not valid if @2 was used previously in TPB'
+					Arg::Gds(isc_tpb_conflicting_options) <<
+					Arg::Str("isc_tpb_rec_version") << Arg::Str("isc_tpb_read_consistency"));
+			}
+
 			transaction->tra_flags &= ~TRA_read_consistency;
 			transaction->tra_flags |= TRA_rec_version;
 			break;
@@ -2810,8 +2818,15 @@ static void transaction_options(thread_db* tdbb,
 						 Arg::Gds(isc_tpb_multiple_spec) << Arg::Str("isc_tpb_no_rec_version"));
 			}
 
+			if (read_consistency.isAssigned())
+			{
+				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+					// 'Option @1 is not valid if @2 was used previously in TPB'
+					Arg::Gds(isc_tpb_conflicting_options) << 
+					Arg::Str("isc_tpb_no_rec_version") << Arg::Str("isc_tpb_read_consistency"));
+			}
+
 			transaction->tra_flags &= ~(TRA_rec_version | TRA_read_consistency);
-			;
 			break;
 
 		case isc_tpb_read_consistency:
@@ -2821,14 +2836,22 @@ static void transaction_options(thread_db* tdbb,
 					Arg::Gds(isc_tpb_option_without_rc) << Arg::Str("isc_tpb_read_consistency"));
 			}
 
-			if (!rec_version.assignOnce(false))
+			if (!read_consistency.assignOnce(true))
 			{
 				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
 					Arg::Gds(isc_tpb_multiple_spec) << Arg::Str("isc_tpb_read_consistency"));
 			}
 
-			transaction->tra_flags &= ~TRA_rec_version;
-			transaction->tra_flags |= TRA_read_consistency;
+			if (rec_version.isAssigned())
+			{
+				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+					// 'Option @1 is not valid if @2 was used previously in TPB'
+					Arg::Gds(isc_tpb_conflicting_options) <<
+					Arg::Str("isc_tpb_read_consistency") << (rec_version.asBool() ? 
+						Arg::Str("isc_tpb_rec_version") : Arg::Str("isc_tpb_no_rec_version")) );
+			}
+
+			transaction->tra_flags |= TRA_read_consistency | TRA_rec_version;
 			break;
 
 		case isc_tpb_nowait:

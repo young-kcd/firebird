@@ -1471,6 +1471,11 @@ void Transaction::generateTPB(thread_db* /*tdbb*/, ClumpletWriter& tpb,
 		tpb.insertTag(isc_tpb_rec_version);
 		break;
 
+	case traReadCommitedReadConsistency:
+		tpb.insertTag(isc_tpb_read_committed);
+		tpb.insertTag(isc_tpb_read_consistency);
+		break;
+
 	case traConcurrency:
 		tpb.insertTag(isc_tpb_concurrency);
 		break;
@@ -1574,7 +1579,9 @@ Transaction* Transaction::getTransaction(thread_db* tdbb, Connection* conn, TraS
 		TraModes traMode = traConcurrency;
 		if (tran->tra_flags & TRA_read_committed)
 		{
-			if (tran->tra_flags & TRA_rec_version)
+			if (tran->tra_flags & TRA_read_consistency)
+				traMode = traReadCommitedReadConsistency;
+			else if (tran->tra_flags & TRA_rec_version)
 				traMode = traReadCommitedRecVersions;
 			else
 				traMode = traReadCommited;
