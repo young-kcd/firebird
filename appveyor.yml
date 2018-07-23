@@ -6,13 +6,11 @@ platform:
   - x64
   - x86
 
-init:
-  - git config --global core.autocrlf true
-
 shallow_clone: true
 
 install:
   - choco install gnuwin32-sed.install
+  - for /r %%i in (*.bat) do unix2dos "%%i"
   - if "%PLATFORM%" == "x64" set FB_PROCESSOR_ARCHITECTURE=AMD64
   - if "%PLATFORM%" == "x64" set FB_OUTPUT_SUFFIX=x64
   - if "%PLATFORM%" == "x86" set FB_PROCESSOR_ARCHITECTURE=x86
