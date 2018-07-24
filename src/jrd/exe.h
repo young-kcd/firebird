@@ -449,6 +449,7 @@ public:
 		csb_cursors(p),
 		csb_invariants(p),
 		csb_current_nodes(p),
+		csb_current_for_nodes(p),
 		csb_computing_fields(p),
 		csb_pool(p),
 		csb_map_field_info(p),
@@ -510,6 +511,7 @@ public:
 	Firebird::Array<ULONG*> csb_invariants;		// stack of pointer to nodes invariant offsets
 	Firebird::Array<ExprNode*> csb_current_nodes;	// RseNode's and other invariant
 												// candidates within whose scope we are
+	Firebird::Array<ForNode*> csb_current_for_nodes;
 	Firebird::SortedArray<jrd_fld*> csb_computing_fields;	// Computed fields being compiled
 	StreamType		csb_n_stream;				// Next available stream
 	USHORT			csb_msg_number;				// Highest used message number

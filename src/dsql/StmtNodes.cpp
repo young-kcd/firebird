@@ -423,10 +423,50 @@ AssignmentNode* AssignmentNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 AssignmentNode* AssignmentNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
+	bool pushedRse = false;
+
+	// Deal with invariants of assignment targets of FOR, SELECT and UPDATE - CORE-5871.
+	//
+	// blr_for
+	//   ...
+	//   blr_begin
+	//     blr_assignment
+	//     blr_assignment
+	//     blr_begin
+	//
+	// blr_for
+	//   ...
+	//   blr_send
+	//     blr_begin
+	//       blr_assignment
+	//       blr_assignment
+	//
+	// blr_for
+	//   ...
+	//   blr_modify
+	//     blr_begin
+	//       blr_assignment
+	//       blr_assignment
+	if (csb->csb_current_for_nodes.hasData() && nodeIs<CompoundStmtNode>(parentStmt))
+	{
+		ForNode* forNode = csb->csb_current_for_nodes.back();
+
+		if (parentStmt->parentStmt == forNode ||
+			(nodeIs<SuspendNode>(parentStmt->parentStmt) && parentStmt->parentStmt->parentStmt == forNode) ||
+			(nodeIs<ModifyNode>(parentStmt->parentStmt) && parentStmt->parentStmt->parentStmt == forNode))
+		{
+			pushedRse = true;
+			csb->csb_current_nodes.push(forNode->rse.getObject());
+		}
+	}
+
 	ExprNode::doPass2(tdbb, csb, asgnFrom.getAddress());
 	ExprNode::doPass2(tdbb, csb, asgnTo.getAddress());
 	ExprNode::doPass2(tdbb, csb, missing.getAddress());
 	ExprNode::doPass2(tdbb, csb, missing2.getAddress());
+
+	if (pushedRse)
+		csb->csb_current_nodes.pop();
 
 	validateTarget(csb, asgnTo);
 
@@ -4818,7 +4858,10 @@ StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	doPass2(tdbb, csb, stall.getAddress(), this);
 	ExprNode::doPass2(tdbb, csb, rse.getAddress());
+
+	csb->csb_current_for_nodes.push(this);
 	doPass2(tdbb, csb, statement.getAddress(), this);
+	csb->csb_current_for_nodes.pop();
 
 	// Finish up processing of record selection expressions.
 
