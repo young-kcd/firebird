@@ -65,7 +65,7 @@
 //#define COMPRESS_DEBUG 1
 #endif // WIRE_COMPRESS_SUPPORT
 
-#define DEB_RBATCH(x)
+#define DEB_RBATCH(x)	((void) 0)
 
 #define REM_SEND_OFFSET(bs) (0)
 #define REM_RECV_OFFSET(bs) (bs)
