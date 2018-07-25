@@ -822,7 +822,9 @@ static bool is_array_or_blob(CompiledStatement* statement, const dsql_nod* node)
 	case nod_dbkey:
 	case nod_current_date:
 	case nod_current_time:
+	case nod_local_time:
 	case nod_current_timestamp:
+	case nod_local_timestamp:
 	case nod_constant:
 	case nod_strlen:
 	case nod_null:

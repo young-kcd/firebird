@@ -1330,6 +1330,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		return;
 
 	case nod_current_time:
+	case nod_local_time:
 		desc->dsc_dtype = dtype_sql_time;
 		desc->dsc_sub_type = 0;
 		desc->dsc_scale = 0;
@@ -1346,6 +1347,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		return;
 
 	case nod_current_timestamp:
+	case nod_local_timestamp:
 		desc->dsc_dtype = dtype_timestamp;
 		desc->dsc_sub_type = 0;
 		desc->dsc_scale = 0;
@@ -2154,9 +2156,15 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		if ( !Config::getOldColumnNaming() )
 			name_alias = "CURRENT_TIME";
 		break;
+	case nod_local_time:
+		name_alias = "LOCALTIME";
+		break;
 	case nod_current_timestamp:
 		if ( !Config::getOldColumnNaming() )
 			name_alias = "CURRENT_TIMESTAMP";
+		break;
+	case nod_local_timestamp:
+		name_alias = "LOCALTIMESTAMP";
 		break;
 	case nod_extract:
 		if ( !Config::getOldColumnNaming() )

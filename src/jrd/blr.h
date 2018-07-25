@@ -376,4 +376,7 @@
 #define blr_stmt_expr				(unsigned char) 190
 #define blr_derived_expr			(unsigned char) 191
 
+#define blr_local_timestamp         (unsigned char) 214
+#define blr_local_time              (unsigned char) 215
+
 #endif // JRD_BLR_H

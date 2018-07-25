@@ -286,8 +286,10 @@ enum nod_t
 	nod_del_role,
 	// SQL time & date support
 	nod_current_time,
+	nod_local_time,
 	nod_current_date,
 	nod_current_timestamp,
+	nod_local_timestamp,
 	nod_extract,
 	// ALTER column/domain support
 	nod_mod_domain_type,

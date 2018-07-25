@@ -1066,7 +1066,9 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 		break;
 
 	case nod_current_time:
+	case nod_local_time:
 	case nod_current_timestamp:
+	case nod_local_timestamp:
 		{
 			const dsql_nod* const_node = input->nod_arg[0];
 			if (const_node) {
@@ -3244,7 +3246,9 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 		case nod_null:
 		case nod_current_date:
 		case nod_current_time:
+		case nod_local_time:
 		case nod_current_timestamp:
+		case nod_local_timestamp:
 		case nod_user_name:
 		case nod_current_role:
 		case nod_internal_info:
@@ -5895,7 +5899,9 @@ static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level
 		case nod_null:
 		case nod_current_date:
 		case nod_current_time:
+		case nod_local_time:
 		case nod_current_timestamp:
+		case nod_local_timestamp:
 		case nod_user_name:
 		case nod_current_role:
 		case nod_internal_info:
@@ -6126,7 +6132,9 @@ static bool pass1_found_field(const dsql_nod* node, USHORT check_scope_level,
 		case nod_null:
 		case nod_current_date:
 		case nod_current_time:
+		case nod_local_time:
 		case nod_current_timestamp:
+		case nod_local_timestamp:
 		case nod_user_name:
 		case nod_current_role:
 		case nod_internal_info:
@@ -6279,7 +6287,9 @@ static bool pass1_found_sub_select(const dsql_nod* node)
 		case nod_null:
 		case nod_current_date:
 		case nod_current_time:
+		case nod_local_time:
 		case nod_current_timestamp:
+		case nod_local_timestamp:
 		case nod_user_name:
 		case nod_current_role:
 		case nod_internal_info:
@@ -6376,7 +6386,9 @@ static dsql_nod* pass1_hidden_variable(CompiledStatement* statement, dsql_nod*& 
 		case nod_current_date:
 		case nod_current_role:
 		case nod_current_time:
+		case nod_local_time:
 		case nod_current_timestamp:
+		case nod_local_timestamp:
 		case nod_dbkey:
 		case nod_field:
 		case nod_internal_info:
@@ -11132,8 +11144,14 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_current_time:
 		verb = "current_time";
 		break;
+	case nod_local_time:
+		verb = "local_time";
+		break;
 	case nod_current_timestamp:
 		verb = "current_timestamp";
+		break;
+	case nod_local_timestamp:
+		verb = "local_timestamp";
 		break;
 	case nod_cursor:
 		verb = "cursor";

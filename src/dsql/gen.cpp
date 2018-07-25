@@ -270,6 +270,18 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 		}
 		return;
 
+	case nod_local_time:
+		stuff(statement, blr_local_time);
+		if (node->nod_arg[0]) {
+			const dsql_nod* const_node = node->nod_arg[0];
+			fb_assert(const_node->nod_type == nod_constant);
+			const int precision = (int) const_node->getSlong();
+			stuff(statement, precision);
+		}
+		else
+			stuff(statement, DEFAULT_TIME_PRECISION);
+		return;
+
 	case nod_current_timestamp:
 		if (node->nod_arg[0]) {
 			const dsql_nod* const_node = node->nod_arg[0];
@@ -281,6 +293,18 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 		else {
 			stuff(statement, blr_current_timestamp);
 		}
+		return;
+
+	case nod_local_timestamp:
+		stuff(statement, blr_local_timestamp);
+		if (node->nod_arg[0]) {
+			const dsql_nod* const_node = node->nod_arg[0];
+			fb_assert(const_node->nod_type == nod_constant);
+			const int precision = (int) const_node->getSlong();
+			stuff(statement, precision);
+		}
+		else
+			stuff(statement, DEFAULT_TIMESTAMP_PRECISION);
 		return;
 
 	case nod_current_date:

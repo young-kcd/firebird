@@ -564,6 +564,9 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token BIN_NOT
 %token SQLSTATE
 
+%token LOCALTIME
+%token LOCALTIMESTAMP
+
 /* precedence declarations for expression evaluation */
 
 %left	OR
@@ -2483,6 +2486,8 @@ keyword_or_column	: valid_symbol_name
 		| START
 		| SIMILAR				/* added in FB 2.5 */
 		| SQLSTATE
+		| LOCALTIME				/* added in FB 2.5.9 */
+		| LOCALTIMESTAMP
 		;
 
 col_opt	: ALTER
@@ -4336,8 +4341,26 @@ datetime_value_expression : CURRENT_DATE
 			}
 			$$ = make_node (nod_current_time, 1, $2);
 			}
+		| LOCALTIME sec_precision_opt
+			{
+			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) <<
+						  												  Arg::Str("TIME"));
+			}
+			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
+						  												  Arg::Str("TIME"));
+			}
+			$$ = make_node (nod_local_time, 1, $2);
+			}
 		| CURRENT_TIMESTAMP sec_precision_opt
 			{ $$ = make_node (nod_current_timestamp, 1, $2); }
+		| LOCALTIMESTAMP sec_precision_opt
+			{ $$ = make_node (nod_local_timestamp, 1, $2); }
 		;
 
 sec_precision_opt	: '(' nonneg_short_integer ')'

@@ -228,6 +228,8 @@ static const TOK tokens[] =
 	{LIMBO, "LIMBO", 2, true},
 	{LIST, "LIST", 2, false},
 	{LN, "LN", 2, false},
+	{LOCALTIME, "LOCALTIME", 2, false},
+	{LOCALTIMESTAMP, "LOCALTIMESTAMP", 2, false},
 	{LOCK, "LOCK", 2, true},
 	{LOG, "LOG", 2, false},
 	{LOG10, "LOG10", 2, false},

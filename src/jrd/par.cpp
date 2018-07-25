@@ -2946,6 +2946,8 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 
 	case blr_current_time2:
 	case blr_current_timestamp2:
+	case blr_local_time:
+	case blr_local_timestamp:
 		n = csb->csb_blr_reader.getByte();
 		if (n > MAX_TIME_PRECISION) {
 			ERR_post(Arg::Gds(isc_invalid_time_precision) << Arg::Num(MAX_TIME_PRECISION));
