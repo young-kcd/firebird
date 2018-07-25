@@ -7064,6 +7064,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 
 	asyncGuard.leave();
 	MutexUnlockGuard cout(*attMutex, FB_FUNCTION);
+	MutexUnlockGuard coutBlocking(*sAtt->getBlockingMutex(), FB_FUNCTION);
 
 	// Try to close database if there are no attachments
 	JRD_shutdown_database(dbb, SHUT_DBB_RELEASE_POOLS | (flags & PURGE_LINGER ? SHUT_DBB_LINGER : 0) |

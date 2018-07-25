@@ -3793,6 +3793,9 @@ void YEvents::cancel(CheckStatusWrapper* status)
 
 		entry.next()->cancel(status);
 
+		if (status->getErrors()[1] == isc_att_shutdown)
+			status->init();
+
 		if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
 			destroy(DF_RELEASE);
 	}
