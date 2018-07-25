@@ -226,7 +226,7 @@ static const struct
 	{"similar", similar},
 	{"exec_stmt", exec_stmt},
 	{"stmt_expr", two},
-	{0, 0},
+	{"derived_expr", derived_expr},
 	{0, 0},
 	{0, 0},
 	{0, 0},
