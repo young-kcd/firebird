@@ -925,17 +925,30 @@ void TipCache::updateActiveSnapshots(thread_db* tdbb, ActiveSnapshots* activeSna
 		// Fast path. Quick update.
 
 		GlobalTpcHeader *header = m_tpcHeader->getHeader();
+		SnapshotList *snapshots = m_snapshots->getHeader();
+
+		// Update m_lastCommit unconditionally, to prevent active snapshots list from
+		// stalling when there is no snapshots created\released since last update.
+		// Stalled list of active snapshots could stop intermediate garbage collection
+		// by current list owner (attachment).
+		// It is important to ensure that no snapshot with CN less than m_lastCommit 
+		// could be missed at activeSnapshots, therefore we read slots_used after 
+		// latest_commit_number using appropriate memory barriers.
+
+		activeSnapshots->m_lastCommit = header->latest_commit_number.load(std::memory_order_acquire);
+		ULONG slots_used_org = snapshots->slots_used.load(std::memory_order_acquire);
+		ULONG release_count = header->snapshot_release_count.load(std::memory_order_relaxed);
 
 		// If no snapshots were released since we were last called - do nothing
 		// Do not care about race issues here, because worst-case consequences are benign
-		if (activeSnapshots->m_releaseCount == header->snapshot_release_count.load(std::memory_order_relaxed))
+		if (activeSnapshots->m_releaseCount == release_count &&
+			activeSnapshots->m_slots_used == slots_used_org)
+		{
 			return;
+		}
 
-		activeSnapshots->m_lastCommit = header->latest_commit_number.load(std::memory_order_acquire);
-		activeSnapshots->m_releaseCount = header->snapshot_release_count.load(std::memory_order_relaxed);
-
-		SnapshotList *snapshots = m_snapshots->getHeader();
-		ULONG slots_used_org = snapshots->slots_used.load(std::memory_order_acquire);
+		activeSnapshots->m_slots_used == slots_used_org;
+		activeSnapshots->m_releaseCount = release_count;
 
 		// Remap snapshot list if it has been grown by someone else
 		remapSnapshots(true);
@@ -951,7 +964,8 @@ void TipCache::updateActiveSnapshots(thread_db* tdbb, ActiveSnapshots* activeSna
 			if (slot->attachment_id.load(std::memory_order_acquire))
 			{
 				CommitNumber slot_snapshot = slot->snapshot.load(std::memory_order_acquire);
-				activeSnapshots->m_snapshots.set(slot_snapshot);
+				if (slot_snapshot)
+					activeSnapshots->m_snapshots.set(slot_snapshot);
 			}
 		}
 	}
