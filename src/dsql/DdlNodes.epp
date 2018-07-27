@@ -393,6 +393,10 @@ void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relati
 		{
 			field->charSetId = DSC_GET_CHARSET(&desc);
 			field->collationId = DSC_GET_COLLATE(&desc);
+
+			const USHORT adjust = field->dtype == dtype_varying ? sizeof(USHORT) : 0;
+			const USHORT bpc = METD_get_charset_bpc(dsqlScratch->getTransaction(), field->charSetId.value);
+			field->charLength = (field->length - adjust) / bpc;
 		}
 		else
 			field->subType = desc.dsc_sub_type;
