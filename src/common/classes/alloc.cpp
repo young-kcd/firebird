@@ -82,7 +82,7 @@ static void* stopAddress = (void*) 0x2254938;
 #endif
 
 #ifdef MEM_DEBUG
-static const int GUARD_BYTES	= Firebird::ALLOC_ALIGNMENT; // * 2048;
+static const int GUARD_BYTES	= ALLOC_ALIGNMENT; // * 2048;
 static const UCHAR INIT_BYTE	= 0xCC;
 static const UCHAR GUARD_BYTE	= 0xDD;
 static const UCHAR DEL_BYTE		= 0xEE;
@@ -205,7 +205,7 @@ namespace SemiDoubleLink
 
 #ifdef USE_VALGRIND
 // Size of Valgrind red zone applied before and after memory block allocated for user
-#define VALGRIND_REDZONE 8
+#define VALGRIND_REDZONE MEM_ALIGN
 #undef MEM_DEBUG	// valgrind works instead
 #else
 #define VALGRIND_REDZONE 0
@@ -240,6 +240,8 @@ public:
 #ifdef DEBUG_GDS_ALLOC
 	INT32		lineNumber;
 	const char	*fileName;
+#elif (SIZEOF_VOID_P == 4) && (ALLOC_ALIGNMENT == 16)
+	FB_UINT64 dummyAlign;
 #endif
 #if defined(USE_VALGRIND) && (VALGRIND_REDZONE != 0)
 	char mbk_valgrind_redzone[VALGRIND_REDZONE];
@@ -527,10 +529,11 @@ public:
 	MemBigHunk*		next;
 	MemBigHunk**	prev;
 	const size_t	length;
-	MemBlock		block;
+	MemBlock*		block;
 
 	MemBigHunk(MemBigHunk** top, size_t l)
-		: next(NULL), prev(NULL), length(l), block(MemBlock::HUGE_BLOCK, length - hdrSize())
+		: next(NULL), prev(NULL), length(l),
+		  block(new(((UCHAR*) this) + hdrSize()) MemBlock(MemBlock::HUGE_BLOCK, length - hdrSize()))
 	{
 		SemiDoubleLink::push(top, this);
 	}
@@ -540,8 +543,8 @@ public:
 		const char* filter_path, const size_t filter_len) throw()
 	{
 		fprintf(file, "Big hunk %p: memory=%p length=%" SIZEFORMAT "\n",
-			this, &block, length);
-		block.print_contents(true, file, used_only, filter_path, filter_len);
+			this, block, length);
+		block->print_contents(true, file, used_only, filter_path, filter_len);
 		if (next)
 			next->print_contents(file, pool, used_only, filter_path, filter_len);
 	}
@@ -549,20 +552,21 @@ public:
 
 	static size_t hdrSize()
 	{
-		return offsetof(MemBigHunk, block);
+		return MEM_ALIGN(sizeof(MemBigHunk));
 	}
 
 	void validate()
 	{
 		SemiDoubleLink::validate(this);
-		block.assertBig();
-		fb_assert(block.getSize() + hdrSize() == length);
+		block->assertBig();
+		fb_assert(block->getSize() + hdrSize() == length);
 	}
 };
 
 
 enum GetSlotFor { SLOT_ALLOC, SLOT_FREE };
 
+#if ALLOC_ALIGNMENT == 8
 const unsigned char lowSlots[] =
 {
 	0, // 24
@@ -726,6 +730,106 @@ const unsigned short lowLimits[] =
 	1024, // 28
 };
 
+const int SLOT_SHIFT = 3;
+#elif ALLOC_ALIGNMENT == 16
+const unsigned char lowSlots[] =
+{
+	0, // 32
+	1, // 48
+	2, // 64
+	3, // 80
+	4, // 96
+	5, // 112
+	6, // 128
+	7, // 144
+	8, // 160
+	9, // 176
+	9, // 192
+	10, // 208
+	10, // 224
+	11, // 240
+	11, // 256
+	12, // 272
+	12, // 288
+	13, // 304
+	13, // 320
+	14, // 336
+	14, // 352
+	14, // 368
+	15, // 384
+	15, // 400
+	15, // 416
+	16, // 432
+	16, // 448
+	16, // 464
+	17, // 480
+	17, // 496
+	17, // 512
+	17, // 528
+	18, // 544
+	18, // 560
+	18, // 576
+	18, // 592
+	19, // 608
+	19, // 624
+	19, // 640
+	19, // 656
+	19, // 672
+	20, // 688
+	20, // 704
+	20, // 720
+	20, // 736
+	20, // 752
+	21, // 768
+	21, // 784
+	21, // 800
+	21, // 816
+	21, // 832
+	21, // 848
+	22, // 864
+	22, // 880
+	22, // 896
+	22, // 912
+	22, // 928
+	22, // 944
+	23, // 960
+	23, // 976
+	23, // 992
+	23, // 1008
+	23, // 1024
+};
+
+const unsigned short lowLimits[] =
+{
+	32, // 0
+	48, // 1
+	64, // 2
+	80, // 3
+	96, // 4
+	112, // 5
+	128, // 6
+	144, // 7
+	160, // 8
+	192, // 9
+	224, // 10
+	256, // 11
+	288, // 12
+	320, // 13
+	368, // 14
+	416, // 15
+	464, // 16
+	528, // 17
+	592, // 18
+	672, // 19
+	752, // 20
+	848, // 21
+	944, // 22
+	1024, // 23
+};
+
+const int SLOT_SHIFT = 4;
+#endif
+
 const size_t TINY_SLOTS = FB_NELEM(lowLimits);
 const unsigned short* TINY_BLOCK_LIMIT = &lowLimits[TINY_SLOTS - 1];
 
@@ -734,7 +838,11 @@ const unsigned short* TINY_BLOCK_LIMIT = &lowLimits[TINY_SLOTS - 1];
 class LowLimits
 {
 public:
+#if ALLOC_ALIGNMENT == 8
 	static const unsigned TOTAL_ELEMENTS = 29;		// TINY_SLOTS
+#elif ALLOC_ALIGNMENT == 16
+	static const unsigned TOTAL_ELEMENTS = 24;		// TINY_SLOTS
+#endif
 	static const unsigned TOP_LIMIT = 1024;			// TINY_BLOCK_LIMIT
 
 	static unsigned getSlot(size_t size, GetSlotFor mode)
@@ -749,7 +857,7 @@ public:
 			size = LOW_LIMIT;
 		fb_assert(MEM_ALIGN(size) == size);
 
-		unsigned slot = lowSlots[(size - LOW_LIMIT) >> 3];
+		unsigned slot = lowSlots[(size - LOW_LIMIT) >> SLOT_SHIFT];
 		fb_assert(size <= lowLimits[slot]);
 		if (lowLimits[slot] > size && mode == SLOT_FREE)
 		{
@@ -1535,7 +1643,7 @@ public:
 
 private:
 	static const size_t minAllocation = 65536;
-	static const size_t roundingSize = 8;
+	static const size_t roundingSize = ALLOC_ALIGNMENT;
 
 	FreeObjects<LinkedList, LowLimits> smallObjects;
 	Vector<MemBlock*, 16> parentRedirected;
@@ -1876,6 +1984,7 @@ void MemoryPool::cleanup()
 MemPool::MemPool()
 	: pool_destroying(false), parent_redirect(false), stats(MemoryPool::default_stats_group), parent(NULL)
 {
+	fb_assert(offsetof(MemBlock, body) == MEM_ALIGN(offsetof(MemBlock, body)));
 	initialize();
 }
 
@@ -2090,7 +2199,7 @@ MemBlock* MemPool::alloc(size_t from, size_t& length, bool flagRedirect) throw (
 	// Allocate the new hunk
 
 	MemBigHunk* hunk = new(allocRaw(hunkLength)) MemBigHunk(&bigHunks, hunkLength);
-	return &hunk->block;
+	return hunk->block;
 }
 
 MemBlock* MemPool::allocate2(size_t from, size_t& size
@@ -2122,6 +2231,7 @@ MemBlock* MemPool::allocate2(size_t from, size_t& size
 	++blocksAllocated;
 	++blocksActive;
 
+	fb_assert((U_IPTR)(&memory->body) % ALLOC_ALIGNMENT == 0);
 	return memory;
 }
 
