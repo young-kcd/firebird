@@ -1575,8 +1575,6 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				options.setBuffers(dbb->dbb_config);
 				CCH_init(tdbb, options.dpb_buffers);
 
-				dbb->dbb_tip_cache = FB_NEW_POOL(*dbb->dbb_permanent) TipCache(dbb);
-
 				// Initialize backup difference subsystem. This must be done before WAL and shadowing
 				// is enabled because nbackup it is a lower level subsystem
 				dbb->dbb_backup_manager = FB_NEW_POOL(*dbb->dbb_permanent) BackupManager(tdbb,
@@ -1593,6 +1591,11 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				// initialize shadowing as soon as the database is ready for it
 				// but before any real work is done
 				SDW_init(tdbb, options.dpb_activate_shadow, options.dpb_delete_shadow);
+
+				// Initialize TIP cache. We do this late to give SDW a chance to 
+				// work while we read states for all interesting transactions
+				dbb->dbb_tip_cache = FB_NEW_POOL(*dbb->dbb_permanent) TipCache(dbb);
+				dbb->dbb_tip_cache->initializeTpc(tdbb);
 
 				// linger
 				dbb->dbb_linger_seconds = MET_get_linger(tdbb);
@@ -1645,6 +1648,8 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				if (CCH_expand(tdbb, options.dpb_buffers))
 					dbb->dbb_linger_seconds = 0;
 			}
+
+			PAG_attachment_id(tdbb);
 
 			if (!options.dpb_verify && CCH_exclusive(tdbb, LCK_PW, LCK_NO_WAIT, NULL))
 				TRA_cleanup(tdbb);
@@ -1896,8 +1901,6 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 			CCH_init2(tdbb);
 			VIO_init(tdbb);
-
-			PAG_attachment_id(tdbb);
 
 			CCH_release_exclusive(tdbb);
 
@@ -2750,8 +2753,6 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			else
 				dbb->dbb_database_name = dbb->dbb_filename;
 
-			dbb->dbb_tip_cache = FB_NEW_POOL(*dbb->dbb_permanent) TipCache(dbb);
-
 			// Initialize backup difference subsystem. This must be done before WAL and shadowing
 			// is enabled because nbackup it is a lower level subsystem
 			dbb->dbb_backup_manager = FB_NEW_POOL(*dbb->dbb_permanent) BackupManager(tdbb,
@@ -2834,6 +2835,10 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			dbb->dbb_backup_manager->dbCreating = false;
 
 			config->notify();
+
+			// Initialize TIP cache
+			dbb->dbb_tip_cache = FB_NEW_POOL(*dbb->dbb_permanent) TipCache(dbb);
+			dbb->dbb_tip_cache->initializeTpc(tdbb);
 
 			// Init complete - we can release dbInitMutex
 			dbb->dbb_flags &= ~(DBB_new | DBB_creating);
@@ -7264,6 +7269,9 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 
 	CCH_shutdown(tdbb);
 
+	if (dbb->dbb_tip_cache)
+		dbb->dbb_tip_cache->finalizeTpc(tdbb);
+
 	if (dbb->dbb_backup_manager)
 		dbb->dbb_backup_manager->shutdown(tdbb);
 
@@ -7275,8 +7283,6 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 
 	if (dbb->dbb_retaining_lock)
 		LCK_release(tdbb, dbb->dbb_retaining_lock);
-
-	dbb->dbb_shared_counter.shutdown(tdbb);
 
 	if (dbb->dbb_sweep_lock)
 		LCK_release(tdbb, dbb->dbb_sweep_lock);
@@ -8495,8 +8501,39 @@ void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
  *	Get a record from the host program.
  *
  **************************************/
-	EXE_unwind(tdbb, request);
-	EXE_start(tdbb, request, transaction);
+
+	// Repeat execution to handle update conflicts, if any
+	int numTries = 0;
+	while (true)
+	{
+		try
+		{
+			EXE_unwind(tdbb, request);
+			EXE_start(tdbb, request, transaction);
+			break;
+		}
+		catch (const status_exception &ex)
+		{
+			const ISC_STATUS* v = ex.value();
+			if (// Update conflict error
+				v[0] == isc_arg_gds &&
+				v[1] == isc_update_conflict &&
+				// Read committed transaction with snapshots
+				(transaction->tra_flags & TRA_read_committed) && 
+				(transaction->tra_flags & TRA_read_consistency) &&
+				// Snapshot has been assigned to the request -
+				// it was top-level request
+				!TRA_get_prior_request(tdbb))
+			{
+				if (++numTries < 10)
+				{
+					fb_utils::init_status(tdbb->tdbb_status_vector);
+					continue;
+				}
+			}
+			throw;
+		}
+	}
 
 	check_autocommit(tdbb, request);
 
@@ -8585,9 +8622,40 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
  *	Get a record from the host program.
  *
  **************************************/
-	EXE_unwind(tdbb, request);
-	EXE_start(tdbb, request, transaction);
-	EXE_send(tdbb, request, msg_type, msg_length, msg);
+
+	// Repeat execution to handle update conflicts, if any
+	int numTries = 0;
+	while (true)
+	{
+		try
+		{
+			EXE_unwind(tdbb, request);
+			EXE_start(tdbb, request, transaction);
+			EXE_send(tdbb, request, msg_type, msg_length, msg);
+			break;
+		}
+		catch (const status_exception &ex)
+		{
+			const ISC_STATUS* v = ex.value();
+			if (// Update conflict error
+				v[0] == isc_arg_gds &&
+				v[1] == isc_update_conflict &&
+				// Read committed transaction with snapshots
+				(transaction->tra_flags & TRA_read_committed) && 
+				(transaction->tra_flags & TRA_read_consistency) &&
+				// Snapshot has been assigned to the request -
+				// it was top-level request
+				!TRA_get_prior_request(tdbb))
+			{
+				if (++numTries < 10)
+				{
+					fb_utils::init_status(tdbb->tdbb_status_vector);
+					continue;
+				}
+			}
+			throw;
+		}
+	}
 
 	check_autocommit(tdbb, request);
 

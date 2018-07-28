@@ -149,6 +149,9 @@ public:
 		KEY_OUTPUT_REDIRECTION_FILE,
 		KEY_EXT_CONN_POOL_SIZE,
 		KEY_EXT_CONN_POOL_LIFETIME,
+		KEY_SNAPSHOTS_MEM_SIZE,
+		KEY_TPC_BLOCK_SIZE,
+		KEY_READ_CONSISTENCY,
 		MAX_CONFIG_KEY		// keep it last
 	};
 
@@ -371,6 +374,12 @@ public:
 	static int getExtConnPoolSize();
 
 	static int getExtConnPoolLifeTime();
+
+	ULONG getSnapshotsMemSize() const;
+
+	ULONG getTpcBlockSize() const;
+
+	bool getReadConsistency() const;
 };
 
 // Implementation of interface to access master configuration file

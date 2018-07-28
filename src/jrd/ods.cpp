@@ -255,4 +255,15 @@ void writeTraNum(void* ptr, TraNumber number, FB_SIZE_T header_size)
 	}
 }
 
+AttNumber getAttID(const header_page* page)
+{
+	return ((AttNumber)page->hdr_att_high << BITS_PER_LONG | page->hdr_attachment_id);
+}
+
+void writeAttID(header_page* page, AttNumber number)
+{
+	page->hdr_att_high = number >> BITS_PER_LONG;
+	page->hdr_attachment_id = (ULONG)(number & MAX_ULONG);
+}
+
 } // namespace

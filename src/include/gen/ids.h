@@ -598,6 +598,7 @@
 	const USHORT  f_mon_rec_bkver_reads = 13;
 	const USHORT  f_mon_rec_frg_reads = 14;
 	const USHORT  f_mon_rec_rpt_reads = 15;
+	const USHORT  f_mon_rec_rpt_imgc = 16;
 
 
 // Relation 40 (MON$CONTEXT_VARIABLES)

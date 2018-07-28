@@ -132,6 +132,7 @@ static const TOK tokens[] =
 	{TOK_CONNECT, "CONNECT", false},
 	{TOK_CONNECTIONS, "CONNECTIONS", true},
 	{TOK_CONSTRAINT, "CONSTRAINT", false},
+	{TOK_CONSISTENCY, "CONSISTENCY", true},
 	{TOK_CONTAINING, "CONTAINING", true},
 	{TOK_CONTINUE, "CONTINUE", true},
 	{TOK_CORR, "CORR", false},

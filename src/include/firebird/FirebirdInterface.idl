@@ -1146,6 +1146,7 @@ interface TraceTransaction : Versioned
 	const uint ISOLATION_CONCURRENCY = 2;
 	const uint ISOLATION_READ_COMMITTED_RECVER = 3;
 	const uint ISOLATION_READ_COMMITTED_NORECVER = 4;
+	const uint ISOLATION_READ_COMMITTED_READ_CONSISTENCY = 5;
 
 	int64 getTransactionID();
 	boolean getReadOnly();

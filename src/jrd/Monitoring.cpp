@@ -986,8 +986,10 @@ void Monitoring::putTransaction(SnapshotData::DumpRecord& record, const jrd_tra*
 		temp = iso_mode_consistency;
 	else if (transaction->tra_flags & TRA_read_committed)
 	{
-		temp = (transaction->tra_flags & TRA_rec_version) ?
-			iso_mode_rc_version : iso_mode_rc_no_version;
+		temp = (transaction->tra_flags & TRA_read_consistency) ?
+			iso_mode_rc_read_consistency :
+			(transaction->tra_flags & TRA_rec_version) ?
+				iso_mode_rc_version : iso_mode_rc_no_version;
 	}
 	else
 		temp = iso_mode_concurrency;
@@ -1025,7 +1027,7 @@ void Monitoring::putRequest(SnapshotData::DumpRecord& record, const jrd_req* req
 	record.reset(rel_mon_statements);
 
 	// request id
-	record.storeInteger(f_mon_stmt_id, request->req_id);
+	record.storeInteger(f_mon_stmt_id, request->getRequestId());
 	// attachment id
 	if (request->req_attachment)
 		record.storeInteger(f_mon_stmt_att_id, request->req_attachment->att_attachment_id);
@@ -1084,12 +1086,12 @@ void Monitoring::putCall(SnapshotData::DumpRecord& record, const jrd_req* reques
 	record.reset(rel_mon_calls);
 
 	// call id
-	record.storeInteger(f_mon_call_id, request->req_id);
+	record.storeInteger(f_mon_call_id, request->getRequestId());
 	// statement id
-	record.storeInteger(f_mon_call_stmt_id, initialRequest->req_id);
+	record.storeInteger(f_mon_call_stmt_id, initialRequest->getRequestId());
 	// caller id
 	if (initialRequest != request->req_caller)
-		record.storeInteger(f_mon_call_caller_id, request->req_caller->req_id);
+		record.storeInteger(f_mon_call_caller_id, request->req_caller->getRequestId());
 
 	const JrdStatement* statement = request->getStatement();
 	const Routine* routine = statement->getRoutine();
@@ -1168,6 +1170,7 @@ void Monitoring::putStatistics(SnapshotData::DumpRecord& record, const RuntimeSt
 	record.storeInteger(f_mon_rec_bkver_reads, statistics.getValue(RuntimeStatistics::RECORD_BACKVERSION_READS));
 	record.storeInteger(f_mon_rec_frg_reads, statistics.getValue(RuntimeStatistics::RECORD_FRAGMENT_READS));
 	record.storeInteger(f_mon_rec_rpt_reads, statistics.getValue(RuntimeStatistics::RECORD_RPT_READS));
+	record.storeInteger(f_mon_rec_rpt_imgc, statistics.getValue(RuntimeStatistics::RECORD_IMGC));
 	record.write();
 
 	// logical I/O statistics (table wise)
@@ -1200,6 +1203,7 @@ void Monitoring::putStatistics(SnapshotData::DumpRecord& record, const RuntimeSt
 		record.storeInteger(f_mon_rec_bkver_reads, (*iter).getCounter(RuntimeStatistics::RECORD_BACKVERSION_READS));
 		record.storeInteger(f_mon_rec_frg_reads, (*iter).getCounter(RuntimeStatistics::RECORD_FRAGMENT_READS));
 		record.storeInteger(f_mon_rec_rpt_reads, (*iter).getCounter(RuntimeStatistics::RECORD_RPT_READS));
+		record.storeInteger(f_mon_rec_rpt_imgc, (*iter).getCounter(RuntimeStatistics::RECORD_IMGC));
 		record.write();
 	}
 }

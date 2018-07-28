@@ -1114,7 +1114,9 @@ void INF_transaction_info(const jrd_tra* transaction,
 			if (transaction->tra_flags & TRA_read_committed)
 			{
 				*p++ = isc_info_tra_read_committed;
-				if (transaction->tra_flags & TRA_rec_version)
+				if (transaction->tra_flags & TRA_read_consistency)
+					*p++ = isc_info_tra_read_consistency;
+				else if (transaction->tra_flags & TRA_rec_version)
 					*p++ = isc_info_tra_rec_version;
 				else
 					*p++ = isc_info_tra_no_rec_version;

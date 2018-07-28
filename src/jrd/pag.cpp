@@ -863,17 +863,17 @@ AttNumber PAG_attachment_id(thread_db* tdbb)
 	// Get new attachment id
 
 	if (dbb->readOnly())
-		attachment->att_attachment_id = dbb->dbb_attachment_id + dbb->generateAttachmentId(tdbb);
+		attachment->att_attachment_id = dbb->generateAttachmentId();
 	else
 	{
 		window.win_page = HEADER_PAGE_NUMBER;
 		header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK(tdbb, &window);
-		const AttNumber att_id =
-			((AttNumber) header->hdr_att_high << BITS_PER_LONG | header->hdr_attachment_id) + 1;
+
+		const AttNumber att_id = Ods::getAttID(header) + 1;
 		attachment->att_attachment_id = att_id;
-		header->hdr_att_high = att_id >> BITS_PER_LONG;
-		header->hdr_attachment_id = (ULONG) (att_id & MAX_ULONG);
+		Ods::writeAttID(header, att_id);
+		dbb->assignLatestAttachmentId(attachment->att_attachment_id);
 
 		CCH_RELEASE(tdbb, &window);
 	}
@@ -1131,13 +1131,8 @@ void PAG_header(thread_db* tdbb, bool info)
 	RelationPages* relPages = relation->getBasePages();
 	if (!relPages->rel_pages)
 	{
-		// 21-Dec-2003 Nickolay Samofatov
-		// No need to re-set first page for RDB$PAGES relation since
+		// NS: There no need to reassign first page for RDB$PAGES relation since
 		// current code cannot change its location after database creation.
-		// Currently, this change only affects isc_database_info call,
-		// the only call which may call PAG_header multiple times.
-		// In fact, this isc_database_info behavior seems dangerous to me,
-		// but let somebody else fix that problem, I just fix the memory leak.
 		vcl* vector = vcl::newVector(*relation->rel_pool, 1);
 		relPages->rel_pages = vector;
 		(*vector)[0] = header->hdr_PAGES;
@@ -1729,6 +1724,13 @@ void PAG_set_db_readonly(thread_db* tdbb, bool flag)
 		// for WRITE operations
 		header->hdr_flags &= ~hdr_read_only;
 		dbb->dbb_flags &= ~DBB_read_only;
+
+		// Take into account current attachment ID, else next attachment 
+		// (cache writer, for examle) will get the same att ID and wait 
+		// for att lock indefinitely.
+		Attachment* att = tdbb->getAttachment();
+		if (att->att_attachment_id)
+			Ods::writeAttID(header, att->att_attachment_id);
 
 		// This is necessary as dbb's Next could be less than OAT.
 		// And this is safe as we currently in exclusive attachment and

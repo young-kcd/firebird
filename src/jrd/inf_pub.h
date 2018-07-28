@@ -401,6 +401,7 @@ enum info_db_provider
 // isc_info_tra_read_committed options
 #define isc_info_tra_no_rec_version		0
 #define isc_info_tra_rec_version		1
+#define isc_info_tra_read_consistency	2
 
 // isc_info_tra_access responses
 #define isc_info_tra_readonly	0

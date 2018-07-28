@@ -39,6 +39,7 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/tra_proto.h"
+#include "../jrd/tpc_proto.h"
 
 #include "../jrd/extds/ExtDS.h"
 
@@ -51,6 +52,31 @@
 
 using namespace Jrd;
 using namespace Firebird;
+
+/// class ActiveSnapshots
+
+ActiveSnapshots::ActiveSnapshots(Firebird::MemoryPool& p) :
+	m_snapshots(p), 
+	m_lastCommit(CN_ACTIVE), 
+	m_releaseCount(0),
+	m_slots_used(0)
+{
+}
+
+
+CommitNumber ActiveSnapshots::getSnapshotForVersion(CommitNumber version_cn)
+{
+	if (version_cn > m_lastCommit)
+		return CN_ACTIVE;
+
+	if (m_snapshots.locate(locGreatEqual, version_cn))
+		return m_snapshots.current();
+
+	return m_lastCommit;
+}
+
+
+/// class Attachment
 
 
 // static method
@@ -177,6 +203,7 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	: att_pool(pool),
 	  att_memory_stats(&dbb->dbb_memory_stats),
 	  att_database(dbb),
+	  att_active_snapshots(*pool),
 	  att_requests(*pool),
 	  att_lock_owner_id(Database::getLockOwnerId()),
 	  att_backup_state_counter(0),

@@ -4470,6 +4470,7 @@ namespace Firebird
 		static const unsigned ISOLATION_CONCURRENCY = 2;
 		static const unsigned ISOLATION_READ_COMMITTED_RECVER = 3;
 		static const unsigned ISOLATION_READ_COMMITTED_NORECVER = 4;
+		static const unsigned ISOLATION_READ_COMMITTED_READ_CONSISTENCY = 5;
 
 		ISC_INT64 getTransactionID()
 		{

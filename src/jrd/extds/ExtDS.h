@@ -47,7 +47,8 @@ class Transaction;
 class Statement;
 class Blob;
 
-enum TraModes {traReadCommited, traReadCommitedRecVersions, traConcurrency, traConsistency};
+enum TraModes {traReadCommited, traReadCommitedRecVersions, traReadCommitedReadConsistency, 
+			   traConcurrency, traConsistency};
 enum TraScope {traNotSet = 0, traAutonomous, traCommon, traTwoPhase};
 
 // Known built-in provider's names

@@ -632,6 +632,19 @@
 #
 #RelaxedAliasChecking = 0
 
+# ----------------------------
+# Engine currently provides statement-level read consistency in READ COMMITTED
+# mode by default. In this mode rec_version/no_rec_version transaction flags have
+# no effect. Setting this parameter to 0 effectively reverts engine to legacy
+# behavior.
+# 
+# CAUTION!
+# There is no guarantee that legacy behavior will be available in future Firebird
+# versions.
+#
+#	Type: boolean
+#
+#ReadConsistency = 1
 
 # ----------------------------
 # Client Connection Settings (Basic)
@@ -817,6 +830,36 @@
 # Type: integer
 #
 #EventMemSize = 64K
+
+# ----------------------------
+#
+# Bytes of shared memory allocated for snapshots management.
+# This will grow automatically unless you use an exotic platform
+# that is neither Windows nor supports mmap system call.
+# Each active shapshot uses 16 bytes of memory.
+#
+# Per-database configurable.
+#
+# Type: integer
+#
+#SnapshotsMemSize = 64K
+
+
+# ----------------------------
+#
+# Bytes of shared memory allocated for each block of TIP cache.
+# The reason to reduce this value is if you have small TIP and
+# want to conserve some memory. The reason to increase this
+# value is if you need very large cache and approach limits 
+# on kernel objects allocated for each block (files, mutexes, etc).
+# Each cached transaction uses 8 bytes of memory.
+#
+# Per-database configurable.
+#
+# Type: integer
+#
+#TpcBlockSize = 4M
+
 
 # ----------------------------
 #
