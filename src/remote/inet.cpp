@@ -1324,6 +1324,11 @@ static rem_port* alloc_port(rem_port* const parent, const USHORT flags)
 			INET_initialized = true;
 
 			// This should go AFTER 'INET_initialized = true' to avoid recursion
+			// That order of statements at the first glance appears to be possible cause of races:
+			// Someone may pass the if (!INET_initialized) with INET_initialized == true,
+			// but inet_async_receive still being NULL. Luckily it's not so awful actually.
+			// Async receive is used only by network server and there is no way for it
+			// to allocate secondary ports until completion of master port init.
 			inet_async_receive = alloc_port(0);
 			inet_async_receive->port_flags |= PORT_server;
 		}
