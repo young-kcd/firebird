@@ -825,7 +825,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 				state = tra_limbo;
 		}
 
-		if (state == tra_precommitted)
+		if (state == tra_committed)
 			state = check_precommitted(transaction, rpb);
 
 		// If the transaction is a read committed and chooses the no version
@@ -847,7 +847,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				state = wait(tdbb, transaction, rpb);
 
-				if (state == tra_precommitted)
+				if (state == tra_committed)
 					state = check_precommitted(transaction, rpb);
 
 				if (state == tra_active)
@@ -2310,7 +2310,7 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 
 		fb_assert(!(rpb->rpb_flags & rpb_gc_active));
 
-		if (state == tra_precommitted)
+		if (state == tra_committed)
 			state = check_precommitted(transaction, rpb);
 
 		if (state == tra_dead)
@@ -2551,7 +2551,7 @@ bool VIO_get_current(thread_db* tdbb,
 
 		fb_assert(!(rpb->rpb_flags & rpb_gc_active));
 
-		if (state == tra_precommitted)
+		if (state == tra_committed)
 			state = check_precommitted(transaction, rpb);
 
 		switch (state)
@@ -2584,7 +2584,7 @@ bool VIO_get_current(thread_db* tdbb,
 
 		state = wait(tdbb, transaction, rpb);
 
-		if (state == tra_precommitted)
+		if (state == tra_committed)
 			state = check_precommitted(transaction, rpb);
 
 		switch (state)
@@ -4096,7 +4096,7 @@ static int check_precommitted(const jrd_tra* transaction, const record_param* rp
 		}
 	}
 
-	return tra_precommitted;
+	return tra_committed;
 }
 
 
@@ -5585,7 +5585,7 @@ static int prepare_update(	thread_db*		tdbb,
 
 		fb_assert(!(rpb->rpb_flags & rpb_gc_active));
 
-		if (state == tra_precommitted)
+		if (state == tra_committed)
 			state = check_precommitted(transaction, rpb);
 
 		switch (state)
@@ -5705,7 +5705,7 @@ static int prepare_update(	thread_db*		tdbb,
 
 			state = wait(tdbb, transaction, rpb);
 
-			if (state == tra_precommitted)
+			if (state == tra_committed)
 				state = check_precommitted(transaction, rpb);
 
 			// The snapshot says: transaction was active.  The TIP page says: transaction
