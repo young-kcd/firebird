@@ -225,15 +225,23 @@ public:
 			CheckStatusWrapper st(&ls);
 
 			networkCallback.wake = false;
-			if (keyPlugin->keyCallback(&st, &networkCallback) && networkCallback.wake)
+			bool callbackResult = keyPlugin->keyCallback(&st, &networkCallback);
+			if (st.getErrors()[1] != isc_wish_list)
+				check(&st);
+			if (callbackResult && networkCallback.wake)
 			{
 				// current holder has a key and it seems to be from the client
 				keyHolder = keyPlugin;
 				keyHolder->addRef();
 				keyCallback = keyHolder->chainHandle(&st);
 
-				if (st.isEmpty() && keyCallback)
-					break;
+				if (st.isEmpty())
+				{
+					if (keyCallback)
+						break;
+				}
+				else if (st.getErrors()[1] != isc_wish_list)
+					check(&st);
 			}
 		}
 	}
