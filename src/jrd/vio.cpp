@@ -5996,7 +5996,7 @@ static void refresh_fk_fields(thread_db* tdbb, Record* old_rec, record_param* cu
 	// Collect all fields of all foreign keys
 	SortedArray<int, InlineStorage<int, 16> > fields;
 
-	for (int i = 0; i < frgnCount; i++)
+	for (FB_SIZE_T i = 0; i < frgnCount; i++)
 	{
 		// We need self-referenced FK's only
 		if ((*relation->rel_foreign_refs.frgn_relations)[i] == relation->rel_id)
@@ -6023,7 +6023,7 @@ static void refresh_fk_fields(thread_db* tdbb, Record* old_rec, record_param* cu
 		return;
 
 	DSC desc1, desc2;
-	for (int idx = 0; idx < fields.getCount(); idx++)
+	for (FB_SIZE_T idx = 0; idx < fields.getCount(); idx++)
 	{
 		// Detect if user changed FK field by himself.
 		const int fld = fields[idx];
