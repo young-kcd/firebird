@@ -1003,9 +1003,10 @@ static void authReceiveResponse(bool havePacket, ClntAuthBlock& authItr, rem_por
 
 static AtomicCounter remote_event_id;
 
-static const unsigned ANALYZE_UV =			0x01;
+static const unsigned ANALYZE_USER_VFY =	0x01;
 static const unsigned ANALYZE_LOOPBACK =	0x02;
 static const unsigned ANALYZE_MOUNTS =		0x04;
+static const unsigned ANALYZE_EMP_NAME =	0x08;
 
 inline static void reset(IStatus* status) throw()
 {
@@ -1053,7 +1054,7 @@ IAttachment* RProvider::attach(CheckStatusWrapper* status, const char* filename,
 		unsigned flags = ANALYZE_MOUNTS;
 
 		if (get_new_dpb(newDpb, dpbParam))
-			flags |= ANALYZE_UV;
+			flags |= ANALYZE_USER_VFY;
 
 		if (loopback)
 			flags |= ANALYZE_LOOPBACK;
@@ -1675,7 +1676,7 @@ Firebird::IAttachment* RProvider::create(CheckStatusWrapper* status, const char*
 		unsigned flags = ANALYZE_MOUNTS;
 
 		if (get_new_dpb(newDpb, dpbParam))
-			flags |= ANALYZE_UV;
+			flags |= ANALYZE_USER_VFY;
 
 		if (loopback)
 			flags |= ANALYZE_LOOPBACK;
@@ -5654,10 +5655,12 @@ Firebird::IService* RProvider::attachSvc(CheckStatusWrapper* status, const char*
 		unsigned flags = 0;
 
 		if (user_verification)
-			flags |= ANALYZE_UV;
+			flags |= ANALYZE_USER_VFY;
 
 		if (loopback)
 			flags |= ANALYZE_LOOPBACK;
+
+		flags |= ANALYZE_EMP_NAME;
 
 		PathName refDbName;
 		if (newSpb.find(isc_spb_expected_db))
@@ -6459,10 +6462,12 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 	cBlock.loadClnt(pb, &parSet);
 	authenticateStep0(cBlock);
 
+	bool needFile = !(flags & ANALYZE_EMP_NAME);
+
 #ifdef WIN_NT
-	if (ISC_analyze_protocol(PROTOCOL_XNET, attach_name, node_name, NULL))
-		port = XNET_analyze(&cBlock, attach_name, flags & ANALYZE_UV, cBlock.getConfig(), ref_db_name);
-	else if (ISC_analyze_protocol(PROTOCOL_WNET, attach_name, node_name, WNET_SEPARATOR) ||
+	if (ISC_analyze_protocol(PROTOCOL_XNET, attach_name, node_name, NULL, needFile))
+		port = XNET_analyze(&cBlock, attach_name, flags & ANALYZE_USER_VFY, cBlock.getConfig(), ref_db_name);
+	else if (ISC_analyze_protocol(PROTOCOL_WNET, attach_name, node_name, WNET_SEPARATOR, needFile) ||
 		ISC_analyze_pclan(attach_name, node_name))
 	{
 		if (node_name.isEmpty())
@@ -6473,20 +6478,20 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 			ISC_utf8ToSystem(node_name);
 		}
 
-		port = WNET_analyze(&cBlock, attach_name, node_name.c_str(), flags & ANALYZE_UV,
+		port = WNET_analyze(&cBlock, attach_name, node_name.c_str(), flags & ANALYZE_USER_VFY,
 			cBlock.getConfig(), ref_db_name);
 	}
 	else
 #endif
 
-	if (ISC_analyze_protocol(PROTOCOL_INET4, attach_name, node_name, INET_SEPARATOR))
+	if (ISC_analyze_protocol(PROTOCOL_INET4, attach_name, node_name, INET_SEPARATOR, needFile))
 		inet_af = AF_INET;
-	else if (ISC_analyze_protocol(PROTOCOL_INET6, attach_name, node_name, INET_SEPARATOR))
+	else if (ISC_analyze_protocol(PROTOCOL_INET6, attach_name, node_name, INET_SEPARATOR, needFile))
 		inet_af = AF_INET6;
 
 	if (inet_af != AF_UNSPEC ||
-		ISC_analyze_protocol(PROTOCOL_INET, attach_name, node_name, INET_SEPARATOR) ||
-		ISC_analyze_tcp(attach_name, node_name))
+		ISC_analyze_protocol(PROTOCOL_INET, attach_name, node_name, INET_SEPARATOR, needFile) ||
+		ISC_analyze_tcp(attach_name, node_name, needFile))
 	{
 		if (node_name.isEmpty())
 			node_name = INET_LOCALHOST;
@@ -6496,7 +6501,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 			ISC_utf8ToSystem(node_name);
 		}
 
-		port = INET_analyze(&cBlock, attach_name, node_name.c_str(), flags & ANALYZE_UV, pb,
+		port = INET_analyze(&cBlock, attach_name, node_name.c_str(), flags & ANALYZE_USER_VFY, pb,
 			cBlock.getConfig(), ref_db_name, cryptCb, inet_af);
 	}
 
@@ -6515,7 +6520,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 				ISC_unescape(node_name);
 				ISC_utf8ToSystem(node_name);
 
-				port = WNET_analyze(&cBlock, expanded_name, node_name.c_str(), flags & ANALYZE_UV,
+				port = WNET_analyze(&cBlock, expanded_name, node_name.c_str(), flags & ANALYZE_USER_VFY,
 					cBlock.getConfig(), ref_db_name);
 			}
 		}
@@ -6530,7 +6535,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 				ISC_unescape(node_name);
 				ISC_utf8ToSystem(node_name);
 
-				port = INET_analyze(&cBlock, expanded_name, node_name.c_str(), flags & ANALYZE_UV, pb,
+				port = INET_analyze(&cBlock, expanded_name, node_name.c_str(), flags & ANALYZE_USER_VFY, pb,
 					cBlock.getConfig(), ref_db_name, cryptCb);
 			}
 		}
@@ -6547,19 +6552,19 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 #ifdef WIN_NT
 			if (!port)
 			{
-				port = XNET_analyze(&cBlock, attach_name, flags & ANALYZE_UV,
+				port = XNET_analyze(&cBlock, attach_name, flags & ANALYZE_USER_VFY,
 					cBlock.getConfig(), ref_db_name);
 			}
 
 			if (!port)
 			{
-				port = WNET_analyze(&cBlock, attach_name, WNET_LOCALHOST, flags & ANALYZE_UV,
+				port = WNET_analyze(&cBlock, attach_name, WNET_LOCALHOST, flags & ANALYZE_USER_VFY,
 					cBlock.getConfig(), ref_db_name);
 			}
 #endif
 			if (!port)
 			{
-				port = INET_analyze(&cBlock, attach_name, INET_LOCALHOST, flags & ANALYZE_UV, pb,
+				port = INET_analyze(&cBlock, attach_name, INET_LOCALHOST, flags & ANALYZE_USER_VFY, pb,
 					cBlock.getConfig(), ref_db_name, cryptCb);
 			}
 		}

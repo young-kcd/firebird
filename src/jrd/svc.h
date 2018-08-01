@@ -43,12 +43,6 @@
 #include "../burp/split/spit.h"
 #include "../jrd/status.h"
 
-// forward decl.
-
-namespace Jrd {
-	struct serv_entry;
-}
-
 namespace Firebird {
 	namespace Arg {
 		class StatusVector;
@@ -56,6 +50,15 @@ namespace Firebird {
 }
 
 namespace Jrd {
+
+typedef int ServiceEntry(Firebird::UtilSvc*);
+
+struct serv_entry
+{
+	USHORT				serv_action;		// isc_action_svc_....
+	const TEXT*			serv_name;			// service name
+	ServiceEntry*		serv_thd;			// thread to execute
+};
 
 const ULONG SERVICE_VERSION			= 2;
 
@@ -284,7 +287,6 @@ private:
 	ULONG	svc_stdout_tail;
 	UCHAR	svc_stdout[SVC_STDOUT_BUFFER_SIZE];		// output from service
 	Firebird::Semaphore	svcStart;
-	const serv_entry*	svc_service;				// attached service's entry
 	const serv_entry*	svc_service_run;			// running service's entry
 	Firebird::Array<UCHAR> svc_resp_alloc;
 	UCHAR*	svc_resp_buf;

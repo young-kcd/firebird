@@ -65,9 +65,6 @@
 
 #include "../common/classes/DbImplementation.h"
 
-// Services table.
-#include "../jrd/svc_tab.h"
-
 // The switches tables. Needed only for utilities that run as service, too.
 #include "../common/classes/Switches.h"
 #include "../alice/aliceswi.h"
@@ -76,6 +73,15 @@
 #include "../utilities/gstat/dbaswi.h"
 #include "../utilities/nbackup/nbkswi.h"
 #include "../jrd/trace/traceswi.h"
+#include "../jrd/val_proto.h"
+
+// Service threads
+#include "../burp/burp_proto.h"
+#include "../alice/alice_proto.h"
+int main_gstat(Firebird::UtilSvc* uSvc);
+#include "../utilities/nbackup/nbk_proto.h"
+#include "../utilities/gsec/gsec_proto.h"
+#include "../jrd/trace/TraceService.h"
 #include "../jrd/val_proto.h"
 
 #ifdef HAVE_SYS_TYPES_H
@@ -201,6 +207,35 @@ namespace {
 
 
 using namespace Jrd;
+
+namespace {
+const serv_entry services[] =
+{
+	{ isc_action_svc_backup, "Backup Database", BURP_main },
+	{ isc_action_svc_restore, "Restore Database", BURP_main },
+	{ isc_action_svc_repair, "Repair Database", ALICE_main },
+	{ isc_action_svc_add_user, "Add User", GSEC_main },
+	{ isc_action_svc_delete_user, "Delete User", GSEC_main },
+	{ isc_action_svc_modify_user, "Modify User", GSEC_main },
+	{ isc_action_svc_display_user, "Display User", GSEC_main },
+	{ isc_action_svc_properties, "Database Properties", ALICE_main },
+	{ isc_action_svc_db_stats, "Database Stats", main_gstat },
+	{ isc_action_svc_get_fb_log, "Get Log File", Service::readFbLog },
+	{ isc_action_svc_nbak, "Incremental Backup Database", NBACKUP_main },
+	{ isc_action_svc_nrest, "Incremental Restore Database", NBACKUP_main },
+	{ isc_action_svc_trace_start, "Start Trace Session", TRACE_main },
+	{ isc_action_svc_trace_stop, "Stop Trace Session", TRACE_main },
+	{ isc_action_svc_trace_suspend, "Suspend Trace Session", TRACE_main },
+	{ isc_action_svc_trace_resume, "Resume Trace Session", TRACE_main },
+	{ isc_action_svc_trace_list, "List Trace Sessions", TRACE_main },
+	{ isc_action_svc_set_mapping, "Set Domain Admins Mapping to RDB$ADMIN", GSEC_main },
+	{ isc_action_svc_drop_mapping, "Drop Domain Admins Mapping to RDB$ADMIN", GSEC_main },
+	{ isc_action_svc_display_user_adm, "Display User with Admin Info", GSEC_main },
+	{ isc_action_svc_validate, "Validate Database", VAL_service},
+	{ 0, NULL, NULL }
+};
+
+}
 
 Service::Validate::Validate(Service* svc)
 	: sharedGuard(globalServicesMutex, FB_FUNCTION)
@@ -703,7 +738,7 @@ namespace
 Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_data,
 				 Firebird::ICryptKeyCallback* crypt_callback)
 	: svc_status(getPool()), svc_parsed_sw(getPool()),
-	svc_stdout_head(0), svc_stdout_tail(0), svc_service(NULL), svc_service_run(NULL),
+	svc_stdout_head(0), svc_stdout_tail(0), svc_service_run(NULL),
 	svc_resp_alloc(getPool()), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 	svc_resp_len(0), svc_flags(SVC_finished), svc_user_flag(0), svc_spb_version(0),
 	svc_do_shutdown(false), svc_shutdown_in_progress(false), svc_timeout(false),
@@ -732,34 +767,14 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	// Since this moment we should remove this service from allServices in case of error thrown
 	try
 	{
-		// If the service name begins with a slash, ignore it.
-		if (*service_name == '/' || *service_name == '\\') {
-			service_name++;
-		}
-
-		// Find the service by looking for an exact match.
-		string svcname(service_name);
-
 #ifdef DEV_BUILD
+		// If the service name begins with a slash, ignore it.
+		if (*service_name == '/' || *service_name == '\\')
+			service_name++;
+		string svcname(service_name);
 		if (svcname == "@@@")
-		{
 			svc_debug = true;
-			svcname = "service_mgr";
-		}
 #endif
-
-		const serv_entry* serv;
-		for (serv = services; serv->serv_name; serv++)
-		{
-			if (svcname == serv->serv_name)
-				break;
-		}
-
-		if (!serv->serv_name)
-		{
-			status_exception::raise(Arg::Gds(isc_service_att_err) <<
-									Arg::Gds(isc_svcnotdef) << Arg::Str(svcname));
-		}
 
 		// Process the service parameter block.
 		ClumpletReader spb(ClumpletReader::spbList, spb_data, spb_length, spbVersionError);
@@ -771,92 +786,68 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		{
 			svc_trace_manager = FB_NEW_POOL(*getDefaultMemoryPool()) TraceManager(this);
 			svc_user_flag = SVC_user_dba;
-			svc_service = serv;
 			return;
 		}
 #endif
 
 		// Perhaps checkout the user in the security database.
-		USHORT user_flag;
-		if (!strcmp(serv->serv_name, "anonymous")) {
-			user_flag = SVC_user_none;
-		}
-		else
+		USHORT user_flag = 0;
+
+		if (!svc_username.hasData())
 		{
-			if (!svc_username.hasData())
+			if (svc_auth_block.hasData())
 			{
-				if (svc_auth_block.hasData())
-				{
-					// remote connection - use svc_auth_block
-					PathName dummy;
-					RefPtr<const Config> config;
-					expandDatabaseName(svc_expected_db, dummy, &config);
+				// remote connection - use svc_auth_block
+				PathName dummy;
+				RefPtr<const Config> config;
+				expandDatabaseName(svc_expected_db, dummy, &config);
 
-					Mapping mapping(Mapping::MAP_THROW_NOT_FOUND, svc_crypt_callback);
-					mapping.needAuthBlock(svc_auth_block);
+				Mapping mapping(Mapping::MAP_THROW_NOT_FOUND, svc_crypt_callback);
+				mapping.needAuthBlock(svc_auth_block);
 
-					mapping.setAuthBlock(svc_auth_block);
-					mapping.setErrorMessagesContextName("services manager");
-					mapping.setSecurityDbAlias(config->getSecurityDatabase(), nullptr);
+				mapping.setAuthBlock(svc_auth_block);
+				mapping.setErrorMessagesContextName("services manager");
+				mapping.setSecurityDbAlias(config->getSecurityDatabase(), nullptr);
 
-					string trusted_role;
-					mapping.mapUser(svc_username, trusted_role);
-					trusted_role.upper();
-					svc_trusted_role = trusted_role == ADMIN_ROLE;
-				}
-				else
-				{
-					// we have embedded service connection, check OS auth
-					if (ISC_get_user(&svc_username, NULL, NULL))
-					{
-						svc_username = DBA_USER_NAME;
-					}
-				}
+				string trusted_role;
+				mapping.mapUser(svc_username, trusted_role);
+				trusted_role.upper();
+				svc_trusted_role = trusted_role == ADMIN_ROLE;
 			}
-
-			if (!svc_username.hasData())
+			else
 			{
-				// user name and password are required while
-				// attaching to the services manager
-				status_exception::raise(Arg::Gds(isc_service_att_err) << Arg::Gds(isc_svcnouser));
-			}
-
-			if (svc_username.length() > USERNAME_LENGTH)
-			{
-				status_exception::raise(Arg::Gds(isc_long_login) <<
-					Arg::Num(svc_username.length()) << Arg::Num(USERNAME_LENGTH));
-			}
-
-			// Check that the validated user has the authority to access this service
-			if (svc_username != DBA_USER_NAME && !svc_trusted_role) {
-				user_flag = SVC_user_any;
-			}
-			else {
-				user_flag = SVC_user_dba | SVC_user_any;
+				// we have embedded service connection, check OS auth
+				if (ISC_get_user(&svc_username, NULL, NULL))
+					svc_username = DBA_USER_NAME;
 			}
 		}
+
+		if (!svc_username.hasData())
+		{
+			// user name and password are required while
+			// attaching to the services manager
+			status_exception::raise(Arg::Gds(isc_service_att_err) << Arg::Gds(isc_svcnouser));
+		}
+
+		if (svc_username.length() > USERNAME_LENGTH)
+		{
+			status_exception::raise(Arg::Gds(isc_long_login) <<
+				Arg::Num(svc_username.length()) << Arg::Num(USERNAME_LENGTH));
+		}
+
+		// Check that the validated user has the authority to access this service
+		if (svc_username != DBA_USER_NAME && !svc_trusted_role)
+			user_flag = SVC_user_any;
+		else
+			user_flag = SVC_user_dba | SVC_user_any;
 
 		// move service switches in
-		string switches;
-		if (serv->serv_std_switches)
-			switches = serv->serv_std_switches;
-		if (svc_command_line.hasData() && serv->serv_std_switches)
-			switches += ' ';
-		switches += svc_command_line;
-
+		string switches = svc_command_line;
 		svc_flags |= switches.hasData() ? SVC_cmd_line : 0;
 		svc_perm_sw = switches;
 		svc_user_flag = user_flag;
-		svc_service = serv;
 
 		svc_trace_manager = FB_NEW_POOL(*getDefaultMemoryPool()) TraceManager(this);
-
-		// If an executable is defined for the service, try to fork a new thread.
-		// Only do this if we are working with a version 1 service
-		if (serv->serv_thd && svc_spb_version == isc_spb_version1)
-		{
-			start(serv);
-		}
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
@@ -2266,11 +2257,6 @@ void Service::start(const serv_entry* service_run)
 	// Break up the command line into individual arguments.
 	parseSwitches();
 
-	if (svc_service && svc_service->serv_name)
-	{
-		argv[0] = svc_service->serv_name;
-	}
-
 	svc_service_run = service_run;
 	Thread::start(run, this, THREAD_medium);
 }
@@ -3224,7 +3210,7 @@ bool Service::get_action_svc_parameter(UCHAR action,
 
 const char* Service::getServiceMgr() const
 {
-	return svc_service ? svc_service->serv_name : NULL;
+	return "service_mgr";
 }
 
 const char* Service::getServiceName() const
