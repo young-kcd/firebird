@@ -564,7 +564,7 @@ void locate(RefPtr<Mapping::Cache>& cache, const NoCaseString& alias, const NoCa
 class Found
 {
 public:
-	enum What {FND_NOTHING, FND_SEC, FND_DB};
+	enum What {FND_NOTHING, FND_PLUG, FND_SEC, FND_DB};
 
 	Found()
 		: found(FND_NOTHING)
@@ -572,8 +572,13 @@ public:
 
 	void set(What find, const AuthReader::Info& val)
 	{
+		fb_assert(find != FND_NOTHING);
+
+		if (val.plugin.hasData())
+			find = FND_PLUG;
 		if (find == found && value != val.name)
 			Arg::Gds(isc_map_undefined).raise();
+
 		if (find > found)
 		{
 			found = find;
@@ -1316,17 +1321,23 @@ void Mapping::setInternalFlags()
 	if (!securityAlias)
 		internalFlags |= FLAG_SEC;
 
-	// detect presence of this databases mapping in authBlock
+	// detect presence of non-plugin databases mapping in authBlock
 	// in that case mapUser was already invoked for it
 	if (authBlock)
 	{
 		AuthReader::Info info;
 		for (AuthReader rdr(*authBlock); rdr.getInfo(info); rdr.moveNext())
 		{
-			if (mainDb && info.secDb == mainDb)
-				internalFlags |= FLAG_DB;
-			if (securityAlias && info.secDb == secExpanded.c_str())
-				internalFlags |= FLAG_SEC;
+			MAP_DEBUG(fprintf(stderr, "info.plugin=%s info.secDb=%s db=%s securityDb=%s\n",
+				info.plugin.c_str(), info.secDb.c_str(), mainDb ? mainDb : "NULL", secExpanded.c_str()));
+
+			if (info.plugin.isEmpty())
+			{
+				if (mainDb && info.secDb == mainDb)
+					internalFlags |= FLAG_DB;
+				if (securityAlias && info.secDb == secExpanded.c_str())
+					internalFlags |= FLAG_SEC;
+			}
 		}
 	}
 }
