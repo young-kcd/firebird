@@ -508,7 +508,7 @@ Cache* locate(const NoCaseString& alias, const NoCaseString& target)
 class Found
 {
 public:
-	enum What {FND_NOTHING, FND_SEC, FND_DB};
+	enum What {FND_NOTHING, FND_PLUG, FND_SEC, FND_DB};
 
 	Found()
 		: found(FND_NOTHING)
@@ -516,8 +516,13 @@ public:
 
 	void set(What find, const AuthReader::Info& val)
 	{
+		fb_assert(find != FND_NOTHING);
+
+		if (val.plugin.hasData())
+			find = FND_PLUG;
 		if (find == found && value != val.name)
 			Arg::Gds(isc_map_undefined).raise();
+
 		if (find > found)
 		{
 			found = find;
@@ -983,15 +988,21 @@ bool mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 	// Create new writer
 	AuthWriter newBlock;
 
-	// detect presence of this databases mapping in authBlock
+	// detect presence of non-plugin databases mapping in authBlock
 	// in that case mapUser was already invoked for it
 	unsigned flags = db ? 0 : FLAG_DB;
 	for (AuthReader rdr(authBlock); rdr.getInfo(info); rdr.moveNext())
 	{
-		if (db && info.secDb == db)
-			flags |= FLAG_DB;
-		if (info.secDb == securityDb)
-			flags |= FLAG_SEC;
+		MAP_DEBUG(fprintf(stderr, "info.plugin=%s info.secDb=%s db=%s securityDb=%s\n",
+			info.plugin.c_str(), info.secDb.c_str(), db ? db : "NULL", securityDb));
+
+		if (info.plugin.isEmpty())
+		{
+			if (db && info.secDb == db)
+				flags |= FLAG_DB;
+			if (info.secDb == securityDb)
+				flags |= FLAG_SEC;
+		}
 	}
 
 	// Perform lock & map only when needed
