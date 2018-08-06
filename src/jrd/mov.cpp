@@ -522,11 +522,11 @@ DescPrinter::DescPrinter(thread_db* tdbb, const dsc* desc, FB_SIZE_T mLen)
 			string hex;
 
 			FB_SIZE_T len = value.length();
-			const bool cut = (len > (maxLen - 3) / 2);
+			const bool cut = (len > (maxLen - 3) / 2);	// 3 is a length of enclosing symbols: x' and '
 			if (cut)
-				len = (maxLen - 5) / 2;
+				len = (maxLen - 5) / 2;					// 5 is a length of enclosing symbols: x' and ...
 
-			char* s = hex.getBuffer(2 * len);
+			char* s = hex.getBuffer(2 * len);			// each raw byte represented by 2 chars in string
 
 			for (FB_SIZE_T i = 0; i < len; i++)
 			{
