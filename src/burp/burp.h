@@ -989,8 +989,8 @@ public:
 	const SCHAR*	gbl_sw_keyholder;
 	const SCHAR*	gbl_sw_crypt;
 	const SCHAR*	gbl_sw_keyname;
-	SCHAR			gbl_hdr_keybuffer[MAX_SQL_IDENTIFIER_SIZE + 1];
-	SCHAR			gbl_hdr_cryptbuffer[MAX_SQL_IDENTIFIER_SIZE + 1];
+	SCHAR			gbl_hdr_keybuffer[MAX_SQL_IDENTIFIER_SIZE];
+	SCHAR			gbl_hdr_cryptbuffer[MAX_SQL_IDENTIFIER_SIZE];
 	const SCHAR*	gbl_sw_sql_role;
 	const SCHAR*	gbl_sw_user;
 	const SCHAR*	gbl_sw_password;

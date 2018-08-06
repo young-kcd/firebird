@@ -58,12 +58,9 @@
 
 #if defined(HAVE_ZLIB_H)
 #define WIRE_COMPRESS_SUPPORT 1
-#endif
-
-#ifdef WIRE_COMPRESS_SUPPORT
-#include <zlib.h>
 //#define COMPRESS_DEBUG 1
-#endif // WIRE_COMPRESS_SUPPORT
+#include "../common/classes/zip.h"
+#endif
 
 #define DEB_RBATCH(x)	((void) 0)
 

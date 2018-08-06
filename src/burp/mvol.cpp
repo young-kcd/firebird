@@ -65,6 +65,7 @@
 #include "../common/StatusHolder.h"
 #include "../common/db_alias.h"
 #include "../common/status.h"
+#include "../common/classes/zip.h"
 
 using MsgFormat::SafeArg;
 using Firebird::FbLocalStatus;
@@ -110,62 +111,9 @@ static UCHAR debug_on = 0;		// able to turn this on in debug mode
 
 const int burp_msg_fac = 12;
 
-#ifdef WIRE_COMPRESS_SUPPORT
-namespace {
-	class ZLib
-	{
-	public:
-		explicit ZLib(Firebird::MemoryPool&)
-		{
-#ifdef WIN_NT
-			const char* name = "zlib1.dll";
-#else
-			const char* name = "libz." SHRLIB_EXT ".1";
-#endif
-			z.reset(ModuleLoader::fixAndLoadModule(name));
-			if (z)
-				symbols();
-		}
-
-		int ZEXPORT (*deflateInit_)(z_stream* strm, int level, const char *version, int stream_size);
-		int ZEXPORT (*inflateInit_)(z_stream* strm, const char *version, int stream_size);
-		int ZEXPORT (*deflate)(z_stream* strm, int flush);
-		int ZEXPORT (*inflate)(z_stream* strm, int flush);
-		void ZEXPORT (*deflateEnd)(z_stream* strm);
-		void ZEXPORT (*inflateEnd)(z_stream* strm);
-
-		operator bool() { return z.hasData(); }
-		bool operator!() { return !z.hasData(); }
-
-	private:
-		Firebird::AutoPtr<ModuleLoader::Module> z;
-
-		void symbols()
-		{
-#define FB_ZSYMB(A) z->findSymbol(STRINGIZE(A), A); if (!A) { z.reset(NULL); return; }
-			FB_ZSYMB(deflateInit_)
-			FB_ZSYMB(inflateInit_)
-			FB_ZSYMB(deflate)
-			FB_ZSYMB(inflate)
-			FB_ZSYMB(deflateEnd)
-			FB_ZSYMB(inflateEnd)
-#undef FB_ZSYMB
-		}
-	};
-
-	Firebird::InitInstance<ZLib> zlib;
-
-	void* allocFunc(void*, uInt items, uInt size)
-	{
-		return MemoryPool::globalAlloc(items * size ALLOC_ARGS);
-	}
-
-	void freeFunc(void*, void* address)
-	{
-		MemoryPool::globalFree(address);
-	}
-}
-#endif // WIRE_COMPRESS_SUPPORT
+#ifdef HAVE_ZLIB_H
+static Firebird::InitInstance<Firebird::ZLib> zlib;
+#endif // HAVE_ZLIB_H
 
 static void  bad_attribute(int, USHORT);
 static void  file_not_empty();
@@ -491,7 +439,7 @@ static ULONG unzip_read_block(BurpGlobals* tdgbl, UCHAR* buffer, FB_SIZE_T buffe
 		return crypt_read_block(tdgbl, buffer, buffer_length);
 	}
 
-#ifdef WIRE_COMPRESS_SUPPORT
+#ifdef HAVE_ZLIB_H
 	z_stream& strm = tdgbl->gbl_stream;
 	strm.avail_out = buffer_length;
 	strm.next_out = buffer;
@@ -558,7 +506,7 @@ static void zip_write_block(BurpGlobals* tdgbl, const UCHAR* buffer, FB_SIZE_T b
 		return;
 	}
 
-#ifdef WIRE_COMPRESS_SUPPORT
+#ifdef HAVE_ZLIB_H
 	z_stream& strm = tdgbl->gbl_stream;
 	strm.avail_in = buffer_length;
 	strm.next_in = (Bytef*)buffer;
@@ -624,7 +572,7 @@ FB_UINT64 MVOL_fini_read()
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-#ifdef WIRE_COMPRESS_SUPPORT
+#ifdef HAVE_ZLIB_H
 	if (tdgbl->gbl_sw_zip)
 	{
 		zlib().inflateEnd(&tdgbl->gbl_stream);
@@ -669,7 +617,7 @@ FB_UINT64 MVOL_fini_write()
 
 	zip_write_block(tdgbl, tdgbl->gbl_compress_buffer, tdgbl->gbl_io_ptr - tdgbl->gbl_compress_buffer, true);
 
-#ifdef WIRE_COMPRESS_SUPPORT
+#ifdef HAVE_ZLIB_H
 	if (tdgbl->gbl_sw_zip)
 	{
 		zlib().deflateEnd(&tdgbl->gbl_stream);
@@ -754,8 +702,8 @@ void MVOL_init_read(const char* file_name, USHORT* format)
 	{
 		z_stream& strm = tdgbl->gbl_stream;
 
-		strm.zalloc = allocFunc;
-		strm.zfree = freeFunc;
+		strm.zalloc = Firebird::ZLib::allocFunc;
+		strm.zfree = Firebird::ZLib::freeFunc;
 		strm.opaque = Z_NULL;
 		strm.avail_in = 0;
 		strm.next_in = Z_NULL;
@@ -821,8 +769,8 @@ void MVOL_init_write(const char* file_name)
 	{
 		z_stream& strm = tdgbl->gbl_stream;
 
-		strm.zalloc = allocFunc;
-		strm.zfree = freeFunc;
+		strm.zalloc = Firebird::ZLib::allocFunc;
+		strm.zfree = Firebird::ZLib::freeFunc;
 		strm.opaque = Z_NULL;
 		int ret = zlib().deflateInit(&strm, Z_DEFAULT_COMPRESSION);
 		if (ret != Z_OK)
