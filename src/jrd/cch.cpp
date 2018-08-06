@@ -275,11 +275,12 @@ int CCH_down_grade_dbb(void* ast_object)
 				const bcb_repeat* const head = bcb->bcb_rpt;
 				const bcb_repeat* tail = bcb->bcb_rpt;
 				fb_assert(tail);			// once I've got here with NULL. AP.
+
 				for (const bcb_repeat* const end = tail + bcb->bcb_count; tail < end; ++tail)
 				{
 					BufferDesc* bdb = tail->bcb_bdb;
 
-					// Acquire EX latch to avoid races with LCK_release (called by CCH_release) 
+					// Acquire EX latch to avoid races with LCK_release (called by CCH_release)
 					// or LCK_lock (by lock_buffer) in main thread. Take extra care to avoid
 					// deadlock with CCH_handoff. See CORE-5436.
 

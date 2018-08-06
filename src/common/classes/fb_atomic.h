@@ -54,7 +54,7 @@ public:
 		return counter.fetch_add(value);
 	}
 
-	void setValue(counter_type val) 
+	void setValue(counter_type val)
 	{
 		counter.store(val, std::memory_order_release);
 	}
@@ -164,9 +164,9 @@ private:
 
 
 
-// NS 2014-08-01: FIXME. Atomic counters use barriers on all platforms, so 
-// these operations are no-ops and will always be no-ops. They were used 
-// to work around (incorrectly) bugs in Sparc and PPC atomics code. 
+// NS 2014-08-01: FIXME. Atomic counters use barriers on all platforms, so
+// these operations are no-ops and will always be no-ops. They were used
+// to work around (incorrectly) bugs in Sparc and PPC atomics code.
 inline void FlushCache() { }
 inline void WaitForFlushCache() { }
 

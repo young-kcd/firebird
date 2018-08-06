@@ -1866,6 +1866,7 @@ static gbak_action open_files(const TEXT* file1,
 		{
 			tdgbl->gbl_database_file_name = file1;
 			provider->setDbCryptCallback(&status_vector, MVOL_get_crypt(tdgbl));
+
 			if (!status_vector.isSuccess())
 			{
 				BURP_print_status(true, &status_vector);
@@ -1909,9 +1910,10 @@ static gbak_action open_files(const TEXT* file1,
 				tdgbl->db_handle->getInfo(&status_vector, sizeof(info), info, sizeof(buffer), buffer);
 
 				UCHAR* p = buffer;
-				while(p)
+
+				while (p)
 				{
-					switch(*p++)
+					switch (*p++)
 					{
 					case fb_info_crypt_key:
 						len = gds__vax_integer(p, 2);
@@ -1952,10 +1954,10 @@ static gbak_action open_files(const TEXT* file1,
 		}
 	}
 
-	burp_fil* fil = 0;
+	burp_fil* fil = NULL;
+
 	if (sw_replace == IN_SW_BURP_B)
 	{
-
 		// Now it is safe to skip a db file
 		tdgbl->gbl_sw_backup_files = tdgbl->gbl_sw_files->fil_next;
 		tdgbl->gbl_sw_files = tdgbl->gbl_sw_files->fil_next;
@@ -1963,6 +1965,7 @@ static gbak_action open_files(const TEXT* file1,
 
 		gbak_action flag = BACKUP;
 		tdgbl->action->act_action = ACT_backup;
+
 		for (fil = tdgbl->gbl_sw_files; fil; fil = fil->fil_next)
 		{
 			// adjust the file size first
@@ -2023,12 +2026,10 @@ static gbak_action open_files(const TEXT* file1,
 			{
 				Firebird::string nm = tdgbl->toSystem(fil->fil_name);
 #ifdef WIN_NT
-				if ((fil->fil_fd = NT_tape_open(nm.c_str(), MODE_WRITE, CREATE_ALWAYS)) ==
-					INVALID_HANDLE_VALUE)
+				if ((fil->fil_fd = NT_tape_open(nm.c_str(), MODE_WRITE, CREATE_ALWAYS)) == INVALID_HANDLE_VALUE)
 #else
 				if ((fil->fil_fd = os_utils::open(nm.c_str(), MODE_WRITE, open_mask)) == -1)
 #endif // WIN_NT
-
 				{
 
 					BURP_error(65, false, fil->fil_name.c_str());
@@ -2133,8 +2134,7 @@ static gbak_action open_files(const TEXT* file1,
 		// open first file
 		Firebird::string nm = tdgbl->toSystem(fil->fil_name);
 #ifdef WIN_NT
-		if ((fil->fil_fd = NT_tape_open(nm.c_str(), MODE_READ, OPEN_EXISTING)) ==
-			INVALID_HANDLE_VALUE)
+		if ((fil->fil_fd = NT_tape_open(nm.c_str(), MODE_READ, OPEN_EXISTING)) == INVALID_HANDLE_VALUE)
 #else
 		if ((fil->fil_fd = os_utils::open(nm.c_str(), MODE_READ)) == INVALID_HANDLE_VALUE)
 #endif
@@ -2179,8 +2179,7 @@ static gbak_action open_files(const TEXT* file1,
 				tdgbl->action->act_file = fil;
 				Firebird::string nm = tdgbl->toSystem(fil->fil_name);
 #ifdef WIN_NT
-				if ((fil->fil_fd = NT_tape_open(nm.c_str(), MODE_READ, OPEN_EXISTING)) ==
-					INVALID_HANDLE_VALUE)
+				if ((fil->fil_fd = NT_tape_open(nm.c_str(), MODE_READ, OPEN_EXISTING)) == INVALID_HANDLE_VALUE)
 #else
 				if ((fil->fil_fd = os_utils::open(nm.c_str(), MODE_READ)) == INVALID_HANDLE_VALUE)
 #endif

@@ -194,14 +194,15 @@ BigInteger RemotePassword::clientProof(const char* account, const char* salt, co
 	hash.reset();
 	hash.process(account);
 	hash.getInt(n2);
-	return MakeProof(n1,n2,salt,sessionKey);
+
+	return MakeProof(n1, n2, salt, sessionKey);
 }
 
 #if SRP_DEBUG > 0
 void dumpIt(const char* name, const Firebird::UCharBuffer& data)
 {
 	fprintf(stderr, "%s\n", name);
-	for (size_t x=0; x<data.getCount(); ++x)
+	for (size_t x = 0; x<data.getCount(); ++x)
 		fprintf(stderr, "%02x ", data[x]);
 	fprintf(stderr, "\n");
 }

@@ -122,7 +122,7 @@ jrd_req* TRA_get_prior_request(thread_db* tdbb)
 	{
 		// Check regular request call stack
 		org_request = jrd_ctx->getRequest();
-		if (org_request) 
+		if (org_request)
 			break;
 
 		// Check for engine context switch (EXECUTE STATEMENT, etc)
@@ -130,7 +130,7 @@ jrd_req* TRA_get_prior_request(thread_db* tdbb)
 		jrd_ctx = NULL;
 		while( (ctx = ctx->getPriorContext()) )
 		{
-			if (ctx->getType() == ThreadData::tddDBB) 
+			if (ctx->getType() == ThreadData::tddDBB)
 			{
 				jrd_ctx = static_cast<thread_db*>(ctx);
 				break;
@@ -141,7 +141,7 @@ jrd_req* TRA_get_prior_request(thread_db* tdbb)
 	return org_request;
 }
 
-void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request) 
+void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
 {
 	// This function is called whenever request is started in a transaction.
 	// Setup context to preserve read consistency in READ COMMITTED transactions.
@@ -152,13 +152,13 @@ void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
 	fb_assert(transaction);
 
 	// If we are not READ COMMITTED or read consistency is not needed then nothing to do here
-	if (!(transaction->tra_flags & TRA_read_committed) || !(transaction->tra_flags & TRA_read_consistency)) 
+	if (!(transaction->tra_flags & TRA_read_committed) || !(transaction->tra_flags & TRA_read_consistency))
 		return;
 
 	// See if there is any request right above us in the call stack
 	jrd_req* org_request = TRA_get_prior_request(tdbb);
 
-	if (org_request && org_request->req_transaction == transaction) 
+	if (org_request && org_request->req_transaction == transaction)
 	{
 		fb_assert(org_request->req_snapshot_owner);
 		request->req_snapshot_owner = org_request->req_snapshot_owner;
@@ -170,23 +170,23 @@ void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
 
 	request->req_snapshot_owner = request;
 
-	request->req_snapshot_handle = 
-		tdbb->getDatabase()->dbb_tip_cache->beginSnapshot(tdbb, 
+	request->req_snapshot_handle =
+		tdbb->getDatabase()->dbb_tip_cache->beginSnapshot(tdbb,
 			tdbb->getAttachment()->att_attachment_id, &request->req_snapshot_number);
 }
 
 
-void TRA_release_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request) 
+void TRA_release_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
 {
-	// This function is called whenever request has completed processing 
+	// This function is called whenever request has completed processing
 	// in a transaction (normally or abnormally)
 
 	if (!request->req_snapshot_owner)
 		return;
 
-	if (request->req_snapshot_handle) 
+	if (request->req_snapshot_handle)
 	{
-		tdbb->getDatabase()->dbb_tip_cache->endSnapshot(tdbb, request->req_snapshot_handle, 
+		tdbb->getDatabase()->dbb_tip_cache->endSnapshot(tdbb, request->req_snapshot_handle,
 			request->req_attachment->att_attachment_id);
 		request->req_snapshot_handle = 0;
 	}
@@ -998,7 +998,7 @@ bool TRA_is_active(thread_db* tdbb, TraNumber number)
  *	Returns whether a given transaction
  *  owned by some other guy active or not.
  *
- * If function return false - you can trust this value and be sure that transaction 
+ * If function return false - you can trust this value and be sure that transaction
  * is not active. However if function returns true - it might be inactive already,
  * but two engine threads are checking for its status at once. Callers need to
  * behave correctly when facing this behavior.
@@ -1305,7 +1305,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 	while (transaction->tra_open_cursors.hasData())
 		DsqlCursor::close(tdbb, transaction->tra_open_cursors.pop());
 
-	if (!(transaction->tra_flags & TRA_read_committed)) 
+	if (!(transaction->tra_flags & TRA_read_committed))
 	{
 		dbb->dbb_tip_cache->endSnapshot(tdbb, transaction->tra_snapshot_handle,
 			transaction->tra_attachment->att_attachment_id);
@@ -1521,7 +1521,7 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, TraNumber number, int 
 }
 
 
-int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, TraNumber number, CommitNumber *snapshot)
+int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, TraNumber number, CommitNumber* snapshot)
 {
 /**************************************
  *
@@ -1573,27 +1573,27 @@ int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, TraNumber number, 
 	int state;
 	CommitNumber stateCn = CN_PREHISTORIC;
 
-	if (TipCache* tip_cache = dbb->dbb_tip_cache) 
+	if (TipCache* tip_cache = dbb->dbb_tip_cache)
 	{
 		stateCn = tip_cache->snapshotState(tdbb, number);
-		switch(stateCn) 
+		switch (stateCn)
 		{
 			case CN_ACTIVE:
 				state = tra_active;
 				break;
-			case CN_LIMBO: 
+			case CN_LIMBO:
 				state = tra_limbo;
 				break;
 			case CN_DEAD:
-				state = tra_dead; 
+				state = tra_dead;
 				break;
-			default: 
-				state = tra_committed; 
+			default:
+				state = tra_committed;
 				if (snapshot)
 					*snapshot = att->att_active_snapshots.getSnapshotForVersion(stateCn);
 				break;
 		}
-	} 
+	}
 	else
 		state = TRA_fetch_state(tdbb, number);
 
@@ -1602,15 +1602,15 @@ int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, TraNumber number, 
 	if (trans->tra_commit_sub_trans && trans->tra_commit_sub_trans->test(number))
 		return tra_committed;
 
-	if (trans->tra_flags & TRA_read_committed) 
+	if (trans->tra_flags & TRA_read_committed)
 	{
-		if ((trans->tra_flags & TRA_read_consistency) && state == tra_committed) 
+		if ((trans->tra_flags & TRA_read_consistency) && state == tra_committed)
 		{
 			// GC thread accesses data directly without any request
-			if (jrd_req* current_request = tdbb->getRequest()) 
+			if (jrd_req* current_request = tdbb->getRequest())
 			{
 				// There is no request snapshot when we build expression index
-				if (jrd_req* snapshot_request = current_request->req_snapshot_owner) 
+				if (jrd_req* snapshot_request = current_request->req_snapshot_owner)
 				{
 					if (stateCn > snapshot_request->req_snapshot_number)
 						return tra_active;
@@ -2822,7 +2822,7 @@ static void transaction_options(thread_db* tdbb,
 			{
 				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
 					// 'Option @1 is not valid if @2 was used previously in TPB'
-					Arg::Gds(isc_tpb_conflicting_options) << 
+					Arg::Gds(isc_tpb_conflicting_options) <<
 					Arg::Str("isc_tpb_no_rec_version") << Arg::Str("isc_tpb_read_consistency"));
 			}
 
@@ -2847,7 +2847,7 @@ static void transaction_options(thread_db* tdbb,
 				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
 					// 'Option @1 is not valid if @2 was used previously in TPB'
 					Arg::Gds(isc_tpb_conflicting_options) <<
-					Arg::Str("isc_tpb_read_consistency") << (rec_version.asBool() ? 
+					Arg::Str("isc_tpb_read_consistency") << (rec_version.asBool() ?
 						Arg::Str("isc_tpb_rec_version") : Arg::Str("isc_tpb_no_rec_version")) );
 			}
 
@@ -3145,8 +3145,10 @@ static void transaction_options(thread_db* tdbb,
 
 
 	if ((transaction->tra_flags & TRA_read_committed) && !(tdbb->tdbb_flags & TDBB_sweeper))
+	{
 		if (tdbb->getDatabase()->dbb_config->getReadConsistency())
 			transaction->tra_flags |= TRA_read_consistency | TRA_rec_version;
+	}
 
 	// If there aren't any relation locks to seize, we're done.
 
@@ -3262,7 +3264,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	// active value (look at call to LCK_query_data below which will take into
 	// account this new lock too)
 
-	lock->lck_data = ((trans->tra_flags & TRA_read_committed) && 
+	lock->lck_data = ((trans->tra_flags & TRA_read_committed) &&
 		!(trans->tra_flags & TRA_read_consistency)) ? number : active;
 	lock->lck_object = trans;
 
@@ -3298,10 +3300,10 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 		// read-committed transactions; they use the snapshot off the dbb block
 		// since they need to know what is currently committed.
 
-		if (!(trans->tra_flags & TRA_read_committed)) 
+		if (!(trans->tra_flags & TRA_read_committed))
 		{
-			trans->tra_snapshot_handle = 
-				dbb->dbb_tip_cache->beginSnapshot(tdbb, 
+			trans->tra_snapshot_handle =
+				dbb->dbb_tip_cache->beginSnapshot(tdbb,
 					attachment->att_attachment_id, &trans->tra_snapshot_number);
 		}
 
@@ -3365,7 +3367,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 			att_oldest_snapshot = MIN(att_oldest_snapshot, tx_att->tra_att_oldest_active);
 		}
 
-		trans->tra_att_oldest_active = ((trans->tra_flags & TRA_read_committed) && 
+		trans->tra_att_oldest_active = ((trans->tra_flags & TRA_read_committed) &&
 			!(trans->tra_flags & TRA_read_consistency)) ? number : att_oldest_active;
 
 		if (attachment->att_oldest_snapshot < att_oldest_snapshot)
@@ -3377,8 +3379,8 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 		// unnecessary blocking of garbage collection by read-committed
 		// transactions
 
-		const TraNumber lck_data = ((trans->tra_flags & TRA_read_committed) 
-			&& !(trans->tra_flags & TRA_read_consistency)) ? number : oldest_active;
+		const TraNumber lck_data = ((trans->tra_flags & TRA_read_committed) &&
+			!(trans->tra_flags & TRA_read_consistency)) ? number : oldest_active;
 
 		static_assert(sizeof(lock->lck_data) == sizeof(lck_data), "Check lock data type !");
 		if (lock->lck_data != lck_data)
@@ -3463,7 +3465,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 
 		// If the transaction is read-only and read committed, it can be
 		// precommitted because it can't modify any records.
-		// 2014-08-26 NS XXX: with latest changes in TIP cache semantics and read 
+		// 2014-08-26 NS XXX: with latest changes in TIP cache semantics and read
 		// consistency changes precommitted transactions offer almost no benefit, but
 		// complicate implementation considerably. It might make sense to remove
 		// precommitted transactions logic completely.

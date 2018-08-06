@@ -72,7 +72,7 @@ void InternalProvider::jrdAttachmentEnd(thread_db* tdbb, Attachment* att, bool f
 	if (!conn)
 		return;
 
-	{
+	{	// scope
 		Database* dbb = tdbb->getDatabase();
 		MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
@@ -85,6 +85,7 @@ void InternalProvider::jrdAttachmentEnd(thread_db* tdbb, Attachment* att, bool f
 				fb_assert(intConn->getJrdAtt() == NULL);
 				return;
 			}
+
 			fb_assert(intConn == conn);
 		}
 		else
@@ -247,7 +248,7 @@ bool InternalConnection::resetSession()
 		return true;
 
 	FbLocalStatus status;
-	m_attachment->execute(&status, NULL, 0, "ALTER SESSION RESET", 
+	m_attachment->execute(&status, NULL, 0, "ALTER SESSION RESET",
 		m_sqlDialect, NULL, NULL, NULL, NULL);
 
 	return !(status->getState() & IStatus::STATE_ERRORS);
@@ -284,7 +285,7 @@ bool InternalConnection::isSameDatabase(const PathName& dbName, ClumpletReader& 
 		const Attachment* att = m_attachment->getHandle();
 		const MetaName& attUser = att->att_user->getUserName();
 		const MetaName& attRole = att->att_user->getSqlRole();
-		
+
 		MetaName str;
 
 		if (dpb.find(isc_dpb_user_name))

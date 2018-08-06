@@ -52,25 +52,27 @@ namespace Jrd
 		return pageSpace->onRawDevice();
 	}
 
-	AttNumber Database::generateAttachmentId() 
+	AttNumber Database::generateAttachmentId()
 	{
 		fb_assert(dbb_tip_cache);
 		return dbb_tip_cache->generateAttachmentId();
 	}
 
-	TraNumber Database::generateTransactionId() 
+	TraNumber Database::generateTransactionId()
 	{
 		fb_assert(dbb_tip_cache);
 		return dbb_tip_cache->generateTransactionId();
 	}
 
-//	void Database::assignLatestTransactionId(TraNumber number) 
-//	{
-//		fb_assert(dbb_tip_cache);
-//		dbb_tip_cache->assignLatestTransactionId(number);
-//	}
+	/***
+	void Database::assignLatestTransactionId(TraNumber number)
+	{
+		fb_assert(dbb_tip_cache);
+		dbb_tip_cache->assignLatestTransactionId(number);
+	}
+	***/
 
-	void Database::assignLatestAttachmentId(AttNumber number) 
+	void Database::assignLatestAttachmentId(AttNumber number)
 	{
 		if (dbb_tip_cache)
 			dbb_tip_cache->assignLatestAttachmentId(number);
@@ -78,7 +80,8 @@ namespace Jrd
 
 	StmtNumber Database::generateStatementId()
 	{
-		if (!dbb_tip_cache) return 0;
+		if (!dbb_tip_cache)
+			return 0;
 		return dbb_tip_cache->generateStatementId();
 	}
 

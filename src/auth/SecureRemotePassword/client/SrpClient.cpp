@@ -55,17 +55,20 @@ private:
 	RemotePassword* client;
 	string data;
 	UCharBuffer sessionKey;
+
 protected:
-    virtual RemotePassword* RemotePasswordFactory()=0;
+    virtual RemotePassword* remotePasswordFactory() = 0;
 };
 
-template <class SHA> class SrpClientImpl FB_FINAL : public SrpClient  
+template <class SHA> class SrpClientImpl FB_FINAL : public SrpClient
 {
 public:
 	explicit SrpClientImpl<SHA>(IPluginConfig* ipc)
-	  : SrpClient(ipc) {}
+		: SrpClient(ipc)
+	{}
+
 protected:
-    RemotePassword* RemotePasswordFactory()
+    RemotePassword* remotePasswordFactory()
     {
 		return FB_NEW RemotePasswordImpl<SHA>;
 	}
@@ -90,12 +93,14 @@ int SrpClient::authenticate(CheckStatusWrapper* status, IClientBlock* cb)
 				return AUTH_CONTINUE;
 			}
 
-			client = RemotePasswordFactory();
+			client = remotePasswordFactory();
 			client->genClientKey(data);
 			dumpIt("Clnt: clientPubKey", data);
 			cb->putData(status, data.length(), data.begin());
+
 			if (status->getState() & IStatus::STATE_ERRORS)
 				return AUTH_FAILED;
+
 			return AUTH_MORE_DATA;
 		}
 
@@ -144,7 +149,8 @@ int SrpClient::authenticate(CheckStatusWrapper* status, IClientBlock* cb)
 
 		BigInteger cProof = client->clientProof(cb->getLogin(), salt.c_str(), sessionKey);
 		cProof.getText(data);
-        	dumpIt("Clnt: Client Proof",cProof);
+		dumpIt("Clnt: Client Proof",cProof);
+
 		cb->putData(status, data.length(), data.c_str());
 		if (status->getState() & IStatus::STATE_ERRORS)
 		{

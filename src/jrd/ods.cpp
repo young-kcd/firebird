@@ -263,7 +263,7 @@ AttNumber getAttID(const header_page* page)
 void writeAttID(header_page* page, AttNumber number)
 {
 	page->hdr_att_high = number >> BITS_PER_LONG;
-	page->hdr_attachment_id = (ULONG)(number & MAX_ULONG);
+	page->hdr_attachment_id = (ULONG) (number & MAX_ULONG);
 }
 
 } // namespace

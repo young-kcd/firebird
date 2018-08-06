@@ -1833,7 +1833,8 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	if (!skipLock)
 		initFile.reset(FB_NEW_POOL(*getDefaultMemoryPool()) FileLock(init_filename));
 
-	// get an exclusive lock on the INIT file with blocking except TransactionStatusBlock since its initialized under FileLock
+	// get an exclusive lock on the INIT file with blocking except TransactionStatusBlock
+	// since its initialized under FileLock
 	FileLockHolder initLock(initFile);
 
 #ifdef USE_SYS5SEMAPHORE

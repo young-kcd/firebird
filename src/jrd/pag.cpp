@@ -1131,7 +1131,7 @@ void PAG_header(thread_db* tdbb, bool info)
 	RelationPages* relPages = relation->getBasePages();
 	if (!relPages->rel_pages)
 	{
-		// NS: There no need to reassign first page for RDB$PAGES relation since
+		// NS: There's no need to reassign first page for RDB$PAGES relation since
 		// current code cannot change its location after database creation.
 		vcl* vector = vcl::newVector(*relation->rel_pool, 1);
 		relPages->rel_pages = vector;
@@ -1725,8 +1725,8 @@ void PAG_set_db_readonly(thread_db* tdbb, bool flag)
 		header->hdr_flags &= ~hdr_read_only;
 		dbb->dbb_flags &= ~DBB_read_only;
 
-		// Take into account current attachment ID, else next attachment 
-		// (cache writer, for examle) will get the same att ID and wait 
+		// Take into account current attachment ID, else next attachment
+		// (cache writer, for examle) will get the same att ID and wait
 		// for att lock indefinitely.
 		Attachment* att = tdbb->getAttachment();
 		if (att->att_attachment_id)

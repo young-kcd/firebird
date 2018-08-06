@@ -18,7 +18,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * Updated for use in Firebird by Tony Whyman <tony@mwasoftware.co.uk>
  *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
@@ -210,27 +210,27 @@ sha2_base::uint64 sha512_k[80] =
              0x3c9ebe0a15c9bebcULL, 0x431d67c49c100d4cULL,
              0x4cc5d4becb3e42b6ULL, 0x597f299cfc657e2aULL,
              0x5fcb6fab3ad6faecULL, 0x6c44198c4a475817ULL};
-             
+
 /* sha2_base */
 
-void sha2_base::getHash(unsigned char *digest) 
+void sha2_base::getHash(unsigned char *digest)
 {
 	sha_final(digest);
 	reset();
-};   
+};
 
 #ifndef NIST_COMPLIANCY_TESTS
-void sha2_base::getHash(UCharBuffer& h) 
+void sha2_base::getHash(UCharBuffer& h)
 {
 	sha_final(h.getBuffer(get_DigestSize()));
 	reset();
 };
-#endif          
-             
+#endif
+
 
 /* SHA-256 functions */
 
-sha256::sha256() : sha2_base() 
+sha256::sha256() : sha2_base()
 {
 	sha256_init(&ctx);
 }

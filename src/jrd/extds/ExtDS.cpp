@@ -63,7 +63,7 @@
 #ifdef EDS_DEBUG
 
 #undef FB_ASSERT_FAILURE_STRING
-#define FB_ASSERT_FAILURE_STRING	"Procces ID %d: assertion (%s) failure: %s %" LINEFORMAT 
+#define FB_ASSERT_FAILURE_STRING	"Procces ID %d: assertion (%s) failure: %s %" LINEFORMAT
 
 #undef fb_assert
 #define fb_assert(ex)	{if (!(ex)) {gds__log(FB_ASSERT_FAILURE_STRING, getpid(), #ex, __FILE__, __LINE__);}}
@@ -141,7 +141,7 @@ Provider* Manager::getProvider(const string& prvName)
 	return NULL;
 }
 
-static void splitDataSourceName(thread_db* tdbb, const string& dataSource, 
+static void splitDataSourceName(thread_db* tdbb, const string& dataSource,
 	string& prvName, PathName& dbName)
 {
 	// dataSource : registered data source name
@@ -172,7 +172,7 @@ static void splitDataSourceName(thread_db* tdbb, const string& dataSource,
 	}
 }
 
-static bool isCurrentAccount(UserId* currUserID, 
+static bool isCurrentAccount(UserId* currUserID,
 	const MetaName& user, const string& pwd, const MetaName& role)
 {
 	const MetaName& attUser = currUserID->getUserName();
@@ -195,14 +195,14 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 
 	Provider* prv = getProvider(prvName);
 
-	const bool isCurrent = (prvName == INTERNAL_PROVIDER_NAME) && 
+	const bool isCurrent = (prvName == INTERNAL_PROVIDER_NAME) &&
 		isCurrentAccount(att->att_user, user, pwd, role);
 
 	ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE);
 	if (!isCurrent)
 		prv->generateDPB(tdbb, dpb, user, pwd, role);
 
-	// look up at connections already bound to current attachment 
+	// look up at connections already bound to current attachment
 	Connection* conn = prv->getBoundConnection(tdbb, dbName, dpb, tra_scope);
 	if (conn)
 		return conn;
@@ -216,7 +216,7 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 		hash = DefaultHash<UCHAR>::hash(dbName.c_str(), dbName.length(), MAX_ULONG) +
 			   DefaultHash<UCHAR>::hash(dpb.getBuffer(), dpb.getBufferLength(), MAX_ULONG);
 
-		while (true) 
+		while (true)
 		{
 			conn = m_connPool->getConnection(tdbb, prv, hash, dbName, dpb);
 			if (!conn)
@@ -247,7 +247,7 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 
 void Manager::jrdAttachmentEnd(thread_db* tdbb, Jrd::Attachment* att, bool forced)
 {
-	for (Provider* prv = m_providers; prv; prv = prv->m_next) 
+	for (Provider* prv = m_providers; prv; prv = prv->m_next)
 		prv->jrdAttachmentEnd(tdbb, att, forced);
 }
 
@@ -261,6 +261,7 @@ int Manager::shutdown()
 	for (Provider* prv = m_providers; prv; prv = prv->m_next) {
 		prv->cancelConnections();
 	}
+
 	return 0;
 }
 
@@ -287,10 +288,10 @@ void Provider::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 
 	const Attachment *attachment = tdbb->getAttachment();
 
-	// bad for connection pooling 
+	// bad for connection pooling
 	dpb.insertInt(isc_dpb_ext_call_depth, attachment->att_ext_call_depth + 1);
 
-	if ((getFlags() & prvTrustedAuth) && 
+	if ((getFlags() & prvTrustedAuth) &&
 		isCurrentAccount(attachment->att_user, user, pwd, role))
 	{
 		attachment->att_user->populateDpb(dpb);
@@ -300,11 +301,12 @@ void Provider::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 		if (!user.isEmpty()) {
 			dpb.insertString(isc_dpb_user_name, user);
 		}
+
 		if (!pwd.isEmpty()) {
 			dpb.insertString(isc_dpb_password, pwd);
 		}
 
-		if (!role.isEmpty()) 
+		if (!role.isEmpty())
 		{
 			dpb.insertByte(isc_dpb_sql_dialect, 0);
 			dpb.insertString(isc_dpb_sql_role_name, role);
@@ -319,7 +321,7 @@ void Provider::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 	// remote network address???
 }
 
-Connection* Provider::createConnection(thread_db* tdbb, 
+Connection* Provider::createConnection(thread_db* tdbb,
 	const PathName& dbName, ClumpletReader& dpb, TraScope tra_scope)
 {
 	Connection* conn = doCreateConnection();
@@ -364,6 +366,7 @@ Connection* Provider::getBoundConnection(Jrd::thread_db* tdbb,
 
 	AttToConnMap::Accessor acc(&m_connections);
 	if (acc.locate(locGreatEqual, AttToConn(att, NULL)))
+	{
 		do
 		{
 			Connection* conn = acc.current().m_conn;
@@ -383,8 +386,8 @@ Connection* Provider::getBoundConnection(Jrd::thread_db* tdbb,
 
 				return conn;
 			}
-
 		} while (acc.getNext());
+	}
 
 	return NULL;
 }
@@ -395,14 +398,14 @@ void Provider::jrdAttachmentEnd(thread_db* tdbb, Jrd::Attachment* att, bool forc
 
 	HalfStaticArray<Connection*, 16> toRelease(getPool());
 
-	{
+	{	// scope
 		MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
 		AttToConnMap::Accessor acc(&m_connections);
 		if (!acc.locate(locGreatEqual, AttToConn(att, NULL)))
 			return;
 
-		do 
+		do
 		{
 			Connection* conn = acc.current().m_conn;
 			if (conn->getBoundAtt() != att)
@@ -449,12 +452,13 @@ void Provider::releaseConnection(thread_db* tdbb, Connection& conn, bool inPool)
 	{
 		if (connPool)
 		{
-			{
+			{	// scope
 				MutexLockGuard guard(m_mutex, FB_FUNCTION);
 				AttToConnMap::Accessor acc(&m_connections);
 				if (acc.locate(AttToConn(NULL, &conn)))
 					acc.fastRemove();
 			}
+
 			connPool->delConnection(tdbb, &conn, false);
 		}
 
@@ -472,11 +476,13 @@ void Provider::clearConnections(thread_db* tdbb)
 
 	AttToConnMap::Accessor acc(&m_connections);
 	if (acc.getFirst())
+	{
 		do
 		{
 			Connection* conn = acc.current().m_conn;
 			Connection::deleteConnection(tdbb, conn);
 		} while (acc.getNext());
+	}
 
 	m_connections.clear();
 }
@@ -487,11 +493,13 @@ void Provider::cancelConnections()
 
 	AttToConnMap::Accessor acc(&m_connections);
 	if (acc.getFirst())
+	{
 		do
 		{
 			Connection* conn = acc.current().m_conn;
 			conn->cancelExecution(false);
 		} while (acc.getNext());
+	}
 }
 
 // Connection
@@ -784,14 +792,14 @@ bool Connection::getWrapErrors(const ISC_STATUS* status)
 
 /// ConnectionsPool
 
-ConnectionsPool::ConnectionsPool(MemoryPool& pool) :
-	m_pool(pool),
-	m_idleArray(pool),
-	m_idleList(NULL),
-	m_activeList(NULL),
-	m_allCount(0),
-	m_maxCount(Config::getExtConnPoolSize()),
-	m_lifeTime(Config::getExtConnPoolLifeTime())
+ConnectionsPool::ConnectionsPool(MemoryPool& pool)
+	: m_pool(pool),
+	  m_idleArray(pool),
+	  m_idleList(NULL),
+	  m_activeList(NULL),
+	  m_allCount(0),
+	  m_maxCount(Config::getExtConnPoolSize()),
+	  m_lifeTime(Config::getExtConnPoolLifeTime())
 {
 	if (m_maxCount > MAX_CONNPOOL_SIZE)
 		m_maxCount = MAX_CONNPOOL_SIZE;
@@ -813,7 +821,7 @@ ConnectionsPool::~ConnectionsPool()
 
 void ConnectionsPool::removeFromPool(Data* item, FB_SIZE_T pos)
 {
-	// m_mutex should be locked 
+	// m_mutex should be locked
 	fb_assert(item);
 
 	if (item->m_lastUsed != 0)
@@ -827,7 +835,7 @@ void ConnectionsPool::removeFromPool(Data* item, FB_SIZE_T pos)
 	}
 	else
 		removeFromList(&m_activeList, item);
-	
+
 	item->clear();
 	m_allCount--;
 }
@@ -846,7 +854,7 @@ ConnectionsPool::Data* ConnectionsPool::removeOldest()
 	return lru;
 }
 
-Connection* ConnectionsPool::getConnection(thread_db* tdbb, Provider* prv, ULONG hash, 
+Connection* ConnectionsPool::getConnection(thread_db* tdbb, Provider* prv, ULONG hash,
 	const PathName& dbName, ClumpletReader& dpb)
 {
 	MutexLockGuard guard(m_mutex, FB_FUNCTION);
@@ -856,7 +864,7 @@ Connection* ConnectionsPool::getConnection(thread_db* tdbb, Provider* prv, ULONG
 	FB_SIZE_T pos;
 	m_idleArray.find(data, pos);
 
-	for (; pos < m_idleArray.getCount(); pos++) 
+	for (; pos < m_idleArray.getCount(); pos++)
 	{
 		Data* item = m_idleArray[pos];
 		if (item->m_hash != data.m_hash)
@@ -900,7 +908,7 @@ void ConnectionsPool::putConnection(thread_db* tdbb, Connection* conn)
 
 		if (item->m_lastUsed)
 		{
-			// Item was already put into idle list 
+			// Item was already put into idle list
 			fb_assert(item->m_connPool == this);
 			return;
 		}
@@ -918,6 +926,7 @@ void ConnectionsPool::putConnection(thread_db* tdbb, Connection* conn)
 				m_allCount++;
 				oldest = removeOldest();
 			}
+
 			if (oldest)
 				oldConn = oldest->m_conn;
 		}
@@ -984,7 +993,7 @@ void ConnectionsPool::addConnection(thread_db* tdbb, Connection* conn, ULONG has
 	item->setConnPool(this);
 
 	Connection* oldConn = NULL;
-	{
+	{	// scope
 		MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
 #ifdef EDS_DEBUG
@@ -1023,7 +1032,7 @@ void ConnectionsPool::addConnection(thread_db* tdbb, Connection* conn, ULONG has
 
 void ConnectionsPool::delConnection(thread_db* tdbb, Connection* conn, bool destroy)
 {
-	{
+	{	// scope
 		MutexLockGuard guard(m_mutex, FB_FUNCTION);
 		Data* item = conn->getPoolData();
 		if (item->getConnPool() == this)
@@ -1047,7 +1056,7 @@ void ConnectionsPool::setMaxCount(ULONG val)
 	if (val < MIN_CONNPOOL_SIZE || val > MAX_CONNPOOL_SIZE)
 	{
 		string err;
-		err.printf("Wrong value for connections pool size (%d). Allowed values are between %d and %d.", 
+		err.printf("Wrong value for connections pool size (%d). Allowed values are between %d and %d.",
 				   val, MIN_CONNPOOL_SIZE, MAX_CONNPOOL_SIZE);
 
 		ERR_post(Arg::Gds(isc_random) << Arg::Str(err));
@@ -1062,7 +1071,7 @@ void ConnectionsPool::setLifeTime(ULONG val)
 	if (val < MIN_LIFE_TIME || val > MAX_LIFE_TIME)
 	{
 		string err;
-		err.printf("Wrong value for pooled connection lifetime (%d). Allowed values are between %d and %d.", 
+		err.printf("Wrong value for pooled connection lifetime (%d). Allowed values are between %d and %d.",
 				   val, MIN_LIFE_TIME, MAX_LIFE_TIME);
 
 		ERR_post(Arg::Gds(isc_random) << Arg::Str(err));
@@ -1162,7 +1171,7 @@ void ConnectionsPool::clear(thread_db* tdbb)
 		Connection* conn = data->m_conn;
 
 		removeFromPool(data, i);
-		conn->getProvider()->releaseConnection(tdbb, *conn, false); 
+		conn->getProvider()->releaseConnection(tdbb, *conn, false);
 	}
 	fb_assert(!m_idleList);
 
@@ -1262,7 +1271,7 @@ bool ConnectionsPool::checkBoundConnection(thread_db* tdbb, Connection* conn)
 void ConnectionsPool::printPool(string& str)
 {
 	string s;
-	s.printf("Conn pool 0x%08X, all %d, max %d, lifeTime %d\n", 
+	s.printf("Conn pool 0x%08X, all %d, max %d, lifeTime %d\n",
 		this, m_allCount, m_maxCount, m_lifeTime);
 	str.append(s);
 
@@ -1272,12 +1281,14 @@ void ConnectionsPool::printPool(string& str)
 	Data* item = m_activeList;
 	int cntActive = 0;
 	if (item)
+	{
 		do
 		{
 			str.append(item->print());
 			item = item->m_next;
 			cntActive++;
 		} while (item != m_activeList);
+	}
 
 	s.printf("  idle list 0x%08X:\n", m_idleList);
 	str.append(s);
@@ -1285,12 +1296,14 @@ void ConnectionsPool::printPool(string& str)
 	item = m_idleList;
 	int cntIdle = 0;
 	if (item)
+	{
 		do
 		{
 			str.append(item->print());
 			item = item->m_next;
 			cntIdle++;
 		} while (item != m_idleList);
+	}
 
 	s.printf("  active list count: %d\n", cntActive);
 	str.append(s);
@@ -1306,7 +1319,7 @@ void ConnectionsPool::printPool(string& str)
 string ConnectionsPool::Data::print()
 {
 	string s;
-	s.printf("    item 0x%08X, conn 0x%08X, hash %8u, used %" UQUADFORMAT ", next 0x%08X, prev 0x%08X, connected %s\n", 
+	s.printf("    item 0x%08X, conn 0x%08X, hash %8u, used %" UQUADFORMAT ", next 0x%08X, prev 0x%08X, connected %s\n",
 		this, m_conn, m_hash, m_lastUsed, m_next, m_prev,
 		(m_conn && m_conn->isConnected()) ? "yes" : "NO");
 	return s;
@@ -1342,6 +1355,7 @@ bool ConnectionsPool::verifyPool()
 
 	Data* item = m_idleList;
 	if (item)
+	{
 		do
 		{
 			cntIdle++;
@@ -1355,15 +1369,18 @@ bool ConnectionsPool::verifyPool()
 
 			item = item->m_next;
 		} while (item != m_idleList);
+	}
 
 	item = m_activeList;
 	if (item)
+	{
 		do
 		{
 			cntActive++;
 			errs += item->verify(this, true);
 			item = item->m_next;
 		} while (item != m_activeList);
+	}
 
 	if (cntIdle != m_idleArray.getCount())
 		errs++;

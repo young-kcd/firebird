@@ -165,12 +165,12 @@ namespace Jrd
 			return ((m_flags & mask) != 0);
 		}
 
-		TraNumber getTransaction_nr() const
+		TraNumber getTransactionNumber() const
 		{
 		    return m_transaction_nr;
 		}
 
-		void setTransaction_nr(const TraNumber &transaction_nr)
+		void setTransactionNumber(const TraNumber& transaction_nr)
 		{
 		    m_transaction_nr = transaction_nr;
 		}

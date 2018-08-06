@@ -236,6 +236,7 @@ namespace Firebird {
 			Stack<Entry*> entries;
 			Entry* current_entry;
 			FB_SIZE_T elem;
+
 		public:
 			explicit reverse_iterator(Stack<Object, Capacity>& s)
 				: stack(s), entries(s.getPool()), elem(0)
@@ -258,6 +259,7 @@ namespace Firebird {
 			{
 				fb_assert(current_entry);
 				elem++;
+
 				if (elem >= current_entry->getCount()) {
 					elem = 0;
 					if (entries.hasData())
@@ -265,6 +267,7 @@ namespace Firebird {
 					else
 						current_entry = NULL;
 				}
+
 				return *this;
 			}
 
@@ -277,6 +280,7 @@ namespace Firebird {
 			void remove() {
 				fb_assert(current_entry);
 				current_entry->remove(elem);
+
 				if (elem >= current_entry->getCount()) {
 					if (elem) {
 						// Simple case - just advance pointer
@@ -285,7 +289,8 @@ namespace Firebird {
 							current_entry = entries.pop();
 						else
 							current_entry = NULL;
-					} else {
+					}
+					else {
 						// Complicated case - Entry is empty and we need to delete it
 						if (entries.hasData()) {
 							Entry* previous = entries.pop();
@@ -293,7 +298,8 @@ namespace Firebird {
 							current_entry->next = NULL;
 							delete current_entry;
 							current_entry = previous;
-						} else {
+						}
+						else {
 							stack.stk = current_entry->next;
 							current_entry->next = NULL;
 							delete current_entry;
@@ -302,6 +308,7 @@ namespace Firebird {
 					}
 				}
 			}
+
 		private:
 			reverse_iterator(const reverse_iterator&); // Not implemented
 			reverse_iterator& operator= (const reverse_iterator&); // Not implemented

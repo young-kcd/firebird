@@ -151,7 +151,7 @@ void DPM_backout( thread_db* tdbb, record_param* rpb)
 #ifdef VIO_DEBUG
 	jrd_rel* relation = rpb->rpb_relation;
 	VIO_trace(DEBUG_WRITES,
-		"DPM_backout (rel_id %u, record_param %" QUADFORMAT"d)\n", 
+		"DPM_backout (rel_id %u, record_param %" QUADFORMAT"d)\n",
 		relation->rel_id, rpb->rpb_number.getValue());
 
 	VIO_trace(DEBUG_WRITES_INFO,
@@ -343,7 +343,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 #ifdef VIO_DEBUG
 	jrd_rel* relation = org_rpb->rpb_relation;
 	VIO_trace(DEBUG_WRITES,
-		"DPM_chain (rel_id %u, org_rpb %" QUADFORMAT"d, new_rpb %" QUADFORMAT"d)\n", 
+		"DPM_chain (rel_id %u, org_rpb %" QUADFORMAT"d, new_rpb %" QUADFORMAT"d)\n",
 		relation->rel_id, org_rpb->rpb_number.getValue(),
 		new_rpb ? new_rpb->rpb_number.getValue() : 0);
 
@@ -699,7 +699,6 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
-	jrd_rel* relation = rpb->rpb_relation;
 	VIO_trace(DEBUG_WRITES,
 		"DPM_delete (record_param %" QUADFORMAT", prior_page %" ULONGFORMAT")\n",
 		rpb->rpb_number.getValue(), prior_page);
@@ -1036,7 +1035,7 @@ void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation,
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE_ALL,
-		"DPM_delete_relation_pages (relation %d, instance %" SQUADFORMAT")\n", 
+		"DPM_delete_relation_pages (relation %d, instance %" SQUADFORMAT")\n",
 		relation->rel_id, relPages->rel_instance_id);
 #endif
 
@@ -2825,7 +2824,7 @@ static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window, con
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
-		"     extend_relation (relation %d, instance %" SQUADFORMAT", window)\n", 
+		"     extend_relation (relation %d, instance %" SQUADFORMAT", window)\n",
 		relation->rel_id, relPages->rel_instance_id);
 #endif
 

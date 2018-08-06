@@ -1054,18 +1054,20 @@ void create_database(BurpGlobals* tdgbl, Firebird::IProvider* provider, const TE
 		int c = 1;
 		if (ptr)
 		{
-			while(ptr && *ptr)
+			while (ptr && *ptr)
 			{
 				if (*ptr >='0' && *ptr <= '9')
 				{
 					v *= 100;
 					v += atoi(ptr);
+
 					if (c >= 3)
 					{
 						if (v < 30004)
 							ptr = NULL;
 						break;
 					}
+
 					++c;
 					ptr = strchr(ptr, '.');
 				}
@@ -1073,6 +1075,7 @@ void create_database(BurpGlobals* tdgbl, Firebird::IProvider* provider, const TE
 					++ptr;
 			}
 		}
+
 		if (!(ptr && *ptr))
 		{
 			Firebird::string x;
@@ -1097,8 +1100,10 @@ void create_database(BurpGlobals* tdgbl, Firebird::IProvider* provider, const TE
 			sql += " KEY ";
 			sql += tdgbl->gbl_sw_keyname;
 		}
+
 		tdgbl->db_handle->execute(gds_status, tdgbl->tr_handle, sql.length(), sql.c_str(), 3,
 			nullptr, nullptr, nullptr, nullptr);
+
 		if (gds_status->hasData())
 			general_on_error ();
 
@@ -1110,6 +1115,7 @@ void create_database(BurpGlobals* tdgbl, Firebird::IProvider* provider, const TE
 		UCHAR buffer[100];
 		UCHAR item = fb_info_crypt_state;
 		bool complete = false;
+
 		for (int i = 0; i < 100; ++i)
 		{
 			Thread::sleep(100);
@@ -1124,6 +1130,7 @@ void create_database(BurpGlobals* tdgbl, Firebird::IProvider* provider, const TE
 
 			const int length = gds__vax_integer(d, 2);
 			d += 2;
+
 			const int value = gds__vax_integer(d, length);
 			if (value & fb_info_crypt_encrypted && !(value & fb_info_crypt_process))
 			{

@@ -144,6 +144,7 @@ public:
 		const FB_SIZE_T len = getBufferLength();
 		return (len == other.getBufferLength()) && (memcmp(getBuffer(), other.getBuffer(), len) == 0);
 	}
+
 	// Methods are virtual so writer can override 'em
 	virtual const UCHAR* getBuffer() const;
 	virtual const UCHAR* getBufferEnd() const;

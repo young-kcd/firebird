@@ -111,13 +111,13 @@ public:
 	CommitNumber snapshotState(thread_db* tdbb, TraNumber number);
 
 	// If engine has recalculated Oldest (interesting) transaction or Oldest Snapshot
-	// number for the database (via Sweep or during regular transaction start) it 
-	// needs to notify TPC, so that it can release cache resources. Any transaction 
-	// with number less than oldest interesting transaction and oldest snapshot 
+	// number for the database (via Sweep or during regular transaction start) it
+	// needs to notify TPC, so that it can release cache resources. Any transaction
+	// with number less than oldest interesting transaction and oldest snapshot
 	// is treated as "prehistoric" committed (CN_PREHISTORIC)
 	void updateOldestTransaction(thread_db* tdbb, TraNumber oldest, TraNumber oldestSnapshot);
 
-	// Create snapshot. The snapshot shall use only versions committed 
+	// Create snapshot. The snapshot shall use only versions committed
 	// before commitNumber_out. Snapshots inhibit GC to some extent.
 	// When snapshot is no longer needed you call endSnapshot.
 	SnapshotHandle beginSnapshot(thread_db* tdbb, AttNumber attachmentId, CommitNumber *commitNumber_out);
@@ -125,11 +125,11 @@ public:
 	// Deallocate snapshot.
 	void endSnapshot(thread_db* tdbb, SnapshotHandle handle, AttNumber attachmentId);
 
-	// Get the list of active snapshots for GC purposes. This function can be 
+	// Get the list of active snapshots for GC purposes. This function can be
 	// called multiple times with the same object to obtain most recent information.
-	// During initialization it checks that all attachments holding snapshots are 
+	// During initialization it checks that all attachments holding snapshots are
 	// actually alive (via lock manager) to prevent GC inhibition in case of sudden
-	// death of attachment process. Update is quick and happens only if needed and 
+	// death of attachment process. Update is quick and happens only if needed and
 	// there is no contention.
 	void updateActiveSnapshots(thread_db* tdbb, ActiveSnapshots* activeSnapshots);
 
@@ -141,7 +141,7 @@ public:
 	void assignLatestAttachmentId(AttNumber number);
 
 private:
-	class GlobalTpcHeader : public Firebird::MemoryHeader 
+	class GlobalTpcHeader : public Firebird::MemoryHeader
 	{
 	public:
 		std::atomic<CommitNumber> latest_commit_number;
@@ -166,7 +166,7 @@ private:
 		ULONG tpc_block_size; // final
 	};
 
-	struct SnapshotData 
+	struct SnapshotData
 	{
 		std::atomic<AttNumber> attachment_id; // Unused slots have attachment_id == 0
 		std::atomic<CommitNumber> snapshot;
@@ -175,7 +175,7 @@ private:
 	// Note: when maintaining this structure, we are extra careful
 	// to keep it consistent at all times, so that the process using it
 	// can be killed at any time without adverse consequences.
-	class SnapshotList : public Firebird::MemoryHeader 
+	class SnapshotList : public Firebird::MemoryHeader
 	{
 	public:
 		std::atomic<ULONG> slots_allocated;
@@ -184,7 +184,7 @@ private:
 		SnapshotData slots[1];
 	};
 
-	class TransactionStatusBlock : public Firebird::MemoryHeader 
+	class TransactionStatusBlock : public Firebird::MemoryHeader
 	{
 	public:
 		CommitNumber data[1];
@@ -192,7 +192,7 @@ private:
 
 	typedef TransactionStatusBlock* PTransactionStatusBlock;
 
-	class StatusBlockData 
+	class StatusBlockData
 	{
 	public:
 		StatusBlockData(Jrd::thread_db* tdbb, Jrd::TipCache* tipCache, int blockNumber);
@@ -211,7 +211,7 @@ private:
 		void clear(Jrd::thread_db* tdbb);
 	};
 
-	class MemoryInitializer : public Firebird::IpcObject 
+	class MemoryInitializer : public Firebird::IpcObject
 	{
 	public:
 		explicit MemoryInitializer(TipCache *cache) : m_cache(cache) {}
@@ -220,21 +220,21 @@ private:
 		TipCache* m_cache;
 	};
 
-	class GlobalTpcInitializer : public MemoryInitializer 
+	class GlobalTpcInitializer : public MemoryInitializer
 	{
 	public:
 		explicit GlobalTpcInitializer(TipCache *cache) : MemoryInitializer(cache) {}
 		bool initialize(Firebird::SharedMemoryBase* sm, bool initialize);
 	};
 
-	class SnapshotsInitializer : public MemoryInitializer 
+	class SnapshotsInitializer : public MemoryInitializer
 	{
 	public:
 		explicit SnapshotsInitializer(TipCache *cache) : MemoryInitializer(cache) {}
 		bool initialize(Firebird::SharedMemoryBase* sm, bool initialize);
 	};
 
-	class MemBlockInitializer : public MemoryInitializer 
+	class MemBlockInitializer : public MemoryInitializer
 	{
 	public:
 		explicit MemBlockInitializer(TipCache *cache) : MemoryInitializer(cache) {}
@@ -271,7 +271,7 @@ private:
 	TransactionStatusBlock* createTransactionStatusBlock(int blockNumber);
 
 	// Release shared memory blocks, if possible.
-	// We utilize one full MemoryBlock as a safety margin to account for possible 
+	// We utilize one full MemoryBlock as a safety margin to account for possible
 	// race conditions during lockless operations, so this operation shall be pretty safe.
 	void releaseSharedMemory(thread_db *tdbb, TraNumber oldest_old, TraNumber oldest_new);
 
@@ -289,7 +289,7 @@ private:
 inline int TPC_cache_state(thread_db* tdbb, TraNumber number)
 {
 	CommitNumber stateCn = tdbb->getDatabase()->dbb_tip_cache->cacheState(number);
-	switch(stateCn) 
+	switch(stateCn)
 	{
 	case CN_ACTIVE:	return tra_active;
 	case CN_LIMBO:	return tra_limbo;

@@ -225,7 +225,7 @@ void SCL_check_access(thread_db* tdbb,
 	// and we need to ignore TDBB_trusted_ddl flag in this case.
 	// More general solution is to remove TDBB_trusted_dll flag since its purpose to
 	// allow system table modification due DDL operations. It requires removing SCL_checks
-	// from VIO_{store,erase,motify}. It's quite possible but not so trivial as at fist look.
+	// from VIO_{store,erase,motify}. It's quite possible but not so trivial as at first look.
 	if ((tdbb->tdbb_flags & TDBB_trusted_ddl) && (mask != SCL_references))
 		return;
 

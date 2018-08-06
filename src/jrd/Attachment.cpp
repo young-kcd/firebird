@@ -56,8 +56,8 @@ using namespace Firebird;
 /// class ActiveSnapshots
 
 ActiveSnapshots::ActiveSnapshots(Firebird::MemoryPool& p) :
-	m_snapshots(p), 
-	m_lastCommit(CN_ACTIVE), 
+	m_snapshots(p),
+	m_lastCommit(CN_ACTIVE),
 	m_releaseCount(0),
 	m_slots_used(0)
 {
@@ -427,7 +427,7 @@ void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 				err = true;
 		}
 
-		// Cannot reset user session 
+		// Cannot reset user session
 		// There are open transactions (@1 active)
 		if (err)
 		{

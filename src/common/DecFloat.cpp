@@ -620,11 +620,12 @@ void DecimalFixed::exactInt(DecimalStatus decSt, int scale)
 		decQuadToIntegralExact(&dec, &dec, &context);
 		decQuadQuantize(&dec, &dec, &c1.dec, &context);
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		FbLocalStatus st;
 		ex.stuffException(&st);
-		switch(st->getErrors()[1])
+
+		switch (st->getErrors()[1])
 		{
 		case isc_decfloat_invalid_operation:
 			(Arg::Gds(isc_decfloat_invalid_operation) <<

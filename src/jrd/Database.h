@@ -497,9 +497,8 @@ public:
 	AttNumber generateAttachmentId();
 	TraNumber generateTransactionId();
 	StmtNumber generateStatementId();
-//	void assignLatestTransactionId(TraNumber number);
+	// void assignLatestTransactionId(TraNumber number);
 	void assignLatestAttachmentId(AttNumber number);
-
 
 	USHORT getMaxIndexKeyLength() const
 	{

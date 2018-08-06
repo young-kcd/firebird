@@ -47,9 +47,20 @@ class Transaction;
 class Statement;
 class Blob;
 
-enum TraModes {traReadCommited, traReadCommitedRecVersions, traReadCommitedReadConsistency, 
-			   traConcurrency, traConsistency};
-enum TraScope {traNotSet = 0, traAutonomous, traCommon, traTwoPhase};
+enum TraModes {
+	traReadCommited,
+	traReadCommitedRecVersions,
+	traReadCommitedReadConsistency,
+	traConcurrency,
+	traConsistency
+};
+
+enum TraScope {
+	traNotSet = 0,
+	traAutonomous,
+	traCommon,
+	traTwoPhase
+};
 
 // Known built-in provider's names
 extern const char* FIREBIRD_PROVIDER_NAME;
@@ -75,6 +86,7 @@ public:
 	static void jrdAttachmentEnd(Jrd::thread_db* tdbb, Jrd::Attachment* att, bool forced);
 
 	static int shutdown();
+
 private:
 	static Firebird::GlobalPtr<Manager> manager;
 	static Firebird::Mutex m_mutex;
@@ -99,10 +111,10 @@ public:
 		const Firebird::PathName& dbName, Firebird::ClumpletReader& dpb,
 		TraScope tra_scope);
 
-	// bind connection to the current attachment 
+	// bind connection to the current attachment
 	void bindConnection(Jrd::thread_db* tdbb, Connection* conn);
 
-	// get available connection already bound to the current attachment 
+	// get available connection already bound to the current attachment
 	Connection* getBoundConnection(Jrd::thread_db* tdbb,
 		const Firebird::PathName& dbName, Firebird::ClumpletReader& dpb,
 		TraScope tra_scope);
@@ -136,7 +148,7 @@ protected:
 	void clearConnections(Jrd::thread_db* tdbb);
 	virtual Connection* doCreateConnection() = 0;
 
-	void generateDPB(Jrd::thread_db* tdbb, Firebird::ClumpletWriter& dpb, 
+	void generateDPB(Jrd::thread_db* tdbb, Firebird::ClumpletWriter& dpb,
 		const Firebird::string& user, const Firebird::string& pwd,
 		const Firebird::string& role) const;
 
@@ -153,14 +165,14 @@ protected:
 		Jrd::Attachment* m_att;
 		Connection* m_conn;
 
-		AttToConn() :
-		  m_att(NULL),
-		  m_conn(NULL)
+		AttToConn()
+			: m_att(NULL),
+			  m_conn(NULL)
 		{}
 
-		AttToConn(Jrd::Attachment* att, Connection* conn) :
-		  m_att(att),
-		  m_conn(conn)
+		AttToConn(Jrd::Attachment* att, Connection* conn)
+			: m_att(att),
+			  m_conn(conn)
 		{}
 
 		static const AttToConn& generate(const void*, const AttToConn& item)
@@ -170,13 +182,13 @@ protected:
 
 		static bool greaterThan(const AttToConn& i1, const AttToConn& i2)
 		{
-			return (i1.m_att > i2.m_att) || 
+			return (i1.m_att > i2.m_att) ||
 				(i1.m_att == i2.m_att && i1.m_conn > i2.m_conn);
 		}
 	};
 
-	typedef Firebird::BePlusTree<AttToConn, AttToConn, Firebird::MemoryPool, 
-								 AttToConn, AttToConn> 
+	typedef Firebird::BePlusTree<AttToConn, AttToConn, Firebird::MemoryPool,
+								 AttToConn, AttToConn>
 		AttToConnMap;
 
 	AttToConnMap m_connections;
@@ -197,7 +209,7 @@ public:
 	~ConnectionsPool();
 
 	// find and return cached connection or NULL
-	Connection* getConnection(Jrd::thread_db* tdbb, Provider* prv, ULONG hash, const Firebird::PathName& dbName, 
+	Connection* getConnection(Jrd::thread_db* tdbb, Provider* prv, ULONG hash, const Firebird::PathName& dbName,
 		Firebird::ClumpletReader& dpb);
 
 	// put unused connection into pool or destroy it
@@ -212,7 +224,7 @@ public:
 	ULONG getIdleCount() const { return m_idleArray.getCount(); }
 	ULONG getAllCount() const { return m_allCount; } ;
 
-	ULONG getMaxCount() const	{ return m_maxCount; }
+	ULONG getMaxCount() const { return m_maxCount; }
 	void setMaxCount(ULONG val);
 
 	ULONG getLifeTime() const	{ return m_lifeTime; }
@@ -229,12 +241,12 @@ public:
 
 	// verify bound connection internals
 	static bool checkBoundConnection(Jrd::thread_db* tdbb, Connection* conn);
+
 public:
 	// this class is embedded into Connection but managed by ConnectionsPool
 	class Data
 	{
 	public:
-
 		// constructor for embedded into Connection instance
 		explicit Data(Connection* conn)
 		{
@@ -244,9 +256,9 @@ public:
 
 		ConnectionsPool* getConnPool() const { return m_connPool; }
 
-		static const Data& generate(const Data* item) 
-		{ 
-			return *item; 
+		static const Data& generate(const Data* item)
+		{
+			return *item;
 		}
 
 		static bool greaterThan(const Data& i1, const Data& i2)
@@ -295,11 +307,12 @@ public:
 			m_next = m_prev = NULL;
 		}
 
-		void setConnPool(ConnectionsPool *connPool) 
-		{ 
+		void setConnPool(ConnectionsPool *connPool)
+		{
 			fb_assert(!connPool || !m_connPool);
-			m_connPool = connPool; 
+			m_connPool = connPool;
 		}
+
 		Firebird::string print();
 		int verify(ConnectionsPool *connPool, bool active);
 	};
@@ -309,9 +322,9 @@ private:
 		public Firebird::RefCntIface<Firebird::ITimerImpl<IdleTimer, Firebird::CheckStatusWrapper> >
 	{
 	public:
-		explicit IdleTimer(ConnectionsPool& connPool) :
-			m_connPool(connPool),
-			m_time(0)
+		explicit IdleTimer(ConnectionsPool& connPool)
+			: m_connPool(connPool),
+			  m_time(0)
 		{}
 
 		// ITimer implementation
@@ -320,6 +333,7 @@ private:
 
 		void start();
 		void stop();
+
 	private:
 		ConnectionsPool& m_connPool;
 		Firebird::Mutex m_mutex;
@@ -348,6 +362,7 @@ private:
 
 		*head = item;
 	}
+
 	void removeFromList(Data** head, Data* item)
 	{
 		if (!item->m_next)
@@ -360,7 +375,7 @@ private:
 			item->m_next->m_prev = item->m_prev;
 			item->m_prev->m_next = item->m_next;
 			if (*head == item)
-				*head = item->m_next; 
+				*head = item->m_next;
 		}
 		else
 		{
@@ -378,7 +393,7 @@ private:
 	bool verifyPool();
 
 	// Array of Data*, sorted by [hash, lastUsed desc]
-	typedef Firebird::SortedArray<Data*, Firebird::EmptyStorage<Data*>, Data, Data, Data> 
+	typedef Firebird::SortedArray<Data*, Firebird::EmptyStorage<Data*>, Data, Data, Data>
 		IdleArray;
 
 	Firebird::MemoryPool& m_pool;
@@ -388,7 +403,7 @@ private:
 	Data* m_activeList;
 	ULONG m_allCount;
 	ULONG m_maxCount;
-	ULONG m_lifeTime;	// How long idle connection should wait before destroyng, seconds
+	ULONG m_lifeTime;	// How long idle connection should wait before destroying, seconds
 	Firebird::RefPtr<IdleTimer> m_timer;
 };
 
@@ -412,7 +427,7 @@ protected:
 public:
 	Provider* getProvider() { return &m_provider; }
 
-	Jrd::Attachment* getBoundAtt() const { return m_boundAtt; } 
+	Jrd::Attachment* getBoundAtt() const { return m_boundAtt; }
 
 	ConnectionsPool* getConnPool() { return m_poolData.getConnPool(); }
 	ConnectionsPool::Data* getPoolData() { return &m_poolData; }

@@ -286,7 +286,7 @@ bool IscConnection::validate(Jrd::thread_db* tdbb)
 	char info[] = {isc_info_attachment_id, isc_info_end};
 	char buff[32];
 
-	return m_iscProvider.isc_database_info(&status, &m_handle, 
+	return m_iscProvider.isc_database_info(&status, &m_handle,
 		sizeof(info), info, sizeof(buff), buff) == 0;
 }
 
@@ -1132,7 +1132,7 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_execute_immediate(FbStatusVector* us
 	if (!m_api.isc_dsql_execute_immediate)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_dsql_execute_immediate) (IscStatus(user_status), 
+	return (*m_api.isc_dsql_execute_immediate) (IscStatus(user_status),
 		db_handle, tra_handle, length, str, dialect, sqlda);
 }
 

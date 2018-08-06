@@ -1000,7 +1000,7 @@ static bool wnet_error(rem_port* port,
  **************************************/
 	if (status)
 	{
-		if (port->port_state == rem_port::PENDING) 
+		if (port->port_state == rem_port::PENDING)
 		{
 			gds__log("WNET/wnet_error: %s errno = %d", function, status);
 		}

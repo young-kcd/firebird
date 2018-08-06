@@ -2718,7 +2718,7 @@ Validation::RTN Validation::walk_record(jrd_rel* relation, const rhd* header, US
 	}
 	else if (header->rhd_flags & rhd_long_tranum)
 	{
-		p = (SCHAR*) ((rhde*)header)->rhde_data;
+		p = (SCHAR*) ((rhde*) header)->rhde_data;
 		end = p + length - offsetof(rhde, rhde_data[0]);
 	}
 	else
@@ -2780,7 +2780,7 @@ Validation::RTN Validation::walk_record(jrd_rel* relation, const rhd* header, US
 		}
 		else if (fragment->rhdf_flags & rhd_long_tranum)
 		{
-			p = (SCHAR*) ((rhde*)fragment)->rhde_data;
+			p = (SCHAR*) ((rhde*) fragment)->rhde_data;
 			end = p + line->dpg_length - offsetof(rhde, rhde_data[0]);
 		}
 		else

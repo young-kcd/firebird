@@ -84,17 +84,20 @@ private:
 	RefPtr<IFirebirdConf> config;
 	const char* secDbName;
 	ICryptKeyCallback* cryptCallback;
+
 protected:
-    virtual RemotePassword* RemotePasswordFactory()=0;
+    virtual RemotePassword* remotePasswordFactory() = 0;
 };
 
-template <class SHA> class SrpServerImpl FB_FINAL : public SrpServer  
+template <class SHA> class SrpServerImpl FB_FINAL : public SrpServer
 {
 public:
 	explicit SrpServerImpl<SHA>(IPluginConfig* ipc)
-	  : SrpServer(ipc) {}
+		: SrpServer(ipc)
+	{}
+
 protected:
-    RemotePassword* RemotePasswordFactory()
+    RemotePassword* remotePasswordFactory()
     {
 		return FB_NEW RemotePasswordImpl<SHA>;
 	}
@@ -229,7 +232,7 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 				throw;
 			}
 
-			server = RemotePasswordFactory();
+			server = remotePasswordFactory();
 			server->genServerKey(serverPubKey, verifier);
 
 			// Ready to prepare data for client and calculate session key
@@ -263,8 +266,9 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 		BigInteger clientProof(proof.c_str());
 		BigInteger serverProof = server->clientProof(account.c_str(), salt.c_str(), sessionKey);
 		HANDSHAKE_DEBUG(fprintf(stderr, "Client Proof Received, Length = %d\n", clientProof.length()));
-		dumpIt("Srv: Client Proof",clientProof);
-		dumpIt("Srv: Server Proof",serverProof);
+		dumpIt("Srv: Client Proof", clientProof);
+		dumpIt("Srv: Server Proof", serverProof);
+
 		if (clientProof == serverProof)
 		{
 			// put the record into authentication block

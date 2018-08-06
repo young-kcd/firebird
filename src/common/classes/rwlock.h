@@ -228,6 +228,7 @@ private:
 public:
 	RWLock() { init(); }
 	explicit RWLock(class MemoryPool&) { init(); }
+
 	~RWLock()
 	{
 #ifdef DEV_BUILD

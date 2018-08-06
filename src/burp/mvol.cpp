@@ -68,6 +68,7 @@
 
 using MsgFormat::SafeArg;
 using Firebird::FbLocalStatus;
+
 const int open_mask	= 0666;
 
 #ifdef WIN_NT
@@ -764,7 +765,6 @@ void MVOL_init_read(const char* file_name, USHORT* format)
 			BURP_error(383, true, SafeArg() << ret);
 		}
 	}
-
 }
 
 void mvol_init_read(BurpGlobals* tdgbl, const char* file_name, USHORT* format, int* cnt, UCHAR** ptr)
@@ -1020,8 +1020,8 @@ UCHAR* MVOL_read_block(BurpGlobals* tdgbl, UCHAR* ptr, ULONG count)
 		count -= n;
 		tdgbl->gbl_io_cnt -= n;
 		tdgbl->gbl_io_ptr += n;
-
 	}
+
 	return ptr;
 }
 
@@ -1906,11 +1906,13 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 			l = get(tdgbl);
 			p = tdgbl->mvol_keyname_buffer;
 			maxlen = sizeof(tdgbl->mvol_keyname_buffer) - 1;
+
 			if (l)
 			{
 				do {
 					*p++ = get(tdgbl);
 				} while (--l && --maxlen);
+
 				// Discard elements that don't fit in the buffer, possible corrupt backup
 				if (l > 0 && !maxlen)
 				{
@@ -1918,21 +1920,26 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 						get(tdgbl);
 				}
 			}
+
 			*p = 0;
 			tdgbl->mvol_keyname = tdgbl->mvol_keyname_buffer;
+
 			if (!tdgbl->gbl_sw_keyname)
 				tdgbl->gbl_sw_keyname = tdgbl->mvol_keyname;
+
 			break;
 
 		case att_backup_crypt:
 			l = get(tdgbl);
 			p = tdgbl->mvol_crypt_buffer;
 			maxlen = sizeof(tdgbl->mvol_crypt_buffer) - 1;
+
 			if (l)
 			{
 				do {
 					*p++ = get(tdgbl);
 				} while (--l && --maxlen);
+
 				// Discard elements that don't fit in the buffer, possible corrupt backup
 				if (l > 0 && !maxlen)
 				{
@@ -1940,10 +1947,13 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 						get(tdgbl);
 				}
 			}
+
 			*p = 0;
 			tdgbl->mvol_crypt = tdgbl->mvol_crypt_buffer;
+
 			if (!tdgbl->gbl_sw_crypt)
 				tdgbl->gbl_sw_crypt = tdgbl->mvol_crypt;
+
 			break;
 
 		case att_backup_zip:
@@ -1958,11 +1968,13 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 			l = get(tdgbl);
 			p = tdgbl->gbl_key_hash;
 			maxlen = sizeof(tdgbl->gbl_key_hash) - 1;
+
 			if (l)
 			{
 				do {
 					*p++ = get(tdgbl);
 				} while (--l && --maxlen);
+
 				// Discard elements that don't fit in the buffer, possible corrupt backup
 				if (l > 0 && !maxlen)
 				{
@@ -1970,6 +1982,7 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 						get(tdgbl);
 				}
 			}
+
 			*p = 0;
 			break;
 

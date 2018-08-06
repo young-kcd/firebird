@@ -735,10 +735,12 @@ public:
 
 			SLONG value = sharedMemory->eventClear(&current->callbackEvent);
 			p->flags |= MappingHeader::FLAG_DELIVER;
+
 			if (sharedMemory->eventPost(&p->notifyEvent) != FB_SUCCESS)
 			{
 				(Arg::Gds(isc_map_event) << "POST").raise();
 			}
+
 			while (sharedMemory->eventWait(&current->callbackEvent, value, 10000) != FB_SUCCESS)
 			{
 				if (!ISC_check_process_existence(p->id))
@@ -749,6 +751,7 @@ public:
 					break;
 				}
 			}
+
 			MAP_DEBUG(fprintf(stderr, "Notified pid %d about reset map %s\n", p->id, sMem->databaseForReset));
 		}
 	}
@@ -998,7 +1001,7 @@ public:
 			c = ptr->get();
 			fb_assert(c);
 		}
-		else 
+		else
 		{
 			c = FB_NEW_POOL(getPool()) DbCache(getPool());
 			*(databases.put(db)) = c;

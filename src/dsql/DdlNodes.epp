@@ -1169,6 +1169,9 @@ void AlterCharSetNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 }
 
 
+//----------------------
+
+
 bool AlterEDSPoolSetNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	if (!tdbb->getAttachment()->locksmith(tdbb, MODIFY_EXT_CONN_POOL))
@@ -1204,6 +1207,9 @@ void AlterEDSPoolSetNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlSc
 			Arg::Gds(isc_random) << Arg::Str("Unknown param for ALTER EXTERNAL CONNECTIONS POOL statement"));
 	}
 }
+
+
+//----------------------
 
 
 bool AlterEDSPoolClearNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -1248,6 +1254,7 @@ void AlterEDSPoolClearNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsql
 			Arg::Gds(isc_random) << Arg::Str("Unknown param for ALTER EXTERNAL CONNECTIONS POOL statement"));
 	}
 }
+
 
 //----------------------
 
@@ -11303,6 +11310,7 @@ static bool checkObjectExist(thread_db* tdbb, jrd_tra* transaction, const MetaNa
 			END_FOR
 			break;
 		}
+
 		case obj_udf:
 		{
 			AutoCacheRequest request(tdbb, drq_udf_exist, DYN_REQUESTS);
@@ -11315,6 +11323,7 @@ static bool checkObjectExist(thread_db* tdbb, jrd_tra* transaction, const MetaNa
 			END_FOR
 			break;
 		}
+
 		case obj_package_header:
 		{
 			AutoCacheRequest request(tdbb, drq_package_exist, DYN_REQUESTS);
@@ -11327,6 +11336,7 @@ static bool checkObjectExist(thread_db* tdbb, jrd_tra* transaction, const MetaNa
 			END_FOR
 			break;
 		}
+
 		case obj_trigger:
 		{
 			AutoCacheRequest request(tdbb, drq_trigger_exist, DYN_REQUESTS);
@@ -11339,6 +11349,7 @@ static bool checkObjectExist(thread_db* tdbb, jrd_tra* transaction, const MetaNa
 			END_FOR
 			break;
 		}
+
 		case obj_relation:
 		case obj_view:
 		{
@@ -11352,6 +11363,7 @@ static bool checkObjectExist(thread_db* tdbb, jrd_tra* transaction, const MetaNa
 			END_FOR
 			break;
 		}
+
 		case obj_exception:
 		{
 			AutoCacheRequest request(tdbb, drq_exception_exist, DYN_REQUESTS);
@@ -11364,6 +11376,7 @@ static bool checkObjectExist(thread_db* tdbb, jrd_tra* transaction, const MetaNa
 			END_FOR
 			break;
 		}
+
 		case obj_generator:
 		{
 			AutoCacheRequest request(tdbb, drq_generator_exist, DYN_REQUESTS);
@@ -11484,7 +11497,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 			break;
 
 		case obj_sql_role:
-			if ((!crdb) && (!isItSqlRole(tdbb, transaction, user, dummyName)))
+			if (!crdb && (!isItSqlRole(tdbb, transaction, user, dummyName)))
 			{
 				// msg 188: Role doesn't exist.
 				status_exception::raise(Arg::PrivateDyn(188) << user.c_str());

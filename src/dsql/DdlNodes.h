@@ -298,12 +298,12 @@ private:
 class AlterEDSPoolSetNode : public DdlNode
 {
 public:
-	enum PARAM {POOL_SIZE, POOL_LIFETIME};
+	enum PARAM { POOL_SIZE, POOL_LIFETIME };
 
-	AlterEDSPoolSetNode(MemoryPool& pool, PARAM prm, int val) :
-	  DdlNode(pool),
-	  m_param(prm),
-	  m_value(val)
+	AlterEDSPoolSetNode(MemoryPool& pool, PARAM prm, int val)
+		: DdlNode(pool),
+		  m_param(prm),
+		  m_value(val)
 	{
 	}
 
@@ -327,12 +327,12 @@ private:
 class AlterEDSPoolClearNode : public DdlNode
 {
 public:
-	enum PARAM {POOL_ALL, POOL_OLDEST, POOL_DB};
+	enum PARAM { POOL_ALL, POOL_OLDEST, POOL_DB };
 
-	AlterEDSPoolClearNode(MemoryPool& pool, PARAM prm, const Firebird::string& val = "") :
-	  DdlNode(pool),
-	  m_param(prm),
-	  m_value(pool)
+	AlterEDSPoolClearNode(MemoryPool& pool, PARAM prm, const Firebird::string& val = "")
+		: DdlNode(pool),
+		  m_param(prm),
+		  m_value(pool)
 	{
 		m_value = val;
 	}

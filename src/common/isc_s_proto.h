@@ -261,14 +261,14 @@ public:
 
 
 // NS 2014-08-11: FIXME - this class needs major refactoring:
-// - remove conditional compilation from header file (for example, 
+// - remove conditional compilation from header file (for example,
 //   you can use virtual interface and factory method to create
 //   implementation-specific instance)
 // - hide implementation details from interface
 // - users of shared mutex implemented by this class shall be using
 //   RAII SharedMutexGuard to improve reliability of code
 // - shared memory initialization shall be separate from construction
-//   so users (event.cpp, tpc.cpp) can avoid storing pointers to a 
+//   so users (event.cpp, tpc.cpp) can avoid storing pointers to a
 //   partially constructed object in code
 class SharedMemoryBase
 {

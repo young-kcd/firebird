@@ -759,7 +759,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 	if ((state == tra_committed || state == tra_us) && !forceBack &&
 		!(rpb->rpb_flags & (rpb_deleted | rpb_damaged)) &&
-		(rpb->rpb_b_page == 0 || 
+		(rpb->rpb_b_page == 0 ||
 		  (rpb->rpb_transaction_nr >= oldest_snapshot && !(tdbb->tdbb_flags & TDBB_sweeper))))
 	{
 		if (gcPolicyBackground && rpb->rpb_b_page)
@@ -795,9 +795,9 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 		}
 
 		// Worry about intermediate GC if necessary
-		if (!int_gc_done && 
-			(//(prev_snapshot_number && prev_snapshot_number == current_snapshot_number) || 
-			 ((tdbb->tdbb_flags & TDBB_sweeper) && state == tra_committed && 
+		if (!int_gc_done &&
+			(//(prev_snapshot_number && prev_snapshot_number == current_snapshot_number) ||
+			 ((tdbb->tdbb_flags & TDBB_sweeper) && state == tra_committed &&
 				rpb->rpb_b_page != 0 && rpb->rpb_transaction_nr >= oldest_snapshot)))
 		{
 			jrd_rel::GCShared gcGuard(tdbb, rpb->rpb_relation);
@@ -816,7 +816,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			}
 		}
 
-		prev_snapshot_number = current_snapshot_number; 
+		prev_snapshot_number = current_snapshot_number;
 
 		if (state == tra_limbo && !(transaction->tra_flags & TRA_ignore_limbo))
 		{
@@ -865,6 +865,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 				if (!DPM_get(tdbb, rpb, LCK_read))
 					return false;
+
 				prev_snapshot_number = 0;
 				state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr, &current_snapshot_number);
 				continue;
@@ -1327,7 +1328,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 	Record* const record = VIO_record(tdbb, rpb, NULL, pool);
 	const Format* const format = record->getFormat();
 
-	record->setTransaction_nr(rpb->rpb_transaction_nr);
+	record->setTransactionNumber(rpb->rpb_transaction_nr);
 
 	// If the record is a delta version, start with data from prior record.
 	UCHAR* tail;
@@ -1972,7 +1973,7 @@ void VIO_fini(thread_db* tdbb)
 	}
 }
 
-static void delete_version_chain(thread_db* tdbb, record_param* rpb, bool delete_head) 
+static void delete_version_chain(thread_db* tdbb, record_param* rpb, bool delete_head)
 {
 /**************************************
  *
@@ -2007,7 +2008,7 @@ static void delete_version_chain(thread_db* tdbb, record_param* rpb, bool delete
 
 	ULONG prior_page = 0;
 
-	if (delete_head == false)
+	if (!delete_head)
 	{
 		prior_page = rpb->rpb_page;
 		rpb->rpb_page = rpb->rpb_b_page;
@@ -2094,12 +2095,12 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 	// and move unnecessary records from staying into going stack.
 	CommitNumber current_snapshot_number = 0, prev_snapshot_number;
 	RecordStack::reverse_iterator rev_i(staying);
-	while (rev_i.hasData()) 
+	while (rev_i.hasData())
 	{
 		prev_snapshot_number = current_snapshot_number;
 
 		Record *record = rev_i.object();
-		CommitNumber cn = tipCache->cacheState(record->getTransaction_nr());
+		CommitNumber cn = tipCache->cacheState(record->getTransactionNumber());
 		if (cn >= CN_PREHISTORIC && cn <= CN_MAX_NUMBER)
 			current_snapshot_number = att->att_active_snapshots.getSnapshotForVersion(cn);
 		else
@@ -2125,7 +2126,7 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 	record_param staying_chain_rpb;
 	staying_chain_rpb.rpb_relation = rpb->rpb_relation;
 	staying_chain_rpb.getWindow(tdbb).win_flags = WIN_secondary;
-	
+
 	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb);
 	PageStack precedence_stack;
 
@@ -2138,13 +2139,13 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 	{
 		org_record = current_record;
 		current_record = const_i.object();
-		
+
 		UCHAR differences[MAX_DIFFERENCES];
 		const size_t l =
 			Compressor::makeDiff(current_record->getLength(), current_record->getData(),
 									org_record->getLength(), org_record->getData(),
 									sizeof(differences), differences);
-		
+
 		staying_chain_rpb.rpb_flags = rpb_chained | (prior_delta ? rpb_delta : 0);
 
 		if ((l < sizeof(differences)) && (l < org_record->getLength()))
@@ -2159,8 +2160,10 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 			staying_chain_rpb.rpb_length = org_record->getLength();
 			prior_delta = false;
 		}
-		staying_chain_rpb.rpb_transaction_nr = org_record->getTransaction_nr();
+
+		staying_chain_rpb.rpb_transaction_nr = org_record->getTransactionNumber();
 		staying_chain_rpb.rpb_format_number = org_record->getFormat()->fmt_version;
+
 		if (staying_chain_rpb.rpb_page)
 		{
 			staying_chain_rpb.rpb_b_page = staying_chain_rpb.rpb_page;
@@ -2168,6 +2171,7 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 			staying_chain_rpb.rpb_page = 0;
 			staying_chain_rpb.rpb_line = 0;
 		}
+
 		staying_chain_rpb.rpb_number = rpb->rpb_number;
 		DPM_store(tdbb, &staying_chain_rpb, precedence_stack, DPM_secondary);
 		precedence_stack.push(PageNumber(relPages->rel_pg_space_id, staying_chain_rpb.rpb_page));
@@ -2181,8 +2185,9 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 		staying_chain_rpb.rpb_length = current_record->getLength();
 		staying_chain_rpb.rpb_flags = rpb_chained | (prior_delta ? rpb_delta : 0);
 		prior_delta = false;
-		staying_chain_rpb.rpb_transaction_nr = current_record->getTransaction_nr();
+		staying_chain_rpb.rpb_transaction_nr = current_record->getTransactionNumber();
 		staying_chain_rpb.rpb_format_number = current_record->getFormat()->fmt_version;
+
 		if (staying_chain_rpb.rpb_page)
 		{
 			staying_chain_rpb.rpb_b_page = staying_chain_rpb.rpb_page;
@@ -2190,6 +2195,7 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 			staying_chain_rpb.rpb_page = 0;
 			staying_chain_rpb.rpb_line = 0;
 		}
+
 		staying_chain_rpb.rpb_number = rpb->rpb_number;
 		DPM_store(tdbb, &staying_chain_rpb, precedence_stack, DPM_secondary);
 		precedence_stack.push(PageNumber(relPages->rel_pg_space_id, staying_chain_rpb.rpb_page));
@@ -2218,7 +2224,7 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 		return;
 	}
 
-	// Ensure that new versions are written to disk before we update back-pointer 
+	// Ensure that new versions are written to disk before we update back-pointer
 	// of primary version to point to them
 	while (precedence_stack.hasData())
 		CCH_precedence(tdbb, &temp_rpb.getWindow(tdbb), precedence_stack.pop());
@@ -2227,10 +2233,12 @@ void VIO_intermediate_gc(thread_db* tdbb, record_param* rpb, jrd_tra* transactio
 	temp_rpb.rpb_b_page = staying_chain_rpb.rpb_page;
 	temp_rpb.rpb_b_line = staying_chain_rpb.rpb_line;
 	CCH_MARK(tdbb, &temp_rpb.getWindow(tdbb));
+
 	if (prior_delta)
 		temp_rpb.rpb_flags |= rpb_delta;
 	else
 		temp_rpb.rpb_flags &= ~rpb_delta;
+
 	DPM_rewrite_header(tdbb, &temp_rpb);
 	CCH_RELEASE(tdbb, &temp_rpb.getWindow(tdbb));
 
@@ -3163,6 +3171,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		tdbb->bumpRelStats(RuntimeStatistics::RECORD_UPDATES, relation->rel_id);
 		return;
 	}
+
 	const bool backVersion = (org_rpb->rpb_b_page != 0);
 	record_param temp;
 	PageStack stack;
@@ -5050,7 +5059,8 @@ static void invalidate_cursor_records(jrd_tra* transaction, record_param* mod_rp
 }
 
 
-static void list_staying_fast(thread_db* tdbb, record_param* rpb, RecordStack& staying, record_param* back_rpb, int flags)
+static void list_staying_fast(thread_db* tdbb, record_param* rpb, RecordStack& staying,
+	record_param* back_rpb, int flags)
 {
 /**************************************
 *
@@ -5135,7 +5145,8 @@ static void list_staying_fast(thread_db* tdbb, record_param* rpb, RecordStack& s
 		staying.push(temp.rpb_record);
 
 		++backversions;
-/**
+
+		/***
 		if (temp.rpb_transaction_nr < oldest_active && temp.rpb_b_page)
 		{
 			temp.rpb_page = page;
@@ -5163,7 +5174,8 @@ static void list_staying_fast(thread_db* tdbb, record_param* rpb, RecordStack& s
 				break;
 			}
 		}
-**/
+		***/
+
 		// Don't monopolize the server while chasing long back version chains.
 		if (--tdbb->tdbb_quantum < 0)
 			JRD_reschedule(tdbb, 0, true);
@@ -5219,9 +5231,9 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 												RuntimeStatistics::RECORD_BACKVERSION_READS);
 
 
-	// Limit number of "restarts" if primary version constantly changed. Currently, 
-	// LS_ACTIVE_RPB is passed by VIO_intermediate_gc only and it is ok to return 
-	// empty staying in this case. 
+	// Limit number of "restarts" if primary version constantly changed. Currently,
+	// LS_ACTIVE_RPB is passed by VIO_intermediate_gc only and it is ok to return
+	// empty staying in this case.
 	// Should think on this more before merge it into Firebird tree.
 
 	int n = 0, max = (flags & LS_ACTIVE_RPB) ? 3 : 0;
@@ -5254,7 +5266,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 			delete backout_rec;
 			backout_rec = NULL;
 
-			if ((flags & LS_NO_RESTART) || max && ++n > max)
+			if ((flags & LS_NO_RESTART) || (max && ++n > max))
 			{
 				CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
 				return;

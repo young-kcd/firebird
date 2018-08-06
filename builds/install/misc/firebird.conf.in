@@ -435,7 +435,7 @@
 #
 # The default Windows client configuration (AuthClient) also includes support for
 # the Win_Sspi plugin. This implements windows trusted authentication and is backward
-# compatible with 2.1 and 2.5 clients and servers running on windows.
+# compatible with 2.1 and 2.5 clients and servers running on Windows.
 #
 # Per-database configurable.
 #
@@ -1041,17 +1041,17 @@
 # Settings of External Connections Pool 
 # ============================
 
-# Set the maximum number of inactive (idle) external connections to retain at 
-# the pool. Valid values are between 0 and 1000. If set to zero, pool is disabed, 
+# Set the maximum number of inactive (idle) external connections to retain at
+# the pool. Valid values are between 0 and 1000. If set to zero, pool is disabled,
 # i.e. external connection is destroyed immediately after the use.
-# 
+#
 # Type: integer
-# 
+#
 #ExtConnPoolSize = 0
 
-# Set the time before destroyng inactive external connection, seconds. 
-# Valid values are between 1 and 86400. 
-# 
+# Set the time before destroyng inactive external connection, seconds.
+# Valid values are between 1 and 86400.
+#
 # Type: integer
-# 
+#
 #ExtConnPoolLifeTime = 7200

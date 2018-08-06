@@ -1980,10 +1980,10 @@ alter_charset_clause
 		{ $$ = newNode<AlterCharSetNode>(*$1, *$5); }
 	;
 
-// 
+//
 %type <ddlNode> alter_eds_conn_pool_clause
-alter_eds_conn_pool_clause 
-	: SET SIZE unsigned_short_integer 
+alter_eds_conn_pool_clause
+	: SET SIZE unsigned_short_integer
 		{ $$ = newNode<AlterEDSPoolSetNode>(AlterEDSPoolSetNode::POOL_SIZE, $3); }
 	| SET LIFETIME unsigned_short_integer eds_pool_lifetime_mult
 		{ $$ = newNode<AlterEDSPoolSetNode>(AlterEDSPoolSetNode::POOL_LIFETIME, $3 * $4); }
@@ -1996,11 +1996,11 @@ alter_eds_conn_pool_clause
 	;
 
 %type <intVal> eds_pool_lifetime_mult
-eds_pool_lifetime_mult :
-		  HOUR		{ $$ = 3600; }
-		| MINUTE	{ $$ = 60; }
-		| SECOND	{ $$ = 1; }
-		;
+eds_pool_lifetime_mult
+	: HOUR		{ $$ = 3600; }
+	| MINUTE	{ $$ = 60; }
+	| SECOND	{ $$ = 1; }
+	;
 
 
 // CREATE DATABASE

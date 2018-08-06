@@ -368,7 +368,7 @@ void IDX_create_index(thread_db* tdbb,
 			continue;
 
 		// If there are any back-versions left make an attempt at intermediate GC.
-		if (primary.rpb_b_page) 
+		if (primary.rpb_b_page)
 		{
 			VIO_intermediate_gc(tdbb, &primary, transaction);
 

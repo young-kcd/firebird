@@ -522,7 +522,9 @@ public:
 	virtual bool resetSession();
 
 	virtual bool isAvailable(Jrd::thread_db* tdbb, TraScope traScope) const;
+
 	virtual bool isConnected() const { return (m_handle != 0); }
+
 	virtual bool validate(Jrd::thread_db* tdbb);
 
 	virtual Blob* createBlob();

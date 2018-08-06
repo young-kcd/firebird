@@ -319,7 +319,6 @@ namespace {
 	private:
 		StackUserData* u;
 	};
-
 } // anonymous namespace
 
 int gsec(Firebird::UtilSvc* uSvc)

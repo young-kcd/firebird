@@ -219,21 +219,21 @@ public:
 			CS_METADATA : req_attachment->att_charset;
 	}
 
-	StmtNumber getRequestId() const 
+	StmtNumber getRequestId() const
 	{
 		if (!req_id)
 			req_id = JRD_get_thread_data()->getDatabase()->generateStatementId();
 		return req_id;
 	}
 
-	void setRequestId(StmtNumber id) 
+	void setRequestId(StmtNumber id)
 	{
 		req_id = id;
 	}
 
 private:
 	JrdStatement* const statement;
-	mutable StmtNumber	req_id;					// request identifier
+	mutable StmtNumber	req_id;			// request identifier
 
 public:
 	MemoryPool* req_pool;

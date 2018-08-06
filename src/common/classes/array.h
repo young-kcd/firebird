@@ -421,6 +421,7 @@ public:
 			remove(pos);
 			return true;
 		}
+
 		return false;
 	}
 

@@ -1592,7 +1592,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				// but before any real work is done
 				SDW_init(tdbb, options.dpb_activate_shadow, options.dpb_delete_shadow);
 
-				// Initialize TIP cache. We do this late to give SDW a chance to 
+				// Initialize TIP cache. We do this late to give SDW a chance to
 				// work while we read states for all interesting transactions
 				dbb->dbb_tip_cache = FB_NEW_POOL(*dbb->dbb_permanent) TipCache(dbb);
 				dbb->dbb_tip_cache->initializeTpc(tdbb);
@@ -8519,7 +8519,7 @@ void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 				v[0] == isc_arg_gds &&
 				v[1] == isc_update_conflict &&
 				// Read committed transaction with snapshots
-				(transaction->tra_flags & TRA_read_committed) && 
+				(transaction->tra_flags & TRA_read_committed) &&
 				(transaction->tra_flags & TRA_read_consistency) &&
 				// Snapshot has been assigned to the request -
 				// it was top-level request
@@ -8641,7 +8641,7 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
 				v[0] == isc_arg_gds &&
 				v[1] == isc_update_conflict &&
 				// Read committed transaction with snapshots
-				(transaction->tra_flags & TRA_read_committed) && 
+				(transaction->tra_flags & TRA_read_committed) &&
 				(transaction->tra_flags & TRA_read_consistency) &&
 				// Snapshot has been assigned to the request -
 				// it was top-level request
