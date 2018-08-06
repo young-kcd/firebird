@@ -22,3 +22,4 @@ Only ones mentioned in this document could be used, but as necessities appears, 
 - [rvalue references](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2006/n2027.html)
 - [strongly-typed enum](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2347.pdf)
 - [atomic types and operations](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2427.html)
+- [static_assert](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2004/n1720.html)
