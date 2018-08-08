@@ -187,7 +187,7 @@ private:
 	class TransactionStatusBlock : public Firebird::MemoryHeader
 	{
 	public:
-		CommitNumber data[1];
+		std::atomic<CommitNumber> data[1];
 	};
 
 	typedef TransactionStatusBlock* PTransactionStatusBlock;
@@ -224,21 +224,21 @@ private:
 	{
 	public:
 		explicit GlobalTpcInitializer(TipCache *cache) : MemoryInitializer(cache) {}
-		bool initialize(Firebird::SharedMemoryBase* sm, bool initialize);
+		bool initialize(Firebird::SharedMemoryBase* sm, bool initFlag);
 	};
 
 	class SnapshotsInitializer : public MemoryInitializer
 	{
 	public:
 		explicit SnapshotsInitializer(TipCache *cache) : MemoryInitializer(cache) {}
-		bool initialize(Firebird::SharedMemoryBase* sm, bool initialize);
+		bool initialize(Firebird::SharedMemoryBase* sm, bool initFlag);
 	};
 
 	class MemBlockInitializer : public MemoryInitializer
 	{
 	public:
 		explicit MemBlockInitializer(TipCache *cache) : MemoryInitializer(cache) {}
-		bool initialize(Firebird::SharedMemoryBase* sm, bool initialize);
+		bool initialize(Firebird::SharedMemoryBase* sm, bool initFlag);
 	};
 
 	typedef Firebird::BePlusTree<StatusBlockData*, int, Firebird::MemoryPool, StatusBlockData> BlocksMemoryMap;

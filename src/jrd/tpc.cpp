@@ -46,11 +46,11 @@ void TipCache::MemoryInitializer::mutexBug(int osErrorCode, const char* text)
 	fb_utils::logAndDie(msg.c_str());
 }
 
-bool TipCache::GlobalTpcInitializer::initialize(Firebird::SharedMemoryBase* sm, bool initialize)
+bool TipCache::GlobalTpcInitializer::initialize(Firebird::SharedMemoryBase* sm, bool initFlag)
 {
 	m_cache->m_tpcHeader = static_cast<Firebird::SharedMemory<GlobalTpcHeader>*>(sm);
 
-	if (!initialize)
+	if (!initFlag)
 		return true;
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -72,9 +72,9 @@ bool TipCache::GlobalTpcInitializer::initialize(Firebird::SharedMemoryBase* sm, 
 	return true;
 }
 
-bool TipCache::SnapshotsInitializer::initialize(Firebird::SharedMemoryBase* sm, bool initialize)
+bool TipCache::SnapshotsInitializer::initialize(Firebird::SharedMemoryBase* sm, bool initFlag)
 {
-	if (!initialize)
+	if (!initFlag)
 		return true;
 
 	SnapshotList* header = static_cast<SnapshotList*>(sm->sh_mem_header);
@@ -92,9 +92,9 @@ bool TipCache::SnapshotsInitializer::initialize(Firebird::SharedMemoryBase* sm, 
 	return true;
 }
 
-bool TipCache::MemBlockInitializer::initialize(Firebird::SharedMemoryBase* sm, bool initialize)
+bool TipCache::MemBlockInitializer::initialize(Firebird::SharedMemoryBase* sm, bool initFlag)
 {
-	if (!initialize)
+	if (!initFlag)
 		return true;
 
 	TransactionStatusBlock* header = static_cast<TransactionStatusBlock*>(sm->sh_mem_header);
@@ -104,7 +104,7 @@ bool TipCache::MemBlockInitializer::initialize(Firebird::SharedMemoryBase* sm, b
 	header->mhb_version = TPC_VERSION;
 	header->mhb_timestamp = TimeStamp::getCurrentTimeStamp().value();
 
-	memset(const_cast<CommitNumber*>(header->data), 0, sm->sh_mem_length_mapped - offsetof(TransactionStatusBlock, data[0]));
+	memset(header->data, 0, sm->sh_mem_length_mapped - offsetof(TransactionStatusBlock, data[0]));
 
 	return true;
 }
@@ -296,7 +296,7 @@ void TipCache::loadInventoryPages(thread_db* tdbb)
 		// Barrier is not needed as our thread is the only one here.
 		// At the same time, simple write to a volatile variable is not good
 		// as it is not deterministic. Some compilers generate barriers and some do not.
-		((std::atomic<CommitNumber>*) (statusBlock->data + transOffset))->store(cn, std::memory_order_relaxed);
+		(statusBlock->data + transOffset)->store(cn, std::memory_order_relaxed);
 
 		if (++t > hdr_next_transaction)
 			break;
@@ -432,7 +432,7 @@ TraNumber TipCache::findStates(TraNumber minNumber, TraNumber maxNumber, ULONG m
 		// Such transaction shall already be considered active by our caller.
 		// TODO: check if this assumption is indeed correct.
 
-		CommitNumber cn = ((std::atomic<CommitNumber>*) (statusBlock->data + transOffset))->load(std::memory_order_relaxed);
+		CommitNumber cn = (statusBlock->data + transOffset)->load(std::memory_order_relaxed);
 		switch (cn)
 		{
 		case CN_ACTIVE:
@@ -489,7 +489,7 @@ CommitNumber TipCache::setState(TraNumber number, SSHORT state)
 	if (!block)
 		ERR_bugcheck_msg("TPC: Attempt to change state of old transaction");
 
-	std::atomic<CommitNumber>* statePtr = (std::atomic<CommitNumber>*) (block->data + offset);
+	std::atomic<CommitNumber>* statePtr = block->data + offset;
 	CommitNumber oldStateCn = statePtr->load(std::memory_order_relaxed);
 	switch (state)
 	{
@@ -946,7 +946,7 @@ void TipCache::updateActiveSnapshots(thread_db* tdbb, ActiveSnapshots* activeSna
 			return;
 		}
 
-		activeSnapshots->m_slots_used == slots_used_org;
+		activeSnapshots->m_slots_used = slots_used_org;
 		activeSnapshots->m_releaseCount = release_count;
 
 		// Remap snapshot list if it has been grown by someone else
