@@ -106,6 +106,8 @@ bool TipCache::MemBlockInitializer::initialize(Firebird::SharedMemoryBase* sm, b
 
 	memset(header->data, 0, sm->sh_mem_length_mapped - offsetof(TransactionStatusBlock, data[0]));
 
+	fb_assert(header->data->is_lock_free());
+
 	return true;
 }
 
