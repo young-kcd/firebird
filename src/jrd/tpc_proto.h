@@ -195,7 +195,7 @@ private:
 	class StatusBlockData
 	{
 	public:
-		StatusBlockData(Jrd::thread_db* tdbb, Jrd::TipCache* tipCache, int blockNumber);
+		StatusBlockData(Jrd::thread_db* tdbb, Jrd::TipCache* tipCache, int blkNumber);
 		~StatusBlockData();
 
 		int blockNumber;

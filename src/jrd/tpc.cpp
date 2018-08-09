@@ -322,7 +322,6 @@ TipCache::StatusBlockData::StatusBlockData(thread_db* tdbb, TipCache* tipCache, 
 	Database* dbb = tipCache->m_dbb;
 	MemoryPool* pool = dbb->dbb_permanent;
 
-	blockNumber = blockNumber;
 	memory = NULL;
 	cache = tipCache;
 	existenceLock.setKey(blockNumber);
