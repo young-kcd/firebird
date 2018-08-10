@@ -1143,8 +1143,9 @@ namespace Why
 
 			if (checkAttachment && ref && ref->savedStatus.getError())
 			{
+				const IStatus* err = ref->savedStatus.value();
 				fini();
-				status_exception::raise(object->attachment->savedStatus.value());
+				status_exception::raise(err);
 			}
 		}
 
@@ -1161,10 +1162,12 @@ namespace Why
 			{
 				MutexLockGuard guard(ref->enterMutex, FB_FUNCTION);
 				++ref->enterCount;
+				nextRef = nxt;
 			}
 			else
 			{
 				++dispCounter;
+				nextRef = nxt;
 			}
 
 			if (shutdownStarted)
@@ -1172,22 +1175,21 @@ namespace Why
 				fini();
 				Arg::Gds(isc_att_shutdown).raise();
 			}
-
-			nextRef = nxt;
 		}
 
 		void fini()
 		{
 			RefDeb(DEB_RLS_JATT, "YEntry::fini");
-			nextRef = NULL;
 
 			if (ref)
 			{
 				MutexLockGuard guard(ref->enterMutex, FB_FUNCTION);
+				nextRef = NULL;
 				--ref->enterCount;
 			}
 			else
 			{
+				nextRef = NULL;
 				--dispCounter;
 			}
 		}
@@ -3834,12 +3836,9 @@ YHelper<Impl, Intf>::YHelper(NextInterface* aNext)
 
 
 YEvents::YEvents(YAttachment* aAttachment, IEvents* aNext, IEventCallback* aCallback)
-	: YHelper(aNext)
+	: YHelper(aNext), attachment(aAttachment), callback(aCallback)
 {
-	attachment = aAttachment;
-	callback = aCallback;
-
-	attachment->childEvents.add(this);
+	attachment.load(std::memory_order_relaxed)->childEvents.add(this);
 }
 
 FB_API_HANDLE& YEvents::getHandle()
@@ -3851,8 +3850,9 @@ FB_API_HANDLE& YEvents::getHandle()
 
 void YEvents::destroy(unsigned dstrFlags)
 {
-	attachment->childEvents.remove(this);
-	attachment = NULL;
+	YAttachment* att = attachment;
+	if (att && attachment.compare_exchange_strong(att, nullptr))
+		att->childEvents.remove(this);
 	removeHandle(&events, handle);
 
 	if (!(dstrFlags & DF_RELEASE))
