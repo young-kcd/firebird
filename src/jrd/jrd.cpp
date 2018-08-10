@@ -134,6 +134,10 @@
 #include "../dsql/dsql_proto.h"
 #include "../dsql/DsqlBatch.h"
 
+#ifdef WIN_NT
+#include "../common/dllinst.h"
+#endif
+
 using namespace Jrd;
 using namespace Firebird;
 
@@ -683,6 +687,9 @@ namespace
 			  nolock(lockFlags & ATT_DONT_LOCK),
 			  blocking(!(lockFlags & ATT_NON_BLOCKING))
 		{
+			if (!sa)
+				Arg::Gds(isc_att_shutdown).raise();
+
 			if (blocking)
 				sAtt->getBlockingMutex()->enter(from);
 
@@ -8018,6 +8025,10 @@ namespace
 
 	THREAD_ENTRY_DECLARE attachmentShutdownThread(THREAD_ENTRY_PARAM arg)
 	{
+#ifdef WIN_NT
+		ThreadModuleRef thdRef(attachmentShutdownThread, &engineShutdown);
+#endif
+
 		try
 		{
 			MutexLockGuard guard(shutdownMutex, FB_FUNCTION);
@@ -8098,9 +8109,10 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 		// Extra shutdown operations
 		Service::shutdownServices();
 	}
-	catch (const Exception&)
+	catch (const Exception& ex)
 	{
 		success = false;
+		iscLogException("Error at shutdown_thread", ex);
 	}
 
 	if (success && semaphore)
