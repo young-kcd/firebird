@@ -86,11 +86,17 @@ extern "C"
 THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg)
 {
 	fb_assert(arg);
-	Firebird::ThreadSync thread("threadStart");
+	Firebird::ThreadSync* thread = FB_NEW Firebird::ThreadSync("threadStart");
+
 	MemoryPool::setContextPool(getDefaultMemoryPool());
 	ThreadArgs localArgs(*static_cast<ThreadArgs*>(arg));
 	delete static_cast<ThreadArgs*>(arg);
 	localArgs.run();
+
+	// Check if ThreadSync still exists before deleting
+	thread = Firebird::ThreadSync::findThread();
+	delete thread;
+
 	return 0;
 }
 
