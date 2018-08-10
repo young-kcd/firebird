@@ -2582,15 +2582,25 @@ static void cancel_operation(rem_port* port, USHORT kind)
  *	able to be canceled.
  *
  **************************************/
-	Rdb* rdb;
-	if ((port->port_flags & (PORT_async | PORT_disconnect)) || !(rdb = port->port_context))
+	if ((port->port_flags & (PORT_async | PORT_disconnect)) || !(port->port_context))
 		return;
 
-	if (rdb->rdb_iface)
+	ServAttachment iface;
+	{
+		RefMutexGuard portGuard(*port->port_cancel_sync, FB_FUNCTION);
+
+		Rdb* rdb;
+		if ((port->port_flags & PORT_disconnect) || !(rdb = port->port_context))
+			return;
+
+		iface = rdb->rdb_iface;
+	}
+
+	if (iface)
 	{
 		LocalStatus ls;
 		CheckStatusWrapper status_vector(&ls);
-		rdb->rdb_iface->cancelOperation(&status_vector, kind);
+		iface->cancelOperation(&status_vector, kind);
 	}
 }
 
@@ -2881,7 +2891,10 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		}
 
 		rdb->rdb_iface->detach(&status_vector);
-		rdb->rdb_iface = NULL;
+		{
+			RefMutexGuard portGuard(*port_cancel_sync, FB_FUNCTION);
+			rdb->rdb_iface = NULL;
+		}
 
 		while (rdb->rdb_events)
 			release_event(rdb->rdb_events);
@@ -2965,7 +2978,10 @@ void rem_port::drop_database(P_RLSE* /*release*/, PACKET* sendL)
 		return;
 	}
 
-	rdb->rdb_iface = NULL;
+	{
+		RefMutexGuard portGuard(*port_cancel_sync, FB_FUNCTION);
+		rdb->rdb_iface = NULL;
+	}
 	port_flags |= PORT_detached;
 	if (port_async)
 		port_async->port_flags |= PORT_detached;
@@ -3056,7 +3072,10 @@ ISC_STATUS rem_port::end_database(P_RLSE* /*release*/, PACKET* sendL)
 			release_event(rdb->rdb_events);
 	}
 
-	rdb->rdb_iface = NULL;
+	{
+		RefMutexGuard portGuard(*port_cancel_sync, FB_FUNCTION);
+		rdb->rdb_iface = NULL;
+	}
 
 	while (rdb->rdb_requests)
 		release_request(rdb->rdb_requests, true);
