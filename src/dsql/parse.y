@@ -3145,6 +3145,7 @@ simple_proc_statement
 	| SUSPEND			{ $$ = newNode<SuspendNode>(); }
 	| EXIT				{ $$ = newNode<ExitNode>(); }
 	| RETURN value		{ $$ = newNode<ReturnNode>($2); }
+	| mng_statement		{ $$ = newNode<SessionManagementWrapperNode>($1, makeParseStr(YYPOSNARG(1), YYPOSNARG(1))); }
 	;
 
 %type <stmtNode> assignment_statement

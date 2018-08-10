@@ -1491,6 +1491,58 @@ public:
 };
 
 
+class SessionManagementWrapperNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_SESSION_MANAGEMENT_WRAPPER>
+{
+public:
+	explicit SessionManagementWrapperNode(MemoryPool& pool, SessionManagementNode* aWrapped,
+				const Firebird::string& aText)
+		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_SESSION_MANAGEMENT_WRAPPER>(pool),
+		  wrapped(aWrapped),
+		  text(pool, aText)
+	{
+	}
+
+public:
+	virtual SessionManagementWrapperNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
+	{
+		Node::dsqlPass(dsqlScratch);
+
+		// Save and reset the statement type, as SessionManagementNode sets it to TYPE_SESSION_MANAGEMENT but
+		// we are a DML statement.
+		DsqlCompiledStatement::Type statementType = dsqlScratch->getStatement()->getType();
+		wrapped->dsqlPass(dsqlScratch);
+		dsqlScratch->getStatement()->setType(statementType);
+
+		return this;
+	}
+
+public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
+	{
+		DsqlOnlyStmtNode::internalPrint(printer);
+
+		NODE_PRINT(printer, wrapped);
+		NODE_PRINT(printer, text);
+
+		return "SessionManagementWrapperNode";
+	}
+
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch)
+	{
+		dsqlScratch->appendUChar(blr_exec_sql);
+		dsqlScratch->appendUChar(blr_literal);
+		dsqlScratch->appendUChar(blr_text2);
+		dsqlScratch->appendUShort(CS_METADATA);
+		dsqlScratch->appendUShort((USHORT) text.length());
+		dsqlScratch->appendBytes((const UCHAR*) text.c_str(), text.length());
+	}
+
+public:
+	SessionManagementNode* wrapped;
+	const Firebird::string text;
+};
+
+
 class SetTransactionNode : public TransactionNode
 {
 public:
