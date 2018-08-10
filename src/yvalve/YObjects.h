@@ -30,6 +30,7 @@
 #include "firebird/Interface.h"
 #include "gen/iberror.h"
 #include "../common/StatusHolder.h"
+#include "../common/classes/fb_atomic.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
 #include "../common/MsgMetadata.h"
@@ -185,7 +186,7 @@ public:
 	void cancel(Firebird::CheckStatusWrapper* status);
 
 public:
-	YAttachment* attachment;
+	Firebird::AtomicPointer<YAttachment> attachment;
 	Firebird::RefPtr<Firebird::IEventCallback> callback;
 
 private:
