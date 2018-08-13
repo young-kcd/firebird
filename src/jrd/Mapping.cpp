@@ -746,8 +746,8 @@ public:
 				if (!ISC_check_process_existence(p->id))
 				{
 					p->flags &= ~MappingHeader::FLAG_ACTIVE;
-					sharedMemory->eventFini(&p->notifyEvent);
-					sharedMemory->eventFini(&p->callbackEvent);
+					sharedMemory->eventFini(&sMem->process[process].notifyEvent);
+					sharedMemory->eventFini(&sMem->process[process].callbackEvent);
 					break;
 				}
 			}
