@@ -60,6 +60,7 @@
 #include "../common/IntlUtil.h"
 #include "../common/os/os_utils.h"
 #include "../burp/burpswi.h"
+#include "../common/db_alias.h"
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -1014,10 +1015,22 @@ int gbak(Firebird::UtilSvc* uSvc)
 			file1 = file->fil_name.c_str();
 		else if (!file2)
 			file2 = file->fil_name.c_str();
+
+		Firebird::PathName expanded;
+		expandDatabaseName(file->fil_name, expanded, NULL);
+
 		for (file_list = file->fil_next; file_list;
 			 file_list = file_list->fil_next)
 		{
-			if (file->fil_name == file_list->fil_name)
+			if (file->fil_name == file_list->fil_name || expanded == file_list->fil_name)
+			{
+				BURP_error(9, true);
+				// msg 9 mutiple sources or destinations specified
+			}
+
+			Firebird::PathName expanded2;
+			expandDatabaseName(file_list->fil_name, expanded2, NULL);
+			if (file->fil_name == expanded2 || expanded == expanded2)
 			{
 				BURP_error(9, true);
 				// msg 9 mutiple sources or destinations specified
