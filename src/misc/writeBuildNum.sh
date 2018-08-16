@@ -9,7 +9,7 @@ BuildType=V
 MajorVer=3
 MinorVer=0
 RevNo=4
-BuildNum=33029
+BuildNum=33030
 
 NowAt=`pwd`
 cd `dirname $0`
