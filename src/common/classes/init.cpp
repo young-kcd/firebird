@@ -146,7 +146,7 @@ namespace
 		try
 		{
 #ifdef DEBUG_GDS_ALLOC
-			// In Debug mode - this will report all server-side memory leaks due to remote access
+			// In Debug mode - this will report all memory leaks
 			if (file)
 			{
 				getDefaultMemoryPool()->print_contents(file,
