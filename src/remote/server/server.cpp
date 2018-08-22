@@ -409,13 +409,14 @@ public:
 GlobalPtr<FailedLogins> usernameFailedLogins;
 GlobalPtr<FailedLogins> remoteFailedLogins;
 bool server_shutdown = false;
+bool engine_shutdown = false;
 
 void loginFail(const string& login, const string& remId)
 {
 	// do not remove variables - both functions should be called
 	bool f1 = usernameFailedLogins->loginFail(login);
 	bool f2 = remoteFailedLogins->loginFail(remId);
-	if ((f1 || f2) && !server_shutdown)
+	if ((f1 || f2) && !engine_shutdown)
 	{
 		// Ahh, someone is too active today
 		Thread::sleep(FAILURE_DELAY * 1000);
@@ -1113,6 +1114,7 @@ static void		send_error(rem_port* port, PACKET* apacket, ISC_STATUS errcode);
 static void		send_error(rem_port* port, PACKET* apacket, const Firebird::Arg::StatusVector&);
 static void		set_server(rem_port*, USHORT);
 static int		shut_server(const int, const int, void*);
+static int		pre_shutdown(const int, const int, void*);
 static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM);
 static void		zap_packet(PACKET*, bool);
 
@@ -6046,6 +6048,7 @@ void set_server(rem_port* port, USHORT flags)
 	{
 		servers = server = FB_NEW srvr(servers, port, flags);
 		fb_shutdown_callback(0, shut_server, fb_shut_postproviders, 0);
+		fb_shutdown_callback(0, pre_shutdown, fb_shut_preproviders, 0);
 	}
 
 	port->port_server = server;
@@ -6743,6 +6746,12 @@ void Worker::shutdown()
 static int shut_server(const int, const int, void*)
 {
 	server_shutdown = true;
+	return 0;
+}
+
+static int pre_shutdown(const int, const int, void*)
+{
+	engine_shutdown = true;
 	return 0;
 }
 
