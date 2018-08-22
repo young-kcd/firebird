@@ -214,7 +214,7 @@ static Firebird::IKeyHolderPlugin* mvol_get_holder(BurpGlobals* tdgbl, Firebird:
 		if (!keyControl.hasData())
 			(Firebird::Arg::Gds(isc_no_keyholder_plugin) << tdgbl->gbl_sw_keyholder).raise();
 
-		BurpCrypt* g = tdgbl->gbl_crypt = FB_NEW BurpCrypt;
+		BurpCrypt* g = tdgbl->gbl_crypt = FB_NEW_POOL(tdgbl->getPool()) BurpCrypt;
 		g->holder_plugin = keyControl.plugin();
 		g->holder_plugin->addRef();
 
@@ -666,9 +666,9 @@ void MVOL_init(ULONG io_buf_size)
 
 	tdgbl->mvol_io_buffer_size = io_buf_size;
 
-	tdgbl->gbl_compress_buffer = FB_NEW(UCHAR[ZC_BUFSIZE]);
-	tdgbl->gbl_crypt_buffer = FB_NEW(UCHAR[ZC_BUFSIZE]);
-	tdgbl->gbl_decompress = FB_NEW UCHAR[ZC_BUFSIZE];
+	tdgbl->gbl_compress_buffer = FB_NEW_POOL(tdgbl->getPool()) UCHAR[ZC_BUFSIZE];
+	tdgbl->gbl_crypt_buffer = FB_NEW_POOL(tdgbl->getPool()) UCHAR[ZC_BUFSIZE];
+	tdgbl->gbl_decompress = FB_NEW_POOL(tdgbl->getPool()) UCHAR[ZC_BUFSIZE];
 }
 
 
