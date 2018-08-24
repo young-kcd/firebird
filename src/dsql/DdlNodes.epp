@@ -7599,6 +7599,22 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 						status_exception::raise(Arg::PrivateDyn(176) << clause->fromName << name);
 					}
 
+					AutoRequest request2;
+
+					FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+						RCL IN RDB$RELATION_CONSTRAINTS CROSS
+						CHK IN RDB$CHECK_CONSTRAINTS
+						WITH RCL.RDB$RELATION_NAME EQ name.c_str() AND
+							 RCL.RDB$CONSTRAINT_TYPE EQ NOT_NULL_CNSTRT AND
+							 CHK.RDB$CONSTRAINT_NAME EQ RCL.RDB$CONSTRAINT_NAME AND
+							 CHK.RDB$TRIGGER_NAME EQ clause->fromName.c_str()
+					{
+						MODIFY CHK
+							strcpy(CHK.RDB$TRIGGER_NAME, clause->toName.c_str());
+						END_MODIFY
+					}
+					END_FOR
+
 					break;
 				}
 

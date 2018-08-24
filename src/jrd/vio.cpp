@@ -2855,10 +2855,13 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		case rel_dpds:
 		case rel_rcon:
 		case rel_refc:
-		case rel_ccon:
 		case rel_backup_history:
 		case rel_global_auth_mapping:
 			protect_system_table_delupd(tdbb, relation, "UPDATE", true);
+			break;
+
+		case rel_ccon:
+			protect_system_table_delupd(tdbb, relation, "UPDATE");
 			break;
 
 		case rel_database:
