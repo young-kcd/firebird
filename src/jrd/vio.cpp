@@ -170,6 +170,7 @@ static void purge(thread_db*, record_param*);
 static void replace_record(thread_db*, record_param*, PageStack*, const jrd_tra*);
 static void refresh_fk_fields(thread_db*, Record*, record_param*, record_param*);
 static SSHORT set_metadata_id(thread_db*, Record*, USHORT, drq_type_t, const char*);
+static void set_nbackup_id(thread_db*, Record*, USHORT, drq_type_t, const char*);
 static void set_owner_name(thread_db*, Record*, USHORT);
 static bool set_security_class(thread_db*, Record*, USHORT);
 static void set_system_flag(thread_db*, Record*, USHORT);
@@ -3766,7 +3767,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_backup_history:
 			if (!tdbb->getAttachment()->locksmith(tdbb, USE_NBACKUP_UTILITY))
 				protect_system_table_insert(tdbb, request, relation);
-			set_metadata_id(tdbb, rpb->rpb_record,
+			set_nbackup_id(tdbb, rpb->rpb_record,
 							f_backup_id, drq_g_nxt_nbakhist_id, "RDB$BACKUP_HISTORY");
 			break;
 
@@ -6082,6 +6083,32 @@ static SSHORT set_metadata_id(thread_db* tdbb, Record* record, USHORT field_id, 
 	MOV_move(tdbb, &desc2, &desc1);
 	record->clearNull(field_id);
 	return value;
+}
+
+
+static void set_nbackup_id(thread_db* tdbb, Record* record, USHORT field_id, drq_type_t dyn_id,
+	const char* name)
+{
+/**************************************
+ *
+ *	s e t _ m e t a d a t a _ i d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Assign the 31-bit auto generated ID to a particular field
+ *
+ **************************************/
+	dsc desc1;
+
+	if (EVL_field(0, record, field_id, &desc1))
+		return;
+
+	SLONG value = (SLONG) DYN_UTIL_gen_unique_id(tdbb, dyn_id, name);
+	dsc desc2;
+	desc2.makeLong(0, &value);
+	MOV_move(tdbb, &desc2, &desc1);
+	record->clearNull(field_id);
 }
 
 
