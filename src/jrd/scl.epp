@@ -1719,4 +1719,7 @@ void Jrd::UserId::populateDpb(Firebird::ClumpletWriter& dpb)
 		dpb.insertBytes(isc_dpb_auth_block, usr_auth_block.begin(), usr_auth_block.getCount());
 	else
 		dpb.insertString(isc_dpb_user_name, usr_user_name);
+
+	if (!usr_sql_role_name.empty())
+		dpb.insertString(isc_dpb_sql_role_name, usr_sql_role_name);
 }
