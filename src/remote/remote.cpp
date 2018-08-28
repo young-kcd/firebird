@@ -987,7 +987,8 @@ void ClntAuthBlock::resetClnt(const Firebird::PathName* fileName, const CSTRING*
 	firstTime = true;
 
 	clntConfig = REMOTE_get_config(fileName, &dpbConfig);
-	pluginList = clntConfig->getPlugins(Firebird::IPluginManager::TYPE_AUTH_CLIENT);
+	pluginList = dpbPlugins.hasData() ? dpbPlugins :
+		clntConfig->getPlugins(Firebird::IPluginManager::TYPE_AUTH_CLIENT);
 
 	Firebird::PathName final;
 	if (serverPluginList.hasData())

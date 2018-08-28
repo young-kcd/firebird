@@ -7446,13 +7446,20 @@ ClntAuthBlock::ClntAuthBlock(const Firebird::PathName* fileName, Firebird::Clump
 	: pluginList(getPool()), serverPluginList(getPool()),
 	  cliUserName(getPool()), cliPassword(getPool()), cliOrigUserName(getPool()),
 	  dataForPlugin(getPool()), dataFromPlugin(getPool()),
-	  cryptKeys(getPool()), dpbConfig(getPool()),
+	  cryptKeys(getPool()), dpbConfig(getPool()), dpbPlugins(getPool()),
 	  hasCryptKey(false), plugins(IPluginManager::TYPE_AUTH_CLIENT),
 	  authComplete(false), firstTime(true)
 {
-	if (dpb && tags && dpb->find(tags->config_text))
+	if (dpb && tags)
 	{
-		dpb->getString(dpbConfig);
+		if (dpb->find(tags->config_text))
+		{
+			dpb->getString(dpbConfig);
+		}
+		if (dpb->find(tags->plugin_list))
+		{
+			dpb->getPath(dpbPlugins);
+		}
 	}
 	resetClnt(fileName);
 }
@@ -7481,6 +7488,7 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& dpb,
 			{
 				dpb.insertPath(tags->plugin_name, pluginName);
 			}
+			dpb.deleteWithTag(tags->plugin_list);
 			dpb.insertPath(tags->plugin_list, pluginList);
 			firstTime = false;
 			HANDSHAKE_DEBUG(fprintf(stderr,
