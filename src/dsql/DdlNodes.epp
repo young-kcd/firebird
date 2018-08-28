@@ -10425,18 +10425,18 @@ void MappingNode::validateAdmin()
 		Arg::Gds(isc_alter_role).raise();
 }
 
-// add some item to DDL in "double quotes"
-void MappingNode::addItem(string& ddl, const char* text)
+// add some item to DDL in quotes
+void MappingNode::addItem(string& ddl, const char* text, char quote)
 {
-	ddl += '"';
+	ddl += quote;
 	char c;
-	while ((c = *text++))
+	while (c = *text++)
 	{
 		ddl += c;
-		if (c == '"')
+		if (c == quote)
 			ddl += c;
 	}
-	ddl += '"';
+	ddl += quote;
 }
 
 bool MappingNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -10513,7 +10513,7 @@ void MappingNode::runInSecurityDb(SecDbContext* secDbContext)
 			ddl += ' ';
 			if (from)
 			{
-				addItem(ddl, from->getString().c_str());
+				addItem(ddl, from->getString().c_str(), '\'');
 				ddl += ' ';
 			}
 		}

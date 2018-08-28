@@ -2081,7 +2081,7 @@ protected:
 	void runInSecurityDb(SecDbContext* secDbContext);
 
 private:
-	void addItem(Firebird::string& ddl, const char* text);
+	void addItem(Firebird::string& ddl, const char* text, char quote = '"');
 
 public:
 	Firebird::MetaName name;
