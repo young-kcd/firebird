@@ -6165,19 +6165,10 @@ static SSHORT set_metadata_id(thread_db* tdbb, Record* record, USHORT field_id, 
 }
 
 
+// Assign the 31-bit auto generated ID to a particular field
 static void set_nbackup_id(thread_db* tdbb, Record* record, USHORT field_id, drq_type_t dyn_id,
 	const char* name)
 {
-/**************************************
- *
- *	s e t _ m e t a d a t a _ i d
- *
- **************************************
- *
- * Functional description
- *	Assign the 31-bit auto generated ID to a particular field
- *
- **************************************/
 	dsc desc1;
 
 	if (EVL_field(0, record, field_id, &desc1))
