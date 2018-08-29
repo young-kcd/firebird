@@ -4029,6 +4029,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 
 	invalidate_cursor_records(transaction, &new_rpb);
 
+	const bool backVersion = (org_rpb->rpb_b_page != 0);
 	record_param temp;
 	PageStack stack;
 	switch (prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr, org_rpb, &temp, &new_rpb,
@@ -4071,8 +4072,19 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 	tdbb->bumpRelStats(RuntimeStatistics::RECORD_LOCKS, relation->rel_id);
 
 	// VIO_writelock
-	if ((tdbb->getDatabase()->dbb_flags & DBB_gc_background) &&
-		!org_rpb->rpb_relation->isTemporary())
+	Database* dbb = tdbb->getDatabase();
+	if (backVersion && !(tdbb->getAttachment()->att_flags & ATT_no_cleanup) &&
+		(dbb->dbb_flags & DBB_gc_cooperative))
+	{
+		jrd_rel::GCShared gcGuard(tdbb, org_rpb->rpb_relation);
+		if (gcGuard.gcEnabled())
+		{
+			temp.rpb_number = org_rpb->rpb_number;
+			if (DPM_get(tdbb, &temp, LCK_read))
+				VIO_intermediate_gc(tdbb, &temp, transaction);
+		}
+	}
+	else if ((dbb->dbb_flags & DBB_gc_background) && !org_rpb->rpb_relation->isTemporary())
 	{
 		notify_garbage_collector(tdbb, org_rpb, transaction->tra_number);
 	}
