@@ -429,6 +429,8 @@ namespace Jrd {
 
 		bool fLoad = false, fTry = false;
 		bool holderLess = false;
+		FbLocalStatus errorVector;
+		(Arg::Gds(isc_random) << "Missing correct crypt key").copyTo(&errorVector);
 		for (GetPlugins<IKeyHolderPlugin> keyControl(IPluginManager::TYPE_KEY_HOLDER, dbb.dbb_config);
 			keyControl.hasData(); keyControl.next())
 		{
@@ -452,6 +454,13 @@ namespace Jrd {
 				fLoad = true;
 				break;
 			}
+			else
+			{
+				string msg = "Plugin ";
+				msg += keyControl.name();
+				msg += ':';
+				(Arg::Gds(isc_random) << msg << Arg::StatusVector(&st)).appendTo(&errorVector);
+			}
 		}
 
 		if (!fTry)
@@ -463,10 +472,17 @@ namespace Jrd {
 				holderLess = true;
 				fLoad = true;
 			}
+			else
+			{
+				string msg = "Plugin ";
+				msg += pluginName;
+				msg += ':';
+				(Arg::Gds(isc_random) << msg << Arg::StatusVector(&status)).appendTo(&errorVector);
+			}
 		}
 
 		if (!fLoad)
-			(Arg::Gds(isc_random) << "Missing correct crypt key").raise();
+			errorVector.raise();
 
 		cryptPlugin = p;
 		cryptPlugin->addRef();
