@@ -1830,6 +1830,8 @@ C --
       PARAMETER (GDS__ses_reset_warn                   = 335545208)
       INTEGER*4 GDS__ses_reset_tran_rollback         
       PARAMETER (GDS__ses_reset_tran_rollback          = 335545209)
+      INTEGER*4 GDS__plugin_name                     
+      PARAMETER (GDS__plugin_name                      = 335545210)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

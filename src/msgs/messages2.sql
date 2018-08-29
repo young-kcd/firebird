@@ -997,6 +997,7 @@ Data source : @4', NULL, NULL)
 ('ses_reset_open_trans', NULL, 'Attachment.cpp', NULL, 0, 887, NULL, 'There are open transactions (@1 active)', NULL, NULL);
 ('ses_reset_warn', NULL, 'Attachment.cpp', NULL, 0, 888, NULL, 'Session was reset with warning(s)', NULL, NULL);
 ('ses_reset_tran_rollback', NULL, 'Attachment.cpp', NULL, 0, 889, NULL, 'Transaction is rolled back due to session reset, all changes are lost', NULL, NULL);
+('plugin_name', NULL, 'CryptoManager.cpp', NULL, 0, 890, NULL, 'Plugin @1:', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

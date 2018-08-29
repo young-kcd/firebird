@@ -1825,6 +1825,8 @@ const
 	gds_ses_reset_warn                   = 335545208;
 	isc_ses_reset_tran_rollback          = 335545209;
 	gds_ses_reset_tran_rollback          = 335545209;
+	isc_plugin_name                      = 335545210;
+	gds_plugin_name                      = 335545210;
 	isc_gfix_db_name                     = 335740929;
 	gds_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;

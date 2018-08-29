@@ -422,6 +422,8 @@ namespace Jrd {
 
 		bool fLoad = false, fTry = false;
 		bool holderLess = false;
+		FbLocalStatus errorVector;
+		Arg::Gds(isc_db_crypt_key).copyTo(&errorVector);
 		for (GetPlugins<IKeyHolderPlugin> keyControl(IPluginManager::TYPE_KEY_HOLDER, dbb.dbb_config);
 			keyControl.hasData(); keyControl.next())
 		{
@@ -445,6 +447,11 @@ namespace Jrd {
 				fLoad = true;
 				break;
 			}
+			else
+			{
+				(Arg::Gds(isc_plugin_name) << keyControl.name() <<
+					Arg::StatusVector(&st)).appendTo(&errorVector);
+			}
 		}
 
 		if (!fTry)
@@ -456,10 +463,15 @@ namespace Jrd {
 				holderLess = true;
 				fLoad = true;
 			}
+			else
+			{
+				(Arg::Gds(isc_plugin_name) << plugName <<
+					Arg::StatusVector(&status)).appendTo(&errorVector);
+			}
 		}
 
 		if (!fLoad)
-			Arg::Gds(isc_db_crypt_key).raise();
+			errorVector.raise();
 
 		cryptPlugin = p;
 		cryptPlugin->addRef();
