@@ -141,7 +141,7 @@ jrd_req* TRA_get_prior_request(thread_db* tdbb)
 	return org_request;
 }
 
-void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
+void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request, bool no_prior)
 {
 	// This function is called whenever request is started in a transaction.
 	// Setup context to preserve read consistency in READ COMMITTED transactions.
@@ -156,23 +156,23 @@ void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
 		return;
 
 	// See if there is any request right above us in the call stack
-	jrd_req* org_request = TRA_get_prior_request(tdbb);
+	jrd_req* org_request = no_prior ? nullptr : TRA_get_prior_request(tdbb);
 
 	if (org_request && org_request->req_transaction == transaction)
 	{
 		fb_assert(org_request->req_snapshot_owner);
-		request->req_snapshot_owner = org_request->req_snapshot_owner;
+		request->req_snapshot.m_owner = org_request->req_snapshot.m_owner;
 		return;
 	}
 
 	// If we are a top-level request or caller is executed in a different transaction,
 	// we need to set up statement snapshot for read consistency and own it
 
-	request->req_snapshot_owner = request;
+	request->req_snapshot.m_owner = request;
 
-	request->req_snapshot_handle =
+	request->req_snapshot.m_handle =
 		tdbb->getDatabase()->dbb_tip_cache->beginSnapshot(tdbb,
-			tdbb->getAttachment()->att_attachment_id, &request->req_snapshot_number);
+			tdbb->getAttachment()->att_attachment_id, &request->req_snapshot.m_number);
 }
 
 
@@ -181,17 +181,18 @@ void TRA_release_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
 	// This function is called whenever request has completed processing
 	// in a transaction (normally or abnormally)
 
-	if (!request->req_snapshot_owner)
+	if (!request->req_snapshot.m_owner)
 		return;
 
-	if (request->req_snapshot_handle)
+	if (request->req_snapshot.m_number)
 	{
-		tdbb->getDatabase()->dbb_tip_cache->endSnapshot(tdbb, request->req_snapshot_handle,
+		tdbb->getDatabase()->dbb_tip_cache->endSnapshot(tdbb, request->req_snapshot.m_handle,
 			request->req_attachment->att_attachment_id);
-		request->req_snapshot_handle = 0;
+		request->req_snapshot.m_handle = 0;
+		request->req_snapshot.m_number = 0;
 	}
 
-	request->req_snapshot_owner = NULL;
+	request->req_snapshot.m_owner = nullptr;
 }
 
 
@@ -1610,9 +1611,9 @@ int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, TraNumber number, 
 			if (jrd_req* current_request = tdbb->getRequest())
 			{
 				// There is no request snapshot when we build expression index
-				if (jrd_req* snapshot_request = current_request->req_snapshot_owner)
+				if (jrd_req* snapshot_request = current_request->req_snapshot.m_owner)
 				{
-					if (stateCn > snapshot_request->req_snapshot_number)
+					if (stateCn > snapshot_request->req_snapshot.m_number)
 						return tra_active;
 				}
 			}

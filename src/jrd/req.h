@@ -178,13 +178,10 @@ public:
 		  req_ext_resultset(NULL),
 		  req_timeout(0),
 		  req_domain_validation(NULL),
-		  req_auto_trans(*req_pool),
 		  req_sorts(*req_pool),
 		  req_rpb(*req_pool),
 		  impureArea(*req_pool),
-		  req_snapshot_owner(NULL),
-		  req_snapshot_handle(0),
-		  req_snapshot_number(0)
+		  req_auto_trans(*req_pool)
 	{
 		fb_assert(statement);
 		setAttachment(attachment);
@@ -282,7 +279,6 @@ public:
 	ULONG req_src_column;
 
 	dsc*			req_domain_validation;	// Current VALUE for constraint validation
-	Firebird::Stack<jrd_tra*> req_auto_trans;	// Autonomous transactions
 	SortOwner req_sorts;
 	Firebird::Array<record_param> req_rpb;	// record parameter blocks
 	Firebird::Array<UCHAR> impureArea;		// impure area
@@ -290,9 +286,42 @@ public:
 	TriggerAction req_trigger_action;		// action that caused trigger to fire
 
 	// Fields to support read consistency in READ COMMITTED transactions
-	jrd_req*		req_snapshot_owner;
-	SnapshotHandle	req_snapshot_handle;
-	CommitNumber	req_snapshot_number;
+	struct snapshot_data
+	{
+		jrd_req*		m_owner;
+		SnapshotHandle	m_handle;
+		CommitNumber	m_number;
+
+		void init()
+		{
+			m_owner = nullptr;
+			m_handle = 0;
+			m_number = 0;
+		}
+	};
+
+	snapshot_data req_snapshot;
+
+	// Context data saved\restored with every new autonomous transaction
+	struct auto_tran_ctx
+	{
+		auto_tran_ctx() :
+			m_transaction(nullptr)
+		{
+			m_snapshot.init();
+		};
+
+		auto_tran_ctx(jrd_tra* const tran, const snapshot_data& snap) :
+			m_transaction(tran),
+			m_snapshot(snap)
+		{
+		};
+
+		jrd_tra*		m_transaction;
+		snapshot_data	m_snapshot;
+	};
+
+	Firebird::Stack<auto_tran_ctx> req_auto_trans;	// Autonomous transactions
 
 	enum req_s {
 		req_evaluate,
@@ -318,6 +347,22 @@ public:
 			req_caller->req_stats.adjust(req_base_stats, req_stats);
 		}
 		req_base_stats.assign(req_stats);
+	}
+
+	// Save transaction and snapshot context when switching to the autonomous transaction
+	void pushTransaction(jrd_tra* const transaction)
+	{
+		req_auto_trans.push(auto_tran_ctx(transaction, req_snapshot));
+		req_snapshot.init();
+	}
+
+	// Restore transaction and snapshot context 
+	jrd_tra* popTransaction()
+	{
+		const auto_tran_ctx tmp = req_auto_trans.pop();
+		req_snapshot = tmp.m_snapshot;
+
+		return tmp.m_transaction;
 	}
 };
 

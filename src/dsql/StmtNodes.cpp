@@ -3889,11 +3889,17 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 			throw;
 		}
 
-		request->req_auto_trans.push(org_transaction);
+		request->pushTransaction(org_transaction);
 		impure->traNumber = transaction->tra_number;
 
 		const Savepoint* const savepoint = transaction->startSavepoint();
 		impure->savNumber = savepoint->getNumber();
+
+		if ((transaction->tra_flags & TRA_read_committed) &&
+			(transaction->tra_flags & TRA_read_consistency))
+		{
+			TRA_setup_request_snapshot(tdbb, request, true);
+		}
 
 		return action;
 	}
@@ -3905,6 +3911,16 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 		return parentStmt;
 
 	fb_assert(transaction->tra_number == impure->traNumber);
+
+	if (request->req_operation == jrd_req::req_return || 
+		request->req_operation == jrd_req::req_unwind)
+	{
+		if ((transaction->tra_flags & TRA_read_committed) &&
+			(transaction->tra_flags & TRA_read_consistency))
+		{
+			TRA_release_request_snapshot(tdbb, request);
+		}
+	}
 
 	switch (request->req_operation)
 	{
@@ -3995,7 +4011,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 	}
 
 	impure->traNumber = impure->savNumber = 0;
-	transaction = request->req_auto_trans.pop();
+	transaction = request->popTransaction();
 
 	TRA_attach_request(transaction, request);
 	tdbb->setTransaction(transaction);
