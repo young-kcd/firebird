@@ -7298,14 +7298,16 @@ static void unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* u
 		{
 			fb_assert(!dbb->locked());
 			ThreadStatusGuard temp_status(tdbb);
-			StableAttachmentPart* sAtt = NULL;
 
 			if (attachment)
 			{
 				// A number of holders to make Attachment::destroy() happy
 				// See also addRef() in create_attachment()
-				sAtt = attachment->getStable();
+				RefPtr<StableAttachmentPart> sAtt(REF_NO_INCR, attachment->getStable());
 				RefPtr<JAttachment> jAtt(REF_NO_INCR, sAtt->getInterface());
+
+				// Additional reference to keep stable part live while unlocking its mutex(es)
+				RefPtr<StableAttachmentPart> sAtt2(attachment->getStable());
 
 				// This unlocking/locking order guarantees stable release of attachment
 				sAtt->manualUnlock(attachment->att_flags);
@@ -7321,11 +7323,6 @@ static void unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* u
 				{
 					sAtt->manualUnlock(flags);
 				}
-			}
-
-			if (sAtt)
-			{
-				sAtt->release();
 			}
 
 			JRD_shutdown_database(dbb, SHUT_DBB_RELEASE_POOLS |
