@@ -160,7 +160,7 @@ void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request, boo
 
 	if (org_request && org_request->req_transaction == transaction)
 	{
-//		fb_assert(org_request->req_snapshot_owner);
+		fb_assert(org_request->req_snapshot.m_owner);
 		request->req_snapshot.m_owner = org_request->req_snapshot.m_owner;
 		return;
 	}
