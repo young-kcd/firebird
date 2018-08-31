@@ -3014,7 +3014,17 @@ void JAttachment::freeEngineData(CheckStatusWrapper* user_status, bool forceFree
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return;
+		if (user_status->getErrors()[1] != isc_att_shutdown)
+			return;
+		else
+		{
+			user_status->init();
+			if (att)
+			{
+				att->release();
+				att = NULL;
+			}
+		}
 	}
 
 	successful_completion(user_status);
@@ -7922,12 +7932,10 @@ static void unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* u
 			if (attachment)
 			{
 				// A number of holders to make Attachment::destroy() happy
-				// See also addRef() in create_attachment()
-				RefPtr<StableAttachmentPart> sAtt(REF_NO_INCR, attachment->getStable());
+				// StablePart will be released in JAttachment::release
+				RefPtr<StableAttachmentPart> sAtt(attachment->getStable());
+				// Will release addRef() addedin  create_attachment()
 				RefPtr<JAttachment> jAtt(REF_NO_INCR, sAtt->getInterface());
-
-				// Additional reference to keep stable part live while unlocking its mutex(es)
-				RefPtr<StableAttachmentPart> sAtt2(attachment->getStable());
 
 				// This unlocking/locking order guarantees stable release of attachment
 				sAtt->manualUnlock(attachment->att_flags);
