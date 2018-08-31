@@ -912,6 +912,7 @@ static const struct {
 	{"ses_reset_warn", 335545208},
 	{"ses_reset_tran_rollback", 335545209},
 	{"plugin_name", 335545210},
+	{"parameter_name", 335545211},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},
