@@ -6427,6 +6427,7 @@ static void verb_post(thread_db* tdbb,
 	SET_TDBB(tdbb);
 
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
+	MemoryPool* pool = tdbb->getDefaultPool();
 
 	// Find action block for relation
 	VerbAction* action;
@@ -6441,7 +6442,7 @@ static void verb_post(thread_db* tdbb,
 		if ( (action = transaction->tra_save_point->sav_verb_free) )
 			transaction->tra_save_point->sav_verb_free = action->vct_next;
 		else
-			action = FB_NEW_POOL(*tdbb->getDefaultPool()) VerbAction();
+			action = FB_NEW_POOL(*pool) VerbAction();
 
 		action->vct_next = transaction->tra_save_point->sav_verb_actions;
 		transaction->tra_save_point->sav_verb_actions = action;
@@ -6450,7 +6451,7 @@ static void verb_post(thread_db* tdbb,
 
 	if (!RecordBitmap::test(action->vct_records, rpb->rpb_number.getValue()))
 	{
-		RBM_SET(tdbb->getDefaultPool(), &action->vct_records, rpb->rpb_number.getValue());
+		RBM_SET(pool, &action->vct_records, rpb->rpb_number.getValue());
 
 		if (old_data)
 		{
@@ -6458,7 +6459,7 @@ static void verb_post(thread_db* tdbb,
 			// savepoint hasn't seen this record before.
 
 			if (!action->vct_undo)
-				action->vct_undo = FB_NEW UndoItemTree(tdbb->getDefaultPool());
+				action->vct_undo = FB_NEW_POOL(*pool) UndoItemTree(pool);
 
 			action->vct_undo->add(UndoItem(transaction, rpb->rpb_number, old_data, same_tx, false));
 		}
@@ -6468,7 +6469,7 @@ static void verb_post(thread_db* tdbb,
 			// and this savepoint hasn't seen this record before.
 
 			if (!action->vct_undo)
-				action->vct_undo = FB_NEW UndoItemTree(tdbb->getDefaultPool());
+				action->vct_undo = FB_NEW_POOL(*pool) UndoItemTree(pool);
 
 			action->vct_undo->add(UndoItem(rpb->rpb_number, true, new_ver));
 		}
@@ -6491,7 +6492,7 @@ static void verb_post(thread_db* tdbb,
 			// and this savepoint has seen this record before but it doesn't have undo data.
 
 			if (!action->vct_undo)
-				action->vct_undo = FB_NEW UndoItemTree(tdbb->getDefaultPool());
+				action->vct_undo = FB_NEW_POOL(*pool) UndoItemTree(pool);
 
 			action->vct_undo->add(UndoItem(rpb->rpb_number, true, true));
 		}
