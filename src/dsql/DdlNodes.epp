@@ -10430,7 +10430,7 @@ void MappingNode::addItem(string& ddl, const char* text, char quote)
 {
 	ddl += quote;
 	char c;
-	while (c = *text++)
+	while ((c = *text++))
 	{
 		ddl += c;
 		if (c == quote)
