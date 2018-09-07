@@ -233,7 +233,7 @@ private:
 		PathName filename;
 		formatFilename(filename, ucTemplate, aMajorVersion, aMinorVersion);
 
-		module = ModuleLoader::fixAndLoadModule(filename);
+		module = ModuleLoader::fixAndLoadModule(NULL, filename);
 		if (!module)
 			return;
 
@@ -998,7 +998,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const string& icuVersion, const string& c
 
 		icu = FB_NEW_POOL(*getDefaultMemoryPool()) ICU(majorVersion, minorVersion);
 
-		icu->ucModule = ModuleLoader::fixAndLoadModule(filename);
+		icu->ucModule = ModuleLoader::fixAndLoadModule(NULL, filename);
 
 		if (!icu->ucModule)
 		{
@@ -1009,7 +1009,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const string& icuVersion, const string& c
 
 		formatFilename(filename, inTemplate, majorVersion, minorVersion);
 
-		icu->inModule = ModuleLoader::fixAndLoadModule(filename);
+		icu->inModule = ModuleLoader::fixAndLoadModule(NULL, filename);
 
 		if (!icu->inModule)
 		{

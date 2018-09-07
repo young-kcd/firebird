@@ -928,24 +928,27 @@ namespace
 	RefPtr<PluginModule> PluginSet::loadModule(const PluginLoadInfo& info)
 	{
 		PathName fixedModuleName(info.curModule);
+		ISC_STATUS_ARRAY statusArray;
 
-		ModuleLoader::Module* module = ModuleLoader::loadModule(fixedModuleName);
+		ModuleLoader::Module* module = ModuleLoader::loadModule(statusArray, fixedModuleName);
 
 		if (!module && !ModuleLoader::isLoadableModule(fixedModuleName))
 		{
 			ModuleLoader::doctorModuleExtension(fixedModuleName);
-			module = ModuleLoader::loadModule(fixedModuleName);
+			module = ModuleLoader::loadModule(statusArray, fixedModuleName);
 		}
 
 		if (!module)
 		{
 			if (ModuleLoader::isLoadableModule(fixedModuleName))
 			{
-				loadError(Arg::Gds(isc_pman_module_bad) << fixedModuleName);
+				loadError(Arg::Gds(isc_pman_module_bad) << fixedModuleName <<
+					Arg::StatusVector(statusArray));
 			}
 			if (info.required)
 			{
-				loadError(Arg::Gds(isc_pman_module_notfound) << fixedModuleName);
+				loadError(Arg::Gds(isc_pman_module_notfound) << fixedModuleName <<
+					Arg::StatusVector(statusArray));
 			}
 
 			return RefPtr<PluginModule>(NULL);
