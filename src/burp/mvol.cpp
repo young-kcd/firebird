@@ -685,6 +685,16 @@ static void brio_fini(BurpGlobals* tdgbl)
 }
 
 
+static void checkCompression()
+{
+	if (!zlib())
+	{
+		(Firebird::Arg::Gds(isc_random) << "Compession support library not loaded" <<
+		 Firebird::Arg::StatusVector(zlib().status)).raise();
+	}
+}
+
+
 //____________________________________________________________
 //
 // Read init record from backup file
@@ -707,6 +717,7 @@ void MVOL_init_read(const char* file_name, USHORT* format)
 		strm.opaque = Z_NULL;
 		strm.avail_in = 0;
 		strm.next_in = Z_NULL;
+		checkCompression();
 		int ret = zlib().inflateInit(&strm);
 		if (ret != Z_OK)
 		{
@@ -772,6 +783,7 @@ void MVOL_init_write(const char* file_name)
 		strm.zalloc = Firebird::ZLib::allocFunc;
 		strm.zfree = Firebird::ZLib::freeFunc;
 		strm.opaque = Z_NULL;
+		checkCompression();
 		int ret = zlib().deflateInit(&strm, Z_DEFAULT_COMPRESSION);
 		if (ret != Z_OK)
 			BURP_error(384, true, SafeArg() << ret);

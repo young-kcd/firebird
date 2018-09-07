@@ -39,7 +39,7 @@ ZLib::ZLib(Firebird::MemoryPool&)
 #else
 	const char* name = "libz." SHRLIB_EXT ".1";
 #endif
-	z.reset(ModuleLoader::fixAndLoadModule(name));
+	z.reset(ModuleLoader::fixAndLoadModule(status, name));
 	if (z)
 		symbols();
 }

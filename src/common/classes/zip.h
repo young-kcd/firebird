@@ -52,6 +52,8 @@ namespace Firebird {
 		static void* allocFunc(void*, uInt items, uInt size);
 		static void freeFunc(void*, void* address);
 
+		ISC_STATUS_ARRAY status;
+
 	private:
 		AutoPtr<ModuleLoader::Module> z;
 

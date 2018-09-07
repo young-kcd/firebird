@@ -351,7 +351,7 @@ static ModuleLoader::Module* formatAndLoad(const char* templateName,
 		s.printf(*p, majorVersion, minorVersion);
 		filename.printf(templateName, s.c_str());
 
-		ModuleLoader::Module* module = ModuleLoader::fixAndLoadModule(filename);
+		ModuleLoader::Module* module = ModuleLoader::fixAndLoadModule(NULL, filename);
 		if (module)
 			return module;
 	}

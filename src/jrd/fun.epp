@@ -105,7 +105,7 @@ namespace
 	{
 		ModuleLoader::doctorModuleExtension(libName);
 
-		ModuleLoader::Module* module = ModuleLoader::loadModule(libName);
+		ModuleLoader::Module* module = ModuleLoader::loadModule(NULL, libName);
 		if (!module)
 		{
 			message.printf("%s library has not been found", libName.c_str());
