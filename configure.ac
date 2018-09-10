@@ -467,15 +467,14 @@ dnl CPU_TYPE=ppc64
     dnl detect native compiler, Sun Studio Pro
     comp=`echo "$CXX" | cut -c1-3`
     case $comp in
-       CC) MAKEFILE_PREFIX=solaris ;
-           dnl inline assembly for atomic operations on Solaris 9 w SSPRO
+       CC)
+           MAKEFILE_PREFIX=solaris
            PTHREAD_CFLAGS=-mt
            PTHREAD_LIBS=-lpthread
-           if test "${build#*solaris}" = "2.9"; then
-             ATOMIC_OPTIONS=`pwd`"/src/common/classes/fb_atomic.il";
-           fi
            ;;
-       *)  MAKEFILE_PREFIX=solaris-64gcc ;
+       *)
+           MAKEFILE_PREFIX=solaris-64gcc
+           ;;
     esac
     CAS_OPTIONS=`pwd`"/src/common/classes/fb_cas.il";
     INSTALL_PREFIX=solaris
@@ -793,8 +792,6 @@ AC_CHECK_HEADERS(sys/resource.h)
 AC_CHECK_HEADERS(sys/sem.h)
 AC_CHECK_HEADERS(semaphore.h)
 AC_CHECK_HEADERS(float.h)
-AC_CHECK_HEADERS(atomic.h)
-AC_CHECK_HEADERS(atomic_ops.h)
 AC_CHECK_HEADERS(poll.h)
 AC_CHECK_HEADERS(langinfo.h)
 AC_CHECK_HEADERS(iconv.h)
@@ -875,11 +872,6 @@ if test "$EDITLINE_FLG" = "Y"; then
 fi
 
 AC_SEARCH_LIBS(inet_aton, resolv)
-
-dnl HP-UX atomic routines are in atomic library, not standard C library.
-dnl If we can't find atomic routines in vendor library, look for atomic_ops.
-AC_SEARCH_LIBS(atomic_inc, atomic,,
-	AC_CHECK_LIB(atomic_ops, main))
 
 
 dnl Check for libraries for static C++ runtime linking
@@ -984,10 +976,6 @@ case $host in
 		;;
 esac
 AC_CHECK_FUNCS(poll)
-dnl AC_CHECK_FUNCS(AO_compare_and_swap_full)
-AC_COMPILE_IFELSE(
-	[AC_LANG_PROGRAM([[#include <atomic_ops.h>]], [[AO_T x; AO_compare_and_swap_full(&x, 0, 0); return 0;]])],
-	AC_DEFINE(HAVE_AO_COMPARE_AND_SWAP_FULL, 1, [Define this if AO_compare_and_swap_full() is defined in atomic_ops.h]))
 
 dnl Check for time function
 AC_SEARCH_LIBS(clock_gettime, rt)
