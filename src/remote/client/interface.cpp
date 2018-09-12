@@ -8495,8 +8495,7 @@ ClntAuthBlock::ClntAuthBlock(const Firebird::PathName* fileName, Firebird::Clump
 	  cliUserName(getPool()), cliPassword(getPool()), cliOrigUserName(getPool()),
 	  dataForPlugin(getPool()), dataFromPlugin(getPool()),
 	  cryptKeys(getPool()), dpbConfig(getPool()), dpbPlugins(getPool()),
-	  hasCryptKey(false), plugins(IPluginManager::TYPE_AUTH_CLIENT),
-	  authComplete(false), firstTime(true)
+	  plugins(IPluginManager::TYPE_AUTH_CLIENT), authComplete(false), firstTime(true)
 {
 	if (dpb && tags)
 	{
@@ -8598,7 +8597,6 @@ void ClntAuthBlock::loadClnt(Firebird::ClumpletWriter& dpb, const ParametersSet*
 		}
 		else if (t == tags->encrypt_key)
 		{
-			hasCryptKey = true;
 			HANDSHAKE_DEBUG(fprintf(stderr,
 				"Cli: loadClnt: PB contains crypt key\n"));
 		}

@@ -762,8 +762,6 @@ private:
 	Firebird::RefPtr<const Config> clntConfig;	// Used to get plugins list and pass to port
 	unsigned nextKey;						// First key to be analyzed
 
-	bool hasCryptKey;						// DPB contains disk crypt key, may be passed only over encrypted wire
-
 public:
 	AuthClientPlugins plugins;
 	bool authComplete;						// Set as response from client that authentication accepted
