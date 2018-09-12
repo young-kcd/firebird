@@ -757,7 +757,7 @@ private:
 	// These two are legacy encrypted password, trusted auth data and so on - what plugin needs
 	Firebird::UCharBuffer dataForPlugin, dataFromPlugin;
 	Firebird::HalfStaticArray<InternalCryptKey*, 1> cryptKeys;		// Wire crypt keys that came from plugin(s) last time
-	Firebird::string dpbConfig;				// User's configuretion parameters
+	Firebird::string dpbConfig;				// User's configuration parameters
 	Firebird::PathName dpbPlugins;			// User's plugin list
 	Firebird::RefPtr<const Config> clntConfig;	// Used to get plugins list and pass to port
 	unsigned nextKey;						// First key to be analyzed
