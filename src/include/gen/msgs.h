@@ -517,7 +517,7 @@ static const struct {
 	{335544813, "Unsupported field type specified in BETWEEN predicate."},		/* optimizer_between_err */
 	{335544814, "Services functionality will be supported in a later version  of the product"},		/* service_not_supported */
 	{335544815, "GENERATOR @1"},		/* generator_name */
-	{335544816, "UDF @1"},		/* udf_name */
+	{335544816, "Function @1"},		/* udf_name */
 	{335544817, "Invalid parameter to FETCH or FIRST. Only integers >= 0 are allowed."},		/* bad_limit_param */
 	{335544818, "Invalid parameter to OFFSET or SKIP. Only integers >= 0 are allowed."},		/* bad_skip_param */
 	{335544819, "File exceeded maximum size of 2GB.  Add another database file or use a 64 bit I/O version of Firebird."},		/* io_32bit_exceeded_err */

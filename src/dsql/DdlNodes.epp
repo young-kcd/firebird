@@ -1907,6 +1907,9 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 				else
 					FUN.RDB$SQL_SECURITY.NULL = TRUE;
 
+				FUN.RDB$LEGACY_FLAG.NULL = FALSE;
+				FUN.RDB$LEGACY_FLAG = isUdf() ? TRUE : FALSE;
+
 				if (isUdf())
 				{
 					dsql_fld* field = returnType ? returnType->type : NULL;
