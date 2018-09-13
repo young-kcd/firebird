@@ -1791,6 +1791,9 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 				FUN.RDB$DETERMINISTIC_FLAG = deterministic ? TRUE : FALSE;
 				FUN.RDB$RETURN_ARGUMENT = 0;
 
+				FUN.RDB$LEGACY_FLAG.NULL = FALSE;
+				FUN.RDB$LEGACY_FLAG = isUdf() ? TRUE : FALSE;
+
 				if (isUdf())
 				{
 					dsql_fld* field = returnType ? returnType->type : NULL;

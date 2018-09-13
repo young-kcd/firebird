@@ -592,7 +592,7 @@ without specifying a character set.', NULL);
 ('optimizer_between_err', 'decompose', 'OPT.C', NULL, 0, 493, NULL, 'Unsupported field type specified in BETWEEN predicate.', NULL, NULL);
 ('service_not_supported', 'SVC_attach', 'svc.c', NULL, 0, 494, NULL, 'Services functionality will be supported in a later version  of the product', NULL, NULL);
 ('generator_name', 'check_dependencies', 'dfw.e', NULL, 0, 495, NULL, 'GENERATOR @1', NULL, NULL);
-('udf_name', 'check_dependencies', 'dfw.e', NULL, 0, 496, NULL, 'UDF @1', NULL, NULL);
+('udf_name', 'check_dependencies', 'dfw.e', NULL, 0, 496, NULL, 'Function @1', NULL, NULL);
 ('bad_limit_param', 'RSE_open', 'rse.c', NULL, 0, 497, NULL, 'Invalid parameter to FETCH or FIRST. Only integers >= 0 are allowed.', NULL, NULL);
 ('bad_skip_param', 'RSE_open', 'rse.c', NULL, 0, 498, NULL, 'Invalid parameter to OFFSET or SKIP. Only integers >= 0 are allowed.', NULL, NULL);
 ('io_32bit_exceeded_err', 'seek_file', 'unix.c', NULL, 0, 499, NULL, 'File exceeded maximum size of 2GB.  Add another database file or use a 64 bit I/O version of Firebird.', NULL, NULL);
