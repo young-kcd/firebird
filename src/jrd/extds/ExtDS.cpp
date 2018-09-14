@@ -1648,7 +1648,7 @@ void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn)
 	m_mutex = conn.isConnected() ? &conn.m_mutex : &conn.m_provider.m_mutex;
 	m_saveConnection = NULL;
 
-	if (m_tdbb)
+	if (m_tdbb && m_tdbb->getDatabase())
 	{
 		jrd_tra *transaction = m_tdbb->getTransaction();
 		if (transaction) 
@@ -1680,7 +1680,7 @@ EngineCallbackGuard::~EngineCallbackGuard()
 		m_mutex->leave();
 	}
 
-	if (m_tdbb)
+	if (m_tdbb && m_tdbb->getDatabase())
 	{
 		m_tdbb->getDatabase()->dbb_sync->lock();
 
