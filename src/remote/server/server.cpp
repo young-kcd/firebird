@@ -1163,6 +1163,7 @@ private:
 	Worker* m_prev;
 	Semaphore m_sem;
 	bool	m_active;
+	bool	m_going;		// thread was timedout and going to be deleted
 #ifdef DEV_BUILD
 	ThreadId	m_tid;
 #endif
@@ -1176,6 +1177,7 @@ private:
 	static GlobalPtr<Mutex> m_mutex;
 	static int m_cntAll;
 	static int m_cntIdle;
+	static int m_cntGoing;
 	static bool shutting_down;
 };
 
@@ -1184,6 +1186,7 @@ Worker* Worker::m_idleWorkers = NULL;
 GlobalPtr<Mutex> Worker::m_mutex;
 int Worker::m_cntAll = 0;
 int Worker::m_cntIdle = 0;
+int Worker::m_cntGoing = 0;
 bool Worker::shutting_down = false;
 
 
@@ -6586,6 +6589,7 @@ static void zap_packet(PACKET* packet, bool new_packet)
 Worker::Worker()
 {
 	m_active = false;
+	m_going = false;
 	m_next = m_prev = NULL;
 #ifdef DEV_BUILD
 	m_tid = getThreadId();
@@ -6600,6 +6604,8 @@ Worker::~Worker()
 	MutexLockGuard guard(m_mutex, FB_FUNCTION);
 	remove();
 	--m_cntAll;
+	if (m_going)
+		--m_cntGoing;
 }
 
 
@@ -6612,7 +6618,13 @@ bool Worker::wait(int timeout)
 	if (m_sem.tryEnter(0))
 		return true;
 
+	// don't exit last worker until server shutdown
+	if ((m_cntAll - m_cntGoing == 1) && !isShuttingDown())
+		return true;
+
 	remove();
+	m_going = true;
+	m_cntGoing++;
 	return false;
 }
 
@@ -6655,10 +6667,10 @@ bool Worker::wakeUp()
 		return true;
 	}
 
-	if (m_cntAll >= ports_active + ports_pending)
+	if (m_cntAll - m_cntGoing >= ports_active + ports_pending)
 		return true;
 
-	return (m_cntAll >= MAX_THREADS);
+	return (m_cntAll - m_cntGoing >= MAX_THREADS);
 }
 
 void Worker::wakeUpAll()
