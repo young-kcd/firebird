@@ -392,6 +392,11 @@ bool LCK_convert_opt(thread_db* tdbb, Lock* lock, USHORT level)
 	if (dbb->dbb_ast_flags & DBB_assert_locks)
 	{
 		lock->lck_logical = old_level;
+		if (lock->lck_id == 0)
+		{
+			fb_assert(dbb->dbb_ast_flags & DBB_blocking);
+			return LCK_lock(tdbb, lock, level, LCK_NO_WAIT);
+		}
 		return LCK_convert(tdbb, lock, level, LCK_NO_WAIT);
 	}
 
