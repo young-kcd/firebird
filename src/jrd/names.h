@@ -415,5 +415,5 @@ NAME("MON$IDLE_TIMER", nam_idle_timer)
 NAME("MON$STATEMENT_TIMEOUT", nam_stmt_timeout)
 NAME("MON$STATEMENT_TIMER", nam_stmt_timer)
 
-NAME("MON$CONNECTION_COMPRESSED", nam_conn_compressed)
-NAME("MON$CONNECTION_ENCRYPTED", nam_conn_encrypted)
+NAME("MON$WIRE_COMPRESSED", nam_wire_compressed)
+NAME("MON$WIRE_ENCRYPTED", nam_wire_encrypted)

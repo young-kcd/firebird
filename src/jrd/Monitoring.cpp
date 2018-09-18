@@ -901,9 +901,9 @@ void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Atta
 	// remote connection flags
 	if (attachment->att_remote_address.hasData())
 	{
-		record.storeBoolean(f_mon_att_conn_compressed,
+		record.storeBoolean(f_mon_att_wire_compressed,
 			attachment->att_remote_flags & isc_dpb_addr_flag_conn_compressed);
-		record.storeBoolean(f_mon_att_conn_encrypted,
+		record.storeBoolean(f_mon_att_wire_encrypted,
 			attachment->att_remote_flags & isc_dpb_addr_flag_conn_encrypted);
 	}
 	// charset
