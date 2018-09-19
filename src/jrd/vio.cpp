@@ -754,6 +754,9 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 		}
 	}
 
+	if (state == tra_committed)
+		state = check_precommitted(transaction, rpb);
+
 	// Handle the fast path first.  If the record is committed, isn't deleted,
 	// and doesn't have an old version that is a candidate for garbage collection,
 	// return without further ado
