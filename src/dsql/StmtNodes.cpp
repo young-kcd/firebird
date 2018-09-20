@@ -8098,10 +8098,15 @@ SetTransactionNode* SetTransactionNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 		{
 			dsqlScratch->appendUChar(isc_tpb_read_committed);
 
-			if (isoLevel.value == ISO_LEVEL_READ_COMMITTED_REC_VERSION)
+			if (isoLevel.value == ISO_LEVEL_READ_COMMITTED_READ_CONSISTENCY)
+				dsqlScratch->appendUChar(isc_tpb_read_consistency);
+			else if (isoLevel.value == ISO_LEVEL_READ_COMMITTED_REC_VERSION)
 				dsqlScratch->appendUChar(isc_tpb_rec_version);
 			else
+			{
+				fb_assert(isoLevel.value == ISO_LEVEL_READ_COMMITTED_NO_REC_VERSION);
 				dsqlScratch->appendUChar(isc_tpb_no_rec_version);
+			}
 		}
 	}
 
