@@ -734,6 +734,37 @@ Example:
 
 
 --------------------
+RDB$GET_TRANSACTION_CN
+--------------------
+
+(FB4 extension)
+Function:
+    Returns commit number of given transaction. 
+	Note, engine internally uses unsigned 8-bit integer for commit numbers, 
+	while SQL language have no unsigned integers, thus one should be ready 
+	to see negative numbers here (it is possible only if engine commits more 
+	than 2^32 transactions since last database start, as global commit number
+	is reset at each restart).
+
+	There are some "special" values used for non-committed transactions and
+	transactions,  committed before database was started:
+
+	0 - transaction is active,
+	1 - transaction committed before database started
+	-2 - transaction is dead (rolled back)
+	-1 - transaction is in limbo
+
+	See also README.read_consistency.md
+
+Format:
+    RDB$SYSTEM_PRIVILEGE( <number> )
+
+Examples:
+	select rdb$get_transaction_cn(current_transaction) from rdb$database;
+	select rdb$get_transaction_cn(123) from rdb$database;
+
+
+--------------------
 RDB$SYSTEM_PRIVILEGE
 --------------------
 

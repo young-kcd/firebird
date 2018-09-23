@@ -140,6 +140,11 @@ public:
 	//void assignLatestTransactionId(TraNumber number);
 	void assignLatestAttachmentId(AttNumber number);
 
+	CommitNumber getGlobalCommitNumber() const
+	{
+		return m_tpcHeader->getHeader()->latest_commit_number.load(std::memory_order_acquire);
+	}
+
 private:
 	class GlobalTpcHeader : public Firebird::MemoryHeader
 	{

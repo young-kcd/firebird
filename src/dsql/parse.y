@@ -630,6 +630,7 @@ using namespace Firebird;
 %token <metaNamePtr> VARBINARY
 %token <metaNamePtr> WINDOW
 %token <metaNamePtr> CONSISTENCY
+%token <metaNamePtr> RDB_GET_TRANSACTION_CN
 
 // external connections pool management
 %token <metaNamePtr> CONNECTIONS
@@ -7787,6 +7788,7 @@ system_function_std_syntax
 	| POWER
 	| RAND
 	| RDB_GET_CONTEXT
+	| RDB_GET_TRANSACTION_CN
 	| RDB_ROLE_IN_USE
 	| RDB_SET_CONTEXT
 	| REPLACE
