@@ -740,7 +740,7 @@ RDB$GET_TRANSACTION_CN
 (FB4 extension)
 Function:
     Returns commit number of given transaction. 
-	Note, engine internally uses unsigned 8-bit integer for commit numbers, 
+	Note, engine internally uses unsigned 8-byte integer for commit numbers, 
 	while SQL language have no unsigned integers, thus one should be ready 
 	to see negative numbers here (it is possible only if engine commits more 
 	than 2^32 transactions since last database start, as global commit number
