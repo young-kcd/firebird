@@ -872,7 +872,7 @@ if test "$EDITLINE_FLG" = "Y"; then
 fi
 
 AC_SEARCH_LIBS(inet_aton, resolv)
-
+AC_CHECK_LIB(atomic, main)
 
 dnl Check for libraries for static C++ runtime linking
 AC_CHECK_LIB(supc++, main, XE_APPEND(-lsupc++, STATIC_CXXSUPPORT_LIB))

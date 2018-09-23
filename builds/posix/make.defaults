@@ -138,8 +138,6 @@ DECLIB=-ldecFloat$(CROSS)
 # crypt library
 CRYPTLIB=@CRYPTLIB@
 
-ATOMICLIB=-latomic
-
 LSB_FLG=@LSB_FLG@
 ifeq ($(LSB_FLG), Y)
   LSB_UNDEF=-Wl,--allow-shlib-undefined
@@ -184,8 +182,8 @@ STATICLIB_LINK = $(AR) crus
 EXE_LINK = $(CXX) $(GLOB_OPTIONS) $(CXXFLAGS)
 STATICEXE_LINK = $(CXX) $(GLOB_OPTIONS) $(CXXFLAGS)
 
-LINK_LIBS = @LIBS@ $(DECLIB) $(ATOMICLIB)
-SO_LINK_LIBS = @LIBS@ $(DECLIB) $(ATOMICLIB)
+LINK_LIBS = @LIBS@ $(DECLIB)
+SO_LINK_LIBS = @LIBS@ $(DECLIB)
 
 # Default extensions
 
