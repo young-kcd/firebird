@@ -582,10 +582,13 @@ void setParamsGetSetContext(DataTypeUtilBase*, const SysFunction*, int argsCount
 
 void setParamsGetTranCN(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
 {
-	if (argsCount >= 1 && args[0]->isUnknown())
-		args[0]->makeInt64(0);
+	if (argsCount >= 1)
+	{
+		if (args[0]->isUnknown())
+			args[0]->makeInt64(0);
 
-	args[0]->setNullable(true);
+		args[0]->setNullable(true);
+	}
 }
 
 
