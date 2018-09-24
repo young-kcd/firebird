@@ -180,6 +180,7 @@ void setParamsDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* functio
 void setParamsDateDiff(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsFirstLastDay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsGetSetContext(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
+void setParamsGetTranCN(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsPosition(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsRoundTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
@@ -576,6 +577,15 @@ void setParamsGetSetContext(DataTypeUtilBase*, const SysFunction*, int argsCount
 		args[2]->makeVarying(255, ttype_none);
 		args[2]->setNullable(true);
 	}
+}
+
+
+void setParamsGetTranCN(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
+{
+	if (argsCount >= 1 && args[0]->isUnknown())
+		args[0]->makeInt64(0);
+
+	args[0]->setNullable(true);
 }
 
 
@@ -4630,7 +4640,7 @@ const SysFunction SysFunction::functions[] =
 		{"QUANTIZE", 2, 2, setParamsDecFloat, makeDecFloatResult, evlQuantize, NULL},
 		{"RAND", 0, 0, NULL, makeDoubleResult, evlRand, NULL},
 		{RDB_GET_CONTEXT, 2, 2, setParamsGetSetContext, makeGetSetContext, evlGetContext, NULL},
-		{"RDB$GET_TRANSACTION_CN", 1, 1, setParamsInt64, makeInt64Result, evlGetTranCN, NULL},
+		{"RDB$GET_TRANSACTION_CN", 1, 1, setParamsGetTranCN, makeInt64Result, evlGetTranCN, NULL},
 		{"RDB$ROLE_IN_USE", 1, 1, setParamsAsciiVal, makeBooleanResult, evlRoleInUse, NULL},
 		{RDB_SET_CONTEXT, 3, 3, setParamsGetSetContext, makeGetSetContext, evlSetContext, NULL},
 		{"RDB$SYSTEM_PRIVILEGE", 1, 1, NULL, makeBooleanResult, evlSystemPrivilege, NULL},
