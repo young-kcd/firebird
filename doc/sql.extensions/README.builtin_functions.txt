@@ -751,7 +751,8 @@ Function:
 	-2 - transaction is dead (rolled back)
 	-1 - transaction is in limbo
 	 0 - transaction is active,
-	 1 - transaction committed before database started
+	 1 - transaction committed before database started or less than database 
+		 Oldest Interesting Transaction
 	>1 - transaction committed after database started
 	NULL - given transaction number is NULL or greater than database Next Transaction
 
