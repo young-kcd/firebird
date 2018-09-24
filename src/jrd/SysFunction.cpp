@@ -180,7 +180,6 @@ void setParamsDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* functio
 void setParamsDateDiff(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsFirstLastDay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsGetSetContext(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
-void setParamsGetTranCN(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsPosition(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsRoundTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
@@ -205,6 +204,7 @@ void makeCeilFloor(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
 void makeDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeFirstLastDayResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeGetSetContext(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeGetTranCN(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeHash(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeLeftRight(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeMod(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
@@ -576,18 +576,6 @@ void setParamsGetSetContext(DataTypeUtilBase*, const SysFunction*, int argsCount
 	{
 		args[2]->makeVarying(255, ttype_none);
 		args[2]->setNullable(true);
-	}
-}
-
-
-void setParamsGetTranCN(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
-{
-	if (argsCount >= 1)
-	{
-		if (args[0]->isUnknown())
-			args[0]->makeInt64(0);
-
-		args[0]->setNullable(true);
 	}
 }
 
@@ -1019,6 +1007,13 @@ void makeGetSetContext(DataTypeUtilBase* /*dataTypeUtil*/, const SysFunction* fu
 	}
 }
 
+
+void makeGetTranCN(DataTypeUtilBase* /*dataTypeUtil*/, const SysFunction* /*function*/, dsc* result, 
+	int /*argsCount*/, const dsc** /*args*/)
+{
+	result->makeInt64(0);
+	result->setNullable(true);
+}
 
 void makeHash(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
 	int argsCount, const dsc** args)
@@ -4643,7 +4638,7 @@ const SysFunction SysFunction::functions[] =
 		{"QUANTIZE", 2, 2, setParamsDecFloat, makeDecFloatResult, evlQuantize, NULL},
 		{"RAND", 0, 0, NULL, makeDoubleResult, evlRand, NULL},
 		{RDB_GET_CONTEXT, 2, 2, setParamsGetSetContext, makeGetSetContext, evlGetContext, NULL},
-		{"RDB$GET_TRANSACTION_CN", 1, 1, setParamsGetTranCN, makeInt64Result, evlGetTranCN, NULL},
+		{"RDB$GET_TRANSACTION_CN", 1, 1, setParamsInt64, makeGetTranCN, evlGetTranCN, NULL},
 		{"RDB$ROLE_IN_USE", 1, 1, setParamsAsciiVal, makeBooleanResult, evlRoleInUse, NULL},
 		{RDB_SET_CONTEXT, 3, 3, setParamsGetSetContext, makeGetSetContext, evlSetContext, NULL},
 		{"RDB$SYSTEM_PRIVILEGE", 1, 1, NULL, makeBooleanResult, evlSystemPrivilege, NULL},
