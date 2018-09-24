@@ -1834,6 +1834,8 @@ C --
       PARAMETER (GDS__plugin_name                      = 335545210)
       INTEGER*4 GDS__parameter_name                  
       PARAMETER (GDS__parameter_name                   = 335545211)
+      INTEGER*4 GDS__file_starting_page_err          
+      PARAMETER (GDS__file_starting_page_err           = 335545212)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

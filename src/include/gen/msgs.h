@@ -916,6 +916,7 @@ Data source : @4"},		/* eds_statement */
 	{335545209, "Transaction is rolled back due to session reset, all changes are lost"},		/* ses_reset_tran_rollback */
 	{335545210, "Plugin @1:"},		/* plugin_name */
 	{335545211, "PARAMETER @1"},		/* parameter_name */
+	{335545212, "Starting page number for file @1 must be @2 or greater"},		/* file_starting_page_err */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

@@ -898,6 +898,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, '01', '102', 0, 889, 'ses_reset_tran_rollback', NULL, 'WARNING')
 (-901, '00', '000', 0, 890, 'plugin_name', NULL, NULL)
 (-901, '42', '000', 0, 891, 'parameter_name', NULL, NULL)
+(-901, 'HY', '000', 0, 892, 'file_starting_page_err', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)

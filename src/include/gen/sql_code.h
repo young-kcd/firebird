@@ -912,6 +912,7 @@ static const struct {
 	{335545209, -901}, /* 889 ses_reset_tran_rollback */
 	{335545210, -901}, /* 890 plugin_name */
 	{335545211, -901}, /* 891 parameter_name */
+	{335545212, -901}, /* 892 file_starting_page_err */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

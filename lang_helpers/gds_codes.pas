@@ -1829,6 +1829,8 @@ const
 	gds_plugin_name                      = 335545210;
 	isc_parameter_name                   = 335545211;
 	gds_parameter_name                   = 335545211;
+	isc_file_starting_page_err           = 335545212;
+	gds_file_starting_page_err           = 335545212;
 	isc_gfix_db_name                     = 335740929;
 	gds_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;
