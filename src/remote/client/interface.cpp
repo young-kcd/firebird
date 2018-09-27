@@ -6431,6 +6431,11 @@ static void secureAuthentication(ClntAuthBlock& cBlock, rem_port* port)
 		if (st.getState() & Firebird::IStatus::STATE_ERRORS)
 			status_exception::raise(&st);
 	}
+	else
+	{
+		// try to start crypt
+		cBlock.tryNewKeys(port);
+	}
 }
 
 
