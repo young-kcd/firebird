@@ -746,6 +746,28 @@ typedef Firebird::GetPlugins<Firebird::IClient> AuthClientPlugins;
 
 // Representation of authentication data, visible for plugin
 // Transfered in format, depending upon type of the packet (phase of handshake)
+class RmtAuthBlock FB_FINAL :
+	public Firebird::VersionedIface<Firebird::IAuthBlockImpl<RmtAuthBlock, Firebird::CheckStatusWrapper> >
+{
+public:
+	RmtAuthBlock(const Firebird::AuthReader::AuthBlock& aBlock);
+
+// Firebird::IAuthBlock implementation
+	const char* getType();
+	const char* getName();
+	const char* getPlugin();
+	const char* getSecurityDb();
+	const char* getOriginalPlugin();
+	FB_BOOLEAN next(Firebird::CheckStatusWrapper* status);
+	FB_BOOLEAN first(Firebird::CheckStatusWrapper* status);
+
+private:
+	Firebird::AuthReader rdr;
+	Firebird::AuthReader::Info info;
+
+	FB_BOOLEAN loadInfo();
+};
+
 class ClntAuthBlock FB_FINAL :
 	public Firebird::RefCntIface<Firebird::IClientBlockImpl<ClntAuthBlock, Firebird::CheckStatusWrapper> >
 {
@@ -757,10 +779,11 @@ private:
 	// These two are legacy encrypted password, trusted auth data and so on - what plugin needs
 	Firebird::UCharBuffer dataForPlugin, dataFromPlugin;
 	Firebird::HalfStaticArray<InternalCryptKey*, 1> cryptKeys;		// Wire crypt keys that came from plugin(s) last time
-	Firebird::string dpbConfig;				// User's configuration parameters
-	Firebird::PathName dpbPlugins;			// User's plugin list
+	Firebird::string dpbConfig;					// User's configuration parameters
+	Firebird::PathName dpbPlugins;				// User's plugin list
 	Firebird::RefPtr<const Config> clntConfig;	// Used to get plugins list and pass to port
-	unsigned nextKey;						// First key to be analyzed
+	Firebird::AutoPtr<RmtAuthBlock> remAuthBlock;	//Authentication block if present
+	unsigned nextKey;							// First key to be analyzed
 
 public:
 	AuthClientPlugins plugins;
@@ -796,6 +819,7 @@ public:
 	const unsigned char* getData(unsigned int* length);
 	void putData(Firebird::CheckStatusWrapper* status, unsigned int length, const void* data);
 	Firebird::ICryptKey* newKey(Firebird::CheckStatusWrapper* status);
+	Firebird::IAuthBlock* getAuthBlock(Firebird::CheckStatusWrapper* status);
 };
 
 // Representation of authentication data, visible for plugin

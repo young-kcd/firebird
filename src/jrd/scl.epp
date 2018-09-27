@@ -1739,14 +1739,14 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 	return privilege;
 }
 
-void UserId::populateDpb(Firebird::ClumpletWriter& dpb)
+void UserId::populateDpb(Firebird::ClumpletWriter& dpb, bool embeddedSupport)
 {
 	if (usr_auth_block.hasData())
 		dpb.insertBytes(isc_dpb_auth_block, usr_auth_block.begin(), usr_auth_block.getCount());
-	else
+	else if (embeddedSupport)
 		dpb.insertString(isc_dpb_user_name, usr_user_name);
 
-	if (!usr_sql_role_name.isEmpty())
+	if (usr_sql_role_name.hasData())
 		dpb.insertString(isc_dpb_sql_role_name, usr_sql_role_name);
 }
 

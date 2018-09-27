@@ -133,7 +133,7 @@ void ExecInSecurityDb::executeInSecurityDb(jrd_tra* localTransaction)
 		const char* secDb = lAtt->att_database->dbb_config->getSecurityDatabase();
 		ClumpletWriter dpb(ClumpletWriter::WideTagged, MAX_DPB_SIZE, isc_dpb_version2);
 		if (lAtt->att_user)
-			lAtt->att_user->populateDpb(dpb);
+			lAtt->att_user->populateDpb(dpb, true);
 		IAttachment* att = DispatcherPtr()->attachDatabase(&statusWrapper, secDb,
 			dpb.getBufferLength(), dpb.getBuffer());
 		check(&statusWrapper);

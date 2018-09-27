@@ -198,7 +198,7 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 	const bool isCurrent = (prvName == INTERNAL_PROVIDER_NAME) &&
 		isCurrentAccount(att->att_user, user, pwd, role);
 
-	ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE);
+	ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
 	if (!isCurrent)
 		prv->generateDPB(tdbb, dpb, user, pwd, role);
 
@@ -294,7 +294,7 @@ void Provider::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 	if ((getFlags() & prvTrustedAuth) &&
 		isCurrentAccount(attachment->att_user, user, pwd, role))
 	{
-		attachment->att_user->populateDpb(dpb);
+		attachment->att_user->populateDpb(dpb, true);
 	}
 	else
 	{
@@ -311,6 +311,7 @@ void Provider::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 			dpb.insertByte(isc_dpb_sql_dialect, 0);
 			dpb.insertString(isc_dpb_sql_role_name, role);
 		}
+		attachment->att_user->populateDpb(dpb, false);
 	}
 
 	CharSet* const cs = INTL_charset_lookup(tdbb, attachment->att_charset);

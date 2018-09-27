@@ -166,7 +166,7 @@ void InternalConnection::attach(thread_db* tdbb)
 		m_dbName = dbb->dbb_database_name.c_str();
 
 		// Avoid change of m_dpb by validatePassword() below
-		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE, m_dpb.begin(), m_dpb.getCount(), 0);
+		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE, m_dpb.begin(), m_dpb.getCount());
 		validatePassword(tdbb, m_dbName, newDpb);
 		newDpb.insertInt(isc_dpb_ext_call_depth, attachment->att_ext_call_depth + 1);
 

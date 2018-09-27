@@ -872,6 +872,12 @@ AuthReader::AuthReader(const AuthBlock& authBlock)
 	rewind();
 }
 
+AuthReader::AuthReader(MemoryPool& pool, const AuthBlock& authBlock)
+	: ClumpletReader(pool, ClumpletReader::WideUnTagged, authBlock.begin(), authBlock.getCount())
+{
+	rewind();
+}
+
 static inline void erase(NoCaseString& s)
 {
 	s.erase();

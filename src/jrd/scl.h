@@ -300,7 +300,7 @@ public:
 		return *this;
 	}
 
-	void populateDpb(Firebird::ClumpletWriter& dpb);
+	void populateDpb(Firebird::ClumpletWriter& dpb, bool embeddedSupport);
 
 	bool locksmith(thread_db* tdbb, ULONG sp) const
 	{
