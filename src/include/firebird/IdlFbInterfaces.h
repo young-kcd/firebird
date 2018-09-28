@@ -4037,6 +4037,8 @@ namespace Firebird
 			IEventBlock* (CLOOP_CARG *createEventBlock)(IUtil* self, IStatus* status, const char** events) throw();
 			IDecFloat16* (CLOOP_CARG *getDecFloat16)(IUtil* self, IStatus* status) throw();
 			IDecFloat34* (CLOOP_CARG *getDecFloat34)(IUtil* self, IStatus* status) throw();
+			ITransaction* (CLOOP_CARG *getTransactionByHandle)(IUtil* self, IStatus* status, isc_tr_handle* hndlPtr) throw();
+			IStatement* (CLOOP_CARG *getStatementByHandle)(IUtil* self, IStatus* status, isc_stmt_handle* hndlPtr) throw();
 		};
 
 	protected:
@@ -4176,6 +4178,34 @@ namespace Firebird
 			}
 			StatusType::clearException(status);
 			IDecFloat34* ret = static_cast<VTable*>(this->cloopVTable)->getDecFloat34(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> ITransaction* getTransactionByHandle(StatusType* status, isc_tr_handle* hndlPtr)
+		{
+			if (cloopVTable->version < 3)
+			{
+				StatusType::setVersionError(status, "IUtil", cloopVTable->version, 3);
+				StatusType::checkException(status);
+				return 0;
+			}
+			StatusType::clearException(status);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->getTransactionByHandle(this, status, hndlPtr);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> IStatement* getStatementByHandle(StatusType* status, isc_stmt_handle* hndlPtr)
+		{
+			if (cloopVTable->version < 3)
+			{
+				StatusType::setVersionError(status, "IUtil", cloopVTable->version, 3);
+				StatusType::checkException(status);
+				return 0;
+			}
+			StatusType::clearException(status);
+			IStatement* ret = static_cast<VTable*>(this->cloopVTable)->getStatementByHandle(this, status, hndlPtr);
 			StatusType::checkException(status);
 			return ret;
 		}
@@ -14017,6 +14047,8 @@ namespace Firebird
 					this->createEventBlock = &Name::cloopcreateEventBlockDispatcher;
 					this->getDecFloat16 = &Name::cloopgetDecFloat16Dispatcher;
 					this->getDecFloat34 = &Name::cloopgetDecFloat34Dispatcher;
+					this->getTransactionByHandle = &Name::cloopgetTransactionByHandleDispatcher;
+					this->getStatementByHandle = &Name::cloopgetStatementByHandleDispatcher;
 				}
 			} vTable;
 
@@ -14244,6 +14276,36 @@ namespace Firebird
 				return static_cast<IDecFloat34*>(0);
 			}
 		}
+
+		static ITransaction* CLOOP_CARG cloopgetTransactionByHandleDispatcher(IUtil* self, IStatus* status, isc_tr_handle* hndlPtr) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getTransactionByHandle(&status2, hndlPtr);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<ITransaction*>(0);
+			}
+		}
+
+		static IStatement* CLOOP_CARG cloopgetStatementByHandleDispatcher(IUtil* self, IStatus* status, isc_stmt_handle* hndlPtr) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getStatementByHandle(&status2, hndlPtr);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<IStatement*>(0);
+			}
+		}
 	};
 
 	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUtil> > >
@@ -14275,6 +14337,8 @@ namespace Firebird
 		virtual IEventBlock* createEventBlock(StatusType* status, const char** events) = 0;
 		virtual IDecFloat16* getDecFloat16(StatusType* status) = 0;
 		virtual IDecFloat34* getDecFloat34(StatusType* status) = 0;
+		virtual ITransaction* getTransactionByHandle(StatusType* status, isc_tr_handle* hndlPtr) = 0;
+		virtual IStatement* getStatementByHandle(StatusType* status, isc_stmt_handle* hndlPtr) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

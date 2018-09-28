@@ -4,7 +4,8 @@
  *	DESCRIPTION:	A trivial sample of using Batch interface.
  *
  *					Example for the following interfaces:
- *					IBatch - interface to work with FB pipes
+ *					IBatch - interface to work with FB batches
+ *					IBatchCompletionState - contains result of batch execution
  *
  *	c++ 11.batch.cpp -lfbclient
  *

@@ -654,6 +654,8 @@ public:
 	Firebird::IEventBlock* createEventBlock(Firebird::CheckStatusWrapper* status, const char** events);
 	Firebird::IDecFloat16* getDecFloat16(Firebird::CheckStatusWrapper* status);
 	Firebird::IDecFloat34* getDecFloat34(Firebird::CheckStatusWrapper* status);
+	Firebird::ITransaction* getTransactionByHandle(Firebird::CheckStatusWrapper* status, isc_tr_handle* hndlPtr);
+	Firebird::IStatement* getStatementByHandle(Firebird::CheckStatusWrapper* status, isc_stmt_handle* hndlPtr);
 };
 
 }	// namespace Why

@@ -55,6 +55,14 @@ typedef unsigned int	FB_API_HANDLE;
 typedef void*		FB_API_HANDLE;
 #endif
 
+typedef FB_API_HANDLE isc_att_handle;
+typedef FB_API_HANDLE isc_blob_handle;
+typedef FB_API_HANDLE isc_db_handle;
+typedef FB_API_HANDLE isc_req_handle;
+typedef FB_API_HANDLE isc_stmt_handle;
+typedef FB_API_HANDLE isc_svc_handle;
+typedef FB_API_HANDLE isc_tr_handle;
+
 /******************************************************************/
 /* Sizes of memory blocks                                         */
 /******************************************************************/

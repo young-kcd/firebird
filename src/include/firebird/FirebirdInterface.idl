@@ -31,6 +31,8 @@ typedef ISC_QUAD;
 typedef ISC_TIME;
 typedef FB_DEC16;
 typedef FB_DEC34;
+typedef isc_tr_handle;
+typedef isc_stmt_handle;
 
 // Versioned interface - base for all FB interfaces
 interface Versioned
@@ -1078,6 +1080,8 @@ version:	// 3.0 => 4.0
 	EventBlock createEventBlock(Status status, const string* events);
 	DecFloat16 getDecFloat16(Status status);
 	DecFloat34 getDecFloat34(Status status);
+	Transaction getTransactionByHandle(Status status, isc_tr_handle* hndlPtr);
+	Statement getStatementByHandle(Status status, isc_stmt_handle* hndlPtr);
 }
 
 interface OffsetsCallback : Versioned

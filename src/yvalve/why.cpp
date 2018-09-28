@@ -1255,6 +1255,13 @@ namespace Why
 				Arg::Gds(isc_dsql_cursor_open_err).raise();
 		}
 
+		IStatement* getInterface()
+		{
+			fb_assert(statement);
+			statement->addRef();
+			return statement;
+		}
+
 		AtomicAttPtr attachment;
 		string cursorName;
 		YStatement* statement;
@@ -6448,6 +6455,41 @@ void Dispatcher::setDbCryptCallback(CheckStatusWrapper* status, ICryptKeyCallbac
 {
 	status->init();
 	cryptCallback = callback;
+}
+
+ITransaction* UtilInterface::getTransactionByHandle(CheckStatusWrapper* status, isc_tr_handle* hndlPtr)
+{
+	try
+	{
+		RefPtr<YTransaction> transaction(translateHandle(transactions, hndlPtr));
+
+		transaction->addRef();
+		return transaction;
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return nullptr;
+}
+
+
+IStatement* UtilInterface::getStatementByHandle(Firebird::CheckStatusWrapper* status, isc_stmt_handle* hndlPtr)
+{
+	try
+	{
+		RefPtr<IscStatement> statement(translateHandle(statements, hndlPtr));
+		statement->checkPrepared(isc_info_unprepared_stmt);
+
+		return statement->getInterface();
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+
+	return nullptr;
 }
 
 } // namespace Why
