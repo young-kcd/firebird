@@ -514,11 +514,13 @@ CommitNumber TipCache::setState(TraNumber number, SSHORT state)
 		}
 
 		case tra_limbo:
+			if (oldStateCn == CN_LIMBO)
+				return CN_LIMBO;
+
 			if (oldStateCn != CN_ACTIVE)
 				ERR_bugcheck_msg("TPC: Attempt to mark inactive transaction to be in limbo");
 
-			if (oldStateCn != CN_LIMBO)
-				statePtr->store(CN_LIMBO, std::memory_order_relaxed);
+			statePtr->store(CN_LIMBO, std::memory_order_relaxed);
 
 			return CN_LIMBO;
 
