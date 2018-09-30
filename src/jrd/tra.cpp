@@ -1306,7 +1306,8 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 	while (transaction->tra_open_cursors.hasData())
 		DsqlCursor::close(tdbb, transaction->tra_open_cursors.pop());
 
-	if (!(transaction->tra_flags & TRA_read_committed))
+	if (!(transaction->tra_flags & TRA_read_committed) &&
+		!(transaction->tra_flags & TRA_reconnected))
 	{
 		dbb->dbb_tip_cache->endSnapshot(tdbb, transaction->tra_snapshot_handle,
 			transaction->tra_attachment->att_attachment_id);
