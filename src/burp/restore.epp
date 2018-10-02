@@ -986,8 +986,8 @@ void create_database(BurpGlobals* tdgbl, Firebird::IProvider* provider, const TE
 	// start database up shut down,
 	// use single-user mode to avoid conflicts during restore process
 	// when crypt thread to run use multi-DBO mode
-	dpb.insertByte(isc_dpb_shutdown, isc_dpb_shut_attachment |
-		(tdgbl->gbl_sw_keyholder ? isc_dpb_shut_multi : isc_dpb_shut_single));
+	dpb.insertByte(isc_dpb_shutdown,
+		tdgbl->gbl_sw_keyholder ? isc_dpb_shut_multi : isc_dpb_shut_attachment | isc_dpb_shut_single);
 	dpb.insertInt(isc_dpb_shutdown_delay, 0);
 	dpb.insertInt(isc_dpb_overwrite, tdgbl->gbl_sw_overwrite);
 
