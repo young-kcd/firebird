@@ -562,11 +562,14 @@ CommitNumber TipCache::snapshotState(thread_db* tdbb, TraNumber number)
 	// 1. We use read_data instead of taking a lock, to avoid possible race conditions
 	//    (they were probably not causing much harm, but consistency is a good thing)
 	// 2. Old TPC returned tra_active for transactions in limbo, which was not correct
+	//
+	// hvlad: tra_active is correct here as it allows caller to wait for prepared but 
+	// still active transaction
 	Lock temp_lock(tdbb, sizeof(TraNumber), LCK_tra);
 	temp_lock.setKey(number);
 
 	if (LCK_read_data(tdbb, &temp_lock))
-		return stateCn;
+		return CN_ACTIVE;
 
 	// Go to disk, and obtain state of our transaction from TIP
 	int state = TRA_fetch_state(tdbb, number);

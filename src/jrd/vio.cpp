@@ -822,13 +822,6 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 		prev_snapshot_number = current_snapshot_number;
 
-		if (state == tra_limbo && !(transaction->tra_flags & TRA_ignore_limbo))
-		{
-			state = wait(tdbb, transaction, rpb);
-			if (state == tra_active)
-				state = tra_limbo;
-		}
-
 		if (state == tra_committed)
 			state = check_precommitted(transaction, rpb);
 
@@ -839,9 +832,33 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			!(transaction->tra_flags & TRA_read_consistency) &&
 			(!(transaction->tra_flags & TRA_rec_version) || writelock))
 		{
-			// NS 2014-09-09: For limbo transactions we had been waiting already
-			// So now wait for active transactions only.
-			if (state == tra_active && !(rpb->rpb_flags & rpb_gc_active))
+			if (state == tra_limbo)
+			{
+				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+				state = wait(tdbb, transaction, rpb);
+
+				if (!DPM_get(tdbb, rpb, LCK_read))
+					return false;
+
+				state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
+
+				// will come back with active if lock mode is no wait
+
+				if (state == tra_active)
+				{
+					// error if we cannot ignore limbo, else fall through
+					// to next version
+
+					if (!(transaction->tra_flags & TRA_ignore_limbo))
+					{
+						CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+						ERR_post(Arg::Gds(isc_deadlock) << Arg::Gds(isc_trainlim));
+					}
+
+					state = tra_limbo;
+				}
+			}
+			else if (state == tra_active && !(rpb->rpb_flags & rpb_gc_active))
 			{
 				// A read committed, no record version transaction has to wait
 				// if the record has been modified by an active transaction. But
