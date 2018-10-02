@@ -2052,6 +2052,7 @@ public:
 	MappingNode(MemoryPool& p, OP o, const Firebird::MetaName& nm)
 		: DdlNode(p),
 		  name(p, nm),
+		  fromUtf8(p),
 		  plugin(NULL),
 		  db(NULL),
 		  fromType(NULL),
@@ -2085,6 +2086,7 @@ private:
 
 public:
 	Firebird::MetaName name;
+	Firebird::string fromUtf8;
 	Firebird::MetaName* plugin;
 	Firebird::MetaName* db;
 	Firebird::MetaName* fromType;
