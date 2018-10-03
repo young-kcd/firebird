@@ -7478,6 +7478,23 @@ non_aggregate_function
 
 %type <aggNode> aggregate_function
 aggregate_function
+	: aggregate_function_prefix
+	| aggregate_function_prefix FILTER '(' WHERE search_condition ')'
+		{
+			$$ = $1;
+
+			if ($$->aggInfo.blr == blr_agg_count2 && !$$->arg)	// count(*)
+				$$->arg = newNode<ValueIfNode>($5, MAKE_const_slong(1), newNode<NullNode>());
+			else
+			{
+				fb_assert($$->arg);
+				$$->arg = newNode<ValueIfNode>($5, $$->arg, newNode<NullNode>());
+			}
+		}
+	;
+
+%type <aggNode> aggregate_function_prefix
+aggregate_function_prefix
 	: COUNT '(' '*' ')'
 		{ $$ = newNode<CountAggNode>(false, (client_dialect < SQL_DIALECT_V6_TRANSITION)); }
 	| COUNT '(' all_noise value ')'
