@@ -506,6 +506,9 @@ TraNumber TipCache::cacheTransactions(thread_db* tdbb, TraNumber oldest)
 	CCH_RELEASE(tdbb, &window);
 #endif
 
+	// Don't try to ask for non-existing TIP page
+	oldest = MIN(oldest, top);
+
 	// hvlad: No need to cache TIP pages below hdr_oldest just refreshed from
 	// header page. Moreover our tip cache can now contain a gap between the last
 	// cached tip page and new pages if our process was idle for long time
