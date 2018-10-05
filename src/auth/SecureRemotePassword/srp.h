@@ -86,7 +86,7 @@ private:
 	Firebird::BigInteger	scramble;
 
 protected:
-    virtual Firebird::BigInteger MakeProof(const Firebird::BigInteger n1, const Firebird::BigInteger n2, 
+    virtual Firebird::BigInteger MakeProof(const Firebird::BigInteger n1, const Firebird::BigInteger n2,
                 const char* salt, const Firebird::UCharBuffer& sessionKey) = 0;
 
 public:
@@ -95,6 +95,7 @@ public:
 
 public:
 	RemotePassword();
+	virtual ~RemotePassword();
 
 	static const char* plugName;
 	static const unsigned SRP_KEY_SIZE = 128;
