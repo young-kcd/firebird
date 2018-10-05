@@ -49,7 +49,6 @@
 #ifndef _SHA2_H
 #define _SHA2_H
 
-#include <string>
 #include <string.h>
 #ifndef NIST_COMPLIANCY_TESTS
 #include "firebird.h"
@@ -145,11 +144,6 @@ public:
 	void process(size_t length, const unsigned char* message)
 	{
 		sha_update(message, length);
-	}
-
-	void process(const std::string& str)
-	{
-		process(str.length(), str.c_str());
 	}
 
 	void process(const char* str)

@@ -198,6 +198,9 @@ BigInteger RemotePassword::clientProof(const char* account, const char* salt, co
 	return MakeProof(n1, n2, salt, sessionKey);
 }
 
+RemotePassword::~RemotePassword()
+{ }
+
 #if SRP_DEBUG > 0
 void dumpIt(const char* name, const Firebird::UCharBuffer& data)
 {

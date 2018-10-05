@@ -95,6 +95,7 @@ public:
 
 public:
 	RemotePassword();
+	virtual ~RemotePassword();
 
 	static const char* plugName;
 	static const unsigned SRP_KEY_SIZE = 128;
