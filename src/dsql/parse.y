@@ -6403,7 +6403,7 @@ map_from_symbol_name
 
 %type <intlStringPtr> map_logoninfo
 map_logoninfo
-	: STRING
+	: sql_string
 	| valid_symbol_name		{ $$ = newNode<IntlString>($1->c_str()); }
 	;
 

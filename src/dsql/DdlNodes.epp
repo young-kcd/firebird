@@ -10176,7 +10176,7 @@ void MappingNode::runInSecurityDb(SecDbContext* secDbContext)
 			ddl += ' ';
 			if (from)
 			{
-				addItem(ddl, from->getString().c_str(), '\'');
+				addItem(ddl, fromUtf8.c_str(), '\'');
 				ddl += ' ';
 			}
 		}
@@ -10260,7 +10260,7 @@ void MappingNode::runInSecurityDb(SecDbContext* secDbContext)
 			if (fromType)
 				type2 = fromType->c_str();
 			if (from)
-				f2 = from->getString().c_str();
+				f2 = fromUtf8.c_str();
 			nm2 = name.c_str();
 
 			Message* msg = NULL;
@@ -10311,6 +10311,9 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 {
 	if (!(tdbb->getAttachment() && tdbb->getAttachment()->locksmith()))
 		status_exception::raise(Arg::Gds(isc_adm_task_denied));
+
+	if (from)
+		fromUtf8 = from->toUtf8(dsqlScratch);
 
 	if (global)
 	{
@@ -10373,7 +10376,7 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 				strcpy(M.RDB$MAP_FROM_TYPE, fromType->c_str());
 				M.RDB$MAP_FROM.NULL = fromNull;
 				if (!fromNull)
-					strcpy(M.RDB$MAP_FROM, from->getString().c_str());
+					strcpy(M.RDB$MAP_FROM, fromUtf8.c_str());
 			END_MODIFY
 			break;
 
@@ -10421,7 +10424,7 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 			strcpy(M.RDB$MAP_FROM_TYPE, fromType->c_str());
 			M.RDB$MAP_FROM.NULL = fromNull;
 			if (!fromNull)
-				strcpy(M.RDB$MAP_FROM, from->getString().c_str());
+				strcpy(M.RDB$MAP_FROM, fromUtf8.c_str());
 
 			M.RDB$MAP_TO_TYPE = role ? 1 : 0;
 			if (to)
