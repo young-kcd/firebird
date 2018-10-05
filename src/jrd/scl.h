@@ -157,7 +157,7 @@ public:
 		return *this;
 	}
 
-	void populateDpb(Firebird::ClumpletWriter& dpb);
+	void populateDpb(Firebird::ClumpletWriter& dpb, bool embeddedSupport);
 };
 
 // These numbers are arbitrary and only used at run-time. Can be changed if necessary at any moment.

@@ -7446,6 +7446,78 @@ static void cleanDpb(Firebird::ClumpletWriter& dpb, const ParametersSet* tags)
 
 } //namespace Remote
 
+
+RmtAuthBlock::RmtAuthBlock(const Firebird::AuthReader::AuthBlock& aBlock)
+	: rdr(*getDefaultMemoryPool(), aBlock), info(*getDefaultMemoryPool())
+{
+	LocalStatus ls;
+	CheckStatusWrapper st(&ls);
+	first(&st);
+	check(&st);
+}
+
+const char* RmtAuthBlock::getType()
+{
+	return info.type.nullStr();
+}
+
+const char* RmtAuthBlock::getName()
+{
+	return info.name.nullStr();
+}
+
+const char* RmtAuthBlock::getPlugin()
+{
+	return info.plugin.nullStr();
+}
+
+const char* RmtAuthBlock::getSecurityDb()
+{
+	return info.secDb.nullStr();
+}
+
+const char* RmtAuthBlock::getOriginalPlugin()
+{
+	return info.origPlug.nullStr();
+}
+
+FB_BOOLEAN RmtAuthBlock::next(Firebird::CheckStatusWrapper* status)
+{
+	try
+	{
+		rdr.moveNext();
+		return loadInfo();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+	return FB_FALSE;
+}
+
+FB_BOOLEAN RmtAuthBlock::first(Firebird::CheckStatusWrapper* status)
+{
+	try
+	{
+		rdr.rewind();
+		return loadInfo();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+	return FB_FALSE;
+}
+
+FB_BOOLEAN RmtAuthBlock::loadInfo()
+{
+	if (rdr.isEof())
+		return FB_FALSE;
+	rdr.getInfo(info);
+	return FB_TRUE;
+}
+
+
 ClntAuthBlock::ClntAuthBlock(const Firebird::PathName* fileName, Firebird::ClumpletReader* dpb,
 							 const ParametersSet* tags)
 	: pluginList(getPool()), serverPluginList(getPool()),
@@ -7464,6 +7536,12 @@ ClntAuthBlock::ClntAuthBlock(const Firebird::PathName* fileName, Firebird::Clump
 		if (dpb->find(tags->plugin_list))
 		{
 			dpb->getPath(dpbPlugins);
+		}
+		if (dpb->find(tags->auth_block))
+		{
+			AuthReader::AuthBlock plain;
+			plain.add(dpb->getBytes(), dpb->getClumpLength());
+			remAuthBlock.reset(FB_NEW RmtAuthBlock(plain));
 		}
 	}
 	resetClnt(fileName);
@@ -7608,6 +7686,11 @@ const char* ClntAuthBlock::getLogin()
 const char* ClntAuthBlock::getPassword()
 {
 	return cliPassword.nullStr();
+}
+
+IAuthBlock* ClntAuthBlock::getAuthBlock(CheckStatusWrapper* status)
+{
+	return remAuthBlock;
 }
 
 const unsigned char* ClntAuthBlock::getData(unsigned int* length)

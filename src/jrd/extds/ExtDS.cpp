@@ -325,7 +325,7 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 	if ((m_provider.getFlags() & prvTrustedAuth) &&
 		user.isEmpty() && pwd.isEmpty() && role.isEmpty())
 	{
-		attachment->att_user->populateDpb(dpb);
+		attachment->att_user->populateDpb(dpb, true);
 	}
 	else
 	{
@@ -338,6 +338,7 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 		if (!role.isEmpty()) {
 			dpb.insertString(isc_dpb_sql_role_name, role);
 		}
+		attachment->att_user->populateDpb(dpb, false);
 	}
 
 	CharSet* const cs = INTL_charset_lookup(tdbb, attachment->att_charset);
