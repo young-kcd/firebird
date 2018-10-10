@@ -2485,7 +2485,9 @@ static void pass2( SLONG start_position)
 	SLONG column = 0;
 
 	SSHORT comment_start_len = static_cast<SSHORT>(strlen(comment_start));
+#if defined(GPRE_COBOL)
 	SSHORT to_skip = 0;
+#endif
 
 	// Dump text until the start of the next action, then process the action.
 
@@ -2552,7 +2554,9 @@ static void pass2( SLONG start_position)
 				{
 					fputc('\n', gpreGlob.out_file);
 					fputs(comment_start, gpreGlob.out_file);
+#if defined(GPRE_COBOL)
 					to_skip = (column < 7) ? comment_start_len - column : 0;
+#endif
 					column = 0;
 				}
 				break;
@@ -2597,7 +2601,9 @@ static void pass2( SLONG start_position)
 						(gpreGlob.sw_language == lang_cobol))
 					{
 						fputs(comment_start, gpreGlob.out_file);
+#if defined(GPRE_COBOL)
 						to_skip = (column < 7) ? comment_start_len - column : 0;
+#endif
 						column = 0;
 					}
 				}
@@ -2635,7 +2641,9 @@ static void pass2( SLONG start_position)
 		if (sw_lines)
 			line_pending = true;
 		column = 0;
+#if defined(GPRE_COBOL)
 		to_skip = 0;
+#endif
 	}
 
 	// We're out of actions -- dump the remaining text to the output stream.
