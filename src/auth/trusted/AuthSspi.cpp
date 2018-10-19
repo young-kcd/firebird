@@ -63,15 +63,6 @@ namespace
 		}
 		return (ToType)rc;
 	}
-
-	/*	appears unused - remove at all?
-	void authName(const char** data, unsigned short* dataSize)
-	{
-		const char* name = "WIN_SSPI";
-		*data = name;
-		*dataSize = strlen(name);
-	}
-	*/
 }
 
 namespace Auth {
@@ -114,7 +105,7 @@ bool AuthSspi::initEntries()
 }
 
 AuthSspi::AuthSspi()
-	: hasContext(false), ctName(*getDefaultMemoryPool()), wheel(false)
+	: hasContext(false), ctName(*getDefaultMemoryPool()), wheel(false), groupNames(*getDefaultMemoryPool())
 {
 	TimeStamp timeOut;
 	hasCredentials = initEntries() && (fAcquireCredentialsHandle(0, "NTLM",
@@ -134,21 +125,12 @@ AuthSspi::~AuthSspi()
 	}
 }
 
-bool AuthSspi::checkAdminPrivilege(PCtxtHandle phContext) const
+bool AuthSspi::checkAdminPrivilege()
 {
-#if defined (__GNUC__) && !defined(__MINGW64_VERSION_MAJOR)
-	// ASF: MinGW hack.
-	struct SecPkgContext_AccessToken
-	{
-		void* AccessToken;
-	};
-	const int SECPKG_ATTR_ACCESS_TOKEN = 18;
-#endif
-
 	// Query access token from security context
 	SecPkgContext_AccessToken spc;
 	spc.AccessToken = 0;
-	if (fQueryContextAttributes(phContext, SECPKG_ATTR_ACCESS_TOKEN, &spc) != SEC_E_OK)
+	if (fQueryContextAttributes(&ctxtHndl, SECPKG_ATTR_ACCESS_TOKEN, &spc) != SEC_E_OK)
 	{
 		return false;
 	}
@@ -160,12 +142,8 @@ bool AuthSspi::checkAdminPrivilege(PCtxtHandle phContext) const
 	// Query actual group information
 	Array<char> buffer;
 	TOKEN_GROUPS *ptg = (TOKEN_GROUPS *)buffer.getBuffer(token_len);
-	bool ok = GetTokenInformation(spc.AccessToken,
-			TokenGroups, ptg, token_len, &token_len);
-	if (! ok)
-	{
+	if (! GetTokenInformation(spc.AccessToken, TokenGroups, ptg, token_len, &token_len))
 		return false;
-	}
 
 	// Create a System Identifier for the Admin group.
 	SID_IDENTIFIER_AUTHORITY system_sid_authority = {SECURITY_NT_AUTHORITY};
@@ -184,20 +162,46 @@ bool AuthSspi::checkAdminPrivilege(PCtxtHandle phContext) const
 				DOMAIN_ALIAS_RID_ADMINS,
 				0, 0, 0, 0, 0, 0, &local_admin_sid))
 	{
+		FreeSid(domain_admin_sid);
 		return false;
 	}
 
 	bool matched = false;
+	char groupName[256];
+	char domainName[256];
+	DWORD dwAcctName = 1, dwDomainName = 1;
+	SID_NAME_USE snu = SidTypeUnknown;
+
+	groupNames.clear();
 
 	// Finally we'll iterate through the list of groups for this access
 	// token looking for a match against the SID we created above.
 	for (DWORD i = 0; i < ptg->GroupCount; i++)
 	{
-		if (EqualSid(ptg->Groups[i].Sid, domain_admin_sid) ||
-			EqualSid(ptg->Groups[i].Sid, local_admin_sid))
+		// consider denied ACE with Administrator SID
+		if ((ptg->Groups[i].Attributes & SE_GROUP_ENABLED) &&
+			!(ptg->Groups[i].Attributes & SE_GROUP_USE_FOR_DENY_ONLY))
 		{
-			matched = true;
-			break;
+			DWORD dwSize = 256;
+			if (LookupAccountSid(NULL, ptg->Groups[i].Sid, groupName, &dwSize, domainName, &dwSize, &snu) &&
+				domainName[0] && strcmp(domainName, "NT AUTHORITY"))
+			{
+				string sumName = domainName;
+				sumName += '\\';
+				sumName += groupName;
+				groupNames.add(sumName);
+
+				sumName = groupName;
+				FB_SIZE_T dummy;
+				if (!groupNames.find(sumName, dummy))
+					groupNames.add(sumName);
+			}
+
+			if (EqualSid(ptg->Groups[i].Sid, domain_admin_sid) ||
+				EqualSid(ptg->Groups[i].Sid, local_admin_sid))
+			{
+				matched = true;
+			}
 		}
 	}
 
@@ -289,7 +293,7 @@ bool AuthSspi::accept(AuthSspi::DataHolder& data)
 			ctName = name.sUserName;
 			ctName.upper();
 			fFreeContextBuffer(name.sUserName);
-			wheel = checkAdminPrivilege(&ctxtHndl);
+			wheel = checkAdminPrivilege();
 		}
 		fDeleteSecurityContext(&ctxtHndl);
 		hasContext = false;
@@ -320,7 +324,7 @@ bool AuthSspi::accept(AuthSspi::DataHolder& data)
 	return true;
 }
 
-bool AuthSspi::getLogin(string& login, bool& wh)
+bool AuthSspi::getLogin(string& login, bool& wh, GroupsList& grNames)
 {
 	wh = false;
 	if (ctName.hasData())
@@ -329,6 +333,9 @@ bool AuthSspi::getLogin(string& login, bool& wh)
 		ctName.erase();
 		wh = wheel;
 		wheel = false;
+		grNames = groupNames;
+		groupNames.clear();
+
 		return true;
 	}
 	return false;
@@ -363,7 +370,8 @@ int WinSspiServer::authenticate(Firebird::CheckStatusWrapper* status,
 		{
 			bool wheel = false;
 			string login;
-			sspi.getLogin(login, wheel);
+			AuthSspi::GroupsList grNames;
+			sspi.getLogin(login, wheel, grNames);
 			ISC_systemToUtf8(login);
 
 			writerInterface->add(status, login.c_str());
@@ -374,6 +382,14 @@ int WinSspiServer::authenticate(Firebird::CheckStatusWrapper* status,
 			}
 
 			// ToDo: walk groups to which login belongs and list them using writerInterface
+			Firebird::string grName;
+			for (unsigned n = 0; n < grNames.getCount(); ++n)
+			{
+				grName = grNames[n];
+				ISC_systemToUtf8(grName);
+				writerInterface->add(status, grName.c_str());
+				writerInterface->setType(status, "Group");
+			}
 
 			return AUTH_SUCCESS;
 		}
