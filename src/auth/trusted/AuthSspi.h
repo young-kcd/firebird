@@ -55,6 +55,7 @@ class AuthSspi
 {
 public:
 	typedef Firebird::ObjectsArray<Firebird::string> GroupsList;
+	typedef Firebird::UCharBuffer Key;
 
 private:
 	enum {BUFSIZE = 4096};
@@ -66,6 +67,7 @@ private:
 	Firebird::string ctName;
 	bool wheel;
 	GroupsList groupNames;
+	Key sessionKey;
 
 	// Handle of library
 	static HINSTANCE library;
@@ -103,6 +105,9 @@ public:
 
 	// returns Windows user/group names, matching accepted security context
 	bool getLogin(Firebird::string& login, bool& wh, GroupsList& grNames);
+
+	// returns session key for wire encryption
+	const Key* getKey() const;
 };
 
 class WinSspiServer :
@@ -135,6 +140,7 @@ public:
 private:
 	AuthSspi::DataHolder sspiData;
 	AuthSspi sspi;
+	bool keySet;
 };
 
 void registerTrustedClient(Firebird::IPluginManager* iPlugin);
