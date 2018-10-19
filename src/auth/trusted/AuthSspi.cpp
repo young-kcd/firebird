@@ -105,7 +105,8 @@ bool AuthSspi::initEntries()
 }
 
 AuthSspi::AuthSspi()
-	: hasContext(false), ctName(*getDefaultMemoryPool()), wheel(false), groupNames(*getDefaultMemoryPool())
+	: hasContext(false), ctName(*getDefaultMemoryPool()), wheel(false),
+	  groupNames(*getDefaultMemoryPool()), sessionKey(*getDefaultMemoryPool())
 {
 	TimeStamp timeOut;
 	hasCredentials = initEntries() && (fAcquireCredentialsHandle(0, "NTLM",
@@ -123,6 +124,13 @@ AuthSspi::~AuthSspi()
 	{
 		fFreeCredentialsHandle(&secHndl);
 	}
+}
+
+const AuthSspi::Key* AuthSspi::getKey() const
+{
+	if (sessionKey.hasData())
+		return &sessionKey;
+	return NULL;
 }
 
 bool AuthSspi::checkAdminPrivilege()
@@ -231,15 +239,23 @@ bool AuthSspi::request(AuthSspi::DataHolder& data)
 	SECURITY_STATUS x = fInitializeSecurityContext(
 		&secHndl, hasContext ? &ctxtHndl : 0, 0, 0, 0, SECURITY_NATIVE_DREP,
 		hasContext ? &inputDesc : 0, 0, &ctxtHndl, &outputDesc, &fContextAttr, &timeOut);
+
+	SecPkgContext_SessionKey key;
 	switch (x)
 	{
 	case SEC_E_OK:
+		if (fQueryContextAttributes(&ctxtHndl, SECPKG_ATTR_SESSION_KEY, &key) == SEC_E_OK)
+		{
+			sessionKey.assign(key.SessionKey, key.SessionKeyLength);
+		}
 		fDeleteSecurityContext(&ctxtHndl);
 		hasContext = false;
 		break;
+
 	case SEC_I_CONTINUE_NEEDED:
 		hasContext = true;
 		break;
+
 	default:
 		if (hasContext)
 		{
@@ -281,10 +297,12 @@ bool AuthSspi::accept(AuthSspi::DataHolder& data)
 
 	ULONG fContextAttr = 0;
 	SecPkgContext_Names name;
+	SecPkgContext_SessionKey key;
 	SECURITY_STATUS x = fAcceptSecurityContext(
 		&secHndl, hasContext ? &ctxtHndl : 0, &inputDesc, 0,
 		SECURITY_NATIVE_DREP, &ctxtHndl, &outputDesc,
 		&fContextAttr, &timeOut);
+
 	switch (x)
 	{
 	case SEC_E_OK:
@@ -295,12 +313,18 @@ bool AuthSspi::accept(AuthSspi::DataHolder& data)
 			fFreeContextBuffer(name.sUserName);
 			wheel = checkAdminPrivilege();
 		}
+		if (fQueryContextAttributes(&ctxtHndl, SECPKG_ATTR_SESSION_KEY, &key) == SEC_E_OK)
+		{
+			sessionKey.assign(key.SessionKey, key.SessionKeyLength);
+		}
 		fDeleteSecurityContext(&ctxtHndl);
 		hasContext = false;
 		break;
+
 	case SEC_I_CONTINUE_NEEDED:
 		hasContext = true;
 		break;
+
 	default:
 		if (hasContext)
 		{
@@ -346,10 +370,6 @@ WinSspiServer::WinSspiServer(Firebird::IPluginConfig*)
 	: sspiData(getPool())
 { }
 
-WinSspiClient::WinSspiClient(Firebird::IPluginConfig*)
-	: sspiData(getPool())
-{ }
-
 int WinSspiServer::authenticate(Firebird::CheckStatusWrapper* status,
 								IServerBlock* sBlock,
 								IWriter* writerInterface)
@@ -374,21 +394,46 @@ int WinSspiServer::authenticate(Firebird::CheckStatusWrapper* status,
 			sspi.getLogin(login, wheel, grNames);
 			ISC_systemToUtf8(login);
 
+			// publish user name obtained during SSPI handshake
 			writerInterface->add(status, login.c_str());
+			if (status->getState() & IStatus::STATE_ERRORS)
+				return AUTH_FAILED;
+
+			// is it suser account?
 			if (wheel)
 			{
 				writerInterface->add(status, FB_DOMAIN_ANY_RID_ADMINS);
+				if (status->getState() & IStatus::STATE_ERRORS)
+					return AUTH_FAILED;
 				writerInterface->setType(status, FB_PREDEFINED_GROUP);
+				if (status->getState() & IStatus::STATE_ERRORS)
+					return AUTH_FAILED;
 			}
 
-			// ToDo: walk groups to which login belongs and list them using writerInterface
+			// walk groups to which login belongs and list them using writerInterface
 			Firebird::string grName;
 			for (unsigned n = 0; n < grNames.getCount(); ++n)
 			{
 				grName = grNames[n];
 				ISC_systemToUtf8(grName);
 				writerInterface->add(status, grName.c_str());
+				if (status->getState() & IStatus::STATE_ERRORS)
+					return AUTH_FAILED;
 				writerInterface->setType(status, "Group");
+				if (status->getState() & IStatus::STATE_ERRORS)
+					return AUTH_FAILED;
+			}
+
+			// set wire crypt key
+			const UCharBuffer* key = sspi.getKey();
+			if (key)
+			{
+				ICryptKey* cKey = sBlock->newKey(status);
+				if (status->getState() & IStatus::STATE_ERRORS)
+					return AUTH_FAILED;
+				cKey->setSymmetric(status, "Symmetric", key->getCount(), key->begin());
+				if (status->getState() & IStatus::STATE_ERRORS)
+					return AUTH_FAILED;
 			}
 
 			return AUTH_SUCCESS;
@@ -416,13 +461,16 @@ int WinSspiServer::release()
 	return 1;
 }
 
+
+WinSspiClient::WinSspiClient(Firebird::IPluginConfig*)
+	: sspiData(getPool()), keySet(false)
+{ }
+
 int WinSspiClient::authenticate(Firebird::CheckStatusWrapper* status,
 								IClientBlock* cBlock)
 {
 	try
 	{
-		const bool wasActive = sspi.isActive();
-
 		sspiData.clear();
 		unsigned int length;
 		const unsigned char* bytes = cBlock->getData(&length);
@@ -432,9 +480,22 @@ int WinSspiClient::authenticate(Firebird::CheckStatusWrapper* status,
 			return AUTH_CONTINUE;
 
 		cBlock->putData(status, sspiData.getCount(), sspiData.begin());
+		if (status->getState() & IStatus::STATE_ERRORS)
+			return AUTH_FAILED;
 
-		if (!wasActive)
-			return AUTH_SUCCESS;
+		// set wire crypt key
+		const UCharBuffer* key = sspi.getKey();
+		if (key && !keySet)
+		{
+			ICryptKey* cKey = cBlock->newKey(status);
+			if (status->getState() & IStatus::STATE_ERRORS)
+				return AUTH_FAILED;
+			cKey->setSymmetric(status, "Symmetric", key->getCount(), key->begin());
+			if (status->getState() & IStatus::STATE_ERRORS)
+				return AUTH_FAILED;
+
+			keySet = true;
+		}
 	}
 	catch (const Firebird::Exception& ex)
 	{
@@ -455,6 +516,7 @@ int WinSspiClient::release()
 
 	return 1;
 }
+
 
 void registerTrustedClient(Firebird::IPluginManager* iPlugin)
 {
