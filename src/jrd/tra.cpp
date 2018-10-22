@@ -94,7 +94,7 @@ typedef Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<USHORT, UCHAR> >
 #ifdef SUPERSERVER_V2
 static SLONG bump_transaction_id(thread_db*, WIN *);
 #else
-static header_page* bump_transaction_id(thread_db*, WIN *);
+static header_page* bump_transaction_id(thread_db*, WIN *, bool);
 #endif
 static Lock* create_transaction_lock(thread_db* tdbb, void* object);
 static void retain_context(thread_db*, jrd_tra*, bool, SSHORT);
@@ -1571,16 +1571,28 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 	WIN window(DB_PAGE_SPACE, -1);
 	tx_inv_page* tip = fetch_inventory_page(tdbb, &window, (SLONG) sequence, LCK_write);
 
-#ifdef SUPERSERVER_V2
-	CCH_MARK(tdbb, &window);
+	UCHAR* address = tip->tip_transactions + byte;
+	const int old_state = ((*address) >> shift) & TRA_MASK;
+
+#if defined(SUPERSERVER_V2)
 	const ULONG generation = tip->pag_generation;
-#else
-	CCH_MARK_MUST_WRITE(tdbb, &window);
+	const bool mustWrite = false;
+#elif defined(SUPERSERVER)
+	const bool mustWrite =
+		(!transaction ||
+		(transaction->tra_flags & TRA_write) ||
+		old_state != tra_active || state != tra_committed);
+#else // not SUPERSERVER
+	const bool mustWrite = true;
 #endif
+
+	if (mustWrite)
+		CCH_MARK_MUST_WRITE(tdbb, &window);
+	else
+		CCH_MARK(tdbb, &window);
 
 	// set the state on the TIP page
 
-	UCHAR* address = tip->tip_transactions + byte;
 	*address &= ~(TRA_MASK << shift);
 	*address |= state << shift;
 
@@ -2085,7 +2097,7 @@ static SLONG bump_transaction_id(thread_db* tdbb, WIN* window)
 #else
 
 
-static header_page* bump_transaction_id(thread_db* tdbb, WIN* window)
+static header_page* bump_transaction_id(thread_db* tdbb, WIN* window, bool mustWrite)
 {
 /**************************************
  *
@@ -2133,7 +2145,11 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN* window)
 
 	// Extend, if necessary, has apparently succeeded.  Next, update header page
 
-	CCH_MARK_MUST_WRITE(tdbb, window);
+	if (mustWrite || new_tip)
+		CCH_MARK_MUST_WRITE(tdbb, window);
+	else
+		CCH_MARK(tdbb, window);
+
 	header->hdr_next_transaction = number;
 
 	if (dbb->dbb_oldest_active > header->hdr_oldest_active)
@@ -2674,7 +2690,13 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, S
 		new_number = dbb->dbb_next_transaction + dbb->generateTransactionId(tdbb);
 	else
 	{
-		const header_page* header = bump_transaction_id(tdbb, &window);
+		const bool mustWrite =
+#ifdef SUPERSERVER
+			!(transaction->tra_flags & TRA_readonly);
+#else
+			true;
+#endif
+		const header_page* header = bump_transaction_id(tdbb, &window, mustWrite);
 		new_number = header->hdr_next_transaction;
 	}
 #endif
@@ -3398,7 +3420,13 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	}
 	else
 	{
-		const header_page* header = bump_transaction_id(tdbb, &window);
+		const bool mustWrite =
+#ifdef SUPERSERVER
+			!(trans->tra_flags & TRA_readonly);
+#else
+			true;
+#endif
+		const header_page* header = bump_transaction_id(tdbb, &window, mustWrite);
 		number = header->hdr_next_transaction;
 		oldest = header->hdr_oldest_transaction;
 		oldest_active = header->hdr_oldest_active;
