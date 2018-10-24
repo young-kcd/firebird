@@ -6704,14 +6704,19 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 			dbb = databases;
 			while (dbb)
 			{
-				if (!(dbb->dbb_flags & DBB_bugcheck) && (dbb->dbb_filename == expanded_name
+				if (dbb->dbb_filename == expanded_name
 #ifdef HAVE_ID_BY_NAME
-															|| dbb->dbb_id == db_id
+													   || dbb->dbb_id == db_id
 #endif
-																					))
+																			  )
 				{
 					if (attach_flag)
 					{
+						if (dbb->dbb_flags & DBB_bugcheck)
+						{
+							status_exception::raise(Arg::Gds(isc_bug_check) << "can't attach after bugcheck");
+						}
+
 						initGuard.linkWith(dbb->dbb_init_fini);
 
 						{   // scope
