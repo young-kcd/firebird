@@ -1752,7 +1752,7 @@ void PAG_set_db_readonly(thread_db* tdbb, bool flag)
 		dbb->dbb_oldest_transaction = Ods::getOIT(header);
 
 		fb_assert(dbb->dbb_next_transaction == Ods::getNT(header));
-		dbb->dbb_next_transaction == Ods::getNT(header);
+		dbb->dbb_next_transaction = Ods::getNT(header);
 	}
 
 	CCH_MARK_MUST_WRITE(tdbb, &window);
