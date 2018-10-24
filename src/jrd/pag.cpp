@@ -1744,6 +1744,15 @@ void PAG_set_db_readonly(thread_db* tdbb, bool flag)
 		// for WRITE operations
 		header->hdr_flags &= ~hdr_read_only;
 		dbb->dbb_flags &= ~DBB_read_only;
+
+		// Also, reset in-memory Database transactions counters as it could be
+		// greater than the Next transaction stored on disk
+		dbb->dbb_oldest_active = Ods::getOAT(header);
+		dbb->dbb_oldest_snapshot = Ods::getOST(header);
+		dbb->dbb_oldest_transaction = Ods::getOIT(header);
+
+		fb_assert(dbb->dbb_next_transaction == Ods::getNT(header));
+		dbb->dbb_next_transaction == Ods::getNT(header);
 	}
 
 	CCH_MARK_MUST_WRITE(tdbb, &window);
