@@ -3,7 +3,7 @@
 ## New features
 
 * [CORE-5953](http://tracker.firebirdsql.org/browse/CORE-5953): Statement level read consistency in read-committed transactions  
-  Reference(s): [/doc/doc\README.read_consistency.md](https://github.com/FirebirdSQL/firebird/raw/master/doc/doc\README.read_consistency.md)  
+  Reference(s): [/doc/README.read_consistency.md](https://github.com/FirebirdSQL/firebird/raw/master/doc/doc\README.read_consistency.md)  
   Contributor(s): Nickolay Samofatov, Roman Simakov, Vlad Khorsun
 
 * [CORE-5951](http://tracker.firebirdsql.org/browse/CORE-5951): Add support of batch insert and update operations  
@@ -27,7 +27,7 @@
 ## Improvements
 
 * [CORE-5954](http://tracker.firebirdsql.org/browse/CORE-5954): Garbage collection in intermediate record versions  
-  Reference(s): [/doc/doc\README.read_consistency.md](https://github.com/FirebirdSQL/firebird/raw/master/doc/doc\README.read_consistency.md)  
+  Reference(s): [/doc/README.read_consistency.md](https://github.com/FirebirdSQL/firebird/raw/master/doc/doc\README.read_consistency.md)  
   Contributor(s): Nickolay Samofatov, Roman Simakov, Vlad Khorsun
 
 * [CORE-5952](http://tracker.firebirdsql.org/browse/CORE-5952): Enhance restore performance of GBAK using batch API  
