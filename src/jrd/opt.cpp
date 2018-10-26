@@ -7837,6 +7837,8 @@ static void set_position(const jrd_nod* from_clause, jrd_nod* to_clause, const j
 		{
 			if ((map && map_equal(*to_ptr, *from_ptr, map)) ||
 				(!map &&
+					(*from_ptr)->nod_type == nod_field &&
+					(*to_ptr)->nod_type == nod_field &&
 					(*from_ptr)->nod_arg[e_fld_stream] == (*to_ptr)->nod_arg[e_fld_stream] &&
 					(*from_ptr)->nod_arg[e_fld_id] == (*to_ptr)->nod_arg[e_fld_id]))
 			{
