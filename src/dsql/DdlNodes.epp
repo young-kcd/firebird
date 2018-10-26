@@ -268,6 +268,7 @@ static void checkSpTrigDependency(thread_db* tdbb, jrd_tra* transaction,
 		FIRST 1
 		DEP IN RDB$DEPENDENCIES
 		WITH DEP.RDB$DEPENDED_ON_NAME EQ relationName.c_str() AND
+			 DEP.RDB$DEPENDED_ON_TYPE EQ obj_relation AND
 			 DEP.RDB$FIELD_NAME EQ fieldName.c_str()
 	{
 		MetaName depName(DEP.RDB$DEPENDENT_NAME);
