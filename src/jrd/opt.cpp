@@ -3549,11 +3549,11 @@ static void set_position(const SortNode* from_clause, SortNode* to_clause, const
 		for (const NestConst<ValueExprNode>* const to_end = to_ptr + count;
 			 to_ptr != to_end; ++to_ptr)
 		{
-			const FieldNode* fromField = nodeAs<FieldNode>(*from_ptr);
-			const FieldNode* toField = nodeAs<FieldNode>(*to_ptr);
+			const FieldNode* const fromField = nodeAs<FieldNode>(*from_ptr);
+			const FieldNode* const toField = nodeAs<FieldNode>(*to_ptr);
 
 			if ((map && map_equal(*to_ptr, *from_ptr, map)) ||
-				(!map &&
+				(!map && fromField && toField &&
 					fromField->fieldStream == toField->fieldStream &&
 					fromField->fieldId == toField->fieldId))
 			{
