@@ -193,7 +193,6 @@ void MonitoringData::read(const char* user_name, TempSpace& temp)
 
 		if (!user_name || !strcmp(element->userName, user_name))
 		{
-			fb_assert(shared_memory->getHeader()->used >= offset + length);
 			temp.write(position, ptr + sizeof(Element), element->length);
 			position += element->length;
 		}
@@ -205,17 +204,19 @@ void MonitoringData::read(const char* user_name, TempSpace& temp)
 
 ULONG MonitoringData::setup(AttNumber att_id, const char* user_name)
 {
-	ensureSpace(sizeof(Element));
+	const ULONG offset = alignOffset(shared_memory->getHeader()->used);
+	const ULONG delta = offset + sizeof(Element) - shared_memory->getHeader()->used;
+
+	ensureSpace(delta);
 
 	// Prepare for writing new data at the tail
 
-	const ULONG offset = shared_memory->getHeader()->used;
 	UCHAR* const ptr = (UCHAR*) shared_memory->getHeader() + offset;
 	Element* const element = (Element*) ptr;
 	element->attId = att_id;
 	strncpy(element->userName, user_name, USERNAME_LENGTH);
 	element->length = 0;
-	shared_memory->getHeader()->used += alignOffset(sizeof(Element));
+	shared_memory->getHeader()->used += delta;
 	return offset;
 }
 
@@ -229,10 +230,8 @@ void MonitoringData::write(ULONG offset, ULONG length, const void* buffer)
 	UCHAR* const ptr = (UCHAR*) shared_memory->getHeader() + offset;
 	Element* const element = (Element*) ptr;
 	memcpy(ptr + sizeof(Element) + element->length, buffer, length);
-	ULONG previous = alignOffset(sizeof(Element) + element->length);
 	element->length += length;
-	ULONG current = alignOffset(sizeof(Element) + element->length);
-	shared_memory->getHeader()->used += (current - previous);
+	shared_memory->getHeader()->used += length;
 }
 
 
@@ -248,14 +247,20 @@ void MonitoringData::cleanup(AttNumber att_id)
 
 		if (element->attId == att_id)
 		{
-			fb_assert(shared_memory->getHeader()->used >= offset + length);
-			memmove(ptr, ptr + length, shared_memory->getHeader()->used - offset - length);
-			shared_memory->getHeader()->used -= length;
+			if (offset + length < shared_memory->getHeader()->used)
+			{
+				memmove(ptr, ptr + length, shared_memory->getHeader()->used - offset - length);
+				shared_memory->getHeader()->used -= length;
+			}
+			else
+			{
+				shared_memory->getHeader()->used = offset;
+			}
+
+			break;
 		}
-		else
-		{
-			offset += length;
-		}
+
+		offset += length;
 	}
 }
 
@@ -269,10 +274,11 @@ void MonitoringData::enumerate(SessionList& sessions, const char* user_name)
 		UCHAR* const ptr = (UCHAR*) shared_memory->getHeader() + offset;
 		const Element* const element = (Element*) ptr;
 		const ULONG length = alignOffset(sizeof(Element) + element->length);
-		offset += length;
 
 		if (!user_name || !strcmp(element->userName, user_name))
 			sessions.add(element->attId);
+
+		offset += length;
 	}
 }
 
