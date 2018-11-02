@@ -3422,7 +3422,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	{
 		const bool mustWrite =
 #ifdef SUPERSERVER
-			!(trans->tra_flags & TRA_readonly);
+			!(temp->tra_flags & TRA_readonly);
 #else
 			true;
 #endif
