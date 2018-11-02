@@ -847,6 +847,10 @@ void IDX_garbage_collect(thread_db*			tdbb,
 				// Get rid of index node
 
 				BTR_remove(tdbb, &window, &insertion);
+
+				if (--tdbb->tdbb_quantum < 0)
+					JRD_reschedule(tdbb, 0, true);
+
 				root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_root);
 				if (stack1.hasMore(1))
 					BTR_description(tdbb, rpb->rpb_relation, root, &idx, i);
