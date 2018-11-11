@@ -8337,7 +8337,7 @@ SetSessionNode::SetSessionNode(MemoryPool& pool, Type aType, ULONG aVal, UCHAR b
 	switch (blr_timepart)
 	{
 	case blr_extract_hour:
-		mult = (aType == TYPE_IDLE_TIMEOUT) ? 3660 : 3660000;
+		mult = (aType == TYPE_IDLE_TIMEOUT) ? 3600 : 3600000;
 		break;
 
 	case blr_extract_minute:
