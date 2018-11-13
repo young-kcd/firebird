@@ -360,6 +360,9 @@
     <ClCompile Include="..\..\..\src\jrd\TempSpace.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\TimeZone.cpp">
+      <Filter>JRD files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\tpc.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
@@ -461,6 +464,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\dsql\DsqlBatch.cpp">
       <Filter>DSQL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\SystemPackages.cpp">
+      <Filter>JRD files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -932,6 +938,9 @@
     <ClInclude Include="..\..\..\src\jrd\TempSpace.h">
       <Filter>Header files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\jrd\TimeZone.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\tpc_proto.h">
       <Filter>Header files</Filter>
     </ClInclude>
@@ -987,6 +996,9 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\dsql\DsqlBatch.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\jrd\SystemPackages.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>
