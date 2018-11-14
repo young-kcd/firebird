@@ -336,7 +336,7 @@ public:
 	Validation*	att_validation;
 	Firebird::PathName	att_working_directory;	// Current working directory is cached
 	Firebird::PathName	att_filename;			// alias used to attach the database
-	const Firebird::TimeStamp	att_timestamp;	// Connection date and time
+	const ISC_TIMESTAMP_TZ	att_timestamp;	// Connection date and time
 	Firebird::StringMap att_context_vars;	// Context variables for the connection
 	Firebird::Stack<DdlTriggerContext*> ddlTriggersContext;	// Context variables for DDL trigger event
 	Firebird::string att_network_protocol;	// Network protocol used by client for connection
@@ -488,7 +488,7 @@ public:
 	void setupIdleTimer(bool clear);
 
 	// returns time when idle timer will be expired, if set
-	bool getIdleTimerTimestamp(Firebird::TimeStamp& ts) const;
+	bool getIdleTimerTimestamp(ISC_TIMESTAMP_TZ& ts) const;
 
 	// batches control
 	void registerBatch(JBatch* b)
@@ -522,15 +522,15 @@ private:
 		// Set timeout, seconds
 		void reset(unsigned int timeout);
 
-		time_t getExpiryTime() const
+		SINT64 getExpiryTime() const
 		{
 			return m_expTime;
 		}
 
 	private:
 		Firebird::RefPtr<JAttachment> m_attachment;
-		time_t m_fireTime;		// when ITimer will fire, could be less than m_expTime
-		time_t m_expTime;		// when actual idle timeout will expire
+		SINT64 m_fireTime;		// when ITimer will fire, could be less than m_expTime
+		SINT64 m_expTime;		// when actual idle timeout will expire
 	};
 
 	unsigned int att_idle_timeout;		// seconds

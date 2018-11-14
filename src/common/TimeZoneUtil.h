@@ -103,6 +103,7 @@ public:
 	static void decodeTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, struct tm* times, int* fractions = NULL);
 
 	static ISC_TIMESTAMP_TZ getCurrentTimeStampUtc();
+	static ISC_TIMESTAMP_TZ getCurrentTimeStampGmt();
 
 	static void validateTimeStampUtc(NoThrowTimeStamp& ts);
 

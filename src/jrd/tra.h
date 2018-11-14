@@ -175,7 +175,7 @@ public:
 		tra_resources(*p),
 		tra_context_vars(*p),
 		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT),
-		tra_timestamp(Firebird::TimeStamp::getCurrentTimeStamp()),
+		tra_timestamp(Firebird::TimeZoneUtil::getCurrentTimeStampUtc()),
 		tra_stats(*p),
 		tra_open_cursors(*p),
 		tra_outer(outer),
@@ -280,7 +280,7 @@ public:
 	UCHAR tra_callback_count;			// callback count for 'execute statement'
 	SSHORT tra_lock_timeout;			// in seconds, -1 means infinite, 0 means NOWAIT
 	ULONG tra_next_blob_id;     		// ID of the previous blob or array created in this transaction
-	const Firebird::TimeStamp tra_timestamp; // transaction start time
+	const ISC_TIMESTAMP_TZ tra_timestamp;	// transaction start time
 	jrd_req* tra_requests;				// Doubly linked list of requests active in this transaction
 	MonitoringSnapshot* tra_mon_snapshot;	// Database state snapshot (for monitoring purposes)
 	RuntimeStatistics tra_stats;

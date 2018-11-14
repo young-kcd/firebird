@@ -821,7 +821,7 @@ void Monitoring::putDatabase(thread_db* tdbb, SnapshotData::DumpRecord& record)
 	temp = (database->dbb_flags & DBB_no_reserve) ? 0 : 1;
 	record.storeInteger(f_mon_db_res_space, temp);
 	// creation date
-	record.storeTimestamp(f_mon_db_created, database->dbb_creation_date);
+	record.storeTimestampTz(f_mon_db_created, database->dbb_creation_date);
 	// database size
 	record.storeInteger(f_mon_db_pages, PageSpace::actAlloc(database));
 	// database backup state
@@ -925,7 +925,7 @@ void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Atta
 	// charset
 	record.storeInteger(f_mon_att_charset_id, attachment->att_charset);
 	// timestamp
-	record.storeTimestamp(f_mon_att_timestamp, attachment->att_timestamp);
+	record.storeTimestampTz(f_mon_att_timestamp, attachment->att_timestamp);
 	// garbage collection flag
 	temp = (attachment->att_flags & ATT_no_cleanup) ? 0 : 1;
 	record.storeInteger(f_mon_att_gc, temp);
@@ -949,9 +949,9 @@ void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Atta
 	// session idle timeout, seconds
 	record.storeInteger(f_mon_att_idle_timeout, attachment->getIdleTimeout());
 	// when idle timer expires, NULL if not running
-	TimeStamp idleTimer;
+	ISC_TIMESTAMP_TZ idleTimer;
 	if (attachment->getIdleTimerTimestamp(idleTimer))
-		record.storeTimestamp(f_mon_att_idle_timer, idleTimer);
+		record.storeTimestampTz(f_mon_att_idle_timer, idleTimer);
 	// statement timeout, milliseconds
 	record.storeInteger(f_mon_att_stmt_timeout, attachment->getStatementTimeout());
 
@@ -990,7 +990,7 @@ void Monitoring::putTransaction(SnapshotData::DumpRecord& record, const jrd_tra*
 	temp = transaction->tra_requests ? mon_state_active : mon_state_idle;
 	record.storeInteger(f_mon_tra_state, temp);
 	// timestamp
-	record.storeTimestamp(f_mon_tra_timestamp, transaction->tra_timestamp);
+	record.storeTimestampTz(f_mon_tra_timestamp, transaction->tra_timestamp);
 	// top transaction
 	record.storeInteger(f_mon_tra_top, transaction->tra_top);
 	// oldest transaction
@@ -1053,13 +1053,13 @@ void Monitoring::putRequest(SnapshotData::DumpRecord& record, const jrd_req* req
 		const bool is_stalled = (request->req_flags & req_stall);
 		record.storeInteger(f_mon_stmt_state, is_stalled ? mon_state_stalled : mon_state_active);
 		record.storeInteger(f_mon_stmt_tra_id, request->req_transaction->tra_number);
-		record.storeTimestamp(f_mon_stmt_timestamp, request->getLocalTimeStamp().value());
+		record.storeTimestampTz(f_mon_stmt_timestamp, request->getTimeStampTz());
 
-		ISC_TIMESTAMP ts;
+		ISC_TIMESTAMP_TZ ts;
 		if (request->req_timer &&
-			request->req_timer->getExpireTimestamp(request->getLocalTimeStamp().value(), ts))
+			request->req_timer->getExpireTimestamp(request->getTimeStampTz(), ts))
 		{
-			record.storeTimestamp(f_mon_stmt_timer, ts);
+			record.storeTimestampTz(f_mon_stmt_timer, ts);
 		}
 	}
 	else
@@ -1133,7 +1133,7 @@ void Monitoring::putCall(SnapshotData::DumpRecord& record, const jrd_req* reques
 	}
 
 	// timestamp
-	record.storeTimestamp(f_mon_call_timestamp, request->getLocalTimeStamp().value());
+	record.storeTimestampTz(f_mon_call_timestamp, request->getTimeStampTz());
 	// source line/column
 	if (request->req_src_line)
 	{

@@ -609,6 +609,21 @@ ISC_TIMESTAMP_TZ TimeZoneUtil::getCurrentTimeStampUtc()
 	return tsTz;
 }
 
+ISC_TIMESTAMP_TZ TimeZoneUtil::getCurrentTimeStampGmt()
+{
+	//// TODO: Make this function does not depend on local time.
+	TimeStamp now = TimeStamp::getCurrentTimeStamp();
+
+	ISC_TIMESTAMP_TZ tsTz;
+	tsTz.utc_timestamp = now.value();
+	tsTz.time_zone = getSystemTimeZone();
+	localTimeStampToUtc(tsTz);
+
+	tsTz.time_zone = GMT_ZONE;
+
+	return tsTz;
+}
+
 void TimeZoneUtil::validateTimeStampUtc(NoThrowTimeStamp& ts)
 {
 	if (ts.isEmpty())

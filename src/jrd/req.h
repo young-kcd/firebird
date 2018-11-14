@@ -375,6 +375,14 @@ public:
 
 		return Firebird::TimeZoneUtil::timeStampTzToTimeStamp(timeStampTz, req_attachment->att_current_timezone);
 	}
+
+	ISC_TIMESTAMP_TZ getTimeStampTz() const
+	{
+		ISC_TIMESTAMP_TZ timeStampTz;
+		timeStampTz.utc_timestamp = req_timestamp_utc.value();
+		timeStampTz.time_zone = Firebird::TimeZoneUtil::GMT_ZONE;
+		return timeStampTz;
+	}
 };
 
 // Flags for req_flags

@@ -8184,18 +8184,18 @@ unsigned int TimeoutTimer::timeToExpire() const
 	return r > 0 ? r : 0;
 }
 
-bool TimeoutTimer::getExpireTimestamp(const ISC_TIMESTAMP start, ISC_TIMESTAMP& exp) const
+bool TimeoutTimer::getExpireTimestamp(const ISC_TIMESTAMP_TZ start, ISC_TIMESTAMP_TZ& exp) const
 {
 	if (!m_started || m_expired)
 		return false;
 
-	static const SINT64 ISC_TICKS_PER_DAY = 24 * 60 * 60 * ISC_TIME_SECONDS_PRECISION;
-
-	SINT64 ticks = start.timestamp_date * ISC_TICKS_PER_DAY + start.timestamp_time;
+	SINT64 ticks = start.utc_timestamp.timestamp_date * TimeStamp::ISC_TICKS_PER_DAY +
+		start.utc_timestamp.timestamp_time;
 	ticks += m_value * ISC_TIME_SECONDS_PRECISION / 1000;
 
-	exp.timestamp_date = ticks / ISC_TICKS_PER_DAY;
-	exp.timestamp_time = ticks % ISC_TICKS_PER_DAY;
+	exp.utc_timestamp.timestamp_date = ticks / TimeStamp::ISC_TICKS_PER_DAY;
+	exp.utc_timestamp.timestamp_time = ticks % TimeStamp::ISC_TICKS_PER_DAY;
+	exp.time_zone = start.time_zone;
 
 	return true;
 }
@@ -8256,18 +8256,18 @@ unsigned int TimeoutTimer::timeToExpire() const
 	return r > 0 ? r : 0;
 }
 
-bool TimeoutTimer::getExpireTimestamp(const ISC_TIMESTAMP start, ISC_TIMESTAMP& exp) const
+bool TimeoutTimer::getExpireTimestamp(const ISC_TIMESTAMP_TZ start, ISC_TIMESTAMP_TZ& exp) const
 {
 	if (!m_start)
 		return false;
 
-	static const SINT64 ISC_TICKS_PER_DAY = 24 * 60 * 60 * ISC_TIME_SECONDS_PRECISION;
-
-	SINT64 ticks = start.timestamp_date * ISC_TICKS_PER_DAY + start.timestamp_time;
+	SINT64 ticks = start.utc_timestamp.timestamp_date * TimeStamp::ISC_TICKS_PER_DAY +
+		start.utc_timestamp.timestamp_time;
 	ticks += m_value * ISC_TIME_SECONDS_PRECISION / 1000;
 
-	exp.timestamp_date = ticks / ISC_TICKS_PER_DAY;
-	exp.timestamp_time = ticks % ISC_TICKS_PER_DAY;
+	exp.utc_timestamp.timestamp_date = ticks / TimeStamp::ISC_TICKS_PER_DAY;
+	exp.utc_timestamp.timestamp_time = ticks % TimeStamp::ISC_TICKS_PER_DAY;
+	exp.time_zone = start.time_zone;
 
 	return true;
 }

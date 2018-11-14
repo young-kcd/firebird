@@ -51,6 +51,7 @@
 #include "../dsql/StmtNodes.h"
 #include "../jrd/license.h"
 #include "../jrd/cch_proto.h"
+#include "../jrd/cvt_proto.h"
 #include "../jrd/inf_proto.h"
 #include "../common/isc_proto.h"
 #include "../jrd/opt_proto.h"
@@ -487,11 +488,21 @@ void INF_database_info(thread_db* tdbb,
 
 		case isc_info_creation_date:
 			{
-				const ISC_TIMESTAMP ts = dbb->dbb_creation_date.value();
+				const ISC_TIMESTAMP ts = TimeZoneUtil::cvtTimeStampTzToTimeStamp(
+					dbb->dbb_creation_date, &EngineCallbacks::instance);
+
 				length = INF_convert(ts.timestamp_date, p);
 				p += length;
 				length += INF_convert(ts.timestamp_time, p);
 			}
+			break;
+
+		case fb_info_creation_timestamp_tz:
+			length = INF_convert(dbb->dbb_creation_date.utc_timestamp.timestamp_date, p);
+			p += length;
+			length += INF_convert(dbb->dbb_creation_date.utc_timestamp.timestamp_time, p);
+			p += length;
+			length += INF_convert(dbb->dbb_creation_date.time_zone, p);
 			break;
 
 		case isc_info_no_reserve:
