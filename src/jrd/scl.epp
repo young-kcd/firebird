@@ -1297,7 +1297,7 @@ SecurityClass::flags_t SCL_get_object_mask(const int object_type)
 	if (!*object_name)
 		return 0;
 
-	const Jrd::SecurityClass* s_class = SCL_recompute_class(tdbb, object_name);
+	const Jrd::SecurityClass* s_class = SCL_get_class(tdbb, object_name);
 	if (s_class)
 		return s_class->scl_flags;
 
