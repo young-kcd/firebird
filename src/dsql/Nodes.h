@@ -783,7 +783,7 @@ public:
 	}
 
 	virtual bool setParameterType(DsqlCompilerScratch* /*dsqlScratch*/,
-		const dsc* /*desc*/, bool /*forceVarChar*/)
+		const dsc* /*desc*/, ValueExprNode* /*node*/, bool /*forceVarChar*/)
 	{
 		return false;
 	}

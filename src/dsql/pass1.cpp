@@ -545,7 +545,7 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, RecordSourceNode*
 			{
 				DEV_BLKCHK(field, dsql_type_fld);
 				MAKE_desc_from_field(&desc_node, field);
-				PASS1_set_parameter_type(dsqlScratch, *input, &desc_node, false);
+				PASS1_set_parameter_type(dsqlScratch, *input, &desc_node, NULL, false);
 			}
 		}
 	}
@@ -1510,10 +1510,10 @@ void PASS1_limit(DsqlCompilerScratch* dsqlScratch, NestConst<ValueExprNode> firs
 		descNode.makeInt64(0);
 
 	rse->dsqlFirst = Node::doDsqlPass(dsqlScratch, firstNode, false);
-	PASS1_set_parameter_type(dsqlScratch, rse->dsqlFirst, &descNode, false);
+	PASS1_set_parameter_type(dsqlScratch, rse->dsqlFirst, &descNode, NULL, false);
 
 	rse->dsqlSkip = Node::doDsqlPass(dsqlScratch, skipNode, false);
-	PASS1_set_parameter_type(dsqlScratch, rse->dsqlSkip, &descNode, false);
+	PASS1_set_parameter_type(dsqlScratch, rse->dsqlSkip, &descNode, NULL, false);
 }
 
 
@@ -2899,20 +2899,9 @@ static void remap_streams_to_parent_context(ExprNode* input, dsql_ctx* parent_co
 
 // Setup the datatype of a parameter.
 bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, ValueExprNode* inNode,
-	const dsc* desc, bool force_varchar)
+	const dsc* desc, ValueExprNode* node, bool force_varchar)
 {
-	return inNode && inNode->setParameterType(dsqlScratch, desc, force_varchar);
-}
-
-// Setup the datatype of a parameter.
-bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, ValueExprNode* inNode,
-	ValueExprNode* node, bool force_varchar)
-{
-	if (!inNode)
-		return false;
-
-	MAKE_desc(dsqlScratch, &node->nodDesc, node);
-	return inNode->setParameterType(dsqlScratch, &node->nodDesc, force_varchar);
+	return inNode && inNode->setParameterType(dsqlScratch, desc, node, force_varchar);
 }
 
 
