@@ -1335,7 +1335,7 @@ BoolExprNode* MissingBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	MissingBoolNode* node = FB_NEW_POOL(dsqlScratch->getPool()) MissingBoolNode(dsqlScratch->getPool(),
 		doDsqlPass(dsqlScratch, arg));
 
-	PASS1_set_parameter_type(dsqlScratch, node->arg, (dsc*) NULL, false);
+	PASS1_set_parameter_type(dsqlScratch, node->arg, NULL, false);
 
 	dsc desc;
 	MAKE_desc(dsqlScratch, &desc, node->arg);

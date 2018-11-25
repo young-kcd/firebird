@@ -2896,7 +2896,9 @@ ExecProcedureNode* ExecProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			DEV_BLKCHK(field, dsql_type_fld);
 			DEV_BLKCHK(*ptr, dsql_type_nod);
 			MAKE_desc_from_field(&desc_node, field);
-			PASS1_set_parameter_type(dsqlScratch, *ptr, &desc_node, false);
+			PASS1_set_parameter_type(dsqlScratch, *ptr,
+				[&] (dsc* desc) { *desc = desc_node; },
+				false);
 		}
 	}
 
@@ -3912,7 +3914,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 
 	fb_assert(transaction->tra_number == impure->traNumber);
 
-	if (request->req_operation == jrd_req::req_return || 
+	if (request->req_operation == jrd_req::req_return ||
 		request->req_operation == jrd_req::req_unwind)
 	{
 		if ((transaction->tra_flags & TRA_read_committed) &&
@@ -4154,7 +4156,9 @@ ExecBlockNode* ExecBlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 			newParam->type->flags |= FLD_nullable;
 			MAKE_desc_from_field(&desc_node, newParam->type);
-			PASS1_set_parameter_type(dsqlScratch, temp, &desc_node, false);
+			PASS1_set_parameter_type(dsqlScratch, temp,
+				[&] (dsc* desc) { *desc = desc_node; },
+				false);
 		} // end scope
 
 		if (param != parameters.begin())

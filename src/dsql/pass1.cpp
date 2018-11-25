@@ -558,7 +558,9 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, RecordSourceNode*
 			{
 				DEV_BLKCHK(field, dsql_type_fld);
 				MAKE_desc_from_field(&desc_node, field);
-				PASS1_set_parameter_type(dsqlScratch, *input, &desc_node, false);
+				PASS1_set_parameter_type(dsqlScratch, *input,
+					[&] (dsc* desc) { *desc = desc_node; },
+					false);
 			}
 		}
 	}
@@ -1522,10 +1524,16 @@ void PASS1_limit(DsqlCompilerScratch* dsqlScratch, NestConst<ValueExprNode> firs
 		descNode.makeInt64(0);
 
 	rse->dsqlFirst = Node::doDsqlPass(dsqlScratch, firstNode, false);
-	PASS1_set_parameter_type(dsqlScratch, rse->dsqlFirst, &descNode, false);
+
+	PASS1_set_parameter_type(dsqlScratch, rse->dsqlFirst,
+		[&] (dsc* desc) { *desc = descNode; },
+		false);
 
 	rse->dsqlSkip = Node::doDsqlPass(dsqlScratch, skipNode, false);
-	PASS1_set_parameter_type(dsqlScratch, rse->dsqlSkip, &descNode, false);
+
+	PASS1_set_parameter_type(dsqlScratch, rse->dsqlSkip,
+		[&] (dsc* desc) { *desc = descNode; },
+		false);
 }
 
 
@@ -2931,20 +2939,25 @@ static void remap_streams_to_parent_context(ExprNode* input, dsql_ctx* parent_co
 
 // Setup the datatype of a parameter.
 bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, ValueExprNode* inNode,
-	const dsc* desc, bool force_varchar)
+	std::function<void (dsc*)> makeDesc, bool forceVarchar)
 {
-	return inNode && inNode->setParameterType(dsqlScratch, desc, force_varchar);
+	return inNode && inNode->setParameterType(dsqlScratch, makeDesc, forceVarchar);
 }
 
 // Setup the datatype of a parameter.
 bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, ValueExprNode* inNode,
-	ValueExprNode* node, bool force_varchar)
+	ValueExprNode* node, bool forceVarchar)
 {
 	if (!inNode)
 		return false;
 
-	MAKE_desc(dsqlScratch, &node->nodDesc, node);
-	return inNode->setParameterType(dsqlScratch, &node->nodDesc, force_varchar);
+	auto makeDesc = [&] (dsc* desc)
+		{
+			MAKE_desc(dsqlScratch, &node->nodDesc, node);
+			*desc = node->nodDesc;
+		};
+
+	return inNode->setParameterType(dsqlScratch, makeDesc, forceVarchar);
 }
 
 

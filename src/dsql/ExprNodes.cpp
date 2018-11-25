@@ -493,10 +493,10 @@ void ArithmeticNode::setParameterName(dsql_par* parameter) const
 }
 
 bool ArithmeticNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	const dsc* desc, bool forceVarChar)
+	std::function<void (dsc*)> makeDesc, bool forceVarChar)
 {
-	return PASS1_set_parameter_type(dsqlScratch, arg1, desc, forceVarChar) |
-		PASS1_set_parameter_type(dsqlScratch, arg2, desc, forceVarChar);
+	return PASS1_set_parameter_type(dsqlScratch, arg1, makeDesc, forceVarChar) |
+		PASS1_set_parameter_type(dsqlScratch, arg2, makeDesc, forceVarChar);
 }
 
 void ArithmeticNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -3071,7 +3071,7 @@ void CastNode::setParameterName(dsql_par* parameter) const
 }
 
 bool CastNode::setParameterType(DsqlCompilerScratch* /*dsqlScratch*/,
-	const dsc* /*desc*/, bool /*forceVarChar*/)
+	std::function<void (dsc*)> /*makeDesc*/, bool /*forceVarChar*/)
 {
 	// ASF: Attention: CastNode::dsqlPass calls us with NULL node.
 
@@ -3298,8 +3298,13 @@ ValueExprNode* CoalesceNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	CoalesceNode* node = FB_NEW_POOL(dsqlScratch->getPool()) CoalesceNode(
 		dsqlScratch->getPool(), doDsqlPass(dsqlScratch, args));
+
 	node->make(dsqlScratch, &node->nodDesc);	// Set descriptor for output node.
-	node->setParameterType(dsqlScratch, &node->nodDesc, false);
+
+	node->setParameterType(dsqlScratch,
+		[&] (dsc* desc) { *desc = node->nodDesc; },
+		false);
+
 	return node;
 }
 
@@ -3309,12 +3314,12 @@ void CoalesceNode::setParameterName(dsql_par* parameter) const
 }
 
 bool CoalesceNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	const dsc* desc, bool /*forceVarChar*/)
+	std::function<void (dsc*)> makeDesc, bool /*forceVarChar*/)
 {
 	bool ret = false;
 
 	for (auto& item : args->items)
-		ret |= PASS1_set_parameter_type(dsqlScratch, item, desc, false);
+		ret |= PASS1_set_parameter_type(dsqlScratch, item, makeDesc, false);
 
 	return ret;
 }
@@ -3510,10 +3515,10 @@ void ConcatenateNode::setParameterName(dsql_par* parameter) const
 }
 
 bool ConcatenateNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	const dsc* desc, bool forceVarChar)
+	std::function<void (dsc*)> makeDesc, bool forceVarChar)
 {
-	return PASS1_set_parameter_type(dsqlScratch, arg1, desc, forceVarChar) |
-		PASS1_set_parameter_type(dsqlScratch, arg2, desc, forceVarChar);
+	return PASS1_set_parameter_type(dsqlScratch, arg1, makeDesc, forceVarChar) |
+		PASS1_set_parameter_type(dsqlScratch, arg2, makeDesc, forceVarChar);
 }
 
 void ConcatenateNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -4270,8 +4275,12 @@ ValueExprNode* DecodeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	DecodeNode* node = FB_NEW_POOL(dsqlScratch->getPool()) DecodeNode(dsqlScratch->getPool(),
 		doDsqlPass(dsqlScratch, test), doDsqlPass(dsqlScratch, conditions), doDsqlPass(dsqlScratch, values));
 	node->label = label;
+
 	node->make(dsqlScratch, &node->nodDesc);	// Set descriptor for output node.
-	node->setParameterType(dsqlScratch, &node->nodDesc, false);
+
+	node->setParameterType(dsqlScratch,
+		[&] (dsc* desc) { *desc = node->nodDesc; },
+		false);
 
 	// Workaround for DECODE/CASE supporting only 255 items - see CORE-5366.
 
@@ -4335,7 +4344,7 @@ void DecodeNode::setParameterName(dsql_par* parameter) const
 }
 
 bool DecodeNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	const dsc* desc, bool /*forceVarChar*/)
+	std::function<void (dsc*)> makeDesc, bool /*forceVarChar*/)
 {
 	// Check if there is a parameter in the test/conditions.
 	bool setParameters = nodeIs<ParameterNode>(test);
@@ -4376,11 +4385,15 @@ bool DecodeNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 		if (!node1Desc.isUnknown())
 		{
 			// Set parameter describe information.
-			PASS1_set_parameter_type(dsqlScratch, test, &node1Desc, false);
+			PASS1_set_parameter_type(dsqlScratch, test,
+				[&] (dsc* desc) { *desc = node1Desc; },
+				false);
 
 			for (auto& condition : conditions->items)
 			{
-				PASS1_set_parameter_type(dsqlScratch, condition, &node1Desc, false);
+				PASS1_set_parameter_type(dsqlScratch, condition,
+					[&] (dsc* desc) { *desc = node1Desc; },
+					false);
 			}
 		}
 	}
@@ -4388,7 +4401,7 @@ bool DecodeNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 	bool ret = false;
 
 	for (auto& value : values->items)
-		ret |= PASS1_set_parameter_type(dsqlScratch, value, desc, false);
+		ret |= PASS1_set_parameter_type(dsqlScratch, value, makeDesc, false);
 
 	return ret;
 }
@@ -4600,7 +4613,8 @@ void DefaultNode::setParameterName(dsql_par* parameter) const
 	parameter->par_name = parameter->par_alias = "DEFAULT";
 }
 
-bool DefaultNode::setParameterType(DsqlCompilerScratch* /*dsqlScratch*/, const dsc* /*desc*/, bool /*forceVarChar*/)
+bool DefaultNode::setParameterType(DsqlCompilerScratch* /*dsqlScratch*/,
+	std::function<void (dsc*)> /*makeDesc*/, bool /*forceVarChar*/)
 {
 	return false;
 }
@@ -4974,9 +4988,9 @@ void ExtractNode::setParameterName(dsql_par* parameter) const
 }
 
 bool ExtractNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	const dsc* desc, bool forceVarChar)
+	std::function<void (dsc*)> makeDesc, bool forceVarChar)
 {
-	return PASS1_set_parameter_type(dsqlScratch, arg, desc, forceVarChar);
+	return PASS1_set_parameter_type(dsqlScratch, arg, makeDesc, forceVarChar);
 }
 
 void ExtractNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -6490,9 +6504,9 @@ void GenIdNode::setParameterName(dsql_par* parameter) const
 }
 
 bool GenIdNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	const dsc* desc, bool forceVarChar)
+	std::function<void (dsc*)> makeDesc, bool forceVarChar)
 {
-	return PASS1_set_parameter_type(dsqlScratch, arg, desc, forceVarChar);
+	return PASS1_set_parameter_type(dsqlScratch, arg, makeDesc, forceVarChar);
 }
 
 void GenIdNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -7250,7 +7264,7 @@ void LiteralNode::setParameterName(dsql_par* parameter) const
 }
 
 bool LiteralNode::setParameterType(DsqlCompilerScratch* /*dsqlScratch*/,
-	const dsc* /*desc*/, bool /*forceVarChar*/)
+	std::function<void (dsc*)> /*makeDesc*/, bool /*forceVarChar*/)
 {
 	return false;
 }
@@ -7899,9 +7913,9 @@ void NegateNode::setParameterName(dsql_par* parameter) const
 }
 
 bool NegateNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	const dsc* desc, bool forceVarChar)
+	std::function<void (dsc*)> makeDesc, bool forceVarChar)
 {
-	return PASS1_set_parameter_type(dsqlScratch, arg, desc, forceVarChar);
+	return PASS1_set_parameter_type(dsqlScratch, arg, makeDesc, forceVarChar);
 }
 
 void NegateNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -8664,17 +8678,17 @@ ValueExprNode* ParameterNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 }
 
 bool ParameterNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	const dsc* desc, bool forceVarChar)
+	std::function<void (dsc*)> makeDesc, bool forceVarChar)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
 	const dsc oldDesc = dsqlParameter->par_desc;
 
-	if (!desc)
+	if (!makeDesc)
 		dsqlParameter->par_desc.makeNullString();
 	else
 	{
-		dsqlParameter->par_desc = *desc;
+		makeDesc(&dsqlParameter->par_desc);
 
 		if (tdbb->getCharSet() != CS_NONE && tdbb->getCharSet() != CS_BINARY)
 		{
@@ -9727,9 +9741,9 @@ void StrCaseNode::setParameterName(dsql_par* parameter) const
 }
 
 bool StrCaseNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	const dsc* desc, bool forceVarChar)
+	std::function<void (dsc*)> makeDesc, bool forceVarChar)
 {
-	return PASS1_set_parameter_type(dsqlScratch, arg, desc, forceVarChar);
+	return PASS1_set_parameter_type(dsqlScratch, arg, makeDesc, forceVarChar);
 }
 
 void StrCaseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -9945,7 +9959,7 @@ void StrLenNode::setParameterName(dsql_par* parameter) const
 }
 
 bool StrLenNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	const dsc* desc, bool forceVarChar)
+	std::function<void (dsc*)> makeDesc, bool forceVarChar)
 {
 	return false;
 }
@@ -10696,11 +10710,11 @@ void SubstringNode::setParameterName(dsql_par* parameter) const
 }
 
 bool SubstringNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	const dsc* desc, bool forceVarChar)
+	std::function<void (dsc*)> makeDesc, bool forceVarChar)
 {
-	return PASS1_set_parameter_type(dsqlScratch, expr, desc, forceVarChar) |
-		PASS1_set_parameter_type(dsqlScratch, start, desc, forceVarChar) |
-		PASS1_set_parameter_type(dsqlScratch, length, desc, forceVarChar);
+	return PASS1_set_parameter_type(dsqlScratch, expr, makeDesc, forceVarChar) |
+		PASS1_set_parameter_type(dsqlScratch, start, makeDesc, forceVarChar) |
+		PASS1_set_parameter_type(dsqlScratch, length, makeDesc, forceVarChar);
 }
 
 void SubstringNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -11020,11 +11034,11 @@ void SubstringSimilarNode::setParameterName(dsql_par* parameter) const
 }
 
 bool SubstringSimilarNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	const dsc* desc, bool forceVarChar)
+	std::function<void (dsc*)> makeDesc, bool forceVarChar)
 {
-	return PASS1_set_parameter_type(dsqlScratch, expr, desc, forceVarChar) |
-		PASS1_set_parameter_type(dsqlScratch, pattern, desc, forceVarChar) |
-		PASS1_set_parameter_type(dsqlScratch, escape, desc, forceVarChar);
+	return PASS1_set_parameter_type(dsqlScratch, expr, makeDesc, forceVarChar) |
+		PASS1_set_parameter_type(dsqlScratch, pattern, makeDesc, forceVarChar) |
+		PASS1_set_parameter_type(dsqlScratch, escape, makeDesc, forceVarChar);
 }
 
 void SubstringSimilarNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -11402,7 +11416,9 @@ ValueExprNode* SysFuncCallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		for (unsigned int i = 0; i < inList->items.getCount(); ++i)
 		{
 			ValueExprNode* p = inList->items[i];
-			PASS1_set_parameter_type(dsqlScratch, p, &p->nodDesc, false);
+			PASS1_set_parameter_type(dsqlScratch, p,
+				[&] (dsc* desc) { *desc = p->nodDesc; },
+				false);
 		}
 	}
 
@@ -11466,10 +11482,10 @@ void TrimNode::setParameterName(dsql_par* parameter) const
 }
 
 bool TrimNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	const dsc* desc, bool forceVarChar)
+	std::function<void (dsc*)> makeDesc, bool forceVarChar)
 {
-	return PASS1_set_parameter_type(dsqlScratch, value, desc, forceVarChar) |
-		PASS1_set_parameter_type(dsqlScratch, trimChars, desc, forceVarChar);
+	return PASS1_set_parameter_type(dsqlScratch, value, makeDesc, forceVarChar) |
+		PASS1_set_parameter_type(dsqlScratch, trimChars, makeDesc, forceVarChar);
 }
 
 void TrimNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -12254,7 +12270,11 @@ ValueExprNode* UdfCallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	for (auto& arg : node->args->items)
 	{
 		if (pos < node->dsqlFunction->udf_arguments.getCount())
-			PASS1_set_parameter_type(dsqlScratch, arg, &node->dsqlFunction->udf_arguments[pos], false);
+		{
+			PASS1_set_parameter_type(dsqlScratch, arg,
+				[&] (dsc* desc) { *desc = node->dsqlFunction->udf_arguments[pos]; },
+				false);
+		}
 		else
 		{
 			// We should complain here in the future! The parameter is
@@ -12459,10 +12479,10 @@ void ValueIfNode::setParameterName(dsql_par* parameter) const
 }
 
 bool ValueIfNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	const dsc* desc, bool forceVarChar)
+	std::function<void (dsc*)> makeDesc, bool forceVarChar)
 {
-	return PASS1_set_parameter_type(dsqlScratch, trueValue, desc, forceVarChar) |
-		PASS1_set_parameter_type(dsqlScratch, falseValue, desc, forceVarChar);
+	return PASS1_set_parameter_type(dsqlScratch, trueValue, makeDesc, forceVarChar) |
+		PASS1_set_parameter_type(dsqlScratch, falseValue, makeDesc, forceVarChar);
 }
 
 void ValueIfNode::genBlr(DsqlCompilerScratch* dsqlScratch)

@@ -28,6 +28,7 @@
 #include "../dsql/Visitors.h"
 #include "../common/classes/array.h"
 #include "../common/classes/NestConst.h"
+#include <functional>
 
 namespace Jrd {
 
@@ -821,7 +822,7 @@ public:
 	}
 
 	virtual bool setParameterType(DsqlCompilerScratch* /*dsqlScratch*/,
-		const dsc* /*desc*/, bool /*forceVarChar*/)
+		std::function<void (dsc*)> /*makeDesc*/, bool /*forceVarChar*/)
 	{
 		return false;
 	}
