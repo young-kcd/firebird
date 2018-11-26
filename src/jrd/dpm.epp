@@ -365,6 +365,10 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 #endif
 
 	record_param temp = *org_rpb;
+
+	// This function is currently called only by VIO_erase and new_rpb does not have a record.
+	fb_assert(new_rpb->rpb_length == 0);
+
 	const Compressor dcc(*tdbb->getDefaultPool(), new_rpb->rpb_length, new_rpb->rpb_address);
 	const ULONG size = (ULONG) dcc.getPackedLength();
 
@@ -2302,6 +2306,7 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack, const jrd
 	CCH_tra_precedence(tdbb, &rpb->getWindow(tdbb), rpb->rpb_transaction_nr);
 	CCH_MARK(tdbb, &rpb->getWindow(tdbb));
 	data_page* page = (data_page*) rpb->getWindow(tdbb).win_buffer;
+
 	const Compressor dcc(*tdbb->getDefaultPool(), rpb->rpb_length, rpb->rpb_address);
 	const ULONG size = (ULONG) dcc.getPackedLength();
 
@@ -3723,6 +3728,7 @@ static void store_big_record(thread_db* tdbb,
 
 	// What's left fits on a page.  Luckily, we don't have to store it ourselves.
 
+	// rpb is already converted to UTC
 	const Compressor dcc(*tdbb->getDefaultPool(), in - rpb->rpb_address, rpb->rpb_address);
 	size = (ULONG) dcc.getPackedLength();
 	rhdf* header = (rhdf*) locate_space(tdbb, rpb, (SSHORT) (RHDF_SIZE + size), stack, NULL, type);

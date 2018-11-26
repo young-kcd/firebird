@@ -604,6 +604,10 @@ using namespace Firebird;
 %token <metaNamePtr> IDLE
 %token <metaNamePtr> INVOKER
 %token <metaNamePtr> LAST_DAY
+%token <metaNamePtr> LEGACY
+%token <metaNamePtr> LOCAL
+%token <metaNamePtr> LOCALTIME
+%token <metaNamePtr> LOCALTIMESTAMP
 %token <metaNamePtr> MESSAGE
 %token <metaNamePtr> NATIVE
 %token <metaNamePtr> NORMALIZE_DECFLOAT
@@ -624,11 +628,15 @@ using namespace Firebird;
 %token <metaNamePtr> SQL
 %token <metaNamePtr> SYSTEM
 %token <metaNamePtr> TIES
+%token <metaNamePtr> TIMEZONE_HOUR
+%token <metaNamePtr> TIMEZONE_MINUTE
 %token <metaNamePtr> TOTALORDER
 %token <metaNamePtr> TRAPS
 %token <metaNamePtr> UNBOUNDED
 %token <metaNamePtr> VARBINARY
 %token <metaNamePtr> WINDOW
+%token <metaNamePtr> WITHOUT
+%token <metaNamePtr> ZONE
 %token <metaNamePtr> CONSISTENCY
 %token <metaNamePtr> RDB_GET_TRANSACTION_CN
 
@@ -651,6 +659,7 @@ using namespace Firebird;
 %left	UMINUS UPLUS
 %left	CONCATENATE
 %left	COLLATE
+%left	AT
 
 // Fix the dangling IF-THEN-ELSE problem
 %nonassoc THEN
@@ -784,9 +793,9 @@ using namespace Firebird;
 	Jrd::SetRoleNode* setRoleNode;
 	Jrd::SetSessionNode* setSessionNode;
 	Jrd::CreateAlterRoleNode* createAlterRoleNode;
-	Jrd::SetRoundNode* setRoundNode;
-	Jrd::SetTrapsNode* setTrapsNode;
-	Jrd::SetBindNode* setBindNode;
+	Jrd::SetDecFloatRoundNode* setDecFloatRoundNode;
+	Jrd::SetDecFloatTrapsNode* setDecFloatTrapsNode;
+	Jrd::SetDecFloatBindNode* setDecFloatBindNode;
 	Jrd::SessionResetNode* sessionResetNode;
 }
 
@@ -845,12 +854,14 @@ tra_statement
 
 %type <mngNode> mng_statement
 mng_statement
-	: set_round									{ $$ = $1; }
-	| set_traps									{ $$ = $1; }
-	| set_bind									{ $$ = $1; }
+	: set_decfloat_round						{ $$ = $1; }
+	| set_decfloat_traps						{ $$ = $1; }
+	| set_decfloat_bind							{ $$ = $1; }
 	| session_statement							{ $$ = $1; }
 	| set_role									{ $$ = $1; }
 	| session_reset								{ $$ = $1; }
+	| set_time_zone								{ $$ = $1; }
+	| set_time_zone_bind						{ $$ = $1; }
 	;
 
 
@@ -4173,8 +4184,14 @@ keyword_or_column
 	| VAR_SAMP
 	| VAR_POP
 	| DECFLOAT				// added in FB 4.0
+	| LOCAL
+	| LOCALTIME
+	| LOCALTIMESTAMP
+	| TIMEZONE_HOUR
+	| TIMEZONE_MINUTE
 	| UNBOUNDED
 	| WINDOW
+	| WITHOUT
 	;
 
 col_opt
@@ -4622,7 +4639,7 @@ non_charset_simple_type
 				$$->length = sizeof(ULONG);
 			}
 		}
-	| TIME
+	| TIME without_time_zone_opt
 		{
 			$$ = newNode<dsql_fld>();
 
@@ -4641,11 +4658,36 @@ non_charset_simple_type
 			$$->dtype = dtype_sql_time;
 			$$->length = sizeof(SLONG);
 		}
-	| TIMESTAMP
+	| TIME WITH TIME ZONE
+		{
+			$$ = newNode<dsql_fld>();
+
+			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) <<
+																		  Arg::Str("TIME"));
+			}
+			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
+																		  Arg::Str("TIME"));
+			}
+			$$->dtype = dtype_sql_time_tz;
+			$$->length = sizeof(ISC_TIME_TZ);
+		}
+	| TIMESTAMP without_time_zone_opt
 		{
 			$$ = newNode<dsql_fld>();
 			$$->dtype = dtype_timestamp;
 			$$->length = sizeof(GDS_TIMESTAMP);
+		}
+	| TIMESTAMP WITH TIME ZONE
+		{
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_timestamp_tz;
+			$$->length = sizeof(ISC_TIMESTAMP_TZ);
 		}
 	| BOOLEAN
 		{
@@ -4658,6 +4700,11 @@ non_charset_simple_type
 integer_keyword
 	: INTEGER
 	| INT
+	;
+
+without_time_zone_opt
+	: // nothing
+	| WITHOUT TIME ZONE
 	;
 
 
@@ -5159,66 +5206,66 @@ set_role
 		{ $$ = newNode<SetRoleNode>(); }
 	;
 
-%type <setRoundNode> set_round
-set_round
+%type <setDecFloatRoundNode> set_decfloat_round
+set_decfloat_round
 	: SET DECFLOAT ROUND valid_symbol_name
-		{ $$ = newNode<SetRoundNode>($4); }
+		{ $$ = newNode<SetDecFloatRoundNode>($4); }
 	;
 
-%type <setTrapsNode> set_traps
-set_traps
+%type <setDecFloatTrapsNode> set_decfloat_traps
+set_decfloat_traps
 	: SET DECFLOAT TRAPS TO
-			{ $$ = newNode<SetTrapsNode>(); }
-		traps_list_opt($5)
+			{ $$ = newNode<SetDecFloatTrapsNode>(); }
+		decfloat_traps_list_opt($5)
 			{ $$ = $5; }
 	;
 
-%type <setBindNode> set_bind
-set_bind
+%type <setDecFloatBindNode> set_decfloat_bind
+set_decfloat_bind
 	: SET DECFLOAT BIND
-			{ $$ = newNode<SetBindNode>(); }
+			{ $$ = newNode<SetDecFloatBindNode>(); }
 		bind_clause($4)
 			{ $$ = $4; }
 	;
 
-%type traps_list_opt(<setTrapsNode>)
-traps_list_opt($setTrapsNode)
+%type decfloat_traps_list_opt(<setDecFloatTrapsNode>)
+decfloat_traps_list_opt($setDecFloatTrapsNode)
 	: // nothing
-	| traps_list($setTrapsNode)
+	| decfloat_traps_list($setDecFloatTrapsNode)
 	;
 
-%type traps_list(<setTrapsNode>)
-traps_list($setTrapsNode)
-	: trap($setTrapsNode)
-	| traps_list ',' trap($setTrapsNode)
+%type decfloat_traps_list(<setDecFloatTrapsNode>)
+decfloat_traps_list($setDecFloatTrapsNode)
+	: decfloat_trap($setDecFloatTrapsNode)
+	| decfloat_traps_list ',' decfloat_trap($setDecFloatTrapsNode)
 	;
 
-%type trap(<setTrapsNode>)
-trap($setTrapsNode)
+%type decfloat_trap(<setDecFloatTrapsNode>)
+decfloat_trap($setDecFloatTrapsNode)
 	: valid_symbol_name
-		{ $setTrapsNode->trap($1); }
+		{ $setDecFloatTrapsNode->trap($1); }
 	;
 
-%type bind_clause(<setBindNode>)
-bind_clause($setBindNode)
+%type bind_clause(<setDecFloatBindNode>)
+bind_clause($setDecFloatBindNode)
 	: NATIVE
 		// do nothing
 	| character_keyword
-		{ $setBindNode->bind.bind = DecimalBinding::DEC_TEXT; }
+		{ $setDecFloatBindNode->bind.bind = DecimalBinding::DEC_TEXT; }
 	| DOUBLE PRECISION
-		{ $setBindNode->bind.bind = DecimalBinding::DEC_DOUBLE; }
-	| BIGINT scale_clause($setBindNode)
-		{ $setBindNode->bind.bind = DecimalBinding::DEC_NUMERIC; }
+		{ $setDecFloatBindNode->bind.bind = DecimalBinding::DEC_DOUBLE; }
+	| BIGINT decfloat_scale_clause($setDecFloatBindNode)
+		{ $setDecFloatBindNode->bind.bind = DecimalBinding::DEC_NUMERIC; }
 	;
 
-%type scale_clause(<setBindNode>)
-scale_clause($setBindNode)
+%type decfloat_scale_clause(<setDecFloatBindNode>)
+decfloat_scale_clause($setDecFloatBindNode)
 	: // nothing
 	| ',' signed_long_integer
 		{
 			if ($2 > 18 || $2 < 0)
 				yyabandon(YYPOSNARG(2), -842, isc_scale_nogt);	// Scale must be between 0 and precision
-			$setBindNode->bind.numScale = -$2;
+			$setDecFloatBindNode->bind.numScale = -$2;
 		}
 
 %type <setSessionNode> session_statement
@@ -5244,6 +5291,28 @@ timepart_ses_stmt_tout
 	| MINUTE		{ $$ = blr_extract_minute; }
 	| SECOND		{ $$ = blr_extract_second; }
 	| MILLISECOND	{ $$ = blr_extract_millisecond; }
+	;
+
+%type <mngNode> set_time_zone
+set_time_zone
+	: SET TIME ZONE set_time_zone_option	{ $$ = $4; }
+	;
+
+%type <mngNode> set_time_zone_option
+set_time_zone_option
+	: sql_string	{ $$ = newNode<SetTimeZoneNode>($1->getString()); }
+	| LOCAL			{ $$ = newNode<SetTimeZoneNode>(); }
+	;
+
+%type <mngNode> set_time_zone_bind
+set_time_zone_bind
+	: SET TIME ZONE BIND set_time_zone_bind_option	{ $$ = $5; }
+	;
+
+%type <mngNode> set_time_zone_bind_option
+set_time_zone_bind_option
+	: LEGACY	{ $$ = newNode<SetTimeZoneBindNode>(TimeZoneUtil::BIND_LEGACY); }
+	| NATIVE	{ $$ = newNode<SetTimeZoneBindNode>(TimeZoneUtil::BIND_NATIVE); }
 	;
 
 %type tran_option_list_opt(<setTransactionNode>)
@@ -7099,7 +7168,7 @@ value_special
 %type <valueExprNode> value_primary
 value_primary
 	: nonparenthesized_value
-	| '(' value_primary ')'	{ $$ = $2; }
+	| '(' value_primary ')'							{ $$ = $2; }
 	;
 
 // Matches definition of <simple value specification> in SQL standard
@@ -7137,6 +7206,10 @@ nonparenthesized_value
 		{ $$ = newNode<ConcatenateNode>($1, $3); }
 	| value_special COLLATE symbol_collation_name
 		{ $$ = newNode<CollateNode>($1, *$3); }
+	| value_special AT LOCAL %prec AT
+		{ $$ = newNode<AtNode>($1, nullptr); }
+	| value_special AT TIME ZONE value_special %prec AT
+		{ $$ = newNode<AtNode>($1, $5); }
 	| value_special '-' value_special
 		{ $$ = newNode<ArithmeticNode>(blr_subtract, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3); }
 	| value_special '*' value_special
@@ -7189,6 +7262,24 @@ datetime_value_expression
 
 			$$ = newNode<CurrentDateNode>();
 		}
+	| LOCALTIME time_precision_opt
+		{
+			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) <<
+						  												  Arg::Str("TIME"));
+			}
+
+			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
+						  												  Arg::Str("TIME"));
+			}
+
+			$$ = newNode<LocalTimeNode>($2);
+		}
 	| CURRENT_TIME time_precision_opt
 		{
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
@@ -7207,6 +7298,8 @@ datetime_value_expression
 
 			$$ = newNode<CurrentTimeNode>($2);
 		}
+	| LOCALTIMESTAMP timestamp_precision_opt
+		{ $$ = newNode<LocalTimeStampNode>($2); }
 	| CURRENT_TIMESTAMP timestamp_precision_opt
 		{ $$ = newNode<CurrentTimeStampNode>($2); }
 	;
@@ -8153,6 +8246,8 @@ timestamp_part
 	| MINUTE		{ $$ = blr_extract_minute; }
 	| SECOND		{ $$ = blr_extract_second; }
 	| MILLISECOND	{ $$ = blr_extract_millisecond; }
+	| TIMEZONE_HOUR	{ $$ = blr_extract_timezone_hour; }
+	| TIMEZONE_MINUTE	{ $$ = blr_extract_timezone_minute; }
 	| WEEK			{ $$ = blr_extract_week; }
 	| WEEKDAY		{ $$ = blr_extract_weekday; }
 	| YEARDAY		{ $$ = blr_extract_yearday; }
@@ -8551,7 +8646,10 @@ non_reserved_word
 	| INCREMENT
 	| TRUSTED
 	| BIND					// added in FB 4.0
+	| CLEAR
 	| COMPARE_DECFLOAT
+	| CONNECTIONS
+	| CONSISTENCY
 	| CUME_DIST
 	| DEFINER
 	| EXCLUDE
@@ -8560,13 +8658,17 @@ non_reserved_word
 	| IDLE
 	| INVOKER
 	| LAST_DAY
+	| LEGACY
+	| LIFETIME
 	| MESSAGE
 	| NATIVE
 	| NORMALIZE_DECFLOAT
 	| NTILE
+	| OLDEST
 	| OTHERS
 	| OVERRIDING
 	| PERCENT_RANK
+	| POOL
 	| PRECEDING
 	| PRIVILEGE
 	| QUANTIZE
@@ -8579,12 +8681,7 @@ non_reserved_word
 	| TIES
 	| TOTALORDER
 	| TRAPS
-	| CONNECTIONS		// external connections pool management
-	| POOL
-	| LIFETIME
-	| CLEAR
-	| OLDEST
-	| CONSISTENCY
+	| ZONE
 	;
 
 %%

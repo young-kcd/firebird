@@ -417,3 +417,11 @@ NAME("MON$STATEMENT_TIMER", nam_stmt_timer)
 
 NAME("MON$WIRE_COMPRESSED", nam_wire_compressed)
 NAME("MON$WIRE_ENCRYPTED", nam_wire_encrypted)
+
+NAME("RDB$TIME_ZONES", nam_time_zones)
+NAME("RDB$TIME_ZONE_ID", nam_tz_id)
+NAME("RDB$TIME_ZONE_NAME", nam_tz_name)
+
+NAME("RDB$TIME_ZONE_OFFSET", nam_tz_offset)
+NAME("RDB$TIMESTAMP_TZ", nam_timestamp_tz)
+NAME("RDB$DBTZ_VERSION", nam_tz_db_version)

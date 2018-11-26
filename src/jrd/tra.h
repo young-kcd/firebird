@@ -62,6 +62,7 @@ class ArrayField;
 class Attachment;
 class DeferredWork;
 class DeferredJob;
+class TimeZoneSnapshot;
 class UserManagement;
 class MappingList;
 class DbCreatorsList;
@@ -187,6 +188,7 @@ public:
 		tra_blob_space(NULL),
 		tra_undo_space(NULL),
 		tra_undo_records(*p),
+		tra_timezone_snapshot(NULL),
 		tra_user_management(NULL),
 		tra_sec_db_context(NULL),
 		tra_mapping_list(NULL),
@@ -301,6 +303,7 @@ private:
 	TempSpace* tra_undo_space;	// undo log storage
 
 	UndoRecordList tra_undo_records;	// temporary records used for the undo purposes
+	TimeZoneSnapshot* tra_timezone_snapshot;
 	UserManagement* tra_user_management;
 	SecDbContext* tra_sec_db_context;
 	MappingList* tra_mapping_list;
@@ -368,6 +371,7 @@ public:
 	void linkToAttachment(Attachment* attachment);
 	static void tra_abort(const char* reason);
 
+	TimeZoneSnapshot* getTimeZoneSnapshot(thread_db* tdbb);
 	UserManagement* getUserManagement();
 	SecDbContext* getSecDbContext();
 	SecDbContext* setSecDbContext(Firebird::IAttachment* att, Firebird::ITransaction* tra);

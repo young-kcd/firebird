@@ -300,12 +300,18 @@ Firebird 4.0
 
     BINARY
     DECFLOAT
+    LOCAL
+    LOCALTIME
+    LOCALTIMESTAMP
     RDB$ERROR *
     RDB$ROLE_IN_USE *
     RDB$SYSTEM_PRIVILEGE *
+    TIMEZONE_HOUR
+    TIMEZONE_MINUTE
     UNBOUNDED (2)
     VARBINARY
     WINDOW
+    WITHOUT
 
   Added as non-reserved words:
 
@@ -319,6 +325,7 @@ Firebird 4.0
     IDLE *
     INVOKER
     LAST_DAY *
+    LEGACY *
     MESSAGE *
     NATIVE *
     NORMALIZE_DECFLOAT *
@@ -330,7 +337,7 @@ Firebird 4.0
     PRIVILEGE *
     QUANTIZE *
     RANGE (1)
-	RESET *
+    RESET *
     SECURITY
     SESSION
     SQL (1)
@@ -338,3 +345,4 @@ Firebird 4.0
     TIES
     TOTALORDER *
     TRAPS *
+    ZONE

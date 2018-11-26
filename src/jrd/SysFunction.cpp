@@ -29,6 +29,7 @@
  */
 
 #include "firebird.h"
+#include "../common/TimeZoneUtil.h"
 #include "../common/classes/VaryStr.h"
 #include "../common/classes/Hash.h"
 #include "../jrd/SysFunction.h"
@@ -986,8 +987,13 @@ void makeFirstLastDayResult(DataTypeUtilBase*, const SysFunction*, dsc* result,
 
 	result->makeDate();
 
-	if (argsCount >= 2 && args[1]->dsc_dtype == dtype_timestamp)
-		result->makeTimestamp();
+	if (argsCount >= 2)
+	{
+		if (args[1]->dsc_dtype == dtype_timestamp)
+			result->makeTimestamp();
+		else if (args[1]->dsc_dtype == dtype_timestamp_tz)
+			result->makeTimestampTz();
+	}
 
 	result->setNullable(isNullable);
 }
@@ -1938,6 +1944,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	switch (valueDsc->dsc_dtype)
 	{
 		case dtype_sql_time:
+		case dtype_sql_time_tz:
 			timestamp.value().timestamp_time = *(GDS_TIME*) valueDsc->dsc_address;
 			timestamp.value().timestamp_date =
 				(TimeStamp::MAX_DATE - TimeStamp::MIN_DATE) / 2 + TimeStamp::MIN_DATE;
@@ -1968,6 +1975,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			break;
 
 		case dtype_timestamp:
+		case dtype_timestamp_tz:
 			timestamp.value() = *(GDS_TIMESTAMP*) valueDsc->dsc_address;
 			break;
 
@@ -2097,6 +2105,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	switch (impure->vlu_desc.dsc_dtype)
 	{
 		case dtype_sql_time:
+		case dtype_sql_time_tz:
 			impure->vlu_misc.vlu_sql_time = timestamp.value().timestamp_time;
 			break;
 
@@ -2105,6 +2114,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			break;
 
 		case dtype_timestamp:
+		case dtype_timestamp_tz:
 			impure->vlu_misc.vlu_timestamp = timestamp.value();
 			break;
 
@@ -2142,17 +2152,25 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 	switch (value1Dsc->dsc_dtype)
 	{
 		case dtype_sql_time:
-			timestamp1.value().timestamp_time = *(GDS_TIME *) value1Dsc->dsc_address;
+		case dtype_sql_time_tz:
+			timestamp1.value().timestamp_time = *(GDS_TIME*) value1Dsc->dsc_address;
 			timestamp1.value().timestamp_date = 0;
+
+			if (value1Dsc->dsc_dtype == dtype_sql_time && value2Dsc->isDateTimeTz())
+				TimeZoneUtil::localTimeToUtc(timestamp1.value().timestamp_time, &EngineCallbacks::instance);
 			break;
 
 		case dtype_sql_date:
-			timestamp1.value().timestamp_date = *(GDS_DATE *) value1Dsc->dsc_address;
+			timestamp1.value().timestamp_date = *(GDS_DATE*) value1Dsc->dsc_address;
 			timestamp1.value().timestamp_time = 0;
 			break;
 
 		case dtype_timestamp:
-			timestamp1.value() = *(GDS_TIMESTAMP *) value1Dsc->dsc_address;
+		case dtype_timestamp_tz:
+			timestamp1.value() = *(GDS_TIMESTAMP*) value1Dsc->dsc_address;
+
+			if (value1Dsc->dsc_dtype == dtype_timestamp && value2Dsc->isDateTimeTz())
+				TimeZoneUtil::localTimeStampToUtc(timestamp1.value(), &EngineCallbacks::instance);
 			break;
 
 		default:
@@ -2167,17 +2185,25 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 	switch (value2Dsc->dsc_dtype)
 	{
 		case dtype_sql_time:
-			timestamp2.value().timestamp_time = *(GDS_TIME *) value2Dsc->dsc_address;
+		case dtype_sql_time_tz:
+			timestamp2.value().timestamp_time = *(GDS_TIME*) value2Dsc->dsc_address;
 			timestamp2.value().timestamp_date = 0;
+
+			if (value2Dsc->dsc_dtype == dtype_sql_time && value1Dsc->isDateTimeTz())
+				TimeZoneUtil::localTimeToUtc(timestamp2.value().timestamp_time, &EngineCallbacks::instance);
 			break;
 
 		case dtype_sql_date:
-			timestamp2.value().timestamp_date = *(GDS_DATE *) value2Dsc->dsc_address;
+			timestamp2.value().timestamp_date = *(GDS_DATE*) value2Dsc->dsc_address;
 			timestamp2.value().timestamp_time = 0;
 			break;
 
 		case dtype_timestamp:
-			timestamp2.value() = *(GDS_TIMESTAMP *) value2Dsc->dsc_address;
+		case dtype_timestamp_tz:
+			timestamp2.value() = *(GDS_TIMESTAMP*) value2Dsc->dsc_address;
+
+			if (value2Dsc->dsc_dtype == dtype_timestamp && value1Dsc->isDateTimeTz())
+				TimeZoneUtil::localTimeStampToUtc(timestamp2.value(), &EngineCallbacks::instance);
 			break;
 
 		default:
@@ -2218,7 +2244,7 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 		case blr_extract_month:
 		case blr_extract_day:
 		case blr_extract_week:
-			if (value1Dsc->dsc_dtype == dtype_sql_time || value2Dsc->dsc_dtype == dtype_sql_time)
+			if (value1Dsc->isTime() || value2Dsc->isTime())
 			{
 				status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 											Arg::Gds(isc_sysf_invalid_timediff) <<
@@ -2231,22 +2257,17 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 		case blr_extract_second:
 		case blr_extract_millisecond:
 			{
-				//if (value1Dsc->dsc_dtype == dtype_sql_date || value2Dsc->dsc_dtype == dtype_sql_date)
-				//	status_exception::raise(Arg::Gds(isc_expression_eval_err));
-
 				// ASF: also throw error if one value is TIMESTAMP and the other is TIME
 				// CVC: Or if one value is DATE and the other is TIME.
-				const int type1 = value1Dsc->dsc_dtype;
-				const int type2 = value2Dsc->dsc_dtype;
-				if ((type1 == dtype_timestamp && type2 == dtype_sql_time) ||
-					(type1 == dtype_sql_time && type2 == dtype_timestamp))
+				if ((value1Dsc->isTimeStamp() && value2Dsc->isTime()) ||
+					(value1Dsc->isTime() && value2Dsc->isTimeStamp()))
 				{
 					status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 												Arg::Gds(isc_sysf_invalid_tstamptimediff) <<
 													Arg::Str(function->name));
 				}
-				if ((type1 == dtype_sql_date && type2 == dtype_sql_time) ||
-					(type1 == dtype_sql_time && type2 == dtype_sql_date))
+				if ((value1Dsc->dsc_dtype == dtype_sql_date && value2Dsc->isTime()) ||
+					(value1Dsc->isTime() && value2Dsc->dsc_dtype == dtype_sql_date))
 				{
 					status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 												Arg::Gds(isc_sysf_invalid_datetimediff) <<
@@ -2400,6 +2421,10 @@ dsc* evlFirstLastDay(thread_db* tdbb, const SysFunction* function, const NestVal
 			timestamp.decode(&times, &fractions);
 			break;
 
+		case dtype_timestamp_tz:
+			TimeZoneUtil::decodeTimeStamp(*(ISC_TIMESTAMP_TZ*) valueDsc->dsc_address, &times, &fractions);
+			break;
+
 		default:
 			status_exception::raise(
 				Arg::Gds(isc_expression_eval_err) <<
@@ -2477,6 +2502,12 @@ dsc* evlFirstLastDay(thread_db* tdbb, const SysFunction* function, const NestVal
 
 		case dtype_timestamp:
 			impure->vlu_misc.vlu_timestamp = timestamp.value();
+			break;
+
+		case dtype_timestamp_tz:
+			impure->vlu_misc.vlu_timestamp_tz.utc_timestamp = timestamp.value();
+			impure->vlu_misc.vlu_timestamp_tz.time_zone = ((ISC_TIMESTAMP_TZ*) valueDsc->dsc_address)->time_zone;
+			TimeZoneUtil::localTimeStampToUtc(impure->vlu_misc.vlu_timestamp_tz);
 			break;
 	}
 

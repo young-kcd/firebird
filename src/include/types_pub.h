@@ -150,16 +150,27 @@ typedef unsigned long long int	ISC_UINT64;
 /* Time & Date support                                             */
 /*******************************************************************/
 
-#ifndef ISC_TIMESTAMP_DEFINED
 typedef int			ISC_DATE;
+
 typedef unsigned int	ISC_TIME;
+
+typedef struct
+{
+	ISC_TIME utc_time;
+	ISC_USHORT time_zone;
+} ISC_TIME_TZ;
+
 typedef struct
 {
 	ISC_DATE timestamp_date;
 	ISC_TIME timestamp_time;
 } ISC_TIMESTAMP;
-#define ISC_TIMESTAMP_DEFINED
-#endif	/* ISC_TIMESTAMP_DEFINED */
+
+typedef struct
+{
+	ISC_TIMESTAMP utc_timestamp;
+	ISC_USHORT time_zone;
+} ISC_TIMESTAMP_TZ;
 
 /*******************************************************************/
 /* Blob Id support                                                 */

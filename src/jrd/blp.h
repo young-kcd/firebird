@@ -244,5 +244,8 @@ static const struct
 	{"window_win", window_win},
 	{"default", relation_field},
 	{"store3", store3},
+	{"local_timestamp", byte_line},
+	{"local_time", byte_line},
+	{"at", verb_byte_verb},
 	{0, 0}
 };

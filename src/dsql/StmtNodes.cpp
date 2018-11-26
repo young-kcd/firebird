@@ -19,6 +19,7 @@
  */
 
 #include "firebird.h"
+#include "../common/TimeZoneUtil.h"
 #include "../common/classes/BaseStream.h"
 #include "../common/classes/MsgPrint.h"
 #include "../common/classes/VaryStr.h"
@@ -3155,7 +3156,7 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 
 	try
 	{
-		procRequest->req_timestamp = request->req_timestamp;
+		procRequest->req_timestamp_utc = request->req_timestamp_utc;
 
 		EXE_start(tdbb, procRequest, transaction);
 
@@ -8276,7 +8277,7 @@ const TextCode* getCodeByText(const MetaName& text, const TextCode* textCode, un
 //--------------------
 
 
-SetRoundNode::SetRoundNode(MemoryPool& pool, Firebird::MetaName* name)
+SetDecFloatRoundNode::SetDecFloatRoundNode(MemoryPool& pool, Firebird::MetaName* name)
 	: SessionManagementNode(pool)
 {
 	fb_assert(name);
@@ -8286,7 +8287,7 @@ SetRoundNode::SetRoundNode(MemoryPool& pool, Firebird::MetaName* name)
 	rndMode = mode->val;
 }
 
-void SetRoundNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
+void SetDecFloatRoundNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -8297,7 +8298,7 @@ void SetRoundNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*t
 //--------------------
 
 
-void SetTrapsNode::trap(Firebird::MetaName* name)
+void SetDecFloatTrapsNode::trap(Firebird::MetaName* name)
 {
 	fb_assert(name);
 	const TextCode* trap = getCodeByText(*name, ieeeTraps, FB_TRAPS_OFFSET);
@@ -8306,7 +8307,7 @@ void SetTrapsNode::trap(Firebird::MetaName* name)
 	traps |= trap->val;
 }
 
-void SetTrapsNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
+void SetDecFloatTrapsNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -8317,7 +8318,7 @@ void SetTrapsNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*t
 //--------------------
 
 
-void SetBindNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
+void SetDecFloatBindNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -8390,6 +8391,31 @@ void SetSessionNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** /*tra
 		att->setStatementTimeout(m_value);
 		break;
 	}
+}
+
+
+//--------------------
+
+
+void SetTimeZoneNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** /*traHandle*/) const
+{
+	Attachment* const attachment = tdbb->getAttachment();
+
+	if (local)
+		attachment->att_current_timezone = attachment->att_original_timezone;
+	else
+		attachment->att_current_timezone = TimeZoneUtil::parse(str.c_str(), str.length());
+}
+
+
+//--------------------
+
+
+void SetTimeZoneBindNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
+{
+	SET_TDBB(tdbb);
+	Attachment* const attachment = tdbb->getAttachment();
+	attachment->att_timezone_bind = bind;
 }
 
 

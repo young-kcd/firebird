@@ -65,6 +65,7 @@
 #include "../common/os/path_utils.h"
 #include "../common/StatusHolder.h"
 #include "../common/Tokens.h"
+#include "../common/TimeZoneUtil.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -123,6 +124,7 @@ enum literal_string_type
 
 using Firebird::PathName;
 using Firebird::TempFile;
+using Firebird::TimeZoneUtil;
 using MsgFormat::SafeArg;
 
 #include "../isql/ColList.h"
@@ -155,7 +157,9 @@ const int FLOAT_LEN		= 14;	// -1.2345678E+38
 const int DOUBLE_LEN		= 23;	// -1.234567890123456E+300
 const int DATE_LEN		= 11;	// 11 for date only
 const int DATETIME_LEN		= 25;	// 25 for date-time
+const int DATETIME_TZ_LEN	= DATETIME_LEN - 1 + 1 + TimeZoneUtil::MAX_LEN;	// DATETIME_LEN should be 24
 const int TIME_ONLY_LEN		= 13;	// 13 for time only
+const int TIME_TZ_ONLY_LEN	= TIME_ONLY_LEN + 1 + TimeZoneUtil::MAX_LEN;
 const int DATE_ONLY_LEN		= 11;
 const int BOOLEAN_LEN		= 7;	// <false>
 const int UNKNOWN_LEN		= 20;	// Unknown type: %d
@@ -5040,7 +5044,10 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		break;
 
 	case SetOptions::time:
-		ret = do_set_command(parms[2], &setValues.Time_display);
+		if (fb_utils::stricmp(parms[2], "ZONE") == 0)
+			ret = CONT;	// pass SET TIME ZONE command to server
+		else
+			ret = do_set_command(parms[2], &setValues.Time_display);
 		break;
 
 //#ifdef DEV_BUILD
@@ -7059,7 +7066,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
  *
  **************************************/
 	const char* convErr = "Conversion error";
- 	TEXT d[32];
+	TEXT d[64];
 	TEXT* p = *s;
 	*p = '\0';
 
@@ -7299,9 +7306,9 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 					strcpy(decStr, convErr);
 
 				if (setValues.List)
-					isqlGlob.printf("%*.*s%s", sizeof(decStr) - 1, sizeof(decStr) - 1, decStr, NEWLINE);
+					isqlGlob.printf("%*.*s%s", int(sizeof(decStr) - 1), int(sizeof(decStr) - 1), decStr, NEWLINE);
 				else
-					sprintf(p, "%*.*s ", sizeof(decStr) - 1, sizeof(decStr) - 1, decStr);
+					sprintf(p, "%*.*s ", int(sizeof(decStr) - 1), int(sizeof(decStr) - 1), decStr);
 			}
 			break;
 
@@ -7395,45 +7402,98 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 			}
 
 		case SQL_TIMESTAMP:
-			isc_decode_timestamp(var->value.asDateTime, &times);
+			{
+				isc_decode_timestamp(var->value.asDateTime, &times);
+				ULONG fractions = ((ULONG*) var->value.asChar)[1] % ISC_TIME_SECONDS_PRECISION;
 
-			if (isqlGlob.SQL_dialect > SQL_DIALECT_V5)
-			{
-				sprintf(d, "%4.4d-%2.2d-%2.2d %2.2d:%2.2d:%2.2d.%4.4" ULONGFORMAT,
-						times.tm_year + 1900, (times.tm_mon + 1),
-						times.tm_mday, times.tm_hour, times.tm_min,
-						times.tm_sec,
-						((ULONG*) var->value.asChar)[1] % ISC_TIME_SECONDS_PRECISION);
-			}
-			else
-			{
-				if (setValues.Time_display)
-					sprintf(d, "%2d-%s-%4d %2.2d:%2.2d:%2.2d.%4.4" ULONGFORMAT,
-							times.tm_mday, alpha_months[times.tm_mon],
-							times.tm_year + 1900, times.tm_hour, times.tm_min,
+				if (isqlGlob.SQL_dialect > SQL_DIALECT_V5)
+				{
+					sprintf(d, "%4.4d-%2.2d-%2.2d %2.2d:%2.2d:%2.2d.%4.4" ULONGFORMAT,
+							times.tm_year + 1900, (times.tm_mon + 1),
+							times.tm_mday, times.tm_hour, times.tm_min,
 							times.tm_sec,
-							((ULONG*) var->value.asChar)[1] % ISC_TIME_SECONDS_PRECISION);
+							fractions);
+				}
 				else
-					sprintf(d, "%2d-%s-%4d", times.tm_mday,
-							alpha_months[times.tm_mon], times.tm_year + 1900);
+				{
+					if (setValues.Time_display)
+						sprintf(d, "%2d-%s-%4d %2.2d:%2.2d:%2.2d.%4.4" ULONGFORMAT,
+								times.tm_mday, alpha_months[times.tm_mon],
+								times.tm_year + 1900, times.tm_hour, times.tm_min,
+								times.tm_sec,
+								fractions);
+					else
+						sprintf(d, "%2d-%s-%4d", times.tm_mday,
+								alpha_months[times.tm_mon], times.tm_year + 1900);
+				}
+
+				sprintf(p, "%-*.*s ", length, length, d);
+
+				if (setValues.List)
+					isqlGlob.printf("%s%s", d, NEWLINE);
+
+				break;
 			}
 
-			sprintf(p, "%-*.*s ", length, length, d);
-			if (setValues.List) {
-				isqlGlob.printf("%s%s", d, NEWLINE);
+		case SQL_TIMESTAMP_TZ:
+			{
+				unsigned year, month, day, hours, minutes, seconds, fractions;
+				char timeZone[TimeZoneUtil::MAX_SIZE];
+
+				Firebird::UtilInterfacePtr()->decodeTimeStampTz(fbStatus, var->value.asDateTimeTz,
+					&year, &month, &day, &hours, &minutes, &seconds, &fractions, sizeof(timeZone), timeZone);
+
+				if (ISQL_errmsg(fbStatus))
+					return ps_ERR;
+
+				sprintf(d, "%4.4d-%2.2d-%2.2d %2.2d:%2.2d:%2.2d.%4.4d %s",
+						year, month, day, hours, minutes, seconds, fractions, timeZone);
+
+				sprintf(p, "%-*.*s ", length, length, d);
+
+				if (setValues.List)
+					isqlGlob.printf("%s%s", d, NEWLINE);
+
+				break;
 			}
-			break;
 
 		case SQL_TYPE_TIME:
-			isc_decode_sql_time(var->value.asTime, &times);
-			sprintf(d, "%2.2d:%2.2d:%2.2d.%4.4" ULONGFORMAT,
-					times.tm_hour, times.tm_min, times.tm_sec,
-					(*var->value.asTime) % ISC_TIME_SECONDS_PRECISION);
-			sprintf(p, "%-*.*s ", length, length, d);
-			if (setValues.List) {
-				isqlGlob.printf("%s%s", d, NEWLINE);
+			{
+				isc_decode_sql_time(var->value.asTime, &times);
+				ULONG fractions = (*var->value.asTime) % ISC_TIME_SECONDS_PRECISION;
+
+				sprintf(d, "%2.2d:%2.2d:%2.2d.%4.4" ULONGFORMAT,
+						times.tm_hour, times.tm_min, times.tm_sec,
+						fractions);
+
+				sprintf(p, "%-*.*s ", length, length, d);
+
+				if (setValues.List)
+					isqlGlob.printf("%s%s", d, NEWLINE);
+
+				break;
 			}
-			break;
+
+		case SQL_TIME_TZ:
+			{
+				unsigned hours, minutes, seconds, fractions;
+				char timeZone[TimeZoneUtil::MAX_SIZE];
+
+				Firebird::UtilInterfacePtr()->decodeTimeTz(fbStatus, var->value.asTimeTz, &hours, &minutes, &seconds,
+					&fractions, sizeof(timeZone), timeZone);
+
+				if (ISQL_errmsg(fbStatus))
+					return ps_ERR;
+
+				sprintf(d, "%2.2d:%2.2d:%2.2d.%4.4d %s", hours, minutes, seconds, fractions, timeZone);
+
+				sprintf(p, "%-*.*s ", length, length, d);
+
+				if (setValues.List)
+					isqlGlob.printf("%s%s", d, NEWLINE);
+
+				break;
+			}
 
 		case SQL_TYPE_DATE:
 			isc_decode_sql_date(var->value.asDate, &times);
@@ -8089,8 +8149,14 @@ static unsigned process_message_display(Firebird::IMessageMetadata* message, uns
 			else
 				disp_length = DATE_ONLY_LEN;
 			break;
+		case SQL_TIMESTAMP_TZ:
+			disp_length = DATETIME_TZ_LEN;
+			break;
 		case SQL_TYPE_TIME:
 			disp_length = TIME_ONLY_LEN;
+			break;
+		case SQL_TIME_TZ:
+			disp_length = TIME_TZ_ONLY_LEN;
 			break;
 		case SQL_TYPE_DATE:
 			disp_length = DATE_ONLY_LEN;
@@ -8770,10 +8836,14 @@ static const char* sqltype_to_string(unsigned sqltype)
 		return "D_FLOAT";
 	case SQL_TIMESTAMP:
 		return "TIMESTAMP";
+	case SQL_TIMESTAMP_TZ:
+		return "TIMESTAMP WITH TIME ZONE";
 	case SQL_TYPE_DATE:
 		return "SQL DATE";
 	case SQL_TYPE_TIME:
 		return "TIME";
+	case SQL_TIME_TZ:
+		return "TIME WITH TIME ZONE";
 	case SQL_BLOB:
 		return "BLOB";
 	case SQL_ARRAY:

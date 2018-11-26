@@ -257,6 +257,8 @@ private:
 		getEntryPoint("ucnv_setFromUCallBack", module, ucnv_setFromUCallBack);
 		getEntryPoint("ucnv_setToUCallBack", module, ucnv_setToUCallBack);
 
+		getEntryPoint("u_strcmp", module, ustrcmp);
+
 #ifdef WIN_NT
 		if (uSetDataDirectory)
 		{
@@ -277,6 +279,28 @@ private:
 				(Arg::Gds(isc_random) << diag).raise();
 			}
 		}
+
+		inModule = formatAndLoad(inTemplate, aMajorVersion, aMinorVersion);
+		if (!inModule)
+			return;
+
+		getEntryPoint("ucal_getTZDataVersion", inModule, ucalGetTZDataVersion);
+		getEntryPoint("ucal_open", inModule, ucalOpen);
+		getEntryPoint("ucal_close", inModule, ucalClose);
+		getEntryPoint("ucal_setMillis", inModule, ucalSetMillis);
+		getEntryPoint("ucal_get", inModule, ucalGet);
+		getEntryPoint("ucal_setDateTime", inModule, ucalSetDateTime);
+		getEntryPoint("ucal_getTimeZoneID", inModule, ucalGetTimeZoneID);
+
+		getEntryPoint("ucal_getNow", inModule, ucalGetNow);
+		getEntryPoint("ucal_getTimeZoneTransitionDate", inModule, ucalGetTimeZoneTransitionDate);
+
+#if defined DEV_BUILD && defined TZ_UPDATE
+		getEntryPoint("ucal_openTimeZones", inModule, ucalOpenTimeZones);
+
+		getEntryPoint("uenum_close", inModule, uenumClose);
+		getEntryPoint("uenum_unext", inModule, uenumUnext);
+#endif
 	}
 
 public:
@@ -302,6 +326,7 @@ public:
 
 private:
 	AutoPtr<ModuleLoader::Module> module;
+	AutoPtr<ModuleLoader::Module> inModule;
 };
 
 static ImplementConversionICU* convIcu = NULL;

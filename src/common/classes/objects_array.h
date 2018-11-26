@@ -28,6 +28,7 @@
 #ifndef CLASSES_OBJECTS_ARRAY_H
 #define CLASSES_OBJECTS_ARRAY_H
 
+#include <initializer_list>
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
 
@@ -336,6 +337,13 @@ namespace Firebird
 			: A()
 		{
 			add(o);
+		}
+
+		ObjectsArray(MemoryPool& p, std::initializer_list<T> items)
+			: A(p)
+		{
+			for (auto& item : items)
+				add(item);
 		}
 
 		ObjectsArray() :

@@ -32,6 +32,7 @@
 #include "../jrd/val.h"
 #include "gen/iberror.h"
 #include "../jrd/intl.h"
+#include "../common/TimeZoneUtil.h"
 #include "../common/gdsassert.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/cvt2_proto.h"
@@ -234,6 +235,7 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2, Firebird::DecimalStatus decSt
 				return 1;
 			return -1;
 
+		case dtype_sql_time_tz:
 		case dtype_sql_time:
 			if (*(ULONG *) p1 == *(ULONG *) p2)
 				return 0;
@@ -271,6 +273,7 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2, Firebird::DecimalStatus decSt
 				return (arg1->dsc_length > l) ? 1 : (arg2->dsc_length > l) ? -1 : 0;
 			}
 
+		case dtype_timestamp_tz:
 		case dtype_timestamp:
 			if (((SLONG *) p1)[0] > ((SLONG *) p2)[0])
 				return 1;
@@ -419,6 +422,18 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2, Firebird::DecimalStatus decSt
 
 	switch (arg1->dsc_dtype)
 	{
+	case dtype_timestamp_tz:
+		{
+			DSC desc;
+			MOVE_CLEAR(&desc, sizeof(desc));
+			desc.dsc_dtype = dtype_timestamp_tz;
+			ISC_TIMESTAMP_TZ datetime;
+			desc.dsc_length = sizeof(datetime);
+			desc.dsc_address = (UCHAR*) &datetime;
+			CVT_move(arg2, &desc, 0);
+			return CVT2_compare(arg1, &desc, 0);
+		}
+
 	case dtype_timestamp:
 		{
 			DSC desc;
@@ -427,6 +442,18 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2, Firebird::DecimalStatus decSt
 			SLONG datetime[2];
 			desc.dsc_length = sizeof(datetime);
 			desc.dsc_address = (UCHAR*) datetime;
+			CVT_move(arg2, &desc, 0);
+			return CVT2_compare(arg1, &desc, 0);
+		}
+
+	case dtype_sql_time_tz:
+		{
+			DSC desc;
+			MOVE_CLEAR(&desc, sizeof(desc));
+			desc.dsc_dtype = dtype_sql_time_tz;
+			ISC_TIME_TZ atime;
+			desc.dsc_length = sizeof(atime);
+			desc.dsc_address = (UCHAR*) &atime;
 			CVT_move(arg2, &desc, 0);
 			return CVT2_compare(arg1, &desc, 0);
 		}

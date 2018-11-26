@@ -71,14 +71,14 @@ static const Jrd::gen generators[] =
 {
 	{ "RDB$SECURITY_CLASS", 1, NULL },
 	{ "SQL$DEFAULT", 2, NULL },
-	{ "RDB$PROCEDURES", 3, "Procedure ID" },
+	{ PROCEDURES_GENERATOR, 3, "Procedure ID" },
 	{ "RDB$EXCEPTIONS", 4, "Exception ID" },
 	{ "RDB$CONSTRAINT_NAME", 5, "Implicit constraint name" },
 	{ "RDB$FIELD_NAME", 6, "Implicit domain name" },
 	{ "RDB$INDEX_NAME", 7, "Implicit index name" },
 	{ "RDB$TRIGGER_NAME", 8, "Implicit trigger name" },
 	{ "RDB$BACKUP_HISTORY", 9, "Nbackup technology" },
-	{ "RDB$FUNCTIONS", 10, "Function ID" },
+	{ FUNCTIONS_GENERATOR, 10, "Function ID" },
 	{ "RDB$GENERATOR_NAME", 11, "Implicit generator name" },
 	{ 0, 0, NULL }
 };
