@@ -3079,14 +3079,17 @@ void AtNode::setParameterName(dsql_par* parameter) const
 	parameter->par_name = parameter->par_alias = "AT";
 }
 
-bool AtNode::setParameterType(DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool forceVarChar)
+bool AtNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
+	std::function<void (dsc*)> makeDesc, bool forceVarChar)
 {
-	dsc zoneDesc;
-	zoneDesc.makeText(TimeZoneUtil::MAX_LEN, ttype_ascii);
-	zoneDesc.setNullable(true);
+	auto makeZoneDesc = [] (dsc* desc)
+		{
+			desc->makeText(TimeZoneUtil::MAX_LEN, ttype_ascii);
+			desc->setNullable(true);
+		};
 
-	return PASS1_set_parameter_type(dsqlScratch, dateTimeArg, desc, forceVarChar) |
-		PASS1_set_parameter_type(dsqlScratch, zoneArg, &zoneDesc, forceVarChar);
+	return PASS1_set_parameter_type(dsqlScratch, dateTimeArg, makeDesc, forceVarChar) |
+		PASS1_set_parameter_type(dsqlScratch, zoneArg, makeZoneDesc, forceVarChar);
 }
 
 void AtNode::genBlr(DsqlCompilerScratch* dsqlScratch)

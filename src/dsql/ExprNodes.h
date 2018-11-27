@@ -188,7 +188,7 @@ public:
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		const dsc* desc, bool forceVarChar);
+		std::function<void (dsc*)> makeDesc, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
