@@ -6008,15 +6008,12 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 
 	for (FB_SIZE_T j = 0; j < assignStatements->statements.getCount(); ++j)
 	{
-		ValueExprNode* const sub1 = orgValues[j];
-		ValueExprNode* const sub2 = newValues[j];
-
-		if (!PASS1_set_parameter_type(dsqlScratch, sub1, sub2, false))
-			PASS1_set_parameter_type(dsqlScratch, sub2, sub1, false);
+		if (!PASS1_set_parameter_type(dsqlScratch, orgValues[j], newValues[j], false))
+			PASS1_set_parameter_type(dsqlScratch, newValues[j], orgValues[j], false);
 
 		AssignmentNode* assign = FB_NEW_POOL(pool) AssignmentNode(pool);
-		assign->asgnFrom = sub1;
-		assign->asgnTo = sub2;
+		assign->asgnFrom = orgValues[j];
+		assign->asgnTo = newValues[j];
 		assignStatements->statements[j] = assign;
 	}
 
@@ -9715,7 +9712,7 @@ static void preprocessAssignments(thread_db* tdbb, CompilerScratch* csb,
 
 	Nullable<IdentityType> identityType;
 
-	for (size_t i = compoundNode->statements.getCount(); i--; )
+	for (FB_SIZE_T i = compoundNode->statements.getCount(); i--; )
 	{
 		const AssignmentNode* assign = nodeAs<AssignmentNode>(compoundNode->statements[i]);
 		fb_assert(assign);

@@ -2946,7 +2946,7 @@ bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, ValueExprNode* i
 
 // Setup the datatype of a parameter.
 bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, ValueExprNode* inNode,
-	ValueExprNode* node, bool forceVarchar)
+	NestConst<ValueExprNode> node, bool forceVarchar)
 {
 	if (!inNode)
 		return false;
