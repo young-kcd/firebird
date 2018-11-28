@@ -3377,7 +3377,7 @@ namespace
 		virtual void validateLength(Jrd::CharSet* toCharset, SLONG toLength, const UCHAR* start,
 			const USHORT to_size);
 		virtual SLONG getLocalDate();
-		virtual ISC_TIMESTAMP getCurrentTimeStampUtc();
+		virtual ISC_TIMESTAMP getCurrentGmtTimeStamp();
 		virtual USHORT getSessionTimeZone();
 		virtual void isVersion4(bool& v4);
 	} commonCallbacks(status_exception::raise);
@@ -3411,9 +3411,9 @@ namespace
 		return TimeStamp::getCurrentTimeStamp().value().timestamp_date;
 	}
 
-	ISC_TIMESTAMP CommonCallbacks::getCurrentTimeStampUtc()
+	ISC_TIMESTAMP CommonCallbacks::getCurrentGmtTimeStamp()
 	{
-		return TimeZoneUtil::timeStampTzToTimeStamp(TimeZoneUtil::getCurrentTimeStampUtc(), TimeZoneUtil::GMT_ZONE);
+		return TimeZoneUtil::timeStampTzToTimeStamp(TimeZoneUtil::getCurrentSystemTimeStamp(), TimeZoneUtil::GMT_ZONE);
 	}
 
 	USHORT CommonCallbacks::getSessionTimeZone()

@@ -212,7 +212,7 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	  att_base_stats(*pool),
 	  att_working_directory(*pool),
 	  att_filename(*pool),
-	  att_timestamp(TimeZoneUtil::getCurrentTimeStampUtc()),
+	  att_timestamp(TimeZoneUtil::getCurrentSystemTimeStamp()),
 	  att_context_vars(*pool),
 	  ddlTriggersContext(*pool),
 	  att_network_protocol(*pool),
@@ -991,7 +991,7 @@ void Attachment::IdleTimer::handler()
 
 	// If timer was reset to fire later, restart ITimer
 
-	const ISC_TIMESTAMP currentTimeGmt = TimeZoneUtil::getCurrentTimeStampGmt().utc_timestamp;
+	const ISC_TIMESTAMP currentTimeGmt = TimeZoneUtil::getCurrentGmtTimeStamp().utc_timestamp;
 	const SINT64 curTime = currentTimeGmt.timestamp_date * TimeStamp::ISC_TICKS_PER_DAY +
 		(SINT64) currentTimeGmt.timestamp_time;
 
@@ -1028,7 +1028,7 @@ void Attachment::IdleTimer::reset(unsigned int timeout)
 		return;
 	}
 
-	const ISC_TIMESTAMP currentTimeGmt = TimeZoneUtil::getCurrentTimeStampGmt().utc_timestamp;
+	const ISC_TIMESTAMP currentTimeGmt = TimeZoneUtil::getCurrentGmtTimeStamp().utc_timestamp;
 	const SINT64 curTime = currentTimeGmt.timestamp_date * TimeStamp::ISC_TICKS_PER_DAY +
 		(SINT64) currentTimeGmt.timestamp_time;
 

@@ -481,7 +481,7 @@ private:
 		dbb_stats(*p),
 		dbb_lock_owner_id(getLockOwnerId()),
 		dbb_tip_cache(NULL),
-		dbb_creation_date(Firebird::TimeZoneUtil::getCurrentTimeStampGmt()),
+		dbb_creation_date(Firebird::TimeZoneUtil::getCurrentGmtTimeStamp()),
 		dbb_external_file_directory_list(NULL),
 		dbb_init_fini(FB_NEW_POOL(*getDefaultMemoryPool()) ExistenceRefMutex()),
 		dbb_linger_seconds(0),

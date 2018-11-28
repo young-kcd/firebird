@@ -470,7 +470,7 @@ void TimeZoneUtil::localTimeToUtc(ISC_TIME& time, Callbacks* cb)
 void TimeZoneUtil::localTimeToUtc(ISC_TIME_TZ& timeTz, Callbacks* cb)
 {
 	ISC_TIMESTAMP_TZ tempTimeStampTz;
-	tempTimeStampTz.utc_timestamp.timestamp_date = cb->getCurrentTimeStampUtc().timestamp_date;
+	tempTimeStampTz.utc_timestamp.timestamp_date = cb->getCurrentGmtTimeStamp().timestamp_date;
 	tempTimeStampTz.utc_timestamp.timestamp_time = timeTz.utc_time;
 	tempTimeStampTz.time_zone = timeTz.time_zone;
 	localTimeStampToUtc(tempTimeStampTz);
@@ -597,7 +597,7 @@ void TimeZoneUtil::decodeTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, struct t
 	TimeStamp::decode_timestamp(ts, times, fractions);
 }
 
-ISC_TIMESTAMP_TZ TimeZoneUtil::getCurrentTimeStampUtc()
+ISC_TIMESTAMP_TZ TimeZoneUtil::getCurrentSystemTimeStamp()
 {
 	TimeStamp now = TimeStamp::getCurrentTimeStamp();
 
@@ -609,7 +609,7 @@ ISC_TIMESTAMP_TZ TimeZoneUtil::getCurrentTimeStampUtc()
 	return tsTz;
 }
 
-ISC_TIMESTAMP_TZ TimeZoneUtil::getCurrentTimeStampGmt()
+ISC_TIMESTAMP_TZ TimeZoneUtil::getCurrentGmtTimeStamp()
 {
 	//// TODO: Make this function does not depend on local time.
 	TimeStamp now = TimeStamp::getCurrentTimeStamp();
@@ -624,10 +624,10 @@ ISC_TIMESTAMP_TZ TimeZoneUtil::getCurrentTimeStampGmt()
 	return tsTz;
 }
 
-void TimeZoneUtil::validateTimeStampUtc(NoThrowTimeStamp& ts)
+void TimeZoneUtil::validateGmtTimeStamp(NoThrowTimeStamp& ts)
 {
 	if (ts.isEmpty())
-		ts.value() = getCurrentTimeStampUtc().utc_timestamp;
+		ts.value() = getCurrentGmtTimeStamp().utc_timestamp;
 }
 
 // Converts a time to timestamp-tz.

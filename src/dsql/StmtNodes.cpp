@@ -3156,7 +3156,7 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 
 	try
 	{
-		procRequest->req_timestamp_utc = request->req_timestamp_utc;
+		procRequest->req_gmt_timestamp = request->req_gmt_timestamp;
 
 		EXE_start(tdbb, procRequest, transaction);
 

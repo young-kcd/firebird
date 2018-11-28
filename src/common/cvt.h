@@ -61,7 +61,7 @@ public:
 	virtual void validateLength(Jrd::CharSet* toCharset, SLONG toLength, const UCHAR* start,
 		const USHORT to_size) = 0;
 	virtual SLONG getLocalDate() = 0;
-	virtual ISC_TIMESTAMP getCurrentTimeStampUtc() = 0;
+	virtual ISC_TIMESTAMP getCurrentGmtTimeStamp() = 0;
 	virtual USHORT getSessionTimeZone() = 0;
 	virtual void isVersion4(bool& v4) = 0;
 

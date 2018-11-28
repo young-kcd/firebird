@@ -890,7 +890,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	request->req_records_affected.clear();
 
 	// Store request start time for timestamp work
-	TimeZoneUtil::validateTimeStampUtc(request->req_timestamp_utc);
+	TimeZoneUtil::validateGmtTimeStamp(request->req_gmt_timestamp);
 
 	// Set all invariants to not computed.
 	const ULONG* const* ptr, * const* end;
@@ -983,7 +983,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 
 	request->req_flags &= ~(req_active | req_proc_fetch | req_reserved);
 	request->req_flags |= req_abort | req_stall;
-	request->req_timestamp_utc.invalidate();
+	request->req_gmt_timestamp.invalidate();
 	request->req_caller = NULL;
 	request->req_proc_inputs = NULL;
 	request->req_proc_caller = NULL;
@@ -1106,9 +1106,9 @@ void EXE_execute_triggers(thread_db* tdbb,
 	TimeStamp timestamp;
 
 	if (request)
-		timestamp = request->req_timestamp_utc;
+		timestamp = request->req_gmt_timestamp;
 	else
-		TimeZoneUtil::validateTimeStampUtc(timestamp);
+		TimeZoneUtil::validateGmtTimeStamp(timestamp);
 
 	jrd_req* trigger = NULL;
 
@@ -1154,7 +1154,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 				}
 			}
 
-			trigger->req_timestamp_utc = timestamp;
+			trigger->req_gmt_timestamp = timestamp;
 			trigger->req_trigger_action = trigger_action;
 
 			TraceTrigExecute trace(tdbb, trigger, which_trig);
@@ -1378,7 +1378,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 
 		TRA_release_request_snapshot(tdbb, request);
 		request->req_flags &= ~(req_active | req_reserved);
-		request->req_timestamp_utc.invalidate();
+		request->req_gmt_timestamp.invalidate();
 		release_blobs(tdbb, request);
 	}
 

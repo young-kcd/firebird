@@ -266,7 +266,7 @@ public:
 	ULONG		req_flags;				// misc request flags
 	Savepoint*	req_savepoints;			// Looper savepoint list
 	Savepoint*	req_proc_sav_point;		// procedure savepoint list
-	Firebird::TimeStamp	req_timestamp_utc;	// Start time of request
+	Firebird::TimeStamp	req_gmt_timestamp;	// Start time of request in GMT time zone
 	unsigned int req_timeout;					// query timeout in milliseconds, set by the dsql_req::setupTimer
 	Firebird::RefPtr<TimeoutTimer> req_timer;	// timeout timer, shared with dsql_req
 
@@ -369,7 +369,7 @@ public:
 	Firebird::TimeStamp getLocalTimeStamp() const
 	{
 		ISC_TIMESTAMP_TZ timeStampTz;
-		timeStampTz.utc_timestamp = req_timestamp_utc.value();
+		timeStampTz.utc_timestamp = req_gmt_timestamp.value();
 		timeStampTz.time_zone = Firebird::TimeZoneUtil::GMT_ZONE;
 		Firebird::TimeZoneUtil::localTimeStampToUtc(timeStampTz);
 
@@ -379,7 +379,7 @@ public:
 	ISC_TIMESTAMP_TZ getTimeStampTz() const
 	{
 		ISC_TIMESTAMP_TZ timeStampTz;
-		timeStampTz.utc_timestamp = req_timestamp_utc.value();
+		timeStampTz.utc_timestamp = req_gmt_timestamp.value();
 		timeStampTz.time_zone = Firebird::TimeZoneUtil::GMT_ZONE;
 		return timeStampTz;
 	}

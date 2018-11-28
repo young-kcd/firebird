@@ -175,7 +175,7 @@ public:
 		tra_resources(*p),
 		tra_context_vars(*p),
 		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT),
-		tra_timestamp(Firebird::TimeZoneUtil::getCurrentTimeStampUtc()),
+		tra_timestamp(Firebird::TimeZoneUtil::getCurrentSystemTimeStamp()),
 		tra_stats(*p),
 		tra_open_cursors(*p),
 		tra_outer(outer),
