@@ -23,5 +23,5 @@ select count(*) filter (where status = 'A') status_a,
 ## Syntax
 
 ```
-aggregate_function [FILTER (WHERE <condition>) [OVER (<window>)]]
+aggregate_function [FILTER (WHERE <condition>)] [OVER (<window>)]
 ```
