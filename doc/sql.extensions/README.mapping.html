@@ -6,7 +6,7 @@
 	<meta name="generator" content="LibreOffice 6.0.6.2 (Linux)"/>
 	<meta name="author" content="irina "/>
 	<meta name="created" content="2014-03-25T00:00:00.010305100"/>
-	<meta name="changed" content="2018-10-22T20:12:35.576055420"/>
+	<meta name="changed" content="2018-12-07T20:15:37.805856298"/>
 	<style type="text/css">
 		@page { margin: 2.01cm }
 		p { margin-bottom: 0.2cm }
@@ -270,7 +270,7 @@ much rights:</font></p>
 <p lang="en-US" style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">CREATE
 MAPPING LEGACY_2_GUEST USING PLUGIN legacy_auth FROM ANY USER TO USER
 GUEST;</font></p>
-<p lang="en-US" style="margin-bottom: 0cm"><br/>
+<p style="margin-bottom: 0cm"><br/>
 
 </p>
 <p lang="en-US" style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">Map
@@ -298,6 +298,29 @@ as security database. If you plan to use other database as security
 one (using for example your own provider) please create in it table
 RDB$AUTH_MAPPING with structure repeating one in firebird 3 database,
 public read access and SYSDBA-only write access.</font></p>
+<p lang="en-US" style="margin-bottom: 0cm"><br/>
+
+</p>
+<p lang="en-US" style="margin-bottom: 0cm"><br/>
+
+</p>
+<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt"><span lang="en-US">Tip:</span></font></p>
+<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt"><span lang="en-US">It’s
+relatively easy to accidentally make a database remotely inaccessible
+using CREATE MAPPING statement. For example: </span></font>
+</p>
+<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt"><span lang="en-US">CREATE
+MAPPING BREAK_DB_1 USING * FROM ANY USER TO ROLE ROLE1;</span></font></p>
+<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt"><span lang="en-US">CREATE
+MAPPING BREAK_DB_2 USING * FROM ANY USER TO ROLE ROLE2;</span></font></p>
+<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt"><span lang="en-US">This
+will disallow any user (including SYSDBA) to connect. Luckily
+mappings are not processed when database is used in embedded mode,
+i.e. in such a case one should attach to database using embedded
+access and fix bad mappings.</span></font></p>
+<p style="margin-bottom: 0cm"><br/>
+
+</p>
 <p style="margin-bottom: 0cm"><br/>
 
 </p>
