@@ -912,7 +912,7 @@ RSA_PRIVATE
 -----------
 
 Function:
-    Returns RSA private key of specified length (in bytes) in PKCS#1 format as VARBINARY atring.
+    Returns RSA private key of specified length (in bytes) in PKCS#1 format as VARBINARY string.
 
 Format:
     RSA_PRIVATE ( <smallint> )
