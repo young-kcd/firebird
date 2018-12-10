@@ -651,7 +651,6 @@ public:
 		unsigned kind, const unsigned char* buf, unsigned len);
 	unsigned setOffsets(Firebird::CheckStatusWrapper* status, Firebird::IMessageMetadata* metadata,
 		Firebird::IOffsetsCallback* callback);
-	Firebird::IEventBlock* createEventBlock(Firebird::CheckStatusWrapper* status, const char** events);
 	Firebird::IDecFloat16* getDecFloat16(Firebird::CheckStatusWrapper* status);
 	Firebird::IDecFloat34* getDecFloat34(Firebird::CheckStatusWrapper* status);
 	Firebird::ITransaction* getTransactionByHandle(Firebird::CheckStatusWrapper* status, isc_tr_handle* hndlPtr);

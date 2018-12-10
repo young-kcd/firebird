@@ -539,16 +539,6 @@ interface Events : ReferenceCounted
 	void cancel(Status status);
 }
 
-interface EventBlock : Disposable
-{
-	uint getLength();
-	uchar* getValues();
-	uchar* getBuffer();
-	uint getCount();
-	uint* getCounters();
-	void counts();
-}
-
 interface Attachment : ReferenceCounted
 {
 	void getInfo(Status status,
@@ -1079,7 +1069,6 @@ interface Util : Versioned
 	uint setOffsets(Status status, MessageMetadata metadata, OffsetsCallback callback);
 
 version:	// 3.0 => 4.0
-	EventBlock createEventBlock(Status status, const string* events);
 	DecFloat16 getDecFloat16(Status status);
 	DecFloat34 getDecFloat34(Status status);
 	Transaction getTransactionByHandle(Status status, isc_tr_handle* hndlPtr);
