@@ -3,10 +3,10 @@
 <head>
 	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
 	<title></title>
-	<meta name="generator" content="LibreOffice 5.4.5.1 (Linux)"/>
+	<meta name="generator" content="LibreOffice 6.0.6.2 (Linux)"/>
 	<meta name="author" content="alex "/>
 	<meta name="created" content="2013-05-31T00:00:00.010003100"/>
-	<meta name="changed" content="2018-05-10T18:16:59.126724786"/>
+	<meta name="changed" content="2018-12-10T17:39:15.976002774"/>
 	<meta name="created" content="00:00:00">
 	<meta name="created" content="00:00:00">
 	<meta name="created" content="00:00:00">
@@ -1099,7 +1099,7 @@ alignment = batch-&gt;getBlobAlignment(&amp;status);</i></font></p>
 <p style="font-variant: normal; font-style: normal"><font size="4" style="font-size: 14pt">It’s
 supposed that all components of blob stream in a batch should be
 aligned at least at alignment boundary, including size of stream
-potions passed to addBlobStream() which should be a multiple of this
+portions passed to addBlobStream() which should be a multiple of this
 alignment. Header contains 3 fields – 8-byte blob ID (must be
 non-zero), 4-byte total blob size and 4 byte BPB size. Total blob
 size includes BPB inside, i.e. one will always find next blob in the
@@ -1145,6 +1145,17 @@ correct (from batch POV) ID to msg-&gt;desc.</font></p>
 <font size="4" style="font-size: 14pt">Almost all mentioned methods
 are used in 11.batch.cpp – please use it to see an alive sample of
 batching in firebird.</font></p>
+<p style="margin-bottom: 0cm; font-variant: normal; font-style: normal">
+<br/>
+
+</p>
+<p style="margin-bottom: 0cm; font-variant: normal; font-style: normal">
+<font size="4" style="font-size: 14pt">Two words about access to
+batches from ISC API - one can execute prepared ISC statement in
+batch mode. Main support for it is present in Util interface, namely
+getTransactionByHandle &amp; getStatementByHandle methods, which make
+it possible to access appropriate interfaces identical to existing
+ISC handles. An example of it is present in 12.batch_isc.cpp.</font></p>
 <p style="margin-bottom: 0cm"><br/>
 
 </p>
@@ -2144,14 +2155,36 @@ sub-entries) in firebird configuration file:</font></p>
 <p style="margin-bottom: 0cm"><br/>
 
 </p>
-<p style="margin-bottom: 0cm"><br/>
-
-</p>
-<p style="margin-bottom: 0cm"><a name="Dtc"></a><font size="4" style="font-size: 14pt">Dtc
-interface – distributed transactions coordinator. Used to start
-distributed (working with 2 or more attachments) transaction. Unlike
-pre-FB3 approach where distributed transaction must be started in
-this way from the most beginning FB3's distributed transactions
+<p style="margin-bottom: 0cm"><a name="DecFloat16"></a><a name="DecFloat34"></a>
+<font size="4" style="font-size: 14pt">DecFloat16 / DecFloat34 –
+interfaces that help to work with DECFLOAT (16 &amp; 34 respectively)
+datatypes. They have almost same set of methods with FB_DEC16
+parameter replaced by FB_DEC34 for DecFloat34:</font></p>
+<ol>
+	<li/>
+<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
+	toBcd(const FB_DEC16* from, int* sign, unsigned char* bcd, int* exp)
+	– convert decimal float value to BCD.</font></p>
+	<li/>
+<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
+	toString(StatusType* status, const FB_DEC16* from, unsigned
+	bufferLength, char* buffer) – convert decimal float value to
+	string.</font></p>
+	<li/>
+<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
+	fromBcd(int sign, const unsigned char* bcd, int exp, FB_DEC16* to) –
+	make decimal float value from BCD.</font></p>
+	<li/>
+<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
+	fromString(StatusType* status, const char* from, FB_DEC16* to) –
+	make decimal float value from string.</font></p>
+	<p style="margin-bottom: 0cm"></p>
+</ol>
+<p style="margin-bottom: 0cm"><a name="Dtc"></a><font size="4" style="font-size: 14pt"><font color="#000000">Dtc
+</font>interface – distributed transactions coordinator. Used to
+start distributed (working with 2 or more attachments) transaction.
+Unlike pre-FB3 approach where distributed transaction must be started
+in this way from the most beginning FB3's distributed transactions
 coordinator makes it also possible to join already started
 transactions into single distributed transaction.</font></p>
 <ol>
@@ -3107,18 +3140,60 @@ interface – various helper methods required here or there.</font></p>
 	getClientVersion() – returns integer, containing major version in
 	byte 0 and minor version in byte 1.</font></p>
 	<li/>
-<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">IXpbBuilder*
+<p style="margin-bottom: 0cm"><font color="#000000"><font size="4" style="font-size: 14pt">IXpbBuilder*
 	getXpbBuilder(StatusType* status, unsigned kind, const unsigned
 	char* buf, unsigned len) – returns <a href="#XpbBuilder">XpbBuilder</a>
 	interface. Valid <a href="#Valid builder types">kinds</a> are
-	enumerated in <a href="#XpbBuilder">XpbBuilder</a>.</font></p>
+	enumerated in <a href="#XpbBuilder">XpbBuilder</a>.</font></font></p>
 	<li/>
-<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">unsigned
+<p style="margin-bottom: 0cm"><font color="#000000"><font size="4" style="font-size: 14pt">unsigned
 	setOffsets(StatusType* status, IMessageMetadata* metadata,
 	IOffsetsCallback* callback) – sets valid offsets in
 	<a href="#MessageMetadata">MessageMetadata</a>. Performs calls to
 	callback in <a href="#OffsetsCallback">OffsetsCallback</a> for each
-	field/parameter.</font></p>
+	field/parameter.</font></font></p>
+	<li/>
+<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">IDecFloat16*
+	getDecFloat16(StatusType* status) – access <a href="#DecFloat16">DecFloat16</a>
+	interface.</font></p>
+	<li/>
+<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">IDecFloat34*
+	getDecFloat34(StatusType* status) – access <a href="#DecFloat34">DecFloat34</a>
+	interface.</font></p>
+	<li/>
+<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">ITransaction*
+	getTransactionByHandle(StatusType* status, isc_tr_handle* hndlPtr) –
+	access <a href="#Transaction">Transaction</a> interface by ISC API
+	hndl.</font></p>
+	<li/>
+<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">IStatement*
+	getStatementByHandle(StatusType* status, isc_stmt_handle* hndlPtr) –
+	access <a href="#Statement">Statement</a> interface by ISC API hndl.</font></p>
+	<li/>
+<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
+	decodeTimeTz(StatusType* status, const ISC_TIME_TZ* timeTz,
+	unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned*</font></p>
+	<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">fractions,
+	unsigned timeZoneBufferLength, char* <span style="text-decoration: none">timeZoneBuffer</span>)
+	– decode time taking time zone into an account.</font></p>
+	<li/>
+<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
+	decodeTimeStampTz(StatusType* status, const ISC_TIMESTAMP_TZ*
+	timeStampTz, unsigned* year, unsigned* month, unsigned* day,
+	unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned*
+	fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) -
+	decode timestamp taking time zone into an account.</font></p>
+	<li/>
+<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
+	encodeTimeTz(StatusType* status, ISC_TIME_TZ* timeTz, unsigned
+	hours, unsigned minutes, unsigned seconds, unsigned fractions, const
+	char* timeZone) – encode time taking time zone into an account.</font></p>
+	<li/>
+<p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
+	encodeTimeStampTz(StatusType* status, ISC_TIMESTAMP_TZ* timeStampTz,
+	unsigned year, unsigned month, unsigned day, unsigned hours,
+	unsigned minutes, unsigned seconds, unsigned fractions, const char*
+	timeZone) – encode timestamp taking time zone into an account.</font></p>
 </ol>
 <p style="margin-bottom: 0cm"><br/>
 
@@ -3756,9 +3831,8 @@ interface is main interface of database crypt key holder plugin.</font></p>
 	interface (if provided by user with <a href="#Provider">Provider</a>::setDbCryptCallback()
 	call). This call is always performed at database attach moment, and
 	some holders may reject attachment if satisfactory key was not
-	provided. </font><font size="4" style="font-size: 14pt">Return value
-	of 0 means that key holder can not provide a key to crypt plugin,
-	non-zero – can.</font></p>
+	provided. Return value of 0 means that key holder can not provide a
+	key to crypt plugin, non-zero – can.</font></p>
 	<li/>
 <p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">ICryptKeyCallback*
 	keyHandle(StatusType* status, const char* keyName) – is intended
