@@ -1199,7 +1199,7 @@ void makeGetSetContext(DataTypeUtilBase* /*dataTypeUtil*/, const SysFunction* fu
 }
 
 
-void makeGetTranCN(DataTypeUtilBase* /*dataTypeUtil*/, const SysFunction* /*function*/, dsc* result, 
+void makeGetTranCN(DataTypeUtilBase* /*dataTypeUtil*/, const SysFunction* /*function*/, dsc* result,
 	int /*argsCount*/, const dsc** /*args*/)
 {
 	result->makeInt64(0);
@@ -1234,9 +1234,10 @@ void makeEncrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, ds
 	fb_assert(argsCount == CRYPT_ARG_MAX);
 
 	if (args[0]->isBlob())
-		result->makeBlob(0, ttype_binary); 
+		result->makeBlob(0, ttype_binary);
 	else
 		result->makeVarying(args[0]->getStringLength(), ttype_binary);
+
 	result->setNullable(args[0]->isNullable());
 }
 
@@ -1247,9 +1248,10 @@ void makeDecrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, ds
 	fb_assert(argsCount == CRYPT_ARG_MAX);
 
 	if (args[0]->isBlob())
-		result->makeBlob(0, ttype_none); 
+		result->makeBlob(0, ttype_none);
 	else
 		result->makeVarying(args[0]->getStringLength(), ttype_none);
+
 	result->setNullable(args[0]->isNullable());
 }
 
@@ -2665,7 +2667,7 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 	{
 		if (!modeName.hasData())
 			raise("Should specify MODE parameter for symmetric algorithm");
-		
+
 		m = find(modes, modeName);
 		if (!m)
 			raise("Unknown symmetric crypt mode");
@@ -2737,7 +2739,7 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		if (iv.hasData() && iv.getCount() != blockLen)
 			raise("Invalid IV length @2, need @1");  // block_length, iv.getCount
 
-		switch(m->code)
+		switch (m->code)
 		{
 		case MODE_ECB:
 			{
@@ -2830,7 +2832,7 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 	else
 	{
 		fb_assert(a);
-		switch(a->code)
+		switch (a->code)
 		{
 		case ALG_RC4:
 			{
@@ -2851,7 +2853,7 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 			{
 				chacha_state chacha;
 				tomCheck(chacha_setup(&chacha, key.begin(), key.getCount(), 20), "initializing CHACHA#20");
-				switch(iv.getCount())
+				switch (iv.getCount())
 				{
 				case 12:
 					tomCheck(chacha_ivctr32(&chacha, iv.begin(), iv.getCount(), ctrVal), "setting IV for CHACHA#20");
@@ -3107,7 +3109,7 @@ dsc* evlRsaSign(thread_db* tdbb, const SysFunction* function, const NestValueArr
 }
 
 
-dsc* boolResult(thread_db* tdbb, impure_value* impure, bool value)
+static dsc* boolResult(thread_db* tdbb, impure_value* impure, bool value)
 {
 	dsc result;
 	FB_BOOLEAN rc = value ? FB_TRUE : FB_FALSE;
@@ -4017,7 +4019,7 @@ dsc* evlSetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 }
 
 
-dsc* evlGetTranCN(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, 
+dsc* evlGetTranCN(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
 	fb_assert(args.getCount() == 1);
@@ -5704,12 +5706,6 @@ const SysFunction SysFunction::functions[] =
 		{"DATEDIFF", 3, 3, setParamsDateDiff, makeInt64Result, evlDateDiff, NULL},
 		{"DECRYPT", 7, 7, setParamsEncrypt, makeDecrypt, evlDecrypt, NULL},
 		{"ENCRYPT", 7, 7, setParamsEncrypt, makeEncrypt, evlEncrypt, NULL},
-		{"RSA_DECRYPT", 4, 4, setParamsRsaEncrypt, makeRsaDecrypt, evlRsaDecrypt, NULL},
-		{"RSA_ENCRYPT", 4, 4, setParamsRsaEncrypt, makeRsaEncrypt, evlRsaEncrypt, NULL},
-		{"RSA_PRIVATE", 1, 1, setParamsInteger, makeRsaPrivate, evlRsaPrivate, NULL},
-		{"RSA_PUBLIC", 1, 1, setParamsRsaPublic, makeRsaPublic, evlRsaPublic, NULL},
-		{"RSA_SIGN", 4, 4, setParamsRsaSign, makeRsaSign, evlRsaSign, NULL},
-		{"RSA_VERIFY", 5, 5, setParamsRsaVerify, makeBoolResult, evlRsaVerify, NULL},
 		{"EXP", 1, 1, setParamsDblDec, makeDblDecResult, evlExp, NULL},
 		{"FIRST_DAY", 2, 2, setParamsFirstLastDay, makeFirstLastDayResult, evlFirstLastDay, (void*) funFirstDay},
 		{"FLOOR", 1, 1, setParamsDblDec, makeCeilFloor, evlFloor, NULL},
@@ -5741,6 +5737,12 @@ const SysFunction SysFunction::functions[] =
 		{"RIGHT", 2, 2, setParamsSecondInteger, makeLeftRight, evlRight, NULL},
 		{"ROUND", 1, 2, setParamsRoundTrunc, makeRound, evlRound, NULL},
 		{"RPAD", 2, 3, setParamsSecondInteger, makePad, evlPad, (void*) funRPad},
+		{"RSA_DECRYPT", 4, 4, setParamsRsaEncrypt, makeRsaDecrypt, evlRsaDecrypt, NULL},
+		{"RSA_ENCRYPT", 4, 4, setParamsRsaEncrypt, makeRsaEncrypt, evlRsaEncrypt, NULL},
+		{"RSA_PRIVATE", 1, 1, setParamsInteger, makeRsaPrivate, evlRsaPrivate, NULL},
+		{"RSA_PUBLIC", 1, 1, setParamsRsaPublic, makeRsaPublic, evlRsaPublic, NULL},
+		{"RSA_SIGN", 4, 4, setParamsRsaSign, makeRsaSign, evlRsaSign, NULL},
+		{"RSA_VERIFY", 5, 5, setParamsRsaVerify, makeBoolResult, evlRsaVerify, NULL},
 		{"SIGN", 1, 1, setParamsDblDec, makeShortResult, evlSign, NULL},
 		{"SIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfSin},
 		{"SINH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfSinh},

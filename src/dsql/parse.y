@@ -8045,50 +8045,50 @@ rsa_encrypt_decrypt
 
 %type <valueExprNode> opt_lparam
 opt_lparam
-	: LPARAM value
-		{ $$ = $2; }
-	| /* nothing */
+	: // nothing
 		{ $$ = MAKE_str_constant(newIntlString(""), CS_ASCII); }
+	| LPARAM value
+		{ $$ = $2; }
 	;
 
 %type <metaNamePtr> opt_hash
 opt_hash
-	: HASH valid_symbol_name
-		{ $$ = $2; }
-	| /* nothing */
+	: // nothing
 		{ $$ = newNode<MetaName>(""); }
+	| HASH valid_symbol_name
+		{ $$ = $2; }
 	;
 
 %type <valueExprNode> opt_saltlen
 opt_saltlen
-	: SALT_LENGTH value
-		{ $$ = $2; }
-	| /* nothing */
+	: // nothing
 		{ $$ = MAKE_str_constant(newIntlString(""), CS_ASCII); }
+	| SALT_LENGTH value
+		{ $$ = $2; }
 	;
 
 %type <metaNamePtr> opt_mode
 opt_mode
-	: MODE valid_symbol_name
-		{ $$ = $2; }
-	| /* nothing */
+	: // nothing
 		{ $$ = newNode<MetaName>(""); }
+	| MODE valid_symbol_name
+		{ $$ = $2; }
 	;
 
 %type <valueExprNode> opt_iv
 opt_iv
-	: IV value
-		{ $$ = $2; }
-	| /* nothing */
+	: // nothing
 		{ $$ = MAKE_str_constant(newIntlString(""), CS_ASCII); }
+	| IV value
+		{ $$ = $2; }
 	;
 
 %type <metaNamePtr> opt_counter_type
 opt_counter_type
-	: counter_type
-		{ $$ = $1; }
-	| /* nothing */
+	: // nothing
 		{ $$ = newNode<MetaName>(""); }
+	| counter_type
+		{ $$ = $1; }
 	;
 
 %type <metaNamePtr> counter_type
@@ -8098,10 +8098,10 @@ counter_type
 
 %type <valueExprNode> opt_counter
 opt_counter
-	: counter_name value
-		{ $$ = $2; }
-	| /* nothing */
+	: // nothing
 		{ $$ = MAKE_str_constant(newIntlString(""), CS_ASCII); }
+	| counter_name value
+		{ $$ = $2; }
 	;
 
 %type <metaNamePtr> counter_name

@@ -3072,19 +3072,18 @@ const UCHAR* CVT_get_bytes(const dsc* desc, unsigned& size)
 	{
 		case dtype_varying:
 			{
-				vary* v = (vary*)(desc->dsc_address);
+				vary* v = (vary*) desc->dsc_address;
 				size = v->vary_length;
-				return (const UCHAR*)v->vary_string;
+				return (const UCHAR*) v->vary_string;
 			}
 
 		case dtype_cstring:
-			size = strlen((const char*)desc->dsc_address);
+			size = strlen((const char*) desc->dsc_address);
 			return desc->dsc_address;
 
 		default:
 			size = desc->dsc_length;
 			return desc->dsc_address;
-			break;
 	}
 
 	return nullptr;	// compiler warning silencer

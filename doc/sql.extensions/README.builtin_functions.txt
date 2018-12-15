@@ -424,7 +424,7 @@ Function:
     Encrypts/decrypts data using symmetric cipher.
 
 Format:
-    {ENCRYPT | DECRYPT} ( <string | blob> USING <algorithm> [MODE <mode>] KEY <string> \
+    {ENCRYPT | DECRYPT} ( <string | blob> USING <algorithm> [MODE <mode>] KEY <string>
     	[IV <string>] [<endianness>] [CTR_LENGTH <smallint>] [COUNTER <bigint>])
 
     algorithm ::= { block_cipher | stream_cipher }
@@ -776,17 +776,17 @@ RDB$GET_TRANSACTION_CN
 Function:
     Returns commit number of given transaction. Result type is BIGINT.
 
-	Note, engine internally uses unsigned 8-byte integer for commit numbers, 
-	and unsigned 6-byte integer for transaction numbers. Thus, despite of	
+	Note, engine internally uses unsigned 8-byte integer for commit numbers,
+	and unsigned 6-byte integer for transaction numbers. Thus, despite of
 	SQL language have no unsigned integers and RDB$GET_TRANSACTION_CN returns
-	signed BIGINT, it is impossible to see negative commit numbers except of 
-	few special values used for non-committed transactions. 
+	signed BIGINT, it is impossible to see negative commit numbers except of
+	few special values used for non-committed transactions.
 	Summary, numbers returned by RDB$GET_TRANSACTION_CN could have values below:
 
 	-2 - transaction is dead (rolled back)
 	-1 - transaction is in limbo
 	 0 - transaction is active,
-	 1 - transaction committed before database started or less than database 
+	 1 - transaction committed before database started or less than database
 		 Oldest Interesting Transaction
 	>1 - transaction committed after database started
 	NULL - given transaction number is NULL or greater than database Next Transaction
@@ -970,7 +970,7 @@ Format:
         KEY should be a value, returhed by RSA_PRIVATE function.
         LPARAM is the same variable passed to RSA_ENCRYPT. If it does not match
           what was used during encoding this function will not decrypt the packet.
-        hash ::= { MD5 | SHA1 | SHA256 | SHA512 } Default is SHA256. 
+        hash ::= { MD5 | SHA1 | SHA256 | SHA512 } Default is SHA256.
 
 Example:
     (tip - start running samples one by one from RSA_PRIVATE function)
