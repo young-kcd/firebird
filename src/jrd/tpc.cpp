@@ -64,7 +64,7 @@ bool TipCache::GlobalTpcInitializer::initialize(Firebird::SharedMemoryBase* sm, 
 
 	header->latest_commit_number.store(CN_PREHISTORIC, std::memory_order_relaxed);
 	header->latest_statement_id.store(0, std::memory_order_relaxed);
-	header->tpc_block_size = m_cache->m_dbb->dbb_config->getTpcBlockSize();
+	header->tpc_block_size = m_cache->m_dbb->dbb_config->getTipCacheBlockSize();
 
 	m_cache->initTransactionsPerBlock();
 	m_cache->loadInventoryPages(tdbb);

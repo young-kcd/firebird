@@ -150,7 +150,7 @@ public:
 		KEY_EXT_CONN_POOL_SIZE,
 		KEY_EXT_CONN_POOL_LIFETIME,
 		KEY_SNAPSHOTS_MEM_SIZE,
-		KEY_TPC_BLOCK_SIZE,
+		KEY_TIP_CACHE_BLOCK_SIZE,
 		KEY_READ_CONSISTENCY,
 		MAX_CONFIG_KEY		// keep it last
 	};
@@ -377,7 +377,7 @@ public:
 
 	ULONG getSnapshotsMemSize() const;
 
-	ULONG getTpcBlockSize() const;
+	ULONG getTipCacheBlockSize() const;
 
 	bool getReadConsistency() const;
 };

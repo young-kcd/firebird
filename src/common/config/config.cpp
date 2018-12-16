@@ -225,7 +225,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_INTEGER,		"ExtConnPoolSize",			(ConfigValue) 0},
 	{TYPE_INTEGER,		"ExtConnPoolLifeTime",		(ConfigValue) 7200},
 	{TYPE_INTEGER,		"SnapshotsMemSize",			(ConfigValue) 65536}, // bytes
-	{TYPE_INTEGER,		"TpcBlockSize",				(ConfigValue) 4194304}, // bytes
+	{TYPE_INTEGER,		"TipCacheBlockSize",		(ConfigValue) 4194304}, // bytes
 	{TYPE_BOOLEAN,		"ReadConsistency",			(ConfigValue) true}
 };
 
@@ -745,9 +745,9 @@ ULONG Config::getSnapshotsMemSize() const
 	return rc;
 }
 
-ULONG Config::getTpcBlockSize() const
+ULONG Config::getTipCacheBlockSize() const
 {
-	SINT64 rc = get<SINT64>(KEY_TPC_BLOCK_SIZE);
+	SINT64 rc = get<SINT64>(KEY_TIP_CACHE_BLOCK_SIZE);
 	if (rc <= 0 || rc > MAX_ULONG)
 	{
 		rc = 4194304;
