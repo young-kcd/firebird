@@ -279,7 +279,7 @@ private:
 	void allocateBuffer(MemoryPool&);
 	void releaseBuffer();
 
-	void diddleKey(UCHAR*, bool);
+	void diddleKey(UCHAR*, bool, bool);
 	sort_record* getMerge(merge_control*);
 	ULONG allocate(ULONG, ULONG, bool);
 	void init();
