@@ -995,9 +995,9 @@ void Attachment::IdleTimer::handler()
 	const SINT64 curTime = currentTimeGmt.timestamp_date * TimeStamp::ISC_TICKS_PER_DAY +
 		(SINT64) currentTimeGmt.timestamp_time;
 
-	if (curTime < m_expTime)
+	if (curTime + ISC_TIME_SECONDS_PRECISION < m_expTime)
 	{
-		reset(m_expTime - curTime);
+		reset((m_expTime - curTime) / ISC_TIME_SECONDS_PRECISION);
 		return;
 	}
 
@@ -1021,6 +1021,8 @@ void Attachment::IdleTimer::reset(unsigned int timeout)
 {
 	// Start timer if necessary. If timer was already started, don't restart
 	// (or stop) it - handler() will take care about it.
+	// Take into account that timeout is in seconds while m_expTime is in ISC ticks
+	// and ITimerControl works with microseconds.
 
 	if (!timeout)
 	{
@@ -1047,7 +1049,8 @@ void Attachment::IdleTimer::reset(unsigned int timeout)
 		m_fireTime = 0;
 	}
 
-	timerCtrl->start(&s, this, (m_expTime - curTime) * 100);
+	// Convert ISC ticks into microseconds
+	timerCtrl->start(&s, this, (m_expTime - curTime) * (1000 * 1000 / ISC_TIME_SECONDS_PRECISION));
 	check(&s);
 	m_fireTime = m_expTime;
 }
