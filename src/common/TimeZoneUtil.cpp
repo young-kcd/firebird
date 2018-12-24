@@ -30,6 +30,7 @@
 #include "firebird.h"
 #include "../common/TimeZoneUtil.h"
 #include "../common/StatusHolder.h"
+#include "../common/classes/rwlock.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/GenericMap.h"
 #include "unicode/ucal.h"
@@ -69,8 +70,7 @@ namespace
 	struct TimeZoneStartup
 	{
 		TimeZoneStartup(MemoryPool& pool)
-			: systemTimeZone(TimeZoneUtil::GMT_ZONE),
-			  nameIdMap(pool)
+			: nameIdMap(pool)
 		{
 #if defined DEV_BUILD && defined TZ_UPDATE
 			tzUpdate();
@@ -82,55 +82,6 @@ namespace
 				s.upper();
 				nameIdMap.put(s, i);
 			}
-
-			UErrorCode icuErrorCode = U_ZERO_ERROR;
-
-			Jrd::UnicodeUtil::ConversionICU& icuLib = Jrd::UnicodeUtil::getConversionICU();
-			UCalendar* icuCalendar = icuLib.ucalOpen(NULL, -1, NULL, UCAL_GREGORIAN, &icuErrorCode);
-
-			if (!icuCalendar)
-			{
-				gds__log("ICU's ucal_open error opening the default callendar.");
-				return;
-			}
-
-			UChar buffer[TimeZoneUtil::MAX_SIZE];
-			bool found = false;
-
-			int32_t len = icuLib.ucalGetTimeZoneID(icuCalendar, buffer, FB_NELEM(buffer), &icuErrorCode);
-
-			if (!U_FAILURE(icuErrorCode))
-			{
-				bool error;
-				string bufferStrUnicode(reinterpret_cast<const char*>(buffer), len * sizeof(USHORT));
-				string bufferStrAscii(IntlUtil::convertUtf16ToAscii(bufferStrUnicode, &error));
-				found = getId(bufferStrAscii, systemTimeZone);
-			}
-			else
-				icuErrorCode = U_ZERO_ERROR;
-
-			if (found)
-			{
-				icuLib.ucalClose(icuCalendar);
-				return;
-			}
-
-			gds__log("ICU error retrieving the system time zone: %d. Fallbacking to displacement.", int(icuErrorCode));
-
-			int32_t displacement = (icuLib.ucalGet(icuCalendar, UCAL_ZONE_OFFSET, &icuErrorCode) +
-				icuLib.ucalGet(icuCalendar, UCAL_DST_OFFSET, &icuErrorCode)) / U_MILLIS_PER_MINUTE;
-
-			icuLib.ucalClose(icuCalendar);
-
-			if (!U_FAILURE(icuErrorCode))
-			{
-				int sign = displacement < 0 ? -1 : 1;
-				unsigned tzh = (unsigned) abs(int(displacement / 60));
-				unsigned tzm = (unsigned) abs(int(displacement % 60));
-				systemTimeZone = makeFromOffset(sign, tzh, tzm);
-			}
-			else
-				gds__log("Cannot retrieve the system time zone: %d.", int(icuErrorCode));
 		}
 
 		bool getId(string name, USHORT& id)
@@ -225,8 +176,6 @@ namespace
 		}
 #endif	// defined DEV_BUILD && defined TZ_UPDATE
 
-		USHORT systemTimeZone;
-
 	private:
 		GenericMap<Pair<Left<string, USHORT> > > nameIdMap;
 	};
@@ -242,7 +191,81 @@ static InitInstance<TimeZoneStartup> timeZoneStartup;
 // Return the current user's time zone.
 USHORT TimeZoneUtil::getSystemTimeZone()
 {
-	return timeZoneStartup().systemTimeZone;
+	static volatile bool cachedError = false;
+	static volatile USHORT cachedTimeZoneId = TimeZoneUtil::GMT_ZONE;
+	static volatile int32_t cachedTimeZoneNameLen = -1;
+	static UChar cachedTimeZoneName[TimeZoneUtil::MAX_SIZE];
+
+	if (cachedError)
+		return cachedTimeZoneId;
+
+	UErrorCode icuErrorCode = U_ZERO_ERROR;
+	Jrd::UnicodeUtil::ConversionICU& icuLib = Jrd::UnicodeUtil::getConversionICU();
+
+	UChar buffer[TimeZoneUtil::MAX_SIZE];
+	int32_t len = icuLib.ucalGetDefaultTimeZone(buffer, FB_NELEM(buffer), &icuErrorCode);
+
+	static GlobalPtr<RWLock> lock;
+
+	ReadLockGuard readGuard(lock, "TimeZoneUtil::getSystemTimeZone");
+
+	if (!U_FAILURE(icuErrorCode) &&
+		cachedTimeZoneNameLen != -1 &&
+		len == cachedTimeZoneNameLen &&
+		memcmp(buffer, cachedTimeZoneName, len * sizeof(USHORT)) == 0)
+	{
+		return cachedTimeZoneId;
+	}
+
+	readGuard.release();
+	WriteLockGuard writeGuard(lock, "TimeZoneUtil::getSystemTimeZone");
+
+	if (!U_FAILURE(icuErrorCode))
+	{
+		bool error;
+		string bufferStrUnicode(reinterpret_cast<const char*>(buffer), len * sizeof(USHORT));
+		string bufferStrAscii(IntlUtil::convertUtf16ToAscii(bufferStrUnicode, &error));
+		USHORT id;
+
+		if (timeZoneStartup().getId(bufferStrAscii, id))
+		{
+			memcpy(cachedTimeZoneName, buffer, len * sizeof(USHORT));
+			cachedTimeZoneNameLen = len;
+			return (cachedTimeZoneId = id);
+		}
+	}
+	else
+		icuErrorCode = U_ZERO_ERROR;
+
+	gds__log("ICU error retrieving the system time zone: %d. Fallbacking to displacement.", int(icuErrorCode));
+
+	UCalendar* icuCalendar = icuLib.ucalOpen(NULL, -1, NULL, UCAL_GREGORIAN, &icuErrorCode);
+
+	if (!icuCalendar)
+	{
+		gds__log("ICU's ucal_open error opening the default callendar.");
+		cachedError = true;
+		return cachedTimeZoneId;	// GMT
+	}
+
+	int32_t displacement = (icuLib.ucalGet(icuCalendar, UCAL_ZONE_OFFSET, &icuErrorCode) +
+		icuLib.ucalGet(icuCalendar, UCAL_DST_OFFSET, &icuErrorCode)) / U_MILLIS_PER_MINUTE;
+
+	icuLib.ucalClose(icuCalendar);
+
+	if (!U_FAILURE(icuErrorCode))
+	{
+		int sign = displacement < 0 ? -1 : 1;
+		unsigned tzh = (unsigned) abs(int(displacement / 60));
+		unsigned tzm = (unsigned) abs(int(displacement % 60));
+		cachedTimeZoneId = makeFromOffset(sign, tzh, tzm);
+	}
+	else
+		gds__log("Cannot retrieve the system time zone: %d.", int(icuErrorCode));
+
+	cachedError = true;
+
+	return cachedTimeZoneId;
 }
 
 void TimeZoneUtil::getDatabaseVersion(Firebird::string& str)
