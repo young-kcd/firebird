@@ -322,7 +322,7 @@ USHORT TimeZoneUtil::parse(const char* str, unsigned strLen)
 		}
 
 		if (p != end)
-			status_exception::raise(Arg::Gds(isc_random) << "Invalid time zone offset");	//// TODO:
+			status_exception::raise(Arg::Gds(isc_invalid_timezone_offset) << string(str, strLen));
 
 		return makeFromOffset(sign, tzh, tzm);
 	}
@@ -364,7 +364,7 @@ USHORT TimeZoneUtil::parseRegion(const char* str, unsigned strLen)
 			return id;
 	}
 
-	status_exception::raise(Arg::Gds(isc_random) << "Invalid time zone region");	//// TODO:
+	status_exception::raise(Arg::Gds(isc_invalid_timezone_region) << string(start, len));
 	return 0;
 }
 
@@ -872,7 +872,7 @@ static const TimeZoneDesc* getDesc(USHORT timeZone)
 	if (MAX_USHORT - timeZone < FB_NELEM(TIME_ZONE_LIST))
 		return &TIME_ZONE_LIST[MAX_USHORT - timeZone];
 
-	status_exception::raise(Arg::Gds(isc_random) << "Invalid time zone id");	//// TODO:
+	status_exception::raise(Arg::Gds(isc_invalid_timezone_id) << Arg::Num(timeZone));
 	return nullptr;
 }
 
@@ -886,7 +886,11 @@ static inline bool isOffset(USHORT timeZone)
 static USHORT makeFromOffset(int sign, unsigned tzh, unsigned tzm)
 {
 	if (!TimeZoneUtil::isValidOffset(sign, tzh, tzm))
-		status_exception::raise(Arg::Gds(isc_random) << "Invalid time zone offset");	//// TODO:
+	{
+		string str;
+		str.printf("%s%02u:%02u", (sign == -1 ? "-" : "+"), tzh, tzm);
+		status_exception::raise(Arg::Gds(isc_invalid_timezone_offset) << str);
+	}
 
 	return (USHORT)((tzh * 60 + tzm) * sign + ONE_DAY);
 }
@@ -909,7 +913,7 @@ static int parseNumber(const char*& p, const char* end)
 		n = n * 10 + *p++ - '0';
 
 	if (p == start)
-		status_exception::raise(Arg::Gds(isc_random) << "Invalid time zone offset");	//// TODO:
+		status_exception::raise(Arg::Gds(isc_invalid_timezone_offset) << string(start, end - start));
 
 	return n;
 }

@@ -1836,6 +1836,12 @@ C --
       PARAMETER (GDS__parameter_name                   = 335545211)
       INTEGER*4 GDS__file_starting_page_err          
       PARAMETER (GDS__file_starting_page_err           = 335545212)
+      INTEGER*4 GDS__invalid_timezone_offset         
+      PARAMETER (GDS__invalid_timezone_offset          = 335545213)
+      INTEGER*4 GDS__invalid_timezone_region         
+      PARAMETER (GDS__invalid_timezone_region          = 335545214)
+      INTEGER*4 GDS__invalid_timezone_id             
+      PARAMETER (GDS__invalid_timezone_id              = 335545215)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

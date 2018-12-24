@@ -913,6 +913,9 @@ static const struct {
 	{335545210, "00000"}, // 890 plugin_name
 	{335545211, "42000"}, // 891 parameter_name
 	{335545212, "HY000"}, // 892 file_starting_page_err
+	{335545213, "22009"}, // 893 invalid_timezone_offset
+	{335545214, "22009"}, // 894 invalid_timezone_region
+	{335545215, "22009"}, // 895 invalid_timezone_id
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

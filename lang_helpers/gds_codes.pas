@@ -1831,6 +1831,12 @@ const
 	gds_parameter_name                   = 335545211;
 	isc_file_starting_page_err           = 335545212;
 	gds_file_starting_page_err           = 335545212;
+	isc_invalid_timezone_offset          = 335545213;
+	gds_invalid_timezone_offset          = 335545213;
+	isc_invalid_timezone_region          = 335545214;
+	gds_invalid_timezone_region          = 335545214;
+	isc_invalid_timezone_id              = 335545215;
+	gds_invalid_timezone_id              = 335545215;
 	isc_gfix_db_name                     = 335740929;
 	gds_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;
