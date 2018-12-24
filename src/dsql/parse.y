@@ -7963,7 +7963,7 @@ system_function_special_syntax
 				newNode<ValueListNode>(MAKE_const_slong($3))->add($5)->add($7));
 			$$->dsqlSpecialSyntax = true;
 		}
-	| encrypt_decrypt '(' value USING valid_symbol_name opt_mode KEY value opt_iv opt_counter_type opt_counter ')'
+	| encrypt_decrypt '(' value USING valid_symbol_name crypt_opt_mode KEY value crypt_opt_iv crypt_opt_counter_type crypt_opt_counter ')'
 		{
 			$$ = newNode<SysFuncCallNode>(*$1,
 				newNode<ValueListNode>($3)->add(MAKE_str_constant(newIntlString($5->c_str()), CS_ASCII))->
@@ -8010,21 +8010,21 @@ system_function_special_syntax
 		}
 	| POSITION '(' value_list_opt  ')'
 		{ $$ = newNode<SysFuncCallNode>(*$1, $3); }
-	| rsa_encrypt_decrypt '(' value KEY value opt_lparam opt_hash ')'
+	| rsa_encrypt_decrypt '(' value KEY value crypt_opt_lparam crypt_opt_hash ')'
 		{
 			$$ = newNode<SysFuncCallNode>(*$1,
 				newNode<ValueListNode>($3)->add($5)->add($6)->
 					add(MAKE_str_constant(newIntlString($7->c_str()), CS_ASCII)));
 			$$->dsqlSpecialSyntax = true;
 		}
-	| RSA_SIGN '(' value KEY value opt_hash opt_saltlen ')'
+	| RSA_SIGN '(' value KEY value crypt_opt_hash crypt_opt_saltlen ')'
 		{
 			$$ = newNode<SysFuncCallNode>(*$1,
 				newNode<ValueListNode>($3)->add($5)->
 					add(MAKE_str_constant(newIntlString($6->c_str()), CS_ASCII))->add($7));
 			$$->dsqlSpecialSyntax = true;
 		}
-	| RSA_VERIFY'(' value SIGNATURE value KEY value opt_hash opt_saltlen ')'
+	| RSA_VERIFY'(' value SIGNATURE value KEY value crypt_opt_hash crypt_opt_saltlen ')'
 		{
 			$$ = newNode<SysFuncCallNode>(*$1,
 				newNode<ValueListNode>($3)->add($5)->add($7)->
@@ -8043,69 +8043,69 @@ rsa_encrypt_decrypt
 	: RSA_DECRYPT | RSA_ENCRYPT
 	;
 
-%type <valueExprNode> opt_lparam
-opt_lparam
+%type <valueExprNode> crypt_opt_lparam
+crypt_opt_lparam
 	: // nothing
 		{ $$ = MAKE_str_constant(newIntlString(""), CS_ASCII); }
 	| LPARAM value
 		{ $$ = $2; }
 	;
 
-%type <metaNamePtr> opt_hash
-opt_hash
+%type <metaNamePtr> crypt_opt_hash
+crypt_opt_hash
 	: // nothing
 		{ $$ = newNode<MetaName>(""); }
 	| HASH valid_symbol_name
 		{ $$ = $2; }
 	;
 
-%type <valueExprNode> opt_saltlen
-opt_saltlen
+%type <valueExprNode> crypt_opt_saltlen
+crypt_opt_saltlen
 	: // nothing
 		{ $$ = MAKE_str_constant(newIntlString(""), CS_ASCII); }
 	| SALT_LENGTH value
 		{ $$ = $2; }
 	;
 
-%type <metaNamePtr> opt_mode
-opt_mode
+%type <metaNamePtr> crypt_opt_mode
+crypt_opt_mode
 	: // nothing
 		{ $$ = newNode<MetaName>(""); }
 	| MODE valid_symbol_name
 		{ $$ = $2; }
 	;
 
-%type <valueExprNode> opt_iv
-opt_iv
+%type <valueExprNode> crypt_opt_iv
+crypt_opt_iv
 	: // nothing
 		{ $$ = MAKE_str_constant(newIntlString(""), CS_ASCII); }
 	| IV value
 		{ $$ = $2; }
 	;
 
-%type <metaNamePtr> opt_counter_type
-opt_counter_type
+%type <metaNamePtr> crypt_opt_counter_type
+crypt_opt_counter_type
 	: // nothing
 		{ $$ = newNode<MetaName>(""); }
-	| counter_type
+	| crypt_counter_type
 		{ $$ = $1; }
 	;
 
-%type <metaNamePtr> counter_type
-counter_type
+%type <metaNamePtr> crypt_counter_type
+crypt_counter_type
 	: CTR_BIG_ENDIAN | CTR_LITTLE_ENDIAN
 	;
 
-%type <valueExprNode> opt_counter
-opt_counter
+%type <valueExprNode> crypt_opt_counter
+crypt_opt_counter
 	: // nothing
 		{ $$ = MAKE_str_constant(newIntlString(""), CS_ASCII); }
-	| counter_name value
+	| crypt_counter_name value
 		{ $$ = $2; }
 	;
 
-%type <metaNamePtr> counter_name
-counter_name
+%type <metaNamePtr> crypt_counter_name
+crypt_counter_name
 	: COUNTER | CTR_LENGTH
 	;
 
