@@ -634,14 +634,76 @@ ISC_TIMESTAMP_TZ TimeZoneUtil::getCurrentSystemTimeStamp()
 
 ISC_TIMESTAMP_TZ TimeZoneUtil::getCurrentGmtTimeStamp()
 {
-	//// TODO: Make this function does not depend on local time.
-	TimeStamp now = TimeStamp::getCurrentTimeStamp();
+	NoThrowTimeStamp now;
+
+	// ASF: This comment is copied from NoThrowTimeStamp::getCurrentTimeStamp.
+	// NS: We round generated timestamps to whole millisecond.
+	// Not many applications can deal with fractional milliseconds properly and
+	// we do not use high resolution timers either so actual time granularity
+	// is going to to be somewhere in range between 1 ms (like on UNIX/Risc)
+	// and 53 ms (such as Win9X)
+
+	int milliseconds;
+
+#ifdef WIN_NT
+	FILETIME ftUtc;
+	SYSTEMTIME stUtc;
+
+	GetSystemTimeAsFileTime(&ftUtc);
+	if (!FileTimeToSystemTime(&ftUtc, &stUtc))
+		system_call_failed::raise("FileTimeToSystemTime");
+
+	milliseconds = stUtc.wMilliseconds;
+#else
+	time_t seconds; // UTC time
+
+#ifdef HAVE_GETTIMEOFDAY
+	struct timeval tp;
+	GETTIMEOFDAY(&tp);
+	seconds = tp.tv_sec;
+	milliseconds = tp.tv_usec / 1000;
+#else
+	struct timeb time_buffer;
+	ftime(&time_buffer);
+	seconds = time_buffer.time;
+	milliseconds = time_buffer.millitm;
+#endif
+#endif // WIN_NT
+
+	const int fractions = milliseconds * ISC_TIME_SECONDS_PRECISION / 1000;
+
+#ifdef WIN_NT
+	// Manually convert SYSTEMTIME to "struct tm" used below
+
+	struct tm times, *ptimes = &times;
+
+	times.tm_sec = stLocal.wSecond;			// seconds after the minute - [0,59]
+	times.tm_min = stLocal.wMinute;			// minutes after the hour - [0,59]
+	times.tm_hour = stLocal.wHour;			// hours since midnight - [0,23]
+	times.tm_mday = stLocal.wDay;			// day of the month - [1,31]
+	times.tm_mon = stLocal.wMonth - 1;		// months since January - [0,11]
+	times.tm_year = stLocal.wYear - 1900;	// years since 1900
+	times.tm_wday = stLocal.wDayOfWeek;		// days since Sunday - [0,6]
+
+	// --- no used for encoding below
+	times.tm_yday = 0;						// days since January 1 - [0,365]
+	times.tm_isdst = -1;					// daylight savings time flag
+#else
+#ifdef HAVE_GMTIME_R
+	struct tm times, *ptimes = &times;
+	if (!gmtime_r(&seconds, &times))
+		system_call_failed::raise("gmtime_r");
+#else
+	struct tm *ptimes = gmtime(&seconds);
+	if (!ptimes)
+		system_call_failed::raise("gmtime");
+#endif
+#endif // WIN_NT
+
+	now.encode(ptimes, fractions);
 
 	ISC_TIMESTAMP_TZ tsTz;
 	tsTz.utc_timestamp = now.value();
-	tsTz.time_zone = getSystemTimeZone();
-	localTimeStampToUtc(tsTz);
-
 	tsTz.time_zone = GMT_ZONE;
 
 	return tsTz;
