@@ -33,6 +33,8 @@
 #include "gen/iberror.h"
 #include "status.h"
 
+#include <limits>
+
 extern "C"
 {
 #include "../../extern/decNumber/decimal128.h"
@@ -709,21 +711,26 @@ double Decimal128Base::toDouble(DecimalStatus decSt) const
 {
 	DecimalContext context(this, decSt);
 
-	if (compare(decSt, dmin) < 0 || compare(decSt, dmax) > 0)
+	if (compare(decSt, dmin) < 0)
+	{
 		decContextSetStatus(&context, DEC_Overflow);
-	else if ((!decQuadIsZero(&dec)) && compare(decSt, dzlw) > 0 && compare(decSt, dzup) < 0)
+		return std::numeric_limits<double>::has_infinity ? -std::numeric_limits<double>::infinity() : 0.0;
+	}
+	if (compare(decSt, dmax) > 0)
+	{
+		decContextSetStatus(&context, DEC_Overflow);
+		return std::numeric_limits<double>::has_infinity ? std::numeric_limits<double>::infinity() : 0.0;
+	}
+
+	if ((!decQuadIsZero(&dec)) && compare(decSt, dzlw) > 0 && compare(decSt, dzup) < 0)
 	{
 		decContextSetStatus(&context, DEC_Underflow);
 		return 0.0;
 	}
-	else
-	{
-		char s[IDecFloat34::STRING_SIZE];
-		decQuadToString(&dec, s);
-		return atof(s);
-	}
 
-	return 0.0;
+	char s[IDecFloat34::STRING_SIZE];
+	decQuadToString(&dec, s);
+	return atof(s);
 }
 
 SINT64 Decimal128::toInt64(DecimalStatus decSt, int scale) const
