@@ -204,7 +204,7 @@ namespace
 			if (!node->first)
 			{
 				// Process RETURNING *
-				node->first = FB_NEW_POOL(scratch->getPool()) ValueListNode(scratch->getPool(), int(0));
+				node->first = FB_NEW_POOL(scratch->getPool()) ValueListNode(scratch->getPool(), 0u);
 				dsqlExplodeFields(relation, node->first->items, true);
 			}
 			else
