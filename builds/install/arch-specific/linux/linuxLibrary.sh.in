@@ -183,7 +183,15 @@ superSrv() {
 
 registerSuperServer() {
 	installSystemdCtrlFiles
-	superSrv enable && return 0
+
+	if [ "${fb_install_prefix}" = "${default_prefix}" ]
+	then
+		superSrv enable && return 0
+		return 1
+	fi
+
+	systemdPresent && return 0
+	return 1
 }
 
 unregisterSuperServer() {
