@@ -6489,23 +6489,17 @@ update_or_insert_matching_opt($fieldArray)
 returning_clause
 	: /* nothing */
 		{ $$ = NULL; }
-	| RETURNING value_opt_alias_list
+	| RETURNING select_list
 		{
 			$$ = FB_NEW_POOL(getPool()) ReturningClause(getPool());
 			$$->first = $2;
 		}
-	| RETURNING value_opt_alias_list INTO variable_list
+	| RETURNING select_list INTO variable_list
 		{
 			$$ = FB_NEW_POOL(getPool()) ReturningClause(getPool());
 			$$->first = $2;
 			$$->second = $4;
 		}
-	;
-
-%type <valueListNode> value_opt_alias_list
-value_opt_alias_list
-	: value_opt_alias							{ $$ = newNode<ValueListNode>($1); }
-	| value_opt_alias_list ',' value_opt_alias	{ $$ = $1->add($3); }
 	;
 
 %type <metaNamePtr> cursor_clause

@@ -179,7 +179,6 @@ using namespace Firebird;
 
 static string pass1_alias_concat(const string&, const string&);
 static void pass1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context);
-static ValueListNode* pass1_expand_select_list(DsqlCompilerScratch*, ValueListNode*, RecSourceListNode*);
 static ValueListNode* pass1_group_by_list(DsqlCompilerScratch*, ValueListNode*, ValueListNode*);
 static ValueExprNode* pass1_make_derived_field(thread_db*, DsqlCompilerScratch*, ValueExprNode*);
 static RseNode* pass1_rse(DsqlCompilerScratch*, RecordSourceNode*, ValueListNode*, RowsClause*, bool, USHORT);
@@ -1288,17 +1287,16 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 
 /**
 
- 	pass1_expand_select_list
+	PASS1_expand_select_list
 
-    @brief	Expand asterisk nodes into fields.
+	@brief	Expand asterisk nodes into fields.
 
-
-    @param dsqlScratch
-    @param list
-    @param streams
+	@param dsqlScratch
+	@param list
+	@param streams
 
  **/
-static ValueListNode* pass1_expand_select_list(DsqlCompilerScratch* dsqlScratch, ValueListNode* list,
+ValueListNode* PASS1_expand_select_list(DsqlCompilerScratch* dsqlScratch, ValueListNode* list,
 	RecSourceListNode* streams)
 {
 	thread_db* tdbb = JRD_get_thread_data();
@@ -1399,15 +1397,24 @@ void PASS1_expand_select_node(DsqlCompilerScratch* dsqlScratch, ExprNode* node, 
 
 		if (context->ctx_relation)
 		{
+			thread_db* const tdbb = JRD_get_thread_data();
+
 			for (dsql_fld* field = context->ctx_relation->rel_fields; field; field = field->fld_next)
 			{
 				DEV_BLKCHK(field, dsql_type_fld);
 
 				NestConst<ValueExprNode> select_item = NULL;
+
 				if (!hide_using || context->getImplicitJoinField(field->fld_name, select_item))
 				{
 					if (!select_item)
-						select_item = MAKE_field(context, field, NULL);
+					{
+						if (context->ctx_flags & CTX_null)
+							select_item = FB_NEW_POOL(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
+						else
+							select_item = MAKE_field(context, field, NULL);
+					}
+
 					list->add(select_item);
 				}
 			}
@@ -1892,7 +1899,7 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, RecordSourceNod
 	ValueListNode* selectList = inputRse->dsqlSelectList;
 	// First expand select list, this will expand nodes with asterisk.
 	++dsqlScratch->inSelectList;
-	selectList = pass1_expand_select_list(dsqlScratch, selectList, rse->dsqlStreams);
+	selectList = PASS1_expand_select_list(dsqlScratch, selectList, rse->dsqlStreams);
 
 	if ((flags & RecordSourceNode::DFLAG_VALUE) &&
 		(!selectList || selectList->items.getCount() > 1))

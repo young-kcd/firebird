@@ -65,7 +65,8 @@ using namespace Jrd;
 
 namespace Jrd {
 
-template <typename T> static void dsqlExplodeFields(dsql_rel* relation, Array<NestConst<T> >& fields);
+template <typename T> static void dsqlExplodeFields(dsql_rel* relation, Array<NestConst<T> >& fields,
+	bool includeComputed);
 static dsql_par* dsqlFindDbKey(const dsql_req*, const RelationSourceNode*);
 static dsql_par* dsqlFindRecordVersion(const dsql_req*, const RelationSourceNode*);
 static const dsql_msg* dsqlGenDmlHeader(DsqlCompilerScratch*, RseNode*);
@@ -133,13 +134,16 @@ namespace
 		// Play with contexts for RETURNING purposes.
 		// Its assumed that oldContext is already on the stack.
 		// Changes oldContext name to "OLD".
-		ReturningProcessor(DsqlCompilerScratch* aScratch, dsql_ctx* aOldContext, dsql_ctx* modContext)
+		ReturningProcessor(DsqlCompilerScratch* aScratch, dsql_ctx* aOldContext, dsql_ctx* modContext,
+				ReturningClause* aNode)
 			: scratch(aScratch),
 			  oldContext(aOldContext),
+			  node(aNode),
 			  oldAlias(oldContext->ctx_alias),
 			  oldInternalAlias(oldContext->ctx_internal_alias),
 			  autoFlags(&oldContext->ctx_flags, oldContext->ctx_flags | CTX_system | CTX_returning),
-			  autoScopeLevel(&aScratch->scopeLevel, aScratch->scopeLevel + 1)
+			  autoScopeLevel(&aScratch->scopeLevel, aScratch->scopeLevel + 1),
+			  autoNodeFirst(node ? &node->first : &temp, node ? node->first : temp)
 		{
 			// Clone the modify/old context and push with name "NEW" in a greater scope level.
 
@@ -171,6 +175,8 @@ namespace
 			newContext->ctx_flags |= CTX_returning;
 			newContext->ctx_scope_level = scratch->scopeLevel;
 			scratch->context->push(newContext);
+
+			explode(scratch, oldContext->ctx_relation, node);
 		}
 
 		~ReturningProcessor()
@@ -184,9 +190,28 @@ namespace
 		}
 
 		// Process the RETURNING clause.
-		StmtNode* process(ReturningClause* node, StmtNode* stmtNode)
+		StmtNode* process(StmtNode* stmtNode)
 		{
 			return dsqlProcessReturning(scratch, node, stmtNode);
+		}
+
+		// Explode RETURNING * and RETURNING alias.* fields.
+		static void explode(DsqlCompilerScratch* scratch, dsql_rel* relation, ReturningClause* node)
+		{
+			if (!node)
+				return;
+
+			if (!node->first)
+			{
+				// Process RETURNING *
+				node->first = FB_NEW_POOL(scratch->getPool()) ValueListNode(scratch->getPool(), int(0));
+				dsqlExplodeFields(relation, node->first->items, true);
+			}
+			else
+			{
+				// Process alias.* items.
+				node->first = PASS1_expand_select_list(scratch, node->first, nullptr);
+			}
 		}
 
 		// Clone a RETURNING node without create duplicate parameters.
@@ -222,9 +247,12 @@ namespace
 	private:
 		DsqlCompilerScratch* scratch;
 		dsql_ctx* oldContext;
+		ReturningClause* node;
 		string oldAlias, oldInternalAlias;
 		AutoSetRestore<USHORT> autoFlags;
 		AutoSetRestore<USHORT> autoScopeLevel;
+		NestConst<ValueListNode> temp;
+		AutoSetRestore<NestConst<ValueListNode> > autoNodeFirst;
 	};
 
 	class SavepointChangeMarker : public Savepoint::ChangeMarker
@@ -2252,6 +2280,8 @@ StmtNode* EraseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		dsqlScratch->context->push(node->dsqlContext);
 		++dsqlScratch->scopeLevel;
 
+		ReturningProcessor::explode(dsqlScratch, node->dsqlContext->ctx_relation, dsqlReturning);
+
 		node->statement = dsqlProcessReturning(dsqlScratch, dsqlReturning, statement);
 
 		--dsqlScratch->scopeLevel;
@@ -2294,6 +2324,8 @@ StmtNode* EraseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	node->dsqlRse = rse;
 	node->dsqlRelation = nodeAs<RelationSourceNode>(rse->dsqlStreams->items[0]);
+
+	ReturningProcessor::explode(dsqlScratch, node->dsqlRelation->dsqlContext->ctx_relation, dsqlReturning);
 
 	node->statement = dsqlProcessReturning(dsqlScratch, dsqlReturning, statement);
 
@@ -5440,8 +5472,6 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 			if (returning)
 			{
-				StmtNode* updRet = ReturningProcessor::clone(dsqlScratch, returning, processedRet);
-
 				// Repush the source contexts.
 				++dsqlScratch->scopeLevel;	// Go to the same level of source and target contexts.
 
@@ -5452,8 +5482,11 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 				modContext->ctx_scope_level = oldContext->ctx_scope_level;
 
-				processedRet = modify->statement2 = ReturningProcessor(
-					dsqlScratch, oldContext, modContext).process(returning, updRet);
+				{	// scope
+					ReturningProcessor returningProcessor(dsqlScratch, oldContext, modContext, returning);
+					StmtNode* updRet = ReturningProcessor::clone(dsqlScratch, returning, processedRet);
+					processedRet = modify->statement2 = returningProcessor.process(updRet);
+				}
 
 				if (!nullRet)
 					nullRet = dsqlNullifyReturning(dsqlScratch, modify, false);
@@ -5506,10 +5539,11 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 			if (returning)
 			{
-				StmtNode* delRet = ReturningProcessor::clone(dsqlScratch, returning, processedRet);
-
-				processedRet = erase->statement = ReturningProcessor(
-					dsqlScratch, context, NULL).process(returning, delRet);
+				{	// scope
+					ReturningProcessor returningProcessor(dsqlScratch, context, NULL, returning);
+					StmtNode* delRet = ReturningProcessor::clone(dsqlScratch, returning, processedRet);
+					processedRet = erase->statement = returningProcessor.process(delRet);
+				}
 
 				if (!nullRet)
 					nullRet = dsqlNullifyReturning(dsqlScratch, erase, false);
@@ -5569,16 +5603,17 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 		if (returning)
 		{
-			StmtNode* insRet = ReturningProcessor::clone(dsqlScratch, returning, processedRet);
-
 			dsql_ctx* const oldContext = dsqlGetContext(target);
 			dsqlScratch->context->push(oldContext);
 
 			dsql_ctx* context = dsqlGetContext(store->dsqlRelation);
 			context->ctx_scope_level = oldContext->ctx_scope_level;
 
-			processedRet = store->statement2 = ReturningProcessor(
-				dsqlScratch, oldContext, context).process(returning, insRet);
+			{	// scope
+				ReturningProcessor returningProcessor(dsqlScratch, oldContext, context, returning);
+				StmtNode* insRet = ReturningProcessor::clone(dsqlScratch, returning, processedRet);
+				processedRet = store->statement2 = returningProcessor.process(insRet);
+			}
 
 			if (!nullRet)
 				nullRet = dsqlNullifyReturning(dsqlScratch, store, false);
@@ -5911,8 +5946,14 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 		dsqlScratch->context->push(oldContext);	// process old context values
 		++dsqlScratch->scopeLevel;
 
-		node->statement2 = ReturningProcessor(dsqlScratch, oldContext, modContext).process(
-			dsqlReturning, statement2);
+		{	// scope
+			ReturningProcessor returningProcessor(dsqlScratch, oldContext, modContext, dsqlReturning);
+
+			if (updateOrInsert)
+				statement2 = ReturningProcessor::clone(dsqlScratch, dsqlReturning, statement2);
+
+			node->statement2 = returningProcessor.process(statement2);
+		}
 
 		--dsqlScratch->scopeLevel;
 		dsqlScratch->context->pop();
@@ -5987,8 +6028,12 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 
 	if (dsqlReturning || statement2)
 	{
-		node->statement2 = ReturningProcessor(dsqlScratch, old_context, mod_context).process(
-			dsqlReturning, statement2);
+		ReturningProcessor returningProcessor(dsqlScratch, old_context, mod_context, dsqlReturning);
+
+		if (updateOrInsert)
+			statement2 = ReturningProcessor::clone(dsqlScratch, dsqlReturning, statement2);
+
+		node->statement2 = returningProcessor.process(statement2);
 	}
 
 	node->dsqlRse = rse;
@@ -6783,7 +6828,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch,
 	}
 	else
 	{
-		dsqlExplodeFields(relation, fields);
+		dsqlExplodeFields(relation, fields, false);
 
 		for (NestConst<ValueExprNode>* i = fields.begin(); i != fields.end(); ++i)
 			*i = doDsqlPass(dsqlScratch, *i, false);
@@ -6851,6 +6896,12 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch,
 		new_context->ctx_flags |= CTX_system | CTX_returning;
 		dsqlScratch->context->push(new_context);
 	}
+
+	NestConst<ValueListNode> temp;
+	AutoSetRestore<NestConst<ValueListNode> > autoNodeFirst(
+		dsqlReturning ? &dsqlReturning->first : &temp, dsqlReturning ? dsqlReturning->first : temp);
+
+	ReturningProcessor::explode(dsqlScratch, relation, dsqlReturning);
 
 	node->statement2 = dsqlProcessReturning(dsqlScratch, dsqlReturning, statement2);
 
@@ -8450,7 +8501,7 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	// If a field list isn't present, build one using the same rules of INSERT INTO table VALUES ...
 	if (fieldsCopy.isEmpty())
-		dsqlExplodeFields(ctxRelation, fieldsCopy);
+		dsqlExplodeFields(ctxRelation, fieldsCopy, false);
 
 	// Maintain a pair of view's field name / base field name.
 	MetaNamePairMap view_fields;
@@ -8593,8 +8644,8 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	if (returning)
 	{
 		update->dsqlRseFlags = RecordSourceNode::DFLAG_SINGLETON;
-		update->statement2 = ReturningProcessor::clone(
-			dsqlScratch, returning, insert->statement2);
+		update->dsqlReturning = returning;
+		update->statement2 = insert->statement2;
 	}
 
 	update = nodeAs<ModifyNode>(update->internalDsqlPass(dsqlScratch, true));
@@ -8655,7 +8706,7 @@ void UpdateOrInsertNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 
 // Generate a field list that correspond to table fields.
 template <typename T>
-static void dsqlExplodeFields(dsql_rel* relation, Array<NestConst<T> >& fields)
+static void dsqlExplodeFields(dsql_rel* relation, Array<NestConst<T> >& fields, bool includeComputed)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 	MemoryPool& pool = *tdbb->getDefaultPool();
@@ -8664,7 +8715,7 @@ static void dsqlExplodeFields(dsql_rel* relation, Array<NestConst<T> >& fields)
 	{
 		// CVC: Ann Harrison requested to skip COMPUTED fields in INSERT w/o field list.
 		// ASF: But not for views - CORE-5454
-		if (!(relation->rel_flags & REL_view) && (field->flags & FLD_computed))
+		if (!includeComputed && !(relation->rel_flags & REL_view) && (field->flags & FLD_computed))
 			continue;
 
 		FieldNode* fieldNode = FB_NEW_POOL(pool) FieldNode(pool);
