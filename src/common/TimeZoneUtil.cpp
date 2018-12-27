@@ -220,11 +220,13 @@ USHORT TimeZoneUtil::getSystemTimeZone()
 	readGuard.release();
 	WriteLockGuard writeGuard(lock, "TimeZoneUtil::getSystemTimeZone");
 
+	string bufferStrAscii;
+
 	if (!U_FAILURE(icuErrorCode))
 	{
 		bool error;
 		string bufferStrUnicode(reinterpret_cast<const char*>(buffer), len * sizeof(USHORT));
-		string bufferStrAscii(IntlUtil::convertUtf16ToAscii(bufferStrUnicode, &error));
+		bufferStrAscii = IntlUtil::convertUtf16ToAscii(bufferStrUnicode, &error);
 		USHORT id;
 
 		if (timeZoneStartup().getId(bufferStrAscii, id))
@@ -237,7 +239,8 @@ USHORT TimeZoneUtil::getSystemTimeZone()
 	else
 		icuErrorCode = U_ZERO_ERROR;
 
-	gds__log("ICU error retrieving the system time zone: %d. Fallbacking to displacement.", int(icuErrorCode));
+	gds__log("ICU error (%d) retrieving the system time zone (%s). Falling back to displacement.",
+		int(icuErrorCode), bufferStrAscii.c_str());
 
 	UCalendar* icuCalendar = icuLib.ucalOpen(NULL, -1, NULL, UCAL_GREGORIAN, &icuErrorCode);
 
