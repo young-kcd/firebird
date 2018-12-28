@@ -494,6 +494,8 @@ int gbak(Firebird::UtilSvc* uSvc)
 	Firebird::UtilSvc::ArgvType& argv = uSvc->argv;
 	const int argc = uSvc->argv.getCount();
 
+	try {
+
 	// Copy the static const table to a local array for processing.
 	in_sw_tab_t burp_in_sw_table[FB_NELEM(reference_burp_in_sw_table)];
 
@@ -513,8 +515,6 @@ int gbak(Firebird::UtilSvc* uSvc)
 			return api_gbak(uSvc, burp_in_sw_table);
 		}
 	}
-
-	try {
 
 	in_sw_tab_t* in_sw_tab;
 
