@@ -201,6 +201,11 @@ USHORT TimeZoneUtil::getSystemTimeZone()
 	if (cachedError)
 		return cachedTimeZoneId;
 
+	// ASF: The code below in this function is prepared to detect changes in OS time zone or config setting, but
+	// the called functions are not. So cache and return directly the previously detected time zone.
+	if (cachedTimeZoneNameLen != -1)
+		return cachedTimeZoneId;
+
 	UErrorCode icuErrorCode = U_ZERO_ERROR;
 	Jrd::UnicodeUtil::ConversionICU& icuLib = Jrd::UnicodeUtil::getConversionICU();
 
@@ -246,8 +251,9 @@ USHORT TimeZoneUtil::getSystemTimeZone()
 		if (timeZoneStartup().getId(bufferStrAscii, id))
 		{
 			memcpy(cachedTimeZoneName, buffer, len * sizeof(USHORT));
+			cachedTimeZoneId = id;
 			cachedTimeZoneNameLen = len;
-			return (cachedTimeZoneId = id);
+			return cachedTimeZoneId;
 		}
 	}
 	else
