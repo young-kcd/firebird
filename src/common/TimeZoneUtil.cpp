@@ -669,13 +669,8 @@ ISC_TIMESTAMP_TZ TimeZoneUtil::getCurrentGmtTimeStamp()
 	int milliseconds;
 
 #ifdef WIN_NT
-	FILETIME ftUtc;
 	SYSTEMTIME stUtc;
-
-	GetSystemTimeAsFileTime(&ftUtc);
-	if (!FileTimeToSystemTime(&ftUtc, &stUtc))
-		system_call_failed::raise("FileTimeToSystemTime");
-
+	GetSystemTime(&stUtc);
 	milliseconds = stUtc.wMilliseconds;
 #else
 	time_t seconds; // UTC time
