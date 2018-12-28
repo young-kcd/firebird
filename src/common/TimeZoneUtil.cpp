@@ -695,13 +695,13 @@ ISC_TIMESTAMP_TZ TimeZoneUtil::getCurrentGmtTimeStamp()
 
 	struct tm times, *ptimes = &times;
 
-	times.tm_sec = stLocal.wSecond;			// seconds after the minute - [0,59]
-	times.tm_min = stLocal.wMinute;			// minutes after the hour - [0,59]
-	times.tm_hour = stLocal.wHour;			// hours since midnight - [0,23]
-	times.tm_mday = stLocal.wDay;			// day of the month - [1,31]
-	times.tm_mon = stLocal.wMonth - 1;		// months since January - [0,11]
-	times.tm_year = stLocal.wYear - 1900;	// years since 1900
-	times.tm_wday = stLocal.wDayOfWeek;		// days since Sunday - [0,6]
+	times.tm_sec = stUtc.wSecond;			// seconds after the minute - [0,59]
+	times.tm_min = stUtc.wMinute;			// minutes after the hour - [0,59]
+	times.tm_hour = stUtc.wHour;			// hours since midnight - [0,23]
+	times.tm_mday = stUtc.wDay;				// day of the month - [1,31]
+	times.tm_mon = stUtc.wMonth - 1;		// months since January - [0,11]
+	times.tm_year = stUtc.wYear - 1900;		// years since 1900
+	times.tm_wday = stUtc.wDayOfWeek;		// days since Sunday - [0,6]
 
 	// --- no used for encoding below
 	times.tm_yday = 0;						// days since January 1 - [0,365]
