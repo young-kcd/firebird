@@ -151,6 +151,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) -1},			// pages
 	{TYPE_INTEGER,		"ConnectionTimeout",		(ConfigValue) 180},			// seconds
 	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 0},			// seconds
+	{TYPE_STRING,		"DefaultTimeZone",			(ConfigValue) ""},
 	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 1048576},		// bytes
 	{TYPE_INTEGER,		"LockHashSlots",			(ConfigValue) 8191},		// slots
 	{TYPE_INTEGER,		"LockAcquireSpins",			(ConfigValue) 0},
@@ -515,6 +516,11 @@ int Config::getConnectionTimeout() const
 int Config::getDummyPacketInterval() const
 {
 	return get<int>(KEY_DUMMY_PACKET_INTERVAL);
+}
+
+const char* Config::getDefaultTimeZone()
+{
+	return getDefaultConfig()->get<const char*>(KEY_DEFAULT_TIME_ZONE);
 }
 
 int Config::getLockMemSize() const

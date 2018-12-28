@@ -33,6 +33,7 @@
 #include "../common/classes/rwlock.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/GenericMap.h"
+#include "../common/config/config.h"
 #include "unicode/ucal.h"
 
 #ifdef TZ_UPDATE
@@ -195,6 +196,7 @@ USHORT TimeZoneUtil::getSystemTimeZone()
 	static volatile USHORT cachedTimeZoneId = TimeZoneUtil::GMT_ZONE;
 	static volatile int32_t cachedTimeZoneNameLen = -1;
 	static UChar cachedTimeZoneName[TimeZoneUtil::MAX_SIZE];
+	static GlobalPtr<RWLock> lock;
 
 	if (cachedError)
 		return cachedTimeZoneId;
@@ -203,9 +205,21 @@ USHORT TimeZoneUtil::getSystemTimeZone()
 	Jrd::UnicodeUtil::ConversionICU& icuLib = Jrd::UnicodeUtil::getConversionICU();
 
 	UChar buffer[TimeZoneUtil::MAX_SIZE];
-	int32_t len = icuLib.ucalGetDefaultTimeZone(buffer, FB_NELEM(buffer), &icuErrorCode);
+	int32_t len;
+	const char* configDefault = Config::getDefaultTimeZone();
 
-	static GlobalPtr<RWLock> lock;
+	if (configDefault && configDefault[0])
+	{
+		UChar* dst = buffer;
+
+		for (const char* src = configDefault; src - configDefault < TimeZoneUtil::MAX_SIZE && *src; ++src, ++dst)
+			*dst = *src;
+
+		*dst = 0;
+		len = dst - buffer;
+	}
+	else
+		len = icuLib.ucalGetDefaultTimeZone(buffer, FB_NELEM(buffer), &icuErrorCode);
 
 	ReadLockGuard readGuard(lock, "TimeZoneUtil::getSystemTimeZone");
 
