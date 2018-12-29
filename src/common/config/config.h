@@ -98,6 +98,7 @@ public:
 		KEY_DEFAULT_DB_CACHE_PAGES,
 		KEY_CONNECTION_TIMEOUT,
 		KEY_DUMMY_PACKET_INTERVAL,
+		KEY_DEFAULT_TIME_ZONE,
 		KEY_LOCK_MEM_SIZE,
 		KEY_LOCK_HASH_SLOTS,
 		KEY_LOCK_ACQUIRE_SPINS,
@@ -262,6 +263,8 @@ public:
 
 	// Dummy packet interval
 	int getDummyPacketInterval() const;
+
+	static const char* getDefaultTimeZone();
 
 	// Lock manager memory size
 	int getLockMemSize() const;

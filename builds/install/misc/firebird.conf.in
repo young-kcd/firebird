@@ -706,6 +706,17 @@
 #
 #DummyPacketInterval = 0
 
+#
+# Default session or client time zone.
+#
+# If empty, the default is the OS time zone.
+# When set in the server, it defines the default session time zone for attachments.
+# When set in the client, it defines the default time zone used with client-side API functions.
+#
+# Type: string
+#
+#DefaultTimeZone =
+
 
 # ----------------------------
 # TCP Protocol Settings

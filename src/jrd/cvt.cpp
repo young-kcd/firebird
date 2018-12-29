@@ -513,26 +513,26 @@ SLONG EngineCallbacks::getLocalDate()
 
 	if (tdbb && (tdbb->getType() == ThreadData::tddDBB) && tdbb->getRequest())
 	{
-		fb_assert(!tdbb->getRequest()->req_timestamp_utc.isEmpty());
+		fb_assert(!tdbb->getRequest()->req_gmt_timestamp.isEmpty());
 		return tdbb->getRequest()->getLocalTimeStamp().value().timestamp_date;
 	}
 
 	return TimeZoneUtil::timeStampTzToTimeStamp(
-		TimeZoneUtil::getCurrentTimeStampUtc(), getSessionTimeZone()).timestamp_date;
+		TimeZoneUtil::getCurrentSystemTimeStamp(), getSessionTimeZone()).timestamp_date;
 }
 
 
-ISC_TIMESTAMP EngineCallbacks::getCurrentTimeStampUtc()
+ISC_TIMESTAMP EngineCallbacks::getCurrentGmtTimeStamp()
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
 	if (tdbb && (tdbb->getType() == ThreadData::tddDBB) && tdbb->getRequest())
 	{
-		fb_assert(!tdbb->getRequest()->req_timestamp_utc.isEmpty());
-		return tdbb->getRequest()->req_timestamp_utc.value();
+		fb_assert(!tdbb->getRequest()->req_gmt_timestamp.isEmpty());
+		return tdbb->getRequest()->req_gmt_timestamp.value();
 	}
 
-	return TimeZoneUtil::timeStampTzToTimeStamp(TimeZoneUtil::getCurrentTimeStampUtc(), TimeZoneUtil::GMT_ZONE);
+	return TimeZoneUtil::timeStampTzToTimeStamp(TimeZoneUtil::getCurrentSystemTimeStamp(), TimeZoneUtil::GMT_ZONE);
 }
 
 

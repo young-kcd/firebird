@@ -158,6 +158,8 @@ enum db_info_types
 	fb_info_protocol_version = 137,
 	fb_info_crypt_plugin = 138,
 
+	fb_info_creation_timestamp_tz = 139,
+
 	isc_info_db_last_value   /* Leave this LAST! */
 };
 

@@ -424,7 +424,7 @@ public:
 
 	TipCache*		dbb_tip_cache;		// cache of latest known state of all transactions in system
 	BackupManager*	dbb_backup_manager;						// physical backup manager
-	Firebird::TimeStamp dbb_creation_date; 					// creation date
+	ISC_TIMESTAMP_TZ dbb_creation_date; 					// creation timestamp in GMT
 	ExternalFileDirectoryList* dbb_external_file_directory_list;
 	Firebird::RefPtr<const Config> dbb_config;
 
@@ -481,7 +481,7 @@ private:
 		dbb_stats(*p),
 		dbb_lock_owner_id(getLockOwnerId()),
 		dbb_tip_cache(NULL),
-		dbb_creation_date(Firebird::TimeStamp::getCurrentTimeStamp()),
+		dbb_creation_date(Firebird::TimeZoneUtil::getCurrentGmtTimeStamp()),
 		dbb_external_file_directory_list(NULL),
 		dbb_init_fini(FB_NEW_POOL(*getDefaultMemoryPool()) ExistenceRefMutex()),
 		dbb_linger_seconds(0),

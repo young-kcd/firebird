@@ -102,9 +102,10 @@ public:
 	static void decodeTime(const ISC_TIME_TZ& timeTz, Callbacks* cb, struct tm* times, int* fractions = NULL);
 	static void decodeTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, struct tm* times, int* fractions = NULL);
 
-	static ISC_TIMESTAMP_TZ getCurrentTimeStampUtc();
+	static ISC_TIMESTAMP_TZ getCurrentSystemTimeStamp();
+	static ISC_TIMESTAMP_TZ getCurrentGmtTimeStamp();
 
-	static void validateTimeStampUtc(NoThrowTimeStamp& ts);
+	static void validateGmtTimeStamp(NoThrowTimeStamp& ts);
 
 	static ISC_TIMESTAMP_TZ cvtTimeToTimeStampTz(const ISC_TIME& time, Callbacks* cb);
 	static ISC_TIME_TZ cvtTimeToTimeTz(const ISC_TIME& time, Callbacks* cb);

@@ -30,8 +30,10 @@
 #include "firebird.h"
 #include "../common/TimeZoneUtil.h"
 #include "../common/StatusHolder.h"
+#include "../common/classes/rwlock.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/GenericMap.h"
+#include "../common/config/config.h"
 #include "unicode/ucal.h"
 
 #ifdef TZ_UPDATE
@@ -69,8 +71,7 @@ namespace
 	struct TimeZoneStartup
 	{
 		TimeZoneStartup(MemoryPool& pool)
-			: systemTimeZone(TimeZoneUtil::GMT_ZONE),
-			  nameIdMap(pool)
+			: nameIdMap(pool)
 		{
 #if defined DEV_BUILD && defined TZ_UPDATE
 			tzUpdate();
@@ -82,55 +83,6 @@ namespace
 				s.upper();
 				nameIdMap.put(s, i);
 			}
-
-			UErrorCode icuErrorCode = U_ZERO_ERROR;
-
-			Jrd::UnicodeUtil::ConversionICU& icuLib = Jrd::UnicodeUtil::getConversionICU();
-			UCalendar* icuCalendar = icuLib.ucalOpen(NULL, -1, NULL, UCAL_GREGORIAN, &icuErrorCode);
-
-			if (!icuCalendar)
-			{
-				gds__log("ICU's ucal_open error opening the default callendar.");
-				return;
-			}
-
-			UChar buffer[TimeZoneUtil::MAX_SIZE];
-			bool found = false;
-
-			int32_t len = icuLib.ucalGetTimeZoneID(icuCalendar, buffer, FB_NELEM(buffer), &icuErrorCode);
-
-			if (!U_FAILURE(icuErrorCode))
-			{
-				bool error;
-				string bufferStrUnicode(reinterpret_cast<const char*>(buffer), len * sizeof(USHORT));
-				string bufferStrAscii(IntlUtil::convertUtf16ToAscii(bufferStrUnicode, &error));
-				found = getId(bufferStrAscii, systemTimeZone);
-			}
-			else
-				icuErrorCode = U_ZERO_ERROR;
-
-			if (found)
-			{
-				icuLib.ucalClose(icuCalendar);
-				return;
-			}
-
-			gds__log("ICU error retrieving the system time zone: %d. Fallbacking to displacement.", int(icuErrorCode));
-
-			int32_t displacement = (icuLib.ucalGet(icuCalendar, UCAL_ZONE_OFFSET, &icuErrorCode) +
-				icuLib.ucalGet(icuCalendar, UCAL_DST_OFFSET, &icuErrorCode)) / U_MILLIS_PER_MINUTE;
-
-			icuLib.ucalClose(icuCalendar);
-
-			if (!U_FAILURE(icuErrorCode))
-			{
-				int sign = displacement < 0 ? -1 : 1;
-				unsigned tzh = (unsigned) abs(int(displacement / 60));
-				unsigned tzm = (unsigned) abs(int(displacement % 60));
-				systemTimeZone = makeFromOffset(sign, tzh, tzm);
-			}
-			else
-				gds__log("Cannot retrieve the system time zone: %d.", int(icuErrorCode));
 		}
 
 		bool getId(string name, USHORT& id)
@@ -225,8 +177,6 @@ namespace
 		}
 #endif	// defined DEV_BUILD && defined TZ_UPDATE
 
-		USHORT systemTimeZone;
-
 	private:
 		GenericMap<Pair<Left<string, USHORT> > > nameIdMap;
 	};
@@ -242,7 +192,103 @@ static InitInstance<TimeZoneStartup> timeZoneStartup;
 // Return the current user's time zone.
 USHORT TimeZoneUtil::getSystemTimeZone()
 {
-	return timeZoneStartup().systemTimeZone;
+	static volatile bool cachedError = false;
+	static volatile USHORT cachedTimeZoneId = TimeZoneUtil::GMT_ZONE;
+	static volatile int32_t cachedTimeZoneNameLen = -1;
+	static UChar cachedTimeZoneName[TimeZoneUtil::MAX_SIZE];
+	static GlobalPtr<RWLock> lock;
+
+	if (cachedError)
+		return cachedTimeZoneId;
+
+	// ASF: The code below in this function is prepared to detect changes in OS time zone or config setting, but
+	// the called functions are not. So cache and return directly the previously detected time zone.
+	if (cachedTimeZoneNameLen != -1)
+		return cachedTimeZoneId;
+
+	UErrorCode icuErrorCode = U_ZERO_ERROR;
+	Jrd::UnicodeUtil::ConversionICU& icuLib = Jrd::UnicodeUtil::getConversionICU();
+
+	UChar buffer[TimeZoneUtil::MAX_SIZE];
+	int32_t len;
+	const char* configDefault = Config::getDefaultTimeZone();
+
+	if (configDefault && configDefault[0])
+	{
+		UChar* dst = buffer;
+
+		for (const char* src = configDefault; src - configDefault < TimeZoneUtil::MAX_SIZE && *src; ++src, ++dst)
+			*dst = *src;
+
+		*dst = 0;
+		len = dst - buffer;
+	}
+	else
+		len = icuLib.ucalGetDefaultTimeZone(buffer, FB_NELEM(buffer), &icuErrorCode);
+
+	ReadLockGuard readGuard(lock, "TimeZoneUtil::getSystemTimeZone");
+
+	if (!U_FAILURE(icuErrorCode) &&
+		cachedTimeZoneNameLen != -1 &&
+		len == cachedTimeZoneNameLen &&
+		memcmp(buffer, cachedTimeZoneName, len * sizeof(USHORT)) == 0)
+	{
+		return cachedTimeZoneId;
+	}
+
+	readGuard.release();
+	WriteLockGuard writeGuard(lock, "TimeZoneUtil::getSystemTimeZone");
+
+	string bufferStrAscii;
+
+	if (!U_FAILURE(icuErrorCode))
+	{
+		bool error;
+		string bufferStrUnicode(reinterpret_cast<const char*>(buffer), len * sizeof(USHORT));
+		bufferStrAscii = IntlUtil::convertUtf16ToAscii(bufferStrUnicode, &error);
+		USHORT id;
+
+		if (timeZoneStartup().getId(bufferStrAscii, id))
+		{
+			memcpy(cachedTimeZoneName, buffer, len * sizeof(USHORT));
+			cachedTimeZoneId = id;
+			cachedTimeZoneNameLen = len;
+			return cachedTimeZoneId;
+		}
+	}
+	else
+		icuErrorCode = U_ZERO_ERROR;
+
+	gds__log("ICU error (%d) retrieving the system time zone (%s). Falling back to displacement.",
+		int(icuErrorCode), bufferStrAscii.c_str());
+
+	UCalendar* icuCalendar = icuLib.ucalOpen(NULL, -1, NULL, UCAL_GREGORIAN, &icuErrorCode);
+
+	if (!icuCalendar)
+	{
+		gds__log("ICU's ucal_open error opening the default callendar.");
+		cachedError = true;
+		return cachedTimeZoneId;	// GMT
+	}
+
+	int32_t displacement = (icuLib.ucalGet(icuCalendar, UCAL_ZONE_OFFSET, &icuErrorCode) +
+		icuLib.ucalGet(icuCalendar, UCAL_DST_OFFSET, &icuErrorCode)) / U_MILLIS_PER_MINUTE;
+
+	icuLib.ucalClose(icuCalendar);
+
+	if (!U_FAILURE(icuErrorCode))
+	{
+		int sign = displacement < 0 ? -1 : 1;
+		unsigned tzh = (unsigned) abs(int(displacement / 60));
+		unsigned tzm = (unsigned) abs(int(displacement % 60));
+		cachedTimeZoneId = makeFromOffset(sign, tzh, tzm);
+	}
+	else
+		gds__log("Cannot retrieve the system time zone: %d.", int(icuErrorCode));
+
+	cachedError = true;
+
+	return cachedTimeZoneId;
 }
 
 void TimeZoneUtil::getDatabaseVersion(Firebird::string& str)
@@ -299,7 +345,7 @@ USHORT TimeZoneUtil::parse(const char* str, unsigned strLen)
 		}
 
 		if (p != end)
-			status_exception::raise(Arg::Gds(isc_random) << "Invalid time zone offset");	//// TODO:
+			status_exception::raise(Arg::Gds(isc_invalid_timezone_offset) << string(str, strLen));
 
 		return makeFromOffset(sign, tzh, tzm);
 	}
@@ -341,7 +387,7 @@ USHORT TimeZoneUtil::parseRegion(const char* str, unsigned strLen)
 			return id;
 	}
 
-	status_exception::raise(Arg::Gds(isc_random) << "Invalid time zone region");	//// TODO:
+	status_exception::raise(Arg::Gds(isc_invalid_timezone_region) << string(start, len));
 	return 0;
 }
 
@@ -383,7 +429,9 @@ void TimeZoneUtil::extractOffset(const ISC_TIMESTAMP_TZ& timeStampTz, int* sign,
 {
 	SSHORT displacement;
 
-	if (isOffset(timeStampTz.time_zone))
+	if (timeStampTz.time_zone == GMT_ZONE)
+		displacement = 0;
+	else if (isOffset(timeStampTz.time_zone))
 		displacement = offsetZoneToDisplacement(timeStampTz.time_zone);
 	else
 	{
@@ -470,7 +518,7 @@ void TimeZoneUtil::localTimeToUtc(ISC_TIME& time, Callbacks* cb)
 void TimeZoneUtil::localTimeToUtc(ISC_TIME_TZ& timeTz, Callbacks* cb)
 {
 	ISC_TIMESTAMP_TZ tempTimeStampTz;
-	tempTimeStampTz.utc_timestamp.timestamp_date = cb->getCurrentTimeStampUtc().timestamp_date;
+	tempTimeStampTz.utc_timestamp.timestamp_date = cb->getCurrentGmtTimeStamp().timestamp_date;
 	tempTimeStampTz.utc_timestamp.timestamp_time = timeTz.utc_time;
 	tempTimeStampTz.time_zone = timeTz.time_zone;
 	localTimeStampToUtc(tempTimeStampTz);
@@ -497,7 +545,9 @@ void TimeZoneUtil::localTimeStampToUtc(ISC_TIMESTAMP_TZ& timeStampTz)
 {
 	int displacement;
 
-	if (isOffset(timeStampTz.time_zone))
+	if (timeStampTz.time_zone == GMT_ZONE)
+		return;
+	else if (isOffset(timeStampTz.time_zone))
 		displacement = offsetZoneToDisplacement(timeStampTz.time_zone);
 	else
 	{
@@ -554,7 +604,9 @@ void TimeZoneUtil::decodeTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, struct t
 		timeStampTz.utc_timestamp.timestamp_time;
 	int displacement;
 
-	if (isOffset(timeStampTz.time_zone))
+	if (timeStampTz.time_zone == GMT_ZONE)
+		displacement = 0;
+	else if (isOffset(timeStampTz.time_zone))
 		displacement = offsetZoneToDisplacement(timeStampTz.time_zone);
 	else
 	{
@@ -597,7 +649,7 @@ void TimeZoneUtil::decodeTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, struct t
 	TimeStamp::decode_timestamp(ts, times, fractions);
 }
 
-ISC_TIMESTAMP_TZ TimeZoneUtil::getCurrentTimeStampUtc()
+ISC_TIMESTAMP_TZ TimeZoneUtil::getCurrentSystemTimeStamp()
 {
 	TimeStamp now = TimeStamp::getCurrentTimeStamp();
 
@@ -609,10 +661,82 @@ ISC_TIMESTAMP_TZ TimeZoneUtil::getCurrentTimeStampUtc()
 	return tsTz;
 }
 
-void TimeZoneUtil::validateTimeStampUtc(NoThrowTimeStamp& ts)
+ISC_TIMESTAMP_TZ TimeZoneUtil::getCurrentGmtTimeStamp()
+{
+	NoThrowTimeStamp now;
+
+	// ASF: This comment is copied from NoThrowTimeStamp::getCurrentTimeStamp.
+	// NS: We round generated timestamps to whole millisecond.
+	// Not many applications can deal with fractional milliseconds properly and
+	// we do not use high resolution timers either so actual time granularity
+	// is going to to be somewhere in range between 1 ms (like on UNIX/Risc)
+	// and 53 ms (such as Win9X)
+
+	int milliseconds;
+
+#ifdef WIN_NT
+	SYSTEMTIME stUtc;
+	GetSystemTime(&stUtc);
+	milliseconds = stUtc.wMilliseconds;
+#else
+	time_t seconds; // UTC time
+
+#ifdef HAVE_GETTIMEOFDAY
+	struct timeval tp;
+	GETTIMEOFDAY(&tp);
+	seconds = tp.tv_sec;
+	milliseconds = tp.tv_usec / 1000;
+#else
+	struct timeb time_buffer;
+	ftime(&time_buffer);
+	seconds = time_buffer.time;
+	milliseconds = time_buffer.millitm;
+#endif
+#endif // WIN_NT
+
+	const int fractions = milliseconds * ISC_TIME_SECONDS_PRECISION / 1000;
+
+#ifdef WIN_NT
+	// Manually convert SYSTEMTIME to "struct tm" used below
+
+	struct tm times, *ptimes = &times;
+
+	times.tm_sec = stUtc.wSecond;			// seconds after the minute - [0,59]
+	times.tm_min = stUtc.wMinute;			// minutes after the hour - [0,59]
+	times.tm_hour = stUtc.wHour;			// hours since midnight - [0,23]
+	times.tm_mday = stUtc.wDay;				// day of the month - [1,31]
+	times.tm_mon = stUtc.wMonth - 1;		// months since January - [0,11]
+	times.tm_year = stUtc.wYear - 1900;		// years since 1900
+	times.tm_wday = stUtc.wDayOfWeek;		// days since Sunday - [0,6]
+
+	// --- no used for encoding below
+	times.tm_yday = 0;						// days since January 1 - [0,365]
+	times.tm_isdst = -1;					// daylight savings time flag
+#else
+#ifdef HAVE_GMTIME_R
+	struct tm times, *ptimes = &times;
+	if (!gmtime_r(&seconds, &times))
+		system_call_failed::raise("gmtime_r");
+#else
+	struct tm *ptimes = gmtime(&seconds);
+	if (!ptimes)
+		system_call_failed::raise("gmtime");
+#endif
+#endif // WIN_NT
+
+	now.encode(ptimes, fractions);
+
+	ISC_TIMESTAMP_TZ tsTz;
+	tsTz.utc_timestamp = now.value();
+	tsTz.time_zone = GMT_ZONE;
+
+	return tsTz;
+}
+
+void TimeZoneUtil::validateGmtTimeStamp(NoThrowTimeStamp& ts)
 {
 	if (ts.isEmpty())
-		ts.value() = getCurrentTimeStampUtc().utc_timestamp;
+		ts.value() = getCurrentGmtTimeStamp().utc_timestamp;
 }
 
 // Converts a time to timestamp-tz.
@@ -834,7 +958,7 @@ static const TimeZoneDesc* getDesc(USHORT timeZone)
 	if (MAX_USHORT - timeZone < FB_NELEM(TIME_ZONE_LIST))
 		return &TIME_ZONE_LIST[MAX_USHORT - timeZone];
 
-	status_exception::raise(Arg::Gds(isc_random) << "Invalid time zone id");	//// TODO:
+	status_exception::raise(Arg::Gds(isc_invalid_timezone_id) << Arg::Num(timeZone));
 	return nullptr;
 }
 
@@ -848,7 +972,11 @@ static inline bool isOffset(USHORT timeZone)
 static USHORT makeFromOffset(int sign, unsigned tzh, unsigned tzm)
 {
 	if (!TimeZoneUtil::isValidOffset(sign, tzh, tzm))
-		status_exception::raise(Arg::Gds(isc_random) << "Invalid time zone offset");	//// TODO:
+	{
+		string str;
+		str.printf("%s%02u:%02u", (sign == -1 ? "-" : "+"), tzh, tzm);
+		status_exception::raise(Arg::Gds(isc_invalid_timezone_offset) << str);
+	}
 
 	return (USHORT)((tzh * 60 + tzm) * sign + ONE_DAY);
 }
@@ -871,7 +999,7 @@ static int parseNumber(const char*& p, const char* end)
 		n = n * 10 + *p++ - '0';
 
 	if (p == start)
-		status_exception::raise(Arg::Gds(isc_random) << "Invalid time zone offset");	//// TODO:
+		status_exception::raise(Arg::Gds(isc_invalid_timezone_offset) << string(start, end - start));
 
 	return n;
 }

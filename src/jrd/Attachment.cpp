@@ -212,7 +212,7 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	  att_base_stats(*pool),
 	  att_working_directory(*pool),
 	  att_filename(*pool),
-	  att_timestamp(Firebird::TimeStamp::getCurrentTimeStamp()),
+	  att_timestamp(TimeZoneUtil::getCurrentSystemTimeStamp()),
 	  att_context_vars(*pool),
 	  ddlTriggersContext(*pool),
 	  att_network_protocol(*pool),
@@ -952,20 +952,19 @@ void Attachment::setupIdleTimer(bool clear)
 	}
 }
 
-bool Attachment::getIdleTimerTimestamp(TimeStamp& ts) const
+bool Attachment::getIdleTimerTimestamp(ISC_TIMESTAMP_TZ& ts) const
 {
 	if (!att_idle_timer)
 		return false;
 
-	time_t value = att_idle_timer->getExpiryTime();
+	SINT64 value = att_idle_timer->getExpiryTime();
 	if (!value)
 		return false;
 
-	struct tm* times = localtime(&value);
-	if (!times)
-		return false;
+	ts.utc_timestamp.timestamp_date = value / TimeStamp::ISC_TICKS_PER_DAY;
+	ts.utc_timestamp.timestamp_time = value % TimeStamp::ISC_TICKS_PER_DAY;
+	ts.time_zone = TimeZoneUtil::GMT_ZONE;
 
-	ts = TimeStamp::encode_timestamp(times);
 	return true;
 }
 
@@ -991,10 +990,14 @@ void Attachment::IdleTimer::handler()
 		return;
 
 	// If timer was reset to fire later, restart ITimer
-	time_t curTime = time(NULL);
-	if (curTime < m_expTime)
+
+	const ISC_TIMESTAMP currentTimeGmt = TimeZoneUtil::getCurrentGmtTimeStamp().utc_timestamp;
+	const SINT64 curTime = currentTimeGmt.timestamp_date * TimeStamp::ISC_TICKS_PER_DAY +
+		(SINT64) currentTimeGmt.timestamp_time;
+
+	if (curTime + ISC_TIME_SECONDS_PRECISION < m_expTime)
 	{
-		reset(m_expTime - curTime);
+		reset((m_expTime - curTime) / ISC_TIME_SECONDS_PRECISION);
 		return;
 	}
 
@@ -1018,6 +1021,8 @@ void Attachment::IdleTimer::reset(unsigned int timeout)
 {
 	// Start timer if necessary. If timer was already started, don't restart
 	// (or stop) it - handler() will take care about it.
+	// Take into account that timeout is in seconds while m_expTime is in ISC ticks
+	// and ITimerControl works with microseconds.
 
 	if (!timeout)
 	{
@@ -1025,8 +1030,11 @@ void Attachment::IdleTimer::reset(unsigned int timeout)
 		return;
 	}
 
-	const time_t curTime = time(NULL);
-	m_expTime = curTime + timeout;
+	const ISC_TIMESTAMP currentTimeGmt = TimeZoneUtil::getCurrentGmtTimeStamp().utc_timestamp;
+	const SINT64 curTime = currentTimeGmt.timestamp_date * TimeStamp::ISC_TICKS_PER_DAY +
+		(SINT64) currentTimeGmt.timestamp_time;
+
+	m_expTime = curTime + timeout * ISC_TIME_SECONDS_PRECISION;
 
 	FbLocalStatus s;
 	ITimerControl* timerCtrl = Firebird::TimerInterfacePtr();
@@ -1041,7 +1049,8 @@ void Attachment::IdleTimer::reset(unsigned int timeout)
 		m_fireTime = 0;
 	}
 
-	timerCtrl->start(&s, this, (m_expTime - curTime) * 1000 * 1000);
+	// Convert ISC ticks into microseconds
+	timerCtrl->start(&s, this, (m_expTime - curTime) * (1000 * 1000 / ISC_TIME_SECONDS_PRECISION));
 	check(&s);
 	m_fireTime = m_expTime;
 }
