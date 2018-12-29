@@ -429,7 +429,9 @@ void TimeZoneUtil::extractOffset(const ISC_TIMESTAMP_TZ& timeStampTz, int* sign,
 {
 	SSHORT displacement;
 
-	if (isOffset(timeStampTz.time_zone))
+	if (timeStampTz.time_zone == GMT_ZONE)
+		displacement = 0;
+	else if (isOffset(timeStampTz.time_zone))
 		displacement = offsetZoneToDisplacement(timeStampTz.time_zone);
 	else
 	{
@@ -543,7 +545,9 @@ void TimeZoneUtil::localTimeStampToUtc(ISC_TIMESTAMP_TZ& timeStampTz)
 {
 	int displacement;
 
-	if (isOffset(timeStampTz.time_zone))
+	if (timeStampTz.time_zone == GMT_ZONE)
+		return;
+	else if (isOffset(timeStampTz.time_zone))
 		displacement = offsetZoneToDisplacement(timeStampTz.time_zone);
 	else
 	{
@@ -600,7 +604,9 @@ void TimeZoneUtil::decodeTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, struct t
 		timeStampTz.utc_timestamp.timestamp_time;
 	int displacement;
 
-	if (isOffset(timeStampTz.time_zone))
+	if (timeStampTz.time_zone == GMT_ZONE)
+		displacement = 0;
+	else if (isOffset(timeStampTz.time_zone))
 		displacement = offsetZoneToDisplacement(timeStampTz.time_zone);
 	else
 	{
