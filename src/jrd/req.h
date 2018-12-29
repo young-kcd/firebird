@@ -380,7 +380,7 @@ public:
 	{
 		ISC_TIMESTAMP_TZ timeStampTz;
 		timeStampTz.utc_timestamp = req_gmt_timestamp.value();
-		timeStampTz.time_zone = Firebird::TimeZoneUtil::GMT_ZONE;
+		timeStampTz.time_zone = req_attachment->att_current_timezone;
 		return timeStampTz;
 	}
 };
