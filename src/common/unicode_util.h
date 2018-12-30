@@ -132,8 +132,6 @@ public:
 		int32_t (U_EXPORT2* ucalGet) (UCalendar* cal, UCalendarDateFields field, UErrorCode* err);
 		void (U_EXPORT2* ucalSetDateTime) (UCalendar* cal, int32_t year, int32_t month, int32_t date, int32_t hour,
 			int32_t minute, int32_t second, UErrorCode* err);
-		int32_t (U_EXPORT2* ucalGetTimeZoneID) (const UCalendar* cal, UChar* result, int32_t resultLength,
-			UErrorCode *status);
 
 		UDate (U_EXPORT2* ucalGetNow) ();
 		UBool (U_EXPORT2* ucalGetTimeZoneTransitionDate) (const UCalendar* cal, UTimeZoneTransitionType type,

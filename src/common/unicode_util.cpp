@@ -291,7 +291,6 @@ private:
 		getEntryPoint("ucal_setMillis", inModule, ucalSetMillis);
 		getEntryPoint("ucal_get", inModule, ucalGet);
 		getEntryPoint("ucal_setDateTime", inModule, ucalSetDateTime);
-		getEntryPoint("ucal_getTimeZoneID", inModule, ucalGetTimeZoneID);
 
 		getEntryPoint("ucal_getNow", inModule, ucalGetNow);
 		getEntryPoint("ucal_getTimeZoneTransitionDate", inModule, ucalGetTimeZoneTransitionDate);
