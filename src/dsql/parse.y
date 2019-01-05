@@ -448,6 +448,8 @@ using namespace Firebird;
 %token <metaNamePtr> ASIN
 %token <metaNamePtr> ATAN
 %token <metaNamePtr> ATAN2
+%token <metaNamePtr> BASE64_DECODE
+%token <metaNamePtr> BASE64_ENCODE
 %token <metaNamePtr> BIN_AND
 %token <metaNamePtr> BIN_OR
 %token <metaNamePtr> BIN_SHL
@@ -458,6 +460,7 @@ using namespace Firebird;
 %token <metaNamePtr> COS
 %token <metaNamePtr> COSH
 %token <metaNamePtr> COT
+%token <metaNamePtr> CRC32
 %token <metaNamePtr> DATEADD
 %token <metaNamePtr> DATEDIFF
 %token <metaNamePtr> DECODE
@@ -7881,6 +7884,8 @@ system_function_std_syntax
 	| ATAN
 	| ATAN2
 	| ATANH
+	| BASE64_DECODE
+	| BASE64_ENCODE
 	| BIN_AND
 	| BIN_NOT
 	| BIN_OR
@@ -7892,6 +7897,7 @@ system_function_std_syntax
 	| COS
 	| COSH
 	| COT
+	| CRC32
 	| EXP
 	| FLOOR
 	| GEN_UUID
@@ -8813,6 +8819,9 @@ non_reserved_word
 	| RSA_VERIFY
 	| SALT_LENGTH
 	| SIGNATURE
+	| BASE64_DECODE
+	| BASE64_ENCODE
+	| CRC32
 	;
 
 %%

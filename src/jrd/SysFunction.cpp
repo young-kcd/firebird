@@ -218,10 +218,10 @@ void makeBin(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* r
 void makeBinShift(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeCeilFloor(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
-void makeEncrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeDecode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeEncode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeDecrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
-void makeRsaEncrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
-void makeRsaDecrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeEncrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeFirstLastDayResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeGetSetContext(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeGetTranCN(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
@@ -234,6 +234,8 @@ void makePi(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* re
 void makeReplace(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeReverse(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeRound(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeRsaDecrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeRsaEncrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeRsaPrivate(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeRsaPublic(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeRsaSign(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
@@ -253,8 +255,11 @@ dsc* evlBin(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 dsc* evlBinShift(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlCeil(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlCrc32(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlDecode64(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlEncode64(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlDecrypt(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlEncrypt(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlRsaDecrypt(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
@@ -1225,6 +1230,56 @@ void makeHash(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* 
 		result->makeVarying(HashAlgorithmDescriptor::find(algorithmName.c_str())->length, ttype_binary);
 		result->setNullable(args[0]->isNullable());
 	}
+}
+
+
+void raise(const char* x)
+{
+	(Arg::Gds(isc_random) << x).raise();
+}
+
+
+unsigned decodeLen(unsigned len)
+{
+ 	if (len % 4 || !len)
+ 		raise("Invalid parameter length");
+ 	len = len / 4 * 3;
+ 	return len;
+}
+
+
+void makeDecode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+{
+	 fb_assert(argsCount == 1);
+	 if (args[0]->isBlob())
+	 	result->makeBlob(isc_blob_untyped, ttype_binary);
+	 else if (args[0]->isText())
+	 	result->makeVarying(decodeLen(args[0]->getStringLength()), ttype_binary);
+	 else
+	 	raise("Invalid parameter datatype - need string or blob");
+
+	result->setNullable(args[0]->isNullable());
+}
+
+
+unsigned encodeLen(unsigned len)
+{
+	len = (len + 2) / 3 * 4;
+	return len;
+}
+
+
+void makeEncode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+{
+	 fb_assert(argsCount == 1);
+	 if (args[0]->isBlob())
+	 	result->makeBlob(isc_blob_text, ttype_ascii);
+	 else if (args[0]->isText())
+	 	result->makeVarying(encodeLen(args[0]->dsc_length), ttype_ascii);
+	 else
+	 	raise("Invalid parameter datatype - need string or blob");
+
+	result->setNullable(args[0]->isNullable());
 }
 
 
@@ -2361,12 +2416,6 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	return &impure->vlu_desc;
 }
 
-void raise(const char* x)
-{
-	(Arg::Gds(isc_random) << x).raise();
-}
-
-
 // Prepare tomcrypt library
 
 class TomcryptInitializer
@@ -2449,7 +2498,9 @@ private:
 InitInstance<PseudoRandom> prng;
 
 
-// Data exchanger between tommath and firebird
+// Data exchange between tommath and firebird
+
+const UCHAR streamBpb[] = {isc_bpb_version1, isc_bpb_type, 1, isc_bpb_type_stream};
 
 class DataPipe
 {
@@ -2477,11 +2528,11 @@ public:
 
 			try
 			{
-				const UCHAR bpb[] = {isc_bpb_version1, isc_bpb_type, 1, isc_bpb_type_stream};
+				const UCHAR streamBpb[] = {isc_bpb_version1, isc_bpb_type, 1, isc_bpb_type_stream};
 				newBlob = blb::create2(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid,
-					sizeof(bpb), bpb);
+					sizeof(streamBpb), streamBpb);
 				blob = blb::open2(tdbb, tdbb->getRequest()->req_transaction, reinterpret_cast<bid*>(desc->dsc_address),
-					sizeof(bpb), bpb);
+					sizeof(streamBpb), streamBpb);
 
 				ptr = inBuf.getBuffer(BLOB_STEP);
 				len = blob->BLB_get_data(tdbb, inBuf.begin(), inBuf.getCount(), false);
@@ -2907,6 +2958,118 @@ dsc* evlDecrypt(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	impure_value* impure)
 {
 	return evlEncryptDecrypt(tdbb, function, args, impure, false);
+}
+
+
+dsc* evlEncodeDecode64(thread_db* tdbb, bool encodeFlag, const SysFunction* function, const NestValueArray& args, impure_value* impure)
+{
+	const dsc* arg = EVL_expr(tdbb, tdbb->getRequest(), args[0]);
+	if (!arg)	// return NULL if value is NULL
+		return NULL;
+
+	UCharBuffer in;
+	if (arg->isBlob())
+	{
+		AutoPtr<blb> blob(blb::open2(tdbb, tdbb->getRequest()->req_transaction, reinterpret_cast<const bid*>(arg->dsc_address),
+			sizeof(streamBpb), streamBpb));
+
+		UCHAR buf[4096];
+		in.clear();
+		for(;;)
+		{
+			const unsigned l = blob->BLB_get_data(tdbb, buf, sizeof buf, false);
+			if (!l)
+				break;
+			in.append(buf, l);
+		}
+
+		blob->BLB_close(tdbb);
+		blob.release();
+	}
+	else
+	{
+		unsigned len;
+		const UCHAR* ptr = CVT_get_bytes(arg, len);
+		in.assign(ptr, len);
+	}
+
+	UCharBuffer out;
+	unsigned long outLen = encodeFlag ? encodeLen(in.getCount()) + 1 : decodeLen(in.getCount());
+	auto* func = encodeFlag ? base64_encode : base64_decode;
+	auto* msg = encodeFlag ? "encoding BASE64" : "decoding BASE64";
+	tomCheck(func(in.begin(), in.getCount(), out.getBuffer(outLen), &outLen), msg);
+	out.resize(outLen);
+
+	dsc result;
+	if (arg->isBlob())
+	{
+		AutoPtr<blb> blob(blb::create2(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid,
+			sizeof(streamBpb), streamBpb));
+		blob->BLB_put_data(tdbb, out.begin(), out.getCount());
+		blob->BLB_close(tdbb);
+		blob.release();
+
+		result.makeBlob(encodeFlag ? isc_blob_text : isc_blob_untyped, encodeFlag ? ttype_ascii : ttype_binary,
+			(ISC_QUAD*)&impure->vlu_misc.vlu_bid);
+	}
+	else
+		result.makeText(out.getCount(), encodeFlag ? ttype_ascii : ttype_binary, const_cast<UCHAR*>(out.begin()));
+
+	EVL_make_value(tdbb, &result, impure);
+	return &impure->vlu_desc;
+}
+
+dsc* evlDecode64(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure)
+{
+	return evlEncodeDecode64(tdbb, false, function, args, impure);
+}
+
+dsc* evlEncode64(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure)
+{
+	return evlEncodeDecode64(tdbb, true, function, args, impure);
+}
+
+
+dsc* evlCrc32(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure)
+{
+	crc32_state ctx;
+	crc32_init(&ctx);
+
+	const dsc* arg = EVL_expr(tdbb, tdbb->getRequest(), args[0]);
+	if (!arg)	// return NULL if value is NULL
+		return NULL;
+
+	if (arg->isBlob())
+	{
+		blb* blob = blb::open2(tdbb, tdbb->getRequest()->req_transaction, reinterpret_cast<const bid*>(arg->dsc_address),
+			sizeof(streamBpb), streamBpb);
+
+		UCHAR buf[4096];
+		for(;;)
+		{
+			const unsigned l = blob->BLB_get_data(tdbb, buf, sizeof buf, false);
+			if (!l)
+				break;
+			crc32_update(&ctx, buf, l);
+		}
+
+		blob->BLB_close(tdbb);
+	}
+	else
+	{
+		unsigned len;
+		const UCHAR* ptr = CVT_get_bytes(arg, len);
+		crc32_update(&ctx, ptr, len);
+	}
+
+	SLONG hash;
+	crc32_finish(&ctx, &hash, sizeof hash);
+
+	dsc result;
+	result.makeLong(0, &hash);
+	EVL_make_value(tdbb, &result, impure);
+
+	return &impure->vlu_desc;
 }
 
 
@@ -5687,6 +5850,9 @@ const SysFunction SysFunction::functions[] =
 		{"ATAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfAtan},
 		{"ATANH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfAtanh},
 		{"ATAN2", 2, 2, setParamsDouble, makeDoubleResult, evlAtan2, NULL},
+		{"BASE64_DECODE", 1, 1, NULL, makeDecode64, evlDecode64, NULL},
+		{"BASE64_ENCODE", 1, 1, NULL, makeEncode64, evlEncode64, NULL},
+		{"CRC32", 1, 1, NULL, makeLongResult, evlCrc32, NULL},
 		{"BIN_AND", 2, -1, setParamsInteger, makeBin, evlBin, (void*) funBinAnd},
 		{"BIN_NOT", 1, 1, setParamsInteger, makeBin, evlBin, (void*) funBinNot},
 		{"BIN_OR", 2, -1, setParamsInteger, makeBin, evlBin, (void*) funBinOr},
