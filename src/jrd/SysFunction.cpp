@@ -2537,7 +2537,7 @@ public:
 				ptr = inBuf.getBuffer(BLOB_STEP);
 				len = blob->BLB_get_data(tdbb, inBuf.begin(), inBuf.getCount(), false);
 			}
-			catch(...)
+			catch (...)
 			{
 				closeBlobs();
 			}
@@ -2582,6 +2582,7 @@ public:
 		if (hasData())
 		{
 			impure->vlu_desc.clear();
+
 			if (!blobMode)
 			{
 				dsc result;
@@ -2626,6 +2627,7 @@ private:
 			newBlob->BLB_close(tdbb);
 			newBlob = nullptr;
 		}
+
 		if (blob)
 		{
 			blob->BLB_close(tdbb);

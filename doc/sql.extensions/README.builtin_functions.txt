@@ -797,9 +797,9 @@ Example:
     select * from x order by rand();
 
 
---------------------
+----------------------
 RDB$GET_TRANSACTION_CN
---------------------
+----------------------
 
 (FB4 extension)
 Function:

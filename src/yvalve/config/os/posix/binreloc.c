@@ -219,7 +219,7 @@ _br_find_exe_for_symbol (const void *symbol, BrInitError *error)
 		if ( !(strstr(line, " r-xp ") || strstr(line, " r--p "))
 			 || strchr (line, '/') == NULL)
 			continue;
-		
+
 		/* Parse line. */
 		start_addr = line;
 		end_addr = strchr (line, '-');

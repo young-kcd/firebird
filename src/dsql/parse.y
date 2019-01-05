@@ -7180,7 +7180,7 @@ value_special
 %type <valueExprNode> value_primary
 value_primary
 	: nonparenthesized_value
-	| '(' value_primary ')'							{ $$ = $2; }
+	| '(' value_primary ')'				{ $$ = $2; }
 	;
 
 // Matches definition of <simple value specification> in SQL standard
