@@ -5242,7 +5242,7 @@ set_decfloat_traps
 set_decfloat_bind
 	: SET DECFLOAT BIND
 			{ $$ = newNode<SetDecFloatBindNode>(); }
-		bind_clause($4)
+		decfloat_bind_clause($4)
 			{ $$ = $4; }
 	;
 
@@ -5264,8 +5264,8 @@ decfloat_trap($setDecFloatTrapsNode)
 		{ $setDecFloatTrapsNode->trap($1); }
 	;
 
-%type bind_clause(<setDecFloatBindNode>)
-bind_clause($setDecFloatBindNode)
+%type decfloat_bind_clause(<setDecFloatBindNode>)
+decfloat_bind_clause($setDecFloatBindNode)
 	: NATIVE
 		// do nothing
 	| character_keyword
