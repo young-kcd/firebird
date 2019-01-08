@@ -598,19 +598,20 @@ using namespace Firebird;
 %token <metaNamePtr> BINARY
 %token <metaNamePtr> BIND
 %token <metaNamePtr> COMPARE_DECFLOAT
-%token <metaNamePtr> CUME_DIST
+%token <metaNamePtr> CONSISTENCY
 %token <metaNamePtr> COUNTER
 %token <metaNamePtr> CTR_BIG_ENDIAN
 %token <metaNamePtr> CTR_LENGTH
 %token <metaNamePtr> CTR_LITTLE_ENDIAN
+%token <metaNamePtr> CUME_DIST
 %token <metaNamePtr> DECFLOAT
 %token <metaNamePtr> DEFINER
 %token <metaNamePtr> EXCLUDE
 %token <metaNamePtr> FIRST_DAY
 %token <metaNamePtr> FOLLOWING
 %token <metaNamePtr> IDLE
-%token <metaNamePtr> IV
 %token <metaNamePtr> INVOKER
+%token <metaNamePtr> IV
 %token <metaNamePtr> LAST_DAY
 %token <metaNamePtr> LEGACY
 %token <metaNamePtr> LOCAL
@@ -630,6 +631,7 @@ using namespace Firebird;
 %token <metaNamePtr> QUANTIZE
 %token <metaNamePtr> RANGE
 %token <metaNamePtr> RDB_ERROR
+%token <metaNamePtr> RDB_GET_TRANSACTION_CN
 %token <metaNamePtr> RDB_ROLE_IN_USE
 %token <metaNamePtr> RDB_SYSTEM_PRIVILEGE
 %token <metaNamePtr> RESET
@@ -640,9 +642,9 @@ using namespace Firebird;
 %token <metaNamePtr> RSA_SIGN
 %token <metaNamePtr> RSA_VERIFY
 %token <metaNamePtr> SALT_LENGTH
-%token <metaNamePtr> SIGNATURE
 %token <metaNamePtr> SECURITY
 %token <metaNamePtr> SESSION
+%token <metaNamePtr> SIGNATURE
 %token <metaNamePtr> SQL
 %token <metaNamePtr> SYSTEM
 %token <metaNamePtr> TIES
@@ -655,8 +657,6 @@ using namespace Firebird;
 %token <metaNamePtr> WINDOW
 %token <metaNamePtr> WITHOUT
 %token <metaNamePtr> ZONE
-%token <metaNamePtr> CONSISTENCY
-%token <metaNamePtr> RDB_GET_TRANSACTION_CN
 
 // external connections pool management
 %token <metaNamePtr> CONNECTIONS
@@ -8767,11 +8767,18 @@ non_reserved_word
 	| SERVERWIDE
 	| INCREMENT
 	| TRUSTED
-	| BIND					// added in FB 4.0
+	| BASE64_DECODE		// added in FB 4.0
+	| BASE64_ENCODE
+	| BIND
 	| CLEAR
+	| COUNTER
 	| COMPARE_DECFLOAT
 	| CONNECTIONS
 	| CONSISTENCY
+	| CRC32
+	| CTR_BIG_ENDIAN
+	| CTR_LENGTH
+	| CTR_LITTLE_ENDIAN
 	| CUME_DIST
 	| DEFINER
 	| EXCLUDE
@@ -8779,10 +8786,13 @@ non_reserved_word
 	| FOLLOWING
 	| IDLE
 	| INVOKER
+	| IV
 	| LAST_DAY
 	| LEGACY
 	| LIFETIME
+	| LPARAM
 	| MESSAGE
+	| MODE
 	| NATIVE
 	| NORMALIZE_DECFLOAT
 	| NTILE
@@ -8796,21 +8806,6 @@ non_reserved_word
 	| QUANTIZE
 	| RANGE
 	| RESET
-	| SECURITY
-	| SESSION
-	| SQL
-	| SYSTEM
-	| TIES
-	| TOTALORDER
-	| TRAPS
-	| ZONE
-	| MODE				// crypt functions
-	| IV
-	| COUNTER
-	| CTR_BIG_ENDIAN
-	| CTR_LITTLE_ENDIAN
-	| CTR_LENGTH
-	| LPARAM
 	| RSA_DECRYPT
 	| RSA_ENCRYPT
 	| RSA_PRIVATE
@@ -8818,10 +8813,15 @@ non_reserved_word
 	| RSA_SIGN
 	| RSA_VERIFY
 	| SALT_LENGTH
+	| SECURITY
+	| SESSION
 	| SIGNATURE
-	| BASE64_DECODE
-	| BASE64_ENCODE
-	| CRC32
+	| SQL
+	| SYSTEM
+	| TIES
+	| TOTALORDER
+	| TRAPS
+	| ZONE
 	;
 
 %%
