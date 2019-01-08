@@ -248,11 +248,16 @@ inline USHORT blb::getMaxSegment() const
 } //namespace Jrd
 
 
+namespace Firebird {
+
 template <>
-inline void Firebird::SimpleDelete<Jrd::blb>::clear(Jrd::blb* b)
+inline void SimpleDelete<Jrd::blb>::clear(Jrd::blb* b)
 {
 	if (b)
 		b->BLB_cancel();
 }
+
+} //namespace Firebird
+
 
 #endif // JRD_BLB_H
