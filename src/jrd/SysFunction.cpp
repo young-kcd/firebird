@@ -390,14 +390,12 @@ double fbcot(double value) throw()
 }
 
 
-void tomCheck(int err, const char* text)
+void tomCheck(int err, const Arg::StatusVector& secondary)
 {
 	if (err == CRYPT_OK)
 		return;
 
-	string buf;
-	buf.printf("LibTomCrypt error %s: %s", text, error_to_string(err));
-	ERR_post(Arg::Gds(isc_random) << buf);
+	status_exception::raise(Arg::Gds(isc_tom_error) << error_to_string(err) << secondary);
 }
 
 
@@ -1233,16 +1231,10 @@ void makeHash(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* 
 }
 
 
-void raise(const char* x)
-{
-	(Arg::Gds(isc_random) << x).raise();
-}
-
-
 unsigned decodeLen(unsigned len)
 {
  	if (len % 4 || !len)
- 		raise("Invalid parameter length");
+ 		status_exception::raise(Arg::Gds(isc_tom_decode64len) << Arg::Num(len));
  	len = len / 4 * 3;
  	return len;
 }
@@ -1256,7 +1248,7 @@ void makeDecode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, d
 	 else if (args[0]->isText())
 	 	result->makeVarying(decodeLen(args[0]->getStringLength()), ttype_binary);
 	 else
-	 	raise("Invalid parameter datatype - need string or blob");
+	 	status_exception::raise(Arg::Gds(isc_tom_strblob));
 
 	result->setNullable(args[0]->isNullable());
 }
@@ -1277,7 +1269,7 @@ void makeEncode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, d
 	 else if (args[0]->isText())
 	 	result->makeVarying(encodeLen(args[0]->dsc_length), ttype_ascii);
 	 else
-	 	raise("Invalid parameter datatype - need string or blob");
+	 	status_exception::raise(Arg::Gds(isc_tom_strblob));
 
 	result->setNullable(args[0]->isNullable());
 }
@@ -2446,14 +2438,14 @@ private:
 	void registerCipher(T& desc)
 	{
 		if (register_cipher(&desc) == -1)
-			raise("Unexpected error registering cipher - probably bad tomcrypt library");
+			status_exception::raise(Arg::Gds(isc_tom_reg) << "cipher");
 	}
 
 	template <typename T>
 	void registerHash(T& desc)
 	{
 		if (register_hash(&desc) == -1)
-			raise("Unexpected error registering hash - probably bad tomcrypt library");
+			status_exception::raise(Arg::Gds(isc_tom_reg) << "hash");
 	}
 };
 
@@ -2468,11 +2460,11 @@ public:
 		// register yarrow
 		index = register_prng(&yarrow_desc);
 		if (index == -1)
-			ERR_post(Arg::Gds(isc_random) << "Error registering PRNG yarrow");
+			status_exception::raise(Arg::Gds(isc_random) << "Error registering PRNG yarrow");
 
 		// setup the PRNG
-		tomCheck(yarrow_start(&state), "starting PRNG yarrow");
-		tomCheck(rng_make_prng(64, index, &state, NULL), "setting up PRNG yarrow");
+		tomCheck(yarrow_start(&state), Arg::Gds(isc_tom_yarrow_start));
+		tomCheck(rng_make_prng(64, index, &state, NULL),  Arg::Gds(isc_tom_yarrow_setup));
 	}
 
 	~PseudoRandom()
@@ -2518,7 +2510,7 @@ public:
 		if (!blobMode)
 		{
 			if (!desc->isText())
-				raise("Wrong data type for first argument");
+				status_exception::raise(Arg::Gds(isc_tom_strblob));
 			ptr = CVT_get_bytes(desc, len);
 		}
 		else
@@ -2693,11 +2685,7 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 	{
 		a = find(algorithms, algorithmName);
 		if (!a)
-		{
-			string error = "Unknown crypt algorithm ";
-			error += algorithmName.c_str();
-			raise(error.c_str());
-		}
+			status_exception::raise(Arg::Gds(isc_tom_algorithm) << algorithmName);
 	}
 
 	const unsigned MODE_ECB = 1;
@@ -2719,14 +2707,14 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 	if (cipher >= 0)
 	{
 		if (!modeName.hasData())
-			raise("Should specify MODE parameter for symmetric algorithm");
+			status_exception::raise(Arg::Gds(isc_tom_mode_miss));
 
 		m = find(modes, modeName);
 		if (!m)
-			raise("Unknown symmetric crypt mode");
+			status_exception::raise(Arg::Gds(isc_tom_mode_bad));
 	}
 	else if (modeName.hasData())
-		raise("Mode parameter makes no sense for chosen algorithm");
+		status_exception::raise(Arg::Gds(isc_tom_no_mode));
 
 	unsigned len;
 	const void* data = CVT_get_bytes(dscs[CRYPT_ARG_KEY], len);
@@ -2738,11 +2726,11 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 	if ((m && (m->code != MODE_ECB)) || (a && (a->code != ALG_RC4)))	// all other need IV
 	{
 		if (!len)
-			raise("Should specify initialization vector for chosen algorithm and/or mode");
+			status_exception::raise(Arg::Gds(isc_tom_iv_miss));
 		memcpy(iv.getBuffer(len), data, len);
 	}
 	else if (len)
-		raise("Initialization vector parameter makes no sense for chosen algorithm and/or mode");
+		status_exception::raise(Arg::Gds(isc_tom_no_iv));
 
 	const unsigned CTR_32 = 1;
 	const unsigned CTR_64 = 2;
@@ -2763,13 +2751,13 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		{
 			c = find(counterTypes, counterType);
 			if (!c)
-				raise("Invalid counter type @1");	// counterType
+				status_exception::raise(Arg::Gds(isc_tom_ctrtype_bad) << counterType);
 		}
 		else
 			c = &counterTypes[CTR_LITTLE_ENDIAN];
 	}
 	else if (counterType.hasData())
-			raise("Counter endianess parameter is not used in Mode @1 (m->name)");
+		status_exception::raise(Arg::Gds(isc_tom_no_ctrtype) << m->value);
 
 	FB_UINT64 ctrVal = 0;
 	if ((m && (m->code == MODE_CTR)) || (a && (a->code == ALG_CHACHA)))
@@ -2778,11 +2766,11 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		{
 			ctrVal = MOV_get_int64(tdbb, dscs[CRYPT_ARG_COUNTER], 0);
 			if (m && ctrVal > key.getCount())
-				raise("Too big value @1, maximum @2 can be used");
+				status_exception::raise(Arg::Gds(isc_tom_ctr_big) << Arg::Num(ctrVal) <<  Arg::Num(key.getCount()));
 		}
 	}
 	else if (dscs[CRYPT_ARG_COUNTER]->dsc_length)
-			raise("@1 (counter length/value) parameter is not used in @1 (a ? a->name : 'Mode' m->name)");
+			status_exception::raise(Arg::Gds(isc_tom_no_ctr) << (m ? "mode" : "cipher") << (m ? m->value : a->value));
 
 	// Run selected algorithm
 	DataPipe dp(tdbb, dscs[CRYPT_ARG_VALUE], impure);
@@ -2790,21 +2778,21 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 	{
 		unsigned blockLen = cipher_descriptor[cipher].block_length;
 		if (iv.hasData() && iv.getCount() != blockLen)
-			raise("Invalid IV length @2, need @1");  // block_length, iv.getCount
+			status_exception::raise(Arg::Gds(isc_tom_iv_length) << Arg::Num(iv.getCount()) << Arg::Num(blockLen));
 
 		switch (m->code)
 		{
 		case MODE_ECB:
 			{
 				symmetric_ECB ecb;
-				tomCheck(ecb_start(cipher, key.begin(), key.getCount(), 0, &ecb), "initializing ECB mode");
+				tomCheck(ecb_start(cipher, key.begin(), key.getCount(), 0, &ecb), Arg::Gds(isc_tom_init_mode) << "ECB");
 
 				while (dp.hasData())
 				{
 					if (encryptFlag)
-						tomCheck(ecb_encrypt(dp.from(), dp.to(), dp.length(), &ecb), "encrypting in ECB mode");
+						tomCheck(ecb_encrypt(dp.from(), dp.to(), dp.length(), &ecb), Arg::Gds(isc_tom_crypt_mode) << "ECB");
 					else
-						tomCheck(ecb_decrypt(dp.from(), dp.to(), dp.length(), &ecb), "decrypting in ECB mode");
+						tomCheck(ecb_decrypt(dp.from(), dp.to(), dp.length(), &ecb), Arg::Gds(isc_tom_decrypt_mode) << "ECB");
 					dp.next();
 				}
 				ecb_done(&ecb);
@@ -2814,14 +2802,14 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		case MODE_CBC:
 			{
 				symmetric_CBC cbc;
-				tomCheck(cbc_start(cipher, iv.begin(), key.begin(), key.getCount(), 0, &cbc), "initializing CBC mode");
+				tomCheck(cbc_start(cipher, iv.begin(), key.begin(), key.getCount(), 0, &cbc), Arg::Gds(isc_tom_init_mode) << "CBC");
 
 				while (dp.hasData())
 				{
 					if (encryptFlag)
-						tomCheck(cbc_encrypt(dp.from(), dp.to(), dp.length(), &cbc), "encrypting in CBC mode");
+						tomCheck(cbc_encrypt(dp.from(), dp.to(), dp.length(), &cbc), Arg::Gds(isc_tom_crypt_mode) << "CBC");
 					else
-						tomCheck(cbc_decrypt(dp.from(), dp.to(), dp.length(), &cbc), "decrypting in CBC mode");
+						tomCheck(cbc_decrypt(dp.from(), dp.to(), dp.length(), &cbc), Arg::Gds(isc_tom_decrypt_mode) << "CBC");
 					dp.next();
 				}
 				cbc_done(&cbc);
@@ -2831,14 +2819,14 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		case MODE_CFB:
 			{
 				symmetric_CFB cfb;
-				tomCheck(cfb_start(cipher, iv.begin(), key.begin(), key.getCount(), 0, &cfb), "initializing CFB mode");
+				tomCheck(cfb_start(cipher, iv.begin(), key.begin(), key.getCount(), 0, &cfb), Arg::Gds(isc_tom_init_mode) << "CFB");
 
 				while (dp.hasData())
 				{
 					if (encryptFlag)
-						tomCheck(cfb_encrypt(dp.from(), dp.to(), dp.length(), &cfb), "encrypting in CFB mode");
+						tomCheck(cfb_encrypt(dp.from(), dp.to(), dp.length(), &cfb), Arg::Gds(isc_tom_crypt_mode) << "CFB");
 					else
-						tomCheck(cfb_decrypt(dp.from(), dp.to(), dp.length(), &cfb), "decrypting in CFB mode");
+						tomCheck(cfb_decrypt(dp.from(), dp.to(), dp.length(), &cfb), Arg::Gds(isc_tom_decrypt_mode) << "CFB");
 					dp.next();
 				}
 				cfb_done(&cfb);
@@ -2848,14 +2836,14 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		case MODE_OFB:
 			{
 				symmetric_OFB ofb;
-				tomCheck(ofb_start(cipher, iv.begin(), key.begin(), key.getCount(), 0, &ofb), "initializing OFB mode");
+				tomCheck(ofb_start(cipher, iv.begin(), key.begin(), key.getCount(), 0, &ofb), Arg::Gds(isc_tom_init_mode) << "OFB");
 
 				while (dp.hasData())
 				{
 					if (encryptFlag)
-						tomCheck(ofb_encrypt(dp.from(), dp.to(), dp.length(), &ofb), "encrypting in OFB mode");
+						tomCheck(ofb_encrypt(dp.from(), dp.to(), dp.length(), &ofb), Arg::Gds(isc_tom_crypt_mode) << "OFB");
 					else
-						tomCheck(ofb_decrypt(dp.from(), dp.to(), dp.length(), &ofb), "decrypting in OFB mode");
+						tomCheck(ofb_decrypt(dp.from(), dp.to(), dp.length(), &ofb), Arg::Gds(isc_tom_decrypt_mode) << "OFB");
 					dp.next();
 				}
 				ofb_done(&ofb);
@@ -2867,14 +2855,14 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 				symmetric_CTR ctr;
 				tomCheck(ctr_start(cipher, iv.begin(), key.begin(), key.getCount(), 0,
 					(c->code == CTR_LITTLE_ENDIAN ? CTR_COUNTER_LITTLE_ENDIAN : CTR_COUNTER_BIG_ENDIAN) | ctrVal,
-					&ctr), "initializing CTR mode");
+					&ctr), Arg::Gds(isc_tom_init_mode) << "CTR");
 
 				while (dp.hasData())
 				{
 					if (encryptFlag)
-						tomCheck(ctr_encrypt(dp.from(), dp.to(), dp.length(), &ctr), "encrypting in CTR mode");
+						tomCheck(ctr_encrypt(dp.from(), dp.to(), dp.length(), &ctr), Arg::Gds(isc_tom_crypt_mode) << "CTR");
 					else
-						tomCheck(ctr_decrypt(dp.from(), dp.to(), dp.length(), &ctr), "decrypting in CTR mode");
+						tomCheck(ctr_decrypt(dp.from(), dp.to(), dp.length(), &ctr), Arg::Gds(isc_tom_decrypt_mode) << "CTR");
 					dp.next();
 				}
 				ctr_done(&ctr);
@@ -2890,12 +2878,12 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		case ALG_RC4:
 			{
 				rc4_state rc4;
-				tomCheck(rc4_stream_setup(&rc4, key.begin(), key.getCount()), "initializing RC4");
+				tomCheck(rc4_stream_setup(&rc4, key.begin(), key.getCount()), Arg::Gds(isc_tom_init_cip) << "RC4");
 
 				while (dp.hasData())
 				{
 					tomCheck(rc4_stream_crypt(&rc4, dp.from(), dp.length(), dp.to()),
-						encryptFlag ? "encrypting RC4" : "decrypting RC4");
+						Arg::Gds(encryptFlag ? isc_tom_crypt_cip : isc_tom_decrypt_cip) << "RC4");
 					dp.next();
 				}
 				rc4_stream_done(&rc4);
@@ -2911,26 +2899,26 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 				case 32:
 					break;
 				default:
-					raise("Invalid KEY length @1, need 16 or 32");	// key.getCount()
+					status_exception::raise(Arg::Gds(isc_tom_chacha_key) << Arg::Num(key.getCount()));
 				}
-				tomCheck(chacha_setup(&chacha, key.begin(), key.getCount(), 20), "initializing CHACHA#20");
+				tomCheck(chacha_setup(&chacha, key.begin(), key.getCount(), 20), Arg::Gds(isc_tom_init_cip) << "CHACHA#20");
 				switch (iv.getCount())
 				{
 				case 12:
-					tomCheck(chacha_ivctr32(&chacha, iv.begin(), iv.getCount(), ctrVal), "setting IV for CHACHA#20");
+					tomCheck(chacha_ivctr32(&chacha, iv.begin(), iv.getCount(), ctrVal), Arg::Gds(isc_tom_setup_cip) << "CHACHA#20");
 					break;
 				case 8:
-					tomCheck(chacha_ivctr64(&chacha, iv.begin(), iv.getCount(), ctrVal), "setting IV for CHACHA#20");
+					tomCheck(chacha_ivctr64(&chacha, iv.begin(), iv.getCount(), ctrVal),  Arg::Gds(isc_tom_setup_cip) << "CHACHA#20");
 					break;
 				default:
-					raise("Invalid IV length @1, need 8 or 12");  // iv.getCount
+					status_exception::raise(Arg::Gds(isc_tom_setup_chacha) << Arg::Num(iv.getCount()));
 					break;
 				}
 
 				while (dp.hasData())
 				{
 					tomCheck(chacha_crypt(&chacha, dp.from(), dp.length(), dp.to()),
-						encryptFlag ? "encrypting CHACHA#20" : "decrypting CHACHA#20");
+						Arg::Gds(encryptFlag ? isc_tom_crypt_cip : isc_tom_decrypt_cip) << "CHACHA#20");
 					dp.next();
 				}
 				chacha_done(&chacha);
@@ -2940,13 +2928,13 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		case ALG_SOBER:
 			{
 				sober128_state sober128;
-				tomCheck(sober128_stream_setup(&sober128, key.begin(), key.getCount()), "initializing SOBER-128");
-				tomCheck(sober128_stream_setiv(&sober128, iv.begin(), iv.getCount()), "setting IV for SOBER-128");
+				tomCheck(sober128_stream_setup(&sober128, key.begin(), key.getCount()), Arg::Gds(isc_tom_init_cip) << "SOBER-128");
+				tomCheck(sober128_stream_setiv(&sober128, iv.begin(), iv.getCount()),  Arg::Gds(isc_tom_setup_cip) << "SOBER-128");
 
 				while (dp.hasData())
 				{
 					tomCheck(sober128_stream_crypt(&sober128, dp.from(), dp.length(), dp.to()),
-						encryptFlag ? "encrypting SOBER-128" : "decrypting SOBER-128");
+						Arg::Gds(encryptFlag ? isc_tom_crypt_cip : isc_tom_decrypt_cip) << "SOBER-128");
 					dp.next();
 				}
 				sober128_stream_done(&sober128);
@@ -3006,8 +2994,8 @@ dsc* evlEncodeDecode64(thread_db* tdbb, bool encodeFlag, const SysFunction* func
 	UCharBuffer out;
 	unsigned long outLen = encodeFlag ? encodeLen(in.getCount()) + 1 : decodeLen(in.getCount());
 	auto* func = encodeFlag ? base64_encode : base64_decode;
-	auto* msg = encodeFlag ? "encoding BASE64" : "decoding BASE64";
-	tomCheck(func(in.begin(), in.getCount(), out.getBuffer(outLen), &outLen), msg);
+	tomCheck(func(in.begin(), in.getCount(), out.getBuffer(outLen), &outLen),
+		Arg::Gds(encodeFlag ? isc_tom_encode : isc_tom_decode) << "BASE64");
 	out.resize(outLen);
 
 	dsc result;
@@ -3106,11 +3094,7 @@ dsc* evlRsaEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const Ne
 	aName.lower();
 	int hash = find_hash(aName.c_str());
 	if (hash < 0)
-	{
-		string error = "Unknown hash algorithm ";
-		error += hashName.c_str();
-		raise(error.c_str());
-	}
+		status_exception::raise(Arg::Gds(isc_tom_hash_bad) << hashName);
 
 	unsigned len;
 	const UCHAR* data = CVT_get_bytes(dscs[RSA_CRYPT_ARG_VALUE], len);
@@ -3129,7 +3113,7 @@ dsc* evlRsaEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const Ne
 
 	// Run tomcrypt functions
 	rsa_key rsaKey;
-	tomCheck(rsa_import(key, keyLen, &rsaKey), "importing RSA key");
+	tomCheck(rsa_import(key, keyLen, &rsaKey), Arg::Gds(isc_tom_rsa_import));
 
 	unsigned long outlen = encryptFlag ? 256 : 190;
 	UCharBuffer outBuf;
@@ -3138,9 +3122,9 @@ dsc* evlRsaEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const Ne
 			prng().getState(), prng().getIndex(), hash, &rsaKey) :
 		rsa_decrypt_key(data, len, outBuf.getBuffer(outlen), &outlen, lParam, paramLen, hash, &stat, &rsaKey);
 	rsa_free(&rsaKey);
-	tomCheck(cryptRc, encryptFlag ? "RSA-encrypting" : "RSA-decrypting");
+	tomCheck(cryptRc, Arg::Gds(encryptFlag ? isc_tom_crypt_cip : isc_tom_decrypt_cip) << "RSA");
 	if ((!encryptFlag) && (!stat))
-		ERR_post(Arg::Gds(isc_random) << "Invalid OAEP packet");
+		status_exception::raise(Arg::Gds(isc_tom_oaep));
 
 	dsc result;
 	result.makeText(outlen, ttype_binary, outBuf.begin());
@@ -3175,14 +3159,13 @@ dsc* evlRsaPrivate(thread_db* tdbb, const SysFunction* function, const NestValue
 		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 
 	rsa_key rsaKey;
-	tomCheck(rsa_make_key(prng().getState(), prng().getIndex(), length, 65537, &rsaKey),
-		"making RSA key");
+	tomCheck(rsa_make_key(prng().getState(), prng().getIndex(), length, 65537, &rsaKey), Arg::Gds(isc_tom_rsa_make));
 
 	unsigned long outlen = length * 16;
 	UCharBuffer key;
 	int cryptRc = rsa_export(key.getBuffer(outlen), &outlen, PK_PRIVATE, &rsaKey);
 	rsa_free(&rsaKey);
-	tomCheck(cryptRc, "exporting private RSA key");
+	tomCheck(cryptRc, Arg::Gds(isc_tom_rsa_export) << "private");
 
 	dsc result;
 	result.makeText(outlen, ttype_binary, key.begin());
@@ -3205,13 +3188,13 @@ dsc* evlRsaPublic(thread_db* tdbb, const SysFunction* function, const NestValueA
 	unsigned len;
 	const UCHAR* data = CVT_get_bytes(value, len);
 	rsa_key rsaKey;
-	tomCheck(rsa_import(data, len, &rsaKey), "importing RSA key");
+	tomCheck(rsa_import(data, len, &rsaKey), Arg::Gds(isc_tom_rsa_import));
 
 	unsigned long outlen = len;
 	UCharBuffer key;
 	int cryptRc = rsa_export(key.getBuffer(outlen), &outlen, PK_PUBLIC, &rsaKey);
 	rsa_free(&rsaKey);
-	tomCheck(cryptRc, "exporting private RSA key");
+	tomCheck(cryptRc, Arg::Gds(isc_tom_rsa_export) << "public");
 
 	dsc result;
 	result.makeText(outlen, ttype_binary, key.begin());
@@ -3242,11 +3225,7 @@ dsc* evlRsaSign(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	aName.lower();
 	int hash = find_hash(aName.c_str());
 	if (hash < 0)
-	{
-		string error = "Unknown hash algorithm ";
-		error += hashName.c_str();
-		raise(error.c_str());
-	}
+		status_exception::raise(Arg::Gds(isc_tom_hash_bad) << hashName);
 
 	unsigned len;
 	const UCHAR* data = CVT_get_bytes(dscs[RSA_SIGN_ARG_VALUE], len);
@@ -3266,14 +3245,14 @@ dsc* evlRsaSign(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	if (!key)
 		return nullptr;
 	rsa_key rsaKey;
-	tomCheck(rsa_import(key, keyLen, &rsaKey), "importing RSA key");
+	tomCheck(rsa_import(key, keyLen, &rsaKey), Arg::Gds(isc_tom_rsa_import));
 
 	unsigned long signLen = 1024;
 	UCharBuffer sign;
 	int cryptRc = rsa_sign_hash(data, len, sign.getBuffer(signLen), &signLen,
 		prng().getState(), prng().getIndex(), hash, saltLength, &rsaKey);
 	rsa_free(&rsaKey);
-	tomCheck(cryptRc, "RSA-signing data");
+	tomCheck(cryptRc, Arg::Gds(isc_tom_rsa_sign));
 
 	dsc result;
 	result.makeText(signLen, ttype_binary, sign.begin());
@@ -3315,11 +3294,7 @@ dsc* evlRsaVerify(thread_db* tdbb, const SysFunction* function, const NestValueA
 	aName.lower();
 	int hash = find_hash(aName.c_str());
 	if (hash < 0)
-	{
-		string error = "Unknown hash algorithm ";
-		error += hashName.c_str();
-		raise(error.c_str());
-	}
+		status_exception::raise(Arg::Gds(isc_tom_hash_bad) << hashName);
 
 	unsigned len;
 	const UCHAR* data = CVT_get_bytes(dscs[RSA_VERIFY_ARG_VALUE], len);
@@ -3344,13 +3319,13 @@ dsc* evlRsaVerify(thread_db* tdbb, const SysFunction* function, const NestValueA
 	if (!key)
 		return boolResult(tdbb, impure, false);
 	rsa_key rsaKey;
-	tomCheck(rsa_import(key, keyLen, &rsaKey), "importing RSA key");
+	tomCheck(rsa_import(key, keyLen, &rsaKey), Arg::Gds(isc_tom_rsa_import));
 
 	int state = 0;
 	int cryptRc = rsa_verify_hash(sign, signLen, data, len, hash, saltLength, &state, &rsaKey);
 	rsa_free(&rsaKey);
 	if (cryptRc != CRYPT_INVALID_PACKET)
-		tomCheck(cryptRc, "verifying RSA-signed data");
+		tomCheck(cryptRc, Arg::Gds(isc_tom_rsa_verify));
 	else
 		state = 0;
 
