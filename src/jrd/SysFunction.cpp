@@ -2905,6 +2905,14 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		case ALG_CHACHA:
 			{
 				chacha_state chacha;
+				switch (key.getCount())
+				{
+				case 16:
+				case 32:
+					break;
+				default:
+					raise("Invalid KEY length @1, need 16 or 32");	// key.getCount()
+				}
 				tomCheck(chacha_setup(&chacha, key.begin(), key.getCount(), 20), "initializing CHACHA#20");
 				switch (iv.getCount())
 				{
@@ -2915,7 +2923,7 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 					tomCheck(chacha_ivctr64(&chacha, iv.begin(), iv.getCount(), ctrVal), "setting IV for CHACHA#20");
 					break;
 				default:
-					raise("Invalid IV length @2, need 8 or 12");  // iv.getCount
+					raise("Invalid IV length @1, need 8 or 12");  // iv.getCount
 					break;
 				}
 
