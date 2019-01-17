@@ -7309,10 +7309,16 @@ static void unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* u
 
 	try
 	{
+		if (!dbb)
+			dbb = tdbb->getDatabase();
+
 		if (dbb)
 		{
 			fb_assert(!dbb->locked());
 			ThreadStatusGuard temp_status(tdbb);
+
+			if (!attachment)
+				attachment = tdbb->getAttachment();
 
 			if (attachment)
 			{
