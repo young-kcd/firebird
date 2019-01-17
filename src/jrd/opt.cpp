@@ -990,7 +990,7 @@ static void check_indices(const CompilerScratch::csb_repeat* csb_tail)
 	// if there were no indices fetched at all but the
 	// user specified some, error out using the first index specified
 
-	if (!csb_tail->csb_indices && plan->accessType)
+	if (!csb_tail->csb_indices && plan->accessType && !tdbb->getAttachment()->isGbak())
 	{
 		// index %s cannot be used in the specified plan
 		ERR_post(Arg::Gds(isc_index_unused) << plan->accessType->items[0].indexName);
