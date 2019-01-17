@@ -2183,12 +2183,12 @@ SLONG MET_lookup_index_name(thread_db* tdbb,
 		if (!REQUEST(irq_l_index_name))
 			REQUEST(irq_l_index_name) = request;
 
-		if (X.RDB$INDEX_INACTIVE == 0) {
+		if (X.RDB$INDEX_INACTIVE == 0)
 			*status = MET_object_active;
-		}
-		else {
+		else if (X.RDB$INDEX_INACTIVE == 3)
+			*status = MET_object_deferred_active;
+		else
 			*status = MET_object_inactive;
-		}
 
 		id = X.RDB$INDEX_ID - 1;
 		const jrd_rel* relation = MET_lookup_relation(tdbb, X.RDB$RELATION_NAME);

@@ -70,9 +70,10 @@ const int TFB_array				= 2;
 
 // index status
 
-const SSHORT MET_object_active		= 0;
-const SSHORT MET_object_inactive	= 1;
-const SSHORT MET_object_unknown	= 2;
+const SSHORT MET_object_active			= 0;
+const SSHORT MET_object_deferred_active	= 1;
+const SSHORT MET_object_inactive		= 2;
+const SSHORT MET_object_unknown			= 3;
 
 
 const int TRIGGER_PRE_STORE		= 1;
