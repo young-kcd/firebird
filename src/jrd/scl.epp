@@ -1721,6 +1721,6 @@ void Jrd::UserId::populateDpb(Firebird::ClumpletWriter& dpb, bool embeddedSuppor
 	else if (embeddedSupport)
 		dpb.insertString(isc_dpb_user_name, usr_user_name);
 
-	if (usr_sql_role_name.hasData())
+	if (usr_sql_role_name.hasData() && usr_sql_role_name != NULL_ROLE && !dpb.find(isc_dpb_sql_role_name))
 		dpb.insertString(isc_dpb_sql_role_name, usr_sql_role_name);
 }
