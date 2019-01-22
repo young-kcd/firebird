@@ -1725,6 +1725,8 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 			userId.makeRoleName(options.dpb_sql_dialect);
 			UserId::sclInit(tdbb, false, userId);
 
+			Monitoring::publishAttachment(tdbb);
+
 			// This pair (SHUT_database/SHUT_online) checks itself for valid user name
 			if (options.dpb_shutdown)
 				SHUT_database(tdbb, options.dpb_shutdown, options.dpb_shutdown_delay, NULL);
@@ -2836,6 +2838,8 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			}
 
 			PAG_attachment_id(tdbb);
+
+			Monitoring::publishAttachment(tdbb);
 
 			CCH_release_exclusive(tdbb);
 
