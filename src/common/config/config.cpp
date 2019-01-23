@@ -173,7 +173,6 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_STRING,		"RemoteBindAddress",		(ConfigValue) 0},
 	{TYPE_STRING,		"ExternalFileAccess",		(ConfigValue) "None"},	// location(s) of external files for tables
 	{TYPE_STRING,		"DatabaseAccess",			(ConfigValue) "Full"},	// location(s) of databases
-#define UDF_DEFAULT_RESTRICT_VALUE "Restrict UDF"								// use it to substitute FB_UDFDIR value
 	{TYPE_STRING,		"UdfAccess",				(ConfigValue) "None"},	// location(s) of UDFs
 	{TYPE_STRING,		"TempDirectories",			(ConfigValue) 0},
 #ifdef DEV_BUILD
@@ -608,34 +607,7 @@ const char *Config::getDatabaseAccess()
 
 const char *Config::getUdfAccess()
 {
-	static Firebird::GlobalPtr<Firebird::Mutex> udfMutex;
-	static Firebird::GlobalPtr<Firebird::string> udfValue;
-	static const char* volatile value = 0;
-
-	if (value)
-	{
-		return value;
-	}
-
-	Firebird::MutexLockGuard guard(udfMutex, "Config::getUdfAccess");
-
-	if (value)
-	{
-		return value;
-	}
-
-	const char* v = (const char*) getDefaultConfig()->values[KEY_UDF_ACCESS];
-	if (CASE_SENSITIVITY ? (! strcmp(v, UDF_DEFAULT_RESTRICT_VALUE) && FB_UDFDIR[0]) :
-						   (! fb_utils::stricmp(v, UDF_DEFAULT_RESTRICT_VALUE) && FB_UDFDIR[0]))
-	{
-		udfValue->printf("Restrict %s", FB_UDFDIR);
-		value = udfValue->c_str();
-	}
-	else
-	{
-		value = v;
-	}
-	return value;
+	return (const char*) getDefaultConfig()->values[KEY_UDF_ACCESS];
 }
 
 const char *Config::getTempDirectories()

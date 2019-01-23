@@ -670,7 +670,6 @@ XE_CONF_DIR(fbconf, [config files DIR (PREFIX)], FB_CONFDIR)
 XE_CONF_DIR(fblib, [object code libraries DIR (PREFIX/lib)], FB_LIBDIR, /lib)
 XE_CONF_DIR(fbinclude, [C/C++ header files DIR (PREFIX/include)], FB_INCDIR, /include)
 XE_CONF_DIR(fbdoc, [documentation root DIR (PREFIX/doc)], FB_DOCDIR, /doc)
-XE_CONF_DIR(fbudf, [UDF DIR (PREFIX/UDF)], FB_UDFDIR, /UDF)
 XE_CONF_DIR(fbsample, [examples DIR (PREFIX/examples)], FB_SAMPLEDIR, /examples)
 XE_CONF_DIR(fbsample-db, [examples database DIR (PREFIX/examples/empbuild)], FB_SAMPLEDBDIR, /examples/empbuild)
 XE_CONF_DIR(fbhelp, [QLI help DIR (PREFIX/help)], FB_HELPDIR, /help)
@@ -1373,11 +1372,6 @@ fi
 AC_SUBST(POSTFIX_INCLUDE)
 
 UDF_COMMENT="#"
-if test -n "${with_fbudf}"; then
-	UDF_COMMENT="#
-#  #  For this build Restrict UDF means Restrict ${with_fbudf}
-#"
-fi
 AC_SUBST(UDF_COMMENT)
 
 AC_CONFIG_FILES(
