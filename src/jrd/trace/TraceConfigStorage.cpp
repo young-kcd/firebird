@@ -235,15 +235,7 @@ void ConfigStorage::checkFile()
 			PathName configFileName(Config::getAuditTraceConfigFile());
 
 			// remove quotes around path if present
-			{ // scope
-				const FB_SIZE_T pathLen = configFileName.length();
-				if (pathLen > 1 && configFileName[0] == '"' &&
-					configFileName[pathLen - 1] == '"')
-				{
-					configFileName.erase(0, 1);
-					configFileName.erase(pathLen - 2, 1);
-				}
-			}
+			configFileName.alltrim(" '\"");
 
 			if (configFileName.empty())
 				return;
