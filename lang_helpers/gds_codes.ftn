@@ -1912,6 +1912,8 @@ C --
       PARAMETER (GDS__tom_rsa_verify                   = 335545249)
       INTEGER*4 GDS__tom_chacha_key                  
       PARAMETER (GDS__tom_chacha_key                   = 335545250)
+      INTEGER*4 GDS__bad_repl_handle                 
+      PARAMETER (GDS__bad_repl_handle                  = 335545251)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

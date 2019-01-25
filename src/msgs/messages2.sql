@@ -1038,6 +1038,7 @@ Data source : @4', NULL, NULL)
 ('tom_rsa_sign', NULL, 'SysFunction.cpp', NULL, 0, 928, NULL, 'RSA-signing data', NULL, NULL);
 ('tom_rsa_verify', NULL, 'SysFunction.cpp', NULL, 0, 929, NULL, 'Verifying RSA-signed data', NULL, NULL);
 ('tom_chacha_key', NULL, 'SysFunction.cpp', NULL, 0, 930, NULL, 'Invalid key length @1, need 16 or 32', NULL, NULL);
+('bad_repl_handle', NULL, 'jrd.cpp', NULL, 0, 931, NULL, 'invalid replicator handle', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
@@ -1784,6 +1785,8 @@ COMMIT WORK;
 ('gfix_opt_icu', 'ALICE_gfix', 'alice.c', NULL, 3, 131, NULL, '   -icu                 fix database to be usable with present ICU version', NULL, NULL);
 ('gfix_opt_role', 'ALICE_gfix', 'alice.c', NULL, 3, 132, NULL, '   -role                set SQL role name', NULL, NULL);
 ('gfix_role_req', 'ALICE_gfix', 'alice.c', NULL, 3, 133, NULL, 'SQL role name required', NULL, NULL);
+('gfix_opt_repl', 'ALICE_gfix', 'alice.c', NULL, 3, 134, NULL, '   -repl(ica)           replica mode <none / read_only / read_write>', NULL, NULL);
+('gfix_repl_mode_req', 'ALICE_gfix', 'alice.c', NULL, 3, 135, NULL, 'replica mode (none / read_only / read_write) required', NULL, NULL);
 -- DSQL
 ('dsql_dbkey_from_non_table', 'MAKE_desc', 'make.c', NULL, 7, 2, NULL, 'Cannot SELECT RDB$DB_KEY from a stored procedure.', NULL, NULL);
 ('dsql_transitional_numeric', 'dsql_yyparse', 'parse.y', NULL, 7, 3, NULL, 'Precision 10 to 18 changed from DOUBLE PRECISION in SQL dialect 1 to 64-bit scaled integer in SQL dialect 3', NULL, NULL);
