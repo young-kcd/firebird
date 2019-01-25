@@ -1165,6 +1165,8 @@ interface TraceSweepInfo : Versioned
 interface TraceLogWriter : ReferenceCounted
 {
 	uint write(const void* buf, uint size);
+version: // 3.0.4 -> 3.0.5
+	uint write_s(Status status, const void* buf, uint size);
 }
 
 interface TraceInitInfo : Versioned
