@@ -56,14 +56,14 @@ if (exists(select * from RDB$FUNCTIONS where RDB$MODULE_NAME is not null and RDB
 if (exists(select * from RDB$FUNCTIONS where RDB$MODULE_NAME is not null and RDB$FUNCTION_NAME = 'DOW')) then execute statement
 'alter function dow (
     val timestamp
-) returns varchar(14) character set ascii
+) returns varchar(53) character set utf8
     external name ''udf_compat!UC_dow''
     engine udr';
 
 if (exists(select * from RDB$FUNCTIONS where RDB$MODULE_NAME is not null and RDB$FUNCTION_NAME = 'SDOW')) then execute statement
 'alter function sdow (
     val timestamp
-) returns varchar(4) character set ascii
+) returns varchar(13) character set utf8
     external name ''udf_compat!UC_sdow''
     engine udr';
 
