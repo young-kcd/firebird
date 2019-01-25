@@ -2,6 +2,10 @@
 
 ## New features
 
+* [CORE-5990](http://tracker.firebirdsql.org/browse/CORE-5990): Pool of external connections  
+  Reference(s): [/doc/sql.extentions/README.external_connections_pool](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.external_connections_pool)  
+  Contributor(s): Vlad Khorsun
+
 * [CORE-5970](http://tracker.firebirdsql.org/browse/CORE-5970): Built-in cryptographic functions  
   Reference(s): [/doc/sql.extentions/README.builtin_functions.txt](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.builtin_functions.txt)  
   Contributor(s): Alex Peshkoff
