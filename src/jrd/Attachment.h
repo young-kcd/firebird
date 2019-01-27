@@ -342,7 +342,7 @@ public:
 			if (m_objects.find(name, pos))
 				return (SLONG) pos;
 
-			return false;
+			return -1;
 		}
 
 	private:
