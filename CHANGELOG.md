@@ -3,11 +3,11 @@
 ## New features
 
 * [CORE-5990](http://tracker.firebirdsql.org/browse/CORE-5990): Pool of external connections  
-  Reference(s): [/doc/sql.extentions/README.external_connections_pool](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.external_connections_pool)  
+  Reference(s): [/doc/sql.extensions/README.external_connections_pool](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.external_connections_pool)  
   Contributor(s): Vlad Khorsun
 
 * [CORE-5970](http://tracker.firebirdsql.org/browse/CORE-5970): Built-in cryptographic functions  
-  Reference(s): [/doc/sql.extentions/README.builtin_functions.txt](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.builtin_functions.txt)  
+  Reference(s): [/doc/sql.extensions/README.builtin_functions.txt](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.builtin_functions.txt)  
   Contributor(s): Alex Peshkoff
 
 * [CORE-5953](http://tracker.firebirdsql.org/browse/CORE-5953): Statement level read consistency in read-committed transactions  
@@ -25,7 +25,7 @@
   Contributor(s): Adriano dos Santos Fernandes
 
 * [CORE-5620](http://tracker.firebirdsql.org/browse/CORE-5620): Add builtin functions FIRST_DAY and LAST_DAY  
-  Reference(s): [/doc/sql.extentions/README.builtin_functions.txt](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.builtin_functions.txt)  
+  Reference(s): [/doc/sql.extensions/README.builtin_functions.txt](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.builtin_functions.txt)  
   Contributor(s): Adriano dos Santos Fernandes
 
 * [CORE-5536](http://tracker.firebirdsql.org/browse/CORE-5536): Connection compressed/encrypted status in MON$ATTACHMENTS table  
@@ -37,11 +37,11 @@
   Contributor(s): Dmitry Yemanov
 
 * [CORE-909](http://tracker.firebirdsql.org/browse/CORE-909): Ability to retrieve current UTC/GMT timestamp  
-  Reference(s): [/doc/sql.extentions/README.time_zone.md](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.time_zone.md)  
+  Reference(s): [/doc/sql.extensions/README.time_zone.md](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.time_zone.md)  
   Contributor(s): Adriano dos Santos Fernandes
 
 * [CORE-694](http://tracker.firebirdsql.org/browse/CORE-694): Support for time zones  
-  Reference(s): [/doc/sql.extentions/README.time_zone.md](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.time_zone.md)  
+  Reference(s): [/doc/sql.extensions/README.time_zone.md](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.time_zone.md)  
   Contributor(s): Adriano dos Santos Fernandes
 
 ## Improvements
@@ -65,7 +65,7 @@
   Contributor(s): Alex Peshkoff
 
 * [CORE-5921](http://tracker.firebirdsql.org/browse/CORE-5921): Provide information about Global Commit Number, Commit Number of currently used database snapshot (if any) and Commit Numbers assigned to the committed transactions  
-  Reference(s): [/doc/sql.extentions/README.builtin_functions.txt](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.builtin_functions.txt)  
+  Reference(s): [/doc/sql.extensions/README.builtin_functions.txt](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.builtin_functions.txt)  
   Contributor(s): Vlad Khorsun
 
 * [CORE-5887](http://tracker.firebirdsql.org/browse/CORE-5887): Allow the use of management statements in PSQL blocks  
@@ -106,7 +106,7 @@
   Contributor(s): Alex Peshkoff
 
 * [CORE-3808](http://tracker.firebirdsql.org/browse/CORE-3808): Provide ability to return all columns using RETURNING clause  
-  Reference(s): [/doc/sql.extentions/README.returning](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extentions/README.returning)  
+  Reference(s): [/doc/sql.extensions/README.returning](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.returning)  
   Contributor(s): Adriano dos Santos Fernandes
 
 ## Bugfixes
@@ -272,11 +272,11 @@
 ## New features
 
 * [CORE-5568](http://tracker.firebirdsql.org/browse/CORE-5568): SQL SECURITY feature  
-  Reference(s): [/doc/sql.extentions/README.sql_security.txt](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.sql_security.txt)  
+  Reference(s): [/doc/sql.extensions/README.sql_security.txt](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.sql_security.txt)  
   Contributor(s): Roman Simakov
 
 * [CORE-5525](http://tracker.firebirdsql.org/browse/CORE-5525): Create high-precision floating point datatype named DECFLOAT  
-  Reference(s): [/doc/sql.extentions/README.data_types](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.data_types)  
+  Reference(s): [/doc/sql.extensions/README.data_types](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.data_types)  
   Contributor(s): Alex Peshkoff
 
 * [CORE-5488](http://tracker.firebirdsql.org/browse/CORE-5488): Timeouts for running SQL statements and idle connections  
