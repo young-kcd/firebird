@@ -3200,3 +3200,8 @@ const char* Service::getServiceName() const
 {
 	return svc_service_run ? svc_service_run->serv_name : NULL;
 }
+
+bool Service::getUserAdminFlag() const
+{
+	return (svc_user_flag & SVC_user_dba);
+}
