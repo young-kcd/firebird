@@ -373,7 +373,7 @@ bool TraceSvcJrd::checkPrivileges(TraceSession& session)
 			}
 
 			t_role.upper();
-			if (s_user == SYSDBA_USER_NAME || t_role == ADMIN_ROLE)
+			if (s_user == SYSDBA_USER_NAME || t_role == ADMIN_ROLE || s_user == session.ses_user)
 				return true;
 		}
 	}
