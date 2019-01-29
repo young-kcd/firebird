@@ -859,8 +859,7 @@ namespace
 											segment->filename.c_str());
 
 							segment->remove();
-						}
-						while (pos < queue.getCount());
+						} while (pos < queue.getCount());
 					}
 				}
 

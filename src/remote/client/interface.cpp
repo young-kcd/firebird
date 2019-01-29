@@ -808,7 +808,7 @@ public:
 
 public:
 	Attachment(Rdb* handle, const PathName& path)
-		: rdb(handle), dbPath(getPool(), path), replicator(nullptr)
+		: replicator(nullptr), rdb(handle), dbPath(getPool(), path)
 	{ }
 
 	Rdb* getRdb()

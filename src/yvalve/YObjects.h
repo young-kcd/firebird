@@ -404,7 +404,7 @@ public:
 
 	void destroy(unsigned dstrFlags);
 
-	// IReplciator implementation
+	// IReplicator implementation
 	void process(Firebird::CheckStatusWrapper* status, unsigned length, const unsigned char* data);
 	void close(Firebird::CheckStatusWrapper* status);
 

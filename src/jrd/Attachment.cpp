@@ -43,6 +43,9 @@
 
 #include "../jrd/extds/ExtDS.h"
 
+#include "../jrd/replication/Applier.h"
+#include "../jrd/replication/Manager.h"
+
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
 #include "../common/StatusArg.h"

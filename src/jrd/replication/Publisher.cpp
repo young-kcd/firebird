@@ -173,7 +173,8 @@ namespace
 	{
 	public:
 		ReplicatedRecordImpl(thread_db* tdbb, const Record* record)
-			: m_tdbb(tdbb), m_record(record)
+			: //m_tdbb(tdbb),
+			  m_record(record)
 		{
 		}
 
@@ -192,7 +193,7 @@ namespace
 		}
 
 	private:
-		thread_db* const m_tdbb;
+		//thread_db* const m_tdbb;
 		const Record* const m_record;
 	};
 
