@@ -111,6 +111,18 @@
 
 ## Bugfixes
 
+* [CORE-5995](http://tracker.firebirdsql.org/browse/CORE-5995): Creator user name is empty in user trace sessions  
+  Note(s): Backported into v3.0.5  
+  Contributor(s): Vlad Khorsun
+
+* [CORE-5993](http://tracker.firebirdsql.org/browse/CORE-5993): When creation of audit log file fails, there is no error message in firebird.log  
+  Note(s): Backported into v3.0.5  
+  Contributor(s): Vlad Khorsun
+
+* [CORE-5991](http://tracker.firebirdsql.org/browse/CORE-5991): Trace could not work correctly with quoted file names in trace configurations  
+  Note(s): Backported into v3.0.5  
+  Contributor(s): Vlad Khorsun
+
 * [CORE-5989](http://tracker.firebirdsql.org/browse/CORE-5989): iconv / libiconv 1.15 vs libc / libiconv_open | common/isc_file.cpp  
   Note(s): Backported into v3.0.5  
   Contributor(s): Alex Peshkoff
