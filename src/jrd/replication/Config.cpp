@@ -276,8 +276,7 @@ void Config::enumerate(Firebird::Array<Config*>& replicas)
 			}
 			else if (key == "verbose_logging")
 			{
-				if (value == "true" || value == "yes" || value == "on" || value == "1")
-					config->verboseLogging = true;
+				parseBoolean(value, config->verboseLogging);
 			}
 			else if (key == "apply_idle_timeout")
 			{

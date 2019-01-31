@@ -92,9 +92,15 @@ namespace
 		{
 			const time_t now = time(NULL);
 
-			const auto file = fopen(m_filename.c_str(), "a");
-			if (file && lock(file))
+			const auto file = os_utils::fopen(m_filename.c_str(), "a");
+			if (file)
 			{
+				if (!lock(file))
+				{
+					fclose(file);
+					return;
+				}
+
 				fseek(file, 0, SEEK_END);
 				fprintf(file, "\n%s (%s) %s\tDatabase: %s\n\t%s: %s\n",
 						m_hostname.c_str(), source.c_str(), ctime(&now),
@@ -113,7 +119,7 @@ namespace
 #ifdef HAVE_FLOCK
 			if (flock(fileno(file), LOCK_EX))
 #else
-			if (lockf(fileno(file), F_LOCK, 0))
+			if (os_utils::lockf(fileno(file), F_LOCK, 0))
 #endif
 			{
 				return false;

@@ -79,7 +79,7 @@ void Replicator::flush(BatchBlock& block, FlushReason reason, ULONG flags)
 	fb_assert(orgLength > sizeof(Block));
 	block.header.dataLength = orgLength - sizeof(Block);
 	block.header.metaLength = (ULONG) (block.metadata.getCount() * sizeof(MetaName));
-	block.header.timestamp = TimeStamp::getCurrentTimeStamp().value();
+	block.header.timestamp = TimeZoneUtil::getCurrentGmtTimeStamp().utc_timestamp;
 	block.header.flags |= flags;
 
 	// Add metadata (if any) to the buffer

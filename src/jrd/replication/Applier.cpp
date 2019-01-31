@@ -860,7 +860,7 @@ bool Applier::lookupRecord(thread_db* tdbb,
 	if (lookupKey(tdbb, relation, idx))
 	{
 		temporary_key key;
-		const auto result = BTR_key(tdbb, relation, record, &idx, &key, NULL, false);
+		const auto result = BTR_key(tdbb, relation, record, &idx, &key, false);
 		if (result != idx_e_ok)
 		{
 			IndexErrorContext context(relation, &idx);

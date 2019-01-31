@@ -255,6 +255,11 @@ void Manager::init()
 {
 	MutexLockGuard guard(m_queueMutex, FB_FUNCTION);
 
+	// Check whether everything is already initialized
+
+	if (m_config->syncReplicas.isEmpty() || m_replicas.hasData())
+		return;
+
 	// Attach to synchronous replicas (if any)
 
 	FbLocalStatus localStatus;
@@ -311,7 +316,6 @@ void Manager::init()
 
 		m_replicas.add(FB_NEW_POOL(getPool()) SyncReplica(getPool(), attachment, replicator));
 	}
-
 }
 
 UCharBuffer* Manager::getBuffer()
@@ -361,27 +365,18 @@ void Manager::flush(UCharBuffer* buffer, bool sync)
 
 	MutexLockGuard guard(m_queueMutex, FB_FUNCTION);
 
-	if (!sync)
-	{
-		// If the background thread is lagging too far behind,
-		// replicate packets synchronously rather than relying
-		// on the background thread to catch up any time soon
-		if (m_queueSize > MAX_BG_WRITER_LAG)
-			sync = true;
-		// Otherwise, just add the current chunk to the queue
-		// and signal the background thread to process it
-		else
-		{
-			m_queue.add(buffer);
-			m_queueSize += buffer->getCount();
-		}
-	}
+	// Add the current chunk to the queue
+	m_queue.add(buffer);
+	m_queueSize += buffer->getCount();
+
+	// If the background thread is lagging too far behind,
+	// replicate packets synchronously rather than relying
+	// on the background thread to catch up any time soon
+	if (!sync && m_queueSize > MAX_BG_WRITER_LAG)
+		sync = true;
 
 	if (sync)
 	{
-		m_queue.add(buffer);
-		m_queueSize += buffer->getCount();
-
 		const auto tdbb = JRD_get_thread_data();
 		const auto dbb = tdbb->getDatabase();
 
