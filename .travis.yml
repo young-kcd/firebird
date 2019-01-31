@@ -22,7 +22,7 @@ addons:
 
 script:
   - ./autogen.sh --enable-binreloc --with-builtin-tomcrypt --prefix=/opt/firebird
-  - make
+  - make -j4
   - make dist
   - tar xzvf gen/Firebird-[0-9]*.tar.gz
   - (cd Firebird-[0-9]*; sudo ./install.sh -silent)
