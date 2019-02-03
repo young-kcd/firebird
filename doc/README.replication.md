@@ -100,8 +100,8 @@ In the Beta 1 release, any physical copying method can be used:
 
 Then the replica mode must be activated for the database copy. Two options are possible:
 
-* gfix -replica read &lt;database&gt; -- set up database as read-only replica
-* gfix -replica write &lt;database&gt; -- set up database as read-write replica
+* gfix -replica read\_only &lt;database&gt; -- set up database as read-only replica
+* gfix -replica read\_write &lt;database&gt; -- set up database as read-write replica
 
 Read-only replica means that only the replicator connection can modify the database. This is mostly indended for high availability solutions as the replica database is guaranteed to match the master one and can be used for fast recovery. Regular user connections may perform any operations allowed for read-only transactions: select from tables, execute read-only procedures, write into global temporary tables, etc. Database maintenance such as sweeping, shutdown, monitoring is also allowed. This can be used for moving read-only load \(analytics, etc\) to the replica database. However, read-only connections may potentially conflict with the replication if some DDL statements \(those requiring an exclusing metadata lock\) are performed on the master database.
 
