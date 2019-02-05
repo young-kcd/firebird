@@ -158,7 +158,7 @@ copyFiles() {
     		  @FB_SAMPLEDIR@ @FB_SAMPLEDBDIR@ @FB_HELPDIR@ @FB_INTLDIR@ @FB_MISCDIR@ @FB_SECDBDIR@ @FB_MSGDIR@ @FB_LOGDIR@ \
     		  @FB_GUARDDIR@ @FB_PLUGDIR@"
 
-	for i in security; do
+	for i in udf; do
 		makeDirs @FB_MISCDIR@/upgrade/$i
 	done
 
@@ -281,7 +281,7 @@ copyFiles() {
 
 	#misc
     cp $BuildRootDir/src/misc/intl.sql							${TargetDir}@FB_MISCDIR@
-    cp $BuildRootDir/src/misc/upgrade/v3.0/security_database*	${TargetDir}@FB_MISCDIR@/upgrade/security
+    cp $BuildRootDir/src/misc/upgrade/v4.0/udf_replace*			${TargetDir}@FB_MISCDIR@/upgrade/udf
 	cp $BuildRootDir/gen/install/misc/firebird.init.d.*			${TargetDir}@FB_MISCDIR@
 	cp $BuildRootDir/gen/install/misc/rc.config.firebird		${TargetDir}@FB_MISCDIR@
     cp $BuildRootDir/gen/install/misc/firebird.service			${TargetDir}@FB_MISCDIR@
