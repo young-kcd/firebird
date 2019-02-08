@@ -59,7 +59,7 @@ for %%v in ( %* )  do (
   ( if /I "%%v"=="ZIP" (set FBBUILD_ZIP_PACK=1) )
   ( if /I "%%v"=="ISX" (set FBBUILD_ISX_PACK=1) )
   ( if /I "%%v"=="ALL" ( (set FBBUILD_ZIP_PACK=1) & (set FBBUILD_ISX_PACK=1) ) )
-)  
+)
 
 :: Now check whether we are debugging the InnoSetup script
 
@@ -122,13 +122,17 @@ if %FBBUILD_ISX_PACK% EQU 1 (
   if NOT DEFINED INNO5_SETUP_PATH (
     call :ERROR INNO5_SETUP_PATH variable not defined
     @goto :EOF
-  ) else (@echo     o Inno Setup found at %INNO5_SETUP_PATH%.)
+  ) else (
+   @echo     o Inno Setup found at %INNO5_SETUP_PATH%.
+   )
 )
 
 if not defined WIX (
     call :ERROR WIX not defined. WiX is needed to build the MSI kits of the CRT runtimes.
     @goto :EOF
-) else (@echo     o WiX found at "%WIX%".)
+) else (
+ @echo     o WiX found at "%WIX%".
+)
 
 if not DEFINED FB_EXTERNAL_DOCS (
  @echo.
@@ -203,21 +207,23 @@ set FBBUILD_FB_LAST_VER=%FBBUILD_FB30_CUR_VER%
 set FBBUILD_FB15_CUR_VER=1.5.6
 set FBBUILD_FB20_CUR_VER=2.0.7
 set FBBUILD_FB21_CUR_VER=2.1.7
-set FBBUILD_FB25_CUR_VER=2.5.7
-set FBBUILD_FB30_CUR_VER=3.0.2
+set FBBUILD_FB25_CUR_VER=2.5.8
+set FBBUILD_FB30_CUR_VER=3.0.4
 
 :: Now fix up the major.minor version strings in the readme files.
 :: We place output in %FB_GEN_DIR%\readmes
 @if not exist %FB_GEN_DIR%\readmes (@mkdir %FB_GEN_DIR%\readmes)
 @for %%d in (ba cz de es fr hu it pl pt ru si ) do (
-  @if not exist %FB_GEN_DIR%\readmes\%%d (@mkdir %FB_GEN_DIR%\readmes\%%d)
+  @if not exist %FB_GEN_DIR%\readmes\%%d (
+    @mkdir %FB_GEN_DIR%\readmes\%%d
+  )
 )
 
 @echo s/\$MAJOR/%FB_MAJOR_VER%/g >  %temp%.\b$4.txt
 @echo s/\$MINOR/%FB_MINOR_VER%/g >> %temp%.\b$4.txt
 @echo s/\$RELEASE/%FB_REV_NO%/g  >> %temp%.\b$4.txt
-@echo   %FBBUILD_PROD_STATUS% release. Copying Readme_%FBBUILD_PROD_STATUS%.txt Readme.txt 
-@copy Readme_%FBBUILD_PROD_STATUS%.txt Readme.txt 
+@echo   %FBBUILD_PROD_STATUS% release. Copying Readme_%FBBUILD_PROD_STATUS%.txt Readme.txt
+@copy Readme_%FBBUILD_PROD_STATUS%.txt Readme.txt
 @for %%f in (Readme.txt installation_readme.txt After_Installation.url) do (
 	@echo   Processing version strings in %%f
 	@sed -f  %temp%.\b$4.txt %%f > %FB_GEN_DIR%\readmes\%%f
@@ -286,6 +292,7 @@ if "%PROCESSOR_ARCHITECTURE%"=="x86" (
   call :ERROR COPY of main documentation tree failed with error %ERRORLEVEL%
   goto :EOF
 )
+
 
 :: Various upgrade scripts and docs
 mkdir %FB_OUTPUT_DIR%\misc\upgrade\security 2>nul
@@ -498,7 +505,7 @@ copy %FB_ROOT_PATH%\builds\install\misc\databases.conf.in %FB_OUTPUT_DIR%\databa
 
 
 :SET_CRLF
-:: Get a list of all files in the tree make sure 
+:: Get a list of all files in the tree make sure
 :: that and they all have windows EOL
 ::===============================================
 for /F %%W in ( 'dir %FB_OUTPUT_DIR% /b /a-d /s' ) do (
@@ -527,7 +534,7 @@ if not exist %FBBUILD_ZIP_PACK_ROOT% @mkdir %FBBUILD_ZIP_PACK_ROOT% 2>nul
 @xcopy /Y /E /S %FB_OUTPUT_DIR% %FBBUILD_ZIP_PACK_ROOT% > nul
 
 @echo   - Add examples to zip tree
-@xcopy /Y /E /S %FB_OUTPUT_DIR%\examples\*.* %FBBUILD_ZIP_PACK_ROOT%\examples > nul 
+@xcopy /Y /E /S %FB_OUTPUT_DIR%\examples\*.* %FBBUILD_ZIP_PACK_ROOT%\examples > nul
 ::@if %FB2_EXAMPLES% equ 1 for %%v in (examples examples\api examples\build_win32 examples\dbcrypt examples\empbuild examples\include examples\interfaces examples\package examples\stat examples\udf examples\udr ) do (
 ::    @mkdir %FBBUILD_ZIP_PACK_ROOT%\%%v 2>nul
 ::    dir %FB_OUTPUT_DIR%\%%v\*.* > nul 2>nul
@@ -537,7 +544,7 @@ if not exist %FBBUILD_ZIP_PACK_ROOT% @mkdir %FBBUILD_ZIP_PACK_ROOT% 2>nul
 
 @echo   - Now remove stuff from zip tree that is not needed...
 setlocal
-set FB_RM_FILE_LIST=doc\installation_readme.txt system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.wixpdb icudt52l_empty.dat 
+set FB_RM_FILE_LIST=doc\installation_readme.txt system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.wixpdb icudt52l_empty.dat
 for %%v in ( %FB_RM_FILE_LIST% ) do (
   @del %FBBUILD_ZIP_PACK_ROOT%\%%v > nul 2>&1
 )
@@ -551,7 +558,7 @@ if not "%FBBUILD_SHIP_PDB%"=="ship_pdb" (
   @del /q %FBBUILD_ZIP_PACK_ROOT%\*.pdb > nul 2>&1
 )
 
-rmdir /s /q %FBBUILD_ZIP_PACK_ROOT%\examples\build_unix 
+rmdir /s /q %FBBUILD_ZIP_PACK_ROOT%\examples\build_unix
 
 :: Don't grab old install notes for zip pack - document needs a complete re-write.
 ::@copy %FB_ROOT_PATH%\doc\install_win32.txt %FBBUILD_ZIP_PACK_ROOT%\doc\README_installation.txt > nul
@@ -696,7 +703,7 @@ if NOT DEFINED GNU_TOOLCHAIN (
 :: errorlevel gets reset automatically so capture it before we lose it.
 set ERRLEV=%errorlevel%
 @echo.
-@echo   Error %ERRLEV% in BuildExecutableInstall 
+@echo   Error %ERRLEV% in BuildExecutableInstall
 @echo     %*
 @echo.
 ::End of ERROR
