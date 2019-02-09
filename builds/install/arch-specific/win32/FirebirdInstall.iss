@@ -120,7 +120,7 @@
 
 
 ;------If necessary we can turn off i18n by uncommenting this undefine
-;------In general this is a good idea for alpha and beta releases. 
+;------In general this is a good idea for alpha and beta releases.
 #undef  i18n
 
 ;----- If we are debugging the script (and not executed from command prompt)
@@ -192,7 +192,7 @@
 ;If we are still under development we can ignore some missing files.
 #if GetEnv("FBBUILD_PROD_STATUS") == "DEV"
 #define SkipFileIfDevStatus " skipifsourcedoesntexist "
-#else 
+#else
 #define SkipFileIfDevStatus " "
 #endif
 
@@ -353,7 +353,7 @@ Name: ru; MessagesFile: compiler:Languages\Russian.isl; InfoBeforeFile: {#GenDir
 #endif
 
 #ifdef iss_debug
-; *** Note - this comment section needs revision or deletion. 
+; *** Note - this comment section needs revision or deletion.
 ; It is only applicable to the ansi installer, which is no longer
 ; supported for Firebird 3
 ; By default, the languages available at runtime depend on the user's
@@ -437,7 +437,7 @@ Root: HKLM; Subkey: "SOFTWARE\FirebirdSQL"; ValueType: none; Flags: deletekey;
 
 [Icons]
 Name: {group}\Firebird Server; Filename: {app}\firebird.exe; Parameters: {code:StartAppParams}; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent; Comment: Run Firebird Server (without guardian)
-Name: {group}\Firebird Guardian; Filename: {app}\fbguard.exe; Parameters: {code:StartAppParams}; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent; Comment: Run Firebird Server (with guardian); 
+Name: {group}\Firebird Guardian; Filename: {app}\fbguard.exe; Parameters: {code:StartAppParams}; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent; Comment: Run Firebird Server (with guardian);
 Name: {group}\Firebird ISQL Tool; Filename: {app}\isql.exe; Parameters: -z; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
 Name: {group}\Firebird {#FB_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
 ;Name: {group}\Firebird {#GroupnameVer} Quick Start Guide; Filename: {app}\doc\Firebird-{#MajorVer}-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver}
@@ -838,7 +838,7 @@ begin
   if IsComponentSelected('ServerComponent') and ( IsTaskSelected('UseSuperServerTask\UseGuardianTask')
       or ( IsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) ) then
     SvcParams := ServerType + SvcParams +  ' -guardian ';
-  
+
   InstanceName := ServiceName('We currently do not support or test for a different instance name');
 
   SvcParams := SvcParams + InstanceName;
@@ -900,8 +900,8 @@ end;
 function InstallServerIcon(): Boolean;
 begin
   result := false;
-  if IsTaskSelected('UseApplicationTask') and 
-    IsComponentSelected('ServerComponent') and 
+  if IsTaskSelected('UseApplicationTask') and
+    IsComponentSelected('ServerComponent') and
       not ( IsTaskSelected('UseSuperServerTask\UseGuardianTask') or
             IsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) then
       result := true;
@@ -909,7 +909,7 @@ end;
 
 function StartApp(Default: String): String;
 begin
-  if IsComponentSelected('ServerComponent') and ( 
+  if IsComponentSelected('ServerComponent') and (
       IsTaskSelected('UseSuperServerTask\UseGuardianTask') or
       IsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) then
     Result := GetAppPath+'\fbguard.exe'
@@ -948,8 +948,8 @@ end;
 
 
 procedure UpdateFirebirdConf;
-// Update firebird conf. 
-// If user has deselected the guardian we should update firebird.conf accordingly. 
+// Update firebird conf.
+// If user has deselected the guardian we should update firebird.conf accordingly.
 // We also test if user has asked for classic or super server
 // If EnableLegacyClientAuth has ben selected we update the file.......
 // Otherwise we leave the file unchanged.
@@ -959,15 +959,15 @@ begin
   //firebird.conf exists. If it doesn't then we don't care.
   if FileExists(GetAppPath+'\firebird.conf') then begin
 
-    if (IsComponentSelected('ServerComponent') ) then begin 
+    if (IsComponentSelected('ServerComponent') ) then begin
 
-// Setting GuardianOption to 0 makes no sense. If the user deploys the guardian 
-// there is an expectation that it will restart the server in the event of a crash. 
+// Setting GuardianOption to 0 makes no sense. If the user deploys the guardian
+// there is an expectation that it will restart the server in the event of a crash.
 // Otherwise, why start firebird with the guardian?
 //      if not ( IsTaskSelected('UseSuperServerTask\UseGuardianTask') or  IsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) then
 //				ReplaceLine(GetAppPath+'\firebird.conf','GuardianOption','GuardianOption = 0','#');
 
-      // These attempts to modify firebird.conf may not survice repeated installs.  
+      // These attempts to modify firebird.conf may not survice repeated installs.
 
 			if IsTaskSelected('UseClassicServerTask') then
 				ReplaceLine(GetAppPath+'\firebird.conf','ServerMode = ','ServerMode = Classic','#');
@@ -985,8 +985,8 @@ begin
 				ReplaceLine(GetAppPath+'\firebird.conf','WireCrypt = ','WireCrypt = enabled','#');
       end;
 
-		end;	
-			
+		end;
+
   end;
 end;
 
@@ -1024,9 +1024,9 @@ end;
 
 procedure CurPageChanged(CurPage: Integer);
 // These are the predefined page IDs of the Wizard form as of InnoSetup 5.5.6
-// wpWelcome, wpLicense, wpPassword, wpInfoBefore, wpUserInfo, 
-// wpSelectDir, wpSelectComponents, wpSelectProgramGroup, wpSelectTasks, 
-// wpReady, wpPreparing, wpInstalling, wpInfoAfter, wpFinished 
+// wpWelcome, wpLicense, wpPassword, wpInfoBefore, wpUserInfo,
+// wpSelectDir, wpSelectComponents, wpSelectProgramGroup, wpSelectTasks,
+// wpReady, wpPreparing, wpInstalling, wpInfoAfter, wpFinished
 begin
   case CurPage of
     wpWelcome:      ResizeWizardForm(True); //There was a bug: every time when "go back" pressed the form was resized!
@@ -1037,7 +1037,7 @@ end;
 
 
 procedure CurStepChanged(CurStep: TSetupStep);
-// currently just three steps - ssInstall, ssPostInstall, ssDone 
+// currently just three steps - ssInstall, ssPostInstall, ssDone
 var
   AppStr: String;
   ReadMeFileStr: String;
@@ -1064,7 +1064,7 @@ begin
       UpdateFirebirdConf;
       RemoveSavedConfIfNoDiff;
 
-				
+
       end;
 
     ssDone: begin
@@ -1190,11 +1190,11 @@ begin
       // a) Decrement shared count of each one and
       // b) If Decrement reaches 0 (ie, function returns true) then we
             //    delete the file.
-            // c) We arbitrarily break after 100 loops. Typically the shared count should only be 
+            // c) We arbitrarily break after 100 loops. Typically the shared count should only be
             //    in single digits anyway but we don't want to risk the test entering an endless loop.
             i := 0;
-            while not DecrementSharedCount(Is64BitInstallMode, aStringList[ count ] ) 
-            do 
+            while not DecrementSharedCount(Is64BitInstallMode, aStringList[ count ] )
+            do
               if i = 100 then break else inc(i);
 
             res := DeleteFile( aStringList[ count ] );
@@ -1219,7 +1219,7 @@ begin
       Result := True
     else if not ConfigureAuthentication then
       Result := True
-    else 
+    else
       Result := False;
 end;
 
@@ -1242,6 +1242,6 @@ begin
     end;
   end;
 end;
-	
+
 begin
 end.
