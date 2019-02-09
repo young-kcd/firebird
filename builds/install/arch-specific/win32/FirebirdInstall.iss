@@ -173,6 +173,44 @@
 #endif
 #endif
 
+#if Len(GetEnv("MSVC_VERSION")) > 0
+#define msvc_version GetEnv("MSVC_VERSION")
+#else
+#define msvc_version 15
+#pragma warning "msvc version is not defined. Forcing default value."
+#endif
+
+#if Len(GetEnv("MSVC_RUNTIME_MAJOR_VERSION")) > 0
+#define msvc_runtime_major_version GetEnv("MSVC_RUNTIME_MAJOR_VERSION")
+#else
+#define msvc_runtime_major_version 14
+#pragma warning "msvc runtime major version was not defined. Forcing default value."
+#endif
+
+#if Len(GetEnv("MSVC_RUNTIME_MINOR_VERSION_0")) > 0
+#define msvc_runtime_minor_version_0 GetEnv("MSVC_RUNTIME_MINOR_VERSION_0")
+#else
+#define msvc_runtime_minor_version_0 0
+#pragma warning "msvc runtime minor version 0 was not defined. Forcing default value."
+#endif
+
+;if we are running msvc15 then we sometimes need to look for 140 and sometimes for 141
+; the rule until MS changes it again is that 141 is always used, except for the filename
+; of the vcruntime and msvcp dll's.
+#if msvc_version = 15
+#if Len(GetEnv("MSVC_RUNTIME_MINOR_VERSION_1")) > 0
+#define msvc_runtime_minor_version_1 GetEnv("MSVC_RUNTIME_MINOR_VERSION_1")
+#else
+#define msvc_runtime_minor_version_1 1
+#pragma warning "msvc runtime minor version 1 was not defined. Forcing default value."
+#endif
+#endif
+
+#if Int(msvc_version,15) < 15
+#define msvcr_filename = "msvcr"
+#else
+#define msvcr_filename = "vcruntime"
+#endif
 
 #if BuildNumber == "0"
 #define MyAppVerString MajorVer + "." + MinorVer + "." + PointRelease
@@ -201,7 +239,6 @@
 #if PlatformTarget == "x64"
 #define WOW64Dir="output_win32"
 #endif
-#define msvc_version 12
 
 ;BaseVer should be used for all MajorVer.MinorVer installs.
 ;This allows us to upgrade silently from MajorVer.MinorVer.m to MajorVer.MinorVer.n
@@ -396,10 +433,11 @@ Name: EnableLegacyClientAuth; Description: {cm:EnableLegacyClientAuth}; Componen
 
 
 [Run]
-#if msvc_version >= 10
-Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_Win32.msi"" /L*v ""{tmp}\vccrt{#msvc_version}_Win32.log"" "; StatusMsg: "Installing MSVC 32-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
+; due to the changes required to support MSVC15 support for earlier versions is now broken.
+#if Int(msvc_runtime_major_version,14) >= 14
+Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_runtime_major_version}{#msvc_runtime_minor_version_1}_Win32.msi"" /L*v ""{tmp}\vccrt{#msvc_runtime_major_version}{#msvc_runtime_minor_version_1}_Win32.log"" "; StatusMsg: "Installing MSVC 32-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
 #if PlatformTarget == "x64"
-Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_x64.msi"" /L*v ""{tmp}\vccrt{#msvc_version}_x64.log"" ";  StatusMsg: "Installing MSVC 64-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
+Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_runtime_major_version}{#msvc_runtime_minor_version_1}_x64.msi"" /L*v ""{tmp}\vccrt{#msvc_runtime_major_version}{#msvc_runtime_minor_version_1}_x64.log"" ";  StatusMsg: "Installing MSVC 64-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
 #endif
 #endif
 
@@ -520,25 +558,24 @@ Source: {#FilesDir}\zlib1.dll; DestDir: {app}; Components: ServerComponent; Flag
 ;Rules for installation of MS runtimes are simplified with MSVC10
 ;We just install the runtimes into the install dir.
 
-#if msvc_version >= 10
-Source: {#FilesDir}\msvcr{#msvc_version}?.dll; DestDir: {app}; Components: ClientComponent; Flags: sharedfile;
-Source: {#FilesDir}\msvcp{#msvc_version}?.dll; DestDir: {app}; Components: ClientComponent; Flags: sharedfile;
+#if Int(msvc_runtime_major_version,14) >= 14
+Source: {#FilesDir}\{#msvcr_filename}{#msvc_runtime_major_version}{#msvc_runtime_minor_version_0}.dll; DestDir: {app}; Components: ClientComponent; Flags: sharedfile;
+Source: {#FilesDir}\msvcp{#msvc_runtime_major_version}{#msvc_runtime_minor_version_0}.dll; DestDir: {app}; Components: ClientComponent; Flags: sharedfile;
 #if PlatformTarget == "x64"
 ;If we are installing on x64 we need some 32-bit libraries for compatibility with 32-bit applications
-Source: {#WOW64Dir}\msvcr{#msvc_version}?.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: sharedfile;
-Source: {#WOW64Dir}\msvcp{#msvc_version}?.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: sharedfile;
+Source: {#WOW64Dir}\{#msvcr_filename}{#msvc_runtime_major_version}{#msvc_runtime_minor_version_0}.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: sharedfile;
+Source: {#WOW64Dir}\msvcp{#msvc_runtime_major_version}{#msvc_runtime_minor_version_0}.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: sharedfile;
 #endif
-#endif  /* if msvc_version >= 10 */
+#endif  /* #if Int(msvc_runtime_major_version,14) >= 10 */
 
-#if msvc_version >= 10
-;Try to install CRT libraries to <sys> via msi, _IF_ msvc_version is 10 or later.
+#if msvc_runtime_major_version = 14
 #if PlatformTarget == "x64"
 ;MinVersion 0,5.0 means no version of Win9x and at least Win2k if NT O/S
 ;In addition, O/S must have Windows Installer 3.0.
-Source: {#FilesDir}\system32\vccrt{#msvc_version}_x64.msi; DestDir: {tmp};  Check: HasWI30; MinVersion: 0,5.0; Components: ClientComponent;
-Source: {#WOW64Dir}\system32\vccrt{#msvc_version}_Win32.msi; DestDir: {tmp}; Check: HasWI30; MinVersion: 0,5.0; Components: ClientComponent;
+Source: {#FilesDir}\system32\vccrt{#msvc_runtime_major_version}{#msvc_runtime_minor_version_1}_x64.msi; DestDir: {tmp};  Check: HasWI30; MinVersion: 0,5.0; Components: ClientComponent;
+Source: {#WOW64Dir}\system32\vccrt{#msvc_runtime_major_version}{#msvc_runtime_minor_version_1}_Win32.msi; DestDir: {tmp}; Check: HasWI30; MinVersion: 0,5.0; Components: ClientComponent;
 #else
-Source: {#FilesDir}\system32\vccrt{#msvc_version}_Win32.msi; DestDir: {tmp}; Check: HasWI30; MinVersion: 0,5.0; Components: ClientComponent;
+Source: {#FilesDir}\system32\vccrt{#msvc_runtime_major_version}{#msvc_runtime_minor_version_1}_Win32.msi; DestDir: {tmp}; Check: HasWI30; MinVersion: 0,5.0; Components: ClientComponent;
 #endif
 #endif
 
