@@ -183,7 +183,6 @@ set FBBUILD_FILE_ID=%FBBUILD_PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_%FB_TA
 
 ::@echo s/-2.0.0-/-%FBBUILD_PRODUCT_VER_STRING%-/ > %temp%.\b$3.txt
 @echo s/define release/define %FBBUILD_BUILDTYPE%/ > %temp%.\b$3.txt
-@echo s/define msvc_version 8/define msvc_version %MSVC_VERSION%/ >> %temp%.\b$3.txt
 @echo s/define no_pdb/define %FBBUILD_SHIP_PDB%/ >> %temp%.\b$3.txt
 ::@echo s/define package_number=\"0\"/define package_number=\"%FBBUILD_PACKAGE_NUMBER%\"/ >> %temp%.\b$3.txt
 @echo s/define iss_release/define %ISS_BUILD_TYPE%/ >> %temp%.\b$3.txt
@@ -249,14 +248,31 @@ del %temp%.\b$?.txt
 :: system dll's we need
 :: MSVC should be installed with redistributable packages.
 ::=====================
+
+:: We are forced to set this because the runtime library now (MSVC15)
+:: has a different version to the compiler. And sometimes they use 141
+:: and sometimes 140.
+if %MSVC_VERSION% EQU 15 (
+  @set MSVC_RUNTIME_MAJOR_VERSION=14
+  @set MSVC_RUNTIME_MINOR_VERSION_0=0
+  @set MSVC_RUNTIME_MINOR_VERSION_1=1
+
+) else (
+  @set MSVC_RUNTIME_VERSION=%MSVC_VERSION%0
+)
+
+
 @echo   Copying MSVC runtime libraries...
-if not exist %FB_OUTPUT_DIR%\system32 (mkdir %FB_OUTPUT_DIR%\system32)
-@for %%f in ( msvcp%MSVC_VERSION%?.dll msvcr%MSVC_VERSION%?.dll  ) do ( 
-if exist "%VCINSTALLDIR%\redist\%PROCESSOR_ARCHITECTURE%\Microsoft.VC%MSVC_VERSION%0.CRT\%%f" (
-copy  "%VCINSTALLDIR%\redist\%PROCESSOR_ARCHITECTURE%\Microsoft.VC%MSVC_VERSION%0.CRT\%%f" %FB_OUTPUT_DIR%\ 
+@if not exist %FB_OUTPUT_DIR%\system32 (
+  @mkdir %FB_OUTPUT_DIR%\system32
 )
+for %%f in ( msvcp%MSVC_RUNTIME_MAJOR_VERSION%%MSVC_RUNTIME_MINOR_VERSION_0%.dll vcruntime%MSVC_RUNTIME_MAJOR_VERSION%%MSVC_RUNTIME_MINOR_VERSION_0%.dll  ) do (
+    echo Copying "%VCToolsRedistDir%\%PROCESSOR_ARCHITECTURE%\Microsoft.VC%MSVC_RUNTIME_MAJOR_VERSION%%MSVC_RUNTIME_MINOR_VERSION_1%.CRT\%%f"
+    copy  "%VCToolsRedistDir%\%PROCESSOR_ARCHITECTURE%\Microsoft.VC%MSVC_RUNTIME_MAJOR_VERSION%%MSVC_RUNTIME_MINOR_VERSION_1%.CRT\%%f" %FB_OUTPUT_DIR%\
+    if %ERRORLEVEL% GEQ 1 (
+       call :ERROR Copying "%VCToolsRedistDir%\%PROCESSOR_ARCHITECTURE%\Microsoft.VC%MSVC_RUNTIME_MAJOR_VERSION%%MSVC_RUNTIME_MINOR_VERSION_1%.CRT\%%f" failed with error %ERRORLEVEL% ) && (goto :EOF)
+    )
 )
-@if %errorlevel% GEQ 1 ( (call :ERROR Copying MSVC runtime library failed with error %errorlevel% ) && (goto :EOF))
 
 @implib.exe | findstr "Borland" > nul
 @if errorlevel 0 (
@@ -390,15 +406,18 @@ for /R %FB_OUTPUT_DIR%\doc %%v in (.) do (
 :: Generate runtimes as an MSI file.
 :: This requires WiX 3.0 to be installed
 ::============
-:: This is only relevent if we are shipping packages built with Visual Studio 2010 (MSVC10)
-:: for Firebird 3.0 there are no plans to ship official builds with other MSVC runtimes. But we could.
-if %MSVC_VERSION% EQU 12 (
-if not exist %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi (
+if %MSVC_VERSION% EQU 15 (
+  if not exist %FB_OUTPUT_DIR%\system32\vccrt%MSVC_RUNTIME_MAJOR_VERSION%%MSVC_RUNTIME_MINOR_VERSION_1%_%FB_TARGET_PLATFORM%.msi (
     "%WIX%\bin\candle.exe" -v -sw1091 %FB_ROOT_PATH%\builds\win32\msvc%MSVC_VERSION%\VCCRT_%FB_TARGET_PLATFORM%.wxs -out %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj
-    "%WIX%\bin\light.exe" -sw1076 %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj -out %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi
-) else (
-    @echo   Using an existing build of %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi
-)
+    @if %ERRORLEVEL% GEQ 1 (
+        ( call :ERROR Could not generate wixobj for MSVC Runtime MSI ) & (goto :EOF)
+    ) else (
+        "%WIX%\bin\light.exe" -sw1076 %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj -out %FB_OUTPUT_DIR%\system32\vccrt%MSVC_RUNTIME_MAJOR_VERSION%%MSVC_RUNTIME_MINOR_VERSION_1%_%FB_TARGET_PLATFORM%.msi
+        @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Could not generate MSVCC Runtime MSI ) & (goto :EOF))
+    )
+  ) else (
+    @echo   Using an existing build of %FB_OUTPUT_DIR%\system32\vccrt%MSVC_RUNTIME_MAJOR_VERSION%%MSVC_RUNTIME_MINOR_VERSION_1%_%FB_TARGET_PLATFORM%.msi
+  )
 )
 
 ::End of BUILD_CRT_MSI
