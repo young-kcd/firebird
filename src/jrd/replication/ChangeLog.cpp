@@ -91,6 +91,15 @@ namespace
 		return 0;
 	}
 
+	void flushFile(int handle)
+	{
+#ifdef WIN_NT
+		FlushFileBuffers((HANDLE) _get_osfhandle(handle));
+#else
+		fsync(handle);
+#endif
+	}
+
 	void raiseIOError(const char* syscall, const char* filename)
 	{
 		Arg::Gds temp(isc_io_error);
@@ -198,6 +207,8 @@ void ChangeLog::Segment::copyTo(const PathName& filename) const
 			raiseIOError("write", filename.c_str());
 		}
 	}
+
+	flushFile(dstHandle);
 }
 
 void ChangeLog::Segment::append(ULONG length, const UCHAR* data)
@@ -241,13 +252,7 @@ void ChangeLog::Segment::truncate()
 void ChangeLog::Segment::flush(bool data)
 {
 	if (data)
-	{
-#ifdef WIN_NT
-		FlushFileBuffers((HANDLE) _get_osfhandle(m_handle));
-#else
-		fsync(m_handle);
-#endif
-	}
+		flushFile(m_handle);
 
 #ifdef WIN_NT
 	FlushViewOfFile(m_header, 0);
