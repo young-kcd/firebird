@@ -119,28 +119,21 @@ copy %FB_ROOT_PATH%\src\extlib\*.sql %FB_OUTPUT_DIR%\plugins\udr > nul
 @copy %FB_INSTALL_SCRIPTS%\uninstall_service.bat %FB_OUTPUT_DIR% >nul
 
 :: MSVC runtime
-if %MSVC_VERSION% == 14 (
-@copy "%VS140COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_ARCH%\Microsoft.VC140.CRT\vcruntime140.dll" %FB_OUTPUT_DIR% >nul
-@copy "%VS140COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_ARCH%\Microsoft.VC140.CRT\msvcp140.dll" %FB_OUTPUT_DIR% >nul
+if defined VS150COMNTOOLS (
+@copy "%VS150COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_DIR%\Microsoft.VC141.CRT\vcruntime140.dll" %FB_OUTPUT_DIR% >nul
+@copy "%VS150COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_DIR%\Microsoft.VC141.CRT\msvcp140.dll" %FB_OUTPUT_DIR% >nul
 ) else (
-if %MSVC_VERSION% == 12 (
-@copy "%VS120COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_ARCH%\Microsoft.VC120.CRT\msvcr120.dll" %FB_OUTPUT_DIR% >nul
-@copy "%VS120COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_ARCH%\Microsoft.VC120.CRT\msvcp120.dll" %FB_OUTPUT_DIR% >nul
+if defined VS140COMNTOOLS (
+@copy "%VS140COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_DIR%\Microsoft.VC140.CRT\vcruntime140.dll" %FB_OUTPUT_DIR% >nul
+@copy "%VS140COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_DIR%\Microsoft.VC140.CRT\msvcp140.dll" %FB_OUTPUT_DIR% >nul
 ) else (
-if %MSVC_VERSION% == 10 (
-@copy "%VS100COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_ARCH%\Microsoft.VC100.CRT\msvcr100.dll" %FB_OUTPUT_DIR% >nul
-@copy "%VS100COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_ARCH%\Microsoft.VC100.CRT\msvcp100.dll" %FB_OUTPUT_DIR% >nul
+if defined VS120COMNTOOLS (
+@copy "%VS120COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_DIR%\Microsoft.VC120.CRT\msvcr120.dll" %FB_OUTPUT_DIR% >nul
+@copy "%VS120COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_DIR%\Microsoft.VC120.CRT\msvcp120.dll" %FB_OUTPUT_DIR% >nul
 ) else (
-if %MSVC_VERSION% == 9 (
-@copy "%VS90COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_ARCH%\Microsoft.VC90.CRT\msvcr90.dll" %FB_OUTPUT_DIR% >nul
-@copy "%VS90COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_ARCH%\Microsoft.VC90.CRT\msvcp90.dll" %FB_OUTPUT_DIR% >nul
-@copy "%VS90COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_ARCH%\Microsoft.VC90.CRT\Microsoft.VC90.CRT.manifest" %FB_OUTPUT_DIR% >nul
-) else (
-if %MSVC_VERSION% == 8 (
-@copy "%VS80COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_ARCH%\Microsoft.VC80.CRT\msvcr80.dll" %FB_OUTPUT_DIR% >nul
-@copy "%VS80COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_ARCH%\Microsoft.VC80.CRT\msvcp80.dll" %FB_OUTPUT_DIR% >nul
-@copy "%VS80COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_ARCH%\Microsoft.VC80.CRT\Microsoft.VC80.CRT.manifest" %FB_OUTPUT_DIR% >nul
-)
+if defined VS100COMNTOOLS (
+@copy "%VS100COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_DIR%\Microsoft.VC100.CRT\msvcr100.dll" %FB_OUTPUT_DIR% >nul
+@copy "%VS100COMNTOOLS%\..\..\VC\redist\%FB_VC_CRT_DIR%\Microsoft.VC100.CRT\msvcp100.dll" %FB_OUTPUT_DIR% >nul
 )
 )
 )
