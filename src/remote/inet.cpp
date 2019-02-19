@@ -3242,16 +3242,18 @@ static bool setNoNagleOption(rem_port* port)
 bool setFastLoopbackOption(SOCKET s)
 {
 #ifdef WIN_NT
-	int optval = 1;
-	DWORD bytes = 0;
+	if (Config::getDefaultConfig()->getTcpLoopbackFastPathOption())
+	{
+		int optval = 1;
+		DWORD bytes = 0;
 
-	int ret = WSAIoctl(s, SIO_LOOPBACK_FAST_PATH, &optval, sizeof(optval),
-					   NULL, 0, &bytes, 0, 0);
+		int ret = WSAIoctl(s, SIO_LOOPBACK_FAST_PATH, &optval, sizeof(optval),
+			NULL, 0, &bytes, 0, 0);
 
-	return (ret == 0);
-#else
-	return false;
+		return (ret == 0);
+	}
 #endif
+	return false;
 }
 
 void setStopMainThread(FPTR_INT func)
