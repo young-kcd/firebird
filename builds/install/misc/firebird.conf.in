@@ -774,7 +774,7 @@
 #
 # Type: Boolean, default 1 (true)
 #
-#TcpLoopbackFastPathOption = 1
+#TcpLoopbackFastPath = 1
 
 #
 # Allows setting of IPV6_V6ONLY socket option. If enabled, IPv6 sockets

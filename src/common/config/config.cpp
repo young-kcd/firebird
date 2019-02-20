@@ -148,7 +148,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_INTEGER,		"CpuAffinityMask",			(ConfigValue) 0},
 	{TYPE_INTEGER,		"TcpRemoteBufferSize",		(ConfigValue) 8192},		// bytes
 	{TYPE_BOOLEAN,		"TcpNoNagle",				(ConfigValue) true},
-	{TYPE_BOOLEAN,		"TcpLoopbackFastPathOption",(ConfigValue) true},
+	{TYPE_BOOLEAN,		"TcpLoopbackFastPath",      (ConfigValue) true},
 	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) -1},			// pages
 	{TYPE_INTEGER,		"ConnectionTimeout",		(ConfigValue) 180},			// seconds
 	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 0},			// seconds
@@ -493,9 +493,9 @@ bool Config::getTcpNoNagle() const
 	return get<bool>(KEY_TCP_NO_NAGLE);
 }
 
-bool Config::getTcpLoopbackFastPathOption() const
+bool Config::getTcpLoopbackFastPath() const
 {
-	return get<bool>(KEY_TCP_LOOPBACK_FAST_PATH_OPTION);
+	return get<bool>(KEY_TCP_LOOPBACK_FAST_PATH);
 }
 
 bool Config::getIPv6V6Only() const

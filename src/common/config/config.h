@@ -95,7 +95,7 @@ public:
 		KEY_CPU_AFFINITY_MASK,
 		KEY_TCP_REMOTE_BUFFER_SIZE,
 		KEY_TCP_NO_NAGLE,
-		KEY_TCP_LOOPBACK_FAST_PATH_OPTION,
+		KEY_TCP_LOOPBACK_FAST_PATH,
 		KEY_DEFAULT_DB_CACHE_PAGES,
 		KEY_CONNECTION_TIMEOUT,
 		KEY_DUMMY_PACKET_INTERVAL,
@@ -254,7 +254,7 @@ public:
 	bool getTcpNoNagle() const;
 
 	// Enable or disable the TCP Loopback Fast Path option
-	bool getTcpLoopbackFastPathOption() const;
+	bool getTcpLoopbackFastPath() const;
 
 	// Let IPv6 socket accept only IPv6 packets
 	bool getIPv6V6Only() const;
