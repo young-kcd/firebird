@@ -3240,7 +3240,7 @@ static bool setNoNagleOption(rem_port* port)
 	return true;
 }
 
-bool setFastLoopbackOption(rem_port* port, SOCKET s = 0)
+bool setFastLoopbackOption(rem_port* port, SOCKET s /*= 0*/)
 {
 #ifdef WIN_NT
 	if (port->getPortConfig()->getTcpLoopbackFastPathOption())
