@@ -1486,11 +1486,10 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 		port->auxAcceptError(packet);
 		inet_error(false, port, "socket", isc_net_event_connect_err, savedError);
 	}
-	new_port->port_handle = n;
 
 	int optval = 1;
 	setsockopt(n, SOL_SOCKET, SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
-	setFastLoopbackOption(new_port);
+	setFastLoopbackOption(new_port, n);
 
 	status = address.connect(n);
 	if (status < 0)
@@ -1501,6 +1500,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 		inet_error(false, port, "connect", isc_net_event_connect_err, savedError);
 	}
 
+	new_port->port_handle = n;
 
 	new_port->port_peer_name = port->port_peer_name;
 	get_peer_info(new_port);
