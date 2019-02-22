@@ -29,6 +29,7 @@
 
 #include "../../common/classes/TempFile.h"
 #include "../../common/StatusArg.h"
+#include "../../common/ScanDir.h"
 #include "../../common/utils_proto.h"
 #include "../../jrd/err_proto.h"
 #include "../../common/isc_proto.h"
@@ -58,7 +59,7 @@ using namespace Firebird;
 
 namespace Jrd {
 
-static const FB_UINT64 TOUCH_INTERVAL = 60 * 60;      // in seconds, one hour should be enough
+static const FB_UINT64 TOUCH_INTERVAL = 60 * 60;	// in seconds, one hour should be enough
 
 void checkFileError(const char* filename, const char* operation, ISC_STATUS iscError)
 {
@@ -588,15 +589,41 @@ bool ConfigStorage::getItemLength(ITEM& tag, ULONG& len)
 
 void ConfigStorage::TouchFile::handler()
 {
-	os_utils::touchFile(fileName);
-	FbLocalStatus s;
-	TimerInterfacePtr()->start(&s, this, TOUCH_INTERVAL * 1000 * 1000);
-	// ignore error in handler
+	try
+	{
+		ScanDir dir(dirName.c_str(), "*");
+		while (dir.next())
+		{
+			PathName cur(dir.getFilePath());
+			if (cur == "." || cur == "..")
+				continue;
+
+			try
+			{
+				if (!os_utils::touchFile(cur.c_str()))
+					system_call_failed::raise("utime");
+			}
+			catch (const Exception& e)
+			{
+				iscLogException("touchFile", e);
+			}
+		}
+
+		FbLocalStatus s;
+		TimerInterfacePtr()->start(&s, this, TOUCH_INTERVAL * 1000 * 1000);
+		s.check();
+	}
+	catch (const Exception& e)
+	{
+		iscLogException("Start TouchFile timer failed", e);
+	}
 }
 
 void ConfigStorage::TouchFile::start(const char* fName)
 {
-	fileName = fName;
+	PathName dummy;
+	PathUtils::splitLastComponent(dirName, dummy, fName);
+
 	FbLocalStatus s;
 	TimerInterfacePtr()->start(&s, this, TOUCH_INTERVAL * 1000 * 1000);
 	check(&s);

@@ -73,6 +73,10 @@
 #include <sys/signal.h>
 #endif
 
+#ifdef HAVE_UTIME_H
+#include <utime.h>
+#endif
+
 using namespace Firebird;
 
 namespace os_utils
@@ -237,6 +241,7 @@ bool touchFile(const char* pathname)
 
 	return true;
 #else
+	errno = ENOSYS;
 	return false;
 #endif
 }

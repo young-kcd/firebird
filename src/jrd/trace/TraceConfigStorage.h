@@ -78,12 +78,16 @@ private:
 		public Firebird::RefCntIface<Firebird::ITimerImpl<TouchFile, Firebird::CheckStatusWrapper> >
 	{
 	public:
+		TouchFile()
+			: dirName(getPool())
+		{ }
 		void handler();
 		void start(const char* fName);
 		void stop();
 		int release();
+
 	private:
-		const char* fileName;
+		Firebird::PathName dirName;
 	};
 	Firebird::RefPtr<TouchFile> m_timer;
 
