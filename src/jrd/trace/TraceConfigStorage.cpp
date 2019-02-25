@@ -29,7 +29,6 @@
 
 #include "../../common/classes/TempFile.h"
 #include "../../common/StatusArg.h"
-#include "../../common/ScanDir.h"
 #include "../../common/utils_proto.h"
 #include "../../jrd/err_proto.h"
 #include "../../common/isc_proto.h"
@@ -599,23 +598,8 @@ void ConfigStorage::TouchFile::handler()
 {
 	try
 	{
-		ScanDir dir(dirName.c_str(), "*");
-		while (dir.next())
-		{
-			PathName cur(dir.getFilePath());
-			if (cur == "." || cur == "..")
-				continue;
-
-			try
-			{
-				if (!os_utils::touchFile(cur.c_str()))
-					system_call_failed::raise("utime");
-			}
-			catch (const Exception& e)
-			{
-				iscLogException("touchFile", e);
-			}
-		}
+		if (!os_utils::touchFile(fileName))
+			system_call_failed::raise("utime");
 
 		FbLocalStatus s;
 		TimerInterfacePtr()->start(&s, this, TOUCH_INTERVAL * 1000 * 1000);
@@ -623,14 +607,13 @@ void ConfigStorage::TouchFile::handler()
 	}
 	catch (const Exception& e)
 	{
-		iscLogException("Start TouchFile timer failed", e);
+		iscLogException("TouchFile failed", e);
 	}
 }
 
 void ConfigStorage::TouchFile::start(const char* fName)
 {
-	PathName dummy;
-	PathUtils::splitLastComponent(dirName, dummy, fName);
+	fileName = fName;
 
 	FbLocalStatus s;
 	TimerInterfacePtr()->start(&s, this, TOUCH_INTERVAL * 1000 * 1000);
