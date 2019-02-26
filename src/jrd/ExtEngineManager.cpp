@@ -893,7 +893,7 @@ ExtEngineManager::Trigger::Trigger(thread_db* tdbb, MemoryPool& pool, CompilerSc
 
 ExtEngineManager::Trigger::~Trigger()
 {
-	// hvlad: shouldn't we call trigger->dispose() here ?
+	trigger->dispose();
 }
 
 
@@ -1270,6 +1270,7 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 				ContextManager<IExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
 				FbLocalStatus status;
 				engine->closeAttachment(&status, attInfo->context);	//// FIXME: log status
+				engine->release();
 			}
 
 			delete attInfo;
