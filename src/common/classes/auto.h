@@ -139,6 +139,39 @@ private:
 	T oldValue;
 };
 
+
+template <typename T>
+class AutoSetRestoreFlag
+{
+public:
+	AutoSetRestoreFlag(T* aValue, T newBit, bool set)
+		: value(aValue),
+		  bit(newBit),
+		  oldValue((*value) & bit)
+	{
+		if (set)
+			*value |= bit;
+		else
+			*value &= ~bit;
+	}
+
+	~AutoSetRestoreFlag()
+	{
+		*value &= ~bit;
+		*value |= oldValue;
+	}
+
+private:
+	// copying is prohibited
+	AutoSetRestoreFlag(const AutoSetRestoreFlag&);
+	AutoSetRestoreFlag& operator =(const AutoSetRestoreFlag&);
+
+	T* value;
+	T bit;
+	T oldValue;
+};
+
+
 template <typename T, typename T2>
 class AutoSetRestore2
 {
