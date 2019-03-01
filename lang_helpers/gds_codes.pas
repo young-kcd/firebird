@@ -1909,6 +1909,8 @@ const
 	gds_tom_chacha_key                   = 335545250;
 	isc_bad_repl_handle                  = 335545251;
 	gds_bad_repl_handle                  = 335545251;
+	isc_tra_snapshot_does_not_exist      = 335545252;
+	gds_tra_snapshot_does_not_exist      = 335545252;
 	isc_gfix_db_name                     = 335740929;
 	gds_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;

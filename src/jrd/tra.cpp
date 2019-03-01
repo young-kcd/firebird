@@ -171,10 +171,11 @@ void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request, boo
 	// we need to set up statement snapshot for read consistency and own it
 
 	request->req_snapshot.m_owner = request;
+	request->req_snapshot.m_number = 0;
 
 	request->req_snapshot.m_handle =
 		tdbb->getDatabase()->dbb_tip_cache->beginSnapshot(tdbb,
-			tdbb->getAttachment()->att_attachment_id, &request->req_snapshot.m_number);
+			tdbb->getAttachment()->att_attachment_id, request->req_snapshot.m_number);
 }
 
 
@@ -1283,8 +1284,10 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 	}
 
 	++transaction->tra_use_count;
+
 	if (transaction->tra_lock)
 		LCK_release(tdbb, transaction->tra_lock);
+
 	--transaction->tra_use_count;
 
 	// release the sparse bit map used for commit retain transaction
@@ -2732,6 +2735,7 @@ static void transaction_options(thread_db* tdbb,
 	TriState wait, lock_timeout;
 	TriState isolation, read_only, rec_version, read_consistency;
 	bool anylock_write = false;
+	bool shared_snapshot = false;
 
 	++tpb;
 
@@ -2744,6 +2748,14 @@ static void transaction_options(thread_db* tdbb,
 			if (!isolation.assignOnce(true))
 				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
 						 Arg::Gds(isc_tpb_multiple_txn_isolation));
+
+			if (shared_snapshot)
+			{
+				ERR_post(
+					Arg::Gds(isc_bad_tpb_content) <<
+					Arg::Gds(isc_tpb_conflicting_options) <<
+						Arg::Str("isc_tpb_consistency") << Arg::Str("isc_tpb_at_snapshot_number"));
+			}
 
 			transaction->tra_flags |= TRA_degree3;
 			transaction->tra_flags &= ~TRA_read_committed;
@@ -2762,6 +2774,14 @@ static void transaction_options(thread_db* tdbb,
 			if (!isolation.assignOnce(true))
 				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
 						 Arg::Gds(isc_tpb_multiple_txn_isolation));
+
+			if (shared_snapshot)
+			{
+				ERR_post(
+					Arg::Gds(isc_bad_tpb_content) <<
+					Arg::Gds(isc_tpb_conflicting_options) <<
+						Arg::Str("isc_tpb_read_committed") << Arg::Str("isc_tpb_at_snapshot_number"));
+			}
 
 			transaction->tra_flags &= ~TRA_degree3;
 			transaction->tra_flags |= TRA_read_committed;
@@ -3143,6 +3163,70 @@ static void transaction_options(thread_db* tdbb,
 			}
 			break;
 
+		case isc_tpb_at_snapshot_number:
+			{
+				const char* option_name = "isc_tpb_at_snapshot_number";
+
+				if (shared_snapshot)
+				{
+					ERR_post(
+						Arg::Gds(isc_bad_tpb_content) <<
+						Arg::Gds(isc_tpb_multiple_spec) << Arg::Str(option_name));
+				}
+
+				if (transaction->tra_flags & TRA_read_committed)
+				{
+					ERR_post(
+						Arg::Gds(isc_bad_tpb_content) <<
+						Arg::Gds(isc_tpb_conflicting_options) <<
+							Arg::Str(option_name) << Arg::Str("isc_tpb_read_committed"));
+				}
+
+				if (transaction->tra_flags & TRA_degree3)
+				{
+					ERR_post(
+						Arg::Gds(isc_bad_tpb_content) <<
+						Arg::Gds(isc_tpb_conflicting_options) <<
+							Arg::Str(option_name) << Arg::Str("isc_tpb_consistency"));
+				}
+
+				if (tpb >= end)
+				{
+					ERR_post(
+						Arg::Gds(isc_bad_tpb_content) <<
+						Arg::Gds(isc_tpb_missing_len) << Arg::Str(option_name));
+				}
+
+				const USHORT len = *tpb++;
+
+				if (tpb >= end && len > 0)
+				{
+					ERR_post(
+						Arg::Gds(isc_bad_tpb_content) <<
+						Arg::Gds(isc_tpb_missing_value) << Arg::Num(len) << Arg::Str(option_name));
+				}
+
+				if (end - tpb < len || len == 0)
+				{
+					ERR_post(
+						Arg::Gds(isc_bad_tpb_content) <<
+						Arg::Gds(isc_tpb_corrupt_len) << Arg::Num(len) << Arg::Str(option_name));
+				}
+
+				shared_snapshot = true;
+				transaction->tra_snapshot_number = isc_portable_integer(tpb, len);
+
+				if (transaction->tra_snapshot_number == 0)
+				{
+					ERR_post(
+						Arg::Gds(isc_bad_tpb_content) <<
+						Arg::Str(option_name));
+				}
+
+				tpb += len;
+			}
+			break;
+
 		default:
 			ERR_post(Arg::Gds(isc_bad_tpb_form));
 		}
@@ -3326,9 +3410,16 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 
 		if (!(trans->tra_flags & TRA_read_committed))
 		{
-			trans->tra_snapshot_handle =
-				dbb->dbb_tip_cache->beginSnapshot(tdbb,
-					attachment->att_attachment_id, &trans->tra_snapshot_number);
+			try
+			{
+				trans->tra_snapshot_handle = dbb->dbb_tip_cache->beginSnapshot(
+					tdbb, attachment->att_attachment_id, trans->tra_snapshot_number);
+			}
+			catch (const Firebird::Exception&)
+			{
+				LCK_release(tdbb, lock);
+				throw;
+			}
 		}
 
 		// Next task is to find the oldest active transaction on the system.  This

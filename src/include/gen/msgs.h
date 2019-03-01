@@ -956,6 +956,7 @@ Data source : @4"},		/* eds_statement */
 	{335545249, "Verifying RSA-signed data"},		/* tom_rsa_verify */
 	{335545250, "Invalid key length @1, need 16 or 32"},		/* tom_chacha_key */
 	{335545251, "invalid replicator handle"},		/* bad_repl_handle */
+	{335545252, "Transaction's base snapshot number does not exist"},		/* tra_snapshot_does_not_exist */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

@@ -1619,6 +1619,7 @@ public:
 	Nullable<USHORT> lockTimeout;
 	Firebird::Array<RestrictionOption*> reserveList;
 	Firebird::UCharBuffer tpb;
+	Nullable<CommitNumber> atSnapshotNumber;
 };
 
 

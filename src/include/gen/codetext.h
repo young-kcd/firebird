@@ -953,6 +953,7 @@ static const struct {
 	{"tom_rsa_verify", 335545249},
 	{"tom_chacha_key", 335545250},
 	{"bad_repl_handle", 335545251},
+	{"tra_snapshot_does_not_exist", 335545252},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

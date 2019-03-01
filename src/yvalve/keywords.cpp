@@ -317,6 +317,7 @@ static const TOK tokens[] =
 	{TOK_NULLIF, "NULLIF", true},
 	{TOK_NULL, "NULL", false},
 	{TOK_NULLS, "NULLS", true},
+	{TOK_NUMBER, "NUMBER", true},
 	{TOK_NUMERIC, "NUMERIC", false},
 	{TOK_OCTET_LENGTH, "OCTET_LENGTH", false},
 	{TOK_OF, "OF", false},
