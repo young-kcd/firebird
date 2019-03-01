@@ -340,7 +340,7 @@ const char
 	ISOLATION_LEVEL_NAME[] = "ISOLATION_LEVEL",
 	LOCK_TIMEOUT_NAME[] = "LOCK_TIMEOUT",
 	READ_ONLY_NAME[] = "READ_ONLY",
-	SNAPSHOT_CN_NAME[] = "SNAPSHOT_CN",
+	SNAPSHOT_NUMBER_NAME[] = "SNAPSHOT_NUMBER",
 	// DDL_TRIGGER namespace
 	DDL_EVENT_NAME[] = "DDL_EVENT",
 	EVENT_TYPE_NAME[] = "EVENT_TYPE",
@@ -3947,7 +3947,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 			resultStr = (transaction->tra_flags & TRA_readonly) ? TRUE_VALUE : FALSE_VALUE;
 		else if (nameStr == GLOBAL_CN_NAME)
 			resultStr.printf("%" SQUADFORMAT, dbb->dbb_tip_cache->getGlobalCommitNumber());
-		else if (nameStr == SNAPSHOT_CN_NAME)
+		else if (nameStr == SNAPSHOT_NUMBER_NAME)
 		{
 			if (!(transaction->tra_flags & TRA_read_committed))
 				resultStr.printf("%" SQUADFORMAT, transaction->tra_snapshot_number);
