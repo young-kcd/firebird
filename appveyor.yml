@@ -1,11 +1,25 @@
 image:
   - Visual Studio 2017
   - Ubuntu1804
-  #- Visual Studio 2015
+  - Visual Studio 2015
 
 platform:
   - x64
-  #- x86
+  - x86
+
+for:
+-
+  matrix:
+    only:
+      - image: Visual Studio 2015
+  only_commits:
+    message: /increment build number/
+-
+  matrix:
+    only:
+      - platform: x86
+  only_commits:
+    message: /increment build number/
 
 shallow_clone: true
 
