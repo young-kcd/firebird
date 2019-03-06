@@ -198,6 +198,7 @@ static const TOK tokens[] =
 	{TOK_ENTRY_POINT, "ENTRY_POINT", true},
 	{TOK_ESCAPE, "ESCAPE", false},
 	{TOK_EXCEPTION, "EXCEPTION", true},
+	{TOK_EXCESS, "EXCESS", true },
 	{TOK_EXCLUDE, "EXCLUDE", true},
 	{TOK_EXECUTE, "EXECUTE", false},
 	{TOK_EXISTS, "EXISTS", false},

@@ -3367,6 +3367,19 @@ DmlNode* ExecStatementNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 						node->outputs = PAR_args(tdbb, csb, outputs, outputs);
 						break;
 
+					case blr_exec_stmt_in_excess:
+					{
+						MemoryPool& pool = csb->csb_pool;
+						node->excessInputs = FB_NEW_POOL(pool) EDS::ParamNumbers(pool);
+						const USHORT count = csb->csb_blr_reader.getWord();
+						for (FB_SIZE_T i = 0; i < count; i++)
+						{
+							const USHORT n = csb->csb_blr_reader.getWord();
+							node->excessInputs->add(n);
+						}
+						break;
+					}
+
 					case blr_end:
 						break;
 
@@ -3395,6 +3408,7 @@ StmtNode* ExecStatementNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	node->sql = doDsqlPass(dsqlScratch, sql);
 	node->inputs = doDsqlPass(dsqlScratch, inputs);
 	node->inputNames = inputNames;
+	node->excessInputs = excessInputs;
 
 	// Check params names uniqueness, if present.
 
@@ -3563,7 +3577,7 @@ void ExecStatementNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 				dsqlScratch->appendUChar(blr_exec_stmt_in_params);
 
 			NestConst<ValueExprNode>* ptr = inputs->items.begin();
-			MetaName* const* name = inputNames ? inputNames->begin() : NULL;
+			const MetaName* const* name = inputNames ? inputNames->begin() : NULL;
 
 			for (const NestConst<ValueExprNode>* end = inputs->items.end(); ptr != end; ++ptr, ++name)
 			{
@@ -3571,6 +3585,15 @@ void ExecStatementNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 					dsqlScratch->appendNullString((*name)->c_str());
 
 				GEN_expr(dsqlScratch, *ptr);
+			}
+
+			if (excessInputs)
+			{
+				dsqlScratch->appendUChar(blr_exec_stmt_in_excess);
+				dsqlScratch->appendUShort(excessInputs->getCount());
+
+				for (FB_SIZE_T i = 0; i < excessInputs->getCount(); i++)
+					dsqlScratch->appendUShort((*excessInputs)[i]);
 			}
 		}
 
@@ -3676,9 +3699,9 @@ const StmtNode* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, Ex
 			stmt->setTimeout(tdbb, timer->timeToExpire());
 
 		if (stmt->isSelectable())
-			stmt->open(tdbb, tran, inpNames, inputs, !innerStmt);
+			stmt->open(tdbb, tran, inpNames, inputs, excessInputs, !innerStmt);
 		else
-			stmt->execute(tdbb, tran, inpNames, inputs, outputs);
+			stmt->execute(tdbb, tran, inpNames, inputs, excessInputs, outputs);
 
 		request->req_operation = jrd_req::req_return;
 	}  // jrd_req::req_evaluate
