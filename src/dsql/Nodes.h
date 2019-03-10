@@ -1067,6 +1067,7 @@ public:
 	static const unsigned DFLAG_DT_IGNORE_COLUMN_CHECK	= 0x10;
 	static const unsigned DFLAG_DT_CTE_USED				= 0x20;
 	static const unsigned DFLAG_CURSOR					= 0x40;
+	static const unsigned DFLAG_LATERAL					= 0x80;
 
 	RecordSourceNode(Type aType, MemoryPool& pool)
 		: ExprNode(aType, pool),

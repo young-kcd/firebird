@@ -652,6 +652,7 @@ public:
 	static const unsigned FLAG_SCROLLABLE		= 0x08;	// scrollable cursor
 	static const unsigned FLAG_DSQL_COMPARATIVE	= 0x10;	// transformed from DSQL ComparativeBoolNode
 	static const unsigned FLAG_OPT_FIRST_ROWS	= 0x20;	// optimize retrieval for first rows
+	static const unsigned FLAG_LATERAL			= 0x40;	// lateral derived table
 
 	explicit RseNode(MemoryPool& pool)
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RSE>(pool),

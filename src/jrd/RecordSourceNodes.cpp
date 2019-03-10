@@ -838,9 +838,6 @@ RecordSource* RelationSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bo
 	opt->beds.add(stream);
 	opt->compileStreams.add(stream);
 
-	if (opt->rse->rse_jointype == blr_left)
-		opt->outerStreams.add(stream);
-
 	// if we have seen any booleans or sort fields, we may be able to
 	// use an index to optimize them; retrieve the current format of
 	// all indices at this time so we can determine if it's possible
@@ -2520,7 +2517,7 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	MemoryPool& pool = dsqlScratch->getPool();
 	DsqlContextStack* const base_context = dsqlScratch->context;
-	DsqlContextStack temp;
+	DsqlContextStack temp, outer;
 	dsqlScratch->context = &temp;
 
 	for (DsqlContextStack::iterator iter(*base_context); iter.hasData(); ++iter)
@@ -2562,12 +2559,20 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			++dsqlScratch->inOuterJoin;
 			streamList->items[0] = doDsqlPass(dsqlScratch, fromList->items[0]);
 			--dsqlScratch->inOuterJoin;
+			// Temporarily remove just created context(s) from the stack,
+			// because outer LATERAL references are not allowed in RIGHT/FULL joins
+			while (temp.getCount() > visibleContexts)
+				outer.push(temp.pop());
 			streamList->items[1] = doDsqlPass(dsqlScratch, fromList->items[1]);
 			break;
 
 		case blr_full:
 			++dsqlScratch->inOuterJoin;
 			streamList->items[0] = doDsqlPass(dsqlScratch, fromList->items[0]);
+			// Temporarily remove just created context(s) from the stack,
+			// because outer LATERAL references are not allowed in RIGHT/FULL joins
+			while (temp.getCount() > visibleContexts)
+				outer.push(temp.pop());
 			streamList->items[1] = doDsqlPass(dsqlScratch, fromList->items[1]);
 			--dsqlScratch->inOuterJoin;
 			break;
@@ -2576,6 +2581,10 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			fb_assert(false);
 			break;
 	}
+
+	// Add outer contexts back to the stack
+	while (outer.hasData())
+		temp.push(outer.pop());
 
 	NestConst<BoolExprNode> boolean = dsqlWhere;
 	ValueListNode* usingList = dsqlJoinUsing;
@@ -3029,6 +3038,8 @@ RecordSource* RseNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSub
 
 	BoolExprNodeStack conjunctStack;
 
+	const auto isLateral = (this->flags & RseNode::FLAG_LATERAL) != 0;
+
 	// pass RseNode boolean only to inner substreams because join condition
 	// should never exclude records from outer substreams
 	if (opt->rse->rse_jointype == blr_inner ||
@@ -3037,8 +3048,10 @@ RecordSource* RseNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSub
 		// AB: For an (X LEFT JOIN Y) mark the outer-streams (X) as
 		// active because the inner-streams (Y) are always "dependent"
 		// on the outer-streams. So that index retrieval nodes could be made.
+		//
+		// dimitr: the same for lateral derived tables in inner joins
 
-		if (opt->rse->rse_jointype == blr_left)
+		if (opt->rse->rse_jointype == blr_left || isLateral)
 		{
 			for (StreamList::iterator i = opt->outerStreams.begin();
 				 i != opt->outerStreams.end();
@@ -3047,10 +3060,13 @@ RecordSource* RseNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSub
 				opt->opt_csb->csb_rpt[*i].activate();
 			}
 
-			// Push all conjuncts except "missing" ones (e.g. IS NULL)
+			if (opt->rse->rse_jointype == blr_left)
+			{
+				// Push all conjuncts except "missing" ones (e.g. IS NULL)
 
-			for (USHORT i = 0; i < opt->opt_base_missing_conjuncts; i++)
-				conjunctStack.push(opt->opt_conjuncts[i].opt_conjunct_node);
+				for (USHORT i = 0; i < opt->opt_base_missing_conjuncts; i++)
+					conjunctStack.push(opt->opt_conjuncts[i].opt_conjunct_node);
+			}
 		}
 		else
 		{
@@ -3060,7 +3076,7 @@ RecordSource* RseNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSub
 
 		RecordSource* const rsb = OPT_compile(tdbb, opt->opt_csb, this, &conjunctStack);
 
-		if (opt->rse->rse_jointype == blr_left)
+		if (opt->rse->rse_jointype == blr_left || isLateral)
 		{
 			for (StreamList::iterator i = opt->outerStreams.begin();
 				i != opt->outerStreams.end(); ++i)

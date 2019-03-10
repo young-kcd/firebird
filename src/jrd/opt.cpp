@@ -483,6 +483,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	AutoPtr<OptimizerBlk> opt(FB_NEW_POOL(*pool) OptimizerBlk(pool, rse));
 	opt->opt_streams.grow(csb->csb_n_stream);
 	opt->optimizeFirstRows = (rse->flags & RseNode::FLAG_OPT_FIRST_ROWS) != 0;
+
 	RecordSource* rsb = NULL;
 
 	try {
@@ -651,19 +652,23 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 
 		if (rsb)
 		{
-			// AB: Save all inner-part streams
+			// AB: Save all outer-part streams
 			if (rse->rse_jointype == blr_inner ||
 				(rse->rse_jointype == blr_left && !innerSubStream))
 			{
 				rsb->findUsedStreams(opt->subStreams);
-				// Save also the outer streams
-				if (rse->rse_jointype == blr_left)
-					rsb->findUsedStreams(opt->outerStreams);
+				rsb->findUsedStreams(opt->outerStreams);
 			}
 
-			River* const river = FB_NEW_POOL(*pool) River(csb, rsb, node, opt->localStreams);
+			const auto river = FB_NEW_POOL(*pool) River(csb, rsb, node, opt->localStreams);
 			river->deactivate(csb);
 			rivers.add(river);
+		}
+		else
+		{
+			// We have a relation, just add its stream
+			fb_assert(opt->beds.hasData());
+			opt->outerStreams.add(opt->beds.back());
 		}
 	}
 

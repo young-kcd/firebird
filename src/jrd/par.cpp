@@ -1285,6 +1285,7 @@ RecordSourceNode* PAR_parseRecordSource(thread_db* tdbb, CompilerScratch* csb)
 			return ProcedureSourceNode::parse(tdbb, csb, blrOp);
 
 		case blr_rse:
+		case blr_lateral_rse:
 		case blr_rs_stream:
 			return PAR_rse(tdbb, csb, blrOp);
 
@@ -1319,6 +1320,9 @@ RseNode* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 
 	int count = (unsigned int) csb->csb_blr_reader.getByte();
 	RseNode* rse = FB_NEW_POOL(*tdbb->getDefaultPool()) RseNode(*tdbb->getDefaultPool());
+
+	if (rse_op == blr_lateral_rse)
+		rse->flags |= RseNode::FLAG_LATERAL;
 
 	while (--count >= 0)
 		rse->rse_relations.add(PAR_parseRecordSource(tdbb, csb));
@@ -1440,6 +1444,7 @@ RseNode* PAR_rse(thread_db* tdbb, CompilerScratch* csb)
 	switch (blrOp)
 	{
 		case blr_rse:
+		case blr_lateral_rse:
 		case blr_rs_stream:
 			return PAR_rse(tdbb, csb, blrOp);
 
@@ -1597,6 +1602,7 @@ DmlNode* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb)
 	switch (blr_operator)
 	{
 		case blr_rse:
+		case blr_lateral_rse:
 		case blr_rs_stream:
 		case blr_singular:
 		case blr_scrollable:

@@ -217,8 +217,9 @@
 #define blr_index		(unsigned char)107
 #define blr_ansi_like		(unsigned char)108
 #define blr_scrollable		(unsigned char) 109
+#define blr_lateral_rse		(unsigned char) 110
 
-// unused codes: 110..117
+// unused codes: 111..117
 
 #define blr_run_count		(unsigned char)118	/* changed from 88 to avoid conflict with blr_parameter3 */
 #define blr_rs_stream		(unsigned char)119

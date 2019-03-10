@@ -4847,6 +4847,7 @@ DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 	AutoSetRestore<ForNode*> autoCurrentForNode(&csb->csb_currentForNode, node);
 
 	if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_rse ||
+		csb->csb_blr_reader.peekByte() == (UCHAR) blr_lateral_rse ||
 		csb->csb_blr_reader.peekByte() == (UCHAR) blr_singular ||
 		csb->csb_blr_reader.peekByte() == (UCHAR) blr_scrollable)
 	{
