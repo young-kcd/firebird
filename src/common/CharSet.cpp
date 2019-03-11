@@ -251,4 +251,53 @@ CharSet* CharSet::createInstance(MemoryPool& pool, USHORT id, charset* cs)
 }
 
 
+ULONG CharSet::removeTrailingSpaces(ULONG srcLen, const UCHAR* src) const
+{
+	const unsigned spaceLen = getSpaceLength();
+	const UCHAR* p = src + srcLen - spaceLen;
+	const UCHAR* const q = getSpace();
+
+	switch (spaceLen)
+	{
+	case 1:
+		while (p >= src && *p == *q)
+			p -= spaceLen;
+		break;
+
+	case 2:
+		while (p >= src && p[0] == q[0] && p[1] == q[1])
+			p -= spaceLen;
+		break;
+
+	case 3:
+		while (p >= src && p[0] == q[0] && p[1] == q[1] && p[2] == q[2])
+			p -= spaceLen;
+		break;
+
+	case 4:
+		while (p >= src && p[0] == q[0] && p[1] == q[1] && p[2] == q[2] && p[3] == q[3])
+			p -= spaceLen;
+		break;
+
+	default:
+		while (p >= src)
+		{
+			unsigned i = 0;
+			for (; i < spaceLen; i++)
+				if (p[i] != q[i])
+					break;
+
+			if (i != spaceLen)
+				break;
+
+			p -= spaceLen;
+		}
+		break;
+	}
+
+	p += spaceLen;
+	return p - src;
+}
+
+
 }	// namespace Jrd
