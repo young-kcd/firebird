@@ -207,7 +207,7 @@ ULONG MultiByteCharSet::substring(const ULONG srcLen, const UCHAR* src, const UL
 			return 0;
 
 		// convert to UTF16
-		HalfStaticArray<UCHAR, BUFFER_SMALL> str;
+		HalfStaticArray<UCHAR, BUFFER_MEDIUM> str;
 		ULONG unilength = getConvToUnicode().convertLength(srcLen);
 
 		// ASF: We should pass badInputPos to convert for it not throw in the case
@@ -220,7 +220,7 @@ ULONG MultiByteCharSet::substring(const ULONG srcLen, const UCHAR* src, const UL
 			OutAligner<USHORT>(str.getBuffer(unilength), unilength), &badInputPos);
 
 		// generate substring of UTF16
-		HalfStaticArray<UCHAR, BUFFER_SMALL> substr;
+		HalfStaticArray<UCHAR, BUFFER_MEDIUM> substr;
 		unilength = UnicodeUtil::utf16Substring(unilength, Aligner<USHORT>(str.begin(), unilength),
 			unilength, OutAligner<USHORT>(substr.getBuffer(unilength), unilength), startPos, len);
 
