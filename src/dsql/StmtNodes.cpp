@@ -324,27 +324,35 @@ void AssignmentNode::validateTarget(CompilerScratch* csb, const ValueExprNode* t
 	if ((fieldNode = nodeAs<FieldNode>(target)))
 	{
 		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[fieldNode->fieldStream];
-		jrd_fld* field = MET_get_field(tail->csb_relation, fieldNode->fieldId);
-		string fieldName(field ? field->fld_name.c_str() : "<unknown>");
 
-		if (field && tail->csb_relation)
-			fieldName = string(tail->csb_relation->rel_name.c_str()) + "." + fieldName;
+		bool error = false;
 
 		// Assignments to the OLD context are prohibited for all trigger types.
 		if ((tail->csb_flags & csb_trigger) && fieldNode->fieldStream == OLD_CONTEXT_VALUE)
-			ERR_post(Arg::Gds(isc_read_only_field) << fieldName.c_str());
+			error = true;
 
 		// Assignments to the NEW context are prohibited for post-action triggers.
-		if ((tail->csb_flags & csb_trigger) && fieldNode->fieldStream == NEW_CONTEXT_VALUE &&
+		else if ((tail->csb_flags & csb_trigger) && fieldNode->fieldStream == NEW_CONTEXT_VALUE &&
 			(csb->csb_g_flags & csb_post_trigger))
 		{
-			ERR_post(Arg::Gds(isc_read_only_field) << fieldName.c_str());
+			error = true;
 		}
 
 		// Assignment to cursor fields are always prohibited.
 		// But we cannot detect FOR cursors here. They are treated in dsqlPass.
-		if (fieldNode->cursorNumber.specified)
+		else if (fieldNode->cursorNumber.specified)
+			error = true;
+
+		if (error)
+		{
+			jrd_fld* field = MET_get_field(tail->csb_relation, fieldNode->fieldId);
+			string fieldName(field ? field->fld_name.c_str() : "<unknown>");
+
+			if (field && tail->csb_relation)
+				fieldName = string(tail->csb_relation->rel_name.c_str()) + "." + fieldName;
+
 			ERR_post(Arg::Gds(isc_read_only_field) << fieldName.c_str());
+		}
 	}
 	else if (!(nodeIs<ParameterNode>(target) || nodeIs<VariableNode>(target) || nodeIs<NullNode>(target)))
 		ERR_post(Arg::Gds(isc_read_only_field) << "<unknown>");
