@@ -9435,7 +9435,7 @@ static void dsqlSetParameterName(DsqlCompilerScratch* dsqlScratch, ExprNode* exp
 			exprNode->getChildren(holder, true);
 
 			for (auto ref : holder.refs)
-				dsqlSetParameterName(dsqlScratch, ref.getExpr(), fld_node, relation);
+				dsqlSetParameterName(dsqlScratch, *ref, fld_node, relation);
 
 			break;
 		}

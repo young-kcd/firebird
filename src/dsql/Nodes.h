@@ -395,64 +395,6 @@ template <typename To, typename From> static bool nodeIs(const NestConst<From>& 
 }
 
 
-// Stores a reference to a specialized ExprNode.
-// This class and NodeRefImpl exists for nodes to replace themselves (eg. pass1) in a type-safe way.
-class NodeRef
-{
-public:
-	NodeRef()
-		: ptr(NULL)
-	{
-	}
-
-	template <typename T>
-	explicit NodeRef(const NestConst<T>& node)
-		: ptr(NULL)
-	{
-		static_assert(std::is_base_of<ExprNode, T>::value, "T must be derived from ExprNode");
-
-		T** aPtr = const_cast<T**> (node.getAddress());
-		ptr = reinterpret_cast<ExprNode**> (aPtr);
-
-		fb_assert(ptr);
-	}
-
-	bool operator !() const
-	{
-		return !getExpr();
-	}
-
-	operator bool() const
-	{
-		return getExpr() != NULL;
-	}
-
-	ExprNode* getExpr()
-	{
-		return *ptr;
-	}
-
-	const ExprNode* getExpr() const
-	{
-		return *ptr;
-	}
-
-	void remap(FieldRemapper& visitor);
-
-	void pass1(thread_db* tdbb, CompilerScratch* csb)
-	{
-		DmlNode::doPass1(tdbb, csb, ptr);
-	}
-
-	void pass2(thread_db* tdbb, CompilerScratch* csb);
-
-protected:
-	void internalPass2(thread_db* tdbb, CompilerScratch* csb);
-
-private:
-	ExprNode** ptr;
-};
-
 class NodeRefsHolder : public Firebird::PermanentStorage
 {
 public:
@@ -462,18 +404,41 @@ public:
 	{
 	}
 
-	~NodeRefsHolder()
-	{
-	}
-
-
 	template <typename T> void add(const NestConst<T>& node)
 	{
-		refs.add(NodeRef(node));
+		static_assert(std::is_base_of<ExprNode, T>::value, "T must be derived from ExprNode");
+
+		static_assert(
+			std::is_convertible<
+				decltype(const_cast<T*>(node.getObject())->pass1(
+					(thread_db*) nullptr, (CompilerScratch*) nullptr)),
+				decltype(const_cast<T*>(node.getObject()))
+			>::value,
+			"pass1 problem");
+
+		static_assert(
+			std::is_convertible<
+				decltype(const_cast<T*>(node.getObject())->pass2(
+					(thread_db*) nullptr, (CompilerScratch*) nullptr)),
+				decltype(const_cast<T*>(node.getObject()))
+			>::value,
+			"pass2 problem");
+
+		static_assert(
+			std::is_convertible<
+				decltype(const_cast<T*>(node.getObject())->dsqlFieldRemapper(*(FieldRemapper*) nullptr)),
+				decltype(const_cast<T*>(node.getObject()))
+			>::value,
+			"dsqlFieldRemapper problem");
+
+		T** ptr = const_cast<T**> (node.getAddress());
+		fb_assert(ptr);
+
+		refs.add(reinterpret_cast<ExprNode**>(ptr));
 	}
 
 public:
-	Firebird::HalfStaticArray<NodeRef, 8> refs;
+	Firebird::HalfStaticArray<ExprNode**, 8> refs;
 };
 
 
@@ -600,8 +565,8 @@ public:
 		NodeRefsHolder holder(visitor.getPool());
 		getChildren(holder, true);
 
-		for (NodeRef* i = holder.refs.begin(); i != holder.refs.end(); ++i)
-			ret |= visitor.visit(i->getExpr());
+		for (auto i : holder.refs)
+			ret |= visitor.visit(*i);
 
 		return ret;
 	}
@@ -613,8 +578,8 @@ public:
 		NodeRefsHolder holder(visitor.getPool());
 		getChildren(holder, true);
 
-		for (NodeRef* i = holder.refs.begin(); i != holder.refs.end(); ++i)
-			ret |= visitor.visit(i->getExpr());
+		for (auto i : holder.refs)
+			ret |= visitor.visit(*i);
 
 		return ret;
 	}
@@ -626,8 +591,8 @@ public:
 		NodeRefsHolder holder(visitor.getPool());
 		getChildren(holder, true);
 
-		for (NodeRef* i = holder.refs.begin(); i != holder.refs.end(); ++i)
-			ret |= visitor.visit(i->getExpr());
+		for (auto i : holder.refs)
+			ret |= visitor.visit(*i);
 
 		return ret;
 	}
@@ -639,8 +604,8 @@ public:
 		NodeRefsHolder holder(visitor.dsqlScratch->getPool());
 		getChildren(holder, true);
 
-		for (NodeRef* i = holder.refs.begin(); i != holder.refs.end(); ++i)
-			ret |= visitor.visit(i->getExpr());
+		for (auto i : holder.refs)
+			ret |= visitor.visit(*i);
 
 		return ret;
 	}
@@ -652,8 +617,8 @@ public:
 		NodeRefsHolder holder(visitor.getPool());
 		getChildren(holder, true);
 
-		for (NodeRef* i = holder.refs.begin(); i != holder.refs.end(); ++i)
-			ret |= visitor.visit(i->getExpr());
+		for (auto i : holder.refs)
+			ret |= visitor.visit(*i);
 
 		return ret;
 	}
@@ -663,8 +628,11 @@ public:
 		NodeRefsHolder holder(visitor.getPool());
 		getChildren(holder, true);
 
-		for (NodeRef* i = holder.refs.begin(); i != holder.refs.end(); ++i)
-			i->remap(visitor);
+		for (auto i : holder.refs)
+		{
+			if (*i)
+				*i = (*i)->dsqlFieldRemapper(visitor);
+		}
 
 		return this;
 	}
@@ -728,18 +696,6 @@ public:
 	unsigned nodFlags;
 	ULONG impureOffset;
 };
-
-
-inline void NodeRef::remap(FieldRemapper& visitor)
-{
-	if (*ptr)
-		*ptr = (*ptr)->dsqlFieldRemapper(visitor);
-}
-
-inline void NodeRef::internalPass2(thread_db* tdbb, CompilerScratch* csb)
-{
-	ExprNode::doPass2(tdbb, csb, ptr);
-}
 
 
 class BoolExprNode : public ExprNode
