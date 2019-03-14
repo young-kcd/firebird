@@ -7,9 +7,11 @@ sudo: required
 dist: xenial
 
 branches:
-  only:
-    - master
-    - B3_0_Release
+  except:
+    - B2_5_Release
+    - B2_1_Release
+    - B2_0_Release
+    - B1_5_Release
 
 addons:
   apt:
