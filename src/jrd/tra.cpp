@@ -3316,14 +3316,13 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	// the transaction inventory page was initialized to zero, it
 	// transaction is automatically marked active.
 
-	TraNumber oldest, number, active, oldest_active, oldest_snapshot;
+	TraNumber oldest, number, active, oldest_active;
 
 #ifdef SUPERSERVER_V2
 	number = bump_transaction_id(tdbb, &window);
 	oldest = dbb->dbb_oldest_transaction;
 	active = MAX(dbb->dbb_oldest_active, dbb->dbb_oldest_transaction);
 	oldest_active = dbb->dbb_oldest_active;
-	oldest_snapshot = dbb->dbb_oldest_snapshot;
 
 #else // SUPERSERVER_V2
 	if (dbb->readOnly())
@@ -3331,7 +3330,6 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 		number = dbb->generateTransactionId();
 		oldest = dbb->dbb_oldest_transaction;
 		oldest_active = dbb->dbb_oldest_active;
-		oldest_snapshot = dbb->dbb_oldest_snapshot;
 	}
 	else
 	{
@@ -3342,7 +3340,6 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 		number = Ods::getNT(header);
 		oldest = Ods::getOIT(header);
 		oldest_active = Ods::getOAT(header);
-		oldest_snapshot = Ods::getOST(header);
 	}
 
 	// oldest (OIT) > oldest_active (OAT) if OIT was advanced by sweep

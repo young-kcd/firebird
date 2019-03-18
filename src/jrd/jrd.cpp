@@ -2704,7 +2704,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 				// try to create with overwrite = false
 				pageSpace->file = PIO_create(tdbb, expanded_name, false, false);
 			}
-			catch (status_exception)
+			catch (const status_exception&)
 			{
 				if (options.dpb_overwrite)
 				{
