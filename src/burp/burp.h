@@ -1048,6 +1048,7 @@ public:
 	isc_req_handle	handles_get_trigger_message_req_handle2;
 	isc_req_handle	handles_get_trigger_old_req_handle1;
 	isc_req_handle	handles_get_trigger_req_handle1;
+	isc_req_handle	handles_get_trigger_req_handle2;
 	isc_req_handle	handles_get_type_req_handle1;
 	isc_req_handle	handles_get_user_privilege_req_handle1;
 	isc_req_handle	handles_get_view_req_handle1;
