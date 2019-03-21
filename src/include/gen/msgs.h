@@ -1102,7 +1102,19 @@ Data source : @4"},		/* eds_statement */
 	{336068896, "INCREMENT BY 0 is an illegal option for sequence @1"},		/* dyn_cant_use_zero_increment */
 	{336068897, "Can't use @1 in FOREIGN KEY constraint"},		/* dyn_cant_use_in_foreignkey */
 	{336068898, "Default values for parameters are not allowed in the definition of a previously declared packaged function @1.@2"},		/* dyn_defvaldecl_package_func */
+	{336068900, "role @1 can not be granted to role @2"},		/* dyn_cyclic_role */
 	{336068904, "INCREMENT BY 0 is an illegal option for identity column @1 of table @2"},		/* dyn_cant_use_zero_inc_ident */
+	{336068907, "no @1 privilege with grant option on DDL @2"},		/* dyn_no_ddl_grant_opt_priv */
+	{336068908, "no @1 privilege with grant option on object @2"},		/* dyn_no_grant_opt_priv */
+	{336068909, "Function @1 does not exist"},		/* dyn_func_not_exist */
+	{336068910, "Procedure @1 does not exist"},		/* dyn_proc_not_exist */
+	{336068911, "Package @1 does not exist"},		/* dyn_pack_not_exist */
+	{336068912, "Trigger @1 does not exist"},		/* dyn_trig_not_exist */
+	{336068913, "View @1 does not exist"},		/* dyn_view_not_exist */
+	{336068914, "Table @1 does not exist"},		/* dyn_rel_not_exist */
+	{336068915, "Exception @1 does not exist"},		/* dyn_exc_not_exist */
+	{336068916, "Generator/Sequence @1 does not exist"},		/* dyn_gen_not_exist */
+	{336068917, "Field @1 of table @2 does not exist"},		/* dyn_fld_not_exist */
 	{336330753, "found unknown switch"},		/* gbak_unknown_switch */
 	{336330754, "page size parameter missing"},		/* gbak_page_size_missing */
 	{336330755, "Page size specified (@1) greater than limit (32768 bytes)"},		/* gbak_page_size_toobig */

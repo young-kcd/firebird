@@ -1133,7 +1133,19 @@ const ISC_STATUS isc_dyn_cant_modify_sysobj           = 336068895L;
 const ISC_STATUS isc_dyn_cant_use_zero_increment      = 336068896L;
 const ISC_STATUS isc_dyn_cant_use_in_foreignkey       = 336068897L;
 const ISC_STATUS isc_dyn_defvaldecl_package_func      = 336068898L;
+const ISC_STATUS isc_dyn_cyclic_role                  = 336068900L;
 const ISC_STATUS isc_dyn_cant_use_zero_inc_ident      = 336068904L;
+const ISC_STATUS isc_dyn_no_ddl_grant_opt_priv        = 336068907L;
+const ISC_STATUS isc_dyn_no_grant_opt_priv            = 336068908L;
+const ISC_STATUS isc_dyn_func_not_exist               = 336068909L;
+const ISC_STATUS isc_dyn_proc_not_exist               = 336068910L;
+const ISC_STATUS isc_dyn_pack_not_exist               = 336068911L;
+const ISC_STATUS isc_dyn_trig_not_exist               = 336068912L;
+const ISC_STATUS isc_dyn_view_not_exist               = 336068913L;
+const ISC_STATUS isc_dyn_rel_not_exist                = 336068914L;
+const ISC_STATUS isc_dyn_exc_not_exist                = 336068915L;
+const ISC_STATUS isc_dyn_gen_not_exist                = 336068916L;
+const ISC_STATUS isc_dyn_fld_not_exist                = 336068917L;
 const ISC_STATUS isc_gbak_unknown_switch              = 336330753L;
 const ISC_STATUS isc_gbak_page_size_missing           = 336330754L;
 const ISC_STATUS isc_gbak_page_size_toobig            = 336330755L;
@@ -1464,7 +1476,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1408;
+const ISC_STATUS isc_err_max                          = 1420;
 
 #else /* c definitions */
 
@@ -2567,7 +2579,19 @@ const ISC_STATUS isc_err_max                          = 1408;
 #define isc_dyn_cant_use_zero_increment      336068896L
 #define isc_dyn_cant_use_in_foreignkey       336068897L
 #define isc_dyn_defvaldecl_package_func      336068898L
+#define isc_dyn_cyclic_role                  336068900L
 #define isc_dyn_cant_use_zero_inc_ident      336068904L
+#define isc_dyn_no_ddl_grant_opt_priv        336068907L
+#define isc_dyn_no_grant_opt_priv            336068908L
+#define isc_dyn_func_not_exist               336068909L
+#define isc_dyn_proc_not_exist               336068910L
+#define isc_dyn_pack_not_exist               336068911L
+#define isc_dyn_trig_not_exist               336068912L
+#define isc_dyn_view_not_exist               336068913L
+#define isc_dyn_rel_not_exist                336068914L
+#define isc_dyn_exc_not_exist                336068915L
+#define isc_dyn_gen_not_exist                336068916L
+#define isc_dyn_fld_not_exist                336068917L
 #define isc_gbak_unknown_switch              336330753L
 #define isc_gbak_page_size_missing           336330754L
 #define isc_gbak_page_size_toobig            336330755L
@@ -2898,7 +2922,7 @@ const ISC_STATUS isc_err_max                          = 1408;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1408
+#define isc_err_max                          1420
 
 #endif
 

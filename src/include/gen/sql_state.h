@@ -1098,7 +1098,19 @@ static const struct {
 	{336068896, "42000"}, // 288 dyn_cant_use_zero_increment
 	{336068897, "42000"}, // 289 dyn_cant_use_in_foreignkey
 	{336068898, "42000"}, // 290 dyn_defvaldecl_package_func
+	{336068900, "42000"}, // 292 dyn_cyclic_role
 	{336068904, "42000"}, // 296 dyn_cant_use_zero_inc_ident
+	{336068907, "42000"}, // 299 dyn_no_ddl_grant_opt_priv
+	{336068908, "42000"}, // 300 dyn_no_grant_opt_priv
+	{336068909, "42000"}, // 301 dyn_func_not_exist
+	{336068910, "42000"}, // 302 dyn_proc_not_exist
+	{336068911, "42000"}, // 303 dyn_pack_not_exist
+	{336068912, "42000"}, // 304 dyn_trig_not_exist
+	{336068913, "42000"}, // 305 dyn_view_not_exist
+	{336068914, "42000"}, // 306 dyn_rel_not_exist
+	{336068915, "42000"}, // 307 dyn_exc_not_exist
+	{336068916, "42000"}, // 308 dyn_gen_not_exist
+	{336068917, "42000"}, // 309 dyn_fld_not_exist
 	{336330753, "00000"}, //   1 gbak_unknown_switch
 	{336330754, "00000"}, //   2 gbak_page_size_missing
 	{336330755, "00000"}, //   3 gbak_page_size_toobig
