@@ -8463,6 +8463,11 @@ bool get_trigger_old (BurpGlobals* tdgbl, burp_rel* relation)
 	return true;
 }
 
+void write_skip_message(const char* trigName, const char* relName)
+{
+	BURP_output(false, "gbak:Skipped trigger %s on system table %s\n", trigName, relName);
+}
+
 bool get_trigger(BurpGlobals* tdgbl)
 {
 /**************************************
@@ -8477,6 +8482,7 @@ bool get_trigger(BurpGlobals* tdgbl)
  **************************************/
 	att_type attribute;
 	BASED_ON RDB$TRIGGERS.RDB$TRIGGER_NAME name;
+	BASED_ON RDB$TRIGGERS.RDB$RELATION_NAME relName;
 	scan_attr_t scan_next_attr;
 	bool skipTrig = false;
 
@@ -8546,10 +8552,12 @@ bool get_trigger(BurpGlobals* tdgbl)
 				case att_trig_relation_name:
 					X.RDB$RELATION_NAME.NULL = FALSE;
 					GET_TEXT(X.RDB$RELATION_NAME);
+					strcpy (relName, X.RDB$RELATION_NAME);
+
 					// Check for trigger on system relation
 					FOR (TRANSACTION_HANDLE local_trans REQUEST_HANDLE tdgbl->handles_get_trigger_req_handle2)
 						Y IN RDB$RELATIONS
-						WITH Y.RDB$RELATION_NAME EQ X.RDB$RELATION_NAME
+						WITH Y.RDB$RELATION_NAME EQ relName
 						 AND Y.RDB$SYSTEM_FLAG EQ 1
 
 						skipTrig = true;
@@ -8628,7 +8636,10 @@ bool get_trigger(BurpGlobals* tdgbl)
 
 			// Skip trigger on system relation
 			if (skipTrig)
+			{
+				write_skip_message(name, relName);
 				return true;
+			}
 
 		END_STORE;
 		ON_ERROR
@@ -8688,10 +8699,12 @@ bool get_trigger(BurpGlobals* tdgbl)
 				case att_trig_relation_name:
 					X.RDB$RELATION_NAME.NULL = FALSE;
 					GET_TEXT(X.RDB$RELATION_NAME);
+					strcpy (relName, X.RDB$RELATION_NAME);
+
 					// Check for trigger on system relation
 					FOR (TRANSACTION_HANDLE local_trans REQUEST_HANDLE tdgbl->handles_get_trigger_req_handle2)
 						Y IN RDB$RELATIONS
-						WITH Y.RDB$RELATION_NAME EQ X.RDB$RELATION_NAME
+						WITH Y.RDB$RELATION_NAME EQ relName
 						 AND Y.RDB$SYSTEM_FLAG EQ 1
 
 						skipTrig = true;
@@ -8759,7 +8772,10 @@ bool get_trigger(BurpGlobals* tdgbl)
 
 			// Skip trigger on system relation
 			if (skipTrig)
+			{
+				write_skip_message(name, relName);
 				return true;
+			}
 
 		END_STORE;
 		ON_ERROR
