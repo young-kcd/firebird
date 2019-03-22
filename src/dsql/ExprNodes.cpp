@@ -10510,7 +10510,7 @@ dsc* StrCaseNode::execute(thread_db* tdbb, jrd_req* request) const
 	else
 	{
 		UCHAR* ptr;
-		VaryStr<32> temp;
+		VaryStr<TEMP_STR_LENGTH> temp;
 		USHORT ttype;
 
 		dsc desc;
@@ -10740,7 +10740,7 @@ dsc* StrLenNode::execute(thread_db* tdbb, jrd_req* request) const
 		return &impure->vlu_desc;
 	}
 
-	VaryStr<32> temp;
+	VaryStr<TEMP_STR_LENGTH> temp;
 	USHORT ttype;
 	UCHAR* p;
 
@@ -11575,7 +11575,7 @@ dsc* SubstringNode::perform(thread_db* tdbb, impure_value* impure, const dsc* va
 		//		- The types that can cause an error() issued inside the low level MOV/CVT
 		//		routines because the "temp" is not enough are blob and array but at this time
 		//		they aren't accepted, so they will cause error() to be called anyway.
-		VaryStr<32> temp;
+		VaryStr<TEMP_STR_LENGTH> temp;
 		USHORT ttype;
 		desc.dsc_length = MOV_get_string_ptr(tdbb, valueDsc, &ttype, &desc.dsc_address,
 			&temp, sizeof(temp));

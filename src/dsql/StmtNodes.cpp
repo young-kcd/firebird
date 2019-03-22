@@ -9902,7 +9902,7 @@ static void validateExpressions(thread_db* tdbb, const Array<ValidateInfo>& vali
 		{
 			// Validation error -- report result
 			const char* value;
-			VaryStr<128> temp;
+			VaryStr<TEMP_STR_LENGTH> temp;
 
 			const dsc* desc = EVL_expr(tdbb, request, i->value);
 			const USHORT length = (desc && !(request->req_flags & req_null)) ?
