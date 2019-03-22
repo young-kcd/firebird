@@ -747,16 +747,16 @@ static DSC *execute_prompt( qli_nod* node)
 		if (node->nod_arg[e_prm_prompt])
 		{
 			if (reprompt)
-				sprintf(string, "\07%s %s: ", prompt[0], (TEXT*) node->nod_arg[e_prm_prompt]);
+				fb_utils::snprintf(string, sizeof(string), "\07%s %s: ", prompt[0], (TEXT*) node->nod_arg[e_prm_prompt]);
 			else
-				sprintf(string, "%s %s: ", prompt[1], (TEXT*) node->nod_arg[e_prm_prompt]);
+				fb_utils::snprintf(string, sizeof(string), "%s %s: ", prompt[1], (TEXT*) node->nod_arg[e_prm_prompt]);
 		}
 		else
 		{
 			if (reprompt)
-				sprintf(string, "\07%s: ", prompt[0]);	// Msg497 Re-enter
+				fb_utils::snprintf(string, sizeof(string), "\07%s: ", prompt[0]);	// Msg497 Re-enter
 			else
-				sprintf(string, "%s: ", prompt[1]);	// Msg498 Enter
+				fb_utils::snprintf(string, sizeof(string), "%s: ", prompt[1]);	// Msg498 Enter
 		}
 
 		if (!LEX_get_line(string, value, length))
