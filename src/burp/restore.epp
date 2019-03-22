@@ -9293,6 +9293,7 @@ bool get_trigger(BurpGlobals* tdgbl)
  **************************************/
 	att_type attribute;
 	BASED_ON RDB$TRIGGERS.RDB$TRIGGER_NAME name;
+	BASED_ON RDB$TRIGGERS.RDB$RELATION_NAME relName;
 	scan_attr_t scan_next_attr;
 	bool skipTrig = false;
 
@@ -9363,10 +9364,12 @@ bool get_trigger(BurpGlobals* tdgbl)
 				case att_trig_relation_name:
 					X.RDB$RELATION_NAME.NULL = FALSE;
 					GET_TEXT(X.RDB$RELATION_NAME);
+					strcpy (relName, X.RDB$RELATION_NAME);
+
 					// Check for trigger on system relation
 					FOR (TRANSACTION_HANDLE local_trans REQUEST_HANDLE tdgbl->handles_get_trigger_req_handle2)
 						Y IN RDB$RELATIONS
-						WITH Y.RDB$RELATION_NAME EQ X.RDB$RELATION_NAME
+						WITH Y.RDB$RELATION_NAME EQ relName
 						 AND Y.RDB$SYSTEM_FLAG EQ 1
 
 						skipTrig = true;
@@ -9455,7 +9458,10 @@ bool get_trigger(BurpGlobals* tdgbl)
 
 			// Skip trigger on system relation
 			if (skipTrig)
+			{
+				BURP_message(387, SafeArg() << name << relName);
 				return true;
+			}
 
 		END_STORE;
 		ON_ERROR
@@ -9515,10 +9521,12 @@ bool get_trigger(BurpGlobals* tdgbl)
 				case att_trig_relation_name:
 					X.RDB$RELATION_NAME.NULL = FALSE;
 					GET_TEXT(X.RDB$RELATION_NAME);
+					strcpy (relName, X.RDB$RELATION_NAME);
+
 					// Check for trigger on system relation
 					FOR (TRANSACTION_HANDLE local_trans REQUEST_HANDLE tdgbl->handles_get_trigger_req_handle2)
 						Y IN RDB$RELATIONS
-						WITH Y.RDB$RELATION_NAME EQ X.RDB$RELATION_NAME
+						WITH Y.RDB$RELATION_NAME EQ relName
 						 AND Y.RDB$SYSTEM_FLAG EQ 1
 
 						skipTrig = true;
@@ -9593,7 +9601,10 @@ bool get_trigger(BurpGlobals* tdgbl)
 
 			// Skip trigger on system relation
 			if (skipTrig)
+			{
+				BURP_message(387, SafeArg() << name << relName);
 				return true;
+			}
 
 		END_STORE;
 		ON_ERROR
