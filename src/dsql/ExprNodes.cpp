@@ -12712,6 +12712,10 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 			Arg::Gds(isc_modnotfound));
 	}
 
+	AutoSetRestore<USHORT> autoOriginalTimeZone(
+		&tdbb->getAttachment()->att_original_timezone,
+		tdbb->getAttachment()->att_current_timezone);
+
 	// Evaluate the function.
 
 	if (function->fun_entrypoint)
