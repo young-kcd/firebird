@@ -715,39 +715,39 @@ inline void JrdStatement::triggersExternalAccess(thread_db* tdbb, ExternalAccess
 // list of requests it depends on.
 void JrdStatement::buildExternalAccess(thread_db* tdbb, ExternalAccessList& list, const MetaName &user)
 {
-	for (ExternalAccess* item = externalList.begin(); item != externalList.end(); ++item)
+	while (externalList.hasData())
 	{
-		FB_SIZE_T i;
+		ExternalAccess item = externalList.pop();
 
 		// Add externals recursively
-		if (item->exa_action == ExternalAccess::exa_procedure)
+		if (item.exa_action == ExternalAccess::exa_procedure)
 		{
-			jrd_prc* const procedure = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
+			jrd_prc* const procedure = MET_lookup_procedure_id(tdbb, item.exa_prc_id, false, false, 0);
 			if (procedure && procedure->getStatement())
 			{
-				item->user = procedure->invoker ? procedure->invoker->getUserName() : user;
-				procedure->getStatement()->buildExternalAccess(tdbb, list, item->user);
+				item.user = procedure->invoker ? procedure->invoker->getUserName() : user;
+				procedure->getStatement()->buildExternalAccess(tdbb, list, item.user);
 			}
 		}
-		else if (item->exa_action == ExternalAccess::exa_function)
+		else if (item.exa_action == ExternalAccess::exa_function)
 		{
-			Function* const function = Function::lookup(tdbb, item->exa_fun_id, false, false, 0);
+			Function* const function = Function::lookup(tdbb, item.exa_fun_id, false, false, 0);
 			if (function && function->getStatement())
 			{
-				item->user = function->invoker ? function->invoker->getUserName() : user;
-				function->getStatement()->buildExternalAccess(tdbb, list, item->user);
+				item.user = function->invoker ? function->invoker->getUserName() : user;
+				function->getStatement()->buildExternalAccess(tdbb, list, item.user);
 			}
 		}
 		else
 		{
-			jrd_rel* relation = MET_lookup_relation_id(tdbb, item->exa_rel_id, false);
+			jrd_rel* relation = MET_lookup_relation_id(tdbb, item.exa_rel_id, false);
 
 			if (!relation)
 				continue;
 
 			RefPtr<TrigVector> vec1, vec2;
 
-			switch (item->exa_action)
+			switch (item.exa_action)
 			{
 				case ExternalAccess::exa_insert:
 					vec1 = relation->rel_pre_store;
@@ -765,13 +765,14 @@ void JrdStatement::buildExternalAccess(thread_db* tdbb, ExternalAccessList& list
 					continue; // should never happen, silence the compiler
 			}
 
-			item->user = relation->rel_ss_definer.orElse(false) ? relation->rel_owner_name : user;
-			triggersExternalAccess(tdbb, list, vec1, item->user);
-			triggersExternalAccess(tdbb, list, vec2, item->user);
+			item.user = relation->rel_ss_definer.orElse(false) ? relation->rel_owner_name : user;
+			triggersExternalAccess(tdbb, list, vec1, item.user);
+			triggersExternalAccess(tdbb, list, vec2, item.user);
 		}
 
-		if (!list.find(*item, i))
-			list.insert(i, *item);
+		FB_SIZE_T i;
+		if (!list.find(item, i))
+			list.insert(i, item);
 	}
 }
 
