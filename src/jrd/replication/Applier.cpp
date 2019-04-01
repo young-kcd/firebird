@@ -22,6 +22,7 @@
 
 #include "firebird.h"
 #include "ids.h"
+#include "../jrd/align.h"
 #include "../jrd/jrd.h"
 #include "../jrd/blb.h"
 #include "../jrd/req.h"
@@ -103,7 +104,7 @@ namespace
 
 		SLONG getInt()
 		{
-			m_data = FB_ALIGN(m_data, FB_ALIGNMENT);
+			m_data = FB_ALIGN(m_data, type_alignments[dtype_long]);
 			const auto ptr = (const SLONG*) m_data;
 			m_data += sizeof(SLONG);
 			return *ptr;
@@ -111,7 +112,7 @@ namespace
 
 		SINT64 getBigInt()
 		{
-			m_data = FB_ALIGN(m_data, FB_ALIGNMENT);
+			m_data = FB_ALIGN(m_data, type_alignments[dtype_int64]);
 			const auto ptr = (const SINT64*) m_data;
 			m_data += sizeof(SINT64);
 			return *ptr;

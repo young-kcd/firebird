@@ -24,9 +24,10 @@
 #ifndef JRD_REPLICATION_REPLICATOR_H
 #define JRD_REPLICATION_REPLICATOR_H
 
-#include "../../common/classes/timestamp.h"
-#include "../../common/os/guid.h"
-#include "../../jrd/status.h"
+#include "../common/classes/timestamp.h"
+#include "../common/os/guid.h"
+#include "../jrd/align.h"
+#include "../jrd/status.h"
 
 #include "Protocol.h"
 #include "Manager.h"
@@ -67,7 +68,7 @@ namespace Replication
 
 			void putInt(SLONG value)
 			{
-				const auto newSize = FB_ALIGN(getSize(), FB_ALIGNMENT);
+				const auto newSize = FB_ALIGN(getSize(), type_alignments[dtype_long]);
 				buffer->resize(newSize);
 				const auto ptr = (const UCHAR*) &value;
 				buffer->add(ptr, sizeof(SLONG));
@@ -75,7 +76,7 @@ namespace Replication
 
 			void putBigInt(SINT64 value)
 			{
-				const auto newSize = FB_ALIGN(getSize(), FB_ALIGNMENT);
+				const auto newSize = FB_ALIGN(getSize(), type_alignments[dtype_int64]);
 				buffer->resize(newSize);
 				const auto ptr = (const UCHAR*) &value;
 				buffer->add(ptr, sizeof(SINT64));
