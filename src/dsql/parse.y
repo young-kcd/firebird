@@ -5300,7 +5300,7 @@ decfloat_scale_clause($setDecFloatBindNode)
 	: // nothing
 	| ',' signed_long_integer
 		{
-			if ($2 > 18 || $2 < 0)
+			if ($2 > DecimalBinding::MAX_SCALE || $2 < 0)
 				yyabandon(YYPOSNARG(2), -842, isc_scale_nogt);	// Scale must be between 0 and precision
 			$setDecFloatBindNode->bind.numScale = -$2;
 		}
