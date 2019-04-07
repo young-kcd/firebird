@@ -1920,6 +1920,10 @@ C --
       PARAMETER (GDS__eds_input_prm_not_used           = 335545253)
       INTEGER*4 GDS__effective_user                  
       PARAMETER (GDS__effective_user                   = 335545254)
+      INTEGER*4 GDS__time_zone_bind                  
+      PARAMETER (GDS__time_zone_bind                   = 335545255)
+      INTEGER*4 GDS__decfloat_bind                   
+      PARAMETER (GDS__decfloat_bind                    = 335545256)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

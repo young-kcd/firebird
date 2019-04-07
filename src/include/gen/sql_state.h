@@ -955,6 +955,8 @@ static const struct {
 	{335545252, "0B000"}, // 932 tra_snapshot_does_not_exist
 	{335545253, "42000"}, // 933 eds_input_prm_not_used
 	{335545254, "28000"}, // 934 effective_user
+	{335545255, "42000"}, // 935 time_zone_bind
+	{335545256, "42000"}, // 936 decfloat_bind
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

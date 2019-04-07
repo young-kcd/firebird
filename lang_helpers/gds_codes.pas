@@ -1915,6 +1915,10 @@ const
 	gds_eds_input_prm_not_used           = 335545253;
 	isc_effective_user                   = 335545254;
 	gds_effective_user                   = 335545254;
+	isc_time_zone_bind                   = 335545255;
+	gds_time_zone_bind                   = 335545255;
+	isc_decfloat_bind                    = 335545256;
+	gds_decfloat_bind                    = 335545256;
 	isc_gfix_db_name                     = 335740929;
 	gds_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;

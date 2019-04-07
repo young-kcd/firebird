@@ -943,119 +943,242 @@ void Trigger::release(thread_db* tdbb)
 	statement = NULL;
 }
 
-// Option block for database parameter block
-
-class DatabaseOptions
+namespace Jrd
 {
-public:
-	USHORT	dpb_wal_action;
-	SLONG	dpb_sweep_interval;
-	ULONG	dpb_page_buffers;
-	bool	dpb_set_page_buffers;
-	ULONG	dpb_buffers;
-	USHORT	dpb_verify;
-	USHORT	dpb_sweep;
-	USHORT	dpb_dbkey_scope;
-	USHORT	dpb_page_size;
-	bool	dpb_activate_shadow;
-	bool	dpb_delete_shadow;
-	bool	dpb_no_garbage;
-	USHORT	dpb_shutdown;
-	SSHORT	dpb_shutdown_delay;
-	USHORT	dpb_online;
-	bool	dpb_force_write;
-	bool	dpb_set_force_write;
-	bool	dpb_no_reserve;
-	bool	dpb_set_no_reserve;
-	SSHORT	dpb_interp;
-	bool	dpb_single_user;
-	bool	dpb_overwrite;
-	bool	dpb_sec_attach;
-	bool	dpb_disable_wal;
-	SLONG	dpb_connect_timeout;
-	SLONG	dpb_dummy_packet_interval;
-	bool	dpb_db_readonly;
-	bool	dpb_set_db_readonly;
-	bool	dpb_gfix_attach;
-	bool	dpb_gstat_attach;
-	USHORT	dpb_sql_dialect;
-	USHORT	dpb_set_db_sql_dialect;
-	SLONG	dpb_remote_pid;
-	bool	dpb_no_db_triggers;
-	bool	dpb_gbak_attach;
-	bool	dpb_utf8_filename;
-	ULONG	dpb_ext_call_depth;
-	ULONG	dpb_flags;			// to OR'd with dbb_flags
-	bool	dpb_nolinger;
-	bool	dpb_reset_icu;
-	bool	dpb_map_attach;
-	ULONG	dpb_remote_flags;
-	ReplicaMode	dpb_replica_mode;
-	bool	dpb_set_db_replica;
+	// Option block for database parameter block
 
-	// here begin compound objects
-	// for constructor to work properly dpb_user_name
-	// MUST be FIRST
-	string	dpb_user_name;
-	AuthReader::AuthBlock	dpb_auth_block;
-	string	dpb_role_name;
-	string	dpb_journal;
-	string	dpb_lc_ctype;
-	PathName	dpb_working_directory;
-	string	dpb_set_db_charset;
-	string	dpb_network_protocol;
-	string	dpb_remote_address;
-	string	dpb_remote_host;
-	string	dpb_remote_os_user;
-	string	dpb_client_version;
-	string	dpb_remote_protocol;
-	string	dpb_trusted_login;
-	PathName	dpb_remote_process;
-	PathName	dpb_org_filename;
-	string	dpb_config;
-	string	dpb_session_tz;
-
-public:
-	static const ULONG DPB_FLAGS_MASK = DBB_damaged;
-
-	DatabaseOptions()
+	class DatabaseOptions
 	{
-		memset(this, 0,
-			reinterpret_cast<char*>(&this->dpb_user_name) - reinterpret_cast<char*>(this));
-	}
+	public:
+		USHORT	dpb_wal_action;
+		SLONG	dpb_sweep_interval;
+		ULONG	dpb_page_buffers;
+		bool	dpb_set_page_buffers;
+		ULONG	dpb_buffers;
+		USHORT	dpb_verify;
+		USHORT	dpb_sweep;
+		USHORT	dpb_dbkey_scope;
+		USHORT	dpb_page_size;
+		bool	dpb_activate_shadow;
+		bool	dpb_delete_shadow;
+		bool	dpb_no_garbage;
+		USHORT	dpb_shutdown;
+		SSHORT	dpb_shutdown_delay;
+		USHORT	dpb_online;
+		bool	dpb_force_write;
+		bool	dpb_set_force_write;
+		bool	dpb_no_reserve;
+		bool	dpb_set_no_reserve;
+		SSHORT	dpb_interp;
+		bool	dpb_single_user;
+		bool	dpb_overwrite;
+		bool	dpb_sec_attach;
+		bool	dpb_disable_wal;
+		SLONG	dpb_connect_timeout;
+		SLONG	dpb_dummy_packet_interval;
+		bool	dpb_db_readonly;
+		bool	dpb_set_db_readonly;
+		bool	dpb_gfix_attach;
+		bool	dpb_gstat_attach;
+		USHORT	dpb_sql_dialect;
+		USHORT	dpb_set_db_sql_dialect;
+		SLONG	dpb_remote_pid;
+		bool	dpb_no_db_triggers;
+		bool	dpb_gbak_attach;
+		bool	dpb_utf8_filename;
+		ULONG	dpb_ext_call_depth;
+		ULONG	dpb_flags;			// to OR'd with dbb_flags
+		bool	dpb_nolinger;
+		bool	dpb_reset_icu;
+		bool	dpb_map_attach;
+		ULONG	dpb_remote_flags;
+		ReplicaMode	dpb_replica_mode;
+		bool	dpb_set_db_replica;
 
-	void get(const UCHAR*, USHORT, bool&);
+		// here begin compound objects
+		// for constructor to work properly dpb_user_name
+		// MUST be FIRST
+		string	dpb_user_name;
+		AuthReader::AuthBlock	dpb_auth_block;
+		string	dpb_role_name;
+		string	dpb_journal;
+		string	dpb_lc_ctype;
+		PathName	dpb_working_directory;
+		string	dpb_set_db_charset;
+		string	dpb_network_protocol;
+		string	dpb_remote_address;
+		string	dpb_remote_host;
+		string	dpb_remote_os_user;
+		string	dpb_client_version;
+		string	dpb_remote_protocol;
+		string	dpb_trusted_login;
+		PathName	dpb_remote_process;
+		PathName	dpb_org_filename;
+		string	dpb_config;
+		string	dpb_session_tz;
+		string	dpb_time_zone_bind;
+		string	dpb_decfloat_bind;
+		string	dpb_decfloat_round;
+		string	dpb_decfloat_traps;
 
-	void setBuffers(RefPtr<const Config> config)
-	{
-		if (dpb_buffers == 0)
+	public:
+		static const ULONG DPB_FLAGS_MASK = DBB_damaged;
+
+		DatabaseOptions()
 		{
-			dpb_buffers = config->getDefaultDbCachePages();
-
-			if (dpb_buffers < MIN_PAGE_BUFFERS)
-				dpb_buffers = MIN_PAGE_BUFFERS;
-			if (dpb_buffers > MAX_PAGE_BUFFERS)
-				dpb_buffers = MAX_PAGE_BUFFERS;
+			memset(this, 0, reinterpret_cast<char*>(&this->dpb_user_name) - reinterpret_cast<char*>(this));
 		}
+
+		void get(const UCHAR*, USHORT, bool&);
+
+		void setBuffers(RefPtr<const Config> config)
+		{
+			if (dpb_buffers == 0)
+			{
+				dpb_buffers = config->getDefaultDbCachePages();
+
+				if (dpb_buffers < MIN_PAGE_BUFFERS)
+					dpb_buffers = MIN_PAGE_BUFFERS;
+				if (dpb_buffers > MAX_PAGE_BUFFERS)
+					dpb_buffers = MAX_PAGE_BUFFERS;
+			}
+		}
+
+	private:
+		void getPath(ClumpletReader& reader, PathName& s)
+		{
+			reader.getPath(s);
+			if (!dpb_utf8_filename)
+				ISC_systemToUtf8(s);
+			ISC_unescape(s);
+		}
+
+		void getString(ClumpletReader& reader, string& s)
+		{
+			reader.getString(s);
+			if (!dpb_utf8_filename)
+				ISC_systemToUtf8(s);
+			ISC_unescape(s);
+		}
+	};
+
+	Attachment::InitialOptions::InitialOptions(const DatabaseOptions& options)
+	{
+		if (options.dpb_time_zone_bind.hasData())
+		{
+			auto option = options.dpb_time_zone_bind;
+			option.lower();
+
+			if (option == "legacy")
+				timeZoneBind = TimeZoneUtil::BIND_LEGACY;
+			else if (option == "native")
+				timeZoneBind = TimeZoneUtil::BIND_NATIVE;
+			else
+				(Arg::Gds(isc_time_zone_bind) << option).raise();
+		}
+
+		if (options.dpb_decfloat_bind.hasData())
+		{
+			auto option = options.dpb_decfloat_bind;
+			option.lower();
+
+			if (option == "native")
+				decFloatBinding = DecimalBinding::DEFAULT;
+			else if (option == "char" || option == "character")
+				decFloatBinding = DecimalBinding(DecimalBinding::DEC_TEXT);
+			else if (option == "double" || option == "double precision")
+				decFloatBinding = DecimalBinding(DecimalBinding::DEC_DOUBLE);
+			else if (option == "bigint")
+				decFloatBinding = DecimalBinding(DecimalBinding::DEC_NUMERIC);
+			else if (option.substr(0, 7) == "bigint,")
+			{
+				const char* p = option.c_str() + 7;
+
+				while (*p == ' ')
+					++p;
+
+				const char* start = p;
+				int scale = 0;
+
+				while (*p >= '0' && *p <= '9')
+				{
+					scale = scale * 10 + (*p - '0');
+					++p;
+				}
+
+				if (*p != '\0' || p - start == 0 || p - start > 2 || scale > DecimalBinding::MAX_SCALE)
+					(Arg::Gds(isc_decfloat_bind) << option).raise();
+
+				decFloatBinding = DecimalBinding(DecimalBinding::DEC_NUMERIC, static_cast<SCHAR>(-scale));
+			}
+			else
+				(Arg::Gds(isc_decfloat_bind) << option).raise();
+		}
+
+		if (options.dpb_decfloat_round.hasData())
+		{
+			const DecFloatConstant* dfConst = DecFloatConstant::getByText(
+				options.dpb_decfloat_round.c_str(), FB_DEC_RoundModes, FB_DEC_RMODE_OFFSET);
+
+			if (!dfConst)
+				(Arg::Gds(isc_decfloat_round) << options.dpb_decfloat_round).raise();
+
+			decFloatStatus.roundingMode = dfConst->val;
+		}
+
+		if (options.dpb_decfloat_traps.hasData())
+		{
+			FB_SIZE_T pos = -1;
+			USHORT traps = 0;
+
+			do {
+				FB_SIZE_T start = pos + 1;
+				pos = options.dpb_decfloat_traps.find(',', start);
+
+				const auto trap = options.dpb_decfloat_traps.substr(start,
+					(pos == string::npos ? pos : pos - start));
+
+				const DecFloatConstant* dfConst = DecFloatConstant::getByText(
+					trap.c_str(), FB_DEC_IeeeTraps, FB_DEC_TRAPS_OFFSET);
+
+				if (!dfConst)
+					(Arg::Gds(isc_decfloat_trap) << trap).raise();
+
+				traps |= dfConst->val;
+
+				if (pos != string::npos)
+				{
+					const char* p = &options.dpb_decfloat_traps[pos + 1];
+
+					while (*p == ' ')
+					{
+						++p;
+						++pos;
+					}
+				}
+
+			} while (pos != string::npos);
+
+			decFloatStatus.decExtFlag = traps;
+		}
+
+		originalTimeZone = options.dpb_session_tz.isEmpty() ?
+			TimeZoneUtil::getSystemTimeZone() :
+			originalTimeZone = TimeZoneUtil::parse(
+				options.dpb_session_tz.c_str(), options.dpb_session_tz.length());
 	}
 
-private:
-	void getPath(ClumpletReader& reader, PathName& s)
+	void Attachment::InitialOptions::resetAttachment(Attachment* attachment) const
 	{
-		reader.getPath(s);
-		if (!dpb_utf8_filename)
-			ISC_systemToUtf8(s);
-		ISC_unescape(s);
-	}
+		// reset DecFloat options
+		attachment->att_dec_status = decFloatStatus;
+		attachment->att_dec_binding = decFloatBinding;
 
-	void getString(ClumpletReader& reader, string& s)
-	{
-		reader.getString(s);
-		if (!dpb_utf8_filename)
-			ISC_systemToUtf8(s);
-		ISC_unescape(s);
+		// reset time zone options
+		attachment->att_timezone_bind = timeZoneBind;
+		attachment->att_current_timezone = attachment->att_original_timezone = originalTimeZone;
 	}
-};
+}	// namespace Jrd
 
 /// trace manager support
 
@@ -6839,6 +6962,22 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			dpb_replica_mode = (ReplicaMode) rdr.getInt();
 			break;
 
+		case isc_dpb_time_zone_bind:
+			rdr.getString(dpb_time_zone_bind);
+			break;
+
+		case isc_dpb_decfloat_bind:
+			rdr.getString(dpb_decfloat_bind);
+			break;
+
+		case isc_dpb_decfloat_round:
+			rdr.getString(dpb_decfloat_round);
+			break;
+
+		case isc_dpb_decfloat_traps:
+			rdr.getString(dpb_decfloat_traps);
+			break;
+
 		default:
 			break;
 		}
@@ -7056,7 +7195,7 @@ static JAttachment* create_attachment(const PathName& alias_name,
 	RefDeb(DEB_AR_JATT, "jrd/create_attachment()");
 	fb_assert(dbb->locked());
 
-	Jrd::Attachment* attachment = NULL;
+	Attachment* attachment = NULL;
 	{ // scope
 		MutexLockGuard guard(newAttachmentMutex, FB_FUNCTION);
 		if (engineShutdown)
@@ -7064,7 +7203,8 @@ static JAttachment* create_attachment(const PathName& alias_name,
 			status_exception::raise(Arg::Gds(isc_att_shutdown));
 		}
 
-		attachment = Jrd::Attachment::create(dbb);
+		Attachment::InitialOptions initialOptions(options);
+		attachment = Attachment::create(dbb, &initialOptions);
 		attachment->att_next = dbb->dbb_attachments;
 		dbb->dbb_attachments = attachment;
 	}

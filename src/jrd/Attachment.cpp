@@ -84,13 +84,13 @@ CommitNumber ActiveSnapshots::getSnapshotForVersion(CommitNumber version_cn)
 
 
 // static method
-Jrd::Attachment* Jrd::Attachment::create(Database* dbb)
+Jrd::Attachment* Jrd::Attachment::create(Database* dbb, const InitialOptions* initialOptions)
 {
 	MemoryPool* const pool = dbb->createPool();
 
 	try
 	{
-		Attachment* const attachment = FB_NEW_POOL(*pool) Attachment(pool, dbb);
+		Attachment* const attachment = FB_NEW_POOL(*pool) Attachment(pool, dbb, initialOptions);
 		pool->setStatsGroup(attachment->att_memory_stats);
 		return attachment;
 	}
@@ -203,7 +203,7 @@ void Jrd::Attachment::backupStateReadUnLock(thread_db* tdbb)
 }
 
 
-Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
+Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, const InitialOptions* initialOptions)
 	: att_pool(pool),
 	  att_memory_stats(&dbb->dbb_memory_stats),
 	  att_database(dbb),
@@ -253,6 +253,11 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 {
 	att_internal.grow(irq_MAX);
 	att_dyn_req.grow(drq_MAX);
+
+	if (initialOptions)
+		att_initial_options = *initialOptions;
+
+	att_initial_options.resetAttachment(this);
 }
 
 
@@ -492,13 +497,7 @@ void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 		}
 	}
 
-	// reset DecFloat
-	att_dec_status = DecimalStatus::DEFAULT;
-	att_dec_binding = DecimalBinding::DEFAULT;
-
-	// reset time zone
-	att_timezone_bind = TimeZoneUtil::BIND_NATIVE;
-	att_current_timezone = att_original_timezone;
+	att_initial_options.resetAttachment(this);
 
 	// reset timeouts
 	setIdleTimeout(0);

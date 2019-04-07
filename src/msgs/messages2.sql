@@ -1042,6 +1042,8 @@ Data source : @4', NULL, NULL)
 ('tra_snapshot_does_not_exist', NULL, 'tpc.cpp', NULL, 0, 932, NULL, 'Transaction''s base snapshot number does not exist', NULL, NULL);
 ('eds_input_prm_not_used', NULL, 'ExtDS.cpp', NULL, 0, 933, NULL, 'Input parameter ''@1'' is not used in SQL query text', NULL, NULL);
 ('effective_user', NULL, NULL, NULL, 0, 934, NULL, 'Effective user is @1', NULL, NULL);
+('time_zone_bind', NULL, 'jrd.cpp', NULL, 0, 935, NULL, 'Invalid time zone bind mode @1', NULL, NULL);
+('decfloat_bind', NULL, 'jrd.cpp', NULL, 0, 936, NULL, 'Invalid decfloat bind mode @1', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

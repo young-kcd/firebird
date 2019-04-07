@@ -150,6 +150,7 @@ const ULONG ATT_crypt_thread		= 0x80000L; // Attachment from crypt thread
 const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
 
 class Attachment;
+class DatabaseOptions;
 struct bid;
 
 
@@ -349,8 +350,28 @@ public:
 		Firebird::Array<Firebird::MetaName> m_objects;
 	};
 
+	class InitialOptions
+	{
+	public:
+		InitialOptions(const DatabaseOptions& options);
+
+		InitialOptions()
+		{
+		}
+
+	public:
+		void resetAttachment(Attachment* attachment) const;
+
+	private:
+		Firebird::DecimalStatus decFloatStatus = Firebird::DecimalStatus::DEFAULT;
+		Firebird::DecimalBinding decFloatBinding = Firebird::DecimalBinding::DEFAULT;
+
+		Firebird::TimeZoneUtil::Bind timeZoneBind = Firebird::TimeZoneUtil::BIND_NATIVE;
+		USHORT originalTimeZone = Firebird::TimeZoneUtil::GMT_ZONE;
+	};
+
 public:
-	static Attachment* create(Database* dbb);
+	static Attachment* create(Database* dbb, const InitialOptions* initialOptions);
 	static void destroy(Attachment* const attachment);
 
 	MemoryPool* const att_pool;					// Memory pool
@@ -572,7 +593,7 @@ public:
 	UserId* getUserId(const Firebird::MetaName &userName);
 
 private:
-	Attachment(MemoryPool* pool, Database* dbb);
+	Attachment(MemoryPool* pool, Database* dbb, const InitialOptions* initialOptions);
 	~Attachment();
 
 	class IdleTimer FB_FINAL :
@@ -608,6 +629,7 @@ private:
 	Firebird::RefPtr<IdleTimer> att_idle_timer;
 
 	Firebird::Array<JBatch*> att_batches;
+	InitialOptions att_initial_options;		// Initial session options
 };
 
 

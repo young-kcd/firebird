@@ -4712,7 +4712,7 @@ void Database::garbage_collector(Database* dbb)
 		UserId user;
 		user.setUserName("Garbage Collector");
 
-		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
+		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb, nullptr);
 		RefPtr<SysStableAttachment> sAtt(FB_NEW SysStableAttachment(attachment));
 		attachment->setStable(sAtt);
 		attachment->att_filename = dbb->dbb_filename;

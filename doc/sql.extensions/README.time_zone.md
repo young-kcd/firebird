@@ -169,6 +169,8 @@ Old clients may not understand the new data types, so it's possible to define th
 
 The bind configuration is also applicable to input parameters.
 
+The initial configuration of time zone bind may be specified with DPB `isc_dpb_time_zone_bind` followed by a string with its value (case does not matter).
+
 #### Syntax
 
 ```

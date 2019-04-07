@@ -941,6 +941,8 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, '0B', '000', 0, 932, 'tra_snapshot_does_not_exist', NULL, NULL)
 (-901, '42', '000', 0, 933, 'eds_input_prm_not_used', NULL, NULL)
 (-551, '28', '000', 0, 934, 'effective_user', NULL, 'ERROR')
+(-901, '42', '000', 0, 935, 'time_zone_bind', NULL, NULL)
+(-901, '42', '000', 0, 936, 'decfloat_bind', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)

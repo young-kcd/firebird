@@ -125,6 +125,11 @@
 #define isc_dpb_map_attach                90
 #define isc_dpb_session_time_zone         91
 #define isc_dpb_set_db_replica            92
+#define isc_dpb_time_zone_bind            93
+#define isc_dpb_decfloat_bind             94
+#define isc_dpb_decfloat_round            95
+#define isc_dpb_decfloat_traps            96
+
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */

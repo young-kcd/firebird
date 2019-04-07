@@ -8,20 +8,20 @@ BIGINT (FB 1.5)
 
   Function:
     SQL99-compliant exact numeric type.
-	
+
   Author:
     Dmitry Yemanov <yemanov@yandex.ru>
-	
+
   Syntax rules:
     BIGINT
-	
+
   Storage:
     64-bit, signed
-	
+
   Example(s):
     1. DECLARE VARIABLE VAR1 BIGINT;
     2. CREATE TABLE TABLE1 (FIELD1 BIGINT);
-	
+
   Note(s):
     1. Available in Dialect 3 only.
     2. Quote from the SQL-99 specification:
@@ -145,7 +145,7 @@ DECFLOAT (FB 4.0)
     		COMPARE_DECFLOAT(2.17, 2.170) returns 2, not 0.
     	- NORMALIZE_DECFLOAT - has single DECFLOAT argument returned in it's simplest form.	That
     		means that for any nonzero value trailing zero are removed with appropriate correction
-    		of an exponent. For example NORMALIZE_DECFLOAT(12.00) returns 12 and 
+    		of an exponent. For example NORMALIZE_DECFLOAT(12.00) returns 12 and
     		NORMALIZE_DECFLOAT(120) returns 1.2E+2.
     	- QUANTIZE - has two DECFLOAT arguments. The returned value is first argument scaled using
     		second value as a pattern. For example QUANTIZE(1234, 9.999) returns 1234.000.
@@ -164,11 +164,16 @@ DECFLOAT (FB 4.0)
 				last digit in the result to be even), HALF_DOWN (to nearest, if equidistant - down),
 				DOWN (towards 0), FLOOR (towards -infinity), REROUND (up if digit to be rounded is
 				0 or 5, down in other cases). HALF_UP rounding is used by default.
+				The initial configuration may be specified with DPB isc_dpb_decfloat_round followed
+				by a string with its value (case does not matter).
 
 			SET DECFLOAT TRAPS TO <comma-separated traps list - may be empty> - controls which
 				exceptional conditions cause a trap. Valid traps are: Division_by_zero, Inexact,
 				Invalid_operation, Overflow and Underflow. By default traps are set to:
 				Division_by_zero, Invalid_operation, Overflow.
+				The initial configuration may be specified with DPB isc_dpb_decfloat_traps followed
+				by a comma-separated string with its value (case does not matter; using a single
+				optional space after commas).
 
 			SET DECFLOAT BIND <bind-type> - controls how are DECFLOAT values represented in outer
 				world (i.e. in messages or in XSQLDA). Valid binding types are: NATIVE (use IEEE754
@@ -182,6 +187,8 @@ DECFLOAT (FB 4.0)
 				required precision but range of values is very limited). When using in a tool like
 				generic purporse GUI client choice of CHAR binding is OK in most cases. By default
 				NATIVE binding is used.
+				The initial configuration may be specified with DPB isc_dpb_decfloat_bind followed
+				by a string with its value (case does not matter).
 
 	5.	The length of DECFLOAT literals are limited to 1024 characters. For longer values, you will
 			need to use the scientific notation. For example, the 0.0<1020 zeroes>11 cannot be used

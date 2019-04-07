@@ -2732,7 +2732,7 @@ void BufferControl::cache_reader(BufferControl* bcb)
 
 	// Dummy attachment needed for lock owner identification.
 	tdbb->setDatabase(dbb);
-	Jrd::Attachment* const attachment = Attachment::create(dbb);
+	Jrd::Attachment* const attachment = Attachment::create(dbb, nullptr);
 	tdbb->setAttachment(attachment);
 	attachment->att_filename = dbb->dbb_filename;
 	Jrd::ContextPoolHolder context(tdbb, bcb->bcb_bufferpool);
@@ -2882,7 +2882,7 @@ void BufferControl::cache_writer(BufferControl* bcb)
 		UserId user;
 		user.setUserName("Cache Writer");
 
-		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
+		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb, nullptr);
 		RefPtr<SysStableAttachment> sAtt(FB_NEW SysStableAttachment(attachment));
 		attachment->setStable(sAtt);
 		attachment->att_filename = dbb->dbb_filename;
