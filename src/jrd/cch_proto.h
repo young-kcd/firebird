@@ -31,6 +31,7 @@ namespace Ods {
 void		CCH_shutdown_database(Jrd::Database*);
 
 USHORT		CCH_checksum(Jrd::BufferDesc*);
+void		CCH_clean_page(Jrd::thread_db*, Jrd::PageNumber);
 int			CCH_down_grade_dbb(void*);
 bool		CCH_exclusive(Jrd::thread_db*, USHORT, SSHORT);
 bool		CCH_exclusive_attachment(Jrd::thread_db*, USHORT, SSHORT);

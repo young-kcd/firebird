@@ -1818,6 +1818,9 @@ void PAG_release_page(thread_db* tdbb, const PageNumber& number, const PageNumbe
 
 	CCH_RELEASE(tdbb, &pip_window);
 
+	if (pageSpace->isTemporary())
+		CCH_clean_page(tdbb, number);
+
 	pageSpace->pipHighWater = MIN(pageSpace->pipHighWater, sequence);
 }
 

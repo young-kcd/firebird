@@ -107,6 +107,7 @@ static tx_inv_page* fetch_inventory_page(thread_db*, WIN *, SLONG, USHORT);
 static const char* get_lockname_v3(const UCHAR lock);
 static SLONG inventory_page(thread_db*, SLONG);
 static SSHORT limbo_transaction(thread_db*, SLONG);
+static void release_temp_tables(thread_db*, jrd_tra*);
 static void restart_requests(thread_db*, jrd_tra*);
 static void start_sweeper(thread_db*);
 static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM);
@@ -1305,18 +1306,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, TraceTransac
 		}
 	}
 
-	{ // scope
-		vec<jrd_rel*>& rels = *dbb->dbb_relations;
-		for (size_t i = 0; i < rels.count(); i++)
-		{
-			jrd_rel* relation = rels[i];
-			if (relation && (relation->rel_flags & REL_temp_tran))
-			{
-				relation->delPages(tdbb, transaction->tra_number);
-			}
-		}
-
-	} // end scope
+	release_temp_tables(tdbb, transaction);
 
 	// Release the locks associated with the transaction
 
@@ -2604,6 +2594,31 @@ void jrd_tra::tra_abort(const char* reason)
 }
 
 
+static void release_temp_tables(thread_db* tdbb, jrd_tra* transaction)
+{
+/**************************************
+ *
+ *	r el e a s e _ t e m p _ t a b l e s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Release data of temporary tables with transaction lifetime
+ *
+ **************************************/
+	Database* dbb = tdbb->getDatabase();
+	vec<jrd_rel*>& rels = *dbb->dbb_relations;
+	for (size_t i = 0; i < rels.count(); i++)
+	{
+		jrd_rel* relation = rels[i];
+		if (relation && (relation->rel_flags & REL_temp_tran))
+		{
+			relation->delPages(tdbb, transaction->tra_number);
+		}
+	}
+}
+
+
 static void restart_requests(thread_db* tdbb, jrd_tra* trans)
 {
 /**************************************
@@ -2741,6 +2756,9 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, S
 		// Set the state on the inventory page
 		TRA_set_state(tdbb, transaction, old_number, state);
 	}
+
+	release_temp_tables(tdbb, transaction);
+
 	transaction->tra_number = new_number;
 
 	// Release transaction lock since it isn't needed

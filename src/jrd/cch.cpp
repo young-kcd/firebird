@@ -355,6 +355,69 @@ USHORT CCH_checksum(BufferDesc* bdb)
 }
 
 
+void CCH_clean_page(thread_db* tdbb, PageNumber page)
+{
+/**************************************
+ *  C C H _ c l e a n _ p a g e
+ **************************************
+ *
+ * Functional description
+ *  Clear dirty status and dependencies. Buffer must be unused.
+ *  If buffer with given page number is not found - it is OK, do nothing.
+ *  Used to remove dirty pages from cache after releasing temporary objects.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
+
+	fb_assert(page.getPageNum() > 0);
+	fb_assert(page.getPageSpaceID() >= TEMP_PAGE_SPACE);
+	if (page.getPageSpaceID() < TEMP_PAGE_SPACE)
+		return;
+
+	BufferControl* bcb = dbb->dbb_bcb;
+
+	QUE mod_que = &bcb->bcb_rpt[page.getPageNum() % bcb->bcb_count].bcb_page_mod;
+	QUE que_inst = mod_que->que_forward;
+	for (; que_inst != mod_que; que_inst = que_inst->que_forward)
+	{
+		BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_que);
+		if (bdb->bdb_page != page)
+			continue;
+
+		fb_assert(bdb->bdb_use_count == 0);
+		if (latch_bdb(tdbb, LATCH_exclusive, bdb, page, 0) != 0)
+			return;
+
+		if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty))
+		{
+			bdb->bdb_difference_page = 0;
+			bdb->bdb_transactions = bdb->bdb_mark_transaction = 0;
+#ifdef DIRTY_LIST
+			if (!(dbb->dbb_bcb->bcb_flags & BCB_keep_pages)) {
+				removeDirty(dbb->dbb_bcb, bdb);
+			}
+#endif
+#ifdef DIRTY_TREE
+			if (!(dbb->dbb_bcb->bcb_flags & BCB_keep_pages) &&
+				(bdb->bdb_parent || bdb == dbb->dbb_bcb->bcb_btree))
+			{
+				btc_remove(bdb);
+			}
+#endif
+			bdb->bdb_flags &= ~(BDB_must_write | BDB_system_dirty);
+			clear_dirty_flag(tdbb, bdb);
+		}
+
+		clear_precedence(tdbb, bdb);
+		QUE_LEAST_RECENTLY_USED(bdb->bdb_in_use);
+
+		release_bdb(tdbb, bdb, true, false, false);
+		break;
+	}
+}
+
+
 int CCH_down_grade_dbb(void* ast_object)
 {
 /**************************************
