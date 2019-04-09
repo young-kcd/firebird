@@ -144,6 +144,8 @@ void ConfigStorage::shutdown()
 	if (!m_timer)
 		return;
 
+	MutexLockGuard localGuard(m_localMutex, FB_FUNCTION);
+
 	m_timer->stop();
 	m_timer = NULL;
 
@@ -290,6 +292,9 @@ void ConfigStorage::checkFile()
 
 void ConfigStorage::acquire()
 {
+	if (!m_sharedMemory)
+		(Arg::Gds(isc_random) << "Trace shared memory can not be accessed").raise();
+
 	fb_assert(m_recursive >= 0);
 	const ThreadId currTID = getThreadId();
 
@@ -309,6 +314,8 @@ void ConfigStorage::acquire()
 
 void ConfigStorage::release()
 {
+	fb_assert(m_sharedMemory);
+
 	fb_assert(m_recursive > 0);
 	fb_assert(m_mutexTID == getThreadId());
 

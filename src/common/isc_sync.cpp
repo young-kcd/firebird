@@ -1088,7 +1088,7 @@ namespace {
 #define PTHREAD_ERRNO(x) { int tmpState = (x); if (isPthreadError(tmpState, #x)) return tmpState; }
 #define LOG_PTHREAD_ERROR(x) isPthreadError((x), #x)
 #define PTHREAD_ERR_STATUS(x, v) { int tmpState = (x); if (tmpState) { error(v, #x, tmpState); return false; } }
-#define PTHREAD_ERR_RAISE(x) { int tmpState = (x); if (tmpState) { system_call_failed(#x, tmpState); } }
+#define PTHREAD_ERR_RAISE(x) { int tmpState = (x); if (tmpState) { system_call_failed::raise(#x, tmpState); } }
 
 #endif // USE_SHARED_FUTEX
 
@@ -2029,7 +2029,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 #ifdef BUGGY_LINUX_MUTEX
 				}
 #endif
-#endif
+#endif // HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL
 
 #ifdef USE_ROBUST_MUTEX
 #ifdef BUGGY_LINUX_MUTEX
