@@ -2598,7 +2598,7 @@ static void release_temp_tables(thread_db* tdbb, jrd_tra* transaction)
 {
 /**************************************
  *
- *	r el e a s e _ t e m p _ t a b l e s
+ *	r e l e a s e _ t e m p _ t a b l e s
  *
  **************************************
  *

@@ -132,6 +132,7 @@ static void prefetch_init(Prefetch*, thread_db*);
 static void prefetch_io(Prefetch*, ISC_STATUS *);
 static void prefetch_prologue(Prefetch*, SLONG *);
 #endif
+static void purgePrecedence(BufferControl*, BufferDesc*);
 static SSHORT related(BufferDesc*, const BufferDesc*, SSHORT, const ULONG);
 static void release_bdb(thread_db*, BufferDesc*, const bool, const bool, const bool);
 static void unmark(thread_db*, WIN*);
@@ -389,6 +390,19 @@ void CCH_clean_page(thread_db* tdbb, PageNumber page)
 		if (latch_bdb(tdbb, LATCH_exclusive, bdb, page, 0) != 0)
 			return;
 
+		// temporary pages should have no precedence relationship
+		if (!QUE_EMPTY(bdb->bdb_higher))
+			purgePrecedence(bcb, bdb);
+
+		fb_assert(QUE_EMPTY(bdb->bdb_higher));
+		fb_assert(QUE_EMPTY(bdb->bdb_lower));
+
+		if (!QUE_EMPTY(bdb->bdb_lower) || !QUE_EMPTY(bdb->bdb_higher))
+		{
+			release_bdb(tdbb, bdb, true, false, false);
+			return;
+		}
+
 		if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty))
 		{
 			bdb->bdb_difference_page = 0;
@@ -405,11 +419,10 @@ void CCH_clean_page(thread_db* tdbb, PageNumber page)
 				btc_remove(bdb);
 			}
 #endif
-			bdb->bdb_flags &= ~(BDB_must_write | BDB_system_dirty);
+			bdb->bdb_flags &= ~(BDB_must_write | BDB_system_dirty | BDB_db_dirty);
 			clear_dirty_flag(tdbb, bdb);
 		}
 
-		clear_precedence(tdbb, bdb);
 		QUE_LEAST_RECENTLY_USED(bdb->bdb_in_use);
 
 		release_bdb(tdbb, bdb, true, false, false);
