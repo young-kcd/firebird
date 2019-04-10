@@ -217,6 +217,20 @@ namespace fb_utils
 
 	// Frequently used actions with clumplets
 	bool isBpbSegmented(unsigned parLength, const unsigned char* par);
+
+	// RAII to call fb_shutdown() in utilities
+	class FbShutdown
+	{
+	public:
+		FbShutdown(int r)
+			: reason(r)
+		{ }
+
+		~FbShutdown();
+
+	private:
+		int reason;
+	};
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

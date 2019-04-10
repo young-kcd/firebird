@@ -1651,4 +1651,9 @@ bool isBpbSegmented(unsigned parLength, const unsigned char* par)
 	return type & isc_bpb_type_stream ? false : true;
 }
 
+FbShutdown::~FbShutdown()
+{
+	fb_shutdown(0, reason);
+}
+
 } // namespace fb_utils
