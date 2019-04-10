@@ -34,6 +34,7 @@
 #define ISQL_ISQL_H
 
 #include "../jrd/flags.h"
+#include "../jrd/constants.h"
 #include <stdlib.h>
 #include <firebird/Interface.h>
 
@@ -86,9 +87,16 @@ enum LegacyTables
 	ALL_objects
 };
 
-const size_t WORDLENGTH				= 32;
-// The worst case of a quoted identifier is 31 * 2 => 62 + 2 DQUOTES + TERM => 65.
-const size_t QUOTEDLENGTH			= 65;
+const size_t QUOTED_NAME_SIZE		= MAX_SQL_IDENTIFIER_SIZE + 2 /* quotes */;
+
+const size_t CHARSET_COLLATE_SIZE	=
+	(MAX_SQL_IDENTIFIER_LEN + 2 /* quotes */) * 2 +	// charset and collate names
+	14 +	// CHARACTER SET
+	9 +		// NOT NULL
+	8 +		// COLLATE
+	30 +	// extra space
+	1;		// null terminator
+
 static const char* const DEFTERM	= ";";
 static const char* const DEFCHARSET	= "NONE";
 const unsigned NULL_DISP_LEN		= 6;
@@ -274,7 +282,7 @@ const int MSG_ROLES					= 195;		// Roles:
 struct sqltypes
 {
 	int type;
-	SCHAR type_name[WORDLENGTH];
+	SCHAR type_name[QUOTED_NAME_SIZE];
 };
 
 //

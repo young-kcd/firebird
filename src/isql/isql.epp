@@ -643,7 +643,7 @@ int ISQL_main(int argc, char* argv[])
 #endif
 	atexit(&atexit_fb_shutdown);
 
-	TEXT tabname[WORDLENGTH];
+	TEXT tabname[MAX_SQL_IDENTIFIER_SIZE];
 	tabname[0] = '\0';
 
 	// Initialize globals
@@ -1250,8 +1250,8 @@ void ISQL_get_character_sets(SSHORT char_set_id, SSHORT collation, bool collate_
 			fb_utils::exact_name(COL.RDB$COLLATION_NAME);
 			fb_utils::exact_name(CST.RDB$DEFAULT_COLLATE_NAME);
 
-			char charSetName[QUOTEDLENGTH];
-			char collateName[QUOTEDLENGTH];
+			char charSetName[QUOTED_NAME_SIZE];
+			char collateName[QUOTED_NAME_SIZE];
 
 			if (quote && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
@@ -2073,7 +2073,7 @@ static processing_state add_row(TEXT* tabname)
 		return FAIL;
 	}
 
-	chop_at(tabname, QUOTEDLENGTH);
+	chop_at(tabname, QUOTED_NAME_SIZE);
 	if (tabname[0] != DBL_QUOTE)
 		IUTILS_make_upper(tabname);
 
@@ -2121,7 +2121,7 @@ static processing_state add_row(TEXT* tabname)
 
 	unsigned i_cols = 0;
 	{ // scope
-		char fldfixed[QUOTEDLENGTH];
+		char fldfixed[QUOTED_NAME_SIZE];
 		int i = 0;
 		for (unsigned i = 0; i < n_cols; ++i)
 		{
@@ -3666,12 +3666,12 @@ static processing_state copy_table(TEXT* source,
 		return END;
 	}
 
-	chop_at(source, QUOTEDLENGTH);
+	chop_at(source, QUOTED_NAME_SIZE);
 	if (source[0] != DBL_QUOTE)
 		IUTILS_make_upper(source);
 	/*
-	chop_at(source_tbl, WORDLENGTH);
-	TEXT source[QUOTEDLENGTH];
+	chop_at(source_tbl, MAX_SQL_IDENTIFIER_SIZE);
+	TEXT source[QUOTED_NAME_SIZE];
 	bool delimited_yes = source_tbl[0] == DBL_QUOTE;
 	if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
 		IUTILS_copy_SQL_id(source_tbl, source, DBL_QUOTE);
@@ -3683,12 +3683,12 @@ static processing_state copy_table(TEXT* source,
 	}
 	*/
 
-	chop_at(destination, QUOTEDLENGTH);
+	chop_at(destination, QUOTED_NAME_SIZE);
 	if (destination[0] != DBL_QUOTE)
 		IUTILS_make_upper(destination);
 	/*
-	chop_at(destination_tbl, WORDLENGTH);
-	TEXT destination[QUOTEDLENGTH];
+	chop_at(destination_tbl, MAX_SQL_IDENTIFIER_SIZE);
+	TEXT destination[QUOTED_NAME_SIZE];
 	delimited_yes = destination_tbl[0] == DBL_QUOTE;
 	if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
 		IUTILS_copy_SQL_id(destination_tbl, destination, DBL_QUOTE);
@@ -6482,10 +6482,10 @@ static processing_state newsize(const TEXT* colname, const TEXT* sizestr)
  *	Add a column name and print width to collist
  *
  **************************************/
-	if (!*colname || (strlen(colname) >= QUOTEDLENGTH))
+	if (!*colname || (strlen(colname) >= QUOTED_NAME_SIZE))
 		return ps_ERR;
 
-	char buf[QUOTEDLENGTH];
+	char buf[QUOTED_NAME_SIZE];
 	if (colname[0] == DBL_QUOTE)
 	{
 		strcpy(buf, colname);
@@ -6982,7 +6982,7 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 #ifdef DEV_BUILD
 				// If there is a table name, it follows
 				if (istable && (++i < argc) && (s = argv[i]) && *s)
-					fb_utils::copy_terminate(tabname, s, WORDLENGTH);
+					fb_utils::copy_terminate(tabname, s, MAX_SQL_IDENTIFIER_SIZE);
 #endif
 			}
 		}

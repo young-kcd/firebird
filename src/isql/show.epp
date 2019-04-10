@@ -748,8 +748,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 	BASED_ON RDB$USER_PRIVILEGES.RDB$GRANTOR prev_grantor;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$OBJECT_TYPE prev_object_type;
 	SCHAR buf_grantor[sizeof(prev_grantor) + 20];
-	SCHAR user_string[QUOTEDLENGTH + 20];
-	SCHAR obj_string[QUOTEDLENGTH + 20];
+	SCHAR user_string[QUOTED_NAME_SIZE + 20];
+	SCHAR obj_string[QUOTED_NAME_SIZE + 20];
 	bool first = true;
 
 	if (!*object)
@@ -2859,7 +2859,7 @@ static void show_charsets(const SCHAR* relation_name, const SCHAR* field_name,
 		END_ERROR;
 	}
 
-	TEXT char_sets[86];			// CHARACTER SET <name31> COLLATE <name31>
+	TEXT char_sets[CHARSET_COLLATE_SIZE];
 	char_sets[0] = 0;
 	if ((char_set_id != default_char_set_id) || collation)
 	{
@@ -4401,7 +4401,7 @@ static processing_state show_func(const SCHAR* funcname)
 
 				const SSHORT default_charset = ISQL_get_default_char_set_id();
 
-				TEXT charset_collation[86];		// CHARACTER SET <name31> COLLATE <name31>
+				TEXT charset_collation[CHARSET_COLLATE_SIZE];
 				charset_collation[0] = 0;
 
 				if ((charset != default_charset) || collation)
@@ -4587,7 +4587,7 @@ static processing_state show_generators(const SCHAR* object)
  **************************************/
 	bool found = false;
 	const char genIdStr[] = "SELECT GEN_ID(%s, 0) FROM RDB$DATABASE";
-	TEXT query[sizeof(genIdStr) + QUOTEDLENGTH], gen_name[QUOTEDLENGTH];
+	TEXT query[sizeof(genIdStr) + QUOTED_NAME_SIZE], gen_name[QUOTED_NAME_SIZE];
 
 	Firebird::RefPtr<Firebird::IMetadataBuilder>
 		mb(Firebird::REF_NO_INCR, fbMaster->getMetadataBuilder(fbStatus, 1));
@@ -5277,7 +5277,7 @@ static processing_state show_proc(const SCHAR* procname)
 
 				const SSHORT default_charset = ISQL_get_default_char_set_id();
 
-				TEXT charset_collation[86];		// CHARACTER SET <name31> COLLATE <name31>
+				TEXT charset_collation[CHARSET_COLLATE_SIZE];
 				charset_collation[0] = 0;
 
 				if ((charset != default_charset) || collation)
