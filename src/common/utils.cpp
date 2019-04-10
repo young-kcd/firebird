@@ -1646,4 +1646,9 @@ const char* dpbItemUpper(const char* s, FB_SIZE_T l, Firebird::string& buf)
 	return buf.c_str();
 }
 
+FbShutdown::~FbShutdown()
+{
+	fb_shutdown(0, reason);
+}
+
 } // namespace fb_utils
