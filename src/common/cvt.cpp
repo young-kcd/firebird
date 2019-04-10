@@ -787,7 +787,7 @@ void CVT_string_to_datetime(const dsc* desc,
 
 		if (p < end)
 		{
-			zone = TimeZoneUtil::parse(p, strlen(p));
+			zone = TimeZoneUtil::parse(p, end - p);
 
 			if (timezone_present)
 				*timezone_present = true;

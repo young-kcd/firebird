@@ -321,7 +321,7 @@ USHORT TimeZoneUtil::parse(const char* str, unsigned strLen)
 	int sign = 1;
 	bool signPresent = false;
 
-	if (*p == '-' || *p == '+')
+	if (p < end && (*p == '-' || *p == '+'))
 	{
 		signPresent = true;
 		sign = *p == '-' ? -1 : 1;
@@ -329,14 +329,14 @@ USHORT TimeZoneUtil::parse(const char* str, unsigned strLen)
 		skipSpaces(p, end);
 	}
 
-	if (signPresent || (*p >= '0' && *p <= '9'))
+	if (p < end && (signPresent || (*p >= '0' && *p <= '9')))
 	{
 		int tzh = parseNumber(p, end);
 		int tzm = 0;
 
 		skipSpaces(p, end);
 
-		if (*p == ':')
+		if (p < end && *p == ':')
 		{
 			++p;
 			skipSpaces(p, end);
