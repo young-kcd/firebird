@@ -227,7 +227,8 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_INTEGER,		"ExtConnPoolLifeTime",		(ConfigValue) 7200},
 	{TYPE_INTEGER,		"SnapshotsMemSize",			(ConfigValue) 65536}, // bytes
 	{TYPE_INTEGER,		"TipCacheBlockSize",		(ConfigValue) 4194304}, // bytes
-	{TYPE_BOOLEAN,		"ReadConsistency",			(ConfigValue) true}
+	{TYPE_BOOLEAN,		"ReadConsistency",			(ConfigValue) true},
+	{TYPE_BOOLEAN,		"ClearGTTAtRetaining",		(ConfigValue) false}
 };
 
 /******************************************************************************
@@ -886,4 +887,9 @@ int Config::getExtConnPoolLifeTime()
 bool Config::getReadConsistency() const
 {
 	return get<bool>(KEY_READ_CONSISTENCY);
+}
+
+bool Config::getClearGTTAtRetaining() const
+{
+	return get<bool>(KEY_CLEAR_GTT_RETAINING);
 }

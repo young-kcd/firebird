@@ -101,6 +101,8 @@ static tx_inv_page* fetch_inventory_page(thread_db*, WIN* window, ULONG sequence
 static const char* get_lockname_v3(const UCHAR lock);
 static ULONG inventory_page(thread_db*, ULONG);
 static int limbo_transaction(thread_db*, TraNumber id);
+static void release_temp_tables(thread_db*, jrd_tra*);
+static void retain_temp_tables(thread_db*, jrd_tra*, TraNumber);
 static void restart_requests(thread_db*, jrd_tra*);
 static void start_sweeper(thread_db*);
 static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM);
@@ -1254,18 +1256,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 		}
 	}
 
-	{ // scope
-		vec<jrd_rel*>& rels = *attachment->att_relations;
-
-		for (FB_SIZE_T i = 0; i < rels.count(); i++)
-		{
-			jrd_rel* relation = rels[i];
-
-			if (relation && (relation->rel_flags & REL_temp_tran))
-				relation->delPages(tdbb, transaction->tra_number);
-		}
-
-	} // end scope
+	release_temp_tables(tdbb, transaction);
 
 	// Release the locks associated with the transaction
 
@@ -1370,7 +1361,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		Savepoint::destroy(transaction->tra_save_point);
 		fb_assert(!transaction->tra_save_point);
 	}
-	else
+	else if (!retaining_flag)
 	{
 		// Remove undo data for GTT ON COMMIT DELETE ROWS as their data will be released
 		// at transaction end anyway and we don't need to waste time backing it out
@@ -2432,6 +2423,57 @@ void jrd_tra::tra_abort(const char* reason)
 }
 
 
+static void release_temp_tables(thread_db* tdbb, jrd_tra* transaction)
+{
+/**************************************
+ *
+ *	r e l e a s e _ t e m p _ t a b l e s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Release data of temporary tables with transaction lifetime
+ *
+ **************************************/
+	Attachment* att = tdbb->getAttachment();
+	vec<jrd_rel*>& rels = *att->att_relations;
+
+	for (FB_SIZE_T i = 0; i < rels.count(); i++)
+	{
+		jrd_rel* relation = rels[i];
+
+		if (relation && (relation->rel_flags & REL_temp_tran))
+			relation->delPages(tdbb, transaction->tra_number);
+	}
+}
+
+
+static void retain_temp_tables(thread_db* tdbb, jrd_tra* transaction, TraNumber new_number)
+{
+/**************************************
+ *
+ *	r e t a i n _ t e m p _ t a b l e s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Reassign instance of temporary tables with transaction lifetime to the new 
+ *  transaction number (see retain_context).
+ *
+ **************************************/
+	Attachment* att = tdbb->getAttachment();
+	vec<jrd_rel*>& rels = *att->att_relations;
+
+	for (FB_SIZE_T i = 0; i < rels.count(); i++)
+	{
+		jrd_rel* relation = rels[i];
+
+		if (relation && (relation->rel_flags & REL_temp_tran))
+			relation->retainPages(tdbb, transaction->tra_number, new_number);
+	}
+}
+
+
 static void restart_requests(thread_db* tdbb, jrd_tra* trans)
 {
 /**************************************
@@ -2557,6 +2599,11 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 		else
 			REPL_trans_rollback(tdbb, transaction);
 	}
+	if (dbb->dbb_config->getClearGTTAtRetaining())
+		release_temp_tables(tdbb, transaction);
+	else
+		retain_temp_tables(tdbb, transaction, new_number);
+
 	transaction->tra_number = new_number;
 
 	// Release transaction lock since it isn't needed

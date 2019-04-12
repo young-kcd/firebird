@@ -154,6 +154,7 @@ public:
 		KEY_SNAPSHOTS_MEM_SIZE,
 		KEY_TIP_CACHE_BLOCK_SIZE,
 		KEY_READ_CONSISTENCY,
+		KEY_CLEAR_GTT_RETAINING,
 		MAX_CONFIG_KEY		// keep it last
 	};
 
@@ -387,6 +388,8 @@ public:
 	ULONG getTipCacheBlockSize() const;
 
 	bool getReadConsistency() const;
+
+	bool getClearGTTAtRetaining() const;
 };
 
 // Implementation of interface to access master configuration file
