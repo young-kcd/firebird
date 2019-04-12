@@ -1631,6 +1631,12 @@ void PAG_release_pages(thread_db* tdbb, USHORT pageSpaceID, int cntRelease,
 		pageSpace->pipWithExtent.exchangeLower(sequence);
 
 	CCH_RELEASE(tdbb, &pip_window);
+
+	if (pageSpace->isTemporary())
+	{
+		for (int i = 0; i < cntRelease; i++)
+			CCH_clean_page(tdbb, PageNumber(pageSpaceID, pgNums[i]));
+	}
 }
 
 
