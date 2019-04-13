@@ -1536,6 +1536,8 @@ recreate_clause
 		{ $$ = newNode<RecreateSequenceNode>($2); }
 	| SEQUENCE generator_clause
 		{ $$ = newNode<RecreateSequenceNode>($2); }
+	| USER create_user_clause
+		{ $$ = newNode<RecreateUserNode>($2); }
 	;
 
 %type <ddlNode> create_or_alter

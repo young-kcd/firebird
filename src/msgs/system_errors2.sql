@@ -1334,6 +1334,7 @@ COMMIT WORK;
 (-901, '42', '000', 13, 1043, 'dsql_string_byte_length', NULL, NULL)
 (-901, '42', '000', 13, 1044, 'dsql_string_char_length', NULL, NULL)
 (-901, '07', '002', 13, 1045, 'dsql_max_nesting', NULL, NULL)
+(-901, '42', '000', 13, 1046, 'dsql_recreate_user_failed', NULL, NULL);
 -- GSEC
 (-901, '00', '000', 18, 15, 'gsec_cant_open_db', NULL, NULL)
 (-901, '00', '000', 18, 16, 'gsec_switches_error', NULL, NULL)

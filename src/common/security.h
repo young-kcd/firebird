@@ -160,7 +160,7 @@ class UserData :
 {
 public:
 	UserData()
-		: op(0), trustedAuth(0), authenticationBlock(*getDefaultMemoryPool())
+		: op(0), trustedAuth(0), silent(false), authenticationBlock(*getDefaultMemoryPool())
 	{ }
 
 	// IUser implementation
@@ -219,6 +219,7 @@ public:
 
 	unsigned int op;
 	int trustedAuth;
+	bool silent;
 	CharField user, pass, first, last, middle, com, attr;
 	IntField adm, act;
 	CharField database, dba, dbaPassword, role;

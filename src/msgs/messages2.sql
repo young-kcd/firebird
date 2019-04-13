@@ -2832,6 +2832,7 @@ ERROR: Backup incomplete', NULL, NULL);
 ('dsql_string_byte_length', NULL, 'Parser.cpp', NULL, 13, 1043, NULL, 'String literal with @1 bytes exceeds the maximum length of @2 bytes', NULL, NULL);
 ('dsql_string_char_length', NULL, 'Parser.cpp', NULL, 13, 1044, NULL, 'String literal with @1 characters exceeds the maximum length of @2 characters for the @3 character set', NULL, NULL);
 ('dsql_max_nesting', NULL, 'StmtNodes.cpp', NULL, 13, 1045, NULL, 'Too many BEGIN...END nesting. Maximum level is @1', NULL, NULL);
+('dsql_recreate_user_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1046, NULL, 'RECREATE USER @1 failed', NULL, NULL);
 -- SQLWARN
 (NULL, NULL, NULL, NULL, 14, 100, NULL, 'Row not found for fetch, update or delete, or the result of a query is an empty table.', NULL, NULL);
 (NULL, NULL, NULL, NULL, 14, 101, NULL, 'segment buffer length shorter than expected', NULL, NULL);

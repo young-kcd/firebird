@@ -11108,6 +11108,7 @@ string DropUserNode::internalPrint(NodePrinter& printer) const
 
 	NODE_PRINT(printer, name);
 	NODE_PRINT(printer, plugin);
+	NODE_PRINT(printer, silent);
 
 	return "DropUserNode";
 }
@@ -11134,6 +11135,7 @@ void DropUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 	userData->user.set(&statusWrapper, text.c_str());
 	userData->user.setEntered(&statusWrapper, 1);
 	userData->plugin = plugin;
+	userData->silent = silent;
 	check(&statusWrapper);
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_USER,

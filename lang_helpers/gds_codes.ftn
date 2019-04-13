@@ -2690,6 +2690,8 @@ C --
       PARAMETER (GDS__dsql_string_char_length          = 336397332)
       INTEGER*4 GDS__dsql_max_nesting                
       PARAMETER (GDS__dsql_max_nesting                 = 336397333)
+      INTEGER*4 GDS__dsql_recreate_user_failed       
+      PARAMETER (GDS__dsql_recreate_user_failed        = 336397334)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             

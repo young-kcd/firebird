@@ -2685,6 +2685,8 @@ const
 	gds_dsql_string_char_length          = 336397332;
 	isc_dsql_max_nesting                 = 336397333;
 	gds_dsql_max_nesting                 = 336397333;
+	isc_dsql_recreate_user_failed        = 336397334;
+	gds_dsql_recreate_user_failed        = 336397334;
 	isc_gsec_cant_open_db                = 336723983;
 	gds_gsec_cant_open_db                = 336723983;
 	isc_gsec_switches_error              = 336723984;

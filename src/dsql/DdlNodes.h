@@ -2225,7 +2225,8 @@ public:
 	DropUserNode(MemoryPool& p, const Firebird::MetaName& aName, const Firebird::MetaName* aPlugin = NULL)
 		: UserNode(p),
 		  name(p, upper(aName)),
-		  plugin(p)
+		  plugin(p),
+		  silent(false)
 	{
 		if (aPlugin)
 			plugin = *aPlugin;
@@ -2250,7 +2251,12 @@ protected:
 public:
 	const Firebird::MetaName name;
 	Firebird::MetaName plugin;
+	bool silent;
 };
+
+
+typedef RecreateNode<CreateAlterUserNode, DropUserNode, isc_dsql_recreate_user_failed>
+	RecreateUserNode;
 
 
 typedef Firebird::Pair<Firebird::NonPooled<char, ValueListNode*> > PrivilegeClause;
