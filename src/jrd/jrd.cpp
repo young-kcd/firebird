@@ -1074,7 +1074,7 @@ namespace Jrd
 			else if (option == "native")
 				timeZoneBind = TimeZoneUtil::BIND_NATIVE;
 			else
-				(Arg::Gds(isc_time_zone_bind) << option).raise();
+				(Arg::Gds(isc_invalid_time_zone_bind) << option).raise();
 		}
 
 		if (options.dpb_decfloat_bind.hasData())
@@ -1107,12 +1107,12 @@ namespace Jrd
 				}
 
 				if (*p != '\0' || p - start == 0 || p - start > 2 || scale > DecimalBinding::MAX_SCALE)
-					(Arg::Gds(isc_decfloat_bind) << option).raise();
+					(Arg::Gds(isc_invalid_decfloat_bind) << option).raise();
 
 				decFloatBinding = DecimalBinding(DecimalBinding::DEC_NUMERIC, static_cast<SCHAR>(-scale));
 			}
 			else
-				(Arg::Gds(isc_decfloat_bind) << option).raise();
+				(Arg::Gds(isc_invalid_decfloat_bind) << option).raise();
 		}
 
 		if (options.dpb_decfloat_round.hasData())
@@ -1121,7 +1121,7 @@ namespace Jrd
 				options.dpb_decfloat_round.c_str(), FB_DEC_RoundModes, FB_DEC_RMODE_OFFSET);
 
 			if (!dfConst)
-				(Arg::Gds(isc_decfloat_round) << options.dpb_decfloat_round).raise();
+				(Arg::Gds(isc_invalid_decfloat_round) << options.dpb_decfloat_round).raise();
 
 			decFloatStatus.roundingMode = dfConst->val;
 		}
@@ -1142,7 +1142,7 @@ namespace Jrd
 					trap.c_str(), FB_DEC_IeeeTraps, FB_DEC_TRAPS_OFFSET);
 
 				if (!dfConst)
-					(Arg::Gds(isc_decfloat_trap) << trap).raise();
+					(Arg::Gds(isc_invalid_decfloat_trap) << trap).raise();
 
 				traps |= dfConst->val;
 

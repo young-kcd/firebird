@@ -8321,7 +8321,7 @@ SetDecFloatRoundNode::SetDecFloatRoundNode(MemoryPool& pool, Firebird::MetaName*
 	fb_assert(name);
 	const DecFloatConstant* mode = DecFloatConstant::getByText(*name, FB_DEC_RoundModes, FB_DEC_RMODE_OFFSET);
 	if (!mode)
-		(Arg::Gds(isc_decfloat_round) << *name).raise();
+		(Arg::Gds(isc_invalid_decfloat_round) << *name).raise();
 	rndMode = mode->val;
 }
 
@@ -8341,7 +8341,7 @@ void SetDecFloatTrapsNode::trap(Firebird::MetaName* name)
 	fb_assert(name);
 	const DecFloatConstant* trap = DecFloatConstant::getByText(*name, FB_DEC_IeeeTraps, FB_DEC_TRAPS_OFFSET);
 	if (!trap)
-		(Arg::Gds(isc_decfloat_trap) << *name).raise();
+		(Arg::Gds(isc_invalid_decfloat_trap) << *name).raise();
 	traps |= trap->val;
 }
 

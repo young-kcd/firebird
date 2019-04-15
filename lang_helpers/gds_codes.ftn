@@ -1718,10 +1718,10 @@ C --
       PARAMETER (GDS__sysf_invalid_hash_algorithm      = 335545152)
       INTEGER*4 GDS__expression_eval_index           
       PARAMETER (GDS__expression_eval_index            = 335545153)
-      INTEGER*4 GDS__decfloat_trap                   
-      PARAMETER (GDS__decfloat_trap                    = 335545154)
-      INTEGER*4 GDS__decfloat_round                  
-      PARAMETER (GDS__decfloat_round                   = 335545155)
+      INTEGER*4 GDS__invalid_decfloat_trap           
+      PARAMETER (GDS__invalid_decfloat_trap            = 335545154)
+      INTEGER*4 GDS__invalid_decfloat_round          
+      PARAMETER (GDS__invalid_decfloat_round           = 335545155)
       INTEGER*4 GDS__sysf_invalid_first_last_part    
       PARAMETER (GDS__sysf_invalid_first_last_part     = 335545156)
       INTEGER*4 GDS__sysf_invalid_date_timestamp     
@@ -1920,10 +1920,10 @@ C --
       PARAMETER (GDS__eds_input_prm_not_used           = 335545253)
       INTEGER*4 GDS__effective_user                  
       PARAMETER (GDS__effective_user                   = 335545254)
-      INTEGER*4 GDS__time_zone_bind                  
-      PARAMETER (GDS__time_zone_bind                   = 335545255)
-      INTEGER*4 GDS__decfloat_bind                   
-      PARAMETER (GDS__decfloat_bind                    = 335545256)
+      INTEGER*4 GDS__invalid_time_zone_bind          
+      PARAMETER (GDS__invalid_time_zone_bind           = 335545255)
+      INTEGER*4 GDS__invalid_decfloat_bind           
+      PARAMETER (GDS__invalid_decfloat_bind            = 335545256)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

@@ -854,8 +854,8 @@ static const struct {
 	{335545151, "42000"}, // 831 subproc_not_impl
 	{335545152, "42000"}, // 832 sysf_invalid_hash_algorithm
 	{335545153, "42000"}, // 833 expression_eval_index
-	{335545154, "42000"}, // 834 decfloat_trap
-	{335545155, "42000"}, // 835 decfloat_round
+	{335545154, "42000"}, // 834 invalid_decfloat_trap
+	{335545155, "42000"}, // 835 invalid_decfloat_round
 	{335545156, "42000"}, // 836 sysf_invalid_first_last_part
 	{335545157, "42000"}, // 837 sysf_invalid_date_timestamp
 	{335545158, "HY104"}, // 838 precision_err2
@@ -955,8 +955,8 @@ static const struct {
 	{335545252, "0B000"}, // 932 tra_snapshot_does_not_exist
 	{335545253, "42000"}, // 933 eds_input_prm_not_used
 	{335545254, "28000"}, // 934 effective_user
-	{335545255, "42000"}, // 935 time_zone_bind
-	{335545256, "42000"}, // 936 decfloat_bind
+	{335545255, "42000"}, // 935 invalid_time_zone_bind
+	{335545256, "42000"}, // 936 invalid_decfloat_bind
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

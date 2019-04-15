@@ -858,8 +858,8 @@ Data source : @4"},		/* eds_statement */
 	{335545151, "Sub-procedure @1 was declared but not implemented"},		/* subproc_not_impl */
 	{335545152, "Invalid HASH algorithm @1"},		/* sysf_invalid_hash_algorithm */
 	{335545153, "Expression evaluation error for index \"@1\" on table \"@2\""},		/* expression_eval_index */
-	{335545154, "Invalid decfloat trap state @1"},		/* decfloat_trap */
-	{335545155, "Invalid decfloat rounding mode @1"},		/* decfloat_round */
+	{335545154, "Invalid decfloat trap state @1"},		/* invalid_decfloat_trap */
+	{335545155, "Invalid decfloat rounding mode @1"},		/* invalid_decfloat_round */
 	{335545156, "Invalid part @1 to calculate the @1 of a DATE/TIMESTAMP"},		/* sysf_invalid_first_last_part */
 	{335545157, "Expected DATE/TIMESTAMP value in @1"},		/* sysf_invalid_date_timestamp */
 	{335545158, "Precision must be from @1 to @2"},		/* precision_err2 */
@@ -959,8 +959,8 @@ Data source : @4"},		/* eds_statement */
 	{335545252, "Transaction's base snapshot number does not exist"},		/* tra_snapshot_does_not_exist */
 	{335545253, "Input parameter '@1' is not used in SQL query text"},		/* eds_input_prm_not_used */
 	{335545254, "Effective user is @1"},		/* effective_user */
-	{335545255, "Invalid time zone bind mode @1"},		/* time_zone_bind */
-	{335545256, "Invalid decfloat bind mode @1"},		/* decfloat_bind */
+	{335545255, "Invalid time zone bind mode @1"},		/* invalid_time_zone_bind */
+	{335545256, "Invalid decfloat bind mode @1"},		/* invalid_decfloat_bind */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

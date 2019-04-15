@@ -889,8 +889,8 @@ const ISC_STATUS isc_subfunc_not_impl                 = 335545150L;
 const ISC_STATUS isc_subproc_not_impl                 = 335545151L;
 const ISC_STATUS isc_sysf_invalid_hash_algorithm      = 335545152L;
 const ISC_STATUS isc_expression_eval_index            = 335545153L;
-const ISC_STATUS isc_decfloat_trap                    = 335545154L;
-const ISC_STATUS isc_decfloat_round                   = 335545155L;
+const ISC_STATUS isc_invalid_decfloat_trap            = 335545154L;
+const ISC_STATUS isc_invalid_decfloat_round           = 335545155L;
 const ISC_STATUS isc_sysf_invalid_first_last_part     = 335545156L;
 const ISC_STATUS isc_sysf_invalid_date_timestamp      = 335545157L;
 const ISC_STATUS isc_precision_err2                   = 335545158L;
@@ -990,8 +990,8 @@ const ISC_STATUS isc_bad_repl_handle                  = 335545251L;
 const ISC_STATUS isc_tra_snapshot_does_not_exist      = 335545252L;
 const ISC_STATUS isc_eds_input_prm_not_used           = 335545253L;
 const ISC_STATUS isc_effective_user                   = 335545254L;
-const ISC_STATUS isc_time_zone_bind                   = 335545255L;
-const ISC_STATUS isc_decfloat_bind                    = 335545256L;
+const ISC_STATUS isc_invalid_time_zone_bind           = 335545255L;
+const ISC_STATUS isc_invalid_decfloat_bind            = 335545256L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -2338,8 +2338,8 @@ const ISC_STATUS isc_err_max                          = 1423;
 #define isc_subproc_not_impl                 335545151L
 #define isc_sysf_invalid_hash_algorithm      335545152L
 #define isc_expression_eval_index            335545153L
-#define isc_decfloat_trap                    335545154L
-#define isc_decfloat_round                   335545155L
+#define isc_invalid_decfloat_trap            335545154L
+#define isc_invalid_decfloat_round           335545155L
 #define isc_sysf_invalid_first_last_part     335545156L
 #define isc_sysf_invalid_date_timestamp      335545157L
 #define isc_precision_err2                   335545158L
@@ -2439,8 +2439,8 @@ const ISC_STATUS isc_err_max                          = 1423;
 #define isc_tra_snapshot_does_not_exist      335545252L
 #define isc_eds_input_prm_not_used           335545253L
 #define isc_effective_user                   335545254L
-#define isc_time_zone_bind                   335545255L
-#define isc_decfloat_bind                    335545256L
+#define isc_invalid_time_zone_bind           335545255L
+#define isc_invalid_decfloat_bind            335545256L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
