@@ -540,7 +540,7 @@ haveLibrary() {
 fixTomMath() {
 	tm1=`checkLibName libtommath.so.1 | awk '{print $4}'`
 	[ -z "$tm1" ] && return
-	tm0=`basename $tm1 .1`.0
+	tm0=`dirname $tm1`/`basename $tm1 .1`.0
 	[ -e "$tm0" ] && return
 	ln -s $tm1 $tm0
 }
