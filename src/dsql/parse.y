@@ -448,8 +448,6 @@ using namespace Firebird;
 %token <metaNamePtr> ASIN
 %token <metaNamePtr> ATAN
 %token <metaNamePtr> ATAN2
-%token <metaNamePtr> BASE64_DECODE
-%token <metaNamePtr> BASE64_ENCODE
 %token <metaNamePtr> BIN_AND
 %token <metaNamePtr> BIN_OR
 %token <metaNamePtr> BIN_SHL
@@ -595,6 +593,8 @@ using namespace Firebird;
 
 // tokens added for Firebird 4.0
 
+%token <metaNamePtr> BASE64_DECODE
+%token <metaNamePtr> BASE64_ENCODE
 %token <metaNamePtr> BINARY
 %token <metaNamePtr> BIND
 %token <metaNamePtr> COMPARE_DECFLOAT
@@ -610,6 +610,8 @@ using namespace Firebird;
 %token <metaNamePtr> EXCLUDE
 %token <metaNamePtr> FIRST_DAY
 %token <metaNamePtr> FOLLOWING
+%token <metaNamePtr> HEX_DECODE
+%token <metaNamePtr> HEX_ENCODE
 %token <metaNamePtr> IDLE
 %token <metaNamePtr> INVOKER
 %token <metaNamePtr> IV
@@ -7936,6 +7938,8 @@ system_function_std_syntax
 	| EXP
 	| FLOOR
 	| GEN_UUID
+	| HEX_DECODE
+	| HEX_ENCODE
 	| LEFT
 	| LN
 	| LOG
@@ -8820,6 +8824,8 @@ non_reserved_word
 	| EXCLUDE
 	| FIRST_DAY
 	| FOLLOWING
+	| HEX_DECODE
+	| HEX_ENCODE
 	| IDLE
 	| INVOKER
 	| IV

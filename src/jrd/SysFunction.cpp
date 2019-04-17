@@ -220,6 +220,8 @@ void makeCeilFloor(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
 void makeDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeDecode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeEncode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeDecodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeEncodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeDecrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeEncrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeFirstLastDayResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
@@ -260,6 +262,8 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlDecode64(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlEncode64(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlDecodeHex(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlEncodeHex(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlDecrypt(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlEncrypt(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlRsaDecrypt(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
@@ -1244,13 +1248,13 @@ unsigned decodeLen(unsigned len)
 
 void makeDecode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
-	 fb_assert(argsCount == 1);
-	 if (args[0]->isBlob())
-	 	result->makeBlob(isc_blob_untyped, ttype_binary);
-	 else if (args[0]->isText())
-	 	result->makeVarying(decodeLen(args[0]->getStringLength()), ttype_binary);
-	 else
-	 	status_exception::raise(Arg::Gds(isc_tom_strblob));
+	fb_assert(argsCount == 1);
+	if (args[0]->isBlob())
+		result->makeBlob(isc_blob_untyped, ttype_binary);
+	else if (args[0]->isText())
+		result->makeVarying(decodeLen(args[0]->getStringLength()), ttype_binary);
+	else
+		status_exception::raise(Arg::Gds(isc_tom_strblob));
 
 	result->setNullable(args[0]->isNullable());
 }
@@ -1265,13 +1269,46 @@ unsigned encodeLen(unsigned len)
 
 void makeEncode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
-	 fb_assert(argsCount == 1);
-	 if (args[0]->isBlob())
-	 	result->makeBlob(isc_blob_text, ttype_ascii);
-	 else if (args[0]->isText())
-	 	result->makeVarying(encodeLen(args[0]->dsc_length), ttype_ascii);
-	 else
-	 	status_exception::raise(Arg::Gds(isc_tom_strblob));
+	fb_assert(argsCount == 1);
+	if (args[0]->isBlob())
+		result->makeBlob(isc_blob_text, ttype_ascii);
+	else if (args[0]->isText())
+		result->makeVarying(encodeLen(args[0]->dsc_length), ttype_ascii);
+	else
+		status_exception::raise(Arg::Gds(isc_tom_strblob));
+
+	result->setNullable(args[0]->isNullable());
+}
+
+
+void makeDecodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+{
+	fb_assert(argsCount == 1);
+	if (args[0]->isBlob())
+		result->makeBlob(isc_blob_untyped, ttype_binary);
+	else if (args[0]->isText())
+	{
+		unsigned len = args[0]->getStringLength();
+	 	if (len % 2 || !len)
+ 			status_exception::raise(Arg::Gds(isc_hex_len) << Arg::Num(len));
+		result->makeVarying(len / 2, ttype_binary);
+	}
+	else
+		status_exception::raise(Arg::Gds(isc_tom_strblob));
+
+	result->setNullable(args[0]->isNullable());
+}
+
+
+void makeEncodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
+{
+	fb_assert(argsCount == 1);
+	if (args[0]->isBlob())
+		result->makeBlob(isc_blob_text, ttype_ascii);
+	else if (args[0]->isText())
+		result->makeVarying(args[0]->dsc_length * 2, ttype_ascii);
+	else
+		status_exception::raise(Arg::Gds(isc_tom_strblob));
 
 	result->setNullable(args[0]->isNullable());
 }
@@ -3027,6 +3064,118 @@ dsc* evlDecode64(thread_db* tdbb, const SysFunction* function, const NestValueAr
 dsc* evlEncode64(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure)
 {
 	return evlEncodeDecode64(tdbb, true, function, args, impure);
+}
+
+
+UCHAR hexChar(UCHAR c)
+{
+	c &= 0xf;
+	return c + (c < 10 ? '0' : 'A' - 10);
+}
+
+UCHAR binChar(UCHAR c, unsigned p)
+{
+	if ('0' <= c && c <= '9')
+		return c - '0';
+
+	if ('A' <= c && c <= 'F')
+		return c + 10 - 'A';
+
+	if ('a' <= c && c <= 'f')
+		return c + 10 - 'a';
+
+	char s[2];
+	s[0] = c;
+	s[1] = 0;
+	(Arg::Gds(isc_hex_digit) << s << Arg::Num(p + 1)).raise();
+	return 0;		// warning silencer
+}
+
+dsc* evlEncodeDecodeHex(thread_db* tdbb, bool encodeFlag, const SysFunction* function, const NestValueArray& args, impure_value* impure)
+{
+	const dsc* arg = EVL_expr(tdbb, tdbb->getRequest(), args[0]);
+	if (!arg)	// return NULL if value is NULL
+		return NULL;
+
+	const unsigned BLOB_BUF = 4096;
+	UCHAR in[BLOB_BUF];
+	const UCHAR* ptr;
+	unsigned len = 0;
+	HalfStaticArray<UCHAR, BLOB_BUF> out;
+	UCHAR last;
+	AutoPtr<blb> inBlob, outBlob;
+
+	if (arg->isBlob())
+	{
+		inBlob.reset(blb::open2(tdbb, tdbb->getRequest()->req_transaction,
+			reinterpret_cast<const bid*>(arg->dsc_address), sizeof(streamBpb), streamBpb));
+		outBlob.reset(blb::create2(tdbb, tdbb->getRequest()->req_transaction,
+			&impure->vlu_misc.vlu_bid, sizeof(streamBpb), streamBpb));
+	}
+	else
+		ptr = CVT_get_bytes(arg, len);
+
+	for(unsigned pos = 0;; --len, ++pos)
+	{
+		if (arg->isBlob() && !len)
+		{
+			len = inBlob->BLB_get_data(tdbb, in, sizeof in, false);
+			ptr = in;
+		}
+		if (!len)
+			break;
+
+		UCHAR c = *ptr++;
+		if (encodeFlag)
+		{
+			out.add(hexChar(c >> 4));
+			out.add(hexChar(c));
+		}
+		else
+		{
+			if (pos & 1)
+				out.add((last << 4) + binChar(c, pos));
+			else
+				last = binChar(c, pos);
+		}
+
+		if (out.getCount() >= BLOB_BUF && arg->isBlob())
+		{
+			outBlob->BLB_put_data(tdbb, out.begin(), out.getCount());
+			out.clear();
+		}
+	}
+
+	dsc result;
+	if (arg->isBlob())
+	{
+		if(out.hasData())
+			outBlob->BLB_put_data(tdbb, out.begin(), out.getCount());
+
+		outBlob->BLB_close(tdbb);
+		outBlob.release();
+
+		inBlob->BLB_close(tdbb);
+		inBlob.release();
+
+		result.makeBlob(encodeFlag ? isc_blob_text : isc_blob_untyped, encodeFlag ? ttype_ascii : ttype_binary,
+			(ISC_QUAD*)&impure->vlu_misc.vlu_bid);
+	}
+	else
+		result.makeText(out.getCount(), encodeFlag ? ttype_ascii : ttype_binary, const_cast<UCHAR*>(out.begin()));
+
+	EVL_make_value(tdbb, &result, impure);
+	return &impure->vlu_desc;
+}
+
+dsc* evlDecodeHex(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure)
+{
+	return evlEncodeDecodeHex(tdbb, false, function, args, impure);
+}
+
+dsc* evlEncodeHex(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure)
+{
+	return evlEncodeDecodeHex(tdbb, true, function, args, impure);
 }
 
 
@@ -5878,6 +6027,8 @@ const SysFunction SysFunction::functions[] =
 		{"FLOOR", 1, 1, setParamsDblDec, makeCeilFloor, evlFloor, NULL},
 		{"GEN_UUID", 0, 0, NULL, makeUuid, evlGenUuid, NULL},
 		{"HASH", 1, 2, NULL, makeHash, evlHash, NULL},
+		{"HEX_DECODE", 1, 1, NULL, makeDecodeHex, evlDecodeHex, NULL},
+		{"HEX_ENCODE", 1, 1, NULL, makeEncodeHex, evlEncodeHex, NULL},
 		{"LAST_DAY", 2, 2, setParamsFirstLastDay, makeFirstLastDayResult, evlFirstLastDay, (void*) funLastDay},
 		{"LEFT", 2, 2, setParamsSecondInteger, makeLeftRight, evlLeft, NULL},
 		{"LN", 1, 1, setParamsDblDec, makeDblDecResult, evlLnLog10, (void*) funLnat},

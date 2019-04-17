@@ -234,6 +234,8 @@ static const TOK tokens[] =
 	{TOK_GROUP, "GROUP", false},
 	{TOK_HASH, "HASH", true},
 	{TOK_HAVING, "HAVING", false},
+	{TOK_HEX_DECODE, "HEX_DECODE", true},
+	{TOK_HEX_ENCODE, "HEX_ENCODE", true},
 	{TOK_HOUR, "HOUR", false},
 	{TOK_IDENTITY, "IDENTITY", true},
 	{TOK_IDLE, "IDLE", true},
