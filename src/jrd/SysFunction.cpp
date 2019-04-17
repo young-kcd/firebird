@@ -3103,10 +3103,13 @@ dsc* evlEncodeDecodeHex(thread_db* tdbb, bool encodeFlag, const SysFunction* fun
 	unsigned len = 0;
 	HalfStaticArray<UCHAR, BLOB_BUF> out;
 	UCHAR last;
+	unsigned pos = 0;
 	AutoPtr<blb> inBlob, outBlob;
 
 	if (arg->isBlob())
 	{
+		// open all blobs as stream - that's perfectly OK for newly created blob with hex ascii
+		// and enables exact restore of binary blob up to segmented structure if present
 		inBlob.reset(blb::open2(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<const bid*>(arg->dsc_address), sizeof(streamBpb), streamBpb));
 		outBlob.reset(blb::create2(tdbb, tdbb->getRequest()->req_transaction,
@@ -3115,10 +3118,11 @@ dsc* evlEncodeDecodeHex(thread_db* tdbb, bool encodeFlag, const SysFunction* fun
 	else
 		ptr = CVT_get_bytes(arg, len);
 
-	for(unsigned pos = 0;; --len, ++pos)
+	for(;; --len, ++pos)
 	{
 		if (arg->isBlob() && !len)
 		{
+			// try to get next portion of data from the blob
 			len = inBlob->BLB_get_data(tdbb, in, sizeof in, false);
 			ptr = in;
 		}
@@ -3145,6 +3149,9 @@ dsc* evlEncodeDecodeHex(thread_db* tdbb, bool encodeFlag, const SysFunction* fun
 			out.clear();
 		}
 	}
+
+	if ((!encodeFlag) && (pos & 1))
+		status_exception::raise(Arg::Gds(isc_odd_hex_len) << Arg::Num(pos));
 
 	dsc result;
 	if (arg->isBlob())
