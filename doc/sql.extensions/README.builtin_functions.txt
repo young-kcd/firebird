@@ -575,6 +575,21 @@ Example:
     select hash(x using sha256) from y;
 
 
+-----------------------------
+HEX_ENCODE / HEX_DECODE
+-----------------------------
+
+Function:
+	Encodes / decodes input data to / from hexadecimal representation. Works with character strings and blobs.
+
+Format:
+	HEX_ENCODE( <binary data> )
+	HEX_DECODE( <hex data> )
+
+Example:
+	select hex_encode(public_key) from clients;
+
+
 --------
 LAST_DAY
 --------
