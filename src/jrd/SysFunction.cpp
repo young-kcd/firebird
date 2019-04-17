@@ -3087,7 +3087,7 @@ UCHAR binChar(UCHAR c, unsigned p)
 	char s[2];
 	s[0] = c;
 	s[1] = 0;
-	(Arg::Gds(isc_hex_digit) << s << Arg::Num(p + 1)).raise();
+	(Arg::Gds(isc_invalid_hex_digit) << s << Arg::Num(p + 1)).raise();
 	return 0;		// warning silencer
 }
 

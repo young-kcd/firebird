@@ -1926,8 +1926,8 @@ C --
       PARAMETER (GDS__invalid_decfloat_bind            = 335545256)
       INTEGER*4 GDS__odd_hex_len                     
       PARAMETER (GDS__odd_hex_len                      = 335545257)
-      INTEGER*4 GDS__hex_digit                       
-      PARAMETER (GDS__hex_digit                        = 335545258)
+      INTEGER*4 GDS__invalid_hex_digit               
+      PARAMETER (GDS__invalid_hex_digit                = 335545258)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

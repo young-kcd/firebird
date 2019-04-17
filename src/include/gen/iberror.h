@@ -993,7 +993,7 @@ const ISC_STATUS isc_effective_user                   = 335545254L;
 const ISC_STATUS isc_invalid_time_zone_bind           = 335545255L;
 const ISC_STATUS isc_invalid_decfloat_bind            = 335545256L;
 const ISC_STATUS isc_odd_hex_len                      = 335545257L;
-const ISC_STATUS isc_hex_digit                        = 335545258L;
+const ISC_STATUS isc_invalid_hex_digit                = 335545258L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -2444,7 +2444,7 @@ const ISC_STATUS isc_err_max                          = 1425;
 #define isc_invalid_time_zone_bind           335545255L
 #define isc_invalid_decfloat_bind            335545256L
 #define isc_odd_hex_len                      335545257L
-#define isc_hex_digit                        335545258L
+#define isc_invalid_hex_digit                335545258L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L

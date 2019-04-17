@@ -1921,8 +1921,8 @@ const
 	gds_invalid_decfloat_bind            = 335545256;
 	isc_odd_hex_len                      = 335545257;
 	gds_odd_hex_len                      = 335545257;
-	isc_hex_digit                        = 335545258;
-	gds_hex_digit                        = 335545258;
+	isc_invalid_hex_digit                = 335545258;
+	gds_invalid_hex_digit                = 335545258;
 	isc_gfix_db_name                     = 335740929;
 	gds_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;
