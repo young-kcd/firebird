@@ -958,7 +958,7 @@ static const struct {
 	{"effective_user", 335545254},
 	{"invalid_time_zone_bind", 335545255},
 	{"invalid_decfloat_bind", 335545256},
-	{"hex_len", 335545257},
+	{"odd_hex_len", 335545257},
 	{"hex_digit", 335545258},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},

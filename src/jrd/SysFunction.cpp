@@ -1290,7 +1290,7 @@ void makeDecodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
 	{
 		unsigned len = args[0]->getStringLength();
 	 	if (len % 2 || !len)
- 			status_exception::raise(Arg::Gds(isc_hex_len) << Arg::Num(len));
+ 			status_exception::raise(Arg::Gds(isc_odd_hex_len) << Arg::Num(len));
 		result->makeVarying(len / 2, ttype_binary);
 	}
 	else

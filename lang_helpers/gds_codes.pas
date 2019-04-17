@@ -1919,8 +1919,8 @@ const
 	gds_invalid_time_zone_bind           = 335545255;
 	isc_invalid_decfloat_bind            = 335545256;
 	gds_invalid_decfloat_bind            = 335545256;
-	isc_hex_len                          = 335545257;
-	gds_hex_len                          = 335545257;
+	isc_odd_hex_len                      = 335545257;
+	gds_odd_hex_len                      = 335545257;
 	isc_hex_digit                        = 335545258;
 	gds_hex_digit                        = 335545258;
 	isc_gfix_db_name                     = 335740929;

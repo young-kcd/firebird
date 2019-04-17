@@ -961,7 +961,7 @@ Data source : @4"},		/* eds_statement */
 	{335545254, "Effective user is @1"},		/* effective_user */
 	{335545255, "Invalid time zone bind mode @1"},		/* invalid_time_zone_bind */
 	{335545256, "Invalid decfloat bind mode @1"},		/* invalid_decfloat_bind */
-	{335545257, "Invalid hex text length @1, should be multiple of 2"},		/* hex_len */
+	{335545257, "Invalid hex text length @1, should be multiple of 2"},		/* odd_hex_len */
 	{335545258, "Invalid hex digit @1 at position @2"},		/* hex_digit */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
