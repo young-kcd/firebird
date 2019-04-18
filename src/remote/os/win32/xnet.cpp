@@ -344,14 +344,14 @@ rem_port* XNET_analyze(ClntAuthBlock* cBlock,
 			cBlock->storeDataForPlugin(packet->p_acpd.p_acpt_data.cstr_length,
 									   packet->p_acpd.p_acpt_data.cstr_address);
 			cBlock->authComplete = packet->p_acpd.p_acpt_authenticated;
-			cBlock->resetClnt(&file_name, &packet->p_acpd.p_acpt_keys);
+			cBlock->resetClnt(&packet->p_acpd.p_acpt_keys);
 		}
 		break;
 
 	case op_accept:
 		if (cBlock)
 		{
-			cBlock->resetClnt(&file_name);
+			cBlock->resetClnt();
 		}
 		accept = &packet->p_acpt;
 		break;

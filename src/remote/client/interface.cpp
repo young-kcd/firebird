@@ -7544,7 +7544,8 @@ ClntAuthBlock::ClntAuthBlock(const Firebird::PathName* fileName, Firebird::Clump
 			remAuthBlock.reset(FB_NEW RmtAuthBlock(plain));
 		}
 	}
-	resetClnt(fileName);
+	clntConfig = REMOTE_get_config(fileName, &dpbConfig);
+	resetClnt();
 }
 
 void ClntAuthBlock::resetDataFromPlugin()

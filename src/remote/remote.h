@@ -765,7 +765,7 @@ public:
 	void extractDataFromPluginTo(P_AUTH_CONT* to);
 	void loadClnt(Firebird::ClumpletWriter& dpb, const ParametersSet*);
 	void extractDataFromPluginTo(Firebird::ClumpletWriter& user_id);
-	void resetClnt(const Firebird::PathName* fileName, const CSTRING* listStr = NULL);
+	void resetClnt(const CSTRING* listStr = NULL);
 	bool checkPluginName(Firebird::PathName& nameToCheck);
 	Firebird::PathName getPluginName();
 	void tryNewKeys(rem_port*);
