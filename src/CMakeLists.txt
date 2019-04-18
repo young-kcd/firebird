@@ -462,6 +462,7 @@ file(GLOB engine_src
     "jrd/*.cpp"
     "jrd/extds/*.cpp"
     "jrd/recsrc/*.cpp"
+    "jrd/replication/*.cpp"
     "jrd/trace/*.cpp"
     "jrd/os/${OS_DIR}/*.cpp"
 )
