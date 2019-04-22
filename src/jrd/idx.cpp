@@ -153,6 +153,7 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 			if (!BTR_description(tdbb, referenced_relation, referenced_root,
 								 &referenced_idx, index_id))
 			{
+				CCH_RELEASE(tdbb, &referenced_window);
 				BUGCHECK(173);	// msg 173 referenced index description not found
 			}
 
@@ -205,10 +206,11 @@ bool IDX_check_master_types(thread_db* tdbb, index_desc& idx, jrd_rel* partner_r
 	index_root_page* root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_root);
 
 	// get the description of the partner index
-	if (!BTR_description(tdbb, partner_relation, root, &partner_idx, idx.idx_primary_index))
-		BUGCHECK(175);			// msg 175 partner index description not found
-
+	const bool ok = BTR_description(tdbb, partner_relation, root, &partner_idx, idx.idx_primary_index);
 	CCH_RELEASE(tdbb, &window);
+	
+	if (!ok)
+		BUGCHECK(175);			// msg 175 partner index description not found
 
 	// make sure partner index have the same segment count as our
 	fb_assert(idx.idx_count == partner_idx.idx_count);
@@ -1279,7 +1281,10 @@ static idx_e check_partner_index(thread_db* tdbb,
 
 	index_desc partner_idx;
 	if (!BTR_description(tdbb, partner_relation, root, &partner_idx, index_id))
+	{
+		CCH_RELEASE(tdbb, &window);
 		BUGCHECK(175);			// msg 175 partner index description not found
+	}
 
 	bool starting = false;
 	USHORT segment;
