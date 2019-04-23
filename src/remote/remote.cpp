@@ -963,7 +963,7 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
 	user_id.insertInt(CNCT_client_crypt, clntConfig->getWireCrypt(WC_CLIENT));
 }
 
-void ClntAuthBlock::resetClnt(const Firebird::PathName* fileName, const CSTRING* listStr)
+void ClntAuthBlock::resetClnt(const CSTRING* listStr)
 {
 	if (listStr)
 	{
@@ -986,7 +986,6 @@ void ClntAuthBlock::resetClnt(const Firebird::PathName* fileName, const CSTRING*
 	dataFromPlugin.clear();
 	firstTime = true;
 
-	clntConfig = REMOTE_get_config(fileName, &dpbConfig);
 	pluginList = dpbPlugins.hasData() ? dpbPlugins :
 		clntConfig->getPlugins(Firebird::IPluginManager::TYPE_AUTH_CLIENT);
 
