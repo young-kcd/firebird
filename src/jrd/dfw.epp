@@ -3017,6 +3017,34 @@ static void cleanup_index_creation(thread_db* tdbb, DeferredWork* work, jrd_tra*
 					IDXN.RDB$INDEX_ID.NULL = TRUE;
 				END_MODIFY
 			}
+
+			if (!IDXN.RDB$FOREIGN_KEY.NULL)
+			{
+				index_desc idx;
+				idx.idx_id = idx_invalid;
+				idx.idx_flags = idx_foreign;
+
+				jrd_rel* partner_relation = NULL;
+				if (MET_lookup_partner(tdbb, relation, &idx, work->dfw_name.c_str()))
+				{
+					partner_relation = MET_lookup_relation_id(tdbb, idx.idx_primary_relation, true);
+				}
+
+				if (partner_relation)
+				{
+					// signal to other processes about new constraint
+					relation->rel_flags |= REL_check_partners;
+					LCK_lock(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+					LCK_release(tdbb, relation->rel_partners_lock);
+
+					if (relation != partner_relation)
+					{
+						partner_relation->rel_flags |= REL_check_partners;
+						LCK_lock(tdbb, partner_relation->rel_partners_lock, LCK_EX, LCK_WAIT);
+						LCK_release(tdbb, partner_relation->rel_partners_lock);
+					}
+				}
+			}
 		}
 	}
 	END_FOR
