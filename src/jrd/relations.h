@@ -307,7 +307,7 @@ END_RELATION
 RELATION(nam_trans, rel_trans, ODS_8_0, rel_persistent)
 	FIELD(f_trn_id, nam_trans_id, fld_trans_id, 1, ODS_8_0)
 	FIELD(f_trn_state, nam_trans_state, fld_trans_state, 1, ODS_8_0)
-	FIELD(f_trn_time, nam_time, fld_time, 1, ODS_8_0)
+	FIELD(f_trn_time, nam_time, fld_timestamp_tz, 1, ODS_8_0)
 	FIELD(f_trn_desc, nam_trans_desc, fld_trans_desc, 1, ODS_8_0)
 END_RELATION
 
@@ -462,7 +462,7 @@ END_RELATION
 // Relation 32 (RDB$BACKUP_HISTORY)
 RELATION(nam_backup_history, rel_backup_history, ODS_11_0, rel_persistent)
 	FIELD(f_backup_id, nam_backup_id, fld_backup_id, 1, ODS_11_0)
-	FIELD(f_backup_time, nam_time, fld_time, 1, ODS_11_0)
+	FIELD(f_backup_time, nam_time, fld_timestamp_tz, 1, ODS_11_0)
 	FIELD(f_backup_level, nam_backup_level, fld_backup_level, 1, ODS_11_0)
 	FIELD(f_backup_guid, nam_guid, fld_guid, 1, ODS_11_0)
 	FIELD(f_backup_scn, nam_scn, fld_scn, 1, ODS_11_0)

@@ -2457,7 +2457,7 @@ static void retain_temp_tables(thread_db* tdbb, jrd_tra* transaction, TraNumber 
  **************************************
  *
  * Functional description
- *	Reassign instance of temporary tables with transaction lifetime to the new 
+ *	Reassign instance of temporary tables with transaction lifetime to the new
  *  transaction number (see retain_context).
  *
  **************************************/
