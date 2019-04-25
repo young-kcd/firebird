@@ -366,10 +366,10 @@ USHORT TimeZoneUtil::parseRegion(const char* str, unsigned strLen)
 		((*str >= 'a' && *str <= 'z') ||
 		 (*str >= 'A' && *str <= 'Z') ||
 		 *str == '_' ||
-		 *str == '/') ||
+		 *str == '/' ||
 		 (str != start && *str >= '0' && *str <= '9') ||
 		 (str != start && *str == '+') ||
-		 (str != start && *str == '-'))
+		 (str != start && *str == '-')))
 	{
 		++str;
 	}
