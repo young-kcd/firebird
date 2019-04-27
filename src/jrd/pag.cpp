@@ -1816,10 +1816,10 @@ void PAG_release_page(thread_db* tdbb, const PageNumber& number, const PageNumbe
 	pages->pip_bits[relative_bit >> 3] |= 1 << (relative_bit & 7);
 	pages->pip_min = MIN(pages->pip_min, relative_bit);
 
-	CCH_RELEASE(tdbb, &pip_window);
-
 	if (pageSpace->isTemporary())
 		CCH_clean_page(tdbb, number);
+
+	CCH_RELEASE(tdbb, &pip_window);
 
 	pageSpace->pipHighWater = MIN(pageSpace->pipHighWater, sequence);
 }
