@@ -288,6 +288,7 @@ private:
 		getEntryPoint("ucal_getDefaultTimeZone", inModule, ucalGetDefaultTimeZone);
 		getEntryPoint("ucal_open", inModule, ucalOpen);
 		getEntryPoint("ucal_close", inModule, ucalClose);
+		getEntryPoint("ucal_setAttribute", inModule, ucalSetAttribute);
 		getEntryPoint("ucal_setMillis", inModule, ucalSetMillis);
 		getEntryPoint("ucal_get", inModule, ucalGet);
 		getEntryPoint("ucal_setDateTime", inModule, ucalSetDateTime);

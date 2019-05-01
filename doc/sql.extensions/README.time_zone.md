@@ -14,6 +14,8 @@ A time zone may be a string with a time zone region (for example, `America/Sao_P
 
 A time/timestamp with time zone is considered equal to another time/timestamp with time zone if their conversion to UTC are equal, for example, `time '10:00 -02' = time '09:00 -03'`, since both are the same as `time '12:00 GMT'`. This is also valid in the context of `UNIQUE` constraints and for sorting purposes.
 
+Some timestamps does not exist (DST starting) or repeats twice (DST ending). For the first case, when DST starts in America/New_York, 2:30 AM on March 12, 2017 does not exist and is interpreted as 2:30 AM UTC-05 (equivalent to 3:30 AM UTC-04). For the second case, when DST ends in America/New_York, 1:30 AM on November 5, 2017 repeats twice and is interpreted as 1:30 AM UTC-04 instead of 1:30 AM UTC-05.
+
 
 ## Data types
 

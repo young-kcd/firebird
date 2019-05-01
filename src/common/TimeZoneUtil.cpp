@@ -564,6 +564,9 @@ void TimeZoneUtil::localTimeStampToUtc(ISC_TIMESTAMP_TZ& timeStampTz)
 		if (!icuCalendar)
 			status_exception::raise(Arg::Gds(isc_random) << "Error calling ICU's ucal_open.");
 
+		icuLib.ucalSetAttribute(icuCalendar, UCAL_REPEATED_WALL_TIME, UCAL_WALLTIME_FIRST);
+		icuLib.ucalSetAttribute(icuCalendar, UCAL_SKIPPED_WALL_TIME, UCAL_WALLTIME_FIRST);
+
 		icuLib.ucalSetDateTime(icuCalendar, 1900 + times.tm_year, times.tm_mon, times.tm_mday,
 			times.tm_hour, times.tm_min, times.tm_sec, &icuErrorCode);
 
