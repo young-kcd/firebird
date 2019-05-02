@@ -597,6 +597,8 @@ public:
 	USHORT req_recursive_ctx_id;		// id of recursive union stream context
 	const dsql_str* const* req_curr_cte_alias;
 
+	const dsql_str* req_temp_coll_name; // temporarily set in PASS1_node for nod_collate
+
 private:
 	Firebird::HalfStaticArray<dsql_nod*, 4> req_ctes; // common table expressions
 	Firebird::HalfStaticArray<const dsql_str*, 4> req_cte_aliases; // CTE aliases in recursive members

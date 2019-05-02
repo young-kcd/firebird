@@ -291,9 +291,6 @@ static dsql_nod* process_returning(CompiledStatement*, dsql_nod*);
 static void dump_context_stack(const DsqlContextStack* stack);
 #endif
 
-// CVC: more global variables???
-static const dsql_str* global_temp_collation_name = NULL;
-
 const char* DB_KEY_STRING	= "DB_KEY"; // NTX: pseudo field name
 const int MAX_MEMBER_LIST	= 1500;	// Maximum members in "IN" list.
 									// For eg. SELECT * FROM T WHERE
@@ -610,9 +607,11 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 		return node;
 
 	case nod_collate:
-		global_temp_collation_name = (dsql_str*) input->nod_arg[e_coll_target];
-		sub1 = PASS1_node(statement, input->nod_arg[e_coll_source]);
-		global_temp_collation_name = NULL;
+		{
+			const dsql_str* coll = (dsql_str*) input->nod_arg[e_coll_target];
+			AutoSetRestore<const dsql_str*> setColl(&statement->req_temp_coll_name, coll);
+			sub1 = PASS1_node(statement, input->nod_arg[e_coll_source]);
+		}
 		node = pass1_collate(statement, sub1, (dsql_str*) input->nod_arg[e_coll_target]);
 		return node;
 
@@ -3967,16 +3966,16 @@ static dsql_nod* pass1_constant( CompiledStatement* statement, dsql_nod* input)
 					  Arg::Gds(isc_charset_not_found) << Arg::Str(string->str_charset));
 		}
 
-		if (global_temp_collation_name)
+		if (statement->req_temp_coll_name)
 		{
 			const dsql_intlsym* resolved_collation =
-				METD_get_collation(statement, global_temp_collation_name, resolved->intlsym_charset_id);
+				METD_get_collation(statement, statement->req_temp_coll_name, resolved->intlsym_charset_id);
 			if (!resolved_collation)
 			{
 				// Specified collation not found
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 						  Arg::Gds(isc_dsql_datatype_err) <<
-						  Arg::Gds(isc_collation_not_found) << Arg::Str(global_temp_collation_name->str_data) <<
+						  Arg::Gds(isc_collation_not_found) << Arg::Str(statement->req_temp_coll_name->str_data) <<
 															   Arg::Str(resolved->intlsym_name));
 			}
 			resolved = resolved_collation;
