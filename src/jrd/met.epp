@@ -3029,17 +3029,26 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			{
 				procedure->prc_flags |= PRC_system;
 			}
+
 			if ( (procedure->prc_inputs = P.RDB$PROCEDURE_INPUTS) )
 			{
 				procedure->prc_input_fields =
 					vec<Parameter*>::newVector(*dbb->dbb_permanent, procedure->prc_input_fields,
 								   P.RDB$PROCEDURE_INPUTS);
 			}
+			if (procedure->prc_input_fields)
+			{
+				procedure->prc_input_fields->resize(procedure->prc_inputs);
+			}
 			if ( (procedure->prc_outputs = P.RDB$PROCEDURE_OUTPUTS) )
 			{
 				procedure->prc_output_fields =
 					vec<Parameter*>::newVector(*dbb->dbb_permanent, procedure->prc_output_fields,
 								   P.RDB$PROCEDURE_OUTPUTS);
+			}
+			if (procedure->prc_output_fields)
+			{
+				procedure->prc_output_fields->resize(procedure->prc_outputs);
 			}
 
 			vec<Parameter*>* paramVector = 0;
