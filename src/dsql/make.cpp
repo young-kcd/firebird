@@ -268,6 +268,39 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 
 /**
 
+ 	MAKE_desc_from_element
+
+    @brief	Compute a DSC from an element's description information.
+
+
+    @param desc
+    @param field
+
+ **/
+void MAKE_desc_from_element(dsc* desc, const dsql_fld* field)
+{
+
+	DEV_BLKCHK(field, dsql_type_fld);
+
+	desc->clear();
+	desc->dsc_dtype = static_cast<UCHAR>(field->elementDtype);
+	desc->dsc_scale = static_cast<SCHAR>(field->scale);
+	desc->dsc_sub_type = field->subType;
+	desc->dsc_length = field->elementLength;
+	desc->dsc_flags = (field->flags & FLD_nullable) ? DSC_nullable : 0;
+
+	if (desc->isText() || desc->isBlob())
+		desc->setTextType(INTL_CS_COLL_TO_TTYPE(field->charSetId.value, field->collationId));
+
+	// UNICODE_FSS_HACK
+	// check if the field is a system domain and CHARACTER SET is UNICODE_FSS
+	if (desc->isText() && (INTL_GET_CHARSET(desc) == CS_UNICODE_FSS) && (field->flags & FLD_system))
+		DataTypeUtilBase::adjustSysFieldLength(desc);
+}
+
+
+/**
+
  	MAKE_desc_from_list
 
     @brief	Make a descriptor from a list of values
@@ -323,20 +356,7 @@ FieldNode* MAKE_field(dsql_ctx* context, dsql_fld* field, ValueListNode* indices
 	{
 		if (indices)
 		{
-			MAKE_desc_from_field(&node->nodDesc, field);
-			node->nodDesc.dsc_dtype = static_cast<UCHAR>(field->elementDtype);
-			node->nodDesc.dsc_length = field->elementLength;
-
-			// node->nodDesc.dsc_scale = field->scale;
-			// node->nodDesc.dsc_sub_type = field->subType;
-
-			// UNICODE_FSS_HACK
-			// check if the field is a system domain and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
-			if ((field->flags & FLD_system) && node->nodDesc.dsc_dtype <= dtype_varying &&
-				INTL_GET_CHARSET(&node->nodDesc) == CS_METADATA)
-			{
-				DataTypeUtilBase::adjustSysFieldLength(&node->nodDesc);
-			}
+			MAKE_desc_from_element(&node->nodDesc, field);
 		}
 		else
 		{
