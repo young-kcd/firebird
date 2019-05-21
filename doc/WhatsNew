@@ -57,11 +57,6 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
-    * Bugfix CORE-5910
-        Server crashes after kill in EDS manager destructor
-      Contributor(s):
-        Vlad Khorsun <hvlad at users.sourceforge.net>
-
     * Bugfix CORE-5868
         fbintl exports internal functions on Darwin
       Contributor(s):
