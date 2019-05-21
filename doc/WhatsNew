@@ -1,4 +1,139 @@
   **************************
+  * v2.5.9
+  **************************
+
+    * Bugfix CORE-6064
+        Segfaults are possible when DDL operations are performed against Stored Procedures under multi-user load
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-6054
+        Random crash 64bit fb_inet_server (possible collation issue)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-6043
+        GTTs do not release used space
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-6015
+        Segfault when using expression index with complex expression
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-6007
+        Firebird does not build on Mac with fresh toolchain
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5980
+        Firebird crashes due to concurrent operations with expression indices
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5943
+        Server crashes preparing a query with both DISTINCT/ORDER BY and non-field expression in the select list
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5939
+        Crash for "gbak -se -b database nul"
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5936
+        Firebird server segfaults in the end of database backup
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5935
+        Bugcheck 165 (cannot find tip page)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5910
+        Server crashes after kill in EDS manager destructor
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5910
+        Server crashes after kill in EDS manager destructor
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5868
+        fbintl exports internal functions on Darwin
+      Contributor(s):
+        Paul Beach <pbeach at ibphoenix.com>
+
+    * Bugfix CORE-5847
+        "Malformed string" error instead of key value in PK violation error message
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5800
+        After backup/restore the indexes by expression on computed field are not working properly
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5762
+        Wrong transaction number in table RDB$PAGES may cause infinite recursion and segfault
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5757
+        Deadlock with events
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5685
+        Sometime it is impossible to cancel\kill connection executing external query
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-5118
+        Indices on computed fields are broken after restore (all keys are NULL)
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-5017
+        Interrupt of aux connection during TCP setup phase causes server exit due to unhandled exception
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-5014
+        Interrupt of aux connection during TCP setup phase causes unclear error messages in firebird.log
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4565
+        GDSCODE can have value = 0 in WHEN-section under some concurrent env., only in SC or CS (not in SS)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2440
+        Restoring DB with computed index on computed field provides wrong index and wrong select results
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-5853
+        Forward-compatible expressions LOCALTIME and LOCALTIMESTAMP
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Improvement CORE-5434
+        Read-only transactions in SuperServer could avoid immediate write of Header and TIP pages after change
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-2493
+        Append the IP address of the remote host to error messages in firebird.log for TCP connections
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+
+  **************************
   * v2.5.8
   **************************
 
