@@ -62,6 +62,33 @@
 using namespace Jrd;
 using namespace Firebird;
 
+namespace
+{
+	void composeDesc(dsc* desc,
+					 USHORT dtype,
+					 SSHORT scale,
+					 SSHORT subType,
+					 FLD_LENGTH length,
+					 const Nullable<SSHORT>& charsetId,
+					 SSHORT collationId,
+					 USHORT flags)
+	{
+		desc->clear();
+		desc->dsc_dtype = static_cast<UCHAR>(dtype);
+		desc->dsc_scale = static_cast<SCHAR>(scale);
+		desc->dsc_sub_type = subType;
+		desc->dsc_length = length;
+		desc->dsc_flags = (flags & FLD_nullable) ? DSC_nullable : 0;
+
+		if (desc->isText() || desc->isBlob())
+			desc->setTextType(INTL_CS_COLL_TO_TTYPE(charsetId.value, collationId));
+
+		// UNICODE_FSS_HACK
+		// check if the field is a system domain and CHARACTER SET is UNICODE_FSS
+		if (desc->isText() && (INTL_GET_CHARSET(desc) == CS_UNICODE_FSS) && (flags & FLD_system))
+			DataTypeUtilBase::adjustSysFieldLength(desc);
+	}
+}
 
 LiteralNode* MAKE_const_slong(SLONG value)
 {
@@ -235,49 +262,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, ValueExprNode* node)
 
 /**
 
-	MAKE_desc_from_field
-
-	@brief	Compute a DSC from a field's description information.
-
-
-	@param desc
-	@param field_dtype
-	@param field_scale
-	@param field_subType
-	@param field_length
-	@param field_flags
-	@param field_charSetId
-	@param field_collationId
-
- **/
-static void MAKE_desc_from_field
-				(dsc*            const   desc,
-				 USHORT          const   field_dtype,
-				 SSHORT          const   field_scale,
-				 SSHORT          const   field_subType,
-				 FLD_LENGTH      const   field_length,
-				 USHORT          const   field_flags,
-				 const Nullable<SSHORT>& field_charSetId,
-				 SSHORT          const   field_collationId)
-{
-	desc->clear();
-	desc->dsc_dtype = static_cast<UCHAR>(field_dtype);
-	desc->dsc_scale = static_cast<SCHAR>(field_scale);
-	desc->dsc_sub_type = field_subType;
-	desc->dsc_length = field_length;
-	desc->dsc_flags = (field_flags & FLD_nullable) ? DSC_nullable : 0;
-
-	if (desc->isText() || desc->isBlob())
-		desc->setTextType(INTL_CS_COLL_TO_TTYPE(field_charSetId.value, field_collationId));
-
-	// UNICODE_FSS_HACK
-	// check if the field is a system domain and CHARACTER SET is UNICODE_FSS
-	if (desc->isText() && (INTL_GET_CHARSET(desc) == CS_UNICODE_FSS) && (field_flags & FLD_system))
-		DataTypeUtilBase::adjustSysFieldLength(desc);
-}
-
-/**
-
  	MAKE_desc_from_field
 
     @brief	Compute a DSC from a field's description information.
@@ -289,18 +273,11 @@ static void MAKE_desc_from_field
  **/
 void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 {
-
 	DEV_BLKCHK(field, dsql_type_fld);
 
-	return MAKE_desc_from_field
-			(desc,
-			 field->dtype,
-			 field->scale,
-			 field->subType,
-			 field->length,
-			 field->flags,
-			 field->charSetId,
-			 field->collationId);
+	return composeDesc(desc,
+		field->dtype, field->scale, field->subType, field->length,
+		field->charSetId, field->collationId, field->flags);
 }
 
 
@@ -317,18 +294,11 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
  **/
 void MAKE_desc_from_element(dsc* desc, const dsql_fld* field)
 {
-
 	DEV_BLKCHK(field, dsql_type_fld);
 
-	return MAKE_desc_from_field
-			(desc,
-			 field->elementDtype,
-			 field->scale,
-			 field->subType,
-			 field->elementLength,
-			 field->flags,
-			 field->charSetId,
-			 field->collationId);
+	return composeDesc(desc,
+		field->elementDtype, field->scale, field->subType, field->elementLength,
+		field->charSetId, field->collationId, field->flags);
 }
 
 
