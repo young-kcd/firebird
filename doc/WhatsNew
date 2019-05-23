@@ -92,6 +92,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-5074
+        Lost the charset ID when selecting an array element
+      Contributor(s):
+        Dmitry Kovalenko <dmitry.lipetsk at gmail.com>
+
     * Bugfix CORE-5017
         Interrupt of aux connection during TCP setup phase causes server exit due to unhandled exception
       Contributor(s):
