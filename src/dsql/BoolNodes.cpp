@@ -409,7 +409,7 @@ BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	if (dsqlCheckBoolean)
 	{
 		dsc desc;
-		MAKE_desc(dsqlScratch, &desc, node->arg1);
+		DsqlDescMaker::fromNode(dsqlScratch, &desc, node->arg1);
 
 		if (desc.dsc_dtype != dtype_boolean && desc.dsc_dtype != dtype_unknown && !desc.isNull())
 		{
@@ -1335,7 +1335,7 @@ BoolExprNode* MissingBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	PASS1_set_parameter_type(dsqlScratch, node->arg, std::function<void (dsc*)>(nullptr), false);
 
 	dsc desc;
-	MAKE_desc(dsqlScratch, &desc, node->arg);
+	DsqlDescMaker::fromNode(dsqlScratch, &desc, node->arg);
 
 	if (dsqlUnknown && desc.dsc_dtype != dtype_boolean && !desc.isNull())
 	{

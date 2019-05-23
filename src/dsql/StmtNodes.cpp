@@ -2940,7 +2940,7 @@ ExecProcedureNode* ExecProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		{
 			DEV_BLKCHK(field, dsql_type_fld);
 			DEV_BLKCHK(*ptr, dsql_type_nod);
-			MAKE_desc_from_field(&desc_node, field);
+			DsqlDescMaker::fromField(&desc_node, field);
 			PASS1_set_parameter_type(dsqlScratch, *ptr,
 				[&] (dsc* desc) { *desc = desc_node; },
 				false);
@@ -3006,7 +3006,7 @@ ValueListNode* ExecProcedureNode::explodeOutputs(DsqlCompilerScratch* dsqlScratc
 			dsqlScratch->getStatement()->getReceiveMsg(), true, true, 0, NULL);
 		paramNode->dsqlParameterIndex = parameter->par_index;
 
-		MAKE_desc_from_field(&parameter->par_desc, field);
+		DsqlDescMaker::fromField(&parameter->par_desc, field);
 		parameter->par_name = parameter->par_alias = field->fld_name.c_str();
 		parameter->par_rel_name = procedure->prc_name.identifier.c_str();
 		parameter->par_owner_name = procedure->prc_owner.c_str();
@@ -4230,7 +4230,7 @@ ExecBlockNode* ExecBlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			dsc desc_node;
 
 			newParam->type->flags |= FLD_nullable;
-			MAKE_desc_from_field(&desc_node, newParam->type);
+			DsqlDescMaker::fromField(&desc_node, newParam->type);
 			PASS1_set_parameter_type(dsqlScratch, temp,
 				[&] (dsc* desc) { *desc = desc_node; },
 				false);
@@ -4357,8 +4357,7 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		dsql_par* param = MAKE_parameter(statement->getReceiveMsg(), true, true,
 			(i - dsqlScratch->outputVariables.begin()) + 1, varNode);
 		param->par_node = varNode;
-		MAKE_desc(dsqlScratch, &param->par_desc, varNode);
-		param->par_desc.dsc_flags |= DSC_nullable;
+		DsqlDescMaker::fromNode(dsqlScratch, &param->par_desc, varNode, true);
 	}
 
 	// Set up parameter to handle EOF
@@ -7612,7 +7611,7 @@ void SelectNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	{
 		dsql_par* parameter = MAKE_parameter(statement->getReceiveMsg(), true, true, 0, *ptr);
 		parameter->par_node = *ptr;
-		MAKE_desc(dsqlScratch, &parameter->par_desc, *ptr);
+		DsqlDescMaker::fromNode(dsqlScratch, &parameter->par_desc, *ptr);
 	}
 
 	// Set up parameter to handle EOF.
@@ -9155,7 +9154,7 @@ static VariableNode* dsqlPassHiddenVariable(DsqlCompilerScratch* dsqlScratch, Va
 	varNode->dsqlVar = dsqlScratch->makeVariable(NULL, "", dsql_var::TYPE_HIDDEN,
 		0, 0, dsqlScratch->hiddenVarsNumber++);
 
-	MAKE_desc(dsqlScratch, &varNode->dsqlVar->desc, expr);
+	DsqlDescMaker::fromNode(dsqlScratch, &varNode->dsqlVar->desc, expr);
 	varNode->nodDesc = varNode->dsqlVar->desc;
 
 	return varNode;
@@ -9321,8 +9320,7 @@ static StmtNode* dsqlProcessReturning(DsqlCompilerScratch* dsqlScratch, Returnin
 			dsql_par* parameter = MAKE_parameter(dsqlScratch->getStatement()->getReceiveMsg(),
 				true, true, 0, *src);
 			parameter->par_node = *src;
-			MAKE_desc(dsqlScratch, &parameter->par_desc, *src);
-			parameter->par_desc.dsc_flags |= DSC_nullable;
+			DsqlDescMaker::fromNode(dsqlScratch, &parameter->par_desc, *src, true);
 
 			ParameterNode* paramNode = FB_NEW_POOL(*tdbb->getDefaultPool()) ParameterNode(
 				*tdbb->getDefaultPool());

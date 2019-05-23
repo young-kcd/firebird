@@ -130,7 +130,7 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, ExprNode* node)
 		(compatDialectVerb = node->getCompatDialectVerb()))
 	{
 		dsc desc;
-		MAKE_desc(dsqlScratch, &desc, static_cast<ValueExprNode*>(node));
+		DsqlDescMaker::fromNode(dsqlScratch, &desc, static_cast<ValueExprNode*>(node));
 
 		if (desc.dsc_dtype == dtype_int64)
 		{

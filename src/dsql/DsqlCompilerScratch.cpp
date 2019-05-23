@@ -306,7 +306,7 @@ void DsqlCompilerScratch::putLocalVariables(CompoundStmtNode* parameters, USHORT
 
 			// Some field attributes are calculated inside putLocalVariable(), so we reinitialize
 			// the descriptor.
-			MAKE_desc_from_field(&variable->desc, field);
+			DsqlDescMaker::fromField(&variable->desc, field);
 
 			++locals;
 		}
@@ -425,7 +425,7 @@ dsql_var* DsqlCompilerScratch::makeVariable(dsql_fld* field, const char* name,
 	dsqlVar->field = field;
 
 	if (field)
-		MAKE_desc_from_field(&dsqlVar->desc, field);
+		DsqlDescMaker::fromField(&dsqlVar->desc, field);
 
 	if (type == dsql_var::TYPE_HIDDEN)
 		hiddenVariables.push(dsqlVar);

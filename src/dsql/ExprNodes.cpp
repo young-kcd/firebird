@@ -580,8 +580,8 @@ void ArithmeticNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	dsc desc1, desc2;
 
-	MAKE_desc(dsqlScratch, &desc1, arg1);
-	MAKE_desc(dsqlScratch, &desc2, arg2);
+	DsqlDescMaker::fromNode(dsqlScratch, &desc1, arg1);
+	DsqlDescMaker::fromNode(dsqlScratch, &desc2, arg2);
 
 	if (desc1.isNull())
 	{
@@ -3103,10 +3103,10 @@ void AtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 void AtNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	dsc dateTimeDesc, zoneDesc;
-	MAKE_desc(dsqlScratch, &dateTimeDesc, dateTimeArg);
+	DsqlDescMaker::fromNode(dsqlScratch, &dateTimeDesc, dateTimeArg);
 
 	if (zoneArg)
-		MAKE_desc(dsqlScratch, &zoneDesc, zoneArg);
+		DsqlDescMaker::fromNode(dsqlScratch, &zoneDesc, zoneArg);
 	else
 	{
 		zoneDesc.clear();
@@ -3356,8 +3356,8 @@ ValueExprNode* CastNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	DDL_resolve_intl_type(dsqlScratch, node->dsqlField, NULL);
 	node->setParameterType(dsqlScratch, NULL, false);
 
-	MAKE_desc_from_field(&node->castDesc, node->dsqlField);
-	MAKE_desc(dsqlScratch, &node->source->nodDesc, node->source);
+	DsqlDescMaker::fromField(&node->castDesc, node->dsqlField);
+	DsqlDescMaker::fromNode(dsqlScratch, &node->source->nodDesc, node->source);
 
 	node->castDesc.dsc_flags = node->source->nodDesc.dsc_flags & DSC_nullable;
 
@@ -3383,7 +3383,7 @@ bool CastNode::setParameterType(DsqlCompilerScratch* /*dsqlScratch*/,
 		if (parameter)
 		{
 			parameter->par_node = source;
-			MAKE_desc_from_field(&parameter->par_desc, dsqlField);
+			DsqlDescMaker::fromField(&parameter->par_desc, dsqlField);
 			if (!dsqlField->fullDomain)
 				parameter->par_desc.setNullable(true);
 			return true;
@@ -3639,7 +3639,7 @@ void CoalesceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void CoalesceNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	MAKE_desc_from_list(dsqlScratch, desc, args, "COALESCE");
+	DsqlDescMaker::fromList(dsqlScratch, desc, args, "COALESCE");
 }
 
 void CoalesceNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
@@ -3730,7 +3730,7 @@ ValueExprNode* CollateNode::pass1Collate(DsqlCompilerScratch* dsqlScratch, Value
 	dsql_fld* field = FB_NEW_POOL(pool) dsql_fld(pool);
 	CastNode* castNode = FB_NEW_POOL(pool) CastNode(pool, input, field);
 
-	MAKE_desc(dsqlScratch, &input->nodDesc, input);
+	DsqlDescMaker::fromNode(dsqlScratch, &input->nodDesc, input);
 
 	if (input->nodDesc.dsc_dtype <= dtype_any_text ||
 		(input->nodDesc.dsc_dtype == dtype_blob && input->nodDesc.dsc_sub_type == isc_blob_text))
@@ -3746,7 +3746,7 @@ ValueExprNode* CollateNode::pass1Collate(DsqlCompilerScratch* dsqlScratch, Value
 	}
 
 	DDL_resolve_intl_type(dsqlScratch, field, collation);
-	MAKE_desc_from_field(&castNode->castDesc, field);
+	DsqlDescMaker::fromField(&castNode->castDesc, field);
 
 	return castNode;
 }
@@ -3831,8 +3831,8 @@ void ConcatenateNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	dsc desc1, desc2;
 
-	MAKE_desc(dsqlScratch, &desc1, arg1);
-	MAKE_desc(dsqlScratch, &desc2, arg2);
+	DsqlDescMaker::fromNode(dsqlScratch, &desc1, arg1);
+	DsqlDescMaker::fromNode(dsqlScratch, &desc2, arg2);
 
 	if (desc1.isNull())
 	{
@@ -4685,7 +4685,7 @@ bool DecodeNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 			++i;
 		}
 
-		MAKE_desc_from_list(dsqlScratch, &node1Desc, node1, label.c_str());
+		DsqlDescMaker::fromList(dsqlScratch, &node1Desc, node1, label.c_str());
 
 		if (!node1Desc.isUnknown())
 		{
@@ -4731,8 +4731,7 @@ void DecodeNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void DecodeNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	MAKE_desc_from_list(dsqlScratch, desc, values, label.c_str());
-	desc->setNullable(true);
+	DsqlDescMaker::fromList(dsqlScratch, desc, values, label.c_str(), true);
 }
 
 void DecodeNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
@@ -5247,7 +5246,7 @@ ValueExprNode* ExtractNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	// sure the requested type of information can be extracted.
 
 	ValueExprNode* sub1 = doDsqlPass(dsqlScratch, arg);
-	MAKE_desc(dsqlScratch, &sub1->nodDesc, sub1);
+	DsqlDescMaker::fromNode(dsqlScratch, &sub1->nodDesc, sub1);
 
 	switch (blrSubOp)
 	{
@@ -5319,7 +5318,7 @@ void ExtractNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 void ExtractNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	dsc desc1;
-	MAKE_desc(dsqlScratch, &desc1, arg);
+	DsqlDescMaker::fromNode(dsqlScratch, &desc1, arg);
 
 	switch (blrSubOp)
 	{
@@ -6925,7 +6924,7 @@ void GenIdNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 	if (!implicit)
 	{
 		dsc desc1;
-		MAKE_desc(dsqlScratch, &desc1, arg);
+		DsqlDescMaker::fromNode(dsqlScratch, &desc1, arg);
 	}
 
 	if (dialect1)
@@ -8071,7 +8070,7 @@ ValueExprNode* DsqlAliasNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	DsqlAliasNode* node = FB_NEW_POOL(dsqlScratch->getPool()) DsqlAliasNode(dsqlScratch->getPool(), name,
 		doDsqlPass(dsqlScratch, value));
-	MAKE_desc(dsqlScratch, &node->value->nodDesc, node->value);
+	DsqlDescMaker::fromNode(dsqlScratch, &node->value->nodDesc, node->value);
 	return node;
 }
 
@@ -8088,7 +8087,7 @@ void DsqlAliasNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void DsqlAliasNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, value);
+	DsqlDescMaker::fromNode(dsqlScratch, desc, value);
 }
 
 
@@ -8249,7 +8248,7 @@ void DsqlMapNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void DsqlMapNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, map->map_node);
+	DsqlDescMaker::fromNode(dsqlScratch, desc, map->map_node);
 
 	// ASF: We should mark nod_agg_count as nullable when it's in an outer join - CORE-2660.
 	if (context->ctx_flags & CTX_outer_join)
@@ -8479,7 +8478,7 @@ void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void DerivedFieldNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, value);
+	DsqlDescMaker::fromNode(dsqlScratch, desc, value);
 }
 
 
@@ -8569,7 +8568,7 @@ void NegateNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void NegateNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, arg);
+	DsqlDescMaker::fromNode(dsqlScratch, desc, arg);
 
 	if (nodeIs<NullNode>(arg))
 	{
@@ -8970,7 +8969,7 @@ WindowClause* WindowClause::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			fb_assert(key);
 
 			dsc desc;
-			MAKE_desc(dsqlScratch, &desc, key->value);
+			DsqlDescMaker::fromNode(dsqlScratch, &desc, key->value);
 
 			if (!desc.isDateTime() && !desc.isNumeric())
 			{
@@ -8989,7 +8988,7 @@ WindowClause* WindowClause::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			if (frame && frame->value)
 			{
 				dsc desc;
-				MAKE_desc(dsqlScratch, &desc, frame->value);
+				DsqlDescMaker::fromNode(dsqlScratch, &desc, frame->value);
 
 				if (!desc.isNumeric())
 				{
@@ -9160,8 +9159,7 @@ void OverNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void OverNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, aggExpr);
-	desc->setNullable(true);
+	DsqlDescMaker::fromNode(dsqlScratch, desc, aggExpr, true);
 }
 
 void OverNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* /*desc*/)
@@ -10393,7 +10391,7 @@ void StrCaseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void StrCaseNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, arg);
+	DsqlDescMaker::fromNode(dsqlScratch, desc, arg);
 
 	if (desc->dsc_dtype > dtype_any_text && desc->dsc_dtype != dtype_blob)
 	{
@@ -10613,7 +10611,7 @@ void StrLenNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 void StrLenNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	dsc desc1;
-	MAKE_desc(dsqlScratch, &desc1, arg);
+	DsqlDescMaker::fromNode(dsqlScratch, &desc1, arg);
 
 	if (desc1.isBlob())
 		desc->makeInt64(0);
@@ -10885,12 +10883,11 @@ void SubQueryNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void SubQueryNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, value1);
-
 	// Set the descriptor flag as nullable. The select expression may or may not return this row
 	// based on the WHERE clause. Setting this flag warns the client to expect null values.
 	// (bug 10379)
-	desc->dsc_flags |= DSC_nullable;
+
+	DsqlDescMaker::fromNode(dsqlScratch, desc, value1, true);
 }
 
 bool SubQueryNode::dsqlAggregateFinder(AggregateFinder& visitor)
@@ -11379,12 +11376,12 @@ void SubstringNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	dsc desc1, desc2, desc3;
 
-	MAKE_desc(dsqlScratch, &desc1, expr);
-	MAKE_desc(dsqlScratch, &desc2, start);
+	DsqlDescMaker::fromNode(dsqlScratch, &desc1, expr);
+	DsqlDescMaker::fromNode(dsqlScratch, &desc2, start);
 
 	if (length)
 	{
-		MAKE_desc(dsqlScratch, &desc3, length);
+		DsqlDescMaker::fromNode(dsqlScratch, &desc3, length);
 
 		if (!nodeIs<LiteralNode>(length))
 			desc3.dsc_address = NULL;
@@ -11690,8 +11687,7 @@ void SubstringSimilarNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void SubstringSimilarNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, expr);
-	desc->setNullable(true);
+	DsqlDescMaker::fromNode(dsqlScratch, desc, expr, true);
 }
 
 void SubstringSimilarNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
@@ -11938,7 +11934,7 @@ void SysFuncCallNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 
 	for (auto& arg : args->items)
 	{
-		MAKE_desc(dsqlScratch, &arg->nodDesc, arg);
+		DsqlDescMaker::fromNode(dsqlScratch, &arg->nodDesc, arg);
 		argsArray.add(&arg->nodDesc);
 	}
 
@@ -12044,7 +12040,7 @@ ValueExprNode* SysFuncCallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		for (unsigned int i = 0; i < inList->items.getCount(); ++i)
 		{
 			ValueExprNode* p = inList->items[i];
-			MAKE_desc(dsqlScratch, &p->nodDesc, p);
+			DsqlDescMaker::fromNode(dsqlScratch, &p->nodDesc, p);
 			argsArray.add(&p->nodDesc);
 		}
 
@@ -12147,10 +12143,10 @@ void TrimNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	dsc desc1, desc2;
 
-	MAKE_desc(dsqlScratch, &desc1, value);
+	DsqlDescMaker::fromNode(dsqlScratch, &desc1, value);
 
 	if (trimChars)
-		MAKE_desc(dsqlScratch, &desc2, trimChars);
+		DsqlDescMaker::fromNode(dsqlScratch, &desc2, trimChars);
 	else
 		desc2.dsc_flags = 0;
 
@@ -13145,10 +13141,10 @@ void ValueIfNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	Array<const dsc*> args;
 
-	MAKE_desc(dsqlScratch, &trueValue->nodDesc, trueValue);
+	DsqlDescMaker::fromNode(dsqlScratch, &trueValue->nodDesc, trueValue);
 	args.add(&trueValue->nodDesc);
 
-	MAKE_desc(dsqlScratch, &falseValue->nodDesc, falseValue);
+	DsqlDescMaker::fromNode(dsqlScratch, &falseValue->nodDesc, falseValue);
 	args.add(&falseValue->nodDesc);
 
 	DSqlDataTypeUtil(dsqlScratch).makeFromList(desc, "CASE", args.getCount(), args.begin());

@@ -556,7 +556,7 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, RecordSourceNode*
 				 ++input, field = field->fld_next)
 			{
 				DEV_BLKCHK(field, dsql_type_fld);
-				MAKE_desc_from_field(&desc_node, field);
+				DsqlDescMaker::fromField(&desc_node, field);
 				PASS1_set_parameter_type(dsqlScratch, *input,
 					[&] (dsc* desc) { *desc = desc_node; },
 					false);
@@ -1142,7 +1142,7 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 		for (FB_SIZE_T count = 0; count < input->columns->getCount(); ++count)
 		{
 			ValueExprNode* select_item = rse->dsqlSelectList->items[count];
-			MAKE_desc(dsqlScratch, &select_item->nodDesc, select_item);
+			DsqlDescMaker::fromNode(dsqlScratch, &select_item->nodDesc, select_item);
 
 			// Make new derived field node.
 
@@ -1164,7 +1164,7 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 			// Auto-create dummy column name for pass1_any()
 			if (ignoreColumnChecks && !nodeIs<DerivedFieldNode>(select_item))
 			{
-				MAKE_desc(dsqlScratch, &select_item->nodDesc, select_item);
+				DsqlDescMaker::fromNode(dsqlScratch, &select_item->nodDesc, select_item);
 
 				// Construct dummy fieldname
 				char fieldname[25];
@@ -2524,7 +2524,7 @@ static RseNode* pass1_union(DsqlCompilerScratch* dsqlScratch, UnionSourceNode* i
 		for (FB_SIZE_T i = 0; i < unionSource->dsqlClauses->items.getCount(); ++i)
 		{
 			ValueListNode* nod1 = nodeAs<RseNode>(unionSource->dsqlClauses->items[i])->dsqlSelectList;
-			MAKE_desc(dsqlScratch, &nod1->items[j]->nodDesc, nod1->items[j]);
+			DsqlDescMaker::fromNode(dsqlScratch, &nod1->items[j]->nodDesc, nod1->items[j]);
 			tmp_list->items[i] = nod1->items[j];
 
 			// We look only at the items->nod_arg[] when creating the
@@ -2540,7 +2540,7 @@ static RseNode* pass1_union(DsqlCompilerScratch* dsqlScratch, UnionSourceNode* i
 		}
 
 		dsc desc;
-		MAKE_desc_from_list(dsqlScratch, &desc, tmp_list, "UNION");
+		DsqlDescMaker::fromList(dsqlScratch, &desc, tmp_list, "UNION");
 		// Only mark upper node as a NULL node when all sub-nodes are NULL
 		items->items[j]->nodDesc.dsc_flags &= ~DSC_null;
 		items->items[j]->nodDesc.dsc_flags |= (desc.dsc_flags & DSC_null);
@@ -2710,7 +2710,7 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, ExprNode* in
 			else
 			{
 				ValueExprNode* select_item = list->items[position];
-				MAKE_desc(dsqlScratch, &select_item->nodDesc, select_item);
+				DsqlDescMaker::fromNode(dsqlScratch, &select_item->nodDesc, select_item);
 
 				if (select_item->nodDesc.dsc_dtype != desc.dsc_dtype ||
 					select_item->nodDesc.dsc_length != desc.dsc_length ||
@@ -2901,7 +2901,7 @@ DsqlMapNode* PASS1_post_map(DsqlCompilerScratch* dsqlScratch, ValueExprNode* nod
 		map->map_window = windowMap;
 	}
 
-	MAKE_desc(dsqlScratch, &node->nodDesc, node);
+	DsqlDescMaker::fromNode(dsqlScratch, &node->nodDesc, node);
 
 	return FB_NEW_POOL(*tdbb->getDefaultPool()) DsqlMapNode(*tdbb->getDefaultPool(), context, map);
 }
@@ -2960,7 +2960,7 @@ bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, ValueExprNode* i
 
 	auto makeDesc = [&] (dsc* desc)
 		{
-			MAKE_desc(dsqlScratch, &node->nodDesc, node);
+			DsqlDescMaker::fromNode(dsqlScratch, &node->nodDesc, node);
 			*desc = node->nodDesc;
 		};
 

@@ -63,6 +63,77 @@
 using namespace Jrd;
 using namespace Firebird;
 
+// DsqlDescMaker methods
+
+void DsqlDescMaker::fromElement(dsc* desc, const dsql_fld* field)
+{
+	composeDesc(desc,
+		field->elementDtype, field->scale, field->subType, field->elementLength,
+		field->charSetId.value, field->collationId, field->flags & FLD_nullable);
+}
+
+void DsqlDescMaker::fromField(dsc* desc, const dsql_fld* field)
+{
+	composeDesc(desc,
+		field->dtype, field->scale, field->subType, field->length,
+		field->charSetId.value, field->collationId, field->flags & FLD_nullable);
+}
+
+void DsqlDescMaker::fromList(DsqlCompilerScratch* scratch, dsc* desc,
+							 ValueListNode* node, const char* expressionName,
+							 bool nullable)
+{
+	NestConst<ValueExprNode>* p = node->items.begin();
+	NestConst<ValueExprNode>* end = node->items.end();
+
+	Array<const dsc*> args;
+
+	while (p != end)
+	{
+		DsqlDescMaker::fromNode(scratch, &(*p)->nodDesc, *p);
+		args.add(&(*p)->nodDesc);
+		++p;
+	}
+
+	DSqlDataTypeUtil(scratch).makeFromList(desc, expressionName, args.getCount(), args.begin());
+
+	desc->dsc_flags |= nullable ? DSC_nullable : 0;
+}
+
+void DsqlDescMaker::fromNode(DsqlCompilerScratch* scratch, dsc* desc,
+							 ValueExprNode* node, bool nullable)
+{
+	DEV_BLKCHK(node, dsql_type_nod);
+
+	// If we already know the datatype, don't worry about anything.
+	if (node->nodDesc.dsc_dtype)
+		*desc = node->nodDesc;
+	else
+		node->make(scratch, desc);
+
+	desc->dsc_flags |= nullable ? DSC_nullable : 0;
+}
+
+void DsqlDescMaker::composeDesc(dsc* desc,
+								USHORT dtype,
+								SSHORT scale,
+								SSHORT subType,
+								FLD_LENGTH length,
+								SSHORT charsetId,
+								SSHORT collationId,
+								bool nullable)
+{
+	desc->clear();
+	desc->dsc_dtype = static_cast<UCHAR>(dtype);
+	desc->dsc_scale = static_cast<SCHAR>(scale);
+	desc->dsc_sub_type = subType;
+	desc->dsc_length = length;
+	desc->dsc_flags = nullable ? DSC_nullable : 0;
+
+	if (desc->isText() || desc->isBlob())
+		desc->setTextType(INTL_CS_COLL_TO_TTYPE(charsetId, collationId));
+}
+
 
 LiteralNode* MAKE_const_slong(SLONG value)
 {
@@ -280,82 +351,6 @@ LiteralNode* MAKE_str_constant(const IntlString* constant, SSHORT character_set)
 }
 
 
-// Make a descriptor from input node.
-void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, ValueExprNode* node)
-{
-	DEV_BLKCHK(node, dsql_type_nod);
-
-	// If we already know the datatype, don't worry about anything.
-	if (node->nodDesc.dsc_dtype)
-	{
-		*desc = node->nodDesc;
-		return;
-	}
-
-	node->make(dsqlScratch, desc);
-}
-
-
-/**
-
- 	MAKE_desc_from_field
-
-    @brief	Compute a DSC from a field's description information.
-
-
-    @param desc
-    @param field
-
- **/
-void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
-{
-
-	DEV_BLKCHK(field, dsql_type_fld);
-
-	desc->clear();
-	desc->dsc_dtype = static_cast<UCHAR>(field->dtype);
-	desc->dsc_scale = static_cast<SCHAR>(field->scale);
-	desc->dsc_sub_type = field->subType;
-	desc->dsc_length = field->length;
-	desc->dsc_flags = (field->flags & FLD_nullable) ? DSC_nullable : 0;
-
-	if (desc->isText() || desc->isBlob())
-		desc->setTextType(INTL_CS_COLL_TO_TTYPE(field->charSetId.value, field->collationId));
-}
-
-
-/**
-
- 	MAKE_desc_from_list
-
-    @brief	Make a descriptor from a list of values
-    according to the sql-standard.
-
-
-    @param desc
-    @param node
-	@param expression_name
-
- **/
-void MAKE_desc_from_list(DsqlCompilerScratch* dsqlScratch, dsc* desc, ValueListNode* node,
-	const TEXT* expression_name)
-{
-	NestConst<ValueExprNode>* p = node->items.begin();
-	NestConst<ValueExprNode>* end = node->items.end();
-
-	Array<const dsc*> args;
-
-	while (p != end)
-	{
-		MAKE_desc(dsqlScratch, &(*p)->nodDesc, *p);
-		args.add(&(*p)->nodDesc);
-		++p;
-	}
-
-	DSqlDataTypeUtil(dsqlScratch).makeFromList(desc, expression_name, args.getCount(), args.begin());
-}
-
-
 /**
 
  	MAKE_field
@@ -381,9 +376,7 @@ FieldNode* MAKE_field(dsql_ctx* context, dsql_fld* field, ValueListNode* indices
 	{
 		if (indices)
 		{
-			MAKE_desc_from_field(&node->nodDesc, field);
-			node->nodDesc.dsc_dtype = static_cast<UCHAR>(field->elementDtype);
-			node->nodDesc.dsc_length = field->elementLength;
+			DsqlDescMaker::fromElement(&node->nodDesc, field);
 		}
 		else
 		{
@@ -401,7 +394,7 @@ FieldNode* MAKE_field(dsql_ctx* context, dsql_fld* field, ValueListNode* indices
 					  Arg::Gds(isc_dsql_only_can_subscript_array) << Arg::Str(field->fld_name));
 		}
 
-		MAKE_desc_from_field(&node->nodDesc, field);
+		DsqlDescMaker::fromField(&node->nodDesc, field);
 	}
 
 	if ((field->flags & FLD_nullable) || (context->ctx_flags & CTX_outer_join))

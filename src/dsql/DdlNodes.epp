@@ -356,7 +356,7 @@ void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relati
 	// Try to calculate size of the computed field. The calculated size
 	// may be ignored, but it will catch self references.
 	dsc desc;
-	MAKE_desc(dsqlScratch, &desc, input);
+	DsqlDescMaker::fromNode(dsqlScratch, &desc, input);
 
 	// Generate the blr expression.
 
@@ -8151,7 +8151,7 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 					if (clause->computed && field->dtype == dtype_unknown)
 					{
 						dsc desc;
-						MAKE_desc(dsqlScratch, &desc, clause->computed->value);
+						DsqlDescMaker::fromNode(dsqlScratch, &desc, clause->computed->value);
 
 						field->dtype = desc.dsc_dtype;
 						field->length = desc.dsc_length;
@@ -9010,7 +9010,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 			// Get the type of the expression.
 			dsc desc;
-			MAKE_desc(dsqlScratch, &desc, fieldNode);
+			DsqlDescMaker::fromNode(dsqlScratch, &desc, fieldNode);
 
 			dsql_fld newField(*tdbb->getDefaultPool());
 			newField.dtype = desc.dsc_dtype;

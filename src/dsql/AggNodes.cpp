@@ -510,8 +510,7 @@ DmlNode* AvgAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 
 void AvgAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, arg);
-	desc->setNullable(true);
+	DsqlDescMaker::fromNode(dsqlScratch, desc, arg, true);
 
 	if (desc->isNull())
 		return;
@@ -753,7 +752,7 @@ DmlNode* ListAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 void ListAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, arg);
+	DsqlDescMaker::fromNode(dsqlScratch, desc, arg);
 	desc->makeBlob(desc->getBlobSubType(), desc->getTextType());
 	desc->setNullable(true);
 }
@@ -998,8 +997,7 @@ DmlNode* SumAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 
 void SumAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, arg);
-	desc->setNullable(true);
+	DsqlDescMaker::fromNode(dsqlScratch, desc, arg, true);
 
 	if (desc->isNull())
 		return;
@@ -1249,8 +1247,7 @@ DmlNode* MaxMinAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 
 void MaxMinAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, arg);
-	desc->setNullable(true);
+	DsqlDescMaker::fromNode(dsqlScratch, desc, arg, true);
 }
 
 void MaxMinAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
@@ -1349,8 +1346,7 @@ void StdDevAggNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned /*
 
 void StdDevAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, arg);
-	desc->setNullable(true);
+	DsqlDescMaker::fromNode(dsqlScratch, desc, arg, true);
 
 	if (desc->isNull())
 		return;
@@ -1558,8 +1554,7 @@ void CorrAggNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned /*co
 
 void CorrAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, arg);
-	desc->setNullable(true);
+	DsqlDescMaker::fromNode(dsqlScratch, desc, arg, true);
 
 	if (desc->isNull())
 		return;
@@ -1835,8 +1830,7 @@ void RegrAggNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned /*co
 
 void RegrAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, arg);
-	desc->setNullable(true);
+	DsqlDescMaker::fromNode(dsqlScratch, desc, arg, true);
 
 	if (desc->isNull())
 		return;
