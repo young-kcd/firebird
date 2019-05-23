@@ -61,6 +61,7 @@ Jrd::dsql_nod* MAKE_constant(Jrd::dsql_str*, Jrd::dsql_constant_type);
 Jrd::dsql_nod* MAKE_str_constant(Jrd::dsql_str*, SSHORT);
 Jrd::dsql_str* MAKE_cstring(const char*);
 void MAKE_desc(Jrd::CompiledStatement*, dsc*, Jrd::dsql_nod*, Jrd::dsql_nod*);
+void MAKE_desc_from_element(dsc*, const Jrd::dsql_fld*);
 void MAKE_desc_from_field(dsc*, const Jrd::dsql_fld*);
 void MAKE_desc_from_list(Jrd::CompiledStatement*, dsc*, Jrd::dsql_nod*, Jrd::dsql_nod*, const TEXT*);
 Jrd::dsql_nod* MAKE_field(Jrd::dsql_ctx*, Jrd::dsql_fld*, Jrd::dsql_nod*);

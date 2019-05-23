@@ -78,6 +78,40 @@ static void adjustLength(dsc* desc)
 	desc->dsc_length += adjust;
 }
 
+static void composeDesc(dsc* desc,
+						USHORT dtype,
+						SSHORT scale,
+						SSHORT sub_type,
+						FLD_LENGTH length,
+						SSHORT character_set_id,
+						SSHORT collation_id,
+						USHORT flags)
+{
+	desc->dsc_dtype = static_cast<UCHAR>(dtype);
+	desc->dsc_scale = static_cast<SCHAR>(scale);
+	desc->dsc_sub_type = sub_type;
+	desc->dsc_length = length;
+	desc->dsc_flags = (flags & FLD_nullable) ? DSC_nullable : 0;
+
+	if (desc->dsc_dtype <= dtype_any_text) {
+		INTL_ASSIGN_DSC(desc, character_set_id, collation_id);
+	}
+	else if (desc->dsc_dtype == dtype_blob)
+	{
+		desc->dsc_scale = static_cast<SCHAR>(character_set_id);
+		desc->dsc_flags |= collation_id << 8;
+	}
+
+	// UNICODE_FSS_HACK
+	// check if the field is a system domain and CHARACTER SET is UNICODE_FSS
+	if ((desc->dsc_dtype <= dtype_any_text) &&
+		(INTL_GET_CHARSET(desc) == CS_UNICODE_FSS) &&
+		(flags & FLD_system))
+	{
+		adjustLength(desc);
+	}
+}
+
 
 // Firebird provides transparent conversion from string to date in
 // contexts where it makes sense.  This macro checks a descriptor to
@@ -1456,6 +1490,27 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 
 /**
 
+ 	MAKE_desc_from_element
+
+    @brief	Compute a DSC from an element's description information.
+
+
+    @param desc
+    @param field
+
+ **/
+void MAKE_desc_from_element(dsc* desc, const dsql_fld* field)
+{
+	DEV_BLKCHK(field, dsql_type_fld);
+
+	composeDesc(desc,
+		field->fld_element_dtype, field->fld_scale, field->fld_sub_type, field->fld_element_length,
+		field->fld_character_set_id, field->fld_collation_id, field->fld_flags);
+}
+
+
+/**
+
  	MAKE_desc_from_field
 
     @brief	Compute a DSC from a field's description information.
@@ -1467,30 +1522,11 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
  **/
 void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 {
-
 	DEV_BLKCHK(field, dsql_type_fld);
 
-	desc->dsc_dtype = static_cast<UCHAR>(field->fld_dtype);
-	desc->dsc_scale = static_cast<SCHAR>(field->fld_scale);
-	desc->dsc_sub_type = field->fld_sub_type;
-	desc->dsc_length = field->fld_length;
-	desc->dsc_flags = (field->fld_flags & FLD_nullable) ? DSC_nullable : 0;
-	if (desc->dsc_dtype <= dtype_any_text) {
-		INTL_ASSIGN_DSC(desc, field->fld_character_set_id, field->fld_collation_id);
-	}
-	else if (desc->dsc_dtype == dtype_blob)
-	{
-		desc->dsc_scale = static_cast<SCHAR>(field->fld_character_set_id);
-		desc->dsc_flags |= field->fld_collation_id << 8;
-	}
-
-	// UNICODE_FSS_HACK
-	// check if the field is a system domain and CHARACTER SET is UNICODE_FSS
-	if ((desc->dsc_dtype <= dtype_any_text) && (INTL_GET_CHARSET(desc) == CS_UNICODE_FSS) &&
-		(field->fld_flags & FLD_system))
-	{
-		adjustLength(desc);
-	}
+	composeDesc(desc,
+		field->fld_dtype, field->fld_scale, field->fld_sub_type, field->fld_length,
+		field->fld_character_set_id, field->fld_collation_id, field->fld_flags);
 }
 
 
@@ -1560,20 +1596,7 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 		if (indices)
 		{
 			node->nod_arg[e_fld_indices] = indices;
-			MAKE_desc_from_field(&node->nod_desc, field);
-			node->nod_desc.dsc_dtype = static_cast<UCHAR>(field->fld_element_dtype);
-			node->nod_desc.dsc_length = field->fld_element_length;
-
-			// node->nod_desc.dsc_scale = field->fld_scale;
-			// node->nod_desc.dsc_sub_type = field->fld_sub_type;
-
-			// UNICODE_FSS_HACK
-			// check if the field is a system domain and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
-			if ((field->fld_flags & FLD_system) && node->nod_desc.dsc_dtype <= dtype_varying &&
-				INTL_GET_CHARSET(&node->nod_desc) == CS_METADATA)
-			{
-				adjustLength(&node->nod_desc);
-			}
+			MAKE_desc_from_element(&node->nod_desc, field);
 		}
 		else
 		{
