@@ -1164,8 +1164,7 @@ namespace Jrd
 
 		originalTimeZone = options.dpb_session_tz.isEmpty() ?
 			TimeZoneUtil::getSystemTimeZone() :
-			originalTimeZone = TimeZoneUtil::parse(
-				options.dpb_session_tz.c_str(), options.dpb_session_tz.length());
+			TimeZoneUtil::parse(options.dpb_session_tz.c_str(), options.dpb_session_tz.length());
 	}
 
 	void Attachment::InitialOptions::resetAttachment(Attachment* attachment) const
