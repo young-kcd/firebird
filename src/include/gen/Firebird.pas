@@ -515,6 +515,7 @@ type
 	ITraceSweepInfo_getNextPtr = function(this: ITraceSweepInfo): Int64; cdecl;
 	ITraceSweepInfo_getPerfPtr = function(this: ITraceSweepInfo): PerformanceInfoPtr; cdecl;
 	ITraceLogWriter_writePtr = function(this: ITraceLogWriter; buf: Pointer; size: Cardinal): Cardinal; cdecl;
+	ITraceLogWriter_write_sPtr = function(this: ITraceLogWriter; status: IStatus; buf: Pointer; size: Cardinal): Cardinal; cdecl;
 	ITraceInitInfo_getConfigTextPtr = function(this: ITraceInitInfo): PAnsiChar; cdecl;
 	ITraceInitInfo_getTraceSessionIDPtr = function(this: ITraceInitInfo): Integer; cdecl;
 	ITraceInitInfo_getTraceSessionNamePtr = function(this: ITraceInitInfo): PAnsiChar; cdecl;
@@ -2848,12 +2849,14 @@ type
 
 	TraceLogWriterVTable = class(ReferenceCountedVTable)
 		write: ITraceLogWriter_writePtr;
+		write_s: ITraceLogWriter_write_sPtr;
 	end;
 
 	ITraceLogWriter = class(IReferenceCounted)
-		const VERSION = 3;
+		const VERSION = 4;
 
 		function write(buf: Pointer; size: Cardinal): Cardinal;
+		function write_s(status: IStatus; buf: Pointer; size: Cardinal): Cardinal;
 	end;
 
 	ITraceLogWriterImpl = class(ITraceLogWriter)
@@ -2862,6 +2865,7 @@ type
 		procedure addRef(); virtual; abstract;
 		function release(): Integer; virtual; abstract;
 		function write(buf: Pointer; size: Cardinal): Cardinal; virtual; abstract;
+		function write_s(status: IStatus; buf: Pointer; size: Cardinal): Cardinal; virtual; abstract;
 	end;
 
 	TraceInitInfoVTable = class(VersionedVTable)
@@ -6818,6 +6822,12 @@ end;
 function ITraceLogWriter.write(buf: Pointer; size: Cardinal): Cardinal;
 begin
 	Result := TraceLogWriterVTable(vTable).write(Self, buf, size);
+end;
+
+function ITraceLogWriter.write_s(status: IStatus; buf: Pointer; size: Cardinal): Cardinal;
+begin
+	Result := TraceLogWriterVTable(vTable).write_s(Self, status, buf, size);
+	FbException.checkException(status);
 end;
 
 function ITraceInitInfo.getConfigText(): PAnsiChar;
@@ -11948,6 +11958,15 @@ begin
 	end
 end;
 
+function ITraceLogWriterImpl_write_sDispatcher(this: ITraceLogWriter; status: IStatus; buf: Pointer; size: Cardinal): Cardinal; cdecl;
+begin
+	try
+		Result := ITraceLogWriterImpl(this).write_s(status, buf, size);
+	except
+		on e: Exception do FbException.catchException(status, e);
+	end
+end;
+
 var
 	ITraceLogWriterImpl_vTable: TraceLogWriterVTable;
 
@@ -13204,10 +13223,11 @@ initialization
 	ITraceSweepInfoImpl_vTable.getPerf := @ITraceSweepInfoImpl_getPerfDispatcher;
 
 	ITraceLogWriterImpl_vTable := TraceLogWriterVTable.create;
-	ITraceLogWriterImpl_vTable.version := 3;
+	ITraceLogWriterImpl_vTable.version := 4;
 	ITraceLogWriterImpl_vTable.addRef := @ITraceLogWriterImpl_addRefDispatcher;
 	ITraceLogWriterImpl_vTable.release := @ITraceLogWriterImpl_releaseDispatcher;
 	ITraceLogWriterImpl_vTable.write := @ITraceLogWriterImpl_writeDispatcher;
+	ITraceLogWriterImpl_vTable.write_s := @ITraceLogWriterImpl_write_sDispatcher;
 
 	ITraceInitInfoImpl_vTable := TraceInitInfoVTable.create;
 	ITraceInitInfoImpl_vTable.version := 7;
