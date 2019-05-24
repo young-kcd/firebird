@@ -68,7 +68,7 @@ UDR_SUPPORT_LIBS := -lgnustl_shared
 LINK_LIBS = $(DroidLibs)
 SO_LINK_LIBS = $(DroidLibs)
 
-EXE_LINK_OPTIONS= $(LDFLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) $(LINK_EMPTY_SYMBOLS)
+EXE_LINK_OPTIONS= $(LDFLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS) $(LINK_EMPTY_SYMBOLS) -pie
 LIB_LINK_OPTIONS= $(LDFLAGS) -shared
 
 UNICODE_DIR := $(shell dirname `find /usr/include -name ucnv.h`)
