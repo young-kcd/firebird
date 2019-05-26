@@ -3153,9 +3153,9 @@ proc_statements
 
 %type <stmtNode> proc_statement
 proc_statement
-	: simple_proc_statement ';'
+	: simple_proc_statement ';' [YYVALID;]
 		{ $$ = newNode<LineColumnNode>(YYPOSNARG(1).firstLine, YYPOSNARG(1).firstColumn, $1); }
-	| complex_proc_statement
+	| complex_proc_statement [YYVALID;]
 		{ $$ = newNode<LineColumnNode>(YYPOSNARG(1).firstLine, YYPOSNARG(1).firstColumn, $1); }
 	;
 
