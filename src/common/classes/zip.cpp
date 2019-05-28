@@ -46,7 +46,7 @@ ZLib::ZLib(Firebird::MemoryPool&)
 
 void ZLib::symbols()
 {
-#define FB_ZSYMB(A) z->findSymbol(STRINGIZE(A), A); if (!A) { z.reset(NULL); return; }
+#define FB_ZSYMB(A) z->findSymbol(status, STRINGIZE(A), A); if (!A) { z.reset(NULL); return; }
 	FB_ZSYMB(deflateInit_)
 	FB_ZSYMB(inflateInit_)
 	FB_ZSYMB(deflate)

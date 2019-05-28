@@ -100,7 +100,7 @@ public:
 		for (const char** p = patterns; *p; ++p)
 		{
 			symbol.printf(*p, name, majorVersion, minorVersion);
-			module->findSymbol(symbol, ptr);
+			module->findSymbol(NULL, symbol, ptr);
 			if (ptr)
 				return;
 		}

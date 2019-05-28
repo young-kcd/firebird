@@ -47,7 +47,7 @@ public:
 	{}
 
 	~DlfcnModule();
-	void* findSymbol (const Firebird::string&);
+	void* findSymbol (ISC_STATUS*, const Firebird::string&);
 
 private:
 	void* module;
@@ -132,7 +132,7 @@ DlfcnModule::~DlfcnModule()
 		dlclose(module);
 }
 
-void* DlfcnModule::findSymbol(const Firebird::string& symName)
+void* DlfcnModule::findSymbol(ISC_STATUS* status, const Firebird::string& symName)
 {
 	void* result = dlsym(module, symName.c_str());
 	if (result == NULL)
@@ -140,8 +140,17 @@ void* DlfcnModule::findSymbol(const Firebird::string& symName)
 		Firebird::string newSym ='_' + symName;
 		result = dlsym(module, newSym.c_str());
 	}
-	return result;
 
+	if (result == NULL && status)
+	{
+		status[0] = isc_arg_gds;
+		status[1] = isc_random;
+		status[2] = isc_arg_string;
+		status[3] = (ISC_STATUS) dlerror();
+		status[4] = isc_arg_end;
+	}
+
+	return result;
 }
 
 

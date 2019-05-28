@@ -113,7 +113,7 @@ namespace
 		}
 
 		void (*ibUtilUnit)(void* (*)(long));
-		if (!module->findSymbol("ib_util_init", ibUtilUnit))
+		if (!module->findSymbol(NULL, "ib_util_init", ibUtilUnit))
 		{
 			// in the case of missing symbol it is better to know an exact library name
 			message.printf("ib_util_init not found in %s", modName.c_str());

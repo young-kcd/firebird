@@ -963,7 +963,8 @@ namespace
 		RefPtr<PluginModule> rc(FB_NEW PluginModule(module, info.curModule));
 		typedef void PluginEntrypoint(IMaster* masterInterface);
 		PluginEntrypoint* startModule;
-		if (module->findSymbol(STRINGIZE(FB_PLUGIN_ENTRY_POINT), startModule))
+		ISC_STATUS_ARRAY stArray;
+		if (module->findSymbol(stArray, STRINGIZE(FB_PLUGIN_ENTRY_POINT), startModule))
 		{
 			current = rc;
 			startModule(masterInterface);
@@ -971,7 +972,7 @@ namespace
 			return rc;
 		}
 
-		loadError(Arg::Gds(isc_pman_entrypoint_notfound) << fixedModuleName);
+		loadError(Arg::Gds(isc_pman_entrypoint_notfound) << fixedModuleName << Arg::StatusVector(stArray));
 		return RefPtr<PluginModule>(NULL);	// compiler warning silencer
 	}
 
