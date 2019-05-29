@@ -70,12 +70,6 @@ void IscProvider::getRemoteError(const FbStatusVector* status, string& err) cons
 {
 	err = "";
 
-	// We can't use safe fb_interpret here as we have no idea what implementation
-	// of ISC API is used by current provider. We can test for existence of
-	// fb_interpret and use it if present, but I don't want to complicate code.
-	// So, buffer should be big enough to please old isc_interprete.
-	// Probably in next version we should use fb_interpret only.
-
 	char buff[1024];
 	const ISC_STATUS* p = status->getErrors();
 	const ISC_STATUS* const end = p + fb_utils::statusLength(p);
@@ -83,7 +77,7 @@ void IscProvider::getRemoteError(const FbStatusVector* status, string& err) cons
 	while (p < end - 1)
 	{
 		const ISC_STATUS code = *p ? p[1] : 0;
-		if (!m_api.isc_interprete(buff, &p))
+		if (!m_api.interpret(buff, sizeof(buff), &p))
 			break;
 
 		string rem_err;
@@ -802,10 +796,10 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_attach_database(FbStatusVector* user_stat
 	short file_length, const char* file_name, isc_db_handle* public_handle,
 	short dpb_length, const char* dpb)
 {
-	if (!m_api.isc_attach_database)
+	if (!m_api.attach_database)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_attach_database) (IscStatus(user_status), file_length, file_name,
+	return (*m_api.attach_database) (IscStatus(user_status), file_length, file_name,
 			public_handle, dpb_length, dpb);
 }
 
@@ -892,10 +886,10 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_blob_info(FbStatusVector* user_status,
 								short buffer_length,
 								char* buffer)
 {
-	if (!m_api.isc_blob_info)
+	if (!m_api.blob_info)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_blob_info) (IscStatus(user_status), blob_handle,
+	return (*m_api.blob_info) (IscStatus(user_status), blob_handle,
 			item_length, items, buffer_length, buffer);
 }
 
@@ -924,10 +918,10 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_blob_set_desc(FbStatusVector* user_status
 ISC_STATUS ISC_EXPORT IscProvider::isc_cancel_blob(FbStatusVector* user_status,
 								  isc_blob_handle* blob_handle)
 {
-	if (!m_api.isc_cancel_blob)
+	if (!m_api.cancel_blob)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_cancel_blob) (IscStatus(user_status), blob_handle);
+	return (*m_api.cancel_blob) (IscStatus(user_status), blob_handle);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_cancel_events(FbStatusVector* user_status,
@@ -940,28 +934,28 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_cancel_events(FbStatusVector* user_status
 ISC_STATUS ISC_EXPORT IscProvider::isc_close_blob(FbStatusVector* user_status,
 								 isc_blob_handle* blob_handle)
 {
-	if (!m_api.isc_close_blob)
+	if (!m_api.close_blob)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_close_blob) (IscStatus(user_status), blob_handle);
+	return (*m_api.close_blob) (IscStatus(user_status), blob_handle);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_commit_retaining(FbStatusVector* user_status,
 	isc_tr_handle* tra_handle)
 {
-	if (!m_api.isc_commit_retaining)
+	if (!m_api.commit_retaining)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_commit_retaining) (IscStatus(user_status), tra_handle);
+	return (*m_api.commit_retaining) (IscStatus(user_status), tra_handle);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_commit_transaction(FbStatusVector* user_status,
 	isc_tr_handle* tra_handle)
 {
-	if (!m_api.isc_commit_transaction)
+	if (!m_api.commit_transaction)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_commit_transaction) (IscStatus(user_status), tra_handle);
+	return (*m_api.commit_transaction) (IscStatus(user_status), tra_handle);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_create_blob(FbStatusVector* user_status,
@@ -970,10 +964,10 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_create_blob(FbStatusVector* user_status,
 								  isc_blob_handle* blob_handle,
 								  ISC_QUAD* blob_id)
 {
-	if (!m_api.isc_create_blob)
+	if (!m_api.create_blob)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_create_blob) (IscStatus(user_status), db_handle, tr_handle,
+	return (*m_api.create_blob) (IscStatus(user_status), db_handle, tr_handle,
 			blob_handle, blob_id);
 }
 
@@ -985,10 +979,10 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_create_blob2(FbStatusVector* user_status,
 								  short bpb_length,
 								  const char* bpb)
 {
-	if (!m_api.isc_create_blob2)
+	if (!m_api.create_blob2)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_create_blob2) (IscStatus(user_status), db_handle, tr_handle,
+	return (*m_api.create_blob2) (IscStatus(user_status), db_handle, tr_handle,
 			blob_handle, blob_id, bpb_length, bpb);
 }
 
@@ -1010,10 +1004,10 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_database_info(FbStatusVector* user_status
 									short res_len,
 									char* res)
 {
-	if (!m_api.isc_database_info)
+	if (!m_api.database_info)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_database_info) (IscStatus(user_status), db_handle,
+	return (*m_api.database_info) (IscStatus(user_status), db_handle,
 			info_len, info, res_len, res);
 }
 
@@ -1044,10 +1038,10 @@ void ISC_EXPORT IscProvider::isc_decode_timestamp(const ISC_TIMESTAMP*,
 ISC_STATUS ISC_EXPORT IscProvider::isc_detach_database(FbStatusVector* user_status,
 									  isc_db_handle* public_handle)
 {
-	if (!m_api.isc_detach_database)
+	if (!m_api.detach_database)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_detach_database) (IscStatus(user_status), public_handle);
+	return (*m_api.detach_database) (IscStatus(user_status), public_handle);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_drop_database(FbStatusVector* user_status,
@@ -1059,37 +1053,37 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_drop_database(FbStatusVector* user_status
 ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_allocate_statement(FbStatusVector* user_status,
 	isc_db_handle* db_handle, isc_stmt_handle* stmt_handle)
 {
-	if (!m_api.isc_dsql_allocate_statement)
+	if (!m_api.dsql_allocate_statement)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_dsql_allocate_statement) (IscStatus(user_status), db_handle, stmt_handle);
+	return (*m_api.dsql_allocate_statement) (IscStatus(user_status), db_handle, stmt_handle);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_alloc_statement2(FbStatusVector* user_status,
 	isc_db_handle* db_handle, isc_stmt_handle* stmt_handle)
 {
-	if (!m_api.isc_dsql_alloc_statement2)
+	if (!m_api.dsql_alloc_statement2)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_dsql_alloc_statement2) (IscStatus(user_status), db_handle, stmt_handle);
+	return (*m_api.dsql_alloc_statement2) (IscStatus(user_status), db_handle, stmt_handle);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_describe(FbStatusVector* user_status,
 	isc_stmt_handle* stmt_handle, unsigned short dialect, XSQLDA* sqlda)
 {
-	if (!m_api.isc_dsql_describe)
+	if (!m_api.dsql_describe)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_dsql_describe) (IscStatus(user_status), stmt_handle, dialect, sqlda);
+	return (*m_api.dsql_describe) (IscStatus(user_status), stmt_handle, dialect, sqlda);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_describe_bind(FbStatusVector* user_status,
 	isc_stmt_handle* stmt_handle, unsigned short dialect, XSQLDA* sqlda)
 {
-	if (!m_api.isc_dsql_describe_bind)
+	if (!m_api.dsql_describe_bind)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_dsql_describe_bind) (IscStatus(user_status), stmt_handle, dialect, sqlda);
+	return (*m_api.dsql_describe_bind) (IscStatus(user_status), stmt_handle, dialect, sqlda);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_exec_immed2(FbStatusVector* user_status,
@@ -1108,20 +1102,20 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_execute(FbStatusVector* user_status,
 	isc_tr_handle* tra_handle, isc_stmt_handle* stmt_handle, unsigned short dialect,
 	const XSQLDA* sqlda)
 {
-	if (!m_api.isc_dsql_execute)
+	if (!m_api.dsql_execute)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_dsql_execute) (IscStatus(user_status), tra_handle, stmt_handle, dialect, sqlda);
+	return (*m_api.dsql_execute) (IscStatus(user_status), tra_handle, stmt_handle, dialect, sqlda);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_execute2(FbStatusVector* user_status,
 	isc_tr_handle* tra_handle, isc_stmt_handle* stmt_handle, unsigned short dialect,
 	const XSQLDA* in_sqlda, const XSQLDA* out_sqlda)
 {
-	if (!m_api.isc_dsql_execute2)
+	if (!m_api.dsql_execute2)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_dsql_execute2) (IscStatus(user_status), tra_handle, stmt_handle, dialect,
+	return (*m_api.dsql_execute2) (IscStatus(user_status), tra_handle, stmt_handle, dialect,
 			in_sqlda, out_sqlda);
 }
 
@@ -1129,20 +1123,20 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_execute_immediate(FbStatusVector* us
 	isc_db_handle* db_handle, isc_tr_handle* tra_handle, unsigned short length,
 	const char* str, unsigned short dialect, const XSQLDA* sqlda)
 {
-	if (!m_api.isc_dsql_execute_immediate)
+	if (!m_api.dsql_execute_immediate)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_dsql_execute_immediate) (IscStatus(user_status),
+	return (*m_api.dsql_execute_immediate) (IscStatus(user_status),
 		db_handle, tra_handle, length, str, dialect, sqlda);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_fetch(FbStatusVector* user_status,
 	isc_stmt_handle* stmt_handle, unsigned short da_version, const XSQLDA* sqlda)
 {
-	if (!m_api.isc_dsql_fetch)
+	if (!m_api.dsql_fetch)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_dsql_fetch) (IscStatus(user_status), stmt_handle, da_version, sqlda);
+	return (*m_api.dsql_fetch) (IscStatus(user_status), stmt_handle, da_version, sqlda);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_finish(isc_db_handle *)
@@ -1153,10 +1147,10 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_finish(isc_db_handle *)
 ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_free_statement(FbStatusVector* user_status,
 	isc_stmt_handle* stmt_handle, unsigned short option)
 {
-	if (!m_api.isc_dsql_free_statement)
+	if (!m_api.dsql_free_statement)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_dsql_free_statement) (IscStatus(user_status), stmt_handle, option);
+	return (*m_api.dsql_free_statement) (IscStatus(user_status), stmt_handle, option);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_insert(FbStatusVector* user_status,
@@ -1171,10 +1165,10 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_prepare(FbStatusVector* user_status,
 	isc_tr_handle* tra_handle, isc_stmt_handle* stmt_handle, unsigned short length,
 	const char* str, unsigned short dialect, XSQLDA* sqlda)
 {
-	if (!m_api.isc_dsql_prepare)
+	if (!m_api.dsql_prepare)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_dsql_prepare) (IscStatus(user_status), tra_handle, stmt_handle,
+	return (*m_api.dsql_prepare) (IscStatus(user_status), tra_handle, stmt_handle,
 				length, str, dialect, sqlda);
 }
 
@@ -1190,10 +1184,10 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_sql_info(FbStatusVector* user_status
 	isc_stmt_handle* stmt_handle, short items_len, const char* items,
 	short buffer_len, char* buffer)
 {
-	if (!m_api.isc_dsql_sql_info)
+	if (!m_api.dsql_sql_info)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_dsql_sql_info) (IscStatus(user_status), stmt_handle, items_len, items,
+	return (*m_api.dsql_sql_info) (IscStatus(user_status), stmt_handle, items_len, items,
 				buffer_len, buffer);
 }
 
@@ -1263,10 +1257,10 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_get_segment(FbStatusVector* user_status,
 								  unsigned short buffer_length,
 								  char* buffer)
 {
-	if (!m_api.isc_get_segment)
+	if (!m_api.get_segment)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_get_segment) (IscStatus(user_status), blob_handle, length,
+	return (*m_api.get_segment) (IscStatus(user_status), blob_handle, length,
 			buffer_length, buffer);
 }
 
@@ -1297,10 +1291,10 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_open_blob(FbStatusVector* user_status,
 								isc_blob_handle* blob_handle,
 								ISC_QUAD* blob_id)
 {
-	if (!m_api.isc_open_blob)
+	if (!m_api.open_blob)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_open_blob) (IscStatus(user_status), db_handle, tr_handle,
+	return (*m_api.open_blob) (IscStatus(user_status), db_handle, tr_handle,
 			blob_handle, blob_id);
 }
 
@@ -1312,10 +1306,10 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_open_blob2(FbStatusVector* user_status,
 								ISC_USHORT bpb_length,
 								const ISC_UCHAR* bpb)
 {
-	if (!m_api.isc_open_blob2)
+	if (!m_api.open_blob2)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_open_blob2) (IscStatus(user_status), db_handle, tr_handle,
+	return (*m_api.open_blob2) (IscStatus(user_status), db_handle, tr_handle,
 			blob_handle, blob_id, bpb_length, bpb);
 }
 
@@ -1343,10 +1337,10 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_put_segment(FbStatusVector* user_status,
 								  unsigned short buffer_length,
 								  const char* buffer)
 {
-	if (!m_api.isc_put_segment)
+	if (!m_api.put_segment)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_put_segment) (IscStatus(user_status), blob_handle,
+	return (*m_api.put_segment) (IscStatus(user_status), blob_handle,
 			buffer_length, buffer);
 }
 
@@ -1378,28 +1372,28 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_que_events(FbStatusVector* user_status,
 ISC_STATUS ISC_EXPORT IscProvider::isc_rollback_retaining(FbStatusVector* user_status,
 	isc_tr_handle* tra_handle)
 {
-	if (!m_api.isc_rollback_retaining)
+	if (!m_api.rollback_retaining)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_rollback_retaining) (IscStatus(user_status), tra_handle);
+	return (*m_api.rollback_retaining) (IscStatus(user_status), tra_handle);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_rollback_transaction(FbStatusVector* user_status,
 	isc_tr_handle* tra_handle)
 {
-	if (!m_api.isc_rollback_transaction)
+	if (!m_api.rollback_transaction)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_rollback_transaction) (IscStatus(user_status), tra_handle);
+	return (*m_api.rollback_transaction) (IscStatus(user_status), tra_handle);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_start_multiple(FbStatusVector* user_status,
 	isc_tr_handle* tra_handle, short count, void* vec)
 {
-	if (!m_api.isc_start_multiple)
+	if (!m_api.start_multiple)
 		return notImplemented(user_status);
 
-	return (*m_api.isc_start_multiple) (IscStatus(user_status), tra_handle, count, vec);
+	return (*m_api.start_multiple) (IscStatus(user_status), tra_handle, count, vec);
 }
 
 
@@ -1414,7 +1408,7 @@ ISC_STATUS ISC_EXPORT_VARARG IscProvider::isc_start_transaction(FbStatusVector* 
 											   isc_tr_handle* tra_handle,
 											   short count, ...)
 {
-	if (!m_api.isc_start_multiple)				// !!!
+	if (!m_api.start_multiple)				// !!!
 		return notImplemented(user_status);
 
 	Firebird::HalfStaticArray<why_teb, 16> tebs;
@@ -1432,7 +1426,7 @@ ISC_STATUS ISC_EXPORT_VARARG IscProvider::isc_start_transaction(FbStatusVector* 
 	}
 	va_end(ptr);
 
-	return (*m_api.isc_start_multiple) (IscStatus(user_status), tra_handle, count, teb);
+	return (*m_api.start_multiple) (IscStatus(user_status), tra_handle, count, teb);
 }
 
 ISC_STATUS ISC_EXPORT_VARARG IscProvider::isc_reconnect_transaction(FbStatusVector* user_status,
@@ -1540,8 +1534,8 @@ ISC_STATUS ISC_EXPORT IscProvider::fb_cancel_operation(FbStatusVector* user_stat
 										isc_db_handle* db_handle,
 										USHORT option)
 {
-	if (m_api.fb_cancel_operation)
-		return m_api.fb_cancel_operation(IscStatus(user_status), db_handle, option);
+	if (m_api.cancel_operation)
+		return m_api.cancel_operation(IscStatus(user_status), db_handle, option);
 
 	return notImplemented(user_status);
 }
@@ -1549,8 +1543,8 @@ ISC_STATUS ISC_EXPORT IscProvider::fb_cancel_operation(FbStatusVector* user_stat
 ISC_STATUS ISC_EXPORT IscProvider::fb_database_crypt_callback(FbStatusVector* user_status,
 										void* cb)
 {
-	if (m_api.fb_database_crypt_callback)
-		return m_api.fb_database_crypt_callback(IscStatus(user_status), cb);
+	if (m_api.database_crypt_callback)
+		return m_api.database_crypt_callback(IscStatus(user_status), cb);
 
 	return notImplemented(user_status);
 }
@@ -1559,8 +1553,8 @@ ISC_STATUS ISC_EXPORT IscProvider::fb_dsql_set_timeout(FbStatusVector* user_stat
 	isc_stmt_handle* stmt_handle,
 	ULONG timeout)
 {
-	if (m_api.fb_dsql_set_timeout)
-		return m_api.fb_dsql_set_timeout(IscStatus(user_status), stmt_handle, timeout);
+	if (m_api.dsql_set_timeout)
+		return m_api.dsql_set_timeout(IscStatus(user_status), stmt_handle, timeout);
 
 	return notImplemented(user_status);
 }
@@ -1575,91 +1569,98 @@ void IscProvider::loadAPI()
 
 // FBProvider
 
-#define PROTO(X) (prototype_##X*) &X
+#define PROTO(PREFIX, NAME) (decltype(&::PREFIX##_##NAME)) &PREFIX##_##NAME
 
+#if defined __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 static FirebirdApiPointers isc_callbacks =
 {
-	PROTO(isc_attach_database),
-	PROTO(isc_array_gen_sdl),
-	PROTO(isc_array_get_slice),
-	PROTO(isc_array_lookup_bounds),
-	PROTO(isc_array_lookup_desc),
-	PROTO(isc_array_set_desc),
-	PROTO(isc_array_put_slice),
-	PROTO(isc_blob_default_desc),
-	PROTO(isc_blob_gen_bpb),
-	PROTO(isc_blob_info),
-	PROTO(isc_blob_lookup_desc),
-	PROTO(isc_blob_set_desc),
-	PROTO(isc_cancel_blob),
-	PROTO(isc_cancel_events),
-	PROTO(isc_close_blob),
-	PROTO(isc_commit_retaining),
-	PROTO(isc_commit_transaction),
-	PROTO(isc_create_blob),
-	PROTO(isc_create_blob2),
-	PROTO(isc_create_database),
-	PROTO(isc_database_info),
-	PROTO(isc_decode_date),
-	PROTO(isc_decode_sql_date),
-	PROTO(isc_decode_sql_time),
-	PROTO(isc_decode_timestamp),
-	PROTO(isc_detach_database),
-	PROTO(isc_drop_database),
-	PROTO(isc_dsql_allocate_statement),
-	PROTO(isc_dsql_alloc_statement2),
-	PROTO(isc_dsql_describe),
-	PROTO(isc_dsql_describe_bind),
-	PROTO(isc_dsql_exec_immed2),
-	PROTO(isc_dsql_execute),
-	PROTO(isc_dsql_execute2),
-	PROTO(isc_dsql_execute_immediate),
-	PROTO(isc_dsql_fetch),
-	PROTO(isc_dsql_finish),
-	PROTO(isc_dsql_free_statement),
-	PROTO(isc_dsql_insert),
-	PROTO(isc_dsql_prepare),
-	PROTO(isc_dsql_set_cursor_name),
-	PROTO(isc_dsql_sql_info),
-	PROTO(isc_encode_date),
-	PROTO(isc_encode_sql_date),
-	PROTO(isc_encode_sql_time),
-	PROTO(isc_encode_timestamp),
-	PROTO(isc_event_block),
-	PROTO(isc_event_counts),
-	PROTO(isc_expand_dpb),
-	PROTO(isc_modify_dpb),
-	PROTO(isc_free),
-	PROTO(isc_get_segment),
-	PROTO(isc_get_slice),
-	PROTO(isc_interprete),
-	PROTO(isc_open_blob),
-	PROTO(isc_open_blob2),
-	PROTO(isc_prepare_transaction2),
-	PROTO(isc_print_sqlerror),
-	PROTO(isc_print_status),
-	PROTO(isc_put_segment),
-	PROTO(isc_put_slice),
-	PROTO(isc_que_events),
-	PROTO(isc_rollback_retaining),
-	PROTO(isc_rollback_transaction),
-	PROTO(isc_start_multiple),
-	PROTO(isc_start_transaction),
-	PROTO(isc_reconnect_transaction),
-	PROTO(isc_sqlcode),
-	PROTO(isc_sql_interprete),
-	PROTO(isc_transaction_info),
-	PROTO(isc_transact_request),
-	PROTO(isc_vax_integer),
-	PROTO(isc_seek_blob),
-	PROTO(isc_service_attach),
-	PROTO(isc_service_detach),
-	PROTO(isc_service_query),
-	PROTO(isc_service_start),
-	PROTO(fb_cancel_operation),
-	PROTO(fb_database_crypt_callback),
-	PROTO(fb_dsql_set_timeout)
+	PROTO(isc, attach_database),
+	PROTO(isc, array_gen_sdl),
+	PROTO(isc, array_get_slice),
+	PROTO(isc, array_lookup_bounds),
+	PROTO(isc, array_lookup_desc),
+	PROTO(isc, array_set_desc),
+	PROTO(isc, array_put_slice),
+	PROTO(isc, blob_default_desc),
+	PROTO(isc, blob_gen_bpb),
+	PROTO(isc, blob_info),
+	PROTO(isc, blob_lookup_desc),
+	PROTO(isc, blob_set_desc),
+	PROTO(isc, cancel_blob),
+	PROTO(isc, cancel_events),
+	PROTO(isc, close_blob),
+	PROTO(isc, commit_retaining),
+	PROTO(isc, commit_transaction),
+	PROTO(isc, create_blob),
+	PROTO(isc, create_blob2),
+	PROTO(isc, create_database),
+	PROTO(isc, database_info),
+	PROTO(isc, decode_date),
+	PROTO(isc, decode_sql_date),
+	PROTO(isc, decode_sql_time),
+	PROTO(isc, decode_timestamp),
+	PROTO(isc, detach_database),
+	PROTO(isc, drop_database),
+	PROTO(isc, dsql_allocate_statement),
+	PROTO(isc, dsql_alloc_statement2),
+	PROTO(isc, dsql_describe),
+	PROTO(isc, dsql_describe_bind),
+	PROTO(isc, dsql_exec_immed2),
+	PROTO(isc, dsql_execute),
+	PROTO(isc, dsql_execute2),
+	PROTO(isc, dsql_execute_immediate),
+	PROTO(isc, dsql_fetch),
+	PROTO(isc, dsql_finish),
+	PROTO(isc, dsql_free_statement),
+	PROTO(isc, dsql_insert),
+	PROTO(isc, dsql_prepare),
+	PROTO(isc, dsql_set_cursor_name),
+	PROTO(isc, dsql_sql_info),
+	PROTO(isc, encode_date),
+	PROTO(isc, encode_sql_date),
+	PROTO(isc, encode_sql_time),
+	PROTO(isc, encode_timestamp),
+	PROTO(isc, event_block),
+	PROTO(isc, event_counts),
+	PROTO(isc, expand_dpb),
+	PROTO(isc, modify_dpb),
+	PROTO(isc, free),
+	PROTO(isc, get_segment),
+	PROTO(isc, get_slice),
+	PROTO(isc, open_blob),
+	PROTO(isc, open_blob2),
+	PROTO(isc, prepare_transaction2),
+	PROTO(isc, print_sqlerror),
+	PROTO(isc, print_status),
+	PROTO(isc, put_segment),
+	PROTO(isc, put_slice),
+	PROTO(isc, que_events),
+	PROTO(isc, rollback_retaining),
+	PROTO(isc, rollback_transaction),
+	PROTO(isc, start_multiple),
+	PROTO(isc, start_transaction),
+	PROTO(isc, reconnect_transaction),
+	PROTO(isc, sqlcode),
+	PROTO(isc, sql_interprete),
+	PROTO(isc, transaction_info),
+	PROTO(isc, transact_request),
+	PROTO(isc, vax_integer),
+	PROTO(isc, seek_blob),
+	PROTO(isc, service_attach),
+	PROTO(isc, service_detach),
+	PROTO(isc, service_query),
+	PROTO(isc, service_start),
+	PROTO(fb, interpret),
+	PROTO(fb, cancel_operation),
+	PROTO(fb, database_crypt_callback),
+	PROTO(fb, dsql_set_timeout)
 };
+#if defined __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 
 void FBProvider::loadAPI()
