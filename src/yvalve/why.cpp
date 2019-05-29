@@ -1125,23 +1125,22 @@ namespace Why
 
 	static AtomicCounter dispCounter;
 
+	enum CHECK_ENTRY { CHECK_NONE, CHECK_ALL, CHECK_WARN_ZERO_HANDLE };
+
 	template <typename Y>
 	class YEntry : public FpeControl	//// TODO: move FpeControl to the engine
 	{
 	public:
-		YEntry(CheckStatusWrapper* aStatus, Y* object, int checkAttachment = 1)
+		YEntry(CheckStatusWrapper* aStatus, Y* object, CHECK_ENTRY checkAttachment = CHECK_ALL)
 			: ref(object->attachment.get()), nextRef(NULL)
 		{
 			aStatus->init();
 			init(object->next);
 
-			if (checkAttachment && !(nextRef.hasData()))
-			{
-				fini();
-				Arg::Gds(Y::ERROR_CODE).raise();
-			}
+			if (checkAttachment != CHECK_NONE && !(nextRef.hasData()))
+				nextIsEmpty(aStatus, checkAttachment);
 
-			if (checkAttachment && ref && ref->savedStatus.getError())
+			if (checkAttachment != CHECK_NONE && ref && ref->savedStatus.getError())
 			{
 				const IStatus* err = ref->savedStatus.value();
 				fini();
@@ -1201,6 +1200,17 @@ namespace Why
 
 	private:
 		YEntry(const YEntry&);	// prohibit copy constructor
+
+		void nextIsEmpty(CheckStatusWrapper* aStatus, CHECK_ENTRY check)
+		{
+			if (check == CHECK_WARN_ZERO_HANDLE)
+				Arg::Warning(Y::ERROR_CODE).appendTo(aStatus);
+			else
+			{
+				fini();
+				Arg::Gds(Y::ERROR_CODE).raise();
+			}
+		}
 
 	private:
 		RefPtr<typename Y::YRef> ref;
@@ -1270,19 +1280,16 @@ namespace Why
 	};
 
 	template <>
-	YEntry<YAttachment>::YEntry(CheckStatusWrapper* aStatus, YAttachment* aAttachment, int checkAttachment)
+	YEntry<YAttachment>::YEntry(CheckStatusWrapper* aStatus, YAttachment* aAttachment, CHECK_ENTRY checkAttachment)
 		: ref(aAttachment), nextRef(NULL)
 	{
 		aStatus->init();
 		init(aAttachment->next);
 
-		if (checkAttachment && !(nextRef.hasData()))
-		{
-			fini();
-			Arg::Gds(YAttachment::ERROR_CODE).raise();
-		}
+		if (checkAttachment != CHECK_NONE && !(nextRef.hasData()))
+			nextIsEmpty(aStatus, checkAttachment);
 
-		if (checkAttachment && aAttachment->savedStatus.getError())
+		if (checkAttachment != CHECK_NONE && aAttachment->savedStatus.getError())
 		{
 			fini();
 			status_exception::raise(aAttachment->savedStatus.value());
@@ -1290,18 +1297,14 @@ namespace Why
 	}
 
 	template <>
-	YEntry<YService>::YEntry(CheckStatusWrapper* aStatus, YService* aService, int checkService)
+	YEntry<YService>::YEntry(CheckStatusWrapper* aStatus, YService* aService, CHECK_ENTRY checkService)
 		: ref(aService), nextRef(NULL)
 	{
 		aStatus->init();
 		init(aService->next);
 
-		if (checkService && !nextRef.hasData())
-		{
-			fini();
-			Arg::Gds(YService::ERROR_CODE).raise();
-		}
-
+		if (checkService != CHECK_NONE && !nextRef.hasData())
+			nextIsEmpty(aStatus, checkService);
 	}
 
 	class DispatcherEntry : public FpeControl	//// TODO: move FpeControl to the engine
@@ -3880,9 +3883,10 @@ void YEvents::cancel(CheckStatusWrapper* status)
 
 	try
 	{
-		YEntry<YEvents> entry(status, this);
+		YEntry<YEvents> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		entry.next()->cancel(status);
+		if (entry.next())
+			entry.next()->cancel(status);
 
 		if (status->getErrors()[1] == isc_att_shutdown)
 			status->init();
@@ -4024,9 +4028,10 @@ void YRequest::free(CheckStatusWrapper* status)
 {
 	try
 	{
-		YEntry<YRequest> entry(status, this);
+		YEntry<YRequest> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		entry.next()->free(status);
+		if (entry.next())
+			entry.next()->free(status);
 
 		if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
 			destroy(DF_RELEASE);
@@ -4118,9 +4123,10 @@ void YBlob::cancel(CheckStatusWrapper* status)
 {
 	try
 	{
-		YEntry<YBlob> entry(status, this);
+		YEntry<YBlob> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		entry.next()->cancel(status);
+		if (entry.next())
+			entry.next()->cancel(status);
 
 		if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
 			destroy(DF_RELEASE);
@@ -4135,9 +4141,10 @@ void YBlob::close(CheckStatusWrapper* status)
 {
 	try
 	{
-		YEntry<YBlob> entry(status, this);
+		YEntry<YBlob> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		entry.next()->close(status);
+		if (entry.next())
+			entry.next()->close(status);
 
 		if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
 			destroy(DF_RELEASE);
@@ -4413,15 +4420,13 @@ void YStatement::free(CheckStatusWrapper* status)
 {
 	try
 	{
-		YEntry<YStatement> entry(status, this);
+		YEntry<YStatement> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		entry.next()->free(status);
-		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
-		{
-			return;
-		}
+		if (entry.next())
+			entry.next()->free(status);
 
-		destroy(DF_RELEASE);
+		if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
+			destroy(DF_RELEASE);
 	}
 	catch (const Exception& e)
 	{
@@ -4643,7 +4648,7 @@ void YResultSet::destroy(unsigned dstrFlags)
 	if (statement)
 	{
 		MutexLockGuard guard(statement->statementMutex, FB_FUNCTION);
-		fb_assert(statement->cursor == this);
+		fb_assert(!statement->cursor || statement->cursor == this);
 		statement->cursor = NULL;
 	}
 
@@ -4830,9 +4835,10 @@ void YResultSet::close(CheckStatusWrapper* status)
 {
 	try
 	{
-		YEntry<YResultSet> entry(status, this);
+		YEntry<YResultSet> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		entry.next()->close(status);
+		if (entry.next())
+			entry.next()->close(status);
 
 		if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
 			destroy(DF_RELEASE);
@@ -5178,9 +5184,10 @@ void YTransaction::rollback(CheckStatusWrapper* status)
 {
 	try
 	{
-		YEntry<YTransaction> entry(status, this);
+		YEntry<YTransaction> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		entry.next()->rollback(status);
+		if (entry.next())
+			entry.next()->rollback(status);
 		if (isNetworkError(status))
 			status->init();
 
@@ -5823,7 +5830,7 @@ void YAttachment::detach(CheckStatusWrapper* status)
 {
 	try
 	{
-		YEntry<YAttachment> entry(status, this, 0);
+		YEntry<YAttachment> entry(status, this, CHECK_NONE);
 
 		if (entry.next())
 			entry.next()->detach(status);
@@ -6046,10 +6053,7 @@ YService::~YService()
 void YService::destroy(unsigned dstrFlags)
 {
 	removeHandle(&services, handle);
-
-	next = NULL;
-	if (dstrFlags & DF_RELEASE)
-		release();
+	destroy2(dstrFlags);
 }
 
 void YService::shutdown()
@@ -6066,7 +6070,7 @@ void YService::detach(CheckStatusWrapper* status)
 {
 	try
 	{
-		YEntry<YService> entry(status, this, 1);
+		YEntry<YService> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
 		if (entry.next())
 			entry.next()->detach(status);
