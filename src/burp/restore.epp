@@ -1094,14 +1094,15 @@ void create_database(BurpGlobals* tdgbl, Firebird::IProvider* provider, const TE
 		}
 
 		Firebird::string sql;
-		sql.printf("ALTER DATABASE ENCRYPT WITH \"%s\"", tdgbl->gbl_sw_crypt);
-		if (tdgbl->gbl_sw_keyname)
+		const char* dQuote = SQL_dialect >= SQL_DIALECT_V6 ? "\"" : "";
+		sql.printf("ALTER DATABASE ENCRYPT WITH %s%s%s", dQuote, tdgbl->gbl_sw_crypt, dQuote);
+		if (tdgbl->gbl_sw_keyname && tdgbl->gbl_sw_keyname[0])
 		{
 			sql += " KEY ";
 			sql += tdgbl->gbl_sw_keyname;
 		}
 
-		tdgbl->db_handle->execute(gds_status, tdgbl->tr_handle, sql.length(), sql.c_str(), 3,
+		tdgbl->db_handle->execute(gds_status, tdgbl->tr_handle, sql.length(), sql.c_str(), SQL_dialect,
 			nullptr, nullptr, nullptr, nullptr);
 
 		if (gds_status->hasData())
