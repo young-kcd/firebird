@@ -109,7 +109,10 @@ void TraceCfgReader::readConfig()
 
 		const bool isDatabase = (section->name == "database");
 		if (!isDatabase && section->name != "services")
-			continue;
+			//continue;
+			fatal_exception::raiseFmt(ERROR_PREFIX
+				"line %d: wrong section header, \"database\" or \"service\" is expected",
+				section->line);
 
 		const ConfigFile::String pattern = section->value;
 		bool match = false;
