@@ -463,6 +463,7 @@ public:
 		csb_currentForNode(NULL),
 		csb_currentDMLNode(NULL),
 		csb_currentAssignTarget(NULL),
+		csb_preferredDataType(0),
 		csb_rpt(p)
 	{
 		csb_dbg_info = FB_NEW_POOL(p) Firebird::DbgInfo(p);
@@ -543,8 +544,9 @@ public:
 	Firebird::GenericMap<Firebird::Left<Firebird::MetaName, DeclareSubProcNode*> > subProcedures;
 
 	ForNode*	csb_currentForNode;
-	StmtNode*	csb_currentDMLNode;	// could be StoreNode or ModifyNode
+	StmtNode*	csb_currentDMLNode;		// could be StoreNode or ModifyNode
 	ExprNode*	csb_currentAssignTarget;
+	UCHAR		csb_preferredDataType;	// expected by receiving side datatype
 
 	struct csb_repeat
 	{

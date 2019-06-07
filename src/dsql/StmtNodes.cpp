@@ -498,7 +498,12 @@ AssignmentNode* AssignmentNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 		}
 	}
 
-	ExprNode::doPass2(tdbb, csb, asgnFrom.getAddress());
+	{ // scope
+		dsc desc;
+		asgnTo->getDesc(tdbb, csb, &desc);
+		AutoSetRestore<UCHAR> dataType(&csb->csb_preferredDataType, desc.dsc_dtype);
+		ExprNode::doPass2(tdbb, csb, asgnFrom.getAddress());
+	}
 	ExprNode::doPass2(tdbb, csb, asgnTo.getAddress());
 	ExprNode::doPass2(tdbb, csb, missing.getAddress());
 	ExprNode::doPass2(tdbb, csb, missing2.getAddress());

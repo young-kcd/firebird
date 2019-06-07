@@ -7336,8 +7336,8 @@ DmlNode* LiteralNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 	USHORT l = node->litDesc.dsc_length;
 	USHORT dataLen = l;
-	if (node->litDesc.dsc_dtype == dtype_double && dataLen < sizeof(Decimal128))
-		dataLen = sizeof(Decimal128);
+	if (dataLen < sizeof(Decimal128))
+		dataLen = sizeof(Decimal128);	// we anyway have min.allocation size == 16
 	UCHAR* p = FB_NEW_POOL(csb->csb_pool) UCHAR[dataLen];
 	node->litDesc.dsc_address = p;
 	node->litDesc.dsc_flags = 0;
@@ -7403,6 +7403,7 @@ DmlNode* LiteralNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 			q = csb->csb_blr_reader.getPos();
 			dtype = CVT_get_numeric(q, l, &scale, p);
 			node->litDesc.dsc_dtype = dtype;
+			node->dsqlStr = FB_NEW_POOL(pool) IntlString(pool, string(q, l));
 
 			switch (dtype)
 			{
@@ -7441,6 +7442,36 @@ DmlNode* LiteralNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	return node;
 }
 
+// Generate BLR for a begated zero (take care about possible DECFLOAT).
+void LiteralNode::genNegZero(DsqlCompilerScratch* dsqlScratch, int prec)
+{
+	char buf[32];		// 18 bytes for max number of digits + some reserve
+	char* s = buf;
+	*s++ = '-';
+	*s++ = '0';
+	if (prec)
+	{
+		*s++ = '.';
+		while (prec--)
+			*s++ = '0';
+	}
+	*s = 0;
+
+	dsc desc;
+	desc.dsc_dtype = dtype_double;
+	desc.dsc_scale = 0;
+	desc.dsc_sub_type = static_cast<SSHORT>(s - buf);	// Keep length in sub_type which is unused
+	desc.dsc_length = sizeof(double);
+	desc.dsc_address = (UCHAR*) buf;
+
+	GEN_descriptor(dsqlScratch, &desc, true);
+
+	const USHORT l = desc.dsc_sub_type;
+	dsqlScratch->appendUShort(l);
+	if (l)
+		dsqlScratch->appendBytes(desc.dsc_address, l);
+}
+
 // Generate BLR for a constant.
 void LiteralNode::genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool negateValue)
 {
@@ -7454,18 +7485,34 @@ void LiteralNode::genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc,
 	switch (desc->dsc_dtype)
 	{
 		case dtype_short:
-			GEN_descriptor(dsqlScratch, desc, true);
 			value = *(SSHORT*) p;
 			if (negateValue)
+			{
+				if (!value)
+				{
+					genNegZero(dsqlScratch, 0);
+					return;
+				}
 				value = -value;
+			}
+
+			GEN_descriptor(dsqlScratch, desc, true);
 			dsqlScratch->appendUShort(value);
 			break;
 
 		case dtype_long:
-			GEN_descriptor(dsqlScratch, desc, true);
 			value = *(SLONG*) p;
 			if (negateValue)
+			{
+				if (!value)
+				{
+					genNegZero(dsqlScratch, 0);
+					return;
+				}
 				value = -value;
+			}
+
+			GEN_descriptor(dsqlScratch, desc, true);
 			dsqlScratch->appendUShort(value);
 			dsqlScratch->appendUShort(value >> 16);
 			break;
@@ -7516,7 +7563,14 @@ void LiteralNode::genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc,
 			i64value = *(SINT64*) p;
 
 			if (negateValue)
+			{
+				if (!i64value)
+				{
+					genNegZero(dsqlScratch, -desc->dsc_scale);
+					return;
+				}
 				i64value = -i64value;
+			}
 			else if (i64value == MIN_SINT64)
 			{
 				// UH OH!
@@ -7800,6 +7854,32 @@ bool LiteralNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignor
 
 ValueExprNode* LiteralNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
+	if (DTYPE_IS_DECFLOAT(csb->csb_preferredDataType) && dsqlStr)
+	{
+		const string& s(dsqlStr->getString());
+		dsc desc;
+		desc.makeText(s.length(), CS_ASCII, (UCHAR*)s.c_str());
+
+		switch(csb->csb_preferredDataType)
+		{
+		case dtype_dec64:
+			*((Decimal64*)litDesc.dsc_address) = CVT_get_dec64(&desc,
+				tdbb->getAttachment()->att_dec_status, ERR_post);
+			litDesc.dsc_dtype = dtype_dec64;
+			break;
+
+		case dtype_dec128:
+		case dtype_dec_fixed:
+			*((Decimal128*)litDesc.dsc_address) = CVT_get_dec64(&desc,
+				tdbb->getAttachment()->att_dec_status, ERR_post);
+			litDesc.dsc_dtype = dtype_dec128;
+			break;
+		}
+	}
+
+	delete dsqlStr;		// Not needed anymore
+	dsqlStr = 0;
+
 	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
