@@ -7442,13 +7442,14 @@ DmlNode* LiteralNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	return node;
 }
 
-// Generate BLR for a begated zero (take care about possible DECFLOAT).
+// Generate BLR for a negated zero (take care about possible DECFLOAT).
 void LiteralNode::genNegZero(DsqlCompilerScratch* dsqlScratch, int prec)
 {
 	char buf[32];		// 18 bytes for max number of digits + some reserve
 	char* s = buf;
 	*s++ = '-';
 	*s++ = '0';
+
 	if (prec)
 	{
 		*s++ = '.';
@@ -7466,10 +7467,10 @@ void LiteralNode::genNegZero(DsqlCompilerScratch* dsqlScratch, int prec)
 
 	GEN_descriptor(dsqlScratch, &desc, true);
 
-	const USHORT l = desc.dsc_sub_type;
-	dsqlScratch->appendUShort(l);
-	if (l)
-		dsqlScratch->appendBytes(desc.dsc_address, l);
+	const USHORT len = desc.dsc_sub_type;
+	dsqlScratch->appendUShort(len);
+	if (len)
+		dsqlScratch->appendBytes(desc.dsc_address, len);
 }
 
 // Generate BLR for a constant.
@@ -7858,19 +7859,19 @@ ValueExprNode* LiteralNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	{
 		const string& s(dsqlStr->getString());
 		dsc desc;
-		desc.makeText(s.length(), CS_ASCII, (UCHAR*)s.c_str());
+		desc.makeText(s.length(), CS_ASCII, (UCHAR*) s.c_str());
 
-		switch(csb->csb_preferredDataType)
+		switch (csb->csb_preferredDataType)
 		{
 		case dtype_dec64:
-			*((Decimal64*)litDesc.dsc_address) = CVT_get_dec64(&desc,
+			*((Decimal64*) litDesc.dsc_address) = CVT_get_dec64(&desc,
 				tdbb->getAttachment()->att_dec_status, ERR_post);
 			litDesc.dsc_dtype = dtype_dec64;
 			break;
 
 		case dtype_dec128:
 		case dtype_dec_fixed:
-			*((Decimal128*)litDesc.dsc_address) = CVT_get_dec64(&desc,
+			*((Decimal128*) litDesc.dsc_address) = CVT_get_dec64(&desc,
 				tdbb->getAttachment()->att_dec_status, ERR_post);
 			litDesc.dsc_dtype = dtype_dec128;
 			break;
