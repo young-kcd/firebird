@@ -66,9 +66,6 @@ bool TipCache::GlobalTpcInitializer::initialize(Firebird::SharedMemoryBase* sm, 
 	header->latest_statement_id.store(0, std::memory_order_relaxed);
 	header->tpc_block_size = m_cache->m_dbb->dbb_config->getTipCacheBlockSize();
 
-	m_cache->initTransactionsPerBlock();
-	m_cache->loadInventoryPages(tdbb);
-
 	return true;
 }
 
@@ -132,6 +129,12 @@ void TipCache::finalizeTpc(thread_db* tdbb)
 	// To avoid race conditions, this function might only
 	// be called during database shutdown when AST delivery is already disabled
 
+	// wait for all initializing processes (PR or EX)
+	Lock lock(tdbb, 0, LCK_tpc_init);
+
+	if (!LCK_lock(tdbb, &lock, LCK_SW, LCK_WAIT))
+		ERR_bugcheck_msg("Unable to obtain TPC lock (SW)");
+
 	// Release locks and deallocate all shared memory structures
 	if (m_blocks_memory.getFirst())
 	{
@@ -158,6 +161,8 @@ void TipCache::finalizeTpc(thread_db* tdbb)
 
 	m_blocks_memory.clear();
 	m_transactionsPerBlock = 0;
+
+	LCK_release(tdbb, &lock);
 }
 
 CommitNumber TipCache::cacheState(TraNumber number)
@@ -197,6 +202,15 @@ void TipCache::initializeTpc(thread_db *tdbb)
 	// Initialization can only be called on a TipCache that is not initialized
 	fb_assert(!m_transactionsPerBlock);
 
+	// wait for finalizers (SW) or first initializer (EX) locks
+	Lock lock(tdbb, 0, LCK_tpc_init);
+
+	if (!LCK_lock(tdbb, &lock, LCK_PR, LCK_WAIT))
+		ERR_bugcheck_msg("Unable to obtain TPC lock (PR)");
+
+	// ask if i am a first initializer
+	const bool init = LCK_convert(tdbb, &lock, LCK_EX, LCK_NO_WAIT);
+
 	string fileName;
 	fileName.printf(TPC_HDR_FILE, m_dbb->getUniqueFileId().c_str());
 	try
@@ -214,12 +228,18 @@ void TipCache::initializeTpc(thread_db *tdbb)
 	{
 		m_tpcHeader = NULL; // This is to prevent double free due to the hack above
 		iscLogException("TPC: Cannot initialize the shared memory region (header)", ex);
+
+		LCK_release(tdbb, &lock);
 		finalizeTpc(tdbb);
 		throw;
 	}
 
 	fb_assert(m_tpcHeader->getHeader()->mhb_version == TPC_VERSION);
 	initTransactionsPerBlock();
+	if (init)
+		loadInventoryPages(tdbb);
+	else
+		mapInventoryPages();
 
 	fileName.printf(SNAPSHOTS_FILE, m_dbb->getUniqueFileId().c_str());
 	try
@@ -230,11 +250,15 @@ void TipCache::initializeTpc(thread_db *tdbb)
 	catch (const Exception& ex)
 	{
 		iscLogException("TPC: Cannot initialize the shared memory region (snapshots)", ex);
+
+		LCK_release(tdbb, &lock);
 		finalizeTpc(tdbb);
 		throw;
 	}
 
 	fb_assert(m_snapshots->getHeader()->mhb_version == TPC_VERSION);
+
+	LCK_release(tdbb, &lock);
 }
 
 void TipCache::initTransactionsPerBlock()
@@ -312,6 +336,15 @@ void TipCache::loadInventoryPages(thread_db* tdbb)
 	}
 }
 
+void TipCache::mapInventoryPages()
+{
+	GlobalTpcHeader* header = m_tpcHeader->getHeader();
+	int blockNumber = header->oldest_transaction / m_transactionsPerBlock;
+	const int lastNumber = header->latest_transaction_id / m_transactionsPerBlock;
+
+	for (; blockNumber <= lastNumber; blockNumber++)
+		getTransactionStatusBlock(blockNumber);
+}
 
 TipCache::StatusBlockData::StatusBlockData(thread_db* tdbb, TipCache* tipCache, int blkNumber)
 	: blockNumber(blkNumber),

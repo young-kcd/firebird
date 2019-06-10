@@ -282,6 +282,8 @@ private:
 
 	// Populate TIP cache from disk
 	void loadInventoryPages(thread_db *tdbb);
+	// Init mapping for existing TIP blocks
+	void mapInventoryPages();
 
 	static int tpc_block_blocking_ast(void* arg);
 
