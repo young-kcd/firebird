@@ -292,6 +292,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
         case isc_tpb_lock_write:
         case isc_tpb_lock_read:
 		case isc_tpb_lock_timeout:
+		case isc_tpb_at_snapshot_number:
 			return TraditionalDpb;
 		}
 		return SingleTpb;
