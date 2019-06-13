@@ -2255,6 +2255,16 @@ public:
 };
 
 
+template <>
+inline RecreateNode<CreateAlterUserNode, DropUserNode, isc_dsql_recreate_user_failed>::
+	RecreateNode(MemoryPool& p, CreateAlterUserNode* aCreateNode)
+		: DdlNode(p),
+		  createNode(aCreateNode),
+		  dropNode(p, createNode->name, createNode->plugin)
+	{
+		dropNode.silent = true;
+	}
+
 typedef RecreateNode<CreateAlterUserNode, DropUserNode, isc_dsql_recreate_user_failed>
 	RecreateUserNode;
 
