@@ -72,6 +72,10 @@ else
   GCC=gcc
 endif
 
+ifeq ($(TOMMATH_BUILD_FLG),Y)
+TOM2TOM_FLAGS=-I../libtommath
+endif
+
 .PHONY:	master_process cross_process firebird Debug Release external
 
 all:	firebird
@@ -150,7 +154,7 @@ ifeq ($(TOMMATH_BUILD_FLG),Y)
 endif
 
 ifeq ($(TOMCRYPT_BUILD_FLG),Y)
-	CFLAGS="$(CFLAGS)" $(MAKE) -C $(ROOT)/extern/libtomcrypt -f makefile.shared GCC=$(GCC)
+	CFLAGS="$(CFLAGS) $(TOM2TOM_FLAGS)" $(MAKE) -C $(ROOT)/extern/libtomcrypt -f makefile.shared GCC=$(GCC)
 	ln -sf $(TOMCRYPT_SO).$(TOMCRYPT_VER) $(LIB)
 	ln -sf $(TOMCRYPT_SO) $(LIB)
 endif
