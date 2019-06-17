@@ -1607,9 +1607,12 @@ bool CreateAlterFunctionNode::checkPermission(thread_db* tdbb, jrd_tra* transact
 	dsc dscName;
 	dscName.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
 	if (alter)
-		SCL_check_function(tdbb, &dscName, SCL_alter);
-	else
-		SCL_check_create_access(tdbb, SCL_object_function);
+	{
+		if (SCL_check_function(tdbb, &dscName, SCL_alter) || !create)
+			return true;
+	}
+
+	SCL_check_create_access(tdbb, SCL_object_function);
 	return true;
 }
 
@@ -2602,9 +2605,12 @@ bool CreateAlterProcedureNode::checkPermission(thread_db* tdbb, jrd_tra* transac
 	dsc dscName;
 	dscName.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
 	if (alter)
-		SCL_check_procedure(tdbb, &dscName, SCL_alter);
-	else
-		SCL_check_create_access(tdbb, SCL_object_procedure);
+	{
+		if (SCL_check_procedure(tdbb, &dscName, SCL_alter) || !create)
+			return true;
+	}
+
+	SCL_check_create_access(tdbb, SCL_object_procedure);
 	return true;
 }
 
@@ -5220,9 +5226,12 @@ string CreateAlterExceptionNode::internalPrint(NodePrinter& printer) const
 bool CreateAlterExceptionNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	if (alter)
-		SCL_check_exception(tdbb, name, SCL_alter);
-	else
-		SCL_check_create_access(tdbb, SCL_object_exception);
+	{
+		if (SCL_check_exception(tdbb, name, SCL_alter) || !create)
+			return true;
+	}
+
+	SCL_check_create_access(tdbb, SCL_object_exception);
 	return true;
 }
 
@@ -5436,9 +5445,12 @@ string CreateAlterSequenceNode::internalPrint(NodePrinter& printer) const
 bool CreateAlterSequenceNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	if (alter)
-		SCL_check_generator(tdbb, name, SCL_alter);
-	else
-		SCL_check_create_access(tdbb, SCL_object_generator);
+	{
+		if (SCL_check_generator(tdbb, name, SCL_alter) || !create)
+			return true;
+	}
+
+	SCL_check_create_access(tdbb, SCL_object_generator);
 	return true;
 }
 
@@ -8290,9 +8302,12 @@ bool CreateAlterViewNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 	dsc dscName;
 	dscName.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
 	if (alter)
-		SCL_check_view(tdbb, &dscName, SCL_alter);
-	else
-		SCL_check_create_access(tdbb, SCL_object_view);
+	{
+		if (SCL_check_view(tdbb, &dscName, SCL_alter) || !create)
+			return true;
+	}
+
+	SCL_check_create_access(tdbb, SCL_object_view);
 	return true;
 }
 
