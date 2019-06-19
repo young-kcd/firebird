@@ -2680,17 +2680,21 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, ExprNode* in
 
 					// Pick a existing cast if available else make a new one.
 					if ((aliasNode = ExprNode::as<DsqlAliasNode>(select_item)) &&
-						aliasNode->value && (castNode = aliasNode->value->as<CastNode>()))
+						aliasNode->value &&
+						(castNode = ExprNode::as<CastNode>(aliasNode->value.getObject())))
 					{
 					}
 					else if ((derivedField = ExprNode::as<DerivedFieldNode>(select_item)) &&
 						(castNode = derivedField->value->as<CastNode>()))
 					{
 					}
-					else if ((castNode = ExprNode::as<CastNode>(select_item)))
-					{
-					}
 					else
+						castNode = ExprNode::as<CastNode>(select_item);
+
+					if (castNode && !DSC_EQUIV(&castNode->nodDesc, &desc, false))
+						castNode = NULL;
+
+					if (!castNode)
 					{
 						castNode = FB_NEW_POOL(*tdbb->getDefaultPool()) CastNode(
 							*tdbb->getDefaultPool());
