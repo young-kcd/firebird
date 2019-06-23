@@ -1232,13 +1232,14 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 		dsqlScratch->recursiveCtx = context;
 		dsqlScratch->context = &temp;
 
-		const string* const* saveCteAlias = dsqlScratch->currCteAlias;
+		const string* const saveCteAlias =
+			dsqlScratch->currCteAlias ? *dsqlScratch->currCteAlias : NULL;
 		dsqlScratch->resetCTEAlias(alias);
 
 		rse = PASS1_rse(dsqlScratch, input, updateLock);
 
 		if (saveCteAlias)
-			dsqlScratch->resetCTEAlias(**saveCteAlias);
+			dsqlScratch->resetCTEAlias(*saveCteAlias);
 		dsqlScratch->recursiveCtx = saveRecursiveCtx;
 
 		// Finish off by cleaning up contexts and put them into derivedContext
