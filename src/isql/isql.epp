@@ -8348,8 +8348,26 @@ static processing_state process_statement(const TEXT* str2)
 	ISQL_warning(fbStatus);
 
 	global_Stmt->setTimeout(fbStatus, setValues.StmtTimeout);
-	if (ISQL_errmsg(fbStatus))
-		setValues.StmtTimeout = 0;
+	if (failed())
+	{
+		if (fbStatus->getErrors()[1] == isc_interface_version_too_old)
+		{
+			if (setValues.StmtTimeout)
+			{
+				setValues.StmtTimeout = 0;
+
+				TEXT msg[MSG_LENGTH];
+				IUTILS_msg_get(NO_TIMEOUTS, msg);
+				// Timeouts are not supported by server
+				isqlGlob.printf("%s%s", msg, NEWLINE);
+			}
+		}
+		else
+		{
+			ISQL_errmsg(fbStatus);
+			return ps_ERR;
+		}
+	}
 
 	// Find out what kind of statement this is
 	const unsigned statement_type = global_Stmt->getType(fbStatus);

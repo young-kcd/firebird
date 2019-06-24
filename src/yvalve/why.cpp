@@ -6242,6 +6242,7 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::CheckStatusWrapper* st
 			case isc_io_error:
 			case isc_lock_dir_access:
 			case isc_no_priv:
+			case isc_wrong_ods:
 				currentStatus = &tempCheckStatusWrapper;
 				// fall down...
 			case isc_unavailable:

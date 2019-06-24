@@ -275,6 +275,7 @@ const int DATABASE_CRYPTED			= 192;		// DB encrypted
 const int DATABASE_NOT_CRYPTED		= 193;		// DB not encrypted
 const int DATABASE_CRYPT_PROCESS	= 194;		// crypt thread not complete
 const int MSG_ROLES					= 195;		// Roles:
+const int NO_TIMEOUTS				= 196;		// Timeouts are not supported by server
 
 
 // Initialize types
