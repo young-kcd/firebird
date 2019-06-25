@@ -592,6 +592,14 @@ public:
 
 	UserId* getUserId(const Firebird::MetaName &userName);
 
+	const UserId* getEffectiveUserId() const
+	{
+		if (att_ss_user)
+			return att_ss_user;
+		return att_user;
+	}
+
+
 private:
 	Attachment(MemoryPool* pool, Database* dbb, const InitialOptions* initialOptions);
 	~Attachment();
