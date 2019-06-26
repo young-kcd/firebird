@@ -89,7 +89,8 @@ public:
 
 	void initialize(ModuleLoader::Module* module);
 
-	template <typename T> void getEntryPoint(const char* name, ModuleLoader::Module* module, T& ptr, bool optional = false)
+	template <typename T> void getEntryPoint(const char* name, ModuleLoader::Module* module, T& ptr,
+		bool optional = false)
 	{
 		// System-wide ICU have no version number at entries names
 		if (!majorVersion)
@@ -135,8 +136,8 @@ void BaseICU::initialize(ModuleLoader::Module* module)
 #ifdef WIN_NT
 	if (uSetDataDirectory)
 	{
-		// call uSetDataDirectory only if .dat file is exists at same folder 
-		// as the loaded module 
+		// call uSetDataDirectory only if .dat file is exists at same folder
+		// as the loaded module
 
 		PathName path, file, fullName;
 		PathUtils::splitLastComponent(path, file, module->fileName);
@@ -167,7 +168,7 @@ void BaseICU::initialize(ModuleLoader::Module* module)
 			(Arg::Gds(isc_random) << diag).raise();
 		}
 	}
-};
+}
 
 }
 
@@ -1193,14 +1194,14 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 
 	// According to http://userguide.icu-project.org/design#TOC-Version-Numbers-in-ICU
 	// we using two ranges of version numbers: 3.0 - 4.8 and 49 - 79.
-	// Note 1: the most current version for now is 64, thus it is seems as enough to 
+	// Note 1: the most current version for now is 64, thus it is seems as enough to
 	// limit upper bound by value of 79. It should be enlarged when necessary in the
 	// future.
 	// Note 2: the required function ucal_getTZDataVersion() is available since 3.8.
 
 	for (int major = 79; major >= 3;)
 	{
-		int minor = 0; 
+		int minor = 0;
 		if (major == 4)
 			minor = 8;
 		else if (major <= 4)
@@ -1234,8 +1235,10 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 	Arg::Gds err(isc_icu_library);
 
 	if (lastError.getState() & Firebird::IStatus::STATE_ERRORS)
-		err << Arg::StatusVector(lastError.getErrors()) << 
+	{
+		err << Arg::StatusVector(lastError.getErrors()) <<
 			   Arg::Gds(isc_random) << Arg::Str(version);
+	}
 
 	err.raise();
 
