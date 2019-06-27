@@ -294,8 +294,8 @@ void SecurityDatabase::prepare()
 	// Attach as SYSDBA
 	dpb.insertString(isc_dpb_trusted_auth, SYSDBA_USER_NAME, fb_strlen(SYSDBA_USER_NAME));
 
-	// Do not use other providers except current engine
-	dpb.insertString(isc_dpb_config, EMBEDDED_PROVIDERS, fb_strlen(EMBEDDED_PROVIDERS));
+	// Do not use loopback provider
+	dpb.insertString(isc_dpb_config, Auth::ParsedList::getNonLoopbackProviders(secureDbName));
 
 	isc_db_handle tempHandle = 0;
 	isc_attach_database(status, 0, secureDbName, &tempHandle,

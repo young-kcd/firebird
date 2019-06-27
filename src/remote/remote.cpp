@@ -992,7 +992,7 @@ void ClntAuthBlock::resetClnt(const CSTRING* listStr)
 	Firebird::PathName final;
 	if (serverPluginList.hasData())
 	{
-		Auth::mergeLists(final, serverPluginList, pluginList);
+		Remote::ParsedList::mergeLists(final, serverPluginList, pluginList);
 		if (final.length() == 0)
 		{
 			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: No matching plugins on client\n"));
@@ -1205,8 +1205,7 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 
 	// we got correct key's type pair
 	// check what about crypt plugin for it
-	Remote::ParsedList clientPlugins;
-	REMOTE_parseList(clientPlugins, getPortConfig()->getPlugins(Firebird::IPluginManager::TYPE_WIRE_CRYPT));
+	Remote::ParsedList clientPlugins(getPortConfig()->getPlugins(Firebird::IPluginManager::TYPE_WIRE_CRYPT));
 	for (unsigned n = 0; n < clientPlugins.getCount(); ++n)
 	{
 		Firebird::PathName p(clientPlugins[n]);
