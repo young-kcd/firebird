@@ -944,13 +944,13 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
 	if (pluginName.hasData())
 	{
 		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: extractDataFromPluginTo: pluginName=%s\n", pluginName.c_str()));
-		user_id.insertPath(CNCT_plugin_name, pluginName);
+		user_id.insertString(CNCT_plugin_name, pluginName);
 	}
 
 	// Add plugin list
 	if (pluginList.hasData())
 	{
-		user_id.insertPath(CNCT_plugin_list, pluginList);
+		user_id.insertString(CNCT_plugin_list, pluginList);
 	}
 
 	// This is specially tricky field - user_id is limited to 255 bytes per entry,

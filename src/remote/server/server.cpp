@@ -7052,14 +7052,14 @@ bool SrvAuthBlock::extractNewKeys(CSTRING* to, ULONG flags)
 			PathName plugins = knownCryptKeyTypes()[t];
 			if (plugins.hasData())
 			{
-				lastExtractedKeys.insertPath(TAG_KEY_TYPE, t);
-				lastExtractedKeys.insertPath(TAG_KEY_PLUGINS, plugins);
+				lastExtractedKeys.insertString(TAG_KEY_TYPE, t);
+				lastExtractedKeys.insertString(TAG_KEY_PLUGINS, plugins);
 			}
 		}
 
 		if ((flags & EXTRACT_PLUGINS_LIST) && (dataFromPlugin.getCount() == 0))
 		{
-			lastExtractedKeys.insertPath(TAG_KNOWN_PLUGINS, pluginList);
+			lastExtractedKeys.insertString(TAG_KNOWN_PLUGINS, pluginList);
 		}
 	}
 

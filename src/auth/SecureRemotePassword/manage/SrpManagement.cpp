@@ -234,7 +234,7 @@ public:
 
 			Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::dpbList, MAX_DPB_SIZE);
 			dpb.insertByte(isc_dpb_sec_attach, TRUE);
-			dpb.insertString(isc_dpb_config, ParsedList::getNonLoopbackProviders(secDbName));
+			dpb.insertString(isc_dpb_config, Firebird::ParsedList::getNonLoopbackProviders(secDbName));
 
 			unsigned int authBlockSize;
 			const unsigned char* authBlock = logonInfo->authBlock(&authBlockSize);
