@@ -5705,7 +5705,7 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::CheckStatusWrapper* st
 
 		// Add original filename to DPB
 		if (orgFilename != expandedFilename && !newDpb.find(isc_dpb_org_filename))
-			newDpb.insertPath(isc_dpb_org_filename, orgFilename);
+			newDpb.insertString(isc_dpb_org_filename, orgFilename);
 
 		StatusVector temp(NULL);
 		CheckStatusWrapper tempCheckStatusWrapper(&temp);

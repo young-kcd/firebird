@@ -5291,7 +5291,7 @@ static void add_other_params(rem_port* port, ClumpletWriter& dpb, const Paramete
 			if (!dpb.find(isc_dpb_utf8_filename))
 				ISC_utf8ToSystem(path);
 
-			dpb.insertPath(par.process_name, path);
+			dpb.insertString(par.process_name, path);
 		}
 	}
 
@@ -5335,7 +5335,7 @@ static void add_working_directory(ClumpletWriter& dpb, const PathName& node_name
 			ISC_utf8ToSystem(cwd);
 	}
 
-	dpb.insertPath(isc_dpb_working_directory, cwd);
+	dpb.insertString(isc_dpb_working_directory, cwd);
 }
 
 
@@ -7570,10 +7570,10 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& dpb,
 			fb_assert(tags->plugin_name && tags->plugin_list);
 			if (pluginName.hasData())
 			{
-				dpb.insertPath(tags->plugin_name, pluginName);
+				dpb.insertString(tags->plugin_name, pluginName);
 			}
 			dpb.deleteWithTag(tags->plugin_list);
-			dpb.insertPath(tags->plugin_list, pluginList);
+			dpb.insertString(tags->plugin_list, pluginList);
 			firstTime = false;
 			HANDSHAKE_DEBUG(fprintf(stderr,
 				"Cli: extractDataFromPluginTo: first time - added plugName & pluginList\n"));
