@@ -599,6 +599,12 @@ public:
 		return att_user;
 	}
 
+	UserId* getEffectiveUserId()
+	{
+		if (att_ss_user)
+			return att_ss_user;
+		return att_user;
+	}
 
 private:
 	Attachment(MemoryPool* pool, Database* dbb, const InitialOptions* initialOptions);
