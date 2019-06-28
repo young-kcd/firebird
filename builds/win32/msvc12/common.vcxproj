@@ -39,6 +39,7 @@
     <ClCompile Include="..\..\..\src\common\classes\MetaName.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\MsgPrint.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\NoThrowTimeStamp.cpp" />
+    <ClCompile Include="..\..\..\src\common\classes\ParsedList.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\SafeArg.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\semaphore.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\Switches.cpp" />
@@ -136,6 +137,7 @@
     <ClInclude Include="..\..\..\src\common\classes\NoThrowTimeStamp.h" />
     <ClInclude Include="..\..\..\src\common\classes\Nullable.h" />
     <ClInclude Include="..\..\..\src\common\classes\objects_array.h" />
+    <ClInclude Include="..\..\..\src\common\classes\ParsedList.h" />
     <ClInclude Include="..\..\..\src\common\classes\QualifiedName.h" />
     <ClInclude Include="..\..\..\src\common\classes\RefCounted.h" />
     <ClInclude Include="..\..\..\src\common\classes\RefMutex.h" />

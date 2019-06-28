@@ -39,6 +39,7 @@
     <ClCompile Include="..\..\..\src\common\classes\MetaName.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\MsgPrint.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\NoThrowTimeStamp.cpp" />
+    <ClCompile Include="..\..\..\src\common\classes\ParsedList.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\SafeArg.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\semaphore.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\Switches.cpp" />
@@ -95,6 +96,7 @@
     <ClCompile Include="..\..\..\src\common\TextType.cpp" />
     <ClCompile Include="..\..\..\src\common\ThreadData.cpp" />
     <ClCompile Include="..\..\..\src\common\ThreadStart.cpp" />
+    <ClCompile Include="..\..\..\src\common\TimeZoneUtil.cpp" />
     <ClCompile Include="..\..\..\src\common\Tokens.cpp" />
     <ClCompile Include="..\..\..\src\common\unicode_util.cpp" />
     <ClCompile Include="..\..\..\src\common\utils.cpp" />
@@ -139,6 +141,7 @@
     <ClInclude Include="..\..\..\src\common\classes\NoThrowTimeStamp.h" />
     <ClInclude Include="..\..\..\src\common\classes\Nullable.h" />
     <ClInclude Include="..\..\..\src\common\classes\objects_array.h" />
+    <ClInclude Include="..\..\..\src\common\classes\ParsedList.h" />
     <ClInclude Include="..\..\..\src\common\classes\QualifiedName.h" />
     <ClInclude Include="..\..\..\src\common\classes\RefCounted.h" />
     <ClInclude Include="..\..\..\src\common\classes\RefMutex.h" />
@@ -205,6 +208,8 @@
     <ClInclude Include="..\..\..\src\common\TextType.h" />
     <ClInclude Include="..\..\..\src\common\ThreadData.h" />
     <ClInclude Include="..\..\..\src\common\ThreadStart.h" />
+    <ClInclude Include="..\..\..\src\common\TimeZones.h" />
+    <ClInclude Include="..\..\..\src\common\TimeZoneUtil.h" />
     <ClInclude Include="..\..\..\src\common\Tokens.h" />
     <ClInclude Include="..\..\..\src\common\unicode_util.h" />
     <ClInclude Include="..\..\..\src\common\UtilSvc.h" />
