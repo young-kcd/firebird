@@ -1128,7 +1128,7 @@ int Parser::yylexAux()
 
 	if (lex.last_token + 1 < lex.end && !isspace(UCHAR(lex.last_token[1])))
 	{
-		Firebird::string str(lex.last_token, 2);
+		Firebird::MetaName str(lex.last_token, 2);
 		KeywordVersion* keyVer = keywordsMap->get(str);
 
 		if (keyVer && parser_version >= keyVer->version)
