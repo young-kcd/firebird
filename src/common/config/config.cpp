@@ -200,7 +200,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 #endif
 	{TYPE_STRING,		"UserManager",				(ConfigValue) "Srp"},
 	{TYPE_STRING,		"TracePlugin",				(ConfigValue) "fbtrace"},
-	{TYPE_STRING,		"SecurityDatabase",			(ConfigValue) "$(dir_secDb)/security4.fdb"},	// security database name
+	{TYPE_STRING,		"SecurityDatabase",			(ConfigValue) "security.db"},	// sec/db alias - rely on databases.conf
 	{TYPE_STRING,		"ServerMode",				(ConfigValue) "Super"},
 	{TYPE_STRING,		"WireCrypt",				(ConfigValue) NULL},
 	{TYPE_STRING,		"WireCryptPlugin",			(ConfigValue) "Arc4"},
