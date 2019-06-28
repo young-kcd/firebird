@@ -40,6 +40,7 @@
 #include "../common/isc_proto.h"
 #include "../common/ThreadStart.h"
 #include "../common/db_alias.h"
+#include "../common/classes/ParsedList.h"
 
 #include "../jrd/Mapping.h"
 #include "../jrd/tra.h"
@@ -191,7 +192,7 @@ bool Mapping::DbHandle::attach(const char* aliasDb, ICryptKeyCallback* cryptCb)
 	ClumpletWriter embeddedSysdba(ClumpletWriter::Tagged, 1024, isc_dpb_version1);
 	embeddedSysdba.insertString(isc_dpb_user_name, DBA_USER_NAME, fb_strlen(DBA_USER_NAME));
 	embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
-	embeddedSysdba.insertString(isc_dpb_config, EMBEDDED_PROVIDERS, fb_strlen(EMBEDDED_PROVIDERS));
+	embeddedSysdba.insertString(isc_dpb_config, ParsedList::getNonLoopbackProviders(aliasDb));
 	embeddedSysdba.insertByte(isc_dpb_map_attach, TRUE);
 	embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
 
@@ -1619,13 +1620,14 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 
 	try
 	{
+		const char* dbName = tdbb->getDatabase()->dbb_config->getSecurityDatabase();
+
 		ClumpletWriter embeddedSysdba(ClumpletWriter::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 		embeddedSysdba.insertString(isc_dpb_user_name, DBA_USER_NAME, fb_strlen(DBA_USER_NAME));
 		embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
-		embeddedSysdba.insertString(isc_dpb_config, EMBEDDED_PROVIDERS, fb_strlen(EMBEDDED_PROVIDERS));
+		embeddedSysdba.insertString(isc_dpb_config, ParsedList::getNonLoopbackProviders(dbName));
 		embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
 
-		const char* dbName = tdbb->getDatabase()->dbb_config->getSecurityDatabase();
 		att = prov->attachDatabase(&st, dbName,
 			embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
 		if (st->getState() & IStatus::STATE_ERRORS)

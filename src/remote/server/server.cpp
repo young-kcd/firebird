@@ -74,6 +74,7 @@
 #include "../common/enc_proto.h"
 #include "../common/classes/InternalMessageBuffer.h"
 #include "../common/os/os_utils.h"
+#include "../common/security.h"
 
 using namespace Firebird;
 
@@ -1012,12 +1013,12 @@ class CryptKeyTypeManager : public PermanentStorage
 
 		void value(PathName& to) const
 		{
-			REMOTE_makeList(to, plugins);
+			plugins.makeList(to);
 		}
 
 	private:
 		PathName keyType;
-		Remote::ParsedList plugins;
+		ParsedList plugins;
 	};
 
 public:
@@ -1032,8 +1033,8 @@ public:
 			check(&st);
 
 			fb_assert(list);
-			Remote::ParsedList newTypes;
-			REMOTE_parseList(newTypes, PathName(list));
+			PathName tmp(list);
+			ParsedList newTypes(tmp);
 
 			PathName plugin(cpItr.name());
 			for (unsigned i = 0; i < newTypes.getCount(); ++i)
@@ -6047,9 +6048,7 @@ void rem_port::start_crypt(P_CRYPT * crypt, PACKET* sendL)
 
 		PathName plugName(crypt->p_plugin.cstr_address, crypt->p_plugin.cstr_length);
 		// Check it's availability
-		Remote::ParsedList plugins;
-
-		REMOTE_parseList(plugins, Config::getDefaultConfig()->getPlugins(
+		ParsedList plugins(Config::getDefaultConfig()->getPlugins(
 			IPluginManager::TYPE_WIRE_CRYPT));
 
 		bool found = false;
@@ -6966,13 +6965,10 @@ void SrvAuthBlock::createPluginsItr()
 		return;
 	}
 
-	Remote::ParsedList fromClient;
-	REMOTE_parseList(fromClient, pluginList);
+	ParsedList fromClient(pluginList);
+	ParsedList onServer(port->getPortConfig()->getPlugins(IPluginManager::TYPE_AUTH_SERVER));
+	ParsedList final;
 
-	Remote::ParsedList onServer;
-	REMOTE_parseList(onServer, port->getPortConfig()->getPlugins(IPluginManager::TYPE_AUTH_SERVER));
-
-	Remote::ParsedList final;
 	for (unsigned s = 0; s < onServer.getCount(); ++s)
 	{
 		// do not expect too long lists, therefore use double loop
@@ -7024,7 +7020,7 @@ void SrvAuthBlock::createPluginsItr()
 		final.push(onServer[onServer.getCount() - 1]);
 	}
 
-	REMOTE_makeList(pluginList, final);
+	final.makeList(pluginList);
 
 	RefPtr<const Config> portConf(port->getPortConfig());
 	plugins = FB_NEW AuthServerPlugins(IPluginManager::TYPE_AUTH_SERVER, portConf, pluginList.c_str());

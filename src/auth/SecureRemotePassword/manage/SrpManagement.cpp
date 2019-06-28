@@ -36,6 +36,7 @@
 #include "../utilities/gsec/gsec.h"
 #include "../auth/SecureRemotePassword/Message.h"
 #include "../common/classes/auto.h"
+#include "../common/classes/ParsedList.h"
 
 #ifndef FB_EXPORTED
 #if defined(DARWIN)
@@ -233,7 +234,7 @@ public:
 
 			Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::dpbList, MAX_DPB_SIZE);
 			dpb.insertByte(isc_dpb_sec_attach, TRUE);
-			dpb.insertString(isc_dpb_config, EMBEDDED_PROVIDERS, fb_strlen(EMBEDDED_PROVIDERS));
+			dpb.insertString(isc_dpb_config, ParsedList::getNonLoopbackProviders(secDbName));
 
 			unsigned int authBlockSize;
 			const unsigned char* authBlock = logonInfo->authBlock(&authBlockSize);

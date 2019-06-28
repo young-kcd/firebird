@@ -40,6 +40,7 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/init.h"
 #include "../common/classes/ImplementHelper.h"
+#include "../common/classes/ParsedList.h"
 #include "firebird/Interface.h"
 
 #include "../remote/remot_proto.h"
@@ -292,8 +293,8 @@ void SecurityDatabase::prepare()
 	// Attach as SYSDBA
 	dpb.insertString(isc_dpb_trusted_auth, DBA_USER_NAME, fb_strlen(DBA_USER_NAME));
 
-	// Do not use other providers except current engine
-	dpb.insertString(isc_dpb_config, EMBEDDED_PROVIDERS, fb_strlen(EMBEDDED_PROVIDERS));
+	// Do not use loopback provider
+	dpb.insertString(isc_dpb_config, ParsedList::getNonLoopbackProviders(secureDbName));
 
 	isc_db_handle tempHandle = 0;
 	isc_attach_database(status, 0, secureDbName, &tempHandle,

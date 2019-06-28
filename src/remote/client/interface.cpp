@@ -8928,8 +8928,7 @@ int ClntAuthBlock::release()
 
 bool ClntAuthBlock::checkPluginName(Firebird::PathName& nameToCheck)
 {
-	Remote::ParsedList parsed;
-	REMOTE_parseList(parsed, pluginList);
+	Firebird::ParsedList parsed(pluginList);
 	for (unsigned i = 0; i < parsed.getCount(); ++i)
 	{
 		if (parsed[i] == nameToCheck)
