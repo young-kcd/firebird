@@ -1299,8 +1299,18 @@ void VIO_copy_record(thread_db* tdbb, record_param* org_rpb, record_param* new_r
 			{
 				if (EVL_field(org_rpb->rpb_relation, org_record, i, &org_desc))
 				{
-					if (DTYPE_IS_BLOB_OR_QUAD(org_desc.dsc_dtype) || DTYPE_IS_BLOB_OR_QUAD(new_desc.dsc_dtype))
-						Jrd::blb::move(tdbb, &org_desc, &new_desc, new_rpb, i);
+					// If the source is not a blob or it's a temporary blob,
+					// then we'll need to materialize the resulting blob.
+					// Thus blb::move() is called with rpb and field ID.
+					// See also CORE-5600.
+
+					const bool materialize =
+						(DTYPE_IS_BLOB_OR_QUAD(new_desc.dsc_dtype) &&
+							!(DTYPE_IS_BLOB_OR_QUAD(org_desc.dsc_dtype) &&
+								((bid*) org_desc.dsc_address)->bid_internal.bid_relation_id));
+
+					if (materialize)
+						blb::move(tdbb, &org_desc, &new_desc, new_rpb, i);
 					else
 						MOV_move(tdbb, &org_desc, &new_desc);
 				}
