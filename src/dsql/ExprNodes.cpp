@@ -3560,10 +3560,7 @@ dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
 	if (!value)
 		return NULL;
 
-	if (DTYPE_IS_BLOB(value->dsc_dtype) || DTYPE_IS_BLOB(impure->vlu_desc.dsc_dtype))
-		blb::move(tdbb, value, &impure->vlu_desc);
-	else
-		MOV_move(tdbb, value, &impure->vlu_desc);
+	MOV_move(tdbb, value, &impure->vlu_desc);
 
 	if (impure->vlu_desc.dsc_dtype == dtype_text)
 		INTL_adjust_text_descriptor(tdbb, &impure->vlu_desc);

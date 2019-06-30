@@ -1257,6 +1257,15 @@ void VIO_copy_record(thread_db* tdbb, record_param* org_rpb, record_param* new_r
 	Record* const new_record = new_rpb->rpb_record;
 	fb_assert(org_record && new_record);
 
+	// dimitr:	Clear the req_null flag that may stay active after the last
+	//			boolean evaluation. Here we use only EVL_field() calls that
+	//			do not touch this flag and data copying is done only for
+	//			non-NULL fields, so req_null should never be seen inside blb::move().
+	//			See CORE-6090 for details.
+
+	jrd_req* const request = tdbb->getRequest();
+	request->req_flags &= ~req_null;
+
 	// Copy the original record to the new record. If the format hasn't changed,
 	// this is a simple move. If the format has changed, each field must be
 	// fetched and moved separately, remembering to set the missing flag.
@@ -1275,8 +1284,18 @@ void VIO_copy_record(thread_db* tdbb, record_param* org_rpb, record_param* new_r
 			{
 				if (EVL_field(org_rpb->rpb_relation, org_record, i, &org_desc))
 				{
-					if (DTYPE_IS_BLOB_OR_QUAD(org_desc.dsc_dtype) || DTYPE_IS_BLOB_OR_QUAD(new_desc.dsc_dtype))
-						Jrd::blb::move(tdbb, &org_desc, &new_desc, new_rpb, i);
+					// If the source is not a blob or it's a temporary blob,
+					// then we'll need to materialize the resulting blob.
+					// Thus blb::move() is called with rpb and field ID.
+					// See also CORE-5600.
+
+					const bool materialize =
+						(DTYPE_IS_BLOB_OR_QUAD(new_desc.dsc_dtype) &&
+							!(DTYPE_IS_BLOB_OR_QUAD(org_desc.dsc_dtype) &&
+								((bid*) org_desc.dsc_address)->bid_internal.bid_relation_id));
+
+					if (materialize)
+						blb::move(tdbb, &org_desc, &new_desc, new_rpb, i);
 					else
 						MOV_move(tdbb, &org_desc, &new_desc);
 				}
