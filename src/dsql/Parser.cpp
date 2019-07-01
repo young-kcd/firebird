@@ -27,7 +27,7 @@
 #include "../dsql/chars.h"
 #include "../jrd/jrd.h"
 #include "../jrd/DataTypeUtil.h"
-#include "../yvalve/keywords.h"
+#include "../common/keywords.h"
 #include "../jrd/intl_proto.h"
 
 #ifdef HAVE_FLOAT_H
@@ -60,7 +60,7 @@ namespace
 		explicit KeywordsMap(MemoryPool& pool)
 			: GenericMap<Pair<Left<MetaName, Keyword> > >(pool)
 		{
-			for (const TOK* token = KEYWORD_getTokens(); token->tok_string; ++token)
+			for (const TOK* token = keywordGetTokens(); token->tok_string; ++token)
 			{
 				MetaName* str = FB_NEW_POOL(pool) MetaName(token->tok_string);
 				put(*str, Keyword(token->tok_ident, str));

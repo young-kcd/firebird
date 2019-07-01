@@ -45,7 +45,6 @@
 
 #include "firebird.h"
 #include <stdio.h>
-#include "../yvalve/keywords.h"
 #include "../jrd/intl.h"
 #include <stdlib.h>
 #include <stdarg.h>
