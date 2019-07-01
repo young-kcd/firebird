@@ -26,7 +26,7 @@
 #include "../dsql/chars.h"
 #include "../jrd/jrd.h"
 #include "../jrd/DataTypeUtil.h"
-#include "../yvalve/keywords.h"
+#include "../common/keywords.h"
 
 using namespace Firebird;
 using namespace Jrd;
@@ -56,7 +56,7 @@ namespace
 		explicit KeywordsMap(MemoryPool& pool)
 			: GenericMap<Pair<Left<MetaName, KeywordVersion> > >(pool)
 		{
-			for (const TOK* token = KEYWORD_getTokens(); token->tok_string; ++token)
+			for (const TOK* token = keywordGetTokens(); token->tok_string; ++token)
 			{
 				MetaName* str = FB_NEW_POOL(pool) MetaName(token->tok_string);
 				put(*str, KeywordVersion(token->tok_ident, str, token->tok_version));
