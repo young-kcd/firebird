@@ -51,7 +51,11 @@ bool TipCache::GlobalTpcInitializer::initialize(Firebird::SharedMemoryBase* sm, 
 	m_cache->m_tpcHeader = static_cast<Firebird::SharedMemory<GlobalTpcHeader>*>(sm);
 
 	if (!initFlag)
+	{
+		m_cache->initTransactionsPerBlock();
+		m_cache->mapInventoryPages();
 		return true;
+	}
 
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -65,6 +69,9 @@ bool TipCache::GlobalTpcInitializer::initialize(Firebird::SharedMemoryBase* sm, 
 	header->latest_commit_number.store(CN_PREHISTORIC, std::memory_order_relaxed);
 	header->latest_statement_id.store(0, std::memory_order_relaxed);
 	header->tpc_block_size = m_cache->m_dbb->dbb_config->getTipCacheBlockSize();
+
+	m_cache->initTransactionsPerBlock();
+	m_cache->loadInventoryPages(tdbb);
 
 	return true;
 }
@@ -129,7 +136,7 @@ void TipCache::finalizeTpc(thread_db* tdbb)
 	// To avoid race conditions, this function might only
 	// be called during database shutdown when AST delivery is already disabled
 
-	// wait for all initializing processes (PR or EX)
+	// wait for all initializing processes (PR)
 	Lock lock(tdbb, 0, LCK_tpc_init);
 
 	if (!LCK_lock(tdbb, &lock, LCK_SW, LCK_WAIT))
@@ -202,14 +209,11 @@ void TipCache::initializeTpc(thread_db *tdbb)
 	// Initialization can only be called on a TipCache that is not initialized
 	fb_assert(!m_transactionsPerBlock);
 
-	// wait for finalizers (SW) or first initializer (EX) locks
+	// wait for finalizers (SW) locks
 	Lock lock(tdbb, 0, LCK_tpc_init);
 
 	if (!LCK_lock(tdbb, &lock, LCK_PR, LCK_WAIT))
 		ERR_bugcheck_msg("Unable to obtain TPC lock (PR)");
-
-	// ask if i am a first initializer
-	const bool init = LCK_convert(tdbb, &lock, LCK_EX, LCK_NO_WAIT);
 
 	string fileName;
 	fileName.printf(TPC_HDR_FILE, m_dbb->getUniqueFileId().c_str());
@@ -235,11 +239,6 @@ void TipCache::initializeTpc(thread_db *tdbb)
 	}
 
 	fb_assert(m_tpcHeader->getHeader()->mhb_version == TPC_VERSION);
-	initTransactionsPerBlock();
-	if (init)
-		loadInventoryPages(tdbb);
-	else
-		mapInventoryPages();
 
 	fileName.printf(SNAPSHOTS_FILE, m_dbb->getUniqueFileId().c_str());
 	try
