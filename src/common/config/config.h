@@ -406,6 +406,7 @@ public:
 	SINT64 asInteger(unsigned int key);
 	const char* asString(unsigned int key);
 	FB_BOOLEAN asBoolean(unsigned int key);
+	unsigned int getVersion(Firebird::CheckStatusWrapper* status);
 
 	int release();
 

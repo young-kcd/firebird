@@ -471,8 +471,7 @@ int SecurityDatabase::shutdown()
 	return FB_SUCCESS;
 }
 
-const static unsigned int INIT_KEY = ((~0) - 1);
-static unsigned int secDbKey = INIT_KEY;
+static Firebird::GlobalPtr<Firebird::ConfigKeys> keys;
 
 int SecurityDatabaseServer::authenticate(Firebird::CheckStatusWrapper* status, IServerBlock* sBlock,
 	IWriter* writerInterface)
@@ -488,10 +487,7 @@ int SecurityDatabaseServer::authenticate(Firebird::CheckStatusWrapper* status, I
 			RefPtr<IFirebirdConf> config(REF_NO_INCR, iParameter->getFirebirdConf(&s));
 			check(&s);
 
-			if (secDbKey == INIT_KEY)
-			{
-				secDbKey = config->getKey("SecurityDatabase");
-			}
+			unsigned int secDbKey = keys->getKey(config, "SecurityDatabase");
 			const char* tmp = config->asString(secDbKey);
 			if (!tmp)
 			{

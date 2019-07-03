@@ -31,6 +31,7 @@
 #include "../jrd/constants.h"
 #include "firebird/Interface.h"
 #include "../common/db_alias.h"
+#include "../jrd/build_no.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -764,23 +765,58 @@ const char* Config::getPlugins(unsigned int type) const
 	return NULL;		// compiler warning silencer
 }
 
+
+// array format: major, minor, release, build
+static unsigned short fileVerNumber[4] = {FILE_VER_NUMBER};
+
+static inline unsigned int getPartialVersion()
+{
+			// major				   // minor
+	return (fileVerNumber[0] << 24) | (fileVerNumber[1] << 16);
+}
+
+static inline unsigned int getFullVersion()
+{
+								 // build_no
+	return getPartialVersion() | fileVerNumber[3];
+}
+
+static unsigned int PARTIAL_MASK = 0xFFFF0000;
+static unsigned int KEY_MASK = 0xFFFF;
+
+static inline void checkKey(unsigned int& key)
+{
+	if (key & PARTIAL_MASK != getPartialVersion())
+		key = KEY_MASK;
+	else
+		key &= KEY_MASK;
+}
+
+unsigned int FirebirdConf::getVersion(Firebird::CheckStatusWrapper* status)
+{
+	return getFullVersion();
+}
+
 unsigned int FirebirdConf::getKey(const char* name)
 {
-	return Config::getKeyByName(name);
+	return Config::getKeyByName(name) | getPartialVersion();
 }
 
 ISC_INT64 FirebirdConf::asInteger(unsigned int key)
 {
+	checkKey(key);
 	return config->getInt(key);
 }
 
 const char* FirebirdConf::asString(unsigned int key)
 {
+	checkKey(key);
 	return config->getString(key);
 }
 
 FB_BOOLEAN FirebirdConf::asBoolean(unsigned int key)
 {
+	checkKey(key);
 	return config->getBoolean(key);
 }
 
@@ -794,6 +830,7 @@ int FirebirdConf::release()
 
 	return 1;
 }
+
 
 const char* Config::getSecurityDatabase() const
 {

@@ -187,6 +187,7 @@ interface FirebirdConf : ReferenceCounted
 	// Get integer key by it's name
 	// Value ~0 means name is invalid
 	// Keys are stable: one can use once obtained key in other instances of this interface
+	// provided they have same minor version (upper 16 bits match with getVersion())
 	uint getKey(const string name);
 	// Use to access integer values
 	int64 asInteger(uint key);
@@ -194,6 +195,10 @@ interface FirebirdConf : ReferenceCounted
 	const string asString(uint key);
 	// Use to access boolean values
 	boolean asBoolean(uint key);
+version:		// 3.0 => 4.0
+	// Use to access version of configuration manager serving this interface
+	// Format: major byte, minor byte, buildno 2-byte
+	uint getVersion(Status status);
 }
 
 // This interface is passed to plugin's factory as it's single parameter

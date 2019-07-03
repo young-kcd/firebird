@@ -100,8 +100,7 @@ static bool grantRevokeAdmin(ISC_STATUS* isc_status, FB_API_HANDLE database, FB_
 }
 
 
-const static unsigned int INIT_KEY = ((~0) - 1);
-static unsigned int secDbKey = INIT_KEY;
+static Firebird::GlobalPtr<Firebird::ConfigKeys> keys;
 
 namespace Auth {
 
@@ -120,12 +119,8 @@ void SecurityDatabaseManagement::start(Firebird::CheckStatusWrapper* st, Firebir
 	{
 		st->init();
 
-		if (secDbKey == INIT_KEY)
-		{
-			secDbKey = config->getKey("SecurityDatabase");
-		}
+		unsigned int secDbKey = keys->getKey(config, "SecurityDatabase");
 		const char* secDbName = config->asString(secDbKey);
-
 		if (!(secDbName && secDbName[0]))
 		{
 			Firebird::Arg::Gds(isc_secdb_name).raise();

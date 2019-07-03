@@ -39,8 +39,7 @@ using namespace Firebird;
 
 namespace {
 
-const unsigned int INIT_KEY = ((~0) - 1);
-unsigned int secDbKey = INIT_KEY;
+GlobalPtr<ConfigKeys> keys;
 
 const unsigned int SZ_LOGIN = 31;
 
@@ -132,11 +131,7 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 
 			// read salt and verifier from database
 			// obviously we need something like attachments cache here
-			if (secDbKey == INIT_KEY)
-			{
-				secDbKey = config->getKey("SecurityDatabase");
-			}
-
+			unsigned int secDbKey = keys->getKey(config, "SecurityDatabase");
 			secDbName = config->asString(secDbKey);
 			if (!(secDbName && secDbName[0]))
 			{

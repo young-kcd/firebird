@@ -611,6 +611,7 @@ namespace Firebird
 			ISC_INT64 (CLOOP_CARG *asInteger)(IFirebirdConf* self, unsigned key) throw();
 			const char* (CLOOP_CARG *asString)(IFirebirdConf* self, unsigned key) throw();
 			FB_BOOLEAN (CLOOP_CARG *asBoolean)(IFirebirdConf* self, unsigned key) throw();
+			unsigned (CLOOP_CARG *getVersion)(IFirebirdConf* self, IStatus* status) throw();
 		};
 
 	protected:
@@ -624,7 +625,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static const unsigned VERSION = 4;
 
 		unsigned getKey(const char* name)
 		{
@@ -647,6 +648,20 @@ namespace Firebird
 		FB_BOOLEAN asBoolean(unsigned key)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->asBoolean(this, key);
+			return ret;
+		}
+
+		template <typename StatusType> unsigned getVersion(StatusType* status)
+		{
+			if (cloopVTable->version < 4)
+			{
+				StatusType::setVersionError(status, "IFirebirdConf", cloopVTable->version, 4);
+				StatusType::checkException(status);
+				return 0;
+			}
+			StatusType::clearException(status);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getVersion(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -7113,6 +7128,7 @@ namespace Firebird
 					this->asInteger = &Name::cloopasIntegerDispatcher;
 					this->asString = &Name::cloopasStringDispatcher;
 					this->asBoolean = &Name::cloopasBooleanDispatcher;
+					this->getVersion = &Name::cloopgetVersionDispatcher;
 				}
 			} vTable;
 
@@ -7171,6 +7187,21 @@ namespace Firebird
 			}
 		}
 
+		static unsigned CLOOP_CARG cloopgetVersionDispatcher(IFirebirdConf* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getVersion(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<unsigned>(0);
+			}
+		}
+
 		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
@@ -7214,6 +7245,7 @@ namespace Firebird
 		virtual ISC_INT64 asInteger(unsigned key) = 0;
 		virtual const char* asString(unsigned key) = 0;
 		virtual FB_BOOLEAN asBoolean(unsigned key) = 0;
+		virtual unsigned getVersion(StatusType* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

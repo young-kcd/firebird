@@ -389,6 +389,19 @@ inline void check(IStatus* status)
 }
 
 
+// Config keys cache
+class ConfigKeys : private HalfStaticArray<unsigned int, 8>
+{
+public:
+	ConfigKeys(MemoryPool& p)
+		: HalfStaticArray<unsigned int, 8>(p)
+	{ }
+
+	const static unsigned int INVALID_KEY = ~0u;
+
+	unsigned int getKey(IFirebirdConf* config, const char* keyName);
+};
+
 // debugger for reference counters
 
 #ifdef NEVERDEF
