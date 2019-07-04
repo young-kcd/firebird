@@ -7868,7 +7868,7 @@ ValueExprNode* LiteralNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 		case dtype_dec128:
 		case dtype_dec_fixed:
-			*((Decimal128*) litDesc.dsc_address) = CVT_get_dec64(&desc,
+			*((Decimal128*) litDesc.dsc_address) = CVT_get_dec128(&desc,
 				tdbb->getAttachment()->att_dec_status, ERR_post);
 			litDesc.dsc_dtype = dtype_dec128;
 			break;
