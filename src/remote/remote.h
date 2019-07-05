@@ -720,6 +720,7 @@ public:
 	FB_BOOLEAN first(Firebird::CheckStatusWrapper* status);
 
 private:
+	Firebird::AuthReader::AuthBlock buffer;
 	Firebird::AuthReader rdr;
 	Firebird::AuthReader::Info info;
 

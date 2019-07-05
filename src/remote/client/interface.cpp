@@ -7448,7 +7448,9 @@ static void cleanDpb(Firebird::ClumpletWriter& dpb, const ParametersSet* tags)
 
 
 RmtAuthBlock::RmtAuthBlock(const Firebird::AuthReader::AuthBlock& aBlock)
-	: rdr(*getDefaultMemoryPool(), aBlock), info(*getDefaultMemoryPool())
+	: buffer(*getDefaultMemoryPool(), aBlock),
+	  rdr(*getDefaultMemoryPool(), buffer),
+	  info(*getDefaultMemoryPool())
 {
 	LocalStatus ls;
 	CheckStatusWrapper st(&ls);
