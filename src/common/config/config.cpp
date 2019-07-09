@@ -786,7 +786,7 @@ static unsigned int KEY_MASK = 0xFFFF;
 
 static inline void checkKey(unsigned int& key)
 {
-	if (key & PARTIAL_MASK != getPartialVersion())
+	if ((key & PARTIAL_MASK) != getPartialVersion())
 		key = KEY_MASK;
 	else
 		key &= KEY_MASK;
