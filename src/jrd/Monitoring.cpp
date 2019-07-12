@@ -214,7 +214,7 @@ ULONG MonitoringData::setup(AttNumber att_id, const char* user_name)
 	UCHAR* const ptr = (UCHAR*) shared_memory->getHeader() + offset;
 	Element* const element = (Element*) ptr;
 	element->attId = att_id;
-	strncpy(element->userName, user_name, USERNAME_LENGTH);
+	snprintf(element->userName, sizeof(element->userName), "%s", user_name);
 	element->length = 0;
 	shared_memory->getHeader()->used += delta;
 	return offset;
