@@ -515,8 +515,8 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 	if (retaining_flag)
 	{
-		trace.finish(ITracePlugin::RESULT_SUCCESS);
 		retain_context(tdbb, transaction, true, tra_committed);
+		trace.finish(ITracePlugin::RESULT_SUCCESS);
 		return;
 	}
 
@@ -1427,8 +1427,8 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 
 	if (retaining_flag)
 	{
-		trace.finish(ITracePlugin::RESULT_SUCCESS);
 		retain_context(tdbb, transaction, false, state);
+		trace.finish(ITracePlugin::RESULT_SUCCESS);
 		return;
 	}
 
@@ -3403,6 +3403,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	// of four, which puts the transaction on a byte boundary.
 
 	trans->tra_number = number;
+	trans->tra_initial_number = number;
 	trans->tra_top = number;
 	trans->tra_oldest = oldest;
 	trans->tra_oldest_active = active;
