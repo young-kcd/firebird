@@ -4104,6 +4104,8 @@ namespace Firebird
 			int (CLOOP_CARG *getWait)(ITraceTransaction* self) throw();
 			unsigned (CLOOP_CARG *getIsolation)(ITraceTransaction* self) throw();
 			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceTransaction* self) throw();
+			ISC_INT64 (CLOOP_CARG *getInitialID)(ITraceTransaction* self) throw();
+			ISC_INT64 (CLOOP_CARG *getPreviousID)(ITraceTransaction* self) throw();
 		};
 
 	protected:
@@ -4117,7 +4119,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static const unsigned VERSION = 3;
 
 		static const unsigned ISOLATION_CONSISTENCY = 1;
 		static const unsigned ISOLATION_CONCURRENCY = 2;
@@ -4151,6 +4153,26 @@ namespace Firebird
 		PerformanceInfo* getPerf()
 		{
 			PerformanceInfo* ret = static_cast<VTable*>(this->cloopVTable)->getPerf(this);
+			return ret;
+		}
+
+		ISC_INT64 getInitialID()
+		{
+			if (cloopVTable->version < 3)
+			{
+				return 0;
+			}
+			ISC_INT64 ret = static_cast<VTable*>(this->cloopVTable)->getInitialID(this);
+			return ret;
+		}
+
+		ISC_INT64 getPreviousID()
+		{
+			if (cloopVTable->version < 3)
+			{
+				return 0;
+			}
+			ISC_INT64 ret = static_cast<VTable*>(this->cloopVTable)->getPreviousID(this);
 			return ret;
 		}
 	};
@@ -13864,6 +13886,8 @@ namespace Firebird
 					this->getWait = &Name::cloopgetWaitDispatcher;
 					this->getIsolation = &Name::cloopgetIsolationDispatcher;
 					this->getPerf = &Name::cloopgetPerfDispatcher;
+					this->getInitialID = &Name::cloopgetInitialIDDispatcher;
+					this->getPreviousID = &Name::cloopgetPreviousIDDispatcher;
 				}
 			} vTable;
 
@@ -13934,6 +13958,32 @@ namespace Firebird
 				return static_cast<PerformanceInfo*>(0);
 			}
 		}
+
+		static ISC_INT64 CLOOP_CARG cloopgetInitialIDDispatcher(ITraceTransaction* self) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getInitialID();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<ISC_INT64>(0);
+			}
+		}
+
+		static ISC_INT64 CLOOP_CARG cloopgetPreviousIDDispatcher(ITraceTransaction* self) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getPreviousID();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<ISC_INT64>(0);
+			}
+		}
 	};
 
 	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<ITraceTransaction> > >
@@ -13954,6 +14004,8 @@ namespace Firebird
 		virtual int getWait() = 0;
 		virtual unsigned getIsolation() = 0;
 		virtual PerformanceInfo* getPerf() = 0;
+		virtual ISC_INT64 getInitialID() = 0;
+		virtual ISC_INT64 getPreviousID() = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

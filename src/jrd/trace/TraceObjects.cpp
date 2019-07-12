@@ -159,6 +159,10 @@ unsigned TraceTransactionImpl::getIsolation()
 	}
 }
 
+ISC_INT64 TraceTransactionImpl::getInitialID()
+{
+	return m_tran->tra_initial_number;
+}
 
 /// TraceSQLStatementImpl
 

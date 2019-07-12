@@ -1059,6 +1059,10 @@ interface TraceTransaction : Versioned
 	int getWait();
 	uint getIsolation();
 	PerformanceInfo* getPerf();
+
+version: // 3.0.4 -> 3.0.5
+	int64 getInitialID();
+	int64 getPreviousID();
 }
 
 interface TraceParams : Versioned
