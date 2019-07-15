@@ -5448,7 +5448,7 @@ dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 				case blr_extract_second:
 				case blr_extract_millisecond:
 					TimeZoneUtil::decodeTime(*(ISC_TIME_TZ*) value->dsc_address,
-						&EngineCallbacks::instance, &times, &fractions);
+						false, &EngineCallbacks::instance, &times, &fractions);
 					break;
 
 				case blr_extract_timezone_hour:
@@ -5508,7 +5508,7 @@ dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 					break;
 
 				default:
-					TimeZoneUtil::decodeTimeStamp(*(ISC_TIMESTAMP_TZ*) value->dsc_address, &times, &fractions);
+					TimeZoneUtil::decodeTimeStamp(*(ISC_TIMESTAMP_TZ*) value->dsc_address, false, &times, &fractions);
 			}
 			break;
 

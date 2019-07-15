@@ -103,6 +103,8 @@ void encodeTimeStampTz(
 );
 ```
 
+When `decodeTimeTz` / `decodeTimeStampTz` is called with non-null `timeZoneBuffer` and ICU could not be loaded in the client, `timeZoneBuffer` returns the string `GMT*` and the others fields receives the timestamp GMT values.
+
 ## Time zone string syntax
 
 ```

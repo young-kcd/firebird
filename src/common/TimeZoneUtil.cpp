@@ -189,6 +189,8 @@ static InitInstance<TimeZoneStartup> timeZoneStartup;
 
 //-------------------------------------
 
+const char TimeZoneUtil::GMT_FALLBACK[5] = "GMT*";
+
 // Return the current user's time zone.
 USHORT TimeZoneUtil::getSystemTimeZone()
 {
@@ -498,7 +500,7 @@ ISC_TIMESTAMP TimeZoneUtil::timeStampTzToTimeStamp(const ISC_TIMESTAMP_TZ& timeS
 
 	struct tm times;
 	int fractions;
-	decodeTimeStamp(tempTimeStampTz, &times, &fractions);
+	decodeTimeStamp(tempTimeStampTz, false, &times, &fractions);
 
 	return TimeStamp::encode_timestamp(&times, fractions);
 }
@@ -595,16 +597,39 @@ void TimeZoneUtil::localTimeStampToUtc(ISC_TIMESTAMP_TZ& timeStampTz)
 	timeStampTz.utc_timestamp.timestamp_time = ticks % TimeStamp::ISC_TICKS_PER_DAY;
 }
 
-void TimeZoneUtil::decodeTime(const ISC_TIME_TZ& timeTz, Callbacks* cb, struct tm* times, int* fractions)
+bool TimeZoneUtil::decodeTime(const ISC_TIME_TZ& timeTz, bool gmtFallback, Callbacks* cb,
+	struct tm* times, int* fractions)
 {
-	ISC_TIMESTAMP_TZ timeStampTz = cvtTimeTzToTimeStampTz(timeTz, cb);
-	decodeTimeStamp(timeStampTz, times, fractions);
+	bool tzLookup = true;
+	ISC_TIMESTAMP_TZ timeStampTz;
+
+	try
+	{
+		timeStampTz = cvtTimeTzToTimeStampTz(timeTz, cb);
+	}
+	catch (const Exception&)
+	{
+		if (gmtFallback)
+		{
+			tzLookup = false;
+			timeStampTz.time_zone = TimeZoneUtil::GMT_ZONE;
+			timeStampTz.utc_timestamp = cb->getCurrentGmtTimeStamp();
+			timeStampTz.utc_timestamp.timestamp_time = timeTz.utc_time;
+		}
+		else
+			throw;
+	}
+
+	decodeTimeStamp(timeStampTz, false, times, fractions);
+	return tzLookup;
 }
 
-void TimeZoneUtil::decodeTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, struct tm* times, int* fractions)
+bool TimeZoneUtil::decodeTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, bool gmtFallback,
+	struct tm* times, int* fractions)
 {
 	SINT64 ticks = timeStampTz.utc_timestamp.timestamp_date * TimeStamp::ISC_TICKS_PER_DAY +
 		timeStampTz.utc_timestamp.timestamp_time;
+	bool icuFail = false;
 	int displacement;
 
 	if (timeStampTz.time_zone == GMT_ZONE)
@@ -615,32 +640,45 @@ void TimeZoneUtil::decodeTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, struct t
 	{
 		UErrorCode icuErrorCode = U_ZERO_ERROR;
 
-		Jrd::UnicodeUtil::ConversionICU& icuLib = Jrd::UnicodeUtil::getConversionICU();
-
-		UCalendar* icuCalendar = icuLib.ucalOpen(
-			getDesc(timeStampTz.time_zone)->icuName, -1, NULL, UCAL_GREGORIAN, &icuErrorCode);
-
-		if (!icuCalendar)
-			status_exception::raise(Arg::Gds(isc_random) << "Error calling ICU's ucal_open.");
-
-		icuLib.ucalSetMillis(icuCalendar, ticksToIcuDate(ticks), &icuErrorCode);
-
-		if (U_FAILURE(icuErrorCode))
+		try
 		{
+			Jrd::UnicodeUtil::ConversionICU& icuLib = Jrd::UnicodeUtil::getConversionICU();
+
+			UCalendar* icuCalendar = icuLib.ucalOpen(
+				getDesc(timeStampTz.time_zone)->icuName, -1, NULL, UCAL_GREGORIAN, &icuErrorCode);
+
+			if (!icuCalendar)
+				status_exception::raise(Arg::Gds(isc_random) << "Error calling ICU's ucal_open.");
+
+			icuLib.ucalSetMillis(icuCalendar, ticksToIcuDate(ticks), &icuErrorCode);
+
+			if (U_FAILURE(icuErrorCode))
+			{
+				icuLib.ucalClose(icuCalendar);
+				status_exception::raise(Arg::Gds(isc_random) << "Error calling ICU's ucal_setMillis.");
+			}
+
+			displacement = (icuLib.ucalGet(icuCalendar, UCAL_ZONE_OFFSET, &icuErrorCode) +
+				icuLib.ucalGet(icuCalendar, UCAL_DST_OFFSET, &icuErrorCode)) / U_MILLIS_PER_MINUTE;
+
+			if (U_FAILURE(icuErrorCode))
+			{
+				icuLib.ucalClose(icuCalendar);
+				status_exception::raise(Arg::Gds(isc_random) << "Error calling ICU's ucal_get.");
+			}
+
 			icuLib.ucalClose(icuCalendar);
-			status_exception::raise(Arg::Gds(isc_random) << "Error calling ICU's ucal_setMillis.");
 		}
-
-		displacement = (icuLib.ucalGet(icuCalendar, UCAL_ZONE_OFFSET, &icuErrorCode) +
-			icuLib.ucalGet(icuCalendar, UCAL_DST_OFFSET, &icuErrorCode)) / U_MILLIS_PER_MINUTE;
-
-		if (U_FAILURE(icuErrorCode))
+		catch (const Exception&)
 		{
-			icuLib.ucalClose(icuCalendar);
-			status_exception::raise(Arg::Gds(isc_random) << "Error calling ICU's ucal_get.");
+			if (gmtFallback)
+			{
+				icuFail = true;
+				displacement = 0;
+			}
+			else
+				throw;
 		}
-
-		icuLib.ucalClose(icuCalendar);
 	}
 
 	ticks += displacement * 60 * ISC_TIME_SECONDS_PRECISION;
@@ -650,6 +688,8 @@ void TimeZoneUtil::decodeTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, struct t
 	ts.timestamp_time = ticks % TimeStamp::ISC_TICKS_PER_DAY;
 
 	TimeStamp::decode_timestamp(ts, times, fractions);
+
+	return !icuFail;
 }
 
 ISC_TIMESTAMP_TZ TimeZoneUtil::getCurrentSystemTimeStamp()

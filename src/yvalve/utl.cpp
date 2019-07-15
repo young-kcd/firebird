@@ -674,7 +674,8 @@ void UtilInterface::decodeTimeTz(CheckStatusWrapper* status, const ISC_TIME_TZ* 
 	{
 		tm times;
 		int intFractions;
-		TimeZoneUtil::decodeTime(*timeTz, CVT_commonCallbacks, &times, &intFractions);
+		bool tzLookup = TimeZoneUtil::decodeTime(*timeTz, timeZoneBuffer != nullptr, CVT_commonCallbacks,
+			&times, &intFractions);
 
 		if (hours)
 			*hours = times.tm_hour;
@@ -689,7 +690,12 @@ void UtilInterface::decodeTimeTz(CheckStatusWrapper* status, const ISC_TIME_TZ* 
 			*fractions = (unsigned) intFractions;
 
 		if (timeZoneBuffer)
-			TimeZoneUtil::format(timeZoneBuffer, timeZoneBufferLength, timeTz->time_zone);
+		{
+			if (tzLookup)
+				TimeZoneUtil::format(timeZoneBuffer, timeZoneBufferLength, timeTz->time_zone);
+			else
+				strncpy(timeZoneBuffer, TimeZoneUtil::GMT_FALLBACK, timeZoneBufferLength);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -720,7 +726,7 @@ void UtilInterface::decodeTimeStampTz(CheckStatusWrapper* status, const ISC_TIME
 	{
 		tm times;
 		int intFractions;
-		TimeZoneUtil::decodeTimeStamp(*timeStampTz, &times, &intFractions);
+		bool tzLookup = TimeZoneUtil::decodeTimeStamp(*timeStampTz, timeZoneBuffer != nullptr, &times, &intFractions);
 
 		if (year)
 			*year = times.tm_year + 1900;
@@ -744,7 +750,12 @@ void UtilInterface::decodeTimeStampTz(CheckStatusWrapper* status, const ISC_TIME
 			*fractions = (unsigned) intFractions;
 
 		if (timeZoneBuffer)
-			TimeZoneUtil::format(timeZoneBuffer, timeZoneBufferLength, timeStampTz->time_zone);
+		{
+			if (tzLookup)
+				TimeZoneUtil::format(timeZoneBuffer, timeZoneBufferLength, timeStampTz->time_zone);
+			else
+				strncpy(timeZoneBuffer, TimeZoneUtil::GMT_FALLBACK, timeZoneBufferLength);
+		}
 	}
 	catch (const Exception& ex)
 	{

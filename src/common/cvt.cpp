@@ -2208,6 +2208,7 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 
 	// Convert a date or time value into a timestamp for manipulation
 
+	bool tzLookup = true;
 	tm times;
 	memset(&times, 0, sizeof(struct tm));
 
@@ -2222,7 +2223,7 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 		break;
 
 	case dtype_sql_time_tz:
-		TimeZoneUtil::decodeTime(*(ISC_TIME_TZ*) from->dsc_address, cb, &times, &fractions);
+		tzLookup = TimeZoneUtil::decodeTime(*(ISC_TIME_TZ*) from->dsc_address, true, cb, &times, &fractions);
 		timezone = ((ISC_TIME_TZ*) from->dsc_address)->time_zone;
 		break;
 
@@ -2237,7 +2238,7 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 
 	case dtype_timestamp_tz:
 		cb->isVersion4(version4); // Used in the conversion to text some lines below.
-		TimeZoneUtil::decodeTimeStamp(*(ISC_TIMESTAMP_TZ*) from->dsc_address, &times, &fractions);
+		tzLookup = TimeZoneUtil::decodeTimeStamp(*(ISC_TIMESTAMP_TZ*) from->dsc_address, true, &times, &fractions);
 		timezone = ((ISC_TIMESTAMP_TZ*) from->dsc_address)->time_zone;
 		break;
 
@@ -2302,7 +2303,13 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	if (from->dsc_dtype == dtype_sql_time_tz || from->dsc_dtype == dtype_timestamp_tz)
 	{
 		*p++ = ' ';
-		p += TimeZoneUtil::format(p, sizeof(temp) - (p - temp), timezone);
+		if (tzLookup)
+			p += TimeZoneUtil::format(p, sizeof(temp) - (p - temp), timezone);
+		else
+		{
+			strncpy(p, TimeZoneUtil::GMT_FALLBACK, sizeof(temp) - (p - temp));
+			p += strlen(TimeZoneUtil::GMT_FALLBACK);
+		}
 	}
 
 	// Move the text version of the date/time value into the destination
@@ -3455,7 +3462,7 @@ namespace
 
 	ISC_TIMESTAMP CommonCallbacks::getCurrentGmtTimeStamp()
 	{
-		return TimeZoneUtil::timeStampTzToTimeStamp(TimeZoneUtil::getCurrentSystemTimeStamp(), TimeZoneUtil::GMT_ZONE);
+		return TimeZoneUtil::getCurrentGmtTimeStamp().utc_timestamp;
 	}
 
 	USHORT CommonCallbacks::getSessionTimeZone()
