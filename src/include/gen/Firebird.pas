@@ -471,6 +471,8 @@ type
 	ITraceTransaction_getWaitPtr = function(this: ITraceTransaction): Integer; cdecl;
 	ITraceTransaction_getIsolationPtr = function(this: ITraceTransaction): Cardinal; cdecl;
 	ITraceTransaction_getPerfPtr = function(this: ITraceTransaction): PerformanceInfoPtr; cdecl;
+	ITraceTransaction_getInitialIDPtr = function(this: ITraceTransaction): Int64; cdecl;
+	ITraceTransaction_getPreviousIDPtr = function(this: ITraceTransaction): Int64; cdecl;
 	ITraceParams_getCountPtr = function(this: ITraceParams): Cardinal; cdecl;
 	ITraceParams_getParamPtr = function(this: ITraceParams; idx: Cardinal): dscPtr; cdecl;
 	ITraceParams_getTextUTF8Ptr = function(this: ITraceParams; status: IStatus; idx: Cardinal): PAnsiChar; cdecl;
@@ -2520,10 +2522,12 @@ type
 		getWait: ITraceTransaction_getWaitPtr;
 		getIsolation: ITraceTransaction_getIsolationPtr;
 		getPerf: ITraceTransaction_getPerfPtr;
+		getInitialID: ITraceTransaction_getInitialIDPtr;
+		getPreviousID: ITraceTransaction_getPreviousIDPtr;
 	end;
 
 	ITraceTransaction = class(IVersioned)
-		const VERSION = 5;
+		const VERSION = 7;
 		const ISOLATION_CONSISTENCY = Cardinal(1);
 		const ISOLATION_CONCURRENCY = Cardinal(2);
 		const ISOLATION_READ_COMMITTED_RECVER = Cardinal(3);
@@ -2534,6 +2538,8 @@ type
 		function getWait(): Integer;
 		function getIsolation(): Cardinal;
 		function getPerf(): PerformanceInfoPtr;
+		function getInitialID(): Int64;
+		function getPreviousID(): Int64;
 	end;
 
 	ITraceTransactionImpl = class(ITraceTransaction)
@@ -2544,6 +2550,8 @@ type
 		function getWait(): Integer; virtual; abstract;
 		function getIsolation(): Cardinal; virtual; abstract;
 		function getPerf(): PerformanceInfoPtr; virtual; abstract;
+		function getInitialID(): Int64; virtual; abstract;
+		function getPreviousID(): Int64; virtual; abstract;
 	end;
 
 	TraceParamsVTable = class(VersionedVTable)
@@ -6601,6 +6609,16 @@ end;
 function ITraceTransaction.getPerf(): PerformanceInfoPtr;
 begin
 	Result := TraceTransactionVTable(vTable).getPerf(Self);
+end;
+
+function ITraceTransaction.getInitialID(): Int64;
+begin
+	Result := TraceTransactionVTable(vTable).getInitialID(Self);
+end;
+
+function ITraceTransaction.getPreviousID(): Int64;
+begin
+	Result := TraceTransactionVTable(vTable).getPreviousID(Self);
 end;
 
 function ITraceParams.getCount(): Cardinal;
@@ -11323,6 +11341,24 @@ begin
 	end
 end;
 
+function ITraceTransactionImpl_getInitialIDDispatcher(this: ITraceTransaction): Int64; cdecl;
+begin
+	try
+		Result := ITraceTransactionImpl(this).getInitialID();
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+function ITraceTransactionImpl_getPreviousIDDispatcher(this: ITraceTransaction): Int64; cdecl;
+begin
+	try
+		Result := ITraceTransactionImpl(this).getPreviousID();
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
 var
 	ITraceTransactionImpl_vTable: TraceTransactionVTable;
 
@@ -13123,12 +13159,14 @@ initialization
 	ITraceDatabaseConnectionImpl_vTable.getDatabaseName := @ITraceDatabaseConnectionImpl_getDatabaseNameDispatcher;
 
 	ITraceTransactionImpl_vTable := TraceTransactionVTable.create;
-	ITraceTransactionImpl_vTable.version := 5;
+	ITraceTransactionImpl_vTable.version := 7;
 	ITraceTransactionImpl_vTable.getTransactionID := @ITraceTransactionImpl_getTransactionIDDispatcher;
 	ITraceTransactionImpl_vTable.getReadOnly := @ITraceTransactionImpl_getReadOnlyDispatcher;
 	ITraceTransactionImpl_vTable.getWait := @ITraceTransactionImpl_getWaitDispatcher;
 	ITraceTransactionImpl_vTable.getIsolation := @ITraceTransactionImpl_getIsolationDispatcher;
 	ITraceTransactionImpl_vTable.getPerf := @ITraceTransactionImpl_getPerfDispatcher;
+	ITraceTransactionImpl_vTable.getInitialID := @ITraceTransactionImpl_getInitialIDDispatcher;
+	ITraceTransactionImpl_vTable.getPreviousID := @ITraceTransactionImpl_getPreviousIDDispatcher;
 
 	ITraceParamsImpl_vTable := TraceParamsVTable.create;
 	ITraceParamsImpl_vTable.version := 3;
