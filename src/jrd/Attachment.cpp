@@ -989,7 +989,7 @@ bool Attachment::getIdleTimerTimestamp(ISC_TIMESTAMP_TZ& ts) const
 
 UserId* Attachment::getUserId(const MetaName& userName)
 {
-	// It's neceesary to keep specified sql role of user
+	// It's necessary to keep specified sql role of user
 	if (att_user && att_user->getUserName() == userName)
 		return att_user;
 
