@@ -286,7 +286,10 @@ bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 		tdbb->checkCancelState(true);
 
 	UCHAR* dsqlMsgBuffer = req_msg_buffers[message->msg_buffer_number];
-	JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, dsqlMsgBuffer);
+	if (prefetchedFirstRow)
+		prefetchedFirstRow = false;
+	else
+		JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, dsqlMsgBuffer);
 
 	const dsql_par* const eof = statement->getEof();
 	const USHORT* eofPtr = eof ? (USHORT*) (dsqlMsgBuffer + (IPTR) eof->par_desc.dsc_address) : NULL;
@@ -677,33 +680,14 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, boo
 	*destroyScratchPool = true;
 }
 
-// Execute a dynamic SQL statement.
-void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
+// Execute a dynamic SQL statement
+void DsqlDmlRequest::doExecute(thread_db* tdbb, jrd_tra** traHandle,
 	Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
 	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
 	bool singleton)
 {
-	if (!req_request)
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
-				  Arg::Gds(isc_unprepared_stmt));
-	}
-
-	// If there is no data required, just start the request
-
+	prefetchedFirstRow = false;
 	const dsql_msg* message = statement->getSendMsg();
-	if (message)
-		mapInOut(tdbb, false, message, inMetadata, NULL, inMsg);
-
-	// we need to mapInOut() before tracing of execution start to let trace
-	// manager know statement parameters values
-	TraceDSQLExecute trace(req_dbb->dbb_attachment, this);
-
-	// Setup and start timeout timer
-	const bool have_cursor = reqTypeWithCursor(statement->getType()) && !singleton;
-
-	setupTimer(tdbb);
-	thread_db::TimerGuard timerGuard(tdbb, req_timer, !have_cursor);
 
 	if (!message)
 		JRD_start(tdbb, req_request, req_transaction);
@@ -805,6 +789,17 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 				status_exception::raise(&localStatus);
 		}
 	}
+	else
+	{
+		// Prefetch first row of a query
+		if (reqTypeWithCursor(statement->getType())) {
+			dsql_msg* message = (dsql_msg*) statement->getReceiveMsg();
+
+			UCHAR* dsqlMsgBuffer = req_msg_buffers[message->msg_buffer_number];
+			JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, dsqlMsgBuffer);
+			prefetchedFirstRow = true;
+		}
+	}
 
 	switch (statement->getType())
 	{
@@ -825,6 +820,79 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 						  Arg::Gds(isc_update_conflict));
 			}
 			break;
+	}
+}
+
+// Execute a dynamic SQL statement with tracing, restart and timeout handler
+void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
+	Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
+	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
+	bool singleton)
+{
+	if (!req_request)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+				  Arg::Gds(isc_unprepared_stmt));
+	}
+
+	// If there is no data required, just start the request
+
+	const dsql_msg* message = statement->getSendMsg();
+	if (message)
+		mapInOut(tdbb, false, message, inMetadata, NULL, inMsg);
+
+	// we need to mapInOut() before tracing of execution start to let trace
+	// manager know statement parameters values
+	TraceDSQLExecute trace(req_dbb->dbb_attachment, this);
+
+	// Setup and start timeout timer
+	const bool have_cursor = reqTypeWithCursor(statement->getType()) && !singleton;
+
+	setupTimer(tdbb);
+	thread_db::TimerGuard timerGuard(tdbb, req_timer, !have_cursor);
+
+	int numTries = 0;
+	TraNumber prev_concurrent_tx = 0;
+	while (true)
+	{
+		try
+		{
+			doExecute(tdbb, traHandle, inMetadata, inMsg, outMetadata, outMsg, singleton);
+			break;
+		}
+		catch (const status_exception &ex)
+		{
+			const ISC_STATUS* v = ex.value();
+			if (// Update conflict error
+				v[0] == isc_arg_gds &&
+				v[1] == isc_deadlock &&
+				v[2] == isc_arg_gds &&
+				v[3] == isc_update_conflict &&
+				// Read committed transaction with snapshots
+				(req_transaction->tra_flags & TRA_read_committed) &&
+				(req_transaction->tra_flags & TRA_read_consistency) &&
+				// Snapshot has been assigned to the request -
+				// it was top-level request
+				!TRA_get_prior_request(tdbb))
+			{
+				// It makes no sense to repeat statement if we stumble on the same Tx again and again
+				if (v[4] == isc_arg_gds &&
+					v[5] == isc_concurrent_transaction &&
+					v[6] == isc_arg_number)
+				{
+					if (prev_concurrent_tx && prev_concurrent_tx == v[7])
+						throw;
+
+					prev_concurrent_tx = v[7];
+				}
+				if (++numTries < 10)
+				{
+					fb_utils::init_status(tdbb->tdbb_status_vector);
+					continue;
+				}
+			}
+			throw;
+		}
 	}
 
 	trace.finish(have_cursor, ITracePlugin::RESULT_SUCCESS);
