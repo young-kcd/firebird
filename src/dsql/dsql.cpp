@@ -865,9 +865,7 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 			const ISC_STATUS* v = ex.value();
 			if (// Update conflict error
 				v[0] == isc_arg_gds &&
-				v[1] == isc_deadlock &&
-				v[2] == isc_arg_gds &&
-				v[3] == isc_update_conflict &&
+				v[1] == isc_update_conflict &&
 				// Read committed transaction with snapshots
 				(req_transaction->tra_flags & TRA_read_committed) &&
 				(req_transaction->tra_flags & TRA_read_consistency) &&
@@ -875,16 +873,6 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 				// it was top-level request
 				!TRA_get_prior_request(tdbb))
 			{
-				// It makes no sense to repeat statement if we stumble on the same Tx again and again
-				if (v[4] == isc_arg_gds &&
-					v[5] == isc_concurrent_transaction &&
-					v[6] == isc_arg_number)
-				{
-					if (prev_concurrent_tx && prev_concurrent_tx == v[7])
-						throw;
-
-					prev_concurrent_tx = v[7];
-				}
 				if (++numTries < 10)
 				{
 					fb_utils::init_status(tdbb->tdbb_status_vector);

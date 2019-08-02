@@ -5791,8 +5791,7 @@ static int prepare_update(	thread_db*		tdbb,
 				{
 					tdbb->bumpRelStats(RuntimeStatistics::RECORD_CONFLICTS, relation->rel_id);
 
-					ERR_post(Arg::Gds(isc_deadlock) <<
-							 Arg::Gds(isc_update_conflict) <<
+					ERR_post(Arg::Gds(isc_update_conflict) <<
 							 Arg::Gds(isc_concurrent_transaction) << Arg::Num(update_conflict_trans));
 				}
 
