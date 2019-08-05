@@ -1266,10 +1266,8 @@ void SCL_clear_classes(thread_db* tdbb, const TEXT* string)
 
 	while (list->current()->sclClassUser.first == string)
 	{
-		SecurityClass* s_class = list->current();
-		list->fastRemove();
-		delete s_class;
-		if (!list->getNext())
+		delete list->current();
+		if (!list->fastRemove())	// removing moves current item to the next one
 			break;
 	}
 }
