@@ -2922,7 +2922,10 @@ ValueExprNode* CoalesceNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	CoalesceNode* node = FB_NEW_POOL(getPool()) CoalesceNode(getPool(),
 		doDsqlPass(dsqlScratch, args));
 	node->make(dsqlScratch, &node->nodDesc);	// Set descriptor for output node.
-	node->setParameterType(dsqlScratch, &node->nodDesc, NULL, false);
+
+	for (auto& item : node->args->items)
+		PASS1_set_parameter_type(dsqlScratch, item, &node->nodDesc, NULL, false);
+
 	return node;
 }
 
@@ -2934,14 +2937,7 @@ void CoalesceNode::setParameterName(dsql_par* parameter) const
 bool CoalesceNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 	const dsc* desc, ValueExprNode* node, bool /*forceVarChar*/)
 {
-	bool ret = false;
-
-	for (NestConst<ValueExprNode>* ptr = args->items.begin(); ptr != args->items.end(); ++ptr)
-	{
-		ret |= PASS1_set_parameter_type(dsqlScratch, *ptr, desc, node, false);
-	}
-
-	return ret;
+	return false;
 }
 
 void CoalesceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
