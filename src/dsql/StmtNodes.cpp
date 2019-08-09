@@ -2643,7 +2643,11 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 		VirtualTable::erase(tdbb, rpb);
 	else if (!relation->rel_view_rse)
 	{
-		VIO_erase(tdbb, rpb, transaction);
+		while (!VIO_erase(tdbb, rpb, transaction))
+		{
+			if (!VIO_refetch_record(tdbb, rpb, transaction, true, true))
+				return parentStmt;
+		}
 		REPL_erase(tdbb, rpb, transaction);
 	}
 
@@ -6452,7 +6456,11 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 					VirtualTable::modify(tdbb, orgRpb, newRpb);
 				else if (!relation->rel_view_rse)
 				{
-					VIO_modify(tdbb, orgRpb, newRpb, transaction);
+					while (!VIO_modify(tdbb, orgRpb, newRpb, transaction))
+					{
+						if (!VIO_refetch_record(tdbb, orgRpb, transaction, true, true))
+							return parentStmt;
+					}
 					IDX_modify(tdbb, orgRpb, newRpb, transaction);
 					REPL_modify(tdbb, orgRpb, newRpb, transaction);
 				}

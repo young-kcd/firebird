@@ -1441,7 +1441,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 }
 
 
-void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
+bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -1497,7 +1497,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		// hvlad: what if record was created\modified by user tx also,
 		// i.e. if there is backversion ???
 		VIO_backout(tdbb, rpb, transaction);
-		return;
+		return true;
 	}
 
 	transaction->tra_flags |= TRA_write;
@@ -1891,7 +1891,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		if (transaction->tra_save_point && transaction->tra_save_point->isChanging())
 			verb_post(tdbb, transaction, rpb, rpb->rpb_undo);
 
-		return;
+		return true;
 	}
 
 	const bool backVersion = (rpb->rpb_b_page != 0);
@@ -1910,11 +1910,19 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	{
 		// Update stub didn't find one page -- do a long, hard update
 		PageStack stack;
-		if (prepare_update(tdbb, transaction, tid_fetch, rpb, &temp, 0, stack, false))
+		int prepare_result = prepare_update(tdbb, transaction, tid_fetch, rpb, &temp, 0, stack, false);
+		if (prepare_result && 
+			(!(transaction->tra_flags & TRA_read_consistency) || prepare_result == PREPARE_LOCKERR))
 		{
 			ERR_post(Arg::Gds(isc_deadlock) <<
 					 Arg::Gds(isc_update_conflict) <<
 					 Arg::Gds(isc_concurrent_transaction) << Arg::Num(rpb->rpb_transaction_nr));
+		}
+		if (prepare_result) {
+			jrd_req* top_request = request->req_snapshot.m_owner;
+			top_request->req_flags |= req_update_conflict;
+			top_request->req_conflict_txn = rpb->rpb_transaction_nr;
+			return false;
 		}
 
 		// Old record was restored and re-fetched for write.  Now replace it.
@@ -1974,6 +1982,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	{
 		notify_garbage_collector(tdbb, rpb, transaction->tra_number);
 	}
+	return true;
 }
 
 
@@ -2769,7 +2778,7 @@ void VIO_init(thread_db* tdbb)
 	}
 }
 
-void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, jrd_tra* transaction)
+bool VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -2835,7 +2844,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 	{
 		VIO_update_in_place(tdbb, transaction, org_rpb, new_rpb);
 		tdbb->bumpRelStats(RuntimeStatistics::RECORD_UPDATES, relation->rel_id);
-		return;
+		return true;
 	}
 
 	check_gbak_cheating_insupd(tdbb, relation, "UPDATE");
@@ -3198,18 +3207,26 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		}
 
 		tdbb->bumpRelStats(RuntimeStatistics::RECORD_UPDATES, relation->rel_id);
-		return;
+		return true;
 	}
 
 	const bool backVersion = (org_rpb->rpb_b_page != 0);
 	record_param temp;
 	PageStack stack;
-	if (prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr, org_rpb, &temp, new_rpb,
-					   stack, false))
+	int prepare_result = prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr, org_rpb, 
+										&temp, new_rpb, stack, false);
+	if (prepare_result && 
+		(!(transaction->tra_flags & TRA_read_consistency) || prepare_result == PREPARE_LOCKERR))
 	{
 		ERR_post(Arg::Gds(isc_deadlock) <<
 				 Arg::Gds(isc_update_conflict) <<
 				 Arg::Gds(isc_concurrent_transaction) << Arg::Num(org_rpb->rpb_transaction_nr));
+	}
+	if (prepare_result) {
+		jrd_req* top_request = tdbb->getRequest()->req_snapshot.m_owner;
+		top_request->req_flags |= req_update_conflict;
+		top_request->req_conflict_txn = org_rpb->rpb_transaction_nr;
+		return false;
 	}
 
 	IDX_modify_flag_uk_modified(tdbb, org_rpb, new_rpb, transaction);
@@ -3259,6 +3276,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 	{
 		notify_garbage_collector(tdbb, org_rpb, transaction->tra_number);
 	}
+	return true;
 }
 
 
@@ -5662,7 +5680,7 @@ static int prepare_update(	thread_db*		tdbb,
 
 				delete_record(tdbb, temp, 0, NULL);
 
-				if (writelock)
+				if (writelock || (transaction->tra_flags & TRA_read_consistency))
 				{
 					tdbb->bumpRelStats(RuntimeStatistics::RECORD_CONFLICTS, relation->rel_id);
 					return PREPARE_DELETE;
@@ -5785,15 +5803,15 @@ static int prepare_update(	thread_db*		tdbb,
 			switch (state)
 			{
 			case tra_committed:
-				// We need to loop waiting in read committed with no read consistency transactions only
-				if (!(transaction->tra_flags & TRA_read_committed) ||
-					(transaction->tra_flags & TRA_read_consistency))
+				// For SNAPSHOT mode transactions raise error early
+				if (!(transaction->tra_flags & TRA_read_committed))
 				{
 					tdbb->bumpRelStats(RuntimeStatistics::RECORD_CONFLICTS, relation->rel_id);
 
 					ERR_post(Arg::Gds(isc_update_conflict) <<
 							 Arg::Gds(isc_concurrent_transaction) << Arg::Num(update_conflict_trans));
 				}
+				return PREPARE_CONFLICT;
 
 			case tra_limbo:
 				if (!(transaction->tra_flags & TRA_ignore_limbo))

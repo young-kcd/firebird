@@ -851,36 +851,26 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	setupTimer(tdbb);
 	thread_db::TimerGuard timerGuard(tdbb, req_timer, !have_cursor);
 
-	int numTries = 0;
-	TraNumber prev_concurrent_tx = 0;
-	while (true)
 	{
-		try
+		AutoSavePoint savePoint(tdbb, req_transaction);
+		int numTries = 0;
+		while (true)
 		{
 			doExecute(tdbb, traHandle, inMetadata, inMsg, outMetadata, outMsg, singleton);
-			break;
-		}
-		catch (const status_exception &ex)
-		{
-			const ISC_STATUS* v = ex.value();
-			if (// Update conflict error
-				v[0] == isc_arg_gds &&
-				v[1] == isc_update_conflict &&
-				// Read committed transaction with snapshots
-				(req_transaction->tra_flags & TRA_read_committed) &&
-				(req_transaction->tra_flags & TRA_read_consistency) &&
-				// Snapshot has been assigned to the request -
-				// it was top-level request
-				!TRA_get_prior_request(tdbb))
-			{
-				if (++numTries < 10)
-				{
-					fb_utils::init_status(tdbb->tdbb_status_vector);
-					continue;
-				}
+			if (!(req_request->req_flags & req_update_conflict))
+				break;
+			req_request->req_flags &= ~req_update_conflict;
+			if (numTries >= 10) {
+				gds__log("Update conflict: unable to get a stable set of rows in the source tables");
+				ERR_post(Arg::Gds(isc_deadlock) <<
+						 Arg::Gds(isc_update_conflict) <<
+						 Arg::Gds(isc_concurrent_transaction) << Arg::Num(req_request->req_conflict_txn));
 			}
-			throw;
+			req_transaction->rollbackSavepoint(tdbb, true);
+			req_transaction->startSavepoint(tdbb);
+			numTries++;
 		}
+		savePoint.release();	// everything is ok
 	}
 
 	trace.finish(have_cursor, ITracePlugin::RESULT_SUCCESS);
