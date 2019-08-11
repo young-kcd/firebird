@@ -11873,7 +11873,7 @@ dsc* SubstringSimilarNode::execute(thread_db* tdbb, jrd_req* request) const
 			delete impure->vlu_misc.vlu_invariant;
 
 			impure->vlu_misc.vlu_invariant = evaluator = collation->createSubstringSimilarMatcher(
-				*tdbb->getDefaultPool(), patternStr, patternLen, escapeStr, escapeLen);
+				tdbb, *tdbb->getDefaultPool(), patternStr, patternLen, escapeStr, escapeLen);
 
 			impure->vlu_flags |= VLU_computed;
 		}
@@ -11885,7 +11885,7 @@ dsc* SubstringSimilarNode::execute(thread_db* tdbb, jrd_req* request) const
 	}
 	else
 	{
-		autoEvaluator = evaluator = collation->createSubstringSimilarMatcher(*tdbb->getDefaultPool(),
+		autoEvaluator = evaluator = collation->createSubstringSimilarMatcher(tdbb, *tdbb->getDefaultPool(),
 			patternStr, patternLen, escapeStr, escapeLen);
 	}
 
