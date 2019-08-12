@@ -199,7 +199,7 @@
     <ClInclude Include="..\..\..\src\common\sdl_proto.h" />
     <ClInclude Include="..\..\..\src\common\sha.h" />
     <ClInclude Include="..\..\..\src\common\sha2\sha2.h" />
-    <ClCompile Include="..\..\..\src\common\SimilarToRegex.h" />
+    <ClInclude Include="..\..\..\src\common\SimilarToRegex.h" />
     <ClInclude Include="..\..\..\src\common\SimpleStatusVector.h" />
     <ClInclude Include="..\..\..\src\common\StatementMetadata.h" />
     <ClInclude Include="..\..\..\src\common\StatusArg.h" />
