@@ -268,7 +268,7 @@ void VerbAction::undo(thread_db* tdbb, jrd_tra* transaction, bool preserveLocks)
 
 			if (!have_undo)
 			{
-				if (preserveLocks) {
+				if (preserveLocks && rpb.rpb_b_page) {
 					// Fetch previous record version and update in place current version with it
 					record_param temp = rpb;
 					temp.rpb_page = rpb.rpb_b_page;
