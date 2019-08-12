@@ -167,10 +167,9 @@ goto :EOF
 :re2
 @echo.
 @echo Building re2...
-REM FIXME: VS version
 @mkdir %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% 2>nul
 @pushd %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM%
-@cmake -G "Visual Studio %MSVC_VERSION% 2017" -A %FB_TARGET_PLATFORM% -S %FB_ROOT_PATH%\extern\re2 
+@cmake -G "Visual Studio %MSVC_VERSION%" -A %FB_TARGET_PLATFORM% -S %FB_ROOT_PATH%\extern\re2 
 @cmake --build %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% --target ALL_BUILD --config Release > re2_Release_%FB_TARGET_PLATFORM%.log
 @cmake --build %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% --target ALL_BUILD --config Debug > re2_Debug_%FB_TARGET_PLATFORM%.log
 @popd
