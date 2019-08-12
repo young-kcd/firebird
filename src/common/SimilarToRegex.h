@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef COMMON_SIMILAR_TO_REGEX_H
-#define COMMON_SIMILAR_TO_REGEX_H
+#ifndef FB_COMMON_SIMILAR_TO_REGEX_H
+#define FB_COMMON_SIMILAR_TO_REGEX_H
 
 #include "firebird.h"
 #include <re2/re2.h>
@@ -72,4 +72,4 @@ private:
 
 }	// namespace Firebird
 
-#endif	// COMMON_SIMILAR_TO_REGEX_H
+#endif	// FB_COMMON_SIMILAR_TO_REGEX_H
