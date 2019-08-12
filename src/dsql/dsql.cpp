@@ -862,9 +862,10 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 			req_request->req_flags &= ~req_update_conflict;
 			if (numTries >= 10) {
 				gds__log("Update conflict: unable to get a stable set of rows in the source tables");
-				ERR_post(Arg::Gds(isc_deadlock) <<
-						 Arg::Gds(isc_update_conflict) <<
-						 Arg::Gds(isc_concurrent_transaction) << Arg::Num(req_request->req_conflict_txn));
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-913) <<
+						  Arg::Gds(isc_deadlock) <<
+						  Arg::Gds(isc_update_conflict) <<
+						  Arg::Gds(isc_concurrent_transaction) << Arg::Num(req_request->req_conflict_txn));
 			}
 			req_transaction->rollbackSavepoint(tdbb, true);
 			req_transaction->startSavepoint(tdbb);
