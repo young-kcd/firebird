@@ -22,7 +22,7 @@
 #define FB_COMMON_SIMILAR_TO_REGEX_H
 
 #include "firebird.h"
-#include <re2/re2.h>
+#include "re2/re2.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
