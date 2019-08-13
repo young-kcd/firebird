@@ -25,7 +25,7 @@ ICU_LOC = $(HOME)/$(ICU_VERS)/icu/source/lib/
 
 all: otool framework
 
-otool: bin lib plugins intl
+otool: bin lib plugins intl udf
 
 BINLOC=$(CURDIR)/Release/firebird/bin/
 LIBLOC=$(CURDIR)/Release/firebird/lib/
@@ -38,6 +38,7 @@ INTLLOC=$(CURDIR)/Release/firebird/intl/
 NEWINTLLOC=/Library/Frameworks/Firebird.framework/Resources/plugins/
 OLDFBCLIENT=$(CURDIR)/Release/firebird/lib/libfbclient.dylib.3.0.4
 NEWFBCLIENT=/Library/Frameworks/Firebird.framework/Versions/A/Firebird
+UDFLOC=$(CURDIR)/Release/firebird/UDF/
 
 bin:
 
@@ -84,6 +85,9 @@ intl:
 
 	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(INTLLOC)libfbintl.dylib
 	install_name_tool -id $(NEWINTLLOC)fbintl  $(INTLLOC)libfbintl.dylib
+udf:
+
+	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(UDFLOC)fbudf.dylib
 
 framework darwin_setup_framework:
 	-$(RM) -rf $(FB_FW) ../gen/Release/Firebird.framework
