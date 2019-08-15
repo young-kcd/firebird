@@ -4080,6 +4080,11 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 	{
 		case PREPARE_CONFLICT:
 		case PREPARE_DELETE:
+			if ((transaction->tra_flags & TRA_read_consistency)) {
+				jrd_req* top_request = tdbb->getRequest()->req_snapshot.m_owner;
+				top_request->req_flags |= req_update_conflict;
+				top_request->req_conflict_txn = org_rpb->rpb_transaction_nr;
+			}
 			org_rpb->rpb_runtime_flags |= RPB_refetch;
 			return false;
 		case PREPARE_LOCKERR:
