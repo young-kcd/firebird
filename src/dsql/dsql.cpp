@@ -851,6 +851,8 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	setupTimer(tdbb);
 	thread_db::TimerGuard timerGuard(tdbb, req_timer, !have_cursor);
 
+	if (req_transaction && (req_transaction->tra_flags & TRA_read_consistency) &&
+		statement->getType() != DsqlCompiledStatement::TYPE_SAVEPOINT) 
 	{
 		AutoSavePoint savePoint(tdbb, req_transaction);
 		int numTries = 0;
@@ -872,6 +874,8 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 			numTries++;
 		}
 		savePoint.release();	// everything is ok
+	} else {
+		doExecute(tdbb, traHandle, inMetadata, inMsg, outMetadata, outMsg, singleton);
 	}
 
 	trace.finish(have_cursor, ITracePlugin::RESULT_SUCCESS);
