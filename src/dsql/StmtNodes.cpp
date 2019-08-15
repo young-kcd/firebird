@@ -2643,8 +2643,16 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 		VirtualTable::erase(tdbb, rpb);
 	else if (!relation->rel_view_rse)
 	{
+		// VIO_erase returns false if there is an update conflict in Read Consistency
+		// transaction. Before returning false it disables statement-level snapshot
+		// (via setting req_update_conflict flag) so re-fetch should see new data.
+		// Deleting new version blindly is generally unsafe, but is ok in this situation
+		// because all changes made by this request will certainly be undone and request 
+		// will be restarted.
 		while (!VIO_erase(tdbb, rpb, transaction))
 		{
+			// VIO_refetch_record returns false if record has been deleted by someone else.
+			// Gently ignore this situation and proceed further.
 			if (!VIO_refetch_record(tdbb, rpb, transaction, true, true))
 				return parentStmt;
 		}
@@ -6456,8 +6464,16 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 					VirtualTable::modify(tdbb, orgRpb, newRpb);
 				else if (!relation->rel_view_rse)
 				{
+					// VIO_modify returns false if there is an update conflict in Read Consistency
+					// transaction. Before returning false it disables statement-level snapshot 
+					// (via setting req_update_conflict flag) so re-fetch should see new data.
+					// Updating new version blindly is generally unsafe, but is ok in this situation
+					// because all changes made by this request will certainly be undone and request 
+					// will be restarted.
 					while (!VIO_modify(tdbb, orgRpb, newRpb, transaction))
 					{
+						// VIO_refetch_record returns false if record has been deleted by someone else.
+						// Gently ignore this situation and proceed further.
 						if (!VIO_refetch_record(tdbb, orgRpb, transaction, true, true))
 							return parentStmt;
 					}
