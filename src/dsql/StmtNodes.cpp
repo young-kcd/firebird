@@ -3964,7 +3964,14 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 		jrd_tra* const org_transaction = request->req_transaction;
 		fb_assert(tdbb->getTransaction() == org_transaction);
 
-		jrd_tra* const transaction = TRA_start(tdbb, 0,
+		// Use SNAPSHOT isolation mode in autonomous transactions by default
+		ULONG transaction_flags = 0;
+
+		// Simulate legacy behavior if ReadConsistency is disabled
+		if (!dbb->dbb_config->getReadConsistency())
+			transaction_flags = org_transaction->tra_flags;
+
+		jrd_tra* const transaction = TRA_start(tdbb, transaction_flags,
 											   org_transaction->tra_lock_timeout,
 											   org_transaction);
 
