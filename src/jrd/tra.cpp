@@ -145,7 +145,7 @@ jrd_req* TRA_get_prior_request(thread_db* tdbb)
 	return org_request;
 }
 
-void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request, bool no_prior)
+void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
 {
 	// This function is called whenever request is started in a transaction.
 	// Setup context to preserve read consistency in READ COMMITTED transactions.
@@ -160,7 +160,7 @@ void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request, boo
 		return;
 
 	// See if there is any request right above us in the call stack
-	jrd_req* org_request = no_prior ? nullptr : TRA_get_prior_request(tdbb);
+	jrd_req* org_request = TRA_get_prior_request(tdbb);
 
 	if (org_request && org_request->req_transaction == transaction)
 	{
