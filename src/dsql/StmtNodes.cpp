@@ -2643,7 +2643,19 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 		VirtualTable::erase(tdbb, rpb);
 	else if (!relation->rel_view_rse)
 	{
-		VIO_erase(tdbb, rpb, transaction);
+		// VIO_erase returns false if there is an update conflict in Read Consistency
+		// transaction. Before returning false it disables statement-level snapshot
+		// (via setting req_update_conflict flag) so re-fetch should see new data.
+		// Deleting new version blindly is generally unsafe, but is ok in this situation
+		// because all changes made by this request will certainly be undone and request 
+		// will be restarted.
+		while (!VIO_erase(tdbb, rpb, transaction))
+		{
+			// VIO_refetch_record returns false if record has been deleted by someone else.
+			// Gently ignore this situation and proceed further.
+			if (!VIO_refetch_record(tdbb, rpb, transaction, true, true))
+				return parentStmt;
+		}
 		REPL_erase(tdbb, rpb, transaction);
 	}
 
@@ -3952,7 +3964,17 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 		jrd_tra* const org_transaction = request->req_transaction;
 		fb_assert(tdbb->getTransaction() == org_transaction);
 
-		jrd_tra* const transaction = TRA_start(tdbb, org_transaction->tra_flags,
+		// Use SNAPSHOT isolation mode in autonomous transactions by default
+		ULONG transaction_flags = 0;
+
+		// Simulate legacy behavior if Read Consistency is not used
+		if (!dbb->dbb_config->getReadConsistency() &&
+			!(org_transaction->tra_flags & TRA_read_consistency))
+		{
+			transaction_flags = org_transaction->tra_flags;
+		}
+
+		jrd_tra* const transaction = TRA_start(tdbb, transaction_flags,
 											   org_transaction->tra_lock_timeout,
 											   org_transaction);
 
@@ -3977,12 +3999,6 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 		const Savepoint* const savepoint = transaction->startSavepoint();
 		impure->savNumber = savepoint->getNumber();
 
-		if ((transaction->tra_flags & TRA_read_committed) &&
-			(transaction->tra_flags & TRA_read_consistency))
-		{
-			TRA_setup_request_snapshot(tdbb, request, true);
-		}
-
 		return action;
 	}
 
@@ -3993,16 +4009,6 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 		return parentStmt;
 
 	fb_assert(transaction->tra_number == impure->traNumber);
-
-	if (request->req_operation == jrd_req::req_return ||
-		request->req_operation == jrd_req::req_unwind)
-	{
-		if ((transaction->tra_flags & TRA_read_committed) &&
-			(transaction->tra_flags & TRA_read_consistency))
-		{
-			TRA_release_request_snapshot(tdbb, request);
-		}
-	}
 
 	switch (request->req_operation)
 	{
@@ -6452,7 +6458,19 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 					VirtualTable::modify(tdbb, orgRpb, newRpb);
 				else if (!relation->rel_view_rse)
 				{
-					VIO_modify(tdbb, orgRpb, newRpb, transaction);
+					// VIO_modify returns false if there is an update conflict in Read Consistency
+					// transaction. Before returning false it disables statement-level snapshot 
+					// (via setting req_update_conflict flag) so re-fetch should see new data.
+					// Updating new version blindly is generally unsafe, but is ok in this situation
+					// because all changes made by this request will certainly be undone and request 
+					// will be restarted.
+					while (!VIO_modify(tdbb, orgRpb, newRpb, transaction))
+					{
+						// VIO_refetch_record returns false if record has been deleted by someone else.
+						// Gently ignore this situation and proceed further.
+						if (!VIO_refetch_record(tdbb, orgRpb, transaction, true, true))
+							return parentStmt;
+					}
 					IDX_modify(tdbb, orgRpb, newRpb, transaction);
 					REPL_modify(tdbb, orgRpb, newRpb, transaction);
 				}

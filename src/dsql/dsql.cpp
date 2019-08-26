@@ -286,7 +286,10 @@ bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 		tdbb->checkCancelState(true);
 
 	UCHAR* dsqlMsgBuffer = req_msg_buffers[message->msg_buffer_number];
-	JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, dsqlMsgBuffer);
+	if (prefetchedFirstRow)
+		prefetchedFirstRow = false;
+	else
+		JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, dsqlMsgBuffer);
 
 	const dsql_par* const eof = statement->getEof();
 	const USHORT* eofPtr = eof ? (USHORT*) (dsqlMsgBuffer + (IPTR) eof->par_desc.dsc_address) : NULL;
@@ -677,33 +680,14 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, boo
 	*destroyScratchPool = true;
 }
 
-// Execute a dynamic SQL statement.
-void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
+// Execute a dynamic SQL statement
+void DsqlDmlRequest::doExecute(thread_db* tdbb, jrd_tra** traHandle,
 	Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
 	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
 	bool singleton)
 {
-	if (!req_request)
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
-				  Arg::Gds(isc_unprepared_stmt));
-	}
-
-	// If there is no data required, just start the request
-
+	prefetchedFirstRow = false;
 	const dsql_msg* message = statement->getSendMsg();
-	if (message)
-		mapInOut(tdbb, false, message, inMetadata, NULL, inMsg);
-
-	// we need to mapInOut() before tracing of execution start to let trace
-	// manager know statement parameters values
-	TraceDSQLExecute trace(req_dbb->dbb_attachment, this);
-
-	// Setup and start timeout timer
-	const bool have_cursor = reqTypeWithCursor(statement->getType()) && !singleton;
-
-	setupTimer(tdbb);
-	thread_db::TimerGuard timerGuard(tdbb, req_timer, !have_cursor);
 
 	if (!message)
 		JRD_start(tdbb, req_request, req_transaction);
@@ -805,6 +789,17 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 				status_exception::raise(&localStatus);
 		}
 	}
+	else
+	{
+		// Prefetch first row of a query
+		if (reqTypeWithCursor(statement->getType())) {
+			dsql_msg* message = (dsql_msg*) statement->getReceiveMsg();
+
+			UCHAR* dsqlMsgBuffer = req_msg_buffers[message->msg_buffer_number];
+			JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, dsqlMsgBuffer);
+			prefetchedFirstRow = true;
+		}
+	}
 
 	switch (statement->getType())
 	{
@@ -825,6 +820,62 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 						  Arg::Gds(isc_update_conflict));
 			}
 			break;
+	}
+}
+
+// Execute a dynamic SQL statement with tracing, restart and timeout handler
+void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
+	Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
+	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
+	bool singleton)
+{
+	if (!req_request)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+				  Arg::Gds(isc_unprepared_stmt));
+	}
+
+	// If there is no data required, just start the request
+
+	const dsql_msg* message = statement->getSendMsg();
+	if (message)
+		mapInOut(tdbb, false, message, inMetadata, NULL, inMsg);
+
+	// we need to mapInOut() before tracing of execution start to let trace
+	// manager know statement parameters values
+	TraceDSQLExecute trace(req_dbb->dbb_attachment, this);
+
+	// Setup and start timeout timer
+	const bool have_cursor = reqTypeWithCursor(statement->getType()) && !singleton;
+
+	setupTimer(tdbb);
+	thread_db::TimerGuard timerGuard(tdbb, req_timer, !have_cursor);
+
+	if (req_transaction && (req_transaction->tra_flags & TRA_read_consistency) &&
+		statement->getType() != DsqlCompiledStatement::TYPE_SAVEPOINT) 
+	{
+		AutoSavePoint savePoint(tdbb, req_transaction);
+		int numTries = 0;
+		while (true)
+		{
+			doExecute(tdbb, traHandle, inMetadata, inMsg, outMetadata, outMsg, singleton);
+			if (!(req_request->req_flags & req_update_conflict))
+				break;
+			req_request->req_flags &= ~req_update_conflict;
+			if (numTries >= 10) {
+				gds__log("Update conflict: unable to get a stable set of rows in the source tables");
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-913) <<
+						  Arg::Gds(isc_deadlock) <<
+						  Arg::Gds(isc_update_conflict) <<
+						  Arg::Gds(isc_concurrent_transaction) << Arg::Num(req_request->req_conflict_txn));
+			}
+			req_transaction->rollbackSavepoint(tdbb, true);
+			req_transaction->startSavepoint(tdbb);
+			numTries++;
+		}
+		savePoint.release();	// everything is ok
+	} else {
+		doExecute(tdbb, traHandle, inMetadata, inMsg, outMetadata, outMsg, singleton);
 	}
 
 	trace.finish(have_cursor, ITracePlugin::RESULT_SUCCESS);

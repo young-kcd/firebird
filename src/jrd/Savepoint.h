@@ -94,7 +94,7 @@ namespace Jrd
 		UndoItemTree*	vct_undo;		// Data for undo records
 
 		void mergeTo(thread_db* tdbb, jrd_tra* transaction, VerbAction* nextAction);
-		void undo(thread_db* tdbb, jrd_tra* transaction);
+		void undo(thread_db* tdbb, jrd_tra* transaction, bool preserveLocks);
 		void garbageCollectIdxLite(thread_db* tdbb, jrd_tra* transaction, SINT64 recordNumber,
 								   VerbAction* nextAction, Record* goingRecord);
 
@@ -231,7 +231,7 @@ namespace Jrd
 
 		void cleanupTempData();
 
-		Savepoint* rollback(thread_db* tdbb, Savepoint* prior = NULL);
+		Savepoint* rollback(thread_db* tdbb, Savepoint* prior = NULL, bool preserveLocks = false);
 		Savepoint* rollforward(thread_db* tdbb, Savepoint* prior = NULL);
 
 		static void destroy(Savepoint*& savepoint)

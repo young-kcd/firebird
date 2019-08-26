@@ -145,7 +145,7 @@ jrd_req* TRA_get_prior_request(thread_db* tdbb)
 	return org_request;
 }
 
-void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request, bool no_prior)
+void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request)
 {
 	// This function is called whenever request is started in a transaction.
 	// Setup context to preserve read consistency in READ COMMITTED transactions.
@@ -160,7 +160,7 @@ void TRA_setup_request_snapshot(Jrd::thread_db* tdbb, Jrd::jrd_req* request, boo
 		return;
 
 	// See if there is any request right above us in the call stack
-	jrd_req* org_request = no_prior ? nullptr : TRA_get_prior_request(tdbb);
+	jrd_req* org_request = TRA_get_prior_request(tdbb);
 
 	if (org_request && org_request->req_transaction == transaction)
 	{
@@ -1616,8 +1616,11 @@ int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, TraNumber number, 
 			// GC thread accesses data directly without any request
 			if (jrd_req* current_request = tdbb->getRequest())
 			{
-				// There is no request snapshot when we build expression index
-				if (jrd_req* snapshot_request = current_request->req_snapshot.m_owner)
+				// Notes:
+				// 1) There is no request snapshot when we build expression index
+				// 2) Disable read committed snapshot after we encountered update conflict
+				jrd_req* snapshot_request = current_request->req_snapshot.m_owner;
+				if (snapshot_request && !(snapshot_request->req_flags & req_update_conflict))
 				{
 					if (stateCn > snapshot_request->req_snapshot.m_number)
 						return tra_active;
@@ -3847,7 +3850,7 @@ Savepoint* jrd_tra::startSavepoint(bool root)
 	return savepoint;
 }
 
-void jrd_tra::rollbackSavepoint(thread_db* tdbb)
+void jrd_tra::rollbackSavepoint(thread_db* tdbb, bool preserveLocks)
 /**************************************
  *
  *	 r o l l b a c k S a v e p o i n t
@@ -3864,7 +3867,7 @@ void jrd_tra::rollbackSavepoint(thread_db* tdbb)
 		REPL_save_cleanup(tdbb, this, tra_save_point, true);
 
 		Jrd::ContextPoolHolder context(tdbb, tra_pool);
-		tra_save_point = tra_save_point->rollback(tdbb);
+		tra_save_point = tra_save_point->rollback(tdbb, NULL, preserveLocks);
 	}
 }
 

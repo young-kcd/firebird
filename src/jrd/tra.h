@@ -386,7 +386,7 @@ public:
 	Record* findNextUndo(VerbAction* before_this, jrd_rel* relation, SINT64 number);
 	void listStayingUndo(jrd_rel* relation, SINT64 number, RecordStack &staying);
 	Savepoint* startSavepoint(bool root = false);
-	void rollbackSavepoint(thread_db* tdbb);
+	void rollbackSavepoint(thread_db* tdbb, bool preserveLocks = false);
 	void rollbackToSavepoint(thread_db* tdbb, SavNumber number);
 	void rollforwardSavepoint(thread_db* tdbb);
 	DbCreatorsList* getDbCreatorsList();
