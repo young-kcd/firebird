@@ -30,7 +30,6 @@
 namespace Firebird {
 
 
-//// FIXME: Leak re2::RE2 when destroyed by pool.
 class SimilarToRegex : public PermanentStorage
 {
 public:
@@ -56,7 +55,6 @@ private:
 	AutoPtr<re2::RE2> regexp;
 };
 
-//// FIXME: Leak re2::RE2 when destroyed by pool.
 // Given a regular expression R1<escape>#R2#<escape>R3 and the string S:
 // - Find the shortest substring of S that matches R1 while the remainder (S23) matches R2R3;
 // - Find the longest (S2) substring of S23 that matches R2 while the remainder matches R3;
