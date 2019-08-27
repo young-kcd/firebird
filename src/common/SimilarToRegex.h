@@ -43,11 +43,16 @@ public:
 public:
 	SimilarToRegex(MemoryPool& pool, bool caseInsensitive,
 		const char* patternStr, unsigned patternLen, const char* escapeStr, unsigned escapeLen);
+	~SimilarToRegex();
+
+private:
+	static void finalizer(SimilarToRegex* self);
 
 public:
 	bool matches(const char* buffer, unsigned bufferLen, Array<MatchPos>* matchPosArray = nullptr);
 
 private:
+	void* finalizerToken = nullptr;
 	AutoPtr<re2::RE2> regexp;
 };
 
@@ -61,11 +66,16 @@ class SubstringSimilarRegex : public PermanentStorage
 public:
 	SubstringSimilarRegex(MemoryPool& pool, bool caseInsensitive,
 		const char* patternStr, unsigned patternLen, const char* escapeStr, unsigned escapeLen);
+	~SubstringSimilarRegex();
+
+private:
+	static void finalizer(SubstringSimilarRegex* self);
 
 public:
 	bool matches(const char* buffer, unsigned bufferLen, unsigned* resultStart, unsigned* resultLength);
 
 private:
+	void* finalizerToken = nullptr;
 	AutoPtr<re2::RE2> regexp;
 };
 

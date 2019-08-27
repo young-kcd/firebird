@@ -239,6 +239,27 @@ public:
 	// The same routine, but more easily callable from the debugger
 	void print_contents(const char* filename, unsigned flags = 0, const char* filter_path = 0) FB_NOTHROW;
 
+	template <typename T> void* registerFinalizer(void (*finalizer)(T*), T* object)
+	{
+		return internalRegisterFinalizer(reinterpret_cast<void (*)(void*)>(finalizer), object);
+	}
+
+	void unregisterFinalizer(void*& token);
+
+private:
+	void* internalRegisterFinalizer(void (*finalizer)(void*), void* object);
+
+private:
+	struct FinalizerEntry
+	{
+		void (*finalizer)(void*);
+		void* object;
+		FinalizerEntry* prev;
+		FinalizerEntry* next;
+	};
+
+	FinalizerEntry* finalizers = nullptr;
+
 	friend class MemPool;
 };
 

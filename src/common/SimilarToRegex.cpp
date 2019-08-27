@@ -739,6 +739,18 @@ SimilarToRegex::SimilarToRegex(MemoryPool& pool, bool caseInsensitive,
 	SimilarToCompiler compiler(pool, regexp,
 		FLAG_GROUP_CAPTURE | FLAG_PREFER_FEWER | (caseInsensitive ? FLAG_CASE_INSENSITIVE : 0),
 		patternStr, patternLen, escapeStr, escapeLen);
+
+	finalizerToken = pool.registerFinalizer(finalizer, this);
+}
+
+SimilarToRegex::~SimilarToRegex()
+{
+	getPool().unregisterFinalizer(finalizerToken);
+}
+
+void SimilarToRegex::finalizer(SimilarToRegex* self)
+{
+	self->regexp.reset();
 }
 
 bool SimilarToRegex::matches(const char* buffer, unsigned bufferLen, Array<MatchPos>* matchPosArray)
@@ -797,6 +809,18 @@ SubstringSimilarRegex::SubstringSimilarRegex(MemoryPool& pool, bool caseInsensit
 	SubstringSimilarCompiler compiler(pool, regexp,
 		(caseInsensitive ? FLAG_CASE_INSENSITIVE : 0),
 		patternStr, patternLen, escapeStr, escapeLen);
+
+	finalizerToken = pool.registerFinalizer(finalizer, this);
+}
+
+SubstringSimilarRegex::~SubstringSimilarRegex()
+{
+	getPool().unregisterFinalizer(finalizerToken);
+}
+
+void SubstringSimilarRegex::finalizer(SubstringSimilarRegex* self)
+{
+	self->regexp.reset();
 }
 
 bool SubstringSimilarRegex::matches(const char* buffer, unsigned bufferLen,

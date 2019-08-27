@@ -1932,6 +1932,8 @@ private:
 	MemPool* next;
 	MemPool* child;
 #endif
+
+friend class MemoryPool;
 };
 
 
@@ -2851,6 +2853,16 @@ void MemoryPool::deallocate(void* block) FB_NOTHROW
 
 void MemoryPool::deletePool(MemoryPool* pool)
 {
+	while (pool->finalizers)
+	{
+		auto next = pool->finalizers->next;
+		pool->finalizers->next = pool->finalizers->prev = nullptr;
+
+		pool->finalizers->finalizer(pool->finalizers->object);
+
+		pool->finalizers = next;
+	}
+
 	MemPool::deletePool(pool->pool);
 	pool->pool = NULL;
 	delete pool;
@@ -2868,6 +2880,57 @@ void MemoryPool::print_contents(const char* filename, unsigned flags, const char
 #ifdef MEM_DEBUG
 	pool->print_contents(filename, flags, filter_path);
 #endif
+}
+
+void* MemoryPool::internalRegisterFinalizer(void (*finalizer)(void*), void* object)
+{
+	fb_assert(finalizer);
+
+	FinalizerEntry* entry = static_cast<FinalizerEntry*>(allocate(sizeof(FinalizerEntry) ALLOC_ARGS));
+
+	MutexLockGuard guard(pool->mutex, "MemoryPool::internalRegisterFinalizer");
+
+	entry->finalizer = finalizer;
+	entry->object = object;
+	entry->prev = nullptr;
+	entry->next = finalizers;
+
+	if (finalizers)
+	{
+		fb_assert(!finalizers->prev);
+		finalizers->prev = entry;
+	}
+
+	finalizers = entry;
+
+	return entry;
+}
+
+void MemoryPool::unregisterFinalizer(void*& token)
+{
+	FinalizerEntry* entry = static_cast<FinalizerEntry*>(token);
+
+	if (entry->finalizer)
+	{
+		MutexLockGuard guard(pool->mutex, "MemoryPool::unregisterFinalizer");
+
+		if (entry->prev)
+		{
+			fb_assert(entry->prev->next == entry);
+			entry->prev->next = entry->next;
+		}
+		else
+			finalizers = entry->next;
+
+		if (entry->next)
+			entry->next->prev = entry->prev;
+	}
+	else
+		fb_assert(!entry->next && !entry->prev);
+
+	deallocate(entry);
+
+	token = nullptr;
 }
 
 
