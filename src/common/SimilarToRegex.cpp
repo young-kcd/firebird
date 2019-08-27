@@ -54,9 +54,6 @@ namespace
 					status_exception::raise(Arg::Gds(isc_escape_invalid));
 			}
 
-			if (flags & FLAG_CASE_INSENSITIVE)
-				re2PatternStr.append("(?i)");
-
 			if (flags & FLAG_GROUP_CAPTURE)
 				re2PatternStr.append("(");
 
@@ -73,6 +70,7 @@ namespace
 			RE2::Options options;
 			options.set_log_errors(false);
 			options.set_dot_nl(true);
+			options.set_case_sensitive(!(flags & FLAG_CASE_INSENSITIVE));
 
 			re2::StringPiece sp((const char*) re2PatternStr.c_str(), re2PatternStr.length());
 			regexp = FB_NEW_POOL(pool) RE2(sp, options);
@@ -662,13 +660,13 @@ namespace
 
 			AutoPtr<RE2> regexp1, regexp2, regexp3;
 
-			SimilarToCompiler compiler1(pool, regexp1, (flags & FLAG_CASE_INSENSITIVE) | FLAG_PREFER_FEWER,
+			SimilarToCompiler compiler1(pool, regexp1, FLAG_PREFER_FEWER,
 				aPatternStr, positions[0] - escapeLen - 1, escapeStr, escapeLen);
 
-			SimilarToCompiler compiler2(pool, regexp2, (flags & FLAG_CASE_INSENSITIVE),
+			SimilarToCompiler compiler2(pool, regexp2, 0,
 				aPatternStr + positions[0], positions[1] - positions[0] - escapeLen - 1, escapeStr, escapeLen);
 
-			SimilarToCompiler compiler3(pool, regexp3, (flags & FLAG_CASE_INSENSITIVE) | FLAG_PREFER_FEWER,
+			SimilarToCompiler compiler3(pool, regexp3, FLAG_PREFER_FEWER,
 				aPatternStr + positions[1], patternLen - positions[1], escapeStr, escapeLen);
 
 			string finalRe2Pattern;
@@ -693,6 +691,7 @@ namespace
 			RE2::Options options;
 			options.set_log_errors(false);
 			options.set_dot_nl(true);
+			options.set_case_sensitive(!(flags & FLAG_CASE_INSENSITIVE));
 
 			re2::StringPiece sp((const char*) finalRe2Pattern.c_str(), finalRe2Pattern.length());
 			regexp = FB_NEW_POOL(pool) RE2(sp, options);
