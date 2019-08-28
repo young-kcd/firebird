@@ -740,15 +740,15 @@ SimilarToRegex::SimilarToRegex(MemoryPool& pool, bool caseInsensitive,
 		FLAG_GROUP_CAPTURE | FLAG_PREFER_FEWER | (caseInsensitive ? FLAG_CASE_INSENSITIVE : 0),
 		patternStr, patternLen, escapeStr, escapeLen);
 
-	finalizerToken = pool.registerFinalizer(finalizer, this);
+	finalizer = pool.registerFinalizer(finalize, this);
 }
 
 SimilarToRegex::~SimilarToRegex()
 {
-	getPool().unregisterFinalizer(finalizerToken);
+	getPool().unregisterFinalizer(finalizer);
 }
 
-void SimilarToRegex::finalizer(SimilarToRegex* self)
+void SimilarToRegex::finalize(SimilarToRegex* self)
 {
 	self->regexp.reset();
 }
@@ -810,15 +810,15 @@ SubstringSimilarRegex::SubstringSimilarRegex(MemoryPool& pool, bool caseInsensit
 		(caseInsensitive ? FLAG_CASE_INSENSITIVE : 0),
 		patternStr, patternLen, escapeStr, escapeLen);
 
-	finalizerToken = pool.registerFinalizer(finalizer, this);
+	finalizer = pool.registerFinalizer(finalize, this);
 }
 
 SubstringSimilarRegex::~SubstringSimilarRegex()
 {
-	getPool().unregisterFinalizer(finalizerToken);
+	getPool().unregisterFinalizer(finalizer);
 }
 
-void SubstringSimilarRegex::finalizer(SubstringSimilarRegex* self)
+void SubstringSimilarRegex::finalize(SubstringSimilarRegex* self)
 {
 	self->regexp.reset();
 }

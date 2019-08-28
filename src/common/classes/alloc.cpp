@@ -2855,12 +2855,19 @@ void MemoryPool::deletePool(MemoryPool* pool)
 {
 	while (pool->finalizers)
 	{
-		auto next = pool->finalizers->next;
-		pool->finalizers->next = pool->finalizers->prev = nullptr;
+		auto finalizer = pool->finalizers;
+		fb_assert(!finalizer->prev);
 
-		pool->finalizers->finalizer(pool->finalizers->object);
+		pool->finalizers = finalizer->next;
 
-		pool->finalizers = next;
+		if (pool->finalizers)
+		{
+			fb_assert(pool->finalizers->prev == finalizer);
+			pool->finalizers->prev = nullptr;
+		}
+
+		finalizer->next = nullptr;
+		finalizer->finalize();
 	}
 
 	MemPool::deletePool(pool->pool);
@@ -2882,55 +2889,43 @@ void MemoryPool::print_contents(const char* filename, unsigned flags, const char
 #endif
 }
 
-void* MemoryPool::internalRegisterFinalizer(void (*finalizer)(void*), void* object)
+void MemoryPool::internalRegisterFinalizer(Finalizer* finalizer)
 {
 	fb_assert(finalizer);
 
-	FinalizerEntry* entry = static_cast<FinalizerEntry*>(allocate(sizeof(FinalizerEntry) ALLOC_ARGS));
-
 	MutexLockGuard guard(pool->mutex, "MemoryPool::internalRegisterFinalizer");
 
-	entry->finalizer = finalizer;
-	entry->object = object;
-	entry->prev = nullptr;
-	entry->next = finalizers;
+	finalizer->prev = nullptr;
+	finalizer->next = finalizers;
 
 	if (finalizers)
 	{
 		fb_assert(!finalizers->prev);
-		finalizers->prev = entry;
+		finalizers->prev = finalizer;
 	}
 
-	finalizers = entry;
-
-	return entry;
+	finalizers = finalizer;
 }
 
-void MemoryPool::unregisterFinalizer(void*& token)
+void MemoryPool::unregisterFinalizer(Finalizer*& finalizer)
 {
-	FinalizerEntry* entry = static_cast<FinalizerEntry*>(token);
-
-	if (entry->finalizer)
-	{
+	{	// scope
 		MutexLockGuard guard(pool->mutex, "MemoryPool::unregisterFinalizer");
 
-		if (entry->prev)
+		if (finalizer->prev)
 		{
-			fb_assert(entry->prev->next == entry);
-			entry->prev->next = entry->next;
+			fb_assert(finalizer->prev->next == finalizer);
+			finalizer->prev->next = finalizer->next;
 		}
 		else
-			finalizers = entry->next;
+			finalizers = finalizer->next;
 
-		if (entry->next)
-			entry->next->prev = entry->prev;
+		if (finalizer->next)
+			finalizer->next->prev = finalizer->prev;
 	}
-	else
-		fb_assert(!entry->next && !entry->prev);
 
-	deallocate(entry);
-
-	token = nullptr;
+	delete finalizer;
+	finalizer = nullptr;
 }
 
 

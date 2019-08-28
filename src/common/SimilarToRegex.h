@@ -45,13 +45,13 @@ public:
 	~SimilarToRegex();
 
 private:
-	static void finalizer(SimilarToRegex* self);
+	static void finalize(SimilarToRegex* self);
 
 public:
 	bool matches(const char* buffer, unsigned bufferLen, Array<MatchPos>* matchPosArray = nullptr);
 
 private:
-	void* finalizerToken = nullptr;
+	MemoryPool::Finalizer* finalizer = nullptr;
 	AutoPtr<re2::RE2> regexp;
 };
 
@@ -67,13 +67,13 @@ public:
 	~SubstringSimilarRegex();
 
 private:
-	static void finalizer(SubstringSimilarRegex* self);
+	static void finalize(SubstringSimilarRegex* self);
 
 public:
 	bool matches(const char* buffer, unsigned bufferLen, unsigned* resultStart, unsigned* resultLength);
 
 private:
-	void* finalizerToken = nullptr;
+	MemoryPool::Finalizer* finalizer = nullptr;
 	AutoPtr<re2::RE2> regexp;
 };
 
