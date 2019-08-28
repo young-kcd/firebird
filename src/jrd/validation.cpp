@@ -603,7 +603,7 @@ static SimilarToRegex* createPatternMatcher(thread_db* tdbb, const char* pattern
 			//// TODO: Should this be different than trace and replication
 			//// and use case sensitive matcher?
 			matcher = FB_NEW_POOL(*tdbb->getDefaultPool()) SimilarToRegex(
-				*tdbb->getDefaultPool(), false,
+				*tdbb->getDefaultPool(), 0,
 				pattern, len,
 				"\\", 1);
 		}

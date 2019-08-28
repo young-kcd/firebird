@@ -110,7 +110,6 @@ using namespace Jrd;
 
 namespace {
 
-//// TODO: NONE / OCTETS.
 class Re2SimilarMatcher : public PatternMatcher
 {
 public:
@@ -119,27 +118,43 @@ public:
 		: PatternMatcher(pool, textType),
 		  buffer(pool)
 	{
-		CsConvert converter = INTL_convert_lookup(tdbb, CS_UTF8, textType->getCharSet()->getId());
-
 		UCharBuffer patternBuffer, escapeBuffer;
 
-		converter.convert(patternLen, patternStr, patternBuffer);
+		const auto charSetId = textType->getCharSet()->getId();
+		unsigned flags = 0;
 
-		if (textType->getFlags() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
-			UnicodeUtil::utf8Normalize(patternBuffer);
-
-		if (escapeStr)
+		if (charSetId != CS_NONE && charSetId != CS_BINARY)
 		{
-			converter.convert(escapeLen, escapeStr, escapeBuffer);
+			flags |= (textType->getFlags() & TEXTTYPE_ATTR_CASE_INSENSITIVE) ?
+				SimilarToRegex::FLAG_CASE_INSENSITIVE : 0;
+
+			CsConvert converter = INTL_convert_lookup(tdbb, CS_UTF8, charSetId);
+
+			converter.convert(patternLen, patternStr, patternBuffer);
 
 			if (textType->getFlags() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
-				UnicodeUtil::utf8Normalize(escapeBuffer);
-		}
+				UnicodeUtil::utf8Normalize(patternBuffer);
 
-		regex = FB_NEW_POOL(pool) SimilarToRegex(pool,
-			(textType->getFlags() & TEXTTYPE_ATTR_CASE_INSENSITIVE),
-			(const char*) patternBuffer.begin(), patternBuffer.getCount(),
-			(escapeStr ? (const char*) escapeBuffer.begin() : nullptr), escapeBuffer.getCount());
+			patternStr = patternBuffer.begin();
+			patternLen = patternBuffer.getCount();
+
+			if (escapeStr)
+			{
+				converter.convert(escapeLen, escapeStr, escapeBuffer);
+
+				if (textType->getFlags() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
+					UnicodeUtil::utf8Normalize(escapeBuffer);
+
+				escapeStr = escapeBuffer.begin();
+				escapeLen = escapeBuffer.getCount();
+			}
+		}
+		else
+			flags |= SimilarToRegex::FLAG_LATIN;
+
+		regex = FB_NEW_POOL(pool) SimilarToRegex(pool, flags,
+			(const char*) patternStr, patternLen,
+			(escapeStr ? (const char*) escapeStr : nullptr), escapeLen);
 	}
 
 public:
@@ -193,27 +208,40 @@ public:
 		  resultStart(0),
 		  resultLength(0)
 	{
-		CsConvert converter = INTL_convert_lookup(tdbb, textType->getCharSet()->getId(), CS_UTF8);
-
 		UCharBuffer patternBuffer, escapeBuffer;
 
-		converter.convert(patternLen, patternStr, patternBuffer);
+		const auto charSetId = textType->getCharSet()->getId();
+		unsigned flags = 0;
 
-		if (textType->getFlags() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
-			UnicodeUtil::utf8Normalize(patternBuffer);
-
-		if (escapeStr)
+		if (charSetId != CS_NONE && charSetId != CS_BINARY)
 		{
-			converter.convert(escapeLen, escapeStr, escapeBuffer);
+			CsConvert converter = INTL_convert_lookup(tdbb, textType->getCharSet()->getId(), CS_UTF8);
+
+			converter.convert(patternLen, patternStr, patternBuffer);
 
 			if (textType->getFlags() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
-				UnicodeUtil::utf8Normalize(escapeBuffer);
-		}
+				UnicodeUtil::utf8Normalize(patternBuffer);
 
-		regex = FB_NEW_POOL(pool) SubstringSimilarRegex(pool,
-			(textType->getFlags() & TEXTTYPE_ATTR_CASE_INSENSITIVE),
-			(const char*) patternBuffer.begin(), patternBuffer.getCount(),
-			(escapeStr ? (const char*) escapeBuffer.begin() : nullptr), escapeBuffer.getCount());
+			patternStr = patternBuffer.begin();
+			patternLen = patternBuffer.getCount();
+
+			if (escapeStr)
+			{
+				converter.convert(escapeLen, escapeStr, escapeBuffer);
+
+				if (textType->getFlags() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
+					UnicodeUtil::utf8Normalize(escapeBuffer);
+
+				escapeStr = escapeBuffer.begin();
+				escapeLen = escapeBuffer.getCount();
+			}
+		}
+		else
+			flags |= SimilarToRegex::FLAG_LATIN;
+
+		regex = FB_NEW_POOL(pool) SubstringSimilarRegex(pool, flags,
+			(const char*) patternStr, patternLen,
+			(escapeStr ? (const char*) escapeStr : nullptr), escapeLen);
 	}
 
 	virtual ~Re2SubstringSimilarMatcher()

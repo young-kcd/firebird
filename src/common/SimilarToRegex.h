@@ -33,6 +33,9 @@ namespace Firebird {
 class SimilarToRegex : public PermanentStorage
 {
 public:
+	static const unsigned FLAG_CASE_INSENSITIVE = 0x1;
+	static const unsigned FLAG_LATIN = 0x2;
+
 	struct MatchPos
 	{
 		unsigned start;
@@ -40,7 +43,7 @@ public:
 	};
 
 public:
-	SimilarToRegex(MemoryPool& pool, bool caseInsensitive,
+	SimilarToRegex(MemoryPool& pool, unsigned flags,
 		const char* patternStr, unsigned patternLen, const char* escapeStr, unsigned escapeLen);
 	~SimilarToRegex();
 
@@ -62,7 +65,11 @@ private:
 class SubstringSimilarRegex : public PermanentStorage
 {
 public:
-	SubstringSimilarRegex(MemoryPool& pool, bool caseInsensitive,
+	static const unsigned FLAG_CASE_INSENSITIVE = SimilarToRegex::FLAG_CASE_INSENSITIVE;
+	static const unsigned FLAG_LATIN = SimilarToRegex::FLAG_LATIN;
+
+public:
+	SubstringSimilarRegex(MemoryPool& pool, unsigned flags,
 		const char* patternStr, unsigned patternLen, const char* escapeStr, unsigned escapeLen);
 	~SubstringSimilarRegex();
 

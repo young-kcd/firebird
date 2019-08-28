@@ -134,14 +134,14 @@ void TraceCfgReader::readConfig()
 				try
 				{
 #ifdef WIN_NT	// !CASE_SENSITIVITY
-					const bool caseInsensitive = true;
+					const unsigned regexFlags = SimilarToRegex::FLAG_CASE_INSENSITIVE;
 #else
-					const bool caseInsensitive = false;
+					const unsigned regexFlags = 0;
 #endif
 					string utf8Pattern = pattern;
 					ISC_systemToUtf8(utf8Pattern);
 
-					SimilarToRegex matcher(*getDefaultMemoryPool(), caseInsensitive,
+					SimilarToRegex matcher(*getDefaultMemoryPool(), regexFlags,
 						utf8Pattern.c_str(), utf8Pattern.length(), "\\", 1);
 
 					regExpOk = true;

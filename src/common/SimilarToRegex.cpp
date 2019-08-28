@@ -27,11 +27,34 @@ using namespace Firebird;
 
 namespace
 {
-	static const unsigned FLAG_PREFER_FEWER = 0x01;
-	static const unsigned FLAG_CASE_INSENSITIVE = 0x02;
-	static const unsigned FLAG_GROUP_CAPTURE = 0x04;
+	bool hasChar(int32_t len, int32_t pos)
+	{
+		return pos < len;
+	}
 
-	//// TODO: Verify usage of U8_NEXT_UNSAFE.
+	UChar32 getChar(bool latin, const char* str, int32_t len, int32_t& pos)
+	{
+		fb_assert(hasChar(len, pos));
+		UChar32 c;
+
+		if (latin)
+			c = str[pos++];
+		else
+		{
+			U8_NEXT(str, pos, len, c);
+
+			if (c < 0)
+				status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
+		}
+
+		return c;
+	}
+
+	static const unsigned COMP_FLAG_PREFER_FEWER = 0x01;
+	static const unsigned COMP_FLAG_GROUP_CAPTURE = 0x02;
+	static const unsigned COMP_FLAG_CASE_INSENSITIVE = 0x04;
+	static const unsigned COMP_FLAG_LATIN = 0x08;
+
 	class SimilarToCompiler
 	{
 	public:
@@ -48,19 +71,19 @@ namespace
 			if (escapeStr)
 			{
 				int32_t escapePos = 0;
-				U8_NEXT_UNSAFE(escapeStr, escapePos, escapeChar);
+				escapeChar = getChar(flags & COMP_FLAG_LATIN, escapeStr, escapeLen, escapePos);
 
 				if (escapePos != escapeLen)
 					status_exception::raise(Arg::Gds(isc_escape_invalid));
 			}
 
-			if (flags & FLAG_GROUP_CAPTURE)
+			if (flags & COMP_FLAG_GROUP_CAPTURE)
 				re2PatternStr.append("(");
 
 			int parseFlags;
 			parseExpr(&parseFlags);
 
-			if (flags & FLAG_GROUP_CAPTURE)
+			if (flags & COMP_FLAG_GROUP_CAPTURE)
 				re2PatternStr.append(")");
 
 			// Check for proper termination.
@@ -70,7 +93,8 @@ namespace
 			RE2::Options options;
 			options.set_log_errors(false);
 			options.set_dot_nl(true);
-			options.set_case_sensitive(!(flags & FLAG_CASE_INSENSITIVE));
+			options.set_case_sensitive(!(flags & COMP_FLAG_CASE_INSENSITIVE));
+			options.set_utf8(!(flags & COMP_FLAG_LATIN));
 
 			re2::StringPiece sp((const char*) re2PatternStr.c_str(), re2PatternStr.length());
 			regexp = FB_NEW_POOL(pool) RE2(sp, options);
@@ -79,23 +103,20 @@ namespace
 				status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 		}
 
-		bool hasChar()
+		bool hasPatternChar()
 		{
 			return patternPos < patternLen;
 		}
 
-		UChar32 getChar()
+		UChar32 getPatternChar()
 		{
-			fb_assert(hasChar());
-			UChar32 c;
-			U8_NEXT_UNSAFE(patternStr, patternPos, c);
-			return c;
+			return getChar(flags & COMP_FLAG_LATIN, patternStr, patternLen, patternPos);
 		}
 
-		UChar32 peekChar()
+		UChar32 peekPatternChar()
 		{
 			auto savePos = patternPos;
-			auto c = getChar();
+			auto c = getPatternChar();
 			patternPos = savePos;
 			return c;
 		}
@@ -169,7 +190,7 @@ namespace
 				auto savePos = patternPos;
 				UChar32 c;
 
-				if (!hasChar() || (c = getChar()) != '|')
+				if (!hasPatternChar() || (c = getPatternChar()) != '|')
 				{
 					patternPos = savePos;
 					break;
@@ -185,9 +206,9 @@ namespace
 
 			bool first = true;
 
-			while (hasChar())
+			while (hasPatternChar())
 			{
-				auto c = peekChar();
+				auto c = peekPatternChar();
 
 				if (c != '|' && c != ')')
 				{
@@ -214,7 +235,7 @@ namespace
 
 			UChar32 op;
 
-			if (!hasChar() || !isRep((op = peekChar())))
+			if (!hasPatternChar() || !isRep((op = peekPatternChar())))
 			{
 				*parseFlagOut = parseFlags;
 				return;
@@ -227,19 +248,19 @@ namespace
 
 			if (op == '*')
 			{
-				re2PatternStr.append((flags & FLAG_PREFER_FEWER) ? "*?" : "*");
+				re2PatternStr.append((flags & COMP_FLAG_PREFER_FEWER) ? "*?" : "*");
 				*parseFlagOut = 0;
 				++patternPos;
 			}
 			else if (op == '+')
 			{
-				re2PatternStr.append((flags & FLAG_PREFER_FEWER) ? "+?" : "+");
+				re2PatternStr.append((flags & COMP_FLAG_PREFER_FEWER) ? "+?" : "+");
 				*parseFlagOut = PARSE_FLAG_NOT_EMPTY;
 				++patternPos;
 			}
 			else if (op == '?')
 			{
-				re2PatternStr.append((flags & FLAG_PREFER_FEWER) ? "??" : "?");
+				re2PatternStr.append((flags & COMP_FLAG_PREFER_FEWER) ? "??" : "?");
 				*parseFlagOut = 0;
 				++patternPos;
 			}
@@ -252,10 +273,10 @@ namespace
 
 				while (true)
 				{
-					if (!hasChar())
+					if (!hasPatternChar())
 						status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
-					UChar32 c = getChar();
+					UChar32 c = getPatternChar();
 
 					if (c == '}')
 					{
@@ -288,11 +309,11 @@ namespace
 
 				re2PatternStr.append(patternStr + repeatStart, patternStr + patternPos);
 
-				if (flags & FLAG_PREFER_FEWER)
+				if (flags & COMP_FLAG_PREFER_FEWER)
 					re2PatternStr.append("?");
 			}
 
-			if (hasChar() && isRep(peekChar()))
+			if (hasPatternChar() && isRep(peekPatternChar()))
 				status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 		}
 
@@ -300,9 +321,9 @@ namespace
 		{
 			*parseFlagOut = 0;
 
-			fb_assert(hasChar());
+			fb_assert(hasPatternChar());
 			auto savePos = patternPos;
-			auto op = getChar();
+			auto op = getPatternChar();
 
 			if (op == '_')
 			{
@@ -312,7 +333,7 @@ namespace
 			}
 			else if (op == '%')
 			{
-				re2PatternStr.append((flags & FLAG_PREFER_FEWER) ? ".*?" : ".*");
+				re2PatternStr.append((flags & COMP_FLAG_PREFER_FEWER) ? ".*?" : ".*");
 				return;
 			}
 			else if (op == '[')
@@ -344,21 +365,21 @@ namespace
 
 				do
 				{
-					if (!hasChar())
+					if (!hasPatternChar())
 						status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
 					unsigned charSavePos = patternPos;
-					UChar32 c = getChar();
+					UChar32 c = getPatternChar();
 					bool range = false;
 					bool charClass = false;
 
 					if (useEscape && c == escapeChar)
 					{
-						if (!hasChar())
+						if (!hasPatternChar())
 							status_exception::raise(Arg::Gds(isc_escape_invalid));
 
 						charSavePos = patternPos;
-						c = getChar();
+						c = getPatternChar();
 
 						if (!(c == escapeChar || isSpecial(c)))
 							status_exception::raise(Arg::Gds(isc_escape_invalid));
@@ -384,17 +405,17 @@ namespace
 
 					if (charClass)
 					{
-						if (!hasChar() || getChar() != ':')
+						if (!hasPatternChar() || getPatternChar() != ':')
 							status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
 						charSavePos = patternPos;
 
-						while (hasChar() && getChar() != ':')
+						while (hasPatternChar() && getPatternChar() != ':')
 							;
 
 						const SLONG len = patternPos - charSavePos - 1;
 
-						if (!hasChar() || getChar() != ']')
+						if (!hasPatternChar() || getPatternChar() != ']')
 							status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
 						for (item.clazz = 0; item.clazz < FB_NELEM(classes); ++item.clazz)
@@ -416,20 +437,20 @@ namespace
 						item.firstStart = item.lastStart = charSavePos;
 						item.firstEnd = item.lastEnd = patternPos;
 
-						if (hasChar() && peekChar() == '-')
+						if (hasPatternChar() && peekPatternChar() == '-')
 						{
-							getChar();
+							getPatternChar();
 
 							charSavePos = patternPos;
-							c = getChar();
+							c = getPatternChar();
 
 							if (useEscape && c == escapeChar)
 							{
-								if (!hasChar())
+								if (!hasPatternChar())
 									status_exception::raise(Arg::Gds(isc_escape_invalid));
 
 								charSavePos = patternPos;
-								c = getChar();
+								c = getPatternChar();
 
 								if (!(c == escapeChar || isSpecial(c)))
 									status_exception::raise(Arg::Gds(isc_escape_invalid));
@@ -442,9 +463,9 @@ namespace
 
 					items.add(item);
 
-					if (!hasChar())
+					if (!hasPatternChar())
 						status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
-				} while (peekChar() != ']');
+				} while (peekPatternChar() != ']');
 
 				auto appendItem = [&](const Item& item, bool negated) {
 					if (item.clazz != -1)
@@ -457,11 +478,10 @@ namespace
 					{
 						if (negated)
 						{
-							UChar32 c;
 							char hex[20];
 
 							int32_t cPos = item.firstStart;
-							U8_NEXT_UNSAFE(patternStr, cPos, c);
+							UChar32 c = getChar(flags & COMP_FLAG_LATIN, patternStr, patternLen, cPos);
 
 							if (c > 0)
 							{
@@ -473,7 +493,7 @@ namespace
 							}
 
 							cPos = item.lastStart;
-							U8_NEXT_UNSAFE(patternStr, cPos, c);
+							c = getChar(flags & COMP_FLAG_LATIN, patternStr, patternLen, cPos);
 
 							if (c < 0x10FFFF)
 							{
@@ -537,17 +557,17 @@ namespace
 					re2PatternStr.append("]");
 				}
 
-				getChar();
+				getPatternChar();
 				*parseFlagOut |= PARSE_FLAG_NOT_EMPTY;
 			}
 			else if (op == '(')
 			{
-				re2PatternStr.append(flags & FLAG_GROUP_CAPTURE ? "(" : "(?:");
+				re2PatternStr.append(flags & COMP_FLAG_GROUP_CAPTURE ? "(" : "(?:");
 
 				int parseFlags;
 				parseExpr(&parseFlags);
 
-				if (!hasChar() || getChar() != ')')
+				if (!hasPatternChar() || getPatternChar() != ')')
 					status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
 				re2PatternStr.append(")");
@@ -563,12 +583,12 @@ namespace
 				do
 				{
 					auto charSavePos = patternPos;
-					op = getChar();
+					op = getPatternChar();
 
 					if (useEscape && op == escapeChar)
 					{
 						charSavePos = patternPos;
-						op = getChar();
+						op = getPatternChar();
 
 						if (!isSpecial(op) && op != escapeChar)
 							status_exception::raise(Arg::Gds(isc_escape_invalid));
@@ -589,7 +609,7 @@ namespace
 
 						re2PatternStr.append(patternStr + charSavePos, patternStr + patternPos);
 					}
-				} while (!controlChar && hasChar());
+				} while (!controlChar && hasPatternChar());
 
 				if (patternPos == savePos)
 					status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
@@ -604,7 +624,7 @@ namespace
 		}
 
 	private:
-		static const int PARSE_FLAG_NOT_EMPTY	= 1;	// known never to match empty string
+		static const int PARSE_FLAG_NOT_EMPTY = 1;	// known never to match empty string
 
 		string re2PatternStr;
 		const char* patternStr;
@@ -618,15 +638,16 @@ namespace
 	class SubstringSimilarCompiler
 	{
 	public:
-		SubstringSimilarCompiler(MemoryPool& pool, AutoPtr<RE2>& regexp, unsigned flags,
+		SubstringSimilarCompiler(MemoryPool& pool, AutoPtr<RE2>& regexp, unsigned aFlags,
 				const char* aPatternStr, unsigned aPatternLen,
 				const char* escapeStr, unsigned escapeLen)
-			: patternStr(aPatternStr),
+			: flags(aFlags),
+			  patternStr(aPatternStr),
 			  patternPos(0),
 			  patternLen(aPatternLen)
 		{
 			int32_t escapePos = 0;
-			U8_NEXT_UNSAFE(escapeStr, escapePos, escapeChar);
+			escapeChar = getChar(flags & COMP_FLAG_LATIN, escapeStr, escapeLen, escapePos);
 
 			if (escapePos != escapeLen)
 				status_exception::raise(Arg::Gds(isc_escape_invalid));
@@ -634,17 +655,17 @@ namespace
 			unsigned positions[2];
 			unsigned part = 0;
 
-			while (hasChar())
+			while (hasPatternChar())
 			{
-				auto c = getChar();
+				auto c = getPatternChar();
 
 				if (c != escapeChar)
 					continue;
 
-				if (!hasChar())
+				if (!hasPatternChar())
 					status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
-				c = getChar();
+				c = getPatternChar();
 
 				if (c == '"')
 				{
@@ -660,13 +681,13 @@ namespace
 
 			AutoPtr<RE2> regexp1, regexp2, regexp3;
 
-			SimilarToCompiler compiler1(pool, regexp1, FLAG_PREFER_FEWER,
+			SimilarToCompiler compiler1(pool, regexp1, COMP_FLAG_PREFER_FEWER,
 				aPatternStr, positions[0] - escapeLen - 1, escapeStr, escapeLen);
 
 			SimilarToCompiler compiler2(pool, regexp2, 0,
 				aPatternStr + positions[0], positions[1] - positions[0] - escapeLen - 1, escapeStr, escapeLen);
 
-			SimilarToCompiler compiler3(pool, regexp3, FLAG_PREFER_FEWER,
+			SimilarToCompiler compiler3(pool, regexp3, COMP_FLAG_PREFER_FEWER,
 				aPatternStr + positions[1], patternLen - positions[1], escapeStr, escapeLen);
 
 			string finalRe2Pattern;
@@ -691,7 +712,8 @@ namespace
 			RE2::Options options;
 			options.set_log_errors(false);
 			options.set_dot_nl(true);
-			options.set_case_sensitive(!(flags & FLAG_CASE_INSENSITIVE));
+			options.set_case_sensitive(!(flags & COMP_FLAG_CASE_INSENSITIVE));
+			options.set_utf8(!(flags & COMP_FLAG_LATIN));
 
 			re2::StringPiece sp((const char*) finalRe2Pattern.c_str(), finalRe2Pattern.length());
 			regexp = FB_NEW_POOL(pool) RE2(sp, options);
@@ -700,28 +722,26 @@ namespace
 				status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 		}
 
-		bool hasChar()
+		bool hasPatternChar()
 		{
 			return patternPos < patternLen;
 		}
 
-		UChar32 getChar()
+		UChar32 getPatternChar()
 		{
-			fb_assert(hasChar());
-			UChar32 c;
-			U8_NEXT_UNSAFE(patternStr, patternPos, c);
-			return c;
+			return getChar(flags & COMP_FLAG_LATIN, patternStr, patternLen, patternPos);
 		}
 
-		UChar32 peekChar()
+		UChar32 peekPatternChar()
 		{
 			auto savePos = patternPos;
-			auto c = getChar();
+			auto c = getPatternChar();
 			patternPos = savePos;
 			return c;
 		}
 
 	private:
+		unsigned flags;
 		const char* patternStr;
 		int32_t patternPos;
 		int32_t patternLen;
@@ -732,12 +752,14 @@ namespace
 namespace Firebird {
 
 
-SimilarToRegex::SimilarToRegex(MemoryPool& pool, bool caseInsensitive,
+SimilarToRegex::SimilarToRegex(MemoryPool& pool, unsigned flags,
 		const char* patternStr, unsigned patternLen, const char* escapeStr, unsigned escapeLen)
 	: PermanentStorage(pool)
 {
 	SimilarToCompiler compiler(pool, regexp,
-		FLAG_GROUP_CAPTURE | FLAG_PREFER_FEWER | (caseInsensitive ? FLAG_CASE_INSENSITIVE : 0),
+		COMP_FLAG_GROUP_CAPTURE | COMP_FLAG_PREFER_FEWER |
+			((flags & FLAG_CASE_INSENSITIVE) ? COMP_FLAG_CASE_INSENSITIVE : 0) |
+			((flags & FLAG_LATIN) ? COMP_FLAG_LATIN : 0),
 		patternStr, patternLen, escapeStr, escapeLen);
 
 	finalizer = pool.registerFinalizer(finalize, this);
@@ -802,12 +824,13 @@ bool SimilarToRegex::matches(const char* buffer, unsigned bufferLen, Array<Match
 
 //---------------------
 
-SubstringSimilarRegex::SubstringSimilarRegex(MemoryPool& pool, bool caseInsensitive,
+SubstringSimilarRegex::SubstringSimilarRegex(MemoryPool& pool, unsigned flags,
 		const char* patternStr, unsigned patternLen, const char* escapeStr, unsigned escapeLen)
 	: PermanentStorage(pool)
 {
 	SubstringSimilarCompiler compiler(pool, regexp,
-		(caseInsensitive ? FLAG_CASE_INSENSITIVE : 0),
+		((flags & FLAG_CASE_INSENSITIVE) ? COMP_FLAG_CASE_INSENSITIVE : 0) |
+			((flags & FLAG_LATIN) ? COMP_FLAG_LATIN : 0),
 		patternStr, patternLen, escapeStr, escapeLen);
 
 	finalizer = pool.registerFinalizer(finalize, this);
