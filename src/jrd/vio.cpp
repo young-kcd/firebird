@@ -1918,7 +1918,8 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 					 Arg::Gds(isc_update_conflict) <<
 					 Arg::Gds(isc_concurrent_transaction) << Arg::Num(rpb->rpb_transaction_nr));
 		}
-		if (prepare_result) {
+		if (prepare_result)
+		{
 			jrd_req* top_request = request->req_snapshot.m_owner;
 			top_request->req_flags |= req_update_conflict;
 			top_request->req_conflict_txn = rpb->rpb_transaction_nr;
@@ -3222,7 +3223,8 @@ bool VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 				 Arg::Gds(isc_update_conflict) <<
 				 Arg::Gds(isc_concurrent_transaction) << Arg::Num(org_rpb->rpb_transaction_nr));
 	}
-	if (prepare_result) {
+	if (prepare_result)
+	{
 		jrd_req* top_request = tdbb->getRequest()->req_snapshot.m_owner;
 		top_request->req_flags |= req_update_conflict;
 		top_request->req_conflict_txn = org_rpb->rpb_transaction_nr;
@@ -4080,7 +4082,8 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 	{
 		case PREPARE_CONFLICT:
 		case PREPARE_DELETE:
-			if ((transaction->tra_flags & TRA_read_consistency)) {
+			if ((transaction->tra_flags & TRA_read_consistency))
+			{
 				jrd_req* top_request = tdbb->getRequest()->req_snapshot.m_owner;
 				top_request->req_flags |= req_update_conflict;
 				top_request->req_conflict_txn = org_rpb->rpb_transaction_nr;

@@ -792,7 +792,8 @@ void DsqlDmlRequest::doExecute(thread_db* tdbb, jrd_tra** traHandle,
 	else
 	{
 		// Prefetch first row of a query
-		if (reqTypeWithCursor(statement->getType())) {
+		if (reqTypeWithCursor(statement->getType()))
+		{
 			dsql_msg* message = (dsql_msg*) statement->getReceiveMsg();
 
 			UCHAR* dsqlMsgBuffer = req_msg_buffers[message->msg_buffer_number];
@@ -862,7 +863,8 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 			if (!(req_request->req_flags & req_update_conflict))
 				break;
 			req_request->req_flags &= ~req_update_conflict;
-			if (numTries >= 10) {
+			if (numTries >= 10)
+			{
 				gds__log("Update conflict: unable to get a stable set of rows in the source tables");
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-913) <<
 						  Arg::Gds(isc_deadlock) <<
