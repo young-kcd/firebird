@@ -21,6 +21,7 @@
 #include "firebird.h"
 #include "../common/SimilarToRegex.h"
 #include "../common/StatusArg.h"
+#include "../common/unicode_util.h"
 #include <unicode/utf8.h>
 
 using namespace Firebird;
@@ -41,7 +42,7 @@ namespace
 			c = str[pos++];
 		else
 		{
-			U8_NEXT(str, pos, len, c);
+			U8_NEXT_UNSAFE(str, pos, c);
 
 			if (c < 0)
 				status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
@@ -54,6 +55,7 @@ namespace
 	static const unsigned COMP_FLAG_GROUP_CAPTURE = 0x02;
 	static const unsigned COMP_FLAG_CASE_INSENSITIVE = 0x04;
 	static const unsigned COMP_FLAG_LATIN = 0x08;
+	static const unsigned COMP_FLAG_WELLFORMED = 0x10;
 
 	class SimilarToCompiler
 	{
@@ -68,8 +70,20 @@ namespace
 			  flags(aFlags),
 			  useEscape(escapeStr != nullptr)
 		{
+			if (!(flags & COMP_FLAG_LATIN) && !(flags & COMP_FLAG_WELLFORMED))
+			{
+				if (!Jrd::UnicodeUtil::utf8WellFormed(patternLen, reinterpret_cast<const UCHAR*>(patternStr), nullptr))
+					status_exception::raise(Arg::Gds(isc_malformed_string));
+			}
+
 			if (escapeStr)
 			{
+				if (!(flags & COMP_FLAG_LATIN) && !(flags & COMP_FLAG_WELLFORMED))
+				{
+					if (!Jrd::UnicodeUtil::utf8WellFormed(escapeLen, reinterpret_cast<const UCHAR*>(escapeStr), nullptr))
+						status_exception::raise(Arg::Gds(isc_malformed_string));
+				}
+
 				int32_t escapePos = 0;
 				escapeChar = getChar(flags & COMP_FLAG_LATIN, escapeStr, escapeLen, escapePos);
 
@@ -759,7 +773,8 @@ SimilarToRegex::SimilarToRegex(MemoryPool& pool, unsigned flags,
 	SimilarToCompiler compiler(pool, regexp,
 		COMP_FLAG_GROUP_CAPTURE | COMP_FLAG_PREFER_FEWER |
 			((flags & FLAG_CASE_INSENSITIVE) ? COMP_FLAG_CASE_INSENSITIVE : 0) |
-			((flags & FLAG_LATIN) ? COMP_FLAG_LATIN : 0),
+			((flags & FLAG_LATIN) ? COMP_FLAG_LATIN : 0) |
+			((flags & FLAG_WELLFORMED) ? COMP_FLAG_WELLFORMED : 0),
 		patternStr, patternLen, escapeStr, escapeLen);
 
 	finalizer = pool.registerFinalizer(finalize, this);
@@ -830,7 +845,8 @@ SubstringSimilarRegex::SubstringSimilarRegex(MemoryPool& pool, unsigned flags,
 {
 	SubstringSimilarCompiler compiler(pool, regexp,
 		((flags & FLAG_CASE_INSENSITIVE) ? COMP_FLAG_CASE_INSENSITIVE : 0) |
-			((flags & FLAG_LATIN) ? COMP_FLAG_LATIN : 0),
+			((flags & FLAG_LATIN) ? COMP_FLAG_LATIN : 0) |
+			((flags & FLAG_WELLFORMED) ? COMP_FLAG_WELLFORMED : 0),
 		patternStr, patternLen, escapeStr, escapeLen);
 
 	finalizer = pool.registerFinalizer(finalize, this);

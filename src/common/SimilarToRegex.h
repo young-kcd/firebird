@@ -35,6 +35,7 @@ class SimilarToRegex : public PermanentStorage
 public:
 	static const unsigned FLAG_CASE_INSENSITIVE = 0x1;
 	static const unsigned FLAG_LATIN = 0x2;
+	static const unsigned FLAG_WELLFORMED = 0x3;
 
 	struct MatchPos
 	{
@@ -67,6 +68,7 @@ class SubstringSimilarRegex : public PermanentStorage
 public:
 	static const unsigned FLAG_CASE_INSENSITIVE = SimilarToRegex::FLAG_CASE_INSENSITIVE;
 	static const unsigned FLAG_LATIN = SimilarToRegex::FLAG_LATIN;
+	static const unsigned FLAG_WELLFORMED = SimilarToRegex::FLAG_WELLFORMED;
 
 public:
 	SubstringSimilarRegex(MemoryPool& pool, unsigned flags,

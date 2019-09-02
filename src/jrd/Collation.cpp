@@ -125,6 +125,9 @@ public:
 
 		if (charSetId != CS_NONE && charSetId != CS_BINARY)
 		{
+			if (charSetId != CS_UTF8)
+				flags |= SimilarToRegex::FLAG_WELLFORMED;
+
 			flags |= (textType->getFlags() & TEXTTYPE_ATTR_CASE_INSENSITIVE) ?
 				SimilarToRegex::FLAG_CASE_INSENSITIVE : 0;
 
@@ -215,6 +218,12 @@ public:
 
 		if (charSetId != CS_NONE && charSetId != CS_BINARY)
 		{
+			if (charSetId != CS_UTF8)
+				flags |= SubstringSimilarRegex::FLAG_WELLFORMED;
+
+			flags |= (textType->getFlags() & TEXTTYPE_ATTR_CASE_INSENSITIVE) ?
+				SubstringSimilarRegex::FLAG_CASE_INSENSITIVE : 0;
+
 			CsConvert converter = INTL_convert_lookup(tdbb, textType->getCharSet()->getId(), CS_UTF8);
 
 			converter.convert(patternLen, patternStr, patternBuffer);
@@ -237,7 +246,7 @@ public:
 			}
 		}
 		else
-			flags |= SimilarToRegex::FLAG_LATIN;
+			flags |= SubstringSimilarRegex::FLAG_LATIN;
 
 		regex = FB_NEW_POOL(pool) SubstringSimilarRegex(pool, flags,
 			(const char*) patternStr, patternLen,
