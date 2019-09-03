@@ -2923,8 +2923,12 @@ ValueExprNode* CoalesceNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		doDsqlPass(dsqlScratch, args));
 	node->make(dsqlScratch, &node->nodDesc);	// Set descriptor for output node.
 
-	for (auto& item : node->args->items)
-		PASS1_set_parameter_type(dsqlScratch, item, &node->nodDesc, NULL, false);
+	for (NestConst<ValueExprNode>* item = node->args->items.begin();
+		 item != node->args->items.end();
+		 ++item)
+	{
+		PASS1_set_parameter_type(dsqlScratch, *item, &node->nodDesc, NULL, false);
+	}
 
 	return node;
 }
