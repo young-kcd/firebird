@@ -41,6 +41,9 @@ if "%ERRLEV%"=="1" goto :END
 call :decNumber
 if "%ERRLEV%"=="1" goto :END
 
+call :re2
+if "%ERRLEV%"=="1" goto :END
+
 call :zlib
 if "%ERRLEV%"=="1" goto :END
 
@@ -157,6 +160,19 @@ if errorlevel 1 call :boot2 decNumber_%FB_OBJ_DIR%
 @call compile.bat extern\decNumber\msvc\decNumber_MSVC%MSVC_VERSION% decNumber_%FB_OBJ_DIR%_%FB_TARGET_PLATFORM%.log decNumber
 if errorlevel 1 call :boot2 decNumber_%FB_OBJ_DIR%
 @call set_build_target.bat %*
+goto :EOF
+
+::===================
+:: BUILD re2
+:re2
+@echo.
+@echo Building re2...
+@mkdir %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% 2>nul
+@pushd %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM%
+@cmake -G "Visual Studio %MSVC_VERSION%" -A %FB_TARGET_PLATFORM% -S %FB_ROOT_PATH%\extern\re2 
+@cmake --build %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% --target ALL_BUILD --config Release > re2_Release_%FB_TARGET_PLATFORM%.log
+@cmake --build %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% --target ALL_BUILD --config Debug > re2_Debug_%FB_TARGET_PLATFORM%.log
+@popd
 goto :EOF
 
 ::===================
