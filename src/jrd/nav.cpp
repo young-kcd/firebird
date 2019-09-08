@@ -412,6 +412,9 @@ bool NAV_get_record(thread_db* tdbb, RecordSource* rsb,
 			}
 		}
 
+		const USHORT key_length = (IPTR) rsb->rsb_arg[RSB_NAV_key_length];
+		fb_assert(key.key_length <= key_length);
+
 		// reset the current navigational position in the index
 		rpb->rpb_number = number;
 		set_position(impure, rpb, &window, pointer, expanded_node, key.key_data, key.key_length);
@@ -1033,14 +1036,19 @@ static UCHAR* nav_open(thread_db* tdbb,
 
 	// find the upper limit for the search (or lower for backwards)
 	temporary_key* limit_ptr = NULL;
+	const USHORT key_length = (IPTR) rsb->rsb_arg[RSB_NAV_key_length];
 	if (direction == RSE_get_forward)
 	{
 		if (retrieval->irb_upper_count)
 		{
-			impure->irsb_nav_upper_length = upper.key_length;
-			memcpy((impure->irsb_nav_data + (IPTR) rsb->rsb_arg[RSB_NAV_key_length]),
+			// If upper key length is greater than declared key length, we need 
+			// one "excess" byte for correct comparison. Without it there could 
+			// be false equality hits.
+
+			impure->irsb_nav_upper_length = MIN(key_length + 1, upper.key_length);
+			memcpy((impure->irsb_nav_data + key_length),
 					upper.key_data,
-					upper.key_length);
+					impure->irsb_nav_upper_length);
 		}
 		if (retrieval->irb_lower_count) {
 			limit_ptr = &lower;
@@ -1051,10 +1059,10 @@ static UCHAR* nav_open(thread_db* tdbb,
 		fb_assert(direction == RSE_get_forward);
 		if (retrieval->irb_lower_count)
 		{
-			impure->irsb_nav_lower_length = lower.key_length;
-			memcpy((impure->irsb_nav_data + (IPTR) rsb->rsb_arg[RSB_NAV_key_length]),
+			impure->irsb_nav_lower_length = MIN(key_length + 1, lower.key_length);
+			memcpy((impure->irsb_nav_data + key_length),
 					lower.key_data,
-					lower.key_length);
+					impure->irsb_nav_lower_length);
 		}
 		if (retrieval->irb_upper_count) {
 			limit_ptr = &upper;

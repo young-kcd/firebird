@@ -989,7 +989,11 @@ USHORT OPT_nav_rsb_size(RecordSource* rsb, USHORT key_length, USHORT size)
 	// of three times the key length for the index
 	size += sizeof(struct irsb_nav) + 3 * key_length;
 #else
-	size += sizeof(struct irsb_nav) + 2 * key_length;
+	// Reserve one excess byte for the upper key - in case when length of 
+	// upper key at retrieval is greater than declared index key length.
+	// See also comments at nav_open().
+
+	size += sizeof(struct irsb_nav) + 2 * key_length + 1;
 #endif
 	size = FB_ALIGN(size, FB_ALIGNMENT);
 	// make room for an idx structure to describe the index
