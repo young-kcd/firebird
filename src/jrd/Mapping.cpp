@@ -146,6 +146,11 @@ private:
 	unsigned char sequence;
 };
 
+struct ExtInfo : public AuthReader::Info
+{
+	NoCaseString currentRole, currentUser;
+};
+
 class Map;
 typedef HashTable<Map, DEFAULT_HASH_SIZE, Map, DefaultKeyValue<Map>, Map> MapHash;
 
@@ -340,7 +345,7 @@ public:
 		}
 	}
 
-	void map(bool flagWild, AuthReader::Info& info, AuthWriter& newBlock)
+	void map(bool flagWild, ExtInfo& info, AuthWriter& newBlock)
 	{
 		if (info.type == TYPE_SEEN)
 			return;
@@ -356,7 +361,7 @@ public:
 			varUsing(info, from, newBlock);
 	}
 
-	void search(AuthReader::Info& info, const Map& from, AuthWriter& newBlock,
+	void search(ExtInfo& info, const Map& from, AuthWriter& newBlock,
 		const NoCaseString& originalUserName)
 	{
 		MAP_DEBUG(fprintf(stderr, "Key = %s\n", from.makeHashKey().c_str()));
@@ -369,21 +374,29 @@ public:
 			unsigned flagRolUsr = to->toRole ? FLAG_ROLE : FLAG_USER;
 			if (info.found & flagRolUsr)
 				continue;
+
+			const NoCaseString& newName(to->to == "*" ? originalUserName : to->to);
+			NoCaseString& infoName(to->toRole ? info.currentRole : info.currentUser);
 			if (info.current & flagRolUsr)
+			{
+				if (infoName == newName)
+					continue;
 				(Arg::Gds(isc_map_multi) << originalUserName).raise();
+			}
 
 			info.current |= flagRolUsr;
+			infoName = newName;
 
 			AuthReader::Info newInfo;
 			newInfo.type = to->toRole ? NM_ROLE : NM_USER;
-			newInfo.name = to->to == "*" ? originalUserName : to->to;
+			newInfo.name = newName;
 	        newInfo.secDb = this->name;
 	        newInfo.origPlug = info.origPlug.hasData() ? info.origPlug : info.plugin;
 			newBlock.add(newInfo);
 		}
 	}
 
-	void varPlugin(AuthReader::Info& info, Map from, AuthWriter& newBlock)
+	void varPlugin(ExtInfo& info, Map from, AuthWriter& newBlock)
 	{
 		varDb(info, from, newBlock);
 		if (from.plugin != "*")
@@ -393,7 +406,7 @@ public:
 		}
 	}
 
-	void varDb(AuthReader::Info& info, Map from, AuthWriter& newBlock)
+	void varDb(ExtInfo& info, Map from, AuthWriter& newBlock)
 	{
 		varFrom(info, from, newBlock);
 		if (from.db != "*")
@@ -403,7 +416,7 @@ public:
 		}
 	}
 
-	void varFrom(AuthReader::Info& info, Map from, AuthWriter& newBlock)
+	void varFrom(ExtInfo& info, Map from, AuthWriter& newBlock)
 	{
 		NoCaseString originalUserName = from.from;
 		search(info, from, newBlock, originalUserName);
@@ -411,7 +424,7 @@ public:
 		search(info, from, newBlock, originalUserName);
 	}
 
-	void varUsing(AuthReader::Info& info, Map from, AuthWriter& newBlock)
+	void varUsing(ExtInfo& info, Map from, AuthWriter& newBlock)
 	{
 		if (from.usng == 'P')
 		{
@@ -438,7 +451,7 @@ public:
 			fb_assert(false);
 	}
 
-	bool map4(bool flagWild, unsigned flagSet, AuthReader& rdr, AuthReader::Info& info, AuthWriter& newBlock)
+	bool map4(bool flagWild, unsigned flagSet, AuthReader& rdr, ExtInfo& info, AuthWriter& newBlock)
 	{
 		if (!flagSet)
 		{
@@ -1009,7 +1022,7 @@ bool mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 	// Perform lock & map only when needed
 	if ((flags != (FLAG_DB | FLAG_SEC)) && authBlock.hasData())
 	{
-		AuthReader::Info info;
+		ExtInfo info;
 		SyncType syncType = SYNC_SHARED;
 		FbLocalStatus st;
 		DbHandle iSec;
