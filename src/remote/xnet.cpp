@@ -1113,21 +1113,28 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 	{ // xnet_mutex scope
 		Firebird::MutexLockGuard guard(xnet_mutex);
 
-		// First, try to connect using default kernel namespace.
-		// This should work on Win9X, NT4 and on later OS when server is running
-		// under restricted account in the same session as the client
-		fb_utils::copy_terminate(xnet_endpoint, Config::getIpcName(), sizeof(xnet_endpoint));
-
-		if (!connect_init(status_vector))
+		if (*xnet_endpoint == 0 || !connect_init(status_vector))
 		{
-			// The client may not have permissions to create global objects,
-			// but still be able to connect to a local server that has such permissions.
-			// This is why we try to connect using Global\ namespace unconditionally
-			fb_utils::snprintf(xnet_endpoint, sizeof(xnet_endpoint), "Global\\%s", Config::getIpcName());
-
 			fb_utils::init_status(status_vector);
-			if (!connect_init(status_vector)) {
-				return NULL;
+
+			// First, try to connect using default kernel namespace.
+			// This should work on Win9X, NT4 and on later OS when server is running
+			// under restricted account in the same session as the client
+			fb_utils::copy_terminate(xnet_endpoint, Config::getIpcName(), sizeof(xnet_endpoint));
+
+			if (!connect_init(status_vector))
+			{
+				// The client may not have permissions to create global objects,
+				// but still be able to connect to a local server that has such permissions.
+				// This is why we try to connect using Global\ namespace unconditionally
+				fb_utils::snprintf(xnet_endpoint, sizeof(xnet_endpoint), "Global\\%s", Config::getIpcName());
+
+				fb_utils::init_status(status_vector);
+				if (!connect_init(status_vector)) 
+				{
+					*xnet_endpoint = 0;
+					return NULL;
+				}
 			}
 		}
 
