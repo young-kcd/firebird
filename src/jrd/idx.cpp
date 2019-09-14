@@ -1043,7 +1043,20 @@ static bool cmpRecordKeys(thread_db* tdbb,
 						  Record* rec1, jrd_rel* rel1, index_desc* idx1,
 						  Record* rec2, jrd_rel* rel2, index_desc* idx2)
 {
-	Firebird::HalfStaticArray<UCHAR, 256> tmp;
+/**************************************
+ *
+ *	c m p R e c o r d K e y s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Compare indexed fields in two records. Records could belong to different 
+ *  relations but set of indexed fields to compare should be equal.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	HalfStaticArray<UCHAR, 256> tmp;
 	DSC desc1, desc2;
 
 	if (idx2->idx_flags & idx_expressn)
@@ -1075,6 +1088,8 @@ static bool cmpRecordKeys(thread_db* tdbb,
 	}
 	else
 	{
+		fb_assert(idx1->idx_count == idx2->idx_count);
+
 		bool all_nulls = true;
 		USHORT i;
 		for (i = 0; i < idx1->idx_count; i++)
