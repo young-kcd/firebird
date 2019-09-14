@@ -1544,11 +1544,7 @@ static idx_e insert_key(thread_db* tdbb,
 	{
 		// Find out if there is a null segment. If there is one,
 		// don't bother to check the primary key.
-		CCH_FETCH(tdbb, window_ptr, LCK_read, pag_root);
-		temporary_key key;
-		result = BTR_key(tdbb, relation, record, idx, &key, false);
-		CCH_RELEASE(tdbb, window_ptr);
-		if (result == idx_e_ok && key.key_nulls == 0)
+		if (result == idx_e_ok && insertion->iib_key->key_nulls == 0)
 		{
 			result = check_foreign_key(tdbb, record, insertion->iib_relation,
 									   transaction, idx, context);
