@@ -41,6 +41,9 @@ if "%ERRLEV%"=="1" goto :END
 call :decNumber
 if "%ERRLEV%"=="1" goto :END
 
+if "%FB_TARGET_PLATFORM%"=="x64" call :ttmath
+if "%ERRLEV%"=="1" goto :END
+
 call :re2
 if "%ERRLEV%"=="1" goto :END
 
@@ -159,6 +162,23 @@ if errorlevel 1 call :boot2 decNumber_%FB_OBJ_DIR%
 @echo Building decNumber (%FB_OBJ_DIR%)...
 @call compile.bat extern\decNumber\msvc\decNumber_MSVC%MSVC_VERSION% decNumber_%FB_OBJ_DIR%_%FB_TARGET_PLATFORM%.log decNumber
 if errorlevel 1 call :boot2 decNumber_%FB_OBJ_DIR%
+@call set_build_target.bat %*
+goto :EOF
+
+::===================
+:: BUILD ttmath
+:ttmath
+@echo.
+@call set_build_target.bat %* RELEASE
+@echo Building ttmath (%FB_OBJ_DIR%)...
+@mkdir %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common 2>nul
+@ml64.exe /c /Fo %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common\ttmathuint_x86_64_msvc.obj %FB_ROOT_PATH%\extern\ttmath\ttmathuint_x86_64_msvc.asm
+if errorlevel 1 call :boot2 ttmath_%FB_OBJ_DIR%
+@call set_build_target.bat %* DEBUG
+@echo Building decNumber (%FB_OBJ_DIR%)...
+@mkdir %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common 2>nul
+@ml64.exe /c /Zi /Fo %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common\ttmathuint_x86_64_msvc.obj %FB_ROOT_PATH%\extern\ttmath\ttmathuint_x86_64_msvc.asm
+if errorlevel 1 call :boot2 ttmath_%FB_OBJ_DIR%
 @call set_build_target.bat %*
 goto :EOF
 

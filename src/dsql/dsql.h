@@ -256,8 +256,8 @@ public:
 				precision = 18;
 				break;
 
-			case dtype_dec_fixed:
-				precision = 34;
+			case dtype_int128:
+				precision = 38;
 				break;
 
 			default:

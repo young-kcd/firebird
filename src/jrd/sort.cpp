@@ -804,6 +804,7 @@ void Sort::diddleKey(UCHAR* record, bool direction, bool duplicateHandling)
 		case SKD_timestamp:
 		case SKD_sql_date:
 		case SKD_int64:
+		case SKD_int128:
 			*p ^= 1 << 7;
 			break;
 
@@ -1045,6 +1046,24 @@ void Sort::diddleKey(UCHAR* record, bool direction, bool duplicateHandling)
 
 			if (direction)
 				SWAP_LONGS(lwp[0], lwp[1], lw);
+			break;
+
+		case SKD_int128:
+			// INT128 fits in four long, and hence two swaps should happen
+			// here for the right order comparison using DO_32_COMPARE
+			if (!direction)
+			{
+				SWAP_LONGS(lwp[0], lwp[3], lw);
+				SWAP_LONGS(lwp[1], lwp[2], lw);
+			}
+
+			p[15] ^= 1 << 7;
+
+			if (direction)
+			{
+				SWAP_LONGS(lwp[0], lwp[3], lw);
+				SWAP_LONGS(lwp[1], lwp[2], lw);
+			}
 			break;
 
 #ifdef IEEE

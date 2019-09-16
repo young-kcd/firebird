@@ -129,6 +129,7 @@
 #define isc_dpb_decfloat_bind             94
 #define isc_dpb_decfloat_round            95
 #define isc_dpb_decfloat_traps            96
+#define isc_dpb_int128_bind               97
 
 
 /**************************************************/

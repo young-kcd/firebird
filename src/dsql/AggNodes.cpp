@@ -540,6 +540,11 @@ void AvgAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
 					  Arg::Gds(isc_dsql_agg2_wrongarg) << Arg::Str("AVG"));
 		}
+		else if (desc->dsc_dtype == dtype_int64 || desc->dsc_dtype == dtype_int128)
+		{
+			desc->dsc_dtype = dtype_int128;
+			desc->dsc_length = sizeof(Int128);
+		}
 		else if (DTYPE_IS_EXACT(desc->dsc_dtype))
 		{
 			desc->dsc_dtype = dtype_int64;
@@ -584,15 +589,21 @@ void AvgAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 		return;
 	}
 
-	// In V6, the average of an exact type is computed in SINT64, rather than double as in prior
-	// releases.
 	switch (desc->dsc_dtype)
 	{
 		case dtype_short:
 		case dtype_long:
-		case dtype_int64:
 			desc->dsc_dtype = dtype_int64;
 			desc->dsc_length = sizeof(SINT64);
+			desc->dsc_sub_type = 0;
+			desc->dsc_flags = 0;
+			nodScale = desc->dsc_scale;
+			break;
+
+		case dtype_int64:
+		case dtype_int128:
+			desc->dsc_dtype = dtype_int128;
+			desc->dsc_length = sizeof(Int128);
 			desc->dsc_sub_type = 0;
 			desc->dsc_flags = 0;
 			nodScale = desc->dsc_scale;
@@ -697,11 +708,18 @@ dsc* AvgAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 	SINT64 i;
 	double d;
 	Decimal128 dec;
+	Int128 i128;
 
 	if (!dialect1 && impure->vlu_desc.dsc_dtype == dtype_int64)
 	{
 		i = *((SINT64*) impure->vlu_desc.dsc_address) / impure->vlux_count;
 		temp.makeInt64(impure->vlu_desc.dsc_scale, &i);
+	}
+	else if (!dialect1 && impure->vlu_desc.dsc_dtype == dtype_int128)
+	{
+		i128.set(impure->vlux_count, 0);
+		i128 = ((Int128*) impure->vlu_desc.dsc_address)->div(i128, 0);
+		temp.makeInt128(impure->vlu_desc.dsc_scale, &i128);
 	}
 	else if (DTYPE_IS_DECFLOAT(impure->vlu_desc.dsc_dtype))
 	{
@@ -1037,6 +1055,11 @@ void SumAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
 					  Arg::Gds(isc_dsql_agg2_wrongarg) << Arg::Str("SUM"));
 		}
+		else if (desc->dsc_dtype == dtype_int64 || desc->dsc_dtype == dtype_int128)
+		{
+			desc->dsc_dtype = dtype_int128;
+			desc->dsc_length = sizeof(Int128);
+		}
 		else if (DTYPE_IS_EXACT(desc->dsc_dtype))
 		{
 			desc->dsc_dtype = dtype_int64;
@@ -1118,11 +1141,19 @@ void SumAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 		{
 			case dtype_short:
 			case dtype_long:
-			case dtype_int64:
 				desc->dsc_dtype = dtype_int64;
 				desc->dsc_length = sizeof(SINT64);
 				nodScale = desc->dsc_scale;
 				desc->dsc_flags = 0;
+				return;
+
+			case dtype_int64:
+			case dtype_int128:
+				desc->dsc_dtype = dtype_int128;
+				desc->dsc_length = sizeof(Int128);
+				desc->dsc_sub_type = 0;
+				desc->dsc_flags = 0;
+				nodScale = desc->dsc_scale;
 				return;
 
 			case dtype_unknown:

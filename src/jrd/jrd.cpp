@@ -1020,6 +1020,7 @@ namespace Jrd
 		string	dpb_decfloat_bind;
 		string	dpb_decfloat_round;
 		string	dpb_decfloat_traps;
+		string	dpb_int128_bind;
 
 	public:
 		static const ULONG DPB_FLAGS_MASK = DBB_damaged;
@@ -1062,6 +1063,43 @@ namespace Jrd
 		}
 	};
 
+	void Attachment::InitialOptions::setBinding(string option, NumericBinding& bind)
+	{
+		option.lower();
+
+		if (option == "native")
+			bind = NumericBinding::DEFAULT;
+		else if (option == "char" || option == "character")
+			bind = NumericBinding(NumericBinding::NUM_TEXT);
+		else if (option == "double" || option == "double precision")
+			bind = NumericBinding(NumericBinding::NUM_DOUBLE);
+		else if (option == "bigint")
+			bind = NumericBinding(NumericBinding::NUM_INT64);
+		else if (option.substr(0, 7) == "bigint,")
+		{
+			const char* p = option.c_str() + 7;
+
+			while (*p == ' ')
+				++p;
+
+			const char* start = p;
+			int scale = 0;
+
+			while (*p >= '0' && *p <= '9')
+			{
+				scale = scale * 10 + (*p - '0');
+				++p;
+			}
+
+			if (*p != '\0' || p - start == 0 || p - start > 2 || scale > NumericBinding::MAX_SCALE)
+				(Arg::Gds(isc_invalid_decfloat_bind) << option).raise();
+
+			bind = NumericBinding(NumericBinding::NUM_INT64, static_cast<SCHAR>(-scale));
+		}
+		else
+			(Arg::Gds(isc_invalid_decfloat_bind) << option).raise();
+	}
+
 	Attachment::InitialOptions::InitialOptions(const DatabaseOptions& options)
 	{
 		if (options.dpb_time_zone_bind.hasData())
@@ -1078,42 +1116,10 @@ namespace Jrd
 		}
 
 		if (options.dpb_decfloat_bind.hasData())
-		{
-			auto option = options.dpb_decfloat_bind;
-			option.lower();
+			setBinding(options.dpb_decfloat_bind, decFloatBinding);
 
-			if (option == "native")
-				decFloatBinding = DecimalBinding::DEFAULT;
-			else if (option == "char" || option == "character")
-				decFloatBinding = DecimalBinding(DecimalBinding::DEC_TEXT);
-			else if (option == "double" || option == "double precision")
-				decFloatBinding = DecimalBinding(DecimalBinding::DEC_DOUBLE);
-			else if (option == "bigint")
-				decFloatBinding = DecimalBinding(DecimalBinding::DEC_NUMERIC);
-			else if (option.substr(0, 7) == "bigint,")
-			{
-				const char* p = option.c_str() + 7;
-
-				while (*p == ' ')
-					++p;
-
-				const char* start = p;
-				int scale = 0;
-
-				while (*p >= '0' && *p <= '9')
-				{
-					scale = scale * 10 + (*p - '0');
-					++p;
-				}
-
-				if (*p != '\0' || p - start == 0 || p - start > 2 || scale > DecimalBinding::MAX_SCALE)
-					(Arg::Gds(isc_invalid_decfloat_bind) << option).raise();
-
-				decFloatBinding = DecimalBinding(DecimalBinding::DEC_NUMERIC, static_cast<SCHAR>(-scale));
-			}
-			else
-				(Arg::Gds(isc_invalid_decfloat_bind) << option).raise();
-		}
+		if (options.dpb_int128_bind.hasData())
+			setBinding(options.dpb_int128_bind, int128Binding);
 
 		if (options.dpb_decfloat_round.hasData())
 		{
@@ -1172,6 +1178,7 @@ namespace Jrd
 		// reset DecFloat options
 		attachment->att_dec_status = decFloatStatus;
 		attachment->att_dec_binding = decFloatBinding;
+		attachment->att_i128_binding = int128Binding;
 
 		// reset time zone options
 		attachment->att_timezone_bind = timeZoneBind;
@@ -6967,6 +6974,10 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 		case isc_dpb_decfloat_bind:
 			rdr.getString(dpb_decfloat_bind);
+			break;
+
+		case isc_dpb_int128_bind:
+			rdr.getString(dpb_int128_bind);
 			break;
 
 		case isc_dpb_decfloat_round:

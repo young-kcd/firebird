@@ -1148,7 +1148,7 @@ void dsql_req::mapInOut(thread_db* tdbb, bool toExternal, const dsql_msg* messag
 				desc.dsc_address = dsql_msg_buf + (IPTR) desc.dsc_address;
 
 				if (notNull)
-					MOVD_move(tdbb, &parDesc, &desc, toExternal);
+					MOVD_move(tdbb, &parDesc, &desc);
 				else
 					memset(desc.dsc_address, 0, desc.dsc_length);
 			}
@@ -1156,7 +1156,7 @@ void dsql_req::mapInOut(thread_db* tdbb, bool toExternal, const dsql_msg* messag
 			{
 				// Safe cast because desc is used as source only.
 				desc.dsc_address = const_cast<UCHAR*>(in_dsql_msg_buf) + (IPTR) desc.dsc_address;
-				MOVD_move(tdbb, &desc, &parDesc, toExternal);
+				MOVD_move(tdbb, &desc, &parDesc);
 			}
 			else
 				memset(parDesc.dsc_address, 0, parDesc.dsc_length);
@@ -1191,7 +1191,7 @@ void dsql_req::mapInOut(thread_db* tdbb, bool toExternal, const dsql_msg* messag
 		dsc desc = parameter->par_desc;
 		desc.dsc_address = msgBuffer + (IPTR) desc.dsc_address;
 
-		MOVD_move(tdbb, &parentDesc, &desc, false);
+		MOVD_move(tdbb, &parentDesc, &desc);
 
 		dsql_par* null_ind = parameter->par_null;
 		if (null_ind != NULL)
@@ -1221,7 +1221,7 @@ void dsql_req::mapInOut(thread_db* tdbb, bool toExternal, const dsql_msg* messag
 		dsc desc = parameter->par_desc;
 		desc.dsc_address = msgBuffer + (IPTR) desc.dsc_address;
 
-		MOVD_move(tdbb, &parentDesc, &desc, false);
+		MOVD_move(tdbb, &parentDesc, &desc);
 
 		dsql_par* null_ind = parameter->par_null;
 		if (null_ind != NULL)

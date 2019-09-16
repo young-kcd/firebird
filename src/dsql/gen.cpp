@@ -203,21 +203,24 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
 			if (fromCharSet != toCharSet)
 				parameter->par_desc.setTextType(toCharSet);
 		}
-		else if (parameter->par_desc.isDecFloat())
+		else if (parameter->par_desc.isDecFloat() ||
+			parameter->par_desc.dsc_dtype == dtype_int128)
 		{
-			const DecimalBinding& b = tdbb->getAttachment()->att_dec_binding;
+			const NumericBinding& b(parameter->par_desc.dsc_dtype == dtype_int128 ?
+				tdbb->getAttachment()->att_i128_binding : tdbb->getAttachment()->att_dec_binding);
 			switch (b.bind)
 			{
-			case DecimalBinding::DEC_NATIVE:
+			case NumericBinding::NUM_NATIVE:
 				break;
-			case DecimalBinding::DEC_TEXT:
+			case NumericBinding::NUM_TEXT:
 				parameter->par_desc.makeText((parameter->par_desc.dsc_dtype == dtype_dec64 ?
-					IDecFloat16::STRING_SIZE : IDecFloat34::STRING_SIZE) - 1, ttype_ascii);
+					IDecFloat16::STRING_SIZE : parameter->par_desc.dsc_dtype == dtype_dec128 ?
+					IDecFloat34::STRING_SIZE : IInt128::STRING_SIZE) - 1, ttype_ascii);
 				break;
-			case DecimalBinding::DEC_DOUBLE:
+			case NumericBinding::NUM_DOUBLE:
 				parameter->par_desc.makeDouble();
 				break;
-			case DecimalBinding::DEC_NUMERIC:
+			case NumericBinding::NUM_INT64:
 				parameter->par_desc.makeInt64(b.numScale);
 				break;
 			}
@@ -415,8 +418,8 @@ void GEN_descriptor( DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool tex
 		dsqlScratch->appendUChar(blr_dec128);
 		break;
 
-	case dtype_dec_fixed:
-		dsqlScratch->appendUChar(blr_dec_fixed);
+	case dtype_int128:
+		dsqlScratch->appendUChar(blr_int128);
 		dsqlScratch->appendUChar(desc->dsc_scale);
 		break;
 

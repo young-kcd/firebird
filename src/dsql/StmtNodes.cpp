@@ -501,7 +501,7 @@ AssignmentNode* AssignmentNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	{ // scope
 		dsc desc;
 		asgnTo->getDesc(tdbb, csb, &desc);
-		AutoSetRestore<UCHAR> dataType(&csb->csb_preferredDataType, desc.dsc_dtype);
+		AutoSetRestore<dsc*> dataType(&csb->csb_preferredDesc, &desc);
 		ExprNode::doPass2(tdbb, csb, asgnFrom.getAddress());
 	}
 	ExprNode::doPass2(tdbb, csb, asgnTo.getAddress());
@@ -8360,11 +8360,14 @@ void SetDecFloatTrapsNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_t
 //--------------------
 
 
-void SetDecFloatBindNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
+void SetHighPrecBindNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
-	attachment->att_dec_binding = bind;
+	if (bindInt128)
+		attachment->att_i128_binding = bind;
+	else
+		attachment->att_dec_binding = bind;
 }
 
 

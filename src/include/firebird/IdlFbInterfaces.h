@@ -116,6 +116,7 @@ namespace Firebird
 	class IUdrPlugin;
 	class IDecFloat16;
 	class IDecFloat34;
+	class IInt128;
 	class IReplicatedRecord;
 	class IReplicatedBlob;
 	class IReplicatedTransaction;
@@ -4051,6 +4052,7 @@ namespace Firebird
 			void (CLOOP_CARG *decodeTimeStampTz)(IUtil* self, IStatus* status, const ISC_TIMESTAMP_TZ* timeStampTz, unsigned* year, unsigned* month, unsigned* day, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) throw();
 			void (CLOOP_CARG *encodeTimeTz)(IUtil* self, IStatus* status, ISC_TIME_TZ* timeTz, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone) throw();
 			void (CLOOP_CARG *encodeTimeStampTz)(IUtil* self, IStatus* status, ISC_TIMESTAMP_TZ* timeStampTz, unsigned year, unsigned month, unsigned day, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone) throw();
+			IInt128* (CLOOP_CARG *getInt128)(IUtil* self, IStatus* status) throw();
 		};
 
 	protected:
@@ -4064,7 +4066,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static const unsigned VERSION = 4;
 
 		template <typename StatusType> void getFbVersion(StatusType* status, IAttachment* att, IVersionCallback* callback)
 		{
@@ -4258,6 +4260,20 @@ namespace Firebird
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->encodeTimeStampTz(this, status, timeStampTz, year, month, day, hours, minutes, seconds, fractions, timeZone);
 			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> IInt128* getInt128(StatusType* status)
+		{
+			if (cloopVTable->version < 4)
+			{
+				StatusType::setVersionError(status, "IUtil", cloopVTable->version, 4);
+				StatusType::checkException(status);
+				return 0;
+			}
+			StatusType::clearException(status);
+			IInt128* ret = static_cast<VTable*>(this->cloopVTable)->getInt128(this, status);
+			StatusType::checkException(status);
+			return ret;
 		}
 	};
 
@@ -5852,6 +5868,45 @@ namespace Firebird
 		{
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->fromString(this, status, from, to);
+			StatusType::checkException(status);
+		}
+	};
+
+	class IInt128 : public IVersioned
+	{
+	public:
+		struct VTable : public IVersioned::VTable
+		{
+			void (CLOOP_CARG *toString)(IInt128* self, IStatus* status, const FB_I128* from, int scale, unsigned bufferLength, char* buffer) throw();
+			void (CLOOP_CARG *fromString)(IInt128* self, IStatus* status, int scale, const char* from, FB_I128* to) throw();
+		};
+
+	protected:
+		IInt128(DoNotInherit)
+			: IVersioned(DoNotInherit())
+		{
+		}
+
+		~IInt128()
+		{
+		}
+
+	public:
+		static const unsigned VERSION = 2;
+
+		static const unsigned STRING_SIZE = 46;
+
+		template <typename StatusType> void toString(StatusType* status, const FB_I128* from, int scale, unsigned bufferLength, char* buffer)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->toString(this, status, from, scale, bufferLength, buffer);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void fromString(StatusType* status, int scale, const char* from, FB_I128* to)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->fromString(this, status, scale, from, to);
 			StatusType::checkException(status);
 		}
 	};
@@ -14332,6 +14387,7 @@ namespace Firebird
 					this->decodeTimeStampTz = &Name::cloopdecodeTimeStampTzDispatcher;
 					this->encodeTimeTz = &Name::cloopencodeTimeTzDispatcher;
 					this->encodeTimeStampTz = &Name::cloopencodeTimeStampTzDispatcher;
+					this->getInt128 = &Name::cloopgetInt128Dispatcher;
 				}
 			} vTable;
 
@@ -14630,6 +14686,21 @@ namespace Firebird
 				StatusType::catchException(&status2);
 			}
 		}
+
+		static IInt128* CLOOP_CARG cloopgetInt128Dispatcher(IUtil* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getInt128(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<IInt128*>(0);
+			}
+		}
 	};
 
 	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUtil> > >
@@ -14666,6 +14737,7 @@ namespace Firebird
 		virtual void decodeTimeStampTz(StatusType* status, const ISC_TIMESTAMP_TZ* timeStampTz, unsigned* year, unsigned* month, unsigned* day, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) = 0;
 		virtual void encodeTimeTz(StatusType* status, ISC_TIME_TZ* timeTz, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone) = 0;
 		virtual void encodeTimeStampTz(StatusType* status, ISC_TIMESTAMP_TZ* timeStampTz, unsigned year, unsigned month, unsigned day, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone) = 0;
+		virtual IInt128* getInt128(StatusType* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
@@ -18079,6 +18151,73 @@ namespace Firebird
 		virtual void toString(StatusType* status, const FB_DEC34* from, unsigned bufferLength, char* buffer) = 0;
 		virtual void fromBcd(int sign, const unsigned char* bcd, int exp, FB_DEC34* to) = 0;
 		virtual void fromString(StatusType* status, const char* from, FB_DEC34* to) = 0;
+	};
+
+	template <typename Name, typename StatusType, typename Base>
+	class IInt128BaseImpl : public Base
+	{
+	public:
+		typedef IInt128 Declaration;
+
+		IInt128BaseImpl(DoNotInherit = DoNotInherit())
+		{
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->toString = &Name::clooptoStringDispatcher;
+					this->fromString = &Name::cloopfromStringDispatcher;
+				}
+			} vTable;
+
+			this->cloopVTable = &vTable;
+		}
+
+		static void CLOOP_CARG clooptoStringDispatcher(IInt128* self, IStatus* status, const FB_I128* from, int scale, unsigned bufferLength, char* buffer) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::toString(&status2, from, scale, bufferLength, buffer);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopfromStringDispatcher(IInt128* self, IStatus* status, int scale, const char* from, FB_I128* to) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::fromString(&status2, scale, from, to);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+	};
+
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IInt128> > >
+	class IInt128Impl : public IInt128BaseImpl<Name, StatusType, Base>
+	{
+	protected:
+		IInt128Impl(DoNotInherit = DoNotInherit())
+		{
+		}
+
+	public:
+		virtual ~IInt128Impl()
+		{
+		}
+
+		virtual void toString(StatusType* status, const FB_I128* from, int scale, unsigned bufferLength, char* buffer) = 0;
+		virtual void fromString(StatusType* status, int scale, const char* from, FB_I128* to) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

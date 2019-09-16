@@ -69,7 +69,7 @@
 #define blr_bool			(unsigned char)23
 #define blr_dec64			(unsigned char)24
 #define blr_dec128			(unsigned char)25
-#define blr_dec_fixed		(unsigned char)26
+#define blr_int128			(unsigned char)26
 #define blr_sql_time_tz		(unsigned char)28
 #define blr_timestamp_tz	(unsigned char)29
 

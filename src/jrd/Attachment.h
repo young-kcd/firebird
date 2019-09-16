@@ -363,8 +363,11 @@ public:
 		void resetAttachment(Attachment* attachment) const;
 
 	private:
+		void setBinding(Firebird::string option, Firebird::NumericBinding& bind);
+
 		Firebird::DecimalStatus decFloatStatus = Firebird::DecimalStatus::DEFAULT;
-		Firebird::DecimalBinding decFloatBinding = Firebird::DecimalBinding::DEFAULT;
+		Firebird::NumericBinding decFloatBinding = Firebird::NumericBinding::DEFAULT;
+		Firebird::NumericBinding int128Binding = Firebird::NumericBinding::DEFAULT;
 
 		Firebird::TimeZoneUtil::Bind timeZoneBind = Firebird::TimeZoneUtil::BIND_NATIVE;
 		USHORT originalTimeZone = Firebird::TimeZoneUtil::GMT_ZONE;
@@ -466,7 +469,8 @@ public:
 	Firebird::Array<JrdStatement*>	att_dyn_req;			// internal dyn statements
 	Firebird::ICryptKeyCallback*	att_crypt_callback;		// callback for DB crypt
 	Firebird::DecimalStatus			att_dec_status;			// error handling and rounding
-	Firebird::DecimalBinding		att_dec_binding;		// use legacy datatype for DecFloat in outer world
+	Firebird::NumericBinding		att_dec_binding;		// use legacy datatype for DecFloat in outer world
+	Firebird::NumericBinding		att_i128_binding;		// use legacy datatype for INT128 in outer world
 
 	jrd_req* findSystemRequest(thread_db* tdbb, USHORT id, USHORT which);
 

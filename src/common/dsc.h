@@ -32,6 +32,7 @@
 #include "../jrd/ods.h"
 #include "../intl/charsets.h"
 #include "../common/DecFloat.h"
+#include "../common/Int128.h"
 
 // Data type information
 
@@ -60,7 +61,7 @@ inline bool DTYPE_IS_BLOB_OR_QUAD(UCHAR d)
 // Exact numeric?
 inline bool DTYPE_IS_EXACT(UCHAR d)
 {
-	return d == dtype_int64 || d == dtype_long || d == dtype_short || d == dtype_dec_fixed;
+	return d == dtype_int64 || d == dtype_long || d == dtype_short || d == dtype_int128;
 }
 
 inline bool DTYPE_IS_APPROX(UCHAR d)
@@ -70,12 +71,13 @@ inline bool DTYPE_IS_APPROX(UCHAR d)
 
 inline bool DTYPE_IS_DECFLOAT(UCHAR d)
 {
-	return d == dtype_dec128 || d  == dtype_dec64 || d == dtype_dec_fixed;
+	return d == dtype_dec128 || d  == dtype_dec64;
 }
 
 inline bool DTYPE_IS_NUMERIC(UCHAR d)
 {
-	return (d >= dtype_byte && d <= dtype_d_float) || d == dtype_int64 || DTYPE_IS_DECFLOAT(d);
+	return (d >= dtype_byte && d <= dtype_d_float) || d == dtype_int64 ||
+			d == dtype_int128 || DTYPE_IS_DECFLOAT(d);
 }
 
 // Descriptor format
@@ -138,7 +140,8 @@ typedef struct dsc
 
 	bool isExact() const
 	{
-		return dsc_dtype == dtype_int64 || dsc_dtype == dtype_long || dsc_dtype == dtype_short;
+		return dsc_dtype == dtype_int128 || dsc_dtype == dtype_int64 ||
+			   dsc_dtype == dtype_long || dsc_dtype == dtype_short;
 	}
 
 	bool isNumeric() const
@@ -187,14 +190,14 @@ typedef struct dsc
 		return dsc_dtype == dtype_dec128 || dsc_dtype == dtype_dec64;
 	}
 
-	bool isDecFixed() const
+	bool isInt128() const
 	{
-		return dsc_dtype == dtype_dec_fixed;
+		return dsc_dtype == dtype_int128;
 	}
 
 	bool isDecOrInt() const
 	{
-		return isDecFloat() || isDecFixed() || isExact();
+		return isDecFloat() || isExact();
 	}
 
 	bool isApprox() const
@@ -335,6 +338,15 @@ typedef struct dsc
 		clear();
 		dsc_dtype = dtype_int64;
 		dsc_length = sizeof(SINT64);
+		dsc_scale = scale;
+		dsc_address = (UCHAR*) address;
+	}
+
+	void makeInt128(SCHAR scale, Firebird::Int128* address = NULL)
+	{
+		clear();
+		dsc_dtype = dtype_int128;
+		dsc_length = sizeof(Firebird::Int128);
 		dsc_scale = scale;
 		dsc_address = (UCHAR*) address;
 	}

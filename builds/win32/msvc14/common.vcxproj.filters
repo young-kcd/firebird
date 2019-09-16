@@ -243,6 +243,9 @@
     <ClCompile Include="..\..\..\src\common\keywords.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\common\Int128.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\common\xdr_proto.h">
@@ -585,6 +588,9 @@
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\common\keywords.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\common\Int128.h">
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>

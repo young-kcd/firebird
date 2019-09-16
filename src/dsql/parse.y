@@ -613,6 +613,7 @@ using namespace Firebird;
 %token <metaNamePtr> HEX_ENCODE
 %token <metaNamePtr> IDLE
 %token <metaNamePtr> INVOKER
+%token <metaNamePtr> INT128
 %token <metaNamePtr> IV
 %token <metaNamePtr> LAST_DAY
 %token <metaNamePtr> LEGACY
@@ -816,7 +817,7 @@ using namespace Firebird;
 	Jrd::CreateAlterRoleNode* createAlterRoleNode;
 	Jrd::SetDecFloatRoundNode* setDecFloatRoundNode;
 	Jrd::SetDecFloatTrapsNode* setDecFloatTrapsNode;
-	Jrd::SetDecFloatBindNode* setDecFloatBindNode;
+	Jrd::SetHighPrecBindNode* setHighPrecBindNode;
 	Jrd::SessionResetNode* sessionResetNode;
 }
 
@@ -4224,6 +4225,7 @@ keyword_or_column
 	| VAR_SAMP
 	| VAR_POP
 	| DECFLOAT				// added in FB 4.0
+	| INT128
 	| LOCAL
 	| LOCALTIME
 	| LOCALTIMESTAMP
@@ -4971,14 +4973,14 @@ prec_scale
 		{
 			$$ = newNode<dsql_fld>();
 
-			if ($2 < 1 || $2 > 34)
-				yyabandon(YYPOSNARG(2), -842, Arg::Gds(isc_precision_err2) << Arg::Num(1) << Arg::Num(34));
-																// Precision must be between 1 and 34
+			if ($2 < 1 || $2 > 38)
+				yyabandon(YYPOSNARG(2), -842, Arg::Gds(isc_precision_err2) << Arg::Num(1) << Arg::Num(38));
+																// Precision must be between 1 and 38
 
 			if ($2 > 18)
 			{
-				$$->dtype = dtype_dec_fixed;
-				$$->length = sizeof(DecimalFixed);
+				$$->dtype = dtype_int128;
+				$$->length = sizeof(Int128);
 			}
 			else if ($2 > 9)
 			{
@@ -5027,17 +5029,17 @@ prec_scale
 		{
 			$$ = newNode<dsql_fld>();
 
-			if ($2 < 1 || $2 > 34)
-				yyabandon(YYPOSNARG(2), -842, Arg::Gds(isc_precision_err2) << Arg::Num(1) << Arg::Num(34));
-																// Precision must be between 1 and 34
+			if ($2 < 1 || $2 > 38)
+				yyabandon(YYPOSNARG(2), -842, Arg::Gds(isc_precision_err2) << Arg::Num(1) << Arg::Num(38));
+																// Precision must be between 1 and 38
 
 			if ($4 > $2 || $4 < 0)
 				yyabandon(YYPOSNARG(4), -842, isc_scale_nogt);	// Scale must be between 0 and precision
 
 			if ($2 > 18)
 			{
-				$$->dtype = dtype_dec_fixed;
-				$$->length = sizeof(DecimalFixed);
+				$$->dtype = dtype_int128;
+				$$->length = sizeof(Int128);
 			}
 			else if ($2 > 9)
 			{
@@ -5270,12 +5272,18 @@ set_decfloat_traps
 			{ $$ = $5; }
 	;
 
-%type <setDecFloatBindNode> set_decfloat_bind
+%type <setHighPrecBindNode> set_decfloat_bind
 set_decfloat_bind
-	: SET DECFLOAT BIND
-			{ $$ = newNode<SetDecFloatBindNode>(); }
+	: SET bind_to_type BIND
+			{ $$ = newNode<SetHighPrecBindNode>($2); }
 		decfloat_bind_clause($4)
 			{ $$ = $4; }
+	;
+
+%type <boolVal> bind_to_type
+bind_to_type
+	: DECFLOAT { $$ = false; }
+	| INT128 { $$ = true; }
 	;
 
 %type decfloat_traps_list_opt(<setDecFloatTrapsNode>)
@@ -5296,26 +5304,26 @@ decfloat_trap($setDecFloatTrapsNode)
 		{ $setDecFloatTrapsNode->trap($1); }
 	;
 
-%type decfloat_bind_clause(<setDecFloatBindNode>)
-decfloat_bind_clause($setDecFloatBindNode)
+%type decfloat_bind_clause(<setHighPrecBindNode>)
+decfloat_bind_clause($setHighPrecBindNode)
 	: NATIVE
 		// do nothing
 	| character_keyword
-		{ $setDecFloatBindNode->bind.bind = DecimalBinding::DEC_TEXT; }
+		{ $setHighPrecBindNode->bind.bind = NumericBinding::NUM_TEXT; }
 	| DOUBLE PRECISION
-		{ $setDecFloatBindNode->bind.bind = DecimalBinding::DEC_DOUBLE; }
-	| BIGINT decfloat_scale_clause($setDecFloatBindNode)
-		{ $setDecFloatBindNode->bind.bind = DecimalBinding::DEC_NUMERIC; }
+		{ $setHighPrecBindNode->bind.bind = NumericBinding::NUM_DOUBLE; }
+	| BIGINT decfloat_scale_clause($setHighPrecBindNode)
+		{ $setHighPrecBindNode->bind.bind = NumericBinding::NUM_INT64; }
 	;
 
-%type decfloat_scale_clause(<setDecFloatBindNode>)
-decfloat_scale_clause($setDecFloatBindNode)
+%type decfloat_scale_clause(<setHighPrecBindNode>)
+decfloat_scale_clause($setHighPrecBindNode)
 	: // nothing
 	| ',' signed_long_integer
 		{
-			if ($2 > DecimalBinding::MAX_SCALE || $2 < 0)
+			if ($2 > NumericBinding::MAX_SCALE || $2 < 0)
 				yyabandon(YYPOSNARG(2), -842, isc_scale_nogt);	// Scale must be between 0 and precision
-			$setDecFloatBindNode->bind.numScale = -$2;
+			$setHighPrecBindNode->bind.numScale = -$2;
 		}
 
 %type <setSessionNode> session_statement

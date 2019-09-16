@@ -1522,8 +1522,8 @@ UCHAR sqlTypeToDscType(SSHORT sqlType)
 		return dtype_dec64;
 	case SQL_DEC34:
 		return dtype_dec128;
-	case SQL_DEC_FIXED:
-		return dtype_dec_fixed;
+	case SQL_INT128:
+		return dtype_int128;
 	case SQL_TIME_TZ:
 		return dtype_sql_time_tz;
 	case SQL_TIMESTAMP_TZ:

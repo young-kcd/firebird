@@ -243,7 +243,7 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, const InitialOption
 	  att_internal(*pool),
 	  att_dyn_req(*pool),
 	  att_dec_status(DecimalStatus::DEFAULT),
-	  att_dec_binding(DecimalBinding::DEFAULT),
+	  att_dec_binding(NumericBinding::DEFAULT),
 	  att_charsets(*pool),
 	  att_charset_ids(*pool),
 	  att_pools(*pool),
