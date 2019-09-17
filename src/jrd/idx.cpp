@@ -1173,7 +1173,7 @@ static idx_e check_duplicates(thread_db* tdbb,
 			// record index are the same, but for foreign keys they are different
 
 			if (cmpRecordKeys(tdbb, rpb.rpb_record, relation_1, insertion_idx,
-									record, relation_2, record_idx))
+							  record, relation_2, record_idx))
 			{
 				// When check foreign keys in snapshot or read consistency transaction, 
 				// ensure that master record is visible in transaction context and still 
@@ -1191,15 +1191,17 @@ static idx_e check_duplicates(thread_db* tdbb,
 							continue;
 
 						if (!cmpRecordKeys(tdbb, rpb.rpb_record, relation_1, insertion_idx,
-												 record, relation_2, record_idx))
+										   record, relation_2, record_idx))
+						{
 							continue;
+						}
+					}
 				}
-			}
 
-					result = idx_e_duplicate;
-					break;
-				}
+				result = idx_e_duplicate;
+				break;
 			}
+		}
 	} while (accessor.getNext());
 
 	delete rpb.rpb_record;
