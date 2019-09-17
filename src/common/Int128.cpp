@@ -417,7 +417,7 @@ Int128 Int128::operator&=(ULONG mask)
 
 Int128 Int128::operator/(unsigned value) const
 {
-	Int128 rc;
+	Int128 rc(*this);
 	rc.v.DivInt(value);
 	return rc;
 }
