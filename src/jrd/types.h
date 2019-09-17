@@ -45,6 +45,7 @@ TYPE("DECFLOAT(16)", blr_dec64, nam_f_type)
 TYPE("DECFLOAT(34)", blr_dec128, nam_f_type)
 TYPE("TIMESTAMP WITH TIMEZONE", blr_timestamp_tz, nam_f_type)
 TYPE("TIME WITH TIMEZONE", blr_sql_time_tz, nam_f_type)
+TYPE("INT128", blr_int128, nam_f_type)
 
 TYPE("BINARY", 0, nam_f_sub_type)
 TYPE("TEXT", 1, nam_f_sub_type)
