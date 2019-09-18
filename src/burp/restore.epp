@@ -653,7 +653,7 @@ void add_files(BurpGlobals* tdgbl, const char* file_name)
 
 	// store the RDB$FILES records
 
-	FB_UINT64 start = FB_CONST64(201); // Magic number, can be taken from some constant?
+	FB_UINT64 start = FB_CONST64(256); // Magic number, can be taken from some constant?
 	SLONG count = 0;
 	const char* prev_file_name = NULL;
 
