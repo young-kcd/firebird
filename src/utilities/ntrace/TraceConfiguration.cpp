@@ -134,7 +134,7 @@ void TraceCfgReader::readConfig()
 				try
 				{
 #ifdef WIN_NT	// !CASE_SENSITIVITY
-					const unsigned regexFlags = SimilarToRegex::FLAG_CASE_INSENSITIVE;
+					const unsigned regexFlags = SimilarToFlag::CASE_INSENSITIVE;
 #else
 					const unsigned regexFlags = 0;
 #endif
