@@ -116,6 +116,7 @@ public:
 	Re2SimilarMatcher(thread_db* tdbb, MemoryPool& pool, TextType* textType,
 			const UCHAR* patternStr, SLONG patternLen, const UCHAR* escapeStr, SLONG escapeLen)
 		: PatternMatcher(pool, textType),
+		  converter(INTL_convert_lookup(tdbb, CS_UTF8, textType->getCharSet()->getId())),
 		  buffer(pool)
 	{
 		UCharBuffer patternBuffer, escapeBuffer;
@@ -130,8 +131,6 @@ public:
 
 			flags |= (textType->getFlags() & TEXTTYPE_ATTR_CASE_INSENSITIVE) ?
 				SimilarToRegex::FLAG_CASE_INSENSITIVE : 0;
-
-			CsConvert converter = INTL_convert_lookup(tdbb, CS_UTF8, charSetId);
 
 			converter.convert(patternLen, patternStr, patternBuffer);
 
@@ -190,13 +189,24 @@ public:
 
 	virtual bool result()
 	{
-		if (textType->getFlags() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
-			UnicodeUtil::utf8Normalize(buffer);
+		UCharBuffer utfBuffer;
+		const auto charSetId = textType->getCharSet()->getId();
+		UCharBuffer* bufferPtr = &buffer;
 
-		return regex->matches((const char*) buffer.begin(), buffer.getCount());
+		if (charSetId != CS_NONE && charSetId != CS_BINARY && charSetId != CS_UTF8)
+		{
+			converter.convert(buffer.getCount(), buffer.begin(), utfBuffer);
+			bufferPtr = &utfBuffer;
+		}
+
+		if (textType->getFlags() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
+			UnicodeUtil::utf8Normalize(*bufferPtr);
+
+		return regex->matches((const char*) bufferPtr->begin(), bufferPtr->getCount());
 	}
 
 private:
+	CsConvert converter;
 	AutoPtr<SimilarToRegex> regex;
 	UCharBuffer buffer;
 };
@@ -207,6 +217,7 @@ public:
 	Re2SubstringSimilarMatcher(thread_db* tdbb, MemoryPool& pool, TextType* textType,
 			const UCHAR* patternStr, SLONG patternLen, const UCHAR* escapeStr, SLONG escapeLen)
 		: BaseSubstringSimilarMatcher(pool, textType),
+		  converter(INTL_convert_lookup(tdbb, CS_UTF8, textType->getCharSet()->getId())),
 		  buffer(pool),
 		  resultStart(0),
 		  resultLength(0)
@@ -223,8 +234,6 @@ public:
 
 			flags |= (textType->getFlags() & TEXTTYPE_ATTR_CASE_INSENSITIVE) ?
 				SubstringSimilarRegex::FLAG_CASE_INSENSITIVE : 0;
-
-			CsConvert converter = INTL_convert_lookup(tdbb, textType->getCharSet()->getId(), CS_UTF8);
 
 			converter.convert(patternLen, patternStr, patternBuffer);
 
@@ -289,10 +298,20 @@ public:
 
 	virtual bool result()
 	{
-		if (textType->getFlags() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
-			UnicodeUtil::utf8Normalize(buffer);
+		UCharBuffer utfBuffer;
+		const auto charSetId = textType->getCharSet()->getId();
+		UCharBuffer* bufferPtr = &buffer;
 
-		return regex->matches((const char*) buffer.begin(), buffer.getCount(), &resultStart, &resultLength);
+		if (charSetId != CS_NONE && charSetId != CS_BINARY && charSetId != CS_UTF8)
+		{
+			converter.convert(buffer.getCount(), buffer.begin(), utfBuffer);
+			bufferPtr = &utfBuffer;
+		}
+
+		if (textType->getFlags() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
+			UnicodeUtil::utf8Normalize(*bufferPtr);
+
+		return regex->matches((const char*) bufferPtr->begin(), bufferPtr->getCount(), &resultStart, &resultLength);
 	}
 
 	virtual void getResultInfo(unsigned* start, unsigned* length)
@@ -302,6 +321,7 @@ public:
 	}
 
 private:
+	CsConvert converter;
 	AutoPtr<SubstringSimilarRegex> regex;
 	UCharBuffer buffer;
 	unsigned resultStart, resultLength;
