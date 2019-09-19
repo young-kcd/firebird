@@ -35,7 +35,7 @@ NEWPLUGLOC=/Library/Frameworks/Firebird.framework/Resources/plugins/
 UDRPLUGLOC=$(CURDIR)/Release/firebird/plugins/udr/
 NEWUDRPLUGLOC=/Library/Frameworks/Firebird.framework/Resources/plugins/udr
 INTLLOC=$(CURDIR)/Release/firebird/intl/
-NEWINTLLOC=/Library/Frameworks/Firebird.framework/Resources/plugins/
+NEWINTLLOC=/Library/Frameworks/Firebird.framework/Resources/intl/
 OLDFBCLIENT=$(CURDIR)/Release/firebird/lib/libfbclient.dylib.3.0.4
 NEWFBCLIENT=/Library/Frameworks/Firebird.framework/Versions/A/Firebird
 UDFLOC=$(CURDIR)/Release/firebird/UDF/
@@ -84,7 +84,7 @@ plugins:
 intl:
 
 	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(INTLLOC)libfbintl.dylib
-	install_name_tool -id $(NEWINTLLOC)fbintl  $(INTLLOC)libfbintl.dylib
+	install_name_tool -id $(NEWINTLLOC)libfbintl.dylib  $(INTLLOC)libfbintl.dylib
 udf:
 
 	install_name_tool -change $(OLDFBCLIENT) $(NEWFBCLIENT) $(UDFLOC)fbudf.dylib
