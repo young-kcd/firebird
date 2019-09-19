@@ -2544,7 +2544,7 @@ void BurpGlobals::setupSkipData(const Firebird::string& regexp)
 			BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 			skipDataMatcher.reset(FB_NEW_POOL(tdgbl->getPool()) Firebird::SimilarToRegex(
-				tdgbl->getPool(), Firebird::SimilarToRegex::FLAG_CASE_INSENSITIVE,
+				tdgbl->getPool(), Firebird::SimilarToFlag::CASE_INSENSITIVE,
 				filter.c_str(), filter.length(),
 				"\\", 1));
 		}

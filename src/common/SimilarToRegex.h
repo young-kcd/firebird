@@ -30,13 +30,16 @@
 namespace Firebird {
 
 
+namespace SimilarToFlag
+{
+	static const unsigned CASE_INSENSITIVE = 0x1;
+	static const unsigned LATIN = 0x2;
+	static const unsigned WELLFORMED = 0x4;
+};
+
 class SimilarToRegex : public PermanentStorage
 {
 public:
-	static const unsigned FLAG_CASE_INSENSITIVE = 0x1;
-	static const unsigned FLAG_LATIN = 0x2;
-	static const unsigned FLAG_WELLFORMED = 0x3;
-
 	struct MatchPos
 	{
 		unsigned start;
@@ -65,11 +68,6 @@ private:
 // - Return S2.
 class SubstringSimilarRegex : public PermanentStorage
 {
-public:
-	static const unsigned FLAG_CASE_INSENSITIVE = SimilarToRegex::FLAG_CASE_INSENSITIVE;
-	static const unsigned FLAG_LATIN = SimilarToRegex::FLAG_LATIN;
-	static const unsigned FLAG_WELLFORMED = SimilarToRegex::FLAG_WELLFORMED;
-
 public:
 	SubstringSimilarRegex(MemoryPool& pool, unsigned flags,
 		const char* patternStr, unsigned patternLen, const char* escapeStr, unsigned escapeLen);

@@ -53,7 +53,7 @@ TableMatcher::TableMatcher(MemoryPool& pool,
 	if (includeFilter.hasData())
 	{
 		m_includeMatcher.reset(FB_NEW_POOL(pool) SimilarToRegex(
-			pool, SimilarToRegex::FLAG_CASE_INSENSITIVE,
+			pool, SimilarToFlag::CASE_INSENSITIVE,
 			includeFilter.c_str(), includeFilter.length(),
 			"\\", 1));
 	}
@@ -61,7 +61,7 @@ TableMatcher::TableMatcher(MemoryPool& pool,
 	if (excludeFilter.hasData())
 	{
 		m_excludeMatcher.reset(FB_NEW_POOL(pool) SimilarToRegex(
-			pool, SimilarToRegex::FLAG_CASE_INSENSITIVE,
+			pool, SimilarToFlag::CASE_INSENSITIVE,
 			excludeFilter.c_str(), excludeFilter.length(),
 			"\\", 1));
 	}

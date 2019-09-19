@@ -772,9 +772,9 @@ SimilarToRegex::SimilarToRegex(MemoryPool& pool, unsigned flags,
 {
 	SimilarToCompiler compiler(pool, regexp,
 		COMP_FLAG_GROUP_CAPTURE | COMP_FLAG_PREFER_FEWER |
-			((flags & FLAG_CASE_INSENSITIVE) ? COMP_FLAG_CASE_INSENSITIVE : 0) |
-			((flags & FLAG_LATIN) ? COMP_FLAG_LATIN : 0) |
-			((flags & FLAG_WELLFORMED) ? COMP_FLAG_WELLFORMED : 0),
+			((flags & SimilarToFlag::CASE_INSENSITIVE) ? COMP_FLAG_CASE_INSENSITIVE : 0) |
+			((flags & SimilarToFlag::LATIN) ? COMP_FLAG_LATIN : 0) |
+			((flags & SimilarToFlag::WELLFORMED) ? COMP_FLAG_WELLFORMED : 0),
 		patternStr, patternLen, escapeStr, escapeLen);
 
 	finalizer = pool.registerFinalizer(finalize, this);
@@ -844,9 +844,9 @@ SubstringSimilarRegex::SubstringSimilarRegex(MemoryPool& pool, unsigned flags,
 	: PermanentStorage(pool)
 {
 	SubstringSimilarCompiler compiler(pool, regexp,
-		((flags & FLAG_CASE_INSENSITIVE) ? COMP_FLAG_CASE_INSENSITIVE : 0) |
-			((flags & FLAG_LATIN) ? COMP_FLAG_LATIN : 0) |
-			((flags & FLAG_WELLFORMED) ? COMP_FLAG_WELLFORMED : 0),
+		((flags & SimilarToFlag::CASE_INSENSITIVE) ? COMP_FLAG_CASE_INSENSITIVE : 0) |
+			((flags & SimilarToFlag::LATIN) ? COMP_FLAG_LATIN : 0) |
+			((flags & SimilarToFlag::WELLFORMED) ? COMP_FLAG_WELLFORMED : 0),
 		patternStr, patternLen, escapeStr, escapeLen);
 
 	finalizer = pool.registerFinalizer(finalize, this);

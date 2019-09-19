@@ -134,7 +134,7 @@ TracePluginImpl::TracePluginImpl(IPluginBase* plugin,
 			ISC_systemToUtf8(filter);
 
 			include_matcher = FB_NEW SimilarToRegex(
-				*getDefaultMemoryPool(), SimilarToRegex::FLAG_CASE_INSENSITIVE,
+				*getDefaultMemoryPool(), SimilarToFlag::CASE_INSENSITIVE,
 				filter.c_str(), filter.length(),
 				"\\", 1);
 		}
@@ -146,7 +146,7 @@ TracePluginImpl::TracePluginImpl(IPluginBase* plugin,
 			ISC_systemToUtf8(filter);
 
 			exclude_matcher = FB_NEW SimilarToRegex(
-				*getDefaultMemoryPool(), SimilarToRegex::FLAG_CASE_INSENSITIVE,
+				*getDefaultMemoryPool(), SimilarToFlag::CASE_INSENSITIVE,
 				filter.c_str(), filter.length(),
 				"\\", 1);
 		}
