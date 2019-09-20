@@ -444,6 +444,11 @@ bool Int128::operator>(Int128 value) const
 	return v > value.v;
 }
 
+bool Int128::operator>=(Int128 value) const
+{
+	return v >= value.v;
+}
+
 bool Int128::operator==(Int128 value) const
 {
 	return v == value.v;

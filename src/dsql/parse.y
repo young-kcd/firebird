@@ -331,8 +331,8 @@ using namespace Firebird;
 %token <metaNamePtr> WORK
 %token <metaNamePtr> WRITE
 
-%token <stringPtr> FLOAT_NUMBER DECIMAL_NUMBER LIMIT64_INT
-%token <lim64ptr> LIMIT64_NUMBER
+%token <stringPtr> FLOAT_NUMBER DECIMAL_NUMBER
+%token <lim64ptr> LIMIT64_NUMBER LIMIT64_INT NUM128
 %token <metaNamePtr> SYMBOL
 %token <int32Val> NUMBER32BIT
 
@@ -7418,9 +7418,11 @@ u_numeric_constant
 	: ul_numeric_constant
 		{ $$ = $1; }
 	| LIMIT64_NUMBER
-		{ $$ = MAKE_constant($1->c_str(), CONSTANT_DECIMAL); }
+		{ $$ = MAKE_constant($1->c_str(), CONSTANT_NUM128, $1->getScale()); }
 	| LIMIT64_INT
-		{ $$ = MAKE_constant($1->c_str(), CONSTANT_DECIMAL); }
+		{ $$ = MAKE_constant($1->c_str(), CONSTANT_NUM128); }
+	| NUM128
+		{ $$ = MAKE_constant($1->c_str(), CONSTANT_NUM128, $1->getScale()); }
 	;
 
 %type <valueExprNode> ul_numeric_constant

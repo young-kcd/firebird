@@ -47,6 +47,7 @@ namespace Jrd {
 	enum dsql_constant_type {
 		CONSTANT_DOUBLE = 1,	// stored as a string
 		CONSTANT_DECIMAL,		// stored as a string
+		CONSTANT_NUM128,		// stored as a string
 		CONSTANT_DATE,			// stored as a SLONG
 		CONSTANT_TIME,			// stored as a ULONG
 		CONSTANT_TIMESTAMP,		// stored as a QUAD
@@ -78,7 +79,7 @@ namespace Jrd {
 
 Jrd::LiteralNode* MAKE_const_slong(SLONG);
 Jrd::LiteralNode* MAKE_const_sint64(SINT64 value, SCHAR scale);
-Jrd::ValueExprNode* MAKE_constant(const char*, Jrd::dsql_constant_type);
+Jrd::ValueExprNode* MAKE_constant(const char*, Jrd::dsql_constant_type, SSHORT = 0);
 Jrd::LiteralNode* MAKE_str_constant(const Jrd::IntlString*, SSHORT);
 Jrd::FieldNode* MAKE_field(Jrd::dsql_ctx*, Jrd::dsql_fld*, Jrd::ValueListNode*);
 Jrd::FieldNode* MAKE_field_name(const char*);

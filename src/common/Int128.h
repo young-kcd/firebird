@@ -89,6 +89,7 @@ public:
 
 	int compare(Int128 tgt) const;
 	bool operator>(Int128 value) const;
+	bool operator>=(Int128 value) const;
 	bool operator==(Int128 value) const;
 	int sign() const;
 

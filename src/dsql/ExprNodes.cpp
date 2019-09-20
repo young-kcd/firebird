@@ -7373,6 +7373,7 @@ DmlNode* LiteralNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 		case dtype_double:
 		case dtype_dec128:
+		case dtype_int128:
 		{
 			// The double literal could potentially be used for any numeric literal - the value is
 			// passed as if it were a text string. Convert the numeric string to its binary value
@@ -7393,6 +7394,9 @@ DmlNode* LiteralNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 					break;
 				case dtype_dec128:
 					node->litDesc.dsc_length = sizeof(Decimal128);
+					break;
+				case dtype_int128:
+					node->litDesc.dsc_length = sizeof(Int128);
 					break;
 				case dtype_long:
 					node->litDesc.dsc_length = sizeof(SLONG);
@@ -7516,6 +7520,7 @@ void LiteralNode::genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc,
 
 		case dtype_double:
 		case dtype_dec128:
+		case dtype_int128:
 		{
 			// this is used for approximate/large numeric literal
 			// which is transmitted to the engine as a string.
@@ -7885,7 +7890,7 @@ dsc* LiteralNode::execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 
 void LiteralNode::fixMinSInt64(MemoryPool& pool)
 {
-	// MIN_SINT64 should be stored as BIGINT, not DECFLOAT
+	// MIN_SINT64 should be stored as BIGINT, not 128-bit integer
 
 	const UCHAR* s = litDesc.dsc_address;
 	const char* minSInt64 = "9223372036854775808";
@@ -8561,7 +8566,7 @@ NegateNode::NegateNode(MemoryPool& pool, ValueExprNode* aArg)
 	  arg(aArg)
 {
 	LiteralNode* literal = nodeAs<LiteralNode>(arg);
-	if (literal && literal->litDesc.dsc_dtype == dtype_dec128)
+	if (literal && literal->litDesc.dsc_dtype == dtype_int128)
 		literal->fixMinSInt64(pool);
 }
 

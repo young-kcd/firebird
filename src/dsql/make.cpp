@@ -180,16 +180,16 @@ LiteralNode* MAKE_const_sint64(SINT64 value, SCHAR scale)
     @param numeric_flag
 
  **/
-ValueExprNode* MAKE_constant(const char* str, dsql_constant_type numeric_flag)
+ValueExprNode* MAKE_constant(const char* str, dsql_constant_type numeric_flag, SSHORT scale)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-
 	LiteralNode* literal = FB_NEW_POOL(*tdbb->getDefaultPool()) LiteralNode(*tdbb->getDefaultPool());
 
 	switch (numeric_flag)
 	{
 	case CONSTANT_DOUBLE:
 	case CONSTANT_DECIMAL:
+	case CONSTANT_NUM128:
 		// This is a numeric value which is transported to the engine as
 		// a string.  The engine will convert it. Use dtype_double/dec128
 		// so that the engine can distinguish it from an actual string.
@@ -197,15 +197,17 @@ ValueExprNode* MAKE_constant(const char* str, dsql_constant_type numeric_flag)
 		// to constants less than 32K - 1 bytes. Not real problem.
 
 		{
-			literal->litDesc.dsc_dtype = numeric_flag == CONSTANT_DOUBLE ? dtype_double : dtype_dec128;
-			literal->litDesc.dsc_scale = 0;
+			literal->litDesc.dsc_dtype = numeric_flag == CONSTANT_DOUBLE ? dtype_double :
+				numeric_flag == CONSTANT_DECIMAL ? dtype_dec128 : dtype_int128;
+			literal->litDesc.dsc_scale = scale;
 			size_t l = strlen(str);
 			if (l > MAX_SSHORT)
 			{
 				ERRD_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_num_literal));
 			}
 			literal->litDesc.dsc_sub_type = static_cast<SSHORT>(l);	// Keep length in sub_type which is unused
-			literal->litDesc.dsc_length = numeric_flag == CONSTANT_DOUBLE ? sizeof(double) : sizeof(Decimal128);
+			literal->litDesc.dsc_length = numeric_flag == CONSTANT_DOUBLE ? sizeof(double) :
+				numeric_flag == CONSTANT_DECIMAL ? sizeof(Decimal128) : sizeof(Int128);
 			literal->litDesc.dsc_address = (UCHAR*) str;
 		}
 		break;
