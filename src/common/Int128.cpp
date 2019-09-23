@@ -58,7 +58,7 @@ namespace Firebird {
 
 Int128 Int128::set(SLONG value, int scale)
 {
-	v = value;
+	v = ttmath::sint(value);
 	setScale(scale);
 	return *this;
 }

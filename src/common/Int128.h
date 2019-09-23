@@ -49,9 +49,9 @@ class Int128 //: public Decimal128Base
 {
 public:
 #if SIZEOF_LONG < 8
-	Int128 set(int value)
+	Int128 set(int value, int scale)
 	{
-		return set(SLONG(value));
+		return set(SLONG(value), scale);
 	}
 #endif
 	Int128 set(SLONG value, int scale);
