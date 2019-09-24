@@ -2771,9 +2771,9 @@ public:
 
 	lb10 compareLimitBy10()
 	{
-		if (value > Traits::UPPER_LIMIT / 10)
+		if (value > Traits::UPPER_LIMIT_BY_10)
 			return RETVAL_OVERFLOW;
-		if (value == Traits::UPPER_LIMIT / 10)
+		if (value == Traits::UPPER_LIMIT_BY_10)
 			return RETVAL_POSSIBLE_OVERFLOW;
 		return RETVAL_NO_OVERFLOW;
 	}
@@ -2804,7 +2804,7 @@ class SLONGTraits
 {
 public:
 	typedef SLONG ValueType;
-	static const SLONG UPPER_LIMIT = MAX_SLONG;
+	static const SLONG UPPER_LIMIT_BY_10 = MAX_SLONG / 10;
 	static const SLONG LOWER_LIMIT = MIN_SLONG;
 };
 
@@ -2831,7 +2831,7 @@ class SINT64Traits
 {
 public:
 	typedef SINT64 ValueType;
-	static const SINT64 UPPER_LIMIT = MAX_SINT64;
+	static const SINT64 UPPER_LIMIT_BY_10 = MAX_SINT64 / 10;
 	static const SINT64 LOWER_LIMIT = MIN_SINT64;
 };
 
@@ -2858,12 +2858,12 @@ class I128Traits
 {
 public:
 	typedef Int128 ValueType;
-	static const CInt128 UPPER_LIMIT;
+	static const CInt128 UPPER_LIMIT_BY_10;
 	static const CInt128 LOWER_LIMIT;
 };
 
-const CInt128 I128Traits::UPPER_LIMIT(MAX_Int128);
-const CInt128 I128Traits::LOWER_LIMIT(MIN_Int128);
+const CInt128 I128Traits::UPPER_LIMIT_BY_10(CInt128(CInt128::MkMax) / 10);
+const CInt128 I128Traits::LOWER_LIMIT(CInt128::MkMin);
 
 SSHORT CVT_decompose(const char* str, USHORT len, Int128* val, ErrorFunction err)
 {
