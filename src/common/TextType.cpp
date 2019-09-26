@@ -101,8 +101,8 @@
 namespace Jrd {
 
 
-TextType::TextType(TTYPE_ID _type, texttype *_tt, CharSet* _cs)
-	: tt(_tt), cs(_cs), type(_type)
+TextType::TextType(TTYPE_ID _type, texttype *_tt, USHORT _attributes, CharSet* _cs)
+	: tt(_tt), cs(_cs), type(_type), attributes(_attributes)
 {
 	if (cs->getSqlMatchAnyLength() != 0)
 	{

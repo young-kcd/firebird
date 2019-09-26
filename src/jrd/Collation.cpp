@@ -129,12 +129,12 @@ public:
 			if (charSetId != CS_UTF8)
 				flags |= SimilarToFlag::WELLFORMED;
 
-			flags |= (textType->getFlags() & TEXTTYPE_ATTR_CASE_INSENSITIVE) ?
+			flags |= (textType->getAttributes() & TEXTTYPE_ATTR_CASE_INSENSITIVE) ?
 				SimilarToFlag::CASE_INSENSITIVE : 0;
 
 			converter.convert(patternLen, patternStr, patternBuffer);
 
-			if (textType->getFlags() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
+			if (textType->getAttributes() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
 				UnicodeUtil::utf8Normalize(patternBuffer);
 
 			patternStr = patternBuffer.begin();
@@ -144,7 +144,7 @@ public:
 			{
 				converter.convert(escapeLen, escapeStr, escapeBuffer);
 
-				if (textType->getFlags() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
+				if (textType->getAttributes() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
 					UnicodeUtil::utf8Normalize(escapeBuffer);
 
 				escapeStr = escapeBuffer.begin();
@@ -199,7 +199,7 @@ public:
 			bufferPtr = &utfBuffer;
 		}
 
-		if (textType->getFlags() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
+		if (textType->getAttributes() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
 			UnicodeUtil::utf8Normalize(*bufferPtr);
 
 		return regex->matches((const char*) bufferPtr->begin(), bufferPtr->getCount());
@@ -232,12 +232,12 @@ public:
 			if (charSetId != CS_UTF8)
 				flags |= SimilarToFlag::WELLFORMED;
 
-			flags |= (textType->getFlags() & TEXTTYPE_ATTR_CASE_INSENSITIVE) ?
+			flags |= (textType->getAttributes() & TEXTTYPE_ATTR_CASE_INSENSITIVE) ?
 				SimilarToFlag::CASE_INSENSITIVE : 0;
 
 			converter.convert(patternLen, patternStr, patternBuffer);
 
-			if (textType->getFlags() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
+			if (textType->getAttributes() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
 				UnicodeUtil::utf8Normalize(patternBuffer);
 
 			patternStr = patternBuffer.begin();
@@ -247,7 +247,7 @@ public:
 			{
 				converter.convert(escapeLen, escapeStr, escapeBuffer);
 
-				if (textType->getFlags() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
+				if (textType->getAttributes() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
 					UnicodeUtil::utf8Normalize(escapeBuffer);
 
 				escapeStr = escapeBuffer.begin();
@@ -308,7 +308,7 @@ public:
 			bufferPtr = &utfBuffer;
 		}
 
-		if (textType->getFlags() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
+		if (textType->getAttributes() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
 			UnicodeUtil::utf8Normalize(*bufferPtr);
 
 		return regex->matches((const char*) bufferPtr->begin(), bufferPtr->getCount(), &resultStart, &resultLength);
@@ -949,8 +949,8 @@ template <
 class CollationImpl : public Collation
 {
 public:
-	CollationImpl(TTYPE_ID a_type, texttype* a_tt, CharSet* a_cs)
-		: Collation(a_type, a_tt, a_cs)
+	CollationImpl(TTYPE_ID a_type, texttype* a_tt, USHORT a_attributes, CharSet* a_cs)
+		: Collation(a_type, a_tt, a_attributes, a_cs)
 	{
 	}
 
@@ -1027,7 +1027,7 @@ public:
 };
 
 template <typename T>
-Collation* newCollation(MemoryPool& pool, TTYPE_ID id, texttype* tt, CharSet* cs)
+Collation* newCollation(MemoryPool& pool, TTYPE_ID id, texttype* tt, USHORT attributes, CharSet* cs)
 {
 	using namespace Firebird;
 
@@ -1052,9 +1052,9 @@ Collation* newCollation(MemoryPool& pool, TTYPE_ID id, texttype* tt, CharSet* cs
 	> NonDirectImpl;
 
 	if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
-		return FB_NEW_POOL(pool) DirectImpl(id, tt, cs);
+		return FB_NEW_POOL(pool) DirectImpl(id, tt, attributes, cs);
 	else
-		return FB_NEW_POOL(pool) NonDirectImpl(id, tt, cs);
+		return FB_NEW_POOL(pool) NonDirectImpl(id, tt, attributes, cs);
 }
 
 }	// namespace
@@ -1066,18 +1066,18 @@ Collation* newCollation(MemoryPool& pool, TTYPE_ID id, texttype* tt, CharSet* cs
 namespace Jrd {
 
 
-Collation* Collation::createInstance(MemoryPool& pool, TTYPE_ID id, texttype* tt, CharSet* cs)
+Collation* Collation::createInstance(MemoryPool& pool, TTYPE_ID id, texttype* tt, USHORT attributes, CharSet* cs)
 {
 	switch (tt->texttype_canonical_width)
 	{
 		case 1:
-			return newCollation<UCHAR>(pool, id, tt, cs);
+			return newCollation<UCHAR>(pool, id, tt, attributes, cs);
 
 		case 2:
-			return newCollation<USHORT>(pool, id, tt, cs);
+			return newCollation<USHORT>(pool, id, tt, attributes, cs);
 
 		case 4:
-			return newCollation<ULONG>(pool, id, tt, cs);
+			return newCollation<ULONG>(pool, id, tt, attributes, cs);
 	}
 
 	fb_assert(false);

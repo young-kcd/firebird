@@ -41,7 +41,7 @@ class CharSet;
 class TextType
 {
 public:
-	TextType(TTYPE_ID _type, texttype *_tt, CharSet* _cs);
+	TextType(TTYPE_ID _type, texttype* _tt, USHORT _attributes, CharSet* _cs);
 
 private:
 	TextType(const TextType&);	// Not implemented
@@ -82,6 +82,11 @@ public:
 		return type;
 	}
 
+	USHORT getAttributes() const
+	{
+		return attributes;
+	}
+
 	CharSet* getCharSet() const
 	{
 		return cs;
@@ -99,6 +104,7 @@ protected:
 
 private:
 	TTYPE_ID type;
+	USHORT attributes;
 
 public:
 	enum
