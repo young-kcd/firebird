@@ -2547,6 +2547,12 @@ bool VIO_get_current(thread_db* tdbb,
 
 		// Get data if there is data.
 
+		if (rpb->rpb_flags & rpb_damaged)
+		{
+			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+			return false;
+		}
+
 		if (rpb->rpb_flags & rpb_deleted)
 			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 		else
