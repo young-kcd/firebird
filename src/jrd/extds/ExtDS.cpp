@@ -2426,14 +2426,15 @@ void Statement::putExtBlob(thread_db* tdbb, dsc& src, dsc& dst)
 		}
 
 		srcBlob->BLB_close(tdbb);
+		srcBlob = NULL;
 		extBlob->close(tdbb);
 	}
 	catch (const Exception&)
 	{
-		extBlob->cancel(tdbb);
 		if (srcBlob) {
 			srcBlob->BLB_close(tdbb);
 		}
+		extBlob->cancel(tdbb);
 		throw;
 	}
 }
