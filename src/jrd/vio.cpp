@@ -1964,6 +1964,12 @@ bool VIO_get_current(thread_db* tdbb,
 
 		// Get data if there is data.
 
+		if (rpb->rpb_flags & rpb_damaged)
+		{
+			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+			return false;
+		}
+
 		if (rpb->rpb_flags & rpb_deleted) {
 			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 		}
@@ -3068,6 +3074,8 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 #ifdef SUPERSERVER
 					transaction->tra_oldest_active = dbb->dbb_oldest_snapshot;
 #endif
+					Database::Checkout dcoHolder(dbb);
+					THREAD_SLEEP(1);
 				}
 
 				traceSweep->endSweepRelation(relation);
