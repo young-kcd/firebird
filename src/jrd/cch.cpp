@@ -5153,8 +5153,8 @@ void requeueRecentlyUsed(BufferControl* bcb)
 		QUE_DELETE (bdb->bdb_in_use);
 		QUE_INSERT (bcb->bcb_in_use, bdb->bdb_in_use);
 
-		bdb->bdb_flags &= ~BDB_lru_chained;
 		bdb->bdb_lru_chain = NULL;
+		bdb->bdb_flags &= ~BDB_lru_chained;
 	}
 
 	chain = bcb->bcb_lru_chain;
