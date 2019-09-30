@@ -175,7 +175,7 @@ goto :EOF
 @ml64.exe /c /Fo %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common\ttmathuint_x86_64_msvc.obj %FB_ROOT_PATH%\extern\ttmath\ttmathuint_x86_64_msvc.asm
 if errorlevel 1 call :boot2 ttmath_%FB_OBJ_DIR%
 @call set_build_target.bat %* DEBUG
-@echo Building decNumber (%FB_OBJ_DIR%)...
+@echo Building ttmath (%FB_OBJ_DIR%)...
 @mkdir %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common 2>nul
 @ml64.exe /c /Zi /Fo %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common\ttmathuint_x86_64_msvc.obj %FB_ROOT_PATH%\extern\ttmath\ttmathuint_x86_64_msvc.asm
 if errorlevel 1 call :boot2 ttmath_%FB_OBJ_DIR%
