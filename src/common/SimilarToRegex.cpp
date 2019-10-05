@@ -356,16 +356,17 @@ namespace
 				{
 					const char* similarClass;
 					const char* re2ClassInclude;
-					const char* re2ClassExclude;
+					const char* re2ClassExcludeUtf;
+					const char* re2ClassExcludeLatin;
 				} static const classes[] =
 					{
-						{"alnum", "[:alnum:]", "[:^alnum:]"},
-						{"alpha", "[:alpha:]", "[:^alpha:]"},
-						{"digit", "[:digit:]", "[:^digit:]"},
-						{"lower", "[:lower:]", "[:^lower:]"},
-						{"space", " ", "\\x00-\\x1F\\x21-\\x{10FFFF}"},
-						{"upper", "[:upper:]", "[:^upper:]"},
-						{"whitespace", "[:space:]", "[:^space:]"}
+						{"alnum", "[:alnum:]", "[:^alnum:]", "[:^alnum:]"},
+						{"alpha", "[:alpha:]", "[:^alpha:]", "[:^alpha:]"},
+						{"digit", "[:digit:]", "[:^digit:]", "[:^digit:]"},
+						{"lower", "[:lower:]", "[:^lower:]", "[:^lower:]"},
+						{"space", " ", "\\x00-\\x1F\\x21-\\x{10FFFF}", "\\x00-\\x1F\\x21-\\xFF"},
+						{"upper", "[:upper:]", "[:^upper:]", "[:^upper:]"},
+						{"whitespace", "[:space:]", "[:^space:]", "[:^space:]"}
 					};
 
 				struct Item
@@ -373,9 +374,12 @@ namespace
 					int clazz;
 					unsigned firstStart, firstEnd, lastStart, lastEnd;
 				};
+
+				const UChar32 maxChar = (flags & COMP_FLAG_LATIN) ? 0xFF : 0x10FFFF;
 				Array<Item> items;
 				unsigned includeCount = 0;
 				bool exclude = false;
+				bool invalidInclude = false;
 
 				do
 				{
@@ -413,9 +417,7 @@ namespace
 					}
 
 					Item item;
-
-					if (!exclude)
-						++includeCount;
+					bool strip = false;
 
 					if (charClass)
 					{
@@ -472,49 +474,68 @@ namespace
 
 							item.lastStart = charSavePos;
 							item.lastEnd = patternPos;
+
+							int32_t cPos = item.firstStart;
+							UChar32 c1 = getChar(flags & COMP_FLAG_LATIN, patternStr, patternLen, cPos);
+
+							cPos = item.lastStart;
+							UChar32 c2 = getChar(flags & COMP_FLAG_LATIN, patternStr, patternLen, cPos);
+
+							strip = c1 > c2;
 						}
 					}
 
-					items.add(item);
+					if (strip)
+					{
+						if (!exclude)
+							invalidInclude = true;
+					}
+					else
+					{
+						if (!exclude)
+							++includeCount;
+
+						items.add(item);
+					}
 
 					if (!hasPatternChar())
 						status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 				} while (peekPatternChar() != ']');
 
+				exclude = includeCount < items.getCount();
+
 				auto appendItem = [&](const Item& item, bool negated) {
 					if (item.clazz != -1)
 					{
 						re2PatternStr.append(negated ?
-							classes[item.clazz].re2ClassExclude :
+							(flags & COMP_FLAG_LATIN ?
+								classes[item.clazz].re2ClassExcludeLatin :
+								classes[item.clazz].re2ClassExcludeUtf
+							) :
 							classes[item.clazz].re2ClassInclude);
 					}
 					else
 					{
 						if (negated)
 						{
-							char hex[20];
+							char hex[40];
 
 							int32_t cPos = item.firstStart;
 							UChar32 c = getChar(flags & COMP_FLAG_LATIN, patternStr, patternLen, cPos);
 
 							if (c > 0)
 							{
-								re2PatternStr.append("\\x00");
-								re2PatternStr.append("-");
-
-								sprintf(hex, "\\x{%X}", (int) c - 1);
+								sprintf(hex, "\\x00-\\x{%X}", (int) c - 1);
 								re2PatternStr.append(hex);
 							}
 
 							cPos = item.lastStart;
 							c = getChar(flags & COMP_FLAG_LATIN, patternStr, patternLen, cPos);
 
-							if (c < 0x10FFFF)
+							if (c < maxChar)
 							{
-								sprintf(hex, "\\x{%X}", (int) c + 1);
+								sprintf(hex, "\\x{%X}-\\x{%X}", (int) c + 1, maxChar);
 								re2PatternStr.append(hex);
-								re2PatternStr.append("-");
-								re2PatternStr.append("\\x{10FFFF}");
 							}
 						}
 						else
@@ -560,15 +581,26 @@ namespace
 				}
 				else
 				{
-					re2PatternStr.append("[");
+					if (items.hasData() && !(invalidInclude && includeCount == 0))
+					{
+						re2PatternStr.append("[");
 
-					if (exclude)
-						re2PatternStr.append("^");
+						if (exclude)
+							re2PatternStr.append("^");
 
-					for (unsigned i = 0; i < items.getCount(); ++i)
-						appendItem(items[i], exclude && i < includeCount);
+						for (unsigned i = 0; i < items.getCount(); ++i)
+							appendItem(items[i], exclude && i < includeCount);
 
-					re2PatternStr.append("]");
+						re2PatternStr.append("]");
+					}
+					else if (invalidInclude)
+					{
+						char str[30];
+						sprintf(str, "[^\\x{0}-\\x{%X}]", maxChar);
+						re2PatternStr.append(str);
+					}
+					else
+						re2PatternStr.append(".");
 				}
 
 				getPatternChar();
@@ -695,13 +727,13 @@ namespace
 
 			AutoPtr<RE2> regexp1, regexp2, regexp3;
 
-			SimilarToCompiler compiler1(pool, regexp1, COMP_FLAG_PREFER_FEWER,
+			SimilarToCompiler compiler1(pool, regexp1, COMP_FLAG_PREFER_FEWER | (flags & COMP_FLAG_LATIN),
 				aPatternStr, positions[0] - escapeLen - 1, escapeStr, escapeLen);
 
-			SimilarToCompiler compiler2(pool, regexp2, 0,
+			SimilarToCompiler compiler2(pool, regexp2, (flags & COMP_FLAG_LATIN),
 				aPatternStr + positions[0], positions[1] - positions[0] - escapeLen - 1, escapeStr, escapeLen);
 
-			SimilarToCompiler compiler3(pool, regexp3, COMP_FLAG_PREFER_FEWER,
+			SimilarToCompiler compiler3(pool, regexp3, COMP_FLAG_PREFER_FEWER | (flags & COMP_FLAG_LATIN),
 				aPatternStr + positions[1], patternLen - positions[1], escapeStr, escapeLen);
 
 			string finalRe2Pattern;
