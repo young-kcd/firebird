@@ -223,7 +223,7 @@ public:
 				" \\u0141 > L;";	// LATIN CAPITAL LETTER L WITH STROKE' (U+0141), polish
 
 			UErrorCode errorCode = U_ZERO_ERROR;
-			ret = utransOpenU(u"FbNormalizer", -1, UTRANS_FORWARD, RULE, -1, NULL, &errorCode);
+			ret = utransOpenU((const UChar*) u"FbNormalizer", -1, UTRANS_FORWARD, RULE, -1, NULL, &errorCode);
 		}
 
 		return ret;
