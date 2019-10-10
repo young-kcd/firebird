@@ -215,7 +215,7 @@ public:
 
 			// Fix for CORE-4136. Was "Any-Upper; NFD; [:Nonspacing Mark:] Remove; NFC".
 			// Also see CORE-4739.
-			static const auto RULE =
+			static const auto RULE = (const UChar*)
 				u"::NFD; ::[:Nonspacing Mark:] Remove; ::NFC;"
 				" \\u00d0 > D;"		// LATIN CAPITAL LETTER ETH' (U+00D0), iceland
 				" \\u00d8 > O;"		// LATIN CAPITAL LETTER O WITH STROKE' (U+00D8), used in danish & iceland alphabets;
