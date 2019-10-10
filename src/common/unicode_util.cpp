@@ -213,10 +213,17 @@ public:
 		{
 			ciAiTransCacheMutex.leave();
 
-			UErrorCode errorCode = U_ZERO_ERROR;
 			// Fix for CORE-4136. Was "Any-Upper; NFD; [:Nonspacing Mark:] Remove; NFC".
-			ret = utransOpen("NFD; [:Nonspacing Mark:] Remove; NFC",
-				UTRANS_FORWARD, NULL, 0, NULL, &errorCode);
+			// Also see CORE-4739.
+			static const auto RULE =
+				u"::NFD; ::[:Nonspacing Mark:] Remove; ::NFC;"
+				" \\u00d0 > D;"		// LATIN CAPITAL LETTER ETH' (U+00D0), iceland
+				" \\u00d8 > O;"		// LATIN CAPITAL LETTER O WITH STROKE' (U+00D8), used in danish & iceland alphabets;
+				" \\u013f > L;"		// LATIN CAPITAL LETTER L WITH MIDDLE DOT' (U+013F), catalone (valencian)
+				" \\u0141 > L;";	// LATIN CAPITAL LETTER L WITH STROKE' (U+0141), polish
+
+			UErrorCode errorCode = U_ZERO_ERROR;
+			ret = utransOpenU(u"FbNormalizer", -1, UTRANS_FORWARD, RULE, -1, NULL, &errorCode);
 		}
 
 		return ret;
@@ -257,8 +264,9 @@ public:
 	void (U_EXPORT2 *ucolGetVersion)(const UCollator* coll, UVersionInfo info);
 
 	void (U_EXPORT2 *utransClose)(UTransliterator* trans);
-	UTransliterator* (U_EXPORT2 *utransOpen)(
-		const char* id,
+	UTransliterator* (U_EXPORT2 *utransOpenU)(
+		const UChar* id,
+		int32_t idLength,
 		UTransDirection dir,
 		const UChar* rules,         /* may be Null */
 		int32_t rulesLength,        /* -1 if null-terminated */
@@ -1138,7 +1146,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const string& icuVersion, const string& c
 			icu->getEntryPoint("ucol_setAttribute", icu->inModule, icu->ucolSetAttribute);
 			icu->getEntryPoint("ucol_strcoll", icu->inModule, icu->ucolStrColl);
 			icu->getEntryPoint("ucol_getVersion", icu->inModule, icu->ucolGetVersion);
-			icu->getEntryPoint("utrans_open", icu->inModule, icu->utransOpen);
+			icu->getEntryPoint("utrans_openU", icu->inModule, icu->utransOpenU);
 			icu->getEntryPoint("utrans_close", icu->inModule, icu->utransClose);
 			icu->getEntryPoint("utrans_transUChars", icu->inModule, icu->utransTransUChars);
 		}
