@@ -113,6 +113,8 @@ static gbak_action open_files(const TEXT *, const TEXT**, USHORT,
 static int svc_api_gbak(Firebird::UtilSvc*, const Switches& switches);
 static void burp_usage(const Switches& switches);
 static Switches::in_sw_tab_t* findSwitchOrThrow(Firebird::UtilSvc*, Switches& switches, Firebird::string& sw);
+static void processFetchPass(const SCHAR*& password, int& itr, const int argc, Firebird::UtilSvc::ArgvType& argv);
+
 
 // fil.fil_length is FB_UINT64
 const ULONG KBYTE	= 1024;
@@ -179,6 +181,7 @@ static int svc_api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
  *
  **********************************************/
     Firebird::string usr, pswd, service;
+    const SCHAR* pswd2 = NULL;
 	bool flag_restore = false;
 	bool flag_verbose = false;
 #ifdef TRUSTED_AUTH
@@ -232,6 +235,7 @@ static int svc_api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 					break;
 				case IN_SW_BURP_PASS:			// default password
 					pswd = argv[itr];
+					pswd2 = pswd.nullStr();
 					uSvc->hidePasswd(argv, itr);
 					break;
 				case IN_SW_BURP_SE:				// service name
@@ -240,6 +244,12 @@ static int svc_api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 				}
 				argv[itr] = 0;
 			}
+			break;
+		case IN_SW_BURP_FETCHPASS:
+			argv[itr] = 0;
+			processFetchPass(pswd2, itr, argc, argv);
+			pswd = pswd2;
+			argv[itr] = 0;
 			break;
 		case IN_SW_BURP_V:				// verify actions
 			if (flag_verbint)
@@ -671,33 +681,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 			tdgbl->gbl_sw_password = argv[itr];
 			break;
 		case IN_SW_BURP_FETCHPASS:
-			if (++itr >= argc)
-			{
-				BURP_error(189, true);
-				// password parameter missing
-			}
-			if (tdgbl->gbl_sw_password)
-			{
-				BURP_error(307, true);
-				// too many passwords provided
-			}
-			switch (fb_utils::fetchPassword(argv[itr], tdgbl->gbl_sw_password))
-			{
-			case fb_utils::FETCH_PASS_OK:
-				break;
-			case fb_utils::FETCH_PASS_FILE_OPEN_ERROR:
-				BURP_error(308, true, MsgFormat::SafeArg() << argv[itr] << errno);
-				// error @2 opening password file @1
-				break;
-			case fb_utils::FETCH_PASS_FILE_READ_ERROR:
-				BURP_error(309, true, MsgFormat::SafeArg() << argv[itr] << errno);
-				// error @2 reading password file @1
-				break;
-			case fb_utils::FETCH_PASS_FILE_EMPTY:
-				BURP_error(310, true, MsgFormat::SafeArg() << argv[itr]);
-				// password file @1 is empty
-				break;
-			}
+			processFetchPass(tdgbl->gbl_sw_password, itr, argc, argv);
 			break;
 		case IN_SW_BURP_USER:
 			if (++itr >= argc)
@@ -2600,4 +2584,36 @@ UnicodeCollationHolder::~UnicodeCollationHolder()
 
 	// cs should be deleted by texttype_fn_destroy call above
 	delete tt;
+}
+
+static void processFetchPass(const SCHAR*& password, int& itr, const int argc, Firebird::UtilSvc::ArgvType& argv)
+{
+	if (++itr >= argc)
+	{
+		BURP_error(189, true);
+		// password parameter missing
+	}
+	if (password)
+	{
+		BURP_error(307, true);
+		// too many passwords provided
+	}
+
+	switch (fb_utils::fetchPassword(argv[itr], password))
+	{
+	case fb_utils::FETCH_PASS_OK:
+		break;
+	case fb_utils::FETCH_PASS_FILE_OPEN_ERROR:
+		BURP_error(308, true, MsgFormat::SafeArg() << argv[itr] << errno);
+		// error @2 opening password file @1
+		break;
+	case fb_utils::FETCH_PASS_FILE_READ_ERROR:
+		BURP_error(309, true, MsgFormat::SafeArg() << argv[itr] << errno);
+		// error @2 reading password file @1
+		break;
+	case fb_utils::FETCH_PASS_FILE_EMPTY:
+		BURP_error(310, true, MsgFormat::SafeArg() << argv[itr]);
+		// password file @1 is empty
+		break;
+	}
 }
