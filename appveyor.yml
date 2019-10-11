@@ -32,6 +32,7 @@ install:
   - cmd: if "%PLATFORM%" == "x86" set FB_OUTPUT_SUFFIX=win32
   - cmd: if "%PLATFORM%" == "x86" set FB_VS_ARCH=x86
   - cmd: if "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2017" call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" -arch=%FB_VS_ARCH%
+  - cmd: if "%APPVEYOR_BUILD_WORKER_IMAGE%" == "Visual Studio 2015" call "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" %FB_VS_ARCH%
   - cmd: cd builds\win32
   - cmd: run_all.bat JUSTBUILD
   - cmd: set ARTIFACTS_PATH=output_%FB_OUTPUT_SUFFIX%
