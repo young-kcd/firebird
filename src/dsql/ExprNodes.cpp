@@ -11761,7 +11761,12 @@ void SubstringSimilarNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void SubstringSimilarNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	DsqlDescMaker::fromNode(dsqlScratch, desc, expr, true);
+	dsc exprDesc;
+	DsqlDescMaker::fromNode(dsqlScratch, &exprDesc, expr);
+
+	DSqlDataTypeUtil dataTypeUtil(dsqlScratch);
+	dataTypeUtil.makeSubstr(desc, &exprDesc, nullptr, nullptr);
+	desc->setNullable(true);
 }
 
 void SubstringSimilarNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
