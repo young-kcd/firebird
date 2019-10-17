@@ -11895,18 +11895,17 @@ dsc* SubstringSimilarNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	if (evaluator->result())
 	{
-		// Get the byte bounds of the matched substring.
-		unsigned start = 0;
-		unsigned length = 0;
+		// Get the character bounds of the matched substring.
+		unsigned start, length;
 		evaluator->getResultInfo(&start, &length);
 
 		dsc desc;
 		desc.makeText((USHORT) exprLen, textType);
 		EVL_make_value(tdbb, &desc, impure);
 
-		// And return it.
-		memcpy(impure->vlu_desc.dsc_address, exprStr + start, length);
-		impure->vlu_desc.dsc_length = length;
+		impure->vlu_desc.dsc_length = charSet->substring(exprLen, exprStr,
+			impure->vlu_desc.dsc_length, impure->vlu_desc.dsc_address,
+			start, length);
 
 		return &impure->vlu_desc;
 	}

@@ -311,7 +311,18 @@ public:
 		if (textType->getAttributes() & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
 			UnicodeUtil::utf8Normalize(*bufferPtr);
 
-		return regex->matches((const char*) bufferPtr->begin(), bufferPtr->getCount(), &resultStart, &resultLength);
+		if (!regex->matches((const char*) bufferPtr->begin(), bufferPtr->getCount(), &resultStart, &resultLength))
+			return false;
+
+		if (charSetId != CS_NONE && charSetId != CS_BINARY)
+		{
+			// Get the character positions in the utf-8 string.
+			auto utf8CharSet = IntlUtil::getUtf8CharSet();
+			resultLength = utf8CharSet->length(resultLength, bufferPtr->begin() + resultStart, true);
+			resultStart = utf8CharSet->length(resultStart, bufferPtr->begin(), true);
+		}
+
+		return true;
 	}
 
 	virtual void getResultInfo(unsigned* start, unsigned* length)
