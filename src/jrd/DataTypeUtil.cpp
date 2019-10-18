@@ -305,7 +305,7 @@ void DataTypeUtilBase::makeSubstr(dsc* result, const dsc* value, const dsc* offs
 		result->dsc_dtype = dtype_varying;
 	}
 
-	result->setTextType(value->isText() ? value->getTextType() : CS_ASCII);
+	result->setTextType(value->isText() || value->isBlob() ? value->getTextType() : CS_ASCII);
 	result->setNullable(value->isNullable() ||
 		(offset && offset->isNullable()) ||
 		(length && length->isNullable()));
