@@ -3239,6 +3239,8 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'main', 'dba.epp', NULL, 21, 58, NULL, 'Other pages: total @1, ENCRYPTED @2 (DB problem!), non-crypted @3', NULL, NULL)
 (NULL, 'main', 'dba.epp', NULL, 21, 59, NULL, 'Gstat execution time @1', NULL, NULL)
 (NULL, 'main', 'dba.epp', NULL, 21, 60, NULL, 'Gstat completion time @1', NULL, NULL)
+(NULL, 'lastUsedPage', 'dba.epp', NULL, 21, 61, NULL, '    Expected page inventory page @1', NULL, NULL);
+(NULL, 'main', 'dba.epp', NULL, 21, 62, NULL, 'Generator pages: total @1, encrypted @2, non-crypted @3', NULL, NULL)
 -- FBSVCMGR
 -- All messages use the new format.
 ('fbsvcmgr_bad_am', 'putAccessMode', 'fbsvcmgr.cpp', NULL, 22, 1, NULL, 'Wrong value for access mode', NULL, NULL);
