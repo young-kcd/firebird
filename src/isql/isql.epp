@@ -1441,7 +1441,7 @@ SLONG ISQL_get_index_segments(TEXT* segs,
  *	returns the list of columns in an index.
  *
  **************************************/
-	TEXT SQL_identifier[BUFFER_LENGTH128];
+	TEXT SQL_identifier[BUFFER_LENGTH256];
 
 	*segs = '\0';
 
@@ -6222,8 +6222,8 @@ static processing_state newdb(TEXT* dbname,
 	strcpy(dbname, save_database);
 	ISQL_FREE(save_database);
 
-	TEXT local_psw[BUFFER_LENGTH128];
-	TEXT local_usr[BUFFER_LENGTH128];
+	TEXT local_psw[BUFFER_LENGTH256];
+	TEXT local_usr[BUFFER_LENGTH256];
 	TEXT local_sql_role[BUFFER_LENGTH256];
 
 	// global user and passwords are set only if they are not originally set
@@ -8303,6 +8303,8 @@ static unsigned process_message_display(Firebird::IMessageMetadata* message, uns
 			if (charSet == CS_UTF8)
 				disp_length *= 4;
 		}
+		else if (isqlGlob.att_charset == CS_UTF8)
+			disp_length = MAX(disp_length, namelength * 4);
 
 		// The total line length
 		linelength += disp_length + 1;

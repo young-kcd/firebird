@@ -35,6 +35,7 @@
 
 #include "../common/classes/ByteChunk.h"
 #include "../common/classes/GenericMap.h"
+#include "../common/classes/QualifiedName.h"
 #include "../common/classes/SyncObject.h"
 #include "../common/classes/array.h"
 #include "../common/classes/stack.h"
@@ -93,12 +94,21 @@ namespace Jrd
 
 struct DSqlCacheItem
 {
+	DSqlCacheItem(MemoryPool& pool)
+		: key(pool),
+		  obsoleteMap(pool),
+		  lock(nullptr),
+		  locked(false)
+	{
+	}
+
+	Firebird::string key;
+	Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::QualifiedName, bool> > > obsoleteMap;
 	Lock* lock;
 	bool locked;
-	bool obsolete;
 };
 
-typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+typedef Firebird::GenericMap<Firebird::Pair<Firebird::Full<
 	Firebird::string, DSqlCacheItem> > > DSqlCache;
 
 
