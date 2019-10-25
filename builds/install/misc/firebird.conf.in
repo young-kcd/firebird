@@ -176,15 +176,15 @@
 # are stored. Relative paths are treated relative to the root directory 
 # of firebird.
 #
-# Default value 'Restrict UDF' provides the same restrictions
-# as in FB 1.0. To specify access to specific trees, enum all required
-# paths (for Windows this may be something like 'C:\ExternalFunctions',
-# for unix - '/db/extern;/mnt/extern').
+# Since FB4.0 default value is None. Set it to 'Restrict UDF' to have
+# the same restrictions as in previous FB versions. To specify access
+# to specific trees, enum all required paths (for Windows this may be
+# something like 'C:\ExternalFunctions', for unix - '/db/udf;/mnt/udf').
 @UDF_COMMENT@
 # NOTE: THE EXTERNAL FUNCTION ENGINE FEATURE COULD BE USED TO COMPROMISE
 # THE SERVER/HOST AS WELL AS DATABASE SECURITY!!
 #
-# IT IS STRONGLY RECOMMENDED THAT THIS SETTING BE SET TO NONE!
+# IT IS STRONGLY RECOMMENDED THAT THIS SETTING REMAINS NONE!
 #
 # Type: string (special format)
 #
