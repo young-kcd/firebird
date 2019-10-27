@@ -169,7 +169,7 @@ void MonitoringData::attachSharedFile()
 
 void MonitoringData::detachSharedFile()
 {
-	delete m_sharedMemory.release();
+	m_sharedMemory.reset();
 }
 
 
