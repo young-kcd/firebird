@@ -2313,8 +2313,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			// inside OptimizerRetrieval::matchOnIndexes()
 
 			if (inversion && condition &&
-				(!condition->computable(csb, INVALID_STREAM, false) ||
-				condition->findStream(csb, stream)))
+				!condition->computable(csb, stream, false))
 			{
 				fb_assert(false);
 				inversion = NULL;
