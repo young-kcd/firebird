@@ -87,6 +87,7 @@ findstr /V "@UDF_COMMENT@" %FB_ROOT_PATH%\builds\install\misc\firebird.conf.in >
 :: Headers
 copy %FB_ROOT_PATH%\src\extlib\ib_util.h %FB_OUTPUT_DIR%\include > nul
 copy %FB_ROOT_PATH%\src\jrd\perf.h %FB_OUTPUT_DIR%\include >nul
+copy %FB_ROOT_PATH%\src\include\ibase.h %FB_OUTPUT_DIR%\include > nul
 copy %FB_ROOT_PATH%\src\include\gen\iberror.h %FB_OUTPUT_DIR%\include > nul
 
 :: New API headers
