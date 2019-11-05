@@ -178,7 +178,7 @@ public:
 	CommitNumber getSnapshotForVersion(CommitNumber version_cn);
 
 private:
-	UInt32Bitmap m_snapshots;		// List of active snapshots as of the moment of time
+	Firebird::SparseBitmap<CommitNumber> m_snapshots;		// List of active snapshots as of the moment of time
 	CommitNumber m_lastCommit;		// CN_ACTIVE here means object is not populated
 	ULONG m_releaseCount;			// Release event counter when list was last updated
 	ULONG m_slots_used;				// Snapshot slots used when list was last updated
