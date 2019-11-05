@@ -2655,6 +2655,8 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 			// Gently ignore this situation and proceed further.
 			if (!VIO_refetch_record(tdbb, rpb, transaction, true, true))
 				return parentStmt;
+
+			rpb->rpb_runtime_flags &= ~RPB_refetch;
 		}
 		REPL_erase(tdbb, rpb, transaction);
 	}
@@ -6470,6 +6472,8 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 						// Gently ignore this situation and proceed further.
 						if (!VIO_refetch_record(tdbb, orgRpb, transaction, true, true))
 							return parentStmt;
+
+						orgRpb->rpb_runtime_flags &= ~RPB_refetch;
 					}
 					IDX_modify(tdbb, orgRpb, newRpb, transaction);
 					REPL_modify(tdbb, orgRpb, newRpb, transaction);
