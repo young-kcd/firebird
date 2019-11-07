@@ -29,6 +29,7 @@
 #include "../jrd/align.h"
 #include "firebird/impl/blr.h"
 #include "../jrd/tra.h"
+#include "../jrd/Coercion.h"
 #include "../jrd/Function.h"
 #include "../jrd/Optimizer.h"
 #include "../jrd/RecordSourceNodes.h"
@@ -8360,14 +8361,39 @@ void SetDecFloatTrapsNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_t
 //--------------------
 
 
-void SetHighPrecBindNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
+void CoercionRule::setRule(TypeClause* from, TypeClause *to)
+{
+	static const USHORT FROM_MASK = FLD_has_len | FLD_has_chset | FLD_has_scale;
+	static const USHORT TO_MASK = FLD_has_len | FLD_has_chset | FLD_has_scale | FLD_legacy;
+
+	fromMask = from->flags & FROM_MASK;
+	DsqlDescMaker::fromField(&fromDsc, from);
+
+	toMask = to->flags & TO_MASK;
+	DsqlDescMaker::fromField(&toDsc, to);
+}
+
+
+SessionManagementNode* SetBindNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	from->resolve(dsqlScratch);
+	if (!(to->flags & FLD_legacy))
+		to->resolve(dsqlScratch);
+
+	return SessionManagementNode::dsqlPass(dsqlScratch);
+}
+
+
+void SetBindNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
+
+	fb_assert(from);
+	fb_assert(to);
+
 	Attachment* const attachment = tdbb->getAttachment();
-	if (bindInt128)
-		attachment->att_i128_binding = bind;
-	else
-		attachment->att_dec_binding = bind;
+	CoercionRule& coercion = attachment->att_dest_bind->add();
+	coercion.setRule(from, to);
 }
 
 
@@ -8450,17 +8476,6 @@ void SetTimeZoneNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** /*tr
 		attachment->att_current_timezone = attachment->att_original_timezone;
 	else
 		attachment->att_current_timezone = TimeZoneUtil::parse(str.c_str(), str.length());
-}
-
-
-//--------------------
-
-
-void SetTimeZoneBindNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
-{
-	SET_TDBB(tdbb);
-	Attachment* const attachment = tdbb->getAttachment();
-	attachment->att_timezone_bind = bind;
 }
 
 

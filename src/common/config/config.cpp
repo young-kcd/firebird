@@ -229,7 +229,8 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_INTEGER,		"SnapshotsMemSize",			(ConfigValue) 65536}, // bytes
 	{TYPE_INTEGER,		"TipCacheBlockSize",		(ConfigValue) 4194304}, // bytes
 	{TYPE_BOOLEAN,		"ReadConsistency",			(ConfigValue) true},
-	{TYPE_BOOLEAN,		"ClearGTTAtRetaining",		(ConfigValue) false}
+	{TYPE_BOOLEAN,		"ClearGTTAtRetaining",		(ConfigValue) false},
+	{TYPE_STRING,		"SetBind",					(ConfigValue) NULL}
 };
 
 /******************************************************************************
@@ -929,4 +930,9 @@ bool Config::getReadConsistency() const
 bool Config::getClearGTTAtRetaining() const
 {
 	return get<bool>(KEY_CLEAR_GTT_RETAINING);
+}
+
+const char* Config::getBind() const
+{
+	return get<const char*>(KEY_SET_BIND);
 }

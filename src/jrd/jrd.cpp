@@ -127,6 +127,7 @@
 #include "../common/classes/fb_tls.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/RefMutex.h"
+#include "../common/classes/ParsedList.h"
 #include "../common/utils_proto.h"
 #include "../jrd/DebugInterface.h"
 #include "../jrd/CryptoManager.h"
@@ -1016,11 +1017,9 @@ namespace Jrd
 		PathName	dpb_org_filename;
 		string	dpb_config;
 		string	dpb_session_tz;
-		string	dpb_time_zone_bind;
-		string	dpb_decfloat_bind;
+		PathName	dpb_set_bind;
 		string	dpb_decfloat_round;
 		string	dpb_decfloat_traps;
-		string	dpb_int128_bind;
 
 	public:
 		static const ULONG DPB_FLAGS_MASK = DBB_damaged;
@@ -1063,63 +1062,40 @@ namespace Jrd
 		}
 	};
 
-	void Attachment::InitialOptions::setBinding(string option, NumericBinding& bind)
+	void Attachment::setInitialOptions(thread_db* tdbb, DatabaseOptions& options, bool newDb)
 	{
-		option.lower();
-
-		if (option == "native")
-			bind = NumericBinding::DEFAULT;
-		else if (option == "char" || option == "character")
-			bind = NumericBinding(NumericBinding::NUM_TEXT);
-		else if (option == "double" || option == "double precision")
-			bind = NumericBinding(NumericBinding::NUM_DOUBLE);
-		else if (option == "bigint")
-			bind = NumericBinding(NumericBinding::NUM_INT64);
-		else if (option.substr(0, 7) == "bigint,")
+		if (newDb)
 		{
-			const char* p = option.c_str() + 7;
-
-			while (*p == ' ')
-				++p;
-
-			const char* start = p;
-			int scale = 0;
-
-			while (*p >= '0' && *p <= '9')
-			{
-				scale = scale * 10 + (*p - '0');
-				++p;
-			}
-
-			if (*p != '\0' || p - start == 0 || p - start > 2 || scale > NumericBinding::MAX_SCALE)
-				(Arg::Gds(isc_invalid_decfloat_bind) << option).raise();
-
-			bind = NumericBinding(NumericBinding::NUM_INT64, static_cast<SCHAR>(-scale));
+			Database* dbb = tdbb->getDatabase();
+			if (dbb->dbb_config->getBind())
+				InitialOptions::setBind(tdbb, dbb->dbb_config->getBind(), dbb->getBindings());
 		}
-		else
-			(Arg::Gds(isc_invalid_decfloat_bind) << option).raise();
+
+		att_initial_options.setInitialOptions(tdbb, options);
+		att_initial_options.resetAttachment(this);
 	}
 
-	Attachment::InitialOptions::InitialOptions(const DatabaseOptions& options)
+	void Attachment::InitialOptions::setBind(thread_db* tdbb, const PathName& bind, CoercionArray* target)
 	{
-		if (options.dpb_time_zone_bind.hasData())
+		if (bind.hasData())
 		{
-			auto option = options.dpb_time_zone_bind;
-			option.lower();
+			ParsedList rules(bind, ";,");
+			Attachment* att = tdbb->getAttachment();
+			AutoSetRestore<CoercionArray*> defSet(&att->att_dest_bind, target);
 
-			if (option == "legacy")
-				timeZoneBind = TimeZoneUtil::BIND_LEGACY;
-			else if (option == "native")
-				timeZoneBind = TimeZoneUtil::BIND_NATIVE;
-			else
-				(Arg::Gds(isc_invalid_time_zone_bind) << option).raise();
+			for (unsigned i = 0; i < rules.getCount(); ++i)
+			{
+				rules[i].insert(0, "SET BIND OF ");
+
+				AutoPreparedStatement ps(att->prepareStatement(tdbb, nullptr, rules[i].ToString()));
+				ps->execute(tdbb, nullptr);
+			}
 		}
+	}
 
-		if (options.dpb_decfloat_bind.hasData())
-			setBinding(options.dpb_decfloat_bind, decFloatBinding);
-
-		if (options.dpb_int128_bind.hasData())
-			setBinding(options.dpb_int128_bind, int128Binding);
+	void Attachment::InitialOptions::setInitialOptions(thread_db* tdbb, const DatabaseOptions& options)
+	{
+		setBind(tdbb, options.dpb_set_bind, getBindings());
 
 		if (options.dpb_decfloat_round.hasData())
 		{
@@ -1177,12 +1153,12 @@ namespace Jrd
 	{
 		// reset DecFloat options
 		attachment->att_dec_status = decFloatStatus;
-		attachment->att_dec_binding = decFloatBinding;
-		attachment->att_i128_binding = int128Binding;
 
 		// reset time zone options
-		attachment->att_timezone_bind = timeZoneBind;
 		attachment->att_current_timezone = attachment->att_original_timezone = originalTimeZone;
+
+		// reset bindings
+		attachment->att_bindings.clear();
 	}
 }	// namespace Jrd
 
@@ -1682,9 +1658,11 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 			TRA_init(attachment);
 
+			bool newDb = false;
 			if (dbb->dbb_flags & DBB_new)
 			{
 				// If we're a not a secondary attachment, initialize some stuff
+				newDb = true;
 
 				// NS: Use alias as database ID only if accessing database using file name is not possible.
 				//
@@ -2075,6 +2053,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 			CCH_init2(tdbb);
 			VIO_init(tdbb);
+			attachment->setInitialOptions(tdbb, options, newDb);
 
 			CCH_release_exclusive(tdbb);
 
@@ -3007,6 +2986,8 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			PAG_attachment_id(tdbb);
 
 			Monitoring::publishAttachment(tdbb);
+
+			attachment->setInitialOptions(tdbb, options, true);
 
 			CCH_release_exclusive(tdbb);
 
@@ -6968,16 +6949,8 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			dpb_replica_mode = (ReplicaMode) rdr.getInt();
 			break;
 
-		case isc_dpb_time_zone_bind:
-			rdr.getString(dpb_time_zone_bind);
-			break;
-
-		case isc_dpb_decfloat_bind:
-			rdr.getString(dpb_decfloat_bind);
-			break;
-
-		case isc_dpb_int128_bind:
-			rdr.getString(dpb_int128_bind);
+		case isc_dpb_set_bind:
+			rdr.getPath(dpb_set_bind);
 			break;
 
 		case isc_dpb_decfloat_round:
@@ -7213,8 +7186,7 @@ static JAttachment* create_attachment(const PathName& alias_name,
 			status_exception::raise(Arg::Gds(isc_att_shutdown));
 		}
 
-		Attachment::InitialOptions initialOptions(options);
-		attachment = Attachment::create(dbb, &initialOptions);
+		attachment = Attachment::create(dbb);
 		attachment->att_next = dbb->dbb_attachments;
 		dbb->dbb_attachments = attachment;
 	}

@@ -203,48 +203,6 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
 			if (fromCharSet != toCharSet)
 				parameter->par_desc.setTextType(toCharSet);
 		}
-		else if (parameter->par_desc.isDecFloat() ||
-			parameter->par_desc.dsc_dtype == dtype_int128)
-		{
-			const NumericBinding& b(parameter->par_desc.dsc_dtype == dtype_int128 ?
-				tdbb->getAttachment()->att_i128_binding : tdbb->getAttachment()->att_dec_binding);
-			switch (b.bind)
-			{
-			case NumericBinding::NUM_NATIVE:
-				break;
-			case NumericBinding::NUM_TEXT:
-				parameter->par_desc.makeText((parameter->par_desc.dsc_dtype == dtype_dec64 ?
-					IDecFloat16::STRING_SIZE : parameter->par_desc.dsc_dtype == dtype_dec128 ?
-					IDecFloat34::STRING_SIZE : IInt128::STRING_SIZE) - 1, ttype_ascii);
-				break;
-			case NumericBinding::NUM_DOUBLE:
-				parameter->par_desc.makeDouble();
-				break;
-			case NumericBinding::NUM_INT64:
-				parameter->par_desc.makeInt64(b.numScale);
-				break;
-			}
-		}
-		else if (parameter->par_desc.isDateTimeTz())
-		{
-			switch (tdbb->getAttachment()->att_timezone_bind)
-			{
-				case TimeZoneUtil::BIND_LEGACY:
-					if (parameter->par_desc.isTime())
-						parameter->par_desc.makeTime();
-					else if (parameter->par_desc.isTimeStamp())
-						parameter->par_desc.makeTimestamp();
-					else
-						fb_assert(false);
-					break;
-
-				case TimeZoneUtil::BIND_NATIVE:
-					break;
-
-				default:
-					fb_assert(false);
-			}
-		}
 
 		if (parameter->par_desc.dsc_dtype == dtype_text && parameter->par_index != 0)
 		{
@@ -255,6 +213,14 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
 			parameter->par_desc.dsc_dtype = dtype_varying;
 			parameter->par_desc.dsc_length = dataTypeUtil.fixLength(
 				&parameter->par_desc, parameter->par_desc.dsc_length) + sizeof(USHORT);
+		}
+
+		if (!(dsqlScratch->flags & DsqlCompilerScratch::FLAG_INTERNAL_REQUEST))
+		{
+			Attachment* att = tdbb->getAttachment();
+			if (!att->att_bindings.coerce(&parameter->par_desc))
+				if (!att->getInitialBindings()->coerce(&parameter->par_desc))
+					tdbb->getDatabase()->getBindings()->coerce(&parameter->par_desc);
 		}
 
 		const USHORT align = type_alignments[parameter->par_desc.dsc_dtype];
