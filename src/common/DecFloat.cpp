@@ -123,12 +123,12 @@ private:
 	}
 };
 
+const CDecimal128 pow2_32("4294967296", DecimalStatus(0));
+const CDecimal128 pow2_64("18446744073709551616", DecimalStatus(0));
 const CDecimal128 dmax(DBL_MAX, DecimalStatus(0)), dmin(-DBL_MAX, DecimalStatus(0));
 const CDecimal128 dzup(DBL_MIN, DecimalStatus(0)), dzlw(-DBL_MIN, DecimalStatus(0));
 const CDecimal128 i64max(MAX_SINT64, DecimalStatus(0)), i64min(MIN_SINT64, DecimalStatus(0));
 const CDecimal128 c1(1);
-const CDecimal128 pow2_32("4294967296", DecimalStatus(0));
-const CDecimal128 pow2_64("18446744073709551616", DecimalStatus(0));
 
 unsigned digits(const unsigned pMax, unsigned char* const coeff, int& exp)
 {
