@@ -4942,7 +4942,7 @@ decfloat_type
 
 			$$ = newNode<dsql_fld>();
 			if (precision)
-				$$->flags |= FLD_has_scale;
+				$$->flags |= FLD_has_len;
 			$$->precision = precision == 0 ? 34 : (USHORT) precision;
 			$$->dtype = precision == 16 ? dtype_dec64 : dtype_dec128;
 			$$->length = precision == 16 ? sizeof(Decimal64) : sizeof(Decimal128);
