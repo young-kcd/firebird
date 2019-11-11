@@ -329,7 +329,8 @@ enum fld_flags_vals {
 	FLD_has_len		= 16,
 	FLD_has_chset	= 32,
 	FLD_has_scale	= 64,
-	FLD_legacy		= 128
+	FLD_legacy		= 128,
+	FLD_native		= 256
 };
 
 //! Stored Procedure block

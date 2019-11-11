@@ -8361,23 +8361,12 @@ void SetDecFloatTrapsNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_t
 //--------------------
 
 
-void CoercionRule::setRule(TypeClause* from, TypeClause *to)
-{
-	static const USHORT FROM_MASK = FLD_has_len | FLD_has_chset | FLD_has_scale;
-	static const USHORT TO_MASK = FLD_has_len | FLD_has_chset | FLD_has_scale | FLD_legacy;
-
-	fromMask = from->flags & FROM_MASK;
-	DsqlDescMaker::fromField(&fromDsc, from);
-
-	toMask = to->flags & TO_MASK;
-	DsqlDescMaker::fromField(&toDsc, to);
-}
-
-
 SessionManagementNode* SetBindNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
+	static const USHORT NON_FIELD_MASK = FLD_legacy | FLD_native;
+
 	from->resolve(dsqlScratch);
-	if (!(to->flags & FLD_legacy))
+	if (!(to->flags & NON_FIELD_MASK))
 		to->resolve(dsqlScratch);
 
 	return SessionManagementNode::dsqlPass(dsqlScratch);

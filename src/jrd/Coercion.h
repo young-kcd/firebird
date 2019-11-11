@@ -50,6 +50,7 @@ public:
 
 	void setRule(TypeClause* from, TypeClause *to);
 	bool coerce(dsc* d) const;
+	bool match(dsc* d) const;
 
 private:
 	dsc fromDsc, toDsc;

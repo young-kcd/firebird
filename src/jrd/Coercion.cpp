@@ -29,10 +29,14 @@
 #include "../jrd/Coercion.h"
 
 #include "../dsql/dsql.h"
+#include "../dsql/make_proto.h"
 #include "../jrd/align.h"
 
 using namespace Jrd;
 using namespace Firebird;
+
+static const USHORT FROM_MASK = FLD_has_len | FLD_has_chset | FLD_has_scale;
+static const USHORT TO_MASK = FLD_has_len | FLD_has_chset | FLD_has_scale | FLD_legacy | FLD_native;
 
 bool CoercionArray::coerce(dsc* d) const
 {
@@ -46,7 +50,16 @@ bool CoercionArray::coerce(dsc* d) const
 	return false;
 }
 
-bool CoercionRule::coerce(dsc* d) const
+void CoercionRule::setRule(TypeClause* from, TypeClause *to)
+{
+	fromMask = from->flags & FROM_MASK;
+	DsqlDescMaker::fromField(&fromDsc, from);
+
+	toMask = to->flags & TO_MASK;
+	DsqlDescMaker::fromField(&toDsc, to);
+}
+
+bool CoercionRule::match(dsc* d) const
 {
 	bool found = false;
 
@@ -75,14 +88,24 @@ bool CoercionRule::coerce(dsc* d) const
 		}
 	}
 
-	if (!found)
+	return found;
+}
+
+bool CoercionRule::coerce(dsc* d) const
+{
+	// check does descriptor match FROM clause
+	if (! match(d))
 		return false;
 
-	// now define output descriptor
-	// first of all process LEGACY case
+	// native binding - do not touch descriptor at all
+	if (toMask & FLD_native)
+		return true;
+
+	// process legacy case
 	if (toMask & FLD_legacy)
 	{
-		found = true;
+		bool found = true;
+
 		switch(d->dsc_dtype)
 		{
 		case dtype_dec64:

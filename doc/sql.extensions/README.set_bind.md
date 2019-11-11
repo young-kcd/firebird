@@ -11,15 +11,30 @@
 ### Syntax is:
 
 ```sql
-SET BIND OF type1 TO type2;
+SET BIND OF type-from TO { type-to | LEGACY };
 SET BIND OF type NATIVE;
 ```
 
 ### Description:
 
-Makes it possible to define rules of describing types of returned to the client columns in non-standard way - `type1` is replaced with `type2`, automatic data coercion takes place.
+Makes it possible to define rules of describing types of returned to the client columns in non-standard way -
+`type-from` is replaced with `type-to`, automatic data coercion takes place.
 
-When incomplete type definition is used (i.e. `CHAR` instead `CHAR(n)`) in left part of `SET BIND` coercion will take place for all `CHAR` columns, not only default `CHAR(1)`. When incomplete type definiton is used in right side of the statement firebird engine will define missing parts automatically based on source column.
+Except SQL-statement there are two more ways to specify data coercion - tag `isc_dpb_bind` in DPB
+and `SetBind` parameter in firebird.conf & databases.conf. The later the rule is introduced (.conf->DPB->SQL)
+the higher priotiy it has. I.e. one can override any preconfigured settings from SQL statement.
+
+When incomplete type definition is used (i.e. `CHAR` instead `CHAR(n)`) in left part of `SET BIND` coercion
+will take place for all `CHAR` columns, not only default `CHAR(1)`.
+When incomplete type definiton is used in right side of the statement (TO part) firebird engine will define missing
+details about that type automatically based on source column.
+
+Special `TO` part format `LEGACY` is used when datatype, missing in previous FB version, should be represented in
+a way, understandable by old client software (may be with some data losses). For example, `NUMERIC(38)` in legacy
+form will be represented as `NUMERIC(18)`.
+
+Setting `NATIVE` means `type` will be used as if there were no previous rules for it.
+
 
 ### Samples:
 
