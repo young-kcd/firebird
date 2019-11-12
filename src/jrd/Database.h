@@ -438,9 +438,9 @@ public:
 	time_t dbb_linger_end;
 	Firebird::RefPtr<Firebird::IPluginConfig> dbb_plugin_config;
 
-	FB_UINT64 dbb_repl_sequence;	// replication sequence
-	ReplicaMode dbb_replica_mode;	// replica access mode
-	CoercionArray dbb_bindings;		// preconfigured datatype coercions
+	FB_UINT64 dbb_repl_sequence;		// replication sequence
+	ReplicaMode dbb_replica_mode;		// replica access mode
+	unsigned dbb_compatibility_index;	// datatype backward compatibility level
 
 	// returns true if primary file is located on raw device
 	bool onRawDevice() const;
@@ -506,7 +506,7 @@ private:
 		dbb_plugin_config(pConf),
 		dbb_repl_sequence(0),
 		dbb_replica_mode(REPLICA_NONE),
-		dbb_bindings(*p)
+		dbb_compatibility_index(~0U)
 	{
 		dbb_pools.add(p);
 	}
@@ -544,16 +544,7 @@ public:
 	FB_UINT64 getReplSequence(thread_db* tdbb);
 	void setReplSequence(thread_db* tdbb, FB_UINT64 sequence);
 
-	CoercionArray *getBindings()
-	{
-		return &dbb_bindings;
-	}
-
-	const CoercionArray *getBindings() const
-	{
-		return &dbb_bindings;
-	}
-
+	const CoercionArray *getBindings() const;
 
 private:
 	//static int blockingAstSharedCounter(void*);

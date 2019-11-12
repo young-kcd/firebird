@@ -944,6 +944,64 @@ void Trigger::release(thread_db* tdbb)
 	statement = NULL;
 }
 
+
+namespace
+{
+	class DatabaseBindings : public CoercionArray
+	{
+	public:
+		DatabaseBindings(MemoryPool& p)
+			: CoercionArray(p)
+		{
+			// FB 2.5
+			versions[0].ind = getCount();
+			versions[0].txt = "2.5";
+
+			// bool compatibility
+			add().makeLegacy()->makeBoolean();
+
+			// FB 3.0
+			versions[1].ind = getCount();
+			versions[1].txt = "3.0";
+
+			// decfloat compatibility
+			add().makeLegacy()->makeDecimal128();
+
+			// int128 compatibility
+			add().makeLegacy()->makeInt128(0);
+
+			// TZ compatibility
+			add().makeLegacy()->makeTimestampTz();
+			add().makeLegacy()->makeTimeTz();
+		}
+
+		unsigned getCompatibilityIndex(const char* txt)
+		{
+			if (txt)
+			{
+				for (unsigned i = 0; i < FB_NELEM(versions); ++i)
+				{
+					if (strcmp(txt, versions[i].txt) == 0)
+						return i;
+				}
+			}
+
+			return ~0U;
+		}
+
+	private:
+		struct Version
+		{
+			unsigned ind;
+			const char* txt;
+		};
+		Version versions[2];
+	};
+
+	InitInstance<DatabaseBindings> databaseBindings;
+}
+
+
 namespace Jrd
 {
 	// Option block for database parameter block
@@ -1062,26 +1120,32 @@ namespace Jrd
 		}
 	};
 
+	const CoercionArray* Database::getBindings() const
+	{
+		return &(databaseBindings());
+	}
+
 	void Attachment::setInitialOptions(thread_db* tdbb, DatabaseOptions& options, bool newDb)
 	{
 		if (newDb)
 		{
 			Database* dbb = tdbb->getDatabase();
-			if (dbb->dbb_config->getBind())
-				InitialOptions::setBind(tdbb, dbb->dbb_config->getBind(), dbb->getBindings());
+			const char* dataTypeCompatibility = dbb->dbb_config->getDataTypeCompatibility();
+			dbb->dbb_compatibility_index = databaseBindings().getCompatibilityIndex(dataTypeCompatibility);
 		}
 
 		att_initial_options.setInitialOptions(tdbb, options);
 		att_initial_options.resetAttachment(this);
 	}
 
-	void Attachment::InitialOptions::setBind(thread_db* tdbb, const PathName& bind, CoercionArray* target)
+
+	void Attachment::InitialOptions::setInitialOptions(thread_db* tdbb, const DatabaseOptions& options)
 	{
-		if (bind.hasData())
+		if (options.dpb_set_bind.hasData())
 		{
-			ParsedList rules(bind, ";,");
+			ParsedList rules(options.dpb_set_bind, ";");
 			Attachment* att = tdbb->getAttachment();
-			AutoSetRestore<CoercionArray*> defSet(&att->att_dest_bind, target);
+			AutoSetRestore<CoercionArray*> defSet(&att->att_dest_bind, getBindings());
 
 			for (unsigned i = 0; i < rules.getCount(); ++i)
 			{
@@ -1091,11 +1155,6 @@ namespace Jrd
 				ps->execute(tdbb, nullptr);
 			}
 		}
-	}
-
-	void Attachment::InitialOptions::setInitialOptions(thread_db* tdbb, const DatabaseOptions& options)
-	{
-		setBind(tdbb, options.dpb_set_bind, getBindings());
 
 		if (options.dpb_decfloat_round.hasData())
 		{

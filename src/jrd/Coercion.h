@@ -49,6 +49,7 @@ public:
 	}
 
 	void setRule(TypeClause* from, TypeClause *to);
+	dsc* makeLegacy(USHORT mask = 0);
 	bool coerce(dsc* d) const;
 	bool match(dsc* d) const;
 
@@ -65,7 +66,7 @@ public:
 	{
 	}
 
-	bool coerce(dsc* d) const;
+	bool coerce(dsc* d, unsigned startItem = 0) const;
 };
 
 } // namespace Jrd

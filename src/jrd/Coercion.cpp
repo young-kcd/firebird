@@ -38,10 +38,10 @@ using namespace Firebird;
 static const USHORT FROM_MASK = FLD_has_len | FLD_has_chset | FLD_has_scale;
 static const USHORT TO_MASK = FLD_has_len | FLD_has_chset | FLD_has_scale | FLD_legacy | FLD_native;
 
-bool CoercionArray::coerce(dsc* d) const
+bool CoercionArray::coerce(dsc* d, unsigned startItem) const
 {
 	// move down through array to ensure correct order: newer rule overrides older one
-	for (unsigned n = getCount(); n--;)
+	for (unsigned n = getCount(); n-- > startItem; )
 	{
 		if (getElement(n).coerce(d))
 			return true;
@@ -57,6 +57,13 @@ void CoercionRule::setRule(TypeClause* from, TypeClause *to)
 
 	toMask = to->flags & TO_MASK;
 	DsqlDescMaker::fromField(&toDsc, to);
+}
+
+dsc* CoercionRule::makeLegacy(USHORT mask)
+{
+	toMask = FLD_legacy;
+	fromMask = mask;
+	return &fromDsc;
 }
 
 bool CoercionRule::match(dsc* d) const
