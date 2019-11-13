@@ -39,16 +39,16 @@ legacy datatypes:
 
 Setting `NATIVE` means `type` will be used as if there were no previous rules for it.
 
-Except SQL-statement there are two more ways to specify data coercion - tag `isc_dpb_bind` in DPB
+Except SQL-statement there are two more ways to specify data coercion - tag `isc_dpb_set_bind` in DPB
 and `DataTypeCompatibility` parameter in firebird.conf & databases.conf. The later the rule is introduced
 (.conf->DPB->SQL) the higher priotiy it has.
 I.e. one can override .conf in any other way any DPB from SQL statement.
 
-Value of clumplet with `isc_dpb_bind` tag in DPB should be specified as a set of partially
+Value of clumplet with `isc_dpb_set_bind` tag in DPB should be specified as a set of partially
 formed SET BIND statements, i.e. with prefix SET BIND OF is omitted, separated by semicolons.
 For example:
 ```c++
-dpb->insertString(&status, isc_dpb_bind, "decfloat to char; numeric(38) to char");
+dpb->insertString(&status, isc_dpb_set_bind, "decfloat to char; numeric(38) to char");
 ```
 
 `DataTypeCompatibility` is minor firebird version for which we want to provide some compatibility
