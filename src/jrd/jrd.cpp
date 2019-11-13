@@ -1151,8 +1151,31 @@ namespace Jrd
 			{
 				rules[i].insert(0, "SET BIND OF ");
 
-				AutoPreparedStatement ps(att->prepareStatement(tdbb, nullptr, rules[i].ToString()));
-				ps->execute(tdbb, nullptr);
+				try
+				{
+					AutoPreparedStatement ps(att->prepareStatement(tdbb, nullptr, rules[i].ToString()));
+					ps->execute(tdbb, nullptr);
+				}
+				catch (const Exception& ex)
+				{
+					FbLocalStatus status;
+					ex.stuffException(&status);
+
+					// strip spam messages
+					const ISC_STATUS* v = status->getErrors();
+					for (; v[0] == isc_arg_gds; v = fb_utils::nextArg(v))
+					{
+						if (v[1] != isc_dsql_error && v[1] != isc_sqlerr)
+							break;
+					}
+
+					// build and throw new vector
+					Arg::Gds newErr(isc_bind_err);
+					newErr << options.dpb_set_bind <<
+						Arg::Gds(isc_bind_statement) << rules[i];
+					newErr << Arg::StatusVector(v);
+					newErr.raise();
+				}
 			}
 		}
 
