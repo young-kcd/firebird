@@ -1474,6 +1474,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 		port->auxAcceptError(packet);
 		inet_error(false, port, "socket", isc_net_event_connect_err, savedError);
 	}
+
 	SockAddr resp_address(response->p_resp_data.cstr_address, response->p_resp_data.cstr_length);
 	address.setPort(resp_address.port());
 
@@ -1571,7 +1572,6 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 		inet_error(false, port, "listen", isc_net_event_listen_err, INET_ERRNO);
 	}
 
-
 	rem_port* const new_port = alloc_port(port->port_parent,
 		(port->port_flags & PORT_no_oob) | PORT_async | PORT_connecting);
 	port->port_async = new_port;
@@ -1586,11 +1586,31 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 	P_RESP* response = &packet->p_resp;
 
 	SockAddr port_address;
+
 	if (port_address.getsockname(port->port_handle) < 0)
-	{
 		inet_error(false, port, "getsockname", isc_net_event_listen_err, INET_ERRNO);
-	}
+
 	port_address.setPort(our_address.port());
+
+	// CORE-5902: MacOS has sockaddr struct layout different than one found in POSIX/Windows.
+	// This prevent usage of events when client or server is MacOS but the other end is not.
+	// Here we try to make this case work. However it's not bullet-proof for others platforms and architectures.
+	// A proper solution would be to just send the port number in a protocol friendly way.
+
+	bool macOsClient =
+		port->port_client_arch == arch_darwin_ppc ||
+		port->port_client_arch == arch_darwin_x64 ||
+		port->port_client_arch == arch_darwin_ppc64;
+
+	bool macOsServer =
+		ARCHITECTURE == arch_darwin_ppc ||
+		ARCHITECTURE == arch_darwin_x64 ||
+		ARCHITECTURE == arch_darwin_ppc64;
+
+	if (macOsServer && !macOsClient)
+		port_address.convertFromMacOsToPosixWindows();
+	else if (!macOsServer && macOsClient)
+		port_address.convertFromPosixWindowsToMacOs();
 
 	response->p_resp_data.cstr_length = (ULONG) port_address.length();
 	memcpy(response->p_resp_data.cstr_address, port_address.ptr(), port_address.length());
