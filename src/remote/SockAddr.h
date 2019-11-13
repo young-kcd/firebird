@@ -29,6 +29,10 @@
 #include <sys/socket.h>
 #endif
 
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+
 #ifndef WIN_NT
 #include <netinet/in.h>
 #else
