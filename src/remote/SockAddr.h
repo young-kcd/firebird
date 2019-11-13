@@ -31,6 +31,8 @@
 
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
+#else
+#include <stdint.h>
 #endif
 
 #ifndef WIN_NT
