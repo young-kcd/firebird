@@ -525,7 +525,8 @@ Connection::Connection(Provider& prov) :
 	m_deleting(false),
 	m_sqlDialect(0),
 	m_wrapErrors(true),
-	m_broken(false)
+	m_broken(false),
+	m_features(0)
 {
 }
 
