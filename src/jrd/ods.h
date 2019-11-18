@@ -649,12 +649,14 @@ struct blh
 	ULONG blh_length;			// Total length of data
 	USHORT blh_sub_type;		// Blob sub-type
 	UCHAR blh_charset;			// Blob charset (since ODS 11.1)
+	UCHAR blh_unused;
 #ifndef ODS_TESTING
+// Macro CHECK_BLOB_FIELD_ACCESS_FOR_SELECT is never defined, code under it was left for a case
+// we would like to have that check in a future.
 #ifdef CHECK_BLOB_FIELD_ACCESS_FOR_SELECT
 	USHORT blh_fld_id;			// Field ID
 #endif
 #endif //ODS_TESTING
-	UCHAR blh_unused;
 	ULONG blh_page[1];			// Page vector for blob pages
 };
 
