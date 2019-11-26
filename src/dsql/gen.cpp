@@ -215,19 +215,6 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
 				&parameter->par_desc, parameter->par_desc.dsc_length) + sizeof(USHORT);
 		}
 
-		if (!(dsqlScratch->flags & DsqlCompilerScratch::FLAG_INTERNAL_REQUEST))
-		{
-			Attachment* att = tdbb->getAttachment();
-			if (!att->att_bindings.coerce(&parameter->par_desc))
-			{
-				if (!att->getInitialBindings()->coerce(&parameter->par_desc))
-				{
-					Database* dbb = tdbb->getDatabase();
-					dbb->getBindings()->coerce(&parameter->par_desc, dbb->dbb_compatibility_index);
-				}
-			}
-		}
-
 		const USHORT align = type_alignments[parameter->par_desc.dsc_dtype];
 		if (align)
 			offset = FB_ALIGN(offset, align);

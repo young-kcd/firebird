@@ -2175,21 +2175,31 @@ static UCHAR* var_info(const dsql_msg* message,
 
 		if (param->par_index >= first_index)
 		{
+			dsc desc = param->par_desc;
+			if (!attachment->att_bindings.coerce(&desc))
+			{
+				if (!attachment->getInitialBindings()->coerce(&desc))
+				{
+					Database* dbb = tdbb->getDatabase();
+					dbb->getBindings()->coerce(&desc, dbb->dbb_compatibility_index);
+				}
+			}
+
 			SLONG sql_len, sql_sub_type, sql_scale, sql_type;
-			param->par_desc.getSqlInfo(&sql_len, &sql_sub_type, &sql_scale, &sql_type);
+			desc.getSqlInfo(&sql_len, &sql_sub_type, &sql_scale, &sql_type);
 
 			if (input_message &&
-				(param->par_desc.dsc_dtype == dtype_text || param->par_is_text) &&
-				(param->par_desc.dsc_flags & DSC_null))
+				(desc.dsc_dtype == dtype_text || param->par_is_text) &&
+				(desc.dsc_flags & DSC_null))
 			{
 				sql_type = SQL_NULL;
 				sql_len = 0;
 				sql_sub_type = 0;
 			}
-			else if (param->par_desc.dsc_dtype == dtype_varying && param->par_is_text)
+			else if (desc.dsc_dtype == dtype_varying && param->par_is_text)
 				sql_type = SQL_TEXT;
 
-			if (sql_type && (param->par_desc.dsc_flags & DSC_nullable))
+			if (sql_type && (desc.dsc_flags & DSC_nullable))
 				sql_type |= 0x1;
 
 			for (const UCHAR* describe = items; describe < end_describe;)
