@@ -41,13 +41,13 @@ export MACOSX_DEPLOYMENT_TARGET
 
 PROD_FLAGS=-DDARWIN -pipe -O2 -MMD -fPIC -fno-common -mmacosx-version-min=10.9
 DEV_FLAGS=-ggdb -DDARWIN -pipe -MMD -fPIC -fno-omit-frame-pointer -fno-common -Wall -fno-optimize-sibling-calls -mmacosx-version-min=10.9 -Wno-non-virtual-dtor
-CXXFLAGS:=$(CXXFLAGS) -fvisibility-inlines-hidden -fvisibility=hidden -msse4
+CXXFLAGS:=$(CXXFLAGS) -fvisibility-inlines-hidden -fvisibility=hidden -stdlib=libc++ -msse4
 
-EXE_LINK_OPTIONS:= 
+EXE_LINK_OPTIONS:=
 UNDEF_PLATFORM=
 
 LINK_LIBS+=-liconv
-MATHLIB=$(ROOT)/extern/libtommath/.libs/libtommath.a
+#MATHLIB=$(ROOT)/extern/libtommath/.libs/libtommath.a
 SO_LINK_LIBS+=-liconv
 
 include $(ROOT)/gen/darwin.defaults
