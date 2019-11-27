@@ -5285,10 +5285,8 @@ set_decfloat_traps
 
 %type <setBindNode> set_bind
 set_bind
-	: SET BIND OF set_bind_from
-			{ $$ = newNode<SetBindNode>(); $$->from = $4; }
-		set_bind_to
-			{ $$ = $5; $$->to = $6; }
+	: SET BIND OF set_bind_from set_bind_to
+			{ $$ = newNode<SetBindNode>(); $$->from = $4; $$->to = $5; }
 	;
 
 %type <legacyField> set_bind_from
