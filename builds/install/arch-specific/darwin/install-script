@@ -75,7 +75,6 @@ echo "Set the permissions correctly"
     chmod 777 "$FB_FW/Resources/"
     chmod 660 "$FB_FW/Resources/security3.fdb"
     chmod 444 "$FB_FW/Resources/help/help.fdb"
-    chmod a+s "$FB_FW/Resources/bin/firebird"
 
 # Remove all older traces of Classic first
 echo "Remove all older traces of Classic first"

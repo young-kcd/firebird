@@ -99,5 +99,4 @@ framework:
 	mkdir $(FB_FW)/Versions/A/Resources/misc/upgrade
 	cp -r ../src/misc/upgrade/v3.0 $(FB_FW)/Versions/A/Resources/misc/upgrade
 
-	install_name_tool -rpath @loader_path/.. /Library/Frameworks/Firebird.framework/Resources $(FB_FW)/Versions/A/Resources/bin/firebird
 	install_name_tool -id /Library/Frameworks/Firebird.framework/Libraries/libfbclient.dylib $(FB_FW)/Versions/A/Resources/lib/libfbclient.dylib
