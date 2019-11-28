@@ -372,7 +372,6 @@ public:
 
 	public:
 		void setInitialOptions(thread_db* tdbb, const DatabaseOptions& options);
-		static void setBind(thread_db* tdbb, const Firebird::PathName& bind, CoercionArray* target);
 		void resetAttachment(Attachment* attachment) const;
 
 		CoercionArray *getBindings()
