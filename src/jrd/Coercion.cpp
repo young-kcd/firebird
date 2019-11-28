@@ -35,8 +35,8 @@
 using namespace Jrd;
 using namespace Firebird;
 
-static const USHORT FROM_MASK = FLD_has_len | FLD_has_chset | FLD_has_scale;
-static const USHORT TO_MASK = FLD_has_len | FLD_has_chset | FLD_has_scale | FLD_legacy | FLD_native;
+static const USHORT FROM_MASK = FLD_has_len | FLD_has_chset | FLD_has_scale | FLD_has_sub;
+static const USHORT TO_MASK = FLD_has_len | FLD_has_chset | FLD_has_scale | FLD_legacy | FLD_native | FLD_has_sub;
 
 bool CoercionArray::coerce(dsc* d, unsigned startItem) const
 {
@@ -75,6 +75,7 @@ bool CoercionRule::match(dsc* d) const
 		(d->dsc_dtype == fromDsc.dsc_dtype) &&
 		((d->dsc_length == fromDsc.dsc_length) || (!(fromMask & FLD_has_len))) &&
 		((d->getCharSet() == fromDsc.getCharSet()) || (!(fromMask & FLD_has_chset))) &&
+		((d->getBlobSubType() == fromDsc.getBlobSubType()) || (!(fromMask & FLD_has_sub))) &&
 		((d->dsc_scale == fromDsc.dsc_scale) || (!(fromMask & FLD_has_scale))))
 	{
 		found = true;
@@ -173,6 +174,10 @@ bool CoercionRule::coerce(dsc* d) const
 	// charset
 	if (toMask & FLD_has_chset)
 		d->setTextType(toDsc.getTextType());
+
+	// subtype
+	if (toMask & FLD_has_sub)
+		d->setBlobSubType(toDsc.getBlobSubType());
 
 	return true;
 }

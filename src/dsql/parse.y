@@ -4763,7 +4763,10 @@ blob_type
 			$$->length = sizeof(ISC_QUAD);
 			$$->segLength = $4;
 			if ($5)
+			{
 				$$->charSet = *$5;
+				$$->flags |= FLD_has_chset;
+			}
 		}
 	| BLOB '(' unsigned_short_integer ')'
 		{
@@ -4780,6 +4783,7 @@ blob_type
 			$$->length = sizeof(ISC_QUAD);
 			$$->segLength = (USHORT) $3;
 			$$->subType = (USHORT) $5;
+			$$->flags |= FLD_has_sub;
 		}
 	| BLOB '(' ',' signed_short_integer ')'
 		{
@@ -4788,6 +4792,7 @@ blob_type
 			$$->length = sizeof(ISC_QUAD);
 			$$->segLength = 80;
 			$$->subType = (USHORT) $4;
+			$$->flags |= FLD_has_sub;
 		}
 	;
 
@@ -4802,9 +4807,9 @@ blob_subtype($field)
 	: // nothing
 		{ $field->subType = (USHORT) 0; }
 	| SUB_TYPE signed_short_integer
-		{ $field->subType = (USHORT) $2; }
+		{ $field->subType = (USHORT) $2; $field->flags |= FLD_has_sub; }
 	| SUB_TYPE symbol_blob_subtype_name
-		{ $field->subTypeName = *$2; }
+		{ $field->subTypeName = *$2; $field->flags |= FLD_has_sub; }
 	;
 
 %type <metaNamePtr> charset_clause
@@ -5291,12 +5296,26 @@ set_bind
 
 %type <legacyField> set_bind_from
 set_bind_from
-	: simple_type
+	: bind_type
+	;
+
+%type <legacyField> bind_type
+bind_type
+	: non_array_type
+		{
+			$$ = $1;
+		}
+	| varying_keyword
+		{
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_varying;
+			$$->charLength = 0;
+		}
 	;
 
 %type <legacyField> set_bind_to
 set_bind_to
-	: TO simple_type
+	: TO bind_type
 		{
 			$$ = $2;
 		}
