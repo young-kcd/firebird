@@ -35,6 +35,8 @@ ifeq ($(TARGET),release)
 	CXX_FLAGS += -O3
 endif
 
+CXX_FLAGS += -stdlib=libc++
+
 ifeq ($(TARGET),debug)
 	FPC_FLAGS += -g
 endif
