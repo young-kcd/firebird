@@ -48,10 +48,11 @@ public:
 		toDsc.clear();
 	}
 
-	void setRule(TypeClause* from, TypeClause *to);
+	void setRule(const TypeClause* from, const TypeClause *to);
 	dsc* makeLegacy(USHORT mask = 0);
 	bool coerce(dsc* d) const;
-	bool match(dsc* d) const;
+	bool match(const dsc* d) const;
+	bool operator==(const CoercionRule& rule) const;
 
 private:
 	dsc fromDsc, toDsc;
@@ -67,6 +68,7 @@ public:
 	}
 
 	bool coerce(dsc* d, unsigned startItem = 0) const;
+	void setRule(const TypeClause* from, const TypeClause *to);
 };
 
 } // namespace Jrd

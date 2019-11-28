@@ -50,7 +50,25 @@ bool CoercionArray::coerce(dsc* d, unsigned startItem) const
 	return false;
 }
 
-void CoercionRule::setRule(TypeClause* from, TypeClause *to)
+void CoercionArray::setRule(const TypeClause* from, const TypeClause *to)
+{
+	CoercionRule newRule;
+	newRule.setRule(from, to);
+
+	for (unsigned n = 0; n < getCount(); ++n)
+	{
+		if (getElement(n) == newRule)
+		{
+			remove(n);
+			printf("Remove rule %d\n", n);
+			break;
+		}
+	}
+
+	add(newRule);
+}
+
+void CoercionRule::setRule(const TypeClause* from, const TypeClause *to)
 {
 	fromMask = from->flags & FROM_MASK;
 	DsqlDescMaker::fromField(&fromDsc, from);
@@ -66,7 +84,14 @@ dsc* CoercionRule::makeLegacy(USHORT mask)
 	return &fromDsc;
 }
 
-bool CoercionRule::match(dsc* d) const
+bool CoercionRule::operator==(const CoercionRule& rule) const
+{
+	if (fromMask != rule.fromMask)
+		return false;
+	return match(&rule.fromDsc);
+}
+
+bool CoercionRule::match(const dsc* d) const
 {
 	bool found = false;
 

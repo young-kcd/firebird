@@ -8381,8 +8381,8 @@ void SetBindNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*tr
 	fb_assert(to);
 
 	Attachment* const attachment = tdbb->getAttachment();
-	CoercionRule& coercion = attachment->att_dest_bind->add();
-	coercion.setRule(from, to);
+	CoercionArray* coercions = attachment->att_dest_bind;
+	coercions->setRule(from, to);
 }
 
 
