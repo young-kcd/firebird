@@ -712,7 +712,7 @@ clean_vers:
 	$(RM) *.vers
 
 clean_misc:
-	$(RM) ods.txt odstest* security.tmp test.header.txt
+	$(RM) ods.txt odstest* security.tmp test.header.txt $(API_PAS_FILE)
 
 ifeq ($(EDITLINE_FLG),Y)
 ifeq ($(STD_EDITLINE),false)
