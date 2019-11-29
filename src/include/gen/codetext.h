@@ -962,6 +962,7 @@ static const struct {
 	{"invalid_hex_digit", 335545258},
 	{"bind_err", 335545259},
 	{"bind_statement", 335545260},
+	{"bind_convert", 335545261},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

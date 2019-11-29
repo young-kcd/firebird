@@ -27,6 +27,7 @@
 
 #include "firebird.h"
 #include "../jrd/Coercion.h"
+#include "../jrd/cvt_proto.h"
 
 #include "../dsql/dsql.h"
 #include "../dsql/make_proto.h"
@@ -60,7 +61,6 @@ void CoercionArray::setRule(const TypeClause* from, const TypeClause *to)
 		if (getElement(n) == newRule)
 		{
 			remove(n);
-			printf("Remove rule %d\n", n);
 			break;
 		}
 	}
@@ -75,6 +75,23 @@ void CoercionRule::setRule(const TypeClause* from, const TypeClause *to)
 
 	toMask = to->flags & TO_MASK;
 	DsqlDescMaker::fromField(&toDsc, to);
+
+	// Check for datatype compatibility
+	const unsigned DATASIZE = 256;
+	UCHAR buf[DATASIZE * 2 + FB_ALIGNMENT];
+	memset(buf, 0, sizeof buf);
+	toDsc.dsc_address = FB_ALIGN(buf, FB_ALIGNMENT);
+	fromDsc.dsc_address = toDsc.dsc_address + DATASIZE;
+
+	try
+	{
+		CVT_move(&fromDsc, &toDsc, 0);
+	}
+	catch(const Exception&)
+	{
+		// Do not use ERR_post here - old error to be overwritten
+		(Arg::Gds(isc_bind_convert) << fromDsc.typeToText() << toDsc.typeToText()).raise();
+	}
 }
 
 dsc* CoercionRule::makeLegacy(USHORT mask)

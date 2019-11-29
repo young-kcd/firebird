@@ -961,6 +961,7 @@ static const struct {
 	{335545258, -901}, /* 938 invalid_hex_digit */
 	{335545259, -902}, /* 939 bind_err */
 	{335545260, -902}, /* 940 bind_statement */
+	{335545261, -901}, /* 941 bind_convert */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */
