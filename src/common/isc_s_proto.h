@@ -339,8 +339,21 @@ private:
 	void	freeSem5(Sys5Semaphore* sem);
 #endif
 
+	bool justCreated()
+	{
+		if (sh_mem_just_created)
+		{
+			// complete initialization
+			sh_mem_just_created = false;
+			return true;
+		}
+
+		return false;
+	}
+
 private:
 	IpcObject* sh_mem_callback;
+	bool sh_mem_just_created;
 #ifdef WIN_NT
 	bool sh_mem_unlink;
 #endif
