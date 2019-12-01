@@ -92,21 +92,6 @@ if [ -f /etc/xinetd.d/firebird ]; then
 	HUPNEEDED='y'
 fi
 
-# Make sure hosts.equiv files are set correctly
-echo "Make sure hosts.equiv files are set correctly"
-
-cp /etc/hosts.equiv /etc/hosts.equiv.fbsave
-if grep -x "localhost" /etc/hosts.equiv > /dev/null; then
-	echo -n
-else
-    echo "localhost" >> /etc/hosts.equiv
-fi
-if grep -x "localhost.localdomain" /etc/hosts.equiv > /dev/null; then
-	echo -n
-else
-    echo "localhost.localdomain" >> /etc/hosts.equiv
-fi
-
 # Install the saved security2 database, if any
 echo "Install the saved security2 database"
 if test -f /tmp/fb-security-database-update2fdb; then
