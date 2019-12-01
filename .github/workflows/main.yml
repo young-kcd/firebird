@@ -47,8 +47,8 @@ jobs:
 
         mkdir extern/icu-macos
         pushd extern/icu-macos
-        wget https://github.com/unicode-org/icu/releases/download/release-59-2/icu4c-59_2-src.tgz
-        wget https://github.com/unicode-org/icu/commit/24aeb9a5a5874f4ce5db912e30670ac3ae236971.patch
+        curl -OL https://github.com/unicode-org/icu/releases/download/release-59-2/icu4c-59_2-src.tgz
+        curl -OL https://github.com/unicode-org/icu/commit/24aeb9a5a5874f4ce5db912e30670ac3ae236971.patch
         tar xzf icu4c-59_2-src.tgz
         ICU_INSTALL_PATH=`pwd`/install
         cd icu/source
