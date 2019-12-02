@@ -194,16 +194,14 @@ public:
 
 	// Set the scratch's transaction when executing a node. Fact of accessing the scratch during
 	// execution is a hack.
-	void executeDdl(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+	void executeDdl(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction, bool trusted = false)
 	{
 		// dsqlScratch should be NULL with CREATE DATABASE.
 		if (dsqlScratch)
 			dsqlScratch->setTransaction(transaction);
 
-		const ULONG flag = checkPermission(tdbb, transaction) ? TDBB_trusted_ddl : 0;
-
-		Firebird::AutoSetRestoreFlag<ULONG> trustedDdlFlag(&tdbb->tdbb_flags, flag, true);
-
+		if (!trusted)
+			checkPermission(tdbb, transaction);
 		execute(tdbb, dsqlScratch, transaction);
 	}
 

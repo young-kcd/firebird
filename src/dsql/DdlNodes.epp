@@ -11751,8 +11751,6 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 	char priv[2];
 	priv[1] = '\0';
 
-	AutoSetRestoreFlag<ULONG> trustedDdlFlag(&tdbb->tdbb_flags, TDBB_trusted_ddl, true);
-
 	if (isGrant)
 	{
 		AutoCacheRequest request(tdbb, drq_l_grant1, DYN_REQUESTS);
