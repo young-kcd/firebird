@@ -2176,11 +2176,16 @@ static UCHAR* var_info(const dsql_msg* message,
 		if (param->par_index >= first_index)
 		{
 			dsc desc = param->par_desc;
+
+			// Scan sources of coercion rules in reverse order to observe
+			// 'last entered in use' rule. Start with dynamic binding rules ...
 			if (!attachment->att_bindings.coerce(&desc))
 			{
+				// next - given in DPB ...
 				if (!attachment->getInitialBindings()->coerce(&desc))
 				{
 					Database* dbb = tdbb->getDatabase();
+					// and finally - rules from .conf files.
 					dbb->getBindings()->coerce(&desc, dbb->dbb_compatibility_index);
 				}
 			}
