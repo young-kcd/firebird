@@ -337,7 +337,12 @@ private:
 	FILE_HANDLE dbase;
 	FILE_HANDLE backup;
 	string decompress;
+#ifdef WIN_NT
+	HANDLE childId;
+	HANDLE childStdErr;
+#else
 	int childId;
+#endif
 	ULONG db_size_pages;	// In pages
 	USHORT m_odsNumber;
 	bool m_silent;		// are we already handling an exception?
@@ -349,6 +354,7 @@ private:
 	void seek_file(FILE_HANDLE &file, SINT64 pos);
 
 	void pr_error(const ISC_STATUS* status, const char* operation);
+	void print_child_error();
 
 	void internal_lock_database();
 	void get_database_size();
@@ -365,6 +371,7 @@ private:
 	void close_database();
 
 	void open_backup_scan();
+	void open_backup_decompress();
 	void create_backup();
 	void close_backup();
 };
@@ -376,6 +383,14 @@ FB_SIZE_T NBackup::read_file(FILE_HANDLE &file, void *buffer, FB_SIZE_T bufsize)
 	DWORD bytesDone;
 	if (ReadFile(file, buffer, bufsize, &bytesDone, NULL))
 		return bytesDone;
+
+	const DWORD err = GetLastError();
+	if (childId != 0 && file == backup)
+	{
+		print_child_error();
+		if (err == ERROR_BROKEN_PIPE)
+			return 0;
+	}
 
 	status_exception::raise(Arg::Gds(isc_nbackup_err_read) <<
 		(&file == &dbase ? dbname.c_str() :
@@ -570,6 +585,12 @@ string NBackup::to_system(const PathName& from)
 
 void NBackup::open_backup_scan()
 {
+	if (decompress.hasData())
+	{
+		open_backup_decompress();
+		return;
+	}
+
 	string nm = to_system(bakname);
 #ifdef WIN_NT
 	backup = CreateFile(nm.c_str(), GENERIC_READ, 0,
@@ -577,93 +598,150 @@ void NBackup::open_backup_scan()
 	if (backup != INVALID_HANDLE_VALUE)
 		return;
 #else
-	if (decompress.hasData())
-	{
-		string command = decompress;
-		const unsigned ARGCOUNT = 20;
-		unsigned narg = 0;
-		char* args[ARGCOUNT + 1];
-		bool inStr = false;
-		for (unsigned i = 0; i < command.length(); ++i)
-		{
-			switch (command[i])
-			{
-			case ' ':
-			case '\t':
-				command[i] = '\0';
-				inStr = false;
-				break;
-			default:
-				if (!inStr)
-				{
-					if (narg >= ARGCOUNT)
-					{
-						status_exception::raise(Arg::Gds(isc_nbackup_deco_parse) << Arg::Num(ARGCOUNT));
-					}
-					inStr = true;
-					args[narg++] = &command[i];
-				}
-				break;
-			}
-		}
-
-		string expanded;
-		for (unsigned i = 0; i < narg; ++i)
-		{
-			expanded = args[i];
-			PathName::size_type n = expanded.find('@');
-			if (n != PathName::npos)
-			{
-				expanded.replace(n, 1, bakname);
-				args[i] = &expanded[0];
-				break;
-			}
-			expanded.erase();
-		}
-		if (!expanded.hasData())
-		{
-			if (narg >= ARGCOUNT)
-			{
-				status_exception::raise(Arg::Gds(isc_nbackup_deco_parse) << Arg::Num(ARGCOUNT));
-			}
-			args[narg++] = &bakname[0];
-		}
-		args[narg] = NULL;
-
-		int pfd[2];
-		if (pipe(pfd) < 0)
-			system_call_failed::raise("pipe");
-
-		fb_assert(!newdb);		// FB 2.5 & 3 can't fork when attached to database
-		childId = fork();
-		if (childId < 0)
-			system_call_failed::raise("fork");
-
-		if (childId == 0)
-		{
-			close(pfd[0]);
-			dup2(pfd[1], 1);
-			close(pfd[1]);
-
-			execvp(args[0], args);
-		}
-		else
-		{
-			backup = pfd[0];
-			close(pfd[1]);
-		}
-
+	backup = os_utils::open(nm.c_str(), O_RDONLY | O_LARGEFILE);
+	if (backup >= 0)
 		return;
-	}
-	else
-	{
-		backup = os_utils::open(nm.c_str(), O_RDONLY | O_LARGEFILE);
-		if (backup >= 0)
-			return;
-	}
 #endif
 
 	status_exception::raise(Arg::Gds(isc_nbackup_err_openbk) << bakname.c_str() << Arg::OsError());
+}
+
+void NBackup::open_backup_decompress()
+{
+	string command = decompress;
+
+#ifdef WIN_NT
+	const PathName::size_type n = command.find('@');
+
+	if (n != PathName::npos)
+	{
+		command.replace(n, 1, bakname);
+	}
+	else
+	{
+		command.append(" ");
+		command.append(bakname);
+	}
+
+	SECURITY_ATTRIBUTES sa;
+	sa.bInheritHandle = TRUE;
+	sa.lpSecurityDescriptor = NULL;
+	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+
+	HANDLE hChildStdOut;
+	if (!CreatePipe(&backup, &hChildStdOut, &sa, 0))
+		system_call_failed::raise("CreatePipe");
+
+	SetHandleInformation(backup, HANDLE_FLAG_INHERIT, 0);
+
+	HANDLE hChildStdErr;
+	if (!CreatePipe(&childStdErr, &hChildStdErr, &sa, 0))
+		system_call_failed::raise("CreatePipe");
+
+	SetHandleInformation(childStdErr, HANDLE_FLAG_INHERIT, 0);
+
+	STARTUPINFO start_crud;
+	memset(&start_crud, 0, sizeof(STARTUPINFO));
+	start_crud.cb = sizeof(STARTUPINFO);
+	start_crud.dwFlags = STARTF_USESTDHANDLES;
+	start_crud.hStdOutput = hChildStdOut;
+	start_crud.hStdError = hChildStdErr;
+
+	PROCESS_INFORMATION pi;
+	if (CreateProcess(NULL, command.begin(), NULL, NULL, TRUE,
+					  NORMAL_PRIORITY_CLASS | DETACHED_PROCESS,
+					  NULL, NULL, &start_crud, &pi))
+	{
+		childId = pi.hProcess;
+		CloseHandle(pi.hThread);
+		CloseHandle(hChildStdOut);
+		CloseHandle(hChildStdErr);
+	}
+	else
+	{
+		const DWORD err = GetLastError();
+
+		CloseHandle(backup);
+		CloseHandle(hChildStdOut);
+		CloseHandle(hChildStdErr);
+
+		// error creating child process
+		system_call_failed::raise("CreateProcess", err);
+	}
+#else
+	const unsigned ARGCOUNT = 20;
+	unsigned narg = 0;
+	char* args[ARGCOUNT + 1];
+	bool inStr = false;
+	for (unsigned i = 0; i < command.length(); ++i)
+	{
+		switch (command[i])
+		{
+		case ' ':
+		case '\t':
+			command[i] = '\0';
+			inStr = false;
+			break;
+		default:
+			if (!inStr)
+			{
+				if (narg >= ARGCOUNT)
+				{
+					status_exception::raise(Arg::Gds(isc_nbackup_deco_parse) << Arg::Num(ARGCOUNT));
+				}
+				inStr = true;
+				args[narg++] = &command[i];
+			}
+			break;
+		}
+	}
+
+	string expanded;
+	for (unsigned i = 0; i < narg; ++i)
+	{
+		expanded = args[i];
+		PathName::size_type n = expanded.find('@');
+		if (n != PathName::npos)
+		{
+			expanded.replace(n, 1, bakname);
+			args[i] = &expanded[0];
+			break;
+		}
+		expanded.erase();
+	}
+	if (!expanded.hasData())
+	{
+		if (narg >= ARGCOUNT)
+		{
+			status_exception::raise(Arg::Gds(isc_nbackup_deco_parse) << Arg::Num(ARGCOUNT));
+		}
+		args[narg++] = &bakname[0];
+	}
+	args[narg] = NULL;
+
+	int pfd[2];
+	if (pipe(pfd) < 0)
+		system_call_failed::raise("pipe");
+
+	fb_assert(!newdb);		// FB 2.5 & 3 can't fork when attached to database
+	childId = fork();
+	if (childId < 0)
+		system_call_failed::raise("fork");
+
+	if (childId == 0)
+	{
+		close(pfd[0]);
+		dup2(pfd[1], 1);
+		close(pfd[1]);
+
+		execvp(args[0], args);
+	}
+	else
+	{
+		backup = pfd[0];
+		close(pfd[1]);
+	}
+#endif
 }
 
 void NBackup::create_backup()
@@ -708,6 +786,21 @@ void NBackup::close_backup()
 		return;
 #ifdef WIN_NT
 	CloseHandle(backup);
+	if (childId > 0)
+	{
+		print_child_error();
+
+		if (WaitForSingleObject(childId, 5000) != WAIT_OBJECT_0)
+		{
+			// report child still exist
+			TerminateProcess(childId, 1);
+			status_exception::raise(Arg::Gds(isc_random) << "Child process seems hung. Killed");
+		}
+
+		CloseHandle(childId);
+		CloseHandle(childStdErr);
+		childId = 0;
+	}
 #else
 	close(backup);
 	if (childId > 0)
@@ -754,6 +847,71 @@ void NBackup::pr_error(const ISC_STATUS* status, const char* operation)
 	m_printed = true;
 
 	status_exception::raise(Arg::Gds(isc_nbackup_err_db));
+}
+
+void NBackup::print_child_error()
+{
+#ifdef WIN_NT
+	// Read stderr of child process (decompressor) and print it at our stdout.
+	// Prepend each line by prefix DE> to let user distinguish nbackup's output
+	// from decompressor's one.
+
+	char buff[256];
+	const char* end = buff + sizeof(buff) - 1;
+	char* r = buff;
+	bool header = false;
+
+	DWORD bytesRead;
+	while (ReadFile(childStdErr, r, end - r, &bytesRead, NULL))
+	{
+		if (bytesRead == 0 && r == buff)
+			break;
+
+		r[bytesRead] = 0;
+
+		char* p = buff;
+		while (true)
+		{
+			char endl = '\r';
+			char* pEndL = strchr(p, endl);
+			if (!pEndL)
+			{
+				endl = '\n';
+				pEndL = strchr(p, endl);
+			}
+			if (!pEndL && p == buff)
+			{
+				endl = 0;
+				pEndL = r + bytesRead;
+			}
+
+			if (pEndL)
+			{
+				*pEndL = 0;
+				uSvc->printf(false, "DE> %s\n", p);
+
+				if (endl == '\r' && (pEndL < r + bytesRead) && pEndL[1] == '\n')
+					pEndL++;
+
+				if (pEndL >= r + bytesRead)
+				{
+					p = r = buff;
+					break;
+				}
+
+				p = pEndL + 1;
+			}
+			else
+			{
+				const size_t s = (r + bytesRead) - p;
+				memmove(buff, p, s);
+				p = buff;
+				r = p + s;
+				break;
+			}
+		}
+	}
+#endif
 }
 
 void NBackup::attach_database()
@@ -1347,10 +1505,10 @@ void NBackup::restore_database(const BackupFiles& files)
 	// We set this flag when database file is in inconsistent state
 	bool delete_database = false;
 	const int filecount = files.getCount();
-#ifndef WIN_NT
+
 	create_database();
 	delete_database = true;
-#endif
+
 	UCHAR *page_buffer = NULL;
 	try {
 		int curLevel = 0;
@@ -1386,10 +1544,7 @@ void NBackup::restore_database(const BackupFiles& files)
 					// Never reaches this point when run as service
 					try {
 						fb_assert(!uSvc->isService());
-#ifdef WIN_NT
-						if (curLevel)
-#endif
-							open_backup_scan();
+						open_backup_scan();
 						break;
 					}
 					catch (const status_exception& e)
@@ -1412,10 +1567,7 @@ void NBackup::restore_database(const BackupFiles& files)
 					return;
 				}
 				bakname = files[curLevel];
-#ifdef WIN_NT
-				if (curLevel)
-#endif
-					open_backup_scan();
+				open_backup_scan();
 			}
 
 			if (curLevel)
@@ -1470,16 +1622,6 @@ void NBackup::restore_database(const BackupFiles& files)
 			}
 			else
 			{
-#ifdef WIN_NT
-				if (!CopyFile(bakname.c_str(), dbname.c_str(), TRUE))
-				{
-					status_exception::raise(Arg::Gds(isc_nbackup_err_copy) <<
-						dbname.c_str() << bakname.c_str() << Arg::OsError());
-				}
-				checkCtrlC(uSvc);
-				delete_database = true; // database is possibly broken
-				open_database_write();
-#else
 				// Use relatively small buffer to make use of prefetch and lazy flush
 				char buffer[65536];
 				while (true)
@@ -1491,7 +1633,7 @@ void NBackup::restore_database(const BackupFiles& files)
 					checkCtrlC(uSvc);
 				}
 				seek_file(dbase, 0);
-#endif
+
 				// Read database header
 				Ods::header_page header;
 				if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
@@ -1526,10 +1668,7 @@ void NBackup::restore_database(const BackupFiles& files)
 				// We are likely to have normal database here
 				delete_database = false;
 			}
-#ifdef WIN_NT
-			if (curLevel)
-#endif
-				close_backup();
+			close_backup();
 			curLevel++;
 		}
 	}
