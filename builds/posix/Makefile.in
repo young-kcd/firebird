@@ -134,8 +134,8 @@ ifeq ($(PLATFORM),DARWIN)
 	cp $(TOMMATH)/.libs/libtommath.0.dylib $(LIB)/libtommath.dylib
 else
 	ln -sf $(TOMMATH_SO).$(TOMMATH_VER) $(LIB)
-endif
 	ln -sf $(TOMMATH_SO) $(LIB)
+endif
 endif
 
 ifeq ($(STD_EDITLINE),false)

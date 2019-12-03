@@ -62,7 +62,7 @@ script:
       export CPLUS_INCLUDE_PATH="$ICU_INSTALL_PATH/include:$CPLUS_INCLUDE_PATH"
 
       LIBRARY_PATH="$ICU_INSTALL_PATH/lib:$LIBRARY_PATH" ./autogen.sh --with-builtin-tommath
-      make
+      make -j4
 
       (cd gen; make -B -f make.platform.postfix ICU_LOC="$ICU_INSTALL_PATH/lib/")
       (cd gen; make -B -f Makefile.install)
