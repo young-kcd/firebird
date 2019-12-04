@@ -332,12 +332,6 @@ public:
 										  // Also, "volatile" variables should never be used directly, only via atomics API
 										  // because there is no portable barrier semantics for them. Only MS2005+ generate
 										  // barriers, and all other compilers generally do not.
-#ifdef USE_SYS5SEMAPHORE
-private:
-	int		fileNum;	// file number in shared table of shared files
-	bool	getSem5(Sys5Semaphore* sem);
-	void	freeSem5(Sys5Semaphore* sem);
-#endif
 
 	bool justCreated()
 	{
@@ -352,6 +346,12 @@ private:
 	}
 
 private:
+#ifdef USE_SYS5SEMAPHORE
+	int		fileNum;	// file number in shared table of shared files
+	bool	getSem5(Sys5Semaphore* sem);
+	void	freeSem5(Sys5Semaphore* sem);
+#endif
+
 	IpcObject* sh_mem_callback;
 	bool sh_mem_just_created;
 #ifdef WIN_NT
