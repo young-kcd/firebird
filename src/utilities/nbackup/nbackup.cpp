@@ -379,36 +379,41 @@ private:
 
 FB_SIZE_T NBackup::read_file(FILE_HANDLE &file, void *buffer, FB_SIZE_T bufsize)
 {
-#ifdef WIN_NT
-	DWORD bytesDone;
-	if (ReadFile(file, buffer, bufsize, &bytesDone, NULL))
-		return bytesDone;
-
-	const DWORD err = GetLastError();
-	if (childId != 0 && file == backup)
-	{
-		print_child_error();
-		if (err == ERROR_BROKEN_PIPE)
-			return 0;
-	}
-
-	status_exception::raise(Arg::Gds(isc_nbackup_err_read) <<
-		(&file == &dbase ? dbname.c_str() :
-			&file == &backup ? bakname.c_str() : "unknown") <<
-		Arg::OsError());
-
-	return 0; // silence compiler
-#else
 	FB_SIZE_T rc = 0;
 	while (bufsize)
 	{
+#ifdef WIN_NT
+		// Read child's stderr often to prevent child process hung if it writes
+		// too much data to the pipe and overflow the pipe buffer.
+		const bool checkChild = (childStdErr > 0 && file == backup);
+		if (checkChild)
+			print_child_error();
+
+		DWORD res;
+		if (!ReadFile(file, buffer, bufsize, &res, NULL))
+		{
+			const DWORD err = GetLastError();
+			if (checkChild)
+			{
+				print_child_error();
+
+				if (err == ERROR_BROKEN_PIPE)
+				{
+					DWORD exitCode;
+					if (GetExitCodeProcess(childId, &exitCode) && (exitCode == 0 || exitCode == STILL_ACTIVE))
+						break;
+				}
+			}
+#else
 		const ssize_t res = read(file, buffer, bufsize);
 		if (res < 0)
 		{
+			const int err = errno;
+#endif
 			status_exception::raise(Arg::Gds(isc_nbackup_err_read) <<
 				(&file == &dbase ? dbname.c_str() :
 					&file == &backup ? bakname.c_str() : "unknown") <<
-				Arg::OsError());
+				Arg::OsError(err));
 		}
 
 		if (!res)
@@ -420,7 +425,6 @@ FB_SIZE_T NBackup::read_file(FILE_HANDLE &file, void *buffer, FB_SIZE_T bufsize)
 	}
 
 	return rc;
-#endif
 
 
 	return 0; // silence compiler
@@ -856,59 +860,64 @@ void NBackup::print_child_error()
 	// Prepend each line by prefix DE> to let user distinguish nbackup's output
 	// from decompressor's one.
 
-	char buff[256];
-	const char* end = buff + sizeof(buff) - 1;
-	char* r = buff;
-	bool header = false;
+	const int BUFF_SIZE = 8192;
+	char buff[BUFF_SIZE];
+	const char* end = buff + BUFF_SIZE - 1;
+	static bool atNewLine = true;
 
 	DWORD bytesRead;
-	while (ReadFile(childStdErr, r, end - r, &bytesRead, NULL))
+	while (true)
 	{
-		if (bytesRead == 0 && r == buff)
+		// Check if pipe have data to read. This is necessary to avoid hung if 
+		// pipe is empty. Ignore read error as ReadFile set bytesRead to zero
+		// in this case and it is enough for our usage.
+		const BOOL ret = PeekNamedPipe(childStdErr, NULL, 1, NULL, &bytesRead, NULL);
+		if (ret && bytesRead)
+			ReadFile(childStdErr, buff, end - buff, &bytesRead, NULL);
+		else
+			bytesRead = 0;
+
+		if (bytesRead == 0)
 			break;
 
-		r[bytesRead] = 0;
+		buff[bytesRead] = 0;
 
 		char* p = buff;
 		while (true)
 		{
-			char endl = '\r';
-			char* pEndL = strchr(p, endl);
-			if (!pEndL)
-			{
-				endl = '\n';
-				pEndL = strchr(p, endl);
-			}
-			if (!pEndL && p == buff)
-			{
-				endl = 0;
-				pEndL = r + bytesRead;
-			}
-
+			char* pEndL = strchr(p, '\r');
 			if (pEndL)
 			{
-				*pEndL = 0;
-				uSvc->printf(false, "DE> %s\n", p);
-
-				if (endl == '\r' && (pEndL < r + bytesRead) && pEndL[1] == '\n')
+				pEndL++;
+				if (*pEndL == '\n')
 					pEndL++;
-
-				if (pEndL >= r + bytesRead)
-				{
-					p = r = buff;
-					break;
-				}
-
-				p = pEndL + 1;
 			}
-			else
+			else 
 			{
-				const size_t s = (r + bytesRead) - p;
-				memmove(buff, p, s);
-				p = buff;
-				r = p + s;
-				break;
+				pEndL = strchr(p, '\n');
+				if (pEndL)
+					pEndL++;
 			}
+			const bool eol = (pEndL != NULL);
+
+			if (!pEndL)
+				pEndL = buff + bytesRead;
+
+			char ch = *pEndL;
+			*pEndL = 0;
+
+			if (atNewLine)
+				uSvc->printf(false, "DE> %s", p);
+			else
+				uSvc->printf(false, "%s", p);
+
+			*pEndL = ch;
+			atNewLine = eol;
+
+			if (pEndL >= buff + bytesRead)
+				break;
+
+			p = pEndL;
 		}
 	}
 #endif
