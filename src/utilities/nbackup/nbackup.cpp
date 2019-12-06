@@ -354,7 +354,7 @@ private:
 	void seek_file(FILE_HANDLE &file, SINT64 pos);
 
 	void pr_error(const ISC_STATUS* status, const char* operation);
-	void print_child_error();
+	void print_child_stderr();
 
 	void internal_lock_database();
 	void get_database_size();
@@ -387,7 +387,7 @@ FB_SIZE_T NBackup::read_file(FILE_HANDLE &file, void *buffer, FB_SIZE_T bufsize)
 		// too much data to the pipe and overflow the pipe buffer.
 		const bool checkChild = (childStdErr > 0 && file == backup);
 		if (checkChild)
-			print_child_error();
+			print_child_stderr();
 
 		DWORD res;
 		if (!ReadFile(file, buffer, bufsize, &res, NULL))
@@ -395,7 +395,7 @@ FB_SIZE_T NBackup::read_file(FILE_HANDLE &file, void *buffer, FB_SIZE_T bufsize)
 			const DWORD err = GetLastError();
 			if (checkChild)
 			{
-				print_child_error();
+				print_child_stderr();
 
 				if (err == ERROR_BROKEN_PIPE)
 				{
@@ -792,7 +792,7 @@ void NBackup::close_backup()
 	CloseHandle(backup);
 	if (childId > 0)
 	{
-		print_child_error();
+		print_child_stderr();
 
 		if (WaitForSingleObject(childId, 5000) != WAIT_OBJECT_0)
 		{
@@ -853,7 +853,7 @@ void NBackup::pr_error(const ISC_STATUS* status, const char* operation)
 	status_exception::raise(Arg::Gds(isc_nbackup_err_db));
 }
 
-void NBackup::print_child_error()
+void NBackup::print_child_stderr()
 {
 #ifdef WIN_NT
 	// Read stderr of child process (decompressor) and print it at our stdout.
