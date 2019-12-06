@@ -661,7 +661,7 @@ class InternalCryptKey FB_FINAL :
 {
 public:
 	InternalCryptKey()
-		: t(getPool())
+		: keyName(getPool())
 	{ }
 
 	// ICryptKey implementation
@@ -696,7 +696,7 @@ public:
 	};
 
 	Key encrypt, decrypt;
-	Firebird::PathName t;
+	Firebird::PathName keyName;
 };
 
 
