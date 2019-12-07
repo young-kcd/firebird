@@ -792,18 +792,17 @@ void NBackup::close_backup()
 	CloseHandle(backup);
 	if (childId > 0)
 	{
-		print_child_stderr();
-
-		if (WaitForSingleObject(childId, 5000) != WAIT_OBJECT_0)
-		{
-			// report child still exist
+		const bool killed = (WaitForSingleObject(childId, 5000) != WAIT_OBJECT_0);
+		if (killed)
 			TerminateProcess(childId, 1);
-			status_exception::raise(Arg::Gds(isc_random) << "Child process seems hung. Killed");
-		}
 
+		print_child_stderr();
 		CloseHandle(childId);
 		CloseHandle(childStdErr);
-		childId = 0;
+		childId = childStdErr = 0;
+
+		if (killed)
+			status_exception::raise(Arg::Gds(isc_random) << "Child process seems hung. Killed");
 	}
 #else
 	close(backup);
