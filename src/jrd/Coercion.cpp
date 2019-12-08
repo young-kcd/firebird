@@ -68,6 +68,12 @@ void CoercionArray::setRule(const TypeClause* from, const TypeClause *to)
 	add(newRule);
 }
 
+void CoercionRule::raiseError()
+{
+	// Do not use ERR_post here - old error should be overwritten
+	(Arg::Gds(isc_bind_convert) << fromDsc.typeToText() << toDsc.typeToText()).raise();
+}
+
 void CoercionRule::setRule(const TypeClause* from, const TypeClause *to)
 {
 	fromMask = from->flags & FROM_MASK;
@@ -77,10 +83,32 @@ void CoercionRule::setRule(const TypeClause* from, const TypeClause *to)
 	DsqlDescMaker::fromField(&toDsc, to);
 
 	// Check for datatype compatibility
+
+	// No checks for special case
+	if (toMask & (FLD_native | FLD_legacy))
+		return;
+
+	// Exceptions - enable blob2blob & blob2string casts
+	if ((toDsc.dsc_dtype == dtype_blob && fromDsc.isText()) ||
+		(fromDsc.dsc_dtype == dtype_blob && toDsc.isText()) ||
+		(toDsc.isBlob() && fromDsc.isBlob()))
+	{
+		return;
+	}
+
+	// Disable the rest of casts with blobs
+	if (toDsc.isBlob() || fromDsc.isBlob())
+		raiseError();
+
+	// Generic check
 	const unsigned DATASIZE = 256;
 	UCHAR buf[DATASIZE * 2 + FB_ALIGNMENT];
 	memset(buf, 0, sizeof buf);
 	toDsc.dsc_address = FB_ALIGN(buf, FB_ALIGNMENT);
+	if (! (toMask & FLD_has_len))
+	{
+		toDsc.dsc_length = DATASIZE - 2;
+	}
 	fromDsc.dsc_address = toDsc.dsc_address + DATASIZE;
 
 	try
@@ -89,8 +117,7 @@ void CoercionRule::setRule(const TypeClause* from, const TypeClause *to)
 	}
 	catch(const Exception&)
 	{
-		// Do not use ERR_post here - old error to be overwritten
-		(Arg::Gds(isc_bind_convert) << fromDsc.typeToText() << toDsc.typeToText()).raise();
+		raiseError();
 	}
 }
 

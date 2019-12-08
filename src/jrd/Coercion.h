@@ -55,6 +55,7 @@ public:
 	bool operator==(const CoercionRule& rule) const;
 
 private:
+	void raiseError();
 	dsc fromDsc, toDsc;
 	USHORT fromMask, toMask;
 };
