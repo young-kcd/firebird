@@ -438,6 +438,11 @@ typedef struct dsc
 		clear();
 		dsc_dtype = dtype_varying;
 		dsc_length = sizeof(USHORT) + length;
+		if (dsc_length < length)
+		{
+			// overflow - avoid segfault
+			dsc_length = MAX_USHORT;
+		}
 		setTextType(ttype);
 		dsc_address = address;
 	}

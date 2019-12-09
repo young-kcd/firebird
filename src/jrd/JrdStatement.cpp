@@ -855,3 +855,19 @@ template <typename T> static void makeSubRoutines(thread_db* tdbb, JrdStatement*
 		statement->subStatements.add(subStatement);
 	}
 }
+
+
+#ifdef DEV_BUILD
+
+// Function is designed to be called from debugger to print subtree of current execution node
+
+const int devNodePrint(DmlNode* node)
+{
+	NodePrinter printer;
+	node->print(printer);
+	printf("\n%s\n\n\n", printer.getText().c_str());
+	fflush(stdout);
+	return 0;
+}
+#endif
+

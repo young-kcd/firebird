@@ -185,6 +185,7 @@ void setParamsSecondInteger(DataTypeUtilBase* dataTypeUtil, const SysFunction* f
 
 // helper functions for setParams
 void setParamVarying(dsc* param, USHORT textType, bool condition = false);
+bool dscHasData(const dsc* param);
 
 // specific setParams functions
 void setParamsAsciiVal(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
@@ -604,6 +605,9 @@ void setParamsDateDiff(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc
 
 void setParamVarying(dsc* param, USHORT textType, bool condition)
 {
+	if (!param)
+		return;
+
 	if (param->isUnknown() || condition)
 	{
 		USHORT l = param->getStringLength();
@@ -611,6 +615,12 @@ void setParamVarying(dsc* param, USHORT textType, bool condition)
 			l = 64;
 		param->makeVarying(l, textType);
 	}
+}
+
+
+bool dscHasData(const dsc* param)
+{
+	return param && (param->dsc_length > 0);
 }
 
 
@@ -2804,14 +2814,14 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 	FB_UINT64 ctrVal = 0;
 	if ((m && (m->code == MODE_CTR)) || (a && (a->code == ALG_CHACHA)))
 	{
-		if (dscs[CRYPT_ARG_COUNTER]->dsc_length)
+		if (dscHasData(dscs[CRYPT_ARG_COUNTER]))
 		{
 			ctrVal = MOV_get_int64(tdbb, dscs[CRYPT_ARG_COUNTER], 0);
 			if (m && ctrVal > key.getCount())
 				status_exception::raise(Arg::Gds(isc_tom_ctr_big) << Arg::Num(ctrVal) <<  Arg::Num(key.getCount()));
 		}
 	}
-	else if (dscs[CRYPT_ARG_COUNTER]->dsc_length)
+	else if (dscHasData(dscs[CRYPT_ARG_COUNTER]))
 			status_exception::raise(Arg::Gds(isc_tom_no_ctr) << (m ? "mode" : "cipher") << (m ? m->value : a->value));
 
 	// Run selected algorithm
@@ -3394,7 +3404,7 @@ dsc* evlRsaSign(thread_db* tdbb, const SysFunction* function, const NestValueArr
 		return nullptr;
 
 	SLONG saltLength = 8;
-	if (dscs[RSA_SIGN_ARG_SALTLEN]->dsc_length)
+	if (dscHasData(dscs[RSA_SIGN_ARG_SALTLEN]))
 	{
 		saltLength = MOV_get_long(tdbb, dscs[RSA_SIGN_ARG_SALTLEN], 0);
 		if (saltLength < 0 || saltLength > 32)
@@ -3468,7 +3478,7 @@ dsc* evlRsaVerify(thread_db* tdbb, const SysFunction* function, const NestValueA
 		return boolResult(tdbb, impure, false);
 
 	SLONG saltLength = 8;
-	if (dscs[RSA_VERIFY_ARG_SALTLEN]->dsc_length)
+	if (dscHasData(dscs[RSA_VERIFY_ARG_SALTLEN]))
 	{
 		saltLength = MOV_get_long(tdbb, dscs[RSA_VERIFY_ARG_SALTLEN], 0);
 		if (saltLength < 0 || saltLength > 32)
