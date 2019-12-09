@@ -1475,11 +1475,7 @@ void logAndDie(const char* text)
 {
 	gds__log(text);
 	Firebird::Syslog::Record(Firebird::Syslog::Error, text);
-#ifdef WIN_NT
-	exit(3);
-#else
 	abort();
-#endif
 }
 
 UCHAR sqlTypeToDscType(SSHORT sqlType)
