@@ -29,12 +29,12 @@ Special `TO` part format `LEGACY` is used when datatype, missing in previous FB 
 a way, understandable by old client software (may be with some data losses). The following coercions are done for
 legacy datatypes:
 
-| Native datatype | Legacy datatype |
-|---|---|
-| BOOLEAN | CHAR(5) |
-| DECFLOAT | DOUBLE PRECISION |
-| NUMERIC(38) | NUMERIC(18) |
-| TIME WITH TIME ZONE | TIME WITHOUT TIME ZONE |
+| Native datatype          | Legacy datatype             |
+|--------------------------|-----------------------------|
+| BOOLEAN                  | CHAR(5)                     |
+| DECFLOAT                 | DOUBLE PRECISION            |
+| NUMERIC(38)              | NUMERIC(18)                 |
+| TIME WITH TIME ZONE      | TIME WITHOUT TIME ZONE      |
 | TIMESTAMP WITH TIME ZONE | TIMESTAMP WITHOUT TIME ZONE |
 
 Setting `NATIVE` means `type` will be used as if there were no previous rules for it.
