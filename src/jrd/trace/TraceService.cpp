@@ -363,8 +363,8 @@ bool TraceSvcJrd::checkPrivileges(TraceSession& session)
 
 			try
 			{
-				mapUser(s_user, t_role, NULL, NULL, m_authBlock,
-					NULL, NULL, secDb, m_svc.getCryptCallback(), NULL);
+				mapUser(s_user, t_role, NULL, NULL, m_authBlock, "services manager", 
+					NULL, secDb, m_svc.getCryptCallback(), NULL);
 			}
 			catch (const Firebird::Exception&)
 			{
