@@ -137,6 +137,7 @@ public:
 	double			cost;
 	USHORT			nonFullMatchedSegments;
 	USHORT			matchedSegments;
+	USHORT			orderedSegments;
 	int				indexes;
 	int				dependencies;
 	BoolExprNode*	boolean;

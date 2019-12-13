@@ -326,6 +326,7 @@ InversionCandidate::InversionCandidate(MemoryPool& p) :
 	dependencies = 0;
 	nonFullMatchedSegments = MAX_INDEX_SEGMENTS + 1;
 	matchedSegments = 0;
+	orderedSegments = 0;
 	boolean = NULL;
 	condition = NULL;
 	inversion = NULL;
@@ -688,6 +689,7 @@ void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversi
 		}
 
 		bool usableIndex = true;
+		unsigned orderedSegments = 0;
 		const index_desc::idx_repeat* idx_tail = idx->idx_rpt;
 		const index_desc::idx_repeat* const idx_end = idx_tail + idx->idx_count;
 		NestConst<ValueExprNode>* ptr = sort->expressions.begin();
@@ -751,6 +753,8 @@ void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversi
 
 						if (segmentNumber >= equalSegments)
 							break;
+
+						++orderedSegments;
 					}
 
 					if (idx_tail >= idx_end || fieldNode->fieldId != idx_tail->idx_field)
@@ -799,6 +803,8 @@ void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversi
 				usableIndex = false;
 				break;
 			}
+
+			++orderedSegments;
 		}
 
 		if (!usableIndex)
@@ -814,6 +820,7 @@ void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversi
 			if ((*iter)->scratch == indexScratch)
 			{
 				candidate = *iter;
+				candidate->orderedSegments = orderedSegments;
 				break;
 			}
 		}
@@ -835,8 +842,11 @@ void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversi
 					{
 						if (candidate->matches.exist(*iter2))
 						{
-							usableIndex = betterInversion(candidate, otherCandidate);
-							break;
+							if (betterInversion(otherCandidate, candidate))
+							{
+								usableIndex = false;
+								break;
+							}
 						}
 					}
 				}
@@ -860,6 +870,7 @@ void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversi
 			candidate->cost = indexScratch->cardinality;
 			candidate->indexes = 1;
 			candidate->scratch = indexScratch;
+			candidate->orderedSegments = orderedSegments;
 			candidate->nonFullMatchedSegments = (int) indexScratch->segments.getCount();
 		}
 
@@ -870,7 +881,8 @@ void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversi
 	}
 }
 
-bool OptimizerRetrieval::betterInversion(const InversionCandidate* inv1, const InversionCandidate* inv2) const
+bool OptimizerRetrieval::betterInversion(const InversionCandidate* inv1,
+										 const InversionCandidate* inv2) const
 {
 	// Return true if inversion1 is *better* than inversion2.
 	// It's mostly about the retrieval cost, but other aspects are also taken into account.
@@ -927,17 +939,21 @@ bool OptimizerRetrieval::betterInversion(const InversionCandidate* inv1, const I
 
 				if (compareSelectivity == 0)
 				{
-					// For the same number of indexes compare number of matched segments.
-					// Note the inverted condition: the more matched segments the better.
-					compareSelectivity =
-						(inv2->matchedSegments - inv1->matchedSegments);
+					// For the same number of indexes compare number of ordered/matched segments.
+					// Note the inverted conditions: the more ordered/matched segments the better.
+					compareSelectivity = (inv2->orderedSegments - inv1->orderedSegments);
 
 					if (compareSelectivity == 0)
 					{
-						// For the same number of matched segments
-						// compare ones that aren't full matched
-						compareSelectivity =
-							(inv1->nonFullMatchedSegments - inv2->nonFullMatchedSegments);
+						compareSelectivity = (inv2->matchedSegments - inv1->matchedSegments);
+
+						if (compareSelectivity == 0)
+						{
+							// For the same number of matched segments
+							// compare ones that aren't full matched
+							compareSelectivity =
+								(inv1->nonFullMatchedSegments - inv2->nonFullMatchedSegments);
+						}
 					}
 				}
 
