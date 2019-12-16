@@ -175,6 +175,7 @@ void MonitoringData::detachSharedFile()
 
 void MonitoringData::acquire()
 {
+	m_localMutex.enter(FB_FUNCTION);
 	m_sharedMemory->mutexLock();
 
 	// Check for shared memory state consistency
@@ -208,11 +209,11 @@ void MonitoringData::acquire()
 		FbLocalStatus statusVector;
 		if (!m_sharedMemory->remapFile(&statusVector, m_sharedMemory->getHeader()->allocated, false))
 		{
-			m_sharedMemory->mutexUnlock();
+			release();
 			status_exception::raise(&statusVector);
 		}
 #else
-		m_sharedMemory->mutexUnlock();
+		release();
 		status_exception::raise(Arg::Gds(isc_montabexh));
 #endif
 	}
@@ -222,6 +223,7 @@ void MonitoringData::acquire()
 void MonitoringData::release()
 {
 	m_sharedMemory->mutexUnlock();
+	m_localMutex.leave();
 }
 
 

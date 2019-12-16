@@ -344,6 +344,7 @@ private:
 
 	Firebird::string m_dbId;
 	Firebird::AutoPtr<Firebird::SharedMemory<MonitoringHeader> > m_sharedMemory;
+	Firebird::Mutex m_localMutex;
 	bool m_sharedFileCreated;
 };
 
