@@ -3013,6 +3013,7 @@ COMMIT WORK;
 -- Do not change the arguments of the previous JRD_BUGCHK messages.
 -- Write the new JRD_BUGCHK messages here.
 (NULL, 'get_header', 'dpm.epp', NULL, 15, 307, NULL, 'RDB$PAGES written by non-system transaction, DB appears to be damaged', NULL, NULL);
+(NULL, 'BLB_get_segment', 'blb.cpp', NULL, 15, 308, NULL, 'cannot read from new BLOB', NULL, NULL);
 -- ISQL
 ('GEN_ERR', 'errmsg', 'isql.e', NULL, 17, 0, NULL, 'Statement failed, SQLSTATE = @1', NULL, NULL);
 ('USAGE', 'ISQL_main', 'isql.epp', NULL, 17, 1, NULL, 'usage:    isql [options] [<database>]', NULL, NULL);
