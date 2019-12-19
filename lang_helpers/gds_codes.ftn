@@ -1934,6 +1934,10 @@ C --
       PARAMETER (GDS__bind_statement                   = 335545260)
       INTEGER*4 GDS__bind_convert                    
       PARAMETER (GDS__bind_convert                     = 335545261)
+      INTEGER*4 GDS__cannot_update_old_blob          
+      PARAMETER (GDS__cannot_update_old_blob           = 335545262)
+      INTEGER*4 GDS__cannot_read_new_blob            
+      PARAMETER (GDS__cannot_read_new_blob             = 335545263)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

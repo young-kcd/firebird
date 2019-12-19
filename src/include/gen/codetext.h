@@ -963,6 +963,8 @@ static const struct {
 	{"bind_err", 335545259},
 	{"bind_statement", 335545260},
 	{"bind_convert", 335545261},
+	{"cannot_update_old_blob", 335545262},
+	{"cannot_read_new_blob", 335545263},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

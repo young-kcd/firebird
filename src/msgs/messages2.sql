@@ -1049,6 +1049,8 @@ Data source : @4', NULL, NULL)
 ('bind_err', NULL, 'jrd.cpp', NULL, 0, 939, NULL, 'Error processing isc_dpb_set_bind clumplet "@1"', NULL, NULL);
 ('bind_statement', NULL, 'jrd.cpp', NULL, 0, 940, NULL, 'The following statement failed: @1', NULL, NULL);
 ('bind_convert', NULL, 'Coercion.cpp', NULL, 0, 941, NULL, 'Can not convert @1 to @2', NULL, NULL);
+('cannot_update_old_blob', 'BLB_put_segment', 'blb.cpp', NULL, 0, 942, NULL, 'cannot update old BLOB', NULL, NULL);
+('cannot_read_new_blob', 'BLB_get_segment', 'blb.cpp', NULL, 0, 943, NULL, 'cannot read from new BLOB', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
@@ -3013,7 +3015,6 @@ COMMIT WORK;
 -- Do not change the arguments of the previous JRD_BUGCHK messages.
 -- Write the new JRD_BUGCHK messages here.
 (NULL, 'get_header', 'dpm.epp', NULL, 15, 307, NULL, 'RDB$PAGES written by non-system transaction, DB appears to be damaged', NULL, NULL);
-(NULL, 'BLB_get_segment', 'blb.cpp', NULL, 15, 308, NULL, 'cannot read from new BLOB', NULL, NULL);
 -- ISQL
 ('GEN_ERR', 'errmsg', 'isql.e', NULL, 17, 0, NULL, 'Statement failed, SQLSTATE = @1', NULL, NULL);
 ('USAGE', 'ISQL_main', 'isql.epp', NULL, 17, 1, NULL, 'usage:    isql [options] [<database>]', NULL, NULL);
