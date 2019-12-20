@@ -1274,7 +1274,7 @@ Data source : @4"},		/* eds_statement */
 	{336397254, "Invalid data type for division in dialect 3"},		/* dsql_invalid_type_div_dial3 */
 	{336397255, "Strings cannot be negated (applied the minus operator) in dialect 3"},		/* dsql_nostring_neg_dial3 */
 	{336397256, "Invalid data type for negation (minus operator)"},		/* dsql_invalid_type_neg */
-	{336397257, "Cannot have more than 255 items in DISTINCT list"},		/* dsql_max_distinct_items */
+	{336397257, "Cannot have more than 255 items in DISTINCT / UNION DISTINCT list"},		/* dsql_max_distinct_items */
 	{336397258, "ALTER CHARACTER SET @1 failed"},		/* dsql_alter_charset_failed */
 	{336397259, "COMMENT ON @1 failed"},		/* dsql_comment_on_failed */
 	{336397260, "CREATE FUNCTION @1 failed"},		/* dsql_create_func_failed */

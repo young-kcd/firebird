@@ -2765,7 +2765,7 @@ ERROR: Backup incomplete', NULL, NULL);
 ('dsql_nostring_neg_dial3',  'MAKE_desc', 'make.cpp', NULL, 13, 967, NULL, 'Strings cannot be negated (applied the minus operator) in dialect 3', NULL, NULL)
 ('dsql_invalid_type_neg', 'MAKE_desc', 'make.cpp', NULL, 13, 968, NULL, 'Invalid data type for negation (minus operator)', NULL, NULL)
 -- End of extras for isc_expression_eval_err
-('dsql_max_distinct_items', 'pass1_rse_impl', 'pass1.cpp', NULL, 13, 969, NULL, 'Cannot have more than 255 items in DISTINCT list', NULL, NULL);
+('dsql_max_distinct_items', 'pass1_rse_impl', 'pass1.cpp', NULL, 13, 969, NULL, 'Cannot have more than 255 items in DISTINCT / UNION DISTINCT list', NULL, NULL);
 ('dsql_alter_charset_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 970, NULL, 'ALTER CHARACTER SET @1 failed', NULL, NULL);
 ('dsql_comment_on_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 971, NULL, 'COMMENT ON @1 failed', NULL, NULL);
 ('dsql_create_func_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 972, NULL, 'CREATE FUNCTION @1 failed', NULL, NULL);
