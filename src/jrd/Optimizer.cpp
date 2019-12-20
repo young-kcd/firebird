@@ -839,7 +839,7 @@ void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversi
 					{
 						if (candidate->matches.exist(*iter2))
 						{
-							if (betterInversion(otherCandidate, candidate, false))
+							if (betterInversion(otherCandidate, candidate, true))
 							{
 								usableIndex = false;
 								break;
