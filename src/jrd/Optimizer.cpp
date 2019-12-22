@@ -1395,13 +1395,15 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 		iter != inversions->end(); ++iter)
 	{
 		InversionCandidate* const inversion = *iter;
-
-		inversion->used = (inversion == navigationCandidate);
-
 		const IndexScratch* const indexScratch = inversion->scratch;
 
-		if (indexScratch &&
-			(indexScratch->idx->idx_runtime_flags & idx_plan_dont_use))
+		// If the explicit plan doesn't mention this index, fake it as used
+		// thus excluding it from the cost-based algorithm. Otherwise,
+		// given this index is suitable for navigation, also mark it as used.
+
+		if ((indexScratch &&
+			(indexScratch->idx->idx_runtime_flags & idx_plan_dont_use)) ||
+			(!customPlan && inversion == navigationCandidate))
 		{
 			inversion->used = true;
 		}
