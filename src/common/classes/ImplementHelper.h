@@ -380,14 +380,14 @@ typedef GlobalPtr<UnloadDetectorHelper, InstanceControl::PRIORITY_DETECT_UNLOAD>
 UnloadDetectorHelper* getUnloadDetector();
 
 // Generic status checker
-inline void check(IStatus* status)
+inline void check(IStatus* status, ISC_STATUS exclude = 0)
 {
 	if (status->getState() & IStatus::STATE_ERRORS)
 	{
-		status_exception::raise(status);
+		if (status->getErrors()[1] != exclude)
+			status_exception::raise(status);
 	}
 }
-
 
 // Config keys cache
 class ConfigKeys : private HalfStaticArray<unsigned int, 8>

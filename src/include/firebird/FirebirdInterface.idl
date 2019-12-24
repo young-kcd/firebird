@@ -822,6 +822,10 @@ interface WireCryptPlugin : PluginBase
 	void setKey(Status status, CryptKey key);
 	void encrypt(Status status, uint length, const void* from, void* to);
 	void decrypt(Status status, uint length, const void* from, void* to);
+
+version:
+	const uchar* getSpecificData(Status status, const string keyType, uint* length);
+	void setSpecificData(Status status, const string keyType, uint length, const uchar* data);
 }
 
 

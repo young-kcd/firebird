@@ -3276,6 +3276,8 @@ namespace Firebird
 			void (CLOOP_CARG *setKey)(IWireCryptPlugin* self, IStatus* status, ICryptKey* key) throw();
 			void (CLOOP_CARG *encrypt)(IWireCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw();
 			void (CLOOP_CARG *decrypt)(IWireCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw();
+			const unsigned char* (CLOOP_CARG *getSpecificData)(IWireCryptPlugin* self, IStatus* status, const char* keyType, unsigned* length) throw();
+			void (CLOOP_CARG *setSpecificData)(IWireCryptPlugin* self, IStatus* status, const char* keyType, unsigned length, const unsigned char* data) throw();
 		};
 
 	protected:
@@ -3289,7 +3291,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static const unsigned VERSION = 5;
 
 		template <typename StatusType> const char* getKnownTypes(StatusType* status)
 		{
@@ -3317,6 +3319,33 @@ namespace Firebird
 		{
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->decrypt(this, status, length, from, to);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> const unsigned char* getSpecificData(StatusType* status, const char* keyType, unsigned* length)
+		{
+			if (cloopVTable->version < 5)
+			{
+				StatusType::setVersionError(status, "IWireCryptPlugin", cloopVTable->version, 5);
+				StatusType::checkException(status);
+				return 0;
+			}
+			StatusType::clearException(status);
+			const unsigned char* ret = static_cast<VTable*>(this->cloopVTable)->getSpecificData(this, status, keyType, length);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> void setSpecificData(StatusType* status, const char* keyType, unsigned length, const unsigned char* data)
+		{
+			if (cloopVTable->version < 5)
+			{
+				StatusType::setVersionError(status, "IWireCryptPlugin", cloopVTable->version, 5);
+				StatusType::checkException(status);
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->setSpecificData(this, status, keyType, length, data);
 			StatusType::checkException(status);
 		}
 	};
@@ -12714,6 +12743,8 @@ namespace Firebird
 					this->setKey = &Name::cloopsetKeyDispatcher;
 					this->encrypt = &Name::cloopencryptDispatcher;
 					this->decrypt = &Name::cloopdecryptDispatcher;
+					this->getSpecificData = &Name::cloopgetSpecificDataDispatcher;
+					this->setSpecificData = &Name::cloopsetSpecificDataDispatcher;
 				}
 			} vTable;
 
@@ -12770,6 +12801,35 @@ namespace Firebird
 			try
 			{
 				static_cast<Name*>(self)->Name::decrypt(&status2, length, from, to);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static const unsigned char* CLOOP_CARG cloopgetSpecificDataDispatcher(IWireCryptPlugin* self, IStatus* status, const char* keyType, unsigned* length) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getSpecificData(&status2, keyType, length);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<const unsigned char*>(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopsetSpecificDataDispatcher(IWireCryptPlugin* self, IStatus* status, const char* keyType, unsigned length, const unsigned char* data) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::setSpecificData(&status2, keyType, length, data);
 			}
 			catch (...)
 			{
@@ -12845,6 +12905,8 @@ namespace Firebird
 		virtual void setKey(StatusType* status, ICryptKey* key) = 0;
 		virtual void encrypt(StatusType* status, unsigned length, const void* from, void* to) = 0;
 		virtual void decrypt(StatusType* status, unsigned length, const void* from, void* to) = 0;
+		virtual const unsigned char* getSpecificData(StatusType* status, const char* keyType, unsigned* length) = 0;
+		virtual void setSpecificData(StatusType* status, const char* keyType, unsigned length, const unsigned char* data) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

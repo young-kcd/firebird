@@ -739,6 +739,59 @@ public:
 };
 
 
+
+// Type of known by server key, received from it by client
+class KnownServerKey : public Firebird::AutoStorage
+{
+public:
+	Firebird::PathName type, plugins;
+	typedef Firebird::Pair<Firebird::Full<Firebird::PathName, Firebird::UCharBuffer> > PluginSpecific;
+	Firebird::ObjectsArray<PluginSpecific> specificData;
+
+	KnownServerKey()
+		: Firebird::AutoStorage(), type(getPool()), plugins(getPool()), specificData(getPool())
+	{ }
+
+	explicit KnownServerKey(Firebird::MemoryPool& p)
+		: Firebird::AutoStorage(p), type(getPool()), plugins(getPool()), specificData(getPool())
+	{ }
+
+	KnownServerKey(Firebird::MemoryPool& p, const KnownServerKey& v)
+		: Firebird::AutoStorage(p), type(getPool(), v.type), plugins(getPool(), v.plugins),
+		  specificData(getPool(), v.specificData)
+	{ }
+
+	void addSpecificData(const Firebird::PathName& plugin, unsigned len, const void* data)
+	{
+		PluginSpecific& p = specificData.add();
+		p.first = plugin;
+		memcpy(p.second.getBuffer(len), data, len);
+	}
+
+	const Firebird::UCharBuffer* findSpecificData(const Firebird::PathName& plugin) const
+	{
+		for (unsigned i = 0; i < specificData.getCount(); ++i)
+		{
+			//KnownServerKey::PluginSpecific& p = specificData[i];
+			auto& p = specificData[i];
+			if (p.first == plugin)
+				return &p.second;
+		}
+		return nullptr;
+	}
+
+private:
+	KnownServerKey(const KnownServerKey&);
+	KnownServerKey& operator=(const KnownServerKey&);
+};
+
+// Tags for clumplets, passed from server to client
+const UCHAR TAG_KEY_TYPE		= 0;
+const UCHAR TAG_KEY_PLUGINS		= 1;
+const UCHAR TAG_KNOWN_PLUGINS	= 2;
+const UCHAR TAG_PLUGIN_SPECIFIC	= 3;
+
+
 typedef Firebird::GetPlugins<Firebird::IClient> AuthClientPlugins;
 
 // Representation of authentication data, visible for plugin
@@ -765,6 +818,7 @@ private:
 
 	FB_BOOLEAN loadInfo();
 };
+
 
 class ClntAuthBlock FB_FINAL :
 	public Firebird::RefCntIface<Firebird::IClientBlockImpl<ClntAuthBlock, Firebird::CheckStatusWrapper> >
@@ -888,34 +942,6 @@ public:
 	Firebird::ICryptKey* newKey(Firebird::CheckStatusWrapper* status);
 };
 
-
-// Type of known by server key, received from it by client
-class KnownServerKey : public Firebird::AutoStorage
-{
-public:
-	Firebird::PathName type, plugins;
-
-	KnownServerKey()
-		: Firebird::AutoStorage(), type(getPool()), plugins(getPool())
-	{ }
-
-	explicit KnownServerKey(Firebird::MemoryPool& p)
-		: Firebird::AutoStorage(p), type(getPool()), plugins(getPool())
-	{ }
-
-	KnownServerKey(Firebird::MemoryPool& p, const KnownServerKey& v)
-		: Firebird::AutoStorage(p), type(getPool(), v.type), plugins(getPool(), v.plugins)
-	{ }
-
-private:
-	KnownServerKey(const KnownServerKey&);
-	KnownServerKey& operator=(const KnownServerKey&);
-};
-
-// Tags for clumplets, passed from server to client
-const UCHAR TAG_KEY_TYPE		= 0;
-const UCHAR TAG_KEY_PLUGINS		= 1;
-const UCHAR TAG_KNOWN_PLUGINS	= 2;
 
 const signed char WIRECRYPT_BROKEN		= -1;
 const signed char WIRECRYPT_DISABLED	= 0;
@@ -1294,8 +1320,14 @@ public:
 
 	Firebird::string getRemoteId() const;
 	void auxAcceptError(PACKET* packet);
+
+	// Working with 'key/plugin' pairs and associated plugin specific data
 	void addServerKeys(CSTRING* str);
+	void addSpecificData(const Firebird::PathName& type, const Firebird::PathName& plugin,
+		unsigned length, const void* data);
+	const Firebird::UCharBuffer* findSpecificData(const Firebird::PathName& type, const Firebird::PathName& plugin);
 	bool tryNewKey(InternalCryptKey* cryptKey);
+
 	void checkResponse(Firebird::IStatus* warning, PACKET* packet, bool checkKeys = false);
 
 private:

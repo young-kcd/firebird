@@ -1147,27 +1147,36 @@ void rem_port::addServerKeys(CSTRING* passedStr)
 	Firebird::ClumpletReader newKeys(Firebird::ClumpletReader::UnTagged,
 									 passedStr->cstr_address, passedStr->cstr_length);
 
+	Firebird::PathName type, plugins, plugin;
+	unsigned len;
+	KnownServerKey* currentKey = nullptr;
 	for (newKeys.rewind(); !newKeys.isEof(); newKeys.moveNext())
 	{
-		if (newKeys.getClumpTag() == TAG_KNOWN_PLUGINS)
+		switch(newKeys.getClumpTag())
 		{
-			continue;
-		}
-
-		KnownServerKey key;
-		fb_assert(newKeys.getClumpTag() == TAG_KEY_TYPE);
-		newKeys.getPath(key.type);
-		newKeys.moveNext();
-		if (newKeys.isEof())
-		{
+		case TAG_KEY_TYPE:
+			newKeys.getPath(type);
+			break;
+		case TAG_KEY_PLUGINS:
+			newKeys.getPath(plugins);
+			plugins += ' ';
+			plugins.insert(0, " ");
+			currentKey = &port_known_server_keys.add();
+			currentKey->type = type;
+			currentKey->plugins = plugins;
+			break;
+		case TAG_PLUGIN_SPECIFIC:
+			plugin.assign(newKeys.getBytes(), newKeys.getClumpLength());
+			len = strlen(plugin.c_str()) + 1;
+			if (len < plugin.length())
+			{
+				const char* data = &plugin[len];
+				len = plugin.length() - len;
+				plugin.recalculate_length();
+				currentKey->addSpecificData(plugin, len, data);
+			}
 			break;
 		}
-		fb_assert(newKeys.getClumpTag() == TAG_KEY_PLUGINS);
-		newKeys.getPath(key.plugins);
-		key.plugins += ' ';
-		key.plugins.insert(0, " ");
-
-		port_known_server_keys.add(key);
 	}
 }
 
@@ -1218,16 +1227,26 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 				Firebird::LocalStatus st;
 				Firebird::CheckStatusWrapper statusWrapper(&st);
 
-				// Looks like we've found correct crypt plugin and key for it
-				port_crypt_plugin = cp.plugin();
-				port_crypt_plugin->addRef();
+				// Pass IV to plugin
+				//const Firebird::UCharBuffer* specificData = srvKey.findSpecificData(p);
+				auto* specificData = srvKey.findSpecificData(p);
+				if (specificData)
+				{
+					cp.plugin()->setSpecificData(&statusWrapper, srvKey.type.c_str(),
+						specificData->getCount(), specificData->begin());
+					check(&st, isc_wish_list);
+				}
 
 				// Pass key to plugin
-				port_crypt_plugin->setKey(&statusWrapper, cryptKey);
+				cp.plugin()->setKey(&statusWrapper, cryptKey);
 				if (st.getState() & Firebird::IStatus::STATE_ERRORS)
 				{
 					Firebird::status_exception::raise(&st);
 				}
+
+				// Looks like we've found correct crypt plugin and key for it
+				port_crypt_plugin = cp.plugin();
+				port_crypt_plugin->addRef();
 
 				// Now it's time to notify server about choice done
 				// Notice - port_crypt_complete flag is not set still,
