@@ -27,7 +27,10 @@
 #define STRINGIZE(x)		STRINGIZE_AUX(x)
 
 
-#ifdef RC_TARGET_engine13
+#ifdef RC_TARGET_chacha
+#define VER_FILEDESC "Wire Encryption plugin using ChaCha cypher"
+
+#elif RC_TARGET_engine13
 #define VER_FILEDESC "Engine plugin"
 
 #elif defined RC_TARGET_fb_lock_print
