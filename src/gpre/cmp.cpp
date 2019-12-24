@@ -756,7 +756,7 @@ static void cmp_field( gpre_req* request, const gpre_fld* field,
 	switch (field->fld_dtype)
 	{
 	case dtype_cstring:
-		if (!(field->fld_flags & FLD_charset) && field->fld_ttype)
+		if (!(field->fld_flags & FLD_charset) && field->fld_ttype && field->fld_ttype != CS_BINARY)
 		{
 			request->add_byte(blr_cstring);
 			request->add_word(field->fld_length);
