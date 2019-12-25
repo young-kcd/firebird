@@ -218,6 +218,14 @@ typedef struct dsc
 		return isc_blob_text;
 	}
 
+	SSHORT getSubType() const
+	{
+		if (isBlob() || isExact())
+			return dsc_sub_type;
+
+		return 0;
+	}
+
 	void setBlobSubType(SSHORT subType)
 	{
 		if (isBlob())

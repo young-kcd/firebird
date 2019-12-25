@@ -4649,18 +4649,21 @@ non_charset_simple_type
 
 			$$->dtype = dtype_int64;
 			$$->length = sizeof(SINT64);
+			$$->flags |= FLD_has_len;
 		}
 	| integer_keyword
 		{
 			$$ = newNode<dsql_fld>();
 			$$->dtype = dtype_long;
 			$$->length = sizeof(SLONG);
+			$$->flags |= FLD_has_len;
 		}
 	| SMALLINT
 		{
 			$$ = newNode<dsql_fld>();
 			$$->dtype = dtype_short;
 			$$->length = sizeof(SSHORT);
+			$$->flags |= FLD_has_len;
 		}
 	| DATE
 		{
@@ -4960,11 +4963,13 @@ numeric_type
 		{
 			$$ = $2;
 			$$->subType = dsc_num_type_numeric;
+			$$->flags |= FLD_has_sub;
 		}
 	| decimal_keyword prec_scale
 		{
 			$$ = $2;
 			$$->subType = dsc_num_type_decimal;
+			$$->flags |= FLD_has_sub;
 
 			if ($$->dtype == dtype_short)
 			{

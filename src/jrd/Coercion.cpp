@@ -144,7 +144,7 @@ bool CoercionRule::match(const dsc* d) const
 		(d->dsc_dtype == fromDsc.dsc_dtype) &&
 		((d->dsc_length == fromDsc.dsc_length) || (!(fromMask & FLD_has_len))) &&
 		((d->getCharSet() == fromDsc.getCharSet()) || (!(fromMask & FLD_has_chset))) &&
-		((d->getBlobSubType() == fromDsc.getBlobSubType()) || (!(fromMask & FLD_has_sub))) &&
+		((d->getSubType() == fromDsc.getSubType()) || (!(fromMask & FLD_has_sub))) &&
 		((d->dsc_scale == fromDsc.dsc_scale) || (!(fromMask & FLD_has_scale))))
 	{
 		found = true;
@@ -158,10 +158,16 @@ bool CoercionRule::match(const dsc* d) const
 		case dtype_dec64:
 		case dtype_dec128:
 			if (d->dsc_dtype == dtype_dec64 || d->dsc_dtype == dtype_dec128)
-			{
 				found = true;
-				break;
-			}
+			break;
+
+		case dtype_short:
+		case dtype_long:
+		case dtype_int64:
+		case dtype_int128:
+			if (d->isExact() && (fromMask & FLD_has_sub) && (d->dsc_sub_type != dsc_num_type_none))
+				found = true;
+			break;
 		}
 	}
 
