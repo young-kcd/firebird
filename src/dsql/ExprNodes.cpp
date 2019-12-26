@@ -7304,7 +7304,7 @@ static RegisterNode<LiteralNode> regLiteralNode(blr_literal);
 
 LiteralNode::LiteralNode(MemoryPool& pool)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_LITERAL>(pool),
-	  dsqlStr(NULL)
+	  dsqlStr(NULL), litNumStringLength(0)
 {
 	litDesc.clear();
 }
@@ -7444,20 +7444,19 @@ void LiteralNode::genNegZero(DsqlCompilerScratch* dsqlScratch, int prec)
 	dsc desc;
 	desc.dsc_dtype = dtype_double;
 	desc.dsc_scale = 0;
-	desc.dsc_sub_type = static_cast<SSHORT>(s - buf);	// Keep length in sub_type which is unused
 	desc.dsc_length = sizeof(double);
 	desc.dsc_address = (UCHAR*) buf;
 
 	GEN_descriptor(dsqlScratch, &desc, true);
 
-	const USHORT len = desc.dsc_sub_type;
+	const USHORT len = static_cast<SSHORT>(s - buf);
 	dsqlScratch->appendUShort(len);
 	if (len)
 		dsqlScratch->appendBytes(desc.dsc_address, len);
 }
 
 // Generate BLR for a constant.
-void LiteralNode::genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool negateValue)
+void LiteralNode::genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool negateValue, USHORT numStringLength)
 {
 	SLONG value;
 	SINT64 i64value;
@@ -7527,19 +7526,16 @@ void LiteralNode::genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc,
 
 			GEN_descriptor(dsqlScratch, desc, true);
 
-			// Length of string literal - keep it in sub_type which is unused
-			const USHORT l = desc->dsc_sub_type;
-
 			if (negateValue)
 			{
-				dsqlScratch->appendUShort(l + 1);
+				dsqlScratch->appendUShort(numStringLength + 1);
 				dsqlScratch->appendUChar('-');
 			}
 			else
-				dsqlScratch->appendUShort(l);
+				dsqlScratch->appendUShort(numStringLength);
 
-			if (l)
-				dsqlScratch->appendBytes(p, l);
+			if (numStringLength)
+				dsqlScratch->appendBytes(p, numStringLength);
 
 			break;
 		}
@@ -7748,7 +7744,7 @@ void LiteralNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	if (litDesc.dsc_dtype == dtype_text)
 		litDesc.dsc_length = dsqlStr->getString().length();
 
-	genConstant(dsqlScratch, &litDesc, false);
+	genConstant(dsqlScratch, &litDesc, false, litNumStringLength);
 }
 
 void LiteralNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
@@ -8632,7 +8628,7 @@ void NegateNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	LiteralNode* literal = nodeAs<LiteralNode>(arg);
 
 	if (literal && DTYPE_IS_NUMERIC(literal->litDesc.dsc_dtype))
-		LiteralNode::genConstant(dsqlScratch, &literal->litDesc, true);
+		LiteralNode::genConstant(dsqlScratch, &literal->litDesc, true, literal->litNumStringLength);
 	else
 	{
 		dsqlScratch->appendUChar(blr_negate);

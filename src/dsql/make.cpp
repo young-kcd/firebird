@@ -205,7 +205,7 @@ ValueExprNode* MAKE_constant(const char* str, dsql_constant_type numeric_flag, S
 			{
 				ERRD_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_num_literal));
 			}
-			literal->litDesc.dsc_sub_type = static_cast<SSHORT>(l);	// Keep length in sub_type which is unused
+			literal->litNumStringLength = static_cast<USHORT>(l);
 			literal->litDesc.dsc_length = numeric_flag == CONSTANT_DOUBLE ? sizeof(double) :
 				numeric_flag == CONSTANT_DECIMAL ? sizeof(Decimal128) : sizeof(Int128);
 			literal->litDesc.dsc_address = (UCHAR*) str;

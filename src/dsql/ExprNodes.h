@@ -899,7 +899,7 @@ public:
 	explicit LiteralNode(MemoryPool& pool);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
-	static void genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool negateValue);
+	static void genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool negateValue, USHORT numStringLength = 0);
 	static void genNegZero(DsqlCompilerScratch* dsqlScratch, int prec);
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
@@ -928,6 +928,7 @@ public:
 public:
 	const IntlString* dsqlStr;
 	dsc litDesc;
+	USHORT litNumStringLength;
 };
 
 
