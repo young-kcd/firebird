@@ -114,7 +114,8 @@ enum rec_type {
 	rec_collation,			// Collations
 	rec_sql_roles,			// SQL roles
 	rec_mapping,			// Mapping of security names
-	rec_package				// Package
+	rec_package,			// Package
+	rec_db_creator			// Database creator
 };
 
 
@@ -625,7 +626,11 @@ enum att_type {
 	att_package_security_class,
 	att_package_owner_name,
 	att_package_description,
-	att_package_sql_security
+	att_package_sql_security,
+
+	// Database creators
+	att_dbc_user = SERIES,
+	att_dbc_type
 };
 
 
@@ -1098,6 +1103,7 @@ public:
 	Firebird::IRequest*	handles_get_security_class_req_handle1;
 	Firebird::IRequest*	handles_get_sql_roles_req_handle1;
 	Firebird::IRequest*	handles_get_mapping_req_handle1;
+	Firebird::IRequest* handles_db_creators_req_handle1;
 	Firebird::IRequest*	handles_get_trigger_message_req_handle1;
 	Firebird::IRequest*	handles_get_trigger_message_req_handle2;
 	Firebird::IRequest*	handles_get_trigger_old_req_handle1;
@@ -1154,6 +1160,7 @@ public:
 	ULONG verboseInterval;	// How many records should be backed up or restored before we show this message
 	bool flag_on_line;		// indicates whether we will bring the database on-line
 	bool firstMap;			// this is the first time we entered get_mapping()
+	bool firstDbc;			// this is the first time we entered get_db_creators()
 	bool stdIoMode;			// stdin or stdout is used as backup file
 	Firebird::AutoPtr<Firebird::SimilarToRegex> skipDataMatcher;
 	Firebird::AutoPtr<Firebird::SimilarToRegex> includeDataMatcher;

@@ -2553,6 +2553,11 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'burp_usage', 'burp.c', NULL, 12, 388, NULL, '    @1INCLUDE(_DATA)       backup data of table(s)', NULL, NULL);
 (NULL, NULL, 'burp.cpp', NULL, 12, 389, NULL, 'missing regular expression to include tables', NULL, NULL);
 (NULL, NULL, 'burp.cpp', NULL, 12, 390, NULL, 'regular expression to include tables was already set', NULL, NULL);
+(NULL, 'BACKUP_backup', 'backup.epp', NULL, 12, 391, NULL, 'writing database create grants', NULL, NULL);
+(NULL, 'write_db_creators', 'backup.epp', NULL, 12, 392, NULL, '    database create grant for @1', NULL, NULL);
+(NULL, 'get_db_creators', 'restore.epp', NULL, 12, 393, NULL, '    restoring database create grant for @1', NULL, NULL);
+(NULL, 'get_db_creators', 'restore.epp', NULL, 12, 394, NULL, 'restoring database create grants', NULL, NULL);
+(NULL, 'get_db_creators', 'restore.epp', NULL, 12, 395, NULL, 'database create grant', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);
