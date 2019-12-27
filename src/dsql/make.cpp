@@ -199,6 +199,8 @@ ValueExprNode* MAKE_constant(const char* str, dsql_constant_type numeric_flag, S
 		{
 			literal->litDesc.dsc_dtype = numeric_flag == CONSTANT_DOUBLE ? dtype_double :
 				numeric_flag == CONSTANT_DECIMAL ? dtype_dec128 : dtype_int128;
+			if (numeric_flag == CONSTANT_NUM128)
+				literal->litDesc.dsc_sub_type = dsc_num_type_decimal;
 			literal->litDesc.dsc_scale = scale;
 			size_t l = strlen(str);
 			if (l > MAX_SSHORT)

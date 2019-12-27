@@ -7449,7 +7449,7 @@ void LiteralNode::genNegZero(DsqlCompilerScratch* dsqlScratch, int prec)
 
 	GEN_descriptor(dsqlScratch, &desc, true);
 
-	const USHORT len = static_cast<SSHORT>(s - buf);
+	const USHORT len = static_cast<USHORT>(s - buf);
 	dsqlScratch->appendUShort(len);
 	if (len)
 		dsqlScratch->appendBytes(desc.dsc_address, len);

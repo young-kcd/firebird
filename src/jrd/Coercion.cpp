@@ -137,28 +137,25 @@ bool CoercionRule::operator==(const CoercionRule& rule) const
 
 bool CoercionRule::match(const dsc* d) const
 {
-	bool found = false;
-
 	// check for exact match (taking flags into an account)
-	if ((!found) &&
-		(d->dsc_dtype == fromDsc.dsc_dtype) &&
+	if ((d->dsc_dtype == fromDsc.dsc_dtype) &&
 		((d->dsc_length == fromDsc.dsc_length) || (!(fromMask & FLD_has_len))) &&
 		((d->getCharSet() == fromDsc.getCharSet()) || (!(fromMask & FLD_has_chset))) &&
 		((d->getSubType() == fromDsc.getSubType()) || (!(fromMask & FLD_has_sub))) &&
 		((d->dsc_scale == fromDsc.dsc_scale) || (!(fromMask & FLD_has_scale))))
 	{
-		found = true;
+		return true;
 	}
 
 	// check for inexact datatype match when FLD_has_len is not set
-	if ((!found) && (!(fromMask & FLD_has_len)))
+	if (!(fromMask & FLD_has_len))
 	{
 		switch(fromDsc.dsc_dtype)
 		{
 		case dtype_dec64:
 		case dtype_dec128:
 			if (d->dsc_dtype == dtype_dec64 || d->dsc_dtype == dtype_dec128)
-				found = true;
+				return true;
 			break;
 
 		case dtype_short:
@@ -166,12 +163,19 @@ bool CoercionRule::match(const dsc* d) const
 		case dtype_int64:
 		case dtype_int128:
 			if (d->isExact() && (fromMask & FLD_has_sub) && (d->dsc_sub_type != dsc_num_type_none))
-				found = true;
+				return true;
 			break;
 		}
 	}
 
-	return found;
+	// ignore minor decimal/numeric difference
+	if (fromDsc.isExact() && (fromMask & FLD_has_sub) &&
+		(fromDsc.dsc_dtype == d->dsc_dtype) && (d->dsc_sub_type != dsc_num_type_none))
+	{
+		return true;
+	}
+
+	return false;
 }
 
 bool CoercionRule::coerce(dsc* d) const

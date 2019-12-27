@@ -24,6 +24,9 @@ When incomplete type definition is used (i.e. `CHAR` instead `CHAR(n)`) in left 
 will take place for all `CHAR` columns, not only default `CHAR(1)`.
 When incomplete type definiton is used in right side of the statement (TO part) firebird engine will define missing
 details about that type automatically based on source column.
+From this statement POV there is no difference between NUMERIC and DECIMAL datatypes. Changing bind of any NUMERIC
+does not affect appropriate underlying integer type. On contrary, changing bind of integer datatype also affects
+appropriate NUMERICs.
 
 Special `TO` part format `LEGACY` is used when datatype, missing in previous FB version, should be represented in
 a way, understandable by old client software (may be with some data losses). The following coercions are done for
