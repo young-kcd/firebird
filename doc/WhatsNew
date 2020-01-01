@@ -250,7 +250,7 @@
     * Bugfix CORE-5966
         Slow performance when executing SQL scripts as non-SYSDBA user
       Contributor(s):
-        Alex Peshkov <dimitr at firebirdsql.org>
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-5965
         FB 3.0 optimizer chooses less efficient plan than FB 2.5 optimizer
