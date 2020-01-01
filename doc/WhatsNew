@@ -173,7 +173,7 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-6027
-        Server hang on new attachment right after trace session stop
+        Server hangs on new attachment right after trace session stop
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
@@ -250,7 +250,7 @@
     * Bugfix CORE-5966
         Slow performance when executing SQL scripts as non-SYSDBA user
       Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
+        Alex Peshkov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-5965
         FB 3.0 optimizer chooses less efficient plan than FB 2.5 optimizer
