@@ -7615,6 +7615,7 @@ static void init(CheckStatusWrapper* status, ClntAuthBlock& cBlock, rem_port* po
 		authFillParametersBlock(cBlock, dpb, ps, port);
 
 		port->port_client_crypt_callback = cryptCallback;
+		cBlock.createCryptCallback(&port->port_client_crypt_callback);
 
 		// Make attach packet
 		P_ATCH* attach = &packet->p_atch;
@@ -8735,7 +8736,8 @@ ClntAuthBlock::ClntAuthBlock(const Firebird::PathName* fileName, Firebird::Clump
 	  cliUserName(getPool()), cliPassword(getPool()), cliOrigUserName(getPool()),
 	  dataForPlugin(getPool()), dataFromPlugin(getPool()),
 	  cryptKeys(getPool()), dpbConfig(getPool()), dpbPlugins(getPool()),
-	  plugins(IPluginManager::TYPE_AUTH_CLIENT), authComplete(false), firstTime(true)
+	  plugins(IPluginManager::TYPE_AUTH_CLIENT), authComplete(false), firstTime(true),
+	  createdInterface(nullptr)
 {
 	if (dpb && tags)
 	{
@@ -8984,4 +8986,65 @@ void ClntAuthBlock::releaseKeys(unsigned from)
 	{
 		delete cryptKeys[from++];
 	}
+}
+
+void ClntAuthBlock::createCryptCallback(Firebird::ICryptKeyCallback** callback)
+{
+	if (*callback)
+		return;
+
+	*callback = clientCrypt.create(clntConfig);
+	if (*callback)
+		createdInterface = callback;
+}
+
+Firebird::ICryptKeyCallback* ClntAuthBlock::ClientCrypt::create(const Config* conf)
+{
+	pluginItr.set(conf);
+
+	return pluginItr.hasData() ? this : nullptr;
+}
+
+unsigned ClntAuthBlock::ClientCrypt::callback(unsigned dlen, const void* data, unsigned blen, void* buffer)
+{
+	HANDSHAKE_DEBUG(fprintf(stderr, "dlen=%d blen=%d\n", dlen, blen));
+
+	int loop = 0;
+	while (loop < 2)
+	{
+		for (; pluginItr.hasData(); pluginItr.next())
+		{
+			if (!currentIface)
+			{
+				LocalStatus ls;
+				CheckStatusWrapper st(&ls);
+
+				HANDSHAKE_DEBUG(fprintf(stderr, "Try plugin %s\n", pluginItr.name()));
+				currentIface = pluginItr.plugin()->chainHandle(&st);
+				// if plugin does not support chaining - silently ignore it
+				check(&st, isc_wish_list);
+				HANDSHAKE_DEBUG(fprintf(stderr, "Use plugin %s, ptr=%p\n", pluginItr.name(), currentIface));
+			}
+
+			// if we have an iface - try it
+			if (currentIface)
+			{
+				unsigned retlen = currentIface->callback(dlen, data, blen, buffer);
+				HANDSHAKE_DEBUG(fprintf(stderr, "Iface %p returned %d\n", currentIface, retlen));
+				if (retlen)
+					return retlen;
+			}
+
+			// no success with iface - clear it
+			// appropriate data structures to be released by plugin cleanup code
+			currentIface = nullptr;
+		}
+
+		++loop;
+		// prepare iterator for next use
+		pluginItr.rewind();
+	}
+
+	// no luck with suggested data
+	return 0;
 }

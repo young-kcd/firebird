@@ -837,6 +837,26 @@ private:
 	Firebird::AutoPtr<RmtAuthBlock> remAuthBlock;	//Authentication block if present
 	unsigned nextKey;							// First key to be analyzed
 
+	class ClientCrypt FB_FINAL :
+		public Firebird::VersionedIface<Firebird::ICryptKeyCallbackImpl<ClientCrypt, Firebird::CheckStatusWrapper> >
+	{
+	public:
+		ClientCrypt()
+			: pluginItr(Firebird::IPluginManager::TYPE_KEY_HOLDER, "NoDefault"), currentIface(nullptr)
+		{ }
+
+		Firebird::ICryptKeyCallback* create(const Config* conf);
+
+		// Firebird::IClientBlock implementation
+		unsigned callback(unsigned dataLength, const void* data, unsigned bufferLength, void* buffer);
+
+	private:
+		Firebird::GetPlugins<Firebird::IKeyHolderPlugin> pluginItr;
+		Firebird::ICryptKeyCallback* currentIface;
+	};
+	ClientCrypt clientCrypt;
+	Firebird::ICryptKeyCallback** createdInterface;
+
 public:
 	AuthClientPlugins plugins;
 	bool authComplete;						// Set as response from client that authentication accepted
@@ -848,6 +868,9 @@ public:
 	~ClntAuthBlock()
 	{
 		releaseKeys(0);
+
+		if (createdInterface)
+			*createdInterface = nullptr;
 	}
 
 	void storeDataForPlugin(unsigned int length, const unsigned char* data);
@@ -863,6 +886,7 @@ public:
 	void tryNewKeys(rem_port*);
 	void releaseKeys(unsigned from);
 	Firebird::RefPtr<const Config>* getConfig();
+	void createCryptCallback(Firebird::ICryptKeyCallback** callback);
 
 	// Firebird::IClientBlock implementation
 	int release();
