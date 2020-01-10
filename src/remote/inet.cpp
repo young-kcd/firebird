@@ -836,6 +836,7 @@ rem_port* INET_connect(const TEXT* name,
 	if (host.hasData())
 	{
 		delete port->port_connection;
+		port->port_connection = nullptr;
 		port->port_connection = REMOTE_make_string(host.c_str());
 	}
 	else {
