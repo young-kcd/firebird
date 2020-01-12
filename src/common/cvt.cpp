@@ -1802,7 +1802,7 @@ void CVT_move_common(const dsc* from, dsc* to, DecimalStatus decSt, Callbacks* c
 				const UCHAR* start = to->dsc_address;
 				UCHAR fill_char = ASCII_SPACE;
 				Jrd::CharSet* toCharset = cb->getToCharset(charset2);
-				ULONG toLength;
+				ULONG toLength = 0;
 				ULONG fill;
 
 				if (charset2 == ttype_binary)
