@@ -779,16 +779,14 @@ int gbak(Firebird::UtilSvc* uSvc)
 					FILE* tmp_outfile = os_utils::fopen(redirect, fopen_read_type);
 					if (tmp_outfile)
 					{
-						BURP_print(true, 66, redirect);
-						// msg 66 can't open status and error output file %s
 						fclose(tmp_outfile);
-						BURP_exit_local(FINI_ERROR, tdgbl);
+						BURP_error(66, true, SafeArg() << redirect);
+						// msg 66 can't open status and error output file %s
 					}
 					if (! (tdgbl->output_file = os_utils::fopen(redirect, fopen_write_type)))
 					{
-						BURP_print(true, 66, redirect);
+						BURP_error(66, true, SafeArg() << redirect);
 						// msg 66 can't open status and error output file %s
-						BURP_exit_local(FINI_ERROR, tdgbl);
 					}
 				}
 			}
