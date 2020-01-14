@@ -301,13 +301,17 @@ Returns:
 
 # Updating the time zone database
 
-Time zones are often changed and when this happen it's convenient to update the time zone database as soon as possible.
+Firebird uses the [IANA time zone database](http://www.iana.org/time-zones) through the ICU library.
 
-Firebird stores `WITH TIME ZONE` values translated to UTC time. If a value is created with one time zone database and later that database is updated and the update changes the information in the range of a stored value, when reading that value it will be returned as a different than the one initially stored.
+When a Firebird version is released it's released with the most up-to-date time zone database but with the time it may become outdated.
 
-Firebird uses the [IANA time zone database](http://www.iana.org/time-zones) through the ICU library. ICU library present in Firebird kit (Windows) or present in OS (Linux, POSIX) sometimes has outdated time zone database.
+An updated database can be found in [this Firebird's github page](https://github.com/FirebirdSQL/firebird/tree/master/tzdata). `le.zip` stands for little-endian and is the necessary file for most computer architectures (Intel/AMD compatible x86 or x64). `be.zip` stands for big-endian architectures.
 
-Update procedure is described in that [ICU page](http://userguide.icu-project.org/datetime/timezone#TOC-Updating-the-Time-Zone-Data). The easiest way to update is downloading the `*.res` files in a directory and set `ICU_TIMEZONE_FILES_DIR` environment variable pointing to it.
+The content of the zip file must be extracted in the `tzdata` subdirectory of Firebird's root, overwriting the others `*.res` files of the old database.
+
+Note: `<firebird root>/tzdata` is the default directory where Firebird looks for the database. It could be overriden with the `ICU_TIMEZONE_FILES_DIR` environment variable.
+
+Important note: Firebird stores `WITH TIME ZONE` values translated to UTC time. If a value is created with one time zone database and later that database is updated and the update changes the information in the range of a stored value, when reading that value it will be returned as a different value than the one initially stored.
 
 
 # Appendix: time zone regions

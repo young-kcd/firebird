@@ -31,12 +31,14 @@
 #include "../common/isc_proto.h"
 #include "../common/CharSet.h"
 #include "../common/IntlUtil.h"
+#include "../common/TimeZoneUtil.h"
 #include "../common/gdsassert.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/init.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/rwlock.h"
+#include "../common/config/config.h"
 #include "../common/StatusHolder.h"
 #include "../common/os/path_utils.h"
 
@@ -126,9 +128,11 @@ public:
 void BaseICU::initialize(ModuleLoader::Module* module)
 {
 	void (U_EXPORT2 *uInit)(UErrorCode* status);
+	void (U_EXPORT2 *uSetTimeZoneFilesDirectory)(const char* path, UErrorCode* status);
 	void (U_EXPORT2 *uSetDataDirectory)(const char* directory);
 
 	getEntryPoint("u_init", module, uInit, true);
+	getEntryPoint("u_setTimeZoneFilesDirectory", module, uSetTimeZoneFilesDirectory, true);
 	getEntryPoint("u_setDataDirectory", module, uSetDataDirectory, true);
 
 #if defined(WIN_NT) || defined(DARWIN)
@@ -165,6 +169,15 @@ void BaseICU::initialize(ModuleLoader::Module* module)
 			diag.printf("u_init() error %d", status);
 			(Arg::Gds(isc_random) << diag).raise();
 		}
+	}
+
+	// ICU's u_setTimeZoneFilesDirectory is an internal API, but we try to use
+	// it because internally set ICU_TIMEZONE_FILES_DIR envvar in Windows is not
+	// safe. See comments in fb_utils::setenv.
+	if (uSetTimeZoneFilesDirectory && TimeZoneUtil::getTzDataPath().hasData())
+	{
+		UErrorCode status = U_ZERO_ERROR;
+		uSetTimeZoneFilesDirectory(TimeZoneUtil::getTzDataPath().c_str(), &status);
 	}
 }
 

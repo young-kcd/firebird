@@ -630,13 +630,13 @@ $(IDS):		$(SRC_ROOT)/misc/ids.m $(SRC_ROOT)/jrd/relations.h
 # all the rest we need to build
 #
 
-.PHONY:	qli message_file gbak_files
+.PHONY:	qli message_file tzdata gbak_files
 
 FDB_FILES := $(HELP_FDB) $(ROOT)/gen/msg.fdb $(SECURITY_FDB) $(FIREBIRD)/examples/empbuild/employee.fdb
 GBAK_FILES := $(FDB_FILES:.fdb=.gbak) $(FIREBIRD)/msg.gbak
 GBAK_FILES := $(subst Native,$(TARGET),$(GBAK_FILES))
 
-rest:	qli message_file
+rest:	qli message_file tzdata
 
 cross_rest:	qli gbak_files
 	$(MAKE) $(BUILD_FILE)
@@ -655,6 +655,12 @@ message_file:	$(FIREBIRD_MSG)
 $(FIREBIRD_MSG):	$(BUILD_FILE) msg.timestamp
 	$(BUILD_FILE) -d msg.fdb -f $@
 	$(CHMOD_6) $@
+
+tzdata: $(FIREBIRD)/tzdata
+
+# FIXME: For big-endian, be.zip must be used.
+$(FIREBIRD)/tzdata: $(ROOT)/tzdata/le.zip
+	unzip -o $(ROOT)/tzdata/le.zip -d $(FIREBIRD)/tzdata
 
 $(BUILD_FILE):	$(BUILD_Objects) $(COMMON_LIB)
 	$(EXE_LINK) $(EXE_LINK_OPTIONS) $(LSB_UNDEF) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS) $(call LINK_DARWIN_RPATH,..)

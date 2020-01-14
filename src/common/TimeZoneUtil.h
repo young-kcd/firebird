@@ -65,6 +65,9 @@ public:
 	static const unsigned MAX_LEN = 32;
 	static const unsigned MAX_SIZE = MAX_LEN + 1;
 
+private:
+	static InitInstance<PathName> tzDataPath;
+
 public:
 	static UDate ticksToIcuDate(SINT64 ticks)
 	{
@@ -75,6 +78,9 @@ public:
 	{
 		return (SINT64(icuDate) * 10) + (TimeStamp::UNIX_DATE * TimeStamp::ISC_TICKS_PER_DAY);
 	}
+
+	static void initTimeZoneEnv();
+	static const PathName& getTzDataPath();
 
 	static USHORT getSystemTimeZone();
 

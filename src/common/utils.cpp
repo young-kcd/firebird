@@ -38,6 +38,7 @@
 #endif
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 
 #include "../common/gdsassert.h"
@@ -302,6 +303,35 @@ bool readenv(const char* env_name, Firebird::PathName& env_value)
 	return rc;
 }
 
+
+bool setenv(const char* name, const char* value, bool overwrite)
+{
+#ifdef WIN_NT
+	int errcode = 0;
+
+	if (!overwrite)
+	{
+		size_t envsize = 0;
+		errcode = getenv_s(&envsize, NULL, 0, name);
+		if (errcode || envsize)
+			return false;
+	}
+
+	// In Windows, _putenv_s sets only the environment data in the CRT.
+	// Each DLL (for example ICU) may use a different CRT which different data
+	// or use Win32's GetEnvironmentVariable, so we also use SetEnvironmentVariable.
+	// This is a mess and is not guarenteed to work correctly in all situations.
+	if (SetEnvironmentVariable(name, value))
+	{
+		_putenv_s(name, value);
+		return true;
+	}
+	else
+		return false;
+#else
+	return ::setenv(name, value, (int) overwrite) == 0;
+#endif
+}
 
 // ***************
 // s n p r i n t f
