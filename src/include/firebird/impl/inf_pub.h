@@ -160,6 +160,8 @@ enum db_info_types
 
 	fb_info_creation_timestamp_tz = 139,
 
+	fb_info_wire_crypt = 140,
+
 	isc_info_db_last_value   /* Leave this LAST! */
 };
 

@@ -1093,6 +1093,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	Firebird::IWireCryptPlugin* port_crypt_plugin;		// plugin used by port, when not NULL - crypts wire data
 	Firebird::ICryptKeyCallback* port_client_crypt_callback;	// client callback to transfer database crypt key
 	ServerCallbackBase* port_server_crypt_callback;			// server callback to transfer database crypt key
+	Firebird::PathName port_crypt_name;		// name of actual wire crypt plugin
 
 	Firebird::RefPtr<Firebird::IReplicator> port_replicator;
 
@@ -1138,8 +1139,8 @@ public:
 		port_srv_auth(NULL), port_srv_auth_block(NULL),
 		port_crypt_keys(getPool()), port_crypt_complete(false), port_crypt_level(WIRECRYPT_REQUIRED),
 		port_known_server_keys(getPool()), port_crypt_plugin(NULL),
-		port_client_crypt_callback(NULL), port_server_crypt_callback(NULL), port_replicator(NULL),
-		port_buffer(FB_NEW_POOL(getPool()) UCHAR[rpt]),
+		port_client_crypt_callback(NULL), port_server_crypt_callback(NULL), port_crypt_name(getPool()),
+		port_replicator(NULL), port_buffer(FB_NEW_POOL(getPool()) UCHAR[rpt]),
 		port_snd_packets(0), port_rcv_packets(0), port_snd_bytes(0), port_rcv_bytes(0)
 	{
 		addRef();

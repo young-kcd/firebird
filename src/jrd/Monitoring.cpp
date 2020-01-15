@@ -978,6 +978,8 @@ void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Atta
 	record.storeString(f_mon_att_client_version, attachment->att_client_version);
 	// remote protocol version
 	record.storeString(f_mon_att_remote_version, attachment->att_remote_protocol);
+	// wire encryption plugin
+	record.storeString(f_mon_att_remote_crypt, attachment->att_remote_crypt);
 	// remote host name
 	record.storeString(f_mon_att_remote_host, attachment->att_remote_host);
 	// OS user name

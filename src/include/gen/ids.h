@@ -524,6 +524,7 @@
 	const USHORT  f_mon_att_stmt_timeout = 22;
 	const USHORT  f_mon_att_wire_compressed = 23;
 	const USHORT  f_mon_att_wire_encrypted = 24;
+	const USHORT  f_mon_att_remote_crypt = 25;
 
 
 // Relation 35 (MON$TRANSACTIONS)

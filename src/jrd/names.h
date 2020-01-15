@@ -419,6 +419,7 @@ NAME("MON$STATEMENT_TIMER", nam_stmt_timer)
 
 NAME("MON$WIRE_COMPRESSED", nam_wire_compressed)
 NAME("MON$WIRE_ENCRYPTED", nam_wire_encrypted)
+NAME("MON$WIRE_CRYPT_PLUGIN", nam_wire_crypt_plugin)
 
 NAME("RDB$TIME_ZONES", nam_time_zones)
 NAME("RDB$TIME_ZONE_ID", nam_tz_id)

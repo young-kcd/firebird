@@ -1065,6 +1065,7 @@ namespace Jrd
 		PathName	dpb_working_directory;
 		string	dpb_set_db_charset;
 		string	dpb_network_protocol;
+		PathName	dpb_remote_crypt;
 		string	dpb_remote_address;
 		string	dpb_remote_host;
 		string	dpb_remote_os_user;
@@ -6970,6 +6971,9 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 							case isc_dpb_addr_flags:
 								dpb_remote_flags = address.getInt();
 								break;
+							case isc_dpb_addr_crypt:
+								address.getPath(dpb_remote_crypt);
+								break;
 							default:
 								break;
 						}
@@ -7275,6 +7279,7 @@ static JAttachment* create_attachment(const PathName& alias_name,
 
 	attachment->att_filename = alias_name;
 	attachment->att_network_protocol = options.dpb_network_protocol;
+	attachment->att_remote_crypt = options.dpb_remote_crypt;
 	attachment->att_remote_address = options.dpb_remote_address;
 	attachment->att_remote_pid = options.dpb_remote_pid;
 	attachment->att_remote_flags = options.dpb_remote_flags;

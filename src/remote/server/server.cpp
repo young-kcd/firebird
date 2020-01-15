@@ -2328,7 +2328,10 @@ static void addClumplets(ClumpletWriter* dpb_buffer,
 		flags |= isc_dpb_addr_flag_conn_compressed;
 #endif
 	if (port->port_crypt_plugin)
+	{
 		flags |= isc_dpb_addr_flag_conn_encrypted;
+		address_record.insertString(isc_dpb_addr_crypt, port->port_crypt_name);
+	}
 
 	if (flags)
 		address_record.insertInt(isc_dpb_addr_flags, flags);
@@ -6175,6 +6178,7 @@ void rem_port::start_crypt(P_CRYPT * crypt, PACKET* sendL)
 		port_crypt_plugin = cp.plugin();
 		port_crypt_plugin->addRef();
 		port_crypt_complete = true;
+		port_crypt_name = cp.name();
 
 		send_response(sendL, 0, 0, &st, false);
 		WIRECRYPT_DEBUG(fprintf(stderr, "Srv: Installed cipher %s\n", cp.name()));

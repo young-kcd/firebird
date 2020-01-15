@@ -209,3 +209,4 @@
 	FIELD(fld_tz_db_version	, nam_tz_db_version	, dtype_varying	, 10						, dsc_text_type_ascii		, NULL		, true)
 
 	FIELD(fld_crypt_state	, nam_crypt_state	, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
+	FIELD(fld_remote_crypt	, nam_wire_crypt_plugin, dtype_varying, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata	, NULL		, true)
