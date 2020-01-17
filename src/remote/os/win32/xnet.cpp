@@ -1066,6 +1066,14 @@ static void cleanup_port(rem_port* port)
  *
  **************************************/
 
+	if (port->port_thread_guard && port->port_events_thread && !Thread::isCurrent(port->port_events_threadId))
+	{
+		//port->port_thread_guard->setWait(port->port_events_thread);
+
+		// Do not release XNET structures while event's thread working
+		Thread::waitForCompletion(port->port_events_thread);
+	}
+
 	if (port->port_xcc)
 	{
 		cleanup_comm(port->port_xcc);
@@ -1988,6 +1996,9 @@ static bool_t xnet_read(XDR* xdrs)
 
 		const DWORD wait_result =
 			WaitForSingleObject(xcc->xcc_event_recv_channel_filled, XNET_RECV_WAIT_TIMEOUT);
+
+		if (port->port_flags & PORT_disconnect)
+			return FALSE;
 
 		if (wait_result == WAIT_OBJECT_0)
 		{

@@ -5998,7 +5998,14 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 		P_OP operation = op_void;
 		{	// scope
 			RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-			stuff = port->receive(&packet);
+			try
+			{
+				stuff = port->receive(&packet);
+			}
+			catch(status_exception&)
+			{
+				// ignore
+			}
 
 			operation = packet.p_operation;
 
