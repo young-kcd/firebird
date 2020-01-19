@@ -1090,7 +1090,7 @@ void create_database(BurpGlobals* tdgbl, Firebird::IProvider* provider, const TE
 
 		if (!tdgbl->gbl_sw_crypt)
 		{
-			BURP_error(true, 378);
+			BURP_error(378, true);
 			// Unknown crypt plugin name - use -CRYPT switch
 		}
 
