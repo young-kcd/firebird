@@ -204,7 +204,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_STRING,		"SecurityDatabase",			(ConfigValue) "security.db"},	// sec/db alias - rely on databases.conf
 	{TYPE_STRING,		"ServerMode",				(ConfigValue) ""},		// actual value differs in boot/regular cases
 	{TYPE_STRING,		"WireCrypt",				(ConfigValue) NULL},
-	{TYPE_STRING,		"WireCryptPlugin",			(ConfigValue) "Arc4"},
+	{TYPE_STRING,		"WireCryptPlugin",			(ConfigValue) "ChaCha, Arc4"},
 	{TYPE_STRING,		"KeyHolderPlugin",			(ConfigValue) ""},
 	{TYPE_BOOLEAN,		"RemoteAccess",				(ConfigValue) true},
 	{TYPE_BOOLEAN,		"IPv6V6Only",				(ConfigValue) false},
