@@ -40,7 +40,6 @@
 #include "../common/StatementMetadata.h"
 #include "../common/StatusHolder.h"
 #include "../common/ThreadStart.h"
-#include "../common/TimeZoneUtil.h"
 #include "../common/isc_proto.h"
 #include "../common/isc_f_proto.h"
 #include "../common/utils_proto.h"
@@ -735,19 +734,6 @@ RefPtr<T> translateHandle(GlobalPtr<GenericMap<Pair<NonPooled<FB_API_HANDLE, T*>
 
 	return RefPtr<T>(*obj);
 }
-
-//-------------------------------------
-
-class TimeZoneDataInit
-{
-public:
-	explicit TimeZoneDataInit(MemoryPool&)
-	{
-		TimeZoneUtil::initTimeZoneEnv();
-	}
-};
-
-static GlobalPtr<TimeZoneDataInit> timeZoneDataInit;
 
 //-------------------------------------
 
