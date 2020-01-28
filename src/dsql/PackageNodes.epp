@@ -279,7 +279,7 @@ DdlNode* CreateAlterPackageNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 }
 
 
-bool CreateAlterPackageNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
+void CreateAlterPackageNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	dsc dscName;
 	dscName.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
@@ -287,11 +287,10 @@ bool CreateAlterPackageNode::checkPermission(thread_db* tdbb, jrd_tra* transacti
 	if (alter)
 	{
 		if (SCL_check_package(tdbb, &dscName, SCL_alter) || !create)
-			return true;
+			return;
 	}
 
 	SCL_check_create_access(tdbb, SCL_object_package);
-	return true;
 }
 
 
@@ -491,12 +490,11 @@ string DropPackageNode::internalPrint(NodePrinter& printer) const
 }
 
 
-bool DropPackageNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
+void DropPackageNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	dsc dscName;
 	dscName.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
 	SCL_check_package(tdbb, &dscName, SCL_drop);
-	return true;
 }
 
 
@@ -687,10 +685,9 @@ DdlNode* CreatePackageBodyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 }
 
 
-bool CreatePackageBodyNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
+void CreatePackageBodyNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	SCL_check_create_access(tdbb, SCL_object_package);
-	return true;
 }
 
 
@@ -876,12 +873,11 @@ string DropPackageBodyNode::internalPrint(NodePrinter& printer) const
 }
 
 
-bool DropPackageBodyNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
+void DropPackageBodyNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	dsc dscName;
 	dscName.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
 	SCL_check_package(tdbb, &dscName, SCL_drop);
-	return true;
 }
 
 

@@ -295,8 +295,7 @@ void SCL_check_create_access(thread_db* tdbb, int type)
 	if (!(obj_mask & SCL_create))
 	{
 		const char* name = accTypeNumToStr(type);
-//		ERR_post(Arg::Gds(isc_dyn_no_create_priv) << name);
-		ERR_post(Arg::Gds(isc_dyn_no_priv));
+		ERR_post(Arg::Gds(isc_dyn_no_create_priv) << name);
 	}
 }
 
