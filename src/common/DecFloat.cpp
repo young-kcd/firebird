@@ -58,28 +58,29 @@ struct Dec2fb
 {
 	USHORT decError;
 	ISC_STATUS fbError;
+	ISC_STATUS fbDoubleError;
 };
 
 Dec2fb dec2fb[] = {
-	{ DEC_IEEE_754_Division_by_zero, isc_decfloat_divide_by_zero },
-	{ DEC_IEEE_754_Inexact, isc_decfloat_inexact_result },
-	{ DEC_IEEE_754_Invalid_operation, isc_decfloat_invalid_operation },
-	{ DEC_IEEE_754_Overflow, isc_decfloat_overflow },
-	{ DEC_IEEE_754_Underflow, isc_decfloat_underflow },
+	{ DEC_IEEE_754_Division_by_zero, isc_decfloat_divide_by_zero, isc_exception_float_divide_by_zero },
+	{ DEC_IEEE_754_Inexact, isc_decfloat_inexact_result, isc_exception_float_inexact_result },
+	{ DEC_IEEE_754_Invalid_operation, isc_decfloat_invalid_operation, isc_exception_float_invalid_operand },
+	{ DEC_IEEE_754_Overflow, isc_decfloat_overflow, isc_exception_float_overflow },
+	{ DEC_IEEE_754_Underflow, isc_decfloat_underflow, isc_exception_float_underflow },
 	{ 0, 0 }
 };
 
 class DecimalContext : public decContext
 {
 public:
-	DecimalContext(const Decimal64*, DecimalStatus ds)
-		: decSt(ds)
+	DecimalContext(const Decimal64*, DecimalStatus ds, bool dblErr = false)
+		: decSt(ds), dblError(dblErr)
 	{
 		init(DEC_INIT_DECIMAL64);
 	}
 
-	DecimalContext(const Decimal128*, DecimalStatus ds)
-		: decSt(ds)
+	DecimalContext(const Decimal128*, DecimalStatus ds, bool dblErr = false)
+		: decSt(ds), dblError(dblErr)
 	{
 		init(DEC_INIT_DECIMAL128);
 	}
@@ -106,12 +107,13 @@ public:
 		{
 			// Arg::Gds(isc_arith_except) as first vector element ?
 			if (e->decError & unmaskedExceptions)
-				Arg::Gds(e->fbError).raise();
+				Arg::Gds(dblError ? e->fbDoubleError : e->fbError).raise();
 		}
 	}
 
 private:
 	DecimalStatus decSt;
+	bool dblError;			// Raise double proecision related errors instead decfloat
 
 	void init(int kind)
 	{
@@ -622,7 +624,7 @@ void Decimal128::toString(string& to) const
 
 double Decimal128::toDouble(DecimalStatus decSt) const
 {
-	DecimalContext context(this, decSt);
+	DecimalContext context(this, decSt, true);
 
 	if (compare(decSt, dmin) < 0)
 	{
@@ -656,7 +658,7 @@ SINT64 Decimal128::toInt64(DecimalStatus decSt, int scale) const
 
 	if (wrk.compare(decSt, i64min) < 0 || wrk.compare(decSt, i64max) > 0)
 	{
-		DecimalContext context(this, decSt);
+		DecimalContext context(this, decSt, true);
 		decContextSetStatus(&context, DEC_Invalid_operation);
 		return 0;	// in case of no trap on invalid operation
 	}
