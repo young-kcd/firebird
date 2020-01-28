@@ -251,6 +251,7 @@ static const UCHAR db_items[] =
 	isc_info_db_id,
 #endif
 	fb_info_crypt_state,
+	fb_info_wire_crypt,
 	isc_info_end
 };
 
@@ -552,6 +553,11 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 			value_out = ISQL_vax_integer(d, length);
 			sprintf(info, "ODS = %" SLONGFORMAT".%" SQUADFORMAT"%s",
 					(SLONG) isqlGlob.major_ods, value_out, separator);
+			break;
+
+		case fb_info_wire_crypt:
+			if (d)
+				sprintf (info, "Wire crypt plugin: %.*s%s", length, d, separator);
 			break;
 
 #ifdef DEV_BUILD

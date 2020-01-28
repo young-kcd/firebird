@@ -114,6 +114,7 @@ Monitoring tables
       - MON$STATEMENT_TIMEOUT (statement timeout)
       - MON$WIRE_COMPRESSED (wire compression enabled/disabled)
       - MON$WIRE_ENCRYPTED (wire encryption enabled/disabled)
+      - MON$WIRE_CRYPT_PLUGIN (name of wire encryption plugin)
 
     MON$TRANSACTIONS (started transactions)
       - MON$TRANSACTION_ID (transaction ID)

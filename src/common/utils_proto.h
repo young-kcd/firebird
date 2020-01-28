@@ -55,6 +55,7 @@ namespace fb_utils
 	int name_length_limit(const TEXT* const name, size_t bufsize);
 	bool readenv(const char* env_name, Firebird::string& env_value);
 	bool readenv(const char* env_name, Firebird::PathName& env_value);
+	bool setenv(const char* name, const char* value, bool overwrite);
 	int snprintf(char* buffer, size_t count, const char* format...);
 	char* cleanup_passwd(char* arg);
 	inline char* get_passwd(char* arg)

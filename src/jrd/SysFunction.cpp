@@ -335,6 +335,7 @@ const char
 	NETWORK_PROTOCOL_NAME[] = "NETWORK_PROTOCOL",
 	WIRE_COMPRESSED_NAME[] = "WIRE_COMPRESSED",
 	WIRE_ENCRYPTED_NAME[] = "WIRE_ENCRYPTED",
+	WIRE_CRYPT_PLUGIN_NAME[] = "WIRE_CRYPT_PLUGIN",
 	CLIENT_ADDRESS_NAME[] = "CLIENT_ADDRESS",
 	CLIENT_HOST_NAME[] = "CLIENT_HOST",
 	CLIENT_PID_NAME[] = "CLIENT_PID",
@@ -4047,6 +4048,13 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 				return NULL;
 
 			resultStr = (attachment->att_remote_flags & isc_dpb_addr_flag_conn_encrypted) ? TRUE_VALUE : FALSE_VALUE;
+		}
+		else if (nameStr == WIRE_CRYPT_PLUGIN_NAME)
+		{
+			if (attachment->att_remote_crypt.isEmpty())
+				return NULL;
+
+			resultStr = attachment->att_remote_crypt.ToString();
 		}
 		else if (nameStr == CLIENT_ADDRESS_NAME)
 		{

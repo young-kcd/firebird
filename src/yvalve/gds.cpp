@@ -3930,6 +3930,8 @@ public:
 		}
 		msgPrefix.copyTo(fb_prefix_msg_val, sizeof(fb_prefix_msg_val));
 		fb_prefix_msg = fb_prefix_msg_val;
+
+		TimeZoneUtil::initTimeZoneEnv();
 	}
 	static void cleanup()
 	{

@@ -34,6 +34,7 @@
 #include "../common/classes/timestamp.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/config/config.h"
+#include "../common/os/path_utils.h"
 #include "unicode/ucal.h"
 
 #ifdef TZ_UPDATE
@@ -190,6 +191,21 @@ static InitInstance<TimeZoneStartup> timeZoneStartup;
 //-------------------------------------
 
 const char TimeZoneUtil::GMT_FALLBACK[5] = "GMT*";
+InitInstance<PathName> TimeZoneUtil::tzDataPath;
+
+void TimeZoneUtil::initTimeZoneEnv()
+{
+	PathName path;
+	PathUtils::concatPath(path, Config::getRootDirectory(), "tzdata");
+
+	if (fb_utils::setenv("ICU_TIMEZONE_FILES_DIR", path.c_str(), false))
+		tzDataPath() = path;
+}
+
+const PathName& TimeZoneUtil::getTzDataPath()
+{
+	return tzDataPath();
+}
 
 // Return the current user's time zone.
 USHORT TimeZoneUtil::getSystemTimeZone()

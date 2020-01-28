@@ -221,6 +221,7 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	  att_context_vars(*pool),
 	  ddlTriggersContext(*pool),
 	  att_network_protocol(*pool),
+	  att_remote_crypt(*pool),
 	  att_remote_address(*pool),
 	  att_remote_process(*pool),
 	  att_client_version(*pool),

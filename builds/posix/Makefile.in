@@ -226,7 +226,7 @@ $(TOMCRYPT_LIB):	$(TOM_Objs)
 # main build target for both debug and release builds
 #
 
-.PHONY:	cross1 cross2 boot yvalve engine fbintl gpre utilities plugins rest codes ids examples cross_rest preliminaryCheck
+.PHONY:	cross1 cross2 boot yvalve engine fbintl gpre utilities plugins rest codes examples cross_rest
 
 master_process:
 	ln -sf $(SRC_ROOT)/include/gen/autoconfig.auto $(SRC_ROOT)/include/gen/autoconfig.h
@@ -234,13 +234,8 @@ master_process:
 	$(MAKE) export_lists
 	$(MAKE) external
 	$(MAKE) updateCloopInterfaces
-	$(MAKE) preliminaryCheck
 	$(MAKE) boot
 	$(MAKE) yvalve
-ifeq ($(IsDeveloper), Y)
-# In developer mode we must regenerate various files in include/gen
-	$(MAKE) ids
-endif
 	$(MAKE) engine
 	$(MAKE) fbintl
 	$(MAKE) utilities
@@ -272,10 +267,6 @@ cross1:
 	$(MAKE) updateCloopInterfaces
 	$(MAKE) boot
 	$(MAKE) yvalve
-ifeq ($(IsDeveloper), Y)
-# In developer mode we must regenerate various files in include/gen
-	$(MAKE) ids
-endif
 	$(MAKE) engine
 	$(MAKE) fbintl
 	$(MAKE) gbak isql gfix
@@ -305,25 +296,6 @@ cross2:
 	$(MAKE) -f Makefile.plugins_examples
 	$(MAKE) cross_rest
 
-
-#___________________________________________________________________________
-# preliminary checks - make sure platform is OK to build FB
-#
-
-STD_SIZES:=$(SRC_ROOT)/misc/ods.txt
-RUN_SIZES:=$(GEN_ROOT)/ods.txt
-ODS_H:=$(SRC_ROOT)/jrd/ods.h
-ODS_AWK:=$(SRC_ROOT)/misc/ods.awk
-ODS_TEST_CPP:=$(GEN_ROOT)/odstest.cpp
-ODS_TEST:=$(GEN_ROOT)/odstest$(EXEC_EXT)
-
-preliminaryCheck:	$(STD_SIZES) $(RUN_SIZES)
-	diff -u $^
-
-$(RUN_SIZES): $(ODS_H) $(ODS_AWK)
-	awk -f $(ODS_AWK) <$(ODS_H) >$(ODS_TEST_CPP)
-	$(CXX) -o $(ODS_TEST) $(WCXXFLAGS) $(ODS_TEST_CPP)
-	$(ODS_TEST) >$(RUN_SIZES)
 
 #___________________________________________________________________________
 # static library - various common code, used in different FB projects
@@ -610,11 +582,8 @@ $(COMPAT_SQL):	$(SRC_COMPAT_SQL)
 
 .PHONY: gen_codes
 CODES = $(BIN)/codes$(EXEC_EXT)
-IDS = $(SRC_ROOT)/include/gen/ids.h
 
 codes:	gen_codes
-
-ids:	$(IDS)
 
 gen_codes:	$(CODES) msg.timestamp
 	$(CODES) $(SRC_ROOT)/include/gen $(LNG_ROOT)
@@ -622,21 +591,17 @@ gen_codes:	$(CODES) msg.timestamp
 $(CODES):	$(CODES_Objects) $(COMMON_LIB)
 	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS) $(call LINK_DARWIN_RPATH,..)
 
-$(IDS):		$(SRC_ROOT)/misc/ids.m $(SRC_ROOT)/jrd/relations.h
-	m4 $< > $@
-
-
 #___________________________________________________________________________
 # all the rest we need to build
 #
 
-.PHONY:	qli message_file gbak_files
+.PHONY:	qli message_file tzdata gbak_files
 
 FDB_FILES := $(HELP_FDB) $(ROOT)/gen/msg.fdb $(SECURITY_FDB) $(FIREBIRD)/examples/empbuild/employee.fdb
 GBAK_FILES := $(FDB_FILES:.fdb=.gbak) $(FIREBIRD)/msg.gbak
 GBAK_FILES := $(subst Native,$(TARGET),$(GBAK_FILES))
 
-rest:	qli message_file
+rest:	qli message_file tzdata
 
 cross_rest:	qli gbak_files
 	$(MAKE) $(BUILD_FILE)
@@ -655,6 +620,12 @@ message_file:	$(FIREBIRD_MSG)
 $(FIREBIRD_MSG):	$(BUILD_FILE) msg.timestamp
 	$(BUILD_FILE) -d msg.fdb -f $@
 	$(CHMOD_6) $@
+
+tzdata: $(FIREBIRD)/tzdata
+
+# FIXME: For big-endian, be.zip must be used.
+$(FIREBIRD)/tzdata: $(ROOT)/extern/icu/tzdata/le.zip
+	unzip -o $(ROOT)/extern/icu/tzdata/le.zip -d $(FIREBIRD)/tzdata
 
 $(BUILD_FILE):	$(BUILD_Objects) $(COMMON_LIB)
 	$(EXE_LINK) $(EXE_LINK_OPTIONS) $(LSB_UNDEF) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS) $(call LINK_DARWIN_RPATH,..)

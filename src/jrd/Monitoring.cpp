@@ -133,13 +133,20 @@ MonitoringData::MonitoringData(const Database* dbb)
 
 MonitoringData::~MonitoringData()
 {
-	Guard guard(this);
+	m_sharedMemory->mutexLock();
 
-	if (m_sharedMemory->getHeader() &&
-		m_sharedMemory->getHeader()->used == alignOffset(sizeof(Header)))
+	try
 	{
-		m_sharedMemory->removeMapFile();
+		if (m_sharedMemory->getHeader() &&
+			m_sharedMemory->getHeader()->used == alignOffset(sizeof(Header)))
+		{
+			m_sharedMemory->removeMapFile();
+		}
 	}
+	catch (const Exception&)
+	{} // no-op
+
+	m_sharedMemory->mutexUnlock();
 }
 
 
@@ -971,6 +978,8 @@ void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Atta
 	record.storeString(f_mon_att_client_version, attachment->att_client_version);
 	// remote protocol version
 	record.storeString(f_mon_att_remote_version, attachment->att_remote_protocol);
+	// wire encryption plugin
+	record.storeString(f_mon_att_remote_crypt, attachment->att_remote_crypt);
 	// remote host name
 	record.storeString(f_mon_att_remote_host, attachment->att_remote_host);
 	// OS user name

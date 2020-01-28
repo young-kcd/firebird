@@ -153,14 +153,20 @@
 
  <address-element> ::=
 	isc_dpb_addr_protocol <byte-clumplet-length> <protocol-string> |
-	isc_dpb_addr_endpoint <byte-clumplet-length> <remote-endpoint-string>
-	isc_dpb_addr_flags <byte-clumplet-length> <flags-int>
+	isc_dpb_addr_endpoint <byte-clumplet-length> <remote-endpoint-string> |
+	isc_dpb_addr_flags <byte-clumplet-length> <flags-int> |
+	isc_dpb_addr_crypt <byte-clumplet-length> <plugin-string>
 
  <protocol-string> ::=
 	"TCPv4" |
 	"TCPv6" |
 	"XNET" |
 	"WNET" |
+	....
+
+ <plugin-string> ::=
+	"Arc4" |
+	"ChaCha" |
 	....
 
  <remote-endpoint-string> ::=
@@ -178,6 +184,7 @@
 #define isc_dpb_addr_protocol 1
 #define isc_dpb_addr_endpoint 2
 #define isc_dpb_addr_flags 3
+#define isc_dpb_addr_crypt 4
 
 /* possible addr flags */
 #define isc_dpb_addr_flag_conn_compressed	0x01

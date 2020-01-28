@@ -38,6 +38,7 @@ if errorlevel 1 call :ERROR build failed - see make_all_%FB_TARGET_PLATFORM%.log
 
 @mkdir %FB_OUTPUT_DIR% 2>nul
 @mkdir %FB_OUTPUT_DIR%\intl 2>nul
+@mkdir %FB_OUTPUT_DIR%\tzdata 2>nul
 @mkdir %FB_OUTPUT_DIR%\help 2>nul
 @mkdir %FB_OUTPUT_DIR%\doc 2>nul
 @mkdir %FB_OUTPUT_DIR%\doc\sql.extensions 2>nul
@@ -50,6 +51,7 @@ if errorlevel 1 call :ERROR build failed - see make_all_%FB_TARGET_PLATFORM%.log
 
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\* %FB_OUTPUT_DIR% >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\intl\* %FB_OUTPUT_DIR%\intl >nul
+@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\tzdata\* %FB_OUTPUT_DIR%\tzdata >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\system32\* %FB_OUTPUT_DIR%\system32 >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\plugins\*.dll %FB_OUTPUT_DIR%\plugins >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\plugins\udr\*.dll %FB_OUTPUT_DIR%\plugins\udr >nul
@@ -61,11 +63,10 @@ for %%v in (gpre_boot build_msg codes) do (
 )
 
 :: Firebird.conf, etc
-@copy %FB_GEN_DIR%\firebird.msg %FB_OUTPUT_DIR% > nul
-:: The line @UDF_COMMENT@ should be deleted from the target file.
-findstr /V "@UDF_COMMENT@" %FB_ROOT_PATH%\builds\install\misc\firebird.conf.in > %FB_OUTPUT_DIR%\firebird.conf
-@copy %FB_ROOT_PATH%\builds\install\misc\databases.conf.in %FB_OUTPUT_DIR%\databases.conf >nul
-@copy %FB_ROOT_PATH%\builds\install\misc\fbintl.conf %FB_OUTPUT_DIR%\intl >nul
+@copy %FB_GEN_DIR%\firebird.msg %FB_OUTPUT_DIR%\ > nul
+@copy %FB_ROOT_PATH%\builds\install\misc\firebird.conf %FB_OUTPUT_DIR%\firebird.conf >nul
+@copy %FB_ROOT_PATH%\builds\install\misc\databases.conf %FB_OUTPUT_DIR%\databases.conf >nul
+@copy %FB_ROOT_PATH%\builds\install\misc\fbintl.conf %FB_OUTPUT_DIR%\intl\ >nul
 @copy %FB_ROOT_PATH%\builds\install\misc\plugins.conf %FB_OUTPUT_DIR% >nul
 @copy %FB_ROOT_PATH%\builds\install\misc\replication.conf %FB_OUTPUT_DIR% >nul
 @copy %FB_ROOT_PATH%\src\utilities\ntrace\fbtrace.conf %FB_OUTPUT_DIR% >nul
