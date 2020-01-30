@@ -403,8 +403,6 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		write_mapping();
 
 		// Write database creators
-		BURP_verbose(391);
-		// msg 391 writing database creators
 		write_db_creators();
 	}
 
@@ -4131,6 +4129,7 @@ void write_db_creators()
  **************************************/
 	Firebird::IRequest* req_handle = nullptr;
 	TEXT temp[GDS_NAME_LEN];
+	bool first = true;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -4138,6 +4137,13 @@ void write_db_creators()
 	{
 		FOR (REQUEST_HANDLE req_handle)
 			C IN RDB$DB_CREATORS
+
+			if (first)
+			{
+				BURP_verbose(391);
+				// msg 391 writing database create grants
+				first = false;
+			}
 
 			bool fl = true;
 
