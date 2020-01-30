@@ -71,7 +71,7 @@ inline bool DTYPE_IS_APPROX(UCHAR d)
 
 inline bool DTYPE_IS_DECFLOAT(UCHAR d)
 {
-	return d == dtype_dec128 || d  == dtype_dec64;
+	return d == dtype_dec128 || d == dtype_dec64;
 }
 
 inline bool DTYPE_IS_NUMERIC(UCHAR d)

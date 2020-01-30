@@ -896,12 +896,19 @@ void ArithmeticNode::makeDialect3(dsc* desc, dsc& desc1, dsc& desc2)
 				else
 					dtype = dtype_int64;
 			}
-			else if (desc1.isDecOrInt() && desc2.isDecOrInt())
-				dtype = dtype_dec128;
 			else if (DTYPE_IS_NUMERIC(dtype1) && DTYPE_IS_NUMERIC(dtype2))
 			{
-				fb_assert(DTYPE_IS_APPROX(dtype1) || DTYPE_IS_APPROX(dtype2));
-				dtype = dtype_double;
+				if (DTYPE_IS_DECFLOAT(dtype1) || DTYPE_IS_DECFLOAT(dtype2))
+				{
+					USHORT d1 = DTYPE_IS_DECFLOAT(dtype1) ? dtype1 : 0;
+					USHORT d2 = DTYPE_IS_DECFLOAT(dtype2) ? dtype2 : 0;
+					dtype = MAX(d1, d2);
+				}
+				else
+				{
+					fb_assert(DTYPE_IS_APPROX(dtype1) || DTYPE_IS_APPROX(dtype2));
+					dtype = dtype_double;
+				}
 			}
 			else
 			{
@@ -1478,10 +1485,20 @@ void ArithmeticNode::getDescDialect3(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 				else
 					dtype = dtype_int64;
 			}
-			else if (desc1.isDecOrInt() && desc2.isDecOrInt())
-				dtype = dtype_dec128;
-			else if (DTYPE_IS_NUMERIC(desc1.dsc_dtype) && DTYPE_IS_NUMERIC(desc2.dsc_dtype))
-				dtype = dtype_double;
+			else if (DTYPE_IS_NUMERIC(dtype1) && DTYPE_IS_NUMERIC(dtype2))
+			{
+				if (DTYPE_IS_DECFLOAT(dtype1) || DTYPE_IS_DECFLOAT(dtype2))
+				{
+					USHORT d1 = DTYPE_IS_DECFLOAT(dtype1) ? dtype1 : 0;
+					USHORT d2 = DTYPE_IS_DECFLOAT(dtype2) ? dtype2 : 0;
+					dtype = MAX(d1, d2);
+				}
+				else
+				{
+					fb_assert(DTYPE_IS_APPROX(dtype1) || DTYPE_IS_APPROX(dtype2));
+					dtype = dtype_double;
+				}
+			}
 			else
 			{
 				// mixed numeric and non-numeric:
@@ -1498,7 +1515,12 @@ void ArithmeticNode::getDescDialect3(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 
 				dtype = MAX(dtype1, dtype2);
 			}
-
+/*
+			if (dtype1 >= DTYPE_TYPE_MAX || dtype2 >= DTYPE_TYPE_MAX)
+				dtype = DTYPE_CANNOT;
+			else
+				dtype = (blrOp == blr_add) ? DSC_add_result[dtype1][dtype2] : DSC_sub_result[dtype1][dtype2];
+*/
 			switch (dtype)
 			{
 				case dtype_timestamp:
