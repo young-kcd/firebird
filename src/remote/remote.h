@@ -847,7 +847,7 @@ private:
 
 		Firebird::ICryptKeyCallback* create(const Config* conf);
 
-		// Firebird::IClientBlock implementation
+		// Firebird::ICryptKeyCallback implementation
 		unsigned callback(unsigned dataLength, const void* data, unsigned bufferLength, void* buffer);
 
 	private:
