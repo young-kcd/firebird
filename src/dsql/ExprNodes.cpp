@@ -1513,14 +1513,9 @@ void ArithmeticNode::getDescDialect3(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 				if (dtype_int64 == dtype2)
 					dtype2 = dtype_double;
 
-				dtype = MAX(dtype1, dtype2);
+				dtype = CVT2_compare_priority[dtype1] > CVT2_compare_priority[dtype2] ? dtype1 : dtype2;
 			}
-/*
-			if (dtype1 >= DTYPE_TYPE_MAX || dtype2 >= DTYPE_TYPE_MAX)
-				dtype = DTYPE_CANNOT;
-			else
-				dtype = (blrOp == blr_add) ? DSC_add_result[dtype1][dtype2] : DSC_sub_result[dtype1][dtype2];
-*/
+
 			switch (dtype)
 			{
 				case dtype_timestamp:

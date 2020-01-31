@@ -76,19 +76,20 @@ const BYTE CVT2_compare_priority[] =
 	1,	// dtype_text
 	2,	// dtype_cstring
 	3,	// dtype_varying
-	// dtypes and 4, 5 are unused.
+	// dtypes and 4, 5 are unused
 	0, 0,
 	// packed through long also have their natural values in the table
 	6,	// dtype_packed
 	7,	// dtype_byte,
 	8,	// dtype_short
 	9,	// dtype_long
-	// Move quad up by one to make room for int64 at its proper place in the table.
+	// Move quad up by one to make room for int64 at its proper place in the table
 	11,	// dtype_quad
-	// Also leave space for int128, dec64 and dec 128.
-	15,	// dtype_real
-	16,	// dtype_double
-	17,	// dtype_d_float
+	// Leave space for int128
+	13,	// dtype_real
+	14,	// dtype_double
+	15,	// dtype_d_float
+	// Leave space for dec64 and dec128
 	18,	// dtype_sql_date
 	19,	// dtype_sql_time
 	// Leave space for dtype_sql_time_tz
@@ -100,8 +101,8 @@ const BYTE CVT2_compare_priority[] =
 	25,	// dtype_dbkey - compares with nothing except itself
 	26,	// dtype_boolean - compares with nothing except itself
 	12,	// dtype_int128 - go after quad
-	13,	// dec64 - go after dtype_int128
-	14,	// dec128 - go after dec64 and before real
+	16,	// dec64 - go after dtype_d_float 
+	17,	// dec128 - go after dec64 and before dtype_sql_date
 	20,	// dtype_sql_time_tz - go after dtype_sql_time
 	22	// dtype_timestamp_tz - go after dtype_timestamp
 };
