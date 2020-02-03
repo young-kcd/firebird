@@ -2569,7 +2569,12 @@ dsc* ArithmeticNode::addSqlDate(const dsc* desc, impure_value* value) const
 		op1_is_date = true;
 	}
 	else
+	{
 		d1 = MOV_get_int64(tdbb, &value->vlu_desc, 0);
+
+		if (abs(d1) > TimeStamp::MAX_DATE - TimeStamp::MIN_DATE)
+			ERR_post(Arg::Gds(isc_date_range_exceeded));
+	}
 
 	SINT64 d2;
 	// Coerce operand2 to a count of days
@@ -2580,7 +2585,12 @@ dsc* ArithmeticNode::addSqlDate(const dsc* desc, impure_value* value) const
 		op2_is_date = true;
 	}
 	else
+	{
 		d2 = MOV_get_int64(tdbb, desc, 0);
+
+		if (abs(d2) > TimeStamp::MAX_DATE - TimeStamp::MIN_DATE)
+			ERR_post(Arg::Gds(isc_date_range_exceeded));
+	}
 
 	if (blrOp == blr_subtract && op1_is_date && op2_is_date)
 	{
@@ -13503,6 +13513,9 @@ static SINT64 getDayFraction(const dsc* d)
 
 	// Convert the input number to a double
 	CVT_move(d, &result, tdbb->getAttachment()->att_dec_status);
+
+	if (abs((SINT64) result_days) > TimeStamp::MAX_DATE - TimeStamp::MIN_DATE)
+		ERR_post(Arg::Gds(isc_date_range_exceeded));
 
 	// There's likely some loss of precision here due to rounding of number
 

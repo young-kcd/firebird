@@ -2332,10 +2332,11 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 
 	switch (part)
 	{
-		// TO DO: detect overflow in the following cases.
-
 		case blr_extract_year:
 			{
+				if (abs(quantity) > 9999)
+					ERR_post(Arg::Gds(isc_date_range_exceeded));
+
 				tm times;
 				timestamp.decode(&times);
 				times.tm_year += quantity;
@@ -2351,6 +2352,9 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 
 		case blr_extract_month:
 			{
+				if (abs(quantity) > 9999 * 12)
+					ERR_post(Arg::Gds(isc_date_range_exceeded));
+
 				tm times;
 				timestamp.decode(&times);
 
@@ -2392,14 +2396,21 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			break;
 
 		case blr_extract_day:
+			if (abs(quantity) > TimeStamp::MAX_DATE - TimeStamp::MIN_DATE)
+				ERR_post(Arg::Gds(isc_date_range_exceeded));
 			timestamp.value().timestamp_date += quantity;
 			break;
 
 		case blr_extract_week:
+			if (abs(quantity) > (TimeStamp::MAX_DATE - TimeStamp::MIN_DATE) / 7 + 1)
+				ERR_post(Arg::Gds(isc_date_range_exceeded));
 			timestamp.value().timestamp_date += quantity * 7;
 			break;
 
 		case blr_extract_hour:
+			if (abs(quantity) > SINT64(TimeStamp::MAX_DATE - TimeStamp::MIN_DATE + 1) * 24)
+				ERR_post(Arg::Gds(isc_date_range_exceeded));
+
 			if (valueDsc->dsc_dtype == dtype_sql_date)
 				timestamp.value().timestamp_date += quantity / 24;
 			else
@@ -2407,6 +2418,9 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			break;
 
 		case blr_extract_minute:
+			if (abs(quantity) > SINT64(TimeStamp::MAX_DATE - TimeStamp::MIN_DATE + 1) * 24 * 60)
+				ERR_post(Arg::Gds(isc_date_range_exceeded));
+
 			if (valueDsc->dsc_dtype == dtype_sql_date)
 				timestamp.value().timestamp_date += quantity / 1440; // 1440 == 24 * 60
 			else
@@ -2414,6 +2428,9 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			break;
 
 		case blr_extract_second:
+			if (abs(quantity) > SINT64(TimeStamp::MAX_DATE - TimeStamp::MIN_DATE + 1) * 24 * 60 * 60)
+				ERR_post(Arg::Gds(isc_date_range_exceeded));
+
 			if (valueDsc->dsc_dtype == dtype_sql_date)
 				timestamp.value().timestamp_date += quantity / oneDay;
 			else
@@ -2421,6 +2438,9 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			break;
 
 		case blr_extract_millisecond:
+			if (abs(quantity) > SINT64(TimeStamp::MAX_DATE - TimeStamp::MIN_DATE + 1) * 24 * 60 * 60 * 1000)
+				ERR_post(Arg::Gds(isc_date_range_exceeded));
+
 			if (valueDsc->dsc_dtype == dtype_sql_date)
 				timestamp.value().timestamp_date += quantity / milliPow / (oneDay * 1000);
 			else
