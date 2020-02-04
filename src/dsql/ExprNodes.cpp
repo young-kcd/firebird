@@ -2572,7 +2572,7 @@ dsc* ArithmeticNode::addSqlDate(const dsc* desc, impure_value* value) const
 	{
 		d1 = MOV_get_int64(tdbb, &value->vlu_desc, 0);
 
-		if (abs(d1) > TimeStamp::MAX_DATE - TimeStamp::MIN_DATE)
+		if (fb_utils::abs64Compare(d1, TimeStamp::MAX_DATE - TimeStamp::MIN_DATE) > 0)
 			ERR_post(Arg::Gds(isc_date_range_exceeded));
 	}
 
@@ -2588,7 +2588,7 @@ dsc* ArithmeticNode::addSqlDate(const dsc* desc, impure_value* value) const
 	{
 		d2 = MOV_get_int64(tdbb, desc, 0);
 
-		if (abs(d2) > TimeStamp::MAX_DATE - TimeStamp::MIN_DATE)
+		if (fb_utils::abs64Compare(d2, TimeStamp::MAX_DATE - TimeStamp::MIN_DATE) > 0)
 			ERR_post(Arg::Gds(isc_date_range_exceeded));
 	}
 
@@ -13514,7 +13514,7 @@ static SINT64 getDayFraction(const dsc* d)
 	// Convert the input number to a double
 	CVT_move(d, &result, tdbb->getAttachment()->att_dec_status);
 
-	if (abs((SINT64) result_days) > TimeStamp::MAX_DATE - TimeStamp::MIN_DATE)
+	if (fb_utils::abs64Compare(result_days, TimeStamp::MAX_DATE - TimeStamp::MIN_DATE) > 0)
 		ERR_post(Arg::Gds(isc_date_range_exceeded));
 
 	// There's likely some loss of precision here due to rounding of number

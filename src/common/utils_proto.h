@@ -104,6 +104,15 @@ namespace fb_utils
 	bool isGlobalKernelPrefix();
 #endif
 
+	// Compare the absolute value of two SINT64 numbers.
+	// Return 0 if they are equal, <0 if n1 < n2 and >0 if n1 > n2.
+	inline int abs64Compare(SINT64 n1, SINT64 n2)
+	{
+		n1 = n1 > 0 ? -n1 : n1;
+		n2 = n2 > 0 ? -n2 : n2;
+		return n1 == n2 ? 0 : n1 < n2 ? 1 : -1;
+	}
+
 	Firebird::PathName get_process_name();
 	SLONG genUniqueId();
 	void getCwd(Firebird::PathName& pn);
