@@ -1935,6 +1935,8 @@ const
 	gds_cannot_read_new_blob             = 335545263;
 	isc_dyn_no_create_priv               = 335545264;
 	gds_dyn_no_create_priv               = 335545264;
+	isc_suspend_without_returns          = 335545265;
+	gds_suspend_without_returns          = 335545265;
 	isc_gfix_db_name                     = 335740929;
 	gds_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;

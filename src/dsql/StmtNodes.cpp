@@ -7956,6 +7956,12 @@ SuspendNode* SuspendNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				  Arg::Gds(isc_random) << Arg::Str("SUSPEND"));
 	}
 
+	if (dsqlScratch->outputVariables.isEmpty())
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				  Arg::Gds(isc_suspend_without_returns));
+	}
+
 	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK)	// autonomous transaction
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
