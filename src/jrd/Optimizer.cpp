@@ -1802,38 +1802,18 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 
 	bool excludeBound = cmpNode && (cmpNode->blrOp == blr_gtr || cmpNode->blrOp == blr_lss);
 
+	dsc matchDesc, valueDesc;
+
 	if (value)
 	{
-		dsc desc1, desc2;
-		match->getDesc(tdbb, csb, &desc1);
-		value->getDesc(tdbb, csb, &desc2);
+		match->getDesc(tdbb, csb, &matchDesc);
+		value->getDesc(tdbb, csb, &valueDesc);
 
-		if (!BTR_types_comparable(desc1, desc2))
+		if (!BTR_types_comparable(matchDesc, valueDesc))
 			return false;
 
-		// if the indexed column is of type int64, we need to inject an
-		// extra cast to deliver the scale value to the BTR level
-
-		if (desc1.dsc_dtype == dtype_int64)
-		{
-			CastNode* cast = FB_NEW_POOL(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
-			cast->source = value;
-			cast->castDesc = desc1;
-			cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
-
-			value = cast;
-
-			if (value2)
-			{
-				cast = FB_NEW_POOL(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
-				cast->source = value2;
-				cast->castDesc = desc1;
-				cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
-
-				value2 = cast;
-			}
-		}
-		else if (desc1.dsc_dtype == dtype_sql_date && desc2.dsc_dtype == dtype_timestamp)
+		if (matchDesc.dsc_dtype == dtype_sql_date &&
+			valueDesc.dsc_dtype == dtype_timestamp)
 		{
 			// for "DATE <op> TIMESTAMP" we need <op> to include the boundary value
 			excludeBound = false;
@@ -1845,11 +1825,11 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 
 	const bool isDesc = (indexScratch->idx->idx_flags & idx_descending);
 	int count = 0;
-	IndexScratchSegment** segment = indexScratch->segments.begin();
+	IndexScratchSegment** const segment = indexScratch->segments.begin();
 
 	for (int i = 0; i < indexScratch->idx->idx_count; i++)
 	{
-		FieldNode* fieldNode = match->as<FieldNode>();
+		FieldNode* const fieldNode = match->as<FieldNode>();
 
 		if (!(indexScratch->idx->idx_flags & idx_expressn))
 		{
@@ -1904,10 +1884,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 					// ASF: Make "NOT boolean" work with indices.
 					case blr_neq:
 					{
-						dsc desc;
-						value->getDesc(tdbb, csb, &desc);
-
-						if (desc.dsc_dtype != dtype_boolean)
+						if (valueDesc.dsc_dtype != dtype_boolean)
 							return false;
 
 						// Let's make a compare with FALSE so we invert the value.
@@ -2046,11 +2023,58 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 				// If this is the first segment, then this index is a candidate.
 				indexScratch->candidate = true;
 			}
-
 		}
 	}
 
-	return count >= 1;
+	if (!count)
+		return false;
+
+	// If we have a match and the indexed column is of type int64, we need
+	// to inject an extra cast to deliver the scale value to the BTR level
+
+	if (value && matchDesc.dsc_dtype == dtype_int64)
+	{
+		CastNode *cast1 = NULL, *cast2 = NULL;
+
+		for (int i = 0; i < indexScratch->idx->idx_count; i++)
+		{
+			if (segment[i]->lowerValue == value || segment[i]->upperValue == value)
+			{
+				if (!cast1)
+				{
+					cast1 = FB_NEW_POOL(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
+					cast1->source = value;
+					cast1->castDesc = matchDesc;
+					cast1->impureOffset = CMP_impure(csb, sizeof(impure_value));
+				}
+
+				if (segment[i]->lowerValue == value)
+					segment[i]->lowerValue = cast1;
+
+				if (segment[i]->upperValue == value)
+					segment[i]->upperValue = cast1;
+			}
+
+			if (value2 && (segment[i]->lowerValue == value2 || segment[i]->upperValue == value2))
+			{
+				if (!cast2)
+				{
+					cast2 = FB_NEW_POOL(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
+					cast2->source = value2;
+					cast2->castDesc = matchDesc;
+					cast2->impureOffset = CMP_impure(csb, sizeof(impure_value));
+				}
+
+				if (segment[i]->lowerValue == value2)
+					segment[i]->lowerValue = cast2;
+
+				if (segment[i]->upperValue == value2)
+					segment[i]->upperValue = cast2;
+			}
+		}
+	}
+
+	return true;
 }
 
 InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
