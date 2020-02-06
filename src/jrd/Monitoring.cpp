@@ -1387,6 +1387,8 @@ void Monitoring::publishAttachment(thread_db* tdbb)
 
 	MonitoringData::Guard guard(dbb->dbb_monitoring_data);
 	dbb->dbb_monitoring_data->setup(attachment->att_attachment_id, user_name.c_str());
+
+	attachment->att_flags |= ATT_monitor_init;
 }
 
 
@@ -1395,9 +1397,14 @@ void Monitoring::cleanupAttachment(thread_db* tdbb)
 	Database* const dbb = tdbb->getDatabase();
 	Attachment* const attachment = tdbb->getAttachment();
 
-	if (dbb->dbb_monitoring_data)
+	if (attachment->att_flags & ATT_monitor_init)
 	{
-		MonitoringData::Guard guard(dbb->dbb_monitoring_data);
-		dbb->dbb_monitoring_data->cleanup(attachment->att_attachment_id);
+		attachment->att_flags &= ~ATT_monitor_init;
+
+		if (dbb->dbb_monitoring_data)
+		{
+			MonitoringData::Guard guard(dbb->dbb_monitoring_data);
+			dbb->dbb_monitoring_data->cleanup(attachment->att_attachment_id);
+		}
 	}
 }
