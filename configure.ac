@@ -1216,6 +1216,7 @@ dnl # output
 	mkdir -p gen/\$fb_tgt/firebird/examples/api
 	mkdir -p gen/\$fb_tgt/firebird/examples/dbcrypt
 	mkdir -p gen/\$fb_tgt/firebird/examples/empbuild
+	mkdir -p gen/\$fb_tgt/firebird/examples/extauth
 	mkdir -p gen/\$fb_tgt/firebird/examples/include
 	mkdir -p gen/\$fb_tgt/firebird/examples/interfaces
 	mkdir -p gen/\$fb_tgt/firebird/examples/package
