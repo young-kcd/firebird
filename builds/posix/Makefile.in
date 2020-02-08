@@ -122,12 +122,15 @@ $(GEN_ROOT)/Make.Version : $(SRC_ROOT)/misc/writeBuildNum.sh
 # build external software
 #
 
+ifndef LIBTOOL
+LIBTOOL=libtool
+endif
+
 extern:
 	$(MAKE) -C $(ROOT)/extern/btyacc
 	$(MAKE) -C $(ROOT)/extern/cloop TARGET=release WITH_FPC=0 BUILD_DIR=$(TMP_ROOT)/cloop OUT_DIR=$(GEN_ROOT)/$(TARGET)/cloop
 
 ifeq ($(TOMBUILD_FLG),Y)
-	echo $(LIBTOOL)
 	$(MAKE) -C $(ROOT)/extern/libtommath -f makefile.shared LIBTOOL=$(LIBTOOL)
 ifeq ($(PLATFORM),DARWIN)
 	install_name_tool -id "@rpath/lib/libtommath.dylib" $(TOMMATH)/.libs/libtommath.0.dylib
