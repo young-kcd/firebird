@@ -3775,14 +3775,14 @@ create_trigger_common($trigger)
 		{
 			$trigger->active = $1;
 			$trigger->type = $2;
-			$trigger->position = $3;
+			setClause($trigger->position, "POSITION", $3);
 		}
 	| FOR symbol_table_name trigger_active table_trigger_type trigger_position
 		{
 			$trigger->relationName = *$2;
 			$trigger->active = $3;
 			$trigger->type = $4;
-			$trigger->position = $5;
+			setClause($trigger->position, "POSITION", $5);
 		}
 	;
 
@@ -3807,10 +3807,11 @@ trigger_active
 
 %type <uint64Val> trigger_type(<createAlterTriggerNode>)
 trigger_type($trigger)
-	: table_trigger_type ON symbol_table_name
+	: table_trigger_type trigger_position ON symbol_table_name
 		{
 			$$ = $1;
-			$trigger->relationName = *$3;
+			setClause($trigger->position, "POSITION", $2);
+			$trigger->relationName = *$4;
 		}
 	| ON trigger_db_type
 		{ $$ = $2; }
