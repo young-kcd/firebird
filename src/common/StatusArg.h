@@ -249,7 +249,9 @@ public:
 };
 
 // On 32-bit architecture ISC_STATUS can't fit 64-bit integer therefore
-// convert such a numbers into text and put string into status-vector
+// convert such a numbers into text and put string into status-vector.
+// Make sure that temporary instance of this class is not going out of scope
+// before exception is raised !
 class Int64 : public Str
 {
 public:
