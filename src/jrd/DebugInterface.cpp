@@ -10,10 +10,10 @@
  *  See the License for the specific language governing rights
  *  and limitations under the License.
  *
- *  The Original Code was created by Vlad Horsun
+ *  The Original Code was created by Vlad Khorsun
  *  for the Firebird Open Source RDBMS project.
  *
- *  Copyright (c) 2006 Vlad Horsun <hvlad@users.sourceforge.net>
+ *  Copyright (c) 2006 Vlad Khorsun <hvlad@users.sourceforge.net>
  *  and all contributors signed below.
  *
  *  All Rights Reserved.
@@ -224,6 +224,28 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 
 				break;
 			}
+
+		case fb_dbg_map_markers:
+			{
+				if (data + 8 >= end)
+				{
+					bad_format = true;
+					break;
+				}
+
+				ULONG marks = *data++;
+				marks |= *data++ << 8;
+				marks |= *data++ << 16;
+				marks |= *data++ << 24;
+
+				ULONG offset = *data++;
+				offset |= *data++ << 8;
+				offset |= *data++ << 16;
+				offset |= *data++ << 24;
+
+				dbgInfo.blrToMarks.put(offset, marks);
+			}
+			break;
 
 		case fb_dbg_end:
 			if (data != end)

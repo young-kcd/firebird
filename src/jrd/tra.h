@@ -425,6 +425,7 @@ const ULONG TRA_no_auto_undo		= 0x8000L;	// don't start a savepoint in TRA_start
 const ULONG TRA_precommitted		= 0x10000L;	// transaction committed at startup
 const ULONG TRA_own_interface		= 0x20000L;	// tra_interface was created for internal needs
 const ULONG TRA_read_consistency	= 0x40000L; // ensure read consistency in this transaction
+const ULONG TRA_ex_restart			= 0x80000L; // Exception was raised to restart request 
 
 // flags derived from TPB, see also transaction_options() at tra.cpp
 const ULONG TRA_OPTIONS_MASK = (TRA_degree3 | TRA_readonly | TRA_ignore_limbo | TRA_read_committed |

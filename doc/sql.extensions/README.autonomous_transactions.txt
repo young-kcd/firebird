@@ -10,7 +10,9 @@ need to raise an exception but do not want the database changes to be rolled-bac
 If exceptions are raised inside the body of an autonomous transaction block, the changes are
 rolled-back. If the block runs till the end, the transaction is committed.
 
-The new transaction is initiated with snapshot isolation level and lock timeout of the existing one.
+The new transaction is initiated with the same isolation level and lock timeout of the existing one.
+The only exception is that if existing transaction run in Read Committed Read Consistency mode, then
+new autonomous transaction will run in Concurrency mode. 
 Should be used with caution to avoid deadlocks.
 
 Author:

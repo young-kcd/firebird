@@ -3866,6 +3866,9 @@ void jrd_tra::rollbackSavepoint(thread_db* tdbb, bool preserveLocks)
 	{
 		REPL_save_cleanup(tdbb, this, tra_save_point, true);
 
+		if (tra_flags & TRA_ex_restart)
+			preserveLocks = true;
+
 		Jrd::ContextPoolHolder context(tdbb, tra_pool);
 		tra_save_point = tra_save_point->rollback(tdbb, NULL, preserveLocks);
 	}

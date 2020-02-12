@@ -10,10 +10,10 @@
  *  See the License for the specific language governing rights
  *  and limitations under the License.
  *
- *  The Original Code was created by Vlad Horsun
+ *  The Original Code was created by Vlad Khorsun
  *  for the Firebird Open Source RDBMS project.
  *
- *  Copyright (c) 2006 Vlad Horsun <hvlad@users.sourceforge.net>
+ *  Copyright (c) 2006 Vlad Khorsun <hvlad@users.sourceforge.net>
  *  and all contributors signed below.
  *
  *  All Rights Reserved.
@@ -33,7 +33,8 @@
 // Also, it introduces some new tags.
 const UCHAR DBG_INFO_VERSION_1 = UCHAR(1);
 const UCHAR DBG_INFO_VERSION_2 = UCHAR(2);
-const UCHAR CURRENT_DBG_INFO_VERSION = DBG_INFO_VERSION_2;
+const UCHAR DBG_INFO_VERSION_3 = UCHAR(3);	// blr offsets of "update" cursors and driven sub-statements
+const UCHAR CURRENT_DBG_INFO_VERSION = DBG_INFO_VERSION_3;
 
 namespace Firebird {
 
@@ -55,6 +56,7 @@ typedef Firebird::SortedArray<
 	MapBlrToSrcItem> MapBlrToSrc;
 
 typedef GenericMap<Pair<Right<USHORT, MetaName> > > MapVarIndexToName;
+typedef GenericMap<Pair<NonPooled<ULONG, ULONG> > > MapBlrToMarks;
 
 struct ArgumentInfo
 {
@@ -93,7 +95,8 @@ struct DbgInfo : public PermanentStorage
 		  argInfoToName(p),
 		  curIndexToName(p),
 		  subFuncs(p),
-		  subProcs(p)
+		  subProcs(p),
+		  blrToMarks(p)
 	{
 	}
 
@@ -126,6 +129,8 @@ struct DbgInfo : public PermanentStorage
 
 			subProcs.clear();
 		}
+
+		blrToMarks.clear();
 	}
 
 	MapBlrToSrc blrToSrc;					// mapping between blr offsets and source text position
@@ -134,6 +139,7 @@ struct DbgInfo : public PermanentStorage
 	MapVarIndexToName curIndexToName;		// mapping between cursor index and name
 	GenericMap<Pair<Left<MetaName, DbgInfo*> > > subFuncs;	// sub functions
 	GenericMap<Pair<Left<MetaName, DbgInfo*> > > subProcs;	// sub procedures
+	MapBlrToMarks blrToMarks;				// blr offsets of marked verbs
 };
 
 } // namespace Firebird

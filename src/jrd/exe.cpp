@@ -875,7 +875,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	TRA_post_resources(tdbb, transaction, statement->resources);
 
 	TRA_attach_request(transaction, request);
-	request->req_flags &= req_in_use;
+	request->req_flags &= req_in_use | req_restart_ready;
 	request->req_flags |= req_active;
 	request->req_flags &= ~req_reserved;
 

@@ -603,7 +603,11 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, boo
 	else
 		scratch->getStatement()->setBlrVersion(4);
 
+	scratch->beginDebug();
+
 	GEN_request(scratch, node);
+
+	scratch->endDebug();
 
 	// Create the messages buffers
 	for (FB_SIZE_T i = 0; i < scratch->ports.getCount(); ++i)
@@ -856,13 +860,47 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 		statement->getType() != DsqlCompiledStatement::TYPE_SAVEPOINT) 
 	{
 		AutoSavePoint savePoint(tdbb, req_transaction);
+		req_request->req_flags &= ~req_update_conflict;
 		int numTries = 0;
 		while (true)
 		{
-			doExecute(tdbb, traHandle, inMetadata, inMsg, outMetadata, outMsg, singleton);
+			AutoSetRestoreFlag<ULONG> restartReady(&req_request->req_flags, req_restart_ready, true);
+			try
+			{
+				doExecute(tdbb, traHandle, inMetadata, inMsg, outMetadata, outMsg, singleton);
+			}
+			catch (const status_exception&)
+			{
+				if (!(req_transaction->tra_flags & TRA_ex_restart))
+				{
+					req_request->req_flags &= ~req_update_conflict;
+					throw;
+				}
+			}
+
 			if (!(req_request->req_flags & req_update_conflict))
+			{
+				fb_assert((req_transaction->tra_flags & TRA_ex_restart) == 0);
+				req_transaction->tra_flags &= ~TRA_ex_restart;
+
+#ifdef DEV_BUILD
+				if (numTries > 0)
+				{
+					string s;
+					s.printf("restarts = %d", numTries);
+
+					ERRD_post_warning(Arg::Warning(isc_random) << Arg::Str(s));
+				}
+#endif
 				break;
+			}
+
+			fb_assert((req_transaction->tra_flags & TRA_ex_restart) != 0);
+
 			req_request->req_flags &= ~req_update_conflict;
+			req_transaction->tra_flags &= ~TRA_ex_restart;
+			fb_utils::init_status(tdbb->tdbb_status_vector);
+
 			if (numTries >= 10)
 			{
 				gds__log("Update conflict: unable to get a stable set of rows in the source tables");
@@ -2076,7 +2114,15 @@ static void sql_info(thread_db* tdbb,
 			{
 				const bool detailed = (item == isc_info_sql_explain_plan);
 				string plan = OPT_get_plan(tdbb, request->req_request, detailed);
-
+#ifdef DEV_BUILD
+				if (!detailed)
+				{
+					NodePrinter printer;
+					request->req_request->getStatement()->topNode->print(printer);
+					plan += "\n--------\n";
+					plan += printer.getText();
+				}
+#endif
 				if (plan.hasData())
 				{
 					// 1-byte item + 2-byte length + isc_info_end/isc_info_truncated == 4

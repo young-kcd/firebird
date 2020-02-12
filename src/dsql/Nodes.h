@@ -1400,6 +1400,12 @@ public:
 		POST_TRIG = 2
 	};
 
+	// Marks used by EraseNode, ModifyNode and StoreNode
+	static const unsigned MARK_POSITIONED	= 0x01;		// Erase|Modify node is positioned at explicit cursor
+	static const unsigned MARK_MERGE		= 0x02;		// node is part of MERGE statement
+	// Marks used by ForNode
+	static const unsigned MARK_FOR_UPDATE	= 0x04;		// implicit cursor used in UPDATE\DELETE\MERGE statement
+
 	struct ExeState
 	{
 		ExeState(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)

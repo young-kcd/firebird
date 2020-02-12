@@ -35,6 +35,7 @@ namespace Jrd {
 
 class CompoundStmtNode;
 class ExecBlockNode;
+class ForNode;
 class PlanNode;
 class RelationSourceNode;
 class SelectNode;
@@ -564,7 +565,8 @@ public:
 		  dsqlContext(NULL),
 		  statement(NULL),
 		  subStatement(NULL),
-		  stream(0)
+		  stream(0),
+		  marks(0)
 	{
 	}
 
@@ -595,6 +597,8 @@ public:
 	NestConst<StmtNode> statement;
 	NestConst<StmtNode> subStatement;
 	StreamType stream;
+	NestConst<ForNode> forNode;			// parent implicit cursor, if present
+	unsigned marks;						// see StmtNode::IUD_MARK_xxx
 };
 
 
@@ -913,7 +917,9 @@ public:
 		  rse(NULL),
 		  statement(NULL),
 		  cursor(NULL),
-		  parBlrBeginCnt(0)
+		  parBlrBeginCnt(0),
+		  forUpdate(false),
+		  withLock(false)
 	{
 	}
 
@@ -927,7 +933,16 @@ public:
 	virtual StmtNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
+	bool isWriteLockMode(jrd_req* request) const;
+	void setWriteLockMode(jrd_req* request) const;
+
 public:
+	struct Impure
+	{
+		SavNumber savepoint;
+		bool writeLockMode;		// true - driven statement (UPDATE\DELETE\SELECT WITH LOCK) works in "write lock" mode, false - normal mode
+	};
+
 	NestConst<SelectNode> dsqlSelect;
 	NestConst<ValueListNode> dsqlInto;
 	DeclareCursorNode* dsqlCursor;
@@ -939,6 +954,8 @@ public:
 	NestConst<StmtNode> statement;
 	NestConst<Cursor> cursor;
 	int parBlrBeginCnt;
+	bool forUpdate;				// part of UPDATE\DELETE\MERGE statement
+	bool withLock;				// part of SELECT ... WITH LOCK	statement
 };
 
 
@@ -1153,7 +1170,8 @@ public:
 		  validations(pool),
 		  mapView(NULL),
 		  orgStream(0),
-		  newStream(0)
+		  newStream(0),
+		  marks(0)
 	{
 	}
 
@@ -1190,6 +1208,8 @@ public:
 	NestConst<StmtNode> mapView;
 	StreamType orgStream;
 	StreamType newStream;
+	NestConst<ForNode> forNode;			// parent implicit cursor, if present
+	unsigned marks;						// see StmtNode::IUD_MARK_xxx
 };
 
 

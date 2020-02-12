@@ -550,6 +550,8 @@ string RelationSourceNode::internalPrint(NodePrinter& printer) const
 	NODE_PRINT(printer, dsqlName);
 	NODE_PRINT(printer, alias);
 	NODE_PRINT(printer, context);
+	if (relation)
+		printer.print("rel_name", relation->rel_name);
 
 	return "RelationSourceNode";
 }
