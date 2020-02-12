@@ -183,6 +183,10 @@ void setParamsInteger(DataTypeUtilBase* dataTypeUtil, const SysFunction* functio
 void setParamsInt64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsSecondInteger(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 
+// helper functions for setParams
+void setParamVarying(dsc* param, USHORT textType, bool condition = false);
+bool dscHasData(const dsc* param);
+
 // specific setParams functions
 void setParamsAsciiVal(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsCharToUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
@@ -331,6 +335,7 @@ const char
 	NETWORK_PROTOCOL_NAME[] = "NETWORK_PROTOCOL",
 	WIRE_COMPRESSED_NAME[] = "WIRE_COMPRESSED",
 	WIRE_ENCRYPTED_NAME[] = "WIRE_ENCRYPTED",
+	WIRE_CRYPT_PLUGIN_NAME[] = "WIRE_CRYPT_PLUGIN",
 	CLIENT_ADDRESS_NAME[] = "CLIENT_ADDRESS",
 	CLIENT_HOST_NAME[] = "CLIENT_HOST",
 	CLIENT_PID_NAME[] = "CLIENT_PID",
@@ -599,6 +604,27 @@ void setParamsDateDiff(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc
 }
 
 
+void setParamVarying(dsc* param, USHORT textType, bool condition)
+{
+	if (!param)
+		return;
+
+	if (param->isUnknown() || condition)
+	{
+		USHORT l = param->getStringLength();
+		if (param->isUnknown() || l == 0)
+			l = 64;
+		param->makeVarying(l, textType);
+	}
+}
+
+
+bool dscHasData(const dsc* param)
+{
+	return param && (param->dsc_length > 0);
+}
+
+
 const unsigned CRYPT_ARG_VALUE = 0;
 const unsigned CRYPT_ARG_ALGORITHM = 1;
 const unsigned CRYPT_ARG_MODE = 2;
@@ -612,18 +638,10 @@ void setParamsEncrypt(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc*
 {
 	fb_assert(argsCount == CRYPT_ARG_MAX);
 
-	if (!args[CRYPT_ARG_VALUE]->isBlob())
-		args[CRYPT_ARG_VALUE]->makeVarying(args[CRYPT_ARG_VALUE]->getStringLength(), ttype_binary);
-
+	setParamVarying(args[CRYPT_ARG_VALUE], ttype_binary);
 	fb_assert(args[CRYPT_ARG_ALGORITHM]->dsc_address && args[CRYPT_ARG_ALGORITHM]->isText());
-
-	args[CRYPT_ARG_KEY]->makeVarying(args[CRYPT_ARG_KEY]->getStringLength(), ttype_binary);
-
-	if (args[CRYPT_ARG_IV]->dsc_length)
-		args[CRYPT_ARG_IV]->makeVarying(args[CRYPT_ARG_IV]->getStringLength(), ttype_binary);
-
-	if (args[CRYPT_ARG_CTRTYPE]->dsc_length)
-		args[CRYPT_ARG_CTRTYPE]->makeVarying(args[CRYPT_ARG_CTRTYPE]->getStringLength(), ttype_ascii);
+	setParamVarying(args[CRYPT_ARG_KEY], ttype_binary);
+	setParamVarying(args[CRYPT_ARG_CTRTYPE], ttype_ascii, args[CRYPT_ARG_CTRTYPE]->dsc_length > 0);
 
 	if (args[CRYPT_ARG_COUNTER]->dsc_length)
 		args[CRYPT_ARG_COUNTER]->makeInt64(0);
@@ -640,8 +658,8 @@ void setParamsRsaEncrypt(DataTypeUtilBase*, const SysFunction*, int argsCount, d
 {
 	fb_assert(argsCount == RSA_CRYPT_ARG_MAX);
 
-	args[RSA_CRYPT_ARG_VALUE]->makeVarying(args[RSA_CRYPT_ARG_VALUE]->getStringLength(), ttype_binary);
-	args[RSA_CRYPT_ARG_KEY]->makeVarying(args[RSA_CRYPT_ARG_KEY]->getStringLength(), ttype_binary);
+	setParamVarying(args[RSA_CRYPT_ARG_VALUE], ttype_binary);
+	setParamVarying(args[RSA_CRYPT_ARG_KEY], ttype_binary);
 
 	if (args[RSA_CRYPT_ARG_LPARAM]->dsc_length)
 		args[RSA_CRYPT_ARG_LPARAM]->makeVarying(args[RSA_CRYPT_ARG_LPARAM]->getStringLength(), ttype_binary);
@@ -661,8 +679,8 @@ void setParamsRsaSign(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc*
 {
 	fb_assert(argsCount == RSA_SIGN_ARG_MAX);
 
-	args[RSA_SIGN_ARG_VALUE]->makeVarying(args[RSA_SIGN_ARG_VALUE]->getStringLength(), ttype_binary);
-	args[RSA_SIGN_ARG_KEY]->makeVarying(args[RSA_SIGN_ARG_KEY]->getStringLength(), ttype_binary);
+	setParamVarying(args[RSA_SIGN_ARG_VALUE], ttype_binary);
+	setParamVarying(args[RSA_SIGN_ARG_KEY], ttype_binary);
 
 	if (args[RSA_SIGN_ARG_HASH]->dsc_length)
 		args[RSA_SIGN_ARG_HASH]->makeVarying(args[RSA_SIGN_ARG_HASH]->getStringLength(), ttype_binary);
@@ -683,9 +701,9 @@ void setParamsRsaVerify(DataTypeUtilBase*, const SysFunction*, int argsCount, ds
 {
 	fb_assert(argsCount == RSA_VERIFY_ARG_MAX);
 
-	args[RSA_VERIFY_ARG_VALUE]->makeVarying(args[RSA_VERIFY_ARG_VALUE]->getStringLength(), ttype_binary);
-	args[RSA_VERIFY_ARG_KEY]->makeVarying(args[RSA_VERIFY_ARG_KEY]->getStringLength(), ttype_binary);
-	args[RSA_VERIFY_ARG_SIGNATURE]->makeVarying(args[RSA_VERIFY_ARG_SIGNATURE]->getStringLength(), ttype_binary);
+	setParamVarying(args[RSA_VERIFY_ARG_VALUE], ttype_binary);
+	setParamVarying(args[RSA_VERIFY_ARG_KEY], ttype_binary);
+	setParamVarying(args[RSA_VERIFY_ARG_SIGNATURE], ttype_binary);
 
 	if (args[RSA_VERIFY_ARG_HASH]->dsc_length)
 		args[RSA_VERIFY_ARG_HASH]->makeVarying(args[RSA_VERIFY_ARG_HASH]->getStringLength(), ttype_binary);
@@ -699,7 +717,7 @@ void setParamsRsaPublic(DataTypeUtilBase*, const SysFunction*, int argsCount, ds
 {
 	fb_assert(argsCount == 1);
 
-	args[0]->makeVarying(args[0]->getStringLength(), ttype_binary);
+	setParamVarying(args[0], ttype_binary);
 }
 
 
@@ -2314,10 +2332,11 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 
 	switch (part)
 	{
-		// TO DO: detect overflow in the following cases.
-
 		case blr_extract_year:
 			{
+				if (fb_utils::abs64Compare(quantity, 9999) > 0)
+					ERR_post(Arg::Gds(isc_date_range_exceeded));
+
 				tm times;
 				timestamp.decode(&times);
 				times.tm_year += quantity;
@@ -2333,6 +2352,9 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 
 		case blr_extract_month:
 			{
+				if (fb_utils::abs64Compare(quantity, 9999 * 12) > 0)
+					ERR_post(Arg::Gds(isc_date_range_exceeded));
+
 				tm times;
 				timestamp.decode(&times);
 
@@ -2374,14 +2396,21 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			break;
 
 		case blr_extract_day:
+			if (fb_utils::abs64Compare(quantity, TimeStamp::MAX_DATE - TimeStamp::MIN_DATE) > 0)
+				ERR_post(Arg::Gds(isc_date_range_exceeded));
 			timestamp.value().timestamp_date += quantity;
 			break;
 
 		case blr_extract_week:
+			if (fb_utils::abs64Compare(quantity, (TimeStamp::MAX_DATE - TimeStamp::MIN_DATE) / 7 + 1) > 0)
+				ERR_post(Arg::Gds(isc_date_range_exceeded));
 			timestamp.value().timestamp_date += quantity * 7;
 			break;
 
 		case blr_extract_hour:
+			if (fb_utils::abs64Compare(quantity, SINT64(TimeStamp::MAX_DATE - TimeStamp::MIN_DATE + 1) * 24) > 0)
+				ERR_post(Arg::Gds(isc_date_range_exceeded));
+
 			if (valueDsc->dsc_dtype == dtype_sql_date)
 				timestamp.value().timestamp_date += quantity / 24;
 			else
@@ -2389,6 +2418,9 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			break;
 
 		case blr_extract_minute:
+			if (fb_utils::abs64Compare(quantity, SINT64(TimeStamp::MAX_DATE - TimeStamp::MIN_DATE + 1) * 24 * 60) > 0)
+				ERR_post(Arg::Gds(isc_date_range_exceeded));
+
 			if (valueDsc->dsc_dtype == dtype_sql_date)
 				timestamp.value().timestamp_date += quantity / 1440; // 1440 == 24 * 60
 			else
@@ -2396,6 +2428,12 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			break;
 
 		case blr_extract_second:
+			if (fb_utils::abs64Compare(quantity,
+					SINT64(TimeStamp::MAX_DATE - TimeStamp::MIN_DATE + 1) * 24 * 60 * 60) > 0)
+			{
+				ERR_post(Arg::Gds(isc_date_range_exceeded));
+			}
+
 			if (valueDsc->dsc_dtype == dtype_sql_date)
 				timestamp.value().timestamp_date += quantity / oneDay;
 			else
@@ -2403,6 +2441,12 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			break;
 
 		case blr_extract_millisecond:
+			if (fb_utils::abs64Compare(quantity,
+					SINT64(TimeStamp::MAX_DATE - TimeStamp::MIN_DATE + 1) * 24 * 60 * 60 * 1000) > 0)
+			{
+				ERR_post(Arg::Gds(isc_date_range_exceeded));
+			}
+
 			if (valueDsc->dsc_dtype == dtype_sql_date)
 				timestamp.value().timestamp_date += quantity / milliPow / (oneDay * 1000);
 			else
@@ -2547,11 +2591,7 @@ public:
 		  newBlob(nullptr)
 	{
 		if (!blobMode)
-		{
-			if (!desc->isText())
-				status_exception::raise(Arg::Gds(isc_tom_strblob));
 			ptr = CVT_get_bytes(desc, len);
-		}
 		else
 		{
 			blobDesc.makeBlob(0, ttype_none);
@@ -2801,14 +2841,14 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 	FB_UINT64 ctrVal = 0;
 	if ((m && (m->code == MODE_CTR)) || (a && (a->code == ALG_CHACHA)))
 	{
-		if (dscs[CRYPT_ARG_COUNTER]->dsc_length)
+		if (dscHasData(dscs[CRYPT_ARG_COUNTER]))
 		{
 			ctrVal = MOV_get_int64(tdbb, dscs[CRYPT_ARG_COUNTER], 0);
 			if (m && ctrVal > key.getCount())
 				status_exception::raise(Arg::Gds(isc_tom_ctr_big) << Arg::Num(ctrVal) <<  Arg::Num(key.getCount()));
 		}
 	}
-	else if (dscs[CRYPT_ARG_COUNTER]->dsc_length)
+	else if (dscHasData(dscs[CRYPT_ARG_COUNTER]))
 			status_exception::raise(Arg::Gds(isc_tom_no_ctr) << (m ? "mode" : "cipher") << (m ? m->value : a->value));
 
 	// Run selected algorithm
@@ -3391,7 +3431,7 @@ dsc* evlRsaSign(thread_db* tdbb, const SysFunction* function, const NestValueArr
 		return nullptr;
 
 	SLONG saltLength = 8;
-	if (dscs[RSA_SIGN_ARG_SALTLEN]->dsc_length)
+	if (dscHasData(dscs[RSA_SIGN_ARG_SALTLEN]))
 	{
 		saltLength = MOV_get_long(tdbb, dscs[RSA_SIGN_ARG_SALTLEN], 0);
 		if (saltLength < 0 || saltLength > 32)
@@ -3465,7 +3505,7 @@ dsc* evlRsaVerify(thread_db* tdbb, const SysFunction* function, const NestValueA
 		return boolResult(tdbb, impure, false);
 
 	SLONG saltLength = 8;
-	if (dscs[RSA_VERIFY_ARG_SALTLEN]->dsc_length)
+	if (dscHasData(dscs[RSA_VERIFY_ARG_SALTLEN]))
 	{
 		saltLength = MOV_get_long(tdbb, dscs[RSA_VERIFY_ARG_SALTLEN], 0);
 		if (saltLength < 0 || saltLength > 32)
@@ -4034,6 +4074,13 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 				return NULL;
 
 			resultStr = (attachment->att_remote_flags & isc_dpb_addr_flag_conn_encrypted) ? TRUE_VALUE : FALSE_VALUE;
+		}
+		else if (nameStr == WIRE_CRYPT_PLUGIN_NAME)
+		{
+			if (attachment->att_remote_crypt.isEmpty())
+				return NULL;
+
+			resultStr = attachment->att_remote_crypt.ToString();
 		}
 		else if (nameStr == CLIENT_ADDRESS_NAME)
 		{

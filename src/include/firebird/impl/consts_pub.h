@@ -125,10 +125,9 @@
 #define isc_dpb_map_attach                90
 #define isc_dpb_session_time_zone         91
 #define isc_dpb_set_db_replica            92
-#define isc_dpb_time_zone_bind            93
-#define isc_dpb_decfloat_bind             94
-#define isc_dpb_decfloat_round            95
-#define isc_dpb_decfloat_traps            96
+#define isc_dpb_set_bind                  93
+#define isc_dpb_decfloat_round            94
+#define isc_dpb_decfloat_traps            95
 
 
 /**************************************************/
@@ -154,14 +153,20 @@
 
  <address-element> ::=
 	isc_dpb_addr_protocol <byte-clumplet-length> <protocol-string> |
-	isc_dpb_addr_endpoint <byte-clumplet-length> <remote-endpoint-string>
-	isc_dpb_addr_flags <byte-clumplet-length> <flags-int>
+	isc_dpb_addr_endpoint <byte-clumplet-length> <remote-endpoint-string> |
+	isc_dpb_addr_flags <byte-clumplet-length> <flags-int> |
+	isc_dpb_addr_crypt <byte-clumplet-length> <plugin-string>
 
  <protocol-string> ::=
 	"TCPv4" |
 	"TCPv6" |
 	"XNET" |
 	"WNET" |
+	....
+
+ <plugin-string> ::=
+	"Arc4" |
+	"ChaCha" |
 	....
 
  <remote-endpoint-string> ::=
@@ -179,6 +184,7 @@
 #define isc_dpb_addr_protocol 1
 #define isc_dpb_addr_endpoint 2
 #define isc_dpb_addr_flags 3
+#define isc_dpb_addr_crypt 4
 
 /* possible addr flags */
 #define isc_dpb_addr_flag_conn_compressed	0x01
@@ -405,6 +411,7 @@
 #define isc_spb_bkp_keyholder			 16
 #define isc_spb_bkp_keyname				 17
 #define isc_spb_bkp_crypt				 18
+#define isc_spb_bkp_include_data         19
 #define isc_spb_bkp_ignore_checksums     0x01
 #define isc_spb_bkp_ignore_limbo         0x02
 #define isc_spb_bkp_metadata_only        0x04
@@ -512,6 +519,7 @@
  *****************************************/
 
 #define isc_spb_res_skip_data			isc_spb_bkp_skip_data
+#define isc_spb_res_include_data		isc_spb_bkp_include_data
 #define isc_spb_res_buffers				9
 #define isc_spb_res_page_size			10
 #define isc_spb_res_length				11

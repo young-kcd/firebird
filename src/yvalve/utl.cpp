@@ -1303,6 +1303,49 @@ IDecFloat34* UtilInterface::getDecFloat34(CheckStatusWrapper* status)
 	return &decFloat34;
 }
 
+class IfaceInt128 FB_FINAL : public AutoIface<IInt128Impl<IfaceInt128, CheckStatusWrapper> >
+{
+public:
+	// IInt128 implementation
+	void toString(CheckStatusWrapper* status, const FB_I128* from, int scale, unsigned bufSize, char* buffer)
+	{
+		try
+		{
+			const Int128* i128 = (Int128*)from;
+			i128->toString(scale, bufSize, buffer);
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+	}
+
+	void fromString(CheckStatusWrapper* status, int scale, const char* from, FB_I128* to)
+	{
+		try
+		{
+			Int128* i128 = (Int128*)to;
+			scale -= CVT_decompose(from, static_cast<USHORT>(strlen(from)), i128, errorFunction);
+			i128->setScale(scale);
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+	}
+
+	static void errorFunction(const Arg::StatusVector& v)
+	{
+		v.raise();
+	}
+};
+
+IInt128* UtilInterface::getInt128(CheckStatusWrapper* status)
+{
+	static IfaceInt128 ifaceInt128;
+	return &ifaceInt128;
+}
+
 unsigned UtilInterface::setOffsets(CheckStatusWrapper* status, IMessageMetadata* metadata,
 	IOffsetsCallback* callback)
 {

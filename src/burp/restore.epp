@@ -147,6 +147,7 @@ bool	get_relation(BurpGlobals* tdgbl);
 bool	get_relation_data(BurpGlobals* tdgbl);
 bool	get_sql_roles(BurpGlobals* tdgbl);
 bool	get_mapping(BurpGlobals* tdgbl);
+bool	get_db_creator(BurpGlobals* tdgbl);
 bool	get_security_class(BurpGlobals* tdgbl);
 void	get_source_blob(BurpGlobals* tdgbl, ISC_QUAD&, bool);
 USHORT	get_text(BurpGlobals* tdgbl, TEXT*, ULONG);
@@ -653,7 +654,7 @@ void add_files(BurpGlobals* tdgbl, const char* file_name)
 
 	// store the RDB$FILES records
 
-	FB_UINT64 start = FB_CONST64(201); // Magic number, can be taken from some constant?
+	FB_UINT64 start = FB_CONST64(256); // Magic number, can be taken from some constant?
 	SLONG count = 0;
 	const char* prev_file_name = NULL;
 
@@ -1089,7 +1090,7 @@ void create_database(BurpGlobals* tdgbl, Firebird::IProvider* provider, const TE
 
 		if (!tdgbl->gbl_sw_crypt)
 		{
-			BURP_error(true, 378);
+			BURP_error(378, true);
 			// Unknown crypt plugin name - use -CRYPT switch
 		}
 
@@ -3579,7 +3580,7 @@ rec_type get_data_old(BurpGlobals* tdgbl, burp_rel* relation)
 		case blr_long:
 		case blr_quad:
 		case blr_int64:
-		case blr_dec_fixed:
+		case blr_int128:
 			add_byte(blr, field->fld_type);
 			add_byte(blr, field->fld_scale);
 			break;
@@ -4902,12 +4903,15 @@ bool get_function(BurpGlobals* tdgbl)
 
 	bool existFlag = false;
 
+	Firebird::ITransaction* local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
+
 	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 	{
 		GDS_NAME function_name;
 		bool securityClass = false;
 
-		STORE (REQUEST_HANDLE tdgbl->handles_get_function_req_handle1)
+		STORE (TRANSACTION_HANDLE local_trans
+				REQUEST_HANDLE tdgbl->handles_get_function_req_handle1)
 			X IN RDB$FUNCTIONS
 			X.RDB$DESCRIPTION.NULL = TRUE;
 			X.RDB$ENGINE_NAME.NULL = TRUE;
@@ -4958,12 +4962,12 @@ bool get_function(BurpGlobals* tdgbl)
 
 				case att_function_description:
 					X.RDB$DESCRIPTION.NULL = FALSE;
-					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, false);
+					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, true);
 					break;
 
 				case att_function_description2:
 					X.RDB$DESCRIPTION.NULL = FALSE;
-					get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
+					get_source_blob (tdgbl, X.RDB$DESCRIPTION, true);
 					break;
 
 				case att_function_module_name:
@@ -5023,7 +5027,7 @@ bool get_function(BurpGlobals* tdgbl)
 				case att_function_blr:
 					if (tdgbl->RESTORE_format >= 10)
 					{
-						get_blr_blob(tdgbl, X.RDB$FUNCTION_BLR, false);
+						get_blr_blob(tdgbl, X.RDB$FUNCTION_BLR, true);
 						X.RDB$FUNCTION_BLR.NULL = FALSE;
 					}
 					else
@@ -5033,7 +5037,7 @@ bool get_function(BurpGlobals* tdgbl)
 				case att_function_source:
 					if (tdgbl->RESTORE_format >= 10)
 					{
-						get_source_blob(tdgbl, X.RDB$FUNCTION_SOURCE, false);
+						get_source_blob(tdgbl, X.RDB$FUNCTION_SOURCE, true);
 						X.RDB$FUNCTION_SOURCE.NULL = FALSE;
 					}
 					else
@@ -5053,7 +5057,7 @@ bool get_function(BurpGlobals* tdgbl)
 				case att_function_debug_info:
 					if (tdgbl->RESTORE_format >= 10)
 					{
-						get_misc_blob(tdgbl, X.RDB$DEBUG_INFO, false);
+						get_misc_blob(tdgbl, X.RDB$DEBUG_INFO, true);
 						X.RDB$DEBUG_INFO.NULL = FALSE;
 					}
 					else
@@ -5132,7 +5136,8 @@ bool get_function(BurpGlobals* tdgbl)
 	}
 	else
 	{
-		STORE (REQUEST_HANDLE tdgbl->handles_get_function_req_handle1)
+		STORE (TRANSACTION_HANDLE local_trans
+				REQUEST_HANDLE tdgbl->handles_get_function_req_handle1)
 			X IN RDB$FUNCTIONS
 			X.RDB$SYSTEM_FLAG = 0;
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
@@ -5278,6 +5283,8 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 	att_type	attribute;
 	scan_attr_t		scan_next_attr;
 
+	Firebird::ITransaction* local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
+
 	if (skip_arguments)
 	{
 		skip_init(&scan_next_attr);
@@ -5377,7 +5384,8 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 	{
 		// with RDB$FIELD_PRECISION
-		STORE (REQUEST_HANDLE tdgbl->handles_get_function_arg_req_handle1)
+		STORE (TRANSACTION_HANDLE local_trans
+				REQUEST_HANDLE tdgbl->handles_get_function_arg_req_handle1)
 			X IN RDB$FUNCTION_ARGUMENTS
 			X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
@@ -5495,7 +5503,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 				case att_functionarg_default_value:
 					if (tdgbl->RESTORE_format >= 10)
 					{
-						get_blr_blob(tdgbl, X.RDB$DEFAULT_VALUE, false);
+						get_blr_blob(tdgbl, X.RDB$DEFAULT_VALUE, true);
 						X.RDB$DEFAULT_VALUE.NULL = FALSE;
 					}
 					else
@@ -5586,7 +5594,8 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 	else if (tdgbl->runtimeODS >= DB_VERSION_DDL10)
 	{
 		// with RDB$FIELD_PRECISION
-		STORE (REQUEST_HANDLE tdgbl->handles_get_function_arg_req_handle1)
+		STORE (TRANSACTION_HANDLE local_trans
+				REQUEST_HANDLE tdgbl->handles_get_function_arg_req_handle1)
 			X IN RDB$FUNCTION_ARGUMENTS
 			X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
@@ -5699,7 +5708,8 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 	else
 	{
 		// without RDB$FIELD_PRECISION
-		STORE (REQUEST_HANDLE tdgbl->handles_get_function_arg_req_handle1)
+		STORE (TRANSACTION_HANDLE local_trans
+				REQUEST_HANDLE tdgbl->handles_get_function_arg_req_handle1)
 			X IN RDB$FUNCTION_ARGUMENTS
 			X.RDB$FIELD_SUB_TYPE.NULL = TRUE;
 			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
@@ -8905,6 +8915,70 @@ bool get_mapping(BurpGlobals* tdgbl)
 	return true;
 }
 
+bool get_db_creator(BurpGlobals* tdgbl)
+{
+/**************************************
+ *
+ *	g e t _ d b _ c r e a t o r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Restore database creators
+ *
+ **************************************/
+	att_type		attribute;
+	scan_attr_t		scan_next_attr;
+	TEXT			temp[GDS_NAME_LEN];
+	SSHORT			l;
+	Firebird::string role;
+
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
+	{
+		STORE (REQUEST_HANDLE tdgbl->handles_db_creators_req_handle1)
+			C IN RDB$DB_CREATORS
+
+			C.RDB$USER.NULL = TRUE;
+			C.RDB$USER_TYPE.NULL = TRUE;
+
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			{
+				switch (attribute)
+				{
+				case att_dbc_user:
+					C.RDB$USER.NULL = FALSE;
+					GET_TEXT(C.RDB$USER);
+					if (tdgbl->firstDbc)
+					{
+						tdgbl->firstDbc = false;
+						BURP_verbose(394);
+						// msg 394 restoring database creators
+					}
+					BURP_verbose (393, C.RDB$USER);
+					break;
+
+				case att_dbc_type:
+					C.RDB$USER_TYPE.NULL = FALSE;
+					C.RDB$USER_TYPE = (USHORT) get_int32(tdgbl);
+					break;
+
+				default:
+					// msg 395 database creator
+					bad_attribute(scan_next_attr, attribute, 395);
+					break;
+				}
+			}
+
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
+
+	return true;
+}
+
 bool is_ascii_name (const TEXT *name, const SSHORT len)
 {
 /**************************************
@@ -10917,6 +10991,12 @@ bool restore(BurpGlobals* tdgbl, Firebird::IProvider* provider, const TEXT* file
 
 		case rec_mapping:
 			if (!get_mapping(tdgbl))
+				return false;
+			flag = true;
+			break;
+
+		case rec_db_creator:
+			if (!get_db_creator(tdgbl))
 				return false;
 			flag = true;
 			break;

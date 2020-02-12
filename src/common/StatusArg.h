@@ -248,6 +248,19 @@ public:
 	explicit Num(ISC_STATUS s) throw();
 };
 
+// On 32-bit architecture ISC_STATUS can't fit 64-bit integer therefore
+// convert such a numbers into text and put string into status-vector.
+// Make sure that temporary instance of this class is not going out of scope
+// before exception is raised !
+class Int64 : public Str
+{
+public:
+	explicit Int64(SINT64 val) throw();
+	explicit Int64(FB_UINT64 val) throw();
+private:
+	char text[24];
+};
+
 class Quad : public Str
 {
 public:

@@ -127,10 +127,10 @@ void BlrFromMessage::buildBlr(IMessageMetadata* metadata)
 				dtype = dtype_dec128;
 				break;
 
-			case SQL_DEC_FIXED:
-				appendUChar(blr_dec_fixed);
+			case SQL_INT128:
+				appendUChar(blr_int128);
 				appendUChar(scale);
-				dtype = dtype_dec_fixed;
+				dtype = dtype_int128;
 				break;
 
 			case SQL_DOUBLE:

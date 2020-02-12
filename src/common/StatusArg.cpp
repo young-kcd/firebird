@@ -333,6 +333,18 @@ PrivateDyn::PrivateDyn(ISC_STATUS codeWithoutFacility) throw() :
 Num::Num(ISC_STATUS s) throw() :
 	Base(isc_arg_number, s) { }
 
+Int64::Int64(SINT64 val) throw() :
+	Str(text)
+{
+	sprintf(text, "%" SQUADFORMAT, val);
+}
+
+Int64::Int64(FB_UINT64 val) throw() :
+	Str(text)
+{
+	sprintf(text, "%" UQUADFORMAT, val);
+}
+
 Quad::Quad(const ISC_QUAD* quad) throw() :
 	Str(text)
 {

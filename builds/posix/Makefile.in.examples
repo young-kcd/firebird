@@ -98,6 +98,11 @@ $(FIREBIRD)/examples/README:
 	$(CP) $(ROOT)/examples/*.* $(FIREBIRD)/examples/
 	$(CP) $(ROOT)/examples/api/*.* $(FIREBIRD)/examples/api/
 	$(CP) $(ROOT)/examples/dbcrypt/*.* $(FIREBIRD)/examples/dbcrypt/
+	$(CP) $(ROOT)/examples/extauth/* $(FIREBIRD)/examples/extauth/
+ifeq ($(TOMCRYPT_BUILD_FLG),Y)
+	mkdir -p $(FIREBIRD)/examples/extauth/tomcrypt.include
+	$(CP) $(ROOT)/extern/libtomcrypt/src/headers/* $(FIREBIRD)/examples/extauth/tomcrypt.include
+endif
 	$(CP) $(ROOT)/examples/include/*.* $(FIREBIRD)/examples/include/
 	$(CP) $(ROOT)/examples/interfaces/*.* $(FIREBIRD)/examples/interfaces/
 	$(CP) $(ROOT)/examples/package/*.* $(FIREBIRD)/examples/package/

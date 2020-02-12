@@ -63,7 +63,7 @@
 #define dtype_boolean	21
 #define dtype_dec64		22
 #define dtype_dec128	23
-#define dtype_dec_fixed	24
+#define dtype_int128	24
 #define dtype_sql_time_tz	25
 #define dtype_timestamp_tz	26
 #define DTYPE_TYPE_MAX	27

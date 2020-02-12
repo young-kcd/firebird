@@ -31,12 +31,14 @@
 #include "../common/isc_proto.h"
 #include "../common/CharSet.h"
 #include "../common/IntlUtil.h"
+#include "../common/TimeZoneUtil.h"
 #include "../common/gdsassert.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/init.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/rwlock.h"
+#include "../common/config/config.h"
 #include "../common/StatusHolder.h"
 #include "../common/os/path_utils.h"
 
@@ -58,10 +60,8 @@ namespace {
 const char* const inTemplate = "icuin%s.dll";
 const char* const ucTemplate = "icuuc%s.dll";
 #elif defined(DARWIN)
-//const char* const inTemplate = "/Library/Frameworks/Firebird.framework/Versions/A/Libraries/libicui18n.dylib";
-//const char* const ucTemplate = "/Library/Frameworks/Firebird.framework/versions/A/Libraries/libicuuc.dylib";
-const char* const inTemplate = "libicui18n.dylib";
-const char* const ucTemplate = "libicuuc.dylib";
+const char* const inTemplate = "lib/libicui18n.%s.dylib";
+const char* const ucTemplate = "lib/libicuuc.%s.dylib";
 #elif defined(HPUX)
 const char* const inTemplate = "libicui18n.sl.%s";
 const char* const ucTemplate = "libicuuc.sl.%s";
@@ -128,12 +128,14 @@ public:
 void BaseICU::initialize(ModuleLoader::Module* module)
 {
 	void (U_EXPORT2 *uInit)(UErrorCode* status);
+	void (U_EXPORT2 *uSetTimeZoneFilesDirectory)(const char* path, UErrorCode* status);
 	void (U_EXPORT2 *uSetDataDirectory)(const char* directory);
 
 	getEntryPoint("u_init", module, uInit, true);
+	getEntryPoint("u_setTimeZoneFilesDirectory", module, uSetTimeZoneFilesDirectory, true);
 	getEntryPoint("u_setDataDirectory", module, uSetDataDirectory, true);
 
-#ifdef WIN_NT
+#if defined(WIN_NT) || defined(DARWIN)
 	if (uSetDataDirectory)
 	{
 		// call uSetDataDirectory only if .dat file is exists at same folder
@@ -167,6 +169,15 @@ void BaseICU::initialize(ModuleLoader::Module* module)
 			diag.printf("u_init() error %d", status);
 			(Arg::Gds(isc_random) << diag).raise();
 		}
+	}
+
+	// ICU's u_setTimeZoneFilesDirectory is an internal API, but we try to use
+	// it because internally set ICU_TIMEZONE_FILES_DIR envvar in Windows is not
+	// safe. See comments in fb_utils::setenv.
+	if (uSetTimeZoneFilesDirectory && TimeZoneUtil::getTzDataPath().hasData())
+	{
+		UErrorCode status = U_ZERO_ERROR;
+		uSetTimeZoneFilesDirectory(TimeZoneUtil::getTzDataPath().c_str(), &status);
 	}
 }
 
@@ -213,10 +224,17 @@ public:
 		{
 			ciAiTransCacheMutex.leave();
 
-			UErrorCode errorCode = U_ZERO_ERROR;
 			// Fix for CORE-4136. Was "Any-Upper; NFD; [:Nonspacing Mark:] Remove; NFC".
-			ret = utransOpen("NFD; [:Nonspacing Mark:] Remove; NFC",
-				UTRANS_FORWARD, NULL, 0, NULL, &errorCode);
+			// Also see CORE-4739.
+			static const auto RULE = (const UChar*)
+				u"::NFD; ::[:Nonspacing Mark:] Remove; ::NFC;"
+				" \\u00d0 > D;"		// LATIN CAPITAL LETTER ETH' (U+00D0), iceland
+				" \\u00d8 > O;"		// LATIN CAPITAL LETTER O WITH STROKE' (U+00D8), used in danish & iceland alphabets;
+				" \\u013f > L;"		// LATIN CAPITAL LETTER L WITH MIDDLE DOT' (U+013F), catalone (valencian)
+				" \\u0141 > L;";	// LATIN CAPITAL LETTER L WITH STROKE' (U+0141), polish
+
+			UErrorCode errorCode = U_ZERO_ERROR;
+			ret = utransOpenU((const UChar*) u"FbNormalizer", -1, UTRANS_FORWARD, RULE, -1, NULL, &errorCode);
 		}
 
 		return ret;
@@ -257,8 +275,9 @@ public:
 	void (U_EXPORT2 *ucolGetVersion)(const UCollator* coll, UVersionInfo info);
 
 	void (U_EXPORT2 *utransClose)(UTransliterator* trans);
-	UTransliterator* (U_EXPORT2 *utransOpen)(
-		const char* id,
+	UTransliterator* (U_EXPORT2 *utransOpenU)(
+		const UChar* id,
+		int32_t idLength,
 		UTransDirection dir,
 		const UChar* rules,         /* may be Null */
 		int32_t rulesLength,        /* -1 if null-terminated */
@@ -1031,6 +1050,37 @@ INTL_BOOL UnicodeUtil::utf32WellFormed(ULONG len, const ULONG* str, ULONG* offen
 	return true;	// well-formed
 }
 
+void UnicodeUtil::utf8Normalize(UCharBuffer& data)
+{
+	ICU* icu = loadICU("", "");
+
+	HalfStaticArray<USHORT, BUFFER_MEDIUM> utf16Buffer(data.getCount());
+	USHORT errCode;
+	ULONG errPosition;
+	ULONG utf16BufferLen = utf8ToUtf16(data.getCount(), data.begin(), data.getCount() * sizeof(USHORT),
+		utf16Buffer.getBuffer(data.getCount()), &errCode, &errPosition);
+
+	UTransliterator* trans = icu->getCiAiTransliterator();
+
+	if (trans)
+	{
+		const int32_t capacity = utf16Buffer.getCount() * sizeof(USHORT);
+		int32_t len = utf16BufferLen / sizeof(USHORT);
+		int32_t limit = len;
+
+		UErrorCode errorCode = U_ZERO_ERROR;
+		icu->utransTransUChars(trans, reinterpret_cast<UChar*>(utf16Buffer.begin()),
+			&len, capacity, 0, &limit, &errorCode);
+		icu->releaseCiAiTransliterator(trans);
+
+		len = utf16ToUtf8(utf16BufferLen, utf16Buffer.begin(),
+			len * 4, data.getBuffer(len * 4, false),
+			&errCode, &errPosition);
+
+		data.shrink(len);
+	}
+}
+
 UnicodeUtil::ICU* UnicodeUtil::loadICU(const string& icuVersion, const string& configInfo)
 {
 	ObjectsArray<string> versions;
@@ -1107,7 +1157,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const string& icuVersion, const string& c
 			icu->getEntryPoint("ucol_setAttribute", icu->inModule, icu->ucolSetAttribute);
 			icu->getEntryPoint("ucol_strcoll", icu->inModule, icu->ucolStrColl);
 			icu->getEntryPoint("ucol_getVersion", icu->inModule, icu->ucolGetVersion);
-			icu->getEntryPoint("utrans_open", icu->inModule, icu->utransOpen);
+			icu->getEntryPoint("utrans_openU", icu->inModule, icu->utransOpenU);
 			icu->getEntryPoint("utrans_close", icu->inModule, icu->utransClose);
 			icu->getEntryPoint("utrans_transUChars", icu->inModule, icu->utransTransUChars);
 		}

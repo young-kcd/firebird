@@ -7204,7 +7204,14 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 		P_OP operation = op_void;
 		{	// scope
 			RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-			stuff = port->receive(&packet);
+			try
+			{
+				stuff = port->receive(&packet);
+			}
+			catch(status_exception&)
+			{
+				// ignore
+			}
 
 			operation = packet.p_operation;
 
@@ -7550,6 +7557,7 @@ static void authReceiveResponse(bool havePacket, ClntAuthBlock& cBlock, rem_port
 			break;
 		}
 
+		cBlock.resetDataFromPlugin();
 		cBlock.storeDataForPlugin(d->cstr_length, d->cstr_address);
 		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: receiveResponse: authenticate(%s)\n", cBlock.plugins.name()));
 		if (cBlock.plugins.plugin()->authenticate(&s, &cBlock) == IAuth::AUTH_FAILED)
@@ -7614,6 +7622,7 @@ static void init(CheckStatusWrapper* status, ClntAuthBlock& cBlock, rem_port* po
 		authFillParametersBlock(cBlock, dpb, ps, port);
 
 		port->port_client_crypt_callback = cryptCallback;
+		cBlock.createCryptCallback(&port->port_client_crypt_callback);
 
 		// Make attach packet
 		P_ATCH* attach = &packet->p_atch;
@@ -8734,6 +8743,7 @@ ClntAuthBlock::ClntAuthBlock(const Firebird::PathName* fileName, Firebird::Clump
 	  cliUserName(getPool()), cliPassword(getPool()), cliOrigUserName(getPool()),
 	  dataForPlugin(getPool()), dataFromPlugin(getPool()),
 	  cryptKeys(getPool()), dpbConfig(getPool()), dpbPlugins(getPool()),
+	  createdInterface(nullptr),
 	  plugins(IPluginManager::TYPE_AUTH_CLIENT), authComplete(false), firstTime(true)
 {
 	if (dpb && tags)
@@ -8949,7 +8959,8 @@ Firebird::ICryptKey* ClntAuthBlock::newKey(CheckStatusWrapper* status)
 		InternalCryptKey* k = FB_NEW InternalCryptKey;
 
 		fb_assert(plugins.hasData());
-		k->t = plugins.name();
+		k->keyName = plugins.name();
+		WIRECRYPT_DEBUG(fprintf(stderr, "Cli: newkey %s\n", k->keyName.c_str());)
 		cryptKeys.add(k);
 
 		return k;
@@ -8963,7 +8974,7 @@ Firebird::ICryptKey* ClntAuthBlock::newKey(CheckStatusWrapper* status)
 
 void ClntAuthBlock::tryNewKeys(rem_port* port)
 {
-	for (unsigned k = 0; k < cryptKeys.getCount(); ++k)
+	for (unsigned k = cryptKeys.getCount(); k--; )
 	{
 		if (port->tryNewKey(cryptKeys[k]))
 		{
@@ -8982,4 +8993,65 @@ void ClntAuthBlock::releaseKeys(unsigned from)
 	{
 		delete cryptKeys[from++];
 	}
+}
+
+void ClntAuthBlock::createCryptCallback(Firebird::ICryptKeyCallback** callback)
+{
+	if (*callback)
+		return;
+
+	*callback = clientCrypt.create(clntConfig);
+	if (*callback)
+		createdInterface = callback;
+}
+
+Firebird::ICryptKeyCallback* ClntAuthBlock::ClientCrypt::create(const Config* conf)
+{
+	pluginItr.set(conf);
+
+	return pluginItr.hasData() ? this : nullptr;
+}
+
+unsigned ClntAuthBlock::ClientCrypt::callback(unsigned dlen, const void* data, unsigned blen, void* buffer)
+{
+	HANDSHAKE_DEBUG(fprintf(stderr, "dlen=%d blen=%d\n", dlen, blen));
+
+	int loop = 0;
+	while (loop < 2)
+	{
+		for (; pluginItr.hasData(); pluginItr.next())
+		{
+			if (!currentIface)
+			{
+				LocalStatus ls;
+				CheckStatusWrapper st(&ls);
+
+				HANDSHAKE_DEBUG(fprintf(stderr, "Try plugin %s\n", pluginItr.name()));
+				currentIface = pluginItr.plugin()->chainHandle(&st);
+				// if plugin does not support chaining - silently ignore it
+				check(&st, isc_wish_list);
+				HANDSHAKE_DEBUG(fprintf(stderr, "Use plugin %s, ptr=%p\n", pluginItr.name(), currentIface));
+			}
+
+			// if we have an iface - try it
+			if (currentIface)
+			{
+				unsigned retlen = currentIface->callback(dlen, data, blen, buffer);
+				HANDSHAKE_DEBUG(fprintf(stderr, "Iface %p returned %d\n", currentIface, retlen));
+				if (retlen)
+					return retlen;
+			}
+
+			// no success with iface - clear it
+			// appropriate data structures to be released by plugin cleanup code
+			currentIface = nullptr;
+		}
+
+		++loop;
+		// prepare iterator for next use
+		pluginItr.rewind();
+	}
+
+	// no luck with suggested data
+	return 0;
 }

@@ -493,6 +493,7 @@ RELATION(nam_mon_database, rel_mon_database, ODS_11_1, rel_virtual)
 	FIELD(f_mon_db_crypt_page, nam_mon_crypt_page, fld_counter, 0, ODS_12_0)
 	FIELD(f_mon_db_owner, nam_mon_owner, fld_user, 0, ODS_12_0)
 	FIELD(f_mon_db_secdb, nam_mon_secdb, fld_sec_db, 0, ODS_12_0)
+	FIELD(f_mon_db_crypt_state, nam_mon_crypt_state, fld_crypt_state, 0, ODS_13_0)
 END_RELATION
 
 // Relation 34 (MON$ATTACHMENTS)
@@ -522,6 +523,7 @@ RELATION(nam_mon_attachments, rel_mon_attachments, ODS_11_1, rel_virtual)
 	FIELD(f_mon_att_stmt_timeout, nam_stmt_timeout, fld_stmt_timeout, 0, ODS_13_0)
 	FIELD(f_mon_att_wire_compressed, nam_wire_compressed, fld_bool, 0, ODS_13_0)
 	FIELD(f_mon_att_wire_encrypted, nam_wire_encrypted, fld_bool, 0, ODS_13_0)
+	FIELD(f_mon_att_remote_crypt, nam_wire_crypt_plugin, fld_remote_crypt, 0, ODS_12_0)
 END_RELATION
 
 // Relation 35 (MON$TRANSACTIONS)

@@ -29,6 +29,7 @@
 #include "../jrd/align.h"
 #include "firebird/impl/blr.h"
 #include "../jrd/tra.h"
+#include "../jrd/Coercion.h"
 #include "../jrd/Function.h"
 #include "../jrd/Optimizer.h"
 #include "../jrd/RecordSourceNodes.h"
@@ -502,7 +503,7 @@ AssignmentNode* AssignmentNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	{ // scope
 		dsc desc;
 		asgnTo->getDesc(tdbb, csb, &desc);
-		AutoSetRestore<UCHAR> dataType(&csb->csb_preferredDataType, desc.dsc_dtype);
+		AutoSetRestore<dsc*> dataType(&csb->csb_preferredDesc, &desc);
 		ExprNode::doPass2(tdbb, csb, asgnFrom.getAddress());
 	}
 	ExprNode::doPass2(tdbb, csb, asgnTo.getAddress());
@@ -2177,7 +2178,7 @@ DmlNode* DeclareVariableNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerS
 		csb->csb_map_item_info.put(Item(Item::TYPE_VARIABLE, node->varId), itemInfo);
 	}
 
-	if (itemInfo.explicitCollation)
+	if ((csb->csb_g_flags & csb_get_dependencies) && itemInfo.explicitCollation)
 	{
 		CompilerScratch::Dependency dependency(obj_collation);
 		dependency.number = INTL_TEXT_TYPE(node->varDesc);
@@ -2743,9 +2744,13 @@ DmlNode* ErrorHandlerNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 				if (!MET_load_exception(tdbb, item))
 					PAR_error(csb, Arg::Gds(isc_xcpnotdef) << item.name);
 
-				CompilerScratch::Dependency dependency(obj_exception);
-				dependency.number = item.code;
-				csb->csb_dependencies.push(dependency);
+				if (csb->csb_g_flags & csb_get_dependencies)
+				{
+					CompilerScratch::Dependency dependency(obj_exception);
+					dependency.number = item.code;
+					csb->csb_dependencies.push(dependency);
+				}
+
 				break;
 			}
 
@@ -2914,7 +2919,7 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 	PAR_procedure_parms(tdbb, csb, procedure, node->outputMessage.getAddress(),
 		node->outputSources.getAddress(), node->outputTargets.getAddress(), false);
 
-	if (!procedure->isSubRoutine())
+	if ((csb->csb_g_flags & csb_get_dependencies) && !procedure->isSubRoutine())
 	{
 		CompilerScratch::Dependency dependency(obj_procedure);
 		dependency.procedure = procedure;
@@ -4515,9 +4520,12 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 					if (!MET_load_exception(tdbb, *item))
 						PAR_error(csb, Arg::Gds(isc_xcpnotdef) << item->name);
 
-					CompilerScratch::Dependency dependency(obj_exception);
-					dependency.number = item->code;
-					csb->csb_dependencies.push(dependency);
+					if (csb->csb_g_flags & csb_get_dependencies)
+					{
+						CompilerScratch::Dependency dependency(obj_exception);
+						dependency.number = item->code;
+						csb->csb_dependencies.push(dependency);
+					}
 				}
 				break;
 
@@ -8077,6 +8085,12 @@ SuspendNode* SuspendNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				  Arg::Gds(isc_random) << Arg::Str("SUSPEND"));
 	}
 
+	if (dsqlScratch->outputVariables.isEmpty())
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				  Arg::Gds(isc_suspend_without_returns));
+	}
+
 	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK)	// autonomous transaction
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
@@ -8489,11 +8503,28 @@ void SetDecFloatTrapsNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_t
 //--------------------
 
 
-void SetDecFloatBindNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
+SessionManagementNode* SetBindNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	static const USHORT NON_FIELD_MASK = FLD_legacy | FLD_native;
+
+	from->resolve(dsqlScratch);
+	if (!(to->flags & NON_FIELD_MASK))
+		to->resolve(dsqlScratch);
+
+	return SessionManagementNode::dsqlPass(dsqlScratch);
+}
+
+
+void SetBindNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
 {
 	SET_TDBB(tdbb);
+
+	fb_assert(from);
+	fb_assert(to);
+
 	Attachment* const attachment = tdbb->getAttachment();
-	attachment->att_dec_binding = bind;
+	CoercionArray* coercions = attachment->att_dest_bind;
+	coercions->setRule(from, to);
 }
 
 
@@ -8576,17 +8607,6 @@ void SetTimeZoneNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** /*tr
 		attachment->att_current_timezone = attachment->att_original_timezone;
 	else
 		attachment->att_current_timezone = TimeZoneUtil::parse(str.c_str(), str.length());
-}
-
-
-//--------------------
-
-
-void SetTimeZoneBindNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
-{
-	SET_TDBB(tdbb);
-	Attachment* const attachment = tdbb->getAttachment();
-	attachment->att_timezone_bind = bind;
 }
 
 

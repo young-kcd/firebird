@@ -686,6 +686,7 @@ public:
 	void encodeTimeStampTz(Firebird::CheckStatusWrapper* status, ISC_TIMESTAMP_TZ* timeStampTz,
 		unsigned year, unsigned month, unsigned day,
 		unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone);
+	Firebird::IInt128* getInt128(Firebird::CheckStatusWrapper* status);
 };
 
 }	// namespace Why

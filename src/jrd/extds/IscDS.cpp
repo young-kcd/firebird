@@ -191,6 +191,8 @@ void IscConnection::attach(thread_db* tdbb)
 		}
 		p += len;
 	}
+
+	m_features = conFtrFB4;	// Exact feature set will be detected at first usage
 }
 
 void IscConnection::doDetach(thread_db* tdbb)
@@ -238,6 +240,9 @@ bool IscConnection::resetSession()
 	if (!m_handle)
 		return false;
 
+	if (!testFeature(conFtrSessionReset))
+		return true;
+
 	FbLocalStatus status;
 	m_iscProvider.isc_dsql_execute_immediate(&status, &m_handle,
 		NULL, 0, "ALTER SESSION RESET", m_sqlDialect, NULL);
@@ -245,7 +250,13 @@ bool IscConnection::resetSession()
 	if (!(status->getState() & IStatus::STATE_ERRORS))
 		return true;
 
-	return false; // (status->getErrors()[1] == isc_dsql_error);
+	if (status->getErrors()[1] == isc_dsql_error)
+	{
+		clearFeature(conFtrSessionReset);
+		return true;
+	}
+
+	return false;
 }
 
 // this ISC connection instance is available for the current execution context if it
@@ -301,14 +312,44 @@ Statement* IscConnection::doCreateStatement()
 
 // IscTransaction
 
+void IscTransaction::generateTPB(thread_db* tdbb, ClumpletWriter& tpb,
+	TraModes traMode, bool readOnly, bool wait, int lockTimeout) const
+{
+	if (traMode == traReadCommitedReadConsistency && !m_connection.testFeature(conFtrReadConsistency))
+		traMode = traConcurrency;
+
+	Transaction::generateTPB(tdbb, tpb, traMode, readOnly, wait, lockTimeout);
+}
+
 void IscTransaction::doStart(FbStatusVector* status, thread_db* tdbb, Firebird::ClumpletWriter& tpb)
 {
 	fb_assert(!m_handle);
 	FB_API_HANDLE& db_handle = m_iscConnection.getAPIHandle();
 
-	EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-	m_iscProvider.isc_start_transaction(status, &m_handle, 1, &db_handle,
-		tpb.getBufferLength(), tpb.getBuffer());
+	{
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+		m_iscProvider.isc_start_transaction(status, &m_handle, 1, &db_handle,
+			tpb.getBufferLength(), tpb.getBuffer());
+	}
+
+	if ((status->getState() & IStatus::STATE_ERRORS) &&
+		(status->getErrors()[1] == isc_bad_tpb_form) &&
+		tpb.find(isc_tpb_read_consistency) &&
+		m_connection.testFeature(conFtrReadConsistency))
+	{
+		tpb.deleteWithTag(isc_tpb_read_committed);
+		tpb.deleteWithTag(isc_tpb_read_consistency);
+		tpb.insertTag(isc_tpb_concurrency);
+
+		{
+			EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+			m_iscProvider.isc_start_transaction(status, &m_handle, 1, &db_handle,
+				tpb.getBufferLength(), tpb.getBuffer());
+		}
+
+		if (!(status->getState() & IStatus::STATE_ERRORS))
+			m_connection.clearFeature(conFtrReadConsistency);
+	}
 }
 
 void IscTransaction::doPrepare(FbStatusVector* /*status*/, thread_db* /*tdbb*/, int /*info_len*/, const char* /*info*/)
@@ -521,6 +562,9 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 
 void IscStatement::doSetTimeout(thread_db* tdbb, unsigned int timeout)
 {
+	if (!m_connection.testFeature(conFtrStatementTimeout))
+		return;
+
 	FbLocalStatus status;
 
 	{
@@ -533,7 +577,10 @@ void IscStatement::doSetTimeout(thread_db* tdbb, unsigned int timeout)
 		// silently ignore error if timeouts is not supported by remote server
 		// or loaded client library
 		if (status[0] == isc_arg_gds && (status[1] == isc_wish_list || status[1] == isc_unavailable))
+		{
+			m_connection.clearFeature(conFtrStatementTimeout);
 			return;
+		}
 
 		raise(&status, tdbb, "fb_dsql_set_timeout");
 	}

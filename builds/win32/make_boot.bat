@@ -41,6 +41,12 @@ if "%ERRLEV%"=="1" goto :END
 call :decNumber
 if "%ERRLEV%"=="1" goto :END
 
+if "%FB_TARGET_PLATFORM%"=="x64" call :ttmath
+if "%ERRLEV%"=="1" goto :END
+
+call :re2
+if "%ERRLEV%"=="1" goto :END
+
 call :zlib
 if "%ERRLEV%"=="1" goto :END
 
@@ -69,7 +75,7 @@ if "%ERRLEV%"=="1" goto :END
 call :isql
 if "%ERRLEV%"=="1" goto :END
 
-@findstr /V "@UDF_COMMENT@" %FB_ROOT_PATH%\builds\install\misc\firebird.conf.in > %FB_BIN_DIR%\firebird.conf
+@copy %FB_ROOT_PATH%\builds\install\misc\firebird.conf %FB_BIN_DIR%\firebird.conf
 
 :: Copy ICU and zlib both to Debug and Release configurations
 
@@ -157,6 +163,36 @@ if errorlevel 1 call :boot2 decNumber_%FB_OBJ_DIR%
 @call compile.bat extern\decNumber\msvc\decNumber_MSVC%MSVC_VERSION% decNumber_%FB_OBJ_DIR%_%FB_TARGET_PLATFORM%.log decNumber
 if errorlevel 1 call :boot2 decNumber_%FB_OBJ_DIR%
 @call set_build_target.bat %*
+goto :EOF
+
+::===================
+:: BUILD ttmath
+:ttmath
+@echo.
+@call set_build_target.bat %* RELEASE
+@echo Building ttmath (%FB_OBJ_DIR%)...
+@mkdir %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common 2>nul
+@ml64.exe /c /Fo %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common\ttmathuint_x86_64_msvc.obj %FB_ROOT_PATH%\extern\ttmath\ttmathuint_x86_64_msvc.asm
+if errorlevel 1 call :boot2 ttmath_%FB_OBJ_DIR%
+@call set_build_target.bat %* DEBUG
+@echo Building ttmath (%FB_OBJ_DIR%)...
+@mkdir %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common 2>nul
+@ml64.exe /c /Zi /Fo %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\common\ttmathuint_x86_64_msvc.obj %FB_ROOT_PATH%\extern\ttmath\ttmathuint_x86_64_msvc.asm
+if errorlevel 1 call :boot2 ttmath_%FB_OBJ_DIR%
+@call set_build_target.bat %*
+goto :EOF
+
+::===================
+:: BUILD re2
+:re2
+@echo.
+@echo Building re2...
+@mkdir %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% 2>nul
+@pushd %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM%
+@cmake -G "Visual Studio %MSVC_VERSION%" -A %FB_TARGET_PLATFORM% -S %FB_ROOT_PATH%\extern\re2 
+@cmake --build %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% --target ALL_BUILD --config Release > re2_Release_%FB_TARGET_PLATFORM%.log
+@cmake --build %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% --target ALL_BUILD --config Debug > re2_Debug_%FB_TARGET_PLATFORM%.log
+@popd
 goto :EOF
 
 ::===================

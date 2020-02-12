@@ -56,11 +56,16 @@ void ZLib::symbols()
 #undef FB_ZSYMB
 }
 
-//	Firebird::InitInstance<ZLib> zlib;
-
 void* ZLib::allocFunc(void*, uInt items, uInt size)
 {
-	return MemoryPool::globalAlloc(items * size ALLOC_ARGS);
+	try
+	{
+		return MemoryPool::globalAlloc(items * size ALLOC_ARGS);
+	}
+	catch (const Exception&)
+	{
+		return nullptr;
+	}
 }
 
 void ZLib::freeFunc(void*, void* address)

@@ -2959,7 +2959,7 @@ void BufferControl::cache_writer(BufferControl* bcb)
 		UserId user;
 		user.setUserName("Cache Writer");
 
-		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb, nullptr);
+		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
 		RefPtr<SysStableAttachment> sAtt(FB_NEW SysStableAttachment(attachment));
 		attachment->setStable(sAtt);
 		attachment->att_filename = dbb->dbb_filename;
@@ -5159,8 +5159,8 @@ void requeueRecentlyUsed(BufferControl* bcb)
 		QUE_DELETE(bdb->bdb_in_use);
 		QUE_INSERT(bcb->bcb_in_use, bdb->bdb_in_use);
 
-		bdb->bdb_flags &= ~BDB_lru_chained;
 		bdb->bdb_lru_chain = NULL;
+		bdb->bdb_flags &= ~BDB_lru_chained;
 	}
 
 	chain = bcb->bcb_lru_chain;

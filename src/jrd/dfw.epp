@@ -587,13 +587,13 @@ static void raiseRelationInUseError(const jrd_rel* relation)
 	raiseObjectInUseError(obj_type, obj_name);
 }
 
-static void raiseRoutineInUseError(const Routine* routine)
+static void raiseRoutineInUseError(const Routine* routine, const QualifiedName& name)
 {
 	const string obj_type =
 		(routine->getObjectType() == obj_udf) ? "FUNCTION" : "PROCEDURE";
 	const string obj_name = routine->getName().toString();
 
-	raiseObjectInUseError(obj_type, obj_name);
+	raiseObjectInUseError(obj_type, obj_name.hasData() ? obj_name : name.toString());
 }
 
 static void raiseTooManyVersionsError(const int obj_type, const string& obj_name)
@@ -712,8 +712,6 @@ namespace
 			jrd_tra* transaction)
 		{
 			SET_TDBB(tdbb);
-
-			Jrd::Attachment* attachment = tdbb->getAttachment();
 			const QualifiedName name(work->dfw_name, work->dfw_package);
 			Routine* routine;
 
@@ -745,7 +743,7 @@ namespace
 						if (!LCK_convert(tdbb, routine->existenceLock, LCK_EX,
 								transaction->getLockWait()))
 						{
-							raiseRoutineInUseError(routine);
+							raiseRoutineInUseError(routine, name);
 						}
 					}
 
@@ -764,7 +762,7 @@ namespace
 					// Do not allow to modify routine used by user requests
 					if (routine->isUsed() && MET_routine_in_use(tdbb, routine))
 					{
-						///raiseRoutineInUseError(routine);
+						///raiseRoutineInUseError(routine, name);
 						gds__log("Modifying %s %s which is currently in use by active user requests",
 								 Self::getTypeStr(), name.toString().c_str());
 
@@ -792,7 +790,7 @@ namespace
 					if (routine->getStatement())
 					{
 						if (routine->getStatement()->isActive())
-							raiseRoutineInUseError(routine);
+							raiseRoutineInUseError(routine, name);
 
 						// release the request
 
@@ -833,6 +831,7 @@ namespace
 					{
 						SSHORT validBlr = FALSE;
 
+						Jrd::Attachment* attachment = tdbb->getAttachment();
 						MemoryPool* newPool = attachment->createPool();
 						try
 						{
@@ -866,7 +865,8 @@ namespace
 			jrd_tra* transaction)
 		{
 			SET_TDBB(tdbb);
-			T* routine = NULL;
+			const QualifiedName name(work->dfw_name, work->dfw_package);
+			T* routine;
 
 			switch (phase)
 			{
@@ -895,7 +895,7 @@ namespace
 						if (!LCK_convert(tdbb, routine->existenceLock, LCK_EX,
 								transaction->getLockWait()))
 						{
-							raiseRoutineInUseError(routine);
+							raiseRoutineInUseError(routine, name);
 						}
 					}
 
@@ -914,12 +914,10 @@ namespace
 					if (!routine)
 						return false;
 
-					const QualifiedName name(work->dfw_name, work->dfw_package);
-
 					// Do not allow to drop routine used by user requests
 					if (routine->isUsed() && MET_routine_in_use(tdbb, routine))
 					{
-						///raiseRoutineInUseError(routine);
+						///raiseRoutineInUseError(routine, name);
 						gds__log("Deleting %s %s which is currently in use by active user requests",
 							Self::getTypeStr(), name.toString().c_str());
 
@@ -941,7 +939,7 @@ namespace
 						if (routine->getStatement()->isActive())
 						{
 							routine->flags = old_flags;
-							raiseRoutineInUseError(routine);
+							raiseRoutineInUseError(routine, name);
 						}
 
 						routine->releaseStatement(tdbb);
@@ -1302,7 +1300,7 @@ USHORT DFW_assign_index_type(thread_db* tdbb, const Firebird::MetaName& name, SS
 		return idx_boolean;
 	case dtype_dec64:
 	case dtype_dec128:
-	case dtype_dec_fixed:
+	case dtype_int128:
 		return idx_decimal;
 	default:
 		return idx_numeric;
