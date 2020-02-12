@@ -1164,11 +1164,8 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 		gds__msg_lookup(NULL, JRD_BUGCHK, message, sizeof(text), text, &flags);
 
 		// Cannot use Arg::Num here because transaction number is 64-bit unsigned integer
-		string trans_num_str;
-		trans_num_str.printf("%" UQUADFORMAT, number);
-
 		ERR_post(Arg::Gds(isc_no_recon) <<
-				 Arg::Gds(isc_tra_state) << Arg::Str(trans_num_str) << Arg::Str(text));
+				 Arg::Gds(isc_tra_state) << Arg::Int64(number) << Arg::Str(text));
 	}
 
 	MemoryPool* const pool = attachment->createPool();
