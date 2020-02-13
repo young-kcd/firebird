@@ -34,11 +34,11 @@ separate servers. See 'Testing' for more details.
 
 4.Testing.
 
-- imagine you have to hosts: host1 and host2;
+- imagine you have two hosts: host1 and host2;
 - generate configuration file using extauth_keygen utility on any of them (only ONCE -
 on ONE host !!!);
 - copy that file and plugin itself to $FIREBIRD/plugins directory on each host;
-- modife firebird.cond, it should contain something like:
+- modify firebird.cond, it should contain something like:
 	AuthServer = Srp256, ExtAuth
 	AuthClient = Srp256, ExtAuth
 lines, certainly something else may be used instead recommended Srp256;
