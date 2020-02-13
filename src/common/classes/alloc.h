@@ -396,23 +396,8 @@ inline void operator delete[](void* mem, std::size_t s ALLOC_PARAMS) FB_NOTHROW
 
 #ifdef DEBUG_GDS_ALLOC
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Winline-new-delete"
-#endif
-
-inline void operator delete(void* mem) FB_NOTHROW
-{
-	MemoryPool::globalFree(mem);
-}
-inline void operator delete[](void* mem) FB_NOTHROW
-{
-	MemoryPool::globalFree(mem);
-}
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
+extern void operator delete(void* mem) FB_NOTHROW;
+extern void operator delete[](void* mem) FB_NOTHROW;
 
 #endif // DEBUG_GDS_ALLOC
 
