@@ -5157,12 +5157,12 @@ bool get_function(BurpGlobals* tdgbl)
 
 				case att_function_description:
 					X.RDB$DESCRIPTION.NULL = FALSE;
-					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, false);
+					get_misc_blob (tdgbl, X.RDB$DESCRIPTION, true);
 					break;
 
 				case att_function_description2:
 					X.RDB$DESCRIPTION.NULL = FALSE;
-					get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
+					get_source_blob (tdgbl, X.RDB$DESCRIPTION, true);
 					break;
 
 				case att_function_module_name:
@@ -5513,7 +5513,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 				case att_functionarg_default_source:
 					if (tdgbl->RESTORE_format >= 10)
 					{
-						get_source_blob(tdgbl, X.RDB$DEFAULT_SOURCE, false);
+						get_source_blob(tdgbl, X.RDB$DEFAULT_SOURCE, true);
 						X.RDB$DEFAULT_SOURCE.NULL = FALSE;
 					}
 					else
@@ -5573,7 +5573,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 				case att_functionarg_description:
 					if (tdgbl->RESTORE_format >= 10)
 					{
-						get_source_blob(tdgbl, X.RDB$DESCRIPTION, false);
+						get_source_blob(tdgbl, X.RDB$DESCRIPTION, true);
 						X.RDB$DESCRIPTION.NULL = FALSE;
 					}
 					else
