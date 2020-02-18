@@ -441,6 +441,8 @@ static int Exit_value = 0;
 static bool Interactive = true;
 static bool Input_file = false;
 
+static const char* DEFAULT_DML_TRANS_SQL = "SET TRANSACTION";
+static Firebird::GlobalPtr<Firebird::string> TranParams;
 
 // Values used in the SET command.
 // Initial options set exclusively from the command line are not included here.
@@ -468,6 +470,8 @@ public:
 		BailOnError = false;
 		StmtTimeout = 0;
 		ISQL_charset[0] = 0;
+		KeepTranParams = true;
+		TranParams->assign(DEFAULT_DML_TRANS_SQL);
 	}
 
 	ColList global_Cols;
@@ -489,6 +493,7 @@ public:
 	bool BailOnError;
 	unsigned int StmtTimeout;
 	SCHAR ISQL_charset[MAXCHARSET_SIZE];
+	bool KeepTranParams;
 };
 
 static SetValues setValues;
@@ -586,6 +591,17 @@ static bool startTransaction(Firebird::ITransaction** t, unsigned len = 0, const
 
 static bool M_Transaction()
 {
+	if (DB && !M__trans && setValues.KeepTranParams)
+	{
+		M__trans = DB->execute(fbStatus, nullptr, 
+							   TranParams->length(), TranParams->c_str(),
+							   isqlGlob.SQL_dialect, nullptr, nullptr, nullptr, nullptr);
+
+		if (ISQL_errmsg(fbStatus))
+			return false;
+
+		return DB != NULL;
+	}
 	return startTransaction(&M__trans);
 }
 
@@ -4949,6 +4965,7 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 //#endif
 			sql, warning, sqlCont, heading, bail,
 			bulk_insert, maxrows, stmtTimeout,
+			keepTranParams,
 			wrong
 		};
 		SetOptions(const optionsMap* inmap, size_t insize, int wrongval)
@@ -4989,6 +5006,7 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		{SetOptions::sqlCont, "TRUSTED", 0},	// TRUSTED ROLE, will get DSQL error other case
 		{SetOptions::stmtTimeout, "LOCAL_TIMEOUT", 0},
 		{SetOptions::sqlCont, "DECFLOAT", 0},
+		{SetOptions::keepTranParams, "KEEP_TRAN_PARAMS", 9},
 	};
 
 	// Display current set options
@@ -5164,6 +5182,16 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 				ret = SKIP;
 			}
 		}
+		break;
+
+	case SetOptions::keepTranParams:
+		{
+			const bool oldValue = setValues.KeepTranParams;
+			ret = do_set_command(parms[2], &setValues.KeepTranParams);
+			if ((ret != ps_ERR) && (oldValue != setValues.KeepTranParams))
+				TranParams->assign(setValues.KeepTranParams ? DEFAULT_DML_TRANS_SQL : "");
+		}
+
 		break;
 
 	default:
@@ -5997,6 +6025,9 @@ static processing_state print_sets()
 	print_set("Warnings:", setValues.Warnings);
 	print_set("Bail on error:", setValues.BailOnError);
 	isqlGlob.printf("%-25s%lu%s", "Local statement timeout:", setValues.StmtTimeout, NEWLINE);
+	print_set("Keep transaction params:", setValues.KeepTranParams);
+	if (setValues.KeepTranParams)
+		isqlGlob.printf("    %s%s", TranParams->c_str(), NEWLINE);
 	return SKIP;
 }
 
@@ -6667,6 +6698,9 @@ static processing_state newtrans(const TEXT* statement)
 	{
 		return FAIL;
 	}
+
+	if (setValues.KeepTranParams)
+		TranParams->assign(statement);
 
 	return SKIP;
 }
