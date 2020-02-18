@@ -575,9 +575,9 @@ static bool M_Transaction()
 {
 	if (DB && !M__trans && setValues.KeepTranParams)
 	{
-		M__trans = DB->execute(fbStatus, nullptr, 
+		M__trans = DB->execute(fbStatus, NULL, 
 							   TranParams->length(), TranParams->c_str(),
-							   isqlGlob.SQL_dialect, nullptr, nullptr, nullptr, nullptr);
+							   isqlGlob.SQL_dialect, NULL, NULL, NULL, NULL);
 
 		if (ISQL_errmsg(fbStatus))
 			return false;
