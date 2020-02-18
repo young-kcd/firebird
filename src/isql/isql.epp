@@ -441,6 +441,8 @@ static int Exit_value = 0;
 static bool Interactive = true;
 static bool Input_file = false;
 
+static const char* DEFAULT_DML_TRANS_SQL = "SET TRANSACTION";
+static Firebird::GlobalPtr<Firebird::string> TranParams;
 
 // Values used in the SET command.
 // Initial options set exclusively from the command line are not included here.
@@ -468,7 +470,8 @@ public:
 		BailOnError = false;
 		StmtTimeout = 0;
 		ISQL_charset[0] = 0;
-		KeepTranParams = false;
+		KeepTranParams = true;
+		TranParams->assign(DEFAULT_DML_TRANS_SQL);
 	}
 
 	ColList global_Cols;
@@ -493,7 +496,6 @@ public:
 	bool KeepTranParams;
 };
 
-static Firebird::GlobalPtr<Firebird::string> TranParams;
 static SetValues setValues;
 
 
@@ -551,8 +553,6 @@ static const UCHAR default_tpb[] =
 	isc_tpb_read_committed, isc_tpb_wait,
 	isc_tpb_no_rec_version
 };
-
-static const char* DEFAULT_DML_TRANS_SQL = "SET TRANSACTION";
 
 #ifdef NOT_USED_OR_REPLACED
 // CVC: Just in case we need it for R/O operations in the future.
@@ -5185,9 +5185,12 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		break;
 
 	case SetOptions::keepTranParams:
-		ret = do_set_command(parms[2], &setValues.KeepTranParams);
-		if (ret != ps_ERR)
-			TranParams->assign(setValues.KeepTranParams ? DEFAULT_DML_TRANS_SQL : "");
+		{
+			const bool oldValue = setValues.KeepTranParams;
+			ret = do_set_command(parms[2], &setValues.KeepTranParams);
+			if ((ret != ps_ERR) && (oldValue != setValues.KeepTranParams))
+				TranParams->assign(setValues.KeepTranParams ? DEFAULT_DML_TRANS_SQL : "");
+		}
 
 		break;
 
