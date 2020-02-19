@@ -60,6 +60,11 @@ public:
 		return nullable;
 	}
 
+	T orElse(T elseValue) const
+	{
+		return specified ? value : elseValue;
+	}
+
 	bool operator ==(const BaseNullable<T>& o) const
 	{
 		return (!specified && !o.specified) || (specified == o.specified && value == o.value);
