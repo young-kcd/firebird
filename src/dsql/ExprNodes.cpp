@@ -12105,11 +12105,11 @@ ValueExprNode* SysFuncCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	ValueExprNode::pass2(tdbb, csb);
 
+	function->checkArgsMismatch(args->items.getCount());
+
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
 	impureOffset = CMP_impure(csb, sizeof(impure_value));
-
-	function->checkArgsMismatch(args->items.getCount());
 
 	return this;
 }
