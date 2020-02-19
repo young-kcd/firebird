@@ -1111,7 +1111,8 @@ struct SignatureParameter
 				(fb_utils::implicit_domain(fieldSource.c_str()) &&
 					fb_utils::implicit_domain(o.fieldSource.c_str()))) &&
 			fieldName == o.fieldName && relationName == o.relationName &&
-			collationId == o.collationId && nullFlag == o.nullFlag &&
+			collationId == o.collationId &&
+			nullFlag.orElse(FALSE) == o.nullFlag.orElse(FALSE) &&
 			mechanism == o.mechanism && fieldLength == o.fieldLength &&
 			fieldScale == o.fieldScale && fieldType == o.fieldType &&
 			fieldSubType == o.fieldSubType && fieldSegmentLength == o.fieldSegmentLength &&
