@@ -2330,12 +2330,17 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	const SINT64 quantity = MOV_get_int64(tdbb, quantityDsc,
 		(part == blr_extract_millisecond ? milliScale : 0));
 
+	const ISC_STATUS rangeExceededStatus =
+		valueDsc->isTimeStamp() ? isc_datetime_range_exceeded :
+		valueDsc->isTime() ? isc_time_range_exceeded :
+		isc_date_range_exceeded;
+
 	switch (part)
 	{
 		case blr_extract_year:
 			{
 				if (fb_utils::abs64Compare(quantity, 9999) > 0)
-					ERR_post(Arg::Gds(isc_date_range_exceeded));
+					ERR_post(Arg::Gds(rangeExceededStatus));
 
 				tm times;
 				timestamp.decode(&times);
@@ -2353,7 +2358,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 		case blr_extract_month:
 			{
 				if (fb_utils::abs64Compare(quantity, 9999 * 12) > 0)
-					ERR_post(Arg::Gds(isc_date_range_exceeded));
+					ERR_post(Arg::Gds(rangeExceededStatus));
 
 				tm times;
 				timestamp.decode(&times);
@@ -2397,19 +2402,19 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 
 		case blr_extract_day:
 			if (fb_utils::abs64Compare(quantity, TimeStamp::MAX_DATE - TimeStamp::MIN_DATE) > 0)
-				ERR_post(Arg::Gds(isc_date_range_exceeded));
+				ERR_post(Arg::Gds(rangeExceededStatus));
 			timestamp.value().timestamp_date += quantity;
 			break;
 
 		case blr_extract_week:
 			if (fb_utils::abs64Compare(quantity, (TimeStamp::MAX_DATE - TimeStamp::MIN_DATE) / 7 + 1) > 0)
-				ERR_post(Arg::Gds(isc_date_range_exceeded));
+				ERR_post(Arg::Gds(rangeExceededStatus));
 			timestamp.value().timestamp_date += quantity * 7;
 			break;
 
 		case blr_extract_hour:
 			if (fb_utils::abs64Compare(quantity, SINT64(TimeStamp::MAX_DATE - TimeStamp::MIN_DATE + 1) * 24) > 0)
-				ERR_post(Arg::Gds(isc_date_range_exceeded));
+				ERR_post(Arg::Gds(rangeExceededStatus));
 
 			if (valueDsc->dsc_dtype == dtype_sql_date)
 				timestamp.value().timestamp_date += quantity / 24;
@@ -2419,7 +2424,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 
 		case blr_extract_minute:
 			if (fb_utils::abs64Compare(quantity, SINT64(TimeStamp::MAX_DATE - TimeStamp::MIN_DATE + 1) * 24 * 60) > 0)
-				ERR_post(Arg::Gds(isc_date_range_exceeded));
+				ERR_post(Arg::Gds(rangeExceededStatus));
 
 			if (valueDsc->dsc_dtype == dtype_sql_date)
 				timestamp.value().timestamp_date += quantity / 1440; // 1440 == 24 * 60
@@ -2431,7 +2436,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			if (fb_utils::abs64Compare(quantity,
 					SINT64(TimeStamp::MAX_DATE - TimeStamp::MIN_DATE + 1) * 24 * 60 * 60) > 0)
 			{
-				ERR_post(Arg::Gds(isc_date_range_exceeded));
+				ERR_post(Arg::Gds(rangeExceededStatus));
 			}
 
 			if (valueDsc->dsc_dtype == dtype_sql_date)
@@ -2444,7 +2449,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			if (fb_utils::abs64Compare(quantity,
 					SINT64(TimeStamp::MAX_DATE - TimeStamp::MIN_DATE + 1) * 24 * 60 * 60 * 1000 * milliPow) > 0)
 			{
-				ERR_post(Arg::Gds(isc_date_range_exceeded));
+				ERR_post(Arg::Gds(rangeExceededStatus));
 			}
 
 			if (valueDsc->dsc_dtype == dtype_sql_date)
@@ -2462,7 +2467,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	}
 
 	if (!TimeStamp::isValidTimeStamp(timestamp.value()))
-		status_exception::raise(Arg::Gds(isc_datetime_range_exceeded));
+		status_exception::raise(Arg::Gds(rangeExceededStatus));
 
 	EVL_make_value(tdbb, valueDsc, impure);
 
