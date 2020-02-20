@@ -2442,7 +2442,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 
 		case blr_extract_millisecond:
 			if (fb_utils::abs64Compare(quantity,
-					SINT64(TimeStamp::MAX_DATE - TimeStamp::MIN_DATE + 1) * 24 * 60 * 60 * 1000) > 0)
+					SINT64(TimeStamp::MAX_DATE - TimeStamp::MIN_DATE + 1) * 24 * 60 * 60 * 1000 * milliPow) > 0)
 			{
 				ERR_post(Arg::Gds(isc_date_range_exceeded));
 			}
