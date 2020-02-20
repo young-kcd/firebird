@@ -4520,10 +4520,16 @@ ITransaction* JStatement::execute(CheckStatusWrapper* user_status, ITransaction*
 			}
 			else if (tra && !jt)
 			{
-				apiTra = NULL;		// Get ready for correct return in OOM case
-				jt = FB_NEW JTransaction(tra, getAttachment());
-				tra->setInterface(jt);
-				jt->addRef();
+				jt = tra->getInterface(false);
+				if (jt)
+					tra->tra_flags &= ~TRA_own_interface;
+				else
+				{
+					apiTra = NULL;		// Get ready for correct return in OOM case
+					jt = FB_NEW JTransaction(tra, getAttachment());
+					tra->setInterface(jt);
+					jt->addRef();
+				}
 			}
 			else if (tra && jt)
 			{
@@ -4669,10 +4675,16 @@ ITransaction* JAttachment::execute(CheckStatusWrapper* user_status, ITransaction
 			}
 			else if (tra && !jt)
 			{
-				apiTra = NULL;		// Get ready for correct return in OOM case
-				jt = FB_NEW JTransaction(tra, getStable());
-				jt->addRef();
-				tra->setInterface(jt);
+				jt = tra->getInterface(false);
+				if (jt)
+					tra->tra_flags &= ~TRA_own_interface;
+				else
+				{
+					apiTra = NULL;		// Get ready for correct return in OOM case
+					jt = FB_NEW JTransaction(tra, getStable());
+					jt->addRef();
+					tra->setInterface(jt);
+				}
 			}
 			else if (tra && jt)
 			{
