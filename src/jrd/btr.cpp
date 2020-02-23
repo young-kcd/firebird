@@ -3364,6 +3364,7 @@ static ULONG fast_load(thread_db* tdbb,
 	bool error = false;
 	FB_UINT64 count = 0;
 	FB_UINT64 duplicates = 0;
+	const bool unique = (idx->idx_flags & idx_unique);
 	const bool descending = (idx->idx_flags & idx_descending);
 	const ULONG segments = idx->idx_count;
 
@@ -3437,6 +3438,13 @@ static ULONG fast_load(thread_db* tdbb,
 
 		IndexNode tempNode;
 
+		// Detect the case when set of duplicate keys contains more then one key
+		// from primary record version. It breaks the unique constraint and must
+		// be rejected. Note, it is not always could be detected while sorting. 
+		// Set to true when primary record version is found in current set of 
+		// duplicate keys.		
+		bool primarySeen = false;
+
 		while (!error)
 		{
 			// Get the next record in sorted order.
@@ -3444,7 +3452,7 @@ static ULONG fast_load(thread_db* tdbb,
 			UCHAR* record;
 			scb->get(tdbb, reinterpret_cast<ULONG**>(&record));
 
-			if (!record)
+			if (!record || creation.duplicates)
 				break;
 
 			index_sort_record* isr = (index_sort_record*) (record + key_length);
@@ -3656,8 +3664,21 @@ static ULONG fast_load(thread_db* tdbb,
 
 			// check if this is a duplicate node
 			duplicate = (!newNode.length && prefix == leafKey->key_length);
+			const bool isPrimary = !(isr->isr_flags & ISR_secondary);
 			if (duplicate && (count > 1))
+			{
 				++duplicates;
+				if (unique && primarySeen && isPrimary && !(isr->isr_flags & ISR_null))
+				{
+					creation.duplicates++;
+					creation.dup_recno = isr->isr_record_number;
+				}
+
+				if (isPrimary)
+					primarySeen = true;
+			}
+			else
+				primarySeen = isPrimary;
 
 			// Update the length of the page.
 			bucket->btr_length = pointer - (UCHAR*) bucket;
