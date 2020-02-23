@@ -70,14 +70,6 @@ using namespace Jrd;
 using namespace Ods;
 using namespace Firebird;
 
-// Data to be passed to index fast load duplicates routine
-
-struct index_fast_load
-{
-	SINT64 ifl_dup_recno;
-	SLONG ifl_duplicates;
-	USHORT ifl_key_length;
-};
 
 static idx_e check_duplicates(thread_db*, Record*, index_desc*, index_insertion*, jrd_rel*);
 static idx_e check_foreign_key(thread_db*, Record*, jrd_rel*, jrd_tra*, index_desc*, IndexErrorContext&);
@@ -300,6 +292,8 @@ void IDX_create_index(thread_db* tdbb,
 	creation.relation = relation;
 	creation.transaction = transaction;
 	creation.key_length = key_length;
+	creation.dup_recno = -1;
+	creation.duplicates = 0;
 
 	BTR_reserve_slot(tdbb, creation);
 
@@ -308,11 +302,6 @@ void IDX_create_index(thread_db* tdbb,
 
 	RecordStack stack;
 	const UCHAR pad = isDescending ? -1 : 0;
-
-	index_fast_load ifl_data;
-	ifl_data.ifl_dup_recno = -1;
-	ifl_data.ifl_duplicates = 0;
-	ifl_data.ifl_key_length = key_length;
 
 	sort_key_def key_desc[2];
 	// Key sort description
@@ -329,7 +318,7 @@ void IDX_create_index(thread_db* tdbb,
 	key_desc[1].skd_vary_offset = 0;
 
 	FPTR_REJECT_DUP_CALLBACK callback = (idx->idx_flags & idx_unique) ? duplicate_key : NULL;
-	void* callback_arg = (idx->idx_flags & idx_unique) ? &ifl_data : NULL;
+	void* callback_arg = (idx->idx_flags & idx_unique) ? &creation : NULL;
 
 	Sort* const scb = FB_NEW_POOL(transaction->tra_sorts.getPool())
 		Sort(dbb, &transaction->tra_sorts, key_length + sizeof(index_sort_record),
@@ -458,7 +447,7 @@ void IDX_create_index(thread_db* tdbb,
 
 			// try to catch duplicates early
 
-			if (ifl_data.ifl_duplicates > 0)
+			if (creation.duplicates > 0)
 			{
 				do {
 					if (record != gc_record)
@@ -495,7 +484,7 @@ void IDX_create_index(thread_db* tdbb,
 				delete record;
 		}
 
-		if (ifl_data.ifl_duplicates > 0)
+		if (creation.duplicates > 0)
 			break;
 
 		if (--tdbb->tdbb_quantum < 0)
@@ -507,20 +496,20 @@ void IDX_create_index(thread_db* tdbb,
 	if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 		--relation->rel_scan_count;
 
-	if (!ifl_data.ifl_duplicates)
+	if (!creation.duplicates)
 		scb->sort(tdbb);
 
-	// ASF: We have a callback accessing ifl_data, so don't join above and below if's.
+	// ASF: We have a callback accessing "creation", so don't join above and below if's.
 
-	if (!ifl_data.ifl_duplicates)
+	if (!creation.duplicates)
 		BTR_create(tdbb, creation, selectivity);
 
-	if (ifl_data.ifl_duplicates > 0)
+	if (creation.duplicates > 0)
 	{
 		AutoPtr<Record> error_record;
 		primary.rpb_record = NULL;
-		fb_assert(ifl_data.ifl_dup_recno >= 0);
-		primary.rpb_number.setValue(ifl_data.ifl_dup_recno);
+		fb_assert(creation.dup_recno >= 0);
+		primary.rpb_number.setValue(creation.dup_recno);
 
 		if (DPM_get(tdbb, &primary, LCK_read))
 		{
@@ -1414,15 +1403,15 @@ static bool duplicate_key(const UCHAR* record1, const UCHAR* record2, void* ifl_
  *	bump a counter.
  *
  **************************************/
-	index_fast_load* ifl_data = static_cast<index_fast_load*>(ifl_void);
-	const index_sort_record* rec1 = (index_sort_record*) (record1 + ifl_data->ifl_key_length);
-	const index_sort_record* rec2 = (index_sort_record*) (record2 + ifl_data->ifl_key_length);
+	IndexCreation* ifl_data = static_cast<IndexCreation*>(ifl_void);
+	const index_sort_record* rec1 = (index_sort_record*) (record1 + ifl_data->key_length);
+	const index_sort_record* rec2 = (index_sort_record*) (record2 + ifl_data->key_length);
 
 	if (!(rec1->isr_flags & (ISR_secondary | ISR_null)) &&
 		!(rec2->isr_flags & (ISR_secondary | ISR_null)))
 	{
-		if (!ifl_data->ifl_duplicates++)
-			ifl_data->ifl_dup_recno = rec2->isr_record_number;
+		if (!ifl_data->duplicates++)
+			ifl_data->dup_recno = rec2->isr_record_number;
 	}
 
 	return false;
