@@ -1603,7 +1603,7 @@ void LockManager::bug(CheckStatusWrapper* statusVector, const TEXT* string)
 	{
 		m_bugcheck = true;
 
-		const lhb* const header = m_sharedMemory->getHeader();
+		const lhb* const header = m_sharedMemory ? m_sharedMemory->getHeader() : nullptr;
 
 		if (header)
 		{
