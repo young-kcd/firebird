@@ -65,11 +65,9 @@
 #include "../jrd/tra_proto.h"
 #include "../jrd/Collation.h"
 
-
 using namespace Jrd;
 using namespace Ods;
 using namespace Firebird;
-
 
 static idx_e check_duplicates(thread_db*, Record*, index_desc*, index_insertion*, jrd_rel*);
 static idx_e check_foreign_key(thread_db*, Record*, jrd_rel*, jrd_tra*, index_desc*, IndexErrorContext&);
@@ -78,23 +76,41 @@ static bool duplicate_key(const UCHAR*, const UCHAR*, void*);
 static PageNumber get_root_page(thread_db*, jrd_rel*);
 static int index_block_flush(void*);
 static idx_e insert_key(thread_db*, jrd_rel*, Record*, jrd_tra*, WIN *, index_insertion*, IndexErrorContext&);
-static bool key_equal(const temporary_key*, const temporary_key*);
 static void release_index_block(thread_db*, IndexBlock*);
 static void signal_index_deletion(thread_db*, jrd_rel*, USHORT);
 
-static inline USHORT getNullSegment(const temporary_key& key)
+namespace
 {
-	USHORT nulls = key.key_nulls;
-
-	for (USHORT i = 0; nulls; i++)
+	// Data to be passed to index fast load duplicates routine
+	struct index_fast_load
 	{
-		if (nulls & 1)
-			return i;
+		SINT64 ifl_dup_recno;
+		SLONG ifl_duplicates;
+		USHORT ifl_key_length;
+	};
 
-		nulls >>= 1;
+	// Return ordinal number of the first NULL segment
+	inline USHORT getNullSegment(const temporary_key& key)
+	{
+		USHORT nulls = key.key_nulls;
+
+		for (USHORT i = 0; nulls; i++)
+		{
+			if (nulls & 1)
+				return i;
+
+			nulls >>= 1;
+		}
+
+		return MAX_USHORT;
 	}
 
-	return MAX_USHORT;
+	// Compare two keys for equality
+	inline bool key_equal(const temporary_key* key1, const temporary_key* key2)
+	{
+		const USHORT l = key1->key_length;
+		return (l == key2->key_length && !memcmp(key1->key_data, key2->key_data, l));
+	}
 }
 
 
@@ -1052,7 +1068,7 @@ static bool cmpRecordKeys(thread_db* tdbb,
 		bool flag_rec = false;
 		const dsc* desc_rec = BTR_eval_expression(tdbb, idx1, rec1, flag_rec);
 
-		if (flag_rec && flag_idx && (MOV_compare(desc_rec, &desc1) == 0))
+		if (flag_rec && flag_idx && !MOV_compare(desc_rec, &desc1))
 			return true;
 	}
 	else
@@ -1070,7 +1086,7 @@ static bool cmpRecordKeys(thread_db* tdbb,
 			field_id = idx2->idx_rpt[i].idx_field;
 			const bool flag_idx = EVL_field(rel2, rec2, field_id, &desc2);
 
-			if (flag_rec != flag_idx || (flag_rec && (MOV_compare(&desc1, &desc2) != 0)))
+			if (flag_rec != flag_idx || (flag_rec && MOV_compare(&desc1, &desc2)))
 				break;
 
 			all_nulls = all_nulls && !flag_rec && !flag_idx;
@@ -1566,29 +1582,32 @@ void IDX_modify_flag_uk_modified(thread_db* tdbb,
 		return;
 	}
 
-	RelationPages* relPages = org_rpb->rpb_relation->getPages(tdbb);
+	jrd_rel* const relation = org_rpb->rpb_relation;
+	fb_assert(new_rpb->rpb_relation == relation);
+
+	RelationPages* const relPages = relation->getPages(tdbb);
 	WIN window(relPages->rel_pg_space_id, -1);
 
 	DSC desc1, desc2;
 	index_desc idx;
 	idx.idx_id = idx_invalid;
 
-	while (BTR_next_index(tdbb, org_rpb->rpb_relation, transaction, &idx, &window))
+	while (BTR_next_index(tdbb, relation, transaction, &idx, &window))
 	{
 		if (!(idx.idx_flags & (idx_primary | idx_unique)) ||
-			!MET_lookup_partner(tdbb, org_rpb->rpb_relation, &idx, 0))
+			!MET_lookup_partner(tdbb, relation, &idx, 0))
 		{
 			continue;
 		}
 
-		const index_desc::idx_repeat* idx_desc = idx.idx_rpt;
-
-		for (USHORT i = 0; i < idx.idx_count; i++, idx_desc++)
+		for (USHORT i = 0; i < idx.idx_count; i++)
 		{
-			const bool flag_org = EVL_field(org_rpb->rpb_relation, org_rpb->rpb_record, idx_desc->idx_field, &desc1);
-			const bool flag_new = EVL_field(new_rpb->rpb_relation, new_rpb->rpb_record, idx_desc->idx_field, &desc2);
+			const USHORT field_id = idx.idx_rpt[i].idx_field;
 
-			if (flag_org != flag_new || MOV_compare(&desc1, &desc2) != 0)
+			const bool flag_org = EVL_field(relation, org_rpb->rpb_record, field_id, &desc1);
+			const bool flag_new = EVL_field(relation, new_rpb->rpb_record, field_id, &desc2);
+
+			if (flag_org != flag_new || (flag_new && MOV_compare(&desc1, &desc2)))
 			{
 				new_rpb->rpb_flags |= rpb_uk_modified;
 				CCH_RELEASE(tdbb, &window);
@@ -1596,23 +1615,6 @@ void IDX_modify_flag_uk_modified(thread_db* tdbb,
 			}
 		}
 	}
-}
-
-
-static bool key_equal(const temporary_key* key1, const temporary_key* key2)
-{
-/**************************************
- *
- *	k e y _ e q u a l
- *
- **************************************
- *
- * Functional description
- *	Compare two keys for equality.
- *
- **************************************/
-	const USHORT l = key1->key_length;
-	return (l == key2->key_length && !memcmp(key1->key_data, key2->key_data, l));
 }
 
 

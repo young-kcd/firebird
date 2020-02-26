@@ -2783,7 +2783,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 					bool rc4 = EVL_field(NULL, new_rpb->rpb_record, f_rfr_sname, &desc4);
 
 					if ((rc2 && MOV_get_long(&desc2, 0) != 0) ||
-						(rc3 && rc4 && MOV_compare(&desc3, &desc4) != 0))
+						(rc3 && rc4 && MOV_compare(&desc3, &desc4)))
 					{
 						EVL_field(0, new_rpb->rpb_record, f_rfr_rname, &desc1);
 						EVL_field(0, new_rpb->rpb_record, f_rfr_id, &desc2);
@@ -4322,7 +4322,9 @@ static void check_rel_field_class(thread_db* tdbb,
 
 static void check_class(thread_db* tdbb,
 						jrd_tra* transaction,
-						record_param* old_rpb, record_param* new_rpb, USHORT id)
+						record_param* org_rpb,
+						record_param* new_rpb,
+						USHORT id)
 {
 /**************************************
  *
@@ -4338,10 +4340,11 @@ static void check_class(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-	DSC desc1, desc2;
-	EVL_field(0, old_rpb->rpb_record, id, &desc1);
-	EVL_field(0, new_rpb->rpb_record, id, &desc2);
-	if (!MOV_compare(&desc1, &desc2))
+	dsc desc1, desc2;
+	const bool flag_org = EVL_field(0, org_rpb->rpb_record, id, &desc1);
+	const bool flag_new = EVL_field(0, new_rpb->rpb_record, id, &desc2);
+
+	if (!flag_new || (flag_org && !MOV_compare(&desc1, &desc2)))
 		return;
 
 	DFW_post_work(transaction, dfw_compute_security, &desc2, 0);
@@ -4387,7 +4390,7 @@ static bool check_nullify_source(thread_db* tdbb, record_param* org_rpb, record_
 			}
 		}
 
-		if (org_null != new_null || MOV_compare(&org_desc, &new_desc))
+		if (org_null != new_null || (!new_null && MOV_compare(&org_desc, &new_desc)))
 			return false;
 	}
 
@@ -4397,7 +4400,9 @@ static bool check_nullify_source(thread_db* tdbb, record_param* org_rpb, record_
 
 static void check_owner(thread_db* tdbb,
 						jrd_tra* transaction,
-						record_param* old_rpb, record_param* new_rpb, USHORT id)
+						record_param* org_rpb,
+						record_param* new_rpb,
+						USHORT id)
 {
 /**************************************
  *
@@ -4413,17 +4418,27 @@ static void check_owner(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-	DSC desc1, desc2;
-	EVL_field(0, old_rpb->rpb_record, id, &desc1);
-	EVL_field(0, new_rpb->rpb_record, id, &desc2);
-	if (!MOV_compare(&desc1, &desc2))
+	dsc desc1, desc2;
+	const bool flag_org = EVL_field(0, org_rpb->rpb_record, id, &desc1);
+	const bool flag_new = EVL_field(0, new_rpb->rpb_record, id, &desc2);
+
+	if (!flag_org && !flag_new)
 		return;
 
-	const Jrd::Attachment* const attachment = tdbb->getAttachment();
-	const Firebird::MetaName name(attachment->att_user->usr_user_name);
-	desc2.makeText((USHORT) name.length(), CS_METADATA, (UCHAR*) name.c_str());
-	if (!MOV_compare(&desc1, &desc2))
-		return;
+	if (flag_org && flag_new)
+	{
+		if (!MOV_compare(&desc1, &desc2))
+			return;
+
+		const Jrd::Attachment* const attachment = tdbb->getAttachment();
+		const Firebird::MetaName name(attachment->att_user->usr_user_name);
+		desc2.makeText((USHORT) name.length(), CS_METADATA, (UCHAR*) name.c_str());
+
+		if (!MOV_compare(&desc1, &desc2))
+			return;
+	}
+
+	// Note: NULL->USER and USER->NULL changes also cause the error to be raised
 
 	ERR_post(Arg::Gds(isc_protect_ownership));
 }
@@ -4611,9 +4626,9 @@ static bool dfw_should_know(record_param* org_rpb, record_param* new_rpb,
 	bool irrelevant_changed = false;
 	for (USHORT iter = 0; iter < org_rpb->rpb_record->getFormat()->fmt_count; ++iter)
 	{
-		const bool a = EVL_field(0, org_rpb->rpb_record, iter, &desc2);
-		const bool b = EVL_field(0, new_rpb->rpb_record, iter, &desc3);
-		if (a != b || MOV_compare(&desc2, &desc3))
+		const bool flag_org = EVL_field(0, org_rpb->rpb_record, iter, &desc2);
+		const bool flag_new = EVL_field(0, new_rpb->rpb_record, iter, &desc3);
+		if (flag_org != flag_new || (flag_new && MOV_compare(&desc2, &desc3)))
 		{
 			if (iter != irrelevant_field)
 				return true;
@@ -6191,7 +6206,7 @@ static void refresh_fk_fields(thread_db* tdbb, Record* old_rec, record_param* cu
 		// If field was not changed by user - pick up possible modification by 
 		// system cascade trigger
 		if (flag_old == flag_new &&
-			(!flag_old || flag_old && MOV_compare(&desc1, &desc2) == 0))
+			(!flag_old || flag_old && !MOV_compare(&desc1, &desc2)))
 		{
 			const bool flag_tmp = EVL_field(relation, cur_rpb->rpb_record, fld, &desc1);
 			if (flag_tmp)
