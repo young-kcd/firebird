@@ -2504,7 +2504,7 @@ static SSHORT cvt_decompose(const char*	string,
 		while (q < end && *q == ' ')
 			q++;
 
-		if (q != end || end - p == 0 || end - p > return_value->maxSize())
+		if (q != end || end - p == 0 || (end - p) * 4 > return_value->maxSize() * 8)
 			CVT_conversion_error(&errd, err);
 
 		q = p;
