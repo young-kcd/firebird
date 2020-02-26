@@ -81,14 +81,6 @@ static void signal_index_deletion(thread_db*, jrd_rel*, USHORT);
 
 namespace
 {
-	// Data to be passed to index fast load duplicates routine
-	struct index_fast_load
-	{
-		SINT64 ifl_dup_recno;
-		SLONG ifl_duplicates;
-		USHORT ifl_key_length;
-	};
-
 	// Return ordinal number of the first NULL segment
 	inline USHORT getNullSegment(const temporary_key& key)
 	{
@@ -106,7 +98,7 @@ namespace
 	}
 
 	// Compare two keys for equality
-	inline bool key_equal(const temporary_key* key1, const temporary_key* key2)
+	inline bool keysEqual(const temporary_key* key1, const temporary_key* key2)
 	{
 		const USHORT l = key1->key_length;
 		return (l == key2->key_length && !memcmp(key1->key_data, key2->key_data, l));
@@ -781,7 +773,7 @@ void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, RecordStack& going,
 						context.raise(tdbb, result, rec2);
 					}
 
-					if (key_equal(&key1, &key2))
+					if (keysEqual(&key1, &key2))
 						break;
 				}
 				if (stack2.hasData())
@@ -804,7 +796,7 @@ void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, RecordStack& going,
 						context.raise(tdbb, result, rec3);
 					}
 
-					if (key_equal(&key1, &key2))
+					if (keysEqual(&key1, &key2))
 						break;
 				}
 				if (stack3.hasData())
@@ -879,7 +871,7 @@ void IDX_modify(thread_db* tdbb,
 			context.raise(tdbb, error_code, org_rpb->rpb_record);
 		}
 
-		if (!key_equal(&key1, &key2))
+		if (!keysEqual(&key1, &key2))
 		{
 			if ((error_code = insert_key(tdbb, new_rpb->rpb_relation, new_rpb->rpb_record,
 										 transaction, &window, &insertion, context)))
@@ -953,7 +945,7 @@ void IDX_modify_check_constraints(thread_db* tdbb,
 			context.raise(tdbb, error_code, org_rpb->rpb_record);
 		}
 
-		if (!key_equal(&key1, &key2))
+		if (!keysEqual(&key1, &key2))
 		{
 			if ((error_code = check_foreign_key(tdbb, org_rpb->rpb_record, org_rpb->rpb_relation,
 										   	    transaction, &idx, context)))
