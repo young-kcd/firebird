@@ -3831,7 +3831,8 @@ dsc* evlFirstLastDay(thread_db* tdbb, const SysFunction* function, const NestVal
 			break;
 
 		case dtype_timestamp_tz:
-			TimeZoneUtil::decodeTimeStamp(*(ISC_TIMESTAMP_TZ*) valueDsc->dsc_address, false, &times, &fractions);
+			TimeZoneUtil::decodeTimeStamp(*(ISC_TIMESTAMP_TZ*) valueDsc->dsc_address, false, TimeZoneUtil::NO_OFFSET,
+				&times, &fractions);
 			break;
 
 		default:
