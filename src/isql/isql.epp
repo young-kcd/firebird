@@ -1044,6 +1044,8 @@ bool ISQL_errmsg(Firebird::IStatus* st)
 		if (state & Firebird::IStatus::STATE_WARNINGS)
 		{
 			const ISC_STATUS* w = st->getWarnings();
+			TEXT* err = errbuf;
+			unsigned es = sizeof(errbuf);
 			while (fb_interpret(err, es, &w)) {
 				STDERROUT(errbuf);
 				if (err == errbuf)
