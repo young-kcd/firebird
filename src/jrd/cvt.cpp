@@ -479,14 +479,11 @@ void EngineCallbacks::validateData(CharSet* toCharSet, SLONG length, const UCHAR
 }
 
 
-void EngineCallbacks::validateLength(CharSet* toCharSet, SLONG toLength, const UCHAR* start,
+ULONG EngineCallbacks::validateLength(CharSet* toCharSet, ULONG toLength, const UCHAR* start,
 	const USHORT to_size)
 {
 	if (toCharSet && toCharSet->isMultiByte())
 	{
-		Jrd::thread_db* tdbb = NULL;
-		SET_TDBB(tdbb);
-
 		const ULONG src_len = toCharSet->length(toLength, start, false);
 		const ULONG dest_len  = (ULONG) to_size / toCharSet->maxBytesPerChar();
 
@@ -496,6 +493,31 @@ void EngineCallbacks::validateLength(CharSet* toCharSet, SLONG toLength, const U
 				Arg::Gds(isc_trunc_limits) << Arg::Num(dest_len) << Arg::Num(src_len));
 		}
 	}
+
+	return toLength;
+}
+
+
+ULONG TruncateCallbacks::validateLength(CharSet* toCharSet, ULONG toLength, const UCHAR* start,
+	const USHORT to_size)
+{
+	if (toCharSet && toCharSet->isMultiByte())
+	{
+		const ULONG dest_len = (ULONG) to_size / toCharSet->maxBytesPerChar();
+
+		for (bool first = true; ; first = false)
+		{
+			const ULONG src_len = toCharSet->length(toLength, start, false);
+			if (src_len <= dest_len)
+				break;
+
+			toLength -= (src_len - dest_len);		// truncate
+			if (first)
+				ERR_post_warning(Arg::Warning(isc_truncate_warn) << Arg::Warning(truncateReason));
+		}
+	}
+
+	return toLength;
 }
 
 

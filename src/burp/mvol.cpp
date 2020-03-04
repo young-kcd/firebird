@@ -1666,25 +1666,22 @@ static void prompt_for_name(SCHAR* name, int length)
 //
 // Write an attribute starting with a null terminated string.
 //
-static void put_asciz( SCHAR attribute, const TEXT* string)
+static void put_asciz( SCHAR attribute, const TEXT* str)
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	SSHORT l = 0;
-	for (const TEXT *p = string; *p; p++)
+	USHORT l = strlen(str);
+	if (l > MAX_UCHAR)
 	{
-		l++;
+		BURP_print(false, 343, SafeArg() << int(attribute) << "put_asciz()" << USHORT(MAX_UCHAR));
+		// msg 343: text for attribute @1 is too large in @2, truncating to @3 bytes
+		l = MAX_UCHAR;
 	}
-	fb_assert(l <= MAX_UCHAR);
 
 	put(tdgbl, attribute);
 	put(tdgbl, l);
-	if (l)
-	{
-		do {
-			put(tdgbl, *string++);
-		} while (--l);
-	}
+	while (l--)
+		put(tdgbl, *str++);
 }
 
 

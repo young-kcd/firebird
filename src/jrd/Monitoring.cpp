@@ -44,6 +44,7 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/opt_proto.h"
 #include "../jrd/pag_proto.h"
+#include "../jrd/cvt_proto.h"
 #include "../jrd/CryptoManager.h"
 
 #include "../jrd/Relation.h"
@@ -727,7 +728,9 @@ void SnapshotData::putField(thread_db* tdbb, Record* record, const DumpField& fi
 		{
 			dsc from_desc;
 			from_desc.makeText(field.length, CS_METADATA, (UCHAR*) field.data);
-			MOV_move(tdbb, &from_desc, &to_desc);
+
+			TruncateCallbacks tcb(isc_truncate_monitor);
+			CVT_move_common(&from_desc, &to_desc, 0, &tcb);	// no need in decimal status for string=>string move
 		}
 	}
 	else if (field.type == VALUE_BOOLEAN)

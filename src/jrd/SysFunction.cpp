@@ -169,6 +169,7 @@ const HashAlgorithmDescriptor* HashAlgorithmDescriptor::find(const char* name)
 
 // constants
 const int oneDay = 86400;
+const unsigned getContextLen = 255;
 
 // auxiliary functions
 void add10msec(ISC_TIMESTAMP* v, SINT64 msec, SINT64 multiplier);
@@ -1220,7 +1221,7 @@ void makeGetSetContext(DataTypeUtilBase* /*dataTypeUtil*/, const SysFunction* fu
 		result->makeLong(0);
 	else
 	{
-		result->makeVarying(255, ttype_none);
+		result->makeVarying(getContextLen, ttype_none);
 		result->setNullable(true);
 	}
 }
@@ -4281,7 +4282,13 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 	}
 
 	dsc result;
-	result.makeText(resultStr.length(), resultType,
+	unsigned l = resultStr.length();
+	if (l > getContextLen)
+	{
+		l = getContextLen;
+		ERR_post_warning(Arg::Warning(isc_truncate_warn) << Arg::Warning(isc_truncate_context));
+	}
+	result.makeText(l, resultType,
 		(UCHAR*) const_cast<char*>(resultStr.c_str()));	// safe const_cast
 	EVL_make_value(tdbb, &result, impure);
 
