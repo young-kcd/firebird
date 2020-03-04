@@ -614,7 +614,6 @@ using namespace Firebird;
 %token <metaNamePtr> HEX_ENCODE
 %token <metaNamePtr> IDLE
 %token <metaNamePtr> INVOKER
-%token <metaNamePtr> INT128
 %token <metaNamePtr> IV
 %token <metaNamePtr> LAST_DAY
 %token <metaNamePtr> LEGACY
@@ -4226,7 +4225,6 @@ keyword_or_column
 	| VAR_SAMP
 	| VAR_POP
 	| DECFLOAT				// added in FB 4.0
-	| INT128
 	| LOCAL
 	| LOCALTIME
 	| LOCALTIMESTAMP
