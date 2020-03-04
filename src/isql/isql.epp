@@ -8480,6 +8480,9 @@ static processing_state process_statement(const TEXT* str2)
 				break;
 			}
 
+			// check for warnings
+			ISQL_warning(fbStatus);
+
 			ret = print_line(message, buffer, pad, line);
 		}
 
