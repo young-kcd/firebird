@@ -86,6 +86,7 @@ static void dsqlSetParameterName(DsqlCompilerScratch*, ExprNode*, const ValueExp
 static void dsqlSetParametersName(DsqlCompilerScratch*, CompoundStmtNode*, const RecordSourceNode*);
 
 static void cleanupRpb(thread_db* tdbb, record_param* rpb);
+static void forceWriteLock(thread_db* tdbb, record_param* rpb, jrd_tra* transaction);
 static void makeValidation(thread_db* tdbb, CompilerScratch* csb, StreamType stream,
 	Array<ValidateInfo>& validations);
 static StmtNode* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, StreamType orgStream,
@@ -2623,7 +2624,7 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 
 	if (forNode && forNode->isWriteLockMode(request))
 	{
-		VIO_writelock(tdbb, rpb, transaction);
+		forceWriteLock(tdbb, rpb, transaction);
 		return parentStmt;
 	}
 
@@ -2668,10 +2669,7 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 
 			forNode->setWriteLockMode(request);
 
-			// VIO_writelock returns false if record has been deleted by someone else.
-			// Gently ignore this situation and proceed further.
-			rpb->rpb_runtime_flags |= RPB_refetch;
-			VIO_writelock(tdbb, rpb, transaction);
+			forceWriteLock(tdbb, rpb, transaction);
 			return parentStmt;
 		}
 		REPL_erase(tdbb, rpb, transaction);
@@ -6546,7 +6544,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 			{
 				if (forNode && forNode->isWriteLockMode(request))
 				{
-					VIO_writelock(tdbb, orgRpb, transaction);
+					forceWriteLock(tdbb, orgRpb, transaction);
 					return parentStmt;
 				}
 
@@ -6584,10 +6582,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 
 						forNode->setWriteLockMode(request);
 
-						// VIO_writelock returns false if record has been deleted by someone else.
-						// Gently ignore this situation and proceed further.
-						orgRpb->rpb_runtime_flags |= RPB_refetch;
-						VIO_writelock(tdbb, orgRpb, transaction);
+						forceWriteLock(tdbb, orgRpb, transaction);
 						return parentStmt;
 					}
 					IDX_modify(tdbb, orgRpb, newRpb, transaction);
@@ -9618,6 +9613,20 @@ static void cleanupRpb(thread_db* tdbb, record_param* rpb)
 				memset(trail, 0, length);
 			}
 		}
+	}
+}
+
+// Try to set write lock on record until success or record exists
+static void forceWriteLock(thread_db * tdbb, record_param * rpb, jrd_tra * transaction)
+{
+	while (VIO_refetch_record(tdbb, rpb, transaction, true, true))
+	{
+		rpb->rpb_runtime_flags &= ~RPB_refetch;
+
+		// VIO_writelock returns false if record has been deleted or modified 
+		// by someone else.
+		if (VIO_writelock(tdbb, rpb, transaction))
+			break;
 	}
 }
 

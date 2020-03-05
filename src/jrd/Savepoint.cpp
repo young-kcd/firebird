@@ -443,7 +443,7 @@ Savepoint* Savepoint::rollback(thread_db* tdbb, Savepoint* prior, bool preserveL
 			VerbAction* preserveAction = nullptr;
 
 			if (preserveLocks && m_next)
-				preserveAction = m_next->getAction(action->vct_relation);
+				preserveAction = m_next->createAction(action->vct_relation);
 
 			action->undo(tdbb, m_transaction, preserveAction);
 
