@@ -1465,8 +1465,7 @@ static bool check_prepare_result(int prepare_result, jrd_tra* transaction, jrd_r
 	jrd_req* top_request = request->req_snapshot.m_owner;
 
 	const bool restart_ready = top_request && 
-		(top_request->req_flags & req_restart_ready) &&
-		(rpb->rpb_runtime_flags & RPB_restart_ready);
+		(top_request->req_flags & req_restart_ready);
 
 	// Second update conflict when request is already in update conflict mode
 	// means we have some (indirect) UPDATE\DELETE in WHERE clause of primary 

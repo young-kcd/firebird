@@ -102,6 +102,7 @@ static void preModifyEraseTriggers(thread_db* tdbb, TrigVector** trigs,
 	StmtNode::WhichTrigger whichTrig, record_param* rpb, record_param* rec, TriggerAction op);
 static void preprocessAssignments(thread_db* tdbb, CompilerScratch* csb,
 	StreamType stream, CompoundStmtNode* compoundNode, const Nullable<OverrideClause>* insertOverride);
+static void restartRequest(const jrd_req* request, jrd_tra* transaction);
 static void validateExpressions(thread_db* tdbb, const Array<ValidateInfo>& validations);
 
 }	// namespace Jrd
@@ -2654,22 +2655,15 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 		// VIO_erase returns false if there is an update conflict in Read Consistency
 		// transaction. Before returning false it disables statement-level snapshot
 		// (via setting req_update_conflict flag) so re-fetch should see new data.
-		// Deleting new version blindly is generally unsafe, but is ok in this situation
-		// because all changes made by this request will certainly be undone and request 
-		// will be restarted.
-
-		if (forNode)
-			rpb->rpb_runtime_flags |= RPB_restart_ready;
-		else
-			rpb->rpb_runtime_flags &= ~RPB_restart_ready;
 
 		if (!VIO_erase(tdbb, rpb, transaction))
 		{
-			fb_assert(forNode != nullptr);
+			forceWriteLock(tdbb, rpb, transaction);
+
+			if (!forNode)
+				restartRequest(request, transaction);
 
 			forNode->setWriteLockMode(request);
-
-			forceWriteLock(tdbb, rpb, transaction);
 			return parentStmt;
 		}
 		REPL_erase(tdbb, rpb, transaction);
@@ -5066,17 +5060,7 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 			}
 
 			if (impure->writeLockMode)
-			{
-				const jrd_req* top_request = request->req_snapshot.m_owner;
-				fb_assert(top_request);
-				fb_assert(top_request->req_flags & req_update_conflict);
-
-				transaction->tra_flags |= TRA_ex_restart;
-
-				ERR_post(Arg::Gds(isc_deadlock) <<
-					Arg::Gds(isc_update_conflict) <<
-					Arg::Gds(isc_concurrent_transaction) << Arg::Num(top_request->req_conflict_txn));
-			}
+				restartRequest(request, transaction);
 
 			request->req_operation = jrd_req::req_return;
 			// fall into
@@ -6567,22 +6551,17 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 				else if (!relation->rel_view_rse)
 				{
 					// VIO_modify returns false if there is an update conflict in Read Consistency
-					// transaction and our code is ready to work in write lock mode (see flag set below). 
-					// Before returning false it disables statement-level snapshot 
+					// transaction. Before returning false it disables statement-level snapshot 
 					// (via setting req_update_conflict flag) so re-fetch should see new data.
-
-					if (forNode)
-						orgRpb->rpb_runtime_flags |= RPB_restart_ready;
-					else
-						orgRpb->rpb_runtime_flags &= ~RPB_restart_ready;
 
 					if (!VIO_modify(tdbb, orgRpb, newRpb, transaction))
 					{
-						fb_assert(forNode != nullptr);
-
-						forNode->setWriteLockMode(request);
-
 						forceWriteLock(tdbb, orgRpb, transaction);
+
+						if (!forNode)
+							restartRequest(request, transaction);
+							
+						forNode->setWriteLockMode(request);
 						return parentStmt;
 					}
 					IDX_modify(tdbb, orgRpb, newRpb, transaction);
@@ -10006,6 +9985,19 @@ static void preprocessAssignments(thread_db* tdbb, CompilerScratch* csb,
 		if (identityType == IDENT_TYPE_ALWAYS)
 			ERR_post(Arg::Gds(isc_overriding_system_missing) << relation->rel_name);
 	}
+}
+
+static void restartRequest(const jrd_req* request, jrd_tra* transaction)
+{
+	const jrd_req* top_request = request->req_snapshot.m_owner;
+	fb_assert(top_request);
+	fb_assert(top_request->req_flags & req_update_conflict);
+
+	transaction->tra_flags |= TRA_ex_restart;
+
+	ERR_post(Arg::Gds(isc_deadlock) <<
+		Arg::Gds(isc_update_conflict) <<
+		Arg::Gds(isc_concurrent_transaction) << Arg::Num(top_request->req_conflict_txn));
 }
 
 // Execute a list of validation expressions.

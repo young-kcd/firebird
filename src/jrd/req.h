@@ -132,7 +132,6 @@ const USHORT RPB_refetch		= 0x01;	// re-fetch is required
 const USHORT RPB_undo_data		= 0x02;	// data got from undo log
 const USHORT RPB_undo_read		= 0x04;	// read was performed using the undo log
 const USHORT RPB_undo_deleted	= 0x08;	// read was performed using the undo log, primary version is deleted
-const USHORT RPB_restart_ready	= 0x10;	// update conflict could be handled by statement restart
 
 const USHORT RPB_UNDO_FLAGS		= (RPB_undo_data | RPB_undo_read | RPB_undo_deleted);
 
