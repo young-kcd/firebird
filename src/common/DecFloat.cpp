@@ -161,10 +161,50 @@ unsigned digits(const unsigned pMax, unsigned char* const coeff, int& exp)
 	return 0;
 }
 
+// offsets down from MAX_SLONG
+const ULONG OFF_inf = 3;
+const ULONG OFF_snan = 2;
+const ULONG OFF_nan = 1;
+
 void make(ULONG* key,
 	const unsigned pMax, const int bias, const unsigned decSize,
-	unsigned char* coeff, int sign, int exp)
+	unsigned char* coeff, int sign, int exp, decClass cl)
 {
+	ULONG offset = 0;
+
+	// special cases
+	switch(cl)
+	{
+	case DEC_CLASS_SNAN:
+		offset = OFF_snan;
+		break;
+	case DEC_CLASS_QNAN:
+		offset = OFF_nan;
+		break;
+	case DEC_CLASS_NEG_INF:
+		offset = OFF_inf;
+		sign = DECFLOAT_Sign;
+		break;
+	case DEC_CLASS_POS_INF:
+		offset = OFF_inf;
+		sign = 0;
+		break;
+	default:
+		break;
+	}
+
+	if (offset)		// special value
+	{
+		unsigned dig = decSize / sizeof(ULONG);
+		fb_assert(!(decSize % sizeof(ULONG)));
+		while (dig--)
+			*key++ = sign ? ~MAX_SLONG : MAX_SLONG;
+		*key = MAX_SLONG - offset;
+		if (sign)
+			*key = ~*key;
+		return;
+	}
+
 	// normalize coeff & exponent
 	unsigned dig = digits(pMax, coeff, exp);
 
@@ -197,10 +237,45 @@ void make(ULONG* key,
 
 void grab(ULONG* key,
 	const unsigned pMax, const int bias, const unsigned decSize,
-	unsigned char* bcd, int& sign, int& exp)
+	unsigned char* bcd, int& sign, int& exp, decClass& cl)
 {
 	exp = *key++;
 	sign = 0;
+
+	if (exp == MAX_SLONG || exp == ~MAX_SLONG)	// special value
+	{
+		unsigned dig = decSize / sizeof(ULONG);
+		fb_assert(!(decSize % sizeof(ULONG)));
+		ULONG offset = key[dig - 1];
+
+		if (exp == ~MAX_SLONG)
+		{
+			sign = DECFLOAT_Sign;
+			offset = ~offset;
+		}
+
+		offset = MAX_SLONG - offset;
+		switch(offset)
+		{
+		case OFF_inf:
+			cl = sign ? DEC_CLASS_NEG_INF : DEC_CLASS_POS_INF;
+			break;
+		case OFF_snan:
+			cl = DEC_CLASS_SNAN;
+			break;
+		case OFF_nan:
+			cl = DEC_CLASS_QNAN;
+			break;
+		default:
+			(Arg::Gds(isc_random) << "Invalid class of special decfloat value in sort key").raise();
+		}
+
+		return;
+	}
+
+	// normal value
+	// here we ignore differnces in class for SUBNORMAL, ZERO and NEG
+	cl = DEC_CLASS_POS_NORMAL;
 
 	// parse exp
 	if (exp < 0)
@@ -238,6 +313,34 @@ void grab(ULONG* key,
 			break;
 		}
 	}
+}
+
+void setSpecial(decNumber* number, decClass cl, int sign)
+{
+	decNumberZero(number);
+
+	switch(cl)
+	{
+	case DEC_CLASS_SNAN:
+		number->bits |= DECSNAN;
+		break;
+
+	case DEC_CLASS_QNAN:
+		number->bits |= DECNAN;
+		break;
+
+	case DEC_CLASS_NEG_INF:
+	case DEC_CLASS_POS_INF:
+		number->bits |= DECINF;
+		break;
+
+	default:
+		fb_assert(false);
+		break;
+	}
+
+	if (sign)
+		number->bits |= DECNEG;
 }
 
 } // anonymous namespace
@@ -432,18 +535,29 @@ void Decimal64::makeKey(ULONG* key) const
 	unsigned char coeff[DECDOUBLE_Pmax];
 	int sign = decDoubleGetCoefficient(&dec, coeff);
 	int exp = decDoubleGetExponent(&dec);
+	decClass dc = decDoubleClass(&dec);
 
-	make(key, DECDOUBLE_Pmax, DECDOUBLE_Bias, sizeof(dec), coeff, sign, exp);
+	make(key, DECDOUBLE_Pmax, DECDOUBLE_Bias, sizeof(dec), coeff, sign, exp, dc);
 }
 
 void Decimal64::grabKey(ULONG* key)
 {
 	int exp, sign;
 	unsigned char bcd[DECDOUBLE_Pmax];
+	decClass cl;
 
-	grab(key, DECDOUBLE_Pmax, DECDOUBLE_Bias, sizeof(dec), bcd, sign, exp);
+	grab(key, DECDOUBLE_Pmax, DECDOUBLE_Bias, sizeof(dec), bcd, sign, exp, cl);
 
-	decDoubleFromBCD(&dec, exp, bcd, sign);
+	if (cl == DEC_CLASS_POS_NORMAL)
+		decDoubleFromBCD(&dec, exp, bcd, sign);
+	else
+	{
+		DecimalContext context(this, 0);
+    	decNumber number;
+
+    	setSpecial(&number, cl, sign);
+		decDoubleFromNumber(&dec, &number, &context);
+	}
 }
 
 Decimal64 Decimal64::quantize(DecimalStatus decSt, Decimal64 op2) const
@@ -879,18 +993,55 @@ void Decimal128::makeKey(ULONG* key) const
 	unsigned char coeff[DECQUAD_Pmax];
 	int sign = decQuadGetCoefficient(&dec, coeff);
 	int exp = decQuadGetExponent(&dec);
+	decClass dc = decQuadClass(&dec);
 
-	make(key, DECQUAD_Pmax, DECQUAD_Bias, sizeof(dec), coeff, sign, exp);
+	make(key, DECQUAD_Pmax, DECQUAD_Bias, sizeof(dec), coeff, sign, exp, dc);
 }
 
 void Decimal128::grabKey(ULONG* key)
 {
 	int exp, sign;
 	unsigned char bcd[DECQUAD_Pmax];
+	decClass cl;
 
-	grab(key, DECQUAD_Pmax, DECQUAD_Bias, sizeof(dec), bcd, sign, exp);
+	grab(key, DECQUAD_Pmax, DECQUAD_Bias, sizeof(dec), bcd, sign, exp, cl);
 
-	decQuadFromBCD(&dec, exp, bcd, sign);
+	if (cl == DEC_CLASS_POS_NORMAL)
+		decQuadFromBCD(&dec, exp, bcd, sign);
+	else
+	{
+		DecimalContext context(this, 0);
+    	decNumber number;
+
+    	setSpecial(&number, cl, sign);
+		decQuadFromNumber(&dec, &number, &context);
+
+#ifdef NOT_USED_OR_REPLACED
+		// decQuad / decDouble API for setting special values appears VERY unstable for FB4
+		// if sometimes it becomes better approximately following code may be used
+
+    	decQuadZero(&dec);
+		switch(cl)
+		{
+		case DEC_CLASS_SNAN:
+			DFWORD(&dec, 0) = DECFLOAT_sNaN;
+			break;
+		case DEC_CLASS_QNAN:
+			DFWORD(&dec, 0) = DECFLOAT_qNaN;
+			break;
+		case DEC_CLASS_NEG_INF:
+		case DEC_CLASS_POS_INF:
+			DFWORD(&dec, 0) = DECFLOAT_Inf;
+			show();
+			break;
+		default:
+			fb_assert(false);
+			break;
+		}
+		if (sign)
+			DFWORD(&dec, 0) |= DECFLOAT_Sign;
+#endif //NOT_USED_OR_REPLACED
+	}
 }
 
 ULONG Decimal128::getIndexKeyLength()
