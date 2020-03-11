@@ -225,28 +225,6 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 				break;
 			}
 
-		case fb_dbg_map_markers:
-			{
-				if (data + 8 >= end)
-				{
-					bad_format = true;
-					break;
-				}
-
-				ULONG marks = *data++;
-				marks |= *data++ << 8;
-				marks |= *data++ << 16;
-				marks |= *data++ << 24;
-
-				ULONG offset = *data++;
-				offset |= *data++ << 8;
-				offset |= *data++ << 16;
-				offset |= *data++ << 24;
-
-				dbgInfo.blrToMarks.put(offset, marks);
-			}
-			break;
-
 		case fb_dbg_end:
 			if (data != end)
 				bad_format = true;

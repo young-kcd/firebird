@@ -50,7 +50,6 @@ public:
 	void putDebugCursor(USHORT, const Firebird::MetaName&);
 	void putDebugSubFunction(DeclareSubFuncNode* subFuncNode);
 	void putDebugSubProcedure(DeclareSubProcNode* subProcNode);
-	void putDebugMarkers(ULONG marks);
 
 	DebugData& getDebugData() { return debugData; }
 

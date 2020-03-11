@@ -2274,7 +2274,6 @@ static RegisterNode<EraseNode> regEraseNode(blr_erase);
 
 DmlNode* EraseNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
-	const ULONG blrOffset = csb->csb_blr_reader.getOffset();
 	const USHORT n = csb->csb_blr_reader.getByte();
 
 	if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
@@ -2283,9 +2282,8 @@ DmlNode* EraseNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch
 	EraseNode* node = FB_NEW_POOL(pool) EraseNode(pool);
 	node->stream = csb->csb_rpt[n].csb_stream;
 
-	ULONG marks;
-	if (csb->csb_dbg_info && csb->csb_dbg_info->blrToMarks.get(blrOffset, marks))
-		node->marks |= marks;
+	if (csb->csb_blr_reader.peekByte() == blr_marks)
+		node->marks |= PAR_marks(csb);
 
 	return node;
 }
@@ -2404,9 +2402,10 @@ void EraseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	dsqlScratch->appendUChar(blr_erase);
-	if (marks)
-		dsqlScratch->putDebugMarkers(marks);
 	GEN_stuff_context(dsqlScratch, context);
+
+	if (marks)
+		dsqlScratch->putBlrMarkers(marks);
 
 	if (statement)
 		dsqlScratch->appendUChar(blr_end);
@@ -4812,10 +4811,8 @@ DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 {
 	ForNode* node = FB_NEW_POOL(pool) ForNode(pool);
 
-	const ULONG blrOffset = csb->csb_blr_reader.getOffset();
-	ULONG marks;
-	if (csb->csb_dbg_info && csb->csb_dbg_info->blrToMarks.get(blrOffset, marks))
-		node->forUpdate = (marks & StmtNode::MARK_FOR_UPDATE) != 0;
+	if (csb->csb_blr_reader.peekByte() == blr_marks)
+		node->forUpdate = (PAR_marks(csb) & StmtNode::MARK_FOR_UPDATE) != 0;
 
 	if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_stall)
 		node->stall = PAR_parse_stmt(tdbb, csb);
@@ -4932,7 +4929,7 @@ void ForNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(blr_for);
 
 	if (forUpdate)
-		dsqlScratch->putDebugMarkers(StmtNode::MARK_FOR_UPDATE);
+		dsqlScratch->putBlrMarkers(StmtNode::MARK_FOR_UPDATE);
 
 	if (!statement || dsqlForceSingular)
 		dsqlScratch->appendUChar(blr_singular);
@@ -5970,8 +5967,6 @@ static RegisterNode<ModifyNode> regModifyNode2(blr_modify2);
 DmlNode* ModifyNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	// Parse the original and new contexts.
-	const ULONG blrOffset = csb->csb_blr_reader.getOffset();
-
 	USHORT context = (unsigned int) csb->csb_blr_reader.getByte();
 
 	if (context >= csb->csb_rpt.getCount() || !(csb->csb_rpt[context].csb_flags & csb_used))
@@ -6000,16 +5995,15 @@ DmlNode* ModifyNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	node->orgStream = orgStream;
 	node->newStream = newStream;
 
+	if (csb->csb_blr_reader.peekByte() == blr_marks)
+		node->marks |= PAR_marks(csb);
+
 	AutoSetRestore<StmtNode*> autoCurrentDMLNode(&csb->csb_currentDMLNode, node);
 
 	node->statement = PAR_parse_stmt(tdbb, csb);
 
 	if (blrOp == blr_modify2)
 		node->statement2 = PAR_parse_stmt(tdbb, csb);
-
-	ULONG marks;
-	if (csb->csb_dbg_info && csb->csb_dbg_info->blrToMarks.get(blrOffset, marks))
-		node->marks |= marks;
 
 	return node;
 }
@@ -6239,8 +6233,6 @@ void ModifyNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	const dsql_msg* message = dsqlGenDmlHeader(dsqlScratch, rse);
 
 	dsqlScratch->appendUChar(statement2 ? blr_modify2 : blr_modify);
-	if (marks)
-		dsqlScratch->putDebugMarkers(marks);
 
 	const dsql_ctx* context;
 
@@ -6255,6 +6247,10 @@ void ModifyNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_stuff_context(dsqlScratch, context);
 	context = dsqlRelation->dsqlContext;
 	GEN_stuff_context(dsqlScratch, context);
+
+	if (marks)
+		dsqlScratch->putBlrMarkers(marks);
+
 	statement->genBlr(dsqlScratch);
 
 	if (statement2)
@@ -8913,7 +8909,7 @@ static const dsql_msg* dsqlGenDmlHeader(DsqlCompilerScratch* dsqlScratch, RseNod
 	if (dsqlRse)
 	{
 		dsqlScratch->appendUChar(blr_for);
-		dsqlScratch->putDebugMarkers(StmtNode::MARK_FOR_UPDATE);
+		dsqlScratch->putBlrMarkers(StmtNode::MARK_FOR_UPDATE);
 		GEN_expr(dsqlScratch, dsqlRse);
 	}
 

@@ -683,6 +683,26 @@ CompoundStmtNode* PAR_make_list(thread_db* tdbb, StmtNodeStack& stack)
 }
 
 
+ULONG PAR_marks(Jrd::CompilerScratch* csb)
+{
+	if (csb->csb_blr_reader.getByte() != blr_marks)
+		PAR_syntax_error(csb, "blr_marks");
+
+	switch (csb->csb_blr_reader.getByte())
+	{
+	case 1:
+		return csb->csb_blr_reader.getByte();
+
+	case 2:
+		return csb->csb_blr_reader.getWord();
+
+	case 4:
+		return csb->csb_blr_reader.getLong();
+	}
+	PAR_syntax_error(csb, "valid length for blr_marks value (1, 2, or 4)");
+	return 0;
+}
+
 CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, ULONG blr_length,
 	bool internal_flag, ULONG dbginfo_length, const UCHAR* dbginfo)
 {
@@ -1627,6 +1647,7 @@ void PAR_syntax_error(CompilerScratch* csb, const TEXT* string)
 
 	csb->csb_blr_reader.seekBackward(1);
 
+	// BLR syntax error: expected @1 at offset @2, encountered @3
 	PAR_error(csb, Arg::Gds(isc_syntaxerr) << Arg::Str(string) <<
 										  Arg::Num(csb->csb_blr_reader.getOffset()) <<
 										  Arg::Num(csb->csb_blr_reader.peekByte()));

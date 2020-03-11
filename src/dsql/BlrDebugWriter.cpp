@@ -141,13 +141,6 @@ void BlrDebugWriter::putDebugSubProcedure(DeclareSubProcNode* subProcNode)
 	debugData.add(subDebugData.begin(), count);
 }
 
-void BlrDebugWriter::putDebugMarkers(ULONG marks)
-{
-	debugData.add(fb_dbg_map_markers);
-	putValue(marks);
-	putBlrOffset();
-}
-
 void BlrDebugWriter::putValue(ULONG val)
 {
 	debugData.add(val);

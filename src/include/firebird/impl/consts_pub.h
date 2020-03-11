@@ -740,7 +740,6 @@
 #define fb_dbg_subproc				5
 #define fb_dbg_subfunc				6
 #define fb_dbg_map_curname			7
-#define fb_dbg_map_markers			8
 
 // sub code for fb_dbg_map_argument
 #define fb_dbg_arg_input			0

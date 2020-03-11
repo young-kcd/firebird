@@ -33,8 +33,7 @@
 // Also, it introduces some new tags.
 const UCHAR DBG_INFO_VERSION_1 = UCHAR(1);
 const UCHAR DBG_INFO_VERSION_2 = UCHAR(2);
-const UCHAR DBG_INFO_VERSION_3 = UCHAR(3);	// blr offsets of "update" cursors and driven sub-statements
-const UCHAR CURRENT_DBG_INFO_VERSION = DBG_INFO_VERSION_3;
+const UCHAR CURRENT_DBG_INFO_VERSION = DBG_INFO_VERSION_2;
 
 namespace Firebird {
 
@@ -56,7 +55,6 @@ typedef Firebird::SortedArray<
 	MapBlrToSrcItem> MapBlrToSrc;
 
 typedef GenericMap<Pair<Right<USHORT, MetaName> > > MapVarIndexToName;
-typedef GenericMap<Pair<NonPooled<ULONG, ULONG> > > MapBlrToMarks;
 
 struct ArgumentInfo
 {
@@ -95,8 +93,7 @@ struct DbgInfo : public PermanentStorage
 		  argInfoToName(p),
 		  curIndexToName(p),
 		  subFuncs(p),
-		  subProcs(p),
-		  blrToMarks(p)
+		  subProcs(p)
 	{
 	}
 
@@ -129,8 +126,6 @@ struct DbgInfo : public PermanentStorage
 
 			subProcs.clear();
 		}
-
-		blrToMarks.clear();
 	}
 
 	MapBlrToSrc blrToSrc;					// mapping between blr offsets and source text position
@@ -139,7 +134,6 @@ struct DbgInfo : public PermanentStorage
 	MapVarIndexToName curIndexToName;		// mapping between cursor index and name
 	GenericMap<Pair<Left<MetaName, DbgInfo*> > > subFuncs;	// sub functions
 	GenericMap<Pair<Left<MetaName, DbgInfo*> > > subProcs;	// sub procedures
-	MapBlrToMarks blrToMarks;				// blr offsets of marked verbs
 };
 
 } // namespace Firebird
