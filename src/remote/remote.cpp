@@ -1420,6 +1420,21 @@ rem_port::~rem_port()
 #endif
 }
 
+bool rem_port::releasePort()
+{
+	Firebird::RefMutexEnsureUnlock portGuard(*port_sync, FB_FUNCTION);
+	const bool locked = portGuard.tryEnter();
+	(void) locked; // avoid warnings in release build
+
+	fb_assert(!(port_flags & PORT_released));
+	if (port_flags & PORT_released)
+		return false;
+
+	port_flags |= PORT_released;
+	release();
+	return true;
+}
+
 bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer,
 	SSHORT buffer_length, SSHORT* length)
 {

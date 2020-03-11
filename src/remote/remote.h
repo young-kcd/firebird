@@ -1151,20 +1151,7 @@ public:
 	}
 
 	// release reference that was created in constructor
-	bool releasePort()
-	{
-		Firebird::RefMutexEnsureUnlock portGuard(*port_sync, FB_FUNCTION);
-		const bool locked = portGuard.tryEnter();
-		fb_assert(locked);
-
-		fb_assert(!(port_flags & PORT_released));
-		if (port_flags & PORT_released)
-			return false;
-
-		port_flags |= PORT_released;
-		release();
-		return true;
-	}
+	bool releasePort();
 
 public:
 	// TMN: Beginning of C++ port
