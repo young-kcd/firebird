@@ -1424,6 +1424,7 @@ bool rem_port::releasePort()
 {
 	Firebird::RefMutexEnsureUnlock portGuard(*port_sync, FB_FUNCTION);
 	const bool locked = portGuard.tryEnter();
+	fb_assert(locked);
 	(void) locked; // avoid warnings in release build
 
 	fb_assert(!(port_flags & PORT_released));
