@@ -2939,7 +2939,10 @@ void RseNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	// where we are just trying to inner join more than 2 streams. If possible,
 	// try to flatten the tree out before we go any further.
 
-	if (!rse->rse_jointype && !rse_jointype && !rse_sorted && !rse_projection &&
+	const auto isLateral = (this->flags & RseNode::FLAG_LATERAL) != 0;
+
+	if (!isLateral && !rse->rse_jointype && !rse_jointype &&
+		!rse_sorted && !rse_projection &&
 		!rse_first && !rse_skip && !rse_plan)
 	{
 		NestConst<RecordSourceNode>* arg = rse_relations.begin();
