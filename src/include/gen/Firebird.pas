@@ -566,7 +566,7 @@ type
 	IVersioned = class
 		vTable: VersionedVTable;
 
-		const VERSION = 0;
+		const VERSION = 1;
 
 	end;
 
@@ -599,7 +599,7 @@ type
 	end;
 
 	IDisposable = class(IVersioned)
-		const VERSION = 1;
+		const VERSION = 2;
 
 		procedure dispose();
 	end;
@@ -623,7 +623,7 @@ type
 	end;
 
 	IStatus = class(IDisposable)
-		const VERSION = 10;
+		const VERSION = 3;
 		const STATE_WARNINGS = Cardinal(1);
 		const STATE_ERRORS = Cardinal(2);
 		const RESULT_ERROR = Integer(-1);
@@ -673,7 +673,7 @@ type
 	end;
 
 	IMaster = class(IVersioned)
-		const VERSION = 12;
+		const VERSION = 2;
 
 		function getStatus(): IStatus;
 		function getDispatcher(): IProvider;
@@ -712,7 +712,7 @@ type
 	end;
 
 	IPluginBase = class(IReferenceCounted)
-		const VERSION = 4;
+		const VERSION = 3;
 
 		procedure setOwner(r: IReferenceCounted);
 		function getOwner(): IReferenceCounted;
@@ -736,7 +736,7 @@ type
 	end;
 
 	IPluginSet = class(IReferenceCounted)
-		const VERSION = 7;
+		const VERSION = 3;
 
 		function getName(): PAnsiChar;
 		function getModuleName(): PAnsiChar;
@@ -766,7 +766,7 @@ type
 	end;
 
 	IConfigEntry = class(IReferenceCounted)
-		const VERSION = 7;
+		const VERSION = 3;
 
 		function getName(): PAnsiChar;
 		function getValue(): PAnsiChar;
@@ -794,7 +794,7 @@ type
 	end;
 
 	IConfig = class(IReferenceCounted)
-		const VERSION = 5;
+		const VERSION = 3;
 
 		function find(status: IStatus; name: PAnsiChar): IConfigEntry;
 		function findValue(status: IStatus; name: PAnsiChar; value: PAnsiChar): IConfigEntry;
@@ -819,7 +819,7 @@ type
 	end;
 
 	IFirebirdConf = class(IReferenceCounted)
-		const VERSION = 6;
+		const VERSION = 3;
 
 		function getKey(name: PAnsiChar): Cardinal;
 		function asInteger(key: Cardinal): Int64;
@@ -846,7 +846,7 @@ type
 	end;
 
 	IPluginConfig = class(IReferenceCounted)
-		const VERSION = 6;
+		const VERSION = 3;
 
 		function getConfigFileName(): PAnsiChar;
 		function getDefaultConfig(status: IStatus): IConfig;
@@ -870,7 +870,7 @@ type
 	end;
 
 	IPluginFactory = class(IVersioned)
-		const VERSION = 1;
+		const VERSION = 2;
 
 		function createPlugin(status: IStatus; factoryParameter: IPluginConfig): IPluginBase;
 	end;
@@ -887,7 +887,7 @@ type
 	end;
 
 	IPluginModule = class(IVersioned)
-		const VERSION = 2;
+		const VERSION = 3;
 
 		procedure doClean();
 		procedure threadDetach();
@@ -910,7 +910,7 @@ type
 	end;
 
 	IPluginManager = class(IVersioned)
-		const VERSION = 6;
+		const VERSION = 2;
 		const TYPE_PROVIDER = Cardinal(1);
 		const TYPE_FIRST_NON_LIB = Cardinal(2);
 		const TYPE_AUTH_SERVER = Cardinal(3);
@@ -950,7 +950,7 @@ type
 	end;
 
 	ICryptKey = class(IVersioned)
-		const VERSION = 4;
+		const VERSION = 2;
 
 		procedure setSymmetric(status: IStatus; type_: PAnsiChar; keyLength: Cardinal; key: Pointer);
 		procedure setAsymmetric(status: IStatus; type_: PAnsiChar; encryptKeyLength: Cardinal; encryptKey: Pointer; decryptKeyLength: Cardinal; decryptKey: Pointer);
@@ -977,7 +977,7 @@ type
 	end;
 
 	IConfigManager = class(IVersioned)
-		const VERSION = 6;
+		const VERSION = 2;
 		const DIR_BIN = Cardinal(0);
 		const DIR_SBIN = Cardinal(1);
 		const DIR_CONF = Cardinal(2);
@@ -1044,7 +1044,7 @@ type
 	end;
 
 	IBlob = class(IReferenceCounted)
-		const VERSION = 8;
+		const VERSION = 3;
 
 		procedure getInfo(status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr);
 		function getSegment(status: IStatus; bufferLength: Cardinal; buffer: Pointer; segmentLength: CardinalPtr): Integer;
@@ -1081,7 +1081,7 @@ type
 	end;
 
 	ITransaction = class(IReferenceCounted)
-		const VERSION = 12;
+		const VERSION = 3;
 
 		procedure getInfo(status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr);
 		procedure prepare(status: IStatus; msgLength: Cardinal; message: BytePtr);
@@ -1131,7 +1131,7 @@ type
 	end;
 
 	IMessageMetadata = class(IReferenceCounted)
-		const VERSION = 17;
+		const VERSION = 3;
 
 		function getCount(status: IStatus): Cardinal;
 		function getField(status: IStatus; index: Cardinal): PAnsiChar;
@@ -1186,7 +1186,7 @@ type
 	end;
 
 	IMetadataBuilder = class(IReferenceCounted)
-		const VERSION = 12;
+		const VERSION = 3;
 
 		procedure setType(status: IStatus; index: Cardinal; type_: Cardinal);
 		procedure setSubType(status: IStatus; index: Cardinal; subType: Integer);
@@ -1232,7 +1232,7 @@ type
 	end;
 
 	IResultSet = class(IReferenceCounted)
-		const VERSION = 13;
+		const VERSION = 3;
 
 		function fetchNext(status: IStatus; message: Pointer): Integer;
 		function fetchPrior(status: IStatus; message: Pointer): Integer;
@@ -1280,7 +1280,7 @@ type
 	end;
 
 	IStatement = class(IReferenceCounted)
-		const VERSION = 13;
+		const VERSION = 3;
 		const PREPARE_PREFETCH_NONE = Cardinal(0);
 		const PREPARE_PREFETCH_TYPE = Cardinal(1);
 		const PREPARE_PREFETCH_INPUT_PARAMETERS = Cardinal(2);
@@ -1337,7 +1337,7 @@ type
 	end;
 
 	IRequest = class(IReferenceCounted)
-		const VERSION = 9;
+		const VERSION = 3;
 
 		procedure receive(status: IStatus; level: Integer; msgType: Cardinal; length: Cardinal; message: BytePtr);
 		procedure send(status: IStatus; level: Integer; msgType: Cardinal; length: Cardinal; message: BytePtr);
@@ -1402,7 +1402,7 @@ type
 	end;
 
 	IAttachment = class(IReferenceCounted)
-		const VERSION = 20;
+		const VERSION = 3;
 
 		procedure getInfo(status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr);
 		function startTransaction(status: IStatus; tpbLength: Cardinal; tpb: BytePtr): ITransaction;
@@ -1456,7 +1456,7 @@ type
 	end;
 
 	IService = class(IReferenceCounted)
-		const VERSION = 5;
+		const VERSION = 3;
 
 		procedure detach(status: IStatus);
 		procedure query(status: IStatus; sendLength: Cardinal; sendItems: BytePtr; receiveLength: Cardinal; receiveItems: BytePtr; bufferLength: Cardinal; buffer: BytePtr);
@@ -1482,7 +1482,7 @@ type
 	end;
 
 	IProvider = class(IPluginBase)
-		const VERSION = 9;
+		const VERSION = 4;
 
 		function attachDatabase(status: IStatus; fileName: PAnsiChar; dpbLength: Cardinal; dpb: BytePtr): IAttachment;
 		function createDatabase(status: IStatus; fileName: PAnsiChar; dpbLength: Cardinal; dpb: BytePtr): IAttachment;
@@ -1512,7 +1512,7 @@ type
 	end;
 
 	IDtcStart = class(IDisposable)
-		const VERSION = 4;
+		const VERSION = 3;
 
 		procedure addAttachment(status: IStatus; att: IAttachment);
 		procedure addWithTpb(status: IStatus; att: IAttachment; length: Cardinal; tpb: BytePtr);
@@ -1576,7 +1576,7 @@ type
 	end;
 
 	IWriter = class(IVersioned)
-		const VERSION = 4;
+		const VERSION = 2;
 
 		procedure reset();
 		procedure add(status: IStatus; name: PAnsiChar);
@@ -1601,7 +1601,7 @@ type
 	end;
 
 	IServerBlock = class(IVersioned)
-		const VERSION = 4;
+		const VERSION = 2;
 
 		function getLogin(): PAnsiChar;
 		function getData(length: CardinalPtr): BytePtr;
@@ -1628,7 +1628,7 @@ type
 	end;
 
 	IClientBlock = class(IReferenceCounted)
-		const VERSION = 8;
+		const VERSION = 4;
 
 		function getLogin(): PAnsiChar;
 		function getPassword(): PAnsiChar;
@@ -1701,7 +1701,7 @@ type
 	end;
 
 	IUserField = class(IVersioned)
-		const VERSION = 3;
+		const VERSION = 2;
 
 		function entered(): Integer;
 		function specified(): Integer;
@@ -1722,7 +1722,7 @@ type
 	end;
 
 	ICharUserField = class(IUserField)
-		const VERSION = 5;
+		const VERSION = 3;
 
 		function get(): PAnsiChar;
 		procedure set_(status: IStatus; newValue: PAnsiChar);
@@ -1744,7 +1744,7 @@ type
 	end;
 
 	IIntUserField = class(IUserField)
-		const VERSION = 5;
+		const VERSION = 3;
 
 		function get(): Integer;
 		procedure set_(status: IStatus; newValue: Integer);
@@ -1775,7 +1775,7 @@ type
 	end;
 
 	IUser = class(IVersioned)
-		const VERSION = 11;
+		const VERSION = 2;
 		const OP_USER_ADD = Cardinal(1);
 		const OP_USER_MODIFY = Cardinal(2);
 		const OP_USER_DELETE = Cardinal(3);
@@ -1817,7 +1817,7 @@ type
 	end;
 
 	IListUsers = class(IVersioned)
-		const VERSION = 1;
+		const VERSION = 2;
 
 		procedure list(status: IStatus; user: IUser);
 	end;
@@ -1837,7 +1837,7 @@ type
 	end;
 
 	ILogonInfo = class(IVersioned)
-		const VERSION = 5;
+		const VERSION = 2;
 
 		function name(): PAnsiChar;
 		function role(): PAnsiChar;
@@ -1864,7 +1864,7 @@ type
 	end;
 
 	IManagement = class(IPluginBase)
-		const VERSION = 8;
+		const VERSION = 4;
 
 		procedure start(status: IStatus; logonInfo: ILogonInfo);
 		function execute(status: IStatus; user: IUser; callback: IListUsers): Integer;
@@ -1896,7 +1896,7 @@ type
 	end;
 
 	IAuthBlock = class(IVersioned)
-		const VERSION = 7;
+		const VERSION = 2;
 
 		function getType(): PAnsiChar;
 		function getName(): PAnsiChar;
@@ -1927,7 +1927,7 @@ type
 	end;
 
 	IWireCryptPlugin = class(IPluginBase)
-		const VERSION = 8;
+		const VERSION = 4;
 
 		function getKnownTypes(status: IStatus): PAnsiChar;
 		procedure setKey(status: IStatus; key: ICryptKey);
@@ -1953,7 +1953,7 @@ type
 	end;
 
 	ICryptKeyCallback = class(IVersioned)
-		const VERSION = 1;
+		const VERSION = 2;
 
 		function callback(dataLength: Cardinal; data: Pointer; bufferLength: Cardinal; buffer: Pointer): Cardinal;
 	end;
@@ -1972,7 +1972,7 @@ type
 	end;
 
 	IKeyHolderPlugin = class(IPluginBase)
-		const VERSION = 8;
+		const VERSION = 5;
 
 		function keyCallback(status: IStatus; callback: ICryptKeyCallback): Integer;
 		function keyHandle(status: IStatus; keyName: PAnsiChar): ICryptKeyCallback;
@@ -2019,7 +2019,7 @@ type
 	end;
 
 	IDbCryptPlugin = class(IPluginBase)
-		const VERSION = 8;
+		const VERSION = 5;
 
 		procedure setKey(status: IStatus; length: Cardinal; sources: IKeyHolderPluginPtr; keyName: PAnsiChar);
 		procedure encrypt(status: IStatus; length: Cardinal; from: Pointer; to_: Pointer);
@@ -2054,7 +2054,7 @@ type
 	end;
 
 	IExternalContext = class(IVersioned)
-		const VERSION = 10;
+		const VERSION = 2;
 
 		function getMaster(): IMaster;
 		function getEngine(status: IStatus): IExternalEngine;
@@ -2088,7 +2088,7 @@ type
 	end;
 
 	IExternalResultSet = class(IDisposable)
-		const VERSION = 2;
+		const VERSION = 3;
 
 		function fetch(status: IStatus): Boolean;
 	end;
@@ -2185,7 +2185,7 @@ type
 	end;
 
 	IRoutineMetadata = class(IVersioned)
-		const VERSION = 9;
+		const VERSION = 2;
 
 		function getPackage(status: IStatus): PAnsiChar;
 		function getName(status: IStatus): PAnsiChar;
@@ -2222,7 +2222,7 @@ type
 	end;
 
 	IExternalEngine = class(IPluginBase)
-		const VERSION = 10;
+		const VERSION = 4;
 
 		procedure open(status: IStatus; context: IExternalContext; charSet: PAnsiChar; charSetSize: Cardinal);
 		procedure openAttachment(status: IStatus; context: IExternalContext);
@@ -2289,7 +2289,7 @@ type
 	end;
 
 	IVersionCallback = class(IVersioned)
-		const VERSION = 1;
+		const VERSION = 2;
 
 		procedure callback(status: IStatus; text: PAnsiChar);
 	end;
@@ -2317,7 +2317,7 @@ type
 	end;
 
 	IUtil = class(IVersioned)
-		const VERSION = 13;
+		const VERSION = 2;
 
 		procedure getFbVersion(status: IStatus; att: IAttachment; callback: IVersionCallback);
 		procedure loadBlob(status: IStatus; blobId: ISC_QUADPtr; att: IAttachment; tra: ITransaction; file_: PAnsiChar; txt: Boolean);
@@ -2357,7 +2357,7 @@ type
 	end;
 
 	IOffsetsCallback = class(IVersioned)
-		const VERSION = 1;
+		const VERSION = 2;
 
 		procedure setOffset(status: IStatus; index: Cardinal; offset: Cardinal; nullOffset: Cardinal);
 	end;
@@ -2392,7 +2392,7 @@ type
 	end;
 
 	IXpbBuilder = class(IDisposable)
-		const VERSION = 21;
+		const VERSION = 3;
 		const DPB = Cardinal(1);
 		const SPB_ATTACH = Cardinal(2);
 		const SPB_START = Cardinal(3);
@@ -2459,7 +2459,7 @@ type
 	end;
 
 	ITraceConnection = class(IVersioned)
-		const VERSION = 9;
+		const VERSION = 2;
 		const KIND_DATABASE = Cardinal(1);
 		const KIND_SERVICE = Cardinal(2);
 
@@ -2494,7 +2494,7 @@ type
 	end;
 
 	ITraceDatabaseConnection = class(ITraceConnection)
-		const VERSION = 11;
+		const VERSION = 3;
 
 		function getConnectionID(): Int64;
 		function getDatabaseName(): PAnsiChar;
@@ -2527,7 +2527,7 @@ type
 	end;
 
 	ITraceTransaction = class(IVersioned)
-		const VERSION = 7;
+		const VERSION = 3;
 		const ISOLATION_CONSISTENCY = Cardinal(1);
 		const ISOLATION_CONCURRENCY = Cardinal(2);
 		const ISOLATION_READ_COMMITTED_RECVER = Cardinal(3);
@@ -2604,7 +2604,7 @@ type
 	end;
 
 	ITraceSQLStatement = class(ITraceStatement)
-		const VERSION = 7;
+		const VERSION = 3;
 
 		function getText(): PAnsiChar;
 		function getPlan(): PAnsiChar;
@@ -2632,7 +2632,7 @@ type
 	end;
 
 	ITraceBLRStatement = class(ITraceStatement)
-		const VERSION = 5;
+		const VERSION = 3;
 
 		function getData(): BytePtr;
 		function getDataLength(): Cardinal;
@@ -2656,7 +2656,7 @@ type
 	end;
 
 	ITraceDYNRequest = class(IVersioned)
-		const VERSION = 3;
+		const VERSION = 2;
 
 		function getData(): BytePtr;
 		function getDataLength(): Cardinal;
@@ -2678,7 +2678,7 @@ type
 	end;
 
 	ITraceContextVariable = class(IVersioned)
-		const VERSION = 3;
+		const VERSION = 2;
 
 		function getNameSpace(): PAnsiChar;
 		function getVarName(): PAnsiChar;
@@ -2700,7 +2700,7 @@ type
 	end;
 
 	ITraceProcedure = class(IVersioned)
-		const VERSION = 3;
+		const VERSION = 2;
 
 		function getProcName(): PAnsiChar;
 		function getInputs(): ITraceParams;
@@ -2723,7 +2723,7 @@ type
 	end;
 
 	ITraceFunction = class(IVersioned)
-		const VERSION = 4;
+		const VERSION = 2;
 
 		function getFuncName(): PAnsiChar;
 		function getInputs(): ITraceParams;
@@ -2749,7 +2749,7 @@ type
 	end;
 
 	ITraceTrigger = class(IVersioned)
-		const VERSION = 5;
+		const VERSION = 2;
 		const TYPE_ALL = Cardinal(0);
 		const TYPE_BEFORE = Cardinal(1);
 		const TYPE_AFTER = Cardinal(2);
@@ -2778,7 +2778,7 @@ type
 	end;
 
 	ITraceServiceConnection = class(ITraceConnection)
-		const VERSION = 12;
+		const VERSION = 3;
 
 		function getServiceID(): Pointer;
 		function getServiceMgr(): PAnsiChar;
@@ -2810,7 +2810,7 @@ type
 	end;
 
 	ITraceStatusVector = class(IVersioned)
-		const VERSION = 4;
+		const VERSION = 2;
 
 		function hasError(): Boolean;
 		function hasWarning(): Boolean;
@@ -2836,7 +2836,7 @@ type
 	end;
 
 	ITraceSweepInfo = class(IVersioned)
-		const VERSION = 5;
+		const VERSION = 2;
 
 		function getOIT(): Int64;
 		function getOST(): Int64;
@@ -2887,7 +2887,7 @@ type
 	end;
 
 	ITraceInitInfo = class(IVersioned)
-		const VERSION = 7;
+		const VERSION = 2;
 
 		function getConfigText(): PAnsiChar;
 		function getTraceSessionID(): Integer;
@@ -2935,7 +2935,7 @@ type
 	end;
 
 	ITracePlugin = class(IReferenceCounted)
-		const VERSION = 23;
+		const VERSION = 3;
 		const RESULT_SUCCESS = Cardinal(0);
 		const RESULT_FAILED = Cardinal(1);
 		const RESULT_UNAUTHORIZED = Cardinal(2);
@@ -3001,7 +3001,7 @@ type
 	end;
 
 	ITraceFactory = class(IPluginBase)
-		const VERSION = 6;
+		const VERSION = 4;
 		const TRACE_EVENT_ATTACH = Cardinal(0);
 		const TRACE_EVENT_DETACH = Cardinal(1);
 		const TRACE_EVENT_TRANSACTION_START = Cardinal(2);
@@ -3107,7 +3107,7 @@ type
 	end;
 
 	IUdrPlugin = class(IVersioned)
-		const VERSION = 4;
+		const VERSION = 2;
 
 		function getMaster(): IMaster;
 		procedure registerFunction(status: IStatus; name: PAnsiChar; factory: IUdrFunctionFactory);
