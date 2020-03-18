@@ -7929,6 +7929,9 @@ bool get_mapping(BurpGlobals* tdgbl)
 			M.RDB$MAP_TO.NULL = TRUE;
 			M.RDB$DESCRIPTION.NULL = TRUE;
 
+			M.RDB$SYSTEM_FLAG.NULL = FALSE;
+			M.RDB$SYSTEM_FLAG = 0;
+
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 			{
