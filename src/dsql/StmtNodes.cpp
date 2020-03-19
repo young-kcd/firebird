@@ -19,6 +19,7 @@
  */
 
 #include "firebird.h"
+#include "ids.h"
 #include "../common/classes/BaseStream.h"
 #include "../common/classes/MsgPrint.h"
 #include "../common/classes/VaryStr.h"
@@ -27,6 +28,7 @@
 #include "../dsql/StmtNodes.h"
 #include "../jrd/align.h"
 #include "../jrd/blr.h"
+#include "../jrd/ini.h"
 #include "../jrd/tra.h"
 #include "../jrd/Function.h"
 #include "../jrd/Optimizer.h"
@@ -2292,6 +2294,27 @@ EraseNode* EraseNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	doPass2(tdbb, csb, statement.getAddress(), this);
 	doPass2(tdbb, csb, subStatement.getAddress(), this);
+
+	const jrd_rel* const relation = csb->csb_rpt[stream].csb_relation;
+
+	if (relation)
+	{
+		// Deletion from MON$ tables uses the attachment ID and the system flag
+		// under the hood, so these field should be added as implicitly referenced
+
+		if (relation->rel_id == rel_mon_attachments)
+		{
+			SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[stream].csb_fields,
+					f_mon_att_id); // MON$ATTACHMENT_ID
+			SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[stream].csb_fields,
+					f_mon_att_sys_flag); // MON$SYSTEM_FLAG
+		}
+		else if (relation->rel_id == rel_mon_statements)
+		{
+			SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[stream].csb_fields,
+					f_mon_stmt_att_id); // MON$ATTACHMENT_ID
+		}
+	}
 
 	impureOffset = CMP_impure(csb, sizeof(SLONG));
 	csb->csb_rpt[stream].csb_flags |= csb_update;
