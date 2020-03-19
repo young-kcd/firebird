@@ -21,15 +21,12 @@
  */
 
 #include "firebird.h"
-#include "ids.h"
-
 #include "../common/classes/auto.h"
 #include "../common/classes/locks.h"
 #include "../common/classes/fb_string.h"
-
-#include "../common/gdsassert.h"
 #include "../jrd/jrd.h"
 #include "../jrd/cch.h"
+#include "../jrd/ids.h"
 #include "../jrd/ini.h"
 #include "../jrd/nbak.h"
 #include "../jrd/req.h"
@@ -46,7 +43,6 @@
 #include "../jrd/pag_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/CryptoManager.h"
-
 #include "../jrd/Relation.h"
 #include "../jrd/RecordBuffer.h"
 #include "../jrd/Monitoring.h"
