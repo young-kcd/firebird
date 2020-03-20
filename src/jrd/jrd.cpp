@@ -5020,6 +5020,14 @@ JStatement* JAttachment::prepare(CheckStatusWrapper* user_status, ITransaction* 
 		try
 		{
 			Array<UCHAR> items, buffer;
+
+			// ASF: The original code (first commit) was:
+			// buffer.resize(StatementMetadata::buildInfoItems(items, flags));
+			// which makes DSQL_prepare internals to fill the statement metadata.
+			// The code as now makes DSQL_prepare to not do this job.
+			// For embedded connection I believe the pre-filling is better but for
+			// remote I'm not sure it's unnecessary job, so I'm only putting that
+			// observation for now.
 			StatementMetadata::buildInfoItems(items, flags);
 
 			statement = DSQL_prepare(tdbb, getHandle(), tra, stmtLength, sqlStmt, dialect,
