@@ -54,116 +54,145 @@
 #include "../jrd/par_proto.h"
 
 using namespace Firebird;
+using namespace Jrd;
 
-namespace Jrd {
-
-
-// Check the index for being an expression one and
-// matching both the given stream and the given expression tree
-bool checkExpressionIndex(CompilerScratch* csb, const index_desc* idx, ValueExprNode* node, StreamType stream)
+namespace
 {
-	fb_assert(idx);
-
-	if (idx->idx_expression)
+	// Check the index for being an expression one and
+	// matching both the given stream and the given expression tree
+	bool checkExpressionIndex(CompilerScratch* csb, const index_desc* idx,
+							  ValueExprNode* node, StreamType stream)
 	{
-		// The desired expression can be hidden inside a derived expression node,
-		// so try to recover it (see CORE-4118).
-		while (!idx->idx_expression->sameAs(csb, node, true))
-		{
-			DerivedExprNode* const derivedExpr = nodeAs<DerivedExprNode>(node);
-			CastNode* const cast = nodeAs<CastNode>(node);
+		fb_assert(idx);
 
-			if (derivedExpr)
-				node = derivedExpr->arg;
-			else if (cast && cast->artificial)
-				node = cast->source;
-			else
-				return false;
+		if (idx->idx_expression)
+		{
+			// The desired expression can be hidden inside a derived expression node,
+			// so try to recover it (see CORE-4118).
+			while (!idx->idx_expression->sameAs(csb, node, true))
+			{
+				DerivedExprNode* const derivedExpr = nodeAs<DerivedExprNode>(node);
+				CastNode* const cast = nodeAs<CastNode>(node);
+
+				if (derivedExpr)
+					node = derivedExpr->arg;
+				else if (cast && cast->artificial)
+					node = cast->source;
+				else
+					return false;
+			}
+
+			SortedStreamList exprStreams, nodeStreams;
+			idx->idx_expression->collectStreams(csb, exprStreams);
+			node->collectStreams(csb, nodeStreams);
+
+			if (exprStreams.getCount() == 1 && exprStreams[0] == 0 &&
+				nodeStreams.getCount() == 1 && nodeStreams[0] == stream)
+			{
+				return true;
+			}
 		}
 
-		SortedStreamList exprStreams, nodeStreams;
-		idx->idx_expression->collectStreams(csb, exprStreams);
-		node->collectStreams(csb, nodeStreams);
-
-		if (exprStreams.getCount() == 1 && exprStreams[0] == 0 &&
-			nodeStreams.getCount() == 1 && nodeStreams[0] == stream)
-		{
-			return true;
-		}
+		return false;
 	}
 
-	return false;
-}
+	ValueExprNode* injectCast(CompilerScratch* csb,
+							  ValueExprNode* value, CastNode*& cast,
+							  const dsc& desc)
+	{
+		// If the indexed column is of type int64, then we need to inject
+		// an extra cast to deliver the scale value to the BTR level
 
+		if (value && desc.dsc_dtype == dtype_int64)
+		{
+			if (!cast)
+			{
+				cast = FB_NEW_POOL(csb->csb_pool) CastNode(csb->csb_pool);
+				cast->source = value;
+				cast->castDesc = desc;
+				cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
+			}
 
-string OPT_make_alias(thread_db* tdbb, const CompilerScratch* csb,
-					  const CompilerScratch::csb_repeat* base_tail)
+			value = cast;
+		}
+
+		return value;
+	}
+
+	ValueExprNode* invertBoolValue(CompilerScratch* csb, ValueExprNode* value)
+	{
+		// Having a condition (<field> != <boolean value>),
+		// invert it by making (<field> == (<boolean value> == FALSE)),
+		// so that an index lookup could be possible
+
+		static const UCHAR falseValue = '\0';
+		LiteralNode* const falseLiteral =
+			FB_NEW_POOL(csb->csb_pool) LiteralNode(csb->csb_pool);
+		falseLiteral->litDesc.makeBoolean(const_cast<UCHAR*>(&falseValue));
+
+		ComparativeBoolNode* const cmpNode =
+			FB_NEW_POOL(csb->csb_pool) ComparativeBoolNode(csb->csb_pool, blr_eql);
+		cmpNode->arg1 = value;
+		cmpNode->arg2 = falseLiteral;
+
+		// Recreate the boolean expression as a value
+		BoolAsValueNode* const newValue =
+			FB_NEW_POOL(csb->csb_pool) BoolAsValueNode(csb->csb_pool);
+		newValue->boolean = cmpNode;
+
+		newValue->impureOffset = CMP_impure(csb, sizeof(impure_value));
+
+		return newValue;
+	}
+
+} // namespace
+
+namespace Jrd
 {
-/**************************************
- *
- *	m a k e _ a l i a s
- *
- **************************************
- *
- * Functional description
- *	Make an alias string suitable for printing
- *	as part of the plan.  For views, this means
- *	multiple aliases to distinguish the base
- *	table.
- *
- **************************************/
-	DEV_BLKCHK(csb, type_csb);
-	SET_TDBB(tdbb);
-
-	string alias;
-
-	if (base_tail->csb_view || base_tail->csb_alias)
+	string OPT_make_alias(const CompilerScratch* csb, StreamType stream)
 	{
-		ObjectsArray<string> alias_list;
+		// Make an alias string suitable for printing as part of the plan.
+		// For views, this means multiple aliases to distinguish the base table.
 
-		for (const CompilerScratch::csb_repeat* csb_tail = base_tail; ;
-			csb_tail = &csb->csb_rpt[csb_tail->csb_view_stream])
+		string alias;
+
+		const CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
+
+		if (csb_tail->csb_view || csb_tail->csb_alias)
 		{
-			if (csb_tail->csb_alias)
+			ObjectsArray<string> alias_list;
+
+			while (csb_tail)
 			{
-				alias_list.push(*csb_tail->csb_alias);
+				if (csb_tail->csb_alias)
+					alias_list.push(*csb_tail->csb_alias);
+				else if (csb_tail->csb_relation)
+					alias_list.push(csb_tail->csb_relation->rel_name.c_str());
+
+				if (!csb_tail->csb_view)
+					break;
+
+				csb_tail = &csb->csb_rpt[csb_tail->csb_view_stream];
 			}
-			else if (csb_tail->csb_relation)
+
+			while (alias_list.hasData())
 			{
-				alias_list.push(csb_tail->csb_relation->rel_name.c_str());
-			}
+				alias += alias_list.pop();
 
-			if (!csb_tail->csb_view)
-				break;
-
-		}
-
-		while (alias_list.getCount())
-		{
-			alias += alias_list.pop();
-
-			if (alias_list.getCount())
-			{
-				alias += ' ';
+				if (alias_list.hasData())
+					alias += ' ';
 			}
 		}
-	}
-	else if (base_tail->csb_relation)
-	{
-		alias = base_tail->csb_relation->rel_name.c_str();
-	}
-	else if (base_tail->csb_procedure)
-	{
-		alias = base_tail->csb_procedure->getName().toString();
-	}
-	else
-	{
-		fb_assert(false);
-	}
+		else if (csb_tail->csb_relation)
+			alias = csb_tail->csb_relation->rel_name.c_str();
+		else if (csb_tail->csb_procedure)
+			alias = csb_tail->csb_procedure->getName().toString();
+		else
+			fb_assert(false);
 
-	return alias;
+		return alias;
+	}
 }
-
 
 IndexScratchSegment::IndexScratchSegment(MemoryPool& p) :
 	matches(p)
@@ -442,10 +471,8 @@ const string& OptimizerRetrieval::getAlias()
  *
  **************************************/
 	if (alias.isEmpty())
-	{
-		const CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[this->stream];
-		alias = OPT_make_alias(tdbb, csb, csb_tail);
-	}
+		alias = OPT_make_alias(csb, this->stream);
+
 	return alias;
 }
 
@@ -1799,38 +1826,18 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 
 	bool excludeBound = cmpNode && (cmpNode->blrOp == blr_gtr || cmpNode->blrOp == blr_lss);
 
+	dsc matchDesc, valueDesc;
+
 	if (value)
 	{
-		dsc desc1, desc2;
-		match->getDesc(tdbb, csb, &desc1);
-		value->getDesc(tdbb, csb, &desc2);
+		match->getDesc(tdbb, csb, &matchDesc);
+		value->getDesc(tdbb, csb, &valueDesc);
 
-		if (!BTR_types_comparable(desc1, desc2))
+		if (!BTR_types_comparable(matchDesc, valueDesc))
 			return false;
 
-		// if the indexed column is of type int64, we need to inject an
-		// extra cast to deliver the scale value to the BTR level
-
-		if (desc1.dsc_dtype == dtype_int64)
-		{
-			CastNode* cast = FB_NEW_POOL(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
-			cast->source = value;
-			cast->castDesc = desc1;
-			cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
-
-			value = cast;
-
-			if (value2)
-			{
-				cast = FB_NEW_POOL(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
-				cast->source = value2;
-				cast->castDesc = desc1;
-				cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
-
-				value2 = cast;
-			}
-		}
-		else if (desc1.dsc_dtype == dtype_sql_date && desc2.dsc_dtype == dtype_timestamp)
+		if (matchDesc.dsc_dtype == dtype_sql_date &&
+			valueDesc.dsc_dtype == dtype_timestamp)
 		{
 			// for "DATE <op> TIMESTAMP" we need <op> to include the boundary value
 			excludeBound = false;
@@ -1840,214 +1847,202 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 	// match the field to an index, if possible, and save the value to be matched
 	// as either the lower or upper bound for retrieval, or both
 
+	FieldNode* const fieldNode = nodeAs<FieldNode>(match);
+
+	if (!(indexScratch->idx->idx_flags & idx_expressn))
+		fb_assert(fieldNode);
+
 	const bool isDesc = (indexScratch->idx->idx_flags & idx_descending);
-	int count = 0;
-	IndexScratchSegment** segment = indexScratch->segments.begin();
+
+	// Needed for int64 matches, see injectCast() function
+	CastNode *cast = NULL, *cast2 = NULL;
+
+	fb_assert(indexScratch->segments.getCount() == indexScratch->idx->idx_count);
 
 	for (int i = 0; i < indexScratch->idx->idx_count; i++)
 	{
-		FieldNode* fieldNode = nodeAs<FieldNode>(match);
-
-		if (!(indexScratch->idx->idx_flags & idx_expressn))
+		if (!(indexScratch->idx->idx_flags & idx_expressn) &&
+			fieldNode->fieldId != indexScratch->idx->idx_rpt[i].idx_field)
 		{
-			fb_assert(fieldNode);
+			continue;
 		}
 
-		if ((indexScratch->idx->idx_flags & idx_expressn) ||
-			fieldNode->fieldId == indexScratch->idx->idx_rpt[i].idx_field)
+		IndexScratchSegment* const segment = indexScratch->segments[i];
+
+		if (cmpNode)
 		{
-			if (cmpNode)
+			switch (cmpNode->blrOp)
 			{
-				switch (cmpNode->blrOp)
-				{
-					case blr_between:
-						if (!forward || !value2->computable(csb, stream, false))
-							return false;
-						segment[i]->matches.add(boolean);
-						// AB: If we have already an exact match don't
-						// override it with worser matches.
-						if (!((segment[i]->scanType == segmentScanEqual) ||
-							(segment[i]->scanType == segmentScanEquivalent)))
-						{
-							segment[i]->lowerValue = value;
-							segment[i]->upperValue = value2;
-							segment[i]->scanType = segmentScanBetween;
-							segment[i]->excludeLower = false;
-							segment[i]->excludeUpper = false;
-						}
-						break;
-
-					case blr_equiv:
-						segment[i]->matches.add(boolean);
-						// AB: If we have already an exact match don't
-						// override it with worser matches.
-						if (!(segment[i]->scanType == segmentScanEqual))
-						{
-							segment[i]->lowerValue = segment[i]->upperValue = value;
-							segment[i]->scanType = segmentScanEquivalent;
-							segment[i]->excludeLower = false;
-							segment[i]->excludeUpper = false;
-						}
-						break;
-
-					case blr_eql:
-						segment[i]->matches.add(boolean);
-						segment[i]->lowerValue = segment[i]->upperValue = value;
-						segment[i]->scanType = segmentScanEqual;
-						segment[i]->excludeLower = false;
-						segment[i]->excludeUpper = false;
-						break;
-
-					// ASF: Make "NOT boolean" work with indices.
-					case blr_neq:
-					{
-						dsc desc;
-						value->getDesc(tdbb, csb, &desc);
-
-						if (desc.dsc_dtype != dtype_boolean)
-							return false;
-
-						// Let's make a compare with FALSE so we invert the value.
-
-						static const UCHAR falseValue = '\0';
-						LiteralNode* falseLiteral = FB_NEW_POOL(*tdbb->getDefaultPool())
-							LiteralNode(*tdbb->getDefaultPool());
-						falseLiteral->litDesc.makeBoolean(const_cast<UCHAR*>(&falseValue));
-
-						ComparativeBoolNode* newCmp = FB_NEW_POOL(*tdbb->getDefaultPool())
-							ComparativeBoolNode(*tdbb->getDefaultPool(), blr_eql);
-						newCmp->arg1 = value;
-						newCmp->arg2 = falseLiteral;
-
-						// Recreate the boolean expression as a value.
-						BoolAsValueNode* newValue = FB_NEW_POOL(*tdbb->getDefaultPool())
-							BoolAsValueNode(*tdbb->getDefaultPool());
-						newValue->boolean = newCmp;
-
-						newValue->impureOffset = CMP_impure(csb, sizeof(impure_value));
-
-						// We have the value inverted. Then use it with a segmentScanEqual for the
-						// index lookup.
-						segment[i]->matches.add(boolean);
-						segment[i]->lowerValue = segment[i]->upperValue = newValue;
-						segment[i]->scanType = segmentScanEqual;
-						segment[i]->excludeLower = false;
-						segment[i]->excludeUpper = false;
-						break;
-					}
-
-					case blr_gtr:
-					case blr_geq:
-						segment[i]->matches.add(boolean);
-						if (!((segment[i]->scanType == segmentScanEqual) ||
-							(segment[i]->scanType == segmentScanEquivalent) ||
-							(segment[i]->scanType == segmentScanBetween)))
-						{
-							if (forward != isDesc) // (forward && !isDesc || !forward && isDesc)
-								segment[i]->excludeLower = excludeBound;
-							else
-								segment[i]->excludeUpper = excludeBound;
-
-							if (forward)
-							{
-								segment[i]->lowerValue = value;
-								if (segment[i]->scanType == segmentScanLess)
-            						segment[i]->scanType = segmentScanBetween;
-								else
-            						segment[i]->scanType = segmentScanGreater;
-							}
-							else
-							{
-								segment[i]->upperValue = value;
-								if (segment[i]->scanType == segmentScanGreater)
-									segment[i]->scanType = segmentScanBetween;
-								else
-									segment[i]->scanType = segmentScanLess;
-							}
-						}
-						break;
-
-					case blr_lss:
-					case blr_leq:
-						segment[i]->matches.add(boolean);
-						if (!((segment[i]->scanType == segmentScanEqual) ||
-							(segment[i]->scanType == segmentScanEquivalent) ||
-							(segment[i]->scanType == segmentScanBetween)))
-						{
-							if (forward != isDesc)
-								segment[i]->excludeUpper = excludeBound;
-							else
-								segment[i]->excludeLower = excludeBound;
-
-							if (forward)
-							{
-								segment[i]->upperValue = value;
-								if (segment[i]->scanType == segmentScanGreater)
-									segment[i]->scanType = segmentScanBetween;
-								else
-									segment[i]->scanType = segmentScanLess;
-							}
-							else
-							{
-								segment[i]->lowerValue = value;
-								if (segment[i]->scanType == segmentScanLess)
-            						segment[i]->scanType = segmentScanBetween;
-								else
-            						segment[i]->scanType = segmentScanGreater;
-							}
-						}
-						break;
-
-					case blr_starting:
-						// Check if validate for using index
-						if (!forward || !validateStarts(indexScratch, cmpNode, i))
-							return false;
-						segment[i]->matches.add(boolean);
-						if (!((segment[i]->scanType == segmentScanEqual) ||
-							(segment[i]->scanType == segmentScanEquivalent)))
-						{
-							segment[i]->lowerValue = segment[i]->upperValue = value;
-							segment[i]->scanType = segmentScanStarting;
-							segment[i]->excludeLower = false;
-							segment[i]->excludeUpper = false;
-						}
-						break;
-
-					default:
+				case blr_between:
+					if (!forward || !value2->computable(csb, stream, false))
 						return false;
-				}
-			}
-			else if (missingNode)
-			{
-				segment[i]->matches.add(boolean);
-				if (!((segment[i]->scanType == segmentScanEqual) ||
-					(segment[i]->scanType == segmentScanEquivalent)))
+					segment->matches.add(boolean);
+					// AB: If we have already an exact match don't
+					// override it with worser matches.
+					if (!((segment->scanType == segmentScanEqual) ||
+						(segment->scanType == segmentScanEquivalent)))
+					{
+						segment->lowerValue = injectCast(csb, value, cast, matchDesc);
+						segment->upperValue = injectCast(csb, value2, cast2, matchDesc);
+						segment->scanType = segmentScanBetween;
+						segment->excludeLower = false;
+						segment->excludeUpper = false;
+					}
+					break;
+
+				case blr_equiv:
+					segment->matches.add(boolean);
+					// AB: If we have already an exact match don't
+					// override it with worser matches.
+					if (!(segment->scanType == segmentScanEqual))
+					{
+						segment->lowerValue = segment->upperValue =
+							injectCast(csb, value, cast, matchDesc);
+						segment->scanType = segmentScanEquivalent;
+						segment->excludeLower = false;
+						segment->excludeUpper = false;
+					}
+					break;
+
+				case blr_eql:
+					segment->matches.add(boolean);
+					segment->lowerValue = segment->upperValue =
+						injectCast(csb, value, cast, matchDesc);
+					segment->scanType = segmentScanEqual;
+					segment->excludeLower = false;
+					segment->excludeUpper = false;
+					break;
+
+				// ASF: Make "NOT boolean" work with indices.
+				case blr_neq:
 				{
-					segment[i]->lowerValue = segment[i]->upperValue = value;
-					segment[i]->scanType = segmentScanMissing;
-					segment[i]->excludeLower = false;
-					segment[i]->excludeUpper = false;
+					if (valueDesc.dsc_dtype != dtype_boolean)
+						return false;
+
+					// Invert the value and use it with "segmentScanEqual" for the index lookup
+					segment->matches.add(boolean);
+					segment->lowerValue = segment->upperValue =
+						invertBoolValue(csb, value);
+					segment->scanType = segmentScanEqual;
+					segment->excludeLower = false;
+					segment->excludeUpper = false;
+					break;
 				}
+
+				case blr_gtr:
+				case blr_geq:
+					segment->matches.add(boolean);
+					if (!((segment->scanType == segmentScanEqual) ||
+						(segment->scanType == segmentScanEquivalent) ||
+						(segment->scanType == segmentScanBetween)))
+					{
+						if (forward != isDesc) // (forward && !isDesc || !forward && isDesc)
+							segment->excludeLower = excludeBound;
+						else
+							segment->excludeUpper = excludeBound;
+
+						if (forward)
+						{
+							segment->lowerValue = injectCast(csb, value, cast, matchDesc);
+							if (segment->scanType == segmentScanLess)
+								segment->scanType = segmentScanBetween;
+							else
+								segment->scanType = segmentScanGreater;
+						}
+						else
+						{
+							segment->upperValue = injectCast(csb, value, cast, matchDesc);
+							if (segment->scanType == segmentScanGreater)
+								segment->scanType = segmentScanBetween;
+							else
+								segment->scanType = segmentScanLess;
+						}
+					}
+					break;
+
+				case blr_lss:
+				case blr_leq:
+					segment->matches.add(boolean);
+					if (!((segment->scanType == segmentScanEqual) ||
+						(segment->scanType == segmentScanEquivalent) ||
+						(segment->scanType == segmentScanBetween)))
+					{
+						if (forward != isDesc)
+							segment->excludeUpper = excludeBound;
+						else
+							segment->excludeLower = excludeBound;
+
+						if (forward)
+						{
+							segment->upperValue = injectCast(csb, value, cast, matchDesc);
+							if (segment->scanType == segmentScanGreater)
+								segment->scanType = segmentScanBetween;
+							else
+								segment->scanType = segmentScanLess;
+						}
+						else
+						{
+							segment->lowerValue = injectCast(csb, value, cast, matchDesc);
+							if (segment->scanType == segmentScanLess)
+								segment->scanType = segmentScanBetween;
+							else
+								segment->scanType = segmentScanGreater;
+						}
+					}
+					break;
+
+				case blr_starting:
+					// Check if validate for using index
+					if (!forward || !validateStarts(indexScratch, cmpNode, i))
+						return false;
+					segment->matches.add(boolean);
+					if (!((segment->scanType == segmentScanEqual) ||
+						(segment->scanType == segmentScanEquivalent)))
+					{
+						segment->lowerValue = segment->upperValue =
+							injectCast(csb, value, cast, matchDesc);
+						segment->scanType = segmentScanStarting;
+						segment->excludeLower = false;
+						segment->excludeUpper = false;
+					}
+					break;
+
+				default:
+					return false;
 			}
-			else
-				return false;
-
-			// A match could be made
-			if (segment[i]->scope < scope)
-				segment[i]->scope = scope;
-
-			++count;
-
-			if (i == 0)
-			{
-				// If this is the first segment, then this index is a candidate.
-				indexScratch->candidate = true;
-			}
-
 		}
+		else if (missingNode)
+		{
+			segment->matches.add(boolean);
+			if (!((segment->scanType == segmentScanEqual) ||
+				(segment->scanType == segmentScanEquivalent)))
+			{
+				segment->lowerValue = segment->upperValue = NULL;
+				segment->scanType = segmentScanMissing;
+				segment->excludeLower = false;
+				segment->excludeUpper = false;
+			}
+		}
+		else
+		{
+			fb_assert(false);
+			return false;
+		}
+
+		// A match could be made
+		if (segment->scope < scope)
+			segment->scope = scope;
+
+		if (i == 0)
+		{
+			// If this is the first segment, then this index is a candidate.
+			indexScratch->candidate = true;
+		}
+
+		return true;
 	}
 
-	return count >= 1;
+	return false;
 }
 
 InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
@@ -3175,6 +3170,3 @@ void OptimizerInnerJoin::printStartOrder() const
 	fclose(opt_debug_file);
 }
 #endif
-
-
-} // namespace

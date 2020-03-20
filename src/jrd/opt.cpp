@@ -2246,7 +2246,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 
 	fb_assert(relation);
 
-	const string alias = OPT_make_alias(tdbb, csb, csb_tail);
+	const string alias = OPT_make_alias(csb, stream);
 	csb_tail->activate();
 
 	// Time to find inversions. For each index on the relation

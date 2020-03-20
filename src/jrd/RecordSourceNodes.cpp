@@ -1226,8 +1226,7 @@ ProcedureScan* ProcedureSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt)
 	SET_TDBB(tdbb);
 
 	CompilerScratch* const csb = opt->opt_csb;
-	CompilerScratch::csb_repeat* const csbTail = &csb->csb_rpt[stream];
-	const string alias = OPT_make_alias(tdbb, csb, csbTail);
+	const string alias = OPT_make_alias(csb, stream);
 
 	return FB_NEW_POOL(*tdbb->getDefaultPool()) ProcedureScan(csb, alias, stream, procedure,
 		sourceList, targetList, in_msg);
