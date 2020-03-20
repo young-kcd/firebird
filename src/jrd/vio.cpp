@@ -2801,6 +2801,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 
 	if (needDfw(tdbb, transaction))
 	{
+		const SLONG nullLinger = 0;
+
 		switch ((RIDS) relation->rel_id)
 		{
 		case rel_segments:
@@ -2846,12 +2848,12 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		case rel_database:
 			protect_system_table_delupd(tdbb, relation, "UPDATE");
 			check_class(tdbb, transaction, org_rpb, new_rpb, f_dat_class);
-			EVL_field(0, org_rpb->rpb_record, f_dat_linger, &desc1);
-			EVL_field(0, new_rpb->rpb_record, f_dat_linger, &desc2);
+			if (!EVL_field(0, org_rpb->rpb_record, f_dat_linger, &desc1))
+				desc1.makeLong(0, const_cast<SLONG*>(&nullLinger));
+			if (!EVL_field(0, new_rpb->rpb_record, f_dat_linger, &desc2))
+				desc2.makeLong(0, const_cast<SLONG*>(&nullLinger));
 			if (MOV_compare(tdbb, &desc1, &desc2))
-			{
 				DFW_post_work(transaction, dfw_set_linger, &desc2, 0);
-			}
 			break;
 
 		case rel_relations:
@@ -2951,7 +2953,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 					bool rc4 = EVL_field(NULL, new_rpb->rpb_record, f_rfr_sname, &desc4);
 
 					if ((rc2 && MOV_get_long(tdbb, &desc2, 0) != 0) ||
-						(rc3 && rc4 && MOV_compare(tdbb, &desc3, &desc4) != 0))
+						(rc3 && rc4 && MOV_compare(tdbb, &desc3, &desc4)))
 					{
 						EVL_field(0, new_rpb->rpb_record, f_rfr_rname, &desc1);
 						EVL_field(0, new_rpb->rpb_record, f_rfr_id, &desc2);
@@ -4117,7 +4119,9 @@ static void check_rel_field_class(thread_db* tdbb,
 
 static void check_class(thread_db* tdbb,
 						jrd_tra* transaction,
-						record_param* old_rpb, record_param* new_rpb, USHORT id)
+						record_param* org_rpb,
+						record_param* new_rpb,
+						USHORT id)
 {
 /**************************************
  *
@@ -4133,16 +4137,23 @@ static void check_class(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-	DSC desc1, desc2;
-	EVL_field(0, old_rpb->rpb_record, id, &desc1);
-	EVL_field(0, new_rpb->rpb_record, id, &desc2);
-	if (!MOV_compare(tdbb, &desc1, &desc2))
+	dsc desc1, desc2;
+	const bool flag_org = EVL_field(0, org_rpb->rpb_record, id, &desc1);
+	const bool flag_new = EVL_field(0, new_rpb->rpb_record, id, &desc2);
+
+	if (!flag_new || (flag_org && !MOV_compare(tdbb, &desc1, &desc2)))
 		return;
 
 	DFW_post_work(transaction, dfw_compute_security, &desc2, 0);
 }
 
 
+static bool check_nullify_source(thread_db* tdbb,
+								 record_param* org_rpb,
+								 record_param* new_rpb,
+								 int field_id_1,
+								 int field_id_2)
+{
 /**************************************
  *
  *	c h e c k _ n u l l i f y _ s o u r c e
@@ -4155,9 +4166,6 @@ static void check_class(thread_db* tdbb,
  *	and if so, validate whether it was an assignment to NULL.
  *
  **************************************/
-static bool check_nullify_source(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
-								 int field_id_1, int field_id_2)
-{
 	if (!tdbb->getAttachment()->locksmith(tdbb, NULL_PRIVILEGE))	// legacy right - no system privilege tuning !!!
 		return false;
 
@@ -4182,7 +4190,7 @@ static bool check_nullify_source(thread_db* tdbb, record_param* org_rpb, record_
 			}
 		}
 
-		if (org_null != new_null || MOV_compare(tdbb, &org_desc, &new_desc))
+		if (org_null != new_null || (!new_null && MOV_compare(tdbb, &org_desc, &new_desc)))
 			return false;
 	}
 
@@ -4192,7 +4200,9 @@ static bool check_nullify_source(thread_db* tdbb, record_param* org_rpb, record_
 
 static void check_owner(thread_db* tdbb,
 						jrd_tra* transaction,
-						record_param* old_rpb, record_param* new_rpb, USHORT id)
+						record_param* org_rpb,
+						record_param* new_rpb,
+						USHORT id)
 {
 /**************************************
  *
@@ -4208,20 +4218,31 @@ static void check_owner(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-	DSC desc1, desc2;
-	EVL_field(0, old_rpb->rpb_record, id, &desc1);
-	EVL_field(0, new_rpb->rpb_record, id, &desc2);
-	if (!MOV_compare(tdbb, &desc1, &desc2))
+	dsc desc1, desc2;
+	const bool flag_org = EVL_field(0, org_rpb->rpb_record, id, &desc1);
+	const bool flag_new = EVL_field(0, new_rpb->rpb_record, id, &desc2);
+
+	if (!flag_org && !flag_new)
 		return;
 
-	const Jrd::Attachment* const attachment = tdbb->getAttachment();
-	if (attachment->att_user)
+	if (flag_org && flag_new)
 	{
-		const Firebird::MetaName name(attachment->att_user->getUserName());
-		desc2.makeText((USHORT) name.length(), CS_METADATA, (UCHAR*) name.c_str());
 		if (!MOV_compare(tdbb, &desc1, &desc2))
 			return;
+
+		const Jrd::Attachment* const attachment = tdbb->getAttachment();
+
+		if (attachment->att_user)
+		{
+			const MetaName name(attachment->att_user->getUserName());
+			desc2.makeText((USHORT) name.length(), CS_METADATA, (UCHAR*) name.c_str());
+
+			if (!MOV_compare(tdbb, &desc1, &desc2))
+				return;
+		}
 	}
+
+	// Note: NULL->USER and USER->NULL changes also cause the error to be raised
 
 	ERR_post(Arg::Gds(isc_protect_ownership));
 }
@@ -4394,25 +4415,34 @@ static UCHAR* delete_tail(thread_db* tdbb,
 }
 
 
-// ******************************
-// d f w _ s h o u l d _ k n o w
-// ******************************
-// Not all operations on system tables are relevant to inform DFW.
-// In particular, changing comments on objects is irrelevant.
-// Engine often performs empty update to force some tasks (e.g. to
-// recreate index after field type change). So we must return true
-// if relevant field changed or if no fields changed. Or we must
-// return false if only irrelevant field changed.
-static bool dfw_should_know(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
-	USHORT irrelevant_field, bool void_update_is_relevant)
+static bool dfw_should_know(thread_db* tdbb,
+							record_param* org_rpb,
+							record_param* new_rpb,
+							USHORT irrelevant_field,
+							bool void_update_is_relevant)
 {
+/**************************************
+ *
+ *	d f w _ s h o u l d _ k n o w
+ *
+ **************************************
+ *
+ * Functional description
+ * Not all operations on system tables are relevant to inform DFW.
+ * In particular, changing comments on objects is irrelevant.
+ * Engine often performs empty update to force some tasks (e.g. to
+ * recreate index after field type change). So we must return true
+ * if relevant field changed or if no fields changed. Or we must
+ * return false if only irrelevant field changed.
+ *
+ **************************************/
 	dsc desc2, desc3;
 	bool irrelevant_changed = false;
 	for (USHORT iter = 0; iter < org_rpb->rpb_record->getFormat()->fmt_count; ++iter)
 	{
-		const bool a = EVL_field(0, org_rpb->rpb_record, iter, &desc2);
-		const bool b = EVL_field(0, new_rpb->rpb_record, iter, &desc3);
-		if (a != b || MOV_compare(tdbb, &desc2, &desc3))
+		const bool flag_org = EVL_field(0, org_rpb->rpb_record, iter, &desc2);
+		const bool flag_new = EVL_field(0, new_rpb->rpb_record, iter, &desc3);
+		if (flag_org != flag_new || (flag_new && MOV_compare(tdbb, &desc2, &desc3)))
 		{
 			if (iter != irrelevant_field)
 				return true;
@@ -6007,7 +6037,7 @@ static void refresh_fk_fields(thread_db* tdbb, Record* old_rec, record_param* cu
 		// If field was not changed by user - pick up possible modification by
 		// system cascade trigger
 		if (flag_old == flag_new &&
-			(!flag_old || (flag_old && MOV_compare(tdbb, &desc1, &desc2) == 0)))
+			(!flag_old || (flag_old && !MOV_compare(tdbb, &desc1, &desc2))))
 		{
 			const bool flag_tmp = EVL_field(relation, cur_rpb->rpb_record, fld, &desc1);
 			if (flag_tmp)
