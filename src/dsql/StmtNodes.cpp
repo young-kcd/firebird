@@ -4323,6 +4323,8 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
+	dsqlScratch->beginDebug();
+
 	// Sub routine needs a different approach from EXECUTE BLOCK.
 	// EXECUTE BLOCK needs "ports", which creates DSQL messages using the client charset.
 	// Sub routine doesn't need ports and should generate BLR as declared in its metadata.
@@ -4457,6 +4459,8 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(blr_end);
 	dsqlScratch->genReturn(true);
 	dsqlScratch->appendUChar(blr_end);
+
+	dsqlScratch->endDebug();
 }
 
 // Revert parameters order for EXECUTE BLOCK statement
@@ -5967,6 +5971,7 @@ static RegisterNode<ModifyNode> regModifyNode2(blr_modify2);
 DmlNode* ModifyNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	// Parse the original and new contexts.
+
 	USHORT context = (unsigned int) csb->csb_blr_reader.getByte();
 
 	if (context >= csb->csb_rpt.getCount() || !(csb->csb_rpt[context].csb_flags & csb_used))
@@ -6556,7 +6561,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 
 						if (!forNode)
 							restartRequest(request, transaction);
-							
+
 						forNode->setWriteLockMode(request);
 						return parentStmt;
 					}

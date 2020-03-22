@@ -603,11 +603,7 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, boo
 	else
 		scratch->getStatement()->setBlrVersion(4);
 
-	scratch->beginDebug();
-
 	GEN_request(scratch, node);
-
-	scratch->endDebug();
 
 	// Create the messages buffers
 	for (FB_SIZE_T i = 0; i < scratch->ports.getCount(); ++i)
