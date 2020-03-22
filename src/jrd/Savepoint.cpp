@@ -234,7 +234,7 @@ void VerbAction::mergeTo(thread_db* tdbb, jrd_tra* transaction, VerbAction* next
 	release(transaction);
 }
 
-void VerbAction::undo(thread_db* tdbb, jrd_tra* transaction, VerbAction* preserveAction)
+void VerbAction::undo(thread_db* tdbb, jrd_tra* transaction, bool preserveLocks, VerbAction* preserveAction)
 {
 	// Undo changes recorded for this verb action.
 	// After that, clear the verb action and prepare it for later reuse.
@@ -258,7 +258,7 @@ void VerbAction::undo(thread_db* tdbb, jrd_tra* transaction, VerbAction* preserv
 			if (!DPM_get(tdbb, &rpb, LCK_read))
 				BUGCHECK(186);	// msg 186 record disappeared
 
-			if ((have_undo || preserveAction) && !(rpb.rpb_flags & rpb_deleted))
+			if ((have_undo || preserveLocks) && !(rpb.rpb_flags & rpb_deleted))
 				VIO_data(tdbb, &rpb, transaction->tra_pool);
 			else
 				CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
@@ -268,7 +268,7 @@ void VerbAction::undo(thread_db* tdbb, jrd_tra* transaction, VerbAction* preserv
 
 			if (!have_undo)
 			{
-				if (preserveAction && rpb.rpb_b_page)
+				if (preserveLocks && rpb.rpb_b_page)
 				{
 					// Fetch previous record version and update in place current version with it
 					record_param temp = rpb;
@@ -305,7 +305,8 @@ void VerbAction::undo(thread_db* tdbb, jrd_tra* transaction, VerbAction* preserv
 
 					delete temp.rpb_record;
 
-					RBM_SET(transaction->tra_pool, &preserveAction->vct_records, rpb.rpb_number.getValue());
+					if (preserveAction)
+						RBM_SET(transaction->tra_pool, &preserveAction->vct_records, rpb.rpb_number.getValue());
 				} 
 				else
 					VIO_backout(tdbb, &rpb, transaction);
@@ -445,7 +446,7 @@ Savepoint* Savepoint::rollback(thread_db* tdbb, Savepoint* prior, bool preserveL
 			if (preserveLocks && m_next)
 				preserveAction = m_next->createAction(action->vct_relation);
 
-			action->undo(tdbb, m_transaction, preserveAction);
+			action->undo(tdbb, m_transaction, preserveLocks, preserveAction);
 
 			m_actions = action->vct_next;
 			action->vct_next = m_freeActions;
