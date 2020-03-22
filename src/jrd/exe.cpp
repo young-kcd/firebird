@@ -1387,7 +1387,9 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 				(*ptr)->close(tdbb);
 		}
 
-		TRA_release_request_snapshot(tdbb, request);
+		if (!exeState.errorPending)
+			TRA_release_request_snapshot(tdbb, request);
+
 		request->req_flags &= ~(req_active | req_reserved);
 		request->req_gmt_timestamp.invalidate();
 		release_blobs(tdbb, request);
@@ -1410,6 +1412,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 		if (!(request->req_transaction->tra_flags & TRA_system))
 			request->req_transaction->rollbackToSavepoint(tdbb, savNumber);
 
+		TRA_release_request_snapshot(tdbb, request);
 		ERR_punt();
 	}
 

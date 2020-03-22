@@ -555,6 +555,7 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 	expr_request->req_flags &= req_in_use;
 	expr_request->req_flags |= req_active;
 	TRA_attach_request(tdbb->getTransaction(), expr_request);
+	TRA_setup_request_snapshot(tdbb, expr_request);
 	tdbb->setRequest(expr_request);
 
 	fb_assert(expr_request->req_transaction);
