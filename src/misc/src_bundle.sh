@@ -58,9 +58,6 @@ rm -rf $DIRNAME
 mv $MODULE $DIRNAME
 pushd $DIRNAME >/dev/null 2>&1
 
-# Remove CVS/SVN information
-rm -rf `find . -name CVS -print`
-rm -rf `find . -name .svn -print`
 
 # Clean gpre-generated files and extern
 cd gen
