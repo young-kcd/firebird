@@ -73,5 +73,5 @@ cp $SRCROOT/configure .
 
 echo "Creating tarball for $PACKNAME"
 cd ..
-tar cjf $SRCROOT/gen/$PACKNAME.tar.bz2 $PACKNAME
+tar cf - $PACKNAME | xz -9e >$SRCROOT/gen/$PACKNAME.tar.xz
 popd >/dev/null 2>&1
