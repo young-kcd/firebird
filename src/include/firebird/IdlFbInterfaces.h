@@ -239,8 +239,8 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 3;
 
-		static const unsigned STATE_WARNINGS = 1;
-		static const unsigned STATE_ERRORS = 2;
+		static const unsigned STATE_WARNINGS = 0x1;
+		static const unsigned STATE_ERRORS = 0x2;
 		static const int RESULT_ERROR = -1;
 		static const int RESULT_OK = 0;
 		static const int RESULT_NO_DATA = 1;
@@ -1639,19 +1639,19 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 4;
 
-		static const unsigned PREPARE_PREFETCH_NONE = 0;
-		static const unsigned PREPARE_PREFETCH_TYPE = 1;
-		static const unsigned PREPARE_PREFETCH_INPUT_PARAMETERS = 2;
-		static const unsigned PREPARE_PREFETCH_OUTPUT_PARAMETERS = 4;
-		static const unsigned PREPARE_PREFETCH_LEGACY_PLAN = 8;
-		static const unsigned PREPARE_PREFETCH_DETAILED_PLAN = 16;
-		static const unsigned PREPARE_PREFETCH_AFFECTED_RECORDS = 32;
-		static const unsigned PREPARE_PREFETCH_FLAGS = 64;
+		static const unsigned PREPARE_PREFETCH_NONE = 0x0;
+		static const unsigned PREPARE_PREFETCH_TYPE = 0x1;
+		static const unsigned PREPARE_PREFETCH_INPUT_PARAMETERS = 0x2;
+		static const unsigned PREPARE_PREFETCH_OUTPUT_PARAMETERS = 0x4;
+		static const unsigned PREPARE_PREFETCH_LEGACY_PLAN = 0x8;
+		static const unsigned PREPARE_PREFETCH_DETAILED_PLAN = 0x10;
+		static const unsigned PREPARE_PREFETCH_AFFECTED_RECORDS = 0x20;
+		static const unsigned PREPARE_PREFETCH_FLAGS = 0x40;
 		static const unsigned PREPARE_PREFETCH_METADATA = IStatement::PREPARE_PREFETCH_TYPE | IStatement::PREPARE_PREFETCH_FLAGS | IStatement::PREPARE_PREFETCH_INPUT_PARAMETERS | IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS;
 		static const unsigned PREPARE_PREFETCH_ALL = IStatement::PREPARE_PREFETCH_METADATA | IStatement::PREPARE_PREFETCH_LEGACY_PLAN | IStatement::PREPARE_PREFETCH_DETAILED_PLAN | IStatement::PREPARE_PREFETCH_AFFECTED_RECORDS;
-		static const unsigned FLAG_HAS_CURSOR = 1;
-		static const unsigned FLAG_REPEAT_EXECUTE = 2;
-		static const unsigned CURSOR_TYPE_SCROLLABLE = 1;
+		static const unsigned FLAG_HAS_CURSOR = 0x1;
+		static const unsigned FLAG_REPEAT_EXECUTE = 0x2;
+		static const unsigned CURSOR_TYPE_SCROLLABLE = 0x1;
 
 		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
@@ -1922,7 +1922,7 @@ namespace Firebird
 
 		static const int EXECUTE_FAILED = -1;
 		static const int SUCCESS_NO_INFO = -2;
-		static const unsigned NO_MORE_ERRORS = -1;
+		static const unsigned NO_MORE_ERRORS = 0xffffffff;
 
 		template <typename StatusType> unsigned getSize(StatusType* status)
 		{
