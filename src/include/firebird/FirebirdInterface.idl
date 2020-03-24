@@ -1135,6 +1135,9 @@ interface XpbBuilder : Disposable
 	const uint TPB = 4;
 	const uint BATCH = 5;
 	const uint BPB = 6;
+	const uint SPB_SEND = 7;
+	const uint SPB_RECEIVE = 8;
+	const uint SPB_RESPONSE = 9;
 
 	// removing data
 	void clear(Status status);

@@ -1922,7 +1922,7 @@ namespace Firebird
 
 		static const int EXECUTE_FAILED = -1;
 		static const int SUCCESS_NO_INFO = -2;
-		static const unsigned NO_MORE_ERRORS = 2147483647;
+		static const unsigned NO_MORE_ERRORS = -1;
 
 		template <typename StatusType> unsigned getSize(StatusType* status)
 		{
@@ -4409,6 +4409,9 @@ namespace Firebird
 		static const unsigned TPB = 4;
 		static const unsigned BATCH = 5;
 		static const unsigned BPB = 6;
+		static const unsigned SPB_SEND = 7;
+		static const unsigned SPB_RECEIVE = 8;
+		static const unsigned SPB_RESPONSE = 9;
 
 		template <typename StatusType> void clear(StatusType* status)
 		{

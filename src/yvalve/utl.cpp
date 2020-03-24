@@ -905,8 +905,17 @@ public:
 			k = ClumpletReader::Tagged;
 			tag = isc_bpb_version1;
 			break;
+		case SPB_SEND:
+			k = ClumpletReader::SpbSendItems;
+			break;
+		case SPB_RECEIVE:
+			k = ClumpletReader::SpbReceiveItems;
+			break;
+		case SPB_RESPONSE:
+			k = ClumpletReader::SpbResponse;
+			break;
 		default:
-			fatal_exception::raiseFmt("Wrong parameters block kind %d, should be from %d to %d", kind, DPB, BPB);
+			fatal_exception::raiseFmt("Wrong parameters block kind %d, should be from %d to %d", kind, DPB, SPB_RESPONSE);
 			break;
 		}
 
