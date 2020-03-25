@@ -624,8 +624,8 @@ type
 
 	IStatus = class(IDisposable)
 		const VERSION = 3;
-		const STATE_WARNINGS = Cardinal(1);
-		const STATE_ERRORS = Cardinal(2);
+		const STATE_WARNINGS = Cardinal($1);
+		const STATE_ERRORS = Cardinal($2);
 		const RESULT_ERROR = Integer(-1);
 		const RESULT_OK = Integer(0);
 		const RESULT_NO_DATA = Integer(1);
@@ -1281,19 +1281,19 @@ type
 
 	IStatement = class(IReferenceCounted)
 		const VERSION = 3;
-		const PREPARE_PREFETCH_NONE = Cardinal(0);
-		const PREPARE_PREFETCH_TYPE = Cardinal(1);
-		const PREPARE_PREFETCH_INPUT_PARAMETERS = Cardinal(2);
-		const PREPARE_PREFETCH_OUTPUT_PARAMETERS = Cardinal(4);
-		const PREPARE_PREFETCH_LEGACY_PLAN = Cardinal(8);
-		const PREPARE_PREFETCH_DETAILED_PLAN = Cardinal(16);
-		const PREPARE_PREFETCH_AFFECTED_RECORDS = Cardinal(32);
-		const PREPARE_PREFETCH_FLAGS = Cardinal(64);
+		const PREPARE_PREFETCH_NONE = Cardinal($0);
+		const PREPARE_PREFETCH_TYPE = Cardinal($1);
+		const PREPARE_PREFETCH_INPUT_PARAMETERS = Cardinal($2);
+		const PREPARE_PREFETCH_OUTPUT_PARAMETERS = Cardinal($4);
+		const PREPARE_PREFETCH_LEGACY_PLAN = Cardinal($8);
+		const PREPARE_PREFETCH_DETAILED_PLAN = Cardinal($10);
+		const PREPARE_PREFETCH_AFFECTED_RECORDS = Cardinal($20);
+		const PREPARE_PREFETCH_FLAGS = Cardinal($40);
 		const PREPARE_PREFETCH_METADATA = Cardinal(IStatement.PREPARE_PREFETCH_TYPE or IStatement.PREPARE_PREFETCH_FLAGS or IStatement.PREPARE_PREFETCH_INPUT_PARAMETERS or IStatement.PREPARE_PREFETCH_OUTPUT_PARAMETERS);
 		const PREPARE_PREFETCH_ALL = Cardinal(IStatement.PREPARE_PREFETCH_METADATA or IStatement.PREPARE_PREFETCH_LEGACY_PLAN or IStatement.PREPARE_PREFETCH_DETAILED_PLAN or IStatement.PREPARE_PREFETCH_AFFECTED_RECORDS);
-		const FLAG_HAS_CURSOR = Cardinal(1);
-		const FLAG_REPEAT_EXECUTE = Cardinal(2);
-		const CURSOR_TYPE_SCROLLABLE = Cardinal(1);
+		const FLAG_HAS_CURSOR = Cardinal($1);
+		const FLAG_REPEAT_EXECUTE = Cardinal($2);
+		const CURSOR_TYPE_SCROLLABLE = Cardinal($1);
 
 		procedure getInfo(status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr);
 		function getType(status: IStatus): Cardinal;
