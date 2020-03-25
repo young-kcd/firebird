@@ -402,7 +402,7 @@ interface MetadataBuilder : ReferenceCounted
 
 	MessageMetadata getMetadata(Status status);
 
-version:	// 3.0 => 3.0.6
+version:	// 3.0 => 4.0
 	void setField(Status status, uint index, const string field);
 	void setRelation(Status status, uint index, const string relation);
 	void setOwner(Status status, uint index, const string owner);
