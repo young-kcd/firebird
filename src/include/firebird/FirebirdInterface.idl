@@ -401,6 +401,12 @@ interface MetadataBuilder : ReferenceCounted
 	uint addField(Status status);
 
 	MessageMetadata getMetadata(Status status);
+
+version:	// 3.0 => 3.0.6
+	void setField(Status status, uint index, const string field);
+	void setRelation(Status status, uint index, const string relation);
+	void setOwner(Status status, uint index, const string owner);
+	void setAlias(Status status, uint index, const string alias);
 }
 
 interface ResultSet : ReferenceCounted

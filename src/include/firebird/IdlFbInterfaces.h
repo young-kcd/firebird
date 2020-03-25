@@ -1399,6 +1399,10 @@ namespace Firebird
 			void (CLOOP_CARG *remove)(IMetadataBuilder* self, IStatus* status, unsigned index) throw();
 			unsigned (CLOOP_CARG *addField)(IMetadataBuilder* self, IStatus* status) throw();
 			IMessageMetadata* (CLOOP_CARG *getMetadata)(IMetadataBuilder* self, IStatus* status) throw();
+			void (CLOOP_CARG *setField)(IMetadataBuilder* self, IStatus* status, unsigned index, const char* field) throw();
+			void (CLOOP_CARG *setRelation)(IMetadataBuilder* self, IStatus* status, unsigned index, const char* relation) throw();
+			void (CLOOP_CARG *setOwner)(IMetadataBuilder* self, IStatus* status, unsigned index, const char* owner) throw();
+			void (CLOOP_CARG *setAlias)(IMetadataBuilder* self, IStatus* status, unsigned index, const char* alias) throw();
 		};
 
 	protected:
@@ -1412,7 +1416,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static const unsigned VERSION = 4;
 
 		template <typename StatusType> void setType(StatusType* status, unsigned index, unsigned type)
 		{
@@ -1484,6 +1488,58 @@ namespace Firebird
 			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getMetadata(this, status);
 			StatusType::checkException(status);
 			return ret;
+		}
+
+		template <typename StatusType> void setField(StatusType* status, unsigned index, const char* field)
+		{
+			if (cloopVTable->version < 4)
+			{
+				StatusType::setVersionError(status, "IMetadataBuilder", cloopVTable->version, 4);
+				StatusType::checkException(status);
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->setField(this, status, index, field);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void setRelation(StatusType* status, unsigned index, const char* relation)
+		{
+			if (cloopVTable->version < 4)
+			{
+				StatusType::setVersionError(status, "IMetadataBuilder", cloopVTable->version, 4);
+				StatusType::checkException(status);
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->setRelation(this, status, index, relation);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void setOwner(StatusType* status, unsigned index, const char* owner)
+		{
+			if (cloopVTable->version < 4)
+			{
+				StatusType::setVersionError(status, "IMetadataBuilder", cloopVTable->version, 4);
+				StatusType::checkException(status);
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->setOwner(this, status, index, owner);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void setAlias(StatusType* status, unsigned index, const char* alias)
+		{
+			if (cloopVTable->version < 4)
+			{
+				StatusType::setVersionError(status, "IMetadataBuilder", cloopVTable->version, 4);
+				StatusType::checkException(status);
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->setAlias(this, status, index, alias);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -8811,6 +8867,10 @@ namespace Firebird
 					this->remove = &Name::cloopremoveDispatcher;
 					this->addField = &Name::cloopaddFieldDispatcher;
 					this->getMetadata = &Name::cloopgetMetadataDispatcher;
+					this->setField = &Name::cloopsetFieldDispatcher;
+					this->setRelation = &Name::cloopsetRelationDispatcher;
+					this->setOwner = &Name::cloopsetOwnerDispatcher;
+					this->setAlias = &Name::cloopsetAliasDispatcher;
 				}
 			} vTable;
 
@@ -8959,6 +9019,62 @@ namespace Firebird
 			}
 		}
 
+		static void CLOOP_CARG cloopsetFieldDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, const char* field) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::setField(&status2, index, field);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopsetRelationDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, const char* relation) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::setRelation(&status2, index, relation);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, const char* owner) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::setOwner(&status2, index, owner);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopsetAliasDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, const char* alias) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::setAlias(&status2, index, alias);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
 		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
@@ -9008,6 +9124,10 @@ namespace Firebird
 		virtual void remove(StatusType* status, unsigned index) = 0;
 		virtual unsigned addField(StatusType* status) = 0;
 		virtual IMessageMetadata* getMetadata(StatusType* status) = 0;
+		virtual void setField(StatusType* status, unsigned index, const char* field) = 0;
+		virtual void setRelation(StatusType* status, unsigned index, const char* relation) = 0;
+		virtual void setOwner(StatusType* status, unsigned index, const char* owner) = 0;
+		virtual void setAlias(StatusType* status, unsigned index, const char* alias) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
