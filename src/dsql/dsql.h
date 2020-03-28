@@ -652,7 +652,8 @@ public:
 	explicit DsqlDmlRequest(MemoryPool& pool, StmtNode* aNode)
 		: dsql_req(pool),
 		  node(aNode),
-		  needDelayedFormat(false)
+		  needDelayedFormat(false),
+		  prefetchedFirstRow(false)
 	{
 	}
 
@@ -671,9 +672,14 @@ public:
 	virtual void setDelayedFormat(thread_db* tdbb, Firebird::IMessageMetadata* metadata);
 
 private:
+	void doExecute(thread_db* tdbb, jrd_tra** traHandle,
+		Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
+		Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
+		bool singleton);
 	NestConst<StmtNode> node;
 	Firebird::RefPtr<Firebird::IMessageMetadata> delayedFormat;
 	bool needDelayedFormat;
+	bool prefetchedFirstRow;
 };
 
 class DsqlDdlRequest : public dsql_req

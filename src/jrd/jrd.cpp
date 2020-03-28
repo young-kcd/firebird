@@ -8970,39 +8970,8 @@ void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
  *	Get a record from the host program.
  *
  **************************************/
-
-	// Repeat execution to handle update conflicts, if any
-	int numTries = 0;
-	while (true)
-	{
-		try
-		{
-			EXE_unwind(tdbb, request);
-			EXE_start(tdbb, request, transaction);
-			break;
-		}
-		catch (const status_exception &ex)
-		{
-			const ISC_STATUS* v = ex.value();
-			if (// Update conflict error
-				v[0] == isc_arg_gds &&
-				v[1] == isc_update_conflict &&
-				// Read committed transaction with snapshots
-				(transaction->tra_flags & TRA_read_committed) &&
-				(transaction->tra_flags & TRA_read_consistency) &&
-				// Snapshot has been assigned to the request -
-				// it was top-level request
-				!TRA_get_prior_request(tdbb))
-			{
-				if (++numTries < 10)
-				{
-					fb_utils::init_status(tdbb->tdbb_status_vector);
-					continue;
-				}
-			}
-			throw;
-		}
-	}
+	EXE_unwind(tdbb, request);
+	EXE_start(tdbb, request, transaction);
 
 	check_autocommit(tdbb, request);
 
@@ -9091,40 +9060,9 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
  *	Get a record from the host program.
  *
  **************************************/
-
-	// Repeat execution to handle update conflicts, if any
-	int numTries = 0;
-	while (true)
-	{
-		try
-		{
-			EXE_unwind(tdbb, request);
-			EXE_start(tdbb, request, transaction);
-			EXE_send(tdbb, request, msg_type, msg_length, msg);
-			break;
-		}
-		catch (const status_exception &ex)
-		{
-			const ISC_STATUS* v = ex.value();
-			if (// Update conflict error
-				v[0] == isc_arg_gds &&
-				v[1] == isc_update_conflict &&
-				// Read committed transaction with snapshots
-				(transaction->tra_flags & TRA_read_committed) &&
-				(transaction->tra_flags & TRA_read_consistency) &&
-				// Snapshot has been assigned to the request -
-				// it was top-level request
-				!TRA_get_prior_request(tdbb))
-			{
-				if (++numTries < 10)
-				{
-					fb_utils::init_status(tdbb->tdbb_status_vector);
-					continue;
-				}
-			}
-			throw;
-		}
-	}
+	EXE_unwind(tdbb, request);
+	EXE_start(tdbb, request, transaction);
+	EXE_send(tdbb, request, msg_type, msg_length, msg);
 
 	check_autocommit(tdbb, request);
 

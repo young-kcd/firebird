@@ -443,4 +443,6 @@
 #define blr_at_local				(unsigned char) 0
 #define blr_at_zone					(unsigned char) 1
 
+#define blr_marks					(unsigned char) 217		// mark some blr code with specific flags
+
 #endif // FIREBIRD_IMPL_BLR_H
