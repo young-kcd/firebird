@@ -125,23 +125,23 @@ So, there are three kinds of read-committed transactions now:
 
 ### Update conflicts handling
 
-When statement executed within *read committed read consistency* transaction its database view is 
+When statement executed within READ COMMITTED READ CONSISTENCY transaction its database view is 
 not changed (similar to snapshot transaction). Therefore it is useless to wait for commit of 
 concurrent transaction in the hope to re-read new committed record version. On read, behavior is 
-similar to read committed *record version* transaction - do not wait for active transaction and
+similar to READ COMMITTED *RECORD VERSION* transaction - do not wait for active transaction and
 walk backversions chain looking for record version visible to the current snapshot.
 
-For *read committed read consistency* mode handling of update conflicts by the engine is changed 
+For READ COMMITTED *READ CONSISTENCY* mode handling of update conflicts by the engine is changed 
 significantly. 
 When update conflict is detected the following is performed:  
-a) transaction isolation mode temporarily switched to the read committed *no record version mode*
+a) transaction isolation mode temporarily switched to the READ COMMITTED *NO RECORD VERSION MODE*
 b) engine put write lock on conflicted record 
 c) engine continue to evaluate remaining records of update\delete cursor and put write locks 
    on it too
 d) when there is no more records to fetch, engine start to undo all actions performed since
-   top-level statement execution starts and put write locks on every updated\deleted record, 
-   all inserted records are removed
-e) then engine restores transaction isolation mode as read committed *read consistency*, creates
+   top-level statement execution starts and preserve already taken write locks for every 
+   updated\deleted\locked record, all inserted records are removed
+e) then engine restores transaction isolation mode as READ COMMITTED *READ CONSISTENCY*, creates
    new statement-level snapshot and restart execution of top-level statement.
 
 Such algorithm allows to ensure that after restart already updated records remains locked, 
@@ -149,28 +149,33 @@ will be visible to the new snapshot, and could be updated again with no further 
 Also, because of read consistency mode, set of modified records remains consistent.
 
 Notes:
-- restart algorithm above is applied to the UPDATE, DELETE, SELECT WITH LOCK and MERGE 
-  statements, with and without RETURNING clause, executing directly by user applicaiton or 
-  as a part of some PSQL object (stored procedure\function, trigger, EXECUTE BLOCK, etc)
-- if UPDATE\DELETE statement is positioned on some explicit cursor (WHERE CURRENT OF) then
-  engine skip step (c) above, i.e. not fetches and not put write locks on remaining records 
-  of cursor
-- if top-level statement is SELECT'able and update conflict happens after one or more records 
-  was returned to the application, then update conflict error is reported as usual and restart 
-  is not initiated
-- restart is not initiated for statements in autonomous blocks
-- after 10 attempts engine stop restarts and report update conflict
-- by historical reasons isc_update_conflict reported as secondary error code with primary
-  error code isc_deadlock.
+- restart algorithm above is applied to the UPDATE, DELETE, SELECT WITH LOCK and MERGE statements, 
+  with and without RETURNING clause, executing directly by user applicaiton or as a part of some 
+  PSQL object (stored procedure\function, trigger, EXECUTE BLOCK, etc)
+- if UPDATE\DELETE statement is positioned on some explicit cursor (WHERE CURRENT OF) then engine 
+  skip step (c) above, i.e. not fetches and not put write locks on remaining records of cursor
+- if top-level statement is SELECT'able and update conflict happens after one or more records was 
+  returned to the application, then update conflict error is reported as usual and restart is not 
+  initiated
+- restart is not initiated for statements in autonomous blocks (IN AUTONOMOUS TRANSACTION DO ...)
+- after 10 attempts engine aborts restart algorithm, releases all write locks, restores transaction 
+  isolation mode as READ COMMITTED *READ CONSISTENCY* and report update conflict
+- any not handled error at step (c) above stops restart algorithm and engine continue processing 
+  in usual way, for example error could be catched and handled by PSQL WHEN block or reported to 
+  the application if not handled
+- UPDATE\DELETE triggers will fire multiply times for the same record if statement execution was
+  restarted and record is updated\deleted again
+- by historical reasons isc_update_conflict reported as secondary error code with primary error 
+  code isc_deadlock.
 
 
 ### Precommitted transactions
 
-*Read-committed read only* transactions marked as committed immediately when transaction started. 
+READ COMMITTED READ ONLY transactions marked as committed immediately when transaction started. 
 This is correct if read-committed transaction needs no database snapshot. But it is not correct 
-to mark *read consistency read only* transaction as committed as it can break statement-level 
-snapshot consistency. Therefore *read consistency read only* transactions is not precommitted 
-on start. Other kinds of read committed read only transactions (*[no] record version*) works as 
+to mark READ CONSISTENCY READ ONLY transaction as committed as it can break statement-level 
+snapshot consistency. Therefore READ CONSISTENCY READ ONLY transactions is not precommitted 
+on start. Other kinds of READ COMMITTED READ ONLY transactions ([NO] RECORD VERSION) works as 
 before and marked as committed when such transaction started.
 
 ### Support for new READ COMMITTED READ CONSISTENCY isolation level
@@ -223,15 +228,16 @@ value of *oldest active snapshot* which could see *given* record version. If few
 in a chain got the same mark then all of them after the first one could be removed. This allows to 
 keep versions chains short.
 
-To make it works, engine maintains list of all active database snapshots. This list is kept in shared
+To make it work, engine maintains list of all active database snapshots. This list is kept in shared
 memory. The initial size of shared memory block could be set in firebird.conf using new setting
 **SnapshotsMemSize**. Default value is 64KB. It could grow automatically, when necessary.
 
-When engine need to find "*oldest active snapshot* which could see *given* record version" it
-just search for CN of transaction that created given record version at the sorted array of active
+When engine needs to find "*oldest active snapshot* which could see *given* record version" it just 
+searches for CN of transaction that created given record version in the sorted array of active
 snapshots.
 
 Garbage collection of intermediate record versions run by:
  - sweep
  - background garbage collector in SuperServer
  - every user attachment after update or delete record
+ - table scan at index creation
