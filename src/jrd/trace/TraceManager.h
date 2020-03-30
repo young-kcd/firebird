@@ -135,6 +135,12 @@ public:
 		active = true;
 	}
 
+	// helps avoid early use
+	bool isActive()
+	{
+		return active;
+	}
+
 	/* DSQL-friendly routines to call Trace API hooks.
        Needed because DSQL cannot include JRD for the current engine */
 	static bool need_dsql_prepare(Attachment* att);
