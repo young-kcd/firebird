@@ -858,9 +858,14 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 		AutoSavePoint savePoint(tdbb, req_transaction);
 		req_request->req_flags &= ~req_update_conflict;
 		int numTries = 0;
+		const int MAX_RESTARTS = 10;
 		while (true)
 		{
-			AutoSetRestoreFlag<ULONG> restartReady(&req_request->req_flags, req_restart_ready, true);
+			// Don't set req_restart_ready flas at last attempt to restart request.
+			// It allows to raise update conflict error (if any) as usual and 
+			// handle error by PSQL handler.
+			const ULONG flag = (numTries >= MAX_RESTARTS) ? 0 : req_restart_ready;
+			AutoSetRestoreFlag<ULONG> restartReady(&req_request->req_flags, flag, true);
 			try
 			{
 				doExecute(tdbb, traHandle, inMetadata, inMsg, outMetadata, outMsg, singleton);
@@ -897,17 +902,16 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 			req_transaction->tra_flags &= ~TRA_ex_restart;
 			fb_utils::init_status(tdbb->tdbb_status_vector);
 
-			if (numTries >= 10)
-			{
-				gds__log("Update conflict: unable to get a stable set of rows in the source tables");
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-913) <<
-						  Arg::Gds(isc_deadlock) <<
-						  Arg::Gds(isc_update_conflict) <<
-						  Arg::Gds(isc_concurrent_transaction) << Arg::Num(req_request->req_conflict_txn));
-			}
 			req_transaction->rollbackSavepoint(tdbb, true);
 			req_transaction->startSavepoint(tdbb);
+
 			numTries++;
+			if (numTries >= MAX_RESTARTS)
+			{
+				gds__log("Update conflict: unable to get a stable set of rows in the source tables\n"
+						 "\tafter %d attempts of restart.\n"
+						 "\tQuery:\n%s\n", numTries, req_request->getStatement()->sqlText->c_str() );
+			}
 		}
 		savePoint.release();	// everything is ok
 	} else {
