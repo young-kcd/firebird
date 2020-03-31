@@ -827,7 +827,6 @@ static jrd_file* seek_file(jrd_file*	file,
 	overlapped->OffsetHigh = liOffset.HighPart;
 	overlapped->Internal = 0;
 	overlapped->InternalHigh = 0;
-	overlapped->hEvent = (HANDLE) 0;
 
 	ThreadSync* thd = ThreadSync::getThread(FB_FUNCTION);
 	overlapped->hEvent = thd->getIOEvent();
