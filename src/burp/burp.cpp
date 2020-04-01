@@ -178,7 +178,7 @@ static void binOut(const void* data, unsigned len)
 	if (bin == -1)
 	{
 		bin = fileno(stdout);
-		_setmode(binout, _O_BINARY);
+		_setmode(bin, _O_BINARY);
 	}
 #else
 	const int bin = 1;
