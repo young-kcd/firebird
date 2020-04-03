@@ -87,7 +87,7 @@ extern _C_ const char *yyrule[];
 #define yyerrok (yyps->errflag = 0)
 
 #ifndef YYSTACKGROWTH
-#define YYSTACKGROWTH 16
+#define YYSTACKGROWTH 128
 #endif
 
 #ifndef YYDEFSTACKSIZE
