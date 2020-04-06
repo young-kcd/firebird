@@ -144,10 +144,6 @@ public:
 	Attachment*		dbb_attachment;
 	Firebird::MetaName dbb_dfl_charset;
 	bool			dbb_no_charset;
-	bool			dbb_read_only;
-	USHORT			dbb_db_SQL_dialect;
-	USHORT			dbb_ods_version;	// major ODS version number
-	USHORT			dbb_minor_version;	// minor ODS version number
 
 	explicit dsql_dbb(MemoryPool& p)
 		: dbb_relations(p),

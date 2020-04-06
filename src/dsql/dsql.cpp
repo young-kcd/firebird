@@ -939,7 +939,7 @@ void DsqlDdlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, boo
 		rethrowDdlException(ex, false);
 	}
 
-	if (scratch->getAttachment()->dbb_read_only)
+	if (dbb->readOnly())
 		ERRD_post(Arg::Gds(isc_read_only_database));
 
 	// In read-only replica, only replicator is allowed to execute DDL.
@@ -951,12 +951,14 @@ void DsqlDdlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, boo
 		ERRD_post(Arg::Gds(isc_read_only_trans));
 	}
 
+	const auto dbDialect =
+		(dbb->dbb_flags & DBB_DB_SQL_dialect_3) ? SQL_DIALECT_V6 : SQL_DIALECT_V5;
+
 	if ((scratch->flags & DsqlCompilerScratch::FLAG_AMBIGUOUS_STMT) &&
-		scratch->getAttachment()->dbb_db_SQL_dialect != scratch->clientDialect)
+		dbDialect != scratch->clientDialect)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
-				  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) <<
-					  Arg::Num(scratch->getAttachment()->dbb_db_SQL_dialect));
+				  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) << Arg::Num(dbDialect));
 	}
 
 	if (scratch->clientDialect > SQL_DIALECT_V5)
@@ -1119,15 +1121,6 @@ static dsql_dbb* init(thread_db* tdbb, Jrd::Attachment* attachment)
 	attachment->att_dsql_instance = database;
 
 	INI_init_dsql(tdbb, database);
-
-	Database* const dbb = tdbb->getDatabase();
-	database->dbb_db_SQL_dialect =
-		(dbb->dbb_flags & DBB_DB_SQL_dialect_3) ? SQL_DIALECT_V6 : SQL_DIALECT_V5;
-
-	database->dbb_ods_version = dbb->dbb_ods_version;
-	database->dbb_minor_version = dbb->dbb_minor_version;
-
-	database->dbb_read_only = dbb->readOnly();
 
 #ifdef DSQL_DEBUG
 	DSQL_debug = Config::getTraceDSQL();
@@ -1473,6 +1466,8 @@ static dsql_req* prepareRequest(thread_db* tdbb, dsql_dbb* database, jrd_tra* tr
 static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
 	ULONG textLength, const TEXT* text, USHORT clientDialect, bool isInternalRequest)
 {
+	Database* const dbb = tdbb->getDatabase();
+
 	if (text && textLength == 0)
 		textLength = static_cast<ULONG>(strlen(text));
 
@@ -1534,14 +1529,18 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		if (isInternalRequest)
 			scratch->flags |= DsqlCompilerScratch::FLAG_INTERNAL_REQUEST;
 
+		const auto dbDialect =
+			(dbb->dbb_flags & DBB_DB_SQL_dialect_3) ? SQL_DIALECT_V6 : SQL_DIALECT_V5;
+
+		const auto charSetId = database->dbb_attachment->att_charset;
+
 		string transformedText;
 
 		{	// scope to delete parser before the scratch pool is gone
 			Jrd::ContextPoolHolder scratchContext(tdbb, scratchPool);
 
 			Parser parser(tdbb, *scratchPool, scratch, clientDialect,
-				scratch->getAttachment()->dbb_db_SQL_dialect, text, textLength,
-				tdbb->getAttachment()->att_charset);
+				dbDialect, text, textLength, charSetId);
 
 			// Parse the SQL statement.  If it croaks, return
 			request = parser.parse();
@@ -1556,8 +1555,6 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		request->req_dbb = scratch->getAttachment();
 		request->req_transaction = scratch->getTransaction();
 		request->statement = scratch->getStatement();
-
-		const SSHORT charSetId = database->dbb_attachment->att_charset;
 
 		// If the attachment charset is NONE, replace non-ASCII characters by question marks, so
 		// that engine internals doesn't receive non-mappeable data to UTF8. If an attachment
