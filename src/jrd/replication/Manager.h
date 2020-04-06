@@ -79,13 +79,16 @@ namespace Replication
 
 		static TableMatcher* createMatcher(MemoryPool& pool, const Firebird::string& dbId);
 
+		static void forceLogSwitch(const Firebird::string& dbId);
+
 		Firebird::UCharBuffer* getBuffer();
 
 		void flush(Firebird::UCharBuffer* buffer, bool sync);
 
 		void forceLogSwitch()
 		{
-			m_changeLog->forceSwitch();
+			if (m_changeLog)
+				m_changeLog->forceSwitch();
 		}
 
 		const Replication::Config* getConfig() const

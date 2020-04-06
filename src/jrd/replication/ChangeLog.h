@@ -117,18 +117,20 @@ namespace Replication
 		{
 		public:
 			LockCheckout(ChangeLog* log)
-				: m_log(log)
+				: m_log(log && !log->m_shutdown ? log : NULL)
 			{
-				m_log->unlockState();
+				if (m_log)
+					m_log->unlockState();
 			}
 
 			~LockCheckout()
 			{
-				m_log->lockState();
+				if (m_log)
+					m_log->lockState();
 			}
 
 		private:
-			ChangeLog* m_log;
+			ChangeLog* const m_log;
 		};
 
 		// Changelog segment (physical file on disk)
@@ -143,6 +145,11 @@ namespace Replication
 			bool validate(const Firebird::Guid& guid) const;
 			void append(ULONG length, const UCHAR* data);
 			void copyTo(const Firebird::PathName& filename) const;
+
+			bool isEmpty() const
+			{
+				return (m_header->hdr_length == sizeof(SegmentHeader));
+			}
 
 			bool hasData() const
 			{

@@ -161,6 +161,15 @@ TableMatcher* Manager::createMatcher(MemoryPool& pool, const string& dbId)
 	return NULL;
 }
 
+void Manager::forceLogSwitch(const string& dbId)
+{
+	MutexLockGuard guard(g_mapMutex, FB_FUNCTION);
+
+	Manager* mgr = NULL;
+	if (g_rmMap->get(dbId, mgr))
+		mgr->forceLogSwitch();
+}
+
 
 Manager::Manager(const string& dbId,
 				 const PathName& database,

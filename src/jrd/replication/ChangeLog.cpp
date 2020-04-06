@@ -360,7 +360,13 @@ ChangeLog::~ChangeLog()
 
 		if (unlinkSelf())
 		{
+			// We're the last owner going away, so mark the active segment as full.
+			// Then attempt archiving the full segments.
+
 			switchActiveSegment();
+
+			// At this point checkouts are disabled, thus it's safe
+			// to iterate through the segments without restarts
 
 			for (const auto segment : m_segments)
 			{
@@ -580,7 +586,7 @@ FB_UINT64 ChangeLog::write(ULONG length, const UCHAR* data, bool sync)
 
 	const auto state = m_sharedMemory->getHeader();
 
-	if (segment->getLength() == sizeof(SegmentHeader))
+	if (segment->isEmpty())
 		state->timestamp = time(NULL);
 
 	segment->append(length, data);
@@ -618,7 +624,9 @@ FB_UINT64 ChangeLog::write(ULONG length, const UCHAR* data, bool sync)
 		}
 	}
 
-	return state->sequence;
+	fb_assert(segment->getSequence() == state->sequence);
+
+	return segment->getSequence();
 }
 
 bool ChangeLog::archiveExecute(Segment* segment)
@@ -741,25 +749,26 @@ bool ChangeLog::archiveSegment(Segment* segment)
 
 void ChangeLog::switchActiveSegment()
 {
-	Segment* activeSegment = NULL;
-
 	for (const auto segment : m_segments)
 	{
 		const auto segmentState = segment->getState();
 
 		if (segmentState == SEGMENT_STATE_USED)
 		{
-			activeSegment = segment;
+			if (segment->hasData())
+			{
+				const auto state = m_sharedMemory->getHeader();
+				fb_assert(segment->getSequence() == state->sequence);
+
+				segment->setState(SEGMENT_STATE_FULL);
+				state->flushMark++;
+
+				if (!m_shutdown)
+					m_workingSemaphore.release();
+			}
+
 			break;
 		}
-	}
-
-	if (activeSegment)
-	{
-		const auto state = m_sharedMemory->getHeader();
-
-		activeSegment->setState(SEGMENT_STATE_FULL);
-		state->flushMark++;
 	}
 }
 
@@ -780,7 +789,7 @@ void ChangeLog::bgArchiver()
 			{
 				if (segment->getState() == SEGMENT_STATE_USED)
 				{
-					if (segment->getLength() > sizeof(SegmentHeader) && m_config->logArchiveTimeout)
+					if (segment->hasData() && m_config->logArchiveTimeout)
 					{
 						const auto delta_timestamp = time(NULL) - state->timestamp;
 
@@ -983,7 +992,7 @@ ChangeLog::Segment* ChangeLog::getSegment(ULONG length)
 			activeSegment = NULL;
 			m_workingSemaphore.release();
 		}
-		else if (activeSegment->getLength() > sizeof(SegmentHeader) && m_config->logArchiveTimeout)
+		else if (activeSegment->hasData() && m_config->logArchiveTimeout)
 		{
 			const size_t deltaTimestamp = time(NULL) - state->timestamp;
 

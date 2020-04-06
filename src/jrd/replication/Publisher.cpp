@@ -636,3 +636,13 @@ void REPL_exec_sql(thread_db* tdbb, jrd_tra* transaction, const string& sql)
 	if (!replicator->executeSqlIntl(charset, sql.c_str()))
 		handleError(tdbb, transaction);
 }
+
+void REPL_log_switch(thread_db* tdbb)
+{
+	const auto dbb = tdbb->getDatabase();
+	fb_assert(dbb);
+
+	const string dbId = dbb->getUniqueFileId();
+
+	Manager::forceLogSwitch(dbId);
+}
