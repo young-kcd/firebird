@@ -2563,6 +2563,13 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'get_db_creators', 'restore.epp', NULL, 12, 393, NULL, '    restoring database create grant for @1', NULL, NULL);
 (NULL, 'get_db_creators', 'restore.epp', NULL, 12, 394, NULL, 'restoring database create grants', NULL, NULL);
 (NULL, 'get_db_creators', 'restore.epp', NULL, 12, 395, NULL, 'database create grant', NULL, NULL);
+(NULL, 'BACKUP_backup', 'backup.epp', NULL, 12, 396, NULL, 'writing publications', NULL, NULL);
+(NULL, 'write_publications', 'backup.epp', NULL, 12, 397, NULL, '    writing publication @1', NULL, NULL);
+(NULL, 'write_pub_tables', 'backup.epp', NULL, 12, 398, NULL, '    writing publication for table @1', NULL, NULL);
+(NULL, 'get_publication', 'restore.epp', NULL, 12, 399, NULL, 'restoring publication @1', NULL, NULL);
+(NULL, 'get_publication', 'restore.epp', NULL, 12, 400, NULL, 'publication', NULL, NULL);
+(NULL, 'get_pub_table', 'restore.epp', NULL, 12, 401, NULL, 'restoring publication for table @1', NULL, NULL);
+(NULL, 'get_pub_table', 'restore.epp', NULL, 12, 402, NULL, 'publication for table', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);
