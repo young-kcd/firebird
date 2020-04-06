@@ -313,6 +313,11 @@ public:
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
+	virtual bool mustBeReplicated() const
+	{
+		return false;
+	}
+
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
 	{
@@ -342,6 +347,11 @@ public:
 	virtual void checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+
+	virtual bool mustBeReplicated() const
+	{
+		return false;
+	}
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
