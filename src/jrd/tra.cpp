@@ -3356,11 +3356,6 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	Jrd::Attachment* const attachment = tdbb->getAttachment();
 	WIN window(DB_PAGE_SPACE, -1);
 
-	// Inside the replica, only replicator sessions are allowed to modify data.
-	// Fake other transactions as read-only to disallow any modifications.
-	if (dbb->isReplica(REPLICA_READ_ONLY) && !(tdbb->tdbb_flags & TDBB_replicator))
-		trans->tra_flags |= TRA_readonly;
-
 	Lock* lock = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) Lock(tdbb, sizeof(TraNumber), LCK_tra);
 
 	// Read header page and allocate transaction number.  Since

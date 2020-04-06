@@ -924,6 +924,8 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 void DsqlDdlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, bool* destroyScratchPool,
 	ntrace_result_t* traceResult)
 {
+	Database* const dbb = tdbb->getDatabase();
+
 	internalScratch = scratch;
 
 	scratch->flags |= DsqlCompilerScratch::FLAG_DDL;
@@ -939,6 +941,15 @@ void DsqlDdlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, boo
 
 	if (scratch->getAttachment()->dbb_read_only)
 		ERRD_post(Arg::Gds(isc_read_only_database));
+
+	// In read-only replica, only replicator is allowed to execute DDL.
+	// As an exception, not replicated DDL statements are also allowed.
+	if (dbb->isReplica(REPLICA_READ_ONLY) &&
+		!(tdbb->tdbb_flags & TDBB_replicator) &&
+		node->mustBeReplicated())
+	{
+		ERRD_post(Arg::Gds(isc_read_only_trans));
+	}
 
 	if ((scratch->flags & DsqlCompilerScratch::FLAG_AMBIGUOUS_STMT) &&
 		scratch->getAttachment()->dbb_db_SQL_dialect != scratch->clientDialect)
