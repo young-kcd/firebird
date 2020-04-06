@@ -4085,6 +4085,23 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 
 	delete csb;
 
+	// Get publication state for this relation
+
+	request.reset(tdbb, irq_l_pub_tab_state, IRQ_REQUESTS);
+
+	relation->rel_flags &= ~REL_replicating;
+
+	FOR(REQUEST_HANDLE request)
+		PUB IN RDB$PUBLICATIONS CROSS
+		PTAB IN RDB$PUBLICATION_TABLES OVER RDB$PUBLICATION_NAME
+		WITH PUB.RDB$PUBLICATION_NAME EQ DEFAULT_PUBLICATION
+			AND PUB.RDB$ACTIVE_FLAG EQ 1
+			AND PTAB.RDB$TABLE_NAME EQ relation->rel_name.c_str()
+	{
+		relation->rel_flags |= REL_replicating;
+	}
+	END_FOR
+
 	// release any triggers in case of a rescan, but not if the rescan
 	// hapenned while system triggers were being loaded.
 

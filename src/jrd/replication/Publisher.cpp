@@ -389,10 +389,16 @@ void REPL_store(thread_db* tdbb, const record_param* rpb, jrd_tra* transaction)
 	if (relation->isTemporary())
 		return;
 
-	const auto matcher = attachment->att_repl_matcher.get();
+	if (!relation->isSystem())
+	{
+		if (!(relation->rel_flags & REL_replicating))
+			return;
 
-	if (!relation->isSystem() && matcher && !matcher->matchTable(relation->rel_name))
-		return;
+		const auto matcher = attachment->att_repl_matcher.get();
+
+		if (matcher && !matcher->matchTable(relation->rel_name))
+			return;
+	}
 
 	const auto record = upgradeRecord(tdbb, relation, rpb->rpb_record);
 	fb_assert(record);
@@ -460,10 +466,16 @@ void REPL_modify(thread_db* tdbb, const record_param* orgRpb,
 	if (relation->isTemporary())
 		return;
 
-	const auto matcher = attachment->att_repl_matcher.get();
+	if (!relation->isSystem())
+	{
+		if (!(relation->rel_flags & REL_replicating))
+			return;
 
-	if (!relation->isSystem() && matcher && !matcher->matchTable(relation->rel_name))
-		return;
+		const auto matcher = attachment->att_repl_matcher.get();
+
+		if (matcher && !matcher->matchTable(relation->rel_name))
+			return;
+	}
 
 	const auto newRecord = upgradeRecord(tdbb, relation, newRpb->rpb_record);
 	fb_assert(newRecord);
@@ -546,10 +558,16 @@ void REPL_erase(thread_db* tdbb, const record_param* rpb, jrd_tra* transaction)
 	if (relation->isTemporary())
 		return;
 
-	const auto matcher = attachment->att_repl_matcher.get();
+	if (!relation->isSystem())
+	{
+		if (!(relation->rel_flags & REL_replicating))
+			return;
 
-	if (!relation->isSystem() && matcher && !matcher->matchTable(relation->rel_name))
-		return;
+		const auto matcher = attachment->att_repl_matcher.get();
+
+		if (matcher && !matcher->matchTable(relation->rel_name))
+			return;
+	}
 
 	const auto record = upgradeRecord(tdbb, relation, rpb->rpb_record);
 	fb_assert(record);

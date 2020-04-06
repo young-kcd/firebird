@@ -605,6 +605,8 @@ using namespace Firebird;
 %token <metaNamePtr> CUME_DIST
 %token <metaNamePtr> DECFLOAT
 %token <metaNamePtr> DEFINER
+%token <metaNamePtr> DISABLE
+%token <metaNamePtr> ENABLE
 %token <metaNamePtr> EXCESS
 %token <metaNamePtr> EXCLUDE
 %token <metaNamePtr> EXTENDED
@@ -634,6 +636,7 @@ using namespace Firebird;
 %token <metaNamePtr> PERCENT_RANK
 %token <metaNamePtr> PRECEDING
 %token <metaNamePtr> PRIVILEGE
+%token <metaNamePtr> PUBLICATION
 %token <metaNamePtr> QUANTIZE
 %token <metaNamePtr> RANGE
 %token <metaNamePtr> RDB_ERROR
@@ -2175,11 +2178,26 @@ table_clause
 			{
 				$<createRelationNode>$ = newNode<CreateRelationNode>($1, $2);
 			}
-		'(' table_elements($3) ')' sql_security_clause
+		'(' table_elements($3) ')' sql_security_clause publication_state
 			{
 				$$ = $3;
 				$$->ssDefiner = $7;
+				$$->replicationState = $8;
 			}
+	;
+
+%type <nullableBoolVal> sql_security_clause
+sql_security_clause
+	: /* nothing */				{ $$ = Nullable<bool>::empty(); }
+	| SQL SECURITY DEFINER		{ $$ = Nullable<bool>::val(true); }
+	| SQL SECURITY INVOKER		{ $$ = Nullable<bool>::val(false); }
+	;
+
+%type <nullableBoolVal> publication_state
+publication_state
+	: /* nothing */			{ $$ = Nullable<bool>::empty(); }
+	| ENABLE PUBLICATION	{ $$ = Nullable<bool>::val(true); }
+	| DISABLE PUBLICATION	{ $$ = Nullable<bool>::val(false); }
 	;
 
 %type <createRelationNode> gtt_table_clause
@@ -2639,13 +2657,6 @@ procedure_clause_start
 			{ $$ = newNode<CreateAlterProcedureNode>(*$1); }
 		input_parameters(NOTRIAL(&$2->parameters)) output_parameters(NOTRIAL(&$2->returns))
 			{ $$ = $2; }
-	;
-
-%type <nullableBoolVal> sql_security_clause
-sql_security_clause
-	: /* nothing */				{ $$ = Nullable<bool>::empty(); }
-	| SQL SECURITY DEFINER		{ $$ = Nullable<bool>::val(true); }
-	| SQL SECURITY INVOKER		{ $$ = Nullable<bool>::val(false); }
 	;
 
 %type <createAlterProcedureNode> alter_procedure_clause
@@ -4135,6 +4146,20 @@ alter_op($relationNode)
 				newNode<RelationNode::AlterSqlSecurityClause>();
 			$relationNode->clauses.add(clause);
 		}
+	| ENABLE PUBLICATION
+		{
+			RelationNode::AlterPublicationClause* clause =
+				newNode<RelationNode::AlterPublicationClause>();
+			clause->state = true;
+			$relationNode->clauses.add(clause);
+		}
+	| DISABLE PUBLICATION
+		{
+			RelationNode::AlterPublicationClause* clause =
+				newNode<RelationNode::AlterPublicationClause>();
+			clause->state = false;
+			$relationNode->clauses.add(clause);
+		}
 	;
 
 %type <metaNamePtr> alter_column_name
@@ -4390,12 +4415,38 @@ db_alter_clause($alterDatabaseNode)
 		{ $alterDatabaseNode->linger = 0; }
 	| SET DEFAULT sql_security_clause
 		{ $alterDatabaseNode->ssDefiner = $3; }
+	| ENABLE PUBLICATION
+		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_ENABLE_PUB; }
+	| DISABLE PUBLICATION
+		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_DISABLE_PUB; }
+	| ADD pub_table_filter($alterDatabaseNode) TO PUBLICATION
+		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_PUB_ADD_TABLE; }
+	| DROP pub_table_filter($alterDatabaseNode) FROM PUBLICATION
+		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_PUB_DROP_TABLE; }
 	;
 
 %type crypt_key_clause(<alterDatabaseNode>)
 crypt_key_clause($alterDatabaseNode)
 	: // nothing
 	| KEY valid_symbol_name		{ $alterDatabaseNode->keyName = *$2; }
+	;
+
+%type pub_table_filter(<alterDatabaseNode>)
+pub_table_filter($alterDatabaseNode)
+	: ALL
+	| TABLE pub_table_list($alterDatabaseNode)
+	;
+
+%type pub_table_list(<alterDatabaseNode>)
+pub_table_list($alterDatabaseNode)
+	: pub_table_clause($alterDatabaseNode)
+	| pub_table_list ',' pub_table_clause($alterDatabaseNode)
+	;
+
+%type pub_table_clause(<alterDatabaseNode>)
+pub_table_clause($alterDatabaseNode)
+	: symbol_table_name
+		{ $alterDatabaseNode->pubTables.add(*$1); }
 	;
 
 // ALTER TRIGGER
@@ -8650,8 +8701,8 @@ non_reserved_word
 	| FREE_IT
 	| RESTRICT
 	| ROLE
-	| TYPE				// added in IB 6.0
-	| BREAK				// added in FB 1.0
+	| TYPE					// added in IB 6.0
+	| BREAK					// added in FB 1.0
 	| DESCRIPTOR
 	| SUBSTRING
 	| COALESCE				// added in FB 1.5
@@ -8868,6 +8919,8 @@ non_reserved_word
 	| CTR_LITTLE_ENDIAN
 	| CUME_DIST
 	| DEFINER
+	| DISABLE
+	| ENABLE
 	| EXCESS
 	| EXCLUDE
 	| EXTENDED

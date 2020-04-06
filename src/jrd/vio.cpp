@@ -1605,6 +1605,8 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_dims:
 		case rel_filters:
 		case rel_vrel:
+		case rel_args:
+		case rel_pub_tables:
 			protect_system_table_delupd(tdbb, relation, "DELETE");
 			break;
 
@@ -1752,10 +1754,6 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			DFW_post_work(transaction, dfw_delete_global, &desc2, 0);
 			break;
 
-		case rel_args:
-			protect_system_table_delupd(tdbb, relation, "DELETE");
-			break;
-
 		case rel_prc_prms:
 			protect_system_table_delupd(tdbb, relation, "DELETE");
 			EVL_field(0, rpb->rpb_record, f_prm_procedure, &desc);
@@ -1856,6 +1854,10 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_prv_o_type, &desc2);
 			id = MOV_get_long(tdbb, &desc2, 0);
 			DFW_post_work(transaction, dfw_grant, &desc, id);
+			break;
+
+		case rel_pubs:
+			protect_system_table_delupd(tdbb, relation, "DELETE");
 			break;
 
 		default:    // Shut up compiler warnings
@@ -2861,6 +2863,7 @@ bool VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		case rel_prc_prms:
 		case rel_auth_mapping:
 		case rel_roles:
+		case rel_pub_tables:
 			protect_system_table_delupd(tdbb, relation, "UPDATE");
 			break;
 
@@ -3145,6 +3148,11 @@ bool VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			protect_system_table_delupd(tdbb, relation, "UPDATE");
 			check_class(tdbb, transaction, org_rpb, new_rpb, f_xcp_class);
 			check_owner(tdbb, transaction, org_rpb, new_rpb, f_xcp_owner);
+			break;
+
+		case rel_pubs:
+			protect_system_table_delupd(tdbb, relation, "UPDATE");
+			check_owner(tdbb, transaction, org_rpb, new_rpb, f_pub_owner);
 			break;
 
 		default:
@@ -3495,6 +3503,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_dpds:
 		case rel_dims:
 		case rel_segments:
+		case rel_pub_tables:
 			protect_system_table_insert(tdbb, request, relation);
 			break;
 
@@ -3783,6 +3792,12 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				protect_system_table_insert(tdbb, request, relation);
 			set_nbackup_id(tdbb, rpb->rpb_record,
 							f_backup_id, drq_g_nxt_nbakhist_id, "RDB$BACKUP_HISTORY");
+			break;
+
+		case rel_pubs:
+			protect_system_table_insert(tdbb, request, relation);
+			set_system_flag(tdbb, rpb->rpb_record, f_pub_sys_flag);
+			set_owner_name(tdbb, rpb->rpb_record, f_pub_owner);
 			break;
 
 		default:    // Shut up compiler warnings
