@@ -59,16 +59,6 @@
 
 #include "ReplServer.h"
 
-#if defined(O_DSYNC)
-#define SYNC		O_DSYNC
-#elif defined(O_SYNC)
-#define SYNC		O_SYNC
-#elif defined(O_FSYNC)
-#define SYNC		O_FSYNC
-#else
-#define SYNC		0
-#endif
-
 #ifndef O_BINARY
 #define O_BINARY	0
 #endif
@@ -207,6 +197,8 @@ namespace
 			}
 			else
 				raiseError("Control file %s appears corrupted", filename.c_str());
+
+			flush();
 		}
 
 		~ControlFile()
@@ -238,6 +230,7 @@ namespace
 
 			lseek(m_handle, 0, SEEK_SET);
 			write(m_handle, &m_data, sizeof(Data));
+			flush();
 		}
 
 		void savePartial(FB_UINT64 sequence, ULONG offset, const TransactionList& transactions)
@@ -266,6 +259,7 @@ namespace
 				lseek(m_handle, 0, SEEK_SET);
 				write(m_handle, &m_data, sizeof(Data));
 				write(m_handle, transactions.begin(), txn_size);
+				flush();
 			}
 		}
 
@@ -283,6 +277,7 @@ namespace
 				lseek(m_handle, 0, SEEK_SET);
 				write(m_handle, &m_data, sizeof(Data));
 				write(m_handle, transactions.begin(), txn_size);
+				flush();
 			}
 		}
 
@@ -300,12 +295,21 @@ namespace
 			const PathName filename = directory + guidStr;
 
 			const int fd = os_utils::open(filename.c_str(),
-				O_CREAT | O_RDWR | O_BINARY | SYNC, ACCESS_MODE);
+				O_CREAT | O_RDWR | O_BINARY, ACCESS_MODE);
 
 			if (fd < 0)
 				raiseError("Control file %s open failed (error: %d)", filename.c_str(), ERRNO);
 
 			return fd;
+		}
+
+		void flush()
+		{
+#ifdef WIN_NT
+			FlushFileBuffers((HANDLE) _get_osfhandle(m_handle));
+#else
+			fsync(m_handle);
+#endif
 		}
 
 		Data m_data;
