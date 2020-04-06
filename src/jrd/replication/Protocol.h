@@ -59,7 +59,8 @@ namespace Replication
 		opDeleteRecord = 11,
 		opStoreBlob = 12,
 		opExecuteSql = 13,
-		opSetSequence = 14
+		opSetSequence = 14,
+		opExecuteSqlIntl = 15
 	};
 
 } // namespace

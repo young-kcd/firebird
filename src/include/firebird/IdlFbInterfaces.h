@@ -6142,6 +6142,7 @@ namespace Firebird
 			FB_BOOLEAN (CLOOP_CARG *deleteRecord)(IReplicatedTransaction* self, const char* name, IReplicatedRecord* record) throw();
 			FB_BOOLEAN (CLOOP_CARG *storeBlob)(IReplicatedTransaction* self, ISC_QUAD blobId, IReplicatedBlob* blob) throw();
 			FB_BOOLEAN (CLOOP_CARG *executeSql)(IReplicatedTransaction* self, const char* sql) throw();
+			FB_BOOLEAN (CLOOP_CARG *executeSqlIntl)(IReplicatedTransaction* self, unsigned charset, const char* sql) throw();
 		};
 
 	protected:
@@ -6220,6 +6221,12 @@ namespace Firebird
 		FB_BOOLEAN executeSql(const char* sql)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->executeSql(this, sql);
+			return ret;
+		}
+
+		FB_BOOLEAN executeSqlIntl(unsigned charset, const char* sql)
+		{
+			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->executeSqlIntl(this, charset, sql);
 			return ret;
 		}
 	};
@@ -18687,6 +18694,7 @@ namespace Firebird
 					this->deleteRecord = &Name::cloopdeleteRecordDispatcher;
 					this->storeBlob = &Name::cloopstoreBlobDispatcher;
 					this->executeSql = &Name::cloopexecuteSqlDispatcher;
+					this->executeSqlIntl = &Name::cloopexecuteSqlIntlDispatcher;
 				}
 			} vTable;
 
@@ -18836,6 +18844,19 @@ namespace Firebird
 			}
 		}
 
+		static FB_BOOLEAN CLOOP_CARG cloopexecuteSqlIntlDispatcher(IReplicatedTransaction* self, unsigned charset, const char* sql) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::executeSqlIntl(charset, sql);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<FB_BOOLEAN>(0);
+			}
+		}
+
 		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
 		{
 			try
@@ -18873,6 +18894,7 @@ namespace Firebird
 		virtual FB_BOOLEAN deleteRecord(const char* name, IReplicatedRecord* record) = 0;
 		virtual FB_BOOLEAN storeBlob(ISC_QUAD blobId, IReplicatedBlob* blob) = 0;
 		virtual FB_BOOLEAN executeSql(const char* sql) = 0;
+		virtual FB_BOOLEAN executeSqlIntl(unsigned charset, const char* sql) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

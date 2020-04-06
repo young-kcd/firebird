@@ -510,6 +510,9 @@ public:
 	const Firebird::RefStrPtr& getSqlText() const { return sqlText; }
 	void setSqlText(Firebird::RefString* value) { sqlText = value; }
 
+	void setOrgText(const char* ptr, ULONG len);
+	const Firebird::string& getOrgText() const { return *orgText; }
+
 	dsql_msg* getSendMsg() { return sendMsg; }
 	const dsql_msg* getSendMsg() const { return sendMsg; }
 	void setSendMsg(dsql_msg* value) { sendMsg = value; }
@@ -546,6 +549,7 @@ private:
 	ULONG flags;				// generic flag
 	unsigned blrVersion;
 	Firebird::RefStrPtr sqlText;
+	Firebird::RefStrPtr orgText;
 	dsql_msg* sendMsg;			// Message to be sent to start request
 	dsql_msg* receiveMsg;		// Per record message to be received
 	dsql_par* eof;				// End of file parameter
@@ -575,6 +579,11 @@ public:
 	const DsqlCompiledStatement* getStatement() const
 	{
 		return statement;
+	}
+
+	virtual bool mustBeReplicated() const
+	{
+		return false;
 	}
 
 	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, bool* destroyScratchPool,
@@ -699,6 +708,8 @@ public:
 		Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
 		Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
 		bool singleton);
+
+	virtual bool mustBeReplicated() const;
 
 private:
 	// Rethrow an exception with isc_no_meta_update and prefix codes.

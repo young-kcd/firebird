@@ -631,6 +631,8 @@ void REPL_exec_sql(thread_db* tdbb, jrd_tra* transaction, const string& sql)
 	if (!ensureSavepoints(tdbb, transaction))
 		return;
 
-	if (!replicator->executeSql(sql.c_str()))
+	const auto charset = attachment->att_charset;
+
+	if (!replicator->executeSqlIntl(charset, sql.c_str()))
 		handleError(tdbb, transaction);
 }

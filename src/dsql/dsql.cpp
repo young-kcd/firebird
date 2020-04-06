@@ -986,7 +986,7 @@ void DsqlDdlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 			node->executeDdl(tdbb, internalScratch, req_transaction);
 
 			if (node->mustBeReplicated())
-				REPL_exec_sql(tdbb, req_transaction, *getStatement()->getSqlText());
+				REPL_exec_sql(tdbb, req_transaction, getStatement()->getOrgText());
 		}
 		catch (status_exception& ex)
 		{
@@ -999,6 +999,11 @@ void DsqlDdlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	JRD_autocommit_ddl(tdbb, req_transaction);
 
 	trace.finish(false, ITracePlugin::RESULT_SUCCESS);
+}
+
+bool DsqlDdlRequest::mustBeReplicated() const
+{
+	return node->mustBeReplicated();
 }
 
 // Rethrow an exception with isc_no_meta_update and prefix codes.
@@ -1552,7 +1557,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		request->req_transaction = scratch->getTransaction();
 		request->statement = scratch->getStatement();
 
-		SSHORT charSetId = database->dbb_attachment->att_charset;
+		const SSHORT charSetId = database->dbb_attachment->att_charset;
 
 		// If the attachment charset is NONE, replace non-ASCII characters by question marks, so
 		// that engine internals doesn't receive non-mappeable data to UTF8. If an attachment
@@ -1616,6 +1621,10 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 			trace.prepare(traceResult);
 			throw;
 		}
+
+		if (!isInternalRequest && request->mustBeReplicated())
+			statement->setOrgText(text, textLength);
+
 		trace.prepare(traceResult);
 
 		return request;
@@ -1695,8 +1704,30 @@ static void release_statement(DsqlCompiledStatement* statement)
 	}
 
 	statement->setSqlText(NULL);
+	statement->setOrgText(NULL, 0);
 }
 
+
+// Class DsqlCompiledStatement
+
+void DsqlCompiledStatement::setOrgText(const char* ptr, ULONG len)
+{
+	if (!ptr || !len)
+	{
+		orgText = NULL;
+		return;
+	}
+
+	const string text(ptr, len);
+
+	if (text == *sqlText)
+		orgText = sqlText;
+	else
+		orgText = FB_NEW_POOL(getPool()) RefString(getPool(), text);
+}
+
+
+// Class dsql_req
 
 dsql_req::dsql_req(MemoryPool& pool)
 	: req_pool(pool),

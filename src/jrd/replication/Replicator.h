@@ -192,6 +192,11 @@ namespace Replication
 				return m_replicator->executeSql(this, sql) ? FB_TRUE : FB_FALSE;
 			}
 
+			FB_BOOLEAN executeSqlIntl(unsigned charset, const char* sql)
+			{
+				return m_replicator->executeSqlIntl(this, charset, sql) ? FB_TRUE : FB_FALSE;
+			}
+
 		private:
 			Replicator* const m_replicator;
 			BatchBlock m_data;
@@ -283,7 +288,14 @@ namespace Replication
 					   Firebird::IReplicatedBlob* blob);
 
 		bool executeSql(Transaction* transaction,
-						const char* sql);
+						const char* sql)
+		{
+			return executeSqlIntl(transaction, CS_UTF8, sql);
+		}
+
+		bool executeSqlIntl(Transaction* transaction,
+							unsigned charset,
+							const char* sql);
 };
 
 } // namespace

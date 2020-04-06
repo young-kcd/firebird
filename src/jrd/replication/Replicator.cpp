@@ -462,8 +462,9 @@ bool Replicator::storeBlob(Transaction* transaction,
 	return true;
 }
 
-bool Replicator::executeSql(Transaction* transaction,
-							const char* sql)
+bool Replicator::executeSqlIntl(Transaction* transaction,
+								unsigned charset,
+								const char* sql)
 {
 	try
 	{
@@ -471,7 +472,16 @@ bool Replicator::executeSql(Transaction* transaction,
 
 		auto& txnData = transaction->getData();
 
-		txnData.putTag(opExecuteSql);
+		if (charset == CS_UTF8)
+		{
+			txnData.putTag(opExecuteSql);
+		}
+		else
+		{
+			txnData.putTag(opExecuteSqlIntl);
+			txnData.putInt(charset);
+		}
+
 		txnData.putString(sql);
 		txnData.putMetaName(m_user);
 

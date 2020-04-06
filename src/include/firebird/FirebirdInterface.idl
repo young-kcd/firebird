@@ -1587,6 +1587,7 @@ interface ReplicatedTransaction : Disposable
 	boolean storeBlob(ISC_QUAD blobId, ReplicatedBlob blob);
 
 	boolean executeSql(const string sql);
+	boolean executeSqlIntl(uint charset, const string sql);
 }
 
 interface ReplicatedSession : Disposable
