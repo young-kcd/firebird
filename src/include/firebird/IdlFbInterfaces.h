@@ -900,6 +900,7 @@ namespace Firebird
 			IConfig* (CLOOP_CARG *getPluginConfig)(IConfigManager* self, const char* configuredPlugin) throw();
 			const char* (CLOOP_CARG *getInstallDirectory)(IConfigManager* self) throw();
 			const char* (CLOOP_CARG *getRootDirectory)(IConfigManager* self) throw();
+			const char* (CLOOP_CARG *getDefaultSecurityDb)(IConfigManager* self) throw();
 		};
 
 	protected:
@@ -913,7 +914,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static const unsigned VERSION = 3;
 
 		static const unsigned DIR_BIN = 0;
 		static const unsigned DIR_SBIN = 1;
@@ -967,6 +968,16 @@ namespace Firebird
 		const char* getRootDirectory()
 		{
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getRootDirectory(this);
+			return ret;
+		}
+
+		const char* getDefaultSecurityDb()
+		{
+			if (cloopVTable->version < 3)
+			{
+				return 0;
+			}
+			const char* ret = static_cast<VTable*>(this->cloopVTable)->getDefaultSecurityDb(this);
 			return ret;
 		}
 	};
@@ -6890,6 +6901,7 @@ namespace Firebird
 					this->getPluginConfig = &Name::cloopgetPluginConfigDispatcher;
 					this->getInstallDirectory = &Name::cloopgetInstallDirectoryDispatcher;
 					this->getRootDirectory = &Name::cloopgetRootDirectoryDispatcher;
+					this->getDefaultSecurityDb = &Name::cloopgetDefaultSecurityDbDispatcher;
 				}
 			} vTable;
 
@@ -6973,6 +6985,19 @@ namespace Firebird
 				return static_cast<const char*>(0);
 			}
 		}
+
+		static const char* CLOOP_CARG cloopgetDefaultSecurityDbDispatcher(IConfigManager* self) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getDefaultSecurityDb();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<const char*>(0);
+			}
+		}
 	};
 
 	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IConfigManager> > >
@@ -6994,6 +7019,7 @@ namespace Firebird
 		virtual IConfig* getPluginConfig(const char* configuredPlugin) = 0;
 		virtual const char* getInstallDirectory() = 0;
 		virtual const char* getRootDirectory() = 0;
+		virtual const char* getDefaultSecurityDb() = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

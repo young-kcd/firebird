@@ -216,6 +216,7 @@ type
 	IConfigManager_getPluginConfigPtr = function(this: IConfigManager; configuredPlugin: PAnsiChar): IConfig; cdecl;
 	IConfigManager_getInstallDirectoryPtr = function(this: IConfigManager): PAnsiChar; cdecl;
 	IConfigManager_getRootDirectoryPtr = function(this: IConfigManager): PAnsiChar; cdecl;
+	IConfigManager_getDefaultSecurityDbPtr = function(this: IConfigManager): PAnsiChar; cdecl;
 	IEventCallback_eventCallbackFunctionPtr = procedure(this: IEventCallback; length: Cardinal; events: BytePtr); cdecl;
 	IBlob_getInfoPtr = procedure(this: IBlob; status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr); cdecl;
 	IBlob_getSegmentPtr = function(this: IBlob; status: IStatus; bufferLength: Cardinal; buffer: Pointer; segmentLength: CardinalPtr): Integer; cdecl;
@@ -974,10 +975,11 @@ type
 		getPluginConfig: IConfigManager_getPluginConfigPtr;
 		getInstallDirectory: IConfigManager_getInstallDirectoryPtr;
 		getRootDirectory: IConfigManager_getRootDirectoryPtr;
+		getDefaultSecurityDb: IConfigManager_getDefaultSecurityDbPtr;
 	end;
 
 	IConfigManager = class(IVersioned)
-		const VERSION = 2;
+		const VERSION = 3;
 		const DIR_BIN = Cardinal(0);
 		const DIR_SBIN = Cardinal(1);
 		const DIR_CONF = Cardinal(2);
@@ -1003,6 +1005,7 @@ type
 		function getPluginConfig(configuredPlugin: PAnsiChar): IConfig;
 		function getInstallDirectory(): PAnsiChar;
 		function getRootDirectory(): PAnsiChar;
+		function getDefaultSecurityDb(): PAnsiChar;
 	end;
 
 	IConfigManagerImpl = class(IConfigManager)
@@ -1014,6 +1017,7 @@ type
 		function getPluginConfig(configuredPlugin: PAnsiChar): IConfig; virtual; abstract;
 		function getInstallDirectory(): PAnsiChar; virtual; abstract;
 		function getRootDirectory(): PAnsiChar; virtual; abstract;
+		function getDefaultSecurityDb(): PAnsiChar; virtual; abstract;
 	end;
 
 	EventCallbackVTable = class(ReferenceCountedVTable)
@@ -5146,6 +5150,11 @@ begin
 	Result := ConfigManagerVTable(vTable).getRootDirectory(Self);
 end;
 
+function IConfigManager.getDefaultSecurityDb(): PAnsiChar;
+begin
+	Result := ConfigManagerVTable(vTable).getDefaultSecurityDb(Self);
+end;
+
 procedure IEventCallback.eventCallbackFunction(length: Cardinal; events: BytePtr);
 begin
 	EventCallbackVTable(vTable).eventCallbackFunction(Self, length, events);
@@ -7887,6 +7896,15 @@ function IConfigManagerImpl_getRootDirectoryDispatcher(this: IConfigManager): PA
 begin
 	try
 		Result := IConfigManagerImpl(this).getRootDirectory();
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+function IConfigManagerImpl_getDefaultSecurityDbDispatcher(this: IConfigManager): PAnsiChar; cdecl;
+begin
+	try
+		Result := IConfigManagerImpl(this).getDefaultSecurityDb();
 	except
 		on e: Exception do FbException.catchException(nil, e);
 	end
@@ -12674,13 +12692,14 @@ initialization
 	ICryptKeyImpl_vTable.getDecryptKey := @ICryptKeyImpl_getDecryptKeyDispatcher;
 
 	IConfigManagerImpl_vTable := ConfigManagerVTable.create;
-	IConfigManagerImpl_vTable.version := 6;
+	IConfigManagerImpl_vTable.version := 7;
 	IConfigManagerImpl_vTable.getDirectory := @IConfigManagerImpl_getDirectoryDispatcher;
 	IConfigManagerImpl_vTable.getFirebirdConf := @IConfigManagerImpl_getFirebirdConfDispatcher;
 	IConfigManagerImpl_vTable.getDatabaseConf := @IConfigManagerImpl_getDatabaseConfDispatcher;
 	IConfigManagerImpl_vTable.getPluginConfig := @IConfigManagerImpl_getPluginConfigDispatcher;
 	IConfigManagerImpl_vTable.getInstallDirectory := @IConfigManagerImpl_getInstallDirectoryDispatcher;
 	IConfigManagerImpl_vTable.getRootDirectory := @IConfigManagerImpl_getRootDirectoryDispatcher;
+	IConfigManagerImpl_vTable.getDefaultSecurityDb := @IConfigManagerImpl_getDefaultSecurityDbDispatcher;
 
 	IEventCallbackImpl_vTable := EventCallbackVTable.create;
 	IEventCallbackImpl_vTable.version := 3;
