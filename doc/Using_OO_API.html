@@ -6,7 +6,7 @@
 	<meta name="generator" content="LibreOffice 6.3.4.2.0 (Linux)"/>
 	<meta name="author" content="alex "/>
 	<meta name="created" content="2013-05-31T00:00:00.010003100"/>
-	<meta name="changed" content="2020-03-25T19:32:22.260995826"/>
+	<meta name="changed" content="2020-04-07T18:37:07.278210989"/>
 	<meta name="created" content="00:00:00">
 	<meta name="created" content="00:00:00">
 	<meta name="created" content="00:00:00">
@@ -2038,6 +2038,11 @@ objects:</font></p>
 	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">const
 	char* getRootDirectory() - returns root directory of current
 	instance, in single-instance case usually matches install directory.</font></p>
+	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">const
+	char* getDefaultSecurityDb() - returns default (i.e. not taking into
+	an account configuration files) pathname of security database, used
+	first of all internally to enable correct access to security
+	database on multi-provider server with zero configuration.</font></p>
 </ol>
 <p style="margin-bottom: 0cm"><a name="Directory codes"></a><font size="4" style="font-size: 14pt">Directory
 codes:</font></p>
@@ -2360,21 +2365,20 @@ message or construct metadata from the beginning.</font></p>
 	remove(StatusType* status, unsigned index) – remove field.</font></p>
 	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">unsigned
 	addField(StatusType* status) – add field.</font></p>
-	<li><p style="margin-bottom: 0cm"> <font size="4" style="font-size: 14pt">IMessageMetadata*
+	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">IMessageMetadata*
 	getMetadata(StatusType* status) – get <a href="#10. MessageMetadata">MessageMetadata</a>
 	interface built by this builder.</font></p>
-	<li><p style="margin-bottom: 0cm"> <font face="Liberation Serif, serif"><font size="4" style="font-size: 14pt">void
-	setField(StatusType* status, uint index, const string field) – </font><font size="4" style="font-size: 14pt">set
+	<li><p style="margin-bottom: 0cm"><font face="Liberation Serif, serif"><font size="4" style="font-size: 14pt">void
+	setField(StatusType* status, uint index, const string field) – set
 	name of a field / column.</font></font></p>
-	<li><p style="margin-bottom: 0cm"> <font face="Liberation Serif, serif"><font size="4" style="font-size: 14pt">void
+	<li><p style="margin-bottom: 0cm"><font face="Liberation Serif, serif"><font size="4" style="font-size: 14pt">void
 	setRelation(StatusType* status, uint index, const string relation) –
-	</font><font size="4" style="font-size: 14pt">set name of the
-	relation from which the field was selected.</font></font></p>
-	<li><p style="margin-bottom: 0cm"> <font face="Liberation Serif, serif"><font size="4" style="font-size: 14pt">void
-	setOwner(StatusType* status, uint index, const string owner) – </font><font size="4" style="font-size: 14pt">set
+	set name of the relation from which the field was selected.</font></font></p>
+	<li><p style="margin-bottom: 0cm"><font face="Liberation Serif, serif"><font size="4" style="font-size: 14pt">void
+	setOwner(StatusType* status, uint index, const string owner) – set
 	name of that relation owner.</font></font></p>
-	<li><p style="margin-bottom: 0cm"> <font face="Liberation Serif, serif"><font size="4" style="font-size: 14pt">void
-	setAlias(StatusType* status, uint index, const string alias) – </font><font size="4" style="font-size: 14pt">set
+	<li><p style="margin-bottom: 0cm"><font face="Liberation Serif, serif"><font size="4" style="font-size: 14pt">void
+	setAlias(StatusType* status, uint index, const string alias) – set
 	alias name of the field in related statement.</font></font></p>
 </ol>
 <p style="margin-bottom: 0cm"><br/>
