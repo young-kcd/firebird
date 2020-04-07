@@ -622,6 +622,7 @@ using namespace Firebird;
 %token <metaNamePtr> LOCALTIME
 %token <metaNamePtr> LOCALTIMESTAMP
 %token <metaNamePtr> LPARAM
+%token <metaNamePtr> MAKE_DBKEY
 %token <metaNamePtr> MESSAGE
 %token <metaNamePtr> MODE
 %token <metaNamePtr> NATIVE
@@ -8000,6 +8001,7 @@ system_function_std_syntax
 	| LOG
 	| LOG10
 	| LPAD
+	| MAKE_DBKEY
 	| MAXVALUE
 	| MINVALUE
 	| MOD
@@ -8889,6 +8891,7 @@ non_reserved_word
 	| LEGACY
 	| LIFETIME
 	| LPARAM
+	| MAKE_DBKEY
 	| MESSAGE
 	| MODE
 	| NATIVE

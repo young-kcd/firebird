@@ -290,6 +290,7 @@ static const TOK tokens[] =
 	{TOK_LOWER, "LOWER", false},
 	{TOK_LPAD, "LPAD", true},
 	{TOK_LPARAM, "LPARAM", true},
+	{TOK_MAKE_DBKEY, "MAKE_DBKEY", true},
 	{TOK_MANUAL, "MANUAL", true},
 	{TOK_MAPPING, "MAPPING", true},
 	{TOK_MATCHED, "MATCHED", true},

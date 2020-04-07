@@ -316,6 +316,14 @@ typedef struct dsc
 		dsc_address = (UCHAR*) address;
 	}
 
+	void makeDbkey(void* address = NULL)
+	{
+		clear();
+		dsc_dtype = dtype_dbkey;
+		dsc_length = sizeof(ISC_QUAD);
+		dsc_address = (UCHAR*) address;
+	}
+
 	void makeDouble(double* address = NULL)
 	{
 		clear();

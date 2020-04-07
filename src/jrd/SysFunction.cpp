@@ -45,6 +45,7 @@
 #include "../common/cvt.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/intl_proto.h"
+#include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/tra_proto.h"
@@ -194,21 +195,23 @@ void setParamsCharToUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* func
 void setParamsDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsDateDiff(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsEncrypt(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args);
+void setParamsFirstLastDay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
+void setParamsGetSetContext(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
+void setParamsMakeDbkey(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
+void setParamsOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
+void setParamsPosition(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
+void setParamsRoundTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsRsaEncrypt(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args);
 void setParamsRsaPublic(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args);
 void setParamsRsaSign(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args);
 void setParamsRsaVerify(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args);
-void setParamsFirstLastDay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
-void setParamsGetSetContext(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
-void setParamsOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
-void setParamsPosition(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
-void setParamsRoundTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsUuidToChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 
 // generic make functions
-void makeDoubleResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeDbkeyResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeDblDecResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeDecFloatResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeDoubleResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeFromListResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeInt64Result(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeLongResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
@@ -288,6 +291,7 @@ dsc* evlHash(thread_db* tdbb, const SysFunction* function, const NestValueArray&
 dsc* evlLeft(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlLnLog10(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlLog(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlMakeDbkey(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, Jrd::impure_value* impure);
 dsc* evlMaxMinValue(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlMod(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
@@ -754,6 +758,24 @@ void setParamsGetSetContext(DataTypeUtilBase*, const SysFunction*, int argsCount
 }
 
 
+void setParamsMakeDbkey(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
+{
+	// MAKE_DBKEY ( REL_NAME | REL_ID, RECNUM [, DPNUM [, PPNUM] ] )
+
+	if (args[0]->isUnknown())
+		args[0]->makeLong(0);
+
+	if (args[1]->isUnknown())
+		args[1]->makeInt64(0);
+
+	if (argsCount > 2 && args[2]->isUnknown())
+		args[2]->makeLong(0);
+
+	if (argsCount > 3 && args[3]->isUnknown())
+		args[3]->makeLong(0);
+}
+
+
 void setParamsOverlay(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
 {
 	if (argsCount >= 3)
@@ -820,6 +842,18 @@ void setParamsUuidToChar(DataTypeUtilBase*, const SysFunction*, int argsCount, d
 		args[0]->makeText(16, ttype_binary);
 }
 
+
+void makeDbkeyResult(DataTypeUtilBase*, const SysFunction*, dsc* result,
+	int argsCount, const dsc** args)
+{
+	result->makeText(8, ttype_binary);
+
+	bool isNullable;
+	if (initResult(result, argsCount, args, &isNullable))
+		return;
+
+	result->setNullable(isNullable);
+}
 
 void makeDoubleResult(DataTypeUtilBase*, const SysFunction*, dsc* result,
 	int argsCount, const dsc** args)
@@ -4799,6 +4833,95 @@ dsc* evlNormDec(thread_db* tdbb, const SysFunction* function, const NestValueArr
 }
 
 
+dsc* evlMakeDbkey(Jrd::thread_db* tdbb, const SysFunction* function, const NestValueArray& args, Jrd::impure_value* impure)
+{
+	// MAKE_DBKEY ( REL_NAME | REL_ID, RECNUM [, DPNUM [, PPNUM] ] )
+
+	Database* const dbb = tdbb->getDatabase();
+	jrd_req* const request = tdbb->getRequest();
+
+	fb_assert(args.getCount() >= 2 && args.getCount() <= 4);
+
+	dsc* argDsc = EVL_expr(tdbb, request, args[0]);
+	if (request->req_flags & req_null)	// return NULL if relation is NULL
+		return NULL;
+
+	USHORT relId;
+
+	if (argDsc->isText())
+	{
+		MetaName relName;
+		MOV_get_metaname(tdbb, argDsc, relName);
+
+		const jrd_rel* const relation = MET_lookup_relation(tdbb, relName);
+		if (!relation)
+			(Arg::Gds(isc_relnotdef) << Arg::Str(relName)).raise();
+
+		relId = relation->rel_id;
+	}
+	else
+	{
+		const SLONG value = MOV_get_long(tdbb, argDsc, 0);
+		if (value > MAX_USHORT) // return NULL if the provided ID is too long
+			return NULL;
+
+		relId = (USHORT) value;
+	}
+
+	argDsc = EVL_expr(tdbb, request, args[1]);
+	if (request->req_flags & req_null)
+		return NULL;
+
+	SINT64 recNo = MOV_get_int64(tdbb, argDsc, 0);
+
+	ULONG dpNum = MAX_ULONG, ppNum = MAX_ULONG;
+
+	if (args.getCount() > 2)
+	{
+		argDsc = EVL_expr(tdbb, request, args[2]);
+		if (request->req_flags & req_null)
+			return NULL;
+
+		dpNum = MOV_get_long(tdbb, argDsc, 0);
+	}
+
+	if (args.getCount() > 3)
+	{
+		argDsc = EVL_expr(tdbb, request, args[3]);
+		if (request->req_flags & req_null)
+			return NULL;
+
+		ppNum = MOV_get_long(tdbb, argDsc, 0);
+	}
+
+	RecordNumber temp;
+
+	if (args.getCount() == 4)
+		recNo += ((SINT64) ppNum * dbb->dbb_dp_per_pp + dpNum) * dbb->dbb_max_records;
+	else if (args.getCount() == 3)
+		recNo += (SINT64) dpNum * dbb->dbb_max_records;
+
+	temp.setValue(recNo + 1);
+
+	RecordNumber::Packed dbkey;
+	memset(&dbkey, 0, sizeof(dbkey));
+	temp.bid_encode(&dbkey);
+	dbkey.bid_relation_id = relId;
+
+	dsc dscKey;
+	dscKey.makeDbkey(&dbkey);
+
+	UCHAR buffer[sizeof(dbkey)];
+	dsc result;
+	result.makeText(sizeof(dbkey), ttype_binary, buffer);
+
+	MOV_move(tdbb, &dscKey, &result);
+	EVL_make_value(tdbb, &result, impure);
+
+	return &impure->vlu_desc;
+}
+
+
 dsc* evlMaxMinValue(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value*)
 {
@@ -6102,6 +6225,7 @@ const SysFunction SysFunction::functions[] =
 		{"LOG", 2, 2, setParamsDblDec, makeDblDecResult, evlLog, NULL},
 		{"LOG10", 1, 1, setParamsDblDec, makeDblDecResult, evlLnLog10, (void*) funLog10},
 		{"LPAD", 2, 3, setParamsSecondInteger, makePad, evlPad, (void*) funLPad},
+		{"MAKE_DBKEY", 2, 4, setParamsMakeDbkey, makeDbkeyResult, evlMakeDbkey, NULL},
 		{"MAXVALUE", 1, -1, setParamsFromList, makeFromListResult, evlMaxMinValue, (void*) funMaxValue},
 		{"MINVALUE", 1, -1, setParamsFromList, makeFromListResult, evlMaxMinValue, (void*) funMinValue},
 		{"MOD", 2, 2, setParamsFromList, makeMod, evlMod, NULL},

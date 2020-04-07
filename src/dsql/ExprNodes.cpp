@@ -12162,28 +12162,54 @@ ValueExprNode* SysFuncCallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	node->function = SysFunction::lookup(name);
 
-	if (node->function && node->function->setParamsFunc)
+	if (node->function)
 	{
-		ValueListNode* inList = node->args;
-		Array<dsc*> argsArray;
-
-		for (unsigned int i = 0; i < inList->items.getCount(); ++i)
+		if (name == "MAKE_DBKEY")
 		{
-			ValueExprNode* p = inList->items[i];
-			DsqlDescMaker::fromNode(dsqlScratch, &p->nodDesc, p);
-			argsArray.add(&p->nodDesc);
+			// Special handling for system function MAKE_DBKEY:
+			// convert constant relation name into ID at the parsing time
+
+			auto literal = nodeAs<LiteralNode>(node->args->items[0]);
+
+			if (literal && literal->litDesc.isText())
+			{
+				const MetaName relName = literal->getText();
+
+				const dsql_rel* const relation =
+					METD_get_relation(dsqlScratch->getTransaction(), dsqlScratch, relName);
+
+				if (!relation)
+				{
+					status_exception::raise(
+						Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+						Arg::Gds(isc_dsql_command_err) <<
+						Arg::Gds(isc_dsql_table_not_found) << relName);
+				}
+
+				node->args->items[0] = MAKE_const_slong(relation->rel_id);
+			}
 		}
 
-		DSqlDataTypeUtil dataTypeUtil(dsqlScratch);
-		node->function->setParamsFunc(&dataTypeUtil, node->function,
-			argsArray.getCount(), argsArray.begin());
-
-		for (unsigned int i = 0; i < inList->items.getCount(); ++i)
+		if (node->function->setParamsFunc)
 		{
-			ValueExprNode* p = inList->items[i];
-			PASS1_set_parameter_type(dsqlScratch, p,
-				[&] (dsc* desc) { *desc = p->nodDesc; },
-				false);
+			Array<dsc*> argsArray;
+
+			for (auto& item : node->args->items)
+			{
+				DsqlDescMaker::fromNode(dsqlScratch, &item->nodDesc, item);
+				argsArray.add(&item->nodDesc);
+			}
+
+			DSqlDataTypeUtil dataTypeUtil(dsqlScratch);
+			node->function->setParamsFunc(&dataTypeUtil, node->function,
+				argsArray.getCount(), argsArray.begin());
+
+			for (auto& item : node->args->items)
+			{
+				PASS1_set_parameter_type(dsqlScratch, item,
+					[&] (dsc* desc) { *desc = item->nodDesc; },
+					false);
+			}
 		}
 	}
 
