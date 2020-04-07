@@ -49,6 +49,7 @@
 #include "../jrd/req.h"
 #include "../jrd/constants.h"
 #include "../common/utils_proto.h"
+#include "../common/classes/Aligner.h"
 #include "../common/classes/VaryStr.h"
 
 using namespace Jrd;
@@ -266,15 +267,43 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2, Firebird::DecimalStatus decSt
 			return -1;
 
 		case dtype_dbkey:
+			// Compare canonical DBKEYs with respect to their
+			// relation IDs and record numbers
+			if (arg1->dsc_length == sizeof(RecordNumber::Packed) &&
+				arg2->dsc_length == sizeof(RecordNumber::Packed))
 			{
-				// keep old ttype_binary compare rules
-				USHORT l = MIN(arg1->dsc_length, arg2->dsc_length);
-				int rc = memcmp(p1, p2, l);
+				const auto dbkey1 = (const RecordNumber::Packed*) arg1->dsc_address;
+				const auto dbkey2 = (const RecordNumber::Packed*) arg2->dsc_address;
+
+				if (dbkey1->bid_relation_id > dbkey2->bid_relation_id)
+					return 1;
+				if (dbkey1->bid_relation_id < dbkey2->bid_relation_id)
+					return -1;
+
+				RecordNumber recno1, recno2;
+				recno1.bid_decode(dbkey1);
+				recno2.bid_decode(dbkey2);
+
+				if (recno1 > recno2)
+					return 1;
+				if (recno1 < recno2)
+					return -1;
+
+				return 0;
+			}
+			// Otherwise, use old ttype_binary compare rules
+			{
+				const auto l = MIN(arg1->dsc_length, arg2->dsc_length);
+				const auto rc = memcmp(p1, p2, l);
+
 				if (rc)
-				{
 					return rc;
-				}
-				return (arg1->dsc_length > l) ? 1 : (arg2->dsc_length > l) ? -1 : 0;
+				if (arg1->dsc_length > l)
+					return 1;
+				if (arg2->dsc_length > l)
+					return -1;
+
+				return 0;
 			}
 
 		case dtype_ex_timestamp_tz:
@@ -595,16 +624,47 @@ int CVT2_compare(const dsc* arg1, const dsc* arg2, Firebird::DecimalStatus decSt
 		if (arg2->isText())
 		{
 			UCHAR* p = NULL;
-			USHORT t; // unused later
-			USHORT length = CVT_get_string_ptr(arg2, &t, &p, NULL, 0, decSt);
+			USHORT ttype;
+			const USHORT length = CVT_get_string_ptr(arg2, &ttype, &p, NULL, 0, decSt);
 
-			USHORT l = MIN(arg1->dsc_length, length);
-			int rc = memcmp(arg1->dsc_address, p, l);
-			if (rc)
+			// Compare DBKEY with a compatible binary string with respect to
+			// relation IDs and record numbers
+			if (arg1->dsc_length == sizeof(RecordNumber::Packed) &&
+				ttype == ttype_binary && length == sizeof(RecordNumber::Packed))
 			{
-				return rc;
+				Aligner<RecordNumber::Packed> alignedNumber(p, length);
+
+				const auto dbkey1 = (const RecordNumber::Packed*) arg1->dsc_address;
+				const auto dbkey2 = (const RecordNumber::Packed*) alignedNumber;
+
+				if (dbkey1->bid_relation_id > dbkey2->bid_relation_id)
+					return 1;
+				if (dbkey1->bid_relation_id < dbkey2->bid_relation_id)
+					return -1;
+
+				RecordNumber recno1, recno2;
+				recno1.bid_decode(dbkey1);
+				recno2.bid_decode(dbkey2);
+
+				if (recno1 > recno2)
+					return 1;
+				if (recno1 < recno2)
+					return -1;
+
+				return 0;
 			}
-			return (arg1->dsc_length > l) ? 1 : (length > l) ? -1 : 0;
+
+			const auto l = MIN(arg1->dsc_length, length);
+			const auto rc = memcmp(arg1->dsc_address, p, l);
+
+			if (rc)
+				return rc;
+			if (arg1->dsc_length > l)
+				return 1;
+			if (length > l)
+				return -1;
+
+			return 0;
 		}
 		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) << "DB_KEY compare");
 		break;

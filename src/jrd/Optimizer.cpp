@@ -338,7 +338,7 @@ IndexScratch::~IndexScratch()
 }
 
 InversionCandidate::InversionCandidate(MemoryPool& p) :
-	matches(p), dependentFromStreams(p)
+	matches(p), dbkeyRanges(p), dependentFromStreams(p)
 {
 /**************************************
  *
@@ -1472,6 +1472,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					else
 						invCandidate->inversion = currentInv->inversion;
 
+					invCandidate->dbkeyRanges.assign(currentInv->dbkeyRanges);
 					invCandidate->unique = currentInv->unique;
 					invCandidate->selectivity = currentInv->selectivity;
 					invCandidate->cost = currentInv->cost;
@@ -1638,6 +1639,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					else {
 						invCandidate->inversion = bestCandidate->inversion;
 					}
+					invCandidate->dbkeyRanges.assign(bestCandidate->dbkeyRanges);
 					invCandidate->unique = bestCandidate->unique;
 					invCandidate->selectivity = bestCandidate->selectivity;
 					invCandidate->cost = bestCandidate->cost;
@@ -1671,6 +1673,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 							bestCandidate->inversion, InversionNode::TYPE_AND);
 					}
 
+					invCandidate->dbkeyRanges.join(bestCandidate->dbkeyRanges);
 					invCandidate->unique = (invCandidate->unique || bestCandidate->unique);
 					invCandidate->selectivity = totalSelectivity;
 					invCandidate->cost += bestCandidate->cost;
@@ -2061,71 +2064,146 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 
 	ComparativeBoolNode* cmpNode = nodeAs<ComparativeBoolNode>(boolean);
 
-	if (!cmpNode || (cmpNode->blrOp != blr_eql && cmpNode->blrOp != blr_equiv))
+	if (!cmpNode)
 		return NULL;
 
-	// Find the side of the equality that is potentially a dbkey.  If
-	// neither, make the obvious deduction
-
-	ValueExprNode* dbkey = cmpNode->arg1;
-	ValueExprNode* value = cmpNode->arg2;
-
-	const RecordKeyNode* keyNode = nodeAs<RecordKeyNode>(dbkey);
-
-	if (!(keyNode && keyNode->blrOp == blr_dbkey && keyNode->recStream == stream) &&
-		!nodeIs<ConcatenateNode>(dbkey))
+	switch (cmpNode->blrOp)
 	{
-		keyNode = nodeAs<RecordKeyNode>(value);
+		case blr_equiv:
+		case blr_eql:
+		case blr_gtr:
+		case blr_geq:
+		case blr_lss:
+		case blr_leq:
+		case blr_between:
+			break;
 
-		if (!(keyNode && keyNode->blrOp == blr_dbkey && keyNode->recStream == stream) &&
-			!nodeIs<ConcatenateNode>(value))
-		{
+		default:
 			return NULL;
-		}
-
-		dbkey = value;
-		value = cmpNode->arg1;
 	}
 
-	// If the value isn't computable, this has been a waste of time
-
-	if (!value->computable(csb, stream, false))
-		return NULL;
-
-	// If this is a concatenation, find an appropriate dbkey
+	// Find the side of the equality that is potentially a dbkey.
+	// If neither, make the obvious deduction.
 
 	SLONG n = 0;
-	if (nodeIs<ConcatenateNode>(dbkey))
+	int dbkeyArg = 1;
+	auto dbkey = findDbKey(cmpNode->arg1, &n);
+
+	if (!dbkey)
 	{
-		dbkey = findDbKey(dbkey, &n);
-		if (!dbkey)
-			return NULL;
+		dbkeyArg = 2;
+		dbkey = findDbKey(cmpNode->arg2, &n);
 	}
+
+	if (!dbkey && (cmpNode->blrOp == blr_between))
+	{
+		dbkeyArg = 3;
+		dbkey = findDbKey(cmpNode->arg3, &n);
+	}
+
+	if (!dbkey)
+		return NULL;
 
 	// Make sure we have the correct stream
 
-	keyNode = nodeAs<RecordKeyNode>(dbkey);
+	const auto keyNode = nodeAs<RecordKeyNode>(dbkey);
 
 	if (!keyNode || keyNode->blrOp != blr_dbkey || keyNode->recStream != stream)
 		return NULL;
 
 	// If this is a dbkey for the appropriate stream, it's invertable
 
-	const double cardinality = csb->csb_rpt[stream].csb_cardinality;
+	const double cardinality =
+		MAX(csb->csb_rpt[stream].csb_cardinality, MINIMUM_CARDINALITY);
+
+	bool unique = false;
+	double selectivity = 0;
+
+	ValueExprNode* lower = NULL;
+	ValueExprNode* upper = NULL;
+
+	switch (cmpNode->blrOp)
+	{
+	case blr_eql:
+	case blr_equiv:
+		unique = true;
+		selectivity = 1 / cardinality;
+		lower = upper = (dbkeyArg == 1) ? cmpNode->arg2 : cmpNode->arg1;
+		break;
+
+	case blr_gtr:
+	case blr_geq:
+		selectivity = REDUCE_SELECTIVITY_FACTOR_GREATER;
+		if (dbkeyArg == 1)
+			lower = cmpNode->arg2;	// dbkey > arg2
+		else
+			upper = cmpNode->arg1;	// arg1 < dbkey
+		break;
+
+	case blr_lss:
+	case blr_leq:
+		selectivity = REDUCE_SELECTIVITY_FACTOR_LESS;
+		if (dbkeyArg == 1)
+			upper = cmpNode->arg2;	// dbkey < arg2
+		else
+			lower = cmpNode->arg1;	// arg1 < dbkey
+		break;
+
+	case blr_between:
+		if (dbkeyArg == 1)			// dbkey between arg2 and arg3
+		{
+			selectivity = REDUCE_SELECTIVITY_FACTOR_BETWEEN;
+			lower = cmpNode->arg2;
+			upper = cmpNode->arg3;
+		}
+		else if (dbkeyArg == 2)		// arg1 between dbkey and arg3, or dbkey <= arg1 and arg1 <= arg3
+		{
+			selectivity = REDUCE_SELECTIVITY_FACTOR_LESS;
+			upper = cmpNode->arg1;
+		}
+		else if (dbkeyArg == 3)		// arg1 between arg2 and dbkey, or arg2 <= arg1 and arg1 <= dbkey
+		{
+			selectivity = REDUCE_SELECTIVITY_FACTOR_GREATER;
+			lower = cmpNode->arg1;
+		}
+		break;
+
+	default:
+		return NULL;
+	}
+
+	if (lower && !lower->computable(csb, stream, false))
+		return NULL;
+
+	if (upper && !upper->computable(csb, stream, false))
+		return NULL;
 
 	InversionCandidate* const invCandidate = FB_NEW_POOL(pool) InversionCandidate(pool);
-	invCandidate->unique = true;
-	invCandidate->selectivity = cardinality ? 1 / cardinality : DEFAULT_SELECTIVITY;
-	invCandidate->cost = 1;
+	invCandidate->unique = unique;
+	invCandidate->selectivity = selectivity;
+	invCandidate->cost = 0;
 	invCandidate->matches.add(boolean);
 	boolean->findDependentFromStreams(this, &invCandidate->dependentFromStreams);
 	invCandidate->dependencies = (int) invCandidate->dependentFromStreams.getCount();
 
 	if (createIndexScanNodes)
 	{
-		InversionNode* const inversion = FB_NEW_POOL(pool) InversionNode(value, n);
-		inversion->impure = CMP_impure(csb, sizeof(impure_inversion));
-		invCandidate->inversion = inversion;
+		if (unique)
+		{
+			fb_assert(lower == upper);
+
+			InversionNode* const inversion = FB_NEW_POOL(pool) InversionNode(lower, n);
+			inversion->impure = CMP_impure(csb, sizeof(impure_inversion));
+			invCandidate->inversion = inversion;
+		}
+		else
+		{
+			fb_assert(n == 0);
+			fb_assert(lower || upper);
+
+			DbKeyRangeNode* const dbkeyRange = FB_NEW_POOL(pool) DbKeyRangeNode(lower, upper);
+			invCandidate->dbkeyRanges.add(dbkeyRange);
+		}
 	}
 
 	return invCandidate;
@@ -2214,7 +2292,9 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 
 		invCandidate2 = makeInversion(&inversions);
 
-		if (invCandidate1 && invCandidate2)
+		if (invCandidate1 && invCandidate2 &&
+			(invCandidate1->indexes || invCandidate1->unique) &&
+			(invCandidate2->indexes || invCandidate2->unique))
 		{
 			InversionCandidate* invCandidate = FB_NEW_POOL(pool) InversionCandidate(pool);
 			invCandidate->inversion = composeInversion(invCandidate1->inversion,

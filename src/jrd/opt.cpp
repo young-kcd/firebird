@@ -2268,6 +2268,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	RecordSource* rsb = NULL;
 	InversionNode* inversion = NULL;
 	BoolExprNode* condition = NULL;
+	Array<DbKeyRangeNode*> dbkeyRanges;
 
 	if (relation->rel_file)
 	{
@@ -2313,6 +2314,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		{
 			inversion = candidate->inversion;
 			condition = candidate->condition;
+			dbkeyRanges.assign(candidate->dbkeyRanges);
 
 			// Just for safety sake, this condition must be already checked
 			// inside OptimizerRetrieval::matchOnIndexes()
@@ -2323,6 +2325,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 				fb_assert(false);
 				inversion = NULL;
 				condition = NULL;
+				dbkeyRanges.clear();
 			}
 		}
 
@@ -2403,7 +2406,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		if (inversion && condition)
 		{
 			RecordSource* const rsb1 =
-				FB_NEW_POOL(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream, relation);
+				FB_NEW_POOL(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream, relation, dbkeyRanges);
 			RecordSource* const rsb2 =
 				FB_NEW_POOL(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, relation, inversion);
 
@@ -2415,7 +2418,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		}
 		else
 		{
-			rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream, relation);
+			rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream, relation, dbkeyRanges);
 
 			if (boolean)
 				csb->csb_rpt[stream].csb_flags |= csb_unmatched;

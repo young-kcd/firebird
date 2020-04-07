@@ -257,6 +257,18 @@ public:
 	USHORT id;
 };
 
+class DbKeyRangeNode
+{
+public:
+	DbKeyRangeNode(ValueExprNode* aLower, ValueExprNode* aUpper)
+		: lower(aLower), upper(aUpper)
+	{
+	}
+
+	NestConst<ValueExprNode> lower;
+	NestConst<ValueExprNode> upper;
+};
+
 class WithClause : public Firebird::Array<SelectExprNode*>
 {
 public:

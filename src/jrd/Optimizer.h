@@ -147,6 +147,7 @@ public:
 	bool			navigated;
 
 	Firebird::Array<BoolExprNode*> matches;
+	Firebird::Array<DbKeyRangeNode*> dbkeyRanges;
 	SortedStreamList dependentFromStreams;
 };
 
