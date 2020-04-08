@@ -6999,7 +6999,6 @@ create_user_clause
 			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_ADD, *$1);
 		}
 	user_fixed_list_opt($2)
-	user_var_opts($2)
 		{
 			$$ = $2;
 		}
@@ -7012,7 +7011,6 @@ alter_user_clause
 			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, *$1);
 		}
 	user_fixed_list_opt($3)
-	user_var_opts($3)
 		{
 			$$ = $3;
 		}
@@ -7025,7 +7023,6 @@ alter_cur_user_clause
 			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, "");
 		}
 	user_fixed_list_opt($2)
-	user_var_opts($2)
 		{
 			$$ = $2;
 		}
@@ -7038,7 +7035,6 @@ replace_user_clause
 			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_RPL, *$1);
 		}
 	user_fixed_list_opt($3)
-	user_var_opts($3)
 		{
 			$$ = $3;
 		}
@@ -7073,11 +7069,6 @@ user_fixed_option($node)
 	| INACTIVE				{ setClause($node->active, "ACTIVE/INACTIVE", false); }
 	| USING PLUGIN valid_symbol_name
 							{ setClause($node->plugin, "USING PLUGIN", $3); }
-	;
-
-%type user_var_opts(<createAlterUserNode>)
-user_var_opts($node)
-	: // nothing
 	| TAGS '(' user_var_list($node) ')'
 	;
 
