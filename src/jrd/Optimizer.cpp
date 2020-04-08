@@ -2091,12 +2091,14 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 
 	if (!dbkey)
 	{
+		n = 0;
 		dbkeyArg = 2;
 		dbkey = findDbKey(cmpNode->arg2, &n);
 	}
 
 	if (!dbkey && (cmpNode->blrOp == blr_between))
 	{
+		n = 0;
 		dbkeyArg = 3;
 		dbkey = findDbKey(cmpNode->arg3, &n);
 	}
