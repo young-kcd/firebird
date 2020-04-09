@@ -1045,6 +1045,7 @@ static void			init_database_lock(thread_db*);
 static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
 static jrd_req*		verify_request_synchronization(JrdStatement* statement, USHORT level);
 static void			purge_transactions(thread_db*, Jrd::Attachment*, const bool);
+static void			check_single_maintenance(thread_db* tdbb);
 
 namespace {
 	enum VdnResult {VDN_FAIL, VDN_OK/*, VDN_SECURITY*/};
@@ -1644,6 +1645,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				fb_assert(dbb->dbb_lock_mgr);
 
 				LCK_init(tdbb, LCK_OWNER_attachment);
+				check_single_maintenance(tdbb);
 				jAtt->getStable()->manualAsyncUnlock(attachment->att_flags);
 
 				INI_init(tdbb);
@@ -6293,6 +6295,21 @@ static JAttachment* create_attachment(const PathName& alias_name,
 }
 
 
+static void check_single_maintenance(thread_db* tdbb)
+{
+	UCHAR spare_memory[RAW_HEADER_SIZE + PAGE_ALIGNMENT];
+	UCHAR* header_page_buffer = FB_ALIGN(spare_memory, PAGE_ALIGNMENT);
+	Ods::header_page* const header_page = reinterpret_cast<Ods::header_page*>(header_page_buffer);
+
+	PIO_header(tdbb, header_page_buffer, RAW_HEADER_SIZE);
+
+	if ((header_page->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
+	{
+		ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(tdbb->getAttachment()->att_filename));
+	}
+}
+
+
 static void init_database_lock(thread_db* tdbb)
 {
 /**************************************
@@ -6331,16 +6348,7 @@ static void init_database_lock(thread_db* tdbb)
 			fb_utils::init_status(tdbb->tdbb_status_vector);
 
 			// If we are in a single-threaded maintenance mode then clean up and stop waiting
-			UCHAR spare_memory[RAW_HEADER_SIZE + PAGE_ALIGNMENT];
-			UCHAR* header_page_buffer = FB_ALIGN(spare_memory, PAGE_ALIGNMENT);
-			Ods::header_page* const header_page = reinterpret_cast<Ods::header_page*>(header_page_buffer);
-
-			PIO_header(tdbb, header_page_buffer, RAW_HEADER_SIZE);
-
-			if ((header_page->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
-			{
-				ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(attachment->att_filename));
-			}
+			check_single_maintenance(tdbb);
 		}
 	}
 }
