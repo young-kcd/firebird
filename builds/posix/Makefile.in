@@ -68,7 +68,9 @@ ifeq ($(LSB_FLG),Y)
   GCC=/opt/lsb/bin/lsbcc
   export CC
   export CXX
-else
+endif
+
+ifndef GCC
   GCC=gcc
 endif
 
