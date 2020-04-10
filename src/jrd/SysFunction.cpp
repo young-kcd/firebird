@@ -769,10 +769,10 @@ void setParamsMakeDbkey(DataTypeUtilBase*, const SysFunction*, int argsCount, ds
 		args[1]->makeInt64(0);
 
 	if (argsCount > 2 && args[2]->isUnknown())
-		args[2]->makeLong(0);
+		args[2]->makeInt64(0);
 
 	if (argsCount > 3 && args[3]->isUnknown())
-		args[3]->makeLong(0);
+		args[3]->makeInt64(0);
 }
 
 
@@ -847,13 +847,9 @@ void makeDbkeyResult(DataTypeUtilBase*, const SysFunction*, dsc* result,
 	int argsCount, const dsc** args)
 {
 	result->makeText(8, ttype_binary);
-
-	bool isNullable;
-	if (initResult(result, argsCount, args, &isNullable))
-		return;
-
-	result->setNullable(isNullable);
+	result->setNullable(true);
 }
+
 
 void makeDoubleResult(DataTypeUtilBase*, const SysFunction*, dsc* result,
 	int argsCount, const dsc** args)
@@ -4862,7 +4858,7 @@ dsc* evlMakeDbkey(Jrd::thread_db* tdbb, const SysFunction* function, const NestV
 	else
 	{
 		const SLONG value = MOV_get_long(tdbb, argDsc, 0);
-		if (value > MAX_USHORT) // return NULL if the provided ID is too long
+		if (value < 0 || value > MAX_USHORT) // return NULL if the provided ID is too long
 			return NULL;
 
 		relId = (USHORT) value;
@@ -4874,7 +4870,7 @@ dsc* evlMakeDbkey(Jrd::thread_db* tdbb, const SysFunction* function, const NestV
 
 	SINT64 recNo = MOV_get_int64(tdbb, argDsc, 0);
 
-	ULONG dpNum = MAX_ULONG, ppNum = MAX_ULONG;
+	SINT64 dpNum = 0, ppNum = 0;
 
 	if (args.getCount() > 2)
 	{
@@ -4882,7 +4878,9 @@ dsc* evlMakeDbkey(Jrd::thread_db* tdbb, const SysFunction* function, const NestV
 		if (request->req_flags & req_null)
 			return NULL;
 
-		dpNum = MOV_get_long(tdbb, argDsc, 0);
+		dpNum = MOV_get_int64(tdbb, argDsc, 0);
+		if (dpNum > MAX_ULONG)
+			return NULL;
 	}
 
 	if (args.getCount() > 3)
@@ -4891,15 +4889,24 @@ dsc* evlMakeDbkey(Jrd::thread_db* tdbb, const SysFunction* function, const NestV
 		if (request->req_flags & req_null)
 			return NULL;
 
-		ppNum = MOV_get_long(tdbb, argDsc, 0);
+		ppNum = MOV_get_int64(tdbb, argDsc, 0);
+		if (ppNum < 0 || ppNum > MAX_ULONG)
+			return NULL;
 	}
 
 	RecordNumber temp;
 
 	if (args.getCount() == 4)
-		recNo += ((SINT64) ppNum * dbb->dbb_dp_per_pp + dpNum) * dbb->dbb_max_records;
+		recNo += (ppNum * dbb->dbb_dp_per_pp + dpNum) * dbb->dbb_max_records;
 	else if (args.getCount() == 3)
-		recNo += (SINT64) dpNum * dbb->dbb_max_records;
+	{
+		if (dpNum < 0)
+			return NULL;
+		recNo += dpNum * dbb->dbb_max_records;
+	}
+
+	if (recNo < 0)
+		return NULL;
 
 	temp.setValue(recNo + 1);
 
