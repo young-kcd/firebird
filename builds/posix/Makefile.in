@@ -105,21 +105,42 @@ IDL_ROOT=$(SRC_ROOT)/include/firebird
 IDL_FILE=$(IDL_ROOT)/FirebirdInterface.idl
 API_H_FILE=$(IDL_ROOT)/IdlFbInterfaces.h
 API_PAS_FILE=$(SRC_ROOT)/include/gen/Firebird.pas
-PAS_ROOT=$(SRC_ROOT)/misc/pascal
+MISC=$(SRC_ROOT)/misc
+PAS_ROOT=$(MISC)/pascal
 PASCAL_SOURCES=$(wildcard $(PAS_ROOT)/*)
 TMP_FUNCS=$(TMP_ROOT)/func.pas
 XPB_CONSTS=$(SRC_ROOT)/include/firebird/impl/consts_pub.h
 ERR_CONSTS=$(ROOT)/lang_helpers/gds_codes.pas
+RPL_AWK=$(GEN_ROOT)/def_awk
+RPL_AWK_SRC=$(MISC)/def_awk.c
+RPL_GREP=$(GEN_ROOT)/isc_grep
+RPL_GREP_SRC=$(MISC)/isc_grep.c
 
 updateCloopInterfaces : $(API_H_FILE) $(API_PAS_FILE)
 
 $(API_H_FILE): $(IDL_FILE)
 	$(CLOOP) $< c++ $@ IDL_FB_INTERFACES_H Firebird I
 
-$(TMP_FUNCS): $(PASCAL_SOURCES) $(XPB_CONSTS) $(ERR_CONSTS)
-	cat $(PAS_ROOT)/fb_get_master_interface.pas >$(TMP_FUNCS)
-	awk -f $(PAS_ROOT)/Pascal.Constants.awk <$(XPB_CONSTS) >>$(TMP_FUNCS)
-	grep '[[:space:]]isc_' $(ERR_CONSTS) >>$(TMP_FUNCS)
+#
+# This way firebird.pas can be created not using own mini-utilities.
+# They were added to be able to build on windows, this code is left for reference.
+#
+#$(TMP_FUNCS): $(PASCAL_SOURCES) $(XPB_CONSTS) $(ERR_CONSTS)
+#	cat $(PAS_ROOT)/fb_get_master_interface.pas >$(TMP_FUNCS)
+#	awk -f $(PAS_ROOT)/Pascal.Constants.awk <$(XPB_CONSTS) >>$(TMP_FUNCS)
+#	grep '[[:space:]]isc_' $(ERR_CONSTS) >>$(TMP_FUNCS)
+#
+
+$(RPL_AWK):	$(RPL_AWK_SRC)
+	$(CC) -o $@ $^
+
+$(RPL_GREP): $(RPL_GREP_SRC)
+	$(CC) -o $@ $^
+
+$(TMP_FUNCS): $(PASCAL_SOURCES) $(XPB_CONSTS) $(ERR_CONSTS) $(RPL_AWK) $(RPL_GREP)
+	cp $(PAS_ROOT)/fb_get_master_interface.pas $(TMP_FUNCS)
+	$(RPL_AWK) <$(XPB_CONSTS) >>$(TMP_FUNCS)
+	$(RPL_GREP) <$(ERR_CONSTS) >>$(TMP_FUNCS)
 
 $(API_PAS_FILE): $(IDL_FILE) $(PASCAL_SOURCES) $(TMP_FUNCS)
 	$(CLOOP) $(IDL_FILE) pascal $@ Firebird --uses SysUtils \
@@ -709,7 +730,9 @@ clean_vers:
 	$(RM) *.vers
 
 clean_misc:
-	$(RM) ods.txt odstest* security.tmp test.header.txt $(API_PAS_FILE)
+	$(RM) security.tmp test.header.txt
+	$(RM) $(API_PAS_FILE) $(API_H_FILE) $(TMP_FUNCS) $(RPL_AWK) $(RPL_GREP)
+
 
 ifeq ($(EDITLINE_FLG),Y)
 ifeq ($(STD_EDITLINE),false)
