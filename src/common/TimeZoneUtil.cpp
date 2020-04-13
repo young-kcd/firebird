@@ -24,9 +24,6 @@
  *  Contributor(s): ______________________________________.
  */
 
-//// TODO: Configure ICU time zone data files.
-//// TODO: Update Windows ICU.
-
 #include "firebird.h"
 #include "../common/TimeZoneUtil.h"
 #include "../common/StatusHolder.h"
@@ -186,6 +183,8 @@ namespace
 
 //-------------------------------------
 
+static const UDate MIN_ICU_TIMESTAMP = TimeZoneUtil::timeStampToIcuDate(TimeStamp::MIN_TIMESTAMP);
+static const UDate MAX_ICU_TIMESTAMP = TimeZoneUtil::timeStampToIcuDate(TimeStamp::MAX_TIMESTAMP);
 static const unsigned ONE_DAY = 24 * 60 - 1;	// used for offset encoding
 static InitInstance<TimeZoneStartup> timeZoneStartup;
 
@@ -494,10 +493,7 @@ void TimeZoneUtil::extractOffset(const ISC_TIMESTAMP_TZ& timeStampTz, SSHORT* of
 		if (!icuCalendar)
 			status_exception::raise(Arg::Gds(isc_random) << "Error calling ICU's ucal_open.");
 
-		SINT64 ticks = timeStampTz.utc_timestamp.timestamp_date * TimeStamp::ISC_TICKS_PER_DAY +
-			timeStampTz.utc_timestamp.timestamp_time;
-
-		icuLib.ucalSetMillis(icuCalendar, ticksToIcuDate(ticks), &icuErrorCode);
+		icuLib.ucalSetMillis(icuCalendar, timeStampToIcuDate(timeStampTz.utc_timestamp), &icuErrorCode);
 
 		if (U_FAILURE(icuErrorCode))
 		{
@@ -633,11 +629,10 @@ void TimeZoneUtil::localTimeStampToUtc(ISC_TIMESTAMP_TZ& timeStampTz)
 		icuLib.ucalClose(icuCalendar);
 	}
 
-	SINT64 ticks = timeStampTz.utc_timestamp.timestamp_date * TimeStamp::ISC_TICKS_PER_DAY +
-		timeStampTz.utc_timestamp.timestamp_time - (displacement * 60 * ISC_TIME_SECONDS_PRECISION);
+	const auto  ticks = TimeStamp::timeStampToTicks(timeStampTz.utc_timestamp) -
+		(displacement * 60 * ISC_TIME_SECONDS_PRECISION);
 
-	timeStampTz.utc_timestamp.timestamp_date = ticks / TimeStamp::ISC_TICKS_PER_DAY;
-	timeStampTz.utc_timestamp.timestamp_time = ticks % TimeStamp::ISC_TICKS_PER_DAY;
+	timeStampTz.utc_timestamp = TimeStamp::ticksToTimeStamp(ticks);
 }
 
 bool TimeZoneUtil::decodeTime(const ISC_TIME_TZ& timeTz, bool gmtFallback, SLONG gmtOffset, Callbacks* cb,
@@ -674,8 +669,6 @@ bool TimeZoneUtil::decodeTime(const ISC_TIME_TZ& timeTz, bool gmtFallback, SLONG
 bool TimeZoneUtil::decodeTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, bool gmtFallback, SLONG gmtOffset,
 	struct tm* times, int* fractions)
 {
-	SINT64 ticks = timeStampTz.utc_timestamp.timestamp_date * TimeStamp::ISC_TICKS_PER_DAY +
-		timeStampTz.utc_timestamp.timestamp_time;
 	bool icuFail = false;
 	int displacement;
 
@@ -701,7 +694,7 @@ bool TimeZoneUtil::decodeTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, bool gmt
 			if (!icuCalendar)
 				status_exception::raise(Arg::Gds(isc_random) << "Error calling ICU's ucal_open.");
 
-			icuLib.ucalSetMillis(icuCalendar, ticksToIcuDate(ticks), &icuErrorCode);
+			icuLib.ucalSetMillis(icuCalendar, timeStampToIcuDate(timeStampTz.utc_timestamp), &icuErrorCode);
 
 			if (U_FAILURE(icuErrorCode))
 			{
@@ -730,13 +723,10 @@ bool TimeZoneUtil::decodeTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, bool gmt
 		}
 	}
 
-	ticks += displacement * 60 * ISC_TIME_SECONDS_PRECISION;
+	const auto ticks = TimeStamp::timeStampToTicks(timeStampTz.utc_timestamp) +
+		(displacement * 60 * ISC_TIME_SECONDS_PRECISION);
 
-	ISC_TIMESTAMP ts;
-	ts.timestamp_date = ticks / TimeStamp::ISC_TICKS_PER_DAY;
-	ts.timestamp_time = ticks % TimeStamp::ISC_TICKS_PER_DAY;
-
-	TimeStamp::decode_timestamp(ts, times, fractions);
+	TimeStamp::decode_timestamp(TimeStamp::ticksToTimeStamp(ticks), times, fractions);
 
 	return !icuFail;
 }
@@ -951,7 +941,7 @@ ISC_TIMESTAMP_TZ TimeZoneUtil::cvtDateToTimeStampTz(const ISC_DATE& date, Callba
 TimeZoneRuleIterator::TimeZoneRuleIterator(USHORT aId, ISC_TIMESTAMP_TZ& aFrom, ISC_TIMESTAMP_TZ& aTo)
 	: id(aId),
 	  icuLib(Jrd::UnicodeUtil::getConversionICU()),
-	  toTicks(aTo.utc_timestamp.timestamp_date * TimeStamp::ISC_TICKS_PER_DAY + aTo.utc_timestamp.timestamp_time)
+	  toTicks(TimeStamp::timeStampToTicks(aTo.utc_timestamp))
 {
 	UErrorCode icuErrorCode = U_ZERO_ERROR;
 
@@ -960,10 +950,7 @@ TimeZoneRuleIterator::TimeZoneRuleIterator(USHORT aId, ISC_TIMESTAMP_TZ& aFrom, 
 	if (!icuCalendar)
 		status_exception::raise(Arg::Gds(isc_random) << "Error calling ICU's ucal_open.");
 
-	SINT64 ticks = aFrom.utc_timestamp.timestamp_date * TimeStamp::ISC_TICKS_PER_DAY +
-		aFrom.utc_timestamp.timestamp_time;
-
-	icuDate = TimeZoneUtil::ticksToIcuDate(ticks);
+	icuDate = TimeZoneUtil::timeStampToIcuDate(aFrom.utc_timestamp);
 
 	icuLib.ucalSetMillis(icuCalendar, icuDate, &icuErrorCode);
 
@@ -973,7 +960,7 @@ TimeZoneRuleIterator::TimeZoneRuleIterator(USHORT aId, ISC_TIMESTAMP_TZ& aFrom, 
 		status_exception::raise(Arg::Gds(isc_random) << "Error calling ICU's ucal_setMillis.");
 	}
 
-	UBool hasNext = icuLib.ucalGetTimeZoneTransitionDate(icuCalendar, UCAL_TZ_TRANSITION_PREVIOUS_INCLUSIVE,
+	UBool hasInitial = icuLib.ucalGetTimeZoneTransitionDate(icuCalendar, UCAL_TZ_TRANSITION_PREVIOUS_INCLUSIVE,
 		&icuDate, &icuErrorCode);
 
 	if (U_FAILURE(icuErrorCode))
@@ -982,8 +969,8 @@ TimeZoneRuleIterator::TimeZoneRuleIterator(USHORT aId, ISC_TIMESTAMP_TZ& aFrom, 
 		status_exception::raise(Arg::Gds(isc_random) << "Error calling ICU's ucal_getTimeZoneTransitionDate.");
 	}
 
-	if (!hasNext)
-		icuDate = TimeZoneUtil::ticksToIcuDate(TimeStamp::MIN_DATE * TimeStamp::ISC_TICKS_PER_DAY);
+	if (!hasInitial)
+		icuDate = MIN_ICU_TIMESTAMP;
 
 	icuLib.ucalSetMillis(icuCalendar, icuDate, &icuErrorCode);
 
@@ -993,7 +980,7 @@ TimeZoneRuleIterator::TimeZoneRuleIterator(USHORT aId, ISC_TIMESTAMP_TZ& aFrom, 
 		status_exception::raise(Arg::Gds(isc_random) << "Error calling ICU's ucal_setMillis.");
 	}
 
-	startTicks = TimeZoneUtil::icuDateToTicks(icuDate);
+	startTicks = TimeStamp::timeStampToTicks(TimeZoneUtil::icuDateToTimeStamp(icuDate));
 }
 
 TimeZoneRuleIterator::~TimeZoneRuleIterator()
@@ -1008,8 +995,7 @@ bool TimeZoneRuleIterator::next()
 
 	UErrorCode icuErrorCode = U_ZERO_ERROR;
 
-	startTimestamp.utc_timestamp.timestamp_date = startTicks / TimeStamp::ISC_TICKS_PER_DAY;
-	startTimestamp.utc_timestamp.timestamp_time = startTicks % TimeStamp::ISC_TICKS_PER_DAY;
+	startTimestamp.utc_timestamp = TimeStamp::ticksToTimeStamp(startTicks);
 	startTimestamp.time_zone = TimeZoneUtil::GMT_ZONE;
 
 	zoneOffset = icuLib.ucalGet(icuCalendar, UCAL_ZONE_OFFSET, &icuErrorCode) / U_MILLIS_PER_MINUTE;
@@ -1024,18 +1010,15 @@ bool TimeZoneRuleIterator::next()
 		status_exception::raise(Arg::Gds(isc_random) << "Error calling ICU's ucal_getTimeZoneTransitionDate.");
 	}
 
-	if (!hasNext)
-	{
-		icuDate = TimeZoneUtil::ticksToIcuDate(
-			TimeStamp::MAX_DATE * TimeStamp::ISC_TICKS_PER_DAY + TimeStamp::ISC_TICKS_PER_DAY);
-	}
+	if (!hasNext || icuDate > MAX_ICU_TIMESTAMP)
+		icuDate = MAX_ICU_TIMESTAMP;
 
 	icuLib.ucalSetMillis(icuCalendar, icuDate, &icuErrorCode);
 
-	SINT64 endTicks = TimeZoneUtil::icuDateToTicks(icuDate) - 1;
+	const auto endTicks = TimeStamp::timeStampToTicks(TimeZoneUtil::icuDateToTimeStamp(icuDate)) - 1;
 
-	endTimestamp.utc_timestamp.timestamp_date = endTicks / TimeStamp::ISC_TICKS_PER_DAY;
-	endTimestamp.utc_timestamp.timestamp_time = endTicks % TimeStamp::ISC_TICKS_PER_DAY;
+	endTimestamp.utc_timestamp = TimeStamp::ticksToTimeStamp(endTicks +
+		(icuDate == MAX_ICU_TIMESTAMP ? ISC_TIME_SECONDS_PRECISION / 1000 : 0));
 	endTimestamp.time_zone = TimeZoneUtil::GMT_ZONE;
 
 	startTicks = endTicks + 1;

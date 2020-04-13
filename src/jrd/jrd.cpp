@@ -4921,7 +4921,7 @@ ITransaction* JStatement::execute(CheckStatusWrapper* user_status, ITransaction*
 			else if (tra && !jt)
 			{
 				jt = tra->getInterface(false);
-				if (jt) 
+				if (jt)
 					tra->tra_flags &= ~TRA_own_interface;
 				else
 				{
@@ -8627,12 +8627,10 @@ bool TimeoutTimer::getExpireTimestamp(const ISC_TIMESTAMP_TZ start, ISC_TIMESTAM
 	if (!m_started || m_expired)
 		return false;
 
-	SINT64 ticks = start.utc_timestamp.timestamp_date * TimeStamp::ISC_TICKS_PER_DAY +
-		start.utc_timestamp.timestamp_time;
+	SINT64 ticks = TimeStamp::timeStampToTicks(start.utc_timestamp);
 	ticks += m_value * ISC_TIME_SECONDS_PRECISION / 1000;
 
-	exp.utc_timestamp.timestamp_date = ticks / TimeStamp::ISC_TICKS_PER_DAY;
-	exp.utc_timestamp.timestamp_time = ticks % TimeStamp::ISC_TICKS_PER_DAY;
+	exp.utc_timestamp = TimeStamp::ticksToTimeStamp(ticks);
 	exp.time_zone = start.time_zone;
 
 	return true;
@@ -8699,12 +8697,10 @@ bool TimeoutTimer::getExpireTimestamp(const ISC_TIMESTAMP_TZ start, ISC_TIMESTAM
 	if (!m_start)
 		return false;
 
-	SINT64 ticks = start.utc_timestamp.timestamp_date * TimeStamp::ISC_TICKS_PER_DAY +
-		start.utc_timestamp.timestamp_time;
+	SINT64 ticks = TimeStamp::timeStampToTicks(start.utc_timestamp);
 	ticks += m_value * ISC_TIME_SECONDS_PRECISION / 1000;
 
-	exp.utc_timestamp.timestamp_date = ticks / TimeStamp::ISC_TICKS_PER_DAY;
-	exp.utc_timestamp.timestamp_time = ticks % TimeStamp::ISC_TICKS_PER_DAY;
+	exp.utc_timestamp = TimeStamp::ticksToTimeStamp(ticks);
 	exp.time_zone = start.time_zone;
 
 	return true;

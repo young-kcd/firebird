@@ -171,7 +171,6 @@ static const long LONG_POS_MAX = 2147483647;
 static const SINT64 MAX_INT64_LIMIT = MAX_SINT64 / 10;
 static const SINT64 MIN_INT64_LIMIT = MIN_SINT64 / 10;
 static const SINT64 SECONDS_PER_DAY = TimeStamp::SECONDS_PER_DAY;
-static const SINT64 ISC_TICKS_PER_DAY = TimeStamp::ISC_TICKS_PER_DAY;
 static const SCHAR DIALECT_3_TIMESTAMP_SCALE = -9;
 static const SCHAR DIALECT_1_TIMESTAMP_SCALE = 0;
 
@@ -2701,7 +2700,7 @@ dsc* ArithmeticNode::addSqlTime(thread_db* tdbb, const dsc* desc, impure_value* 
 	if (op1_is_time)
 	{
 		d1 = *(GDS_TIME*) op1_desc->dsc_address;
-		fb_assert(d1 >= 0 && d1 < ISC_TICKS_PER_DAY);
+		fb_assert(d1 >= 0 && d1 < TimeStamp::ISC_TICKS_PER_DAY);
 	}
 	else
 		d1 = MOV_get_int64(tdbb, op1_desc, ISC_TIME_SECONDS_PRECISION_SCALE);
@@ -2712,7 +2711,7 @@ dsc* ArithmeticNode::addSqlTime(thread_db* tdbb, const dsc* desc, impure_value* 
 	if (op2_is_time)
 	{
 		d2 = *(GDS_TIME*) op2_desc->dsc_address;
-		fb_assert(d2 >= 0 && d2 < ISC_TICKS_PER_DAY);
+		fb_assert(d2 >= 0 && d2 < TimeStamp::ISC_TICKS_PER_DAY);
 	}
 	else
 		d2 = MOV_get_int64(tdbb, op2_desc, ISC_TIME_SECONDS_PRECISION_SCALE);
@@ -2747,12 +2746,12 @@ dsc* ArithmeticNode::addSqlTime(thread_db* tdbb, const dsc* desc, impure_value* 
 
 	// Make the result positive
 	while (d2 < 0)
-		d2 += (ISC_TICKS_PER_DAY);
+		d2 += TimeStamp::ISC_TICKS_PER_DAY;
 
 	// And make it in the range of values for a day
-	d2 %= (ISC_TICKS_PER_DAY);
+	d2 %= TimeStamp::ISC_TICKS_PER_DAY;
 
-	fb_assert(d2 >= 0 && d2 < ISC_TICKS_PER_DAY);
+	fb_assert(d2 >= 0 && d2 < TimeStamp::ISC_TICKS_PER_DAY);
 
 	value->vlu_misc.vlu_sql_time_tz.utc_time = d2;
 
@@ -2925,7 +2924,7 @@ dsc* ArithmeticNode::addTimeStamp(thread_db* tdbb, const dsc* desc, impure_value
 			}
 
 			// This is dialect 1 subtraction returning double as before
-			value->vlu_misc.vlu_double = (double) d2 / ((double) ISC_TICKS_PER_DAY);
+			value->vlu_misc.vlu_double = (double) d2 / ((double) TimeStamp::ISC_TICKS_PER_DAY);
 			result->dsc_dtype = dtype_double;
 			result->dsc_length = sizeof(double);
 			result->dsc_scale = DIALECT_1_TIMESTAMP_SCALE;
@@ -2984,24 +2983,11 @@ dsc* ArithmeticNode::addTimeStamp(thread_db* tdbb, const dsc* desc, impure_value
 
 		// Convert the count of microseconds back to a date / time format
 
-		value->vlu_misc.vlu_timestamp_tz.utc_timestamp.timestamp_date = d2 / (ISC_TICKS_PER_DAY);
-		value->vlu_misc.vlu_timestamp_tz.utc_timestamp.timestamp_time = (d2 % ISC_TICKS_PER_DAY);
-
-		// Make sure the TIME portion is non-negative
-
-		if ((SLONG) value->vlu_misc.vlu_timestamp_tz.utc_timestamp.timestamp_time < 0)
-		{
-			value->vlu_misc.vlu_timestamp_tz.utc_timestamp.timestamp_time =
-				((SLONG) value->vlu_misc.vlu_timestamp_tz.utc_timestamp.timestamp_time) + ISC_TICKS_PER_DAY;
-			--value->vlu_misc.vlu_timestamp_tz.utc_timestamp.timestamp_date;
-		}
+		value->vlu_misc.vlu_timestamp_tz.utc_timestamp = TimeStamp::ticksToTimeStamp(d2);
 
 		if (!TimeStamp::isValidTimeStamp(*(ISC_TIMESTAMP*) &value->vlu_misc.vlu_timestamp_tz))
 			ERR_post(Arg::Gds(isc_datetime_range_exceeded));
 	}
-
-	fb_assert(value->vlu_misc.vlu_timestamp_tz.utc_timestamp.timestamp_time >= 0 &&
-		value->vlu_misc.vlu_timestamp_tz.utc_timestamp.timestamp_time < ISC_TICKS_PER_DAY);
 
 	fb_assert(!(op1_tz.specified && op2_tz.specified));
 
@@ -13582,13 +13568,13 @@ static SINT64 getDayFraction(const dsc* d)
 	// in hope that compiler rounding mode doesn't get in.
 
 #ifdef HAVE_LLRINT
-	return llrint(result_days * ISC_TICKS_PER_DAY);
+	return llrint(result_days * TimeStamp::ISC_TICKS_PER_DAY);
 #else
 	const double eps = 0.49999999999999;
 	if (result_days >= 0)
-		return (SINT64)(result_days * ISC_TICKS_PER_DAY + eps);
+		return (SINT64)(result_days * TimeStamp::ISC_TICKS_PER_DAY + eps);
 
-	return (SINT64) (result_days * ISC_TICKS_PER_DAY - eps);
+	return (SINT64) (result_days * TimeStamp::ISC_TICKS_PER_DAY - eps);
 #endif
 }
 
@@ -13611,10 +13597,7 @@ static SINT64 getTimeStampToIscTicks(thread_db* tdbb, const dsc* d)
 
 	CVT_move(d, &result, tdbb->getAttachment()->att_dec_status);
 
-	SINT64 delta = 0;
-
-	return ((SINT64) result_timestamp.utc_timestamp.timestamp_date) * ISC_TICKS_PER_DAY +
-		(SINT64) result_timestamp.utc_timestamp.timestamp_time - delta;
+	return TimeStamp::timeStampToTicks(result_timestamp.utc_timestamp);
 }
 
 // One of d1, d2 is time, the other is date

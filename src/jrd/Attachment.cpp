@@ -977,9 +977,8 @@ bool Attachment::getIdleTimerTimestamp(ISC_TIMESTAMP_TZ& ts) const
 	if (!value)
 		return false;
 
-	ts.utc_timestamp.timestamp_date = value / TimeStamp::ISC_TICKS_PER_DAY;
-	ts.utc_timestamp.timestamp_time = value % TimeStamp::ISC_TICKS_PER_DAY;
-	ts.time_zone = TimeZoneUtil::GMT_ZONE;
+	ts.utc_timestamp = TimeStamp::ticksToTimeStamp(value);
+	ts.time_zone = att_timestamp.time_zone;
 
 	return true;
 }
@@ -1024,8 +1023,7 @@ void Attachment::IdleTimer::handler()
 	// If timer was reset to fire later, restart ITimer
 
 	const ISC_TIMESTAMP currentTimeGmt = TimeZoneUtil::getCurrentGmtTimeStamp().utc_timestamp;
-	const SINT64 curTime = currentTimeGmt.timestamp_date * TimeStamp::ISC_TICKS_PER_DAY +
-		(SINT64) currentTimeGmt.timestamp_time;
+	const SINT64 curTime = TimeStamp::timeStampToTicks(currentTimeGmt);
 
 	if (curTime + ISC_TIME_SECONDS_PRECISION < m_expTime)
 	{
@@ -1063,8 +1061,7 @@ void Attachment::IdleTimer::reset(unsigned int timeout)
 	}
 
 	const ISC_TIMESTAMP currentTimeGmt = TimeZoneUtil::getCurrentGmtTimeStamp().utc_timestamp;
-	const SINT64 curTime = currentTimeGmt.timestamp_date * TimeStamp::ISC_TICKS_PER_DAY +
-		(SINT64) currentTimeGmt.timestamp_time;
+	const SINT64 curTime = TimeStamp::timeStampToTicks(currentTimeGmt);
 
 	m_expTime = curTime + timeout * ISC_TIME_SECONDS_PRECISION;
 

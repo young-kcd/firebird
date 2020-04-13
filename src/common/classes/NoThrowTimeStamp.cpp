@@ -42,6 +42,10 @@
 
 namespace Firebird {
 
+const ISC_TIMESTAMP NoThrowTimeStamp::MIN_TIMESTAMP = {NoThrowTimeStamp::MIN_DATE, 0};
+const ISC_TIMESTAMP NoThrowTimeStamp::MAX_TIMESTAMP =
+	{NoThrowTimeStamp::MAX_DATE, NoThrowTimeStamp::ISC_TICKS_PER_DAY - 1};
+
 const ISC_TIME NoThrowTimeStamp::POW_10_TABLE[] =
 	{1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
 

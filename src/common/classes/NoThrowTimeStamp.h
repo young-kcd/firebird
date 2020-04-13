@@ -28,6 +28,7 @@
 #define CLASSES_NOTHROW_TIMESTAMP_H
 
 #include "firebird/impl/dsc_pub.h"
+#include "../common/gdsassert.h"
 
 // struct tm declaration
 #if defined(TIME_WITH_SYS_TIME)
@@ -62,6 +63,9 @@ public:
 
 	static const SINT64 SECONDS_PER_DAY = 24 * 60 * 60;
 	static const SINT64 ISC_TICKS_PER_DAY = SECONDS_PER_DAY * ISC_TIME_SECONDS_PRECISION;
+
+	static const ISC_TIMESTAMP MIN_TIMESTAMP;
+	static const ISC_TIMESTAMP MAX_TIMESTAMP;
 
 private:
 	static const ISC_DATE BAD_DATE = MAX_SLONG;
@@ -166,6 +170,24 @@ public:
 	static inline bool isLeapYear(const int year) throw()
 	{
 		return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+	}
+
+	static SINT64 timeStampToTicks(ISC_TIMESTAMP ts)
+	{
+		const SINT64 ticks = (ts.timestamp_date - MIN_DATE) * ISC_TICKS_PER_DAY + ts.timestamp_time;
+		fb_assert(ticks >= 0);
+		return ticks;
+	}
+
+	static ISC_TIMESTAMP ticksToTimeStamp(SINT64 ticks)
+	{
+		fb_assert(ticks >= 0);
+
+		ISC_TIMESTAMP ts;
+		ts.timestamp_date = (ticks / ISC_TICKS_PER_DAY) + MIN_DATE;
+		ts.timestamp_time = ticks % ISC_TICKS_PER_DAY;
+
+		return ts;
 	}
 
 private:

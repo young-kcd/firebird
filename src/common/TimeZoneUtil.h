@@ -69,14 +69,17 @@ private:
 	static InitInstance<PathName> tzDataPath;
 
 public:
-	static UDate ticksToIcuDate(SINT64 ticks)
+	static UDate timeStampToIcuDate(ISC_TIMESTAMP ts)
 	{
-		return (ticks - (TimeStamp::UNIX_DATE * TimeStamp::ISC_TICKS_PER_DAY)) / 10;
+		return (TimeStamp::timeStampToTicks(ts) -
+			((TimeStamp::UNIX_DATE - TimeStamp::MIN_DATE) * TimeStamp::ISC_TICKS_PER_DAY)) /
+			(ISC_TIME_SECONDS_PRECISION / 1000);
 	}
 
-	static SINT64 icuDateToTicks(UDate icuDate)
+	static ISC_TIMESTAMP icuDateToTimeStamp(UDate icuDate)
 	{
-		return (SINT64(icuDate) * 10) + (TimeStamp::UNIX_DATE * TimeStamp::ISC_TICKS_PER_DAY);
+		return TimeStamp::ticksToTimeStamp(icuDate * (ISC_TIME_SECONDS_PRECISION / 1000) +
+			((TimeStamp::UNIX_DATE - TimeStamp::MIN_DATE) * TimeStamp::ISC_TICKS_PER_DAY));
 	}
 
 	static void initTimeZoneEnv();
