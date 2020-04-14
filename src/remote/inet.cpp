@@ -2006,6 +2006,13 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
  *
  **************************************/
 
+// This code is used to test error handling in main server loop
+#ifdef NEVERDEF
+	static int dummyCnt = 0;
+	if (++dummyCnt % 64 == 0)
+		(Arg::Gds(isc_random) << "Simulated select_multi error").raise();
+#endif
+
 	for (;;)
 	{
 		select_port(main_port, &INET_select, port);
