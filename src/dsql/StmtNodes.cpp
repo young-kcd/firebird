@@ -5468,7 +5468,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	BoolExprNode* matchedConditions = NULL;
 	BoolExprNode* notMatchedConditions = NULL;
 
-	for (ObjectsArray<Matched>::iterator matched = whenMatched.begin();
+	for (auto matched = whenMatched.begin();
 		 matched != whenMatched.end();
 		 ++matched)
 	{
@@ -5481,7 +5481,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		}
 	}
 
-	for (ObjectsArray<NotMatched>::iterator notMatched = whenNotMatched.begin();
+	for (auto notMatched = whenNotMatched.begin();
 		 notMatched != whenNotMatched.end();
 		 ++notMatched)
 	{
@@ -5553,9 +5553,9 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	StmtNode* update = NULL;
 	IfNode* lastIf = NULL;
 
-	for (ObjectsArray<Matched>::iterator matched = whenMatched.begin();
+	for (auto nextMatched = whenMatched.begin(), matched = nextMatched++;
 		 matched != whenMatched.end();
-		 ++matched)
+		 matched = nextMatched++)
 	{
 		IfNode* thisIf = FB_NEW_POOL(pool) IfNode(pool);
 
@@ -5699,24 +5699,30 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			--dsqlScratch->scopeLevel;
 		}
 
+		if (!thisIf->condition && nextMatched != whenMatched.end())
+		{
+			ComparativeBoolNode* cmpNode = FB_NEW_POOL(pool) ComparativeBoolNode(pool,
+				blr_eql, MAKE_constant("1", CONSTANT_BOOLEAN), MAKE_constant("1", CONSTANT_BOOLEAN));
+			cmpNode->dsqlCheckBoolean = true;
+
+			NestConst<BoolExprNode> trueCondition(cmpNode);
+			thisIf->condition = doDsqlPass(dsqlScratch, trueCondition, false);
+		}
+
 		if (lastIf)
 			lastIf->falseAction = thisIf->condition ? thisIf : thisIf->trueAction;
 		else
 			update = thisIf->condition ? thisIf : thisIf->trueAction;
 
 		lastIf = thisIf;
-
-		// If a statement executes unconditionally, no other will ever execute.
-		if (!thisIf->condition)
-			break;
 	}
 
 	StmtNode* insert = NULL;
 	lastIf = NULL;
 
-	for (ObjectsArray<NotMatched>::iterator notMatched = whenNotMatched.begin();
+	for (auto nextNotMatched = whenNotMatched.begin(), notMatched = nextNotMatched++;
 		 notMatched != whenNotMatched.end();
-		 ++notMatched)
+		 notMatched = nextNotMatched++)
 	{
 		IfNode* thisIf = FB_NEW_POOL(pool) IfNode(pool);
 
@@ -5770,16 +5776,22 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		dsqlScratch->context->pop();
 		--dsqlScratch->scopeLevel;
 
+		if (!thisIf->condition && nextNotMatched != whenNotMatched.end())
+		{
+			ComparativeBoolNode* cmpNode = FB_NEW_POOL(pool) ComparativeBoolNode(pool,
+				blr_eql, MAKE_constant("1", CONSTANT_BOOLEAN), MAKE_constant("1", CONSTANT_BOOLEAN));
+			cmpNode->dsqlCheckBoolean = true;
+
+			NestConst<BoolExprNode> trueCondition(cmpNode);
+			thisIf->condition = doDsqlPass(dsqlScratch, trueCondition, false);
+		}
+
 		if (lastIf)
 			lastIf->falseAction = thisIf->condition ? thisIf : thisIf->trueAction;
 		else
 			insert = thisIf->condition ? thisIf : thisIf->trueAction;
 
 		lastIf = thisIf;
-
-		// If a statement executes unconditionally, no other will ever execute.
-		if (!thisIf->condition)
-			break;
 	}
 
 	// Build a IF (target.RDB$DB_KEY IS NULL).
@@ -6576,7 +6588,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 				else if (!relation->rel_view_rse)
 				{
 					// VIO_modify returns false if there is an update conflict in Read Consistency
-					// transaction. Before returning false it disables statement-level snapshot 
+					// transaction. Before returning false it disables statement-level snapshot
 					// (via setting req_update_conflict flag) so re-fetch should see new data.
 
 					if (!VIO_modify(tdbb, orgRpb, newRpb, transaction))
@@ -9627,7 +9639,7 @@ static void forceWriteLock(thread_db * tdbb, record_param * rpb, jrd_tra * trans
 	{
 		rpb->rpb_runtime_flags &= ~RPB_refetch;
 
-		// VIO_writelock returns false if record has been deleted or modified 
+		// VIO_writelock returns false if record has been deleted or modified
 		// by someone else.
 		if (VIO_writelock(tdbb, rpb, transaction))
 			break;
