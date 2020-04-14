@@ -5189,9 +5189,9 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	StmtNode* update = NULL;
 	IfNode* lastIf = NULL;
 
-	for (ObjectsArray<Matched>::iterator matched = whenMatched.begin();
+	for (ObjectsArray<Matched>::iterator nextMatched = whenMatched.begin(), matched = nextMatched++;
 		 matched != whenMatched.end();
-		 ++matched)
+		 matched = nextMatched++)
 	{
 		IfNode* thisIf = FB_NEW_POOL(pool) IfNode(pool);
 
@@ -5331,24 +5331,30 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			--dsqlScratch->scopeLevel;
 		}
 
+		if (!thisIf->condition && nextMatched != whenMatched.end())
+		{
+			ComparativeBoolNode* cmpNode = FB_NEW_POOL(pool) ComparativeBoolNode(pool,
+				blr_eql, MAKE_constant("1", CONSTANT_BOOLEAN), MAKE_constant("1", CONSTANT_BOOLEAN));
+			cmpNode->dsqlCheckBoolean = true;
+
+			NestConst<BoolExprNode> trueCondition(cmpNode);
+			thisIf->condition = doDsqlPass(dsqlScratch, trueCondition, false);
+		}
+
 		if (lastIf)
 			lastIf->falseAction = thisIf->condition ? thisIf : thisIf->trueAction;
 		else
 			update = thisIf->condition ? thisIf : thisIf->trueAction;
 
 		lastIf = thisIf;
-
-		// If a statement executes unconditionally, no other will ever execute.
-		if (!thisIf->condition)
-			break;
 	}
 
 	StmtNode* insert = NULL;
 	lastIf = NULL;
 
-	for (ObjectsArray<NotMatched>::iterator notMatched = whenNotMatched.begin();
+	for (ObjectsArray<NotMatched>::iterator nextNotMatched = whenNotMatched.begin(), notMatched = nextNotMatched++;
 		 notMatched != whenNotMatched.end();
-		 ++notMatched)
+		 notMatched = nextNotMatched++)
 	{
 		IfNode* thisIf = FB_NEW_POOL(pool) IfNode(pool);
 
@@ -5399,16 +5405,22 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		dsqlScratch->context->pop();
 		--dsqlScratch->scopeLevel;
 
+		if (!thisIf->condition && nextNotMatched != whenNotMatched.end())
+		{
+			ComparativeBoolNode* cmpNode = FB_NEW_POOL(pool) ComparativeBoolNode(pool,
+				blr_eql, MAKE_constant("1", CONSTANT_BOOLEAN), MAKE_constant("1", CONSTANT_BOOLEAN));
+			cmpNode->dsqlCheckBoolean = true;
+
+			NestConst<BoolExprNode> trueCondition(cmpNode);
+			thisIf->condition = doDsqlPass(dsqlScratch, trueCondition, false);
+		}
+
 		if (lastIf)
 			lastIf->falseAction = thisIf->condition ? thisIf : thisIf->trueAction;
 		else
 			insert = thisIf->condition ? thisIf : thisIf->trueAction;
 
 		lastIf = thisIf;
-
-		// If a statement executes unconditionally, no other will ever execute.
-		if (!thisIf->condition)
-			break;
 	}
 
 	// Build a IF (target.RDB$DB_KEY IS NULL).
