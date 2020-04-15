@@ -3,6 +3,7 @@
  *	MODULE:		13.null_pk.cpp
  *	DESCRIPTION:	Changing metadata, passed from DB engine, and using modified
  *					copy later. Useful for changing nullability or coercing datatype.
+ *					In this sample we insert NULLs in all columns.
  *
  *					Example for the following interfaces:
  *					IMessageMetadata - describe input and output data format
