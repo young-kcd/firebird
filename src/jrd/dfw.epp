@@ -485,6 +485,7 @@ static bool grant_privileges(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool db_crypt(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool set_linger(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool clear_cache(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool change_repl_state(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 
 // ----------------------------------------------------------------
 
@@ -1233,6 +1234,7 @@ static const deferred_task task_table[] =
 	{ dfw_db_crypt, db_crypt },
 	{ dfw_set_linger, set_linger },
 	{ dfw_clear_cache, clear_cache },
+	{ dfw_change_repl_state, change_repl_state },
 	{ dfw_null, NULL }
 };
 
@@ -6347,6 +6349,48 @@ static bool scan_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd
 
 	return false;
 }
+
+
+static bool change_repl_state(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra*)
+{
+/**************************************
+ *
+ *	c h a n g e _ r e p l _ s t a t e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Signal other processes to refresh their replication state.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
+	Attachment* const attachment = tdbb->getAttachment();
+
+	switch (phase)
+	{
+	case 1:
+	case 2:
+	case 3:
+		return true;
+
+	case 4:
+		if (work->dfw_id == 0)
+		{
+			// replication state is changed
+			dbb->invalidateReplState(tdbb, true);
+		}
+		else
+		{
+			// replication set is changed
+			attachment->invalidateReplSet(tdbb, true);
+		}
+		break;
+	}
+
+	return false;
+}
+
 
 #ifdef NOT_USED_OR_REPLACED
 static bool shadow_defined(thread_db* tdbb)

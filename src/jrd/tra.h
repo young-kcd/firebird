@@ -512,6 +512,7 @@ enum dfw_t {
 	dfw_check_not_null,
 	dfw_store_view_context_type,
 	dfw_set_generator,
+	dfw_change_repl_state,
 
 	// deferred works argument types
 	dfw_arg_index_name,		// index name for dfw_delete_expression_index, mandatory

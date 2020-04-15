@@ -243,25 +243,27 @@ public:
 
 	GCRecordList	rel_gc_records;		// records for garbage collection
 
-	USHORT		rel_use_count;		// requests compiled with relation
-	USHORT		rel_sweep_count;	// sweep and/or garbage collector threads active
-	SSHORT		rel_scan_count;		// concurrent sequential scan count
+	USHORT		rel_use_count;			// requests compiled with relation
+	USHORT		rel_sweep_count;		// sweep and/or garbage collector threads active
+	SSHORT		rel_scan_count;			// concurrent sequential scan count
 
-	Lock*		rel_existence_lock;	// existence lock, if any
-	Lock*		rel_partners_lock;	// partners lock
-	Lock*		rel_rescan_lock;	// lock forcing relation to be scanned
-	Lock*		rel_gc_lock;		// garbage collection lock
-	IndexLock*	rel_index_locks;	// index existence locks
-	IndexBlock*	rel_index_blocks;	// index blocks for caching index info
-	TrigVector*	rel_pre_erase; 		// Pre-operation erase trigger
-	TrigVector*	rel_post_erase;		// Post-operation erase trigger
-	TrigVector*	rel_pre_modify;		// Pre-operation modify trigger
-	TrigVector*	rel_post_modify;	// Post-operation modify trigger
-	TrigVector*	rel_pre_store;		// Pre-operation store trigger
-	TrigVector*	rel_post_store;		// Post-operation store trigger
-	prim		rel_primary_dpnds;	// foreign dependencies on this relation's primary key
-	frgn		rel_foreign_refs;	// foreign references to other relations' primary keys
+	Lock*		rel_existence_lock;		// existence lock, if any
+	Lock*		rel_partners_lock;		// partners lock
+	Lock*		rel_rescan_lock;		// lock forcing relation to be scanned
+	Lock*		rel_gc_lock;			// garbage collection lock
+	IndexLock*	rel_index_locks;		// index existence locks
+	IndexBlock*	rel_index_blocks;		// index blocks for caching index info
+	TrigVector*	rel_pre_erase; 			// Pre-operation erase trigger
+	TrigVector*	rel_post_erase;			// Post-operation erase trigger
+	TrigVector*	rel_pre_modify;			// Pre-operation modify trigger
+	TrigVector*	rel_post_modify;		// Post-operation modify trigger
+	TrigVector*	rel_pre_store;			// Pre-operation store trigger
+	TrigVector*	rel_post_store;			// Post-operation store trigger
+	prim		rel_primary_dpnds;		// foreign dependencies on this relation's primary key
+	frgn		rel_foreign_refs;		// foreign references to other relations' primary keys
 	Nullable<bool>	rel_ss_definer;
+
+	TriState	rel_repl_state;			// replication state
 
 	Firebird::Mutex rel_drop_mutex;
 
@@ -269,6 +271,8 @@ public:
 	bool isTemporary() const;
 	bool isVirtual() const;
 	bool isView() const;
+
+	bool isReplicating(thread_db* tdbb);
 
 	// global temporary relations attributes
 	RelationPages* getPages(thread_db* tdbb, TraNumber tran = MAX_TRA_NUMBER, bool allocPages = true);
@@ -393,7 +397,6 @@ const ULONG REL_jrd_view				= 0x10000;	// relation is VIEW
 const ULONG REL_gc_blocking				= 0x20000;	// request to downgrade\release gc lock
 const ULONG REL_gc_disabled				= 0x40000;	// gc is disabled temporarily
 const ULONG REL_gc_lockneed				= 0x80000;	// gc lock should be acquired
-const ULONG REL_replicating				= 0x100000;	// table is being replicated
 
 
 /// class jrd_rel

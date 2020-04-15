@@ -33,6 +33,7 @@
 #include "../jrd/Database.h"
 #include "../jrd/nbak.h"
 #include "../jrd/tra.h"
+#include "../jrd/met_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/tpc_proto.h"
 #include "../jrd/lck_proto.h"
@@ -302,6 +303,74 @@ namespace Jrd
 			PAG_set_repl_sequence(tdbb, sequence);
 			dbb_repl_sequence = sequence;
 		}
+	}
+
+	bool Database::isReplicating(thread_db* tdbb)
+	{
+		Sync sync(&dbb_repl_sync, FB_FUNCTION);
+		sync.lock(SYNC_SHARED);
+
+		if (dbb_repl_state.isUnknown())
+		{
+			sync.unlock();
+			sync.lock(SYNC_EXCLUSIVE);
+
+			if (dbb_repl_state.isUnknown())
+			{
+				if (!dbb_repl_lock)
+				{
+					dbb_repl_lock = FB_NEW_RPT(*dbb_permanent, 0)
+						Lock(tdbb, 0, LCK_repl_state, this, replStateAst);
+				}
+
+				dbb_repl_state = MET_get_repl_state(tdbb, "");
+
+				fb_assert(dbb_repl_lock->lck_logical == LCK_none);
+				LCK_lock(tdbb, dbb_repl_lock, LCK_SR, LCK_WAIT);
+			}
+		}
+
+		return dbb_repl_state.value;
+	}
+
+	void Database::invalidateReplState(thread_db* tdbb, bool broadcast)
+	{
+		SyncLockGuard guard(&dbb_repl_sync, SYNC_EXCLUSIVE, FB_FUNCTION);
+
+		dbb_repl_state.invalidate();
+
+		if (broadcast)
+		{
+			if (!dbb_repl_lock)
+			{
+				dbb_repl_lock = FB_NEW_RPT(*dbb_permanent, 0)
+					Lock(tdbb, 0, LCK_repl_state, this, replStateAst);
+			}
+
+			// Signal other processes about the changed state
+			if (dbb_repl_lock->lck_logical == LCK_none)
+				LCK_lock(tdbb, dbb_repl_lock, LCK_EX, LCK_WAIT);
+			else
+				LCK_convert(tdbb, dbb_repl_lock, LCK_EX, LCK_WAIT);
+		}
+
+		LCK_release(tdbb, dbb_repl_lock);
+	}
+
+	int Database::replStateAst(void* ast_object)
+	{
+		Database* const dbb = static_cast<Database*>(ast_object);
+
+		try
+		{
+			AsyncContextHolder tdbb(dbb, FB_FUNCTION);
+
+			dbb->invalidateReplState(tdbb, false);
+		}
+		catch (const Exception&)
+		{} // no-op
+
+		return 0;
 	}
 
 	void Database::initGlobalObjectHolder(thread_db* tdbb)

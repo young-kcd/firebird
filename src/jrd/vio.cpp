@@ -97,6 +97,7 @@ using namespace Firebird;
 static void check_class(thread_db*, jrd_tra*, record_param*, record_param*, USHORT);
 static bool check_nullify_source(thread_db*, record_param*, record_param*, int, int = -1);
 static void check_owner(thread_db*, jrd_tra*, record_param*, record_param*, USHORT);
+static void check_repl_state(thread_db*, jrd_tra*, record_param*, record_param*, USHORT);
 static bool check_user(thread_db*, const dsc*);
 static int check_precommitted(const jrd_tra*, const record_param*);
 static void check_rel_field_class(thread_db*, record_param*, jrd_tra*);
@@ -1606,7 +1607,9 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_filters:
 		case rel_vrel:
 		case rel_args:
-		case rel_pub_tables:
+		case rel_packages:
+		case rel_charsets:
+		case rel_pubs:
 			protect_system_table_delupd(tdbb, relation, "DELETE");
 			break;
 
@@ -1627,10 +1630,6 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			}
 			break;
 
-		case rel_packages:
-			protect_system_table_delupd(tdbb, relation, "DELETE");
-			break;
-
 		case rel_procedures:
 			protect_system_table_delupd(tdbb, relation, "DELETE");
 			EVL_field(0, rpb->rpb_record, f_prc_id, &desc2);
@@ -1643,10 +1642,6 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 			DFW_post_work(transaction, dfw_delete_procedure, &desc, id, package_name);
 			MET_lookup_procedure_id(tdbb, id, false, true, 0);
-			break;
-
-		case rel_charsets:
-			protect_system_table_delupd(tdbb, relation, "DELETE");
 			break;
 
 		case rel_collations:
@@ -1856,8 +1851,9 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			DFW_post_work(transaction, dfw_grant, &desc, id);
 			break;
 
-		case rel_pubs:
+		case rel_pub_tables:
 			protect_system_table_delupd(tdbb, relation, "DELETE");
+			DFW_post_work(transaction, dfw_change_repl_state, "", 1);
 			break;
 
 		default:    // Shut up compiler warnings
@@ -2863,6 +2859,7 @@ bool VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		case rel_prc_prms:
 		case rel_auth_mapping:
 		case rel_roles:
+		case rel_ccon:
 		case rel_pub_tables:
 			protect_system_table_delupd(tdbb, relation, "UPDATE");
 			break;
@@ -2889,10 +2886,6 @@ bool VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		case rel_backup_history:
 		case rel_global_auth_mapping:
 			protect_system_table_delupd(tdbb, relation, "UPDATE", true);
-			break;
-
-		case rel_ccon:
-			protect_system_table_delupd(tdbb, relation, "UPDATE");
 			break;
 
 		case rel_database:
@@ -3153,6 +3146,7 @@ bool VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		case rel_pubs:
 			protect_system_table_delupd(tdbb, relation, "UPDATE");
 			check_owner(tdbb, transaction, org_rpb, new_rpb, f_pub_owner);
+			check_repl_state(tdbb, transaction, org_rpb, new_rpb, f_pub_active_flag);
 			break;
 
 		default:
@@ -3503,7 +3497,6 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_dpds:
 		case rel_dims:
 		case rel_segments:
-		case rel_pub_tables:
 			protect_system_table_insert(tdbb, request, relation);
 			break;
 
@@ -3798,6 +3791,11 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			protect_system_table_insert(tdbb, request, relation);
 			set_system_flag(tdbb, rpb->rpb_record, f_pub_sys_flag);
 			set_owner_name(tdbb, rpb->rpb_record, f_pub_owner);
+			break;
+
+		case rel_pub_tables:
+			protect_system_table_insert(tdbb, request, relation);
+			DFW_post_work(transaction, dfw_change_repl_state, "", 1);
 			break;
 
 		default:    // Shut up compiler warnings
@@ -4320,6 +4318,40 @@ static void check_owner(thread_db* tdbb,
 	// Note: NULL->USER and USER->NULL changes also cause the error to be raised
 
 	ERR_post(Arg::Gds(isc_protect_ownership));
+}
+
+
+static void check_repl_state(thread_db* tdbb,
+							 jrd_tra* transaction,
+							 record_param* org_rpb,
+							 record_param* new_rpb,
+							 USHORT id)
+{
+/**************************************
+ *
+ *	c h e c k _ r e p l _ s t a t e
+ *
+ **************************************
+ *
+ * Functional description
+ *	A record in a system relation containing a replication state is
+ *	being changed.  Check to see if the replication state has changed,
+ *	and if so, post the change.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	dsc desc1, desc2;
+	const bool flag_org = EVL_field(0, org_rpb->rpb_record, id, &desc1);
+	const bool flag_new = EVL_field(0, new_rpb->rpb_record, id, &desc2);
+
+	if (!flag_org && !flag_new)
+		return;
+
+	if (flag_org && flag_new && !MOV_compare(tdbb, &desc1, &desc2))
+		return;
+
+	DFW_post_work(transaction, dfw_change_repl_state, "", 0);
 }
 
 

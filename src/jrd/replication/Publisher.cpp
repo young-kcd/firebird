@@ -69,7 +69,7 @@ namespace
 
 			if (status->getState() & IStatus::STATE_ERRORS)
 			{
-				Firebird::string msg;
+				string msg;
 				msg.printf("Database: %s\n\t%s", dbb->dbb_filename.c_str(), LOG_ERROR_MSG);
 				iscLogStatus(msg.c_str(), status);
 			}
@@ -77,6 +77,18 @@ namespace
 			attachment->att_replicator->dispose();
 			attachment->att_replicator = NULL;
 		}
+	}
+
+	bool checkState(thread_db* tdbb, jrd_tra* transaction = NULL)
+	{
+		const auto dbb = tdbb->getDatabase();
+		fb_assert(dbb);
+
+		if (dbb->isReplicating(tdbb))
+			return true;
+
+		handleError(tdbb, transaction);
+		return false;
 	}
 
 	Record* upgradeRecord(thread_db* tdbb, jrd_rel* relation, Record* record)
@@ -124,7 +136,7 @@ namespace
 			transaction->tra_replicator = replicator->startTransaction(transaction->tra_number);
 
 			if (!transaction->tra_replicator)
-				handleError(tdbb);
+				handleError(tdbb, transaction);
 		}
 
 		return transaction->tra_replicator;
@@ -158,7 +170,7 @@ namespace
 
 			if (!replicator->startSavepoint())
 			{
-				handleError(tdbb);
+				handleError(tdbb, transaction);
 				return false;
 			}
 
@@ -169,7 +181,7 @@ namespace
 	}
 
 	class ReplicatedRecordImpl :
-		public Firebird::AutoIface<Firebird::IReplicatedRecordImpl<ReplicatedRecordImpl, Firebird::CheckStatusWrapper> >
+		public AutoIface<IReplicatedRecordImpl<ReplicatedRecordImpl, CheckStatusWrapper> >
 	{
 	public:
 		ReplicatedRecordImpl(thread_db* tdbb, const Record* record)
@@ -198,7 +210,7 @@ namespace
 	};
 
 	class ReplicatedBlobImpl :
-		public Firebird::AutoIface<Firebird::IReplicatedBlobImpl<ReplicatedBlobImpl, Firebird::CheckStatusWrapper> >
+		public AutoIface<IReplicatedBlobImpl<ReplicatedBlobImpl, CheckStatusWrapper> >
 	{
 	public:
 		ReplicatedBlobImpl(thread_db* tdbb, jrd_tra* transaction, const bid* blobId) :
@@ -260,6 +272,9 @@ void REPL_attach(thread_db* tdbb, bool cleanupTransactions)
 	const auto dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
+	if (!dbb->isReplicating(tdbb))
+		return;
+
 	dbb->ensureGuid(tdbb);
 
 	const auto replMgr = dbb->replManager();
@@ -284,7 +299,7 @@ void REPL_trans_prepare(thread_db* tdbb, jrd_tra* transaction)
 	if (!replicator)
 		return;
 
-	if (transaction->tra_flags & (TRA_system | TRA_readonly))
+	if (!checkState(tdbb, transaction))
 		return;
 
 	if (!replicator->prepare())
@@ -298,7 +313,7 @@ void REPL_trans_commit(thread_db* tdbb, jrd_tra* transaction)
 	if (!replicator)
 		return;
 
-	if (transaction->tra_flags & (TRA_system | TRA_readonly))
+	if (!checkState(tdbb, transaction))
 		return;
 
 	if (!replicator->commit())
@@ -314,7 +329,7 @@ void REPL_trans_rollback(thread_db* tdbb, jrd_tra* transaction)
 	if (!replicator)
 		return;
 
-	if (transaction->tra_flags & (TRA_system | TRA_readonly))
+	if (!checkState(tdbb, transaction))
 		return;
 
 	if (!replicator->rollback())
@@ -331,6 +346,9 @@ void REPL_trans_cleanup(Jrd::thread_db* tdbb, TraNumber number)
 	const auto replicator = attachment->att_replicator;
 
 	if (!replicator)
+		return;
+
+	if (!checkState(tdbb))
 		return;
 
 	if (!replicator->cleanupTransaction(number))
@@ -351,10 +369,10 @@ void REPL_save_cleanup(thread_db* tdbb, jrd_tra* transaction,
 	if (tdbb->tdbb_flags & (TDBB_dont_post_dfw | TDBB_repl_sql))
 		return;
 
-	if (transaction->tra_flags & (TRA_system | TRA_readonly))
+	if (!transaction->tra_save_point->isReplicated())
 		return;
 
-	if (!transaction->tra_save_point->isReplicated())
+	if (!checkState(tdbb, transaction))
 		return;
 
 	if (undo)
@@ -383,6 +401,9 @@ void REPL_store(thread_db* tdbb, const record_param* rpb, jrd_tra* transaction)
 	if (transaction->tra_flags & (TRA_system | TRA_readonly))
 		return;
 
+	if (!checkState(tdbb, transaction))
+		return;
+
 	const auto relation = rpb->rpb_relation;
 	fb_assert(relation);
 
@@ -391,7 +412,7 @@ void REPL_store(thread_db* tdbb, const record_param* rpb, jrd_tra* transaction)
 
 	if (!relation->isSystem())
 	{
-		if (!(relation->rel_flags & REL_replicating))
+		if (!relation->isReplicating(tdbb))
 			return;
 
 		const auto matcher = attachment->att_repl_matcher.get();
@@ -429,7 +450,7 @@ void REPL_store(thread_db* tdbb, const record_param* rpb, jrd_tra* transaction)
 
 				if (!replicator->storeBlob(blobId, &replBlob))
 				{
-					handleError(tdbb);
+					handleError(tdbb, transaction);
 					return;
 				}
 			}
@@ -460,6 +481,9 @@ void REPL_modify(thread_db* tdbb, const record_param* orgRpb,
 	if (transaction->tra_flags & (TRA_system | TRA_readonly))
 		return;
 
+	if (!checkState(tdbb, transaction))
+		return;
+
 	const auto relation = newRpb->rpb_relation;
 	fb_assert(relation);
 
@@ -468,7 +492,7 @@ void REPL_modify(thread_db* tdbb, const record_param* orgRpb,
 
 	if (!relation->isSystem())
 	{
-		if (!(relation->rel_flags & REL_replicating))
+		if (!relation->isReplicating(tdbb))
 			return;
 
 		const auto matcher = attachment->att_repl_matcher.get();
@@ -520,7 +544,7 @@ void REPL_modify(thread_db* tdbb, const record_param* orgRpb,
 
 				if (!replicator->storeBlob(blobId, &replBlob))
 				{
-					handleError(tdbb);
+					handleError(tdbb, transaction);
 					return;
 				}
 			}
@@ -552,6 +576,9 @@ void REPL_erase(thread_db* tdbb, const record_param* rpb, jrd_tra* transaction)
 	if (transaction->tra_flags & (TRA_system | TRA_readonly))
 		return;
 
+	if (!checkState(tdbb, transaction))
+		return;
+
 	const auto relation = rpb->rpb_relation;
 	fb_assert(relation);
 
@@ -560,7 +587,7 @@ void REPL_erase(thread_db* tdbb, const record_param* rpb, jrd_tra* transaction)
 
 	if (!relation->isSystem())
 	{
-		if (!(relation->rel_flags & REL_replicating))
+		if (!relation->isReplicating(tdbb))
 			return;
 
 		const auto matcher = attachment->att_repl_matcher.get();
@@ -614,6 +641,9 @@ void REPL_gen_id(thread_db* tdbb, SLONG genId, SINT64 value)
 		}
 	}
 
+	if (!checkState(tdbb))
+		return;
+
 	MetaName genName;
 
 	if (!attachment->att_generators.lookup(genId, genName))
@@ -640,6 +670,9 @@ void REPL_exec_sql(thread_db* tdbb, jrd_tra* transaction, const string& sql)
 		return;
 
 	if (transaction->tra_flags & (TRA_system | TRA_readonly))
+		return;
+
+	if (!checkState(tdbb, transaction))
 		return;
 
 	const auto replicator = ensureTransaction(tdbb, transaction);

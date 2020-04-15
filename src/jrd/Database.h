@@ -514,8 +514,12 @@ public:
 	time_t dbb_linger_end;
 	Firebird::RefPtr<Firebird::IPluginConfig> dbb_plugin_config;
 
+	TriState dbb_repl_state;			// replication state
+	Lock* dbb_repl_lock;				// replication state lock
+	Firebird::SyncObject dbb_repl_sync;
 	FB_UINT64 dbb_repl_sequence;		// replication sequence
 	ReplicaMode dbb_replica_mode;		// replica access mode
+
 	unsigned dbb_compatibility_index;	// datatype backward compatibility level
 
 	// returns true if primary file is located on raw device
@@ -620,6 +624,9 @@ public:
 	void ensureGuid(thread_db* tdbb);
 	FB_UINT64 getReplSequence(thread_db* tdbb);
 	void setReplSequence(thread_db* tdbb, FB_UINT64 sequence);
+	bool isReplicating(thread_db* tdbb);
+	void invalidateReplState(thread_db* tdbb, bool broadcast);
+	static int replStateAst(void*);
 
 	const CoercionArray *getBindings() const;
 

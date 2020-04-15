@@ -1760,6 +1760,52 @@ jrd_fld* MET_get_field(const jrd_rel* relation, USHORT id)
 }
 
 
+bool MET_get_repl_state(Jrd::thread_db* tdbb, const Firebird::MetaName& name)
+{
+/**************************************
+ *
+ *      M E T _ g e t _ r e p l _ s t a t e
+ *
+ **************************************
+ *
+ * Functional description
+ *      Return relication state (enabled/disabled)
+ *      for either database or given relation.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Attachment* const attachment = tdbb->getAttachment();
+
+	AutoRequest handle;
+	bool state = false;
+
+	if (name.hasData())
+	{
+		FOR(REQUEST_HANDLE handle)
+			PTAB IN RDB$PUBLICATION_TABLES
+			WITH PTAB.RDB$TABLE_NAME EQ name.c_str()
+		{
+			state = true;
+			break;
+		}
+		END_FOR
+	}
+	else
+	{
+		FOR(REQUEST_HANDLE handle)
+			PUB IN RDB$PUBLICATIONS
+			WITH PUB.RDB$ACTIVE_FLAG EQ 1
+		{
+			state = true;
+			break;
+		}
+		END_FOR
+	}
+
+	return state;
+}
+
+
 void MET_get_shadow_files(thread_db* tdbb, bool delete_files)
 {
 /**************************************
@@ -4084,23 +4130,6 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 	END_FOR
 
 	delete csb;
-
-	// Get publication state for this relation
-
-	request.reset(tdbb, irq_l_pub_tab_state, IRQ_REQUESTS);
-
-	relation->rel_flags &= ~REL_replicating;
-
-	FOR(REQUEST_HANDLE request)
-		PUB IN RDB$PUBLICATIONS CROSS
-		PTAB IN RDB$PUBLICATION_TABLES OVER RDB$PUBLICATION_NAME
-		WITH PUB.RDB$PUBLICATION_NAME EQ DEFAULT_PUBLICATION
-			AND PUB.RDB$ACTIVE_FLAG EQ 1
-			AND PTAB.RDB$TABLE_NAME EQ relation->rel_name.c_str()
-	{
-		relation->rel_flags |= REL_replicating;
-	}
-	END_FOR
 
 	// release any triggers in case of a rescan, but not if the rescan
 	// hapenned while system triggers were being loaded.

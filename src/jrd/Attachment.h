@@ -158,6 +158,7 @@ const ULONG ATT_security_db			= 0x20000L; // Attachment used for security purpos
 const ULONG ATT_mapping				= 0x40000L; // Attachment used for mapping auth block
 const ULONG ATT_crypt_thread		= 0x80000L; // Attachment from crypt thread
 const ULONG ATT_monitor_init		= 0x100000L; // Attachment is registered in monitoring
+const ULONG ATT_repl_reset			= 0x200000L; // Replication set has been reset
 
 const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
 
@@ -508,6 +509,7 @@ public:
 	static int blockingAstShutdown(void*);
 	static int blockingAstCancel(void*);
 	static int blockingAstMonitor(void*);
+	static int blockingAstReplSet(void*);
 
 	Firebird::Array<MemoryPool*>	att_pools;		// pools
 
@@ -634,6 +636,9 @@ public:
 		return att_initial_options.getBindings();
 	}
 
+	void checkReplSetLock(thread_db* tdbb);
+	void invalidateReplSet(thread_db* tdbb, bool broadcast);
+
 
 private:
 	Attachment(MemoryPool* pool, Database* dbb);
@@ -673,6 +678,8 @@ private:
 
 	Firebird::Array<JBatch*> att_batches;
 	InitialOptions att_initial_options;		// Initial session options
+
+	Lock* att_repl_lock;				// Replication set lock
 };
 
 

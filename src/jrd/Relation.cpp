@@ -36,6 +36,17 @@ using namespace Jrd;
 
 /// jrd_rel
 
+bool jrd_rel::isReplicating(thread_db* tdbb)
+{
+	Attachment* const attachment = tdbb->getAttachment();
+	attachment->checkReplSetLock(tdbb);
+
+	if (rel_repl_state.isUnknown())
+		rel_repl_state = MET_get_repl_state(tdbb, rel_name);
+
+	return rel_repl_state.value;
+}
+
 RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool allocPages)
 {
 	if (tdbb->tdbb_flags & TDBB_use_db_page_space)
