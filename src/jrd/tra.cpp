@@ -3635,6 +3635,9 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 				LCK_write_data(tdbb, lock, 0); // Fully disinhibit GC for this transaction
 			trans->tra_flags |= TRA_precommitted;
 		}
+
+		if (dbb->isReplicating(tdbb))
+			trans->tra_flags |= TRA_replicating;
 	}
 	catch (const Firebird::Exception&)
 	{

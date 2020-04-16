@@ -123,7 +123,8 @@ namespace
 	{
 		// Create a transaction object, unless it already exists
 
-		if (!transaction->tra_replicator)
+		if (!transaction->tra_replicator &&
+			(transaction->tra_flags & TRA_replicating))
 		{
 			const auto attachment = tdbb->getAttachment();
 			fb_assert(attachment);
