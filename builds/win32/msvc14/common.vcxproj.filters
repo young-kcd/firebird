@@ -470,9 +470,6 @@
     <ClInclude Include="..\..\..\src\common\classes\tree.h">
       <Filter>headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\common\classes\TriState.h">
-      <Filter>headers</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\common\classes\UserBlob.h">
       <Filter>headers</Filter>
     </ClInclude>
