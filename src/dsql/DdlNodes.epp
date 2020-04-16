@@ -7364,6 +7364,44 @@ void RelationNode::stuffTriggerFiringCondition(const Constraint& constraint, Blr
 }
 
 
+void RelationNode::addToPublication(thread_db* tdbb,
+									jrd_tra* transaction,
+									const MetaName& tableName,
+									const MetaName& pubName)
+{
+	AutoCacheRequest request(tdbb, drq_s_pub_tab, DYN_REQUESTS);
+
+	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		PTAB IN RDB$PUBLICATION_TABLES
+	{
+		strcpy(PTAB.RDB$PUBLICATION_NAME, pubName.c_str());
+		PTAB.RDB$PUBLICATION_NAME.NULL = FALSE;
+
+		strcpy(PTAB.RDB$TABLE_NAME, tableName.c_str());
+		PTAB.RDB$TABLE_NAME.NULL = FALSE;
+	}
+	END_STORE
+}
+
+
+void RelationNode::dropFromPublication(thread_db* tdbb,
+									   jrd_tra* transaction,
+									   const MetaName& tableName,
+									   const MetaName& pubName)
+{
+	AutoCacheRequest request(tdbb, drq_e_pub_tab, DYN_REQUESTS);
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		PTAB IN RDB$PUBLICATION_TABLES
+		WITH PTAB.RDB$PUBLICATION_NAME EQ pubName.c_str()
+			AND PTAB.RDB$TABLE_NAME EQ tableName.c_str()
+	{
+		ERASE PTAB;
+	}
+	END_FOR
+}
+
+
 //----------------------
 
 
@@ -7464,19 +7502,7 @@ void CreateRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScrat
 	if (replicationEnabled)
 	{
 		// Add table to the default publication
-
-		AutoCacheRequest request2(tdbb, drq_s_pub_tab, DYN_REQUESTS);
-
-		STORE(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
-			PTAB IN RDB$PUBLICATION_TABLES
-		{
-			strcpy(PTAB.RDB$PUBLICATION_NAME, DEFAULT_PUBLICATION);
-			PTAB.RDB$PUBLICATION_NAME.NULL = FALSE;
-
-			strcpy(PTAB.RDB$TABLE_NAME, name.c_str());
-			PTAB.RDB$TABLE_NAME.NULL = FALSE;
-		}
-		END_STORE
+		RelationNode::addToPublication(tdbb, transaction, name, DEFAULT_PUBLICATION);
 	}
 
 	storePrivileges(tdbb, transaction, name, obj_relation, ALL_PRIVILEGES);
@@ -7831,18 +7857,8 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 
 						try
 						{
-							AutoCacheRequest request(tdbb, drq_s_pub_tab, DYN_REQUESTS);
-
-							STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-								PTAB IN RDB$PUBLICATION_TABLES
-							{
-								strcpy(PTAB.RDB$PUBLICATION_NAME, DEFAULT_PUBLICATION);
-								PTAB.RDB$PUBLICATION_NAME.NULL = FALSE;
-
-								strcpy(PTAB.RDB$TABLE_NAME, name.c_str());
-								PTAB.RDB$TABLE_NAME.NULL = FALSE;
-							}
-							END_STORE
+							RelationNode::addToPublication(tdbb, transaction,
+														   name, DEFAULT_PUBLICATION);
 						}
 						catch (const status_exception& ex)
 						{
@@ -7857,16 +7873,8 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 					{
 						// Drop table from the publication
 
-						AutoCacheRequest request(tdbb, drq_e_pub_tab, DYN_REQUESTS);
-
-						FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-							PTAB IN RDB$PUBLICATION_TABLES
-							WITH PTAB.RDB$PUBLICATION_NAME EQ DEFAULT_PUBLICATION
-								AND PTAB.RDB$TABLE_NAME EQ name.c_str()
-						{
-							ERASE PTAB;
-						}
-						END_FOR
+						RelationNode::dropFromPublication(tdbb, transaction,
+														  name, DEFAULT_PUBLICATION);
 					}
 
 					break;
@@ -12625,18 +12633,8 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 			{
 				try
 				{
-					AutoCacheRequest request(tdbb, drq_s_pub_tab, DYN_REQUESTS);
-
-					STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-						PTAB IN RDB$PUBLICATION_TABLES
-					{
-						strcpy(PTAB.RDB$PUBLICATION_NAME, DEFAULT_PUBLICATION);
-						PTAB.RDB$PUBLICATION_NAME.NULL = FALSE;
-
-						strcpy(PTAB.RDB$TABLE_NAME, tableName.c_str());
-						PTAB.RDB$TABLE_NAME.NULL = FALSE;
-					}
-					END_STORE
+					RelationNode::addToPublication(tdbb, transaction,
+												   tableName, DEFAULT_PUBLICATION);
 				}
 				catch (const status_exception& ex)
 				{
@@ -12649,16 +12647,8 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 			}
 			else
 			{
-				AutoCacheRequest request(tdbb, drq_e_pub_tab, DYN_REQUESTS);
-
-				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-					PTAB IN RDB$PUBLICATION_TABLES
-					WITH PTAB.RDB$PUBLICATION_NAME EQ DEFAULT_PUBLICATION
-						AND PTAB.RDB$TABLE_NAME EQ tableName.c_str()
-				{
-					ERASE PTAB;
-				}
-				END_FOR
+				RelationNode::dropFromPublication(tdbb, transaction,
+												  tableName, DEFAULT_PUBLICATION);
 			}
 		}
 	}

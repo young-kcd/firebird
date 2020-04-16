@@ -1504,6 +1504,11 @@ public:
 	static void deleteLocalField(thread_db* tdbb, jrd_tra* transaction,
 		const Firebird::MetaName& relationName, const Firebird::MetaName& fieldName);
 
+	static void addToPublication(thread_db* tdbb, jrd_tra* transaction,
+		const Firebird::MetaName& tableName, const Firebird::MetaName& pubTame);
+	static void dropFromPublication(thread_db* tdbb, jrd_tra* transaction,
+		const Firebird::MetaName& tableName, const Firebird::MetaName& pubTame);
+
 protected:
 	virtual Firebird::string internalPrint(NodePrinter& printer) const
 	{
