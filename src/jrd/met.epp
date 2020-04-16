@@ -1250,8 +1250,16 @@ Format* MET_current(thread_db* tdbb, jrd_rel* relation)
  *
  **************************************/
 
-	if (relation->rel_current_format)
+	// dimitr:	rel_current_format may sometimes get out of sync,
+	//			e.g. after DFW error raised during ALTER TABLE command.
+	//			Thus it makes sense to validate it before usage and
+	//			fetch the proper one if something is suspicious.
+
+	if (relation->rel_current_format &&
+		relation->rel_current_format->fmt_version == relation->rel_current_fmt)
+	{
 		return relation->rel_current_format;
+	}
 
 	SET_TDBB(tdbb);
 	Attachment* attachment = tdbb->getAttachment();
