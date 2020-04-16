@@ -1762,8 +1762,8 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 				pageSpace->file = PIO_open(tdbb, expanded_name, org_filename);
 
-				// Initialize the lock manager
-				dbb->dbb_lock_mgr = LockManager::create(dbb->getUniqueFileId(), dbb->dbb_config);
+				// Initialize the global object holder
+				dbb->initGlobalObjectHolder(tdbb);
 
 				// Initialize locks
 				LCK_init(tdbb, LCK_OWNER_database);
@@ -1829,8 +1829,6 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 						err << Arg::Gds(isc_baddpb_damaged_mode);
 					err.raise();
 				}
-
-				fb_assert(dbb->dbb_lock_mgr);
 
 				LCK_init(tdbb, LCK_OWNER_attachment);
 				check_single_maintenance(tdbb);
@@ -2374,11 +2372,10 @@ void JEvents::freeEngineData(CheckStatusWrapper* user_status)
 		try
 		{
 			Database* const dbb = tdbb->getDatabase();
+			Attachment* const attachment = tdbb->getAttachment();
 
-			if (dbb->dbb_event_mgr)
-			{
-				dbb->dbb_event_mgr->cancelEvents(id);
-			}
+			if (attachment->att_event_session)
+				dbb->eventManager()->cancelEvents(id);
 
 			id = -1;
 		}
@@ -2961,8 +2958,8 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			os_utils::getUniqueFileId(dbb->dbb_filename.c_str(), dbb->dbb_id);
 #endif
 
-			// Initialize the lock manager
-			dbb->dbb_lock_mgr = LockManager::create(dbb->getUniqueFileId(), dbb->dbb_config);
+			// Initialize the global object holder
+			dbb->initGlobalObjectHolder(tdbb);
 
 			// Initialize locks
 			LCK_init(tdbb, LCK_OWNER_database);
@@ -3006,6 +3003,9 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			PAG_format_pip(tdbb, *pageSpace);
 
 			dbb->dbb_page_manager.initTempPageSpace(tdbb);
+
+			GenerateGuid(&dbb->dbb_guid);
+			PAG_set_db_guid(tdbb, dbb->dbb_guid);
 
 			if (options.dpb_set_page_buffers)
 				PAG_set_page_buffers(tdbb, options.dpb_page_buffers);
@@ -3747,11 +3747,13 @@ JEvents* JAttachment::queEvents(CheckStatusWrapper* user_status, IEventCallback*
 		try
 		{
 			Database* const dbb = tdbb->getDatabase();
+			Attachment* const attachment = getHandle();
 
-			EventManager::init(getHandle());
+			EventManager::init(attachment);
 
-			int id = dbb->dbb_event_mgr->queEvents(getHandle()->att_event_session,
-												   length, events, callback);
+			const int id = dbb->eventManager()->queEvents(attachment->att_event_session,
+														  length, events, callback);
+
 			ev = FB_NEW JEvents(id, getStable(), callback);
 			ev->addRef();
 		}
@@ -7464,8 +7466,8 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	if (dbb->dbb_config->getServerMode() == MODE_SUPER)
 		attachment->releaseGTTs(tdbb);
 
-	if (dbb->dbb_event_mgr && attachment->att_event_session)
-		dbb->dbb_event_mgr->deleteSession(attachment->att_event_session);
+	if (attachment->att_event_session)
+		dbb->eventManager()->deleteSession(attachment->att_event_session);
 
     // CMP_release() changes att_requests.
 	while (attachment->att_requests.hasData())

@@ -86,22 +86,24 @@ namespace Jrd
 		return dbb_tip_cache->generateStatementId();
 	}
 
-	string Database::getUniqueFileId() const
+	const Firebird::string& Database::getUniqueFileId()
 	{
-		const PageSpace* const pageSpace = dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-
-		UCharBuffer buffer;
-		os_utils::getUniqueFileId(pageSpace->file->fil_desc, buffer);
-
-		string file_id;
-		char* s = file_id.getBuffer(2 * buffer.getCount());
-		for (FB_SIZE_T i = 0; i < buffer.getCount(); i++)
+		if (dbb_file_id.isEmpty())
 		{
-			sprintf(s, "%02x", (int) buffer[i]);
-			s += 2;
+			const PageSpace* const pageSpace = dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+
+			UCharBuffer buffer;
+			os_utils::getUniqueFileId(pageSpace->file->fil_desc, buffer);
+
+			auto ptr = dbb_file_id.getBuffer(2 * buffer.getCount());
+			for (const auto val : buffer)
+			{
+				sprintf(ptr, "%02x", (int) val);
+				ptr += 2;
+			}
 		}
 
-		return file_id;
+		return dbb_file_id;
 	}
 
 	Database::~Database()
@@ -131,11 +133,6 @@ namespace Jrd
 		delete dbb_monitoring_data;
 		delete dbb_backup_manager;
 		delete dbb_crypto_manager;
-		fb_assert(!locked());
-		// This line decrements the usage counter and may cause the destructor to be called.
-		// It should happen with the dbb_sync unlocked.
-		LockManager::destroy(dbb_lock_mgr);
-		EventManager::destroy(dbb_event_mgr);
 	}
 
 	void Database::deletePool(MemoryPool* pool)
@@ -277,6 +274,44 @@ namespace Jrd
 			dbb_modules.add(module);
 	}
 
+	void Database::ensureGuid(thread_db* tdbb)
+	{
+		if (readOnly())
+			return;
+
+		if (!dbb_guid.alignment) // hackery way to check whether it was loaded
+		{
+			GenerateGuid(&dbb_guid);
+			PAG_set_db_guid(tdbb, dbb_guid);
+		}
+	}
+
+	FB_UINT64 Database::getReplSequence(thread_db* tdbb)
+	{
+		USHORT length = sizeof(FB_UINT64);
+		if (!PAG_get_clump(tdbb, Ods::HDR_repl_seq, &length, (UCHAR*) &dbb_repl_sequence))
+			return 0;
+
+		return dbb_repl_sequence;
+	}
+
+	void Database::setReplSequence(thread_db* tdbb, FB_UINT64 sequence)
+	{
+		if (dbb_repl_sequence != sequence)
+		{
+			PAG_set_repl_sequence(tdbb, sequence);
+			dbb_repl_sequence = sequence;
+		}
+	}
+
+	void Database::initGlobalObjectHolder(thread_db* tdbb)
+	{
+		dbb_gblobj_holder =
+			GlobalObjectHolder::init(getUniqueFileId(), dbb_filename, dbb_config);
+	}
+
+	// Database::Linger class implementation
+
 	void Database::Linger::handler()
 	{
 		JRD_shutdown_database(dbb, SHUT_DBB_RELEASE_POOLS);
@@ -321,34 +356,68 @@ namespace Jrd
 		reset();
 	}
 
-	void Database::ensureGuid(thread_db* tdbb)
-	{
-		if (readOnly())
-			return;
+	// Database::GlobalObjectHolder class implementation
 
-		if (!dbb_guid.alignment) // hackery way to check whether it was loaded
+	Database::GlobalObjectHolder* Database::GlobalObjectHolder::init(const string& id,
+																	 const PathName& filename,
+																	 RefPtr<const Config> config)
+	{
+		MutexLockGuard guard(g_mutex, FB_FUNCTION);
+
+		Database::GlobalObjectHolder::DbId* entry = g_hashTable->lookup(id);
+		if (!entry)
 		{
-			GenerateGuid(&dbb_guid);
-			PAG_set_db_guid(tdbb, dbb_guid);
+			const auto holder = FB_NEW Database::GlobalObjectHolder(id, filename, config);
+			entry = FB_NEW Database::GlobalObjectHolder::DbId(id, holder);
+			g_hashTable->add(entry);
 		}
+
+		return entry->holder;
 	}
 
-	FB_UINT64 Database::getReplSequence(thread_db* tdbb)
+	Database::GlobalObjectHolder::~GlobalObjectHolder()
 	{
-		USHORT length = sizeof(FB_UINT64);
-		if (!PAG_get_clump(tdbb, Ods::HDR_repl_seq, &length, (UCHAR*) &dbb_repl_sequence))
-			return 0;
+		MutexLockGuard guard(g_mutex, FB_FUNCTION);
 
-		return dbb_repl_sequence;
+		if (!g_hashTable->remove(m_id))
+			fb_assert(false);
 	}
 
-	void Database::setReplSequence(thread_db* tdbb, FB_UINT64 sequence)
+	LockManager* Database::GlobalObjectHolder::getLockManager()
 	{
-		if (dbb_repl_sequence != sequence)
-		{
-			PAG_set_repl_sequence(tdbb, sequence);
-			dbb_repl_sequence = sequence;
-		}
+		MutexLockGuard guard(m_mutex, FB_FUNCTION);
+
+		if (!m_lockMgr)
+			m_lockMgr = FB_NEW LockManager(m_id, m_config);
+
+		return m_lockMgr;
 	}
+
+	EventManager* Database::GlobalObjectHolder::getEventManager()
+	{
+		MutexLockGuard guard(m_mutex, FB_FUNCTION);
+
+		if (!m_eventMgr)
+			m_eventMgr = FB_NEW EventManager(m_id, m_config);
+
+		return m_eventMgr;
+	}
+
+	Replication::Manager* Database::GlobalObjectHolder::getReplManager(const Guid& guid)
+	{
+		if (!m_replConfig)
+			return nullptr;
+
+		MutexLockGuard guard(m_mutex, FB_FUNCTION);
+
+		if (!m_replMgr)
+			m_replMgr = FB_NEW Replication::Manager(m_id, guid, m_replConfig);
+
+		return m_replMgr;
+	}
+
+	GlobalPtr<Database::GlobalObjectHolder::DbIdHash>
+		Database::GlobalObjectHolder::g_hashTable;
+	GlobalPtr<Mutex> Database::GlobalObjectHolder::g_mutex;
 
 } // namespace

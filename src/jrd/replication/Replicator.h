@@ -218,14 +218,11 @@ namespace Replication
 		};
 
 	public:
-		virtual ~Replicator();
-
-		static Replicator* create(Firebird::MemoryPool& pool,
-								  const Firebird::string& dbId,
-								  const Firebird::PathName& database,
-								  const Firebird::Guid& guid,
-								  const Firebird::MetaName& user,
-								  bool cleanupTransactions);
+		Replicator(Firebird::MemoryPool& pool,
+				   Manager* manager,
+				   const Firebird::Guid& dbGuid,
+				   const Firebird::MetaName& userName,
+				   bool cleanupTransactions);
 
 		// IDisposable methods
 		void dispose();
@@ -244,20 +241,12 @@ namespace Replication
 	private:
 		Manager* const m_manager;
 		const Config* const m_config;
-		const Firebird::PathName m_database;
 		Firebird::Guid m_guid;
 		const Firebird::MetaName m_user;
 		Firebird::Array<Transaction*> m_transactions;
 		GeneratorCache m_generators;
 		Firebird::Mutex m_mutex;
 		Firebird::FbLocalStatus m_status;
-
-		Replicator(Firebird::MemoryPool& pool,
-				   Manager* manager,
-				   const Firebird::PathName& dbName,
-				   const Firebird::Guid& dbGuid,
-				   const Firebird::MetaName& userName,
-				   bool cleanupTransactions);
 
 		void initialize();
 		void flush(BatchBlock& txnData, FlushReason reason, ULONG flags = 0);

@@ -262,19 +262,19 @@ void REPL_attach(thread_db* tdbb, bool cleanupTransactions)
 
 	dbb->ensureGuid(tdbb);
 
-	const string dbId = dbb->getUniqueFileId();
-	const PathName& dbName = dbb->dbb_filename;
-	const Guid& dbGuid = dbb->dbb_guid;
-	const MetaName& currentUser = attachment->att_user->getUserName();
+	const auto replMgr = dbb->replManager();
 
-	MemoryPool& pool = *attachment->att_pool;
+	if (!replMgr)
+		return;
 
-	attachment->att_replicator = (IReplicatedSession*)
-		Replicator::create(pool, dbId, dbName, dbGuid, currentUser,
-						   cleanupTransactions);
+	const auto& dbGuid = dbb->dbb_guid;
+	const auto& currentUser = attachment->att_user->getUserName();
+	auto& pool = *attachment->att_pool;
 
-	if (attachment->att_replicator)
-		attachment->att_repl_matcher = Manager::createMatcher(pool, dbId);
+	attachment->att_replicator = (IReplicatedSession*) FB_NEW_POOL(pool)
+		Replicator(pool, replMgr, dbGuid, currentUser, cleanupTransactions);
+
+	attachment->att_repl_matcher = replMgr->createTableMatcher(pool);
 }
 
 void REPL_trans_prepare(thread_db* tdbb, jrd_tra* transaction)
@@ -642,7 +642,10 @@ void REPL_log_switch(thread_db* tdbb)
 	const auto dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
-	const string dbId = dbb->getUniqueFileId();
+	dbb->ensureGuid(tdbb);
 
-	Manager::forceLogSwitch(dbId);
+	const auto replMgr = dbb->replManager();
+
+	if (replMgr)
+		replMgr->forceLogSwitch();
 }

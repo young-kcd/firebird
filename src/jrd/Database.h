@@ -46,6 +46,7 @@
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
 #include "../common/classes/array.h"
+#include "../common/classes/Hash.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
@@ -66,6 +67,7 @@
 #include "../common/config/config.h"
 #include "../common/classes/SyncObject.h"
 #include "../common/classes/Synchronize.h"
+#include "../jrd/replication/Manager.h"
 #include "fb_types.h"
 
 namespace Jrd
@@ -235,6 +237,81 @@ const ULONG DBB_shutdown_single		= 0x100L;	// Database is in single-user mainten
 
 class Database : public pool_alloc<type_dbb>
 {
+	// This class is a reference-counted container for all "global"
+	// (shared among different dbb's) objects -- e.g. the lock manager.
+	// The contained objects are created on demand (upon the first reference).
+	// The container is destroyed by the last dbb going away and
+	// it automatically destroys all the objects it holds.
+
+	class GlobalObjectHolder : public Firebird::RefCounted, public Firebird::GlobalStorage
+	{
+		struct DbId;
+		typedef Firebird::HashTable<DbId, Firebird::DEFAULT_HASH_SIZE,
+			Firebird::string, DbId, DbId > DbIdHash;
+
+		struct DbId : public DbIdHash::Entry, public Firebird::GlobalStorage
+		{
+			DbId(const Firebird::string& x, GlobalObjectHolder* h)
+				: id(getPool(), x), holder(h)
+			{}
+
+			DbId* get()
+			{
+				return this;
+			}
+
+			bool isEqual(const Firebird::string& val) const
+			{
+				return val == id;
+			}
+
+			static const Firebird::string& generate(const DbId& item)
+			{
+				return item.id;
+			}
+
+			static FB_SIZE_T hash(const Firebird::string& value, FB_SIZE_T hashSize)
+			{
+				return Firebird::InternalHash::hash(value.length(),
+													(const UCHAR*) value.c_str(),
+													hashSize);
+			}
+
+			const Firebird::string id;
+			GlobalObjectHolder* const holder;
+		};
+
+		static Firebird::GlobalPtr<DbIdHash> g_hashTable;
+		static Firebird::GlobalPtr<Firebird::Mutex> g_mutex;
+
+	public:
+		static GlobalObjectHolder* init(const Firebird::string& id,
+										const Firebird::PathName& filename,
+										Firebird::RefPtr<const Config> config);
+
+		~GlobalObjectHolder();
+
+		LockManager* getLockManager();
+		EventManager* getEventManager();
+		Replication::Manager* getReplManager(const Firebird::Guid& guid);
+
+	private:
+		const Firebird::string m_id;
+		const Firebird::RefPtr<const Config> m_config;
+		const Firebird::AutoPtr<const Replication::Config> m_replConfig;
+		Firebird::AutoPtr<LockManager> m_lockMgr;
+		Firebird::AutoPtr<EventManager> m_eventMgr;
+		Firebird::AutoPtr<Replication::Manager> m_replMgr;
+		Firebird::Mutex m_mutex;
+
+		explicit GlobalObjectHolder(const Firebird::string& id,
+									const Firebird::PathName& filename,
+									Firebird::RefPtr<const Config> config)
+			: m_id(getPool(), id), m_config(config),
+			  m_replConfig(Replication::Config::get(filename))
+		{}
+	};
+
 public:
 	class ExistenceRefMutex : public Firebird::RefCounted
 	{
@@ -329,15 +406,12 @@ public:
 		return fb_utils::genUniqueId();
 	}
 
+	MemoryPool* dbb_permanent;
+
 	Firebird::Guid dbb_guid;			// database GUID
 
 	Firebird::SyncObject	dbb_sync;
 	Firebird::SyncObject	dbb_sys_attach;		// synchronize operations with dbb_sys_attachments
-
-	MemoryPool* dbb_permanent;
-
-	LockManager*	dbb_lock_mgr;
-	EventManager*	dbb_event_mgr;
 
 	Firebird::ICryptKeyCallback*	dbb_callback;	// Parent's crypt callback
 	Database*	dbb_next;				// Next database block in system
@@ -362,6 +436,8 @@ public:
 	MonitoringData*			dbb_monitoring_data;	// monitoring data
 
 private:
+	Firebird::string dbb_file_id;		// system-wide unique file ID
+	Firebird::RefPtr<GlobalObjectHolder> dbb_gblobj_holder;
 	Firebird::SyncObject dbb_modules_sync;
 	DatabaseModules	dbb_modules;		// external function/filter modules
 
@@ -446,7 +522,7 @@ public:
 	bool onRawDevice() const;
 
 	// returns an unique ID string for a database file
-	Firebird::string getUniqueFileId() const;
+	const Firebird::string& getUniqueFileId();
 
 #ifdef DEV_BUILD
 	// returns true if main lock is in exclusive state
@@ -483,6 +559,7 @@ private:
 	Database(MemoryPool* p, Firebird::IPluginConfig* pConf, bool shared)
 	:	dbb_permanent(p),
 		dbb_page_manager(this, *p),
+		dbb_file_id(*p),
 		dbb_modules(*p),
 		dbb_extManager(*p),
 		dbb_flags(shared ? DBB_shared : 0),
@@ -545,6 +622,23 @@ public:
 	void setReplSequence(thread_db* tdbb, FB_UINT64 sequence);
 
 	const CoercionArray *getBindings() const;
+
+	void initGlobalObjectHolder(thread_db* tdbb);
+
+	LockManager* lockManager()
+	{
+		return dbb_gblobj_holder->getLockManager();
+	}
+
+	EventManager* eventManager()
+	{
+		return dbb_gblobj_holder->getEventManager();
+	}
+
+	Replication::Manager* replManager()
+	{
+		return dbb_gblobj_holder->getReplManager(dbb_guid);
+	}
 
 private:
 	//static int blockingAstSharedCounter(void*);

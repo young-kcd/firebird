@@ -120,9 +120,9 @@ bool MonitoringTableScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
 
 // MonitoringData class
 
-MonitoringData::MonitoringData(const Database* dbb)
+MonitoringData::MonitoringData(Database* dbb)
 	: PermanentStorage(*dbb->dbb_permanent),
-	  m_dbId(getPool(), dbb->getUniqueFileId())
+	  m_dbId(dbb->getUniqueFileId())
 {
 	initSharedFile();
 }

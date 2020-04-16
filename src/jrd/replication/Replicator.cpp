@@ -32,43 +32,22 @@ using namespace Jrd;
 using namespace Replication;
 
 
-Replicator* Replicator::create(MemoryPool& pool,
-							   const string& dbId,
-							   const PathName& database,
-							   const Guid& guid,
-							   const MetaName& user,
-							   bool cleanupTransactions)
-{
-	const auto manager = Manager::create(dbId, database, guid);
-
-	return manager ? FB_NEW_POOL(pool)
-		Replicator(pool, manager, database, guid, user, cleanupTransactions) : NULL;
-}
-
 Replicator::Replicator(MemoryPool& pool,
 					   Manager* manager,
-					   const PathName& database,
 					   const Guid& guid,
 					   const MetaName& user,
 					   bool cleanupTransactions)
 	: PermanentStorage(pool),
 	  m_manager(manager),
+	  m_guid(guid),
 	  m_config(manager->getConfig()),
-	  m_database(pool, database),
 	  m_user(user),
 	  m_transactions(pool),
 	  m_generators(pool),
 	  m_status(pool)
 {
-	memcpy(&m_guid, &guid, sizeof(Guid));
-
 	if (cleanupTransactions)
 		cleanupTransaction(0);
-}
-
-Replicator::~Replicator()
-{
-	Manager::destroy(m_manager);
 }
 
 void Replicator::flush(BatchBlock& block, FlushReason reason, ULONG flags)
@@ -123,7 +102,7 @@ void Replicator::logError(const IStatus* status)
 		message += temp;
 	}
 
-	logOriginMessage(m_database, message, ERROR_MSG);
+	logOriginMessage(m_config->dbName, message, ERROR_MSG);
 }
 
 void Replicator::postError(const Exception& ex)

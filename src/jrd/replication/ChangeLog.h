@@ -199,7 +199,6 @@ namespace Replication
 	public:
 		ChangeLog(Firebird::MemoryPool& pool,
 				  const Firebird::string& dbId,
-				  const Firebird::PathName& database,
 				  const Firebird::Guid& guid,
 				  const FB_UINT64 sequence,
 				  const Config* config);
@@ -239,8 +238,7 @@ namespace Replication
 
 		void switchActiveSegment();
 
-		const Firebird::string m_dbId;
-		const Firebird::PathName m_database;
+		const Firebird::string& m_dbId;
 		const Config* const m_config;
 		Firebird::Array<Segment*> m_segments;
 		Firebird::AutoPtr<Firebird::SharedMemory<State> > m_sharedMemory;

@@ -1606,8 +1606,9 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 		case dfw_post_event:
 			EventManager::init(transaction->tra_attachment);
 
-			dbb->dbb_event_mgr->postEvent(work->dfw_name.length(), work->dfw_name.c_str(),
-										  work->dfw_count);
+			dbb->eventManager()->postEvent(work->dfw_name.length(),
+										   work->dfw_name.c_str(),
+										   work->dfw_count);
 
 			delete work;
 			pending_events = true;
@@ -1624,7 +1625,7 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 
 	if (pending_events)
 	{
-		dbb->dbb_event_mgr->deliverEvents();
+		dbb->eventManager()->deliverEvents();
 	}
 }
 

@@ -163,52 +163,8 @@ static const bool compatibility[LCK_max][LCK_max] =
 
 namespace Jrd {
 
-GlobalPtr<LockManager::DbLockMgrMap> LockManager::g_lmMap;
-GlobalPtr<Mutex> LockManager::g_mapMutex;
 
-
-LockManager* LockManager::create(const string& id, RefPtr<const Config> conf)
-{
-	MutexLockGuard guard(g_mapMutex, FB_FUNCTION);
-
-	LockManager* lockMgr = NULL;
-	if (!g_lmMap->get(id, lockMgr))
-	{
-		lockMgr = FB_NEW LockManager(id, conf);
-
-		if (g_lmMap->put(id, lockMgr))
-		{
-			fb_assert(false);
-		}
-	}
-
-	fb_assert(lockMgr);
-
-	lockMgr->addRef();
-	return lockMgr;
-}
-
-
-void LockManager::destroy(LockManager* lockMgr)
-{
-	if (lockMgr)
-	{
-		const string id = lockMgr->m_dbId;
-
-		MutexLockGuard guard(g_mapMutex, FB_FUNCTION);
-
-		if (!lockMgr->release())
-		{
-			if (!g_lmMap->remove(id))
-			{
-				fb_assert(false);
-			}
-		}
-	}
-}
-
-
-LockManager::LockManager(const string& id, RefPtr<const Config> conf)
+LockManager::LockManager(const string& id, const Config* conf)
 	: PID(getpid()),
 	  m_bugcheck(false),
 	  m_process(NULL),
@@ -216,7 +172,7 @@ LockManager::LockManager(const string& id, RefPtr<const Config> conf)
 	  m_cleanupSync(getPool(), blocking_action_thread, THREAD_high),
 	  m_sharedMemory(NULL),
 	  m_blockage(false),
-	  m_dbId(getPool(), id),
+	  m_dbId(id),
 	  m_config(conf),
 	  m_acquireSpins(m_config->getLockAcquireSpins()),
 	  m_memorySize(m_config->getLockMemSize()),
