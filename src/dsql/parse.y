@@ -2178,26 +2178,42 @@ table_clause
 			{
 				$<createRelationNode>$ = newNode<CreateRelationNode>($1, $2);
 			}
-		'(' table_elements($3) ')' sql_security_clause publication_state
+		'(' table_elements($3) ')' table_attributes($3)
 			{
 				$$ = $3;
-				$$->ssDefiner = $7;
-				$$->replicationState = $8;
 			}
 	;
 
-%type <nullableBoolVal> sql_security_clause
-sql_security_clause
-	: /* nothing */				{ $$ = Nullable<bool>::empty(); }
-	| SQL SECURITY DEFINER		{ $$ = Nullable<bool>::val(true); }
-	| SQL SECURITY INVOKER		{ $$ = Nullable<bool>::val(false); }
+%type table_attributes(<relationNode>)
+table_attributes($relationNode)
+	: /* nothing */
+	| table_attribute($relationNode) table_attributes($relationNode)
 	;
 
-%type <nullableBoolVal> publication_state
+%type table_attribute(<relationNode>)
+table_attribute($relationNode)
+	: sql_security_clause
+		{ setClause($relationNode->ssDefiner, "SQL SECURITY", $1); }
+	| publication_state
+		{ setClause($relationNode->replicationState, "PUBLICATION", $1); }
+	;
+
+%type <boolVal> sql_security_clause
+sql_security_clause
+	: SQL SECURITY DEFINER		{ $$ = true; }
+	| SQL SECURITY INVOKER		{ $$ = false; }
+	;
+
+%type <nullableBoolVal> sql_security_clause_opt
+sql_security_clause_opt
+	: /* nothing */				{ $$ = Nullable<bool>::empty(); }
+	| sql_security_clause		{ $$ = Nullable<bool>::val($1); }
+	;
+
+%type <boolVal> publication_state
 publication_state
-	: /* nothing */			{ $$ = Nullable<bool>::empty(); }
-	| ENABLE PUBLICATION	{ $$ = Nullable<bool>::val(true); }
-	| DISABLE PUBLICATION	{ $$ = Nullable<bool>::val(false); }
+	: ENABLE PUBLICATION		{ $$ = true; }
+	| DISABLE PUBLICATION		{ $$ = false; }
 	;
 
 %type <createRelationNode> gtt_table_clause
@@ -2224,8 +2240,8 @@ gtt_ops($createRelationNode)
 %type gtt_op(<createRelationNode>)
 gtt_op($createRelationNode)
 	: // nothing by default. Will be set "on commit delete rows" in dsqlPass
-	| sql_security_clause
-		{ setClause(static_cast<BaseNullable<bool>&>($createRelationNode->ssDefiner), "SQL SECURITY", $1); }
+	| sql_security_clause_opt
+		{ setClause($createRelationNode->ssDefiner, "SQL SECURITY", $1); }
 	| ON COMMIT DELETE ROWS
 		{ setClause($createRelationNode->relationType, "ON COMMIT DELETE ROWS", rel_global_temp_delete); }
 	| ON COMMIT PRESERVE ROWS
@@ -2630,7 +2646,7 @@ procedure_clause
 
 %type <createAlterProcedureNode> psql_procedure_clause
 psql_procedure_clause
-	: procedure_clause_start sql_security_clause AS local_declarations_opt full_proc_block
+	: procedure_clause_start sql_security_clause_opt AS local_declarations_opt full_proc_block
 		{
 			$$ = $1;
 			$$->ssDefiner = $2;
@@ -2754,7 +2770,7 @@ function_clause
 
 %type <createAlterFunctionNode> psql_function_clause
 psql_function_clause
-	: function_clause_start sql_security_clause AS local_declarations_opt full_proc_block
+	: function_clause_start sql_security_clause_opt AS local_declarations_opt full_proc_block
 		{
 			$$ = $1;
 			$$->ssDefiner = $2;
@@ -2840,7 +2856,7 @@ replace_function_clause
 
 %type <createAlterPackageNode> package_clause
 package_clause
-	: symbol_package_name sql_security_clause AS BEGIN package_items_opt END
+	: symbol_package_name sql_security_clause_opt AS BEGIN package_items_opt END
 		{
 			CreateAlterPackageNode* node = newNode<CreateAlterPackageNode>(*$1);
 			node->ssDefiner = $2;
@@ -4128,36 +4144,37 @@ alter_op($relationNode)
 		}
 	| ALTER SQL SECURITY DEFINER
 		{
-			RelationNode::AlterSqlSecurityClause* clause =
-				newNode<RelationNode::AlterSqlSecurityClause>();
-			clause->ssDefiner = Nullable<bool>::val(true);
+			setClause($relationNode->ssDefiner, "SQL SECURITY", true);
+			RelationNode::Clause* clause =
+				newNode<RelationNode::Clause>(RelationNode::Clause::TYPE_ALTER_SQL_SECURITY);
 			$relationNode->clauses.add(clause);
 		}
 	| ALTER SQL SECURITY INVOKER
 		{
-			RelationNode::AlterSqlSecurityClause* clause =
-				newNode<RelationNode::AlterSqlSecurityClause>();
-			clause->ssDefiner = Nullable<bool>::val(false);
+			setClause($relationNode->ssDefiner, "SQL SECURITY", false);
+			RelationNode::Clause* clause =
+				newNode<RelationNode::Clause>(RelationNode::Clause::TYPE_ALTER_SQL_SECURITY);
 			$relationNode->clauses.add(clause);
 		}
 	| DROP SQL SECURITY
 		{
-			RelationNode::AlterSqlSecurityClause* clause =
-				newNode<RelationNode::AlterSqlSecurityClause>();
+			setClause($relationNode->ssDefiner, "SQL SECURITY", Nullable<bool>::empty());
+			RelationNode::Clause* clause =
+				newNode<RelationNode::Clause>(RelationNode::Clause::TYPE_ALTER_SQL_SECURITY);
 			$relationNode->clauses.add(clause);
 		}
 	| ENABLE PUBLICATION
 		{
-			RelationNode::AlterPublicationClause* clause =
-				newNode<RelationNode::AlterPublicationClause>();
-			clause->state = true;
+			setClause($relationNode->replicationState, "PUBLICATION", true);
+			RelationNode::Clause* clause =
+				newNode<RelationNode::Clause>(RelationNode::Clause::TYPE_ALTER_PUBLICATION);
 			$relationNode->clauses.add(clause);
 		}
 	| DISABLE PUBLICATION
 		{
-			RelationNode::AlterPublicationClause* clause =
-				newNode<RelationNode::AlterPublicationClause>();
-			clause->state = false;
+			setClause($relationNode->replicationState, "PUBLICATION", false);
+			RelationNode::Clause* clause =
+				newNode<RelationNode::Clause>(RelationNode::Clause::TYPE_ALTER_PUBLICATION);
 			$relationNode->clauses.add(clause);
 		}
 	;

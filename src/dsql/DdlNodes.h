@@ -1499,26 +1499,6 @@ public:
 		Firebird::MetaName name;
 	};
 
-	struct AlterSqlSecurityClause : public Clause
-	{
-		explicit AlterSqlSecurityClause(MemoryPool& p)
-			: Clause(p, TYPE_ALTER_SQL_SECURITY)
-		{
-		}
-
-		Nullable<bool> ssDefiner;
-	};
-
-	struct AlterPublicationClause : public Clause
-	{
-		explicit AlterPublicationClause(MemoryPool& p)
-			: Clause(p, TYPE_ALTER_PUBLICATION)
-		{
-		}
-
-		bool state;
-	};
-
 	RelationNode(MemoryPool& p, RelationSourceNode* aDsqlNode);
 
 	static void deleteLocalField(thread_db* tdbb, jrd_tra* transaction,

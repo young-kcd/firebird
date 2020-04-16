@@ -7806,9 +7806,6 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 					{
 						MODIFY REL
 						{
-							const Nullable<bool> ssDefiner =
-								static_cast<const AlterSqlSecurityClause*>(i->getObject())->ssDefiner;
-
 							if (ssDefiner.specified)
 							{
 								REL.RDB$SQL_SECURITY.NULL = FALSE;
@@ -7826,10 +7823,9 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 
 				case Clause::TYPE_ALTER_PUBLICATION:
 				{
-					const bool publicationState =
-						static_cast<const AlterPublicationClause*>(i->getObject())->state;
+					fb_assert(replicationState.specified);
 
-					if (publicationState)
+					if (replicationState.value)
 					{
 						// Add table to the publication
 
