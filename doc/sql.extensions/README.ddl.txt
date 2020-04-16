@@ -575,7 +575,7 @@ Grants all rights to view (used in SRP management plugin) to users having USER_M
 
 ALTER DATABASE {ENABLE | DISABLE} PUBLICATION
 
-Enables or disabled replication. The change is applied immediately.
+Enables or disabled replication. The change is applied immediately after commit.
 
 ALTER DATABASE ADD ALL TO PUBLICATION
 
