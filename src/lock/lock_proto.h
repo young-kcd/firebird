@@ -293,8 +293,7 @@ namespace Jrd {
 
 class thread_db;
 
-class LockManager : public Firebird::GlobalStorage,
-					public Firebird::IpcObject
+class LockManager final : public Firebird::GlobalStorage, public Firebird::IpcObject
 {
 	class LockTableGuard
 	{

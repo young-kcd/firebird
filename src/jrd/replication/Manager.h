@@ -53,7 +53,7 @@ namespace Replication
 		TablePermissionMap m_tables;
 	};
 
-	class Manager : public Firebird::GlobalStorage
+	class Manager final : public Firebird::GlobalStorage
 	{
 		struct SyncReplica
 		{

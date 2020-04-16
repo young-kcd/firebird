@@ -238,10 +238,11 @@ void ChangeLog::Segment::truncate()
 	unmapHeader();
 
 #ifdef WIN_NT
-	chsize(m_handle, length);
+	if (chsize(m_handle, length))
 #else
-	ftruncate(m_handle, length);
+	if (ftruncate(m_handle, length))
 #endif
+		raiseError("Log file %s truncate failed (error %d)", m_filename.c_str(), ERRNO);
 
 	mapHeader();
 }

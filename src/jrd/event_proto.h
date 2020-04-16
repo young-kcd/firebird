@@ -38,7 +38,7 @@ namespace Jrd {
 
 class Attachment;
 
-class EventManager : public Firebird::GlobalStorage, public Firebird::IpcObject
+class EventManager final : public Firebird::GlobalStorage, public Firebird::IpcObject
 {
 	const int PID;
 

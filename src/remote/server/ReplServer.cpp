@@ -229,7 +229,8 @@ namespace
 			m_data.db_sequence = db_sequence;
 
 			lseek(m_handle, 0, SEEK_SET);
-			write(m_handle, &m_data, sizeof(Data));
+			if (write(m_handle, &m_data, sizeof(Data)) != sizeof(Data))
+				raiseError("Control file write failed (error: %d)", ERRNO);
 			flush();
 		}
 
@@ -257,8 +258,10 @@ namespace
 				const ULONG txn_size = m_data.txn_count * sizeof(ActiveTransaction);
 
 				lseek(m_handle, 0, SEEK_SET);
-				write(m_handle, &m_data, sizeof(Data));
-				write(m_handle, transactions.begin(), txn_size);
+				if (write(m_handle, &m_data, sizeof(Data)) != sizeof(Data))
+					raiseError("Control file write failed (error: %d)", ERRNO);
+				if (write(m_handle, transactions.begin(), txn_size) != txn_size)
+					raiseError("Control file write failed (error: %d)", ERRNO);
 				flush();
 			}
 		}
@@ -275,8 +278,10 @@ namespace
 				const ULONG txn_size = m_data.txn_count * sizeof(ActiveTransaction);
 
 				lseek(m_handle, 0, SEEK_SET);
-				write(m_handle, &m_data, sizeof(Data));
-				write(m_handle, transactions.begin(), txn_size);
+				if (write(m_handle, &m_data, sizeof(Data)) != sizeof(Data))
+					raiseError("Control file write failed (error: %d)", ERRNO);
+				if (write(m_handle, transactions.begin(), txn_size) != txn_size)
+					raiseError("Control file write failed (error: %d)", ERRNO);
 				flush();
 			}
 		}
