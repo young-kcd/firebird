@@ -8843,8 +8843,18 @@ bool get_mapping(BurpGlobals* tdgbl)
 			general_on_error ();
 		END_ERROR;
 	}
-	else if (tdgbl->runtimeODS >= DB_VERSION_DDL11_1)
+	else
 	{
+		int match = 0;
+		const unsigned MATCH_FROM = 0x01;
+		const unsigned MATCH_FROM_TYPE = 0x02;
+		const unsigned MATCH_USING = 0x04;
+		const unsigned MATCH_PLUGIN = 0x08;
+		const unsigned MATCH_TO_TYPE = 0x10;
+		const unsigned MATCH_TO = 0x20;
+		const unsigned MATCH_ALL = 0x3f;
+		Firebird::NoCaseString txt;
+
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
@@ -8856,7 +8866,8 @@ bool get_mapping(BurpGlobals* tdgbl)
 				break;
 
 			case att_map_to_type:
-				get_int32(tdgbl);
+				if (get_int32(tdgbl) == 1)
+					match |= MATCH_TO_TYPE;
 				break;
 
 			case att_map_name:
@@ -8866,7 +8877,37 @@ bool get_mapping(BurpGlobals* tdgbl)
 			case att_map_from_type:
 			case att_map_from:
 			case att_map_to:
-				GET_TEXT(temp);
+				l = GET_TEXT(temp);
+				txt.assign(temp, l);
+
+				switch(attribute)
+				{
+				case att_map_using:
+					if (txt == "P")
+						match |= MATCH_USING;
+					break;
+
+				case att_map_plugin:
+					if (txt == "Win_Sspi")
+						match |= MATCH_PLUGIN;
+					break;
+
+				case att_map_from_type:
+					if (txt == FB_PREDEFINED_GROUP)
+						match |= MATCH_FROM_TYPE;
+					break;
+
+				case att_map_from:
+					if (txt == FB_DOMAIN_ANY_RID_ADMINS)
+						match |= MATCH_FROM;
+					break;
+
+				case att_map_to:
+					if (txt == ADMIN_ROLE)
+						match |= MATCH_TO;
+					break;
+
+				}
 				break;
 
 			case att_map_description:
@@ -8890,6 +8931,9 @@ bool get_mapping(BurpGlobals* tdgbl)
 			BURP_verbose(301);
 			// msg 301, restoring names mapping
 		}
+
+		if (match == MATCH_ALL)
+			role = ADMIN_ROLE;
 
 		if (role != ADMIN_ROLE)
 		{
@@ -8932,51 +8976,62 @@ bool get_db_creator(BurpGlobals* tdgbl)
  **************************************/
 	att_type		attribute;
 	scan_attr_t		scan_next_attr;
-	TEXT			temp[GDS_NAME_LEN];
-	SSHORT			l;
-	Firebird::string role;
+	TEXT			usr[GDS_NAME_LEN];
+	SSHORT			uType;
+	bool			userSet, typeSet;
 
-	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
+	skip_init(&scan_next_attr);
+	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 	{
-		STORE (REQUEST_HANDLE tdgbl->handles_db_creators_req_handle1)
-			C IN RDB$DB_CREATORS
+		userSet = typeSet = false;
 
-			C.RDB$USER.NULL = TRUE;
-			C.RDB$USER_TYPE.NULL = TRUE;
+		switch (attribute)
+		{
+		case att_dbc_user:
+			userSet = true;
+			GET_TEXT(usr);
+			break;
 
-			skip_init(&scan_next_attr);
-			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		case att_dbc_type:
+			typeSet = true;
+			uType = (SSHORT) get_int32(tdgbl);
+			break;
+
+		default:
+			// msg 395 database creator
+			bad_attribute(scan_next_attr, attribute, 395);
+			break;
+		}
+
+		if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
+		{
+			if (tdgbl->firstDbc)
 			{
-				switch (attribute)
-				{
-				case att_dbc_user:
-					C.RDB$USER.NULL = FALSE;
-					GET_TEXT(C.RDB$USER);
-					if (tdgbl->firstDbc)
-					{
-						tdgbl->firstDbc = false;
-						BURP_verbose(394);
-						// msg 394 restoring database creators
-					}
-					BURP_verbose (393, C.RDB$USER);
-					break;
-
-				case att_dbc_type:
-					C.RDB$USER_TYPE.NULL = FALSE;
-					C.RDB$USER_TYPE = (USHORT) get_int32(tdgbl);
-					break;
-
-				default:
-					// msg 395 database creator
-					bad_attribute(scan_next_attr, attribute, 395);
-					break;
-				}
+				tdgbl->firstDbc = false;
+				BURP_verbose(394);
+				// msg 394 restoring database creators
 			}
 
-		END_STORE;
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
+			STORE (REQUEST_HANDLE tdgbl->handles_db_creators_req_handle1)
+				C IN RDB$DB_CREATORS
+
+				BURP_verbose (393, usr);
+				if (strlen(usr) > sizeof(C.RDB$USER))
+					BURP_error_redirect(NULL, 46);
+
+				C.RDB$USER.NULL = userSet ? FALSE : TRUE;
+				if (userSet)
+					strncpy(C.RDB$USER, usr, sizeof(C.RDB$USER));
+
+				C.RDB$USER_TYPE.NULL = typeSet ? FALSE : TRUE;
+				if (typeSet)
+					C.RDB$USER_TYPE = uType;
+
+			END_STORE;
+			ON_ERROR
+				general_on_error ();
+			END_ERROR;
+		}
 	}
 
 	return true;
@@ -10125,6 +10180,12 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 
 		END_STORE;
 		ON_ERROR
+			if (tdgbl->status_vector->getErrors()[1] == isc_integ_fail)
+			{
+				BURP_print_status(false, &tdgbl->status_vector);
+				tdgbl->flag_on_line = false;
+				return true;
+			}
 			general_on_error ();
 		END_ERROR;
 	}
@@ -11756,7 +11817,14 @@ void fix_generator(BurpGlobals* tdgbl, const FixGenerator* g)
 	catch (const Firebird::FbException& ex)
 	{
 		fb_utils::copyStatus(&tdgbl->status_vector, ex.getStatus());
-		general_on_error ();
+
+		if (tdgbl->status_vector->getErrors()[1] == isc_dsql_error)
+		{
+			BURP_print_status(false, &tdgbl->status_vector);
+			tdgbl->flag_on_line = false;
+		}
+		else
+			general_on_error();
 	}
 }
 
