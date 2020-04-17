@@ -247,7 +247,7 @@ void ChangeLog::Segment::truncate()
 
 	const auto hndl = (HANDLE) _get_osfhandle(m_handle);
 	const auto ret = SetFilePointer(hndl, newSize.LowPart, &newSize.HighPart, FILE_BEGIN);
-	if (ret != INVALID_SET_FILE_POINTER || !SetEndOfFile(hndl))
+	if (ret == INVALID_SET_FILE_POINTER || !SetEndOfFile(hndl))
 #else
 	if (os_utils::ftruncate(m_handle, length))
 #endif
