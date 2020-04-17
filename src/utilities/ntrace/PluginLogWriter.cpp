@@ -79,11 +79,7 @@ PluginLogWriter::~PluginLogWriter()
 
 SINT64 PluginLogWriter::seekToEnd()
 {
-#ifdef WIN_NT
-	SINT64 nFileLen = _lseeki64(m_fileHandle, 0, SEEK_END);
-#else
-	off_t nFileLen = os_utils::lseek(m_fileHandle, 0, SEEK_END);
-#endif
+	const SINT64 nFileLen = os_utils::lseek(m_fileHandle, 0, SEEK_END);
 
 	if (nFileLen < 0)
 		checkErrno("lseek");

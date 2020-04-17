@@ -168,11 +168,7 @@ bool ChangeLog::Segment::validate(const Guid& guid) const
 
 void ChangeLog::Segment::copyTo(const PathName& filename) const
 {
-#ifdef WIN_NT
-	if (_lseeki64(m_handle, 0, SEEK_SET) != 0)
-#else
 	if (os_utils::lseek(m_handle, 0, SEEK_SET) != 0)
-#endif
 		raiseIOError("seek", m_filename.c_str());
 
 	const auto totalLength = m_header->hdr_length;
@@ -213,13 +209,9 @@ void ChangeLog::Segment::append(ULONG length, const UCHAR* data)
 	fb_assert(m_header->hdr_state == SEGMENT_STATE_USED);
 	fb_assert(length);
 
-	const auto currentLength = m_header->hdr_length;
+	const auto currentLength = (SINT64) m_header->hdr_length;
 
-#ifdef WIN_NT
-	if (_lseeki64(m_handle, currentLength, SEEK_SET) != currentLength)
-#else
 	if (os_utils::lseek(m_handle, currentLength, SEEK_SET) != currentLength)
-#endif
 		raiseError("Log file %s seek failed (error %d)", m_filename.c_str(), ERRNO);
 
 	if (::write(m_handle, data, length) != length)

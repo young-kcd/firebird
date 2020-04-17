@@ -91,21 +91,24 @@ namespace os_utils
 	void getUniqueFileId(const char* name, Firebird::UCharBuffer& id);
 #endif
 
-
-	inline off_t lseek(int fd, off_t offset, int whence)
+	inline SINT64 lseek(int fd, SINT64 offset, int origin)
 	{
+#ifdef WIN_NT
+		return _lseeki64(fd, offset, origin);
+#else
 		off_t rc;
 
 		do
 		{
 #ifdef LSB_BUILD
-			rc = lseek64(fd, offset, whence);
+			rc = lseek64(fd, offset, origin);
 #else
-			rc = ::lseek(fd, offset, whence);
+			rc = ::lseek(fd, offset, origin);
 #endif
 		} while (rc == (off_t) -1 && SYSCALL_INTERRUPTED(errno));
 
 		return rc;
+#endif
 	}
 
 	inline int stat(const char* path, struct STAT* buf)
@@ -346,6 +349,7 @@ namespace os_utils
 
 		return rc;
 	}
+
 #endif	// WIN_NT
 
 	class CtrlCHandler
@@ -371,6 +375,7 @@ namespace os_utils
 		bool procTerm;
 #endif
 	};
+
 } // namespace os_utils
 
 #endif // INCLUDE_OS_FILE_UTILS_H
