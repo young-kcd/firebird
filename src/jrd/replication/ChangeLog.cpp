@@ -138,7 +138,6 @@ void ChangeLog::Segment::init(FB_UINT64 sequence, const Guid& guid)
 	m_header->hdr_version = LOG_CURRENT_VERSION;
 	m_header->hdr_state = SEGMENT_STATE_USED;
 	memcpy(&m_header->hdr_guid, &guid, sizeof(Guid));
-	m_header->hdr_protocol = PROTOCOL_CURRENT_VERSION;
 	m_header->hdr_sequence = sequence;
 	m_header->hdr_length = sizeof(SegmentHeader);
 
@@ -164,15 +163,16 @@ bool ChangeLog::Segment::validate(const Guid& guid) const
 	if (memcmp(&m_header->hdr_guid, &guid, sizeof(Guid)))
 		return false;
 
-	if (m_header->hdr_protocol != PROTOCOL_VERSION1)
-		return false;
-
 	return true;
 }
 
 void ChangeLog::Segment::copyTo(const PathName& filename) const
 {
-	if (::lseek(m_handle, 0, SEEK_SET) != 0)
+#ifdef WIN_NT
+	if (_lseeki64(m_handle, 0, SEEK_SET) != 0)
+#else
+	if (os_utils::lseek(m_handle, 0, SEEK_SET) != 0)
+#endif
 		raiseIOError("seek", m_filename.c_str());
 
 	const auto totalLength = m_header->hdr_length;
@@ -185,10 +185,10 @@ void ChangeLog::Segment::copyTo(const PathName& filename) const
 	Vector<UCHAR, COPY_BLOCK_SIZE> buffer;
 	const auto data = buffer.begin();
 
-	for (ULONG offset = 0; offset < totalLength; offset += COPY_BLOCK_SIZE)
+	for (FB_UINT64 offset = 0; offset < totalLength; offset += COPY_BLOCK_SIZE)
 	{
 		const auto remaining = totalLength - offset;
-		const auto length = MIN(remaining, COPY_BLOCK_SIZE);
+		const SINT64 length = MIN(remaining, COPY_BLOCK_SIZE);
 
 		if (::read(m_handle, data, length) != length)
 		{
@@ -215,7 +215,11 @@ void ChangeLog::Segment::append(ULONG length, const UCHAR* data)
 
 	const auto currentLength = m_header->hdr_length;
 
-	if (::lseek(m_handle, currentLength, SEEK_SET) != currentLength)
+#ifdef WIN_NT
+	if (_lseeki64(m_handle, currentLength, SEEK_SET) != currentLength)
+#else
+	if (os_utils::lseek(m_handle, currentLength, SEEK_SET) != currentLength)
+#endif
 		raiseError("Log file %s seek failed (error %d)", m_filename.c_str(), ERRNO);
 
 	if (::write(m_handle, data, length) != length)
@@ -238,9 +242,14 @@ void ChangeLog::Segment::truncate()
 	unmapHeader();
 
 #ifdef WIN_NT
-	if (chsize(m_handle, length))
+	LARGE_INTEGER newSize;
+	newSize.QuadPart = (ULONGLONG) length;
+
+	const auto hndl = (HANDLE) _get_osfhandle(m_handle);
+	const auto ret = SetFilePointer(hndl, newSize.LowPart, &newSize.HighPart, FILE_BEGIN);
+	if (ret != INVALID_SET_FILE_POINTER || !SetEndOfFile(hndl))
 #else
-	if (ftruncate(m_handle, length))
+	if (os_utils::ftruncate(m_handle, length))
 #endif
 		raiseError("Log file %s truncate failed (error %d)", m_filename.c_str(), ERRNO);
 

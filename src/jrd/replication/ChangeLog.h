@@ -33,7 +33,7 @@
 
 namespace Replication
 {
-	enum SegmentState
+	enum SegmentState : USHORT
 	{
 		SEGMENT_STATE_FREE = 0,
 		SEGMENT_STATE_USED = 1,
@@ -45,12 +45,10 @@ namespace Replication
 	{
 		char hdr_signature[12];
 		USHORT hdr_version;
-		USHORT hdr_protocol;
+		SegmentState hdr_state;
 		Firebird::Guid hdr_guid;
 		FB_UINT64 hdr_sequence;
-		ISC_TIMESTAMP hdr_timestamp;
-		SegmentState hdr_state;
-		ULONG hdr_length;
+		FB_UINT64 hdr_length;
 	};
 
 	const char LOG_SIGNATURE[] = "FBCHANGELOG";

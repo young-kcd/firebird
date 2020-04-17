@@ -146,6 +146,11 @@ namespace
 			return m_header->traNumber;
 		}
 
+		ULONG getProtocolVersion() const
+		{
+			return m_header->protocol;
+		}
+
 	private:
 		const Block* const m_header;
 		const UCHAR* m_data;
@@ -232,6 +237,10 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 		BlockReader reader(length, data);
 
 		const auto traNum = reader.getTransactionId();
+		const auto protocol = reader.getProtocolVersion();
+
+		if (protocol != PROTOCOL_CURRENT_VERSION)
+			raiseError("Unsupported replication protocol version %u", protocol);
 
 		while (!reader.isEof())
 		{

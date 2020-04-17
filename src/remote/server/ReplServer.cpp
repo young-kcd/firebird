@@ -572,9 +572,6 @@ namespace
 			return false;
 		}
 
-		if (header->hdr_protocol != PROTOCOL_VERSION1)
-			return false;
-
 		return true;
 	}
 
