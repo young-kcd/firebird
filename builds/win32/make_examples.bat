@@ -27,7 +27,12 @@
 )
 @call compile.bat builds\win32\%VS_VER%\FirebirdExamples udrcpp_example_%FB_TARGET_PLATFORM%.log udrcpp_example
 if errorlevel 1 (
-    @call :ERROR building udrcpp example failed - see make_examples_%FB_TARGET_PLATFORM%.log for details
+    @call :ERROR building udrcpp example failed - see udrcpp_example_%FB_TARGET_PLATFORM%.log for details
+    @goto :EOF
+)
+@call compile.bat examples\extauth\msvc\ExtAuth_%VS_VER% ExtAuth_%FB_TARGET_PLATFORM%.log
+if errorlevel 1 (
+    @call :ERROR building ExtAuth example failed - see ExtAuth_%FB_TARGET_PLATFORM%.log for details
     @goto :EOF
 )
 
@@ -97,6 +102,8 @@ if defined FB2_INTLEMP (
 @mkdir %FB_OUTPUT_DIR%\examples\udf
 @mkdir %FB_OUTPUT_DIR%\examples\udr
 @mkdir %FB_OUTPUT_DIR%\plugins\udr 2>nul
+@mkdir %FB_OUTPUT_DIR%\examples\prebuilt\bin
+@mkdir %FB_OUTPUT_DIR%\examples\prebuilt\plugins
 
 @echo Moving files to output directory
 copy %FB_ROOT_PATH%\examples\* %FB_OUTPUT_DIR%\examples > nul
@@ -113,6 +120,8 @@ copy %FB_ROOT_PATH%\examples\stat\* %FB_OUTPUT_DIR%\examples\stat > nul
 copy %FB_ROOT_PATH%\examples\udf\* %FB_OUTPUT_DIR%\examples\udf > nul
 copy %FB_ROOT_PATH%\examples\udr\* %FB_OUTPUT_DIR%\examples\udr > nul
 copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\plugins\udr\*.dll %FB_OUTPUT_DIR%\plugins\udr >nul
+copy %FB_ROOT_PATH%\examples\prebuilt\%FB_OBJ_DIR%\bin\*.exe %FB_OUTPUT_DIR%\examples\prebuilt\bin > nul
+copy %FB_ROOT_PATH%\examples\prebuilt\%FB_OBJ_DIR%\plugins\*.dll %FB_OUTPUT_DIR%\examples\prebuilt\plugins > nul
 
 ::@copy %FB_GEN_DIR%\examples\empbuild.c %FB_OUTPUT_DIR%\examples\empbuild\ > nul
 ::@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\examples\empbuild.exe %FB_GEN_DIR%\examples\empbuild.exe > nul
