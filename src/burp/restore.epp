@@ -8980,11 +8980,11 @@ bool get_db_creator(BurpGlobals* tdgbl)
 	SSHORT			uType;
 	bool			userSet, typeSet;
 
+	userSet = typeSet = false;
+
 	skip_init(&scan_next_attr);
 	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 	{
-		userSet = typeSet = false;
-
 		switch (attribute)
 		{
 		case att_dbc_user:
@@ -9002,36 +9002,36 @@ bool get_db_creator(BurpGlobals* tdgbl)
 			bad_attribute(scan_next_attr, attribute, 395);
 			break;
 		}
+	}
 
-		if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
+	{
+		if (tdgbl->firstDbc)
 		{
-			if (tdgbl->firstDbc)
-			{
-				tdgbl->firstDbc = false;
-				BURP_verbose(394);
-				// msg 394 restoring database creators
-			}
-
-			STORE (REQUEST_HANDLE tdgbl->handles_db_creators_req_handle1)
-				C IN RDB$DB_CREATORS
-
-				BURP_verbose (393, usr);
-				if (strlen(usr) > sizeof(C.RDB$USER))
-					BURP_error_redirect(NULL, 46);
-
-				C.RDB$USER.NULL = userSet ? FALSE : TRUE;
-				if (userSet)
-					strncpy(C.RDB$USER, usr, sizeof(C.RDB$USER));
-
-				C.RDB$USER_TYPE.NULL = typeSet ? FALSE : TRUE;
-				if (typeSet)
-					C.RDB$USER_TYPE = uType;
-
-			END_STORE;
-			ON_ERROR
-				general_on_error ();
-			END_ERROR;
+			tdgbl->firstDbc = false;
+			BURP_verbose(394);
+			// msg 394 restoring database creators
 		}
+
+		STORE (REQUEST_HANDLE tdgbl->handles_db_creators_req_handle1)
+			C IN RDB$DB_CREATORS
+
+			BURP_verbose (393, usr);
+			if (strlen(usr) > sizeof(C.RDB$USER))
+				BURP_error_redirect(NULL, 46);
+
+			C.RDB$USER.NULL = userSet ? FALSE : TRUE;
+			if (userSet)
+				strncpy(C.RDB$USER, usr, sizeof(C.RDB$USER));
+
+			C.RDB$USER_TYPE.NULL = typeSet ? FALSE : TRUE;
+			if (typeSet)
+				C.RDB$USER_TYPE = uType;
+
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
 	}
 
 	return true;
