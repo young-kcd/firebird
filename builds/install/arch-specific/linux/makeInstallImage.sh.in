@@ -208,6 +208,12 @@ copyFiles() {
 
 		ReadOnlyTree ${TargetDir}@FB_SAMPLEDIR@
 		chmod 0664 ${TargetDir}@FB_SAMPLEDBDIR@/*.fdb
+		chmod 0755 ${TargetDir}@FB_SAMPLEDIR@/prebuilt/bin/*
+
+		#plugins samples
+		makeDirs ${TargetDir}@FB_SAMPLEDIR@/prebuilt
+		cp $BuiltFBDir/plugins/*_example.so ${TargetDir}@FB_SAMPLEDIR@/prebuilt/plugins
+		chmod 0644 ${TargetDir}@FB_SAMPLEDIR@/prebuilt/plugins/*
     fi
 
 	#QLI help
@@ -249,7 +255,7 @@ copyFiles() {
 	chmod 0755 ${TargetDir}@FB_LIBDIR@/*.so*
 
 	#plugins
-	(cd $BuiltFBDir/plugins;tar cf - .) | (cd ${TargetDir}@FB_PLUGDIR@; tar xvf -)
+	(cd $BuiltFBDir/plugins;tar cf - --exclude='*_example.so' .) | (cd ${TargetDir}@FB_PLUGDIR@; tar xvf -)
 
 	for file in `find ${TargetDir}@FB_PLUGDIR@ -name '*.so*' -print`; do
 		chmod 0755 ${file}

@@ -28,7 +28,7 @@
 #
 #
 #
-ROOT=../..
+ROOT=$(shell cd ../..; pwd)
 
 # Add the install include directory to the search path since the
 # examples need to build using those headers values.
@@ -64,7 +64,7 @@ LIB_LINK_MAPFILE =
 
 EXAMPLES_DEST=	$(GEN_ROOT)/examples
 EXAMPLES_SRC=	$(ROOT)/examples
-
+EXAMPLES_FB=	$(FIREBIRD)/examples
 
 EMPBLD_Objects=	$(EXAMPLES_DEST)/empbuild.o
 
@@ -79,37 +79,44 @@ INTL_Files    =	intlddl.sql intldml.sql indexoff.sql indexon.sql \
 INTL_Sources =   $(addprefix $(EXAMPLES_DEST)/, $(INTL_Files))
 
 EMPLOYEE_DB=	$(EXAMPLES_DEST)/employee.fdb
-FINAL_EMPDB=	$(FIREBIRD)/examples/empbuild/employee.fdb
+FINAL_EMPDB=	$(EXAMPLES_FB)/empbuild/employee.fdb
 INTLEMP_DB=	$(EXAMPLES_DEST)/intlemp.fdb
+
+EXTAUTH_PLUGIN=	$(EXAMPLES_FB)/prebuilt/libExtAuth.$(SHRLIB_EXT)
 
 .PHONY: all examples
 
 all: examples
 
-# examples: $(EMPLOYEE_DB) $(INTLEMP_DB) $(FIREBIRD)/examples/README
-examples:	$(FINAL_EMPDB) $(FIREBIRD)/examples/README
+# examples: $(EMPLOYEE_DB) $(INTLEMP_DB) $(EXAMPLES_FB)/README
+examples:	$(FINAL_EMPDB) $(EXAMPLES_FB)/README $(EXTAUTH_PLUGIN)
+
+$(EXTAUTH_PLUGIN):	$(EXAMPLES_FB)/extauth/Makefile
+	make -C $(EXAMPLES_FB)/extauth OUT=$(EXAMPLES_FB)/prebuilt INTERMED=$(TMP_ROOT)/examples/extauth
+
+$(EXAMPLES_FB)/extauth/Makefile:
+ifeq ($(TOMCRYPT_BUILD_FLG),Y)
+	mkdir -p $(EXAMPLES_FB)/extauth/tomcrypt.include
+	$(CP) $(ROOT)/extern/libtomcrypt/src/headers/* $(EXAMPLES_FB)/extauth/tomcrypt.include
+endif
+	tar cf - -C $(ROOT)/examples/extauth . | tar xf - -C $(EXAMPLES_FB)/extauth/
 
 $(FINAL_EMPDB):	$(EMPLOYEE_DB)
 	$(RM) $(FINAL_EMPDB)
 	$(CP) $(EMPLOYEE_DB) $(FINAL_EMPDB)
 
-$(FIREBIRD)/examples/README:
-	$(CP) $(ROOT)/examples/readme $(FIREBIRD)/examples/README
-	$(CP) $(ROOT)/examples/*.* $(FIREBIRD)/examples/
-	$(CP) $(ROOT)/examples/api/*.* $(FIREBIRD)/examples/api/
-	$(CP) $(ROOT)/examples/dbcrypt/*.* $(FIREBIRD)/examples/dbcrypt/
-	$(CP) -r $(ROOT)/examples/extauth/* $(FIREBIRD)/examples/extauth/
-ifeq ($(TOMCRYPT_BUILD_FLG),Y)
-	mkdir -p $(FIREBIRD)/examples/extauth/tomcrypt.include
-	$(CP) $(ROOT)/extern/libtomcrypt/src/headers/* $(FIREBIRD)/examples/extauth/tomcrypt.include
-endif
-	$(CP) $(ROOT)/examples/include/*.* $(FIREBIRD)/examples/include/
-	$(CP) $(ROOT)/examples/interfaces/*.* $(FIREBIRD)/examples/interfaces/
-	$(CP) $(ROOT)/examples/package/*.* $(FIREBIRD)/examples/package/
-	$(CP) $(ROOT)/examples/stat/*.* $(FIREBIRD)/examples/stat/
-	$(CP) $(ROOT)/examples/udf/*.* $(FIREBIRD)/examples/udf/
-	$(CP) $(ROOT)/examples/udr/*.* $(FIREBIRD)/examples/udr/
-#	$(CP) intlemp.fdb $(FIREBIRD)/examples/empbuild/
+$(EXAMPLES_FB)/README:
+	$(CP) $(ROOT)/examples/*.* $(EXAMPLES_FB)/
+	$(CP) $(ROOT)/examples/api/*.* $(EXAMPLES_FB)/api/
+	$(CP) $(ROOT)/examples/dbcrypt/*.* $(EXAMPLES_FB)/dbcrypt/
+	$(CP) $(ROOT)/examples/include/*.* $(EXAMPLES_FB)/include/
+	$(CP) $(ROOT)/examples/interfaces/*.* $(EXAMPLES_FB)/interfaces/
+	$(CP) $(ROOT)/examples/package/*.* $(EXAMPLES_FB)/package/
+	$(CP) $(ROOT)/examples/stat/*.* $(EXAMPLES_FB)/stat/
+	$(CP) $(ROOT)/examples/udf/*.* $(EXAMPLES_FB)/udf/
+	$(CP) $(ROOT)/examples/udr/*.* $(EXAMPLES_FB)/udr/
+#	$(CP) intlemp.fdb $(EXAMPLES_FB)/empbuild/
+	$(CP) $(ROOT)/examples/readme $(EXAMPLES_FB)/README
 
 $(EXAMPLES_DEST)% : $(EXAMPLES_SRC)%
 	$(CP) $^ $@

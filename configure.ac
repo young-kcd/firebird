@@ -1204,15 +1204,10 @@ for fb_tgt in \$FB_TARGETS; do
 
 	echo "Creating \$fb_tgt directories"
 
-dnl ### GEN ### directories for databases and misc
-	mkdir -p gen/\$fb_tgt/examples
-	mkdir -p gen/\$fb_tgt/refDatabases
-
 dnl # output
-	mkdir -p gen/\$fb_tgt/include
-	mkdir -p gen/\$fb_tgt/intl
 	mkdir -p gen/\$fb_tgt/firebird/bin
 	mkdir -p gen/\$fb_tgt/firebird/plugins
+	mkdir -p gen/\$fb_tgt/firebird/plugins/udr
 	mkdir -p gen/\$fb_tgt/firebird/examples/api
 	mkdir -p gen/\$fb_tgt/firebird/examples/dbcrypt
 	mkdir -p gen/\$fb_tgt/firebird/examples/empbuild
@@ -1223,10 +1218,11 @@ dnl # output
 	mkdir -p gen/\$fb_tgt/firebird/examples/stat
 	mkdir -p gen/\$fb_tgt/firebird/examples/udf
 	mkdir -p gen/\$fb_tgt/firebird/examples/udr
+	mkdir -p gen/\$fb_tgt/firebird/examples/prebuilt/bin
+	mkdir -p gen/\$fb_tgt/firebird/examples/prebuilt/plugins
 	mkdir -p gen/\$fb_tgt/firebird/lib
 	mkdir -p gen/\$fb_tgt/firebird/misc
 	mkdir -p gen/\$fb_tgt/firebird/help
-	mkdir -p gen/\$fb_tgt/firebird/plugins/udr
 
 dnl ### TEMP ### directories for generated .cpp, .o and .d by module name
 	for src_dir in `cd src; ls -R -1 * | grep : | tr -d : | tr "\n" " "; cd ..`; do
