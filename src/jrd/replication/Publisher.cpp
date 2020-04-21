@@ -71,17 +71,6 @@ namespace
 		}
 	}
 
-	bool checkState(thread_db* tdbb, jrd_tra* transaction = NULL)
-	{
-		const auto dbb = tdbb->getDatabase();
-		const auto attachment = tdbb->getAttachment();
-
-		if (dbb->isReplicating(tdbb))
-			return true;
-
-		return false;
-	}
-
 	IReplicatedSession* getReplicator(thread_db* tdbb, bool cleanupTransactions = false)
 	{
 		const auto attachment = tdbb->getAttachment();
@@ -116,8 +105,6 @@ namespace
 
 		if (!attachment->att_replicator)
 		{
-			dbb->ensureGuid(tdbb);
-
 			auto& pool = *attachment->att_pool;
 			const auto dbId = dbb->getUniqueFileId();
 			const auto& dbName = dbb->dbb_filename;
@@ -331,12 +318,16 @@ void REPL_attach(thread_db* tdbb, bool cleanupTransactions)
 	const auto dbb = tdbb->getDatabase();
 	const auto attachment = tdbb->getAttachment();
 
-	fb_assert(!attachment->att_replicator);
-	getReplicator(tdbb, cleanupTransactions);
+	const auto replMgr = dbb->replManager();
+	if (!replMgr)
+		return;
 
 	fb_assert(!attachment->att_repl_matcher);
 	auto& pool = *attachment->att_pool;
 	attachment->att_repl_matcher = replMgr->createTableMatcher(pool);
+
+	fb_assert(!attachment->att_replicator);
+	getReplicator(tdbb, cleanupTransactions);
 }
 
 void REPL_trans_prepare(thread_db* tdbb, jrd_tra* transaction)
@@ -643,6 +634,7 @@ void REPL_exec_sql(thread_db* tdbb, jrd_tra* transaction, const string& sql)
 	if (!ensureSavepoints(tdbb, transaction))
 		return;
 
+	const auto attachment = tdbb->getAttachment();
 	const auto charset = attachment->att_charset;
 
 	if (!replicator->executeSqlIntl(charset, sql.c_str()))
@@ -652,12 +644,10 @@ void REPL_exec_sql(thread_db* tdbb, jrd_tra* transaction, const string& sql)
 void REPL_log_switch(thread_db* tdbb)
 {
 	const auto dbb = tdbb->getDatabase();
-	fb_assert(dbb);
-
-	dbb->ensureGuid(tdbb);
 
 	const auto replMgr = dbb->replManager();
+	if (!replMgr)
+		return;
 
-	if (replMgr)
-		replMgr->forceLogSwitch();
+	replMgr->forceLogSwitch();
 }

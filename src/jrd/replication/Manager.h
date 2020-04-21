@@ -68,7 +68,6 @@ namespace Replication
 
 	public:
 		Manager(const Firebird::string& dbId,
-				const Firebird::Guid& guid,
 				const Replication::Config* config);
 		~Manager();
 

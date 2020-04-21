@@ -293,7 +293,7 @@ class Database : public pool_alloc<type_dbb>
 
 		LockManager* getLockManager();
 		EventManager* getEventManager();
-		Replication::Manager* getReplManager(const Firebird::Guid& guid);
+		Replication::Manager* getReplManager();
 
 	private:
 		const Firebird::string m_id;
@@ -644,7 +644,7 @@ public:
 
 	Replication::Manager* replManager()
 	{
-		return dbb_gblobj_holder->getReplManager(dbb_guid);
+		return dbb_gblobj_holder->getReplManager();
 	}
 
 private:

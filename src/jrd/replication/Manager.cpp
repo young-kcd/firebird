@@ -96,7 +96,6 @@ bool TableMatcher::matchTable(const MetaName& tableName)
 // Replication manager
 
 Manager::Manager(const string& dbId,
-				 const Guid& guid,
 				 const Replication::Config* config)
 	: m_config(config),
 	  m_replicas(getPool()),
@@ -111,6 +110,8 @@ Manager::Manager(const string& dbId,
 	const auto tdbb = JRD_get_thread_data();
 	const auto dbb = tdbb->getDatabase();
 
+	dbb->ensureGuid(tdbb);
+	const Guid& guid = dbb->dbb_guid;
 	m_sequence = dbb->dbb_repl_sequence;
 
 	if (config->logDirectory.hasData())

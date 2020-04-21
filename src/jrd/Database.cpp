@@ -472,7 +472,7 @@ namespace Jrd
 		return m_eventMgr;
 	}
 
-	Replication::Manager* Database::GlobalObjectHolder::getReplManager(const Guid& guid)
+	Replication::Manager* Database::GlobalObjectHolder::getReplManager()
 	{
 		if (!m_replConfig)
 			return nullptr;
@@ -480,7 +480,7 @@ namespace Jrd
 		MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
 		if (!m_replMgr)
-			m_replMgr = FB_NEW Replication::Manager(m_id, guid, m_replConfig);
+			m_replMgr = FB_NEW Replication::Manager(m_id, m_replConfig);
 
 		return m_replMgr;
 	}
