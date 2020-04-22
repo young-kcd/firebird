@@ -28,6 +28,8 @@ for %%v in ( %* )  do (
 
 if defined FBBUILD_MAKE_KITS_ONLY (goto :MAKE_KITS & goto :EOF)
 
+call :SETVCENV
+
 :: Go to work
 if not defined FB_NOCLEAN (call clean_all)
 :: We do not support debug builds of icu, so we don't pass %FBBUILD_BUILDTYPE%
@@ -71,6 +73,36 @@ goto :END
 @echo    JUSTBUILD - Just build - don't create packages.
 @echo.
 @goto :EOF
+
+
+:SETVCENV
+::===============================
+:: Set up the compiler environment
+
+if DEFINED VS150COMNTOOLS (
+@devenv /? >nul 2>nul
+@if errorlevel 9009 (call "%VS150COMNTOOLS%\..\..\VC\Auxiliary\Build\vcvarsall.bat" %PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS150COMNTOOLS%\..\..\VC\Auxiliary\Build\vcvarsall.bat" %PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
+) else (
+if DEFINED VS140COMNTOOLS (
+@devenv /? >nul 2>nul
+@if errorlevel 9009 (call "%VS140COMNTOOLS%\..\..\VC\vcvarsall.bat" %PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS140COMNTOOLS%\..\..\VC\vcvarsall.bat" %PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
+) else (
+if DEFINED VS120COMNTOOLS (
+@devenv /? >nul 2>nul
+@if errorlevel 9009 (call "%VS120COMNTOOLS%\..\..\VC\vcvarsall.bat" %PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS120COMNTOOLS%\..\..\VC\vcvarsall.bat" %PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
+) else (
+if DEFINED VS100COMNTOOLS (
+@devenv /? >nul 2>nul
+@if errorlevel 9009 (call "%VS100COMNTOOLS%\..\..\VC\vcvarsall.bat" %PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS100COMNTOOLS%\..\..\VC\vcvarsall.bat" %PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
+) else (
+@goto :HELP
+)
+)
+)
+)
+goto :END
+::---------
+
 
 :END
 
