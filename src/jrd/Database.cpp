@@ -307,6 +307,9 @@ namespace Jrd
 
 	bool Database::isReplicating(thread_db* tdbb)
 	{
+		if (!replManager())
+			return false;
+
 		Sync sync(&dbb_repl_sync, FB_FUNCTION);
 		sync.lock(SYNC_SHARED);
 

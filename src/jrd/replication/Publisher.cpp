@@ -80,16 +80,9 @@ namespace
 		if (attachment->isSystem())
 			return NULL;
 
-		// Check whether replication is configured for this database
+		// Check whether replication is configured and enabled for this database
 
 		const auto dbb = tdbb->getDatabase();
-		const auto replMgr = dbb->replManager();
-
-		if (!replMgr)
-			return NULL;
-
-		// Check database-wise replication state
-
 		if (!dbb->isReplicating(tdbb))
 		{
 			if (attachment->att_replicator)
@@ -106,13 +99,12 @@ namespace
 		if (!attachment->att_replicator)
 		{
 			auto& pool = *attachment->att_pool;
-			const auto dbId = dbb->getUniqueFileId();
-			const auto& dbName = dbb->dbb_filename;
-			const auto& dbGuid = dbb->dbb_guid;
-			const auto& currentUser = attachment->att_user->getUserName();
+			const auto manager = dbb->replManager();
+			const auto& guid = dbb->dbb_guid;
+			const auto& userName = attachment->att_user->getUserName();
 
 			attachment->att_replicator = (IReplicatedSession*) FB_NEW_POOL(pool)
-				Replicator(pool, replMgr, dbGuid, currentUser, cleanupTransactions);
+				Replicator(pool, manager, guid, userName, cleanupTransactions);
 		}
 
 		fb_assert(attachment->att_replicator);
