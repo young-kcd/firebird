@@ -29,7 +29,7 @@ LD_LIBRARY_PATH=$FIREBIRD/lib:$LD_LIBRARY_PATH
 
 export FIREBIRD LD_LIBRARY_PATH
 
-# Normally this 3 lines are not needed, keep hem just in case of something VERY starnge
+# Normally this 3 lines are not needed, keep them just in case of something VERY starnge
 ISC_USER=
 ISC_PASSWORD=
 export ISC_USER ISC_PASSWORD
