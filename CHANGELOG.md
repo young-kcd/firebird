@@ -104,9 +104,17 @@
 * [CORE-4462](http://tracker.firebirdsql.org/browse/CORE-4462): Make it possible to restore compressed .nbk files without explicitly decompressing them  
   Contributor(s): Alex Peshkoff
 
+* [CORE-3983](http://tracker.firebirdsql.org/browse/CORE-3983): Ability to authenticate user in "EXECUTE STATEMENT ON EXTERNAL DATA SOURCE" by hash of the current password  
+  Contributor(s): Alex Peshkoff
+
 ## Bugfixes
 
+* [CORE-6290](http://tracker.firebirdsql.org/browse/CORE-6290): Hex number used at the end of statement may read invalid memory and produce wrong values or exceptions  
+  Note(s): Backported into v3.0.6  
+  Contributor(s): Adriano dos Santos Fernandes
+
 * [CORE-6283](http://tracker.firebirdsql.org/browse/CORE-6283): isNullable() in message metadata, returned by metadata builder, does not match with datatype set by setType() in metadata builder  
+  Note(s): Backported into v3.0.6  
   Contributor(s): Alex Peshkoff
 
 * [CORE-6282](http://tracker.firebirdsql.org/browse/CORE-6282): Change type of MON$ATTACHMENTS.MON$IDLE\_TIMER and MON$STATEMENTS.MON$STATEMENT\_TIMER to TIMESTAMP WITH TIME ZONE  
