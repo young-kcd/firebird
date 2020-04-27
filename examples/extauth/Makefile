@@ -65,7 +65,7 @@ CXXFLAGS=-std=c++11 -pthread -I$(ROOT)/include -fPIC $(TOMCRYPT_COMPILE)
 LDFLAGS=-pthread -L$(LIB) -Wl,-rpath,'$$ORIGIN/../lib' $(TOMCRYPT_LINK)
 
 LINK=c++
-LINK_LIBS=-lfbclient -ltomcrypt
+LINK_LIBS=-lfbclient -ltomcrypt -ltommath
 
 $(INTERMED)/%.o: ./%.cpp
 	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
