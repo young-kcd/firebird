@@ -179,7 +179,7 @@ set SED_COMMAND=sed -e s/\$MAJOR/%FB_MAJOR_VER%/g ^
   -e s/\$MINOR/%FB_MINOR_VER%/g ^
   -e s/\$RELEASE/%FB_REV_NO%/g
 @echo   Processing version strings in Readme_%FBBUILD_PROD_STATUS%.txt
-@%SED_COMMAND% Readme_%FBBUILD_PROD_STATUS%.txt > %FB_GEN_DIR%\readmes\Readme.txt 
+@%SED_COMMAND% Readme_%FBBUILD_PROD_STATUS%.txt > %FB_GEN_DIR%\readmes\Readme.txt
 @for %%f in (installation_readme.txt) do (
 	@echo   Processing version strings in %%f
 	@%SED_COMMAND% %%f > %FB_GEN_DIR%\readmes\%%f
@@ -389,9 +389,9 @@ setlocal
 @echo   Copying other include files required for development...
 set OUTPATH=%FB_OUTPUT_DIR%\include
 @copy %FB_ROOT_PATH%\src\yvalve\perf.h %OUTPATH%\ > nul
-@copy %FB_ROOT_PATH%\src\include\gen\firebird.pas %OUTPATH%\firebird\ > nul || (@call :ERROR Failure executing copy %FB_ROOT_PATH%\src\include\gen\firebird.pas %OUTPATH%\firebird\ )
+@copy %FB_ROOT_PATH%\src\include\gen\firebird.pas %OUTPATH%\firebird\ > nul || (@call :ERROR Failure executing copy %FB_ROOT_PATH%\src\include\gen\firebird.pas %OUTPATH%\firebird\  )
 @if %ERRLEV% GEQ 1 goto :END
-@xcopy /e /i /y %FB_ROOT_PATH%\src\include\firebird\impl %OUTPATH%\firebird\  > nul || (@call :ERROR Failure executing @xcopy /e /i /y %FB_ROOT_PATH%\src\include\firebird\* %OUTPATH%\firebird\ )
+@xcopy /e /i /y %FB_ROOT_PATH%\src\include\firebird\impl %OUTPATH%\firebird\  > nul || (@call :ERROR Failure executing @xcopy /e /i /y %FB_ROOT_PATH%\src\include\firebird\* %OUTPATH%\firebird\  )
 @if %ERRLEV% GEQ 1 goto :END
 
 endlocal
