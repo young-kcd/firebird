@@ -540,9 +540,12 @@ Source: {#WOW64Dir}\lib\*.lib; DestDir: {app}\WOW64\lib; Components: DevAdminCom
 Source: {#FilesDir}\plugins.conf; DestDir: {app}; Components: ServerComponent; Flags: ignoreversion;
 Source: {#FilesDir}\plugins\*.dll; DestDir: {app}\plugins; Components: ServerComponent; Flags: ignoreversion;
 Source: {#FilesDir}\plugins\*.conf; DestDir: {app}\plugins; Components: ServerComponent; Flags: ignoreversion;
+Source: {#FilesDir}\plugins\udr\*.*; DestDir: {app}\plugins\udr; Components: ServerComponent; Flags: ignoreversion;
 
 Source: {#FilesDir}\misc\*.*; DestDir: {app}\misc; Components: ServerComponent; Flags: ignoreversion;
 Source: {#FilesDir}\misc\upgrade\security\*.*; DestDir: {app}\misc\upgrade\security; Components: ServerComponent; Flags: ignoreversion;
+
+Source: {#FilesDir}\tzdata\*.*; DestDir: {app}\tzdata; Components: ClientComponent; Flags: ignoreversion;
 
 ;Source: {#FilesDir}\system32\Firebird2Control.cpl; DestDir: {sys}; Components: ServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
 #endif /* files */
@@ -557,6 +560,7 @@ Source: {#FilesDir}\examples\empbuild\*.*; DestDir: {app}\examples\empbuild; Com
 Source: {#FilesDir}\examples\include\*.*; DestDir: {app}\examples\include; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
 Source: {#FilesDir}\examples\interfaces\*.*; DestDir: {app}\examples\interfaces; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
 Source: {#FilesDir}\examples\package\*.*; DestDir: {app}\examples\package; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
+Source: {#FilesDir}\examples\prebuilt\*.*; DestDir: {app}\examples\prebuilt; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
 Source: {#FilesDir}\examples\stat\*.*; DestDir: {app}\examples\stat; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
 Source: {#FilesDir}\examples\udf\*.*; DestDir: {app}\examples\udf; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
 Source: {#FilesDir}\examples\udr\*.*; DestDir: {app}\examples\udr; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
