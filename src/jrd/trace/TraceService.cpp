@@ -287,8 +287,6 @@ void TraceSvcJrd::listSessions()
 
 void TraceSvcJrd::readSession(TraceSession& session)
 {
-	const size_t maxLogSize = Config::getMaxUserTraceLogSize(); // in MB
-
 	if (session.ses_logfile.empty())
 	{
 		m_svc.printf(false, "Can't open trace data log file");
@@ -316,7 +314,7 @@ void TraceSvcJrd::readSession(TraceSession& session)
 			m_svc.putBytes(buff, len);
 
 			const bool logFull = (flags & trs_log_full);
-			if (logFull && log->getApproxLogSize() <= maxLogSize)
+			if (logFull && !log->isFull())
 			{
 				// resume session
 				changeFlags(session.ses_id, 0, trs_log_full);
