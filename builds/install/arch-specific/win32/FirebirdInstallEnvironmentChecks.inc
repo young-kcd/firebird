@@ -722,7 +722,7 @@ Var
 
 function ClassicInstallChosen: Boolean;
 begin
-	result := IsTaskSelected('UseClassicServerTask');
+	result := WizardIsTaskSelected('UseClassicServerTask');
 end;
 
 
@@ -1005,8 +1005,8 @@ function InstallGuardian: boolean;
 begin
   result := False;
   if (ConfigureFirebird) then
-     result := IsTaskSelected('UseSuperServerTask\UseGuardianTask') 
-			or IsTaskSelected('UseSuperClassicTask\UseGuardianTask');
+     result := WizardIsTaskSelected('UseSuperServerTask\UseGuardianTask')
+			or WizardIsTaskSelected('UseSuperClassicTask\UseGuardianTask');
 end;
 
 
@@ -1014,7 +1014,7 @@ function CopyGds32: boolean;
 begin
   result := False;
   if ConfigureFirebird then begin
-     result := ( IsTaskSelected( 'CopyFbClientAsGds32Task' ) );
+     result := ( WizardIsTaskSelected( 'CopyFbClientAsGds32Task' ) );
   end;
 end;
 
@@ -1027,7 +1027,7 @@ end;
 
 function CopyFbClientLib: boolean;
 begin
-    result := ( IsTaskSelected( 'CopyFbClientToSysTask' ) );
+    result := ( WizardIsTaskSelected( 'CopyFbClientToSysTask' ) );
 end;
 
 

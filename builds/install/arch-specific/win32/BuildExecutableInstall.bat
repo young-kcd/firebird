@@ -92,8 +92,8 @@ if %FBBUILD_ZIP_PACK% EQU 1 (
 
 if %FBBUILD_ISX_PACK% NEQ 1 goto :SKIP_INNO
 
-if defined INNO5_SETUP_PATH (
-  set ISCC_COMMAND=%INNO5_SETUP_PATH%\iscc.exe
+if defined INNO6_SETUP_PATH (
+  set ISCC_COMMAND=%INNO6_SETUP_PATH%\iscc.exe
 )
 :: If the environment variable is not set let's search in PATH
 if not defined ISCC_COMMAND (
@@ -519,8 +519,8 @@ endlocal
 ::=======
 :: Now let's go and build the installable .exe
 ::
-:: Note - define INNO5_SETUP_PATH with double quotes if it is installed into a path string using spaces.
-:: eg set INNO5_SETUP_PATH="C:\Program Files\Inno Setup 5"
+:: Note - define INNO6_SETUP_PATH with double quotes if it is installed into a path string using spaces.
+:: eg set INNO6_SETUP_PATH="C:\Program Files\Inno Setup 6"
 ::
 ::=================================================
 @echo.
@@ -573,7 +573,7 @@ popd
 @echo              (These files roughly double the size of the package.)
 @echo.
 @echo       ISX    Create installable binary from InnoSetup Extensions compiler.
-@echo              (You need to set the INNO5_SETUP_PATH environment variable.)
+@echo              (You need to set the INNO6_SETUP_PATH environment variable.)
 @echo.
 @echo       ZIP    Create Zip package.
 @echo              (SEVENZIP is currently used and the SEVENZIP env var must be set.)

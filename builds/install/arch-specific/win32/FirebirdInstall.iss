@@ -23,9 +23,9 @@
 
 ;   Usage Notes:
 ;
-;   This script has been designed to work with Inno Setup v5.5.8 (unicode
-;   version). It is available as a quick start pack from here:
-;     http://www.jrsoftware.org/isdl.php#qsp
+;   This script has been designed to work with Inno Setup v6.0.4
+;   It is available as a quick start pack from here:
+;     http://www.jrsoftware.org/isdl.php
 ;
 ;
 ;   Known bugs and problems etc etc.
@@ -259,10 +259,13 @@ OutputDir=builds\install_images
 #define GenDir "gen\readmes"
 LicenseFile={#LicensesDir}\IPLicense.txt
 
+WizardStyle=modern
+WizardSizePercent=130,150
+WizardResizable=yes
 WizardImageFile={#ScriptsDir}\firebird_install_logo1.bmp
 WizardSmallImageFile={#ScriptsDir}\firebird_install_logo1.bmp
 
-DefaultDirName={code:ChooseInstallDir|{pf}\Firebird\Firebird_{#AppVer}}
+DefaultDirName={code:ChooseInstallDir|{commonpf}\Firebird\Firebird_{#AppVer}}
 DefaultGroupName=Firebird {#GroupnameVer} ({#PlatformTarget})
 
 UninstallDisplayIcon={code:ChooseUninstallIcon|{#UninstallBinary}}
@@ -272,7 +275,6 @@ Compression=none
 SolidCompression=yes
 #endif
 
-ShowUndisplayableLanguages={#defined iss_debug}
 AllowNoIcons=true
 AlwaysShowComponentsList=true
 PrivilegesRequired=admin
@@ -801,15 +803,15 @@ begin
   ServerType := '';
   SvcParams := '';
 
-  if IsComponentSelected('ServerComponent') and IsTaskSelected('AutoStartTask') then
+  if WizardIsComponentSelected('ServerComponent') and WizardIsTaskSelected('AutoStartTask') then
     SvcParams := ' -auto '
   else
     SvcParams := ' -demand ';
 
   SvcParams := ServerType + SvcParams;
 
-  if IsComponentSelected('ServerComponent') and ( IsTaskSelected('UseSuperServerTask\UseGuardianTask')
-      or ( IsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) ) then
+  if WizardIsComponentSelected('ServerComponent') and ( WizardIsTaskSelected('UseSuperServerTask\UseGuardianTask')
+      or ( WizardIsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) ) then
     SvcParams := ServerType + SvcParams +  ' -guardian ';
 
   InstanceName := ServiceName('We currently do not support or test for a different instance name');
@@ -848,7 +850,7 @@ begin
 	AStringList := TStringList.create;
 	with AStringList do begin
 		Add( 'create user ' + GetAdminUserName + ' password ''' + GetAdminUserPassword + ''' using plugin Srp;' );
-    if IsTaskSelected('EnableLegacyClientAuth') then
+    if WizardIsTaskSelected('EnableLegacyClientAuth') then
       if ( ( uppercase( GetAdminUserName ) <> 'SYSDBA' ) or ( GetAdminUserPassword <> 'masterkey' ) ) then
         Add( 'create or alter user ' + GetAdminUserName + ' password ''' + GetAdminUserPassword + ''' using plugin Legacy_UserManager;' );
 		Add( 'commit;' );  //Technically exit implies a commit so this not necessary. OTOH, explicitly committing makes for more readable code.
@@ -863,28 +865,28 @@ end;
 function InstallGuardianIcon(): Boolean;
 begin
   result := false;
-  if IsTaskSelected('UseApplicationTask') and
-    IsComponentSelected('ServerComponent') and (
-    IsTaskSelected('UseSuperServerTask\UseGuardianTask') or
-    IsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) then
+  if WizardIsTaskSelected('UseApplicationTask') and
+    WizardIsComponentSelected('ServerComponent') and (
+    WizardIsTaskSelected('UseSuperServerTask\UseGuardianTask') or
+    WizardIsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) then
       result := true;
 end;
 
 function InstallServerIcon(): Boolean;
 begin
   result := false;
-  if IsTaskSelected('UseApplicationTask') and
-    IsComponentSelected('ServerComponent') and
-      not ( IsTaskSelected('UseSuperServerTask\UseGuardianTask') or
-            IsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) then
+  if WizardIsTaskSelected('UseApplicationTask') and
+    WizardIsComponentSelected('ServerComponent') and
+      not ( WizardIsTaskSelected('UseSuperServerTask\UseGuardianTask') or
+            WizardIsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) then
       result := true;
 end;
 
 function StartApp(Default: String): String;
 begin
-  if IsComponentSelected('ServerComponent') and (
-      IsTaskSelected('UseSuperServerTask\UseGuardianTask') or
-      IsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) then
+  if WizardIsComponentSelected('ServerComponent') and (
+      WizardIsTaskSelected('UseSuperServerTask\UseGuardianTask') or
+      WizardIsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) then
     Result := GetAppPath+'\fbguard.exe'
   else
     Result := GetAppPath+'\firebird.exe' ;
@@ -899,8 +901,8 @@ function IsNotAutoStartApp: boolean;
 //Support function to help remove unwanted registry entry.
 begin
   result := true;
-  if ( IsComponentSelected('ServerComponent') and IsTaskSelected('AutoStartTask') ) and
-    ( IsComponentSelected('ServerComponent') and IsTaskSelected('UseApplicationTask') ) then
+  if ( WizardIsComponentSelected('ServerComponent') and WizardIsTaskSelected('AutoStartTask') ) and
+    ( WizardIsComponentSelected('ServerComponent') and WizardIsTaskSelected('UseApplicationTask') ) then
   result := false;
 end;
 
@@ -932,26 +934,26 @@ begin
   //firebird.conf exists. If it doesn't then we don't care.
   if FileExists(GetAppPath+'\firebird.conf') then begin
 
-    if (IsComponentSelected('ServerComponent') ) then begin
+    if (WizardIsComponentSelected('ServerComponent') ) then begin
 
 // Setting GuardianOption to 0 makes no sense. If the user deploys the guardian
 // there is an expectation that it will restart the server in the event of a crash.
 // Otherwise, why start firebird with the guardian?
-//      if not ( IsTaskSelected('UseSuperServerTask\UseGuardianTask') or  IsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) then
+//      if not ( WizardIsTaskSelected('UseSuperServerTask\UseGuardianTask') or  WizardIsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) then
 //				ReplaceLine(GetAppPath+'\firebird.conf','GuardianOption','GuardianOption = 0','#');
 
       // These attempts to modify firebird.conf may not survice repeated installs.
 
-			if IsTaskSelected('UseClassicServerTask') then
+			if WizardIsTaskSelected('UseClassicServerTask') then
 				ReplaceLine(GetAppPath+'\firebird.conf','ServerMode = ','ServerMode = Classic','#');
 
-      if IsTaskSelected('UseSuperClassicTask') then
+      if WizardIsTaskSelected('UseSuperClassicTask') then
 				ReplaceLine(GetAppPath+'\firebird.conf','ServerMode = ','ServerMode = SuperClassic','#');
 
-			if IsTaskSelected('UseSuperServerTask')  then
+			if WizardIsTaskSelected('UseSuperServerTask')  then
 				ReplaceLine(GetAppPath+'\firebird.conf','ServerMode = ','ServerMode = Super','#');
 
-      if IsTaskSelected('EnableLegacyClientAuth') then begin
+      if WizardIsTaskSelected('EnableLegacyClientAuth') then begin
 				ReplaceLine(GetAppPath+'\firebird.conf','AuthServer = ','AuthServer = Legacy_Auth, Srp, Win_Sspi','#');
 				ReplaceLine(GetAppPath+'\firebird.conf','AuthClient = ','AuthClient = Legacy_Auth, Srp, Win_Sspi','#');
 				ReplaceLine(GetAppPath+'\firebird.conf','UserManager = ','UserManager = Legacy_UserManager, Srp','#');
@@ -1002,7 +1004,6 @@ procedure CurPageChanged(CurPage: Integer);
 // wpReady, wpPreparing, wpInstalling, wpInfoAfter, wpFinished
 begin
   case CurPage of
-    wpWelcome:      ResizeWizardForm(True); //There was a bug: every time when "go back" pressed the form was resized!
     wpInfoBefore:   WizardForm.INFOBEFOREMEMO.font.name:='Courier New';
     wpInfoAfter:    WizardForm.INFOAFTERMEMO.font.name:='Courier New';
   end;
@@ -1043,8 +1044,8 @@ begin
     ssDone: begin
       //If user has chosen to install an app and run it automatically set up the registry accordingly
       //so that the server or guardian starts evertime they login.
-      if (IsComponentSelected('ServerComponent') and IsTaskSelected('AutoStartTask') ) and
-              ( IsComponentSelected('ServerComponent') and IsTaskSelected('UseApplicationTask') ) then begin
+      if (WizardIsComponentSelected('ServerComponent') and WizardIsTaskSelected('AutoStartTask') ) and
+              ( WizardIsComponentSelected('ServerComponent') and WizardIsTaskSelected('UseApplicationTask') ) then begin
         AppStr := StartApp('')+StartAppParams('');
         RegWriteStringValue (HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Run', 'Firebird', AppStr);
       end;
