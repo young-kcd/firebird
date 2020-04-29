@@ -329,11 +329,13 @@ for %%v in (IPLicense.txt IDPLicense.txt ) do (
 ::  Walk through all docs and transform any that are not .txt, .pdf or .html to .txt
 @echo   Setting .txt filetype to ascii docs.
 for /R %FB_OUTPUT_DIR%\doc %%v in ( * ) do (
-  if /I not "%%~xv" == ".txt" (
-    if /I not "%%~xv" == ".pdf" (
-      if /I not "%%~xv" == ".htm" (
-        if /I not "%%~xv" == ".html" (
-          ren %%v %%~nxv.txt
+  if /I not "%%~xv" == ".md" (
+    if /I not "%%~xv" == ".txt" (
+      if /I not "%%~xv" == ".pdf" (
+        if /I not "%%~xv" == ".htm" (
+          if /I not "%%~xv" == ".html" (
+            ren %%v %%~nxv.txt
+          )
         )
       )
     )
