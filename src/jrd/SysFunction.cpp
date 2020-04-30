@@ -174,7 +174,6 @@ const int oneDay = 86400;
 const unsigned getContextLen = 255;
 
 // auxiliary functions
-void add10msec(ISC_TIMESTAMP* v, SINT64 msec, SINT64 multiplier);
 double fbcot(double value) throw();
 
 // generic setParams functions
@@ -376,29 +375,6 @@ const char
 static const char
 	FALSE_VALUE[] = "FALSE",
 	TRUE_VALUE[] = "TRUE";
-
-
-void add10msec(ISC_TIMESTAMP* v, SINT64 msec, SINT64 multiplier)
-{
-	const SINT64 full = msec * multiplier;
-	const int days = full / (oneDay * ISC_TIME_SECONDS_PRECISION);
-	const int secs = full % (oneDay * ISC_TIME_SECONDS_PRECISION);
-
-	v->timestamp_date += days;
-
-	// Time portion is unsigned, so we avoid unsigned rolling over negative values
-	// that only produce a new unsigned number with the wrong result.
-	if (secs < 0 && ISC_TIME(-secs) > v->timestamp_time)
-	{
-		v->timestamp_date--;
-		v->timestamp_time += (oneDay * ISC_TIME_SECONDS_PRECISION) + secs;
-	}
-	else if ((v->timestamp_time += secs) >= (oneDay * ISC_TIME_SECONDS_PRECISION))
-	{
-		v->timestamp_date++;
-		v->timestamp_time -= (oneDay * ISC_TIME_SECONDS_PRECISION);
-	}
-}
 
 
 double fbcot(double value) throw()
@@ -2451,7 +2427,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			if (valueDsc->dsc_dtype == dtype_sql_date)
 				timestamp.value().timestamp_date += quantity / 24;
 			else
-				add10msec(&timestamp.value(), quantity, 3600 * ISC_TIME_SECONDS_PRECISION);
+				NoThrowTimeStamp::add10msec(&timestamp.value(), quantity, 3600 * ISC_TIME_SECONDS_PRECISION);
 			break;
 
 		case blr_extract_minute:
@@ -2461,7 +2437,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			if (valueDsc->dsc_dtype == dtype_sql_date)
 				timestamp.value().timestamp_date += quantity / 1440; // 1440 == 24 * 60
 			else
-				add10msec(&timestamp.value(), quantity, 60 * ISC_TIME_SECONDS_PRECISION);
+				NoThrowTimeStamp::add10msec(&timestamp.value(), quantity, 60 * ISC_TIME_SECONDS_PRECISION);
 			break;
 
 		case blr_extract_second:
@@ -2474,7 +2450,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			if (valueDsc->dsc_dtype == dtype_sql_date)
 				timestamp.value().timestamp_date += quantity / oneDay;
 			else
-				add10msec(&timestamp.value(), quantity, ISC_TIME_SECONDS_PRECISION);
+				NoThrowTimeStamp::add10msec(&timestamp.value(), quantity, ISC_TIME_SECONDS_PRECISION);
 			break;
 
 		case blr_extract_millisecond:
@@ -2487,7 +2463,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			if (valueDsc->dsc_dtype == dtype_sql_date)
 				timestamp.value().timestamp_date += quantity / milliPow / (oneDay * 1000);
 			else
-				add10msec(&timestamp.value(), quantity, ISC_TIME_SECONDS_PRECISION / 1000 / milliPow);
+				NoThrowTimeStamp::add10msec(&timestamp.value(), quantity, ISC_TIME_SECONDS_PRECISION / 1000 / milliPow);
 			break;
 
 		default:
