@@ -43,8 +43,8 @@ using namespace Firebird;
 #ifndef HAVE_STRERROR_R
 void strerror_r(int err, char* buf, size_t bufSize)
 {
-	static Firebird::GlobalPtr<Firebird::Mutex> mutex;
-	Firebird::MutexLockGuard guard(mutex, FB_FUNCTION);
+	static GlobalPtr<Mutex> mutex;
+	MutexLockGuard guard(mutex, FB_FUNCTION);
 	strncpy(buf, strerror(err), bufSize);
 }
 #endif
@@ -61,16 +61,23 @@ PluginLogWriter::PluginLogWriter(const char* fileName, size_t maxSize) :
 	mutexName.append(m_fileName);
 
 	checkMutex("init", ISC_mutex_init(&m_mutex, mutexName.c_str()));
-	Guard guard(this);
 #endif
+	Guard guard(this);
 
 	reopen();
 }
 
 PluginLogWriter::~PluginLogWriter()
 {
-	if (m_fileHandle != -1)
-		::close(m_fileHandle);
+	{
+		Guard guard(this);
+
+		if (m_idleTimer)
+			m_idleTimer->stop();
+
+		if (m_fileHandle != -1)
+			::close(m_fileHandle);
+	}
 
 #ifdef WIN_NT
 	ISC_mutex_fini(&m_mutex);
@@ -113,9 +120,9 @@ void PluginLogWriter::reopen()
 
 FB_SIZE_T PluginLogWriter::write(const void* buf, FB_SIZE_T size)
 {
-#ifdef WIN_NT
 	Guard guard(this);
-#endif
+
+	setupIdleTimer(true);
 
 	if (m_fileHandle < 0)
 		reopen();
@@ -179,6 +186,7 @@ FB_SIZE_T PluginLogWriter::write(const void* buf, FB_SIZE_T size)
 	if (written != size)
 		checkErrno("write");
 
+	setupIdleTimer(false);
 	return written;
 }
 
@@ -238,3 +246,34 @@ void PluginLogWriter::unlock()
 	checkMutex("unlock", ISC_mutex_unlock(&m_mutex));
 }
 #endif // WIN_NT
+
+
+const unsigned int IDLE_TIMEOUT = 30; // seconds
+
+void PluginLogWriter::setupIdleTimer(bool clear)
+{
+	unsigned int timeout = clear ? 0 : IDLE_TIMEOUT;
+	if (!timeout)
+	{
+		if (m_idleTimer)
+			m_idleTimer->reset(0);
+	}
+	else
+	{
+		if (!m_idleTimer)
+			m_idleTimer = FB_NEW IdleTimer(this);
+
+		m_idleTimer->reset(timeout);
+	}
+}
+
+void PluginLogWriter::onIdleTimer(TimerImpl*)
+{
+	Guard guard(this);
+
+	if (m_fileHandle == -1)
+		return;
+
+	::close(m_fileHandle);
+	m_fileHandle = -1;
+}
