@@ -7506,6 +7506,7 @@ constant
 	| '-' ul_numeric_constant	{ $$ = newNode<NegateNode>($2); }
 	| '-' LIMIT64_INT			{ $$ = MAKE_const_sint64(MIN_SINT64, 0); }
 	| '-' LIMIT64_NUMBER		{ $$ = MAKE_const_sint64(MIN_SINT64, $2->getScale()); }
+	| '-' u_constant_128		{ $$ = newNode<NegateNode>($2); }
 	| boolean_literal
 	;
 
@@ -7517,7 +7518,12 @@ u_numeric_constant
 		{ $$ = MAKE_constant($1->c_str(), CONSTANT_NUM128, $1->getScale()); }
 	| LIMIT64_INT
 		{ $$ = MAKE_constant($1->c_str(), CONSTANT_NUM128); }
-	| NUM128
+	| u_constant_128
+	;
+
+%type <valueExprNode> u_constant_128
+u_constant_128
+	: NUM128
 		{ $$ = MAKE_constant($1->c_str(), CONSTANT_NUM128, $1->getScale()); }
 	;
 
