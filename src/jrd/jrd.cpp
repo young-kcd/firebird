@@ -8697,17 +8697,12 @@ unsigned int TimeoutTimer::timeToExpire() const
 	return r > 0 ? r : 0;
 }
 
-bool TimeoutTimer::getExpireTimestamp(const ISC_TIMESTAMP_TZ start, ISC_TIMESTAMP_TZ& exp) const
+bool TimeoutTimer::getExpireClock(SINT64& clock) const
 {
 	if (!m_start)
 		return false;
 
-	SINT64 ticks = TimeStamp::timeStampToTicks(start.utc_timestamp);
-	ticks += m_value * ISC_TIME_SECONDS_PRECISION / 1000;
-
-	exp.utc_timestamp = TimeStamp::ticksToTimeStamp(ticks);
-	exp.time_zone = start.time_zone;
-
+	clock = m_start + m_value;
 	return true;
 }
 
