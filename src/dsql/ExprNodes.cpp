@@ -4253,15 +4253,18 @@ dsc* CurrentTimeNode::execute(thread_db* tdbb, jrd_req* request) const
 	// Use the request timestamp.
 	fb_assert(!request->req_gmt_timestamp.isEmpty());
 
-	ISC_TIME time = request->req_gmt_timestamp.value().timestamp_time;
-	TimeStamp::round_time(time, precision);
+	ISC_TIMESTAMP_TZ currentTimeStamp;
+	currentTimeStamp.utc_timestamp = request->req_gmt_timestamp.value();
+	currentTimeStamp.time_zone = tdbb->getAttachment()->att_current_timezone;
 
 	impure->vlu_desc.dsc_dtype = dtype_sql_time_tz;
 	impure->vlu_desc.dsc_length = type_lengths[dtype_sql_time_tz];
 	impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_sql_time_tz;
 
-	impure->vlu_misc.vlu_sql_time_tz.utc_time = time;
 	impure->vlu_misc.vlu_sql_time_tz.time_zone = tdbb->getAttachment()->att_current_timezone;
+	impure->vlu_misc.vlu_sql_time_tz.utc_time = TimeZoneUtil::timeStampTzToTimeTz(currentTimeStamp).utc_time;
+
+	TimeStamp::round_time(impure->vlu_misc.vlu_sql_time_tz.utc_time, precision);
 
 	return &impure->vlu_desc;
 }
@@ -5474,7 +5477,7 @@ dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 				case blr_extract_second:
 				case blr_extract_millisecond:
 					TimeZoneUtil::decodeTime(*(ISC_TIME_TZ*) value->dsc_address,
-						false, TimeZoneUtil::NO_OFFSET, &EngineCallbacks::instance, &times, &fractions);
+						false, TimeZoneUtil::NO_OFFSET, &times, &fractions);
 					break;
 
 				case blr_extract_timezone_hour:

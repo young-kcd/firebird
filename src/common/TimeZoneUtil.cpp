@@ -190,6 +190,8 @@ static InitInstance<TimeZoneStartup> timeZoneStartup;
 
 //-------------------------------------
 
+
+const ISC_DATE TimeZoneUtil::TIME_TZ_BASE_DATE = 58849;	// 2020-01-01
 const char TimeZoneUtil::GMT_FALLBACK[5] = "GMT*";
 InitInstance<PathName> TimeZoneUtil::tzDataPath;
 
@@ -524,69 +526,41 @@ void TimeZoneUtil::extractOffset(const ISC_TIMESTAMP_TZ& timeStampTz, SSHORT* of
 	*offset = displacement;
 }
 
-// Converts a time-tz to a time in a given zone.
-ISC_TIME TimeZoneUtil::timeTzToTime(const ISC_TIME_TZ& timeTz, USHORT toTimeZone, Callbacks* cb)
-{
-	ISC_TIMESTAMP_TZ tempTimeStampTz;
-	tempTimeStampTz.utc_timestamp.timestamp_date = cb->getLocalDate();
-	tempTimeStampTz.utc_timestamp.timestamp_time = 0;
-	tempTimeStampTz.time_zone = cb->getSessionTimeZone();
-	TimeZoneUtil::localTimeStampToUtc(tempTimeStampTz);
-
-	tempTimeStampTz.utc_timestamp.timestamp_time = timeTz.utc_time;
-	tempTimeStampTz.time_zone = timeTz.time_zone;
-
-	return timeStampTzToTimeStamp(tempTimeStampTz, toTimeZone).timestamp_time;
-}
-
-// Converts a timestamp-tz to a timestamp in a given zone.
-ISC_TIMESTAMP TimeZoneUtil::timeStampTzToTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, USHORT toTimeZone)
-{
-	ISC_TIMESTAMP_TZ tempTimeStampTz = timeStampTz;
-	tempTimeStampTz.time_zone = toTimeZone;
-
-	struct tm times;
-	int fractions;
-	decodeTimeStamp(tempTimeStampTz, false, TimeZoneUtil::NO_OFFSET, &times, &fractions);
-
-	return TimeStamp::encode_timestamp(&times, fractions);
-}
-
 // Converts a time from local to UTC.
-void TimeZoneUtil::localTimeToUtc(ISC_TIME& time, Callbacks* cb)
+void TimeZoneUtil::localTimeToUtc(ISC_TIME& time, ISC_USHORT timeZone)
 {
 	ISC_TIME_TZ timeTz;
 	timeTz.utc_time = time;
-	timeTz.time_zone = cb->getSessionTimeZone();
-	localTimeToUtc(timeTz, cb);
+	timeTz.time_zone = timeZone;
+	localTimeToUtc(timeTz);
 
 	time = timeTz.utc_time;
 }
 
 // Converts a time from local to UTC.
-void TimeZoneUtil::localTimeToUtc(ISC_TIME_TZ& timeTz, Callbacks* cb)
+void TimeZoneUtil::localTimeToUtc(ISC_TIME_TZ& timeTz)
 {
-	ISC_TIMESTAMP_TZ tempTimeStampTz;
-	tempTimeStampTz.utc_timestamp.timestamp_date = cb->getCurrentGmtTimeStamp().timestamp_date;
-	tempTimeStampTz.utc_timestamp.timestamp_time = timeTz.utc_time;
-	tempTimeStampTz.time_zone = timeTz.time_zone;
-	localTimeStampToUtc(tempTimeStampTz);
+	ISC_TIMESTAMP_TZ tsTz;
+	tsTz.utc_timestamp.timestamp_date = TIME_TZ_BASE_DATE;
+	tsTz.utc_timestamp.timestamp_time = timeTz.utc_time;
+	tsTz.time_zone = timeTz.time_zone;
+	localTimeStampToUtc(tsTz);
 
-	timeTz.utc_time = tempTimeStampTz.utc_timestamp.timestamp_time;
+	timeTz.utc_time = tsTz.utc_timestamp.timestamp_time;
 }
 
 // Converts a timestamp from its local datetime fields to UTC.
 void TimeZoneUtil::localTimeStampToUtc(ISC_TIMESTAMP& timeStamp, Callbacks* cb)
 {
-	ISC_TIMESTAMP_TZ tempTimeStampTz;
-	tempTimeStampTz.utc_timestamp.timestamp_date = timeStamp.timestamp_date;
-	tempTimeStampTz.utc_timestamp.timestamp_time = timeStamp.timestamp_time;
-	tempTimeStampTz.time_zone = cb->getSessionTimeZone();
+	ISC_TIMESTAMP_TZ tsTz;
+	tsTz.utc_timestamp.timestamp_date = timeStamp.timestamp_date;
+	tsTz.utc_timestamp.timestamp_time = timeStamp.timestamp_time;
+	tsTz.time_zone = cb->getSessionTimeZone();
 
-	localTimeStampToUtc(tempTimeStampTz);
+	localTimeStampToUtc(tsTz);
 
-	timeStamp.timestamp_date = tempTimeStampTz.utc_timestamp.timestamp_date;
-	timeStamp.timestamp_time = tempTimeStampTz.utc_timestamp.timestamp_time;
+	timeStamp.timestamp_date = tsTz.utc_timestamp.timestamp_date;
+	timeStamp.timestamp_time = tsTz.utc_timestamp.timestamp_time;
 }
 
 // Converts a timestamp from its local datetime fields to UTC.
@@ -643,35 +617,15 @@ void TimeZoneUtil::localTimeStampToUtc(ISC_TIMESTAMP_TZ& timeStampTz)
 	timeStampTz.utc_timestamp = TimeStamp::ticksToTimeStamp(ticks);
 }
 
-bool TimeZoneUtil::decodeTime(const ISC_TIME_TZ& timeTz, bool gmtFallback, SLONG gmtOffset, Callbacks* cb,
+bool TimeZoneUtil::decodeTime(const ISC_TIME_TZ& timeTz, bool gmtFallback, SLONG gmtOffset,
 	struct tm* times, int* fractions)
 {
-	bool tzLookup = true;
 	ISC_TIMESTAMP_TZ timeStampTz;
+	timeStampTz.utc_timestamp.timestamp_date = TIME_TZ_BASE_DATE;
+	timeStampTz.utc_timestamp.timestamp_time = timeTz.utc_time;
+	timeStampTz.time_zone = timeTz.time_zone;
 
-	try
-	{
-#ifdef DEV_BUILD
-		if (gmtFallback && getenv("MISSING_ICU_EMULATION"))
-			(Arg::Gds(isc_random) << "Emulating missing ICU").raise();
-#endif
-		timeStampTz = cvtTimeTzToTimeStampTz(timeTz, cb);
-	}
-	catch (const Exception&)
-	{
-		if (gmtFallback)
-		{
-			tzLookup = false;
-			timeStampTz.time_zone = displacementToOffsetZone(gmtOffset == TimeZoneUtil::NO_OFFSET ? 0 : gmtOffset);
-			timeStampTz.utc_timestamp = cb->getCurrentGmtTimeStamp();
-			timeStampTz.utc_timestamp.timestamp_time = timeTz.utc_time;
-		}
-		else
-			throw;
-	}
-
-	decodeTimeStamp(timeStampTz, gmtFallback, gmtOffset, times, fractions);
-	return tzLookup;
+	return decodeTimeStamp(timeStampTz, gmtFallback, gmtOffset, times, fractions);
 }
 
 bool TimeZoneUtil::decodeTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, bool gmtFallback, SLONG gmtOffset,
@@ -727,7 +681,7 @@ bool TimeZoneUtil::decodeTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, bool gmt
 				throw;
 
 			icuFail = true;
-			displacement = gmtOffset == TimeZoneUtil::NO_OFFSET ? 0 : gmtOffset;
+			displacement = gmtOffset == NO_OFFSET ? 0 : gmtOffset;
 		}
 	}
 
@@ -829,8 +783,42 @@ void TimeZoneUtil::validateGmtTimeStamp(NoThrowTimeStamp& ts)
 		ts.value() = getCurrentGmtTimeStamp().utc_timestamp;
 }
 
+// Converts a time-tz to a time.
+ISC_TIME TimeZoneUtil::timeTzToTime(const ISC_TIME_TZ& timeTz, Callbacks* cb)
+{
+	ISC_TIMESTAMP_TZ tsTz;
+	tsTz.utc_timestamp.timestamp_date = TIME_TZ_BASE_DATE;
+	tsTz.utc_timestamp.timestamp_time = timeTz.utc_time;
+	tsTz.time_zone = timeTz.time_zone;
+
+	struct tm times;
+	int fractions;
+	decodeTimeStamp(tsTz, false, NO_OFFSET, &times, &fractions);
+
+	tsTz.utc_timestamp.timestamp_date = cb->getLocalDate();
+	tsTz.utc_timestamp.timestamp_time =
+		TimeStamp::encode_time(times.tm_hour, times.tm_min, times.tm_sec, fractions);
+
+	localTimeStampToUtc(tsTz);
+
+	return timeStampTzToTimeStamp(tsTz, cb->getSessionTimeZone()).timestamp_time;
+}
+
+// Converts a timestamp-tz to a timestamp in a given zone.
+ISC_TIMESTAMP TimeZoneUtil::timeStampTzToTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, USHORT toTimeZone)
+{
+	ISC_TIMESTAMP_TZ tsTz = timeStampTz;
+	tsTz.time_zone = toTimeZone;
+
+	struct tm times;
+	int fractions;
+	decodeTimeStamp(tsTz, false, NO_OFFSET, &times, &fractions);
+
+	return TimeStamp::encode_timestamp(&times, fractions);
+}
+
 // Converts a time to timestamp-tz.
-ISC_TIMESTAMP_TZ TimeZoneUtil::cvtTimeToTimeStampTz(const ISC_TIME& time, Callbacks* cb)
+ISC_TIMESTAMP_TZ TimeZoneUtil::timeToTimeStampTz(const ISC_TIME& time, Callbacks* cb)
 {
 	// SQL: source => TIMESTAMP WITHOUT TIME ZONE => TIMESTAMP WITH TIME ZONE
 
@@ -844,66 +832,82 @@ ISC_TIMESTAMP_TZ TimeZoneUtil::cvtTimeToTimeStampTz(const ISC_TIME& time, Callba
 }
 
 // Converts a time to time-tz.
-ISC_TIME_TZ TimeZoneUtil::cvtTimeToTimeTz(const ISC_TIME& time, Callbacks* cb)
+ISC_TIME_TZ TimeZoneUtil::timeToTimeTz(const ISC_TIME& time, Callbacks* cb)
 {
-	ISC_TIMESTAMP_TZ tsTz = cvtTimeToTimeStampTz(time, cb);
+	ISC_TIMESTAMP_TZ tsTz;
+	tsTz.time_zone = cb->getSessionTimeZone();
+	tsTz.utc_timestamp.timestamp_date = TIME_TZ_BASE_DATE;
+	tsTz.utc_timestamp.timestamp_time = time;
+
+	localTimeStampToUtc(tsTz);
 
 	ISC_TIME_TZ timeTz;
-	timeTz.utc_time = tsTz.utc_timestamp.timestamp_time;
 	timeTz.time_zone = tsTz.time_zone;
+	timeTz.utc_time = tsTz.utc_timestamp.timestamp_time;
 
 	return timeTz;
 }
 
 // Converts a time-tz to timestamp-tz.
-ISC_TIMESTAMP_TZ TimeZoneUtil::cvtTimeTzToTimeStampTz(const ISC_TIME_TZ& timeTz, Callbacks* cb)
+ISC_TIMESTAMP_TZ TimeZoneUtil::timeTzToTimeStampTz(const ISC_TIME_TZ& timeTz, Callbacks* cb)
 {
 	// SQL: Copy date fields from CURRENT_DATE and time and time zone fields from the source.
 
+	struct tm localTimes;
+	TimeStamp::decode_date(cb->getLocalDate(), &localTimes);
+
 	ISC_TIMESTAMP_TZ tsTz;
-	tsTz.utc_timestamp.timestamp_date = cb->getLocalDate();
-	tsTz.utc_timestamp.timestamp_time = timeTzToTime(timeTz, cb->getSessionTimeZone(), cb);
-	tsTz.time_zone = cb->getSessionTimeZone();
-	localTimeStampToUtc(tsTz);
 	tsTz.time_zone = timeTz.time_zone;
+	tsTz.utc_timestamp.timestamp_date = TIME_TZ_BASE_DATE;
+	tsTz.utc_timestamp.timestamp_time = timeTz.utc_time;
+
+	struct tm times;
+	int fractions;
+	decodeTimeStamp(tsTz, false, NO_OFFSET, &times, &fractions);
+
+	times.tm_mday = localTimes.tm_mday;
+	times.tm_mon = localTimes.tm_mon;
+	times.tm_year = localTimes.tm_year;
+
+	tsTz.utc_timestamp = TimeStamp::encode_timestamp(&times, fractions);
+	localTimeStampToUtc(tsTz);
 
 	return tsTz;
 }
 
 // Converts a time-tz to timestamp.
-ISC_TIMESTAMP TimeZoneUtil::cvtTimeTzToTimeStamp(const ISC_TIME_TZ& timeTz, Callbacks* cb)
+ISC_TIMESTAMP TimeZoneUtil::timeTzToTimeStamp(const ISC_TIME_TZ& timeTz, Callbacks* cb)
 {
 	// SQL: source => TIMESTAMP WITH TIME ZONE => TIMESTAMP WITHOUT TIME ZONE
 
-	ISC_TIMESTAMP_TZ tsTz = cvtTimeTzToTimeStampTz(timeTz, cb);
+	ISC_TIMESTAMP_TZ tsTz = timeTzToTimeStampTz(timeTz, cb);
 
 	return timeStampTzToTimeStamp(tsTz, cb->getSessionTimeZone());
 }
 
-// Converts a time-tz to time.
-ISC_TIME TimeZoneUtil::cvtTimeTzToTime(const ISC_TIME_TZ& timeTz, Callbacks* cb)
-{
-	return timeTzToTime(timeTz, cb->getSessionTimeZone(), cb);
-}
-
 // Converts a timestamp-tz to timestamp.
-ISC_TIMESTAMP TimeZoneUtil::cvtTimeStampTzToTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, Callbacks* cb)
+ISC_TIMESTAMP TimeZoneUtil::timeStampTzToTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, Callbacks* cb)
 {
 	return timeStampTzToTimeStamp(timeStampTz, cb->getSessionTimeZone());
 }
 
 // Converts a timestamp-tz to time-tz.
-ISC_TIME_TZ TimeZoneUtil::cvtTimeStampTzToTimeTz(const ISC_TIMESTAMP_TZ& timeStampTz)
+ISC_TIME_TZ TimeZoneUtil::timeStampTzToTimeTz(const ISC_TIMESTAMP_TZ& timeStampTz)
 {
+	struct tm times;
+	int fractions;
+	decodeTimeStamp(timeStampTz, false, NO_OFFSET, &times, &fractions);
+
 	ISC_TIME_TZ timeTz;
-	timeTz.utc_time = timeStampTz.utc_timestamp.timestamp_time;
+	timeTz.utc_time = TimeStamp::encode_time(times.tm_hour, times.tm_min, times.tm_sec, fractions);
 	timeTz.time_zone = timeStampTz.time_zone;
+	localTimeToUtc(timeTz);
 
 	return timeTz;
 }
 
 // Converts a timestamp to timestamp-tz.
-ISC_TIMESTAMP_TZ TimeZoneUtil::cvtTimeStampToTimeStampTz(const ISC_TIMESTAMP& timeStamp, Callbacks* cb)
+ISC_TIMESTAMP_TZ TimeZoneUtil::timeStampToTimeStampTz(const ISC_TIMESTAMP& timeStamp, Callbacks* cb)
 {
 	// SQL: Copy time and time zone fields from the source.
 
@@ -917,21 +921,15 @@ ISC_TIMESTAMP_TZ TimeZoneUtil::cvtTimeStampToTimeStampTz(const ISC_TIMESTAMP& ti
 }
 
 // Converts a timestamp to time-tz.
-ISC_TIME_TZ TimeZoneUtil::cvtTimeStampToTimeTz(const ISC_TIMESTAMP& timeStamp, Callbacks* cb)
+ISC_TIME_TZ TimeZoneUtil::timeStampToTimeTz(const ISC_TIMESTAMP& timeStamp, Callbacks* cb)
 {
 	// SQL: source => TIMESTAMP WITH TIME ZONE => TIME WITH TIME ZONE
 
-	ISC_TIMESTAMP_TZ tsTz = cvtTimeStampToTimeStampTz(timeStamp, cb);
-
-	ISC_TIME_TZ timeTz;
-	timeTz.utc_time = tsTz.utc_timestamp.timestamp_time;
-	timeTz.time_zone = tsTz.time_zone;
-
-	return timeTz;
+	return timeStampTzToTimeTz(timeStampToTimeStampTz(timeStamp, cb));
 }
 
 // Converts a date to timestamp-tz.
-ISC_TIMESTAMP_TZ TimeZoneUtil::cvtDateToTimeStampTz(const ISC_DATE& date, Callbacks* cb)
+ISC_TIMESTAMP_TZ TimeZoneUtil::dateToTimeStampTz(const ISC_DATE& date, Callbacks* cb)
 {
 	// SQL: source => TIMESTAMP WITHOUT TIME ZONE => TIMESTAMP WITH TIME ZONE
 

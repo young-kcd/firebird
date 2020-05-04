@@ -21,7 +21,7 @@ a routine that changes the current time zone and later run `SET TIME ZONE LOCAL`
 to its initially received value.
 
 A time zone may be a string with a time zone region (for example, `America/Sao_Paulo`) or a hours:minutes displacement
-(for example, `-03:00`) from GMT.
+(for example, `-03:00` or `+3`) from GMT.
 
 A time/timestamp with time zone is considered equal to another time/timestamp with time zone if their conversion to UTC
 are equal, for example, `time '10:00 -02' = time '09:00 -03'`, since both are the same as `time '12:00 GMT'`.
@@ -32,7 +32,7 @@ in America/New_York, 2:30 AM on March 12, 2017 does not exist and is interpreted
 3:30 AM UTC-04). For the second case, when DST ends in America/New_York, 1:30 AM on November 5, 2017 repeats twice and
 is interpreted as 1:30 AM UTC-04 instead of 1:30 AM UTC-05.
 
-`EXTENDED TIME/TIMESTAMP WITH TIME ZONE` are intended for use only when communicating with a cliens,
+`EXTENDED TIME/TIMESTAMP WITH TIME ZONE` are intended for use only when communicating with clients,
 they solve a problem of representing correct time on clients missing ICU library. One can't use extended
 datatypes in tables, procedures, etc. The only way to use that datatypes is datatype coercion including
 SET BIND statement (see [README.set_bind](./README.set_bind.md) for further details).
@@ -47,6 +47,33 @@ TIMESTAMP [ { WITH | WITHOUT } TIME ZONE ]
 
 EXTENDED { TIME | TIMESTAMP } WITH TIME ZONE
 ```
+
+## Region-based `TIME WITH TIME ZONE` semantics
+
+By definition region-based time zones depends on a moment (date and time - or timestamp) to
+know its UTC offset in relation to GMT.
+But Firebird also supports region-based time zones in `TIME WITH TIME ZONE` values.
+
+When constructing a `TIME WITH TIME ZONE` value from a literal or conversion its UTC value must
+be computed and cannot be changed, so the current date may not be used. In this case the fixed date
+`2020-01-01` is used. So when comparing `TIME WITH TIME ZONE` with different time zones the
+comparation is done is a manner similar to they being `TIMESTAMP WITH TIME ZONE` values in the
+given date.
+
+However when converting between `TIMESTAMP` types to `TIME WITH TIME ZONE` that fixed date is
+not used, otherwise some weird conversions may be seen when the current date has a different
+offset (due to DST changes) than one in `2020-01-01`. In this case when converting
+a `TIME WITH TIME ZONE` to `TIMESTAMP WITH TIME ZONE` the time portion is maintained
+(if possible). For example, if current date is `2020-05-03` the effective offset in time zone
+`America/Los_Angeles` is `-420` while its effective offset in `2020-01-01` is `-480`, but
+`cast(time '10:00:00 America/Los_Angeles' as timestamp with time zone)` will result in
+`2020-05-03 10:00:00.0000 America/Los_Angeles` instead of having the time portion adjusted.
+
+But in a date when DST starts there is a missing hour, for example in `America/Los_Angeles`
+in `2021-03-14` which there is no `02:00:00` to `02:59:59` hours. In this case the conversion
+is done like constructing a literal and the hour is adjusted to its next valid value.
+For example, in `2021-03-14` a `cast(time '02:10:00 America/Los_Angeles' as timestamp with time zone)`
+will result in `2021-03-14 03:10:00.0000 America/Los_Angeles`.
 
 ### Storage
 
@@ -63,6 +90,7 @@ For example, a `00:00` displacement is encoded as `(1 * (0 * 60 + 0)) + 1439 = 1
 
 EXTENDED TIME/TIMESTAMP WITH TIME ZONE have additionally more 2 bytes always containing absolute
 time zone offset in minutes.
+
 ### API structs
 
 ```
@@ -342,16 +370,16 @@ DATABASE_VERSION
 `RDB$TIME_ZONE_UTIL.TRANSITIONS` returns the set of rules between the start and end timestamps.
 
 Input parameters:
- - `TIME_ZONE_NAME` type `CHAR(63)`
- - `FROM_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE`
- - `TO_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE`
+ - `RDB$TIME_ZONE_NAME` type `CHAR(63)`
+ - `RDB$FROM_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE`
+ - `RDB$TO_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE`
 
  Output parameters:
- - `START_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - the transition' start timestamp
- - `END_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - the transition's end timestamp
- - `ZONE_OFFSET` type `SMALLINT` - number of minutes related to the zone's offset
- - `DST_OFFSET` type `SMALLINT` - number of minutes related to the zone's DST offset
- - `EFFECTIVE_OFFSET` type `SMALLINT` - effective offset (`ZONE_OFFSET + DST_OFFSET`)
+ - `RDB$START_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - the transition' start timestamp
+ - `RDB$END_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - the transition's end timestamp
+ - `RDB$ZONE_OFFSET` type `SMALLINT` - number of minutes related to the zone's offset
+ - `RDB$DST_OFFSET` type `SMALLINT` - number of minutes related to the zone's DST offset
+ - `RDB$EFFECTIVE_OFFSET` type `SMALLINT` - effective offset (`ZONE_OFFSET + DST_OFFSET`)
 
 ```
 select *
@@ -364,13 +392,13 @@ select *
 Returns:
 
 ```
-             START_TIMESTAMP                END_TIMESTAMP ZONE_OFFSET DST_OFFSET EFFECTIVE_OFFSET
-============================ ============================ =========== ========== ================
-2016-10-16 03:00:00.0000 GMT 2017-02-19 01:59:59.9999 GMT        -180         60             -120
-2017-02-19 02:00:00.0000 GMT 2017-10-15 02:59:59.9999 GMT        -180          0             -180
-2017-10-15 03:00:00.0000 GMT 2018-02-18 01:59:59.9999 GMT        -180         60             -120
-2018-02-18 02:00:00.0000 GMT 2018-10-21 02:59:59.9999 GMT        -180          0             -180
-2018-10-21 03:00:00.0000 GMT 2019-02-17 01:59:59.9999 GMT        -180         60             -120
+         RDB$START_TIMESTAMP            RDB$END_TIMESTAMP RDB$ZONE_OFFSET RDB$DST_OFFSET RDB$EFFECTIVE_OFFSET
+============================ ============================ =============== ============== ====================
+2016-10-16 03:00:00.0000 GMT 2017-02-19 01:59:59.9999 GMT            -180             60                 -120
+2017-02-19 02:00:00.0000 GMT 2017-10-15 02:59:59.9999 GMT            -180              0                 -180
+2017-10-15 03:00:00.0000 GMT 2018-02-18 01:59:59.9999 GMT            -180             60                 -120
+2018-02-18 02:00:00.0000 GMT 2018-10-21 02:59:59.9999 GMT            -180              0                 -180
+2018-10-21 03:00:00.0000 GMT 2019-02-17 01:59:59.9999 GMT            -180             60                 -120
 ```
 
 # Updating the time zone database

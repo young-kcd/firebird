@@ -3596,7 +3596,10 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 			timestamp1.value().timestamp_date = 0;
 
 			if (value1Dsc->dsc_dtype == dtype_sql_time && value2Dsc->isDateTimeTz())
-				TimeZoneUtil::localTimeToUtc(timestamp1.value().timestamp_time, &EngineCallbacks::instance);
+			{
+				TimeZoneUtil::localTimeToUtc(timestamp1.value().timestamp_time,
+					EngineCallbacks::instance->getSessionTimeZone());
+			}
 			break;
 
 		case dtype_sql_date:
@@ -3629,7 +3632,10 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 			timestamp2.value().timestamp_date = 0;
 
 			if (value2Dsc->dsc_dtype == dtype_sql_time && value1Dsc->isDateTimeTz())
-				TimeZoneUtil::localTimeToUtc(timestamp2.value().timestamp_time, &EngineCallbacks::instance);
+			{
+				TimeZoneUtil::localTimeToUtc(timestamp2.value().timestamp_time,
+					EngineCallbacks::instance->getSessionTimeZone());
+			}
 			break;
 
 		case dtype_sql_date:
