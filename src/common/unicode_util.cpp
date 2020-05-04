@@ -100,7 +100,6 @@ public:
 		}
 		else
 		{
-
 			// ICU has several schemas for entries names
 			const char* patterns[] =
 			{
@@ -347,8 +346,8 @@ private:
 #if defined DEV_BUILD && defined TZ_UPDATE
 		getEntryPoint("ucal_openTimeZones", inModule, ucalOpenTimeZones);
 
-		getEntryPoint("uenum_close", inModule, uenumClose);
-		getEntryPoint("uenum_unext", inModule, uenumUnext);
+		getEntryPoint("uenum_close", module, uenumClose);
+		getEntryPoint("uenum_unext", module, uenumUnext);
 #endif
 	}
 
