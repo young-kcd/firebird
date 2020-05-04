@@ -1052,6 +1052,8 @@ Below is the list of time zone region names and IDs.
 - W-SU (64906)
 - WET (64905)
 - Zulu (64904)
+- America/Nuuk (64903)
+- Asia/Qostanay (64902)
 
 
 Author:

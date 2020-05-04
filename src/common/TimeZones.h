@@ -1,7 +1,5 @@
 // The content of this file is generated with help of macro TZ_UPDATE.
 
-// The content of this file is generated with help of macro TZ_UPDATE.
-
 static const UChar TZSTR_0[] = {'G', 'M', 'T', '\0'};
 static const UChar TZSTR_1[] = {'A', 'C', 'T', '\0'};
 static const UChar TZSTR_2[] = {'A', 'E', 'T', '\0'};
@@ -634,6 +632,8 @@ static const UChar TZSTR_628[] = {'V', 'S', 'T', '\0'};
 static const UChar TZSTR_629[] = {'W', '-', 'S', 'U', '\0'};
 static const UChar TZSTR_630[] = {'W', 'E', 'T', '\0'};
 static const UChar TZSTR_631[] = {'Z', 'u', 'l', 'u', '\0'};
+static const UChar TZSTR_632[] = {'A', 'm', 'e', 'r', 'i', 'c', 'a', '/', 'N', 'u', 'u', 'k', '\0'};
+static const UChar TZSTR_633[] = {'A', 's', 'i', 'a', '/', 'Q', 'o', 's', 't', 'a', 'n', 'a', 'y', '\0'};
 
 // Do not change order of items in this array! The index corresponds to a TimeZone ID, which must be fixed!
 static const TimeZoneDesc TIME_ZONE_LIST[] = {
@@ -1268,5 +1268,7 @@ static const TimeZoneDesc TIME_ZONE_LIST[] = {
 	{"VST", TZSTR_628},
 	{"W-SU", TZSTR_629},
 	{"WET", TZSTR_630},
-	{"Zulu", TZSTR_631}
+	{"Zulu", TZSTR_631},
+	{"America/Nuuk", TZSTR_632},
+	{"Asia/Qostanay", TZSTR_633}
 };
