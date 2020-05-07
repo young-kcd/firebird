@@ -115,7 +115,7 @@ public:
 		{
 		case ENC:
 			att->execute(status, tra, 0,
-				"ALTER DATABASE ENCRYPT WITH \"DbCrypt_example\"", 3, NULL, NULL, NULL, NULL);
+				"ALTER DATABASE ENCRYPT WITH \"fbSampleDbCrypt\"", 3, NULL, NULL, NULL, NULL);
 			if (status->getState() & IStatus::STATE_ERRORS)
 				throw "execute";
 			break;
