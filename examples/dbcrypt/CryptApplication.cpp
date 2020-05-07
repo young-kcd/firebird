@@ -238,8 +238,13 @@ int main(int ac, char** av)
 		av++;
 	}
 
+#ifdef WIN_NT
+	_putenv_s("ISC_USER", "sysdba");
+	_putenv_s("ISC_PASSWORD", "masterkey");
+#else
 	setenv("ISC_USER", "sysdba", 0);
 	setenv("ISC_PASSWORD", "masterkey", 0);
+#endif
 
 	App app;
 	try
