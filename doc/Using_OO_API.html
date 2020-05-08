@@ -6,7 +6,7 @@
 	<meta name="generator" content="LibreOffice 6.3.4.2.0 (Linux)"/>
 	<meta name="author" content="alex "/>
 	<meta name="created" content="2013-05-31T00:00:00.010003100"/>
-	<meta name="changed" content="2020-04-07T19:03:03.576658853"/>
+	<meta name="changed" content="2020-05-08T12:18:09.185599623"/>
 	<meta name="created" content="00:00:00">
 	<style type="text/css">
 		@page { margin: 2.01cm }
@@ -2328,7 +2328,9 @@ interface – replaces isc_tr_handle.</font></p>
 	replaces isc_transaction_info().</font></p>
 	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
 	prepare(StatusType* status, unsigned msgLength, const unsigned char*
-	message) – replaces isc_prepare_transaction2().</font></p>
+	message) – replaces isc_prepare_transaction2(), with zero
+	msgLength behaves like isc_prepare_transaction() automatically
+	generating appropriate message.</font></p>
 	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
 	commit(StatusType* status) – replaces isc_commit_transaction().</font></p>
 	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
