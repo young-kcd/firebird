@@ -6,7 +6,7 @@
 	<meta name="generator" content="LibreOffice 6.3.4.2.0 (Linux)"/>
 	<meta name="author" content="alex "/>
 	<meta name="created" content="2013-05-31T00:00:00.010003100"/>
-	<meta name="changed" content="2020-04-07T18:37:07.278210989"/>
+	<meta name="changed" content="2020-05-08T12:59:03.687467748"/>
 	<meta name="created" content="00:00:00">
 	<meta name="created" content="00:00:00">
 	<meta name="created" content="00:00:00">
@@ -2125,6 +2125,12 @@ parameter replaced by FB_DEC34 for DecFloat34:</font></p>
 	fromString(StatusType* status, const char* from, FB_DEC16* to) –
 	make decimal float value from string.</font></p>
 </ol>
+<p style="margin-bottom: 0cm"><br/>
+
+</p>
+<p style="margin-bottom: 0cm"><br/>
+
+</p>
 <p style="margin-bottom: 0cm"><a name="Dtc"></a><font size="4" style="font-size: 14pt"><font color="#000000">Dtc
 </font>interface – distributed transactions coordinator. Used to
 start distributed (working with 2 or more attachments) transaction.
@@ -2229,6 +2235,25 @@ configuration value for different databases). </font>
 	old DB engine is in use on modern server. Pay attention – keys
 	(see getKey()) from different versions do not match and when used
 	inappropriately will always return 0/nullptr/false.</font></p>
+</ol>
+<p style="margin-bottom: 0cm"><br/>
+
+</p>
+<p style="margin-bottom: 0cm"><br/>
+
+</p>
+<p style="margin-bottom: 0cm"><a name="Int128"></a><font size="4" style="font-size: 14pt">Int128
+interfaces that help to work with 128-bit integers (used as base type
+for numeric and decimal with precision &gt; 18).</font></p>
+<ol>
+	<li value="1"><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
+	toString(StatusType* status, const FB_I128* from, int scale,
+	unsigned bufferLength, char* buffer) – convert 128-bit integer
+	value to string taking scale into an account.</font></p>
+	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
+	fromString(StatusType* status, int scale, const char* from, FB_I128*
+	to) – make 128-bit integer value from string taking scale into an
+	account.</font></p>
 </ol>
 <p style="margin-bottom: 0cm"><br/>
 
@@ -2874,7 +2899,9 @@ interface – replaces isc_tr_handle.</font></p>
 	replaces isc_transaction_info().</font></p>
 	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
 	prepare(StatusType* status, unsigned msgLength, const unsigned char*
-	message) – replaces isc_prepare_transaction2().</font></p>
+	message) – replaces isc_prepare_transaction2(), with zero
+	msgLength behaves like isc_prepare_transaction() automatically
+	generating appropriate message.</font></p>
 	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
 	commit(StatusType* status) – replaces isc_commit_transaction().</font></p>
 	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
@@ -3012,6 +3039,20 @@ interface – various helper methods required here or there.</font></p>
 	unsigned year, unsigned month, unsigned day, unsigned hours,
 	unsigned minutes, unsigned seconds, unsigned fractions, const char*
 	timeZone) – encode timestamp taking time zone into an account.</font></p>
+	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">IInt128*
+	getInt128(Status status) – access <a href="#Int128">Int128</a>
+	interface.</font></p>
+	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
+	decodeTimeTzEx(Status status, const ISC_TIME_TZ_EX* timeTz, uint*
+	hours, uint* minutes, uint* seconds, uint* fractions, uint
+	timeZoneBufferLength, string timeZoneBuffer) – decode time taking
+	extended time zone into an account.</font></p>
+	<li><p style="margin-bottom: 0cm"><font size="4" style="font-size: 14pt">void
+	decodeTimeStampTzEx(Status status, const ISC_TIMESTAMP_TZ_EX*
+	timeStampTz, uint* year, uint* month, uint* day, uint* hours, uint*
+	minutes, uint* seconds, uint* fractions, uint timeZoneBufferLength,
+	string timeZoneBuffer) – decode timestamp taking extended time
+	zone into an account.</font></p>
 </ol>
 <p style="margin-bottom: 0cm"><br/>
 
