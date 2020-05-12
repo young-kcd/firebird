@@ -64,7 +64,6 @@ KEY_AUTH_objects=$(INTERMED)/ExtAuth.o
 CXXFLAGS=-std=c++11 -pthread -I$(ROOT)/include -fPIC $(TOMCRYPT_COMPILE)
 LDFLAGS=-pthread -L$(LIB) -Wl,-rpath,'$$ORIGIN/../lib' $(TOMCRYPT_LINK)
 
-LINK=c++
 LINK_LIBS=-lfbclient -ltomcrypt -ltommath
 
 $(INTERMED)/%.o: ./%.cpp
@@ -77,12 +76,12 @@ all:		keygen plugin
 keygen:		$(BLD_KEYGEN)
 
 $(BLD_KEYGEN):	$(KEYGEN_objects) $(TCWRAP_objects)
-	$(LINK) $(LDFLAGS) $^ -o $@ $(LINK_LIBS)
+	$(CXX) $(LDFLAGS) $^ -o $@ $(LINK_LIBS)
 
 plugin:		$(BLD_SIMPLE_KEY_AUTH)
 
 $(BLD_SIMPLE_KEY_AUTH):	$(KEY_AUTH_objects) $(TCWRAP_objects)
-	$(LINK) -shared $(LDFLAGS) $^ -o $@ $(LINK_LIBS)
+	$(CXX) -shared $(LDFLAGS) $^ -o $@ $(LINK_LIBS)
 
 clean:
 	rm -f $(INTERMED)/*.o* $(BLD_KEYGEN) $(BLD_SIMPLE_KEY_AUTH)
