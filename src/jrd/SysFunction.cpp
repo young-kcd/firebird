@@ -59,6 +59,7 @@
 #include "../common/classes/FpeControl.h"
 #include "../jrd/extds/ExtDS.h"
 
+#include <cmath>
 #include <math.h>
 
 #ifndef WIN_NT
@@ -1825,7 +1826,7 @@ dsc* evlStdMath(thread_db* tdbb, const SysFunction* function, const NestValueArr
 		return NULL;
 	}
 
-	if (isinf(rc))
+	if (std::isinf(rc))
 	{
 		status_exception::raise(Arg::Gds(isc_arith_except) <<
 								Arg::Gds(isc_sysf_fp_overflow) << Arg::Str(function->name));
@@ -3823,7 +3824,7 @@ dsc* evlExp(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 		const double rc = exp(MOV_get_double(tdbb, value));
 		if (rc == HUGE_VAL) // unlikely to trap anything
 			status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_exception_float_overflow));
-		if (isinf(rc))
+		if (std::isinf(rc))
 			status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_exception_float_overflow));
 
 		impure->vlu_misc.vlu_double = rc;
@@ -5560,7 +5561,7 @@ dsc* evlPower(thread_db* tdbb, const SysFunction* function, const NestValueArray
 		}
 
 		const double rc = pow(v1, v2);
-		if (isinf(rc))
+		if (std::isinf(rc))
 			status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_exception_float_overflow));
 
 		impure->vlu_misc.vlu_double = rc;

@@ -19,6 +19,7 @@
  */
 
 #include "firebird.h"
+#include <cmath>
 #include <math.h>
 #include <ctype.h>
 #include "../common/TimeZoneUtil.h"
@@ -1858,7 +1859,7 @@ dsc* ArithmeticNode::execute(thread_db* tdbb, jrd_req* request) const
 
 				impure->vlu_misc.vlu_double = MOV_get_double(tdbb, desc1) / divisor;
 
-				if (isinf(impure->vlu_misc.vlu_double))
+				if (std::isinf(impure->vlu_misc.vlu_double))
 				{
 					ERR_post(Arg::Gds(isc_arith_except) <<
 							 Arg::Gds(isc_exception_float_overflow));
@@ -1949,7 +1950,7 @@ dsc* ArithmeticNode::add(thread_db* tdbb, const dsc* desc, impure_value* value, 
 
 		value->vlu_misc.vlu_double = (blrOp == blr_subtract) ? d2 - d1 : d1 + d2;
 
-		if (isinf(value->vlu_misc.vlu_double))
+		if (std::isinf(value->vlu_misc.vlu_double))
 			ERR_post(Arg::Gds(isc_arith_except) << Arg::Gds(isc_exception_float_overflow));
 
 		result->dsc_dtype = DEFAULT_DOUBLE;
@@ -2046,7 +2047,7 @@ dsc* ArithmeticNode::add2(thread_db* tdbb, const dsc* desc, impure_value* value,
 
 		value->vlu_misc.vlu_double = (blrOp == blr_subtract) ? d2 - d1 : d1 + d2;
 
-		if (isinf(value->vlu_misc.vlu_double))
+		if (std::isinf(value->vlu_misc.vlu_double))
 			ERR_post(Arg::Gds(isc_arith_except) << Arg::Gds(isc_exception_float_overflow));
 
 		result->dsc_dtype = DEFAULT_DOUBLE;
@@ -2149,7 +2150,7 @@ dsc* ArithmeticNode::multiply(const dsc* desc, impure_value* value) const
 		const double d2 = MOV_get_double(tdbb, &value->vlu_desc);
 		value->vlu_misc.vlu_double = d1 * d2;
 
-		if (isinf(value->vlu_misc.vlu_double))
+		if (std::isinf(value->vlu_misc.vlu_double))
 		{
 			ERR_post(Arg::Gds(isc_arith_except) <<
 					 Arg::Gds(isc_exception_float_overflow));
@@ -2262,7 +2263,7 @@ dsc* ArithmeticNode::multiply2(const dsc* desc, impure_value* value) const
 		const double d2 = MOV_get_double(tdbb, &value->vlu_desc);
 		value->vlu_misc.vlu_double = d1 * d2;
 
-		if (isinf(value->vlu_misc.vlu_double))
+		if (std::isinf(value->vlu_misc.vlu_double))
 		{
 			ERR_post(Arg::Gds(isc_arith_except) <<
 					 Arg::Gds(isc_exception_float_overflow));
@@ -2381,7 +2382,7 @@ dsc* ArithmeticNode::divide2(const dsc* desc, impure_value* value) const
 		}
 		const double d1 = MOV_get_double(tdbb, &value->vlu_desc);
 		value->vlu_misc.vlu_double = d1 / d2;
-		if (isinf(value->vlu_misc.vlu_double))
+		if (std::isinf(value->vlu_misc.vlu_double))
 		{
 			ERR_post(Arg::Gds(isc_arith_except) <<
 					 Arg::Gds(isc_exception_float_overflow));

@@ -36,6 +36,7 @@
  */
 
 #include "firebird.h"
+#include <cmath>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -1449,7 +1450,7 @@ double CVT_get_double(const dsc* desc, DecimalStatus decSt, ErrorFunction err, b
 			else if (scale < 0)
 				value *= CVT_power_of_ten(-scale);
 
-			if (isinf(value))
+			if (std::isinf(value))
 			{
 				if (getNumericOverflow)
 				{
