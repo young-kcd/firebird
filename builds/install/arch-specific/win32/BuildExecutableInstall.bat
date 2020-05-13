@@ -472,6 +472,9 @@ if "%FBBUILD_SHIP_PDB%" == "ship_pdb" (
     set SKIP_FILES=%SKIP_FILES% -x!*.pdb
 )
 
+:: No need to ship this file with the msi runtime
+set SKIP_FILES=%SKIP_FILES% -x!*.wixpdb
+
 if "%FB2_EXAMPLES%" == "0" set SKIP_FILES=%SKIP_FILES% -xr-!examples
 
 if exist %FBBUILD_ZIPFILE% (
@@ -637,6 +640,8 @@ if "%FBBUILD_PROD_STATUS%"=="PROD" (
 @echo   Production status is Final or Release Candidate
 @echo   Error %ERRLEV% must be fixed before continuing
 @echo.
+) else (
+set ERRLEV=0
 )
 @goto :EOF
 
