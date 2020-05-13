@@ -365,7 +365,6 @@ Name: AutoStartTask; Description: {cm:AutoStartTask}; Components: ServerComponen
 ;Copying of client libs to <sys>
 Name: CopyFbClientToSysTask; Description: {cm:CopyFbClientToSysTask}; Components: ClientComponent; MinVersion: 4,4; Check: ShowCopyFbClientLibTask;
 Name: CopyFbClientAsGds32Task; Description: {cm:CopyFbClientAsGds32Task}; Components: ClientComponent; MinVersion: 4,4; Flags: Unchecked; Check: ShowCopyGds32Task;
-Name: EnableLegacyClientAuth; Description: {cm:EnableLegacyClientAuth}; Components: ClientComponent; MinVersion: 4,4; Flags: Unchecked; Check: ConfigureAuthentication;
 
 
 [Run]
@@ -854,9 +853,6 @@ begin
 	AStringList := TStringList.create;
 	with AStringList do begin
 		Add( 'create user ' + GetAdminUserName + ' password ''' + GetAdminUserPassword + ''' using plugin Srp;' );
-    if WizardIsTaskSelected('EnableLegacyClientAuth') then
-      if ( ( uppercase( GetAdminUserName ) <> 'SYSDBA' ) or ( GetAdminUserPassword <> 'masterkey' ) ) then
-        Add( 'create or alter user ' + GetAdminUserName + ' password ''' + GetAdminUserPassword + ''' using plugin Legacy_UserManager;' );
 		Add( 'commit;' );  //Technically exit implies a commit so this not necessary. OTOH, explicitly committing makes for more readable code.
 		Add( 'exit;' );
 		SaveToFile( Tempdir +'\temp.sql' );
@@ -930,8 +926,6 @@ procedure UpdateFirebirdConf;
 // Update firebird conf.
 // If user has deselected the guardian we should update firebird.conf accordingly.
 // We also test if user has asked for classic or super server
-// If EnableLegacyClientAuth has ben selected we update the file.......
-// Otherwise we leave the file unchanged.
 begin
   //There is no simple, foolproof and futureproof way to check whether
   //we are doing a server install, so the easiest way is to see if a
@@ -956,13 +950,6 @@ begin
 
 			if WizardIsTaskSelected('UseSuperServerTask')  then
 				ReplaceLine(GetAppPath+'\firebird.conf','ServerMode = ','ServerMode = Super','#');
-
-      if WizardIsTaskSelected('EnableLegacyClientAuth') then begin
-				ReplaceLine(GetAppPath+'\firebird.conf','AuthServer = ','AuthServer = Legacy_Auth, Srp, Win_Sspi','#');
-				ReplaceLine(GetAppPath+'\firebird.conf','AuthClient = ','AuthClient = Legacy_Auth, Srp, Win_Sspi','#');
-				ReplaceLine(GetAppPath+'\firebird.conf','UserManager = ','UserManager = Legacy_UserManager, Srp','#');
-				ReplaceLine(GetAppPath+'\firebird.conf','WireCrypt = ','WireCrypt = enabled','#');
-      end;
 
 		end;
 
