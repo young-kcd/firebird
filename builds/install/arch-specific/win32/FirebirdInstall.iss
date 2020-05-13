@@ -555,11 +555,16 @@ Source: {#FilesDir}\examples\api\*.*; DestDir: {app}\examples\api; Components: D
 Source: {#FilesDir}\examples\build_win32\*.*; DestDir: {app}\examples\build_win32; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
 ;Source: {#FilesDir}\examples\dyn\*.*; DestDir: {app}\examples\dyn; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
 Source: {#FilesDir}\examples\dbcrypt\*.*; DestDir: {app}\examples\dbcrypt; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
+Source: {#FilesDir}\examples\dbcrypt\msvc\*.*; DestDir: {app}\examples\dbcrypt\msvc; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
 Source: {#FilesDir}\examples\empbuild\*.*; DestDir: {app}\examples\empbuild; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
+Source: {#FilesDir}\examples\extauth\*.*; DestDir: {app}\examples\extauth; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
+Source: {#FilesDir}\examples\extauth\msvc\*.*; DestDir: {app}\examples\extauth\msvc; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
 Source: {#FilesDir}\examples\include\*.*; DestDir: {app}\examples\include; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
 Source: {#FilesDir}\examples\interfaces\*.*; DestDir: {app}\examples\interfaces; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
 Source: {#FilesDir}\examples\package\*.*; DestDir: {app}\examples\package; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
 Source: {#FilesDir}\examples\prebuilt\*.*; DestDir: {app}\examples\prebuilt; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
+Source: {#FilesDir}\examples\prebuilt\bin\*.*; DestDir: {app}\examples\prebuilt\bin; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
+Source: {#FilesDir}\examples\prebuilt\plugins\*.*; DestDir: {app}\examples\prebuilt\plugins; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
 Source: {#FilesDir}\examples\stat\*.*; DestDir: {app}\examples\stat; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
 Source: {#FilesDir}\examples\udf\*.*; DestDir: {app}\examples\udf; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
 Source: {#FilesDir}\examples\udr\*.*; DestDir: {app}\examples\udr; Components: DevAdminComponent;  Flags: ignoreversion {#SkipFileIfDevStatus};
