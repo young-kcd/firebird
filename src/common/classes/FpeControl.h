@@ -222,7 +222,7 @@ inline bool isinf(double x)
 {
 	return (!_finite (x) && !isnan(x));
 }
-#else
+#elif !defined(DARWIN)
 #ifndef isinf
 template <typename F>
 inline bool isinf(F x)
