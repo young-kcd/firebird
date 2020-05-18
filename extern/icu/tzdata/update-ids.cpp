@@ -166,8 +166,8 @@ int main(int argc, const char* argv[])
 	{
 		return run(argc, argv);
 	}
-	catch(const exception& e)
+	catch (const exception& e)
 	{
-		std::cerr << e.what() << '\n';
+		cerr << e.what() << '\n';
 	}
 }
