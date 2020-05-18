@@ -185,7 +185,7 @@ namespace
 
 			const size_t CHUNK_SIZE = 10000;
 			Array<UCHAR> buffer(CHUNK_SIZE);
-			ssize_t count;
+			long count;
 
 			do
 			{
@@ -194,7 +194,7 @@ namespace
 				count = read(fileHandle, &buffer[prevCount], CHUNK_SIZE);
 
 				if (count < CHUNK_SIZE)
-					buffer.shrink(prevCount + count);
+					buffer.shrink(prevCount + MAX(count, 0));
 			} while (count > 0);
 
 			close(fileHandle);
