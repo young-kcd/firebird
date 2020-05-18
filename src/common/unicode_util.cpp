@@ -342,13 +342,6 @@ private:
 
 		getEntryPoint("ucal_getNow", inModule, ucalGetNow);
 		getEntryPoint("ucal_getTimeZoneTransitionDate", inModule, ucalGetTimeZoneTransitionDate);
-
-#if defined DEV_BUILD && defined TZ_UPDATE
-		getEntryPoint("ucal_openTimeZones", inModule, ucalOpenTimeZones);
-
-		getEntryPoint("uenum_close", module, uenumClose);
-		getEntryPoint("uenum_unext", module, uenumUnext);
-#endif
 	}
 
 public:

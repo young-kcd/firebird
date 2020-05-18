@@ -26,32 +26,55 @@
 
 #include "firebird.h"
 #include "../common/TimeZoneUtil.h"
+#include "../common/TimeZones.h"
 #include "../common/StatusHolder.h"
 #include "../common/classes/rwlock.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/config/config.h"
 #include "../common/os/path_utils.h"
+#include "../common/os/os_utils.h"
 #include "unicode/ucal.h"
-
-#ifdef TZ_UPDATE
-#include "../common/classes/objects_array.h"
-#endif
 
 using namespace Firebird;
 
-//-------------------------------------
-
 namespace
 {
-	struct TimeZoneDesc
+	class TimeZoneDesc
 	{
-		const char* asciiName;
-		const UChar* icuName;
-	};
-}	// namespace
+	public:
+		TimeZoneDesc(MemoryPool& pool)
+			: asciiName(pool),
+			  unicodeName(pool)
+		{
+		}
 
-#include "./TimeZones.h"
+	public:
+		void setName(const char* name)
+		{
+			asciiName = name;
+
+			for (const auto c : asciiName)
+				unicodeName.push(c);
+
+			unicodeName.push(0);
+		}
+
+		const char* getAsciiName() const
+		{
+			return asciiName.c_str();
+		}
+
+		const UChar* getUnicodeName() const
+		{
+			return unicodeName.begin();
+		}
+
+	private:
+		string asciiName;
+		Array<UChar> unicodeName;
+	};
+}
 
 //-------------------------------------
 
@@ -67,21 +90,70 @@ static void skipSpaces(const char*& p, const char* end);
 
 namespace
 {
-	struct TimeZoneStartup
+	class TimeZoneDataPath
 	{
-		TimeZoneStartup(MemoryPool& pool)
-			: nameIdMap(pool)
+	public:
+		TimeZoneDataPath(MemoryPool& pool)
+			: path(pool)
 		{
-#if defined DEV_BUILD && defined TZ_UPDATE
-			tzUpdate();
-#endif
+			PathName temp;
 
-			for (USHORT i = 0; i < FB_NELEM(TIME_ZONE_LIST); ++i)
+			// Could not call fb_utils::getPrefix here.
+			if (FB_TZDATADIR[0])
+				temp = FB_TZDATADIR;
+			else
+				PathUtils::concatPath(temp, Config::getRootDirectory(), "tzdata");
+
+			const static char* const ICU_TIMEZONE_FILES_DIR = "ICU_TIMEZONE_FILES_DIR";
+
+			// Do not update ICU_TIMEZONE_FILES_DIR if it's already set.
+			fb_utils::setenv(ICU_TIMEZONE_FILES_DIR, temp.c_str(), false);
+			fb_utils::readenv(ICU_TIMEZONE_FILES_DIR, path);
+		}
+
+		const PathName& get()
+		{
+			return path;
+		}
+
+	private:
+		PathName path;
+	};
+
+	class TimeZoneStartup
+	{
+	public:
+		TimeZoneStartup(MemoryPool& pool)
+			: timeZoneList(pool),
+			  nameIdMap(pool)
+		{
+			const auto databaseVersion = initFromFile();
+
+			if (!databaseVersion.hasData() || databaseVersion <= BUILTIN_TIME_ZONE_VERSION)
 			{
-				string s(TIME_ZONE_LIST[i].asciiName);
-				s.upper();
-				nameIdMap.put(s, i);
+				if (databaseVersion.hasData() && databaseVersion < BUILTIN_TIME_ZONE_VERSION)
+					gds__log("tzdata ids.dat file is older than builtin time zone list.");
+
+				for (USHORT i = 0; i < FB_NELEM(BUILTIN_TIME_ZONE_LIST); ++i)
+				{
+					auto& timeZone = timeZoneList.add();
+					timeZone.setName(BUILTIN_TIME_ZONE_LIST[i]);
+				}
 			}
+
+			unsigned id = 0;
+
+			for (const auto& timeZone : timeZoneList)
+			{
+				string name = timeZone.getAsciiName();
+				name.upper();
+				nameIdMap.put(name, id++);
+			}
+		}
+
+		const ObjectsArray<TimeZoneDesc>& getTimeZoneList()
+		{
+			return timeZoneList;
 		}
 
 		bool getId(string name, USHORT& id)
@@ -98,85 +170,90 @@ namespace
 				return false;
 		}
 
-#if defined DEV_BUILD && defined TZ_UPDATE
-		void tzUpdate()
+	private:
+		string initFromFile()
 		{
-			SortedObjectsArray<string> currentZones, icuZones;
+			PathName idsPath;
+			PathUtils::concatPath(idsPath, TimeZoneUtil::getTzDataPath(), "ids.dat");
+			const int fileHandle = os_utils::open(idsPath.c_str(), O_RDONLY | O_BINARY, 0);
 
-			for (unsigned i = 0; i < FB_NELEM(TIME_ZONE_LIST); ++i)
-				currentZones.push(TIME_ZONE_LIST[i].asciiName);
-
-			Jrd::UnicodeUtil::ConversionICU& icuLib = Jrd::UnicodeUtil::getConversionICU();
-			UErrorCode icuErrorCode = U_ZERO_ERROR;
-
-			UEnumeration* uenum = icuLib.ucalOpenTimeZones(&icuErrorCode);
-			int32_t length;
-
-			while (const UChar* str = icuLib.uenumUnext(uenum, &length, &icuErrorCode))
+			if (fileHandle == -1)
 			{
-				char buffer[256];
-
-				for (int i = 0; i <= length; ++i)
-					buffer[i] = (char) str[i];
-
-				icuZones.push(buffer);
+				gds__log("tzdata ids.dat file not found or cannot be opened.");
+				return "";
 			}
 
-			icuLib.uenumClose(uenum);
+			const size_t CHUNK_SIZE = 10000;
+			Array<UCHAR> buffer(CHUNK_SIZE);
+			ssize_t count;
 
-			for (auto const& zone : currentZones)
+			do
 			{
-				FB_SIZE_T pos;
+				unsigned prevCount = buffer.getCount();
+				buffer.resize(prevCount + CHUNK_SIZE);
+				count = read(fileHandle, &buffer[prevCount], CHUNK_SIZE);
 
-				if (icuZones.find(zone, pos))
-					icuZones.remove(pos);
-				else
-					printf("--> %s does not exist in ICU.\n", zone.c_str());
+				if (count < CHUNK_SIZE)
+					buffer.shrink(prevCount + count);
+			} while (count > 0);
+
+			close(fileHandle);
+
+			const UCHAR* p = buffer.begin();
+			const UCHAR* end = buffer.end();
+
+			if (buffer.getCount() > 10)
+			{
+				// file signature
+				if (memcmp(p, "FBTZ", 5) == 0)
+				{
+					p += 5;
+					if (isc_portable_integer(p, 2) == 1)	// file version: must be 1
+					{
+						string databaseVersion;
+
+						for (p += 2; p < end && *p; ++p)
+							databaseVersion += *p;
+
+						++p;
+
+						if (end - p >= 2)
+						{
+							unsigned count = isc_portable_integer(p, 2);
+
+							for (p += 2; p < end && nameIdMap.count() < count; ++p)
+							{
+								auto& timeZone = timeZoneList.add();
+								string name;
+
+								for (; p < end && *p; ++p)
+									name += *p;
+
+								timeZone.setName(name.c_str());
+
+								if (p >= end)
+								{
+									timeZoneList.clear();
+									break;
+								}
+							}
+
+							if (timeZoneList.getCount() == count)
+								return databaseVersion;
+						}
+					}
+				}
 			}
 
-			ObjectsArray<string> newZones;
+			gds__log("tzdata ids.dat file is corrupted.");
 
-			for (int i = 0; i < FB_NELEM(TIME_ZONE_LIST); ++i)
-				newZones.push(TIME_ZONE_LIST[i].asciiName);
+			timeZoneList.clear();
 
-			for (auto const& zone : icuZones)
-				newZones.push(zone);
-
-			printf("// The content of this file is generated with help of macro TZ_UPDATE.\n\n");
-
-			int index = 0;
-
-			for (auto const& zone : newZones)
-			{
-				printf("static const UChar TZSTR_%d[] = {", index);
-
-				for (int i = 0; i < zone.length(); ++i)
-					printf("'%c', ", zone[i]);
-
-				printf("'\\0'};\n");
-
-				++index;
-			}
-
-			printf("\n");
-
-			printf("// Do not change order of items in this array! The index corresponds to a TimeZone ID, which must be fixed!\n");
-			printf("static const TimeZoneDesc TIME_ZONE_LIST[] = {");
-
-			index = 0;
-
-			for (auto const& zone : newZones)
-			{
-				printf("%s\n\t{\"%s\", TZSTR_%d}", (index == 0 ? "" : ","), zone.c_str(), index);
-				++index;
-			}
-
-			printf("\n");
-			printf("};\n\n");
+			return "";
 		}
-#endif	// defined DEV_BUILD && defined TZ_UPDATE
 
 	private:
+		ObjectsArray<TimeZoneDesc> timeZoneList;
 		GenericMap<Pair<Left<string, USHORT> > > nameIdMap;
 	};
 }	// namespace
@@ -186,6 +263,7 @@ namespace
 static const UDate MIN_ICU_TIMESTAMP = TimeZoneUtil::timeStampToIcuDate(TimeStamp::MIN_TIMESTAMP);
 static const UDate MAX_ICU_TIMESTAMP = TimeZoneUtil::timeStampToIcuDate(TimeStamp::MAX_TIMESTAMP);
 static const unsigned ONE_DAY = 24 * 60 - 1;	// used for offset encoding
+static InitInstance<TimeZoneDataPath> timeZoneDataPath;
 static InitInstance<TimeZoneStartup> timeZoneStartup;
 
 //-------------------------------------
@@ -193,28 +271,15 @@ static InitInstance<TimeZoneStartup> timeZoneStartup;
 
 const ISC_DATE TimeZoneUtil::TIME_TZ_BASE_DATE = 58849;	// 2020-01-01
 const char TimeZoneUtil::GMT_FALLBACK[5] = "GMT*";
-InitInstance<PathName> TimeZoneUtil::tzDataPath;
 
 void TimeZoneUtil::initTimeZoneEnv()
 {
-	PathName path;
-
-	// Could not call fb_utils::getPrefix here.
-	if (FB_TZDATADIR[0])
-		path = FB_TZDATADIR;
-	else
-		PathUtils::concatPath(path, Config::getRootDirectory(), "tzdata");
-
-	const static char* const ICU_TIMEZONE_FILES_DIR = "ICU_TIMEZONE_FILES_DIR";
-
-	// Do not update ICU_TIMEZONE_FILES_DIR if it's already set.
-	fb_utils::setenv(ICU_TIMEZONE_FILES_DIR, path.c_str(), false);
-	fb_utils::readenv(ICU_TIMEZONE_FILES_DIR, tzDataPath());
+	timeZoneDataPath();
 }
 
 const PathName& TimeZoneUtil::getTzDataPath()
 {
-	return tzDataPath();
+	return timeZoneDataPath().get();
 }
 
 // Return the current user's time zone.
@@ -334,8 +399,8 @@ void TimeZoneUtil::getDatabaseVersion(Firebird::string& str)
 
 void TimeZoneUtil::iterateRegions(std::function<void (USHORT, const char*)> func)
 {
-	for (USHORT i = 0; i < FB_NELEM(TIME_ZONE_LIST); ++i)
-		func(MAX_USHORT - i, TIME_ZONE_LIST[i].asciiName);
+	for (USHORT i = 0; i < timeZoneStartup().getTimeZoneList().getCount(); ++i)
+		func(MAX_USHORT - i, timeZoneStartup().getTimeZoneList()[i].getAsciiName());
 }
 
 // Parses a time zone, offset- or region-based.
@@ -454,7 +519,7 @@ unsigned TimeZoneUtil::format(char* buffer, size_t bufferSize, USHORT timeZone, 
 	}
 	else
 	{
-		strncpy(buffer, getDesc(timeZone)->asciiName, bufferSize);
+		strncpy(buffer, getDesc(timeZone)->getAsciiName(), bufferSize);
 
 		p += strlen(buffer);
 	}
@@ -498,7 +563,7 @@ void TimeZoneUtil::extractOffset(const ISC_TIMESTAMP_TZ& timeStampTz, SSHORT* of
 		Jrd::UnicodeUtil::ConversionICU& icuLib = Jrd::UnicodeUtil::getConversionICU();
 
 		UCalendar* icuCalendar = icuLib.ucalOpen(
-			getDesc(timeStampTz.time_zone)->icuName, -1, NULL, UCAL_GREGORIAN, &icuErrorCode);
+			getDesc(timeStampTz.time_zone)->getUnicodeName(), -1, NULL, UCAL_GREGORIAN, &icuErrorCode);
 
 		if (!icuCalendar)
 			status_exception::raise(Arg::Gds(isc_random) << "Error calling ICU's ucal_open.");
@@ -582,7 +647,7 @@ void TimeZoneUtil::localTimeStampToUtc(ISC_TIMESTAMP_TZ& timeStampTz)
 		Jrd::UnicodeUtil::ConversionICU& icuLib = Jrd::UnicodeUtil::getConversionICU();
 
 		UCalendar* icuCalendar = icuLib.ucalOpen(
-			getDesc(timeStampTz.time_zone)->icuName, -1, NULL, UCAL_GREGORIAN, &icuErrorCode);
+			getDesc(timeStampTz.time_zone)->getUnicodeName(), -1, NULL, UCAL_GREGORIAN, &icuErrorCode);
 
 		if (!icuCalendar)
 			status_exception::raise(Arg::Gds(isc_random) << "Error calling ICU's ucal_open.");
@@ -651,7 +716,7 @@ bool TimeZoneUtil::decodeTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, bool gmt
 			Jrd::UnicodeUtil::ConversionICU& icuLib = Jrd::UnicodeUtil::getConversionICU();
 
 			UCalendar* icuCalendar = icuLib.ucalOpen(
-				getDesc(timeStampTz.time_zone)->icuName, -1, NULL, UCAL_GREGORIAN, &icuErrorCode);
+				getDesc(timeStampTz.time_zone)->getUnicodeName(), -1, NULL, UCAL_GREGORIAN, &icuErrorCode);
 
 			if (!icuCalendar)
 				status_exception::raise(Arg::Gds(isc_random) << "Error calling ICU's ucal_open.");
@@ -951,7 +1016,7 @@ TimeZoneRuleIterator::TimeZoneRuleIterator(USHORT aId, ISC_TIMESTAMP_TZ& aFrom, 
 {
 	UErrorCode icuErrorCode = U_ZERO_ERROR;
 
-	icuCalendar = icuLib.ucalOpen(getDesc(id)->icuName, -1, NULL, UCAL_GREGORIAN, &icuErrorCode);
+	icuCalendar = icuLib.ucalOpen(getDesc(id)->getUnicodeName(), -1, NULL, UCAL_GREGORIAN, &icuErrorCode);
 
 	if (!icuCalendar)
 		status_exception::raise(Arg::Gds(isc_random) << "Error calling ICU's ucal_open.");
@@ -1036,8 +1101,8 @@ bool TimeZoneRuleIterator::next()
 
 static const TimeZoneDesc* getDesc(USHORT timeZone)
 {
-	if (MAX_USHORT - timeZone < FB_NELEM(TIME_ZONE_LIST))
-		return &TIME_ZONE_LIST[MAX_USHORT - timeZone];
+	if (MAX_USHORT - timeZone < timeZoneStartup().getTimeZoneList().getCount())
+		return &timeZoneStartup().getTimeZoneList()[MAX_USHORT - timeZone];
 
 	status_exception::raise(Arg::Gds(isc_invalid_timezone_id) << Arg::Num(timeZone));
 	return nullptr;
