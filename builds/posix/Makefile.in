@@ -234,9 +234,7 @@ $(TOMMATH_LIB):	$(TOM_Objs)
 .PHONY:	tomcrypt
 TOMCRYPT_LIB=$(LIB)/libtomcrypt.a
 
-TOM_Src:=hashes/md5.c hashes/sha1.c hashes/sha2/sha256.c hashes/sha2/sha512.c misc/crypt/crypt_argchk.c
-TOM_Src:=$(addprefix ../extern/libtomcrypt/src/, $(TOM_Src))
-
+TOM_Src:=$(shell find ../extern/libtomcrypt/src -name '*.c' -print)
 TOM_Objs=$(call doObjects,$(TOM_Src))
 
 tomcrypt:	$(TOMCRYPT_LIB)
