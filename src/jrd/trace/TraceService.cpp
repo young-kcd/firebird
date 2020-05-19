@@ -160,14 +160,10 @@ void TraceSvcJrd::stopSession(ULONG id)
 	ConfigStorage* storage = TraceManager::getStorage();
 	StorageGuard guard(storage);
 
-	storage->restart();
-
 	TraceSession session(*getDefaultMemoryPool());
-	while (storage->getNextSession(session))
+	session.ses_id = id;
+	if (storage->getSession(session, ConfigStorage::AUTH))
 	{
-		if (id != session.ses_id)
-			continue;
-
 		if (checkPrivileges(session))
 		{
 			storage->removeSession(id);
@@ -203,14 +199,10 @@ bool TraceSvcJrd::changeFlags(ULONG id, int setFlags, int clearFlags)
 	ConfigStorage* storage = TraceManager::getStorage();
 	StorageGuard guard(storage);
 
-	storage->restart();
-
 	TraceSession session(*getDefaultMemoryPool());
-	while (storage->getNextSession(session))
+	session.ses_id = id;
+	if (storage->getSession(session, ConfigStorage::AUTH))
 	{
-		if (id != session.ses_id)
-			continue;
-
 		if (checkPrivileges(session))
 		{
 			const int saveFlags = session.ses_flags;
@@ -218,9 +210,8 @@ bool TraceSvcJrd::changeFlags(ULONG id, int setFlags, int clearFlags)
 			session.ses_flags |= setFlags;
 			session.ses_flags &= ~clearFlags;
 
-			if (saveFlags != session.ses_flags) {
-				storage->updateSession(session);
-			}
+			if (saveFlags != session.ses_flags) 
+				storage->updateFlags(session);
 
 			return true;
 		}
@@ -243,7 +234,7 @@ void TraceSvcJrd::listSessions()
 	storage->restart();
 
 	TraceSession session(*getDefaultMemoryPool());
-	while (storage->getNextSession(session))
+	while (storage->getNextSession(session, ConfigStorage::ALL))
 	{
 		if (checkPrivileges(session))
 		{
@@ -334,15 +325,11 @@ bool TraceSvcJrd::checkAliveAndFlags(ULONG sesId, int& flags)
 		StorageGuard guard(storage);
 
 		TraceSession readSession(*getDefaultMemoryPool());
-		storage->restart();
-		while (storage->getNextSession(readSession))
+		readSession.ses_id = sesId;
+		if (storage->getSession(readSession, ConfigStorage::FLAGS))
 		{
-			if (readSession.ses_id == sesId)
-			{
-				alive = true;
-				flags = readSession.ses_flags;
-				break;
-			}
+			flags = readSession.ses_flags;
+			alive = true;
 		}
 
 		m_chg_number = storage->getChangeNumber();

@@ -179,7 +179,7 @@ void TraceManager::update_sessions()
 
 	MemoryPool& pool = *getDefaultMemoryPool();
 	SortedArray<ULONG, InlineStorage<ULONG, 64> > liveSessions(pool);
-	HalfStaticArray<TraceSession*, 64> newSessions;
+	HalfStaticArray<TraceSession*, 64> newSessions(pool);
 
 	{	// scope
 		ConfigStorage* storage = getStorage();
@@ -188,7 +188,7 @@ void TraceManager::update_sessions()
 		storage->restart();
 
 		TraceSession session(pool);
-		while (storage->getNextSession(session))
+		while (storage->getNextSession(session, ConfigStorage::FLAGS))
 		{
 			if ((session.ses_flags & trs_active) && !(session.ses_flags & trs_log_full))
 			{
@@ -196,7 +196,10 @@ void TraceManager::update_sessions()
 				if (trace_sessions.find(session.ses_id, pos))
 					liveSessions.add(session.ses_id);
 				else
+				{
+					storage->getSession(session, ConfigStorage::ALL);
 					newSessions.add(FB_NEW_POOL(pool) TraceSession(pool, session));
+				}
 			}
 		}
 

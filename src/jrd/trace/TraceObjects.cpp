@@ -542,20 +542,16 @@ FB_SIZE_T TraceLogWriterImpl::write(const void* buf, FB_SIZE_T size)
 	StorageGuard guard(storage);
 
 	TraceSession session(*getDefaultMemoryPool());
-	storage->restart();
-	while (storage->getNextSession(session))
+	session.ses_id = m_sesId;
+	if (storage->getSession(session, ConfigStorage::FLAGS))
 	{
-		if (session.ses_id == m_sesId)
-		{
 			if (!(session.ses_flags & trs_log_full))
 			{
 				// suspend session
 				session.ses_flags |= trs_log_full;
-				storage->updateSession(session);
+			storage->updateFlags(session);
 			}
-			break;
 		}
-	}
 
 	// report successful write
 	return size;
