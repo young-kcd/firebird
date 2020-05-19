@@ -105,7 +105,7 @@ FB_SIZE_T TraceLog::read(void* buf, FB_SIZE_T size)
 	if (header->readPos > header->writePos)
 	{
 		const FB_SIZE_T toRead = MIN(header->allocated - header->readPos, size);
-		memcpy_s(dest, size, data + header->readPos, toRead);
+		memcpy(dest, data + header->readPos, toRead);
 
 		readCnt += toRead;
 		header->readPos += toRead;
@@ -119,7 +119,7 @@ FB_SIZE_T TraceLog::read(void* buf, FB_SIZE_T size)
 	if (size && header->readPos < header->writePos)
 	{
 		const FB_SIZE_T toRead = MIN(header->writePos - header->readPos, size);
-		memcpy_s(dest, size, data + header->readPos, toRead);
+		memcpy(dest, data + header->readPos, toRead);
 
 		readCnt += toRead;
 		header->readPos += toRead;
@@ -181,7 +181,7 @@ FB_SIZE_T TraceLog::write(const void* buf, FB_SIZE_T size)
 	if (header->writePos >= header->readPos)
 	{
 		const FB_SIZE_T toWrite = MIN(header->allocated - header->writePos, size);
-		memcpy_s(data + header->writePos, toWrite, src, toWrite);
+		memcpy(data + header->writePos, src, toWrite);
 
 		header->writePos += toWrite;
 		if (header->writePos == header->allocated)
@@ -195,7 +195,7 @@ FB_SIZE_T TraceLog::write(const void* buf, FB_SIZE_T size)
 	if (size && header->writePos < header->readPos)
 	{
 		const FB_SIZE_T toWrite = MIN(header->readPos - 1 - header->writePos, size);
-		memcpy_s(data + header->writePos, toWrite, src, toWrite);
+		memcpy(data + header->writePos, src, toWrite);
 
 		header->writePos += toWrite;
 		writeCnt += toWrite;
@@ -237,12 +237,12 @@ void TraceLog::extend(FB_SIZE_T size)
 		char* data = reinterpret_cast<char*> (header);
 		if (toMoveW < toMoveR)
 		{
-			memcpy_s(data + oldSize, newSize - oldSize, data + sizeof(TraceLogHeader), toMoveW);
+			memcpy(data + oldSize, data + sizeof(TraceLogHeader), toMoveW);
 			header->writePos = oldSize + toMoveW;
 		}
 		else
 		{
-			memcpy_s(data + newSize - toMoveR, toMoveR, data + header->readPos, toMoveR);
+			memcpy(data + newSize - toMoveR, data + header->readPos, toMoveR);
 			header->readPos = newSize - toMoveW;
 		}
 	}
