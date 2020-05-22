@@ -964,6 +964,19 @@ void StableAttachmentPart::manualAsyncUnlock(ULONG& flags)
 	}
 }
 
+void StableAttachmentPart::onIdleTimer(TimerImpl*)
+{
+	// Ensure attachment is still alive and still idle
+
+	MutexEnsureUnlock guard(*this->getMutex(), FB_FUNCTION);
+	if (!guard.tryEnter())
+		return;
+
+	Attachment* att = this->getHandle();
+	att->signalShutdown(isc_att_shut_idle);
+	JRD_shutdown_attachment(att);
+}
+
 JAttachment* Attachment::getInterface() throw()
 {
 	return att_stable->getInterface();
@@ -989,23 +1002,13 @@ void Attachment::setupIdleTimer(bool clear)
 	else
 	{
 		if (!att_idle_timer)
+		{
 			att_idle_timer = FB_NEW IdleTimer(getStable());
+			att_idle_timer->setOnTimer(&StableAttachmentPart::onIdleTimer);
+		}
 
 		att_idle_timer->reset(timeout);
 	}
-}
-
-void Attachment::onIdleTimer(TimerImpl*, StableAttachmentPart* stable)
-{
-	// Ensure attachment is still alive and still idle
-
-	MutexEnsureUnlock guard(*stable->getMutex(), FB_FUNCTION);
-	if (!guard.tryEnter())
-		return;
-
-	Attachment* att = stable->getHandle();
-	att->signalShutdown(isc_att_shut_idle);
-	JRD_shutdown_attachment(att);
 }
 
 UserId* Attachment::getUserId(const MetaName& userName)

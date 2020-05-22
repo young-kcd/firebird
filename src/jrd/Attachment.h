@@ -266,6 +266,8 @@ public:
 		return shutError;
 	}
 
+	void onIdleTimer(Firebird::TimerImpl*);
+
 private:
 	Attachment* att;
 	JAttachment* jAtt;
@@ -653,12 +655,10 @@ private:
 	Attachment(MemoryPool* pool, Database* dbb);
 	~Attachment();
 
-	static void onIdleTimer(Firebird::TimerImpl*, StableAttachmentPart*);
-
 	unsigned int att_idle_timeout;		// seconds
 	unsigned int att_stmt_timeout;		// milliseconds
 
-	typedef Firebird::TimerTmplRef<StableAttachmentPart, onIdleTimer> IdleTimer;
+	typedef Firebird::TimerWithRef<StableAttachmentPart> IdleTimer;
 	Firebird::RefPtr<IdleTimer> att_idle_timer;
 
 	Firebird::Array<JBatch*> att_batches;

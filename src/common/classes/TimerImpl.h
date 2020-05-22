@@ -28,10 +28,21 @@
 #ifndef FB_CLASSES_TIMER_IMPL
 #define FB_CLASSES_TIMER_IMPL
 
+#include <functional>
+
 #include "../../common/classes/ImplementHelper.h"
 #include "../../common/classes/locks.h"
 
 namespace Firebird {
+
+class TimerImpl;
+
+// Signature of free function to call by timer
+typedef void (OnTimerFunc)(TimerImpl*);
+
+// Signature  of member function of class T to call by timer
+template <typename T>
+using OnTimerMember = void (T::*)(TimerImpl*);
 
 class TimerImpl :
 	public RefCntIface<ITimerImpl<TimerImpl, CheckStatusWrapper> >
@@ -46,6 +57,19 @@ public:
 	void handler();
 	int release();
 
+	// Set timer handler function
+	void setOnTimer(std::function<OnTimerFunc> onTimer)
+	{
+		m_onTimer = onTimer;
+	}
+
+	// Set member function as timer handler
+	template <typename T>
+	void setOnTimer(T* obj, OnTimerMember<T> onTimer)
+	{
+		m_onTimer = std::bind(onTimer, obj, std::placeholders::_1);
+	}
+
 	// Set timeout, seconds
 	void reset(unsigned int timeout);
 	void stop();
@@ -55,50 +79,31 @@ public:
 		return m_expTime;
 	}
 
-protected:
-	// Descendants must override it
-	virtual void onTimer(TimerImpl*) = 0;
-
 private:
 	Mutex m_mutex;
 	SINT64 m_fireTime;		// when ITimer will fire, could be less than m_expTime
 	SINT64 m_expTime;		// when actual idle timeout will expire
+	std::function<OnTimerFunc> m_onTimer;
 };
 
 
-// Call member function of some class T::Fn()
-template <typename T, void (T::*Fn)(TimerImpl*)>
-class TimerTmpl : public TimerImpl
+// Call member function and keep reference on class instance
+template <typename T>
+class TimerWithRef : public TimerImpl
 {
 public:
-	TimerTmpl(T* obj) : m_obj(obj) {}
+	TimerWithRef(T* obj) :
+		TimerImpl(),
+		m_ref(obj)
+	{}
 
-protected:
-	void onTimer(TimerImpl* arg)
+	void setOnTimer(OnTimerMember<T> onTimer)
 	{
-		(m_obj->*Fn)(arg);
+		TimerImpl::setOnTimer(m_ref.getPtr(), onTimer);
 	}
 
 private:
-	T* m_obj;
-};
-
-
-// Call static function with argument - instance of some RefCounted class T
-template <typename T, void (Fn)(TimerImpl*, T*)>
-class TimerTmplRef : public TimerImpl
-{
-public:
-	TimerTmplRef(T* obj) : m_obj(obj) {}
-
-protected:
-	void onTimer(TimerImpl* arg1)
-	{
-		Fn(arg1, m_obj);
-	}
-
-private:
-	RefPtr<T> m_obj;
+	RefPtr<T> m_ref;
 };
 
 } // namespace Firebird

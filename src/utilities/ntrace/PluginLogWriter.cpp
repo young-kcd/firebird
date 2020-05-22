@@ -261,7 +261,10 @@ void PluginLogWriter::setupIdleTimer(bool clear)
 	else
 	{
 		if (!m_idleTimer)
-			m_idleTimer = FB_NEW IdleTimer(this);
+		{
+			m_idleTimer = FB_NEW IdleTimer();
+			m_idleTimer->setOnTimer(this, &PluginLogWriter::onIdleTimer);
+		}
 
 		m_idleTimer->reset(timeout);
 	}

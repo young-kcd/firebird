@@ -122,7 +122,7 @@ private:
 	int		 m_fileHandle;
 	size_t	 m_maxSize;
 
-	typedef Firebird::TimerTmpl<PluginLogWriter, &PluginLogWriter::onIdleTimer> IdleTimer;
+	typedef Firebird::TimerImpl IdleTimer;
 	Firebird::RefPtr<IdleTimer> m_idleTimer;
 };
 

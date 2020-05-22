@@ -52,7 +52,8 @@ void TimerImpl::handler()
 		m_expTime = 0;
 	}
 
-	onTimer(this);
+	if (m_onTimer)
+		m_onTimer(this);
 }
 
 int TimerImpl::release()
