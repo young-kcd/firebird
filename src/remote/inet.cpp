@@ -252,12 +252,12 @@ private:
 public:
 #ifdef HAVE_POLL
 	Select()
-		: slct_time(0), slct_count(0), slct_poll(*getDefaultMemoryPool())
+		: slct_time(0), slct_count(0), slct_poll(*getDefaultMemoryPool()),
 		  slct_ready(*getDefaultMemoryPool())
 	{ }
 
 	explicit Select(Firebird::MemoryPool& pool)
-		: slct_time(0), slct_count(0), slct_poll(pool)
+		: slct_time(0), slct_count(0), slct_poll(pool), slct_ready(pool)
 	{ }
 #else
 	Select()
