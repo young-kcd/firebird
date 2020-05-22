@@ -341,7 +341,7 @@ bool TraceSvcJrd::checkAliveAndFlags(ULONG sesId, int& flags)
 bool TraceSvcJrd::checkPrivileges(TraceSession& session)
 {
 	// Our service run in embedded mode and have no auth info - trust user name as is
-	if (m_admin || m_user.hasData() && (m_user == session.ses_user))
+	if (m_admin || (m_user.hasData() && (m_user == session.ses_user)))
 		return true;
 
 	// Other session is fully authorized - try to map our auth info using other's

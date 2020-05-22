@@ -212,7 +212,7 @@ void ConfigStorage::checkAudit()
 		return;
 
 	// put default (audit) trace file contents into storage
-	AutoPtr<FILE> cfgFile = NULL;
+	AutoPtr<FILE> cfgFile;
 
 	try
 	{
@@ -622,28 +622,28 @@ bool ConfigStorage::validate()
 ULONG ConfigStorage::getSessionSize(const TraceSession& session)
 {
 	ULONG ret = 1; // tagEnd
+	const ULONG sz = 1 + sizeof(ULONG);		// sizeof tag + sizeof len 
 
 	ULONG len = session.ses_name.length();
-	const ULONG sz = 1 + sizeof(ULONG);		// sizeof tag + sizeof len 
 	if (len) 
 		ret += sz + len;
 
-	if (len = session.ses_auth.getCount())
+	if ((len = session.ses_auth.getCount()))
 		ret += sz + len;
 
-	if (len = session.ses_user.getCount())
+	if ((len = session.ses_user.getCount()))
 		ret += sz + len;
 
-	if (len = session.ses_role.length())
+	if ((len = session.ses_role.length()))
 		ret += sz + len;
 
-	if (len = session.ses_config.length())
+	if ((len = session.ses_config.length()))
 		ret += sz + len;
 
-	if (len = sizeof(session.ses_start))
+	if ((len = sizeof(session.ses_start)))
 		ret += sz + len;
 
-	if (len = session.ses_logfile.length())
+	if ((len = session.ses_logfile.length()))
 		ret += sz + len;
 
 	return ret;
