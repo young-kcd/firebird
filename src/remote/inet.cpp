@@ -252,12 +252,12 @@ private:
 public:
 #ifdef HAVE_POLL
 	Select()
-		: slct_time(0), slct_count(0), slct_poll(*getDefaultMemoryPool())
+		: slct_time(0), slct_count(0), slct_poll(*getDefaultMemoryPool()),
 		  slct_ready(*getDefaultMemoryPool())
 	{ }
 
 	explicit Select(Firebird::MemoryPool& pool)
-		: slct_time(0), slct_count(0), slct_poll(pool)
+		: slct_time(0), slct_count(0), slct_poll(pool), slct_ready(pool)
 	{ }
 #else
 	Select()
@@ -365,7 +365,7 @@ public:
 			pollfd f;
 			f.fd = handle;
 			f.events = SEL_INIT_EVENTS;
-			slct_poll.insert(f, pos);
+			slct_poll.insert(pos, f);
 		}
 #else
 		FD_SET(handle, &slct_fdset);
