@@ -816,7 +816,7 @@ bool ConfigStorage::readSession(TraceCSHeader::Slot* slot, TraceSession& session
 		}
 
 		if (p)
-			memcpy_s(p, len, data, len);
+			memcpy(p, data, len);
 	}
 
 	return false;
@@ -881,10 +881,10 @@ void ConfigStorage::Writer::write(ITEM tag, ULONG len, const void* data)
 	if (m_mem + sizeof(len) + len > m_end)
 		(Arg::Gds(isc_random) << Arg::Str("Item data not fits into memory")).raise();
 
-	memcpy_s(m_mem, m_end - m_mem, &len, sizeof(len));
+	memcpy(m_mem, &len, sizeof(len));
 	m_mem += sizeof(len);
 
-	memcpy_s(m_mem, m_end - m_mem, data, len);
+	memcpy(m_mem, data, len);
 	m_mem += len;
 }
 
@@ -903,7 +903,7 @@ const void* ConfigStorage::Reader::read(ITEM& tag, ULONG& len)
 	if (m_mem + sizeof(ULONG) > m_end)
 		return NULL;
 
-	memcpy_s(&len, sizeof(ULONG), m_mem, sizeof(ULONG));
+	memcpy(&len, m_mem, sizeof(ULONG));
 	m_mem += sizeof(ULONG);
 
 	if (m_mem + len <= m_end)
