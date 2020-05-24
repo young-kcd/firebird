@@ -243,7 +243,7 @@ void TraceLog::extend(FB_SIZE_T size)
 		else
 		{
 			memcpy(data + newSize - toMoveR, data + header->readPos, toMoveR);
-			header->readPos = newSize - toMoveW;
+			header->readPos = newSize - toMoveR;
 		}
 	}
 	fb_assert(oldUsed == getUsed());
