@@ -50,7 +50,8 @@ class TimerImpl :
 public:
 	TimerImpl() :
 		m_fireTime(0),
-		m_expTime(0)
+		m_expTime(0),
+		m_inHandler(false)
 	{ }
 
 	// ITimer implementation
@@ -84,6 +85,7 @@ private:
 	SINT64 m_fireTime;		// when ITimer will fire, could be less than m_expTime
 	SINT64 m_expTime;		// when actual idle timeout will expire
 	std::function<OnTimerFunc> m_onTimer;
+	bool m_inHandler;
 };
 
 

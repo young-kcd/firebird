@@ -27,6 +27,7 @@
 
 #include "../../common/classes/TimerImpl.h"
 #include "../../common/StatusHolder.h"
+#include "../../common/ThreadStart.h"
 #include "../../common/utils_proto.h"
 
 namespace Firebird {
@@ -35,9 +36,10 @@ void TimerImpl::handler()
 {
 	{
 		MutexLockGuard guard(m_mutex, FB_FUNCTION);
+		fb_assert(!m_inHandler);
 
 		m_fireTime = 0;
-		if (!m_expTime)	// Timer was reset to zero, do nothing
+		if (!m_expTime)	// Timer was reset to zero or stopped, do nothing
 			return;
 
 		// If timer was reset to fire later, restart ITimer
@@ -50,10 +52,18 @@ void TimerImpl::handler()
 			return;
 		}
 		m_expTime = 0;
+
+		if (m_onTimer)
+			m_inHandler = true;
 	}
 
-	if (m_onTimer)
-		m_onTimer(this);
+	if (!m_onTimer)
+		return;
+
+	m_onTimer(this);
+
+	MutexLockGuard guard(m_mutex, FB_FUNCTION);
+	m_inHandler = false;
 }
 
 int TimerImpl::release()
@@ -109,10 +119,17 @@ void TimerImpl::stop()
 {
 	MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
+	// hvlad: it could be replaced by condition variable when we have good one for Windows
+	while (m_inHandler)
+	{
+		MutexUnlockGuard unlock(m_mutex, FB_FUNCTION);
+		Thread::sleep(10);
+	}
+
 	if (!m_fireTime)
 		return;
 
-	m_fireTime = 0;
+	m_fireTime = m_expTime = 0;
 
 	LocalStatus ls;
 	CheckStatusWrapper s(&ls);
