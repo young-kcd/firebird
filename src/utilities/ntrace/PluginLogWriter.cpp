@@ -27,6 +27,7 @@
 
 #include "PluginLogWriter.h"
 #include "../common/classes/init.h"
+#include "../common/classes/RefMutex.h"
 #include "../common/os/os_utils.h"
 
 #ifndef S_IREAD
@@ -61,23 +62,19 @@ PluginLogWriter::PluginLogWriter(const char* fileName, size_t maxSize) :
 	mutexName.append(m_fileName);
 
 	checkMutex("init", ISC_mutex_init(&m_mutex, mutexName.c_str()));
-#endif
 	Guard guard(this);
+#endif
 
 	reopen();
 }
 
 PluginLogWriter::~PluginLogWriter()
 {
-	{
-		Guard guard(this);
+	if (m_idleTimer)
+		m_idleTimer->stop();
 
-		if (m_idleTimer)
-			m_idleTimer->stop();
-
-		if (m_fileHandle != -1)
-			::close(m_fileHandle);
-	}
+	if (m_fileHandle != -1)
+		::close(m_fileHandle);
 
 #ifdef WIN_NT
 	ISC_mutex_fini(&m_mutex);
@@ -120,9 +117,12 @@ void PluginLogWriter::reopen()
 
 FB_SIZE_T PluginLogWriter::write(const void* buf, FB_SIZE_T size)
 {
-	Guard guard(this);
-
+	MutexLockGuard guardIdle(m_idleMutex, FB_FUNCTION);
 	setupIdleTimer(true);
+
+#ifdef WIN_NT
+	Guard guard(this);
+#endif
 
 	if (m_fileHandle < 0)
 		reopen();
@@ -272,7 +272,10 @@ void PluginLogWriter::setupIdleTimer(bool clear)
 
 void PluginLogWriter::onIdleTimer(TimerImpl*)
 {
-	Guard guard(this);
+	MutexEnsureUnlock lockIdle(m_idleMutex, FB_FUNCTION);
+
+	if (!lockIdle.tryEnter())
+		return;
 
 	if (m_fileHandle == -1)
 		return;

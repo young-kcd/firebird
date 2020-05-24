@@ -106,16 +106,6 @@ private:
 	private:
 		PluginLogWriter& m_log;
 	};
-#else
-	class Guard : public Firebird::MutexLockGuard
-	{
-	public:
-		explicit Guard(PluginLogWriter* log) :
-			Firebird::MutexLockGuard(log->m_mutex, FB_FUNCTION)
-		{}
-	};
-
-	Firebird::Mutex m_mutex;
 #endif
 
 	Firebird::PathName m_fileName;
@@ -124,6 +114,7 @@ private:
 
 	typedef Firebird::TimerImpl IdleTimer;
 	Firebird::RefPtr<IdleTimer> m_idleTimer;
+	Firebird::Mutex m_idleMutex;
 };
 
 #endif // PLUGINLOGWRITER_H
