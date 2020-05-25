@@ -134,7 +134,11 @@ ConfigStorage::ConfigStorage()
 
 	StorageGuard guard(this);
 	checkAudit();
-	m_timer->start(filename.c_str());	// do we still need timer ?
+
+	TEXT fullName[MAXPATHLEN];
+	iscPrefixLock(fullName, filename.c_str(), false);
+
+	m_timer->start(fullName);	// do we still need a timer ?
 
 	++(m_sharedMemory->getHeader()->cnt_uses);
 }
