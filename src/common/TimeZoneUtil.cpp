@@ -127,13 +127,8 @@ namespace
 			: timeZoneList(pool),
 			  nameIdMap(pool)
 		{
-			const auto databaseVersion = initFromFile();
-
-			if (!databaseVersion.hasData() || databaseVersion <= BUILTIN_TIME_ZONE_VERSION)
+			if (!initFromFile())
 			{
-				if (databaseVersion.hasData() && databaseVersion < BUILTIN_TIME_ZONE_VERSION)
-					gds__log("tzdata ids.dat file is older than builtin time zone list.");
-
 				for (USHORT i = 0; i < FB_NELEM(BUILTIN_TIME_ZONE_LIST); ++i)
 				{
 					auto& timeZone = timeZoneList.add();
@@ -171,33 +166,30 @@ namespace
 		}
 
 	private:
-		string initFromFile()
+		bool initFromFile()
 		{
 			PathName idsPath;
 			PathUtils::concatPath(idsPath, TimeZoneUtil::getTzDataPath(), "ids.dat");
 			const int fileHandle = os_utils::open(idsPath.c_str(), O_RDONLY | O_BINARY, 0);
 
 			if (fileHandle == -1)
+				return false;
+
+			struct STAT stat;
+			if (os_utils::fstat(fileHandle, &stat) != 0)
 			{
-				gds__log("tzdata ids.dat file not found or cannot be opened.");
-				return "";
+				close(fileHandle);
+				return false;
 			}
 
-			const size_t CHUNK_SIZE = 10000;
-			Array<UCHAR> buffer(CHUNK_SIZE);
-			long count;
-
-			do
-			{
-				unsigned prevCount = buffer.getCount();
-				buffer.resize(prevCount + CHUNK_SIZE);
-				count = read(fileHandle, &buffer[prevCount], CHUNK_SIZE);
-
-				if (count < CHUNK_SIZE)
-					buffer.shrink(prevCount + MAX(count, 0));
-			} while (count > 0);
+			Array<UCHAR> buffer(stat.st_size);
+			buffer.resize(stat.st_size);
+			const long bytesRead = read(fileHandle, buffer.begin(), buffer.getCount());
 
 			close(fileHandle);
+
+			if (bytesRead != buffer.getCount())
+				return false;
 
 			const UCHAR* p = buffer.begin();
 			const UCHAR* end = buffer.end();
@@ -221,7 +213,22 @@ namespace
 						{
 							unsigned count = isc_portable_integer(p, 2);
 
-							for (p += 2; p < end && nameIdMap.count() < count; ++p)
+							// Our main criteria to choose the file or the builtin data is the count
+							// of entries. TZ database version is the second, as new version could
+							// have the same entries as before.
+
+							if (count < FB_NELEM(BUILTIN_TIME_ZONE_LIST))
+							{
+								gds__log("tzdata ids.dat file is older than builtin time zone list.");
+								return false;
+							}
+							else if (count == FB_NELEM(BUILTIN_TIME_ZONE_LIST) &&
+								databaseVersion <= BUILTIN_TIME_ZONE_VERSION)
+							{
+								return false;
+							}
+
+							for (p += 2; p < end; ++p)
 							{
 								auto& timeZone = timeZoneList.add();
 								string name;
@@ -239,7 +246,7 @@ namespace
 							}
 
 							if (timeZoneList.getCount() == count)
-								return databaseVersion;
+								return true;
 						}
 					}
 				}
@@ -249,7 +256,7 @@ namespace
 
 			timeZoneList.clear();
 
-			return "";
+			return false;
 		}
 
 	private:
