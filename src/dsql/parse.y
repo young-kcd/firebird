@@ -2088,7 +2088,7 @@ db_initial_desc($alterDatabaseNode)
 // With the exception of LENGTH, all clauses here are handled only at the client.
 %type db_initial_option(<alterDatabaseNode>)
 db_initial_option($alterDatabaseNode)
-	: PAGE_SIZE equals pos_short_integer
+	: PAGE_SIZE equals NUMBER32BIT
 	| USER symbol_user_name
 	| USER utf_string
 	| ROLE valid_symbol_name
