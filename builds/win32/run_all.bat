@@ -34,7 +34,7 @@ if defined FBBUILD_MAKE_KITS_ONLY (goto :MAKE_KITS & goto :EOF)
 
 
 :: Go to work
-if not defined FBBBUILD_NOCLEAN (call clean_all %FBBUILD_REAL_CLEAN%)
+if not defined FBBUILD_NOCLEAN (call clean_all %FBBUILD_REAL_CLEAN%)
 :: We do not support debug builds of icu, so we don't pass %FBBUILD_BUILDTYPE%
 call make_icu
 if "%ERRLEV%"=="1" goto :END
