@@ -627,8 +627,7 @@ void CVT_string_to_datetime(const dsc* desc,
 			}
 			description[i] = precision;
 		}
-		// Month names are only allowed in first 2 positions
-		else if (LETTER7(c) && !have_english_month && i < 2)
+		else if (LETTER7(c) && !have_english_month && i - start_component < 2)
 		{
 			TEXT temp[sizeof(YESTERDAY) + 1];
 
@@ -653,7 +652,8 @@ void CVT_string_to_datetime(const dsc* desc,
 			const TEXT* const* month_ptr = FB_LONG_MONTHS_UPPER;
 			while (true)
 			{
-				if (*month_ptr)
+				// Month names are only allowed in first 2 positions
+				if (*month_ptr && i < 2)
 				{
 					t = temp;
 					const TEXT* m = *month_ptr++;
@@ -670,7 +670,7 @@ void CVT_string_to_datetime(const dsc* desc,
 					// it's not a month name, so it's either a magic word or
 					// a non-date string.  If there are more characters, it's bad
 
-					if (!allow_special || i != 0)
+					if (!allow_special || i != start_component)
 						CVT_conversion_error(desc, cb->err);
 
 					description[i] = SPECIAL;
