@@ -1113,8 +1113,6 @@ interface Util : Versioned
 version:	// 3.0 => 4.0 Alpha1
 	DecFloat16 getDecFloat16(Status status);
 	DecFloat34 getDecFloat34(Status status);
-	Transaction getTransactionByHandle(Status status, isc_tr_handle* hndlPtr);
-	Statement getStatementByHandle(Status status, isc_stmt_handle* hndlPtr);
 	void decodeTimeTz(Status status, const ISC_TIME_TZ* timeTz, uint* hours, uint* minutes, uint* seconds,
 		uint* fractions, uint timeZoneBufferLength, string timeZoneBuffer);
 	void decodeTimeStampTz(Status status, const ISC_TIMESTAMP_TZ* timeStampTz, uint* year, uint* month, uint* day,

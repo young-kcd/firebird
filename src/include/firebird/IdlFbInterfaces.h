@@ -4143,8 +4143,6 @@ namespace Firebird
 			unsigned (CLOOP_CARG *setOffsets)(IUtil* self, IStatus* status, IMessageMetadata* metadata, IOffsetsCallback* callback) throw();
 			IDecFloat16* (CLOOP_CARG *getDecFloat16)(IUtil* self, IStatus* status) throw();
 			IDecFloat34* (CLOOP_CARG *getDecFloat34)(IUtil* self, IStatus* status) throw();
-			ITransaction* (CLOOP_CARG *getTransactionByHandle)(IUtil* self, IStatus* status, isc_tr_handle* hndlPtr) throw();
-			IStatement* (CLOOP_CARG *getStatementByHandle)(IUtil* self, IStatus* status, isc_stmt_handle* hndlPtr) throw();
 			void (CLOOP_CARG *decodeTimeTz)(IUtil* self, IStatus* status, const ISC_TIME_TZ* timeTz, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) throw();
 			void (CLOOP_CARG *decodeTimeStampTz)(IUtil* self, IStatus* status, const ISC_TIMESTAMP_TZ* timeStampTz, unsigned* year, unsigned* month, unsigned* day, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) throw();
 			void (CLOOP_CARG *encodeTimeTz)(IUtil* self, IStatus* status, ISC_TIME_TZ* timeTz, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone) throw();
@@ -4277,34 +4275,6 @@ namespace Firebird
 			}
 			StatusType::clearException(status);
 			IDecFloat34* ret = static_cast<VTable*>(this->cloopVTable)->getDecFloat34(this, status);
-			StatusType::checkException(status);
-			return ret;
-		}
-
-		template <typename StatusType> ITransaction* getTransactionByHandle(StatusType* status, isc_tr_handle* hndlPtr)
-		{
-			if (cloopVTable->version < 3)
-			{
-				StatusType::setVersionError(status, "IUtil", cloopVTable->version, 3);
-				StatusType::checkException(status);
-				return 0;
-			}
-			StatusType::clearException(status);
-			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->getTransactionByHandle(this, status, hndlPtr);
-			StatusType::checkException(status);
-			return ret;
-		}
-
-		template <typename StatusType> IStatement* getStatementByHandle(StatusType* status, isc_stmt_handle* hndlPtr)
-		{
-			if (cloopVTable->version < 3)
-			{
-				StatusType::setVersionError(status, "IUtil", cloopVTable->version, 3);
-				StatusType::checkException(status);
-				return 0;
-			}
-			StatusType::clearException(status);
-			IStatement* ret = static_cast<VTable*>(this->cloopVTable)->getStatementByHandle(this, status, hndlPtr);
 			StatusType::checkException(status);
 			return ret;
 		}
@@ -14650,8 +14620,6 @@ namespace Firebird
 					this->setOffsets = &Name::cloopsetOffsetsDispatcher;
 					this->getDecFloat16 = &Name::cloopgetDecFloat16Dispatcher;
 					this->getDecFloat34 = &Name::cloopgetDecFloat34Dispatcher;
-					this->getTransactionByHandle = &Name::cloopgetTransactionByHandleDispatcher;
-					this->getStatementByHandle = &Name::cloopgetStatementByHandleDispatcher;
 					this->decodeTimeTz = &Name::cloopdecodeTimeTzDispatcher;
 					this->decodeTimeStampTz = &Name::cloopdecodeTimeStampTzDispatcher;
 					this->encodeTimeTz = &Name::cloopencodeTimeTzDispatcher;
@@ -14872,36 +14840,6 @@ namespace Firebird
 			}
 		}
 
-		static ITransaction* CLOOP_CARG cloopgetTransactionByHandleDispatcher(IUtil* self, IStatus* status, isc_tr_handle* hndlPtr) throw()
-		{
-			StatusType status2(status);
-
-			try
-			{
-				return static_cast<Name*>(self)->Name::getTransactionByHandle(&status2, hndlPtr);
-			}
-			catch (...)
-			{
-				StatusType::catchException(&status2);
-				return static_cast<ITransaction*>(0);
-			}
-		}
-
-		static IStatement* CLOOP_CARG cloopgetStatementByHandleDispatcher(IUtil* self, IStatus* status, isc_stmt_handle* hndlPtr) throw()
-		{
-			StatusType status2(status);
-
-			try
-			{
-				return static_cast<Name*>(self)->Name::getStatementByHandle(&status2, hndlPtr);
-			}
-			catch (...)
-			{
-				StatusType::catchException(&status2);
-				return static_cast<IStatement*>(0);
-			}
-		}
-
 		static void CLOOP_CARG cloopdecodeTimeTzDispatcher(IUtil* self, IStatus* status, const ISC_TIME_TZ* timeTz, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) throw()
 		{
 			StatusType status2(status);
@@ -15030,8 +14968,6 @@ namespace Firebird
 		virtual unsigned setOffsets(StatusType* status, IMessageMetadata* metadata, IOffsetsCallback* callback) = 0;
 		virtual IDecFloat16* getDecFloat16(StatusType* status) = 0;
 		virtual IDecFloat34* getDecFloat34(StatusType* status) = 0;
-		virtual ITransaction* getTransactionByHandle(StatusType* status, isc_tr_handle* hndlPtr) = 0;
-		virtual IStatement* getStatementByHandle(StatusType* status, isc_stmt_handle* hndlPtr) = 0;
 		virtual void decodeTimeTz(StatusType* status, const ISC_TIME_TZ* timeTz, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) = 0;
 		virtual void decodeTimeStampTz(StatusType* status, const ISC_TIMESTAMP_TZ* timeStampTz, unsigned* year, unsigned* month, unsigned* day, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions, unsigned timeZoneBufferLength, char* timeZoneBuffer) = 0;
 		virtual void encodeTimeTz(StatusType* status, ISC_TIME_TZ* timeTz, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions, const char* timeZone) = 0;
