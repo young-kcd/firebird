@@ -1065,6 +1065,10 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 
 	while (SRQ_EMPTY(m_sharedMemory->getHeader()->lhb_processes))
 	{
+		fb_assert(!m_process);
+		if (m_process)
+			bug(NULL, "Process disappeared in LockManager::acquire_shmem");
+
 		if (m_sharedMemory->justCreated())
 		{
 			// no sense thinking about statistics now
