@@ -7,12 +7,12 @@
 */
 
 #define PRODUCT_VER_STRING "4.0.0.2009"
-#define FILE_VER_STRING "WI-T4.0.0.2009"
-#define LICENSE_VER_STRING "WI-T4.0.0.2009"
+#define FILE_VER_STRING "WI-V4.0.0.2009"
+#define LICENSE_VER_STRING "WI-V4.0.0.2009"
 #define FILE_VER_NUMBER 4, 0, 0, 2009
 #define FB_MAJOR_VER "4"
 #define FB_MINOR_VER "0"
 #define FB_REV_NO "0"
 #define FB_BUILD_NO "2009"
-#define FB_BUILD_TYPE "T"
-#define FB_BUILD_SUFFIX "Firebird 4.0 Beta 2"
+#define FB_BUILD_TYPE "V"
+#define FB_BUILD_SUFFIX "Firebird 4.0 Release Candidate 1"

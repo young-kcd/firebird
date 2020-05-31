@@ -1,4 +1,4 @@
-# v4.0 Beta 2 (unreleased)
+# v4.0 Beta 2 (14-May-2020)
 
 ## New features
 
