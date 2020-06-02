@@ -120,6 +120,10 @@ private:
 		public Firebird::RefCntIface<Firebird::ITimerImpl<TouchFile, Firebird::CheckStatusWrapper> >
 	{
 	public:
+		TouchFile() :
+			fileName(*getDefaultMemoryPool())
+		{}
+
 		void handler();
 		void start(const char* fName);
 		void stop();
