@@ -2651,6 +2651,9 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 		return parentStmt;
 	}
 
+	if (forNode && (marks & StmtNode::MARK_MERGE))
+		forNode->checkRecordUpdated(tdbb, request, rpb);
+
 	// If the stream was sorted, the various fields in the rpb are probably junk.
 	// Just to make sure that everything is cool, refetch and release the record.
 
@@ -2696,6 +2699,9 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 	{
 		EXE_execute_triggers(tdbb, &relation->rel_post_erase, rpb, NULL, TRIGGER_DELETE, POST_TRIG);
 	}
+
+	if (forNode && (marks & StmtNode::MARK_MERGE))
+		forNode->setRecordUpdated(tdbb, request, rpb);
 
 	// Call IDX_erase (which checks constraints) after all post erase triggers have fired.
 	// This is required for cascading referential integrity, which can be implemented as
@@ -4839,7 +4845,11 @@ DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 	ForNode* node = FB_NEW_POOL(pool) ForNode(pool);
 
 	if (csb->csb_blr_reader.peekByte() == blr_marks)
-		node->forUpdate = (PAR_marks(csb) & StmtNode::MARK_FOR_UPDATE) != 0;
+	{
+		unsigned marks = PAR_marks(csb);
+		node->forUpdate = (marks & StmtNode::MARK_FOR_UPDATE) != 0;
+		node->isMerge = (marks & StmtNode::MARK_MERGE) != 0;
+	}
 
 	if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_stall)
 		node->stall = PAR_parse_stmt(tdbb, csb);
@@ -4956,8 +4966,9 @@ void ForNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 	dsqlScratch->appendUChar(blr_for);
 
-	if (forUpdate)
-		dsqlScratch->putBlrMarkers(StmtNode::MARK_FOR_UPDATE);
+	const unsigned marks = (forUpdate ? StmtNode::MARK_FOR_UPDATE : 0) | (isMerge ? StmtNode::MARK_MERGE : 0);
+	if (marks)
+		dsqlScratch->putBlrMarkers(marks);
 
 	if (!statement || dsqlForceSingular)
 		dsqlScratch->appendUChar(blr_singular);
@@ -5027,7 +5038,7 @@ StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	if (rse->flags & RseNode::FLAG_WRITELOCK)
 		withLock = true;
 
-	impureOffset = CMP_impure(csb, sizeof(Impure));
+	impureOffset = CMP_impure(csb, isMerge ? sizeof(ImpureMerge) : sizeof(Impure));
 
 	return this;
 }
@@ -5035,7 +5046,8 @@ StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
 	jrd_tra* transaction = request->req_transaction;
-	Impure* impure = request->getImpure<Impure>(impureOffset);
+	ImpureMerge* merge = request->getImpure<ImpureMerge>(impureOffset);
+	Impure* impure = merge;
 
 	switch (request->req_operation)
 	{
@@ -5043,6 +5055,8 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 			// initialize impure values
 			impure->savepoint = 0;
 			impure->writeLockMode = false;
+			if (isMerge)
+				merge->recUpdated = nullptr;
 
 			if (!(transaction->tra_flags & TRA_system) &&
 				transaction->tra_save_point &&
@@ -5122,6 +5136,13 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 			}
 
 			cursor->close(tdbb);
+
+			if (isMerge)
+			{
+				delete merge->recUpdated;
+				merge->recUpdated = nullptr;
+			}
+
 			return parentStmt;
 		}
 	}
@@ -5130,13 +5151,11 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 	return NULL;
 }
 
-
 bool ForNode::isWriteLockMode(jrd_req* request) const
 {
 	const Impure* impure = request->getImpure<Impure>(impureOffset);
 	return impure->writeLockMode;
 }
-
 
 void ForNode::setWriteLockMode(jrd_req* request) const
 {
@@ -5144,6 +5163,32 @@ void ForNode::setWriteLockMode(jrd_req* request) const
 	fb_assert(!impure->writeLockMode);
 
 	impure->writeLockMode = true;
+}
+
+void ForNode::checkRecordUpdated(thread_db* tdbb, jrd_req* request, record_param* rpb) const
+{
+	jrd_rel* relation = rpb->rpb_relation;
+	if (!isMerge || relation->isVirtual() || relation->rel_file || relation->rel_view_rse)
+		return;
+
+	ImpureMerge* impure = request->getImpure<ImpureMerge>(impureOffset);
+
+	if (!impure->recUpdated)
+		return;
+
+	if (impure->recUpdated->test(rpb->rpb_number.getValue()))
+		Arg::Gds(isc_merge_dup_update).raise();
+}
+
+void ForNode::setRecordUpdated(thread_db* tdbb, jrd_req* request, record_param* rpb) const
+{
+	jrd_rel* relation = rpb->rpb_relation;
+	if (!isMerge || relation->isVirtual() || relation->rel_file || relation->rel_view_rse)
+		return;
+
+	ImpureMerge* impure = request->getImpure<ImpureMerge>(impureOffset);
+
+	RBM_SET(tdbb->getDefaultPool(), &impure->recUpdated, rpb->rpb_number.getValue());
 }
 
 //--------------------
@@ -5538,6 +5583,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		forNode->dsqlForceSingular = true;
 
 	forNode->forUpdate = true;
+	forNode->isMerge = true;
 
 	// Get the already processed relations.
 	RseNode* processedRse = nodeAs<RseNode>(forNode->rse->dsqlStreams->items[0]);
@@ -5736,7 +5782,6 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 		// Build the INSERT node.
 		StoreNode* store = FB_NEW_POOL(pool) StoreNode(pool);
-		// TODO: store->marks |= StmtNode::MARK_MERGE;
 		store->dsqlRelation = relation;
 		store->dsqlFields = notMatched->fields;
 		store->dsqlValues = notMatched->values;
@@ -6614,6 +6659,9 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 						TRIGGER_UPDATE, POST_TRIG);
 				}
 
+				if (forNode && (marks & StmtNode::MARK_MERGE))
+					forNode->setRecordUpdated(tdbb, request, orgRpb);
+
 				// Now call IDX_modify_check_constrints after all post modify triggers
 				// have fired.  This is required for cascading referential integrity,
 				// which can be implemented as post_erase triggers.
@@ -6649,6 +6697,9 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 
 	impure->sta_state = 0;
 	RLCK_reserve_relation(tdbb, transaction, relation, true);
+
+	if (forNode && (marks & StmtNode::MARK_MERGE))
+		forNode->checkRecordUpdated(tdbb, request, orgRpb);
 
 	// If the stream was sorted, the various fields in the rpb are
 	// probably junk.  Just to make sure that everything is cool,

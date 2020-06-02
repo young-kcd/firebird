@@ -920,6 +920,7 @@ public:
 		  cursor(NULL),
 		  parBlrBeginCnt(0),
 		  forUpdate(false),
+		  isMerge(false),
 		  withLock(false)
 	{
 	}
@@ -937,11 +938,20 @@ public:
 	bool isWriteLockMode(jrd_req* request) const;
 	void setWriteLockMode(jrd_req* request) const;
 
+	// Used by UPDATE and DELETE sub-statements of MERGE
+	void checkRecordUpdated(thread_db* tdbb, jrd_req* request, record_param* rpb) const;
+	void setRecordUpdated(thread_db* tdbb, jrd_req* request, record_param* rpb) const;
+
 public:
 	struct Impure
 	{
 		SavNumber savepoint;
 		bool writeLockMode;		// true - driven statement (UPDATE\DELETE\SELECT WITH LOCK) works in "write lock" mode, false - normal mode
+	};
+
+	struct ImpureMerge : Impure
+	{
+		RecordBitmap* recUpdated;	// updated and deleted records by MERGE statement
 	};
 
 	NestConst<SelectNode> dsqlSelect;
@@ -956,6 +966,7 @@ public:
 	NestConst<Cursor> cursor;
 	int parBlrBeginCnt;
 	bool forUpdate;				// part of UPDATE\DELETE\MERGE statement
+	bool isMerge;				// part of MERGE statement
 	bool withLock;				// part of SELECT ... WITH LOCK	statement
 };
 
