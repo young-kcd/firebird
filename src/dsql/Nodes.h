@@ -153,7 +153,7 @@ public:
 		doDsqlPass(dsqlScratch, target, node);
 	}
 
-	virtual Firebird::string internalPrint(NodePrinter& printer) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const = 0;
 
 	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
 	{
@@ -545,7 +545,7 @@ public:
 		*node = (*node)->pass2(tdbb, csb);
 	}
 
-	virtual Firebird::string internalPrint(NodePrinter& printer) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const = 0;
 
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor)
 	{
@@ -743,7 +743,7 @@ public:
 	}
 
 public:
-	virtual Firebird::string internalPrint(NodePrinter& printer) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const = 0;
 
 	virtual Kind getKind()
 	{
@@ -965,7 +965,7 @@ public:
 		holder.add(arg);
 	}
 
-	virtual Firebird::string internalPrint(NodePrinter& printer) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const = 0;
 
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
 	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
@@ -1092,7 +1092,7 @@ public:
 		stream = value;
 	}
 
-	virtual Firebird::string internalPrint(NodePrinter& printer) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const = 0;
 
 	virtual RecordSourceNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
