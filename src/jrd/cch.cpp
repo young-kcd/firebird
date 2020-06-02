@@ -2903,7 +2903,7 @@ void BufferControl::cache_reader(BufferControl* bcb)
 		// Otherwise, wait for event notification.
 		BufferDesc* bdb;
 		if (found)
-			JRD_reschedule(tdbb, 0, true);
+			JRD_reschedule(tdbb, true);
 		else if (bcb->bcb_flags & BCB_free_pending &&
 			(bdb = get_buffer(tdbb, FREE_PAGE, LATCH_none, 1)))
 		{
@@ -3016,7 +3016,7 @@ void BufferControl::cache_writer(BufferControl* bcb)
 
 				if ((bcb->bcb_flags & BCB_free_pending) || dbb->dbb_flush_cycle)
 				{
-					JRD_reschedule(tdbb, 0, true);
+					JRD_reschedule(tdbb, true);
 				}
 #ifdef CACHE_READER
 				else if (SBM_next(bcb->bcb_prefetch, &starting_page, RSE_get_forward))

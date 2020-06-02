@@ -7662,7 +7662,7 @@ bool thread_db::checkCancelState(bool punt)
 	return true;
 }
 
-bool thread_db::reschedule(SLONG quantum, bool punt)
+bool thread_db::reschedule(bool punt)
 {
 	// Somebody has kindly offered to relinquish
 	// control so that somebody else may run
@@ -7680,8 +7680,8 @@ bool thread_db::reschedule(SLONG quantum, bool punt)
 
 	Monitoring::checkState(this);
 
-	tdbb_quantum = (tdbb_quantum <= 0) ?
-		(quantum ? quantum : QUANTUM) : tdbb_quantum;
+	if (tdbb_quantum <= 0)
+		tdbb_quantum = (tdbb_flags & TDBB_sweeper) ? SWEEP_QUANTUM : QUANTUM;
 
 	return false;
 }
