@@ -1814,7 +1814,7 @@ void TRA_sweep(thread_db* tdbb)
 		// 2) Execution is throttled in JRD_reschedule() by
 		// yielding the processor when our quantum expires.
 
-		tdbb->tdbb_flags |= TDBB_sweeper;
+		ThreadSweepGuard sweepGuard(tdbb);
 
 		TraceSweepEvent traceSweep(tdbb);
 
@@ -1880,7 +1880,6 @@ void TRA_sweep(thread_db* tdbb)
 
 		TRA_commit(tdbb, transaction, false);
 
-		tdbb->tdbb_flags &= ~TDBB_sweeper;
 		tdbb->setTransaction(tdbb_old_trans);
 		dbb->clearSweepFlags(tdbb);
 	}
@@ -1905,7 +1904,6 @@ void TRA_sweep(thread_db* tdbb)
 			}
 		}
 
-		tdbb->tdbb_flags &= ~TDBB_sweeper;
 		tdbb->setTransaction(tdbb_old_trans);
 		dbb->clearSweepFlags(tdbb);
 
@@ -3295,7 +3293,6 @@ static void transaction_options(thread_db* tdbb,
 					 Arg::Gds(isc_tpb_option_without_rc) << Arg::Str("isc_tpb_no_rec_version"));
 		}
 	}
-
 
 	if ((transaction->tra_flags & TRA_read_committed) && !(tdbb->tdbb_flags & TDBB_sweeper))
 	{

@@ -636,8 +636,7 @@ void EXE_receive(thread_db* tdbb,
 
 	DEV_BLKCHK(request, type_req);
 
-	if (--tdbb->tdbb_quantum < 0)
-		JRD_reschedule(tdbb, 0, true);
+	JRD_reschedule(tdbb);
 
 	jrd_tra* transaction = request->req_transaction;
 
@@ -789,8 +788,7 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(request, type_req);
 
-	if (--tdbb->tdbb_quantum < 0)
-		JRD_reschedule(tdbb, 0, true);
+	JRD_reschedule(tdbb);
 
 	if (!(request->req_flags & req_active))
 		ERR_post(Arg::Gds(isc_req_sync));
@@ -1317,8 +1315,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 		{
 			if (request->req_operation == jrd_req::req_evaluate)
 			{
-				if (--tdbb->tdbb_quantum < 0)
-					JRD_reschedule(tdbb, 0, true);
+				JRD_reschedule(tdbb);
 
 				if (node->hasLineColumn)
 				{

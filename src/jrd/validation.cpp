@@ -755,10 +755,8 @@ static int validate(Firebird::UtilSvc* svc)
 	{
 		// should be EngineContextHolder but it is declared in jrd.cpp
 		BackgroundContextHolder tdbb(dbb, att, &status, FB_FUNCTION);
+
 		att->att_use_count++;
-
-
-		tdbb->tdbb_flags |= TDBB_sweeper;
 
 		val_pool = dbb->createPool();
 		Jrd::ContextPoolHolder context(tdbb, val_pool);
@@ -1027,7 +1025,7 @@ bool Validation::run(thread_db* tdbb, USHORT flags)
 		for (USHORT i = 0; i < VAL_MAX_ERROR; i++)
 			vdr_err_counts[i] = 0;
 
-		tdbb->tdbb_flags |= TDBB_sweeper;
+		ThreadSweepGuard sweepGuard(tdbb);
 
 		gds__log("Database: %s\n\tValidation started", fileName.c_str());
 
@@ -1046,8 +1044,6 @@ bool Validation::run(thread_db* tdbb, USHORT flags)
 			CCH_flush(tdbb, flushFlags, 0);
 		}
 
-		tdbb->tdbb_flags &= ~TDBB_sweeper;
-
 		cleanup();
 
 		gds__log("Database: %s\n\tValidation finished: %d errors, %d warnings, %d fixed",
@@ -1063,7 +1059,6 @@ bool Validation::run(thread_db* tdbb, USHORT flags)
 
 		cleanup();
 		dbb->deletePool(val_pool);
-		tdbb->tdbb_flags &= ~TDBB_sweeper;
 		return false;
 	}
 
@@ -1178,10 +1173,8 @@ Validation::FETCH_CODE Validation::fetch_page(bool mark, ULONG page_number,
  **************************************/
 	Database* dbb = vdr_tdbb->getDatabase();
 
-	if (--vdr_tdbb->tdbb_quantum < 0)
+	if (JRD_reschedule(vdr_tdbb))
 	{
-		JRD_reschedule(vdr_tdbb, 0, true);
-
 		if (vdr_service && vdr_service->finished())
 		{
 			CCH_unwind(vdr_tdbb, false);

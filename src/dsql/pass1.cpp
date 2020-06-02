@@ -806,8 +806,7 @@ bool PASS1_node_match(DsqlCompilerScratch* dsqlScratch, const ExprNode* node1, c
 	DEV_BLKCHK(node1, dsql_type_nod);
 	DEV_BLKCHK(node2, dsql_type_nod);
 
-	if (--tdbb->tdbb_quantum < 0)
-		JRD_reschedule(tdbb, 0, true);
+	JRD_reschedule(tdbb);
 
 	if (!node1 && !node2)
 		return true;

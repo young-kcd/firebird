@@ -667,7 +667,7 @@ ULONG DPM_data_pages(thread_db* tdbb, jrd_rel* relation)
 
 			CCH_RELEASE(tdbb, &window);
 
-			tdbb->checkCancelState(true);
+			tdbb->checkCancelState();
 		}
 
 		CCH_RELEASE(tdbb, &window);
@@ -1888,7 +1888,7 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 			return false;
 
 		if (sweeper)
-			tdbb->checkCancelState(true);
+			tdbb->checkCancelState();
 	}
 }
 

@@ -3872,7 +3872,7 @@ void LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_wai
 		// if so we mark our own request as rejected
 
 		// !!! this will be changed to have no dependency on thread_db !!!
-		const bool cancelled = (tdbb->checkCancelState() != FB_SUCCESS);
+		const bool cancelled = (tdbb->getCancelState() != FB_SUCCESS);
 
 		if (cancelled || (lck_wait < 0 && lock_timeout <= current_time))
 		{
