@@ -280,6 +280,19 @@ namespace
 namespace Jrd {
 
 
+string StmtNode::internalPrint(NodePrinter& printer) const
+{
+	DmlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, impureOffset);
+
+	return "StmtNode";
+}
+
+
+//--------------------
+
+
 StmtNode* SavepointEncloseNode::make(MemoryPool& pool, DsqlCompilerScratch* dsqlScratch, StmtNode* node)
 {
 	if (dsqlScratch->errorHandlers)
