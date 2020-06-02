@@ -924,7 +924,7 @@ void ConfigStorage::TouchFile::handler()
 {
 	try
 	{
-		if (!os_utils::touchFile(fileName))
+		if (!os_utils::touchFile(fileName.c_str()))
 			system_call_failed::raise("utime");
 
 		FbLocalStatus s;

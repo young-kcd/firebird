@@ -126,7 +126,7 @@ private:
 		int release();
 
 	private:
-		const char* fileName;
+		Firebird::PathName fileName;
 	};
 	Firebird::RefPtr<TouchFile> m_timer;
 
