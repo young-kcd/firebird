@@ -703,7 +703,7 @@ namespace Jrd
 
 				dsc* desc = EVL_expr(tdbb, request, from);
 
-				if (request->req_flags & req_null)
+				if (!desc)
 					target->vlu_desc.dsc_address = NULL;
 				else
 				{

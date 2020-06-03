@@ -728,7 +728,7 @@ public:
 	}
 
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const = 0;
-	virtual bool execute(thread_db* tdbb, jrd_req* request) const = 0;
+	virtual TriState execute(thread_db* tdbb, jrd_req* request) const = 0;
 };
 
 class ValueExprNode : public ExprNode

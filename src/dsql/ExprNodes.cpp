@@ -1817,25 +1817,17 @@ dsc* ArithmeticNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 
-	request->req_flags &= ~req_null;
-
 	// Evaluate arguments.  If either is null, result is null, but in
 	// any case, evaluate both, since some expressions may later depend
 	// on mappings which are developed here
 
 	const dsc* desc1 = EVL_expr(tdbb, request, arg1);
-	const ULONG flags = request->req_flags;
-	request->req_flags &= ~req_null;
-
 	const dsc* desc2 = EVL_expr(tdbb, request, arg2);
 
 	// restore saved NULL state
 
-	if (flags & req_null)
-		request->req_flags |= req_null;
-
-	if (request->req_flags & req_null)
-		return NULL;
+	if (!desc1 || !desc2)
+		return nullptr;
 
 	EVL_make_value(tdbb, desc1, impure);
 
@@ -3192,16 +3184,15 @@ ValueExprNode* AtNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* AtNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
-	request->req_flags &= ~req_null;
 
 	dsc* dateTimeDesc = EVL_expr(tdbb, request, dateTimeArg);
 
-	if (!dateTimeDesc || (request->req_flags & req_null))
+	if (!dateTimeDesc)
 		return NULL;
 
 	dsc* zoneDesc = zoneArg ? EVL_expr(tdbb, request, zoneArg) : NULL;
 
-	if (zoneArg && (!zoneDesc || (request->req_flags & req_null)))
+	if (zoneArg && !zoneDesc)
 		return NULL;
 
 	USHORT zone;
@@ -3309,15 +3300,16 @@ ValueExprNode* BoolAsValueNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 dsc* BoolAsValueNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	UCHAR booleanVal = (UCHAR) boolean->execute(tdbb, request);
+	const TriState booleanVal = boolean->execute(tdbb, request);
 
-	if (request->req_flags & req_null)
+	if (booleanVal.isUnknown())
 		return NULL;
 
 	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 
+	UCHAR booleanByte = (UCHAR) booleanVal.value;
 	dsc desc;
-	desc.makeBoolean(&booleanVal);
+	desc.makeBoolean(&booleanByte);
 	EVL_make_value(tdbb, &desc, impure);
 
 	return &impure->vlu_desc;
@@ -3531,9 +3523,6 @@ dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	dsc* value = EVL_expr(tdbb, request, source);
 
-	if (request->req_flags & req_null)
-		value = NULL;
-
 	// If validation is not required and the source value is either NULL
 	// or already in the desired data type, simply return it "as is"
 
@@ -3706,7 +3695,7 @@ dsc* CoalesceNode::execute(thread_db* tdbb, jrd_req* request) const
 	{
 		dsc* desc = EVL_expr(tdbb, request, item);
 
-		if (desc && !(request->req_flags & req_null))
+		if (desc)
 			return desc;
 	}
 
@@ -3905,13 +3894,8 @@ dsc* ConcatenateNode::execute(thread_db* tdbb, jrd_req* request) const
 	const ULONG flags = request->req_flags;
 	const dsc* value2 = EVL_expr(tdbb, request, arg2);
 
-	// restore saved NULL state
-
-	if (flags & req_null)
-		request->req_flags |= req_null;
-
-	if (request->req_flags & req_null)
-		return NULL;
+	if (!value1 || !value2)
+		return nullptr;
 
 	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 	dsc desc;
@@ -4135,7 +4119,6 @@ ValueExprNode* CurrentDateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* CurrentDateNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
-	request->req_flags &= ~req_null;
 
 	// Use the request timestamp.
 	fb_assert(!request->req_gmt_timestamp.isEmpty());
@@ -4249,7 +4232,6 @@ ValueExprNode* CurrentTimeNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 dsc* CurrentTimeNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
-	request->req_flags &= ~req_null;
 
 	// Use the request timestamp.
 	fb_assert(!request->req_gmt_timestamp.isEmpty());
@@ -4365,7 +4347,6 @@ ValueExprNode* CurrentTimeStampNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch
 dsc* CurrentTimeStampNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
-	request->req_flags &= ~req_null;
 
 	// Use the request timestamp.
 	fb_assert(!request->req_gmt_timestamp.isEmpty());
@@ -4452,7 +4433,6 @@ ValueExprNode* CurrentRoleNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* CurrentRoleNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
-	request->req_flags &= ~req_null;
 
 	impure->vlu_desc.dsc_dtype = dtype_text;
 	impure->vlu_desc.dsc_sub_type = 0;
@@ -4545,7 +4525,6 @@ ValueExprNode* CurrentUserNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* CurrentUserNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
-	request->req_flags &= ~req_null;
 
 	impure->vlu_desc.dsc_dtype = dtype_text;
 	impure->vlu_desc.dsc_sub_type = 0;
@@ -4805,7 +4784,7 @@ dsc* DecodeNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	// The comparisons are done with "equal" operator semantics, so if the test value is
 	// NULL we have nothing to compare.
-	if (testDesc && !(request->req_flags & req_null))
+	if (testDesc)
 	{
 		const NestConst<ValueExprNode>* valuesPtr = values->items.begin();
 
@@ -4813,7 +4792,7 @@ dsc* DecodeNode::execute(thread_db* tdbb, jrd_req* request) const
 		{
 			dsc* desc = EVL_expr(tdbb, request, condition);
 
-			if (desc && !(request->req_flags & req_null) && MOV_compare(tdbb, testDesc, desc) == 0)
+			if (desc && MOV_compare(tdbb, testDesc, desc) == 0)
 				return EVL_expr(tdbb, request, *valuesPtr);
 
 			++valuesPtr;
@@ -5150,10 +5129,6 @@ dsc* DerivedExprNode::execute(thread_db* tdbb, jrd_req* request) const
 		if (request->req_rpb[i].rpb_number.isValid())
 		{
 			value = EVL_expr(tdbb, request, arg);
-
-			if (request->req_flags & req_null)
-				value = NULL;
-
 			break;
 		}
 	}
@@ -5429,11 +5404,10 @@ ValueExprNode* ExtractNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
-	request->req_flags &= ~req_null;
 
 	dsc* value = EVL_expr(tdbb, request, arg);
 
-	if (!value || (request->req_flags & req_null))
+	if (!value)
 		return NULL;
 
 	impure->vlu_desc.makeShort(0, &impure->vlu_misc.vlu_short);
@@ -7036,8 +7010,6 @@ ValueExprNode* GenIdNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 dsc* GenIdNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	request->req_flags &= ~req_null;
-
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	SINT64 change = step;
 
@@ -7045,7 +7017,7 @@ dsc* GenIdNode::execute(thread_db* tdbb, jrd_req* request) const
 	{
 		const dsc* const value = EVL_expr(tdbb, request, arg);
 
-		if (request->req_flags & req_null)
+		if (!value)
 			return NULL;
 
 		change = MOV_get_int64(tdbb, value, 0);
@@ -7232,10 +7204,9 @@ ValueExprNode* InternalInfoNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* InternalInfoNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
-	request->req_flags &= ~req_null;
 
 	const dsc* value = EVL_expr(tdbb, request, arg);
-	if (request->req_flags & req_null)
+	if (!value)
 		return NULL;
 
 	fb_assert(value->dsc_dtype == dtype_long);
@@ -8048,7 +8019,6 @@ ValueExprNode* LocalTimeNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 dsc* LocalTimeNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
-	request->req_flags &= ~req_null;
 
 	// Use the request timestamp.
 	fb_assert(!request->req_gmt_timestamp.isEmpty());
@@ -8151,7 +8121,6 @@ ValueExprNode* LocalTimeStampNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/
 dsc* LocalTimeStampNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
-	request->req_flags &= ~req_null;
 
 	// Use the request timestamp.
 	fb_assert(!request->req_gmt_timestamp.isEmpty());
@@ -8749,10 +8718,8 @@ ValueExprNode* NegateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 dsc* NegateNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	request->req_flags &= ~req_null;
-
 	const dsc* desc = EVL_expr(tdbb, request, arg);
-	if (request->req_flags & req_null)
+	if (!desc)
 		return NULL;
 
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
@@ -9634,15 +9601,15 @@ ValueExprNode* ParameterNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* ParameterNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
-	request->req_flags &= ~req_null;
 
 	const dsc* desc;
+	bool argNull = false;
 
 	if (argFlag)
 	{
 		desc = EVL_expr(tdbb, request, argFlag);
 		if (MOV_get_long(tdbb, desc, 0))
-			request->req_flags |= req_null;
+			argNull = true;
 	}
 
 	desc = &message->format->fmt_desc[argNumber];
@@ -9662,7 +9629,7 @@ dsc* ParameterNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	if (!(*impure_flags & VLU_checked))
 	{
-		if (!(request->req_flags & req_null))
+		if (!argNull)
 		{
 			USHORT maxLen = desc->dsc_length;	// not adjusted length
 			desc = &impure->vlu_desc;
@@ -9716,13 +9683,13 @@ dsc* ParameterNode::execute(thread_db* tdbb, jrd_req* request) const
 		if (argInfo)
 		{
 			EVL_validate(tdbb, Item(Item::TYPE_PARAMETER, message->messageNumber, argNumber),
-				argInfo, &impure->vlu_desc, request->req_flags & req_null);
+				argInfo, &impure->vlu_desc, argNull);
 		}
 
 		*impure_flags |= VLU_checked;
 	}
 
-	return (request->req_flags & req_null) ? NULL : &impure->vlu_desc;
+	return argNull ? NULL : &impure->vlu_desc;
 }
 
 
@@ -10184,10 +10151,7 @@ dsc* RecordKeyNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 
 		// If it doesn't point to a valid record, return NULL
 		if (!rpb->rpb_number.isValid() || rpb->rpb_number.isBof() || !relation)
-		{
-			request->req_flags |= req_null;
 			return NULL;
-		}
 
 		// Format dbkey as vector of relation id, record number
 
@@ -10249,10 +10213,7 @@ dsc* RecordKeyNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 
 		// If it doesn't point to a valid record, return NULL.
 		if (!rpb->rpb_number.isValid() || !relation || relation->isVirtual() || relation->rel_file)
-		{
-			request->req_flags |= req_null;
 			return NULL;
-		}
 
 		impure->vlu_misc.vlu_int64 = rpb->rpb_transaction_nr;
 		impure->vlu_desc.makeInt64(0, &impure->vlu_misc.vlu_int64);
@@ -10364,7 +10325,7 @@ dsc* ScalarNode::execute(thread_db* tdbb, jrd_req* request) const
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	const dsc* desc = EVL_expr(tdbb, request, field);
 
-	if (request->req_flags & req_null)
+	if (!desc)
 		return NULL;
 
 	if (desc->dsc_dtype != dtype_array)
@@ -10380,7 +10341,7 @@ dsc* ScalarNode::execute(thread_db* tdbb, jrd_req* request) const
 	{
 		const dsc* temp = EVL_expr(tdbb, request, subscript);
 
-		if (temp && !(request->req_flags & req_null))
+		if (temp)
 			numSubscripts[iter++] = MOV_get_long(tdbb, temp, 0);
 		else
 			return NULL;
@@ -10577,11 +10538,10 @@ ValueExprNode* StrCaseNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* StrCaseNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
-	request->req_flags &= ~req_null;
 
 	const dsc* value = EVL_expr(tdbb, request, arg);
 
-	if (request->req_flags & req_null)
+	if (!value)
 		return NULL;
 
 	TextType* textType = INTL_texttype_lookup(tdbb, value->getTextType());
@@ -10792,13 +10752,12 @@ ValueExprNode* StrLenNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* StrLenNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
-	request->req_flags &= ~req_null;
 
 	const dsc* value = EVL_expr(tdbb, request, arg);
 
 	impure->vlu_desc.makeInt64(0, &impure->vlu_misc.vlu_int64);
 
-	if (!value || (request->req_flags & req_null))
+	if (!value)
 		return NULL;
 
 	FB_UINT64 length;
@@ -11250,7 +11209,6 @@ ValueExprNode* SubQueryNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* impure = request->getImpure<impure_value>(impureOffset);
-	request->req_flags &= ~req_null;
 
 	dsc* desc = &impure->vlu_desc;
 	USHORT* invariant_flags = NULL;
@@ -11264,11 +11222,9 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 			// An invariant node has already been computed.
 
 			if (*invariant_flags & VLU_null)
-				request->req_flags |= req_null;
+				return nullptr;
 			else
-				request->req_flags &= ~req_null;
-
-			return (request->req_flags & req_null) ? NULL : desc;
+				return desc;
 		}
 	}
 
@@ -11277,7 +11233,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 	impure->vlu_desc.dsc_length = sizeof(SLONG);
 	impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_long;
 
-	ULONG flag = req_null;
+	bool flagNull = true;
 
 	try
 	{
@@ -11293,7 +11249,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 		switch (blrOp)
 		{
 			case blr_count:
-				flag = 0;
+				flagNull = false;
 				while (subQuery->fetch(tdbb))
 					++impure->vlu_misc.vlu_long;
 				break;
@@ -11303,15 +11259,15 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 				while (subQuery->fetch(tdbb))
 				{
 					dsc* value = EVL_expr(tdbb, request, value1);
-					if (request->req_flags & req_null)
+					if (!value)
 						continue;
 
 					int result;
 
-					if (flag || ((result = MOV_compare(tdbb, value, desc)) < 0 && blrOp == blr_minimum) ||
+					if (flagNull || ((result = MOV_compare(tdbb, value, desc)) < 0 && blrOp == blr_minimum) ||
 						(blrOp != blr_minimum && result > 0))
 					{
-						flag = 0;
+						flagNull = false;
 						EVL_make_value(tdbb, value, impure);
 					}
 				}
@@ -11322,7 +11278,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 				while (subQuery->fetch(tdbb))
 				{
 					desc = EVL_expr(tdbb, request, value1);
-					if (request->req_flags & req_null)
+					if (!desc)
 						continue;
 
 					// Note: if the field being SUMed or AVERAGEd is short or long,
@@ -11338,7 +11294,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 
 				if (blrOp == blr_total)
 				{
-					flag = 0;
+					flagNull = false;
 					break;
 				}
 
@@ -11350,7 +11306,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 				impure->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
 				impure->vlu_desc.dsc_length = sizeof(double);
 				impure->vlu_desc.dsc_scale = 0;
-				flag = 0;
+				flagNull = false;
 				break;
 
 			case blr_via:
@@ -11364,7 +11320,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 						ERR_post(Arg::Gds(isc_from_no_match));
 				}
 
-				flag = request->req_flags;
+				flagNull = desc == nullptr;
 				break;
 
 			default:
@@ -11377,8 +11333,6 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 		try
 		{
 			subQuery->close(tdbb);
-			request->req_flags &= ~req_null;
-			request->req_flags |= flag;
 		}
 		catch (const Exception&)
 		{
@@ -11390,8 +11344,6 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 	// Close stream and return value.
 
 	subQuery->close(tdbb);
-	request->req_flags &= ~req_null;
-	request->req_flags |= flag;
 
 	// If this is an invariant node, save the return value. If the descriptor does not point to the
 	// impure area for this node then point this node's descriptor to the correct place;
@@ -11401,13 +11353,14 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 	{
 		*invariant_flags |= VLU_computed;
 
-		if (request->req_flags & req_null)
+		if (flagNull)
 			*invariant_flags |= VLU_null;
+
 		if (desc && (desc != &impure->vlu_desc))
 			impure->vlu_desc = *desc;
 	}
 
-	return (request->req_flags & req_null) ? NULL : desc;
+	return flagNull ? nullptr : desc;
 }
 
 
@@ -11576,13 +11529,8 @@ dsc* SubstringNode::execute(thread_db* tdbb, jrd_req* request) const
 	// Run all expression arguments.
 
 	const dsc* exprDesc = EVL_expr(tdbb, request, expr);
-	exprDesc = (request->req_flags & req_null) ? NULL : exprDesc;
-
 	const dsc* startDesc = EVL_expr(tdbb, request, start);
-	startDesc = (request->req_flags & req_null) ? NULL : startDesc;
-
 	const dsc* lengthDesc = EVL_expr(tdbb, request, length);
-	lengthDesc = (request->req_flags & req_null) ? NULL : lengthDesc;
 
 	if (exprDesc && startDesc && lengthDesc)
 		return perform(tdbb, impure, exprDesc, startDesc, lengthDesc);
@@ -11878,13 +11826,8 @@ dsc* SubstringSimilarNode::execute(thread_db* tdbb, jrd_req* request) const
 	// Run all expression arguments.
 
 	const dsc* exprDesc = EVL_expr(tdbb, request, expr);
-	exprDesc = (request->req_flags & req_null) ? NULL : exprDesc;
-
 	const dsc* patternDesc = EVL_expr(tdbb, request, pattern);
-	patternDesc = (request->req_flags & req_null) ? NULL : patternDesc;
-
 	const dsc* escapeDesc = EVL_expr(tdbb, request, escape);
-	escapeDesc = (request->req_flags & req_null) ? NULL : escapeDesc;
 
 	// If any of them is NULL, return NULL.
 	if (!exprDesc || !patternDesc || !escapeDesc)
@@ -12390,14 +12333,13 @@ ValueExprNode* TrimNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* TrimNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* impure = request->getImpure<impure_value>(impureOffset);
-	request->req_flags &= ~req_null;
 
 	dsc* trimCharsDesc = (trimChars ? EVL_expr(tdbb, request, trimChars) : NULL);
-	if (request->req_flags & req_null)
+	if (trimChars && !trimCharsDesc)
 		return NULL;
 
 	dsc* valueDesc = EVL_expr(tdbb, request, value);
-	if (request->req_flags & req_null)
+	if (!valueDesc)
 		return NULL;
 
 	USHORT ttype = INTL_TEXT_TYPE(*valueDesc);
@@ -12833,11 +12775,9 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 		if (invariantFlags & VLU_computed)
 		{
 			if (invariantFlags & VLU_null)
-				request->req_flags |= req_null;
+				return nullptr;
 			else
-				request->req_flags &= ~req_null;
-
-			return (request->req_flags & req_null) ? NULL : &value->vlu_desc;
+				return &value->vlu_desc;
 		}
 	}
 
@@ -12896,7 +12836,8 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 				FB_NEW_POOL(*tdbb->getDefaultPool()) Array<UCHAR>(*tdbb->getDefaultPool());
 		}
 
-		FUN_evaluate(tdbb, function, args->items, value, *impureArea->temp);
+		if (!FUN_evaluate(tdbb, function, args->items, value, *impureArea->temp))
+			value = nullptr;
 	}
 	else
 	{
@@ -12922,7 +12863,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 				SSHORT* const nullPtr = reinterpret_cast<SSHORT*>(inMsg + nullOffset);
 
 				dsc* const srcDesc = EVL_expr(tdbb, request, source);
-				if (srcDesc && !(request->req_flags & req_null))
+				if (srcDesc)
 				{
 					*nullPtr = 0;
 					MOV_move(tdbb, srcDesc, &argDesc);
@@ -12988,13 +12929,11 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 
 		if (*nullPtr)
 		{
-			request->req_flags |= req_null;
+			value = nullptr;
 			trace.finish(ITracePlugin::RESULT_SUCCESS);
 		}
 		else
 		{
-			request->req_flags &= ~req_null;
-
 			const ULONG argOffset = (IPTR) fmtDesc[0].dsc_address;
 			value->vlu_desc = *fmtDesc;
 			value->vlu_desc.dsc_address = outMsg + argOffset;
@@ -13009,7 +12948,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 		funcRequest->req_gmt_timestamp.invalidate();
 	}
 
-	if (!(request->req_flags & req_null))
+	if (value)
 		INTL_adjust_text_descriptor(tdbb, &value->vlu_desc);
 
 	// If the function is declared as invariant, mark it as computed.
@@ -13017,11 +12956,11 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 	{
 		invariantFlags |= VLU_computed;
 
-		if (request->req_flags & req_null)
+		if (!value)
 			invariantFlags |= VLU_null;
 	}
 
-	return (request->req_flags & req_null) ? NULL : &value->vlu_desc;
+	return value ? &value->vlu_desc : nullptr;
 }
 
 ValueExprNode* UdfCallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -13324,7 +13263,7 @@ ValueExprNode* ValueIfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 dsc* ValueIfNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	return EVL_expr(tdbb, request, (condition->execute(tdbb, request) ? trueValue : falseValue));
+	return EVL_expr(tdbb, request, (condition->execute(tdbb, request) == true ? trueValue : falseValue));
 }
 
 
@@ -13476,11 +13415,6 @@ dsc* VariableNode::execute(thread_db* tdbb, jrd_req* request) const
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	impure_value* impure2 = request->getImpure<impure_value>(varDecl->impureOffset);
 
-	request->req_flags &= ~req_null;
-
-	if (impure2->vlu_desc.dsc_flags & DSC_null)
-		request->req_flags |= req_null;
-
 	impure->vlu_desc = impure2->vlu_desc;
 
 	if (impure->vlu_desc.dsc_dtype == dtype_text)
@@ -13497,7 +13431,7 @@ dsc* VariableNode::execute(thread_db* tdbb, jrd_req* request) const
 		impure2->vlu_flags |= VLU_checked;
 	}
 
-	return (request->req_flags & req_null) ? NULL : &impure->vlu_desc;
+	return (impure->vlu_desc.dsc_flags & DSC_null) ? NULL : &impure->vlu_desc;
 }
 
 

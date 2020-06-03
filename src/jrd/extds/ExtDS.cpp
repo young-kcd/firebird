@@ -1773,7 +1773,7 @@ void Statement::setTimeout(thread_db* tdbb, unsigned int timeout)
 }
 
 void Statement::execute(thread_db* tdbb, Transaction* tran,
-	const MetaName* const* in_names, const ValueListNode* in_params, const ParamNumbers* in_excess, 
+	const MetaName* const* in_names, const ValueListNode* in_params, const ParamNumbers* in_excess,
 	const ValueListNode* out_params)
 {
 	fb_assert(isAllocated() && !m_stmt_selectable);
@@ -1788,7 +1788,7 @@ void Statement::execute(thread_db* tdbb, Transaction* tran,
 }
 
 void Statement::open(thread_db* tdbb, Transaction* tran,
-	const MetaName* const* in_names, const ValueListNode* in_params, const ParamNumbers* in_excess, 
+	const MetaName* const* in_names, const ValueListNode* in_params, const ParamNumbers* in_excess,
 	bool singleton)
 {
 	fb_assert(isAllocated() && m_stmt_selectable);
@@ -2260,12 +2260,9 @@ void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const MetaNam
 			paramDescs.put(*jrdVar, src);
 
 			if (src)
-			{
-				if (request->req_flags & req_null)
-					src->setNull();
-				else
-					src->clearNull();
-			}
+				src->clearNull();
+
+			//// Should not src->setNull() be called when !src?
 		}
 
 		const bool srcNull = !src || src->isNull();

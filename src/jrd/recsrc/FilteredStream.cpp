@@ -81,7 +81,7 @@ bool FilteredStream::getRecord(thread_db* tdbb) const
 
 	while (m_next->getRecord(tdbb))
 	{
-		if (m_boolean->execute(tdbb, request))
+		if (m_boolean->execute(tdbb, request) == true)
 			return true;
 	}
 
@@ -93,7 +93,7 @@ bool FilteredStream::refetchRecord(thread_db* tdbb) const
 	jrd_req* const request = tdbb->getRequest();
 
 	return m_next->refetchRecord(tdbb) &&
-		m_boolean->execute(tdbb, request);
+		m_boolean->execute(tdbb, request) == true;
 }
 
 bool FilteredStream::lockRecord(thread_db* tdbb) const

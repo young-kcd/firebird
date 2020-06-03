@@ -171,7 +171,7 @@ BoolExprNode* BinaryBoolNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-bool BinaryBoolNode::execute(thread_db* tdbb, jrd_req* request) const
+TriState BinaryBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	switch (blrOp)
 	{
@@ -183,10 +183,10 @@ bool BinaryBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 	}
 
 	fb_assert(false);
-	return false;
+	return TriState(false);
 }
 
-bool BinaryBoolNode::executeAnd(thread_db* tdbb, jrd_req* request) const
+TriState BinaryBoolNode::executeAnd(thread_db* tdbb, jrd_req* request) const
 {
 	// If either operand is false, then the result is false;
 	// If both are true, the result is true;
@@ -204,35 +204,25 @@ bool BinaryBoolNode::executeAnd(thread_db* tdbb, jrd_req* request) const
 	// N               T                N
 	// N               N                N
 
-	const bool value1 = arg1->execute(tdbb, request);
+	const TriState value1 = arg1->execute(tdbb, request);
 
-	// Save null state and get other operand.
-	const USHORT firstnull = request->req_flags & req_null;
-	request->req_flags &= ~req_null;
-
-	if (!value1 && !firstnull)
+	if (value1 == false)
 	{
 		// First term is false, why the whole expression is false.
-		// NULL flag is already turned off a few lines above.
-		return false;
+		return TriState(false);
 	}
 
-	const bool value2 = arg2->execute(tdbb, request);
-	const USHORT secondnull = request->req_flags & req_null;
-	request->req_flags &= ~req_null;
+	const TriState value2 = arg2->execute(tdbb, request);
 
-	if (!value2 && !secondnull)
-		return false;	// at least one operand was false
-
-	if (value1 && value2)
-		return true;	// both true
-
-	// otherwise, return null
-	request->req_flags |= req_null;
-	return false;
+	if (value2 == false)
+		return TriState(false);	// at least one operand was false
+	else if (value1 == true && value2 == true)
+		return TriState(true);	// both true
+	else
+		return TriState();	// otherwise, return null
 }
 
-bool BinaryBoolNode::executeOr(thread_db* tdbb, jrd_req* request) const
+TriState BinaryBoolNode::executeOr(thread_db* tdbb, jrd_req* request) const
 {
 	// If either operand is true, then the result is true;
 	// If both are false, the result is false;
@@ -250,32 +240,20 @@ bool BinaryBoolNode::executeOr(thread_db* tdbb, jrd_req* request) const
 	// N               T                T
 	// N               N                N
 
-	const bool value1 = arg1->execute(tdbb, request);
+	const TriState value1 = arg1->execute(tdbb, request);
 
-	const ULONG flags = request->req_flags;
-	request->req_flags &= ~req_null;
-
-	if (value1)
+	if (value1 == true)
 	{
 		// First term is true, why the whole expression is true.
-		// NULL flag is already turned off a few lines above.
-		return true;
+		return TriState(true);
 	}
 
-	const bool value2 = arg2->execute(tdbb, request);
+	const TriState value2 = arg2->execute(tdbb, request);
 
-	if (value1 || value2)
-	{
-		request->req_flags &= ~req_null;
-		return true;
-	}
-
-	// restore saved NULL state
-
-	if (flags & req_null)
-		request->req_flags |= req_null;
-
-	return false;
+	if (value2 == true)
+		return TriState(true);
+	else
+		return value1.isUnknown() || value2.isUnknown() ? TriState() : TriState(false);
 }
 
 
@@ -639,7 +617,7 @@ void ComparativeBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 	}
 }
 
-bool ComparativeBoolNode::execute(thread_db* tdbb, jrd_req* request) const
+TriState ComparativeBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	dsc* desc[2] = {NULL, NULL};
 	bool computed_invariant = false;
@@ -653,10 +631,9 @@ bool ComparativeBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 	desc[0] = EVL_expr(tdbb, request, arg1);
 
 	const ULONG flags = request->req_flags;
-	request->req_flags &= ~req_null;
 	bool force_equal = (request->req_flags & req_same_tx_upd) != 0;
 
-	// Currently only nod_like, nod_contains, nod_starts and nod_similar may be marked invariant
+	// Currently only blr_like, blr_containing, blr_starting and blr_similar may be marked invariant
 	if (nodFlags & FLAG_INVARIANT)
 	{
 		impure_value* impure = request->getImpure<impure_value>(impureOffset);
@@ -677,20 +654,15 @@ bool ComparativeBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 
 		if (impure->vlu_flags & VLU_computed)
 		{
-			if (impure->vlu_flags & VLU_null)
-				request->req_flags |= req_null;
-			else
+			if (!(impure->vlu_flags & VLU_null))
 				computed_invariant = true;
 		}
 		else
 		{
 			desc[1] = EVL_expr(tdbb, request, arg2);
 
-			if (request->req_flags & req_null)
-			{
-				impure->vlu_flags |= VLU_computed;
-				impure->vlu_flags |= VLU_null;
-			}
+			if (!desc[1])
+				impure->vlu_flags |= VLU_computed | VLU_null;
 			else
 			{
 				impure->vlu_flags &= ~VLU_null;
@@ -719,31 +691,21 @@ bool ComparativeBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	// An equivalence operator evaluates to true when both operands
 	// are NULL and behaves like an equality operator otherwise.
-	// Note that this operator never sets req_null flag
+	// Note that this operator never returns a SQL null.
 
 	if (blrOp == blr_equiv)
 	{
-		if ((flags & req_null) && (request->req_flags & req_null))
-		{
-			request->req_flags &= ~req_null;
-			return true;
-		}
+		if (!desc[0] && !desc[1])
+			return TriState(true);
 
-		if ((flags & req_null) || (request->req_flags & req_null))
-		{
-			request->req_flags &= ~req_null;
-			return false;
-		}
+		if (!desc[0] || !desc[1])
+			return TriState(false);
 	}
 
-	// If either of expressions above returned NULL set req_null flag
-	// and return false
+	// If either of expressions above returned NULL, return NULL.
 
-	if (flags & req_null)
-		request->req_flags |= req_null;
-
-	if (request->req_flags & req_null)
-		return false;
+	if (!desc[0] || (!computed_invariant && !desc[1]))
+		return TriState();
 
 	force_equal |= (request->req_flags & req_same_tx_upd) != 0;
 	int comparison; // while the two switch() below are in sync, no need to initialize
@@ -769,34 +731,34 @@ bool ComparativeBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 	if (recVersionNode && recVersionNode->blrOp == blr_record_version && force_equal)
 		comparison = 0;
 
-	request->req_flags &= ~(req_null | req_same_tx_upd);
+	request->req_flags &= ~(req_same_tx_upd);
 
 	switch (blrOp)
 	{
 		case blr_eql:
 		case blr_equiv:
-			return comparison == 0;
+			return TriState(comparison == 0);
 
 		case blr_gtr:
-			return comparison > 0;
+			return TriState(comparison > 0);
 
 		case blr_geq:
-			return comparison >= 0;
+			return TriState(comparison >= 0);
 
 		case blr_lss:
-			return comparison < 0;
+			return TriState(comparison < 0);
 
 		case blr_leq:
-			return comparison <= 0;
+			return TriState(comparison <= 0);
 
 		case blr_neq:
-			return comparison != 0;
+			return TriState(comparison != 0);
 
 		case blr_between:
 			desc[1] = EVL_expr(tdbb, request, arg3);
-			if (request->req_flags & req_null)
-				return false;
-			return comparison >= 0 && MOV_compare(tdbb, desc[0], desc[1]) <= 0;
+			if (!desc[1])
+				return TriState();
+			return TriState(comparison >= 0 && MOV_compare(tdbb, desc[0], desc[1]) <= 0);
 
 		case blr_containing:
 		case blr_starting:
@@ -809,11 +771,11 @@ bool ComparativeBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 			return sleuth(tdbb, request, desc[0], desc[1]);
 	}
 
-	return false;
+	return TriState(false);
 }
 
 // Perform one of the complex string functions CONTAINING, MATCHES, or STARTS WITH.
-bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* desc1,
+TriState ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* desc1,
 	dsc* desc2, bool computed_invariant) const
 {
 	UCHAR* p1 = NULL;
@@ -876,7 +838,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 	// Performs the string_function on each segment of the blob until
 	// a positive result is obtained
 
-	bool ret_val = false;
+	TriState ret_val;
 
 	switch (blrOp)
 	{
@@ -893,7 +855,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 				// Convert ESCAPE to operation character set
 				dsc* desc = EVL_expr(tdbb, request, arg3);
 
-				if (request->req_flags & req_null)
+				if (!desc)
 				{
 					if (nodFlags & FLAG_INVARIANT)
 					{
@@ -901,7 +863,6 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 						impure->vlu_flags |= VLU_computed;
 						impure->vlu_flags |= VLU_null;
 					}
-					ret_val = false;
 					break;
 				}
 
@@ -1041,7 +1002,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 }
 
 // Perform one of the pattern matching string functions.
-bool ComparativeBoolNode::stringFunction(thread_db* tdbb, jrd_req* request,
+TriState ComparativeBoolNode::stringFunction(thread_db* tdbb, jrd_req* request,
 	SLONG l1, const UCHAR* p1, SLONG l2, const UCHAR* p2, USHORT ttype,
 	bool computed_invariant) const
 {
@@ -1082,14 +1043,14 @@ bool ComparativeBoolNode::stringFunction(thread_db* tdbb, jrd_req* request,
 			}
 
 			evaluator->process(p1, l1);
-			return evaluator->result();
+			return TriState(evaluator->result());
 		}
 
 		if (blrOp == blr_containing)
-			return obj->contains(*tdbb->getDefaultPool(), p1, l1, p2, l2);
+			return TriState(obj->contains(*tdbb->getDefaultPool(), p1, l1, p2, l2));
 
 		// nod_starts
-		return obj->starts(*tdbb->getDefaultPool(), p1, l1, p2, l2);
+		return TriState(obj->starts(*tdbb->getDefaultPool(), p1, l1, p2, l2));
 	}
 
 	// Handle LIKE and SIMILAR
@@ -1103,7 +1064,7 @@ bool ComparativeBoolNode::stringFunction(thread_db* tdbb, jrd_req* request,
 		{
 			// Convert ESCAPE to operation character set
 			dsc* desc = EVL_expr(tdbb, request, arg3);
-			if (request->req_flags & req_null)
+			if (!desc)
 			{
 				if (nodFlags & FLAG_INVARIANT)
 				{
@@ -1111,7 +1072,7 @@ bool ComparativeBoolNode::stringFunction(thread_db* tdbb, jrd_req* request,
 					impure->vlu_flags |= VLU_computed;
 					impure->vlu_flags |= VLU_null;
 				}
-				return false;
+				return TriState();
 			}
 
 			escape_length = MOV_make_string(tdbb, desc, ttype,
@@ -1163,22 +1124,22 @@ bool ComparativeBoolNode::stringFunction(thread_db* tdbb, jrd_req* request,
 
 			evaluator->process(p1, l1);
 
-			return evaluator->result();
+			return TriState(evaluator->result());
 		}
 
 		if (blrOp == blr_like)
-			return obj->like(*tdbb->getDefaultPool(), p1, l1, p2, l2, escape_str, escape_length);
+			return TriState(obj->like(*tdbb->getDefaultPool(), p1, l1, p2, l2, escape_str, escape_length));
 
 		// nod_similar
-		return obj->similarTo(tdbb, *tdbb->getDefaultPool(), p1, l1, p2, l2, escape_str, escape_length);
+		return TriState(obj->similarTo(tdbb, *tdbb->getDefaultPool(), p1, l1, p2, l2, escape_str, escape_length));
 	}
 
 	// Handle MATCHES
-	return obj->matches(*tdbb->getDefaultPool(), p1, l1, p2, l2);
+	return TriState(obj->matches(*tdbb->getDefaultPool(), p1, l1, p2, l2));
 }
 
 // Execute SLEUTH operator.
-bool ComparativeBoolNode::sleuth(thread_db* tdbb, jrd_req* request, const dsc* desc1,
+TriState ComparativeBoolNode::sleuth(thread_db* tdbb, jrd_req* request, const dsc* desc1,
 	const dsc* desc2) const
 {
 	SET_TDBB(tdbb);
@@ -1201,6 +1162,8 @@ bool ComparativeBoolNode::sleuth(thread_db* tdbb, jrd_req* request, const dsc* d
 	// Get operator definition string (control string)
 
 	dsc* desc3 = EVL_expr(tdbb, request, arg3);
+	if (!desc3)
+		return TriState();
 
 	UCHAR* p1;
 	MoveBuffer sleuth_str;
@@ -1248,7 +1211,7 @@ bool ComparativeBoolNode::sleuth(thread_db* tdbb, jrd_req* request, const dsc* d
 		blob->BLB_close(tdbb);
 	}
 
-	return ret_val;
+	return TriState(ret_val);
 }
 
 BoolExprNode* ComparativeBoolNode::createRseNode(DsqlCompilerScratch* dsqlScratch, UCHAR rseBlrOp)
@@ -1378,17 +1341,9 @@ void MissingBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 	arg->getDesc(tdbb, csb, &descriptor_a);
 }
 
-bool MissingBoolNode::execute(thread_db* tdbb, jrd_req* request) const
+TriState MissingBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	EVL_expr(tdbb, request, arg);
-
-	if (request->req_flags & req_null)
-	{
-		request->req_flags &= ~req_null;
-		return true;
-	}
-
-	return false;
+	return TriState(EVL_expr(tdbb, request, arg) == nullptr);
 }
 
 
@@ -1438,14 +1393,10 @@ BoolExprNode* NotBoolNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
-bool NotBoolNode::execute(thread_db* tdbb, jrd_req* request) const
+TriState NotBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	bool value = arg->execute(tdbb, request);
-
-	if (request->req_flags & req_null)
-		return false;
-
-	return !value;
+	const TriState value = arg->execute(tdbb, request);
+	return value.isUnknown() ? value : TriState(!value.value);
 }
 
 // Replace NOT with an appropriately inverted condition, if possible.
@@ -1785,7 +1736,7 @@ void RseBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 	subQuery = FB_NEW_POOL(*tdbb->getDefaultPool()) SubQuery(rsb, rse->rse_invariants);
 }
 
-bool RseBoolNode::execute(thread_db* tdbb, jrd_req* request) const
+TriState RseBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	USHORT* invariant_flags;
 	impure_value* impure;
@@ -1800,11 +1751,13 @@ bool RseBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 			// An invariant node has already been computed.
 
 			if ((blrOp == blr_ansi_any || blrOp == blr_ansi_all) && (*invariant_flags & VLU_null))
-				request->req_flags |= req_null;
+			{
+				// ASF: Check suspicious code when req_null was there.
+				fb_assert(impure->vlu_misc.vlu_short == 0);
+				return TriState();
+			}
 			else
-				request->req_flags &= ~req_null;
-
-			return impure->vlu_misc.vlu_short != 0;
+				return TriState(impure->vlu_misc.vlu_short != 0);
 		}
 	}
 
@@ -1883,12 +1836,7 @@ bool RseBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 		impure->vlu_misc.vlu_short = value == true ? TRUE : FALSE;
 	}
 
-	if (value.isUnknown())
-		request->req_flags |= req_null;
-	else
-		request->req_flags &= ~req_null;
-
-	return value.orElse(false);
+	return value;
 }
 
 
