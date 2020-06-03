@@ -184,7 +184,6 @@ public:
 	}
 
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
 
 private:
@@ -238,9 +237,6 @@ public:
 	virtual void pass2Boolean1(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Boolean2(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
-
-private:
-	BoolExprNode* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb);
 
 public:
 	UCHAR blrOp;

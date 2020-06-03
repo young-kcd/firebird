@@ -512,9 +512,8 @@ public:
 	static const unsigned FLAG_INVARIANT	= 0x01;	// Node is recognized as being invariant.
 
 	// Boolean flags.
-	static const unsigned FLAG_DEOPTIMIZE	= 0x02;	// Boolean which requires deoptimization.
-	static const unsigned FLAG_RESIDUAL		= 0x04;	// Boolean which must remain residual.
-	static const unsigned FLAG_ANSI_NOT		= 0x08;	// ANY/ALL predicate is prefixed with a NOT one.
+	static const unsigned FLAG_DEOPTIMIZE	= 0x02;	// Boolean which requires deoptimization - currently never defined.
+	static const unsigned FLAG_RESIDUAL		= 0x04;	// Boolean which must remain residual - currently never defined.
 
 	// Value flags.
 	static const unsigned FLAG_DOUBLE		= 0x10;
