@@ -833,7 +833,7 @@ void ConnectionsPool::removeFromPool(Data* item, FB_SIZE_T pos)
 
 	if (item->m_lastUsed != 0)
 	{
-		if (pos == -1)
+		if (pos == (FB_SIZE_T) -1)
 			m_idleArray.find(*item, pos);
 
 		fb_assert(m_idleArray[pos] == item);
@@ -1357,8 +1357,8 @@ int ConnectionsPool::Data::verify(ConnectionsPool* connPool, bool active)
 
 bool ConnectionsPool::verifyPool()
 {
-	int cntIdle = 0, cntActive = 0;
-	int errs = 0;
+	unsigned cntIdle = 0, cntActive = 0;
+	unsigned errs = 0;
 
 	Data* item = m_idleList;
 	if (item)

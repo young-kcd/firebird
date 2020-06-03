@@ -1083,7 +1083,7 @@ SlidingWindow::~SlidingWindow()
 // Move in the window without pass partition boundaries.
 bool SlidingWindow::moveWithinPartition(SINT64 delta)
 {
-	const SINT64 newPosition = SINT64(savedPosition) + delta;
+	const auto newPosition = savedPosition + delta;
 
 	if (newPosition < partitionStart || newPosition > partitionEnd)
 		return false;
@@ -1104,7 +1104,7 @@ bool SlidingWindow::moveWithinPartition(SINT64 delta)
 // Move in the window without pass frame boundaries.
 bool SlidingWindow::moveWithinFrame(SINT64 delta)
 {
-	const SINT64 newPosition = SINT64(savedPosition) + delta;
+	const auto newPosition = savedPosition + delta;
 
 	if (newPosition < frameStart || newPosition > frameEnd)
 		return false;

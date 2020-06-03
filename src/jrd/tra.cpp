@@ -3538,7 +3538,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 			!(trans->tra_flags & TRA_read_consistency)) ? number : oldest_active;
 
 		static_assert(sizeof(lock->lck_data) == sizeof(lck_data), "Check lock data type !");
-		if (lock->lck_data != lck_data)
+		if (lock->lck_data != (SINT64) lck_data)
 			LCK_write_data(tdbb, lock, lck_data);
 
 		// Query the minimum lock data for all active transaction locks.

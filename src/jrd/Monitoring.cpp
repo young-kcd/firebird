@@ -119,8 +119,9 @@ bool MonitoringTableScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
 
 	if (relation->rel_id == rel_mon_attachments || relation->rel_id == rel_mon_statements)
 	{
-		const USHORT fieldId = relation->rel_id == rel_mon_attachments ? 
-								f_mon_att_idle_timer : f_mon_stmt_timer;
+		const USHORT fieldId = (relation->rel_id == rel_mon_attachments) ?
+			(USHORT) f_mon_att_idle_timer : (USHORT) f_mon_stmt_timer;
+
 		dsc desc;
 		if (EVL_field(relation, record, fieldId, &desc))
 		{
