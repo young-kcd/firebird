@@ -45,6 +45,7 @@
 #include "../common/isc_proto.h"
 #include "../common/isc_s_proto.h"
 #include "../common/StatusHolder.h"
+#include "../common/os/os_utils.h"
 
 namespace Jrd {
 // Lock types
@@ -510,8 +511,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		Firebird::PathName db_name;
 		expandDatabaseName(org_name, db_name, NULL);
 
-		// Below code mirrors the one in JRD (PIO modules and Database class).
-		// Maybe it's worth putting it into common, if no better solution is found.
+		Firebird::UCharBuffer buffer;
 #ifdef WIN_NT
 		const HANDLE h = CreateFile(db_name.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
 									NULL, OPEN_EXISTING, 0, 0);
@@ -520,37 +520,16 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			FPRINTF(outfile, "Unable to open the database file (%d).\n", GetLastError());
 			return FINI_OK;
 		}
-		BY_HANDLE_FILE_INFORMATION file_info;
-		GetFileInformationByHandle(h, &file_info);
-		const size_t len1 = sizeof(file_info.dwVolumeSerialNumber);
-		const size_t len2 = sizeof(file_info.nFileIndexHigh);
-		const size_t len3 = sizeof(file_info.nFileIndexLow);
-		UCHAR buffer[len1 + len2 + len3], *p = buffer;
-		memcpy(p, &file_info.dwVolumeSerialNumber, len1);
-		p += len1;
-		memcpy(p, &file_info.nFileIndexHigh, len2);
-		p += len2;
-		memcpy(p, &file_info.nFileIndexLow, len3);
+		os_utils::getUniqueFileId(h, buffer);
 		CloseHandle(h);
 #else
-		struct stat statistics;
-		if (stat(db_name.c_str(), &statistics) == -1)
-		{
-			FPRINTF(outfile, "Unable to open the database file.\n");
-			return FINI_OK;
-		}
-		const size_t len1 = sizeof(statistics.st_dev);
-		const size_t len2 = sizeof(statistics.st_ino);
-		UCHAR buffer[len1 + len2], *p = buffer;
-		memcpy(p, &statistics.st_dev, len1);
-		p += len1;
-		memcpy(p, &statistics.st_ino, len2);
+		os_utils::getUniqueFileId(db_name.c_str(), buffer);
 #endif
 
 		Firebird::string file_id;
-		for (size_t i = 0; i < sizeof(buffer); i++)
+		for (FB_SIZE_T i = 0; i < buffer.getCount(); i++)
 		{
-			TEXT hex[3];
+			char hex[3];
 			sprintf(hex, "%02x", (int) buffer[i]);
 			file_id.append(hex);
 		}
