@@ -104,7 +104,27 @@ namespace
 		(HANDLE, LPSTR, DWORD, DWORD);
 	typedef BOOL (WINAPI *pfnGetFileInformationByHandleEx)
 		(HANDLE, FILE_INFO_BY_HANDLE_CLASS, LPVOID, DWORD);
-}
+
+	pfnGetFinalPathNameByHandle fnGetFinalPathNameByHandle = NULL;
+	pfnGetFileInformationByHandleEx fnGetFileInformationByHandleEx = NULL;
+
+	struct EntryPointLoader
+	{
+		static void init()
+		{
+			const HMODULE hmodKernel32 = GetModuleHandle("kernel32.dll");
+			if (hmodKernel32)
+			{
+				fnGetFinalPathNameByHandle = (pfnGetFinalPathNameByHandle)
+					GetProcAddress(hmodKernel32, "GetFinalPathNameByHandleA");
+				fnGetFileInformationByHandleEx = (pfnGetFileInformationByHandleEx)
+					GetProcAddress(hmodKernel32, "GetFileInformationByHandleEx");
+			}
+		}
+	};
+
+	InitMutex<EntryPointLoader> entryLoader("EntryPointLoader");
+} // anonymous namespace
 
 namespace os_utils
 {
@@ -372,24 +392,7 @@ FILE* fopen(const char* pathname, const char* mode)
 
 void getUniqueFileId(HANDLE fd, UCharBuffer& id)
 {
-	static pfnGetFinalPathNameByHandle fnGetFinalPathNameByHandle = NULL;
-	static pfnGetFileInformationByHandleEx fnGetFileInformationByHandleEx = NULL;
-	static bool init = false;
-
-	if (!init)
-	{
-		const HMODULE hmodKernel32 = GetModuleHandle("kernel32.dll");
-		if (hmodKernel32)
-		{
-			fnGetFinalPathNameByHandle = (pfnGetFinalPathNameByHandle)
-				GetProcAddress(hmodKernel32, "GetFinalPathNameByHandleA");
-			fnGetFileInformationByHandleEx = (pfnGetFileInformationByHandleEx)
-				GetProcAddress(hmodKernel32, "GetFileInformationByHandleEx");
-		}
-
-		init = true;
-	}
-
+	entryLoader.init();
 	id.clear();
 
 	// Let's try getting the file identifier. It's not as easy as it may look.
