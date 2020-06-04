@@ -30,6 +30,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/init.h"
 #include "../common/gdsassert.h"
+#include "../common/os/guid.h"
 #include "../common/os/os_utils.h"
 #include "../jrd/constants.h"
 #include "../common/os/path_utils.h"
