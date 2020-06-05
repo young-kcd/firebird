@@ -543,7 +543,7 @@ UCHAR getFType(const dsc& desc)
 
 enum Scaling { SCALE_MIN, SCALE_SUM };
 
-unsigned setDecDesc(dsc* desc, const dsc& desc1, const dsc& desc2, Scaling sc, SCHAR* nodScale = nullptr)
+USHORT setDecDesc(dsc* desc, const dsc& desc1, const dsc& desc2, Scaling sc, SCHAR* nodScale = nullptr)
 {
 	UCHAR zipType = decimalDescTable[getFType(desc1)][getFType(desc2)];
 	fb_assert(zipType <= DSC_ZTYPE_FIXED);

@@ -434,7 +434,7 @@ public:
 class ExprNode : public DmlNode
 {
 public:
-	enum Type
+	enum Type : UCHAR
 	{
 		// Value types
 		TYPE_AGGREGATE,
@@ -509,25 +509,25 @@ public:
 	};
 
 	// Generic flags.
-	static const unsigned FLAG_INVARIANT	= 0x01;	// Node is recognized as being invariant.
+	static const USHORT FLAG_INVARIANT	= 0x01;	// Node is recognized as being invariant.
 
 	// Boolean flags.
-	static const unsigned FLAG_DEOPTIMIZE	= 0x02;	// Boolean which requires deoptimization.
-	static const unsigned FLAG_RESIDUAL		= 0x04;	// Boolean which must remain residual.
-	static const unsigned FLAG_ANSI_NOT		= 0x08;	// ANY/ALL predicate is prefixed with a NOT one.
+	static const USHORT FLAG_DEOPTIMIZE	= 0x02;	// Boolean which requires deoptimization.
+	static const USHORT FLAG_RESIDUAL		= 0x04;	// Boolean which must remain residual.
+	static const USHORT FLAG_ANSI_NOT		= 0x08;	// ANY/ALL predicate is prefixed with a NOT one.
 
 	// Value flags.
-	static const unsigned FLAG_DOUBLE		= 0x10;
-	static const unsigned FLAG_DATE			= 0x20;
-	static const unsigned FLAG_DECFLOAT		= 0x40;
-	static const unsigned FLAG_VALUE		= 0x80;	// Full value area required in impure space.
-	static const unsigned FLAG_INT128		= 0x100;
+	static const USHORT FLAG_DOUBLE		= 0x10;
+	static const USHORT FLAG_DATE			= 0x20;
+	static const USHORT FLAG_DECFLOAT		= 0x40;
+	static const USHORT FLAG_VALUE		= 0x80;	// Full value area required in impure space.
+	static const USHORT FLAG_INT128		= 0x100;
 
 	explicit ExprNode(Type aType, MemoryPool& pool)
 		: DmlNode(pool),
-		  type(aType),
+		  impureOffset(0),
 		  nodFlags(0),
-		  impureOffset(0)
+		  type(aType)
 	{
 	}
 
@@ -681,9 +681,9 @@ public:
 	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const = 0;
 
 public:
-	const Type type;
-	unsigned nodFlags;
 	ULONG impureOffset;
+	USHORT nodFlags;
+	const Type type;
 };
 
 
