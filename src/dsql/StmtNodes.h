@@ -770,8 +770,7 @@ class InAutonomousTransactionNode : public TypedNode<StmtNode, StmtNode::TYPE_IN
 public:
 	explicit InAutonomousTransactionNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_IN_AUTO_TRANS>(pool),
-		  action(NULL),
-		  impureOffset(0)
+		  action(NULL)
 	{
 	}
 
@@ -787,7 +786,6 @@ public:
 
 public:
 	NestConst<StmtNode> action;
-	SLONG impureOffset;
 };
 
 
