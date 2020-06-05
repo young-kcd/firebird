@@ -29,6 +29,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/NestConst.h"
 #include <functional>
+#include <initializer_list>
 #include <type_traits>
 
 namespace Jrd {
@@ -87,9 +88,10 @@ template <typename T>
 class RegisterNode
 {
 public:
-	explicit RegisterNode(UCHAR blr)
+	explicit RegisterNode(std::initializer_list<UCHAR> blrList)
 	{
-		PAR_register(blr, T::parse);
+		for (const auto blr : blrList)
+			PAR_register(blr, T::parse);
 	}
 };
 
@@ -97,9 +99,10 @@ template <typename T>
 class RegisterBoolNode
 {
 public:
-	explicit RegisterBoolNode(UCHAR blr)
+	explicit RegisterBoolNode(std::initializer_list<UCHAR> blrList)
 	{
-		PAR_register(blr, T::parse);
+		for (const auto blr : blrList)
+			PAR_register(blr, T::parse);
 	}
 };
 
@@ -937,20 +940,18 @@ public:
 	public:
 		explicit Register(const char* aName, UCHAR blr, UCHAR blrDistinct)
 			: AggInfo(aName, blr, blrDistinct),
-			  registerNode1(blr),
-			  registerNode2(blrDistinct)
+			  registerNode({blr, blrDistinct})
 		{
 		}
 
 		explicit Register(const char* aName, UCHAR blr)
 			: AggInfo(aName, blr, blr),
-			  registerNode1(blr),
-			  registerNode2(blr)
+			  registerNode({blr})
 		{
 		}
 
 	private:
-		RegisterNode<T> registerNode1, registerNode2;
+		RegisterNode<T> registerNode;
 	};
 
 public:

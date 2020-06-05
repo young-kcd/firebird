@@ -326,7 +326,7 @@ void SavepointEncloseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 //--------------------
 
 
-static RegisterNode<AssignmentNode> regAssignmentNode(blr_assignment);
+static RegisterNode<AssignmentNode> regAssignmentNode({blr_assignment});
 
 DmlNode* AssignmentNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
@@ -550,7 +550,7 @@ const StmtNode* AssignmentNode::execute(thread_db* tdbb, jrd_req* request, ExeSt
 //--------------------
 
 
-static RegisterNode<BlockNode> regBlockNode(blr_block);
+static RegisterNode<BlockNode> regBlockNode({blr_block});
 
 DmlNode* BlockNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
@@ -890,7 +890,7 @@ bool BlockNode::testAndFixupError(thread_db* tdbb, jrd_req* request, const Excep
 //--------------------
 
 
-static RegisterNode<CompoundStmtNode> regCompoundStmtNode(blr_begin);
+static RegisterNode<CompoundStmtNode> regCompoundStmtNode({blr_begin});
 
 DmlNode* CompoundStmtNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
@@ -1043,8 +1043,7 @@ const StmtNode* CompoundStmtNode::execute(thread_db* tdbb, jrd_req* request, Exe
 //--------------------
 
 
-static RegisterNode<ContinueLeaveNode> regContinueLeaveNodeContinue(blr_continue_loop);
-static RegisterNode<ContinueLeaveNode> regContinueLeaveNodeLeave(blr_leave);
+static RegisterNode<ContinueLeaveNode> regContinueLeaveNode({blr_continue_loop, blr_leave});
 
 DmlNode* ContinueLeaveNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
@@ -1102,7 +1101,7 @@ const StmtNode* ContinueLeaveNode::execute(thread_db* /*tdbb*/, jrd_req* request
 //--------------------
 
 
-static RegisterNode<CursorStmtNode> regCursorStmtNode(blr_cursor_stmt);
+static RegisterNode<CursorStmtNode> regCursorStmtNode({blr_cursor_stmt});
 
 DmlNode* CursorStmtNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
@@ -1355,7 +1354,7 @@ const StmtNode* CursorStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeSt
 //--------------------
 
 
-static RegisterNode<DeclareCursorNode> regDeclareCursorNode(blr_dcl_cursor);
+static RegisterNode<DeclareCursorNode> regDeclareCursorNode({blr_dcl_cursor});
 
 DmlNode* DeclareCursorNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
@@ -1502,7 +1501,7 @@ const StmtNode* DeclareCursorNode::execute(thread_db* /*tdbb*/, jrd_req* request
 //--------------------
 
 
-static RegisterNode<DeclareSubFuncNode> regDeclareSubFuncNode(blr_subfunc_decl);
+static RegisterNode<DeclareSubFuncNode> regDeclareSubFuncNode({blr_subfunc_decl});
 
 DmlNode* DeclareSubFuncNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 	const UCHAR /*blrOp*/)
@@ -1835,7 +1834,7 @@ const StmtNode* DeclareSubFuncNode::execute(thread_db* /*tdbb*/, jrd_req* reques
 //--------------------
 
 
-static RegisterNode<DeclareSubProcNode> regDeclareSubProcNode(blr_subproc_decl);
+static RegisterNode<DeclareSubProcNode> regDeclareSubProcNode({blr_subproc_decl});
 
 DmlNode* DeclareSubProcNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
@@ -2175,7 +2174,7 @@ const StmtNode* DeclareSubProcNode::execute(thread_db* /*tdbb*/, jrd_req* reques
 //--------------------
 
 
-static RegisterNode<DeclareVariableNode> regDeclareVariableNode(blr_dcl_variable);
+static RegisterNode<DeclareVariableNode> regDeclareVariableNode({blr_dcl_variable});
 
 DmlNode* DeclareVariableNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
@@ -2285,7 +2284,7 @@ const StmtNode* DeclareVariableNode::execute(thread_db* tdbb, jrd_req* request, 
 //--------------------
 
 
-static RegisterNode<EraseNode> regEraseNode(blr_erase);
+static RegisterNode<EraseNode> regEraseNode({blr_erase});
 
 DmlNode* EraseNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
@@ -2738,7 +2737,7 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 //--------------------
 
 
-static RegisterNode<ErrorHandlerNode> regErrorHandlerNode(blr_error_handler);
+static RegisterNode<ErrorHandlerNode> regErrorHandlerNode({blr_error_handler});
 
 DmlNode* ErrorHandlerNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
@@ -2901,10 +2900,8 @@ const StmtNode* ErrorHandlerNode::execute(thread_db* /*tdbb*/, jrd_req* request,
 //--------------------
 
 
-static RegisterNode<ExecProcedureNode> regExecProcedureNodeProc(blr_exec_proc);
-static RegisterNode<ExecProcedureNode> regExecProcedureNodeProc2(blr_exec_proc2);
-static RegisterNode<ExecProcedureNode> regExecProcedureNodePid(blr_exec_pid);
-static RegisterNode<ExecProcedureNode> regExecProcedureNodeSubProc(blr_exec_subproc);
+static RegisterNode<ExecProcedureNode> regExecProcedureNode(
+	{blr_exec_proc, blr_exec_proc2, blr_exec_pid, blr_exec_subproc});
 
 // Parse an execute procedure reference.
 DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
@@ -3334,9 +3331,7 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 //--------------------
 
 
-static RegisterNode<ExecStatementNode> regExecStatementSql(blr_exec_sql);
-static RegisterNode<ExecStatementNode> regExecStatementInto(blr_exec_into);
-static RegisterNode<ExecStatementNode> regExecStatementStmt(blr_exec_stmt);
+static RegisterNode<ExecStatementNode> regExecStatementNode({blr_exec_sql, blr_exec_into, blr_exec_stmt});
 
 DmlNode* ExecStatementNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
@@ -3851,7 +3846,7 @@ void ExecStatementNode::getString(thread_db* tdbb, jrd_req* request, const Value
 //--------------------
 
 
-static RegisterNode<IfNode> regIfNode(blr_if);
+static RegisterNode<IfNode> regIfNode({blr_if});
 
 DmlNode* IfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
@@ -3943,7 +3938,7 @@ const StmtNode* IfNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*e
 //--------------------
 
 
-static RegisterNode<InAutonomousTransactionNode> regInAutonomousTransactionNode(blr_auto_trans);
+static RegisterNode<InAutonomousTransactionNode> regInAutonomousTransactionNode({blr_auto_trans});
 
 DmlNode* InAutonomousTransactionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 	const UCHAR /*blrOp*/)
@@ -4163,7 +4158,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 //--------------------
 
 
-static RegisterNode<InitVariableNode> regInitVariableNode(blr_init_variable);
+static RegisterNode<InitVariableNode> regInitVariableNode({blr_init_variable});
 
 DmlNode* InitVariableNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
@@ -4525,7 +4520,7 @@ void ExecBlockNode::revertParametersOrder(Array<dsql_par*>& parameters)
 //--------------------
 
 
-static RegisterNode<ExceptionNode> regExceptionNode(blr_abort);
+static RegisterNode<ExceptionNode> regExceptionNode({blr_abort});
 
 DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 	const UCHAR /*blrOp*/)
@@ -4851,7 +4846,7 @@ void ExitNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 //--------------------
 
 
-static RegisterNode<ForNode> regForNode(blr_for);
+static RegisterNode<ForNode> regForNode({blr_for});
 
 DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
@@ -5207,7 +5202,7 @@ void ForNode::setRecordUpdated(thread_db* tdbb, jrd_req* request, record_param* 
 //--------------------
 
 
-static RegisterNode<HandlerNode> regHandlerNode(blr_handler);
+static RegisterNode<HandlerNode> regHandlerNode({blr_handler});
 
 DmlNode* HandlerNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
@@ -5266,7 +5261,7 @@ const StmtNode* HandlerNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeS
 //--------------------
 
 
-static RegisterNode<LabelNode> regLabelNode(blr_label);
+static RegisterNode<LabelNode> regLabelNode({blr_label});
 
 DmlNode* LabelNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
@@ -5361,7 +5356,7 @@ void LineColumnNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 //--------------------
 
 
-static RegisterNode<LoopNode> regLoopNode(blr_loop);
+static RegisterNode<LoopNode> regLoopNode({blr_loop});
 
 DmlNode* LoopNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
@@ -5925,7 +5920,7 @@ void MergeNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 //--------------------
 
 
-static RegisterNode<MessageNode> regMessageNode(blr_message);
+static RegisterNode<MessageNode> regMessageNode({blr_message});
 
 // Parse a message declaration, including operator byte.
 DmlNode* MessageNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
@@ -6058,8 +6053,7 @@ const StmtNode* MessageNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeS
 //--------------------
 
 
-static RegisterNode<ModifyNode> regModifyNode(blr_modify);
-static RegisterNode<ModifyNode> regModifyNode2(blr_modify2);
+static RegisterNode<ModifyNode> regModifyNode({blr_modify, blr_modify2});
 
 // Parse a modify statement.
 DmlNode* ModifyNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
@@ -6770,8 +6764,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 //--------------------
 
 
-static RegisterNode<PostEventNode> regPostEventNode1(blr_post);
-static RegisterNode<PostEventNode> regPostEventNode2(blr_post_arg);
+static RegisterNode<PostEventNode> regPostEventNode({blr_post, blr_post_arg});
 
 DmlNode* PostEventNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
@@ -6860,8 +6853,7 @@ const StmtNode* PostEventNode::execute(thread_db* tdbb, jrd_req* request, ExeSta
 //--------------------
 
 
-static RegisterNode<ReceiveNode> regReceiveNode(blr_receive);
-static RegisterNode<ReceiveNode> regReceiveNodeBatch(blr_receive_batch);
+static RegisterNode<ReceiveNode> regReceiveNode({blr_receive, blr_receive_batch});
 
 DmlNode* ReceiveNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
@@ -6942,9 +6934,7 @@ const StmtNode* ReceiveNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeS
 //--------------------
 
 
-static RegisterNode<StoreNode> regStoreNode(blr_store);
-static RegisterNode<StoreNode> regStoreNode2(blr_store2);
-static RegisterNode<StoreNode> regStoreNode3(blr_store3);
+static RegisterNode<StoreNode> regStoreNode({blr_store, blr_store2, blr_store3});
 
 // Parse a store statement.
 DmlNode* StoreNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
@@ -7612,7 +7602,7 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 //--------------------
 
 
-static RegisterNode<UserSavepointNode> regUserSavepointNode(blr_user_savepoint);
+static RegisterNode<UserSavepointNode> regUserSavepointNode({blr_user_savepoint});
 
 DmlNode* UserSavepointNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
@@ -7750,7 +7740,7 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 //--------------------
 
 
-static RegisterNode<SelectNode> regSelectNode(blr_select);
+static RegisterNode<SelectNode> regSelectNode({blr_select});
 
 DmlNode* SelectNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
@@ -8003,7 +7993,7 @@ const StmtNode* SelectNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeSt
 
 
 // This is only for GPRE's cmp_set_generator().
-static RegisterNode<SetGeneratorNode> regSetGeneratorNode(blr_set_generator);
+static RegisterNode<SetGeneratorNode> regSetGeneratorNode({blr_set_generator});
 
 DmlNode* SetGeneratorNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
@@ -8075,7 +8065,7 @@ const StmtNode* SetGeneratorNode::execute(thread_db* tdbb, jrd_req* request, Exe
 //--------------------
 
 
-static RegisterNode<StallNode> regStallNode(blr_stall);
+static RegisterNode<StallNode> regStallNode({blr_stall});
 
 DmlNode* StallNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* /*csb*/, const UCHAR /*blrOp*/)
 {
@@ -8135,7 +8125,7 @@ const StmtNode* StallNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeSta
 //--------------------
 
 
-static RegisterNode<SuspendNode> regSuspendNode(blr_send);
+static RegisterNode<SuspendNode> regSuspendNode({blr_send});
 
 DmlNode* SuspendNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
@@ -8308,8 +8298,7 @@ void ReturnNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 //--------------------
 
 
-static RegisterNode<SavePointNode> regSavePointNodeStart(blr_start_savepoint);
-static RegisterNode<SavePointNode> regSavePointNodeEnd(blr_end_savepoint);
+static RegisterNode<SavePointNode> regSavePointNode({blr_start_savepoint, blr_end_savepoint});
 
 DmlNode* SavePointNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* /*csb*/, const UCHAR blrOp)
 {

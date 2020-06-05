@@ -207,7 +207,7 @@ namespace
 		}
 	};
 
-	static RegisterNode<FetchNode> regFetch(blr_fetch);
+	static RegisterNode<FetchNode> regFetch({blr_fetch});
 }	// namespace
 
 
