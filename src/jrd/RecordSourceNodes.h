@@ -313,7 +313,10 @@ public:
 	virtual RelationSourceNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) const;
 
-	virtual RecordSourceNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual RecordSourceNode* pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
+	{
+		return this;
+	}
 
 	virtual void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 		BoolExprNode** boolean, RecordSourceNodeStack& stack);
