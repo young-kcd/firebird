@@ -3692,7 +3692,6 @@ ValueExprNode* CoalesceNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -4789,7 +4788,6 @@ ValueExprNode* DecodeNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -5125,7 +5123,6 @@ ValueExprNode* DerivedExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	// As all streams belongs to the same cursor, we use only the first.
 	cursorNumber = csb->csb_rpt[internalStreamList[0]].csb_cursor_number;
@@ -5214,7 +5211,6 @@ ValueExprNode* DomainValidationNode::pass2(thread_db* tdbb, CompilerScratch* csb
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -7907,13 +7903,12 @@ ValueExprNode* LiteralNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	}
 
 	delete dsqlStr;		// Not needed anymore
-	dsqlStr = 0;
+	dsqlStr = nullptr;
 
 	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -13290,7 +13285,6 @@ ValueExprNode* ValueIfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }

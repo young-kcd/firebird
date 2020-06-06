@@ -2568,7 +2568,6 @@ EraseNode* EraseNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	if (!(marks & StmtNode::MARK_POSITIONED))
 		forNode = pass2FindForNode(parentStmt, stream);
 
-	impureOffset = CMP_impure(csb, sizeof(SLONG));
 	csb->csb_rpt[stream].csb_flags |= csb_update;
 
 	return this;
@@ -3974,7 +3973,6 @@ string InAutonomousTransactionNode::internalPrint(NodePrinter& printer) const
 	StmtNode::internalPrint(printer);
 
 	NODE_PRINT(printer, action);
-	NODE_PRINT(printer, impureOffset);
 
 	return "InAutonomousTransactionNode";
 }
