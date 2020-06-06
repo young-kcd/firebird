@@ -6723,14 +6723,14 @@ exec_function
 	: udf
 		{
 			AssignmentNode* node = newNode<AssignmentNode>();
-			node->asgnTo = newNode<NullNode>();
+			node->asgnTo = &NullNode::INSTANCE;
 			node->asgnFrom = $1;
 			$$ = node;
 		}
 	| non_aggregate_function
 		{
 			AssignmentNode* node = newNode<AssignmentNode>();
-			node->asgnTo = newNode<NullNode>();
+			node->asgnTo = &NullNode::INSTANCE;
 			node->asgnFrom = $1;
 			$$ = node;
 		}
@@ -7750,11 +7750,11 @@ aggregate_function
 			$$ = $1;
 
 			if ($$->aggInfo.blr == blr_agg_count2 && !$$->arg)	// count(*)
-				$$->arg = newNode<ValueIfNode>($5, MAKE_const_slong(1), newNode<NullNode>());
+				$$->arg = newNode<ValueIfNode>($5, MAKE_const_slong(1), &NullNode::INSTANCE);
 			else
 			{
 				fb_assert($$->arg);
-				$$->arg = newNode<ValueIfNode>($5, $$->arg, newNode<NullNode>());
+				$$->arg = newNode<ValueIfNode>($5, $$->arg, &NullNode::INSTANCE);
 			}
 		}
 	;
@@ -7854,15 +7854,15 @@ window_function
 	| LAG '(' value ',' value ',' value ')'
 		{ $$ = newNode<LagWinNode>($3, $5, $7); }
 	| LAG '(' value ',' value ')'
-		{ $$ = newNode<LagWinNode>($3, $5, newNode<NullNode>()); }
+		{ $$ = newNode<LagWinNode>($3, $5, &NullNode::INSTANCE); }
 	| LAG '(' value ')'
-		{ $$ = newNode<LagWinNode>($3, MAKE_const_slong(1), newNode<NullNode>()); }
+		{ $$ = newNode<LagWinNode>($3, MAKE_const_slong(1), &NullNode::INSTANCE); }
 	| LEAD '(' value ',' value ',' value ')'
 		{ $$ = newNode<LeadWinNode>($3, $5, $7); }
 	| LEAD '(' value ',' value ')'
-		{ $$ = newNode<LeadWinNode>($3, $5, newNode<NullNode>()); }
+		{ $$ = newNode<LeadWinNode>($3, $5, &NullNode::INSTANCE); }
 	| LEAD '(' value ')'
-		{ $$ = newNode<LeadWinNode>($3, MAKE_const_slong(1), newNode<NullNode>()); }
+		{ $$ = newNode<LeadWinNode>($3, MAKE_const_slong(1), &NullNode::INSTANCE); }
 	| NTILE '(' ntile_arg ')'
 		{ $$ = newNode<NTileWinNode>($3); }
 	;
@@ -8367,7 +8367,7 @@ case_abbreviation
 	: NULLIF '(' value ',' value ')'
 		{
 			ComparativeBoolNode* condition = newNode<ComparativeBoolNode>(blr_eql, $3, $5);
-			$$ = newNode<ValueIfNode>(condition, newNode<NullNode>(), $3);
+			$$ = newNode<ValueIfNode>(condition, &NullNode::INSTANCE, $3);
 		}
 	| IIF '(' search_condition ',' value ',' value ')'
 		{ $$ = newNode<ValueIfNode>($3, $5, $7); }
@@ -8466,10 +8466,10 @@ searched_case
 %type <valueIfNode> searched_when_clause
 searched_when_clause
 	: WHEN search_condition THEN case_result
-		{ $$ = newNode<ValueIfNode>($2, $4, newNode<NullNode>()); }
+		{ $$ = newNode<ValueIfNode>($2, $4, &NullNode::INSTANCE); }
 	| searched_when_clause WHEN search_condition THEN case_result
 		{
-			ValueIfNode* cond = newNode<ValueIfNode>($3, $5, newNode<NullNode>());
+			ValueIfNode* cond = newNode<ValueIfNode>($3, $5, &NullNode::INSTANCE);
 			ValueIfNode* last = $1;
 			ValueIfNode* next;
 
@@ -8552,14 +8552,14 @@ distinct_noise
 %type <valueExprNode> null_value
 null_value
 	: NULL
-		{ $$ = newNode<NullNode>(); }
+		{ $$ = &NullNode::INSTANCE; }
 	| UNKNOWN
 		{
 			dsql_fld* field = newNode<dsql_fld>();
 			field->dtype = dtype_boolean;
 			field->length = sizeof(UCHAR);
 
-			CastNode* castNode = newNode<CastNode>(newNode<NullNode>(), field);
+			CastNode* castNode = newNode<CastNode>(&NullNode::INSTANCE, field);
 			castNode->dsqlAlias = "CONSTANT";
 			$$ = castNode;
 		}

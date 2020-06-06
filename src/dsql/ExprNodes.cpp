@@ -4882,7 +4882,7 @@ DmlNode* DefaultNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 			}
 		}
 
-		return FB_NEW_POOL(pool) NullNode(pool);
+		return &NullNode::INSTANCE;
 	}
 }
 
@@ -4914,7 +4914,7 @@ ValueExprNode* DefaultNode::createFromField(thread_db* tdbb, CompilerScratch* cs
 		return NodeCopier(csb->csb_pool, csb, map).copy(tdbb, fld->fld_default_value);
 	}
 	else
-		return FB_NEW_POOL(csb->csb_pool) NullNode(csb->csb_pool);
+		return &NullNode::INSTANCE;
 }
 
 string DefaultNode::internalPrint(NodePrinter& printer) const
@@ -5820,7 +5820,7 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 				else
 				{
 					if (relation->rel_flags & REL_system)
-						return FB_NEW_POOL(pool) NullNode(pool);
+						return &NullNode::INSTANCE;
 
  					if (tdbb->getAttachment()->isGbak())
 					{
@@ -5863,7 +5863,7 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 				!(*temp_rel->rel_fields)[id])
 			{
 				if (temp_rel->rel_flags & REL_system)
-					return FB_NEW_POOL(pool) NullNode(pool);
+					return &NullNode::INSTANCE;
 			}
 		}
 	}
@@ -6057,7 +6057,7 @@ ValueExprNode* FieldNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, Rec
 
 					if ((context->ctx_flags & CTX_view_with_check_store) && !field)
 					{
-						node = FB_NEW_POOL(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
+						node = &NullNode::INSTANCE;
 						node->line = line;
 						node->column = column;
 					}
@@ -6088,7 +6088,7 @@ ValueExprNode* FieldNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, Rec
 							doDsqlPass(dsqlScratch, dsqlIndices, false) : NULL;
 
 						if (context->ctx_flags & CTX_null)
-							node = FB_NEW_POOL(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
+							node = &NullNode::INSTANCE;
 						else if (field)
 							node = MAKE_field(context, field, indices);
 						else
@@ -8813,10 +8813,12 @@ ValueExprNode* NegateNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 static RegisterNode<NullNode> regNullNode({blr_null});
 
+GlobalPtr<NullNode> NullNode::INSTANCE;
+
 DmlNode* NullNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* /*csb*/,
 	const UCHAR /*blrOp*/)
 {
-	return FB_NEW_POOL(pool) NullNode(pool);
+	return &INSTANCE;
 }
 
 string NullNode::internalPrint(NodePrinter& printer) const
@@ -8863,18 +8865,7 @@ void NullNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 
 ValueExprNode* NullNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
 {
-	return FB_NEW_POOL(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
-}
-
-ValueExprNode* NullNode::pass2(thread_db* tdbb, CompilerScratch* csb)
-{
-	ValueExprNode::pass2(tdbb, csb);
-
-	dsc desc;
-	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
-
-	return this;
+	return &INSTANCE;
 }
 
 dsc* NullNode::execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
@@ -9790,7 +9781,7 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				raiseError(context);
 
 			if (context->ctx_flags & CTX_null)
-				return FB_NEW_POOL(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
+				return &NullNode::INSTANCE;
 
 			PASS1_ambiguity_check(dsqlScratch, getAlias(true), contexts);
 
@@ -9828,7 +9819,7 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 					raiseError(context);
 
 				if (context->ctx_flags & CTX_null)
-					return FB_NEW_POOL(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
+					return &NullNode::INSTANCE;
 
 				RelationSourceNode* relNode = FB_NEW_POOL(dsqlScratch->getPool()) RelationSourceNode(
 					dsqlScratch->getPool());
@@ -10120,7 +10111,7 @@ ValueExprNode* RecordKeyNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 			eqlNode->arg2 = literal;
 
 			// THEN: NULL
-			valueIfNode->trueValue = FB_NEW_POOL(csb->csb_pool) NullNode(csb->csb_pool);
+			valueIfNode->trueValue = &NullNode::INSTANCE;
 
 			// ELSE: RDB$DB_KEY
 			valueIfNode->falseValue = node;
@@ -10960,7 +10951,7 @@ ValueExprNode* SubQueryNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	RseNode* rse = PASS1_rse(dsqlScratch, nodeAs<SelectExprNode>(dsqlRse), false);
 
 	SubQueryNode* node = FB_NEW_POOL(dsqlScratch->getPool()) SubQueryNode(dsqlScratch->getPool(), blrOp, rse,
-		rse->dsqlSelectList->items[0], FB_NEW_POOL(dsqlScratch->getPool()) NullNode(dsqlScratch->getPool()));
+		rse->dsqlSelectList->items[0], &NullNode::INSTANCE);
 
 	// Finish off by cleaning up contexts.
 	dsqlScratch->context->clear(base);

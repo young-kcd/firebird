@@ -26,6 +26,7 @@
 #include "firebird/impl/blr.h"
 #include "../dsql/Nodes.h"
 #include "../dsql/NodePrinter.h"
+#include "../common/classes/init.h"
 #include "../dsql/pass1_proto.h"
 
 class SysFunction;
@@ -1169,12 +1170,15 @@ public:
 
 class NullNode : public TypedNode<ValueExprNode, ExprNode::TYPE_NULL>
 {
-public:
+private:
+	friend class Firebird::GlobalPtr<NullNode>;
+
 	explicit NullNode(MemoryPool& pool)
 		: TypedNode<ValueExprNode, ExprNode::TYPE_NULL>(pool)
 	{
 	}
 
+public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
@@ -1184,8 +1188,10 @@ public:
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
-	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+public:
+	static Firebird::GlobalPtr<NullNode> INSTANCE;
 };
 
 
