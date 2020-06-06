@@ -223,7 +223,7 @@ string ExprNode::internalPrint(NodePrinter& printer) const
 
 bool ExprNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const
 {
-	if (other->type != type)
+	if (other->getType() != getType())
 		return false;
 
 	NodeRefsHolder thisHolder(dsqlScratch->getPool());
@@ -251,7 +251,7 @@ bool ExprNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other
 
 bool ExprNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
 {
-	if (other->type != type)
+	if (other->getType() != getType())
 		return false;
 
 	NodeRefsHolder thisHolder(csb->csb_pool);

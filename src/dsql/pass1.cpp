@@ -891,7 +891,7 @@ bool PASS1_node_match(DsqlCompilerScratch* dsqlScratch, const ExprNode* node1, c
 			return PASS1_node_match(dsqlScratch, node1, derivedField2->value, ignoreMapCast);
 	}
 
-	return node1->type == node2->type && node1->dsqlMatch(dsqlScratch, node2, ignoreMapCast);
+	return node1->getType() == node2->getType() && node1->dsqlMatch(dsqlScratch, node2, ignoreMapCast);
 }
 
 

@@ -3105,7 +3105,7 @@ void RseNode::planCheck(const CompilerScratch* csb) const
 	{
 		const RecordSourceNode* node = *ptr;
 
-		if (node->type == RelationSourceNode::TYPE)
+		if (nodeIs<RelationSourceNode>(node))
 		{
 			const StreamType stream = node->getStream();
 
@@ -3115,7 +3115,7 @@ void RseNode::planCheck(const CompilerScratch* csb) const
 					Arg::Str(csb->csb_rpt[stream].csb_relation->rel_name));
 			}
 		}
-		else if (node->type == RseNode::TYPE)
+		else if (nodeIs<RseNode>(node))
 			static_cast<const RseNode*>(node)->planCheck(csb);
 	}
 }

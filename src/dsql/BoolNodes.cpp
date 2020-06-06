@@ -1844,7 +1844,9 @@ BoolExprNode* RseBoolNode::convertNeqAllToNotAny(thread_db* tdbb, CompilerScratc
 	RseNode* outerRse = rse;	// blr_ansi_all rse
 	ComparativeBoolNode* outerRseNeq;
 
-	if (!outerRse || outerRse->type != RseNode::TYPE || outerRse->rse_relations.getCount() != 1 ||
+	if (!outerRse ||
+		outerRse->getType() != RseNode::TYPE ||		// Reduntant test?
+		outerRse->rse_relations.getCount() != 1 ||
 		!outerRse->rse_boolean ||
 		!(outerRseNeq = nodeAs<ComparativeBoolNode>(outerRse->rse_boolean)) ||
 		outerRseNeq->blrOp != blr_neq)
@@ -1856,7 +1858,7 @@ BoolExprNode* RseBoolNode::convertNeqAllToNotAny(thread_db* tdbb, CompilerScratc
 
 	// If the rse is different than we expected, do nothing. Do nothing also if it uses FIRST or
 	// SKIP, as we can't inject booleans there without changing the behavior.
-	if (!innerRse || innerRse->type != RseNode::TYPE || innerRse->rse_first || innerRse->rse_skip)
+	if (!innerRse || innerRse->getType() != RseNode::TYPE || innerRse->rse_first || innerRse->rse_skip)
 		return NULL;
 
 	NotBoolNode* newNode = FB_NEW_POOL(csb->csb_pool) NotBoolNode(csb->csb_pool);

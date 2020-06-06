@@ -980,7 +980,7 @@ CompoundStmtNode* CompoundStmtNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	for (NestConst<StmtNode>* i = statements.begin(); i != statements.end(); ++i)
 	{
-		if (!StmtNode::is<AssignmentNode>(i->getObject()))
+		if (!nodeIs<AssignmentNode>(i->getObject()))
 			return this;
 	}
 
@@ -3806,7 +3806,7 @@ const StmtNode* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, Ex
 
 	if (request->req_operation == jrd_req::req_unwind)
 	{
-		const LabelNode* label = StmtNode::as<LabelNode>(parentStmt.getObject());
+		const LabelNode* label = nodeAs<LabelNode>(parentStmt.getObject());
 
 		if (label && request->req_label == label->labelNumber &&
 			(request->req_flags & req_continue_loop))
@@ -5114,7 +5114,7 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 
 		case jrd_req::req_unwind:
 		{
-			const LabelNode* label = StmtNode::as<LabelNode>(parentStmt.getObject());
+			const LabelNode* label = nodeAs<LabelNode>(parentStmt.getObject());
 
 			if (label && request->req_label == label->labelNumber &&
 				(request->req_flags & req_continue_loop))
@@ -5432,7 +5432,7 @@ const StmtNode* LoopNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeStat
 
 		case jrd_req::req_unwind:
 		{
-			const LabelNode* label = StmtNode::as<LabelNode>(parentStmt.getObject());
+			const LabelNode* label = nodeAs<LabelNode>(parentStmt.getObject());
 
 			if (label && request->req_label == label->labelNumber &&
 				(request->req_flags & req_continue_loop))
@@ -7374,7 +7374,7 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 		if (!*ptr1 || !((*ptr1)->fld_generator_name.hasData() || (value = (*ptr1)->fld_default_value)))
 			continue;
 
-		CompoundStmtNode* compoundNode = StmtNode::as<CompoundStmtNode>(statement.getObject());
+		CompoundStmtNode* compoundNode = nodeAs<CompoundStmtNode>(statement.getObject());
 		fb_assert(compoundNode);
 
 		if (compoundNode)
@@ -7383,7 +7383,7 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 
 			for (FB_SIZE_T i = 0; i < compoundNode->statements.getCount(); ++i)
 			{
-				const AssignmentNode* assign = StmtNode::as<AssignmentNode>(
+				const AssignmentNode* assign = nodeAs<AssignmentNode>(
 					compoundNode->statements[i].getObject());
 				fb_assert(assign);
 
@@ -9353,7 +9353,7 @@ static VariableNode* dsqlPassHiddenVariable(DsqlCompilerScratch* dsqlScratch, Va
 	thread_db* tdbb = JRD_get_thread_data();
 
 	// For some node types, it's better to not create temporary value.
-	switch (expr->type)
+	switch (expr->getType())
 	{
 		case ExprNode::TYPE_CURRENT_DATE:
 		case ExprNode::TYPE_CURRENT_TIME:
@@ -9582,7 +9582,7 @@ static void dsqlSetParameterName(DsqlCompilerScratch* dsqlScratch, ExprNode* exp
 	if (fieldNode->nodDesc.dsc_dtype != dtype_array)
 		return;
 
-	switch (exprNode->type)
+	switch (exprNode->getType())
 	{
 		case ExprNode::TYPE_ARITHMETIC:
 		case ExprNode::TYPE_CONCATENATE:
@@ -9874,7 +9874,7 @@ static RelationSourceNode* pass1Update(thread_db* tdbb, CompilerScratch* csb, jr
 	// we've got a view without triggers, let's check whether it's updateable
 
 	if (rse->rse_relations.getCount() != 1 || rse->rse_projection || rse->rse_sorted ||
-		rse->rse_relations[0]->type != RelationSourceNode::TYPE)
+		rse->rse_relations[0]->getType() != RelationSourceNode::TYPE)
 	{
 		ERR_post(Arg::Gds(isc_read_only_view) << Arg::Str(relation->rel_name));
 	}

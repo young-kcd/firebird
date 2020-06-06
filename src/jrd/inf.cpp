@@ -1028,7 +1028,7 @@ ULONG INF_request_info(const jrd_req* request, const ULONG item_length, const UC
 			}
 			else
 			{
-				const MessageNode* node = StmtNode::as<MessageNode>(request->req_message);
+				const MessageNode* node = nodeAs<MessageNode>(request->req_message);
 
 				if (node)
 				{

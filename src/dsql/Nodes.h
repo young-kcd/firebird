@@ -352,38 +352,44 @@ public:
 	}
 
 public:
+	typename T::Type getType() const override
+	{
+		return typeConst;
+	}
+
+public:
 	const static typename T::Type TYPE = typeConst;
 };
 
 
 template <typename To, typename From> static To* nodeAs(From* fromNode)
 {
-	return fromNode && fromNode->type == To::TYPE ? static_cast<To*>(fromNode) : NULL;
+	return fromNode && fromNode->getType() == To::TYPE ? static_cast<To*>(fromNode) : NULL;
 }
 
 template <typename To, typename From> static To* nodeAs(NestConst<From>& fromNode)
 {
-	return fromNode && fromNode->type == To::TYPE ? static_cast<To*>(fromNode.getObject()) : NULL;
+	return fromNode && fromNode->getType() == To::TYPE ? static_cast<To*>(fromNode.getObject()) : NULL;
 }
 
 template <typename To, typename From> static const To* nodeAs(const From* fromNode)
 {
-	return fromNode && fromNode->type == To::TYPE ? static_cast<const To*>(fromNode) : NULL;
+	return fromNode && fromNode->getType() == To::TYPE ? static_cast<const To*>(fromNode) : NULL;
 }
 
 template <typename To, typename From> static const To* nodeAs(const NestConst<From>& fromNode)
 {
-	return fromNode && fromNode->type == To::TYPE ? static_cast<const To*>(fromNode.getObject()) : NULL;
+	return fromNode && fromNode->getType() == To::TYPE ? static_cast<const To*>(fromNode.getObject()) : NULL;
 }
 
 template <typename To, typename From> static bool nodeIs(const From* fromNode)
 {
-	return fromNode && fromNode->type == To::TYPE;
+	return fromNode && fromNode->getType() == To::TYPE;
 }
 
 template <typename To, typename From> static bool nodeIs(const NestConst<From>& fromNode)
 {
-	return fromNode && fromNode->type == To::TYPE;
+	return fromNode && fromNode->getType() == To::TYPE;
 }
 
 
@@ -437,7 +443,7 @@ public:
 class ExprNode : public DmlNode
 {
 public:
-	enum Type : UCHAR
+	enum Type
 	{
 		// Value types
 		TYPE_AGGREGATE,
@@ -529,8 +535,7 @@ public:
 	explicit ExprNode(Type aType, MemoryPool& pool)
 		: DmlNode(pool),
 		  impureOffset(0),
-		  nodFlags(0),
-		  type(aType)
+		  nodFlags(0)
 	{
 	}
 
@@ -548,6 +553,7 @@ public:
 		*node = (*node)->pass2(tdbb, csb);
 	}
 
+	virtual Type getType() const = 0;
 	virtual Firebird::string internalPrint(NodePrinter& printer) const = 0;
 
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor)
@@ -686,7 +692,6 @@ public:
 public:
 	ULONG impureOffset;
 	USHORT nodFlags;
-	const Type type;
 };
 
 
@@ -1440,42 +1445,13 @@ public:
 public:
 	explicit StmtNode(Type aType, MemoryPool& pool)
 		: DmlNode(pool),
-		  type(aType),
 		  parentStmt(NULL),
 		  impureOffset(0),
 		  hasLineColumn(false)
 	{
 	}
 
-	template <typename T> T* as()
-	{
-		return type == T::TYPE ? static_cast<T*>(this) : NULL;
-	}
-
-	template <typename T> const T* as() const
-	{
-		return type == T::TYPE ? static_cast<const T*>(this) : NULL;
-	}
-
-	template <typename T> bool is() const
-	{
-		return type == T::TYPE;
-	}
-
-	template <typename T, typename T2> static T* as(T2* node)
-	{
-		return node ? node->template as<T>() : NULL;
-	}
-
-	template <typename T, typename T2> static const T* as(const T2* node)
-	{
-		return node ? node->template as<T>() : NULL;
-	}
-
-	template <typename T, typename T2> static bool is(const T2* node)
-	{
-		return node && node->template is<T>();
-	}
+	virtual Type getType() const = 0;
 
 	// Allocate and assign impure space for various nodes.
 	template <typename T> static void doPass2(thread_db* tdbb, CompilerScratch* csb, T** node,
@@ -1511,7 +1487,7 @@ public:
 		fb_assert(false);
 		Firebird::status_exception::raise(
 			Firebird::Arg::Gds(isc_cannot_copy_stmt) <<
-			Firebird::Arg::Num(int(type)));
+			Firebird::Arg::Num(int(getType())));
 
 		return NULL;
 	}
@@ -1519,7 +1495,6 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const = 0;
 
 public:
-	const Type type;
 	NestConst<StmtNode> parentStmt;
 	ULONG impureOffset;	// Inpure offset from request block.
 	bool hasLineColumn;
