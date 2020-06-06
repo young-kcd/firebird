@@ -516,13 +516,13 @@ public:
 
 	// Boolean flags.
 	static const USHORT FLAG_DEOPTIMIZE	= 0x02;	// Boolean which requires deoptimization.
-	static const USHORT FLAG_RESIDUAL		= 0x04;	// Boolean which must remain residual.
-	static const USHORT FLAG_ANSI_NOT		= 0x08;	// ANY/ALL predicate is prefixed with a NOT one.
+	static const USHORT FLAG_RESIDUAL	= 0x04;	// Boolean which must remain residual.
+	static const USHORT FLAG_ANSI_NOT	= 0x08;	// ANY/ALL predicate is prefixed with a NOT one.
 
 	// Value flags.
 	static const USHORT FLAG_DOUBLE		= 0x10;
-	static const USHORT FLAG_DATE			= 0x20;
-	static const USHORT FLAG_DECFLOAT		= 0x40;
+	static const USHORT FLAG_DATE		= 0x20;
+	static const USHORT FLAG_DECFLOAT	= 0x40;
 	static const USHORT FLAG_VALUE		= 0x80;	// Full value area required in impure space.
 	static const USHORT FLAG_INT128		= 0x100;
 
