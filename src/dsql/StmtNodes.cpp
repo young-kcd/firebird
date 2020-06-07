@@ -2519,6 +2519,7 @@ void EraseNode::pass1Erase(thread_db* tdbb, CompilerScratch* csb, EraseNode* nod
 
 			EraseNode* viewNode = FB_NEW_POOL(*tdbb->getDefaultPool()) EraseNode(*tdbb->getDefaultPool());
 			viewNode->stream = node->stream;
+			viewNode->marks = node->marks & (StmtNode::MARK_POSITIONED | StmtNode::MARK_MERGE);
 
 			node->subStatement = viewNode;
 
@@ -4955,6 +4956,7 @@ string ForNode::internalPrint(NodePrinter& printer) const
 	NODE_PRINT(printer, cursor);
 	NODE_PRINT(printer, parBlrBeginCnt);
 	NODE_PRINT(printer, forUpdate);
+	NODE_PRINT(printer, isMerge);
 	NODE_PRINT(printer, withLock);
 
 	return "ForNode";
@@ -6471,6 +6473,7 @@ void ModifyNode::pass1Modify(thread_db* tdbb, CompilerScratch* csb, ModifyNode* 
 
 			ModifyNode* viewNode = FB_NEW_POOL(*tdbb->getDefaultPool()) ModifyNode(*tdbb->getDefaultPool());
 			viewNode->statement = pass1ExpandView(tdbb, csb, viewStream, newStream, true);
+			viewNode->marks = node->marks & (StmtNode::MARK_POSITIONED | StmtNode::MARK_MERGE);
 
 			node->subMod = viewNode;
 
