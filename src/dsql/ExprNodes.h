@@ -116,11 +116,11 @@ private:
 	void getDescDialect3(thread_db* tdbb, dsc* desc, dsc& desc1, dsc& desc2);
 
 public:
-	const UCHAR blrOp;
-	bool dialect1;
 	Firebird::string label;
 	NestConst<ValueExprNode> arg1;
 	NestConst<ValueExprNode> arg2;
+	const UCHAR blrOp;
+	bool dialect1;
 };
 
 
@@ -269,9 +269,9 @@ public:
 public:
 	Firebird::MetaName dsqlAlias;
 	dsql_fld* dsqlField;
-	dsc castDesc;
 	NestConst<ValueExprNode> source;
 	NestConst<ItemInfo> itemInfo;
+	dsc castDesc;
 	bool artificial;
 };
 
@@ -803,12 +803,12 @@ public:
 	dsql_ctx* const dsqlContext;
 	dsql_fld* const dsqlField;
 	NestConst<ValueListNode> dsqlIndices;
-	const StreamType fieldStream;
 	const Format* format;
+	const StreamType fieldStream;
+	Nullable<USHORT> cursorNumber;
 	const USHORT fieldId;
 	const bool byId;
 	bool dsqlCursorField;
-	Nullable<USHORT> cursorNumber;
 };
 
 
@@ -845,10 +845,10 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	const bool dialect1;
 	GeneratorItem generator;
 	NestConst<ValueExprNode> arg;
 	SLONG step;
+	const bool dialect1;
 
 private:
 	bool sysGen;
@@ -1077,9 +1077,9 @@ public:
 
 public:
 	Firebird::MetaName name;
-	USHORT scope;
 	NestConst<ValueExprNode> value;
 	dsql_ctx* context;
+	USHORT scope;
 };
 
 
@@ -1198,7 +1198,7 @@ public:
 class OrderNode : public DsqlNode<OrderNode, ExprNode::TYPE_ORDER>
 {
 public:
-	enum NullsPlacement
+	enum NullsPlacement : UCHAR
 	{
 		NULLS_DEFAULT,
 		NULLS_FIRST,
@@ -1545,13 +1545,13 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	USHORT dsqlParameterIndex;
 	dsql_par* dsqlParameter;
 	NestConst<MessageNode> message;
-	USHORT argNumber;
 	NestConst<ValueExprNode> argFlag;
 	NestConst<ValueExprNode> argIndicator;
 	NestConst<ItemInfo> argInfo;
+	USHORT dsqlParameterIndex;
+	USHORT argNumber;
 };
 
 
@@ -1625,10 +1625,10 @@ private:
 	void raiseError(dsql_ctx* context) const;
 
 public:
-	const UCHAR blrOp;
 	Firebird::MetaName dsqlQualifier;
 	NestConst<RecordSourceNode> dsqlRelation;
 	StreamType recStream;
+	const UCHAR blrOp;
 	bool aggregate;
 };
 
@@ -1867,13 +1867,13 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	const UCHAR blrOp;
-	bool ownSavepoint;
 	NestConst<RecordSourceNode> dsqlRse;
 	NestConst<RseNode> rse;
 	NestConst<ValueExprNode> value1;
 	NestConst<ValueExprNode> value2;
 	NestConst<SubQuery> subQuery;
+	const UCHAR blrOp;
+	bool ownSavepoint;
 };
 
 
@@ -1984,9 +1984,9 @@ public:
 
 public:
 	Firebird::MetaName name;
-	bool dsqlSpecialSyntax;
 	NestConst<ValueListNode> args;
 	const SysFunction* function;
+	bool dsqlSpecialSyntax;
 };
 
 
@@ -2144,9 +2144,9 @@ public:
 public:
 	Firebird::MetaName dsqlName;
 	NestConst<dsql_var> dsqlVar;
-	USHORT varId;
 	NestConst<DeclareVariableNode> varDecl;
 	NestConst<ItemInfo> varInfo;
+	USHORT varId;
 };
 
 

@@ -446,11 +446,11 @@ static RegisterNode<ArithmeticNode> regArithmeticNode({blr_add, blr_subtract, bl
 ArithmeticNode::ArithmeticNode(MemoryPool& pool, UCHAR aBlrOp, bool aDialect1,
 			ValueExprNode* aArg1, ValueExprNode* aArg2)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_ARITHMETIC>(pool),
-	  blrOp(aBlrOp),
-	  dialect1(aDialect1),
 	  label(pool),
 	  arg1(aArg1),
-	  arg2(aArg2)
+	  arg2(aArg2),
+	  blrOp(aBlrOp),
+	  dialect1(aDialect1)
 {
 	label = getCompatDialectVerb();
 	label.upper();
@@ -5683,8 +5683,8 @@ FieldNode::FieldNode(MemoryPool& pool, dsql_ctx* context, dsql_fld* field, Value
 	  dsqlContext(context),
 	  dsqlField(field),
 	  dsqlIndices(indices),
-	  fieldStream(0),
 	  format(NULL),
+	  fieldStream(0),
 	  fieldId(0),
 	  byId(false),
 	  dsqlCursorField(false)
@@ -5698,8 +5698,8 @@ FieldNode::FieldNode(MemoryPool& pool, StreamType stream, USHORT id, bool aById)
 	  dsqlContext(NULL),
 	  dsqlField(NULL),
 	  dsqlIndices(NULL),
-	  fieldStream(stream),
 	  format(NULL),
+	  fieldStream(stream),
 	  fieldId(id),
 	  byId(aById),
 	  dsqlCursorField(false)
@@ -6843,10 +6843,10 @@ GenIdNode::GenIdNode(MemoryPool& pool, bool aDialect1,
 					 ValueExprNode* aArg,
 					 bool aImplicit, bool aIdentity)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_GEN_ID>(pool),
-	  dialect1(aDialect1),
 	  generator(pool, name),
 	  arg(aArg),
 	  step(0),
+	  dialect1(aDialect1),
 	  sysGen(false),
 	  implicit(aImplicit),
 	  identity(aIdentity)
@@ -8373,9 +8373,9 @@ DerivedFieldNode::DerivedFieldNode(MemoryPool& pool, const MetaName& aName, USHO
 			ValueExprNode* aValue)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_FIELD>(pool),
 	  name(aName),
-	  scope(aScope),
 	  value(aValue),
-	  context(NULL)
+	  context(NULL),
+	  scope(aScope)
 {
 }
 
@@ -9319,13 +9319,13 @@ static RegisterNode<ParameterNode> regParameterNode({blr_parameter, blr_paramete
 
 ParameterNode::ParameterNode(MemoryPool& pool)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_PARAMETER>(pool),
-	  dsqlParameterIndex(0),
 	  dsqlParameter(NULL),
 	  message(NULL),
-	  argNumber(0),
 	  argFlag(NULL),
 	  argIndicator(NULL),
-	  argInfo(NULL)
+	  argInfo(NULL),
+	  dsqlParameterIndex(0),
+	  argNumber(0)
 {
 }
 
@@ -9710,10 +9710,10 @@ static RegisterNode<RecordKeyNode> regRecordKeyNode({blr_dbkey, blr_record_versi
 
 RecordKeyNode::RecordKeyNode(MemoryPool& pool, UCHAR aBlrOp, const MetaName& aDsqlQualifier)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_RECORD_KEY>(pool),
-	  blrOp(aBlrOp),
 	  dsqlQualifier(pool, aDsqlQualifier),
 	  dsqlRelation(NULL),
 	  recStream(0),
+	  blrOp(aBlrOp),
 	  aggregate(false)
 {
 	fb_assert(blrOp == blr_dbkey || blrOp == blr_record_version || blrOp == blr_record_version2);
@@ -10872,12 +10872,12 @@ static RegisterNode<SubQueryNode> regSubQueryNode({
 SubQueryNode::SubQueryNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDsqlRse,
 			ValueExprNode* aValue1, ValueExprNode* aValue2)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_SUBQUERY>(pool),
-	  blrOp(aBlrOp),
-	  ownSavepoint(true),
 	  dsqlRse(aDsqlRse),
 	  value1(aValue1),
 	  value2(aValue2),
-	  subQuery(NULL)
+	  subQuery(NULL),
+	  blrOp(aBlrOp),
+	  ownSavepoint(true)
 {
 }
 
@@ -11958,9 +11958,9 @@ static RegisterNode<SysFuncCallNode> regSysFuncCallNode({blr_sys_function});
 SysFuncCallNode::SysFuncCallNode(MemoryPool& pool, const MetaName& aName, ValueListNode* aArgs)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_SYSFUNC_CALL>(pool),
 	  name(pool, aName),
-	  dsqlSpecialSyntax(false),
 	  args(aArgs),
-	  function(NULL)
+	  function(NULL),
+	  dsqlSpecialSyntax(false)
 {
 }
 
@@ -13304,9 +13304,9 @@ VariableNode::VariableNode(MemoryPool& pool)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_VARIABLE>(pool),
 	  dsqlName(pool),
 	  dsqlVar(NULL),
-	  varId(0),
 	  varDecl(NULL),
-	  varInfo(NULL)
+	  varInfo(NULL),
+	  varId(0)
 {
 }
 
@@ -13598,4 +13598,5 @@ static void setParameterInfo(dsql_par* parameter, const dsql_ctx* context)
 }
 
 
+static_assert(sizeof(RecordSourceNode) <= 40, "sizeof()");
 }	// namespace Jrd

@@ -1066,20 +1066,20 @@ public:
 class RecordSourceNode : public ExprNode
 {
 public:
-	static const unsigned DFLAG_SINGLETON				= 0x01;
-	static const unsigned DFLAG_VALUE					= 0x02;
-	static const unsigned DFLAG_RECURSIVE				= 0x04;	// recursive member of recursive CTE
-	static const unsigned DFLAG_DERIVED					= 0x08;
-	static const unsigned DFLAG_DT_IGNORE_COLUMN_CHECK	= 0x10;
-	static const unsigned DFLAG_DT_CTE_USED				= 0x20;
-	static const unsigned DFLAG_CURSOR					= 0x40;
-	static const unsigned DFLAG_LATERAL					= 0x80;
+	static const USHORT DFLAG_SINGLETON					= 0x01;
+	static const USHORT DFLAG_VALUE						= 0x02;
+	static const USHORT DFLAG_RECURSIVE					= 0x04;	// recursive member of recursive CTE
+	static const USHORT DFLAG_DERIVED					= 0x08;
+	static const USHORT DFLAG_DT_IGNORE_COLUMN_CHECK	= 0x10;
+	static const USHORT DFLAG_DT_CTE_USED				= 0x20;
+	static const USHORT DFLAG_CURSOR					= 0x40;
+	static const USHORT DFLAG_LATERAL					= 0x80;
 
 	RecordSourceNode(Type aType, MemoryPool& pool)
 		: ExprNode(aType, pool),
-		  dsqlFlags(0),
 		  dsqlContext(NULL),
-		  stream(INVALID_STREAM)
+		  stream(INVALID_STREAM),
+		  dsqlFlags(0)
 	{
 	}
 
@@ -1158,11 +1158,13 @@ public:
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream) = 0;
 
 public:
-	unsigned dsqlFlags;
 	dsql_ctx* dsqlContext;
 
 protected:
 	StreamType stream;
+
+public:
+	USHORT dsqlFlags;
 };
 
 
@@ -1389,7 +1391,7 @@ public:
 		TYPE_EXT_TRIGGER
 	};
 
-	enum WhichTrigger
+	enum WhichTrigger : UCHAR
 	{
 		ALL_TRIGS = 0,
 		PRE_TRIG = 1,
@@ -1409,13 +1411,13 @@ public:
 			  oldPool(tdbb->getDefaultPool()),
 			  oldRequest(tdbb->getRequest()),
 			  oldTransaction(tdbb->getTransaction()),
-			  errorPending(false),
-			  catchDisabled(false),
+			  topNode(NULL),
+			  prevNode(NULL),
 			  whichEraseTrig(ALL_TRIGS),
 			  whichStoTrig(ALL_TRIGS),
 			  whichModTrig(ALL_TRIGS),
-			  topNode(NULL),
-			  prevNode(NULL),
+			  errorPending(false),
+			  catchDisabled(false),
 			  exit(false)
 		{
 			savedTdbb->setTransaction(transaction);
@@ -1432,13 +1434,13 @@ public:
 		MemoryPool* oldPool;		// Save the old pool to restore on exit.
 		jrd_req* oldRequest;		// Save the old request to restore on exit.
 		jrd_tra* oldTransaction;	// Save the old transcation to restore on exit.
-		bool errorPending;			// Is there an error pending to be handled?
-		bool catchDisabled;			// Catch errors so we can unwind cleanly.
+		const StmtNode* topNode;
+		const StmtNode* prevNode;
 		WhichTrigger whichEraseTrig;
 		WhichTrigger whichStoTrig;
 		WhichTrigger whichModTrig;
-		const StmtNode* topNode;
-		const StmtNode* prevNode;
+		bool errorPending;			// Is there an error pending to be handled?
+		bool catchDisabled;			// Catch errors so we can unwind cleanly.
 		bool exit;					// Exit the looper when true.
 	};
 
