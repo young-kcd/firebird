@@ -1179,6 +1179,11 @@ private:
 	}
 
 public:
+	static NullNode* instance()
+	{
+		return &INSTANCE;
+	}
+
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
@@ -1190,7 +1195,7 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
-public:
+private:
 	static Firebird::GlobalPtr<NullNode> INSTANCE;
 };
 

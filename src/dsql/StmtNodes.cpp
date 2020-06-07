@@ -9123,7 +9123,7 @@ static StmtNode* dsqlNullifyReturning(DsqlCompilerScratch* dsqlScratch, StmtNode
 		 ++ret_ptr, ++null_ptr)
 	{
 		AssignmentNode* assign = FB_NEW_POOL(pool) AssignmentNode(pool);
-		assign->asgnFrom = &NullNode::INSTANCE;
+		assign->asgnFrom = NullNode::instance();
 		assign->asgnTo = nodeAs<AssignmentNode>(*ret_ptr)->asgnTo;
 		*null_ptr = assign;
 	}

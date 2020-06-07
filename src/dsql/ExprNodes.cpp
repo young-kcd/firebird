@@ -4880,7 +4880,7 @@ DmlNode* DefaultNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 			}
 		}
 
-		return &NullNode::INSTANCE;
+		return NullNode::instance();
 	}
 }
 
@@ -4912,7 +4912,7 @@ ValueExprNode* DefaultNode::createFromField(thread_db* tdbb, CompilerScratch* cs
 		return NodeCopier(csb->csb_pool, csb, map).copy(tdbb, fld->fld_default_value);
 	}
 	else
-		return &NullNode::INSTANCE;
+		return NullNode::instance();
 }
 
 string DefaultNode::internalPrint(NodePrinter& printer) const
@@ -5816,7 +5816,7 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 				else
 				{
 					if (relation->rel_flags & REL_system)
-						return &NullNode::INSTANCE;
+						return NullNode::instance();
 
  					if (tdbb->getAttachment()->isGbak())
 					{
@@ -5859,7 +5859,7 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 				!(*temp_rel->rel_fields)[id])
 			{
 				if (temp_rel->rel_flags & REL_system)
-					return &NullNode::INSTANCE;
+					return NullNode::instance();
 			}
 		}
 	}
@@ -6053,9 +6053,11 @@ ValueExprNode* FieldNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, Rec
 
 					if ((context->ctx_flags & CTX_view_with_check_store) && !field)
 					{
-						node = &NullNode::INSTANCE;
+						node = NullNode::instance();
+						/*** Do not set line/column of shared node.
 						node->line = line;
 						node->column = column;
+						***/
 					}
 					else if (dsqlQualifier.hasData() && !field)
 					{
@@ -6084,14 +6086,17 @@ ValueExprNode* FieldNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, Rec
 							doDsqlPass(dsqlScratch, dsqlIndices, false) : NULL;
 
 						if (context->ctx_flags & CTX_null)
-							node = &NullNode::INSTANCE;
-						else if (field)
-							node = MAKE_field(context, field, indices);
+							node = NullNode::instance();
 						else
-							node = list ? usingField.getObject() : doDsqlPass(dsqlScratch, usingField, false);
+						{
+							if (field)
+								node = MAKE_field(context, field, indices);
+							else
+								node = list ? usingField.getObject() : doDsqlPass(dsqlScratch, usingField, false);
 
-						node->line = line;
-						node->column = column;
+							node->line = line;
+							node->column = column;
+						}
 					}
 				}
 				else if (isDerivedTable)
@@ -9776,7 +9781,7 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				raiseError(context);
 
 			if (context->ctx_flags & CTX_null)
-				return &NullNode::INSTANCE;
+				return NullNode::instance();
 
 			PASS1_ambiguity_check(dsqlScratch, getAlias(true), contexts);
 
@@ -9814,7 +9819,7 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 					raiseError(context);
 
 				if (context->ctx_flags & CTX_null)
-					return &NullNode::INSTANCE;
+					return NullNode::instance();
 
 				RelationSourceNode* relNode = FB_NEW_POOL(dsqlScratch->getPool()) RelationSourceNode(
 					dsqlScratch->getPool());
@@ -10106,7 +10111,7 @@ ValueExprNode* RecordKeyNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 			eqlNode->arg2 = literal;
 
 			// THEN: NULL
-			valueIfNode->trueValue = &NullNode::INSTANCE;
+			valueIfNode->trueValue = NullNode::instance();
 
 			// ELSE: RDB$DB_KEY
 			valueIfNode->falseValue = node;
@@ -10946,7 +10951,7 @@ ValueExprNode* SubQueryNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	RseNode* rse = PASS1_rse(dsqlScratch, nodeAs<SelectExprNode>(dsqlRse), false);
 
 	SubQueryNode* node = FB_NEW_POOL(dsqlScratch->getPool()) SubQueryNode(dsqlScratch->getPool(), blrOp, rse,
-		rse->dsqlSelectList->items[0], &NullNode::INSTANCE);
+		rse->dsqlSelectList->items[0], NullNode::instance());
 
 	// Finish off by cleaning up contexts.
 	dsqlScratch->context->clear(base);

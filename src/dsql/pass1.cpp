@@ -1415,7 +1415,7 @@ void PASS1_expand_select_node(DsqlCompilerScratch* dsqlScratch, ExprNode* node, 
 					if (!select_item)
 					{
 						if (context->ctx_flags & CTX_null)
-							select_item = &NullNode::INSTANCE;
+							select_item = NullNode::instance();
 						else
 							select_item = MAKE_field(context, field, NULL);
 					}

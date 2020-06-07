@@ -1290,7 +1290,7 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 	{
 		if (segment[i]->scanType == segmentScanMissing)
 		{
-			*lower++ = *upper++ = &NullNode::INSTANCE;
+			*lower++ = *upper++ = NullNode::instance();
 			ignoreNullsOnScan = false;
 		}
 		else
