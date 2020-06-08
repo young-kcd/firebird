@@ -7626,7 +7626,7 @@ string UserSavepointNode::internalPrint(NodePrinter& printer) const
 {
 	StmtNode::internalPrint(printer);
 
-	NODE_PRINT(printer, command);
+	NODE_PRINT(printer, (SSHORT) command);
 	NODE_PRINT(printer, name);
 
 	return "UserSavepointNode";
@@ -9089,11 +9089,11 @@ static StmtNode* dsqlNullifyReturning(DsqlCompilerScratch* dsqlScratch, StmtNode
 	ModifyNode* modifyNode;
 	StoreNode* storeNode;
 
-	if (eraseNode = nodeAs<EraseNode>(input))
+	if ((eraseNode = nodeAs<EraseNode>(input)))
 		returning = eraseNode->statement;
-	else if (modifyNode = nodeAs<ModifyNode>(input))
+	else if ((modifyNode = nodeAs<ModifyNode>(input)))
 		returning = modifyNode->statement2;
-	else if (storeNode = nodeAs<StoreNode>(input))
+	else if ((storeNode = nodeAs<StoreNode>(input)))
 		returning = storeNode->statement2;
 	else
 	{
