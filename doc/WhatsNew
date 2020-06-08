@@ -43,7 +43,7 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-6290
-        Hex number used at end of statement (for exame with CREATE DOMAIN ... DEFAULT) may read invalid memory and produce wrong values or exceptions
+        Hex number used at end of statement (for example with CREATE DOMAIN ... DEFAULT) may read invalid memory and produce wrong values or exceptions
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
