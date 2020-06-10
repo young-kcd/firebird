@@ -456,17 +456,15 @@ void Provider::releaseConnection(thread_db* tdbb, Connection& conn, bool inPool)
 
 	if (!inPool || !connPool || !conn.isConnected() || !conn.resetSession())
 	{
-		if (connPool)
-		{
-			{	// scope
-				MutexLockGuard guard(m_mutex, FB_FUNCTION);
-				AttToConnMap::Accessor acc(&m_connections);
-				if (acc.locate(AttToConn(NULL, &conn)))
-					acc.fastRemove();
-			}
-
-			connPool->delConnection(tdbb, &conn, false);
+		{	// scope
+			MutexLockGuard guard(m_mutex, FB_FUNCTION);
+			AttToConnMap::Accessor acc(&m_connections);
+			if (acc.locate(AttToConn(NULL, &conn)))
+				acc.fastRemove();
 		}
+
+		if (connPool)
+			connPool->delConnection(tdbb, &conn, false);
 
 		Connection::deleteConnection(tdbb, &conn);
 	}
