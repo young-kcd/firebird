@@ -6665,7 +6665,7 @@ StmtNode* StoreNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	if (!needSavePoint || node->is<SavepointEncloseNode>())
 		return node;
 
-	return FB_NEW SavepointEncloseNode(getPool(), node);
+	return FB_NEW_POOL(getPool()) SavepointEncloseNode(getPool(), node);
 }
 
 string StoreNode::internalPrint(NodePrinter& printer) const
@@ -8236,7 +8236,7 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	if (!needSavePoint || ret->is<SavepointEncloseNode>())
 		return ret;
 
-	return FB_NEW SavepointEncloseNode(getPool(), ret);
+	return FB_NEW_POOL(getPool()) SavepointEncloseNode(getPool(), ret);
 }
 
 string UpdateOrInsertNode::internalPrint(NodePrinter& printer) const
