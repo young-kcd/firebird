@@ -636,7 +636,7 @@ void ComparativeBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 	if (nodFlags & FLAG_INVARIANT)
 	{
 		// This may currently happen for nod_like, nod_contains and nod_similar
-		impureOffset = CMP_impure(csb, sizeof(impure_value));
+		impureOffset = csb->allocImpure<impure_value>();
 	}
 }
 
@@ -1753,7 +1753,7 @@ void RseBoolNode::pass2Boolean1(thread_db* tdbb, CompilerScratch* csb)
 void RseBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 {
 	if (nodFlags & FLAG_INVARIANT)
-		impureOffset = CMP_impure(csb, sizeof(impure_value));
+		impureOffset = csb->allocImpure<impure_value>();
 
 	RecordSource* const rsb = CMP_post_rse(tdbb, csb, rse);
 

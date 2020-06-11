@@ -1805,7 +1805,7 @@ ValueExprNode* ArithmeticNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -3181,7 +3181,7 @@ ValueExprNode* AtNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -3299,7 +3299,7 @@ ValueExprNode* BoolAsValueNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -3518,7 +3518,7 @@ ValueExprNode* CastNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -3890,7 +3890,7 @@ ValueExprNode* ConcatenateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -4123,7 +4123,7 @@ ValueExprNode* CurrentDateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -4228,7 +4228,7 @@ ValueExprNode* CurrentTimeNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -4343,7 +4343,7 @@ ValueExprNode* CurrentTimeStampNode::pass2(thread_db* tdbb, CompilerScratch* csb
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -4437,7 +4437,7 @@ ValueExprNode* CurrentRoleNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -4531,7 +4531,7 @@ ValueExprNode* CurrentUserNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -5411,7 +5411,7 @@ ValueExprNode* ExtractNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -6771,7 +6771,7 @@ ValueExprNode* FieldNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	if (csb->csb_rpt[fieldStream].csb_relation || csb->csb_rpt[fieldStream].csb_procedure)
 		format = CMP_format(tdbb, csb, fieldStream);
 
-	impureOffset = CMP_impure(csb, sizeof(impure_value_ex));
+	impureOffset = csb->allocImpure<impure_value_ex>();
 	cursorNumber = csb->csb_rpt[fieldStream].csb_cursor_number;
 
 	return this;
@@ -7023,7 +7023,7 @@ ValueExprNode* GenIdNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -7217,7 +7217,7 @@ ValueExprNode* InternalInfoNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -8025,7 +8025,7 @@ ValueExprNode* LocalTimeNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -8128,7 +8128,7 @@ ValueExprNode* LocalTimeStampNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -8735,7 +8735,7 @@ ValueExprNode* NegateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -9608,7 +9608,11 @@ ValueExprNode* ParameterNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, (nodFlags & FLAG_VALUE) ? sizeof(impure_value_ex) : sizeof(dsc));
+
+	if (nodFlags & FLAG_VALUE)
+		impureOffset = csb->allocImpure<impure_value_ex>();
+	else
+		impureOffset = csb->allocImpure<dsc>();
 
 	return this;
 }
@@ -10146,7 +10150,7 @@ ValueExprNode* RecordKeyNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -10333,7 +10337,7 @@ ValueExprNode* ScalarNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -10547,7 +10551,7 @@ ValueExprNode* StrCaseNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -10762,7 +10766,7 @@ ValueExprNode* StrLenNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -11187,7 +11191,7 @@ ValueExprNode* SubQueryNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	ValueExprNode::pass2(tdbb, csb);
 
-	impureOffset = CMP_impure(csb, sizeof(impure_value_ex));
+	impureOffset = csb->allocImpure<impure_value_ex>();
 
 	{
 		dsc desc;
@@ -11539,7 +11543,7 @@ ValueExprNode* SubstringNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -11843,7 +11847,7 @@ ValueExprNode* SubstringSimilarNode::pass2(thread_db* tdbb, CompilerScratch* csb
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -12100,7 +12104,7 @@ ValueExprNode* SysFuncCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -12356,7 +12360,7 @@ ValueExprNode* TrimNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 
 	return this;
 }
@@ -12771,20 +12775,20 @@ ValueExprNode* UdfCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
 
-	impureOffset = CMP_impure(csb, sizeof(Impure));
+	impureOffset = csb->allocImpure<Impure>();
 
 	if (function->isDefined() && !function->fun_entrypoint)
 	{
 		if (function->getInputFormat() && function->getInputFormat()->fmt_count)
 		{
 			fb_assert(function->getInputFormat()->fmt_length);
-			CMP_impure(csb, function->getInputFormat()->fmt_length);
+			csb->allocImpure(FB_ALIGNMENT, function->getInputFormat()->fmt_length);
 		}
 
 		fb_assert(function->getOutputFormat()->fmt_count == 3);
 
 		fb_assert(function->getOutputFormat()->fmt_length);
-		CMP_impure(csb, function->getOutputFormat()->fmt_length);
+		csb->allocImpure(FB_ALIGNMENT, function->getOutputFormat()->fmt_length);
 	}
 
 	return this;
@@ -13438,7 +13442,10 @@ ValueExprNode* VariableNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	ValueExprNode::pass2(tdbb, csb);
 
-	impureOffset = CMP_impure(csb, (nodFlags & FLAG_VALUE) ? sizeof(impure_value_ex) : sizeof(dsc));
+	if (nodFlags & FLAG_VALUE)
+		impureOffset = csb->allocImpure<impure_value_ex>();
+	else
+		impureOffset = csb->allocImpure<dsc>();
 
 	return this;
 }

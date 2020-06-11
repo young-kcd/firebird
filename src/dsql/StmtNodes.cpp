@@ -632,7 +632,7 @@ BlockNode* BlockNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	doPass2(tdbb, csb, action.getAddress(), this);
 	doPass2(tdbb, csb, handlers.getAddress(), this);
 
-	impureOffset = CMP_impure(csb, sizeof(SavNumber));
+	impureOffset = csb->allocImpure<SavNumber>();
 
 	return this;
 }
@@ -976,7 +976,7 @@ CompoundStmtNode* CompoundStmtNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	for (NestConst<StmtNode>* i = statements.begin(); i != statements.end(); ++i)
 		doPass2(tdbb, csb, i->getAddress(), this);
 
-	impureOffset = CMP_impure(csb, sizeof(impure_state));
+	impureOffset = csb->allocImpure<impure_state>();
 
 	for (NestConst<StmtNode>* i = statements.begin(); i != statements.end(); ++i)
 	{
@@ -2248,7 +2248,7 @@ DeclareVariableNode* DeclareVariableNode::pass1(thread_db* tdbb, CompilerScratch
 
 DeclareVariableNode* DeclareVariableNode::pass2(thread_db* /*tdbb*/, CompilerScratch* csb)
 {
-	impureOffset = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = csb->allocImpure<impure_value>();
 	return this;
 }
 
@@ -3736,7 +3736,7 @@ ExecStatementNode* ExecStatementNode::pass2(thread_db* tdbb, CompilerScratch* cs
 		}
 	}
 
-	impureOffset = CMP_impure(csb, sizeof(EDS::Statement*));
+	impureOffset = csb->allocImpure<EDS::Statement*>();
 
 	return this;
 }
@@ -3992,7 +3992,7 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::pass1(thread_db* tdbb,
 
 InAutonomousTransactionNode* InAutonomousTransactionNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	impureOffset = CMP_impure(csb, sizeof(Impure));
+	impureOffset = csb->allocImpure<Impure>();
 	doPass2(tdbb, csb, action.getAddress(), this);
 	return this;
 }
@@ -5046,7 +5046,10 @@ StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	if (rse->flags & RseNode::FLAG_WRITELOCK)
 		withLock = true;
 
-	impureOffset = CMP_impure(csb, isMerge ? sizeof(ImpureMerge) : sizeof(Impure));
+	if (isMerge)
+		impureOffset = csb->allocImpure<ImpureMerge>();
+	else
+		impureOffset = csb->allocImpure<Impure>();
 
 	return this;
 }
@@ -6031,8 +6034,8 @@ MessageNode* MessageNode::pass2(thread_db* /*tdbb*/, CompilerScratch* csb)
 {
 	fb_assert(format);
 
-	impureOffset = CMP_impure(csb, FB_ALIGN(format->fmt_length, 2));
-	impureFlags = CMP_impure(csb, sizeof(USHORT) * format->fmt_count);
+	impureOffset = csb->allocImpure(FB_ALIGNMENT, FB_ALIGN(format->fmt_length, 2));
+	impureFlags = csb->allocImpure(FB_ALIGNMENT, sizeof(USHORT) * format->fmt_count);
 
 	return this;
 }
@@ -6527,7 +6530,7 @@ ModifyNode* ModifyNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	if (!(marks & StmtNode::MARK_POSITIONED))
 		forNode = pass2FindForNode(parentStmt, orgStream);
 
-	impureOffset = CMP_impure(csb, sizeof(impure_state));
+	impureOffset = csb->allocImpure<impure_state>();
 
 	return this;
 }
@@ -7441,7 +7444,7 @@ StoreNode* StoreNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 		ExprNode::doPass2(tdbb, csb, i->value.getAddress());
 	}
 
-	impureOffset = CMP_impure(csb, sizeof(impure_state));
+	impureOffset = csb->allocImpure<impure_state>();
 
 	return this;
 }

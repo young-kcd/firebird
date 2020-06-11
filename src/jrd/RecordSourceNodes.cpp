@@ -1949,7 +1949,7 @@ RecordSource* UnionSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt, cons
 	CompilerScratch* csb = opt->opt_csb;
 	HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs;
 
-	const ULONG baseImpure = CMP_impure(csb, 0);
+	const ULONG baseImpure = csb->allocImpure(FB_ALIGNMENT, 0);
 
 	NestConst<RseNode>* ptr = clauses.begin();
 	NestConst<MapNode>* ptr2 = maps.begin();

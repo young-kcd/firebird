@@ -468,6 +468,15 @@ public:
 		csb_dbg_info = FB_NEW_POOL(p) Firebird::DbgInfo(p);
 	}
 
+	// Implemented in JrdStatement.cpp
+	ULONG allocImpure(ULONG align, ULONG size);
+
+	template <typename T>
+	ULONG allocImpure()
+	{
+		return allocImpure(alignof(T), sizeof(T));
+	}
+
 	StreamType nextStream(bool check = true)
 	{
 		if (csb_n_stream >= MAX_STREAMS && check)
