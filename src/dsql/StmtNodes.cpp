@@ -2043,6 +2043,9 @@ DmlNode* EraseNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch
 	EraseNode* node = FB_NEW_POOL(pool) EraseNode(pool);
 	node->stream = csb->csb_rpt[n].csb_stream;
 
+	if (csb->csb_blr_reader.peekByte() == blr_marks)
+		PAR_marks(csb); // unused
+
 	return node;
 }
 
@@ -4533,6 +4536,9 @@ DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 {
 	ForNode* node = FB_NEW_POOL(pool) ForNode(pool);
 
+	if (csb->csb_blr_reader.peekByte() == blr_marks)
+		PAR_marks(csb); // unused
+
 	if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_stall)
 		node->stall = PAR_parse_stmt(tdbb, csb);
 
@@ -5664,6 +5670,9 @@ DmlNode* ModifyNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	ModifyNode* node = FB_NEW_POOL(pool) ModifyNode(pool);
 	node->orgStream = orgStream;
 	node->newStream = newStream;
+
+	if (csb->csb_blr_reader.peekByte() == blr_marks)
+		PAR_marks(csb); // unused
 
 	AutoSetRestore<StmtNode*> autoCurrentDMLNode(&csb->csb_currentDMLNode, node);
 
