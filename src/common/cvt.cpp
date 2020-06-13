@@ -2609,7 +2609,7 @@ static SINT64 hex_to_value(const char*& string, const char* end)
 	int nibble = ((end - string) & 1);
 	char ch;
 
-	while ((DIGIT((ch = UPPER(*string)))) || ((ch >= 'A') && (ch <= 'F')))
+	while ((string <= end) && ((DIGIT((ch = UPPER(*string)))) || ((ch >= 'A') && (ch <= 'F'))))
 	{
 		// Now convert the character to a nibble
 		SSHORT c;
