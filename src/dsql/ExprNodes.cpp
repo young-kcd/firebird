@@ -13610,5 +13610,4 @@ static void setParameterInfo(dsql_par* parameter, const dsql_ctx* context)
 }
 
 
-static_assert(sizeof(RecordSourceNode) <= 40, "sizeof()");
 }	// namespace Jrd
