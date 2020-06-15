@@ -5016,7 +5016,12 @@ void ForNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 StmtNode* ForNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	doPass1(tdbb, csb, stall.getAddress());
-	doPass1(tdbb, csb, rse.getAddress());
+
+	{ // scope
+		AutoSetRestore<bool> autoImplicitCursor(&csb->csb_implicit_cursor, forUpdate);
+		doPass1(tdbb, csb, rse.getAddress());
+	}
+
 	doPass1(tdbb, csb, statement.getAddress());
 	return this;
 }

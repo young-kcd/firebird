@@ -1113,7 +1113,6 @@ public:
 	}
 
 	virtual RecordSourceNode* copy(thread_db* tdbb, NodeCopier& copier) const = 0;
-	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) const = 0;
 	virtual RecordSourceNode* pass1(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 		BoolExprNode** boolean, RecordSourceNodeStack& stack) = 0;

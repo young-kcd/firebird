@@ -1727,13 +1727,8 @@ BoolExprNode* RseBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 				boolean->nodFlags |= FLAG_RESIDUAL | (deoptimize ? FLAG_DEOPTIMIZE : 0);
 			}
 		}
-		// fall into
 
-		case blr_any:
-		case blr_exists:
-		case blr_unique:
-			rse->ignoreDbKey(tdbb, csb);
-			break;
+		break;
 	}
 
 	return BoolExprNode::pass1(tdbb, csb);
@@ -1883,7 +1878,6 @@ BoolExprNode* RseBoolNode::convertNeqAllToNotAny(thread_db* tdbb, CompilerScratc
 	andNode->arg2 = rseBoolNode;
 
 	RseNode* newInnerRse = innerRse->clone(csb->csb_pool);
-	newInnerRse->ignoreDbKey(tdbb, csb);
 
 	rseBoolNode = FB_NEW_POOL(csb->csb_pool) RseBoolNode(csb->csb_pool, blr_any);
 	rseBoolNode->rse = newInnerRse;
