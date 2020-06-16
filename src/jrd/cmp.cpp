@@ -323,12 +323,12 @@ IndexLock* CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
 
 void CMP_post_access(thread_db* tdbb,
 					 CompilerScratch* csb,
-					 const Firebird::MetaName& security_name,
+					 const MetaName& security_name,
 					 SLONG ssRelationId,			// SQL SECURITY relation in which context permissions should be check
 					 SecurityClass::flags_t mask,
 					 SLONG type_name,
-					 const Firebird::MetaName& name,
-					 const Firebird::MetaName& r_name)
+					 const MetaName& name,
+					 const MetaName& r_name)
 {
 /**************************************
  *

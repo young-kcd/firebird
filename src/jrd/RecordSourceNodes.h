@@ -25,7 +25,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/NestConst.h"
-#include "../common/classes/QualifiedName.h"
+#include "../jrd/QualifiedName.h"
 #include "../dsql/ExprNodes.h"
 #include "../jrd/jrd.h"
 #include "../jrd/exe.h"
@@ -146,7 +146,7 @@ public:
 
 		SLONG relationId;
 		SLONG indexId;
-		Firebird::MetaName indexName;
+		MetaName indexName;
 	};
 
 	struct AccessType
@@ -192,7 +192,7 @@ public:
 private:
 	dsql_ctx* dsqlPassAliasList(DsqlCompilerScratch* dsqlScratch);
 	static dsql_ctx* dsqlPassAlias(DsqlCompilerScratch* dsqlScratch, DsqlContextStack& stack,
-		const Firebird::MetaName& alias);
+		const MetaName& alias);
 
 public:
 	Type const type;
@@ -200,7 +200,7 @@ public:
 	RelationSourceNode* relationNode;
 	Firebird::Array<NestConst<PlanNode> > subNodes;
 	RecordSourceNode* dsqlRecordSourceNode;
-	Firebird::ObjectsArray<Firebird::MetaName>* dsqlNames;
+	Firebird::ObjectsArray<MetaName>* dsqlNames;
 };
 
 class InversionNode
@@ -286,7 +286,7 @@ public:
 class RelationSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RELATION>
 {
 public:
-	explicit RelationSourceNode(MemoryPool& pool, const Firebird::MetaName& aDsqlName = NULL)
+	explicit RelationSourceNode(MemoryPool& pool, const MetaName& aDsqlName = NULL)
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RELATION>(pool),
 		  dsqlName(pool, aDsqlName),
 		  alias(pool),
@@ -348,7 +348,7 @@ public:
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
 public:
-	Firebird::MetaName dsqlName;
+	MetaName dsqlName;
 	Firebird::string alias;	// SQL alias for the relation
 	jrd_rel* relation;
 
@@ -363,7 +363,7 @@ class ProcedureSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode:
 {
 public:
 	explicit ProcedureSourceNode(MemoryPool& pool,
-			const Firebird::QualifiedName& aDsqlName = Firebird::QualifiedName())
+			const QualifiedName& aDsqlName = QualifiedName())
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_PROCEDURE>(pool),
 		  dsqlName(pool, aDsqlName),
 		  alias(pool),
@@ -423,7 +423,7 @@ private:
 	ProcedureScan* generate(thread_db* tdbb, OptimizerBlk* opt);
 
 public:
-	Firebird::QualifiedName dsqlName;
+	QualifiedName dsqlName;
 	Firebird::string alias;
 	NestConst<ValueListNode> sourceList;
 	NestConst<ValueListNode> targetList;
@@ -871,7 +871,7 @@ public:
 	NestConst<RowsClause> rowsClause;
 	NestConst<WithClause> withClause;
 	Firebird::string alias;
-	Firebird::ObjectsArray<Firebird::MetaName>* columns;
+	Firebird::ObjectsArray<MetaName>* columns;
 };
 
 

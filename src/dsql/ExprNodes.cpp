@@ -3701,7 +3701,7 @@ dsc* CoalesceNode::execute(thread_db* tdbb, jrd_req* request) const
 //--------------------
 
 
-CollateNode::CollateNode(MemoryPool& pool, ValueExprNode* aArg, const Firebird::MetaName& aCollation)
+CollateNode::CollateNode(MemoryPool& pool, ValueExprNode* aArg, const MetaName& aCollation)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_COLLATE>(pool),
 	  arg(aArg),
 	  collation(pool, aCollation)
@@ -4813,8 +4813,8 @@ dsc* DecodeNode::execute(thread_db* tdbb, jrd_req* request) const
 
 static RegisterNode<DefaultNode> regDefaultNode({blr_default});
 
-DefaultNode::DefaultNode(MemoryPool& pool, const Firebird::MetaName& aRelationName,
-		const Firebird::MetaName& aFieldName)
+DefaultNode::DefaultNode(MemoryPool& pool, const MetaName& aRelationName,
+		const MetaName& aFieldName)
 	: DsqlNode<DefaultNode, ExprNode::TYPE_DEFAULT>(pool),
 	  relationName(aRelationName),
 	  fieldName(aFieldName),
@@ -6832,7 +6832,7 @@ dsc* FieldNode::execute(thread_db* tdbb, jrd_req* request) const
 static RegisterNode<GenIdNode> regGenIdNode({blr_gen_id, blr_gen_id2});
 
 GenIdNode::GenIdNode(MemoryPool& pool, bool aDialect1,
-					 const Firebird::MetaName& name,
+					 const MetaName& name,
 					 ValueExprNode* aArg,
 					 bool aImplicit, bool aIdentity)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_GEN_ID>(pool),
@@ -12007,7 +12007,7 @@ void SysFuncCallNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	dsqlScratch->appendUChar(blr_sys_function);
-	dsqlScratch->appendMetaString(function->name.c_str());
+	dsqlScratch->appendMetaString(function->name);
 	dsqlScratch->appendUChar(args->items.getCount());
 
 	for (auto& arg : args->items)

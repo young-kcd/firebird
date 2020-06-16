@@ -35,7 +35,7 @@ using namespace Replication;
 Replicator::Replicator(MemoryPool& pool,
 					   Manager* manager,
 					   const Guid& guid,
-					   const MetaName& user,
+					   const MetaString& user,
 					   bool cleanupTransactions)
 	: PermanentStorage(pool),
 	  m_manager(manager),
