@@ -227,7 +227,7 @@ void INF_database_info(thread_db* tdbb,
  	CHECK_INPUT("INF_database_info");
 
 	CountsBuffer counts_buffer;
-	UCHAR* buffer = counts_buffer.getBuffer(BUFFER_SMALL);
+	UCHAR* buffer = counts_buffer.getBuffer(BUFFER_SMALL, false);
 	USHORT length;
 	ULONG err_val;
 	bool header_refreshed = false;
@@ -458,31 +458,24 @@ void INF_database_info(thread_db* tdbb,
 
 		case isc_info_db_id:
 			{
-				counts_buffer.resize(BUFFER_SMALL);
-				const UCHAR* const end_buf = counts_buffer.end();
-				// May be simpler to code using a server-side version of isql's Extender class.
+				counts_buffer.clear();
+
 				const PathName& str_fn = dbb->dbb_database_name;
-				STUFF(p, 2);
-				USHORT len = str_fn.length();
-				if (p + len + 1 >= end_buf)
-					len = end_buf - p - 1;
+				counts_buffer.push(2);
+				PathName::size_type len = str_fn.length();
 				if (len > 255)
 					len = 255; // Cannot put more in one byte, will truncate instead.
-				*p++ = len;
-				memcpy(p, str_fn.c_str(), len);
-				p += len;
-				if (p + 2 < end_buf)
-				{
-					SCHAR site[256];
-					ISC_get_host(site, sizeof(site));
-					len = static_cast<USHORT>(strlen(site));
-					if (p + len + 1 >= end_buf)
-						len = end_buf - p - 1;
-					*p++ = len;
-					memcpy(p, site, len);
-					p += len;
-				}
-				length = p - buffer;
+				counts_buffer.push(static_cast<UCHAR>(len));
+				counts_buffer.push(reinterpret_cast<const UCHAR*>(str_fn.c_str()), len);
+
+				TEXT site[256];
+				ISC_get_host(site, sizeof(site));
+				UCHAR siteLen = static_cast<UCHAR>(strlen(site));
+				counts_buffer.push(siteLen);
+				counts_buffer.push(reinterpret_cast<UCHAR*>(site), siteLen);
+
+				buffer = counts_buffer.begin();
+				length = counts_buffer.getCount();
 			}
 			break;
 
@@ -859,7 +852,8 @@ void INF_database_info(thread_db* tdbb,
 		    {
                 static const unsigned char features[] = ENGINE_FEATURES;
                 length = sizeof(features);
-                memcpy(buffer, features, length);
+                counts_buffer.assign(features, length);
+                buffer = counts_buffer.begin();
                 break;
 		    }
 
