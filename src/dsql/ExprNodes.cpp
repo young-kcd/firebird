@@ -11220,11 +11220,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 		if (*invariant_flags & VLU_computed)
 		{
 			// An invariant node has already been computed.
-
-			if (*invariant_flags & VLU_null)
-				return nullptr;
-			else
-				return desc;
+			return (*invariant_flags & VLU_null) ? nullptr : desc;
 		}
 	}
 
@@ -12770,16 +12766,8 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 	// If the function is known as being both deterministic and invariant,
 	// check whether it has already been evaluated
 
-	if (nodFlags & FLAG_INVARIANT)
-	{
-		if (invariantFlags & VLU_computed)
-		{
-			if (invariantFlags & VLU_null)
-				return nullptr;
-			else
-				return &value->vlu_desc;
-		}
-	}
+	if ((nodFlags & FLAG_INVARIANT) && (invariantFlags & VLU_computed))
+		return (invariantFlags & VLU_null) ? nullptr : &value->vlu_desc;
 
 	if (!function->isImplemented())
 	{

@@ -216,10 +216,11 @@ TriState BinaryBoolNode::executeAnd(thread_db* tdbb, jrd_req* request) const
 
 	if (value2 == false)
 		return TriState(false);	// at least one operand was false
-	else if (value1 == true && value2 == true)
+
+	if (value1 == true && value2 == true)
 		return TriState(true);	// both true
-	else
-		return TriState();	// otherwise, return null
+
+	return TriState();	// otherwise, return null
 }
 
 TriState BinaryBoolNode::executeOr(thread_db* tdbb, jrd_req* request) const
@@ -250,10 +251,9 @@ TriState BinaryBoolNode::executeOr(thread_db* tdbb, jrd_req* request) const
 
 	const TriState value2 = arg2->execute(tdbb, request);
 
-	if (value2 == true)
-		return TriState(true);
-	else
-		return value1.isUnknown() || value2.isUnknown() ? TriState() : TriState(false);
+	return value2 == true ? TriState(true) :
+		(value1.isUnknown() || value2.isUnknown()) ? TriState() :
+		TriState(false);
 }
 
 
@@ -1543,6 +1543,8 @@ DmlNode* RseBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 		// We treat ANY and ALL in the same manner in execution - as ANY.
 		// For that, we invert ALL's operator to its negated complement and prefix RseBoolNode with NOT.
 
+		// This code must be in sync with RseBoolNode::execute.
+
 		BoolExprNode* rseBoolNode = nullptr;
 		BinaryBoolNode* binNode = nullptr;
 		ComparativeBoolNode* cmpNode = nullptr;
@@ -1565,7 +1567,7 @@ DmlNode* RseBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 		SubExprNodeCopier copier(csb->csb_pool, csb);
 
-		auto* injectedBoolean =
+		const auto injectedBoolean =
 			FB_NEW_POOL(pool) BinaryBoolNode(pool, blr_or,
 				FB_NEW_POOL(pool) BinaryBoolNode(pool, blr_or,
 					cmpNode,
@@ -1631,8 +1633,8 @@ DmlNode* RseBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 	if (blrOp == blr_ansi_all)
 		return FB_NEW_POOL(pool) NotBoolNode(pool, node);
-	else
-		return node;
+
+	return node;
 }
 
 string RseBoolNode::internalPrint(NodePrinter& printer) const
@@ -1778,6 +1780,8 @@ TriState RseBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 			// Check if we do have at least a record. ANY (empty) is FALSE.
 			if (value == true)
 			{
+				// This code must be in sync with RseBoolNode::parse.
+
 				auto boolNode1 = nodeAs<BinaryBoolNode>(rse->rse_boolean);
 				fb_assert(boolNode1);
 
@@ -1787,15 +1791,20 @@ TriState RseBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 					fb_assert(boolNode1);
 				}
 
-				auto boolNode2 = nodeAs<BinaryBoolNode>(boolNode1->arg1);
-				fb_assert(boolNode1);
+				fb_assert(boolNode1->blrOp == blr_or);
 
-				auto missingValueNode = nodeAs<MissingBoolNode>(boolNode1->arg2);
-				auto columnNode = boolNode2->arg2;
-				fb_assert(missingValueNode && columnNode);
+				auto boolNode2 = nodeAs<BinaryBoolNode>(boolNode1->arg1);
+				fb_assert(boolNode2 && boolNode2->blrOp == blr_or);
+
+				const auto missingValueNode = nodeAs<MissingBoolNode>(boolNode1->arg2);
+				const auto valueNode = missingValueNode->arg;
+				const auto cmpNode = boolNode2->arg1;
+
+				fb_assert(missingValueNode && nodeIs<MissingBoolNode>(boolNode2->arg2));  // equivalent MissingBoolNode
+				fb_assert(valueNode && cmpNode);
 
 				// Test our value. NULL op ANY (non empty) is UNKNOWN.
-				if (!EVL_expr(tdbb, request, missingValueNode->arg))
+				if (!EVL_expr(tdbb, request, valueNode))
 					value.invalidate();
 				else
 				{
@@ -1807,7 +1816,7 @@ TriState RseBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 					// If we had not a NULL, return FALSE.
 					do
 					{
-						value = boolNode2->arg1->execute(tdbb, request);
+						value = cmpNode->execute(tdbb, request);
 
 						if (value == true)
 							break;

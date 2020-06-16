@@ -85,6 +85,7 @@ bool FilteredStream::getRecord(thread_db* tdbb) const
 			return true;
 	}
 
+	invalidateRecords(request);
 	return false;
 }
 
