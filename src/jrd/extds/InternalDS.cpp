@@ -451,8 +451,6 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	}
 
 	{
-		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-
 		CallerName save_caller_name(tran->getHandle()->tra_caller_name);
 
 		if (m_callerPrivileges)
@@ -488,11 +486,16 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 				tran->getHandle()->tra_caller_name = CallerName();
 		}
 
-		m_request.assignRefNoIncr(att->prepare(&status, tran, sql.length(), sql.c_str(),
-			m_connection.getSqlDialect(), 0));
+		{
+			EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+
+			m_request.assignRefNoIncr(att->prepare(&status, tran, sql.length(), sql.c_str(),
+				m_connection.getSqlDialect(), 0));
+		}
 		m_allocated = (m_request != NULL);
 
-		tran->getHandle()->tra_caller_name = save_caller_name;
+		if (tran->getHandle())
+			tran->getHandle()->tra_caller_name = save_caller_name;
 	}
 
 	if (status->getState() & IStatus::STATE_ERRORS)
