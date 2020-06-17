@@ -718,7 +718,7 @@ static int validate(Firebird::UtilSvc* svc)
 		}
 	}
 
-	ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+	ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
 	if (!userName.isEmpty())
 	{
 		dpb.insertString(isc_dpb_trusted_auth, userName);

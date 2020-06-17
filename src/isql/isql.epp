@@ -6133,7 +6133,7 @@ static processing_state newdb(TEXT* dbname,
 		local_numbufs = global_numbufs;
 
 	// Build up a dpb
-	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::dpbList, MAX_DPB_SIZE);
 
 	if (*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET)) {
 		dpb.insertString(isc_dpb_lc_ctype, setValues.ISQL_charset, fb_strlen(setValues.ISQL_charset));

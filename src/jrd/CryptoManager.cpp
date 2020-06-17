@@ -961,7 +961,7 @@ namespace Jrd {
 
 				// Establish context
 				// Need real attachment in order to make classic mode happy
-				ClumpletWriter writer(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+				ClumpletWriter writer(ClumpletReader::dpbList, MAX_DPB_SIZE);
 				writer.insertString(isc_dpb_user_name, "SYSDBA");
 				writer.insertByte(isc_dpb_no_db_triggers, TRUE);
 
