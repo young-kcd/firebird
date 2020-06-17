@@ -189,8 +189,8 @@ void InternalConnection::attach(thread_db* tdbb)
 					SQL_DIALECT_V6 : SQL_DIALECT_V5;
 
 	memset(m_features, false, sizeof(m_features));
-	static const info_provider_features features[] = ENGINE_FEATURES;
-	for (int i = 0; i < sizeof(features); i++)
+	static const info_features features[] = ENGINE_FEATURES;
+	for (int i = 0; i < FB_NELEM(features); i++)
 		setFeature(features[i]);
 }
 
