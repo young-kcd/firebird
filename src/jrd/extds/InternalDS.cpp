@@ -188,7 +188,10 @@ void InternalConnection::attach(thread_db* tdbb)
 	m_sqlDialect = (attachment->att_database->dbb_flags & DBB_DB_SQL_dialect_3) ?
 					SQL_DIALECT_V6 : SQL_DIALECT_V5;
 
-	m_features = conFtrFB4;
+	memset(m_features, false, sizeof(m_features));
+	static const info_provider_features features[] = ENGINE_FEATURES;
+	for (int i = 0; i < sizeof(features); i++)
+		setFeature(features[i]);
 }
 
 void InternalConnection::doDetach(thread_db* tdbb)
@@ -285,10 +288,10 @@ bool InternalConnection::isSameDatabase(const PathName& dbName, ClumpletReader& 
 	if (m_isCurrent)
 	{
 		const Attachment* att = m_attachment->getHandle();
-		const MetaName& attUser = att->att_user->getUserName();
-		const MetaName& attRole = att->att_user->getSqlRole();
+		const MetaString& attUser = att->att_user->getUserName();
+		const MetaString& attRole = att->att_user->getSqlRole();
 
-		MetaName str;
+		MetaString str;
 
 		if (dpb.find(isc_dpb_user_name))
 		{
@@ -386,7 +389,6 @@ void InternalTransaction::doRollback(FbStatusVector* status, thread_db* tdbb, bo
 	if (m_connection.isBroken())
 	{
 		m_transaction = NULL;
-		m_jrdTran = NULL;
 		return;
 	}
 
@@ -470,7 +472,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 			else if (statement && (routine = statement->getRoutine()) &&
 				routine->getName().identifier.hasData())
 			{
-				const MetaName& userName = routine->invoker ? routine->invoker->getUserName() : "";
+				const MetaString& userName = routine->invoker ? routine->invoker->getUserName() : "";
 				if (routine->getName().package.isEmpty())
 				{
 					tran->getHandle()->tra_caller_name = CallerName(routine->getObjectType(),

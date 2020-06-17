@@ -48,7 +48,7 @@ using namespace Jrd;
 namespace Jrd {
 
 
-static RegisterNode<AggNode> regAggNode(blr_agg_function);
+static RegisterNode<AggNode> regAggNode({blr_agg_function});
 
 AggNode::Factory* AggNode::factories = NULL;
 
@@ -351,7 +351,7 @@ AggNode* AggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	impureOffset = CMP_impure(csb, sizeof(impure_value_ex));
+	impureOffset = csb->allocImpure<impure_value_ex>();
 
 	return this;
 }
@@ -653,7 +653,7 @@ AggNode* AvgAggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 		nodFlags |= FLAG_DOUBLE;
 
 	// We need a second descriptor in the impure area for AVG.
-	tempImpure = CMP_impure(csb, sizeof(impure_value_ex));
+	tempImpure = csb->allocImpure<impure_value_ex>();
 
 	return this;
 }
@@ -898,7 +898,7 @@ AggNode* ListAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 //--------------------
 
 
-static RegisterNode<CountAggNode> regCountAggNodeLegacy(blr_agg_count);
+static RegisterNode<CountAggNode> regCountAggNodeLegacy({blr_agg_count});
 
 static AggNode::Register<CountAggNode> countAggInfo("COUNT", blr_agg_count2, blr_agg_count_distinct);
 
@@ -1416,7 +1416,7 @@ AggNode* StdDevAggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	AggNode::pass2(tdbb, csb);
 
-	impure2Offset = CMP_impure(csb, sizeof(StdDevImpure));
+	impure2Offset = csb->allocImpure<StdDevImpure>();
 
 	return this;
 }
@@ -1625,7 +1625,7 @@ AggNode* CorrAggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	AggNode::pass2(tdbb, csb);
 
-	impure2Offset = CMP_impure(csb, sizeof(CorrImpure));
+	impure2Offset = csb->allocImpure<CorrImpure>();
 
 	return this;
 }
@@ -1901,7 +1901,7 @@ AggNode* RegrAggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	AggNode::pass2(tdbb, csb);
 
-	impure2Offset = CMP_impure(csb, sizeof(RegrImpure));
+	impure2Offset = csb->allocImpure<RegrImpure>();
 
 	return this;
 }

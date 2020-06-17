@@ -497,7 +497,7 @@ void setParamsFromList(DataTypeUtilBase* dataTypeUtil, const SysFunction* functi
 	int argsCount, dsc** args)
 {
 	dsc desc;
-	dataTypeUtil->makeFromList(&desc, function->name.c_str(), argsCount, const_cast<const dsc**>(args));
+	dataTypeUtil->makeFromList(&desc, function->name, argsCount, const_cast<const dsc**>(args));
 
 	for (int i = 0; i < argsCount; ++i)
 	{
@@ -885,7 +885,7 @@ void makeFromListResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* funct
 	int argsCount, const dsc** args)
 {
 	result->clear();
-	dataTypeUtil->makeFromList(result, function->name.c_str(), argsCount, args);
+	dataTypeUtil->makeFromList(result, function->name, argsCount, args);
 }
 
 
@@ -6247,9 +6247,9 @@ const SysFunction SysFunction::functions[] =
 
 const SysFunction* SysFunction::lookup(const MetaName& name)
 {
-	for (const SysFunction* f = functions; f->name.length() > 0; ++f)
+	for (const SysFunction* f = functions; f->name[0]; ++f)
 	{
-		if (f->name == name)
+		if (name == f->name)
 			return f;
 	}
 
@@ -6261,6 +6261,6 @@ void SysFunction::checkArgsMismatch(int count) const
 {
 	if (count < minArgCount || (maxArgCount != -1 && count > maxArgCount))
 	{
-		status_exception::raise(Arg::Gds(isc_funmismat) << Arg::Str(name.c_str()));
+		status_exception::raise(Arg::Gds(isc_funmismat) << Arg::Str(name));
 	}
 }

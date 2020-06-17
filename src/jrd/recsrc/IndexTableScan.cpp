@@ -57,7 +57,7 @@ IndexTableScan::IndexTableScan(CompilerScratch* csb, const string& alias,
 	m_offset = size;
 	size += sizeof(index_desc);
 
-	m_impure = CMP_impure(csb, static_cast<ULONG>(size));
+	m_impure = csb->allocImpure(FB_ALIGNMENT, static_cast<ULONG>(size));
 }
 
 void IndexTableScan::open(thread_db* tdbb) const

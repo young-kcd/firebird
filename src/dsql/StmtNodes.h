@@ -23,7 +23,7 @@
 #ifndef DSQL_STMT_NODES_H
 #define DSQL_STMT_NODES_H
 
-#include "../common/classes/MetaName.h"
+#include "../jrd/MetaName.h"
 #include "firebird/impl/blr.h"
 #include "../jrd/Function.h"
 #include "../jrd/extds/ExtDS.h"
@@ -49,7 +49,7 @@ typedef Firebird::Pair<
 class ExceptionItem : public Firebird::PermanentStorage, public Printable
 {
 public:
-	enum Type
+	enum Type : UCHAR
 	{
 		SQL_CODE = 1,
 		SQL_STATE = 2,
@@ -101,7 +101,7 @@ public:
 	// while there are system exceptions with 32 chars. The parser always expects metanames, but
 	// I'm following the legacy code and making this a string.
 	Firebird::string name;
-	Firebird::MetaName secName;
+	MetaName secName;
 };
 
 typedef Firebird::ObjectsArray<ExceptionItem> ExceptionArray;
@@ -188,7 +188,7 @@ public:
 class CommitRollbackNode : public TransactionNode
 {
 public:
-	enum Command
+	enum Command : UCHAR
 	{
 		CMD_COMMIT,
 		CMD_ROLLBACK
@@ -330,23 +330,23 @@ public:
 public:
 	UCHAR blrOp;
 	USHORT labelNumber;
-	Firebird::MetaName* dsqlLabelName;
+	MetaName* dsqlLabelName;
 };
 
 
 class CursorStmtNode : public TypedNode<StmtNode, StmtNode::TYPE_CURSOR_STMT>
 {
 public:
-	explicit CursorStmtNode(MemoryPool& pool, UCHAR aCursorOp, const Firebird::MetaName& aDsqlName = "",
+	explicit CursorStmtNode(MemoryPool& pool, UCHAR aCursorOp, const MetaName& aDsqlName = "",
 				ValueListNode* aDsqlIntoStmt = NULL)
 		: TypedNode<StmtNode, StmtNode::TYPE_CURSOR_STMT>(pool),
 		  dsqlName(pool, aDsqlName),
 		  dsqlIntoStmt(aDsqlIntoStmt),
-		  cursorOp(aCursorOp),
-		  cursorNumber(0),
-		  scrollOp(0),
 		  scrollExpr(NULL),
-		  intoStmt(NULL)
+		  intoStmt(NULL),
+		  cursorNumber(0),
+		  cursorOp(aCursorOp),
+		  scrollOp(0)
 	{
 	}
 
@@ -361,13 +361,13 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	Firebird::MetaName dsqlName;
+	MetaName dsqlName;
 	ValueListNode* dsqlIntoStmt;
-	UCHAR cursorOp;
-	USHORT cursorNumber;
-	UCHAR scrollOp;
 	NestConst<ValueExprNode> scrollExpr;
 	NestConst<StmtNode> intoStmt;
+	USHORT cursorNumber;
+	UCHAR cursorOp;
+	UCHAR scrollOp;
 };
 
 
@@ -379,17 +379,17 @@ public:
 	static const USHORT CUR_TYPE_FOR = 2;
 	static const USHORT CUR_TYPE_ALL = (CUR_TYPE_EXPLICIT | CUR_TYPE_FOR);
 
-	explicit DeclareCursorNode(MemoryPool& pool, const Firebird::MetaName& aDsqlName = NULL,
+	explicit DeclareCursorNode(MemoryPool& pool, const MetaName& aDsqlName = NULL,
 				USHORT aDsqlCursorType = CUR_TYPE_NONE)
 		: TypedNode<StmtNode, StmtNode::TYPE_DECLARE_CURSOR>(pool),
-		  dsqlCursorType(aDsqlCursorType),
-		  dsqlScroll(false),
 		  dsqlName(aDsqlName),
 		  dsqlSelect(NULL),
 		  rse(NULL),
 		  refs(NULL),
+		  cursor(NULL),
+		  dsqlCursorType(aDsqlCursorType),
 		  cursorNumber(0),
-		  cursor(NULL)
+		  dsqlScroll(false)
 	{
 	}
 
@@ -404,24 +404,23 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	USHORT dsqlCursorType;
-	bool dsqlScroll;
-	Firebird::MetaName dsqlName;
+	MetaName dsqlName;
 	NestConst<SelectNode> dsqlSelect;
 	NestConst<RseNode> rse;
 	NestConst<ValueListNode> refs;
-	USHORT cursorNumber;
 	NestConst<Cursor> cursor;
+	USHORT dsqlCursorType;
+	USHORT cursorNumber;
+	bool dsqlScroll;
 };
 
 
 class DeclareSubFuncNode : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_SUBFUNC>
 {
 public:
-	explicit DeclareSubFuncNode(MemoryPool& pool, const Firebird::MetaName& aName)
+	explicit DeclareSubFuncNode(MemoryPool& pool, const MetaName& aName)
 		: TypedNode<StmtNode, StmtNode::TYPE_DECLARE_SUBFUNC>(pool),
 		  name(pool, aName),
-		  dsqlDeterministic(false),
 		  dsqlParameters(pool),
 		  dsqlReturns(pool),
 		  dsqlSignature(pool, aName),
@@ -429,9 +428,10 @@ public:
 		  blockScratch(NULL),
 		  dsqlFunction(NULL),
 		  blrStart(NULL),
-		  blrLength(0),
 		  subCsb(NULL),
-		  routine(NULL)
+		  routine(NULL),
+		  blrLength(0),
+		  dsqlDeterministic(false)
 	{
 	}
 
@@ -454,8 +454,7 @@ private:
 		Firebird::Array<NestConst<ParameterClause> >& paramArray);
 
 public:
-	Firebird::MetaName name;
-	bool dsqlDeterministic;
+	MetaName name;
 	Firebird::Array<NestConst<ParameterClause> > dsqlParameters;
 	Firebird::Array<NestConst<ParameterClause> > dsqlReturns;
 	Signature dsqlSignature;
@@ -463,16 +462,17 @@ public:
 	DsqlCompilerScratch* blockScratch;
 	dsql_udf* dsqlFunction;
 	const UCHAR* blrStart;
-	ULONG blrLength;
 	CompilerScratch* subCsb;
 	Function* routine;
+	ULONG blrLength;
+	bool dsqlDeterministic;
 };
 
 
 class DeclareSubProcNode : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_SUBPROC>
 {
 public:
-	explicit DeclareSubProcNode(MemoryPool& pool, const Firebird::MetaName& aName)
+	explicit DeclareSubProcNode(MemoryPool& pool, const MetaName& aName)
 		: TypedNode<StmtNode, StmtNode::TYPE_DECLARE_SUBPROC>(pool),
 		  name(pool, aName),
 		  dsqlParameters(pool),
@@ -482,9 +482,9 @@ public:
 		  blockScratch(NULL),
 		  dsqlProcedure(NULL),
 		  blrStart(NULL),
-		  blrLength(0),
 		  subCsb(NULL),
-		  routine(NULL)
+		  routine(NULL),
+		  blrLength(0)
 	{
 	}
 
@@ -507,7 +507,7 @@ private:
 		Firebird::Array<NestConst<ParameterClause> >& paramArray);
 
 public:
-	Firebird::MetaName name;
+	MetaName name;
 	Firebird::Array<NestConst<ParameterClause> > dsqlParameters;
 	Firebird::Array<NestConst<ParameterClause> > dsqlReturns;
 	Signature dsqlSignature;
@@ -515,9 +515,9 @@ public:
 	DsqlCompilerScratch* blockScratch;
 	dsql_prc* dsqlProcedure;
 	const UCHAR* blrStart;
-	ULONG blrLength;
 	CompilerScratch* subCsb;
 	jrd_prc* routine;
+	ULONG blrLength;
 };
 
 
@@ -545,8 +545,8 @@ public:
 
 public:
 	NestConst<ParameterClause> dsqlDef;
-	USHORT varId;
 	dsc varDesc;
+	USHORT varId;
 };
 
 
@@ -591,14 +591,14 @@ public:
 	NestConst<PlanNode> dsqlPlan;
 	NestConst<ValueListNode> dsqlOrder;
 	NestConst<RowsClause> dsqlRows;
-	Firebird::MetaName dsqlCursorName;
+	MetaName dsqlCursorName;
 	NestConst<ReturningClause> dsqlReturning;
 	NestConst<RseNode> dsqlRse;
 	dsql_ctx* dsqlContext;
 	NestConst<StmtNode> statement;
 	NestConst<StmtNode> subStatement;
-	StreamType stream;
 	NestConst<ForNode> forNode;			// parent implicit cursor, if present
+	StreamType stream;
 	unsigned marks;						// see StmtNode::IUD_MARK_xxx
 };
 
@@ -633,7 +633,7 @@ class ExecProcedureNode : public TypedNode<StmtNode, StmtNode::TYPE_EXEC_PROCEDU
 {
 public:
 	explicit ExecProcedureNode(MemoryPool& pool,
-				const Firebird::QualifiedName& aDsqlName = Firebird::QualifiedName(),
+				const QualifiedName& aDsqlName = QualifiedName(),
 				ValueListNode* aInputs = NULL, ValueListNode* aOutputs = NULL)
 		: TypedNode<StmtNode, StmtNode::TYPE_EXEC_PROCEDURE>(pool),
 		  dsqlName(pool, aDsqlName),
@@ -663,7 +663,7 @@ private:
 	void executeProcedure(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	Firebird::QualifiedName dsqlName;
+	QualifiedName dsqlName;
 	dsql_prc* dsqlProcedure;
 	NestConst<ValueListNode> inputSources;
 	NestConst<ValueListNode> inputTargets;
@@ -681,7 +681,6 @@ public:
 	explicit ExecStatementNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_EXEC_STATEMENT>(pool),
 		  dsqlLabelName(NULL),
-		  dsqlLabelNumber(0),
 		  sql(NULL),
 		  dataSource(NULL),
 		  userName(NULL),
@@ -690,10 +689,11 @@ public:
 		  innerStmt(NULL),
 		  inputs(NULL),
 		  outputs(NULL),
-		  useCallerPrivs(false),
-		  traScope(EDS::traNotSet),	// not defined
 		  inputNames(NULL),
-		  excessInputs(NULL)
+		  excessInputs(NULL),
+		  dsqlLabelNumber(0),
+		  useCallerPrivs(false),
+		  traScope(EDS::traNotSet)	// not defined
 	{
 	}
 
@@ -714,8 +714,7 @@ private:
 		Firebird::string& str, bool useAttCS = false) const;
 
 public:
-	Firebird::MetaName* dsqlLabelName;
-	USHORT dsqlLabelNumber;
+	MetaName* dsqlLabelName;
 	NestConst<ValueExprNode> sql;
 	NestConst<ValueExprNode> dataSource;
 	NestConst<ValueExprNode> userName;
@@ -724,10 +723,11 @@ public:
 	NestConst<StmtNode> innerStmt;
 	NestConst<ValueListNode> inputs;
 	NestConst<ValueListNode> outputs;
-	bool useCallerPrivs;
-	EDS::TraScope traScope;
 	EDS::ParamNames* inputNames;
 	EDS::ParamNumbers* excessInputs;
+	USHORT dsqlLabelNumber;
+	bool useCallerPrivs;
+	EDS::TraScope traScope;
 };
 
 
@@ -770,8 +770,7 @@ class InAutonomousTransactionNode : public TypedNode<StmtNode, StmtNode::TYPE_IN
 public:
 	explicit InAutonomousTransactionNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_IN_AUTO_TRANS>(pool),
-		  action(NULL),
-		  impureOffset(0)
+		  action(NULL)
 	{
 	}
 
@@ -787,7 +786,6 @@ public:
 
 public:
 	NestConst<StmtNode> action;
-	SLONG impureOffset;
 };
 
 
@@ -850,7 +848,7 @@ public:
 class ExceptionNode : public TypedNode<StmtNode, StmtNode::TYPE_EXCEPTION>
 {
 public:
-	ExceptionNode(MemoryPool& pool, const Firebird::MetaName& name,
+	ExceptionNode(MemoryPool& pool, const MetaName& name,
 				ValueExprNode* aMessageExpr = NULL, ValueListNode* aParameters = NULL)
 		: TypedNode<StmtNode, StmtNode::TYPE_EXCEPTION>(pool),
 		  messageExpr(aMessageExpr),
@@ -912,13 +910,13 @@ public:
 		  dsqlInto(NULL),
 		  dsqlCursor(NULL),
 		  dsqlLabelName(NULL),
-		  dsqlLabelNumber(0),
-		  dsqlForceSingular(false),
 		  stall(NULL),
 		  rse(NULL),
 		  statement(NULL),
 		  cursor(NULL),
 		  parBlrBeginCnt(0),
+		  dsqlLabelNumber(0),
+		  dsqlForceSingular(false),
 		  forUpdate(false),
 		  isMerge(false),
 		  withLock(false)
@@ -957,14 +955,14 @@ public:
 	NestConst<SelectNode> dsqlSelect;
 	NestConst<ValueListNode> dsqlInto;
 	DeclareCursorNode* dsqlCursor;
-	Firebird::MetaName* dsqlLabelName;
-	USHORT dsqlLabelNumber;
-	bool dsqlForceSingular;
+	MetaName* dsqlLabelName;
 	NestConst<StmtNode> stall;
 	NestConst<RseNode> rse;
 	NestConst<StmtNode> statement;
 	NestConst<Cursor> cursor;
 	int parBlrBeginCnt;
+	USHORT dsqlLabelNumber;
+	bool dsqlForceSingular;
 	bool forUpdate;				// part of UPDATE\DELETE\MERGE statement
 	bool isMerge;				// part of MERGE statement
 	bool withLock;				// part of SELECT ... WITH LOCK	statement
@@ -1048,9 +1046,9 @@ public:
 	explicit LoopNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_LOOP>(pool),
 		  dsqlLabelName(NULL),
-		  dsqlLabelNumber(0),
 		  dsqlExpr(NULL),
-		  statement(NULL)
+		  statement(NULL),
+		  dsqlLabelNumber(0)
 	{
 	}
 
@@ -1065,10 +1063,10 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	Firebird::MetaName* dsqlLabelName;
-	USHORT dsqlLabelNumber;
+	MetaName* dsqlLabelName;
 	NestConst<BoolExprNode> dsqlExpr;
 	NestConst<StmtNode> statement;
+	USHORT dsqlLabelNumber;
 };
 
 
@@ -1132,9 +1130,9 @@ class MessageNode : public TypedNode<StmtNode, StmtNode::TYPE_MESSAGE>
 public:
 	explicit MessageNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_MESSAGE>(pool),
-		  messageNumber(0),
 		  format(NULL),
-		  impureFlags(0)
+		  impureFlags(0),
+		  messageNumber(0)
 	{
 	}
 
@@ -1155,9 +1153,9 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	USHORT messageNumber;
 	NestConst<Format> format;
 	ULONG impureFlags;
+	USHORT messageNumber;
 };
 
 
@@ -1173,7 +1171,6 @@ public:
 		  dsqlRows(NULL),
 		  dsqlCursorName(pool),
 		  dsqlReturning(NULL),
-		  dsqlRseFlags(0),
 		  dsqlRse(NULL),
 		  dsqlContext(NULL),
 		  statement(NULL),
@@ -1183,7 +1180,8 @@ public:
 		  mapView(NULL),
 		  orgStream(0),
 		  newStream(0),
-		  marks(0)
+		  marks(0),
+		  dsqlRseFlags(0)
 	{
 	}
 
@@ -1208,9 +1206,8 @@ public:
 	NestConst<PlanNode> dsqlPlan;
 	NestConst<ValueListNode> dsqlOrder;
 	NestConst<RowsClause> dsqlRows;
-	Firebird::MetaName dsqlCursorName;
+	MetaName dsqlCursorName;
 	NestConst<ReturningClause> dsqlReturning;
-	USHORT dsqlRseFlags;
 	NestConst<RecordSourceNode> dsqlRse;
 	dsql_ctx* dsqlContext;
 	NestConst<StmtNode> statement;
@@ -1218,10 +1215,11 @@ public:
 	NestConst<StmtNode> subMod;
 	Firebird::Array<ValidateInfo> validations;
 	NestConst<StmtNode> mapView;
+	NestConst<ForNode> forNode;			// parent implicit cursor, if present
 	StreamType orgStream;
 	StreamType newStream;
-	NestConst<ForNode> forNode;			// parent implicit cursor, if present
 	unsigned marks;						// see StmtNode::IUD_MARK_xxx
+	USHORT dsqlRseFlags;
 };
 
 
@@ -1331,7 +1329,7 @@ public:
 class UserSavepointNode : public TypedNode<StmtNode, StmtNode::TYPE_USER_SAVEPOINT>
 {
 public:
-	enum Command
+	enum Command : SSHORT
 	{
 		CMD_NOTHING = -1,
 		CMD_SET = blr_savepoint_set,
@@ -1360,7 +1358,7 @@ public:
 
 public:
 	Command command;
-	Firebird::MetaName name;
+	MetaName name;
 };
 
 
@@ -1370,10 +1368,10 @@ public:
 	explicit SelectNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_SELECT>(pool),
 		  dsqlExpr(NULL),
-		  dsqlForUpdate(false),
-		  dsqlWithLock(false),
 		  dsqlRse(NULL),
-		  statements(pool)
+		  statements(pool),
+		  dsqlForUpdate(false),
+		  dsqlWithLock(false)
 	{
 	}
 
@@ -1389,10 +1387,10 @@ public:
 
 public:
 	NestConst<SelectExprNode> dsqlExpr;
-	bool dsqlForUpdate;
-	bool dsqlWithLock;
 	NestConst<RseNode> dsqlRse;
 	Firebird::Array<NestConst<StmtNode> > statements;
+	bool dsqlForUpdate;
+	bool dsqlWithLock;
 };
 
 
@@ -1400,7 +1398,7 @@ public:
 class SetGeneratorNode : public TypedNode<StmtNode, StmtNode::TYPE_SET_GENERATOR>
 {
 public:
-	SetGeneratorNode(MemoryPool& pool, const Firebird::MetaName& name, ValueExprNode* aValue = NULL)
+	SetGeneratorNode(MemoryPool& pool, const MetaName& name, ValueExprNode* aValue = NULL)
 		: TypedNode<StmtNode, StmtNode::TYPE_SET_GENERATOR>(pool),
 		  generator(pool, name), value(aValue)
 	{
@@ -1582,7 +1580,7 @@ class SetTransactionNode : public TransactionNode
 public:
 	struct RestrictionOption : Firebird::PermanentStorage
 	{
-		RestrictionOption(MemoryPool& p, Firebird::ObjectsArray<Firebird::MetaName>* aTables,
+		RestrictionOption(MemoryPool& p, Firebird::ObjectsArray<MetaName>* aTables,
 					unsigned aLockMode)
 			: PermanentStorage(p),
 			  tables(aTables),
@@ -1590,7 +1588,7 @@ public:
 		{
 		}
 
-		Firebird::ObjectsArray<Firebird::MetaName>* tables;
+		Firebird::ObjectsArray<MetaName>* tables;
 		unsigned lockMode;
 	};
 
@@ -1643,17 +1641,17 @@ private:
 		USHORT lockLevel);
 
 public:
+	Firebird::Array<RestrictionOption*> reserveList;
+	Firebird::UCharBuffer tpb;
+	Nullable<CommitNumber> atSnapshotNumber;
+	Nullable<unsigned> isoLevel;
+	Nullable<USHORT> lockTimeout;
 	Nullable<bool> readOnly;
 	Nullable<bool> wait;
-	Nullable<unsigned> isoLevel;
 	Nullable<bool> noAutoUndo;
 	Nullable<bool> ignoreLimbo;
 	Nullable<bool> restartRequests;
 	Nullable<bool> autoCommit;
-	Nullable<USHORT> lockTimeout;
-	Firebird::Array<RestrictionOption*> reserveList;
-	Firebird::UCharBuffer tpb;
-	Nullable<CommitNumber> atSnapshotNumber;
 };
 
 
@@ -1687,7 +1685,7 @@ public:
 	{
 	}
 
-	SetRoleNode(MemoryPool& pool, Firebird::MetaName* name)
+	SetRoleNode(MemoryPool& pool, MetaName* name)
 		: SessionManagementNode(pool),
 		  trusted(false),
 		  roleName(pool, *name)
@@ -1709,14 +1707,18 @@ public:
 
 public:
 	bool trusted;
-	Firebird::MetaName roleName;
+	MetaName roleName;
 };
 
 
 class SetSessionNode : public SessionManagementNode
 {
 public:
-	enum Type { TYPE_IDLE_TIMEOUT, TYPE_STMT_TIMEOUT };
+	enum Type : UCHAR
+	{
+		TYPE_IDLE_TIMEOUT,
+		TYPE_STMT_TIMEOUT
+	};
 
 	SetSessionNode(MemoryPool& pool, Type aType, ULONG aVal, UCHAR blr_timepart);
 
@@ -1733,7 +1735,7 @@ private:
 class SetDecFloatRoundNode : public SessionManagementNode
 {
 public:
-	SetDecFloatRoundNode(MemoryPool& pool, Firebird::MetaName* name);
+	SetDecFloatRoundNode(MemoryPool& pool, MetaName* name);
 
 public:
 	virtual Firebird::string internalPrint(NodePrinter& printer) const
@@ -1773,7 +1775,7 @@ public:
 
 	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** traHandle) const;
 
-	void trap(Firebird::MetaName* name);
+	void trap(MetaName* name);
 
 public:
 	USHORT traps;
@@ -1805,8 +1807,8 @@ public:
 	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** traHandle) const;
 
 public:
-	dsql_fld *from;
-	dsql_fld *to;
+	dsql_fld* from;
+	dsql_fld* to;
 };
 
 

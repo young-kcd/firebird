@@ -855,6 +855,14 @@ void INF_database_info(thread_db* tdbb,
 			length = INF_convert(att->getActualIdleTimeout(), buffer);
 			break;
 
+		case fb_info_provider_features:
+		    {
+                static const unsigned char features[] = ENGINE_FEATURES;
+                length = sizeof(features);
+                memcpy(buffer, features, length);
+                break;
+		    }
+
 		default:
 			buffer[0] = item;
 			item = isc_info_error;
@@ -1028,7 +1036,7 @@ ULONG INF_request_info(const jrd_req* request, const ULONG item_length, const UC
 			}
 			else
 			{
-				const MessageNode* node = StmtNode::as<MessageNode>(request->req_message);
+				const MessageNode* node = nodeAs<MessageNode>(request->req_message);
 
 				if (node)
 				{

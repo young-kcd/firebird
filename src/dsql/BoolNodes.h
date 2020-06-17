@@ -70,7 +70,7 @@ public:
 class ComparativeBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_COMPARATIVE_BOOL>
 {
 public:
-	enum DsqlFlag
+	enum DsqlFlag : UCHAR
 	{
 		DFLAG_NONE,
 		DFLAG_ANSI_ALL,
@@ -233,7 +233,6 @@ public:
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 	virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
-	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Boolean1(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Boolean2(thread_db* tdbb, CompilerScratch* csb);
 	virtual TriState execute(thread_db* tdbb, jrd_req* request) const;

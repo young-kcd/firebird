@@ -35,7 +35,7 @@ using namespace Replication;
 Replicator::Replicator(MemoryPool& pool,
 					   Manager* manager,
 					   const Guid& guid,
-					   const MetaName& user,
+					   const MetaString& user,
 					   bool cleanupTransactions)
 	: PermanentStorage(pool),
 	  m_manager(manager),
@@ -194,7 +194,7 @@ bool Replicator::commitTransaction(Transaction* transaction)
 
 		auto& txnData = transaction->getData();
 
-		for (const auto generator : m_generators)
+		for (const auto& generator : m_generators)
 		{
 			fb_assert(generator.name.hasData());
 

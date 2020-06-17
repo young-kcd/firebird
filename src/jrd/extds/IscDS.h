@@ -186,7 +186,7 @@ public:
 	virtual ISC_STATUS ISC_EXPORT isc_database_info(Jrd::FbStatusVector*,
 										isc_db_handle*,
 										short,
-										const char*,
+										const unsigned char*,
 										short,
 										char*);
 
@@ -497,7 +497,8 @@ public:
 	explicit FBProvider(const char* prvName) :
 		IscProvider(prvName)
 	{
-		m_flags = (prvMultyStmts | prvMultyTrans | prvTrustedAuth);
+	    // Assume that winsspi auth plugin is enabled in configuration
+		m_flags = prvTrustedAuth;
 	}
 
 protected:
@@ -590,7 +591,7 @@ protected:
 	virtual void doClose(Jrd::thread_db* tdbb, bool drop);
 
 	virtual void doSetInParams(Jrd::thread_db* tdbb, unsigned int count,
-		const Firebird::MetaName* const* names, const NestConst<Jrd::ValueExprNode>* params);
+		const Jrd::MetaName* const* names, const NestConst<Jrd::ValueExprNode>* params);
 
 	IscTransaction* getIscTransaction() { return (IscTransaction*) m_transaction; }
 

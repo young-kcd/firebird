@@ -24,8 +24,8 @@
 #include "../common/classes/array.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/BlrReader.h"
-#include "../common/classes/MetaName.h"
-#include "../common/classes/QualifiedName.h"
+#include "../jrd/MetaName.h"
+#include "../jrd/QualifiedName.h"
 #include "../common/classes/NestConst.h"
 #include "../common/MsgMetadata.h"
 #include "../common/classes/Nullable.h"
@@ -97,11 +97,11 @@ namespace Jrd
 
 		void setId(USHORT value) { id = value; }
 
-		const Firebird::QualifiedName& getName() const { return name; }
-		void setName(const Firebird::QualifiedName& value) { name = value; }
+		const QualifiedName& getName() const { return name; }
+		void setName(const QualifiedName& value) { name = value; }
 
-		const Firebird::MetaName& getSecurityName() const { return securityName; }
-		void setSecurityName(const Firebird::MetaName& value) { securityName = value; }
+		const MetaName& getSecurityName() const { return securityName; }
+		void setSecurityName(const MetaName& value) { securityName = value; }
 
 		/*const*/ JrdStatement* getStatement() const { return statement; }
 		void setStatement(JrdStatement* value) { statement = value; }
@@ -160,8 +160,8 @@ namespace Jrd
 
 	private:
 		USHORT id;							// routine ID
-		Firebird::QualifiedName name;		// routine name
-		Firebird::MetaName securityName;	// security class name
+		QualifiedName name;					// routine name
+		MetaName securityName;				// security class name
 		JrdStatement* statement;			// compiled routine statement
 		bool subRoutine;					// Is this a subroutine?
 		bool implemented;					// Is the packaged routine missing the body/entrypoint?
@@ -182,7 +182,7 @@ namespace Jrd
 		USHORT alterCount;		// No. of times the routine was altered
 		Lock* existenceLock;	// existence lock, if any
 
-		Firebird::MetaName owner;
+		MetaName owner;
 		Jrd::UserId* invoker;		// Invoker ID
 	};
 }
