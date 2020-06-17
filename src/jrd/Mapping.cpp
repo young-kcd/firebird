@@ -189,7 +189,7 @@ bool Mapping::DbHandle::attach(const char* aliasDb, ICryptKeyCallback* cryptCb)
 		check("IProvider::setDbCryptCallback", &st);
 	}
 
-	ClumpletWriter embeddedSysdba(ClumpletWriter::Tagged, 1024, isc_dpb_version1);
+	ClumpletWriter embeddedSysdba(ClumpletWriter::dpbList, MAX_DPB_SIZE);
 	embeddedSysdba.insertString(isc_dpb_user_name, DBA_USER_NAME, fb_strlen(DBA_USER_NAME));
 	embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
 	embeddedSysdba.insertString(isc_dpb_config, ParsedList::getNonLoopbackProviders(aliasDb));
@@ -1630,7 +1630,7 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 	{
 		const char* dbName = tdbb->getDatabase()->dbb_config->getSecurityDatabase();
 
-		ClumpletWriter embeddedSysdba(ClumpletWriter::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+		ClumpletWriter embeddedSysdba(ClumpletWriter::dpbList, MAX_DPB_SIZE);
 		embeddedSysdba.insertString(isc_dpb_user_name, DBA_USER_NAME, fb_strlen(DBA_USER_NAME));
 		embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
 		embeddedSysdba.insertString(isc_dpb_config, ParsedList::getNonLoopbackProviders(dbName));

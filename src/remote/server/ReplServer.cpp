@@ -364,7 +364,7 @@ namespace
 			if (m_connected)
 				return m_sequence;
 
-			ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+			ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
 
 			dpb.insertString(isc_dpb_user_name, DBA_USER_NAME);
 			dpb.insertString(isc_dpb_config, ParsedList::getNonLoopbackProviders(m_config->dbName));

@@ -558,7 +558,7 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 
 	BURP_verbose(360);
 
-	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::dpbList, MAX_DPB_SIZE);
 	add_access_dpb(tdgbl, dpb);
 
 	if (tdgbl->flag_on_line)
@@ -934,7 +934,7 @@ void create_database(BurpGlobals* tdgbl, Firebird::IProvider* provider, const TE
 	if (tdgbl->gbl_sw_page_buffers)
 		page_buffers = tdgbl->gbl_sw_page_buffers;
 
-	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::dpbList, MAX_DPB_SIZE);
 	tdgbl->uSvc->fillDpb(dpb);
 
 	const UCHAR* authBlock;

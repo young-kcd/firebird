@@ -71,7 +71,7 @@ void check(const char* s, IStatus* st)
 
 bool openDb(const char* securityDb, RefPtr<IAttachment>& att, RefPtr<ITransaction>& tra)
 {
-	ClumpletWriter embeddedAttach(ClumpletWriter::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+	ClumpletWriter embeddedAttach(ClumpletWriter::dpbList, MAX_DPB_SIZE);
 	embeddedAttach.insertString(isc_dpb_user_name, DBA_USER_NAME, fb_strlen(DBA_USER_NAME));
 	embeddedAttach.insertByte(isc_dpb_sec_attach, TRUE);
 	embeddedAttach.insertString(isc_dpb_config, ParsedList::getNonLoopbackProviders(securityDb));
