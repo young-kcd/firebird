@@ -816,7 +816,7 @@ Data source : @4', NULL, NULL)
 ('ee_blr_mismatch_null', NULL, 'met.epp', NULL, 0, 706, NULL, 'External BLR message mismatch: invalid null descriptor at field @1', NULL, NULL)
 ('ee_blr_mismatch_length', NULL, 'met.epp', NULL, 0, 707, NULL, 'External BLR message mismatch: length = @1, expected @2', NULL, NULL)
 ('ss_out_of_bounds', NULL, 'sdl.cpp', NULL, 0, 708, NULL, 'Subscript @1 out of bounds [@2, @3]', NULL, NULL)
-('missing_data_structures', NULL, 'server.cpp', NULL, 0, 709, NULL, 'Install incomplete, please read the Compatibility chapter in the release notes for this version', NULL, NULL)
+('missing_data_structures', NULL, 'server.cpp', NULL, 0, 709, NULL, 'Install incomplete. To complete security database initialization please CREATE USER. For details read doc/README.security_database.txt.', NULL, NULL)
 ('protect_sys_tab', NULL, 'vio.cpp', NULL, 0, 710, NULL, '@1 operation is not allowed for system table @2', NULL, NULL)
 ('libtommath_generic', 'check', 'BigInteger.cpp', NULL, 0, 711, NULL, 'Libtommath error code @1 in function @2', NULL, NULL)
 ('wroblrver2', NULL, NULL, NULL, 0, 712, NULL, 'unsupported BLR version (expected between @1 and @2, encountered @3)', NULL, NULL);
