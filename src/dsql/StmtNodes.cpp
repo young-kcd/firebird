@@ -7241,7 +7241,12 @@ StoreNode* StoreNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		makeDefaults(tdbb, csb);
 
 	doPass1(tdbb, csb, statement.getAddress());
-	doPass1(tdbb, csb, statement2.getAddress());
+
+	{ // scope
+		AutoSetRestore<bool> autoReturningExpr(&csb->csb_returning_expr, true);
+		doPass1(tdbb, csb, statement2.getAddress());
+	}
+
 	doPass1(tdbb, csb, subStore.getAddress());
 	pass1Validations(tdbb, csb, validations);
 

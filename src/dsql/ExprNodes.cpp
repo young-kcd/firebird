@@ -6561,47 +6561,36 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	}
 	*/
 
-	// posting the required privilege access to the current relation and field
+	// Unless this is a validation expression, post the required privilege access
+	// to the current relation and field
 
-	// If this is in a "validate_subtree" then we must not
-	// post access checks to the table and the fields in the table.
-	// If any node of the parse tree is a nod_validate type node,
-	// the nodes in the subtree are involved in a validation
-	// clause only, the subtree is a validate_subtree in our notation.
-
-	const SLONG ssRelationId = tail->csb_view ?
-		tail->csb_view->rel_id : (csb->csb_view ? csb->csb_view->rel_id : 0);
-
-	if (tail->csb_flags & csb_modify)
+	if (!csb->csb_validate_expr)
 	{
-		if (!csb->csb_validate_expr)
+		SecurityClass::flags_t privilege = SCL_select;
+
+		if (!csb->csb_returning_expr)
 		{
-			SecurityClass::flags_t priv = csb->csb_returning_expr ?
-				SCL_select : SCL_update;
-			CMP_post_access(tdbb, csb, relation->rel_security_name, ssRelationId,
-				priv, SCL_object_table, relation->rel_name);
-			CMP_post_access(tdbb, csb, field->fld_security_name, ssRelationId,
-				priv, SCL_object_column, field->fld_name, relation->rel_name);
+			if (tail->csb_flags & csb_store)
+				privilege = SCL_insert;
+			else if (tail->csb_flags & csb_modify)
+				privilege = SCL_update;
+			else if (tail->csb_flags & csb_erase)
+				privilege = SCL_delete;
 		}
-	}
-	else if (tail->csb_flags & csb_erase)
-	{
+
+		const SLONG ssRelationId = tail->csb_view ?
+			tail->csb_view->rel_id : (csb->csb_view ? csb->csb_view->rel_id : 0);
+
 		CMP_post_access(tdbb, csb, relation->rel_security_name, ssRelationId,
-			SCL_delete, SCL_object_table, relation->rel_name);
-	}
-	else if (tail->csb_flags & csb_store)
-	{
-		CMP_post_access(tdbb, csb, relation->rel_security_name, ssRelationId,
-			SCL_insert, SCL_object_table, relation->rel_name);
-		CMP_post_access(tdbb, csb, field->fld_security_name, ssRelationId,
-			SCL_insert, SCL_object_column, field->fld_name, relation->rel_name);
-	}
-	else
-	{
-		CMP_post_access(tdbb, csb, relation->rel_security_name, ssRelationId,
-			SCL_select, SCL_object_table, relation->rel_name);
-		CMP_post_access(tdbb, csb, field->fld_security_name, ssRelationId,
-			SCL_select, SCL_object_column, field->fld_name, relation->rel_name);
+			privilege, SCL_object_table, relation->rel_name);
+
+		// Field-level privilege access is posted for every operation except DELETE
+
+		if (privilege != SCL_delete)
+		{
+			CMP_post_access(tdbb, csb, field->fld_security_name, ssRelationId,
+				privilege, SCL_object_column, field->fld_name, relation->rel_name);
+		}
 	}
 
 	ValueExprNode* sub;
