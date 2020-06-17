@@ -849,13 +849,13 @@ void INF_database_info(thread_db* tdbb,
 			break;
 
 		case fb_info_features:
-		    {
-                static const unsigned char features[] = ENGINE_FEATURES;
-                length = sizeof(features);
-                counts_buffer.assign(features, length);
-                buffer = counts_buffer.begin();
-                break;
-		    }
+			{
+				static const unsigned char features[] = ENGINE_FEATURES;
+				length = sizeof(features);
+				counts_buffer.assign(features, length);
+				buffer = counts_buffer.begin();
+				break;
+			}
 
 		default:
 			buffer[0] = item;
