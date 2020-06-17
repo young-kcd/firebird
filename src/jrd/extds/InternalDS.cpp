@@ -450,53 +450,51 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 		fb_assert(!m_allocated);
 	}
 
+	CallerName save_caller_name(tran->getHandle()->tra_caller_name);
+
+	if (m_callerPrivileges)
 	{
-		CallerName save_caller_name(tran->getHandle()->tra_caller_name);
+		jrd_req* request = tdbb->getRequest();
+		JrdStatement* statement = request ? request->getStatement() : NULL;
+		CallerName callerName;
+		const Routine* routine;
 
-		if (m_callerPrivileges)
+		if (statement && statement->parentStatement)
+			statement = statement->parentStatement;
+
+		if (statement && statement->triggerInvoker)
+			tran->getHandle()->tra_caller_name = CallerName(obj_trigger,
+															statement->triggerName,
+															statement->triggerInvoker->getUserName());
+		else if (statement && (routine = statement->getRoutine()) &&
+			routine->getName().identifier.hasData())
 		{
-			jrd_req* request = tdbb->getRequest();
-			JrdStatement* statement = request ? request->getStatement() : NULL;
-			CallerName callerName;
-			const Routine* routine;
-
-			if (statement && statement->parentStatement)
-				statement = statement->parentStatement;
-
-			if (statement && statement->triggerInvoker)
-				tran->getHandle()->tra_caller_name = CallerName(obj_trigger,
-																statement->triggerName,
-																statement->triggerInvoker->getUserName());
-			else if (statement && (routine = statement->getRoutine()) &&
-				routine->getName().identifier.hasData())
+			const MetaString& userName = routine->invoker ? routine->invoker->getUserName() : "";
+			if (routine->getName().package.isEmpty())
 			{
-				const MetaString& userName = routine->invoker ? routine->invoker->getUserName() : "";
-				if (routine->getName().package.isEmpty())
-				{
-					tran->getHandle()->tra_caller_name = CallerName(routine->getObjectType(),
-						routine->getName().identifier, userName);
-				}
-				else
-				{
-					tran->getHandle()->tra_caller_name = CallerName(obj_package_header,
-						routine->getName().package, userName);
-				}
+				tran->getHandle()->tra_caller_name = CallerName(routine->getObjectType(),
+					routine->getName().identifier, userName);
 			}
 			else
-				tran->getHandle()->tra_caller_name = CallerName();
+			{
+				tran->getHandle()->tra_caller_name = CallerName(obj_package_header,
+					routine->getName().package, userName);
+			}
 		}
-
-		{
-			EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-
-			m_request.assignRefNoIncr(att->prepare(&status, tran, sql.length(), sql.c_str(),
-				m_connection.getSqlDialect(), 0));
-		}
-		m_allocated = (m_request != NULL);
-
-		if (tran->getHandle())
-			tran->getHandle()->tra_caller_name = save_caller_name;
+		else
+			tran->getHandle()->tra_caller_name = CallerName();
 	}
+
+	{
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+
+		m_request.assignRefNoIncr(att->prepare(&status, tran, sql.length(), sql.c_str(),
+			m_connection.getSqlDialect(), 0));
+	}
+	m_allocated = (m_request != NULL);
+
+	if (tran->getHandle())
+		tran->getHandle()->tra_caller_name = save_caller_name;
 
 	if (status->getState() & IStatus::STATE_ERRORS)
 		raise(&status, tdbb, "JAttachment::prepare", &sql);
