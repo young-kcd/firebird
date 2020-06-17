@@ -1789,7 +1789,7 @@ USHORT SCL_convert_privilege(thread_db* tdbb, jrd_tra* transaction, const Firebi
 {
 	static GlobalPtr<Mutex> privCacheMutex;
 	static bool cacheFlag = false;
-	typedef NonPooled<MetaName, USHORT> CachedPriv;
+	typedef NonPooled<MetaString, USHORT> CachedPriv;
 	static GlobalPtr<GenericMap<CachedPriv> > privCache;
 
 	if (!cacheFlag)
