@@ -1339,11 +1339,9 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 		case isc_info_svc_implementation:
 			// The server implementation - e.g. Firebird/sun4
 			{ // scope
-				string buf2 = DbImplementation::current.implementation();
-				info = INF_put_item(item, buf2.length(), buf2.c_str(), info, end);
-				if (!info) {
+				const string buf2 = DbImplementation::current.implementation();
+				if (!(info = INF_put_item(item, buf2.length(), buf2.c_str(), info, end)))
 					return 0;
-				}
 			} // scope
 			break;
 
@@ -1371,10 +1369,8 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 				expandDatabaseName(svc_expected_db, secDb, &config);
 				expandDatabaseName(config->getSecurityDatabase(), secDb, nullptr);
 
-				if (!(info = INF_put_item(item, static_cast<USHORT>(secDb.length()), secDb.c_str(), info, end)))
-				{
+				if (!(info = INF_put_item(item, secDb.length(), secDb.c_str(), info, end)))
 					return 0;
-				}
 			}
 			else
 				need_admin_privs(status, "isc_info_svc_user_dbpath");
@@ -1422,9 +1418,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			if ( (l = length = svc_resp_len) )
 				length = MIN(end - (info + 5), l);
 			if (!(info = INF_put_item(item, length, svc_resp_ptr, info, end)))
-			{
 				return 0;
-			}
 			svc_resp_ptr += length;
 			svc_resp_len -= length;
 			if (length != l)
@@ -1437,9 +1431,8 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			get(buffer, 2, GET_BINARY, 0, &length);
 			l = (USHORT) gds__vax_integer(buffer, 2);
 			get(buffer, l, GET_BINARY, 0, &length);
-			if (!(info = INF_put_item(item, length, buffer, info, end))) {
+			if (!(info = INF_put_item(item, length, buffer, info, end)))
 				return 0;
-			}
 			break;
 
 		case isc_info_svc_line:
@@ -1488,13 +1481,9 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			else //if (!svc_stdin_size_requested)
 			{
 				if (!length && !(svc_flags & SVC_finished))
-				{
 					*info++ = isc_info_data_not_ready;
-				}
 				else if (item == isc_info_svc_to_eof && !(svc_flags & SVC_finished))
-				{
 					*info++ = isc_info_truncated;
-				}
 			}
 			break;
 
@@ -1658,15 +1647,12 @@ void Service::query(USHORT			send_item_length,
 				fb_assert(num_dbs == databases.getCount());
 
 				length = INF_convert(num_att, buffer);
-				info = INF_put_item(item, length, buffer, info, end);
-				if (!info) {
+				if (!(info = INF_put_item(item, length, buffer, info, end)))
 					return;
-				}
+
 				length = INF_convert(num_dbs, buffer);
-				info = INF_put_item(item, length, buffer, info, end);
-				if (!info) {
+				if (!(info = INF_put_item(item, length, buffer, info, end)))
 					return;
-				}
 			}
 			// Can not return error for service v.1 => simply ignore request
 			// else
@@ -1720,7 +1706,7 @@ void Service::query(USHORT			send_item_length,
 				// Note: it is safe to use strlen to get a length of "buffer"
 				// because gds_prefix[_lock|_msg] return a zero-terminated
 				// string.
-				if (!(info = INF_put_item(item, static_cast<USHORT>(strlen(pathBuffer)), pathBuffer, info, end)))
+				if (!(info = INF_put_item(item, strlen(pathBuffer), pathBuffer, info, end)))
 					return;
 			}
 			// Can not return error for service v.1 => simply ignore request
@@ -1825,10 +1811,8 @@ void Service::query(USHORT			send_item_length,
 				expandDatabaseName(svc_expected_db, secDb, &config);
 				expandDatabaseName(config->getSecurityDatabase(), secDb, nullptr);
 
-				if (!(info = INF_put_item(item, static_cast<USHORT>(secDb.length()), secDb.c_str(), info, end)))
-				{
+				if (!(info = INF_put_item(item, secDb.length(), secDb.c_str(), info, end)))
 					return;
-				}
 			}
 			// Can not return error for service v.1 => simply ignore request
 			// else
@@ -1877,9 +1861,7 @@ void Service::query(USHORT			send_item_length,
 			if ( (l = length = svc_resp_len) )
 				length = MIN(end - (info + 4), l);
 			if (!(info = INF_put_item(item, length, svc_resp_ptr, info, end)))
-			{
 				return;
-			}
 			svc_resp_ptr += length;
 			svc_resp_len -= length;
 			if (length != l)
@@ -1893,9 +1875,7 @@ void Service::query(USHORT			send_item_length,
 			l = (USHORT) gds__vax_integer(buffer, 2);
 			get(buffer, l, GET_BINARY, 0, &length);
 			if (!(info = INF_put_item(item, length, buffer, info, end)))
-			{
 				return;
-			}
 			break;
 
 		case isc_info_svc_line:
