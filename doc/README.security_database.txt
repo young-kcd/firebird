@@ -33,8 +33,7 @@ it for the user management task.
     WARNING! Do not just copy and paste! Generate your own strong password!
 
     SQL> create user SYSDBA password 'StrongPassword';
-    SQL> commit;
-    SQL> quit;
+    SQL> exit;
 
 	WARNING! Do not just copy and paste! Generate your own strong password!
 4. To complete the initialization, start the Firebird server again. Now you will be able to perform a network
