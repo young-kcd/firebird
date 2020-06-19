@@ -529,11 +529,15 @@ set FBBUILD_ZIP_PACK_ROOT=%FB_ROOT_PATH%\builds\zip_pack_%FB_TARGET_PLATFORM%
 if not exist %FBBUILD_ZIP_PACK_ROOT% @mkdir %FBBUILD_ZIP_PACK_ROOT% 2>nul
 @del /s /q %FBBUILD_ZIP_PACK_ROOT%\ > nul
 @copy /Y %FB_OUTPUT_DIR% %FBBUILD_ZIP_PACK_ROOT% > nul
-for %%v in (doc doc\sql.extensions help include intl lib udf misc misc\upgrade misc\upgrade\ib_udf misc\upgrade\security misc\upgrade\metadata system32 plugins ) do (
+for %%v in (doc doc\sql.extensions help intl lib udf misc misc\upgrade misc\upgrade\ib_udf misc\upgrade\security misc\upgrade\metadata system32 plugins ) do (
     @mkdir %FBBUILD_ZIP_PACK_ROOT%\%%v 2>nul
     @dir /A-D %FB_OUTPUT_DIR%\%%v\*.* > nul 2>nul
     if not ERRORLEVEL 1 @copy /Y %FB_OUTPUT_DIR%\%%v\*.* %FBBUILD_ZIP_PACK_ROOT%\%%v\ > nul
 )
+:: Handle include dir separately because copy doesn't recurse.
+:: Zip file creation is much improved in FB4, but is part of more substantial changes.
+:: Backporting these to FB3 during the maintenance release cycle is not a good idea.
+@xcopy /E %FB_OUTPUT_DIR%\include\*.* %FBBUILD_ZIP_PACK_ROOT%\include\ > nul
 
 @if %FB2_EXAMPLES% equ 1 for %%v in (examples examples\api examples\build_win32 examples\dbcrypt examples\empbuild examples\include examples\interfaces examples\package examples\stat examples\udf examples\udr ) do (
     @mkdir %FBBUILD_ZIP_PACK_ROOT%\%%v 2>nul
