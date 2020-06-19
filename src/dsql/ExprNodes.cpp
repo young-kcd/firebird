@@ -488,6 +488,23 @@ void ArithmeticNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 namespace
 {
 
+bool setFixedSubType(dsc* to, const dsc& from1, const dsc& from2)
+{
+	if (!to->isExact())
+		return false;
+
+	if (from1.isExact() && from2.isExact())
+		to->dsc_sub_type = MAX(from1.dsc_sub_type, from2.dsc_sub_type);
+	else if (from1.isExact())
+		to->dsc_sub_type = from1.dsc_sub_type;
+	else if (from2.isExact())
+		to->dsc_sub_type = from2.dsc_sub_type;
+	else
+		to->dsc_sub_type = 0;
+
+	return true;
+}
+
 const UCHAR DSC_ZTYPE_FLT64 = 0;
 const UCHAR DSC_ZTYPE_FLT128 = 1;
 const UCHAR DSC_ZTYPE_FIXED = 2;
@@ -537,7 +554,8 @@ USHORT setDecDesc(dsc* desc, const dsc& desc1, const dsc& desc2, Scaling sc, SCH
 
 	desc->dsc_dtype = zipType == DSC_ZTYPE_FLT64 ? dtype_dec64 :
 		zipType == DSC_ZTYPE_FLT128 ? dtype_dec128 : dtype_int128;
-	desc->dsc_sub_type = 0;
+	if (!setFixedSubType(desc, desc1, desc2))
+		desc->dsc_sub_type = 0;
 	desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 	desc->dsc_scale = 0;
 
@@ -764,7 +782,7 @@ void ArithmeticNode::makeDialect1(dsc* desc, dsc& desc1, dsc& desc2)
 
 				default:
 					desc->dsc_dtype = dtype_long;
-					desc->dsc_sub_type = 0;
+					setFixedSubType(desc, desc1, desc2);
 					desc->dsc_length = sizeof(SLONG);
 					desc->dsc_scale = MIN(NUMERIC_SCALE(desc1), NUMERIC_SCALE(desc2));
 					break;
@@ -799,7 +817,7 @@ void ArithmeticNode::makeDialect1(dsc* desc, dsc& desc1, dsc& desc2)
 
 				case dtype_long:
 					desc->dsc_dtype = dtype_long;
-					desc->dsc_sub_type = 0;
+					setFixedSubType(desc, desc1, desc2);
 					desc->dsc_length = sizeof(SLONG);
 					desc->dsc_scale = NUMERIC_SCALE(desc1) + NUMERIC_SCALE(desc2);
 					break;
@@ -1041,7 +1059,7 @@ void ArithmeticNode::makeDialect3(dsc* desc, dsc& desc1, dsc& desc2)
 				case dtype_long:
 				case dtype_int64:
 					desc->dsc_dtype = dtype_int64;
-					desc->dsc_sub_type = 0;
+					setFixedSubType(desc, desc1, desc2);
 					desc->dsc_length = sizeof(SINT64);
 
 					// The result type is int64 because both operands are
@@ -1096,7 +1114,7 @@ void ArithmeticNode::makeDialect3(dsc* desc, dsc& desc1, dsc& desc2)
 
 				case dtype_int64:
 					desc->dsc_dtype = dtype_int64;
-					desc->dsc_sub_type = 0;
+					setFixedSubType(desc, desc1, desc2);
 					desc->dsc_length = sizeof(SINT64);
 					desc->dsc_scale = NUMERIC_SCALE(desc1) + NUMERIC_SCALE(desc2);
 					break;
@@ -1220,7 +1238,7 @@ void ArithmeticNode::getDescDialect1(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 						desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
 
 					nodScale = desc->dsc_scale;
-					desc->dsc_sub_type = 0;
+					setFixedSubType(desc, desc1, desc2);
 					desc->dsc_flags = 0;
 					return;
 
@@ -1391,7 +1409,7 @@ void ArithmeticNode::getDescDialect1(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 					desc->dsc_dtype = dtype_long;
 					desc->dsc_length = sizeof(SLONG);
 					desc->dsc_scale = nodScale = NUMERIC_SCALE(desc1) + NUMERIC_SCALE(desc2);
-					desc->dsc_sub_type = 0;
+					setFixedSubType(desc, desc1, desc2);
 					desc->dsc_flags = 0;
 					return;
 
@@ -1660,7 +1678,7 @@ void ArithmeticNode::getDescDialect3(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 					else
 						desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
 					nodScale = desc->dsc_scale;
-					desc->dsc_sub_type = MAX(desc1.dsc_sub_type, desc2.dsc_sub_type);
+					setFixedSubType(desc, desc1, desc2);
 					desc->dsc_flags = 0;
 					return;
 
@@ -1708,7 +1726,7 @@ void ArithmeticNode::getDescDialect3(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 					desc->dsc_dtype = dtype_int64;
 					desc->dsc_length = sizeof(SINT64);
 					desc->dsc_scale = nodScale = NUMERIC_SCALE(desc1) + NUMERIC_SCALE(desc2);
-					desc->dsc_sub_type = MAX(desc1.dsc_sub_type, desc2.dsc_sub_type);
+					setFixedSubType(desc, desc1, desc2);
 					desc->dsc_flags = 0;
 					return;
 
@@ -2017,7 +2035,7 @@ dsc* ArithmeticNode::add2(thread_db* tdbb, const dsc* desc, impure_value* value,
 		result->dsc_dtype = dtype_int128;
 		result->dsc_length = sizeof(Int128);
 		result->dsc_scale = node->nodScale;
-		result->dsc_sub_type = 0;
+		setFixedSubType(result, *desc, value->vlu_desc);
 		result->dsc_address = (UCHAR*) &value->vlu_misc.vlu_int128;
 
 		return result;
@@ -2054,7 +2072,7 @@ dsc* ArithmeticNode::add2(thread_db* tdbb, const dsc* desc, impure_value* value,
 	result->dsc_scale = node->nodScale;
 	value->vlu_misc.vlu_int64 = (blrOp == blr_subtract) ? i2 - i1 : i1 + i2;
 	result->dsc_address = (UCHAR*) &value->vlu_misc.vlu_int64;
-	result->dsc_sub_type = MAX(desc->dsc_sub_type, value->vlu_desc.dsc_sub_type);
+	setFixedSubType(result, *desc, value->vlu_desc);
 
 	/* If the operands of an addition have the same sign, and their sum has
 	the opposite sign, then overflow occurred.  If the two addends have
@@ -2121,7 +2139,7 @@ dsc* ArithmeticNode::multiply(const dsc* desc, impure_value* value) const
 		value->vlu_desc.dsc_dtype = dtype_int128;
 		value->vlu_desc.dsc_length = sizeof(Int128);
 		value->vlu_desc.dsc_scale = nodScale;
-		value->vlu_desc.dsc_sub_type = 0;
+		setFixedSubType(&value->vlu_desc, *desc, value->vlu_desc);
 		value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc.vlu_int128;
 
 		return &value->vlu_desc;
@@ -2234,7 +2252,7 @@ dsc* ArithmeticNode::multiply2(const dsc* desc, impure_value* value) const
 		value->vlu_desc.dsc_dtype = dtype_int128;
 		value->vlu_desc.dsc_length = sizeof(Int128);
 		value->vlu_desc.dsc_scale = nodScale;
-		value->vlu_desc.dsc_sub_type = 0;
+		setFixedSubType(&value->vlu_desc, *desc, value->vlu_desc);
 		value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc.vlu_int128;
 
 		return &value->vlu_desc;
@@ -2349,7 +2367,7 @@ dsc* ArithmeticNode::divide2(const dsc* desc, impure_value* value) const
 		value->vlu_desc.dsc_dtype = dtype_int128;
 		value->vlu_desc.dsc_length = sizeof(Int128);
 		value->vlu_desc.dsc_scale = nodScale;
-		value->vlu_desc.dsc_sub_type = 0;
+		setFixedSubType(&value->vlu_desc, *desc, value->vlu_desc);
 		value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc.vlu_int128;
 
 		return &value->vlu_desc;
