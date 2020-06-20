@@ -799,9 +799,9 @@ if defined WIX (
 @(@call :FB_MSG ) || (@echo Error calling FB_MSG & @goto :EOF)
 @Echo.
 
-@Echo   Fix up line endingings
-@(@call :SET_CRLF ) || (@echo Error calling SET_CRLF & @goto :EOF)
-@Echo.
+::@Echo   Fix up line endings
+::@(@call :SET_CRLF ) || (@echo Error calling SET_CRLF & @goto :EOF)
+::@Echo.
 
 
 if %FBBUILD_ZIP_PACK% EQU 1 (
