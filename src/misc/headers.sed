@@ -1,5 +1,6 @@
 s/#include "types_pub.h"//g
 s/#include "blr.h"//g
+s/#include "ntrace.h"//g
 s/#include "iberror.h"//g
 s/#include "sqlda_pub.h"//g
 s/#include "..\/dsql\/sqlda_pub.h"//g

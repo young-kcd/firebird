@@ -1078,6 +1078,7 @@ if (UNIX)
         ${CMAKE_SOURCE_DIR}/src/jrd/ibase.h
         ${CMAKE_SOURCE_DIR}/src/jrd/inf_pub.h
         ${CMAKE_SOURCE_DIR}/src/jrd/blr.h
+        ${CMAKE_SOURCE_DIR}/src/jrd/ntrace.h
         ${CMAKE_SOURCE_DIR}/src/include/gen/iberror.h
     )
     foreach(F ${files})
