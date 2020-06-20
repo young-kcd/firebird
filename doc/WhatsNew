@@ -7,6 +7,11 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Improvement CORE-6334
+        Missing relocation support on MacOS
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Improvement CORE-6274
         Increase parsing speed of long queries
       Contributor(s):
@@ -17,10 +22,25 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix CORE-6331
+        Memory leak with some statements and expressions
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-6329
+        GBAK with service_mgr and WinSSPI authentication raises error in clumplet API
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-6323
         File-system ID may be duplicated among databases located on different volumes
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-6319
+        NBACKUP locks database file after error
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-6317
         Server is crashing on long GRANT statement
@@ -41,6 +61,11 @@
         FBSVCMGR can not decode information buffer returned by gfix list limbo service
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-6296
+        Many connections results in poor performance
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-6290
         Hex number used at end of statement (for example with CREATE DOMAIN ... DEFAULT) may read invalid memory and produce wrong values or exceptions
