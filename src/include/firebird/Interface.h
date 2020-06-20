@@ -38,6 +38,9 @@
 
 struct dsc;
 
+namespace Firebird
+{
+
 // Performance counters for individual table
 typedef int ntrace_relation_t;
 struct TraceCounts
@@ -47,7 +50,7 @@ struct TraceCounts
 	// Used with trc_counters.
 	enum RecordCounters
 	{
-		SEQ_READS,
+		SEQ_READS = 0,
 		IDX_READS,
 		UPDATES,
 		INSERTS,
@@ -90,6 +93,8 @@ struct PerformanceInfo
 
 	ISC_INT64 pin_records_fetched;	// records fetched from statement/procedure
 };
+
+}; // namespace Firebird
 
 #include "IdlFbInterfaces.h"
 
