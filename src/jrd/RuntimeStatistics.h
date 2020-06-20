@@ -28,8 +28,9 @@
 #include "../common/classes/init.h"
 #include "../common/classes/tree.h"
 
-struct TraceCounts;		// declared in ntrace.h
-struct PerformanceInfo;	// declared in ntrace.h
+// declared in firebird/Interface.h
+struct TraceCounts;
+struct PerformanceInfo;
 
 namespace Jrd {
 
