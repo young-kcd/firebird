@@ -1927,8 +1927,20 @@ void TracePluginImpl::register_service(ITraceServiceConnection* service)
 			remote_address = "internal";
 	}
 
-	if (username.isEmpty())
-		username = "<user is unknown>";
+
+	if (!username.isEmpty())
+	{
+		const char* role = service->getRoleName();
+		if (role && *role) 
+		{
+			username.append(":");
+			username.append(role);
+		}
+	}
+	else
+	{
+		username = "<unknown_user>";
+	}
 
 	tmp = service->getRemoteProcessName();
 	if (tmp && *tmp) {
