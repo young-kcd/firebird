@@ -89,7 +89,7 @@ protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 
 private:
-	USHORT tempImpure;
+	ULONG tempImpure;
 };
 
 // PERCENT_RANK function.
@@ -124,7 +124,7 @@ protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 
 private:
-	USHORT tempImpure;
+	ULONG tempImpure;
 };
 
 // CUME_DIST function.
