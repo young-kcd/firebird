@@ -728,9 +728,9 @@ int Parser::yylexAux()
 
 		while (++lex.ptr + 1 < lex.end)
 		{
-			if (*lex.ptr == endChar && *++lex.ptr == '\'')
+			if (*lex.ptr == endChar && lex.ptr[1] == '\'')
 			{
-				size_t len = lex.ptr - lex.last_token - 4;
+				size_t len = ++lex.ptr - lex.last_token - 4;
 
 				if (len > MAX_STR_SIZE)
 				{
