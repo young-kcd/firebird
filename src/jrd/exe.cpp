@@ -964,7 +964,7 @@ void EXE_send(thread_db*		tdbb,
 			if (!bid->isEmpty())
 			{
 				if (!(request->req_flags & req_internal))
-					transaction->checkBlob(tdbb, bid, true);
+					transaction->checkBlob(tdbb, bid, false);
 
 				if (desc->getCharSet() != CS_NONE && desc->getCharSet() != CS_BINARY)
 				{
