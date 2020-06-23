@@ -1199,13 +1199,6 @@ ISC_STATUS ISC_EXPORT fb_database_crypt_callback(ISC_STATUS*, void*);
 
 #include "../jrd/inf_pub.h"
 
-/************************************/
-/* Performance counter declarations */
-/************************************/
-
-#include "ntrace.h"
-
-
 #include "iberror.h"
 
 #endif /* JRD_IBASE_H */
