@@ -67,6 +67,12 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-6295
+        Incomplete header files in distributed packages
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+        Paul Reeves <preeves at ibphoenix.com>
+
     * Bugfix CORE-6290
         Hex number used at end of statement (for example with CREATE DOMAIN ... DEFAULT) may read invalid memory and produce wrong values or exceptions
       Contributor(s):
