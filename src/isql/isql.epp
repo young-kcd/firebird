@@ -5488,6 +5488,7 @@ static processing_state get_statement(Firebird::string& statement,
 
 	char lastChar = '\0';
 	char altQuoteChar = '\0';
+	unsigned altQuoteStringLength = 0;
 
 	while (!done)
 	{
@@ -5626,6 +5627,7 @@ static processing_state get_statement(Firebird::string& statement,
 					{
 						statement += (lastChar = c);
 						altQuoteChar = c = getNextInputChar();
+						altQuoteStringLength = statement.length();
 
 						switch (altQuoteChar)
 						{
@@ -5649,7 +5651,7 @@ static processing_state get_statement(Firebird::string& statement,
 					state = in_single_quoted_string;
 					break;
 				case in_single_quoted_string:
-					if (!altQuoteChar || lastChar == altQuoteChar)
+					if (!altQuoteChar || (statement.length() != altQuoteStringLength + 1 && lastChar == altQuoteChar))
 						state = normal;
 					break;
 			}
