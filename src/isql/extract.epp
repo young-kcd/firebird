@@ -2992,7 +2992,8 @@ static void list_functions_legacy()
 				if (isqlGlob.major_ods >= ODS_VERSION10 &&
 					(FNA.RDB$FIELD_TYPE == SMALLINT ||
 					 FNA.RDB$FIELD_TYPE == INTEGER ||
-					 FNA.RDB$FIELD_TYPE == BIGINT))
+					 FNA.RDB$FIELD_TYPE == BIGINT ||
+					 FNA.RDB$FIELD_TYPE == blr_int128))
 				{
 					// We are ODS >= 10 and could be any Dialect
 					// We are Dialect >=3 since FIELD_PRECISION is non-NULL

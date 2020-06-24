@@ -615,6 +615,7 @@ using namespace Firebird;
 %token <metaNamePtr> HEX_DECODE
 %token <metaNamePtr> HEX_ENCODE
 %token <metaNamePtr> IDLE
+%token <metaNamePtr> INT128
 %token <metaNamePtr> INVOKER
 %token <metaNamePtr> IV
 %token <metaNamePtr> LAST_DAY
@@ -4270,6 +4271,7 @@ keyword_or_column
 	| VAR_POP
 	| BINARY				// added in FB 4.0
 	| DECFLOAT
+	| INT128
 	| LATERAL
 	| LOCAL
 	| LOCALTIME
@@ -4723,6 +4725,13 @@ non_charset_simple_type
 
 			$$->dtype = dtype_int64;
 			$$->length = sizeof(SINT64);
+			$$->flags |= FLD_has_len;
+		}
+	| INT128
+		{
+			$$ = newNode<dsql_fld>();
+			$$->dtype = dtype_int128;
+			$$->length = sizeof(Int128);
 			$$->flags |= FLD_has_len;
 		}
 	| integer_keyword

@@ -747,6 +747,12 @@ void TracePluginImpl::appendParams(ITraceParams* params)
 				else
 					paramtype = "bigint";
 				break;
+			case dtype_int128:
+				if (parameters->dsc_scale)
+					paramtype.printf("int128(*, %d)", parameters->dsc_scale);
+				else
+					paramtype = "int128";
+				break;
 
 			case dtype_real:
 				paramtype = "float";
@@ -763,9 +769,6 @@ void TracePluginImpl::appendParams(ITraceParams* params)
 				break;
 			case dtype_dec128:
 				paramtype = "decfloat(34)";
-				break;
-			case dtype_int128:
-				paramtype = "decimal";
 				break;
 
 			case dtype_sql_date:

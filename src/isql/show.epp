@@ -4511,7 +4511,8 @@ static processing_state show_func_legacy(const SCHAR* object)
 				if ( (isqlGlob.major_ods >= ODS_VERSION10) &&
 						((FNA.RDB$FIELD_TYPE == SMALLINT) ||
 						(FNA.RDB$FIELD_TYPE == INTEGER) ||
-						(FNA.RDB$FIELD_TYPE == BIGINT)) )
+						(FNA.RDB$FIELD_TYPE == BIGINT) ||
+						(FNA.RDB$FIELD_TYPE == blr_int128)) )
 				{
 					// We are Dialect >=3 since FIELD_PRECISION is non-NULL
 					if (!FNA.RDB$FIELD_PRECISION.NULL &&

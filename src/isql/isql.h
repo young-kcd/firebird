@@ -325,7 +325,7 @@ static const sqltypes Column_types[] = {
 	{BOOLEAN_TYPE, "BOOLEAN"},	// keyword
 	{DEC64_TYPE, "DECFLOAT(16)"},
 	{DEC128_TYPE, "DECFLOAT(34)"},
-	{blr_int128, "INT64"},
+	{blr_int128, "INT128"},
 	{blr_sql_time_tz, "TIME WITH TIME ZONE"},		// keyword
 	{blr_timestamp_tz, "TIMESTAMP WITH TIME ZONE"},	// keyword
 	{blr_ex_time_tz, "TIME WITH TIME ZONE"},
