@@ -4725,28 +4725,28 @@ non_charset_simple_type
 
 			$$->dtype = dtype_int64;
 			$$->length = sizeof(SINT64);
-			$$->flags |= FLD_has_len;
+			$$->flags |= FLD_has_prec;
 		}
 	| INT128
 		{
 			$$ = newNode<dsql_fld>();
 			$$->dtype = dtype_int128;
 			$$->length = sizeof(Int128);
-			$$->flags |= FLD_has_len;
+			$$->flags |= FLD_has_prec;
 		}
 	| integer_keyword
 		{
 			$$ = newNode<dsql_fld>();
 			$$->dtype = dtype_long;
 			$$->length = sizeof(SLONG);
-			$$->flags |= FLD_has_len;
+			$$->flags |= FLD_has_prec;
 		}
 	| SMALLINT
 		{
 			$$ = newNode<dsql_fld>();
 			$$->dtype = dtype_short;
 			$$->length = sizeof(SSHORT);
-			$$->flags |= FLD_has_len;
+			$$->flags |= FLD_has_prec;
 		}
 	| DATE
 		{
@@ -4768,7 +4768,7 @@ non_charset_simple_type
 				$$->dtype = dtype_sql_date;
 				$$->length = sizeof(ULONG);
 			}
-			$$->flags |= FLD_has_len;
+			$$->flags |= FLD_has_prec;
 		}
 	| TIME without_time_zone_opt
 		{
@@ -4777,7 +4777,7 @@ non_charset_simple_type
 			checkTimeDialect();
 			$$->dtype = dtype_sql_time;
 			$$->length = sizeof(SLONG);
-			$$->flags |= FLD_has_len;
+			$$->flags |= FLD_has_prec;
 		}
 	| TIME WITH TIME ZONE
 		{
@@ -4786,21 +4786,21 @@ non_charset_simple_type
 			checkTimeDialect();
 			$$->dtype = dtype_sql_time_tz;
 			$$->length = sizeof(ISC_TIME_TZ);
-			$$->flags |= FLD_has_len;
+			$$->flags |= FLD_has_prec;
 		}
 	| TIMESTAMP without_time_zone_opt
 		{
 			$$ = newNode<dsql_fld>();
 			$$->dtype = dtype_timestamp;
 			$$->length = sizeof(GDS_TIMESTAMP);
-			$$->flags |= FLD_has_len;
+			$$->flags |= FLD_has_prec;
 		}
 	| TIMESTAMP WITH TIME ZONE
 		{
 			$$ = newNode<dsql_fld>();
 			$$->dtype = dtype_timestamp_tz;
 			$$->length = sizeof(ISC_TIMESTAMP_TZ);
-			$$->flags |= FLD_has_len;
+			$$->flags |= FLD_has_prec;
 		}
 	| BOOLEAN
 		{
@@ -5016,7 +5016,7 @@ decfloat_type
 
 			$$ = newNode<dsql_fld>();
 			if (precision)
-				$$->flags |= FLD_has_len;
+				$$->flags |= FLD_has_prec;
 			$$->precision = precision == 0 ? 34 : (USHORT) precision;
 			$$->dtype = precision == 16 ? dtype_dec64 : dtype_dec128;
 			$$->length = precision == 16 ? sizeof(Decimal64) : sizeof(Decimal128);
@@ -5057,7 +5057,7 @@ prec_scale
 	| '(' signed_long_integer ')'
 		{
 			$$ = newNode<dsql_fld>();
-			$$->flags |= FLD_has_len;
+			$$->flags |= FLD_has_prec;
 
 			if ($2 < 1 || $2 > 38)
 				yyabandon(YYPOSNARG(2), -842, Arg::Gds(isc_precision_err2) << Arg::Num(1) << Arg::Num(38));
@@ -5114,7 +5114,7 @@ prec_scale
 	| '(' signed_long_integer ',' signed_long_integer ')'
 		{
 			$$ = newNode<dsql_fld>();
-			$$->flags |= (FLD_has_len | FLD_has_scale);
+			$$->flags |= (FLD_has_prec | FLD_has_scale);
 
 			if ($2 < 1 || $2 > 38)
 				yyabandon(YYPOSNARG(2), -842, Arg::Gds(isc_precision_err2) << Arg::Num(1) << Arg::Num(38));
@@ -5414,14 +5414,14 @@ set_bind_to
 			checkTimeDialect();
 			$$->dtype = dtype_ex_time_tz;
 			$$->length = sizeof(ISC_TIME_TZ_EX);
-			$$->flags |= FLD_has_len;
+			$$->flags |= FLD_has_prec;
 		}
 	| EXTENDED TIMESTAMP WITH TIME ZONE
 		{
 			$$ = newNode<dsql_fld>();
 			$$->dtype = dtype_ex_timestamp_tz;
 			$$->length = sizeof(ISC_TIMESTAMP_TZ_EX);
-			$$->flags |= FLD_has_len;
+			$$->flags |= FLD_has_prec;
 		}
 	;
 

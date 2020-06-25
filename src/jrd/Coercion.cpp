@@ -36,8 +36,10 @@
 using namespace Jrd;
 using namespace Firebird;
 
-static const USHORT FROM_MASK = FLD_has_len | FLD_has_chset | FLD_has_scale | FLD_has_sub;
-static const USHORT TO_MASK = FLD_has_len | FLD_has_chset | FLD_has_scale | FLD_legacy | FLD_native | FLD_has_sub | FLD_extended;
+static const USHORT FROM_MASK = FLD_has_len | FLD_has_chset | FLD_has_scale |
+	FLD_has_sub | FLD_has_prec;
+static const USHORT TO_MASK = FLD_has_len | FLD_has_chset | FLD_has_scale |
+	FLD_legacy | FLD_native | FLD_has_sub | FLD_has_prec | FLD_extended;
 
 bool CoercionArray::coerce(dsc* d, unsigned startItem) const
 {
@@ -155,8 +157,8 @@ bool CoercionRule::match(const dsc* d) const
 		return true;
 	}
 
-	// check for inexact datatype match when FLD_has_len is not set
-	if (!(fromMask & FLD_has_len))
+	// check for inexact datatype match when FLD_has_prec is not set
+	if (!(fromMask & FLD_has_prec))
 	{
 		switch(fromDsc.dsc_dtype)
 		{
@@ -170,7 +172,7 @@ bool CoercionRule::match(const dsc* d) const
 		case dtype_long:
 		case dtype_int64:
 		case dtype_int128:
-			if (d->isExact() && (fromMask & FLD_has_sub) && (d->dsc_sub_type != dsc_num_type_none))
+			if (d->isExact() && (fromMask & FLD_has_sub) && (d->dsc_sub_type == fromDsc.dsc_sub_type))
 				return true;
 			break;
 
@@ -308,26 +310,24 @@ bool CoercionRule::coerce(dsc* d) const
 		d->dsc_sub_type = toDsc.dsc_sub_type;
 	}
 
-	// type
-	if (toMask & FLD_has_len ||
-		subTypeCompatibility[d->dsc_dtype] != COMPATIBLE_INT ||
-		subTypeCompatibility[toDsc.dsc_dtype] != COMPATIBLE_INT)
-	{
-		d->dsc_dtype = toDsc.dsc_dtype;
-	}
-
 	// length
 	if (toMask & FLD_has_len)
 		d->dsc_length = toDsc.dsc_length;
-	else
+
+	// type
+	if (toMask & FLD_has_prec ||
+		subTypeCompatibility[d->dsc_dtype] != COMPATIBLE_INT ||
+		subTypeCompatibility[toDsc.dsc_dtype] != COMPATIBLE_INT)
 	{
-		if (!type_lengths[d->dsc_dtype])
+		if (!type_lengths[toDsc.dsc_dtype])
 		{
-			fb_assert(d->isText());
+			fb_assert(toDsc.isText());
 			d->dsc_length = d->getStringLength();
 		}
 		else
-			d->dsc_length = type_lengths[d->dsc_dtype];
+			d->dsc_length = type_lengths[toDsc.dsc_dtype];
+
+		d->dsc_dtype = toDsc.dsc_dtype;
 	}
 
 	// varchar length

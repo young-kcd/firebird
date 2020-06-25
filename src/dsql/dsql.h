@@ -324,7 +324,8 @@ enum fld_flags_vals {
 	FLD_has_sub		= 0x80,
 	FLD_legacy		= 0x100,
 	FLD_native		= 0x200,
-	FLD_extended	= 0x400
+	FLD_extended	= 0x400,
+	FLD_has_prec	= 0x800
 };
 
 //! Stored Procedure block
