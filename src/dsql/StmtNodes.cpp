@@ -4718,7 +4718,7 @@ StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
 {
 	jrd_tra* transaction = request->req_transaction;
 	jrd_tra* sysTransaction = request->req_attachment->getSysTransaction();
