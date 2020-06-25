@@ -4776,6 +4776,10 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 				while (transaction->tra_save_point &&
 					transaction->tra_save_point->sav_number >= savNumber)
 				{
+					// If an error is still pending when the savepoint is supposed to end, then the
+					// application didn't handle the error and the savepoint should be undone.
+					if (exeState->errorPending)
+						++transaction->tra_save_point->sav_verb_count;
 					VIO_verb_cleanup(tdbb, transaction);
 				}
 			}
