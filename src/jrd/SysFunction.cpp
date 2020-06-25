@@ -431,7 +431,7 @@ bool areParamsDouble(int argsCount, DSC** args)
 	{
 		if (args[i]->isApprox())
 			return true;
-		if (args[i]->isDecFloat())
+		if (args[i]->isDecOrInt128())
 			decSeen = true;
 	}
 
@@ -1167,6 +1167,10 @@ void makeCeilFloor(DataTypeUtilBase*, const SysFunction* function, dsc* result,
 		case dtype_long:
 		case dtype_int64:
 			result->makeInt64(0);
+			break;
+
+		case dtype_int128:
+			result->makeInt128(0);
 			break;
 
 		case dtype_dec128:
@@ -2062,6 +2066,18 @@ dsc* evlBinShift(thread_db* tdbb, const SysFunction* function, const NestValueAr
 	return &impure->vlu_desc;
 }
 
+template <typename HUGEINT>
+HUGEINT getScale(impure_value* impure)
+{
+	HUGEINT scale = 1;
+
+	fb_assert(impure->vlu_desc.dsc_scale <= 0);
+	for (int i = -impure->vlu_desc.dsc_scale; i > 0; --i)
+		scale *= 10;
+
+	return scale;
+}
+
 
 dsc* evlCeil(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
@@ -2082,11 +2098,7 @@ dsc* evlCeil(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 		case dtype_long:
 		case dtype_int64:
 			{
-				SINT64 scale = 1;
-
-				fb_assert(impure->vlu_desc.dsc_scale <= 0);
-				for (int i = -impure->vlu_desc.dsc_scale; i > 0; --i)
-					scale *= 10;
+				SINT64 scale = getScale<SINT64>(impure);
 
 				const SINT64 v1 = MOV_get_int64(tdbb, &impure->vlu_desc, impure->vlu_desc.dsc_scale);
 				const SINT64 v2 = MOV_get_int64(tdbb, &impure->vlu_desc, 0) * scale;
@@ -2097,6 +2109,22 @@ dsc* evlCeil(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 					++impure->vlu_misc.vlu_int64;
 
 				impure->vlu_desc.makeInt64(0, &impure->vlu_misc.vlu_int64);
+			}
+			break;
+
+		case dtype_int128:
+			{
+				Int128 scale = getScale<CInt128>(impure);
+
+				const Int128 v1 = MOV_get_int128(tdbb, &impure->vlu_desc, impure->vlu_desc.dsc_scale);
+				const Int128 v2 = MOV_get_int128(tdbb, &impure->vlu_desc, 0).mul(scale);
+
+				impure->vlu_misc.vlu_int128 = v1.div(scale, 0);
+
+				if (v1.sign() > 0 && v1 != v2)
+					impure->vlu_misc.vlu_int128 += 1u;
+
+				impure->vlu_desc.makeInt128(0, &impure->vlu_misc.vlu_int128);
 			}
 			break;
 
@@ -3785,7 +3813,7 @@ dsc* evlExp(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	if (value->isDecFloat())
+	if (value->isDecOrInt128())
 	{
 		DecimalStatus decSt = tdbb->getAttachment()->att_dec_status;
 		impure->vlu_misc.vlu_dec128 = MOV_get_dec128(tdbb, value);
@@ -3957,7 +3985,7 @@ dsc* evlFloor(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 		case dtype_long:
 		case dtype_int64:
 			{
-				SINT64 scale = 1;
+				SINT64 scale = getScale<SINT64>(impure);
 
 				fb_assert(impure->vlu_desc.dsc_scale <= 0);
 				for (int i = -impure->vlu_desc.dsc_scale; i > 0; --i)
@@ -3972,6 +4000,22 @@ dsc* evlFloor(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 					--impure->vlu_misc.vlu_int64;
 
 				impure->vlu_desc.makeInt64(0, &impure->vlu_misc.vlu_int64);
+			}
+			break;
+
+		case dtype_int128:
+			{
+				Int128 scale = getScale<CInt128>(impure);
+
+				const Int128 v1 = MOV_get_int128(tdbb, &impure->vlu_desc, impure->vlu_desc.dsc_scale);
+				const Int128 v2 = MOV_get_int128(tdbb, &impure->vlu_desc, 0).mul(scale);
+
+				impure->vlu_misc.vlu_int128 = v1.div(scale, 0);
+
+				if (v1.sign() < 0 && v1 != v2)
+					impure->vlu_misc.vlu_int128 -= 1u;
+
+				impure->vlu_desc.makeInt128(0, &impure->vlu_misc.vlu_int128);
 			}
 			break;
 
@@ -4556,7 +4600,7 @@ dsc* evlLnLog10(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	if (value->isDecFloat())
+	if (value->isDecOrInt128())
 	{
 		DecimalStatus decSt = tdbb->getAttachment()->att_dec_status;
 		Decimal128 d = MOV_get_dec128(tdbb, value);
@@ -5954,7 +5998,7 @@ dsc* evlSqrt(thread_db* tdbb, const SysFunction* function, const NestValueArray&
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	if (value->isDecFloat())
+	if (value->isDecOrInt128())
 	{
 		DecimalStatus decSt = tdbb->getAttachment()->att_dec_status;
 		impure->vlu_misc.vlu_dec128 = MOV_get_dec128(tdbb, value);

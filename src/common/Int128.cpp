@@ -433,6 +433,12 @@ Int128 Int128::operator+=(unsigned value)
 	return *this;
 }
 
+Int128 Int128::operator-=(unsigned value)
+{
+	v.SubInt(value);
+	return *this;
+}
+
 Int128 Int128::operator*=(unsigned value)
 {
 	v.MulInt(value);
@@ -452,6 +458,11 @@ bool Int128::operator>=(Int128 value) const
 bool Int128::operator==(Int128 value) const
 {
 	return v == value.v;
+}
+
+bool Int128::operator!=(Int128 value) const
+{
+	return v != value.v;
 }
 
 void Int128::zerodivide()

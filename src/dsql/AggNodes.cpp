@@ -1378,7 +1378,7 @@ void StdDevAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 	if (desc->isNull())
 		return;
 
-	if (DTYPE_IS_DECFLOAT(desc->dsc_dtype))
+	if (desc->isDecOrInt128())
 		desc->makeDecimal128();
 	else
 		desc->makeDouble();
@@ -1388,7 +1388,7 @@ void StdDevAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
 	arg->getDesc(tdbb, csb, desc);
 
-	if (DTYPE_IS_DECFLOAT(desc->dsc_dtype))
+	if (desc->isDecOrInt128())
 	{
 		desc->makeDecimal128();
 		nodFlags |= FLAG_DECFLOAT;
@@ -1586,7 +1586,7 @@ void CorrAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 	if (desc->isNull())
 		return;
 
-	if (DTYPE_IS_DECFLOAT(desc->dsc_dtype))
+	if (desc->isDecOrInt128())
 		desc->makeDecimal128();
 	else
 		desc->makeDouble();
@@ -1596,7 +1596,7 @@ void CorrAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
 	arg->getDesc(tdbb, csb, desc);
 
-	if (DTYPE_IS_DECFLOAT(desc->dsc_dtype))
+	if (desc->isDecOrInt128())
 	{
 		desc->makeDecimal128();
 		nodFlags |= FLAG_DECFLOAT;
@@ -1862,7 +1862,7 @@ void RegrAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 	if (desc->isNull())
 		return;
 
-	if (DTYPE_IS_DECFLOAT(desc->dsc_dtype))
+	if (desc->isDecOrInt128())
 		desc->makeDecimal128();
 	else
 		desc->makeDouble();
@@ -1872,7 +1872,7 @@ void RegrAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
 	arg->getDesc(tdbb, csb, desc);
 
-	if (DTYPE_IS_DECFLOAT(desc->dsc_dtype))
+	if (desc->isDecOrInt128())
 	{
 		desc->makeDecimal128();
 		nodFlags |= FLAG_DECFLOAT;

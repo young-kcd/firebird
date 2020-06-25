@@ -84,12 +84,14 @@ public:
 	Int128 operator-() const;
 	Int128 operator/(unsigned value) const;
 	Int128 operator+=(unsigned value);
+	Int128 operator-=(unsigned value);
 	Int128 operator*=(unsigned value);
 
 	int compare(Int128 tgt) const;
 	bool operator>(Int128 value) const;
 	bool operator>=(Int128 value) const;
 	bool operator==(Int128 value) const;
+	bool operator!=(Int128 value) const;
 	int sign() const;
 
 	Int128 abs() const;

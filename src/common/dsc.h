@@ -199,6 +199,11 @@ typedef struct dsc
 		return isDecFloat() || isExact();
 	}
 
+	bool isDecOrInt128() const
+	{
+		return isDecFloat() || isInt128();
+	}
+
 	bool isApprox() const
 	{
 		return DTYPE_IS_APPROX(dsc_dtype);
