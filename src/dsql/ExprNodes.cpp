@@ -2443,10 +2443,6 @@ dsc* ArithmeticNode::divide2(const dsc* desc, impure_value* value) const
 
 	SINT64 i1 = MOV_get_int64(tdbb, &value->vlu_desc, nodScale - desc->dsc_scale);
 
-	// MIN_SINT64 / -1 = (MAX_SINT64 + 1), which overflows in SINT64.
-	if ((i1 == MIN_SINT64) && (i2 == -1))
-		ERR_post(Arg::Gds(isc_exception_integer_overflow));
-
 	// Scale the dividend by as many of the needed powers of 10 as possible
 	// without causing an overflow.
 	int addl_scale = 2 * desc->dsc_scale;
@@ -2475,6 +2471,10 @@ dsc* ArithmeticNode::divide2(const dsc* desc, impure_value* value) const
 		i2 /= 10;
 		++addl_scale;
 	}
+
+	// MIN_SINT64 / -1 = (MAX_SINT64 + 1), which overflows in SINT64.
+	if ((i1 == MIN_SINT64) && (i2 == -1))
+		ERR_post(Arg::Gds(isc_exception_integer_overflow));
 
 	value->vlu_desc.dsc_dtype = dtype_int64;
 	value->vlu_desc.dsc_length = sizeof(SINT64);
