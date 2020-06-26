@@ -22,6 +22,11 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix CORE-6345
+        Server crashes on overflow of division result
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-6343
         Rolled back transaction produces unexpected results leading to duplicate values in PRIMARY KEY
       Contributor(s):
