@@ -3987,10 +3987,6 @@ dsc* evlFloor(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 			{
 				SINT64 scale = getScale<SINT64>(impure);
 
-				fb_assert(impure->vlu_desc.dsc_scale <= 0);
-				for (int i = -impure->vlu_desc.dsc_scale; i > 0; --i)
-					scale *= 10;
-
 				const SINT64 v1 = MOV_get_int64(tdbb, &impure->vlu_desc, impure->vlu_desc.dsc_scale);
 				const SINT64 v2 = MOV_get_int64(tdbb, &impure->vlu_desc, 0) * scale;
 
