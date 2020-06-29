@@ -258,6 +258,11 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
+	void setDsqlDesc(const dsc& desc)
+	{
+		dsqlDesc = desc;
+	}
+
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
@@ -765,6 +770,11 @@ public:
 	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 	virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
 
+	void setDsqlDesc(const dsc& desc)
+	{
+		dsqlDesc = desc;
+	}
+
 	virtual bool possiblyUnknown(OptimizerBlk* /*opt*/)
 	{
 		return false;
@@ -964,6 +974,11 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
+	void setDsqlDesc(const dsc& desc)
+	{
+		dsqlDesc = desc;
+	}
+
 	virtual void getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* /*desc*/)
 	{
 		fb_assert(false);
@@ -1008,6 +1023,11 @@ public:
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 
+	void setDsqlDesc(const dsc& desc)
+	{
+		dsqlDesc = desc;
+	}
+
 	virtual void getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* /*desc*/)
 	{
 		fb_assert(false);
@@ -1028,6 +1048,8 @@ public:
 public:
 	dsql_ctx* context;
 	dsql_map* map;
+	bool setNullable;
+	bool clearNull;
 };
 
 
@@ -1058,6 +1080,11 @@ public:
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
+
+	void setDsqlDesc(const dsc& desc)
+	{
+		dsqlDesc = desc;
+	}
 
 	virtual void getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* /*desc*/)
 	{
@@ -1177,6 +1204,7 @@ private:
 	explicit NullNode(MemoryPool& pool)
 		: TypedNode<ValueExprNode, ExprNode::TYPE_NULL>(pool)
 	{
+		dsqlDesc.makeNullString();
 	}
 
 public:
@@ -1186,6 +1214,11 @@ public:
 	}
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual bool isSharedNode()
+	{
+		return true;
+	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void setParameterName(dsql_par* parameter) const;
@@ -2140,6 +2173,11 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
+
+	void setDsqlDesc(const dsc& desc)
+	{
+		dsqlDesc = desc;
+	}
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
