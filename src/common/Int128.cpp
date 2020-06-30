@@ -422,6 +422,45 @@ Int128 Int128::operator/(unsigned value) const
 	return rc;
 }
 
+Int128 Int128::operator<<(int value) const
+{
+	Int128 rc(*this);
+	rc.v <<= value;
+	return rc;
+}
+
+Int128 Int128::operator>>(int value) const
+{
+	Int128 rc(*this);
+	rc.v >>= value;
+	return rc;
+}
+
+Int128 Int128::operator&=(Int128 value)
+{
+	v &= value.v;
+	return *this;
+}
+
+Int128 Int128::operator|=(Int128 value)
+{
+	v |= value.v;
+	return *this;
+}
+
+Int128 Int128::operator^=(Int128 value)
+{
+	v ^= value.v;
+	return *this;
+}
+
+Int128 Int128::operator~() const
+{
+	Int128 rc(*this);
+	rc.v.BitNot();
+	return rc;
+}
+
 Int128 Int128::operator-() const
 {
 	return neg();

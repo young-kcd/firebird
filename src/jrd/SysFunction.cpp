@@ -58,7 +58,9 @@
 #include "../jrd/Collation.h"
 #include "../common/classes/FpeControl.h"
 #include "../jrd/extds/ExtDS.h"
+#include "../jrd/align.h"
 
+#include <functional>
 #include <cmath>
 #include <math.h>
 
@@ -191,6 +193,7 @@ bool dscHasData(const dsc* param);
 
 // specific setParams functions
 void setParamsAsciiVal(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
+void setParamsBin(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsCharToUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsDateDiff(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
@@ -513,6 +516,27 @@ void setParamsInteger(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc*
 	{
 		if (args[i]->isUnknown())
 			args[i]->makeLong(0);
+	}
+}
+
+
+void setParamsBin(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
+{
+	UCHAR t = dtype_long;
+	for (int i = 0; i < argsCount; ++i)
+	{
+		if (args[i]->isExact())
+			t = MAX(t, args[i]->dsc_dtype);
+	}
+
+	for (int i = 0; i < argsCount; ++i)
+	{
+		if (args[i]->isUnknown())
+		{
+			args[i]->clear();
+			args[i]->dsc_dtype = t;
+			args[i]->dsc_length = type_lengths[t];
+		}
 	}
 }
 
@@ -1065,7 +1089,7 @@ void makeBin(DataTypeUtilBase*, const SysFunction* function, dsc* result,
 
 	bool isNullable = false;
 	bool isNull = false;
-	bool first = true;
+	UCHAR t = dtype_long;
 
 	for (int i = 0; i < argsCount; ++i)
 	{
@@ -1085,40 +1109,33 @@ void makeBin(DataTypeUtilBase*, const SysFunction* function, dsc* result,
 				Arg::Gds(isc_sysf_argmustbe_exact) << Arg::Str(function->name));
 		}
 
-		if (first)
-		{
-			first = false;
-
-			result->clear();
-			result->dsc_dtype = args[i]->dsc_dtype;
-			result->dsc_length = args[i]->dsc_length;
-		}
-		else
-		{
-			if (args[i]->dsc_dtype == dtype_int64)
-				result->makeInt64(0);
-			else if (args[i]->dsc_dtype == dtype_long && result->dsc_dtype != dtype_int64)
-				result->makeLong(0);
-		}
+		if (args[i]->isExact())
+			t = MAX(t, args[i]->dsc_dtype);
 	}
 
-	if (isNull)
-	{
-		if (first)
-			result->makeLong(0);
-		result->setNull();
-	}
-
+	result->clear();
+	result->dsc_dtype = t;
+	result->dsc_length = type_lengths[t];
 	result->setNullable(isNullable);
+	if (isNull)
+		result->setNull();
 }
 
 
 void makeBinShift(DataTypeUtilBase*, const SysFunction* function, dsc* result,
 	int argsCount, const dsc** args)
 {
-	fb_assert(argsCount >= function->minArgCount);
+	fb_assert(argsCount == 2);
+	fb_assert(function->minArgCount == 2);
+	fb_assert(function->maxArgCount == 2);
 
-	result->makeInt64(0);
+	UCHAR t = dtype_int64;
+	if (args[0]->isInt128())
+		t = dtype_int128;
+
+	result->clear();
+	result->dsc_dtype = t;
+	result->dsc_length = type_lengths[t];
 
 	bool isNullable = false;
 
@@ -1960,54 +1977,108 @@ dsc* evlAtan2(thread_db* tdbb, const SysFunction* function, const NestValueArray
 }
 
 
+template <typename ACC, typename F>
+void evlBin2(thread_db* tdbb, ACC& acc, Function func, const NestValueArray& args, F getValue)
+{
+	for (FB_SIZE_T i = 0; i < args.getCount(); ++i)
+	{
+		const dsc* value = EVL_expr(tdbb, tdbb->getRequest(), args[i]);
+		ACC v = getValue(value);
+
+		if (i == 0)
+		{
+			if (func == funBinNot)
+				acc = ~v;
+			else
+				acc = v;
+		}
+		else
+		{
+			switch (func)
+			{
+				case funBinAnd:
+					acc &= v;
+					break;
+				case funBinOr:
+					acc |= v;
+					break;
+				case funBinXor:
+					acc ^= v;
+					break;
+				default:
+					fb_assert(false);
+			}
+		}
+	}
+}
+
+
 dsc* evlBin(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
 	fb_assert(args.getCount() >= 1);
 	fb_assert(function->misc != NULL);
 
+	Function func = (Function)(IPTR) function->misc;
 	jrd_req* request = tdbb->getRequest();
 
-	for (FB_SIZE_T i = 0; i < args.getCount(); ++i)
+	bool f128 = false;
+	for (unsigned i = 0; i < args.getCount(); ++i)
 	{
 		const dsc* value = EVL_expr(tdbb, request, args[i]);
-		if (request->req_flags & req_null)	// return NULL if value is NULL
-			return NULL;
+		if (request->req_flags & req_null)	// return nullptr if value is null
+			return nullptr;
 
-		if (i == 0)
-		{
-			if ((Function)(IPTR) function->misc == funBinNot)
-				impure->vlu_misc.vlu_int64 = ~MOV_get_int64(tdbb, value, 0);
-			else
-				impure->vlu_misc.vlu_int64 = MOV_get_int64(tdbb, value, 0);
-		}
-		else
-		{
-			switch ((Function)(IPTR) function->misc)
-			{
-				case funBinAnd:
-					impure->vlu_misc.vlu_int64 &= MOV_get_int64(tdbb, value, 0);
-					break;
-
-				case funBinOr:
-					impure->vlu_misc.vlu_int64 |= MOV_get_int64(tdbb, value, 0);
-					break;
-
-				case funBinXor:
-					impure->vlu_misc.vlu_int64 ^= MOV_get_int64(tdbb, value, 0);
-					break;
-
-				default:
-					fb_assert(false);
-			}
-		}
+		if (value->dsc_dtype == dtype_int128)
+			f128 = true;
 	}
 
-	impure->vlu_desc.makeInt64(0, &impure->vlu_misc.vlu_int64);
+	if (f128)
+	{
+		evlBin2(tdbb, impure->vlu_misc.vlu_int128, func, args,
+			[ tdbb ] (const dsc* v) { return MOV_get_int128(tdbb, v, 0); });
+		impure->vlu_desc.makeInt128(0, &impure->vlu_misc.vlu_int128);
+	}
+	else
+	{
+		evlBin2(tdbb, impure->vlu_misc.vlu_int64, func, args,
+			[ tdbb ] (const dsc* v) { return MOV_get_int64(tdbb, v, 0); });
+		impure->vlu_desc.makeInt64(0, &impure->vlu_misc.vlu_int64);
+	}
 
 	return &impure->vlu_desc;
 }
 
+
+template <typename TARGET>
+void evlBinShift2(TARGET& acc, Function func, TARGET target, int shift)
+{
+	const int rotshift = shift % sizeof(SINT64);
+
+	switch (func)
+	{
+		case funBinShl:
+			acc = target << shift;
+			break;
+
+		case funBinShr:
+			acc = target >> shift;
+			break;
+
+		case funBinShlRot:
+			acc = target >> (sizeof(SINT64) - rotshift);
+			acc |= (target << rotshift);
+			break;
+
+		case funBinShrRot:
+			acc = target << (sizeof(SINT64) - rotshift);
+			acc |= (target >> rotshift);
+			break;
+
+		default:
+			fb_assert(false);
+	}
+}
 
 dsc* evlBinShift(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
@@ -2032,39 +2103,21 @@ dsc* evlBinShift(thread_db* tdbb, const SysFunction* function, const NestValueAr
 								Arg::Gds(isc_sysf_argmustbe_nonneg) << Arg::Str(function->name));
 	}
 
-	const SINT64 rotshift = shift % sizeof(SINT64);
-	SINT64 tempbits = 0;
-
-	const SINT64 target = MOV_get_int64(tdbb, value1, 0);
-
-	switch ((Function)(IPTR) function->misc)
+	Function func = (Function)(IPTR) function->misc;
+	if (value1->isInt128())
 	{
-		case funBinShl:
-			impure->vlu_misc.vlu_int64 = target << shift;
-			break;
-
-		case funBinShr:
-			impure->vlu_misc.vlu_int64 = target >> shift;
-			break;
-
-		case funBinShlRot:
-			tempbits = target >> (sizeof(SINT64) - rotshift);
-			impure->vlu_misc.vlu_int64 = (target << rotshift) | tempbits;
-			break;
-
-		case funBinShrRot:
-			tempbits = target << (sizeof(SINT64) - rotshift);
-			impure->vlu_misc.vlu_int64 = (target >> rotshift) | tempbits;
-			break;
-
-		default:
-			fb_assert(false);
+		evlBinShift2(impure->vlu_misc.vlu_int128, func, MOV_get_int128(tdbb, value1, 0), shift);
+		impure->vlu_desc.makeInt128(0, &impure->vlu_misc.vlu_int128);
 	}
-
-	impure->vlu_desc.makeInt64(0, &impure->vlu_misc.vlu_int64);
+	else
+	{
+		evlBinShift2(impure->vlu_misc.vlu_int64, func, MOV_get_int64(tdbb, value1, 0), shift);
+		impure->vlu_desc.makeInt64(0, &impure->vlu_misc.vlu_int64);
+	}
 
 	return &impure->vlu_desc;
 }
+
 
 template <typename HUGEINT>
 HUGEINT getScale(impure_value* impure)
@@ -6223,14 +6276,14 @@ const SysFunction SysFunction::functions[] =
 		{"BASE64_DECODE", 1, 1, NULL, makeDecode64, evlDecode64, NULL},
 		{"BASE64_ENCODE", 1, 1, NULL, makeEncode64, evlEncode64, NULL},
 		{"CRC32", 1, 1, NULL, makeLongResult, evlCrc32, NULL},
-		{"BIN_AND", 2, -1, setParamsInteger, makeBin, evlBin, (void*) funBinAnd},
-		{"BIN_NOT", 1, 1, setParamsInteger, makeBin, evlBin, (void*) funBinNot},
-		{"BIN_OR", 2, -1, setParamsInteger, makeBin, evlBin, (void*) funBinOr},
+		{"BIN_AND", 2, -1, setParamsBin, makeBin, evlBin, (void*) funBinAnd},
+		{"BIN_NOT", 1, 1, setParamsBin, makeBin, evlBin, (void*) funBinNot},
+		{"BIN_OR", 2, -1, setParamsBin, makeBin, evlBin, (void*) funBinOr},
 		{"BIN_SHL", 2, 2, setParamsInteger, makeBinShift, evlBinShift, (void*) funBinShl},
 		{"BIN_SHR", 2, 2, setParamsInteger, makeBinShift, evlBinShift, (void*) funBinShr},
 		{"BIN_SHL_ROT", 2, 2, setParamsInteger, makeBinShift, evlBinShift, (void*) funBinShlRot},
 		{"BIN_SHR_ROT", 2, 2, setParamsInteger, makeBinShift, evlBinShift, (void*) funBinShrRot},
-		{"BIN_XOR", 2, -1, setParamsInteger, makeBin, evlBin, (void*) funBinXor},
+		{"BIN_XOR", 2, -1, setParamsBin, makeBin, evlBin, (void*) funBinXor},
 		{"CEIL", 1, 1, setParamsDblDec, makeCeilFloor, evlCeil, NULL},
 		{"CEILING", 1, 1, setParamsDblDec, makeCeilFloor, evlCeil, NULL},
 		{"CHAR_TO_UUID", 1, 1, setParamsCharToUuid, makeUuid, evlCharToUuid, NULL},
