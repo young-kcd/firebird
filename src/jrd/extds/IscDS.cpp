@@ -172,38 +172,34 @@ void IscConnection::attach(thread_db* tdbb)
 				break;
 
 			case fb_info_features:
-			    for (int i = 0; i < len; i++)
-                {
-                    if (p[i] == 0)
-                    {
-                        ERR_post(Arg::Gds(isc_random) << Arg::Str("Bad provider feature value"));
-                    }
+				for (int i = 0; i < len; i++)
+				{
+					if (p[i] == 0)
+						ERR_post(Arg::Gds(isc_random) << Arg::Str("Bad provider feature value"));
 
-                    if (p[i] < fb_feature_max)
-                    {
-                        setFeature(static_cast<info_features>(p[i]));
-                    }
-                    // else this provider supports unknown feature, ignore it.
-                }
+					if (p[i] < fb_feature_max)
+						setFeature(static_cast<info_features>(p[i]));
+					// else this provider supports unknown feature, ignore it.
+				}
 				break;
 
 			case isc_info_error:
-			    {
-                    const ULONG err = m_iscProvider.isc_vax_integer(p + 1, len - 1);
-                    if (err == isc_infunk)
-                    {
-                        if (*p == fb_info_features)
-                        {
-                            // Used provider follow Firebird error reporting conventions but is not aware of
-                            // this info item. Assume Firebird 3 or earlier.
-                            m_features[fb_feature_multi_statements] = true;
-                            m_features[fb_feature_multi_transactions] = true;
-                            m_features[fb_feature_statement_long_life] = true;
-                        }
-                        break;
-                    }
-                    ERR_post(Arg::Gds(isc_random) << Arg::Str("Unexpected error in isc_database_info"));
-			    }
+				{
+					const ULONG err = m_iscProvider.isc_vax_integer(p + 1, len - 1);
+					if (err == isc_infunk)
+					{
+						if (*p == fb_info_features)
+						{
+							// Used provider follow Firebird error reporting conventions but is not aware of
+							// this info item. Assume Firebird 3 or earlier.
+							m_features[fb_feature_multi_statements] = true;
+							m_features[fb_feature_multi_transactions] = true;
+							m_features[fb_feature_statement_long_life] = true;
+						}
+						break;
+					}
+					ERR_post(Arg::Gds(isc_random) << Arg::Str("Unexpected error in isc_database_info"));
+				}
 
 			case isc_info_truncated:
 				ERR_post(Arg::Gds(isc_random) << Arg::Str("Result truncation in isc_database_info"));
@@ -1498,10 +1494,10 @@ ISC_STATUS ISC_EXPORT_VARARG IscProvider::isc_start_transaction(FbStatusVector* 
 }
 
 ISC_STATUS ISC_EXPORT_VARARG IscProvider::isc_reconnect_transaction(FbStatusVector* user_status,
-                                               isc_db_handle *,
-                                               isc_tr_handle *,
-                                               short,
-                                               const char*)
+											isc_db_handle *,
+											isc_tr_handle *,
+											short,
+											const char*)
 {
 	return notImplemented(user_status);
 }
@@ -1543,7 +1539,7 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_transact_request(FbStatusVector* user_sta
 
 ISC_LONG ISC_EXPORT IscProvider::isc_vax_integer(const unsigned char* p, short len)
 {
-	return ::isc_vax_integer((ISC_SCHAR*)p, len);
+	return ::isc_vax_integer((ISC_SCHAR*) p, len);
 }
 
 ISC_INT64 ISC_EXPORT IscProvider::isc_portable_integer(const unsigned char* p, short len)
@@ -1767,11 +1763,10 @@ static void parseSQLDA(XSQLDA* xsqlda, UCharBuffer& buff, Firebird::Array<dsc> &
 		if (type_alignments[dtype])
 			offset = FB_ALIGN(offset, type_alignments[dtype]);
 
-        offset += xVar->sqllen;
-        const int type = xVar->sqltype & (~1);
-		if (type == SQL_VARYING) {
-            offset += sizeof(SSHORT);
-		}
+		offset += xVar->sqllen;
+		const int type = xVar->sqltype & (~1);
+		if (type == SQL_VARYING)
+			offset += sizeof(SSHORT);
 
 		// null indicator
 		offset = FB_ALIGN(offset, type_alignments[dtype_short]);
@@ -1801,10 +1796,10 @@ static void parseSQLDA(XSQLDA* xsqlda, UCharBuffer& buff, Firebird::Array<dsc> &
 		src.dsc_address = (UCHAR*) xVar->sqldata;
 
 		offset += xVar->sqllen;
-        const int type = xVar->sqltype & (~1);
+	const int type = xVar->sqltype & (~1);
 		if (type == SQL_VARYING)
 		{
-            offset += sizeof(SSHORT);
+			offset += sizeof(SSHORT);
 			src.dsc_length += sizeof(SSHORT);
 		}
 		else if (type == SQL_NULL) {
