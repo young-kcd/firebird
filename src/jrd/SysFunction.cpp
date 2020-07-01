@@ -1458,6 +1458,7 @@ void makeMod(DataTypeUtilBase*,	 const SysFunction* function, dsc* result,
 		case dtype_short:
 		case dtype_long:
 		case dtype_int64:
+		case dtype_int128:
 			*result = *value1;
 			result->dsc_scale = 0;
 			break;
@@ -5063,6 +5064,20 @@ dsc* evlMod(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 
 	EVL_make_value(tdbb, value1, impure);
 	impure->vlu_desc.dsc_scale = 0;
+
+	if (impure->vlu_desc.dsc_dtype == dtype_int128)
+	{
+		const Int128 divisor = MOV_get_int128(tdbb, value2, 0);
+		Int128 cmp0;
+		cmp0.set(0, 0);
+
+		if (divisor == cmp0)
+			status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_exception_integer_divide_by_zero));
+
+		impure->vlu_misc.vlu_int128 = MOV_get_int128(tdbb, value1, 0).mod(divisor);
+
+		return &impure->vlu_desc;
+	}
 
 	const SINT64 divisor = MOV_get_int64(tdbb, value2, 0);
 
