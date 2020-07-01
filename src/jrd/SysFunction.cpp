@@ -1050,6 +1050,7 @@ void makeAbs(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* r
 		case dtype_real:
 		case dtype_double:
 		case dtype_int64:
+		case dtype_int128:
 		case dtype_dec64:
 		case dtype_dec128:
 			*result = *value;
@@ -1865,6 +1866,10 @@ dsc* evlAbs(thread_db* tdbb, const SysFunction*, const NestValueArray& args, imp
 
 		case dtype_dec128:
 			impure->vlu_misc.vlu_dec128 = impure->vlu_misc.vlu_dec128.abs();
+			break;
+
+		case dtype_int128:
+			impure->vlu_misc.vlu_int128 = impure->vlu_misc.vlu_int128.abs();
 			break;
 
 		case dtype_short:
