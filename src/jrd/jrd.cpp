@@ -2294,19 +2294,8 @@ ITransaction* JTransaction::join(CheckStatusWrapper* user_status, ITransaction* 
 
 JTransaction* JTransaction::validate(CheckStatusWrapper* user_status, IAttachment* testAtt)
 {
-	try
-	{
-		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
-		check_database(tdbb);
-
-		// Do not raise error in status - just return NULL if attachment does not match
-		return sAtt->getInterface() == testAtt ? this : NULL;
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(user_status);
-	}
-	return NULL;
+	// Do not raise error in status - just return NULL if attachment does not match
+	return (sAtt && sAtt->getInterface() == testAtt) ? this : NULL;
 }
 
 JTransaction* JTransaction::enterDtc(CheckStatusWrapper* user_status)
