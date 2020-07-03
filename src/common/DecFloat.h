@@ -248,6 +248,8 @@ public:
 	static ULONG getIndexKeyLength();
 	ULONG makeIndexKey(vary* buf);
 
+	Decimal128 modf(DecimalStatus decSt, Decimal128* ipart) const;
+
 #ifdef DEV_BUILD
 	int show();
 #endif

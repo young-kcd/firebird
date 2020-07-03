@@ -1689,6 +1689,9 @@ void makeTrunc(DataTypeUtilBase*, const SysFunction* function, dsc* result,
 		case dtype_short:
 		case dtype_long:
 		case dtype_int64:
+		case dtype_int128:
+		case dtype_dec64:
+		case dtype_dec128:
 			*result = *value;
 			if (argsCount == 1)
 				result->dsc_scale = 0;
@@ -6018,8 +6021,16 @@ dsc* evlRound(thread_db* tdbb, const SysFunction* function, const NestValueArray
 		}
 	}
 
-	impure->vlu_misc.vlu_int64 = MOV_get_int64(tdbb, value, scale);
-	impure->vlu_desc.makeInt64(scale, &impure->vlu_misc.vlu_int64);
+	if (value->is128())
+	{
+		impure->vlu_misc.vlu_int128 = MOV_get_int128(tdbb, value, scale);
+		impure->vlu_desc.makeInt128(scale, &impure->vlu_misc.vlu_int128);
+	}
+	else
+	{
+		impure->vlu_misc.vlu_int64 = MOV_get_int64(tdbb, value, scale);
+		impure->vlu_desc.makeInt64(scale, &impure->vlu_misc.vlu_int64);
+	}
 
 	return &impure->vlu_desc;
 }
@@ -6129,7 +6140,10 @@ dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const NestValueArray
 	if (value->isExact())
 	{
 		SSHORT scale = value->dsc_scale;
-		impure->vlu_misc.vlu_int64 = MOV_get_int64(tdbb, value, scale);
+		if (value->isInt128())
+			impure->vlu_misc.vlu_int128 = MOV_get_int128(tdbb, value, scale);
+		else
+			impure->vlu_misc.vlu_int64 = MOV_get_int64(tdbb, value, scale);
 
 		if (resultScale < scale)
 			resultScale = scale;
@@ -6140,18 +6154,30 @@ dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const NestValueArray
 		{
 			while (scale)
 			{
-				impure->vlu_misc.vlu_int64 /= 10;
+				if (value->isInt128())
+					impure->vlu_misc.vlu_int128 = impure->vlu_misc.vlu_int128 / 10;
+				else
+					impure->vlu_misc.vlu_int64 /= 10;
+
 				++scale;
 			}
 		}
 
-		impure->vlu_desc.makeInt64(resultScale, &impure->vlu_misc.vlu_int64);
+		if (value->isInt128())
+			impure->vlu_desc.makeInt128(resultScale, &impure->vlu_misc.vlu_int128);
+		else
+			impure->vlu_desc.makeInt64(resultScale, &impure->vlu_misc.vlu_int64);
 	}
 	else
 	{
-		impure->vlu_misc.vlu_double = MOV_get_double(tdbb, value);
+		if (value->isDecFloat())
+			impure->vlu_misc.vlu_dec128 = MOV_get_dec128(tdbb, value);
+		else
+			impure->vlu_misc.vlu_double = MOV_get_double(tdbb, value);
 
 		SINT64 v = 1;
+		Decimal128 vv;
+		DecimalStatus decSt = tdbb->getAttachment()->att_dec_status;
 
 		if (resultScale > 0)
 		{
@@ -6161,25 +6187,55 @@ dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const NestValueArray
 				--resultScale;
 			}
 
-			impure->vlu_misc.vlu_double /= v;
-			modf(impure->vlu_misc.vlu_double, &impure->vlu_misc.vlu_double);
-			impure->vlu_misc.vlu_double *= v;
+			if (value->isDecFloat())
+			{
+				vv.set(v, decSt, 0);
+				impure->vlu_misc.vlu_dec128 = impure->vlu_misc.vlu_dec128.div(decSt, vv);
+				impure->vlu_misc.vlu_dec128.modf(decSt, &impure->vlu_misc.vlu_dec128);
+				impure->vlu_misc.vlu_dec128 = impure->vlu_misc.vlu_dec128.mul(decSt, vv);
+			}
+			else
+			{
+				impure->vlu_misc.vlu_double /= v;
+				modf(impure->vlu_misc.vlu_double, &impure->vlu_misc.vlu_double);
+				impure->vlu_misc.vlu_double *= v;
+			}
 		}
 		else
 		{
-			double r = modf(impure->vlu_misc.vlu_double, &impure->vlu_misc.vlu_double);
-
-			if (resultScale != 0)
+			if (value->isDecFloat())
 			{
-				for (SLONG i = 0; i > resultScale; --i)
-					v *= 10;
+				Decimal128 r = impure->vlu_misc.vlu_dec128.modf(decSt, &impure->vlu_misc.vlu_dec128);
 
-				modf(r * v, &r);
-				impure->vlu_misc.vlu_double += r / v;
+				if (resultScale != 0)
+				{
+					for (SLONG i = 0; i > resultScale; --i)
+						v *= 10;
+					vv.set(v, decSt, 0);
+
+					r.mul(decSt, vv).modf(decSt, &r);
+					impure->vlu_misc.vlu_dec128 = impure->vlu_misc.vlu_dec128.add(decSt, r.div(decSt, vv));
+				}
+			}
+			else
+			{
+				double r = modf(impure->vlu_misc.vlu_double, &impure->vlu_misc.vlu_double);
+
+				if (resultScale != 0)
+				{
+					for (SLONG i = 0; i > resultScale; --i)
+						v *= 10;
+
+					modf(r * v, &r);
+					impure->vlu_misc.vlu_double += r / v;
+				}
 			}
 		}
 
-		impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
+		if (value->isDecFloat())
+			impure->vlu_desc.makeDecimal128(&impure->vlu_misc.vlu_dec128);
+		else
+			impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
 	}
 
 	return &impure->vlu_desc;
