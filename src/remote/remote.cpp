@@ -1452,6 +1452,10 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 	else
 		port->port_flags &= ~PORT_z_data;
 
+#ifdef COMPRESS_DEBUG
+	fprintf(stderr, "Z-buffer %s\n", port->port_flags & PORT_z_data ? "has data" : "is empty");
+#endif
+
 	return true;
 #else
 	return packet_receive(port, buffer, buffer_length, length);

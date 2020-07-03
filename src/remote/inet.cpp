@@ -280,12 +280,30 @@ public:
 	{
 		slct_main = port;
 		slct_port = port;
+#ifdef WIRE_COMPRESS_SUPPORT
+		slct_zport = nullptr;
+#endif
 	}
 
 	// get port to check for readyness
 	// assume port_mutex is locked
 	HandleState checkNext(RemPortPtr& port)
 	{
+#ifdef WIRE_COMPRESS_SUPPORT
+		if (slct_zport)
+		{
+			if ((slct_zport->port_flags & PORT_z_data) &&
+				(slct_zport->port_state != rem_port::DISCONNECTED))
+			{
+				port = slct_zport;
+				slct_zport = nullptr;	// Will be set again by select_multi() if needed
+				return SEL_READY;
+			}
+
+			slct_zport = nullptr;
+		}
+#endif
+
 		if (slct_port && slct_port->port_state == rem_port::DISCONNECTED)
 		{
 			// restart from main port
@@ -307,6 +325,13 @@ public:
 
 		slct_port = slct_port->port_next;
 		return ok(port);
+	}
+
+	void setZDataPort(RemPortPtr& port)
+	{
+#ifdef WIRE_COMPRESS_SUPPORT
+		slct_zport = port;
+#endif
 	}
 
 	HandleState ok(const rem_port* port)
@@ -388,6 +413,9 @@ public:
 #endif
 		slct_main = nullptr;
 		slct_port = nullptr;
+#ifdef WIRE_COMPRESS_SUPPORT
+		slct_zport = nullptr;
+#endif
 	}
 
 	void select(timeval* timeout)
@@ -456,6 +484,9 @@ private:
 #endif
 	RemPortPtr slct_main;	// first port to check for readyness
 	RemPortPtr slct_port;	// next port to check for readyness
+#ifdef WIRE_COMPRESS_SUPPORT
+	RemPortPtr slct_zport;	// port with some compressed data remaining in the buffer
+#endif
 };
 
 static bool		accept_connection(rem_port*, const P_CNCT*);
@@ -2086,6 +2117,10 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 				{
 					*length = 0;
 				}
+#ifdef WIRE_COMPRESS_SUPPORT
+				if (port->port_flags & PORT_z_data)
+					INET_select->setZDataPort(port);
+#endif
 				return (*length) ? true : false;
 			}
 
@@ -2110,6 +2145,10 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 				}
 				*length = 0;
 			}
+#ifdef WIRE_COMPRESS_SUPPORT
+			if (port->port_flags & PORT_z_data)
+				INET_select->setZDataPort(port);
+#endif
 			return (*length) ? true : false;
 		}
 		if (!select_wait(main_port, &INET_select))
