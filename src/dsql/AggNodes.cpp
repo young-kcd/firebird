@@ -605,6 +605,7 @@ void AvgAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 			desc->dsc_length = sizeof(Int128);
 			desc->dsc_flags = 0;
 			nodScale = desc->dsc_scale;
+			nodFlags |= FLAG_INT128;
 			break;
 
 		case dtype_unknown:
@@ -1150,6 +1151,7 @@ void SumAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 				desc->dsc_length = sizeof(Int128);
 				desc->dsc_flags = 0;
 				nodScale = desc->dsc_scale;
+				nodFlags |= FLAG_INT128;
 				return;
 
 			case dtype_unknown:
