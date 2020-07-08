@@ -6012,13 +6012,14 @@ dsc* evlRound(thread_db* tdbb, const SysFunction* function, const NestValueArray
 		if (request->req_flags & req_null)	// return NULL if scaleDsc is NULL
 			return NULL;
 
-		scale = -MOV_get_long(tdbb, scaleDsc, 0);
+		scale = MOV_get_long(tdbb, scaleDsc, 0);
 		if (!(scale >= MIN_SCHAR && scale <= MAX_SCHAR))
 		{
 			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 										Arg::Gds(isc_sysf_invalid_scale) <<
 											Arg::Str(function->name));
 		}
+		scale = -scale;
 	}
 
 	// No sense in rounding to something more precise then arg
@@ -6132,13 +6133,14 @@ dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const NestValueArray
 		if (request->req_flags & req_null)	// return NULL if scaleDsc is NULL
 			return NULL;
 
-		resultScale = -MOV_get_long(tdbb, scaleDsc, 0);
+		resultScale = MOV_get_long(tdbb, scaleDsc, 0);
 		if (!(resultScale >= MIN_SCHAR && resultScale <= MAX_SCHAR))
 		{
 			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 										Arg::Gds(isc_sysf_invalid_scale) <<
 											Arg::Str(function->name));
 		}
+		resultScale = -resultScale;
 	}
 
 	if (value->isExact())
