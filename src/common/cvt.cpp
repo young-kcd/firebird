@@ -1838,7 +1838,6 @@ void CVT_move_common(const dsc* from, dsc* to, DecimalStatus decSt, Callbacks* c
 				} // end scope
 
 				const USHORT to_size = TEXT_LEN(to);
-				const UCHAR* start = to->dsc_address;
 				UCHAR fill_char = ASCII_SPACE;
 				Jrd::CharSet* toCharset = cb->getToCharset(charset2);
 
@@ -1896,7 +1895,7 @@ void CVT_move_common(const dsc* from, dsc* to, DecimalStatus decSt, Callbacks* c
 						// TMN: Here we should really have the following fb_assert
 						// fb_assert(length <= MAX_USHORT);
 						((vary*) p)->vary_length = (USHORT) toLength;
-						start = p = reinterpret_cast<UCHAR*>(((vary*) p)->vary_string);
+						p = reinterpret_cast<UCHAR*>(((vary*) p)->vary_string);
 						CVT_COPY_BUFF(q, p, toLength);
 					}
 					else
