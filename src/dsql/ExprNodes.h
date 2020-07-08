@@ -931,6 +931,7 @@ public:
 	}
 
 	void fixMinSInt64(MemoryPool& pool);
+	void fixMinSInt128(MemoryPool& pool);
 
 public:
 	const IntlString* dsqlStr;

@@ -6021,6 +6021,10 @@ dsc* evlRound(thread_db* tdbb, const SysFunction* function, const NestValueArray
 		}
 	}
 
+	// No sense in rounding to something more precise then arg
+	if (scale < value->dsc_scale)
+		scale = value->dsc_scale;
+
 	if (value->is128())
 	{
 		impure->vlu_misc.vlu_int128 = MOV_get_int128(tdbb, value, scale);

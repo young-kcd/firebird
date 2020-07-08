@@ -7956,6 +7956,47 @@ void LiteralNode::fixMinSInt64(MemoryPool& pool)
 }
 
 
+void LiteralNode::fixMinSInt128(MemoryPool& pool)
+{
+	// MIN_SINT64 should be stored as BIGINT, not 128-bit integer
+
+	const UCHAR* s = litDesc.dsc_address;
+	const char* const minSInt128 = "170141183460469231731687303715884105728";
+	const char* minPtr = minSInt128;
+	bool hasDot = false;
+	int scale = 0;
+
+	for (const UCHAR* s = litDesc.dsc_address; *s; ++s)
+	{
+		if (*s == '.')
+		{
+			if (hasDot)
+				return;
+			hasDot = true;
+		}
+		else if (*s == *minPtr++)
+		{
+			if (hasDot)
+				scale--;
+		}
+		else
+			return;
+	}
+
+	if (*minPtr)
+		return;
+
+	char* valuePtr = FB_NEW_POOL(pool) char[strlen(minSInt128) + 1];
+	strcpy(valuePtr, minSInt128);
+
+	litDesc.dsc_dtype = dtype_int128;
+	litDesc.dsc_length = sizeof(Int128);
+	litDesc.dsc_scale = scale;
+	litDesc.dsc_sub_type = 0;
+	litDesc.dsc_address = reinterpret_cast<UCHAR*>(valuePtr);
+}
+
+
 //--------------------
 
 
@@ -8596,8 +8637,18 @@ NegateNode::NegateNode(MemoryPool& pool, ValueExprNode* aArg)
 	  arg(aArg)
 {
 	LiteralNode* literal = nodeAs<LiteralNode>(arg);
-	if (literal && literal->litDesc.dsc_dtype == dtype_int128)
-		literal->fixMinSInt64(pool);
+	if (literal)
+	{
+		switch(literal->litDesc.dsc_dtype)
+		{
+		case dtype_int128:
+			literal->fixMinSInt64(pool);
+			break;
+		case dtype_dec128:
+			literal->fixMinSInt128(pool);
+			break;
+		}
+	}
 }
 
 DmlNode* NegateNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)

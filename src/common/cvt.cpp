@@ -2544,13 +2544,19 @@ static SSHORT cvt_decompose(const char*	string,
 			q++;
 
 		if (q != end || end - p == 0 || (end - p) * 4 > return_value->maxSize() * 8)
+		{
 			CVT_conversion_error(&errd, err);
+			return 0;
+		}
 
 		q = p;
 		hex_to_value(q, digits_end, return_value);
 
 		if (q != digits_end)
+		{
 			CVT_conversion_error(&errd, err);
+			return 0;
+		}
 
 		// 0xFFFFFFFF = -1; 0x0FFFFFFFF = 4294967295
 		if (digits_end - p <= 8)
@@ -2587,11 +2593,12 @@ static SSHORT cvt_decompose(const char*	string,
 						continue;
 				}
 				err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-				break;
+				return 0;
 			case RetPtr::RETVAL_POSSIBLE_OVERFLOW:
 				if ((*p > '8' && sign == -1) || (*p > '7' && sign != -1))
 				{
 					err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+					return 0;
 				}
 				break;
 			default:
@@ -2605,9 +2612,11 @@ static SSHORT cvt_decompose(const char*	string,
 		else if (*p == '.')
 		{
 			if (fraction)
+			{
 				CVT_conversion_error(&errd, err);
-			else
-				fraction = true;
+				return 0;
+			}
+			fraction = true;
 		}
 		else if (*p == '-' && !digit_seen && !sign && !fraction)
 			sign = -1;
@@ -2623,14 +2632,23 @@ static SSHORT cvt_decompose(const char*	string,
 
 			// throw if there is something after the spaces
 			if (p < end)
+			{
 				CVT_conversion_error(&errd, err);
+				return 0;
+			}
 		}
 		else
+		{
 			CVT_conversion_error(&errd, err);
+			return 0;
+		}
 	}
 
 	if (!digit_seen)
+	{
 		CVT_conversion_error(&errd, err);
+		return 0;
+	}
 
 	if ((sign == -1) && !return_value->isLowerLimit())
 		return_value->neg();
@@ -2654,7 +2672,10 @@ static SSHORT cvt_decompose(const char*	string,
 				// applied to the value.
 
 				if (exp >= SHORT_LIMIT)
+				{
 					err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+					return 0;
+				}
 			}
 			else if (*p == '-' && !digit_seen && !sign)
 				sign = -1;
@@ -2668,10 +2689,16 @@ static SSHORT cvt_decompose(const char*	string,
 
 				// throw if there is something after the spaces
 				if (p < end)
+				{
 					CVT_conversion_error(&errd, err);
+					return 0;
+				}
 			}
 			else
+			{
 				CVT_conversion_error(&errd, err);
+				return 0;
+			}
 		}
 		if (sign == -1)
 			scale -= exp;
@@ -2679,7 +2706,10 @@ static SSHORT cvt_decompose(const char*	string,
 			scale += exp;
 
 		if (!digit_seen)
+		{
 			CVT_conversion_error(&errd, err);
+			return 0;
+		}
 	}
 
 	return scale;
