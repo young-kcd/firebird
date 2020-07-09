@@ -287,8 +287,11 @@ UCHAR CVT_get_numeric(const UCHAR* string, const USHORT length, SSHORT* scale, v
 
 		tdbb->tdbb_status_vector->init();
 		*scale = -CVT_decompose(reinterpret_cast<const char*>(string), length, (Int128*) ptr, error_swallow);
-		if (!(tdbb->tdbb_status_vector->getState() & IStatus::STATE_ERRORS))
+		if (*scale >= MIN_SCHAR && *scale <= MAX_SCHAR &&
+			(!(tdbb->tdbb_status_vector->getState() & IStatus::STATE_ERRORS)))
+		{
 			return dtype_int128;
+		}
 		tdbb->tdbb_status_vector->init();
 
 		*(Decimal128*) ptr = CVT_get_dec128(&desc, tdbb->getAttachment()->att_dec_status, ERR_post);
