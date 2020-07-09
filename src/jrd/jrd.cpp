@@ -7534,7 +7534,7 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 		break;
 	}
 
-	if (!(other || crypt_att))
+	if (dbb->dbb_crypto_manager && !(other || crypt_att))
 		dbb->dbb_crypto_manager->terminateCryptThread(tdbb, false);
 
 	cryptGuard.leave();
@@ -7544,6 +7544,7 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 		sync.unlock();
 
 		CRYPT_DEBUG(fprintf(stderr, "crypt_att=%p terminateCryptThread\n", crypt_att));
+		fb_assert(dbb->dbb_crypto_manager);
 		dbb->dbb_crypto_manager->terminateCryptThread(tdbb, true);
 
 		sync.lock(SYNC_EXCLUSIVE);
