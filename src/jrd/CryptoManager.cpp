@@ -308,7 +308,7 @@ namespace Jrd {
 
 	void CryptoManager::shutdown(thread_db* tdbb)
 	{
-		terminateCryptThread(tdbb);
+		terminateCryptThread(tdbb, false);
 
 		if (cryptPlugin)
 		{
@@ -836,7 +836,7 @@ namespace Jrd {
 	void CryptoManager::stopThreadUsing(thread_db* tdbb, Attachment* att)
 	{
 		if (att == cryptAtt)
-			terminateCryptThread(tdbb);
+			terminateCryptThread(tdbb, false);
 	}
 
 	void CryptoManager::startCryptThread(thread_db* tdbb)
@@ -864,10 +864,6 @@ namespace Jrd {
 		bool releasingLock = false;
 		try
 		{
-			// Cleanup resources
-			terminateCryptThread(tdbb);
-			down = false;
-
 			// Determine current page from the header
 			CchHdr hdr(tdbb, LCK_read);
 			process = hdr->hdr_flags & Ods::hdr_crypt_process ? true : false;

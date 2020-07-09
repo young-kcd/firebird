@@ -6461,6 +6461,7 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	// stop the crypt thread if we release last regular attachment
 	Jrd::Attachment* crypt_att = NULL;
+	bool other = false;
 	CRYPT_DEBUG(fprintf(stderr, "\nrelease attachment=%p\n", attachment));
 	for (Jrd::Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
 	{
@@ -6477,9 +6478,14 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 			continue;
 		}
 		crypt_att = NULL;
+		other = true;
 		CRYPT_DEBUG(fprintf(stderr, "other\n"));
 		break;
 	}
+
+	if (!(other || crypt_att))
+		dbb->dbb_crypto_manager->terminateCryptThread(tdbb, false);
+
 	cryptGuard.leave();
 
 	if (crypt_att)
@@ -6693,9 +6699,6 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 	// Shutdown file and/or remote connection
 
 	VIO_fini(tdbb);
-
-	if (dbb->dbb_crypto_manager)
-		dbb->dbb_crypto_manager->terminateCryptThread(tdbb);
 
 	CCH_shutdown(tdbb);
 
