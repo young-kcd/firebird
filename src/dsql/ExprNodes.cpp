@@ -7587,6 +7587,7 @@ void LiteralNode::genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc,
 				}
 				i64value = -i64value;
 			}
+/*  comment to be removed after tests
 			else if (i64value == MIN_SINT64)
 			{
 				// UH OH!
@@ -7601,7 +7602,7 @@ void LiteralNode::genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc,
 						  Arg::Gds(isc_arith_except) <<
 						  Arg::Gds(isc_numeric_out_of_range));
 			}
-
+ */
 			// We and the lexer both agree that this is an SINT64 constant,
 			// and if the value needed to be negated, it already has been.
 			// If the value will fit into a 32-bit signed integer, generate
