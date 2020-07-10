@@ -622,6 +622,10 @@ namespace
 		if (!transaction)
 			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
 
+		const Attachment* att = tdbb->getAttachment();
+		if (att && transaction->tra_attachment)
+			fb_assert(att == transaction->tra_attachment);
+
 		validateHandle(tdbb, transaction->tra_attachment);
 
 		tdbb->setTransaction(transaction);
@@ -1278,7 +1282,6 @@ static void			check_database(thread_db* tdbb, bool async = false);
 static void			commit(thread_db*, jrd_tra*, const bool);
 static bool			drop_files(const jrd_file*);
 static void			find_intl_charset(thread_db*, Jrd::Attachment*, const DatabaseOptions*);
-static jrd_tra*		find_transaction(thread_db*);
 static void			init_database_lock(thread_db*);
 static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
 static jrd_req*		verify_request_synchronization(JrdStatement* statement, USHORT level);
@@ -2658,14 +2661,15 @@ JBlob* JAttachment::createBlob(CheckStatusWrapper* user_status, ITransaction* tr
 
 	try
 	{
+		JTransaction* const jt = getTransactionInterface(user_status, tra);
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
-		check_database(tdbb);
 
-		validateHandle(tdbb, getEngineTransaction(user_status, tra));
+		jrd_tra* transaction = jt->getHandle();
+		validateHandle(tdbb, transaction);
+		check_database(tdbb);
 
 		try
 		{
-			jrd_tra* const transaction = find_transaction(tdbb);
 			blob = blb::create2(tdbb, transaction, reinterpret_cast<bid*>(blob_id), bpb_length, bpb, true);
 		}
 		catch (const Exception& ex)
@@ -3494,16 +3498,15 @@ int JAttachment::getSlice(CheckStatusWrapper* user_status, ITransaction* tra, IS
 
 	try
 	{
+		JTransaction* const jt =  getTransactionInterface(user_status, tra);
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 
-		validateHandle(tdbb, getEngineTransaction(user_status, tra));
-
+		jrd_tra* transaction = jt->getHandle();
+		validateHandle(tdbb, transaction);
 		check_database(tdbb);
 
 		try
 		{
-			jrd_tra* const transaction = find_transaction(tdbb);
-
 			if (!array_id->gds_quad_low && !array_id->gds_quad_high)
 				MOVE_CLEAR(slice, slice_length);
 			else
@@ -3547,15 +3550,15 @@ JBlob* JAttachment::openBlob(CheckStatusWrapper* user_status, ITransaction* tra,
 
 	try
 	{
+		JTransaction* const jt = getTransactionInterface(user_status, tra);
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 
-		validateHandle(tdbb, getEngineTransaction(user_status, tra));
-
+		jrd_tra* transaction = jt->getHandle();
+		validateHandle(tdbb, transaction);
 		check_database(tdbb);
 
 		try
 		{
-			jrd_tra* const transaction = find_transaction(tdbb);
 			const bid* id = reinterpret_cast<bid*>(blob_id);
 
 			if (blob_id->gds_quad_high)
@@ -3685,15 +3688,15 @@ void JAttachment::putSlice(CheckStatusWrapper* user_status, ITransaction* tra, I
  **************************************/
 	try
 	{
+		JTransaction* const jt = getTransactionInterface(user_status, tra);
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 
-		validateHandle(tdbb, getEngineTransaction(user_status, tra));
-
+		jrd_tra* transaction = jt->getHandle();
+		validateHandle(tdbb, transaction);
 		check_database(tdbb);
 
 		try
 		{
-			jrd_tra* const transaction = find_transaction(tdbb);
 			blb::put_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
 				sdl, paramLength, param, sliceLength, slice);
 		}
@@ -4317,18 +4320,17 @@ void JRequest::startAndSend(CheckStatusWrapper* user_status, ITransaction* tra, 
  **************************************/
 	try
 	{
+		JTransaction* const jt = getAttachment()->getTransactionInterface(user_status, tra);
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 
-		validateHandle(tdbb, getAttachment()->getEngineTransaction(user_status, tra));
-
+		jrd_tra* transaction = jt->getHandle();
+		validateHandle(tdbb, transaction);
 		check_database(tdbb);
 
 		jrd_req* request = getHandle()->getRequest(tdbb, level);
 
 		try
 		{
-			jrd_tra* const transaction = find_transaction(tdbb);
-
 			TraceBlrExecute trace(tdbb, request);
 			try
 			{
@@ -4376,21 +4378,17 @@ void JRequest::start(CheckStatusWrapper* user_status, ITransaction* tra, int lev
  **************************************/
 	try
 	{
+		JTransaction* const jt = getAttachment()->getTransactionInterface(user_status, tra);
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 
-		if (!tra)
-			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
-
-		validateHandle(tdbb, getAttachment()->getEngineTransaction(user_status, tra));
-
+		jrd_tra* transaction = jt->getHandle();
+		validateHandle(tdbb, transaction);
 		check_database(tdbb);
 
 		jrd_req* request = getHandle()->getRequest(tdbb, level);
 
 		try
 		{
-			jrd_tra* const transaction = find_transaction(tdbb);
-
 			TraceBlrExecute trace(tdbb, request);
 			try
 			{
@@ -4576,15 +4574,15 @@ void JAttachment::transactRequest(CheckStatusWrapper* user_status, ITransaction*
  **************************************/
 	try
 	{
+		JTransaction* const jt = getTransactionInterface(user_status, tra);
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 
-		validateHandle(tdbb, getEngineTransaction(user_status, tra));
-
+		jrd_tra* transaction = jt->getHandle();
+		validateHandle(tdbb, transaction);
 		check_database(tdbb);
 
 		try
 		{
-			jrd_tra* const transaction = find_transaction(tdbb);
 			Jrd::Attachment* const att = transaction->tra_attachment;
 
 			const MessageNode* inMessage = NULL;
@@ -4885,10 +4883,10 @@ ITransaction* JStatement::execute(CheckStatusWrapper* user_status, ITransaction*
 
 	try
 	{
-		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
-
 		if (apiTra)
 			jt = getAttachment()->getTransactionInterface(user_status, apiTra);
+
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 
 		jrd_tra* tra = jt ? jt->getHandle() : NULL;
 
@@ -4954,9 +4952,10 @@ JResultSet* JStatement::openCursor(CheckStatusWrapper* user_status, ITransaction
 
 	try
 	{
+		JTransaction* jt = transaction ? getAttachment()->getTransactionInterface(user_status, transaction) : NULL;
+
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 
-		JTransaction* jt = transaction ? getAttachment()->getTransactionInterface(user_status, transaction) : NULL;
 		jrd_tra* tra = jt ? jt->getHandle() : NULL;
 
 		if (tra)
@@ -5039,10 +5038,10 @@ ITransaction* JAttachment::execute(CheckStatusWrapper* user_status, ITransaction
 
 	try
 	{
-		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
-
 		if (apiTra)
 			jt = getTransactionInterface(user_status, apiTra);
+
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 
 		jrd_tra* tra = jt ? jt->getHandle() : NULL;
 
@@ -5447,10 +5446,10 @@ JStatement* JAttachment::prepare(CheckStatusWrapper* user_status, ITransaction* 
 
 	try
 	{
+		JTransaction* const jt = apiTra ? getTransactionInterface(user_status, apiTra) : nullptr;
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 
-		jrd_tra* tra = apiTra ? getEngineTransaction(user_status, apiTra) : NULL;
-
+		jrd_tra* tra = jt ? jt->getHandle() : nullptr;
 		if (tra)
 			validateHandle(tdbb, tra);
 
@@ -6169,15 +6168,11 @@ IBatchCompletionState* JBatch::execute(CheckStatusWrapper* status, ITransaction*
 	IBatchCompletionState* cs;
 	try
 	{
+		JTransaction* jt = transaction ? getAttachment()->getTransactionInterface(status, transaction) : nullptr;
+
 		EngineContextHolder tdbb(status, this, FB_FUNCTION);
 
-		jrd_tra* tra = nullptr;
-		if (transaction)
-		{
-			JTransaction* jt = getAttachment()->getTransactionInterface(status, transaction);
-			if (jt)
-				tra = jt->getHandle();
-		}
+		jrd_tra* tra = jt ? jt->getHandle() : nullptr;
 
 		validateHandle(tdbb, tra);
 		check_database(tdbb);
@@ -6585,29 +6580,6 @@ static bool drop_files(const jrd_file* file)
 	}
 
 	return status->getState() & IStatus::STATE_ERRORS ? true : false;
-}
-
-
-static jrd_tra* find_transaction(thread_db* tdbb)
-{
-/**************************************
- *
- *	f i n d _ t r a n s a c t i o n
- *
- **************************************
- *
- * Functional description
- *	Find the element of a possible multiple database transaction
- *	that corresponds to the current database.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	const Jrd::Attachment* const attachment = tdbb->getAttachment();
-	jrd_tra* const transaction = tdbb->getTransaction();
-	fb_assert(transaction->tra_attachment == attachment);
-
-	return transaction;
 }
 
 
