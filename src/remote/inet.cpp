@@ -342,7 +342,13 @@ public:
 #endif
 		SOCKET n = port->port_handle;
 #if defined(WIN_NT)
-		return FD_ISSET(n, &slct_fdset) ? SEL_READY : SEL_NO_DATA;
+		if (FD_ISSET(n, &slct_fdset))
+		{
+			unset(n);
+			return SEL_READY;
+		}
+		else
+			return SEL_NO_DATA;
 #elif defined(HAVE_POLL)
 		pollfd* pf = NULL;
 		FB_SIZE_T pos;
