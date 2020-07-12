@@ -342,7 +342,13 @@ public:
 #endif
 		SOCKET n = port->port_handle;
 #if defined(WIN_NT)
-		return FD_ISSET(n, &slct_fdset) ? SEL_READY : SEL_NO_DATA;
+		if (FD_ISSET(n, &slct_fdset))
+		{
+			unset(n);
+			return SEL_READY;
+		}
+		else
+			return SEL_NO_DATA;
 #elif defined(HAVE_POLL)
 		pollfd* pf = nullptr;
 		FB_SIZE_T pos;
@@ -359,7 +365,14 @@ public:
 #else
 		if (n < 0 || n >= FD_SETSIZE)
 			return port->port_flags & PORT_disconnect ? SEL_DISCONNECTED : SEL_BAD;
-		return (n < slct_width && FD_ISSET(n, &slct_fdset)) ? SEL_READY : SEL_NO_DATA;
+
+		if (n < slct_width && FD_ISSET(n, &slct_fdset))
+		{
+			unset(n);
+			return SEL_READY;
+		}
+		else
+			return SEL_NO_DATA;
 #endif
 	}
 
