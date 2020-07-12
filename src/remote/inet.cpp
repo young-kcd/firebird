@@ -365,7 +365,14 @@ public:
 #else
 		if (n < 0 || n >= FD_SETSIZE)
 			return port->port_flags & PORT_disconnect ? SEL_DISCONNECTED : SEL_BAD;
-		return (n < slct_width && FD_ISSET(n, &slct_fdset)) ? SEL_READY : SEL_NO_DATA;
+
+		if (n < slct_width && FD_ISSET(n, &slct_fdset))
+		{
+			unset(n);
+			return SEL_READY;
+		}
+		else
+			return SEL_NO_DATA;
 #endif
 	}
 
