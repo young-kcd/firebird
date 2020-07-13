@@ -561,6 +561,7 @@ Source: {#FilesDir}\UDF\*.txt; DestDir: {app}\UDF; Components: ServerComponent; 
 Source: {#FilesDir}\plugins.conf; DestDir: {app}; Components: ServerComponent; Flags: ignoreversion;
 Source: {#FilesDir}\plugins\*.dll; DestDir: {app}\plugins; Components: ServerComponent; Flags: ignoreversion;
 Source: {#FilesDir}\plugins\*.conf; DestDir: {app}\plugins; Components: ServerComponent; Flags: ignoreversion;
+Source: {#FilesDir}\plugins\udr\*.dll; DestDir: {app}\plugins\udr; Components: ServerComponent; Flags: ignoreversion;
 
 Source: {#FilesDir}\misc\*.*; DestDir: {app}\misc; Components: ServerComponent; Flags: ignoreversion;
 Source: {#FilesDir}\misc\upgrade\security\*.*; DestDir: {app}\misc\upgrade\security; Components: ServerComponent; Flags: ignoreversion;
