@@ -182,8 +182,8 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		strcat(buffer, outSqlDa->sqlvar[0].sqldata + sizeof(short));
 		strcat(buffer, "';\nend");
 
-		AutoRelease<IAttachment> attachment = context->getAttachment(status);
-		AutoRelease<ITransaction> transaction = context->getTransaction(status);
+		AutoRelease<IAttachment> attachment(context->getAttachment(status));
+		AutoRelease<ITransaction> transaction(context->getTransaction(status));
 
 		stmt.reset(attachment->prepare(status, transaction, 0, buffer, SQL_DIALECT_CURRENT, 0));
 
@@ -289,8 +289,8 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		strcat(buffer, outSqlDa->sqlvar[0].sqldata + sizeof(short));
 		strcat(buffer, "';\nend");
 
-		AutoRelease<IAttachment> attachment = context->getAttachment(status);
-		AutoRelease<ITransaction> transaction = context->getTransaction(status);
+		AutoRelease<IAttachment> attachment(context->getAttachment(status));
+		AutoRelease<ITransaction> transaction(context->getTransaction(status));
 
 		stmt.reset(attachment->prepare(status, transaction, 0, buffer, SQL_DIALECT_CURRENT, 0));
 
