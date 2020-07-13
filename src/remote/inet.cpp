@@ -347,8 +347,7 @@ public:
 			unset(n);
 			return SEL_READY;
 		}
-		else
-			return SEL_NO_DATA;
+		return SEL_NO_DATA;
 #elif defined(HAVE_POLL)
 		pollfd* pf = nullptr;
 		FB_SIZE_T pos;
@@ -371,8 +370,8 @@ public:
 			unset(n);
 			return SEL_READY;
 		}
-		else
-			return SEL_NO_DATA;
+
+		return SEL_NO_DATA;
 #endif
 	}
 
@@ -934,11 +933,9 @@ rem_port* INET_connect(const TEXT* name,
 		port->port_connection = nullptr;
 		port->port_connection = REMOTE_make_string(host.c_str());
 	}
-	else {
-		if (packet)
-		{
-			host = port->port_host->str_data;
-		}
+	else if (packet)
+	{
+		host = port->port_host->str_data;
 	}
 
 	if (protocol.isEmpty())
@@ -1030,36 +1027,31 @@ rem_port* INET_connect(const TEXT* name,
 			continue;
 		}
 
-		if (packet)
+		if (!packet) // server
+			return listener_socket(port, flag, pai);
+
+		// client
+		int optval = 1;
+		n = setsockopt(port->port_handle, SOL_SOCKET, SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
+		if (n == -1)
 		{
-			// client
-			int optval = 1;
-			n = setsockopt(port->port_handle, SOL_SOCKET, SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
-			if (n == -1)
-			{
-				gds__log("setsockopt: error setting SO_KEEPALIVE");
-			}
-
-			if (!setNoNagleOption(port))
-				gds__log("setsockopt: error setting TCP_NODELAY");
-			else
-			{
-				setFastLoopbackOption(port);
-
-				n = connect(port->port_handle, pai->ai_addr, pai->ai_addrlen);
-				if (n != -1)
-				{
-					port->port_peer_name = host;
-					get_peer_info(port);
-					if (send_full(port, packet))
-						return port;
-				}
-			}
+			gds__log("setsockopt: error setting SO_KEEPALIVE");
 		}
+
+		if (!setNoNagleOption(port))
+			gds__log("setsockopt: error setting TCP_NODELAY");
 		else
 		{
-			// server
-			return listener_socket(port, flag, pai);
+			setFastLoopbackOption(port);
+
+			n = connect(port->port_handle, pai->ai_addr, pai->ai_addrlen);
+			if (n != -1)
+			{
+				port->port_peer_name = host;
+				get_peer_info(port);
+				if (send_full(port, packet))
+					return port;
+			}
 		}
 
 		SOCLOSE(port->port_handle);
@@ -1521,17 +1513,13 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 			if (count != -1 || !INTERRUPT_ERROR(inetErrNo))
 			{
 				if (count == 1)
-				{
 					break;
-				}
-				else
-				{
-					const ISC_STATUS error_code =
-						(count == 0) ? isc_net_event_connect_timeout : isc_net_event_connect_err;
-					int savedError = inetErrNo;
-					SOCLOSE(port->port_channel);
-					inet_error(false, port, "select", error_code, savedError);
-				}
+
+				const ISC_STATUS error_code =
+					(count == 0) ? isc_net_event_connect_timeout : isc_net_event_connect_err;
+				int savedError = inetErrNo;
+				SOCLOSE(port->port_channel);
+				inet_error(false, port, "select", error_code, savedError);
 			}
 		}
 

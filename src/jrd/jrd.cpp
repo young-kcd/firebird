@@ -818,7 +818,7 @@ namespace
 			AutoResultSet rs(ps->executeQuery(tdbb, transaction));
 			rs->fetch(tdbb);
 
-			UserId* u = attachment->att_user;
+			const UserId* const u = attachment->att_user;
 			Arg::Gds err(isc_adm_task_denied);
 			err << Arg::Gds(isc_miss_prvlg) << missPriv;
 			if (u && u->testFlag(USR_mapdown))
@@ -1960,10 +1960,11 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 					if (dbb->dbb_ast_flags & DBB_shutdown)
 						ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(org_filename));
-					else if (err)
+
+					if (err)
 						ERR_post(Arg::Gds(isc_att_shutdown) << Arg::Gds(err));
-					else
-						ERR_post(Arg::Gds(isc_att_shutdown));
+
+					ERR_post(Arg::Gds(isc_att_shutdown));
 				}
 
 				if (!attachment_succeeded)
@@ -2890,58 +2891,54 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			}
 			catch (const status_exception&)
 			{
-				if (options.dpb_overwrite)
+				if (!options.dpb_overwrite)
+					throw;
+
+				// isc_dpb_no_db_triggers is required for 2 reasons
+				// - it disables non-DBA attaches with isc_adm_task_denied or isc_miss_prvlg error
+				// - it disables any user code to be executed when we later lock
+				//   databases_mutex with OverwriteHolder
+				ClumpletWriter dpbWriter(ClumpletReader::dpbList, MAX_DPB_SIZE, dpb, dpb_length);
+				dpbWriter.insertByte(isc_dpb_no_db_triggers, 1);
+				dpb = dpbWriter.getBuffer();
+				dpb_length = dpbWriter.getBufferLength();
+
+				OverwriteHolder overwriteCheckHolder(dbb);
+
+				JAttachment* attachment2 = internalAttach(user_status, filename, dpb_length,
+					dpb, &userId);
+				switch (user_status->getErrors()[1])
 				{
-					// isc_dpb_no_db_triggers is required for 2 reasons
-					// - it disables non-DBA attaches with isc_adm_task_denied or isc_miss_prvlg error
-					// - it disables any user code to be executed when we later lock
-					//   databases_mutex with OverwriteHolder
-					ClumpletWriter dpbWriter(ClumpletReader::dpbList, MAX_DPB_SIZE, dpb, dpb_length);
-					dpbWriter.insertByte(isc_dpb_no_db_triggers, 1);
-					dpb = dpbWriter.getBuffer();
-					dpb_length = dpbWriter.getBufferLength();
+					case isc_adm_task_denied:
+					case isc_miss_prvlg:
+						throw;
+					default:
+						break;
+				}
 
-					OverwriteHolder overwriteCheckHolder(dbb);
+				bool allow_overwrite = false;
 
-					JAttachment* attachment2 = internalAttach(user_status, filename, dpb_length,
-						dpb, &userId);
-					switch (user_status->getErrors()[1])
-					{
-						case isc_adm_task_denied:
-						case isc_miss_prvlg:
-							throw;
-						default:
-							break;
-					}
-
-					bool allow_overwrite = false;
-
-					if (attachment2)
-					{
-						allow_overwrite = attachment2->getHandle()->locksmith(tdbb, DROP_DATABASE);
-						attachment2->detach(user_status);
-					}
-					else
-					{
-						// clear status after failed attach
-						user_status->init();
-						allow_overwrite = true;
-					}
-
-					if (allow_overwrite)
-					{
-						// file is a database and the user (SYSDBA or owner) has right to overwrite
-						pageSpace->file = PIO_create(tdbb, expanded_name, options.dpb_overwrite, false);
-					}
-					else
-					{
-						ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("overwrite") <<
-														  Arg::Str("database") <<
-														  Arg::Str(expanded_name));
-					}
+				if (attachment2)
+				{
+					allow_overwrite = attachment2->getHandle()->locksmith(tdbb, DROP_DATABASE);
+					attachment2->detach(user_status);
 				}
 				else
-					throw;
+				{
+					// clear status after failed attach
+					user_status->init();
+					allow_overwrite = true;
+				}
+
+				if (!allow_overwrite)
+				{
+					ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("overwrite") <<
+													  Arg::Str("database") <<
+													  Arg::Str(expanded_name));
+				}
+
+				// file is a database and the user (SYSDBA or owner) has right to overwrite
+				pageSpace->file = PIO_create(tdbb, expanded_name, options.dpb_overwrite, false);
 			}
 
 #ifdef WIN_NT
@@ -3262,16 +3259,15 @@ void JAttachment::freeEngineData(CheckStatusWrapper* user_status, bool forceFree
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
+
 		if (user_status->getErrors()[1] != isc_att_shutdown)
 			return;
-		else
+
+		user_status->init();
+		if (att)
 		{
-			user_status->init();
-			if (att)
-			{
-				att->release();
-				att = NULL;
-			}
+			att->release();
+			att = NULL;
 		}
 	}
 
@@ -3326,11 +3322,12 @@ void JAttachment::dropDatabase(CheckStatusWrapper* user_status)
 
 					if (dbb->dbb_ast_flags & DBB_shutdown)
 						ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(file_name));
-					else if (err)
+
+					if (err)
 						ERR_post(Arg::Gds(isc_att_shutdown) << Arg::Gds(err));
-					else
-						ERR_post(Arg::Gds(isc_att_shutdown));
-					}
+
+					ERR_post(Arg::Gds(isc_att_shutdown));
+				}
 
 				if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD, NULL))
 				{
@@ -6494,14 +6491,13 @@ static void check_database(thread_db* tdbb, bool async)
 			const PathName& filename = attachment->att_filename;
 			status_exception::raise(Arg::Gds(isc_shutdown) << Arg::Str(filename));
 		}
-		else
-		{
-			Arg::Gds err(isc_att_shutdown);
-			if (attachment->getStable() && attachment->getStable()->getShutError())
-				err << Arg::Gds(attachment->getStable()->getShutError());
 
-			err.raise();
-		}
+		Arg::Gds err(isc_att_shutdown);
+
+		if (attachment->getStable() && attachment->getStable()->getShutError())
+			err << Arg::Gds(attachment->getStable()->getShutError());
+
+		err.raise();
 	}
 
 	// No further checks for the async calls
@@ -6617,8 +6613,8 @@ static void find_intl_charset(thread_db* tdbb, Jrd::Attachment* attachment, cons
 			ERR_post(Arg::Gds(isc_bad_dpb_content) <<
 					 Arg::Gds(isc_invalid_attachment_charset) << Arg::Str(options->dpb_lc_ctype));
 		}
-		else
-			attachment->att_client_charset = attachment->att_charset = id & 0xFF;
+
+		attachment->att_client_charset = attachment->att_charset = id & 0xFF;
 	}
 	else
 	{
@@ -7697,11 +7693,21 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 
 	fb_assert(!dbb->locked());
 
+	try
+	{
 #ifdef SUPERSERVER_V2
-	TRA_header_write(tdbb, dbb, 0);	// Update transaction info on header page.
+		TRA_header_write(tdbb, dbb, 0);	// Update transaction info on header page.
 #endif
-	if (flags & SHUT_DBB_RELEASE_POOLS)
-		TRA_update_counters(tdbb, dbb);
+		if (flags & SHUT_DBB_RELEASE_POOLS)
+			TRA_update_counters(tdbb, dbb);
+	}
+	catch (const Exception&)
+	{
+		// Swallow exception raised from the physical I/O layer
+		// (e.g. due to database file being inaccessible).
+		// User attachment is already destroyed, so there's no chance
+		// this dbb can be cleaned up after raising an exception.
+	}
 
 	// Disable AST delivery as we're about to release all locks
 
@@ -8127,7 +8133,11 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 	if (!sAtt->getHandle())
 		return;
 
-	bool overwriteCheck = attachment->att_flags & ATT_overwrite_check;
+	unsigned shutdownFlags = SHUT_DBB_RELEASE_POOLS;
+	if (flags & PURGE_LINGER)
+		shutdownFlags |= SHUT_DBB_LINGER;
+	if (attachment->att_flags & ATT_overwrite_check)
+		shutdownFlags |= SHUT_DBB_OVERWRITE_CHECK;
 
 	// Unlink attachment from database
 	release_attachment(tdbb, attachment);
@@ -8137,8 +8147,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 	MutexUnlockGuard coutBlocking(*sAtt->getBlockingMutex(), FB_FUNCTION);
 
 	// Try to close database if there are no attachments
-	JRD_shutdown_database(dbb, SHUT_DBB_RELEASE_POOLS | (flags & PURGE_LINGER ? SHUT_DBB_LINGER : 0) |
-		(overwriteCheck ? SHUT_DBB_OVERWRITE_CHECK : 0));
+	JRD_shutdown_database(dbb, shutdownFlags);
 }
 
 
@@ -8284,9 +8293,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const char
 			mapping.needAuthBlock(user.usr_auth_block);
 
 			if (mapping.mapUser(name, trusted_role) & Mapping::MAP_DOWN)
-			{
 				user.setFlag(USR_mapdown);
-			}
 
 			if (creating && config)		// when config is NULL we are in error handler
 			{
@@ -8536,16 +8543,13 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 			MutexLockGuard guard(databases_mutex, FB_FUNCTION);
 
 			for (Database* dbb = databases; dbb; dbb = dbb->dbb_next)
-			{
 				dbArray.push(dbb);
-			}
 
 			// No need in databases_mutex any more
 		}
+
 		for (unsigned n = 0; n < dbArray.getCount(); ++n)
-		{
 			JRD_shutdown_database(dbArray[n], SHUT_DBB_RELEASE_POOLS);
-		}
 
 		// Extra shutdown operations
 		Service::shutdownServices();
@@ -8557,9 +8561,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 	}
 
 	if (success && semaphore)
-	{
 		semaphore->release();
-	}
 
 	return 0;
 }
