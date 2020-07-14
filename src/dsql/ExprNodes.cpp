@@ -5455,9 +5455,11 @@ dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 				case blr_extract_timezone_hour:
 				case blr_extract_timezone_minute:
 				{
-					dsc tempDsc;
-					tempDsc.makeTimestampTz(&timeStampTz);
-					MOV_move(tdbb, value, &tempDsc);
+					ISC_TIME_TZ timeTz = TimeZoneUtil::timeToTimeTz(
+						*(ISC_TIME*) value->dsc_address, &EngineCallbacks::instance);
+					timeStampTz.utc_timestamp.timestamp_date = TimeZoneUtil::TIME_TZ_BASE_DATE;
+					timeStampTz.utc_timestamp.timestamp_time = timeTz.utc_time;
+					timeStampTz.time_zone = timeTz.time_zone;
 					break;
 				}
 
@@ -5480,7 +5482,7 @@ dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 
 				case blr_extract_timezone_hour:
 				case blr_extract_timezone_minute:
-					timeStampTz.utc_timestamp.timestamp_date = EngineCallbacks::instance->getLocalDate();
+					timeStampTz.utc_timestamp.timestamp_date = TimeZoneUtil::TIME_TZ_BASE_DATE;
 					timeStampTz.utc_timestamp.timestamp_time = ((ISC_TIME_TZ*) value->dsc_address)->utc_time;
 					timeStampTz.time_zone = ((ISC_TIME_TZ*) value->dsc_address)->time_zone;
 					break;

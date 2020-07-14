@@ -1586,17 +1586,16 @@ void CVT_move_common(const dsc* from, dsc* to, DecimalStatus decSt, Callbacks* c
 		break;
 
 	case dtype_ex_timestamp_tz:
-		d.makeTimestampTz((ISC_TIMESTAMP_TZ*)(to->dsc_address));
+		d.makeTimestampTz((ISC_TIMESTAMP_TZ*) to->dsc_address);
 		CVT_move_common(from, &d, decSt, cb);
-		TimeZoneUtil::extractOffset(*(ISC_TIMESTAMP_TZ*)(to->dsc_address),
-			&((ISC_TIMESTAMP_TZ_EX*)(to->dsc_address))->ext_offset);
+		TimeZoneUtil::extractOffset(*(ISC_TIMESTAMP_TZ*) to->dsc_address,
+			&((ISC_TIMESTAMP_TZ_EX*) to->dsc_address)->ext_offset);
 		return;
 
 	case dtype_ex_time_tz:
-		d.makeTimeTz((ISC_TIME_TZ*)(to->dsc_address));
+		d.makeTimeTz((ISC_TIME_TZ*) to->dsc_address);
 		CVT_move_common(from, &d, decSt, cb);
-		TimeZoneUtil::extractOffset(TimeZoneUtil::timeTzToTimeStampTz(*(ISC_TIME_TZ*)(to->dsc_address), cb),
-			&((ISC_TIME_TZ_EX*)(to->dsc_address))->ext_offset);
+		TimeZoneUtil::extractOffset(*(ISC_TIME_TZ*) to->dsc_address, &((ISC_TIME_TZ_EX*) to->dsc_address)->ext_offset);
 		return;
 
 	case dtype_timestamp_tz:
