@@ -862,7 +862,10 @@ void INI_init_dsql(thread_db* tdbb, dsql_dbb* database)
 			}
 
 			if (DTYPE_IS_TEXT(gfield->gfld_dtype))
-				get_charset_by_text_type(field->charSetId.value, gfield->gfld_sub_type);
+			{
+				if (get_charset_by_text_type(field->charSetId.value, gfield->gfld_sub_type))
+					field->charSetId.specified = true;
+			}
 
 			if (gfield->gfld_nullable)
 				field->flags |= FLD_nullable;
