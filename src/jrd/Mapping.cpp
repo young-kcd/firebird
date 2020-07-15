@@ -1520,6 +1520,45 @@ ULONG Mapping::mapUser(string& name, string& trustedRole)
 	{
 		if (flags & MAP_THROW_NOT_FOUND)
 		{
+			NoCaseString msg = "Missing security context required for ";
+			if (mainDb)
+				msg += mainDb;
+			if (mainDb && securityAlias)
+				msg += " or ";
+			if (securityAlias)
+				msg += secExpanded.c_str();
+
+			msg += "\n\tAvailable context(s): ";
+			bool fstCtx = true;
+			for (AuthReader scan(newBlock); scan.getInfo(info); scan.moveNext())
+			{
+				if (info.type == NM_USER || info.type == NM_ROLE)
+				{
+					if (!fstCtx)
+						msg += "\n\t\t";
+					else
+						fstCtx = false;
+
+					msg += info.type;
+					msg += ' ';
+					msg += info.name;
+					if (info.secDb.hasData())
+					{
+						msg += " in ";
+						msg += info.secDb;
+					}
+					if (info.plugin.hasData())
+					{
+						msg += " plugin ";
+						msg += info.plugin;
+					}
+				}
+			}
+			if (fstCtx)
+				msg += "<none>";
+
+			gds__log("%s", msg.c_str());
+
 			Arg::Gds v(isc_sec_context);
 			v << (errorMessagesContext ? errorMessagesContext : mainAlias ? mainAlias : "<unknown object>");
 			if (rc & MAP_DOWN)
