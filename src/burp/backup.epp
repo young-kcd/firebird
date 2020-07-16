@@ -412,8 +412,6 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 	{
 		// Write database creators
-		BURP_verbose(391);
-		// msg 391 writing database creators
 		write_db_creators();
 	}
 
