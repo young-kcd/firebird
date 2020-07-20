@@ -864,9 +864,10 @@ void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversi
 					for (BoolExprNode* const* iter2 = otherCandidate->matches.begin();
 						iter2 != otherCandidate->matches.end(); ++iter2)
 					{
-						if (candidate->matches.exist(*iter2))
+						if (candidate->matches.exist(*iter2) &&
+							betterInversion(otherCandidate, candidate, true))
 						{
-							usableIndex = betterInversion(candidate, otherCandidate, true);
+							usableIndex = false;
 							break;
 						}
 					}
@@ -963,8 +964,7 @@ bool OptimizerRetrieval::betterInversion(const InversionCandidate* inv1,
 				{
 					// For the same number of indexes compare number of matched segments.
 					// Note the inverted condition: the more matched segments the better.
-					compareSelectivity =
-						(inv2->matchedSegments - inv1->matchedSegments);
+					compareSelectivity = (inv2->matchedSegments - inv1->matchedSegments);
 
 					if (compareSelectivity == 0 && !ignoreUnmatched)
 					{
