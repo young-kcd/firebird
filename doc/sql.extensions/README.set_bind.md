@@ -64,6 +64,9 @@ of particular SQL functions. The following types will be described in legacy for
 DECFLOAT, INT128 and TIME(STAMP) WITH TIME ZONE. When `DataTypeCompatibility=2.5` in addition to this list
 BOOLEAN will be described as legacy type as well.
 
+Only fields returned by database engine in regular messages are modified according to SET BIND rules.
+Variables returned by getting slice of an array are not affected by SET BIND statement.
+
 
 ### SQL Samples:
 
