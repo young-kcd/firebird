@@ -890,6 +890,7 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 	case dtype_long:
 	case dtype_quad:
 	case dtype_int64:
+	case dtype_int128:
 		desc->dsc_scale = static_cast<SCHAR>(*sdl++);
 		break;
 

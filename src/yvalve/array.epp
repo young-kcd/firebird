@@ -318,6 +318,15 @@ ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS* status,
 	case SQL_BOOLEAN:
 		desc->array_desc_dtype = blr_bool;
 		break;
+	case SQL_DEC16:
+		desc->array_desc_dtype = blr_dec64;
+		break;
+	case SQL_DEC34:
+		desc->array_desc_dtype = blr_dec128;
+		break;
+	case SQL_INT128:
+		desc->array_desc_dtype = blr_int128;
+		break;
 	default:
 		return error(status, Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 							 Arg::Gds(isc_random) << Arg::Str("data type not understood"));
@@ -423,6 +432,7 @@ static ISC_STATUS gen_sdl(ISC_STATUS* status,
 	case blr_long:
 	case blr_int64:
 	case blr_quad:
+	case blr_int128:
 		if (stuff_sdl(gen, desc->array_desc_scale))
 			return status[1];
 		break;
