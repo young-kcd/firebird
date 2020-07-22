@@ -454,6 +454,14 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			}
 			invalid_structure("unknown parameter for nbackup", tag);
 			break;
+		case isc_action_svc_nfix:
+			switch (tag)
+			{
+			case isc_spb_dbname:
+				return StringSpb;
+			}
+			invalid_structure("unknown parameter for nbackup", tag);
+			break;
 		case isc_action_svc_trace_start:
 		case isc_action_svc_trace_stop:
 		case isc_action_svc_trace_suspend:

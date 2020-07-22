@@ -223,6 +223,7 @@ const serv_entry services[] =
 	{ isc_action_svc_get_fb_log, "Get Log File", Service::readFbLog },
 	{ isc_action_svc_nbak, "Incremental Backup Database", NBACKUP_main },
 	{ isc_action_svc_nrest, "Incremental Restore Database", NBACKUP_main },
+	{ isc_action_svc_nfix, "Fixup Database after FS Copy", NBACKUP_main },
 	{ isc_action_svc_trace_start, "Start Trace Session", TRACE_main },
 	{ isc_action_svc_trace_stop, "Stop Trace Session", TRACE_main },
 	{ isc_action_svc_trace_suspend, "Suspend Trace Session", TRACE_main },
@@ -2046,6 +2047,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		svc_id == isc_action_svc_restore ||
 		svc_id == isc_action_svc_nbak ||
 		svc_id == isc_action_svc_nrest ||
+		svc_id == isc_action_svc_nfix ||
 		svc_id == isc_action_svc_repair ||
 		svc_id == isc_action_svc_db_stats ||
 		svc_id == isc_action_svc_properties ||
@@ -2685,6 +2687,27 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					return false;
 				}
 				get_action_svc_string(spb, switches);
+
+			default:
+				return false;
+			}
+			break;
+
+		case isc_action_svc_nfix:
+			found = true;
+
+			switch (spb.getClumpTag())
+			{
+			case isc_spb_dbname:
+				if (nbk_database.hasData())
+				{
+					(Arg::Gds(isc_unexp_spb_form) << Arg::Str("only one isc_spb_dbname")).raise();
+				}
+				get_action_svc_string(spb, nbk_database);
+				break;
+
+			default:
+				return false;
 			}
 			break;
 
@@ -3086,6 +3109,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 		{
 			(Arg::Gds(isc_missing_required_spb) << Arg::Str("isc_spb_nbk_file")).raise();
 		}
+
 		if (!get_action_svc_parameter(svc_action, nbackup_action_in_sw_table, switches))
 		{
 			return false;
@@ -3107,6 +3131,19 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 		}
 		switches += nbk_database;
 		switches += nbk_file;
+		break;
+
+	case isc_action_svc_nfix:
+		if (nbk_database.isEmpty())
+		{
+			(Arg::Gds(isc_missing_required_spb) << Arg::Str("isc_spb_dbname")).raise();
+		}
+
+		if (!get_action_svc_parameter(svc_action, nbackup_action_in_sw_table, switches))
+		{
+			return false;
+		}
+		switches += nbk_database;
 		break;
 
 	case isc_action_svc_validate:
