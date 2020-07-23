@@ -542,9 +542,9 @@ static SocketsArray* forkSockets;
 static void		get_peer_info(rem_port*);
 
 static void		inet_gen_error(bool, rem_port*, const Arg::StatusVector& v);
-static bool_t	inet_getbytes(XDR*, SCHAR *, u_int);
+static bool_t	inet_getbytes(XDR*, SCHAR *, unsigned);
 static void		inet_error(bool, rem_port*, const TEXT*, ISC_STATUS, int);
-static bool_t	inet_putbytes(XDR*, const SCHAR*, u_int);
+static bool_t	inet_putbytes(XDR*, const SCHAR*, unsigned);
 static bool		inet_read(XDR*);
 static rem_port*		inet_try_connect(	PACKET*,
 									Rdb*,
@@ -2584,7 +2584,7 @@ static void inet_gen_error(bool releasePort, rem_port* port, const Arg::StatusVe
 }
 
 
-static bool_t inet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
+static bool_t inet_getbytes( XDR* xdrs, SCHAR* buff, unsigned bytecount)
 {
 /**************************************
  *
@@ -2598,15 +2598,11 @@ static bool_t inet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
  **************************************/
 	const rem_port* port = (rem_port*) xdrs->x_public;
 	if (port->port_flags & PORT_server)
-	{
-		return REMOTE_getbytes(xdrs, buff, count);
-	}
-
-	SLONG bytecount = count;
+		return REMOTE_getbytes(xdrs, buff, bytecount);
 
 	// Use memcpy to optimize bulk transfers.
 
-	while (bytecount > (SLONG) sizeof(ISC_QUAD))
+	while (bytecount > sizeof(ISC_QUAD))
 	{
 		if (xdrs->x_handy >= bytecount)
 		{
@@ -2644,9 +2640,9 @@ static bool_t inet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
 		return TRUE;
 	}
 
-	while (--bytecount >= 0)
+	while (bytecount--)
 	{
-		if (!xdrs->x_handy && !inet_read(xdrs))
+		if (xdrs->x_handy == 0 && !inet_read(xdrs))
 			return FALSE;
 		*buff++ = *xdrs->x_private++;
 		--xdrs->x_handy;
@@ -2718,7 +2714,7 @@ static void inet_error(bool releasePort, rem_port* port, const TEXT* function, I
 	}
 }
 
-static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
+static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, unsigned bytecount)
 {
 /**************************************
  *
@@ -2730,11 +2726,10 @@ static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
  *	Put a bunch of bytes to a memory stream if it fits.
  *
  **************************************/
-	SLONG bytecount = count;
 
 	// Use memcpy to optimize bulk transfers.
 
-	while (bytecount > (SLONG) sizeof(ISC_QUAD))
+	while (bytecount > sizeof(ISC_QUAD))
 	{
 		if (xdrs->x_handy >= bytecount)
 		{
@@ -2774,9 +2769,9 @@ static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 		return TRUE;
 	}
 
-	while (--bytecount >= 0)
+	while (bytecount--)
 	{
-		if (xdrs->x_handy <= 0 && !REMOTE_deflate(xdrs, inet_write, packet_send, false))
+		if (xdrs->x_handy == 0 && !REMOTE_deflate(xdrs, inet_write, packet_send, false))
 			return FALSE;
 		--xdrs->x_handy;
 		*xdrs->x_private++ = *buff++;
@@ -2818,7 +2813,7 @@ static bool inet_read( XDR* xdrs)
 		return false;
 	p += length;
 
-	xdrs->x_handy = (int) ((SCHAR *) p - xdrs->x_base);
+	xdrs->x_handy = (SCHAR *) p - xdrs->x_base;
 	xdrs->x_private = xdrs->x_base;
 
 	return true;
