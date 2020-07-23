@@ -1184,7 +1184,7 @@ public:
 	class RecvQueState
 	{
 	public:
-		int save_handy;
+		unsigned save_handy;
 		FB_SIZE_T save_private;
 		FB_SIZE_T save_qoffset;
 
