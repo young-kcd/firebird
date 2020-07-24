@@ -228,7 +228,7 @@ public:
 	};
 
 public:
-	static Attachment* create(Database* dbb);
+	static Attachment* create(Database* dbb, Firebird::IProvider* provider);
 	static void destroy(Attachment* const attachment);
 
 	MemoryPool* const att_pool;					// Memory pool
@@ -384,9 +384,17 @@ public:
 
 	JAttachment* getInterface() throw();
 
+	Firebird::IProvider* getProvider()
+	{
+		fb_assert(att_provider);
+		return att_provider;
+	}
+
 private:
-	Attachment(MemoryPool* pool, Database* dbb);
+	Attachment(MemoryPool* pool, Database* dbb, Firebird::IProvider* provider);
 	~Attachment();
+
+	Firebird::IProvider* att_provider;	// Provider which created this attachment
 };
 
 

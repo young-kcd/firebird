@@ -604,7 +604,7 @@ ExtEngineManager::ExternalContextImpl::ExternalContextImpl(thread_db* tdbb,
 	internalAttachment->getStable()->addRef();
 
 	externalAttachment = MasterInterfacePtr()->registerAttachment
-		(AutoPlugin<JProvider>(JProvider::getInstance()), internalAttachment->getInterface());
+		(internalAttachment->getProvider(), internalAttachment->getInterface());
 }
 
 ExtEngineManager::ExternalContextImpl::~ExternalContextImpl()

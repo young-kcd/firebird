@@ -1056,7 +1056,7 @@ static void		unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* 
 	Jrd::Attachment* attachment, Database* dbb, bool internalFlag);
 static JAttachment*	initAttachment(thread_db*, const PathName&, const PathName&, RefPtr<const Config>, bool,
 	const DatabaseOptions&, RefMutexUnlock&, IPluginConfig*, JProvider*);
-static JAttachment*	create_attachment(const PathName&, Database*, const DatabaseOptions&, bool newDb);
+static JAttachment*	create_attachment(const PathName&, Database*, IProvider* provider, const DatabaseOptions&, bool newDb);
 static void		prepare_tra(thread_db*, jrd_tra*, USHORT, const UCHAR*);
 static void		start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
 	Jrd::Attachment* attachment, unsigned int tpb_length, const UCHAR* tpb);
@@ -6122,7 +6122,7 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 								fb_assert(!(dbb->dbb_flags & DBB_new));
 
 								tdbb->setDatabase(dbb);
-								jAtt = create_attachment(alias_name, dbb, options, !attach_flag);
+								jAtt = create_attachment(alias_name, dbb, provider, options, !attach_flag);
 
 								if (dbb->dbb_linger_timer)
 									dbb->dbb_linger_timer->reset();
@@ -6180,7 +6180,7 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 		dbbGuard.lock(SYNC_EXCLUSIVE);
 
 		tdbb->setDatabase(dbb);
-		jAtt = create_attachment(alias_name, dbb, options, !attach_flag);
+		jAtt = create_attachment(alias_name, dbb, provider, options, !attach_flag);
 		tdbb->setAttachment(jAtt->getHandle());
 	} // end scope
 
@@ -6217,6 +6217,7 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 
 static JAttachment* create_attachment(const PathName& alias_name,
 									  Database* dbb,
+									  IProvider* provider,
 									  const DatabaseOptions& options,
 									  bool newDb)
 {
@@ -6241,7 +6242,7 @@ static JAttachment* create_attachment(const PathName& alias_name,
 			status_exception::raise(Arg::Gds(isc_att_shutdown));
 		}
 
-		attachment = Jrd::Attachment::create(dbb);
+		attachment = Jrd::Attachment::create(dbb, provider);
 		attachment->att_next = dbb->dbb_attachments;
 		dbb->dbb_attachments = attachment;
 	}

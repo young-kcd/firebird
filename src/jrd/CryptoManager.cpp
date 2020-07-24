@@ -926,7 +926,7 @@ namespace Jrd {
 			UserId user;
 			user.usr_user_name = "Database Crypter";
 
-			Jrd::Attachment* const attachment = Jrd::Attachment::create(&dbb);
+			Jrd::Attachment* const attachment = Jrd::Attachment::create(&dbb, NULL);
 			RefPtr<SysStableAttachment> sAtt(FB_NEW SysStableAttachment(attachment));
 			attachment->setStable(sAtt);
 			attachment->att_filename = dbb.dbb_filename;
