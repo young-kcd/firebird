@@ -396,7 +396,7 @@ public:
 	};
 
 public:
-	static Attachment* create(Database* dbb);
+	static Attachment* create(Database* dbb, Firebird::IProvider* provider);
 	static void destroy(Attachment* const attachment);
 
 	MemoryPool* const att_pool;					// Memory pool
@@ -650,9 +650,14 @@ public:
 	void checkReplSetLock(thread_db* tdbb);
 	void invalidateReplSet(thread_db* tdbb, bool broadcast);
 
+	Firebird::IProvider* getProvider()
+	{
+		fb_assert(att_provider);
+		return att_provider;
+	}
 
 private:
-	Attachment(MemoryPool* pool, Database* dbb);
+	Attachment(MemoryPool* pool, Database* dbb, Firebird::IProvider* provider);
 	~Attachment();
 
 	unsigned int att_idle_timeout;		// seconds
@@ -662,9 +667,10 @@ private:
 	Firebird::RefPtr<IdleTimer> att_idle_timer;
 
 	Firebird::Array<JBatch*> att_batches;
-	InitialOptions att_initial_options;		// Initial session options
+	InitialOptions att_initial_options;	// Initial session options
 
 	Lock* att_repl_lock;				// Replication set lock
+	Firebird::IProvider* att_provider;	// Provider which created this attachment
 };
 
 
