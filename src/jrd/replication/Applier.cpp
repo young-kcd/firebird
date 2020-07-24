@@ -118,10 +118,10 @@ namespace
 			return *ptr;
 		}
 
-		const MetaName& getMetaName()
+		const MetaString& getMetaName()
 		{
-			const auto offset = getInt() * sizeof(MetaName);
-			const auto metaPtr = (const MetaName*) (m_metadata + offset);
+			const auto offset = getInt() * sizeof(MetaString);
+			const auto metaPtr = (const MetaString*) (m_metadata + offset);
 			return *metaPtr;
 		}
 

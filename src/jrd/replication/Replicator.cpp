@@ -58,7 +58,7 @@ void Replicator::flush(BatchBlock& block, FlushReason reason, ULONG flags)
 	fb_assert(orgLength > sizeof(Block));
 	block.header.protocol = PROTOCOL_CURRENT_VERSION;
 	block.header.dataLength = orgLength - sizeof(Block);
-	block.header.metaLength = (ULONG) (block.metadata.getCount() * sizeof(MetaName));
+	block.header.metaLength = (ULONG) (block.metadata.getCount() * sizeof(MetaString));
 	block.header.timestamp = TimeZoneUtil::getCurrentGmtTimeStamp().utc_timestamp;
 	block.header.flags |= flags;
 
