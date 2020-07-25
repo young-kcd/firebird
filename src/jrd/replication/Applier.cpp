@@ -206,21 +206,13 @@ Applier* Applier::create(thread_db* tdbb)
 
 void Applier::shutdown(thread_db* tdbb)
 {
-	TransactionMap::Accessor txnAccessor(&m_txnMap);
-	if (txnAccessor.getFirst())
-	{
-		do {
-			const auto transaction = txnAccessor.current()->second;
-			TRA_rollback(tdbb, transaction, false, true);
-		} while (txnAccessor.getNext());
-	}
+	cleanupTransactions(tdbb);
 
 	CMP_release(tdbb, m_request);
 	m_request = NULL;
 	m_record = NULL;
 
 	m_bitmap->clear();
-	m_txnMap.clear();
 }
 
 void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
@@ -265,7 +257,10 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 				break;
 
 			case opCleanupTransaction:
-				rollbackTransaction(tdbb, traNum, true);
+				if (traNum)
+					rollbackTransaction(tdbb, traNum, true);
+				else
+					cleanupTransactions(tdbb);
 				break;
 
 			case opStartSavepoint:
@@ -411,6 +406,20 @@ void Applier::rollbackTransaction(thread_db* tdbb, TraNumber traNum, bool cleanu
 	TRA_rollback(tdbb, transaction, false, true);
 
 	m_txnMap.remove(traNum);
+}
+
+void Applier::cleanupTransactions(thread_db* tdbb)
+{
+	TransactionMap::Accessor txnAccessor(&m_txnMap);
+	if (txnAccessor.getFirst())
+	{
+		do {
+			const auto transaction = txnAccessor.current()->second;
+			TRA_rollback(tdbb, transaction, false, true);
+		} while (txnAccessor.getNext());
+	}
+
+	m_txnMap.clear();
 }
 
 void Applier::startSavepoint(thread_db* tdbb, TraNumber traNum)
