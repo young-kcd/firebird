@@ -2762,7 +2762,7 @@ void CastNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 
 ValueExprNode* CastNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	CastNode* node = FB_NEW_POOL(getPool()) CastNode(getPool());
+	CastNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
 
 	node->source = copier.copy(tdbb, source);
 	node->castDesc = castDesc;
