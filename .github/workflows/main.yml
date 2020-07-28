@@ -120,28 +120,28 @@ jobs:
 
     - name: Upload (Linux)
       if: matrix.os == 'ubuntu-20.04'
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@main
       with:
         name: firebird-linux-${{ matrix.platform }}
         path: gen/Firebird-[0-9]*.tar.gz
 
     - name: Upload (MacOS)
       if: matrix.os == 'macOS-latest'
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@main
       with:
         name: firebird-macos
         path: gen/artifacts
 
     - name: Upload (Windows x64)
       if: matrix.os == 'windows-2016' && matrix.platform == 'x64'
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@main
       with:
         name: firebird-windows-x64
         path: output_x64
 
     - name: Upload (Windows x86)
       if: matrix.os == 'windows-2016' && matrix.platform == 'x86'
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@main
       with:
         name: firebird-windows-x86
         path: output_win32
