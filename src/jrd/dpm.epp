@@ -69,7 +69,7 @@ DATABASE DB = FILENAME "ODS.RDB";
 #define DECOMPOSE(n, divisor, q, r) {r = n % divisor; q = n / divisor;}
 //#define DECOMPOSE_QUOTIENT(n, divisor, q) {q = n / divisor;}
 #define HIGH_WATER(x)	((USHORT) sizeof (data_page) + (USHORT) sizeof (data_page::dpg_repeat) * (x - 1))
-#define SPACE_FUDGE	RHDF_SIZE
+#define SPACE_FUDGE	(ROUNDUP(RHDF_SIZE, ODS_ALIGNMENT) + sizeof(data_page::dpg_repeat))
 
 using namespace Jrd;
 using namespace Ods;
@@ -428,7 +428,7 @@ bool DPM_chain( thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 	// too small, compute the number of pad bytes required
 
 	SLONG fill = (RHDF_SIZE - header_size) - size;
-	if (fill < 0 || (new_rpb->rpb_flags & rpb_deleted))
+	if (fill < 0)
 		fill = 0;
 
 	// Accomodate max record size i.e. 64K
