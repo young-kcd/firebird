@@ -62,6 +62,8 @@ void ProcedureScan::open(thread_db* tdbb) const
 				Arg::Str(m_procedure->getName().identifier) << Arg::Str(m_procedure->getName().package));
 	}
 
+	const_cast<jrd_prc*>(m_procedure)->checkReload(tdbb);
+
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 

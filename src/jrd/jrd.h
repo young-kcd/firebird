@@ -269,6 +269,9 @@ public:
 		delete prc_external;
 		prc_external = NULL;
 	}
+
+protected:
+	virtual bool reload(thread_db* tdbb);	// impl is in met.epp
 };
 
 
