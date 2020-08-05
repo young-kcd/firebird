@@ -120,7 +120,7 @@ void Routine::checkReload(thread_db* tdbb)
 		string err;
 		err.printf("Recompile of %s \"%s\" failed", 
 					getObjectType() == obj_udf ? "FUNCTION" : "PROCEDURE",
-					getName().toString());
+					getName().toString().c_str());
 
 		(Arg::Gds(isc_random) << Arg::Str(err)).raise();
 	}
