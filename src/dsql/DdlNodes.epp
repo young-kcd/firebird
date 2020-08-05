@@ -5830,7 +5830,8 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 			const SINT64 oldValue = !X.RDB$INITIAL_VALUE.NULL ? X.RDB$INITIAL_VALUE : 0;
 			const SINT64 newValue = value.specified ? value.value : oldValue;
 
-			transaction->getGenIdCache()->put(id, newValue);
+			transaction->getGenIdCache()->put(id,
+				newValue - (!X.RDB$GENERATOR_INCREMENT.NULL ? X.RDB$GENERATOR_INCREMENT : 1));
 
 			if (newValue != oldValue)
 			{
@@ -5916,7 +5917,7 @@ SSHORT CreateAlterSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, con
 
 	// The STORE above has caused the DFW item to be posted, so we just adjust the cached
 	// generator value.
-	transaction->getGenIdCache()->put(storedId, val);
+	transaction->getGenIdCache()->put(storedId, val - step);
 
 	return storedId;
 }
@@ -8137,8 +8138,11 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 
 					if (clause->identityOptions->restart)
 					{
-						const SINT64 val = clause->identityOptions->startValue
-							.orElse(!GEN.RDB$INITIAL_VALUE.NULL ? GEN.RDB$INITIAL_VALUE : 0);
+						const SINT64 val =
+							clause->identityOptions->startValue
+								.orElse(!GEN.RDB$INITIAL_VALUE.NULL ? GEN.RDB$INITIAL_VALUE : 0) -
+							clause->identityOptions->increment
+								.orElse(!GEN.RDB$GENERATOR_INCREMENT.NULL ? GEN.RDB$GENERATOR_INCREMENT : 1);
 
 						transaction->getGenIdCache()->put(id, val);
 					}
