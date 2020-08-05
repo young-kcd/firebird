@@ -5177,7 +5177,7 @@ static void list_staying_fast(thread_db* tdbb, record_param* rpb, RecordStack& s
 
 	fb_assert(temp.rpb_b_page == rpb->rpb_b_page);
 	fb_assert(temp.rpb_b_line == rpb->rpb_b_line);
-	fb_assert(temp.rpb_flags == rpb->rpb_flags);
+	fb_assert((temp.rpb_flags & ~rpb_incomplete) == (rpb->rpb_flags & ~rpb_incomplete));
 
 	Record* backout_rec = NULL;
 	RuntimeStatistics::Accumulator backversions(tdbb, rpb->rpb_relation,
