@@ -5730,7 +5730,7 @@ void CreateAlterSequenceNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_SEQUENCE,
 		name, NULL);
 
-	const SINT64 val = value.specified ? value.value : 0;
+	const SINT64 val = value.orElse(1);
 	SLONG initialStep = 1;
 	if (step.specified)
 	{
@@ -6478,7 +6478,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 			CreateAlterSequenceNode::store(tdbb, transaction, fieldDefinition.identitySequence,
 				fb_sysflag_identity_generator,
-				clause->identityOptions->startValue.orElse(0),
+				clause->identityOptions->startValue.orElse(1),
 				clause->identityOptions->increment.orElse(1));
 		}
 
