@@ -215,6 +215,10 @@ void ConfigStorage::checkAudit()
 	if (m_sharedMemory->getHeader()->change_number != 0)
 		return;
 
+	// Prevent second attempt to create audit session if first one was failed.
+	// This also prevents multiply logging of the same error.
+	setDirty();
+
 	// put default (audit) trace file contents into storage
 	AutoPtr<FILE> cfgFile;
 
@@ -254,8 +258,10 @@ void ConfigStorage::checkAudit()
 			}
 			p[len] = 0;
 		}
-		else {
+		else 
+		{
 			gds__log("Audit configuration file \"%s\" is empty", configFileName.c_str());
+			return;
 		}
 
 		session.ses_user = DBA_USER_NAME;
