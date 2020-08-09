@@ -878,6 +878,31 @@ void INF_database_info(thread_db* tdbb,
 				break;
 			}
 
+		case fb_info_next_attachment:
+			length = INF_convert(dbb->getLatestAttachmentId(), buffer);
+			break;
+
+		case fb_info_next_statement:
+			length = INF_convert(dbb->getLatestStatementId(), buffer);
+			break;
+
+		case fb_info_db_guid:
+			{
+				char guidBuffer[GUID_BUFF_SIZE];
+				GuidToString(guidBuffer, &dbb->dbb_guid);
+				if (!(info = INF_put_item(item, strlen(guidBuffer), guidBuffer, info, end)))
+					return;
+			}
+			break;
+
+		case fb_info_db_file_id:
+			{
+				const auto& fileId = dbb->getUniqueFileId();
+				if (!(info = INF_put_item(item, fileId.length(), fileId.c_str(), info, end)))
+					return;
+			}
+			break;
+
 		default:
 			buffer[0] = item;
 			item = isc_info_error;

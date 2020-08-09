@@ -165,6 +165,12 @@ enum db_info_types
 	// Return list of features supported by provider of current connection
 	fb_info_features = 141,
 
+	fb_info_next_attachment = 142,
+	fb_info_next_statement = 143,
+
+	fb_info_db_guid = 144,
+	fb_info_db_file_id = 145,
+
 	isc_info_db_last_value   /* Leave this LAST! */
 };
 

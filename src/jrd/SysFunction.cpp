@@ -338,6 +338,8 @@ const char
 	EXT_CONN_POOL_ACTIVE[] = "EXT_CONN_POOL_ACTIVE_COUNT",
 	EXT_CONN_POOL_LIFETIME[] = "EXT_CONN_POOL_LIFETIME",
 	REPLICATION_SEQ_NAME[] = "REPLICATION_SEQUENCE",
+	DATABASE_GUID[] = "DB_GUID",
+	DATABASE_FILE_ID[] = "DB_FILE_ID",
 	// SYSTEM namespace: connection wise items
 	SESSION_ID_NAME[] = "SESSION_ID",
 	NETWORK_PROTOCOL_NAME[] = "NETWORK_PROTOCOL",
@@ -4174,6 +4176,16 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 			resultStr.printf("%s.%s.%s", FB_MAJOR_VER, FB_MINOR_VER, FB_REV_NO);
 		else if (nameStr == DATABASE_NAME)
 			resultStr = dbb->dbb_database_name.ToString();
+		else if (nameStr == DATABASE_GUID)
+		{
+			char guidBuffer[GUID_BUFF_SIZE];
+			GuidToString(guidBuffer, &dbb->dbb_guid);
+			resultStr = string(guidBuffer);
+		}
+		else if (nameStr == DATABASE_FILE_ID)
+		{
+			resultStr = dbb->getUniqueFileId();
+		}
 		else if (nameStr == SESSION_ID_NAME)
 			resultStr.printf("%" SQUADFORMAT, PAG_attachment_id(tdbb));
 		else if (nameStr == NETWORK_PROTOCOL_NAME)

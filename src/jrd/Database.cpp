@@ -88,6 +88,20 @@ namespace Jrd
 		return dbb_tip_cache->generateStatementId();
 	}
 
+	AttNumber Database::getLatestAttachmentId() const
+	{
+		if (!dbb_tip_cache)
+			return 0;
+		return dbb_tip_cache->getLatestAttachmentId();
+	}
+
+	StmtNumber Database::getLatestStatementId() const
+	{
+		if (!dbb_tip_cache)
+			return 0;
+		return dbb_tip_cache->getLatestStatementId();
+	}
+
 	const Firebird::string& Database::getUniqueFileId()
 	{
 		if (dbb_file_id.isEmpty())
