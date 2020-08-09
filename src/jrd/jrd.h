@@ -156,6 +156,8 @@ public:
 	Nullable<bool> ssDefiner;
 	MetaName	owner;				// Owner for SQL SECURITY
 
+	bool isActive() const;
+
 	void compile(thread_db*);				// Ensure that trigger is compiled
 	void release(thread_db*);				// Try to free trigger request
 
@@ -191,13 +193,17 @@ public:
 		  useCount(0)
 	{ }
 
-	void addRef() const
+	void addRef()
 	{
 		++useCount;
 	}
 
-	void release() const;
-	void release(thread_db* tdbb) const;
+	bool hasActive() const;
+
+	void decompile(thread_db* tdbb);
+
+	void release();
+	void release(thread_db* tdbb);
 
 	~TrigVector()
 	{
@@ -205,7 +211,7 @@ public:
 	}
 
 private:
-	mutable Firebird::AtomicCounter useCount;
+	Firebird::AtomicCounter useCount;
 };
 
 

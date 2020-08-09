@@ -331,6 +331,8 @@ public:
 	explicit jrd_rel(MemoryPool& p);
 
 	bool hasTriggers() const;
+	void releaseTriggers(thread_db* tdbb, bool destroy);
+	void replaceTriggers(thread_db* tdbb, TrigVector** triggers);
 
 	static Lock* createLock(thread_db* tdbb, MemoryPool* pool, jrd_rel* relation, lck_t, bool);
 	static int blocking_ast_gcLock(void*);

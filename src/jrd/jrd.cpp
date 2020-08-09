@@ -854,6 +854,11 @@ namespace
 #define TEXT    SCHAR
 #endif	// WIN_NT
 
+bool Trigger::isActive() const
+{
+	return statement && statement->isActive();
+}
+
 void Trigger::compile(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
@@ -941,7 +946,7 @@ void Trigger::release(thread_db* tdbb)
 		extTrigger = NULL;
 	}
 
-	if (blr.getCount() == 0 || !statement || statement->isActive())
+	if (blr.isEmpty() || !statement || statement->isActive())
 		return;
 
 	statement->release(tdbb);
@@ -9367,25 +9372,36 @@ void JRD_cancel_operation(thread_db* /*tdbb*/, Jrd::Attachment* attachment, int 
 }
 
 
-void TrigVector::release() const
+bool TrigVector::hasActive() const
+{
+	for (const_iterator iter = begin(); iter != end(); ++iter)
+	{
+		if (iter->isActive())
+			return true;
+	}
+
+	return false;
+}
+
+
+void TrigVector::decompile(thread_db* tdbb)
+{
+	for (iterator iter = begin(); iter != end(); ++iter)
+		iter->release(tdbb);
+}
+
+
+void TrigVector::release()
 {
 	release(JRD_get_thread_data());
 }
 
 
-void TrigVector::release(thread_db* tdbb) const
+void TrigVector::release(thread_db* tdbb)
 {
 	if (--useCount == 0)
 	{
-		const const_iterator e = end();
-
-		for (const_iterator t = begin(); t != e; ++t)
-		{
-			JrdStatement* stmt = t->statement;
-			if (stmt)
-				stmt->release(tdbb);
-		}
-
+		decompile(tdbb);
 		delete this;
 	}
 }

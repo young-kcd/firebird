@@ -1184,12 +1184,12 @@ void EXE_execute_triggers(thread_db* tdbb,
 		}
 
 		if (vector != *triggers)
-			MET_release_triggers(tdbb, &vector);
+			MET_release_triggers(tdbb, &vector, true);
 	}
 	catch (const Firebird::Exception& ex)
 	{
 		if (vector != *triggers)
-			MET_release_triggers(tdbb, &vector);
+			MET_release_triggers(tdbb, &vector, true);
 
 		if (trigger)
 		{

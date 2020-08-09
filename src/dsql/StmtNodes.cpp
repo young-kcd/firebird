@@ -2481,7 +2481,7 @@ void EraseNode::pass1Erase(thread_db* tdbb, CompilerScratch* csb, EraseNode* nod
 		if (parent)
 			priv |= SCL_select;
 
-		RefPtr<const TrigVector> trigger(relation->rel_pre_erase ?
+		RefPtr<TrigVector> trigger(relation->rel_pre_erase ?
 			relation->rel_pre_erase : relation->rel_post_erase);
 
 		// If we have a view with triggers, let's expand it.
@@ -6426,7 +6426,7 @@ void ModifyNode::pass1Modify(thread_db* tdbb, CompilerScratch* csb, ModifyNode* 
 		if (parent)
 			priv |= SCL_select;
 
-		RefPtr<const TrigVector> trigger(relation->rel_pre_modify ?
+		RefPtr<TrigVector> trigger(relation->rel_pre_modify ?
 			relation->rel_pre_modify : relation->rel_post_modify);
 
 		// If we have a view with triggers, let's expand it.
@@ -7289,7 +7289,7 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 
 		postTriggerAccess(csb, relation, ExternalAccess::exa_insert, view);
 
-		RefPtr<const TrigVector> trigger(relation->rel_pre_store ?
+		RefPtr<TrigVector> trigger(relation->rel_pre_store ?
 			relation->rel_pre_store : relation->rel_post_store);
 
 		// Check out insert. If this is an insert thru a view, verify the view by checking for read

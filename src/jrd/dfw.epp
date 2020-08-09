@@ -500,7 +500,6 @@ static bool formatsAreEqual(const Format*, const Format*);
 static bool	find_depend_in_dfw(thread_db*, TEXT*, USHORT, USHORT, jrd_tra*);
 static void get_array_desc(thread_db*, const TEXT*, Ods::InternalArrayDesc*);
 static void get_trigger_dependencies(DeferredWork*, bool, jrd_tra*);
-static void	load_trigs(thread_db*, jrd_rel*, TrigVector**);
 static Format*	make_format(thread_db*, jrd_rel*, USHORT *, TemporaryField*);
 static void put_summary_blob(thread_db* tdbb, blb*, enum rsr_t, bid*, jrd_tra*);
 static void put_summary_record(thread_db* tdbb, blb*, enum rsr_t, const UCHAR*, USHORT);
@@ -3839,12 +3838,12 @@ static bool create_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 					if ((arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
 					{
 						unsigned triggerKind = arg->dfw_id & ~TRIGGER_TYPE_DB;
-						MET_release_triggers(tdbb, &tdbb->getAttachment()->att_triggers[triggerKind]);
+						MET_release_triggers(tdbb, &tdbb->getAttachment()->att_triggers[triggerKind], true);
 						MET_load_db_triggers(tdbb, triggerKind);
 					}
 					else if ((arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DDL)
 					{
-						MET_release_triggers(tdbb, &tdbb->getAttachment()->att_ddl_triggers);
+						MET_release_triggers(tdbb, &tdbb->getAttachment()->att_ddl_triggers, true);
 						MET_load_ddl_triggers(tdbb);
 					}
 				}
@@ -4964,12 +4963,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 		}
 
 		// Release relation triggers
-		MET_release_triggers(tdbb, &relation->rel_pre_store);
-		MET_release_triggers(tdbb, &relation->rel_post_store);
-		MET_release_triggers(tdbb, &relation->rel_pre_erase);
-		MET_release_triggers(tdbb, &relation->rel_post_erase);
-		MET_release_triggers(tdbb, &relation->rel_pre_modify);
-		MET_release_triggers(tdbb, &relation->rel_post_modify);
+		relation->releaseTriggers(tdbb, true);
 
 		break;
 	}
@@ -5449,48 +5443,6 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 		else
 			attachment->deletePool(new_pool);
 	}
-}
-
-
-static void load_trigs(thread_db* tdbb, jrd_rel* relation, TrigVector** triggers)
-{
-/**************************************
- *
- *	l o a d _ t r i g s
- *
- **************************************
- *
- * Functional description
- *	We have just loaded the triggers onto the local vector
- *      triggers. Its now time to place them at their rightful
- *      place ie the relation block.
- *
- **************************************/
-	TrigVector* tmp_vector;
-
-	tmp_vector = relation->rel_pre_store;
-	relation->rel_pre_store = triggers[TRIGGER_PRE_STORE];
-	MET_release_triggers(tdbb, &tmp_vector);
-
-	tmp_vector = relation->rel_post_store;
-	relation->rel_post_store = triggers[TRIGGER_POST_STORE];
-	MET_release_triggers(tdbb, &tmp_vector);
-
-	tmp_vector = relation->rel_pre_erase;
-	relation->rel_pre_erase = triggers[TRIGGER_PRE_ERASE];
-	MET_release_triggers(tdbb, &tmp_vector);
-
-	tmp_vector = relation->rel_post_erase;
-	relation->rel_post_erase = triggers[TRIGGER_POST_ERASE];
-	MET_release_triggers(tdbb, &tmp_vector);
-
-	tmp_vector = relation->rel_pre_modify;
-	relation->rel_pre_modify = triggers[TRIGGER_PRE_MODIFY];
-	MET_release_triggers(tdbb, &tmp_vector);
-
-	tmp_vector = relation->rel_post_modify;
-	relation->rel_post_modify = triggers[TRIGGER_POST_MODIFY];
-	MET_release_triggers(tdbb, &tmp_vector);
 }
 
 
@@ -6075,8 +6027,11 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		if (!relation)
 			return false;
 
+		// We have just loaded the triggers onto the local vector triggers.
+		// It's now time to place them at their rightful place inside the relation block.
+
 		if (!(relation->rel_flags & REL_sys_trigs_being_loaded))
-		    load_trigs(tdbb, relation, triggers);
+			relation->replaceTriggers(tdbb, triggers);
 
 		// in case somebody changed the view definition or a computed
 		// field, reset the dependencies by deleting the current ones
@@ -6170,12 +6125,12 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 				if (arg && (arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
 				{
 					unsigned triggerKind = arg->dfw_id & ~TRIGGER_TYPE_DB;
-					MET_release_triggers(tdbb, &tdbb->getAttachment()->att_triggers[triggerKind]);
+					MET_release_triggers(tdbb, &tdbb->getAttachment()->att_triggers[triggerKind], true);
 					MET_load_db_triggers(tdbb, triggerKind);
 				}
 				else if ((arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DDL)
 				{
-					MET_release_triggers(tdbb, &tdbb->getAttachment()->att_ddl_triggers);
+					MET_release_triggers(tdbb, &tdbb->getAttachment()->att_ddl_triggers, true);
 					MET_load_ddl_triggers(tdbb);
 				}
 			}
@@ -6217,7 +6172,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 									for (FB_SIZE_T j = 0; j < triggers[i]->getCount(); ++j)
 										(*triggers[i])[j].compile(tdbb);
 
-									MET_release_triggers(tdbb, &triggers[i]);
+									MET_release_triggers(tdbb, &triggers[i], true);
 								}
 							}
 

@@ -123,7 +123,7 @@ Jrd::jrd_prc*	MET_procedure(Jrd::thread_db*, USHORT, bool, USHORT);
 Jrd::jrd_rel*	MET_relation(Jrd::thread_db*, USHORT);
 void		MET_release_existence(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_release_trigger(Jrd::thread_db*, Jrd::TrigVector**, const Jrd::MetaName&);
-void		MET_release_triggers(Jrd::thread_db*, Jrd::TrigVector**);
+void		MET_release_triggers(Jrd::thread_db*, Jrd::TrigVector**, bool);
 #ifdef DEV_BUILD
 void		MET_verify_cache(Jrd::thread_db*);
 #endif
