@@ -201,8 +201,7 @@ public:
 private:
 	template <typename T> T* setupNode(Node* node)
 	{
-		node->line = yyposn.firstLine;
-		node->column = yyposn.firstColumn;
+		setNodeLineColumn(node);
 		return static_cast<T*>(node);
 	}
 
@@ -365,6 +364,8 @@ private:
 	void yyMoreStack(yyparsestate* yyps);
 	yyparsestate* yyNewState(int size);
 
+	void setNodeLineColumn(Node* node);
+
 private:
 	int parseAux();
 	int yylex1();
@@ -392,6 +393,7 @@ private:
 	Position yyretposn;
 
 	int yynerrs;
+	int yym;
 
 	// Current parser state
 	yyparsestate* yyps;
