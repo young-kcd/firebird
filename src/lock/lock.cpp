@@ -1061,22 +1061,20 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 	if (!locked)
 		m_sharedMemory->mutexLock();
 
-	// Check for shared memory state consistency
+	// Reattach if someone has just deleted the shared file
 
-	while (SRQ_EMPTY(m_sharedMemory->getHeader()->lhb_processes))
+	while (m_sharedMemory->getHeader()->isDeleted())
 	{
 		fb_assert(!m_process);
 		if (m_process)
 			bug(NULL, "Process disappeared in LockManager::acquire_shmem");
 
-		if (m_sharedMemory->justCreated())
-		{
-			// no sense thinking about statistics now
-			m_blockage = false;
-			break;
-		}
+		// Shared memory must be empty at this point
+		fb_assert(SRQ_EMPTY(m_sharedMemory->getHeader()->lhb_processes));
 
-		// Someone is going to delete shared file? Reattach.
+		// no sense thinking about statistics now
+		m_blockage = false;
+
 		m_sharedMemory->mutexUnlock();
 		m_sharedMemory.reset();
 
@@ -1087,8 +1085,6 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 
 		m_sharedMemory->mutexLock();
 	}
-
-	fb_assert(!m_sharedMemory->justCreated());
 
 	++(m_sharedMemory->getHeader()->lhb_acquires);
 	if (m_blockage)

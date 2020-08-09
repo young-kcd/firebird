@@ -166,7 +166,7 @@ MonitoringData::MonitoringData(Database* dbb)
 
 MonitoringData::~MonitoringData()
 {
-	m_sharedMemory->mutexLock();
+	Guard guard(this);
 
 	try
 	{
@@ -178,8 +178,6 @@ MonitoringData::~MonitoringData()
 	}
 	catch (const Exception&)
 	{} // no-op
-
-	m_sharedMemory->mutexUnlock();
 }
 
 
@@ -210,12 +208,13 @@ void MonitoringData::acquire()
 	m_localMutex.enter(FB_FUNCTION);
 	m_sharedMemory->mutexLock();
 
-	while (m_sharedMemory->getHeader()->used == alignOffset(sizeof(Header)))
-	{
-		if (m_sharedMemory->justCreated())
-			break;
+	// Reattach if someone has just deleted the shared file
 
-		// Someone is going to delete shared file? Reattach.
+	while (m_sharedMemory->getHeader()->isDeleted())
+	{
+		// Shared memory must be empty at this point
+		fb_assert(m_sharedMemory->getHeader()->used == alignOffset(sizeof(Header)));
+
 		m_sharedMemory->mutexUnlock();
 		m_sharedMemory.reset();
 
@@ -224,8 +223,6 @@ void MonitoringData::acquire()
 		initSharedFile();
 		m_sharedMemory->mutexLock();
 	}
-
-	fb_assert(!m_sharedMemory->justCreated());
 
 	if (m_sharedMemory->getHeader()->allocated > m_sharedMemory->sh_mem_length_mapped)
 	{

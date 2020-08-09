@@ -1734,11 +1734,15 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg, ISC_STATUS& isc
 
 void SharedMemoryBase::removeMapFile()
 {
+	fb_assert(sh_mem_header && !sh_mem_header->isDeleted());
+
 #ifndef WIN_NT
 	unlinkFile();
 #else
 	sh_mem_unlink = true;
 #endif // WIN_NT
+
+	sh_mem_header->markAsDeleted();
 }
 
 void SharedMemoryBase::unlinkFile()
@@ -1965,7 +1969,6 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 		if (trunc_flag)
 			FB_UNUSED(os_utils::ftruncate(mainLock->getFd(), length));
 
-		sh_mem_just_created = true;
 		if (callback->initialize(this, true))
 		{
 #ifdef HAVE_SHARED_MUTEX_SECTION
@@ -2089,7 +2092,6 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	}
 	else
 	{
-		sh_mem_just_created = false;
 		if (callback->initialize(this, false))
 		{
 			if (!mainLock->setlock(&statusVector, FileLock::FLM_SHARED))
@@ -2419,7 +2421,6 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	sh_mem_hdr_address = header_address;
 	strcpy(sh_mem_name, filename);
 
-	sh_mem_just_created = init_flag;
 	sh_mem_callback->initialize(this, init_flag);
 
 	if (init_flag)
