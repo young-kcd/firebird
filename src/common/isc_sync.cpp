@@ -1734,15 +1734,19 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg, ISC_STATUS& isc
 
 void SharedMemoryBase::removeMapFile()
 {
-	fb_assert(sh_mem_header && !sh_mem_header->isDeleted());
+	fb_assert(sh_mem_header);
 
+	if (!sh_mem_header->isDeleted())
+	{
 #ifndef WIN_NT
-	unlinkFile();
+		unlinkFile();
 #else
-	sh_mem_unlink = true;
+		fb_assert(!sh_mem_unlink);
+		sh_mem_unlink = true;
 #endif // WIN_NT
 
-	sh_mem_header->markAsDeleted();
+		sh_mem_header->markAsDeleted();
+	}
 }
 
 void SharedMemoryBase::unlinkFile()
