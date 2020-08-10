@@ -871,7 +871,6 @@ void Trigger::compile(thread_db* tdbb)
 
 	if (!statement)
 	{
-		compile_in_progress = true;
 		// Allocate statement memory pool
 		MemoryPool* new_pool = att->createPool();
 		// Trigger request is not compiled yet. Lets do it now
@@ -911,8 +910,6 @@ void Trigger::compile(thread_db* tdbb)
 		}
 		catch (const Exception&)
 		{
-			compile_in_progress = false;
-
 			if (statement)
 			{
 				statement->release(tdbb);
@@ -928,13 +925,11 @@ void Trigger::compile(thread_db* tdbb)
 		if (ssDefiner.orElse(false))
 			statement->triggerInvoker = att->getUserId(owner);
 
-		if (sys_trigger)
+		if (sysTrigger)
 			statement->flags |= JrdStatement::FLAG_SYS_TRIGGER;
 
 		if (flags & TRG_ignore_perm)
 			statement->flags |= JrdStatement::FLAG_IGNORE_PERM;
-
-		compile_in_progress = false;
 	}
 }
 
@@ -946,8 +941,10 @@ void Trigger::release(thread_db* tdbb)
 		extTrigger = NULL;
 	}
 
-	if (blr.isEmpty() || !statement || statement->isActive())
+	if (blr.isEmpty() || !statement || statement->isActive() || releaseInProgress)
 		return;
+
+	AutoSetRestore<bool> autoProgressFlag(&releaseInProgress, true);
 
 	statement->release(tdbb);
 	statement = NULL;

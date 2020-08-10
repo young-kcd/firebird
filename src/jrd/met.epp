@@ -3737,23 +3737,21 @@ void MET_release_existence(thread_db* tdbb, jrd_rel* relation)
  *      existence lock and mark deleted.
  *
  **************************************/
-	if (relation->rel_use_count) {
-		relation->rel_use_count--;
-	}
+	if (!relation->rel_use_count)
+		return;
+
+	--relation->rel_use_count;
 
 	if (!relation->rel_use_count)
 	{
-		if (relation->rel_flags & REL_blocking) {
+		if (relation->rel_flags & REL_blocking)
 			LCK_re_post(tdbb, relation->rel_existence_lock);
-		}
 
+		// release trigger requests
 		relation->releaseTriggers(tdbb, false);
 
-		if (relation->rel_file)
-		{
-			// close external file
-			EXT_fini(relation, true);
-		}
+		// close external file
+		EXT_fini(relation, true);
 	}
 }
 
@@ -4984,8 +4982,7 @@ static void save_trigger_data(thread_db* tdbb, TrigVector** ptr, jrd_rel* relati
 
 	t.type = type;
 	t.flags = flags;
-	t.compile_in_progress = false;
-	t.sys_trigger = sys_trigger;
+	t.sysTrigger = sys_trigger;
 	t.statement = statement;
 	t.relation = relation;
 	t.engine = engine;
@@ -5186,7 +5183,7 @@ static void store_dependencies(thread_db* tdbb,
 			(t = findTrigger(dep_rel->rel_post_erase, object_name)) ||
 			(t = findTrigger(dep_rel->rel_post_modify, object_name)) ||
 			(t = findTrigger(dep_rel->rel_post_store, object_name))
-		) && t && (t->sys_trigger);
+		) && t && (t->sysTrigger);
 
 	while (csb->csb_dependencies.hasData())
 	{

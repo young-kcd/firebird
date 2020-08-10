@@ -143,8 +143,8 @@ public:
 	Firebird::HalfStaticArray<UCHAR, 128> blr;			// BLR code
 	Firebird::HalfStaticArray<UCHAR, 128> debugInfo;	// Debug info
 	JrdStatement* statement;							// Compiled statement
-	bool		compile_in_progress;
-	bool		sys_trigger;
+	bool		releaseInProgress;
+	bool		sysTrigger;
 	FB_UINT64	type;						// Trigger type
 	USHORT		flags;						// Flags as they are in RDB$TRIGGERS table
 	jrd_rel*	relation;					// Trigger parent relation
@@ -164,6 +164,7 @@ public:
 	explicit Trigger(MemoryPool& p)
 		: blr(p),
 		  debugInfo(p),
+		  releaseInProgress(false),
 		  name(p),
 		  engine(p),
 		  entryPoint(p),
