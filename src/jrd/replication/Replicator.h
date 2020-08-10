@@ -39,7 +39,7 @@ namespace Replication
 		public Firebird::AutoIface<Firebird::IReplicatedSessionImpl<Replicator, Firebird::CheckStatusWrapper> >,
 		private Firebird::PermanentStorage
 	{
-		typedef Firebird::Array<Jrd::MetaName> MetadataCache;
+		typedef Firebird::Array<Firebird::MetaString> MetadataCache;
 		typedef Firebird::HalfStaticArray<SavNumber, 16> SavepointStack;
 
 		struct BatchBlock
@@ -83,7 +83,7 @@ namespace Replication
 				buffer->add(ptr, sizeof(SINT64));
 			}
 
-			void putMetaName(const Jrd::MetaName& name)
+			void putMetaName(const Firebird::MetaString& name)
 			{
 				if (lastMetaId < metadata.getCount() && metadata[lastMetaId] == name)
 				{
