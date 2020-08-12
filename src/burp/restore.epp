@@ -3672,7 +3672,7 @@ rec_type get_data_old(BurpGlobals* tdgbl, burp_rel* relation)
 	if (identity_type == IDENT_TYPE_ALWAYS)
 	{
 		add_byte(blr, blr_store3);
-		add_byte(blr, identity_type == IDENT_TYPE_ALWAYS ? OverrideClause::SYSTEM_VALUE : OverrideClause::USER_VALUE);
+		add_byte(blr, OverrideClause::SYSTEM_VALUE);
 	}
 	else
 		add_byte(blr, blr_store);
