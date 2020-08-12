@@ -5832,14 +5832,6 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 			transaction->getGenIdCache()->put(id,
 				newValue - (!X.RDB$GENERATOR_INCREMENT.NULL ? X.RDB$GENERATOR_INCREMENT : 1));
-
-			if (newValue != oldValue)
-			{
-				MODIFY X
-					X.RDB$INITIAL_VALUE.NULL = FALSE;
-					X.RDB$INITIAL_VALUE = newValue;
-				END_MODIFY
-			}
 		}
 
 		dsc desc;
