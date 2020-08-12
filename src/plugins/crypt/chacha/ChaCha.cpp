@@ -42,7 +42,7 @@ void tomCheck(int err, const char* text)
 		return;
 
 	string buf;
-	buf.printf("LibTomCrypt error %s: %s", text, error_to_string(err));
+	buf.printf("TomCrypt library error %s: %s", text, error_to_string(err));
 	(Arg::Gds(isc_random) << buf).raise();
 }
 
@@ -50,7 +50,7 @@ void tomCheck(int err, const char* text)
 class Cipher : public GlobalStorage
 {
 public:
-	Cipher(const unsigned char* key, unsigned int ivlen, const unsigned char* iv) throw()
+	Cipher(const unsigned char* key, unsigned int ivlen, const unsigned char* iv)
 	{
 		if (ivlen != 16)
 			(Arg::Gds(isc_random) << "Wrong IV length, need 16").raise();
@@ -60,7 +60,7 @@ public:
 		tomCheck(chacha_ivctr32(&chacha, iv, 12, ctr), "setting IV for CHACHA#20");
 	}
 
-	void transform(unsigned int length, const void* from, void* to) throw()
+	void transform(unsigned int length, const void* from, void* to)
 	{
 		unsigned char* t = static_cast<unsigned char*>(to);
 		const unsigned char* f = static_cast<const unsigned char*>(from);
@@ -157,7 +157,8 @@ const char* ChaCha::getKnownTypes(CheckStatusWrapper* status)
 const unsigned char* ChaCha::getSpecificData(CheckStatusWrapper* status, const char*, unsigned* len)
 {
 	*len = 16;
-	GenerateRandomBytes(iv.getBuffer(*len), *len);
+	GenerateRandomBytes(iv.getBuffer(*len), 12);
+	iv[12] = iv[13] = iv[14] = iv[15] = 0;
 	return iv.begin();
 }
 
