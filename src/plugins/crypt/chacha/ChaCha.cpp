@@ -52,12 +52,24 @@ class Cipher : public GlobalStorage
 public:
 	Cipher(const unsigned char* key, unsigned int ivlen, const unsigned char* iv)
 	{
-		if (ivlen != 16)
-			(Arg::Gds(isc_random) << "Wrong IV length, need 16").raise();
-
-		unsigned ctr = (iv[12] << 24) + (iv[13] << 16) + (iv[14] << 8) + iv[15];
 		tomCheck(chacha_setup(&chacha, key, 32, 20), "initializing CHACHA#20");
-		tomCheck(chacha_ivctr32(&chacha, iv, 12, ctr), "setting IV for CHACHA#20");
+
+		unsigned ctr = 0;
+		switch (ivlen)
+		{
+		case 16:
+			ctr = (iv[12] << 24) + (iv[13] << 16) + (iv[14] << 8) + iv[15];
+			// fall down...
+		case 12:
+			tomCheck(chacha_ivctr32(&chacha, iv, 12, ctr), "setting IV for CHACHA#20");
+			break;
+		case 8:
+			tomCheck(chacha_ivctr64(&chacha, iv, 8, 0), "setting IV for CHACHA#20");
+			break;
+		default:
+			(Arg::Gds(isc_random) << "Wrong IV length, need 8, 12 or 16").raise();
+			break;
+		}
 	}
 
 	void transform(unsigned int length, const void* from, void* to)
