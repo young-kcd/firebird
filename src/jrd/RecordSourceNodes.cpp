@@ -682,7 +682,6 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 
 	// we've got a view, expand it
 
-	DEBUG;
 	stack.pop();
 	StreamType* map = CMP_alloc_map(tdbb, csb, stream);
 
@@ -701,10 +700,8 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 	{
 		NodeCopier copier(csb->csb_pool, csb, map);
 		RseNode* copy = viewRse->copy(tdbb, copier);
-		DEBUG;
 		doPass1(tdbb, csb, &copy);
 		stack.push(copy);
-		DEBUG;
 		return;
 	}
 

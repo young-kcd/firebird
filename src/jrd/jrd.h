@@ -60,12 +60,6 @@
 #include "../jrd/Attachment.h"
 #include "firebird/Interface.h"
 
-#ifdef DEV_BUILD
-//#define DEBUG                   if (debug) DBG_supervisor(debug);
-#else // PROD
-//#define DEBUG
-#endif
-#define DEBUG
 
 #define BUGCHECK(number)		ERR_bugcheck(number, __FILE__, __LINE__)
 #define SOFT_BUGCHECK(number)	ERR_soft_bugcheck(number, __FILE__, __LINE__)
@@ -999,8 +993,6 @@ inline void SET_DBB(Jrd::Database*& dbb)
 
 
 // global variables for engine
-
-extern int debug;
 
 namespace Jrd {
 	typedef Firebird::SubsystemContextPoolHolder <Jrd::thread_db, MemoryPool> ContextPoolHolder;

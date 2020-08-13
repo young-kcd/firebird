@@ -150,9 +150,6 @@ const SSHORT WAIT_PERIOD	= -1;
 #define unlink PIO_unlink
 #endif
 
-#ifdef DEV_BUILD
-int debug;
-#endif
 
 namespace Jrd
 {

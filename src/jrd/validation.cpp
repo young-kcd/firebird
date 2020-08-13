@@ -1344,7 +1344,6 @@ void Validation::garbage_collect()
 							p[-1] &= ~(1 << (number & 7));
 							vdr_fixed++;
 						}
-						DEBUG;
 					}
 				}
 				else if (!(byte & 1) && (vdr_flags & VDR_records))
@@ -1366,7 +1365,6 @@ void Validation::garbage_collect()
 						if (p[-1] == 0xFF && page->pip_extent > bit)
 							page->pip_extent = bit & ((ULONG) ~7);
 					}
-					DEBUG;
 				}
 			}
 		}

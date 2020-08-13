@@ -6387,9 +6387,7 @@ void VIO_update_in_place(thread_db* tdbb,
 	org_rpb->rpb_flags &= ~rpb_deleted;
 	org_rpb->rpb_flags |= new_rpb->rpb_flags & (rpb_uk_modified|rpb_deleted);
 
-	DEBUG;
 	replace_record(tdbb, org_rpb, stack, transaction);
-	DEBUG;
 
 	org_rpb->rpb_address = save_address;
 	org_rpb->rpb_length = length;

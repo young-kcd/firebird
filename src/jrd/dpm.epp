@@ -773,7 +773,6 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 			return;
 		}
 
-		DEBUG
 		page->dpg_header.pag_flags &= ~dpg_full;
 		mark_full(tdbb, rpb);
 
@@ -2317,7 +2316,6 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack, const jrd
 	// Mark the page as modified, then figure out the compressed length of the
 	// replacement record.
 
-	DEBUG
 	if (stack)
 	{
 		while (stack->hasData())

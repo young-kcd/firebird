@@ -2654,30 +2654,3 @@ void PAG_set_page_scn(thread_db* tdbb, win* window)
 	CCH_precedence(tdbb, window, scn_page);
 }
 
-
-#ifdef DEBUG
-namespace
-{
-	// This checks should better be placed at ods.h but we can't use fb_assert() there.
-	// See also comments in ods.h near the scns_page definition.
-
-	class CheckODS
-	{
-	public:
-		CheckODS()
-		{
-			for (ULONG page_size = MIN_PAGE_SIZE; page_size <= MAX_PAGE_SIZE; page_size *= 2)
-			{
-				ULONG pagesPerPIP = Ods::pagesPerPIP(page_size);
-				ULONG pagesPerSCN = Ods::pagesPerSCN(page_size);
-				ULONG maxPagesPerSCN = Ods::maxPagesPerSCN(page_size);
-
-				fb_assert((pagesPerPIP % pagesPerSCN) == 0);
-				fb_assert(pagesPerSCN <= maxPagesPerSCN);
-			}
-		}
-	};
-
-	static CheckODS doCheck;
-}
-#endif // DEBUG
