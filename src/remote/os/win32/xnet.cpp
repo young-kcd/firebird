@@ -1068,7 +1068,7 @@ static void cleanup_port(rem_port* port)
  *
  **************************************/
 
-	if (port->port_thread_guard && port->port_events_thread && !Thread::isCurrent(port->port_events_threadId))
+	if (port->port_thread_guard && port->port_events_thread && !port->port_events_threadId.isCurrent())
 	{
 		//port->port_thread_guard->setWait(port->port_events_thread);
 
