@@ -753,7 +753,7 @@ static void disconnect(rem_port* port)
 
 	wnet_ports->unRegisterPort(port);
 
-	if (port->port_thread_guard && port->port_events_thread && !Thread::isCurrent(port->port_events_threadId))
+	if (port->port_thread_guard && port->port_events_thread && !port->port_events_threadId.isCurrent())
 		port->port_thread_guard->setWait(port->port_events_thread);
 	else
 		port->releasePort();
