@@ -264,7 +264,7 @@ void Thread::yield()
 
 #ifdef WIN_NT
 #define START_THREAD
-ThreadId Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* p_handle)
+Thread Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* p_handle)
 {
 /**************************************
  *
