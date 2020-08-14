@@ -104,7 +104,7 @@ THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg)
 
 #ifdef USE_POSIX_THREADS
 #define START_THREAD
-ThreadId Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* p_handle)
+Thread Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* p_handle)
 {
 /**************************************
  *
@@ -124,12 +124,6 @@ ThreadId Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, H
 #if defined (LINUX) || defined (FREEBSD)
 	if ((state = pthread_create(&thread, NULL, THREAD_ENTRYPOINT, THREAD_ARG)))
 		Firebird::system_call_failed::raise("pthread_create", state);
-
-	if (!p_handle)
-	{
-		if ((state = pthread_detach(thread)))
-			Firebird::system_call_failed::raise("pthread_detach", state);
-	}
 #else
 	state = pthread_attr_init(&pattr);
 	if (state)
@@ -186,8 +180,13 @@ ThreadId Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, H
 #endif
 		*p_handle = thread;
 	}
+	else
+	{
+		if ((state = pthread_detach(thread)))
+			Firebird::system_call_failed::raise("pthread_detach", state);
+	}
 
-	return getId();
+	return Thread(thread);
 }
 
 void Thread::waitForCompletion(Handle& thread)
@@ -209,16 +208,16 @@ void Thread::kill(Handle& thread)
 
 ThreadId Thread::getId()
 {
-#if defined(LINUX) && !defined(ANDROID) && !defined(LSB_BUILD)
+#ifdef USE_LWP_AS_THREAD_ID
 	return syscall(SYS_gettid);
 #else
 	return pthread_self();
 #endif
 }
 
-bool Thread::isCurrent(const ThreadId threadId)
+bool Thread::isCurrent()
 {
-	return getId() == threadId;
+	return pthread_equal(internalId, pthread_self());
 }
 
 void Thread::sleep(unsigned milliseconds)
@@ -333,7 +332,7 @@ ThreadId Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, H
 		CloseHandle(handle);
 	}
 
-	return thread_id;
+	return Thread(thread_id);
 }
 
 void Thread::waitForCompletion(Handle& handle)
@@ -360,9 +359,9 @@ ThreadId Thread::getId()
 	return GetCurrentThreadId();
 }
 
-bool Thread::isCurrent(const ThreadId threadId)
+bool Thread::isCurrent()
 {
-	return GetCurrentThreadId() == threadId;
+	return GetCurrentThreadId() == internalId;
 }
 
 void Thread::sleep(unsigned milliseconds)
