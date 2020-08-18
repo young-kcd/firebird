@@ -311,9 +311,12 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 					bid blob_id;
 					blob_id.bid_quad.bid_quad_high = reader.getInt();
 					blob_id.bid_quad.bid_quad_low = reader.getInt();
-					const UCHAR* blob = NULL;
-					const ULONG length = reader.getBinary(blob);
-					storeBlob(tdbb, traNum, &blob_id, length, blob);
+					ULONG length = 0;
+					do {
+						const UCHAR* blob = NULL;
+						length = reader.getBinary(blob);
+						storeBlob(tdbb, traNum, &blob_id, length, blob);
+					} while (length && !reader.isEof());
 				}
 				break;
 
@@ -765,11 +768,33 @@ void Applier::storeBlob(thread_db* tdbb, TraNumber traNum, bid* blobId,
 
 	const auto orgBlobId = blobId->get_permanent_number().getValue();
 
-	const auto blob = blb::create(tdbb, transaction, blobId);
-	blob->BLB_put_data(tdbb, data, length);
-	blob->BLB_close(tdbb);
+	blb* blob = NULL;
 
-	transaction->tra_repl_blobs.put(orgBlobId, blobId->bid_temp_id());
+	ReplBlobMap::Accessor accessor(&transaction->tra_repl_blobs);
+	if (accessor.locate(orgBlobId))
+	{
+		const auto tempBlobId = accessor.current()->second;
+
+		if (transaction->tra_blobs->locate(tempBlobId))
+		{
+			const auto current = &transaction->tra_blobs->current();
+			fb_assert(!current->bli_materialized);
+			blob = current->bli_blob_object;
+		}
+	}
+	else
+	{
+		bid newBlobId;
+		blob = blb::create(tdbb, transaction, &newBlobId);
+		transaction->tra_repl_blobs.put(orgBlobId, newBlobId.bid_temp_id());
+	}
+
+	fb_assert(blob);
+
+	if (length)
+		blob->BLB_put_segment(tdbb, data, length);
+	else
+		blob->BLB_close(tdbb);
 }
 
 void Applier::executeSql(thread_db* tdbb,

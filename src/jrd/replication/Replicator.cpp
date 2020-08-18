@@ -418,17 +418,44 @@ bool Replicator::storeBlob(Transaction* transaction,
 		MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
 		UCharBuffer buffer;
-
-		const auto length = blob->getLength();
-		const auto data = buffer.getBuffer(length);
-		blob->getSegment(length, data);
+		const auto bufferLength = MAX_SSHORT;
+		auto data = buffer.getBuffer(bufferLength);
 
 		auto& txnData = transaction->getData();
+		bool newOp = true;
 
-		txnData.putTag(opStoreBlob);
-		txnData.putInt(blobId.gds_quad_high);
-		txnData.putInt(blobId.gds_quad_low);
-		txnData.putBinary(length, data);
+		while (!blob->isEof())
+		{
+			const auto segmentLength = blob->getSegment(bufferLength, data);
+
+			if (!segmentLength)
+				break;
+
+			if (newOp)
+			{
+				txnData.putTag(opStoreBlob);
+				txnData.putInt(blobId.gds_quad_high);
+				txnData.putInt(blobId.gds_quad_low);
+				newOp = false;
+			}
+
+			txnData.putBinary(segmentLength, data);
+
+			if (txnData.getSize() > m_config->bufferSize)
+			{
+				flush(txnData, FLUSH_OVERFLOW);
+				newOp = true;
+			}
+		}
+
+		if (newOp)
+		{
+			txnData.putTag(opStoreBlob);
+			txnData.putInt(blobId.gds_quad_high);
+			txnData.putInt(blobId.gds_quad_low);
+		}
+
+		txnData.putBinary(0, NULL);
 
 		if (txnData.getSize() > m_config->bufferSize)
 			flush(txnData, FLUSH_OVERFLOW);
