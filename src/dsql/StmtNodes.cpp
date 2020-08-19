@@ -2937,6 +2937,8 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 				Arg::Str(procedure->getName().identifier) << Arg::Str(procedure->getName().package));
 	}
 
+	const_cast<jrd_prc*>(procedure.getObject())->checkReload(tdbb);
+
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	ULONG inMsgLength = 0;

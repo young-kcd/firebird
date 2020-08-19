@@ -250,6 +250,9 @@ public:
 
 	virtual bool checkCache(thread_db* tdbb) const;
 	virtual void clearCache(thread_db* tdbb);
+
+protected:
+	virtual bool reload(thread_db* tdbb);	// impl is in met.epp
 };
 
 

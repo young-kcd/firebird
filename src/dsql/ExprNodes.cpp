@@ -5619,7 +5619,12 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	jrd_fld* field;
 
 	if (!relation || !(field = MET_get_field(relation, fieldId)))
+	{
+		if (relation && (relation->rel_flags & REL_being_scanned))
+			csb->csb_g_flags |= csb_reload;
+
 		return ValueExprNode::pass1(tdbb, csb);
+	}
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -5862,6 +5867,15 @@ dsc* FieldNode::execute(thread_db* tdbb, jrd_req* request) const
 	record_param& rpb = request->req_rpb[fieldStream];
 	Record* record = rpb.rpb_record;
 	jrd_rel* relation = rpb.rpb_relation;
+
+#ifdef DEV_BUILD
+	if (relation && !relation->isView())
+	{
+		// Computed fields shouldn't be present at this point
+		jrd_fld* field = MET_get_field(relation, fieldId);
+		fb_assert(field && !field->fld_computation);
+	}
+#endif
 
 	// In order to "map a null to a default" value (in EVL_field()), the relation block is referenced.
 	// Reference: Bug 10116, 10424
@@ -11307,6 +11321,8 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 	}
 	else
 	{
+		const_cast<Function*>(function.getObject())->checkReload(tdbb);
+
 		Jrd::Attachment* attachment = tdbb->getAttachment();
 
 		const ULONG inMsgLength = function->getInputFormat() ? function->getInputFormat()->fmt_length : 0;
