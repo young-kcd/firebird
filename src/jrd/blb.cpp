@@ -2538,7 +2538,9 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	transaction = transaction->getOuter();
 
 	UCharBuffer bpb;
-	BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);
+
+	if (!(from_desc->isText() && from_desc->getCharSet() == CS_BINARY))
+		BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);
 
 	bid temp_bid;
 	temp_bid.clear();
