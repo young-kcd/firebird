@@ -221,7 +221,7 @@ Begin
       tpb.insertTag(status, isc_tpb_read);
 
       // start transaction
-      tra := att.startTransaction(status, 0, nil);
+      tra := att.startTransaction(status, tpb.getBufferLength( status ), tpb.getBuffer( status ));
 
       // prepare statement
       stmt := att.prepare(status, tra, 0, 'Select last_name, first_name, phone_ext from phone_list ' +
