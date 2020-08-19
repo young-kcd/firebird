@@ -418,7 +418,7 @@ bool Replicator::storeBlob(Transaction* transaction,
 		MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
 		UCharBuffer buffer;
-		const auto bufferLength = MAX_SSHORT;
+		const auto bufferLength = MAX_USHORT;
 		auto data = buffer.getBuffer(bufferLength);
 
 		auto& txnData = transaction->getData();

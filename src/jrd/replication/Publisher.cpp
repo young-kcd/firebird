@@ -284,7 +284,7 @@ namespace
 
 			if (length && !(m_blob->blb_flags & BLB_eof))
 			{
-				auto n = (USHORT) MIN(length, MAX_SSHORT);
+				const auto n = (USHORT) MIN(length, MAX_USHORT);
 				p += m_blob->BLB_get_segment(m_tdbb, p, n);
 			}
 
