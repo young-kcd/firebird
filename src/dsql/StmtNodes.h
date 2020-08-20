@@ -116,9 +116,8 @@ struct ValidateInfo
 
 enum OverrideClause : UCHAR
 {
-	// Warning: used in BLR
-	USER_VALUE = 1,
-	SYSTEM_VALUE
+	USER_VALUE = blr_store_override_user,
+	SYSTEM_VALUE = blr_store_override_system
 };
 
 

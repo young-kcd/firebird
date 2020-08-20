@@ -48,7 +48,6 @@
 #include "../burp/resto_proto.h"
 #include "../common/gdsassert.h"
 #include "../jrd/constants.h"
-#include "../dsql/StmtNodes.h"
 #include "../remote/protocol.h"
 #ifdef DEBUG
 #include "../common/prett_proto.h"
@@ -3512,7 +3511,6 @@ rec_type get_data_old(BurpGlobals* tdgbl, burp_rel* relation)
  *	Write data records for a relation.
  *
  **************************************/
-	using Jrd::OverrideClause;
 	Firebird::IRequest* req_handle = 0;
 	BASED_ON RDB$INDICES.RDB$INDEX_NAME index_name;
 
@@ -3672,7 +3670,7 @@ rec_type get_data_old(BurpGlobals* tdgbl, burp_rel* relation)
 	if (identity_type == IDENT_TYPE_ALWAYS)
 	{
 		add_byte(blr, blr_store3);
-		add_byte(blr, OverrideClause::SYSTEM_VALUE);
+		add_byte(blr, blr_store_override_system);
 	}
 	else
 		add_byte(blr, blr_store);
