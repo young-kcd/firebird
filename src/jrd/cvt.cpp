@@ -286,7 +286,7 @@ UCHAR CVT_get_numeric(const UCHAR* string, const USHORT length, SSHORT* scale, v
 		thread_db* tdbb = JRD_get_thread_data();
 
 		tdbb->tdbb_status_vector->init();
-		*scale = -CVT_decompose(reinterpret_cast<const char*>(string), length, (Int128*) ptr, error_swallow);
+		*scale = CVT_decompose(reinterpret_cast<const char*>(string), length, (Int128*) ptr, error_swallow);
 		if (*scale >= MIN_SCHAR && *scale <= MAX_SCHAR &&
 			(!(tdbb->tdbb_status_vector->getState() & IStatus::STATE_ERRORS)))
 		{
