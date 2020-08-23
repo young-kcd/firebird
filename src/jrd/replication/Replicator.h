@@ -133,6 +133,7 @@ namespace Replication
 
 			void dispose()
 			{
+				m_replicator->releaseTransaction(this);
 				delete this;
 			}
 
@@ -226,7 +227,11 @@ namespace Replication
 				   bool cleanupTransactions);
 
 		// IDisposable methods
-		void dispose();
+
+		void dispose()
+		{
+			delete this;
+		}
 
 		// IReplicatedSession methods
 
@@ -257,6 +262,7 @@ namespace Replication
 		bool prepareTransaction(Transaction* transaction);
 		bool commitTransaction(Transaction* transaction);
 		bool rollbackTransaction(Transaction* transaction);
+		void releaseTransaction(Transaction* transaction);
 
 		bool startSavepoint(Transaction* transaction);
 		bool releaseSavepoint(Transaction* transaction);

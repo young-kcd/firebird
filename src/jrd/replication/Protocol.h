@@ -49,7 +49,7 @@ namespace Replication
 	const ULONG BLOCK_BEGIN_TRANS = 1;
 	const ULONG BLOCK_END_TRANS = 2;
 
-	enum Operation
+	enum Operation: UCHAR
 	{
 		opStartTransaction = 1,
 		opPrepareTransaction = 2,

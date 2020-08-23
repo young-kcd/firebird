@@ -119,20 +119,6 @@ void Replicator::postError(const Exception& ex)
 	newErrors.copyTo(&m_status);
 }
 
-// IDisposable implementation
-
-void Replicator::dispose()
-{
-	try
-	{
-		delete this;
-	}
-	catch (const Exception& ex)
-	{
-		postError(ex);
-	}
-}
-
 // IReplicatedSession implementation
 
 IReplicatedTransaction* Replicator::startTransaction(SINT64 number)
@@ -194,25 +180,32 @@ bool Replicator::commitTransaction(Transaction* transaction)
 
 		auto& txnData = transaction->getData();
 
-		for (const auto& generator : m_generators)
+		// Do not replicate this transaction if it's de-facto read-only.
+		// If there were no flushes yet and the buffer contains just one tag
+		// (this should be opStartTransaction), it means nothing was changed.
+
+		const auto dataLength = txnData.buffer->getCount() - sizeof(Block);
+
+		if (txnData.flushes || dataLength > sizeof(UCHAR))
 		{
-			fb_assert(generator.name.hasData());
+			for (const auto& generator : m_generators)
+			{
+				fb_assert(generator.name.hasData());
 
-			txnData.putTag(opSetSequence);
-			txnData.putMetaName(generator.name.c_str());
-			txnData.putBigInt(generator.value);
+				txnData.putTag(opSetSequence);
+				txnData.putMetaName(generator.name.c_str());
+				txnData.putBigInt(generator.value);
+			}
+
+			m_generators.clear();
+
+			txnData.putTag(opCommitTransaction);
+			flush(txnData, FLUSH_SYNC, BLOCK_END_TRANS);
 		}
-
-		m_generators.clear();
-
-		txnData.putTag(opCommitTransaction);
-		flush(txnData, FLUSH_SYNC, BLOCK_END_TRANS);
-
-		FB_SIZE_T pos;
-		if (m_transactions.find(transaction, pos))
-			m_transactions.remove(pos);
-
-		transaction->dispose();
+		else
+		{
+			fb_assert((*txnData.buffer)[sizeof(Block)] == opStartTransaction);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -220,6 +213,7 @@ bool Replicator::commitTransaction(Transaction* transaction)
 		return false;
 	}
 
+	transaction->dispose();
 	return true;
 }
 
@@ -236,12 +230,10 @@ bool Replicator::rollbackTransaction(Transaction* transaction)
 			txnData.putTag(opRollbackTransaction);
 			flush(txnData, FLUSH_SYNC, BLOCK_END_TRANS);
 		}
-
-		FB_SIZE_T pos;
-		if (m_transactions.find(transaction, pos))
-			m_transactions.remove(pos);
-
-		transaction->dispose();
+		else
+		{
+			fb_assert((*txnData.buffer)[sizeof(Block)] == opStartTransaction);
+		}
 	}
 	catch (const Exception& ex)
 	{
@@ -249,7 +241,25 @@ bool Replicator::rollbackTransaction(Transaction* transaction)
 		return false;
 	}
 
+	transaction->dispose();
 	return true;
+}
+
+void Replicator::releaseTransaction(Transaction* transaction)
+{
+	try
+	{
+		MutexLockGuard guard(m_mutex, FB_FUNCTION);
+
+		auto& txnData = transaction->getData();
+		m_manager->releaseBuffer(txnData.buffer);
+
+		FB_SIZE_T pos;
+		if (m_transactions.find(transaction, pos))
+			m_transactions.remove(pos);
+	}
+	catch (const Exception& ex)
+	{} // no-op
 }
 
 bool Replicator::startSavepoint(Transaction* transaction)

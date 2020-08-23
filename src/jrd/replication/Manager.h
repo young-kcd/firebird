@@ -78,6 +78,7 @@ namespace Replication
 		}
 
 		Firebird::UCharBuffer* getBuffer();
+		void releaseBuffer(Firebird::UCharBuffer* buffer);
 
 		void flush(Firebird::UCharBuffer* buffer, bool sync);
 
@@ -94,7 +95,6 @@ namespace Replication
 
 	private:
 		void logError(const Firebird::IStatus* status);
-		void releaseBuffer(Firebird::UCharBuffer* buffer);
 
 		void bgWriter();
 
