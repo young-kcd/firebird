@@ -91,6 +91,7 @@ namespace Jrd
 	class TrigVector;
 	class Function;
 	class JrdStatement;
+	class Profiler;
 	class Validation;
 	class Applier;
 
@@ -650,6 +651,9 @@ public:
 	void checkReplSetLock(thread_db* tdbb);
 	void invalidateReplSet(thread_db* tdbb, bool broadcast);
 
+	Profiler* getProfiler(thread_db* tdbb);
+	bool isProfilerActive();
+
 	Firebird::IProvider* getProvider()
 	{
 		fb_assert(att_provider);
@@ -668,6 +672,7 @@ private:
 
 	Firebird::Array<JBatch*> att_batches;
 	InitialOptions att_initial_options;	// Initial session options
+	Firebird::AutoPtr<Profiler> att_profiler;	// Profiler
 
 	Lock* att_repl_lock;				// Replication set lock
 	Firebird::IProvider* att_provider;	// Provider which created this attachment

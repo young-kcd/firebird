@@ -42,7 +42,7 @@
 #include "../jrd/tpc_proto.h"
 
 #include "../jrd/extds/ExtDS.h"
-
+#include "../jrd/Profiler.h"
 #include "../jrd/replication/Applier.h"
 #include "../jrd/replication/Manager.h"
 
@@ -1079,4 +1079,17 @@ int Attachment::blockingAstReplSet(void* ast_object)
 	{} // no-op
 
 	return 0;
+}
+
+Profiler* Attachment::getProfiler(thread_db* tdbb)
+{
+	auto profiler = att_profiler.get();
+	if (!profiler)
+		att_profiler.reset(profiler = Profiler::create(tdbb));
+	return profiler;
+}
+
+bool Attachment::isProfilerActive()
+{
+	return att_profiler && att_profiler->isActive();
 }
