@@ -1027,7 +1027,7 @@ ISC_TIMESTAMP_TZ TimeZoneUtil::dateToTimeStampTz(const ISC_DATE& date, Callbacks
 
 //-------------------------------------
 
-TimeZoneRuleIterator::TimeZoneRuleIterator(USHORT aId, ISC_TIMESTAMP_TZ& aFrom, ISC_TIMESTAMP_TZ& aTo)
+TimeZoneRuleIterator::TimeZoneRuleIterator(USHORT aId, const ISC_TIMESTAMP_TZ& aFrom, const ISC_TIMESTAMP_TZ& aTo)
 	: id(aId),
 	  icuLib(Jrd::UnicodeUtil::getConversionICU()),
 	  toTicks(TimeStamp::timeStampToTicks(aTo.utc_timestamp))

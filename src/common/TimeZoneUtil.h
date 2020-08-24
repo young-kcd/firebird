@@ -136,7 +136,7 @@ public:
 class TimeZoneRuleIterator
 {
 public:
-	TimeZoneRuleIterator(USHORT aId, ISC_TIMESTAMP_TZ& aFrom, ISC_TIMESTAMP_TZ& aTo);
+	TimeZoneRuleIterator(USHORT aId, const ISC_TIMESTAMP_TZ& aFrom, const ISC_TIMESTAMP_TZ& aTo);
 	~TimeZoneRuleIterator();
 
 public:
