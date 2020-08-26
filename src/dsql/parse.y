@@ -457,7 +457,6 @@ using namespace Firebird;
 %token <metaNamePtr> COS
 %token <metaNamePtr> COSH
 %token <metaNamePtr> COT
-%token <metaNamePtr> CRC32
 %token <metaNamePtr> DATEADD
 %token <metaNamePtr> DATEDIFF
 %token <metaNamePtr> DECODE
@@ -599,6 +598,7 @@ using namespace Firebird;
 %token <metaNamePtr> COMPARE_DECFLOAT
 %token <metaNamePtr> CONSISTENCY
 %token <metaNamePtr> COUNTER
+%token <metaNamePtr> CRYPT_HASH
 %token <metaNamePtr> CTR_BIG_ENDIAN
 %token <metaNamePtr> CTR_LENGTH
 %token <metaNamePtr> CTR_LITTLE_ENDIAN
@@ -8067,7 +8067,6 @@ system_function_std_syntax
 	| COS
 	| COSH
 	| COT
-	| CRC32
 	| EXP
 	| FLOOR
 	| GEN_UUID
@@ -8152,7 +8151,7 @@ system_function_special_syntax
 		}
 	| HASH '(' value ')'
 		{ $$ = newNode<SysFuncCallNode>(*$1, newNode<ValueListNode>($3)); }
-	| HASH '(' value USING valid_symbol_name ')'
+	| hash_func '(' value USING valid_symbol_name ')'
 		{
 			$$ = newNode<SysFuncCallNode>(*$1,
 				newNode<ValueListNode>($3)->add(MAKE_str_constant(newIntlString($5->c_str()), CS_ASCII)));
@@ -8209,6 +8208,11 @@ system_function_special_syntax
 			ValueExprNode* v = MAKE_system_privilege($3->c_str());
 			$$ = newNode<SysFuncCallNode>(*$1, newNode<ValueListNode>(v));
 		}
+	;
+
+%type <metaNamePtr> hash_func
+hash_func
+	: HASH | CRYPT_HASH
 	;
 
 %type <metaNamePtr> rsa_encrypt_decrypt
@@ -8948,7 +8952,7 @@ non_reserved_word
 	| COMPARE_DECFLOAT
 	| CONNECTIONS
 	| CONSISTENCY
-	| CRC32
+	| CRYPT_HASH
 	| CTR_BIG_ENDIAN
 	| CTR_LENGTH
 	| CTR_LITTLE_ENDIAN

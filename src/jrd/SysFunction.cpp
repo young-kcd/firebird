@@ -125,7 +125,7 @@ struct HashAlgorithmDescriptor
 	USHORT length;
 	HashContext* (*create)(MemoryPool&);
 
-	static const HashAlgorithmDescriptor* find(const char* name);
+	static const HashAlgorithmDescriptor* find(const HashAlgorithmDescriptor** hashDescriptor, const MetaName name);
 };
 
 template <typename T>
@@ -149,25 +149,45 @@ struct HashAlgorithmDescriptorFactory
 
 template <typename T> HashAlgorithmDescriptor HashAlgorithmDescriptorFactory<T>::desc;
 
-static const HashAlgorithmDescriptor* hashAlgorithmDescriptors[] = {
+static const HashAlgorithmDescriptor* cryptHashAlgorithmDescriptors[] = {
 	HashAlgorithmDescriptorFactory<Md5HashContext>::getInstance("MD5", 16),
 	HashAlgorithmDescriptorFactory<Sha1HashContext>::getInstance("SHA1", 20),
 	HashAlgorithmDescriptorFactory<Sha256HashContext>::getInstance("SHA256", 32),
-	HashAlgorithmDescriptorFactory<Sha512HashContext>::getInstance("SHA512", 64)
+	HashAlgorithmDescriptorFactory<Sha512HashContext>::getInstance("SHA512", 64),
+	nullptr
 };
 
-const HashAlgorithmDescriptor* HashAlgorithmDescriptor::find(const char* name)
-{
-	unsigned count = FB_NELEM(hashAlgorithmDescriptors);
+static const HashAlgorithmDescriptor* hashAlgorithmDescriptors[] = {
+	HashAlgorithmDescriptorFactory<Crc32HashContext>::getInstance("CRC32", 4),
+	nullptr
+};
 
-	for (unsigned i = 0; i < count; ++i)
+const HashAlgorithmDescriptor* HashAlgorithmDescriptor::find(const HashAlgorithmDescriptor** hashDescriptor, const MetaName name)
+{
+	for (; *hashDescriptor; hashDescriptor++)
 	{
-		if (strcmp(name, hashAlgorithmDescriptors[i]->name) == 0)
-			return hashAlgorithmDescriptors[i];
+		if (name == (*hashDescriptor)->name)
+			return *hashDescriptor;
 	}
 
 	status_exception::raise(Arg::Gds(isc_sysf_invalid_hash_algorithm) << name);
 	return nullptr;
+}
+
+
+const HashAlgorithmDescriptor* getHashAlgorithmDesc(thread_db* tdbb, const SysFunction* function, const dsc* algDsc, bool* cHash = nullptr)
+{
+	bool cryptHash = (strcmp(function->name, "CRYPT_HASH") == 0);
+	if (cHash)
+		*cHash = cryptHash;
+
+	if (!algDsc->dsc_address || !algDsc->isText())
+		status_exception::raise(Arg::Gds(isc_sysf_invalid_hash_algorithm) << "<not a string constant>");
+
+	MetaName algorithmName;
+	MOV_get_metaname(tdbb, algDsc, algorithmName);
+
+	return HashAlgorithmDescriptor::find(cryptHash ? cryptHashAlgorithmDescriptors : hashAlgorithmDescriptors, algorithmName);
 }
 
 
@@ -200,6 +220,7 @@ void setParamsDateDiff(DataTypeUtilBase* dataTypeUtil, const SysFunction* functi
 void setParamsEncrypt(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args);
 void setParamsFirstLastDay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsGetSetContext(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
+void setParamsHash(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args);
 void setParamsMakeDbkey(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsPosition(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
@@ -268,7 +289,6 @@ dsc* evlBin(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 dsc* evlBinShift(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlCeil(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
-dsc* evlCrc32(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlDecode64(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
@@ -758,6 +778,14 @@ void setParamsGetSetContext(DataTypeUtilBase*, const SysFunction*, int argsCount
 		args[2]->makeVarying(255, ttype_none);
 		args[2]->setNullable(true);
 	}
+}
+
+
+void setParamsHash(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
+{
+	fb_assert(argsCount == 1 || argsCount == 2);
+
+	setParamVarying(args[0], ttype_binary);
 }
 
 
@@ -1275,13 +1303,22 @@ void makeHash(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* 
 		makeInt64Result(dataTypeUtil, function, result, argsCount, args);
 	else if (argsCount >= 2)
 	{
-		if (!args[1]->dsc_address || !args[1]->isText())	// not a constant
-			status_exception::raise(Arg::Gds(isc_sysf_invalid_hash_algorithm) << "<not a string constant>");
+		bool cryptHash;
+		const HashAlgorithmDescriptor* d = getHashAlgorithmDesc(JRD_get_thread_data(), function, args[1], &cryptHash);
 
-		MetaName algorithmName;
-		MOV_get_metaname(JRD_get_thread_data(), args[1], algorithmName);
-
-		result->makeVarying(HashAlgorithmDescriptor::find(algorithmName.c_str())->length, ttype_binary);
+		if (cryptHash)
+			result->makeVarying(d->length, ttype_binary);
+		else
+		{
+			switch(d->length)
+			{
+			case 4:
+				result->makeLong(0);
+				break;
+			default:
+				fb_assert(false);
+			}
+		}
 		result->setNullable(args[0]->isNullable());
 	}
 }
@@ -3330,50 +3367,6 @@ dsc* evlEncodeHex(thread_db* tdbb, const SysFunction* function, const NestValueA
 	return evlEncodeDecodeHex(tdbb, true, function, args, impure);
 }
 
-
-dsc* evlCrc32(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure)
-{
-	crc32_state ctx;
-	crc32_init(&ctx);
-
-	const dsc* arg = EVL_expr(tdbb, tdbb->getRequest(), args[0]);
-	if (!arg)	// return NULL if value is NULL
-		return NULL;
-
-	if (arg->isBlob())
-	{
-		blb* blob = blb::open2(tdbb, tdbb->getRequest()->req_transaction, reinterpret_cast<const bid*>(arg->dsc_address),
-			sizeof(streamBpb), streamBpb);
-
-		UCHAR buf[4096];
-		for(;;)
-		{
-			const unsigned l = blob->BLB_get_data(tdbb, buf, sizeof buf, false);
-			if (!l)
-				break;
-			crc32_update(&ctx, buf, l);
-		}
-
-		blob->BLB_close(tdbb);
-	}
-	else
-	{
-		unsigned len;
-		const UCHAR* ptr = CVT_get_bytes(arg, len);
-		crc32_update(&ctx, ptr, len);
-	}
-
-	SLONG hash;
-	crc32_finish(&ctx, &hash, sizeof hash);
-
-	dsc result;
-	result.makeLong(0, &hash);
-	EVL_make_value(tdbb, &result, impure);
-
-	return &impure->vlu_desc;
-}
-
-
 dsc* evlRsaEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure, bool encryptFlag)
 {
@@ -4558,7 +4551,7 @@ dsc* evlGetTranCN(thread_db* tdbb, const SysFunction* function, const NestValueA
 }
 
 
-dsc* evlHash(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
+dsc* evlHash(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
 	fb_assert(args.getCount() >= 1);
@@ -4578,12 +4571,8 @@ dsc* evlHash(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 		if (request->req_flags & req_null)	// return NULL if algorithm is NULL
 			return NULL;
 
-		if (!algorithmDesc->isText())
-			status_exception::raise(Arg::Gds(isc_sysf_invalid_hash_algorithm) << "<not a string constant>");
-
-		MetaName algorithmName;
-		MOV_get_metaname(tdbb, algorithmDesc, algorithmName);
-		hashContext.reset(HashAlgorithmDescriptor::find(algorithmName.c_str())->create(pool));
+		const HashAlgorithmDescriptor* d = getHashAlgorithmDesc(tdbb, function, algorithmDesc);
+		hashContext.reset(d->create(pool));
 	}
 	else
 	{
@@ -4607,29 +4596,14 @@ dsc* evlHash(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	}
 	else
 	{
-		UCHAR* address;
-		MoveBuffer buffer;
-		const ULONG length = MOV_make_string2(tdbb, value, value->getTextType(), &address, buffer, false);
-		hashContext->update(address, length);
+		unsigned len;
+		const UCHAR* ptr = CVT_get_bytes(value, len);
+		hashContext->update(ptr, len);
 	}
 
-	HashContext::Buffer resultBuffer;
-	hashContext->finish(resultBuffer);
-
-	if (args.getCount() >= 2)
-	{
-		dsc result;
-		result.makeText(resultBuffer.getCount(), ttype_binary, resultBuffer.begin());
-		EVL_make_value(tdbb, &result, impure);
-	}
-	else
-	{
-		fb_assert(resultBuffer.getCount() == sizeof(SINT64));
-		memcpy(&impure->vlu_misc.vlu_int64, resultBuffer.begin(), sizeof(SINT64));
-
-		// make descriptor for return value
-		impure->vlu_desc.makeInt64(0, &impure->vlu_misc.vlu_int64);
-	}
+	dsc result;
+	hashContext->finish(result);
+	EVL_make_value(tdbb, &result, impure);
 
 	return &impure->vlu_desc;
 }
@@ -6369,7 +6343,6 @@ const SysFunction SysFunction::functions[] =
 		{"ATAN2", 2, 2, setParamsDouble, makeDoubleResult, evlAtan2, NULL},
 		{"BASE64_DECODE", 1, 1, NULL, makeDecode64, evlDecode64, NULL},
 		{"BASE64_ENCODE", 1, 1, NULL, makeEncode64, evlEncode64, NULL},
-		{"CRC32", 1, 1, NULL, makeLongResult, evlCrc32, NULL},
 		{"BIN_AND", 2, -1, setParamsBin, makeBin, evlBin, (void*) funBinAnd},
 		{"BIN_NOT", 1, 1, setParamsBin, makeBin, evlBin, (void*) funBinNot},
 		{"BIN_OR", 2, -1, setParamsBin, makeBin, evlBin, (void*) funBinOr},
@@ -6385,6 +6358,7 @@ const SysFunction SysFunction::functions[] =
 		{"COS", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCos},
 		{"COSH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCosh},
 		{"COT", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCot},
+		{"CRYPT_HASH", 2, 2, setParamsHash, makeHash, evlHash, NULL},
 		{"DATEADD", 3, 3, setParamsDateAdd, makeDateAdd, evlDateAdd, NULL},
 		{"DATEDIFF", 3, 3, setParamsDateDiff, makeInt64Result, evlDateDiff, NULL},
 		{"DECRYPT", 7, 7, setParamsEncrypt, makeDecrypt, evlDecrypt, NULL},
@@ -6393,7 +6367,7 @@ const SysFunction SysFunction::functions[] =
 		{"FIRST_DAY", 2, 2, setParamsFirstLastDay, makeFirstLastDayResult, evlFirstLastDay, (void*) funFirstDay},
 		{"FLOOR", 1, 1, setParamsDblDec, makeCeilFloor, evlFloor, NULL},
 		{"GEN_UUID", 0, 0, NULL, makeUuid, evlGenUuid, NULL},
-		{"HASH", 1, 2, NULL, makeHash, evlHash, NULL},
+		{"HASH", 1, 2, setParamsHash, makeHash, evlHash, NULL},
 		{"HEX_DECODE", 1, 1, NULL, makeDecodeHex, evlDecodeHex, NULL},
 		{"HEX_ENCODE", 1, 1, NULL, makeEncodeHex, evlEncodeHex, NULL},
 		{"LAST_DAY", 2, 2, setParamsFirstLastDay, makeFirstLastDayResult, evlFirstLastDay, (void*) funLastDay},
