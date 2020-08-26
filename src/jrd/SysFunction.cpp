@@ -4594,6 +4594,13 @@ dsc* evlHash(thread_db* tdbb, const SysFunction* function, const NestValueArray&
 
 		blob->BLB_close(tdbb);
 	}
+	else if (args.getCount() == 1)		// deprecated HASH(arg)
+	{
+		UCHAR* address;
+		MoveBuffer buffer;
+		const ULONG length = MOV_make_string2(tdbb, value, value->getTextType(), &address, buffer, false);
+		hashContext->update(address, length);
+	}
 	else
 	{
 		unsigned len;
