@@ -58,7 +58,7 @@ if errorlevel 1 call :ERROR build failed - see make_all_%FB_TARGET_PLATFORM%.log
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\yvalve\fbclient.lib %FB_OUTPUT_DIR%\lib\fbclient_ms.lib >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\ib_util\ib_util.lib %FB_OUTPUT_DIR%\lib\ib_util_ms.lib >nul
 
-for %%v in (gpre_boot build_msg codes) do (
+for %%v in (gpre_boot build_msg codes cloop) do (
 @del %FB_OUTPUT_DIR%\%%v.* 2>nul
 )
 
