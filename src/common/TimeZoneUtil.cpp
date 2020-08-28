@@ -295,7 +295,7 @@ USHORT TimeZoneUtil::getSystemTimeZone()
 	static volatile bool cachedError = false;
 	static volatile USHORT cachedTimeZoneId = TimeZoneUtil::GMT_ZONE;
 	static volatile int32_t cachedTimeZoneNameLen = -1;
-	static UChar cachedTimeZoneName[TimeZoneUtil::MAX_SIZE];
+	static char cachedTimeZoneName[TimeZoneUtil::MAX_SIZE];
 	static GlobalPtr<RWLock> lock;
 
 	if (cachedError)
@@ -309,29 +309,45 @@ USHORT TimeZoneUtil::getSystemTimeZone()
 	UErrorCode icuErrorCode = U_ZERO_ERROR;
 	Jrd::UnicodeUtil::ConversionICU& icuLib = Jrd::UnicodeUtil::getConversionICU();
 
-	UChar buffer[TimeZoneUtil::MAX_SIZE];
+	char buffer[TimeZoneUtil::MAX_SIZE];
+	const char* str = buffer;
 	int32_t len;
 	const char* configDefault = Config::getDefaultTimeZone();
 
 	if (configDefault && configDefault[0])
 	{
-		UChar* dst = buffer;
-
-		for (const char* src = configDefault; src - configDefault < TimeZoneUtil::MAX_SIZE && *src; ++src, ++dst)
-			*dst = *src;
-
-		*dst = 0;
-		len = dst - buffer;
+		str = configDefault;
+		len = strlen(str);
 	}
 	else
-		len = icuLib.ucalGetDefaultTimeZone(buffer, FB_NELEM(buffer), &icuErrorCode);
+	{
+		UChar unicodeBuffer[TimeZoneUtil::MAX_LEN];
+		len = icuLib.ucalGetDefaultTimeZone(unicodeBuffer, FB_NELEM(unicodeBuffer), &icuErrorCode);
+
+		if (!U_FAILURE(icuErrorCode))
+		{
+			UChar* src = unicodeBuffer;
+			char* dst = buffer;
+
+			while (src - unicodeBuffer < len)
+				*dst++ = (char) *src++;
+
+			str = buffer;
+			buffer[len] = '\0';
+		}
+		else
+		{
+			gds__log("ICU error (%d) retrieving the system time zone. Falling back to displacement.",
+				int(icuErrorCode));
+		}
+	}
 
 	ReadLockGuard readGuard(lock, "TimeZoneUtil::getSystemTimeZone");
 
 	if (!U_FAILURE(icuErrorCode) &&
 		cachedTimeZoneNameLen != -1 &&
 		len == cachedTimeZoneNameLen &&
-		memcmp(buffer, cachedTimeZoneName, len * sizeof(USHORT)) == 0)
+		memcmp(str, cachedTimeZoneName, len) == 0)
 	{
 		return cachedTimeZoneId;
 	}
@@ -339,34 +355,28 @@ USHORT TimeZoneUtil::getSystemTimeZone()
 	readGuard.release();
 	WriteLockGuard writeGuard(lock, "TimeZoneUtil::getSystemTimeZone");
 
-	string bufferStrAscii;
-
 	if (!U_FAILURE(icuErrorCode))
 	{
-		bool error;
-		string bufferStrUnicode(reinterpret_cast<const char*>(buffer), len * sizeof(USHORT));
-		bufferStrAscii = IntlUtil::convertUtf16ToAscii(bufferStrUnicode, &error);
-		USHORT id;
-
-		if (timeZoneStartup().getId(bufferStrAscii, id))
+		try
 		{
-			memcpy(cachedTimeZoneName, buffer, len * sizeof(USHORT));
+			USHORT id = parse(str, len);
 			cachedTimeZoneId = id;
 			cachedTimeZoneNameLen = len;
 			return cachedTimeZoneId;
 		}
+		catch (status_exception&)
+		{
+			gds__log("Invalid time zone (%s). Falling back to displacement.", str);
+		}
 	}
-	else
-		icuErrorCode = U_ZERO_ERROR;
 
-	gds__log("ICU error (%d) retrieving the system time zone (%s). Falling back to displacement.",
-		int(icuErrorCode), bufferStrAscii.c_str());
+	icuErrorCode = U_ZERO_ERROR;
 
 	UCalendar* icuCalendar = icuLib.ucalOpen(NULL, -1, NULL, UCAL_GREGORIAN, &icuErrorCode);
 
 	if (!icuCalendar)
 	{
-		gds__log("ICU's ucal_open error opening the default callendar.");
+		gds__log("ICU's ucal_open error opening the default calendar.");
 		cachedError = true;
 		return cachedTimeZoneId;	// GMT
 	}
