@@ -704,7 +704,7 @@ void TimeZoneUtil::localTimeStampToUtc(ISC_TIMESTAMP_TZ& timeStampTz)
 		icuLib.ucalClose(icuCalendar);
 	}
 
-	const auto  ticks = TimeStamp::timeStampToTicks(timeStampTz.utc_timestamp) -
+	const auto ticks = TimeStamp::timeStampToTicks(timeStampTz.utc_timestamp) -
 		(displacement * 60 * ISC_TIME_SECONDS_PRECISION);
 
 	timeStampTz.utc_timestamp = TimeStamp::ticksToTimeStamp(ticks);
