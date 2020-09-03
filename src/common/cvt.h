@@ -97,6 +97,7 @@ USHORT CVT_make_string(const dsc*, USHORT, const char**, vary*, USHORT, Firebird
 void CVT_make_null_string(const dsc*, USHORT, const char**, vary*, USHORT, Firebird::DecimalStatus, ErrorFunction);
 void CVT_move_common(const dsc*, dsc*, Firebird::DecimalStatus, Firebird::Callbacks*);
 void CVT_move(const dsc*, dsc*, Firebird::DecimalStatus, ErrorFunction);
+SSHORT CVT_decompose(const char*, USHORT, SSHORT*, ErrorFunction);
 SSHORT CVT_decompose(const char*, USHORT, SLONG*, ErrorFunction);
 SSHORT CVT_decompose(const char*, USHORT, SINT64*, ErrorFunction);
 SSHORT CVT_decompose(const char*, USHORT, Firebird::Int128*, ErrorFunction);

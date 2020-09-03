@@ -114,14 +114,14 @@ using namespace Firebird;
  * less than the number of bits in the type: one bit is for the sign,
  * and the other is because we divide by 5, rather than 10.  */
 
-#define SHORT_LIMIT     ((1 << 14) / 5)
-#define LONG_LIMIT      ((1L << 30) / 5)
+const SSHORT SHORT_LIMIT = ((1 << 14) / 5);
+const SLONG LONG_LIMIT = ((1L << 30) / 5);
 
 // NOTE: The syntax for the below line may need modification to ensure
 // the result of 1 << 62 is a quad
 
 //#define QUAD_LIMIT      ((((SINT64) 1) << 62) / 5)
-#define INT64_LIMIT     ((((SINT64) 1) << 62) / 5)
+const SINT64 INT64_LIMIT = ((((SINT64) 1) << 62) / 5);
 
 #define TODAY           "TODAY"
 #define NOW             "NOW"
@@ -139,6 +139,7 @@ static void decimal_float_to_text(const dsc*, dsc*, DecimalStatus, Callbacks*);
 static void integer_to_text(const dsc*, dsc*, Callbacks*);
 static void int128_to_text(const dsc*, dsc*, Callbacks* cb);
 static void localError(const Firebird::Arg::StatusVector&);
+static SSHORT cvt_get_short(const dsc* desc, SSHORT scale, DecimalStatus decSt, ErrorFunction err);
 
 class DummyException {};
 
@@ -1017,6 +1018,72 @@ void CVT_string_to_datetime(const dsc* desc,
 }
 
 
+template <typename V>
+void adjustForScale(V& val, SSHORT scale, const V limit, ErrorFunction err)
+{
+	if (scale > 0)
+	{
+		int fraction = 0;
+		do {
+			if (scale == 1)
+				fraction = int(val % 10);
+			val /= 10;
+		} while (--scale);
+
+		if (fraction > 4)
+			val++;
+		// The following 2 lines are correct for platforms where
+		// ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
+		// a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
+		// we'll have to change this depending on the platform.
+		else if (fraction < -4)
+			val--;
+	}
+	else if (scale < 0)
+	{
+		do {
+			if ((val > limit) || (val < -limit))
+				err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+			val *= 10;
+		} while (++scale);
+	}
+}
+
+
+static SSHORT cvt_get_short(const dsc* desc, SSHORT scale, DecimalStatus decSt, ErrorFunction err)
+{
+/**************************************
+ *
+ *      C V T _ g e t _ s h o r t
+ *
+ **************************************
+ *
+ * Functional description
+ *      Convert something arbitrary to a short (16 bit) integer of given
+ *      scale.
+ *
+ **************************************/
+	SSHORT value;
+
+	if (desc->isText())
+	{
+		VaryStr<20> buffer;			// long enough to represent largest short in ASCII
+		const char* p;
+		USHORT length = CVT_make_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer), decSt, err);
+		scale -= CVT_decompose(p, length, &value, err);
+
+		adjustForScale(value, scale, SHORT_LIMIT, err);
+	}
+	else {
+		ULONG lval = CVT_get_long(desc, scale, decSt, err);
+		value = (SSHORT) lval;
+		if (value != SLONG(lval))
+			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+	}
+
+	return value;
+}
+
 SLONG CVT_get_long(const dsc* desc, SSHORT scale, DecimalStatus decSt, ErrorFunction err)
 {
 /**************************************
@@ -1058,32 +1125,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, DecimalStatus decSt, ErrorFunc
 		val64 = *((SINT64 *) p);
 
 		// adjust for scale first, *before* range-checking the value.
-		if (scale > 0)
-		{
-			SLONG fraction = 0;
-			do {
-				if (scale == 1)
-					fraction = SLONG(val64 % 10);
-				val64 /= 10;
-			} while (--scale);
-			if (fraction > 4)
-				val64++;
-			// The following 2 lines are correct for platforms where
-			// ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
-			// a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
-			// we'll have to change this depending on the platform.
-			else if (fraction < -4)
-				val64--;
-		}
-		else if (scale < 0)
-		{
-			do {
-				if ((val64 > INT64_LIMIT) || (val64 < -INT64_LIMIT))
-					err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-				val64 *= 10;
-			} while (++scale);
-		}
-
+		adjustForScale(val64, scale, INT64_LIMIT, err);
 		if ((val64 > LONG_MAX_int64) || (val64 < LONG_MIN_int64))
 			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 		return (SLONG) val64;
@@ -1165,33 +1207,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, DecimalStatus decSt, ErrorFunc
 	}
 
 	// Last, but not least, adjust for scale
-
-	if (scale > 0)
-	{
-		SLONG fraction = 0;
-		do {
-			if (scale == 1)
-				fraction = value % 10;
-			value /= 10;
-		} while (--scale);
-
-		if (fraction > 4)
-			value++;
-		// The following 2 lines are correct for platforms where
-		// ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
-		// a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
-		// we'll have to change this depending on the platform.
-		else if (fraction < -4)
-			value--;
-	}
-	else if (scale < 0)
-	{
-		do {
-			if (value > LONG_LIMIT || value < -LONG_LIMIT)
-				err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-			value *= 10;
-		} while (++scale);
-	}
+	adjustForScale(value, scale, LONG_LIMIT, err);
 
 	return value;
 }
@@ -1995,14 +2011,7 @@ void CVT_move_common(const dsc* from, dsc* to, DecimalStatus decSt, Callbacks* c
 		return;
 
 	case dtype_short:
-		{
-			ULONG lval = CVT_get_long(from, (SSHORT) to->dsc_scale, decSt, cb->err);
-			// TMN: Here we should really have the following fb_assert
-			// fb_assert(lval <= MAX_SSHORT);
-			*(SSHORT*) p = (SSHORT) lval;
-			if (*(SSHORT*) p != SLONG(lval))
-				cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-		}
+		*(SSHORT *) p = cvt_get_short(from, (SSHORT) to->dsc_scale, decSt, cb->err);
 		return;
 
 	case dtype_long:
@@ -2777,6 +2786,33 @@ private:
 };
 
 
+class SSHORTTraits
+{
+public:
+	typedef SSHORT ValueType;
+	static const SSHORT UPPER_LIMIT_BY_10 = MAX_SSHORT / 10;
+	static const SSHORT LOWER_LIMIT = MIN_SSHORT;
+};
+
+SSHORT CVT_decompose(const char* str, USHORT len, SSHORT* val, ErrorFunction err)
+{
+/**************************************
+ *
+ *      d e c o m p o s e
+ *
+ **************************************
+ *
+ * Functional description
+ *      Decompose a numeric string in mantissa and exponent,
+ *      or if it is in hexadecimal notation.
+ *
+ **************************************/
+
+	RetValue<SSHORTTraits> value(val);
+	return cvt_decompose(str, len, &value, err);
+}
+
+
 class SLONGTraits
 {
 public:
@@ -3512,32 +3548,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, DecimalStatus decSt, ErrorFu
 	}
 
 	// Last, but not least, adjust for scale
-
-	if (scale > 0)
-	{
-		SLONG fraction = 0;
-		do {
-			if (scale == 1)
-				fraction = (SLONG) (value % 10);
-			value /= 10;
-		} while (--scale);
-		if (fraction > 4)
-			value++;
-		// The following 2 lines are correct for platforms where
-		// (-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
-		// a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
-		// we'll have to change this depending on the platform.
-		else if (fraction < -4)
-			value--;
-	}
-	else if (scale < 0)
-	{
-		do {
-			if (value > INT64_LIMIT || value < -INT64_LIMIT)
-				err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-			value *= 10;
-		} while (++scale);
-	}
+	adjustForScale(value, scale, INT64_LIMIT, err);
 
 	return value;
 }
