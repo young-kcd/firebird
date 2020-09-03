@@ -27,10 +27,6 @@ for %%v in ( alice auth burp dsql gpre isql jrd misc msgs qli examples yvalve ut
 @mkdir %FB_GEN_DIR%\auth\SecurityDatabase 2>nul
 @mkdir %FB_GEN_DIR%\gpre\std 2>nul
 
-::=======
-call :cloop
-if "%ERRLEV%"=="1" goto :END
-
 call :interfaces
 if "%ERRLEV%"=="1" goto :END
 
@@ -199,20 +195,10 @@ if errorlevel 1 call :boot2 re2
 goto :EOF
 
 ::===================
-:: Build CLOOP
-:cloop
-@echo.
-@echo Building CLOOP...
-@call compile.bat extern\cloop\cloop cloop_%FB_TARGET_PLATFORM%.log cloop
-if errorlevel 1 call :boot2 cloop
-goto :EOF
-
-::===================
-:: Generate interface headers
+:: Build CLOOP and generate interface headers
 :interfaces
 @echo.
-@echo Generating interfaces...
-@mkdir %FB_TEMP_DIR%\..\%FB_OBJ_DIR%\misc 2>nul
+@echo Building CLOOP and generating interfaces...
 @nmake /s /x interfaces_%FB_TARGET_PLATFORM%.log /f gen_helper.nmake updateCloopInterfaces
 if errorlevel 1 call :boot2 interfaces
 goto :EOF
