@@ -1057,6 +1057,7 @@ Data source : @4', NULL, NULL)
 ('truncate_monitor', NULL, 'Monitoring.cpp', NULL, 0, 947, NULL, 'Monitoring data does not fit into the field', NULL, NULL);
 ('truncate_context', NULL, 'SysFunction.cpp', NULL, 0, 948, NULL, 'Engine data does not fit into return value of system function', NULL, NULL);
 ('merge_dup_update', NULL, 'StmtNodes.cpp', NULL, 0, 949, NULL, 'Multiple source records cannot match the same target during MERGE', NULL, NULL);
+('wrong_page', 'get_header', 'dpm.epp', NULL, 0, 950, NULL, 'RDB$PAGES written by non-system transaction, DB appears to be damaged', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
@@ -3032,7 +3033,6 @@ COMMIT WORK;
 (NULL, 'CMP_get_desc', 'cmp.cpp', NULL, 15, 306, NULL, 'Found array data type with more than 16 dimensions', NULL, NULL);
 -- Do not change the arguments of the previous JRD_BUGCHK messages.
 -- Write the new JRD_BUGCHK messages here.
-(NULL, 'get_header', 'dpm.epp', NULL, 15, 307, NULL, 'RDB$PAGES written by non-system transaction, DB appears to be damaged', NULL, NULL);
 -- ISQL
 ('GEN_ERR', 'errmsg', 'isql.e', NULL, 17, 0, NULL, 'Statement failed, SQLSTATE = @1', NULL, NULL);
 ('USAGE', 'ISQL_main', 'isql.epp', NULL, 17, 1, NULL, 'usage:    isql [options] [<database>]', NULL, NULL);

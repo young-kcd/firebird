@@ -3170,7 +3170,7 @@ static bool get_header(WIN* window, USHORT line, record_param* rpb)
 		if (rpb->rpb_relation->rel_id == 0 /*i.e.RDB$PAGES*/ && rpb->rpb_transaction_nr != 0)
 		{
 			// RDB$PAGES relation should be modified only by system transaction
-			BUGCHECK(307);
+			ERR_post(Arg::Gds(isc_wrong_page));
 		}
 	}
 

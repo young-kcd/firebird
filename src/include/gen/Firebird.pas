@@ -1556,7 +1556,7 @@ type
 		const VERSION = 3;
 		const EXECUTE_FAILED = Integer(-1);
 		const SUCCESS_NO_INFO = Integer(-2);
-		const NO_MORE_ERRORS = Cardinal($7fffffff);
+		const NO_MORE_ERRORS = Cardinal($ffffffff);
 
 		function getSize(status: IStatus): Cardinal;
 		function getState(status: IStatus; pos: Cardinal): Integer;
@@ -5026,6 +5026,7 @@ const
 	isc_truncate_monitor                 = 335545267;
 	isc_truncate_context                 = 335545268;
 	isc_merge_dup_update                 = 335545269;
+	isc_wrong_page                       = 335545270;
 	isc_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;
 	isc_gfix_incmp_sw                    = 335740932;
