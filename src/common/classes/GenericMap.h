@@ -75,9 +75,6 @@ public:
 		bool fastRemove() { return m_Accessor.fastRemove(); }
 
 	private:
-		Accessor(const Accessor&);
-		Accessor& operator=(const Accessor&);
-
 		TreeAccessor m_Accessor;
 	};
 
@@ -94,9 +91,6 @@ public:
 		ValueType* locate(const KeyType& key) { return m_Accessor.locate(key); }
 
 	private:
-		ConstAccessor(const ConstAccessor&);
-		ConstAccessor& operator=(const ConstAccessor&);
-
 		ConstTreeAccessor m_Accessor;
 	};
 
@@ -253,6 +247,16 @@ public:
 	}
 
 	size_t count() const { return mCount; }
+
+	Accessor accessor()
+	{
+		return Accessor(this);
+	}
+
+	ConstAccessor constAccessor() const
+	{
+		return ConstAccessor(this);
+	}
 
 private:
 	ValuesTree tree;
