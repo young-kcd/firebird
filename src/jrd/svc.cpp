@@ -2687,6 +2687,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					return false;
 				}
 				get_action_svc_string(spb, switches);
+				break;
 
 			default:
 				return false;
