@@ -302,14 +302,14 @@ int CCH_down_grade_dbb(void* ast_object)
 
 		AsyncContextHolder tdbb(dbb, FB_FUNCTION);
 
-		SyncLockGuard dsGuard(&dbb->dbb_sync, SYNC_EXCLUSIVE, "CCH_down_grade_dbb");
-
 		dbb->dbb_ast_flags |= DBB_blocking;
 
 		// Process the database shutdown request, if any
 
 		if (SHUT_blocking_ast(tdbb, true))
 			return 0;
+
+		SyncLockGuard dsGuard(&dbb->dbb_sync, SYNC_EXCLUSIVE, "CCH_down_grade_dbb");
 
 		// If we are already shared, there is nothing more we can do.
 		// If any case, the other guy probably wants exclusive access,
