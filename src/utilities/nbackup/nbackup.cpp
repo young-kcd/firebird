@@ -822,8 +822,9 @@ void NBackup::close_backup()
 void NBackup::fixup_database(bool set_readonly)
 {
 	open_database_write();
+
 	Ods::header_page header;
-	if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
+	if (read_file(dbase, &header, HDR_SIZE) != HDR_SIZE)
 		status_exception::raise(Arg::Gds(isc_nbackup_err_eofdb) << dbname.c_str());
 
 	const int backup_state = header.hdr_flags & Ods::hdr_backup_mask;
@@ -832,12 +833,50 @@ void NBackup::fixup_database(bool set_readonly)
 		status_exception::raise(Arg::Gds(isc_nbackup_fixup_wrongstate) << dbname.c_str() <<
 			Arg::Num(Ods::hdr_nbak_stalled));
 	}
-	header.hdr_flags = (header.hdr_flags & ~Ods::hdr_backup_mask) | Ods::hdr_nbak_normal;
-	if (set_readonly)
-		header.hdr_flags |= Ods::hdr_read_only;
+
+	Array<UCHAR> header_buffer;
+	const auto header_ptr = header_buffer.getBuffer(header.hdr_page_size);
 
 	seek_file(dbase, 0);
-	write_file(dbase, &header, sizeof(header));
+
+	if (read_file(dbase, header_ptr, header.hdr_page_size) != header.hdr_page_size)
+		status_exception::raise(Arg::Gds(isc_nbackup_err_eofdb) << dbname.c_str());
+
+	auto p = reinterpret_cast<Ods::header_page*>(header_ptr)->hdr_data;
+	const auto end = header_ptr + header.hdr_page_size;
+	while (p < end && *p != Ods::HDR_end)
+	{
+		if (*p == Ods::HDR_db_guid)
+		{
+			// Replace existing database GUID with a regenerated one
+			Guid guid;
+			GenerateGuid(&guid);
+			fb_assert(p[1] == sizeof(guid));
+			memcpy(p + 2, &guid, sizeof(guid));
+		}
+
+		if (*p == Ods::HDR_repl_seq)
+		{
+			// Reset the sequence counter
+			const FB_UINT64 sequence = 0;
+			fb_assert(p[1] == sizeof(sequence));
+			memcpy(p + 2, &sequence, sizeof(sequence));
+		}
+
+		p += p[1] + 2;
+	}
+
+	// Update the flags and write the header page back
+
+	const auto mod_flags =
+		(header.hdr_flags & ~Ods::hdr_backup_mask) | Ods::hdr_nbak_normal |
+		(set_readonly ? Ods::hdr_read_only : 0);
+
+	reinterpret_cast<Ods::header_page*>(header_ptr)->hdr_flags = mod_flags;
+
+	seek_file(dbase, 0);
+	write_file(dbase, header_ptr, header.hdr_page_size);
+
 	close_database();
 }
 
@@ -1247,12 +1286,12 @@ void NBackup::backup_database(int level, Guid& guid, const PathName& fname)
 		open_database_scan();
 
 		// Read database header
-		char unaligned_header_buffer[SECTOR_ALIGNMENT * 2];
+		char unaligned_header_buffer[RAW_HEADER_SIZE + SECTOR_ALIGNMENT];
 
-		Ods::header_page *header = reinterpret_cast<Ods::header_page*>(
+		auto header = reinterpret_cast<Ods::header_page*>(
 			FB_ALIGN(unaligned_header_buffer, SECTOR_ALIGNMENT));
 
-		if (read_file(dbase, header, SECTOR_ALIGNMENT/*sizeof(*header)*/) != SECTOR_ALIGNMENT/*sizeof(*header)*/)
+		if (read_file(dbase, header, RAW_HEADER_SIZE) != RAW_HEADER_SIZE)
 			status_exception::raise(Arg::Gds(isc_nbackup_err_eofhdrdb) << dbname.c_str() << Arg::Num(1));
 
 		if (!Ods::isSupported(header))
@@ -1284,25 +1323,21 @@ void NBackup::backup_database(int level, Guid& guid, const PathName& fname)
 
 		Guid backup_guid;
 		bool guid_found = false;
-		const UCHAR* p = reinterpret_cast<Ods::header_page*>(page_buff)->hdr_data;
-		const UCHAR* const end = reinterpret_cast<UCHAR*>(page_buff) + header->hdr_page_size;
-		while (p < end)
+		auto p = reinterpret_cast<Ods::header_page*>(page_buff)->hdr_data;
+		const auto end = reinterpret_cast<UCHAR*>(page_buff) + header->hdr_page_size;
+		while (p < end && *p != Ods::HDR_end)
 		{
-			switch (*p)
+			if (*p == Ods::HDR_backup_guid)
 			{
-			case Ods::HDR_backup_guid:
 				if (p[1] == sizeof(Guid))
 				{
 					memcpy(&backup_guid, p + 2, sizeof(Guid));
 					guid_found = true;
 				}
 				break;
-
-			default:
-				p += p[1] + 2;
-				continue;
 			}
-			break;
+
+			p += p[1] + 2;
 		}
 
 		if (!guid_found)
@@ -1573,8 +1608,10 @@ void NBackup::restore_database(const BackupFiles& files, bool inc_rest)
 		delete_database = true;
 	}
 
-	UCHAR *page_buffer = NULL;
-	try {
+	try
+	{
+		Array<UCHAR> page_buffer;
+
 		int curLevel = 0;
 		Guid prev_guid;
 		while (true)
@@ -1602,7 +1639,6 @@ void NBackup::restore_database(const BackupFiles& files, bool inc_rest)
 							status_exception::raise(Arg::Gds(isc_nbackup_failed_lzbk));
 						}
 						fixup_database();
-						delete[] page_buffer;
 						return;
 					}
 					// Never reaches this point when run as service
@@ -1627,7 +1663,6 @@ void NBackup::restore_database(const BackupFiles& files, bool inc_rest)
 				{
 					close_database();
 					fixup_database(inc_rest);
-					delete[] page_buffer;
 					return;
 				}
 				if (!inc_rest || curLevel)
@@ -1672,17 +1707,18 @@ void NBackup::restore_database(const BackupFiles& files, bool inc_rest)
 				if (!inc_rest)
 					delete_database = true;
 				prev_guid = bakheader.backup_guid;
+				const auto page_ptr = page_buffer.begin();
 				while (true)
 				{
-					const FB_SIZE_T bytesDone = read_file(backup, page_buffer, bakheader.page_size);
+					const FB_SIZE_T bytesDone = read_file(backup, page_ptr, bakheader.page_size);
 					if (bytesDone == 0)
 						break;
 					if (bytesDone != bakheader.page_size) {
 						status_exception::raise(Arg::Gds(isc_nbackup_err_eofbk) << bakname.c_str());
 					}
-					const SINT64 pageNum = reinterpret_cast<Ods::pag*> (page_buffer)->pag_pageno;
+					const SINT64 pageNum = reinterpret_cast<Ods::pag*>(page_ptr)->pag_pageno;
 					seek_file(dbase, pageNum * bakheader.page_size);
-					write_file(dbase, page_buffer, bakheader.page_size);
+					write_file(dbase, page_ptr, bakheader.page_size);
 					checkCtrlC(uSvc);
 				}
 				delete_database = false;
@@ -1708,35 +1744,32 @@ void NBackup::restore_database(const BackupFiles& files, bool inc_rest)
 
 				// Read database header
 				Ods::header_page header;
-				if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
+				if (read_file(dbase, &header, HDR_SIZE) != HDR_SIZE)
 					status_exception::raise(Arg::Gds(isc_nbackup_err_eofhdr_restdb) << Arg::Num(1));
-				page_buffer = FB_NEW_POOL(*getDefaultMemoryPool()) UCHAR[header.hdr_page_size];
+
+				const auto page_ptr = page_buffer.getBuffer(header.hdr_page_size);
 
 				seek_file(dbase, 0);
 
-				if (read_file(dbase, page_buffer, header.hdr_page_size) != header.hdr_page_size)
+				if (read_file(dbase, page_ptr, header.hdr_page_size) != header.hdr_page_size)
 					status_exception::raise(Arg::Gds(isc_nbackup_err_eofhdr_restdb) << Arg::Num(2));
 
 				bool guid_found = false;
-				const UCHAR* p = reinterpret_cast<Ods::header_page*>(page_buffer)->hdr_data;
-				const UCHAR* const end = page_buffer + header.hdr_page_size;
-				while (p < end)
+				auto p = reinterpret_cast<Ods::header_page*>(page_ptr)->hdr_data;
+				const auto end = page_ptr + header.hdr_page_size;
+				while (p < end && *p != Ods::HDR_end)
 				{
-					switch (*p)
+					if (*p == Ods::HDR_backup_guid)
 					{
-					case Ods::HDR_backup_guid:
 						if (p[1] == sizeof(Guid))
 						{
 							memcpy(&prev_guid, p + 2, sizeof(Guid));
 							guid_found = true;
 						}
 						break;
-
-					default:
-						p += p[1] + 2;
-						continue;
 					}
-					break;
+
+					p += p[1] + 2;
 				}
 				if (!guid_found)
 					status_exception::raise(Arg::Gds(isc_nbackup_lostguid_l0bk));
@@ -1750,7 +1783,6 @@ void NBackup::restore_database(const BackupFiles& files, bool inc_rest)
 	catch (const Exception&)
 	{
 		m_silent = true;
-		delete[] page_buffer;
 
 		close_database();
 		close_backup();
