@@ -893,7 +893,7 @@ void INF_database_info(thread_db* tdbb,
 				if (!(info = INF_put_item(item, strlen(guidBuffer), guidBuffer, info, end)))
 					return;
 			}
-			break;
+			continue;
 
 		case fb_info_db_file_id:
 			{
@@ -901,7 +901,7 @@ void INF_database_info(thread_db* tdbb,
 				if (!(info = INF_put_item(item, fileId.length(), fileId.c_str(), info, end)))
 					return;
 			}
-			break;
+			continue;
 
 		default:
 			buffer[0] = item;
