@@ -683,17 +683,30 @@ void CVT_string_to_datetime(const dsc* desc,
 					}
 
 					// fetch the current datetime
-					*(ISC_TIMESTAMP*) date = Firebird::TimeStamp::getCurrentTimeStamp().value();
+					*date = TimeZoneUtil::getCurrentGmtTimeStamp();
+					date->time_zone = cb->getSessionTimeZone();
 
-					if (expect_type == expect_sql_time_tz || expect_type == expect_timestamp_tz)
-						date->time_zone = cb->getSessionTimeZone();
+					switch (expect_type)
+					{
+						case expect_sql_time_tz:
+							date->utc_timestamp.timestamp_time =
+								TimeZoneUtil::timeStampTzToTimeTz(*date).utc_time;
+							break;
+
+						case expect_sql_date:
+						case expect_sql_time:
+						case expect_timestamp:
+							// Not really UTC.
+							date->utc_timestamp = TimeZoneUtil::timeStampTzToTimeStamp(
+								*date, cb->getSessionTimeZone());
+							break;
+
+						case expect_timestamp_tz:
+							break;
+					}
 
 					if (strcmp(temp, NOW) == 0)
-					{
-						if (expect_type == expect_sql_time_tz || expect_type == expect_timestamp_tz)
-							TimeZoneUtil::localTimeStampToUtc(*date);
 						return;
-					}
 
 					if (expect_type == expect_sql_time || expect_type == expect_sql_time_tz)
 					{
@@ -703,21 +716,18 @@ void CVT_string_to_datetime(const dsc* desc,
 
 					date->utc_timestamp.timestamp_time = 0;
 
-					if (expect_type == expect_sql_time_tz || expect_type == expect_timestamp_tz)
-						TimeZoneUtil::localTimeStampToUtc(*date);
-
 					if (strcmp(temp, TODAY) == 0)
 						return;
 
 					if (strcmp(temp, TOMORROW) == 0)
 					{
-						date->utc_timestamp.timestamp_date++;
+						++date->utc_timestamp.timestamp_date;
 						return;
 					}
 
 					if (strcmp(temp, YESTERDAY) == 0)
 					{
-						date->utc_timestamp.timestamp_date--;
+						--date->utc_timestamp.timestamp_date;
 						return;
 					}
 
