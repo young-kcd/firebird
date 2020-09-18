@@ -99,7 +99,11 @@ Config::Config()
 	  logSourceDirectory(getPool()),
 	  verboseLogging(false),
 	  applyIdleTimeout(DEFAULT_APPLY_IDLE_TIMEOUT),
-	  applyErrorTimeout(DEFAULT_APPLY_ERROR_TIMEOUT)
+	  applyErrorTimeout(DEFAULT_APPLY_ERROR_TIMEOUT),
+	  pluginName(getPool()),
+	  log_on_error(true),
+	  disable_on_error(true),
+	  throw_on_error(false)
 {
 	sourceGuid.alignment = 0;
 }
@@ -121,7 +125,11 @@ Config::Config(const Config& other)
 	  logSourceDirectory(getPool(), other.logSourceDirectory),
 	  verboseLogging(other.verboseLogging),
 	  applyIdleTimeout(other.applyIdleTimeout),
-	  applyErrorTimeout(other.applyErrorTimeout)
+	  applyErrorTimeout(other.applyErrorTimeout),
+	  pluginName(other.pluginName),
+	  log_on_error(other.log_on_error),
+	  disable_on_error(other.disable_on_error),
+	  throw_on_error(other.throw_on_error)
 {
 	sourceGuid.alignment = 0;
 }
@@ -165,6 +173,8 @@ Config* Config::get(const PathName& lookupName)
 
 			if (dbName != lookupName)
 				continue;
+
+			config->dbName = dbName;
 
 			exactMatch = true;
 		}
@@ -232,27 +242,48 @@ Config* Config::get(const PathName& lookupName)
 				{
 					parseLong(value, config->logArchiveTimeout);
 				}
+				else if (key == "plugin")
+				{
+					config->pluginName = value;
+				}
+				else if (key == "log_on_error")
+				{
+					parseBoolean(value, config->log_on_error);
+				}
+				else if (key == "disable_on_error")
+				{
+					parseBoolean(value, config->disable_on_error);
+				}
+				else if (key == "throw_on_error")
+				{
+					parseBoolean(value, config->throw_on_error);
+				}
 			}
 		}
 
-		if (!exactMatch)
-			continue;
+		if (exactMatch)
+			break;
 
-		if (config->logDirectory.hasData() || config->syncReplicas.hasData())
+	}
+
+	// TODO: As soon as plugin name is moved into RDB$PUBLICATIONS delay config parse until real replication start
+	if (config->pluginName.hasData())
+	{
+		return config.release();
+	}
+
+	if (config->logDirectory.hasData() || config->syncReplicas.hasData())
+	{
+		// If log_directory is specified, then replication is enabled
+
+		if (config->logFilePrefix.isEmpty())
 		{
-			// If log_directory is specified, then replication is enabled
-
-			if (config->logFilePrefix.isEmpty())
-			{
-				PathName db_directory, db_filename;
-				PathUtils::splitLastComponent(db_directory, db_filename, dbName);
-				config->logFilePrefix = db_filename;
-			}
-
-			config->dbName = dbName;
-
-			return config.release();
+			PathName db_directory, db_filename;
+			PathUtils::splitLastComponent(db_directory, db_filename, config->dbName);
+			config->logFilePrefix = db_filename;
 		}
+
+		return config.release();
 	}
 
 	return NULL;
