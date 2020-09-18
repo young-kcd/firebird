@@ -6294,7 +6294,7 @@ void JReplicator::process(CheckStatusWrapper* status, unsigned length, const UCH
 			return;
 		}
 
-		trace_warning(tdbb, status, "JBatch::add");
+		trace_warning(tdbb, status, "JReplicator::process");
 	}
 	catch (const Exception& ex)
 	{
@@ -6325,7 +6325,7 @@ void JReplicator::close(CheckStatusWrapper* status)
 			return;
 		}
 
-		trace_warning(tdbb, status, "JBatch::add");
+		trace_warning(tdbb, status, "JReplicator::close");
 	}
 	catch (const Exception& ex)
 	{
