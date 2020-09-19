@@ -413,67 +413,83 @@ void getUniqueFileId(HANDLE fd, UCharBuffer& id)
 
 	if (fnGetFinalPathNameByHandle)
 	{
-		char pathbuf[MAX_PATH + 1];
-		DWORD res = fnGetFinalPathNameByHandle(fd,
-			pathbuf, sizeof(pathbuf), VOLUME_NAME_GUID);
+		HalfStaticArray<char, MAX_PATH> pathbuf;
+		DWORD len = (DWORD) pathbuf.getCapacity();
+		DWORD res = fnGetFinalPathNameByHandle(fd, pathbuf.begin(), len, VOLUME_NAME_GUID);
 
-		if (res && res < sizeof(pathbuf))
+		if (res)
 		{
-			string path(pathbuf);
-
-			// Expected format is \\?\Volume{GUID}\pathname,
-			// we extract {GUID} and convert into binary format
-
-			const char* const pattern = "\\\\?\\Volume";
-			const FB_SIZE_T pos1 = (FB_SIZE_T) strlen(pattern);
-
-			if (path.find(pattern) == 0)
+			if (res >= len)
 			{
-				const FB_SIZE_T pos2 = path.find_first_of('}');
+				len = res;
+				pathbuf.resize(len);
+				res = fnGetFinalPathNameByHandle(fd, pathbuf.begin(), len, VOLUME_NAME_GUID);
+			}
 
-				if (path.find_first_of('{') == pos1 && pos2 != string::npos)
+			if (res && res < len)
+			{
+				const string path(pathbuf.begin());
+
+				// Expected format is \\?\Volume{GUID}\pathname,
+				// we extract {GUID} and convert into binary format
+
+				const char* const pattern = "\\\\?\\Volume";
+				const FB_SIZE_T pos1 = (FB_SIZE_T) strlen(pattern);
+
+				if (path.find(pattern) == 0)
 				{
-					fb_assert(id.isEmpty());
-					id.resize(sizeof(Guid));
-					UCHAR* ptr = id.begin();
-					bool num_start = true;
+					const FB_SIZE_T pos2 = path.find_first_of('}');
 
-					for (FB_SIZE_T n = pos1 + 1; n < pos2 && ptr < id.end(); n++)
+					if (path.find_first_of('{') == pos1 && pos2 != string::npos)
 					{
-						const char symbol = path[n];
+						fb_assert(id.isEmpty());
+						id.resize(sizeof(Guid));
+						UCHAR* ptr = id.begin();
+						bool num_start = true;
 
-						if (symbol == '-')
-							continue;
+						for (FB_SIZE_T n = pos1 + 1; n < pos2 && ptr < id.end(); n++)
+						{
+							const char symbol = path[n];
 
-						fb_assert(isalpha(symbol) || isdigit(symbol));
+							if (symbol == '-')
+								continue;
 
-						if (symbol >= '0' && symbol <= '9')
-							*ptr += symbol - '0';
-						else if (symbol >= 'a' && symbol <= 'z')
-							*ptr += symbol - 'a' + 10;
-						else if (symbol >= 'A' && symbol <= 'Z')
-							*ptr += symbol - 'A' + 10;
+							fb_assert(isalpha(symbol) || isdigit(symbol));
 
-						if (num_start)
-							*ptr *= 16;
-						else
-							ptr++;
+							if (symbol >= '0' && symbol <= '9')
+								*ptr += symbol - '0';
+							else if (symbol >= 'a' && symbol <= 'z')
+								*ptr += symbol - 'a' + 10;
+							else if (symbol >= 'A' && symbol <= 'Z')
+								*ptr += symbol - 'A' + 10;
 
-						num_start = !num_start;
+							if (num_start)
+								*ptr *= 16;
+							else
+								ptr++;
+
+							num_start = !num_start;
+						}
+
+						fb_assert(ptr == id.end());
 					}
-
-					fb_assert(ptr == id.end());
 				}
 			}
 		}
-		else if (!res && GetLastError() == ERROR_PATH_NOT_FOUND)
+		else if (GetLastError() == ERROR_PATH_NOT_FOUND)
 		{
-			res = fnGetFinalPathNameByHandle(fd,
-				pathbuf, sizeof(pathbuf), VOLUME_NAME_DOS);
+			res = fnGetFinalPathNameByHandle(fd, pathbuf.begin(), len, VOLUME_NAME_DOS);
 
-			if (res && res < sizeof(pathbuf))
+			if (res >= len)
 			{
-				const string path(pathbuf);
+				len = res;
+				pathbuf.resize(len);
+				res = fnGetFinalPathNameByHandle(fd, pathbuf.begin(), len, VOLUME_NAME_DOS);
+			}
+
+			if (res && res < len)
+			{
+				const string path(pathbuf.begin());
 
 				// Expected format is \\?\UNC\server\share\pathname,
 				// we extract <server> and <share> and use them together
