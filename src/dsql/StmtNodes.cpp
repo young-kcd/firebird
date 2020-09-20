@@ -4970,6 +4970,10 @@ void ForNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	{
 		dsqlScratch->appendUChar(blr_label);
 		dsqlScratch->appendUChar(dsqlLabelNumber);
+
+		// Put src info for blr_for.
+		if (hasLineColumn)
+			dsqlScratch->putDebugSrcInfo(line, column);
 	}
 
 	// Generate FOR loop
@@ -5094,6 +5098,12 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 
 		case jrd_req::req_sync:
 			{
+				if (hasLineColumn)
+				{
+					request->req_src_line = line;
+					request->req_src_column = column;
+				}
+
 				const bool fetched = cursor->fetchNext(tdbb);
 				if (withLock)
 				{
@@ -5353,6 +5363,11 @@ string LineColumnNode::internalPrint(NodePrinter& printer) const
 LineColumnNode* LineColumnNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	statement = statement->dsqlPass(dsqlScratch);
+
+	statement->line = line;
+	statement->column = column;
+	statement->hasLineColumn = true;
+
 	return this;
 }
 
@@ -5411,6 +5426,10 @@ void LoopNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar((UCHAR) dsqlLabelNumber);
 	dsqlScratch->appendUChar(blr_loop);
 	dsqlScratch->appendUChar(blr_begin);
+
+	if (hasLineColumn)
+		dsqlScratch->putDebugSrcInfo(line, column);
+
 	dsqlScratch->appendUChar(blr_if);
 	GEN_expr(dsqlScratch, dsqlExpr);
 	statement->genBlr(dsqlScratch);
