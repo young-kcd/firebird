@@ -421,8 +421,8 @@ void getUniqueFileId(HANDLE fd, UCharBuffer& id)
 		{
 			if (res >= len)
 			{
-				len = res;
-				pathbuf.resize(len);
+				pathbuf.getBuffer(res + 1, false);
+				len = (DWORD) pathbuf.getCapacity();
 				res = fnGetFinalPathNameByHandle(fd, pathbuf.begin(), len, VOLUME_NAME_GUID);
 			}
 
@@ -482,8 +482,8 @@ void getUniqueFileId(HANDLE fd, UCharBuffer& id)
 
 			if (res >= len)
 			{
-				len = res;
-				pathbuf.resize(len);
+				pathbuf.getBuffer(res + 1, false);
+				len = (DWORD) pathbuf.getCapacity();
 				res = fnGetFinalPathNameByHandle(fd, pathbuf.begin(), len, VOLUME_NAME_DOS);
 			}
 
