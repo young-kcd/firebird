@@ -48,48 +48,60 @@ namespace
 	// should be replicated similar to user-defined ones
 	const int BACKUP_HISTORY_GENERATOR = 9;
 
-	const char* LOG_ERROR_MSG = "Replication error";
-	const char* LOG_WARNING_MSG = "Replication warning";
+	const char* NO_PLUGIN_ERROR = "Replication plugin %s is not found";
+	const char* STOP_ERROR = "Replication is stopped due to critical error(s)";
 
- 	void handleError(thread_db* tdbb, jrd_tra* transaction = NULL, bool canThrow = true)
+	void logStatus(const Database* dbb, const ISC_STATUS* status, LogMsgType type)
+	{
+		string message;
+		char temp[BUFFER_LARGE];
+
+		while (fb_interpret(temp, sizeof(temp), &status))
+		{
+			if (!message.isEmpty())
+				message += "\n\t";
+
+			message += temp;
+		}
+
+		logOriginMessage(dbb->dbb_filename.c_str(), message, type);
+	}
+
+	void handleError(thread_db* tdbb, jrd_tra* transaction = nullptr, bool canThrow = true)
 	{
 		const auto dbb = tdbb->getDatabase();
 		const auto attachment = tdbb->getAttachment();
-		const auto config = dbb->replConfig();
+
 		fb_assert(attachment->att_replicator.hasData());
 
-		if (transaction && transaction->tra_replicator && config->disable_on_error && canThrow)
+		const auto config = dbb->replConfig();
+		fb_assert(config);
+
+		if (transaction && transaction->tra_replicator && config->disableOnError)
 		{
-			// If we cannot throw then calling routine will take care of the replicator
 			transaction->tra_replicator->dispose();
-			transaction->tra_replicator = NULL;
-			transaction->tra_flags &= ~TRA_replicating;
+			transaction->tra_replicator = nullptr;
 		}
 
 		const auto status = attachment->att_replicator->getStatus();
 		const auto state = status->getState();
+
 		if (state & IStatus::STATE_WARNINGS)
 		{
-			if (config->log_on_error)
-			{
-				string msg;
-				msg.printf("Database: %s\n\t%s", dbb->dbb_filename.c_str(), LOG_WARNING_MSG);
-				iscLogStatus(msg.c_str(), status);
-			}
+			if (config->logErrors)
+				logStatus(dbb, status->getWarnings(), WARNING_MSG);
 		}
+
 		if (state & IStatus::STATE_ERRORS)
 		{
-			if (config->log_on_error)
-			{
-				string msg;
-				msg.printf("Database: %s\n\t%s", dbb->dbb_filename.c_str(), LOG_ERROR_MSG);
-				iscLogStatus(msg.c_str(), status);
-			}
+			if (config->logErrors)
+				logStatus(dbb, status->getErrors(), ERROR_MSG);
 
-			if (config->throw_on_error && canThrow)
-			{
+			if (config->disableOnError)
+				logOriginMessage(dbb->dbb_filename, STOP_ERROR, ERROR_MSG);
+
+			if (config->reportErrors && canThrow)
 				status_exception::raise(status);
-			}
 		}
 	}
 
@@ -100,7 +112,7 @@ namespace
 		// Disable replication for system attachments
 
 		if (attachment->isSystem())
-			return NULL;
+			return nullptr;
 
 		// Check whether replication is configured and enabled for this database
 
@@ -108,52 +120,60 @@ namespace
 		if (!dbb->isReplicating(tdbb))
 		{
 			attachment->att_replicator = nullptr;
-
-			return NULL;
+			return nullptr;
 		}
+
+		const auto config = dbb->replConfig();
+		fb_assert(config);
 
 		// Create a replicator object, unless it already exists
 
-		if (!attachment->att_replicator)
+		if (attachment->att_replicator.hasData())
 		{
-			const auto config = dbb->replConfig();
+			// If replication must be disabled after errors and the status is dirty,
+			// then fake the replication being inactive
 
+			const auto status = attachment->att_replicator->getStatus();
+			const auto state = status->getState();
+
+			if (config->disableOnError && (state & IStatus::STATE_ERRORS))
+				return nullptr;
+
+			status->init(); // reset the status
+		}
+		else
+		{
 			if (config->pluginName.empty())
 			{
-				if (config->logDirectory.hasData() || config->syncReplicas.hasData())
-				{
-					auto& pool = *attachment->att_pool;
-					const auto manager = dbb->replManager(true);
-					const auto& guid = dbb->dbb_guid;
-					const auto& userName = attachment->att_user->getUserName();
-					attachment->att_replicator = FB_NEW
-						Replicator(pool, manager, guid, userName);
-				}
+				auto& pool = *attachment->att_pool;
+				const auto manager = dbb->replManager(true);
+				const auto& guid = dbb->dbb_guid;
+				const auto& userName = attachment->att_user->getUserName();
+
+				attachment->att_replicator = FB_NEW Replicator(pool, manager, guid, userName);
 			}
 			else
 			{
-				GetPlugins<IReplicatedSession> plugins(IPluginManager::TYPE_REPLICATOR, config->pluginName.c_str());
+				GetPlugins<IReplicatedSession> plugins(IPluginManager::TYPE_REPLICATOR,
+													   config->pluginName.c_str());
 				if (!plugins.hasData())
 				{
 					string msg;
-					msg.printf("Replication plugin %s not found\n\t%s", config->pluginName.c_str(), LOG_ERROR_MSG);
+					msg.printf(NO_PLUGIN_ERROR, config->pluginName.c_str());
 					logOriginMessage(dbb->dbb_filename, msg, ERROR_MSG);
+
 					return nullptr;
 				}
+
 				attachment->att_replicator = plugins.plugin();
 			}
 
-			if (attachment->att_replicator.hasData())
-			{
-				attachment->att_replicator->setAttachment(attachment->getInterface());
-				if (cleanupTransactions)
-					attachment->att_replicator->cleanupTransaction(0);
-			}
+			attachment->att_replicator->setAttachment(attachment->getInterface());
+			if (cleanupTransactions)
+				attachment->att_replicator->cleanupTransaction(0);
 		}
 
 		fb_assert(attachment->att_replicator.hasData());
-
-		// No need to check for errors here: fresh replicator cannot have any, used one can have dirty status.
 
 		return attachment->att_replicator;
 	}
@@ -163,7 +183,7 @@ namespace
 		// Disable replication for system and read-only transactions
 
 		if (transaction->tra_flags & (TRA_system | TRA_readonly))
-			return NULL;
+			return nullptr;
 
 		// Check parent replicator presense
 		// (this includes checking for the database-wise replication state)
@@ -174,18 +194,19 @@ namespace
 			if (transaction->tra_replicator)
 			{
 				transaction->tra_replicator->dispose();
-				transaction->tra_replicator = NULL;
+				transaction->tra_replicator = nullptr;
 			}
 
-			return NULL;
+			return nullptr;
 		}
 
 		// Create a replicator object, unless it already exists
 
-		if (!transaction->tra_replicator &&
-			(transaction->tra_flags & TRA_replicating))
+		if (!transaction->tra_replicator && (transaction->tra_flags & TRA_replicating))
 		{
-			transaction->tra_replicator = replicator->startTransaction(transaction->getInterface(true), transaction->tra_number);
+			transaction->tra_replicator =
+				replicator->startTransaction(transaction->getInterface(true),
+											 transaction->tra_number);
 
 			if (!transaction->tra_replicator)
 				handleError(tdbb, transaction);
@@ -271,9 +292,7 @@ namespace
 	{
 	public:
 		ReplicatedRecordImpl(thread_db* tdbb, const jrd_rel* relation, const Record* record)
-			: //m_tdbb(tdbb),
-			  m_record(record),
-			  m_format(record->getFormat()),
+			: m_record(record),
 			  m_relation(relation)
 		{
 		}
@@ -284,17 +303,14 @@ namespace
 
 		unsigned getCount() override
 		{
-			return m_format->fmt_count;
+			const auto format = m_record->getFormat();
+			return format->fmt_count;
 		}
 
 		const char* getName() override
 		{
-			jrd_fld* field = MET_get_field(m_relation, m_fieldIndex);
-
-			if (field == nullptr)
-				return nullptr;
-
-			return field->fld_name.c_str();
+			const auto field = MET_get_field(m_relation, m_fieldIndex);
+			return field ? field->fld_name.c_str() : nullptr;
 		}
 
 		unsigned getType() override
@@ -304,12 +320,12 @@ namespace
 
 		unsigned getSubType() override
 		{
-			return m_format->fmt_desc[m_fieldIndex].getSubType();
+			return m_desc->getSubType();
 		}
 
 		unsigned getScale() override
 		{
-			return m_format->fmt_desc[m_fieldIndex].dsc_scale;
+			return m_desc->dsc_scale;
 		}
 
 		unsigned getLength() override
@@ -319,7 +335,7 @@ namespace
 
 		unsigned getCharSet() override
 		{
-			return m_format->fmt_desc[m_fieldIndex].getCharSet();
+			return m_desc->getCharSet();
 		}
 
 		const void* getData() override
@@ -327,17 +343,25 @@ namespace
 			if (m_record->isNull(m_fieldIndex))
 				return nullptr;
 
-			return m_record->getData() + (IPTR)(m_format->fmt_desc[m_fieldIndex].dsc_address);
+			return m_record->getData() + (IPTR) m_desc->dsc_address;
 		}
 
 		IReplicatedField* getField(unsigned index) override
 		{
-			if (index >= m_format->fmt_count)
+			const auto format = m_record->getFormat();
+
+			if (index >= format->fmt_count)
 				return nullptr;
 
+			const auto desc = &format->fmt_desc[index];
+
+			if (desc->isUnknown() || !desc->dsc_address)
+				return nullptr;
+
+			m_desc = desc;
 			m_fieldIndex = index;
 			SLONG dummySubtype, dummyScale;
-			m_format->fmt_desc[m_fieldIndex].getSqlInfo(&m_fieldLength, &dummySubtype, &dummyScale, &m_fieldType);
+			desc->getSqlInfo(&m_fieldLength, &dummySubtype, &dummyScale, &m_fieldType);
 
 			return this;
 		}
@@ -353,10 +377,9 @@ namespace
 		}
 
 	private:
-		//thread_db* const m_tdbb;
 		const Record* const m_record;
-		const Format* m_format; // Optimization
 		const jrd_rel* const m_relation;
+		const dsc* m_desc = nullptr; // optimization
 		unsigned m_fieldIndex = 0;
 		SLONG m_fieldLength = 0;
 		SLONG m_fieldType = 0;
@@ -376,7 +399,7 @@ void REPL_attach(thread_db* tdbb, bool cleanupTransactions)
 	fb_assert(!attachment->att_repl_matcher);
 	auto& pool = *attachment->att_pool;
 	attachment->att_repl_matcher = FB_NEW_POOL(pool)
-				TableMatcher(pool, replConfig->includeFilter, replConfig->excludeFilter);
+		TableMatcher(pool, replConfig->includeFilter, replConfig->excludeFilter);
 
 	fb_assert(!attachment->att_replicator);
 	if (cleanupTransactions)
@@ -404,11 +427,15 @@ void REPL_trans_commit(thread_db* tdbb, jrd_tra* transaction)
 
 	if (!replicator->commit())
 	{
+		// Commit is a terminal routine, we cannot throw here
 		handleError(tdbb, transaction, false);
 	}
 
-	replicator->dispose();
-	transaction->tra_replicator = nullptr;
+	if (transaction->tra_replicator)
+	{
+		transaction->tra_replicator->dispose();
+		transaction->tra_replicator = nullptr;
+	}
 }
 
 void REPL_trans_rollback(thread_db* tdbb, jrd_tra* transaction)
@@ -423,8 +450,11 @@ void REPL_trans_rollback(thread_db* tdbb, jrd_tra* transaction)
 		handleError(tdbb, transaction, false);
 	}
 
-	replicator->dispose();
-	transaction->tra_replicator = nullptr;
+	if (transaction->tra_replicator)
+	{
+		transaction->tra_replicator->dispose();
+		transaction->tra_replicator = nullptr;
+	}
 }
 
 void REPL_trans_cleanup(Jrd::thread_db* tdbb, TraNumber number)
@@ -490,7 +520,7 @@ void REPL_store(thread_db* tdbb, const record_param* rpb, jrd_tra* transaction)
 	fb_assert(record);
 
 	// This temporary auto-pointer is just to delete a temporary record
-	AutoPtr<Record> cleanupRecord(record != rpb->rpb_record ? record : NULL);
+	AutoPtr<Record> cleanupRecord(record != rpb->rpb_record ? record : nullptr);
 	AutoSetRestoreFlag<ULONG> noRecursion(&tdbb->tdbb_flags, TDBB_repl_in_progress, true);
 
 	if (!ensureSavepoints(tdbb, transaction))
@@ -534,8 +564,8 @@ void REPL_modify(thread_db* tdbb, const record_param* orgRpb,
 	fb_assert(orgRecord);
 
 	// These temporary auto-pointers are just to delete temporary records
-	AutoPtr<Record> cleanupOrgRecord(orgRecord != orgRpb->rpb_record ? orgRecord : NULL);
-	AutoPtr<Record> cleanupNewRecord(newRecord != newRpb->rpb_record ? newRecord : NULL);
+	AutoPtr<Record> cleanupOrgRecord(orgRecord != orgRpb->rpb_record ? orgRecord : nullptr);
+	AutoPtr<Record> cleanupNewRecord(newRecord != newRpb->rpb_record ? newRecord : nullptr);
 
 	const auto orgLength = orgRecord->getLength();
 	const auto newLength = newRecord->getLength();
@@ -588,7 +618,7 @@ void REPL_erase(thread_db* tdbb, const record_param* rpb, jrd_tra* transaction)
 	fb_assert(record);
 
 	// This temporary auto-pointer is just to delete a temporary record
-	AutoPtr<Record> cleanupRecord(record != rpb->rpb_record ? record : NULL);
+	AutoPtr<Record> cleanupRecord(record != rpb->rpb_record ? record : nullptr);
 	AutoSetRestoreFlag<ULONG> noRecursion(&tdbb->tdbb_flags, TDBB_repl_in_progress, true);
 
 	if (!ensureSavepoints(tdbb, transaction))
@@ -627,7 +657,7 @@ void REPL_gen_id(thread_db* tdbb, SLONG genId, SINT64 value)
 	MetaName genName;
 	if (!attachment->att_generators.lookup(genId, genName))
 	{
-		MET_lookup_generator_id(tdbb, genId, genName, NULL);
+		MET_lookup_generator_id(tdbb, genId, genName, nullptr);
 		attachment->att_generators.store(genId, genName);
 	}
 

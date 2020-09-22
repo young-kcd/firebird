@@ -304,6 +304,7 @@ class Database : public pool_alloc<type_dbb>
 		LockManager* getLockManager();
 		EventManager* getEventManager();
 		Replication::Manager* getReplManager(bool create);
+
 		const Replication::Config* getReplConfig()
 		{
 			return m_replConfig.get();

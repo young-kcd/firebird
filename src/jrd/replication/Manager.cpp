@@ -119,6 +119,8 @@ Manager::Manager(const string& dbId,
 		m_changeLog = FB_NEW_POOL(getPool())
 			ChangeLog(getPool(), dbId, guid, m_sequence, config);
 	}
+	else
+		fb_assert(config->syncReplicas.hasData());
 
 	// Attach to synchronous replicas (if any)
 

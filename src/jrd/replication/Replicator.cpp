@@ -85,30 +85,10 @@ void Replicator::flush(BatchBlock& block, FlushReason reason, ULONG flags)
 	block.flushes++;
 }
 
-void Replicator::logError(const IStatus* status)
-{
-	string message;
-
-	auto statusPtr = status->getErrors();
-
-	char temp[BUFFER_LARGE];
-	while (fb_interpret(temp, sizeof(temp), &statusPtr))
-	{
-		if (!message.isEmpty())
-			message += "\n\t";
-
-		message += temp;
-	}
-
-	logOriginMessage(m_config->dbName, message, ERROR_MSG);
-}
-
 void Replicator::postError(const Exception& ex)
 {
 	FbLocalStatus tempStatus;
 	ex.stuffException(&tempStatus);
-
-	logError(&tempStatus);
 
 	Arg::StatusVector newErrors;
 	newErrors << Arg::Gds(isc_random) << Arg::Str("Replication error");

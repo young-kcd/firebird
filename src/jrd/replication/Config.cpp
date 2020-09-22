@@ -59,7 +59,7 @@ namespace
 
 	void parseLong(const string& input, ULONG& output)
 	{
-		char* tail = NULL;
+		char* tail = nullptr;
 		auto number = strtol(input.c_str(), &tail, 10);
 		if (tail && *tail == 0 && number > 0)
 			output = (ULONG) number;
@@ -101,9 +101,9 @@ Config::Config()
 	  applyIdleTimeout(DEFAULT_APPLY_IDLE_TIMEOUT),
 	  applyErrorTimeout(DEFAULT_APPLY_ERROR_TIMEOUT),
 	  pluginName(getPool()),
-	  log_on_error(true),
-	  disable_on_error(true),
-	  throw_on_error(false)
+	  logErrors(true),
+	  reportErrors(false),
+	  disableOnError(true)
 {
 	sourceGuid.alignment = 0;
 }
@@ -126,10 +126,10 @@ Config::Config(const Config& other)
 	  verboseLogging(other.verboseLogging),
 	  applyIdleTimeout(other.applyIdleTimeout),
 	  applyErrorTimeout(other.applyErrorTimeout),
-	  pluginName(other.pluginName),
-	  log_on_error(other.log_on_error),
-	  disable_on_error(other.disable_on_error),
-	  throw_on_error(other.throw_on_error)
+	  pluginName(getPool(), other.pluginName),
+	  logErrors(other.logErrors),
+	  reportErrors(other.reportErrors),
+	  disableOnError(other.disableOnError)
 {
 	sourceGuid.alignment = 0;
 }
@@ -246,31 +246,28 @@ Config* Config::get(const PathName& lookupName)
 				{
 					config->pluginName = value;
 				}
-				else if (key == "log_on_error")
+				else if (key == "log_errors")
 				{
-					parseBoolean(value, config->log_on_error);
+					parseBoolean(value, config->logErrors);
+				}
+				else if (key == "report_errors")
+				{
+					parseBoolean(value, config->reportErrors);
 				}
 				else if (key == "disable_on_error")
 				{
-					parseBoolean(value, config->disable_on_error);
-				}
-				else if (key == "throw_on_error")
-				{
-					parseBoolean(value, config->throw_on_error);
+					parseBoolean(value, config->disableOnError);
 				}
 			}
 		}
 
 		if (exactMatch)
 			break;
-
 	}
 
 	// TODO: As soon as plugin name is moved into RDB$PUBLICATIONS delay config parse until real replication start
 	if (config->pluginName.hasData())
-	{
 		return config.release();
-	}
 
 	if (config->logDirectory.hasData() || config->syncReplicas.hasData())
 	{
@@ -286,7 +283,7 @@ Config* Config::get(const PathName& lookupName)
 		return config.release();
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 // This routine is used to retrieve the list of replica databases.

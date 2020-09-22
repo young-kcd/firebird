@@ -58,9 +58,9 @@ namespace Replication
 		ULONG applyIdleTimeout;
 		ULONG applyErrorTimeout;
 		Firebird::string pluginName;
-		bool log_on_error;
-		bool disable_on_error;
-		bool throw_on_error;
+		bool logErrors;
+		bool reportErrors;
+		bool disableOnError;
 	};
 };
 

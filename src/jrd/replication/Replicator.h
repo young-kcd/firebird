@@ -264,7 +264,6 @@ namespace Replication
 
 		void initialize();
 		void flush(BatchBlock& txnData, FlushReason reason, ULONG flags = 0);
-		void logError(const Firebird::IStatus* status);
 		void postError(const Firebird::Exception& ex);
 
 		bool prepareTransaction(Transaction* transaction);
