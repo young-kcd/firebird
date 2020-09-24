@@ -3552,7 +3552,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
 					throw;
 				}
 
-				procedure->getStatement()->procedure = procedure;
+				fb_assert(procedure->getStatement()->procedure == procedure);
 			}
 			else
 			{
@@ -3629,26 +3629,32 @@ bool jrd_prc::reload(thread_db* tdbb)
 		MemoryPool* const csb_pool = attachment->createPool();
 		Jrd::ContextPoolHolder context(tdbb, csb_pool);
 
-		AutoPtr<CompilerScratch> csb(FB_NEW_POOL(*csb_pool) CompilerScratch(*csb_pool));
-
 		try
 		{
-			this->parseBlr(tdbb, csb, &P.RDB$PROCEDURE_BLR,
-				P.RDB$DEBUG_INFO.NULL ? NULL : &P.RDB$DEBUG_INFO);
+			AutoPtr<CompilerScratch> csb(FB_NEW_POOL(*csb_pool) CompilerScratch(*csb_pool));
 
-			// parseBlr() above could set FLAG_RELOAD again
-			return !(this->flags & Routine::FLAG_RELOAD);
+			try
+			{
+				this->parseBlr(tdbb, csb, &P.RDB$PROCEDURE_BLR,
+					P.RDB$DEBUG_INFO.NULL ? NULL : &P.RDB$DEBUG_INFO);
+
+				// parseBlr() above could set FLAG_RELOAD again
+				return !(this->flags & Routine::FLAG_RELOAD);
+			}
+			catch (const Exception& ex)
+			{
+				StaticStatusVector temp_status;
+				ex.stuffException(temp_status);
+
+				const string name = this->getName().toString();
+				(Arg::Gds(isc_bad_proc_BLR) << Arg::Str(name)
+					<< Arg::StatusVector(temp_status.begin())).raise();
+			}
 		}
-		catch (const Exception& ex)
+		catch (const Exception&)
 		{
-			StaticStatusVector temp_status;
-			ex.stuffException(temp_status);
-
 			attachment->deletePool(csb_pool);
-
-			const string name = this->getName().toString();
-			(Arg::Gds(isc_bad_proc_BLR) << Arg::Str(name)
-				<< Arg::StatusVector(temp_status.begin())).raise();
+			throw;
 		}
 	}
 	END_FOR
