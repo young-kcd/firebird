@@ -157,32 +157,23 @@ bool Replicator::commitTransaction(Transaction* transaction)
 
 		auto& txnData = transaction->getData();
 
-		// Do not replicate this transaction if it's de-facto read-only.
-		// If there were no flushes yet and the buffer contains just one tag
-		// (this should be opStartTransaction), it means nothing was changed.
-
+		// Assert this transaction being de-facto dirty
 		const auto dataLength = txnData.buffer->getCount() - sizeof(Block);
+		fb_assert(txnData.flushes || dataLength > sizeof(UCHAR));
 
-		if (txnData.flushes || dataLength > sizeof(UCHAR))
+		for (const auto& generator : m_generators)
 		{
-			for (const auto& generator : m_generators)
-			{
-				fb_assert(generator.name.hasData());
+			fb_assert(generator.name.hasData());
 
-				txnData.putTag(opSetSequence);
-				txnData.putMetaName(generator.name.c_str());
-				txnData.putBigInt(generator.value);
-			}
-
-			m_generators.clear();
-
-			txnData.putTag(opCommitTransaction);
-			flush(txnData, FLUSH_SYNC, BLOCK_END_TRANS);
+			txnData.putTag(opSetSequence);
+			txnData.putMetaName(generator.name.c_str());
+			txnData.putBigInt(generator.value);
 		}
-		else
-		{
-			fb_assert((*txnData.buffer)[sizeof(Block)] == opStartTransaction);
-		}
+
+		m_generators.clear();
+
+		txnData.putTag(opCommitTransaction);
+		flush(txnData, FLUSH_SYNC, BLOCK_END_TRANS);
 	}
 	catch (const Exception& ex)
 	{
@@ -205,10 +196,6 @@ bool Replicator::rollbackTransaction(Transaction* transaction)
 		{
 			txnData.putTag(opRollbackTransaction);
 			flush(txnData, FLUSH_SYNC, BLOCK_END_TRANS);
-		}
-		else
-		{
-			fb_assert((*txnData.buffer)[sizeof(Block)] == opStartTransaction);
 		}
 	}
 	catch (const Exception& ex)
