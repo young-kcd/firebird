@@ -649,6 +649,42 @@ void Applier::updateRecord(thread_db* tdbb, TraNumber traNum,
 
 	if (found)
 	{
+		if (relation->isSystem())
+		{
+			// For system tables, preserve the fields that was not explicitly changed
+			// during the update. This prevents metadata IDs from being overwritten.
+
+			for (USHORT id = 0; id < newFormat->fmt_count; id++)
+			{
+				dsc from, to;
+
+				const auto orgFlag = EVL_field(NULL, orgRecord, id, &from);
+				const auto newFlag = EVL_field(NULL, newRecord, id, &to);
+
+				if (orgFlag == newFlag && (!newFlag || !MOV_compare(tdbb, &from, &to)))
+				{
+					const auto flag = EVL_field(NULL, orgRpb.rpb_record, id, &from);
+
+					if (flag)
+					{
+						MOV_move(tdbb, &from, &to);
+						newRecord->clearNull(id);
+
+						if (DTYPE_IS_BLOB(from.dsc_dtype))
+						{
+							const auto source = (bid*) from.dsc_address;
+							sourceBlobs[id] = *source;
+						}
+					}
+					else
+					{
+						newRecord->setNull(id);
+						sourceBlobs[id].clear();
+					}
+				}
+			}
+		}
+
 		doUpdate(tdbb, &orgRpb, &newRpb, transaction, &sourceBlobs);
 	}
 	else
@@ -855,10 +891,30 @@ bool Applier::lookupKey(thread_db* tdbb, jrd_rel* relation, index_desc& key)
 
 			if (idx.idx_flags & idx_unique)
 			{
-				if ((key.idx_id == idx_invalid) || (idx.idx_count < key.idx_count))
-				{
+				if (key.idx_id == idx_invalid)
 					key = idx;
+				else if (relation->isSystem())
+				{
+					// For unique system indices, prefer ones using metanames rather than IDs
+					USHORT metakeys1 = 0, metakeys2 = 0;
+
+					for (USHORT id = 0; id < idx.idx_count; id++)
+					{
+						if (idx.idx_rpt[id].idx_itype == idx_metadata)
+							metakeys1++;
+					}
+
+					for (USHORT id = 0; id < key.idx_count; id++)
+					{
+						if (key.idx_rpt[id].idx_itype == idx_metadata)
+							metakeys2++;
+					}
+
+					if (metakeys1 > metakeys2)
+						key = idx;
 				}
+				else if (idx.idx_count < key.idx_count)
+					key = idx;
 			}
 		}
 	}
