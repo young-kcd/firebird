@@ -499,15 +499,16 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
 		MET_update_transaction(tdbb, transaction, true);
 
+	// Get rid of the rest of savepoints to allow intermediate garbage collection
+	// in indices and BLOBs after in-place updates
+
+	while (transaction->tra_save_point)
+		transaction->rollforwardSavepoint(tdbb);
+
 	// Flush pages if transaction logically modified data
 
 	if (transaction->tra_flags & TRA_write)
 	{
-		// Get rid of the rest of savepoints to allow intermediate garbage collection
-		// in indices and BLOBs after in-place updates
-		while (transaction->tra_save_point)
-			transaction->rollforwardSavepoint(tdbb);
-
 		transaction_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
 	}
 	else if ((transaction->tra_flags & (TRA_prepare2 | TRA_reconnected)) ||
@@ -1396,8 +1397,13 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 			while (transaction->tra_save_point && !transaction->tra_save_point->isRoot())
 				transaction->rollforwardSavepoint(tdbb);
 
-			if (transaction->tra_save_point) // we still can use undo log for rollback, it wasn't reset because of no_auto_undo flag or size
+			if (transaction->tra_save_point)
 			{
+				// We still can use the undo log for rollback, it wasn't reset because of
+				// no_auto_undo flag or being oversized
+
+				fb_assert(transaction->tra_save_point->isRoot());
+
 				// In an attempt to avoid deadlocks, clear the precedence by writing
 				// all dirty buffers for this transaction.
 
@@ -1420,7 +1426,12 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 			// Prevent a bugcheck in TRA_set_state to cause a loop
 			// Clear the error because the rollback will succeed.
 			fb_utils::init_status(tdbb->tdbb_status_vector);
+
+			// If undo failed, free all savepoints
+			Savepoint::destroy(transaction->tra_save_point);
 		}
+
+		fb_assert(!transaction->tra_save_point);
 	}
 	else if (!(transaction->tra_flags & TRA_write))
 	{
@@ -2545,6 +2556,9 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
+	// All savepoints must already be released in TRA_commit/TRA_rollback
+	fb_assert(!transaction->tra_save_point);
+
 	// The new transaction needs to remember the 'commit-retained' transaction
 	// because it must see the operations of the 'commit-retained' transaction and
 	// its snapshot doesn't contain these operations.
@@ -2639,9 +2653,9 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 
 	transaction->tra_flags &= ~(TRA_write | TRA_prepared);
 
-	// All savepoint were already released in TRA_commit/TRA_rollback except, may be, empty transaction-level one
-	if (!transaction->tra_save_point && !(transaction->tra_flags & TRA_no_auto_undo))
-		transaction->startSavepoint(true);	// start new savepoint if necessary
+	// Restart a transaction-level savepoint, unless NO AUTO UNDO is specified
+	if (!(transaction->tra_flags & TRA_no_auto_undo))
+		transaction->startSavepoint(true);
 
 	if (transaction->tra_flags & TRA_precommitted)
 	{
