@@ -12666,7 +12666,7 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	{
 		if (function->isImplemented() && !function->isDefined())
 		{
-			if (tdbb->getAttachment()->isGbak())
+			if (tdbb->getAttachment()->isGbak() || (tdbb->tdbb_flags & TDBB_replicator))
 			{
 				PAR_warning(Arg::Warning(isc_funnotdef) << Arg::Str(name.toString()) <<
 							Arg::Warning(isc_modnotfound));
