@@ -1801,6 +1801,8 @@ bool RseBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	subQuery->close(tdbb);
 
+	savePoint.release();
+
 	if (blrOp == blr_any || blrOp == blr_unique)
 		request->req_flags &= ~req_null;
 

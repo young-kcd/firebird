@@ -293,39 +293,6 @@ string StmtNode::internalPrint(NodePrinter& printer) const
 //--------------------
 
 
-StmtNode* SavepointEncloseNode::make(MemoryPool& pool, DsqlCompilerScratch* dsqlScratch, StmtNode* node)
-{
-	if (dsqlScratch->errorHandlers)
-	{
-		node = FB_NEW_POOL(pool) SavepointEncloseNode(pool, node);
-		node->dsqlPass(dsqlScratch);
-	}
-
-	return node;
-}
-
-string SavepointEncloseNode::internalPrint(NodePrinter& printer) const
-{
-	DsqlOnlyStmtNode::internalPrint(printer);
-
-	NODE_PRINT(printer, stmt);
-
-	return "SavepointEncloseNode";
-}
-
-void SavepointEncloseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
-{
-	dsqlScratch->appendUChar(blr_begin);
-	dsqlScratch->appendUChar(blr_start_savepoint);
-	stmt->genBlr(dsqlScratch);
-	dsqlScratch->appendUChar(blr_end_savepoint);
-	dsqlScratch->appendUChar(blr_end);
-}
-
-
-//--------------------
-
-
 static RegisterNode<AssignmentNode> regAssignmentNode({blr_assignment});
 
 DmlNode* AssignmentNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
@@ -690,17 +657,17 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 					savNumber = *request->getImpure<SavNumber>(impureOffset);
 
 					// Since there occurred an error (req_unwind), undo all savepoints
-					// up to, _but not including_, the savepoint of this block.
-					// That's why transaction->rollbackToSavepoint() cannot be used here
+					// up to, *but not including*, the savepoint of this block.
+					// That's why transaction->rollbackToSavepoint() cannot be used here.
 					// The savepoint of this block will be dealt with below.
-					// Do this only if error handlers exist. If not - leave rollbacking to caller node
+					// Do this only if error handlers exist. Otherwise, leave undo up to callers.
 
 					while (transaction->tra_save_point &&
-						savNumber < transaction->tra_save_point->getNumber() &&
+						transaction->tra_save_point->getNumber() > savNumber &&
 						transaction->tra_save_point->getNext() &&
-						savNumber < transaction->tra_save_point->getNext()->getNumber())
+						transaction->tra_save_point->getNext()->getNumber() > savNumber)
 					{
-						transaction->rollforwardSavepoint(tdbb);
+						transaction->rollforwardSavepoint(tdbb, false);
 					}
 
 					// There can be no savepoints above the given one
@@ -767,8 +734,8 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 						}
 					}
 				}
-				// The error is dealt with by the application, cleanup
-				// this block's savepoint.
+
+				// The error is dealt with by the application, cleanup our savepoint
 
 				if (handled && !(transaction->tra_flags & TRA_system))
 				{
@@ -783,9 +750,8 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 					// Because of this following assert is commented out
 					//fb_assert(transaction->tra_save_point && transaction->tra_save_point->getNumber() == savNumber);
 
-					for (const Savepoint* save_point = transaction->tra_save_point;
-							save_point && savNumber <= save_point->getNumber();
-							save_point = transaction->tra_save_point)
+					while (transaction->tra_save_point &&
+						transaction->tra_save_point->getNumber() >= savNumber)
 					{
 						transaction->rollforwardSavepoint(tdbb);
 					}
@@ -804,9 +770,9 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 				savNumber = *request->getImpure<SavNumber>(impureOffset);
 
 				// rollforward all savepoints
-				for (const Savepoint* save_point = transaction->tra_save_point;
-					 save_point && save_point->getNext() && savNumber <= save_point->getNumber();
-					 save_point = transaction->tra_save_point)
+				while (transaction->tra_save_point &&
+					transaction->tra_save_point->getNext() &&
+					transaction->tra_save_point->getNumber() >= savNumber)
 				{
 					transaction->rollforwardSavepoint(tdbb);
 				}
@@ -2579,7 +2545,6 @@ const StmtNode* EraseNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 
 	if (request->req_operation == jrd_req::req_unwind)
 		retNode = parentStmt;
-
 	else if (request->req_operation == jrd_req::req_return && subStatement)
 	{
 		if (!exeState->topNode)
@@ -3262,6 +3227,7 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 	}
 
 	jrd_tra* transaction = request->req_transaction;
+
 	const SavNumber savNumber = transaction->tra_save_point ?
 		transaction->tra_save_point->getNumber() : 0;
 
@@ -3287,7 +3253,7 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 
 		EXE_receive(tdbb, procRequest, 1, outMsgLength, outMsg);
 
-		// Clean up all savepoints started during execution of the procedure.
+		// Clean up all savepoints started during execution of the procedure
 
 		if (!(transaction->tra_flags & TRA_system))
 		{
@@ -4071,7 +4037,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 			transaction->tra_save_point->isSystem() &&
 			transaction->tra_save_point->isChanging())
 		{
-			transaction->rollforwardSavepoint(tdbb);
+			transaction->rollforwardSavepoint(tdbb, false);
 		}
 
 		{ // scope
@@ -4096,7 +4062,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 					transaction->tra_save_point->isSystem() &&
 					transaction->tra_save_point->isChanging())
 				{
-					transaction->rollforwardSavepoint(tdbb);
+					transaction->rollforwardSavepoint(tdbb, false);
 				}
 
 				AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
@@ -5089,11 +5055,13 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 			}
 			cursor->open(tdbb);
 			request->req_records_affected.clear();
+
 			// fall into
 
 		case jrd_req::req_return:
 			if (stall)
 				return stall;
+
 			// fall into
 
 		case jrd_req::req_sync:
@@ -5130,36 +5098,47 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 				restartRequest(request, transaction);
 
 			request->req_operation = jrd_req::req_return;
-			// fall into
 
-		case jrd_req::req_unwind:
-		{
-			const LabelNode* label = nodeAs<LabelNode>(parentStmt.getObject());
-
-			if (label && request->req_label == label->labelNumber &&
-				(request->req_flags & req_continue_loop))
+			if (impure->savepoint)
 			{
-				request->req_flags &= ~req_continue_loop;
-				request->req_operation = jrd_req::req_sync;
-				return this;
+				while (transaction->tra_save_point &&
+					transaction->tra_save_point->getNumber() >= impure->savepoint)
+				{
+					transaction->rollforwardSavepoint(tdbb);
+				}
 			}
 
 			// fall into
-		}
 
 		default:
 		{
-			const SavNumber savNumber = impure->savepoint;
-
-			if (savNumber)
+			if (request->req_operation == jrd_req::req_unwind)
 			{
-				while (transaction->tra_save_point &&
-					transaction->tra_save_point->getNumber() >= savNumber)
+				if (request->req_flags & (req_leave | req_continue_loop))
 				{
-					if (transaction->tra_save_point->isChanging()) // we must rollback this savepoint
-						transaction->rollbackSavepoint(tdbb);
-					else
-						transaction->rollforwardSavepoint(tdbb);
+					const auto label = nodeAs<LabelNode>(parentStmt.getObject());
+
+					// If CONTINUE matches our label, restart fetching records
+
+					if (label && request->req_label == label->labelNumber &&
+						(request->req_flags & req_continue_loop))
+					{
+						request->req_flags &= ~req_continue_loop;
+						request->req_operation = jrd_req::req_sync;
+						return this;
+					}
+
+					// Otherwise (BREAK/LEAVE/EXIT or mismatched CONTINUE), we should unwind further.
+					// Thus cleanup our savepoint.
+
+					if (impure->savepoint)
+					{
+						while (transaction->tra_save_point &&
+							transaction->tra_save_point->getNumber() >= impure->savepoint)
+						{
+							transaction->rollforwardSavepoint(tdbb);
+						}
+					}
 				}
 			}
 
@@ -8333,72 +8312,94 @@ void ReturnNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 //--------------------
 
 
-static RegisterNode<SavePointNode> regSavePointNode({blr_start_savepoint, blr_end_savepoint});
+static RegisterNode<SavepointEncloseNode> regSavePointNode({blr_start_savepoint});
 
-DmlNode* SavePointNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* /*csb*/, const UCHAR blrOp)
+DmlNode* SavepointEncloseNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
-	SavePointNode* node = FB_NEW_POOL(pool) SavePointNode(pool, blrOp);
+	const auto statement = PAR_parse_stmt(tdbb, csb);
+
+	const auto node = FB_NEW_POOL(pool) SavepointEncloseNode(pool, statement);
+
+	// skip blr_end_savepoint
+	const auto blrOp = csb->csb_blr_reader.getByte();
+	fb_assert(blrOp == blr_end_savepoint);
+
 	return node;
 }
 
-SavePointNode* SavePointNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
+StmtNode* SavepointEncloseNode::make(MemoryPool& pool, DsqlCompilerScratch* dsqlScratch, StmtNode* node)
 {
-	return this;
+	// Add savepoint wrapper around the statement having error handlers
+
+	return dsqlScratch->errorHandlers ?
+		FB_NEW_POOL(pool) SavepointEncloseNode(pool, node) : node;
 }
 
-string SavePointNode::internalPrint(NodePrinter& printer) const
+SavepointEncloseNode* SavepointEncloseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	const auto node = FB_NEW_POOL(dsqlScratch->getPool()) SavepointEncloseNode(dsqlScratch->getPool(), statement);
+	node->statement = statement->dsqlPass(dsqlScratch);
+	return node;
+}
+
+string SavepointEncloseNode::internalPrint(NodePrinter& printer) const
 {
 	StmtNode::internalPrint(printer);
 
-	NODE_PRINT(printer, blrOp);
+	NODE_PRINT(printer, statement);
 
-	return "SavePointNode";
+	return "SavepointEncloseNode";
 }
 
-void SavePointNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+void SavepointEncloseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
-	dsqlScratch->appendUChar(blrOp);
+	dsqlScratch->appendUChar(blr_begin);
+	dsqlScratch->appendUChar(blr_start_savepoint);
+	statement->genBlr(dsqlScratch);
+	dsqlScratch->appendUChar(blr_end_savepoint);
+	dsqlScratch->appendUChar(blr_end);
 }
 
-const StmtNode* SavePointNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+SavepointEncloseNode* SavepointEncloseNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	jrd_tra* transaction = request->req_transaction;
+	doPass1(tdbb, csb, statement.getAddress());
+	return this;
+}
 
-	switch (blrOp)
+SavepointEncloseNode* SavepointEncloseNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	doPass2(tdbb, csb, statement.getAddress(), this);
+	impureOffset = csb->allocImpure<SavNumber>();
+	return this;
+}
+
+const StmtNode* SavepointEncloseNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+{
+	const auto transaction = request->req_transaction;
+
+	if (request->req_operation == jrd_req::req_evaluate)
 	{
-		case blr_start_savepoint:
-			if (request->req_operation == jrd_req::req_evaluate)
+		if (!(transaction->tra_flags & TRA_system))
+		{
+			const auto savepoint = transaction->startSavepoint();
+			*request->getImpure<SavNumber>(impureOffset) = savepoint->getNumber();
+		}
+
+		return statement;
+	}
+
+	if (request->req_operation == jrd_req::req_return)
+	{
+		if (!(transaction->tra_flags & TRA_system))
+		{
+			const auto savNumber = *request->getImpure<SavNumber>(impureOffset);
+
+			while (transaction->tra_save_point &&
+				transaction->tra_save_point->getNumber() >= savNumber)
 			{
-				// Start a save point.
-				if (!(transaction->tra_flags & TRA_system))
-					transaction->startSavepoint();
-
-				request->req_operation = jrd_req::req_return;
+				transaction->rollforwardSavepoint(tdbb);
 			}
-			break;
-
-		case blr_end_savepoint:
-			if (request->req_operation == jrd_req::req_evaluate ||
-				request->req_operation == jrd_req::req_unwind)
-			{
-				// If any requested modify/delete/insert ops have completed, forget them.
-				if (!(transaction->tra_flags & TRA_system))
-				{
-					// If an error is still pending when the savepoint is supposed to end, then the
-					// application didn't handle the error and the savepoint should be undone.
-					if (exeState->errorPending)
-						transaction->rollbackSavepoint(tdbb);
-					else
-						transaction->rollforwardSavepoint(tdbb);
-				}
-
-				if (request->req_operation == jrd_req::req_evaluate)
-					request->req_operation = jrd_req::req_return;
-			}
-			break;
-
-		default:
-			fb_assert(false);
+		}
 	}
 
 	return parentStmt;

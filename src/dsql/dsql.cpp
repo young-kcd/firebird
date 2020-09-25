@@ -855,12 +855,14 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	if (req_transaction && (req_transaction->tra_flags & TRA_read_consistency) &&
 		statement->getType() != DsqlCompiledStatement::TYPE_SAVEPOINT)
 	{
-		AutoSavePoint savePoint(tdbb, req_transaction);
 		req_request->req_flags &= ~req_update_conflict;
 		int numTries = 0;
 		const int MAX_RESTARTS = 10;
+
 		while (true)
 		{
+			AutoSavePoint savePoint(tdbb, req_transaction);
+
 			// Don't set req_restart_ready flas at last attempt to restart request.
 			// It allows to raise update conflict error (if any) as usual and
 			// handle error by PSQL handler.
@@ -893,6 +895,7 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 					ERRD_post_warning(Arg::Warning(isc_random) << Arg::Str(s));
 				}
 #endif
+				savePoint.release();	// everything is ok
 				break;
 			}
 
@@ -902,8 +905,9 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 			req_transaction->tra_flags &= ~TRA_ex_restart;
 			fb_utils::init_status(tdbb->tdbb_status_vector);
 
-			req_transaction->rollbackSavepoint(tdbb, true);
-			req_transaction->startSavepoint(tdbb);
+			// Undo current savepoint but preserve already taken locks.
+			// Savepoint will be restarted at the next loop iteration.
+			savePoint.rollback(true);
 
 			numTries++;
 			if (numTries >= MAX_RESTARTS)
@@ -913,7 +917,6 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 						 "\tQuery:\n%s\n", numTries, req_request->getStatement()->sqlText->c_str() );
 			}
 		}
-		savePoint.release();	// everything is ok
 	} else {
 		doExecute(tdbb, traHandle, inMetadata, inMsg, outMetadata, outMsg, singleton);
 	}

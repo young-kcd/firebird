@@ -11327,11 +11327,11 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	ULONG flag = req_null;
 
+	StableCursorSavePoint savePoint(tdbb, request->req_transaction,
+		blrOp == blr_via && ownSavepoint);
+
 	try
 	{
-		StableCursorSavePoint savePoint(tdbb, request->req_transaction,
-			blrOp == blr_via && ownSavepoint);
-
 		subQuery->open(tdbb);
 
 		SLONG count = 0;
@@ -11438,6 +11438,9 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 	// Close stream and return value.
 
 	subQuery->close(tdbb);
+
+	savePoint.release();
+
 	request->req_flags &= ~req_null;
 	request->req_flags |= flag;
 
@@ -12995,6 +12998,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 		}
 
 		jrd_tra* transaction = request->req_transaction;
+
 		const SavNumber savNumber = transaction->tra_save_point ?
 			transaction->tra_save_point->getNumber() : 0;
 
@@ -13018,7 +13022,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 
 			EXE_receive(tdbb, funcRequest, 1, outMsgLength, outMsg);
 
-			// Clean up all savepoints started during execution of the procedure.
+			// Clean up all savepoints started during execution of the function
 
 			if (!(transaction->tra_flags & TRA_system))
 			{

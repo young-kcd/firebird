@@ -3896,14 +3896,14 @@ void jrd_tra::rollbackToSavepoint(thread_db* tdbb, SavNumber number)
  *
  **************************************/
 {
-	// Merge all but one folowing savepoints into one
+	// Merge all savepoints (except the given one) into a single one
 	while (tra_save_point && tra_save_point->getNumber() > number &&
 		tra_save_point->getNext() && tra_save_point->getNext()->getNumber() >= number)
 	{
-		rollforwardSavepoint(tdbb);
+		rollforwardSavepoint(tdbb, false);
 	}
 
-	// Check that savepoint with given number really exists
+	// Check that savepoint with the given number really exists
 	fb_assert(tra_save_point && tra_save_point->getNumber() == number);
 
 	if (tra_save_point && tra_save_point->getNumber() >= number) // second line of defence
@@ -3915,7 +3915,7 @@ void jrd_tra::rollbackToSavepoint(thread_db* tdbb, SavNumber number)
 }
 
 
-void jrd_tra::rollforwardSavepoint(thread_db* tdbb)
+void jrd_tra::rollforwardSavepoint(thread_db* tdbb, bool assertChanging)
 /**************************************
  *
  *	 r o l l f o r w a r d S a v e p o i n t
@@ -3929,6 +3929,8 @@ void jrd_tra::rollforwardSavepoint(thread_db* tdbb)
 {
 	if (tra_save_point && !(tra_flags & TRA_system))
 	{
+		fb_assert(!assertChanging || !tra_save_point->isChanging());
+
 		REPL_save_cleanup(tdbb, this, tra_save_point, false);
 
 		Jrd::ContextPoolHolder context(tdbb, tra_pool);

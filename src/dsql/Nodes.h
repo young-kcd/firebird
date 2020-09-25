@@ -1402,7 +1402,6 @@ public:
 		TYPE_RECEIVE,
 		TYPE_RETURN,
 		TYPE_SAVEPOINT,
-		TYPE_SAVEPOINT_ENCLOSE,
 		TYPE_SELECT,
 		TYPE_SESSION_MANAGEMENT_WRAPPER,
 		TYPE_SET_GENERATOR,
@@ -1562,28 +1561,6 @@ public:
 		fb_assert(false);
 		return NULL;
 	}
-};
-
-
-// Add savepoint pair of nodes to statement having error handlers.
-class SavepointEncloseNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_SAVEPOINT_ENCLOSE>
-{
-public:
-	explicit SavepointEncloseNode(MemoryPool& pool, StmtNode* aStmt)
-		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_SAVEPOINT_ENCLOSE>(pool),
-		  stmt(aStmt)
-	{
-	}
-
-public:
-	static StmtNode* make(MemoryPool& pool, DsqlCompilerScratch* dsqlScratch, StmtNode* node);
-
-public:
-	virtual Firebird::string internalPrint(NodePrinter& printer) const;
-	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-
-private:
-	NestConst<StmtNode> stmt;
 };
 
 
