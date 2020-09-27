@@ -226,7 +226,7 @@ namespace Replication
 				   const Firebird::MetaString& userName);
 
 		// IReferenceCounted methods
-		int release()
+		int release() override
 		{
 			if (--refCounter == 0)
 			{
@@ -238,7 +238,7 @@ namespace Replication
 
 		// IReplicatedSession methods
 
-		Firebird::IStatus* getStatus()
+		Firebird::IStatus* getStatus() override
 		{
 			return &m_status;
 		}
@@ -247,9 +247,10 @@ namespace Replication
 		{
 			m_attachment = att;
 		}
+
 		Firebird::IReplicatedTransaction* startTransaction(Firebird::ITransaction* trans, SINT64 number) override;
-		FB_BOOLEAN cleanupTransaction(SINT64 number);
-		FB_BOOLEAN setSequence(const char* name, SINT64 value);
+		FB_BOOLEAN cleanupTransaction(SINT64 number) override;
+		FB_BOOLEAN setSequence(const char* name, SINT64 value) override;
 
 	private:
 		Manager* const m_manager;
