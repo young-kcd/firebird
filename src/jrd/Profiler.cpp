@@ -63,12 +63,28 @@ void ProfileSnapshotData::update(thread_db* tdbb, Profiler* profiler)
 	for (bool sessionFound = sessionAccessor.getFirst(); sessionFound;)
 	{
 		const SINT64 sessionId = sessionAccessor.current()->first;
-		const ISC_TIMESTAMP_TZ sessionTimeStamp = sessionAccessor.current()->second.timeStamp;
+		const auto& sessionDescription = sessionAccessor.current()->second.description;
+		const ISC_TIMESTAMP_TZ sessionStartTimeStamp = sessionAccessor.current()->second.startTimeStamp;
+		const Nullable<ISC_TIMESTAMP_TZ> sessionFinishTimeStamp = sessionAccessor.current()->second.finishTimeStamp;
 
 		sessionRecord->nullify();
 		putField(tdbb, sessionRecord, DumpField(f_prof_ses_id, VALUE_INTEGER, sizeof(sessionId), &sessionId));
-		putField(tdbb, sessionRecord, DumpField(f_prof_ses_time, VALUE_TIMESTAMP_TZ,
-			sizeof(sessionTimeStamp), &sessionTimeStamp));
+
+		if (sessionDescription.hasData())
+		{
+			putField(tdbb, sessionRecord, DumpField(f_prof_ses_desc, VALUE_STRING,
+				sessionDescription.length(), sessionDescription.c_str()));
+		}
+
+		putField(tdbb, sessionRecord, DumpField(f_prof_ses_start_timestamp, VALUE_TIMESTAMP_TZ,
+			sizeof(sessionStartTimeStamp), &sessionStartTimeStamp));
+
+		if (sessionFinishTimeStamp.isAssigned())
+		{
+			putField(tdbb, sessionRecord, DumpField(f_prof_ses_finish_timestamp, VALUE_TIMESTAMP_TZ,
+				sizeof(sessionFinishTimeStamp.value), &sessionFinishTimeStamp.value));
+		}
+
 		sessionBuffer->store(sessionRecord);
 
 		for (const auto& requestIt : sessionAccessor.current()->second.requests)
@@ -110,20 +126,20 @@ void ProfileSnapshotData::update(thread_db* tdbb, Profiler* profiler)
 				const auto lineColumn = Profiler::decodeLineColumn(statsIt.first);
 				const SINT64 line = lineColumn.first;
 				const SINT64 column = lineColumn.second;
-				const SINT64 count = statsIt.second.count;
+				const SINT64 counter = statsIt.second.counter;
 				const SINT64 minTime = statsIt.second.minTime;
 				const SINT64 maxTime = statsIt.second.maxTime;
-				const SINT64 accTime = statsIt.second.accTime;
+				const SINT64 totalTime = statsIt.second.totalTime;
 
 				statsRecord->nullify();
 				putField(tdbb, statsRecord, DumpField(f_prof_stats_ses_id, VALUE_INTEGER, sizeof(sessionId), &sessionId));
 				putField(tdbb, statsRecord, DumpField(f_prof_stats_req_id, VALUE_INTEGER, sizeof(requestId), &requestId));
 				putField(tdbb, statsRecord, DumpField(f_prof_stats_line, VALUE_INTEGER, sizeof(line), &line));
 				putField(tdbb, statsRecord, DumpField(f_prof_stats_column, VALUE_INTEGER, sizeof(column), &column));
-				putField(tdbb, statsRecord, DumpField(f_prof_stats_count, VALUE_INTEGER, sizeof(count), &count));
+				putField(tdbb, statsRecord, DumpField(f_prof_stats_counter, VALUE_INTEGER, sizeof(counter), &counter));
 				putField(tdbb, statsRecord, DumpField(f_prof_stats_min_time, VALUE_INTEGER, sizeof(minTime), &minTime));
 				putField(tdbb, statsRecord, DumpField(f_prof_stats_max_time, VALUE_INTEGER, sizeof(maxTime), &maxTime));
-				putField(tdbb, statsRecord, DumpField(f_prof_stats_acc_time, VALUE_INTEGER, sizeof(accTime), &accTime));
+				putField(tdbb, statsRecord, DumpField(f_prof_stats_total_time, VALUE_INTEGER, sizeof(totalTime), &totalTime));
 				statsBuffer->store(statsRecord);
 			}
 		}
@@ -194,7 +210,15 @@ IExternalResultSet* ProfilerPackage::finishSessionProcedure(ThrowStatusException
 
 	const auto profiler = attachment->getProfiler(tdbb);
 
-	profiler->activeSession = false;
+	if (profiler->activeSession)
+	{
+		profiler->activeSession = false;
+
+		const auto profileSession = profiler->sessions.get(profiler->currentSessionId);
+
+		profileSession->finishTimeStamp = TimeZoneUtil::getCurrentSystemTimeStamp();
+		profileSession->finishTimeStamp.value.time_zone = attachment->att_current_timezone;
+	}
 
 	if (in->updateSnapshot)
 		profiler->snapshotData.update(tdbb, profiler);
@@ -268,7 +292,7 @@ IExternalResultSet* ProfilerPackage::resumeSessionProcedure(ThrowStatusException
 }
 
 void ProfilerPackage::startSessionFunction(ThrowStatusExceptionWrapper* status,
-	IExternalContext* context, const void*, StartSessionOutput::Type* out)
+	IExternalContext* context, const StartSessionInput::Type* in, StartSessionOutput::Type* out)
 {
 	const auto tdbb = JRD_get_thread_data();
 	const auto attachment = tdbb->getAttachment();
@@ -282,7 +306,8 @@ void ProfilerPackage::startSessionFunction(ThrowStatusExceptionWrapper* status,
 
 	const auto sessionId = ++profiler->currentSessionId;
 
-	profiler->sessions.put(sessionId)->init(attachment);
+	profiler->sessions.put(sessionId)->init(attachment,
+		in->descriptionNull ? "" : string(string(in->description.str, in->description.length)));
 
 	out->sessionIdNull = FB_FALSE;
 	out->sessionId = sessionId;
@@ -301,9 +326,10 @@ void Profiler::Request::init(jrd_req* request)
 }
 
 
-void Profiler::Session::init(Attachment* attachment)
+void Profiler::Session::init(Attachment* attachment, const string& aDescription)
 {
-	timeStamp.time_zone = attachment->att_current_timezone;
+	startTimeStamp.time_zone = attachment->att_current_timezone;
+	description = aDescription;
 }
 
 //--------------------------------------
@@ -363,14 +389,14 @@ void Profiler::hitLineColumn(jrd_req* request, ULONG line, ULONG column, SINT64 
 	if (!profileStats)
 		profileStats = profileRequest->stats.put(statsKey);
 
-	if (profileStats->count == 0 || runTime < profileStats->minTime)
+	if (profileStats->counter == 0 || runTime < profileStats->minTime)
 		profileStats->minTime = runTime;
 
-	if (profileStats->count == 0 || runTime > profileStats->maxTime)
+	if (profileStats->counter == 0 || runTime > profileStats->maxTime)
 		profileStats->maxTime = runTime;
 
-	profileStats->accTime += runTime;
-	++profileStats->count;
+	profileStats->totalTime += runTime;
+	++profileStats->counter;
 }
 
 //--------------------------------------
@@ -451,9 +477,11 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 			SystemFunction(
 				pool,
 				"START_SESSION",
-				SystemFunctionFactory<VoidMessage, StartSessionOutput, startSessionFunction>(),
+				SystemFunctionFactory<StartSessionInput, StartSessionOutput, startSessionFunction>(),
 				// parameters
-				{},
+				{
+					{"DESCRIPTION", fld_short_description, true}
+				},
 				{fld_prof_ses_id, false}
 			)
 		}

@@ -45,7 +45,7 @@ end!
 
 -- Start profiling
 
-select rdb$profiler.start_session() from rdb$database!
+select rdb$profiler.start_session('Profile XPTO') from rdb$database!
 
 execute block
 as
@@ -92,6 +92,9 @@ Result data for `RDB$PROFILE_STATS`:
 ## Function `START_SESSION`
 
 `RDB$PROFILER.START_SESSION` starts a new profiler session, turns it the current session and return its identifier.
+
+Input parameters:
+ - `DESCRIPTION` type `VARCHAR(255) CHARACTER SET UTF8`
 
 Return type: `BIGINT NOT NULL`.
 
@@ -140,7 +143,9 @@ The profile snaphsot tables are like user's global temporary table with `ON COMM
 ## Table `RDB$PROFILE_SESSIONS`
 
  - `RDB$PROFILE_SESSION_ID` type `BIGINT` - Profile session ID
- - `RDB$TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - Moment the profile session was started
+ - `DESCRIPTION` type `VARCHAR(255) CHARACTER SET UTF8` - Description passed in `RDB$PROFILER.START_SESSION`
+ - `RDB$START_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - Moment the profile session was started
+ - `RDB$FINISH_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - Moment the profile session was finished (NULL when not finished)
 
 ## Table `RDB$PROFILE_REQUESTS`
 
@@ -161,4 +166,4 @@ The profile snaphsot tables are like user's global temporary table with `ON COMM
  - `RDB$COUNTER` type `BIGINT` - Number of executed times of the statement
  - `RDB$MIN_TIME` type `BIGINT` - Minimal time (in nanoseconds) of a statement execution
  - `RDB$MAX_TIME` type `BIGINT` - Maximum time (in nanoseconds) of a statement execution
- - `RDB$ACCUMULATED_TIME` type `BIGINT` - Accumulated execution time (in nanoseconds) of the statement
+ - `RDB$TOTAL_TIME` type `BIGINT` - Accumulated execution time (in nanoseconds) of the statement

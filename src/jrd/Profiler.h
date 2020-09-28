@@ -75,10 +75,10 @@ public:
 	class Stats
 	{
 	public:
-		FB_UINT64 count = 0;
+		FB_UINT64 counter = 0;
 		FB_UINT64 minTime = 0;
 		FB_UINT64 maxTime = 0;
-		FB_UINT64 accTime = 0;
+		FB_UINT64 totalTime = 0;
 	};
 
 	class Request
@@ -107,14 +107,17 @@ public:
 	{
 	public:
 		Session(MemoryPool& pool)
-			: requests(pool)
+			: requests(pool),
+			  description(pool)
 		{
 		}
 
-		void init(Attachment* attachment);
+		void init(Attachment* attachment, const Firebird::string& aDescription);
 
 		Firebird::RightPooledMap<StmtNumber, Request> requests;
-		ISC_TIMESTAMP_TZ timeStamp = Firebird::TimeZoneUtil::getCurrentSystemTimeStamp();
+		ISC_TIMESTAMP_TZ startTimeStamp = Firebird::TimeZoneUtil::getCurrentSystemTimeStamp();
+		Nullable<ISC_TIMESTAMP_TZ> finishTimeStamp;
+		Firebird::string description;
 	};
 
 private:
@@ -200,12 +203,16 @@ private:
 
 	//----------
 
+	FB_MESSAGE(StartSessionInput, Firebird::ThrowStatusExceptionWrapper,
+		(FB_INTL_VARCHAR(255, CS_METADATA), description)
+	);
+
 	FB_MESSAGE(StartSessionOutput, Firebird::ThrowStatusExceptionWrapper,
 		(FB_BIGINT, sessionId)
 	);
 
 	static void startSessionFunction(Firebird::ThrowStatusExceptionWrapper* status,
-		Firebird::IExternalContext* context, const void* in, StartSessionOutput::Type* out);
+		Firebird::IExternalContext* context, const StartSessionInput::Type* in, StartSessionOutput::Type* out);
 };
 
 

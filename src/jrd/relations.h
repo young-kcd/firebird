@@ -730,7 +730,9 @@ END_RELATION
 // Relation 53 (RDB$PROFILE_SESSIONS)
 RELATION(nam_prof_ses, rel_prof_sessions, ODS_13_0, rel_virtual)
 	FIELD(f_prof_ses_id, nam_prof_ses_id, fld_prof_ses_id, 0, ODS_13_0)
-	FIELD(f_prof_ses_time, nam_time, fld_timestamp_tz, 0, ODS_13_0)
+	FIELD(f_prof_ses_desc, nam_description, fld_short_description, 0, ODS_13_0)
+	FIELD(f_prof_ses_start_timestamp, nam_start_timestamp, fld_timestamp_tz, 0, ODS_13_0)
+	FIELD(f_prof_ses_finish_timestamp, nam_finish_timestamp, fld_timestamp_tz, 0, ODS_13_0)
 END_RELATION
 
 // Relation 54 (RDB$PROFILE_REQUESTS)
@@ -750,8 +752,8 @@ RELATION(nam_prof_stats, rel_prof_stats, ODS_13_0, rel_virtual)
 	FIELD(f_prof_stats_req_id, nam_prof_req_id, fld_stmt_id, 0, ODS_13_0)
 	FIELD(f_prof_stats_line, nam_line, fld_src_info, 0, ODS_13_0)
 	FIELD(f_prof_stats_column, nam_column, fld_src_info, 0, ODS_13_0)
-	FIELD(f_prof_stats_count, nam_counter, fld_counter, 0, ODS_13_0)
+	FIELD(f_prof_stats_counter, nam_counter, fld_counter, 0, ODS_13_0)
 	FIELD(f_prof_stats_min_time, nam_min_time, fld_counter, 0, ODS_13_0)
 	FIELD(f_prof_stats_max_time, nam_max_time, fld_counter, 0, ODS_13_0)
-	FIELD(f_prof_stats_acc_time, nam_acc_time, fld_counter, 0, ODS_13_0)
+	FIELD(f_prof_stats_total_time, nam_total_time, fld_counter, 0, ODS_13_0)
 END_RELATION
