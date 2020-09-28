@@ -5614,7 +5614,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, 
 		buffer[pos] = UCHAR(dflCount);
 		buffer[pos + 1] = UCHAR(dflCount >> 8);
 
-		blob->BLB_put_segment(tdbb, buffer.begin(), buffer.getCount());
+		blob->BLB_put_data(tdbb, buffer.begin(), buffer.getCount());
 		blob->BLB_close(tdbb);
 	}
 	END_STORE
