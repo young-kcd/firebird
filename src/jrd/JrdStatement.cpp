@@ -744,21 +744,6 @@ template <typename T> static void makeSubRoutines(thread_db* tdbb, JrdStatement*
 		subStatement->parentStatement = statement;
 		subRoutine->setStatement(subStatement);
 
-		switch (subRoutine->getObjectType())
-		{
-		case obj_procedure:
-			subStatement->procedure = static_cast<jrd_prc*>(subRoutine);
-			break;
-
-		case obj_udf:
-			subStatement->function = static_cast<Function*>(subRoutine);
-			break;
-
-		default:
-			fb_assert(false);
-			break;
-		}
-
 		// Move dependencies and permissions from the sub routine to the parent.
 
 		for (CompilerScratch::Dependency* dependency = subCsb->csb_dependencies.begin();

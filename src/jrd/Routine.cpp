@@ -22,6 +22,7 @@
 #include "firebird.h"
 #include "../jrd/Routine.h"
 #include "../jrd/JrdStatement.h"
+#include "../jrd/Function.h"
 #include "../jrd/jrd.h"
 #include "../jrd/exe.h"
 #include "../common/StatusHolder.h"
@@ -105,6 +106,29 @@ Format* Routine::createFormat(MemoryPool& pool, IMessageMetadata* params, bool a
 	format->fmt_length = runOffset;
 
 	return format;
+}
+
+void Routine::setStatement(JrdStatement* value) 
+{ 
+	statement = value;
+
+	if (statement)
+	{
+		switch (getObjectType())
+		{
+		case obj_procedure:
+			statement->procedure = static_cast<jrd_prc*>(this);
+			break;
+
+		case obj_udf:
+			statement->function = static_cast<Function*>(this);
+			break;
+
+		default:
+			fb_assert(false);
+			break;
+		}
+	}
 }
 
 void Routine::checkReload(thread_db* tdbb)

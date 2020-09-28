@@ -102,7 +102,7 @@ namespace Jrd
 		void setSecurityName(const Firebird::MetaName& value) { securityName = value; }
 
 		/*const*/ JrdStatement* getStatement() const { return statement; }
-		void setStatement(JrdStatement* value) { statement = value; }
+		void setStatement(JrdStatement* value);
 
 		bool isSubRoutine() const { return subRoutine; }
 		void setSubRoutine(bool value) { subRoutine = value; }
