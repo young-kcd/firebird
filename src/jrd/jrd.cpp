@@ -8410,7 +8410,7 @@ static void unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* u
 
 namespace
 {
-	bool shutdownAttachments(AttachmentsRefHolder* arg, bool signal)
+	bool shutdownAttachments(AttachmentsRefHolder* arg, ISC_STATUS signal)
 	{
 		AutoPtr<AttachmentsRefHolder> queue(arg);
 		AttachmentsRefHolder& attachments = *arg;
@@ -8428,7 +8428,7 @@ namespace
 				Attachment* attachment = sAtt->getHandle();
 
 				if (attachment)
-					attachment->signalShutdown(isc_att_shut_engine);
+					attachment->signalShutdown(signal);
 			}
 		}
 
@@ -8485,7 +8485,7 @@ namespace
 				return 0;
 			}
 
-			shutdownAttachments(static_cast<AttachmentsRefHolder*>(arg), false);
+			shutdownAttachments(static_cast<AttachmentsRefHolder*>(arg), isc_att_shut_db_down);
 		}
 		catch (const Exception& ex)
 		{
@@ -8535,7 +8535,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 		}
 
 		// Shutdown existing attachments
-		success = success && shutdownAttachments(attachments, true);
+		success = success && shutdownAttachments(attachments, isc_att_shut_engine);
 
 		HalfStaticArray<Database*, 32> dbArray(pool);
 		{ // scope
@@ -9285,7 +9285,7 @@ void JRD_shutdown_attachments(Database* dbb)
  **************************************
  *
  * Functional description
- *  Schedule the attachments marked as shutdown for disconnection.
+ *  Schedule the attachments not marked as shutdown for disconnection.
  *
  **************************************/
 	fb_assert(dbb);
@@ -9294,6 +9294,9 @@ void JRD_shutdown_attachments(Database* dbb)
 	{
 		MemoryPool& pool = *getDefaultMemoryPool();
 		AutoPtr<AttachmentsRefHolder> queue(FB_NEW_POOL(pool) AttachmentsRefHolder(pool));
+
+		// Collect all user attachments to shutdown. Lock dbb_sync for safety.
+		// Note, attachments will be marked for shutdown later, in shutdownAttachments()
 
 		{	// scope
 			Sync guard(&dbb->dbb_sync, "JRD_shutdown_attachments");
@@ -9304,7 +9307,8 @@ void JRD_shutdown_attachments(Database* dbb)
 				 attachment;
 				 attachment = attachment->att_next)
 			{
-				if (attachment->att_flags & ATT_shutdown)
+				if (!(attachment->att_flags & ATT_shutdown) && 
+					!(attachment->att_flags & ATT_shutdown_manager))
 				{
 					fb_assert(attachment->getStable());
 					attachment->getStable()->addRef();
