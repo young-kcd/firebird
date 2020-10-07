@@ -677,22 +677,21 @@ type
 	IReplicatedRecord_getFieldPtr = function(this: IReplicatedRecord; index: Cardinal): IReplicatedField; cdecl;
 	IReplicatedRecord_getRawLengthPtr = function(this: IReplicatedRecord): Cardinal; cdecl;
 	IReplicatedRecord_getRawDataPtr = function(this: IReplicatedRecord): BytePtr; cdecl;
-	IReplicatedTransaction_preparePtr = function(this: IReplicatedTransaction): Boolean; cdecl;
-	IReplicatedTransaction_commitPtr = function(this: IReplicatedTransaction): Boolean; cdecl;
-	IReplicatedTransaction_rollbackPtr = function(this: IReplicatedTransaction): Boolean; cdecl;
-	IReplicatedTransaction_startSavepointPtr = function(this: IReplicatedTransaction): Boolean; cdecl;
-	IReplicatedTransaction_releaseSavepointPtr = function(this: IReplicatedTransaction): Boolean; cdecl;
-	IReplicatedTransaction_rollbackSavepointPtr = function(this: IReplicatedTransaction): Boolean; cdecl;
-	IReplicatedTransaction_insertRecordPtr = function(this: IReplicatedTransaction; name: PAnsiChar; record_: IReplicatedRecord): Boolean; cdecl;
-	IReplicatedTransaction_updateRecordPtr = function(this: IReplicatedTransaction; name: PAnsiChar; orgRecord: IReplicatedRecord; newRecord: IReplicatedRecord): Boolean; cdecl;
-	IReplicatedTransaction_deleteRecordPtr = function(this: IReplicatedTransaction; name: PAnsiChar; record_: IReplicatedRecord): Boolean; cdecl;
-	IReplicatedTransaction_executeSqlPtr = function(this: IReplicatedTransaction; sql: PAnsiChar): Boolean; cdecl;
-	IReplicatedTransaction_executeSqlIntlPtr = function(this: IReplicatedTransaction; charset: Cardinal; sql: PAnsiChar): Boolean; cdecl;
-	IReplicatedSession_getStatusPtr = function(this: IReplicatedSession): IStatus; cdecl;
+	IReplicatedTransaction_preparePtr = procedure(this: IReplicatedTransaction; status: IStatus); cdecl;
+	IReplicatedTransaction_commitPtr = procedure(this: IReplicatedTransaction; status: IStatus); cdecl;
+	IReplicatedTransaction_rollbackPtr = procedure(this: IReplicatedTransaction; status: IStatus); cdecl;
+	IReplicatedTransaction_startSavepointPtr = procedure(this: IReplicatedTransaction; status: IStatus); cdecl;
+	IReplicatedTransaction_releaseSavepointPtr = procedure(this: IReplicatedTransaction; status: IStatus); cdecl;
+	IReplicatedTransaction_rollbackSavepointPtr = procedure(this: IReplicatedTransaction; status: IStatus); cdecl;
+	IReplicatedTransaction_insertRecordPtr = procedure(this: IReplicatedTransaction; status: IStatus; name: PAnsiChar; record_: IReplicatedRecord); cdecl;
+	IReplicatedTransaction_updateRecordPtr = procedure(this: IReplicatedTransaction; status: IStatus; name: PAnsiChar; orgRecord: IReplicatedRecord; newRecord: IReplicatedRecord); cdecl;
+	IReplicatedTransaction_deleteRecordPtr = procedure(this: IReplicatedTransaction; status: IStatus; name: PAnsiChar; record_: IReplicatedRecord); cdecl;
+	IReplicatedTransaction_executeSqlPtr = procedure(this: IReplicatedTransaction; status: IStatus; sql: PAnsiChar); cdecl;
+	IReplicatedTransaction_executeSqlIntlPtr = procedure(this: IReplicatedTransaction; status: IStatus; charset: Cardinal; sql: PAnsiChar); cdecl;
 	IReplicatedSession_setAttachmentPtr = procedure(this: IReplicatedSession; attachment: IAttachment); cdecl;
-	IReplicatedSession_startTransactionPtr = function(this: IReplicatedSession; transaction: ITransaction; number: Int64): IReplicatedTransaction; cdecl;
-	IReplicatedSession_cleanupTransactionPtr = function(this: IReplicatedSession; number: Int64): Boolean; cdecl;
-	IReplicatedSession_setSequencePtr = function(this: IReplicatedSession; name: PAnsiChar; value: Int64): Boolean; cdecl;
+	IReplicatedSession_startTransactionPtr = function(this: IReplicatedSession; status: IStatus; transaction: ITransaction; number: Int64): IReplicatedTransaction; cdecl;
+	IReplicatedSession_cleanupTransactionPtr = procedure(this: IReplicatedSession; status: IStatus; number: Int64); cdecl;
+	IReplicatedSession_setSequencePtr = procedure(this: IReplicatedSession; status: IStatus; name: PAnsiChar; value: Int64); cdecl;
 
 	VersionedVTable = class
 		version: NativeInt;
@@ -3607,38 +3606,37 @@ type
 	IReplicatedTransaction = class(IDisposable)
 		const VERSION = 3;
 
-		function prepare(): Boolean;
-		function commit(): Boolean;
-		function rollback(): Boolean;
-		function startSavepoint(): Boolean;
-		function releaseSavepoint(): Boolean;
-		function rollbackSavepoint(): Boolean;
-		function insertRecord(name: PAnsiChar; record_: IReplicatedRecord): Boolean;
-		function updateRecord(name: PAnsiChar; orgRecord: IReplicatedRecord; newRecord: IReplicatedRecord): Boolean;
-		function deleteRecord(name: PAnsiChar; record_: IReplicatedRecord): Boolean;
-		function executeSql(sql: PAnsiChar): Boolean;
-		function executeSqlIntl(charset: Cardinal; sql: PAnsiChar): Boolean;
+		procedure prepare(status: IStatus);
+		procedure commit(status: IStatus);
+		procedure rollback(status: IStatus);
+		procedure startSavepoint(status: IStatus);
+		procedure releaseSavepoint(status: IStatus);
+		procedure rollbackSavepoint(status: IStatus);
+		procedure insertRecord(status: IStatus; name: PAnsiChar; record_: IReplicatedRecord);
+		procedure updateRecord(status: IStatus; name: PAnsiChar; orgRecord: IReplicatedRecord; newRecord: IReplicatedRecord);
+		procedure deleteRecord(status: IStatus; name: PAnsiChar; record_: IReplicatedRecord);
+		procedure executeSql(status: IStatus; sql: PAnsiChar);
+		procedure executeSqlIntl(status: IStatus; charset: Cardinal; sql: PAnsiChar);
 	end;
 
 	IReplicatedTransactionImpl = class(IReplicatedTransaction)
 		constructor create;
 
 		procedure dispose(); virtual; abstract;
-		function prepare(): Boolean; virtual; abstract;
-		function commit(): Boolean; virtual; abstract;
-		function rollback(): Boolean; virtual; abstract;
-		function startSavepoint(): Boolean; virtual; abstract;
-		function releaseSavepoint(): Boolean; virtual; abstract;
-		function rollbackSavepoint(): Boolean; virtual; abstract;
-		function insertRecord(name: PAnsiChar; record_: IReplicatedRecord): Boolean; virtual; abstract;
-		function updateRecord(name: PAnsiChar; orgRecord: IReplicatedRecord; newRecord: IReplicatedRecord): Boolean; virtual; abstract;
-		function deleteRecord(name: PAnsiChar; record_: IReplicatedRecord): Boolean; virtual; abstract;
-		function executeSql(sql: PAnsiChar): Boolean; virtual; abstract;
-		function executeSqlIntl(charset: Cardinal; sql: PAnsiChar): Boolean; virtual; abstract;
+		procedure prepare(status: IStatus); virtual; abstract;
+		procedure commit(status: IStatus); virtual; abstract;
+		procedure rollback(status: IStatus); virtual; abstract;
+		procedure startSavepoint(status: IStatus); virtual; abstract;
+		procedure releaseSavepoint(status: IStatus); virtual; abstract;
+		procedure rollbackSavepoint(status: IStatus); virtual; abstract;
+		procedure insertRecord(status: IStatus; name: PAnsiChar; record_: IReplicatedRecord); virtual; abstract;
+		procedure updateRecord(status: IStatus; name: PAnsiChar; orgRecord: IReplicatedRecord; newRecord: IReplicatedRecord); virtual; abstract;
+		procedure deleteRecord(status: IStatus; name: PAnsiChar; record_: IReplicatedRecord); virtual; abstract;
+		procedure executeSql(status: IStatus; sql: PAnsiChar); virtual; abstract;
+		procedure executeSqlIntl(status: IStatus; charset: Cardinal; sql: PAnsiChar); virtual; abstract;
 	end;
 
 	ReplicatedSessionVTable = class(PluginBaseVTable)
-		getStatus: IReplicatedSession_getStatusPtr;
 		setAttachment: IReplicatedSession_setAttachmentPtr;
 		startTransaction: IReplicatedSession_startTransactionPtr;
 		cleanupTransaction: IReplicatedSession_cleanupTransactionPtr;
@@ -3648,11 +3646,10 @@ type
 	IReplicatedSession = class(IPluginBase)
 		const VERSION = 4;
 
-		function getStatus(): IStatus;
 		procedure setAttachment(attachment: IAttachment);
-		function startTransaction(transaction: ITransaction; number: Int64): IReplicatedTransaction;
-		function cleanupTransaction(number: Int64): Boolean;
-		function setSequence(name: PAnsiChar; value: Int64): Boolean;
+		function startTransaction(status: IStatus; transaction: ITransaction; number: Int64): IReplicatedTransaction;
+		procedure cleanupTransaction(status: IStatus; number: Int64);
+		procedure setSequence(status: IStatus; name: PAnsiChar; value: Int64);
 	end;
 
 	IReplicatedSessionImpl = class(IReplicatedSession)
@@ -3662,11 +3659,10 @@ type
 		function release(): Integer; virtual; abstract;
 		procedure setOwner(r: IReferenceCounted); virtual; abstract;
 		function getOwner(): IReferenceCounted; virtual; abstract;
-		function getStatus(): IStatus; virtual; abstract;
 		procedure setAttachment(attachment: IAttachment); virtual; abstract;
-		function startTransaction(transaction: ITransaction; number: Int64): IReplicatedTransaction; virtual; abstract;
-		function cleanupTransaction(number: Int64): Boolean; virtual; abstract;
-		function setSequence(name: PAnsiChar; value: Int64): Boolean; virtual; abstract;
+		function startTransaction(status: IStatus; transaction: ITransaction; number: Int64): IReplicatedTransaction; virtual; abstract;
+		procedure cleanupTransaction(status: IStatus; number: Int64); virtual; abstract;
+		procedure setSequence(status: IStatus; name: PAnsiChar; value: Int64); virtual; abstract;
 	end;
 
 	function fb_get_master_interface : IMaster; cdecl; external 'fbclient';
@@ -8182,64 +8178,70 @@ begin
 	Result := ReplicatedRecordVTable(vTable).getRawData(Self);
 end;
 
-function IReplicatedTransaction.prepare(): Boolean;
+procedure IReplicatedTransaction.prepare(status: IStatus);
 begin
-	Result := ReplicatedTransactionVTable(vTable).prepare(Self);
+	ReplicatedTransactionVTable(vTable).prepare(Self, status);
+	FbException.checkException(status);
 end;
 
-function IReplicatedTransaction.commit(): Boolean;
+procedure IReplicatedTransaction.commit(status: IStatus);
 begin
-	Result := ReplicatedTransactionVTable(vTable).commit(Self);
+	ReplicatedTransactionVTable(vTable).commit(Self, status);
+	FbException.checkException(status);
 end;
 
-function IReplicatedTransaction.rollback(): Boolean;
+procedure IReplicatedTransaction.rollback(status: IStatus);
 begin
-	Result := ReplicatedTransactionVTable(vTable).rollback(Self);
+	ReplicatedTransactionVTable(vTable).rollback(Self, status);
+	FbException.checkException(status);
 end;
 
-function IReplicatedTransaction.startSavepoint(): Boolean;
+procedure IReplicatedTransaction.startSavepoint(status: IStatus);
 begin
-	Result := ReplicatedTransactionVTable(vTable).startSavepoint(Self);
+	ReplicatedTransactionVTable(vTable).startSavepoint(Self, status);
+	FbException.checkException(status);
 end;
 
-function IReplicatedTransaction.releaseSavepoint(): Boolean;
+procedure IReplicatedTransaction.releaseSavepoint(status: IStatus);
 begin
-	Result := ReplicatedTransactionVTable(vTable).releaseSavepoint(Self);
+	ReplicatedTransactionVTable(vTable).releaseSavepoint(Self, status);
+	FbException.checkException(status);
 end;
 
-function IReplicatedTransaction.rollbackSavepoint(): Boolean;
+procedure IReplicatedTransaction.rollbackSavepoint(status: IStatus);
 begin
-	Result := ReplicatedTransactionVTable(vTable).rollbackSavepoint(Self);
+	ReplicatedTransactionVTable(vTable).rollbackSavepoint(Self, status);
+	FbException.checkException(status);
 end;
 
-function IReplicatedTransaction.insertRecord(name: PAnsiChar; record_: IReplicatedRecord): Boolean;
+procedure IReplicatedTransaction.insertRecord(status: IStatus; name: PAnsiChar; record_: IReplicatedRecord);
 begin
-	Result := ReplicatedTransactionVTable(vTable).insertRecord(Self, name, record_);
+	ReplicatedTransactionVTable(vTable).insertRecord(Self, status, name, record_);
+	FbException.checkException(status);
 end;
 
-function IReplicatedTransaction.updateRecord(name: PAnsiChar; orgRecord: IReplicatedRecord; newRecord: IReplicatedRecord): Boolean;
+procedure IReplicatedTransaction.updateRecord(status: IStatus; name: PAnsiChar; orgRecord: IReplicatedRecord; newRecord: IReplicatedRecord);
 begin
-	Result := ReplicatedTransactionVTable(vTable).updateRecord(Self, name, orgRecord, newRecord);
+	ReplicatedTransactionVTable(vTable).updateRecord(Self, status, name, orgRecord, newRecord);
+	FbException.checkException(status);
 end;
 
-function IReplicatedTransaction.deleteRecord(name: PAnsiChar; record_: IReplicatedRecord): Boolean;
+procedure IReplicatedTransaction.deleteRecord(status: IStatus; name: PAnsiChar; record_: IReplicatedRecord);
 begin
-	Result := ReplicatedTransactionVTable(vTable).deleteRecord(Self, name, record_);
+	ReplicatedTransactionVTable(vTable).deleteRecord(Self, status, name, record_);
+	FbException.checkException(status);
 end;
 
-function IReplicatedTransaction.executeSql(sql: PAnsiChar): Boolean;
+procedure IReplicatedTransaction.executeSql(status: IStatus; sql: PAnsiChar);
 begin
-	Result := ReplicatedTransactionVTable(vTable).executeSql(Self, sql);
+	ReplicatedTransactionVTable(vTable).executeSql(Self, status, sql);
+	FbException.checkException(status);
 end;
 
-function IReplicatedTransaction.executeSqlIntl(charset: Cardinal; sql: PAnsiChar): Boolean;
+procedure IReplicatedTransaction.executeSqlIntl(status: IStatus; charset: Cardinal; sql: PAnsiChar);
 begin
-	Result := ReplicatedTransactionVTable(vTable).executeSqlIntl(Self, charset, sql);
-end;
-
-function IReplicatedSession.getStatus(): IStatus;
-begin
-	Result := ReplicatedSessionVTable(vTable).getStatus(Self);
+	ReplicatedTransactionVTable(vTable).executeSqlIntl(Self, status, charset, sql);
+	FbException.checkException(status);
 end;
 
 procedure IReplicatedSession.setAttachment(attachment: IAttachment);
@@ -8247,19 +8249,22 @@ begin
 	ReplicatedSessionVTable(vTable).setAttachment(Self, attachment);
 end;
 
-function IReplicatedSession.startTransaction(transaction: ITransaction; number: Int64): IReplicatedTransaction;
+function IReplicatedSession.startTransaction(status: IStatus; transaction: ITransaction; number: Int64): IReplicatedTransaction;
 begin
-	Result := ReplicatedSessionVTable(vTable).startTransaction(Self, transaction, number);
+	Result := ReplicatedSessionVTable(vTable).startTransaction(Self, status, transaction, number);
+	FbException.checkException(status);
 end;
 
-function IReplicatedSession.cleanupTransaction(number: Int64): Boolean;
+procedure IReplicatedSession.cleanupTransaction(status: IStatus; number: Int64);
 begin
-	Result := ReplicatedSessionVTable(vTable).cleanupTransaction(Self, number);
+	ReplicatedSessionVTable(vTable).cleanupTransaction(Self, status, number);
+	FbException.checkException(status);
 end;
 
-function IReplicatedSession.setSequence(name: PAnsiChar; value: Int64): Boolean;
+procedure IReplicatedSession.setSequence(status: IStatus; name: PAnsiChar; value: Int64);
 begin
-	Result := ReplicatedSessionVTable(vTable).setSequence(Self, name, value);
+	ReplicatedSessionVTable(vTable).setSequence(Self, status, name, value);
+	FbException.checkException(status);
 end;
 
 var
@@ -14415,102 +14420,102 @@ begin
 	end
 end;
 
-function IReplicatedTransactionImpl_prepareDispatcher(this: IReplicatedTransaction): Boolean; cdecl;
+procedure IReplicatedTransactionImpl_prepareDispatcher(this: IReplicatedTransaction; status: IStatus); cdecl;
 begin
 	try
-		Result := IReplicatedTransactionImpl(this).prepare();
+		IReplicatedTransactionImpl(this).prepare(status);
 	except
-		on e: Exception do FbException.catchException(nil, e);
+		on e: Exception do FbException.catchException(status, e);
 	end
 end;
 
-function IReplicatedTransactionImpl_commitDispatcher(this: IReplicatedTransaction): Boolean; cdecl;
+procedure IReplicatedTransactionImpl_commitDispatcher(this: IReplicatedTransaction; status: IStatus); cdecl;
 begin
 	try
-		Result := IReplicatedTransactionImpl(this).commit();
+		IReplicatedTransactionImpl(this).commit(status);
 	except
-		on e: Exception do FbException.catchException(nil, e);
+		on e: Exception do FbException.catchException(status, e);
 	end
 end;
 
-function IReplicatedTransactionImpl_rollbackDispatcher(this: IReplicatedTransaction): Boolean; cdecl;
+procedure IReplicatedTransactionImpl_rollbackDispatcher(this: IReplicatedTransaction; status: IStatus); cdecl;
 begin
 	try
-		Result := IReplicatedTransactionImpl(this).rollback();
+		IReplicatedTransactionImpl(this).rollback(status);
 	except
-		on e: Exception do FbException.catchException(nil, e);
+		on e: Exception do FbException.catchException(status, e);
 	end
 end;
 
-function IReplicatedTransactionImpl_startSavepointDispatcher(this: IReplicatedTransaction): Boolean; cdecl;
+procedure IReplicatedTransactionImpl_startSavepointDispatcher(this: IReplicatedTransaction; status: IStatus); cdecl;
 begin
 	try
-		Result := IReplicatedTransactionImpl(this).startSavepoint();
+		IReplicatedTransactionImpl(this).startSavepoint(status);
 	except
-		on e: Exception do FbException.catchException(nil, e);
+		on e: Exception do FbException.catchException(status, e);
 	end
 end;
 
-function IReplicatedTransactionImpl_releaseSavepointDispatcher(this: IReplicatedTransaction): Boolean; cdecl;
+procedure IReplicatedTransactionImpl_releaseSavepointDispatcher(this: IReplicatedTransaction; status: IStatus); cdecl;
 begin
 	try
-		Result := IReplicatedTransactionImpl(this).releaseSavepoint();
+		IReplicatedTransactionImpl(this).releaseSavepoint(status);
 	except
-		on e: Exception do FbException.catchException(nil, e);
+		on e: Exception do FbException.catchException(status, e);
 	end
 end;
 
-function IReplicatedTransactionImpl_rollbackSavepointDispatcher(this: IReplicatedTransaction): Boolean; cdecl;
+procedure IReplicatedTransactionImpl_rollbackSavepointDispatcher(this: IReplicatedTransaction; status: IStatus); cdecl;
 begin
 	try
-		Result := IReplicatedTransactionImpl(this).rollbackSavepoint();
+		IReplicatedTransactionImpl(this).rollbackSavepoint(status);
 	except
-		on e: Exception do FbException.catchException(nil, e);
+		on e: Exception do FbException.catchException(status, e);
 	end
 end;
 
-function IReplicatedTransactionImpl_insertRecordDispatcher(this: IReplicatedTransaction; name: PAnsiChar; record_: IReplicatedRecord): Boolean; cdecl;
+procedure IReplicatedTransactionImpl_insertRecordDispatcher(this: IReplicatedTransaction; status: IStatus; name: PAnsiChar; record_: IReplicatedRecord); cdecl;
 begin
 	try
-		Result := IReplicatedTransactionImpl(this).insertRecord(name, record_);
+		IReplicatedTransactionImpl(this).insertRecord(status, name, record_);
 	except
-		on e: Exception do FbException.catchException(nil, e);
+		on e: Exception do FbException.catchException(status, e);
 	end
 end;
 
-function IReplicatedTransactionImpl_updateRecordDispatcher(this: IReplicatedTransaction; name: PAnsiChar; orgRecord: IReplicatedRecord; newRecord: IReplicatedRecord): Boolean; cdecl;
+procedure IReplicatedTransactionImpl_updateRecordDispatcher(this: IReplicatedTransaction; status: IStatus; name: PAnsiChar; orgRecord: IReplicatedRecord; newRecord: IReplicatedRecord); cdecl;
 begin
 	try
-		Result := IReplicatedTransactionImpl(this).updateRecord(name, orgRecord, newRecord);
+		IReplicatedTransactionImpl(this).updateRecord(status, name, orgRecord, newRecord);
 	except
-		on e: Exception do FbException.catchException(nil, e);
+		on e: Exception do FbException.catchException(status, e);
 	end
 end;
 
-function IReplicatedTransactionImpl_deleteRecordDispatcher(this: IReplicatedTransaction; name: PAnsiChar; record_: IReplicatedRecord): Boolean; cdecl;
+procedure IReplicatedTransactionImpl_deleteRecordDispatcher(this: IReplicatedTransaction; status: IStatus; name: PAnsiChar; record_: IReplicatedRecord); cdecl;
 begin
 	try
-		Result := IReplicatedTransactionImpl(this).deleteRecord(name, record_);
+		IReplicatedTransactionImpl(this).deleteRecord(status, name, record_);
 	except
-		on e: Exception do FbException.catchException(nil, e);
+		on e: Exception do FbException.catchException(status, e);
 	end
 end;
 
-function IReplicatedTransactionImpl_executeSqlDispatcher(this: IReplicatedTransaction; sql: PAnsiChar): Boolean; cdecl;
+procedure IReplicatedTransactionImpl_executeSqlDispatcher(this: IReplicatedTransaction; status: IStatus; sql: PAnsiChar); cdecl;
 begin
 	try
-		Result := IReplicatedTransactionImpl(this).executeSql(sql);
+		IReplicatedTransactionImpl(this).executeSql(status, sql);
 	except
-		on e: Exception do FbException.catchException(nil, e);
+		on e: Exception do FbException.catchException(status, e);
 	end
 end;
 
-function IReplicatedTransactionImpl_executeSqlIntlDispatcher(this: IReplicatedTransaction; charset: Cardinal; sql: PAnsiChar): Boolean; cdecl;
+procedure IReplicatedTransactionImpl_executeSqlIntlDispatcher(this: IReplicatedTransaction; status: IStatus; charset: Cardinal; sql: PAnsiChar); cdecl;
 begin
 	try
-		Result := IReplicatedTransactionImpl(this).executeSqlIntl(charset, sql);
+		IReplicatedTransactionImpl(this).executeSqlIntl(status, charset, sql);
 	except
-		on e: Exception do FbException.catchException(nil, e);
+		on e: Exception do FbException.catchException(status, e);
 	end
 end;
 
@@ -14558,15 +14563,6 @@ begin
 	end
 end;
 
-function IReplicatedSessionImpl_getStatusDispatcher(this: IReplicatedSession): IStatus; cdecl;
-begin
-	try
-		Result := IReplicatedSessionImpl(this).getStatus();
-	except
-		on e: Exception do FbException.catchException(nil, e);
-	end
-end;
-
 procedure IReplicatedSessionImpl_setAttachmentDispatcher(this: IReplicatedSession; attachment: IAttachment); cdecl;
 begin
 	try
@@ -14576,30 +14572,30 @@ begin
 	end
 end;
 
-function IReplicatedSessionImpl_startTransactionDispatcher(this: IReplicatedSession; transaction: ITransaction; number: Int64): IReplicatedTransaction; cdecl;
+function IReplicatedSessionImpl_startTransactionDispatcher(this: IReplicatedSession; status: IStatus; transaction: ITransaction; number: Int64): IReplicatedTransaction; cdecl;
 begin
 	try
-		Result := IReplicatedSessionImpl(this).startTransaction(transaction, number);
+		Result := IReplicatedSessionImpl(this).startTransaction(status, transaction, number);
 	except
-		on e: Exception do FbException.catchException(nil, e);
+		on e: Exception do FbException.catchException(status, e);
 	end
 end;
 
-function IReplicatedSessionImpl_cleanupTransactionDispatcher(this: IReplicatedSession; number: Int64): Boolean; cdecl;
+procedure IReplicatedSessionImpl_cleanupTransactionDispatcher(this: IReplicatedSession; status: IStatus; number: Int64); cdecl;
 begin
 	try
-		Result := IReplicatedSessionImpl(this).cleanupTransaction(number);
+		IReplicatedSessionImpl(this).cleanupTransaction(status, number);
 	except
-		on e: Exception do FbException.catchException(nil, e);
+		on e: Exception do FbException.catchException(status, e);
 	end
 end;
 
-function IReplicatedSessionImpl_setSequenceDispatcher(this: IReplicatedSession; name: PAnsiChar; value: Int64): Boolean; cdecl;
+procedure IReplicatedSessionImpl_setSequenceDispatcher(this: IReplicatedSession; status: IStatus; name: PAnsiChar; value: Int64); cdecl;
 begin
 	try
-		Result := IReplicatedSessionImpl(this).setSequence(name, value);
+		IReplicatedSessionImpl(this).setSequence(status, name, value);
 	except
-		on e: Exception do FbException.catchException(nil, e);
+		on e: Exception do FbException.catchException(status, e);
 	end
 end;
 
@@ -15555,7 +15551,6 @@ initialization
 	IReplicatedSessionImpl_vTable.release := @IReplicatedSessionImpl_releaseDispatcher;
 	IReplicatedSessionImpl_vTable.setOwner := @IReplicatedSessionImpl_setOwnerDispatcher;
 	IReplicatedSessionImpl_vTable.getOwner := @IReplicatedSessionImpl_getOwnerDispatcher;
-	IReplicatedSessionImpl_vTable.getStatus := @IReplicatedSessionImpl_getStatusDispatcher;
 	IReplicatedSessionImpl_vTable.setAttachment := @IReplicatedSessionImpl_setAttachmentDispatcher;
 	IReplicatedSessionImpl_vTable.startTransaction := @IReplicatedSessionImpl_startTransactionDispatcher;
 	IReplicatedSessionImpl_vTable.cleanupTransaction := @IReplicatedSessionImpl_cleanupTransactionDispatcher;

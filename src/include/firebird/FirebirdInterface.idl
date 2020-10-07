@@ -1592,37 +1592,35 @@ interface ReplicatedTransaction : Disposable
 {
 	// Last chance to return an error and make commit to be aborted.
 	// The transaction still can be rolled back on error happened after this call.
-	boolean prepare();
-	// An error returned from these methods may be logged but do not abort process
-	boolean commit();
-	boolean rollback();
+	void prepare(Status status);
+	// An error returned from these methods may be logged but do not abort process.
+	void commit(Status status);
+	void rollback(Status status);
 
-	boolean startSavepoint();
-	boolean releaseSavepoint();
-	boolean rollbackSavepoint();
+	void startSavepoint(Status status);
+	void releaseSavepoint(Status status);
+	void rollbackSavepoint(Status status);
 
 	// ReplicatedRecords parameters point to local objects, do not ever store the pointer.
-	boolean insertRecord(const string name,
-					  	 ReplicatedRecord record);
-	boolean updateRecord(const string name,
-					  	 ReplicatedRecord orgRecord,
-					  	 ReplicatedRecord newRecord);
-	boolean deleteRecord(const string name,
-					  	 ReplicatedRecord record);
+	void insertRecord(Status status, const string name,
+					  ReplicatedRecord record);
+	void updateRecord(Status status, const string name,
+					  ReplicatedRecord orgRecord,
+					  ReplicatedRecord newRecord);
+	void deleteRecord(Status status, const string name,
+					  ReplicatedRecord record);
 
-	boolean executeSql(const string sql);
-	boolean executeSqlIntl(uint charset, const string sql);
+	void executeSql(Status status, const string sql);
+	void executeSqlIntl(Status status, uint charset, const string sql);
 }
 
 interface ReplicatedSession : PluginBase
 {
-	// Returned value is guaranteed to be valid only after other method has returned an error.
-	Status getStatus();
-
 	// Parameter don't need to be released if not used.
 	void setAttachment(Attachment attachment);
-	ReplicatedTransaction startTransaction(Transaction transaction, int64 number);
-	boolean cleanupTransaction(int64 number);
 
-	boolean setSequence(const string name, int64 value);
+	ReplicatedTransaction startTransaction(Status status, Transaction transaction, int64 number);
+	void cleanupTransaction(Status status, int64 number);
+	void setSequence(Status status, const string name, int64 value);
 }
+

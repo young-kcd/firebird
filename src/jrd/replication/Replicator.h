@@ -143,59 +143,63 @@ namespace Replication
 
 			// IReplicatedTransaction methods
 
-			FB_BOOLEAN prepare()
+			void prepare(Firebird::CheckStatusWrapper* status)
 			{
-				return m_replicator->prepareTransaction(this) ? FB_TRUE : FB_FALSE;
+				m_replicator->prepareTransaction(status, this);
 			}
 
-			FB_BOOLEAN commit()
+			void commit(Firebird::CheckStatusWrapper* status)
 			{
-				return m_replicator->commitTransaction(this) ? FB_TRUE : FB_FALSE;
+				m_replicator->commitTransaction(status, this);
 			}
 
-			FB_BOOLEAN rollback()
+			void rollback(Firebird::CheckStatusWrapper* status)
 			{
-				return m_replicator->rollbackTransaction(this) ? FB_TRUE : FB_FALSE;
+				m_replicator->rollbackTransaction(status, this);
 			}
 
-			FB_BOOLEAN startSavepoint()
+			void startSavepoint(Firebird::CheckStatusWrapper* status)
 			{
-				return m_replicator->startSavepoint(this) ? FB_TRUE : FB_FALSE;
+				m_replicator->startSavepoint(status, this);
 			}
 
-			FB_BOOLEAN releaseSavepoint()
+			void releaseSavepoint(Firebird::CheckStatusWrapper* status)
 			{
-				return m_replicator->releaseSavepoint(this) ? FB_TRUE : FB_FALSE;
+				m_replicator->releaseSavepoint(status, this);
 			}
 
-			FB_BOOLEAN rollbackSavepoint()
+			void rollbackSavepoint(Firebird::CheckStatusWrapper* status)
 			{
-				return m_replicator->rollbackSavepoint(this) ? FB_TRUE : FB_FALSE;
+				m_replicator->rollbackSavepoint(status, this);
 			}
 
-			FB_BOOLEAN insertRecord(const char* name, Firebird::IReplicatedRecord* record)
+			void insertRecord(Firebird::CheckStatusWrapper* status, const char* name,
+							  Firebird::IReplicatedRecord* record)
 			{
-				return m_replicator->insertRecord(this, name, record) ? FB_TRUE : FB_FALSE;
+				m_replicator->insertRecord(status, this, name, record);
 			}
 
-			FB_BOOLEAN updateRecord(const char* name, Firebird::IReplicatedRecord* orgRecord, Firebird::IReplicatedRecord* newRecord)
+			void updateRecord(Firebird::CheckStatusWrapper* status, const char* name,
+							  Firebird::IReplicatedRecord* orgRecord,
+							  Firebird::IReplicatedRecord* newRecord)
 			{
-				return m_replicator->updateRecord(this, name, orgRecord, newRecord) ? FB_TRUE : FB_FALSE;
+				m_replicator->updateRecord(status, this, name, orgRecord, newRecord);
 			}
 
-			FB_BOOLEAN deleteRecord(const char* name, Firebird::IReplicatedRecord* record)
+			void deleteRecord(Firebird::CheckStatusWrapper* status, const char* name,
+							  Firebird::IReplicatedRecord* record)
 			{
-				return m_replicator->deleteRecord(this, name, record) ? FB_TRUE : FB_FALSE;
+				m_replicator->deleteRecord(status, this, name, record);
 			}
 
-			FB_BOOLEAN executeSql(const char* sql)
+			void executeSql(Firebird::CheckStatusWrapper* status, const char* sql)
 			{
-				return m_replicator->executeSql(this, sql) ? FB_TRUE : FB_FALSE;
+				m_replicator->executeSql(status, this, sql);
 			}
 
-			FB_BOOLEAN executeSqlIntl(unsigned charset, const char* sql)
+			void executeSqlIntl(Firebird::CheckStatusWrapper* status, unsigned charset, const char* sql)
 			{
-				return m_replicator->executeSqlIntl(this, charset, sql) ? FB_TRUE : FB_FALSE;
+				m_replicator->executeSqlIntl(status, this, charset, sql);
 			}
 
 		private:
@@ -238,19 +242,14 @@ namespace Replication
 
 		// IReplicatedSession methods
 
-		Firebird::IStatus* getStatus() override
-		{
-			return &m_status;
-		}
-
 		void setAttachment(Firebird::IAttachment* att) override
 		{
 			m_attachment = att;
 		}
 
-		Firebird::IReplicatedTransaction* startTransaction(Firebird::ITransaction* trans, SINT64 number) override;
-		FB_BOOLEAN cleanupTransaction(SINT64 number) override;
-		FB_BOOLEAN setSequence(const char* name, SINT64 value) override;
+		Firebird::IReplicatedTransaction* startTransaction(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* trans, SINT64 number);
+		void cleanupTransaction(Firebird::CheckStatusWrapper* status, SINT64 number);
+		void setSequence(Firebird::CheckStatusWrapper* status, const char* name, SINT64 value);
 
 	private:
 		Manager* const m_manager;
@@ -260,44 +259,41 @@ namespace Replication
 		Firebird::Array<Transaction*> m_transactions;
 		GeneratorCache m_generators;
 		Firebird::Mutex m_mutex;
-		Firebird::FbLocalStatus m_status;
 		Firebird::RefPtr<Firebird::IAttachment> m_attachment;
 
 		void initialize();
 		void flush(BatchBlock& txnData, FlushReason reason, ULONG flags = 0);
-		void postError(const Firebird::Exception& ex);
-
-		bool prepareTransaction(Transaction* transaction);
-		bool commitTransaction(Transaction* transaction);
-		bool rollbackTransaction(Transaction* transaction);
+		void postError(const Firebird::Exception& ex, Firebird::CheckStatusWrapper* status);
+		// Blob id is passed by value because BlobWrapper requires reference to non-const ISC_QUAD
+		void storeBlob(Transaction* transaction, ISC_QUAD blobId);
 		void releaseTransaction(Transaction* transaction);
 
-		bool startSavepoint(Transaction* transaction);
-		bool releaseSavepoint(Transaction* transaction);
-		bool rollbackSavepoint(Transaction* transaction);
+		void prepareTransaction(Firebird::CheckStatusWrapper* status, Transaction* transaction);
+		void commitTransaction(Firebird::CheckStatusWrapper* status, Transaction* transaction);
+		void rollbackTransaction(Firebird::CheckStatusWrapper* status, Transaction* transaction);
 
-		bool insertRecord(Transaction* transaction,
+		void startSavepoint(Firebird::CheckStatusWrapper* status, Transaction* transaction);
+		void releaseSavepoint(Firebird::CheckStatusWrapper* status, Transaction* transaction);
+		void rollbackSavepoint(Firebird::CheckStatusWrapper* status, Transaction* transaction);
+
+		void insertRecord(Firebird::CheckStatusWrapper* status, Transaction* transaction,
 						  const char* name,
 						  Firebird::IReplicatedRecord* record);
-		bool updateRecord(Transaction* transaction,
+		void updateRecord(Firebird::CheckStatusWrapper* status, Transaction* transaction,
 						  const char* name,
 						  Firebird::IReplicatedRecord* orgRecord,
 						  Firebird::IReplicatedRecord* newRecord);
-		bool deleteRecord(Transaction* transaction,
+		void deleteRecord(Firebird::CheckStatusWrapper* status, Transaction* transaction,
 						  const char* name,
 						  Firebird::IReplicatedRecord* record);
 
-		// Blob id is passed by value because BlobWrapper requires reference to non-const ISC_QUAD
-		bool storeBlob(Transaction* transaction,
-					   ISC_QUAD blobId);
-
-		bool executeSql(Transaction* transaction,
+		void executeSql(Firebird::CheckStatusWrapper* status, Transaction* transaction,
 						const char* sql)
 		{
-			return executeSqlIntl(transaction, CS_UTF8, sql);
+			executeSqlIntl(status, transaction, CS_UTF8, sql);
 		}
 
-		bool executeSqlIntl(Transaction* transaction,
+		void executeSqlIntl(Firebird::CheckStatusWrapper* status, Transaction* transaction,
 							unsigned charset,
 							const char* sql);
 };

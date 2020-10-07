@@ -67,7 +67,8 @@ namespace
 		logOriginMessage(dbb->dbb_filename.c_str(), message, type);
 	}
 
-	void handleError(thread_db* tdbb, jrd_tra* transaction = nullptr, bool canThrow = true)
+	bool checkStatus(thread_db* tdbb, const FbLocalStatus& status,
+					 jrd_tra* transaction = nullptr, bool canThrow = true)
 	{
 		const auto dbb = tdbb->getDatabase();
 		const auto attachment = tdbb->getAttachment();
@@ -77,13 +78,6 @@ namespace
 		const auto config = dbb->replConfig();
 		fb_assert(config);
 
-		if (transaction && transaction->tra_replicator && config->disableOnError)
-		{
-			transaction->tra_replicator->dispose();
-			transaction->tra_replicator = nullptr;
-		}
-
-		const auto status = attachment->att_replicator->getStatus();
 		const auto state = status->getState();
 
 		if (state & IStatus::STATE_WARNINGS)
@@ -98,14 +92,34 @@ namespace
 				logStatus(dbb, status->getErrors(), ERROR_MSG);
 
 			if (config->disableOnError)
+			{
+				if (transaction)
+				{
+					transaction->tra_flags &= ~TRA_replicating;
+
+					if (transaction->tra_replicator)
+					{
+						transaction->tra_replicator->dispose();
+						transaction->tra_replicator = nullptr;
+					}
+				}
+
+				attachment->att_flags &= ~ATT_replicating;
+				attachment->att_replicator = nullptr;
+
 				logOriginMessage(dbb->dbb_filename, STOP_ERROR, ERROR_MSG);
+			}
 
 			if (config->reportErrors && canThrow)
-				status_exception::raise(status);
+				status.raise();
+
+			return false;
 		}
+
+		return true;
 	}
 
-	IReplicatedSession* getReplicator(thread_db* tdbb, bool cleanupTransactions = false)
+	IReplicatedSession* getReplicator(thread_db* tdbb)
 	{
 		const auto attachment = tdbb->getAttachment();
 
@@ -114,11 +128,17 @@ namespace
 		if (attachment->isSystem())
 			return nullptr;
 
+		// Check whether replication is allowed for this session
+
+		if (!(attachment->att_flags & ATT_replicating))
+			return nullptr;
+
 		// Check whether replication is configured and enabled for this database
 
 		const auto dbb = tdbb->getDatabase();
 		if (!dbb->isReplicating(tdbb))
 		{
+			attachment->att_flags &= ~ATT_replicating;
 			attachment->att_replicator = nullptr;
 			return nullptr;
 		}
@@ -128,20 +148,7 @@ namespace
 
 		// Create a replicator object, unless it already exists
 
-		if (attachment->att_replicator.hasData())
-		{
-			// If replication must be disabled after errors and the status is dirty,
-			// then fake the replication being inactive
-
-			const auto status = attachment->att_replicator->getStatus();
-			const auto state = status->getState();
-
-			if (config->disableOnError && (state & IStatus::STATE_ERRORS))
-				return nullptr;
-
-			status->init(); // reset the status
-		}
-		else
+		if (!attachment->att_replicator)
 		{
 			if (config->pluginName.empty())
 			{
@@ -169,8 +176,6 @@ namespace
 			}
 
 			attachment->att_replicator->setAttachment(attachment->getInterface());
-			if (cleanupTransactions)
-				attachment->att_replicator->cleanupTransaction(0);
 		}
 
 		fb_assert(attachment->att_replicator.hasData());
@@ -178,11 +183,18 @@ namespace
 		return attachment->att_replicator;
 	}
 
-	IReplicatedTransaction* getReplicator(thread_db* tdbb, jrd_tra* transaction)
+	IReplicatedTransaction* getReplicator(thread_db* tdbb,
+										  FbLocalStatus& status,
+										  jrd_tra* transaction)
 	{
 		// Disable replication for system and read-only transactions
 
 		if (transaction->tra_flags & (TRA_system | TRA_readonly))
+			return nullptr;
+
+		// Check whether replication is allowed for this transaction
+
+		if (!(transaction->tra_flags & TRA_replicating))
 			return nullptr;
 
 		// Check parent replicator presense
@@ -191,6 +203,8 @@ namespace
 		const auto replicator = getReplicator(tdbb);
 		if (!replicator)
 		{
+			transaction->tra_flags &= ~TRA_replicating;
+
 			if (transaction->tra_replicator)
 			{
 				transaction->tra_replicator->dispose();
@@ -202,14 +216,32 @@ namespace
 
 		// Create a replicator object, unless it already exists
 
-		if (!transaction->tra_replicator && (transaction->tra_flags & TRA_replicating))
+		if (!transaction->tra_replicator)
 		{
 			transaction->tra_replicator =
-				replicator->startTransaction(transaction->getInterface(true),
+				replicator->startTransaction(&status,
+											 transaction->getInterface(true),
 											 transaction->tra_number);
 
-			if (!transaction->tra_replicator)
-				handleError(tdbb, transaction);
+			if (!checkStatus(tdbb, status, transaction))
+				return nullptr;
+		}
+
+		// Ensure all active savepoints are replicated
+
+		for (Savepoint::Iterator iter(transaction->tra_save_point); *iter; ++iter)
+		{
+			const auto savepoint = *iter;
+
+			if (savepoint->isReplicated())
+				break;
+
+			transaction->tra_replicator->startSavepoint(&status);
+
+			if (!checkStatus(tdbb, status, transaction))
+				return nullptr;
+
+			savepoint->markAsReplicated();
 		}
 
 		return transaction->tra_replicator;
@@ -249,41 +281,6 @@ namespace
 		}
 
 		return newRecord;
-	}
-
-	bool ensureSavepoints(thread_db* tdbb, jrd_tra* transaction)
-	{
-		const auto replicator = transaction->tra_replicator;
-
-		// Replicate the entire stack of active savepoints (excluding priorly replicated),
-		// starting with the oldest ones
-
-		HalfStaticArray<Savepoint*, 16> stack;
-
-		for (Savepoint::Iterator iter(transaction->tra_save_point); *iter; ++iter)
-		{
-			const auto savepoint = *iter;
-
-			if (savepoint->isReplicated())
-				break;
-
-			stack.push(savepoint);
-		}
-
-		while (stack.hasData())
-		{
-			const auto savepoint = stack.pop();
-
-			if (!replicator->startSavepoint())
-			{
-				handleError(tdbb, transaction);
-				return false;
-			}
-
-			savepoint->markAsReplicated();
-		}
-
-		return true;
 	}
 
 	class ReplicatedRecordImpl :
@@ -402,8 +399,10 @@ void REPL_attach(thread_db* tdbb, bool cleanupTransactions)
 		TableMatcher(pool, replConfig->includeFilter, replConfig->excludeFilter);
 
 	fb_assert(!attachment->att_replicator);
+	attachment->att_flags |= ATT_replicating;
+
 	if (cleanupTransactions)
-		getReplicator(tdbb, cleanupTransactions);
+		REPL_trans_cleanup(tdbb, 0);
 	// else defer creation of replicator till really needed
 }
 
@@ -415,8 +414,10 @@ void REPL_trans_prepare(thread_db* tdbb, jrd_tra* transaction)
 	if (!replicator)
 		return;
 
-	if (!replicator->prepare())
-		handleError(tdbb, transaction);
+	FbLocalStatus status;
+	replicator->prepare(&status);
+
+	checkStatus(tdbb, status, transaction);
 }
 
 void REPL_trans_commit(thread_db* tdbb, jrd_tra* transaction)
@@ -425,11 +426,11 @@ void REPL_trans_commit(thread_db* tdbb, jrd_tra* transaction)
 	if (!replicator)
 		return;
 
-	if (!replicator->commit())
-	{
-		// Commit is a terminal routine, we cannot throw here
-		handleError(tdbb, transaction, false);
-	}
+	FbLocalStatus status;
+	replicator->commit(&status);
+
+	// Commit is a terminal routine, we cannot throw here
+	checkStatus(tdbb, status, transaction, false);
 
 	if (transaction->tra_replicator)
 	{
@@ -444,11 +445,11 @@ void REPL_trans_rollback(thread_db* tdbb, jrd_tra* transaction)
 	if (!replicator)
 		return;
 
-	if (!replicator->rollback())
-	{
-		// Rollback is a terminal routine, we cannot throw here
-		handleError(tdbb, transaction, false);
-	}
+	FbLocalStatus status;
+	replicator->rollback(&status);
+
+	// Rollback is a terminal routine, we cannot throw here
+	checkStatus(tdbb, status, transaction, false);
 
 	if (transaction->tra_replicator)
 	{
@@ -463,8 +464,10 @@ void REPL_trans_cleanup(Jrd::thread_db* tdbb, TraNumber number)
 	if (!replicator)
 		return;
 
-	if (!replicator->cleanupTransaction(number))
-		handleError(tdbb);
+	FbLocalStatus status;
+	replicator->cleanupTransaction(&status, number);
+
+	checkStatus(tdbb, status);
 }
 
 void REPL_save_cleanup(thread_db* tdbb, jrd_tra* transaction,
@@ -480,16 +483,14 @@ void REPL_save_cleanup(thread_db* tdbb, jrd_tra* transaction,
 	if (!replicator)
 		return;
 
+	FbLocalStatus status;
+
 	if (undo)
-	{
-		if (!replicator->rollbackSavepoint())
-			handleError(tdbb, transaction);
-	}
+		replicator->rollbackSavepoint(&status);
 	else
-	{
-		if (!replicator->releaseSavepoint())
-			handleError(tdbb, transaction);
-	}
+		replicator->releaseSavepoint(&status);
+
+	checkStatus(tdbb, status, transaction);
 }
 
 void REPL_store(thread_db* tdbb, const record_param* rpb, jrd_tra* transaction)
@@ -512,7 +513,8 @@ void REPL_store(thread_db* tdbb, const record_param* rpb, jrd_tra* transaction)
 			return;
 	}
 
-	const auto replicator = getReplicator(tdbb, transaction);
+	FbLocalStatus status;
+	const auto replicator = getReplicator(tdbb, status, transaction);
 	if (!replicator)
 		return;
 
@@ -523,13 +525,13 @@ void REPL_store(thread_db* tdbb, const record_param* rpb, jrd_tra* transaction)
 	AutoPtr<Record> cleanupRecord(record != rpb->rpb_record ? record : nullptr);
 	AutoSetRestoreFlag<ULONG> noRecursion(&tdbb->tdbb_flags, TDBB_repl_in_progress, true);
 
-	if (!ensureSavepoints(tdbb, transaction))
-		return;
-
 	ReplicatedRecordImpl replRecord(tdbb, relation, record);
 
-	if (!replicator->insertRecord(relation->rel_name.c_str(), &replRecord))
-		handleError(tdbb, transaction);
+	replicator->insertRecord(&status,
+							 relation->rel_name.c_str(),
+							 &replRecord);
+
+	checkStatus(tdbb, status, transaction);
 }
 
 void REPL_modify(thread_db* tdbb, const record_param* orgRpb,
@@ -553,7 +555,8 @@ void REPL_modify(thread_db* tdbb, const record_param* orgRpb,
 			return;
 	}
 
-	const auto replicator = getReplicator(tdbb, transaction);
+	FbLocalStatus status;
+	const auto replicator = getReplicator(tdbb, status, transaction);
 	if (!replicator)
 		return;
 
@@ -579,14 +582,14 @@ void REPL_modify(thread_db* tdbb, const record_param* orgRpb,
 
 	AutoSetRestoreFlag<ULONG> noRecursion(&tdbb->tdbb_flags, TDBB_repl_in_progress, true);
 
-	if (!ensureSavepoints(tdbb, transaction))
-		return;
-
 	ReplicatedRecordImpl replOrgRecord(tdbb, relation, orgRecord);
 	ReplicatedRecordImpl replNewRecord(tdbb, relation, newRecord);
 
-	if (!replicator->updateRecord(relation->rel_name.c_str(), &replOrgRecord, &replNewRecord))
-		handleError(tdbb, transaction);
+	replicator->updateRecord(&status,
+							 relation->rel_name.c_str(),
+							 &replOrgRecord, &replNewRecord);
+
+	checkStatus(tdbb, status, transaction);
 }
 
 
@@ -610,7 +613,8 @@ void REPL_erase(thread_db* tdbb, const record_param* rpb, jrd_tra* transaction)
 			return;
 	}
 
-	const auto replicator = getReplicator(tdbb, transaction);
+	FbLocalStatus status;
+	const auto replicator = getReplicator(tdbb, status, transaction);
 	if (!replicator)
 		return;
 
@@ -621,13 +625,13 @@ void REPL_erase(thread_db* tdbb, const record_param* rpb, jrd_tra* transaction)
 	AutoPtr<Record> cleanupRecord(record != rpb->rpb_record ? record : nullptr);
 	AutoSetRestoreFlag<ULONG> noRecursion(&tdbb->tdbb_flags, TDBB_repl_in_progress, true);
 
-	if (!ensureSavepoints(tdbb, transaction))
-		return;
-
 	ReplicatedRecordImpl replRecord(tdbb, relation, record);
 
-	if (!replicator->deleteRecord(relation->rel_name.c_str(), &replRecord))
-		handleError(tdbb, transaction);
+	replicator->deleteRecord(&status,
+							 relation->rel_name.c_str(),
+							 &replRecord);
+
+	checkStatus(tdbb, status, transaction);
 }
 
 void REPL_gen_id(thread_db* tdbb, SLONG genId, SINT64 value)
@@ -663,8 +667,10 @@ void REPL_gen_id(thread_db* tdbb, SLONG genId, SINT64 value)
 
 	AutoSetRestoreFlag<ULONG> noRecursion(&tdbb->tdbb_flags, TDBB_repl_in_progress, true);
 
-	if (!replicator->setSequence(genName.c_str(), value))
-		handleError(tdbb);
+	FbLocalStatus status;
+	replicator->setSequence(&status, genName.c_str(), value);
+
+	checkStatus(tdbb, status);
 }
 
 void REPL_exec_sql(thread_db* tdbb, jrd_tra* transaction, const string& sql)
@@ -674,11 +680,9 @@ void REPL_exec_sql(thread_db* tdbb, jrd_tra* transaction, const string& sql)
 	if (tdbb->tdbb_flags & TDBB_dont_post_dfw)
 		return;
 
-	const auto replicator = getReplicator(tdbb, transaction);
+	FbLocalStatus status;
+	const auto replicator = getReplicator(tdbb, status, transaction);
 	if (!replicator)
-		return;
-
-	if (!ensureSavepoints(tdbb, transaction))
 		return;
 
 	const auto attachment = tdbb->getAttachment();
@@ -686,8 +690,9 @@ void REPL_exec_sql(thread_db* tdbb, jrd_tra* transaction, const string& sql)
 
 	// This place is already protected from recursion in calling code
 
-	if (!replicator->executeSqlIntl(charset, sql.c_str()))
-		handleError(tdbb, transaction);
+	replicator->executeSqlIntl(&status, charset, sql.c_str());
+
+	checkStatus(tdbb, status, transaction);
 }
 
 void REPL_log_switch(thread_db* tdbb)
