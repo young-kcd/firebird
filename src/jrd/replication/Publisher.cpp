@@ -235,7 +235,7 @@ namespace
 		{
 			const auto savepoint = *iter;
 
-			if (savepoint->isReplicated())
+			if (savepoint->isReplicated() || savepoint->isRoot())
 				break;
 
 			transaction->tra_replicator->startSavepoint(&status);

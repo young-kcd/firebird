@@ -354,8 +354,7 @@ void Applier::startTransaction(thread_db* tdbb, TraNumber traNum)
 	if (m_txnMap.exist(traNum))
 		raiseError("Transaction %" SQUADFORMAT" already exists", traNum);
 
-	const auto transaction =
-		TRA_start(tdbb, TRA_read_committed | TRA_rec_version | TRA_no_auto_undo, 1);
+	const auto transaction = TRA_start(tdbb, TRA_read_committed | TRA_rec_version, 1);
 
 	m_txnMap.put(traNum, transaction);
 }
