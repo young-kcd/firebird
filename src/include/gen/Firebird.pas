@@ -5051,6 +5051,7 @@ const
 	isc_truncate_context                 = 335545268;
 	isc_merge_dup_update                 = 335545269;
 	isc_wrong_page                       = 335545270;
+	isc_repl_error                       = 335545271;
 	isc_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;
 	isc_gfix_incmp_sw                    = 335740932;

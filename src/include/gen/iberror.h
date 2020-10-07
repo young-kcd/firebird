@@ -1006,6 +1006,7 @@ const ISC_STATUS isc_truncate_monitor                 = 335545267L;
 const ISC_STATUS isc_truncate_context                 = 335545268L;
 const ISC_STATUS isc_merge_dup_update                 = 335545269L;
 const ISC_STATUS isc_wrong_page                       = 335545270L;
+const ISC_STATUS isc_repl_error                       = 335545271L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -1496,7 +1497,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1440;
+const ISC_STATUS isc_err_max                          = 1441;
 
 #else /* c definitions */
 
@@ -2472,6 +2473,7 @@ const ISC_STATUS isc_err_max                          = 1440;
 #define isc_truncate_context                 335545268L
 #define isc_merge_dup_update                 335545269L
 #define isc_wrong_page                       335545270L
+#define isc_repl_error                       335545271L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -2962,7 +2964,7 @@ const ISC_STATUS isc_err_max                          = 1440;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1440
+#define isc_err_max                          1441
 
 #endif
 

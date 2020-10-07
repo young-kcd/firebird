@@ -972,6 +972,7 @@ static const struct {
 	{"truncate_context", 335545268},
 	{"merge_dup_update", 335545269},
 	{"wrong_page", 335545270},
+	{"repl_error", 335545271},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

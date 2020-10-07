@@ -84,17 +84,6 @@ void Replicator::flush(BatchBlock& block, FlushReason reason, ULONG flags)
 	block.flushes++;
 }
 
-void Replicator::postError(const Exception& ex, CheckStatusWrapper* status)
-{
-	FbLocalStatus tempStatus;
-	ex.stuffException(&tempStatus);
-
-	Arg::StatusVector newErrors;
-	newErrors << Arg::Gds(isc_random) << Arg::Str("Replication error");
-	newErrors << Arg::StatusVector(tempStatus->getErrors());
-	newErrors.copyTo(status);
-}
-
 void Replicator::storeBlob(Transaction* transaction, ISC_QUAD blobId)
 {
 	FbLocalStatus localStatus;
@@ -193,7 +182,7 @@ IReplicatedTransaction* Replicator::startTransaction(CheckStatusWrapper* status,
 	}
 	catch (const Exception& ex)
 	{
-		postError(ex, status);
+		ex.stuffException(status);
 	}
 
 	return transaction.release();
@@ -213,7 +202,7 @@ void Replicator::prepareTransaction(CheckStatusWrapper* status, Transaction* tra
 	}
 	catch (const Exception& ex)
 	{
-		postError(ex, status);
+		ex.stuffException(status);
 	}
 }
 
@@ -245,7 +234,7 @@ void Replicator::commitTransaction(CheckStatusWrapper* status, Transaction* tran
 	}
 	catch (const Exception& ex)
 	{
-		postError(ex, status);
+		ex.stuffException(status);
 	}
 }
 
@@ -265,7 +254,7 @@ void Replicator::rollbackTransaction(CheckStatusWrapper* status, Transaction* tr
 	}
 	catch (const Exception& ex)
 	{
-		postError(ex, status);
+		ex.stuffException(status);
 	}
 }
 
@@ -284,7 +273,7 @@ void Replicator::startSavepoint(CheckStatusWrapper* status, Transaction* transac
 	}
 	catch (const Exception& ex)
 	{
-		postError(ex, status);
+		ex.stuffException(status);
 	}
 }
 
@@ -303,7 +292,7 @@ void Replicator::releaseSavepoint(CheckStatusWrapper* status, Transaction* trans
 	}
 	catch (const Exception& ex)
 	{
-		postError(ex, status);
+		ex.stuffException(status);
 	}
 }
 
@@ -321,7 +310,7 @@ void Replicator::rollbackSavepoint(CheckStatusWrapper* status, Transaction* tran
 	}
 	catch (const Exception& ex)
 	{
-		postError(ex, status);
+		ex.stuffException(status);
 	}
 }
 
@@ -364,7 +353,7 @@ void Replicator::insertRecord(CheckStatusWrapper* status,
 	}
 	catch (const Exception& ex)
 	{
-		postError(ex, status);
+		ex.stuffException(status);
 	}
 }
 
@@ -412,7 +401,7 @@ void Replicator::updateRecord(CheckStatusWrapper* status,
 	}
 	catch (const Exception& ex)
 	{
-		postError(ex, status);
+		ex.stuffException(status);
 	}
 }
 
@@ -439,7 +428,7 @@ void Replicator::deleteRecord(CheckStatusWrapper* status,
 	}
 	catch (const Exception& ex)
 	{
-		postError(ex, status);
+		ex.stuffException(status);
 	}
 }
 
@@ -472,7 +461,7 @@ void Replicator::executeSqlIntl(CheckStatusWrapper* status,
 	}
 	catch (const Exception& ex)
 	{
-		postError(ex, status);
+		ex.stuffException(status);
 	}
 }
 
@@ -492,7 +481,7 @@ void Replicator::cleanupTransaction(CheckStatusWrapper* status,
 	}
 	catch (const Exception& ex)
 	{
-		postError(ex, status);
+		ex.stuffException(status);
 	}
 }
 
@@ -521,6 +510,6 @@ void Replicator::setSequence(CheckStatusWrapper* status,
 	}
 	catch (const Exception& ex)
 	{
-		postError(ex, status);
+		ex.stuffException(status);
 	}
 }

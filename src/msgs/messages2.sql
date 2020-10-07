@@ -1058,6 +1058,7 @@ Data source : @4', NULL, NULL)
 ('truncate_context', NULL, 'SysFunction.cpp', NULL, 0, 948, NULL, 'Engine data does not fit into return value of system function', NULL, NULL);
 ('merge_dup_update', NULL, 'StmtNodes.cpp', NULL, 0, 949, NULL, 'Multiple source records cannot match the same target during MERGE', NULL, NULL);
 ('wrong_page', 'get_header', 'dpm.epp', NULL, 0, 950, NULL, 'RDB$PAGES written by non-system transaction, DB appears to be damaged', NULL, NULL);
+('repl_error', 'checkStatus', 'Publisher.cpp', NULL, 0, 951, NULL, 'Replication error', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

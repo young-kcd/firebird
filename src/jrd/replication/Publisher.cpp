@@ -111,7 +111,9 @@ namespace
 			}
 
 			if (config->reportErrors && canThrow)
-				status.raise();
+			{
+				(Arg::Gds(isc_repl_error) << Arg::StatusVector(&status)).raise();
+			}
 
 			return false;
 		}
