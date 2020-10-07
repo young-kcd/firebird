@@ -49,7 +49,7 @@
 #include "Utils.h"
 
 // Log conflicts as warnings
-#define LOG_WARNINGS
+#define LOG_CONFLICTS
 
 // Detect and resolve record-level conflicts (in favor of master copy)
 #define RESOLVE_CONFLICTS
@@ -222,137 +222,128 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 	if (dbb->readOnly())
 		raiseError("Replication is impossible for read-only database");
 
-	try
+	tdbb->tdbb_flags |= TDBB_replicator;
+
+	BlockReader reader(length, data);
+
+	const auto traNum = reader.getTransactionId();
+	const auto protocol = reader.getProtocolVersion();
+
+	if (protocol != PROTOCOL_CURRENT_VERSION)
+		raiseError("Unsupported replication protocol version %u", protocol);
+
+	while (!reader.isEof())
 	{
-		tdbb->tdbb_flags |= TDBB_replicator;
+		const auto op = reader.getTag();
 
-		BlockReader reader(length, data);
-
-		const auto traNum = reader.getTransactionId();
-		const auto protocol = reader.getProtocolVersion();
-
-		if (protocol != PROTOCOL_CURRENT_VERSION)
-			raiseError("Unsupported replication protocol version %u", protocol);
-
-		while (!reader.isEof())
+		switch (op)
 		{
-			const auto op = reader.getTag();
+		case opStartTransaction:
+			startTransaction(tdbb, traNum);
+			break;
 
-			switch (op)
+		case opPrepareTransaction:
+			prepareTransaction(tdbb, traNum);
+			break;
+
+		case opCommitTransaction:
+			commitTransaction(tdbb, traNum);
+			break;
+
+		case opRollbackTransaction:
+			rollbackTransaction(tdbb, traNum, false);
+			break;
+
+		case opCleanupTransaction:
+			if (traNum)
+				rollbackTransaction(tdbb, traNum, true);
+			else
+				cleanupTransactions(tdbb);
+			break;
+
+		case opStartSavepoint:
+			startSavepoint(tdbb, traNum);
+			break;
+
+		case opReleaseSavepoint:
+			cleanupSavepoint(tdbb, traNum, false);
+			break;
+
+		case opRollbackSavepoint:
+			cleanupSavepoint(tdbb, traNum, true);
+			break;
+
+		case opInsertRecord:
 			{
-			case opStartTransaction:
-				startTransaction(tdbb, traNum);
-				break;
-
-			case opPrepareTransaction:
-				prepareTransaction(tdbb, traNum);
-				break;
-
-			case opCommitTransaction:
-				commitTransaction(tdbb, traNum);
-				break;
-
-			case opRollbackTransaction:
-				rollbackTransaction(tdbb, traNum, false);
-				break;
-
-			case opCleanupTransaction:
-				if (traNum)
-					rollbackTransaction(tdbb, traNum, true);
-				else
-					cleanupTransactions(tdbb);
-				break;
-
-			case opStartSavepoint:
-				startSavepoint(tdbb, traNum);
-				break;
-
-			case opReleaseSavepoint:
-				cleanupSavepoint(tdbb, traNum, false);
-				break;
-
-			case opRollbackSavepoint:
-				cleanupSavepoint(tdbb, traNum, true);
-				break;
-
-			case opInsertRecord:
-				{
-					const MetaName relName = reader.getMetaName();
-					const UCHAR* record = NULL;
-					const ULONG length = reader.getBinary(record);
-					insertRecord(tdbb, traNum, relName, length, record);
-				}
-				break;
-
-			case opUpdateRecord:
-				{
-					const MetaName relName = reader.getMetaName();
-					const UCHAR* orgRecord = NULL;
-					const ULONG orgLength = reader.getBinary(orgRecord);
-					const UCHAR* newRecord = NULL;
-					const ULONG newLength = reader.getBinary(newRecord);
-					updateRecord(tdbb, traNum, relName,
-										  orgLength, orgRecord,
-										  newLength, newRecord);
-				}
-				break;
-
-			case opDeleteRecord:
-				{
-					const MetaName relName = reader.getMetaName();
-					const UCHAR* record = NULL;
-					const ULONG length = reader.getBinary(record);
-					deleteRecord(tdbb, traNum, relName, length, record);
-				}
-				break;
-
-			case opStoreBlob:
-				{
-					bid blob_id;
-					blob_id.bid_quad.bid_quad_high = reader.getInt();
-					blob_id.bid_quad.bid_quad_low = reader.getInt();
-					ULONG length = 0;
-					do {
-						const UCHAR* blob = NULL;
-						length = reader.getBinary(blob);
-						storeBlob(tdbb, traNum, &blob_id, length, blob);
-					} while (length && !reader.isEof());
-				}
-				break;
-
-			case opExecuteSql:
-			case opExecuteSqlIntl:
-				{
-					const unsigned charset =
-						(op == opExecuteSql) ? CS_UTF8 : reader.getInt();
-					const string sql = reader.getString();
-					const MetaName ownerName = reader.getMetaName();
-					executeSql(tdbb, traNum, charset, sql, ownerName);
-				}
-				break;
-
-			case opSetSequence:
-				{
-					const MetaName genName = reader.getMetaName();
-					const SINT64 value = reader.getBigInt();
-					setSequence(tdbb, genName, value);
-				}
-				break;
-
-			default:
-				fb_assert(false);
+				const MetaName relName = reader.getMetaName();
+				const UCHAR* record = NULL;
+				const ULONG length = reader.getBinary(record);
+				insertRecord(tdbb, traNum, relName, length, record);
 			}
+			break;
 
-			// Check cancellation flags and reset monitoring state if necessary
-			tdbb->checkCancelState();
-			Monitoring::checkState(tdbb);
+		case opUpdateRecord:
+			{
+				const MetaName relName = reader.getMetaName();
+				const UCHAR* orgRecord = NULL;
+				const ULONG orgLength = reader.getBinary(orgRecord);
+				const UCHAR* newRecord = NULL;
+				const ULONG newLength = reader.getBinary(newRecord);
+				updateRecord(tdbb, traNum, relName,
+									  orgLength, orgRecord,
+									  newLength, newRecord);
+			}
+			break;
+
+		case opDeleteRecord:
+			{
+				const MetaName relName = reader.getMetaName();
+				const UCHAR* record = NULL;
+				const ULONG length = reader.getBinary(record);
+				deleteRecord(tdbb, traNum, relName, length, record);
+			}
+			break;
+
+		case opStoreBlob:
+			{
+				bid blob_id;
+				blob_id.bid_quad.bid_quad_high = reader.getInt();
+				blob_id.bid_quad.bid_quad_low = reader.getInt();
+				ULONG length = 0;
+				do {
+					const UCHAR* blob = NULL;
+					length = reader.getBinary(blob);
+					storeBlob(tdbb, traNum, &blob_id, length, blob);
+				} while (length && !reader.isEof());
+			}
+			break;
+
+		case opExecuteSql:
+		case opExecuteSqlIntl:
+			{
+				const unsigned charset =
+					(op == opExecuteSql) ? CS_UTF8 : reader.getInt();
+				const string sql = reader.getString();
+				const MetaName ownerName = reader.getMetaName();
+				executeSql(tdbb, traNum, charset, sql, ownerName);
+			}
+			break;
+
+		case opSetSequence:
+			{
+				const MetaName genName = reader.getMetaName();
+				const SINT64 value = reader.getBigInt();
+				setSequence(tdbb, genName, value);
+			}
+			break;
+
+		default:
+			fb_assert(false);
 		}
 
-	} // try
-	catch (const Exception& ex)
-	{
-		postError(tdbb->tdbb_status_vector, ex);
-		throw;
+		// Check cancellation flags and reset monitoring state if necessary
+		tdbb->checkCancelState();
+		Monitoring::checkState(tdbb);
 	}
 }
 
@@ -536,7 +527,7 @@ void Applier::insertRecord(thread_db* tdbb, TraNumber traNum,
 
 	if (found)
 	{
-		logWarning("Record being inserted into table %s already exists, updating instead", relName.c_str());
+		logConflict("Record being inserted into table %s already exists, updating instead", relName.c_str());
 
 		record_param newRpb;
 		newRpb.rpb_relation = relation;
@@ -690,7 +681,7 @@ void Applier::updateRecord(thread_db* tdbb, TraNumber traNum,
 	else
 	{
 #ifdef RESOLVE_CONFLICTS
-		logWarning("Record being updated in table %s does not exist, inserting instead", relName.c_str());
+		logConflict("Record being updated in table %s does not exist, inserting instead", relName.c_str());
 		doInsert(tdbb, &newRpb, transaction);
 #else
 		raiseError("Record in table %s cannot be located via the primary/unique key", relName.c_str());
@@ -766,7 +757,7 @@ void Applier::deleteRecord(thread_db* tdbb, TraNumber traNum,
 	else
 	{
 #ifdef RESOLVE_CONFLICTS
-		logWarning("Record being deleted from table %s does not exist, ignoring", relName.c_str());
+		logConflict("Record being deleted from table %s does not exist, ignoring", relName.c_str());
 #else
 		raiseError("Record in table %s cannot be located via the primary/unique key", relName.c_str());
 #endif
@@ -1208,14 +1199,9 @@ void Applier::doDelete(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	REPL_erase(tdbb, rpb, transaction);
 }
 
-void Applier::logMessage(const string& message, LogMsgType type)
+void Applier::logConflict(const char* msg, ...)
 {
-	logReplicaMessage(m_database, message, type);
-}
-
-void Applier::logWarning(const char* msg, ...)
-{
-#ifdef LOG_WARNINGS
+#ifdef LOG_CONFLICTS
 	char buffer[BUFFER_LARGE];
 
 	va_list ptr;
@@ -1223,32 +1209,6 @@ void Applier::logWarning(const char* msg, ...)
 	vsprintf(buffer, msg, ptr);
 	va_end(ptr);
 
-	logMessage(buffer, WARNING_MSG);
+	logReplicaMessage(m_database, buffer, WARNING_MSG);
 #endif
-}
-
-void Applier::postError(FbStatusVector* status, const Exception& ex)
-{
-	FbLocalStatus temp_status;
-	ex.stuffException(&temp_status);
-
-	string message;
-
-	char temp[BUFFER_LARGE];
-	const ISC_STATUS* temp_status_ptr = temp_status->getErrors();
-	while (fb_interpret(temp, sizeof(temp), &temp_status_ptr))
-	{
-		if (!message.isEmpty())
-			message += "\n\t";
-
-		message += temp;
-	}
-
-	logMessage(message, ERROR_MSG);
-
-	Arg::StatusVector org_error(&temp_status);
-	Arg::StatusVector new_error;
-	new_error << Arg::Gds(isc_random) << Arg::Str("Replication error");
-	new_error.append(org_error);
-	new_error.copyTo(status);
 }

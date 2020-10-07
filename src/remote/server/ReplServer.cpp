@@ -622,11 +622,13 @@ namespace
 
 		ProcessStatus ret = PROCESS_SUSPEND;
 
+		const auto config = target->getConfig();
+
 		try
 		{
 			// First pass: create the processing queue
 
-			for (auto iter = PathUtils::newDirIterator(pool, target->getConfig()->logSourceDirectory);
+			for (auto iter = PathUtils::newDirIterator(pool, config->logSourceDirectory);
 				*iter; ++(*iter))
 			{
 				const auto filename = **iter;
@@ -722,7 +724,7 @@ namespace
 			if (queue.isEmpty())
 			{
 				target->verbose("No new segments found, suspending for %u seconds",
-								target->getConfig()->applyIdleTimeout);
+								config->applyIdleTimeout);
 				return ret;
 			}
 
@@ -773,7 +775,7 @@ namespace
 				if (max_sequence == last_sequence)
 				{
 					target->verbose("No new segments found, suspending for %u seconds",
-									target->getConfig()->applyIdleTimeout);
+									config->applyIdleTimeout);
 					return ret;
 				}
 
@@ -934,8 +936,8 @@ namespace
 			string message;
 
 			char temp[BUFFER_LARGE];
-			const ISC_STATUS* status_ptr = localStatus.getErrors();
-			while (fb_interpret(temp, sizeof(temp), &status_ptr))
+			const ISC_STATUS* statusPtr = localStatus.getErrors();
+			while (fb_interpret(temp, sizeof(temp), &statusPtr))
 			{
 				if (!message.isEmpty())
 					message += "\n\t";
@@ -943,11 +945,10 @@ namespace
 				message += temp;
 			}
 
-			if (message.find("Replication") == string::npos)
-				target->logError(message);
+			target->logError(message);
 
 			target->verbose("Suspending for %u seconds",
-							target->getConfig()->applyErrorTimeout);
+							config->applyErrorTimeout);
 
 			ret = PROCESS_ERROR;
 		}

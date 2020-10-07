@@ -191,9 +191,7 @@ namespace Jrd
 		void doDelete(thread_db* tdbb, record_param* rpb,
 						jrd_tra* transaction);
 
-		void logMessage(const Firebird::string& message, Replication::LogMsgType type);
-		void logWarning(const char* msg, ...);
-		void postError(FbStatusVector* status, const Firebird::Exception& ex);
+		void logConflict(const char* msg, ...);
 	};
 }
 
