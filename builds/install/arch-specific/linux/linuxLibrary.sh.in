@@ -139,8 +139,7 @@ installSystemdCtrlFiles() {
 			exit 1
 		fi
 
-		editFile "@FB_MISCDIR@/firebird.service" ExecStart "ExecStart=${fb_install_prefix}/bin/fbguard -pidfile $PidDir/${fb_startup_name}.pid -daemon -forever"
-		editFile "@FB_MISCDIR@/firebird.service" PIDFile "PIDFile=$PidDir/${fb_startup_name}.pid"
+		editFile "@FB_MISCDIR@/firebird.service" ExecStart "ExecStart=${fb_install_prefix}/bin/fbguard -daemon -forever"
 		cp @FB_MISCDIR@/firebird.service "${SYSTEMD_DIR}/${fb_startup_name}.service"
 
 		mkdir -p ${PidDir}
@@ -389,14 +388,6 @@ EOF
 		echo "the most appropriate startup script in @FB_MISCDIR@"
 		echo "and manually register it in your OS."
 	fi
-
-    # Create directory to store pidfile
-	if [ ! -d $PidDir ] 
-	then
-		[ -e $PidDir ] && rm -rf $PidDir
-		mkdir $PidDir
-	fi
-    chown $RunUser:$RunGroup $PidDir
 }
 
 
