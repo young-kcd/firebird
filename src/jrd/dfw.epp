@@ -5902,23 +5902,34 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 									desc.makeText(len, tfb->tfb_desc.getCharSet(), ptr);
 								}
 
+								impure_value tempValue;
+								MoveBuffer tempBuffer;
+
 								if (!tfb->tfb_desc.isBlob() && !DSC_EQUIV(result, &tfb->tfb_desc, false))
 								{
-									impure_value tempValue;
 									tempValue.vlu_desc = tfb->tfb_desc;
 
-									MoveBuffer buffer2;
-
 									if (tfb->tfb_desc.isText())
-										tempValue.vlu_desc.dsc_address = buffer2.getBuffer(tfb->tfb_desc.dsc_length);
+										tempValue.vlu_desc.dsc_address = tempBuffer.getBuffer(tfb->tfb_desc.dsc_length);
 									else
 										tempValue.vlu_desc.dsc_address = (UCHAR*) &tempValue.vlu_misc;
 
-									MOV_move(tdbb, &desc, &tempValue.vlu_desc);
-									EVL_make_value(tdbb, &tempValue.vlu_desc, &tfb->tfb_default, relation->rel_pool);
+									try
+									{
+										MOV_move(tdbb, &desc, &tempValue.vlu_desc);
+										desc = tempValue.vlu_desc;
+									}
+									catch (const status_exception&)
+									{
+										if (!tdbb->getAttachment()->isGbak())
+											throw;
+
+										// If we're restoring a database, ignore the error and use the original desc.
+										fb_utils::init_status(tdbb->tdbb_status_vector);
+									}
 								}
-								else
-									EVL_make_value(tdbb, &desc, &tfb->tfb_default, relation->rel_pool);
+
+								EVL_make_value(tdbb, &desc, &tfb->tfb_default, relation->rel_pool);
 							}
 						}
 						catch (const Exception&)
