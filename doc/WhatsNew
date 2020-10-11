@@ -2,6 +2,11 @@
   * v3.0.7
   **************************
 
+    * Improvement CORE-6413
+        Remove PIDFile/-pidfile option from Super(Server/Classic) systemd unit
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Improvement CORE-6362
         Better diagnostic for the 'Missing security context' error
       Contributor(s):
@@ -11,6 +16,11 @@
         Detach server from the security database when missing plugin data structures are causing an error
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-6411
+        FB crashes attempting to create a table with >5460 fields
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-6396
         Unknown tag (0) in isc_svc_query() results
