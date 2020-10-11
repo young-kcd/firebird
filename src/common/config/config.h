@@ -143,6 +143,7 @@ public:
 		KEY_WIRE_COMPRESSION,
 		KEY_ENCRYPT_SECURITY_DATABASE,
 		KEY_CLEAR_GTT_RETAINING,
+		KEY_LEGACY_DB_FILE_ID,
 		MAX_CONFIG_KEY		// keep it last
 	};
 
@@ -353,6 +354,8 @@ public:
 	bool getCryptSecurityDatabase() const;
 
 	bool getClearGTTAtRetaining() const;
+
+	static bool getLegacyDatabaseFileId();
 };
 
 // Implementation of interface to access master configuration file

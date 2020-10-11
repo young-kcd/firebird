@@ -197,7 +197,8 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_BOOLEAN,		"IPv6V6Only",				(ConfigValue) false},
 	{TYPE_BOOLEAN,		"WireCompression",			(ConfigValue) false},
 	{TYPE_BOOLEAN,		"AllowEncryptedSecurityDatabase", (ConfigValue) false},
-	{TYPE_BOOLEAN,		"ClearGTTAtRetaining",		(ConfigValue) true}
+	{TYPE_BOOLEAN,		"ClearGTTAtRetaining",		(ConfigValue) true},
+	{TYPE_BOOLEAN,		"LegacyDatabaseFileId",		(ConfigValue) true}
 };
 
 /******************************************************************************
@@ -823,4 +824,9 @@ bool Config::getCryptSecurityDatabase() const
 bool Config::getClearGTTAtRetaining() const
 {
 	return get<bool>(KEY_CLEAR_GTT_RETAINING);
+}
+
+bool Config::getLegacyDatabaseFileId()
+{
+	return (bool) getDefaultConfig()->values[KEY_LEGACY_DB_FILE_ID];
 }

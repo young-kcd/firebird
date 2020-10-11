@@ -29,12 +29,13 @@
 
 #include "../common/classes/array.h"
 #include "../common/classes/init.h"
+#include "../common/config/config.h"
 #include "../common/gdsassert.h"
 #include "../common/os/guid.h"
 #include "../common/os/os_utils.h"
-#include "../jrd/constants.h"
 #include "../common/os/path_utils.h"
 #include "../common/isc_proto.h"
+#include "../jrd/constants.h"
 #include "gen/iberror.h"
 
 #include <direct.h>
@@ -411,7 +412,7 @@ void getUniqueFileId(HANDLE fd, UCharBuffer& id)
 	// and extract the volume GUID (for local drives) or its share name
 	// (for remote drives) as unique volume ID.
 
-	if (fnGetFinalPathNameByHandle)
+	if (fnGetFinalPathNameByHandle && !Config::getLegacyDatabaseFileId())
 	{
 		HalfStaticArray<char, MAX_PATH> pathbuf;
 		DWORD len = (DWORD) pathbuf.getCapacity();
@@ -522,7 +523,7 @@ void getUniqueFileId(HANDLE fd, UCharBuffer& id)
 			system_call_failed::raise("GetFinalPathNameByHandle");
 	}
 
-	if (fnGetFileInformationByHandleEx)
+	if (fnGetFileInformationByHandleEx && !Config::getLegacyDatabaseFileId())
 	{
 		// This function returns the volume serial number and 128-bit file ID.
 		// We use the VSN only if we failed to get the other volume ID above.
