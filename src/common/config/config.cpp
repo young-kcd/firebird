@@ -144,96 +144,96 @@ const char*	GCPolicyCombined	= "combined";
 
 Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 {
-	{TYPE_INTEGER,		"TempBlockSize",			1048576},	// bytes
-	{TYPE_INTEGER,		"TempCacheLimit",			-1},		// bytes
-	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	false},
-	{TYPE_INTEGER,		"GuardianOption",			1},
-	{TYPE_INTEGER,		"CpuAffinityMask",			0},
-	{TYPE_INTEGER,		"TcpRemoteBufferSize",		8192},		// bytes
-	{TYPE_BOOLEAN,		"TcpNoNagle",				true},
-	{TYPE_BOOLEAN,		"TcpLoopbackFastPath",      true},
-	{TYPE_INTEGER,		"DefaultDbCachePages",		-1},		// pages
-	{TYPE_INTEGER,		"ConnectionTimeout",		180},		// seconds
-	{TYPE_INTEGER,		"DummyPacketInterval",		0},			// seconds
-	{TYPE_STRING,		"DefaultTimeZone",			NULL},
-	{TYPE_INTEGER,		"LockMemSize",				1048576},	// bytes
-	{TYPE_INTEGER,		"LockHashSlots",			8191},		// slots
-	{TYPE_INTEGER,		"LockAcquireSpins",			0},
-	{TYPE_INTEGER,		"EventMemSize",				65536},		// bytes
-	{TYPE_INTEGER,		"DeadlockTimeout",			10},		// seconds
-	{TYPE_STRING,		"RemoteServiceName",		FB_SERVICE_NAME},
-	{TYPE_INTEGER,		"RemoteServicePort",		0},
-	{TYPE_STRING,		"RemotePipeName",			FB_PIPE_NAME},
-	{TYPE_STRING,		"IpcName",					FB_IPC_NAME},
+	{TYPE_INTEGER,		"TempBlockSize",			ConfigValue(1048576)},	// bytes
+	{TYPE_INTEGER,		"TempCacheLimit",			ConfigValue(-1)},		// bytes
+	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	ConfigValue(false)},
+	{TYPE_INTEGER,		"GuardianOption",			ConfigValue(1)},
+	{TYPE_INTEGER,		"CpuAffinityMask",			ConfigValue(0)},
+	{TYPE_INTEGER,		"TcpRemoteBufferSize",		ConfigValue(8192)},		// bytes
+	{TYPE_BOOLEAN,		"TcpNoNagle",				ConfigValue(true)},
+	{TYPE_BOOLEAN,		"TcpLoopbackFastPath",      ConfigValue(true)},
+	{TYPE_INTEGER,		"DefaultDbCachePages",		ConfigValue(-1)},		// pages
+	{TYPE_INTEGER,		"ConnectionTimeout",		ConfigValue(180)},		// seconds
+	{TYPE_INTEGER,		"DummyPacketInterval",		ConfigValue(0)},		// seconds
+	{TYPE_STRING,		"DefaultTimeZone",			ConfigValue(NULL)},
+	{TYPE_INTEGER,		"LockMemSize",				ConfigValue(1048576)},	// bytes
+	{TYPE_INTEGER,		"LockHashSlots",			ConfigValue(8191)},		// slots
+	{TYPE_INTEGER,		"LockAcquireSpins",			ConfigValue(0)},
+	{TYPE_INTEGER,		"EventMemSize",				ConfigValue(65536)},	// bytes
+	{TYPE_INTEGER,		"DeadlockTimeout",			ConfigValue(10)},		// seconds
+	{TYPE_STRING,		"RemoteServiceName",		ConfigValue(FB_SERVICE_NAME)},
+	{TYPE_INTEGER,		"RemoteServicePort",		ConfigValue(0)},
+	{TYPE_STRING,		"RemotePipeName",			ConfigValue(FB_PIPE_NAME)},
+	{TYPE_STRING,		"IpcName",					ConfigValue(FB_IPC_NAME)},
 #ifdef WIN_NT
-	{TYPE_INTEGER,		"MaxUnflushedWrites",		100},
-	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	5},
+	{TYPE_INTEGER,		"MaxUnflushedWrites",		ConfigValue(100)},
+	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	ConfigValue(5)},
 #else
-	{TYPE_INTEGER,		"MaxUnflushedWrites",		-1},
-	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	-1},
+	{TYPE_INTEGER,		"MaxUnflushedWrites",		ConfigValue(-1)},
+	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	ConfigValue(-1)},
 #endif
-	{TYPE_INTEGER,		"ProcessPriorityLevel",		0},
-	{TYPE_INTEGER,		"RemoteAuxPort",			0},
-	{TYPE_STRING,		"RemoteBindAddress",		0},
-	{TYPE_STRING,		"ExternalFileAccess",		"None"},	// location(s) of external files for tables
-	{TYPE_STRING,		"DatabaseAccess",			"Full"},	// location(s) of databases
-	{TYPE_STRING,		"UdfAccess",				"None"},	// location(s) of UDFs
-	{TYPE_STRING,		"TempDirectories",			0},
+	{TYPE_INTEGER,		"ProcessPriorityLevel",		ConfigValue(0)},
+	{TYPE_INTEGER,		"RemoteAuxPort",			ConfigValue(0)},
+	{TYPE_STRING,		"RemoteBindAddress",		ConfigValue(0)},
+	{TYPE_STRING,		"ExternalFileAccess",		ConfigValue("None")},	// location(s) of external files for tables
+	{TYPE_STRING,		"DatabaseAccess",			ConfigValue("Full")},	// location(s) of databases
+	{TYPE_STRING,		"UdfAccess",				ConfigValue("None")},	// location(s) of UDFs
+	{TYPE_STRING,		"TempDirectories",			ConfigValue(0)},
 #ifdef DEV_BUILD
- 	{TYPE_BOOLEAN,		"BugcheckAbort",			true},	// whether to abort() engine when internal error is found
+ 	{TYPE_BOOLEAN,		"BugcheckAbort",			ConfigValue(true)},		// whether to abort() engine when internal error is found
 #else
- 	{TYPE_BOOLEAN,		"BugcheckAbort",			false},	// whether to abort() engine when internal error is found
+ 	{TYPE_BOOLEAN,		"BugcheckAbort",			ConfigValue(false)},	// whether to abort() engine when internal error is found
 #endif
-	{TYPE_INTEGER,		"TraceDSQL",				0},		// bitmask
-	{TYPE_BOOLEAN,		"LegacyHash",				true},	// let use old passwd hash verification
-	{TYPE_STRING,		"GCPolicy",					NULL},	// garbage collection policy
-	{TYPE_BOOLEAN,		"Redirection",				false},
-	{TYPE_INTEGER,		"DatabaseGrowthIncrement",	128 * 1048576},	// bytes
-	{TYPE_INTEGER,		"FileSystemCacheThreshold",	65536},	// page buffers
-	{TYPE_BOOLEAN,		"RelaxedAliasChecking",		false},	// if true relax strict alias checking rules in DSQL a bit
-	{TYPE_STRING,		"AuditTraceConfigFile",		""},	// location of audit trace configuration file
-	{TYPE_INTEGER,		"MaxUserTraceLogSize",		10},	// maximum size of user session trace log
-	{TYPE_INTEGER,		"FileSystemCacheSize",		0},		// percent
-	{TYPE_STRING,		"Providers",				"Remote, " CURRENT_ENGINE ", Loopback"},
-	{TYPE_STRING,		"AuthServer",				"Srp256"},
+	{TYPE_INTEGER,		"TraceDSQL",				ConfigValue(0)},		// bitmask
+	{TYPE_BOOLEAN,		"LegacyHash",				ConfigValue(true)},		// let use old passwd hash verification
+	{TYPE_STRING,		"GCPolicy",					ConfigValue(NULL)},		// garbage collection policy
+	{TYPE_BOOLEAN,		"Redirection",				ConfigValue(false)},
+	{TYPE_INTEGER,		"DatabaseGrowthIncrement",	ConfigValue(128 * 1048576)},	// bytes
+	{TYPE_INTEGER,		"FileSystemCacheThreshold",	ConfigValue(65536)},	// page buffers
+	{TYPE_BOOLEAN,		"RelaxedAliasChecking",		ConfigValue(false)},	// if true relax strict alias checking rules in DSQL a bit
+	{TYPE_STRING,		"AuditTraceConfigFile",		ConfigValue("")},		// location of audit trace configuration file
+	{TYPE_INTEGER,		"MaxUserTraceLogSize",		ConfigValue(10)},		// maximum size of user session trace log
+	{TYPE_INTEGER,		"FileSystemCacheSize",		ConfigValue(0)},		// percent
+	{TYPE_STRING,		"Providers",				ConfigValue("Remote, " CURRENT_ENGINE ", Loopback")},
+	{TYPE_STRING,		"AuthServer",				ConfigValue("Srp256")},
 #ifdef WIN_NT
-	{TYPE_STRING,		"AuthClient",				"Srp256, Srp, Win_Sspi, Legacy_Auth"},
+	{TYPE_STRING,		"AuthClient",				ConfigValue("Srp256, Srp, Win_Sspi, Legacy_Auth")},
 #else
-	{TYPE_STRING,		"AuthClient",				"Srp256, Srp, Legacy_Auth"},
+	{TYPE_STRING,		"AuthClient",				ConfigValue("Srp256, Srp, Legacy_Auth")},
 #endif
-	{TYPE_STRING,		"UserManager",				"Srp"},
-	{TYPE_STRING,		"TracePlugin",				"fbtrace"},
-	{TYPE_STRING,		"SecurityDatabase",			NULL},	// sec/db alias - rely on ConfigManager::getDefaultSecurityDb()
-	{TYPE_STRING,		"ServerMode",				NULL},	// actual value differs in boot/regular cases and set at setupDefaultConfig()
-	{TYPE_STRING,		"WireCrypt",				NULL},
-	{TYPE_STRING,		"WireCryptPlugin",			"ChaCha, Arc4"},
-	{TYPE_STRING,		"KeyHolderPlugin",			""},
-	{TYPE_BOOLEAN,		"RemoteAccess",				true},
-	{TYPE_BOOLEAN,		"IPv6V6Only",				false},
-	{TYPE_BOOLEAN,		"WireCompression",			false},
-	{TYPE_INTEGER,		"MaxIdentifierByteLength",	-1},
-	{TYPE_INTEGER,		"MaxIdentifierCharLength",	-1},
-	{TYPE_BOOLEAN,		"AllowEncryptedSecurityDatabase", false},
-	{TYPE_INTEGER,		"StatementTimeout",			0},
-	{TYPE_INTEGER,		"ConnectionIdleTimeout",	0},
-	{TYPE_INTEGER,		"ClientBatchBuffer",		(128 * 1024)},
+	{TYPE_STRING,		"UserManager",				ConfigValue("Srp")},
+	{TYPE_STRING,		"TracePlugin",				ConfigValue("fbtrace")},
+	{TYPE_STRING,		"SecurityDatabase",			ConfigValue(NULL)},		// sec/db alias - rely on ConfigManager::getDefaultSecurityDb()
+	{TYPE_STRING,		"ServerMode",				ConfigValue(NULL)},		// actual value differs in boot/regular cases and set at setupDefaultConfig()
+	{TYPE_STRING,		"WireCrypt",				ConfigValue(NULL)},
+	{TYPE_STRING,		"WireCryptPlugin",			ConfigValue("ChaCha, Arc4")},
+	{TYPE_STRING,		"KeyHolderPlugin",			ConfigValue("")},
+	{TYPE_BOOLEAN,		"RemoteAccess",				ConfigValue(true)},
+	{TYPE_BOOLEAN,		"IPv6V6Only",				ConfigValue(false)},
+	{TYPE_BOOLEAN,		"WireCompression",			ConfigValue(false)},
+	{TYPE_INTEGER,		"MaxIdentifierByteLength",	ConfigValue(MAX_SQL_IDENTIFIER_LEN)},
+	{TYPE_INTEGER,		"MaxIdentifierCharLength",	ConfigValue(METADATA_IDENTIFIER_CHAR_LEN)},
+	{TYPE_BOOLEAN,		"AllowEncryptedSecurityDatabase", ConfigValue(false)},
+	{TYPE_INTEGER,		"StatementTimeout",			ConfigValue(0)},
+	{TYPE_INTEGER,		"ConnectionIdleTimeout",	ConfigValue(0)},
+	{TYPE_INTEGER,		"ClientBatchBuffer",		ConfigValue((128 * 1024))},
 #ifdef DEV_BUILD
-	{TYPE_STRING,		"OutputRedirectionFile", 	"-"},
+	{TYPE_STRING,		"OutputRedirectionFile", 	ConfigValue("-")},
 #else
 #ifdef WIN_NT
-	{TYPE_STRING,		"OutputRedirectionFile", 	"nul"},
+	{TYPE_STRING,		"OutputRedirectionFile", 	ConfigValue("nul")},
 #else
-	{TYPE_STRING,		"OutputRedirectionFile", 	"/dev/null"},
+	{TYPE_STRING,		"OutputRedirectionFile", 	ConfigValue("/dev/null")},
 #endif
 #endif
-	{TYPE_INTEGER,		"ExtConnPoolSize",			0},
-	{TYPE_INTEGER,		"ExtConnPoolLifeTime",		7200},
-	{TYPE_INTEGER,		"SnapshotsMemSize",			65536},		// bytes
-	{TYPE_INTEGER,		"TipCacheBlockSize",		4194304},	// bytes
-	{TYPE_BOOLEAN,		"ReadConsistency",			true},
-	{TYPE_BOOLEAN,		"ClearGTTAtRetaining",		false},
-	{TYPE_STRING,		"DataTypeCompatibility",	NULL},
-	{TYPE_BOOLEAN,		"UseFileSystemCache",		true}
+	{TYPE_INTEGER,		"ExtConnPoolSize",			ConfigValue(0)},
+	{TYPE_INTEGER,		"ExtConnPoolLifeTime",		ConfigValue(7200)},
+	{TYPE_INTEGER,		"SnapshotsMemSize",			ConfigValue(65536)},	// bytes
+	{TYPE_INTEGER,		"TipCacheBlockSize",		ConfigValue(4194304)},	// bytes
+	{TYPE_BOOLEAN,		"ReadConsistency",			ConfigValue(true)},
+	{TYPE_BOOLEAN,		"ClearGTTAtRetaining",		ConfigValue(false)},
+	{TYPE_STRING,		"DataTypeCompatibility",	ConfigValue(NULL)},
+	{TYPE_BOOLEAN,		"UseFileSystemCache",		ConfigValue(true)}
 };
 
 /******************************************************************************
@@ -400,7 +400,6 @@ void Config::setupDefaultConfig()
 	{
 		pDefault->strVal = (serverMode == MODE_SUPER) ? GCPolicyCombined : GCPolicyCooperative;
 	}
-
 
 	//pDefault = &entries[KEY_SECURITY_DATABASE].default_value;
 
@@ -614,7 +613,7 @@ bool Config::valueAsString(ConfigValue val, ConfigType type, string& str)
 
 	case Config::TYPE_STRING:
 	{
-		if (val == 0)
+		if (val.strVal == NULL)
 			return false;
 
 		str = val.strVal;

@@ -91,10 +91,11 @@ public:
 	struct ConfigValue
 	{
 		ConfigValue() : intVal(0) {};
-		ConfigValue(const char* val) : strVal(val) {};
-		ConfigValue(bool val) : boolVal(val) {};
-		ConfigValue(SINT64 val) : intVal(val) {};
-		ConfigValue(int val) : intVal(val) {};
+		explicit ConfigValue(const char* val) : strVal(val) {};
+		explicit ConfigValue(bool val) : boolVal(val) {};
+		explicit ConfigValue(SINT64 val) : intVal(val) {};
+		explicit ConfigValue(unsigned val) : intVal(val) {};
+		explicit ConfigValue(int val) : intVal(val) {};
 
 		union 
 		{
