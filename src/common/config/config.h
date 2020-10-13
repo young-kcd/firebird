@@ -87,7 +87,33 @@ const char* const CONFIG_FILE = "firebird.conf";
 class Config : public RefCounted, public GlobalStorage
 {
 public:
-	typedef IPTR ConfigValue;
+	//typedef IPTR ConfigValue;
+	struct ConfigValue
+	{
+		ConfigValue() : intVal(0) {};
+		ConfigValue(const char* val) : strVal(val) {};
+		ConfigValue(bool val) : boolVal(val) {};
+		ConfigValue(SINT64 val) : intVal(val) {};
+		ConfigValue(int val) : intVal(val) {};
+
+		union 
+		{
+			const char* strVal;
+			bool boolVal;
+			SINT64 intVal;
+		};
+
+		// simple bitwise comparison
+		bool operator== (const ConfigValue& other) const
+		{
+			return this->intVal == other.intVal;
+		}
+
+		bool operator!= (const ConfigValue& other) const
+		{
+			return !(*this == other);
+		}
+	};
 
 	enum ConfigKey
 	{
@@ -159,6 +185,7 @@ public:
 		KEY_READ_CONSISTENCY,
 		KEY_CLEAR_GTT_RETAINING,
 		KEY_DATA_TYPE_COMPATIBILITY,
+		KEY_USE_FILESYSTEM_CACHE,
 		MAX_CONFIG_KEY		// keep it last
 	};
 
@@ -182,21 +209,67 @@ private:
 	};
 
 	void loadValues(const ConfigFile& file);
+	void setupDefaultConfig();
+	void checkValues();
 
-	template <typename T> T get(Config::ConfigKey key) const
+	// helper check-value functions
+	void checkIntForLoBound(ConfigKey key, SINT64 loBound, bool setDefault);
+	void checkIntForHiBound(ConfigKey key, SINT64 hiBound, bool setDefault);
+
+	const char* getStr(ConfigKey key, bool* pPresent = nullptr) const
 	{
-		return (T) values[key];
+		if (pPresent)
+			*pPresent = testKey(key);
+
+		return values[key].strVal;
 	}
 
-	static const ConfigEntry entries[MAX_CONFIG_KEY];
+	bool getBool(ConfigKey key, bool* pPresent = nullptr) const
+	{
+		if (pPresent)
+			*pPresent = testKey(key);
+
+		return values[key].boolVal;
+	}
+
+	SINT64 getInt(ConfigKey key, bool* pPresent = nullptr) const
+	{
+		if (pPresent)
+			*pPresent = testKey(key);
+
+		return values[key].intVal;
+	}
+
+	static bool valueAsString(ConfigValue val, ConfigType type, string& str);
+
+	static ConfigEntry entries[MAX_CONFIG_KEY];
 
 	ConfigValue values[MAX_CONFIG_KEY];
+
+	// One bit per key: bit is set if corresponding key value was set in config
+	ULONG bits[MAX_CONFIG_KEY / BITS_PER_LONG + 1];
+
+	// test if given key value was set in config
+	bool testKey(unsigned int key) const
+	{
+		return bits[key / BITS_PER_LONG] & (1ul << key % BITS_PER_LONG);
+	}
+
+	// set bit of given key that was set in config
+	void setKey(unsigned int key)
+	{
+		bits[key / BITS_PER_LONG] |= (1ul << key % BITS_PER_LONG);
+	}
+
 	mutable PathName notifyDatabase;
+
+	// set in default config only
+	int serverMode;
 
 public:
 	explicit Config(const ConfigFile& file);				// use to build default config
 	Config(const ConfigFile& file, const Config& base);		// use to build db-specific config
-	Config(const ConfigFile& file, const Config& base, const PathName& notify);	// use to build db-specific config with notifucation
+	Config(const ConfigFile& file, const Config& base, const PathName& notify);	// use to build db-specific config with notification
 	~Config();
 
 	// Call it when database with given config is created
@@ -228,6 +301,21 @@ public:
 	const char* getString(unsigned int key) const;
 	bool getBoolean(unsigned int key) const;
 
+	// Number of known keys
+	static unsigned int getKeyCount() { return MAX_CONFIG_KEY; };
+	static const char* getKeyName(unsigned int key) 
+	{
+		if (key >= MAX_CONFIG_KEY)
+			return nullptr;
+
+		return entries[key].key;
+	}
+	// false if value is null or key is not exists
+	bool getValue(unsigned int key, string& str) const;
+	static bool getDefaultValue(unsigned int key, string& str);
+	// return true if value is set at some level
+	bool getIsSet(unsigned int key) const { return testKey(key); }
+
 	// Static functions apply to instance-wide values,
 	// non-static may be specified per database.
 
@@ -250,7 +338,7 @@ public:
 	static int getGuardianOption();
 
 	// CPU affinity mask
-	static int getCpuAffinityMask();
+	static FB_UINT64 getCpuAffinityMask();
 
 	// XDR buffer size
 	static int getTcpRemoteBufferSize();
@@ -396,6 +484,8 @@ public:
 	bool getClearGTTAtRetaining() const;
 
 	const char* getDataTypeCompatibility() const;
+
+	bool getUseFileSystemCache(bool* pPresent = nullptr) const;
 };
 
 // Implementation of interface to access master configuration file

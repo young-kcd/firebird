@@ -79,6 +79,7 @@
     <ClCompile Include="..\..\..\src\jrd\extds\IscDS.cpp" />
     <ClCompile Include="..\..\..\src\jrd\extds\ValidatePassword.cpp" />
     <ClCompile Include="..\..\..\src\jrd\ExtEngineManager.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\FBConfigTable.cpp" />
     <ClCompile Include="..\..\..\src\jrd\filters.cpp" />
     <ClCompile Include="..\..\..\src\jrd\flu.cpp" />
     <ClCompile Include="..\..\..\src\jrd\GarbageCollector.cpp" />
@@ -248,6 +249,7 @@
     <ClInclude Include="..\..\..\src\jrd\extds\ValidatePassword.h" />
     <ClInclude Include="..\..\..\src\jrd\ExtEngineManager.h" />
     <ClInclude Include="..\..\..\src\jrd\ext_proto.h" />
+    <ClInclude Include="..\..\..\src\jrd\FBConfigTable.h" />
     <ClInclude Include="..\..\..\src\jrd\fields.h" />
     <ClInclude Include="..\..\..\src\jrd\filte_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\flags.h" />

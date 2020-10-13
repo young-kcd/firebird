@@ -142,97 +142,98 @@ const char*	GCPolicyBackground	= "background";
 const char*	GCPolicyCombined	= "combined";
 
 
-const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
+Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 {
-	{TYPE_INTEGER,		"TempBlockSize",			(ConfigValue) 1048576},		// bytes
-	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) -1},			// bytes
-	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	(ConfigValue) false},
-	{TYPE_INTEGER,		"GuardianOption",			(ConfigValue) 1},
-	{TYPE_INTEGER,		"CpuAffinityMask",			(ConfigValue) 0},
-	{TYPE_INTEGER,		"TcpRemoteBufferSize",		(ConfigValue) 8192},		// bytes
-	{TYPE_BOOLEAN,		"TcpNoNagle",				(ConfigValue) true},
-	{TYPE_BOOLEAN,		"TcpLoopbackFastPath",      (ConfigValue) true},
-	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) -1},			// pages
-	{TYPE_INTEGER,		"ConnectionTimeout",		(ConfigValue) 180},			// seconds
-	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 0},			// seconds
-	{TYPE_STRING,		"DefaultTimeZone",			(ConfigValue) ""},
-	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 1048576},		// bytes
-	{TYPE_INTEGER,		"LockHashSlots",			(ConfigValue) 8191},		// slots
-	{TYPE_INTEGER,		"LockAcquireSpins",			(ConfigValue) 0},
-	{TYPE_INTEGER,		"EventMemSize",				(ConfigValue) 65536},		// bytes
-	{TYPE_INTEGER,		"DeadlockTimeout",			(ConfigValue) 10},			// seconds
-	{TYPE_STRING,		"RemoteServiceName",		(ConfigValue) FB_SERVICE_NAME},
-	{TYPE_INTEGER,		"RemoteServicePort",		(ConfigValue) 0},
-	{TYPE_STRING,		"RemotePipeName",			(ConfigValue) FB_PIPE_NAME},
-	{TYPE_STRING,		"IpcName",					(ConfigValue) FB_IPC_NAME},
+	{TYPE_INTEGER,		"TempBlockSize",			1048576},	// bytes
+	{TYPE_INTEGER,		"TempCacheLimit",			-1},		// bytes
+	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	false},
+	{TYPE_INTEGER,		"GuardianOption",			1},
+	{TYPE_INTEGER,		"CpuAffinityMask",			0},
+	{TYPE_INTEGER,		"TcpRemoteBufferSize",		8192},		// bytes
+	{TYPE_BOOLEAN,		"TcpNoNagle",				true},
+	{TYPE_BOOLEAN,		"TcpLoopbackFastPath",      true},
+	{TYPE_INTEGER,		"DefaultDbCachePages",		-1},		// pages
+	{TYPE_INTEGER,		"ConnectionTimeout",		180},		// seconds
+	{TYPE_INTEGER,		"DummyPacketInterval",		0},			// seconds
+	{TYPE_STRING,		"DefaultTimeZone",			NULL},
+	{TYPE_INTEGER,		"LockMemSize",				1048576},	// bytes
+	{TYPE_INTEGER,		"LockHashSlots",			8191},		// slots
+	{TYPE_INTEGER,		"LockAcquireSpins",			0},
+	{TYPE_INTEGER,		"EventMemSize",				65536},		// bytes
+	{TYPE_INTEGER,		"DeadlockTimeout",			10},		// seconds
+	{TYPE_STRING,		"RemoteServiceName",		FB_SERVICE_NAME},
+	{TYPE_INTEGER,		"RemoteServicePort",		0},
+	{TYPE_STRING,		"RemotePipeName",			FB_PIPE_NAME},
+	{TYPE_STRING,		"IpcName",					FB_IPC_NAME},
 #ifdef WIN_NT
-	{TYPE_INTEGER,		"MaxUnflushedWrites",		(ConfigValue) 100},
-	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	(ConfigValue) 5},
+	{TYPE_INTEGER,		"MaxUnflushedWrites",		100},
+	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	5},
 #else
-	{TYPE_INTEGER,		"MaxUnflushedWrites",		(ConfigValue) -1},
-	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	(ConfigValue) -1},
+	{TYPE_INTEGER,		"MaxUnflushedWrites",		-1},
+	{TYPE_INTEGER,		"MaxUnflushedWriteTime",	-1},
 #endif
-	{TYPE_INTEGER,		"ProcessPriorityLevel",		(ConfigValue) 0},
-	{TYPE_INTEGER,		"RemoteAuxPort",			(ConfigValue) 0},
-	{TYPE_STRING,		"RemoteBindAddress",		(ConfigValue) 0},
-	{TYPE_STRING,		"ExternalFileAccess",		(ConfigValue) "None"},	// location(s) of external files for tables
-	{TYPE_STRING,		"DatabaseAccess",			(ConfigValue) "Full"},	// location(s) of databases
-	{TYPE_STRING,		"UdfAccess",				(ConfigValue) "None"},	// location(s) of UDFs
-	{TYPE_STRING,		"TempDirectories",			(ConfigValue) 0},
+	{TYPE_INTEGER,		"ProcessPriorityLevel",		0},
+	{TYPE_INTEGER,		"RemoteAuxPort",			0},
+	{TYPE_STRING,		"RemoteBindAddress",		0},
+	{TYPE_STRING,		"ExternalFileAccess",		"None"},	// location(s) of external files for tables
+	{TYPE_STRING,		"DatabaseAccess",			"Full"},	// location(s) of databases
+	{TYPE_STRING,		"UdfAccess",				"None"},	// location(s) of UDFs
+	{TYPE_STRING,		"TempDirectories",			0},
 #ifdef DEV_BUILD
- 	{TYPE_BOOLEAN,		"BugcheckAbort",			(ConfigValue) true},	// whether to abort() engine when internal error is found
+ 	{TYPE_BOOLEAN,		"BugcheckAbort",			true},	// whether to abort() engine when internal error is found
 #else
- 	{TYPE_BOOLEAN,		"BugcheckAbort",			(ConfigValue) false},	// whether to abort() engine when internal error is found
+ 	{TYPE_BOOLEAN,		"BugcheckAbort",			false},	// whether to abort() engine when internal error is found
 #endif
-	{TYPE_INTEGER,		"TraceDSQL",				(ConfigValue) 0},		// bitmask
-	{TYPE_BOOLEAN,		"LegacyHash",				(ConfigValue) true},	// let use old passwd hash verification
-	{TYPE_STRING,		"GCPolicy",					(ConfigValue) NULL},	// garbage collection policy
-	{TYPE_BOOLEAN,		"Redirection",				(ConfigValue) false},
-	{TYPE_INTEGER,		"DatabaseGrowthIncrement",	(ConfigValue) 128 * 1048576},	// bytes
-	{TYPE_INTEGER,		"FileSystemCacheThreshold",	(ConfigValue) 65536},	// page buffers
-	{TYPE_BOOLEAN,		"RelaxedAliasChecking",		(ConfigValue) false},	// if true relax strict alias checking rules in DSQL a bit
-	{TYPE_STRING,		"AuditTraceConfigFile",		(ConfigValue) ""},		// location of audit trace configuration file
-	{TYPE_INTEGER,		"MaxUserTraceLogSize",		(ConfigValue) 10},		// maximum size of user session trace log
-	{TYPE_INTEGER,		"FileSystemCacheSize",		(ConfigValue) 0},		// percent
-	{TYPE_STRING,		"Providers",				(ConfigValue) "Remote, " CURRENT_ENGINE ", Loopback"},
-	{TYPE_STRING,		"AuthServer",				(ConfigValue) "Srp256"},
+	{TYPE_INTEGER,		"TraceDSQL",				0},		// bitmask
+	{TYPE_BOOLEAN,		"LegacyHash",				true},	// let use old passwd hash verification
+	{TYPE_STRING,		"GCPolicy",					NULL},	// garbage collection policy
+	{TYPE_BOOLEAN,		"Redirection",				false},
+	{TYPE_INTEGER,		"DatabaseGrowthIncrement",	128 * 1048576},	// bytes
+	{TYPE_INTEGER,		"FileSystemCacheThreshold",	65536},	// page buffers
+	{TYPE_BOOLEAN,		"RelaxedAliasChecking",		false},	// if true relax strict alias checking rules in DSQL a bit
+	{TYPE_STRING,		"AuditTraceConfigFile",		""},	// location of audit trace configuration file
+	{TYPE_INTEGER,		"MaxUserTraceLogSize",		10},	// maximum size of user session trace log
+	{TYPE_INTEGER,		"FileSystemCacheSize",		0},		// percent
+	{TYPE_STRING,		"Providers",				"Remote, " CURRENT_ENGINE ", Loopback"},
+	{TYPE_STRING,		"AuthServer",				"Srp256"},
 #ifdef WIN_NT
-	{TYPE_STRING,		"AuthClient",				(ConfigValue) "Srp256, Srp, Win_Sspi, Legacy_Auth"},
+	{TYPE_STRING,		"AuthClient",				"Srp256, Srp, Win_Sspi, Legacy_Auth"},
 #else
-	{TYPE_STRING,		"AuthClient",				(ConfigValue) "Srp256, Srp, Legacy_Auth"},
+	{TYPE_STRING,		"AuthClient",				"Srp256, Srp, Legacy_Auth"},
 #endif
-	{TYPE_STRING,		"UserManager",				(ConfigValue) "Srp"},
-	{TYPE_STRING,		"TracePlugin",				(ConfigValue) "fbtrace"},
-	{TYPE_STRING,		"SecurityDatabase",			(ConfigValue) NULL},	// sec/db alias - rely on ConfigManager::getDefaultSecurityDb()
-	{TYPE_STRING,		"ServerMode",				(ConfigValue) ""},		// actual value differs in boot/regular cases
-	{TYPE_STRING,		"WireCrypt",				(ConfigValue) NULL},
-	{TYPE_STRING,		"WireCryptPlugin",			(ConfigValue) "ChaCha, Arc4"},
-	{TYPE_STRING,		"KeyHolderPlugin",			(ConfigValue) ""},
-	{TYPE_BOOLEAN,		"RemoteAccess",				(ConfigValue) true},
-	{TYPE_BOOLEAN,		"IPv6V6Only",				(ConfigValue) false},
-	{TYPE_BOOLEAN,		"WireCompression",			(ConfigValue) false},
-	{TYPE_INTEGER,		"MaxIdentifierByteLength",	(ConfigValue) -1},
-	{TYPE_INTEGER,		"MaxIdentifierCharLength",	(ConfigValue) -1},
-	{TYPE_BOOLEAN,		"AllowEncryptedSecurityDatabase", (ConfigValue) false},
-	{TYPE_INTEGER,		"StatementTimeout",			(ConfigValue) 0},
-	{TYPE_INTEGER,		"ConnectionIdleTimeout",	(ConfigValue) 0},
-	{TYPE_INTEGER,		"ClientBatchBuffer",		(ConfigValue) (128 * 1024)},
+	{TYPE_STRING,		"UserManager",				"Srp"},
+	{TYPE_STRING,		"TracePlugin",				"fbtrace"},
+	{TYPE_STRING,		"SecurityDatabase",			NULL},	// sec/db alias - rely on ConfigManager::getDefaultSecurityDb()
+	{TYPE_STRING,		"ServerMode",				NULL},	// actual value differs in boot/regular cases and set at setupDefaultConfig()
+	{TYPE_STRING,		"WireCrypt",				NULL},
+	{TYPE_STRING,		"WireCryptPlugin",			"ChaCha, Arc4"},
+	{TYPE_STRING,		"KeyHolderPlugin",			""},
+	{TYPE_BOOLEAN,		"RemoteAccess",				true},
+	{TYPE_BOOLEAN,		"IPv6V6Only",				false},
+	{TYPE_BOOLEAN,		"WireCompression",			false},
+	{TYPE_INTEGER,		"MaxIdentifierByteLength",	-1},
+	{TYPE_INTEGER,		"MaxIdentifierCharLength",	-1},
+	{TYPE_BOOLEAN,		"AllowEncryptedSecurityDatabase", false},
+	{TYPE_INTEGER,		"StatementTimeout",			0},
+	{TYPE_INTEGER,		"ConnectionIdleTimeout",	0},
+	{TYPE_INTEGER,		"ClientBatchBuffer",		(128 * 1024)},
 #ifdef DEV_BUILD
-	{TYPE_STRING,		"OutputRedirectionFile", 	(ConfigValue) "-"},
+	{TYPE_STRING,		"OutputRedirectionFile", 	"-"},
 #else
 #ifdef WIN_NT
-	{TYPE_STRING,		"OutputRedirectionFile", 	(ConfigValue) "nul"},
+	{TYPE_STRING,		"OutputRedirectionFile", 	"nul"},
 #else
-	{TYPE_STRING,		"OutputRedirectionFile", 	(ConfigValue) "/dev/null"},
+	{TYPE_STRING,		"OutputRedirectionFile", 	"/dev/null"},
 #endif
 #endif
-	{TYPE_INTEGER,		"ExtConnPoolSize",			(ConfigValue) 0},
-	{TYPE_INTEGER,		"ExtConnPoolLifeTime",		(ConfigValue) 7200},
-	{TYPE_INTEGER,		"SnapshotsMemSize",			(ConfigValue) 65536}, // bytes
-	{TYPE_INTEGER,		"TipCacheBlockSize",		(ConfigValue) 4194304}, // bytes
-	{TYPE_BOOLEAN,		"ReadConsistency",			(ConfigValue) true},
-	{TYPE_BOOLEAN,		"ClearGTTAtRetaining",		(ConfigValue) false},
-	{TYPE_STRING,		"DataTypeCompatibility",	(ConfigValue) NULL}
+	{TYPE_INTEGER,		"ExtConnPoolSize",			0},
+	{TYPE_INTEGER,		"ExtConnPoolLifeTime",		7200},
+	{TYPE_INTEGER,		"SnapshotsMemSize",			65536},		// bytes
+	{TYPE_INTEGER,		"TipCacheBlockSize",		4194304},	// bytes
+	{TYPE_BOOLEAN,		"ReadConsistency",			true},
+	{TYPE_BOOLEAN,		"ClearGTTAtRetaining",		false},
+	{TYPE_STRING,		"DataTypeCompatibility",	NULL},
+	{TYPE_BOOLEAN,		"UseFileSystemCache",		true}
 };
 
 /******************************************************************************
@@ -241,8 +242,13 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
  */
 
 Config::Config(const ConfigFile& file)
-	: notifyDatabase(*getDefaultMemoryPool())
+	: notifyDatabase(*getDefaultMemoryPool()), 
+	serverMode(-1)
 {
+	memset(bits, 0, sizeof(bits));
+
+	setupDefaultConfig();
+
 	// Array to save string temporarily
 	// Will be finally saved by loadValues() in the end of ctor
 	ObjectsArray<ConfigFile::String> tempStrings(getPool());
@@ -251,10 +257,10 @@ Config::Config(const ConfigFile& file)
 	for (unsigned int i = 0; i < MAX_CONFIG_KEY; i++)
 	{
 		values[i] = entries[i].default_value;
-		if (entries[i].data_type == TYPE_STRING && values[i])
+		if (entries[i].data_type == TYPE_STRING && values[i].strVal)
 		{
-			ConfigFile::String expand((const char*)values[i]);
-			if (file.macroParse(expand, NULL) && expand != (const char*) values[i])
+			ConfigFile::String expand(values[i].strVal);
+			if (file.macroParse(expand, NULL) && expand != values[i].strVal)
 			{
 				ConfigFile::String& saved(tempStrings.add());
 				saved = expand;
@@ -267,26 +273,36 @@ Config::Config(const ConfigFile& file)
 }
 
 Config::Config(const ConfigFile& file, const Config& base)
-	: notifyDatabase(*getDefaultMemoryPool())
+	: notifyDatabase(*getDefaultMemoryPool()), 
+	serverMode(-1)
 {
+	memset(bits, 0, sizeof(bits));
+
 	// Iterate through the known configuration entries
 
 	for (unsigned int i = 0; i < MAX_CONFIG_KEY; i++)
 	{
 		values[i] = base.values[i];
+		if (base.testKey(i))
+			setKey(i);
 	}
 
 	loadValues(file);
 }
 
 Config::Config(const ConfigFile& file, const Config& base, const PathName& notify)
-	: notifyDatabase(*getDefaultMemoryPool())
+	: notifyDatabase(*getDefaultMemoryPool()), 
+	serverMode(-1)
 {
+	memset(bits, 0, sizeof(bits));
+
 	// Iterate through the known configuration entries
 
 	for (unsigned int i = 0; i < MAX_CONFIG_KEY; i++)
 	{
 		values[i] = base.values[i];
+		if (base.testKey(i))
+			setKey(i);
 	}
 
 	loadValues(file);
@@ -338,17 +354,145 @@ void Config::loadValues(const ConfigFile& file)
 			//case TYPE_STRING_VECTOR:
 			//	break;
 			}
+
+			setKey(i);
 		}
 
 		if (entry.data_type == TYPE_STRING && values[i] != entry.default_value)
 		{
-			const char* src = (const char*) values[i];
+			const char* src = values[i].strVal;
 			char* dst = FB_NEW_POOL(getPool()) char[strlen(src) + 1];
 			strcpy(dst, src);
 			values[i] = (ConfigValue) dst;
 		}
 	}
+
+	checkValues();
 }
+
+static const char* txtServerModes[6] = 
+{
+	"Super", "ThreadedDedicated", 
+	"SuperClassic", "ThreadedShared", 
+	"Classic", "MultiProcess" 
+};
+
+void Config::setupDefaultConfig()
+{
+	const bool bootBuild = fb_utils::bootBuild();
+
+	ConfigValue* pDefault = &entries[KEY_SERVER_MODE].default_value;
+	serverMode = bootBuild ? MODE_CLASSIC : MODE_SUPER;
+	pDefault->strVal = txtServerModes[2 * serverMode];
+
+	pDefault = &entries[KEY_TEMP_CACHE_LIMIT].default_value;
+	if (pDefault->intVal < 0)
+		pDefault->intVal = (serverMode != MODE_SUPER) ? 8388608 : 67108864;	// bytes
+
+	entries[KEY_REMOTE_FILE_OPEN_ABILITY].default_value.boolVal = bootBuild;
+
+	pDefault = &entries[KEY_DEFAULT_DB_CACHE_PAGES].default_value;
+	if (pDefault->intVal < 0)
+		pDefault->intVal = (serverMode != MODE_SUPER) ? 256 : 2048;	// pages
+
+	pDefault = &entries[KEY_GC_POLICY].default_value;
+	if (!pDefault->strVal)
+	{
+		pDefault->strVal = (serverMode == MODE_SUPER) ? GCPolicyCombined : GCPolicyCooperative;
+	}
+
+
+	//pDefault = &entries[KEY_SECURITY_DATABASE].default_value;
+
+	//pDefault = &entries[KEY_WIRE_CRYPT].default_value;
+//	if (!*pDefault)
+//		*pDefault == (ConfigValue) (xxx == WC_CLIENT) ? WIRE_CRYPT_ENABLED : WIRE_CRYPT_REQUIRED;
+
+}
+
+void Config::checkIntForLoBound(ConfigKey key, SINT64 loBound, bool setDefault)
+{
+	fb_assert(entries[key].data_type == TYPE_INTEGER);
+	if (values[key].intVal < loBound)
+		values[key].intVal = setDefault ? entries[key].default_value.intVal : loBound;
+}
+
+void Config::checkIntForHiBound(ConfigKey key, SINT64 hiBound, bool setDefault)
+{
+	fb_assert(entries[key].data_type == TYPE_INTEGER);
+	if (values[key].intVal > hiBound)
+		values[key].intVal = setDefault ? entries[key].default_value.intVal : hiBound;
+}
+
+void Config::checkValues()
+{
+	checkIntForLoBound(KEY_TEMP_CACHE_LIMIT, 0, true);
+
+	checkIntForLoBound(KEY_TCP_REMOTE_BUFFER_SIZE, 1448, false);
+	checkIntForHiBound(KEY_TCP_REMOTE_BUFFER_SIZE, MAX_SSHORT, false);
+
+	checkIntForLoBound(KEY_DEFAULT_DB_CACHE_PAGES, 0, true);
+
+	checkIntForLoBound(KEY_LOCK_MEM_SIZE, 64 * 1024, false);
+
+	const char* strVal = values[KEY_GC_POLICY].strVal;
+	if (strVal)
+	{
+		NoCaseString gcPolicy(strVal);
+		if (gcPolicy != GCPolicyCooperative &&
+			gcPolicy != GCPolicyBackground &&
+			gcPolicy != GCPolicyCombined)
+		{
+			// user-provided value is invalid - fail to default
+			values[KEY_GC_POLICY] = entries[KEY_GC_POLICY].default_value;
+		}
+	}
+
+	strVal = values[KEY_WIRE_CRYPT].strVal;
+	if (strVal)
+	{
+		NoCaseString wireCrypt(strVal);
+		if (wireCrypt != "DISABLED" && wireCrypt != "ENABLED" && wireCrypt != "REQUIRED")
+		{
+			// user-provided value is invalid - fail to default
+			values[KEY_WIRE_CRYPT] = entries[KEY_WIRE_CRYPT].default_value;
+		}
+	}
+
+	strVal = values[KEY_SERVER_MODE].strVal;
+	if (strVal && !fb_utils::bootBuild())
+	{
+		bool found = false;
+		NoCaseString mode(strVal);
+		for (int x = 0; x < 6; ++x)
+		{
+			if (mode == txtServerModes[x])
+			{
+				serverMode = x / 2;
+				found = true;
+				break;
+			}
+		}
+
+		if (!found)
+			values[KEY_SERVER_MODE] = entries[KEY_SERVER_MODE].default_value;
+	}
+
+	checkIntForLoBound(KEY_FILESYSTEM_CACHE_THRESHOLD, 0, true);
+
+	checkIntForLoBound(KEY_MAX_IDENTIFIER_BYTE_LENGTH, 1, true);
+	checkIntForHiBound(KEY_MAX_IDENTIFIER_BYTE_LENGTH, MAX_SQL_IDENTIFIER_LEN, true);
+
+	checkIntForLoBound(KEY_MAX_IDENTIFIER_CHAR_LENGTH, 1, true);
+	checkIntForHiBound(KEY_MAX_IDENTIFIER_CHAR_LENGTH, METADATA_IDENTIFIER_CHAR_LEN, true);
+
+	checkIntForLoBound(KEY_SNAPSHOTS_MEM_SIZE, 1, true);
+	checkIntForHiBound(KEY_SNAPSHOTS_MEM_SIZE, MAX_ULONG, true);
+
+	checkIntForLoBound(KEY_TIP_CACHE_BLOCK_SIZE, 1, true);
+	checkIntForHiBound(KEY_TIP_CACHE_BLOCK_SIZE, MAX_ULONG, true);
+}
+
 
 Config::~Config()
 {
@@ -362,7 +506,7 @@ Config::~Config()
 		switch (entries[i].data_type)
 		{
 		case TYPE_STRING:
-			delete[] (char*) values[i];
+			delete[] values[i].strVal;
 			break;
 		//case TYPE_STRING_VECTOR:
 		//	break;
@@ -435,7 +579,7 @@ SINT64 Config::getInt(unsigned int key) const
 {
 	if (key >= MAX_CONFIG_KEY)
 		return 0;
-	return get<SINT64>(static_cast<ConfigKey>(key));
+	return getInt(static_cast<ConfigKey>(key));
 }
 
 const char* Config::getString(unsigned int key) const
@@ -450,330 +594,315 @@ const char* Config::getString(unsigned int key) const
 		return getSecurityDatabase();
 	}
 
-	return get<const char*>(static_cast<ConfigKey>(key));
+	return getStr(static_cast<ConfigKey>(key));
 }
 
 bool Config::getBoolean(unsigned int key) const
 {
 	if (key >= MAX_CONFIG_KEY)
 		return false;
-	return get<bool>(static_cast<ConfigKey>(key));
+	return getBool(static_cast<ConfigKey>(key));
+}
+
+bool Config::valueAsString(ConfigValue val, ConfigType type, string& str)
+{
+	switch (type)
+	{
+	case Config::TYPE_INTEGER:
+		str.printf("%" SQUADFORMAT, val.intVal);
+		break;
+
+	case Config::TYPE_STRING:
+	{
+		if (val == 0)
+			return false;
+
+		str = val.strVal;
+	}
+	break;
+
+	case Config::TYPE_BOOLEAN:
+		str = val.boolVal ? "true" : "false";
+		break;
+	}
+
+	return true;
+}
+
+bool Config::getValue(unsigned int key, string& str) const
+{
+	if (key >= MAX_CONFIG_KEY)
+		return false;
+
+	return valueAsString(values[key], entries[key].data_type, str);
+}
+
+bool Config::getDefaultValue(unsigned int key, string& str)
+{
+	if (key >= MAX_CONFIG_KEY)
+		return false;
+
+	return valueAsString(entries[key].default_value, entries[key].data_type, str);
 }
 
 
 int Config::getTempBlockSize()
 {
-	return (int) getDefaultConfig()->values[KEY_TEMP_BLOCK_SIZE];
+	return (int) getDefaultConfig()->values[KEY_TEMP_BLOCK_SIZE].intVal;
 }
 
 FB_UINT64 Config::getTempCacheLimit() const
 {
-	SINT64 v = get<SINT64>(KEY_TEMP_CACHE_LIMIT);
-	if (v < 0)
-	{
-		v = getServerMode() != MODE_SUPER ? 8388608 : 67108864;	// bytes
-	}
-	return v;
+	return  getInt(KEY_TEMP_CACHE_LIMIT);
 }
 
 bool Config::getRemoteFileOpenAbility()
 {
-	return fb_utils::bootBuild() ? true : ((bool) getDefaultConfig()->values[KEY_REMOTE_FILE_OPEN_ABILITY]);
+	return getDefaultConfig()->getBool(KEY_REMOTE_FILE_OPEN_ABILITY);
 }
 
 int Config::getGuardianOption()
 {
-	return (int) getDefaultConfig()->values[KEY_GUARDIAN_OPTION];
+	return getDefaultConfig()->getInt(KEY_GUARDIAN_OPTION);
 }
 
-int Config::getCpuAffinityMask()
+FB_UINT64 Config::getCpuAffinityMask()
 {
-	return (int) getDefaultConfig()->values[KEY_CPU_AFFINITY_MASK];
+	return getDefaultConfig()->getInt(KEY_CPU_AFFINITY_MASK);
 }
 
 int Config::getTcpRemoteBufferSize()
 {
-	int rc = (int) getDefaultConfig()->values[KEY_TCP_REMOTE_BUFFER_SIZE];
-	if (rc < 1448)
-		rc = 1448;
-	if (rc > MAX_SSHORT)
-		rc = MAX_SSHORT;
-	return rc;
+	return getDefaultConfig()->getInt(KEY_TCP_REMOTE_BUFFER_SIZE);
 }
 
 bool Config::getTcpNoNagle() const
 {
-	return get<bool>(KEY_TCP_NO_NAGLE);
+	return getBool(KEY_TCP_NO_NAGLE);
 }
 
 bool Config::getTcpLoopbackFastPath() const
 {
-	return get<bool>(KEY_TCP_LOOPBACK_FAST_PATH);
+	return getBool(KEY_TCP_LOOPBACK_FAST_PATH);
 }
 
 bool Config::getIPv6V6Only() const
 {
-	return get<bool>(KEY_IPV6_V6ONLY);
+	return getBool(KEY_IPV6_V6ONLY);
 }
 
 int Config::getDefaultDbCachePages() const
 {
-	int rc = get<int>(KEY_DEFAULT_DB_CACHE_PAGES);
-	if (rc < 0)
-	{
-		rc = getServerMode() != MODE_SUPER ? 256 : 2048;	// pages
-	}
-	return rc;
+	return getInt(KEY_DEFAULT_DB_CACHE_PAGES);
 }
 
 int Config::getConnectionTimeout() const
 {
-	return get<int>(KEY_CONNECTION_TIMEOUT);
+	return getInt(KEY_CONNECTION_TIMEOUT);
 }
 
 int Config::getDummyPacketInterval() const
 {
-	return get<int>(KEY_DUMMY_PACKET_INTERVAL);
+	return getInt(KEY_DUMMY_PACKET_INTERVAL);
 }
 
 const char* Config::getDefaultTimeZone()
 {
-	return getDefaultConfig()->get<const char*>(KEY_DEFAULT_TIME_ZONE);
+	return getDefaultConfig()->getStr(KEY_DEFAULT_TIME_ZONE);
 }
 
 int Config::getLockMemSize() const
 {
-	int size = get<int>(KEY_LOCK_MEM_SIZE);
-	if (size < 64 * 1024)
-		size = 64 * 1024;
-	return size;
+	return getInt(KEY_LOCK_MEM_SIZE);
 }
 
 int Config::getLockHashSlots() const
 {
-	return get<int>(KEY_LOCK_HASH_SLOTS);
+	return getInt(KEY_LOCK_HASH_SLOTS);
 }
 
 int Config::getLockAcquireSpins() const
 {
-	return get<int>(KEY_LOCK_ACQUIRE_SPINS);
+	return getInt(KEY_LOCK_ACQUIRE_SPINS);
 }
 
 int Config::getEventMemSize() const
 {
-	return get<int>(KEY_EVENT_MEM_SIZE);
+	return getInt(KEY_EVENT_MEM_SIZE);
 }
 
 int Config::getDeadlockTimeout() const
 {
-	return get<int>(KEY_DEADLOCK_TIMEOUT);
+	return getInt(KEY_DEADLOCK_TIMEOUT);
 }
 
 const char *Config::getRemoteServiceName() const
 {
-	return get<const char*>(KEY_REMOTE_SERVICE_NAME);
+	return getStr(KEY_REMOTE_SERVICE_NAME);
 }
 
 unsigned short Config::getRemoteServicePort() const
 {
-	return get<unsigned short>(KEY_REMOTE_SERVICE_PORT);
+	return getInt(KEY_REMOTE_SERVICE_PORT);
 }
 
 const char *Config::getRemotePipeName() const
 {
-	return get<const char*>(KEY_REMOTE_PIPE_NAME);
+	return getStr(KEY_REMOTE_PIPE_NAME);
 }
 
 const char *Config::getIpcName() const
 {
-	return get<const char*>(KEY_IPC_NAME);
+	return getStr(KEY_IPC_NAME);
 }
 
 int Config::getMaxUnflushedWrites() const
 {
-	return get<int>(KEY_MAX_UNFLUSHED_WRITES);
+	return getInt(KEY_MAX_UNFLUSHED_WRITES);
 }
 
 int Config::getMaxUnflushedWriteTime() const
 {
-	return get<int>(KEY_MAX_UNFLUSHED_WRITE_TIME);
+	return getInt(KEY_MAX_UNFLUSHED_WRITE_TIME);
 }
 
 int Config::getProcessPriorityLevel()
 {
-	return (int) getDefaultConfig()->values[KEY_PROCESS_PRIORITY_LEVEL];
+	return getDefaultConfig()->getInt(KEY_PROCESS_PRIORITY_LEVEL);
 }
 
 int Config::getRemoteAuxPort() const
 {
-	return get<int>(KEY_REMOTE_AUX_PORT);
+	return getInt(KEY_REMOTE_AUX_PORT);
 }
 
 const char *Config::getRemoteBindAddress()
 {
-	return (const char*) getDefaultConfig()->values[KEY_REMOTE_BIND_ADDRESS];
+	return getDefaultConfig()->getStr(KEY_REMOTE_BIND_ADDRESS);
 }
 
 const char *Config::getExternalFileAccess() const
 {
-	return get<const char*>(KEY_EXTERNAL_FILE_ACCESS);
+	return getStr(KEY_EXTERNAL_FILE_ACCESS);
 }
 
 const char *Config::getDatabaseAccess()
 {
-	return (const char*) getDefaultConfig()->values[KEY_DATABASE_ACCESS];
+	return getDefaultConfig()->getStr(KEY_DATABASE_ACCESS);
 }
 
 const char *Config::getUdfAccess()
 {
-	return (const char*) getDefaultConfig()->values[KEY_UDF_ACCESS];
+	return getDefaultConfig()->getStr(KEY_UDF_ACCESS);
 }
 
 const char *Config::getTempDirectories()
 {
-	return (const char*) getDefaultConfig()->values[KEY_TEMP_DIRECTORIES];
+	return getDefaultConfig()->getStr(KEY_TEMP_DIRECTORIES);
 }
 
 bool Config::getBugcheckAbort()
 {
-	return (bool) getDefaultConfig()->values[KEY_BUGCHECK_ABORT];
+	return getDefaultConfig()->getBool(KEY_BUGCHECK_ABORT);
 }
 
 int Config::getTraceDSQL()
 {
-	return (int) getDefaultConfig()->values[KEY_TRACE_DSQL];
+	return getDefaultConfig()->getInt(KEY_TRACE_DSQL);
 }
 
 bool Config::getLegacyHash()
 {
-	return (bool) getDefaultConfig()->values[KEY_LEGACY_HASH];
+	return getDefaultConfig()->getBool(KEY_LEGACY_HASH);
 }
 
 const char *Config::getGCPolicy() const
 {
-	const char* rc = get<const char*>(KEY_GC_POLICY);
-
-	if (rc)
-	{
-		if (strcmp(rc, GCPolicyCooperative) != 0 &&
-			strcmp(rc, GCPolicyBackground) != 0 &&
-			strcmp(rc, GCPolicyCombined) != 0)
-		{
-			// user-provided value is invalid - fail to default
-			rc = NULL;
-		}
-	}
-
-	if (! rc)
-	{
-		rc = getServerMode() == MODE_SUPER ? GCPolicyCombined : GCPolicyCooperative;
-	}
-
-	return rc;
+	return getStr(KEY_GC_POLICY);
 }
 
 bool Config::getRedirection()
 {
-	return (bool) getDefaultConfig()->values[KEY_REDIRECTION];
+	return getDefaultConfig()->getBool(KEY_REDIRECTION);
 }
 
 int Config::getDatabaseGrowthIncrement() const
 {
-	return get<int>(KEY_DATABASE_GROWTH_INCREMENT);
+	return getInt(KEY_DATABASE_GROWTH_INCREMENT);
 }
 
 int Config::getFileSystemCacheThreshold() const
 {
-	int rc = get<int>(KEY_FILESYSTEM_CACHE_THRESHOLD);
-	return rc < 0 ? 0 : rc;
+	return getInt(KEY_FILESYSTEM_CACHE_THRESHOLD);
 }
 
 bool Config::getRelaxedAliasChecking()
 {
-	return (bool) getDefaultConfig()->values[KEY_RELAXED_ALIAS_CHECKING];
+	return getDefaultConfig()->getBool(KEY_RELAXED_ALIAS_CHECKING);
 }
 
 FB_UINT64 Config::getFileSystemCacheSize()
 {
-	return (FB_UINT64)(SINT64) getDefaultConfig()->values[KEY_FILESYSTEM_CACHE_SIZE];
+	return (FB_UINT64) getDefaultConfig()->getInt(KEY_FILESYSTEM_CACHE_SIZE);
 }
 
 const char *Config::getAuditTraceConfigFile()
 {
-	return (const char*) getDefaultConfig()->values[KEY_TRACE_CONFIG];
+	return getDefaultConfig()->getStr(KEY_TRACE_CONFIG);
 }
 
 FB_UINT64 Config::getMaxUserTraceLogSize()
 {
-	return (FB_UINT64)(SINT64) getDefaultConfig()->values[KEY_MAX_TRACELOG_SIZE];
+	return (FB_UINT64) getDefaultConfig()->getInt(KEY_MAX_TRACELOG_SIZE);
 }
 
 int Config::getServerMode()
 {
-	static int rc = -1;
-	if (rc >= 0)
-		return rc;
-
-	const char* textMode = (const char*) (getDefaultConfig()->values[KEY_SERVER_MODE]);
-	const char* modes[6] =
-		{"Super", "ThreadedDedicated", "SuperClassic", "ThreadedShared", "Classic", "MultiProcess"};
-
-	for (int x = 0; x < 6; ++x)
-	{
-		if (fb_utils::stricmp(textMode, modes[x]) == 0)
-		{
-			rc = x / 2;
-			return rc;
-		}
-	}
-
-	// use default
-	rc = fb_utils::bootBuild() ? MODE_CLASSIC : MODE_SUPER;
-	return rc;
+	return getDefaultConfig()->serverMode;
 }
 
 ULONG Config::getSnapshotsMemSize() const
 {
-	SINT64 rc = get<SINT64>(KEY_SNAPSHOTS_MEM_SIZE);
-	if (rc <= 0 || rc > MAX_ULONG)
-	{
-		rc = 65536;
-	}
-	return rc;
+	return getInt(KEY_SNAPSHOTS_MEM_SIZE);
 }
 
 ULONG Config::getTipCacheBlockSize() const
 {
-	SINT64 rc = get<SINT64>(KEY_TIP_CACHE_BLOCK_SIZE);
-	if (rc <= 0 || rc > MAX_ULONG)
-	{
-		rc = 4194304;
-	}
-	return rc;
+	return getInt(KEY_TIP_CACHE_BLOCK_SIZE);
 }
 
 const char* Config::getPlugins(unsigned int type) const
 {
+	ConfigKey key;
 	switch (type)
 	{
 		case IPluginManager::TYPE_PROVIDER:
-			return (const char*) values[KEY_PLUG_PROVIDERS];
+			key = KEY_PLUG_PROVIDERS;
+			break;
 		case IPluginManager::TYPE_AUTH_SERVER:
-			return (const char*) values[KEY_PLUG_AUTH_SERVER];
+			key = KEY_PLUG_AUTH_SERVER;
+			break;
 		case IPluginManager::TYPE_AUTH_CLIENT:
-			return (const char*) values[KEY_PLUG_AUTH_CLIENT];
+			key = KEY_PLUG_AUTH_CLIENT;
+			break;
 		case IPluginManager::TYPE_AUTH_USER_MANAGEMENT:
-			return (const char*) values[KEY_PLUG_AUTH_MANAGE];
+			key = KEY_PLUG_AUTH_MANAGE;
+			break;
 		case IPluginManager::TYPE_TRACE:
-			return (const char*) values[KEY_PLUG_TRACE];
+			key = KEY_PLUG_TRACE;
+			break;
 		case IPluginManager::TYPE_WIRE_CRYPT:
-			return (const char*) values[KEY_PLUG_WIRE_CRYPT];
+			key = KEY_PLUG_WIRE_CRYPT;
+			break;
 		case IPluginManager::TYPE_KEY_HOLDER:
-			return (const char*) values[KEY_PLUG_KEY_HOLDER];
+			key = KEY_PLUG_KEY_HOLDER;
+			break;
+
+		default:
+			(Arg::Gds(isc_random) << "Internal error in Config::getPlugins(): unknown plugin type requested").raise();
 	}
 
-	(Arg::Gds(isc_random) << "Internal error in Config::getPlugins(): unknown plugin type requested").raise();
-	return NULL;		// compiler warning silencer
+	return getStr(key);
 }
 
 
@@ -844,7 +973,7 @@ int FirebirdConf::release()
 
 const char* Config::getSecurityDatabase() const
 {
-	const char* strVal = get<const char*>(KEY_SECURITY_DATABASE);
+	const char* strVal = getStr(KEY_SECURITY_DATABASE);
 	if (!strVal)
 	{
 		strVal = MasterInterfacePtr()->getConfigManager()->getDefaultSecurityDb();
@@ -857,101 +986,96 @@ const char* Config::getSecurityDatabase() const
 
 int Config::getWireCrypt(WireCryptMode wcMode) const
 {
-	const char* wc = get<const char*>(KEY_WIRE_CRYPT);
-	if (!wc)
+	bool present;
+	const char* wc = getStr(KEY_WIRE_CRYPT, &present);
+	if (present && wc)
 	{
-		return wcMode == WC_CLIENT ? WIRE_CRYPT_ENABLED : WIRE_CRYPT_REQUIRED;
+		NoCaseString wireCrypt(wc);
+		if (wireCrypt == "DISABLED")
+			return WIRE_CRYPT_DISABLED;
+		if (wireCrypt == "ENABLED")
+			return WIRE_CRYPT_ENABLED;
+
+		// the safest choice
+		return WIRE_CRYPT_REQUIRED;
 	}
 
-	NoCaseString wireCrypt(wc);
-	if (wireCrypt == "DISABLED")
-		return WIRE_CRYPT_DISABLED;
-	if (wireCrypt == "ENABLED")
-		return WIRE_CRYPT_ENABLED;
-
-	// the safest choice
-	return WIRE_CRYPT_REQUIRED;
+	return wcMode == WC_CLIENT ? WIRE_CRYPT_ENABLED : WIRE_CRYPT_REQUIRED;
 }
 
 bool Config::getRemoteAccess() const
 {
-	return get<bool>(KEY_REMOTE_ACCESS);
+	return getBool(KEY_REMOTE_ACCESS);
 }
 
 bool Config::getWireCompression() const
 {
-	return get<bool>(KEY_WIRE_COMPRESSION);
+	return getBool(KEY_WIRE_COMPRESSION);
 }
 
 int Config::getMaxIdentifierByteLength() const
 {
-	int rc = get<int>(KEY_MAX_IDENTIFIER_BYTE_LENGTH);
-
-	if (rc < 0)
-		rc = MAX_SQL_IDENTIFIER_LEN;
-
-	return MIN(MAX(rc, 1), MAX_SQL_IDENTIFIER_LEN);
+	return getInt(KEY_MAX_IDENTIFIER_BYTE_LENGTH);
 }
 
 int Config::getMaxIdentifierCharLength() const
 {
-	int rc = get<int>(KEY_MAX_IDENTIFIER_CHAR_LENGTH);
-
-	if (rc < 0)
-		rc = METADATA_IDENTIFIER_CHAR_LEN;
-
-	return MIN(MAX(rc, 1), METADATA_IDENTIFIER_CHAR_LEN);
+	return getInt(KEY_MAX_IDENTIFIER_CHAR_LENGTH);
 }
 
 bool Config::getCryptSecurityDatabase() const
 {
-	return get<bool>(KEY_ENCRYPT_SECURITY_DATABASE);
+	return getBool(KEY_ENCRYPT_SECURITY_DATABASE);
 }
 
 unsigned int Config::getStatementTimeout() const
 {
-	return get<unsigned int>(KEY_STMT_TIMEOUT);
+	return getInt(KEY_STMT_TIMEOUT);
 }
 
 unsigned int Config::getConnIdleTimeout() const
 {
-	return get<unsigned int>(KEY_CONN_IDLE_TIMEOUT);
+	return getInt(KEY_CONN_IDLE_TIMEOUT);
 }
 
 unsigned int Config::getClientBatchBuffer() const
 {
-	return get<unsigned int>(KEY_CLIENT_BATCH_BUFFER);
+	return getInt(KEY_CLIENT_BATCH_BUFFER);
 }
 
 const char* Config::getOutputRedirectionFile()
 {
-	const char* file = (const char*) (getDefaultConfig()->values[KEY_OUTPUT_REDIRECTION_FILE]);
-	return file;
+	return getDefaultConfig()->getStr(KEY_OUTPUT_REDIRECTION_FILE);
 }
 
 int Config::getExtConnPoolSize()
 {
-	return getDefaultConfig()->get<int>(KEY_EXT_CONN_POOL_SIZE);
+	return getDefaultConfig()->getInt(KEY_EXT_CONN_POOL_SIZE);
 }
 
 int Config::getExtConnPoolLifeTime()
 {
-	return getDefaultConfig()->get<int>(KEY_EXT_CONN_POOL_LIFETIME);
+	return getDefaultConfig()->getInt(KEY_EXT_CONN_POOL_LIFETIME);
 }
 
 bool Config::getReadConsistency() const
 {
-	return get<bool>(KEY_READ_CONSISTENCY);
+	return getBool(KEY_READ_CONSISTENCY);
 }
 
 bool Config::getClearGTTAtRetaining() const
 {
-	return get<bool>(KEY_CLEAR_GTT_RETAINING);
+	return getBool(KEY_CLEAR_GTT_RETAINING);
 }
 
 const char* Config::getDataTypeCompatibility() const
 {
-	return get<const char*>(KEY_DATA_TYPE_COMPATIBILITY);
+	return getStr(KEY_DATA_TYPE_COMPATIBILITY);
+}
+
+bool Config::getUseFileSystemCache(bool* pPresent) const
+{
+	return getBool(KEY_USE_FILESYSTEM_CACHE, pPresent);
 }
 
 } // namespace Firebird
