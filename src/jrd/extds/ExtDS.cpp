@@ -81,8 +81,7 @@ namespace EDS {
 GlobalPtr<Manager> Manager::manager;
 Mutex Manager::m_mutex;
 Provider* Manager::m_providers = NULL;
-volatile bool Manager::m_initialized = false;
-ConnectionsPool* Manager::m_connPool;
+ConnectionsPool* Manager::m_connPool = NULL;
 
 const ULONG MIN_CONNPOOL_SIZE		= 0;
 const ULONG MAX_CONNPOOL_SIZE		= 1000;
@@ -93,12 +92,12 @@ const ULONG MAX_LIFE_TIME		= 60 * 60 * 24;	// one day
 Manager::Manager(MemoryPool& pool) :
 	PermanentStorage(pool)
 {
-	m_connPool = FB_NEW_POOL(pool) ConnectionsPool(pool);
+	//m_connPool = FB_NEW_POOL(pool) ConnectionsPool(pool);
 }
 
 Manager::~Manager()
 {
-	fb_assert(m_connPool->getAllCount() == 0);
+	fb_assert(!m_connPool || m_connPool->getAllCount() == 0);
 
 	ThreadContextHolder tdbb;
 
@@ -111,6 +110,7 @@ Manager::~Manager()
 	}
 
 	delete m_connPool;
+	m_connPool = NULL;
 }
 
 void Manager::addProvider(Provider* provider)
@@ -209,6 +209,9 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 
 	// if could be pooled, ask connections pool
 
+	if (!m_connPool)
+		m_connPool = FB_NEW_POOL(manager->getPool()) ConnectionsPool(manager->getPool());
+
 	ULONG hash = 0;
 
 	if (!isCurrent)
@@ -256,7 +259,8 @@ int Manager::shutdown()
 	FbLocalStatus status;
 	ThreadContextHolder tdbb(&status);
 
-	m_connPool->clear(tdbb);
+	if (m_connPool)
+		m_connPool->clear(tdbb);
 
 	for (Provider* prv = m_providers; prv; prv = prv->m_next) {
 		prv->cancelConnections();

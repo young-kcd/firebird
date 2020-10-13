@@ -92,7 +92,6 @@ private:
 	static Firebird::GlobalPtr<Manager> manager;
 	static Firebird::Mutex m_mutex;
 	static Provider* m_providers;
-	static volatile bool m_initialized;
 	static ConnectionsPool* m_connPool;
 };
 
