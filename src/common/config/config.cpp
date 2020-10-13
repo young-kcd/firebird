@@ -155,7 +155,7 @@ Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_INTEGER,		"DefaultDbCachePages",		ConfigValue(-1)},		// pages
 	{TYPE_INTEGER,		"ConnectionTimeout",		ConfigValue(180)},		// seconds
 	{TYPE_INTEGER,		"DummyPacketInterval",		ConfigValue(0)},		// seconds
-	{TYPE_STRING,		"DefaultTimeZone",			ConfigValue(NULL)},
+	{TYPE_STRING,		"DefaultTimeZone",			ConfigValue(nullptr)},
 	{TYPE_INTEGER,		"LockMemSize",				ConfigValue(1048576)},	// bytes
 	{TYPE_INTEGER,		"LockHashSlots",			ConfigValue(8191)},		// slots
 	{TYPE_INTEGER,		"LockAcquireSpins",			ConfigValue(0)},
@@ -186,7 +186,7 @@ Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 #endif
 	{TYPE_INTEGER,		"TraceDSQL",				ConfigValue(0)},		// bitmask
 	{TYPE_BOOLEAN,		"LegacyHash",				ConfigValue(true)},		// let use old passwd hash verification
-	{TYPE_STRING,		"GCPolicy",					ConfigValue(NULL)},		// garbage collection policy
+	{TYPE_STRING,		"GCPolicy",					ConfigValue(nullptr)},	// garbage collection policy
 	{TYPE_BOOLEAN,		"Redirection",				ConfigValue(false)},
 	{TYPE_INTEGER,		"DatabaseGrowthIncrement",	ConfigValue(128 * 1048576)},	// bytes
 	{TYPE_INTEGER,		"FileSystemCacheThreshold",	ConfigValue(65536)},	// page buffers
@@ -203,9 +203,9 @@ Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 #endif
 	{TYPE_STRING,		"UserManager",				ConfigValue("Srp")},
 	{TYPE_STRING,		"TracePlugin",				ConfigValue("fbtrace")},
-	{TYPE_STRING,		"SecurityDatabase",			ConfigValue(NULL)},		// sec/db alias - rely on ConfigManager::getDefaultSecurityDb()
-	{TYPE_STRING,		"ServerMode",				ConfigValue(NULL)},		// actual value differs in boot/regular cases and set at setupDefaultConfig()
-	{TYPE_STRING,		"WireCrypt",				ConfigValue(NULL)},
+	{TYPE_STRING,		"SecurityDatabase",			ConfigValue(nullptr)},	// sec/db alias - rely on ConfigManager::getDefaultSecurityDb()
+	{TYPE_STRING,		"ServerMode",				ConfigValue(nullptr)},	// actual value differs in boot/regular cases and set at setupDefaultConfig()
+	{TYPE_STRING,		"WireCrypt",				ConfigValue(nullptr)},
 	{TYPE_STRING,		"WireCryptPlugin",			ConfigValue("ChaCha, Arc4")},
 	{TYPE_STRING,		"KeyHolderPlugin",			ConfigValue("")},
 	{TYPE_BOOLEAN,		"RemoteAccess",				ConfigValue(true)},
@@ -232,7 +232,7 @@ Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_INTEGER,		"TipCacheBlockSize",		ConfigValue(4194304)},	// bytes
 	{TYPE_BOOLEAN,		"ReadConsistency",			ConfigValue(true)},
 	{TYPE_BOOLEAN,		"ClearGTTAtRetaining",		ConfigValue(false)},
-	{TYPE_STRING,		"DataTypeCompatibility",	ConfigValue(NULL)},
+	{TYPE_STRING,		"DataTypeCompatibility",	ConfigValue(nullptr)},
 	{TYPE_BOOLEAN,		"UseFileSystemCache",		ConfigValue(true)}
 };
 
