@@ -40,8 +40,8 @@ namespace
 	class UserIdInfo : public AutoIface<ILogonInfoImpl<UserIdInfo, CheckStatusWrapper> >
 	{
 	public:
-		explicit UserIdInfo(const Attachment* pAtt)
-			: att(pAtt)
+		explicit UserIdInfo(Attachment* pAtt, jrd_tra* pTra)
+			: att(pAtt), tra(pTra)
 		{ }
 
 		// ILogonInfo implementation
@@ -74,8 +74,19 @@ namespace
 			return aBlock.getCount() ? aBlock.begin() : NULL;
 		}
 
+		JAttachment* attachment(CheckStatusWrapper*)
+		{
+			return att->getInterface();
+		}
+
+		JTransaction* transaction(CheckStatusWrapper*)
+		{
+			return tra->getInterface(false);
+		}
+
 	private:
-		const Attachment* att;
+		Attachment* att;
+		jrd_tra* tra;
 	};
 
 	class FillSnapshot : public AutoIface<IListUsersImpl<FillSnapshot, CheckStatusWrapper> >
@@ -146,13 +157,14 @@ bool UsersTableScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
 }
 
 
-UserManagement::UserManagement(jrd_tra* tra)
-	: SnapshotData(*tra->tra_pool),
+UserManagement::UserManagement(jrd_tra* pTra)
+	: SnapshotData(*pTra->tra_pool),
 	  threadDbb(NULL),
-	  commands(*tra->tra_pool),
-	  managers(*tra->tra_pool),
-	  plugins(*tra->tra_pool),
-	  att(tra->tra_attachment)
+	  commands(*pTra->tra_pool),
+	  managers(*pTra->tra_pool),
+	  plugins(*pTra->tra_pool),
+	  att(pTra->tra_attachment),
+	  tra(pTra)
 {
 	if (!att || !att->att_user)
 	{
@@ -172,7 +184,7 @@ IManagement* UserManagement::registerManager(Auth::Get& getPlugin, const char* p
 	LocalStatus status;
 	CheckStatusWrapper statusWrapper(&status);
 
-	UserIdInfo idInfo(att);
+	UserIdInfo idInfo(att, tra);
 	manager->start(&statusWrapper, &idInfo);
 	if (status.getState() & IStatus::STATE_ERRORS)
 	{
@@ -298,6 +310,7 @@ USHORT UserManagement::put(Auth::DynamicUserData* userData)
 	{
 		status_exception::raise(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_random) << "Too many user management DDL per transaction");
 	}
+
 	commands.push(userData);
 	return ret;
 }

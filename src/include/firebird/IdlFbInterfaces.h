@@ -3162,6 +3162,8 @@ namespace Firebird
 			const char* (CLOOP_CARG *networkProtocol)(ILogonInfo* self) throw();
 			const char* (CLOOP_CARG *remoteAddress)(ILogonInfo* self) throw();
 			const unsigned char* (CLOOP_CARG *authBlock)(ILogonInfo* self, unsigned* length) throw();
+			IAttachment* (CLOOP_CARG *attachment)(ILogonInfo* self, IStatus* status) throw();
+			ITransaction* (CLOOP_CARG *transaction)(ILogonInfo* self, IStatus* status) throw();
 		};
 
 	protected:
@@ -3175,7 +3177,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static const unsigned VERSION = 3;
 
 		const char* name()
 		{
@@ -3204,6 +3206,34 @@ namespace Firebird
 		const unsigned char* authBlock(unsigned* length)
 		{
 			const unsigned char* ret = static_cast<VTable*>(this->cloopVTable)->authBlock(this, length);
+			return ret;
+		}
+
+		template <typename StatusType> IAttachment* attachment(StatusType* status)
+		{
+			if (cloopVTable->version < 3)
+			{
+				StatusType::setVersionError(status, "ILogonInfo", cloopVTable->version, 3);
+				StatusType::checkException(status);
+				return 0;
+			}
+			StatusType::clearException(status);
+			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->attachment(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> ITransaction* transaction(StatusType* status)
+		{
+			if (cloopVTable->version < 3)
+			{
+				StatusType::setVersionError(status, "ILogonInfo", cloopVTable->version, 3);
+				StatusType::checkException(status);
+				return 0;
+			}
+			StatusType::clearException(status);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->transaction(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -12559,6 +12589,8 @@ namespace Firebird
 					this->networkProtocol = &Name::cloopnetworkProtocolDispatcher;
 					this->remoteAddress = &Name::cloopremoteAddressDispatcher;
 					this->authBlock = &Name::cloopauthBlockDispatcher;
+					this->attachment = &Name::cloopattachmentDispatcher;
+					this->transaction = &Name::clooptransactionDispatcher;
 				}
 			} vTable;
 
@@ -12629,6 +12661,36 @@ namespace Firebird
 				return static_cast<const unsigned char*>(0);
 			}
 		}
+
+		static IAttachment* CLOOP_CARG cloopattachmentDispatcher(ILogonInfo* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::attachment(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<IAttachment*>(0);
+			}
+		}
+
+		static ITransaction* CLOOP_CARG clooptransactionDispatcher(ILogonInfo* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::transaction(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<ITransaction*>(0);
+			}
+		}
 	};
 
 	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<ILogonInfo> > >
@@ -12649,6 +12711,8 @@ namespace Firebird
 		virtual const char* networkProtocol() = 0;
 		virtual const char* remoteAddress() = 0;
 		virtual const unsigned char* authBlock(unsigned* length) = 0;
+		virtual IAttachment* attachment(StatusType* status) = 0;
+		virtual ITransaction* transaction(StatusType* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
