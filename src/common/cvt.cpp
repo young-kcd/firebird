@@ -474,7 +474,7 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 		} while (++scale);
 	}
 
-	length = cb->validateLength(cb->getToCharset(to->getCharSet()), length, start, TEXT_LEN(to));
+	length = cb->validateLength(cb->getToCharset(to->getCharSet()), to->getCharSet(), length, start, TEXT_LEN(to));
 
 	// If padding is required, do it now.
 
@@ -1853,95 +1853,56 @@ void CVT_move_common(const dsc* from, dsc* to, DecimalStatus decSt, Callbacks* c
 				if (cb->transliterate(from, to, charset2))
 					return;
 
-				ULONG len;
-
 				{ // scope
 					USHORT strtype_unused;
 					UCHAR *ptr;
-					length = len = CVT_get_string_ptr_common(from, &strtype_unused, &ptr, NULL, 0, decSt, cb);
+					length = CVT_get_string_ptr_common(from, &strtype_unused, &ptr, NULL, 0, decSt, cb);
 					q = ptr;
 				} // end scope
 
 				const USHORT to_size = TEXT_LEN(to);
-				UCHAR fill_char = ASCII_SPACE;
 				Jrd::CharSet* toCharset = cb->getToCharset(charset2);
 
-				switch (to->dsc_dtype)
-				{
-				case dtype_text:
-					length = MIN(length, to->dsc_length);
-					break;
-
-				case dtype_cstring:
-					// Note: Following is only correct for narrow and
-					// multibyte character sets which use a zero
-					// byte to represent end-of-string
-
-					fb_assert(to->dsc_length > 0);
-					length = MIN(length, ULONG(to->dsc_length - 1));
-					break;
-
-				case dtype_varying:
-					length = to->dsc_length > sizeof(USHORT) ?
-						MIN(length, (ULONG(to->dsc_length) - sizeof(USHORT))) : 0;
-					break;
-				}
-
 				cb->validateData(toCharset, length, q);
-				ULONG toLength = cb->validateLength(toCharset, length, q, to_size);
-				len -= toLength;
-				ULONG fill = ULONG(to->dsc_length) - toLength;
-
-				if (charset2 == ttype_binary)
-					fill_char = 0x00;
+				ULONG toLength = cb->validateLength(toCharset, charset2, length, q, to_size);
 
 				switch (to->dsc_dtype)
 				{
-				case dtype_text:
-					CVT_COPY_BUFF(q, p, toLength);
-					if (fill > 0)
+					case dtype_text:
 					{
-						memset(p, fill_char, fill);
-						p += fill;
-						// Note: above is correct only for narrow
-						// and multi-byte character sets which
-						// use ASCII for the SPACE character.
-					}
-					break;
-
-				case dtype_cstring:
-					CVT_COPY_BUFF(q, p, toLength);
-					*p = 0;
-					break;
-
-				case dtype_varying:
-					if (to->dsc_length > sizeof(USHORT))
-					{
-						// TMN: Here we should really have the following fb_assert
-						// fb_assert(length <= MAX_USHORT);
-						((vary*) p)->vary_length = (USHORT) toLength;
-						p = reinterpret_cast<UCHAR*>(((vary*) p)->vary_string);
+						ULONG fill = ULONG(to->dsc_length) - toLength;
 						CVT_COPY_BUFF(q, p, toLength);
-					}
-					else
-						memset(to->dsc_address, 0, to->dsc_length);		// the best we can do
-					break;
-				}
 
-				if (len && toLength == length)
-				{
-					// Scan the truncated string to ensure only spaces lost
-					// Warning: it is correct only for narrow and multi-byte
-					// character sets which use ASCII or NULL for the SPACE character
-
-					do {
-						if (*q++ != fill_char && toLength == length)
+						if (fill > 0)
 						{
-							cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
-									Arg::Gds(isc_trunc_limits) <<
-										Arg::Num(to->getStringLength()) << Arg::Num(from->getStringLength()));
+							fb_assert(!toCharset || toCharset->getSpaceLength() == 1);
+							UCHAR fillChar = toCharset ?
+								*toCharset->getSpace() :
+								(charset2 == ttype_binary ? 0x00 : ASCII_SPACE);
+
+							memset(p, fillChar, fill);
+							p += fill;
 						}
-					} while (--len);
+						break;
+					}
+
+					case dtype_cstring:
+						CVT_COPY_BUFF(q, p, toLength);
+						*p = 0;
+						break;
+
+					case dtype_varying:
+						if (to->dsc_length > sizeof(USHORT))
+						{
+							// TMN: Here we should really have the following fb_assert
+							// fb_assert(length <= MAX_USHORT);
+							((vary*) p)->vary_length = (USHORT) toLength;
+							p = reinterpret_cast<UCHAR*>(((vary*) p)->vary_string);
+							CVT_COPY_BUFF(q, p, toLength);
+						}
+						else
+							memset(to->dsc_address, 0, to->dsc_length);		// the best we can do
+						break;
 				}
 			}
 			return;
@@ -3635,8 +3596,8 @@ namespace
 		virtual CHARSET_ID getChid(const dsc* d);
 		virtual Jrd::CharSet* getToCharset(CHARSET_ID charset2);
 		virtual void validateData(Jrd::CharSet* toCharset, SLONG length, const UCHAR* q);
-		virtual ULONG validateLength(Jrd::CharSet* toCharset, ULONG toLength, const UCHAR* start,
-			const USHORT to_size);
+		virtual ULONG validateLength(Jrd::CharSet* charSet, CHARSET_ID charSetId, ULONG length, const UCHAR* start,
+			const USHORT size);
 		virtual SLONG getLocalDate();
 		virtual ISC_TIMESTAMP getCurrentGmtTimeStamp();
 		virtual USHORT getSessionTimeZone();
@@ -3658,9 +3619,32 @@ namespace
 	{
 	}
 
-	ULONG CommonCallbacks::validateLength(Jrd::CharSet*, ULONG l, const UCHAR*, const USHORT)
+	ULONG CommonCallbacks::validateLength(Jrd::CharSet* charSet, CHARSET_ID charSetId, ULONG length, const UCHAR* start,
+		const USHORT size)
 	{
-		return l;
+		if (length > size)
+		{
+			fb_assert(!charSet || (!charSet->isMultiByte() && charSet->getSpaceLength() == 1));
+			UCHAR fillChar = charSet ?
+				*charSet->getSpace() :
+				(charSetId == ttype_binary ? 0x00 : ASCII_SPACE);
+
+			const UCHAR* p = start + size;
+
+			// Scan the truncated string to ensure only spaces lost
+
+			while (p < start + length)
+			{
+				if (*p++ != fillChar)
+				{
+					err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
+						Arg::Gds(isc_trunc_limits) <<
+							Arg::Num(size) << Arg::Num(length));
+				}
+			}
+		}
+
+		return MIN(length, size);
 	}
 
 	CHARSET_ID CommonCallbacks::getChid(const dsc* d)

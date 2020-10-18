@@ -496,19 +496,21 @@ void EngineCallbacks::validateData(CharSet* toCharSet, SLONG length, const UCHAR
 }
 
 
-ULONG EngineCallbacks::validateLength(CharSet* toCharSet, ULONG toLength, const UCHAR* start,
-	const USHORT to_size)
+ULONG EngineCallbacks::validateLength(CharSet* charSet, CHARSET_ID charSetId, ULONG length, const UCHAR* start,
+	const USHORT size)
 {
-	if (toCharSet && toCharSet->isMultiByte())
+	fb_assert(charSet);
+
+	if (charSet && (charSet->isMultiByte() || length > size))
 	{
-		const ULONG srcCharLength = toCharSet->length(toLength, start, true);
-		const ULONG destCharLength  = (ULONG) to_size / toCharSet->maxBytesPerChar();
+		const ULONG srcCharLength = charSet->length(length, start, true);
+		const ULONG destCharLength = (ULONG) size / charSet->maxBytesPerChar();
 
 		if (srcCharLength > destCharLength)
 		{
-			const ULONG spaceByteLength = toCharSet->getSpaceLength();
-			const ULONG trimmedByteLength = toCharSet->removeTrailingSpaces(toLength, start);
-			const ULONG trimmedCharLength = srcCharLength - (toLength - trimmedByteLength) / spaceByteLength;
+			const ULONG spaceByteLength = charSet->getSpaceLength();
+			const ULONG trimmedByteLength = charSet->removeTrailingSpaces(length, start);
+			const ULONG trimmedCharLength = srcCharLength - (length - trimmedByteLength) / spaceByteLength;
 
 			if (trimmedCharLength <= destCharLength)
 				return trimmedByteLength + (destCharLength - trimmedCharLength) * spaceByteLength;
@@ -520,30 +522,43 @@ ULONG EngineCallbacks::validateLength(CharSet* toCharSet, ULONG toLength, const 
 		}
 	}
 
-	return toLength;
+	return length;
 }
 
 
-ULONG TruncateCallbacks::validateLength(CharSet* toCharSet, ULONG toLength, const UCHAR* start,
-	const USHORT to_size)
+ULONG TruncateCallbacks::validateLength(CharSet* charSet, CHARSET_ID charSetId, ULONG length, const UCHAR* start,
+	const USHORT size)
 {
-	if (toCharSet && toCharSet->isMultiByte())
+	fb_assert(charSet);
+
+	if (charSet && (charSet->isMultiByte() || length > size))
 	{
-		const ULONG dest_len = (ULONG) to_size / toCharSet->maxBytesPerChar();
+		const ULONG srcCharLength = charSet->length(length, start, true);
+		const ULONG destCharLength = (ULONG) size / charSet->maxBytesPerChar();
 
-		for (bool first = true; ; first = false)
+		if (srcCharLength > destCharLength)
 		{
-			const ULONG src_len = toCharSet->length(toLength, start, false);
-			if (src_len <= dest_len)
-				break;
+			const ULONG spaceByteLength = charSet->getSpaceLength();
+			const ULONG trimmedByteLength = charSet->removeTrailingSpaces(length, start);
+			const ULONG trimmedCharLength = srcCharLength - (length - trimmedByteLength) / spaceByteLength;
 
-			toLength -= (src_len - dest_len);		// truncate
-			if (first)
-				ERR_post_warning(Arg::Warning(isc_truncate_warn) << Arg::Warning(truncateReason));
+			if (trimmedCharLength <= destCharLength)
+				return trimmedByteLength + (destCharLength - trimmedCharLength) * spaceByteLength;
+			else if (charSet->isMultiByte())
+			{
+				HalfStaticArray<UCHAR, BUFFER_SMALL, USHORT> buffer(size);
+				length = charSet->substring(
+					length, start, buffer.getCapacity(), buffer.begin(),
+					0, destCharLength);
+			}
+			else
+				length = size;
+
+			ERR_post_warning(Arg::Warning(isc_truncate_warn) << Arg::Warning(truncateReason));
 		}
 	}
 
-	return toLength;
+	return length;
 }
 
 

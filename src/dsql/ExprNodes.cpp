@@ -9749,7 +9749,7 @@ dsc* ParameterNode::execute(thread_db* tdbb, jrd_req* request) const
 				CharSet* charSet = INTL_charset_lookup(tdbb, DSC_GET_CHARSET(desc));
 
 				EngineCallbacks::instance->validateData(charSet, len, p);
-				EngineCallbacks::instance->validateLength(charSet, len, p, maxLen);
+				EngineCallbacks::instance->validateLength(charSet, DSC_GET_CHARSET(desc), len, p, maxLen);
 			}
 			else if (desc->isBlob())
 			{
