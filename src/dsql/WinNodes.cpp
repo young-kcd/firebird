@@ -606,8 +606,14 @@ dsc* NthValueWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* 
 
 AggNode* NthValueWinNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 {
-	return FB_NEW_POOL(dsqlScratch->getPool()) NthValueWinNode(dsqlScratch->getPool(),
+	const auto node = FB_NEW_POOL(dsqlScratch->getPool()) NthValueWinNode(dsqlScratch->getPool(),
 		doDsqlPass(dsqlScratch, arg), doDsqlPass(dsqlScratch, row), doDsqlPass(dsqlScratch, from));
+
+	PASS1_set_parameter_type(dsqlScratch, node->row,
+		[&] (dsc* desc) { desc->makeInt64(0); },
+		false);
+
+	return node;
 }
 
 
@@ -710,10 +716,16 @@ ValueExprNode* LagWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
 
 AggNode* LagWinNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 {
-	return FB_NEW_POOL(dsqlScratch->getPool()) LagWinNode(dsqlScratch->getPool(),
+	const auto node = FB_NEW_POOL(dsqlScratch->getPool()) LagWinNode(dsqlScratch->getPool(),
 		doDsqlPass(dsqlScratch, arg),
 		doDsqlPass(dsqlScratch, rows),
 		doDsqlPass(dsqlScratch, outExpr));
+
+	PASS1_set_parameter_type(dsqlScratch, node->rows,
+		[&] (dsc* desc) { desc->makeInt64(0); },
+		false);
+
+	return node;
 }
 
 
