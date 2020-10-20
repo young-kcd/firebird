@@ -761,6 +761,9 @@ AC_CHECK_HEADERS(poll.h)
 AC_CHECK_HEADERS(langinfo.h)
 AC_CHECK_HEADERS(iconv.h)
 AC_CHECK_HEADERS(linux/falloc.h)
+AC_LANG_PUSH(C++)
+AC_CHECK_HEADERS(cmath)
+AC_LANG_POP(C++)
 
 AC_CHECK_HEADERS(socket.h sys/socket.h sys/sockio.h winsock2.h)
 AC_CHECK_DECLS(SOCK_CLOEXEC,,,[[

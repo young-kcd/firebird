@@ -30,7 +30,9 @@
 #define CLASSES_FPE_CONTROL_H
 
 #include <math.h>
+#ifdef HAVE_CMATH
 #include <cmath>
+#endif
 #if defined(WIN_NT)
 #include <float.h>
 #else
@@ -231,8 +233,17 @@ inline bool isinf(double x)
 {
 	return (!_finite (x) && !isnan(x));
 }
-#else
+#else //WIN_NT
+#ifdef HAVE_CMATH
 using std::isinf;
-#endif // WIN_NT
-
+#else //HAVE_CMATH
+#ifndef isinf
+template <typename F>
+inline bool isinf(F x)
+{
+	return !isnan(x) && isnan(x - x);
+}
+#endif //isinf
+#endif //HAVE_CMATH
+#endif //WIN_NT
 #endif //CLASSES_FPE_CONTROL_H
