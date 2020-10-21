@@ -48,6 +48,8 @@
 #include "../jrd/EngineInterface.h"
 #include "../jrd/sbm.h"
 
+#define DEBUG_LCK_LIST
+
 namespace EDS {
 	class Connection;
 }
@@ -436,6 +438,9 @@ public:
 	SSHORT		att_client_charset;			// user's charset specified in dpb
 	SSHORT		att_charset;				// current (client or external) attachment charset
 	Lock*		att_long_locks;				// outstanding two phased locks
+#ifdef DEBUG_LCK_LIST
+	UCHAR		att_long_locks_type;		// Lock type of the first lock in list
+#endif
 	Lock*		att_wait_lock;				// lock at which attachment waits currently
 	vec<Lock*>*	att_compatibility_table;	// hash table of compatible locks
 	Validation*	att_validation;

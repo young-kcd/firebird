@@ -808,7 +808,12 @@ void Jrd::Attachment::detachLocks()
 
 	Lock* long_lock = att_long_locks;
 	while (long_lock)
+	{
+#ifdef DEBUG_LCK_LIST
+		att_long_locks_type = long_lock->lck_next_type;
+#endif
 		long_lock = long_lock->detach();
+	}
 
 	att_long_locks = NULL;
 }

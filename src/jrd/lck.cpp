@@ -336,7 +336,7 @@ bool LCK_convert(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	Database* dbb = lock->lck_dbb;
 
 	Jrd::Attachment* const old_attachment = lock->getLockAttachment();
-	lock->setLockAttachment(tdbb, tdbb->getAttachment());
+	lock->setLockAttachment(tdbb->getAttachment());
 
 	WaitCancelGuard guard(tdbb, lock, wait);
 	FbLocalStatus statusVector;
@@ -346,7 +346,7 @@ bool LCK_convert(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 
 	if (!result)
 	{
-	    lock->setLockAttachment(tdbb, old_attachment);
+	    lock->setLockAttachment(old_attachment);
 
 		switch (statusVector[1])
 		{
@@ -457,7 +457,7 @@ void LCK_downgrade(thread_db* tdbb, Lock* lock)
 	if (lock->lck_physical == LCK_none)
 	{
 		lock->lck_id = lock->lck_data = 0;
-	    lock->setLockAttachment(tdbb, NULL);
+	    lock->setLockAttachment(NULL);
 	}
 
 	fb_assert(LCK_CHECK_LOCK(lock));
@@ -663,7 +663,7 @@ bool LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 #endif
 
 	Database* dbb = lock->lck_dbb;
-    lock->setLockAttachment(tdbb, tdbb->getAttachment());
+    lock->setLockAttachment(tdbb->getAttachment());
 
 	WaitCancelGuard guard(tdbb, lock, wait);
 	FbLocalStatus statusVector;
@@ -674,7 +674,7 @@ bool LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 
 	if (!lock->lck_id)
 	{
-    	lock->setLockAttachment(tdbb, NULL);
+    	lock->setLockAttachment(NULL);
 		if (!wait)
 		{
 			statusVector.copyTo(tdbb->tdbb_status_vector);
@@ -806,7 +806,7 @@ void LCK_release(thread_db* tdbb, Lock* lock)
 
 	lock->lck_physical = lock->lck_logical = LCK_none;
 	lock->lck_id = lock->lck_data = 0;
-	lock->setLockAttachment(tdbb, NULL);
+	lock->setLockAttachment(NULL);
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 }
@@ -1495,6 +1495,10 @@ Lock::Lock(thread_db* tdbb, USHORT length, lck_t type, void* object, lock_ast_t 
 	lck_object(object),
 	lck_next(NULL),
 	lck_prior(NULL),
+#ifdef DEBUG_LCK_LIST
+	lck_next_type(0),
+	lck_prev_type(0),
+#endif
 	lck_collision(NULL),
 	lck_identical(NULL),
 	lck_id(0),
@@ -1508,15 +1512,26 @@ Lock::Lock(thread_db* tdbb, USHORT length, lck_t type, void* object, lock_ast_t 
 	lck_key.key_long = 0;
 }
 
-void Lock::setLockAttachment(thread_db* tdbb, Jrd::Attachment* attachment)
+Lock::~Lock()
+{
+	fb_assert(lck_id == 0);
+	fb_assert(!lck_attachment.hasData());
+
+	if (lck_attachment || lck_next || lck_prior)
+	{
+#ifdef DEBUG_LCK_LIST
+		gds__log("Lock::~Lock(): this 0x%p, attachment 0x%p, lck_type %d, lck_next 0x%p, lck_prior 0x%p",
+			this, lck_attachment ? lck_attachment->getHandle() : NULL, 
+			(int) lck_type, lck_next, lck_prior);
+#endif
+
+		setLockAttachment(NULL);
+	}
+}
+
+void Lock::setLockAttachment(Jrd::Attachment* attachment)
 {
 	if (get_owner_type(lck_type) == LCK_OWNER_database)
-		return;
-
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	fb_assert(dbb);
-	if (!dbb)
 		return;
 
 	Attachment* att = lck_attachment ? lck_attachment->getHandle() : NULL;
@@ -1536,17 +1551,26 @@ void Lock::setLockAttachment(thread_db* tdbb, Jrd::Attachment* attachment)
 		{
 			fb_assert(lck_prior->lck_next == this);
 			lck_prior->lck_next = lck_next;
+#ifdef DEBUG_LCK_LIST
+			lck_prior->lck_next_type = lck_next ? lck_next->lck_type : 0;
+#endif
 		}
 		else
 		{
 			fb_assert(att->att_long_locks == this);
 			att->att_long_locks = lck_next;
+#ifdef DEBUG_LCK_LIST
+			att->att_long_locks_type = lck_next ? lck_next->lck_type : 0;
+#endif
 		}
 
 		if (lck_next)
 		{
 			fb_assert(lck_next->lck_prior == this);
 			lck_next->lck_prior = lck_prior;
+#ifdef DEBUG_LCK_LIST
+			lck_next->lck_prev_type = lck_prior ? lck_prior->lck_type : 0;
+#endif
 		}
 
 		lck_next = NULL;
@@ -1565,6 +1589,15 @@ void Lock::setLockAttachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 		if (lck_next)
 			lck_next->lck_prior = this;
+
+#ifdef DEBUG_LCK_LIST
+		attachment->att_long_locks_type = lck_type;
+		if (lck_next)
+		{
+			this->lck_next_type = lck_next->lck_type;
+			lck_next->lck_prev_type = this->lck_type;
+		}
+#endif
 	}
 
 	RefDeb(DEB_RLS_JATT, "setLockAttachment");
