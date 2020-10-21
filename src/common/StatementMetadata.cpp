@@ -373,17 +373,14 @@ void StatementMetadata::parse(unsigned bufferLength, const UCHAR* buffer)
 								}
 							}
 
+							if (parameters->fetched && parameters->makeOffsets() != ~0u)
+								parameters->fetched = false;
+
 							if (parameters->fetched)
 							{
-								unsigned off = 0;
-
 								for (unsigned n = 0; n < parameters->items.getCount(); ++n)
 								{
 									Parameters::Item* param = &parameters->items[n];
-
-									off = fb_utils::sqlTypeToDsc(off, param->type, param->length,
-										NULL /*dtype*/, NULL /*length*/, &param->offset, &param->nullInd);
-
 									switch (param->type)
 									{
 										case SQL_VARYING:
@@ -397,8 +394,6 @@ void StatementMetadata::parse(unsigned bufferLength, const UCHAR* buffer)
 											break;
 									}
 								}
-
-								parameters->length = off;
 							}
 
 							break;
