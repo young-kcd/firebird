@@ -163,6 +163,10 @@ if errorlevel 44 (call :ERROR empbuild.exe failed - see %~n0.log for details & g
 ::==============
 :MOVE2
 @copy %FB_GEN_DIR%\examples\employee.fdb %FB_OUTPUT_DIR%\examples\empbuild\ > nul
+if errorlevel 1 (
+  @call :ERROR copying employee database to %FB_OUTPUT_DIR%\examples\empbuild failed - see make_examples_%FB_TARGET_PLATFORM%.log for details
+  @goto :EOF
+)
 
 if defined FB2_INTLEMP (
   if exist %FB_GEN_DIR%\examples\intlemp.fdb (
