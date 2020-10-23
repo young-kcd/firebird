@@ -792,6 +792,14 @@ void INF_database_info(thread_db* tdbb,
 			length = INF_convert(tdbb->getAttachment()->att_remote_flags, buffer);
 			break;
 
+		case fb_info_db_file_id:
+			{
+				const string& fileId = dbb->getUniqueFileId();
+				if (!(info = INF_put_item(item, fileId.length(), fileId.c_str(), info, end)))
+					return;
+			}
+			break;
+
 		default:
 			buffer[0] = item;
 			item = isc_info_error;

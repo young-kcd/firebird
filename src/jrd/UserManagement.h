@@ -75,6 +75,7 @@ private:
 	Firebird::ObjectsArray<Manager> managers;
 	Firebird::NoCaseString plugins;
 	Attachment* att;
+	jrd_tra* tra;
 
 	Firebird::IManagement* getManager(const char* name);
 	void openAllManagers();

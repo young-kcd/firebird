@@ -188,6 +188,16 @@ public:
 };
 
 
+template <typename Where>
+class AutoRelease : public AutoPtr<Where, SimpleRelease>
+{
+public:
+	AutoRelease(Where* v = NULL)
+		: AutoPtr<Where, SimpleRelease>(v)
+	{ }
+};
+
+
 template <typename T>
 class AutoSetRestore
 {

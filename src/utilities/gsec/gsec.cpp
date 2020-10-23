@@ -190,6 +190,16 @@ namespace {
 			return authBytes;
 		}
 
+		Firebird::IAttachment* attachment(Firebird::CheckStatusWrapper* status)
+		{
+			return NULL;
+		}
+
+		Firebird::ITransaction* transaction(Firebird::CheckStatusWrapper* status)
+		{
+			return NULL;
+		}
+
 	private:
 		const char* dba;
 		const char* sqlRole;

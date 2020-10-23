@@ -145,6 +145,8 @@ enum db_info_types
 	fb_info_crypt_key = 133,
 	fb_info_crypt_state = 134,
 
+	fb_info_db_file_id = 145,
+
 	isc_info_db_last_value   /* Leave this LAST! */
 };
 

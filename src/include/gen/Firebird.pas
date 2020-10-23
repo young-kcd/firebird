@@ -361,6 +361,8 @@ type
 	ILogonInfo_networkProtocolPtr = function(this: ILogonInfo): PAnsiChar; cdecl;
 	ILogonInfo_remoteAddressPtr = function(this: ILogonInfo): PAnsiChar; cdecl;
 	ILogonInfo_authBlockPtr = function(this: ILogonInfo; length: CardinalPtr): BytePtr; cdecl;
+	ILogonInfo_attachmentPtr = function(this: ILogonInfo; status: IStatus): IAttachment; cdecl;
+	ILogonInfo_transactionPtr = function(this: ILogonInfo; status: IStatus): ITransaction; cdecl;
 	IManagement_startPtr = procedure(this: IManagement; status: IStatus; logonInfo: ILogonInfo); cdecl;
 	IManagement_executePtr = function(this: IManagement; status: IStatus; user: IUser; callback: IListUsers): Integer; cdecl;
 	IManagement_commitPtr = procedure(this: IManagement; status: IStatus); cdecl;
@@ -1838,16 +1840,20 @@ type
 		networkProtocol: ILogonInfo_networkProtocolPtr;
 		remoteAddress: ILogonInfo_remoteAddressPtr;
 		authBlock: ILogonInfo_authBlockPtr;
+		attachment: ILogonInfo_attachmentPtr;
+		transaction: ILogonInfo_transactionPtr;
 	end;
 
 	ILogonInfo = class(IVersioned)
-		const VERSION = 2;
+		const VERSION = 3;
 
 		function name(): PAnsiChar;
 		function role(): PAnsiChar;
 		function networkProtocol(): PAnsiChar;
 		function remoteAddress(): PAnsiChar;
 		function authBlock(length: CardinalPtr): BytePtr;
+		function attachment(status: IStatus): IAttachment;
+		function transaction(status: IStatus): ITransaction;
 	end;
 
 	ILogonInfoImpl = class(ILogonInfo)
@@ -1858,6 +1864,8 @@ type
 		function networkProtocol(): PAnsiChar; virtual; abstract;
 		function remoteAddress(): PAnsiChar; virtual; abstract;
 		function authBlock(length: CardinalPtr): BytePtr; virtual; abstract;
+		function attachment(status: IStatus): IAttachment; virtual; abstract;
+		function transaction(status: IStatus): ITransaction; virtual; abstract;
 	end;
 
 	ManagementVTable = class(PluginBaseVTable)
@@ -5993,6 +6001,18 @@ begin
 	Result := LogonInfoVTable(vTable).authBlock(Self, length);
 end;
 
+function ILogonInfo.attachment(status: IStatus): IAttachment;
+begin
+	Result := LogonInfoVTable(vTable).attachment(Self, status);
+	FbException.checkException(status);
+end;
+
+function ILogonInfo.transaction(status: IStatus): ITransaction;
+begin
+	Result := LogonInfoVTable(vTable).transaction(Self, status);
+	FbException.checkException(status);
+end;
+
 procedure IManagement.start(status: IStatus; logonInfo: ILogonInfo);
 begin
 	ManagementVTable(vTable).start(Self, status, logonInfo);
@@ -9837,6 +9857,24 @@ begin
 	end
 end;
 
+function ILogonInfoImpl_attachmentDispatcher(this: ILogonInfo; status: IStatus): IAttachment; cdecl;
+begin
+	try
+		Result := ILogonInfoImpl(this).attachment(status);
+	except
+		on e: Exception do FbException.catchException(status, e);
+	end
+end;
+
+function ILogonInfoImpl_transactionDispatcher(this: ILogonInfo; status: IStatus): ITransaction; cdecl;
+begin
+	try
+		Result := ILogonInfoImpl(this).transaction(status);
+	except
+		on e: Exception do FbException.catchException(status, e);
+	end
+end;
+
 var
 	ILogonInfoImpl_vTable: LogonInfoVTable;
 
@@ -12963,12 +13001,14 @@ initialization
 	IListUsersImpl_vTable.list := @IListUsersImpl_listDispatcher;
 
 	ILogonInfoImpl_vTable := LogonInfoVTable.create;
-	ILogonInfoImpl_vTable.version := 5;
+	ILogonInfoImpl_vTable.version := 7;
 	ILogonInfoImpl_vTable.name := @ILogonInfoImpl_nameDispatcher;
 	ILogonInfoImpl_vTable.role := @ILogonInfoImpl_roleDispatcher;
 	ILogonInfoImpl_vTable.networkProtocol := @ILogonInfoImpl_networkProtocolDispatcher;
 	ILogonInfoImpl_vTable.remoteAddress := @ILogonInfoImpl_remoteAddressDispatcher;
 	ILogonInfoImpl_vTable.authBlock := @ILogonInfoImpl_authBlockDispatcher;
+	ILogonInfoImpl_vTable.attachment := @ILogonInfoImpl_attachmentDispatcher;
+	ILogonInfoImpl_vTable.transaction := @ILogonInfoImpl_transactionDispatcher;
 
 	IManagementImpl_vTable := ManagementVTable.create;
 	IManagementImpl_vTable.version := 8;
