@@ -751,10 +751,16 @@ ValueExprNode* LeadWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
 
 AggNode* LeadWinNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 {
-	return FB_NEW_POOL(dsqlScratch->getPool()) LeadWinNode(dsqlScratch->getPool(),
+	const auto node = FB_NEW_POOL(dsqlScratch->getPool()) LeadWinNode(dsqlScratch->getPool(),
 		doDsqlPass(dsqlScratch, arg),
 		doDsqlPass(dsqlScratch, rows),
 		doDsqlPass(dsqlScratch, outExpr));
+
+	PASS1_set_parameter_type(dsqlScratch, node->rows,
+		[&] (dsc* desc) { desc->makeInt64(0); },
+		false);
+
+	return node;
 }
 
 
