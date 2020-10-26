@@ -21,10 +21,10 @@ a routine that changes the current time zone and later run `SET TIME ZONE LOCAL`
 to its initially received value.
 
 A time zone may be a string with a time zone region (for example, `America/Sao_Paulo`) or a hours:minutes displacement
-(for example, `-03:00` or `+3`) from GMT.
+(for example, `-03:00` or `+3:0`) from GMT.
 
 A time/timestamp with time zone is considered equal to another time/timestamp with time zone if their conversion to UTC
-are equal, for example, `time '10:00 -02' = time '09:00 -03'`, since both are the same as `time '12:00 GMT'`.
+are equal, for example, `time '10:00 -02:00' = time '09:00 -03:00'`, since both are the same as `time '12:00 GMT'`.
 This is also valid in the context of `UNIQUE` constraints and for sorting purposes.
 
 Some timestamps does not exist (DST starting) or repeats twice (DST ending). For the first case, when DST starts
@@ -85,8 +85,8 @@ The time/timestamp parts are stored in UTC (translated from the informed time zo
 Time zone identifiers (from regions) are put directly in the time_zone field.
 They start from 65535 (which is the GMT code) and are decreasing as new time zones were/are added.
 
-Time zone displacements (+/- HH:MM) are encoded with `(sign * (HH * 60 + MM)) + 1439`.
-For example, a `00:00` displacement is encoded as `(1 * (0 * 60 + 0)) + 1439 = 1439` and `-02:00` as `(-1 * (2 * 60 + 0)) + 1439 = 1319`.
+Time zone displacements (+/- hours:minutes) are encoded with `(sign * (hours * 60 + minutes)) + 1439`.
+For example, a `+00:00` displacement is encoded as `(1 * (0 * 60 + 0)) + 1439 = 1439` and `-02:00` as `(-1 * (2 * 60 + 0)) + 1439 = 1319`.
 
 EXTENDED TIME/TIMESTAMP WITH TIME ZONE have additionally more 2 bytes always containing absolute
 time zone offset in minutes.
@@ -215,16 +215,16 @@ fields are set using specified `ext_offset`.
 
 <time zone> ::=
     <time zone region> |
-    [+/-] <hour displacement> [: <minute displacement>]
+    {+ | -} <hours displacement> : <minutes displacement>
 ```
 
 Examples:
 
 - `'America/Sao_Paulo'`
 - `'-02:00'`
-- `'+04'`
-- `'04:00'`
-- `'04:30'`
+- `'+04:00'`
+- `'+4:0'`
+- `'-04:30'`
 
 ## `TIME WITH TIME ZONE` and `TIMESTAMP WITH TIME ZONE` literals
 
@@ -239,9 +239,9 @@ Examples:
 Examples:
 
 - `time '10:00 America/Los_Angeles'`
-- `time '10:00:00.5 +08'`
+- `time '10:00:00.5 +08:00'`
 - `timestamp '2018-01-01 10:00 America/Los_Angeles'`
-- `timestamp '2018-01-01 10:00:00.5 +08'`
+- `timestamp '2018-01-01 10:00:00.5 +08:00'`
 
 ## Statements and expressions
 
@@ -281,7 +281,7 @@ If `LOCAL` is used, the value is converted to the session time zone.
 #### Examples
 
 ```
-select time '12:00 GMT' at time zone '-03'
+select time '12:00 GMT' at time zone '-03:00'
   from rdb$database;
 
 select current_timestamp at time zone 'America/Sao_Paulo'
@@ -362,7 +362,7 @@ Returns:
 ```
 DATABASE_VERSION
 ================
-2017c
+2020d
 ```
 
 ### Procedure `TRANSITIONS`

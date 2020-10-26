@@ -917,7 +917,7 @@ Data source : @4"},		/* eds_statement */
 	{335545210, "Plugin @1:"},		/* plugin_name */
 	{335545211, "PARAMETER @1"},		/* parameter_name */
 	{335545212, "Starting page number for file @1 must be @2 or greater"},		/* file_starting_page_err */
-	{335545213, "Invalid time zone offset: @1 - must be between -14:00 and +14:00"},		/* invalid_timezone_offset */
+	{335545213, "Invalid time zone offset: @1 - must use format +/-hours:minutes and be between -14:00 and +14:00"},		/* invalid_timezone_offset */
 	{335545214, "Invalid time zone region: @1"},		/* invalid_timezone_region */
 	{335545215, "Invalid time zone ID: @1"},		/* invalid_timezone_id */
 	{335545216, "Wrong base64 text length @1, should be multiple of 4"},		/* tom_decode64len */

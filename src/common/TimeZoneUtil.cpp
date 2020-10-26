@@ -428,39 +428,40 @@ USHORT TimeZoneUtil::parse(const char* str, unsigned strLen)
 
 	skipSpaces(p, end);
 
-	int sign = 1;
-	bool signPresent = false;
+	const auto start = str;
 
 	if (p < end && (*p == '-' || *p == '+'))
 	{
-		signPresent = true;
-		sign = *p == '-' ? -1 : 1;
-		++p;
+		int sign = *p++ == '-' ? -1 : 1;
 		skipSpaces(p, end);
-	}
 
-	if (p < end && (signPresent || (*p >= '0' && *p <= '9')))
-	{
 		int tzh = parseNumber(p, end);
-		int tzm = 0;
 
-		skipSpaces(p, end);
-
-		if (p < end && *p == ':')
+		if (tzh >= 0)
 		{
-			++p;
 			skipSpaces(p, end);
-			tzm = (unsigned) parseNumber(p, end);
-			skipSpaces(p, end);
+
+			if (p < end && *p == ':')
+			{
+				++p;
+				skipSpaces(p, end);
+				int tzm = parseNumber(p, end);
+
+				if (tzm >= 0)
+				{
+					skipSpaces(p, end);
+
+					if (p == end)
+						return makeFromOffset(sign, tzh, tzm);
+				}
+			}
 		}
 
-		if (p != end)
-			status_exception::raise(Arg::Gds(isc_invalid_timezone_offset) << string(str, strLen));
-
-		return makeFromOffset(sign, tzh, tzm);
+		status_exception::raise(Arg::Gds(isc_invalid_timezone_offset) << string(start, end));
+		return 0;	// avoid warning
 	}
-	else
-		return parseRegion(p, str + strLen - p);
+
+	return parseRegion(p, str + strLen - p);
 }
 
 // Parses a time zone id from a region string.
@@ -497,7 +498,7 @@ USHORT TimeZoneUtil::parseRegion(const char* str, unsigned strLen)
 			return id;
 	}
 
-	status_exception::raise(Arg::Gds(isc_invalid_timezone_region) << string(start, len));
+	status_exception::raise(Arg::Gds(isc_invalid_timezone_region) << string(start, end));
 	return 0;
 }
 
@@ -1178,7 +1179,7 @@ static int parseNumber(const char*& p, const char* end)
 		n = n * 10 + *p++ - '0';
 
 	if (p == start)
-		status_exception::raise(Arg::Gds(isc_invalid_timezone_offset) << string(start, end - start));
+		return -1;
 
 	return n;
 }

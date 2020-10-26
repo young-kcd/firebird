@@ -752,9 +752,14 @@ void CVT_string_to_datetime(const dsc* desc,
 
 		components[i] = n;
 
+		bool hadSpace = false;
+
 		// Grab whitespace following the number
 		while (p < end && (*p == ' ' || *p == '\t'))
+		{
 			p++;
+			hadSpace = true;
+		}
 
 		if (p == end)
 			break;
@@ -762,18 +767,16 @@ void CVT_string_to_datetime(const dsc* desc,
 		// Grab a separator character
 		if (i <= 1)
 		{
-			if (date_sep == '\0' || *p == date_sep)
+			if (date_sep == '\0' || (date_sep != ' ' && *p == date_sep) || (date_sep == ' ' && hadSpace))
 			{
-				date_sep = *p;
-
-				if (*p == '/' || *p == '-')
+				if (date_sep != ' ' && (*p == '/' || *p == '-' || *p == '.'))
 				{
-					p++;
+					date_sep = *p++;
 					continue;
 				}
-				else if (*p == '.')
+				else if (hadSpace)
 				{
-					p++;
+					date_sep = ' ';
 					continue;
 				}
 			}

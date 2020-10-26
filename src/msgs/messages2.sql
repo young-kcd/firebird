@@ -1000,7 +1000,7 @@ Data source : @4', NULL, NULL)
 ('plugin_name', NULL, 'CryptoManager.cpp', NULL, 0, 890, NULL, 'Plugin @1:', NULL, NULL);
 ('parameter_name', 'ProcedureManager::checkDependencies', 'dfw.e', NULL, 0, 891, NULL, 'PARAMETER @1', NULL, NULL);
 ('file_starting_page_err', 'add_file', 'dfw.epp', NULL, 0, 892, NULL, 'Starting page number for file @1 must be @2 or greater', NULL, NULL);
-('invalid_timezone_offset', NULL, 'TimeZoneUtil.cpp', NULL, 0, 893, NULL, 'Invalid time zone offset: @1 - must be between -14:00 and +14:00', NULL, NULL);
+('invalid_timezone_offset', NULL, 'TimeZoneUtil.cpp', NULL, 0, 893, NULL, 'Invalid time zone offset: @1 - must use format +/-hours:minutes and be between -14:00 and +14:00', NULL, NULL);
 ('invalid_timezone_region', NULL, 'TimeZoneUtil.cpp', NULL, 0, 894, NULL, 'Invalid time zone region: @1', NULL, NULL);
 ('invalid_timezone_id', NULL, 'TimeZoneUtil.cpp', NULL, 0, 895, NULL, 'Invalid time zone ID: @1', NULL, NULL);
 ('tom_decode64len', NULL, 'SysFunction.cpp', NULL, 0, 896, NULL, 'Wrong base64 text length @1, should be multiple of 4', NULL, NULL);
