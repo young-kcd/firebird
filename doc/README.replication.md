@@ -36,16 +36,16 @@ ALTER DATABASE ENABLE PUBLICATION
 Also, the replication set (aka publication) should be defined. It includes tables that should be replicated. This is also done via the DDL command:
 
 -- to replicate all tables (including the ones created later): 
-ALTER DATABASE ADD ALL TO PUBLICATION 
+ALTER DATABASE INCLUDE ALL TO PUBLICATION 
 -- to replicate specific tables: 
-ALTER DATABASE ADD TABLE T1, T2, T3 TO PUBLICATION 
+ALTER DATABASE INCLUDE TABLE T1, T2, T3 TO PUBLICATION 
 
 Tables may later be excluded from the replication set:
 
 -- to disable replication of all tables (including the ones created later): 
-ALTER DATABASE DROP ALL FROM PUBLICATION 
+ALTER DATABASE EXCLUDE ALL FROM PUBLICATION 
 -- to disable replication of specific tables: 
-ALTER DATABASE DROP TABLE T1, T2, T3 FROM PUBLICATION 
+ALTER DATABASE EXCLUDE TABLE T1, T2, T3 FROM PUBLICATION 
 
 Tables enabled for replicated can be additionally filtered using two settings in the configuration file: include\_filter and exclude\_filter. They are regular expressions that are applied to table names and define rules for inclusion table\(s\) into the replication set or excluding them from the replication set.
 

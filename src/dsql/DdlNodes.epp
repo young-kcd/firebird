@@ -12508,8 +12508,8 @@ void AlterDatabaseNode::checkClauses(thread_db* tdbb)
 	if ((clauses & CLAUSE_ENABLE_PUB) && (clauses & CLAUSE_DISABLE_PUB))
 		(Arg::PrivateDyn(298) << Arg::Str("ENABLE PUBLICATION") << Arg::Str("DISABLE PUBLICATION")).raise();
 
-	if ((clauses & CLAUSE_PUB_ADD_TABLE) && (clauses & CLAUSE_PUB_DROP_TABLE))
-		(Arg::PrivateDyn(298) << Arg::Str("ADD TABLE TO PUBLICATION") << Arg::Str("DROP TABLE FROM PUBLICATION")).raise();
+	if ((clauses & CLAUSE_PUB_INCL_TABLE) && (clauses & CLAUSE_PUB_EXCL_TABLE))
+		(Arg::PrivateDyn(298) << Arg::Str("INCLUDE TABLE TO PUBLICATION") << Arg::Str("EXCLUDE TABLE FROM PUBLICATION")).raise();
 }
 
 void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
@@ -12562,7 +12562,7 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 		END_FOR
 	}
 
-	if (clauses & (CLAUSE_PUB_ADD_TABLE | CLAUSE_PUB_DROP_TABLE))
+	if (clauses & (CLAUSE_PUB_INCL_TABLE | CLAUSE_PUB_EXCL_TABLE))
 	{
 		if (pubTables.isEmpty())
 		{
@@ -12588,7 +12588,7 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 				WITH PUB.RDB$PUBLICATION_NAME EQ DEFAULT_PUBLICATION
 			{
 				MODIFY PUB
-					PUB.RDB$AUTO_ENABLE = (clauses & CLAUSE_PUB_ADD_TABLE) ? 1 : 0;
+					PUB.RDB$AUTO_ENABLE = (clauses & CLAUSE_PUB_INCL_TABLE) ? 1 : 0;
 					PUB.RDB$AUTO_ENABLE.NULL = FALSE;
 				END_MODIFY
 			}
@@ -12626,7 +12626,7 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 		{
 			const MetaName& tableName = *iter;
 
-			if (clauses & CLAUSE_PUB_ADD_TABLE)
+			if (clauses & CLAUSE_PUB_INCL_TABLE)
 			{
 				try
 				{

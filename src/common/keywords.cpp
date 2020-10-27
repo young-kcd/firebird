@@ -247,6 +247,7 @@ static const TOK tokens[] =
 	{TOK_IIF, "IIF", true},
 	{TOK_IN, "IN", false},
 	{TOK_INACTIVE, "INACTIVE", true},
+	{TOK_INCLUDE, "INCLUDE", true},
 	{TOK_INCREMENT, "INCREMENT", true},
 	{TOK_INDEX, "INDEX", false},
 	{TOK_INNER, "INNER", false},

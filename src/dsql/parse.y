@@ -615,6 +615,7 @@ using namespace Firebird;
 %token <metaNamePtr> HEX_DECODE
 %token <metaNamePtr> HEX_ENCODE
 %token <metaNamePtr> IDLE
+%token <metaNamePtr> INCLUDE
 %token <metaNamePtr> INT128
 %token <metaNamePtr> INVOKER
 %token <metaNamePtr> IV
@@ -4441,10 +4442,10 @@ db_alter_clause($alterDatabaseNode)
 		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_ENABLE_PUB; }
 	| DISABLE PUBLICATION
 		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_DISABLE_PUB; }
-	| ADD pub_table_filter($alterDatabaseNode) TO PUBLICATION
-		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_PUB_ADD_TABLE; }
-	| DROP pub_table_filter($alterDatabaseNode) FROM PUBLICATION
-		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_PUB_DROP_TABLE; }
+	| INCLUDE pub_table_filter($alterDatabaseNode) TO PUBLICATION
+		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_PUB_INCL_TABLE; }
+	| EXCLUDE pub_table_filter($alterDatabaseNode) FROM PUBLICATION
+		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_PUB_EXCL_TABLE; }
 	;
 
 %type crypt_key_clause(<alterDatabaseNode>)
@@ -8968,6 +8969,7 @@ non_reserved_word
 	| HEX_DECODE
 	| HEX_ENCODE
 	| IDLE
+	| INCLUDE
 	| INVOKER
 	| IV
 	| LAST_DAY
