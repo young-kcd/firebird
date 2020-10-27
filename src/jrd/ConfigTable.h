@@ -20,8 +20,8 @@
  *  Contributor(s): ______________________________________.
  */
 
-#ifndef JRD_FBCONFIG_TABLE_H
-#define JRD_FBCONFIG_TABLE_H
+#ifndef JRD_CONFIG_TABLE_H
+#define JRD_CONFIG_TABLE_H
 
 #include "firebird.h"
 #include "../common/classes/fb_string.h"
@@ -32,10 +32,10 @@
 namespace Jrd
 {
 
-class FBConfigTable : public SnapshotData
+class ConfigTable : public SnapshotData
 {
 public:
-	FBConfigTable(MemoryPool& pool, const Firebird::Config* conf);
+	ConfigTable(MemoryPool& pool, const Firebird::Config* conf);
 
 	// return data for RDB$CONFIG
 	RecordBuffer* getRecords(thread_db* tdbb, jrd_rel* relation);
@@ -45,10 +45,10 @@ private:
 };
 
 
-class FBConfigTableScan : public VirtualTableScan
+class ConfigTableScan : public VirtualTableScan
 {
 public:
-	FBConfigTableScan(CompilerScratch* csb, const Firebird::string& alias,
+	ConfigTableScan(CompilerScratch* csb, const Firebird::string& alias,
 					  StreamType stream, jrd_rel* relation)
 		: VirtualTableScan(csb, alias, stream, relation)
 	{
@@ -66,7 +66,7 @@ protected:
 private:
 	struct Impure
 	{
-		FBConfigTable* table;
+		ConfigTable* table;
 	};
 
 	RecordBuffer* getRecords(thread_db* tdbb, jrd_rel* relation) const;
@@ -76,4 +76,4 @@ private:
 
 } // namespace Jrd
 
-#endif // JRD_FBCONFIG_TABLE_H
+#endif // JRD_CONFIG_TABLE_H

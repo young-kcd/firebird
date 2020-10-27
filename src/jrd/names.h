@@ -442,7 +442,7 @@ NAME("MON$GUID", nam_mon_guid)
 NAME("MON$NEXT_ATTACHMENT", nam_mon_na)
 NAME("MON$NEXT_STATEMENT", nam_mon_ns)
 
-NAME("RDB$CONFIG", nam_cfg_table)
+NAME("RDB$CONFIG", nam_config)
 NAME("RDB$CONFIG_ID", nam_cfg_id)
 NAME("RDB$CONFIG_NAME", nam_cfg_name)
 NAME("RDB$CONFIG_VALUE", nam_cfg_value)

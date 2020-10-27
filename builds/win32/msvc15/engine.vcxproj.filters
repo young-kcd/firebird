@@ -222,6 +222,9 @@
     <ClCompile Include="..\..\..\src\jrd\Collation.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\ConfigTable.cpp">
+      <Filter>JRD files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\cvt2.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
@@ -498,9 +501,6 @@
     <ClCompile Include="..\..\..\src\jrd\MetaName.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\FBConfigTable.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\jrd\recsrc\RecordSource.h">
@@ -675,6 +675,9 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\Collation.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\jrd\ConfigTable.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\constants.h">
@@ -1038,9 +1041,6 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\QualifiedName.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\jrd\FBConfigTable.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>

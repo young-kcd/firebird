@@ -20,7 +20,7 @@
  *  Contributor(s): ______________________________________.
  */
 
-#include "../jrd/FBConfigTable.h"
+#include "../jrd/ConfigTable.h"
 #include "../jrd/ini.h"
 #include "../jrd/ids.h"
 
@@ -28,18 +28,18 @@ using namespace Jrd;
 using namespace Firebird;
 
 
-///  class FBConfigTable
+///  class ConfigTable
 
-FBConfigTable::FBConfigTable(MemoryPool& pool, const Config* conf) :
+ConfigTable::ConfigTable(MemoryPool& pool, const Config* conf) :
 	SnapshotData(pool),
 	m_conf(conf)
 {
 }
 
-RecordBuffer* FBConfigTable::getRecords(thread_db* tdbb, jrd_rel* relation)
+RecordBuffer* ConfigTable::getRecords(thread_db* tdbb, jrd_rel* relation)
 {
 	fb_assert(relation);
-	fb_assert(relation->rel_id == rel_cfg_table);
+	fb_assert(relation->rel_id == rel_config);
 
 	RecordBuffer* recordBuffer = getData(relation);
 	if (recordBuffer)
@@ -57,7 +57,8 @@ RecordBuffer* FBConfigTable::getRecords(thread_db* tdbb, jrd_rel* relation)
 		Record* rec = recordBuffer->getTempRecord();
 		rec->nullify();
 
-		putField(tdbb, rec, DumpField(f_cfg_id, VALUE_INTEGER, sizeof(key), &key));
+		SINT64 id = key;
+		putField(tdbb, rec, DumpField(f_cfg_id, VALUE_INTEGER, sizeof(id), &id));
 
 		const char* name = Config::getKeyName(key);
 		putField(tdbb, rec, DumpField(f_cfg_name, VALUE_STRING, strlen(name), name));
@@ -79,9 +80,9 @@ RecordBuffer* FBConfigTable::getRecords(thread_db* tdbb, jrd_rel* relation)
 }
 
 
-///  class FBConfigTableScan
+///  class ConfigTableScan
 
-void FBConfigTableScan::close(thread_db* tdbb) const
+void ConfigTableScan::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -92,20 +93,20 @@ void FBConfigTableScan::close(thread_db* tdbb) const
 	VirtualTableScan::close(tdbb);
 }
 
-const Format* FBConfigTableScan::getFormat(thread_db* tdbb, jrd_rel* relation) const
+const Format* ConfigTableScan::getFormat(thread_db* tdbb, jrd_rel* relation) const
 {
 	RecordBuffer* records = getRecords(tdbb, relation);
 	return records->getFormat();
 }
 
-bool FBConfigTableScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
+bool ConfigTableScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
 	FB_UINT64 position, Record* record) const
 {
 	RecordBuffer* records = getRecords(tdbb, relation);
 	return records->fetch(position, record);
 }
 
-RecordBuffer* FBConfigTableScan::getRecords(thread_db* tdbb, jrd_rel* relation) const
+RecordBuffer* ConfigTableScan::getRecords(thread_db* tdbb, jrd_rel* relation) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -113,7 +114,7 @@ RecordBuffer* FBConfigTableScan::getRecords(thread_db* tdbb, jrd_rel* relation) 
 	if (!impure->table)
 	{
 		MemoryPool* pool = tdbb->getDefaultPool();
-		impure->table = FB_NEW_POOL(*pool) FBConfigTable(*pool, tdbb->getDatabase()->dbb_config);
+		impure->table = FB_NEW_POOL(*pool) ConfigTable(*pool, tdbb->getDatabase()->dbb_config);
 	}
 
 	return impure->table->getRecords(tdbb, relation);

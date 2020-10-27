@@ -725,7 +725,7 @@ RELATION(nam_pub_tables, rel_pub_tables, ODS_13_0, rel_persistent)
 END_RELATION
 
 // Relation 53 (RDB$CONFIG)
-RELATION(nam_cfg_table, rel_cfg_table, ODS_13_0, rel_virtual)
+RELATION(nam_config, rel_config, ODS_13_0, rel_virtual)
 FIELD(f_cfg_id, nam_cfg_id, fld_cfg_id, 0, ODS_13_0)
 FIELD(f_cfg_name, nam_cfg_name, fld_cfg_name, 0, ODS_13_0)
 FIELD(f_cfg_value, nam_cfg_value, fld_cfg_value, 0, ODS_13_0)

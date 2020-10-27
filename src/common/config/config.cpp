@@ -641,6 +641,12 @@ bool Config::getDefaultValue(unsigned int key, string& str)
 	if (key >= MAX_CONFIG_KEY)
 		return false;
 
+	if (key == KEY_WIRE_CRYPT && !entries[key].default_value.strVal)
+	{
+		str = "Required";	// see getWireCrypt(WC_SERVER)
+		return true;
+	}
+
 	return valueAsString(entries[key].default_value, entries[key].data_type, str);
 }
 
@@ -994,9 +1000,12 @@ int Config::getWireCrypt(WireCryptMode wcMode) const
 			return WIRE_CRYPT_DISABLED;
 		if (wireCrypt == "ENABLED")
 			return WIRE_CRYPT_ENABLED;
+		if (wireCrypt == "REQUIRED")
+			return WIRE_CRYPT_REQUIRED;
 
-		// the safest choice
-		return WIRE_CRYPT_REQUIRED;
+		// wrong user value, fail to default
+		// should not happens, see checkValues()
+		fb_assert(false);
 	}
 
 	return wcMode == WC_CLIENT ? WIRE_CRYPT_ENABLED : WIRE_CRYPT_REQUIRED;
