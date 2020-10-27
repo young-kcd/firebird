@@ -156,6 +156,10 @@ namespace
 				// Create the target (= OLD) context and push it on the stack.
 				dsql_ctx* targetContext = FB_NEW_POOL(scratch->getPool()) dsql_ctx(scratch->getPool());
 				*targetContext = *oldContext;
+
+				// ASF: dsql_ctx::operator= do not copy ctx_internal_alias.
+				targetContext->ctx_internal_alias = oldContext->ctx_internal_alias;
+
 				targetContext->ctx_flags &= ~CTX_system;	// resolve unqualified fields
 				scratch->context->push(targetContext);
 
