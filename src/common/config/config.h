@@ -209,6 +209,8 @@ private:
 		ConfigValue default_value;
 	};
 
+	static ConfigValue specialProcessing(ConfigKey key, ConfigValue val);
+
 	void loadValues(const ConfigFile& file);
 	void setupDefaultConfig();
 	void checkValues();
@@ -222,7 +224,7 @@ private:
 		if (pPresent)
 			*pPresent = testKey(key);
 
-		return values[key].strVal;
+		return specialProcessing(key, values[key]).strVal;
 	}
 
 	bool getBool(ConfigKey key, bool* pPresent = nullptr) const
@@ -230,7 +232,7 @@ private:
 		if (pPresent)
 			*pPresent = testKey(key);
 
-		return values[key].boolVal;
+		return specialProcessing(key, values[key]).boolVal;
 	}
 
 	SINT64 getInt(ConfigKey key, bool* pPresent = nullptr) const
@@ -238,7 +240,7 @@ private:
 		if (pPresent)
 			*pPresent = testKey(key);
 
-		return values[key].intVal;
+		return specialProcessing(key, values[key]).intVal;
 	}
 
 	static bool valueAsString(ConfigValue val, ConfigType type, string& str);
@@ -303,14 +305,19 @@ public:
 	bool getBoolean(unsigned int key) const;
 
 	// Number of known keys
-	static unsigned int getKeyCount() { return MAX_CONFIG_KEY; };
-	static const char* getKeyName(unsigned int key) 
+	static unsigned int getKeyCount()
+	{
+		return MAX_CONFIG_KEY;
+	}
+
+	static const char* getKeyName(unsigned int key)
 	{
 		if (key >= MAX_CONFIG_KEY)
 			return nullptr;
 
 		return entries[key].key;
 	}
+
 	// false if value is null or key is not exists
 	bool getValue(unsigned int key, string& str) const;
 	static bool getDefaultValue(unsigned int key, string& str);

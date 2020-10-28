@@ -401,8 +401,6 @@ void Config::setupDefaultConfig()
 		pDefault->strVal = (serverMode == MODE_SUPER) ? GCPolicyCombined : GCPolicyCooperative;
 	}
 
-	//pDefault = &entries[KEY_SECURITY_DATABASE].default_value;
-
 	//pDefault = &entries[KEY_WIRE_CRYPT].default_value;
 //	if (!*pDefault)
 //		*pDefault == (ConfigValue) (xxx == WC_CLIENT) ? WIRE_CRYPT_ENABLED : WIRE_CRYPT_REQUIRED;
@@ -586,13 +584,6 @@ const char* Config::getString(unsigned int key) const
 	if (key >= MAX_CONFIG_KEY)
 		return NULL;
 
-	// irregular case
-	switch(key)
-	{
-	case KEY_SECURITY_DATABASE:
-		return getSecurityDatabase();
-	}
-
 	return getStr(static_cast<ConfigKey>(key));
 }
 
@@ -633,7 +624,7 @@ bool Config::getValue(unsigned int key, string& str) const
 	if (key >= MAX_CONFIG_KEY)
 		return false;
 
-	return valueAsString(values[key], entries[key].data_type, str);
+	return valueAsString(specialProcessing(static_cast<ConfigKey>(key), values[key]), entries[key].data_type, str);
 }
 
 bool Config::getDefaultValue(unsigned int key, string& str)
@@ -647,18 +638,18 @@ bool Config::getDefaultValue(unsigned int key, string& str)
 		return true;
 	}
 
-	return valueAsString(entries[key].default_value, entries[key].data_type, str);
+	return valueAsString(specialProcessing(static_cast<ConfigKey>(key), entries[key].default_value), entries[key].data_type, str);
 }
 
 
 int Config::getTempBlockSize()
 {
-	return (int) getDefaultConfig()->values[KEY_TEMP_BLOCK_SIZE].intVal;
+	return (int) getDefaultConfig()->getInt(KEY_TEMP_BLOCK_SIZE);
 }
 
 FB_UINT64 Config::getTempCacheLimit() const
 {
-	return  getInt(KEY_TEMP_CACHE_LIMIT);
+	return getInt(KEY_TEMP_CACHE_LIMIT);
 }
 
 bool Config::getRemoteFileOpenAbility()
@@ -978,15 +969,25 @@ int FirebirdConf::release()
 
 const char* Config::getSecurityDatabase() const
 {
-	const char* strVal = getStr(KEY_SECURITY_DATABASE);
-	if (!strVal)
+	return getStr(KEY_SECURITY_DATABASE);
+}
+
+Config::ConfigValue Config::specialProcessing(ConfigKey key, ConfigValue val)
+{
+	// irregular case
+	switch(key)
 	{
-		strVal = MasterInterfacePtr()->getConfigManager()->getDefaultSecurityDb();
-		if (!strVal)
-			strVal = "security.db";
+	case KEY_SECURITY_DATABASE:
+		if (!val.strVal)
+		{
+			val.strVal = MasterInterfacePtr()->getConfigManager()->getDefaultSecurityDb();
+			if (!val.strVal)
+				val.strVal = "security.db";
+		}
+		break;
 	}
 
-	return strVal;
+	return val;
 }
 
 int Config::getWireCrypt(WireCryptMode wcMode) const
