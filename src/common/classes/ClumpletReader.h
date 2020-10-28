@@ -57,7 +57,8 @@ public:
 		WideUnTagged,
 		SpbSendItems,
 		SpbReceiveItems,
-		SpbResponse
+		SpbResponse,
+		InfoResponse
 	};
 
 	struct KindList
@@ -130,7 +131,8 @@ public:
 		FB_SIZE_T rc = getBufferEnd() - getBuffer();
 		if (rc == 1 && kind != UnTagged     && kind != SpbStart &&
 					   kind != WideUnTagged && kind != SpbSendItems &&
-					   kind != SpbReceiveItems && kind != SpbResponse)
+					   kind != SpbReceiveItems && kind != SpbResponse &&
+					   kind != InfoResponse)
 		{
 			rc = 0;
 		}
