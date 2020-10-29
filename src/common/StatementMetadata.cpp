@@ -498,7 +498,7 @@ static int getNumericInfo(const UCHAR** ptr, const UCHAR* bufferEnd)
 {
 	fb_assert(bufferEnd - *ptr >= 2);
 
-	const SSHORT len = static_cast<SSHORT>(gds__vax_integer(*ptr, 2));
+	const USHORT len = static_cast<USHORT>(gds__vax_integer(*ptr, 2));
 	*ptr += 2;
 
 	fb_assert(bufferEnd - *ptr >= len);
@@ -513,20 +513,13 @@ static void getStringInfo(const UCHAR** ptr, const UCHAR* bufferEnd, string* str
 {
 	fb_assert(bufferEnd - *ptr >= 2);
 
-	const UCHAR* p = *ptr;
-	SSHORT len = static_cast<SSHORT>(gds__vax_integer(p, 2));
+	const USHORT len = static_cast<USHORT>(gds__vax_integer(*ptr, 2));
 	*ptr += 2;
 
 	fb_assert(bufferEnd - *ptr >= len);
 
-	// CVC: What else can we do here?
-	if (len < 0)
-		len = 0;
-
+	str->assign(*ptr, len);
 	*ptr += len;
-	p += 2;
-
-	str->assign(p, len);
 }
 
 
