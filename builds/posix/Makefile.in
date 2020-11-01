@@ -374,7 +374,7 @@ $(HELP_FDB):	help.fdb
 	$(CHMOD) 0444 $@
 
 help.fdb:	$(BLD_ROOT)/misc/help.gbak
-	$(RUN_GBAK) -MODE read_only -R $< $@
+	$(RUN_GBAK) -MODE read_only -REPLACE $< $@
 	$(CHMOD) 0444 $@
 
 $(SECURITY_FDB):	security.fdb

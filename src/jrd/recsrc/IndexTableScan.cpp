@@ -97,16 +97,30 @@ void IndexTableScan::close(thread_db* tdbb) const
 			impure->irsb_nav_records_visited = NULL;
 		}
 
-		if (impure->irsb_nav_page)
+		if (impure->irsb_nav_btr_gc_lock)
 		{
-			fb_assert(impure->irsb_nav_btr_gc_lock);
+#ifdef DEBUG_LCK_LIST
+			if (!impure->irsb_nav_page)
+				gds__log("DEBUG_LCK_LIST: irsb_nav_btr_gc_lock && !irsb_nav_page");
+#endif
 			impure->irsb_nav_btr_gc_lock->enablePageGC(tdbb);
 			delete impure->irsb_nav_btr_gc_lock;
 			impure->irsb_nav_btr_gc_lock = NULL;
-
-			impure->irsb_nav_page = 0;
 		}
+		impure->irsb_nav_page = 0;
 	}
+#ifdef DEBUG_LCK_LIST
+	// paranoid check
+	else if (impure->irsb_nav_btr_gc_lock)
+	{
+		gds__log("DEBUG_LCK_LIST: irsb_nav_btr_gc_lock && !(irsb_flags & irsb_open)");
+
+		impure->irsb_nav_btr_gc_lock->enablePageGC(tdbb);
+		delete impure->irsb_nav_btr_gc_lock;
+		impure->irsb_nav_btr_gc_lock = NULL;
+		impure->irsb_nav_page = 0;
+	}
+#endif
 }
 
 bool IndexTableScan::getRecord(thread_db* tdbb) const
@@ -563,7 +577,11 @@ void IndexTableScan::setPage(thread_db* tdbb, Impure* impure, win* window) const
 			if (!impure->irsb_nav_btr_gc_lock)
 			{
 				impure->irsb_nav_btr_gc_lock =
+#ifdef DEBUG_LCK_LIST
+					FB_NEW_RPT(*tdbb->getDefaultPool(), 0) BtrPageGCLock(tdbb, tdbb->getDefaultPool());
+#else
 					FB_NEW_RPT(*tdbb->getDefaultPool(), 0) BtrPageGCLock(tdbb);
+#endif
 			}
 
 			impure->irsb_nav_btr_gc_lock->disablePageGC(tdbb, window->win_page);

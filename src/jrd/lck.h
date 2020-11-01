@@ -86,6 +86,8 @@ class Lock : public pool_alloc_rpt<UCHAR, type_lck>
 public:
 	Lock(thread_db* tdbb, USHORT length, lck_t type, void* object = NULL, lock_ast_t ast = NULL);
 
+	~Lock();
+
 	Lock* detach();
 
 	Firebird::RefPtr<StableAttachmentPart> getLockStable()
@@ -98,7 +100,7 @@ public:
 		return lck_attachment ? lck_attachment->getHandle() : NULL;
 	}
 
-	void setLockAttachment(thread_db* tdbb, Attachment* att);
+	void setLockAttachment(Attachment* att);
 
 #ifdef DEBUG_LCK
 	Firebird::SyncObject	lck_sync;
