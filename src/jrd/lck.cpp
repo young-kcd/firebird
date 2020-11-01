@@ -1520,7 +1520,7 @@ Lock::~Lock()
 	if (lck_attachment || lck_next || lck_prior)
 	{
 #ifdef DEBUG_LCK_LIST
-		gds__log("Lock::~Lock(): this 0x%p, attachment 0x%p, lck_type %d, lck_next 0x%p, lck_prior 0x%p",
+		gds__log("DEBUG_LCK_LIST: Lock::~Lock(): this 0x%p, attachment 0x%p, lck_type %d, lck_next 0x%p, lck_prior 0x%p",
 			this, lck_attachment ? lck_attachment->getHandle() : NULL, 
 			(int) lck_type, lck_next, lck_prior);
 #endif

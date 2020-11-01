@@ -158,6 +158,21 @@ void Jrd::Attachment::deletePool(MemoryPool* pool)
 		if (att_pools.find(pool, pos))
 			att_pools.remove(pos);
 
+#ifdef DEBUG_LCK_LIST
+		// hvlad: this could be slow, use only when absolutely necessary
+		for (Lock* lock = att_long_locks; lock; )
+		{
+			Lock* next = lock->lck_next;
+			if (BtrPageGCLock::checkPool(lock, pool))
+			{
+				gds__log("DEBUG_LCK_LIST: found not detached lock 0x%p in deleting pool 0x%p", lock, pool);
+
+				//delete lock;
+				lock->setLockAttachment(NULL);
+			}
+			lock = next;
+		}
+#endif
 		MemoryPool::deletePool(pool);
 	}
 }

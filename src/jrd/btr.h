@@ -243,6 +243,29 @@ public:
 	void enablePageGC(thread_db* tdbb);
 
 	static bool isPageGCAllowed(thread_db* tdbb, const PageNumber& page);
+
+#ifdef DEBUG_LCK_LIST
+	BtrPageGCLock(thread_db* tdbb, Firebird::MemoryPool* pool)
+		: Lock(tdbb, PageNumber::getLockLen(), LCK_btr_dont_gc), m_pool(pool)
+	{
+	}
+
+	static bool checkPool(const Lock* lock, Firebird::MemoryPool* pool) 
+	{
+		if (!pool || !lock)
+			return false;
+
+		const Firebird::MemoryPool* pool2 = NULL;
+
+		if (lock && (lock->lck_type == LCK_btr_dont_gc))
+			pool2 = reinterpret_cast<const BtrPageGCLock*>(lock)->m_pool;
+
+		return (pool == pool2);
+	}
+
+private:
+	const Firebird::MemoryPool* m_pool;
+#endif
 };
 
 // Struct used for index creation
