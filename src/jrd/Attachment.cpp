@@ -52,7 +52,7 @@ using namespace Firebird;
 
 
 // static method
-Jrd::Attachment* Jrd::Attachment::create(Database* dbb, Firebird::IProvider* provider)
+Jrd::Attachment* Jrd::Attachment::create(Database* dbb, JProvider* provider)
 {
 	MemoryPool* const pool = dbb->createPool();
 
@@ -171,7 +171,7 @@ void Jrd::Attachment::backupStateReadUnLock(thread_db* tdbb)
 }
 
 
-Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, IProvider* provider)
+Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, JProvider* provider)
 	: att_pool(pool),
 	  att_memory_stats(&dbb->dbb_memory_stats),
 	  att_database(dbb),
