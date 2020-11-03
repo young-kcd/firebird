@@ -52,6 +52,7 @@ static const UCHAR DESCRIBE_VARS[] =
 static const unsigned INFO_BUFFER_SIZE = MemoryPool::MAX_MEDIUM_BLOCK_SIZE;
 
 
+static USHORT getLen(const UCHAR** ptr, const UCHAR* bufferEnd);
 static int getNumericInfo(const UCHAR** ptr, const UCHAR* bufferEnd);
 static void getStringInfo(const UCHAR** ptr, const UCHAR* bufferEnd, string* str);
 
@@ -488,16 +489,27 @@ void StatementMetadata::fetchParameters(UCHAR code, Parameters* parameters)
 //--------------------------------------
 
 
-// Pick up a VAX format numeric info item with a 2 byte length.
-static int getNumericInfo(const UCHAR** ptr, const UCHAR* bufferEnd)
+static USHORT getLen(const UCHAR** ptr, const UCHAR* bufferEnd)
 {
-	fb_assert(bufferEnd - *ptr >= 2);
+	if (bufferEnd - *ptr < 2)
+		fatal_exception::raise("Invalid info structure - no space for clumplet length");
 
 	const USHORT len = static_cast<USHORT>(gds__vax_integer(*ptr, 2));
 	*ptr += 2;
 
 	fb_assert(bufferEnd - *ptr >= len);
+	if (bufferEnd - *ptr < len)
+		fatal_exception::raiseFmt("Invalid info structure - no space for clumplet data: need %d, actual %d",
+			len, bufferEnd - *ptr);
 
+	return len;
+}
+
+
+// Pick up a VAX format numeric info item with a 2 byte length.
+static int getNumericInfo(const UCHAR** ptr, const UCHAR* bufferEnd)
+{
+	const USHORT len = getLen(ptr, bufferEnd);
 	int item = gds__vax_integer(*ptr, len);
 	*ptr += len;
 	return item;
@@ -506,13 +518,7 @@ static int getNumericInfo(const UCHAR** ptr, const UCHAR* bufferEnd)
 // Pick up a string valued info item.
 static void getStringInfo(const UCHAR** ptr, const UCHAR* bufferEnd, string* str)
 {
-	fb_assert(bufferEnd - *ptr >= 2);
-
-	const USHORT len = static_cast<USHORT>(gds__vax_integer(*ptr, 2));
-	*ptr += 2;
-
-	fb_assert(bufferEnd - *ptr >= len);
-
+	const USHORT len = getLen(ptr, bufferEnd);
 	str->assign(*ptr, len);
 	*ptr += len;
 }
