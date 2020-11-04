@@ -11421,7 +11421,6 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 	}
 	catch (const Exception&)
 	{
-		// Close stream, ignoring any error during it to keep the original error.
 		try
 		{
 			subQuery->close(tdbb);
@@ -11429,8 +11428,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 			request->req_flags |= flag;
 		}
 		catch (const Exception&)
-		{
-		}
+		{} // ignore any error to report the original one
 
 		throw;
 	}

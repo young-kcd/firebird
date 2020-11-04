@@ -1793,11 +1793,26 @@ bool RseBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	StableCursorSavePoint savePoint(tdbb, request->req_transaction, ownSavepoint);
 
-	subQuery->open(tdbb);
-	bool value = subQuery->fetch(tdbb);
+	bool value;
+	try
+	{
+		subQuery->open(tdbb);
+		value = subQuery->fetch(tdbb);
 
-	if (blrOp == blr_unique && value)
-		value = !subQuery->fetch(tdbb);
+		if (blrOp == blr_unique && value)
+			value = !subQuery->fetch(tdbb);
+	}
+	catch (const Exception&)
+	{
+		try
+		{
+			subQuery->close(tdbb);
+		}
+		catch (const Exception&)
+		{} // ignore any error to report the original one
+
+		throw;
+	}
 
 	subQuery->close(tdbb);
 
