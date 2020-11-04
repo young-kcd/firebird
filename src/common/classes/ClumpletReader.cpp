@@ -542,7 +542,6 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 		{
 		case isc_info_end:
 		case isc_info_truncated:
-		case isc_info_data_not_ready:
 		case isc_info_flag_end:
 			return SingleTpb;
 		}
