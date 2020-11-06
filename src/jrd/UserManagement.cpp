@@ -138,6 +138,14 @@ namespace
 		string value;
 		bool present;
 	};
+
+	class ChangeCharset : public AutoSetRestore<SSHORT>
+	{
+	public:
+		ChangeCharset(Attachment* att)
+			: AutoSetRestore(&att->att_charset, CS_NONE)
+		{ }
+	};
 } // anonymous namespace
 
 const Format* UsersTableScan::getFormat(thread_db* tdbb, jrd_rel* relation) const
@@ -183,6 +191,7 @@ IManagement* UserManagement::registerManager(Auth::Get& getPlugin, const char* p
 	CheckStatusWrapper statusWrapper(&status);
 
 	UserIdInfo idInfo(att, tra);
+	ChangeCharset cc(att);
 	manager->start(&statusWrapper, &idInfo);
 	if (status.getState() & IStatus::STATE_ERRORS)
 	{
@@ -271,6 +280,7 @@ UserManagement::~UserManagement()
 			LocalStatus status;
 			CheckStatusWrapper statusWrapper(&status);
 
+			ChangeCharset cc(att);
 			manager->rollback(&statusWrapper);
 			PluginManagerInterfacePtr()->releasePlugin(manager);
 			managers[i].second = NULL;
@@ -293,6 +303,7 @@ void UserManagement::commit()
 			LocalStatus status;
 			CheckStatusWrapper statusWrapper(&status);
 
+			ChangeCharset cc(att);
 			manager->commit(&statusWrapper);
 			if (status.getState() & IStatus::STATE_ERRORS)
 				status_exception::raise(&statusWrapper);
@@ -363,6 +374,7 @@ void UserManagement::execute(USHORT id)
 
 	LocalStatus status;
 	CheckStatusWrapper statusWrapper(&status);
+	ChangeCharset cc(att);
 
 	if (command->attr.entered() || command->op == Auth::ADDMOD_OPER)
 	{
