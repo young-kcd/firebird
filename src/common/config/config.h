@@ -211,7 +211,7 @@ private:
 
 	static ConfigValue specialProcessing(ConfigKey key, ConfigValue val);
 
-	void loadValues(const ConfigFile& file);
+	void loadValues(const ConfigFile& file, const char* srcName);
 	void setupDefaultConfig();
 	void checkValues();
 
@@ -249,19 +249,16 @@ private:
 
 	ConfigValue values[MAX_CONFIG_KEY];
 
-	// One bit per key: bit is set if corresponding key value was set in config
-	ULONG bits[MAX_CONFIG_KEY / BITS_PER_LONG + 1];
+	// Array of value source names, NULL item is for default value
+	HalfStaticArray<const char*, 4> valuesSource;
+
+	// Index of value source, zero if not set
+	UCHAR sourceIdx[MAX_CONFIG_KEY];
 
 	// test if given key value was set in config
 	bool testKey(unsigned int key) const
 	{
-		return bits[key / BITS_PER_LONG] & (1ul << key % BITS_PER_LONG);
-	}
-
-	// set bit of given key that was set in config
-	void setKey(unsigned int key)
-	{
-		bits[key / BITS_PER_LONG] |= (1ul << key % BITS_PER_LONG);
+		return sourceIdx[key] != 0;
 	}
 
 	mutable PathName notifyDatabase;
@@ -271,8 +268,8 @@ private:
 
 public:
 	explicit Config(const ConfigFile& file);				// use to build default config
-	Config(const ConfigFile& file, const Config& base);		// use to build db-specific config
-	Config(const ConfigFile& file, const Config& base, const PathName& notify);	// use to build db-specific config with notification
+	Config(const ConfigFile& file, const char* srcName, const Config& base);		// use to build db-specific config
+	Config(const ConfigFile& file, const char* srcName, const Config& base, const PathName& notify);	// use to build db-specific config with notification
 	~Config();
 
 	// Call it when database with given config is created
@@ -323,6 +320,11 @@ public:
 	static bool getDefaultValue(unsigned int key, string& str);
 	// return true if value is set at some level
 	bool getIsSet(unsigned int key) const { return testKey(key); }
+
+	const char* getValueSource(unsigned int key) const
+	{
+		return valuesSource[sourceIdx[key]];
+	}
 
 	// Static functions apply to instance-wide values,
 	// non-static may be specified per database.

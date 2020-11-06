@@ -242,10 +242,12 @@ Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
  */
 
 Config::Config(const ConfigFile& file)
-	: notifyDatabase(*getDefaultMemoryPool()), 
+	: notifyDatabase(*getDefaultMemoryPool()),
+	valuesSource(*getDefaultMemoryPool()),
 	serverMode(-1)
 {
-	memset(bits, 0, sizeof(bits));
+	memset(sourceIdx, 0, sizeof(sourceIdx[0]) * sizeof(sourceIdx));
+	valuesSource.add(NULL);
 
 	setupDefaultConfig();
 
@@ -269,43 +271,63 @@ Config::Config(const ConfigFile& file)
 		}
 	}
 
-	loadValues(file);
+	loadValues(file, CONFIG_FILE);
 }
 
-Config::Config(const ConfigFile& file, const Config& base)
-	: notifyDatabase(*getDefaultMemoryPool()), 
+Config::Config(const ConfigFile& file, const char* srcName, const Config& base)
+	: notifyDatabase(*getDefaultMemoryPool()),
+	valuesSource(*getDefaultMemoryPool()),
 	serverMode(-1)
 {
-	memset(bits, 0, sizeof(bits));
+	memset(sourceIdx, 0, sizeof(sourceIdx[0]) * sizeof(sourceIdx));
+	valuesSource.add(NULL);
+
+	for (FB_SIZE_T i = 1; i < base.valuesSource.getCount(); i++)
+	{
+		const char* src = base.valuesSource[i];
+		const size_t len = strlen(src);
+		char* str = FB_NEW char[len + 1];
+		strcpy(str, src);
+		valuesSource.add(str);
+	}
 
 	// Iterate through the known configuration entries
 
 	for (unsigned int i = 0; i < MAX_CONFIG_KEY; i++)
 	{
 		values[i] = base.values[i];
-		if (base.testKey(i))
-			setKey(i);
+		sourceIdx[i] = base.sourceIdx[i];
 	}
 
-	loadValues(file);
+	loadValues(file, srcName);
 }
 
-Config::Config(const ConfigFile& file, const Config& base, const PathName& notify)
-	: notifyDatabase(*getDefaultMemoryPool()), 
+Config::Config(const ConfigFile& file, const char* srcName, const Config& base, const PathName& notify)
+	: notifyDatabase(*getDefaultMemoryPool()),
+	valuesSource(*getDefaultMemoryPool()),
 	serverMode(-1)
 {
-	memset(bits, 0, sizeof(bits));
+	memset(sourceIdx, 0, sizeof(sourceIdx[0]) * sizeof(sourceIdx));
+	valuesSource.add(NULL);
+
+	for (FB_SIZE_T i = 1; i < base.valuesSource.getCount(); i++)
+	{
+		const char* src = base.valuesSource[i];
+		const size_t len = strlen(src);
+		char* str = FB_NEW char[len + 1];
+		strcpy(str, src);
+		valuesSource.add(str);
+	}
 
 	// Iterate through the known configuration entries
 
 	for (unsigned int i = 0; i < MAX_CONFIG_KEY; i++)
 	{
 		values[i] = base.values[i];
-		if (base.testKey(i))
-			setKey(i);
+		sourceIdx[i] = base.sourceIdx[i];
 	}
 
-	loadValues(file);
+	loadValues(file, srcName);
 
 	notifyDatabase = notify;
 }
@@ -323,12 +345,14 @@ void Config::merge(RefPtr<const Config>& config, const string* dpbConfig)
 	if (dpbConfig && dpbConfig->hasData())
 	{
 		ConfigFile txtStream(ConfigFile::USE_TEXT, dpbConfig->c_str());
-		config = FB_NEW Config(txtStream, *(config.hasData() ? config : getDefaultConfig()));
+		config = FB_NEW Config(txtStream, "<DPB>", *(config.hasData() ? config : getDefaultConfig()));
 	}
 }
 
-void Config::loadValues(const ConfigFile& file)
+void Config::loadValues(const ConfigFile& file, const char* srcName)
 {
+	unsigned srcIdx = 0;
+
 	// Iterate through the known configuration entries
 
 	for (int i = 0; i < MAX_CONFIG_KEY; i++)
@@ -355,7 +379,16 @@ void Config::loadValues(const ConfigFile& file)
 			//	break;
 			}
 
-			setKey(i);
+			if (!srcIdx)
+			{
+				const size_t len = strlen(srcName);
+				char* str = FB_NEW char[len + 1];
+				strcpy(str, srcName);
+				srcIdx = valuesSource.add(str);
+
+				fb_assert(srcIdx <= MAX_UCHAR);
+			}
+			sourceIdx[i] = srcIdx;
 		}
 
 		if (entry.data_type == TYPE_STRING && values[i] != entry.default_value)
@@ -509,6 +542,9 @@ Config::~Config()
 		//	break;
 		}
 	}
+
+	for (FB_SIZE_T i = 1; i < valuesSource.getCount(); i++)
+		delete[] valuesSource[i];
 }
 
 

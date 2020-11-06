@@ -73,6 +73,10 @@ RecordBuffer* ConfigTable::getRecords(thread_db* tdbb, jrd_rel* relation)
 		char set = m_conf->getIsSet(key) ? 1 : 0;
 		putField(tdbb, rec, DumpField(f_cfg_is_set, VALUE_BOOLEAN, 1, &set));
 
+		const char* valSrc = m_conf->getValueSource(key);
+		if (valSrc)
+			putField(tdbb, rec, DumpField(f_cfg_source, VALUE_STRING, strlen(valSrc), valSrc));
+
 		recordBuffer->store(rec);
 	}
 
