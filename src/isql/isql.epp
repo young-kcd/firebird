@@ -8189,7 +8189,7 @@ static void process_header(Firebird::IMessageMetadata* msg, const unsigned pad[]
 			isqlGlob.att_charset, static_cast<unsigned>(strlen(var.alias)), var.alias);
 		limit = MAX(limit, pad[i]) + 1;
 
-		for (unsigned j = 1; j < limit && j < 80; j++)
+		for (unsigned j = 1; j < limit; j++)
 			*p2++ = '=';
 		*p2++ = BLANK;
 	}
