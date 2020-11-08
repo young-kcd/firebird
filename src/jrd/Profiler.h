@@ -26,6 +26,7 @@
 #include "firebird.h"
 #include "firebird/Message.h"
 #include "../common/classes/fb_string.h"
+#include "../common/classes/Nullable.h"
 #include "../jrd/Monitoring.h"
 #include "../jrd/SystemPackages.h"
 
@@ -75,10 +76,49 @@ public:
 	class Stats
 	{
 	public:
+		void hit(SINT64 runTime)
+		{
+			if (counter == 0 || runTime < minTime)
+				minTime = runTime;
+
+			if (counter == 0 || runTime > maxTime)
+				maxTime = runTime;
+
+			totalTime += runTime;
+			++counter;
+		}
+
+	public:
 		FB_UINT64 counter = 0;
 		FB_UINT64 minTime = 0;
 		FB_UINT64 maxTime = 0;
 		FB_UINT64 totalTime = 0;
+	};
+
+	class ProfileRecordSource
+	{
+	public:
+		ProfileRecordSource(MemoryPool& pool)
+			: accessPath(pool)
+		{
+		}
+
+		unsigned sequence = 0;
+		Nullable<ULONG> parentSequence;
+		Firebird::string accessPath;
+		Stats openStats;
+		Stats fetchStats;
+	};
+
+	class ProfileCursor
+	{
+	public:
+		ProfileCursor(MemoryPool& pool)
+			: sources(pool)
+		{
+		}
+
+		Firebird::RightPooledMap<ULONG, ProfileRecordSource> sources;
 	};
 
 	class Request
@@ -88,6 +128,8 @@ public:
 			: requestType(pool),
 			  packageName(pool),
 			  routineName(pool),
+			  cursors(pool),
+			  sourcesCursor(pool),
 			  stats(pool),
 			  sqlText(pool)
 		{
@@ -99,6 +141,8 @@ public:
 		Firebird::string requestType;
 		Firebird::MetaString packageName;
 		Firebird::MetaString routineName;
+		Firebird::RightPooledMap<ULONG, ProfileCursor> cursors;
+		Firebird::NonPooledMap<ULONG, ULONG> sourcesCursor;
 		Firebird::NonPooledMap<FB_UINT64, Stats> stats;
 		Firebird::string sqlText;
 	};
@@ -125,6 +169,7 @@ private:
 	{
 		size_t sessions = 0;
 		size_t requests = 0;
+		size_t recSourceStats = 0;
 		size_t stats = 0;
 	};
 
@@ -135,7 +180,10 @@ public:
 	static Profiler* create(thread_db* tdbb);
 
 public:
+	void setupCursor(thread_db* tdbb, jrd_req* request, const Cursor* cursor);
 	void hitLineColumn(jrd_req* request, ULONG line, ULONG column, SINT64 runTime);
+	void hitRecSourceOpen(jrd_req* request, ULONG recSourceId, SINT64 runTime);
+	void hitRecSourceGetRecord(jrd_req* request, ULONG recSourceId, SINT64 runTime);
 
 	bool isActive() const
 	{
@@ -153,6 +201,8 @@ private:
 		return Firebird::Pair<Firebird::NonPooled<ULONG, ULONG>>(
 			ULONG((lineColumn >> 32) & 0xFFFFFFFF), ULONG(lineColumn & 0xFFFFFFFF));
 	}
+
+	Request* getRequest(jrd_req* request);
 
 private:
 	ULONG currentSessionId = 0;
@@ -204,6 +254,7 @@ private:
 	//----------
 
 	FB_MESSAGE(StartSessionInput, Firebird::ThrowStatusExceptionWrapper,
+		////  TODO: Options: PSQL, SQL.
 		(FB_INTL_VARCHAR(255, CS_METADATA), description)
 	);
 

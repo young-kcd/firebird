@@ -1337,7 +1337,6 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 
 	// Execute stuff until we drop
 
-	//// FIXME: Do we need to avoid profile routines which user does not have some type of permission?
 	SINT64 lastPerfCounter = fb_utils::query_performance_counter();
 	const StmtNode* profileNode = nullptr;
 	ULONG lastProfiledLine = node->line;

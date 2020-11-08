@@ -1,10 +1,10 @@
 # `RDB$PROFILER` package (FB 5.0)
 
-`RDB$PROFILER` package allows to profile execution of PSQL code gathering statistics of how many times each line was executed along with its minimum, maximum and accumulated execution time (with nanoseconds precision).
+`RDB$PROFILER` package allows to profile execution of PSQL code gathering statistics of how many times each line was executed along with its minimum, maximum and accumulated execution time (with nanoseconds precision), as well open and fetch statistics of implicit and explicit SQL cursors.
 
 To gather profile data, an user must first start a profile session with `RDB$PROFILER.START_SESSION`. This function returns an profile session ID which is later stored in the profile snapshot system tables to be read and analyzed by the user.
 
-After a session is started, PSQL statements execution statistics starts to be collected in engine memory. Note that a profile session gathers data only of statements executed in the same attachment where the session was started.
+After a session is started, PSQL and SQL statements statistics starts to be collected in engine memory. Note that a profile session gathers data only of statements executed in the same attachment where the session was started.
 
 A session may be paused to temporary disable statistics gathering in a session. It may be resumed later to return gather statistics in the same session.
 
@@ -45,7 +45,7 @@ end!
 
 -- Start profiling
 
-select rdb$profiler.start_session('Profile XPTO') from rdb$database!
+select rdb$profiler.start_session('Profile Session 1') from rdb$database!
 
 execute block
 as
@@ -56,16 +56,54 @@ end!
 
 execute procedure rdb$profiler.finish_session(true)!
 
+execute procedure ins!
+
+select rdb$profiler.start_session('Profile Session 2') from rdb$database!
+
+select mod(id, 5),
+       sum(val)
+  from tab
+  where id <= 50
+  group by mod(id, 5)
+  order by sum(val)!
+
+execute procedure rdb$profiler.finish_session(true)!
+
 select * from rdb$profile_sessions!
-select * from rdb$profile_requests!
-select * from rdb$profile_stats order by rdb$profile_session_id, rdb$profile_request_id, rdb$line, rdb$column!
+
+select preq.*
+  from rdb$profile_requests preq
+  join rdb$profile_sessions pses
+    on pses.rdb$profile_session_id = preq.rdb$profile_session_id and
+	   pses.rdb$description = 'Profile Session 1'!
+
+select pstat.*
+  from rdb$profile_stats pstat
+  join rdb$profile_sessions pses
+    on pses.rdb$profile_session_id = pstat.rdb$profile_session_id and
+	   pses.rdb$description = 'Profile Session 1'
+  order by pstat.rdb$profile_session_id,
+           pstat.rdb$profile_request_id,
+		   pstat.rdb$line,
+		   pstat.rdb$column!
+
+select pstat.*
+  from rdb$profile_record_source_stats pstat
+  join rdb$profile_sessions pses
+    on pses.rdb$profile_session_id = pstat.rdb$profile_session_id and
+	   pses.rdb$description = 'Profile Session 2'
+  order by pstat.rdb$profile_session_id,
+           pstat.rdb$profile_request_id,
+		   pstat.rdb$cursor_id,
+		   pstat.rdb$source_id!
 ```
 
 Result data for `RDB$PROFILE_SESSIONS`:
 
-| RDB$PROFILE_SESSION_ID | RDB$TIMESTAMP          |
-|-----------------------:|------------------------|
-|  1 | 2020-09-27 15:45:58.5930 America/Sao_Paulo |
+| RDB$PROFILE_SESSION_ID | RDB$DESCRIPTION   | RDB$TIMESTAMP                              |
+|-----------------------:|-------------------|--------------------------------------------|
+|                      1 | Profile Session 1 | 2020-09-27 15:45:58.5930 America/Sao_Paulo |
+|                      2 | Profile Session 2 | 2020-09-27 15:46:00.3000 America/Sao_Paulo |
 
 Result data for `RDB$PROFILE_REQUESTS`:
 
@@ -77,7 +115,6 @@ Result data for `RDB$PROFILE_REQUESTS`:
 
 Result data for `RDB$PROFILE_STATS`:
 
-
 | RDB$PROFILE_SESSION_ID | RDB$PROFILE_REQUEST_ID | RDB$LINE | RDB$COLUMN | RDB$COUNTER | RDB$MIN_TIME | RDB$MAX_TIME | RDB$ACCUMULATED_TIME |
 |-----------------------:|-----------------------:|---------:|-----------:|------------:|-------------:|-------------:|---------------------:|
 |                      1 |                    118 |        4 |          5 |           1 |  41567976    |     41567976 |             41567976 |
@@ -88,6 +125,19 @@ Result data for `RDB$PROFILE_STATS`:
 |                      1 |                    119 |        9 |         13 |         500 |       750    |        25497 |               806646 |
 |                      1 |                    119 |       10 |          9 |        1000 |      1058    |      5888615 |             37007949 |
 |                      1 |                    120 |        4 |          5 |         500 |      1934    |        53578 |              1939773 |
+
+Result data for `RDB$PROFILE_RECORD_SOURCE_STATS`:
+
+| RDB$PROFILE_SESSION_ID | RDB$PROFILE_REQUEST_ID | RDB$CURSOR_ID | RDB$RECORD_SOURCE_ID | RDB$PARENT_RECORD_SOURCE_ID | RDB$ACCESS_PATH                          | RDB$OPEN_COUNTER | RDB$OPEN_MIN_TIME | RDB$OPEN_MAX_TIME | RDB$OPEN_ACCUMULATED_TIME | RDB$FETCH_COUNTER | RDB$FETCH_MIN_TIME | RDB$FETCH_MAX_TIME | RDB$FETCH_ACCUMULATED_TIME |
+|-----------------------:|-----------------------:|--------------:|---------------------:|----------------------------:|------------------------------------------|-----------------:|------------------:|------------------:|--------------------------:|------------------:|-------------------:|-------------------:|---------------------------:|
+|                      2 |                    125 |             1 |                    1 |                    `<null>` | Table "RDB$DATABASE" Full Scan           |                0 |                 0 |                 0 |                         0 |                 1 |              39511 |              39511 |                      39511 |
+|                      2 |                    126 |             1 |                    1 |                    `<null>` | Sort (record length: 44, key length: 12) |                1 |           9789453 |           9789453 |                   9789453 |                 6 |               1255 |              16117 |                      56529 |
+|                      2 |                    126 |             1 |                    2 |                           1 | Aggregate                                |                1 |           9041973 |           9041973 |                   9041973 |                 6 |                608 |             116513 |                     349010 |
+|                      2 |                    126 |             1 |                    3 |                           2 | Sort (record length: 44, key length: 8)  |                1 |           9032505 |           9032505 |                   9032505 |                26 |                430 |              12786 |                      75872 |
+|                      2 |                    126 |             1 |                    4 |                           3 | Filter                                   |                1 |              6588 |              6588 |                      6588 |                26 |               8250 |            4437621 |                    8857693 |
+|                      2 |                    126 |             1 |                    5 |                           4 | Table "TAB" Full Scan                    |                1 |              2348 |              2348 |                      2348 |               501 |               4916 |            4191568 |                    7312176 |
+
+In this table request ID 125 should be disconsidered as it's the query calling `RDB$PROFILER.START_SESSION`.
 
 ## Function `START_SESSION`
 
@@ -167,3 +217,20 @@ The profile snaphsot tables are like user's global temporary table with `ON COMM
  - `RDB$MIN_TIME` type `BIGINT` - Minimal time (in nanoseconds) of a statement execution
  - `RDB$MAX_TIME` type `BIGINT` - Maximum time (in nanoseconds) of a statement execution
  - `RDB$TOTAL_TIME` type `BIGINT` - Accumulated execution time (in nanoseconds) of the statement
+
+## Table `RDB$PROFILE_RECORD_SOURCE_STATS`
+
+ - `RDB$PROFILE_SESSION_ID` type `BIGINT` - Profile session ID
+ - `RDB$PROFILE_REQUEST_ID` type `BIGINT` - Request ID
+ - `RDB$CURSOR_ID` type `BIGINT` - Cursor ID
+ - `RDB$RECORD_SOURCE_ID` type `BIGINT` - Record source ID
+ - `RDB$PARENT_RECORD_SOURCE_ID` type `BIGINT` - Parent record source ID
+ - `RDB$ACCESS_PATH` type `VARCHAR(255) CHARACTER SET UTF8` - Access path for the record source
+ - `RDB$OPEN_COUNTER` type `BIGINT` - Number of open times of the record source
+ - `RDB$OPEN_MIN_TIME` type `BIGINT` - Minimal time (in nanoseconds) of a record source open
+ - `RDB$OPEN_MAX_TIME` type `BIGINT` - Maximum time (in nanoseconds) of a record source open
+ - `RDB$OPEN_TOTAL_TIME` type `BIGINT` - Accumulated open time (in nanoseconds) of the record source
+ - `RDB$FETCH_COUNTER` type `BIGINT` - Number of fetch times of the record source
+ - `RDB$FETCH_MIN_TIME` type `BIGINT` - Minimal time (in nanoseconds) of a record source fetch
+ - `RDB$FETCH_MAX_TIME` type `BIGINT` - Maximum time (in nanoseconds) of a record source fetch
+ - `RDB$FETCH_TOTAL_TIME` type `BIGINT` - Accumulated fetch time (in nanoseconds) of the record source
