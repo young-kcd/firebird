@@ -268,8 +268,7 @@ private:
 
 public:
 	explicit Config(const ConfigFile& file);				// use to build default config
-	Config(const ConfigFile& file, const char* srcName, const Config& base);		// use to build db-specific config
-	Config(const ConfigFile& file, const char* srcName, const Config& base, const PathName& notify);	// use to build db-specific config with notification
+	Config(const ConfigFile& file, const char* srcName, const Config& base, const PathName& notify = "");	// use to build db-specific config with notification
 	~Config();
 
 	// Call it when database with given config is created

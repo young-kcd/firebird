@@ -246,7 +246,7 @@ Config::Config(const ConfigFile& file)
 	valuesSource(*getDefaultMemoryPool()),
 	serverMode(-1)
 {
-	memset(sourceIdx, 0, sizeof(sourceIdx[0]) * sizeof(sourceIdx));
+	memset(sourceIdx, 0, sizeof(sourceIdx));
 	valuesSource.add(NULL);
 
 	setupDefaultConfig();
@@ -274,40 +274,12 @@ Config::Config(const ConfigFile& file)
 	loadValues(file, CONFIG_FILE);
 }
 
-Config::Config(const ConfigFile& file, const char* srcName, const Config& base)
-	: notifyDatabase(*getDefaultMemoryPool()),
-	valuesSource(*getDefaultMemoryPool()),
-	serverMode(-1)
-{
-	memset(sourceIdx, 0, sizeof(sourceIdx[0]) * sizeof(sourceIdx));
-	valuesSource.add(NULL);
-
-	for (FB_SIZE_T i = 1; i < base.valuesSource.getCount(); i++)
-	{
-		const char* src = base.valuesSource[i];
-		const size_t len = strlen(src);
-		char* str = FB_NEW char[len + 1];
-		strcpy(str, src);
-		valuesSource.add(str);
-	}
-
-	// Iterate through the known configuration entries
-
-	for (unsigned int i = 0; i < MAX_CONFIG_KEY; i++)
-	{
-		values[i] = base.values[i];
-		sourceIdx[i] = base.sourceIdx[i];
-	}
-
-	loadValues(file, srcName);
-}
-
 Config::Config(const ConfigFile& file, const char* srcName, const Config& base, const PathName& notify)
 	: notifyDatabase(*getDefaultMemoryPool()),
 	valuesSource(*getDefaultMemoryPool()),
 	serverMode(-1)
 {
-	memset(sourceIdx, 0, sizeof(sourceIdx[0]) * sizeof(sourceIdx));
+	memset(sourceIdx, 0, sizeof(sourceIdx));
 	valuesSource.add(NULL);
 
 	for (FB_SIZE_T i = 1; i < base.valuesSource.getCount(); i++)
