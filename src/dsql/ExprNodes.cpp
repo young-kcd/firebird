@@ -70,6 +70,28 @@ using namespace Jrd;
 
 namespace
 {
+	bool sameNodes(CompilerScratch* csb, const ValueIfNode* node1,
+				   const CoalesceNode* node2, bool ignoreStreams)
+	{
+		// dimitr:	COALESCE could be represented as ValueIfNode in older databases,
+		// 			so compare them for actually being the same thing:
+		//			COALESCE(A, B) == VALUE_IF(A IS NULL, B, A)
+
+		if (node1 && node2)
+		{
+			const auto missing = nodeAs<MissingBoolNode>(node1->condition);
+			if (missing && missing->arg->sameAs(csb, node1->falseValue, false) &&
+				node2->args->items.getCount() == 2 &&
+				node2->args->items[0]->sameAs(csb, node1->falseValue, ignoreStreams) &&
+				node2->args->items[1]->sameAs(csb, node1->trueValue, ignoreStreams))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	// Try to expand the given stream. If it's a view reference, collect its base streams
 	// (the ones directly residing in the FROM clause) and recurse.
 	void expandViewStreams(CompilerScratch* csb, StreamType baseStream, SortedStreamList& streams)
@@ -3690,6 +3712,14 @@ ValueExprNode* CoalesceNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	CoalesceNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) CoalesceNode(*tdbb->getDefaultPool());
 	node->args = copier.copy(tdbb, args);
 	return node;
+}
+
+bool CoalesceNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
+{
+	if (ExprNode::sameAs(csb, other, ignoreStreams))
+		return true;
+
+	return sameNodes(csb, nodeAs<ValueIfNode>(other), this, ignoreStreams);
 }
 
 ValueExprNode* CoalesceNode::pass2(thread_db* tdbb, CompilerScratch* csb)
@@ -13371,6 +13401,14 @@ ValueExprNode* ValueIfNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	node->trueValue = copier.copy(tdbb, trueValue);
 	node->falseValue = copier.copy(tdbb, falseValue);
 	return node;
+}
+
+bool ValueIfNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
+{
+	if (ExprNode::sameAs(csb, other, ignoreStreams))
+		return true;
+
+	return sameNodes(csb, this, nodeAs<CoalesceNode>(other), ignoreStreams);
 }
 
 ValueExprNode* ValueIfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
