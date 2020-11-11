@@ -220,6 +220,7 @@ public:
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
@@ -1554,6 +1555,7 @@ public:
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 

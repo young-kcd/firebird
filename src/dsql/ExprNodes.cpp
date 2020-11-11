@@ -67,6 +67,27 @@ using namespace Jrd;
 
 namespace
 {
+	bool sameNodes(const ValueIfNode* node1, const CoalesceNode* node2, bool ignoreStreams)
+	{
+		// dimitr:	COALESCE could be represented as ValueIfNode in older databases,
+		// 			so compare them for actually being the same thing:
+		//			COALESCE(A, B) == VALUE_IF(A IS NULL, B, A)
+
+		if (node1 && node2)
+		{
+			const MissingBoolNode* const missing = node1->condition->as<MissingBoolNode>();
+			if (missing && missing->arg->sameAs(node1->falseValue, false) &&
+				node2->args->items.getCount() == 2 &&
+				node2->args->items[0]->sameAs(node1->falseValue, ignoreStreams) &&
+				node2->args->items[1]->sameAs(node1->trueValue, ignoreStreams))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	// Expand DBKEY for view
 	void expandViewNodes(thread_db* tdbb, CompilerScratch* csb, StreamType stream,
 						 ValueExprNodeStack& stack, UCHAR blrOp)
@@ -2986,6 +3007,14 @@ ValueExprNode* CoalesceNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	CoalesceNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) CoalesceNode(*tdbb->getDefaultPool());
 	node->args = copier.copy(tdbb, args);
 	return node;
+}
+
+bool CoalesceNode::sameAs(const ExprNode* other, bool ignoreStreams) const
+{
+	if (ExprNode::sameAs(other, ignoreStreams))
+		return true;
+
+	return sameNodes(other->as<ValueIfNode>(), this, ignoreStreams);
 }
 
 ValueExprNode* CoalesceNode::pass2(thread_db* tdbb, CompilerScratch* csb)
@@ -11736,6 +11765,14 @@ ValueExprNode* ValueIfNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	node->trueValue = copier.copy(tdbb, trueValue);
 	node->falseValue = copier.copy(tdbb, falseValue);
 	return node;
+}
+
+bool ValueIfNode::sameAs(const ExprNode* other, bool ignoreStreams) const
+{
+	if (ExprNode::sameAs(other, ignoreStreams))
+		return true;
+
+	return sameNodes(this, other->as<CoalesceNode>(), ignoreStreams);
 }
 
 ValueExprNode* ValueIfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
