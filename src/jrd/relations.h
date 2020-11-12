@@ -723,3 +723,13 @@ RELATION(nam_pub_tables, rel_pub_tables, ODS_13_0, rel_persistent)
 	FIELD(f_pubtab_pub_name, nam_pub_name, fld_pub_name, 1, ODS_13_0)
 	FIELD(f_pubtab_tab_name, nam_tab_name, fld_r_name, 1, ODS_13_0)
 END_RELATION
+
+// Relation 53 (RDB$CONFIG)
+RELATION(nam_config, rel_config, ODS_13_0, rel_virtual)
+	FIELD(f_cfg_id, nam_cfg_id, fld_cfg_id, 0, ODS_13_0)
+	FIELD(f_cfg_name, nam_cfg_name, fld_cfg_name, 0, ODS_13_0)
+	FIELD(f_cfg_value, nam_cfg_value, fld_cfg_value, 0, ODS_13_0)
+	FIELD(f_cfg_default, nam_cfg_default, fld_cfg_default, 0, ODS_13_0)
+	FIELD(f_cfg_is_set, nam_cfg_is_set, fld_cfg_is_set, 0, ODS_13_0)
+	FIELD(f_cfg_source, nam_cfg_source, fld_file_name2, 0, ODS_13_0)
+END_RELATION

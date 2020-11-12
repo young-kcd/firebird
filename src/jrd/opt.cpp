@@ -92,6 +92,7 @@
 #include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
+#include "../jrd/ConfigTable.h"
 
 using namespace Jrd;
 using namespace Firebird;
@@ -2295,6 +2296,10 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 
 		case rel_time_zones:
 			rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) TimeZonesTableScan(csb, alias, stream, relation);
+			break;
+
+		case rel_config:
+			rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) ConfigTableScan(csb, alias, stream, relation);
 			break;
 
 		default:
