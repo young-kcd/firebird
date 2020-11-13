@@ -73,8 +73,14 @@ public:
 		: login(p_login), password(p_password)
 	{ }
 
-	// Firebird::IClientBlock implementation
+	// Here we are going to place reference counted object on a stack.
+	// Release will never be called, but let's better have safe implementation for it.
+	int release() override
+	{
+		return 1;
+	}
 
+	// Firebird::IClientBlock implementation
 	const char* getLogin()
 	{
 		return login.c_str();
