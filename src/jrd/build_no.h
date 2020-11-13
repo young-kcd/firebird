@@ -6,7 +6,7 @@
   FORMAL BUILD NUMBER:33390
 */
 
-#define PRODUCT_VER_STRING "3.0.8.33390"
+#define PRODUCT_VER_STRING "3.0.8.33390-msg_metadata_trap"
 #define FILE_VER_STRING "WI-V3.0.8.33390"
 #define LICENSE_VER_STRING "WI-V3.0.8.33390"
 #define FILE_VER_NUMBER 3, 0, 8, 33390
@@ -15,4 +15,4 @@
 #define FB_REV_NO "8"
 #define FB_BUILD_NO "33390"
 #define FB_BUILD_TYPE "V"
-#define FB_BUILD_SUFFIX "Firebird 3.0"
+#define FB_BUILD_SUFFIX "Firebird 3.0 msg_metadata_trap"
