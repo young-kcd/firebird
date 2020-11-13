@@ -209,8 +209,8 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 
 	// if could be pooled, ask connections pool
 
-	if (!m_connPool)
-		m_connPool = FB_NEW_POOL(manager->getPool()) ConnectionsPool(manager->getPool());
+	// Ensure pool is created
+	getConnPool(true);
 
 	ULONG hash = 0;
 
@@ -246,6 +246,14 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 
 	fb_assert(conn != NULL);
 	return conn;
+}
+
+ConnectionsPool* Manager::getConnPool(bool create)
+{ 
+	if (!m_connPool && create)
+		m_connPool = FB_NEW_POOL(manager->getPool()) ConnectionsPool(manager->getPool());
+
+	return m_connPool;
 }
 
 void Manager::jrdAttachmentEnd(thread_db* tdbb, Jrd::Attachment* att, bool forced)

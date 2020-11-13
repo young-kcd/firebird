@@ -1190,14 +1190,15 @@ string AlterEDSPoolSetNode::internalPrint(NodePrinter& printer) const
 
 void AlterEDSPoolSetNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/, jrd_tra* /*transaction*/)
 {
+	EDS::ConnectionsPool* pool = EDS::Manager::getConnPool(false);
 	switch (m_param)
 	{
 	case POOL_SIZE:
-		EDS::Manager::getConnPool()->setMaxCount(m_value);
+		pool->setMaxCount(m_value);
 		break;
 
 	case POOL_LIFETIME:
-		EDS::Manager::getConnPool()->setLifeTime(m_value);
+		pool->setLifeTime(m_value);
 		break;
 
 	default:
@@ -1228,17 +1229,21 @@ string AlterEDSPoolClearNode::internalPrint(NodePrinter& printer) const
 
 void AlterEDSPoolClearNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/, jrd_tra* /*transaction*/)
 {
+	EDS::ConnectionsPool* pool = EDS::Manager::getConnPool(false);
+	if (!pool)
+		return;
+
 	switch (m_param)
 	{
 	case POOL_ALL:
 	{
-		EDS::Manager::getConnPool()->clearIdle(tdbb, true);
+		pool->clearIdle(tdbb, true);
 		break;
 	}
 
 	case POOL_OLDEST:
 	{
-		EDS::Manager::getConnPool()->clearIdle(tdbb, false);
+		pool->clearIdle(tdbb, false);
 		break;
 	}
 

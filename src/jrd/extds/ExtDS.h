@@ -81,7 +81,7 @@ public:
 		const Firebird::string& dataSource, const Firebird::string& user,
 		const Firebird::string& pwd, const Firebird::string& role, TraScope tra_scope);
 
-	static ConnectionsPool* getConnPool() { return m_connPool; }
+	static ConnectionsPool* getConnPool(bool create);
 
 	// Release bound external connections when some jrd attachment is about to be released
 	static void jrdAttachmentEnd(Jrd::thread_db* tdbb, Jrd::Attachment* att, bool forced);
