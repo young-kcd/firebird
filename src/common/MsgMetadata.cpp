@@ -186,7 +186,7 @@ void MetadataBuilder::moveNameToIndex(CheckStatusWrapper* status, const char* na
 
 		indexError(index, "moveNameToIndex");
 
-		for (ObjectsArray<MsgMetadata::Item>::iterator i = msgMetadata->items.begin();
+		for (XObjectsArray<MsgMetadata::Item>::iterator i = msgMetadata->items.begin();
 			 i != msgMetadata->items.end();
 			 ++i)
 		{

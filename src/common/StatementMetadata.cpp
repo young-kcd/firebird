@@ -464,7 +464,7 @@ void StatementMetadata::fetchParameters(UCHAR code, Parameters* parameters)
 	{
 		unsigned startIndex = 1;
 
-		for (ObjectsArray<Parameters::Item>::iterator i = parameters->items.begin();
+		for (XObjectsArray<Parameters::Item>::iterator i = parameters->items.begin();
 			 i != parameters->items.end();
 			 ++i)
 		{

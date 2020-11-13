@@ -28,7 +28,16 @@
 #include "firebird/Interface.h"
 #include "iberror.h"
 #include "../common/classes/fb_string.h"
+
+#define METADATA_BLR_TRAP
+
+#ifdef METADATA_BLR_TRAP
+#include "../common/classes/x_objects_array.h"
+#else
+#define XObjectsArray ObjectsArray
 #include "../common/classes/objects_array.h"
+#endif
+
 #include "../common/classes/ImplementHelper.h"
 #include "../common/dsc.h"
 
@@ -280,7 +289,7 @@ private:
 	void assign(IMessageMetadata* from);
 
 private:
-	ObjectsArray<Item> items;
+	XObjectsArray<Item> items;
 	unsigned length;
 };
 
