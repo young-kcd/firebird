@@ -4295,16 +4295,16 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 				return NULL;
 		}
 		else if (nameStr == EXT_CONN_POOL_SIZE)
-			resultStr.printf("%d", EDS::Manager::getConnPool()->getMaxCount());
+			resultStr.printf("%d", EDS::Manager::getConnPool(true)->getMaxCount());
 		else if (nameStr == EXT_CONN_POOL_IDLE)
-			resultStr.printf("%d", EDS::Manager::getConnPool()->getIdleCount());
+			resultStr.printf("%d", EDS::Manager::getConnPool(true)->getIdleCount());
 		else if (nameStr == EXT_CONN_POOL_ACTIVE)
 		{
-			EDS::ConnectionsPool* connPool = EDS::Manager::getConnPool();
+			EDS::ConnectionsPool* connPool = EDS::Manager::getConnPool(true);
 			resultStr.printf("%d", connPool->getAllCount() - connPool->getIdleCount());
 		}
 		else if (nameStr == EXT_CONN_POOL_LIFETIME)
-			resultStr.printf("%d", EDS::Manager::getConnPool()->getLifeTime());
+			resultStr.printf("%d", EDS::Manager::getConnPool(true)->getLifeTime());
 		else if (nameStr == REPLICATION_SEQ_NAME)
 			resultStr.printf("%" UQUADFORMAT, dbb->getReplSequence(tdbb));
 		else if (nameStr == EFFECTIVE_USER_NAME)
