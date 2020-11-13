@@ -399,7 +399,7 @@ public:
 	};
 
 public:
-	static Attachment* create(Database* dbb, Firebird::IProvider* provider);
+	static Attachment* create(Database* dbb, JProvider* provider);
 	static void destroy(Attachment* const attachment);
 
 	MemoryPool* const att_pool;					// Memory pool
@@ -656,14 +656,14 @@ public:
 	void checkReplSetLock(thread_db* tdbb);
 	void invalidateReplSet(thread_db* tdbb, bool broadcast);
 
-	Firebird::IProvider* getProvider()
+	JProvider* getProvider()
 	{
 		fb_assert(att_provider);
 		return att_provider;
 	}
 
 private:
-	Attachment(MemoryPool* pool, Database* dbb, Firebird::IProvider* provider);
+	Attachment(MemoryPool* pool, Database* dbb, JProvider* provider);
 	~Attachment();
 
 	unsigned int att_idle_timeout;		// seconds
@@ -676,7 +676,7 @@ private:
 	InitialOptions att_initial_options;	// Initial session options
 
 	Lock* att_repl_lock;				// Replication set lock
-	Firebird::IProvider* att_provider;	// Provider which created this attachment
+	JProvider* att_provider;	// Provider which created this attachment
 };
 
 
@@ -747,7 +747,6 @@ public:
 		{
 			if (m_index < m_list.m_attachments.getCount())
 			{
-				AttachmentsRefHolder::debugHelper(FB_FUNCTION);
 				m_list.m_attachments[m_index]->release();
 				m_list.m_attachments.remove(m_index);
 			}
@@ -780,7 +779,6 @@ public:
 	{
 		while (m_attachments.hasData())
 		{
-			debugHelper(FB_FUNCTION);
 			m_attachments.pop()->release();
 		}
 	}
@@ -801,8 +799,6 @@ public:
 
 private:
 	AttachmentsRefHolder(const AttachmentsRefHolder&);
-
-	static void debugHelper(const char* from);
 
 	Firebird::HalfStaticArray<StableAttachmentPart*, 128> m_attachments;
 };

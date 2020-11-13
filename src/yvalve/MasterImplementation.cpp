@@ -57,12 +57,6 @@ namespace Why {
 
 class UserStatus FB_FINAL : public Firebird::DisposeIface<Firebird::BaseStatus<UserStatus> >
 {
-public:
-	// IStatus implementation
-	void dispose()
-	{
-		delete this;
-	}
 };
 
 IStatus* MasterImplementation::getStatus()

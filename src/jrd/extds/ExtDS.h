@@ -326,7 +326,6 @@ private:
 
 		// ITimer implementation
 		void handler();
-		int release();
 
 		void start();
 		void stop();

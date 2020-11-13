@@ -135,7 +135,7 @@ namespace Replication
 
 			// IDisposable methods
 
-			void dispose()
+			void dispose() override
 			{
 				m_replicator->releaseTransaction(this);
 				delete this;
@@ -228,17 +228,6 @@ namespace Replication
 				   Manager* manager,
 				   const Firebird::Guid& dbGuid,
 				   const Firebird::MetaString& userName);
-
-		// IReferenceCounted methods
-		int release() override
-		{
-			if (--refCounter == 0)
-			{
-				delete this;
-				return 0;
-			}
-			return 1;
-		}
 
 		// IReplicatedSession methods
 

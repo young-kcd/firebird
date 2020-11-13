@@ -378,7 +378,6 @@ public:
 
 		// ITimer implementation
 		void handler();
-		int release();
 
 	private:
 		Database* dbb;

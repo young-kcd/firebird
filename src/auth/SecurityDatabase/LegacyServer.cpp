@@ -137,7 +137,6 @@ public:
 	int authenticate(CheckStatusWrapper* status, IServerBlock* sBlock,
 		IWriter* writerInterface);
 	void setDbCryptCallback(CheckStatusWrapper*, ICryptKeyCallback*) { }	// ignore
-	int release();
 
 private:
 	RefPtr<IPluginConfig> iParameter;
@@ -402,17 +401,6 @@ int SecurityDatabaseServer::authenticate(CheckStatusWrapper* status, IServerBloc
 		HANDSHAKE_DEBUG(isc_print_status(status->getWarnings()));
 		return IAuth::AUTH_FAILED;
 	}
-}
-
-int SecurityDatabaseServer::release()
-{
-	if (--refCounter == 0)
-	{
-		delete this;
-		return 0;
-	}
-
-	return 1;
 }
 
 namespace {

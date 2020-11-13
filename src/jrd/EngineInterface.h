@@ -52,7 +52,7 @@ class JBlob FB_FINAL :
 {
 public:
 	// IBlob implementation
-	int release();
+	int release() override;
 	void getInfo(Firebird::CheckStatusWrapper* status,
 		unsigned int itemsLength, const unsigned char* items,
 		unsigned int bufferLength, unsigned char* buffer);
@@ -93,7 +93,7 @@ class JTransaction FB_FINAL :
 {
 public:
 	// ITransaction implementation
-	int release();
+	int release() override;
 	void getInfo(Firebird::CheckStatusWrapper* status,
 		unsigned int itemsLength, const unsigned char* items,
 		unsigned int bufferLength, unsigned char* buffer);
@@ -146,7 +146,7 @@ class JResultSet FB_FINAL :
 {
 public:
 	// IResultSet implementation
-	int release();
+	int release() override;
 	int fetchNext(Firebird::CheckStatusWrapper* status, void* message);
 	int fetchPrior(Firebird::CheckStatusWrapper* status, void* message);
 	int fetchFirst(Firebird::CheckStatusWrapper* status, void* message);
@@ -187,7 +187,7 @@ class JBatch FB_FINAL :
 {
 public:
 	// IBatch implementation
-	int release();
+	int release() override;
 	void add(Firebird::CheckStatusWrapper* status, unsigned count, const void* inBuffer);
 	void addBlob(Firebird::CheckStatusWrapper* status, unsigned length, const void* inBuffer, ISC_QUAD* blobId,
 		unsigned parLength, const unsigned char* par);
@@ -228,7 +228,7 @@ class JReplicator FB_FINAL :
 {
 public:
 	// IReplicator implementation
-	int release();
+	int release() override;
 	void process(Firebird::CheckStatusWrapper* status, unsigned length, const unsigned char* data);
 	void close(Firebird::CheckStatusWrapper* status);
 
@@ -256,7 +256,7 @@ class JStatement FB_FINAL :
 {
 public:
 	// IStatement implementation
-	int release();
+	int release() override;
 	void getInfo(Firebird::CheckStatusWrapper* status,
 		unsigned int itemsLength, const unsigned char* items,
 		unsigned int bufferLength, unsigned char* buffer);
@@ -306,7 +306,7 @@ class JRequest FB_FINAL :
 {
 public:
 	// IRequest implementation
-	int release();
+	int release() override;
 	void receive(Firebird::CheckStatusWrapper* status, int level, unsigned int msg_type,
 		unsigned int length, void* message);
 	void send(Firebird::CheckStatusWrapper* status, int level, unsigned int msg_type,
@@ -344,7 +344,7 @@ class JEvents FB_FINAL : public Firebird::RefCntIface<Firebird::IEventsImpl<JEve
 {
 public:
 	// IEvents implementation
-	int release();
+	int release() override;
 	void cancel(Firebird::CheckStatusWrapper* status);
 
 public:
@@ -373,8 +373,8 @@ class JAttachment FB_FINAL :
 {
 public:
 	// IAttachment implementation
-	int release();
-	void addRef();
+	int release() override;
+	void addRef() override;
 
 	void getInfo(Firebird::CheckStatusWrapper* status,
 		unsigned int itemsLength, const unsigned char* items,
@@ -466,7 +466,7 @@ class JService FB_FINAL :
 {
 public:
 	// IService implementation
-	int release();
+	int release() override;
 	void detach(Firebird::CheckStatusWrapper* status);
 	void query(Firebird::CheckStatusWrapper* status,
 		unsigned int sendLength, const unsigned char* sendItems,
@@ -489,8 +489,7 @@ class JProvider FB_FINAL :
 public:
 	explicit JProvider(Firebird::IPluginConfig* pConf)
 		: cryptCallback(NULL), pluginConfig(pConf)
-	{
-	}
+	{ }
 
 	static JProvider* getInstance()
 	{
@@ -514,8 +513,6 @@ public:
 	void shutdown(Firebird::CheckStatusWrapper* status, unsigned int timeout, const int reason);
 	void setDbCryptCallback(Firebird::CheckStatusWrapper* status,
 		Firebird::ICryptKeyCallback* cryptCb);
-
-	int release();
 
 private:
 	JAttachment* internalAttach(Firebird::CheckStatusWrapper* status, const char* const fileName,

@@ -74,10 +74,6 @@ public:
 	{ }
 
 	// Firebird::IClientBlock implementation
-	int release()
-	{
-		return 1;
-	}
 
 	const char* getLogin()
 	{

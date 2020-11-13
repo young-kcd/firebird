@@ -142,7 +142,7 @@ class Blob FB_FINAL : public RefCntIface<IBlobImpl<Blob, CheckStatusWrapper> >
 {
 public:
 	// IBlob implementation
-	int release();
+	int release() override;
 	void getInfo(CheckStatusWrapper* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
@@ -188,7 +188,7 @@ class Transaction FB_FINAL : public RefCntIface<ITransactionImpl<Transaction, Ch
 {
 public:
 	// ITransaction implementation
-	int release();
+	int release() override;
 	void getInfo(CheckStatusWrapper* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
@@ -253,7 +253,7 @@ class ResultSet FB_FINAL : public RefCntIface<IResultSetImpl<ResultSet, CheckSta
 {
 public:
 	// IResultSet implementation
-	int release();
+	int release() override;
 	int fetchNext(CheckStatusWrapper* status, void* message);
 	int fetchPrior(CheckStatusWrapper* status, void* message);
 	int fetchFirst(CheckStatusWrapper* status, void* message);
@@ -306,7 +306,7 @@ public:
 	Batch(Statement* s, IMessageMetadata* inFmt, unsigned parLength, const unsigned char* par);
 
 	// IResultSet implementation
-	int release();
+	int release() override;
 	void add(Firebird::CheckStatusWrapper* status, unsigned count, const void* inBuffer);
 	void addBlob(Firebird::CheckStatusWrapper* status, unsigned length, const void* inBuffer, ISC_QUAD* blobId,
 		unsigned parLength, const unsigned char* par);
@@ -529,7 +529,7 @@ class Replicator FB_FINAL : public RefCntIface<IReplicatorImpl<Replicator, Check
 {
 public:
 	// IReplicator implementation
-	int release();
+	int release() override;
 	void process(CheckStatusWrapper* status, unsigned length, const unsigned char* data);
 	void close(CheckStatusWrapper* status);
 
@@ -562,7 +562,7 @@ class Statement FB_FINAL : public RefCntIface<IStatementImpl<Statement, CheckSta
 {
 public:
 	// IStatement implementation
-	int release();
+	int release() override;
 	void getInfo(CheckStatusWrapper* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
@@ -666,7 +666,7 @@ class Request FB_FINAL : public RefCntIface<IRequestImpl<Request, CheckStatusWra
 {
 public:
 	// IRequest implementation
-	int release();
+	int release() override;
 	void receive(CheckStatusWrapper* status, int level, unsigned int msg_type,
 						 unsigned int length, void* message);
 	void send(CheckStatusWrapper* status, int level, unsigned int msg_type,
@@ -714,7 +714,7 @@ class Events FB_FINAL : public RefCntIface<IEventsImpl<Events, CheckStatusWrappe
 {
 public:
 	// IEvents implementation
-	int release();
+	int release() override;
 	void cancel(CheckStatusWrapper* status);
 
 public:
@@ -756,7 +756,7 @@ class Attachment FB_FINAL : public RefCntIface<IAttachmentImpl<Attachment, Check
 {
 public:
 	// IAttachment implementation
-	int release();
+	int release() override;
 	void getInfo(CheckStatusWrapper* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
@@ -859,7 +859,7 @@ class Service FB_FINAL : public RefCntIface<IServiceImpl<Service, CheckStatusWra
 {
 public:
 	// IService implementation
-	int release();
+	int release() override;
 	void detach(CheckStatusWrapper* status);
 	void query(CheckStatusWrapper* status,
 					   unsigned int sendLength, const unsigned char* sendItems,
@@ -911,17 +911,6 @@ public:
 		unsigned int spbLength, const unsigned char* spb);
 	void shutdown(CheckStatusWrapper* status, unsigned int timeout, const int reason);
 	void setDbCryptCallback(CheckStatusWrapper* status, ICryptKeyCallback* cryptCallback);
-
-	int release()
-	{
-		if (--refCounter == 0)
-		{
-			delete this;
-			return 0;
-		}
-
-		return 1;
-	}
 
 protected:
 	IAttachment* attach(CheckStatusWrapper* status, const char* filename, unsigned int dpb_length,
@@ -8931,15 +8920,6 @@ void ClntAuthBlock::putData(CheckStatusWrapper* status, unsigned int length, con
 	{
 		ex.stuffException(status);
 	}
-}
-
-int ClntAuthBlock::release()
-{
-	if (--refCounter != 0)
-		return 1;
-
-	delete this;
-	return 0;
 }
 
 bool ClntAuthBlock::checkPluginName(Firebird::PathName& nameToCheck)

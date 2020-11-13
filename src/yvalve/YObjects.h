@@ -134,42 +134,37 @@ public:
 
 	static const unsigned DF_RELEASE =		0x1;
 
-	explicit YHelper(NextInterface* aNext
+	explicit YHelper(NextInterface* aNext, const char* m = NULL)
+		:
 #ifdef DEV_BUILD
-										, const char* m = NULL
+		  Firebird::RefCntIface<Intf>(m),
 #endif
-										);
+		  next(Firebird::REF_NO_INCR, aNext)
+	{ }
 
-	int release()
+	int release() override
 	{
-		Firebird::RefCntIface<Intf>::refCntDPrt('-');
-		int rc = --(this->refCounter);
+		int rc = --this->refCounter;
+		this->refCntDPrt('-');
 		if (rc == 0)
 		{
-			Impl* impl = static_cast<Impl*>(this);
-
 			if (next)
-			{
-				impl->destroy(0);
-			}
-
-			delete impl; 	// call correct destructor
-			return 0;
+				destroy(0);
+			delete this;
 		}
 
-		fb_assert(rc > 0);
-		return 1;
+		return rc;
 	}
+
+	virtual void destroy(unsigned dstrFlags) = 0;
 
 	void destroy2(unsigned dstrFlags)
 	{
-		RefDeb(Firebird::DEB_RLS_JATT, "YValve/destroy2");
 		next = NULL;
 
 		if (dstrFlags & DF_RELEASE)
 		{
-			RefDeb(Firebird::DEB_RLS_YATT, "destroy2");
-			release();
+			this->release();
 		}
 	}
 
@@ -626,16 +621,8 @@ public:
 	void setDbCryptCallback(Firebird::CheckStatusWrapper* status,
 		Firebird::ICryptKeyCallback* cryptCallback);
 
-	int release()
-	{
-		if (--refCounter == 0)
-		{
-			delete this;
-			return 0;
-		}
-
-		return 1;
-	}
+	void destroy(unsigned)
+	{ }
 
 private:
 	YAttachment* attachOrCreateDatabase(Firebird::CheckStatusWrapper* status, bool createFlag,

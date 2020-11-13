@@ -1188,11 +1188,6 @@ public:
 		}
 	}
 
-	void dispose()
-	{
-		delete this;
-	}
-
 private:
 	AutoPtr<ClumpletWriter> pb;
 	unsigned char nextTag;

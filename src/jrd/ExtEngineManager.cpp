@@ -1131,17 +1131,6 @@ namespace
 		{
 		}
 
-		int release() override
-		{
-			if (--refCounter == 0)
-			{
-				delete this;
-				return 0;
-			}
-
-			return 1;
-		}
-
 	public:
 		void open(ThrowStatusExceptionWrapper* status, IExternalContext* context,
 			char* name, unsigned nameSize) override
@@ -1245,7 +1234,6 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 			enginesCopy.put(accessor.current()->first, accessor.current()->second);
 	}
 
-	RefDeb(DEB_RLS_JATT, "ExtEngineManager::closeAttachment");
 	EngineCheckout cout(tdbb, FB_FUNCTION, true);
 
 	EnginesMap::Accessor accessor(&enginesCopy);

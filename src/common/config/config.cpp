@@ -964,17 +964,6 @@ FB_BOOLEAN FirebirdConf::asBoolean(unsigned int key)
 	return config->getBoolean(key);
 }
 
-int FirebirdConf::release()
-{
-	if (--refCounter == 0)
-	{
-		delete this;
-		return 0;
-	}
-
-	return 1;
-}
-
 const char* Config::getSecurityDatabase() const
 {
 	return getStr(KEY_SECURITY_DATABASE);

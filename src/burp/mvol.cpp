@@ -147,15 +147,6 @@ public:
 		return tdgbl->gbl_database_file_name;
 	}
 
-	int release()
-	{
-		if (--refCounter != 0)
-			return 1;
-
-		delete this;
-		return 0;
-	}
-
 private:
 	BurpGlobals* tdgbl;
 };

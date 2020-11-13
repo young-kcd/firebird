@@ -404,17 +404,6 @@ namespace Jrd
 		JRD_shutdown_database(dbb, SHUT_DBB_RELEASE_POOLS);
 	}
 
-	int Database::Linger::release()
-	{
-		if (--refCounter == 0)
-		{
-			delete this;
-			return 0;
-		}
-
-		return 1;
-	}
-
 	void Database::Linger::reset()
 	{
 		if (active)

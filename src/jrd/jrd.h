@@ -382,7 +382,6 @@ public:
 
 	// ITimer implementation
 	void handler();
-	int release();
 
 	bool expired() const
 	{

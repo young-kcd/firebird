@@ -83,7 +83,6 @@ public:
 	// IServer implementation
 	int authenticate(CheckStatusWrapper* status, IServerBlock* sBlock, IWriter* writerInterface);
 	void setDbCryptCallback(CheckStatusWrapper* status, ICryptKeyCallback* callback);
-    int release();
 
 	~SrpServer()
 	{
@@ -401,15 +400,6 @@ void SrpServer::setDbCryptCallback(CheckStatusWrapper* status, ICryptKeyCallback
 	cryptCallback = callback;
 }
 
-int SrpServer::release()
-{
-	if (--refCounter == 0)
-	{
-		delete this;
-		return 0;
-	}
-	return 1;
-}
 
 SimpleFactory<SrpServerImpl<Sha1> > factory_sha1;
 SimpleFactory<SrpServerImpl<sha224> > factory_sha224;

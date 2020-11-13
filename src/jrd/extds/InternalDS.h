@@ -87,6 +87,7 @@ protected:
 	virtual Statement* doCreateStatement();
 	virtual void doDetach(Jrd::thread_db* tdbb);
 
+	Firebird::AutoPlugin<Jrd::JProvider> m_provider;
 	Firebird::RefPtr<Jrd::JAttachment> m_attachment;
 	bool m_isCurrent;
 };

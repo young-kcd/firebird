@@ -723,17 +723,6 @@ public:
 		}
 	}
 
-	int release()
-	{
-		if (--refCounter == 0)
-		{
-			delete this;
-			return 0;
-		}
-
-		return 1;
-	}
-
 private:
 	Firebird::RefPtr<Firebird::IFirebirdConf> config;
 

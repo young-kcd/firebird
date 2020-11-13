@@ -84,7 +84,7 @@ CommitNumber ActiveSnapshots::getSnapshotForVersion(CommitNumber version_cn)
 
 
 // static method
-Jrd::Attachment* Jrd::Attachment::create(Database* dbb, Firebird::IProvider* provider)
+Jrd::Attachment* Jrd::Attachment::create(Database* dbb, JProvider* provider)
 {
 	MemoryPool* const pool = dbb->createPool();
 
@@ -218,7 +218,7 @@ void Jrd::Attachment::backupStateReadUnLock(thread_db* tdbb)
 }
 
 
-Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, IProvider* provider)
+Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, JProvider* provider)
 	: att_pool(pool),
 	  att_memory_stats(&dbb->dbb_memory_stats),
 	  att_database(dbb),
@@ -942,11 +942,6 @@ void Jrd::Attachment::SyncGuard::init(const char* f, bool
 			Arg::Gds(isc_att_shutdown).raise();
 		}
 	}
-}
-
-void AttachmentsRefHolder::debugHelper(const char* from)
-{
-	RefDeb(DEB_RLS_JATT, from);
 }
 
 void StableAttachmentPart::manualLock(ULONG& flags, const ULONG whatLock)

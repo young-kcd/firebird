@@ -144,17 +144,6 @@ int DebugServer::authenticate(Firebird::CheckStatusWrapper* status, Firebird::IS
 void DebugServer::setDbCryptCallback(Firebird::CheckStatusWrapper*, Firebird::ICryptKeyCallback*)
 { /* ignore it */ }
 
-int DebugServer::release()
-{
-	if (--refCounter == 0)
-	{
-		delete this;
-		return 0;
-	}
-
-	return 1;
-}
-
 DebugClient::DebugClient(Firebird::IPluginConfig*)
 	: str(getPool())
 { }
@@ -210,17 +199,6 @@ int DebugClient::authenticate(Firebird::CheckStatusWrapper* status, Firebird::IC
 	}
 
 	return AUTH_FAILED;
-}
-
-int DebugClient::release()
-{
-	if (--refCounter == 0)
-	{
-		delete this;
-		return 0;
-	}
-
-	return 1;
 }
 
 } // namespace Auth

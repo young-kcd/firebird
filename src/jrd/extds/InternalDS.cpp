@@ -173,9 +173,9 @@ void InternalConnection::attach(thread_db* tdbb)
 		FbLocalStatus status;
 		{
 			EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-			AutoPlugin<JProvider> jInstance(JProvider::getInstance());
-			jInstance->setDbCryptCallback(&status, tdbb->getAttachment()->att_crypt_callback);
-			m_attachment.assignRefNoIncr(jInstance->attachDatabase(&status, m_dbName.c_str(),
+			m_provider.reset(attachment->getProvider());
+			m_provider->addRef();
+			m_attachment.assignRefNoIncr(m_provider->attachDatabase(&status, m_dbName.c_str(),
 				newDpb.getBufferLength(), newDpb.getBuffer()));
 		}
 

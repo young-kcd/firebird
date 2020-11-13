@@ -889,7 +889,6 @@ public:
 	void createCryptCallback(Firebird::ICryptKeyCallback** callback);
 
 	// Firebird::IClientBlock implementation
-	int release();
 	const char* getLogin();
 	const char* getPassword();
 	const unsigned char* getData(unsigned int* length);

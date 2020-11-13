@@ -514,16 +514,6 @@ public:
 	FB_SIZE_T write(const void* buf, FB_SIZE_T size);
 	FB_SIZE_T write_s(CheckStatusWrapper* status, const void* buf, FB_SIZE_T size);
 
-	int release()
-	{
-		if (--refCounter == 0)
-		{
-			delete this;
-			return 0;
-		}
-		return 1;
-	}
-
 private:
 	TraceLog m_log;
 	ULONG m_sesId;

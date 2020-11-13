@@ -1600,14 +1600,12 @@ void Lock::setLockAttachment(Jrd::Attachment* attachment)
 #endif
 	}
 
-	RefDeb(DEB_RLS_JATT, "setLockAttachment");
 	lck_attachment = attachment ? attachment->getStable() : NULL;
 }
 
 Lock* Lock::detach()
 {
 	Lock* next = lck_next;
-	RefDeb(DEB_RLS_JATT, "Lock::detach");
 	lck_attachment = NULL;
 	lck_next = NULL;
 	lck_prior = NULL;

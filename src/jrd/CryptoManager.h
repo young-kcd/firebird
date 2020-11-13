@@ -344,15 +344,6 @@ private:
 		// IDbCryptInfo implementation
 		const char* getDatabaseFullPath(Firebird::CheckStatusWrapper* status);
 
-		int release()
-		{
-			if (--refCounter != 0)
-				return 1;
-
-			delete this;
-			return 0;
-		}
-
 	private:
 		CryptoManager* cryptoManager;
 	};

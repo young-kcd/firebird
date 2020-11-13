@@ -1423,17 +1423,6 @@ void ConnectionsPool::IdleTimer::handler()
 	start();
 }
 
-int ConnectionsPool::IdleTimer::release()
-{
-	if (--refCounter == 0)
-	{
-		delete this;
-		return 0;
-	}
-
-	return 1;
-}
-
 void ConnectionsPool::IdleTimer::start()
 {
 	FbLocalStatus s;

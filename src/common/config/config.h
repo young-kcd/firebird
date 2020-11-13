@@ -513,8 +513,6 @@ public:
 	FB_BOOLEAN asBoolean(unsigned int key);
 	unsigned int getVersion(CheckStatusWrapper* status);
 
-	int release();
-
 private:
 	RefPtr<const Config> config;
 };

@@ -129,8 +129,6 @@ public:
 	SQLDAMetadata(const XSQLDA* aSqlda);
 	~SQLDAMetadata() { delete[] offsets; }
 
-	int release();
-
 	unsigned getCount(CheckStatusWrapper* status);
 	const char* getField(CheckStatusWrapper* status, unsigned index);
 	const char* getRelation(CheckStatusWrapper* status, unsigned index);
@@ -625,17 +623,6 @@ IMetadataBuilder* SQLDAMetadata::getBuilder(CheckStatusWrapper* status)
 	// no way to construct SQLDA
 	fb_assert(false);
 	return NULL;
-}
-
-int SQLDAMetadata::release()
-{
-	if (--refCounter != 0)
-	{
-		return 1;
-	}
-
-	delete this;
-	return 0;
 }
 
 int SQLDAMetadata::detach()
@@ -1177,8 +1164,6 @@ namespace Why
 
 		void fini()
 		{
-			RefDeb(DEB_RLS_JATT, "YEntry::fini");
-
 			if (ref)
 			{
 				MutexLockGuard guard(ref->enterMutex, FB_FUNCTION);
@@ -2800,17 +2785,6 @@ namespace
 			{ }
 		}
 
-		int release()
-		{
-			if (--refCounter == 0)
-			{
-				delete this;
-				return 0;
-			}
-
-			return 1;
-		}
-
 		UCHAR* buffer;
 		Semaphore sem;
 	};
@@ -2896,17 +2870,6 @@ namespace
 				CheckStatusWrapper statusWrapper(&status);
 				tmp->cancel(&statusWrapper);
 			}
-		}
-
-		int release()
-		{
-			if (--refCounter == 0)
-			{
-				delete this;
-				return 0;
-			}
-
-			return 1;
 		}
 
 		Mutex mtx;
@@ -3885,16 +3848,6 @@ ITransaction* MasterImplementation::registerTransaction(IAttachment* attachment,
 	return rc;
 }
 
-template <typename Impl, typename Intf>
-#ifdef DEV_BUILD
-YHelper<Impl, Intf>::YHelper(NextInterface* aNext, const char* m)
-	: RefCntIface<Intf>(m)
-#else
-YHelper<Impl, Intf>::YHelper(NextInterface* aNext)
-#endif
-{
-	next.assignRefNoIncr(aNext);
-}
 
 //-------------------------------------
 
@@ -6191,7 +6144,6 @@ YAttachment* Dispatcher::createDatabase(CheckStatusWrapper* status, const char* 
 YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::CheckStatusWrapper* status, bool createFlag,
 	const char* filename, unsigned int dpbLength, const unsigned char* dpb)
 {
-	RefDeb(DEB_AR_JATT, "Dispatcher::attachOrCreateDatabase");
 	try
 	{
 		DispatcherEntry entry(status);

@@ -156,8 +156,9 @@ namespace Jrd
 
 int JBlob::release()
 {
-	if (--refCounter != 0)
-		return 1;
+	int rc = --refCounter;
+	if (rc != 0)
+		return rc;
 
 	if (blob)
 	{
@@ -179,10 +180,9 @@ int JBlob::release()
 
 int JTransaction::release()
 {
-	if (--refCounter != 0)
-		return 1;
-
-	RefDeb(DEB_RLS_JATT, "JTransaction::release");
+	int rc = --refCounter;
+	if (rc != 0)
+		return rc;
 
 	if (transaction)
 	{
@@ -206,8 +206,9 @@ int JTransaction::release()
 
 int JStatement::release()
 {
-	if (--refCounter != 0)
-		return 1;
+	int rc = --refCounter;
+	if (rc != 0)
+		return rc;
 
 	if (statement)
 	{
@@ -223,8 +224,9 @@ int JStatement::release()
 
 int JRequest::release()
 {
-	if (--refCounter != 0)
-		return 1;
+	int rc = --refCounter;
+	if (rc != 0)
+		return rc;
 
 	if (rq)
 	{
@@ -240,8 +242,9 @@ int JRequest::release()
 
 int JEvents::release()
 {
-	if (--refCounter != 0)
-		return 1;
+	int rc = --refCounter;
+	if (rc != 0)
+		return rc;
 
 	if (id >= 0)
 	{
@@ -284,7 +287,6 @@ void JAttachment::addRef()
 
 int JAttachment::release()
 {
-#ifdef DEV_BUILD
 	int r = --refCounter;
 #ifdef DEBUG_ATT_COUNTERS
 	ReferenceCounterDebugger* my = ReferenceCounterDebugger::get(DEB_RLS_JATT);
@@ -293,10 +295,6 @@ int JAttachment::release()
 #endif
 	if (r != 0)
 		return r;
-#else
-	if (--refCounter != 0)
-		return 1;
-#endif
 
 	if (att)
 	{
@@ -357,8 +355,9 @@ JService::JService(Jrd::Service* handle)
 
 int JService::release()
 {
-	if (--refCounter != 0)
-		return 1;
+	int rc = --refCounter;
+	if (rc != 0)
+		return rc;
 
 	if (svc)
 	{
@@ -375,16 +374,6 @@ int JService::release()
 	return 0;
 }
 
-int JProvider::release()
-{
-	if (--refCounter == 0)
-	{
-		delete this;
-		return 0;
-	}
-
-	return 1;
-}
 
 static void threadDetach()
 {
@@ -1295,7 +1284,7 @@ static VdnResult	verifyDatabaseName(const PathName&, FbStatusVector*, bool);
 static void		unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* userStatus, bool internalFlag);
 static JAttachment*	initAttachment(thread_db*, const PathName&, const PathName&, RefPtr<const Config>, bool,
 	const DatabaseOptions&, RefMutexUnlock&, IPluginConfig*, JProvider*);
-static JAttachment*	create_attachment(const PathName&, Database*, IProvider* provider, const DatabaseOptions&, bool newDb);
+static JAttachment*	create_attachment(const PathName&, Database*, JProvider* provider, const DatabaseOptions&, bool newDb);
 static void		prepare_tra(thread_db*, jrd_tra*, USHORT, const UCHAR*);
 static void		release_attachment(thread_db*, Attachment*);
 static void		start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
@@ -1592,8 +1581,6 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
  *	sullied by user data.
  *
  **************************************/
-	RefDeb(DEB_AR_JATT, "JProvider::attachDatabase");
-
 	try
 	{
 		ThreadContextHolder tdbb(user_status);
@@ -2706,7 +2693,6 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
  *	Create a nice, squeeky clean database, uncorrupted by user data.
  *
  **************************************/
-	RefDeb(DEB_AR_JATT, "JProvider::createDatabase");
 	try
 	{
 		ThreadContextHolder tdbb(user_status);
@@ -3195,7 +3181,6 @@ void JAttachment::detach(CheckStatusWrapper* user_status)
 	if (!att->getHandle())
 		return;				// already detached
 
-	RefDeb(DEB_RLS_JATT, "JAttachment::detach");
 	freeEngineData(user_status, false);
 }
 
@@ -5338,8 +5323,9 @@ FB_BOOLEAN JResultSet::isBof(CheckStatusWrapper* user_status)
 
 int JResultSet::release()
 {
-	if (--refCounter != 0)
-		return 1;
+	int rc = --refCounter;
+	if (rc != 0)
+		return rc;
 
 	if (cursor)
 	{
@@ -5895,8 +5881,9 @@ StableAttachmentPart* JBatch::getAttachment()
 
 int JBatch::release()
 {
-	if (--refCounter != 0)
-		return 1;
+	int rc = --refCounter;
+	if (rc != 0)
+		return rc;
 
 	if (batch)
 	{
@@ -6234,8 +6221,9 @@ JReplicator::JReplicator(StableAttachmentPart* sa)
 
 int JReplicator::release()
 {
-	if (--refCounter != 0)
-		return 1;
+	int rc = --refCounter;
+	if (rc != 0)
+		return rc;
 
 	LocalStatus status;
 	CheckStatusWrapper statusWrapper(&status);
@@ -7055,7 +7043,6 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
  *	Upon entry mutex dbInitMutex must be locked.
  *
  **************************************/
-	RefDeb(DEB_AR_JATT, "jrd/initAttachment()");
 	SET_TDBB(tdbb);
 	fb_assert(dbInitMutex->locked());
 
@@ -7233,7 +7220,7 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 
 static JAttachment* create_attachment(const PathName& alias_name,
 									  Database* dbb,
-									  IProvider* provider,
+									  JProvider* provider,
 									  const DatabaseOptions& options,
 									  bool newDb)
 {
@@ -7247,7 +7234,6 @@ static JAttachment* create_attachment(const PathName& alias_name,
  *	Create attachment and link it to dbb
  *
  **************************************/
-	RefDeb(DEB_AR_JATT, "jrd/create_attachment()");
 	fb_assert(dbb->locked());
 
 	Attachment* attachment = NULL;
@@ -8356,8 +8342,6 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options, const char
 
 static void unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* userStatus, bool internalFlag)
 {
-	RefDeb(DEB_RLS_JATT, "unwindAttach");
-	RefDeb(DEB_AR_JATT, "unwindAttach");
 	transliterateException(tdbb, ex, userStatus, NULL);
 
 	try

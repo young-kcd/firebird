@@ -984,17 +984,6 @@ public:
 		}
 	}
 
-	int release()
-	{
-		if (--refCounter == 0)
-		{
-			delete this;
-			return 0;
-		}
-
-		return 1;
-	}
-
 	bool operator== (Sys5Semaphore& sem)
 	{
 		return semId == sem.getId() && semNum == sem.semNum;
