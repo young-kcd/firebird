@@ -71,13 +71,23 @@ void PluginDatabases::getInstance(IPluginConfig* pluginConfig, RefPtr<CachedSecu
 
 	{ // guard scope
 		MutexLockGuard g(arrayMutex, FB_FUNCTION);
-		for (unsigned int i = 0; i < dbArray.getCount(); ++i)
+		for (unsigned int i = 0; i < dbArray.getCount(); )
 		{
 			if (secDbName == dbArray[i]->secureDbName)
 			{
-				instance = dbArray[i];
-				break;
+				CachedSecurityDatabase* fromCache = dbArray[i];
+				if (fromCache->secDb->test())
+				{
+					instance = fromCache;
+					break;
+				}
+				else
+				{
+					dbArray.remove(i);
+					continue;
+				}
 			}
+			++i;
 		}
 
 		if (!instance)
@@ -147,7 +157,7 @@ void PluginDatabases::handler(CachedSecurityDatabase* tgt)
 		const ISC_STATUS* status = st.begin();
 		if (status[0] == 1 && status[1] != isc_att_shutdown)
 		{
-			iscLogStatus("Legacy security database timer handler", status);
+			iscLogStatus("Security database timer handler", status);
 		}
 	}
 }

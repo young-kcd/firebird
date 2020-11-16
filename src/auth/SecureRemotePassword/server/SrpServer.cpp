@@ -109,7 +109,8 @@ protected:
 class SecurityDatabase : public VSecDb
 {
 public:
-	bool lookup(void* inMsg, void* outMsg)
+	// VSecDb implementation
+	bool lookup(void* inMsg, void* outMsg) override
 	{
 		FbLocalStatus status;
 
@@ -118,6 +119,14 @@ public:
 		check(&status);
 
 		return false;	// safe default
+	}
+
+	bool test() override
+	{
+		FbLocalStatus status;
+
+		att->ping(&status);
+		return !(status->getState() & IStatus::STATE_ERRORS);
 	}
 
 	// This 2 are needed to satisfy temporarily different calling requirements

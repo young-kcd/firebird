@@ -146,7 +146,12 @@ private:
 class SecurityDatabase : public VSecDb
 {
 public:
-	bool lookup(void* inMsg, void* outMsg);
+	bool lookup(void* inMsg, void* outMsg) override;
+
+	bool test() override
+	{
+		return fb_ping(status, &lookup_db) == FB_SUCCESS;
+	}
 
 	// This 2 are needed to satisfy temporarily different calling requirements
 	static int shutdown(const int, const int, void*)

@@ -49,6 +49,7 @@ public:
 	}
 
 	virtual bool lookup(void* inMsg, void* outMsg) = 0;
+	virtual bool test() = 0;
 };
 
 

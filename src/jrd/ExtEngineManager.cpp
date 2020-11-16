@@ -603,8 +603,6 @@ ExtEngineManager::ExternalContextImpl::ExternalContextImpl(thread_db* tdbb,
 
 	clientCharSet = INTL_charset_lookup(tdbb, internalAttachment->att_client_charset)->getName();
 
-	internalAttachment->getStable()->addRef();
-
 	externalAttachment = MasterInterfacePtr()->registerAttachment
 		(internalAttachment->getProvider(), internalAttachment->getInterface());
 }
