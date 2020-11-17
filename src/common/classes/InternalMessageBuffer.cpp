@@ -45,6 +45,7 @@ public:
 };
 
 MetadataFromBlr::MetadataFromBlr(unsigned aBlrLength, const unsigned char* aBlr, unsigned aLength)
+	: MsgMetadata()
 {
 	if (aBlrLength == 0)
 		return;
@@ -211,7 +212,7 @@ InternalMessageBuffer::InternalMessageBuffer(unsigned aBlrLength, const unsigned
 	unsigned aBufferLength, unsigned char* aBuffer)
 {
 	buffer = aBuffer;
-	if (aBlr)
+	if (aBlr && aBlrLength)
 	{
 		metadata = FB_NEW MetadataFromBlr(aBlrLength, aBlr, aBufferLength);
 		metadata->addRef();
