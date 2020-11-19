@@ -51,7 +51,7 @@ void CachedSecurityDatabase::handler()
 }
 
 
-void PluginDatabases::getInstance(IPluginConfig* pluginConfig, RefPtr<CachedSecurityDatabase>& instance)
+void PluginDatabases::getInstance(IPluginConfig* pluginConfig, CachedSecurityDatabase::Instance& instance)
 {
 	// Determine sec.db name based on existing config
 	PathName secDbName;
@@ -78,7 +78,7 @@ void PluginDatabases::getInstance(IPluginConfig* pluginConfig, RefPtr<CachedSecu
 				CachedSecurityDatabase* fromCache = dbArray[i];
 				if (fromCache->secDb->test())
 				{
-					instance = fromCache;
+					instance.set(fromCache);
 					break;
 				}
 				else
@@ -92,7 +92,7 @@ void PluginDatabases::getInstance(IPluginConfig* pluginConfig, RefPtr<CachedSecu
 
 		if (!instance)
 		{
-			instance = FB_NEW CachedSecurityDatabase(this, secDbName);
+			instance.set(FB_NEW CachedSecurityDatabase(this, secDbName));
 			instance->addRef();
 			secDbName.copyTo(instance->secureDbName, sizeof(instance->secureDbName));
 			dbArray.add(instance);
