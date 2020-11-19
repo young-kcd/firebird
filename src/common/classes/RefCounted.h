@@ -193,7 +193,7 @@ namespace Firebird
 			return ptr;
 		}
 
-	private:
+	protected:
 		T* assign(T* const p)
 		{
 			if (ptr != p)

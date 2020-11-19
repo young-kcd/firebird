@@ -120,6 +120,14 @@ public:
 		return false;	// safe default
 	}
 
+	bool test() override
+	{
+		Jrd::FbLocalStatus status;
+
+		att->ping(&status);
+		return !(status->getState() & IStatus::STATE_ERRORS);
+	}
+
 	// This 2 are needed to satisfy temporarily different calling requirements
 	static int shutdown(const int, const int, void*)
 	{
@@ -293,28 +301,19 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 			messages.param->loginNull = 0;
 			messages.data.clear();
 
-			{ // reference & mutex scope scope
+			{ // instance RAII scope
+				CachedSecurityDatabase::Instance instance;
+
 				// Get database block from cache
-				RefPtr<CachedSecurityDatabase> instance;
 				instances->getInstance(iParameter, instance);
+				secDbName = instance->secureDbName;
 
-				try
-				{
-					MutexLockGuard g(instance->mutex, FB_FUNCTION);
+				// Create SecurityDatabase if needed
+				if (!instance->secDb)
+					instance->secDb = FB_NEW SecurityDatabase(instance->secureDbName, cryptCallback);
 
-					secDbName = instance->secureDbName;
-					if (!instance->secDb)
-						instance->secDb = FB_NEW SecurityDatabase(instance->secureDbName, cryptCallback);
-
-					instance->secDb->lookup(messages.param.getData(), messages.data.getData());
-				}
-				catch(const Exception&)
-				{
-					instance->close();
-					throw;
-				}
-
-				instance->close();
+				// Lookup
+				instance->secDb->lookup(messages.param.getData(), messages.data.getData());
 			}
 			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP1: Executed statement\n"));
 
