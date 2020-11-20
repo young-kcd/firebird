@@ -76,7 +76,8 @@ void PluginDatabases::getInstance(IPluginConfig* pluginConfig, CachedSecurityDat
 			if (secDbName == dbArray[i]->secureDbName)
 			{
 				CachedSecurityDatabase* fromCache = dbArray[i];
-				if (fromCache->secDb->test())
+				// if element is just created or test passed we can use it
+				if ((!fromCache->secDb) || fromCache->secDb->test())
 				{
 					instance.set(fromCache);
 					break;
