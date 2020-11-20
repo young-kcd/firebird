@@ -79,7 +79,7 @@ void PluginDatabases::getInstance(IPluginConfig* pluginConfig, CachedSecurityDat
 			if (secDbName == dbArray[i]->secureDbName)
 			{
 				CachedSecurityDatabase* fromCache = dbArray[i];
-				if (fromCache->secDb->test())
+				if ((!fromCache->secDb) || fromCache->secDb->test())
 				{
 					instance.set(fromCache);
 					break;
