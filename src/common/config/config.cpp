@@ -612,49 +612,49 @@ bool Config::getDefaultValue(unsigned int key, string& str)
 
 const char* Config::getPlugins(unsigned int type) const
 {
-	ConfigKey _key;
+	ConfigKey aKey;
 	switch (type)
 	{
 		case IPluginManager::TYPE_PROVIDER:
 		{
 			DECLARE_PER_DB_KEY(KEY_PLUG_PROVIDERS);
-			_key = key;
+			aKey = key;
 			break;
 		}
 		case IPluginManager::TYPE_AUTH_SERVER:
 		{
 			DECLARE_PER_DB_KEY(KEY_PLUG_AUTH_SERVER);
-			_key = key;
+			aKey = key;
 			break;
 		}
 		case IPluginManager::TYPE_AUTH_CLIENT:
 		{
 			DECLARE_PER_DB_KEY(KEY_PLUG_AUTH_CLIENT);
-			_key = key;
+			aKey = key;
 			break;
 		}
 		case IPluginManager::TYPE_AUTH_USER_MANAGEMENT:
 		{
 			DECLARE_PER_DB_KEY(KEY_PLUG_AUTH_MANAGE);
-			_key = key;
+			aKey = key;
 			break;
 		}
 		case IPluginManager::TYPE_TRACE:
 		{
 			DECLARE_PER_DB_KEY(KEY_PLUG_TRACE);
-			_key = key;
+			aKey = key;
 			break;
 		}
 		case IPluginManager::TYPE_WIRE_CRYPT:
 		{
 			DECLARE_PER_DB_KEY(KEY_PLUG_WIRE_CRYPT);
-			_key = key;
+			aKey = key;
 			break;
 		}
 		case IPluginManager::TYPE_KEY_HOLDER:
 		{
 			DECLARE_PER_DB_KEY(KEY_PLUG_KEY_HOLDER);
-			_key = key;
+			aKey = key;
 			break;
 		}
 
@@ -662,7 +662,7 @@ const char* Config::getPlugins(unsigned int type) const
 			(Arg::Gds(isc_random) << "Internal error in Config::getPlugins(): unknown plugin type requested").raise();
 	}
 
-	return getStr(_key);
+	return getStr(aKey);
 }
 
 int Config::getWireCrypt(WireCryptMode wcMode) const
