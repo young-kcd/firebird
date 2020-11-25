@@ -125,9 +125,19 @@ namespace
 				item.length = sizeof(SLONG);
 				break;
 
+			case dtype_sql_time_tz:
+				item.type = SQL_TIME_TZ;
+				item.length = sizeof(ISC_TIME_TZ);
+				break;
+
 			case dtype_timestamp:
 				item.type = SQL_TIMESTAMP;
 				item.length = sizeof(SLONG) * 2;
+				break;
+
+			case dtype_timestamp_tz:
+				item.type = SQL_TIMESTAMP_TZ;
+				item.length = sizeof(ISC_TIMESTAMP_TZ);
 				break;
 
 			case dtype_array:
