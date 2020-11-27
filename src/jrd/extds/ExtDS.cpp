@@ -2109,7 +2109,7 @@ void Statement::preprocess(const string& sql, string& ret)
 				FB_SIZE_T n = 0;
 				if (!m_sqlParamNames.find(ident.c_str(), n))
 				{
-					MetaName* pName = FB_NEW_POOL(getPool()) MetaName(getPool(), ident);
+					MetaString* pName = FB_NEW_POOL(getPool()) MetaString(getPool(), ident);
 					n = m_sqlParamNames.add(*pName);
 				}
 
@@ -2205,7 +2205,7 @@ void Statement::setInParams(thread_db* tdbb, const MetaName* const* names,
 
 		for (unsigned int sqlNum = 0; sqlNum < mapCount; sqlNum++)
 		{
-			const MetaName* sqlName = m_sqlParamsMap[sqlNum];
+			const MetaString* sqlName = m_sqlParamsMap[sqlNum];
 
 			unsigned int num = 0;
 			for (; num < count; num++)
@@ -2226,11 +2226,11 @@ void Statement::setInParams(thread_db* tdbb, const MetaName* const* names,
 
 		doSetInParams(tdbb, mapCount, m_sqlParamsMap.begin(), sqlParams);
 	}
-	else
-		doSetInParams(tdbb, count, names, (params ? params->items.begin() : NULL));
+	else 
+		doSetInParams(tdbb, count, NULL, (params ? params->items.begin() : NULL));
 }
 
-void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const MetaName* const* /*names*/,
+void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const MetaString* const* /*names*/,
 	const NestConst<ValueExprNode>* params)
 {
 	if (count != getInputs())

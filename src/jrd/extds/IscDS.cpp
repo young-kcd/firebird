@@ -663,7 +663,7 @@ void IscStatement::doClose(thread_db* tdbb, bool drop)
 	}
 }
 
-void IscStatement::doSetInParams(thread_db* tdbb, unsigned int count, const MetaName* const* names,
+void IscStatement::doSetInParams(thread_db* tdbb, unsigned int count, const MetaString* const* names,
 	const NestConst<Jrd::ValueExprNode>* params)
 {
 	Statement::doSetInParams(tdbb, count, names, params);
@@ -1796,7 +1796,7 @@ static void parseSQLDA(XSQLDA* xsqlda, UCharBuffer& buff, Firebird::Array<dsc> &
 		src.dsc_address = (UCHAR*) xVar->sqldata;
 
 		offset += xVar->sqllen;
-	const int type = xVar->sqltype & (~1);
+		const int type = xVar->sqltype & (~1);
 		if (type == SQL_VARYING)
 		{
 			offset += sizeof(SSHORT);
