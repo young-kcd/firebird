@@ -610,6 +610,12 @@ bool Config::getDefaultValue(unsigned int key, string& str)
 	const ConfigKey key = KEY;		\
 	const Config* config = this;
 
+int Config::getServerMode()
+{
+	DECLARE_GLOBAL_KEY(KEY_SERVER_MODE);
+	return config->serverMode;
+}
+
 const char* Config::getPlugins(unsigned int type) const
 {
 	ConfigKey aKey;

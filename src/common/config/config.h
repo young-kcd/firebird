@@ -576,7 +576,7 @@ public:
 
 	CONFIG_GET_GLOBAL_KEY(FB_UINT64, getMaxUserTraceLogSize, KEY_MAX_TRACELOG_SIZE, getInt);
 
-	CONFIG_GET_GLOBAL_INT(getServerMode, KEY_SERVER_MODE);
+	static int getServerMode();
 
 	const char* getPlugins(unsigned int type) const;
 
