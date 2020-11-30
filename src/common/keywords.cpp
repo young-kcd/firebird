@@ -408,7 +408,7 @@ static const TOK tokens[] =
 	{TOK_RESERVING, "RESERV", true},	// Alias of RESERVING
 	{TOK_RESERVING, "RESERVING", true},
 	{TOK_RESET, "RESET", true},
-	{TOK_RESETTING, "RESETTING", true},
+	{TOK_RESETTING, "RESETTING", false},
 	{TOK_RESTART, "RESTART", true},
 	{TOK_RESTRICT, "RESTRICT", true},
 	{TOK_RETAIN, "RETAIN", true},
