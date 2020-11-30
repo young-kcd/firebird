@@ -7120,7 +7120,8 @@ const InternalInfoNode::InfoAttr InternalInfoNode::INFO_TYPE_ATTRIBUTES[MAX_INFO
 	{"INSERTING/UPDATING/DELETING", DsqlCompilerScratch::FLAG_TRIGGER},
 	{"SQLSTATE", DsqlCompilerScratch::FLAG_BLOCK},
 	{"EXCEPTION", DsqlCompilerScratch::FLAG_BLOCK},
-	{"MESSAGE", DsqlCompilerScratch::FLAG_BLOCK}
+	{"MESSAGE", DsqlCompilerScratch::FLAG_BLOCK},
+	{"RESETTING", DsqlCompilerScratch::FLAG_TRIGGER}
 };
 
 InternalInfoNode::InternalInfoNode(MemoryPool& pool, ValueExprNode* aArg)
@@ -7196,6 +7197,7 @@ void InternalInfoNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 		case INFO_TYPE_GDSCODE:
 		case INFO_TYPE_SQLCODE:
 		case INFO_TYPE_TRIGGER_ACTION:
+		case INFO_TYPE_SESSION_RESETTING:
 			desc->makeLong(0);
 			break;
 
@@ -7237,6 +7239,7 @@ void InternalInfoNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 		case INFO_TYPE_GDSCODE:
 		case INFO_TYPE_SQLCODE:
 		case INFO_TYPE_TRIGGER_ACTION:
+		case INFO_TYPE_SESSION_RESETTING:
 			desc->makeLong(0);
 			break;
 
@@ -7345,6 +7348,9 @@ dsc* InternalInfoNode::execute(thread_db* tdbb, jrd_req* request) const
 			break;
 		case INFO_TYPE_TRIGGER_ACTION:
 			result32 = request->req_trigger_action;
+			break;
+		case INFO_TYPE_SESSION_RESETTING:
+			result32 = (tdbb->getAttachment()->att_flags & ATT_resetting) ? 1 : 0;
 			break;
 		default:
 			SOFT_BUGCHECK(232);	// msg 232 EVL_expr: invalid operation

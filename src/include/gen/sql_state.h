@@ -972,6 +972,7 @@ static const struct {
 	{335545269, "21000"}, // 949 merge_dup_update
 	{335545270, "XX000"}, // 950 wrong_page
 	{335545271, "HY000"}, // 951 repl_error
+	{335545272, "08003"}, // 952 ses_reset_failed
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

@@ -458,6 +458,47 @@ void Jrd::Attachment::releaseGTTs(thread_db* tdbb)
 	}
 }
 
+static void runDBTriggers(thread_db* tdbb, TriggerAction action)
+{
+	fb_assert(action == TRIGGER_CONNECT || action == TRIGGER_DISCONNECT);
+
+	Database* dbb = tdbb->getDatabase();
+	Attachment* att = tdbb->getAttachment();
+	fb_assert(dbb);
+	fb_assert(att);
+
+	const unsigned trgKind = (action == TRIGGER_CONNECT) ? DB_TRIGGER_CONNECT : DB_TRIGGER_DISCONNECT;
+
+	const TrigVector* const triggers =	att->att_triggers[trgKind];
+	if (!triggers || triggers->isEmpty())
+		return;
+
+	ThreadStatusGuard temp_status(tdbb);
+	jrd_tra* transaction = NULL;
+
+	try
+	{
+		transaction = TRA_start(tdbb, 0, NULL);
+		EXE_execute_db_triggers(tdbb, transaction, action);
+		TRA_commit(tdbb, transaction, false);
+		return;
+	}
+	catch (const Exception& /*ex*/)
+	{
+		if (!(dbb->dbb_flags & DBB_bugcheck) && transaction)
+		{
+			try
+			{
+				TRA_rollback(tdbb, transaction, false, false);
+			}
+			catch (const Exception& /*ex2*/)
+			{
+			}
+		}
+		throw;
+	}
+}
+
 void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 {
 	jrd_tra* oldTran = traHandle ? *traHandle : nullptr;
@@ -481,27 +522,30 @@ void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 		}
 	}
 
-	// TODO: trigger before reset
+	AutoSetRestoreFlag<ULONG> flags(&att_flags, ATT_resetting, true);
 
 	ULONG oldFlags = 0;
 	SSHORT oldTimeout = 0;
-	if (oldTran)
+	RefPtr<JTransaction> jTran;
+	bool shutAtt = false;
+	try
 	{
-		oldFlags = oldTran->tra_flags;
-		oldTimeout = oldTran->tra_lock_timeout;
+		// Run ON DISCONNECT trigger before reset
+		if (!(att_flags & ATT_no_db_triggers))
+			runDBTriggers(tdbb, TRIGGER_DISCONNECT);
 
-		try
+		// shutdown attachment on any error after this point
+		shutAtt = true;
+
+		if (oldTran)
 		{
+			oldFlags = oldTran->tra_flags;
+			oldTimeout = oldTran->tra_lock_timeout;
+			jTran = oldTran->getInterface(false);
+
 			// It will also run run ON TRANSACTION ROLLBACK triggers
 			JRD_rollback_transaction(tdbb, oldTran);
 			*traHandle = nullptr;
-		}
-		catch (const Exception& ex)
-		{
-			Arg::StatusVector error;
-			error.assign(ex);
-			error.prepend(Arg::Gds(isc_ses_reset_err));
-			error.raise();
 		}
 
 		// Session was reset with warning(s)
@@ -511,29 +555,37 @@ void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 			ERR_post_warning(Arg::Warning(isc_ses_reset_warn) <<
 				Arg::Gds(isc_ses_reset_tran_rollback));
 		}
-	}
 
-	att_initial_options.resetAttachment(this);
+		att_initial_options.resetAttachment(this);
 
-	// reset timeouts
-	setIdleTimeout(0);
-	setStatementTimeout(0);
+		// reset timeouts
+		setIdleTimeout(0);
+		setStatementTimeout(0);
 
-	// reset context variables
-	att_context_vars.clear();
+		// reset context variables
+		att_context_vars.clear();
 
-	// reset role
-	if (att_user->resetRole())
-		SCL_release_all(att_security_classes);
+		// reset role
+		if (att_user->resetRole())
+			SCL_release_all(att_security_classes);
 
-	// reset GTT's
-	releaseGTTs(tdbb);
+		// reset GTT's
+		releaseGTTs(tdbb);
 
-	if (oldTran)
-	{
-		try
+		// Run ON CONNECT trigger after reset
+		if (!(att_flags & ATT_no_db_triggers))
+			runDBTriggers(tdbb, TRIGGER_CONNECT);
+
+		if (oldTran)
 		{
 			jrd_tra* newTran = TRA_start(tdbb, oldFlags, oldTimeout);
+			if (jTran)
+			{
+				fb_assert(jTran->getHandle() == NULL);
+
+				newTran->setInterface(jTran);
+				jTran->setHandle(newTran);
+			}
 
 			// run ON TRANSACTION START triggers
 			JRD_run_trans_start_triggers(tdbb, newTran);
@@ -541,16 +593,17 @@ void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 			tdbb->setTransaction(newTran);
 			*traHandle = newTran;
 		}
-		catch (const Exception& ex)
-		{
-			Arg::StatusVector error;
-			error.assign(ex);
-			error.prepend(Arg::Gds(isc_ses_reset_err));
-			error.raise();
-		}
 	}
+	catch (const Exception& ex)
+	{
+		if (shutAtt)
+			signalShutdown(isc_ses_reset_failed);
 
-	// TODO: trigger after reset
+		Arg::StatusVector error;
+		error.assign(ex);
+		error.prepend(Arg::Gds(shutAtt ? isc_ses_reset_failed : isc_ses_reset_err));
+		error.raise();
+	}
 }
 
 

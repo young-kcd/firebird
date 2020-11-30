@@ -1949,6 +1949,8 @@ const
 	gds_wrong_page                       = 335545270;
 	isc_repl_error                       = 335545271;
 	gds_repl_error                       = 335545271;
+	isc_ses_reset_failed                 = 335545272;
+	gds_ses_reset_failed                 = 335545272;
 	isc_gfix_db_name                     = 335740929;
 	gds_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;

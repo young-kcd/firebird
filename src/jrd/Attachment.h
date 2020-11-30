@@ -163,6 +163,7 @@ const ULONG ATT_crypt_thread		= 0x80000L; // Attachment from crypt thread
 const ULONG ATT_monitor_init		= 0x100000L; // Attachment is registered in monitoring
 const ULONG ATT_repl_reset			= 0x200000L; // Replication set has been reset
 const ULONG ATT_replicating			= 0x400000L; // Replication is active
+const ULONG ATT_resetting			= 0x800000L; // Session reset is in progress
 
 const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
 

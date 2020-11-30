@@ -972,6 +972,7 @@ static const struct {
 	{335545269, -811}, /* 949 merge_dup_update */
 	{335545270, -902}, /* 950 wrong_page */
 	{335545271, -902}, /* 951 repl_error */
+	{335545272, -902}, /* 952 ses_reset_failed */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

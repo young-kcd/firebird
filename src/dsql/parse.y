@@ -641,6 +641,7 @@ using namespace Firebird;
 %token <metaNamePtr> PUBLICATION
 %token <metaNamePtr> QUANTIZE
 %token <metaNamePtr> RANGE
+%token <metaNamePtr> RESETTING
 %token <metaNamePtr> RDB_ERROR
 %token <metaNamePtr> RDB_GET_TRANSACTION_CN
 %token <metaNamePtr> RDB_ROLE_IN_USE
@@ -4278,6 +4279,7 @@ keyword_or_column
 	| LOCALTIME
 	| LOCALTIMESTAMP
 	| PUBLICATION
+	| RESETTING
 	| TIMEZONE_HOUR
 	| TIMEZONE_MINUTE
 	| UNBOUNDED
@@ -6874,6 +6876,7 @@ predicate
 	| exists_predicate
 	| singular_predicate
 	| trigger_action_predicate
+	| session_reset_predicate
 	;
 
 
@@ -7044,6 +7047,15 @@ trigger_action_predicate
 					MAKE_const_slong(3));
 		}
 	;
+
+%type <boolExprNode> session_reset_predicate
+session_reset_predicate
+	: RESETTING
+		{
+			$$ = newNode<ComparativeBoolNode>(blr_eql,
+					newNode<InternalInfoNode>(MAKE_const_slong(INFO_TYPE_SESSION_RESETTING)),
+					MAKE_const_slong(1));
+		}
 
 %type <boolExprNode> null_predicate
 null_predicate

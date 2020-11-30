@@ -390,6 +390,35 @@ static void shutdownBeforeUnload()
 	threadDetach();
 };
 
+static JTransaction* checkTranIntf(StableAttachmentPart* sAtt, JTransaction* jt, jrd_tra* tra)
+{
+	if (jt && !tra)
+	{
+		jt->setHandle(NULL);
+		jt->release();
+		jt = NULL;
+	}
+	else if (tra && !jt)
+	{
+		jt = tra->getInterface(false);
+		if (jt)
+			tra->tra_flags &= ~TRA_own_interface;
+		else
+		{
+			jt = FB_NEW JTransaction(tra, sAtt);
+			tra->setInterface(jt);
+			jt->addRef();
+		}
+	}
+	else if (tra && jt)
+	{
+		jt->setHandle(tra);
+		tra->setInterface(jt);
+	}
+
+	return jt;
+};
+
 class EngineFactory : public AutoIface<IPluginFactoryImpl<EngineFactory, CheckStatusWrapper> >
 {
 public:
@@ -4882,35 +4911,13 @@ ITransaction* JStatement::execute(CheckStatusWrapper* user_status, ITransaction*
 				inMetadata, static_cast<UCHAR*>(inBuffer),
 				outMetadata, static_cast<UCHAR*>(outBuffer));
 
-			if (jt && !tra)
-			{
-				jt->setHandle(NULL);
-				jt->release();
-				jt = NULL;
-			}
-			else if (tra && !jt)
-			{
-				jt = tra->getInterface(false);
-				if (jt)
-					tra->tra_flags &= ~TRA_own_interface;
-				else
-				{
-					apiTra = NULL;		// Get ready for correct return in OOM case
-					jt = FB_NEW JTransaction(tra, getAttachment());
-					tra->setInterface(jt);
-					jt->addRef();
-				}
-			}
-			else if (tra && jt)
-			{
-				jt->setHandle(tra);
-				tra->setInterface(jt);
-			}
+			jt = checkTranIntf(getAttachment(), jt, tra);
 		}
 		catch (const Exception& ex)
 		{
 			transliterateException(tdbb, ex, user_status, "JStatement::execute");
-			return apiTra;
+			jt = checkTranIntf(getAttachment(), jt, tra);
+			return jt;
 		}
 		trace_warning(tdbb, user_status, "JStatement::execute");
 	}
@@ -4921,7 +4928,6 @@ ITransaction* JStatement::execute(CheckStatusWrapper* user_status, ITransaction*
 	}
 
 	successful_completion(user_status);
-
 	return jt;
 }
 
@@ -5038,35 +5044,13 @@ ITransaction* JAttachment::execute(CheckStatusWrapper* user_status, ITransaction
 				outMetadata, static_cast<UCHAR*>(outBuffer),
 				false);
 
-			if (jt && !tra)
-			{
-				jt->setHandle(NULL);
-				jt->release();
-				jt = NULL;
-			}
-			else if (tra && !jt)
-			{
-				jt = tra->getInterface(false);
-				if (jt)
-					tra->tra_flags &= ~TRA_own_interface;
-				else
-				{
-					apiTra = NULL;		// Get ready for correct return in OOM case
-					jt = FB_NEW JTransaction(tra, getStable());
-					jt->addRef();
-					tra->setInterface(jt);
-				}
-			}
-			else if (tra && jt)
-			{
-				jt->setHandle(tra);
-				tra->setInterface(jt);
-			}
+			jt = checkTranIntf(getStable(), jt, tra);
 		}
 		catch (const Exception& ex)
 		{
 			transliterateException(tdbb, ex, user_status, "JAttachment::execute");
-			return apiTra;
+			jt = checkTranIntf(getStable(), jt, tra);
+			return jt;
 		}
 		trace_warning(tdbb, user_status, "JAttachment::execute");
 	}
