@@ -383,7 +383,7 @@ FB_SIZE_T NBackup::read_file(FILE_HANDLE &file, void *buffer, FB_SIZE_T bufsize)
 #ifdef WIN_NT
 		// Read child's stderr often to prevent child process hung if it writes
 		// too much data to the pipe and overflow the pipe buffer.
-		const bool checkChild = (childStdErr > 0 && file == backup);
+		const bool checkChild = (childStdErr != 0 && file == backup);
 		if (checkChild)
 			print_child_stderr();
 
@@ -795,7 +795,7 @@ void NBackup::close_backup()
 		return;
 #ifdef WIN_NT
 	CloseHandle(backup);
-	if (childId > 0)
+	if (childId != 0)
 	{
 		const bool killed = (WaitForSingleObject(childId, 5000) != WAIT_OBJECT_0);
 		if (killed)
