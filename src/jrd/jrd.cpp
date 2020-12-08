@@ -7432,60 +7432,68 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	attachment->mergeStats();
 
-	// avoid races with crypt thread
-	Mutex dummyMutex;
-	MutexEnsureUnlock cryptGuard(dbb->dbb_crypto_manager ?
-			dbb->dbb_crypto_manager->cryptAttMutex :
-			dummyMutex,
-		FB_FUNCTION);
-	cryptGuard.enter();
-
 	Sync sync(&dbb->dbb_sync, "jrd.cpp: release_attachment");
+
+	// avoid races with special threads
+	XThreadEnsureUnlock threadGuard(dbb->dbb_thread_mutex, FB_FUNCTION);
+	threadGuard.enter();
+
 	sync.lock(SYNC_EXCLUSIVE);
 
-	// stop the crypt thread if we release last regular attachment
-	Jrd::Attachment* crypt_att = NULL;
+	// stop special threads if and only if we release last regular attachment
+	{ // checkout scope
+		EngineCheckout checkout(tdbb, FB_FUNCTION);
+
 	bool other = false;
-	CRYPT_DEBUG(fprintf(stderr, "\nrelease attachment=%p\n", attachment));
+	SPTHR_DEBUG(fprintf(stderr, "\nrelease attachment=%p\n", attachment));
 
 	for (Jrd::Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
 	{
-		CRYPT_DEBUG(fprintf(stderr, "att=%p crypt_att=%p F=%c ", att, crypt_att, att->att_flags & ATT_crypt_thread ? '1' : '0'));
+		SPTHR_DEBUG(fprintf(stderr, "att=%p FromThr=%c ", att, att->att_flags & ATT_from_thread ? '1' : '0'));
 
 		if (att == attachment)
 		{
-			CRYPT_DEBUG(fprintf(stderr, "self\n"));
+			SPTHR_DEBUG(fprintf(stderr, "self\n"));
 			continue;
 		}
 
-		if (att->att_flags & ATT_crypt_thread)
+		if (att->att_flags & ATT_from_thread)
 		{
-			crypt_att = att;
-			CRYPT_DEBUG(fprintf(stderr, "found crypt_att=%p\n", crypt_att));
+			SPTHR_DEBUG(fprintf(stderr, "found special att=%p\n", att));
 			continue;
 		}
 
-		crypt_att = NULL;
+		// Found attachment that is not current (to be released) and is not special
 		other = true;
-		CRYPT_DEBUG(fprintf(stderr, "other\n"));
+		SPTHR_DEBUG(fprintf(stderr, "other\n"));
 		break;
 	}
 
-	if (dbb->dbb_crypto_manager && !(other || crypt_att))
-		dbb->dbb_crypto_manager->terminateCryptThread(tdbb, false);
+	// Notify special threads
+	if (!other)
+		dbb->dbb_flags |= DBB_closing;
+	threadGuard.leave();
 
-	cryptGuard.leave();
-
-	if (crypt_att)
+	// Sync with special threads
+	if (!other)
 	{
 		sync.unlock();
 
-		CRYPT_DEBUG(fprintf(stderr, "crypt_att=%p terminateCryptThread\n", crypt_att));
-		fb_assert(dbb->dbb_crypto_manager);
-		dbb->dbb_crypto_manager->terminateCryptThread(tdbb, true);
+		// crypt thread
+		if (dbb->dbb_crypto_manager)
+			dbb->dbb_crypto_manager->terminateCryptThread(tdbb, true);
+
+		// sweep thread
+		if (dbb->dbb_sweep_thread)
+		{
+			Thread::waitForCompletion(dbb->dbb_sweep_thread);
+			dbb->dbb_sweep_thread = 0;
+		}
 
 		sync.lock(SYNC_EXCLUSIVE);
 	}
+
+	} // EngineCheckout scope
 
 	// remove the attachment block from the dbb linked list
 	for (Jrd::Attachment** ptr = &dbb->dbb_attachments; *ptr; ptr = &(*ptr)->att_next)

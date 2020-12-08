@@ -278,7 +278,7 @@ namespace Jrd {
 		  slowIO(0),
 		  crypt(false),
 		  process(false),
-		  down(false),
+		  flDown(false),
 		  run(false)
 	{
 		stateLock = FB_NEW_RPT(getPool(), 0)
@@ -817,7 +817,7 @@ namespace Jrd {
 
 	void CryptoManager::terminateCryptThread(thread_db*, bool wait)
 	{
-		down = true;
+		flDown = true;
 		if (wait && cryptThreadId)
 		{
 			Thread::waitForCompletion(cryptThreadId);
@@ -956,10 +956,10 @@ namespace Jrd {
 				writer.insertByte(isc_dpb_no_db_triggers, TRUE);
 
 				// Avoid races with release_attachment() in jrd.cpp
-				MutexEnsureUnlock releaseGuard(cryptAttMutex, FB_FUNCTION);
+				XThreadEnsureUnlock releaseGuard(dbb.dbb_thread_mutex, FB_FUNCTION);
 				releaseGuard.enter();
 
-				if (!down)
+				if (!down())
 				{
 					AutoPlugin<JProvider> jInstance(JProvider::getInstance());
 					jInstance->setDbCryptCallback(&status_vector, dbb.dbb_callback);
@@ -973,7 +973,7 @@ namespace Jrd {
 					Attachment* att = jAtt->getHandle();
 					if (!att)
 						Arg::Gds(isc_att_shutdown).raise();
-					att->att_flags |= ATT_crypt_thread;
+					att->att_flags |= ATT_from_thread;
 					releaseGuard.leave();
 
 					ThreadContextHolder tdbb(att->att_database, att, &status_vector);
@@ -1008,7 +1008,7 @@ namespace Jrd {
 						while (currentPage < lastPage)
 						{
 							// forced terminate
-							if (down)
+							if (down())
 							{
 								break;
 							}
@@ -1050,7 +1050,7 @@ namespace Jrd {
 						}
 
 						// forced terminate
-						if (down)
+						if (down())
 						{
 							break;
 						}
@@ -1062,7 +1062,7 @@ namespace Jrd {
 					} while (currentPage < lastPage);
 
 					// Finalize crypt
-					if (!down)
+					if (!down())
 					{
 						writeDbHeader(tdbb, 0);
 					}
@@ -1343,6 +1343,11 @@ namespace Jrd {
 	const char* CryptoManager::getPluginName() const
 	{
 		return pluginName.c_str();
+	}
+
+	bool CryptoManager::down() const
+	{
+		return flDown || (dbb.dbb_flags & DBB_closing);
 	}
 
 	void CryptoManager::addClumplet(string& signature, ClumpletReader& block, UCHAR tag)

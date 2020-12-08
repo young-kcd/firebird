@@ -53,6 +53,7 @@
 #include "../common/classes/timestamp.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/RefCounted.h"
+#include "../common/classes/RefMutex.h"
 #include "../common/classes/semaphore.h"
 #include "../common/utils_proto.h"
 #include "../jrd/RandomGenerator.h"
@@ -206,6 +207,69 @@ private:
 typedef vec<TraNumber> TransactionsVector;
 
 
+// Non-recursive mutex that may be unlocked by any thread
+// Based on semaphore
+class XThreadMutex : private Firebird::Semaphore, private Firebird::Reasons
+{
+public:
+	XThreadMutex()
+	{
+		Firebird::Semaphore::release();
+#ifdef DEV_BUILD
+		locked = false;
+#endif
+	}
+
+	~XThreadMutex()
+	{
+		fb_assert(!locked);
+	}
+
+	void enter(const char* aReason)
+	{
+		Firebird::Semaphore::enter();
+		fb_assert(!locked);
+#ifdef DEV_BUILD
+		locked = true;
+#endif
+		reason(aReason);
+	}
+
+	bool tryEnter(const char* aReason)
+	{
+		const bool ret = Firebird::Semaphore::tryEnter();
+		if (ret)
+		{
+			fb_assert(!locked);
+#ifdef DEV_BUILD
+			locked = true;
+#endif
+			reason(aReason);
+		}
+		return ret;
+	}
+
+	void leave()
+	{
+		fb_assert(locked);
+#ifdef DEV_BUILD
+		locked = false;
+#endif
+		Firebird::Semaphore::release();
+	}
+
+private:
+#ifdef DEV_BUILD
+	bool locked;
+#endif
+};
+
+typedef Firebird::RaiiLockGuard<XThreadMutex> XThreadLockGuard;
+typedef Firebird::EnsureUnlock<XThreadMutex, Firebird::NotRefCounted<XThreadMutex> > XThreadEnsureUnlock;
+
+#define SPTHR_DEBUG(A)
+
+
 //
 // bit values for dbb_flags
 //
@@ -231,6 +295,7 @@ const ULONG DBB_no_fs_cache				= 0x40000L;		// Not using file system cache
 const ULONG DBB_sweep_starting			= 0x80000L;		// Auto-sweep is starting
 const ULONG DBB_creating				= 0x100000L;	// Database creation is in progress
 const ULONG DBB_shared					= 0x200000L;	// Database object is shared among connections
+const ULONG DBB_closing					= 0x400000L;	// Database closing, special backgroud threads should exit
 
 //
 // dbb_ast_flags
@@ -523,6 +588,8 @@ public:
 
 	CryptoManager* dbb_crypto_manager;
 	Firebird::RefPtr<ExistenceRefMutex> dbb_init_fini;
+	XThreadMutex dbb_thread_mutex;		// special threads start/stop mutex
+	Thread::Handle dbb_sweep_thread;
 	Firebird::RefPtr<Linger> dbb_linger_timer;
 	unsigned dbb_linger_seconds;
 	time_t dbb_linger_end;
@@ -598,6 +665,7 @@ private:
 		dbb_creation_date(Firebird::TimeZoneUtil::getCurrentGmtTimeStamp()),
 		dbb_external_file_directory_list(NULL),
 		dbb_init_fini(FB_NEW_POOL(*getDefaultMemoryPool()) ExistenceRefMutex()),
+		dbb_sweep_thread(0),
 		dbb_linger_seconds(0),
 		dbb_linger_end(0),
 		dbb_plugin_config(pConf),
@@ -634,8 +702,10 @@ public:
 	bool allowSweepThread(thread_db* tdbb);
 	// returns true if sweep could run
 	bool allowSweepRun(thread_db* tdbb);
-	// reset sweep flags and release sweep lock
+	// reset sweep flag and release sweep lock
 	void clearSweepFlags(thread_db* tdbb);
+	// reset sweep starting flag, release thread starting mutex
+	bool clearSweepStarting();
 
 	static void garbage_collector(Database* dbb);
 	void exceptionHandler(const Firebird::Exception& ex, ThreadFinishSync<Database*>::ThreadRoutine* routine);

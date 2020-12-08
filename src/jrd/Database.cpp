@@ -174,10 +174,21 @@ namespace Jrd
 			Database* dbb = static_cast<Database*>(ast_object);
 			AsyncContextHolder tdbb(dbb, FB_FUNCTION);
 
-			if ((dbb->dbb_flags & DBB_sweep_starting) && !(dbb->dbb_flags & DBB_sweep_in_progress))
+			while (true)
 			{
-				dbb->dbb_flags &= ~DBB_sweep_starting;
-				LCK_release(tdbb, dbb->dbb_sweep_lock);
+				AtomicCounter::counter_type old = dbb->dbb_flags;
+				if ((old & DBB_sweep_in_progress) || !(old & DBB_sweep_starting))
+				{
+					SPTHR_DEBUG(fprintf(stderr, "blocking_ast_sweep %p false wrong flags %lx\n", dbb, old));
+					break;
+				}
+
+				if (dbb->dbb_flags.compareExchange(old, old & ~DBB_sweep_starting))
+				{
+					SPTHR_DEBUG(fprintf(stderr, "blocking_ast_sweep true %p\n", dbb));
+					dbb->dbb_thread_mutex.leave();
+					break;
+				}
 			}
 		}
 		catch (const Exception&)
@@ -199,6 +210,7 @@ namespace Jrd
 
 	bool Database::allowSweepThread(thread_db* tdbb)
 	{
+		SPTHR_DEBUG(fprintf(stderr, "allowSweepThread %p\n", this));
 		if (readOnly())
 			return false;
 
@@ -206,15 +218,33 @@ namespace Jrd
 		if (attachment->att_flags & ATT_no_cleanup)
 			return false;
 
+		if (!dbb_thread_mutex.tryEnter(FB_FUNCTION))
+		{
+			SPTHR_DEBUG(fprintf(stderr, "allowSweepThread %p false, dbb_thread_mutex busy\n", this));
+			return false;
+		}
+
+		if (dbb_flags & DBB_closing)
+		{
+			SPTHR_DEBUG(fprintf(stderr, "allowSweepThread false, dbb closing\n"));
+			dbb_thread_mutex.leave();
+			return false;
+		}
+
 		while (true)
 		{
 			AtomicCounter::counter_type old = dbb_flags;
 			if ((old & (DBB_sweep_in_progress | DBB_sweep_starting)) || (dbb_ast_flags & DBB_shutdown))
+			{
+				dbb_thread_mutex.leave();
 				return false;
+			}
 
 			if (dbb_flags.compareExchange(old, old | DBB_sweep_starting))
 				break;
 		}
+
+        SPTHR_DEBUG(fprintf(stderr, "allowSweepThread - set DBB_sweep_starting\n"));
 
 		createSweepLock(tdbb);
 		if (!LCK_lock(tdbb, dbb_sweep_lock, LCK_EX, LCK_NO_WAIT))
@@ -222,16 +252,40 @@ namespace Jrd
 			// clear lock error from status vector
 			fb_utils::init_status(tdbb->tdbb_status_vector);
 
-			dbb_flags &= ~DBB_sweep_starting;
+			clearSweepStarting();
+			SPTHR_DEBUG(fprintf(stderr, "allowSweepThread - !LCK_lock\n"));
 			return false;
 		}
 
+        SPTHR_DEBUG(fprintf(stderr, "allowSweepThread - TRUE\n"));
 		return true;
+	}
+
+	bool Database::clearSweepStarting()
+	{
+		while (true)
+		{
+			AtomicCounter::counter_type old = dbb_flags;
+			if (!(old & DBB_sweep_starting))
+			{
+				SPTHR_DEBUG(fprintf(stderr, "clearSweepStarting false %p\n", this));
+				return false;
+			}
+
+			if (dbb_flags.compareExchange(old, old & ~DBB_sweep_starting))
+			{
+				SPTHR_DEBUG(fprintf(stderr, "clearSweepStarting true %p\n", this));
+				dbb_thread_mutex.leave();
+				return true;
+			}
+		}
 	}
 
 	bool Database::allowSweepRun(thread_db* tdbb)
 	{
-		if (readOnly())
+		SPTHR_DEBUG(fprintf(stderr, "allowSweepRun %p\n", this));
+
+		if (readOnly() || (dbb_flags & DBB_closing))
 			return false;
 
 		Jrd::Attachment* const attachment = tdbb->getAttachment();
@@ -242,14 +296,21 @@ namespace Jrd
 		{
 			AtomicCounter::counter_type old = dbb_flags;
 			if (old & DBB_sweep_in_progress)
+			{
+				clearSweepStarting();
 				return false;
+			}
 
 			if (dbb_flags.compareExchange(old, old | DBB_sweep_in_progress))
 				break;
 		}
 
+		SPTHR_DEBUG(fprintf(stderr, "allowSweepRun - set DBB_sweep_in_progress\n"));
+
 		if (!(dbb_flags & DBB_sweep_starting))
 		{
+			SPTHR_DEBUG(fprintf(stderr, "allowSweepRun - createSweepLock\n"));
+
 			createSweepLock(tdbb);
 			if (!LCK_lock(tdbb, dbb_sweep_lock, LCK_EX, -1))
 			{
@@ -261,20 +322,24 @@ namespace Jrd
 			}
 		}
 		else
-			dbb_flags &= ~DBB_sweep_starting;
+		{
+			SPTHR_DEBUG(fprintf(stderr, "allowSweepRun - clearSweepStarting\n"));
+			attachment->att_flags |= ATT_from_thread;
+			clearSweepStarting();
+		}
 
 		return true;
 	}
 
 	void Database::clearSweepFlags(thread_db* tdbb)
 	{
-		if (!(dbb_flags & (DBB_sweep_starting | DBB_sweep_in_progress)))
+		if (!(dbb_flags & DBB_sweep_in_progress))
 			return;
 
 		if (dbb_sweep_lock)
 			LCK_release(tdbb, dbb_sweep_lock);
 
-		dbb_flags &= ~(DBB_sweep_in_progress | DBB_sweep_starting);
+		dbb_flags &= ~DBB_sweep_in_progress;
 	}
 
 	void Database::registerModule(Module& module)
