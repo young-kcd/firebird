@@ -7444,54 +7444,54 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	{ // checkout scope
 		EngineCheckout checkout(tdbb, FB_FUNCTION);
 
-	bool other = false;
-	SPTHR_DEBUG(fprintf(stderr, "\nrelease attachment=%p\n", attachment));
+		bool other = false;
+		SPTHR_DEBUG(fprintf(stderr, "\nrelease attachment=%p\n", attachment));
 
-	for (Jrd::Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
-	{
-		SPTHR_DEBUG(fprintf(stderr, "att=%p FromThr=%c ", att, att->att_flags & ATT_from_thread ? '1' : '0'));
-
-		if (att == attachment)
+		for (Jrd::Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
 		{
-			SPTHR_DEBUG(fprintf(stderr, "self\n"));
-			continue;
+			SPTHR_DEBUG(fprintf(stderr, "att=%p FromThr=%c ", att, att->att_flags & ATT_from_thread ? '1' : '0'));
+
+			if (att == attachment)
+			{
+				SPTHR_DEBUG(fprintf(stderr, "self\n"));
+				continue;
+			}
+
+			if (att->att_flags & ATT_from_thread)
+			{
+				SPTHR_DEBUG(fprintf(stderr, "found special att=%p\n", att));
+				continue;
+			}
+
+			// Found attachment that is not current (to be released) and is not special
+			other = true;
+			SPTHR_DEBUG(fprintf(stderr, "other\n"));
+			break;
 		}
 
-		if (att->att_flags & ATT_from_thread)
+		// Notify special threads
+		if (!other)
+			dbb->dbb_flags |= DBB_closing;
+		threadGuard.leave();
+
+		// Sync with special threads
+		if (!other)
 		{
-			SPTHR_DEBUG(fprintf(stderr, "found special att=%p\n", att));
-			continue;
+			sync.unlock();
+
+			// crypt thread
+			if (dbb->dbb_crypto_manager)
+				dbb->dbb_crypto_manager->terminateCryptThread(tdbb, true);
+
+			// sweep thread
+			if (dbb->dbb_sweep_thread)
+			{
+				Thread::waitForCompletion(dbb->dbb_sweep_thread);
+				dbb->dbb_sweep_thread = 0;
+			}
+
+			sync.lock(SYNC_EXCLUSIVE);
 		}
-
-		// Found attachment that is not current (to be released) and is not special
-		other = true;
-		SPTHR_DEBUG(fprintf(stderr, "other\n"));
-		break;
-	}
-
-	// Notify special threads
-	if (!other)
-		dbb->dbb_flags |= DBB_closing;
-	threadGuard.leave();
-
-	// Sync with special threads
-	if (!other)
-	{
-		sync.unlock();
-
-		// crypt thread
-		if (dbb->dbb_crypto_manager)
-			dbb->dbb_crypto_manager->terminateCryptThread(tdbb, true);
-
-		// sweep thread
-		if (dbb->dbb_sweep_thread)
-		{
-			Thread::waitForCompletion(dbb->dbb_sweep_thread);
-			dbb->dbb_sweep_thread = 0;
-		}
-
-		sync.lock(SYNC_EXCLUSIVE);
-	}
 
 	} // EngineCheckout scope
 
