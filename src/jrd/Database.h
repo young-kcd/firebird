@@ -53,8 +53,8 @@
 #include "../common/classes/timestamp.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/RefCounted.h"
-#include "../common/classes/RefMutex.h"
 #include "../common/classes/semaphore.h"
+#include "../common/classes/XThreadMutex.h"
 #include "../common/utils_proto.h"
 #include "../jrd/RandomGenerator.h"
 #include "../common/os/guid.h"
@@ -71,6 +71,10 @@
 #include "../common/classes/Synchronize.h"
 #include "../jrd/replication/Manager.h"
 #include "fb_types.h"
+
+
+#define SPTHR_DEBUG(A)
+
 
 namespace Jrd
 {
@@ -205,69 +209,6 @@ private:
 };
 
 typedef vec<TraNumber> TransactionsVector;
-
-
-// Non-recursive mutex that may be unlocked by any thread
-// Based on semaphore
-class XThreadMutex : private Firebird::Semaphore, private Firebird::Reasons
-{
-public:
-	XThreadMutex()
-	{
-		Firebird::Semaphore::release();
-#ifdef DEV_BUILD
-		locked = false;
-#endif
-	}
-
-	~XThreadMutex()
-	{
-		fb_assert(!locked);
-	}
-
-	void enter(const char* aReason)
-	{
-		Firebird::Semaphore::enter();
-		fb_assert(!locked);
-#ifdef DEV_BUILD
-		locked = true;
-#endif
-		reason(aReason);
-	}
-
-	bool tryEnter(const char* aReason)
-	{
-		const bool ret = Firebird::Semaphore::tryEnter();
-		if (ret)
-		{
-			fb_assert(!locked);
-#ifdef DEV_BUILD
-			locked = true;
-#endif
-			reason(aReason);
-		}
-		return ret;
-	}
-
-	void leave()
-	{
-		fb_assert(locked);
-#ifdef DEV_BUILD
-		locked = false;
-#endif
-		Firebird::Semaphore::release();
-	}
-
-private:
-#ifdef DEV_BUILD
-	bool locked;
-#endif
-};
-
-typedef Firebird::RaiiLockGuard<XThreadMutex> XThreadLockGuard;
-typedef Firebird::EnsureUnlock<XThreadMutex, Firebird::NotRefCounted<XThreadMutex> > XThreadEnsureUnlock;
-
-#define SPTHR_DEBUG(A)
 
 
 //
@@ -588,7 +529,7 @@ public:
 
 	CryptoManager* dbb_crypto_manager;
 	Firebird::RefPtr<ExistenceRefMutex> dbb_init_fini;
-	XThreadMutex dbb_thread_mutex;		// special threads start/stop mutex
+	Firebird::XThreadMutex dbb_thread_mutex;		// special threads start/stop mutex
 	Thread::Handle dbb_sweep_thread;
 	Firebird::RefPtr<Linger> dbb_linger_timer;
 	unsigned dbb_linger_seconds;
