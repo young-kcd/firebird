@@ -7441,10 +7441,10 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	sync.lock(SYNC_EXCLUSIVE);
 
 	// stop special threads if and only if we release last regular attachment
+	bool other = false;
 	{ // checkout scope
 		EngineCheckout checkout(tdbb, FB_FUNCTION);
 
-		bool other = false;
 		SPTHR_DEBUG(fprintf(stderr, "\nrelease attachment=%p\n", attachment));
 
 		for (Jrd::Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
@@ -7489,11 +7489,13 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 				Thread::waitForCompletion(dbb->dbb_sweep_thread);
 				dbb->dbb_sweep_thread = 0;
 			}
-
-			sync.lock(SYNC_EXCLUSIVE);
 		}
 
 	} // EngineCheckout scope
+
+	// restore database lock if needed
+	if (!other)
+		sync.lock(SYNC_EXCLUSIVE);
 
 	// remove the attachment block from the dbb linked list
 	for (Jrd::Attachment** ptr = &dbb->dbb_attachments; *ptr; ptr = &(*ptr)->att_next)
