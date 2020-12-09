@@ -3705,6 +3705,13 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 
 		for (FB_SIZE_T i = 1; (vector = attachment->att_relations) && i < vector->count(); i++)
 		{
+			if (dbb->dbb_flags & DBB_closing)
+			{
+				SPTHR_DEBUG(fprintf(stderr, "VIO_sweep exits\n"));
+				ret = false;
+				break;
+			}
+
 			relation = (*vector)[i];
 			if (relation)
 				relation = MET_lookup_relation_id(tdbb, i, false);
@@ -3734,6 +3741,12 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 				while (VIO_next_record(tdbb, &rpb, transaction, 0, false))
 				{
 					CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
+
+					if (dbb->dbb_flags & DBB_closing)
+					{
+						SPTHR_DEBUG(fprintf(stderr, "VIO_sweep exits after VIO_next_record\n"));
+						break;
+					}
 
 					if (relation->rel_flags & REL_deleting)
 						break;

@@ -1789,6 +1789,13 @@ void TRA_sweep(thread_db* tdbb)
 
 	try {
 
+		// Avoid races with release_attachment()
+
+		XThreadEnsureUnlock releaseAttGuard(dbb->dbb_thread_mutex, FB_FUNCTION);
+		releaseAttGuard.enter();
+		if (dbb->dbb_flags & DBB_closing)
+			return;
+
 		// Identify ourselves as a sweeper thread. This accomplishes two goals:
 		// 1) Sweep transaction is started "precommitted" and
 		// 2) Execution is throttled in JRD_reschedule() by
@@ -1816,6 +1823,11 @@ void TRA_sweep(thread_db* tdbb)
 		// synchronously perform the garbage collection ourselves.
 
 		attachment->att_flags &= ~ATT_notify_gc;
+
+		// Mark our attachment as special one
+
+		attachment->att_flags |= ATT_from_thread;
+		releaseAttGuard.leave();
 
 		if (VIO_sweep(tdbb, transaction, &traceSweep))
 		{
@@ -2677,35 +2689,21 @@ static void start_sweeper(thread_db* tdbb)
 
 	TRA_update_counters(tdbb, dbb);
 
-	// allocate space for the string and a null at the end
-	const char* pszFilename = tdbb->getAttachment()->att_filename.c_str();
-
-	char* database = (char*) gds__alloc(static_cast<SLONG>(strlen(pszFilename)) + 1);
-
-	if (database)
+	// pass dbb to sweep thread - if allowSweepThread() returned TRUE that is safe
+	try
 	{
-		strcpy(database, pszFilename);
-
-		try
-		{
-			Thread::start(sweep_database, database, THREAD_medium);
-			return;
-		}
-		catch (const Firebird::Exception& ex)
-		{
-			gds__free(database);
-			iscLogException("cannot start sweep thread", ex);
-		}
+		Thread::start(sweep_database, dbb, THREAD_medium, &dbb->dbb_sweep_thread);
+		return;
 	}
-	else
+	catch (const Firebird::Exception& ex)
 	{
-		ERR_log(0, 0, "cannot start sweep thread, Out of Memory");
+		iscLogException("cannot start sweep thread", ex);
+		dbb->clearSweepFlags(tdbb);
 	}
-	dbb->clearSweepFlags(tdbb);
 }
 
 
-static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
+static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM d)
 {
 /**************************************
  *
@@ -2717,26 +2715,32 @@ static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
  *	Sweep database.
  *
  **************************************/
-	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::dpbList, MAX_DPB_SIZE);
-
-	dpb.insertByte(isc_dpb_sweep, isc_dpb_records);
-	// use embedded authentication to attach database
-	const char* szAuthenticator = "sweeper";
-	dpb.insertString(isc_dpb_user_name, szAuthenticator, fb_strlen(szAuthenticator));
-
-	ISC_STATUS_ARRAY status_vector = {0};
-	isc_db_handle db_handle = 0;
-
-	isc_attach_database(status_vector, 0, (const char*) database,
-						&db_handle, dpb.getBufferLength(),
-						reinterpret_cast<const char*>(dpb.getBuffer()));
-
-	if (db_handle)
+	// determine database name
+	// taking into an account that thread is started successfully
+	// we should take care about parameters reference counter and DBB flags
+	Database* dbb = (Database*) d;
+	try
 	{
-		isc_detach_database(status_vector, &db_handle);
-	}
+		ISC_STATUS_ARRAY status_vector = {0};
+		isc_db_handle db_handle = 0;
 
-	gds__free(database);
+		Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::dpbList, MAX_DPB_SIZE);
+		dpb.insertByte(isc_dpb_sweep, isc_dpb_records);
+		// use embedded authentication to attach database
+		const char* szAuthenticator = "sweeper";
+		dpb.insertString(isc_dpb_user_name, szAuthenticator, fb_strlen(szAuthenticator));
+
+		isc_attach_database(status_vector, 0, dbb->dbb_database_name.c_str(),
+							&db_handle, dpb.getBufferLength(),
+							reinterpret_cast<const char*>(dpb.getBuffer()));
+		if (db_handle)
+			isc_detach_database(status_vector, &db_handle);
+	}
+	catch (const Exception&)
+	{ }
+
+	dbb->clearSweepStarting();	// actually needed here only for classic,
+								// but do danger calling for super
 	return 0;
 }
 

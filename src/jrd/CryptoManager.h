@@ -42,8 +42,6 @@
 #include "../jrd/status.h"
 #include "firebird/Interface.h"
 
-#define CRYPT_DEBUG(A)
-
 // forward
 
 class Config;
@@ -419,10 +417,9 @@ private:
 	// normal operation.
 
 	SINT64 slowIO;
-	bool crypt, process, down, run;
+	bool crypt, process, flDown, run;
 
-public:
-	Firebird::Mutex cryptAttMutex;
+	bool down() const;
 };
 
 } // namespace Jrd

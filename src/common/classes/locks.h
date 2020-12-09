@@ -337,16 +337,17 @@ typedef Mutex Spinlock;
 
 
 // RAII holder
-class MutexLockGuard
+template <typename M>
+class RaiiLockGuard
 {
 public:
-	MutexLockGuard(Mutex& aLock, const char* aReason)
+	RaiiLockGuard(M& aLock, const char* aReason)
 		: lock(&aLock)
 	{
 		lock->enter(aReason);
 	}
 
-	~MutexLockGuard()
+	~RaiiLockGuard()
 	{
 		try
 		{
@@ -360,11 +361,13 @@ public:
 
 private:
 	// Forbid copying
-	MutexLockGuard(const MutexLockGuard&);
-	MutexLockGuard& operator=(const MutexLockGuard&);
+	RaiiLockGuard(const RaiiLockGuard&);
+	RaiiLockGuard& operator=(const RaiiLockGuard&);
 
-	Mutex* lock;
+	M* lock;
 };
+
+typedef RaiiLockGuard<Mutex> MutexLockGuard;
 
 class MutexUnlockGuard
 {

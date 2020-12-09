@@ -286,7 +286,7 @@ namespace Jrd {
 		  slowIO(0),
 		  crypt(false),
 		  process(false),
-		  down(false),
+		  flDown(false),
 		  run(false)
 	{
 		stateLock = FB_NEW_RPT(getPool(), 0)
@@ -825,7 +825,7 @@ namespace Jrd {
 
 	void CryptoManager::terminateCryptThread(thread_db*, bool wait)
 	{
-		down = true;
+		flDown = true;
 		if (wait && cryptThreadId)
 		{
 			Thread::waitForCompletion(cryptThreadId);
@@ -962,114 +962,114 @@ namespace Jrd {
 				writer.insertByte(isc_dpb_no_db_triggers, TRUE);
 
 				// Avoid races with release_attachment() in jrd.cpp
-				MutexEnsureUnlock releaseGuard(cryptAttMutex, FB_FUNCTION);
+				XThreadEnsureUnlock releaseGuard(dbb.dbb_thread_mutex, FB_FUNCTION);
 				releaseGuard.enter();
-				if (!down)
+				if (!down())
 				{
-				AutoPlugin<JProvider> jInstance(JProvider::getInstance());
-				jInstance->setDbCryptCallback(&status_vector, dbb.dbb_callback);
-				check(&status_vector);
+					AutoPlugin<JProvider> jInstance(JProvider::getInstance());
+					jInstance->setDbCryptCallback(&status_vector, dbb.dbb_callback);
+					check(&status_vector);
 
-				RefPtr<JAttachment> jAtt(REF_NO_INCR, jInstance->attachDatabase(&status_vector,
-					dbb.dbb_database_name.c_str(), writer.getBufferLength(), writer.getBuffer()));
-				check(&status_vector);
+					RefPtr<JAttachment> jAtt(REF_NO_INCR, jInstance->attachDatabase(&status_vector,
+						dbb.dbb_database_name.c_str(), writer.getBufferLength(), writer.getBuffer()));
+					check(&status_vector);
 
-				MutexLockGuard attGuard(*(jAtt->getStable()->getMutex()), FB_FUNCTION);
-				Attachment* att = jAtt->getHandle();
-				if (!att)
-					Arg::Gds(isc_att_shutdown).raise();
-				att->att_flags |= ATT_crypt_thread;
-				releaseGuard.leave();
+					MutexLockGuard attGuard(*(jAtt->getStable()->getMutex()), FB_FUNCTION);
+					Attachment* att = jAtt->getHandle();
+					if (!att)
+						Arg::Gds(isc_att_shutdown).raise();
+					att->att_flags |= ATT_from_thread;
+					releaseGuard.leave();
 
-				ThreadContextHolder tdbb(att->att_database, att, &status_vector);
-				tdbb->markAsSweeper();
+					ThreadContextHolder tdbb(att->att_database, att, &status_vector);
+					tdbb->markAsSweeper();
 
-				DatabaseContextHolder dbHolder(tdbb);
+					DatabaseContextHolder dbHolder(tdbb);
 
-				class UseCountHolder
-				{
-				public:
-					explicit UseCountHolder(Attachment* a)
-						: att(a)
+					class UseCountHolder
 					{
-						att->att_use_count++;
-					}
-					~UseCountHolder()
-					{
-						att->att_use_count--;
-					}
-				private:
-					Attachment* att;
-				};
-				UseCountHolder use_count(att);
+					public:
+						explicit UseCountHolder(Attachment* a)
+							: att(a)
+						{
+							att->att_use_count++;
+						}
+						~UseCountHolder()
+						{
+							att->att_use_count--;
+						}
+					private:
+						Attachment* att;
+					};
+					UseCountHolder use_count(att);
 
-				// get ready...
-				AutoSetRestore<Attachment*> attSet(&cryptAtt, att);
-				ULONG lastPage = getLastPage(tdbb);
+					// get ready...
+					AutoSetRestore<Attachment*> attSet(&cryptAtt, att);
+					ULONG lastPage = getLastPage(tdbb);
 
-				do
-				{
-					// Check is there some job to do
-					while (currentPage < lastPage)
+					do
 					{
+						// Check is there some job to do
+						while (currentPage < lastPage)
+						{
+							// forced terminate
+							if (down())
+							{
+								break;
+							}
+
+							// scheduling
+							if (--tdbb->tdbb_quantum < 0)
+								JRD_reschedule(tdbb, true);
+
+							// nbackup state check
+							BackupManager::StateReadGuard::lock(tdbb, 1);
+							int bak_state = tdbb->getDatabase()->dbb_backup_manager->getState();
+							BackupManager::StateReadGuard::unlock(tdbb);
+
+							if (bak_state != Ods::hdr_nbak_normal)
+							{
+								EngineCheckout checkout(tdbb, FB_FUNCTION);
+								Thread::sleep(10);
+								continue;
+							}
+
+							// writing page to disk will change it's crypt status in usual way
+							WIN window(DB_PAGE_SPACE, currentPage);
+							Ods::pag* page = CCH_FETCH(tdbb, &window, LCK_write, pag_undefined);
+							if (page && page->pag_type <= pag_max &&
+								(bool(page->pag_flags & Ods::crypted_page) != crypt) &&
+								Ods::pag_crypt_page[page->pag_type])
+							{
+								CCH_MARK_MUST_WRITE(tdbb, &window);
+							}
+							CCH_RELEASE_TAIL(tdbb, &window);
+
+							// sometimes save currentPage into DB header
+							++currentPage;
+							if ((currentPage & 0x3FF) == 0)
+							{
+								writeDbHeader(tdbb, currentPage);
+							}
+						}
+
 						// forced terminate
-						if (down)
+						if (down())
 						{
 							break;
 						}
 
-						// scheduling
-						if (--tdbb->tdbb_quantum < 0)
-							JRD_reschedule(tdbb, true);
+						// At this moment of time all pages with number < lastpage
+						// are guaranteed to change crypt state. Check for added pages.
+						lastPage = getLastPage(tdbb);
 
-						// nbackup state check
-						BackupManager::StateReadGuard::lock(tdbb, 1);
-						int bak_state = tdbb->getDatabase()->dbb_backup_manager->getState();
-						BackupManager::StateReadGuard::unlock(tdbb);
+					} while (currentPage < lastPage);
 
-						if (bak_state != Ods::hdr_nbak_normal)
-						{
-							EngineCheckout checkout(tdbb, FB_FUNCTION);
-							Thread::sleep(10);
-							continue;
-						}
-
-						// writing page to disk will change it's crypt status in usual way
-						WIN window(DB_PAGE_SPACE, currentPage);
-						Ods::pag* page = CCH_FETCH(tdbb, &window, LCK_write, pag_undefined);
-						if (page && page->pag_type <= pag_max &&
-							(bool(page->pag_flags & Ods::crypted_page) != crypt) &&
-							Ods::pag_crypt_page[page->pag_type])
-						{
-							CCH_MARK_MUST_WRITE(tdbb, &window);
-						}
-						CCH_RELEASE_TAIL(tdbb, &window);
-
-						// sometimes save currentPage into DB header
-						++currentPage;
-						if ((currentPage & 0x3FF) == 0)
-						{
-							writeDbHeader(tdbb, currentPage);
-						}
-					}
-
-					// forced terminate
-					if (down)
+					// Finalize crypt
+					if (!down())
 					{
-						break;
+						writeDbHeader(tdbb, 0);
 					}
-
-					// At this moment of time all pages with number < lastpage
-					// are guaranteed to change crypt state. Check for added pages.
-					lastPage = getLastPage(tdbb);
-
-				} while (currentPage < lastPage);
-
-				// Finalize crypt
-				if (!down)
-				{
-					writeDbHeader(tdbb, 0);
-				}
 				}
 
 				// Release exclusive lock on StartCryptThread
@@ -1342,6 +1342,11 @@ namespace Jrd {
 	const char* CryptoManager::getKeyName() const
 	{
 		return keyName.c_str();
+	}
+
+	bool CryptoManager::down() const
+	{
+		return flDown || (dbb.dbb_flags & DBB_closing);
 	}
 
 	void CryptoManager::addClumplet(string& signature, ClumpletReader& block, UCHAR tag)
