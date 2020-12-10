@@ -798,7 +798,7 @@ void INF_database_info(thread_db* tdbb,
 				if (!(info = INF_put_item(item, fileId.length(), fileId.c_str(), info, end)))
 					return;
 			}
-			break;
+			continue;
 
 		default:
 			buffer[0] = item;
