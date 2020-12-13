@@ -227,6 +227,12 @@ namespace Firebird
 	};
 
 	template <typename T>
+	RefPtr<T> makeNoIncRef(T* arg)
+	{
+		return RefPtr<T>(REF_NO_INCR, arg);
+	}
+
+	template <typename T>
 	class AnyRef : public T, public RefCounted
 	{
 	public:
