@@ -5051,7 +5051,7 @@ ITransaction* JAttachment::execute(CheckStatusWrapper* user_status, ITransaction
 			DSQL_execute_immediate(tdbb, getHandle(), &tra, length, string, dialect,
 				inMetadata, static_cast<UCHAR*>(inBuffer),
 				outMetadata, static_cast<UCHAR*>(outBuffer),
-				false);
+				getHandle()->att_in_system_routine);
 
 			if (jt && !tra)
 			{
@@ -5466,7 +5466,7 @@ JStatement* JAttachment::prepare(CheckStatusWrapper* user_status, ITransaction* 
 			StatementMetadata::buildInfoItems(items, flags);
 
 			statement = DSQL_prepare(tdbb, getHandle(), tra, stmtLength, sqlStmt, dialect,
-				&items, &buffer, false);
+				&items, &buffer, getHandle()->att_in_system_routine);
 			rc = FB_NEW JStatement(statement, getStable(), buffer);
 			rc->addRef();
 

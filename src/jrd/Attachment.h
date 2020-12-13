@@ -435,6 +435,7 @@ public:
 	ULONG		att_flags;					// Flags describing the state of the attachment
 	SSHORT		att_client_charset;			// user's charset specified in dpb
 	SSHORT		att_charset;				// current (client or external) attachment charset
+	bool 		att_in_system_routine = false;	// running a system routine
 	Lock*		att_long_locks;				// outstanding two phased locks
 	Lock*		att_wait_lock;				// lock at which attachment waits currently
 	vec<Lock*>*	att_compatibility_table;	// hash table of compatible locks
