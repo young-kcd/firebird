@@ -30,7 +30,7 @@
 /* Indices to be created */
 
 /* Maxinum number of segments in any existing system index */
-const int  INI_IDX_MAX_SEGMENTS		= 3;
+const int  INI_IDX_MAX_SEGMENTS		= 4;
 
 struct ini_idx_t
 {
@@ -303,6 +303,31 @@ static const struct ini_idx_t indices[] =
 	INDEX(56, rel_pub_tables, idx_unique, 2)
 		SEGMENT(f_pubtab_tab_name, idx_string),		// table name
 		SEGMENT(f_pubtab_pub_name, idx_string)		// publication name
+	}},
+	// define index RDB$INDEX_57 for RDB$PROFILE_SESSIONS unique RDB$PROFILE_SESSION_ID;
+	INDEX(57, rel_prof_sessions, idx_unique, 1)
+		SEGMENT(f_prof_ses_id, idx_numeric)			// profile session id
+	}},
+	// define index RDB$INDEX_58 for RDB$PROFILE_REQUESTS unique RDB$PROFILE_SESSION_ID, RDB$PROFILE_REQUEST_ID;
+	INDEX(58, rel_prof_requests, idx_unique, 2)
+		SEGMENT(f_prof_req_ses_id, idx_numeric),	// profile session id
+		SEGMENT(f_prof_req_req_id, idx_numeric)		// profile request id
+	}},
+	// define index RDB$INDEX_59 for RDB$PROFILE_STATS unique
+	//	RDB$PROFILE_SESSION_ID, RDB$PROFILE_REQUEST_ID, RDB$LINE, RDB$COLUMN;
+	INDEX(59, rel_prof_stats, idx_unique, 4)
+		SEGMENT(f_prof_stats_ses_id, idx_numeric),	// profile session id
+		SEGMENT(f_prof_stats_req_id, idx_numeric),	// profile request id
+		SEGMENT(f_prof_stats_line, idx_numeric),	// line number
+		SEGMENT(f_prof_stats_column, idx_numeric)	// column number
+	}},
+	// define index RDB$INDEX_60 for RDB$PROFILE_RECORD_SOURCE_STATS unique
+	//	RDB$PROFILE_SESSION_ID, RDB$PROFILE_REQUEST_ID, RDB$CURSOR_ID, RDB$RECORD_SOURCE_ID;
+	INDEX(60, rel_prof_recsrc_stats, idx_unique, 4)
+		SEGMENT(f_prof_recsrc_stats_ses_id, idx_numeric),		// profile session id
+		SEGMENT(f_prof_recsrc_stats_req_id, idx_numeric),		// profile request id
+		SEGMENT(f_prof_recsrc_stats_cursor_id, idx_numeric),	// cursor id
+		SEGMENT(f_prof_recsrc_stats_recsrc_id, idx_numeric)		// record source id
 	}},
 };
 

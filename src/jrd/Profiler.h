@@ -38,37 +38,8 @@ class thread_db;
 class Profiler;
 
 
-class ProfileSnapshotData : public SnapshotData
-{
-public:
-	ProfileSnapshotData(thread_db* tdbb);
-
-public:
-	void update(thread_db* tdbb, Profiler* profiler);
-	void reset(thread_db* tdbb);
-
-private:
-	void allocBuffers(thread_db* tdbb);
-
-private:
-	MemoryPool& pool;
-};
-
-
-class ProfileTableScan : public VirtualTableScan
-{
-public:
-	using VirtualTableScan::VirtualTableScan;
-
-protected:
-	const Format* getFormat(thread_db* tdbb, jrd_rel* relation) const override;
-	bool retrieveRecord(thread_db* tdbb, jrd_rel* relation, FB_UINT64 position, Record* record) const override;
-};
-
-
 class Profiler
 {
-	friend class ProfileSnapshotData;
 	friend class ProfileTableScan;
 	friend class ProfilerPackage;
 
@@ -202,6 +173,8 @@ private:
 			ULONG((lineColumn >> 32) & 0xFFFFFFFF), ULONG(lineColumn & 0xFFFFFFFF));
 	}
 
+	void updateSnapshot(thread_db* tdbb);
+
 	Request* getRequest(jrd_req* request);
 
 private:
@@ -209,8 +182,6 @@ private:
 	bool activeSession = false;
 	bool paused = false;
 	Firebird::RightPooledMap<ULONG, Session> sessions;
-	ProfileSnapshotData snapshotData;
-	SnapshotCounters previousSnapshotCounters;
 };
 
 

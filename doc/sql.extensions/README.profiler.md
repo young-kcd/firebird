@@ -100,10 +100,10 @@ select pstat.*
 
 Result data for `RDB$PROFILE_SESSIONS`:
 
-| RDB$PROFILE_SESSION_ID | RDB$DESCRIPTION   | RDB$TIMESTAMP                              |
-|-----------------------:|-------------------|--------------------------------------------|
-|                      1 | Profile Session 1 | 2020-09-27 15:45:58.5930 America/Sao_Paulo |
-|                      2 | Profile Session 2 | 2020-09-27 15:46:00.3000 America/Sao_Paulo |
+| RDB$PROFILE_SESSION_ID | RDB$ATTACHMENT_ID | RDB$USER | RDB$DESCRIPTION   | RDB$START_TIMESTAMP                        | RDB$FINISH_TIMESTAP                        |
+|-----------------------:|------------------:|----------|-------------------|--------------------------------------------|--------------------------------------------|
+|                      1 |                 3 | SYSDBA   | Profile Session 1 | 2020-09-27 15:45:58.5930 America/Sao_Paulo | 2020-09-27 15:45:59.0200 America/Sao_Paulo |
+|                      2 |                 3 | SYSDBA   | Profile Session 2 | 2020-09-27 15:46:00.3000 America/Sao_Paulo | 2020-09-27 15:46:02.0000 America/Sao_Paulo |
 
 Result data for `RDB$PROFILE_REQUESTS`:
 
@@ -188,11 +188,13 @@ It also removes finished sessions from engine memory, so if `RDB$PROFILER.PURGE_
 
 # Snapshot system tables
 
-The profile snaphsot tables are like user's global temporary table with `ON COMMIT PRESERVE ROWS`. Data are per attachment and remains there until disconnected or explicitely purged with `RDB$PROFILER.PURGE_SNAPSHOTS`.
+Below is the list of system tables that stores profile data. Note that `gbak` does not backup these tables.
 
 ## Table `RDB$PROFILE_SESSIONS`
 
  - `RDB$PROFILE_SESSION_ID` type `BIGINT` - Profile session ID
+ - `RDB$ATTACHMENT_ID` type `BIGINT` - Attachment ID
+ - `RDB$USER` type `CHAR(63) CHARACTER SET UTF8` - User name
  - `DESCRIPTION` type `VARCHAR(255) CHARACTER SET UTF8` - Description passed in `RDB$PROFILER.START_SESSION`
  - `RDB$START_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - Moment the profile session was started
  - `RDB$FINISH_TIMESTAMP` type `TIMESTAMP WITH TIME ZONE` - Moment the profile session was finished (NULL when not finished)

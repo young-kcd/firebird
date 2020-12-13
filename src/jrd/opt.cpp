@@ -2298,13 +2298,6 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) TimeZonesTableScan(csb, alias, stream, relation);
 			break;
 
-		case rel_prof_sessions:
-		case rel_prof_requests:
-		case rel_prof_stats:
-		case rel_prof_recsrc_stats:
-			rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) ProfileTableScan(csb, alias, stream, relation);
-			break;
-
 		default:
 			rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) MonitoringTableScan(csb, alias, stream, relation);
 			break;

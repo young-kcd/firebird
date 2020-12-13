@@ -27,239 +27,11 @@
 #include "../jrd/tra.h"
 #include "../jrd/ids.h"
 #include "../jrd/recsrc/Cursor.h"
+#include "../jrd/dpm_proto.h"
+#include "../jrd/met_proto.h"
 
 using namespace Jrd;
 using namespace Firebird;
-
-
-ProfileSnapshotData::ProfileSnapshotData(thread_db* tdbb)
-	: SnapshotData(*tdbb->getAttachment()->att_pool),
-	  pool(*tdbb->getAttachment()->att_pool)
-{
-	allocBuffers(tdbb);
-}
-
-void ProfileSnapshotData::reset(thread_db* tdbb)
-{
-	clearSnapshot();
-	allocBuffers(tdbb);
-}
-
-void ProfileSnapshotData::update(thread_db* tdbb, Profiler* profiler)
-{
-	const auto sessionBuffer = getData(rel_prof_sessions);
-	const auto requestBuffer = getData(rel_prof_requests);
-	const auto recSourceStatsBuffer = getData(rel_prof_recsrc_stats);
-	const auto statsBuffer = getData(rel_prof_stats);
-
-	const auto sessionRecord = sessionBuffer->getTempRecord();
-	const auto requestRecord = requestBuffer->getTempRecord();
-	const auto recSourceStatsRecord = recSourceStatsBuffer->getTempRecord();
-	const auto statsRecord = statsBuffer->getTempRecord();
-
-	sessionBuffer->resetCount(profiler->previousSnapshotCounters.sessions);
-	requestBuffer->resetCount(profiler->previousSnapshotCounters.requests);
-	recSourceStatsBuffer->resetCount(profiler->previousSnapshotCounters.recSourceStats);
-	statsBuffer->resetCount(profiler->previousSnapshotCounters.stats);
-
-	auto sessionAccessor = profiler->sessions.accessor();
-
-	for (bool sessionFound = sessionAccessor.getFirst(); sessionFound;)
-	{
-		const SINT64 sessionId = sessionAccessor.current()->first;
-		const auto& sessionDescription = sessionAccessor.current()->second.description;
-		const ISC_TIMESTAMP_TZ sessionStartTimeStamp = sessionAccessor.current()->second.startTimeStamp;
-		const Nullable<ISC_TIMESTAMP_TZ> sessionFinishTimeStamp = sessionAccessor.current()->second.finishTimeStamp;
-
-		sessionRecord->nullify();
-		putField(tdbb, sessionRecord, DumpField(f_prof_ses_id, VALUE_INTEGER, sizeof(sessionId), &sessionId));
-
-		if (sessionDescription.hasData())
-		{
-			putField(tdbb, sessionRecord, DumpField(f_prof_ses_desc, VALUE_STRING,
-				sessionDescription.length(), sessionDescription.c_str()));
-		}
-
-		putField(tdbb, sessionRecord, DumpField(f_prof_ses_start_timestamp, VALUE_TIMESTAMP_TZ,
-			sizeof(sessionStartTimeStamp), &sessionStartTimeStamp));
-
-		if (sessionFinishTimeStamp.isAssigned())
-		{
-			putField(tdbb, sessionRecord, DumpField(f_prof_ses_finish_timestamp, VALUE_TIMESTAMP_TZ,
-				sizeof(sessionFinishTimeStamp.value), &sessionFinishTimeStamp.value));
-		}
-
-		sessionBuffer->store(sessionRecord);
-
-		for (const auto& requestIt : sessionAccessor.current()->second.requests)
-		{
-			const SINT64 requestId = requestIt.first;
-			const auto& profileRequest = requestIt.second;
-			const ISC_TIMESTAMP_TZ requestTimeStamp = profileRequest.timeStamp;
-
-			requestRecord->nullify();
-			putField(tdbb, requestRecord, DumpField(f_prof_req_ses_id, VALUE_INTEGER, sizeof(sessionId), &sessionId));
-			putField(tdbb, requestRecord, DumpField(f_prof_req_time, VALUE_TIMESTAMP_TZ,
-				sizeof(requestTimeStamp), &requestTimeStamp));
-			putField(tdbb, requestRecord, DumpField(f_prof_req_req_id, VALUE_INTEGER, sizeof(requestId), &requestId));
-			putField(tdbb, requestRecord, DumpField(f_prof_req_type, VALUE_STRING,
-				profileRequest.requestType.length(), profileRequest.requestType.c_str()));
-
-			if (profileRequest.packageName.hasData())
-			{
-				putField(tdbb, requestRecord, DumpField(f_prof_req_pkg_name, VALUE_STRING,
-					profileRequest.packageName.length(), profileRequest.packageName.c_str()));
-			}
-
-			if (profileRequest.routineName.hasData())
-			{
-				putField(tdbb, requestRecord, DumpField(f_prof_req_routine, VALUE_STRING,
-					profileRequest.routineName.length(), profileRequest.routineName.c_str()));
-			}
-
-			if (profileRequest.sqlText.hasData())
-			{
-				putField(tdbb, requestRecord, DumpField(f_prof_req_sql_text, VALUE_STRING,
-					profileRequest.sqlText.length(), profileRequest.sqlText.c_str()));
-			}
-
-			requestBuffer->store(requestRecord);
-
-			for (const auto& cursorIt : profileRequest.cursors)
-			{
-				const SINT64 cursorId = cursorIt.first;
-				const auto& profileCursor = cursorIt.second;
-
-				for (const auto& sourceIt : profileCursor.sources)
-				{
-					const SINT64 recSourceId = sourceIt.second.sequence;	// use sequence instead of the internal ID
-					const SINT64 sourceParentId = sourceIt.second.parentSequence.value;
-					const SINT64 openCounter = sourceIt.second.openStats.counter;
-					const SINT64 openMinTime = sourceIt.second.openStats.minTime;
-					const SINT64 openMaxTime = sourceIt.second.openStats.maxTime;
-					const SINT64 openTotalTime = sourceIt.second.openStats.totalTime;
-					const SINT64 fetchCounter = sourceIt.second.fetchStats.counter;
-					const SINT64 fetchMinTime = sourceIt.second.fetchStats.minTime;
-					const SINT64 fetchMaxTime = sourceIt.second.fetchStats.maxTime;
-					const SINT64 fetchTotalTime = sourceIt.second.fetchStats.totalTime;
-
-					recSourceStatsRecord->nullify();
-
-					putField(tdbb, recSourceStatsRecord,
-						DumpField(f_prof_recsrc_stats_ses_id, VALUE_INTEGER, sizeof(sessionId), &sessionId));
-					putField(tdbb, recSourceStatsRecord,
-						DumpField(f_prof_recsrc_stats_req_id, VALUE_INTEGER, sizeof(requestId), &requestId));
-					putField(tdbb, recSourceStatsRecord,
-						DumpField(f_prof_recsrc_stats_cursor_id, VALUE_INTEGER, sizeof(cursorId), &cursorId));
-					putField(tdbb, recSourceStatsRecord,
-						DumpField(f_prof_recsrc_stats_recsrc_id, VALUE_INTEGER, sizeof(recSourceId), &recSourceId));
-
-					if (sourceIt.second.parentSequence.specified)
-					{
-						putField(tdbb, recSourceStatsRecord,
-							DumpField(f_prof_recsrc_stats_parent_recsrc_id, VALUE_INTEGER,
-								sizeof(sourceParentId), &sourceParentId));
-					}
-
-					putField(tdbb, recSourceStatsRecord, DumpField(f_prof_recsrc_stats_access_path, VALUE_STRING,
-						sourceIt.second.accessPath.length(), sourceIt.second.accessPath.c_str()));
-
-					putField(tdbb, recSourceStatsRecord,
-						DumpField(f_prof_recsrc_stats_open_counter, VALUE_INTEGER,
-							sizeof(openCounter), &openCounter));
-
-					putField(tdbb, recSourceStatsRecord,
-						DumpField(f_prof_recsrc_stats_open_min_time, VALUE_INTEGER,
-							sizeof(openMinTime), &openMinTime));
-
-					putField(tdbb, recSourceStatsRecord,
-						DumpField(f_prof_recsrc_stats_open_max_time, VALUE_INTEGER,
-							sizeof(openMaxTime), &openMaxTime));
-
-					putField(tdbb, recSourceStatsRecord,
-						DumpField(f_prof_recsrc_stats_open_total_time, VALUE_INTEGER,
-							sizeof(openTotalTime), &openTotalTime));
-
-					putField(tdbb, recSourceStatsRecord,
-						DumpField(f_prof_recsrc_stats_fetch_counter, VALUE_INTEGER,
-							sizeof(fetchCounter), &fetchCounter));
-
-					putField(tdbb, recSourceStatsRecord,
-						DumpField(f_prof_recsrc_stats_fetch_min_time, VALUE_INTEGER,
-							sizeof(fetchMinTime), &fetchMinTime));
-
-					putField(tdbb, recSourceStatsRecord,
-						DumpField(f_prof_recsrc_stats_fetch_max_time, VALUE_INTEGER,
-							sizeof(fetchMaxTime), &fetchMaxTime));
-
-					putField(tdbb, recSourceStatsRecord,
-						DumpField(f_prof_recsrc_stats_fetch_total_time, VALUE_INTEGER,
-							sizeof(fetchTotalTime), &fetchTotalTime));
-
-					recSourceStatsBuffer->store(recSourceStatsRecord);
-				}
-			}
-
-			for (const auto& statsIt : profileRequest.stats)
-			{
-				const auto lineColumn = Profiler::decodeLineColumn(statsIt.first);
-				const SINT64 line = lineColumn.first;
-				const SINT64 column = lineColumn.second;
-				const SINT64 counter = statsIt.second.counter;
-				const SINT64 minTime = statsIt.second.minTime;
-				const SINT64 maxTime = statsIt.second.maxTime;
-				const SINT64 totalTime = statsIt.second.totalTime;
-
-				statsRecord->nullify();
-				putField(tdbb, statsRecord, DumpField(f_prof_stats_ses_id, VALUE_INTEGER, sizeof(sessionId), &sessionId));
-				putField(tdbb, statsRecord, DumpField(f_prof_stats_req_id, VALUE_INTEGER, sizeof(requestId), &requestId));
-				putField(tdbb, statsRecord, DumpField(f_prof_stats_line, VALUE_INTEGER, sizeof(line), &line));
-				putField(tdbb, statsRecord, DumpField(f_prof_stats_column, VALUE_INTEGER, sizeof(column), &column));
-				putField(tdbb, statsRecord, DumpField(f_prof_stats_counter, VALUE_INTEGER, sizeof(counter), &counter));
-				putField(tdbb, statsRecord, DumpField(f_prof_stats_min_time, VALUE_INTEGER, sizeof(minTime), &minTime));
-				putField(tdbb, statsRecord, DumpField(f_prof_stats_max_time, VALUE_INTEGER, sizeof(maxTime), &maxTime));
-				putField(tdbb, statsRecord, DumpField(f_prof_stats_total_time, VALUE_INTEGER, sizeof(totalTime), &totalTime));
-				statsBuffer->store(statsRecord);
-			}
-		}
-
-		if (sessionId != profiler->currentSessionId)
-		{
-			profiler->previousSnapshotCounters.sessions = sessionBuffer->getCount();
-			profiler->previousSnapshotCounters.requests = requestBuffer->getCount();
-			profiler->previousSnapshotCounters.stats = statsBuffer->getCount();
-
-			sessionFound = sessionAccessor.fastRemove();
-		}
-		else
-			sessionFound = sessionAccessor.getNext();
-	}
-}
-
-void ProfileSnapshotData::allocBuffers(thread_db* tdbb)
-{
-	allocBuffer(tdbb, pool, rel_prof_sessions);
-	allocBuffer(tdbb, pool, rel_prof_requests);
-	allocBuffer(tdbb, pool, rel_prof_stats);
-	allocBuffer(tdbb, pool, rel_prof_recsrc_stats);
-}
-
-
-//--------------------------------------
-
-
-const Format* ProfileTableScan::getFormat(thread_db* tdbb, jrd_rel* relation) const
-{
-	const auto profiler = tdbb->getAttachment()->getProfiler(tdbb);
-	return profiler->snapshotData.getData(relation)->getFormat();
-}
-
-bool ProfileTableScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
-	FB_UINT64 position, Record* record) const
-{
-	const auto profiler = tdbb->getAttachment()->getProfiler(tdbb);
-	return profiler->snapshotData.getData(relation)->fetch(position, record);
-}
 
 
 //--------------------------------------
@@ -275,7 +47,7 @@ IExternalResultSet* ProfilerPackage::updateSnapshotProcedure(ThrowStatusExceptio
 
 	const auto profiler = attachment->getProfiler(tdbb);
 
-	profiler->snapshotData.update(tdbb, profiler);
+	profiler->updateSnapshot(tdbb);
 
 	return nullptr;
 }
@@ -301,7 +73,7 @@ IExternalResultSet* ProfilerPackage::finishSessionProcedure(ThrowStatusException
 	}
 
 	if (in->updateSnapshot)
-		profiler->snapshotData.update(tdbb, profiler);
+		profiler->updateSnapshot(tdbb);
 
 	return nullptr;
 }
@@ -322,7 +94,7 @@ IExternalResultSet* ProfilerPackage::pauseSessionProcedure(ThrowStatusExceptionW
 	profiler->paused = true;
 
 	if (in->updateSnapshot)
-		profiler->snapshotData.update(tdbb, profiler);
+		profiler->updateSnapshot(tdbb);
 
 	return nullptr;
 }
@@ -337,8 +109,21 @@ IExternalResultSet* ProfilerPackage::purgeSnapshotsProcedure(ThrowStatusExceptio
 
 	const auto profiler = attachment->getProfiler(tdbb);
 
-	profiler->snapshotData.reset(tdbb);
-	profiler->previousSnapshotCounters = {};
+	IAttachment* const attachmentIntf = attachment->getInterface();
+	ITransaction* const transactionIntf = tdbb->getTransaction()->getInterface(false);
+	ThrowLocalStatus throwStatus;
+
+	const char* purgeSql =
+		"execute block as\n"
+		"begin\n"
+		"    delete from rdb$profile_stats;\n"
+		"    delete from rdb$profile_record_source_stats;\n"
+		"    delete from rdb$profile_requests;\n"
+		"    delete from rdb$profile_sessions;\n"
+		"end";
+
+	attachmentIntf->execute(&throwStatus, transactionIntf, 0, purgeSql, SQL_DIALECT_CURRENT,
+		nullptr, nullptr, nullptr, nullptr);
 
 	auto sessionAccessor = profiler->sessions.accessor();
 
@@ -384,7 +169,8 @@ void ProfilerPackage::startSessionFunction(ThrowStatusExceptionWrapper* status,
 	profiler->activeSession = true;
 	profiler->paused = false;
 
-	const auto sessionId = ++profiler->currentSessionId;
+	const auto generator = MET_lookup_generator(tdbb, PROFILE_SESSION_GENERATOR);
+	const auto sessionId = profiler->currentSessionId = DPM_gen_id(tdbb, generator, false, 1);
 
 	profiler->sessions.put(sessionId)->init(attachment,
 		in->descriptionNull ? "" : string(string(in->description.str, in->description.length)));
@@ -416,8 +202,7 @@ void Profiler::Session::init(Attachment* attachment, const string& aDescription)
 
 
 Profiler::Profiler(thread_db* tdbb)
-	: sessions(*tdbb->getAttachment()->att_pool),
-	  snapshotData(tdbb)
+	: sessions(*tdbb->getAttachment()->att_pool)
 {
 }
 
@@ -535,6 +320,260 @@ void Profiler::hitRecSourceGetRecord(jrd_req* request, ULONG recSourceId, SINT64
 	fb_assert(profileRecSource);
 
 	profileRecSource->fetchStats.hit(runTime);
+}
+
+void Profiler::updateSnapshot(thread_db* tdbb)
+{
+	const static UCHAR TEMP_BPB[] = {isc_bpb_version1, isc_bpb_storage, 1, isc_bpb_storage_temp};
+
+	IAttachment* const attachment = tdbb->getAttachment()->getInterface();
+	ITransaction* const transaction = tdbb->getTransaction()->getInterface(false);
+	ThrowLocalStatus throwStatus;
+
+	const char* sessionSql =
+		"update or insert into rdb$profile_sessions\n"
+		"  (rdb$profile_session_id, rdb$attachment_id, rdb$user, rdb$description, rdb$start_timestamp, rdb$finish_timestamp)\n"
+		"  values (?, ?, ?, ?, ?, ?)\n"
+		"  matching (rdb$profile_session_id)";
+
+	const char* requestSql =
+		"update or insert into rdb$profile_requests\n"
+		"  (rdb$profile_session_id, rdb$profile_request_id, rdb$timestamp, rdb$request_type, rdb$package_name,\n"
+		"   rdb$routine_name, rdb$sql_text)\n"
+		"  values (?, ?, ?, ?, ?, ?, ?)\n"
+		"  matching (rdb$profile_session_id, rdb$profile_request_id)";
+
+	const char* recSrcStatsSql =
+		"update or insert into rdb$profile_record_source_stats\n"
+		"  (rdb$profile_session_id, rdb$profile_request_id, rdb$cursor_id, rdb$record_source_id,\n"
+		"   rdb$parent_record_source_id, rdb$access_path,\n"
+		"   rdb$open_counter, rdb$open_min_time, rdb$open_max_time, rdb$open_total_time,\n"
+		"   rdb$fetch_counter, rdb$fetch_min_time, rdb$fetch_max_time, rdb$fetch_total_time)\n"
+		"  values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n"
+		"  matching (rdb$profile_session_id, rdb$profile_request_id, rdb$cursor_id, rdb$record_source_id)";
+
+	const char* statsSql =
+		"update or insert into rdb$profile_stats\n"
+		"  (rdb$profile_session_id, rdb$profile_request_id, rdb$line, rdb$column,\n"
+		"   rdb$counter, rdb$min_time, rdb$max_time, rdb$total_time)\n"
+		"  values (?, ?, ?, ?, ?, ?, ?, ?)\n"
+		"  matching (rdb$profile_session_id, rdb$profile_request_id, rdb$line, rdb$column)";
+
+	FB_MESSAGE(SessionMessage, ThrowWrapper,
+		(FB_BIGINT, sessionId)
+		(FB_BIGINT, attachmentId)
+		(FB_INTL_VARCHAR(METADATA_IDENTIFIER_CHAR_LEN * 4, CS_UTF8), user)
+		(FB_INTL_VARCHAR(255 * 4, CS_UTF8), description)
+		(FB_TIMESTAMP_TZ, startTimestamp)
+		(FB_TIMESTAMP_TZ, finishTimestamp)
+	) sessionMessage(&throwStatus, fb_get_master_interface());
+	sessionMessage.clear();
+
+	FB_MESSAGE(RequestMessage, ThrowWrapper,
+		(FB_BIGINT, sessionId)
+		(FB_BIGINT, requestId)
+		(FB_TIMESTAMP_TZ, timestamp)
+		(FB_INTL_VARCHAR(20 * 4, CS_UTF8), requestType)
+		(FB_INTL_VARCHAR(METADATA_IDENTIFIER_CHAR_LEN * 4, CS_UTF8), packageName)
+		(FB_INTL_VARCHAR(METADATA_IDENTIFIER_CHAR_LEN * 4, CS_UTF8), routineName)
+		(FB_BLOB, sqlText)
+	) requestMessage(&throwStatus, fb_get_master_interface());
+	requestMessage.clear();
+
+	FB_MESSAGE(RecSrcStatsMessage, ThrowWrapper,
+		(FB_BIGINT, sessionId)
+		(FB_BIGINT, requestId)
+		(FB_INTEGER, cursorId)
+		(FB_INTEGER, recordSourceId)
+		(FB_BIGINT, parentRecordSourceId)
+		(FB_INTL_VARCHAR(255 * 4, CS_UTF8), accessPath)
+		(FB_BIGINT, openCounter)
+		(FB_BIGINT, openMinTime)
+		(FB_BIGINT, openMaxTime)
+		(FB_BIGINT, openTotalTime)
+		(FB_BIGINT, fetchCounter)
+		(FB_BIGINT, fetchMinTime)
+		(FB_BIGINT, fetchMaxTime)
+		(FB_BIGINT, fetchTotalTime)
+	) recSrcStatsMessage(&throwStatus, fb_get_master_interface());
+	recSrcStatsMessage.clear();
+
+	FB_MESSAGE(StatsMessage, ThrowWrapper,
+		(FB_BIGINT, sessionId)
+		(FB_BIGINT, requestId)
+		(FB_INTEGER, line)
+		(FB_INTEGER, column)
+		(FB_BIGINT, counter)
+		(FB_BIGINT, minTime)
+		(FB_BIGINT, maxTime)
+		(FB_BIGINT, totalTime)
+	) statsMessage(&throwStatus, fb_get_master_interface());
+	statsMessage.clear();
+
+	auto sessionStmt = makeNoIncRef(attachment->prepare(
+		&throwStatus, transaction, 0, sessionSql, SQL_DIALECT_CURRENT, 0));
+	auto requestStmt = makeNoIncRef(attachment->prepare(
+		&throwStatus, transaction, 0, requestSql, SQL_DIALECT_CURRENT, 0));
+	auto recSrcStatsStmt = makeNoIncRef(attachment->prepare(
+		&throwStatus, transaction, 0, recSrcStatsSql, SQL_DIALECT_CURRENT, 0));
+	auto statsStmt = makeNoIncRef(attachment->prepare(
+		&throwStatus, transaction, 0, statsSql, SQL_DIALECT_CURRENT, 0));
+
+	auto sessionAccessor = sessions.accessor();
+
+	for (bool sessionFound = sessionAccessor.getFirst(); sessionFound;)
+	{
+		sessionMessage->sessionIdNull = FB_FALSE;
+		sessionMessage->sessionId = sessionAccessor.current()->first;
+
+		sessionMessage->attachmentIdNull = FB_FALSE;
+		sessionMessage->attachmentId = tdbb->getAttachment()->att_attachment_id;
+
+		sessionMessage->userNull = FB_FALSE;
+		sessionMessage->user.set(tdbb->getAttachment()->att_user->getUserName().c_str());
+
+		sessionMessage->descriptionNull = sessionAccessor.current()->second.description.isEmpty();
+		sessionMessage->description.set(sessionAccessor.current()->second.description.c_str());
+
+		sessionMessage->startTimestampNull = FB_FALSE;
+		sessionMessage->startTimestamp = sessionAccessor.current()->second.startTimeStamp;
+
+		sessionMessage->finishTimestampNull = sessionAccessor.current()->second.finishTimeStamp.isUnknown();
+		sessionMessage->finishTimestamp = sessionAccessor.current()->second.finishTimeStamp.value;
+
+		sessionStmt->execute(&throwStatus, transaction, sessionMessage.getMetadata(),
+			sessionMessage.getData(), nullptr, nullptr);
+
+		for (const auto& requestIt : sessionAccessor.current()->second.requests)
+		{
+			const auto& profileRequest = requestIt.second;
+
+			requestMessage->sessionIdNull = FB_FALSE;
+			requestMessage->sessionId = sessionMessage->sessionId;
+
+			requestMessage->requestIdNull = FB_FALSE;
+			requestMessage->requestId = requestIt.first;
+
+			requestMessage->timestampNull = FB_FALSE;
+			requestMessage->timestamp = profileRequest.timeStamp;
+
+			requestMessage->requestTypeNull = FB_FALSE;
+			requestMessage->requestType.set(profileRequest.requestType.c_str());
+
+			requestMessage->packageNameNull = profileRequest.packageName.isEmpty();
+			requestMessage->packageName.set(profileRequest.packageName.c_str());
+
+			requestMessage->routineNameNull = profileRequest.routineName.isEmpty();
+			requestMessage->routineName.set(profileRequest.routineName.c_str());
+
+			requestMessage->sqlTextNull = profileRequest.sqlText.isEmpty();
+
+			if (profileRequest.sqlText.hasData())
+			{
+				const auto blob = attachment->createBlob(
+					&throwStatus, transaction, &requestMessage->sqlText, sizeof(TEMP_BPB), TEMP_BPB);
+				blob->putSegment(&throwStatus, profileRequest.sqlText.length(), profileRequest.sqlText.c_str());
+				blob->close(&throwStatus);
+			}
+
+			requestStmt->execute(&throwStatus, transaction, requestMessage.getMetadata(),
+				requestMessage.getData(), nullptr, nullptr);
+
+			for (const auto& cursorIt : profileRequest.cursors)
+			{
+				const auto& profileCursor = cursorIt.second;
+
+				recSrcStatsMessage->sessionIdNull = FB_FALSE;
+				recSrcStatsMessage->sessionId = sessionMessage->sessionId;
+
+				recSrcStatsMessage->requestIdNull = FB_FALSE;
+				recSrcStatsMessage->requestId = requestIt.first;
+
+				recSrcStatsMessage->cursorIdNull = FB_FALSE;
+				recSrcStatsMessage->cursorId = cursorIt.first;
+
+				for (const auto& sourceIt : profileCursor.sources)
+				{
+					const auto& recSrc = sourceIt.second;
+
+					// Use sequence instead of the internal ID.
+					recSrcStatsMessage->recordSourceIdNull = FB_FALSE;
+					recSrcStatsMessage->recordSourceId = recSrc.sequence;
+
+					// Use parent sequence instead of the internal parent ID.
+					recSrcStatsMessage->parentRecordSourceIdNull = !recSrc.parentSequence.specified;
+					recSrcStatsMessage->parentRecordSourceId = recSrc.parentSequence.value;
+
+					recSrcStatsMessage->accessPathNull = recSrc.accessPath.isEmpty();
+					recSrcStatsMessage->accessPath.set(recSrc.accessPath.c_str());
+
+					recSrcStatsMessage->openCounterNull = FB_FALSE;
+					recSrcStatsMessage->openCounter = recSrc.openStats.counter;
+
+					recSrcStatsMessage->openMinTimeNull = FB_FALSE;
+					recSrcStatsMessage->openMinTime = recSrc.openStats.minTime;
+
+					recSrcStatsMessage->openMaxTimeNull = FB_FALSE;
+					recSrcStatsMessage->openMaxTime = recSrc.openStats.maxTime;
+
+					recSrcStatsMessage->openTotalTimeNull = FB_FALSE;
+					recSrcStatsMessage->openTotalTime = recSrc.openStats.totalTime;
+
+					recSrcStatsMessage->fetchCounterNull = FB_FALSE;
+					recSrcStatsMessage->fetchCounter = recSrc.fetchStats.counter;
+
+					recSrcStatsMessage->fetchMinTimeNull = FB_FALSE;
+					recSrcStatsMessage->fetchMinTime = recSrc.fetchStats.minTime;
+
+					recSrcStatsMessage->fetchMaxTimeNull = FB_FALSE;
+					recSrcStatsMessage->fetchMaxTime = recSrc.fetchStats.maxTime;
+
+					recSrcStatsMessage->fetchTotalTimeNull = FB_FALSE;
+					recSrcStatsMessage->fetchTotalTime = recSrc.fetchStats.totalTime;
+
+					recSrcStatsStmt->execute(&throwStatus, transaction, recSrcStatsMessage.getMetadata(),
+						recSrcStatsMessage.getData(), nullptr, nullptr);
+				}
+			}
+
+			for (const auto& statsIt : profileRequest.stats)
+			{
+				const auto lineColumn = Profiler::decodeLineColumn(statsIt.first);
+
+				statsMessage->sessionIdNull = FB_FALSE;
+				statsMessage->sessionId = sessionMessage->sessionId;
+
+				statsMessage->requestIdNull = FB_FALSE;
+				statsMessage->requestId = requestIt.first;
+
+				statsMessage->lineNull = FB_FALSE;
+				statsMessage->line = lineColumn.first;
+
+				statsMessage->columnNull = FB_FALSE;
+				statsMessage->column = lineColumn.second;
+
+				statsMessage->counterNull = FB_FALSE;
+				statsMessage->counter = statsIt.second.counter;
+
+				statsMessage->minTimeNull = FB_FALSE;
+				statsMessage->minTime = statsIt.second.minTime;
+
+				statsMessage->maxTimeNull = FB_FALSE;
+				statsMessage->maxTime = statsIt.second.maxTime;
+
+				statsMessage->totalTimeNull = FB_FALSE;
+				statsMessage->totalTime = statsIt.second.totalTime;
+
+				statsStmt->execute(&throwStatus, transaction, statsMessage.getMetadata(),
+					statsMessage.getData(), nullptr, nullptr);
+			}
+		}
+
+		if (sessionAccessor.current()->first != currentSessionId)
+			sessionFound = sessionAccessor.fastRemove();
+		else
+			sessionFound = sessionAccessor.getNext();
+	}
 }
 
 Profiler::Request* Profiler::getRequest(jrd_req* request)

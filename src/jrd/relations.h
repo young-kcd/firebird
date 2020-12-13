@@ -728,15 +728,17 @@ END_RELATION
 //// FIXME: Nullable fields.
 
 // Relation 53 (RDB$PROFILE_SESSIONS)
-RELATION(nam_prof_ses, rel_prof_sessions, ODS_13_0, rel_virtual)
+RELATION(nam_prof_ses, rel_prof_sessions, ODS_13_0, rel_persistent)
 	FIELD(f_prof_ses_id, nam_prof_ses_id, fld_prof_ses_id, 0, ODS_13_0)
+	FIELD(f_prof_ses_att_id, nam_att_id, fld_att_id, 0, ODS_13_0)
+	FIELD(f_prof_ses_user, nam_user, fld_user, 0, ODS_13_0)
 	FIELD(f_prof_ses_desc, nam_description, fld_short_description, 0, ODS_13_0)
 	FIELD(f_prof_ses_start_timestamp, nam_start_timestamp, fld_timestamp_tz, 0, ODS_13_0)
 	FIELD(f_prof_ses_finish_timestamp, nam_finish_timestamp, fld_timestamp_tz, 0, ODS_13_0)
 END_RELATION
 
 // Relation 54 (RDB$PROFILE_REQUESTS)
-RELATION(nam_prof_requests, rel_prof_requests, ODS_13_0, rel_virtual)
+RELATION(nam_prof_requests, rel_prof_requests, ODS_13_0, rel_persistent)
 	FIELD(f_prof_req_ses_id, nam_prof_ses_id, fld_prof_ses_id, 0, ODS_13_0)
 	FIELD(f_prof_req_req_id, nam_prof_req_id, fld_stmt_id, 0, ODS_13_0)
 	FIELD(f_prof_req_time, nam_time, fld_timestamp_tz, 0, ODS_13_0)
@@ -747,7 +749,7 @@ RELATION(nam_prof_requests, rel_prof_requests, ODS_13_0, rel_virtual)
 END_RELATION
 
 // Relation 55 (RDB$PROFILE_STATS)
-RELATION(nam_prof_stats, rel_prof_stats, ODS_13_0, rel_virtual)
+RELATION(nam_prof_stats, rel_prof_stats, ODS_13_0, rel_persistent)
 	FIELD(f_prof_stats_ses_id, nam_prof_ses_id, fld_prof_ses_id, 0, ODS_13_0)
 	FIELD(f_prof_stats_req_id, nam_prof_req_id, fld_stmt_id, 0, ODS_13_0)
 	FIELD(f_prof_stats_line, nam_line, fld_src_info, 0, ODS_13_0)
@@ -759,7 +761,7 @@ RELATION(nam_prof_stats, rel_prof_stats, ODS_13_0, rel_virtual)
 END_RELATION
 
 // Relation 56 (RDB$PROFILE_RECORD_SOURCE_STATS)
-RELATION(nam_prof_recsrc_stats, rel_prof_recsrc_stats, ODS_13_0, rel_virtual)
+RELATION(nam_prof_recsrc_stats, rel_prof_recsrc_stats, ODS_13_0, rel_persistent)
 	FIELD(f_prof_recsrc_stats_ses_id, nam_prof_ses_id, fld_prof_ses_id, 0, ODS_13_0)
 	FIELD(f_prof_recsrc_stats_req_id, nam_prof_req_id, fld_stmt_id, 0, ODS_13_0)
 	FIELD(f_prof_recsrc_stats_cursor_id, nam_cursor_id, fld_cursor_id, 0, ODS_13_0)

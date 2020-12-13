@@ -142,6 +142,7 @@ const int GEN_SECCLASS_PREFIX_LEN			= 4;
 
 const char* const PROCEDURES_GENERATOR = "RDB$PROCEDURES";
 const char* const FUNCTIONS_GENERATOR = "RDB$FUNCTIONS";
+const char* const PROFILE_SESSION_GENERATOR = "RDB$PROFILE_SESSION_ID";
 
 // Automatically created check constraints for unnamed PRIMARY and UNIQUE declarations.
 const char* const IMPLICIT_INTEGRITY_PREFIX = "INTEG_";
