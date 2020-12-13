@@ -10,7 +10,7 @@ A session may be paused to temporary disable statistics gathering in a session. 
 
 A new session may be started when a session is already active. In this case it has the same semantics of finishing the current session with `RDB$PROFILER.FINISH_SESSION(FALSE)` so snapshots are not updated in the same moment.
 
-To analyze the gathered data, the user must update the snapshots which may be done finishing or pausing a session (with `UPDATE_SNAPSHOT` parameter set to `TRUE`) or calling `RDB$PROFILER.UPDATE_SNAPSHOT`.
+To analyze the gathered data, the user must update the snapshots which may be done finishing or pausing a session (with `REFRESH_SNAPSHOTS` parameter set to `TRUE`) or calling `RDB$PROFILER.REFRESH_SNAPSHOTS`.
 
 Following is a sample profile session.
 
@@ -152,12 +152,12 @@ Return type: `BIGINT NOT NULL`.
 
 `RDB$PROFILER.PAUSE_SESSION` pauses the current profiler session so the following PSQL executed statements are not accounted.
 
-If `UPDATE_SNAPSHOT` is `TRUE` the snapshot tables are updated with data up to the current moment. Otherwise data remains only in the engine memory for later update.
+If `REFRESH_SNAPSHOTS` is `TRUE` the snapshot tables are updated with data up to the current moment. Otherwise data remains only in the engine memory for later update.
 
-Calling `RDB$PROFILER.PAUSE_SESSION(TRUE)` has the same semantics of calling `RDB$PROFILER.PAUSE_SESSION(FALSE)` followed by `RDB$PROFILER.UPDATE_SNAPSHOT`.
+Calling `RDB$PROFILER.PAUSE_SESSION(TRUE)` has the same semantics of calling `RDB$PROFILER.PAUSE_SESSION(FALSE)` followed by `RDB$PROFILER.REFRESH_SNAPSHOTS`.
 
 Input parameters:
- - `UPDATE_SNAPSHOT` type `BOOLEAN NOT NULL`
+ - `REFRESH_SNAPSHOTS` type `BOOLEAN NOT NULL`
 
 ## Procedure `RESUME_SESSION`
 
@@ -167,26 +167,28 @@ Input parameters:
 
 `RDB$PROFILER.FINISH_SESSION` finishes the current profiler session.
 
-If `UPDATE_SNAPSHOT` is `TRUE` the snapshot tables are updated with data of the finished session (and old finished sessions not yet present in the snapshot). Otherwise data remains only in the engine memory for later update.
+If `REFRESH_SNAPSHOTS` is `TRUE` the snapshot tables are updated with data of the finished session (and old finished sessions not yet present in the snapshot). Otherwise data remains only in the engine memory for later update.
 
-Calling `RDB$PROFILER.FINISH_SESSION(TRUE)` has the same semantics of calling `RDB$PROFILER.FINISH_SESSION(FALSE)` followed by `RDB$PROFILER.UPDATE_SNAPSHOT`.
+Calling `RDB$PROFILER.FINISH_SESSION(TRUE)` has the same semantics of calling `RDB$PROFILER.FINISH_SESSION(FALSE)` followed by `RDB$PROFILER.REFRESH_SNAPSHOTS`.
 
 Input parameters:
- - `UPDATE_SNAPSHOT` type `BOOLEAN NOT NULL`
+ - `REFRESH_SNAPSHOTS` type `BOOLEAN NOT NULL`
 
-## Procedure `UPDATE_SNAPSHOT`
+## Procedure `REFRESH_SNAPSHOTS`
 
-`RDB$PROFILER.UPDATE_SNAPSHOT` updates the system tables snapshots with data from the profile sessions in memory.
+`RDB$PROFILER.REFRESH_SNAPSHOTS` updates the system tables snapshots with data from the profile sessions in memory.
 
 After update data is stored in tables `RDB$PROFILE_SESSIONS`, `RDB$PROFILE_REQUESTS`, `RDB$PROFILE_STATS` and `PROFILE_RECORD_SOURCE_STATS` and may be read and analyzed by the user.
 
-It also removes finished sessions from engine memory, so if `RDB$PROFILER.PURGE_SNAPSHOTS` is later called these data are not recovered.
-
-## Procedure `PURGE_SNAPSHOTS`
-
-`RDB$PROFILER.PURGE_SNAPSHOTS` removes all profile snapshots from the system tables and remove finished profile sessions from engine memory.
+It also removes finished sessions from engine memory.
 
 # Snapshot system tables
+
+Profile snapshot tables are read only with one exception - `RDB$PROFILE_SESSIONS` may be used with `DELETE` command.
+
+An user can delete profile sessions from their own, and if it has the `DELETE_ANY_PROFILE_SESSION` system privilege it may also delete sessions from any users.
+
+When a session is deleted the related data in others profiler snapshot tables are internally and automatically deleted too.
 
 Below is the list of system tables that stores profile data. Note that `gbak` does not backup these tables.
 

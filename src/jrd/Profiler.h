@@ -149,6 +149,7 @@ private:
 
 public:
 	static Profiler* create(thread_db* tdbb);
+	static void deleteSessionDetails(thread_db* tdbb, SINT64 sessionId);
 
 public:
 	void setupCursor(thread_db* tdbb, jrd_req* request, const Cursor* cursor);
@@ -173,15 +174,15 @@ private:
 			ULONG((lineColumn >> 32) & 0xFFFFFFFF), ULONG(lineColumn & 0xFFFFFFFF));
 	}
 
-	void updateSnapshot(thread_db* tdbb);
+	void refreshSnapshots(thread_db* tdbb);
 
 	Request* getRequest(jrd_req* request);
 
 private:
-	ULONG currentSessionId = 0;
+	SINT64 currentSessionId = 0;
 	bool activeSession = false;
 	bool paused = false;
-	Firebird::RightPooledMap<ULONG, Session> sessions;
+	Firebird::RightPooledMap<SINT64, Session> sessions;
 };
 
 
@@ -191,13 +192,13 @@ public:
 	ProfilerPackage(Firebird::MemoryPool& pool);
 
 private:
-	static Firebird::IExternalResultSet* updateSnapshotProcedure(Firebird::ThrowStatusExceptionWrapper* status,
+	static Firebird::IExternalResultSet* refreshSnapshotsProcedure(Firebird::ThrowStatusExceptionWrapper* status,
 		Firebird::IExternalContext* context, const void* in, void* out);
 
 	//----------
 
 	FB_MESSAGE(FinishSessionInput, Firebird::ThrowStatusExceptionWrapper,
-		(FB_BOOLEAN, updateSnapshot)
+		(FB_BOOLEAN, refreshSnapshots)
 	);
 
 	static Firebird::IExternalResultSet* finishSessionProcedure(Firebird::ThrowStatusExceptionWrapper* status,
@@ -206,16 +207,11 @@ private:
 	//----------
 
 	FB_MESSAGE(PauseSessionInput, Firebird::ThrowStatusExceptionWrapper,
-		(FB_BOOLEAN, updateSnapshot)
+		(FB_BOOLEAN, refreshSnapshots)
 	);
 
 	static Firebird::IExternalResultSet* pauseSessionProcedure(Firebird::ThrowStatusExceptionWrapper* status,
 		Firebird::IExternalContext* context, const PauseSessionInput::Type* in, void* out);
-
-	//----------
-
-	static Firebird::IExternalResultSet* purgeSnapshotsProcedure(Firebird::ThrowStatusExceptionWrapper* status,
-		Firebird::IExternalContext* context, const void* in, void* out);
 
 	//----------
 

@@ -88,6 +88,7 @@
 #include "../jrd/Function.h"
 #include "../common/StatusArg.h"
 #include "../jrd/GarbageCollector.h"
+#include "../jrd/Profiler.h"
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceJrdHelpers.h"
 
@@ -1454,7 +1455,7 @@ static bool check_prepare_result(int prepare_result, jrd_tra* transaction, jrd_r
  **************************************
  *
  * Functional description
- *	Called by VIO_modify and VIO_erase. Raise update conflict error if not in 
+ *	Called by VIO_modify and VIO_erase. Raise update conflict error if not in
  *  read consistency transaction or lock error happens or if request is already
  *  in update conflict mode. In latter case set TRA_ex_restart flag to correctly
  *  handle request restart.
@@ -1465,17 +1466,17 @@ static bool check_prepare_result(int prepare_result, jrd_tra* transaction, jrd_r
 
 	jrd_req* top_request = request->req_snapshot.m_owner;
 
-	const bool restart_ready = top_request && 
+	const bool restart_ready = top_request &&
 		(top_request->req_flags & req_restart_ready);
 
 	// Second update conflict when request is already in update conflict mode
-	// means we have some (indirect) UPDATE\DELETE in WHERE clause of primary 
+	// means we have some (indirect) UPDATE\DELETE in WHERE clause of primary
 	// cursor. In this case all we can do is restart whole request immediately.
-	const bool secondary = top_request && 
-		(top_request->req_flags & req_update_conflict) && 
+	const bool secondary = top_request &&
+		(top_request->req_flags & req_update_conflict) &&
 		(prepare_result != PREPARE_LOCKERR);
 
-	if (!(transaction->tra_flags & TRA_read_consistency) || prepare_result == PREPARE_LOCKERR || 
+	if (!(transaction->tra_flags & TRA_read_consistency) || prepare_result == PREPARE_LOCKERR ||
 		secondary || !restart_ready)
 	{
 		if (secondary)
@@ -1610,7 +1611,29 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_packages:
 		case rel_charsets:
 		case rel_pubs:
+		case rel_prof_requests:
+		case rel_prof_stats:
+		case rel_prof_recsrc_stats:
 			protect_system_table_delupd(tdbb, relation, "DELETE");
+			break;
+
+		case rel_prof_sessions:
+			if (EVL_field(0, rpb->rpb_record, f_prof_ses_user, &desc) &&
+				EVL_field(0, rpb->rpb_record, f_prof_ses_id, &desc2))
+			{
+				MetaName user;
+				MOV_get_metaname(tdbb, &desc, user);
+
+				if (user != tdbb->getAttachment()->att_user->getUserName() &&
+					!tdbb->getAttachment()->locksmith(tdbb, DELETE_ANY_PROFILE_SESSION))
+				{
+					ERR_post(
+						Arg::Gds(isc_miss_prvlg) <<
+						Arg::Str("DELETE_ANY_PROFILE_SESSION"));
+				}
+
+				Profiler::deleteSessionDetails(tdbb, MOV_get_long(tdbb, &desc2, 0));
+			}
 			break;
 
 		case rel_relations:
@@ -2861,6 +2884,10 @@ bool VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		case rel_roles:
 		case rel_ccon:
 		case rel_pub_tables:
+		case rel_prof_sessions:
+		case rel_prof_requests:
+		case rel_prof_stats:
+		case rel_prof_recsrc_stats:
 			protect_system_table_delupd(tdbb, relation, "UPDATE");
 			break;
 
@@ -3197,7 +3224,7 @@ bool VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 	const bool backVersion = (org_rpb->rpb_b_page != 0);
 	record_param temp;
 	PageStack stack;
-	int prepare_result = prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr, org_rpb, 
+	int prepare_result = prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr, org_rpb,
 										&temp, new_rpb, stack, false);
 	if (!check_prepare_result(prepare_result, transaction, tdbb->getRequest(), org_rpb))
 		return false;
@@ -3497,6 +3524,10 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_dpds:
 		case rel_dims:
 		case rel_segments:
+		case rel_prof_sessions:
+		case rel_prof_requests:
+		case rel_prof_stats:
+		case rel_prof_recsrc_stats:
 			protect_system_table_insert(tdbb, request, relation);
 			break;
 

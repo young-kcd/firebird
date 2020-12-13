@@ -615,6 +615,11 @@ void INI_format(const char* owner, const char* charset)
 	store_admin_grant(tdbb, buf.c_str(), obj_privilege, "RDB$DB_CREATORS", obj_relation, "SIUDR");
 	GRANT_privileges(tdbb, "RDB$DB_CREATORS", obj_relation, attachment->getSysTransaction());
 
+	// Allow everyone to delete RDB$PROFILE_SESSIONS. VIO_delete will check record permissions.
+	buf = "PUBLIC";
+	store_admin_grant(tdbb, buf.c_str(), obj_user, "RDB$PROFILE_SESSIONS", obj_relation, "D");
+	GRANT_privileges(tdbb, "RDB$PROFILE_SESSIONS", obj_relation, attachment->getSysTransaction());
+
 	DFW_perform_system_work(tdbb);
 }
 

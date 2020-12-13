@@ -37,7 +37,7 @@ using namespace Firebird;
 //--------------------------------------
 
 
-IExternalResultSet* ProfilerPackage::updateSnapshotProcedure(ThrowStatusExceptionWrapper* status,
+IExternalResultSet* ProfilerPackage::refreshSnapshotsProcedure(ThrowStatusExceptionWrapper* status,
 	IExternalContext* context, const void* in, void* out)
 {
 	const auto tdbb = JRD_get_thread_data();
@@ -47,7 +47,7 @@ IExternalResultSet* ProfilerPackage::updateSnapshotProcedure(ThrowStatusExceptio
 
 	const auto profiler = attachment->getProfiler(tdbb);
 
-	profiler->updateSnapshot(tdbb);
+	profiler->refreshSnapshots(tdbb);
 
 	return nullptr;
 }
@@ -72,8 +72,10 @@ IExternalResultSet* ProfilerPackage::finishSessionProcedure(ThrowStatusException
 		profileSession->finishTimeStamp.value.time_zone = attachment->att_current_timezone;
 	}
 
-	if (in->updateSnapshot)
-		profiler->updateSnapshot(tdbb);
+	profiler->currentSessionId = 0;
+
+	if (in->refreshSnapshots)
+		profiler->refreshSnapshots(tdbb);
 
 	return nullptr;
 }
@@ -93,49 +95,8 @@ IExternalResultSet* ProfilerPackage::pauseSessionProcedure(ThrowStatusExceptionW
 
 	profiler->paused = true;
 
-	if (in->updateSnapshot)
-		profiler->updateSnapshot(tdbb);
-
-	return nullptr;
-}
-
-IExternalResultSet* ProfilerPackage::purgeSnapshotsProcedure(ThrowStatusExceptionWrapper* status,
-	IExternalContext* context, const void* in, void* out)
-{
-	const auto tdbb = JRD_get_thread_data();
-	const auto attachment = tdbb->getAttachment();
-
-	Attachment::SyncGuard guard(attachment, FB_FUNCTION);
-
-	const auto profiler = attachment->getProfiler(tdbb);
-
-	IAttachment* const attachmentIntf = attachment->getInterface();
-	ITransaction* const transactionIntf = tdbb->getTransaction()->getInterface(false);
-	ThrowLocalStatus throwStatus;
-
-	const char* purgeSql =
-		"execute block as\n"
-		"begin\n"
-		"    delete from rdb$profile_stats;\n"
-		"    delete from rdb$profile_record_source_stats;\n"
-		"    delete from rdb$profile_requests;\n"
-		"    delete from rdb$profile_sessions;\n"
-		"end";
-
-	attachmentIntf->execute(&throwStatus, transactionIntf, 0, purgeSql, SQL_DIALECT_CURRENT,
-		nullptr, nullptr, nullptr, nullptr);
-
-	auto sessionAccessor = profiler->sessions.accessor();
-
-	for (bool sessionFound = sessionAccessor.getFirst(); sessionFound;)
-	{
-		const auto sessionId = sessionAccessor.current()->first;
-
-		if (!profiler->activeSession || sessionId != profiler->currentSessionId)
-			sessionFound = sessionAccessor.fastRemove();
-		else
-			sessionFound = sessionAccessor.getNext();
-	}
+	if (in->refreshSnapshots)
+		profiler->refreshSnapshots(tdbb);
 
 	return nullptr;
 }
@@ -209,6 +170,37 @@ Profiler::Profiler(thread_db* tdbb)
 Profiler* Profiler::create(thread_db* tdbb)
 {
 	return FB_NEW_POOL(*tdbb->getAttachment()->att_pool) Profiler(tdbb);
+}
+
+void Profiler::deleteSessionDetails(thread_db* tdbb, SINT64 sessionId)
+{
+	const auto attachment = tdbb->getAttachment();
+
+	AutoSetRestore<bool> autoInSystemPackage(&attachment->att_in_system_routine, true);
+
+	IAttachment* const attachmentIntf = attachment->getInterface();
+	ITransaction* const transactionIntf = tdbb->getTransaction()->getInterface(false);
+	ThrowLocalStatus throwStatus;
+
+	const char* deleteSessionSql = R"""(
+		execute block (session_id type of rdb$profile_session_id = ?) as
+		begin
+			delete from rdb$profile_record_source_stats where rdb$profile_session_id = :session_id;
+			delete from rdb$profile_stats where rdb$profile_session_id = :session_id;
+			delete from rdb$profile_requests where rdb$profile_session_id = :session_id;
+		end
+	)""";
+
+	FB_MESSAGE(SessionMessage, ThrowWrapper,
+		(FB_BIGINT, sessionId)
+	) sessionMessage(&throwStatus, fb_get_master_interface());
+	sessionMessage.clear();
+
+	sessionMessage->sessionId = sessionId;
+	sessionMessage->sessionIdNull = FB_FALSE;
+
+	attachmentIntf->execute(&throwStatus, transactionIntf, 0, deleteSessionSql, SQL_DIALECT_CURRENT,
+		sessionMessage.getMetadata(), sessionMessage.getData(), nullptr, nullptr);
 }
 
 void Profiler::setupCursor(thread_db* tdbb, jrd_req* request, const Cursor* cursor)
@@ -322,7 +314,7 @@ void Profiler::hitRecSourceGetRecord(jrd_req* request, ULONG recSourceId, SINT64
 	profileRecSource->fetchStats.hit(runTime);
 }
 
-void Profiler::updateSnapshot(thread_db* tdbb)
+void Profiler::refreshSnapshots(thread_db* tdbb)
 {
 	const static UCHAR TEMP_BPB[] = {isc_bpb_version1, isc_bpb_storage, 1, isc_bpb_storage_temp};
 
@@ -330,34 +322,12 @@ void Profiler::updateSnapshot(thread_db* tdbb)
 	ITransaction* const transaction = tdbb->getTransaction()->getInterface(false);
 	ThrowLocalStatus throwStatus;
 
-	const char* sessionSql =
-		"update or insert into rdb$profile_sessions\n"
-		"  (rdb$profile_session_id, rdb$attachment_id, rdb$user, rdb$description, rdb$start_timestamp, rdb$finish_timestamp)\n"
-		"  values (?, ?, ?, ?, ?, ?)\n"
-		"  matching (rdb$profile_session_id)";
-
-	const char* requestSql =
-		"update or insert into rdb$profile_requests\n"
-		"  (rdb$profile_session_id, rdb$profile_request_id, rdb$timestamp, rdb$request_type, rdb$package_name,\n"
-		"   rdb$routine_name, rdb$sql_text)\n"
-		"  values (?, ?, ?, ?, ?, ?, ?)\n"
-		"  matching (rdb$profile_session_id, rdb$profile_request_id)";
-
-	const char* recSrcStatsSql =
-		"update or insert into rdb$profile_record_source_stats\n"
-		"  (rdb$profile_session_id, rdb$profile_request_id, rdb$cursor_id, rdb$record_source_id,\n"
-		"   rdb$parent_record_source_id, rdb$access_path,\n"
-		"   rdb$open_counter, rdb$open_min_time, rdb$open_max_time, rdb$open_total_time,\n"
-		"   rdb$fetch_counter, rdb$fetch_min_time, rdb$fetch_max_time, rdb$fetch_total_time)\n"
-		"  values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n"
-		"  matching (rdb$profile_session_id, rdb$profile_request_id, rdb$cursor_id, rdb$record_source_id)";
-
-	const char* statsSql =
-		"update or insert into rdb$profile_stats\n"
-		"  (rdb$profile_session_id, rdb$profile_request_id, rdb$line, rdb$column,\n"
-		"   rdb$counter, rdb$min_time, rdb$max_time, rdb$total_time)\n"
-		"  values (?, ?, ?, ?, ?, ?, ?, ?)\n"
-		"  matching (rdb$profile_session_id, rdb$profile_request_id, rdb$line, rdb$column)";
+	const char* sessionSql = R"""(
+		update or insert into rdb$profile_sessions
+			(rdb$profile_session_id, rdb$attachment_id, rdb$user, rdb$description, rdb$start_timestamp, rdb$finish_timestamp)
+			values (?, ?, ?, ?, ?, ?)
+			matching (rdb$profile_session_id);
+	)""";
 
 	FB_MESSAGE(SessionMessage, ThrowWrapper,
 		(FB_BIGINT, sessionId)
@@ -369,6 +339,14 @@ void Profiler::updateSnapshot(thread_db* tdbb)
 	) sessionMessage(&throwStatus, fb_get_master_interface());
 	sessionMessage.clear();
 
+	const char* requestSql = R"""(
+		update or insert into rdb$profile_requests
+			(rdb$profile_session_id, rdb$profile_request_id, rdb$timestamp, rdb$request_type, rdb$package_name,
+			 rdb$routine_name, rdb$sql_text)
+			values (?, ?, ?, ?, ?, ?, ?)
+			matching (rdb$profile_session_id, rdb$profile_request_id)
+	)""";
+
 	FB_MESSAGE(RequestMessage, ThrowWrapper,
 		(FB_BIGINT, sessionId)
 		(FB_BIGINT, requestId)
@@ -379,6 +357,16 @@ void Profiler::updateSnapshot(thread_db* tdbb)
 		(FB_BLOB, sqlText)
 	) requestMessage(&throwStatus, fb_get_master_interface());
 	requestMessage.clear();
+
+	const char* recSrcStatsSql = R"""(
+		update or insert into rdb$profile_record_source_stats
+			(rdb$profile_session_id, rdb$profile_request_id, rdb$cursor_id, rdb$record_source_id,
+			 rdb$parent_record_source_id, rdb$access_path,
+			 rdb$open_counter, rdb$open_min_time, rdb$open_max_time, rdb$open_total_time,
+			 rdb$fetch_counter, rdb$fetch_min_time, rdb$fetch_max_time, rdb$fetch_total_time)
+			values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			matching (rdb$profile_session_id, rdb$profile_request_id, rdb$cursor_id, rdb$record_source_id)
+	)""";
 
 	FB_MESSAGE(RecSrcStatsMessage, ThrowWrapper,
 		(FB_BIGINT, sessionId)
@@ -397,6 +385,14 @@ void Profiler::updateSnapshot(thread_db* tdbb)
 		(FB_BIGINT, fetchTotalTime)
 	) recSrcStatsMessage(&throwStatus, fb_get_master_interface());
 	recSrcStatsMessage.clear();
+
+	const char* statsSql = R"""(
+		update or insert into rdb$profile_stats
+			(rdb$profile_session_id, rdb$profile_request_id, rdb$line, rdb$column,
+			 rdb$counter, rdb$min_time, rdb$max_time, rdb$total_time)
+			values (?, ?, ?, ?, ?, ?, ?, ?)
+			matching (rdb$profile_session_id, rdb$profile_request_id, rdb$line, rdb$column)
+	)""";
 
 	FB_MESSAGE(StatsMessage, ThrowWrapper,
 		(FB_BIGINT, sessionId)
@@ -630,7 +626,7 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 				prc_executable,
 				// input parameters
 				{
-					{"UPDATE_SNAPSHOT", fld_bool, false}
+					{"REFRESH_SNAPSHOTS", fld_bool, false}
 				},
 				// output parameters
 				{
@@ -638,8 +634,8 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 			),
 			SystemProcedure(
 				pool,
-				"UPDATE_SNAPSHOT",
-				SystemProcedureFactory<VoidMessage, VoidMessage, updateSnapshotProcedure>(),
+				"REFRESH_SNAPSHOTS",
+				SystemProcedureFactory<VoidMessage, VoidMessage, refreshSnapshotsProcedure>(),
 				prc_executable,
 				// input parameters
 				{
@@ -655,19 +651,7 @@ ProfilerPackage::ProfilerPackage(MemoryPool& pool)
 				prc_executable,
 				// input parameters
 				{
-					{"UPDATE_SNAPSHOT", fld_bool, false}
-				},
-				// output parameters
-				{
-				}
-			),
-			SystemProcedure(
-				pool,
-				"PURGE_SNAPSHOTS",
-				SystemProcedureFactory<VoidMessage, VoidMessage, purgeSnapshotsProcedure>(),
-				prc_executable,
-				// input parameters
-				{
+					{"REFRESH_SNAPSHOTS", fld_bool, false}
 				},
 				// output parameters
 				{
