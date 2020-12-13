@@ -21,7 +21,7 @@ set term !;
 
 create table tab (
     id integer not null,
-	val integer not null
+    val integer not null
 )!
 
 create or alter function mult(p1 integer, p2 integer) returns integer
@@ -75,27 +75,27 @@ select preq.*
   from rdb$profile_requests preq
   join rdb$profile_sessions pses
     on pses.rdb$profile_session_id = preq.rdb$profile_session_id and
-	   pses.rdb$description = 'Profile Session 1'!
+       pses.rdb$description = 'Profile Session 1'!
 
 select pstat.*
   from rdb$profile_stats pstat
   join rdb$profile_sessions pses
     on pses.rdb$profile_session_id = pstat.rdb$profile_session_id and
-	   pses.rdb$description = 'Profile Session 1'
+       pses.rdb$description = 'Profile Session 1'
   order by pstat.rdb$profile_session_id,
            pstat.rdb$profile_request_id,
-		   pstat.rdb$line,
-		   pstat.rdb$column!
+           pstat.rdb$line,
+           pstat.rdb$column!
 
 select pstat.*
   from rdb$profile_record_source_stats pstat
   join rdb$profile_sessions pses
     on pses.rdb$profile_session_id = pstat.rdb$profile_session_id and
-	   pses.rdb$description = 'Profile Session 2'
+       pses.rdb$description = 'Profile Session 2'
   order by pstat.rdb$profile_session_id,
            pstat.rdb$profile_request_id,
-		   pstat.rdb$cursor_id,
-		   pstat.rdb$source_id!
+           pstat.rdb$cursor_id,
+           pstat.rdb$record_source_id!
 ```
 
 Result data for `RDB$PROFILE_SESSIONS`:
@@ -178,7 +178,7 @@ Input parameters:
 
 `RDB$PROFILER.UPDATE_SNAPSHOT` updates the system tables snapshots with data from the profile sessions in memory.
 
-After update data is stored in tables `RDB$PROFILE_SESSIONS`, `RDB$PROFILE_REQUESTS` and `RDB$PROFILE_STATS` and may be read and analyzed by the user.
+After update data is stored in tables `RDB$PROFILE_SESSIONS`, `RDB$PROFILE_REQUESTS`, `RDB$PROFILE_STATS` and `PROFILE_RECORD_SOURCE_STATS` and may be read and analyzed by the user.
 
 It also removes finished sessions from engine memory, so if `RDB$PROFILER.PURGE_SNAPSHOTS` is later called these data are not recovered.
 
