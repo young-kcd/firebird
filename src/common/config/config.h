@@ -235,7 +235,7 @@ public:
 	static int getGuardianOption();
 
 	// CPU affinity mask
-	static int getCpuAffinityMask();
+	static FB_UINT64 getCpuAffinityMask();
 
 	// XDR buffer size
 	static int getTcpRemoteBufferSize();

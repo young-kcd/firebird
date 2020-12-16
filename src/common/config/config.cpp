@@ -452,9 +452,9 @@ int Config::getGuardianOption()
 	return (int) getDefaultConfig()->values[KEY_GUARDIAN_OPTION];
 }
 
-int Config::getCpuAffinityMask()
+FB_UINT64 Config::getCpuAffinityMask()
 {
-	return (int) getDefaultConfig()->values[KEY_CPU_AFFINITY_MASK];
+	return (FB_UINT64) getDefaultConfig()->values[KEY_CPU_AFFINITY_MASK];
 }
 
 int Config::getTcpRemoteBufferSize()
