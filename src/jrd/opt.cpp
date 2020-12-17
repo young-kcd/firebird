@@ -113,6 +113,20 @@ namespace
 			*node1 = (*node1) ? FB_NEW_POOL(pool) BinaryBoolNode(pool, blr_and, *node1, node2) : node2;
 	}
 
+	struct SortField
+	{
+		SortField() : stream(INVALID_STREAM), id(0), desc(NULL)
+		{}
+
+		SortField(StreamType _stream, ULONG _id, const dsc* _desc)
+			: stream(_stream), id(_id), desc(_desc)
+		{}
+
+		StreamType stream;
+		ULONG id;
+		const dsc* desc;
+	};
+
 	class River
 	{
 	public:
@@ -483,7 +497,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 
 	AutoPtr<OptimizerBlk> opt(FB_NEW_POOL(*pool) OptimizerBlk(pool, rse));
 	opt->opt_streams.grow(csb->csb_n_stream);
-	opt->optimizeFirstRows = (rse->flags & RseNode::FLAG_OPT_FIRST_ROWS) != 0;
+	opt->favorFirstRows = (rse->flags & RseNode::FLAG_OPT_FIRST_ROWS) != 0;
 
 	RecordSource* rsb = NULL;
 
@@ -834,11 +848,11 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 
 		// Handle project clause, if present
 		if (project)
-			rsb = OPT_gen_sort(tdbb, opt->opt_csb, opt->beds, &opt->keyStreams, rsb, project, true);
+			rsb = OPT_gen_sort(tdbb, opt->opt_csb, opt->beds, &opt->keyStreams, rsb, project, opt->favorFirstRows, true);
 
 		// Handle sort clause if present
 		if (sort)
-			rsb = OPT_gen_sort(tdbb, opt->opt_csb, opt->beds, &opt->keyStreams, rsb, sort, false);
+			rsb = OPT_gen_sort(tdbb, opt->opt_csb, opt->beds, &opt->keyStreams, rsb, sort, opt->favorFirstRows, false);
 	}
 
     // Handle first and/or skip.  The skip MUST (if present)
@@ -2435,7 +2449,8 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 
 
 SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamList& streams,
-	const StreamList* dbkey_streams, RecordSource* prior_rsb, SortNode* sort, bool project_flag)
+	const StreamList* dbkey_streams, RecordSource* prior_rsb, SortNode* sort,
+	bool refetch_flag, bool project_flag)
 {
 /**************************************
  *
@@ -2468,51 +2483,96 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 
 	ULONG items = sort->expressions.getCount() +
 		3 * streams.getCount() + 2 * (dbkey_streams ? dbkey_streams->getCount() : 0);
-	const StreamType* const end_ptr = streams.end();
 	const NestConst<ValueExprNode>* const end_node = sort->expressions.end();
-	HalfStaticArray<ULONG, OPT_STATIC_ITEMS> id_list;
-	StreamList stream_list;
 
-	for (const StreamType* ptr = streams.begin(); ptr < end_ptr; ptr++)
+	// Collect all fields involved into the sort
+
+	HalfStaticArray<SortField, OPT_STATIC_ITEMS> fields;
+	ULONG totalLength = 0;
+
+	for (const auto stream : streams)
 	{
-		UInt32Bitmap::Accessor accessor(csb->csb_rpt[*ptr].csb_fields);
+		UInt32Bitmap::Accessor accessor(csb->csb_rpt[stream].csb_fields);
 
 		if (accessor.getFirst())
 		{
 			do
 			{
-				const ULONG id = accessor.current();
-				items++;
-				id_list.push(id);
-				stream_list.push(*ptr);
+				const auto id = accessor.current();
 
-				for (NestConst<ValueExprNode>* node_ptr = sort->expressions.begin();
-					 node_ptr != end_node;
-					 ++node_ptr)
+				const auto format = CMP_format(tdbb, csb, stream);
+				const auto desc = &format->fmt_desc[id];
+
+				if (id >= format->fmt_count || desc->dsc_dtype == dtype_unknown)
+					IBERROR(157);		// msg 157 cannot sort on a field that does not exist
+
+				fields.push(SortField(stream, id, desc));
+				totalLength += desc->dsc_length;
+
+				// If the field has already been mentioned as a sort key, don't bother to repeat it
+
+				for (auto expr : sort->expressions)
 				{
-					FieldNode* fieldNode = nodeAs<FieldNode>(*node_ptr);
+					const auto fieldNode = nodeAs<FieldNode>(expr);
 
-					if (fieldNode && fieldNode->fieldStream == *ptr && fieldNode->fieldId == id)
+					if (fieldNode && fieldNode->fieldStream == stream && fieldNode->fieldId == id)
 					{
-						dsc* desc = &descriptor;
+						auto desc = &descriptor;
 						fieldNode->getDesc(tdbb, csb, desc);
 
-						// International type text has a computed key
-						// Different decimal float values sometimes have same keys
+						// International type text has a computed key.
+						// Different decimal float values sometimes have same keys.
 						// ASF: Date/time with time zones too.
-						if (IS_INTL_DATA(desc) || desc->isDecFloat() || desc->isDateTimeTz())
-							break;
-
-						--items;
-						id_list.pop();
-						stream_list.pop();
+						if (!IS_INTL_DATA(desc) && !desc->isDecFloat() && !desc->isDateTimeTz())
+						{
+							totalLength -= desc->dsc_length;
+							fields.pop();
+						}
 
 						break;
 					}
 				}
+
 			} while (accessor.getNext());
 		}
 	}
+
+	auto fieldCount = fields.getCount();
+
+	// Unless refetching is requested explicitly (e.g. FIRST ROWS optimization mode),
+	// validate the sort record length against the configured threshold for inline storage
+
+	if (!refetch_flag)
+	{
+		const auto dbb = tdbb->getDatabase();
+		const auto threshold = dbb->dbb_config->getInlineSortThreshold();
+
+		refetch_flag = (totalLength > threshold);
+	}
+
+	// Check for persistent fields to be excluded from the sort.
+	// If nothing is excluded, there's no point in the refetch mode.
+
+	if (refetch_flag)
+	{
+		for (auto& item : fields)
+		{
+			const auto relation = csb->csb_rpt[item.stream].csb_relation;
+
+			if (relation &&
+				!relation->rel_file &&
+				!relation->rel_view_rse &&
+				!relation->isVirtual())
+			{
+				item.desc = NULL;
+				--fieldCount;
+			}
+		}
+
+		refetch_flag = (fieldCount != fields.getCount());
+	}
+
+	items += fieldCount;
 
 	// Now that we know the number of items, allocate a sort map block.
 	SortedStream::SortMap* map =
@@ -2520,6 +2580,9 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 
 	if (project_flag)
 		map->flags |= SortedStream::FLAG_PROJECT;
+
+	if (refetch_flag)
+		map->flags |= SortedStream::FLAG_REFETCH;
 
 	if (sort->unique)
 		map->flags |= SortedStream::FLAG_UNIQUE;
@@ -2607,7 +2670,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 
 		FieldNode* fieldNode;
 
-		if ((fieldNode = nodeAs<FieldNode>(node)))
+		if ( (fieldNode = nodeAs<FieldNode>(node)) )
 		{
 			map_item->stream = fieldNode->fieldStream;
 			map_item->fieldId = fieldNode->fieldId;
@@ -2618,100 +2681,98 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 	ULONG map_length = prev_key ? ROUNDUP(prev_key->getSkdOffset() + prev_key->getSkdLength(), sizeof(SLONG)) : 0;
 	map->keyLength = map_length;
 	ULONG flag_offset = map_length;
-	map_length += stream_list.getCount();
+	map_length += fieldCount;
 
-	// Now go back and process all to fields involved with the sort.  If the
-	// field has already been mentioned as a sort key, don't bother to repeat it.
+	// Now go back and process all to fields involved with the sort
 
-	while (stream_list.hasData())
+	for (const auto& item : fields)
 	{
-		const ULONG id = id_list.pop();
-		const StreamType stream = stream_list.pop();
-		const Format* format = CMP_format(tdbb, csb, stream);
-		const dsc* desc = &format->fmt_desc[id];
-		if (id >= format->fmt_count || desc->dsc_dtype == dtype_unknown)
-			IBERROR(157);		// msg 157 cannot sort on a field that does not exist
-		if (desc->dsc_dtype >= dtype_aligned)
-			map_length = FB_ALIGN(map_length, type_alignments[desc->dsc_dtype]);
+		if (!item.desc)
+			continue;
+
+		if (item.desc->dsc_dtype >= dtype_aligned)
+			map_length = FB_ALIGN(map_length, type_alignments[item.desc->dsc_dtype]);
 
 		map_item->clear();
-		map_item->fieldId = (SSHORT) id;
-		map_item->stream = stream;
+		map_item->fieldId = (SSHORT) item.id;
+		map_item->stream = item.stream;
 		map_item->flagOffset = flag_offset++;
-		map_item->desc = *desc;
+		map_item->desc = *item.desc;
 		map_item->desc.dsc_address = (UCHAR*)(IPTR) map_length;
-		map_length += desc->dsc_length;
+		map_length += item.desc->dsc_length;
 		map_item++;
 	}
 
 	// Make fields for record numbers and transaction ids for all streams
 
 	map_length = ROUNDUP(map_length, sizeof(SINT64));
-	for (const StreamType* ptr = streams.begin(); ptr < end_ptr; ptr++, map_item++)
+	for (const auto stream : streams)
 	{
 		map_item->clear();
 		map_item->fieldId = SortedStream::ID_DBKEY;
-		map_item->stream = *ptr;
+		map_item->stream = stream;
 		dsc* desc = &map_item->desc;
 		desc->dsc_dtype = dtype_int64;
 		desc->dsc_length = sizeof(SINT64);
 		desc->dsc_address = (UCHAR*)(IPTR) map_length;
 		map_length += desc->dsc_length;
-
 		map_item++;
 
 		map_item->clear();
 		map_item->fieldId = SortedStream::ID_TRANS;
-		map_item->stream = *ptr;
+		map_item->stream = stream;
 		desc = &map_item->desc;
 		desc->dsc_dtype = dtype_int64;
 		desc->dsc_length = sizeof(SINT64);
 		desc->dsc_address = (UCHAR*)(IPTR) map_length;
 		map_length += desc->dsc_length;
+		map_item++;
 	}
 
 	if (dbkey_streams && dbkey_streams->hasData())
 	{
-		const StreamType* const end_ptrL = dbkey_streams->end();
-
 		map_length = ROUNDUP(map_length, sizeof(SINT64));
-		for (const StreamType* ptr = dbkey_streams->begin(); ptr < end_ptrL; ptr++, map_item++)
+
+		for (const auto stream : *dbkey_streams)
 		{
 			map_item->clear();
 			map_item->fieldId = SortedStream::ID_DBKEY;
-			map_item->stream = *ptr;
+			map_item->stream = stream;
 			dsc* desc = &map_item->desc;
 			desc->dsc_dtype = dtype_int64;
 			desc->dsc_length = sizeof(SINT64);
 			desc->dsc_address = (UCHAR*)(IPTR) map_length;
 			map_length += desc->dsc_length;
+			map_item++;
 		}
 
-		for (const StreamType* ptr = dbkey_streams->begin(); ptr < end_ptrL; ptr++, map_item++)
+		for (const auto stream : *dbkey_streams)
 		{
 			map_item->clear();
 			map_item->fieldId = SortedStream::ID_DBKEY_VALID;
-			map_item->stream = *ptr;
+			map_item->stream = stream;
 			dsc* desc = &map_item->desc;
 			desc->dsc_dtype = dtype_text;
 			desc->dsc_ttype() = CS_BINARY;
 			desc->dsc_length = 1;
 			desc->dsc_address = (UCHAR*)(IPTR) map_length;
 			map_length += desc->dsc_length;
+			map_item++;
 		}
 	}
 
-	for (const StreamType* ptr = streams.begin(); ptr < end_ptr; ptr++, map_item++)
+	for (const auto stream : streams)
 	{
 		map_item->clear();
 		map_item->fieldId = SortedStream::ID_DBKEY_VALID;
-		map_item->stream = *ptr;
+		map_item->stream = stream;
 		dsc* desc = &map_item->desc;
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_ttype() = CS_BINARY;
 		desc->dsc_length = 1;
 		desc->dsc_address = (UCHAR*)(IPTR) map_length;
 		map_length += desc->dsc_length;
+		map_item++;
 	}
 
 	fb_assert(map_item == map->items.end());
@@ -2719,15 +2780,15 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 
 	map_length = ROUNDUP(map_length, sizeof(SLONG));
 
-	// Make fields to store varying and cstring length.
+	// Make fields to store varying and cstring length
 
-	const sort_key_def* const end_key = sort_key;
-	for (sort_key = map->keyItems.begin(); sort_key < end_key; sort_key++)
+	for (auto& sortKey : map->keyItems)
 	{
-		fb_assert(sort_key->skd_dtype != 0);
-		if (sort_key->skd_dtype == SKD_varying || sort_key->skd_dtype == SKD_cstring)
+		fb_assert(sortKey.skd_dtype != 0);
+
+		if (sortKey.skd_dtype == SKD_varying || sortKey.skd_dtype == SKD_cstring)
 		{
-			sort_key->skd_vary_offset = map_length;
+			sortKey.skd_vary_offset = map_length;
 			map_length += sizeof(USHORT);
 			map->flags |= SortedStream::FLAG_KEY_VARY;
 		}
@@ -2972,7 +3033,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 
 			StreamList streams;
 			streams.assign(river->getStreams());
-			rsb = OPT_gen_sort(tdbb, opt->opt_csb, streams, NULL, rsb, key, false);
+			rsb = OPT_gen_sort(tdbb, opt->opt_csb, streams, NULL, rsb, key, opt->favorFirstRows, false);
 		}
 		else
 		{

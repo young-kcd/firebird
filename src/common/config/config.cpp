@@ -408,6 +408,8 @@ void Config::checkValues()
 
 	checkIntForLoBound(KEY_TIP_CACHE_BLOCK_SIZE, 1, true);
 	checkIntForHiBound(KEY_TIP_CACHE_BLOCK_SIZE, MAX_ULONG, true);
+
+	checkIntForLoBound(KEY_INLINE_SORT_THRESHOLD, 0, true);
 }
 
 

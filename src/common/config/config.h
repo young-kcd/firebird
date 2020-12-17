@@ -185,6 +185,7 @@ enum ConfigKey
 	KEY_CLEAR_GTT_RETAINING,
 	KEY_DATA_TYPE_COMPATIBILITY,
 	KEY_USE_FILESYSTEM_CACHE,
+	KEY_INLINE_SORT_THRESHOLD,
 	MAX_CONFIG_KEY		// keep it last
 };
 
@@ -293,12 +294,13 @@ constexpr ConfigEntry entries[MAX_CONFIG_KEY] =
 #endif
 	{TYPE_INTEGER,	"ExtConnPoolSize",			true,	0},
 	{TYPE_INTEGER,	"ExtConnPoolLifeTime",		true,	7200},
-	{TYPE_INTEGER,	"SnapshotsMemSize",			false,	65536},		// bytes,
-	{TYPE_INTEGER,	"TipCacheBlockSize",		false,	4194304},	// bytes,
+	{TYPE_INTEGER,	"SnapshotsMemSize",			false,	65536},		// bytes
+	{TYPE_INTEGER,	"TipCacheBlockSize",		false,	4194304},	// bytes
 	{TYPE_BOOLEAN,	"ReadConsistency",			false,	true},
 	{TYPE_BOOLEAN,	"ClearGTTAtRetaining",		false,	false},
 	{TYPE_STRING,	"DataTypeCompatibility",	false,	nullptr},
-	{TYPE_BOOLEAN,	"UseFileSystemCache",		false,	true}
+	{TYPE_BOOLEAN,	"UseFileSystemCache",		false,	true},
+	{TYPE_INTEGER,	"InlineSortThreshold",		false,	1000},		// bytes
 };
 
 
@@ -619,6 +621,8 @@ public:
 	CONFIG_GET_PER_DB_STR(getDataTypeCompatibility, KEY_DATA_TYPE_COMPATIBILITY);
 
 	bool getUseFileSystemCache(bool* pPresent = nullptr) const;
+
+	CONFIG_GET_PER_DB_KEY(ULONG, getInlineSortThreshold, KEY_INLINE_SORT_THRESHOLD, getInt);
 };
 
 // Implementation of interface to access master configuration file
