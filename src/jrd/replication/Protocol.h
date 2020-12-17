@@ -26,15 +26,9 @@
 
 namespace Replication
 {
-	inline ULONG ENCODE_PROTOCOL(ULONG major, USHORT minor)
-	{
-		return ((major << 8) | minor);
-	}
-
 	// Supported protocol versions
 	const ULONG PROTOCOL_VERSION_1 = 1;
-	const ULONG PROTOCOL_1_0 = ENCODE_PROTOCOL(PROTOCOL_VERSION_1, 0);
-	const ULONG PROTOCOL_CURRENT_VERSION = PROTOCOL_1_0;
+	const ULONG PROTOCOL_CURRENT_VERSION = PROTOCOL_VERSION_1;
 
 	struct Block
 	{
