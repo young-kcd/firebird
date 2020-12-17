@@ -97,6 +97,11 @@ namespace
 			return (m_data >= m_metadata);
 		}
 
+		ULONG getFlags() const
+		{
+			return m_header->flags;
+		}
+
 		UCHAR getTag()
 		{
 			return *m_data++;
@@ -228,9 +233,13 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 
 	const auto traNum = reader.getTransactionId();
 	const auto protocol = reader.getProtocolVersion();
+	const auto flags = reader.getFlags();
 
 	if (protocol != PROTOCOL_CURRENT_VERSION)
 		raiseError("Unsupported replication protocol version %u", protocol);
+
+	if (flags & BLOCK_BEGIN_TRANS)
+		startTransaction(tdbb, traNum);
 
 	while (!reader.isEof())
 	{
@@ -239,7 +248,7 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 		switch (op)
 		{
 		case opStartTransaction:
-			startTransaction(tdbb, traNum);
+			// no-op (handled above)
 			break;
 
 		case opPrepareTransaction:

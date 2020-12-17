@@ -177,8 +177,6 @@ IReplicatedTransaction* Replicator::startTransaction(CheckStatusWrapper* status,
 		txnData.header.flags = BLOCK_BEGIN_TRANS;
 
 		txnData.buffer = m_manager->getBuffer();
-
-		txnData.putTag(opStartTransaction);
 	}
 	catch (const Exception& ex)
 	{
