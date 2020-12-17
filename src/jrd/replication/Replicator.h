@@ -27,7 +27,6 @@
 #include "../common/classes/timestamp.h"
 #include "../common/classes/MetaString.h"
 #include "../common/os/guid.h"
-#include "../jrd/align.h"
 #include "../jrd/status.h"
 
 #include "Protocol.h"
@@ -66,27 +65,32 @@ namespace Replication
 				buffer->add(tag);
 			}
 
-			void putInt(SLONG value)
+			void putInt16(SSHORT value)
 			{
-				const auto newSize = FB_ALIGN(getSize(), type_alignments[dtype_long]);
-				buffer->resize(newSize);
-				const auto ptr = (const UCHAR*) &value;
-				buffer->add(ptr, sizeof(SLONG));
+				UCHAR temp[sizeof(SSHORT)];
+				put_vax_short(temp, value);
+				buffer->add(temp, sizeof(SSHORT));
 			}
 
-			void putBigInt(SINT64 value)
+			void putInt32(SLONG value)
 			{
-				const auto newSize = FB_ALIGN(getSize(), type_alignments[dtype_int64]);
-				buffer->resize(newSize);
-				const auto ptr = (const UCHAR*) &value;
-				buffer->add(ptr, sizeof(SINT64));
+				UCHAR temp[sizeof(SLONG)];
+				put_vax_long(temp, value);
+				buffer->add(temp, sizeof(SLONG));
+			}
+
+			void putInt64(SINT64 value)
+			{
+				UCHAR temp[sizeof(SINT64)];
+				put_vax_int64(temp, value);
+				buffer->add(temp, sizeof(SINT64));
 			}
 
 			void putMetaName(const Firebird::MetaString& name)
 			{
 				if (lastMetaId < metadata.getCount() && metadata[lastMetaId] == name)
 				{
-					putInt(lastMetaId);
+					putInt32(lastMetaId);
 					return;
 				}
 
@@ -97,20 +101,20 @@ namespace Replication
 					metadata.add(name);
 				}
 
-				putInt(pos);
+				putInt32(pos);
 				lastMetaId = (ULONG) pos;
 			}
 
 			void putString(const Firebird::string& str)
 			{
 				const auto length = str.length();
-				putInt(length);
+				putInt32(length);
 				buffer->add((const UCHAR*) str.c_str(), length);
 			}
 
 			void putBinary(ULONG length, const UCHAR* data)
 			{
-				putInt(length);
+				putInt32(length);
 				buffer->add(data, length);
 			}
 		};

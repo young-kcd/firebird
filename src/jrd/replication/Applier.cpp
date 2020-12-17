@@ -22,7 +22,6 @@
 
 #include "firebird.h"
 #include "../ids.h"
-#include "../jrd/align.h"
 #include "../jrd/jrd.h"
 #include "../jrd/blb.h"
 #include "../jrd/req.h"
@@ -85,11 +84,19 @@ namespace
 	{
 	public:
 		BlockReader(ULONG length, const UCHAR* data)
-			: m_header((Block*) data),
-			  m_data(data + sizeof(Block)),
-			  m_metadata(data + sizeof(Block) + m_header->dataLength)
+			: m_data(data), m_metadata(data)
 		{
-			fb_assert(m_metadata + m_header->metaLength == data + length);
+			m_header.traNumber = getInt64();
+			m_header.protocol = getInt32();
+			m_header.dataLength = getInt32();
+			m_header.metaLength = getInt32();
+			m_header.flags = getInt32();
+			m_header.timestamp.timestamp_date = getInt32();
+			m_header.timestamp.timestamp_time = getInt32();
+
+			fb_assert(m_data == data + sizeof(Block));
+
+			m_metadata = m_data + m_header.dataLength;
 		}
 
 		bool isEof() const
@@ -99,7 +106,7 @@ namespace
 
 		ULONG getFlags() const
 		{
-			return m_header->flags;
+			return m_header.flags;
 		}
 
 		UCHAR getTag()
@@ -107,32 +114,37 @@ namespace
 			return *m_data++;
 		}
 
-		SLONG getInt()
+		SSHORT getInt16()
 		{
-			m_data = FB_ALIGN(m_data, type_alignments[dtype_long]);
-			const auto ptr = (const SLONG*) m_data;
-			m_data += sizeof(SLONG);
-			return *ptr;
+			const auto value = (SSHORT) isc_portable_integer(m_data, sizeof(SSHORT));
+			m_data += sizeof(SSHORT);
+			return value;
 		}
 
-		SINT64 getBigInt()
+		SLONG getInt32()
 		{
-			m_data = FB_ALIGN(m_data, type_alignments[dtype_int64]);
-			const auto ptr = (const SINT64*) m_data;
+			const auto value = (SLONG) isc_portable_integer(m_data, sizeof(SLONG));
+			m_data += sizeof(SLONG);
+			return value;
+		}
+
+		SINT64 getInt64()
+		{
+			const auto value = (SINT64) isc_portable_integer(m_data, sizeof(SINT64));
 			m_data += sizeof(SINT64);
-			return *ptr;
+			return value;
 		}
 
 		const MetaString& getMetaName()
 		{
-			const auto offset = getInt() * sizeof(MetaString);
+			const auto offset = getInt32() * sizeof(MetaString);
 			const auto metaPtr = (const MetaString*) (m_metadata + offset);
 			return *metaPtr;
 		}
 
 		string getString()
 		{
-			const auto length = getInt();
+			const auto length = getInt32();
 			const string str((const char*) m_data, length);
 			m_data += length;
 			return str;
@@ -140,7 +152,7 @@ namespace
 
 		ULONG getBinary(const UCHAR*& ptr)
 		{
-			const auto len = getInt();
+			const auto len = getInt32();
 			ptr = m_data;
 			m_data += len;
 			return len;
@@ -148,18 +160,18 @@ namespace
 
 		TraNumber getTransactionId() const
 		{
-			return m_header->traNumber;
+			return m_header.traNumber;
 		}
 
 		ULONG getProtocolVersion() const
 		{
-			return m_header->protocol;
+			return m_header.protocol;
 		}
 
 	private:
-		const Block* const m_header;
+		Block m_header;
 		const UCHAR* m_data;
-		const UCHAR* const m_metadata;
+		const UCHAR* m_metadata;
 	};
 
 	class LocalThreadContext
@@ -316,8 +328,8 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 		case opStoreBlob:
 			{
 				bid blob_id;
-				blob_id.bid_quad.bid_quad_high = reader.getInt();
-				blob_id.bid_quad.bid_quad_low = reader.getInt();
+				blob_id.bid_quad.bid_quad_high = reader.getInt32();
+				blob_id.bid_quad.bid_quad_low = reader.getInt32();
 				ULONG length = 0;
 				do {
 					const UCHAR* blob = NULL;
@@ -331,7 +343,7 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 		case opExecuteSqlIntl:
 			{
 				const unsigned charset =
-					(op == opExecuteSql) ? CS_UTF8 : reader.getInt();
+					(op == opExecuteSql) ? CS_UTF8 : reader.getInt32();
 				const string sql = reader.getString();
 				const MetaName ownerName = reader.getMetaName();
 				executeSql(tdbb, traNum, charset, sql, ownerName);
@@ -341,7 +353,7 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 		case opSetSequence:
 			{
 				const MetaName genName = reader.getMetaName();
-				const SINT64 value = reader.getBigInt();
+				const SINT64 value = reader.getInt64();
 				setSequence(tdbb, genName, value);
 			}
 			break;
