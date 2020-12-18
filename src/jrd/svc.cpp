@@ -156,10 +156,11 @@ namespace {
 			waitFor(threads);
 		}
 
-		void add(Thread::Handle& h)
+		void add(const Thread::Handle& h)
 		{
 			// put thread into completion wait queue when it finished running
 			MutexLockGuard g(threadsMutex, FB_FUNCTION);
+			fb_assert(h);
 			threads.add(h);
 		}
 

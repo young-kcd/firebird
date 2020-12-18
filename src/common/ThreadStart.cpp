@@ -118,16 +118,17 @@ Thread Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Han
  *
  **************************************/
 	pthread_t thread;
+	pthread_t* p_thread = p_handle ? p_handle : &thread;
 	pthread_attr_t pattr;
 	int state;
 
 #if defined (LINUX) || defined (FREEBSD)
-	if ((state = pthread_create(&thread, NULL, THREAD_ENTRYPOINT, THREAD_ARG)))
+	if ((state = pthread_create(p_thread, NULL, THREAD_ENTRYPOINT, THREAD_ARG)))
 		Firebird::system_call_failed::raise("pthread_create", state);
 
 	if (!p_handle)
 	{
-		if ((state = pthread_detach(thread)))
+		if ((state = pthread_detach(*p_thread)))
 			Firebird::system_call_failed::raise("pthread_detach", state);
 	}
 #else
@@ -184,10 +185,9 @@ Thread Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Han
 		if (state)
 			 Firebird::system_call_failed::raise("pthread_setcanceltype", state);
 #endif
-		*p_handle = thread;
 	}
 
-	return Thread(thread);
+	return Thread(*p_thread);
 }
 
 void Thread::waitForCompletion(Handle& thread)
@@ -322,14 +322,14 @@ Thread Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Han
 
 	SetThreadPriority(handle, priority);
 
-	ResumeThread(handle);
-
 	if (p_handle)
 	{
 		*p_handle = handle;
+		ResumeThread(handle);
 	}
 	else
 	{
+		ResumeThread(handle);
 		CloseHandle(handle);
 	}
 
