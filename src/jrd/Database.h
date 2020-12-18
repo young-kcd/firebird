@@ -236,7 +236,7 @@ const ULONG DBB_no_fs_cache				= 0x40000L;		// Not using file system cache
 const ULONG DBB_sweep_starting			= 0x80000L;		// Auto-sweep is starting
 const ULONG DBB_creating				= 0x100000L;	// Database creation is in progress
 const ULONG DBB_shared					= 0x200000L;	// Database object is shared among connections
-const ULONG DBB_closing					= 0x400000L;	// Database closing, special backgroud threads should exit
+//const ULONG DBB_closing					= 0x400000L;	// Database closing, special backgroud threads should exit
 
 //
 // dbb_ast_flags
@@ -530,7 +530,6 @@ public:
 	CryptoManager* dbb_crypto_manager;
 	Firebird::RefPtr<ExistenceRefMutex> dbb_init_fini;
 	Firebird::XThreadMutex dbb_thread_mutex;		// special threads start/stop mutex
-	Thread::Handle dbb_sweep_thread;
 	Firebird::RefPtr<Linger> dbb_linger_timer;
 	unsigned dbb_linger_seconds;
 	time_t dbb_linger_end;
@@ -606,7 +605,6 @@ private:
 		dbb_creation_date(Firebird::TimeZoneUtil::getCurrentGmtTimeStamp()),
 		dbb_external_file_directory_list(NULL),
 		dbb_init_fini(FB_NEW_POOL(*getDefaultMemoryPool()) ExistenceRefMutex()),
-		dbb_sweep_thread(0),
 		dbb_linger_seconds(0),
 		dbb_linger_end(0),
 		dbb_plugin_config(pConf),

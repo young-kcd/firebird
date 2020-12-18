@@ -228,6 +228,7 @@ type
 	IMaster_getUtilInterfacePtr = function(this: IMaster): IUtil; cdecl;
 	IMaster_getConfigManagerPtr = function(this: IMaster): IConfigManager; cdecl;
 	IMaster_getProcessExitingPtr = function(this: IMaster): Boolean; cdecl;
+	IMaster_backgroundDbProcessingPtr = procedure(this: IMaster; status: IStatus; dbName: PAnsiChar; dpbLength: Cardinal; dpb: BytePtr; cryptCallback: ICryptKeyCallback); cdecl;
 	IPluginBase_setOwnerPtr = procedure(this: IPluginBase; r: IReferenceCounted); cdecl;
 	IPluginBase_getOwnerPtr = function(this: IPluginBase): IReferenceCounted; cdecl;
 	IPluginSet_getNamePtr = function(this: IPluginSet): PAnsiChar; cdecl;
@@ -806,6 +807,7 @@ type
 		getUtilInterface: IMaster_getUtilInterfacePtr;
 		getConfigManager: IMaster_getConfigManagerPtr;
 		getProcessExiting: IMaster_getProcessExitingPtr;
+		backgroundDbProcessing: IMaster_backgroundDbProcessingPtr;
 	end;
 
 	IMaster = class(IVersioned)
@@ -823,6 +825,7 @@ type
 		function getUtilInterface(): IUtil;
 		function getConfigManager(): IConfigManager;
 		function getProcessExiting(): Boolean;
+		procedure backgroundDbProcessing(status: IStatus; dbName: PAnsiChar; dpbLength: Cardinal; dpb: BytePtr; cryptCallback: ICryptKeyCallback);
 	end;
 
 	IMasterImpl = class(IMaster)
@@ -840,6 +843,7 @@ type
 		function getUtilInterface(): IUtil; virtual; abstract;
 		function getConfigManager(): IConfigManager; virtual; abstract;
 		function getProcessExiting(): Boolean; virtual; abstract;
+		procedure backgroundDbProcessing(status: IStatus; dbName: PAnsiChar; dpbLength: Cardinal; dpb: BytePtr; cryptCallback: ICryptKeyCallback); virtual; abstract;
 	end;
 
 	PluginBaseVTable = class(ReferenceCountedVTable)
@@ -5674,6 +5678,12 @@ begin
 	Result := MasterVTable(vTable).getProcessExiting(Self);
 end;
 
+procedure IMaster.backgroundDbProcessing(status: IStatus; dbName: PAnsiChar; dpbLength: Cardinal; dpb: BytePtr; cryptCallback: ICryptKeyCallback);
+begin
+	MasterVTable(vTable).backgroundDbProcessing(Self, status, dbName, dpbLength, dpb, cryptCallback);
+	FbException.checkException(status);
+end;
+
 procedure IPluginBase.setOwner(r: IReferenceCounted);
 begin
 	PluginBaseVTable(vTable).setOwner(Self, r);
@@ -8543,6 +8553,15 @@ begin
 		Result := IMasterImpl(this).getProcessExiting();
 	except
 		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+procedure IMasterImpl_backgroundDbProcessingDispatcher(this: IMaster; status: IStatus; dbName: PAnsiChar; dpbLength: Cardinal; dpb: BytePtr; cryptCallback: ICryptKeyCallback); cdecl;
+begin
+	try
+		IMasterImpl(this).backgroundDbProcessing(status, dbName, dpbLength, dpb, cryptCallback);
+	except
+		on e: Exception do FbException.catchException(status, e);
 	end
 end;
 
@@ -14730,6 +14749,7 @@ initialization
 	IMasterImpl_vTable.getUtilInterface := @IMasterImpl_getUtilInterfaceDispatcher;
 	IMasterImpl_vTable.getConfigManager := @IMasterImpl_getConfigManagerDispatcher;
 	IMasterImpl_vTable.getProcessExiting := @IMasterImpl_getProcessExitingDispatcher;
+	IMasterImpl_vTable.backgroundDbProcessing := @IMasterImpl_backgroundDbProcessingDispatcher;
 
 	IPluginBaseImpl_vTable := PluginBaseVTable.create;
 	IPluginBaseImpl_vTable.version := 3;

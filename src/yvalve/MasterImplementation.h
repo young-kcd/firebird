@@ -64,6 +64,8 @@ namespace Why
 		Firebird::IUtil* getUtilInterface();
 		Firebird::IConfigManager* getConfigManager();
 		FB_BOOLEAN getProcessExiting();
+		void backgroundDbProcessing(Firebird::CheckStatusWrapper* status, const char* dbName,
+			unsigned dpbLength, const UCHAR* dpb, Firebird::ICryptKeyCallback* cryptCallback);
 	};
 
 	void shutdownTimers();

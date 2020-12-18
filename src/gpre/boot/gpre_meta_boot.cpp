@@ -767,6 +767,9 @@ public:
 	{
 		return false;
 	}
+
+	void backgroundDbProcessing(CheckStatusWrapper*, const char*, unsigned, const UCHAR*, ICryptKeyCallback*)
+	{ }
 };
 
 

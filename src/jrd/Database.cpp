@@ -224,13 +224,6 @@ namespace Jrd
 			return false;
 		}
 
-		if (dbb_flags & DBB_closing)
-		{
-			SPTHR_DEBUG(fprintf(stderr, "allowSweepThread false, dbb closing\n"));
-			dbb_thread_mutex.leave();
-			return false;
-		}
-
 		while (true)
 		{
 			AtomicCounter::counter_type old = dbb_flags;
@@ -285,7 +278,7 @@ namespace Jrd
 	{
 		SPTHR_DEBUG(fprintf(stderr, "allowSweepRun %p\n", this));
 
-		if (readOnly() || (dbb_flags & DBB_closing))
+		if (readOnly())
 			return false;
 
 		Jrd::Attachment* const attachment = tdbb->getAttachment();

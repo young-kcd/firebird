@@ -7470,8 +7470,6 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 		}
 
 		// Notify special threads
-		if (!other)
-			dbb->dbb_flags |= DBB_closing;
 		threadGuard.leave();
 
 		// Sync with special threads
@@ -7482,13 +7480,6 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 			// crypt thread
 			if (dbb->dbb_crypto_manager)
 				dbb->dbb_crypto_manager->terminateCryptThread(tdbb, true);
-
-			// sweep thread
-			if (dbb->dbb_sweep_thread)
-			{
-				Thread::waitForCompletion(dbb->dbb_sweep_thread);
-				dbb->dbb_sweep_thread = 0;
-			}
 		}
 
 	} // EngineCheckout scope

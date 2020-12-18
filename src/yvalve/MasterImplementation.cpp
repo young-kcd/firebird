@@ -44,6 +44,7 @@
 #include "../common/ThreadStart.h"
 #include "../common/utils_proto.h"
 #include "../common/dllinst.h"
+#include "../common/status.h"
 #include "ibase.h"
 #include "../yvalve/utl_proto.h"
 
@@ -119,6 +120,93 @@ int MasterImplementation::serverMode(int mode)
 	if (mode >= 0)
 		currentMode = mode;
 	return currentMode;
+}
+
+
+class AttachParams : public GlobalStorage
+{
+public:
+	AttachParams(const PathName& db, unsigned len, const UCHAR* d, ICryptKeyCallback*)
+		: dbName(getPool(), db), dpb(getPool()), cryptCallback(nullptr)
+	{
+		dpb.assign(d, len);
+	}
+
+	AttachParams(const AttachParams& p)
+		: dbName(getPool(), p.dbName), dpb(getPool(), p.dpb), cryptCallback(p.cryptCallback)
+	{ }
+
+	AttachParams& operator=(const AttachParams& p)
+	{
+		dbName = p.dbName;
+		dpb = p.dpb;
+		cryptCallback = p.cryptCallback;
+
+		return *this;
+	}
+
+	static THREAD_ENTRY_DECLARE runTask(THREAD_ENTRY_PARAM p)
+	{
+		try
+		{
+			AttachParams* par = (AttachParams*) p;
+			AttachParams params(*par);
+			par->sem.release();
+
+#ifdef NEVERDEF
+			// small delay to debug fbclient unload at problematic moment
+			long long x = 0x10000000;
+			while (--x > 0);
+#endif
+
+			FbLocalStatus status;
+			DispatcherPtr prov;
+			if (params.cryptCallback)
+			{
+				prov->setDbCryptCallback(&status, params.cryptCallback);
+				status.check();
+			}
+
+			RefPtr<IAttachment> att(REF_NO_INCR,
+				prov->attachDatabase(&status, params.dbName.c_str(), params.dpb.getCount(), params.dpb.begin()));
+			status.check();
+		}
+		catch(const Exception& ex)
+		{
+			iscLogException("Automatic sweep error", ex);
+		}
+
+		return 0;
+	}
+
+	void wait()
+	{
+		sem.enter();
+	}
+
+private:
+	Semaphore sem;
+	PathName dbName;
+	UCharBuffer dpb;
+	ICryptKeyCallback* cryptCallback;
+};
+
+void MasterImplementation::backgroundDbProcessing(CheckStatusWrapper* status, const char* dbName,
+	unsigned dpbLength, const UCHAR* d, ICryptKeyCallback* cryptCallback)
+{
+	AutoDispose<IXpbBuilder> dpb(UtilInterfacePtr()->getXpbBuilder(status, IXpbBuilder::DPB, d, dpbLength));
+	check(status);
+	bool hasLogin = dpb->findFirst(status, isc_dpb_user_name);
+	check(status);
+	if (!hasLogin)
+	{
+		dpb->insertString(status, isc_dpb_user_name, "SYSDBA");
+		check(status);
+	}
+
+	AttachParams par(dbName, dpb->getBufferLength(status), dpb->getBuffer(status), cryptCallback);
+	Thread::start(AttachParams::runTask, &par, THREAD_medium);
+	par.wait();
 }
 
 } // namespace Why
