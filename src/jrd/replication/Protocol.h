@@ -64,7 +64,7 @@ namespace Replication
 		opInsertRecord = 9,
 		opUpdateRecord =  10,
 		opDeleteRecord = 11,
-		opStoreBlob = 12,
+		opBlobData = 12,
 		opExecuteSql = 13,
 		opSetSequence = 14,
 		opExecuteSqlIntl = 15,

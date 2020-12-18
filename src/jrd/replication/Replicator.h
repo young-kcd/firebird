@@ -121,7 +121,6 @@ namespace Replication
 
 			void putBinary(ULONG length, const UCHAR* data)
 			{
-				putInt32(length);
 				buffer->add(data, length);
 			}
 		};

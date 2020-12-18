@@ -114,14 +114,17 @@ void Replicator::storeBlob(Transaction* transaction, ISC_QUAD blobId)
 		if (!segmentLength)
 			continue; // Zero-length segments are unusual but OK
 
+		fb_assert(segmentLength <= MAX_USHORT);
+
 		if (newOp)
 		{
-			txnData.putByte(opStoreBlob);
+			txnData.putByte(opBlobData);
 			txnData.putInt32(blobId.gds_quad_high);
 			txnData.putInt32(blobId.gds_quad_low);
 			newOp = false;
 		}
 
+		txnData.putInt16(segmentLength);
 		txnData.putBinary(segmentLength, data);
 
 		if (txnData.getSize() > m_config->bufferSize)
@@ -137,12 +140,12 @@ void Replicator::storeBlob(Transaction* transaction, ISC_QUAD blobId)
 
 	if (newOp)
 	{
-		txnData.putByte(opStoreBlob);
+		txnData.putByte(opBlobData);
 		txnData.putInt32(blobId.gds_quad_high);
 		txnData.putInt32(blobId.gds_quad_low);
 	}
 
-	txnData.putBinary(0, NULL);
+	txnData.putInt16(0); // end-of-blob marker
 
 	if (txnData.getSize() > m_config->bufferSize)
 		flush(txnData, FLUSH_OVERFLOW);
@@ -356,6 +359,7 @@ void Replicator::insertRecord(CheckStatusWrapper* status,
 
 		txnData.putByte(opInsertRecord);
 		txnData.putInt32(atom);
+		txnData.putInt32(length);
 		txnData.putBinary(length, data);
 
 		if (txnData.getSize() > m_config->bufferSize)
@@ -405,7 +409,9 @@ void Replicator::updateRecord(CheckStatusWrapper* status,
 
 		txnData.putByte(opUpdateRecord);
 		txnData.putInt32(atom);
+		txnData.putInt32(orgLength);
 		txnData.putBinary(orgLength, orgData);
+		txnData.putInt32(newLength);
 		txnData.putBinary(newLength, newData);
 
 		if (txnData.getSize() > m_config->bufferSize)
@@ -435,6 +441,7 @@ void Replicator::deleteRecord(CheckStatusWrapper* status,
 
 		txnData.putByte(opDeleteRecord);
 		txnData.putInt32(atom);
+		txnData.putInt32(length);
 		txnData.putBinary(length, data);
 
 		if (txnData.getSize() > m_config->bufferSize)
