@@ -302,9 +302,9 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 		case opInsertRecord:
 			{
 				const auto relName = reader.getMetaName();
-				const auto length = reader.getInt32();
-				const auto record = reader.getBinary(length);
-				insertRecord(tdbb, traNum, relName, length, record);
+				const auto recLength = reader.getInt32();
+				const auto record = reader.getBinary(recLength);
+				insertRecord(tdbb, traNum, relName, recLength, record);
 			}
 			break;
 
@@ -324,9 +324,9 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 		case opDeleteRecord:
 			{
 				const auto relName = reader.getMetaName();
-				const auto length = reader.getInt32();
-				const auto record = reader.getBinary(length);
-				deleteRecord(tdbb, traNum, relName, length, record);
+				const auto recLength = reader.getInt32();
+				const auto record = reader.getBinary(recLength);
+				deleteRecord(tdbb, traNum, relName, recLength, record);
 			}
 			break;
 
@@ -336,11 +336,11 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 				blob_id.bid_quad.bid_quad_high = reader.getInt32();
 				blob_id.bid_quad.bid_quad_low = reader.getInt32();
 				do {
-					const auto length = reader.getInt16();
-					if (!length)
+					const auto segmentLength = reader.getInt16();
+					if (!segmentLength)
 						break;
-					const auto blob = reader.getBinary(length);
-					storeBlob(tdbb, traNum, &blob_id, length, blob);
+					const auto blob = reader.getBinary(segmentLength);
+					storeBlob(tdbb, traNum, &blob_id, segmentLength, blob);
 				} while (!reader.isEof());
 			}
 			break;
