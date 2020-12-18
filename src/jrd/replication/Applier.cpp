@@ -80,28 +80,26 @@ namespace
 		{ rel_db_creators, { f_crt_user, f_crt_u_type, UNDEF, UNDEF, UNDEF, UNDEF, UNDEF, UNDEF } }
 	};
 
-	class BlockReader
+	class BlockReader : public AutoStorage
 	{
 	public:
 		BlockReader(ULONG length, const UCHAR* data)
-			: m_data(data), m_metadata(data)
+			: m_data(data), m_end(data + length), m_atoms(getPool())
 		{
 			m_header.traNumber = getInt64();
 			m_header.protocol = getInt32();
-			m_header.dataLength = getInt32();
-			m_header.metaLength = getInt32();
+			m_header.length = getInt32();
 			m_header.flags = getInt32();
 			m_header.timestamp.timestamp_date = getInt32();
 			m_header.timestamp.timestamp_time = getInt32();
 
-			fb_assert(m_data == data + sizeof(Block));
-
-			m_metadata = m_data + m_header.dataLength;
+			fb_assert(m_data == data + BLOCK_HEADER_SIZE);
+			fb_assert(m_data + m_header.length == m_end);
 		}
 
 		bool isEof() const
 		{
-			return (m_data >= m_metadata);
+			return (m_data >= m_end);
 		}
 
 		ULONG getFlags() const
@@ -109,7 +107,7 @@ namespace
 			return m_header.flags;
 		}
 
-		UCHAR getTag()
+		UCHAR getByte()
 		{
 			return *m_data++;
 		}
@@ -137,9 +135,8 @@ namespace
 
 		const MetaString& getMetaName()
 		{
-			const auto offset = getInt32() * sizeof(MetaString);
-			const auto metaPtr = (const MetaString*) (m_metadata + offset);
-			return *metaPtr;
+			const auto pos = getInt32();
+			return m_atoms[pos];
 		}
 
 		string getString()
@@ -168,10 +165,19 @@ namespace
 			return m_header.protocol;
 		}
 
+		void defineAtom()
+		{
+			const auto length = *m_data++;
+			const MetaString name((const char*) m_data, length);
+			m_data += length;
+			m_atoms.add(name);
+		}
+
 	private:
 		Block m_header;
 		const UCHAR* m_data;
-		const UCHAR* m_metadata;
+		const UCHAR* const m_end;
+		HalfStaticArray<MetaString, 64> m_atoms;
 	};
 
 	class LocalThreadContext
@@ -255,7 +261,7 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 
 	while (!reader.isEof())
 	{
-		const auto op = reader.getTag();
+		const auto op = reader.getByte();
 
 		switch (op)
 		{
@@ -342,10 +348,10 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 		case opExecuteSql:
 		case opExecuteSqlIntl:
 			{
-				const unsigned charset =
-					(op == opExecuteSql) ? CS_UTF8 : reader.getInt32();
-				const string sql = reader.getString();
 				const MetaName ownerName = reader.getMetaName();
+				const unsigned charset =
+					(op == opExecuteSql) ? CS_UTF8 : reader.getByte();
+				const string sql = reader.getString();
 				executeSql(tdbb, traNum, charset, sql, ownerName);
 			}
 			break;
@@ -356,6 +362,10 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 				const SINT64 value = reader.getInt64();
 				setSequence(tdbb, genName, value);
 			}
+			break;
+
+		case opDefineAtom:
+			reader.defineAtom();
 			break;
 
 		default:

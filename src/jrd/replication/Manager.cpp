@@ -214,7 +214,7 @@ UCharBuffer* Manager::getBuffer()
 		m_buffers.pop() : FB_NEW_POOL(getPool()) UCharBuffer(getPool());
 
 	fb_assert(buffer->isEmpty());
-	buffer->resize(sizeof(Block));
+	buffer->resize(BLOCK_HEADER_SIZE);
 	return buffer;
 }
 

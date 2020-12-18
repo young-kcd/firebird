@@ -34,11 +34,17 @@ namespace Replication
 	{
 		FB_UINT64 traNumber;
 		ULONG protocol;
-		ULONG dataLength;
-		ULONG metaLength;
+		ULONG length;
 		ULONG flags;
 		ISC_TIMESTAMP timestamp;
 	};
+
+	const ULONG BLOCK_HEADER_SIZE =
+		sizeof(Block::traNumber) +
+		sizeof(Block::protocol) +
+		sizeof(Block::length) +
+		sizeof(Block::flags) +
+		sizeof(Block::timestamp);
 
 	const ULONG BLOCK_BEGIN_TRANS = 1;
 	const ULONG BLOCK_END_TRANS = 2;
@@ -61,7 +67,9 @@ namespace Replication
 		opStoreBlob = 12,
 		opExecuteSql = 13,
 		opSetSequence = 14,
-		opExecuteSqlIntl = 15
+		opExecuteSqlIntl = 15,
+
+		opDefineAtom = 16
 	};
 
 } // namespace

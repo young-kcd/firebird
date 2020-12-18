@@ -831,22 +831,27 @@ namespace
 				ULONG totalLength = sizeof(SegmentHeader);
 				while (totalLength < segment->header.hdr_length)
 				{
-					Block header;
-					if (read(file, &header, sizeof(Block)) != sizeof(Block))
+					UCharBuffer buffer;
+
+					auto data = buffer.getBuffer(BLOCK_HEADER_SIZE);
+					if (read(file, data, BLOCK_HEADER_SIZE) != BLOCK_HEADER_SIZE)
 						raiseError("Log file %s read failed (error %d)", segment->filename.c_str(), ERRNO);
 
-					const auto blockLength = header.dataLength + header.metaLength;
-					const auto length = sizeof(Block) + blockLength;
+					// skip transaction ID and protocol version
+					data += sizeof(FB_UINT64) + sizeof(ULONG);
+					// now ptr points to the block length
+					const auto blockLength = (ULONG) isc_portable_integer(data, sizeof(ULONG));
+
+					const auto length = BLOCK_HEADER_SIZE + blockLength;
 
 					if (blockLength)
 					{
 						const bool rewind = (sequence < last_sequence ||
 							(sequence == last_sequence && (!last_offset || totalLength < last_offset)));
 
-						UCHAR* const data = buffer.getBuffer(length);
-						memcpy(data, &header, sizeof(Block));
+						data = buffer.getBuffer(length, true); // preserve the header
 
-						if (read(file, data + sizeof(Block), blockLength) != blockLength)
+						if (read(file, data + BLOCK_HEADER_SIZE, blockLength) != blockLength)
 							raiseError("Log file %s read failed (error %d)", segment->filename.c_str(), ERRNO);
 
 						const bool success =

@@ -37,20 +37,20 @@ namespace Replication
 	class Replicator :
 		public Firebird::StdPlugin<Firebird::IReplicatedSessionImpl<Replicator, Firebird::CheckStatusWrapper> >
 	{
-		typedef Firebird::Array<Firebird::MetaString> MetadataCache;
+		typedef Firebird::Array<Firebird::MetaString> MetaNameCache;
 		typedef Firebird::HalfStaticArray<SavNumber, 16> SavepointStack;
 
 		struct BatchBlock
 		{
 			Block header;
 			Firebird::UCharBuffer* buffer;
-			MetadataCache metadata;
-			ULONG lastMetaId;
+			MetaNameCache atoms;
+			ULONG lastAtom;
 			ULONG flushes;
 
 			explicit BatchBlock(MemoryPool& pool)
-				: buffer(NULL), metadata(pool),
-				  lastMetaId(MAX_ULONG), flushes(0)
+				: buffer(NULL), atoms(pool),
+				  lastAtom(MAX_ULONG), flushes(0)
 			{
 				memset(&header, 0, sizeof(Block));
 			}
@@ -60,9 +60,9 @@ namespace Replication
 				return (ULONG) buffer->getCount();
 			}
 
-			void putTag(UCHAR tag)
+			void putByte(UCHAR value)
 			{
-				buffer->add(tag);
+				buffer->add(value);
 			}
 
 			void putInt16(SSHORT value)
@@ -86,23 +86,30 @@ namespace Replication
 				buffer->add(temp, sizeof(SINT64));
 			}
 
-			void putMetaName(const Firebird::MetaString& name)
+			ULONG defineAtom(const Firebird::MetaString& name)
 			{
-				if (lastMetaId < metadata.getCount() && metadata[lastMetaId] == name)
-				{
-					putInt32(lastMetaId);
-					return;
-				}
+				if (lastAtom < atoms.getCount() && atoms[lastAtom] == name)
+					return lastAtom;
 
 				FB_SIZE_T pos;
-				if (!metadata.find(name, pos))
+				if (!atoms.find(name, pos))
 				{
-					pos = metadata.getCount();
-					metadata.add(name);
+					pos = atoms.getCount();
+					atoms.add(name);
+					putByte(opDefineAtom);
+					putMetaName(name);
 				}
 
-				putInt32(pos);
-				lastMetaId = (ULONG) pos;
+				lastAtom = (ULONG) pos;
+				return lastAtom;
+			}
+
+			void putMetaName(const Firebird::MetaString& name)
+			{
+				const auto length = name.length();
+				fb_assert(length <= MAX_UCHAR);
+				putByte((UCHAR) length);
+				buffer->add((const UCHAR*) name.c_str(), length);
 			}
 
 			void putString(const Firebird::string& str)
