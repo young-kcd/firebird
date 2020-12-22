@@ -317,12 +317,12 @@ namespace
 			return m_fieldType;
 		}
 
-		unsigned getSubType() override
+		int getSubType() override
 		{
 			return m_desc->getSubType();
 		}
 
-		unsigned getScale() override
+		int getScale() override
 		{
 			return m_desc->dsc_scale;
 		}

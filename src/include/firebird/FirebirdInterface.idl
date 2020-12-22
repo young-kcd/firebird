@@ -1566,19 +1566,19 @@ interface Int128 : Versioned
 
 interface ReplicatedField : Versioned
 {
-	// Return name of field. NULL is returned on error
+	// Return field name (or nullptr on error)
 	const string getName();
-	// Return field type or zero if field not exists
+	// Return field type (or zero if the field does not exist)
 	uint getType();
-	// Return subtype if applicable
-	uint getSubType();
-	// Return scale fo the field. Behavior is undefined for non-numeric fields
-	uint getScale();
-	// Return maximum length of field data in bytes
+	// Return field subtype, if applicable
+	int getSubType();
+	// Return field scale (behavior is undefined for non-numeric fields)
+	int getScale();
+	// Return maximum length of the field data in bytes
 	uint getLength();
 	// Return character set without collation part for text or CLOB fields
 	uint getCharSet();
-	// Return pointer to data. nullptr is returned if value is NULL
+	// Return pointer to data (or nullptr for NULL values)
 	const void* getData();
 }
 
@@ -1586,8 +1586,8 @@ interface ReplicatedRecord : Versioned
 {
 	// Return count of fields
 	uint getCount();
-	// Return ReplicatedField with given index. nullptr is returned if index is invalid.
-	// Returned refeence is valid until next call of getField() or end of the record life.
+	// Return ReplicatedField with given index (or nullptr if index is invalid).
+	// Returned reference is valid until next call of getField() or end of the record life.
 	ReplicatedField getField(uint index);
 
 	// Return size of raw data

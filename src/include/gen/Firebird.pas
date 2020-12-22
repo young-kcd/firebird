@@ -671,8 +671,8 @@ type
 	IInt128_fromStringPtr = procedure(this: IInt128; status: IStatus; scale: Integer; from: PAnsiChar; to_: FB_I128Ptr); cdecl;
 	IReplicatedField_getNamePtr = function(this: IReplicatedField): PAnsiChar; cdecl;
 	IReplicatedField_getTypePtr = function(this: IReplicatedField): Cardinal; cdecl;
-	IReplicatedField_getSubTypePtr = function(this: IReplicatedField): Cardinal; cdecl;
-	IReplicatedField_getScalePtr = function(this: IReplicatedField): Cardinal; cdecl;
+	IReplicatedField_getSubTypePtr = function(this: IReplicatedField): Integer; cdecl;
+	IReplicatedField_getScalePtr = function(this: IReplicatedField): Integer; cdecl;
 	IReplicatedField_getLengthPtr = function(this: IReplicatedField): Cardinal; cdecl;
 	IReplicatedField_getCharSetPtr = function(this: IReplicatedField): Cardinal; cdecl;
 	IReplicatedField_getDataPtr = function(this: IReplicatedField): Pointer; cdecl;
@@ -3557,8 +3557,8 @@ type
 
 		function getName(): PAnsiChar;
 		function getType(): Cardinal;
-		function getSubType(): Cardinal;
-		function getScale(): Cardinal;
+		function getSubType(): Integer;
+		function getScale(): Integer;
 		function getLength(): Cardinal;
 		function getCharSet(): Cardinal;
 		function getData(): Pointer;
@@ -3569,8 +3569,8 @@ type
 
 		function getName(): PAnsiChar; virtual; abstract;
 		function getType(): Cardinal; virtual; abstract;
-		function getSubType(): Cardinal; virtual; abstract;
-		function getScale(): Cardinal; virtual; abstract;
+		function getSubType(): Integer; virtual; abstract;
+		function getScale(): Integer; virtual; abstract;
 		function getLength(): Cardinal; virtual; abstract;
 		function getCharSet(): Cardinal; virtual; abstract;
 		function getData(): Pointer; virtual; abstract;
@@ -8165,12 +8165,12 @@ begin
 	Result := ReplicatedFieldVTable(vTable).getType(Self);
 end;
 
-function IReplicatedField.getSubType(): Cardinal;
+function IReplicatedField.getSubType(): Integer;
 begin
 	Result := ReplicatedFieldVTable(vTable).getSubType(Self);
 end;
 
-function IReplicatedField.getScale(): Cardinal;
+function IReplicatedField.getScale(): Integer;
 begin
 	Result := ReplicatedFieldVTable(vTable).getScale(Self);
 end;
@@ -14373,7 +14373,7 @@ begin
 	end
 end;
 
-function IReplicatedFieldImpl_getSubTypeDispatcher(this: IReplicatedField): Cardinal; cdecl;
+function IReplicatedFieldImpl_getSubTypeDispatcher(this: IReplicatedField): Integer; cdecl;
 begin
 	try
 		Result := IReplicatedFieldImpl(this).getSubType();
@@ -14382,7 +14382,7 @@ begin
 	end
 end;
 
-function IReplicatedFieldImpl_getScaleDispatcher(this: IReplicatedField): Cardinal; cdecl;
+function IReplicatedFieldImpl_getScaleDispatcher(this: IReplicatedField): Integer; cdecl;
 begin
 	try
 		Result := IReplicatedFieldImpl(this).getScale();

@@ -6077,8 +6077,8 @@ namespace Firebird
 		{
 			const char* (CLOOP_CARG *getName)(IReplicatedField* self) throw();
 			unsigned (CLOOP_CARG *getType)(IReplicatedField* self) throw();
-			unsigned (CLOOP_CARG *getSubType)(IReplicatedField* self) throw();
-			unsigned (CLOOP_CARG *getScale)(IReplicatedField* self) throw();
+			int (CLOOP_CARG *getSubType)(IReplicatedField* self) throw();
+			int (CLOOP_CARG *getScale)(IReplicatedField* self) throw();
 			unsigned (CLOOP_CARG *getLength)(IReplicatedField* self) throw();
 			unsigned (CLOOP_CARG *getCharSet)(IReplicatedField* self) throw();
 			const void* (CLOOP_CARG *getData)(IReplicatedField* self) throw();
@@ -6109,15 +6109,15 @@ namespace Firebird
 			return ret;
 		}
 
-		unsigned getSubType()
+		int getSubType()
 		{
-			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getSubType(this);
+			int ret = static_cast<VTable*>(this->cloopVTable)->getSubType(this);
 			return ret;
 		}
 
-		unsigned getScale()
+		int getScale()
 		{
-			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getScale(this);
+			int ret = static_cast<VTable*>(this->cloopVTable)->getScale(this);
 			return ret;
 		}
 
@@ -18677,7 +18677,7 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetSubTypeDispatcher(IReplicatedField* self) throw()
+		static int CLOOP_CARG cloopgetSubTypeDispatcher(IReplicatedField* self) throw()
 		{
 			try
 			{
@@ -18686,11 +18686,11 @@ namespace Firebird
 			catch (...)
 			{
 				StatusType::catchException(0);
-				return static_cast<unsigned>(0);
+				return static_cast<int>(0);
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetScaleDispatcher(IReplicatedField* self) throw()
+		static int CLOOP_CARG cloopgetScaleDispatcher(IReplicatedField* self) throw()
 		{
 			try
 			{
@@ -18699,7 +18699,7 @@ namespace Firebird
 			catch (...)
 			{
 				StatusType::catchException(0);
-				return static_cast<unsigned>(0);
+				return static_cast<int>(0);
 			}
 		}
 
@@ -18758,8 +18758,8 @@ namespace Firebird
 
 		virtual const char* getName() = 0;
 		virtual unsigned getType() = 0;
-		virtual unsigned getSubType() = 0;
-		virtual unsigned getScale() = 0;
+		virtual int getSubType() = 0;
+		virtual int getScale() = 0;
 		virtual unsigned getLength() = 0;
 		virtual unsigned getCharSet() = 0;
 		virtual const void* getData() = 0;
