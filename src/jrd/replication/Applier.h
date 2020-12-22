@@ -155,14 +155,13 @@ namespace Jrd
 
 		void insertRecord(thread_db* tdbb, TraNumber traNum,
 						  const MetaName& relName,
-						  ULONG length, const UCHAR* data);
+						  const UCHAR*& data);
 		void updateRecord(thread_db* tdbb, TraNumber traNum,
 						  const MetaName& relName,
-						  ULONG orgLength, const UCHAR* orgData,
-						  ULONG newLength, const UCHAR* newData);
+						  const UCHAR*& data);
 		void deleteRecord(thread_db* tdbb, TraNumber traNum,
 						  const MetaName& relName,
-						  ULONG length, const UCHAR* data);
+						  const UCHAR*& data);
 
 		void setSequence(thread_db* tdbb, const MetaName& genName, SINT64 value);
 
@@ -181,8 +180,6 @@ namespace Jrd
 		bool lookupRecord(thread_db* tdbb, jrd_rel* relation,
 						  Record* record, RecordBitmap* bitmap,
 						  index_desc& idx);
-
-		const Format* findFormat(thread_db* tdbb, jrd_rel* relation, ULONG length);
 
 		void doInsert(thread_db* tdbb, record_param* rpb,
 						jrd_tra* transaction);

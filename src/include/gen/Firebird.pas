@@ -670,15 +670,13 @@ type
 	IInt128_fromStringPtr = procedure(this: IInt128; status: IStatus; scale: Integer; from: PAnsiChar; to_: FB_I128Ptr); cdecl;
 	IReplicatedField_getNamePtr = function(this: IReplicatedField): PAnsiChar; cdecl;
 	IReplicatedField_getTypePtr = function(this: IReplicatedField): Cardinal; cdecl;
-	IReplicatedField_getSubTypePtr = function(this: IReplicatedField): Cardinal; cdecl;
-	IReplicatedField_getScalePtr = function(this: IReplicatedField): Cardinal; cdecl;
+	IReplicatedField_getSubTypePtr = function(this: IReplicatedField): Integer; cdecl;
+	IReplicatedField_getScalePtr = function(this: IReplicatedField): Integer; cdecl;
 	IReplicatedField_getLengthPtr = function(this: IReplicatedField): Cardinal; cdecl;
 	IReplicatedField_getCharSetPtr = function(this: IReplicatedField): Cardinal; cdecl;
 	IReplicatedField_getDataPtr = function(this: IReplicatedField): Pointer; cdecl;
 	IReplicatedRecord_getCountPtr = function(this: IReplicatedRecord): Cardinal; cdecl;
 	IReplicatedRecord_getFieldPtr = function(this: IReplicatedRecord; index: Cardinal): IReplicatedField; cdecl;
-	IReplicatedRecord_getRawLengthPtr = function(this: IReplicatedRecord): Cardinal; cdecl;
-	IReplicatedRecord_getRawDataPtr = function(this: IReplicatedRecord): BytePtr; cdecl;
 	IReplicatedTransaction_preparePtr = procedure(this: IReplicatedTransaction; status: IStatus); cdecl;
 	IReplicatedTransaction_commitPtr = procedure(this: IReplicatedTransaction; status: IStatus); cdecl;
 	IReplicatedTransaction_rollbackPtr = procedure(this: IReplicatedTransaction; status: IStatus); cdecl;
@@ -3553,8 +3551,8 @@ type
 
 		function getName(): PAnsiChar;
 		function getType(): Cardinal;
-		function getSubType(): Cardinal;
-		function getScale(): Cardinal;
+		function getSubType(): Integer;
+		function getScale(): Integer;
 		function getLength(): Cardinal;
 		function getCharSet(): Cardinal;
 		function getData(): Pointer;
@@ -3565,8 +3563,8 @@ type
 
 		function getName(): PAnsiChar; virtual; abstract;
 		function getType(): Cardinal; virtual; abstract;
-		function getSubType(): Cardinal; virtual; abstract;
-		function getScale(): Cardinal; virtual; abstract;
+		function getSubType(): Integer; virtual; abstract;
+		function getScale(): Integer; virtual; abstract;
 		function getLength(): Cardinal; virtual; abstract;
 		function getCharSet(): Cardinal; virtual; abstract;
 		function getData(): Pointer; virtual; abstract;
@@ -3575,8 +3573,6 @@ type
 	ReplicatedRecordVTable = class(VersionedVTable)
 		getCount: IReplicatedRecord_getCountPtr;
 		getField: IReplicatedRecord_getFieldPtr;
-		getRawLength: IReplicatedRecord_getRawLengthPtr;
-		getRawData: IReplicatedRecord_getRawDataPtr;
 	end;
 
 	IReplicatedRecord = class(IVersioned)
@@ -3584,8 +3580,6 @@ type
 
 		function getCount(): Cardinal;
 		function getField(index: Cardinal): IReplicatedField;
-		function getRawLength(): Cardinal;
-		function getRawData(): BytePtr;
 	end;
 
 	IReplicatedRecordImpl = class(IReplicatedRecord)
@@ -3593,8 +3587,6 @@ type
 
 		function getCount(): Cardinal; virtual; abstract;
 		function getField(index: Cardinal): IReplicatedField; virtual; abstract;
-		function getRawLength(): Cardinal; virtual; abstract;
-		function getRawData(): BytePtr; virtual; abstract;
 	end;
 
 	ReplicatedTransactionVTable = class(DisposableVTable)
@@ -8155,12 +8147,12 @@ begin
 	Result := ReplicatedFieldVTable(vTable).getType(Self);
 end;
 
-function IReplicatedField.getSubType(): Cardinal;
+function IReplicatedField.getSubType(): Integer;
 begin
 	Result := ReplicatedFieldVTable(vTable).getSubType(Self);
 end;
 
-function IReplicatedField.getScale(): Cardinal;
+function IReplicatedField.getScale(): Integer;
 begin
 	Result := ReplicatedFieldVTable(vTable).getScale(Self);
 end;
@@ -8188,16 +8180,6 @@ end;
 function IReplicatedRecord.getField(index: Cardinal): IReplicatedField;
 begin
 	Result := ReplicatedRecordVTable(vTable).getField(Self, index);
-end;
-
-function IReplicatedRecord.getRawLength(): Cardinal;
-begin
-	Result := ReplicatedRecordVTable(vTable).getRawLength(Self);
-end;
-
-function IReplicatedRecord.getRawData(): BytePtr;
-begin
-	Result := ReplicatedRecordVTable(vTable).getRawData(Self);
 end;
 
 procedure IReplicatedTransaction.prepare(status: IStatus);
@@ -14354,7 +14336,7 @@ begin
 	end
 end;
 
-function IReplicatedFieldImpl_getSubTypeDispatcher(this: IReplicatedField): Cardinal; cdecl;
+function IReplicatedFieldImpl_getSubTypeDispatcher(this: IReplicatedField): Integer; cdecl;
 begin
 	try
 		Result := IReplicatedFieldImpl(this).getSubType();
@@ -14363,7 +14345,7 @@ begin
 	end
 end;
 
-function IReplicatedFieldImpl_getScaleDispatcher(this: IReplicatedField): Cardinal; cdecl;
+function IReplicatedFieldImpl_getScaleDispatcher(this: IReplicatedField): Integer; cdecl;
 begin
 	try
 		Result := IReplicatedFieldImpl(this).getScale();
@@ -14420,24 +14402,6 @@ function IReplicatedRecordImpl_getFieldDispatcher(this: IReplicatedRecord; index
 begin
 	try
 		Result := IReplicatedRecordImpl(this).getField(index);
-	except
-		on e: Exception do FbException.catchException(nil, e);
-	end
-end;
-
-function IReplicatedRecordImpl_getRawLengthDispatcher(this: IReplicatedRecord): Cardinal; cdecl;
-begin
-	try
-		Result := IReplicatedRecordImpl(this).getRawLength();
-	except
-		on e: Exception do FbException.catchException(nil, e);
-	end
-end;
-
-function IReplicatedRecordImpl_getRawDataDispatcher(this: IReplicatedRecord): BytePtr; cdecl;
-begin
-	try
-		Result := IReplicatedRecordImpl(this).getRawData();
 	except
 		on e: Exception do FbException.catchException(nil, e);
 	end
@@ -15569,8 +15533,6 @@ initialization
 	IReplicatedRecordImpl_vTable.version := 2;
 	IReplicatedRecordImpl_vTable.getCount := @IReplicatedRecordImpl_getCountDispatcher;
 	IReplicatedRecordImpl_vTable.getField := @IReplicatedRecordImpl_getFieldDispatcher;
-	IReplicatedRecordImpl_vTable.getRawLength := @IReplicatedRecordImpl_getRawLengthDispatcher;
-	IReplicatedRecordImpl_vTable.getRawData := @IReplicatedRecordImpl_getRawDataDispatcher;
 
 	IReplicatedTransactionImpl_vTable := ReplicatedTransactionVTable.create;
 	IReplicatedTransactionImpl_vTable.version := 3;

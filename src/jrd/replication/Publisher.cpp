@@ -317,12 +317,12 @@ namespace
 			return m_fieldType;
 		}
 
-		unsigned getSubType() override
+		int getSubType() override
 		{
 			return m_desc->getSubType();
 		}
 
-		unsigned getScale() override
+		int getScale() override
 		{
 			return m_desc->dsc_scale;
 		}
@@ -363,16 +363,6 @@ namespace
 			desc->getSqlInfo(&m_fieldLength, &dummySubtype, &dummyScale, &m_fieldType);
 
 			return this;
-		}
-
-		unsigned getRawLength() override
-		{
-			return m_record->getLength();
-		}
-
-		const unsigned char* getRawData() override
-		{
-			return m_record->getData();
 		}
 
 	private:

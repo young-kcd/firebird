@@ -22,6 +22,7 @@
 
 #include "firebird.h"
 #include "../ids.h"
+#include "../common/utils_proto.h"
 #include "../jrd/jrd.h"
 #include "../jrd/blb.h"
 #include "../jrd/req.h"
@@ -154,6 +155,11 @@ namespace
 			return ptr;
 		}
 
+		const UCHAR*& getPointer()
+		{
+			return m_data;
+		}
+
 		TraNumber getTransactionId() const
 		{
 			return m_header.traNumber;
@@ -198,6 +204,145 @@ namespace
 	private:
 		thread_db* m_tdbb;
 	};
+
+	void copyRecord(thread_db* tdbb, Record* record, const UCHAR*& data)
+	{
+		const auto format = record->getFormat();
+		dsc fromDesc, toDesc;
+
+		for (unsigned id = 0; ; id++)
+		{
+			const auto sqlType = (USHORT) isc_portable_integer(data, sizeof(USHORT));
+			data += sizeof(USHORT);
+
+			if (!sqlType)
+			{
+				// TODO: Raise an error? Set remaining fields to NULLs? To default values?
+				fb_assert(id == format->fmt_count);
+				break;
+			}
+
+			if (sqlType == SQL_NULL)
+			{
+				record->setNull(id);
+				continue;
+			}
+
+			SCHAR scale = 0;
+			USHORT ttype = 0;
+			USHORT length = 0;
+
+			if (sqlType == SQL_SHORT || sqlType == SQL_LONG ||
+				sqlType == SQL_INT64 || sqlType == SQL_INT128)
+			{
+				scale = *data++;
+			}
+			else if (sqlType == SQL_TEXT || sqlType == SQL_VARYING)
+			{
+				ttype = *data++;
+				length = (USHORT) isc_portable_integer(data, sizeof(USHORT));
+				data += sizeof(USHORT);
+			}
+
+			switch (sqlType)
+			{
+				case SQL_TEXT:
+				case SQL_VARYING:
+					fromDesc.makeText(length, ttype, nullptr);
+					break;
+
+				case SQL_SHORT:
+					fromDesc.makeShort(scale, nullptr);
+					break;
+
+				case SQL_LONG:
+					fromDesc.makeLong(scale, nullptr);
+					break;
+
+				case SQL_INT64:
+					fromDesc.makeInt64(scale, nullptr);
+					break;
+
+				case SQL_INT128:
+					fromDesc.makeInt128(scale, nullptr);
+					break;
+
+				case SQL_FLOAT:
+					fromDesc.makeFloat(nullptr);
+					break;
+
+				case SQL_DOUBLE:
+					fromDesc.makeDouble(nullptr);
+					break;
+/*
+				case SQL_D_FLOAT:
+					fromDesc.makeDouble(nullptr);
+					break;
+*/
+				case SQL_TYPE_DATE:
+					fromDesc.makeTimestamp(nullptr);
+					break;
+
+				case SQL_TYPE_TIME:
+					fromDesc.makeTimestamp(nullptr);
+					break;
+
+				case SQL_TIMESTAMP:
+					fromDesc.makeTimestamp(nullptr);
+					break;
+
+				case SQL_TIME_TZ:
+					fromDesc.makeTimeTz(nullptr);
+					break;
+
+				case SQL_TIMESTAMP_TZ:
+					fromDesc.makeTimestampTz(nullptr);
+					break;
+
+				case SQL_TIME_TZ_EX:
+					fromDesc.makeTimeTzEx(nullptr);
+					break;
+
+				case SQL_TIMESTAMP_TZ_EX:
+					fromDesc.makeTimestampTzEx(nullptr);
+					break;
+
+				case SQL_BOOLEAN:
+					fromDesc.makeBoolean(nullptr);
+					break;
+
+				case SQL_DEC16:
+					fromDesc.makeDecimal64(nullptr);
+					break;
+
+				case SQL_DEC34:
+					fromDesc.makeDecimal128(nullptr);
+					break;
+
+				case SQL_BLOB:
+				case SQL_ARRAY:
+				case SQL_QUAD:
+					fromDesc.dsc_dtype = dtype_quad;
+					fromDesc.dsc_length = sizeof(ISC_QUAD);
+					break;
+
+				default:
+					// TODO: raise proper error
+					fb_assert(false);
+			}
+
+			fromDesc.dsc_address = (UCHAR*) data;
+			data += fromDesc.dsc_length;
+
+			if (id >= format->fmt_count)
+				continue;
+
+			record->clearNull(id);
+
+			if (EVL_field(nullptr, record, id, &toDesc))
+				MOV_move(tdbb, &fromDesc, &toDesc);
+		}
+	}
 
 } // namespace
 
@@ -302,31 +447,24 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 		case opInsertRecord:
 			{
 				const auto relName = reader.getMetaName();
-				const auto recLength = reader.getInt32();
-				const auto record = reader.getBinary(recLength);
-				insertRecord(tdbb, traNum, relName, recLength, record);
+				auto& data = reader.getPointer();
+				insertRecord(tdbb, traNum, relName, data);
 			}
 			break;
 
 		case opUpdateRecord:
 			{
 				const auto relName = reader.getMetaName();
-				const auto orgLength = reader.getInt32();
-				const auto orgRecord = reader.getBinary(orgLength);
-				const auto newLength = reader.getInt32();
-				const auto newRecord = reader.getBinary(newLength);
-				updateRecord(tdbb, traNum, relName,
-									  orgLength, orgRecord,
-									  newLength, newRecord);
+				auto& data = reader.getPointer();
+				updateRecord(tdbb, traNum, relName, data);
 			}
 			break;
 
 		case opDeleteRecord:
 			{
 				const auto relName = reader.getMetaName();
-				const auto recLength = reader.getInt32();
-				const auto record = reader.getBinary(recLength);
-				deleteRecord(tdbb, traNum, relName, recLength, record);
+				auto& data = reader.getPointer();
+				deleteRecord(tdbb, traNum, relName, data);
 			}
 			break;
 
@@ -476,7 +614,7 @@ void Applier::cleanupSavepoint(thread_db* tdbb, TraNumber traNum, bool undo)
 
 void Applier::insertRecord(thread_db* tdbb, TraNumber traNum,
 						   const MetaName& relName,
-						   ULONG length, const UCHAR* data)
+						   const UCHAR*& data)
 {
 	jrd_tra* transaction = NULL;
 	if (!m_txnMap.get(traNum, transaction))
@@ -493,7 +631,7 @@ void Applier::insertRecord(thread_db* tdbb, TraNumber traNum,
 	if (!(relation->rel_flags & REL_scanned))
 		MET_scan_relation(tdbb, relation);
 
-	const auto format = findFormat(tdbb, relation, length);
+	const auto format = MET_current(tdbb, relation);
 
 	record_param rpb;
 	rpb.rpb_relation = relation;
@@ -504,8 +642,8 @@ void Applier::insertRecord(thread_db* tdbb, TraNumber traNum,
 
 	rpb.rpb_format_number = format->fmt_version;
 	rpb.rpb_address = record->getData();
-	rpb.rpb_length = length;
-	record->copyDataFrom(data);
+	rpb.rpb_length = format->fmt_length;
+	copyRecord(tdbb, record, data);
 
 	try
 	{
@@ -567,8 +705,8 @@ void Applier::insertRecord(thread_db* tdbb, TraNumber traNum,
 
 		newRpb.rpb_format_number = format->fmt_version;
 		newRpb.rpb_address = newRecord->getData();
-		newRpb.rpb_length = length;
-		newRecord->copyDataFrom(data);
+		newRpb.rpb_length = format->fmt_length;
+		copyRecord(tdbb, newRecord, data);
 
 		doUpdate(tdbb, &rpb, &newRpb, transaction, NULL);
 	}
@@ -580,8 +718,7 @@ void Applier::insertRecord(thread_db* tdbb, TraNumber traNum,
 
 void Applier::updateRecord(thread_db* tdbb, TraNumber traNum,
 						   const MetaName& relName,
-						   ULONG orgLength, const UCHAR* orgData,
-						   ULONG newLength, const UCHAR* newData)
+						   const UCHAR*& data)
 {
 	jrd_tra* transaction = NULL;
 	if (!m_txnMap.get(traNum, transaction))
@@ -598,7 +735,7 @@ void Applier::updateRecord(thread_db* tdbb, TraNumber traNum,
 	if (!(relation->rel_flags & REL_scanned))
 		MET_scan_relation(tdbb, relation);
 
-	const auto orgFormat = findFormat(tdbb, relation, orgLength);
+	const auto orgFormat = MET_current(tdbb, relation);
 
 	record_param orgRpb;
 	orgRpb.rpb_relation = relation;
@@ -609,8 +746,8 @@ void Applier::updateRecord(thread_db* tdbb, TraNumber traNum,
 
 	orgRpb.rpb_format_number = orgFormat->fmt_version;
 	orgRpb.rpb_address = orgRecord->getData();
-	orgRpb.rpb_length = orgLength;
-	orgRecord->copyDataFrom(orgData);
+	orgRpb.rpb_length = orgFormat->fmt_length;
+	copyRecord(tdbb, orgRecord, data);
 
 	BlobList sourceBlobs(getPool());
 	sourceBlobs.resize(orgFormat->fmt_count);
@@ -655,7 +792,7 @@ void Applier::updateRecord(thread_db* tdbb, TraNumber traNum,
 		cleanup = tempRpb.rpb_record;
 	}
 
-	const auto newFormat = findFormat(tdbb, relation, newLength);
+	const auto newFormat = MET_current(tdbb, relation);
 
 	record_param newRpb;
 	newRpb.rpb_relation = relation;
@@ -665,8 +802,8 @@ void Applier::updateRecord(thread_db* tdbb, TraNumber traNum,
 
 	newRpb.rpb_format_number = newFormat->fmt_version;
 	newRpb.rpb_address = newRecord->getData();
-	newRpb.rpb_length = newLength;
-	newRecord->copyDataFrom(newData);
+	newRpb.rpb_length = newFormat->fmt_length;
+	copyRecord(tdbb, newRecord, data);
 
 	if (found)
 	{
@@ -721,7 +858,7 @@ void Applier::updateRecord(thread_db* tdbb, TraNumber traNum,
 
 void Applier::deleteRecord(thread_db* tdbb, TraNumber traNum,
 						   const MetaName& relName,
-						   ULONG length, const UCHAR* data)
+						   const UCHAR*& data)
 {
 	jrd_tra* transaction = NULL;
 	if (!m_txnMap.get(traNum, transaction))
@@ -738,7 +875,7 @@ void Applier::deleteRecord(thread_db* tdbb, TraNumber traNum,
 	if (!(relation->rel_flags & REL_scanned))
 		MET_scan_relation(tdbb, relation);
 
-	const auto format = findFormat(tdbb, relation, length);
+	const auto format = MET_current(tdbb, relation);
 
 	record_param rpb;
 	rpb.rpb_relation = relation;
@@ -749,8 +886,8 @@ void Applier::deleteRecord(thread_db* tdbb, TraNumber traNum,
 
 	rpb.rpb_format_number = format->fmt_version;
 	rpb.rpb_address = record->getData();
-	rpb.rpb_length = length;
-	record->copyDataFrom(data);
+	rpb.rpb_length = format->fmt_length;
+	copyRecord(tdbb, record, data);
 
 	index_desc idx;
 	const bool indexed = lookupRecord(tdbb, relation, record, m_bitmap, idx);
@@ -1056,22 +1193,6 @@ bool Applier::lookupRecord(thread_db* tdbb,
 
 	delete rpb.rpb_record;
 	return false;
-}
-
-const Format* Applier::findFormat(thread_db* tdbb, jrd_rel* relation, ULONG length)
-{
-	auto format = MET_current(tdbb, relation);
-
-	while (format->fmt_length != length && format->fmt_version)
-		format = MET_format(tdbb, relation, format->fmt_version - 1);
-
-	if (format->fmt_length != length)
-	{
-		raiseError("Record format with length %u is not found for table %s",
-				   length, relation->rel_name.c_str());
-	}
-
-	return format;
 }
 
 void Applier::doInsert(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)

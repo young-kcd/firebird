@@ -264,6 +264,7 @@ namespace Replication
 		void flush(BatchBlock& txnData, FlushReason reason, ULONG flags = 0);
 		// Blob id is passed by value because BlobWrapper requires reference to non-const ISC_QUAD
 		void storeBlob(Transaction* transaction, ISC_QUAD blobId);
+		void storeRecord(BatchBlock& txnData, Firebird::IReplicatedRecord* record);
 		void releaseTransaction(Transaction* transaction);
 
 		void prepareTransaction(Firebird::CheckStatusWrapper* status, Transaction* transaction);

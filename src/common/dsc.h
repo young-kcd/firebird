@@ -334,6 +334,14 @@ typedef struct dsc
 		dsc_address = (UCHAR*) address;
 	}
 
+	void makeFloat(float* address = NULL)
+	{
+		clear();
+		dsc_dtype = dtype_real;
+		dsc_length = sizeof(float);
+		dsc_address = (UCHAR*) address;
+	}
+
 	void makeDouble(double* address = NULL)
 	{
 		clear();

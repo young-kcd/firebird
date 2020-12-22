@@ -151,6 +151,64 @@ void Replicator::storeBlob(Transaction* transaction, ISC_QUAD blobId)
 		flush(txnData, FLUSH_OVERFLOW);
 }
 
+void Replicator::storeRecord(BatchBlock& txnData, IReplicatedRecord* record)
+{
+	for (unsigned id = 0; id < record->getCount(); id++)
+	{
+		IReplicatedField* const field = record->getField(id);
+
+		if (field)
+		{
+			auto data = static_cast<const UCHAR*>(field->getData());
+
+			if (!data)
+			{
+				// Indicate NULL using SQL_NULL pseudo-type
+				txnData.putInt16(SQL_NULL);
+				continue;
+			}
+
+			const auto type = field->getType();
+			fb_assert(type <= MAX_USHORT);
+			txnData.putInt16(type);
+
+			auto length = field->getLength();
+			fb_assert(type <= MAX_USHORT);
+
+			if (type == SQL_SHORT || type == SQL_LONG ||
+				type == SQL_INT64 || type == SQL_INT128)
+			{
+				const auto scale = field->getScale();
+				fb_assert(scale <= 0 && scale >= MIN_SCHAR);
+				txnData.putByte(scale);
+			}
+			else if (type == SQL_TEXT)
+			{
+				const auto charset = field->getCharSet();
+				fb_assert(charset <= MAX_UCHAR);
+				txnData.putByte(charset);
+				txnData.putInt16(length);
+			}
+			else if (type == SQL_VARYING)
+			{
+				const auto charset = field->getCharSet();
+				fb_assert(charset <= MAX_UCHAR);
+				txnData.putByte(charset);
+				const auto str = (const vary*) data;
+				length = str->vary_length;
+				data = (const UCHAR*) str->vary_string;
+				txnData.putInt16(length);
+			}
+			// Should we store the charset for blobs too?
+
+			// TODO: store fields in little-endian format
+			txnData.putBinary(length, data);
+		}
+	}
+
+	txnData.putInt16(0); // end-of-record marker
+}
+
 void Replicator::releaseTransaction(Transaction* transaction)
 {
 	try
@@ -334,10 +392,12 @@ void Replicator::insertRecord(CheckStatusWrapper* status,
 	{
 		for (unsigned id = 0; id < record->getCount(); id++)
 		{
-			IReplicatedField* field = record->getField(id);
-			if (field != nullptr)
+			const auto field = record->getField(id);
+
+			if (field)
 			{
-				auto type = field->getType();
+				const auto type = field->getType();
+
 				if (type == SQL_ARRAY || type == SQL_BLOB)
 				{
 					const auto blobId = (ISC_QUAD*) field->getData();
@@ -350,17 +410,13 @@ void Replicator::insertRecord(CheckStatusWrapper* status,
 
 		MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
-		const auto length = record->getRawLength();
-		const auto data = record->getRawData();
-
 		auto& txnData = transaction->getData();
 
 		const auto atom = txnData.defineAtom(relName);
 
 		txnData.putByte(opInsertRecord);
 		txnData.putInt32(atom);
-		txnData.putInt32(length);
-		txnData.putBinary(length, data);
+		storeRecord(txnData, record);
 
 		if (txnData.getSize() > m_config->bufferSize)
 			flush(txnData, FLUSH_OVERFLOW);
@@ -381,10 +437,12 @@ void Replicator::updateRecord(CheckStatusWrapper* status,
 	{
 		for (unsigned id = 0; id < newRecord->getCount(); id++)
 		{
-			IReplicatedField* field = newRecord->getField(id);
-			if (field != nullptr)
+			const auto field = newRecord->getField(id);
+
+			if (field)
 			{
-				auto type = field->getType();
+				const auto type = field->getType();
+
 				if (type == SQL_ARRAY || type == SQL_BLOB)
 				{
 					const auto blobId = (ISC_QUAD*) field->getData();
@@ -397,22 +455,14 @@ void Replicator::updateRecord(CheckStatusWrapper* status,
 
 		MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
-		const auto orgLength = orgRecord->getRawLength();
-		const auto orgData = orgRecord->getRawData();
-
-		const auto newLength = newRecord->getRawLength();
-		const auto newData = newRecord->getRawData();
-
 		auto& txnData = transaction->getData();
 
 		const auto atom = txnData.defineAtom(relName);
 
 		txnData.putByte(opUpdateRecord);
 		txnData.putInt32(atom);
-		txnData.putInt32(orgLength);
-		txnData.putBinary(orgLength, orgData);
-		txnData.putInt32(newLength);
-		txnData.putBinary(newLength, newData);
+		storeRecord(txnData, orgRecord);
+		storeRecord(txnData, newRecord);
 
 		if (txnData.getSize() > m_config->bufferSize)
 			flush(txnData, FLUSH_OVERFLOW);
@@ -432,17 +482,13 @@ void Replicator::deleteRecord(CheckStatusWrapper* status,
 	{
 		MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
-		const auto length = record->getRawLength();
-		const auto data = record->getRawData();
-
 		auto& txnData = transaction->getData();
 
 		const auto atom = txnData.defineAtom(relName);
 
 		txnData.putByte(opDeleteRecord);
 		txnData.putInt32(atom);
-		txnData.putInt32(length);
-		txnData.putBinary(length, data);
+		storeRecord(txnData, record);
 
 		if (txnData.getSize() > m_config->bufferSize)
 			flush(txnData, FLUSH_OVERFLOW);
