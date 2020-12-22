@@ -2479,8 +2479,6 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 	 * be used to detect update conflict in read committed
 	 * transactions. */
 
-	dsc descriptor;
-
 	ULONG items = sort->expressions.getCount() +
 		3 * streams.getCount() + 2 * (dbkey_streams ? dbkey_streams->getCount() : 0);
 	const NestConst<ValueExprNode>* const end_node = sort->expressions.end();
@@ -2503,7 +2501,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 				const auto format = CMP_format(tdbb, csb, stream);
 				const auto desc = &format->fmt_desc[id];
 
-				if (id >= format->fmt_count || desc->dsc_dtype == dtype_unknown)
+				if (id >= format->fmt_count || desc->isUnknown())
 					IBERROR(157);		// msg 157 cannot sort on a field that does not exist
 
 				fields.push(SortField(stream, id, desc));
@@ -2517,9 +2515,6 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 
 					if (fieldNode && fieldNode->fieldStream == stream && fieldNode->fieldId == id)
 					{
-						auto desc = &descriptor;
-						fieldNode->getDesc(tdbb, csb, desc);
-
 						// International type text has a computed key.
 						// Different decimal float values sometimes have same keys.
 						// ASF: Date/time with time zones too.
@@ -2592,6 +2587,8 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 	// Loop thru sort keys building sort keys.  Actually, to handle null values
 	// correctly, two sort keys are made for each field, one for the null flag
 	// and one for field itself.
+
+	dsc descriptor;
 
 	SortedStream::SortMap::Item* map_item = map->items.getBuffer(items);
 	sort_key_def* sort_key = map->keyItems.getBuffer(2 * sort->expressions.getCount());
