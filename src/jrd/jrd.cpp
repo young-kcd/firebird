@@ -2777,8 +2777,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 				ERR_post(Arg::Gds(isc_unavailable));
 
 			// Check for correct credentials supplied
-			mapping.setSecurityDbAlias(config->getSecurityDatabase(), expanded_name.c_str());
-			mapping.setDb(filename, expanded_name.c_str(), nullptr);
+			mapping.setSecurityDbAlias(config->getSecurityDatabase(), nullptr);
 			getUserInfo(userId, options, filename, &config, true, mapping);
 
 #ifdef WIN_NT
