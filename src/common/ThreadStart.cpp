@@ -168,7 +168,7 @@ Thread Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Han
 		if (state)
 			Firebird::system_call_failed::raise("pthread_attr_setdetachstate", state);
 	}
-	state = pthread_create(&thread, &pattr, THREAD_ENTRYPOINT, THREAD_ARG);
+	state = pthread_create(p_thread, &pattr, THREAD_ENTRYPOINT, THREAD_ARG);
 	int state2 = pthread_attr_destroy(&pattr);
 	if (state)
 		Firebird::system_call_failed::raise("pthread_create", state);
