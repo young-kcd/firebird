@@ -313,7 +313,6 @@ namespace Firebird
 			IUtil* (CLOOP_CARG *getUtilInterface)(IMaster* self) throw();
 			IConfigManager* (CLOOP_CARG *getConfigManager)(IMaster* self) throw();
 			FB_BOOLEAN (CLOOP_CARG *getProcessExiting)(IMaster* self) throw();
-			void (CLOOP_CARG *backgroundDbProcessing)(IMaster* self, IStatus* status, const char* dbName, unsigned dpbLength, const unsigned char* dpb, ICryptKeyCallback* cryptCallback) throw();
 		};
 
 	protected:
@@ -401,13 +400,6 @@ namespace Firebird
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->getProcessExiting(this);
 			return ret;
-		}
-
-		template <typename StatusType> void backgroundDbProcessing(StatusType* status, const char* dbName, unsigned dpbLength, const unsigned char* dpb, ICryptKeyCallback* cryptCallback)
-		{
-			StatusType::clearException(status);
-			static_cast<VTable*>(this->cloopVTable)->backgroundDbProcessing(this, status, dbName, dpbLength, dpb, cryptCallback);
-			StatusType::checkException(status);
 		}
 	};
 
@@ -6703,7 +6695,6 @@ namespace Firebird
 					this->getUtilInterface = &Name::cloopgetUtilInterfaceDispatcher;
 					this->getConfigManager = &Name::cloopgetConfigManagerDispatcher;
 					this->getProcessExiting = &Name::cloopgetProcessExitingDispatcher;
-					this->backgroundDbProcessing = &Name::cloopbackgroundDbProcessingDispatcher;
 				}
 			} vTable;
 
@@ -6867,20 +6858,6 @@ namespace Firebird
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
-
-		static void CLOOP_CARG cloopbackgroundDbProcessingDispatcher(IMaster* self, IStatus* status, const char* dbName, unsigned dpbLength, const unsigned char* dpb, ICryptKeyCallback* cryptCallback) throw()
-		{
-			StatusType status2(status);
-
-			try
-			{
-				static_cast<Name*>(self)->Name::backgroundDbProcessing(&status2, dbName, dpbLength, dpb, cryptCallback);
-			}
-			catch (...)
-			{
-				StatusType::catchException(&status2);
-			}
-		}
 	};
 
 	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IMaster> > >
@@ -6908,7 +6885,6 @@ namespace Firebird
 		virtual IUtil* getUtilInterface() = 0;
 		virtual IConfigManager* getConfigManager() = 0;
 		virtual FB_BOOLEAN getProcessExiting() = 0;
-		virtual void backgroundDbProcessing(StatusType* status, const char* dbName, unsigned dpbLength, const unsigned char* dpb, ICryptKeyCallback* cryptCallback) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

@@ -102,9 +102,6 @@ interface Master : Versioned
 	Util getUtilInterface();
 	ConfigManager getConfigManager();
 	boolean getProcessExiting();
-
-	void backgroundDbProcessing(Status status, const string dbName, uint dpbLength, const uchar* dpb,
-		CryptKeyCallback cryptCallback);
 }
 
 

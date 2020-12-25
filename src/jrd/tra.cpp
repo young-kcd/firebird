@@ -2669,6 +2669,103 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 }
 
 
+namespace {
+	class SweepParameter : public GlobalStorage
+	{
+	public:
+		SweepParameter(Database* d)
+			: dbb(d)
+		{ }
+
+		void waitForStartup()
+		{
+			sem.enter();
+		}
+
+		static void runSweep(SweepParameter* par)
+		{
+			FbLocalStatus status;
+			PathName dbName(par->dbb->dbb_database_name);
+
+			// temporarily disable automatic sweep for encrypted DBs with remote key
+			ICryptKeyCallback* cryptCallback(nullptr);
+#ifdef NEVERDEF
+			ICryptKeyCallback* cryptCallback(par->dbb->dbb_callback);
+			// small (~ 1/2 sec in 2020) delay to debug unload at problematic moment
+			long long x = 0x10000000;
+			while (--x > 0);
+#endif
+
+			// reference is needed to guarantee that provider exists
+			// between semaphore release and attach database
+			AutoPlugin<JProvider> prov(JProvider::getInstance());
+			if (cryptCallback)
+			{
+				prov->setDbCryptCallback(&status, cryptCallback);
+				status.check();
+			}
+			par->sem.release();
+
+			AutoDispose<IXpbBuilder> dpb(UtilInterfacePtr()->getXpbBuilder(&status, IXpbBuilder::DPB, nullptr, 0));
+			status.check();
+			dpb->insertString(&status, isc_dpb_user_name, "sweeper");
+			status.check();
+			UCHAR byte = isc_dpb_records;
+			dpb->insertBytes(&status, isc_dpb_sweep, &byte, 1);
+			status.check();
+			const UCHAR* dpbBytes = dpb->getBuffer(&status);
+			status.check();
+			unsigned dpbLen = dpb->getBufferLength(&status);
+			status.check();
+
+			AutoRelease<IAttachment> att(prov->attachDatabase(&status, dbName.c_str(), dpbLen, dpbBytes));
+			status.check();
+		}
+
+		void exceptionHandler(const Exception& ex, ThreadFinishSync<SweepParameter*>::ThreadRoutine*)
+		{
+			FbLocalStatus st;
+			ex.stuffException(&st);
+			if (st->getErrors()[1] != isc_att_shutdown)
+				iscLogException("Automatic sweep error", ex);
+		}
+
+	private:
+		Semaphore sem;
+		Database* dbb;
+	};
+
+	typedef ThreadFinishSync<SweepParameter*> SweepSync;
+	InitInstance<HalfStaticArray<SweepSync*, 16> > sweepThreads;
+	GlobalPtr<Mutex> swThrMutex;
+	bool sweepDown = false;
+}
+
+
+void TRA_shutdown_sweep()
+{
+/**************************************
+ *
+ *	T R A _ s h u t d o w n _ s w e e p
+ *
+ **************************************
+ *
+ * Functional description
+ *	Wait for sweep threads exit.
+ *
+ **************************************/
+	MutexLockGuard g(swThrMutex, FB_FUNCTION);
+	if (sweepDown)
+		return;
+	sweepDown = true;
+
+	auto& swThr(sweepThreads());
+	for (unsigned n = 0; n < swThr.getCount(); ++n)
+		swThr[n]->waitForCompletion();
+	swThr.clear();
+}
+
+
 static void start_sweeper(thread_db* tdbb)
 {
 /**************************************
@@ -2683,34 +2780,46 @@ static void start_sweeper(thread_db* tdbb)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
+	bool started = false;
 
 	if (!dbb->allowSweepThread(tdbb))
 		return;
 
 	TRA_update_counters(tdbb, dbb);
 
-	CheckStatusWrapper* status = tdbb->tdbb_status_vector;
-	AutoDispose<IXpbBuilder> dpb(UtilInterfacePtr()->getXpbBuilder(status, IXpbBuilder::DPB, nullptr, 0));
-	check(status);
-	dpb->insertString(status, isc_dpb_user_name, "sweeper");
-	check(status);
-	UCHAR byte = isc_dpb_records;
-	dpb->insertBytes(status, isc_dpb_sweep, &byte, 1);
-	check(status);
-
-	MasterInterfacePtr()->backgroundDbProcessing(status, dbb->dbb_database_name.c_str(),
-		dpb->getBufferLength(status), dpb->getBuffer(status), dbb->dbb_callback);
-	if (status->getState() & IStatus::STATE_ERRORS)
+	try
 	{
-		iscLogStatus("cannot start sweep thread", tdbb->tdbb_status_vector);
-		dbb->clearSweepFlags(tdbb);
+		MutexLockGuard g(swThrMutex, FB_FUNCTION);
+		if (sweepDown)
+			return;
+
+		// perform housekeeping
+		auto& swThr(sweepThreads());
+		for (unsigned n = 0; n < swThr.getCount(); )
+		{
+			if (swThr[n]->tryWait())
+			{
+				delete swThr[n];
+				swThr.remove(n);
+			}
+			else
+				++n;
+		}
+
+		AutoPtr<SweepSync> sweepSync(FB_NEW SweepSync(*getDefaultMemoryPool(), SweepParameter::runSweep));
+		SweepParameter swPar(dbb);
+		sweepSync->run(&swPar);
+		started = true;
+		swPar.waitForStartup();
+		sweepThreads().add(sweepSync.release());
+	}
+	catch (const Exception&)
+	{
+		if (!started)
+			dbb->clearSweepStarting();
+		throw;
 	}
 }
-
-
-/*	dbb->clearSweepStarting();	// actually needed here only for classic,
-								// but do danger calling for super
-*/
 
 
 static void transaction_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number)

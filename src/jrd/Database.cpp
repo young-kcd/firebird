@@ -187,6 +187,7 @@ namespace Jrd
 				{
 					SPTHR_DEBUG(fprintf(stderr, "blocking_ast_sweep true %p\n", dbb));
 					dbb->dbb_thread_mutex.leave();
+					LCK_release(tdbb, dbb->dbb_sweep_lock);
 					break;
 				}
 			}

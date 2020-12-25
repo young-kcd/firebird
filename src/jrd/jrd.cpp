@@ -8521,6 +8521,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 
 		// Extra shutdown operations
 		Service::shutdownServices();
+		TRA_shutdown_sweep();
 	}
 	catch (const Exception& ex)
 	{
