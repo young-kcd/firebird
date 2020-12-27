@@ -102,7 +102,7 @@ static void release_temp_tables(thread_db*, jrd_tra*);
 static void retain_temp_tables(thread_db*, jrd_tra*, TraNumber);
 static void restart_requests(thread_db*, jrd_tra*);
 static void start_sweeper(thread_db*);
-static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM);
+//static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM);
 static void transaction_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number);
 static void transaction_options(thread_db*, jrd_tra*, const UCHAR*, USHORT);
 static void transaction_start(thread_db* tdbb, jrd_tra* temp);
@@ -1789,13 +1789,6 @@ void TRA_sweep(thread_db* tdbb)
 
 	try {
 
-		// Avoid races with release_attachment()
-
-		XThreadEnsureUnlock releaseAttGuard(dbb->dbb_thread_mutex, FB_FUNCTION);
-		releaseAttGuard.enter();
-		if (dbb->dbb_flags & DBB_closing)
-			return;
-
 		// Identify ourselves as a sweeper thread. This accomplishes two goals:
 		// 1) Sweep transaction is started "precommitted" and
 		// 2) Execution is throttled in JRD_reschedule() by
@@ -1823,11 +1816,6 @@ void TRA_sweep(thread_db* tdbb)
 		// synchronously perform the garbage collection ourselves.
 
 		attachment->att_flags &= ~ATT_notify_gc;
-
-		// Mark our attachment as special one
-
-		attachment->att_flags |= ATT_from_thread;
-		releaseAttGuard.leave();
 
 		if (VIO_sweep(tdbb, transaction, &traceSweep))
 		{
@@ -2669,6 +2657,90 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 }
 
 
+namespace {
+	class SweepParameter : public GlobalStorage
+	{
+	public:
+		SweepParameter(Database* d)
+			: dbb(d)
+		{ }
+
+		void waitForStartup()
+		{
+			sem.enter();
+		}
+
+		static void runSweep(SweepParameter* par)
+		{
+			FbLocalStatus status;
+			PathName dbName(par->dbb->dbb_database_name);
+
+			// reference is needed to guarantee that provider exists
+			// between semaphore release and attach database
+			AutoPlugin<JProvider> prov(JProvider::getInstance());
+			par->sem.release();
+
+			AutoDispose<IXpbBuilder> dpb(UtilInterfacePtr()->getXpbBuilder(&status, IXpbBuilder::DPB, NULL, 0));
+			status.check();
+			dpb->insertString(&status, isc_dpb_user_name, "sweeper");
+			status.check();
+			UCHAR byte = isc_dpb_records;
+			dpb->insertBytes(&status, isc_dpb_sweep, &byte, 1);
+			status.check();
+			const UCHAR* dpbBytes = dpb->getBuffer(&status);
+			status.check();
+			unsigned dpbLen = dpb->getBufferLength(&status);
+			status.check();
+
+			AutoRelease<IAttachment> att(prov->attachDatabase(&status, dbName.c_str(), dpbLen, dpbBytes));
+			status.check();
+		}
+
+		void exceptionHandler(const Exception& ex, ThreadFinishSync<SweepParameter*>::ThreadRoutine*)
+		{
+			FbLocalStatus st;
+			ex.stuffException(&st);
+			if (st->getErrors()[1] != isc_att_shutdown)
+				iscLogException("Automatic sweep error", ex);
+		}
+
+	private:
+		Semaphore sem;
+		Database* dbb;
+	};
+
+	typedef ThreadFinishSync<SweepParameter*> SweepSync;
+	typedef HalfStaticArray<SweepSync*, 16> SweepThreads;
+	InitInstance<SweepThreads> sweepThreads;
+	GlobalPtr<Mutex> swThrMutex;
+	bool sweepDown = false;
+}
+
+
+void TRA_shutdown_sweep()
+{
+/**************************************
+ *
+ *	T R A _ s h u t d o w n _ s w e e p
+ *
+ **************************************
+ *
+ * Functional description
+ *	Wait for sweep threads exit.
+ *
+ **************************************/
+	MutexLockGuard g(swThrMutex, FB_FUNCTION);
+	if (sweepDown)
+		return;
+	sweepDown = true;
+
+	SweepThreads& swThr(sweepThreads());
+	for (unsigned n = 0; n < swThr.getCount(); ++n)
+		swThr[n]->waitForCompletion();
+	swThr.clear();
+}
+
+
 static void start_sweeper(thread_db* tdbb)
 {
 /**************************************
@@ -2683,65 +2755,45 @@ static void start_sweeper(thread_db* tdbb)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
+	bool started = false;
 
 	if (!dbb->allowSweepThread(tdbb))
 		return;
 
 	TRA_update_counters(tdbb, dbb);
 
-	// pass dbb to sweep thread - if allowSweepThread() returned TRUE that is safe
 	try
 	{
-		Thread::start(sweep_database, dbb, THREAD_medium, &dbb->dbb_sweep_thread);
-		return;
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		iscLogException("cannot start sweep thread", ex);
-		dbb->clearSweepFlags(tdbb);
-	}
-}
+		MutexLockGuard g(swThrMutex, FB_FUNCTION);
+		if (sweepDown)
+			return;
 
+		// perform housekeeping
+		SweepThreads& swThr(sweepThreads());
+		for (unsigned n = 0; n < swThr.getCount(); )
+		{
+			if (swThr[n]->tryWait())
+			{
+				delete swThr[n];
+				swThr.remove(n);
+			}
+			else
+				++n;
+		}
 
-static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM d)
-{
-/**************************************
- *
- *	s w e e p _ d a t a b a s e
- *
- **************************************
- *
- * Functional description
- *	Sweep database.
- *
- **************************************/
-	// determine database name
-	// taking into an account that thread is started successfully
-	// we should take care about parameters reference counter and DBB flags
-	Database* dbb = (Database*) d;
-	try
-	{
-		ISC_STATUS_ARRAY status_vector = {0};
-		isc_db_handle db_handle = 0;
-
-		Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::dpbList, MAX_DPB_SIZE);
-		dpb.insertByte(isc_dpb_sweep, isc_dpb_records);
-		// use embedded authentication to attach database
-		const char* szAuthenticator = "sweeper";
-		dpb.insertString(isc_dpb_user_name, szAuthenticator, fb_strlen(szAuthenticator));
-
-		isc_attach_database(status_vector, 0, dbb->dbb_database_name.c_str(),
-							&db_handle, dpb.getBufferLength(),
-							reinterpret_cast<const char*>(dpb.getBuffer()));
-		if (db_handle)
-			isc_detach_database(status_vector, &db_handle);
+		AutoPtr<SweepSync> sweepSync(FB_NEW SweepSync(*getDefaultMemoryPool(), SweepParameter::runSweep));
+		SweepParameter swPar(dbb);
+		sweepSync->run(&swPar);
+		started = true;
+		swPar.waitForStartup();
+		sweepThreads().add(sweepSync.release());
 	}
 	catch (const Exception&)
-	{ }
-
-	dbb->clearSweepStarting();	// actually needed here only for classic,
-								// but do danger calling for super
-	return 0;
+	{
+		if (!started)
+			dbb->clearSweepStarting();
+		throw;
+	}
 }
 
 
@@ -3512,6 +3564,9 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 		}
 
 		// If the transaction block is getting out of hand, force a sweep
+
+		SPTHR_DEBUG(fprintf(stderr, "dbb_sweep_interval=%d tra_oldest_active=%d oldest=%d oldest_state=%d\n",
+			dbb->dbb_sweep_interval, trans->tra_oldest_active, oldest, oldest_state));
 
 		if (dbb->dbb_sweep_interval &&
 			(trans->tra_oldest_active > oldest) &&

@@ -6396,6 +6396,54 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	if (dbb->dbb_crypto_manager)
 		dbb->dbb_crypto_manager->detach(tdbb, attachment);
 
+	Sync sync(&dbb->dbb_sync, "jrd.cpp: release_attachment");
+
+	// avoid races with special threads
+	XThreadEnsureUnlock threadGuard(dbb->dbb_thread_mutex, FB_FUNCTION);
+	threadGuard.enter();
+
+	sync.lock(SYNC_EXCLUSIVE);
+
+	// stop special threads if and only if we release last regular attachment
+	bool other = false;
+	{ // checkout scope
+		EngineCheckout checkout(tdbb, FB_FUNCTION);
+
+		SPTHR_DEBUG(fprintf(stderr, "\nrelease attachment=%p\n", attachment));
+		for (Jrd::Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
+		{
+			SPTHR_DEBUG(fprintf(stderr, "att=%p FromThr=%c ", att, att->att_flags & ATT_from_thread ? '1' : '0'));
+			if (att == attachment)
+			{
+				SPTHR_DEBUG(fprintf(stderr, "self\n"));
+				continue;
+			}
+			if (att->att_flags & ATT_from_thread)
+			{
+				SPTHR_DEBUG(fprintf(stderr, "found special att=%p\n", att));
+				continue;
+			}
+
+			// Found attachment that is not current (to be released) and is not special
+			other = true;
+			SPTHR_DEBUG(fprintf(stderr, "other\n"));
+			break;
+		}
+
+		// Notify special threads
+		threadGuard.leave();
+
+		// Sync with special threads
+		sync.unlock();
+		if (!other)
+		{
+			// crypt thread
+			if (dbb->dbb_crypto_manager)
+				dbb->dbb_crypto_manager->terminateCryptThread(tdbb, true);
+		}
+
+	} // EngineCheckout scope
+
 	Monitoring::cleanupAttachment(tdbb);
 
 	dbb->dbb_extManager.closeAttachment(tdbb, attachment);
@@ -6451,69 +6499,8 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	attachment->mergeStats();
 
-	Sync sync(&dbb->dbb_sync, "jrd.cpp: release_attachment");
-
-	// avoid races with special threads
-	XThreadEnsureUnlock threadGuard(dbb->dbb_thread_mutex, FB_FUNCTION);
-	threadGuard.enter();
-
-	sync.lock(SYNC_EXCLUSIVE);
-
-	// stop special threads if and only if we release last regular attachment
-	bool other = false;
-	{ // checkout scope
-		EngineCheckout checkout(tdbb, FB_FUNCTION);
-
-		SPTHR_DEBUG(fprintf(stderr, "\nrelease attachment=%p\n", attachment));
-		for (Jrd::Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
-		{
-			SPTHR_DEBUG(fprintf(stderr, "att=%p FromThr=%c ", att, att->att_flags & ATT_from_thread ? '1' : '0'));
-			if (att == attachment)
-			{
-				SPTHR_DEBUG(fprintf(stderr, "self\n"));
-				continue;
-			}
-			if (att->att_flags & ATT_from_thread)
-			{
-				SPTHR_DEBUG(fprintf(stderr, "found special att=%p\n", att));
-				continue;
-			}
-
-			// Found attachment that is not current (to be released) and is not special
-			other = true;
-			SPTHR_DEBUG(fprintf(stderr, "other\n"));
-			break;
-		}
-
-		// Notify special threads
-		if (!other)
-			dbb->dbb_flags |= DBB_closing;
-		threadGuard.leave();
-
-		// Sync with special threads
-		if (!other)
-		{
-			sync.unlock();
-
-			// crypt thread
-			if (dbb->dbb_crypto_manager)
-				dbb->dbb_crypto_manager->terminateCryptThread(tdbb, true);
-
-			// sweep thread
-			if (dbb->dbb_sweep_thread)
-			{
-				Thread::waitForCompletion(dbb->dbb_sweep_thread);
-				dbb->dbb_sweep_thread = 0;
-			}
-		}
-
-	} // EngineCheckout scope
-
-	// restore database lock if needed
-	if (!other)
-		sync.lock(SYNC_EXCLUSIVE);
-
 	// remove the attachment block from the dbb linked list
+	sync.lock(SYNC_EXCLUSIVE);
 	for (Jrd::Attachment** ptr = &dbb->dbb_attachments; *ptr; ptr = &(*ptr)->att_next)
 	{
 		if (*ptr == attachment)
@@ -7552,6 +7539,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 
 		// Extra shutdown operations
 		Service::shutdownServices();
+		TRA_shutdown_sweep();
 	}
 	catch (const Exception& ex)
 	{

@@ -1346,7 +1346,7 @@ namespace Jrd {
 
 	bool CryptoManager::down() const
 	{
-		return flDown || (dbb.dbb_flags & DBB_closing);
+		return flDown;
 	}
 
 	void CryptoManager::addClumplet(string& signature, ClumpletReader& block, UCHAR tag)

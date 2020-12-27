@@ -141,6 +141,7 @@ namespace Jrd
 				{
 					SPTHR_DEBUG(fprintf(stderr, "blocking_ast_sweep true %p\n", dbb));
 					dbb->dbb_thread_mutex.leave();
+					LCK_release(tdbb, dbb->dbb_sweep_lock);
 					break;
 				}
 			}
@@ -175,13 +176,6 @@ namespace Jrd
 		if (!dbb_thread_mutex.tryEnter(FB_FUNCTION))
 		{
 			SPTHR_DEBUG(fprintf(stderr, "allowSweepThread %p false, dbb_thread_mutex busy\n", this));
-			return false;
-		}
-
-		if (dbb_flags & DBB_closing)
-		{
-			SPTHR_DEBUG(fprintf(stderr, "allowSweepThread false, dbb closing\n"));
-			dbb_thread_mutex.leave();
 			return false;
 		}
 
@@ -239,7 +233,7 @@ namespace Jrd
 	{
 		SPTHR_DEBUG(fprintf(stderr, "allowSweepRun %p\n", this));
 
-		if (readOnly() || (dbb_flags & DBB_closing))
+		if (readOnly())
 			return false;
 
 		Jrd::Attachment* const attachment = tdbb->getAttachment();
