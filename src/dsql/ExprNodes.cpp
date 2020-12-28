@@ -9157,9 +9157,9 @@ WindowClause* WindowClause::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	WindowClause* node = FB_NEW_POOL(dsqlScratch->getPool()) WindowClause(dsqlScratch->getPool(),
 		window->name,
 		doDsqlPass(dsqlScratch, window->partition),
-		doDsqlPass(dsqlScratch, window->order),
-		doDsqlPass(dsqlScratch, window->extent),
-		window->exclusion);
+		doDsqlPass(dsqlScratch, order ? order : window->order),
+		doDsqlPass(dsqlScratch, extent ? extent : window->extent),
+		exclusion ? exclusion : window->exclusion);
 
 	if (node->order && node->extent && node->extent->unit == FrameExtent::Unit::RANGE &&
 		(node->extent->frame1->value || (node->extent->frame2 && node->extent->frame2->value)))
