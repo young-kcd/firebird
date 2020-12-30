@@ -1130,8 +1130,9 @@ bool TimeZoneRuleIterator::next()
 
 static const TimeZoneDesc* getDesc(USHORT timeZone)
 {
-	if (MAX_USHORT - timeZone < timeZoneStartup().getTimeZoneList().getCount())
-		return &timeZoneStartup().getTimeZoneList()[MAX_USHORT - timeZone];
+	const USHORT id = MAX_USHORT - timeZone;
+	if (id < timeZoneStartup().getTimeZoneList().getCount())
+		return &timeZoneStartup().getTimeZoneList()[id];
 
 	status_exception::raise(Arg::Gds(isc_invalid_timezone_id) << Arg::Num(timeZone));
 	return nullptr;

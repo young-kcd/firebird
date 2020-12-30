@@ -1538,8 +1538,10 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 				UChar str[10];
 				UErrorCode status = U_ZERO_ERROR;
 				int len = icu->usetGetItem(contractions, i, NULL, NULL, str, sizeof(str), &status);
+				if (len < 0)
+					fatal_exception::raiseFmt("uset_getItem() error %d", status);
 
-				if (len > srcLenLong)
+				if (unsigned(len) > srcLenLong)		// safe cast - sign checked
 					len = srcLenLong;
 				else
 					--len;
