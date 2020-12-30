@@ -263,9 +263,9 @@ constexpr ConfigEntry entries[MAX_CONFIG_KEY] =
 	{TYPE_STRING,	"Providers",				false,	"Remote, " CURRENT_ENGINE ", Loopback"},
 	{TYPE_STRING,	"AuthServer",				false,	"Srp256"},
 #ifdef WIN_NT
-	{TYPE_STRING,	"AuthClient",				false,	"Srp256"},
-#else
 	{TYPE_STRING,	"AuthClient",				false,	"Srp256, Srp, Win_Sspi, Legacy_Auth"},
+#else
+	{TYPE_STRING,	"AuthClient",				false,	"Srp256, Srp, Legacy_Auth"},
 #endif
 	{TYPE_STRING,	"UserManager",				false,	"Srp"},
 	{TYPE_STRING,	"TracePlugin",				false,	"fbtrace"},
@@ -300,7 +300,7 @@ constexpr ConfigEntry entries[MAX_CONFIG_KEY] =
 	{TYPE_BOOLEAN,	"ClearGTTAtRetaining",		false,	false},
 	{TYPE_STRING,	"DataTypeCompatibility",	false,	nullptr},
 	{TYPE_BOOLEAN,	"UseFileSystemCache",		false,	true},
-	{TYPE_INTEGER,	"InlineSortThreshold",		false,	1000},		// bytes
+	{TYPE_INTEGER,	"InlineSortThreshold",		false,	1000}		// bytes
 };
 
 
