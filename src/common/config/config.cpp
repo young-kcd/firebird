@@ -149,8 +149,8 @@ ConfigValue Config::defaults[MAX_CONFIG_KEY];
  */
 
 Config::Config(const ConfigFile& file)
-	: notifyDatabase(*getDefaultMemoryPool()),
-	valuesSource(*getDefaultMemoryPool()),
+	: valuesSource(*getDefaultMemoryPool()),
+	notifyDatabase(*getDefaultMemoryPool()),
 	serverMode(-1),
 	defaultConfig(false)
 {
@@ -183,8 +183,8 @@ Config::Config(const ConfigFile& file)
 }
 
 Config::Config(const ConfigFile& file, const char* srcName, const Config& base, const PathName& notify)
-	: notifyDatabase(*getDefaultMemoryPool()),
-	valuesSource(*getDefaultMemoryPool()),
+	: valuesSource(*getDefaultMemoryPool()),
+	notifyDatabase(*getDefaultMemoryPool()),
 	serverMode(-1),
 	defaultConfig(false)
 {
