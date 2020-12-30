@@ -5540,6 +5540,7 @@ const
 	isc_nbackup_user_stop                = 337117257;
 	isc_nbackup_deco_parse               = 337117259;
 	isc_nbackup_lostrec_guid_db          = 337117261;
+	isc_nbackup_seq_misuse               = 337117265;
 	isc_trace_conflict_acts              = 337182750;
 	isc_trace_act_notfound               = 337182751;
 	isc_trace_switch_once                = 337182752;

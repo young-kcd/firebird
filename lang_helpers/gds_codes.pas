@@ -2909,6 +2909,8 @@ const
 	gds_nbackup_deco_parse               = 337117259;
 	isc_nbackup_lostrec_guid_db          = 337117261;
 	gds_nbackup_lostrec_guid_db          = 337117261;
+	isc_nbackup_seq_misuse               = 337117265;
+	gds_nbackup_seq_misuse               = 337117265;
 	isc_trace_conflict_acts              = 337182750;
 	gds_trace_conflict_acts              = 337182750;
 	isc_trace_act_notfound               = 337182751;

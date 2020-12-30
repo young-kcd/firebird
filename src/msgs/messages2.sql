@@ -3594,7 +3594,9 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 76, NULL, '  -RO(LE) <role>                         SQL role name', NULL, NULL)
 ('nbackup_lostrec_guid_db', 'NBackup::backup_database', 'nbackup.cpp', NULL, 24, 77, NULL, 'Cannot find record for database "@1" backup GUID @2 in the backup history', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 78, NULL, '  -I(NPLACE)                             Restore incremental backup(s) to existing database', NULL, NULL)
-(NULL, 'usage', 'nbackup.cpp', NULL, 24, 79, NULL, '  -INPLACE option could corrupt the database that has changed since previous restore', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 79, NULL, '  -INPLACE option could corrupt the database that has changed since previous restore.', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 80, NULL, '  -SEQ(UENCE)                            Preserve original replication sequence', NULL, NULL)
+('nbackup_seq_misuse', 'nbackup', 'nbackup.cpp', NULL, 24, 81, NULL, 'Switch -SEQ(UENCE) can be used only with -FIXUP or -RESTORE', NULL, NULL)
 -- FBTRACEMGR
 -- All messages use the new format.
 (NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 1, NULL, 'Firebird Trace Manager version @1', NULL, NULL)

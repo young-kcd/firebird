@@ -1452,6 +1452,7 @@ static const struct {
 	{337117257, "08006"}, //  73 nbackup_user_stop
 	{337117259, "54023"}, //  75 nbackup_deco_parse
 	{337117261, "00000"}, //  77 nbackup_lostrec_guid_db
+	{337117265, "00000"}, //  81 nbackup_seq_misuse
 	{337182750, "00000"}, //  30 trace_conflict_acts
 	{337182751, "00000"}, //  31 trace_act_notfound
 	{337182752, "00000"}, //  32 trace_switch_once
