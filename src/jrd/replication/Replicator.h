@@ -27,7 +27,6 @@
 #include "../common/classes/timestamp.h"
 #include "../common/classes/MetaString.h"
 #include "../common/os/guid.h"
-#include "../jrd/align.h"
 #include "../jrd/status.h"
 
 #include "Protocol.h"
@@ -63,21 +62,28 @@ namespace Replication
 
 			void putTag(UCHAR tag)
 			{
-				buffer->add(tag);
+				putByte(tag);
 			}
 
-			void putInt(SLONG value)
+			void putByte(UCHAR value)
 			{
-				const auto newSize = FB_ALIGN(getSize(), type_alignments[dtype_long]);
-				buffer->resize(newSize);
+				buffer->add(value);
+			}
+
+			void putInt16(SLONG value)
+			{
+				const auto ptr = (const UCHAR*) &value;
+				buffer->add(ptr, sizeof(SSHORT));
+			}
+
+			void putInt32(SLONG value)
+			{
 				const auto ptr = (const UCHAR*) &value;
 				buffer->add(ptr, sizeof(SLONG));
 			}
 
-			void putBigInt(SINT64 value)
+			void putInt64(SINT64 value)
 			{
-				const auto newSize = FB_ALIGN(getSize(), type_alignments[dtype_int64]);
-				buffer->resize(newSize);
 				const auto ptr = (const UCHAR*) &value;
 				buffer->add(ptr, sizeof(SINT64));
 			}
@@ -86,7 +92,7 @@ namespace Replication
 			{
 				if (lastMetaId < metadata.getCount() && metadata[lastMetaId] == name)
 				{
-					putInt(lastMetaId);
+					putInt32(lastMetaId);
 					return;
 				}
 
@@ -97,20 +103,20 @@ namespace Replication
 					metadata.add(name);
 				}
 
-				putInt(pos);
+				putInt32(pos);
 				lastMetaId = (ULONG) pos;
 			}
 
 			void putString(const Firebird::string& str)
 			{
 				const auto length = str.length();
-				putInt(length);
-				buffer->add((const UCHAR*) str.c_str(), length);
+				putInt32(length);
+				const auto ptr = (const UCHAR*) str.c_str();
+				buffer->add(ptr, length);
 			}
 
 			void putBinary(ULONG length, const UCHAR* data)
 			{
-				putInt(length);
 				buffer->add(data, length);
 			}
 		};

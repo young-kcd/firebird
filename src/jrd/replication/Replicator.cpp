@@ -110,11 +110,13 @@ void Replicator::storeBlob(Transaction* transaction, ISC_QUAD blobId)
 		if (newOp)
 		{
 			txnData.putTag(opStoreBlob);
-			txnData.putInt(blobId.gds_quad_high);
-			txnData.putInt(blobId.gds_quad_low);
+			txnData.putInt32(blobId.gds_quad_high);
+			txnData.putInt32(blobId.gds_quad_low);
 			newOp = false;
 		}
 
+		fb_assert(segmentLength <= MAX_USHORT);
+		txnData.putInt16(segmentLength);
 		txnData.putBinary(segmentLength, data);
 
 		if (txnData.getSize() > m_config->bufferSize)
@@ -131,11 +133,11 @@ void Replicator::storeBlob(Transaction* transaction, ISC_QUAD blobId)
 	if (newOp)
 	{
 		txnData.putTag(opStoreBlob);
-		txnData.putInt(blobId.gds_quad_high);
-		txnData.putInt(blobId.gds_quad_low);
+		txnData.putInt32(blobId.gds_quad_high);
+		txnData.putInt32(blobId.gds_quad_low);
 	}
 
-	txnData.putBinary(0, NULL);
+	txnData.putInt16(0); // end-of-blob marker
 
 	if (txnData.getSize() > m_config->bufferSize)
 		flush(txnData, FLUSH_OVERFLOW);
@@ -226,7 +228,7 @@ void Replicator::commitTransaction(CheckStatusWrapper* status, Transaction* tran
 
 			txnData.putTag(opSetSequence);
 			txnData.putMetaName(generator.name.c_str());
-			txnData.putBigInt(generator.value);
+			txnData.putInt64(generator.value);
 		}
 
 		m_generators.clear();
@@ -348,6 +350,7 @@ void Replicator::insertRecord(CheckStatusWrapper* status,
 
 		txnData.putTag(opInsertRecord);
 		txnData.putMetaName(relName);
+		txnData.putInt32(length);
 		txnData.putBinary(length, data);
 
 		if (txnData.getSize() > m_config->bufferSize)
@@ -395,7 +398,9 @@ void Replicator::updateRecord(CheckStatusWrapper* status,
 
 		txnData.putTag(opUpdateRecord);
 		txnData.putMetaName(relName);
+		txnData.putInt32(orgLength);
 		txnData.putBinary(orgLength, orgData);
+		txnData.putInt32(newLength);
 		txnData.putBinary(newLength, newData);
 
 		if (txnData.getSize() > m_config->bufferSize)
@@ -423,6 +428,7 @@ void Replicator::deleteRecord(CheckStatusWrapper* status,
 
 		txnData.putTag(opDeleteRecord);
 		txnData.putMetaName(relName);
+		txnData.putInt32(length);
 		txnData.putBinary(length, data);
 
 		if (txnData.getSize() > m_config->bufferSize)
@@ -445,18 +451,10 @@ void Replicator::executeSqlIntl(CheckStatusWrapper* status,
 
 		auto& txnData = transaction->getData();
 
-		if (charset == CS_UTF8)
-		{
-			txnData.putTag(opExecuteSql);
-		}
-		else
-		{
-			txnData.putTag(opExecuteSqlIntl);
-			txnData.putInt(charset);
-		}
-
-		txnData.putString(sql);
+		txnData.putTag(opExecuteSqlIntl);
 		txnData.putMetaName(m_user);
+		txnData.putByte(charset);
+		txnData.putString(sql);
 
 		if (txnData.getSize() > m_config->bufferSize)
 			flush(txnData, FLUSH_OVERFLOW);

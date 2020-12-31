@@ -22,7 +22,6 @@
 
 #include "firebird.h"
 #include "../ids.h"
-#include "../jrd/align.h"
 #include "../jrd/jrd.h"
 #include "../jrd/blb.h"
 #include "../jrd/req.h"
@@ -99,46 +98,58 @@ namespace
 
 		UCHAR getTag()
 		{
+			return getByte();
+		}
+
+		UCHAR getByte()
+		{
 			return *m_data++;
 		}
 
-		SLONG getInt()
+		SSHORT getInt16()
 		{
-			m_data = FB_ALIGN(m_data, type_alignments[dtype_long]);
-			const auto ptr = (const SLONG*) m_data;
-			m_data += sizeof(SLONG);
-			return *ptr;
+			SSHORT value;
+			memcpy(&value, m_data, sizeof(SSHORT));
+			m_data += sizeof(SSHORT);
+			return value;
 		}
 
-		SINT64 getBigInt()
+		SLONG getInt32()
 		{
-			m_data = FB_ALIGN(m_data, type_alignments[dtype_int64]);
-			const auto ptr = (const SINT64*) m_data;
+			SLONG value;
+			memcpy(&value, m_data, sizeof(SLONG));
+			m_data += sizeof(SLONG);
+			return value;
+		}
+
+		SINT64 getInt64()
+		{
+			SINT64 value;
+			memcpy(&value, m_data, sizeof(SINT64));
 			m_data += sizeof(SINT64);
-			return *ptr;
+			return value;
 		}
 
 		const MetaString& getMetaName()
 		{
-			const auto offset = getInt() * sizeof(MetaString);
+			const auto offset = getInt32() * sizeof(MetaString);
 			const auto metaPtr = (const MetaString*) (m_metadata + offset);
 			return *metaPtr;
 		}
 
 		string getString()
 		{
-			const auto length = getInt();
+			const auto length = getInt32();
 			const string str((const char*) m_data, length);
 			m_data += length;
 			return str;
 		}
 
-		ULONG getBinary(const UCHAR*& ptr)
+		const UCHAR* getBinary(ULONG length)
 		{
-			const auto len = getInt();
-			ptr = m_data;
-			m_data += len;
-			return len;
+			const auto ptr = m_data;
+			m_data += length;
+			return ptr;
 		}
 
 		TraNumber getTransactionId() const
@@ -275,31 +286,29 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 
 		case opInsertRecord:
 			{
-				const MetaName relName = reader.getMetaName();
-				const UCHAR* record = NULL;
-				const ULONG length = reader.getBinary(record);
+				const auto relName = reader.getMetaName();
+				const ULONG length = reader.getInt32();
+				const auto record = reader.getBinary(length);
 				insertRecord(tdbb, traNum, relName, length, record);
 			}
 			break;
 
 		case opUpdateRecord:
 			{
-				const MetaName relName = reader.getMetaName();
-				const UCHAR* orgRecord = NULL;
-				const ULONG orgLength = reader.getBinary(orgRecord);
-				const UCHAR* newRecord = NULL;
-				const ULONG newLength = reader.getBinary(newRecord);
-				updateRecord(tdbb, traNum, relName,
-									  orgLength, orgRecord,
-									  newLength, newRecord);
+				const auto relName = reader.getMetaName();
+				const ULONG orgLength = reader.getInt32();
+				const auto orgRecord = reader.getBinary(orgLength);
+				const ULONG newLength = reader.getInt32();
+				const auto newRecord = reader.getBinary(newLength);
+				updateRecord(tdbb, traNum, relName, orgLength, orgRecord, newLength, newRecord);
 			}
 			break;
 
 		case opDeleteRecord:
 			{
-				const MetaName relName = reader.getMetaName();
-				const UCHAR* record = NULL;
-				const ULONG length = reader.getBinary(record);
+				const auto relName = reader.getMetaName();
+				const ULONG length = reader.getInt32();
+				const auto record = reader.getBinary(length);
 				deleteRecord(tdbb, traNum, relName, length, record);
 			}
 			break;
@@ -307,32 +316,33 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 		case opStoreBlob:
 			{
 				bid blob_id;
-				blob_id.bid_quad.bid_quad_high = reader.getInt();
-				blob_id.bid_quad.bid_quad_low = reader.getInt();
-				ULONG length = 0;
+				blob_id.bid_quad.bid_quad_high = reader.getInt32();
+				blob_id.bid_quad.bid_quad_low = reader.getInt32();
 				do {
-					const UCHAR* blob = NULL;
-					length = reader.getBinary(blob);
+					const ULONG length = reader.getInt16();
+					if (!length)
+						break;
+					const auto blob = reader.getBinary(length);
 					storeBlob(tdbb, traNum, &blob_id, length, blob);
-				} while (length && !reader.isEof());
+				} while (!reader.isEof());
 			}
 			break;
 
 		case opExecuteSql:
 		case opExecuteSqlIntl:
 			{
+				const auto ownerName = reader.getMetaName();
 				const unsigned charset =
-					(op == opExecuteSql) ? CS_UTF8 : reader.getInt();
+					(op == opExecuteSql) ? CS_UTF8 : reader.getByte();
 				const string sql = reader.getString();
-				const MetaName ownerName = reader.getMetaName();
 				executeSql(tdbb, traNum, charset, sql, ownerName);
 			}
 			break;
 
 		case opSetSequence:
 			{
-				const MetaName genName = reader.getMetaName();
-				const SINT64 value = reader.getBigInt();
+				const auto genName = reader.getMetaName();
+				const auto value = reader.getInt64();
 				setSequence(tdbb, genName, value);
 			}
 			break;
