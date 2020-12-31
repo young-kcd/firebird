@@ -835,7 +835,7 @@ namespace
 					if (read(file, &header, sizeof(Block)) != sizeof(Block))
 						raiseError("Log file %s read failed (error %d)", segment->filename.c_str(), ERRNO);
 
-					const auto blockLength = header.dataLength + header.metaLength;
+					const auto blockLength = header.length;
 					const auto length = sizeof(Block) + blockLength;
 
 					if (blockLength)

@@ -50,20 +50,22 @@ void Replicator::flush(BatchBlock& block, FlushReason reason, ULONG flags)
 {
 	const auto traNumber = block.header.traNumber;
 
-	const auto orgLength = (ULONG) block.buffer->getCount();
-	fb_assert(orgLength > sizeof(Block));
+	const auto dataLength = (ULONG) (block.buffer->getCount() - sizeof(Block));
+	fb_assert(dataLength);
+	const auto metaLength = (ULONG) (block.metadata.getCount() * sizeof(MetaString));
+
 	block.header.protocol = PROTOCOL_CURRENT_VERSION;
-	block.header.dataLength = orgLength - sizeof(Block);
-	block.header.metaLength = (ULONG) (block.metadata.getCount() * sizeof(MetaString));
-	block.header.timestamp = TimeZoneUtil::getCurrentGmtTimeStamp().utc_timestamp;
 	block.header.flags |= flags;
+	block.header.length = dataLength + metaLength;
+	block.header.metaOffset = dataLength;
+	block.header.timestamp = TimeZoneUtil::getCurrentGmtTimeStamp().utc_timestamp;
 
 	// Add metadata (if any) to the buffer
 
-	if (block.header.metaLength)
+	if (metaLength)
 	{
-		block.buffer->resize(orgLength + block.header.metaLength);
-		memcpy(block.buffer->begin() + orgLength, block.metadata.begin(), block.header.metaLength);
+		block.buffer->resize(dataLength + metaLength + sizeof(Block));
+		memcpy(block.buffer->begin() + dataLength + sizeof(Block), block.metadata.begin(), metaLength);
 	}
 
 	// Re-write the updated header

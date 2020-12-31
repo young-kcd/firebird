@@ -87,9 +87,9 @@ namespace
 		BlockReader(ULONG length, const UCHAR* data)
 			: m_header((Block*) data),
 			  m_data(data + sizeof(Block)),
-			  m_metadata(data + sizeof(Block) + m_header->dataLength)
+			  m_metadata(m_data + m_header->metaOffset)
 		{
-			fb_assert(m_metadata + m_header->metaLength == data + length);
+			fb_assert(m_data + m_header->length == data + length);
 		}
 
 		bool isEof() const
