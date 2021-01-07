@@ -324,7 +324,7 @@ cross2:
 	ln -sf $(SRC_ROOT)/include/cross/$(CROSS_CONFIG) $(SRC_ROOT)/include/gen/autoconfig.h
 	$(MAKE) prerequisites
 	$(MAKE) tommath
-	$(MAKE) tomcrypt
+	$(MAKE) LTCSOURCE=-DLTC_SOURCE tomcrypt
 	$(MAKE) re2
 	$(MAKE) -C $(ROOT)/extern/decNumber
 	ln -sf $(ROOT)/extern/decNumber/libdecFloat$(CROSS).a $(LIB)

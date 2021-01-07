@@ -25,14 +25,8 @@ TOOL_PATH:=$(NDK)/toolchains/llvm/prebuilt/linux-x86_64/bin
 CROSS_PREFIX:=$(TOOL_PATH)/$(TOOLCHAIN_NAME)-
 
 #Now it's time to decide upon clang/clang++
-space:=
-space+=
-CLANG_NAME:=$(subst -,$(space),$(TOOLCHAIN_NAME))
-CLANG_NAME:=$(foreach part, $(CLANG_NAME), $(if $(and $(findstring arm, $(part)), $(findstring $(part), arm)), armv7a, $(part)))
-CLANG_NAME:=$(strip $(CLANG_NAME))
-CLANG_NAME:=$(subst $(space),-,$(CLANG_NAME))
+CLANG_NAME:=$(subst arm-,armv7a-,$(TOOLCHAIN_NAME))
 CLANG_NUM:=$(shell mi=256; for i in `seq 24 $$mi`; do [ -e $(TOOL_PATH)/$(CLANG_NAME)$$i-clang ] && [ $$i -le $$mi ] && mi=$$i; done; echo $$mi)
-
 CXX:=$(TOOL_PATH)/$(CLANG_NAME)$(CLANG_NUM)-clang++
 CC:=$(TOOL_PATH)/$(CLANG_NAME)$(CLANG_NUM)-clang
 
