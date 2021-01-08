@@ -234,7 +234,7 @@ DsqlCursor* DSQL_open(thread_db* tdbb,
 
 
 // Provide backward-compatibility
-void DsqlDmlRequest::setDelayedFormat(thread_db* tdbb, Firebird::IMessageMetadata* metadata)
+void DsqlDmlRequest::setDelayedFormat(thread_db* tdbb, IMessageMetadata* metadata)
 {
 	if (!needDelayedFormat)
 	{
@@ -426,7 +426,7 @@ dsql_req* DSQL_prepare(thread_db* tdbb,
 
 		return request;
 	}
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
 		if (request)
 		{
@@ -545,8 +545,8 @@ void DSQL_sql_info(thread_db* tdbb,
 // Common part of prepare and execute a statement.
 void DSQL_execute_immediate(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tra** tra_handle,
 	ULONG length, const TEXT* string, USHORT dialect,
-	Firebird::IMessageMetadata* in_meta, const UCHAR* in_msg,
-	Firebird::IMessageMetadata* out_meta, UCHAR* out_msg,
+	IMessageMetadata* in_meta, const UCHAR* in_msg,
+	IMessageMetadata* out_meta, UCHAR* out_msg,
 	bool isInternalRequest)
 {
 	SET_TDBB(tdbb);
@@ -587,7 +587,7 @@ void DSQL_execute_immediate(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tr
 
 		dsql_req::destroy(tdbb, request, true);
 	}
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
 		if (request)
 		{
@@ -783,7 +783,7 @@ void DsqlDmlRequest::doExecute(thread_db* tdbb, jrd_tra** traHandle,
 						message->msg_length, message_buffer);
 					status = FB_SUCCESS;
 				}
-				catch (Firebird::Exception&)
+				catch (Exception&)
 				{
 					status = tdbb->tdbb_status_vector->getErrors()[1];
 				}
@@ -828,8 +828,8 @@ void DsqlDmlRequest::doExecute(thread_db* tdbb, jrd_tra** traHandle,
 
 // Execute a dynamic SQL statement with tracing, restart and timeout handler
 void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
-	Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
-	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
+	IMessageMetadata* inMetadata, const UCHAR* inMsg,
+	IMessageMetadata* outMetadata, UCHAR* outMsg,
 	bool singleton)
 {
 	if (!req_request)
@@ -993,8 +993,8 @@ void DsqlDdlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, boo
 
 // Execute a dynamic SQL statement.
 void DsqlDdlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
-	Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
-	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
+	IMessageMetadata* inMetadata, const UCHAR* inMsg,
+	IMessageMetadata* outMetadata, UCHAR* outMsg,
 	bool singleton)
 {
 	TraceDSQLExecute trace(req_dbb->dbb_attachment, this);
@@ -1083,8 +1083,8 @@ void DsqlSessionManagementRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch
 
 // Execute a dynamic SQL statement.
 void DsqlSessionManagementRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
-	Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
-	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
+	IMessageMetadata* inMetadata, const UCHAR* inMsg,
+	IMessageMetadata* outMetadata, UCHAR* outMsg,
 	bool singleton)
 {
 	node->execute(tdbb, this, traHandle);
@@ -1115,7 +1115,7 @@ static ULONG get_request_info(thread_db* tdbb, dsql_req* request, ULONG buffer_l
 		return INF_request_info(request->req_request, sizeof(record_info), record_info,
 			buffer_length, buffer);
 	}
-	catch (Firebird::Exception&)
+	catch (Exception&)
 	{
 		return 0;
 	}
@@ -1650,7 +1650,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 
 		return request;
 	}
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
 		trace.prepare(ITracePlugin::RESULT_FAILED);
 
@@ -1779,7 +1779,7 @@ void dsql_req::setCursor(thread_db* /*tdbb*/, const TEXT* /*name*/)
 		Arg::Gds(isc_req_sync));
 }
 
-void dsql_req::setDelayedFormat(thread_db* /*tdbb*/, Firebird::IMessageMetadata* /*metadata*/)
+void dsql_req::setDelayedFormat(thread_db* /*tdbb*/, IMessageMetadata* /*metadata*/)
 {
 	status_exception::raise(
 		Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
@@ -1939,7 +1939,7 @@ void dsql_req::destroy(thread_db* tdbb, dsql_req* request, bool drop)
 			CMP_release(tdbb, request->req_request);
 			request->req_request = NULL;
 		}
-		catch (Firebird::Exception&)
+		catch (Exception&)
 		{} // no-op
 	}
 
