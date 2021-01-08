@@ -4119,6 +4119,8 @@ static void do_isql()
 #endif
 
 #ifdef WIN_NT
+	// Enable Ctrl+C processing
+	SetConsoleCtrlHandler(NULL, FALSE);
 	SetConsoleCtrlHandler(query_abort, TRUE);
 #else
 	fb_shutdown_callback(0, query_abort, fb_shut_confirmation, 0);
