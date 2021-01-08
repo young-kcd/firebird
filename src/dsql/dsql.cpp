@@ -286,10 +286,19 @@ bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 		tdbb->checkCancelState();
 
 	UCHAR* dsqlMsgBuffer = req_msg_buffers[message->msg_buffer_number];
-	if (prefetchedFirstRow)
-		prefetchedFirstRow = false;
+	if (!firstRowFetched && needRestarts())
+	{
+		// Note: tra_handle can't be changed by executeReceiveWithRestarts below 
+		// and outMetadata and outMsg in not used there, so passing NULL's is safe.
+		jrd_tra* tra = req_transaction;
+
+		executeReceiveWithRestarts(tdbb, &tra, NULL, NULL, false, false, true);
+		fb_assert(tra == req_transaction);
+	}
 	else
 		JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, dsqlMsgBuffer);
+
+	firstRowFetched = true;
 
 	const dsql_par* const eof = statement->getEof();
 	const USHORT* eofPtr = eof ? (USHORT*) (dsqlMsgBuffer + (IPTR) eof->par_desc.dsc_address) : NULL;
@@ -680,13 +689,18 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, boo
 	*destroyScratchPool = true;
 }
 
+bool DsqlDmlRequest::needRestarts()
+{
+	return (req_transaction && (req_transaction->tra_flags & TRA_read_consistency) &&
+		statement->getType() != DsqlCompiledStatement::TYPE_SAVEPOINT);
+};
+
 // Execute a dynamic SQL statement
 void DsqlDmlRequest::doExecute(thread_db* tdbb, jrd_tra** traHandle,
-	Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
-	Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
+	IMessageMetadata* outMetadata, UCHAR* outMsg,
 	bool singleton)
 {
-	prefetchedFirstRow = false;
+	firstRowFetched = false;
 	const dsql_msg* message = statement->getSendMsg();
 
 	if (!message)
@@ -789,18 +803,6 @@ void DsqlDmlRequest::doExecute(thread_db* tdbb, jrd_tra** traHandle,
 				status_exception::raise(&localStatus);
 		}
 	}
-	else
-	{
-		// Prefetch first row of a query
-		if (reqTypeWithCursor(statement->getType()))
-		{
-			dsql_msg* message = (dsql_msg*) statement->getReceiveMsg();
-
-			UCHAR* dsqlMsgBuffer = req_msg_buffers[message->msg_buffer_number];
-			JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, dsqlMsgBuffer);
-			prefetchedFirstRow = true;
-		}
-	}
 
 	switch (statement->getType())
 	{
@@ -852,76 +854,95 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	setupTimer(tdbb);
 	thread_db::TimerGuard timerGuard(tdbb, req_timer, !have_cursor);
 
-	if (req_transaction && (req_transaction->tra_flags & TRA_read_consistency) &&
-		statement->getType() != DsqlCompiledStatement::TYPE_SAVEPOINT)
-	{
-		req_request->req_flags &= ~req_update_conflict;
-		int numTries = 0;
-		const int MAX_RESTARTS = 10;
-
-		while (true)
-		{
-			AutoSavePoint savePoint(tdbb, req_transaction);
-
-			// Don't set req_restart_ready flas at last attempt to restart request.
-			// It allows to raise update conflict error (if any) as usual and
-			// handle error by PSQL handler.
-			const ULONG flag = (numTries >= MAX_RESTARTS) ? 0 : req_restart_ready;
-			AutoSetRestoreFlag<ULONG> restartReady(&req_request->req_flags, flag, true);
-			try
-			{
-				doExecute(tdbb, traHandle, inMetadata, inMsg, outMetadata, outMsg, singleton);
-			}
-			catch (const status_exception&)
-			{
-				if (!(req_transaction->tra_flags & TRA_ex_restart))
-				{
-					req_request->req_flags &= ~req_update_conflict;
-					throw;
-				}
-			}
-
-			if (!(req_request->req_flags & req_update_conflict))
-			{
-				fb_assert((req_transaction->tra_flags & TRA_ex_restart) == 0);
-				req_transaction->tra_flags &= ~TRA_ex_restart;
-
-#ifdef DEV_BUILD
-				if (numTries > 0)
-				{
-					string s;
-					s.printf("restarts = %d", numTries);
-
-					ERRD_post_warning(Arg::Warning(isc_random) << Arg::Str(s));
-				}
-#endif
-				savePoint.release();	// everything is ok
-				break;
-			}
-
-			fb_assert((req_transaction->tra_flags & TRA_ex_restart) != 0);
-
-			req_request->req_flags &= ~req_update_conflict;
-			req_transaction->tra_flags &= ~TRA_ex_restart;
-			fb_utils::init_status(tdbb->tdbb_status_vector);
-
-			// Undo current savepoint but preserve already taken locks.
-			// Savepoint will be restarted at the next loop iteration.
-			savePoint.rollback(true);
-
-			numTries++;
-			if (numTries >= MAX_RESTARTS)
-			{
-				gds__log("Update conflict: unable to get a stable set of rows in the source tables\n"
-						 "\tafter %d attempts of restart.\n"
-						 "\tQuery:\n%s\n", numTries, req_request->getStatement()->sqlText->c_str() );
-			}
-		}
-	} else {
-		doExecute(tdbb, traHandle, inMetadata, inMsg, outMetadata, outMsg, singleton);
+	if (needRestarts())
+		executeReceiveWithRestarts(tdbb, traHandle, outMetadata, outMsg, singleton, true, false);
+	else {
+		doExecute(tdbb, traHandle, outMetadata, outMsg, singleton);
 	}
 
 	trace.finish(have_cursor, ITracePlugin::RESULT_SUCCESS);
+}
+
+void DsqlDmlRequest::executeReceiveWithRestarts(thread_db* tdbb, jrd_tra** traHandle,
+	IMessageMetadata* outMetadata, UCHAR* outMsg,
+	bool singleton, bool exec, bool fetch)
+{
+	req_request->req_flags &= ~req_update_conflict;
+	int numTries = 0;
+	const int MAX_RESTARTS = 10;
+
+	while (true)
+	{
+		AutoSavePoint savePoint(tdbb, req_transaction);
+
+		// Don't set req_restart_ready flas at last attempt to restart request.
+		// It allows to raise update conflict error (if any) as usual and
+		// handle error by PSQL handler.
+		const ULONG flag = (numTries >= MAX_RESTARTS) ? 0 : req_restart_ready;
+		AutoSetRestoreFlag<ULONG> restartReady(&req_request->req_flags, flag, true);
+		try
+		{
+			if (exec)
+				doExecute(tdbb, traHandle, outMetadata, outMsg, singleton);
+
+			if (fetch)
+			{
+				fb_assert(reqTypeWithCursor(statement->getType()));
+
+				const dsql_msg* message = statement->getReceiveMsg();
+
+				UCHAR* dsqlMsgBuffer = req_msg_buffers[message->msg_buffer_number];
+				JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, dsqlMsgBuffer);
+			}
+		}
+		catch (const status_exception&)
+		{
+			if (!(req_transaction->tra_flags & TRA_ex_restart))
+			{
+				req_request->req_flags &= ~req_update_conflict;
+				throw;
+			}
+		}
+
+		if (!(req_request->req_flags & req_update_conflict))
+		{
+			fb_assert((req_transaction->tra_flags & TRA_ex_restart) == 0);
+			req_transaction->tra_flags &= ~TRA_ex_restart;
+
+#ifdef DEV_BUILD
+			if (numTries > 0)
+			{
+				string s;
+				s.printf("restarts = %d", numTries);
+
+				ERRD_post_warning(Arg::Warning(isc_random) << Arg::Str(s));
+			}
+#endif
+			savePoint.release();	// everything is ok
+			break;
+		}
+
+		fb_assert((req_transaction->tra_flags & TRA_ex_restart) != 0);
+
+		req_request->req_flags &= ~req_update_conflict;
+		req_transaction->tra_flags &= ~TRA_ex_restart;
+		fb_utils::init_status(tdbb->tdbb_status_vector);
+
+		// Undo current savepoint but preserve already taken locks.
+		// Savepoint will be restarted at the next loop iteration.
+		savePoint.rollback(true);
+
+		numTries++;
+		if (numTries >= MAX_RESTARTS)
+		{
+			gds__log("Update conflict: unable to get a stable set of rows in the source tables\n"
+				"\tafter %d attempts of restart.\n"
+				"\tQuery:\n%s\n", numTries, req_request->getStatement()->sqlText->c_str() );
+		}
+
+		// When restart we must execute query 
+		exec = true;
+	}
 }
 
 void DsqlDdlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, bool* destroyScratchPool,
