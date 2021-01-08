@@ -875,7 +875,7 @@ void DsqlDmlRequest::executeReceiveWithRestarts(thread_db* tdbb, jrd_tra** traHa
 	{
 		AutoSavePoint savePoint(tdbb, req_transaction);
 
-		// Don't set req_restart_ready flas at last attempt to restart request.
+		// Don't set req_restart_ready flag at last attempt to restart request.
 		// It allows to raise update conflict error (if any) as usual and
 		// handle error by PSQL handler.
 		const ULONG flag = (numTries >= MAX_RESTARTS) ? 0 : req_restart_ready;
