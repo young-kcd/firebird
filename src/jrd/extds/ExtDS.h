@@ -434,7 +434,7 @@ public:
 	virtual bool cancelExecution(bool forced) = 0;
 
 	// Try to reset connection, return true if it can be pooled
-	virtual bool resetSession() = 0;
+	virtual bool resetSession(Jrd::thread_db* tdbb) = 0;
 
 	int getSqlDialect() const { return m_sqlDialect; }
 

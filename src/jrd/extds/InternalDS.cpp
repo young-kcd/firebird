@@ -245,7 +245,7 @@ bool InternalConnection::cancelExecution(bool /*forced*/)
 	return !(status->getState() & IStatus::STATE_ERRORS);
 }
 
-bool InternalConnection::resetSession()
+bool InternalConnection::resetSession(thread_db* tdbb)
 {
 	fb_assert(!m_isCurrent);
 
@@ -253,9 +253,11 @@ bool InternalConnection::resetSession()
 		return true;
 
 	FbLocalStatus status;
-	m_attachment->execute(&status, NULL, 0, "ALTER SESSION RESET",
-		m_sqlDialect, NULL, NULL, NULL, NULL);
-
+	{
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+		m_attachment->execute(&status, NULL, 0, "ALTER SESSION RESET",
+			m_sqlDialect, NULL, NULL, NULL, NULL);
+	}
 	return !(status->getState() & IStatus::STATE_ERRORS);
 }
 
