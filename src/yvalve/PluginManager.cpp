@@ -1080,7 +1080,7 @@ void PluginManager::unregisterModule(IPluginModule* cleanup)
 		Firebird::dDllUnloadTID = GetCurrentThreadId();
 #endif
 
-	fb_shutdown(5000, fb_shutrsn_exit_called);
+	fb_shutdown(10000, fb_shutrsn_exit_called);
 }
 
 IPluginSet* PluginManager::getPlugins(CheckStatusWrapper* status, unsigned int interfaceType,
