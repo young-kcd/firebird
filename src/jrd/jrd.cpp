@@ -138,6 +138,9 @@
 #include "../dsql/DsqlBatch.h"
 
 #ifdef WIN_NT
+#include <process.h>
+#define getpid _getpid
+
 #include "../common/dllinst.h"
 #endif
 
@@ -1322,6 +1325,7 @@ static void		rollback(thread_db*, jrd_tra*, const bool);
 static void		purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsigned flags = 0);
 static void		getUserInfo(UserId&, const DatabaseOptions&, const char*,
 	const RefPtr<const Config>*, bool, Mapping& mapping);
+static void		waitForShutdown(Semaphore&);
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
 
@@ -4487,12 +4491,7 @@ void JProvider::shutdown(CheckStatusWrapper* status, unsigned int timeout, const
 			Thread::start(shutdown_thread, &shutdown_semaphore, THREAD_medium, &h);
 
 			if (!shutdown_semaphore.tryEnter(0, timeout))
-			{
-				// sad, but we MUST kill shutdown_thread because engine DLL\SO is unloaded
-				// else whole process will be crashed
-				Thread::kill(h);
-				status_exception::raise(Arg::Gds(isc_shutdown_timeout));
-			}
+				waitForShutdown(shutdown_semaphore);
 
 			Thread::waitForCompletion(h);
 		}
@@ -8463,6 +8462,42 @@ namespace
 		return 0;
 	}
 } // anonymous namespace
+
+
+static void waitForShutdown(Semaphore& shutdown_semaphore)
+{
+	const int pid = getpid();
+	unsigned int timeout = 10000;	// initial value, 10 sec
+	bool done = false;
+
+	for (int i = 0; i < 5; i++)
+	{
+		gds__log("PID %d: engine shutdown is in progress with %s database(s) attached",
+			pid, databases == NULL ? "no" : "some");
+
+		timeout *= 2;
+		if (shutdown_semaphore.tryEnter(timeout))
+		{
+			done = true;
+			break;
+		}
+	}
+
+	if (!done)
+	{
+		if (databases == NULL)
+		{
+			gds__log("PID %d: wait for engine shutdown failed, terminating", pid);
+			if (Config::getBugcheckAbort())
+				abort();
+
+			// return immediately
+			_exit(5);
+		}
+
+		shutdown_semaphore.enter();
+	}
+}
 
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)

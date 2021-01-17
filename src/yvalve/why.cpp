@@ -725,7 +725,7 @@ RefPtr<T> translateHandle(GlobalPtr<GenericMap<Pair<NonPooled<FB_API_HANDLE, T*>
 
 //-------------------------------------
 
-const int SHUTDOWN_TIMEOUT = 5000;	// 5 sec
+const int SHUTDOWN_TIMEOUT = 10000;	// 10 sec
 
 class ShutdownInit
 {
