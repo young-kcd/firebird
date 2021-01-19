@@ -8,7 +8,7 @@
 ;  for the specific language governing rights and limitations under the
 ;  License.
 ;
-;  The Original Code is copyright 2001-20016 Paul Reeves for IBPhoenix.
+;  The Original Code is copyright 2001-2021 Paul Reeves for IBPhoenix.
 ;
 ;  The Initial Developer of the Original Code is Paul Reeves for IBPhoenix.
 ;
@@ -23,7 +23,7 @@
 
 ;   Usage Notes:
 ;
-;   This script has been designed to work with Inno Setup v6.0.4
+;   This script has been designed to work with Inno Setup v6.1.2
 ;   It is available as a quick start pack from here:
 ;     http://www.jrsoftware.org/isdl.php
 ;
@@ -123,6 +123,29 @@
 ;-------#ifdef iss_debug
 
 ;-------end of Innosetup script debug flags section
+
+; As per the innosetup documentation:
+;  "Change in default behavior: [Setup] section directive MinVersion now
+;  defaults to 6.1sp1, so by default Setup will not run on Windows Vista or
+;  on versions of Windows 7 and Windows Server 2008 R2 which have not been
+;  updated. Setting MinVersion to 6.0 to allow Setup to run on Windows Vista
+;  is supported but not recommended - Windows Vista doesn't support some of
+;  Setup's security measures against potential DLL preloading attacks so these
+;  have to be removed by the compiler if MinVersion is below 6.1 making your
+;  installer less secure on all versions of Windows."
+;
+; This change _may_ be a problem for W2K8 R2. In any case Windows Vista and
+; even Windows 7 are now deprecated and hopefully no production install of
+; W2K8 R2 is unpatched. If necessary we can define 'support_legacy_windows' to
+; roll back this new feature but users who need to deploy to what are now
+; ancient versions of windows are advised to manually install Firebird 4.0 with
+; the zip package.
+#ifdef support_legacy_windows
+#define MINVER "6.0"
+#else
+#define MINVER "6.1sp1"
+#endif
+
 
 ;-------Start of Innosetup script
 
