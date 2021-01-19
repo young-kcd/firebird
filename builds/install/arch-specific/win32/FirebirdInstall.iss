@@ -318,7 +318,7 @@ SetupLogging=yes
 [Languages]
 Name: en; MessagesFile: compiler:Default.isl; InfoBeforeFile: {#GenDir}\installation_readme.txt; InfoAfterFile: {#GenDir}\Readme.txt;
 #ifdef i18n
-Name: ba; MessagesFile: compiler:Languages\Bosnian.isl; InfoBeforeFile: {#GenDir}\ba\Instalacija_ProcitajMe.txt; InfoAfterFile: {#GenDir}\ba\ProcitajMe.txt;
+;Name: ba; MessagesFile: compiler:Languages\Bosnian.isl; InfoBeforeFile: {#GenDir}\ba\Instalacija_ProcitajMe.txt; InfoAfterFile: {#GenDir}\ba\ProcitajMe.txt;
 Name: cz; MessagesFile: compiler:Languages\Czech.isl; InfoBeforeFile: {#GenDir}\cz\instalace_ctime.txt; InfoAfterFile: {#GenDir}\cz\ctime.txt;
 Name: fr; MessagesFile: compiler:Languages\French.isl; InfoBeforeFile: {#GenDir}\fr\installation_lisezmoi.txt; InfoAfterFile: {#GenDir}\fr\lisezmoi.txt;
 ;Name: de; MessagesFile: compiler:Languages\German.isl; InfoBeforeFile: {#GenDir}\de\installation_liesmich.txt; InfoAfterFile: {#GenDir}\de\liesmich.txt;
@@ -350,7 +350,7 @@ Name: ru; MessagesFile: compiler:Languages\Russian.isl; InfoBeforeFile: {#GenDir
 [CustomMessages]
 #include "custom_messages.inc"
 #ifdef i18n
-#include "ba\custom_messages_ba.inc"
+;#include "ba\custom_messages_ba.inc"
 #include "cz\custom_messages_cz.inc"
 #include "fr\custom_messages_fr.inc"
 ;#include "de\custom_messages_de.inc"
@@ -457,7 +457,7 @@ Source: {#ScriptsDir}\firebirdsql.org.url; DestDir: {app}\doc; Components: Serve
 Source: {#GenDir}\readme.txt; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion;
 #ifdef i18n
 ;Translated files
-Source: {#GenDir}\ba\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ba;
+;Source: {#GenDir}\ba\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ba;
 Source: {#GenDir}\cz\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: cz;
 Source: {#GenDir}\fr\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: fr;
 ;Source: {#GenDir}\de\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: de;
