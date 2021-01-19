@@ -331,22 +331,6 @@ Name: ru; MessagesFile: compiler:Languages\Russian.isl; InfoBeforeFile: {#GenDir
 ;Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: {#GenDir}\si\instalacija_precitajMe.txt; InfoAfterFile: {#GenDir}\readme.txt;
 #endif
 
-[Messages]
-;en.BeveledLabel=English
-#ifdef i18n
-;ba.BeveledLabel=Bosanski
-;cz.BeveledLabel=Czech
-;fr.BeveledLabel=Français
-;de.BeveledLabel=Deutsch
-;es.BeveledLabel=Español
-;hu.BeveledLabel=Magyar
-;it.BeveledLabel=Italiano
-;pl.BeveledLabel=Polski
-;ru.BeveledLabel=
-;pt.BeveledLabel=Português
-;si.BeveledLabel=Slovenski
-#endif
-
 [CustomMessages]
 #include "custom_messages.inc"
 #ifdef i18n
