@@ -1076,9 +1076,6 @@ void DsqlSessionManagementRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch
 	ntrace_result_t* /*traceResult*/)
 {
 	node = Node::doDsqlPass(scratch, node);
-
-	// Don't trace pseudo-statements (without requests associated).
-	req_traced = false;
 }
 
 // Execute a dynamic SQL statement.
@@ -1087,7 +1084,9 @@ void DsqlSessionManagementRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	IMessageMetadata* outMetadata, UCHAR* outMsg,
 	bool singleton)
 {
+	TraceDSQLExecute trace(req_dbb->dbb_attachment, this);
 	node->execute(tdbb, this, traHandle);
+	trace.finish(false, ITracePlugin::RESULT_SUCCESS);
 }
 
 
