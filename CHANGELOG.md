@@ -1,3 +1,202 @@
+# v4.0 Release Candidate 1 (planned)
+
+## New features
+
+* [CORE-6300](http://tracker.firebirdsql.org/browse/CORE-6300): Ability to retrieve next attachment id and next statement id  
+  Reference(s): [/doc/README.monitoring_tables](https://github.com/FirebirdSQL/firebird/raw/master/doc/README.monitoring_tables), [/doc/sql.extensions/README.context_variables2](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.context_variables2)  
+  Contributor(s): Dmitry Yemanov
+
+* [CORE-5832](http://tracker.firebirdsql.org/browse/CORE-5832): Add command to reset user session environment to its initial (default) state  
+  Contributor(s): Vlad Khorsun
+
+* [CORE-3708](http://tracker.firebirdsql.org/browse/CORE-3708): Add virtual table RDB$CONFIG that shows actual configuration settings  
+  Contributor(s): Vlad Khorsun
+
+## Improvements
+
+* [CORE-6429](http://tracker.firebirdsql.org/browse/CORE-6429): Timezone offset in timestamp/time literal, CAST, SET TIME ZONE and AT TIME ZONE should follow SQL standard syntax only  
+  Reference(s): [/doc/sql.extensions/README.time_zone.md](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.time_zone.md)  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6413](http://tracker.firebirdsql.org/browse/CORE-6413): Remove PIDFile/-pidfile directive/option from firebird Super(Server/Classic) systemd unit  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6395](http://tracker.firebirdsql.org/browse/CORE-6395): Allow usage of time zone displacement in config DefaultTimeZone  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6366](http://tracker.firebirdsql.org/browse/CORE-6366): Check presence of tomcrypt & curses libraries before installing Firebird  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6342](http://tracker.firebirdsql.org/browse/CORE-6342): INT128 as explicit basic type for high precision numerics  
+  Reference(s): [/doc/sql.extensions/README.data_types](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.data_types)  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6320](http://tracker.firebirdsql.org/browse/CORE-6320): Replace Util methods to get interface pointer by legacy handle with plain functions  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6308](http://tracker.firebirdsql.org/browse/CORE-6308): Make it possible to update list of time zones (names and ids) without source code recompilation  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-5085](http://tracker.firebirdsql.org/browse/CORE-5085): Allow to fixup (nbackup) database via Services API  
+  Reference(s): [/doc/README.services_extension](https://github.com/FirebirdSQL/firebird/raw/master/doc/README.services_extension)  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-4841](http://tracker.firebirdsql.org/browse/CORE-4841): Report explicit message about missing password in CREATE (OR ALTER) USER  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-2650](http://tracker.firebirdsql.org/browse/CORE-2650): Improve sorting performance when long VARCHARs are involved  
+  Contributor(s): Dmitry Yemanov
+
+## Bugfixes
+
+* [CORE-6460](http://tracker.firebirdsql.org/browse/CORE-6460): Incorrect query result when using named window  
+  Contributor(s): Vlad Khorsun
+
+* [CORE-6453](http://tracker.firebirdsql.org/browse/CORE-6453): EXECUTE STATEMENT fails on FB 4.x if containing time/timestamp with time zone parameters  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6450](http://tracker.firebirdsql.org/browse/CORE-6450): Races in the security databases cache could lead to the server crash  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6447](http://tracker.firebirdsql.org/browse/CORE-6447): Unexpectedly different text of message for parameterized expression starting from second run  
+  Contributor(s): Vlad Khorsun
+
+* [CORE-6441](http://tracker.firebirdsql.org/browse/CORE-6441): Srp plugin keeps connection after database has been removed for ~10 seconds  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6440](http://tracker.firebirdsql.org/browse/CORE-6440): Expression indexes containing COALESCE inside cannot be matched by the optimizer after migration from v2.5 to v3.0  
+  Contributor(s): Dmitry Yemanov
+
+* [CORE-6438](http://tracker.firebirdsql.org/browse/CORE-6438): ISQL: bad headers when text columns has >= 80 characters  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6437](http://tracker.firebirdsql.org/browse/CORE-6437): GFIX cannot set big value for page buffers  
+  Contributor(s): Vlad Khorsun
+
+* [CORE-6433](http://tracker.firebirdsql.org/browse/CORE-6433): Server could crash during a daily maintenance / set statistics index  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6432](http://tracker.firebirdsql.org/browse/CORE-6432): Possible buffer overflow in client library in Attachment::getInfo() call  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6427](http://tracker.firebirdsql.org/browse/CORE-6427): Whitespace as date separator causes conversion error  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6426](http://tracker.firebirdsql.org/browse/CORE-6426): Assertion when the batch is executed without a BLOB field  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6425](http://tracker.firebirdsql.org/browse/CORE-6425): Exception in client library in IAttachment::createBatch()  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6421](http://tracker.firebirdsql.org/browse/CORE-6421): Parameter in offset expression in LAG, LEAD, NTH_VALUE window functions requires explicit cast to BIGINT or INTEGER  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6419](http://tracker.firebirdsql.org/browse/CORE-6419): Truncation of strings to put in MON$ tables do not work correctly  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6415](http://tracker.firebirdsql.org/browse/CORE-6415): Error "malformed string' is raised instead of "expected: N, actual: M" when UTF-8 charset is used and default value is longer than the column length  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6414](http://tracker.firebirdsql.org/browse/CORE-6414): Error "expected length N, actual M" contains wrong value of M when UTF-8 charset is used in the field declaration  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6412](http://tracker.firebirdsql.org/browse/CORE-6412): Firebird was freezing when trying to manage users via triggers  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6408](http://tracker.firebirdsql.org/browse/CORE-6408): RETURNING clause in the MERGE statement cannot reference column in aliased target table using qualified reference (alias.column) if DELETE action present  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6403](http://tracker.firebirdsql.org/browse/CORE-6403): Some PSQL statements may lead to exceptions report wrong line/column  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6398](http://tracker.firebirdsql.org/browse/CORE-6398): Error converting string with hex representation of INTEGER to SMALLINT  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6397](http://tracker.firebirdsql.org/browse/CORE-6397):  Message length error with COALESCE and TIME/TIMESTAMP WITHOUT TIME ZONE and WITH TIME ZONE  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6389](http://tracker.firebirdsql.org/browse/CORE-6389): Using binary string literal to assign to user-defined blob sub-types yield conversion error  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6387](http://tracker.firebirdsql.org/browse/CORE-6387): Client process was aborting due to bugs inside the ChaCha plugin
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6386](http://tracker.firebirdsql.org/browse/CORE-6386): ALTER SEQUENCE RESTART WITH <n> should not change the initial sequence START value  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6385](http://tracker.firebirdsql.org/browse/CORE-6385): Wrong line and column information after IF statement  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6379](http://tracker.firebirdsql.org/browse/CORE-6379): Bugcheck 179 (decompression overran buffer)  
+  Contributor(s): Vlad Khorsun
+
+* [CORE-6377](http://tracker.firebirdsql.org/browse/CORE-6377): Unable to restore database with tables using GENERATED ALWAYS AS IDENTITY columns  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6376](http://tracker.firebirdsql.org/browse/CORE-6376): IDENTITY column with explicit START WITH or INCREMENT BY starts with wrong value  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6357](http://tracker.firebirdsql.org/browse/CORE-6357): LEAD() and LAG() do not allow to specify 3rd argument of INT128 datatype  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6356](http://tracker.firebirdsql.org/browse/CORE-6356): ROUND() does not allow second argument >=1 when its first argument is more than MAX_BIGINT / 10  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6355](http://tracker.firebirdsql.org/browse/CORE-6355): TRUNC() does not accept second argument = -128 (but shows it as required boundary in error message)  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6353](http://tracker.firebirdsql.org/browse/CORE-6353): INT128 data type has problems with some PSQL objects  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6344](http://tracker.firebirdsql.org/browse/CORE-6344): Invalid return type for functions with INT128 / Numeric(38) argument  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6337](http://tracker.firebirdsql.org/browse/CORE-6337): Sub-type information is lost when calculating arithmetic expressions  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6336](http://tracker.firebirdsql.org/browse/CORE-6336): Error "Implementation of text subtype <NNNN> not located" on attempt to use some collations defined in fbintl.conf  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6335](http://tracker.firebirdsql.org/browse/CORE-6335): INSERT ... RETURNING does not require a SELECT privilege  
+  Contributor(s): Dmitry Yemanov
+
+* [CORE-6328](http://tracker.firebirdsql.org/browse/CORE-6328): FB4 Beta 2 may still be using the current date for TIME WITH TIME ZONE and extended wire protocol  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6325](http://tracker.firebirdsql.org/browse/CORE-6325): NTILE/RANK/PERCENT_RANK may cause problems in big/complex statements  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6318](http://tracker.firebirdsql.org/browse/CORE-6318): CAST('NOW' as TIME) raises a conversion error  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6316](http://tracker.firebirdsql.org/browse/CORE-6316): Unable to specify new 32KB page size in CREATE DATABASE statement  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6305](http://tracker.firebirdsql.org/browse/CORE-6305): Android port build failure  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6303](http://tracker.firebirdsql.org/browse/CORE-6303): Error writing to TIMESTAMP/TIME WITH TIME ZONE array  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6302](http://tracker.firebirdsql.org/browse/CORE-6302): Error writing an array of NUMERIC(24,6) to the database  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-6084](http://tracker.firebirdsql.org/browse/CORE-6084): CREATE SEQUENCE START WITH has wrong initial value  
+  Contributor(s): Adriano dos Santos Fernandes
+
+* [CORE-6023](http://tracker.firebirdsql.org/browse/CORE-6023): FB4 is unable to overwrite older ODS database  
+  Contributor(s): Alex Peshkoff
+
+* [CORE-5838](http://tracker.firebirdsql.org/browse/CORE-5838): Rotated trace files are locked by the engine  
+  Contributor(s): Vlad Khorsun
+
+* [CORE-4985](http://tracker.firebirdsql.org/browse/CORE-4985): A non-privileged user could implicitly count records in a restricted table  
+  Contributor(s): Dmitry Yemanov
+
+* [CORE-2274](http://tracker.firebirdsql.org/browse/CORE-2274): MERGE has a non-standard behaviour, accepts multiple matches  
+  Contributor(s): Vlad Khorsun
+
+
 # v4.0 Beta 2 (14-May-2020)
 
 ## New features
