@@ -2104,14 +2104,19 @@ void Statement::preprocess(const string& sql, string& ret)
 				// hvlad: TODO check quoted param names
 				ident.assign(start + 1, p - start - 1);
 				if (tok == ttIdent)
+				{
+					if (ident.length() > MAX_SQL_IDENTIFIER_LEN)
+						ERR_post(Arg::Gds(isc_eds_preprocess) <<
+								 Arg::Gds(isc_dyn_name_longer) <<
+								 Arg::Gds(isc_random) << Arg::Str(ident));
+
 					ident.upper();
+				}
 
 				FB_SIZE_T n = 0;
-				if (!m_sqlParamNames.find(ident.c_str(), n))
-				{
-					MetaString* pName = FB_NEW_POOL(getPool()) MetaString(getPool(), ident);
-					n = m_sqlParamNames.add(*pName);
-				}
+				MetaString name(ident);
+				if (!m_sqlParamNames.find(name, n))
+					n = m_sqlParamNames.add(name);
 
 				m_sqlParamsMap.add(&m_sqlParamNames[n]);
 			}
