@@ -527,7 +527,7 @@ RELATION(nam_mon_attachments, rel_mon_attachments, ODS_11_1, rel_virtual)
 	FIELD(f_mon_att_stmt_timeout, nam_stmt_timeout, fld_stmt_timeout, 0, ODS_13_0)
 	FIELD(f_mon_att_wire_compressed, nam_wire_compressed, fld_bool, 0, ODS_13_0)
 	FIELD(f_mon_att_wire_encrypted, nam_wire_encrypted, fld_bool, 0, ODS_13_0)
-	FIELD(f_mon_att_remote_crypt, nam_wire_crypt_plugin, fld_remote_crypt, 0, ODS_12_0)
+	FIELD(f_mon_att_remote_crypt, nam_wire_crypt_plugin, fld_remote_crypt, 0, ODS_13_0)
 END_RELATION
 
 // Relation 35 (MON$TRANSACTIONS)
