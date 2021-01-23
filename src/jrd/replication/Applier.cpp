@@ -80,20 +80,21 @@ namespace
 		{ rel_db_creators, { f_crt_user, f_crt_u_type, UNDEF, UNDEF, UNDEF, UNDEF, UNDEF, UNDEF } }
 	};
 
-	class BlockReader
+	class BlockReader : public AutoStorage
 	{
 	public:
 		BlockReader(ULONG length, const UCHAR* data)
 			: m_header((Block*) data),
 			  m_data(data + sizeof(Block)),
-			  m_metadata(m_data + m_header->metaOffset)
+			  m_end(data + length),
+			  m_atoms(getPool())
 		{
-			fb_assert(m_data + m_header->length == data + length);
+			fb_assert(m_data + m_header->length == m_end);
 		}
 
 		bool isEof() const
 		{
-			return (m_data >= m_metadata);
+			return (m_data >= m_end);
 		}
 
 		UCHAR getTag()
@@ -132,9 +133,8 @@ namespace
 
 		const MetaString& getMetaName()
 		{
-			const auto offset = getInt32() * sizeof(MetaString);
-			const auto metaPtr = (const MetaString*) (m_metadata + offset);
-			return *metaPtr;
+			const auto pos = getInt32();
+			return m_atoms[pos];
 		}
 
 		string getString()
@@ -162,10 +162,19 @@ namespace
 			return m_header->protocol;
 		}
 
+		void defineAtom()
+		{
+			const auto length = getByte();
+			const auto ptr = getBinary(length);
+			const MetaString name((const char*) ptr, length);
+			m_atoms.add(name);
+		}
+
 	private:
 		const Block* const m_header;
 		const UCHAR* m_data;
-		const UCHAR* const m_metadata;
+		const UCHAR* const m_end;
+		HalfStaticArray<MetaString, 64> m_atoms;
 	};
 
 	class LocalThreadContext
@@ -345,6 +354,10 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 				const auto value = reader.getInt64();
 				setSequence(tdbb, genName, value);
 			}
+			break;
+
+		case opDefineAtom:
+			reader.defineAtom();
 			break;
 
 		default:

@@ -50,23 +50,12 @@ void Replicator::flush(BatchBlock& block, FlushReason reason, ULONG flags)
 {
 	const auto traNumber = block.header.traNumber;
 
-	const auto dataLength = (ULONG) (block.buffer->getCount() - sizeof(Block));
-	fb_assert(dataLength);
-	const auto metaLength = (ULONG) (block.metadata.getCount() * sizeof(MetaString));
+	const auto length = (ULONG) (block.buffer->getCount() - sizeof(Block));
+	fb_assert(length);
 
 	block.header.protocol = PROTOCOL_CURRENT_VERSION;
 	block.header.flags |= flags;
-	block.header.length = dataLength + metaLength;
-	block.header.metaOffset = dataLength;
-	block.header.timestamp = TimeZoneUtil::getCurrentGmtTimeStamp().utc_timestamp;
-
-	// Add metadata (if any) to the buffer
-
-	if (metaLength)
-	{
-		block.buffer->resize(dataLength + metaLength + sizeof(Block));
-		memcpy(block.buffer->begin() + dataLength + sizeof(Block), block.metadata.begin(), metaLength);
-	}
+	block.header.length = length;
 
 	// Re-write the updated header
 
@@ -80,8 +69,8 @@ void Replicator::flush(BatchBlock& block, FlushReason reason, ULONG flags)
 	memset(&block.header, 0, sizeof(Block));
 	block.header.traNumber = traNumber;
 
-	block.metadata.clear();
-	block.lastMetaId = MAX_ULONG;
+	block.atoms.clear();
+	block.lastAtom = MAX_ULONG;
 	block.buffer = m_manager->getBuffer();
 	block.flushes++;
 }
@@ -105,7 +94,7 @@ void Replicator::storeBlob(Transaction* transaction, ISC_QUAD blobId)
 	while (blob.getSegment(bufferLength, data, segmentLength))
 	{
 		if (!segmentLength)
-			continue; // Zero-length segments are unusual but ok.
+			continue; // Zero-length segments are unusual but OK
 
 		if (newOp)
 		{
@@ -226,8 +215,10 @@ void Replicator::commitTransaction(CheckStatusWrapper* status, Transaction* tran
 		{
 			fb_assert(generator.name.hasData());
 
+			const auto atom = txnData.defineAtom(generator.name);
+
 			txnData.putTag(opSetSequence);
-			txnData.putMetaName(generator.name.c_str());
+			txnData.putInt32(atom);
 			txnData.putInt64(generator.value);
 		}
 
@@ -348,8 +339,10 @@ void Replicator::insertRecord(CheckStatusWrapper* status,
 
 		auto& txnData = transaction->getData();
 
+		const auto atom = txnData.defineAtom(relName);
+
 		txnData.putTag(opInsertRecord);
-		txnData.putMetaName(relName);
+		txnData.putInt32(atom);
 		txnData.putInt32(length);
 		txnData.putBinary(length, data);
 
@@ -396,8 +389,10 @@ void Replicator::updateRecord(CheckStatusWrapper* status,
 
 		auto& txnData = transaction->getData();
 
+		const auto atom = txnData.defineAtom(relName);
+
 		txnData.putTag(opUpdateRecord);
-		txnData.putMetaName(relName);
+		txnData.putInt32(atom);
 		txnData.putInt32(orgLength);
 		txnData.putBinary(orgLength, orgData);
 		txnData.putInt32(newLength);
@@ -426,8 +421,10 @@ void Replicator::deleteRecord(CheckStatusWrapper* status,
 
 		auto& txnData = transaction->getData();
 
+		const auto atom = txnData.defineAtom(relName);
+
 		txnData.putTag(opDeleteRecord);
-		txnData.putMetaName(relName);
+		txnData.putInt32(atom);
 		txnData.putInt32(length);
 		txnData.putBinary(length, data);
 
@@ -451,8 +448,10 @@ void Replicator::executeSqlIntl(CheckStatusWrapper* status,
 
 		auto& txnData = transaction->getData();
 
+		const auto atom = txnData.defineAtom(m_user);
+
 		txnData.putTag(opExecuteSqlIntl);
-		txnData.putMetaName(m_user);
+		txnData.putInt32(atom);
 		txnData.putByte(charset);
 		txnData.putString(sql);
 
