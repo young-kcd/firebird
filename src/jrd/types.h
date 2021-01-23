@@ -202,3 +202,7 @@ TYPE("NOT ENCRYPTED", 0, nam_mon_crypt_state)
 TYPE("ENCRYPTED", 1, nam_mon_crypt_state)
 TYPE("DECRYPT IN PROGRESS", 2, nam_mon_crypt_state)
 TYPE("ENCRYPT IN PROGRESS", 3, nam_mon_crypt_state)
+
+TYPE("NONE", 0, nam_mon_repl_mode)
+TYPE("READ-ONLY", 1, nam_mon_repl_mode)
+TYPE("READ-WRITE", 2, nam_mon_repl_mode)

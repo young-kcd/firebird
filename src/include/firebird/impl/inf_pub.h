@@ -171,6 +171,8 @@ enum db_info_types
 	fb_info_db_guid = 144,
 	fb_info_db_file_id = 145,
 
+	fb_info_replica_mode = 146,
+
 	isc_info_db_last_value   /* Leave this LAST! */
 };
 
@@ -191,6 +193,13 @@ enum info_features // response to fb_info_features
 	fb_feature_statement_long_life  = 7,    // Prepared statements are not dropped on transaction end
 
 	fb_feature_max      // Not really a feature. Keep this last.
+};
+
+enum replica_mode // response to fb_info_replica_mode
+{
+	fb_info_replica_none = 0,
+	fb_info_replica_read_only = 1,
+	fb_info_replica_read_write = 2
 };
 
 #define isc_info_version isc_info_isc_version

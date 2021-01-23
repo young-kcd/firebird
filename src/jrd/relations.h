@@ -498,6 +498,7 @@ RELATION(nam_mon_database, rel_mon_database, ODS_11_1, rel_virtual)
 	FIELD(f_mon_db_file_id, nam_mon_file_id, fld_file_id, 0, ODS_13_0)
 	FIELD(f_mon_db_na, nam_mon_na, fld_att_id, 0, ODS_13_0)
 	FIELD(f_mon_db_ns, nam_mon_ns, fld_stmt_id, 0, ODS_13_0)
+	FIELD(f_mon_db_repl_mode, nam_mon_repl_mode, fld_repl_mode, 0, ODS_13_0)
 END_RELATION
 
 // Relation 34 (MON$ATTACHMENTS)

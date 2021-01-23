@@ -931,6 +931,8 @@ void Monitoring::putDatabase(thread_db* tdbb, SnapshotData::DumpRecord& record)
 	record.storeString(f_mon_db_guid, string(guidBuffer));
 	record.storeString(f_mon_db_file_id, dbb->getUniqueFileId());
 
+	record.storeInteger(f_mon_db_repl_mode, dbb->dbb_replica_mode);
+
 	// statistics
 	const int stat_id = fb_utils::genUniqueId();
 	record.storeGlobalId(f_mon_db_stat_id, getGlobalId(stat_id));

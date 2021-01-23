@@ -360,6 +360,7 @@ const char
 	REPLICATION_SEQ_NAME[] = "REPLICATION_SEQUENCE",
 	DATABASE_GUID[] = "DB_GUID",
 	DATABASE_FILE_ID[] = "DB_FILE_ID",
+	REPLICA_MODE[] = "REPLICA_MODE",
 	// SYSTEM namespace: connection wise items
 	SESSION_ID_NAME[] = "SESSION_ID",
 	NETWORK_PROTOCOL_NAME[] = "NETWORK_PROTOCOL",
@@ -389,6 +390,11 @@ const char
 	NEW_OBJECT_NAME[] = "NEW_OBJECT_NAME",
 	OBJECT_TYPE_NAME[] = "OBJECT_TYPE",
 	SQL_TEXT_NAME[] = "SQL_TEXT";
+
+// Replica modes
+const char
+	RO_VALUE[] = "READ-ONLY",
+	RW_VALUE[] = "READ-WRITE";
 
 // Isolation values modes
 const char
@@ -4178,6 +4184,13 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 		else if (nameStr == DATABASE_FILE_ID)
 		{
 			resultStr = dbb->getUniqueFileId();
+		}
+		else if (nameStr == REPLICA_MODE)
+		{
+			if (dbb->dbb_replica_mode == REPLICA_READ_ONLY)
+				resultStr = RO_VALUE;
+			else if (dbb->dbb_replica_mode == REPLICA_READ_WRITE)
+				resultStr = RW_VALUE;
 		}
 		else if (nameStr == SESSION_ID_NAME)
 			resultStr.printf("%" SQUADFORMAT, PAG_attachment_id(tdbb));

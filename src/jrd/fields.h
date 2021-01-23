@@ -218,3 +218,5 @@
 	FIELD(fld_cfg_name		, nam_cfg_name		, dtype_varying	, MAX_CONFIG_NAME_LEN		, dsc_text_type_ascii		, NULL		, false)
 	FIELD(fld_cfg_value		, nam_cfg_value		, dtype_varying	, 255 * METADATA_BYTES_PER_CHAR, dsc_text_type_metadata	, NULL		, true)
 	FIELD(fld_cfg_is_set	, nam_cfg_is_set	, dtype_boolean	, 1							, 0							, NULL		, false)
+
+	FIELD(fld_repl_mode		, nam_repl_mode		, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)

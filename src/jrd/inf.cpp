@@ -903,6 +903,12 @@ void INF_database_info(thread_db* tdbb,
 			}
 			continue;
 
+		case fb_info_replica_mode:
+			// fb_info_replica_* reply items are equal to the ReplicaMode enumeration
+			*p++ = (UCHAR) dbb->dbb_replica_mode;
+			length = p - buffer;
+			break;
+
 		default:
 			buffer[0] = item;
 			item = isc_info_error;
