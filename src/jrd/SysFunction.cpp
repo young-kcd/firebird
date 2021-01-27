@@ -76,6 +76,13 @@ using namespace Jrd;
 
 namespace {
 
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#pragma message("Ensure the 'hh' size modifier is supported")
+#endif
+
+const char* const BYTE_GUID_FORMAT =
+	"%02hhX%02hhX%02hhX%02hhX-%02hhX%02hhX-%02hhX%02hhX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX";
+
 // function types handled in generic functions
 enum Function
 {
@@ -2346,13 +2353,9 @@ dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const NestValue
 		}
 	}
 
-#if defined(_MSC_VER) && _MSC_VER < 1900
-#pragma message("Support of hh size modifier is not sure")
-#endif
-
 	UCHAR bytes[16];
 	sscanf(reinterpret_cast<const char*>(data),
-		"%02hhX%02hhX%02hhX%02hhX-%02hhX%02hhX-%02hhX%02hhX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX",
+		BYTE_GUID_FORMAT,
 		&bytes[0], &bytes[1], &bytes[2], &bytes[3],
 		&bytes[4], &bytes[5], &bytes[6], &bytes[7],
 		&bytes[8], &bytes[9], &bytes[10], &bytes[11],
@@ -4110,8 +4113,8 @@ dsc* evlGenUuid(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 
 	GenerateGuid(&guid);
 
-	// Convert platform-depended UUID into platform-independent form
-	// according to RFC 4122
+	// Convert platform-dependent UUID into platform-independent form according to RFC 4122
+
 	UCHAR data[16];
 	data[0] = (guid.Data1 >> 24) & 0xFF;
 	data[1] = (guid.Data1 >> 16) & 0xFF;
@@ -6274,7 +6277,7 @@ dsc* evlUuidToChar(thread_db* tdbb, const SysFunction* function, const NestValue
 
 	UCHAR buffer[GUID_BUFF_SIZE];
 	sprintf(reinterpret_cast<char*>(buffer),
-		"%02hhX%02hhX%02hhX%02hhX-%02hhX%02hhX-%02hhX%02hhX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX",
+		BYTE_GUID_FORMAT,
 		data[0], data[1], data[2], data[3], data[4],
 		data[5], data[6], data[7], data[8], data[9],
 		data[10], data[11], data[12], data[13], data[14],

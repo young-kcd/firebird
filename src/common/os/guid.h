@@ -37,7 +37,7 @@
 #else
 #include "fb_types.h"
 
-struct UUID	// Compatible with Win32 UUID struct layout.
+struct UUID	// Compatible with Win32 UUID struct layout
 {
 	ULONG Data1;
 	USHORT Data2;
@@ -53,15 +53,15 @@ typedef UUID Guid;
 const int GUID_BUFF_SIZE = 39;
 const int GUID_BODY_SIZE = 36;
 
-// Some versions of MSVC cannot recognize hh specifier but MSVC 2015 has it.
+// Some versions of MSVC cannot recognize hh specifier but MSVC 2015 has it
 const char* const GUID_FORMAT =
 	"{%08X-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX}";
 
 void GenerateRandomBytes(void* buffer, FB_SIZE_T size);
-// Generates platform-depended UUID compatible with RFC 4122
+// Generates platform-dependent UUID compatible with RFC 4122
 void GenerateGuid(Guid* guid);
 
-// These functions receive buffers of at least GUID_BUFF_SIZE length.
+// These functions receive buffers of at least GUID_BUFF_SIZE length
 
 inline void GuidToString(char* buffer, const Guid* guid)
 {
