@@ -2,10 +2,6 @@
 
 ## New features
 
-* [CORE-6300](http://tracker.firebirdsql.org/browse/CORE-6300): Ability to retrieve next attachment id and next statement id  
-  Reference(s): [/doc/README.monitoring_tables](https://github.com/FirebirdSQL/firebird/raw/master/doc/README.monitoring_tables), [/doc/sql.extensions/README.context_variables2](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.context_variables2)  
-  Contributor(s): Dmitry Yemanov
-
 * [CORE-5832](http://tracker.firebirdsql.org/browse/CORE-5832): Add command to reset user session environment to its initial (default) state  
   Contributor(s): Vlad Khorsun
 
@@ -13,6 +9,12 @@
   Contributor(s): Vlad Khorsun
 
 ## Improvements
+
+* [CORE-6474](http://tracker.firebirdsql.org/browse/CORE-6474): Report replica mode through isc_database_info, MON$DATABASE and SYSTEM context  
+  Contributor(s): Dmitry Yemanov
+
+* [CORE-6469](http://tracker.firebirdsql.org/browse/CORE-6469): Ability to trace session management commands (e.g. ALTER SESSION RESET)  
+  Contributor(s): Vlad Khorsun
 
 * [CORE-6429](http://tracker.firebirdsql.org/browse/CORE-6429): Timezone offset in timestamp/time literal, CAST, SET TIME ZONE and AT TIME ZONE should follow SQL standard syntax only  
   Reference(s): [/doc/sql.extensions/README.time_zone.md](https://github.com/FirebirdSQL/firebird/raw/master/doc/sql.extensions/README.time_zone.md)  
@@ -37,6 +39,10 @@
 * [CORE-6308](http://tracker.firebirdsql.org/browse/CORE-6308): Make it possible to update list of time zones (names and ids) without source code recompilation  
   Contributor(s): Adriano dos Santos Fernandes
 
+* [CORE-6300](http://tracker.firebirdsql.org/browse/CORE-6300): Ability to retrieve next attachment id and next statement id  
+  Reference(s): [/doc/README.monitoring_tables](https://github.com/FirebirdSQL/firebird/raw/master/doc/README.monitoring_tables)  
+  Contributor(s): Dmitry Yemanov
+
 * [CORE-5085](http://tracker.firebirdsql.org/browse/CORE-5085): Allow to fixup (nbackup) database via Services API  
   Reference(s): [/doc/README.services_extension](https://github.com/FirebirdSQL/firebird/raw/master/doc/README.services_extension)  
   Contributor(s): Alex Peshkoff
@@ -48,6 +54,12 @@
   Contributor(s): Dmitry Yemanov
 
 ## Bugfixes
+
+* [CORE-6475](http://tracker.firebirdsql.org/browse/CORE-6475): Memory leak when running EXECUTE STATEMENT with named parameters  
+  Contributor(s): Vlad Khorsun
+
+* [CORE-6472](http://tracker.firebirdsql.org/browse/CORE-6472): Wrong byte order for UUIDs in gstat and monitoring output  
+  Contributor(s): Dmitriy Sibiryakov
 
 * [CORE-6460](http://tracker.firebirdsql.org/browse/CORE-6460): Incorrect query result when using named window  
   Contributor(s): Vlad Khorsun
