@@ -39,7 +39,7 @@ public:
 
 	//static const unsigned MAP_LENGTH;		// CVC: Moved to dsql/Nodes.h as STREAM_MAP_LENGTH
 	static const unsigned MAX_CLONES = 1000;
-	static const unsigned MAX_REQUEST_SIZE = 10485760;	// 10 MB - just to be safe
+	static const unsigned MAX_REQUEST_SIZE = 50 * 1048576;	// 50 MB - just to be safe
 
 private:
 	JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb);
