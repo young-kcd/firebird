@@ -199,8 +199,8 @@ const HashAlgorithmDescriptor* getHashAlgorithmDesc(thread_db* tdbb, const SysFu
 
 
 // constants
-const int oneDay = 86400;
-const unsigned getContextLen = 255;
+const int ONE_DAY = 86400;
+const unsigned MAX_CTX_VAR_SIZE = MAX_VARY_COLUMN_SIZE;
 
 // auxiliary functions
 double fbcot(double value) throw();
@@ -1293,7 +1293,7 @@ void makeGetSetContext(DataTypeUtilBase* /*dataTypeUtil*/, const SysFunction* fu
 		result->makeLong(0);
 	else
 	{
-		result->makeVarying(getContextLen, ttype_none);
+		result->makeVarying(MAX_CTX_VAR_SIZE, ttype_none);
 		result->setNullable(true);
 	}
 }
@@ -2580,7 +2580,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			}
 
 			if (valueDsc->dsc_dtype == dtype_sql_date)
-				timestamp.value().timestamp_date += quantity / oneDay;
+				timestamp.value().timestamp_date += quantity / ONE_DAY;
 			else
 				NoThrowTimeStamp::add10msec(&timestamp.value(), quantity, ISC_TIME_SECONDS_PRECISION);
 			break;
@@ -2593,7 +2593,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			}
 
 			if (valueDsc->dsc_dtype == dtype_sql_date)
-				timestamp.value().timestamp_date += quantity / milliPow / (oneDay * 1000);
+				timestamp.value().timestamp_date += quantity / milliPow / (ONE_DAY * 1000);
 			else
 				NoThrowTimeStamp::add10msec(&timestamp.value(), quantity, ISC_TIME_SECONDS_PRECISION / 1000 / milliPow);
 			break;
@@ -3832,7 +3832,7 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 			break;
 
 		case blr_extract_second:
-			result = (SINT64) oneDay *
+			result = (SINT64) ONE_DAY *
 				(timestamp2.value().timestamp_date - timestamp1.value().timestamp_date);
 			result += ((SINT64) timestamp2.value().timestamp_time -
 				(SINT64) timestamp1.value().timestamp_time) /
@@ -3840,7 +3840,7 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 			break;
 
 		case blr_extract_millisecond:
-			result = (SINT64) oneDay *
+			result = (SINT64) ONE_DAY *
 				(timestamp2.value().timestamp_date - timestamp1.value().timestamp_date) * 1000;
 			result += ((SINT64) timestamp2.value().timestamp_time -
 				(SINT64) timestamp1.value().timestamp_time) /
@@ -4414,13 +4414,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 	}
 
 	dsc result;
-	unsigned l = resultStr.length();
-	if (l > getContextLen)
-	{
-		l = getContextLen;
-		ERR_post_warning(Arg::Warning(isc_truncate_warn) << Arg::Warning(isc_truncate_context));
-	}
-	result.makeText(l, resultType,
+	result.makeText(resultStr.length(), resultType,
 		(UCHAR*) const_cast<char*>(resultStr.c_str()));	// safe const_cast
 	EVL_make_value(tdbb, &result, impure);
 
@@ -4441,13 +4435,19 @@ dsc* evlSetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 	request->req_flags &= ~req_null;
 	const dsc* nameSpace = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// Complain if namespace is null
-		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_GET_CONTEXT));
+		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_SET_CONTEXT));
 
 	const dsc* name = EVL_expr(tdbb, request, args[1]);
 	if (request->req_flags & req_null)	// Complain if variable name is null
-		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_GET_CONTEXT));
+		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_SET_CONTEXT));
 
 	const dsc* value = EVL_expr(tdbb, request, args[2]);
+
+	if (value->getStringLength() > MAX_CTX_VAR_SIZE)
+	{
+		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_SET_CONTEXT) <<
+				 Arg::Gds(isc_arith_except) << Arg::Gds(isc_imp_exc));
+	}
 
 	const string nameSpaceStr(MOV_make_string2(tdbb, nameSpace, ttype_none));
 	const string nameStr(MOV_make_string2(tdbb, name, ttype_none));
