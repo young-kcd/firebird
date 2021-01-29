@@ -32,7 +32,7 @@ jobs:
         uses: peter-evans/create-pull-request@v3.5.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: Updata tzdata.
-          title: Updata tzdata.
+          commit-message: Update tzdata.
+          title: Update tzdata.
           assignees: asfernandes
           branch: work/tzdata-update
