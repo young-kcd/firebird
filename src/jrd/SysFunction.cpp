@@ -200,7 +200,7 @@ const HashAlgorithmDescriptor* getHashAlgorithmDesc(thread_db* tdbb, const SysFu
 
 // constants
 const int ONE_DAY = 86400;
-const unsigned MAX_CTX_VAR_SIZE = MAX_VARY_COLUMN_SIZE;
+const unsigned MAX_CTX_VAR_SIZE = 255;
 
 // auxiliary functions
 double fbcot(double value) throw();
@@ -4442,12 +4442,6 @@ dsc* evlSetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_SET_CONTEXT));
 
 	const dsc* value = EVL_expr(tdbb, request, args[2]);
-
-	if (value->getStringLength() > MAX_CTX_VAR_SIZE)
-	{
-		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_SET_CONTEXT) <<
-				 Arg::Gds(isc_arith_except) << Arg::Gds(isc_imp_exc));
-	}
 
 	const string nameSpaceStr(MOV_make_string2(tdbb, nameSpace, ttype_none));
 	const string nameStr(MOV_make_string2(tdbb, name, ttype_none));
