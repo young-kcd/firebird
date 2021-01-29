@@ -788,7 +788,7 @@ void setParamsGetSetContext(DataTypeUtilBase*, const SysFunction*, int argsCount
 
 	if (argsCount >= 3 && args[2]->isUnknown())
 	{
-		args[2]->makeVarying(255, ttype_none);
+		args[2]->makeVarying(MAX_CTX_VAR_SIZE, ttype_none);
 		args[2]->setNullable(true);
 	}
 }
