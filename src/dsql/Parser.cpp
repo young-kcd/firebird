@@ -1161,7 +1161,7 @@ void Parser::yyerror_detailed(const TEXT* /*error_string*/, int yychar, YYSTYPE&
 		ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Token unknown - line %d, column %d
 				  Arg::Gds(isc_dsql_token_unk_err) << Arg::Num(posn.firstLine) <<
-				  									  Arg::Num(posn.firstColumn) << // CVC: +1
+				  									  Arg::Num(posn.firstColumn) <<
 				  // Show the token
 				  Arg::Gds(isc_random) << Arg::Str(string(posn.firstPos, posn.lastPos - posn.firstPos)));
 	}
