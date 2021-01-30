@@ -51,6 +51,8 @@ private:
 		ULONG lastColumn;
 		const char* firstPos;
 		const char* lastPos;
+		const char* leadingFirstPos;
+		const char* trailingLastPos;
 	};
 
 	typedef Position YYPOSN;
@@ -81,6 +83,7 @@ private:
 
 		// Actual lexer state begins from here
 
+		const TEXT* leadingPtr;
 		const TEXT* ptr;
 		const TEXT* end;
 		const TEXT* last_token;
@@ -188,8 +191,10 @@ public:
 private:
 	template <typename T> T* setupNode(Node* node)
 	{
-		node->line = yyposn.firstLine;
-		node->column = yyposn.firstColumn;
+		// Get line/column from YYPOSNARG(1)
+		const int posnArg = 1;
+		node->line = ((yyps->psp)[1 - yym + posnArg - 1]).firstLine;
+		node->column = ((yyps->psp)[1 - yym + posnArg - 1]).firstColumn;
 		return static_cast<T*>(node);
 	}
 
@@ -228,7 +233,7 @@ private:
 
 	void yyerror(const TEXT* error_string);
 	void yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YYPOSN&);
-	void yyerrorIncompleteCmd();
+	void yyerrorIncompleteCmd(const YYPOSN& pos);
 
 	void check_bound(const char* const to, const char* const string);
 	void check_copy_incr(char*& to, const char ch, const char* const string);
@@ -360,6 +365,7 @@ private:
 	Position yyretposn;
 
 	int yynerrs;
+	int yym;	// ASF: moved from local variable of Parser::parseAux()
 
 	// Current parser state
 	yyparsestate* yyps;

@@ -866,7 +866,7 @@ grant0($node)
 	***/
 	| ddl_privileges(NOTRIAL(&$node->privileges)) object
 			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
-		{ 
+		{
 			$node->object = $2;
 			$node->grantAdminOption = $5;
 			$node->grantor = $6;
@@ -900,11 +900,11 @@ object
 		{ $$ = newNode<GranteeClause>(obj_functions, get_object_name(obj_functions)); }
 	| PACKAGE
 		{ $$ = newNode<GranteeClause>(obj_packages, get_object_name(obj_packages)); }
-	| GENERATOR 
+	| GENERATOR
 		{ $$ = newNode<GranteeClause>(obj_generators, get_object_name(obj_generators)); }
-	| SEQUENCE 
+	| SEQUENCE
 		{ $$ = newNode<GranteeClause>(obj_generators, get_object_name(obj_generators)); }
-	| KW_DOMAIN 
+	| KW_DOMAIN
 		{ $$ = newNode<GranteeClause>(obj_domains, get_object_name(obj_domains)); }
 	| EXCEPTION
 		{ $$ = newNode<GranteeClause>(obj_exceptions, get_object_name(obj_exceptions)); }
@@ -917,7 +917,7 @@ object
 	| FILTER
 		{ $$ = newNode<GranteeClause>(obj_filters, get_object_name(obj_filters)); }
 	;
-	
+
 table_noise
 	: // nothing
 	| TABLE
@@ -1670,7 +1670,7 @@ alter_sequence_clause
 	: symbol_generator_name restart_value_opt2 step_option
 		{
 			if (!$2.specified && !$3.specified)
-				yyerrorIncompleteCmd();
+				yyerrorIncompleteCmd(YYPOSNARG(3));
 			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1, $2.value, $3);
 			node->create = false;
 			node->alter = true;
