@@ -179,6 +179,17 @@ void Parser::yyFreeState(Parser::yyparsestate* p)
 }
 
 
+void Parser::setNodeLineColumn(Node* node)
+{
+	// Check if we are not accessing the position stack below its base.
+	if (&YYPOSNARG(1) >= yyps->ps)
+	{
+		node->line = YYPOSNARG(1).firstLine;
+		node->column = YYPOSNARG(1).firstColumn;
+	}
+}
+
+
 int Parser::parseAux()
 {
   // ASF: yym moved to Parser.h

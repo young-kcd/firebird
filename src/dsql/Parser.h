@@ -191,10 +191,7 @@ public:
 private:
 	template <typename T> T* setupNode(Node* node)
 	{
-		// Get line/column from YYPOSNARG(1)
-		const int posnArg = 1;
-		node->line = ((yyps->psp)[1 - yym + posnArg - 1]).firstLine;
-		node->column = ((yyps->psp)[1 - yym + posnArg - 1]).firstColumn;
+		setNodeLineColumn(node);
 		return static_cast<T*>(node);
 	}
 
@@ -338,6 +335,8 @@ private:
 
 	void yyMoreStack(yyparsestate* yyps);
 	yyparsestate* yyNewState(int size);
+
+	void setNodeLineColumn(Node* node);
 
 private:
 	int parseAux();
