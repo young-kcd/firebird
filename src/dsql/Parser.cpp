@@ -254,8 +254,8 @@ void Parser::yyReducePosn(YYPOSN& ret, YYPOSN* termPosns, YYSTYPE* /*termVals*/,
 		// Accessing termPosns[-1] seems to be the only way to get correct positions in this case.
 		ret.firstLine = ret.lastLine = termPosns[termNo - 1].lastLine;
 		ret.firstColumn = ret.lastColumn = termPosns[termNo - 1].lastColumn;
-		ret.firstPos = ret.lastPos = termPosns[termNo - 1].lastPos;
-		ret.leadingFirstPos = ret.trailingLastPos = termPosns[termNo - 1].trailingLastPos;
+		ret.firstPos = ret.lastPos = ret.trailingLastPos = termPosns[termNo - 1].trailingLastPos;
+		ret.leadingFirstPos = termPosns[termNo - 1].lastPos;
 	}
 	else
 	{
