@@ -266,11 +266,13 @@ if "%VSCMD_ARG_TGT_ARCH%"=="x86" (
 
 
 :: Various upgrade scripts and docs
-mkdir %FB_OUTPUT_DIR%\misc\upgrade\security 2>nul
-@copy %FB_ROOT_PATH%\src\misc\upgrade\v3.0\security_* %FB_OUTPUT_DIR%\misc\upgrade\security > nul
-@if %ERRORLEVEL% GEQ 1 (
-  call :ERROR copy %FB_ROOT_PATH%\src\misc\upgrade\v3.0\security_* %FB_OUTPUT_DIR%\misc\upgrade\security failed with error %ERRORLEVEL%.
-  goto :EOF
+for %%d in ( v3.0 v4.0 ) do (
+    mkdir %FB_OUTPUT_DIR%\misc\upgrade\%%d 2>nul
+    @copy %FB_ROOT_PATH%\src\misc\upgrade\%%d\*.* %FB_OUTPUT_DIR%\misc\upgrade\%%d > nul
+    @if %ERRORLEVEL% GEQ 1 (
+        call :ERROR copy %FB_ROOT_PATH%\src\misc\upgrade\%%d\*.* %FB_OUTPUT_DIR%\misc\upgrade\%%d failed with error %ERRORLEVEL%.
+        goto :EOF
+    )
 )
 
 :: INTL script
