@@ -548,8 +548,7 @@ Source: {#FilesDir}\plugins\*.dll; DestDir: {app}\plugins; Components: ServerCom
 Source: {#FilesDir}\plugins\*.conf; DestDir: {app}\plugins; Components: ServerComponent; Flags: ignoreversion;
 Source: {#FilesDir}\plugins\udr\*.*; DestDir: {app}\plugins\udr; Components: ServerComponent; Flags: ignoreversion;
 
-Source: {#FilesDir}\misc\*.*; DestDir: {app}\misc; Components: ServerComponent; Flags: ignoreversion;
-Source: {#FilesDir}\misc\upgrade\security\*.*; DestDir: {app}\misc\upgrade\security; Components: ServerComponent; Flags: ignoreversion;
+Source: {#FilesDir}\misc\*.*; DestDir: {app}\misc; Components: ServerComponent; Flags: ignoreversion createallsubdirs recursesubdirs ;
 
 Source: {#FilesDir}\tzdata\*.*; DestDir: {app}\tzdata; Components: ClientComponent; Flags: ignoreversion;
 
