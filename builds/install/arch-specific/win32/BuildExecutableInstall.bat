@@ -303,11 +303,28 @@ for %%d in ( v3.0 v4.0 ) do (
 :: an error if FB_EXTERNAL_DOCS is not defined. On the other hand,
 :: if the docs are available then we can include them.
 if defined FB_EXTERNAL_DOCS (
-@echo   Copying pdf docs...
-@for %%v in ( Firebird-%FB_MAJOR_VER%.%FB_MINOR_VER%-QuickStart.pdf Firebird_v%FB_MAJOR_VER%.%FB_MINOR_VER%.%FB_REV_NO%.ReleaseNotes.pdf ) do (
-  @echo     ... %%v
-  (@copy /Y %FB_EXTERNAL_DOCS%\%%v %FB_OUTPUT_DIR%\doc\%%v > nul) || (call :WARNING Copying %FB_EXTERNAL_DOCS%\%%v failed.)
-)
+    @echo   Copying pdf docs...
+    @for %%v in ( Firebird_v%FB_MAJOR_VER%.%FB_MINOR_VER%.%FB_REV_NO%.ReleaseNotes.pdf ) do (
+        @echo     ... %%v
+        @copy /Y %FB_EXTERNAL_DOCS%\%%v %FB_OUTPUT_DIR%\doc\%%v > nul
+        if %ERRORLEVEL% GEQ 1 (call :ERROR Copying %FB_EXTERNAL_DOCS%\%%v failed.)
+    )
+
+    @for %%v in ( Firebird-%FB_MAJOR_VER%.%FB_MINOR_VER%-QuickStart.pdf  ) do (
+        @echo     ... %%v
+        @copy /Y %FB_EXTERNAL_DOCS%\%%v %FB_OUTPUT_DIR%\doc\%%v > nul
+        if %ERRORLEVEL% GEQ 1 (
+            REM - As of RC1 there is no quick start guide so we do not want
+            REM   the packaging to fail for something that doesn't exist
+            if "%FBBUILD_FILENAME_SUFFIX%" == "_RC1" (
+                echo Copying %FB_EXTERNAL_DOCS%\%%v failed.
+            ) else (
+                call :ERROR Copying %FB_EXTERNAL_DOCS%\%%v failed.
+            )
+        )
+    )
+
+
 @echo   Finished copying pdf docs...
 @echo.
 )
@@ -744,6 +761,6 @@ if %FBBUILD_ISX_PACK% EQU 1 (
 
 :END
 
-exit /b
+exit /b %ERRLEV%
 
 
