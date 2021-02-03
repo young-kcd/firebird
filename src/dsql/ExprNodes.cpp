@@ -6570,7 +6570,8 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	jrd_rel* relation = tail->csb_relation;
 	jrd_fld* field;
 
-	if (!relation || !(field = MET_get_field(relation, fieldId)))
+	if (!relation || !(field = MET_get_field(relation, fieldId)) ||
+		(field->fld_flags & FLD_parse_computed))
 	{
 		if (relation && (relation->rel_flags & REL_being_scanned))
 			csb->csb_g_flags |= csb_reload;

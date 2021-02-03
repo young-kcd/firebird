@@ -4072,6 +4072,8 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 
 			case RSR_computed_blr:
 				{
+					AutoSetRestoreFlag<USHORT> flag(&field->fld_flags, FLD_parse_computed, true);
+
 					DmlNode* nod = dependencies ?
 						MET_get_dependencies(tdbb, relation, p, length, csb, NULL, NULL, NULL,
 							field->fld_name, obj_computed, 0, depTrans) :
