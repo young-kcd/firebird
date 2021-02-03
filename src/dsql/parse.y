@@ -1799,7 +1799,7 @@ replace_sequence_clause
 		{
 			// Remove this to implement CORE-5137
 			if (!$2->restartSpecified && !$2->step.specified)
-				yyerrorIncompleteCmd();
+				yyerrorIncompleteCmd(YYPOSNARG(3));
 			$$ = $2;
 		}
 	;
@@ -1832,7 +1832,7 @@ alter_sequence_clause
 	  alter_sequence_options($2)
 		{
 			if (!$2->restartSpecified && !$2->value.specified && !$2->step.specified)
-				yyerrorIncompleteCmd();
+				yyerrorIncompleteCmd(YYPOSNARG(3));
 			$$ = $2;
 		}
 

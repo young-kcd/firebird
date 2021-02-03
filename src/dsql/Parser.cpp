@@ -123,7 +123,7 @@ Parser::Parser(thread_db* tdbb, MemoryPool& pool, DsqlCompilerScratch* aScratch,
 	yylexemes = 0;
 
 	lex.start = string;
-	lex.line_start = lex.last_token = lex.ptr = string;
+	lex.line_start = lex.last_token = lex.ptr = lex.leadingPtr = string;
 	lex.end = string + length;
 	lex.lines = 1;
 	lex.att_charset = characterSet;
@@ -242,11 +242,12 @@ void Parser::transformString(const char* start, unsigned length, string& dest)
 // Make a substring from the command text being parsed.
 string Parser::makeParseStr(const Position& p1, const Position& p2)
 {
-	const char* start = p1.firstPos;
-	const char* end = p2.lastPos;
+	const char* start = p1.leadingFirstPos;
+	const char* end = p2.trailingLastPos;
 
 	string str;
 	transformString(start, end - start, str);
+	str.trim(" \t\r\n");
 
 	string ret;
 
@@ -278,16 +279,19 @@ void Parser::yyReducePosn(YYPOSN& ret, YYPOSN* termPosns, YYSTYPE* /*termVals*/,
 		// Accessing termPosns[-1] seems to be the only way to get correct positions in this case.
 		ret.firstLine = ret.lastLine = termPosns[termNo - 1].lastLine;
 		ret.firstColumn = ret.lastColumn = termPosns[termNo - 1].lastColumn;
-		ret.firstPos = ret.lastPos = termPosns[termNo - 1].lastPos;
+		ret.firstPos = ret.lastPos = ret.trailingLastPos = termPosns[termNo - 1].trailingLastPos;
+		ret.leadingFirstPos = termPosns[termNo - 1].lastPos;
 	}
 	else
 	{
 		ret.firstLine = termPosns[0].firstLine;
 		ret.firstColumn = termPosns[0].firstColumn;
 		ret.firstPos = termPosns[0].firstPos;
+		ret.leadingFirstPos = termPosns[0].leadingFirstPos;
 		ret.lastLine = termPosns[termNo - 1].lastLine;
 		ret.lastColumn = termPosns[termNo - 1].lastColumn;
 		ret.lastPos = termPosns[termNo - 1].lastPos;
+		ret.trailingLastPos = termPosns[termNo - 1].trailingLastPos;
 	}
 
 	/*** This allows us to see colored output representing the position reductions.
@@ -308,29 +312,24 @@ int Parser::yylex()
 	yyposn.firstLine = lex.lines;
 	yyposn.firstColumn = lex.ptr - lex.line_start;
 	yyposn.firstPos = lex.ptr - 1;
+	yyposn.leadingFirstPos = lex.leadingPtr;
 
 	lex.prev_keyword = yylexAux();
 
-	const TEXT* ptr = lex.ptr;
-	const TEXT* last_token = lex.last_token;
-	const TEXT* line_start = lex.line_start;
-	const SLONG lines = lex.lines;
+	yyposn.lastPos = lex.ptr;
+	lex.leadingPtr = lex.ptr;
 
 	// Lets skip spaces before store lastLine/lastColumn. This is necessary to avoid yyReducePosn
 	// produce invalid line/column information - CORE-4381.
-	yylexSkipSpaces();
+	bool spacesSkipped = yylexSkipSpaces();
 
 	yyposn.lastLine = lex.lines;
 	yyposn.lastColumn = lex.ptr - lex.line_start;
 
-	lex.ptr = ptr;
-	lex.last_token = last_token;
-	lex.line_start = line_start;
-	lex.lines = lines;
+	if (spacesSkipped)
+		--lex.ptr;
 
-	// But the correct value for lastPos is the old (before the second yyLexSkipSpaces)
-	// value of lex.ptr.
-	yyposn.lastPos = ptr;
+	yyposn.trailingLastPos = lex.ptr;
 
 	return lex.prev_keyword;
 }
@@ -1269,7 +1268,7 @@ int Parser::yylexAux()
 }
 
 
-void Parser::yyerror_detailed(const TEXT* /*error_string*/, int yychar, YYSTYPE&, YYPOSN&)
+void Parser::yyerror_detailed(const TEXT* /*error_string*/, int yychar, YYSTYPE&, YYPOSN& posn)
 {
 /**************************************
  *
@@ -1281,29 +1280,21 @@ void Parser::yyerror_detailed(const TEXT* /*error_string*/, int yychar, YYSTYPE&
  *	Print a syntax error.
  *
  **************************************/
-	const TEXT* line_start = lex.line_start;
-	SLONG lines = lex.lines;
-	if (lex.last_token < line_start)
-	{
-		line_start = lex.line_start_bk;
-		lines--;
-	}
-
 	if (yychar < 1)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Unexpected end of command
-				  Arg::Gds(isc_command_end_err2) << Arg::Num(lines) <<
-													Arg::Num(lex.last_token - line_start + 1));
+				  Arg::Gds(isc_command_end_err2) << Arg::Num(posn.firstLine) <<
+													Arg::Num(posn.firstColumn));
 	}
 	else
 	{
 		ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Token unknown - line %d, column %d
-				  Arg::Gds(isc_dsql_token_unk_err) << Arg::Num(lines) <<
-				  									  Arg::Num(lex.last_token - line_start + 1) << // CVC: +1
+				  Arg::Gds(isc_dsql_token_unk_err) << Arg::Num(posn.firstLine) <<
+				  									  Arg::Num(posn.firstColumn) <<
 				  // Show the token
-				  Arg::Gds(isc_random) << Arg::Str(string(lex.last_token, lex.ptr - lex.last_token)));
+				  Arg::Gds(isc_random) << Arg::Str(string(posn.firstPos, posn.lastPos - posn.firstPos)));
 	}
 }
 
@@ -1317,15 +1308,12 @@ void Parser::yyerror(const TEXT* error_string)
 	yyerror_detailed(error_string, -1, errt_value, errt_posn);
 }
 
-void Parser::yyerrorIncompleteCmd()
+void Parser::yyerrorIncompleteCmd(const YYPOSN& pos)
 {
-	const TEXT* line_start = lex.line_start;
-	SLONG lines = lex.lines;
-
 	ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 			  // Unexpected end of command
-			  Arg::Gds(isc_command_end_err2) << Arg::Num(lines) <<
-												Arg::Num(lex.ptr - line_start + 1));
+			  Arg::Gds(isc_command_end_err2) << Arg::Num(pos.lastLine) <<
+												Arg::Num(pos.lastColumn + 1));
 }
 
 void Parser::check_bound(const char* const to, const char* const string)
