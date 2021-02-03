@@ -474,6 +474,8 @@ inline jrd_rel::GCShared::~GCShared()
 
 // Field block, one for each field in a scanned relation
 
+const USHORT FLD_parse_computed = 0x0001;		// computed expression is being parsed
+
 class jrd_fld : public pool_alloc<type_fld>
 {
 public:
@@ -487,6 +489,7 @@ public:
 	Firebird::MetaName	fld_name;	// Field name
 	Firebird::MetaName	fld_security_name;	// security class name for field
 	Firebird::MetaName	fld_generator_name;	// identity generator name
+	USHORT fld_flags;
 
 public:
 	explicit jrd_fld(MemoryPool& p)
