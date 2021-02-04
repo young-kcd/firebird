@@ -126,8 +126,15 @@ enum alice_switches
 
 static const char* const ALICE_SW_ASYNC	= "ASYNC";
 static const char* const ALICE_SW_SYNC	= "SYNC";
+
+static const char* const ALICE_SW_MODE_NONE	= "NONE";
 static const char* const ALICE_SW_MODE_RO	= "READ_ONLY";
 static const char* const ALICE_SW_MODE_RW	= "READ_WRITE";
+
+static const char* const ALICE_SW_SHUT_NORMAL	= "NORMAL";
+static const char* const ALICE_SW_SHUT_MULTI	= "MULTI";
+static const char* const ALICE_SW_SHUT_SINGLE	= "SINGLE";
+static const char* const ALICE_SW_SHUT_FULL		= "FULL";
 
 // Switch table
 static const Switches::in_sw_tab_t alice_in_sw_table[] =
@@ -214,7 +221,7 @@ static const Switches::in_sw_tab_t alice_in_sw_table[] =
 	// msg 43: \t-quit_log\tquit logging for replay utility
 */
 #endif
-	{IN_SW_ALICE_REPLICA, 0, "REPLICA", sw_replica,
+	{IN_SW_ALICE_REPLICA, isc_spb_prp_replica_mode, "REPLICA", sw_replica,
 		0, ~(sw_replica | sw_user | sw_password | sw_nolinger | sw_role), false, false, 134, 2, NULL},
 	// msg 134: -replica access mode <none / read_only / read_write>
 	{IN_SW_ALICE_ROLE, 0, "ROLE", sw_role,
@@ -304,9 +311,14 @@ static const Switches::in_sw_tab_t alice_in_sw_table[] =
      	0, 0, false, false, 0, 0, NULL}
 };
 
-static const char* alice_mode_sw_table[] =
+static const char* alice_shut_mode_sw_table[] =
 {
-	"NORMAL", "MULTI", "SINGLE", "FULL"
+	ALICE_SW_SHUT_NORMAL, ALICE_SW_SHUT_MULTI, ALICE_SW_SHUT_SINGLE, ALICE_SW_SHUT_FULL
+};
+
+static const char* alice_repl_mode_sw_table[] =
+{
+	ALICE_SW_MODE_NONE, ALICE_SW_MODE_RO, ALICE_SW_MODE_RW
 };
 
 #endif // ALICE_ALICESWI_H

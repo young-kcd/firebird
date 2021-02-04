@@ -1445,6 +1445,7 @@ const ISC_STATUS isc_fbsvcmgr_bad_arg                 = 336986164L;
 const ISC_STATUS isc_fbsvcmgr_info_limbo              = 336986170L;
 const ISC_STATUS isc_fbsvcmgr_limbo_state             = 336986171L;
 const ISC_STATUS isc_fbsvcmgr_limbo_advise            = 336986172L;
+const ISC_STATUS isc_fbsvcmgr_bad_rm                  = 336986173L;
 const ISC_STATUS isc_utl_trusted_switch               = 337051649L;
 const ISC_STATUS isc_nbackup_missing_param            = 337117213L;
 const ISC_STATUS isc_nbackup_allowed_switches         = 337117214L;
@@ -1499,7 +1500,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1443;
+const ISC_STATUS isc_err_max                          = 1444;
 
 #else /* c definitions */
 
@@ -2914,6 +2915,7 @@ const ISC_STATUS isc_err_max                          = 1443;
 #define isc_fbsvcmgr_info_limbo              336986170L
 #define isc_fbsvcmgr_limbo_state             336986171L
 #define isc_fbsvcmgr_limbo_advise            336986172L
+#define isc_fbsvcmgr_bad_rm                  336986173L
 #define isc_utl_trusted_switch               337051649L
 #define isc_nbackup_missing_param            337117213L
 #define isc_nbackup_allowed_switches         337117214L
@@ -2968,7 +2970,7 @@ const ISC_STATUS isc_err_max                          = 1443;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1443
+#define isc_err_max                          1444
 
 #endif
 

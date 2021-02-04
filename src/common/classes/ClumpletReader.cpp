@@ -353,6 +353,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			case isc_spb_verbose:
 				return SingleTpb;
 			case isc_spb_res_access_mode:
+			case isc_spb_res_replica_mode:
 				return ByteSpb;
 			}
 			invalid_structure("unknown parameter for backup/restore", tag);
@@ -420,6 +421,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			case isc_spb_prp_access_mode:
 			case isc_spb_prp_shutdown_mode:
 			case isc_spb_prp_online_mode:
+			case isc_spb_prp_replica_mode:
 				return ByteSpb;
 			}
 			invalid_structure("unknown parameter for setting database properties", tag);
@@ -461,6 +463,8 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			{
 			case isc_spb_dbname:
 				return StringSpb;
+			case isc_spb_options:
+				return IntSpb;
 			}
 			invalid_structure("unknown parameter for nbackup", tag);
 			break;

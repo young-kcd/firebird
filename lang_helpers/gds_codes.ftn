@@ -2830,6 +2830,8 @@ C --
       PARAMETER (GDS__fbsvcmgr_limbo_state             = 336986171)
       INTEGER*4 GDS__fbsvcmgr_limbo_advise           
       PARAMETER (GDS__fbsvcmgr_limbo_advise            = 336986172)
+      INTEGER*4 GDS__fbsvcmgr_bad_rm                 
+      PARAMETER (GDS__fbsvcmgr_bad_rm                  = 336986173)
       INTEGER*4 GDS__utl_trusted_switch              
       PARAMETER (GDS__utl_trusted_switch               = 337051649)
       INTEGER*4 GDS__nbackup_missing_param           

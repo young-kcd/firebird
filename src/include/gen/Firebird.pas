@@ -3797,6 +3797,9 @@ const
 	isc_dpb_shut_multi = $20;
 	isc_dpb_shut_single = $30;
 	isc_dpb_shut_full = $40;
+	isc_dpb_replica_none = byte(0);
+	isc_dpb_replica_read_only = byte(1);
+	isc_dpb_replica_read_write = byte(2);
 	RDB_system = byte(1);
 	RDB_id_assigned = byte(2);
 	isc_tpb_version1 = byte(1);
@@ -3954,6 +3957,7 @@ const
 	isc_spb_prp_transactions_shutdown = byte(43);
 	isc_spb_prp_shutdown_mode = byte(44);
 	isc_spb_prp_online_mode = byte(45);
+	isc_spb_prp_replica_mode = byte(46);
 	isc_spb_prp_sm_normal = byte(0);
 	isc_spb_prp_sm_multi = byte(1);
 	isc_spb_prp_sm_single = byte(2);
@@ -3964,6 +3968,9 @@ const
 	isc_spb_prp_wm_sync = byte(38);
 	isc_spb_prp_am_readonly = byte(39);
 	isc_spb_prp_am_readwrite = byte(40);
+	isc_spb_prp_rm_none = byte(0);
+	isc_spb_prp_rm_readonly = byte(1);
+	isc_spb_prp_rm_readwrite = byte(2);
 	isc_spb_rpr_commit_trans = byte(15);
 	isc_spb_rpr_rollback_trans = byte(34);
 	isc_spb_rpr_recover_two_phase = byte(17);
@@ -4010,6 +4017,7 @@ const
 	isc_spb_res_replace = $1000;
 	isc_spb_res_create = $2000;
 	isc_spb_res_use_all_space = $4000;
+	isc_spb_res_replica_mode = byte(20);
 	isc_spb_val_tab_incl = byte(1);
 	isc_spb_val_tab_excl = byte(2);
 	isc_spb_val_idx_incl = byte(3);
@@ -4032,6 +4040,7 @@ const
 	isc_spb_nbk_guid = byte(8);
 	isc_spb_nbk_no_triggers = $01;
 	isc_spb_nbk_inplace = $02;
+	isc_spb_nbk_sequence = $04;
 	isc_spb_trc_id = byte(1);
 	isc_spb_trc_name = byte(2);
 	isc_spb_trc_cfg = byte(3);
@@ -5498,6 +5507,7 @@ const
 	isc_fbsvcmgr_info_limbo              = 336986170;
 	isc_fbsvcmgr_limbo_state             = 336986171;
 	isc_fbsvcmgr_limbo_advise            = 336986172;
+	isc_fbsvcmgr_bad_rm                  = 336986173;
 	isc_utl_trusted_switch               = 337051649;
 	isc_nbackup_missing_param            = 337117213;
 	isc_nbackup_allowed_switches         = 337117214;

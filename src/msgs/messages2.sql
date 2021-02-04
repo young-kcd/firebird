@@ -2574,6 +2574,8 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'get_publication', 'restore.epp', NULL, 12, 400, NULL, 'publication', NULL, NULL);
 (NULL, 'get_pub_table', 'restore.epp', NULL, 12, 401, NULL, 'restoring publication for table @1', NULL, NULL);
 (NULL, 'get_pub_table', 'restore.epp', NULL, 12, 402, NULL, 'publication for table', NULL, NULL);
+('gbak_opt_replica', 'burp_usage', 'burp.c', NULL, 12, 403, NULL, '    @1REPLICA <mode>      "none", "read_only" or "read_write" replica mode', NULL, NULL);
+('gbak_replica_req', 'BURP_gbak', 'burp.c', NULL, 12, 404, NULL, '"none", "read_only" or "read_write" required', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);
@@ -3511,6 +3513,7 @@ Analyzing database pages ...', NULL, NULL);
 ('fbsvcmgr_info_limbo', 'printInfo', 'fbsvcmgr.cpp', NULL, 22, 58, NULL, 'Unknown tag (@1) in isc_info_svc_limbo_trans block after isc_svc_query()', NULL, NULL);
 ('fbsvcmgr_limbo_state', 'printInfo', 'fbsvcmgr.cpp', NULL, 22, 59, NULL, 'Unknown tag (@1) in isc_spb_tra_state block after isc_svc_query()', NULL, NULL);
 ('fbsvcmgr_limbo_advise', 'printInfo', 'fbsvcmgr.cpp', NULL, 22, 60, NULL, 'Unknown tag (@1) in isc_spb_tra_advise block after isc_svc_query()', NULL, NULL);
+('fbsvcmgr_bad_rm', 'putReplicaMode', 'fbsvcmgr.cpp', NULL, 22, 61, NULL, 'Wrong value for replica mode', NULL, NULL);
 -- UTL (messages common for many utilities)
 -- All messages use the new format.
 ('utl_trusted_switch', 'checkService', 'UtilSvc.cpp', NULL, 23, 1, NULL, 'Switches trusted_user and trusted_role are not supported from command line', NULL, NULL);

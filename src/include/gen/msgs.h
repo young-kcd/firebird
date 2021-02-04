@@ -1414,6 +1414,7 @@ Data source : @4"},		/* eds_statement */
 	{336986170, "Unknown tag (@1) in isc_info_svc_limbo_trans block after isc_svc_query()"},		/* fbsvcmgr_info_limbo */
 	{336986171, "Unknown tag (@1) in isc_spb_tra_state block after isc_svc_query()"},		/* fbsvcmgr_limbo_state */
 	{336986172, "Unknown tag (@1) in isc_spb_tra_advise block after isc_svc_query()"},		/* fbsvcmgr_limbo_advise */
+	{336986173, "Wrong value for replica mode"},		/* fbsvcmgr_bad_rm */
 	{337051649, "Switches trusted_user and trusted_role are not supported from command line"},		/* utl_trusted_switch */
 	{337117213, "Missing parameter for switch @1"},		/* nbackup_missing_param */
 	{337117214, "Only one of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE should be specified"},		/* nbackup_allowed_switches */

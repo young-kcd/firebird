@@ -1410,6 +1410,7 @@ static const struct {
 	{336986170, "00000"}, //  58 fbsvcmgr_info_limbo
 	{336986171, "00000"}, //  59 fbsvcmgr_limbo_state
 	{336986172, "00000"}, //  60 fbsvcmgr_limbo_advise
+	{336986173, "00000"}, //  61 fbsvcmgr_bad_rm
 	{337051649, "00000"}, //   1 utl_trusted_switch
 	{337117213, "00000"}, //  29 nbackup_missing_param
 	{337117214, "00000"}, //  30 nbackup_allowed_switches

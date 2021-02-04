@@ -1411,6 +1411,7 @@ static const struct {
 	{"fbsvcmgr_info_limbo", 336986170},
 	{"fbsvcmgr_limbo_state", 336986171},
 	{"fbsvcmgr_limbo_advise", 336986172},
+	{"fbsvcmgr_bad_rm", 336986173},
 	{"utl_trusted_switch", 337051649},
 	{"nbackup_missing_param", 337117213},
 	{"nbackup_allowed_switches", 337117214},
