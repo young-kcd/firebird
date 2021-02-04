@@ -100,6 +100,15 @@ Parser::Parser(MemoryPool& pool, DsqlCompilerScratch* aScratch, USHORT aClientDi
 	yylexp = 0;
 	yylexemes = 0;
 
+	yyposn.firstLine = 1;
+	yyposn.firstColumn = 1;
+	yyposn.lastLine = 1;
+	yyposn.lastColumn = 1;
+	yyposn.firstPos = string;
+	yyposn.leadingFirstPos = string;
+	yyposn.lastPos = string + length;
+	yyposn.trailingLastPos = string + length;
+
 	lex.start = string;
 	lex.line_start = lex.last_token = lex.ptr = lex.leadingPtr = string;
 	lex.end = string + length;
