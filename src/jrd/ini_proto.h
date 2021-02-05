@@ -35,5 +35,6 @@ void	INI_init(Jrd::thread_db*);
 void	INI_init2(Jrd::thread_db*);
 void	INI_init_dsql(Jrd::thread_db*, Jrd::dsql_dbb* database);
 Firebird::string INI_owner_privileges();
+void	INI_upgrade(Jrd::thread_db*);
 
 #endif // JRD_INI_PROTO_H

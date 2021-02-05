@@ -70,7 +70,7 @@ DATABASE DB = FILENAME "ODS.RDB";
 const int FB_MAX_ACL_SIZE	= 4096;
 
 
-static void add_index_set(thread_db*);
+static void add_index_set(thread_db*, USHORT = 0);
 static void add_security_to_sys_obj(thread_db*, AutoRequest&, AutoRequest&, AutoRequest&,
 	const MetaName&, USHORT, const MetaName&, USHORT = 0, const UCHAR* = NULL);
 static void add_security_class(thread_db* tdbb, AutoRequest&, const MetaName& class_name,
@@ -82,8 +82,9 @@ static void store_generator(thread_db*, const gen*, AutoRequest&, const MetaName
 static void store_global_field(thread_db*, const gfld*, AutoRequest&, const MetaName&);
 static void store_intlnames(thread_db*, const MetaName&);
 static void store_message(thread_db*, const trigger_msg*, AutoRequest&);
-static void store_relation_field(thread_db*, const int*, const int*, int, AutoRequest&);
-static void store_packages(thread_db* tdbb, const MetaName& owner);
+static void store_relation(thread_db*, int, const char*, const char*, int, int, AutoRequest&);
+static void store_relation_field(thread_db*, int, const char*, const char*, const char*, int, AutoRequest&);
+static void store_packages(thread_db* tdbb, const MetaName& owner, USHORT = 0);
 static void store_trigger(thread_db*, const jrd_trg*, AutoRequest&);
 static void store_admin_grant(thread_db*, const char* grantee, USHORT grantee_type,
     const char* object, USHORT object_type, const char* prvl, USHORT option = 0, bool dflt = false);
@@ -246,7 +247,7 @@ void INI_format(const char* owner, const char* charset)
 	MetaName ownerName(owner);
 
 	// Uppercase charset name
-	MetaName rdbCharSetName(charset && charset[0] ? charset : DEFAULT_DB_CHARACTER_SET_NAME);
+	MetaName charSetName(charset && charset[0] ? charset : DEFAULT_DB_CHARACTER_SET_NAME);
 
 	const int* fld;
 
@@ -267,35 +268,32 @@ void INI_format(const char* owner, const char* charset)
 
 	// Store RELATIONS and RELATION_FIELDS
 
-	SLONG rdbRelationId;
-	MetaName rdbRelationName;
-	SLONG rdbFieldId;
-	SLONG rdbSystemFlag = RDB_system;
-	SLONG rdbRelationType;
+	AutoRequest handle1, handle2;
 
-	PreparedStatement::Builder sql;
-	sql << "insert into rdb$relations (rdb$relation_id, rdb$relation_name, rdb$field_id,"
-		<< "rdb$format, rdb$system_flag, rdb$dbkey_length, rdb$owner_name, rdb$relation_type)"
-		<< "values (" << rdbRelationId << ", " << rdbRelationName << ", " << rdbFieldId << ", 0,"
-		<< rdbSystemFlag << ", 8, " << ownerName << ", " << rdbRelationType << ")";
-
-	AutoPreparedStatement ps(attachment->prepareStatement(tdbb, transaction, sql));
-
-	AutoRequest handle1;
 	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
-		for (rdbFieldId = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
+		int fieldId = 0;
+
+		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
 		{
-			const int* pFld = fld;
-			const int* pRelFld = relfld;
-			store_relation_field(tdbb, pFld, pRelFld, rdbFieldId, handle1);
-			++rdbFieldId;
+			const gfld* gfield = &gfields[fld[RFLD_F_ID]];
+			const auto relId = relfld[RFLD_R_ID];
+			const auto relName = names[relfld[RFLD_R_NAME]];
+			const auto fieldName = names[fld[RFLD_F_NAME]];
+			const auto globalName = names[gfield->gfld_name];
+			const auto updateFlag = fld[RFLD_F_UPDATE];
+
+			store_relation_field(tdbb, fieldId, relName, fieldName, globalName,
+								 updateFlag, handle1);
+			++fieldId;
 		}
 
-		rdbRelationId = relfld[RFLD_R_ID];
-		rdbRelationName = names[relfld[RFLD_R_NAME]];
-		rdbRelationType = relfld[RFLD_R_TYPE];
-		ps->execute(tdbb, transaction);
+		const auto relId = relfld[RFLD_R_ID];
+		const auto relName = names[relfld[RFLD_R_NAME]];
+		const auto relType = relfld[RFLD_R_TYPE];
+
+		store_relation(tdbb, relId, relName, ownerName.c_str(),
+					   fieldId, relType, handle2);
 	}
 
 	handle1.reset();
@@ -307,14 +305,13 @@ void INI_format(const char* owner, const char* charset)
 
 	// Store DATABASE record
 
-	sql = PreparedStatement::Builder();
-	sql << "insert into rdb$database (rdb$relation_id, rdb$character_set_name) values ("
-		<< rdbRelationId << ", " << rdbCharSetName << ")";
+	handle1.reset();
 
-	ps.reset(attachment->prepareStatement(tdbb, transaction, sql));
-
-	rdbRelationId = USER_DEF_REL_INIT_ID;
-	ps->execute(tdbb, transaction);
+	STORE(REQUEST_HANDLE handle1) X IN RDB$DATABASE
+		X.RDB$RELATION_ID = (int) USER_DEF_REL_INIT_ID;
+		PAD(charSetName.c_str(), X.RDB$CHARACTER_SET_NAME);
+		X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
+	END_STORE
 
 	// Store default publication
 
@@ -536,6 +533,7 @@ void INI_format(const char* owner, const char* charset)
 		add_security_to_sys_obj(tdbb, reqAddSC, reqModObjSC, reqInsUserPriv, ownerName, obj_database,
 			"", length, buffer);
 	}
+
 	// Add security on system tables
 
 	const UCHAR REL_OWNER_ACL[] =
@@ -571,10 +569,13 @@ void INI_format(const char* owner, const char* charset)
 		AutoRequest reqModObjSC, reqInsUserPriv;
 		for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 		{
-			for (rdbFieldId = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
-				++rdbFieldId;
+			int fieldId = 0;
+			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
+				++fieldId;
 
-			add_security_to_sys_rel(tdbb, reqAddSC, reqModObjSC, reqInsUserPriv, ownerName, names[relfld[RFLD_R_NAME]], length, buffer);
+			const auto relName = names[relfld[RFLD_R_NAME]];
+
+			add_security_to_sys_rel(tdbb, reqAddSC, reqModObjSC, reqInsUserPriv, ownerName, relName, length, buffer);
 		}
 	}
 
@@ -923,7 +924,168 @@ void INI_init_dsql(thread_db* tdbb, dsql_dbb* database)
 }
 
 
-static void add_index_set(thread_db* tdbb)
+void INI_upgrade(thread_db* tdbb)
+{
+/**************************************
+ *
+ *	I N I _ u p g r a d e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Upgrade minor ODS version.
+ *
+ **************************************/
+	const auto dbb = tdbb->getDatabase();
+	const auto attachment = tdbb->getAttachment();
+
+	// If database is read-only, punt
+	if (dbb->dbb_flags & DBB_read_only)
+		Arg::Gds(isc_read_only).raise();
+
+	// Check current ODS version to see if we have work to do
+
+	const auto majorVersion = dbb->dbb_ods_version;
+	fb_assert(majorVersion == ODS_VERSION);
+
+	const auto minorVersion = dbb->dbb_minor_version;
+	if (minorVersion == ODS_CURRENT)
+		return;
+
+	const auto odsVersion = ENCODE_ODS(majorVersion, minorVersion);
+
+	const int* fld;
+
+	// Make sure relations exist already
+
+	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
+	{
+		if (relfld[RFLD_R_TYPE] == rel_persistent &&
+			relfld[RFLD_R_ODS] > odsVersion)
+		{
+			DPM_create_relation(tdbb, MET_relation(tdbb, relfld[RFLD_R_ID]));
+		}
+
+		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
+			;
+	}
+
+	AutoRequest handle1, handle2;
+
+	// Get the database owner
+
+	MetaName ownerName;
+
+	FOR(REQUEST_HANDLE handle1)
+		FIRST 1 REL IN RDB$RELATIONS
+		WITH REL.RDB$RELATION_NAME EQ "RDB$DATABASE"
+	{
+		fb_assert(!REL.RDB$OWNER_NAME.NULL);
+		ownerName = REL.RDB$OWNER_NAME;
+	}
+	END_FOR
+
+	// Create global fields added after the original minor ODS
+
+	handle1.reset();
+
+	for (const gfld* gfield = gfields; gfield->gfld_name; gfield++)
+	{
+		if (gfield->gfld_ods_version > odsVersion)
+			store_global_field(tdbb, gfield, handle1, ownerName);
+	}
+
+	// Create new system relations and new relation fields
+
+	handle1.reset();
+
+	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
+	{
+		int fieldId = 0;
+
+		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
+		{
+			if (fld[RFLD_F_ODS] > odsVersion)
+			{
+				const gfld* gfield = &gfields[fld[RFLD_F_ID]];
+				const auto relId = relfld[RFLD_R_ID];
+				const auto relName = names[relfld[RFLD_R_NAME]];
+				const auto fieldName = names[fld[RFLD_F_NAME]];
+				const auto globalName = names[gfield->gfld_name];
+				const auto updateFlag = fld[RFLD_F_UPDATE];
+
+				store_relation_field(tdbb, fieldId, relName, fieldName, globalName,
+									 updateFlag, handle1);
+			}
+
+			++fieldId;
+		}
+
+		if (relfld[RFLD_R_ODS] > odsVersion)
+		{
+			const auto relId = relfld[RFLD_R_ID];
+			const auto relName = names[relfld[RFLD_R_NAME]];
+			const auto relType = relfld[RFLD_R_TYPE];
+
+			store_relation(tdbb, relId, relName, ownerName.c_str(),
+						   fieldId, relType, handle2);
+		}
+	}
+
+	// Create new system indexes
+
+	add_index_set(tdbb, odsVersion);
+
+	// Create new system triggers and their trigger messages
+
+	handle1.reset();
+
+	for (const jrd_trg* trigger = triggers; trigger->trg_relation; ++trigger)
+	{
+		if (trigger->trg_ods_version > odsVersion)
+			store_trigger(tdbb, trigger, handle1);
+	}
+
+	handle1.reset();
+
+	for (const trigger_msg* message = trigger_messages; message->trigmsg_name; ++message)
+	{
+		if (message->trg_ods_version > odsVersion)
+			store_message(tdbb, message, handle1);
+	}
+
+	// Create new system generators
+
+	handle1.reset();
+
+	for (const gen* generator = generators; generator->gen_name; generator++)
+	{
+		if (generator->gen_ods_version > odsVersion)
+			store_generator(tdbb, generator, handle1, ownerName);
+	}
+
+	// Create new system packages
+
+	store_packages(tdbb, ownerName, odsVersion);
+
+	// Should we also add new types? They are collected from multiple sources and
+	// don't have their corresponding ODS defined.
+	// The same for new charsets/collations.
+
+	// If the database was successfully updated, mark it with the current minor ODS
+
+	win window(HEADER_PAGE_NUMBER);
+	auto header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+	CCH_MARK(tdbb, &window);
+
+	dbb->dbb_minor_version = header->hdr_ods_minor = ODS_CURRENT;
+	CCH_RELEASE(tdbb, &window);
+
+	DFW_perform_system_work(tdbb);
+}
+
+
+static void add_index_set(thread_db* tdbb, USHORT odsVersion)
 {
 /**************************************
  *
@@ -932,9 +1094,8 @@ static void add_index_set(thread_db* tdbb)
  **************************************
  *
  * Functional description
- *	Add system indices.  If update_ods is true we are performing
- *	an ODS update, and only add the indices marked as newer than
- *	ODS (major_version,minor_version).
+ *	Add system indices. If odsVersion is specified, then we are performing
+ *	an ODS update, so add only the indices marked as newer than odsVersion.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -948,6 +1109,9 @@ static void add_index_set(thread_db* tdbb)
 	{
 		const ini_idx_t* index = &indices[n];
 		jrd_rel* relation = MET_relation(tdbb, index->ini_idx_relid);
+
+		if (odsVersion && index->ini_idx_ods <= odsVersion)
+			continue;
 
 		MetaName indexName;
 		indexName.printf("RDB$INDEX_%d", index->ini_idx_index_id);
@@ -1679,11 +1843,37 @@ static void store_message(thread_db* tdbb, const trigger_msg* message, AutoReque
 }
 
 
-static void store_relation_field(thread_db*		tdbb,
-								 const int*		fld,
-								 const int*		relfld,
-								 int			field_id,
-								 AutoRequest&	handle)
+static void store_relation(thread_db* tdbb,
+						   int relId,
+						   const char* relName,
+						   const char* ownerName,
+						   int fieldId,
+						   int relType,
+						   AutoRequest& handle)
+{
+	SET_TDBB(tdbb);
+	const auto attachment = tdbb->getAttachment();
+
+	STORE(REQUEST_HANDLE handle) X IN RDB$RELATIONS
+		X.RDB$RELATION_ID = relId;
+		PAD(relName, X.RDB$RELATION_NAME);
+		PAD(ownerName, X.RDB$OWNER_NAME);
+		X.RDB$OWNER_NAME.NULL = FALSE;
+		X.RDB$FIELD_ID = fieldId;
+		X.RDB$FORMAT = 0;
+		X.RDB$SYSTEM_FLAG = RDB_system;
+		X.RDB$DBKEY_LENGTH = 8;
+
+	END_STORE;
+}
+
+static void store_relation_field(thread_db* tdbb,
+								 int fieldId,
+								 const char* relName,
+								 const char* fieldName,
+								 const char* globalName,
+								 int updateFlag,
+								 AutoRequest& handle)
 {
 /**************************************
  *
@@ -1701,28 +1891,25 @@ static void store_relation_field(thread_db*		tdbb,
 
 	STORE(REQUEST_HANDLE handle) X IN RDB$RELATION_FIELDS
 	{
-		const gfld* gfield = &gfields[fld[RFLD_F_ID]];
-		PAD(names[relfld[RFLD_R_NAME]], X.RDB$RELATION_NAME);
-		PAD(names[fld[RFLD_F_NAME]], X.RDB$FIELD_NAME);
-		PAD(names[gfield->gfld_name], X.RDB$FIELD_SOURCE);
-		X.RDB$FIELD_POSITION = field_id;
-		X.RDB$FIELD_ID = field_id;
+		PAD(relName, X.RDB$RELATION_NAME);
+		PAD(fieldName, X.RDB$FIELD_NAME);
+		PAD(globalName, X.RDB$FIELD_SOURCE);
+		X.RDB$FIELD_POSITION = fieldId;
+		X.RDB$FIELD_ID = fieldId;
 		X.RDB$SYSTEM_FLAG = RDB_system;
 		X.RDB$SYSTEM_FLAG.NULL = FALSE;
-		X.RDB$UPDATE_FLAG = fld[RFLD_F_UPDATE];
+		X.RDB$UPDATE_FLAG = updateFlag;
 	}
 	END_STORE
 }
 
 
 // Store system packages.
-static void store_packages(thread_db* tdbb, const MetaName& owner)
+static void store_packages(thread_db* tdbb, const MetaName& owner, USHORT odsVersion)
 {
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* const dbb = tdbb->getDatabase();
-	const USHORT majorVersion = dbb->dbb_ods_version;
-	const USHORT minorVersion = dbb->dbb_minor_version;
 
 	AutoRequest packageHandle, procedureHandle, procedureParameterHandle;
 	AutoRequest functionHandle, functionReturnHandle, functionArgumentHandle;
@@ -1731,7 +1918,7 @@ static void store_packages(thread_db* tdbb, const MetaName& owner)
 
 	for (auto& systemPackage : SystemPackage::get())
 	{
-		if (systemPackage.odsVersion > ENCODE_ODS(majorVersion, minorVersion))
+		if (odsVersion && systemPackage.odsVersion < odsVersion)
 			continue;
 
 		STORE (REQUEST_HANDLE packageHandle) PKG IN RDB$PACKAGES

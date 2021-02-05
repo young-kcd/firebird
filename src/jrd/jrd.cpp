@@ -1083,6 +1083,7 @@ namespace Jrd
 		ReplicaMode	dpb_replica_mode;
 		bool	dpb_set_db_replica;
 		bool	dpb_clear_map;
+		bool	dpb_upgrade_db;
 
 		// here begin compound objects
 		// for constructor to work properly dpb_user_name
@@ -1834,6 +1835,12 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				// work while we read states for all interesting transactions
 				dbb->dbb_tip_cache = FB_NEW_POOL(*dbb->dbb_permanent) TipCache(dbb);
 				dbb->dbb_tip_cache->initializeTpc(tdbb);
+
+				if (options.dpb_upgrade_db)
+				{
+					validateAccess(tdbb, attachment, USE_GFIX_UTILITY);
+					INI_upgrade(tdbb);
+				}
 
 				// linger
 				dbb->dbb_linger_seconds = MET_get_linger(tdbb);
@@ -7248,6 +7255,9 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 		case isc_dpb_worker_attach:
 			dpb_worker_attach = true;
+
+		case isc_dpb_upgrade_db:
+			dpb_upgrade_db = true;
 			break;
 
 		default:
