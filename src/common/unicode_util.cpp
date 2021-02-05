@@ -65,9 +65,6 @@ const char* const ucTemplate = "lib/libicuuc.%s.dylib";
 #elif defined(HPUX)
 const char* const inTemplate = "libicui18n.sl.%s";
 const char* const ucTemplate = "libicuuc.sl.%s";
-#elif defined(ANDROID)
-const char* const inTemplate = "libicui18n.so";
-const char* const ucTemplate = "libicuuc.so";
 #else
 const char* const inTemplate = "libicui18n.so.%s";
 const char* const ucTemplate = "libicuuc.so.%s";
@@ -134,7 +131,7 @@ void BaseICU::initialize(ModuleLoader::Module* module)
 	getEntryPoint("u_setTimeZoneFilesDirectory", module, uSetTimeZoneFilesDirectory, true);
 	getEntryPoint("u_setDataDirectory", module, uSetDataDirectory, true);
 
-#if defined(WIN_NT) || defined(DARWIN)
+#if defined(WIN_NT) || defined(DARWIN) || defined(ANDROID)
 	if (uSetDataDirectory)
 	{
 		// call uSetDataDirectory only if .dat file is exists at same folder
@@ -143,6 +140,7 @@ void BaseICU::initialize(ModuleLoader::Module* module)
 		PathName path, file, fullName;
 		PathUtils::splitLastComponent(path, file, module->fileName);
 
+#ifdef WIN_NT
 		// icuucXX.dll -> icudtXX.dll
 		file.replace(3, 2, "dt");
 
@@ -150,6 +148,17 @@ void BaseICU::initialize(ModuleLoader::Module* module)
 		const FB_SIZE_T pos = file.find_last_of('.');
 		file.erase(pos);
 		file.append("l.dat");
+#else
+		// libicuuc.so.XX -> icudtXX
+		const FB_SIZE_T pos = file.find_last_of('.');
+		if (pos > 0 && pos != file.npos)
+		{
+			file.replace(0, pos + 1, "icudt");
+		}
+
+		// icudtXX -> icudtXXl.dat
+		file += "l.dat";
+#endif
 
 		PathUtils::concatPath(fullName, path, file);
 
@@ -405,6 +414,14 @@ static GlobalPtr<UnicodeUtil::ICUModules> icuModules;
 static ModuleLoader::Module* formatAndLoad(const char* templateName,
 	int majorVersion, int minorVersion)
 {
+#ifdef ANDROID
+	static ModuleLoader::Module* dat = ModuleLoader::loadModule(NULL,
+		fb_utils::getPrefix(Firebird::IConfigManager::DIR_LIB, "libicudata.so"));
+
+	Firebird::PathName newName = fb_utils::getPrefix(Firebird::IConfigManager::DIR_LIB, templateName);
+	templateName = newName.c_str();
+#endif
+
 	ModuleLoader::Module* module = nullptr;
 
 	// System-wide ICU have no version number at file names
