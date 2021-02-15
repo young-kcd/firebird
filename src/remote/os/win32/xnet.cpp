@@ -904,7 +904,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		endPoint->make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_EVNT_CHAN_EMPTED,
 						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_recv_channel_empted =
-			CreateEvent(ISC_get_security_desc(), FALSE, TRUE, name_buffer);
+			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_empted ||
 			(xcc->xcc_event_recv_channel_empted && ERRNO == ERROR_ALREADY_EXISTS))
 		{
@@ -924,7 +924,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		endPoint->make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_EMPTED,
 						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_send_channel_empted =
-			CreateEvent(ISC_get_security_desc(), FALSE, TRUE, name_buffer);
+			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_empted ||
 			(xcc->xcc_event_send_channel_empted && ERRNO == ERROR_ALREADY_EXISTS))
 		{
