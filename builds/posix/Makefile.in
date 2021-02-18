@@ -162,14 +162,19 @@ export_lists: $(ALLVERS)
 #
 
 .PHONY:	tommath
-TOMLIB=$(LIB)/libtommath.a
-TOM_Objs=$(addprefix ../extern/libtommath/,$(call doObjects,$(call dirFiles,../extern/libtommath)))
+STATIC_TOMMATH_LIB=libtommath.a
+TOMMATH_CROSS_BLD_DIR=$(ROOT)/extern/libtommath/cross
+TOMLINK=$(LIB)/$(STATIC_TOMMATH_LIB)
+TOMLIB=$(TOMMATH_CROSS_BLD_DIR)/$(STATIC_TOMMATH_LIB)
 
-tommath:	$(TOMLIB)
+tommath:	$(TOMLINK)
 
-$(TOMLIB):	$(TOM_Objs)
-	-$(RM) $@
-	$(STATICLIB_LINK) $@ $^
+$(TOMLINK):	$(TOMLIB)
+	-$(RM) $(TOMLINK)
+	$(LN) $(TOMLIB) $(TOMLINK)
+
+$(TOMLIB):
+	CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) $(MAKE) -C $(TOMMATH_CROSS_BLD_DIR) -f Makefile
 
 #___________________________________________________________________________
 # main build target for both debug and release builds
