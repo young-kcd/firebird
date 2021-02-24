@@ -71,6 +71,8 @@ namespace Replication
 				const Replication::Config* config);
 		~Manager();
 
+		void shutdown();
+
 		Firebird::UCharBuffer* getBuffer();
 		void releaseBuffer(Firebird::UCharBuffer* buffer);
 

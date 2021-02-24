@@ -450,10 +450,15 @@ namespace Jrd
 		return 0;
 	}
 
-	void Database::initGlobalObjectHolder(thread_db* tdbb)
+	void Database::initGlobalObjects()
 	{
 		dbb_gblobj_holder =
 			GlobalObjectHolder::init(getUniqueFileId(), dbb_filename, dbb_config);
+	}
+
+	void Database::shutdownGlobalObjects()
+	{
+		dbb_gblobj_holder->shutdown();
 	}
 
 	// Database::Linger class implementation
@@ -521,6 +526,12 @@ namespace Jrd
 		m_lockMgr = nullptr;
 		m_eventMgr = nullptr;
 		m_replMgr = nullptr;
+	}
+
+	void Database::GlobalObjectHolder::shutdown()
+	{
+		if (m_replMgr)
+			m_replMgr->shutdown();
 	}
 
 	LockManager* Database::GlobalObjectHolder::getLockManager()

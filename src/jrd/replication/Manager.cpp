@@ -185,12 +185,27 @@ Manager::Manager(const string& dbId,
 
 Manager::~Manager()
 {
+	for (auto& buffer : m_buffers)
+		delete buffer;
+}
+
+void Manager::shutdown()
+{
 	m_shutdown = true;
 
 	m_workingSemaphore.release();
 	m_cleanupSemaphore.enter();
 
 	MutexLockGuard guard(m_queueMutex, FB_FUNCTION);
+
+	for (auto& buffer : m_queue)
+	{
+		if (buffer)
+		{
+			releaseBuffer(buffer);
+			buffer = nullptr;
+		}
+	}
 
 	// Detach from synchronous replicas
 
@@ -202,8 +217,7 @@ Manager::~Manager()
 		iter->attachment->detach(&localStatus);
 	}
 
-	while (m_buffers.hasData())
-		delete m_buffers.pop();
+	m_replicas.clear();
 }
 
 UCharBuffer* Manager::getBuffer()

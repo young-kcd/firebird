@@ -1784,8 +1784,8 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 				pageSpace->file = PIO_open(tdbb, expanded_name, org_filename);
 
-				// Initialize the global object holder
-				dbb->initGlobalObjectHolder(tdbb);
+				// Initialize the global objects
+				dbb->initGlobalObjects();
 
 				// Initialize locks
 				LCK_init(tdbb, LCK_OWNER_database);
@@ -2965,8 +2965,8 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			os_utils::getUniqueFileId(dbb->dbb_filename.c_str(), dbb->dbb_id);
 #endif
 
-			// Initialize the global object holder
-			dbb->initGlobalObjectHolder(tdbb);
+			// Initialize the global objects
+			dbb->initGlobalObjects();
 
 			// Initialize locks
 			LCK_init(tdbb, LCK_OWNER_database);
@@ -7720,6 +7720,8 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 	LCK_fini(tdbb, LCK_OWNER_database);
 
 	CCH_fini(tdbb);
+
+	dbb->shutdownGlobalObjects();
 
 	{ // scope
 		MutexLockGuard listGuard2(databases_mutex, FB_FUNCTION);
