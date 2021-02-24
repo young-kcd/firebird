@@ -458,7 +458,8 @@ namespace Jrd
 
 	void Database::shutdownGlobalObjects()
 	{
-		dbb_gblobj_holder->shutdown();
+		if (dbb_gblobj_holder)
+			dbb_gblobj_holder->shutdown();
 	}
 
 	// Database::Linger class implementation
