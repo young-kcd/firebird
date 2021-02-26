@@ -569,7 +569,7 @@ FB_UINT64 ChangeLog::write(ULONG length, const UCHAR* data, bool sync)
 			const string warningMsg =
 				"Out of available space in changelog segments, waiting for archiving...";
 
-			logOriginMessage(m_config->dbName, warningMsg, WARNING_MSG);
+			logPrimaryWarning(m_config->dbName, warningMsg);
 		}
 
 		{	// scope
@@ -673,7 +673,7 @@ bool ChangeLog::archiveExecute(Segment* segment)
 								res, archiveCommand.c_str());
 			}
 
-			logOriginMessage(m_config->dbName, errorMsg, ERROR_MSG);
+			logPrimaryError(m_config->dbName, errorMsg);
 			return false;
 		}
 	}
@@ -691,7 +691,7 @@ bool ChangeLog::archiveExecute(Segment* segment)
 				warningMsg.printf("Destination log file %s exists, it will be overwritten",
 								  archpathname.c_str());
 
-				logOriginMessage(m_config->dbName, warningMsg, WARNING_MSG);
+				logPrimaryWarning(m_config->dbName, warningMsg);
 			}
 		}
 
@@ -713,13 +713,13 @@ bool ChangeLog::archiveExecute(Segment* segment)
 				errorMsg += temp;
 			}
 
-			logOriginMessage(m_config->dbName, errorMsg, ERROR_MSG);
+			logPrimaryError(m_config->dbName, errorMsg);
 			return false;
 		}
 		catch (...)
 		{
 			const string errorMsg = "Cannot copy log segment (reason unknown)";
-			logOriginMessage(m_config->dbName, errorMsg, ERROR_MSG);
+			logPrimaryError(m_config->dbName, errorMsg);
 			return false;
 		}
 	}

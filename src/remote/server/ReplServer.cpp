@@ -444,16 +444,11 @@ namespace
 			return m_config->logSourceDirectory;
 		}
 
-		void logMessage(const string& message, LogMsgType type) const
-		{
-			logReplicaMessage(m_config->dbName, message, type);
-		}
-
 		void logError(const string& message)
 		{
 			if (message != m_lastError)
 			{
-				logMessage(message, ERROR_MSG);
+				logReplicaError(m_config->dbName, message);
 				m_lastError = message;
 			}
 		}
@@ -469,7 +464,7 @@ namespace
 				VSNPRINTF(buffer, sizeof(buffer), msg, ptr);
 				va_end(ptr);
 
-				logMessage(buffer, VERBOSE_MSG);
+				logReplicaVerbose(m_config->dbName, buffer);
 			}
 		}
 

@@ -162,16 +162,16 @@ Manager::Manager(const string& dbId,
 
 		const auto attachment = provider->attachDatabase(&localStatus, database.c_str(),
 												   	     dpb.getBufferLength(), dpb.getBuffer());
-		if (!localStatus.isSuccess())
+		if (localStatus->getState() & IStatus::STATE_ERRORS)
 		{
-			logError(&localStatus);
+			logPrimaryStatus(m_config->dbName, &localStatus);
 			continue;
 		}
 
 		const auto replicator = attachment->createReplicator(&localStatus);
-		if (!localStatus.isSuccess())
+		if (localStatus->getState() & IStatus::STATE_ERRORS)
 		{
-			logError(&localStatus);
+			logPrimaryStatus(m_config->dbName, &localStatus);
 			attachment->detach(&localStatus);
 			continue;
 		}
@@ -241,24 +241,6 @@ void Manager::releaseBuffer(UCharBuffer* buffer)
 
 	fb_assert(!m_buffers.exist(buffer));
 	m_buffers.add(buffer);
-}
-
-void Manager::logError(const IStatus* status)
-{
-	string message;
-
-	auto statusPtr = status->getErrors();
-
-	char temp[BUFFER_LARGE];
-	while (fb_interpret(temp, sizeof(temp), &statusPtr))
-	{
-		if (!message.isEmpty())
-			message += "\n\t";
-
-		message += temp;
-	}
-
-	logOriginMessage(m_config->dbName, message, ERROR_MSG);
 }
 
 void Manager::flush(UCharBuffer* buffer, bool sync)

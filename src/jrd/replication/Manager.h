@@ -90,8 +90,6 @@ namespace Replication
 		}
 
 	private:
-		void logError(const Firebird::IStatus* status);
-
 		void bgWriter();
 
 		static THREAD_ENTRY_DECLARE writer_thread(THREAD_ENTRY_PARAM arg)

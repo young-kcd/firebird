@@ -1231,6 +1231,6 @@ void Applier::logConflict(const char* msg, ...)
 	vsprintf(buffer, msg, ptr);
 	va_end(ptr);
 
-	logReplicaMessage(m_database, buffer, WARNING_MSG);
+	logReplicaWarning(m_database, buffer);
 #endif
 }

@@ -24,9 +24,11 @@
 #include "../common/config/config_file.h"
 #include "../common/os/path_utils.h"
 #include "../common/isc_f_proto.h"
+#include "../common/status.h"
 #include "../common/StatusArg.h"
 #include "../jrd/constants.h"
 
+#include "Utils.h"
 #include "Config.h"
 
 #ifdef HAVE_UNISTD_H
@@ -73,9 +75,27 @@ namespace
 			output = false;
 	}
 
-	void raiseError(const char* msg)
+	void checkAccess(const PathName& path, const string& key)
 	{
-		(Arg::Gds(isc_random) << Arg::Str(msg)).raise();
+		if (path.hasData() && !PathUtils::canAccess(path, 6))
+		{
+			string msg;
+			msg.printf("%s specifies missing or inaccessible directory: %s",
+					   key.c_str(), path.c_str());
+			raiseError(msg.c_str());
+		}
+	}
+
+	void composeError(CheckStatusWrapper* status, const Exception& ex)
+	{
+		string prefix;
+		prefix.printf("Incorrect entry in %s", REPLICATION_CFGFILE);
+
+		Arg::StatusVector sv;
+		sv << Arg::Gds(isc_random) << Arg::Str(prefix);
+		sv << Arg::StatusVector(ex);
+
+		status->setErrors(sv.value());
 	}
 }
 
@@ -141,48 +161,52 @@ Config* Config::get(const PathName& lookupName)
 {
 	fb_assert(lookupName.hasData());
 
-	const PathName filename =
-		fb_utils::getPrefix(IConfigManager::DIR_CONF, REPLICATION_CFGFILE);
-
-	MemoryPool& pool = *getDefaultMemoryPool();
-
-	ConfigFile cfgFile(filename, ConfigFile::HAS_SUB_CONF | ConfigFile::NATIVE_ORDER | ConfigFile::CUSTOM_MACROS);
-
-	AutoPtr<Config> config(FB_NEW Config);
-
-	bool defaultFound = false, exactMatch = false;
-	const ConfigFile::Parameters& params = cfgFile.getParameters();
-	for (const auto& section : params)
+	try
 	{
-		if (section.name != "database")
-			raiseError("Unknown section found in the configuration file");
+		const PathName filename =
+			fb_utils::getPrefix(IConfigManager::DIR_CONF, REPLICATION_CFGFILE);
 
-		PathName dbName(section.value.c_str());
+		MemoryPool& pool = *getDefaultMemoryPool();
 
-		if (dbName.empty())
+		ConfigFile cfgFile(filename, ConfigFile::HAS_SUB_CONF |
+									 ConfigFile::NATIVE_ORDER |
+									 ConfigFile::CUSTOM_MACROS);
+
+		AutoPtr<Config> config(FB_NEW Config);
+
+		bool defaultFound = false, exactMatch = false;
+
+		for (const auto& section : cfgFile.getParameters())
 		{
-			if (defaultFound)
-				raiseError("Only one default DATABASE section is allowed");
-
-			defaultFound = true;
-		}
-		else
-		{
-			PathUtils::fixupSeparators(dbName);
-			ISC_expand_filename(dbName, true);
-
-			if (dbName != lookupName)
+			if (section.name != "database")
 				continue;
 
-			config->dbName = dbName;
+			PathName dbName(section.value.c_str());
 
-			exactMatch = true;
-		}
+			if (dbName.empty())
+			{
+				if (defaultFound)
+					raiseError("Only one default DATABASE section is allowed");
 
-		if (section.sub)
-		{
-			const ConfigFile::Parameters& elements = section.sub->getParameters();
-			for (const auto& el : elements)
+				defaultFound = true;
+			}
+			else
+			{
+				PathUtils::fixupSeparators(dbName);
+				ISC_expand_filename(dbName, true);
+
+				if (dbName != lookupName)
+					continue;
+
+				config->dbName = dbName;
+
+				exactMatch = true;
+			}
+
+			if (!section.sub)
+				continue;
+
+			for (const auto& el : section.sub->getParameters())
 			{
 				const string key(el.name.c_str());
 				string value(el.value);
@@ -220,6 +244,7 @@ Config* Config::get(const PathName& lookupName)
 				{
 					config->logDirectory = value.c_str();
 					PathUtils::ensureSeparator(config->logDirectory);
+					checkAccess(config->logDirectory, key);
 				}
 				else if (key == "log_file_prefix")
 				{
@@ -233,6 +258,7 @@ Config* Config::get(const PathName& lookupName)
 				{
 					config->logArchiveDirectory = value.c_str();
 					PathUtils::ensureSeparator(config->logArchiveDirectory);
+					checkAccess(config->logArchiveDirectory, key);
 				}
 				else if (key == "log_archive_command")
 				{
@@ -259,28 +285,36 @@ Config* Config::get(const PathName& lookupName)
 					parseBoolean(value, config->disableOnError);
 				}
 			}
+
+			if (exactMatch)
+				break;
 		}
 
-		if (exactMatch)
-			break;
-	}
+		// TODO: As soon as plugin name is moved into RDB$PUBLICATIONS,
+		// delay config parse until real replication start
+		if (config->pluginName.hasData())
+			return config.release();
 
-	// TODO: As soon as plugin name is moved into RDB$PUBLICATIONS delay config parse until real replication start
-	if (config->pluginName.hasData())
-		return config.release();
-
-	if (config->logDirectory.hasData() || config->syncReplicas.hasData())
-	{
-		// If log_directory is specified, then replication is enabled
-
-		if (config->logFilePrefix.isEmpty())
+		if (config->logDirectory.hasData() || config->syncReplicas.hasData())
 		{
-			PathName db_directory, db_filename;
-			PathUtils::splitLastComponent(db_directory, db_filename, config->dbName);
-			config->logFilePrefix = db_filename;
-		}
+			// If log_directory is specified, then replication is enabled
 
-		return config.release();
+			if (config->logFilePrefix.isEmpty())
+			{
+				PathName db_directory, db_filename;
+				PathUtils::splitLastComponent(db_directory, db_filename, config->dbName);
+				config->logFilePrefix = db_filename;
+			}
+
+			return config.release();
+		}
+	}
+	catch (const Exception& ex)
+	{
+		FbLocalStatus localStatus;
+		composeError(&localStatus, ex);
+
+		logPrimaryStatus(lookupName, &localStatus);
 	}
 
 	return nullptr;
@@ -291,34 +325,50 @@ Config* Config::get(const PathName& lookupName)
 
 void Config::enumerate(Firebird::Array<Config*>& replicas)
 {
-	const PathName filename =
-		fb_utils::getPrefix(IConfigManager::DIR_CONF, REPLICATION_CFGFILE);
+	PathName dbName;
 
-	MemoryPool& pool = *getDefaultMemoryPool();
-
-	ConfigFile cfgFile(filename, ConfigFile::HAS_SUB_CONF | ConfigFile::NATIVE_ORDER | ConfigFile::CUSTOM_MACROS);
-
-	AutoPtr<Config> defConfig(FB_NEW Config);
-
-	bool defaultFound = false, exactMatch = false;
-	const ConfigFile::Parameters& params = cfgFile.getParameters();
-	for (const auto& section : params)
+	try
 	{
-		if (section.name != "database")
-			raiseError("Unknown section found in the configuration file");
+		const PathName filename =
+			fb_utils::getPrefix(IConfigManager::DIR_CONF, REPLICATION_CFGFILE);
 
-		PathName dbName(section.value.c_str());
+		MemoryPool& pool = *getDefaultMemoryPool();
 
-		AutoPtr<Config> dbConfig;
-		if (!dbName.isEmpty())
-			dbConfig = FB_NEW Config(*defConfig);
+		ConfigFile cfgFile(filename, ConfigFile::HAS_SUB_CONF |
+									 ConfigFile::NATIVE_ORDER |
+									 ConfigFile::CUSTOM_MACROS);
 
-		Config* const config = dbName.isEmpty() ? defConfig : dbConfig;
+		AutoPtr<Config> defConfig(FB_NEW Config);
 
-		if (section.sub)
+		bool defaultFound = false, exactMatch = false;
+
+		for (const auto& section : cfgFile.getParameters())
 		{
-			const ConfigFile::Parameters& elements = section.sub->getParameters();
-			for (const auto& el : elements)
+			if (section.name != "database")
+				continue;
+
+			AutoPtr<Config> dbConfig;
+			Config* config = nullptr;
+
+			dbName = section.value.c_str();
+
+			if (dbName.empty())
+			{
+				if (defaultFound)
+					raiseError("Only one default DATABASE section is allowed");
+
+				defaultFound = true;
+				config = defConfig;
+			}
+			else
+			{
+				config = dbConfig = FB_NEW Config(*defConfig);
+			}
+
+			if (!section.sub)
+				continue;
+
+			for (const auto& el : section.sub->getParameters())
 			{
 				const string key(el.name.c_str());
 				string value(el.value);
@@ -330,6 +380,7 @@ void Config::enumerate(Firebird::Array<Config*>& replicas)
 				{
 					config->logSourceDirectory = value.c_str();
 					PathUtils::ensureSeparator(config->logSourceDirectory);
+					checkAccess(config->logSourceDirectory, key);
 				}
 				else if (key == "source_guid")
 				{
@@ -348,27 +399,24 @@ void Config::enumerate(Firebird::Array<Config*>& replicas)
 					parseLong(value, config->applyErrorTimeout);
 				}
 			}
-		}
 
-		if (dbName.empty())
-		{
-			if (defaultFound)
-				raiseError("Only one default DATABASE section is allowed");
+			if (dbName.hasData() && config->logSourceDirectory.hasData())
+			{
+				// If source_directory is specified, then replication is enabled
 
-			defaultFound = true;
-			continue;
-		}
+				PathUtils::fixupSeparators(dbName);
+				ISC_expand_filename(dbName, true);
 
-		if (config->logSourceDirectory.hasData())
-		{
-			// If source_directory is specified, then replication is enabled
-
-			PathUtils::fixupSeparators(dbName);
-			ISC_expand_filename(dbName, true);
-
-			config->dbName = dbName;
-			replicas.add(dbConfig.release());
+				config->dbName = dbName;
+				replicas.add(dbConfig.release());
+			}
 		}
 	}
+	catch (const Exception& ex)
+	{
+		FbLocalStatus localStatus;
+		composeError(&localStatus, ex);
 
+		logReplicaStatus(dbName, &localStatus);
+	}
 }
