@@ -744,10 +744,13 @@ bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, unsigned bytecount)
 		}
 
 		rem_port* port = (rem_port*) xdrs->x_public;
-		Firebird::RefMutexGuard queGuard(*port->port_que_sync, FB_FUNCTION);
+		Firebird::RefMutexEnsureUnlock queGuard(*port->port_que_sync, FB_FUNCTION);
+		queGuard.enter();
 		if (port->port_qoffset >= port->port_queue.getCount())
 		{
-			port->port_flags |= PORT_partial_data;
+			queGuard.leave();
+
+			port->port_partial_data = true;
 			return FALSE;
 		}
 
@@ -1405,7 +1408,7 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 #ifdef COMPRESS_DEBUG
 				fprintf(stderr, "Inflate error\n");
 #endif
-				port->port_flags &= ~PORT_z_data;
+				port->port_z_data = false;
 				return false;
 			}
 #ifdef COMPRESS_DEBUG
@@ -1418,9 +1421,9 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 			if (strm.next_out != buffer)
 				break;
 
-			if (port->port_flags & PORT_z_data)		// Was called from select_multi() but nothing decompressed
+			if (port->port_z_data)		// Was called from select_multi() but nothing decompressed
 			{
-				port->port_flags &= ~PORT_z_data;
+				port->port_z_data = false;
 				return false;
 			}
 
@@ -1437,7 +1440,7 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 		SSHORT l = (SSHORT) (port->port_buff_size - strm.avail_in);
 		if ((!packet_receive(port, strm.next_in, l, &l)) || (l <= 0))	// fixit - 2 ways to report errors in same routine
 		{
-			port->port_flags &= ~PORT_z_data;
+			port->port_z_data = false;
 			return false;
 		}
 
@@ -1446,12 +1449,12 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 
 	*length = (SSHORT) (buffer_length - strm.avail_out);
 	if (strm.avail_in)	// Z-buffer still has some data - probably can call inflate() once more on them
-		port->port_flags |= PORT_z_data;
+		port->port_z_data = true;
 	else
-		port->port_flags &= ~PORT_z_data;
+		port->port_z_data = false;
 
 #ifdef COMPRESS_DEBUG
-	fprintf(stderr, "Z-buffer %s\n", port->port_flags & PORT_z_data ? "has data" : "is empty");
+	fprintf(stderr, "ZLib buffer %s\n", port->port_z_data ? "has data" : "is empty");
 #endif
 
 	return true;
