@@ -292,7 +292,7 @@ public:
 #ifdef WIRE_COMPRESS_SUPPORT
 		if (slct_zport)
 		{
-			if ((slct_zport->port_flags & PORT_z_data) &&
+			if (slct_zport->port_z_data &&
 				(slct_zport->port_state != rem_port::DISCONNECTED))
 			{
 				port = slct_zport;
@@ -319,7 +319,7 @@ public:
 			return SEL_NO_DATA;
 
 #ifdef WIRE_COMPRESS_SUPPORT
-		if (slct_port->port_flags & PORT_z_data)
+		if (slct_port->port_z_data)
 			return SEL_READY;
 #endif
 
@@ -337,7 +337,7 @@ public:
 	HandleState ok(const rem_port* port)
 	{
 #ifdef WIRE_COMPRESS_SUPPORT
-		if (port->port_flags & PORT_z_data)
+		if (port->port_z_data)
 			return SEL_READY;
 #endif
 		SOCKET n = port->port_handle;
@@ -2058,12 +2058,11 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 	do {
 		if (!xdr_protocol(&main_port->port_receive, packet))
 		{
-			packet->p_operation = main_port->port_flags & PORT_partial_data ? op_partial : op_exit;
-			main_port->port_flags &= ~PORT_partial_data;
-
-			if (packet->p_operation == op_exit) {
+			packet->p_operation = main_port->port_partial_data ? op_partial : op_exit;
+			if (packet->p_operation == op_exit)
 				main_port->port_state = rem_port::BROKEN;
-			}
+
+			main_port->port_partial_data = 0;
 			break;
 		}
 #ifdef DEBUG
@@ -2130,7 +2129,7 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 					*length = 0;
 				}
 #ifdef WIRE_COMPRESS_SUPPORT
-				if (port->port_flags & PORT_z_data)
+				if (port->port_z_data)
 					INET_select->setZDataPort(port);
 #endif
 				return (*length) ? true : false;
@@ -2158,7 +2157,7 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 				*length = 0;
 			}
 #ifdef WIRE_COMPRESS_SUPPORT
-			if (port->port_flags & PORT_z_data)
+			if (port->port_z_data)
 				INET_select->setZDataPort(port);
 #endif
 			return (*length) ? true : false;
@@ -2819,7 +2818,7 @@ static bool inet_read( XDR* xdrs)
 	}
 
 	SSHORT length = end - p;
-	port->port_flags &= ~PORT_z_data;
+	port->port_z_data = 0;
 	if (!REMOTE_inflate(port, packet_receive2, (UCHAR*)p, length, &length))
 		return false;
 	p += length;

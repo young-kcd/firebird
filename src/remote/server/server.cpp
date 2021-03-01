@@ -2841,7 +2841,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 	}
 
 	this->port_flags |= PORT_disconnect;
-	this->port_flags &= ~PORT_z_data;
+	this->port_z_data = 0;
 
 	if (!rdb)
 	{
