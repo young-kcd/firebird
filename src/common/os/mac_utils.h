@@ -36,7 +36,7 @@ void osLog(const char*);
 #else // DARWIN
 
 inline const char* getTemporaryFolder() { return NULL; }
-inline bool isSandboxed() { return NULL; }
+inline bool isSandboxed() { return false; }
 
 #endif // DARWIN
 
