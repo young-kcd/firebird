@@ -1041,7 +1041,7 @@ namespace Jrd
 		USHORT	dpb_verify;
 		USHORT	dpb_sweep;
 		USHORT	dpb_dbkey_scope;
-		USHORT	dpb_page_size;
+		SLONG	dpb_page_size;
 		bool	dpb_activate_shadow;
 		bool	dpb_delete_shadow;
 		bool	dpb_no_garbage;
@@ -2885,11 +2885,11 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 
 			attachment->att_client_charset = attachment->att_charset = options.dpb_interp;
 
-			if (!options.dpb_page_size) {
+			if (options.dpb_page_size <= 0) {
 				options.dpb_page_size = DEFAULT_PAGE_SIZE;
 			}
 
-			USHORT page_size = MIN_PAGE_SIZE;
+			SLONG page_size = MIN_PAGE_SIZE;
 			for (; page_size < MAX_PAGE_SIZE; page_size <<= 1)
 			{
 				if (options.dpb_page_size < page_size << 1)
@@ -6668,7 +6668,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			break;
 
 		case isc_dpb_page_size:
-			dpb_page_size = (USHORT) rdr.getInt();
+			dpb_page_size = rdr.getInt();
 			break;
 
 		case isc_dpb_debug:

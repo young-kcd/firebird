@@ -229,7 +229,7 @@ bool PREPARSE_execute(CheckStatusWrapper* status, Why::YAttachment** ptrAtt,
 							if (token == "=")
 								token = getToken(pos, tks, NUMERIC);
 
-							page_size = atol(token.c_str());
+							page_size = token.length() > 8 ? 100000000 : atol(token.c_str());
 							dpb.insertInt(isc_dpb_page_size, page_size);
 							matched = true;
 							break;
