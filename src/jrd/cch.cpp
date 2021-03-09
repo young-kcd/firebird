@@ -2658,6 +2658,8 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 	for (ULONG i = 0; i < bcb->bcb_count; i++)
 	{
 		BufferDesc* bdb = bcb->bcb_rpt[i].bcb_bdb;
+		if (!bdb)		// first non-initialized BDB, abandon following checks
+			break;
 
 		if (bdb->bdb_flags & (BDB_db_dirty | BDB_dirty))
 		{
@@ -3510,8 +3512,8 @@ static bool expand_buffers(thread_db* tdbb, ULONG number)
  **************************************
  *
  * Functional description
- *	Expand the cache to at least a given number of buffers.  If
- *	it's already that big, don't do anything.
+ *	Expand the cache to at least a given number of buffers.
+ *	If it's already that big, don't do anything.
  *
  * Nickolay Samofatov, 08-Mar-2004.
  *  This function does not handle exceptions correctly,
@@ -3541,8 +3543,8 @@ static bool expand_buffers(thread_db* tdbb, ULONG number)
 
 	bcb_repeat* const new_rpt = FB_NEW_POOL(*bcb->bcb_bufferpool) bcb_repeat[number];
 	bcb_repeat* const old_rpt = bcb->bcb_rpt;
-	bcb->bcb_rpt = new_rpt;
 
+	bcb->bcb_rpt = new_rpt;
 	bcb->bcb_count = number;
 	bcb->bcb_free_minimum = (SSHORT) MIN(number / 4, 128);	/* 25% clean page reserve */
 
@@ -3551,7 +3553,10 @@ static bool expand_buffers(thread_db* tdbb, ULONG number)
 	// Initialize tail of new buffer control block
 	bcb_repeat* new_tail;
 	for (new_tail = bcb->bcb_rpt; new_tail < new_end; new_tail++)
+	{
 		QUE_INIT(new_tail->bcb_page_mod);
+		new_tail->bcb_bdb = nullptr;
+	}
 
 	// Move any active buffers from old block to new
 
