@@ -713,7 +713,7 @@ void SharedMemoryBase::eventFini(event_t* event)
 
 	if (event->event_pid == process_id)
 	{
-		CloseHandle((HANDLE) event->event_handle);
+		CloseHandle(event->event_handle);
 	}
 
 #else // pthread-based event
@@ -749,7 +749,7 @@ SLONG SharedMemoryBase::eventClear(event_t* event)
 
 #if defined(WIN_NT)
 
-	ResetEvent((HANDLE) event->event_handle);
+	ResetEvent(event->event_handle);
 
 	return event->event_count + 1;
 
@@ -874,7 +874,7 @@ int SharedMemoryBase::eventPost(event_t* event)
 	if (event->event_pid != process_id)
 		return ISC_kill(event->event_pid, event->event_id, event->event_handle);
 
-	return SetEvent((HANDLE) event->event_handle) ? FB_SUCCESS : FB_FAILURE;
+	return SetEvent(event->event_handle) ? FB_SUCCESS : FB_FAILURE;
 
 #else // pthread-based event
 
