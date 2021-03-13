@@ -111,12 +111,18 @@ struct mtx
 	FAST_MUTEX mtx_fast;
 };
 
+// Enforce equal binary layout for both 32 and 64-bit platforms as instances of
+// event_t is used in shared memory.
 struct event_t
 {
 	SLONG event_pid;
 	SLONG event_id;
 	SLONG event_count;
-	void* event_handle;
+	union
+	{
+		HANDLE event_handle;
+		FB_UINT64 dummy;
+	};
 };
 
 #endif // WIN_NT
