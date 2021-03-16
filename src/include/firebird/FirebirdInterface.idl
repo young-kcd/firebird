@@ -80,7 +80,9 @@ interface Status : Disposable
 	void setErrors(const intptr* value);
 	void setWarnings(const intptr* value);
 
+	[onError stubError]
 	const intptr* getErrors() const;
+	[onError stubError]
 	const intptr* getWarnings() const;
 
 	Status clone() const;

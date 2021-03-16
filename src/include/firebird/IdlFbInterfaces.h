@@ -6603,7 +6603,7 @@ namespace Firebird
 			catch (...)
 			{
 				StatusType::catchException(0);
-				return static_cast<const intptr_t*>(0);
+				return stubError();
 			}
 		}
 
@@ -6616,7 +6616,7 @@ namespace Firebird
 			catch (...)
 			{
 				StatusType::catchException(0);
-				return static_cast<const intptr_t*>(0);
+				return stubError();
 			}
 		}
 
