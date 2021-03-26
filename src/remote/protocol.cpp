@@ -98,6 +98,8 @@ static bool alloc_cstring(XDR*, CSTRING*);
 static void free_cstring(XDR*, CSTRING*);
 static void reset_statement(XDR*, SSHORT);
 static bool_t xdr_cstring(XDR*, CSTRING*);
+static bool_t xdr_response(XDR*, CSTRING*);
+static bool_t xdr_cstring_with_limit(XDR*, CSTRING*, ULONG);
 static inline bool_t xdr_cstring_const(XDR*, CSTRING_CONST*);
 #ifdef DEBUG_XDR_MEMORY
 static bool_t xdr_debug_packet(XDR*, enum xdr_op, PACKET*);
@@ -112,8 +114,6 @@ static bool_t xdr_sql_blr(XDR*, SLONG, CSTRING*, bool, SQL_STMT_TYPE);
 static bool_t xdr_sql_message(XDR*, SLONG);
 static bool_t xdr_trrq_blr(XDR*, CSTRING*);
 static bool_t xdr_trrq_message(XDR*, USHORT);
-
-#include "../common/xdr_proto.h"
 
 inline void fixupLength(const XDR* xdrs, ULONG& length)
 {
@@ -181,7 +181,7 @@ void xdr_debug_memory(XDR* xdrs,
  *	status vector.
  *
  **************************************/
-	rem_port* port = (rem_port*) xdrs->x_public;
+	rem_port* port = xdrs->x_public;
 	fb_assert(port != 0);
 	fb_assert(port->port_header.blk_type == type_port);
 
@@ -417,7 +417,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		response = &p->p_resp;
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(response->p_resp_object));
 		MAP(xdr_quad, response->p_resp_blob_id);
-		MAP(xdr_cstring, response->p_resp_data);
+		MAP(xdr_response, response->p_resp_data);
 		return xdr_status_vector(xdrs, response->p_resp_status_vector) ?
 								 	P_TRUE(xdrs, p) : P_FALSE(xdrs, p);
 
@@ -797,7 +797,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			P_CRYPT_CALLBACK* cc = &p->p_cc;
 			MAP(xdr_cstring, cc->p_cc_data);
 
-			rem_port* port = (rem_port*) xdrs->x_public;
+			rem_port* port = xdrs->x_public;
 			// If the protocol is 0 we are in the process of establishing a connection.
 			// crypt_key_callback at this phaze means server protocol is at least P15
 			if (port->port_protocol >= PROTOCOL_VERSION14 || port->port_protocol == 0)
@@ -949,6 +949,13 @@ static void free_cstring( XDR* xdrs, CSTRING* cstring)
 }
 
 
+static bool xdr_is_client(XDR* xdrs)
+{
+	const rem_port* port = xdrs->x_public;
+	return !(port->port_flags & PORT_server);
+}
+
+
 // CVC: This function is a little stub to validate that indeed, bpb's aren't
 // overwritten by accident. Even though xdr_string writes to cstr_address,
 // an action we wanted to block, it first allocates a new buffer.
@@ -961,19 +968,39 @@ static void free_cstring( XDR* xdrs, CSTRING* cstring)
 // The same function is being used to check P_SGMT & P_DDL.
 static inline bool_t xdr_cstring_const(XDR* xdrs, CSTRING_CONST* cstring)
 {
-#ifdef DEV_BUILD
-	if (xdrs->x_client)
+	if (xdr_is_client(xdrs) && xdrs->x_op == XDR_DECODE)
 	{
-		const bool cond =
-			!(xdrs->x_op == XDR_DECODE &&
-				cstring->cstr_length <= cstring->cstr_allocated && cstring->cstr_allocated);
-		fb_assert(cond);
+		fb_assert(!(cstring->cstr_length <= cstring->cstr_allocated && cstring->cstr_allocated));
+
+		if (!cstring->cstr_allocated)
+		{
+			// Normally we should not decode into such CSTRING_CONST at client side
+			// May be op, normally never sent to client, was received
+			cstring->cstr_address = NULL;
+			cstring->cstr_length = 0;
+		}
 	}
-#endif
 	return xdr_cstring(xdrs, reinterpret_cast<CSTRING*>(cstring));
 }
 
+static inline bool_t xdr_response(XDR* xdrs, CSTRING* cstring)
+{
+	if (xdr_is_client(xdrs) && xdrs->x_op == XDR_DECODE && cstring->cstr_allocated)
+	{
+		ULONG limit = cstring->cstr_allocated;
+		cstring->cstr_allocated = 0;
+		return xdr_cstring_with_limit(xdrs, cstring, limit);
+	}
+
+	return xdr_cstring(xdrs, cstring);
+}
+
 static bool_t xdr_cstring( XDR* xdrs, CSTRING* cstring)
+{
+	return xdr_cstring_with_limit(xdrs, cstring, 0);
+}
+
+static bool_t xdr_cstring_with_limit( XDR* xdrs, CSTRING* cstring, ULONG limit)
 {
 /**************************************
  *
@@ -1001,29 +1028,25 @@ static bool_t xdr_cstring( XDR* xdrs, CSTRING* cstring)
 	{
 	case XDR_ENCODE:
 		if (cstring->cstr_length &&
-			!(*xdrs->x_ops->x_putbytes) (xdrs,
-										 reinterpret_cast<const SCHAR*>(cstring->cstr_address),
-										 cstring->cstr_length))
+			!xdrs->x_putbytes(reinterpret_cast<const SCHAR*>(cstring->cstr_address), cstring->cstr_length))
 		{
 			return FALSE;
 		}
 		l = (4 - cstring->cstr_length) & 3;
 		if (l)
-			return (*xdrs->x_ops->x_putbytes) (xdrs, filler, l);
+			return xdrs->x_putbytes(filler, l);
 		return TRUE;
 
 	case XDR_DECODE:
+		if (limit && cstring->cstr_length > limit)
+			return FALSE;
 		if (!alloc_cstring(xdrs, cstring))
 			return FALSE;
-		if (!(*xdrs->x_ops->x_getbytes)(xdrs,
-										reinterpret_cast<SCHAR*>(cstring->cstr_address),
-										cstring->cstr_length))
-		{
+		if (!xdrs->x_getbytes(reinterpret_cast<SCHAR*>(cstring->cstr_address), cstring->cstr_length))
 			return FALSE;
-		}
 		l = (4 - cstring->cstr_length) & 3;
 		if (l)
-			return (*xdrs->x_ops->x_getbytes) (xdrs, trash, l);
+			return xdrs->x_getbytes(trash, l);
 		return TRUE;
 
 	case XDR_FREE:
@@ -1049,7 +1072,7 @@ static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
  *	entering/removing from a port's packet tracking vector.
  *
  **************************************/
-	rem_port* port = (rem_port*) xdrs->x_public;
+	rem_port* port = xdrs->x_public;
 	fb_assert(port != 0);
 	fb_assert(port->port_header.blk_type == type_port);
 
@@ -1168,7 +1191,7 @@ static bool_t xdr_message( XDR* xdrs, RMessage* message, const rem_fmt* format)
 	if (xdrs->x_op == XDR_FREE)
 		return TRUE;
 
-	rem_port* port = (rem_port*) xdrs->x_public;
+	rem_port* port = xdrs->x_public;
 
 	if (!message || !format)
 		return FALSE;
@@ -1207,7 +1230,7 @@ static bool_t xdr_packed_message( XDR* xdrs, RMessage* message, const rem_fmt* f
 	if (xdrs->x_op == XDR_FREE)
 		return TRUE;
 
-	const rem_port* const port = (rem_port*) xdrs->x_public;
+	const rem_port* const port = xdrs->x_public;
 
 	if (!message || !format)
 		return FALSE;
@@ -1342,7 +1365,7 @@ static bool_t xdr_request(XDR* xdrs,
 	if (xdrs->x_op == XDR_FREE)
 		return TRUE;
 
-	rem_port* port = (rem_port*) xdrs->x_public;
+	rem_port* port = xdrs->x_public;
 
 	if (request_id >= port->port_objects.getCount())
 		return FALSE;
@@ -1449,7 +1472,7 @@ static bool_t xdr_slice(XDR* xdrs, lstring* slice, /*USHORT sdl_length,*/ const 
 	}
 
 	const dsc* desc = &info.sdl_info_element;
-	const rem_port* port = (rem_port*) xdrs->x_public;
+	const rem_port* port = xdrs->x_public;
 	BLOB_PTR* p = (BLOB_PTR*) slice->lstr_address;
 	ULONG n;
 
@@ -1502,7 +1525,7 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 	if (xdrs->x_op == XDR_FREE)
 		return TRUE;
 
-	rem_port* port = (rem_port*) xdrs->x_public;
+	rem_port* port = xdrs->x_public;
 
 	Rsr* statement;
 
@@ -1603,7 +1626,7 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 	if (xdrs->x_op == XDR_FREE)
 		return TRUE;
 
-	rem_port* port = (rem_port*) xdrs->x_public;
+	rem_port* port = xdrs->x_public;
 
 	if (statement_id >= 0)
 	{
@@ -1767,7 +1790,7 @@ static bool_t xdr_trrq_blr(XDR* xdrs, CSTRING* blr)
 	if (xdrs->x_op == XDR_FREE || xdrs->x_op == XDR_ENCODE)
 		return TRUE;
 
-	rem_port* port = (rem_port*) xdrs->x_public;
+	rem_port* port = xdrs->x_public;
 	Rpr* procedure = port->port_rpr;
 	if (!procedure)
 		procedure = port->port_rpr = FB_NEW Rpr;
@@ -1831,7 +1854,7 @@ static bool_t xdr_trrq_message( XDR* xdrs, USHORT msg_type)
 	if (xdrs->x_op == XDR_FREE)
 		return TRUE;
 
-	rem_port* port = (rem_port*) xdrs->x_public;
+	rem_port* port = xdrs->x_public;
 	Rpr* procedure = port->port_rpr;
 
 	if (msg_type == 1)
@@ -1855,7 +1878,7 @@ static void reset_statement( XDR* xdrs, SSHORT statement_id)
  **************************************/
 
 	Rsr* statement = NULL;
-	rem_port* port = (rem_port*) xdrs->x_public;
+	rem_port* port = xdrs->x_public;
 
 	// if the statement ID is -1, this seems to indicate that we are
 	// re-executing the previous statement.  This is not a

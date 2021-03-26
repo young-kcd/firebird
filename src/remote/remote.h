@@ -611,7 +611,7 @@ inline void Rsr::releaseException()
 	rsr_status = NULL;
 }
 
-#include "../common/xdr.h"
+#include "../remote/remot_proto.h"
 
 
 // Generalized port definition.
@@ -972,8 +972,8 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	HANDLE			port_pipe;			// port pipe handle
 	HANDLE			port_event;			// event associated with a port
 #endif
-	XDR				port_receive;
-	XDR				port_send;
+	Firebird::AutoPtr<XDR>	port_receive;
+	Firebird::AutoPtr<XDR>	port_send;
 #ifdef DEBUG_XDR_MEMORY
 	r e m _ v e c*	port_packet_vector;		// Vector of send/receive packets
 #endif
@@ -1148,7 +1148,7 @@ public:
 
 	void releaseObject(OBJCT id)
 	{
-		if (id != INVALID_OBJECT)
+		if (id != INVALID_OBJECT && id <= MAX_OBJCT_HANDLES)
 		{
 			port_objects[id].release();
 		}
@@ -1174,7 +1174,7 @@ public:
 	bool haveRecvData()
 	{
 		Firebird::RefMutexGuard queGuard(*port_que_sync, FB_FUNCTION);
-		return ((port_receive.x_handy > 0) || (port_qoffset < port_queue.getCount()));
+		return ((port_receive->x_handy > 0) || (port_qoffset < port_queue.getCount()));
 	}
 
 	void clearRecvQue()
@@ -1182,7 +1182,7 @@ public:
 		Firebird::RefMutexGuard queGuard(*port_que_sync, FB_FUNCTION);
 		port_queue.clear();
 		port_qoffset = 0;
-		port_receive.x_private = port_receive.x_base;
+		port_receive->x_private = port_receive->x_base;
 	}
 
 	class RecvQueState
@@ -1194,8 +1194,8 @@ public:
 
 		RecvQueState(const rem_port* port)
 		{
-			save_handy = port->port_receive.x_handy;
-			save_private = port->port_receive.x_private - port->port_receive.x_base;
+			save_handy = port->port_receive->x_handy;
+			save_private = port->port_receive->x_private - port->port_receive->x_base;
 			save_qoffset = port->port_qoffset;
 		}
 	};
@@ -1210,11 +1210,11 @@ public:
 		if (rs.save_qoffset > 0 && (rs.save_qoffset != port_qoffset))
 		{
 			Firebird::Array<char>& q = port_queue[rs.save_qoffset - 1];
-			memcpy(port_receive.x_base, q.begin(), q.getCount());
+			memcpy(port_receive->x_base, q.begin(), q.getCount());
 		}
 		port_qoffset = rs.save_qoffset;
-		port_receive.x_private = port_receive.x_base + rs.save_private;
-		port_receive.x_handy = rs.save_handy;
+		port_receive->x_private = port_receive->x_base + rs.save_private;
+		port_receive->x_handy = rs.save_handy;
 	}
 
 	// TMN: The following member functions are conceptually private
@@ -1262,7 +1262,7 @@ public:
 
 	Firebird::string getRemoteId() const;
 	void auxAcceptError(PACKET* packet);
-	void addServerKeys(CSTRING* str);
+	void addServerKeys(const CSTRING* str);
 	bool tryNewKey(InternalCryptKey* cryptKey);
 	void checkResponse(Firebird::IStatus* warning, PACKET* packet, bool checkKeys = false);
 

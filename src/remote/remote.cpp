@@ -30,7 +30,6 @@
 #include "../common/gdsassert.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
-#include "../common/xdr_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/init.h"
@@ -324,12 +323,9 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
 
 	if (packet)
 	{
-		xdrmem_create(&xdr, reinterpret_cast<char*>(packet), sizeof(PACKET), XDR_FREE);
-		xdr.x_public = (caddr_t) port;
+		xdr.create(reinterpret_cast<char*>(packet), sizeof(PACKET), XDR_FREE);
+		xdr.x_public = port;
 		xdr.x_local = (port->port_type == rem_port::XNET);
-#ifdef DEV_BUILD
-		xdr.x_client = false;
-#endif
 
 		if (partial) {
 			xdr_protocol(&xdr, packet);
@@ -743,7 +739,7 @@ bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, unsigned bytecount)
 			xdrs->x_handy = 0;
 		}
 
-		rem_port* port = (rem_port*) xdrs->x_public;
+		rem_port* port = xdrs->x_public;
 		Firebird::RefMutexEnsureUnlock queGuard(*port->port_que_sync, FB_FUNCTION);
 		queGuard.enter();
 		if (port->port_qoffset >= port->port_queue.getCount())
@@ -1143,7 +1139,7 @@ static void setCStr(CSTRING& to, const char* from)
 	to.cstr_allocated = 0;
 }
 
-void rem_port::addServerKeys(CSTRING* passedStr)
+void rem_port::addServerKeys(const CSTRING* passedStr)
 {
 	Firebird::ClumpletReader newKeys(Firebird::ClumpletReader::UnTagged,
 									 passedStr->cstr_address, passedStr->cstr_length);
@@ -1523,7 +1519,7 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 bool REMOTE_deflate(XDR* xdrs, ProtoWrite* proto_write, PacketSend* packet_send, bool flash)
 {
 #ifdef WIRE_COMPRESS_SUPPORT
-	rem_port* port = (rem_port*) xdrs->x_public;
+	rem_port* port = xdrs->x_public;
 	if (!(port->port_compressed && (port->port_flags & PORT_compressed)))
 		return proto_write(xdrs);
 

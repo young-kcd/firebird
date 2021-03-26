@@ -31,22 +31,22 @@
 // Functions below need to have C++ linkage to avoid name clash with
 // standard XDR. Firebird XDR is NOT compatible with Sun XDR at interface level
 
-bool_t	xdr_datum(XDR*, const dsc*, UCHAR*);
-bool_t	xdr_double(XDR*, double*);
-bool_t	xdr_enum(XDR*, xdr_op*);
-bool_t	xdr_float(XDR*, float*);
-bool_t	xdr_int(XDR*, int*);
-bool_t	xdr_long(XDR*, SLONG*);
-bool_t	xdr_opaque(XDR*, SCHAR*, unsigned);
-bool_t	xdr_quad(XDR*, SQUAD*);
-bool_t	xdr_short(XDR*, SSHORT*);
-bool_t	xdr_string(XDR*, SCHAR**, unsigned);
-bool_t	xdr_u_int(XDR*, unsigned*);
-bool_t	xdr_u_long(XDR*, ULONG*);
-bool_t	xdr_u_short(XDR*, u_short*);
-bool_t	xdr_wrapstring(XDR*, SCHAR**);
-bool_t	xdr_hyper(XDR*, void*);
-bool_t	xdrmem_create(XDR*, SCHAR*, unsigned, xdr_op);
-SLONG	xdr_peek_long(const XDR*, const void* data, size_t size);
+bool_t	xdr_datum(xdr_t*, const dsc*, UCHAR*);
+bool_t	xdr_double(xdr_t*, double*);
+bool_t	xdr_enum(xdr_t*, xdr_op*);
+bool_t	xdr_float(xdr_t*, float*);
+bool_t	xdr_int(xdr_t*, int*);
+bool_t	xdr_long(xdr_t*, SLONG*);
+bool_t	xdr_opaque(xdr_t*, SCHAR*, unsigned);
+bool_t	xdr_quad(xdr_t*, SQUAD*);
+bool_t	xdr_short(xdr_t*, SSHORT*);
+bool_t	xdr_string(xdr_t*, SCHAR**, unsigned);
+bool_t	xdr_u_int(xdr_t*, unsigned*);
+bool_t	xdr_u_long(xdr_t*, ULONG*);
+bool_t	xdr_u_short(xdr_t*, u_short*);
+bool_t	xdr_wrapstring(xdr_t*, SCHAR**);
+bool_t	xdr_hyper(xdr_t*, void*);
+bool_t	xdrmem_create(xdr_t*, SCHAR*, unsigned, xdr_op);
+SLONG	xdr_peek_long(const xdr_t*, const void* data, size_t size);
 
 #endif	// REMOTE_XDR_PROTO_H
