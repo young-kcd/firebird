@@ -1562,8 +1562,7 @@ unsigned sqlTypeToDsc(unsigned runOffset, unsigned sqlType, unsigned sqlLength,
 	if (dscType == dtype_unknown)
 	{
 		fb_assert(false);
-		// keep old yvalve logic
-		dscType = sqlType;
+		Firebird::Arg::Gds(isc_dsql_datatype_err).raise();
 	}
 
 	if (dtype)

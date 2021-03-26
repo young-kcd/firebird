@@ -28,8 +28,9 @@
 #include "../common/config/config.h"
 #include "../common/classes/RefCounted.h"
 #include "../common/classes/ParsedList.h"
-#include "../common/xdr.h"
 #include "../remote/protocol.h"
+#include "../common/xdr_proto.h"
+
 
 namespace Firebird
 {
@@ -37,6 +38,16 @@ namespace Firebird
 }
 
 struct rem_port;
+struct RemoteXdr : public xdr_t
+{
+	RemoteXdr()
+		: x_public(nullptr)
+	{ }
+
+	rem_port* x_public;
+};
+typedef struct RemoteXdr XDR;
+
 struct rem_fmt;
 struct Rdb;
 typedef bool PacketReceive(rem_port*, UCHAR*, SSHORT, SSHORT*);
