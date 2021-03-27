@@ -68,12 +68,12 @@ static rem_port* receive(rem_port*, PACKET*);
 static int send_full(rem_port*, PACKET*);
 static int send_partial(rem_port*, PACKET*);
 
-static XDR* xdrxnet_create(rem_port*, UCHAR *, USHORT, xdr_op);
+static RemoteXdr* xdrxnet_create(rem_port*, UCHAR *, USHORT, xdr_op);
 
-static bool_t xnet_read(XDR* xdrs);
-static bool_t xnet_write(XDR* xdrs);
+static bool_t xnet_read(RemoteXdr* xdrs);
+static bool_t xnet_write(RemoteXdr* xdrs);
 
-struct XnetXdr : public XDR
+struct XnetXdr : public RemoteXdr
 {
 	virtual bool_t x_getbytes(SCHAR *, unsigned);		// get some bytes from "
 	virtual bool_t x_putbytes(const SCHAR*, unsigned);	// put some bytes to "
@@ -1691,7 +1691,7 @@ void XnetClientEndPoint::server_shutdown(rem_port* port)
 }
 
 
-static XDR* xdrxnet_create(rem_port* port, UCHAR* buffer, USHORT length, xdr_op x_op)
+static RemoteXdr* xdrxnet_create(rem_port* port, UCHAR* buffer, USHORT length, xdr_op x_op)
 {
 /**************************************
  *
@@ -1704,7 +1704,7 @@ static XDR* xdrxnet_create(rem_port* port, UCHAR* buffer, USHORT length, xdr_op 
  *
  **************************************/
 
-	XDR* xdrs = FB_NEW XnetXdr;
+	RemoteXdr* xdrs = FB_NEW XnetXdr;
 
 	xdrs->x_public = port;
 	xdrs->create(reinterpret_cast<SCHAR*>(buffer), length, x_op);
@@ -1938,7 +1938,7 @@ bool_t XnetXdr::x_putbytes(const SCHAR* buff, unsigned bytecount)
 }
 
 
-static bool_t xnet_read(XDR* xdrs)
+static bool_t xnet_read(RemoteXdr* xdrs)
 {
 /**************************************
  *
@@ -2025,7 +2025,7 @@ static bool_t xnet_read(XDR* xdrs)
 }
 
 
-static bool_t xnet_write(XDR* xdrs)
+static bool_t xnet_write(RemoteXdr* xdrs)
 {
 /**************************************
  *

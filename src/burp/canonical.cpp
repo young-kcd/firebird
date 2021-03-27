@@ -59,11 +59,9 @@ struct BurpXdr : public xdr_t
 
 	lstring* x_public;
 };
-typedef struct BurpXdr XDR;
-
-static bool_t expand_buffer(XDR*);
-static int xdr_init(XDR*, lstring*, enum xdr_op);
-static bool_t xdr_slice(XDR*, lstring*, /*USHORT,*/ const UCHAR*);
+static bool_t expand_buffer(BurpXdr*);
+static int xdr_init(BurpXdr*, lstring*, enum xdr_op);
+static bool_t xdr_slice(BurpXdr*, lstring*, /*USHORT,*/ const UCHAR*);
 
 const unsigned increment = 1024;
 
@@ -83,8 +81,8 @@ ULONG CAN_encode_decode(burp_rel* relation, lstring* buffer, UCHAR* data, bool d
 	const burp_fld* field;
 	SSHORT n;
 
-	XDR xdr;
-	XDR* xdrs = &xdr;
+	BurpXdr xdr;
+	BurpXdr* xdrs = &xdr;
 
 	xdr_init(xdrs, buffer, direction ? XDR_ENCODE : XDR_DECODE);
 
@@ -274,8 +272,8 @@ ULONG CAN_slice(lstring* buffer, lstring* slice, bool direction, UCHAR* sdl)
  *	encode and decode canonical backup.
  *
  **************************************/
-	XDR xdr;
-	XDR* xdrs = &xdr;
+	BurpXdr xdr;
+	BurpXdr* xdrs = &xdr;
 
 	xdr_init(xdrs, buffer, direction ? XDR_ENCODE : XDR_DECODE);
 
@@ -354,7 +352,7 @@ bool_t BurpXdr::x_putbytes(const SCHAR* buff, unsigned bytecount)
 }
 
 
-static bool_t expand_buffer(XDR* xdrs)
+static bool_t expand_buffer(BurpXdr* xdrs)
 {
 /**************************************
  *
@@ -388,7 +386,7 @@ static bool_t expand_buffer(XDR* xdrs)
 }
 
 
-static int xdr_init(XDR* xdrs, lstring* buffer, enum xdr_op x_op)
+static int xdr_init(BurpXdr* xdrs, lstring* buffer, enum xdr_op x_op)
 {
 /**************************************
  *
@@ -408,7 +406,7 @@ static int xdr_init(XDR* xdrs, lstring* buffer, enum xdr_op x_op)
 }
 
 
-static bool_t xdr_slice(XDR* xdrs, lstring* slice, /*USHORT sdl_length,*/ const UCHAR* sdl)
+static bool_t xdr_slice(BurpXdr* xdrs, lstring* slice, /*USHORT sdl_length,*/ const UCHAR* sdl)
 {
 /**************************************
  *

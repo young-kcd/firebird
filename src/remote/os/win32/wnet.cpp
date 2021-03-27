@@ -76,12 +76,12 @@ static rem_str*		make_pipe_name(const RefPtr<const Config>&, const TEXT*, const 
 static rem_port*	receive(rem_port*, PACKET*);
 static int		send_full(rem_port*, PACKET*);
 static int		send_partial(rem_port*, PACKET*);
-static XDR*		xdrwnet_create(rem_port*, UCHAR *, USHORT, xdr_op);
-static bool_t	xdrwnet_endofrecord(XDR*);//, int);
+static RemoteXdr*		xdrwnet_create(rem_port*, UCHAR *, USHORT, xdr_op);
+static bool_t	xdrwnet_endofrecord(RemoteXdr*);//, int);
 static bool		wnet_error(rem_port*, const TEXT*, ISC_STATUS, int);
 static void		wnet_gen_error(rem_port*, const Arg::StatusVector& v);
-static bool_t	wnet_read(XDR*);
-static bool_t	wnet_write(XDR*); //, int);
+static bool_t	wnet_read(RemoteXdr*);
+static bool_t	wnet_write(RemoteXdr*); //, int);
 #ifdef DEBUG
 static void		packet_print(const TEXT*, const UCHAR*, const int);
 #endif
@@ -91,7 +91,7 @@ static void		wnet_make_file_name(TEXT*, DWORD);
 
 static int		cleanup_ports(const int, const int, void*);
 
-struct WnetXdr : public XDR
+struct WnetXdr : public RemoteXdr
 {
 	virtual bool_t x_getbytes(SCHAR *, unsigned);		// get some bytes from "
 	virtual bool_t x_putbytes(const SCHAR*, unsigned);	// put some bytes to "
@@ -932,7 +932,7 @@ static int send_partial( rem_port* port, PACKET* packet)
 }
 
 
-static XDR* xdrwnet_create(rem_port* port, UCHAR* buffer, USHORT length, xdr_op x_op)
+static RemoteXdr* xdrwnet_create(rem_port* port, UCHAR* buffer, USHORT length, xdr_op x_op)
 {
 /**************************************
  *
@@ -945,7 +945,7 @@ static XDR* xdrwnet_create(rem_port* port, UCHAR* buffer, USHORT length, xdr_op 
  *
  **************************************/
 
-	XDR* xdrs = FB_NEW WnetXdr;
+	RemoteXdr* xdrs = FB_NEW WnetXdr;
 
 	xdrs->x_public = port;
 	xdrs->create(reinterpret_cast<SCHAR*>(buffer), length, x_op);
@@ -954,7 +954,7 @@ static XDR* xdrwnet_create(rem_port* port, UCHAR* buffer, USHORT length, xdr_op 
 }
 
 
-static bool_t xdrwnet_endofrecord( XDR* xdrs) //, bool_t flushnow)
+static bool_t xdrwnet_endofrecord( RemoteXdr* xdrs) //, bool_t flushnow)
 {
 /**************************************
  *
@@ -1165,7 +1165,7 @@ bool_t WnetXdr::x_putbytes(const SCHAR* buff, unsigned count)
 }
 
 
-static bool_t wnet_read( XDR* xdrs)
+static bool_t wnet_read( RemoteXdr* xdrs)
 {
 /**************************************
  *
@@ -1216,7 +1216,7 @@ static bool_t wnet_read( XDR* xdrs)
 }
 
 
-static bool_t wnet_write( XDR* xdrs /*, bool_t end_flag*/)
+static bool_t wnet_write( RemoteXdr* xdrs /*, bool_t end_flag*/)
 {
 /**************************************
  *

@@ -543,7 +543,7 @@ static void		get_peer_info(rem_port*);
 
 static void		inet_gen_error(bool, rem_port*, const Arg::StatusVector& v);
 static void		inet_error(bool, rem_port*, const TEXT*, ISC_STATUS, int);
-static bool		inet_read(XDR*);
+static bool		inet_read(RemoteXdr*);
 static rem_port*		inet_try_connect(	PACKET*,
 									Rdb*,
 									const PathName&,
@@ -552,7 +552,7 @@ static rem_port*		inet_try_connect(	PACKET*,
 									RefPtr<const Config>*,
 									const PathName*,
 									int);
-static bool		inet_write(XDR*);
+static bool		inet_write(RemoteXdr*);
 static rem_port* listener_socket(rem_port* port, USHORT flag, const addrinfo* pai);
 
 #ifdef DEBUG
@@ -571,7 +571,7 @@ static bool		select_wait(rem_port*, Select*);
 static int		send_full(rem_port*, PACKET *);
 static int		send_partial(rem_port*, PACKET *);
 
-static XDR*		xdrinet_create(rem_port*, UCHAR *, USHORT, enum xdr_op);
+static RemoteXdr*		xdrinet_create(rem_port*, UCHAR *, USHORT, enum xdr_op);
 static bool		setNoNagleOption(rem_port*);
 static bool		setFastLoopbackOption(rem_port*, SOCKET s = INVALID_SOCKET);
 static bool		setKeepAlive(SOCKET);
@@ -579,7 +579,7 @@ static FPTR_INT	tryStopMainThread = 0;
 
 
 
-struct InetXdr : public XDR
+struct InetXdr : public RemoteXdr
 {
 	virtual bool_t x_getbytes(SCHAR *, unsigned);		// get some bytes from "
 	virtual bool_t x_putbytes(const SCHAR*, unsigned);	// put some bytes to "
@@ -2469,7 +2469,7 @@ static int send_partial( rem_port* port, PACKET * packet)
 }
 
 
-XDR* xdrinet_create(rem_port* port, UCHAR* buffer, USHORT length, enum xdr_op x_op)
+RemoteXdr* xdrinet_create(rem_port* port, UCHAR* buffer, USHORT length, enum xdr_op x_op)
 {
 /**************************************
  *
@@ -2482,7 +2482,7 @@ XDR* xdrinet_create(rem_port* port, UCHAR* buffer, USHORT length, enum xdr_op x_
  *
  **************************************/
 
-	XDR* xdrs = FB_NEW InetXdr;
+	RemoteXdr* xdrs = FB_NEW InetXdr;
 
 	xdrs->x_public = port;
 	xdrs->create(reinterpret_cast<SCHAR*>(buffer), length, x_op);
@@ -2763,7 +2763,7 @@ bool_t InetXdr::x_putbytes(const SCHAR* buff, unsigned bytecount)
 	return TRUE;
 }
 
-static bool inet_read( XDR* xdrs)
+static bool inet_read( RemoteXdr* xdrs)
 {
 /**************************************
  *
@@ -2887,7 +2887,7 @@ static rem_port* inet_try_connect(PACKET* packet,
 	return port;
 }
 
-static bool inet_write(XDR* xdrs)
+static bool inet_write(RemoteXdr* xdrs)
 {
 /**************************************
  *

@@ -318,7 +318,7 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
  *	Zero out a full packet block (partial == false) or
  *	part of packet used in last operation (partial == true)
  **************************************/
-	XDR xdr;
+	RemoteXdr xdr;
 	USHORT n;
 
 	if (packet)
@@ -707,7 +707,7 @@ void rem_port::auxAcceptError(PACKET* packet)
 	}
 }
 
-bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, unsigned bytecount)
+bool_t REMOTE_getbytes (RemoteXdr* xdrs, SCHAR* buff, unsigned bytecount)
 {
 /**************************************
  *
@@ -1459,7 +1459,7 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 #endif
 }
 
-bool REMOTE_deflate(XDR* xdrs, ProtoWrite* proto_write, PacketSend* packet_send, bool flush)
+bool REMOTE_deflate(RemoteXdr* xdrs, ProtoWrite* proto_write, PacketSend* packet_send, bool flush)
 {
 #ifdef WIRE_COMPRESS_SUPPORT
 	rem_port* port = xdrs->x_public;

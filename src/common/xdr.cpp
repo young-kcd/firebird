@@ -33,7 +33,7 @@
 #include "../common/DecFloat.h"
 #include "../common/Int128.h"
 
-typedef struct xdr_t XDR;
+typedef struct xdr_t xdr_t;
 
 inline UCHAR* XDR_ALLOC(ULONG size)
 {
@@ -45,19 +45,19 @@ inline void XDR_FREEA(void* block)
 }
 
 #ifdef DEBUG_XDR_MEMORY
-inline void DEBUG_XDR_ALLOC(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len)
+inline void DEBUG_XDR_ALLOC(xdr_t* xdrs, const void* xdrvar, const void* addr, ULONG len)
 {
 	xdr_debug_memory(xdrs, XDR_DECODE, xdrvar, addr, len)
 }
-inline void DEBUG_XDR_FREE(XDR* xdrs, const void* xdrvar, const void* addr, ULONG len)
+inline void DEBUG_XDR_FREE(xdr_t* xdrs, const void* xdrvar, const void* addr, ULONG len)
 {
 	xdr_debug_memory (xdrs, XDR_FREE, xdrvar, addr, (ULONG) len);
 }
 #else
-inline void DEBUG_XDR_ALLOC(XDR*, const void*, const void*, ULONG)
+inline void DEBUG_XDR_ALLOC(xdr_t*, const void*, const void*, ULONG)
 {
 }
-inline void DEBUG_XDR_FREE(XDR*, const void*, const void*, ULONG)
+inline void DEBUG_XDR_FREE(xdr_t*, const void*, const void*, ULONG)
 {
 }
 #endif // DEBUG_XDR_MEMORY
@@ -73,7 +73,7 @@ const unsigned MAXSTRING_FOR_WRAPSTRING	= 65535;
 #define GETBYTES	 xdrs->x_getbytes
 #define PUTBYTES	 xdrs->x_putbytes
 
-inline bool_t GETLONG(XDR* xdrs, SLONG* lp)
+inline bool_t GETLONG(xdr_t* xdrs, SLONG* lp)
 {
 	SLONG l;
 
@@ -85,7 +85,7 @@ inline bool_t GETLONG(XDR* xdrs, SLONG* lp)
 	return TRUE;
 }
 
-inline bool_t PUTLONG(XDR* xdrs, const SLONG* lp)
+inline bool_t PUTLONG(xdr_t* xdrs, const SLONG* lp)
 {
 	const SLONG l = xdrs->x_local ? *lp : htonl(*lp);
 	return xdrs->x_putbytes(reinterpret_cast<const char*>(&l), 4);
@@ -94,7 +94,7 @@ inline bool_t PUTLONG(XDR* xdrs, const SLONG* lp)
 static SCHAR zeros[4] = { 0, 0, 0, 0 };
 
 
-bool_t xdr_hyper( XDR* xdrs, void* pi64)
+bool_t xdr_hyper( xdr_t* xdrs, void* pi64)
 {
 /**************************************
  *
@@ -155,7 +155,7 @@ bool_t xdr_hyper( XDR* xdrs, void* pi64)
 }
 
 
-bool_t xdr_datum( XDR* xdrs, const dsc* desc, UCHAR* buffer)
+bool_t xdr_datum( xdr_t* xdrs, const dsc* desc, UCHAR* buffer)
 {
 /**************************************
  *
@@ -335,7 +335,7 @@ bool_t xdr_datum( XDR* xdrs, const dsc* desc, UCHAR* buffer)
 }
 
 
-bool_t xdr_double(XDR* xdrs, double* ip)
+bool_t xdr_double(xdr_t* xdrs, double* ip)
 {
 /**************************************
  *
@@ -382,13 +382,13 @@ bool_t xdr_double(XDR* xdrs, double* ip)
 }
 
 
-bool_t xdr_dec64(XDR* xdrs, Firebird::Decimal64* ip)
+bool_t xdr_dec64(xdr_t* xdrs, Firebird::Decimal64* ip)
 {
 	return xdr_hyper(xdrs, ip->getBytes());
 }
 
 
-bool_t xdr_dec128(XDR* xdrs, Firebird::Decimal128* ip)
+bool_t xdr_dec128(xdr_t* xdrs, Firebird::Decimal128* ip)
 {
 	UCHAR* bytes = ip->getBytes();
 
@@ -401,7 +401,7 @@ bool_t xdr_dec128(XDR* xdrs, Firebird::Decimal128* ip)
 }
 
 
-bool_t xdr_int128(XDR* xdrs, Firebird::Int128* ip)
+bool_t xdr_int128(xdr_t* xdrs, Firebird::Int128* ip)
 {
 	UCHAR* bytes = ip->getBytes();
 
@@ -414,7 +414,7 @@ bool_t xdr_int128(XDR* xdrs, Firebird::Int128* ip)
 }
 
 
-bool_t xdr_enum(XDR* xdrs, xdr_op* ip)
+bool_t xdr_enum(xdr_t* xdrs, xdr_op* ip)
 {
 /**************************************
  *
@@ -448,7 +448,7 @@ bool_t xdr_enum(XDR* xdrs, xdr_op* ip)
 }
 
 
-bool_t xdr_float(XDR* xdrs, float* ip)
+bool_t xdr_float(xdr_t* xdrs, float* ip)
 {
 /**************************************
  *
@@ -478,7 +478,7 @@ bool_t xdr_float(XDR* xdrs, float* ip)
 }
 
 
-bool_t xdr_int(XDR* xdrs, int* ip)
+bool_t xdr_int(xdr_t* xdrs, int* ip)
 {
 /**************************************
  *
@@ -512,7 +512,7 @@ bool_t xdr_int(XDR* xdrs, int* ip)
 }
 
 
-bool_t xdr_long(XDR* xdrs, SLONG* ip)
+bool_t xdr_long(xdr_t* xdrs, SLONG* ip)
 {
 /**************************************
  *
@@ -541,7 +541,7 @@ bool_t xdr_long(XDR* xdrs, SLONG* ip)
 }
 
 
-bool_t xdr_opaque(XDR* xdrs, SCHAR* p, unsigned len)
+bool_t xdr_opaque(xdr_t* xdrs, SCHAR* p, unsigned len)
 {
 /**************************************
  *
@@ -582,7 +582,7 @@ bool_t xdr_opaque(XDR* xdrs, SCHAR* p, unsigned len)
 }
 
 
-bool_t xdr_quad( XDR* xdrs, SQUAD* ip)
+bool_t xdr_quad( xdr_t* xdrs, SQUAD* ip)
 {
 /**************************************
  *
@@ -622,7 +622,7 @@ bool_t xdr_quad( XDR* xdrs, SQUAD* ip)
 }
 
 
-bool_t xdr_short(XDR* xdrs, SSHORT* ip)
+bool_t xdr_short(xdr_t* xdrs, SSHORT* ip)
 {
 /**************************************
  *
@@ -656,7 +656,7 @@ bool_t xdr_short(XDR* xdrs, SSHORT* ip)
 }
 
 
-bool_t xdr_string(XDR* xdrs, SCHAR** sp, unsigned maxlength)
+bool_t xdr_string(xdr_t* xdrs, SCHAR** sp, unsigned maxlength)
 {
 /**************************************
  *
@@ -719,7 +719,7 @@ bool_t xdr_string(XDR* xdrs, SCHAR** sp, unsigned maxlength)
 }
 
 
-bool_t xdr_u_int(XDR* xdrs, unsigned* ip)
+bool_t xdr_u_int(xdr_t* xdrs, unsigned* ip)
 {
 /**************************************
  *
@@ -754,7 +754,7 @@ bool_t xdr_u_int(XDR* xdrs, unsigned* ip)
 }
 
 
-bool_t xdr_u_long(XDR* xdrs, ULONG* ip)
+bool_t xdr_u_long(xdr_t* xdrs, ULONG* ip)
 {
 /**************************************
  *
@@ -785,7 +785,7 @@ bool_t xdr_u_long(XDR* xdrs, ULONG* ip)
 }
 
 
-bool_t xdr_u_short(XDR* xdrs, u_short* ip)
+bool_t xdr_u_short(xdr_t* xdrs, u_short* ip)
 {
 /**************************************
  *
@@ -819,7 +819,7 @@ bool_t xdr_u_short(XDR* xdrs, u_short* ip)
 }
 
 
-bool_t xdr_wrapstring(XDR* xdrs, SCHAR** strp)
+bool_t xdr_wrapstring(xdr_t* xdrs, SCHAR** strp)
 {
 /**************************************
  *
@@ -882,7 +882,7 @@ bool_t xdr_t::x_getbytes(SCHAR* buff, unsigned bytecount)
 }
 
 
-SLONG xdr_peek_long(const XDR* xdrs, const void* data, size_t size)
+SLONG xdr_peek_long(const xdr_t* xdrs, const void* data, size_t size)
 {
 /**************************************
  *

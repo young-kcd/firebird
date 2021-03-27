@@ -46,13 +46,12 @@ struct RemoteXdr : public xdr_t
 
 	rem_port* x_public;
 };
-typedef struct RemoteXdr XDR;
 
 struct rem_fmt;
 struct Rdb;
 typedef bool PacketReceive(rem_port*, UCHAR*, SSHORT, SSHORT*);
 typedef bool PacketSend(rem_port*, const SCHAR*, SSHORT);
-typedef bool ProtoWrite(XDR*);
+typedef bool ProtoWrite(RemoteXdr*);
 enum LegacyPlugin {PLUGIN_NEW = 0, PLUGIN_LEGACY, PLUGIN_TRUSTED};
 
 void		REMOTE_cleanup_transaction (struct Rtr *);
@@ -65,13 +64,13 @@ void		REMOTE_release_messages (struct RMessage*);
 void		REMOTE_release_request (struct Rrq *);
 void		REMOTE_reset_request (struct Rrq *, struct RMessage*);
 void		REMOTE_reset_statement (struct Rsr *);
-bool_t		REMOTE_getbytes (XDR*, SCHAR*, unsigned);
+bool_t		REMOTE_getbytes (RemoteXdr*, SCHAR*, unsigned);
 LegacyPlugin REMOTE_legacy_auth(const char* nm, int protocol);
 Firebird::RefPtr<const Firebird::Config> REMOTE_get_config(const Firebird::PathName* dbName,
 	const Firebird::string* dpb_config = NULL);
 void		REMOTE_check_response(Firebird::IStatus* warning, Rdb* rdb, PACKET* packet, bool checkKeys = false);
 bool		REMOTE_inflate(rem_port*, PacketReceive*, UCHAR*, SSHORT, SSHORT*);
-bool		REMOTE_deflate(XDR*, ProtoWrite*, PacketSend*, bool flash);
+bool		REMOTE_deflate(RemoteXdr*, ProtoWrite*, PacketSend*, bool flash);
 
 extern signed char wcCompatible[3][3];
 

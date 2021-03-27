@@ -1058,8 +1058,8 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	HANDLE			port_pipe;			// port pipe handle
 	HANDLE			port_event;			// event associated with a port
 #endif
-	Firebird::AutoPtr<XDR>	port_receive;
-	Firebird::AutoPtr<XDR>	port_send;
+	Firebird::AutoPtr<RemoteXdr>	port_receive;
+	Firebird::AutoPtr<RemoteXdr>	port_send;
 #ifdef DEBUG_XDR_MEMORY
 	r e m _ v e c*	port_packet_vector;		// Vector of send/receive packets
 #endif
