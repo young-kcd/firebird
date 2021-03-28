@@ -728,10 +728,9 @@ public:
 	public:
 		TimerGuard(thread_db* tdbb, TimeoutTimer* timer, bool autoStop)
 			: m_tdbb(tdbb),
-			  m_autoStop(autoStop && timer)
+			  m_autoStop(autoStop && timer),
+			  m_saveTimer(tdbb->tdbb_reqTimer)
 		{
-			fb_assert(m_tdbb->tdbb_reqTimer == NULL);
-
 			m_tdbb->tdbb_reqTimer = timer;
 			if (timer && timer->expired())
 				m_tdbb->tdbb_quantum = 0;
@@ -742,12 +741,13 @@ public:
 			if (m_autoStop)
 				m_tdbb->tdbb_reqTimer->stop();
 
-			m_tdbb->tdbb_reqTimer = NULL;
+			m_tdbb->tdbb_reqTimer = m_saveTimer;
 		}
 
 	private:
 		thread_db* m_tdbb;
 		bool m_autoStop;
+		Firebird::RefPtr<TimeoutTimer> m_saveTimer;
 	};
 
 private:
