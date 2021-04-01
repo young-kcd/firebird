@@ -246,11 +246,10 @@ Sort* SortedStream::init(thread_db* tdbb) const
 
 			if (!flag)
 			{
-				// If moving a TEXT item into the key portion of the sort record,
-				// then want to sort by language dependent order.
+				// If an INTL string is moved into the key portion of the sort record,
+				// then we want to sort by language dependent order
 
-				if (IS_INTL_DATA(&item->desc) &&
-					(ULONG)(IPTR) item->desc.dsc_address < m_map->keyLength)
+				if (IS_INTL_DATA(&item->desc) && isKey(&item->desc))
 				{
 					INTL_string_to_key(tdbb, INTL_INDEX_TYPE(&item->desc), from, &to,
 						(m_map->flags & FLAG_UNIQUE ? INTL_KEY_UNIQUE : INTL_KEY_SORT));
@@ -335,18 +334,13 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 		if (item.node && !nodeIs<FieldNode>(item.node))
 			continue;
 
-		// if moving a TEXT item into the key portion of the sort record,
-		// then want to sort by language dependent order
+		// Some fields may have volatile keys, so that their value
+		// can be possibly changed before or during the sorting.
+		// We should ignore such an item, because there is a later field
+		// in the item list that contains the original value to send back.
 
-		// in the case below a nod_field is being converted to
-		// a sort key, there is a later nod_field in the item
-		// list that contains the data to send back
-
-		if ((IS_INTL_DATA(&item.desc) || item.desc.isDecFloat()) &&
-			(ULONG)(IPTR) item.desc.dsc_address < m_map->keyLength)
-		{
+		if (hasVolatileKey(&item.desc) && isKey(&item.desc))
 			continue;
-		}
 
 		const auto rpb = &request->req_rpb[item.stream];
 		const auto relation = rpb->rpb_relation;
@@ -502,6 +496,14 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 					continue;
 
 				if (item.stream != stream || item.fieldId < 0)
+					continue;
+
+				// Some fields may have volatile keys, so that their value
+				// can be possibly changed before or during the sorting.
+				// We should ignore such an item, because there is a later field
+				// in the item list that contains the original value to compare.
+
+				if (hasVolatileKey(&item.desc) && isKey(&item.desc))
 					continue;
 
 				const auto null1 = (*(data + item.flagOffset) == TRUE);
