@@ -4062,36 +4062,7 @@ static index_root_page* fetch_root(thread_db* tdbb, WIN* window, const jrd_rel* 
 		window->win_page = relPages->rel_index_root;
 	}
 
-	index_root_page* irp = (index_root_page*) CCH_FETCH(tdbb, window, LCK_read, pag_root);
-	if (irp)
-	{
-		// check RPT size correctness
-		FB_UINT64 rptSize = sizeof(index_root_page) - sizeof(index_root_page::irt_repeat);
-		rptSize += FB_UINT64(irp->irt_count) * sizeof(index_root_page::irt_repeat);
-		if (rptSize > tdbb->getDatabase()->dbb_page_size)
-		{
-			CCH_RELEASE(tdbb, window);
-			(Arg::Gds(isc_random) << "Bad index root page: too many indices").raise();
-		}
-
-		// check keys location on page
-		for (USHORT i = 0; i < irp->irt_count; ++i)
-		{
-			index_root_page::irt_repeat* irt = &irp->irt_rpt[i];
-			if (!irt->getRoot())
-				continue;
-
-			FB_UINT64 descEnd = irt->irt_desc;
-			descEnd += FB_UINT64(irt->irt_keys) * sizeof(irtd);
-			if (descEnd > tdbb->getDatabase()->dbb_page_size)
-			{
-				CCH_RELEASE(tdbb, window);
-				(Arg::Gds(isc_random) << "Bad index root page: keys run out of page").raise();
-			}
-		}
-	}
-
-	return irp;
+	return (index_root_page*) CCH_FETCH(tdbb, window, LCK_read, pag_root);
 }
 
 
