@@ -4443,7 +4443,7 @@ static void validate_read_page(thread_db* tdbb, WIN* window, SSHORT type)
 		blob_page* pg = (blob_page*) window->win_buffer;
 
 		// check used space size correctness
-		FB_UINT64 usedSpace = sizeof(blob_page) - sizeof(blob_page::blp_page);
+		FB_UINT64 usedSpace = sizeof(blob_page) - sizeof(ULONG);
 		usedSpace += FB_UINT64(pg->blp_length);
 		if (usedSpace > tdbb->getDatabase()->dbb_page_size)
 		{
@@ -4491,8 +4491,8 @@ static void validate_read_page(thread_db* tdbb, WIN* window, SSHORT type)
 		pointer_page* pg = (pointer_page*) window->win_buffer;
 
 		// check used space size correctness
-		FB_UINT64 usedSpace = sizeof(pointer_page) - sizeof(pointer_page::ppg_page);
-		usedSpace += FB_UINT64(pg->ppg_count) * sizeof(pointer_page::ppg_page);
+		FB_UINT64 usedSpace = sizeof(pointer_page) - sizeof(ULONG);
+		usedSpace += FB_UINT64(pg->ppg_count) * sizeof(ULONG);
 		if (usedSpace > tdbb->getDatabase()->dbb_page_size)
 		{
 			page_validation_error(tdbb, window, type,
