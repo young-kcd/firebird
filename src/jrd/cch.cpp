@@ -4386,8 +4386,8 @@ static void page_validation_error(thread_db* tdbb, WIN* window, SSHORT type, Arg
 inline void page_validate(thread_db* tdbb, WIN* window, const LockState ls, SSHORT type)
 {
 	// Validate only when required page type is known and page was read from disk
-//	if (type != pag_undefined && ls == lsLocked)
-//		validate_read_page(tdbb, window, type);
+	if (type != pag_undefined && ls == lsLocked)
+		validate_read_page(tdbb, window, type);
 }
 
 
