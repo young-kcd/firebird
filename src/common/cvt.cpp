@@ -2009,7 +2009,7 @@ void CVT_move_common(const dsc* from, dsc* to, DecimalStatus decSt, Callbacks* c
 	case dtype_real:
 		{
 			double d_value = CVT_get_double(from, decSt, cb->err);
-			if (ABSOLUT(d_value) > FLOAT_MAX)
+			if (ABSOLUT(d_value) > FLOAT_MAX && ABSOLUT(d_value) != INFINITY)
 				cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 			*(float*) p = (float) d_value;
 		}
