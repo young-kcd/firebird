@@ -2652,7 +2652,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 				sort_key->skd_flags |= SKD_binary;
 		}
 
-		if (SortedStream::hasVolatileKey(desc))
+		if (SortedStream::hasVolatileKey(desc) && !refetch_flag)
 			sort_key->skd_flags |= SKD_separate_data;
 
 		map_item->clear();
