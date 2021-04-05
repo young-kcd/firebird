@@ -138,8 +138,6 @@ static LatchState latch_buffer(thread_db*, Sync&, BufferDesc*, const PageNumber,
 static LockState lock_buffer(thread_db*, BufferDesc*, const SSHORT, const SCHAR);
 static ULONG memory_init(thread_db*, BufferControl*, SLONG);
 static void page_validation_error(thread_db*, win*, SSHORT);
-inline void page_validate(thread_db*, win*, const LockState, SSHORT);
-static void validate_read_page(thread_db*, win*, SSHORT);
 static void purgePrecedence(BufferControl*, BufferDesc*);
 static SSHORT related(BufferDesc*, const BufferDesc*, SSHORT, const ULONG);
 static bool writeable(BufferDesc*);
@@ -749,7 +747,10 @@ pag* CCH_fetch(thread_db* tdbb, WIN* window, int lock_type, SCHAR page_type, int
 
 	adjust_scan_count(window, lockState == lsLocked);
 
-	page_validate(tdbb, window, lockState, page_type);
+	// Validate the fetched page matches the expected type
+
+	if (bdb->bdb_buffer->pag_type != page_type && page_type != pag_undefined)
+		page_validation_error(tdbb, window, page_type);
 
 	return window->win_buffer;
 }
@@ -1411,7 +1412,10 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, ULONG page, int lock, SCHAR page_
 
 	adjust_scan_count(window, must_read == lsLocked);
 
-	page_validate(tdbb, window, must_read, page_type);
+	// Validate the fetched page matches the expected type
+
+	if (bdb->bdb_buffer->pag_type != page_type && page_type != pag_undefined)
+		page_validation_error(tdbb, window, page_type);
 
 	return window->win_buffer;
 }
@@ -4353,7 +4357,7 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, SLONG number)
 }
 
 
-static void page_validation_error(thread_db* tdbb, WIN* window, SSHORT type, Arg::StatusVector& err)
+static void page_validation_error(thread_db* tdbb, WIN* window, SSHORT type)
 {
 /**************************************
  *
@@ -4372,137 +4376,19 @@ static void page_validation_error(thread_db* tdbb, WIN* window, SSHORT type, Arg
  **************************************/
 	SET_TDBB(tdbb);
 	BufferDesc* bdb = window->win_bdb;
+	const pag* page = bdb->bdb_buffer;
 	PageSpace* pages =
 		tdbb->getDatabase()->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
 
 	ERR_build_status(tdbb->tdbb_status_vector,
-					 Arg::Gds(isc_db_corrupt) << Arg::Str(pages->file->fil_string) << err);
+					 Arg::Gds(isc_db_corrupt) << Arg::Str(pages->file->fil_string) <<
+					 Arg::Gds(isc_page_type_err) <<
+					 Arg::Gds(isc_badpagtyp) << Arg::Num(bdb->bdb_page.getPageNum()) <<
+												pagtype(type) <<
+												pagtype(page->pag_type));
 
 	// We should invalidate this bad buffer.
 	CCH_unwind(tdbb, true);
-}
-
-
-inline void page_validate(thread_db* tdbb, WIN* window, const LockState ls, SSHORT type)
-{
-	// Validate only when required page type is known and page was read from disk
-	if (type != pag_undefined && ls == lsLocked)
-		validate_read_page(tdbb, window, type);
-}
-
-
-static void validate_read_page(thread_db* tdbb, WIN* window, SSHORT type)
-{
-	// Validate the fetched page matches the expected type
-	if (window->win_buffer->pag_type != type)
-	{
-		BufferDesc* bdb = window->win_bdb;
-		const pag* page = bdb->bdb_buffer;
-
-		page_validation_error(tdbb, window, type,
-			Arg::Gds(isc_page_type_err) <<
-			Arg::Gds(isc_badpagtyp) << Arg::Num(bdb->bdb_page.getPageNum()) << 	pagtype(type) << pagtype(page->pag_type));
-	}
-
-	switch(type)
-	{
-	case pag_root:
-	  {
-		index_root_page* pg = (index_root_page*) window->win_buffer;
-
-		// check RPT size correctness
-		FB_UINT64 rptSize = sizeof(index_root_page) - sizeof(index_root_page::irt_repeat);
-		rptSize += FB_UINT64(pg->irt_count) * sizeof(index_root_page::irt_repeat);
-		if (rptSize > tdbb->getDatabase()->dbb_page_size)
-		{
-			page_validation_error(tdbb, window, type,
-				Arg::Gds(isc_random) << "Bad index root page: too many indices");
-		}
-
-		// check keys location on page
-		for (USHORT i = 0; i < pg->irt_count; ++i)
-		{
-			index_root_page::irt_repeat* rpt = &pg->irt_rpt[i];
-			if (!rpt->getRoot())
-				continue;
-
-			FB_UINT64 descEnd = rpt->irt_desc;
-			descEnd += FB_UINT64(rpt->irt_keys) * sizeof(irtd);
-			if (descEnd > tdbb->getDatabase()->dbb_page_size)
-			{
-				page_validation_error(tdbb, window, type,
-					Arg::Gds(isc_random) << "Bad index root page: keys run out of page");
-			}
-		}
-
-		break;
-	  }
-
-	case pag_blob:
-	  {
-		blob_page* pg = (blob_page*) window->win_buffer;
-
-		// check used space size correctness
-		FB_UINT64 usedSpace = sizeof(blob_page) - sizeof(ULONG);
-		usedSpace += FB_UINT64(pg->blp_length);
-		if (usedSpace > tdbb->getDatabase()->dbb_page_size)
-		{
-			page_validation_error(tdbb, window, type,
-				Arg::Gds(isc_random) << "Bad blob page: data does not fit on page");
-		}
-
-		break;
-	  }
-
-	case pag_data:
-	  {
-		data_page* pg = (data_page*) window->win_buffer;
-
-		// check RPT size correctness
-		FB_UINT64 rptSize = sizeof(data_page) - sizeof(data_page::dpg_repeat);
-		rptSize += FB_UINT64(pg->dpg_count) * sizeof(data_page::dpg_repeat);
-		if (rptSize > tdbb->getDatabase()->dbb_page_size)
-		{
-			page_validation_error(tdbb, window, type,
-				Arg::Gds(isc_random) << "Bad data page: too many record fragments");
-		}
-
-		// check fragments location on page
-		for (USHORT i = 0; i < pg->dpg_count; ++i)
-		{
-			data_page::dpg_repeat* rpt = &pg->dpg_rpt[i];
-			if (!(rpt->dpg_offset && rpt->dpg_length))
-				continue;
-
-			FB_UINT64 fragEnd = rpt->dpg_offset;
-			fragEnd += rpt->dpg_length;
-			if (fragEnd > tdbb->getDatabase()->dbb_page_size)
-			{
-				page_validation_error(tdbb, window, type,
-					Arg::Gds(isc_random) << "Bad data page: record fragment runs out of page");
-			}
-		}
-
-		break;
-	  }
-
-	case pag_pointer:
-	  {
-		pointer_page* pg = (pointer_page*) window->win_buffer;
-
-		// check used space size correctness
-		FB_UINT64 usedSpace = sizeof(pointer_page) - sizeof(ULONG);
-		usedSpace += FB_UINT64(pg->ppg_count) * sizeof(ULONG);
-		if (usedSpace > tdbb->getDatabase()->dbb_page_size)
-		{
-			page_validation_error(tdbb, window, type,
-				Arg::Gds(isc_random) << "Bad pointer page: data page vector does not fit on page");
-		}
-
-		break;
-	  }
-
-	}
 }
 
 
