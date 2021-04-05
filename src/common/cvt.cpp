@@ -1735,7 +1735,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 	case dtype_real:
 		{
 			double d_value = CVT_get_double(from, cb->err);
-			if (ABSOLUT(d_value) > FLOAT_MAX && ABSOLUT(d_value) != INFINITY)
+			if (ABSOLUT(d_value) > FLOAT_MAX && !isinf(ABSOLUT(d_value)))
 				cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 			*(float*) p = (float) d_value;
 		}
