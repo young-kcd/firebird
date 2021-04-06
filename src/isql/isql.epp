@@ -7413,13 +7413,13 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 			else
 			{
 				if (setValues.Time_display)
-					sprintf(d, "%2d-%s-%4d %2.2d:%2.2d:%2.2d.%4.4" ULONGFORMAT,
+					sprintf(d, "%2.2d-%s-%4.4d %2.2d:%2.2d:%2.2d.%4.4" ULONGFORMAT,
 							times.tm_mday, alpha_months[times.tm_mon],
 							times.tm_year + 1900, times.tm_hour, times.tm_min,
 							times.tm_sec,
 							((ULONG*) var->value.asChar)[1] % ISC_TIME_SECONDS_PRECISION);
 				else
-					sprintf(d, "%2d-%s-%4d", times.tm_mday,
+					sprintf(d, "%2.2d-%s-%4.4d", times.tm_mday,
 							alpha_months[times.tm_mon], times.tm_year + 1900);
 			}
 
