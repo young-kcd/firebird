@@ -2232,7 +2232,7 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 		else
 		{
 			// Prior to BLR version 5 timestamps were converted to text in the dd-MMM-yyyy format
-			sprintf(p, "%d-%.3s-%d",
+			sprintf(p, "%2.2d-%.3s-%4.4d",
 					times.tm_mday,
 					FB_LONG_MONTHS_UPPER[times.tm_mon], times.tm_year + 1900);
 		}
