@@ -305,8 +305,8 @@ public:
 	}
 };
 
-static_assert(sizeof(Decimal64) % sizeof(ULONG) == 0);
-static_assert(sizeof(Decimal128) % sizeof(ULONG) == 0);
+static_assert(sizeof(Decimal64) % sizeof(ULONG) == 0, "Decimal64 size mismatch");
+static_assert(sizeof(Decimal128) % sizeof(ULONG) == 0, "Decimal128 size mismatch");
 
 static const size_t MAX_DEC_LONGS = MAX(sizeof(Decimal64), sizeof(Decimal128)) >> SHIFTLONG;
 static const size_t MAX_DEC_KEY_LONGS = MAX_DEC_LONGS + 1; // key is one longword bigger
