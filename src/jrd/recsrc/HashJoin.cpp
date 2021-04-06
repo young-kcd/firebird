@@ -229,6 +229,14 @@ HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, FB_SIZE_T count,
 
 		if (IS_INTL_DATA(&desc))
 			keyLength = INTL_key_length(tdbb, INTL_INDEX_TYPE(&desc), keyLength);
+		else if (desc.isTime())
+			keyLength = sizeof(ISC_TIME);
+		else if (desc.isTimeStamp())
+			keyLength = sizeof(ISC_TIMESTAMP);
+		else if (desc.dsc_dtype == dtype_dec64)
+			keyLength = Decimal64::getKeyLength();
+		else if (desc.dsc_dtype == dtype_dec128)
+			keyLength = Decimal128::getKeyLength();
 
 		m_leader.keyLengths[j] = keyLength;
 		m_leader.totalKeyLength += keyLength;
@@ -255,6 +263,14 @@ HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, FB_SIZE_T count,
 
 			if (IS_INTL_DATA(&desc))
 				keyLength = INTL_key_length(tdbb, INTL_INDEX_TYPE(&desc), keyLength);
+			else if (desc.isTime())
+				keyLength = sizeof(ISC_TIME);
+			else if (desc.isTimeStamp())
+				keyLength = sizeof(ISC_TIMESTAMP);
+			else if (desc.dsc_dtype == dtype_dec64)
+				keyLength = Decimal64::getKeyLength();
+			else if (desc.dsc_dtype == dtype_dec128)
+				keyLength = Decimal128::getKeyLength();
 
 			sub.keyLengths[j] = keyLength;
 			sub.totalKeyLength += keyLength;
@@ -504,10 +520,42 @@ ULONG HashJoin::computeHash(thread_db* tdbb,
 			}
 			else
 			{
-				// We don't enforce proper alignments inside the key buffer,
-				// so use plain byte copying instead of MOV_move() to avoid bus errors
-				fb_assert(keyLength == desc->dsc_length);
-				memcpy(keyPtr, desc->dsc_address, keyLength);
+				const auto data = desc->dsc_address;
+
+				if (desc->isDecFloat())
+				{
+					// Values inside our key buffer are not aligned,
+					// hence we need to use intermediate storage for makeKey()
+					ULONG key[MAX_DEC_KEY_LONGS];
+
+					if (desc->dsc_dtype == dtype_dec64)
+						((Decimal64*) data)->makeKey(key);
+					else if (desc->dsc_dtype == dtype_dec128)
+						((Decimal128*) data)->makeKey(key);
+					else
+						fb_assert(false);
+
+					fb_assert(keyLength <= sizeof(key));
+					memcpy(keyPtr, key, keyLength);
+				}
+				else if (desc->dsc_dtype == dtype_real && *(float*) data == 0)
+				{
+					fb_assert(keyLength == sizeof(float));
+					memset(keyPtr, 0, keyLength); // positive zero in binary
+				}
+				else if (desc->dsc_dtype == dtype_double && *(double*) data == 0)
+				{
+					fb_assert(keyLength == sizeof(double));
+					memset(keyPtr, 0, keyLength); // positive zero in binary
+				}
+				else
+				{
+					// We don't enforce proper alignments inside the key buffer,
+					// so use plain byte copying instead of MOV_move() to avoid bus errors.
+					// Note: for date/time with time zone, we copy only the UTC part.
+					fb_assert(keyLength <= desc->dsc_length);
+					memcpy(keyPtr, data, keyLength);
+				}
 			}
 		}
 
