@@ -3952,11 +3952,11 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 					const bool write_thru = (bcb->bcb_flags & BCB_exclusive);
 					if (!write_buffer(tdbb, bdb, bdb->bdb_page, write_thru, tdbb->tdbb_status_vector, true))
 					{
-						bcbSync.lock(SYNC_EXCLUSIVE);
+						lruSync.lock(SYNC_EXCLUSIVE);
 						bdb->bdb_flags &= ~BDB_free_pending;
 						QUE_DELETE(bdb->bdb_in_use);
 						QUE_APPEND(bcb->bcb_in_use, bdb->bdb_in_use);
-						bcbSync.unlock();
+						lruSync.unlock();
 
 						bdb->release(tdbb, true);
 						CCH_unwind(tdbb, true);
