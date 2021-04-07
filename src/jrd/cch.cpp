@@ -1012,14 +1012,25 @@ void CCH_forget_page(thread_db* tdbb, WIN* window)
 		dbb->dbb_flags &= ~DBB_suspend_bgio;
 
 	clear_dirty_flag_and_nbak_state(tdbb, bdb);
-	bdb->bdb_flags = 0;
 	BufferControl* bcb = dbb->dbb_bcb;
 
 	removeDirty(bcb, bdb);
 
-	QUE_DELETE(bdb->bdb_in_use);
-	QUE_DELETE(bdb->bdb_que);
-	QUE_INSERT(bcb->bcb_empty, bdb->bdb_que);
+	// remove from LRU list
+	{
+		SyncLockGuard lruSync(&bcb->bcb_syncLRU, SYNC_EXCLUSIVE, FB_FUNCTION);
+		requeueRecentlyUsed(bcb);
+		QUE_DELETE(bdb->bdb_in_use);
+	}
+
+	// remove from hash table and put into empty list
+	{
+		SyncLockGuard bcbSync(&bcb->bcb_syncObject, SYNC_EXCLUSIVE, FB_FUNCTION);
+		QUE_DELETE(bdb->bdb_que);
+		QUE_INSERT(bcb->bcb_empty, bdb->bdb_que);
+	}
+
+	bdb->bdb_flags = 0;
 
 	if (tdbb->tdbb_flags & TDBB_no_cache_unwind)
 		bdb->release(tdbb, true);
