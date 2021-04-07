@@ -21,6 +21,7 @@
  */
 
 #include "firebird.h"
+#include "../common/classes/Aligner.h"
 #include "../common/classes/Hash.h"
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
@@ -525,8 +526,8 @@ ULONG HashJoin::computeHash(thread_db* tdbb,
 				if (desc->isDecFloat())
 				{
 					// Values inside our key buffer are not aligned,
-					// hence we need to use intermediate storage for makeKey()
-					ULONG key[MAX_DEC_KEY_LONGS];
+					// so ensure we satisfy our platform's alignment rules
+					OutAligner<ULONG, MAX_DEC_KEY_LONGS> key(keyPtr, keyLength);
 
 					if (desc->dsc_dtype == dtype_dec64)
 						((Decimal64*) data)->makeKey(key);
@@ -534,9 +535,6 @@ ULONG HashJoin::computeHash(thread_db* tdbb,
 						((Decimal128*) data)->makeKey(key);
 					else
 						fb_assert(false);
-
-					fb_assert(keyLength <= sizeof(key));
-					memcpy(keyPtr, key, keyLength);
 				}
 				else if (desc->dsc_dtype == dtype_real && *(float*) data == 0)
 				{
