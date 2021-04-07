@@ -1707,6 +1707,7 @@ static RemoteXdr* xdrxnet_create(rem_port* port, UCHAR* buffer, USHORT length, x
 	RemoteXdr* xdrs = FB_NEW XnetXdr;
 
 	xdrs->x_public = port;
+	xdrs->x_local = true;
 	xdrs->create(reinterpret_cast<SCHAR*>(buffer), length, x_op);
 
 	return xdrs;
