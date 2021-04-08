@@ -41,6 +41,7 @@
 #include "../jrd/req.h"
 #include "../dsql/ExprNodes.h"
 #include "../jrd/blb_proto.h"
+#include "../jrd/cch_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../common/cvt.h"
 #include "../jrd/evl_proto.h"
@@ -4538,7 +4539,17 @@ dsc* evlGetTranCN(thread_db* tdbb, const SysFunction* function, const NestValueA
 		return NULL;
 
 	TraNumber traNum = MOV_get_int64(tdbb, value, 0);
-	if (traNum > dbb->dbb_next_transaction)
+	TraNumber traMax = dbb->dbb_next_transaction;
+
+	if ((traNum > traMax) && !(dbb->dbb_flags & DBB_shared))
+	{
+		WIN window(HEADER_PAGE_NUMBER);
+		const Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
+		traMax = Ods::getNT(header);
+		CCH_RELEASE(tdbb, &window);
+	}
+
+	if (traNum > traMax)
 	{
 		request->req_flags |= req_null;
 		return NULL;
