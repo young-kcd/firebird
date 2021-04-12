@@ -37,8 +37,6 @@ typedef ISC_TIMESTAMP_TZ_EX;
 typedef FB_DEC16;
 typedef FB_DEC34;
 typedef FB_I128;
-typedef isc_tr_handle;
-typedef isc_stmt_handle;
 
 // Versioned interface - base for all FB interfaces
 interface Versioned
