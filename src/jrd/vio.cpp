@@ -297,7 +297,16 @@ inline void waitGCActive(thread_db* tdbb, const record_param* rpb)
 	Lock temp_lock(tdbb, sizeof(SINT64), LCK_record_gc);
 	temp_lock.setKey(((SINT64) rpb->rpb_page << 16) | rpb->rpb_line);
 
-	if (!LCK_lock(tdbb, &temp_lock, LCK_SR, LCK_WAIT))
+	SSHORT wait = LCK_WAIT;
+
+	jrd_tra* transaction = tdbb->getTransaction();
+	if (transaction->tra_number == rpb->rpb_transaction_nr)
+	{
+		// There is no sense to wait for self
+		wait = LCK_NO_WAIT;
+	}
+
+	if (!LCK_lock(tdbb, &temp_lock, LCK_SR, wait))
 		ERR_punt();
 
 	LCK_release(tdbb, &temp_lock);
