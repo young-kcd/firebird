@@ -203,6 +203,12 @@ namespace
 
 			if (!checkStatus(tdbb, status, transaction))
 				return nullptr;
+
+			if (!transaction->tra_replicator)
+			{
+				transaction->tra_flags &= ~TRA_replicating;
+				return nullptr;
+			}
 		}
 
 		// Ensure all active savepoints are replicated
