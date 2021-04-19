@@ -10,9 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Build is segfaulting in Ubuntu.
-        #os: [macOS-latest, windows-2016, ubuntu-16.04]
-        os: [macOS-latest, windows-2016]
+        os: [macOS-latest, windows-2016, ubuntu-16.04]
         platform: [x64, x86]
         include:
           - os: ubuntu-18.04
@@ -21,8 +19,8 @@ jobs:
         exclude:
           - os: macOS-latest
             platform: x86
-          #- os: ubuntu-16.04
-          #  platform: x86
+          - os: ubuntu-16.04
+            platform: x86
 
     steps:
     - uses: actions/checkout@v1
