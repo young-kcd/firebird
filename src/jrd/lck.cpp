@@ -249,6 +249,7 @@ public:
 			switch (lock->lck_type)
 			{
 			case LCK_tra:
+			case LCK_record_gc:
 				m_tdbb->tdbb_flags &= ~TDBB_wait_cancel_disable;
 				if (att)
 					att->att_wait_lock = lock;
