@@ -547,13 +547,11 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 
 	// check for resursive expression evaluation
 	jrd_req* const org_request = tdbb->getRequest();
-	for (auto req = org_request; req; req = req->req_caller)
-	{
-		if (req->getStatement() == idx->idx_expression_statement)
-			ERR_post(Arg::Gds(isc_random) << "Attempt to evaluate index expression recursively");
-	}
+	jrd_req* const expr_request = idx->idx_expression_statement->findRequest(tdbb, true);
 
-	jrd_req* const expr_request = idx->idx_expression_statement->findRequest(tdbb);
+	if (expr_request == NULL)
+		ERR_post(Arg::Gds(isc_random) << "Attempt to evaluate index expression recursively");
+
 	fb_assert(expr_request != org_request);
 
 	fb_assert(expr_request->req_caller == NULL);
