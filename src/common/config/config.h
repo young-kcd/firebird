@@ -30,6 +30,8 @@
 #include "../common/classes/ImplementHelper.h"
 #include "../jrd/constants.h"
 
+#include <type_traits>
+
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and
 	easy-to-use abilities to work with complex configurations, a decision
