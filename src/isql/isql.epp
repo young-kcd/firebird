@@ -167,34 +167,6 @@ const char* UNKNOWN = "*unknown*";
 
 namespace IcuUtil
 {
-	// Duplicate from ICU to not need to link ISQL with it. It's used by U8_NEXT_UNSAFE.
-	static const uint8_t utf8_countTrailBytes[256] = {
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-
-		2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-		3, 3, 3, 3, 3,
-		3, 3, 3,    /* illegal in Unicode */
-		4, 4, 4, 4, /* illegal in Unicode */
-		5, 5,       /* illegal in Unicode */
-		0, 0        /* illegal bytes 0xfe and 0xff */
-	};
-
 	// Return the number of characters of a string.
 	static unsigned charLength(SSHORT charset, unsigned len, const char* str)
 	{
@@ -209,7 +181,7 @@ namespace IcuUtil
 		while (i < len)
 		{
 			UChar32 c;
-			U8_NEXT_UNSAFE(str, i, c);
+			FB_U8_NEXT_UNSAFE(str, i, c);
 			++charLen;
 		}
 
@@ -249,7 +221,7 @@ namespace IcuUtil
 		while (i < len && width > 0)
 		{
 			UChar32 c;
-			U8_NEXT_UNSAFE(str, i, c);
+			FB_U8_NEXT_UNSAFE(str, i, c);
 			--width;
 		}
 

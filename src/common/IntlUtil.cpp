@@ -426,7 +426,7 @@ ULONG IntlUtil::utf8SubString(charset* cs, ULONG srcLen, const UCHAR* src, ULONG
 		if (pos >= srcLen)
 			return 0;
 
-		U8_NEXT_UNSAFE(src, pos, c);
+		FB_U8_NEXT_UNSAFE(src, pos, c);
 
 		if (c < 0)
 			return INTL_BAD_STR_LENGTH;
@@ -438,7 +438,7 @@ ULONG IntlUtil::utf8SubString(charset* cs, ULONG srcLen, const UCHAR* src, ULONG
 
 	while (currentPos < startPos + length && pos < srcLen)
 	{
-		U8_NEXT_UNSAFE(src, pos, c);
+		FB_U8_NEXT_UNSAFE(src, pos, c);
 
 		if (c < 0)
 			return INTL_BAD_STR_LENGTH;
