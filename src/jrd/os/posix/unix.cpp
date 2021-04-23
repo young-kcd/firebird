@@ -724,6 +724,7 @@ jrd_file* PIO_open(thread_db* tdbb,
 		raw = true;
 		if (!raw_devices_validate_database(desc, expandedName))
 		{
+			maybeCloseFile(desc);
 			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << Arg::Str(originalName) <<
 					 Arg::Gds(isc_io_open_err) << Arg::Unix(ENOENT));
 		}
