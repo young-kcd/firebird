@@ -236,11 +236,11 @@ class WaitCancelGuard
 public:
 	WaitCancelGuard(thread_db* tdbb, Lock* lock, int wait)
 		: m_tdbb(tdbb),
-		  m_save_lock(NULL)
+		  m_save_handle(0)
 	{
 		Jrd::Attachment* att = m_tdbb->getAttachment();
 		if (att)
-			m_save_lock = att->att_wait_lock;
+			m_save_handle = att->att_wait_owner_handle;
 
 		m_cancel_disabled = (m_tdbb->tdbb_flags & TDBB_wait_cancel_disable);
 		if (wait == LCK_WAIT)
@@ -251,18 +251,20 @@ public:
 			case LCK_record_gc:
 				m_tdbb->tdbb_flags &= ~TDBB_wait_cancel_disable;
 				if (att)
-					att->att_wait_lock = lock;
+					att->att_wait_owner_handle = lock->lck_owner_handle;
 				break;
 
 			default:
 				m_tdbb->tdbb_flags |= TDBB_wait_cancel_disable;
+				if (att && m_save_handle)
+					att->att_wait_owner_handle = 0;
 			}
 		}
 		else if (wait != LCK_NO_WAIT)
 		{
 			m_tdbb->tdbb_flags &= ~TDBB_wait_cancel_disable;
 			if (att)
-				att->att_wait_lock = lock;
+				att->att_wait_owner_handle = lock->lck_owner_handle;
 		}
 	}
 
@@ -270,7 +272,7 @@ public:
 	{
 		Jrd::Attachment* att = m_tdbb->getAttachment();
 		if (att)
-			att->att_wait_lock = m_save_lock;
+			att->att_wait_owner_handle = m_save_handle;
 
 		if (m_cancel_disabled)
 			m_tdbb->tdbb_flags |= TDBB_wait_cancel_disable;
@@ -280,7 +282,7 @@ public:
 
 private:
 	thread_db* m_tdbb;
-	Lock* m_save_lock;
+	SLONG m_save_handle;
 	bool m_cancel_disabled;
 };
 
@@ -420,8 +422,9 @@ bool LCK_cancel_wait(Jrd::Attachment* attachment)
  **************************************/
 	Database *dbb = attachment->att_database;
 
-	if (attachment->att_wait_lock)
-		return dbb->dbb_lock_mgr->cancelWait(attachment->att_wait_lock->lck_owner_handle);
+	const SLONG owner_offset = attachment->att_wait_owner_handle;
+	if (owner_offset)
+		return dbb->dbb_lock_mgr->cancelWait(owner_offset);
 
 	return false;
 }

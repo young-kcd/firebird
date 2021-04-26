@@ -37,6 +37,7 @@
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/SyncObject.h"
 #include "../common/classes/array.h"
+#include "../common/classes/fb_atomic.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
 #include "../common/ThreadStart.h"
@@ -263,7 +264,7 @@ public:
 	SSHORT		att_client_charset;			// user's charset specified in dpb
 	SSHORT		att_charset;				// current (client or external) attachment charset
 	Lock*		att_long_locks;				// outstanding two phased locks
-	Lock*		att_wait_lock;				// lock at which attachment waits currently
+	Firebird::AtomicCounter att_wait_owner_handle;		// lock owner with which attachment waits currently
 	vec<Lock*>*	att_compatibility_table;	// hash table of compatible locks
 	Validation*	att_validation;
 	Firebird::PathName	att_working_directory;	// Current working directory is cached
