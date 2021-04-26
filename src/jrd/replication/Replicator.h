@@ -244,9 +244,10 @@ namespace Replication
 
 		// IReplicatedSession methods
 
-		void setAttachment(Firebird::IAttachment* att) override
+		FB_BOOLEAN init(Firebird::CheckStatusWrapper* /*status*/, Firebird::IAttachment* att) override
 		{
 			m_attachment = att;
+			return FB_TRUE;
 		}
 
 		Firebird::IReplicatedTransaction* startTransaction(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* trans, SINT64 number) override;

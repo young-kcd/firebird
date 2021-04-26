@@ -6295,7 +6295,7 @@ namespace Firebird
 	public:
 		struct VTable : public IPluginBase::VTable
 		{
-			void (CLOOP_CARG *setAttachment)(IReplicatedSession* self, IAttachment* attachment) throw();
+			FB_BOOLEAN (CLOOP_CARG *init)(IReplicatedSession* self, IStatus* status, IAttachment* attachment) throw();
 			IReplicatedTransaction* (CLOOP_CARG *startTransaction)(IReplicatedSession* self, IStatus* status, ITransaction* transaction, ISC_INT64 number) throw();
 			void (CLOOP_CARG *cleanupTransaction)(IReplicatedSession* self, IStatus* status, ISC_INT64 number) throw();
 			void (CLOOP_CARG *setSequence)(IReplicatedSession* self, IStatus* status, const char* name, ISC_INT64 value) throw();
@@ -6314,9 +6314,12 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 4;
 
-		void setAttachment(IAttachment* attachment)
+		template <typename StatusType> FB_BOOLEAN init(StatusType* status, IAttachment* attachment)
 		{
-			static_cast<VTable*>(this->cloopVTable)->setAttachment(this, attachment);
+			StatusType::clearException(status);
+			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->init(this, status, attachment);
+			StatusType::checkException(status);
+			return ret;
 		}
 
 		template <typename StatusType> IReplicatedTransaction* startTransaction(StatusType* status, ITransaction* transaction, ISC_INT64 number)
@@ -19077,7 +19080,7 @@ namespace Firebird
 					this->release = &Name::cloopreleaseDispatcher;
 					this->setOwner = &Name::cloopsetOwnerDispatcher;
 					this->getOwner = &Name::cloopgetOwnerDispatcher;
-					this->setAttachment = &Name::cloopsetAttachmentDispatcher;
+					this->init = &Name::cloopinitDispatcher;
 					this->startTransaction = &Name::cloopstartTransactionDispatcher;
 					this->cleanupTransaction = &Name::cloopcleanupTransactionDispatcher;
 					this->setSequence = &Name::cloopsetSequenceDispatcher;
@@ -19087,15 +19090,18 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopsetAttachmentDispatcher(IReplicatedSession* self, IAttachment* attachment) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopinitDispatcher(IReplicatedSession* self, IStatus* status, IAttachment* attachment) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::setAttachment(attachment);
+				return static_cast<Name*>(self)->Name::init(&status2, attachment);
 			}
 			catch (...)
 			{
-				StatusType::catchException(0);
+				StatusType::catchException(&status2);
+				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
 
@@ -19206,7 +19212,7 @@ namespace Firebird
 		{
 		}
 
-		virtual void setAttachment(IAttachment* attachment) = 0;
+		virtual FB_BOOLEAN init(StatusType* status, IAttachment* attachment) = 0;
 		virtual IReplicatedTransaction* startTransaction(StatusType* status, ITransaction* transaction, ISC_INT64 number) = 0;
 		virtual void cleanupTransaction(StatusType* status, ISC_INT64 number) = 0;
 		virtual void setSequence(StatusType* status, const char* name, ISC_INT64 value) = 0;

@@ -153,7 +153,19 @@ namespace
 				attachment->att_replicator = plugins.plugin();
 			}
 
-			attachment->att_replicator->setAttachment(attachment->getInterface());
+			FbLocalStatus status;
+			const bool replicating =
+				attachment->att_replicator->init(&status, attachment->getInterface());
+
+			if (!checkStatus(tdbb, status))
+				return nullptr;
+
+			if (!replicating)
+			{
+				attachment->att_flags &= ~ATT_replicating;
+				attachment->att_replicator = nullptr;
+				return nullptr;
+			}
 		}
 
 		fb_assert(attachment->att_replicator.hasData());

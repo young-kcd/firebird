@@ -690,7 +690,7 @@ type
 	IReplicatedTransaction_deleteRecordPtr = procedure(this: IReplicatedTransaction; status: IStatus; name: PAnsiChar; record_: IReplicatedRecord); cdecl;
 	IReplicatedTransaction_executeSqlPtr = procedure(this: IReplicatedTransaction; status: IStatus; sql: PAnsiChar); cdecl;
 	IReplicatedTransaction_executeSqlIntlPtr = procedure(this: IReplicatedTransaction; status: IStatus; charset: Cardinal; sql: PAnsiChar); cdecl;
-	IReplicatedSession_setAttachmentPtr = procedure(this: IReplicatedSession; attachment: IAttachment); cdecl;
+	IReplicatedSession_initPtr = function(this: IReplicatedSession; status: IStatus; attachment: IAttachment): Boolean; cdecl;
 	IReplicatedSession_startTransactionPtr = function(this: IReplicatedSession; status: IStatus; transaction: ITransaction; number: Int64): IReplicatedTransaction; cdecl;
 	IReplicatedSession_cleanupTransactionPtr = procedure(this: IReplicatedSession; status: IStatus; number: Int64); cdecl;
 	IReplicatedSession_setSequencePtr = procedure(this: IReplicatedSession; status: IStatus; name: PAnsiChar; value: Int64); cdecl;
@@ -3645,7 +3645,7 @@ type
 	end;
 
 	ReplicatedSessionVTable = class(PluginBaseVTable)
-		setAttachment: IReplicatedSession_setAttachmentPtr;
+		init: IReplicatedSession_initPtr;
 		startTransaction: IReplicatedSession_startTransactionPtr;
 		cleanupTransaction: IReplicatedSession_cleanupTransactionPtr;
 		setSequence: IReplicatedSession_setSequencePtr;
@@ -3654,7 +3654,7 @@ type
 	IReplicatedSession = class(IPluginBase)
 		const VERSION = 4;
 
-		procedure setAttachment(attachment: IAttachment);
+		function init(status: IStatus; attachment: IAttachment): Boolean;
 		function startTransaction(status: IStatus; transaction: ITransaction; number: Int64): IReplicatedTransaction;
 		procedure cleanupTransaction(status: IStatus; number: Int64);
 		procedure setSequence(status: IStatus; name: PAnsiChar; value: Int64);
@@ -3667,7 +3667,7 @@ type
 		function release(): Integer; virtual; abstract;
 		procedure setOwner(r: IReferenceCounted); virtual; abstract;
 		function getOwner(): IReferenceCounted; virtual; abstract;
-		procedure setAttachment(attachment: IAttachment); virtual; abstract;
+		function init(status: IStatus; attachment: IAttachment): Boolean; virtual; abstract;
 		function startTransaction(status: IStatus; transaction: ITransaction; number: Int64): IReplicatedTransaction; virtual; abstract;
 		procedure cleanupTransaction(status: IStatus; number: Int64); virtual; abstract;
 		procedure setSequence(status: IStatus; name: PAnsiChar; value: Int64); virtual; abstract;
@@ -8278,9 +8278,10 @@ begin
 	FbException.checkException(status);
 end;
 
-procedure IReplicatedSession.setAttachment(attachment: IAttachment);
+function IReplicatedSession.init(status: IStatus; attachment: IAttachment): Boolean;
 begin
-	ReplicatedSessionVTable(vTable).setAttachment(Self, attachment);
+	Result := ReplicatedSessionVTable(vTable).init(Self, status, attachment);
+	FbException.checkException(status);
 end;
 
 function IReplicatedSession.startTransaction(status: IStatus; transaction: ITransaction; number: Int64): IReplicatedTransaction;
@@ -14615,12 +14616,12 @@ begin
 	end
 end;
 
-procedure IReplicatedSessionImpl_setAttachmentDispatcher(this: IReplicatedSession; attachment: IAttachment); cdecl;
+function IReplicatedSessionImpl_initDispatcher(this: IReplicatedSession; status: IStatus; attachment: IAttachment): Boolean; cdecl;
 begin
 	try
-		IReplicatedSessionImpl(this).setAttachment(attachment);
+		Result := IReplicatedSessionImpl(this).init(status, attachment);
 	except
-		on e: Exception do FbException.catchException(nil, e);
+		on e: Exception do FbException.catchException(status, e);
 	end
 end;
 
@@ -15605,7 +15606,7 @@ initialization
 	IReplicatedSessionImpl_vTable.release := @IReplicatedSessionImpl_releaseDispatcher;
 	IReplicatedSessionImpl_vTable.setOwner := @IReplicatedSessionImpl_setOwnerDispatcher;
 	IReplicatedSessionImpl_vTable.getOwner := @IReplicatedSessionImpl_getOwnerDispatcher;
-	IReplicatedSessionImpl_vTable.setAttachment := @IReplicatedSessionImpl_setAttachmentDispatcher;
+	IReplicatedSessionImpl_vTable.init := @IReplicatedSessionImpl_initDispatcher;
 	IReplicatedSessionImpl_vTable.startTransaction := @IReplicatedSessionImpl_startTransactionDispatcher;
 	IReplicatedSessionImpl_vTable.cleanupTransaction := @IReplicatedSessionImpl_cleanupTransactionDispatcher;
 	IReplicatedSessionImpl_vTable.setSequence := @IReplicatedSessionImpl_setSequenceDispatcher;

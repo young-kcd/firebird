@@ -1622,7 +1622,7 @@ interface ReplicatedTransaction : Disposable
 interface ReplicatedSession : PluginBase
 {
 	// Parameter don't need to be released if not used.
-	void setAttachment(Attachment attachment);
+	boolean init(Status status, Attachment attachment);
 
 	ReplicatedTransaction startTransaction(Status status, Transaction transaction, int64 number);
 	void cleanupTransaction(Status status, int64 number);
