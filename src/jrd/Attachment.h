@@ -48,6 +48,8 @@
 #include "../jrd/EngineInterface.h"
 #include "../jrd/sbm.h"
 
+#include <atomic>
+
 #define DEBUG_LCK_LIST
 
 namespace EDS {
@@ -442,7 +444,7 @@ public:
 #ifdef DEBUG_LCK_LIST
 	UCHAR		att_long_locks_type;		// Lock type of the first lock in list
 #endif
-	Lock*		att_wait_lock;				// lock at which attachment waits currently
+	std::atomic<SLONG>	att_wait_owner_handle;	// lock owner with which attachment waits currently
 	vec<Lock*>*	att_compatibility_table;	// hash table of compatible locks
 	Validation*	att_validation;
 	Firebird::PathName	att_working_directory;	// Current working directory is cached
