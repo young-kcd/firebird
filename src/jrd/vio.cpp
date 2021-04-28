@@ -741,7 +741,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 	// Take care about modifications performed by our own transaction
 
-	rpb->rpb_runtime_flags &= ~RPB_UNDO_FLAGS;
+	rpb->rpb_runtime_flags &= ~RPB_CLEAR_FLAGS;
 	int forceBack = 0;
 
 	if (rpb->rpb_stream_flags & RPB_s_unstable)
