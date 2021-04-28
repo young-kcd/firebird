@@ -34,7 +34,7 @@ Build instructions are here:
 https://www.firebirdsql.org/en/building-the-code/
 
 Bugs and feature requests should be submitted at:  
-http://tracker.firebirdsql.org/
+https://github.com/FirebirdSQL/firebird/issues
 
 You may find more details at:  
 https://www.firebirdsql.org/en/development/
