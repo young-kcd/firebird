@@ -364,6 +364,8 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 				fb_assert(false);
 			}
 
+			rpb->rpb_runtime_flags &= ~RPB_CLEAR_FLAGS;
+
 			// If transaction ID is present, then fields from this stream are accessed.
 			// So we need to refetch the stream, either immediately or on demand.
 			const auto refetch = (id == ID_TRANS);
