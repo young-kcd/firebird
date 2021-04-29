@@ -1154,7 +1154,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg, ISC_STATUS& isc
 		// application is not terminated until you press some button on resulting window.
 		// This happens even if you run application as non-interactive service on
 		// "server" OS like Windows Server 2003.
-		exit(3);
+		_exit(3);
 	}
 
 	return result;
