@@ -68,6 +68,7 @@
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/RefMutex.h"
 #include "../common/classes/array.h"
+#include "../common/classes/init.h"
 #include "../common/StatusHolder.h"
 
 static int process_id;
@@ -1154,6 +1155,9 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg, ISC_STATUS& isc
 		// application is not terminated until you press some button on resulting window.
 		// This happens even if you run application as non-interactive service on
 		// "server" OS like Windows Server 2003.
+
+		// This will avoid cleanup in current module, usually it is engine
+		InstanceControl::cancelCleanup();
 		_exit(3);
 	}
 
