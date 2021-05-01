@@ -702,12 +702,12 @@ namespace
 		validateHandle(tdbb, batch->getAttachment());
 	}
 
-	inline void validateHandle(thread_db* tdbb, JReplicator* const replicator)
+	inline void validateHandle(thread_db* tdbb, Applier* const applier)
 	{
-		if (!replicator)
+		if (!applier)
 			status_exception::raise(Arg::Gds(isc_bad_repl_handle));
 
-		validateHandle(tdbb, replicator->getAttachment()->getHandle());
+		validateHandle(tdbb, applier->getAttachment());
 	}
 
 	class AttachmentHolder
@@ -5089,13 +5089,11 @@ IReplicator* JAttachment::createReplicator(CheckStatusWrapper* user_status)
 
 		try
 		{
-			const auto att = tdbb->getAttachment();
+			const auto applier = Applier::create(tdbb);
 
-			if (!att->att_repl_applier)
-				att->att_repl_applier = Applier::create(tdbb);
-
-			jr = FB_NEW JReplicator(getStable());
+			jr = FB_NEW JReplicator(applier, getStable());
 			jr->addRef();
+			applier->setInterfacePtr(jr);
 		}
 		catch (const Exception& ex)
 		{
@@ -6196,8 +6194,8 @@ void JBatch::cancel(CheckStatusWrapper* status)
 }
 
 
-JReplicator::JReplicator(StableAttachmentPart* sa)
-	: sAtt(sa)
+JReplicator::JReplicator(Applier* appl, StableAttachmentPart* sa)
+	: applier(appl), sAtt(sa)
 { }
 
 
@@ -6207,10 +6205,13 @@ int JReplicator::release()
 	if (rc != 0)
 		return rc;
 
-	LocalStatus status;
-	CheckStatusWrapper statusWrapper(&status);
+	if (applier)
+	{
+		LocalStatus status;
+		CheckStatusWrapper statusWrapper(&status);
 
-	freeEngineData(&statusWrapper);
+		freeEngineData(&statusWrapper);
+	}
 
 	delete this;
 	return 0;
@@ -6226,9 +6227,9 @@ void JReplicator::freeEngineData(Firebird::CheckStatusWrapper* user_status)
 
 		try
 		{
-			const auto att = sAtt->getHandle();
-			if (att)
-				att->att_repl_applier.reset();
+			AutoPtr<Applier> cleanupApplier(applier);
+			cleanupApplier->shutdown(tdbb);
+			fb_assert(!applier);
 		}
 		catch (const Exception& ex)
 		{
@@ -6255,8 +6256,7 @@ void JReplicator::process(CheckStatusWrapper* status, unsigned length, const UCH
 
 		try
 		{
-			const auto att = sAtt->getHandle();
-			att->att_repl_applier->process(tdbb, length, data);
+			applier->process(tdbb, length, data);
 		}
 		catch (const Exception& ex)
 		{
@@ -6276,34 +6276,9 @@ void JReplicator::process(CheckStatusWrapper* status, unsigned length, const UCH
 }
 
 
-void JReplicator::close(CheckStatusWrapper* status)
+void JReplicator::close(CheckStatusWrapper* user_status)
 {
-	try
-	{
-		EngineContextHolder tdbb(status, this, FB_FUNCTION);
-		check_database(tdbb);
-
-		try
-		{
-			const auto att = sAtt->getHandle();
-			att->att_repl_applier->shutdown(tdbb);
-			att->att_repl_applier.reset();
-		}
-		catch (const Exception& ex)
-		{
-			transliterateException(tdbb, ex, status, "JReplicator::close");
-			return;
-		}
-
-		trace_warning(tdbb, status, "JReplicator::close");
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
-		return;
-	}
-
-	successful_completion(status);
+	freeEngineData(user_status);
 }
 
 
@@ -7380,8 +7355,11 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	attachment->att_replicator = nullptr;
 
-	if (attachment->att_repl_applier)
-		attachment->att_repl_applier->shutdown(tdbb);
+	while (attachment->att_repl_appliers.hasData())
+	{
+		AutoPtr<Applier> cleanupApplier(attachment->att_repl_appliers.pop());
+		cleanupApplier->shutdown(tdbb);
+	}
 
 	if (dbb->dbb_crypto_manager)
 		dbb->dbb_crypto_manager->detach(tdbb, attachment);
