@@ -3620,6 +3620,15 @@ ISC_STATUS API_ROUTINE isc_unwind_request(ISC_STATUS* userStatus, FB_API_HANDLE*
 // Shutdown firebird.
 int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 {
+	if (reason == fb_shutrsn_emergency)
+	{
+		shutdownStarted = true;
+		abortShutdown();
+	}
+
+	if (shutdownStarted)
+		return FB_SUCCESS;
+
 	StatusVector status(NULL);
 	CheckStatusWrapper statusWrapper(&status);
 

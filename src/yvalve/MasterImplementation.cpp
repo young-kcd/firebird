@@ -135,10 +135,20 @@ int MasterImplementation::serverMode(int mode)
 
 namespace Why {
 
+static bool abortShutdownFlag = false;
+
+void abortShutdown()
+{
+	abortShutdownFlag = true;
+}
+
 Thread::Handle timerThreadHandle = 0;
 
 FB_BOOLEAN MasterImplementation::getProcessExiting()
 {
+	if (abortShutdownFlag)
+		return true;
+
 #ifdef WIN_NT
 	if (timerThreadHandle && WaitForSingleObject(timerThreadHandle, 0) != WAIT_TIMEOUT)
 		return true;
