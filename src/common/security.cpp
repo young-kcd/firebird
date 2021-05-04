@@ -183,13 +183,12 @@ PathName ParsedList::getNonLoopbackProviders(const PathName& aliasDb)
 
 	PathName providers(config->getPlugins(IPluginManager::TYPE_PROVIDER));
 	Auth::ParsedList list(providers);
-	for (unsigned n = 0; n < list.getCount(); ++n)
+	for (unsigned n = 0; n < list.getCount();)
 	{
 		if (list[n] == "Loopback")
-		{
 			list.remove(n);
-			break;
-		}
+		else
+			++n;
 	}
 	list.makeList(providers);
 	providers.insert(0, "Providers=");
