@@ -2319,7 +2319,8 @@ void Statement::freeClientData(CheckStatusWrapper* status, bool force)
 
 		if (rdb->rdb_port->port_flags & PORT_lazy)
 		{
-			defer_packet(rdb->rdb_port, packet);
+			send_packet(rdb->rdb_port, packet);
+			defer_packet(rdb->rdb_port, packet, true);
 			packet->p_resp.p_resp_object = statement->rsr_id;
 		}
 		else
