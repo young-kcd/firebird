@@ -1513,7 +1513,7 @@ type
 	end;
 
 	IBatch = class(IReferenceCounted)
-		const VERSION = 4;
+		const VERSION = 3;
 		const VERSION1 = Byte(1);
 		const TAG_MULTIERROR = Byte(1);
 		const TAG_RECORD_COUNTS = Byte(2);
@@ -14961,7 +14961,7 @@ initialization
 	IStatementImpl_vTable.createBatch := @IStatementImpl_createBatchDispatcher;
 
 	IBatchImpl_vTable := BatchVTable.create;
-	IBatchImpl_vTable.version := 4;
+	IBatchImpl_vTable.version := 3;
 	IBatchImpl_vTable.addRef := @IBatchImpl_addRefDispatcher;
 	IBatchImpl_vTable.release := @IBatchImpl_releaseDispatcher;
 	IBatchImpl_vTable.add := @IBatchImpl_addDispatcher;

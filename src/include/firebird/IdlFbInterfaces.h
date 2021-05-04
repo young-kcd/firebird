@@ -1878,7 +1878,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 4;
+		static const unsigned VERSION = 3;
 
 		static const unsigned char VERSION1 = 1;
 		static const unsigned char TAG_MULTIERROR = 1;
@@ -1967,12 +1967,6 @@ namespace Firebird
 
 		template <typename StatusType> void close(StatusType* status)
 		{
-			if (cloopVTable->version < 4)
-			{
-				StatusType::setVersionError(status, "IBatch", cloopVTable->version, 4);
-				StatusType::checkException(status);
-				return;
-			}
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->close(this, status);
 			StatusType::checkException(status);

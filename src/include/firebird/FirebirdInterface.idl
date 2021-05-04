@@ -516,8 +516,6 @@ interface Batch : ReferenceCounted
 	uint getBlobAlignment(Status status);
 	MessageMetadata getMetadata(Status status);
 	void setDefaultBpb(Status status, uint parLength, const uchar* par);
-
-version:	// added after FB4 RC1
 	void close(Status status);
 }
 
