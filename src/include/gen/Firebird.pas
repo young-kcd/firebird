@@ -4095,6 +4095,7 @@ const
 	fb_shutrsn_signal = -5;
 	fb_shutrsn_services = -6;
 	fb_shutrsn_exit_called = -7;
+	fb_shutrsn_emergency = -8;
 	fb_cancel_disable = byte(1);
 	fb_cancel_enable = byte(2);
 	fb_cancel_raise = byte(3);
