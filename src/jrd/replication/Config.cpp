@@ -75,15 +75,17 @@ namespace
 			output = false;
 	}
 
+	void configError(const string& type, const string& key, const string& value)
+	{
+		string msg;
+		msg.printf("%s specifies %s: %s", key.c_str(), type.c_str(), value.c_str());
+		raiseError(msg.c_str());
+	}
+
 	void checkAccess(const PathName& path, const string& key)
 	{
 		if (path.hasData() && !PathUtils::canAccess(path, 6))
-		{
-			string msg;
-			msg.printf("%s specifies missing or inaccessible directory: %s",
-					   key.c_str(), path.c_str());
-			raiseError(msg.c_str());
-		}
+			configError("missing or inaccessible directory", key, path.c_str());
 	}
 
 	void composeError(CheckStatusWrapper* status, const Exception& ex)
@@ -384,7 +386,8 @@ void Config::enumerate(Firebird::Array<Config*>& replicas)
 				}
 				else if (key == "source_guid")
 				{
-					StringToGuid(&config->sourceGuid, value.c_str());
+					if (!StringToGuid(&config->sourceGuid, value.c_str()))
+						configError("invalid (misformatted) value", key, value);
 				}
 				else if (key == "verbose_logging")
 				{
