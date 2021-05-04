@@ -114,7 +114,7 @@ Manager::Manager(const string& dbId,
 	const Guid& guid = dbb->dbb_guid;
 	m_sequence = dbb->dbb_repl_sequence;
 
-	if (config->logDirectory.hasData())
+	if (config->journalDirectory.hasData())
 	{
 		m_changeLog = FB_NEW_POOL(getPool())
 			ChangeLog(getPool(), dbId, guid, m_sequence, config);

@@ -78,7 +78,7 @@ namespace Replication
 
 		void flush(Firebird::UCharBuffer* buffer, bool sync);
 
-		void forceLogSwitch()
+		void forceJournalSwitch()
 		{
 			if (m_changeLog)
 				m_changeLog->forceSwitch();

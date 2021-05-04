@@ -52,10 +52,10 @@ namespace
 	const char* REPLICATION_CFGFILE = "replication.conf";
 
 	const ULONG DEFAULT_BUFFER_SIZE = 1024 * 1024; 				// 1 MB
-	const ULONG DEFAULT_LOG_SEGMENT_SIZE = 16 * 1024 * 1024;	// 16 MB
-	const ULONG DEFAULT_LOG_SEGMENT_COUNT = 8;
-	const ULONG DEFAULT_LOG_ARCHIVE_TIMEOUT = 60;				// seconds
-	const ULONG DEFAULT_LOG_GROUP_FLUSH_DELAY = 0;
+	const ULONG DEFAULT_SEGMENT_SIZE = 16 * 1024 * 1024;	// 16 MB
+	const ULONG DEFAULT_SEGMENT_COUNT = 8;
+	const ULONG DEFAULT_ARCHIVE_TIMEOUT = 60;				// seconds
+	const ULONG DEFAULT_GROUP_FLUSH_DELAY = 0;
 	const ULONG DEFAULT_APPLY_IDLE_TIMEOUT = 10;				// seconds
 	const ULONG DEFAULT_APPLY_ERROR_TIMEOUT = 60;				// seconds
 
@@ -109,16 +109,16 @@ Config::Config()
 	  bufferSize(DEFAULT_BUFFER_SIZE),
 	  includeFilter(getPool()),
 	  excludeFilter(getPool()),
-	  logSegmentSize(DEFAULT_LOG_SEGMENT_SIZE),
-	  logSegmentCount(DEFAULT_LOG_SEGMENT_COUNT),
-	  logDirectory(getPool()),
-	  logFilePrefix(getPool()),
-	  logGroupFlushDelay(DEFAULT_LOG_GROUP_FLUSH_DELAY),
-	  logArchiveDirectory(getPool()),
-	  logArchiveCommand(getPool()),
-	  logArchiveTimeout(DEFAULT_LOG_ARCHIVE_TIMEOUT),
+	  segmentSize(DEFAULT_SEGMENT_SIZE),
+	  segmentCount(DEFAULT_SEGMENT_COUNT),
+	  journalDirectory(getPool()),
+	  filePrefix(getPool()),
+	  groupFlushDelay(DEFAULT_GROUP_FLUSH_DELAY),
+	  archiveDirectory(getPool()),
+	  archiveCommand(getPool()),
+	  archiveTimeout(DEFAULT_ARCHIVE_TIMEOUT),
 	  syncReplicas(getPool()),
-	  logSourceDirectory(getPool()),
+	  sourceDirectory(getPool()),
 	  sourceGuid{},
 	  verboseLogging(false),
 	  applyIdleTimeout(DEFAULT_APPLY_IDLE_TIMEOUT),
@@ -135,16 +135,16 @@ Config::Config(const Config& other)
 	  bufferSize(other.bufferSize),
 	  includeFilter(getPool(), other.includeFilter),
 	  excludeFilter(getPool(), other.excludeFilter),
-	  logSegmentSize(other.logSegmentSize),
-	  logSegmentCount(other.logSegmentCount),
-	  logDirectory(getPool(), other.logDirectory),
-	  logFilePrefix(getPool(), other.logFilePrefix),
-	  logGroupFlushDelay(other.logGroupFlushDelay),
-	  logArchiveDirectory(getPool(), other.logArchiveDirectory),
-	  logArchiveCommand(getPool(), other.logArchiveCommand),
-	  logArchiveTimeout(other.logArchiveTimeout),
+	  segmentSize(other.segmentSize),
+	  segmentCount(other.segmentCount),
+	  journalDirectory(getPool(), other.journalDirectory),
+	  filePrefix(getPool(), other.filePrefix),
+	  groupFlushDelay(other.groupFlushDelay),
+	  archiveDirectory(getPool(), other.archiveDirectory),
+	  archiveCommand(getPool(), other.archiveCommand),
+	  archiveTimeout(other.archiveTimeout),
 	  syncReplicas(getPool(), other.syncReplicas),
-	  logSourceDirectory(getPool(), other.logSourceDirectory),
+	  sourceDirectory(getPool(), other.sourceDirectory),
 	  sourceGuid{},
 	  verboseLogging(other.verboseLogging),
 	  applyIdleTimeout(other.applyIdleTimeout),
@@ -234,41 +234,41 @@ Config* Config::get(const PathName& lookupName)
 					ISC_systemToUtf8(value);
 					config->excludeFilter = value;
 				}
-				else if (key == "log_segment_size")
+				else if (key == "journal_segment_size")
 				{
-					parseLong(value, config->logSegmentSize);
+					parseLong(value, config->segmentSize);
 				}
-				else if (key == "log_segment_count")
+				else if (key == "journal_segment_count")
 				{
-					parseLong(value, config->logSegmentCount);
+					parseLong(value, config->segmentCount);
 				}
-				else if (key == "log_directory")
+				else if (key == "journal_directory")
 				{
-					config->logDirectory = value.c_str();
-					PathUtils::ensureSeparator(config->logDirectory);
-					checkAccess(config->logDirectory, key);
+					config->journalDirectory = value.c_str();
+					PathUtils::ensureSeparator(config->journalDirectory);
+					checkAccess(config->journalDirectory, key);
 				}
-				else if (key == "log_file_prefix")
+				else if (key == "journal_file_prefix")
 				{
-					config->logFilePrefix = value.c_str();
+					config->filePrefix = value.c_str();
 				}
-				else if (key == "log_group_flush_delay")
+				else if (key == "journal_group_flush_delay")
 				{
-					parseLong(value, config->logGroupFlushDelay);
+					parseLong(value, config->groupFlushDelay);
 				}
-				else if (key == "log_archive_directory")
+				else if (key == "journal_archive_directory")
 				{
-					config->logArchiveDirectory = value.c_str();
-					PathUtils::ensureSeparator(config->logArchiveDirectory);
-					checkAccess(config->logArchiveDirectory, key);
+					config->archiveDirectory = value.c_str();
+					PathUtils::ensureSeparator(config->archiveDirectory);
+					checkAccess(config->archiveDirectory, key);
 				}
-				else if (key == "log_archive_command")
+				else if (key == "journal_archive_command")
 				{
-					config->logArchiveCommand = value.c_str();
+					config->archiveCommand = value.c_str();
 				}
-				else if (key == "log_archive_timeout")
+				else if (key == "journal_archive_timeout")
 				{
-					parseLong(value, config->logArchiveTimeout);
+					parseLong(value, config->archiveTimeout);
 				}
 				else if (key == "plugin")
 				{
@@ -297,15 +297,15 @@ Config* Config::get(const PathName& lookupName)
 		if (config->pluginName.hasData())
 			return config.release();
 
-		if (config->logDirectory.hasData() || config->syncReplicas.hasData())
+		if (config->journalDirectory.hasData() || config->syncReplicas.hasData())
 		{
 			// If log_directory is specified, then replication is enabled
 
-			if (config->logFilePrefix.isEmpty())
+			if (config->filePrefix.isEmpty())
 			{
 				PathName db_directory, db_filename;
 				PathUtils::splitLastComponent(db_directory, db_filename, config->dbName);
-				config->logFilePrefix = db_filename;
+				config->filePrefix = db_filename;
 			}
 
 			return config.release();
@@ -378,11 +378,11 @@ void Config::enumerate(Firebird::Array<Config*>& replicas)
 				if (value.isEmpty())
 					continue;
 
-				if (key == "log_source_directory")
+				if (key == "journal_source_directory")
 				{
-					config->logSourceDirectory = value.c_str();
-					PathUtils::ensureSeparator(config->logSourceDirectory);
-					checkAccess(config->logSourceDirectory, key);
+					config->sourceDirectory = value.c_str();
+					PathUtils::ensureSeparator(config->sourceDirectory);
+					checkAccess(config->sourceDirectory, key);
 				}
 				else if (key == "source_guid")
 				{
@@ -403,7 +403,7 @@ void Config::enumerate(Firebird::Array<Config*>& replicas)
 				}
 			}
 
-			if (dbName.hasData() && config->logSourceDirectory.hasData())
+			if (dbName.hasData() && config->sourceDirectory.hasData())
 			{
 				// If source_directory is specified, then replication is enabled
 

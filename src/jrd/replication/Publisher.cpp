@@ -691,7 +691,7 @@ void REPL_exec_sql(thread_db* tdbb, jrd_tra* transaction, const string& sql)
 	checkStatus(tdbb, status, transaction);
 }
 
-void REPL_log_switch(thread_db* tdbb)
+void REPL_journal_switch(thread_db* tdbb)
 {
 	const auto dbb = tdbb->getDatabase();
 
@@ -699,5 +699,5 @@ void REPL_log_switch(thread_db* tdbb)
 	if (!replMgr)
 		return;
 
-	replMgr->forceLogSwitch();
+	replMgr->forceJournalSwitch();
 }
