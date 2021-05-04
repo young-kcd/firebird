@@ -201,6 +201,7 @@ public:
 	unsigned getBlobAlignment(Firebird::CheckStatusWrapper* status) override;
 	Firebird::IMessageMetadata* getMetadata(Firebird::CheckStatusWrapper* status) override;
 	void setDefaultBpb(Firebird::CheckStatusWrapper* status, unsigned parLength, const unsigned char* par) override;
+	void close(Firebird::CheckStatusWrapper* status) override;
 
 public:
 	JBatch(DsqlBatch* handle, JStatement* aStatement, Firebird::IMessageMetadata* aMetadata);

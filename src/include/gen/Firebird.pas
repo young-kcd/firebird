@@ -355,6 +355,7 @@ type
 	IBatch_getBlobAlignmentPtr = function(this: IBatch; status: IStatus): Cardinal; cdecl;
 	IBatch_getMetadataPtr = function(this: IBatch; status: IStatus): IMessageMetadata; cdecl;
 	IBatch_setDefaultBpbPtr = procedure(this: IBatch; status: IStatus; parLength: Cardinal; par: BytePtr); cdecl;
+	IBatch_closePtr = procedure(this: IBatch; status: IStatus); cdecl;
 	IBatchCompletionState_getSizePtr = function(this: IBatchCompletionState; status: IStatus): Cardinal; cdecl;
 	IBatchCompletionState_getStatePtr = function(this: IBatchCompletionState; status: IStatus; pos: Cardinal): Integer; cdecl;
 	IBatchCompletionState_findErrorPtr = function(this: IBatchCompletionState; status: IStatus; pos: Cardinal): Cardinal; cdecl;
@@ -1508,10 +1509,11 @@ type
 		getBlobAlignment: IBatch_getBlobAlignmentPtr;
 		getMetadata: IBatch_getMetadataPtr;
 		setDefaultBpb: IBatch_setDefaultBpbPtr;
+		close: IBatch_closePtr;
 	end;
 
 	IBatch = class(IReferenceCounted)
-		const VERSION = 3;
+		const VERSION = 4;
 		const VERSION1 = Byte(1);
 		const TAG_MULTIERROR = Byte(1);
 		const TAG_RECORD_COUNTS = Byte(2);
@@ -1534,6 +1536,7 @@ type
 		function getBlobAlignment(status: IStatus): Cardinal;
 		function getMetadata(status: IStatus): IMessageMetadata;
 		procedure setDefaultBpb(status: IStatus; parLength: Cardinal; par: BytePtr);
+		procedure close(status: IStatus);
 	end;
 
 	IBatchImpl = class(IBatch)
@@ -1551,6 +1554,7 @@ type
 		function getBlobAlignment(status: IStatus): Cardinal; virtual; abstract;
 		function getMetadata(status: IStatus): IMessageMetadata; virtual; abstract;
 		procedure setDefaultBpb(status: IStatus; parLength: Cardinal; par: BytePtr); virtual; abstract;
+		procedure close(status: IStatus); virtual; abstract;
 	end;
 
 	BatchCompletionStateVTable = class(DisposableVTable)
@@ -6419,6 +6423,12 @@ begin
 	FbException.checkException(status);
 end;
 
+procedure IBatch.close(status: IStatus);
+begin
+	BatchVTable(vTable).close(Self, status);
+	FbException.checkException(status);
+end;
+
 function IBatchCompletionState.getSize(status: IStatus): Cardinal;
 begin
 	Result := BatchCompletionStateVTable(vTable).getSize(Self, status);
@@ -10101,6 +10111,15 @@ procedure IBatchImpl_setDefaultBpbDispatcher(this: IBatch; status: IStatus; parL
 begin
 	try
 		IBatchImpl(this).setDefaultBpb(status, parLength, par);
+	except
+		on e: Exception do FbException.catchException(status, e);
+	end
+end;
+
+procedure IBatchImpl_closeDispatcher(this: IBatch; status: IStatus); cdecl;
+begin
+	try
+		IBatchImpl(this).close(status);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
@@ -14942,7 +14961,7 @@ initialization
 	IStatementImpl_vTable.createBatch := @IStatementImpl_createBatchDispatcher;
 
 	IBatchImpl_vTable := BatchVTable.create;
-	IBatchImpl_vTable.version := 3;
+	IBatchImpl_vTable.version := 4;
 	IBatchImpl_vTable.addRef := @IBatchImpl_addRefDispatcher;
 	IBatchImpl_vTable.release := @IBatchImpl_releaseDispatcher;
 	IBatchImpl_vTable.add := @IBatchImpl_addDispatcher;
@@ -14955,6 +14974,7 @@ initialization
 	IBatchImpl_vTable.getBlobAlignment := @IBatchImpl_getBlobAlignmentDispatcher;
 	IBatchImpl_vTable.getMetadata := @IBatchImpl_getMetadataDispatcher;
 	IBatchImpl_vTable.setDefaultBpb := @IBatchImpl_setDefaultBpbDispatcher;
+	IBatchImpl_vTable.close := @IBatchImpl_closeDispatcher;
 
 	IBatchCompletionStateImpl_vTable := BatchCompletionStateVTable.create;
 	IBatchCompletionStateImpl_vTable.version := 3;

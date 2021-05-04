@@ -5877,6 +5877,13 @@ int JBatch::release()
 	return 0;
 }
 
+
+void JBatch::close(CheckStatusWrapper* user_status)
+{
+	freeEngineData(user_status);
+}
+
+
 void JBatch::freeEngineData(Firebird::CheckStatusWrapper* user_status)
 {
 	try
@@ -5890,6 +5897,7 @@ void JBatch::freeEngineData(Firebird::CheckStatusWrapper* user_status)
 			if (att)
 				att->deregisterBatch(this);
 			delete batch;
+			batch = nullptr;
 		}
 		catch (const Exception& ex)
 		{

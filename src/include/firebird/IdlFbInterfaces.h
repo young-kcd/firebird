@@ -1864,6 +1864,7 @@ namespace Firebird
 			unsigned (CLOOP_CARG *getBlobAlignment)(IBatch* self, IStatus* status) throw();
 			IMessageMetadata* (CLOOP_CARG *getMetadata)(IBatch* self, IStatus* status) throw();
 			void (CLOOP_CARG *setDefaultBpb)(IBatch* self, IStatus* status, unsigned parLength, const unsigned char* par) throw();
+			void (CLOOP_CARG *close)(IBatch* self, IStatus* status) throw();
 		};
 
 	protected:
@@ -1877,7 +1878,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 3;
+		static const unsigned VERSION = 4;
 
 		static const unsigned char VERSION1 = 1;
 		static const unsigned char TAG_MULTIERROR = 1;
@@ -1961,6 +1962,19 @@ namespace Firebird
 		{
 			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setDefaultBpb(this, status, parLength, par);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void close(StatusType* status)
+		{
+			if (cloopVTable->version < 4)
+			{
+				StatusType::setVersionError(status, "IBatch", cloopVTable->version, 4);
+				StatusType::checkException(status);
+				return;
+			}
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->close(this, status);
 			StatusType::checkException(status);
 		}
 	};
@@ -9785,6 +9799,7 @@ namespace Firebird
 					this->getBlobAlignment = &Name::cloopgetBlobAlignmentDispatcher;
 					this->getMetadata = &Name::cloopgetMetadataDispatcher;
 					this->setDefaultBpb = &Name::cloopsetDefaultBpbDispatcher;
+					this->close = &Name::cloopcloseDispatcher;
 				}
 			} vTable;
 
@@ -9934,6 +9949,20 @@ namespace Firebird
 			}
 		}
 
+		static void CLOOP_CARG cloopcloseDispatcher(IBatch* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::close(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
 		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
@@ -9983,6 +10012,7 @@ namespace Firebird
 		virtual unsigned getBlobAlignment(StatusType* status) = 0;
 		virtual IMessageMetadata* getMetadata(StatusType* status) = 0;
 		virtual void setDefaultBpb(StatusType* status, unsigned parLength, const unsigned char* par) = 0;
+		virtual void close(StatusType* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

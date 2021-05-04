@@ -296,7 +296,7 @@ int main()
 		print_cs(status, cs, utl);
 
 		// close batch
-		batch->release();
+		batch->close(&status);
 		batch = NULL;
 
 		//
@@ -366,7 +366,7 @@ int main()
 		print_cs(status, cs, utl);
 
 		// close batch
-		batch->release();
+		batch->close(&status);
 		batch = NULL;
 
 		//
@@ -493,7 +493,7 @@ int main()
 		print_cs(status, cs, utl);
 
 		// cleanup
-		batch->release();
+		batch->close(&status);
 		batch = NULL;
 		tra->commit(&status);
 		tra = NULL;

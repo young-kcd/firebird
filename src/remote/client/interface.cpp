@@ -339,6 +339,7 @@ public:
 	unsigned getBlobAlignment(Firebird::CheckStatusWrapper* status) override;
 	void setDefaultBpb(Firebird::CheckStatusWrapper* status, unsigned parLength, const unsigned char* par) override;
 	Firebird::IMessageMetadata* getMetadata(Firebird::CheckStatusWrapper* status) override;
+	void close(Firebird::CheckStatusWrapper* status) override;
 
 private:
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
@@ -2806,6 +2807,13 @@ void Batch::freeClientData(CheckStatusWrapper* status, bool force)
 	{
 		ex.stuffException(status);
 	}
+}
+
+
+void Batch::close(CheckStatusWrapper* status)
+{
+	reset(status);
+	freeClientData(status);
 }
 
 

@@ -5028,6 +5028,25 @@ void YBatch::cancel(CheckStatusWrapper* status)
 }
 
 
+void YBatch::close(CheckStatusWrapper* status)
+{
+	try
+	{
+		YEntry<YBatch> entry(status, this, CHECK_WARN_ZERO_HANDLE);
+
+		if (entry.next())
+			entry.next()->close(status);
+
+		if (!(status->getState() & IStatus::STATE_ERRORS))
+			destroy(DF_RELEASE);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+}
+
+
 //-------------------------------------
 
 
