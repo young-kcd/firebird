@@ -959,7 +959,7 @@ void Trigger::release(thread_db* tdbb)
 		extTrigger = NULL;
 	}
 
-	if (blr.isEmpty() || !statement || statement->isActive() || releaseInProgress)
+	if (sysTrigger || !statement || statement->isActive() || releaseInProgress)
 		return;
 
 	AutoSetRestore<bool> autoProgressFlag(&releaseInProgress, true);
