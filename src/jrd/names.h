@@ -451,3 +451,5 @@ NAME("RDB$CONFIG_VALUE", nam_cfg_value)
 NAME("RDB$CONFIG_DEFAULT", nam_cfg_default)
 NAME("RDB$CONFIG_IS_SET", nam_cfg_is_set)
 NAME("RDB$CONFIG_SOURCE", nam_cfg_source)
+
+NAME("MON$SESSION_TIMEZONE", nam_mon_session_tz)
