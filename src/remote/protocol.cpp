@@ -1057,12 +1057,13 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 		}
 
 	case op_batch_rls:
+	case op_batch_cancel:
 		{
-			P_BATCH_FREE* b = &p->p_batch_free;
+			P_BATCH_FREE_CANCEL* b = &p->p_batch_free_cancel;
 			MAP(xdr_short, reinterpret_cast<SSHORT&>(b->p_batch_statement));
 
 			if (xdrs->x_op != XDR_FREE)
-				DEB_RBATCH(fprintf(stderr, "BatRem: xdr release\n"));
+				DEB_RBATCH(fprintf(stderr, "BatRem: xdr release/cancel %d\n", p->p_operation));
 
 			return P_TRUE(xdrs, p);
 		}

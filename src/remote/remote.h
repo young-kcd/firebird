@@ -1366,7 +1366,8 @@ public:
 	void		batch_blob_stream(P_BATCH_BLOB*, PACKET*);
 	void		batch_regblob(P_BATCH_REGBLOB*, PACKET*);
 	void		batch_exec(P_BATCH_EXEC*, PACKET*);
-	void		batch_rls(P_BATCH_FREE*, PACKET*);
+	void		batch_rls(P_BATCH_FREE_CANCEL*, PACKET*);
+	void		batch_cancel(P_BATCH_FREE_CANCEL*, PACKET*);
 	void		batch_bpb(P_BATCH_SETBPB*, PACKET*);
 	void		replicate(P_REPLICATE*, PACKET*);
 

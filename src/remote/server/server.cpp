@@ -3684,7 +3684,7 @@ void rem_port::batch_exec(P_BATCH_EXEC* batch, PACKET* sendL)
 }
 
 
-void rem_port::batch_rls(P_BATCH_FREE* batch, PACKET* sendL)
+void rem_port::batch_rls(P_BATCH_FREE_CANCEL* batch, PACKET* sendL)
 {
 	LocalStatus ls;
 	CheckStatusWrapper status_vector(&ls);
@@ -3698,6 +3698,22 @@ void rem_port::batch_rls(P_BATCH_FREE* batch, PACKET* sendL)
 	statement->rsr_batch = nullptr;
 
 	this->send_response(sendL, 0, 0, &status_vector, true);
+}
+
+
+void rem_port::batch_cancel(P_BATCH_FREE_CANCEL* batch, PACKET* sendL)
+{
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
+
+	Rsr* statement;
+	getHandle(statement, batch->p_batch_statement);
+	statement->checkIface();
+	statement->checkBatch();
+
+	statement->rsr_batch->cancel(&status_vector);
+
+	this->send_response(sendL, 0, 0, &status_vector, false);
 }
 
 
@@ -4969,7 +4985,11 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 			break;
 
 		case op_batch_rls:
-			port->batch_rls(&receive->p_batch_free, sendL);
+			port->batch_rls(&receive->p_batch_free_cancel, sendL);
+			break;
+
+		case op_batch_cancel:
+			port->batch_cancel(&receive->p_batch_free_cancel, sendL);
 			break;
 
 		case op_batch_blob_stream:

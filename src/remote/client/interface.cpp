@@ -2752,6 +2752,35 @@ void Batch::cancel(CheckStatusWrapper* status)
 {
 	try
 	{
+		// Check and validate handles, etc.
+		if (!stmt)
+		{
+			Arg::Gds(isc_dsql_cursor_err).raise();
+		}
+
+		Rsr* statement = stmt->getStatement();
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		// Cleanup local data
+		if (blobPolicy != BLOB_NONE)
+			blobStream = blobStreamBuffer;
+		sizePointer = nullptr;
+		messageStream = 0;
+		batchActive = false;
+
+		// Prepare packet
+		PACKET* packet = &rdb->rdb_packet;
+		packet->p_operation = op_batch_cancel;
+
+		P_BATCH_FREE_CANCEL* batch = &packet->p_batch_free_cancel;
+		batch->p_batch_statement = statement->rsr_id;
+
+		send_and_receive(status, rdb, packet);
+
+		batchActive = false;
 	}
 	catch (const Exception& ex)
 	{
@@ -2780,7 +2809,7 @@ void Batch::freeClientData(CheckStatusWrapper* status, bool force)
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_batch_rls;
 
-		P_BATCH_FREE* batch = &packet->p_batch_free;
+		P_BATCH_FREE_CANCEL* batch = &packet->p_batch_free_cancel;
 		batch->p_batch_statement = statement->rsr_id;
 
 		if (rdb->rdb_port->port_flags & PORT_lazy)
