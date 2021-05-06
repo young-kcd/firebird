@@ -343,7 +343,11 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 				do {
 					const ULONG length = reader.getInt16();
 					if (!length)
+					{
+						// Close our newly created blob
+						storeBlob(tdbb, traNum, &blob_id, 0, nullptr);
 						break;
+					}
 					const auto blob = reader.getBinary(length);
 					storeBlob(tdbb, traNum, &blob_id, length, blob);
 				} while (!reader.isEof());
