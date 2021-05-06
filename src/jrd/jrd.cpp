@@ -3123,6 +3123,8 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			dbb->dbb_flags &= ~(DBB_new | DBB_creating);
 			guardDbInit.leave();
 
+			REPL_attach(tdbb, false);
+
 			// Report that we created attachment to Trace API
 			attachment->att_trace_manager->activate();
 			if (attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_ATTACH))
