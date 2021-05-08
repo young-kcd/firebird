@@ -117,7 +117,7 @@ namespace
 							dbname.c_str(), LOG_MSG_TYPES[type], message.c_str());
 
 				fseek(file, 0, SEEK_END);
-				fprintf(file, text.c_str());
+				fprintf(file, "%s", text.c_str());
 				fclose(file);
 				unlock();
 			}
