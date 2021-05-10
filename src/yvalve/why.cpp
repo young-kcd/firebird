@@ -6192,10 +6192,17 @@ YAttachment* Dispatcher::attachOrCreateDatabase(CheckStatusWrapper* status, bool
 
 		// Take care about DPB
 		setLogin(newDpb, false);
-		if (!utfData)
+
+		if (!newDpb.find(isc_dpb_session_time_zone))
 		{
-			IntlDpb().toUtf8(newDpb);
+			const char* defaultTimeZone = Config::getDefaultTimeZone();
+
+			if (defaultTimeZone && defaultTimeZone[0])
+				newDpb.insertString(isc_dpb_session_time_zone, defaultTimeZone);
 		}
+
+		if (!utfData)
+			IntlDpb().toUtf8(newDpb);
 
 		// Take care about filename
 		PathName orgFilename(filename);
