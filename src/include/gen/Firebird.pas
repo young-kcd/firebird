@@ -5076,6 +5076,7 @@ const
 	isc_repl_error                       = 335545271;
 	isc_ses_reset_failed                 = 335545272;
 	isc_block_size                       = 335545273;
+	isc_tom_key_length                   = 335545274;
 	isc_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;
 	isc_gfix_incmp_sw                    = 335740932;

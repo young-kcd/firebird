@@ -1953,6 +1953,8 @@ const
 	gds_ses_reset_failed                 = 335545272;
 	isc_block_size                       = 335545273;
 	gds_block_size                       = 335545273;
+	isc_tom_key_length                   = 335545274;
+	gds_tom_key_length                   = 335545274;
 	isc_gfix_db_name                     = 335740929;
 	gds_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;
