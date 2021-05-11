@@ -1061,6 +1061,7 @@ Data source : @4', NULL, NULL)
 ('repl_error', 'checkStatus', 'Publisher.cpp', NULL, 0, 951, NULL, 'Replication error', NULL, NULL);
 ('ses_reset_failed', NULL, 'Attachment.cpp', NULL, 0, 952, NULL, 'Reset of user session failed. Connection is shut down.', NULL, NULL);
 ('block_size', NULL, 'unix.cpp', NULL, 0, 953, NULL, 'File size is less than expected', NULL, NULL);
+('tom_key_length', NULL, 'SysFunction.cpp', NULL, 0, 954, NULL, 'Invalid key length @1, need >@2', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
