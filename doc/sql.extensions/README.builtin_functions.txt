@@ -1101,15 +1101,15 @@ Example:
         key rdb$get_context('USER_SESSION', 'private_key')) from rdb$database;
 
 
---------
-RSA_SIGN
---------
+-------------
+RSA_SIGN_HASH
+-------------
 
 Function:
     Performs PSS encoding of message digest to be signed and signs using RSA private key.
 
 Format:
-    RSA_SIGN ( <string> KEY <private key> [HASH <hash>] [SALT_LENGTH <smallint>] )
+    RSA_SIGN_HASH ( <string> KEY <private key> [HASH <hash>] [SALT_LENGTH <smallint>] )
         KEY should be a value, returhed by RSA_PRIVATE function.
         hash ::= { MD5 | SHA1 | SHA256 | SHA512 } Default is SHA256.
         SALT_LENGTH indicates the length of the desired salt, and should typically be small.
@@ -1117,20 +1117,20 @@ Format:
 
 Example:
     (tip - start running samples one by one from RSA_PRIVATE function)
-    select rdb$set_context('USER_SESSION', 'msg', rsa_sign(hash('Test message' using sha256)
+    select rdb$set_context('USER_SESSION', 'msg', rsa_sign_hash(crypt_hash('Test message' using sha256)
         key rdb$get_context('USER_SESSION', 'private_key'))) from rdb$database;
 
 
-----------
-RSA_VERIFY
-----------
+---------------
+RSA_VERIFY_HASH
+---------------
 
 Function:
     Performs PSS encoding of message digest to be signed and verifies it's digital signature
         using RSA public key.
 
 Format:
-    RSA_VERIFY ( <string> SIGNATURE <string> KEY <public key> [HASH <hash>] [SALT_LENGTH <smallint>] )
+    RSA_VERIFY_HASH ( <string> SIGNATURE <string> KEY <public key> [HASH <hash>] [SALT_LENGTH <smallint>] )
         SIGNATURE should be a value, returhed by RSA_SIGN function.
         KEY should be a value, returhed by RSA_PUBLIC function.
         hash ::= { MD5 | SHA1 | SHA256 | SHA512 } Default is SHA256.
@@ -1139,7 +1139,7 @@ Format:
 
 Example:
     (tip - start running samples one by one from RSA_PRIVATE function)
-    select rsa_verify(hash('Test message' using sha256) signature rdb$get_context('USER_SESSION', 'msg')
+    select rsa_verify_hash(crypt_hash('Test message' using sha256) signature rdb$get_context('USER_SESSION', 'msg')
         key rdb$get_context('USER_SESSION', 'public_key')) from rdb$database;
 
 
