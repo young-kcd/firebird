@@ -662,80 +662,80 @@ int Parser::yylexAux()
 	// in a character or binary item.
 	if ((c == 'x' || c == 'X') && lex.ptr < lex.end && *lex.ptr == '\'')
 	{
+		++lex.ptr;
+
 		bool hexerror = false;
+		Firebird::string temp;
+		int leadNibble = -1;
 
-		// Remember where we start from, to rescan later.
-		// Also we'll need to know the length of the buffer.
+		// Scan over the hex string converting adjacent bytes into nibble values.
+		// Every other nibble, write the saved byte to the temp space.
+		// At the end of this, the temp.space area will contain the binary representation of the hex constant.
+		// Full string could be composed of multiple segments.
 
-		const char* hexstring = ++lex.ptr;
-		int charlen = 0;
-
-		// Time to scan the string. Make sure the characters are legal,
-		// and find out how long the hex digit string is.
-
-		for (;;)
+		while (!hexerror)
 		{
-			if (lex.ptr >= lex.end)	// Unexpected EOS
+			int leadNibble = -1;
+
+			// Scan over the hex string converting adjacent bytes into nibble values.
+			// Every other nibble, write the saved byte to the temp space.
+			// At the end of this, the temp.space area will contain the binary representation of the hex constant.
+
+			for (;;)
 			{
-				hexerror = true;
-				break;
+				if (lex.ptr >= lex.end)	// Unexpected EOS
+				{
+					hexerror = true;
+					break;
+				}
+
+				c = *lex.ptr;
+
+				if (c == '\'')			// Trailing quote, done
+				{
+					++lex.ptr;			// Skip the quote
+					break;
+				}
+				else if (c != ' ')
+				{
+					if (!(classes(c) & CHR_HEX))	// Illegal character
+					{
+						hexerror = true;
+						break;
+					}
+
+					c = UPPER7(c);
+
+					if (c >= 'A')
+						c = (c - 'A') + 10;
+					else
+						c = (c - '0');
+
+					if (leadNibble == -1)
+						leadNibble = c;
+					else
+					{
+						temp.append(1, char((leadNibble << 4) + (UCHAR) c));
+						leadNibble = -1;
+					}
+				}
+
+				++lex.ptr;	// and advance...
 			}
 
-			c = *lex.ptr;
+			hexerror = hexerror || leadNibble != -1;
 
-			if (c == '\'')			// Trailing quote, done
+			LexerState saveLex = lex;
+
+			if (!yylexSkipSpaces() || lex.ptr[-1] != '\'')
 			{
-				++lex.ptr;			// Skip the quote
+				lex = saveLex;
 				break;
 			}
-
-			if (!(classes(c) & CHR_HEX))	// Illegal character
-			{
-				hexerror = true;
-				break;
-			}
-
-			++charlen;	// Okay, just count 'em
-			++lex.ptr;	// and advance...
 		}
 
-		hexerror = hexerror || (charlen & 1);	// IS_ODD(charlen)
-
-		// If we made it this far with no error, then convert the string.
 		if (!hexerror)
 		{
-			// Figure out the length of the actual resulting hex string.
-			// Allocate a second temporary buffer for it.
-
-			Firebird::string temp;
-
-			// Re-scan over the hex string we got earlier, converting
-			// adjacent bytes into nibble values.  Every other nibble,
-			// write the saved byte to the temp space.  At the end of
-			// this, the temp.space area will contain the binary
-			// representation of the hex constant.
-
-			UCHAR byte = 0;
-			for (int i = 0; i < charlen; i++)
-			{
-				c = UPPER7(hexstring[i]);
-
-				// Now convert the character to a nibble
-
-				if (c >= 'A')
-					c = (c - 'A') + 10;
-				else
-					c = (c - '0');
-
-				if (i & 1) // nibble?
-				{
-					byte = (byte << 4) + (UCHAR) c;
-					temp.append(1, (char) byte);
-				}
-				else
-					byte = c;
-			}
-
 			if (temp.length() / 2 > MAX_STR_SIZE)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
