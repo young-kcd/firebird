@@ -509,45 +509,60 @@ int Parser::yylexAux()
 		char* buffer = string;
 		SLONG buffer_len = sizeof(string);
 		const char* buffer_end = buffer + buffer_len - 1;
-		char* p;
-		for (p = buffer; ; ++p)
+		char* p = buffer;
+
+		do
 		{
-			if (lex.ptr >= lex.end)
+			do
 			{
-				if (buffer != string)
-					gds__free (buffer);
-				yyerror("unterminated string");
-				return -1;
-			}
-			// Care about multi-line constants and identifiers
-			if (*lex.ptr == '\n')
-			{
-				lex.lines++;
-				lex.line_start = lex.ptr + 1;
-			}
-			// *lex.ptr is quote - if next != quote we're at the end
-			if ((*lex.ptr == c) && ((++lex.ptr == lex.end) || (*lex.ptr != c)))
-				break;
-			if (p > buffer_end)
-			{
-				char* const new_buffer = (char*) gds__alloc (2 * buffer_len);
-				// FREE: at outer block
-				if (!new_buffer)		// NOMEM:
+				if (lex.ptr >= lex.end)
 				{
 					if (buffer != string)
 						gds__free (buffer);
+					yyerror("unterminated string");
 					return -1;
 				}
-				memcpy (new_buffer, buffer, buffer_len);
-				if (buffer != string)
-					gds__free (buffer);
-				buffer = new_buffer;
-				p = buffer + buffer_len;
-				buffer_len = 2 * buffer_len;
-				buffer_end = buffer + buffer_len - 1;
+				// Care about multi-line constants and identifiers
+				if (*lex.ptr == '\n')
+				{
+					lex.lines++;
+					lex.line_start = lex.ptr + 1;
+				}
+				// *lex.ptr is quote - if next != quote we're at the end
+				if ((*lex.ptr == c) && ((++lex.ptr == lex.end) || (*lex.ptr != c)))
+					break;
+				if (p > buffer_end)
+				{
+					char* const new_buffer = (char*) gds__alloc (2 * buffer_len);
+					// FREE: at outer block
+					if (!new_buffer)		// NOMEM:
+					{
+						if (buffer != string)
+							gds__free (buffer);
+						return -1;
+					}
+					memcpy (new_buffer, buffer, buffer_len);
+					if (buffer != string)
+						gds__free (buffer);
+					buffer = new_buffer;
+					p = buffer + buffer_len;
+					buffer_len = 2 * buffer_len;
+					buffer_end = buffer + buffer_len - 1;
+				}
+				*p++ = *lex.ptr++;
+			} while (true);
+
+			if (c != '\'')
+				break;
+
+			LexerState saveLex = lex;
+
+			if (!yylexSkipSpaces() || lex.ptr[-1] != '\'')
+			{
+				lex = saveLex;
+				break;
 			}
-			*p = *lex.ptr++;
-		}
+		} while (true);
 
 		if (p - buffer > MAX_STR_SIZE)
 		{
