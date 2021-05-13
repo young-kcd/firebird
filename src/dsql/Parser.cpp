@@ -727,7 +727,7 @@ int Parser::yylexAux()
 
 			LexerState saveLex = lex;
 
-			if (!yylexSkipSpaces() || lex.ptr[-1] != '\'')
+			if (!yylexSkipSpaces() || lex.ptr - 1 == saveLex.ptr || lex.ptr[-1] != '\'')
 			{
 				lex = saveLex;
 				break;
