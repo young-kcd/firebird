@@ -27,6 +27,12 @@
 
 ## Bugfixes
 
+* [#6808](https://github.com/FirebirdSQL/firebird/issues/6808): Assertion in tomcrypt when key length for RC4 is too small  
+  Contributor(s): Alex Peshkoff
+
+* [#6805](https://github.com/FirebirdSQL/firebird/issues/6805): RDB$TYPES has incorrect entries for RDB$TYPE 28 and 29 in RDB$TYPE_NAME column  
+  Contributor(s): Alex Peshkoff
+
 * [#6800](https://github.com/FirebirdSQL/firebird/issues/6800): Client config DefaultTimeZone is not passed to server when isc_dpb_session_time_zone is not set  
   Contributor(s): Adriano dos Santos Fernandes
 
@@ -50,6 +56,9 @@
 
 * [#6781](https://github.com/FirebirdSQL/firebird/issues/6781): Crashing (due to UDF exception) process hangs  
   Contributor(s): Vlad Khorsun
+
+* [#6780](https://github.com/FirebirdSQL/firebird/issues/6780): firebird.msg is missing in Firebird Android builds  
+  Contributor(s): Alex Peshkoff
 
 * [#6778](https://github.com/FirebirdSQL/firebird/issues/6778): Inconsistent cursor-driven deletion  
   Contributor(s): Dmitry Yemanov
