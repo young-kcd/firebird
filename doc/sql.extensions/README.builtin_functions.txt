@@ -485,7 +485,7 @@ Important:
 
 Example:
     select encrypt('897897' using sober128 key 'AbcdAbcdAbcdAbcd' iv '01234567') from rdb$database;
-    select decrypt(x'0154090759DF' using sober128 key 'AbcdAbcdAbcdAbcd' iv '01234567') from rdb$database;
+    select cast(decrypt(x'0154090759DF' using sober128 key 'AbcdAbcdAbcdAbcd' iv '01234567') as varchar(128)) from rdb$database;
     select decrypt(secret_field using aes mode ofb key '0123456701234567' iv init_vector) from secure_table;
 
 
@@ -1097,8 +1097,8 @@ Format:
 
 Example:
     (tip - start running samples one by one from RSA_PRIVATE function)
-    select rsa_decrypt(rdb$get_context('USER_SESSION', 'msg')
-        key rdb$get_context('USER_SESSION', 'private_key')) from rdb$database;
+    select cast(rsa_decrypt(rdb$get_context('USER_SESSION', 'msg')
+        key rdb$get_context('USER_SESSION', 'private_key')) as varchar(128)) from rdb$database;
 
 
 -------------
