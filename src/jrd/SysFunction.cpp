@@ -262,8 +262,7 @@ void makeDecode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, d
 void makeEncode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeDecodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeEncodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
-void makeDecrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
-void makeEncrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeCrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeFirstLastDayResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeGetSetContext(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeGetTranCN(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
@@ -276,8 +275,7 @@ void makePi(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* re
 void makeReplace(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeReverse(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeRound(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
-void makeRsaDecrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
-void makeRsaEncrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeRsaCrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeRsaPrivate(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeRsaPublic(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeRsaSign(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
@@ -1416,7 +1414,7 @@ void makeEncodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
 }
 
 
-void makeEncrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
+void makeCrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
 	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount == CRYPT_ARG_MAX);
@@ -1430,36 +1428,12 @@ void makeEncrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, ds
 }
 
 
-void makeDecrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
-	int argsCount, const dsc** args)
-{
-	fb_assert(argsCount == CRYPT_ARG_MAX);
-
-	if (args[0]->isBlob())
-		result->makeBlob(0, ttype_none);
-	else
-		result->makeVarying(args[0]->getStringLength(), ttype_none);
-
-	result->setNullable(args[0]->isNullable());
-}
-
-
-void makeRsaEncrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
+void makeRsaCrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
 	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount == RSA_CRYPT_ARG_MAX);
 
 	result->makeVarying(256, ttype_binary);
-	result->setNullable(args[0]->isNullable());
-}
-
-
-void makeRsaDecrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
-	int argsCount, const dsc** args)
-{
-	fb_assert(argsCount == RSA_CRYPT_ARG_MAX);
-
-	result->makeVarying(255, ttype_none);
 	result->setNullable(args[0]->isNullable());
 }
 
@@ -2769,7 +2743,7 @@ public:
 		if (!completed)
 		{
 			dsc result;
-			result.makeText(0, ttype_none, outBuf.begin());
+			result.makeText(0, ttype_binary, outBuf.begin());
 			EVL_make_value(tdbb, &result, impure);
 			impure->vlu_desc.setNull();
 		}
@@ -6390,8 +6364,8 @@ const SysFunction SysFunction::functions[] =
 		{"CRYPT_HASH", 2, 2, setParamsHash, makeHash, evlHash, NULL},
 		{"DATEADD", 3, 3, setParamsDateAdd, makeDateAdd, evlDateAdd, NULL},
 		{"DATEDIFF", 3, 3, setParamsDateDiff, makeInt64Result, evlDateDiff, NULL},
-		{"DECRYPT", 7, 7, setParamsEncrypt, makeDecrypt, evlDecrypt, NULL},
-		{"ENCRYPT", 7, 7, setParamsEncrypt, makeEncrypt, evlEncrypt, NULL},
+		{"DECRYPT", 7, 7, setParamsEncrypt, makeCrypt, evlDecrypt, NULL},
+		{"ENCRYPT", 7, 7, setParamsEncrypt, makeCrypt, evlEncrypt, NULL},
 		{"EXP", 1, 1, setParamsDblDec, makeDblDecResult, evlExp, NULL},
 		{"FIRST_DAY", 2, 2, setParamsFirstLastDay, makeFirstLastDayResult, evlFirstLastDay, (void*) funFirstDay},
 		{"FLOOR", 1, 1, setParamsDblDec, makeCeilFloor, evlFloor, NULL},
@@ -6426,8 +6400,8 @@ const SysFunction SysFunction::functions[] =
 		{"RIGHT", 2, 2, setParamsSecondInteger, makeLeftRight, evlRight, NULL},
 		{"ROUND", 1, 2, setParamsRoundTrunc, makeRound, evlRound, NULL},
 		{"RPAD", 2, 3, setParamsSecondInteger, makePad, evlPad, (void*) funRPad},
-		{"RSA_DECRYPT", 4, 4, setParamsRsaEncrypt, makeRsaDecrypt, evlRsaDecrypt, NULL},
-		{"RSA_ENCRYPT", 4, 4, setParamsRsaEncrypt, makeRsaEncrypt, evlRsaEncrypt, NULL},
+		{"RSA_DECRYPT", 4, 4, setParamsRsaEncrypt, makeRsaCrypt, evlRsaDecrypt, NULL},
+		{"RSA_ENCRYPT", 4, 4, setParamsRsaEncrypt, makeRsaCrypt, evlRsaEncrypt, NULL},
 		{"RSA_PRIVATE", 1, 1, setParamsInteger, makeRsaPrivate, evlRsaPrivate, NULL},
 		{"RSA_PUBLIC", 1, 1, setParamsRsaPublic, makeRsaPublic, evlRsaPublic, NULL},
 		{"RSA_SIGN_HASH", 4, 4, setParamsRsaSign, makeRsaSign, evlRsaSign, NULL},
