@@ -2972,6 +2972,9 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 	else if (dscHasData(dscs[CRYPT_ARG_COUNTER]))
 			status_exception::raise(Arg::Gds(isc_tom_no_ctr) << (m ? "mode" : "cipher") << (m ? m->value : a->value));
 
+	if (!dscs[CRYPT_ARG_VALUE])
+		return nullptr;
+
 	// Run selected algorithm
 	DataPipe dp(tdbb, dscs[CRYPT_ARG_VALUE], impure);
 	if (m)
