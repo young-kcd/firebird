@@ -237,6 +237,7 @@ void setParamsRsaEncrypt(DataTypeUtilBase*, const SysFunction*, int argsCount, d
 void setParamsRsaPublic(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args);
 void setParamsRsaSign(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args);
 void setParamsRsaVerify(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args);
+void setParamsUnicodeVal(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsUuidToChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 
 // generic make functions
@@ -280,6 +281,7 @@ void makeRsaPrivate(DataTypeUtilBase* dataTypeUtil, const SysFunction* function,
 void makeRsaPublic(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeRsaSign(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeUnicodeChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeUuidToChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 
@@ -338,6 +340,8 @@ dsc* evlSign(thread_db* tdbb, const SysFunction* function, const NestValueArray&
 dsc* evlSqrt(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlSystemPrivilege(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlUnicodeChar(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlUnicodeVal(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlUuidToChar(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 
 
@@ -642,6 +646,13 @@ void setParamsDateDiff(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc
 		else if (args[2]->isUnknown())
 			*args[2] = *args[1];
 	}
+}
+
+
+void setParamsUnicodeVal(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
+{
+	if (argsCount >= 1 && args[0]->isUnknown())
+		args[0]->makeText(4, CS_UTF8);
 }
 
 
@@ -1731,6 +1742,24 @@ void makeTrunc(DataTypeUtilBase*, const SysFunction* function, dsc* result,
 	}
 
 	result->setNullable(value->isNullable() || (argsCount > 1 && args[1]->isNullable()));
+}
+
+
+void makeUnicodeChar(DataTypeUtilBase*, const SysFunction* function, dsc* result,
+	int argsCount, const dsc** args)
+{
+	fb_assert(argsCount == function->minArgCount);
+
+	const dsc* value = args[0];
+
+	if (value->isNull())
+	{
+		result->makeNullString();
+		return;
+	}
+
+	result->makeText(4, ttype_utf8);
+	result->setNullable(value->isNullable());
 }
 
 
@@ -6331,6 +6360,75 @@ dsc* evlSystemPrivilege(thread_db* tdbb, const SysFunction*, const NestValueArra
 	return &impure->vlu_desc;
 }
 
+
+dsc* evlUnicodeChar(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
+	impure_value* impure)
+{
+	fb_assert(args.getCount() == 1);
+
+	jrd_req* request = tdbb->getRequest();
+
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
+	if (request->req_flags & req_null)	// return NULL if value is NULL
+		return NULL;
+
+	const UChar32 code = MOV_get_long(tdbb, value, 0);
+
+	if (U8_LENGTH(code) == 0)
+		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_malformed_string));
+
+	UCHAR buffer[4];
+	int len = 0;
+	U8_APPEND_UNSAFE(buffer, len, code);
+
+	dsc result;
+	result.makeText(len, ttype_utf8, buffer);
+	EVL_make_value(tdbb, &result, impure);
+
+	return &impure->vlu_desc;
+}
+
+
+dsc* evlUnicodeVal(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
+	impure_value* impure)
+{
+	fb_assert(args.getCount() == 1);
+
+	jrd_req* request = tdbb->getRequest();
+
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
+	if (request->req_flags & req_null)	// return NULL if value is NULL
+		return NULL;
+
+	MoveBuffer buffer;
+	UCHAR* str;
+	int len = MOV_make_string2(tdbb, value, CS_UTF8, &str, buffer);
+
+	USHORT dst[2];
+	USHORT errCode = 0;
+	ULONG errPosition;
+	ULONG dstLen = UnicodeUtil::utf8ToUtf16(len, str, sizeof(dst), dst, &errCode, &errPosition);
+
+	if (errCode != 0 && errCode != CS_TRUNCATION_ERROR)
+		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_transliteration_failed));
+
+	if (dstLen == 0)
+		impure->vlu_misc.vlu_long = 0;
+	else if (dstLen == 2 || !U_IS_SURROGATE(dst[0]))
+		impure->vlu_misc.vlu_long = dst[0];
+	else if (dstLen == 4 && U16_IS_LEAD(dst[0]) && U16_IS_TRAIL(dst[1]))
+		impure->vlu_misc.vlu_long = U16_GET_SUPPLEMENTARY(dst[0], dst[1]);
+	else
+	{
+		fb_assert(false);
+		impure->vlu_misc.vlu_long = 0;
+	}
+
+	impure->vlu_desc.makeLong(0, &impure->vlu_misc.vlu_long);
+
+	return &impure->vlu_desc;
+}
+
 } // anonymous namespace
 
 
@@ -6417,6 +6515,8 @@ const SysFunction SysFunction::functions[] =
 		{"TANH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfTanh},
 		{"TOTALORDER", 2, 2, setParamsDecFloat, makeShortResult, evlCompare, (void*) funTotalOrd},
 		{"TRUNC", 1, 2, setParamsRoundTrunc, makeTrunc, evlTrunc, NULL},
+		{"UNICODE_CHAR", 1, 1, setParamsInteger, makeUnicodeChar, evlUnicodeChar, NULL},
+		{"UNICODE_VAL", 1, 1, setParamsUnicodeVal, makeLongResult, evlUnicodeVal, NULL},
 		{"UUID_TO_CHAR", 1, 1, setParamsUuidToChar, makeUuidToChar, evlUuidToChar, NULL},
 		{"", 0, 0, NULL, NULL, NULL, NULL}
 	};

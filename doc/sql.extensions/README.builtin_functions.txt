@@ -721,22 +721,22 @@ Notes:
     1) If the first argument (relation) is a string expression or literal, then
        it's treated as a relation name and the engine searches for the
        corresponding relation ID. The search is case-sensitive.
-       In the case of string literal, relation ID is evaluated at prepare time. 
-       In the case of expression, relation ID is evaluated at execution time. 
+       In the case of string literal, relation ID is evaluated at prepare time.
+       In the case of expression, relation ID is evaluated at execution time.
        If the relation couldn't be found, then isc_relnotdef error is raised.
-    2) If the first argument (relation) is a numeric expression or literal, then 
+    2) If the first argument (relation) is a numeric expression or literal, then
        it's treated as a relation ID and used "as is", without verification
        against existing relations.
        If the argument value is negative or greater than the maximum allowed
        relation ID (65535 currently), then NULL is returned.
-    3) Second argument (recnum) represents an absolute record number in relation 
+    3) Second argument (recnum) represents an absolute record number in relation
        (if the next arguments -- dpnum and ppnum -- are missing), or a record
        number relative to the first record, specified by the next arguments.
-    4) Third argument (dpnum) is a logical number of data page in relation (if 
+    4) Third argument (dpnum) is a logical number of data page in relation (if
        the next argument -- ppnum -- is missing), or number of data page
        relative to the first data page addressed by the given ppnum.
     5) Forth argument (ppnum) is a logical number of pointer page in relation.
-    6) All numbers are zero-based. 
+    6) All numbers are zero-based.
 	   Maximum allowed value for dpnum and ppnum is 2^32 (4294967296).
 	   If dpnum is specified, then recnum could be negative.
 	   If dpnum is missing and recnum is negative then NULL is returned.
@@ -763,7 +763,7 @@ Examples:
 		 where rdb$db_key >= make_dbkey(6, 0, 0)
 		   and rdb$db_key <  make_dbkey(6, 0, 1)
 
-	4) Select all records that physically reside at first data page of 6th pointer 
+	4) Select all records that physically reside at first data page of 6th pointer
 	   page at relation
 
 		select * from SOMETABLE
@@ -1253,6 +1253,41 @@ Example:
     1) select trunc(x) from y;
     2) select trunc(-2.8), trunc(2.8) from rdb$database;  -- returns -2, 2
     3) select trunc(987.65, 1), trunc(987.65, -1) from rdb$database;  -- returns 987.60, 980.00
+
+
+------------
+UNICODE_CHAR
+------------
+
+Function:
+    Returns the UNICODE character with the specified code point.
+
+Format:
+    UNICODE_CHAR( <number> )
+
+Notes:
+    Argument to UNICODE_CHAR must be a valid UTF-32 code point not in the range of
+    high/low surrogates (0xD800 to 0xDFFF). Otherwise it throws an error.
+
+Example:
+    select unicode_char(x) from y;
+
+
+-----------
+UNICODE_VAL
+-----------
+
+Function:
+    Returns the UTF-32 code point of the first character of the specified string.
+
+Format:
+    UNICODE_VAL( <string> )
+
+Notes:
+    Returns 0 if the string is empty.
+
+Example:
+    select unicode_val(x) from y;
 
 
 ------------

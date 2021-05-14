@@ -507,6 +507,8 @@ static const TOK tokens[] =
 	{TOK_UNBOUNDED, "UNBOUNDED", false},
 	{TOK_UNCOMMITTED, "UNCOMMITTED", true},
 	{TOK_UNDO, "UNDO", true},
+	{TOK_UNICODE_CHAR, "UNICODE_CHAR", true},
+	{TOK_UNICODE_VAL, "UNICODE_VAL", true},
 	{TOK_UNION, "UNION", false},
 	{TOK_UNIQUE, "UNIQUE", false},
 	{TOK_UNKNOWN, "UNKNOWN", false},

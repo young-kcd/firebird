@@ -677,6 +677,11 @@ using namespace Firebird;
 %token <metaNamePtr> CLEAR
 %token <metaNamePtr> OLDEST
 
+// tokens added for Firebird 5.0
+
+%token <metaNamePtr> UNICODE_CHAR
+%token <metaNamePtr> UNICODE_VAL
+
 // precedence declarations for expression evaluation
 
 %left	OR
@@ -8134,6 +8139,8 @@ system_function_std_syntax
 	| TAN
 	| TANH
 	| TRUNC
+	| UNICODE_CHAR
+	| UNICODE_VAL
 	| UUID_TO_CHAR
 	| QUANTIZE
 	| TOTALORDER
@@ -9040,6 +9047,8 @@ non_reserved_word
 	| TOTALORDER
 	| TRAPS
 	| ZONE
+	| UNICODE_CHAR		// added in FB 5.0
+	| UNICODE_VAL
 	;
 
 %%
