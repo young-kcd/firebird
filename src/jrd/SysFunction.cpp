@@ -71,6 +71,7 @@
 #define USE_LTM
 #define LTM_DESC
 #include <tomcrypt.h>
+#include <limits.h>
 
 using namespace Firebird;
 using namespace Jrd;
@@ -3514,6 +3515,16 @@ dsc* evlRsaPublic(thread_db* tdbb, const SysFunction* function, const NestValueA
 }
 
 
+int getMaxSaltlen(int hashIdx, rsa_key* key)
+{
+	int maxSaltLen = rsa_sign_saltlen_get_max_ex(LTC_PKCS_1_PSS, hashIdx, key);
+	if (maxSaltLen == INT_MAX)
+		return 32;		// fallback on error
+
+	return maxSaltLen;
+}
+
+
 dsc* evlRsaSign(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure)
 {
 	tomcryptInitializer();
@@ -3543,20 +3554,20 @@ dsc* evlRsaSign(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	if (!data)
 		return nullptr;
 
-	SLONG saltLength = 8;
-	if (dscHasData(dscs[RSA_SIGN_ARG_SALTLEN]))
-	{
-		saltLength = MOV_get_long(tdbb, dscs[RSA_SIGN_ARG_SALTLEN], 0);
-		if (saltLength < 0 || saltLength > 32)
-			status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-	}
-
 	unsigned keyLen;
 	const UCHAR* key = CVT_get_bytes(dscs[RSA_SIGN_ARG_KEY], keyLen);
 	if (!key)
 		return nullptr;
 	rsa_key rsaKey;
 	tomCheck(rsa_import(key, keyLen, &rsaKey), Arg::Gds(isc_tom_rsa_import));
+
+	SLONG saltLength = 8;
+	if (dscHasData(dscs[RSA_SIGN_ARG_SALTLEN]))
+	{
+		saltLength = MOV_get_long(tdbb, dscs[RSA_SIGN_ARG_SALTLEN], 0);
+		if (saltLength < 0 || saltLength > getMaxSaltlen(hash, &rsaKey))
+			status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+	}
 
 	unsigned long signLen = 1024;
 	UCharBuffer sign;
@@ -3617,20 +3628,20 @@ dsc* evlRsaVerify(thread_db* tdbb, const SysFunction* function, const NestValueA
 	if (!sign)
 		return boolResult(tdbb, impure, false);
 
-	SLONG saltLength = 8;
-	if (dscHasData(dscs[RSA_VERIFY_ARG_SALTLEN]))
-	{
-		saltLength = MOV_get_long(tdbb, dscs[RSA_VERIFY_ARG_SALTLEN], 0);
-		if (saltLength < 0 || saltLength > 32)
-			status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-	}
-
 	unsigned keyLen;
 	const UCHAR* key = CVT_get_bytes(dscs[RSA_VERIFY_ARG_KEY], keyLen);
 	if (!key)
 		return boolResult(tdbb, impure, false);
 	rsa_key rsaKey;
 	tomCheck(rsa_import(key, keyLen, &rsaKey), Arg::Gds(isc_tom_rsa_import));
+
+	SLONG saltLength = 8;
+	if (dscHasData(dscs[RSA_VERIFY_ARG_SALTLEN]))
+	{
+		saltLength = MOV_get_long(tdbb, dscs[RSA_VERIFY_ARG_SALTLEN], 0);
+		if (saltLength < 0 || saltLength > getMaxSaltlen(hash, &rsaKey))
+			status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+	}
 
 	int state = 0;
 	int cryptRc = rsa_verify_hash(sign, signLen, data, len, hash, saltLength, &state, &rsaKey);
