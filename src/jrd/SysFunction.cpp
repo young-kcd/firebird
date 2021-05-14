@@ -6372,7 +6372,7 @@ dsc* evlSystemPrivilege(thread_db* tdbb, const SysFunction*, const NestValueArra
 }
 
 
-dsc* evlUnicodeChar(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
+dsc* evlUnicodeChar(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
 	fb_assert(args.getCount() == 1);
@@ -6384,6 +6384,13 @@ dsc* evlUnicodeChar(thread_db* tdbb, const SysFunction*, const NestValueArray& a
 		return NULL;
 
 	const UChar32 code = MOV_get_long(tdbb, value, 0);
+
+	if (code < 0)
+	{
+		status_exception::raise(
+			Arg::Gds(isc_expression_eval_err) <<
+			Arg::Gds(isc_sysf_argmustbe_nonneg) << Arg::Str(function->name));
+	}
 
 	if (U8_LENGTH(code) == 0)
 		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_malformed_string));
