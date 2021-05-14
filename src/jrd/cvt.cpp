@@ -218,6 +218,13 @@ UCHAR CVT_get_numeric(const UCHAR* string, const USHORT length, SSHORT* scale, v
 	bool digit_seen = false, fraction = false, over = false;
 
 	const UCHAR* p = string;
+	if (p[0] == '0' && p[1] == 'X')
+	{
+		*(Int128*) ptr = CVT_hex_to_int128(reinterpret_cast<const char*>(p + 2), length - 2);
+		*scale = 0;
+		return dtype_int128;
+	}
+
 	const UCHAR* const end = p + length;
 	for (; p < end; p++)
 	{
