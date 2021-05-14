@@ -2872,6 +2872,16 @@ SSHORT CVT_decompose(const char* str, USHORT len, Int128* val, ErrorFunction err
 }
 
 
+Int128 CVT_hex_to_int128(const char* str, USHORT len)
+{
+	Int128 val;
+	RetValue<I128Traits> value(&val);
+	hex_to_value(str, str + len, &value);
+
+	return val;
+}
+
+
 USHORT CVT_get_string_ptr_common(const dsc* desc, USHORT* ttype, UCHAR** address,
 								 vary* temp, USHORT length, DecimalStatus decSt, Callbacks* cb)
 {
@@ -3538,7 +3548,7 @@ static void hex_to_value(const char*& string, const char* end, RetPtr* retValue)
  * Functional description
  *      Convert a hex string to a numeric value. This code only
  *      converts a hex string into a numeric value, and the
- *      biggest hex string supported must fit into a BIGINT.
+ *      size of biggest hex string depends upon RetPtr.
  *
  *************************************/
 {
