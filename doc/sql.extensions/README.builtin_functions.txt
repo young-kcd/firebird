@@ -1266,7 +1266,7 @@ Format:
     UNICODE_CHAR( <number> )
 
 Notes:
-    Argument to UNICODE_CHAR must be a valid UTF-32 code point not in the range of
+    Argument to UNICODE_CHAR must be a valid UNICODE code point and not in the range of
     high/low surrogates (0xD800 to 0xDFFF). Otherwise it throws an error.
 
 Example:
@@ -1278,7 +1278,7 @@ UNICODE_VAL
 -----------
 
 Function:
-    Returns the UTF-32 code point of the first character of the specified string.
+    Returns the UNICODE code point of the first character of the specified string.
 
 Format:
     UNICODE_VAL( <string> )
