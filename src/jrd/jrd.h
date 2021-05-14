@@ -655,6 +655,10 @@ public:
 		return tdbb_reqTimer;
 	}
 
+	// Returns minimum of passed wait timeout and time to expiration of reqTimer.
+	// Timer value is rounded to the upper whole second.
+	SLONG adjustWait(SLONG wait) const;
+
 	void registerBdb(BufferDesc* bdb)
 	{
 		if (tdbb_bdbs.isEmpty()) {

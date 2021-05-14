@@ -8657,7 +8657,7 @@ bool TimeoutTimer::expired() const
 		return false;
 
 	const SINT64 t = currTime();
-	return t > m_start + m_value;
+	return t >= m_start + m_value;
 }
 
 unsigned int TimeoutTimer::timeToExpire() const
@@ -8836,6 +8836,24 @@ void thread_db::reschedule()
 
 	if (tdbb_quantum <= 0)
 		tdbb_quantum = (tdbb_flags & TDBB_sweeper) ? SWEEP_QUANTUM : QUANTUM;
+}
+
+SLONG thread_db::adjustWait(SLONG wait) const
+{
+	if ((wait == 0) || (tdbb_flags & TDBB_wait_cancel_disable) || !tdbb_reqTimer)
+		return wait;
+
+	const unsigned int tout = tdbb_reqTimer->timeToExpire();
+	SLONG t;
+	if (tout < MAX_SSHORT * 1000)
+		t = (tout + 999) / 1000;
+	else
+		t = MAX_SSHORT;
+
+	if (wait > t)
+		return t;
+
+	return wait;
 }
 
 // end thread_db methods

@@ -3765,7 +3765,7 @@ void LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_wai
 	// out the time when the lock request will timeout
 
 	const time_t lock_timeout = (lck_wait < 0) ? current_time + (-lck_wait) : 0;
-	time_t deadlock_timeout = current_time + scan_interval;
+	time_t deadlock_timeout = current_time + tdbb->adjustWait(scan_interval);
 
 	// Wait in a loop until the lock becomes available
 
@@ -3890,7 +3890,7 @@ void LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_wai
 
 		// We're going to do some real work - reset when we next want to
 		// do a deadlock scan
-		deadlock_timeout = current_time + scan_interval;
+		deadlock_timeout = current_time + tdbb->adjustWait(scan_interval);
 
 		// Handle lock event first
 		if (ret == FB_SUCCESS)
