@@ -27,14 +27,23 @@
 
 ## Bugfixes
 
-* [#6808](https://github.com/FirebirdSQL/firebird/issues/6808): Assertion in tomcrypt when key length for RC4 is too small  
+* [#6808](https://github.com/FirebirdSQL/firebird/issues/6808): Segfault in encrypt/decrypt functions when their first argument is NULL  
   Contributor(s): Alex Peshkoff
 
 * [#6805](https://github.com/FirebirdSQL/firebird/issues/6805): RDB$TYPES has incorrect entries for RDB$TYPE 28 and 29 in RDB$TYPE_NAME column  
   Contributor(s): Alex Peshkoff
 
+* [#6804](https://github.com/FirebirdSQL/firebird/issues/6804): Assertion in tomcrypt when key length for RC4 is too small  
+  Contributor(s): Alex Peshkoff
+
+* [#6802](https://github.com/FirebirdSQL/firebird/issues/6802): When the statement timeout is set, it causes the lock manager to delay reporting deadlocks until timeout is expired  
+  Contributor(s): Vlad Khorsun
+
 * [#6800](https://github.com/FirebirdSQL/firebird/issues/6800): Client config DefaultTimeZone is not passed to server when isc_dpb_session_time_zone is not set  
   Contributor(s): Adriano dos Santos Fernandes
+
+* [#6797](https://github.com/FirebirdSQL/firebird/issues/6797): Functions DECRYPT and RSA_DECRYPT return VARCHAR CHARACTER SET NONE instead of VARBINARY (VARCHAR CHARACTER SET OCTETS)  
+  Contributor(s): Alex Peshkoff
 
 * [#6796](https://github.com/FirebirdSQL/firebird/issues/6796): Buffer overflow when padding line with national characters causes ISQL to crash  
   Contributor(s): Adriano dos Santos Fernandes
