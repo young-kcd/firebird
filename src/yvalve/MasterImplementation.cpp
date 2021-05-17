@@ -44,6 +44,7 @@
 #include "../common/ThreadStart.h"
 #include "../common/utils_proto.h"
 #include "../common/dllinst.h"
+#include "../common/status.h"
 #include "ibase.h"
 #include "../yvalve/utl_proto.h"
 
@@ -57,12 +58,6 @@ namespace Why {
 
 class UserStatus FB_FINAL : public Firebird::DisposeIface<Firebird::BaseStatus<UserStatus> >
 {
-public:
-	// IStatus implementation
-	void dispose()
-	{
-		delete this;
-	}
 };
 
 IStatus* MasterImplementation::getStatus()
@@ -135,10 +130,20 @@ int MasterImplementation::serverMode(int mode)
 
 namespace Why {
 
+static bool abortShutdownFlag = false;
+
+void abortShutdown()
+{
+	abortShutdownFlag = true;
+}
+
 Thread::Handle timerThreadHandle = 0;
 
 FB_BOOLEAN MasterImplementation::getProcessExiting()
 {
+	if (abortShutdownFlag)
+		return true;
+
 #ifdef WIN_NT
 	// Sometime, when user process exits not calling fb_shutdown and timer thread should 
 	// be terminated already, wait for its handle with zero timeout returns WAIT_TIMEOUT.

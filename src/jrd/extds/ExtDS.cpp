@@ -81,8 +81,7 @@ namespace EDS {
 GlobalPtr<Manager> Manager::manager;
 Mutex Manager::m_mutex;
 Provider* Manager::m_providers = NULL;
-volatile bool Manager::m_initialized = false;
-ConnectionsPool* Manager::m_connPool;
+ConnectionsPool* Manager::m_connPool = NULL;
 
 const ULONG MIN_CONNPOOL_SIZE		= 0;
 const ULONG MAX_CONNPOOL_SIZE		= 1000;
@@ -93,12 +92,12 @@ const ULONG MAX_LIFE_TIME		= 60 * 60 * 24;	// one day
 Manager::Manager(MemoryPool& pool) :
 	PermanentStorage(pool)
 {
-	m_connPool = FB_NEW_POOL(pool) ConnectionsPool(pool);
+	//m_connPool = FB_NEW_POOL(pool) ConnectionsPool(pool);
 }
 
 Manager::~Manager()
 {
-	fb_assert(m_connPool->getAllCount() == 0);
+	fb_assert(!m_connPool || m_connPool->getAllCount() == 0);
 
 	ThreadContextHolder tdbb;
 
@@ -111,6 +110,7 @@ Manager::~Manager()
 	}
 
 	delete m_connPool;
+	m_connPool = NULL;
 }
 
 void Manager::addProvider(Provider* provider)
@@ -209,6 +209,9 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 
 	// if could be pooled, ask connections pool
 
+	// Ensure pool is created
+	getConnPool(true);
+
 	ULONG hash = 0;
 
 	if (!isCurrent)
@@ -245,6 +248,14 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 	return conn;
 }
 
+ConnectionsPool* Manager::getConnPool(bool create)
+{ 
+	if (!m_connPool && create)
+		m_connPool = FB_NEW_POOL(manager->getPool()) ConnectionsPool(manager->getPool());
+
+	return m_connPool;
+}
+
 void Manager::jrdAttachmentEnd(thread_db* tdbb, Jrd::Attachment* att, bool forced)
 {
 	for (Provider* prv = m_providers; prv; prv = prv->m_next)
@@ -256,7 +267,8 @@ int Manager::shutdown()
 	FbLocalStatus status;
 	ThreadContextHolder tdbb(&status);
 
-	m_connPool->clear(tdbb);
+	if (m_connPool)
+		m_connPool->clear(tdbb);
 
 	for (Provider* prv = m_providers; prv; prv = prv->m_next) {
 		prv->cancelConnections();
@@ -454,7 +466,7 @@ void Provider::releaseConnection(thread_db* tdbb, Connection& conn, bool inPool)
 			m_connections.add(AttToConn(NULL, &conn));
 	}
 
-	if (!inPool || !connPool || !conn.isConnected() || !conn.resetSession())
+	if (!inPool || !connPool || !conn.isConnected() || !conn.resetSession(tdbb))
 	{
 		{	// scope
 			MutexLockGuard guard(m_mutex, FB_FUNCTION);
@@ -1411,17 +1423,6 @@ void ConnectionsPool::IdleTimer::handler()
 	start();
 }
 
-int ConnectionsPool::IdleTimer::release()
-{
-	if (--refCounter == 0)
-	{
-		delete this;
-		return 0;
-	}
-
-	return 1;
-}
-
 void ConnectionsPool::IdleTimer::start()
 {
 	FbLocalStatus s;
@@ -2103,14 +2104,19 @@ void Statement::preprocess(const string& sql, string& ret)
 				// hvlad: TODO check quoted param names
 				ident.assign(start + 1, p - start - 1);
 				if (tok == ttIdent)
+				{
+					if (ident.length() > MAX_SQL_IDENTIFIER_LEN)
+						ERR_post(Arg::Gds(isc_eds_preprocess) <<
+								 Arg::Gds(isc_dyn_name_longer) <<
+								 Arg::Gds(isc_random) << Arg::Str(ident));
+
 					ident.upper();
+				}
 
 				FB_SIZE_T n = 0;
-				if (!m_sqlParamNames.find(ident.c_str(), n))
-				{
-					MetaName* pName = FB_NEW_POOL(getPool()) MetaName(getPool(), ident);
-					n = m_sqlParamNames.add(*pName);
-				}
+				MetaString name(ident);
+				if (!m_sqlParamNames.find(name, n))
+					n = m_sqlParamNames.add(name);
 
 				m_sqlParamsMap.add(&m_sqlParamNames[n]);
 			}
@@ -2204,7 +2210,7 @@ void Statement::setInParams(thread_db* tdbb, const MetaName* const* names,
 
 		for (unsigned int sqlNum = 0; sqlNum < mapCount; sqlNum++)
 		{
-			const MetaName* sqlName = m_sqlParamsMap[sqlNum];
+			const MetaString* sqlName = m_sqlParamsMap[sqlNum];
 
 			unsigned int num = 0;
 			for (; num < count; num++)
@@ -2225,11 +2231,11 @@ void Statement::setInParams(thread_db* tdbb, const MetaName* const* names,
 
 		doSetInParams(tdbb, mapCount, m_sqlParamsMap.begin(), sqlParams);
 	}
-	else
-		doSetInParams(tdbb, count, names, (params ? params->items.begin() : NULL));
+	else 
+		doSetInParams(tdbb, count, NULL, (params ? params->items.begin() : NULL));
 }
 
-void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const MetaName* const* /*names*/,
+void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const MetaString* const* /*names*/,
 	const NestConst<ValueExprNode>* params)
 {
 	if (count != getInputs())

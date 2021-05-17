@@ -141,17 +141,6 @@ namespace
 
 		IConfig* getSubConfig(CheckStatusWrapper* status);
 
-		int release()
-		{
-			if (--refCounter == 0)
-			{
-				delete this;
-				return 0;
-			}
-
-			return 1;
-		}
-
 	private:
 		RefPtr<IReferenceCounted> cf;
 		const ConfigFile::Parameter* par;
@@ -218,17 +207,6 @@ namespace
 				ex.stuffException(status);
 			}
 			return NULL;
-		}
-
-		int release()
-		{
-			if (--refCounter == 0)
-			{
-				delete this;
-				return 0;
-			}
-
-			return 1;
 		}
 
 	private:
@@ -523,9 +501,9 @@ namespace
 		{ }
 
 		int release();
-
 	private:
-		~ConfiguredPlugin();
+		~ConfiguredPlugin() {}
+		void destroy();
 
 		RefPtr<PluginModule> module;
 		unsigned int regPlugin;
@@ -588,17 +566,6 @@ namespace
 		void setReleaseDelay(CheckStatusWrapper*, ISC_UINT64 microSeconds)
 		{
 			configuredPlugin->setReleaseDelay(microSeconds);
-		}
-
-		int release()
-		{
-			if (--refCounter == 0)
-			{
-				delete this;
-				return 0;
-			}
-
-			return 1;
 		}
 
 	private:
@@ -688,10 +655,15 @@ namespace
 
 	GlobalPtr<PluginsMap> plugins;
 
-	ConfiguredPlugin::~ConfiguredPlugin()
+	void ConfiguredPlugin::destroy()
 	{
-		MutexLockGuard g(plugins->mutex, FB_FUNCTION);
+		// plugins->mutex must be entered by current thread
 
+#ifdef DEV_BUILD
+		if (!plugins->mutex.tryEnter(FB_FUNCTION))
+			fb_assert(false);
+		plugins->mutex.leave();
+#endif
 		if (!destroyingPluginsMap)
 		{
 			plugins->remove(MapKey(module->getPlugin(regPlugin).type, plugName));
@@ -711,6 +683,33 @@ namespace
 #endif
 	}
 
+	int ConfiguredPlugin::release()
+	{
+		int x = --refCounter;
+
+#ifdef DEBUG_PLUGINS
+		fprintf(stderr, "ConfiguredPlugin::release %s %d\n", plugName.c_str(), x);
+#endif
+
+		if (x == 0)
+		{
+			{ // plugins->mutex scope
+				MutexLockGuard g(plugins->mutex, FB_FUNCTION);
+				if (refCounter != 0)
+					return 1;
+
+				destroy();
+			}
+
+			// Must run out of mutex scope to avoid deadlock with PluginManager::threadDetach()
+			// called when module is unloaded by dtor
+			delete this;
+			return 0;
+		}
+
+		return 1;
+	}
+
 	PluginModule* modules = NULL;
 
 	PluginModule* current = NULL;
@@ -724,23 +723,6 @@ namespace
 			next->prev = &next;
 		}
 		*prev = this;
-	}
-
-	int ConfiguredPlugin::release()
-	{
-		int x = --refCounter;
-
-#ifdef DEBUG_PLUGINS
-		fprintf(stderr, "ConfiguredPlugin::release %s %d\n", plugName.c_str(), x);
-#endif
-
-		if (x == 0)
-		{
-			delete this;
-			return 0;
-		}
-
-		return 1;
 	}
 
 	struct PluginLoadInfo
@@ -830,17 +812,6 @@ namespace
 			Firebird::CheckStatusWrapper statusWrapper(&s);
 			next(&statusWrapper);
 			check(&statusWrapper);
-		}
-
-		int release()
-		{
-			if (--refCounter == 0)
-			{
-				delete this;
-				return 0;
-			}
-
-			return 1;
 		}
 
 	private:
@@ -1087,7 +1058,7 @@ void PluginManager::unregisterModule(IPluginModule* cleanup)
 		Firebird::dDllUnloadTID = GetCurrentThreadId();
 #endif
 
-	fb_shutdown(5000, fb_shutrsn_exit_called);
+	fb_shutdown(10000, fb_shutrsn_exit_called);
 }
 
 IPluginSet* PluginManager::getPlugins(CheckStatusWrapper* status, unsigned int interfaceType,
@@ -1291,7 +1262,7 @@ public:
 		try
 		{
 			PathName dummy;
-			Firebird::RefPtr<const Config> config;
+			Firebird::RefPtr<const Firebird::Config> config;
 			expandDatabaseName(dbName, dummy, &config);
 
 			IFirebirdConf* firebirdConf = FB_NEW FirebirdConf(config);

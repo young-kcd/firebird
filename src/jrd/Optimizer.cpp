@@ -851,7 +851,7 @@ void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversi
 		// then don't consider any (possibly better) alternatives.
 		// Another exception is when the FIRST ROWS optimization strategy is applied.
 
-		if (candidate && !optimizer->optimizeFirstRows &&
+		if (candidate && !optimizer->favorFirstRows &&
 			!(indexScratch->idx->idx_runtime_flags & idx_plan_navigate))
 		{
 			for (const InversionCandidate* const* iter = inversions.begin();
@@ -2886,7 +2886,7 @@ StreamType OptimizerInnerJoin::findJoinOrder()
 
 				const int currentFilter = innerStreams[i]->isFiltered() ? 1 : 0;
 
-				if (!optimizer->optimizeFirstRows || !navigations ||
+				if (!optimizer->favorFirstRows || !navigations ||
 					(innerStreams[i]->baseNavigated && currentFilter == filters))
 				{
 					indexedRelationships.clear();

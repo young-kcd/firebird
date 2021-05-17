@@ -156,10 +156,11 @@ namespace {
 			waitFor(threads);
 		}
 
-		void add(Thread::Handle& h)
+		void add(const Thread::Handle& h)
 		{
 			// put thread into completion wait queue when it finished running
 			MutexLockGuard g(threadsMutex, FB_FUNCTION);
+			fb_assert(h);
 			threads.add(h);
 		}
 
@@ -2687,6 +2688,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					return false;
 				}
 				get_action_svc_string(spb, switches);
+				break;
 
 			default:
 				return false;
@@ -2704,6 +2706,13 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					(Arg::Gds(isc_unexp_spb_form) << Arg::Str("only one isc_spb_dbname")).raise();
 				}
 				get_action_svc_string(spb, nbk_database);
+				break;
+
+			case isc_spb_options:
+				if (!get_action_svc_bitmask(spb, nbackup_in_sw_table, switches))
+				{
+					return false;
+				}
 				break;
 
 			default:
@@ -2873,6 +2882,30 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				{
 					string s;
 					spb.getString(s);
+
+					bool inStr = false;
+					for (FB_SIZE_T i = 0; i < s.length(); ++i)
+					{
+						if (s[i] == SVC_TRMNTR)
+						{
+							s.erase(i, 1);
+							if (inStr)
+							{
+								if (i < s.length() && s[i] != SVC_TRMNTR)
+								{
+									inStr = false;
+									continue;
+								}
+							}
+							else
+							{
+								inStr = true;
+								continue;
+							}
+						}
+						++i;
+					}
+
 					switches += s;
 					switches += ' ';
 				}
@@ -2922,6 +2955,19 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					return false;
 				}
 				break;
+			case isc_spb_res_replica_mode:
+				if (get_action_svc_parameter(spb.getClumpTag(), reference_burp_in_sw_table, switches))
+				{
+					unsigned int val = spb.getInt();
+					if (val >= FB_NELEM(burp_repl_mode_sw_table))
+					{
+						return false;
+					}
+					switches += burp_repl_mode_sw_table[val];
+					switches += " ";
+					break;
+				}
+				return false;
 			case isc_spb_verbose:
 				if (!get_action_svc_parameter(spb.getClumpTag(), reference_burp_in_sw_table, switches))
 				{
@@ -2996,11 +3042,24 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				if (get_action_svc_parameter(spb.getClumpTag(), alice_in_sw_table, switches))
 				{
 					unsigned int val = spb.getInt();
-					if (val >= FB_NELEM(alice_mode_sw_table))
+					if (val >= FB_NELEM(alice_shut_mode_sw_table))
 					{
 						return false;
 					}
-					switches += alice_mode_sw_table[val];
+					switches += alice_shut_mode_sw_table[val];
+					switches += " ";
+					break;
+				}
+				return false;
+			case isc_spb_prp_replica_mode:
+				if (get_action_svc_parameter(spb.getClumpTag(), alice_in_sw_table, switches))
+				{
+					unsigned int val = spb.getInt();
+					if (val >= FB_NELEM(alice_repl_mode_sw_table))
+					{
+						return false;
+					}
+					switches += alice_repl_mode_sw_table[val];
 					switches += " ";
 					break;
 				}

@@ -382,7 +382,6 @@ public:
 
 	// ITimer implementation
 	void handler();
-	int release();
 
 	bool expired() const
 	{
@@ -489,7 +488,7 @@ const ULONG TDBB_wait_cancel_disable	= 512;		// don't cancel current waiting ope
 const ULONG TDBB_cache_unwound			= 1024;		// page cache was unwound
 const ULONG TDBB_reset_stack			= 2048;		// stack should be reset after stack overflow exception
 const ULONG TDBB_dfw_cleanup			= 4096;		// DFW cleanup phase is active
-const ULONG TDBB_repl_sql				= 8192;	// SQL statement is being replicated
+const ULONG TDBB_repl_in_progress		= 8192;		// Prevent recursion in replication
 const ULONG TDBB_replicator				= 16384;	// Replicator
 
 class thread_db : public Firebird::ThreadData
@@ -656,6 +655,10 @@ public:
 		return tdbb_reqTimer;
 	}
 
+	// Returns minimum of passed wait timeout and time to expiration of reqTimer.
+	// Timer value is rounded to the upper whole second.
+	ULONG adjustWait(ULONG wait) const;
+
 	void registerBdb(BufferDesc* bdb)
 	{
 		if (tdbb_bdbs.isEmpty()) {
@@ -729,10 +732,9 @@ public:
 	public:
 		TimerGuard(thread_db* tdbb, TimeoutTimer* timer, bool autoStop)
 			: m_tdbb(tdbb),
-			  m_autoStop(autoStop && timer)
+			  m_autoStop(autoStop && timer),
+			  m_saveTimer(tdbb->tdbb_reqTimer)
 		{
-			fb_assert(m_tdbb->tdbb_reqTimer == NULL);
-
 			m_tdbb->tdbb_reqTimer = timer;
 			if (timer && timer->expired())
 				m_tdbb->tdbb_quantum = 0;
@@ -743,12 +745,13 @@ public:
 			if (m_autoStop)
 				m_tdbb->tdbb_reqTimer->stop();
 
-			m_tdbb->tdbb_reqTimer = NULL;
+			m_tdbb->tdbb_reqTimer = m_saveTimer;
 		}
 
 	private:
 		thread_db* m_tdbb;
 		bool m_autoStop;
+		Firebird::RefPtr<TimeoutTimer> m_saveTimer;
 	};
 
 private:

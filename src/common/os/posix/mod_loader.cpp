@@ -32,6 +32,10 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+
+#include <limits.h>
+#include <stdlib.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dlfcn.h>
@@ -138,7 +142,13 @@ ModuleLoader::Module* ModuleLoader::loadModule(ISC_STATUS* status, const Firebir
 	system(command.c_str());
 #endif
 
-	return FB_NEW_POOL(*getDefaultMemoryPool()) DlfcnModule(*getDefaultMemoryPool(), modPath, module);
+	Firebird::PathName linkPath = modPath;
+	char b[PATH_MAX];
+	const char* newPath = realpath(modPath.c_str(), b);
+	if (newPath)
+		linkPath = newPath;
+
+	return FB_NEW_POOL(*getDefaultMemoryPool()) DlfcnModule(*getDefaultMemoryPool(), linkPath, module);
 }
 
 DlfcnModule::~DlfcnModule()

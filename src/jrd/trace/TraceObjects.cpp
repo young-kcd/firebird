@@ -213,7 +213,8 @@ void TraceSQLStatementImpl::fillPlan(bool explained)
 	if (m_plan.isEmpty() || m_planExplained != explained)
 	{
 		m_planExplained = explained;
-		m_plan = OPT_get_plan(JRD_get_thread_data(), m_stmt->req_request, m_planExplained);
+		if (m_stmt->req_request)
+			m_plan = OPT_get_plan(JRD_get_thread_data(), m_stmt->req_request, m_planExplained);
 	}
 }
 
@@ -514,16 +515,6 @@ public:
 	FB_SIZE_T write(const void* buf, FB_SIZE_T size);
 	FB_SIZE_T write_s(CheckStatusWrapper* status, const void* buf, FB_SIZE_T size);
 
-	int release()
-	{
-		if (--refCounter == 0)
-		{
-			delete this;
-			return 0;
-		}
-		return 1;
-	}
-
 private:
 	TraceLog m_log;
 	ULONG m_sesId;
@@ -664,7 +655,7 @@ TraceRuntimeStats::TraceRuntimeStats(Attachment* att, RuntimeStatistics* baselin
 	m_info.pin_time = clock * 1000 / fb_utils::query_performance_frequency();
 	m_info.pin_records_fetched = records_fetched;
 
-	if (baseline)
+	if (baseline && stats)
 		baseline->computeDifference(att, *stats, m_info, m_counts);
 	else
 	{

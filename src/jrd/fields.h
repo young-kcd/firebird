@@ -214,6 +214,13 @@
 	FIELD(fld_pub_name		, nam_pub_name		, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata	, NULL		, false)
 	FIELD(fld_file_id		, nam_file_id		, dtype_varying	, 255						, dsc_text_type_ascii		, NULL		, false)
 
+	FIELD(fld_cfg_id		, nam_cfg_id		, dtype_long	, sizeof(SLONG)				, 0							, NULL		, false)
+	FIELD(fld_cfg_name		, nam_cfg_name		, dtype_varying	, MAX_CONFIG_NAME_LEN		, dsc_text_type_ascii		, NULL		, false)
+	FIELD(fld_cfg_value		, nam_cfg_value		, dtype_varying	, 255 * METADATA_BYTES_PER_CHAR, dsc_text_type_metadata	, NULL		, true)
+	FIELD(fld_cfg_is_set	, nam_cfg_is_set	, dtype_boolean	, 1							, 0							, NULL		, false)
+
+	FIELD(fld_repl_mode		, nam_repl_mode		, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
+
 	FIELD(fld_blob			, nam_blob			, dtype_blob	, BLOB_SIZE					, isc_blob_untyped			, NULL		, true)
 	FIELD(fld_varybinary_max, nam_varbinary_max	, dtype_varying	, MAX_VARY_COLUMN_SIZE		, 0							, NULL		, true)
 	FIELD(fld_long_number	, nam_long_number	, dtype_long	, sizeof(SLONG)				, 0							, NULL		, true)

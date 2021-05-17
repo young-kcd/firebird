@@ -1005,8 +1005,13 @@ const ISC_STATUS isc_truncate_warn                    = 335545266L;
 const ISC_STATUS isc_truncate_monitor                 = 335545267L;
 const ISC_STATUS isc_truncate_context                 = 335545268L;
 const ISC_STATUS isc_merge_dup_update                 = 335545269L;
-const ISC_STATUS isc_invalid_blob_util_handle         = 335545270L;
-const ISC_STATUS isc_cannot_make_blob_opened_handle   = 335545271L;
+const ISC_STATUS isc_wrong_page                       = 335545270L;
+const ISC_STATUS isc_repl_error                       = 335545271L;
+const ISC_STATUS isc_ses_reset_failed                 = 335545272L;
+const ISC_STATUS isc_block_size                       = 335545273L;
+const ISC_STATUS isc_tom_key_length                   = 335545274L;
+const ISC_STATUS isc_invalid_blob_util_handle         = 335545275L;
+const ISC_STATUS isc_cannot_make_blob_opened_handle   = 335545276L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -1444,6 +1449,7 @@ const ISC_STATUS isc_fbsvcmgr_bad_arg                 = 336986164L;
 const ISC_STATUS isc_fbsvcmgr_info_limbo              = 336986170L;
 const ISC_STATUS isc_fbsvcmgr_limbo_state             = 336986171L;
 const ISC_STATUS isc_fbsvcmgr_limbo_advise            = 336986172L;
+const ISC_STATUS isc_fbsvcmgr_bad_rm                  = 336986173L;
 const ISC_STATUS isc_utl_trusted_switch               = 337051649L;
 const ISC_STATUS isc_nbackup_missing_param            = 337117213L;
 const ISC_STATUS isc_nbackup_allowed_switches         = 337117214L;
@@ -1486,6 +1492,7 @@ const ISC_STATUS isc_nbackup_switchd_parameter        = 337117255L;
 const ISC_STATUS isc_nbackup_user_stop                = 337117257L;
 const ISC_STATUS isc_nbackup_deco_parse               = 337117259L;
 const ISC_STATUS isc_nbackup_lostrec_guid_db          = 337117261L;
+const ISC_STATUS isc_nbackup_seq_misuse               = 337117265L;
 const ISC_STATUS isc_trace_conflict_acts              = 337182750L;
 const ISC_STATUS isc_trace_act_notfound               = 337182751L;
 const ISC_STATUS isc_trace_switch_once                = 337182752L;
@@ -1497,7 +1504,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1441;
+const ISC_STATUS isc_err_max                          = 1448;
 
 #else /* c definitions */
 
@@ -2472,8 +2479,13 @@ const ISC_STATUS isc_err_max                          = 1441;
 #define isc_truncate_monitor                 335545267L
 #define isc_truncate_context                 335545268L
 #define isc_merge_dup_update                 335545269L
-#define isc_invalid_blob_util_handle         335545270L
-#define isc_cannot_make_blob_opened_handle   335545271L
+#define isc_wrong_page                       335545270L
+#define isc_repl_error                       335545271L
+#define isc_ses_reset_failed                 335545272L
+#define isc_block_size                       335545273L
+#define isc_tom_key_length                   335545274L
+#define isc_invalid_blob_util_handle         335545275L
+#define isc_cannot_make_blob_opened_handle   335545276L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -2911,6 +2923,7 @@ const ISC_STATUS isc_err_max                          = 1441;
 #define isc_fbsvcmgr_info_limbo              336986170L
 #define isc_fbsvcmgr_limbo_state             336986171L
 #define isc_fbsvcmgr_limbo_advise            336986172L
+#define isc_fbsvcmgr_bad_rm                  336986173L
 #define isc_utl_trusted_switch               337051649L
 #define isc_nbackup_missing_param            337117213L
 #define isc_nbackup_allowed_switches         337117214L
@@ -2953,6 +2966,7 @@ const ISC_STATUS isc_err_max                          = 1441;
 #define isc_nbackup_user_stop                337117257L
 #define isc_nbackup_deco_parse               337117259L
 #define isc_nbackup_lostrec_guid_db          337117261L
+#define isc_nbackup_seq_misuse               337117265L
 #define isc_trace_conflict_acts              337182750L
 #define isc_trace_act_notfound               337182751L
 #define isc_trace_switch_once                337182752L
@@ -2964,7 +2978,7 @@ const ISC_STATUS isc_err_max                          = 1441;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1441
+#define isc_err_max                          1448
 
 #endif
 

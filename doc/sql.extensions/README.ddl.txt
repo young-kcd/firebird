@@ -577,19 +577,19 @@ ALTER DATABASE {ENABLE | DISABLE} PUBLICATION
 
 Enables or disabled replication. The change is applied immediately after commit.
 
-ALTER DATABASE ADD ALL TO PUBLICATION
+ALTER DATABASE INCLUDE ALL TO PUBLICATION
 
 Enables replication for all tables inside the database, including the ones to be created in the future.
 
-ALTER DATABASE ADD TABLE {<table1>, <table2>, ..., <tableN>} TO PUBLICATION
+ALTER DATABASE INCLUDE TABLE {<table1>, <table2>, ..., <tableN>} TO PUBLICATION
 
 Enables replication for the specified set of tables.
 
-ALTER DATABASE DROP ALL FROM PUBLICATION
+ALTER DATABASE EXCLUDE ALL FROM PUBLICATION
 
 Disables replication for all tables inside the database, including the ones to be created in the future.
 
-ALTER DATABASE DROP TABLE {<table1>, <table2>, ..., <tableN>} FROM PUBLICATION
+ALTER DATABASE EXCLUDE TABLE {<table1>, <table2>, ..., <tableN>} FROM PUBLICATION
 
 Disables replication for the specified set of tables.
 

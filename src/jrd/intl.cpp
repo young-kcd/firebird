@@ -901,7 +901,7 @@ int INTL_convert_string(dsc* to, const dsc* from, Firebird::Callbacks* cb)
 			ULONG to_len = INTL_convert_bytes(tdbb, to_cs, vstr,
 										to_size, from_cs, from_ptr, from_len, cb->err);
 
-			to_len = cb->validateLength(toCharSet, to_len, vstr, to_size);
+			to_len = cb->validateLength(toCharSet, to_cs, to_len, vstr, to_size);
 
 			toLength = to_len;
 			((vary*) to->dsc_address)->vary_length = to_len;
@@ -914,7 +914,7 @@ int INTL_convert_string(dsc* to, const dsc* from, Firebird::Callbacks* cb)
 			if (!toCharSet->wellFormed(to_len, q))
 				cb->err(Arg::Gds(isc_malformed_string));
 
-			to_len = cb->validateLength(toCharSet, to_len, q, to_size);
+			to_len = cb->validateLength(toCharSet, to_cs, to_len, q, to_size);
 
 			toLength = to_len;
 			from_fill = from_len - to_len;

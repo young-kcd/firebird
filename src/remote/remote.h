@@ -653,7 +653,7 @@ inline void Rsr::releaseException()
 	rsr_status = NULL;
 }
 
-#include "../common/xdr.h"
+#include "../remote/remot_proto.h"
 
 
 // Generalized port definition.
@@ -833,7 +833,7 @@ private:
 	Firebird::HalfStaticArray<InternalCryptKey*, 1> cryptKeys;		// Wire crypt keys that came from plugin(s) last time
 	Firebird::string dpbConfig;					// User's configuration parameters
 	Firebird::PathName dpbPlugins;				// User's plugin list
-	Firebird::RefPtr<const Config> clntConfig;	// Used to get plugins list and pass to port
+	Firebird::RefPtr<const Firebird::Config> clntConfig;	// Used to get plugins list and pass to port
 	Firebird::AutoPtr<RmtAuthBlock> remAuthBlock;	//Authentication block if present
 	unsigned nextKey;							// First key to be analyzed
 
@@ -845,7 +845,7 @@ private:
 			: pluginItr(Firebird::IPluginManager::TYPE_KEY_HOLDER, "NoDefault"), currentIface(nullptr)
 		{ }
 
-		Firebird::ICryptKeyCallback* create(const Config* conf);
+		Firebird::ICryptKeyCallback* create(const Firebird::Config* conf);
 
 		// Firebird::ICryptKeyCallback implementation
 		unsigned callback(unsigned dataLength, const void* data, unsigned bufferLength, void* buffer);
@@ -885,11 +885,10 @@ public:
 	Firebird::PathName getPluginName();
 	void tryNewKeys(rem_port*);
 	void releaseKeys(unsigned from);
-	Firebird::RefPtr<const Config>* getConfig();
+	Firebird::RefPtr<const Firebird::Config>* getConfig();
 	void createCryptCallback(Firebird::ICryptKeyCallback** callback);
 
 	// Firebird::IClientBlock implementation
-	int release();
 	const char* getLogin();
 	const char* getPassword();
 	const unsigned char* getData(unsigned int* length);
@@ -978,13 +977,13 @@ const USHORT PORT_async			= 0x0002;	// Port is asynchronous channel for events
 const USHORT PORT_no_oob		= 0x0004;	// Don't send out of band data
 const USHORT PORT_disconnect	= 0x0008;	// Disconnect is in progress
 const USHORT PORT_dummy_pckt_set= 0x0010;	// A dummy packet interval is set
-const USHORT PORT_partial_data	= 0x0020;	// Physical packet doesn't contain all API packet
+//const USHORT PORT_partial_data	= 0x0020;	// Physical packet doesn't contain all API packet
 const USHORT PORT_lazy			= 0x0040;	// Deferred operations are allowed
 const USHORT PORT_server		= 0x0080;	// Server (not client) port
 const USHORT PORT_detached		= 0x0100;	// op_detach, op_drop_database or op_service_detach was processed
 const USHORT PORT_rdb_shutdown	= 0x0200;	// Database is shut down
 const USHORT PORT_connecting	= 0x0400;	// Aux connection waits for a channel to be activated by client
-const USHORT PORT_z_data		= 0x0800;	// Zlib incoming buffer has data left after decompression
+//const USHORT PORT_z_data		= 0x0800;	// Zlib incoming buffer has data left after decompression
 const USHORT PORT_compressed	= 0x1000;	// Compress outgoing stream (does not affect incoming)
 const USHORT PORT_released		= 0x2000;	// release(), complementary to the first addRef() in constructor, was called 
 
@@ -1042,6 +1041,9 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	USHORT			port_protocol;		// protocol version number
 	USHORT			port_buff_size;		// port buffer size
 	USHORT			port_flags;			// Misc flags
+	std::atomic<bool>
+					port_partial_data,	// Physical packet doesn't contain all API packet
+					port_z_data;		// Zlib incoming buffer has data left after decompression
 	SLONG			port_connect_timeout;   // Connection timeout value
 	SLONG			port_dummy_packet_interval; // keep alive dummy packet interval
 	SLONG			port_dummy_timeout;	// time remaining until keepalive packet
@@ -1056,8 +1058,8 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	HANDLE			port_pipe;			// port pipe handle
 	HANDLE			port_event;			// event associated with a port
 #endif
-	XDR				port_receive;
-	XDR				port_send;
+	Firebird::AutoPtr<RemoteXdr>	port_receive;
+	Firebird::AutoPtr<RemoteXdr>	port_send;
 #ifdef DEBUG_XDR_MEMORY
 	r e m _ v e c*	port_packet_vector;		// Vector of send/receive packets
 #endif
@@ -1080,7 +1082,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	OBJCT			port_last_object_id;	// cached last id
 	Firebird::ObjectsArray< Firebird::Array<char> > port_queue;
 	FB_SIZE_T		port_qoffset;			// current packet in the queue
-	Firebird::RefPtr<const Config> port_config;	// connection-specific configuration info
+	Firebird::RefPtr<const Firebird::Config> port_config;	// connection-specific configuration info
 
 	// Authentication and crypt stuff
 	ServerAuthBase*							port_srv_auth;
@@ -1121,7 +1123,8 @@ public:
 		port_type(t), port_state(PENDING), port_clients(0), port_next(0),
 		port_parent(0), port_async(0), port_async_receive(0),
 		port_server(0), port_server_flags(0), port_protocol(0), port_buff_size(rpt / 2),
-		port_flags(0), port_connect_timeout(0), port_dummy_packet_interval(0),
+		port_flags(0), port_partial_data(false), port_z_data(false),
+		port_connect_timeout(0), port_dummy_packet_interval(0),
 		port_dummy_timeout(0), port_handle(INVALID_SOCKET), port_channel(INVALID_SOCKET), port_context(0),
 		port_events_thread(0), port_thread_guard(0),
 #ifdef WIN_NT
@@ -1168,8 +1171,8 @@ public:
 	static bool checkCompression();
 	void linkParent(rem_port* const parent);
 	void unlinkParent();
-	Firebird::RefPtr<const Config> getPortConfig();
-	const Firebird::RefPtr<const Config>& getPortConfig() const;
+	Firebird::RefPtr<const Firebird::Config> getPortConfig();
+	const Firebird::RefPtr<const Firebird::Config>& getPortConfig() const;
 	void versionInfo(Firebird::string& version) const;
 
 	bool extractNewKeys(CSTRING* to, bool flagPlugList = false)
@@ -1234,7 +1237,7 @@ public:
 
 	void releaseObject(OBJCT id)
 	{
-		if (id != INVALID_OBJECT)
+		if (id != INVALID_OBJECT && id <= MAX_OBJCT_HANDLES)
 		{
 			port_objects[id].release();
 		}
@@ -1273,7 +1276,7 @@ public:
 	bool haveRecvData()
 	{
 		Firebird::RefMutexGuard queGuard(*port_que_sync, FB_FUNCTION);
-		return ((port_receive.x_handy > 0) || (port_qoffset < port_queue.getCount()));
+		return ((port_receive->x_handy > 0) || (port_qoffset < port_queue.getCount()));
 	}
 
 	void clearRecvQue()
@@ -1281,7 +1284,7 @@ public:
 		Firebird::RefMutexGuard queGuard(*port_que_sync, FB_FUNCTION);
 		port_queue.clear();
 		port_qoffset = 0;
-		port_receive.x_private = port_receive.x_base;
+		port_receive->x_private = port_receive->x_base;
 	}
 
 	class RecvQueState
@@ -1293,8 +1296,8 @@ public:
 
 		RecvQueState(const rem_port* port)
 		{
-			save_handy = port->port_receive.x_handy;
-			save_private = port->port_receive.x_private - port->port_receive.x_base;
+			save_handy = port->port_receive->x_handy;
+			save_private = port->port_receive->x_private - port->port_receive->x_base;
 			save_qoffset = port->port_qoffset;
 		}
 	};
@@ -1309,11 +1312,11 @@ public:
 		if (rs.save_qoffset > 0 && (rs.save_qoffset != port_qoffset))
 		{
 			Firebird::Array<char>& q = port_queue[rs.save_qoffset - 1];
-			memcpy(port_receive.x_base, q.begin(), q.getCount());
+			memcpy(port_receive->x_base, q.begin(), q.getCount());
 		}
 		port_qoffset = rs.save_qoffset;
-		port_receive.x_private = port_receive.x_base + rs.save_private;
-		port_receive.x_handy = rs.save_handy;
+		port_receive->x_private = port_receive->x_base + rs.save_private;
+		port_receive->x_handy = rs.save_handy;
 	}
 
 	// TMN: The following member functions are conceptually private
@@ -1363,7 +1366,8 @@ public:
 	void		batch_blob_stream(P_BATCH_BLOB*, PACKET*);
 	void		batch_regblob(P_BATCH_REGBLOB*, PACKET*);
 	void		batch_exec(P_BATCH_EXEC*, PACKET*);
-	void		batch_rls(P_BATCH_FREE*, PACKET*);
+	void		batch_rls(P_BATCH_FREE_CANCEL*, PACKET*);
+	void		batch_cancel(P_BATCH_FREE_CANCEL*, PACKET*);
 	void		batch_bpb(P_BATCH_SETBPB*, PACKET*);
 	void		replicate(P_REPLICATE*, PACKET*);
 
@@ -1371,7 +1375,7 @@ public:
 	void auxAcceptError(PACKET* packet);
 
 	// Working with 'key/plugin' pairs and associated plugin specific data
-	void addServerKeys(CSTRING* str);
+	void addServerKeys(const CSTRING* str);
 	void addSpecificData(const Firebird::PathName& type, const Firebird::PathName& plugin,
 		unsigned length, const void* data);
 	const Firebird::UCharBuffer* findSpecificData(const Firebird::PathName& type, const Firebird::PathName& plugin);

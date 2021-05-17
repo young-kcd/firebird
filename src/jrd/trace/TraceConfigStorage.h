@@ -127,7 +127,6 @@ private:
 		void handler();
 		void start(const char* fName);
 		void stop();
-		int release();
 
 	private:
 		Firebird::PathName fileName;

@@ -48,6 +48,10 @@
 #include "../jrd/EngineInterface.h"
 #include "../jrd/sbm.h"
 
+#include <atomic>
+
+#define DEBUG_LCK_LIST
+
 namespace EDS {
 	class Connection;
 }
@@ -157,9 +161,11 @@ const ULONG ATT_creator				= 0x08000L; // This attachment created the DB
 const ULONG ATT_monitor_done		= 0x10000L; // Monitoring data is refreshed
 const ULONG ATT_security_db			= 0x20000L; // Attachment used for security purposes
 const ULONG ATT_mapping				= 0x40000L; // Attachment used for mapping auth block
-const ULONG ATT_crypt_thread		= 0x80000L; // Attachment from crypt thread
+const ULONG ATT_from_thread			= 0x80000L; // Attachment from internal special thread (sweep, crypt)
 const ULONG ATT_monitor_init		= 0x100000L; // Attachment is registered in monitoring
 const ULONG ATT_repl_reset			= 0x200000L; // Replication set has been reset
+const ULONG ATT_replicating			= 0x400000L; // Replication is active
+const ULONG ATT_resetting			= 0x800000L; // Session reset is in progress
 
 const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
 
@@ -396,7 +402,7 @@ public:
 	};
 
 public:
-	static Attachment* create(Database* dbb, Firebird::IProvider* provider);
+	static Attachment* create(Database* dbb, JProvider* provider);
 	static void destroy(Attachment* const attachment);
 
 	MemoryPool* const att_pool;					// Memory pool
@@ -435,12 +441,15 @@ public:
 	SSHORT		att_client_charset;			// user's charset specified in dpb
 	SSHORT		att_charset;				// current (client or external) attachment charset
 	Lock*		att_long_locks;				// outstanding two phased locks
-	Lock*		att_wait_lock;				// lock at which attachment waits currently
+#ifdef DEBUG_LCK_LIST
+	UCHAR		att_long_locks_type;		// Lock type of the first lock in list
+#endif
+	std::atomic<SLONG>	att_wait_owner_handle;	// lock owner with which attachment waits currently
 	vec<Lock*>*	att_compatibility_table;	// hash table of compatible locks
 	Validation*	att_validation;
 	Firebird::PathName	att_working_directory;	// Current working directory is cached
 	Firebird::PathName	att_filename;			// alias used to attach the database
-	const ISC_TIMESTAMP_TZ	att_timestamp;	// Connection date and time
+	ISC_TIMESTAMP_TZ	att_timestamp;	    // Connection date and time
 	Firebird::StringMap att_context_vars;	// Context variables for the connection
 	Firebird::Stack<DdlTriggerContext*> ddlTriggersContext;	// Context variables for DDL trigger event
 	Firebird::string att_network_protocol;	// Network protocol used by client for connection
@@ -472,9 +481,9 @@ public:
 	USHORT att_original_timezone;
 	USHORT att_current_timezone;
 
-	Firebird::IReplicatedSession* att_replicator;
+	Firebird::RefPtr<Firebird::IReplicatedSession> att_replicator;
 	Firebird::AutoPtr<Replication::TableMatcher> att_repl_matcher;
-	Firebird::AutoPtr<Applier> att_repl_applier;
+	Firebird::Array<Applier*> att_repl_appliers;
 
 	enum UtilType { UTIL_NONE, UTIL_GBAK, UTIL_GFIX, UTIL_GSTAT };
 
@@ -650,14 +659,14 @@ public:
 	void checkReplSetLock(thread_db* tdbb);
 	void invalidateReplSet(thread_db* tdbb, bool broadcast);
 
-	Firebird::IProvider* getProvider()
+	JProvider* getProvider()
 	{
 		fb_assert(att_provider);
 		return att_provider;
 	}
 
 private:
-	Attachment(MemoryPool* pool, Database* dbb, Firebird::IProvider* provider);
+	Attachment(MemoryPool* pool, Database* dbb, JProvider* provider);
 	~Attachment();
 
 	unsigned int att_idle_timeout;		// seconds
@@ -670,7 +679,7 @@ private:
 	InitialOptions att_initial_options;	// Initial session options
 
 	Lock* att_repl_lock;				// Replication set lock
-	Firebird::IProvider* att_provider;	// Provider which created this attachment
+	JProvider* att_provider;	// Provider which created this attachment
 };
 
 
@@ -741,7 +750,6 @@ public:
 		{
 			if (m_index < m_list.m_attachments.getCount())
 			{
-				AttachmentsRefHolder::debugHelper(FB_FUNCTION);
 				m_list.m_attachments[m_index]->release();
 				m_list.m_attachments.remove(m_index);
 			}
@@ -774,7 +782,6 @@ public:
 	{
 		while (m_attachments.hasData())
 		{
-			debugHelper(FB_FUNCTION);
 			m_attachments.pop()->release();
 		}
 	}
@@ -795,8 +802,6 @@ public:
 
 private:
 	AttachmentsRefHolder(const AttachmentsRefHolder&);
-
-	static void debugHelper(const char* from);
 
 	Firebird::HalfStaticArray<StableAttachmentPart*, 128> m_attachments;
 };

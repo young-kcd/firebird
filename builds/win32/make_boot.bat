@@ -18,20 +18,18 @@ set ERRLEV=0
 :MAIN
 @echo.
 @echo Creating directories
-@rmdir /s /q %FB_GEN_DIR% 2>nul
-:: Remove previously generated output, and recreate the directory hierarchy. 
-for %%v in ( alice auth burp dsql gpre isql jrd misc msgs qli examples yvalve) do (
-  @mkdir %FB_GEN_DIR%\%%v 
+:: Create the directory hierarchy.
+for %%v in ( alice auth burp dsql gpre isql jrd misc msgs qli examples yvalve utilities) do (
+  @mkdir %FB_GEN_DIR%\%%v 2>nul
 )
 
-@rmdir /s /q %FB_GEN_DIR%\utilities 2>nul
-
-@mkdir %FB_GEN_DIR%\utilities 2>nul
 @mkdir %FB_GEN_DIR%\utilities\gstat 2>nul
 @mkdir %FB_GEN_DIR%\auth\SecurityDatabase 2>nul
 @mkdir %FB_GEN_DIR%\gpre\std 2>nul
 
-::=======
+call :interfaces
+if "%ERRLEV%"=="1" goto :END
+
 call :btyacc
 if "%ERRLEV%"=="1" goto :END
 
@@ -194,6 +192,15 @@ if errorlevel 1 call :boot2 re2
 @cmake --build %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% --target ALL_BUILD --config Release > re2_Release_%FB_TARGET_PLATFORM%.log
 @cmake --build %FB_ROOT_PATH%\extern\re2\builds\%FB_TARGET_PLATFORM% --target ALL_BUILD --config Debug > re2_Debug_%FB_TARGET_PLATFORM%.log
 @popd
+goto :EOF
+
+::===================
+:: Build CLOOP and generate interface headers
+:interfaces
+@echo.
+@echo Building CLOOP and generating interfaces...
+@nmake /s /x interfaces_%FB_TARGET_PLATFORM%.log /f gen_helper.nmake updateCloopInterfaces
+if errorlevel 1 call :boot2 interfaces
 goto :EOF
 
 ::===================

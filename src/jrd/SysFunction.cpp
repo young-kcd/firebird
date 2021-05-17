@@ -41,6 +41,7 @@
 #include "../jrd/req.h"
 #include "../dsql/ExprNodes.h"
 #include "../jrd/blb_proto.h"
+#include "../jrd/cch_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../common/cvt.h"
 #include "../jrd/evl_proto.h"
@@ -70,11 +71,19 @@
 #define USE_LTM
 #define LTM_DESC
 #include <tomcrypt.h>
+#include <limits.h>
 
 using namespace Firebird;
 using namespace Jrd;
 
 namespace {
+
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#pragma message("Ensure the 'hh' size modifier is supported")
+#endif
+
+const char* const BYTE_GUID_FORMAT =
+	"%02hhX%02hhX%02hhX%02hhX-%02hhX%02hhX-%02hhX%02hhX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX";
 
 // function types handled in generic functions
 enum Function
@@ -125,7 +134,7 @@ struct HashAlgorithmDescriptor
 	USHORT length;
 	HashContext* (*create)(MemoryPool&);
 
-	static const HashAlgorithmDescriptor* find(const char* name);
+	static const HashAlgorithmDescriptor* find(const HashAlgorithmDescriptor** hashDescriptor, const MetaName name);
 };
 
 template <typename T>
@@ -149,21 +158,25 @@ struct HashAlgorithmDescriptorFactory
 
 template <typename T> HashAlgorithmDescriptor HashAlgorithmDescriptorFactory<T>::desc;
 
-static const HashAlgorithmDescriptor* hashAlgorithmDescriptors[] = {
+static const HashAlgorithmDescriptor* cryptHashAlgorithmDescriptors[] = {
 	HashAlgorithmDescriptorFactory<Md5HashContext>::getInstance("MD5", 16),
 	HashAlgorithmDescriptorFactory<Sha1HashContext>::getInstance("SHA1", 20),
 	HashAlgorithmDescriptorFactory<Sha256HashContext>::getInstance("SHA256", 32),
-	HashAlgorithmDescriptorFactory<Sha512HashContext>::getInstance("SHA512", 64)
+	HashAlgorithmDescriptorFactory<Sha512HashContext>::getInstance("SHA512", 64),
+	nullptr
 };
 
-const HashAlgorithmDescriptor* HashAlgorithmDescriptor::find(const char* name)
-{
-	unsigned count = FB_NELEM(hashAlgorithmDescriptors);
+static const HashAlgorithmDescriptor* hashAlgorithmDescriptors[] = {
+	HashAlgorithmDescriptorFactory<Crc32HashContext>::getInstance("CRC32", 4),
+	nullptr
+};
 
-	for (unsigned i = 0; i < count; ++i)
+const HashAlgorithmDescriptor* HashAlgorithmDescriptor::find(const HashAlgorithmDescriptor** hashDescriptor, const MetaName name)
+{
+	for (; *hashDescriptor; hashDescriptor++)
 	{
-		if (strcmp(name, hashAlgorithmDescriptors[i]->name) == 0)
-			return hashAlgorithmDescriptors[i];
+		if (name == (*hashDescriptor)->name)
+			return *hashDescriptor;
 	}
 
 	status_exception::raise(Arg::Gds(isc_sysf_invalid_hash_algorithm) << name);
@@ -171,9 +184,25 @@ const HashAlgorithmDescriptor* HashAlgorithmDescriptor::find(const char* name)
 }
 
 
+const HashAlgorithmDescriptor* getHashAlgorithmDesc(thread_db* tdbb, const SysFunction* function, const dsc* algDsc, bool* cHash = nullptr)
+{
+	bool cryptHash = (strcmp(function->name, "CRYPT_HASH") == 0);
+	if (cHash)
+		*cHash = cryptHash;
+
+	if (!algDsc->dsc_address || !algDsc->isText())
+		status_exception::raise(Arg::Gds(isc_sysf_invalid_hash_algorithm) << "<not a string constant>");
+
+	MetaName algorithmName;
+	MOV_get_metaname(tdbb, algDsc, algorithmName);
+
+	return HashAlgorithmDescriptor::find(cryptHash ? cryptHashAlgorithmDescriptors : hashAlgorithmDescriptors, algorithmName);
+}
+
+
 // constants
-const int oneDay = 86400;
-const unsigned getContextLen = 255;
+const int ONE_DAY = 86400;
+const unsigned MAX_CTX_VAR_SIZE = 255;
 
 // auxiliary functions
 double fbcot(double value) throw();
@@ -200,6 +229,7 @@ void setParamsDateDiff(DataTypeUtilBase* dataTypeUtil, const SysFunction* functi
 void setParamsEncrypt(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args);
 void setParamsFirstLastDay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsGetSetContext(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
+void setParamsHash(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args);
 void setParamsMakeDbkey(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsPosition(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
@@ -208,6 +238,7 @@ void setParamsRsaEncrypt(DataTypeUtilBase*, const SysFunction*, int argsCount, d
 void setParamsRsaPublic(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args);
 void setParamsRsaSign(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args);
 void setParamsRsaVerify(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args);
+void setParamsUnicodeVal(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsUuidToChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 
 // generic make functions
@@ -233,8 +264,7 @@ void makeDecode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, d
 void makeEncode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeDecodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeEncodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
-void makeDecrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
-void makeEncrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeCrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeFirstLastDayResult(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeGetSetContext(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeGetTranCN(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
@@ -247,12 +277,12 @@ void makePi(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* re
 void makeReplace(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeReverse(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeRound(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
-void makeRsaDecrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
-void makeRsaEncrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeRsaCrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeRsaPrivate(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeRsaPublic(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeRsaSign(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeUnicodeChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeUuidToChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 
@@ -268,7 +298,6 @@ dsc* evlBin(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 dsc* evlBinShift(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlCeil(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
-dsc* evlCrc32(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlDecode64(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
@@ -312,6 +341,8 @@ dsc* evlSign(thread_db* tdbb, const SysFunction* function, const NestValueArray&
 dsc* evlSqrt(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlSystemPrivilege(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlUnicodeChar(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlUnicodeVal(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 dsc* evlUuidToChar(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 
 
@@ -340,6 +371,7 @@ const char
 	REPLICATION_SEQ_NAME[] = "REPLICATION_SEQUENCE",
 	DATABASE_GUID[] = "DB_GUID",
 	DATABASE_FILE_ID[] = "DB_FILE_ID",
+	REPLICA_MODE[] = "REPLICA_MODE",
 	// SYSTEM namespace: connection wise items
 	SESSION_ID_NAME[] = "SESSION_ID",
 	NETWORK_PROTOCOL_NAME[] = "NETWORK_PROTOCOL",
@@ -355,6 +387,7 @@ const char
 	SESSION_IDLE_TIMEOUT[] = "SESSION_IDLE_TIMEOUT",
 	STATEMENT_TIMEOUT[] = "STATEMENT_TIMEOUT",
 	EFFECTIVE_USER_NAME[] = "EFFECTIVE_USER",
+	SESSION_TIMEZONE[] = "SESSION_TIMEZONE",
 	// SYSTEM namespace: transaction wise items
 	TRANSACTION_ID_NAME[] = "TRANSACTION_ID",
 	ISOLATION_LEVEL_NAME[] = "ISOLATION_LEVEL",
@@ -369,6 +402,11 @@ const char
 	NEW_OBJECT_NAME[] = "NEW_OBJECT_NAME",
 	OBJECT_TYPE_NAME[] = "OBJECT_TYPE",
 	SQL_TEXT_NAME[] = "SQL_TEXT";
+
+// Replica modes
+const char
+	RO_VALUE[] = "READ-ONLY",
+	RW_VALUE[] = "READ-WRITE";
 
 // Isolation values modes
 const char
@@ -612,6 +650,13 @@ void setParamsDateDiff(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc
 }
 
 
+void setParamsUnicodeVal(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
+{
+	if (argsCount >= 1 && args[0]->isUnknown())
+		args[0]->makeText(4, CS_UTF8);
+}
+
+
 void setParamVarying(dsc* param, USHORT textType, bool condition)
 {
 	if (!param)
@@ -755,9 +800,17 @@ void setParamsGetSetContext(DataTypeUtilBase*, const SysFunction*, int argsCount
 
 	if (argsCount >= 3 && args[2]->isUnknown())
 	{
-		args[2]->makeVarying(255, ttype_none);
+		args[2]->makeVarying(MAX_CTX_VAR_SIZE, ttype_none);
 		args[2]->setNullable(true);
 	}
+}
+
+
+void setParamsHash(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
+{
+	fb_assert(argsCount == 1 || argsCount == 2);
+
+	setParamVarying(args[0], ttype_binary);
 }
 
 
@@ -1252,7 +1305,7 @@ void makeGetSetContext(DataTypeUtilBase* /*dataTypeUtil*/, const SysFunction* fu
 		result->makeLong(0);
 	else
 	{
-		result->makeVarying(getContextLen, ttype_none);
+		result->makeVarying(MAX_CTX_VAR_SIZE, ttype_none);
 		result->setNullable(true);
 	}
 }
@@ -1275,13 +1328,22 @@ void makeHash(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* 
 		makeInt64Result(dataTypeUtil, function, result, argsCount, args);
 	else if (argsCount >= 2)
 	{
-		if (!args[1]->dsc_address || !args[1]->isText())	// not a constant
-			status_exception::raise(Arg::Gds(isc_sysf_invalid_hash_algorithm) << "<not a string constant>");
+		bool cryptHash;
+		const HashAlgorithmDescriptor* d = getHashAlgorithmDesc(JRD_get_thread_data(), function, args[1], &cryptHash);
 
-		MetaName algorithmName;
-		MOV_get_metaname(JRD_get_thread_data(), args[1], algorithmName);
-
-		result->makeVarying(HashAlgorithmDescriptor::find(algorithmName.c_str())->length, ttype_binary);
+		if (cryptHash)
+			result->makeVarying(d->length, ttype_binary);
+		else
+		{
+			switch(d->length)
+			{
+			case 4:
+				result->makeLong(0);
+				break;
+			default:
+				fb_assert(false);
+			}
+		}
 		result->setNullable(args[0]->isNullable());
 	}
 }
@@ -1296,13 +1358,23 @@ unsigned decodeLen(unsigned len)
 }
 
 
+unsigned characterLen(DataTypeUtilBase* dataTypeUtil, const dsc* arg)
+{
+	unsigned len = arg->getStringLength();
+	unsigned maxBytes = dataTypeUtil->maxBytesPerChar(arg->getCharSet());
+	fb_assert(maxBytes);
+	fb_assert(!(len % maxBytes));
+	return len / maxBytes;
+}
+
+
 void makeDecode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
 	fb_assert(argsCount == 1);
 	if (args[0]->isBlob())
 		result->makeBlob(isc_blob_untyped, ttype_binary);
 	else if (args[0]->isText())
-		result->makeVarying(decodeLen(args[0]->getStringLength()), ttype_binary);
+		result->makeVarying(decodeLen(characterLen(dataTypeUtil, args[0])), ttype_binary);
 	else
 		status_exception::raise(Arg::Gds(isc_tom_strblob));
 
@@ -1323,7 +1395,7 @@ void makeEncode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, d
 	if (args[0]->isBlob())
 		result->makeBlob(isc_blob_text, ttype_ascii);
 	else if (args[0]->isText())
-		result->makeVarying(encodeLen(args[0]->dsc_length), ttype_ascii);
+		result->makeVarying(encodeLen(args[0]->getStringLength()), ttype_ascii);
 	else
 		status_exception::raise(Arg::Gds(isc_tom_strblob));
 
@@ -1338,7 +1410,7 @@ void makeDecodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
 		result->makeBlob(isc_blob_untyped, ttype_binary);
 	else if (args[0]->isText())
 	{
-		unsigned len = args[0]->getStringLength();
+		unsigned len = characterLen(dataTypeUtil, args[0]);
 	 	if (len % 2 || !len)
  			status_exception::raise(Arg::Gds(isc_odd_hex_len) << Arg::Num(len));
 		result->makeVarying(len / 2, ttype_binary);
@@ -1356,7 +1428,7 @@ void makeEncodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
 	if (args[0]->isBlob())
 		result->makeBlob(isc_blob_text, ttype_ascii);
 	else if (args[0]->isText())
-		result->makeVarying(args[0]->dsc_length * 2, ttype_ascii);
+		result->makeVarying(args[0]->getStringLength() * 2, ttype_ascii);
 	else
 		status_exception::raise(Arg::Gds(isc_tom_strblob));
 
@@ -1364,7 +1436,7 @@ void makeEncodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
 }
 
 
-void makeEncrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
+void makeCrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
 	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount == CRYPT_ARG_MAX);
@@ -1378,36 +1450,12 @@ void makeEncrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, ds
 }
 
 
-void makeDecrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
-	int argsCount, const dsc** args)
-{
-	fb_assert(argsCount == CRYPT_ARG_MAX);
-
-	if (args[0]->isBlob())
-		result->makeBlob(0, ttype_none);
-	else
-		result->makeVarying(args[0]->getStringLength(), ttype_none);
-
-	result->setNullable(args[0]->isNullable());
-}
-
-
-void makeRsaEncrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
+void makeRsaCrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
 	int argsCount, const dsc** args)
 {
 	fb_assert(argsCount == RSA_CRYPT_ARG_MAX);
 
 	result->makeVarying(256, ttype_binary);
-	result->setNullable(args[0]->isNullable());
-}
-
-
-void makeRsaDecrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
-	int argsCount, const dsc** args)
-{
-	fb_assert(argsCount == RSA_CRYPT_ARG_MAX);
-
-	result->makeVarying(255, ttype_none);
 	result->setNullable(args[0]->isNullable());
 }
 
@@ -1705,6 +1753,24 @@ void makeTrunc(DataTypeUtilBase*, const SysFunction* function, dsc* result,
 	}
 
 	result->setNullable(value->isNullable() || (argsCount > 1 && args[1]->isNullable()));
+}
+
+
+void makeUnicodeChar(DataTypeUtilBase*, const SysFunction* function, dsc* result,
+	int argsCount, const dsc** args)
+{
+	fb_assert(argsCount == function->minArgCount);
+
+	const dsc* value = args[0];
+
+	if (value->isNull())
+	{
+		result->makeNullString();
+		return;
+	}
+
+	result->makeText(4, ttype_utf8);
+	result->setNullable(value->isNullable());
 }
 
 
@@ -2303,26 +2369,16 @@ dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const NestValue
 		}
 	}
 
-	// convert to binary representation
-	char buffer[GUID_BUFF_SIZE];
-	buffer[0] = '{';
-	buffer[37] = '}';
-	buffer[38] = '\0';
-	memcpy(buffer + 1, data, GUID_BODY_SIZE);
-
-	USHORT bytes[16];
-	sscanf(buffer, GUID_NEW_FORMAT,
+	UCHAR bytes[16];
+	sscanf(reinterpret_cast<const char*>(data),
+		BYTE_GUID_FORMAT,
 		&bytes[0], &bytes[1], &bytes[2], &bytes[3],
 		&bytes[4], &bytes[5], &bytes[6], &bytes[7],
 		&bytes[8], &bytes[9], &bytes[10], &bytes[11],
 		&bytes[12], &bytes[13], &bytes[14], &bytes[15]);
 
-	UCHAR resultData[16];
-	for (unsigned i = 0; i < 16; ++i)
-		resultData[i] = (UCHAR) bytes[i];
-
 	dsc result;
-	result.makeText(16, ttype_binary, resultData);
+	result.makeText(16, ttype_binary, bytes);
 	EVL_make_value(tdbb, &result, impure);
 
 	return &impure->vlu_desc;
@@ -2540,7 +2596,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			}
 
 			if (valueDsc->dsc_dtype == dtype_sql_date)
-				timestamp.value().timestamp_date += quantity / oneDay;
+				timestamp.value().timestamp_date += quantity / ONE_DAY;
 			else
 				NoThrowTimeStamp::add10msec(&timestamp.value(), quantity, ISC_TIME_SECONDS_PRECISION);
 			break;
@@ -2553,7 +2609,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			}
 
 			if (valueDsc->dsc_dtype == dtype_sql_date)
-				timestamp.value().timestamp_date += quantity / milliPow / (oneDay * 1000);
+				timestamp.value().timestamp_date += quantity / milliPow / (ONE_DAY * 1000);
 			else
 				NoThrowTimeStamp::add10msec(&timestamp.value(), quantity, ISC_TIME_SECONDS_PRECISION / 1000 / milliPow);
 			break;
@@ -2727,7 +2783,7 @@ public:
 		if (!completed)
 		{
 			dsc result;
-			result.makeText(0, ttype_none, outBuf.begin());
+			result.makeText(0, ttype_binary, outBuf.begin());
 			EVL_make_value(tdbb, &result, impure);
 			impure->vlu_desc.setNull();
 		}
@@ -2956,6 +3012,9 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 	else if (dscHasData(dscs[CRYPT_ARG_COUNTER]))
 			status_exception::raise(Arg::Gds(isc_tom_no_ctr) << (m ? "mode" : "cipher") << (m ? m->value : a->value));
 
+	if (!dscs[CRYPT_ARG_VALUE])
+		return nullptr;
+
 	// Run selected algorithm
 	DataPipe dp(tdbb, dscs[CRYPT_ARG_VALUE], impure);
 	if (m)
@@ -3061,6 +3120,8 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		{
 		case ALG_RC4:
 			{
+				if (key.getCount() < 5)		// 40 bit - constant from tomcrypt
+					(Arg::Gds(isc_tom_key_length) << Arg::Num(key.getCount()) << Arg::Num(4)).raise();
 				rc4_state rc4;
 				tomCheck(rc4_stream_setup(&rc4, key.begin(), key.getCount()), Arg::Gds(isc_tom_init_cip) << "RC4");
 
@@ -3111,6 +3172,8 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 
 		case ALG_SOBER:
 			{
+				if (key.getCount() < 4)		// 4, 8, 12, ...
+					(Arg::Gds(isc_tom_key_length) << Arg::Num(key.getCount()) << Arg::Num(3)).raise();
 				sober128_state sober128;
 				tomCheck(sober128_stream_setup(&sober128, key.begin(), key.getCount()), Arg::Gds(isc_tom_init_cip) << "SOBER-128");
 				tomCheck(sober128_stream_setiv(&sober128, iv.begin(), iv.getCount()),  Arg::Gds(isc_tom_setup_cip) << "SOBER-128");
@@ -3330,50 +3393,6 @@ dsc* evlEncodeHex(thread_db* tdbb, const SysFunction* function, const NestValueA
 	return evlEncodeDecodeHex(tdbb, true, function, args, impure);
 }
 
-
-dsc* evlCrc32(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure)
-{
-	crc32_state ctx;
-	crc32_init(&ctx);
-
-	const dsc* arg = EVL_expr(tdbb, tdbb->getRequest(), args[0]);
-	if (!arg)	// return NULL if value is NULL
-		return NULL;
-
-	if (arg->isBlob())
-	{
-		blb* blob = blb::open2(tdbb, tdbb->getRequest()->req_transaction, reinterpret_cast<const bid*>(arg->dsc_address),
-			sizeof(streamBpb), streamBpb);
-
-		UCHAR buf[4096];
-		for(;;)
-		{
-			const unsigned l = blob->BLB_get_data(tdbb, buf, sizeof buf, false);
-			if (!l)
-				break;
-			crc32_update(&ctx, buf, l);
-		}
-
-		blob->BLB_close(tdbb);
-	}
-	else
-	{
-		unsigned len;
-		const UCHAR* ptr = CVT_get_bytes(arg, len);
-		crc32_update(&ctx, ptr, len);
-	}
-
-	SLONG hash;
-	crc32_finish(&ctx, &hash, sizeof hash);
-
-	dsc result;
-	result.makeLong(0, &hash);
-	EVL_make_value(tdbb, &result, impure);
-
-	return &impure->vlu_desc;
-}
-
-
 dsc* evlRsaEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure, bool encryptFlag)
 {
@@ -3506,6 +3525,16 @@ dsc* evlRsaPublic(thread_db* tdbb, const SysFunction* function, const NestValueA
 }
 
 
+int getMaxSaltlen(int hashIdx, rsa_key* key)
+{
+	int maxSaltLen = rsa_sign_saltlen_get_max_ex(LTC_PKCS_1_PSS, hashIdx, key);
+	if (maxSaltLen == INT_MAX)
+		return 32;		// fallback on error
+
+	return maxSaltLen;
+}
+
+
 dsc* evlRsaSign(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure)
 {
 	tomcryptInitializer();
@@ -3535,20 +3564,20 @@ dsc* evlRsaSign(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	if (!data)
 		return nullptr;
 
-	SLONG saltLength = 8;
-	if (dscHasData(dscs[RSA_SIGN_ARG_SALTLEN]))
-	{
-		saltLength = MOV_get_long(tdbb, dscs[RSA_SIGN_ARG_SALTLEN], 0);
-		if (saltLength < 0 || saltLength > 32)
-			status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-	}
-
 	unsigned keyLen;
 	const UCHAR* key = CVT_get_bytes(dscs[RSA_SIGN_ARG_KEY], keyLen);
 	if (!key)
 		return nullptr;
 	rsa_key rsaKey;
 	tomCheck(rsa_import(key, keyLen, &rsaKey), Arg::Gds(isc_tom_rsa_import));
+
+	SLONG saltLength = 8;
+	if (dscHasData(dscs[RSA_SIGN_ARG_SALTLEN]))
+	{
+		saltLength = MOV_get_long(tdbb, dscs[RSA_SIGN_ARG_SALTLEN], 0);
+		if (saltLength < 0 || saltLength > getMaxSaltlen(hash, &rsaKey))
+			status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+	}
 
 	unsigned long signLen = 1024;
 	UCharBuffer sign;
@@ -3609,20 +3638,20 @@ dsc* evlRsaVerify(thread_db* tdbb, const SysFunction* function, const NestValueA
 	if (!sign)
 		return boolResult(tdbb, impure, false);
 
-	SLONG saltLength = 8;
-	if (dscHasData(dscs[RSA_VERIFY_ARG_SALTLEN]))
-	{
-		saltLength = MOV_get_long(tdbb, dscs[RSA_VERIFY_ARG_SALTLEN], 0);
-		if (saltLength < 0 || saltLength > 32)
-			status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-	}
-
 	unsigned keyLen;
 	const UCHAR* key = CVT_get_bytes(dscs[RSA_VERIFY_ARG_KEY], keyLen);
 	if (!key)
 		return boolResult(tdbb, impure, false);
 	rsa_key rsaKey;
 	tomCheck(rsa_import(key, keyLen, &rsaKey), Arg::Gds(isc_tom_rsa_import));
+
+	SLONG saltLength = 8;
+	if (dscHasData(dscs[RSA_VERIFY_ARG_SALTLEN]))
+	{
+		saltLength = MOV_get_long(tdbb, dscs[RSA_VERIFY_ARG_SALTLEN], 0);
+		if (saltLength < 0 || saltLength > getMaxSaltlen(hash, &rsaKey))
+			status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+	}
 
 	int state = 0;
 	int cryptRc = rsa_verify_hash(sign, signLen, data, len, hash, saltLength, &state, &rsaKey);
@@ -3836,7 +3865,7 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 			break;
 
 		case blr_extract_second:
-			result = (SINT64) oneDay *
+			result = (SINT64) ONE_DAY *
 				(timestamp2.value().timestamp_date - timestamp1.value().timestamp_date);
 			result += ((SINT64) timestamp2.value().timestamp_time -
 				(SINT64) timestamp1.value().timestamp_time) /
@@ -3844,7 +3873,7 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 			break;
 
 		case blr_extract_millisecond:
-			result = (SINT64) oneDay *
+			result = (SINT64) ONE_DAY *
 				(timestamp2.value().timestamp_date - timestamp1.value().timestamp_date) * 1000;
 			result += ((SINT64) timestamp2.value().timestamp_time -
 				(SINT64) timestamp1.value().timestamp_time) /
@@ -4112,29 +4141,30 @@ dsc* evlGenUuid(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 0);
 
-	Guid fbguid;
-	fb_assert(sizeof(fbguid.data) == 16);
+	Guid guid;
+	static_assert(sizeof(guid) == 16, "Guid size mismatch");
 
-	GenerateGuid(&fbguid);
-	Win32GUID* guid = (Win32GUID*)&fbguid;
+	GenerateGuid(&guid);
+
+	// Convert platform-dependent UUID into platform-independent form according to RFC 4122
 
 	UCHAR data[16];
-	data[0] = (guid->data1 >> 24) & 0xFF;
-	data[1] = (guid->data1 >> 16) & 0xFF;
-	data[2] = (guid->data1 >> 8) & 0xFF;
-	data[3] = guid->data1 & 0xFF;
-	data[4] = (guid->data2 >> 8) & 0xFF;
-	data[5] = guid->data2 & 0xFF;
-	data[6] = (guid->data3 >> 8) & 0xFF;
-	data[7] = guid->data3 & 0xFF;
-	data[8] = guid->data4[0];
-	data[9] = guid->data4[1];
-	data[10] = guid->data4[2];
-	data[11] = guid->data4[3];
-	data[12] = guid->data4[4];
-	data[13] = guid->data4[5];
-	data[14] = guid->data4[6];
-	data[15] = guid->data4[7];
+	data[0] = (guid.Data1 >> 24) & 0xFF;
+	data[1] = (guid.Data1 >> 16) & 0xFF;
+	data[2] = (guid.Data1 >> 8) & 0xFF;
+	data[3] = guid.Data1 & 0xFF;
+	data[4] = (guid.Data2 >> 8) & 0xFF;
+	data[5] = guid.Data2 & 0xFF;
+	data[6] = (guid.Data3 >> 8) & 0xFF;
+	data[7] = guid.Data3 & 0xFF;
+	data[8] = guid.Data4[0];
+	data[9] = guid.Data4[1];
+	data[10] = guid.Data4[2];
+	data[11] = guid.Data4[3];
+	data[12] = guid.Data4[4];
+	data[13] = guid.Data4[5];
+	data[14] = guid.Data4[6];
+	data[15] = guid.Data4[7];
 
 	dsc result;
 	result.makeText(16, ttype_binary, data);
@@ -4185,6 +4215,13 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 		else if (nameStr == DATABASE_FILE_ID)
 		{
 			resultStr = dbb->getUniqueFileId();
+		}
+		else if (nameStr == REPLICA_MODE)
+		{
+			if (dbb->dbb_replica_mode == REPLICA_READ_ONLY)
+				resultStr = RO_VALUE;
+			else if (dbb->dbb_replica_mode == REPLICA_READ_WRITE)
+				resultStr = RW_VALUE;
 		}
 		else if (nameStr == SESSION_ID_NAME)
 			resultStr.printf("%" SQUADFORMAT, PAG_attachment_id(tdbb));
@@ -4302,16 +4339,16 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 				return NULL;
 		}
 		else if (nameStr == EXT_CONN_POOL_SIZE)
-			resultStr.printf("%d", EDS::Manager::getConnPool()->getMaxCount());
+			resultStr.printf("%d", EDS::Manager::getConnPool(true)->getMaxCount());
 		else if (nameStr == EXT_CONN_POOL_IDLE)
-			resultStr.printf("%d", EDS::Manager::getConnPool()->getIdleCount());
+			resultStr.printf("%d", EDS::Manager::getConnPool(true)->getIdleCount());
 		else if (nameStr == EXT_CONN_POOL_ACTIVE)
 		{
-			EDS::ConnectionsPool* connPool = EDS::Manager::getConnPool();
+			EDS::ConnectionsPool* connPool = EDS::Manager::getConnPool(true);
 			resultStr.printf("%d", connPool->getAllCount() - connPool->getIdleCount());
 		}
 		else if (nameStr == EXT_CONN_POOL_LIFETIME)
-			resultStr.printf("%d", EDS::Manager::getConnPool()->getLifeTime());
+			resultStr.printf("%d", EDS::Manager::getConnPool(true)->getLifeTime());
 		else if (nameStr == REPLICATION_SEQ_NAME)
 			resultStr.printf("%" UQUADFORMAT, dbb->getReplSequence(tdbb));
 		else if (nameStr == EFFECTIVE_USER_NAME)
@@ -4325,6 +4362,12 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 			if (user.isEmpty())
 				return NULL;
 			resultStr = user.c_str();
+		}
+		else if (nameStr == SESSION_TIMEZONE)
+		{
+			char timeZoneBuffer[TimeZoneUtil::MAX_SIZE];
+			TimeZoneUtil::format(timeZoneBuffer, sizeof(timeZoneBuffer), attachment->att_current_timezone);
+			resultStr = timeZoneBuffer;
 		}
 		else
 		{
@@ -4410,13 +4453,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 	}
 
 	dsc result;
-	unsigned l = resultStr.length();
-	if (l > getContextLen)
-	{
-		l = getContextLen;
-		ERR_post_warning(Arg::Warning(isc_truncate_warn) << Arg::Warning(isc_truncate_context));
-	}
-	result.makeText(l, resultType,
+	result.makeText(resultStr.length(), resultType,
 		(UCHAR*) const_cast<char*>(resultStr.c_str()));	// safe const_cast
 	EVL_make_value(tdbb, &result, impure);
 
@@ -4437,11 +4474,11 @@ dsc* evlSetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 	request->req_flags &= ~req_null;
 	const dsc* nameSpace = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// Complain if namespace is null
-		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_GET_CONTEXT));
+		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_SET_CONTEXT));
 
 	const dsc* name = EVL_expr(tdbb, request, args[1]);
 	if (request->req_flags & req_null)	// Complain if variable name is null
-		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_GET_CONTEXT));
+		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_SET_CONTEXT));
 
 	const dsc* value = EVL_expr(tdbb, request, args[2]);
 
@@ -4540,7 +4577,17 @@ dsc* evlGetTranCN(thread_db* tdbb, const SysFunction* function, const NestValueA
 		return NULL;
 
 	TraNumber traNum = MOV_get_int64(tdbb, value, 0);
-	if (traNum > dbb->dbb_next_transaction)
+	TraNumber traMax = dbb->dbb_next_transaction;
+
+	if ((traNum > traMax) && !(dbb->dbb_flags & DBB_shared))
+	{
+		WIN window(HEADER_PAGE_NUMBER);
+		const Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
+		traMax = Ods::getNT(header);
+		CCH_RELEASE(tdbb, &window);
+	}
+
+	if (traNum > traMax)
 	{
 		request->req_flags |= req_null;
 		return NULL;
@@ -4558,7 +4605,7 @@ dsc* evlGetTranCN(thread_db* tdbb, const SysFunction* function, const NestValueA
 }
 
 
-dsc* evlHash(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
+dsc* evlHash(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
 	fb_assert(args.getCount() >= 1);
@@ -4578,12 +4625,8 @@ dsc* evlHash(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 		if (request->req_flags & req_null)	// return NULL if algorithm is NULL
 			return NULL;
 
-		if (!algorithmDesc->isText())
-			status_exception::raise(Arg::Gds(isc_sysf_invalid_hash_algorithm) << "<not a string constant>");
-
-		MetaName algorithmName;
-		MOV_get_metaname(tdbb, algorithmDesc, algorithmName);
-		hashContext.reset(HashAlgorithmDescriptor::find(algorithmName.c_str())->create(pool));
+		const HashAlgorithmDescriptor* d = getHashAlgorithmDesc(tdbb, function, algorithmDesc);
+		hashContext.reset(d->create(pool));
 	}
 	else
 	{
@@ -4613,23 +4656,9 @@ dsc* evlHash(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 		hashContext->update(address, length);
 	}
 
-	HashContext::Buffer resultBuffer;
-	hashContext->finish(resultBuffer);
-
-	if (args.getCount() >= 2)
-	{
-		dsc result;
-		result.makeText(resultBuffer.getCount(), ttype_binary, resultBuffer.begin());
-		EVL_make_value(tdbb, &result, impure);
-	}
-	else
-	{
-		fb_assert(resultBuffer.getCount() == sizeof(SINT64));
-		memcpy(&impure->vlu_misc.vlu_int64, resultBuffer.begin(), sizeof(SINT64));
-
-		// make descriptor for return value
-		impure->vlu_desc.makeInt64(0, &impure->vlu_misc.vlu_int64);
-	}
+	dsc result;
+	hashContext->finish(result);
+	EVL_make_value(tdbb, &result, impure);
 
 	return &impure->vlu_desc;
 }
@@ -6289,15 +6318,16 @@ dsc* evlUuidToChar(thread_db* tdbb, const SysFunction* function, const NestValue
 										Arg::Str(function->name));
 	}
 
-	char buffer[GUID_BUFF_SIZE];
-	sprintf(buffer, GUID_NEW_FORMAT,
-		USHORT(data[0]), USHORT(data[1]), USHORT(data[2]), USHORT(data[3]), USHORT(data[4]),
-		USHORT(data[5]), USHORT(data[6]), USHORT(data[7]), USHORT(data[8]), USHORT(data[9]),
-		USHORT(data[10]), USHORT(data[11]), USHORT(data[12]), USHORT(data[13]), USHORT(data[14]),
-		USHORT(data[15]));
+	UCHAR buffer[GUID_BUFF_SIZE];
+	sprintf(reinterpret_cast<char*>(buffer),
+		BYTE_GUID_FORMAT,
+		data[0], data[1], data[2], data[3], data[4],
+		data[5], data[6], data[7], data[8], data[9],
+		data[10], data[11], data[12], data[13], data[14],
+		data[15]);
 
 	dsc result;
-	result.makeText(GUID_BODY_SIZE, ttype_ascii, reinterpret_cast<UCHAR*>(buffer) + 1);
+	result.makeText(GUID_BODY_SIZE, ttype_ascii, buffer);
 	EVL_make_value(tdbb, &result, impure);
 
 	return &impure->vlu_desc;
@@ -6351,6 +6381,82 @@ dsc* evlSystemPrivilege(thread_db* tdbb, const SysFunction*, const NestValueArra
 	return &impure->vlu_desc;
 }
 
+
+dsc* evlUnicodeChar(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
+	impure_value* impure)
+{
+	fb_assert(args.getCount() == 1);
+
+	jrd_req* request = tdbb->getRequest();
+
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
+	if (request->req_flags & req_null)	// return NULL if value is NULL
+		return NULL;
+
+	const UChar32 code = MOV_get_long(tdbb, value, 0);
+
+	if (code < 0)
+	{
+		status_exception::raise(
+			Arg::Gds(isc_expression_eval_err) <<
+			Arg::Gds(isc_sysf_argmustbe_nonneg) << Arg::Str(function->name));
+	}
+
+	if (U8_LENGTH(code) == 0)
+		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_malformed_string));
+
+	UCHAR buffer[4];
+	int len = 0;
+	U8_APPEND_UNSAFE(buffer, len, code);
+
+	dsc result;
+	result.makeText(len, ttype_utf8, buffer);
+	EVL_make_value(tdbb, &result, impure);
+
+	return &impure->vlu_desc;
+}
+
+
+dsc* evlUnicodeVal(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
+	impure_value* impure)
+{
+	fb_assert(args.getCount() == 1);
+
+	jrd_req* request = tdbb->getRequest();
+
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
+	if (request->req_flags & req_null)	// return NULL if value is NULL
+		return NULL;
+
+	MoveBuffer buffer;
+	UCHAR* str;
+	int len = MOV_make_string2(tdbb, value, CS_UTF8, &str, buffer);
+
+	USHORT dst[2];
+	USHORT errCode = 0;
+	ULONG errPosition;
+	ULONG dstLen = UnicodeUtil::utf8ToUtf16(len, str, sizeof(dst), dst, &errCode, &errPosition);
+
+	if (errCode != 0 && errCode != CS_TRUNCATION_ERROR)
+		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_transliteration_failed));
+
+	if (dstLen == 0)
+		impure->vlu_misc.vlu_long = 0;
+	else if (dstLen == 2 || !U_IS_SURROGATE(dst[0]))
+		impure->vlu_misc.vlu_long = dst[0];
+	else if (dstLen == 4 && U16_IS_LEAD(dst[0]) && U16_IS_TRAIL(dst[1]))
+		impure->vlu_misc.vlu_long = U16_GET_SUPPLEMENTARY(dst[0], dst[1]);
+	else
+	{
+		fb_assert(false);
+		impure->vlu_misc.vlu_long = 0;
+	}
+
+	impure->vlu_desc.makeLong(0, &impure->vlu_misc.vlu_long);
+
+	return &impure->vlu_desc;
+}
+
 } // anonymous namespace
 
 
@@ -6369,7 +6475,6 @@ const SysFunction SysFunction::functions[] =
 		{"ATAN2", 2, 2, setParamsDouble, makeDoubleResult, evlAtan2, NULL},
 		{"BASE64_DECODE", 1, 1, NULL, makeDecode64, evlDecode64, NULL},
 		{"BASE64_ENCODE", 1, 1, NULL, makeEncode64, evlEncode64, NULL},
-		{"CRC32", 1, 1, NULL, makeLongResult, evlCrc32, NULL},
 		{"BIN_AND", 2, -1, setParamsBin, makeBin, evlBin, (void*) funBinAnd},
 		{"BIN_NOT", 1, 1, setParamsBin, makeBin, evlBin, (void*) funBinNot},
 		{"BIN_OR", 2, -1, setParamsBin, makeBin, evlBin, (void*) funBinOr},
@@ -6385,15 +6490,16 @@ const SysFunction SysFunction::functions[] =
 		{"COS", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCos},
 		{"COSH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCosh},
 		{"COT", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCot},
+		{"CRYPT_HASH", 2, 2, setParamsHash, makeHash, evlHash, NULL},
 		{"DATEADD", 3, 3, setParamsDateAdd, makeDateAdd, evlDateAdd, NULL},
 		{"DATEDIFF", 3, 3, setParamsDateDiff, makeInt64Result, evlDateDiff, NULL},
-		{"DECRYPT", 7, 7, setParamsEncrypt, makeDecrypt, evlDecrypt, NULL},
-		{"ENCRYPT", 7, 7, setParamsEncrypt, makeEncrypt, evlEncrypt, NULL},
+		{"DECRYPT", 7, 7, setParamsEncrypt, makeCrypt, evlDecrypt, NULL},
+		{"ENCRYPT", 7, 7, setParamsEncrypt, makeCrypt, evlEncrypt, NULL},
 		{"EXP", 1, 1, setParamsDblDec, makeDblDecResult, evlExp, NULL},
 		{"FIRST_DAY", 2, 2, setParamsFirstLastDay, makeFirstLastDayResult, evlFirstLastDay, (void*) funFirstDay},
 		{"FLOOR", 1, 1, setParamsDblDec, makeCeilFloor, evlFloor, NULL},
 		{"GEN_UUID", 0, 0, NULL, makeUuid, evlGenUuid, NULL},
-		{"HASH", 1, 2, NULL, makeHash, evlHash, NULL},
+		{"HASH", 1, 2, setParamsHash, makeHash, evlHash, NULL},
 		{"HEX_DECODE", 1, 1, NULL, makeDecodeHex, evlDecodeHex, NULL},
 		{"HEX_ENCODE", 1, 1, NULL, makeEncodeHex, evlEncodeHex, NULL},
 		{"LAST_DAY", 2, 2, setParamsFirstLastDay, makeFirstLastDayResult, evlFirstLastDay, (void*) funLastDay},
@@ -6423,12 +6529,12 @@ const SysFunction SysFunction::functions[] =
 		{"RIGHT", 2, 2, setParamsSecondInteger, makeLeftRight, evlRight, NULL},
 		{"ROUND", 1, 2, setParamsRoundTrunc, makeRound, evlRound, NULL},
 		{"RPAD", 2, 3, setParamsSecondInteger, makePad, evlPad, (void*) funRPad},
-		{"RSA_DECRYPT", 4, 4, setParamsRsaEncrypt, makeRsaDecrypt, evlRsaDecrypt, NULL},
-		{"RSA_ENCRYPT", 4, 4, setParamsRsaEncrypt, makeRsaEncrypt, evlRsaEncrypt, NULL},
+		{"RSA_DECRYPT", 4, 4, setParamsRsaEncrypt, makeRsaCrypt, evlRsaDecrypt, NULL},
+		{"RSA_ENCRYPT", 4, 4, setParamsRsaEncrypt, makeRsaCrypt, evlRsaEncrypt, NULL},
 		{"RSA_PRIVATE", 1, 1, setParamsInteger, makeRsaPrivate, evlRsaPrivate, NULL},
 		{"RSA_PUBLIC", 1, 1, setParamsRsaPublic, makeRsaPublic, evlRsaPublic, NULL},
-		{"RSA_SIGN", 4, 4, setParamsRsaSign, makeRsaSign, evlRsaSign, NULL},
-		{"RSA_VERIFY", 5, 5, setParamsRsaVerify, makeBoolResult, evlRsaVerify, NULL},
+		{"RSA_SIGN_HASH", 4, 4, setParamsRsaSign, makeRsaSign, evlRsaSign, NULL},
+		{"RSA_VERIFY_HASH", 5, 5, setParamsRsaVerify, makeBoolResult, evlRsaVerify, NULL},
 		{"SIGN", 1, 1, setParamsDblDec, makeShortResult, evlSign, NULL},
 		{"SIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfSin},
 		{"SINH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfSinh},
@@ -6437,6 +6543,8 @@ const SysFunction SysFunction::functions[] =
 		{"TANH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfTanh},
 		{"TOTALORDER", 2, 2, setParamsDecFloat, makeShortResult, evlCompare, (void*) funTotalOrd},
 		{"TRUNC", 1, 2, setParamsRoundTrunc, makeTrunc, evlTrunc, NULL},
+		{"UNICODE_CHAR", 1, 1, setParamsInteger, makeUnicodeChar, evlUnicodeChar, NULL},
+		{"UNICODE_VAL", 1, 1, setParamsUnicodeVal, makeLongResult, evlUnicodeVal, NULL},
 		{"UUID_TO_CHAR", 1, 1, setParamsUuidToChar, makeUuidToChar, evlUuidToChar, NULL},
 		{"", 0, 0, NULL, NULL, NULL, NULL}
 	};

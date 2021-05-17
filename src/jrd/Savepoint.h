@@ -324,8 +324,8 @@ namespace Jrd
 		VerbAction* m_freeActions;		// free verb actions
 	};
 
-
-	// Starts a savepoint and rollback it in destructor if release() is not called
+	// Start a savepoint and rollback it in destructor,
+	// unless it was released / rolled back explicitly
 
 	class AutoSavePoint
 	{
@@ -333,26 +333,22 @@ namespace Jrd
 		AutoSavePoint(thread_db* tdbb, jrd_tra* trans);
 		~AutoSavePoint();
 
-		void release()
-		{
-			m_released = true;
-		}
+		void release();
+		void rollback(bool preserveLocks = false);
 
 	private:
 		thread_db* const m_tdbb;
 		jrd_tra* const m_transaction;
-		bool m_released;
+		SavNumber m_number;
 	};
+
+	// Conditional savepoint used to ensure cursor stability in sub-queries
 
 	class StableCursorSavePoint
 	{
 	public:
 		StableCursorSavePoint(thread_db* tdbb, jrd_tra* trans, bool start);
-
-		~StableCursorSavePoint()
-		{
-			release();
-		}
+		~StableCursorSavePoint() {} // undo is left up to the callers
 
 		void release();
 

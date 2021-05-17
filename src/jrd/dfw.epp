@@ -502,7 +502,7 @@ static void get_array_desc(thread_db*, const TEXT*, Ods::InternalArrayDesc*);
 static void get_trigger_dependencies(DeferredWork*, bool, jrd_tra*);
 static Format*	make_format(thread_db*, jrd_rel*, USHORT *, TemporaryField*);
 static void put_summary_blob(thread_db* tdbb, blb*, enum rsr_t, bid*, jrd_tra*);
-static void put_summary_record(thread_db* tdbb, blb*, enum rsr_t, const UCHAR*, USHORT);
+static void put_summary_record(thread_db* tdbb, blb*, enum rsr_t, const UCHAR*, ULONG);
 static void	setup_array(thread_db*, blb*, const TEXT*, USHORT, TemporaryField*);
 static blb*	setup_triggers(thread_db*, jrd_rel*, bool, TrigVector**, blb*);
 static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, TrigVector**, const TEXT*, bool);
@@ -5614,7 +5614,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, 
 		buffer[pos] = UCHAR(dflCount);
 		buffer[pos + 1] = UCHAR(dflCount >> 8);
 
-		blob->BLB_put_segment(tdbb, buffer.begin(), buffer.getCount());
+		blob->BLB_put_data(tdbb, buffer.begin(), buffer.getCount());
 		blob->BLB_close(tdbb);
 	}
 	END_STORE
@@ -5927,23 +5927,34 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 									desc.makeText(len, tfb->tfb_desc.getCharSet(), ptr);
 								}
 
+								impure_value tempValue;
+								MoveBuffer tempBuffer;
+
 								if (!tfb->tfb_desc.isBlob() && !DSC_EQUIV(result, &tfb->tfb_desc, false))
 								{
-									impure_value tempValue;
 									tempValue.vlu_desc = tfb->tfb_desc;
 
-									MoveBuffer buffer2;
-
 									if (tfb->tfb_desc.isText())
-										tempValue.vlu_desc.dsc_address = buffer2.getBuffer(tfb->tfb_desc.dsc_length);
+										tempValue.vlu_desc.dsc_address = tempBuffer.getBuffer(tfb->tfb_desc.dsc_length);
 									else
 										tempValue.vlu_desc.dsc_address = (UCHAR*) &tempValue.vlu_misc;
 
-									MOV_move(tdbb, &desc, &tempValue.vlu_desc);
-									EVL_make_value(tdbb, &tempValue.vlu_desc, &tfb->tfb_default, relation->rel_pool);
+									try
+									{
+										MOV_move(tdbb, &desc, &tempValue.vlu_desc);
+										desc = tempValue.vlu_desc;
+									}
+									catch (const status_exception&)
+									{
+										if (!tdbb->getAttachment()->isGbak())
+											throw;
+
+										// If we're restoring a database, ignore the error and use the original desc.
+										fb_utils::init_status(tdbb->tdbb_status_vector);
+									}
 								}
-								else
-									EVL_make_value(tdbb, &desc, &tfb->tfb_default, relation->rel_pool);
+
+								EVL_make_value(tdbb, &desc, &tfb->tfb_default, relation->rel_pool);
 							}
 						}
 						catch (const Exception&)
@@ -6232,13 +6243,18 @@ static void put_summary_blob(thread_db* tdbb, blb* blob, rsr_t type, bid* blob_i
 
 	// Go ahead and open blob
 	blb* blr = blb::open(tdbb, transaction, blob_id);
-	fb_assert(blr->blb_length <= MAX_USHORT);
 
-	USHORT length = (USHORT) blr->blb_length;
-	HalfStaticArray<UCHAR, 128> buffer;
+	ULONG length = blr->blb_length;
+	// We cannot deal with chunks longer than a max blob segment (minus one)
+	fb_assert(length < MAX_USHORT);
 
-	length = (USHORT) blr->BLB_get_data(tdbb, buffer.getBuffer(length), (SLONG) length);
-	put_summary_record(tdbb, blob, type, buffer.begin(), length);
+	HalfStaticArray<UCHAR, BUFFER_TINY> buffer;
+	UCHAR* p = buffer.getBuffer(length + 1);
+	*p++ = (UCHAR) type;
+
+	length = blr->BLB_get_data(tdbb, p, length);
+
+	blob->BLB_put_segment(tdbb, buffer.begin(), length + 1);
 }
 
 
@@ -6246,7 +6262,7 @@ static void put_summary_record(thread_db* tdbb,
 							   blb*		blob,
 							   rsr_t	type,
 							   const UCHAR*	data,
-							   USHORT	length)
+							   ULONG	length)
 {
 /**************************************
  *
@@ -6258,31 +6274,17 @@ static void put_summary_record(thread_db* tdbb,
  *	Put an attribute record to the relation summary blob.
  *
  **************************************/
+	// We cannot deal with chunks longer than a max blob segment (minus one)
+	fb_assert(length < MAX_USHORT);
 
 	SET_TDBB(tdbb);
 
-	fb_assert(length < MAX_USHORT); // otherwise length + 1 wraps. Or do we bugcheck???
-	UCHAR temp[129];
-
-	UCHAR* const buffer = ((size_t) (length + 1) > sizeof(temp)) ?
-		FB_NEW_POOL(*getDefaultMemoryPool()) UCHAR[length + 1] : temp;
-
-	UCHAR* p = buffer;
+	HalfStaticArray<UCHAR, BUFFER_TINY> buffer;
+	UCHAR* p = buffer.getBuffer(length + 1);
 	*p++ = (UCHAR) type;
 	memcpy(p, data, length);
 
-	try {
-		blob->BLB_put_segment(tdbb, buffer, length + 1);
-	}
-	catch (const Firebird::Exception&)
-	{
-		if (buffer != temp)
-			delete[] buffer;
-		throw;
-	}
-
-	if (buffer != temp)
-		delete[] buffer;
+	blob->BLB_put_segment(tdbb, buffer.begin(), length + 1);
 }
 
 

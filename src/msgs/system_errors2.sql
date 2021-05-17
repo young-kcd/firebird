@@ -956,8 +956,13 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (304, '01', '004', 0, 947, 'truncate_monitor', NULL, NULL)
 (304, '01', '004', 0, 948, 'truncate_context', NULL, NULL)
 (-811, '21', '000', 0, 949, 'merge_dup_update', NULL, NULL)
-(-402, '42', '000', 0, 950, 'invalid_blob_util_handle', NULL, NULL)
-(-402, '42', '000', 0, 951, 'cannot_make_blob_opened_handle', NULL, NULL)
+(-902, 'XX', '000', 0, 950, 'wrong_page', NULL, NULL)
+(-902, 'HY', '000', 0, 951, 'repl_error', NULL, NULL)
+(-902, '08', '003', 0, 952, 'ses_reset_failed', NULL, NULL)
+(-902, 'XX', '000', 0, 953, 'block_size', NULL, NULL)
+(-901, '22', '023', 0, 954, 'tom_key_length', NULL, NULL)
+(-402, '42', '000', 0, 955, 'invalid_blob_util_handle', NULL, NULL)
+(-402, '42', '000', 0, 956, 'cannot_make_blob_opened_handle', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)
@@ -1406,6 +1411,7 @@ COMMIT WORK;
 (-901, '00', '000', 22, 58, 'fbsvcmgr_info_limbo', NULL, NULL)
 (-901, '00', '000', 22, 59, 'fbsvcmgr_limbo_state', NULL, NULL)
 (-901, '00', '000', 22, 60, 'fbsvcmgr_limbo_advise', NULL, NULL)
+(-901, '00', '000', 22, 61, 'fbsvcmgr_bad_rm', NULL, NULL)
 -- UTILITIES
 (-901, '00', '000', 23, 1, 'utl_trusted_switch', NULL, NULL)
 -- NBACKUP
@@ -1450,6 +1456,7 @@ COMMIT WORK;
 (-901, '08', '006', 24, 73, 'nbackup_user_stop', NULL, NULL)
 (-901, '54', '023', 24, 75, 'nbackup_deco_parse', NULL, NULL)
 (-901, '00', '000', 24, 77, 'nbackup_lostrec_guid_db', NULL, NULL)
+(-901, '00', '000', 24, 81, 'nbackup_seq_misuse', NULL, NULL)
 -- FBTRACEMGR
 (-901, '00', '000', 25, 30, 'trace_conflict_acts', NULL, NULL)
 (-901, '00', '000', 25, 31, 'trace_act_notfound', NULL, NULL)

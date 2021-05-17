@@ -219,7 +219,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 		return STARTUP_ERROR;
 	}
 
-	const DWORD affinity = static_cast<DWORD>(Config::getCpuAffinityMask());
+	const DWORD_PTR affinity = Config::getCpuAffinityMask();
 	if (affinity)
 		SetProcessAffinityMask(GetCurrentProcess(), affinity);
 
@@ -308,7 +308,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 			iscLogException("Server error", ex);
 		}
 
-		fb_shutdown(5 * 1000 /*5 seconds*/, fb_shutrsn_no_connection);
+		fb_shutdown(10 * 1000 /*10 seconds*/, fb_shutrsn_no_connection);
 	}
 	else if (!(server_flag & SRVR_non_service))
 	{

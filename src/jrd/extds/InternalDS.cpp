@@ -173,9 +173,9 @@ void InternalConnection::attach(thread_db* tdbb)
 		FbLocalStatus status;
 		{
 			EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-			AutoPlugin<JProvider> jInstance(JProvider::getInstance());
-			jInstance->setDbCryptCallback(&status, tdbb->getAttachment()->att_crypt_callback);
-			m_attachment.assignRefNoIncr(jInstance->attachDatabase(&status, m_dbName.c_str(),
+			m_provider.reset(attachment->getProvider());
+			m_provider->addRef();
+			m_attachment.assignRefNoIncr(m_provider->attachDatabase(&status, m_dbName.c_str(),
 				newDpb.getBufferLength(), newDpb.getBuffer()));
 		}
 
@@ -245,7 +245,7 @@ bool InternalConnection::cancelExecution(bool /*forced*/)
 	return !(status->getState() & IStatus::STATE_ERRORS);
 }
 
-bool InternalConnection::resetSession()
+bool InternalConnection::resetSession(thread_db* tdbb)
 {
 	fb_assert(!m_isCurrent);
 
@@ -253,9 +253,11 @@ bool InternalConnection::resetSession()
 		return true;
 
 	FbLocalStatus status;
-	m_attachment->execute(&status, NULL, 0, "ALTER SESSION RESET",
-		m_sqlDialect, NULL, NULL, NULL, NULL);
-
+	{
+		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+		m_attachment->execute(&status, NULL, 0, "ALTER SESSION RESET",
+			m_sqlDialect, NULL, NULL, NULL, NULL);
+	}
 	return !(status->getState() & IStatus::STATE_ERRORS);
 }
 

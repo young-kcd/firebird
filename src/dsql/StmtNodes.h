@@ -1488,37 +1488,31 @@ public:
 };
 
 
-class SavePointNode : public TypedNode<StmtNode, StmtNode::TYPE_SAVEPOINT>
+class SavepointEncloseNode : public TypedNode<StmtNode, StmtNode::TYPE_SAVEPOINT>
 {
 public:
-	explicit SavePointNode(MemoryPool& pool, UCHAR aBlrOp)
+	explicit SavepointEncloseNode(MemoryPool& pool, StmtNode* stmt)
 		: TypedNode<StmtNode, StmtNode::TYPE_SAVEPOINT>(pool),
-		  blrOp(aBlrOp)
+		  statement(stmt)
 	{
-		fb_assert(blrOp == blr_start_savepoint || blrOp == blr_end_savepoint);
 	}
 
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
+	static StmtNode* make(MemoryPool& pool, DsqlCompilerScratch* dsqlScratch, StmtNode* node);
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
-	virtual SavePointNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual SavepointEncloseNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual SavePointNode* pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
-	{
-		return this;
-	}
-
-	virtual SavePointNode* pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
-	{
-		return this;
-	}
+	virtual SavepointEncloseNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual SavepointEncloseNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	UCHAR blrOp;
+	NestConst<StmtNode> statement;
 };
 
 

@@ -970,8 +970,13 @@ static const struct {
 	{335545267,  304}, /* 947 truncate_monitor */
 	{335545268,  304}, /* 948 truncate_context */
 	{335545269, -811}, /* 949 merge_dup_update */
-	{335545270, -402}, /* 950 invalid_blob_util_handle */
-	{335545271, -402}, /* 951 cannot_make_blob_opened_handle */
+	{335545270, -902}, /* 950 wrong_page */
+	{335545271, -902}, /* 951 repl_error */
+	{335545272, -902}, /* 952 ses_reset_failed */
+	{335545273, -902}, /* 953 block_size */
+	{335545274, -901}, /* 954 tom_key_length */
+	{335545275, -402}, /* 955 invalid_blob_util_handle */
+	{335545276, -402}, /* 956 cannot_make_blob_opened_handle */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */
@@ -1409,6 +1414,7 @@ static const struct {
 	{336986170, -901}, /*  58 fbsvcmgr_info_limbo */
 	{336986171, -901}, /*  59 fbsvcmgr_limbo_state */
 	{336986172, -901}, /*  60 fbsvcmgr_limbo_advise */
+	{336986173, -901}, /*  61 fbsvcmgr_bad_rm */
 	{337051649, -901}, /*   1 utl_trusted_switch */
 	{337117213, -901}, /*  29 nbackup_missing_param */
 	{337117214, -901}, /*  30 nbackup_allowed_switches */
@@ -1451,6 +1457,7 @@ static const struct {
 	{337117257, -901}, /*  73 nbackup_user_stop */
 	{337117259, -901}, /*  75 nbackup_deco_parse */
 	{337117261, -901}, /*  77 nbackup_lostrec_guid_db */
+	{337117265, -901}, /*  81 nbackup_seq_misuse */
 	{337182750, -901}, /*  30 trace_conflict_acts */
 	{337182751, -901}, /*  31 trace_act_notfound */
 	{337182752, -901}, /*  32 trace_switch_once */

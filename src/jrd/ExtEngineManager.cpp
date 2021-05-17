@@ -603,8 +603,6 @@ ExtEngineManager::ExternalContextImpl::ExternalContextImpl(thread_db* tdbb,
 
 	clientCharSet = INTL_charset_lookup(tdbb, internalAttachment->att_client_charset)->getName();
 
-	internalAttachment->getStable()->addRef();
-
 	externalAttachment = MasterInterfacePtr()->registerAttachment
 		(internalAttachment->getProvider(), internalAttachment->getInterface());
 }
@@ -1131,17 +1129,6 @@ namespace
 		{
 		}
 
-		int release() override
-		{
-			if (--refCounter == 0)
-			{
-				delete this;
-				return 0;
-			}
-
-			return 1;
-		}
-
 	public:
 		void open(ThrowStatusExceptionWrapper* status, IExternalContext* context,
 			char* name, unsigned nameSize) override
@@ -1235,22 +1222,22 @@ ExtEngineManager::ExtEngineManager(MemoryPool& p)
 
 void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 {
-	Array<IExternalEngine*> enginesCopy;
+	EnginesMap enginesCopy;
 
 	{	// scope
 		ReadLockGuard readGuard(enginesLock, FB_FUNCTION);
 
 		EnginesMap::Accessor accessor(&engines);
 		for (bool found = accessor.getFirst(); found; found = accessor.getNext())
-			enginesCopy.add(accessor.current()->second);
+			enginesCopy.put(accessor.current()->first, accessor.current()->second);
 	}
 
-	RefDeb(DEB_RLS_JATT, "ExtEngineManager::closeAttachment");
 	EngineCheckout cout(tdbb, FB_FUNCTION, true);
 
-	for (Array<IExternalEngine*>::iterator i = enginesCopy.begin(); i != enginesCopy.end(); ++i)
+	EnginesMap::Accessor accessor(&enginesCopy);
+	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 	{
-		IExternalEngine* engine = *i;
+		IExternalEngine* engine = accessor.current()->second;
 		EngineAttachmentInfo* attInfo = getEngineAttachment(tdbb, engine, true);
 
 		if (attInfo)
@@ -1259,7 +1246,27 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 				ContextManager<IExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
 				FbLocalStatus status;
 				engine->closeAttachment(&status, attInfo->context);	//// FIXME: log status
-				engine->release();
+
+				// Check whether the engine is used by other attachments. 
+				// If no one uses, release it.
+				bool close = true;
+				WriteLockGuard writeGuard(enginesLock, FB_FUNCTION);
+
+				EnginesAttachmentsMap::Accessor ea_accessor(&enginesAttachments);
+				for (bool ea_found = ea_accessor.getFirst(); ea_found; ea_found = ea_accessor.getNext())
+				{
+					if (ea_accessor.current()->first.engine == engine)
+					{
+						close = false; // engine is in use, no need to release
+						break;
+					}
+				}
+
+				if (close)
+				{										
+					if (engines.remove(accessor.current()->first)) // If engine has already been deleted - nothing to do
+						engine->release();
+				}
 			}
 
 			delete attInfo;

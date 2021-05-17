@@ -517,6 +517,7 @@ namespace Jrd
 		static const USHORT FLAG_PROJECT	= 0x1;	// sort is really a project
 		static const USHORT FLAG_UNIQUE		= 0x2;	// sorts using unique key - for distinct and group by
 		static const USHORT FLAG_KEY_VARY	= 0x4;	// sort key contains varying length string(s)
+		static const USHORT FLAG_REFETCH	= 0x8;	// refetch data after sorting
 
 		// Special values for SortMap::Item::fieldId.
 		static const SSHORT ID_DBKEY		= -1;	// dbkey value
@@ -598,6 +599,19 @@ namespace Jrd
 
 		UCHAR* getData(thread_db* tdbb) const;
 		void mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const;
+
+		bool isKey(const dsc* desc) const
+		{
+			return ((ULONG)(IPTR) desc->dsc_address < m_map->keyLength);
+		}
+
+		static bool hasVolatileKey(const dsc* desc)
+		{
+			// International type text has a computed key.
+			// Different decimal float values sometimes have same keys.
+			// The same for date/time with time zones.
+			return (IS_INTL_DATA(desc) || desc->isDecFloat() || desc->isDateTimeTz());
+		}
 
 	private:
 		Sort* init(thread_db* tdbb) const;

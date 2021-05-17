@@ -36,6 +36,9 @@ if errorlevel 1 call :ERROR build failed - see make_all_%FB_TARGET_PLATFORM%.log
 @del %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\*.lib 2>nul
 @rmdir /q /s %FB_OUTPUT_DIR% 2>nul
 
+:: short delay to let OS complete actions by rmdir above
+@timeout 1 >nul
+
 @mkdir %FB_OUTPUT_DIR% 2>nul
 @mkdir %FB_OUTPUT_DIR%\intl 2>nul
 @mkdir %FB_OUTPUT_DIR%\tzdata 2>nul

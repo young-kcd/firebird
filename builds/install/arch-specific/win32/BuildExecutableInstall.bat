@@ -170,7 +170,7 @@ set FBBUILD_PROD_STATUS=PROD
 set FBBUILD_PROD_STATUS=DEV
 )
 
-set FBBUILD_FILE_ID=%PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_%FB_TARGET_PLATFORM%
+set FBBUILD_FILE_ID=%PRODUCT_VER_STRING%_%FBBUILD_PACKAGE_NUMBER%_%FB_TARGET_PLATFORM%
 
 @setlocal
 @echo.
@@ -266,11 +266,13 @@ if "%VSCMD_ARG_TGT_ARCH%"=="x86" (
 
 
 :: Various upgrade scripts and docs
-mkdir %FB_OUTPUT_DIR%\misc\upgrade\security 2>nul
-@copy %FB_ROOT_PATH%\src\misc\upgrade\v3.0\security_* %FB_OUTPUT_DIR%\misc\upgrade\security > nul
-@if %ERRORLEVEL% GEQ 1 (
-  call :ERROR copy %FB_ROOT_PATH%\src\misc\upgrade\v3.0\security_* %FB_OUTPUT_DIR%\misc\upgrade\security failed with error %ERRORLEVEL%.
-  goto :EOF
+for %%d in ( v3.0 v4.0 ) do (
+    mkdir %FB_OUTPUT_DIR%\misc\upgrade\%%d 2>nul
+    @copy %FB_ROOT_PATH%\src\misc\upgrade\%%d\*.* %FB_OUTPUT_DIR%\misc\upgrade\%%d > nul
+    @if %ERRORLEVEL% GEQ 1 (
+        call :ERROR copy %FB_ROOT_PATH%\src\misc\upgrade\%%d\*.* %FB_OUTPUT_DIR%\misc\upgrade\%%d failed with error %ERRORLEVEL%.
+        goto :EOF
+    )
 )
 
 :: INTL script
@@ -301,11 +303,28 @@ mkdir %FB_OUTPUT_DIR%\misc\upgrade\security 2>nul
 :: an error if FB_EXTERNAL_DOCS is not defined. On the other hand,
 :: if the docs are available then we can include them.
 if defined FB_EXTERNAL_DOCS (
-@echo   Copying pdf docs...
-@for %%v in ( Firebird-%FB_MAJOR_VER%.%FB_MINOR_VER%-QuickStart.pdf Firebird_v%FB_MAJOR_VER%.%FB_MINOR_VER%.%FB_REV_NO%.ReleaseNotes.pdf ) do (
-  @echo     ... %%v
-  (@copy /Y %FB_EXTERNAL_DOCS%\%%v %FB_OUTPUT_DIR%\doc\%%v > nul) || (call :WARNING Copying %FB_EXTERNAL_DOCS%\%%v failed.)
-)
+    @echo   Copying pdf docs...
+    @for %%v in ( Firebird_v%FB_MAJOR_VER%.%FB_MINOR_VER%.%FB_REV_NO%.ReleaseNotes.pdf ) do (
+        @echo     ... %%v
+        @copy /Y %FB_EXTERNAL_DOCS%\%%v %FB_OUTPUT_DIR%\doc\%%v > nul
+        if %ERRORLEVEL% GEQ 1 (call :ERROR Copying %FB_EXTERNAL_DOCS%\%%v failed.)
+    )
+
+    @for %%v in ( Firebird-%FB_MAJOR_VER%.%FB_MINOR_VER%-QuickStart.pdf  ) do (
+        @echo     ... %%v
+        @copy /Y %FB_EXTERNAL_DOCS%\%%v %FB_OUTPUT_DIR%\doc\%%v > nul
+        if %ERRORLEVEL% GEQ 1 (
+            REM - As of RC1 there is no quick start guide so we do not want
+            REM   the packaging to fail for something that doesn't exist
+            if "%FBBUILD_FILENAME_SUFFIX%" == "_RC1" (
+                echo Copying %FB_EXTERNAL_DOCS%\%%v failed.
+            ) else (
+                call :ERROR Copying %FB_EXTERNAL_DOCS%\%%v failed.
+            )
+        )
+    )
+
+
 @echo   Finished copying pdf docs...
 @echo.
 )
@@ -481,7 +500,7 @@ if exist %FBBUILD_ZIPFILE% (
   @del %FBBUILD_ZIPFILE%
 )
 
-%SEVENZIP%\7z.exe a -r -tzip -mx9 %SKIP_FILES% %FBBUILD_ZIPFILE% %FB_OUTPUT_DIR%\*.*
+%SEVENZIP%\7z.exe a -r -tzip -mx9 %SKIP_FILES% %FBBUILD_ZIPFILE% %FB_OUTPUT_DIR%\*
 
 endlocal
 
@@ -742,6 +761,6 @@ if %FBBUILD_ISX_PACK% EQU 1 (
 
 :END
 
-exit /b
+exit /b %ERRLEV%
 
 

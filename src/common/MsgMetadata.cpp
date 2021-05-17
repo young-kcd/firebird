@@ -44,17 +44,6 @@ MetadataBuilder::MetadataBuilder(unsigned fieldCount)
 		msgMetadata->items.grow(fieldCount);
 }
 
-int MetadataBuilder::release()
-{
-	if (--refCounter != 0)
-	{
-		return 1;
-	}
-
-	delete this;
-	return 0;
-}
-
 void MetadataBuilder::setType(CheckStatusWrapper* status, unsigned index, unsigned type)
 {
 	try
@@ -451,29 +440,5 @@ void MsgMetadata::assign(IMessageMetadata* from)
 
 	makeOffsets();
 }
-
-
-int MsgMetadata::release()
-{
-	if (--refCounter != 0)
-	{
-		return 1;
-	}
-
-	delete this;
-	return 0;
-}
-
-/*
-int AttMetadata::release()
-{
-	if (--refCounter != 0)
-	{
-		return 1;
-	}
-
-	delete this;
-	return 0;
-}*/
 
 }	// namespace Firebird

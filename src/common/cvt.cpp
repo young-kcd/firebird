@@ -114,14 +114,14 @@ using namespace Firebird;
  * less than the number of bits in the type: one bit is for the sign,
  * and the other is because we divide by 5, rather than 10.  */
 
-#define SHORT_LIMIT     ((1 << 14) / 5)
-#define LONG_LIMIT      ((1L << 30) / 5)
+const SSHORT SHORT_LIMIT = ((1 << 14) / 5);
+const SLONG LONG_LIMIT = ((1L << 30) / 5);
 
 // NOTE: The syntax for the below line may need modification to ensure
 // the result of 1 << 62 is a quad
 
 //#define QUAD_LIMIT      ((((SINT64) 1) << 62) / 5)
-#define INT64_LIMIT     ((((SINT64) 1) << 62) / 5)
+const SINT64 INT64_LIMIT = ((((SINT64) 1) << 62) / 5);
 
 #define TODAY           "TODAY"
 #define NOW             "NOW"
@@ -139,6 +139,7 @@ static void decimal_float_to_text(const dsc*, dsc*, DecimalStatus, Callbacks*);
 static void integer_to_text(const dsc*, dsc*, Callbacks*);
 static void int128_to_text(const dsc*, dsc*, Callbacks* cb);
 static void localError(const Firebird::Arg::StatusVector&);
+static SSHORT cvt_get_short(const dsc* desc, SSHORT scale, DecimalStatus decSt, ErrorFunction err);
 
 class DummyException {};
 
@@ -473,7 +474,7 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 		} while (++scale);
 	}
 
-	length = cb->validateLength(cb->getToCharset(to->getCharSet()), length, start, TEXT_LEN(to));
+	length = cb->validateLength(cb->getToCharset(to->getCharSet()), to->getCharSet(), length, start, TEXT_LEN(to));
 
 	// If padding is required, do it now.
 
@@ -682,17 +683,30 @@ void CVT_string_to_datetime(const dsc* desc,
 					}
 
 					// fetch the current datetime
-					*(ISC_TIMESTAMP*) date = Firebird::TimeStamp::getCurrentTimeStamp().value();
+					*date = TimeZoneUtil::getCurrentGmtTimeStamp();
+					date->time_zone = cb->getSessionTimeZone();
 
-					if (expect_type == expect_sql_time_tz || expect_type == expect_timestamp_tz)
-						date->time_zone = cb->getSessionTimeZone();
+					switch (expect_type)
+					{
+						case expect_sql_time_tz:
+							date->utc_timestamp.timestamp_time =
+								TimeZoneUtil::timeStampTzToTimeTz(*date).utc_time;
+							break;
+
+						case expect_sql_date:
+						case expect_sql_time:
+						case expect_timestamp:
+							// Not really UTC.
+							date->utc_timestamp = TimeZoneUtil::timeStampTzToTimeStamp(
+								*date, cb->getSessionTimeZone());
+							break;
+
+						case expect_timestamp_tz:
+							break;
+					}
 
 					if (strcmp(temp, NOW) == 0)
-					{
-						if (expect_type == expect_sql_time_tz || expect_type == expect_timestamp_tz)
-							TimeZoneUtil::localTimeStampToUtc(*date);
 						return;
-					}
 
 					if (expect_type == expect_sql_time || expect_type == expect_sql_time_tz)
 					{
@@ -702,21 +716,18 @@ void CVT_string_to_datetime(const dsc* desc,
 
 					date->utc_timestamp.timestamp_time = 0;
 
-					if (expect_type == expect_sql_time_tz || expect_type == expect_timestamp_tz)
-						TimeZoneUtil::localTimeStampToUtc(*date);
-
 					if (strcmp(temp, TODAY) == 0)
 						return;
 
 					if (strcmp(temp, TOMORROW) == 0)
 					{
-						date->utc_timestamp.timestamp_date++;
+						++date->utc_timestamp.timestamp_date;
 						return;
 					}
 
 					if (strcmp(temp, YESTERDAY) == 0)
 					{
-						date->utc_timestamp.timestamp_date--;
+						--date->utc_timestamp.timestamp_date;
 						return;
 					}
 
@@ -741,9 +752,14 @@ void CVT_string_to_datetime(const dsc* desc,
 
 		components[i] = n;
 
+		bool hadSpace = false;
+
 		// Grab whitespace following the number
 		while (p < end && (*p == ' ' || *p == '\t'))
+		{
 			p++;
+			hadSpace = true;
+		}
 
 		if (p == end)
 			break;
@@ -751,18 +767,16 @@ void CVT_string_to_datetime(const dsc* desc,
 		// Grab a separator character
 		if (i <= 1)
 		{
-			if (date_sep == '\0' || *p == date_sep)
+			if (date_sep == '\0' || (date_sep != ' ' && *p == date_sep) || (date_sep == ' ' && hadSpace))
 			{
-				date_sep = *p;
-
-				if (*p == '/' || *p == '-')
+				if (date_sep != ' ' && (*p == '/' || *p == '-' || *p == '.'))
 				{
-					p++;
+					date_sep = *p++;
 					continue;
 				}
-				else if (*p == '.')
+				else if (hadSpace)
 				{
-					p++;
+					date_sep = ' ';
 					continue;
 				}
 			}
@@ -1017,6 +1031,72 @@ void CVT_string_to_datetime(const dsc* desc,
 }
 
 
+template <typename V>
+void adjustForScale(V& val, SSHORT scale, const V limit, ErrorFunction err)
+{
+	if (scale > 0)
+	{
+		int fraction = 0;
+		do {
+			if (scale == 1)
+				fraction = int(val % 10);
+			val /= 10;
+		} while (--scale);
+
+		if (fraction > 4)
+			val++;
+		// The following 2 lines are correct for platforms where
+		// ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
+		// a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
+		// we'll have to change this depending on the platform.
+		else if (fraction < -4)
+			val--;
+	}
+	else if (scale < 0)
+	{
+		do {
+			if ((val > limit) || (val < -limit))
+				err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+			val *= 10;
+		} while (++scale);
+	}
+}
+
+
+static SSHORT cvt_get_short(const dsc* desc, SSHORT scale, DecimalStatus decSt, ErrorFunction err)
+{
+/**************************************
+ *
+ *      C V T _ g e t _ s h o r t
+ *
+ **************************************
+ *
+ * Functional description
+ *      Convert something arbitrary to a short (16 bit) integer of given
+ *      scale.
+ *
+ **************************************/
+	SSHORT value;
+
+	if (desc->isText())
+	{
+		VaryStr<20> buffer;			// long enough to represent largest short in ASCII
+		const char* p;
+		USHORT length = CVT_make_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer), decSt, err);
+		scale -= CVT_decompose(p, length, &value, err);
+
+		adjustForScale(value, scale, SHORT_LIMIT, err);
+	}
+	else {
+		ULONG lval = CVT_get_long(desc, scale, decSt, err);
+		value = (SSHORT) lval;
+		if (value != SLONG(lval))
+			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+	}
+
+	return value;
+}
+
 SLONG CVT_get_long(const dsc* desc, SSHORT scale, DecimalStatus decSt, ErrorFunction err)
 {
 /**************************************
@@ -1058,32 +1138,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, DecimalStatus decSt, ErrorFunc
 		val64 = *((SINT64 *) p);
 
 		// adjust for scale first, *before* range-checking the value.
-		if (scale > 0)
-		{
-			SLONG fraction = 0;
-			do {
-				if (scale == 1)
-					fraction = SLONG(val64 % 10);
-				val64 /= 10;
-			} while (--scale);
-			if (fraction > 4)
-				val64++;
-			// The following 2 lines are correct for platforms where
-			// ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
-			// a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
-			// we'll have to change this depending on the platform.
-			else if (fraction < -4)
-				val64--;
-		}
-		else if (scale < 0)
-		{
-			do {
-				if ((val64 > INT64_LIMIT) || (val64 < -INT64_LIMIT))
-					err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-				val64 *= 10;
-			} while (++scale);
-		}
-
+		adjustForScale(val64, scale, INT64_LIMIT, err);
 		if ((val64 > LONG_MAX_int64) || (val64 < LONG_MIN_int64))
 			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 		return (SLONG) val64;
@@ -1165,33 +1220,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, DecimalStatus decSt, ErrorFunc
 	}
 
 	// Last, but not least, adjust for scale
-
-	if (scale > 0)
-	{
-		SLONG fraction = 0;
-		do {
-			if (scale == 1)
-				fraction = value % 10;
-			value /= 10;
-		} while (--scale);
-
-		if (fraction > 4)
-			value++;
-		// The following 2 lines are correct for platforms where
-		// ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
-		// a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
-		// we'll have to change this depending on the platform.
-		else if (fraction < -4)
-			value--;
-	}
-	else if (scale < 0)
-	{
-		do {
-			if (value > LONG_LIMIT || value < -LONG_LIMIT)
-				err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-			value *= 10;
-		} while (++scale);
-	}
+	adjustForScale(value, scale, LONG_LIMIT, err);
 
 	return value;
 }
@@ -1827,95 +1856,56 @@ void CVT_move_common(const dsc* from, dsc* to, DecimalStatus decSt, Callbacks* c
 				if (cb->transliterate(from, to, charset2))
 					return;
 
-				ULONG len;
-
 				{ // scope
 					USHORT strtype_unused;
 					UCHAR *ptr;
-					length = len = CVT_get_string_ptr_common(from, &strtype_unused, &ptr, NULL, 0, decSt, cb);
+					length = CVT_get_string_ptr_common(from, &strtype_unused, &ptr, NULL, 0, decSt, cb);
 					q = ptr;
 				} // end scope
 
 				const USHORT to_size = TEXT_LEN(to);
-				UCHAR fill_char = ASCII_SPACE;
 				Jrd::CharSet* toCharset = cb->getToCharset(charset2);
 
-				switch (to->dsc_dtype)
-				{
-				case dtype_text:
-					length = MIN(length, to->dsc_length);
-					break;
-
-				case dtype_cstring:
-					// Note: Following is only correct for narrow and
-					// multibyte character sets which use a zero
-					// byte to represent end-of-string
-
-					fb_assert(to->dsc_length > 0);
-					length = MIN(length, ULONG(to->dsc_length - 1));
-					break;
-
-				case dtype_varying:
-					length = to->dsc_length > sizeof(USHORT) ?
-						MIN(length, (ULONG(to->dsc_length) - sizeof(USHORT))) : 0;
-					break;
-				}
-
 				cb->validateData(toCharset, length, q);
-				ULONG toLength = cb->validateLength(toCharset, length, q, to_size);
-				len -= toLength;
-				ULONG fill = ULONG(to->dsc_length) - toLength;
-
-				if (charset2 == ttype_binary)
-					fill_char = 0x00;
+				ULONG toLength = cb->validateLength(toCharset, charset2, length, q, to_size);
 
 				switch (to->dsc_dtype)
 				{
-				case dtype_text:
-					CVT_COPY_BUFF(q, p, toLength);
-					if (fill > 0)
+					case dtype_text:
 					{
-						memset(p, fill_char, fill);
-						p += fill;
-						// Note: above is correct only for narrow
-						// and multi-byte character sets which
-						// use ASCII for the SPACE character.
-					}
-					break;
-
-				case dtype_cstring:
-					CVT_COPY_BUFF(q, p, toLength);
-					*p = 0;
-					break;
-
-				case dtype_varying:
-					if (to->dsc_length > sizeof(USHORT))
-					{
-						// TMN: Here we should really have the following fb_assert
-						// fb_assert(length <= MAX_USHORT);
-						((vary*) p)->vary_length = (USHORT) toLength;
-						p = reinterpret_cast<UCHAR*>(((vary*) p)->vary_string);
+						ULONG fill = ULONG(to->dsc_length) - toLength;
 						CVT_COPY_BUFF(q, p, toLength);
-					}
-					else
-						memset(to->dsc_address, 0, to->dsc_length);		// the best we can do
-					break;
-				}
 
-				if (len && toLength == length)
-				{
-					// Scan the truncated string to ensure only spaces lost
-					// Warning: it is correct only for narrow and multi-byte
-					// character sets which use ASCII or NULL for the SPACE character
-
-					do {
-						if (*q++ != fill_char && toLength == length)
+						if (fill > 0)
 						{
-							cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
-									Arg::Gds(isc_trunc_limits) <<
-										Arg::Num(to->getStringLength()) << Arg::Num(from->getStringLength()));
+							fb_assert(!toCharset || toCharset->getSpaceLength() == 1);
+							UCHAR fillChar = toCharset ?
+								*toCharset->getSpace() :
+								(charset2 == ttype_binary ? 0x00 : ASCII_SPACE);
+
+							memset(p, fillChar, fill);
+							p += fill;
 						}
-					} while (--len);
+						break;
+					}
+
+					case dtype_cstring:
+						CVT_COPY_BUFF(q, p, toLength);
+						*p = 0;
+						break;
+
+					case dtype_varying:
+						if (to->dsc_length > sizeof(USHORT))
+						{
+							// TMN: Here we should really have the following fb_assert
+							// fb_assert(length <= MAX_USHORT);
+							((vary*) p)->vary_length = (USHORT) toLength;
+							p = reinterpret_cast<UCHAR*>(((vary*) p)->vary_string);
+							CVT_COPY_BUFF(q, p, toLength);
+						}
+						else
+							memset(to->dsc_address, 0, to->dsc_length);		// the best we can do
+						break;
 				}
 			}
 			return;
@@ -1995,14 +1985,7 @@ void CVT_move_common(const dsc* from, dsc* to, DecimalStatus decSt, Callbacks* c
 		return;
 
 	case dtype_short:
-		{
-			ULONG lval = CVT_get_long(from, (SSHORT) to->dsc_scale, decSt, cb->err);
-			// TMN: Here we should really have the following fb_assert
-			// fb_assert(lval <= MAX_SSHORT);
-			*(SSHORT*) p = (SSHORT) lval;
-			if (*(SSHORT*) p != SLONG(lval))
-				cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-		}
+		*(SSHORT *) p = cvt_get_short(from, (SSHORT) to->dsc_scale, decSt, cb->err);
 		return;
 
 	case dtype_long:
@@ -2026,7 +2009,7 @@ void CVT_move_common(const dsc* from, dsc* to, DecimalStatus decSt, Callbacks* c
 	case dtype_real:
 		{
 			double d_value = CVT_get_double(from, decSt, cb->err);
-			if (ABSOLUT(d_value) > FLOAT_MAX)
+			if (ABSOLUT(d_value) > FLOAT_MAX && ABSOLUT(d_value) != INFINITY)
 				cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 			*(float*) p = (float) d_value;
 		}
@@ -2249,7 +2232,7 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 		else
 		{
 			// Prior to BLR version 5 timestamps were converted to text in the dd-MMM-yyyy format
-			sprintf(p, "%d-%.3s-%d",
+			sprintf(p, "%2.2d-%.3s-%4.4d",
 					times.tm_mday,
 					FB_LONG_MONTHS_UPPER[times.tm_mon], times.tm_year + 1900);
 		}
@@ -2777,6 +2760,33 @@ private:
 };
 
 
+class SSHORTTraits
+{
+public:
+	typedef SSHORT ValueType;
+	static const SSHORT UPPER_LIMIT_BY_10 = MAX_SSHORT / 10;
+	static const SSHORT LOWER_LIMIT = MIN_SSHORT;
+};
+
+SSHORT CVT_decompose(const char* str, USHORT len, SSHORT* val, ErrorFunction err)
+{
+/**************************************
+ *
+ *      d e c o m p o s e
+ *
+ **************************************
+ *
+ * Functional description
+ *      Decompose a numeric string in mantissa and exponent,
+ *      or if it is in hexadecimal notation.
+ *
+ **************************************/
+
+	RetValue<SSHORTTraits> value(val);
+	return cvt_decompose(str, len, &value, err);
+}
+
+
 class SLONGTraits
 {
 public:
@@ -2859,6 +2869,16 @@ SSHORT CVT_decompose(const char* str, USHORT len, Int128* val, ErrorFunction err
 
 	RetValue<I128Traits> value(val);
 	return cvt_decompose(str, len, &value, err);
+}
+
+
+Int128 CVT_hex_to_int128(const char* str, USHORT len)
+{
+	Int128 val;
+	RetValue<I128Traits> value(&val);
+	hex_to_value(str, str + len, &value);
+
+	return val;
 }
 
 
@@ -3512,32 +3532,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, DecimalStatus decSt, ErrorFu
 	}
 
 	// Last, but not least, adjust for scale
-
-	if (scale > 0)
-	{
-		SLONG fraction = 0;
-		do {
-			if (scale == 1)
-				fraction = (SLONG) (value % 10);
-			value /= 10;
-		} while (--scale);
-		if (fraction > 4)
-			value++;
-		// The following 2 lines are correct for platforms where
-		// (-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
-		// a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
-		// we'll have to change this depending on the platform.
-		else if (fraction < -4)
-			value--;
-	}
-	else if (scale < 0)
-	{
-		do {
-			if (value > INT64_LIMIT || value < -INT64_LIMIT)
-				err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-			value *= 10;
-		} while (++scale);
-	}
+	adjustForScale(value, scale, INT64_LIMIT, err);
 
 	return value;
 }
@@ -3553,7 +3548,7 @@ static void hex_to_value(const char*& string, const char* end, RetPtr* retValue)
  * Functional description
  *      Convert a hex string to a numeric value. This code only
  *      converts a hex string into a numeric value, and the
- *      biggest hex string supported must fit into a BIGINT.
+ *      size of biggest hex string depends upon RetPtr.
  *
  *************************************/
 {
@@ -3614,8 +3609,8 @@ namespace
 		virtual CHARSET_ID getChid(const dsc* d);
 		virtual Jrd::CharSet* getToCharset(CHARSET_ID charset2);
 		virtual void validateData(Jrd::CharSet* toCharset, SLONG length, const UCHAR* q);
-		virtual ULONG validateLength(Jrd::CharSet* toCharset, ULONG toLength, const UCHAR* start,
-			const USHORT to_size);
+		virtual ULONG validateLength(Jrd::CharSet* charSet, CHARSET_ID charSetId, ULONG length, const UCHAR* start,
+			const USHORT size);
 		virtual SLONG getLocalDate();
 		virtual ISC_TIMESTAMP getCurrentGmtTimeStamp();
 		virtual USHORT getSessionTimeZone();
@@ -3637,9 +3632,32 @@ namespace
 	{
 	}
 
-	ULONG CommonCallbacks::validateLength(Jrd::CharSet*, ULONG l, const UCHAR*, const USHORT)
+	ULONG CommonCallbacks::validateLength(Jrd::CharSet* charSet, CHARSET_ID charSetId, ULONG length, const UCHAR* start,
+		const USHORT size)
 	{
-		return l;
+		if (length > size)
+		{
+			fb_assert(!charSet || (!charSet->isMultiByte() && charSet->getSpaceLength() == 1));
+			UCHAR fillChar = charSet ?
+				*charSet->getSpace() :
+				(charSetId == ttype_binary ? 0x00 : ASCII_SPACE);
+
+			const UCHAR* p = start + size;
+
+			// Scan the truncated string to ensure only spaces lost
+
+			while (p < start + length)
+			{
+				if (*p++ != fillChar)
+				{
+					err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
+						Arg::Gds(isc_trunc_limits) <<
+							Arg::Num(size) << Arg::Num(length));
+				}
+			}
+		}
+
+		return MIN(length, size);
 	}
 
 	CHARSET_ID CommonCallbacks::getChid(const dsc* d)

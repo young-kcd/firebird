@@ -1000,7 +1000,7 @@ Data source : @4', NULL, NULL)
 ('plugin_name', NULL, 'CryptoManager.cpp', NULL, 0, 890, NULL, 'Plugin @1:', NULL, NULL);
 ('parameter_name', 'ProcedureManager::checkDependencies', 'dfw.e', NULL, 0, 891, NULL, 'PARAMETER @1', NULL, NULL);
 ('file_starting_page_err', 'add_file', 'dfw.epp', NULL, 0, 892, NULL, 'Starting page number for file @1 must be @2 or greater', NULL, NULL);
-('invalid_timezone_offset', NULL, 'TimeZoneUtil.cpp', NULL, 0, 893, NULL, 'Invalid time zone offset: @1 - must be between -14:00 and +14:00', NULL, NULL);
+('invalid_timezone_offset', NULL, 'TimeZoneUtil.cpp', NULL, 0, 893, NULL, 'Invalid time zone offset: @1 - must use format +/-hours:minutes and be between -14:00 and +14:00', NULL, NULL);
 ('invalid_timezone_region', NULL, 'TimeZoneUtil.cpp', NULL, 0, 894, NULL, 'Invalid time zone region: @1', NULL, NULL);
 ('invalid_timezone_id', NULL, 'TimeZoneUtil.cpp', NULL, 0, 895, NULL, 'Invalid time zone ID: @1', NULL, NULL);
 ('tom_decode64len', NULL, 'SysFunction.cpp', NULL, 0, 896, NULL, 'Wrong base64 text length @1, should be multiple of 4', NULL, NULL);
@@ -1057,8 +1057,13 @@ Data source : @4', NULL, NULL)
 ('truncate_monitor', NULL, 'Monitoring.cpp', NULL, 0, 947, NULL, 'Monitoring data does not fit into the field', NULL, NULL);
 ('truncate_context', NULL, 'SysFunction.cpp', NULL, 0, 948, NULL, 'Engine data does not fit into return value of system function', NULL, NULL);
 ('merge_dup_update', NULL, 'StmtNodes.cpp', NULL, 0, 949, NULL, 'Multiple source records cannot match the same target during MERGE', NULL, NULL);
-('invalid_blob_util_handle', NULL, 'BlobUtil.cpp', NULL, 0, 950, NULL, 'Invalid RDB$BLOB_UTIL handle', NULL, NULL);
-('cannot_make_blob_opened_handle', NULL, 'BlobUtil.cpp', NULL, 0, 951, NULL, 'Cannot make a BLOB from an opened RDB$BLOB_UTIL handle', NULL, NULL);
+('wrong_page', 'get_header', 'dpm.epp', NULL, 0, 950, NULL, 'RDB$PAGES written by non-system transaction, DB appears to be damaged', NULL, NULL);
+('repl_error', 'checkStatus', 'Publisher.cpp', NULL, 0, 951, NULL, 'Replication error', NULL, NULL);
+('ses_reset_failed', NULL, 'Attachment.cpp', NULL, 0, 952, NULL, 'Reset of user session failed. Connection is shut down.', NULL, NULL);
+('block_size', NULL, 'unix.cpp', NULL, 0, 953, NULL, 'File size is less than expected', NULL, NULL);
+('tom_key_length', NULL, 'SysFunction.cpp', NULL, 0, 954, NULL, 'Invalid key length @1, need >@2', NULL, NULL);
+('invalid_blob_util_handle', NULL, 'BlobUtil.cpp', NULL, 0, 955, NULL, 'Invalid RDB$BLOB_UTIL handle', NULL, NULL);
+('cannot_make_blob_opened_handle', NULL, 'BlobUtil.cpp', NULL, 0, 956, NULL, 'Cannot make a BLOB from an opened RDB$BLOB_UTIL handle', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
@@ -2573,6 +2578,8 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'get_publication', 'restore.epp', NULL, 12, 400, NULL, 'publication', NULL, NULL);
 (NULL, 'get_pub_table', 'restore.epp', NULL, 12, 401, NULL, 'restoring publication for table @1', NULL, NULL);
 (NULL, 'get_pub_table', 'restore.epp', NULL, 12, 402, NULL, 'publication for table', NULL, NULL);
+('gbak_opt_replica', 'burp_usage', 'burp.c', NULL, 12, 403, NULL, '    @1REPLICA <mode>      "none", "read_only" or "read_write" replica mode', NULL, NULL);
+('gbak_replica_req', 'BURP_gbak', 'burp.c', NULL, 12, 404, NULL, '"none", "read_only" or "read_write" required', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);
@@ -3034,7 +3041,6 @@ COMMIT WORK;
 (NULL, 'CMP_get_desc', 'cmp.cpp', NULL, 15, 306, NULL, 'Found array data type with more than 16 dimensions', NULL, NULL);
 -- Do not change the arguments of the previous JRD_BUGCHK messages.
 -- Write the new JRD_BUGCHK messages here.
-(NULL, 'get_header', 'dpm.epp', NULL, 15, 307, NULL, 'RDB$PAGES written by non-system transaction, DB appears to be damaged', NULL, NULL);
 -- ISQL
 ('GEN_ERR', 'errmsg', 'isql.e', NULL, 17, 0, NULL, 'Statement failed, SQLSTATE = @1', NULL, NULL);
 ('USAGE', 'ISQL_main', 'isql.epp', NULL, 17, 1, NULL, 'usage:    isql [options] [<database>]', NULL, NULL);
@@ -3511,6 +3517,7 @@ Analyzing database pages ...', NULL, NULL);
 ('fbsvcmgr_info_limbo', 'printInfo', 'fbsvcmgr.cpp', NULL, 22, 58, NULL, 'Unknown tag (@1) in isc_info_svc_limbo_trans block after isc_svc_query()', NULL, NULL);
 ('fbsvcmgr_limbo_state', 'printInfo', 'fbsvcmgr.cpp', NULL, 22, 59, NULL, 'Unknown tag (@1) in isc_spb_tra_state block after isc_svc_query()', NULL, NULL);
 ('fbsvcmgr_limbo_advise', 'printInfo', 'fbsvcmgr.cpp', NULL, 22, 60, NULL, 'Unknown tag (@1) in isc_spb_tra_advise block after isc_svc_query()', NULL, NULL);
+('fbsvcmgr_bad_rm', 'putReplicaMode', 'fbsvcmgr.cpp', NULL, 22, 61, NULL, 'Wrong value for replica mode', NULL, NULL);
 -- UTL (messages common for many utilities)
 -- All messages use the new format.
 ('utl_trusted_switch', 'checkService', 'UtilSvc.cpp', NULL, 23, 1, NULL, 'Switches trusted_user and trusted_role are not supported from command line', NULL, NULL);
@@ -3594,7 +3601,9 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 76, NULL, '  -RO(LE) <role>                         SQL role name', NULL, NULL)
 ('nbackup_lostrec_guid_db', 'NBackup::backup_database', 'nbackup.cpp', NULL, 24, 77, NULL, 'Cannot find record for database "@1" backup GUID @2 in the backup history', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 78, NULL, '  -I(NPLACE)                             Restore incremental backup(s) to existing database', NULL, NULL)
-(NULL, 'usage', 'nbackup.cpp', NULL, 24, 79, NULL, '  -INPLACE option could corrupt the database that has changed since previous restore', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 79, NULL, '  -INPLACE option could corrupt the database that has changed since previous restore.', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 80, NULL, '  -SEQ(UENCE)                            Preserve original replication sequence', NULL, NULL)
+('nbackup_seq_misuse', 'nbackup', 'nbackup.cpp', NULL, 24, 81, NULL, 'Switch -SEQ(UENCE) can be used only with -FIXUP or -RESTORE', NULL, NULL)
 -- FBTRACEMGR
 -- All messages use the new format.
 (NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 1, NULL, 'Firebird Trace Manager version @1', NULL, NULL)

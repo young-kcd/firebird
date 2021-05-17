@@ -37,7 +37,6 @@
 namespace Jrd {
 
 class Database;
-class Attachment;
 class thread_db;
 
 // Lock types
@@ -89,6 +88,7 @@ class Lock : public pool_alloc_rpt<UCHAR, type_lck>
 {
 public:
 	Lock(thread_db* tdbb, USHORT length, lck_t type, void* object = NULL, lock_ast_t ast = NULL);
+	~Lock();
 
 	Lock* detach();
 
@@ -102,7 +102,7 @@ public:
 		return lck_attachment ? lck_attachment->getHandle() : NULL;
 	}
 
-	void setLockAttachment(thread_db* tdbb, Attachment* att);
+	void setLockAttachment(Attachment* att);
 
 #ifdef DEBUG_LCK
 	Firebird::SyncObject	lck_sync;
@@ -123,6 +123,11 @@ public:
 //private:
 	Lock* lck_next;					// lck_next and lck_prior form a doubly linked list of locks
 	Lock* lck_prior;				// bound to attachment
+
+#ifdef DEBUG_LCK_LIST
+	UCHAR lck_next_type;			// Lock type of next lock in list
+	UCHAR lck_prev_type;			// Lock type of prev lock in list
+#endif
 
 	Lock* lck_collision;			// Collisions in compatibility table
 	Lock* lck_identical;			// Identical locks in compatibility table

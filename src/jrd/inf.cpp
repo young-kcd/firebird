@@ -893,7 +893,7 @@ void INF_database_info(thread_db* tdbb,
 				if (!(info = INF_put_item(item, strlen(guidBuffer), guidBuffer, info, end)))
 					return;
 			}
-			break;
+			continue;
 
 		case fb_info_db_file_id:
 			{
@@ -901,6 +901,12 @@ void INF_database_info(thread_db* tdbb,
 				if (!(info = INF_put_item(item, fileId.length(), fileId.c_str(), info, end)))
 					return;
 			}
+			continue;
+
+		case fb_info_replica_mode:
+			// fb_info_replica_* reply items are equal to the ReplicaMode enumeration
+			*p++ = (UCHAR) dbb->dbb_replica_mode;
+			length = p - buffer;
 			break;
 
 		default:
@@ -939,15 +945,14 @@ UCHAR* INF_put_item(UCHAR item,
  *
  **************************************/
 
-	if (ptr + length + (inserting ? 3 : 4) >= end)
+	if ((ptr + length + (inserting ? 3 : 4) >= end) || (length > MAX_USHORT))
 	{
-		*ptr = isc_info_truncated;
-		return NULL;
-	}
-
-	if (length > MAX_USHORT)
-	{
-		*ptr = isc_info_truncated;
+		if (ptr < end)
+		{
+			*ptr++ = isc_info_truncated;
+			if (ptr < end && !inserting)
+				*ptr++ = isc_info_end;
+		}
 		return NULL;
 	}
 

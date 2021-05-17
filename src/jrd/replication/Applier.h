@@ -137,12 +137,23 @@ namespace Jrd
 
 		void shutdown(thread_db* tdbb);
 
+		Attachment* getAttachment() const
+		{
+			return m_request ? m_request->req_attachment : nullptr;
+		}
+
+		void setInterfacePtr(JReplicator* interfacePtr)
+		{
+			m_interface = interfacePtr;
+		}
+
 	private:
 		TransactionMap m_txnMap;
 		const Firebird::PathName m_database;
 		jrd_req* m_request;
 		Firebird::AutoPtr<RecordBitmap> m_bitmap;
 		Record* m_record;
+		JReplicator* m_interface;
 
 		void startTransaction(thread_db* tdbb, TraNumber traNum);
 		void prepareTransaction(thread_db* tdbb, TraNumber traNum);
@@ -191,9 +202,7 @@ namespace Jrd
 		void doDelete(thread_db* tdbb, record_param* rpb,
 						jrd_tra* transaction);
 
-		void logMessage(const Firebird::string& message, Replication::LogMsgType type);
-		void logWarning(const char* msg, ...);
-		void postError(FbStatusVector* status, const Firebird::Exception& ex);
+		void logConflict(const char* msg, ...);
 	};
 }
 

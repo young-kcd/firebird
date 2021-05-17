@@ -66,7 +66,7 @@ public:
 	virtual void attach(Jrd::thread_db* tdbb);
 
 	virtual bool cancelExecution(bool forced);
-	virtual bool resetSession();
+	virtual bool resetSession(Jrd::thread_db* tdbb);
 
 	virtual bool isAvailable(Jrd::thread_db* tdbb, TraScope traScope) const;
 
@@ -87,6 +87,7 @@ protected:
 	virtual Statement* doCreateStatement();
 	virtual void doDetach(Jrd::thread_db* tdbb);
 
+	Firebird::AutoPlugin<Jrd::JProvider> m_provider;
 	Firebird::RefPtr<Jrd::JAttachment> m_attachment;
 	bool m_isCurrent;
 };

@@ -295,7 +295,7 @@ USHORT TimeZoneUtil::getSystemTimeZone()
 	static volatile bool cachedError = false;
 	static volatile USHORT cachedTimeZoneId = TimeZoneUtil::GMT_ZONE;
 	static volatile int32_t cachedTimeZoneNameLen = -1;
-	static UChar cachedTimeZoneName[TimeZoneUtil::MAX_SIZE];
+	static char cachedTimeZoneName[TimeZoneUtil::MAX_SIZE];
 	static GlobalPtr<RWLock> lock;
 
 	if (cachedError)
@@ -309,29 +309,48 @@ USHORT TimeZoneUtil::getSystemTimeZone()
 	UErrorCode icuErrorCode = U_ZERO_ERROR;
 	Jrd::UnicodeUtil::ConversionICU& icuLib = Jrd::UnicodeUtil::getConversionICU();
 
-	UChar buffer[TimeZoneUtil::MAX_SIZE];
+	char buffer[TimeZoneUtil::MAX_SIZE];
+	const char* str = buffer;
 	int32_t len;
 	const char* configDefault = Config::getDefaultTimeZone();
+	bool strictParse = true;
 
 	if (configDefault && configDefault[0])
 	{
-		UChar* dst = buffer;
-
-		for (const char* src = configDefault; src - configDefault < TimeZoneUtil::MAX_SIZE && *src; ++src, ++dst)
-			*dst = *src;
-
-		*dst = 0;
-		len = dst - buffer;
+		str = configDefault;
+		len = strlen(str);
 	}
 	else
-		len = icuLib.ucalGetDefaultTimeZone(buffer, FB_NELEM(buffer), &icuErrorCode);
+	{
+		UChar unicodeBuffer[TimeZoneUtil::MAX_LEN];
+		len = icuLib.ucalGetDefaultTimeZone(unicodeBuffer, FB_NELEM(unicodeBuffer), &icuErrorCode);
+
+		if (!U_FAILURE(icuErrorCode))
+		{
+			UChar* src = unicodeBuffer;
+			char* dst = buffer;
+
+			while (src - unicodeBuffer < len)
+				*dst++ = (char) *src++;
+
+			str = buffer;
+			buffer[len] = '\0';
+
+			strictParse = false;
+		}
+		else
+		{
+			gds__log("ICU error (%d) retrieving the system time zone. Falling back to displacement.",
+				int(icuErrorCode));
+		}
+	}
 
 	ReadLockGuard readGuard(lock, "TimeZoneUtil::getSystemTimeZone");
 
 	if (!U_FAILURE(icuErrorCode) &&
 		cachedTimeZoneNameLen != -1 &&
 		len == cachedTimeZoneNameLen &&
-		memcmp(buffer, cachedTimeZoneName, len * sizeof(USHORT)) == 0)
+		memcmp(str, cachedTimeZoneName, len) == 0)
 	{
 		return cachedTimeZoneId;
 	}
@@ -339,34 +358,28 @@ USHORT TimeZoneUtil::getSystemTimeZone()
 	readGuard.release();
 	WriteLockGuard writeGuard(lock, "TimeZoneUtil::getSystemTimeZone");
 
-	string bufferStrAscii;
-
 	if (!U_FAILURE(icuErrorCode))
 	{
-		bool error;
-		string bufferStrUnicode(reinterpret_cast<const char*>(buffer), len * sizeof(USHORT));
-		bufferStrAscii = IntlUtil::convertUtf16ToAscii(bufferStrUnicode, &error);
-		USHORT id;
-
-		if (timeZoneStartup().getId(bufferStrAscii, id))
+		try
 		{
-			memcpy(cachedTimeZoneName, buffer, len * sizeof(USHORT));
+			USHORT id = parse(str, len, strictParse);
 			cachedTimeZoneId = id;
 			cachedTimeZoneNameLen = len;
 			return cachedTimeZoneId;
 		}
+		catch (status_exception&)
+		{
+			gds__log("Invalid time zone (%s). Falling back to displacement.", str);
+		}
 	}
-	else
-		icuErrorCode = U_ZERO_ERROR;
 
-	gds__log("ICU error (%d) retrieving the system time zone (%s). Falling back to displacement.",
-		int(icuErrorCode), bufferStrAscii.c_str());
+	icuErrorCode = U_ZERO_ERROR;
 
 	UCalendar* icuCalendar = icuLib.ucalOpen(NULL, -1, NULL, UCAL_GREGORIAN, &icuErrorCode);
 
 	if (!icuCalendar)
 	{
-		gds__log("ICU's ucal_open error opening the default callendar.");
+		gds__log("ICU's ucal_open error opening the default calendar.");
 		cachedError = true;
 		return cachedTimeZoneId;	// GMT
 	}
@@ -411,46 +424,52 @@ void TimeZoneUtil::iterateRegions(std::function<void (USHORT, const char*)> func
 }
 
 // Parses a time zone, offset- or region-based.
-USHORT TimeZoneUtil::parse(const char* str, unsigned strLen)
+USHORT TimeZoneUtil::parse(const char* str, unsigned strLen, bool strict)
 {
+	// Non-strict parse is used to detect OS time zone.
+
 	const char* end = str + strLen;
 	const char* p = str;
 
 	skipSpaces(p, end);
 
-	int sign = 1;
-	bool signPresent = false;
+	const auto start = str;
 
 	if (p < end && (*p == '-' || *p == '+'))
 	{
-		signPresent = true;
-		sign = *p == '-' ? -1 : 1;
-		++p;
+		int sign = *p++ == '-' ? -1 : 1;
 		skipSpaces(p, end);
-	}
 
-	if (p < end && (signPresent || (*p >= '0' && *p <= '9')))
-	{
 		int tzh = parseNumber(p, end);
-		int tzm = 0;
 
-		skipSpaces(p, end);
-
-		if (p < end && *p == ':')
+		if (tzh >= 0)
 		{
-			++p;
 			skipSpaces(p, end);
-			tzm = (unsigned) parseNumber(p, end);
-			skipSpaces(p, end);
+
+			if (!strict && p == end)
+				return makeFromOffset(sign, tzh, 0);
+
+			if (p < end && *p == ':')
+			{
+				++p;
+				skipSpaces(p, end);
+				int tzm = parseNumber(p, end);
+
+				if (tzm >= 0)
+				{
+					skipSpaces(p, end);
+
+					if (p == end)
+						return makeFromOffset(sign, tzh, tzm);
+				}
+			}
 		}
 
-		if (p != end)
-			status_exception::raise(Arg::Gds(isc_invalid_timezone_offset) << string(str, strLen));
-
-		return makeFromOffset(sign, tzh, tzm);
+		status_exception::raise(Arg::Gds(isc_invalid_timezone_offset) << string(start, end));
+		return 0;	// avoid warning
 	}
-	else
-		return parseRegion(p, str + strLen - p);
+
+	return parseRegion(p, str + strLen - p);
 }
 
 // Parses a time zone id from a region string.
@@ -487,7 +506,7 @@ USHORT TimeZoneUtil::parseRegion(const char* str, unsigned strLen)
 			return id;
 	}
 
-	status_exception::raise(Arg::Gds(isc_invalid_timezone_region) << string(start, len));
+	status_exception::raise(Arg::Gds(isc_invalid_timezone_region) << string(start, end));
 	return 0;
 }
 
@@ -694,7 +713,7 @@ void TimeZoneUtil::localTimeStampToUtc(ISC_TIMESTAMP_TZ& timeStampTz)
 		icuLib.ucalClose(icuCalendar);
 	}
 
-	const auto  ticks = TimeStamp::timeStampToTicks(timeStampTz.utc_timestamp) -
+	const auto ticks = TimeStamp::timeStampToTicks(timeStampTz.utc_timestamp) -
 		(displacement * 60 * ISC_TIME_SECONDS_PRECISION);
 
 	timeStampTz.utc_timestamp = TimeStamp::ticksToTimeStamp(ticks);
@@ -778,13 +797,8 @@ bool TimeZoneUtil::decodeTimeStamp(const ISC_TIMESTAMP_TZ& timeStampTz, bool gmt
 
 ISC_TIMESTAMP_TZ TimeZoneUtil::getCurrentSystemTimeStamp()
 {
-	TimeStamp now = TimeStamp::getCurrentTimeStamp();
-
-	ISC_TIMESTAMP_TZ tsTz;
-	tsTz.utc_timestamp = now.value();
+	auto tsTz = getCurrentGmtTimeStamp();
 	tsTz.time_zone = getSystemTimeZone();
-	localTimeStampToUtc(tsTz);
-
 	return tsTz;
 }
 
@@ -1119,8 +1133,9 @@ bool TimeZoneRuleIterator::next()
 
 static const TimeZoneDesc* getDesc(USHORT timeZone)
 {
-	if (MAX_USHORT - timeZone < timeZoneStartup().getTimeZoneList().getCount())
-		return &timeZoneStartup().getTimeZoneList()[MAX_USHORT - timeZone];
+	const USHORT id = MAX_USHORT - timeZone;
+	if (id < timeZoneStartup().getTimeZoneList().getCount())
+		return &timeZoneStartup().getTimeZoneList()[id];
 
 	status_exception::raise(Arg::Gds(isc_invalid_timezone_id) << Arg::Num(timeZone));
 	return nullptr;
@@ -1168,7 +1183,7 @@ static int parseNumber(const char*& p, const char* end)
 		n = n * 10 + *p++ - '0';
 
 	if (p == start)
-		status_exception::raise(Arg::Gds(isc_invalid_timezone_offset) << string(start, end - start));
+		return -1;
 
 	return n;
 }

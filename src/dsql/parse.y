@@ -457,7 +457,6 @@ using namespace Firebird;
 %token <metaNamePtr> COS
 %token <metaNamePtr> COSH
 %token <metaNamePtr> COT
-%token <metaNamePtr> CRC32
 %token <metaNamePtr> DATEADD
 %token <metaNamePtr> DATEDIFF
 %token <metaNamePtr> DECODE
@@ -599,6 +598,7 @@ using namespace Firebird;
 %token <metaNamePtr> COMPARE_DECFLOAT
 %token <metaNamePtr> CONSISTENCY
 %token <metaNamePtr> COUNTER
+%token <metaNamePtr> CRYPT_HASH
 %token <metaNamePtr> CTR_BIG_ENDIAN
 %token <metaNamePtr> CTR_LENGTH
 %token <metaNamePtr> CTR_LITTLE_ENDIAN
@@ -615,6 +615,7 @@ using namespace Firebird;
 %token <metaNamePtr> HEX_DECODE
 %token <metaNamePtr> HEX_ENCODE
 %token <metaNamePtr> IDLE
+%token <metaNamePtr> INCLUDE
 %token <metaNamePtr> INT128
 %token <metaNamePtr> INVOKER
 %token <metaNamePtr> IV
@@ -640,6 +641,7 @@ using namespace Firebird;
 %token <metaNamePtr> PUBLICATION
 %token <metaNamePtr> QUANTIZE
 %token <metaNamePtr> RANGE
+%token <metaNamePtr> RESETTING
 %token <metaNamePtr> RDB_ERROR
 %token <metaNamePtr> RDB_GET_TRANSACTION_CN
 %token <metaNamePtr> RDB_ROLE_IN_USE
@@ -649,8 +651,8 @@ using namespace Firebird;
 %token <metaNamePtr> RSA_ENCRYPT
 %token <metaNamePtr> RSA_PRIVATE
 %token <metaNamePtr> RSA_PUBLIC
-%token <metaNamePtr> RSA_SIGN
-%token <metaNamePtr> RSA_VERIFY
+%token <metaNamePtr> RSA_SIGN_HASH
+%token <metaNamePtr> RSA_VERIFY_HASH
 %token <metaNamePtr> SALT_LENGTH
 %token <metaNamePtr> SECURITY
 %token <metaNamePtr> SESSION
@@ -674,6 +676,11 @@ using namespace Firebird;
 %token <metaNamePtr> LIFETIME
 %token <metaNamePtr> CLEAR
 %token <metaNamePtr> OLDEST
+
+// tokens added for Firebird 5.0
+
+%token <metaNamePtr> UNICODE_CHAR
+%token <metaNamePtr> UNICODE_VAL
 
 // precedence declarations for expression evaluation
 
@@ -1797,7 +1804,7 @@ replace_sequence_clause
 		{
 			// Remove this to implement CORE-5137
 			if (!$2->restartSpecified && !$2->step.specified)
-				yyerrorIncompleteCmd();
+				yyerrorIncompleteCmd(YYPOSNARG(3));
 			$$ = $2;
 		}
 	;
@@ -1830,7 +1837,7 @@ alter_sequence_clause
 	  alter_sequence_options($2)
 		{
 			if (!$2->restartSpecified && !$2->value.specified && !$2->step.specified)
-				yyerrorIncompleteCmd();
+				yyerrorIncompleteCmd(YYPOSNARG(3));
 			$$ = $2;
 		}
 
@@ -4277,6 +4284,7 @@ keyword_or_column
 	| LOCALTIME
 	| LOCALTIMESTAMP
 	| PUBLICATION
+	| RESETTING
 	| TIMEZONE_HOUR
 	| TIMEZONE_MINUTE
 	| UNBOUNDED
@@ -4441,10 +4449,10 @@ db_alter_clause($alterDatabaseNode)
 		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_ENABLE_PUB; }
 	| DISABLE PUBLICATION
 		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_DISABLE_PUB; }
-	| ADD pub_table_filter($alterDatabaseNode) TO PUBLICATION
-		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_PUB_ADD_TABLE; }
-	| DROP pub_table_filter($alterDatabaseNode) FROM PUBLICATION
-		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_PUB_DROP_TABLE; }
+	| INCLUDE pub_table_filter($alterDatabaseNode) TO PUBLICATION
+		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_PUB_INCL_TABLE; }
+	| EXCLUDE pub_table_filter($alterDatabaseNode) FROM PUBLICATION
+		{ $alterDatabaseNode->clauses |= AlterDatabaseNode::CLAUSE_PUB_EXCL_TABLE; }
 	;
 
 %type crypt_key_clause(<alterDatabaseNode>)
@@ -5635,13 +5643,27 @@ comment
 		{ $$ = newNode<CommentOnNode>($3, *$4, *$5, *$7); }
 	| COMMENT ON ddl_type4 ddl_qualified_name IS ddl_desc
 		{ $$ = newNode<CommentOnNode>($3, *$4, "", *$6); }
-	| COMMENT ON USER symbol_user_name IS ddl_desc
-		{
-			CreateAlterUserNode* node =
-				newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, *$4);
-			node->comment = $6;
-			$$ = node;
-		}
+	| comment_on_user
+		{ $$ = $1; }
+	;
+
+%type <createAlterUserNode> comment_on_user
+comment_on_user
+	: COMMENT ON USER symbol_user_name
+			{
+				$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, *$4);
+			}
+		opt_use_plugin($5) IS ddl_desc
+			{
+				CreateAlterUserNode* node = $$ = $5;
+				node->comment = $8;
+			}
+	;
+
+%type opt_use_plugin(<createAlterUserNode>)
+opt_use_plugin($node)
+	: // nothing
+	| use_plugin($node)
 	;
 
 %type <intVal> ddl_type0
@@ -6873,6 +6895,7 @@ predicate
 	| exists_predicate
 	| singular_predicate
 	| trigger_action_predicate
+	| session_reset_predicate
 	;
 
 
@@ -7044,6 +7067,15 @@ trigger_action_predicate
 		}
 	;
 
+%type <boolExprNode> session_reset_predicate
+session_reset_predicate
+	: RESETTING
+		{
+			$$ = newNode<ComparativeBoolNode>(blr_eql,
+					newNode<InternalInfoNode>(MAKE_const_slong(INFO_TYPE_SESSION_RESETTING)),
+					MAKE_const_slong(1));
+		}
+
 %type <boolExprNode> null_predicate
 null_predicate
 	: value IS NULL
@@ -7147,9 +7179,14 @@ user_fixed_option($node)
 	| REVOKE ADMIN ROLE		{ setClause($node->adminRole, "ADMIN ROLE", false); }
 	| ACTIVE				{ setClause($node->active, "ACTIVE/INACTIVE", true); }
 	| INACTIVE				{ setClause($node->active, "ACTIVE/INACTIVE", false); }
-	| USING PLUGIN valid_symbol_name
-							{ setClause($node->plugin, "USING PLUGIN", $3); }
+	| use_plugin($node)
 	| TAGS '(' user_var_list($node) ')'
+	;
+
+%type use_plugin(<createAlterUserNode>)
+use_plugin($node)
+	: USING PLUGIN valid_symbol_name
+							{ setClause($node->plugin, "USING PLUGIN", $3); }
 	;
 
 %type user_var_list(<createAlterUserNode>)
@@ -8067,7 +8104,6 @@ system_function_std_syntax
 	| COS
 	| COSH
 	| COT
-	| CRC32
 	| EXP
 	| FLOOR
 	| GEN_UUID
@@ -8103,6 +8139,8 @@ system_function_std_syntax
 	| TAN
 	| TANH
 	| TRUNC
+	| UNICODE_CHAR
+	| UNICODE_VAL
 	| UUID_TO_CHAR
 	| QUANTIZE
 	| TOTALORDER
@@ -8152,7 +8190,7 @@ system_function_special_syntax
 		}
 	| HASH '(' value ')'
 		{ $$ = newNode<SysFuncCallNode>(*$1, newNode<ValueListNode>($3)); }
-	| HASH '(' value USING valid_symbol_name ')'
+	| hash_func '(' value USING valid_symbol_name ')'
 		{
 			$$ = newNode<SysFuncCallNode>(*$1,
 				newNode<ValueListNode>($3)->add(MAKE_str_constant(newIntlString($5->c_str()), CS_ASCII)));
@@ -8190,14 +8228,14 @@ system_function_special_syntax
 					add(MAKE_str_constant(newIntlString($7->c_str()), CS_ASCII)));
 			$$->dsqlSpecialSyntax = true;
 		}
-	| RSA_SIGN '(' value KEY value crypt_opt_hash crypt_opt_saltlen ')'
+	| RSA_SIGN_HASH '(' value KEY value crypt_opt_hash crypt_opt_saltlen ')'
 		{
 			$$ = newNode<SysFuncCallNode>(*$1,
 				newNode<ValueListNode>($3)->add($5)->
 					add(MAKE_str_constant(newIntlString($6->c_str()), CS_ASCII))->add($7));
 			$$->dsqlSpecialSyntax = true;
 		}
-	| RSA_VERIFY'(' value SIGNATURE value KEY value crypt_opt_hash crypt_opt_saltlen ')'
+	| RSA_VERIFY_HASH '(' value SIGNATURE value KEY value crypt_opt_hash crypt_opt_saltlen ')'
 		{
 			$$ = newNode<SysFuncCallNode>(*$1,
 				newNode<ValueListNode>($3)->add($5)->add($7)->
@@ -8209,6 +8247,11 @@ system_function_special_syntax
 			ValueExprNode* v = MAKE_system_privilege($3->c_str());
 			$$ = newNode<SysFuncCallNode>(*$1, newNode<ValueListNode>(v));
 		}
+	;
+
+%type <metaNamePtr> hash_func
+hash_func
+	: HASH | CRYPT_HASH
 	;
 
 %type <metaNamePtr> rsa_encrypt_decrypt
@@ -8543,6 +8586,7 @@ timestamp_part
 	| MILLISECOND	{ $$ = blr_extract_millisecond; }
 	| TIMEZONE_HOUR	{ $$ = blr_extract_timezone_hour; }
 	| TIMEZONE_MINUTE	{ $$ = blr_extract_timezone_minute; }
+	| TIMEZONE_NAME	{ $$ = blr_extract_timezone_name; }
 	| WEEK			{ $$ = blr_extract_week; }
 	| WEEKDAY		{ $$ = blr_extract_weekday; }
 	| YEARDAY		{ $$ = blr_extract_yearday; }
@@ -8948,7 +8992,7 @@ non_reserved_word
 	| COMPARE_DECFLOAT
 	| CONNECTIONS
 	| CONSISTENCY
-	| CRC32
+	| CRYPT_HASH
 	| CTR_BIG_ENDIAN
 	| CTR_LENGTH
 	| CTR_LITTLE_ENDIAN
@@ -8964,6 +9008,7 @@ non_reserved_word
 	| HEX_DECODE
 	| HEX_ENCODE
 	| IDLE
+	| INCLUDE
 	| INVOKER
 	| IV
 	| LAST_DAY
@@ -8991,8 +9036,8 @@ non_reserved_word
 	| RSA_ENCRYPT
 	| RSA_PRIVATE
 	| RSA_PUBLIC
-	| RSA_SIGN
-	| RSA_VERIFY
+	| RSA_SIGN_HASH
+	| RSA_VERIFY_HASH
 	| SALT_LENGTH
 	| SECURITY
 	| SESSION
@@ -9000,9 +9045,12 @@ non_reserved_word
 	| SQL
 	| SYSTEM
 	| TIES
+	| TIMEZONE_NAME
 	| TOTALORDER
 	| TRAPS
 	| ZONE
+	| UNICODE_CHAR		// added in FB 5.0
+	| UNICODE_VAL
 	;
 
 %%

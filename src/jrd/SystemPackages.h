@@ -270,12 +270,6 @@ namespace Jrd
 			}
 
 		public:
-			void dispose() override
-			{
-				delete this;
-			}
-
-		public:
 			void getCharSet(Firebird::ThrowStatusExceptionWrapper* status, Firebird::IExternalContext* context,
 				char* name, unsigned nameSize) override
 			{

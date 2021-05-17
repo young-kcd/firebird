@@ -1950,10 +1950,20 @@ C --
       PARAMETER (GDS__truncate_context                 = 335545268)
       INTEGER*4 GDS__merge_dup_update                
       PARAMETER (GDS__merge_dup_update                 = 335545269)
+      INTEGER*4 GDS__wrong_page                      
+      PARAMETER (GDS__wrong_page                       = 335545270)
+      INTEGER*4 GDS__repl_error                      
+      PARAMETER (GDS__repl_error                       = 335545271)
+      INTEGER*4 GDS__ses_reset_failed                
+      PARAMETER (GDS__ses_reset_failed                 = 335545272)
+      INTEGER*4 GDS__block_size                      
+      PARAMETER (GDS__block_size                       = 335545273)
+      INTEGER*4 GDS__tom_key_length                  
+      PARAMETER (GDS__tom_key_length                   = 335545274)
       INTEGER*4 GDS__invalid_blob_util_handle        
-      PARAMETER (GDS__invalid_blob_util_handle         = 335545270)
+      PARAMETER (GDS__invalid_blob_util_handle         = 335545275)
       INTEGER*4 GDS__cannot_make_blob_opened_handle  
-      PARAMETER (GDS__cannot_make_blob_opened_handle   = 335545271)
+      PARAMETER (GDS__cannot_make_blob_opened_handle   = 335545276)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
@@ -2828,6 +2838,8 @@ C --
       PARAMETER (GDS__fbsvcmgr_limbo_state             = 336986171)
       INTEGER*4 GDS__fbsvcmgr_limbo_advise           
       PARAMETER (GDS__fbsvcmgr_limbo_advise            = 336986172)
+      INTEGER*4 GDS__fbsvcmgr_bad_rm                 
+      PARAMETER (GDS__fbsvcmgr_bad_rm                  = 336986173)
       INTEGER*4 GDS__utl_trusted_switch              
       PARAMETER (GDS__utl_trusted_switch               = 337051649)
       INTEGER*4 GDS__nbackup_missing_param           
@@ -2912,6 +2924,8 @@ C --
       PARAMETER (GDS__nbackup_deco_parse               = 337117259)
       INTEGER*4 GDS__nbackup_lostrec_guid_db         
       PARAMETER (GDS__nbackup_lostrec_guid_db          = 337117261)
+      INTEGER*4 GDS__nbackup_seq_misuse              
+      PARAMETER (GDS__nbackup_seq_misuse               = 337117265)
       INTEGER*4 GDS__trace_conflict_acts             
       PARAMETER (GDS__trace_conflict_acts              = 337182750)
       INTEGER*4 GDS__trace_act_notfound              

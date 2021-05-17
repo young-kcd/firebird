@@ -73,36 +73,38 @@ public:
 		: login(p_login), password(p_password)
 	{ }
 
-	// Firebird::IClientBlock implementation
-	int release()
+	// Here we are going to place reference counted object on a stack.
+	// Release will never be called, but let's better have safe implementation for it.
+	int release() override
 	{
 		return 1;
 	}
 
-	const char* getLogin()
+	// Firebird::IClientBlock implementation
+	const char* getLogin() override
 	{
 		return login.c_str();
 	}
 
-	const char* getPassword()
+	const char* getPassword() override
 	{
 		return password.c_str();
 	}
 
-	const unsigned char* getData(unsigned int* length)
+	const unsigned char* getData(unsigned int* length) override
 	{
 		*length = data.getCount();
 		return data.begin();
 	}
 
-	void putData(CheckStatusWrapper* status, unsigned int length, const void* d);
+	void putData(CheckStatusWrapper* status, unsigned int length, const void* d) override;
 
-	Firebird::ICryptKey* newKey(Firebird::CheckStatusWrapper* status)
+	Firebird::ICryptKey* newKey(Firebird::CheckStatusWrapper* status) override
 	{
 		return &dummyCryptKey;
 	}
 
-	Firebird::IAuthBlock* getAuthBlock(Firebird::CheckStatusWrapper*)
+	Firebird::IAuthBlock* getAuthBlock(Firebird::CheckStatusWrapper*) override
 	{
 		return nullptr;
 	}
@@ -172,7 +174,7 @@ namespace EDS {
 
 void validatePassword(thread_db* tdbb, const PathName& file, ClumpletWriter& dpb)
 {
-	// Peliminary checks - should we really validate password ourself
+	// Preliminary checks - should we really validate the password ourselves
 	if (!dpb.find(isc_dpb_user_name))		// check for user name presence
 		return;
 	if (ISC_check_if_remote(file, false))	// check for remote connection

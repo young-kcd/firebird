@@ -399,6 +399,12 @@ void defineComputed(DsqlCompilerScratch* dsqlScratch, RelationSourceNode* relati
 			const USHORT bpc = METD_get_charset_bpc(dsqlScratch->getTransaction(), field->charSetId.value);
 			field->charLength = (field->length - adjust) / bpc;
 		}
+		else if (field->dtype == dtype_blob)
+		{
+			field->charSetId = desc.getCharSet();
+			field->collationId = desc.getCollation();
+			field->subType = desc.getBlobSubType();
+		}
 		else
 			field->subType = desc.dsc_sub_type;
 	}
@@ -1190,14 +1196,15 @@ string AlterEDSPoolSetNode::internalPrint(NodePrinter& printer) const
 
 void AlterEDSPoolSetNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/, jrd_tra* /*transaction*/)
 {
+	EDS::ConnectionsPool* pool = EDS::Manager::getConnPool(false);
 	switch (m_param)
 	{
 	case POOL_SIZE:
-		EDS::Manager::getConnPool()->setMaxCount(m_value);
+		pool->setMaxCount(m_value);
 		break;
 
 	case POOL_LIFETIME:
-		EDS::Manager::getConnPool()->setLifeTime(m_value);
+		pool->setLifeTime(m_value);
 		break;
 
 	default:
@@ -1228,17 +1235,21 @@ string AlterEDSPoolClearNode::internalPrint(NodePrinter& printer) const
 
 void AlterEDSPoolClearNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/, jrd_tra* /*transaction*/)
 {
+	EDS::ConnectionsPool* pool = EDS::Manager::getConnPool(false);
+	if (!pool)
+		return;
+
 	switch (m_param)
 	{
 	case POOL_ALL:
 	{
-		EDS::Manager::getConnPool()->clearIdle(tdbb, true);
+		pool->clearIdle(tdbb, true);
 		break;
 	}
 
 	case POOL_OLDEST:
 	{
-		EDS::Manager::getConnPool()->clearIdle(tdbb, false);
+		pool->clearIdle(tdbb, false);
 		break;
 	}
 
@@ -12508,8 +12519,8 @@ void AlterDatabaseNode::checkClauses(thread_db* tdbb)
 	if ((clauses & CLAUSE_ENABLE_PUB) && (clauses & CLAUSE_DISABLE_PUB))
 		(Arg::PrivateDyn(298) << Arg::Str("ENABLE PUBLICATION") << Arg::Str("DISABLE PUBLICATION")).raise();
 
-	if ((clauses & CLAUSE_PUB_ADD_TABLE) && (clauses & CLAUSE_PUB_DROP_TABLE))
-		(Arg::PrivateDyn(298) << Arg::Str("ADD TABLE TO PUBLICATION") << Arg::Str("DROP TABLE FROM PUBLICATION")).raise();
+	if ((clauses & CLAUSE_PUB_INCL_TABLE) && (clauses & CLAUSE_PUB_EXCL_TABLE))
+		(Arg::PrivateDyn(298) << Arg::Str("INCLUDE TABLE TO PUBLICATION") << Arg::Str("EXCLUDE TABLE FROM PUBLICATION")).raise();
 }
 
 void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
@@ -12562,7 +12573,7 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 		END_FOR
 	}
 
-	if (clauses & (CLAUSE_PUB_ADD_TABLE | CLAUSE_PUB_DROP_TABLE))
+	if (clauses & (CLAUSE_PUB_INCL_TABLE | CLAUSE_PUB_EXCL_TABLE))
 	{
 		if (pubTables.isEmpty())
 		{
@@ -12588,7 +12599,7 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 				WITH PUB.RDB$PUBLICATION_NAME EQ DEFAULT_PUBLICATION
 			{
 				MODIFY PUB
-					PUB.RDB$AUTO_ENABLE = (clauses & CLAUSE_PUB_ADD_TABLE) ? 1 : 0;
+					PUB.RDB$AUTO_ENABLE = (clauses & CLAUSE_PUB_INCL_TABLE) ? 1 : 0;
 					PUB.RDB$AUTO_ENABLE.NULL = FALSE;
 				END_MODIFY
 			}
@@ -12626,7 +12637,7 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 		{
 			const MetaName& tableName = *iter;
 
-			if (clauses & CLAUSE_PUB_ADD_TABLE)
+			if (clauses & CLAUSE_PUB_INCL_TABLE)
 			{
 				try
 				{

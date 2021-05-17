@@ -66,17 +66,6 @@ void TimerImpl::handler()
 	m_inHandler = false;
 }
 
-int TimerImpl::release()
-{
-	if (--refCounter == 0)
-	{
-		delete this;
-		return 0;
-	}
-
-	return 1;
-}
-
 void TimerImpl::reset(unsigned int timeout)
 {
 	LocalStatus ls;

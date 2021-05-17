@@ -917,7 +917,7 @@ Data source : @4"},		/* eds_statement */
 	{335545210, "Plugin @1:"},		/* plugin_name */
 	{335545211, "PARAMETER @1"},		/* parameter_name */
 	{335545212, "Starting page number for file @1 must be @2 or greater"},		/* file_starting_page_err */
-	{335545213, "Invalid time zone offset: @1 - must be between -14:00 and +14:00"},		/* invalid_timezone_offset */
+	{335545213, "Invalid time zone offset: @1 - must use format +/-hours:minutes and be between -14:00 and +14:00"},		/* invalid_timezone_offset */
 	{335545214, "Invalid time zone region: @1"},		/* invalid_timezone_region */
 	{335545215, "Invalid time zone ID: @1"},		/* invalid_timezone_id */
 	{335545216, "Wrong base64 text length @1, should be multiple of 4"},		/* tom_decode64len */
@@ -974,8 +974,13 @@ Data source : @4"},		/* eds_statement */
 	{335545267, "Monitoring data does not fit into the field"},		/* truncate_monitor */
 	{335545268, "Engine data does not fit into return value of system function"},		/* truncate_context */
 	{335545269, "Multiple source records cannot match the same target during MERGE"},		/* merge_dup_update */
-	{335545270, "Invalid RDB$BLOB_UTIL handle"},		/* invalid_blob_util_handle */
-	{335545271, "Cannot make a BLOB from an opened RDB$BLOB_UTIL handle"},		/* cannot_make_blob_opened_handle */
+	{335545270, "RDB$PAGES written by non-system transaction, DB appears to be damaged"},		/* wrong_page */
+	{335545271, "Replication error"},		/* repl_error */
+	{335545272, "Reset of user session failed. Connection is shut down."},		/* ses_reset_failed */
+	{335545273, "File size is less than expected"},		/* block_size */
+	{335545274, "Invalid key length @1, need >@2"},		/* tom_key_length */
+	{335545275, "Invalid RDB$BLOB_UTIL handle"},		/* invalid_blob_util_handle */
+	{335545276, "Cannot make a BLOB from an opened RDB$BLOB_UTIL handle"},		/* cannot_make_blob_opened_handle */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */
@@ -1413,6 +1418,7 @@ Data source : @4"},		/* eds_statement */
 	{336986170, "Unknown tag (@1) in isc_info_svc_limbo_trans block after isc_svc_query()"},		/* fbsvcmgr_info_limbo */
 	{336986171, "Unknown tag (@1) in isc_spb_tra_state block after isc_svc_query()"},		/* fbsvcmgr_limbo_state */
 	{336986172, "Unknown tag (@1) in isc_spb_tra_advise block after isc_svc_query()"},		/* fbsvcmgr_limbo_advise */
+	{336986173, "Wrong value for replica mode"},		/* fbsvcmgr_bad_rm */
 	{337051649, "Switches trusted_user and trusted_role are not supported from command line"},		/* utl_trusted_switch */
 	{337117213, "Missing parameter for switch @1"},		/* nbackup_missing_param */
 	{337117214, "Only one of -LOCK, -UNLOCK, -FIXUP, -BACKUP or -RESTORE should be specified"},		/* nbackup_allowed_switches */
@@ -1455,6 +1461,7 @@ Data source : @4"},		/* eds_statement */
 	{337117257, "Terminated due to user request"},		/* nbackup_user_stop */
 	{337117259, "Too complex decompress command (> @1 arguments)"},		/* nbackup_deco_parse */
 	{337117261, "Cannot find record for database \"@1\" backup GUID @2 in the backup history"},		/* nbackup_lostrec_guid_db */
+	{337117265, "Switch -SEQ(UENCE) can be used only with -FIXUP or -RESTORE"},		/* nbackup_seq_misuse */
 	{337182750, "conflicting actions \"@1\" and \"@2\" found"},		/* trace_conflict_acts */
 	{337182751, "action switch not found"},		/* trace_act_notfound */
 	{337182752, "switch \"@1\" must be set only once"},		/* trace_switch_once */

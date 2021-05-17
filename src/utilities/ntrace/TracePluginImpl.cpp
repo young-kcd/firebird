@@ -2347,16 +2347,6 @@ void TracePluginImpl::log_event_sweep(ITraceDatabaseConnection* connection, ITra
 
 //***************************** PLUGIN INTERFACE ********************************
 
-int TracePluginImpl::release()
-{
-	if (--refCounter == 0)
-	{
-		delete this;
-		return 0;
-	}
-	return 1;
-}
-
 const char* TracePluginImpl::trace_get_error()
 {
 	return get_error_string();

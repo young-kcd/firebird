@@ -81,7 +81,7 @@ public:
 		const Firebird::string& dataSource, const Firebird::string& user,
 		const Firebird::string& pwd, const Firebird::string& role, TraScope tra_scope);
 
-	static ConnectionsPool* getConnPool() { return m_connPool; }
+	static ConnectionsPool* getConnPool(bool create);
 
 	// Release bound external connections when some jrd attachment is about to be released
 	static void jrdAttachmentEnd(Jrd::thread_db* tdbb, Jrd::Attachment* att, bool forced);
@@ -92,7 +92,6 @@ private:
 	static Firebird::GlobalPtr<Manager> manager;
 	static Firebird::Mutex m_mutex;
 	static Provider* m_providers;
-	static volatile bool m_initialized;
 	static ConnectionsPool* m_connPool;
 };
 
@@ -327,7 +326,6 @@ private:
 
 		// ITimer implementation
 		void handler();
-		int release();
 
 		void start();
 		void stop();
@@ -436,7 +434,7 @@ public:
 	virtual bool cancelExecution(bool forced) = 0;
 
 	// Try to reset connection, return true if it can be pooled
-	virtual bool resetSession() = 0;
+	virtual bool resetSession(Jrd::thread_db* tdbb) = 0;
 
 	int getSqlDialect() const { return m_sqlDialect; }
 
@@ -649,7 +647,7 @@ protected:
 	virtual void getOutParams(Jrd::thread_db* tdbb, const Jrd::ValueListNode* params);
 
 	virtual void doSetInParams(Jrd::thread_db* tdbb, unsigned int count,
-		const Jrd::MetaName* const* names, const NestConst<Jrd::ValueExprNode>* params);
+		const Firebird::MetaString* const* names, const NestConst<Jrd::ValueExprNode>* params);
 
 	virtual void putExtBlob(Jrd::thread_db* tdbb, dsc& src, dsc& dst);
 	virtual void getExtBlob(Jrd::thread_db* tdbb, const dsc& src, dsc& dst);
@@ -698,8 +696,8 @@ protected:
 	Jrd::jrd_req* m_preparedByReq;
 
 	// set in preprocess
-	Firebird::SortedObjectsArray<const Jrd::MetaName> m_sqlParamNames;
-	ParamNames m_sqlParamsMap;
+	Firebird::SortedObjectsArray<const Firebird::MetaString> m_sqlParamNames;
+	Firebird::Array<const Firebird::MetaString*> m_sqlParamsMap;
 
 	// set in prepare()
 	Firebird::UCharBuffer m_in_buffer;

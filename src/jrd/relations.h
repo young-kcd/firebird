@@ -498,6 +498,7 @@ RELATION(nam_mon_database, rel_mon_database, ODS_11_1, rel_virtual)
 	FIELD(f_mon_db_file_id, nam_mon_file_id, fld_file_id, 0, ODS_13_0)
 	FIELD(f_mon_db_na, nam_mon_na, fld_att_id, 0, ODS_13_0)
 	FIELD(f_mon_db_ns, nam_mon_ns, fld_stmt_id, 0, ODS_13_0)
+	FIELD(f_mon_db_repl_mode, nam_mon_repl_mode, fld_repl_mode, 0, ODS_13_0)
 END_RELATION
 
 // Relation 34 (MON$ATTACHMENTS)
@@ -527,7 +528,8 @@ RELATION(nam_mon_attachments, rel_mon_attachments, ODS_11_1, rel_virtual)
 	FIELD(f_mon_att_stmt_timeout, nam_stmt_timeout, fld_stmt_timeout, 0, ODS_13_0)
 	FIELD(f_mon_att_wire_compressed, nam_wire_compressed, fld_bool, 0, ODS_13_0)
 	FIELD(f_mon_att_wire_encrypted, nam_wire_encrypted, fld_bool, 0, ODS_13_0)
-	FIELD(f_mon_att_remote_crypt, nam_wire_crypt_plugin, fld_remote_crypt, 0, ODS_12_0)
+	FIELD(f_mon_att_remote_crypt, nam_wire_crypt_plugin, fld_remote_crypt, 0, ODS_13_0)
+	FIELD(f_mon_att_session_tz, nam_mon_session_tz, fld_tz_name, 0, ODS_13_1)
 END_RELATION
 
 // Relation 35 (MON$TRANSACTIONS)
@@ -722,4 +724,14 @@ END_RELATION
 RELATION(nam_pub_tables, rel_pub_tables, ODS_13_0, rel_persistent)
 	FIELD(f_pubtab_pub_name, nam_pub_name, fld_pub_name, 1, ODS_13_0)
 	FIELD(f_pubtab_tab_name, nam_tab_name, fld_r_name, 1, ODS_13_0)
+END_RELATION
+
+// Relation 53 (RDB$CONFIG)
+RELATION(nam_config, rel_config, ODS_13_0, rel_virtual)
+	FIELD(f_cfg_id, nam_cfg_id, fld_cfg_id, 0, ODS_13_0)
+	FIELD(f_cfg_name, nam_cfg_name, fld_cfg_name, 0, ODS_13_0)
+	FIELD(f_cfg_value, nam_cfg_value, fld_cfg_value, 0, ODS_13_0)
+	FIELD(f_cfg_default, nam_cfg_default, fld_cfg_value, 0, ODS_13_0)
+	FIELD(f_cfg_is_set, nam_cfg_is_set, fld_cfg_is_set, 0, ODS_13_0)
+	FIELD(f_cfg_source, nam_cfg_source, fld_file_name2, 0, ODS_13_0)
 END_RELATION

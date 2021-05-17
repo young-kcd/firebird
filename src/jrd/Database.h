@@ -54,6 +54,7 @@
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/RefCounted.h"
 #include "../common/classes/semaphore.h"
+#include "../common/classes/XThreadMutex.h"
 #include "../common/utils_proto.h"
 #include "../jrd/RandomGenerator.h"
 #include "../common/os/guid.h"
@@ -70,6 +71,10 @@
 #include "../common/classes/Synchronize.h"
 #include "../jrd/replication/Manager.h"
 #include "fb_types.h"
+
+
+#define SPTHR_DEBUG(A)
+
 
 namespace Jrd
 {
@@ -231,6 +236,7 @@ const ULONG DBB_no_fs_cache				= 0x40000L;		// Not using file system cache
 const ULONG DBB_sweep_starting			= 0x80000L;		// Auto-sweep is starting
 const ULONG DBB_creating				= 0x100000L;	// Database creation is in progress
 const ULONG DBB_shared					= 0x200000L;	// Database object is shared among connections
+//const ULONG DBB_closing					= 0x400000L;	// Database closing, special backgroud threads should exit
 
 //
 // dbb_ast_flags
@@ -297,17 +303,24 @@ class Database : public pool_alloc<type_dbb>
 	public:
 		static GlobalObjectHolder* init(const Firebird::string& id,
 										const Firebird::PathName& filename,
-										Firebird::RefPtr<const Config> config);
+										Firebird::RefPtr<const Firebird::Config> config);
 
 		~GlobalObjectHolder();
 
+		void shutdown();
+
 		LockManager* getLockManager();
 		EventManager* getEventManager();
-		Replication::Manager* getReplManager();
+		Replication::Manager* getReplManager(bool create);
+
+		const Replication::Config* getReplConfig()
+		{
+			return m_replConfig.get();
+		}
 
 	private:
 		const Firebird::string m_id;
-		const Firebird::RefPtr<const Config> m_config;
+		const Firebird::RefPtr<const Firebird::Config> m_config;
 		const Firebird::AutoPtr<const Replication::Config> m_replConfig;
 		Firebird::AutoPtr<LockManager> m_lockMgr;
 		Firebird::AutoPtr<EventManager> m_eventMgr;
@@ -316,7 +329,7 @@ class Database : public pool_alloc<type_dbb>
 
 		explicit GlobalObjectHolder(const Firebird::string& id,
 									const Firebird::PathName& filename,
-									Firebird::RefPtr<const Config> config)
+									Firebird::RefPtr<const Firebird::Config> config)
 			: m_id(getPool(), id), m_config(config),
 			  m_replConfig(Replication::Config::get(filename))
 		{}
@@ -373,7 +386,6 @@ public:
 
 		// ITimer implementation
 		void handler();
-		int release();
 
 	private:
 		Database* dbb;
@@ -515,10 +527,11 @@ public:
 	BackupManager*	dbb_backup_manager;						// physical backup manager
 	ISC_TIMESTAMP_TZ dbb_creation_date; 					// creation timestamp in GMT
 	ExternalFileDirectoryList* dbb_external_file_directory_list;
-	Firebird::RefPtr<const Config> dbb_config;
+	Firebird::RefPtr<const Firebird::Config> dbb_config;
 
 	CryptoManager* dbb_crypto_manager;
 	Firebird::RefPtr<ExistenceRefMutex> dbb_init_fini;
+	Firebird::XThreadMutex dbb_thread_mutex;		// special threads start/stop mutex
 	Firebird::RefPtr<Linger> dbb_linger_timer;
 	unsigned dbb_linger_seconds;
 	time_t dbb_linger_end;
@@ -630,8 +643,10 @@ public:
 	bool allowSweepThread(thread_db* tdbb);
 	// returns true if sweep could run
 	bool allowSweepRun(thread_db* tdbb);
-	// reset sweep flags and release sweep lock
+	// reset sweep flag and release sweep lock
 	void clearSweepFlags(thread_db* tdbb);
+	// reset sweep starting flag, release thread starting mutex
+	bool clearSweepStarting();
 
 	static void garbage_collector(Database* dbb);
 	void exceptionHandler(const Firebird::Exception& ex, ThreadFinishSync<Database*>::ThreadRoutine* routine);
@@ -645,7 +660,8 @@ public:
 
 	const CoercionArray *getBindings() const;
 
-	void initGlobalObjectHolder(thread_db* tdbb);
+	void initGlobalObjects();
+	void shutdownGlobalObjects();
 
 	LockManager* lockManager()
 	{
@@ -657,9 +673,14 @@ public:
 		return dbb_gblobj_holder->getEventManager();
 	}
 
-	Replication::Manager* replManager()
+	Replication::Manager* replManager(bool create = false)
 	{
-		return dbb_gblobj_holder->getReplManager();
+		return dbb_gblobj_holder->getReplManager(create);
+	}
+
+	const Replication::Config* replConfig()
+	{
+		return dbb_gblobj_holder->getReplConfig();
 	}
 
 private:

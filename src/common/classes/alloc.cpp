@@ -255,7 +255,7 @@ namespace SemiDoubleLink
 
 #ifdef USE_VALGRIND
 // Size of Valgrind red zone applied before and after memory block allocated for user
-#define VALGRIND_REDZONE MEM_ALIGN
+#define VALGRIND_REDZONE ALLOC_ALIGNMENT
 #undef MEM_DEBUG	// valgrind works instead
 #else
 #define VALGRIND_REDZONE 0
@@ -491,9 +491,6 @@ public:
 			block->print_contents(block->pool == pool, file, used_only, filter_path, filter_len);
 			m += block->getSize();
 		}
-
-		if (next)
-			next->print_contents(file, pool, used_only, filter_path, filter_len);
 	}
 #endif
 
@@ -638,8 +635,6 @@ public:
 		fprintf(file, "Big hunk %p: memory=%p length=%" SIZEFORMAT "\n",
 			this, block, length);
 		block->print_contents(true, file, used_only, filter_path, filter_len);
-		if (next)
-			next->print_contents(file, pool, used_only, filter_path, filter_len);
 	}
 #endif
 
@@ -1703,8 +1698,8 @@ public:
 	void print_contents(FILE* file, MemPool* pool, bool used_only,
 						const char* filter_path, const size_t filter_len) FB_NOTHROW
 	{
-		if (currentExtent)
-			currentExtent->print_contents(file, pool, used_only, filter_path, filter_len);
+		for (Extent* ext = currentExtent; ext; ext = ext->next)
+			ext->print_contents(file, pool, used_only, filter_path, filter_len);
 	}
 #endif
 

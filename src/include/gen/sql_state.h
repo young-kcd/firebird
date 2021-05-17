@@ -970,8 +970,13 @@ static const struct {
 	{335545267, "01004"}, // 947 truncate_monitor
 	{335545268, "01004"}, // 948 truncate_context
 	{335545269, "21000"}, // 949 merge_dup_update
-	{335545270, "42000"}, // 950 invalid_blob_util_handle
-	{335545271, "42000"}, // 951 cannot_make_blob_opened_handle
+	{335545270, "XX000"}, // 950 wrong_page
+	{335545271, "HY000"}, // 951 repl_error
+	{335545272, "08003"}, // 952 ses_reset_failed
+	{335545273, "XX000"}, // 953 block_size
+	{335545274, "22023"}, // 954 tom_key_length
+	{335545275, "42000"}, // 955 invalid_blob_util_handle
+	{335545276, "42000"}, // 956 cannot_make_blob_opened_handle
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw
@@ -1409,6 +1414,7 @@ static const struct {
 	{336986170, "00000"}, //  58 fbsvcmgr_info_limbo
 	{336986171, "00000"}, //  59 fbsvcmgr_limbo_state
 	{336986172, "00000"}, //  60 fbsvcmgr_limbo_advise
+	{336986173, "00000"}, //  61 fbsvcmgr_bad_rm
 	{337051649, "00000"}, //   1 utl_trusted_switch
 	{337117213, "00000"}, //  29 nbackup_missing_param
 	{337117214, "00000"}, //  30 nbackup_allowed_switches
@@ -1451,6 +1457,7 @@ static const struct {
 	{337117257, "08006"}, //  73 nbackup_user_stop
 	{337117259, "54023"}, //  75 nbackup_deco_parse
 	{337117261, "00000"}, //  77 nbackup_lostrec_guid_db
+	{337117265, "00000"}, //  81 nbackup_seq_misuse
 	{337182750, "00000"}, //  30 trace_conflict_acts
 	{337182751, "00000"}, //  31 trace_act_notfound
 	{337182752, "00000"}, //  32 trace_switch_once

@@ -271,7 +271,6 @@ private:
 
 public:
 	// TracePlugin implementation
-	int release();
 	const char* trace_get_error();
 
 	// Create/close attachment

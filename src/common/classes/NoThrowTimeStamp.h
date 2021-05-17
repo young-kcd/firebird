@@ -176,14 +176,11 @@ public:
 	static SINT64 timeStampToTicks(ISC_TIMESTAMP ts)
 	{
 		const SINT64 ticks = (ts.timestamp_date - MIN_DATE) * ISC_TICKS_PER_DAY + ts.timestamp_time;
-		fb_assert(ticks >= 0);
 		return ticks;
 	}
 
 	static ISC_TIMESTAMP ticksToTimeStamp(SINT64 ticks)
 	{
-		fb_assert(ticks >= 0);
-
 		ISC_TIMESTAMP ts;
 		ts.timestamp_date = (ticks / ISC_TICKS_PER_DAY) + MIN_DATE;
 		ts.timestamp_time = ticks % ISC_TICKS_PER_DAY;

@@ -56,7 +56,6 @@ public:
 
 	// ITimer implementation
 	void handler();
-	int release();
 
 	// Set timer handler function
 	void setOnTimer(std::function<OnTimerFunc> onTimer)

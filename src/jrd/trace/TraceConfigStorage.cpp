@@ -963,15 +963,4 @@ void ConfigStorage::TouchFile::stop()
 	// ignore error in stop timer
 }
 
-int ConfigStorage::TouchFile::release()
-{
-	if (--refCounter == 0)
-	{
-		delete this;
-		return 0;
-	}
-
-	return 1;
-}
-
 } // namespace Jrd

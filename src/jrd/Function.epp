@@ -458,7 +458,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 					throw;
 				}
 
-				function->getStatement()->function = function;
+				fb_assert(function->getStatement()->function == function);
 			}
 			else
 			{
@@ -568,26 +568,32 @@ bool Function::reload(thread_db* tdbb)
 		MemoryPool* const csb_pool = attachment->createPool();
 		Jrd::ContextPoolHolder context(tdbb, csb_pool);
 
-		AutoPtr<CompilerScratch> csb(FB_NEW_POOL(*csb_pool) CompilerScratch(*csb_pool));
-
 		try
 		{
-			this->parseBlr(tdbb, csb, &X.RDB$FUNCTION_BLR,
-				X.RDB$DEBUG_INFO.NULL ? NULL : &X.RDB$DEBUG_INFO);
+			AutoPtr<CompilerScratch> csb(FB_NEW_POOL(*csb_pool) CompilerScratch(*csb_pool));
 
-			// parseBlr() above could set FLAG_RELOAD again
-			return !(this->flags & Routine::FLAG_RELOAD);
+			try
+			{
+				this->parseBlr(tdbb, csb, &X.RDB$FUNCTION_BLR,
+					X.RDB$DEBUG_INFO.NULL ? NULL : &X.RDB$DEBUG_INFO);
+
+				// parseBlr() above could set FLAG_RELOAD again
+				return !(this->flags & Routine::FLAG_RELOAD);
+			}
+			catch (const Exception& ex)
+			{
+				StaticStatusVector temp_status;
+				ex.stuffException(temp_status);
+
+				const string name = this->getName().toString();
+				(Arg::Gds(isc_bad_fun_BLR) << Arg::Str(name)
+					<< Arg::StatusVector(temp_status.begin())).raise();
+			}
 		}
-		catch (const Exception& ex)
+		catch (const Exception&)
 		{
-			StaticStatusVector temp_status;
-			ex.stuffException(temp_status);
-
 			attachment->deletePool(csb_pool);
-
-			const string name = this->getName().toString();
-			(Arg::Gds(isc_bad_fun_BLR) << Arg::Str(name)
-				<< Arg::StatusVector(temp_status.begin())).raise();
+			throw;
 		}
 	}
 	END_FOR

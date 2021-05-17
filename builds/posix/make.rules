@@ -32,7 +32,7 @@
 
 
 # Please don't use compiler/platform specific flags here - nmcc 02-Nov-2002
-WFLAGS =-I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include -I$(ROOT)/extern/re2 $(CPPFLAGS)
+WFLAGS =-I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include -I$(ROOT)/extern/re2 $(CPPFLAGS) $(LTCSOURCE)
 
 ifeq ($(TOMMATH_BUILD_FLG),Y)
   WFLAGS += -I$(TOMMATH_INC)
@@ -53,7 +53,7 @@ else
 endif
 
 WCFLAGS = $(WFLAGS) $(CFLAGS) $(AC_CFLAGS) $(GLOB_OPTIONS)
-WCXXFLAGS = $(WFLAGS) $(PLUSPLUS_FLAGS) $(CXXFLAGS) $(AC_CXXFLAGS) $(GLOB_OPTIONS)
+WCXXFLAGS = $(WFLAGS) $(PLUSPLUS_FLAGS) $(PLATFORM_PLUSPLUS_FLAGS) $(CXXFLAGS) $(AC_CXXFLAGS) $(GLOB_OPTIONS)
 
 # Here we have definitions for using the preprocessor.
 
@@ -105,6 +105,10 @@ $(OBJ)/%.cpp: $(SRC_ROOT)/%.epp
 	$(CC) $(WCFLAGS) -c $(firstword $<) -o $@
 
 $(OBJ)/%.o: $(SRC_ROOT)/%.c
+	$(CC) $(WCFLAGS) -c $(firstword $<) -o $@
+	@sed $(INLINE_EDIT_SED) -e "1,2s/:/: \$$(wildcard/" -e "\$$s/\(.*\)/\\1)/" $(patsubst %.o,%.d,$@)
+
+$(OBJ)/%.o: $(SRC_ROOT)/%.m
 	$(CC) $(WCFLAGS) -c $(firstword $<) -o $@
 	@sed $(INLINE_EDIT_SED) -e "1,2s/:/: \$$(wildcard/" -e "\$$s/\(.*\)/\\1)/" $(patsubst %.o,%.d,$@)
 

@@ -30,7 +30,6 @@
 #include "../common/gdsassert.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
-#include "../common/xdr_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/init.h"
@@ -319,17 +318,14 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
  *	Zero out a full packet block (partial == false) or
  *	part of packet used in last operation (partial == true)
  **************************************/
-	XDR xdr;
+	RemoteXdr xdr;
 	USHORT n;
 
 	if (packet)
 	{
-		xdrmem_create(&xdr, reinterpret_cast<char*>(packet), sizeof(PACKET), XDR_FREE);
-		xdr.x_public = (caddr_t) port;
+		xdr.create(reinterpret_cast<char*>(packet), sizeof(PACKET), XDR_FREE);
+		xdr.x_public = port;
 		xdr.x_local = (port->port_type == rem_port::XNET);
-#ifdef DEV_BUILD
-		xdr.x_client = false;
-#endif
 
 		if (partial) {
 			xdr_protocol(&xdr, packet);
@@ -604,14 +600,14 @@ void rem_port::linkParent(rem_port* const parent)
 	parent->port_clients = parent->port_next = this;
 }
 
-const Firebird::RefPtr<const Config>& rem_port::getPortConfig() const
+const Firebird::RefPtr<const Firebird::Config>& rem_port::getPortConfig() const
 {
-	return port_config.hasData() ? port_config : Config::getDefaultConfig();
+	return port_config.hasData() ? port_config : Firebird::Config::getDefaultConfig();
 }
 
-Firebird::RefPtr<const Config> rem_port::getPortConfig()
+Firebird::RefPtr<const Firebird::Config> rem_port::getPortConfig()
 {
-	return port_config.hasData() ? port_config : Config::getDefaultConfig();
+	return port_config.hasData() ? port_config : Firebird::Config::getDefaultConfig();
 }
 
 void rem_port::unlinkParent()
@@ -711,7 +707,7 @@ void rem_port::auxAcceptError(PACKET* packet)
 	}
 }
 
-bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, unsigned bytecount)
+bool_t REMOTE_getbytes (RemoteXdr* xdrs, SCHAR* buff, unsigned bytecount)
 {
 /**************************************
  *
@@ -743,11 +739,14 @@ bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, unsigned bytecount)
 			xdrs->x_handy = 0;
 		}
 
-		rem_port* port = (rem_port*) xdrs->x_public;
-		Firebird::RefMutexGuard queGuard(*port->port_que_sync, FB_FUNCTION);
+		rem_port* port = xdrs->x_public;
+		Firebird::RefMutexEnsureUnlock queGuard(*port->port_que_sync, FB_FUNCTION);
+		queGuard.enter();
 		if (port->port_qoffset >= port->port_queue.getCount())
 		{
-			port->port_flags |= PORT_partial_data;
+			queGuard.leave();
+
+			port->port_partial_data = true;
 			return FALSE;
 		}
 
@@ -958,7 +957,7 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
 	addMultiPartConnectParameter(dataFromPlugin, user_id, CNCT_specific_data);
 
 	// Client's wirecrypt requested level
-	user_id.insertInt(CNCT_client_crypt, clntConfig->getWireCrypt(WC_CLIENT));
+	user_id.insertInt(CNCT_client_crypt, clntConfig->getWireCrypt(Firebird::WC_CLIENT));
 }
 
 void ClntAuthBlock::resetClnt(const CSTRING* listStr)
@@ -1009,7 +1008,7 @@ void ClntAuthBlock::resetClnt(const CSTRING* listStr)
 	plugins.set(final.c_str());
 }
 
-Firebird::RefPtr<const Config>* ClntAuthBlock::getConfig()
+Firebird::RefPtr<const Firebird::Config>* ClntAuthBlock::getConfig()
 {
 	return clntConfig.hasData() ? &clntConfig : NULL;
 }
@@ -1020,10 +1019,10 @@ void ClntAuthBlock::storeDataForPlugin(unsigned int length, const unsigned char*
 	HANDSHAKE_DEBUG(fprintf(stderr, "Cli: accepted data for plugin length=%d\n", length));
 }
 
-Firebird::RefPtr<const Config> REMOTE_get_config(const Firebird::PathName* dbName,
+Firebird::RefPtr<const Firebird::Config> REMOTE_get_config(const Firebird::PathName* dbName,
 	const Firebird::string* dpb_config)
 {
-	Firebird::RefPtr<const Config> config;
+	Firebird::RefPtr<const Firebird::Config> config;
 
 	if (dbName && dbName->hasData())
 	{
@@ -1031,9 +1030,9 @@ Firebird::RefPtr<const Config> REMOTE_get_config(const Firebird::PathName* dbNam
 		expandDatabaseName(*dbName, dummy, &config);
 	}
 	else
-		config = Config::getDefaultConfig();
+		config = Firebird::Config::getDefaultConfig();
 
-	Config::merge(config, dpb_config);
+	Firebird::Config::merge(config, dpb_config);
 
 	return config;
 }
@@ -1140,7 +1139,7 @@ static void setCStr(CSTRING& to, const char* from)
 	to.cstr_allocated = 0;
 }
 
-void rem_port::addServerKeys(CSTRING* passedStr)
+void rem_port::addServerKeys(const CSTRING* passedStr)
 {
 	Firebird::ClumpletReader newKeys(Firebird::ClumpletReader::UnTagged,
 									 passedStr->cstr_address, passedStr->cstr_length);
@@ -1204,7 +1203,7 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 		return false;
 	}
 
-	if (getPortConfig()->getWireCrypt(WC_CLIENT) == WIRE_CRYPT_DISABLED)
+	if (getPortConfig()->getWireCrypt(Firebird::WC_CLIENT) == Firebird::WIRE_CRYPT_DISABLED)
 	{
 		port_crypt_complete = true;
 		return true;
@@ -1405,7 +1404,7 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 #ifdef COMPRESS_DEBUG
 				fprintf(stderr, "Inflate error\n");
 #endif
-				port->port_flags &= ~PORT_z_data;
+				port->port_z_data = false;
 				return false;
 			}
 #ifdef COMPRESS_DEBUG
@@ -1418,9 +1417,9 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 			if (strm.next_out != buffer)
 				break;
 
-			if (port->port_flags & PORT_z_data)		// Was called from select_multi() but nothing decompressed
+			if (port->port_z_data)		// Was called from select_multi() but nothing decompressed
 			{
-				port->port_flags &= ~PORT_z_data;
+				port->port_z_data = false;
 				return false;
 			}
 
@@ -1437,7 +1436,7 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 		SSHORT l = (SSHORT) (port->port_buff_size - strm.avail_in);
 		if ((!packet_receive(port, strm.next_in, l, &l)) || (l <= 0))	// fixit - 2 ways to report errors in same routine
 		{
-			port->port_flags &= ~PORT_z_data;
+			port->port_z_data = false;
 			return false;
 		}
 
@@ -1446,12 +1445,12 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 
 	*length = (SSHORT) (buffer_length - strm.avail_out);
 	if (strm.avail_in)	// Z-buffer still has some data - probably can call inflate() once more on them
-		port->port_flags |= PORT_z_data;
+		port->port_z_data = true;
 	else
-		port->port_flags &= ~PORT_z_data;
+		port->port_z_data = false;
 
 #ifdef COMPRESS_DEBUG
-	fprintf(stderr, "Z-buffer %s\n", port->port_flags & PORT_z_data ? "has data" : "is empty");
+	fprintf(stderr, "ZLib buffer %s\n", port->port_z_data ? "has data" : "is empty");
 #endif
 
 	return true;
@@ -1460,10 +1459,10 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 #endif
 }
 
-bool REMOTE_deflate(XDR* xdrs, ProtoWrite* proto_write, PacketSend* packet_send, bool flush)
+bool REMOTE_deflate(RemoteXdr* xdrs, ProtoWrite* proto_write, PacketSend* packet_send, bool flush)
 {
 #ifdef WIRE_COMPRESS_SUPPORT
-	rem_port* port = (rem_port*) xdrs->x_public;
+	rem_port* port = xdrs->x_public;
 	if (!(port->port_compressed && (port->port_flags & PORT_compressed)))
 		return proto_write(xdrs);
 

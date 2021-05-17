@@ -2390,8 +2390,8 @@ public:
 	static const unsigned CLAUSE_CRYPT				= 0x08;
 	static const unsigned CLAUSE_ENABLE_PUB			= 0x10;
 	static const unsigned CLAUSE_DISABLE_PUB		= 0x20;
-	static const unsigned CLAUSE_PUB_ADD_TABLE		= 0x40;
-	static const unsigned CLAUSE_PUB_DROP_TABLE		= 0x80;
+	static const unsigned CLAUSE_PUB_INCL_TABLE		= 0x40;
+	static const unsigned CLAUSE_PUB_EXCL_TABLE		= 0x80;
 
 	static const unsigned RDB_DATABASE_MASK =
 		CLAUSE_BEGIN_BACKUP | CLAUSE_END_BACKUP | CLAUSE_DROP_DIFFERENCE;

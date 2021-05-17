@@ -22,7 +22,6 @@
 
 #include "firebird.h"
 #include "../ids.h"
-#include "../jrd/align.h"
 #include "../jrd/jrd.h"
 #include "../jrd/blb.h"
 #include "../jrd/req.h"
@@ -49,7 +48,7 @@
 #include "Utils.h"
 
 // Log conflicts as warnings
-#define LOG_WARNINGS
+#define LOG_CONFLICTS
 
 // Detect and resolve record-level conflicts (in favor of master copy)
 #define RESOLVE_CONFLICTS
@@ -81,64 +80,76 @@ namespace
 		{ rel_db_creators, { f_crt_user, f_crt_u_type, UNDEF, UNDEF, UNDEF, UNDEF, UNDEF, UNDEF } }
 	};
 
-	class BlockReader
+	class BlockReader : public AutoStorage
 	{
 	public:
 		BlockReader(ULONG length, const UCHAR* data)
 			: m_header((Block*) data),
 			  m_data(data + sizeof(Block)),
-			  m_metadata(data + sizeof(Block) + m_header->dataLength)
+			  m_end(data + length),
+			  m_atoms(getPool())
 		{
-			fb_assert(m_metadata + m_header->metaLength == data + length);
+			fb_assert(m_data + m_header->length == m_end);
 		}
 
 		bool isEof() const
 		{
-			return (m_data >= m_metadata);
+			return (m_data >= m_end);
 		}
 
 		UCHAR getTag()
 		{
+			return getByte();
+		}
+
+		UCHAR getByte()
+		{
 			return *m_data++;
 		}
 
-		SLONG getInt()
+		SSHORT getInt16()
 		{
-			m_data = FB_ALIGN(m_data, type_alignments[dtype_long]);
-			const auto ptr = (const SLONG*) m_data;
-			m_data += sizeof(SLONG);
-			return *ptr;
+			SSHORT value;
+			memcpy(&value, m_data, sizeof(SSHORT));
+			m_data += sizeof(SSHORT);
+			return value;
 		}
 
-		SINT64 getBigInt()
+		SLONG getInt32()
 		{
-			m_data = FB_ALIGN(m_data, type_alignments[dtype_int64]);
-			const auto ptr = (const SINT64*) m_data;
+			SLONG value;
+			memcpy(&value, m_data, sizeof(SLONG));
+			m_data += sizeof(SLONG);
+			return value;
+		}
+
+		SINT64 getInt64()
+		{
+			SINT64 value;
+			memcpy(&value, m_data, sizeof(SINT64));
 			m_data += sizeof(SINT64);
-			return *ptr;
+			return value;
 		}
 
 		const MetaString& getMetaName()
 		{
-			const auto offset = getInt() * sizeof(MetaString);
-			const auto metaPtr = (const MetaString*) (m_metadata + offset);
-			return *metaPtr;
+			const auto pos = getInt32();
+			return m_atoms[pos];
 		}
 
 		string getString()
 		{
-			const auto length = getInt();
+			const auto length = getInt32();
 			const string str((const char*) m_data, length);
 			m_data += length;
 			return str;
 		}
 
-		ULONG getBinary(const UCHAR*& ptr)
+		const UCHAR* getBinary(ULONG length)
 		{
-			const auto len = getInt();
-			ptr = m_data;
-			m_data += len;
-			return len;
+			const auto ptr = m_data;
+			m_data += length;
+			return ptr;
 		}
 
 		TraNumber getTransactionId() const
@@ -151,10 +162,19 @@ namespace
 			return m_header->protocol;
 		}
 
+		void defineAtom()
+		{
+			const auto length = getByte();
+			const auto ptr = getBinary(length);
+			const MetaString name((const char*) ptr, length);
+			m_atoms.add(name);
+		}
+
 	private:
 		const Block* const m_header;
 		const UCHAR* m_data;
-		const UCHAR* const m_metadata;
+		const UCHAR* const m_end;
+		HalfStaticArray<MetaString, 64> m_atoms;
 	};
 
 	class LocalThreadContext
@@ -201,11 +221,16 @@ Applier* Applier::create(thread_db* tdbb)
 	request->req_attachment = attachment;
 
 	auto& att_pool = *attachment->att_pool;
-	return FB_NEW_POOL(att_pool) Applier(att_pool, dbb->dbb_filename, request);
+	const auto applier = FB_NEW_POOL(att_pool) Applier(att_pool, dbb->dbb_filename, request);
+
+	attachment->att_repl_appliers.add(applier);
+	return applier;
 }
 
 void Applier::shutdown(thread_db* tdbb)
 {
+	const auto attachment = tdbb->getAttachment();
+
 	cleanupTransactions(tdbb);
 
 	CMP_release(tdbb, m_request);
@@ -213,6 +238,14 @@ void Applier::shutdown(thread_db* tdbb)
 	m_record = NULL;
 
 	m_bitmap->clear();
+
+	attachment->att_repl_appliers.findAndRemove(this);
+
+	if (m_interface)
+	{
+		m_interface->resetHandle();
+		m_interface = nullptr;
+	}
 }
 
 void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
@@ -222,137 +255,135 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 	if (dbb->readOnly())
 		raiseError("Replication is impossible for read-only database");
 
-	try
+	tdbb->tdbb_flags |= TDBB_replicator;
+
+	BlockReader reader(length, data);
+
+	const auto traNum = reader.getTransactionId();
+	const auto protocol = reader.getProtocolVersion();
+
+	if (protocol != PROTOCOL_CURRENT_VERSION)
+		raiseError("Unsupported replication protocol version %u", protocol);
+
+	while (!reader.isEof())
 	{
-		tdbb->tdbb_flags |= TDBB_replicator;
+		const auto op = reader.getTag();
 
-		BlockReader reader(length, data);
-
-		const auto traNum = reader.getTransactionId();
-		const auto protocol = reader.getProtocolVersion();
-
-		if (protocol != PROTOCOL_CURRENT_VERSION)
-			raiseError("Unsupported replication protocol version %u", protocol);
-
-		while (!reader.isEof())
+		switch (op)
 		{
-			const auto op = reader.getTag();
+		case opStartTransaction:
+			startTransaction(tdbb, traNum);
+			break;
 
-			switch (op)
+		case opPrepareTransaction:
+			prepareTransaction(tdbb, traNum);
+			break;
+
+		case opCommitTransaction:
+			commitTransaction(tdbb, traNum);
+			break;
+
+		case opRollbackTransaction:
+			rollbackTransaction(tdbb, traNum, false);
+			break;
+
+		case opCleanupTransaction:
+			if (traNum)
+				rollbackTransaction(tdbb, traNum, true);
+			else
+				cleanupTransactions(tdbb);
+			break;
+
+		case opStartSavepoint:
+			startSavepoint(tdbb, traNum);
+			break;
+
+		case opReleaseSavepoint:
+			cleanupSavepoint(tdbb, traNum, false);
+			break;
+
+		case opRollbackSavepoint:
+			cleanupSavepoint(tdbb, traNum, true);
+			break;
+
+		case opInsertRecord:
 			{
-			case opStartTransaction:
-				startTransaction(tdbb, traNum);
-				break;
-
-			case opPrepareTransaction:
-				prepareTransaction(tdbb, traNum);
-				break;
-
-			case opCommitTransaction:
-				commitTransaction(tdbb, traNum);
-				break;
-
-			case opRollbackTransaction:
-				rollbackTransaction(tdbb, traNum, false);
-				break;
-
-			case opCleanupTransaction:
-				if (traNum)
-					rollbackTransaction(tdbb, traNum, true);
-				else
-					cleanupTransactions(tdbb);
-				break;
-
-			case opStartSavepoint:
-				startSavepoint(tdbb, traNum);
-				break;
-
-			case opReleaseSavepoint:
-				cleanupSavepoint(tdbb, traNum, false);
-				break;
-
-			case opRollbackSavepoint:
-				cleanupSavepoint(tdbb, traNum, true);
-				break;
-
-			case opInsertRecord:
-				{
-					const MetaName relName = reader.getMetaName();
-					const UCHAR* record = NULL;
-					const ULONG length = reader.getBinary(record);
-					insertRecord(tdbb, traNum, relName, length, record);
-				}
-				break;
-
-			case opUpdateRecord:
-				{
-					const MetaName relName = reader.getMetaName();
-					const UCHAR* orgRecord = NULL;
-					const ULONG orgLength = reader.getBinary(orgRecord);
-					const UCHAR* newRecord = NULL;
-					const ULONG newLength = reader.getBinary(newRecord);
-					updateRecord(tdbb, traNum, relName,
-										  orgLength, orgRecord,
-										  newLength, newRecord);
-				}
-				break;
-
-			case opDeleteRecord:
-				{
-					const MetaName relName = reader.getMetaName();
-					const UCHAR* record = NULL;
-					const ULONG length = reader.getBinary(record);
-					deleteRecord(tdbb, traNum, relName, length, record);
-				}
-				break;
-
-			case opStoreBlob:
-				{
-					bid blob_id;
-					blob_id.bid_quad.bid_quad_high = reader.getInt();
-					blob_id.bid_quad.bid_quad_low = reader.getInt();
-					ULONG length = 0;
-					do {
-						const UCHAR* blob = NULL;
-						length = reader.getBinary(blob);
-						storeBlob(tdbb, traNum, &blob_id, length, blob);
-					} while (length && !reader.isEof());
-				}
-				break;
-
-			case opExecuteSql:
-			case opExecuteSqlIntl:
-				{
-					const unsigned charset =
-						(op == opExecuteSql) ? CS_UTF8 : reader.getInt();
-					const string sql = reader.getString();
-					const MetaName ownerName = reader.getMetaName();
-					executeSql(tdbb, traNum, charset, sql, ownerName);
-				}
-				break;
-
-			case opSetSequence:
-				{
-					const MetaName genName = reader.getMetaName();
-					const SINT64 value = reader.getBigInt();
-					setSequence(tdbb, genName, value);
-				}
-				break;
-
-			default:
-				fb_assert(false);
+				const auto relName = reader.getMetaName();
+				const ULONG length = reader.getInt32();
+				const auto record = reader.getBinary(length);
+				insertRecord(tdbb, traNum, relName, length, record);
 			}
+			break;
 
-			// Check cancellation flags and reset monitoring state if necessary
-			tdbb->checkCancelState();
-			Monitoring::checkState(tdbb);
+		case opUpdateRecord:
+			{
+				const auto relName = reader.getMetaName();
+				const ULONG orgLength = reader.getInt32();
+				const auto orgRecord = reader.getBinary(orgLength);
+				const ULONG newLength = reader.getInt32();
+				const auto newRecord = reader.getBinary(newLength);
+				updateRecord(tdbb, traNum, relName, orgLength, orgRecord, newLength, newRecord);
+			}
+			break;
+
+		case opDeleteRecord:
+			{
+				const auto relName = reader.getMetaName();
+				const ULONG length = reader.getInt32();
+				const auto record = reader.getBinary(length);
+				deleteRecord(tdbb, traNum, relName, length, record);
+			}
+			break;
+
+		case opStoreBlob:
+			{
+				bid blob_id;
+				blob_id.bid_quad.bid_quad_high = reader.getInt32();
+				blob_id.bid_quad.bid_quad_low = reader.getInt32();
+				do {
+					const ULONG length = reader.getInt16();
+					if (!length)
+					{
+						// Close our newly created blob
+						storeBlob(tdbb, traNum, &blob_id, 0, nullptr);
+						break;
+					}
+					const auto blob = reader.getBinary(length);
+					storeBlob(tdbb, traNum, &blob_id, length, blob);
+				} while (!reader.isEof());
+			}
+			break;
+
+		case opExecuteSql:
+		case opExecuteSqlIntl:
+			{
+				const auto ownerName = reader.getMetaName();
+				const unsigned charset =
+					(op == opExecuteSql) ? CS_UTF8 : reader.getByte();
+				const string sql = reader.getString();
+				executeSql(tdbb, traNum, charset, sql, ownerName);
+			}
+			break;
+
+		case opSetSequence:
+			{
+				const auto genName = reader.getMetaName();
+				const auto value = reader.getInt64();
+				setSequence(tdbb, genName, value);
+			}
+			break;
+
+		case opDefineAtom:
+			reader.defineAtom();
+			break;
+
+		default:
+			fb_assert(false);
 		}
 
-	} // try
-	catch (const Exception& ex)
-	{
-		postError(tdbb->tdbb_status_vector, ex);
-		throw;
+		// Check cancellation flags and reset monitoring state if necessary
+		tdbb->checkCancelState();
+		Monitoring::checkState(tdbb);
 	}
 }
 
@@ -363,8 +394,7 @@ void Applier::startTransaction(thread_db* tdbb, TraNumber traNum)
 	if (m_txnMap.exist(traNum))
 		raiseError("Transaction %" SQUADFORMAT" already exists", traNum);
 
-	const auto transaction =
-		TRA_start(tdbb, TRA_read_committed | TRA_rec_version | TRA_no_auto_undo, 1);
+	const auto transaction = TRA_start(tdbb, TRA_read_committed | TRA_rec_version, 1);
 
 	m_txnMap.put(traNum, transaction);
 }
@@ -536,7 +566,7 @@ void Applier::insertRecord(thread_db* tdbb, TraNumber traNum,
 
 	if (found)
 	{
-		logWarning("Record being inserted into table %s already exists, updating instead", relName.c_str());
+		logConflict("Record being inserted into table %s already exists, updating instead", relName.c_str());
 
 		record_param newRpb;
 		newRpb.rpb_relation = relation;
@@ -649,12 +679,48 @@ void Applier::updateRecord(thread_db* tdbb, TraNumber traNum,
 
 	if (found)
 	{
+		if (relation->isSystem())
+		{
+			// For system tables, preserve the fields that was not explicitly changed
+			// during the update. This prevents metadata IDs from being overwritten.
+
+			for (USHORT id = 0; id < newFormat->fmt_count; id++)
+			{
+				dsc from, to;
+
+				const auto orgFlag = EVL_field(NULL, orgRecord, id, &from);
+				const auto newFlag = EVL_field(NULL, newRecord, id, &to);
+
+				if (orgFlag == newFlag && (!newFlag || !MOV_compare(tdbb, &from, &to)))
+				{
+					const auto flag = EVL_field(NULL, orgRpb.rpb_record, id, &from);
+
+					if (flag)
+					{
+						MOV_move(tdbb, &from, &to);
+						newRecord->clearNull(id);
+
+						if (DTYPE_IS_BLOB(from.dsc_dtype))
+						{
+							const auto source = (bid*) from.dsc_address;
+							sourceBlobs[id] = *source;
+						}
+					}
+					else
+					{
+						newRecord->setNull(id);
+						sourceBlobs[id].clear();
+					}
+				}
+			}
+		}
+
 		doUpdate(tdbb, &orgRpb, &newRpb, transaction, &sourceBlobs);
 	}
 	else
 	{
 #ifdef RESOLVE_CONFLICTS
-		logWarning("Record being updated in table %s does not exist, inserting instead", relName.c_str());
+		logConflict("Record being updated in table %s does not exist, inserting instead", relName.c_str());
 		doInsert(tdbb, &newRpb, transaction);
 #else
 		raiseError("Record in table %s cannot be located via the primary/unique key", relName.c_str());
@@ -730,7 +796,7 @@ void Applier::deleteRecord(thread_db* tdbb, TraNumber traNum,
 	else
 	{
 #ifdef RESOLVE_CONFLICTS
-		logWarning("Record being deleted from table %s does not exist, ignoring", relName.c_str());
+		logConflict("Record being deleted from table %s does not exist, ignoring", relName.c_str());
 #else
 		raiseError("Record in table %s cannot be located via the primary/unique key", relName.c_str());
 #endif
@@ -855,10 +921,30 @@ bool Applier::lookupKey(thread_db* tdbb, jrd_rel* relation, index_desc& key)
 
 			if (idx.idx_flags & idx_unique)
 			{
-				if ((key.idx_id == idx_invalid) || (idx.idx_count < key.idx_count))
-				{
+				if (key.idx_id == idx_invalid)
 					key = idx;
+				else if (relation->isSystem())
+				{
+					// For unique system indices, prefer ones using metanames rather than IDs
+					USHORT metakeys1 = 0, metakeys2 = 0;
+
+					for (USHORT id = 0; id < idx.idx_count; id++)
+					{
+						if (idx.idx_rpt[id].idx_itype == idx_metadata)
+							metakeys1++;
+					}
+
+					for (USHORT id = 0; id < key.idx_count; id++)
+					{
+						if (key.idx_rpt[id].idx_itype == idx_metadata)
+							metakeys2++;
+					}
+
+					if (metakeys1 > metakeys2)
+						key = idx;
 				}
+				else if (idx.idx_count < key.idx_count)
+					key = idx;
 			}
 		}
 	}
@@ -1152,14 +1238,9 @@ void Applier::doDelete(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	REPL_erase(tdbb, rpb, transaction);
 }
 
-void Applier::logMessage(const string& message, LogMsgType type)
+void Applier::logConflict(const char* msg, ...)
 {
-	logReplicaMessage(m_database, message, type);
-}
-
-void Applier::logWarning(const char* msg, ...)
-{
-#ifdef LOG_WARNINGS
+#ifdef LOG_CONFLICTS
 	char buffer[BUFFER_LARGE];
 
 	va_list ptr;
@@ -1167,32 +1248,6 @@ void Applier::logWarning(const char* msg, ...)
 	vsprintf(buffer, msg, ptr);
 	va_end(ptr);
 
-	logMessage(buffer, WARNING_MSG);
+	logReplicaWarning(m_database, buffer);
 #endif
-}
-
-void Applier::postError(FbStatusVector* status, const Exception& ex)
-{
-	FbLocalStatus temp_status;
-	ex.stuffException(&temp_status);
-
-	string message;
-
-	char temp[BUFFER_LARGE];
-	const ISC_STATUS* temp_status_ptr = temp_status->getErrors();
-	while (fb_interpret(temp, sizeof(temp), &temp_status_ptr))
-	{
-		if (!message.isEmpty())
-			message += "\n\t";
-
-		message += temp;
-	}
-
-	logMessage(message, ERROR_MSG);
-
-	Arg::StatusVector org_error(&temp_status);
-	Arg::StatusVector new_error;
-	new_error << Arg::Gds(isc_random) << Arg::Str("Replication error");
-	new_error.append(org_error);
-	new_error.copyTo(status);
 }

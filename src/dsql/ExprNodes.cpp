@@ -70,6 +70,28 @@ using namespace Jrd;
 
 namespace
 {
+	bool sameNodes(CompilerScratch* csb, const ValueIfNode* node1,
+				   const CoalesceNode* node2, bool ignoreStreams)
+	{
+		// dimitr:	COALESCE could be represented as ValueIfNode in older databases,
+		// 			so compare them for actually being the same thing:
+		//			COALESCE(A, B) == VALUE_IF(A IS NULL, B, A)
+
+		if (node1 && node2)
+		{
+			const auto missing = nodeAs<MissingBoolNode>(node1->condition);
+			if (missing && missing->arg->sameAs(csb, node1->falseValue, false) &&
+				node2->args->items.getCount() == 2 &&
+				node2->args->items[0]->sameAs(csb, node1->falseValue, ignoreStreams) &&
+				node2->args->items[1]->sameAs(csb, node1->trueValue, ignoreStreams))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	// Try to expand the given stream. If it's a view reference, collect its base streams
 	// (the ones directly residing in the FROM clause) and recurse.
 	void expandViewStreams(CompilerScratch* csb, StreamType baseStream, SortedStreamList& streams)
@@ -3692,6 +3714,14 @@ ValueExprNode* CoalesceNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
+bool CoalesceNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
+{
+	if (ExprNode::sameAs(csb, other, ignoreStreams))
+		return true;
+
+	return sameNodes(csb, nodeAs<ValueIfNode>(other), this, ignoreStreams);
+}
+
 ValueExprNode* CoalesceNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	ValueExprNode::pass2(tdbb, csb);
@@ -5304,6 +5334,7 @@ ValueExprNode* ExtractNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 		case blr_extract_timezone_hour:
 		case blr_extract_timezone_minute:
+		case blr_extract_timezone_name:
 			if (!nodeIs<NullNode>(sub1) &&
 				!sub1->getDsqlDesc().isTime() &&
 				!sub1->getDsqlDesc().isTimeStamp())
@@ -5355,6 +5386,10 @@ void ExtractNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 			desc->makeLong(ISC_TIME_SECONDS_PRECISION_SCALE + 3);
 			break;
 
+		case blr_extract_timezone_name:
+			desc->makeVarying(TimeZoneUtil::MAX_LEN, ttype_ascii);
+			break;
+
 		default:
 			desc->makeShort(0);
 			break;
@@ -5374,6 +5409,10 @@ void ExtractNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* de
 
 		case blr_extract_millisecond:
 			desc->makeLong(ISC_TIME_SECONDS_PRECISION_SCALE + 3);
+			break;
+
+		case blr_extract_timezone_name:
+			desc->makeVarying(TimeZoneUtil::MAX_LEN, ttype_ascii);
 			break;
 
 		default:
@@ -5454,6 +5493,7 @@ dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 
 				case blr_extract_timezone_hour:
 				case blr_extract_timezone_minute:
+				case blr_extract_timezone_name:
 				{
 					ISC_TIME_TZ timeTz = TimeZoneUtil::timeToTimeTz(
 						*(ISC_TIME*) value->dsc_address, &EngineCallbacks::instance);
@@ -5482,6 +5522,7 @@ dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 
 				case blr_extract_timezone_hour:
 				case blr_extract_timezone_minute:
+				case blr_extract_timezone_name:
 					timeStampTz.utc_timestamp.timestamp_date = TimeZoneUtil::TIME_TZ_BASE_DATE;
 					timeStampTz.utc_timestamp.timestamp_time = ((ISC_TIME_TZ*) value->dsc_address)->utc_time;
 					timeStampTz.time_zone = ((ISC_TIME_TZ*) value->dsc_address)->time_zone;
@@ -5502,6 +5543,7 @@ dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 				case blr_extract_millisecond:
 				case blr_extract_timezone_hour:
 				case blr_extract_timezone_minute:
+				case blr_extract_timezone_name:
 					ERR_post(Arg::Gds(isc_expression_eval_err) <<
 							 Arg::Gds(isc_invalid_extractpart_date));
 					break;
@@ -5516,6 +5558,7 @@ dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 			{
 				case blr_extract_timezone_hour:
 				case blr_extract_timezone_minute:
+				case blr_extract_timezone_name:
 				{
 					dsc tempDsc;
 					tempDsc.makeTimestampTz(&timeStampTz);
@@ -5533,6 +5576,7 @@ dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 			{
 				case blr_extract_timezone_hour:
 				case blr_extract_timezone_minute:
+				case blr_extract_timezone_name:
 					timeStampTz = *(ISC_TIMESTAMP_TZ*) value->dsc_address;
 					break;
 
@@ -5548,28 +5592,41 @@ dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 			break;
 	}
 
-	if (blrSubOp == blr_extract_timezone_hour || blrSubOp == blr_extract_timezone_minute)
-	{
-		int tzSign;
-		unsigned tzh, tzm;
-		TimeZoneUtil::extractOffset(timeStampTz, &tzSign, &tzh, &tzm);
-
-		switch (blrSubOp)
-		{
-			case blr_extract_timezone_hour:
-				*(SSHORT*) impure->vlu_desc.dsc_address = tzSign * int(tzh);
-				return &impure->vlu_desc;
-
-			case blr_extract_timezone_minute:
-				*(SSHORT*) impure->vlu_desc.dsc_address = tzSign * int(tzm);
-				return &impure->vlu_desc;
-		}
-	}
-
 	USHORT part;
 
 	switch (blrSubOp)
 	{
+		case blr_extract_timezone_hour:
+		case blr_extract_timezone_minute:
+		{
+			int tzSign;
+			unsigned tzh, tzm;
+			TimeZoneUtil::extractOffset(timeStampTz, &tzSign, &tzh, &tzm);
+
+			switch (blrSubOp)
+			{
+				case blr_extract_timezone_hour:
+					*(SSHORT*) impure->vlu_desc.dsc_address = tzSign * int(tzh);
+					return &impure->vlu_desc;
+
+				case blr_extract_timezone_minute:
+					*(SSHORT*) impure->vlu_desc.dsc_address = tzSign * int(tzm);
+					return &impure->vlu_desc;
+			}
+
+			break;
+		}
+
+		case blr_extract_timezone_name:
+		{
+			char timeZoneBuffer[TimeZoneUtil::MAX_SIZE];
+			const auto len = TimeZoneUtil::format(timeZoneBuffer, sizeof(timeZoneBuffer), timeStampTz.time_zone);
+
+			impure->vlu_desc.makeText(len, ttype_ascii, (UCHAR*) timeZoneBuffer);
+			EVL_make_value(tdbb, &impure->vlu_desc, impure);
+			return &impure->vlu_desc;
+		}
+
 		case blr_extract_year:
 			part = times.tm_year + 1900;
 			break;
@@ -6540,7 +6597,8 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	jrd_rel* relation = tail->csb_relation;
 	jrd_fld* field;
 
-	if (!relation || !(field = MET_get_field(relation, fieldId)))
+	if (!relation || !(field = MET_get_field(relation, fieldId)) ||
+		(field->fld_flags & FLD_parse_computed))
 	{
 		if (relation && (relation->rel_flags & REL_being_scanned))
 			csb->csb_g_flags |= csb_reload;
@@ -7090,7 +7148,8 @@ const InternalInfoNode::InfoAttr InternalInfoNode::INFO_TYPE_ATTRIBUTES[MAX_INFO
 	{"INSERTING/UPDATING/DELETING", DsqlCompilerScratch::FLAG_TRIGGER},
 	{"SQLSTATE", DsqlCompilerScratch::FLAG_BLOCK},
 	{"EXCEPTION", DsqlCompilerScratch::FLAG_BLOCK},
-	{"MESSAGE", DsqlCompilerScratch::FLAG_BLOCK}
+	{"MESSAGE", DsqlCompilerScratch::FLAG_BLOCK},
+	{"RESETTING", DsqlCompilerScratch::FLAG_TRIGGER}
 };
 
 InternalInfoNode::InternalInfoNode(MemoryPool& pool, ValueExprNode* aArg)
@@ -7166,6 +7225,7 @@ void InternalInfoNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 		case INFO_TYPE_GDSCODE:
 		case INFO_TYPE_SQLCODE:
 		case INFO_TYPE_TRIGGER_ACTION:
+		case INFO_TYPE_SESSION_RESETTING:
 			desc->makeLong(0);
 			break;
 
@@ -7207,6 +7267,7 @@ void InternalInfoNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 		case INFO_TYPE_GDSCODE:
 		case INFO_TYPE_SQLCODE:
 		case INFO_TYPE_TRIGGER_ACTION:
+		case INFO_TYPE_SESSION_RESETTING:
 			desc->makeLong(0);
 			break;
 
@@ -7315,6 +7376,9 @@ dsc* InternalInfoNode::execute(thread_db* tdbb, jrd_req* request) const
 			break;
 		case INFO_TYPE_TRIGGER_ACTION:
 			result32 = request->req_trigger_action;
+			break;
+		case INFO_TYPE_SESSION_RESETTING:
+			result32 = (tdbb->getAttachment()->att_flags & ATT_resetting) ? 1 : 0;
 			break;
 		default:
 			SOFT_BUGCHECK(232);	// msg 232 EVL_expr: invalid operation
@@ -9121,9 +9185,9 @@ WindowClause* WindowClause::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	WindowClause* node = FB_NEW_POOL(dsqlScratch->getPool()) WindowClause(dsqlScratch->getPool(),
 		window->name,
 		doDsqlPass(dsqlScratch, window->partition),
-		doDsqlPass(dsqlScratch, window->order),
-		doDsqlPass(dsqlScratch, window->extent),
-		window->exclusion);
+		doDsqlPass(dsqlScratch, order ? order : window->order),
+		doDsqlPass(dsqlScratch, extent ? extent : window->extent),
+		exclusion ? exclusion : window->exclusion);
 
 	if (node->order && node->extent && node->extent->unit == FrameExtent::Unit::RANGE &&
 		(node->extent->frame1->value || (node->extent->frame2 && node->extent->frame2->value)))
@@ -9749,7 +9813,7 @@ dsc* ParameterNode::execute(thread_db* tdbb, jrd_req* request) const
 				CharSet* charSet = INTL_charset_lookup(tdbb, DSC_GET_CHARSET(desc));
 
 				EngineCallbacks::instance->validateData(charSet, len, p);
-				EngineCallbacks::instance->validateLength(charSet, len, p, maxLen);
+				EngineCallbacks::instance->validateLength(charSet, DSC_GET_CHARSET(desc), len, p, maxLen);
 			}
 			else if (desc->isBlob())
 			{
@@ -11327,11 +11391,11 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	ULONG flag = req_null;
 
+	StableCursorSavePoint savePoint(tdbb, request->req_transaction,
+		blrOp == blr_via && ownSavepoint);
+
 	try
 	{
-		StableCursorSavePoint savePoint(tdbb, request->req_transaction,
-			blrOp == blr_via && ownSavepoint);
-
 		subQuery->open(tdbb);
 
 		SLONG count = 0;
@@ -11421,7 +11485,6 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 	}
 	catch (const Exception&)
 	{
-		// Close stream, ignoring any error during it to keep the original error.
 		try
 		{
 			subQuery->close(tdbb);
@@ -11429,8 +11492,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 			request->req_flags |= flag;
 		}
 		catch (const Exception&)
-		{
-		}
+		{} // ignore any error to report the original one
 
 		throw;
 	}
@@ -11438,6 +11500,9 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 	// Close stream and return value.
 
 	subQuery->close(tdbb);
+
+	savePoint.release();
+
 	request->req_flags &= ~req_null;
 	request->req_flags |= flag;
 
@@ -12663,7 +12728,7 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	{
 		if (function->isImplemented() && !function->isDefined())
 		{
-			if (tdbb->getAttachment()->isGbak())
+			if (tdbb->getAttachment()->isGbak() || (tdbb->tdbb_flags & TDBB_replicator))
 			{
 				PAR_warning(Arg::Warning(isc_funnotdef) << Arg::Str(name.toString()) <<
 							Arg::Warning(isc_modnotfound));
@@ -12995,6 +13060,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 		}
 
 		jrd_tra* transaction = request->req_transaction;
+
 		const SavNumber savNumber = transaction->tra_save_point ?
 			transaction->tra_save_point->getNumber() : 0;
 
@@ -13018,7 +13084,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 
 			EXE_receive(tdbb, funcRequest, 1, outMsgLength, outMsg);
 
-			// Clean up all savepoints started during execution of the procedure.
+			// Clean up all savepoints started during execution of the function
 
 			if (!(transaction->tra_flags & TRA_system))
 			{
@@ -13369,6 +13435,14 @@ ValueExprNode* ValueIfNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	node->trueValue = copier.copy(tdbb, trueValue);
 	node->falseValue = copier.copy(tdbb, falseValue);
 	return node;
+}
+
+bool ValueIfNode::sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const
+{
+	if (ExprNode::sameAs(csb, other, ignoreStreams))
+		return true;
+
+	return sameNodes(csb, this, nodeAs<CoalesceNode>(other), ignoreStreams);
 }
 
 ValueExprNode* ValueIfNode::pass2(thread_db* tdbb, CompilerScratch* csb)

@@ -42,11 +42,7 @@
 #include "../jrd/status.h"
 #include "firebird/Interface.h"
 
-#define CRYPT_DEBUG(A)
-
 // forward
-
-class Config;
 
 namespace Ods {
 
@@ -346,15 +342,6 @@ private:
 		// IDbCryptInfo implementation
 		const char* getDatabaseFullPath(Firebird::CheckStatusWrapper* status);
 
-		int release()
-		{
-			if (--refCounter != 0)
-				return 1;
-
-			delete this;
-			return 0;
-		}
-
 	private:
 		CryptoManager* cryptoManager;
 	};
@@ -420,10 +407,9 @@ private:
 	// normal operation.
 
 	SINT64 slowIO;
-	bool crypt, process, down, run;
+	bool crypt, process, flDown, run;
 
-public:
-	Firebird::Mutex cryptAttMutex;
+	bool down() const;
 };
 
 } // namespace Jrd

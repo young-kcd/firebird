@@ -334,7 +334,7 @@ bool JrdStatement::isActive() const
 	return false;
 }
 
-jrd_req* JrdStatement::findRequest(thread_db* tdbb)
+jrd_req* JrdStatement::findRequest(thread_db* tdbb, bool unique)
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -362,6 +362,9 @@ jrd_req* JrdStatement::findRequest(thread_db* tdbb)
 				clone = next;
 				break;
 			}
+
+			if (unique)
+				return NULL;
 
 			++count;
 		}
@@ -819,21 +822,6 @@ template <typename T> static void makeSubRoutines(thread_db* tdbb, JrdStatement*
 		JrdStatement* subStatement = JrdStatement::makeStatement(tdbb, subCsb, false);
 		subStatement->parentStatement = statement;
 		subRoutine->setStatement(subStatement);
-
-		switch (subRoutine->getObjectType())
-		{
-		case obj_procedure:
-			subStatement->procedure = static_cast<jrd_prc*>(subRoutine);
-			break;
-
-		case obj_udf:
-			subStatement->function = static_cast<Function*>(subRoutine);
-			break;
-
-		default:
-			fb_assert(false);
-			break;
-		}
 
 		// Move dependencies and permissions from the sub routine to the parent.
 

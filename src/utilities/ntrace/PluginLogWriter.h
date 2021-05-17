@@ -59,16 +59,6 @@ public:
 	virtual FB_SIZE_T write(const void* buf, FB_SIZE_T size);
 	virtual FB_SIZE_T write_s(Firebird::CheckStatusWrapper* status, const void* buf, unsigned size);
 
-	virtual int release()
-	{
-		if (--refCounter == 0)
-		{
-			delete this;
-			return 0;
-		}
-		return 1;
-	}
-
 private:
 	SINT64 seekToEnd();
 	void reopen();

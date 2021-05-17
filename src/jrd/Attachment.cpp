@@ -84,7 +84,7 @@ CommitNumber ActiveSnapshots::getSnapshotForVersion(CommitNumber version_cn)
 
 
 // static method
-Jrd::Attachment* Jrd::Attachment::create(Database* dbb, Firebird::IProvider* provider)
+Jrd::Attachment* Jrd::Attachment::create(Database* dbb, JProvider* provider)
 {
 	MemoryPool* const pool = dbb->createPool();
 
@@ -158,6 +158,21 @@ void Jrd::Attachment::deletePool(MemoryPool* pool)
 		if (att_pools.find(pool, pos))
 			att_pools.remove(pos);
 
+#ifdef DEBUG_LCK_LIST
+		// hvlad: this could be slow, use only when absolutely necessary
+		for (Lock* lock = att_long_locks; lock; )
+		{
+			Lock* next = lock->lck_next;
+			if (BtrPageGCLock::checkPool(lock, pool))
+			{
+				gds__log("DEBUG_LCK_LIST: found not detached lock 0x%p in deleting pool 0x%p", lock, pool);
+
+				//delete lock;
+				lock->setLockAttachment(NULL);
+			}
+			lock = next;
+		}
+#endif
 		MemoryPool::deletePool(pool);
 	}
 }
@@ -203,7 +218,7 @@ void Jrd::Attachment::backupStateReadUnLock(thread_db* tdbb)
 }
 
 
-Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, IProvider* provider)
+Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, JProvider* provider)
 	: att_pool(pool),
 	  att_memory_stats(&dbb->dbb_memory_stats),
 	  att_database(dbb),
@@ -238,6 +253,7 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, IProvider* provider
 	  att_dest_bind(&att_bindings),
 	  att_original_timezone(TimeZoneUtil::getSystemTimeZone()),
 	  att_current_timezone(att_original_timezone),
+	  att_repl_appliers(*pool),
 	  att_utility(UTIL_NONE),
 	  att_procedures(*pool),
 	  att_functions(*pool),
@@ -443,6 +459,47 @@ void Jrd::Attachment::releaseGTTs(thread_db* tdbb)
 	}
 }
 
+static void runDBTriggers(thread_db* tdbb, TriggerAction action)
+{
+	fb_assert(action == TRIGGER_CONNECT || action == TRIGGER_DISCONNECT);
+
+	Database* dbb = tdbb->getDatabase();
+	Attachment* att = tdbb->getAttachment();
+	fb_assert(dbb);
+	fb_assert(att);
+
+	const unsigned trgKind = (action == TRIGGER_CONNECT) ? DB_TRIGGER_CONNECT : DB_TRIGGER_DISCONNECT;
+
+	const TrigVector* const triggers =	att->att_triggers[trgKind];
+	if (!triggers || triggers->isEmpty())
+		return;
+
+	ThreadStatusGuard temp_status(tdbb);
+	jrd_tra* transaction = NULL;
+
+	try
+	{
+		transaction = TRA_start(tdbb, 0, NULL);
+		EXE_execute_db_triggers(tdbb, transaction, action);
+		TRA_commit(tdbb, transaction, false);
+		return;
+	}
+	catch (const Exception& /*ex*/)
+	{
+		if (!(dbb->dbb_flags & DBB_bugcheck) && transaction)
+		{
+			try
+			{
+				TRA_rollback(tdbb, transaction, false, false);
+			}
+			catch (const Exception& /*ex2*/)
+			{
+			}
+		}
+		throw;
+	}
+}
+
 void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 {
 	jrd_tra* oldTran = traHandle ? *traHandle : nullptr;
@@ -466,27 +523,30 @@ void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 		}
 	}
 
-	// TODO: trigger before reset
+	AutoSetRestoreFlag<ULONG> flags(&att_flags, ATT_resetting, true);
 
 	ULONG oldFlags = 0;
 	SSHORT oldTimeout = 0;
-	if (oldTran)
+	RefPtr<JTransaction> jTran;
+	bool shutAtt = false;
+	try
 	{
-		oldFlags = oldTran->tra_flags;
-		oldTimeout = oldTran->tra_lock_timeout;
+		// Run ON DISCONNECT trigger before reset
+		if (!(att_flags & ATT_no_db_triggers))
+			runDBTriggers(tdbb, TRIGGER_DISCONNECT);
 
-		try
+		// shutdown attachment on any error after this point
+		shutAtt = true;
+
+		if (oldTran)
 		{
+			oldFlags = oldTran->tra_flags;
+			oldTimeout = oldTran->tra_lock_timeout;
+			jTran = oldTran->getInterface(false);
+
 			// It will also run run ON TRANSACTION ROLLBACK triggers
 			JRD_rollback_transaction(tdbb, oldTran);
 			*traHandle = nullptr;
-		}
-		catch (const Exception& ex)
-		{
-			Arg::StatusVector error;
-			error.assign(ex);
-			error.prepend(Arg::Gds(isc_ses_reset_err));
-			error.raise();
 		}
 
 		// Session was reset with warning(s)
@@ -496,29 +556,37 @@ void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 			ERR_post_warning(Arg::Warning(isc_ses_reset_warn) <<
 				Arg::Gds(isc_ses_reset_tran_rollback));
 		}
-	}
 
-	att_initial_options.resetAttachment(this);
+		att_initial_options.resetAttachment(this);
 
-	// reset timeouts
-	setIdleTimeout(0);
-	setStatementTimeout(0);
+		// reset timeouts
+		setIdleTimeout(0);
+		setStatementTimeout(0);
 
-	// reset context variables
-	att_context_vars.clear();
+		// reset context variables
+		att_context_vars.clear();
 
-	// reset role
-	if (att_user->resetRole())
-		SCL_release_all(att_security_classes);
+		// reset role
+		if (att_user->resetRole())
+			SCL_release_all(att_security_classes);
 
-	// reset GTT's
-	releaseGTTs(tdbb);
+		// reset GTT's
+		releaseGTTs(tdbb);
 
-	if (oldTran)
-	{
-		try
+		// Run ON CONNECT trigger after reset
+		if (!(att_flags & ATT_no_db_triggers))
+			runDBTriggers(tdbb, TRIGGER_CONNECT);
+
+		if (oldTran)
 		{
 			jrd_tra* newTran = TRA_start(tdbb, oldFlags, oldTimeout);
+			if (jTran)
+			{
+				fb_assert(jTran->getHandle() == NULL);
+
+				newTran->setInterface(jTran);
+				jTran->setHandle(newTran);
+			}
 
 			// run ON TRANSACTION START triggers
 			JRD_run_trans_start_triggers(tdbb, newTran);
@@ -526,16 +594,17 @@ void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 			tdbb->setTransaction(newTran);
 			*traHandle = newTran;
 		}
-		catch (const Exception& ex)
-		{
-			Arg::StatusVector error;
-			error.assign(ex);
-			error.prepend(Arg::Gds(isc_ses_reset_err));
-			error.raise();
-		}
 	}
+	catch (const Exception& ex)
+	{
+		if (shutAtt)
+			signalShutdown(isc_ses_reset_failed);
 
-	// TODO: trigger after reset
+		Arg::StatusVector error;
+		error.assign(ex);
+		error.prepend(Arg::Gds(shutAtt ? isc_ses_reset_failed : isc_ses_reset_err));
+		error.raise();
+	}
 }
 
 
@@ -808,7 +877,12 @@ void Jrd::Attachment::detachLocks()
 
 	Lock* long_lock = att_long_locks;
 	while (long_lock)
+	{
+#ifdef DEBUG_LCK_LIST
+		att_long_locks_type = long_lock->lck_next_type;
+#endif
 		long_lock = long_lock->detach();
+	}
 
 	att_long_locks = NULL;
 }
@@ -922,11 +996,6 @@ void Jrd::Attachment::SyncGuard::init(const char* f, bool
 			Arg::Gds(isc_att_shutdown).raise();
 		}
 	}
-}
-
-void AttachmentsRefHolder::debugHelper(const char* from)
-{
-	RefDeb(DEB_RLS_JATT, from);
 }
 
 void StableAttachmentPart::manualLock(ULONG& flags, const ULONG whatLock)

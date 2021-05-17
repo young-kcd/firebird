@@ -37,8 +37,6 @@ typedef ISC_TIMESTAMP_TZ_EX;
 typedef FB_DEC16;
 typedef FB_DEC34;
 typedef FB_I128;
-typedef isc_tr_handle;
-typedef isc_stmt_handle;
 
 // Versioned interface - base for all FB interfaces
 interface Versioned
@@ -80,7 +78,9 @@ interface Status : Disposable
 	void setErrors(const intptr* value);
 	void setWarnings(const intptr* value);
 
+	[onError stubError]
 	const intptr* getErrors() const;
+	[onError stubError]
 	const intptr* getWarnings() const;
 
 	Status clone() const;
@@ -103,6 +103,7 @@ interface Master : Versioned
 	ConfigManager getConfigManager();
 	boolean getProcessExiting();
 }
+
 
 /*
  * Firebird plugins are accessed using methods of PluginLoader interface.
@@ -246,7 +247,8 @@ interface PluginManager : Versioned
 	const uint TYPE_WIRE_CRYPT = 8;
 	const uint TYPE_DB_CRYPT = 9;
 	const uint TYPE_KEY_HOLDER = 10;
-	const uint TYPE_COUNT = 11;	// keep in sync
+	const uint TYPE_REPLICATOR = 11;
+	const uint TYPE_COUNT = 12;	// keep in sync
 	//// TODO: TYPE_COUNT is not count. And these constants starts from 1, different than DIR_* ones.
 
 	// Main function called by plugin modules in firebird_plugin()
@@ -514,6 +516,7 @@ interface Batch : ReferenceCounted
 	uint getBlobAlignment(Status status);
 	MessageMetadata getMetadata(Status status);
 	void setDefaultBpb(Status status, uint parLength, const uchar* par);
+	void close(Status status);
 }
 
 interface BatchCompletionState : Disposable
@@ -796,6 +799,10 @@ interface LogonInfo : Versioned
 	const string networkProtocol();
 	const string remoteAddress();
 	const uchar* authBlock(uint* length);
+
+version:
+	Attachment attachment(Status status);
+	Transaction transaction(Status status);
 }
 
 interface Management : PluginBase
@@ -1555,49 +1562,71 @@ interface Int128 : Versioned
 
 // Replication interfaces
 
-interface ReplicatedRecord : Versioned
+interface ReplicatedField : Versioned
 {
-	uint getRawLength();
-	const uchar* getRawData();
+	// Return field name (or nullptr on error)
+	const string getName();
+	// Return field type (or zero if the field does not exist)
+	uint getType();
+	// Return field subtype, if applicable
+	int getSubType();
+	// Return field scale (behavior is undefined for non-numeric fields)
+	int getScale();
+	// Return maximum length of the field data in bytes
+	uint getLength();
+	// Return character set without collation part for text or CLOB fields
+	uint getCharSet();
+	// Return pointer to data (or nullptr for NULL values)
+	const void* getData();
 }
 
-interface ReplicatedBlob : Versioned
+interface ReplicatedRecord : Versioned
 {
-	uint getLength();
-	boolean isEof();
-	uint getSegment(uint length, uchar* buffer);
+	// Return count of fields
+	uint getCount();
+	// Return ReplicatedField with given index (or nullptr if index is invalid).
+	// Returned reference is valid until next call of getField() or end of the record life.
+	ReplicatedField getField(uint index);
+
+	// Return size of raw data
+	uint getRawLength();
+	// Dirty method to return record buffer in internal format
+	const uchar* getRawData();
 }
 
 interface ReplicatedTransaction : Disposable
 {
-	boolean prepare();
-	boolean commit();
-	boolean rollback();
+	// Last chance to return an error and make commit to be aborted.
+	// The transaction still can be rolled back on error happened after this call.
+	void prepare(Status status);
+	// An error returned from these methods may be logged but do not abort process.
+	void commit(Status status);
+	void rollback(Status status);
 
-	boolean startSavepoint();
-	boolean releaseSavepoint();
-	boolean rollbackSavepoint();
+	void startSavepoint(Status status);
+	void releaseSavepoint(Status status);
+	void rollbackSavepoint(Status status);
 
-	boolean insertRecord(const string name,
-					  	 ReplicatedRecord record);
-	boolean updateRecord(const string name,
-					  	 ReplicatedRecord orgRecord,
-					  	 ReplicatedRecord newRecord);
-	boolean deleteRecord(const string name,
-					  	 ReplicatedRecord record);
+	// ReplicatedRecords parameters point to local objects, do not ever store the pointer.
+	void insertRecord(Status status, const string name,
+					  ReplicatedRecord record);
+	void updateRecord(Status status, const string name,
+					  ReplicatedRecord orgRecord,
+					  ReplicatedRecord newRecord);
+	void deleteRecord(Status status, const string name,
+					  ReplicatedRecord record);
 
-	boolean storeBlob(ISC_QUAD blobId, ReplicatedBlob blob);
-
-	boolean executeSql(const string sql);
-	boolean executeSqlIntl(uint charset, const string sql);
+	void executeSql(Status status, const string sql);
+	void executeSqlIntl(Status status, uint charset, const string sql);
 }
 
-interface ReplicatedSession : Disposable
+interface ReplicatedSession : PluginBase
 {
-	Status getStatus();
+	// Parameter don't need to be released if not used.
+	boolean init(Status status, Attachment attachment);
 
-	ReplicatedTransaction startTransaction(int64 number);
-	boolean cleanupTransaction(int64 number);
-
-	boolean setSequence(const string name, int64 value);
+	ReplicatedTransaction startTransaction(Status status, Transaction transaction, int64 number);
+	void cleanupTransaction(Status status, int64 number);
+	void setSequence(Status status, const string name, int64 value);
 }
+

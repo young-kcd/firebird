@@ -86,7 +86,8 @@ void ClumpletReader::dump() const
 
 	try {
 		ClumpletDump d(kind, getBuffer(), getBufferLength());
-		int t = (kind == SpbStart || kind == UnTagged || kind == WideUnTagged || kind == SpbResponse) ? -1 : d.getBufferTag();
+		int t = (kind == SpbStart || kind == UnTagged || kind == WideUnTagged || kind == SpbResponse || kind == InfoResponse) ?
+			-1 : d.getBufferTag();
 		gds__log("Tag=%d Offset=%d Length=%d Eof=%d\n", t, getCurOffset(), getBufferLength(), isEof());
 		for (d.rewind(); !(d.isEof()); d.moveNext())
 		{
@@ -240,6 +241,7 @@ UCHAR ClumpletReader::getBufferTag() const
 	case SpbSendItems:
 	case SpbReceiveItems:
 	case SpbResponse:
+	case InfoResponse:
 		usage_mistake("buffer is not tagged");
 		return 0;
 	case SpbAttach:
@@ -351,6 +353,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			case isc_spb_verbose:
 				return SingleTpb;
 			case isc_spb_res_access_mode:
+			case isc_spb_res_replica_mode:
 				return ByteSpb;
 			}
 			invalid_structure("unknown parameter for backup/restore", tag);
@@ -418,6 +421,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			case isc_spb_prp_access_mode:
 			case isc_spb_prp_shutdown_mode:
 			case isc_spb_prp_online_mode:
+			case isc_spb_prp_replica_mode:
 				return ByteSpb;
 			}
 			invalid_structure("unknown parameter for setting database properties", tag);
@@ -459,6 +463,8 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			{
 			case isc_spb_dbname:
 				return StringSpb;
+			case isc_spb_options:
+				return IntSpb;
 			}
 			invalid_structure("unknown parameter for nbackup", tag);
 			break;
@@ -535,6 +541,15 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 		}
 		invalid_structure("unrecognized service response tag", tag);
 		break;
+	case InfoResponse:
+		switch (tag)
+		{
+		case isc_info_end:
+		case isc_info_truncated:
+		case isc_info_flag_end:
+			return SingleTpb;
+		}
+		return StringSpb;
 	}
 	invalid_structure("unknown clumplet kind", kind);
 	return SingleTpb;
@@ -688,6 +703,7 @@ void ClumpletReader::rewind()
 	case SpbSendItems:
 	case SpbReceiveItems:
 	case SpbResponse:
+	case InfoResponse:
 		cur_offset = 0;
 		break;
 	default:

@@ -98,23 +98,12 @@ public:
 	void decrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to);
 	const unsigned char* getSpecificData(CheckStatusWrapper* status, const char* type, unsigned* len);
 	void setSpecificData(CheckStatusWrapper* status, const char* type, unsigned len, const unsigned char* data);
-	int release();
 
 private:
 	Cipher* createCypher(unsigned int l, const void* key);
 	AutoPtr<Cipher> en, de;
 	UCharBuffer iv;
 };
-
-int ChaCha::release()
-{
-	if (--refCounter == 0)
-	{
-		delete this;
-		return 0;
-	}
-	return 1;
-}
 
 void ChaCha::setKey(CheckStatusWrapper* status, ICryptKey* key)
 {
