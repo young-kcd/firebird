@@ -1078,18 +1078,28 @@ namespace Jrd {
 	class EngineCheckout
 	{
 	public:
-		EngineCheckout(thread_db* tdbb, const char* from, bool optional = false)
+		enum Type
+		{
+			REQUIRED,
+			OPTIONAL,
+			AVOID
+		};
+
+		EngineCheckout(thread_db* tdbb, const char* from, Type type = REQUIRED)
 			: m_tdbb(tdbb), m_from(from)
 		{
-			Attachment* const att = tdbb ? tdbb->getAttachment() : NULL;
+			if (type != AVOID)
+			{
+				Attachment* const att = tdbb ? tdbb->getAttachment() : NULL;
 
-			if (att)
-				m_ref = att->getStable();
+				if (att)
+					m_ref = att->getStable();
 
-			fb_assert(optional || m_ref.hasData());
+				fb_assert(type == OPTIONAL || m_ref.hasData());
 
-			if (m_ref.hasData())
-				m_ref->getMutex()->leave();
+				if (m_ref.hasData())
+					m_ref->getMutex()->leave();
+			}
 		}
 
 		~EngineCheckout()
@@ -1123,7 +1133,7 @@ namespace Jrd {
 		{
 			if (!m_mutex.tryEnter(from))
 			{
-				EngineCheckout cout(tdbb, from, optional);
+				EngineCheckout cout(tdbb, from, optional ? EngineCheckout::OPTIONAL : EngineCheckout::REQUIRED);
 				m_mutex.enter(from);
 			}
 		}
@@ -1151,7 +1161,7 @@ namespace Jrd {
 		{
 			if (!m_sync.lockConditional(type, from))
 			{
-				EngineCheckout cout(tdbb, from, optional);
+				EngineCheckout cout(tdbb, from, optional ? EngineCheckout::OPTIONAL : EngineCheckout::REQUIRED);
 				m_sync.lock(type);
 			}
 		}
