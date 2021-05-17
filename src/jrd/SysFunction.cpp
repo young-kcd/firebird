@@ -1358,13 +1358,23 @@ unsigned decodeLen(unsigned len)
 }
 
 
+unsigned characterLen(DataTypeUtilBase* dataTypeUtil, const dsc* arg)
+{
+	unsigned len = arg->getStringLength();
+	unsigned maxBytes = dataTypeUtil->maxBytesPerChar(arg->getCharSet());
+	fb_assert(maxBytes);
+	fb_assert(!(len % maxBytes));
+	return len / maxBytes;
+}
+
+
 void makeDecode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
 	fb_assert(argsCount == 1);
 	if (args[0]->isBlob())
 		result->makeBlob(isc_blob_untyped, ttype_binary);
 	else if (args[0]->isText())
-		result->makeVarying(decodeLen(args[0]->getStringLength()), ttype_binary);
+		result->makeVarying(decodeLen(characterLen(dataTypeUtil, args[0])), ttype_binary);
 	else
 		status_exception::raise(Arg::Gds(isc_tom_strblob));
 
@@ -1385,7 +1395,7 @@ void makeEncode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, d
 	if (args[0]->isBlob())
 		result->makeBlob(isc_blob_text, ttype_ascii);
 	else if (args[0]->isText())
-		result->makeVarying(encodeLen(args[0]->dsc_length), ttype_ascii);
+		result->makeVarying(encodeLen(args[0]->getStringLength()), ttype_ascii);
 	else
 		status_exception::raise(Arg::Gds(isc_tom_strblob));
 
@@ -1400,7 +1410,7 @@ void makeDecodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
 		result->makeBlob(isc_blob_untyped, ttype_binary);
 	else if (args[0]->isText())
 	{
-		unsigned len = args[0]->getStringLength();
+		unsigned len = characterLen(dataTypeUtil, args[0]);
 	 	if (len % 2 || !len)
  			status_exception::raise(Arg::Gds(isc_odd_hex_len) << Arg::Num(len));
 		result->makeVarying(len / 2, ttype_binary);
@@ -1418,7 +1428,7 @@ void makeEncodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
 	if (args[0]->isBlob())
 		result->makeBlob(isc_blob_text, ttype_ascii);
 	else if (args[0]->isText())
-		result->makeVarying(args[0]->dsc_length * 2, ttype_ascii);
+		result->makeVarying(args[0]->getStringLength() * 2, ttype_ascii);
 	else
 		status_exception::raise(Arg::Gds(isc_tom_strblob));
 
