@@ -453,3 +453,7 @@ NAME("RDB$CONFIG_IS_SET", nam_cfg_is_set)
 NAME("RDB$CONFIG_SOURCE", nam_cfg_source)
 
 NAME("MON$SESSION_TIMEZONE", nam_mon_session_tz)
+
+NAME("RDB$KEYWORDS", nam_keywords)
+NAME("RDB$KEYWORD_NAME", nam_keyword_name)
+NAME("RDB$KEYWORD_RESERVED", nam_keyword_reserved)
