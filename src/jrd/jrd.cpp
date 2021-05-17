@@ -8838,22 +8838,20 @@ void thread_db::reschedule()
 		tdbb_quantum = (tdbb_flags & TDBB_sweeper) ? SWEEP_QUANTUM : QUANTUM;
 }
 
-SLONG thread_db::adjustWait(SLONG wait) const
+ULONG thread_db::adjustWait(ULONG wait) const
 {
 	if ((wait == 0) || (tdbb_flags & TDBB_wait_cancel_disable) || !tdbb_reqTimer)
 		return wait;
 
-	const unsigned int tout = tdbb_reqTimer->timeToExpire();
-	SLONG t;
-	if (tout < MAX_SSHORT * 1000)
-		t = (tout + 999) / 1000;
-	else
-		t = MAX_SSHORT;
+	// This limit corresponds to the lock manager restriction (wait time is signed short)
+	static const ULONG MAX_WAIT_TIME = MAX_SSHORT; // seconds
 
-	if (wait > t)
-		return t;
+	const unsigned int timeout = tdbb_reqTimer->timeToExpire(); // milliseconds
 
-	return wait;
+	const ULONG adjustedTimeout =
+		(timeout < MAX_WAIT_TIME * 1000) ? (timeout + 999) / 1000 : MAX_WAIT_TIME;
+
+	return MIN(wait, adjustedTimeout);
 }
 
 // end thread_db methods

@@ -3716,7 +3716,7 @@ void LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_wai
 	ASSERT_ACQUIRED;
 
 	++(m_sharedMemory->getHeader()->lhb_waits);
-	const SLONG scan_interval = m_sharedMemory->getHeader()->lhb_scan_interval;
+	const ULONG scan_interval = m_sharedMemory->getHeader()->lhb_scan_interval;
 
 	// lrq_count will be off if we wait for a pending request
 	CHECK(!(request->lrq_flags & LRQ_pending));

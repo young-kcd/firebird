@@ -657,7 +657,7 @@ public:
 
 	// Returns minimum of passed wait timeout and time to expiration of reqTimer.
 	// Timer value is rounded to the upper whole second.
-	SLONG adjustWait(SLONG wait) const;
+	ULONG adjustWait(ULONG wait) const;
 
 	void registerBdb(BufferDesc* bdb)
 	{
