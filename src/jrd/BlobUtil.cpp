@@ -54,8 +54,6 @@ IExternalResultSet* BlobUtilPackage::appendProcedure(ThrowStatusExceptionWrapper
 	IExternalContext* context, const AppendInput::Type* in, void*)
 {
 	const auto tdbb = JRD_get_thread_data();
-	Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
-
 	const auto blob = getBlobFromHandle(tdbb, in->handle);
 
 	if (in->data.length > 0)
@@ -70,8 +68,6 @@ IExternalResultSet* BlobUtilPackage::cancelProcedure(ThrowStatusExceptionWrapper
 	IExternalContext* context, const HandleMessage::Type* in, void*)
 {
 	const auto tdbb = JRD_get_thread_data();
-	Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
-
 	const auto transaction = tdbb->getTransaction();
 	const auto blob = getBlobFromHandle(tdbb, in->handle);
 
@@ -85,8 +81,6 @@ void BlobUtilPackage::newFunction(ThrowStatusExceptionWrapper* status,
 	IExternalContext* context, const NewInput::Type* in, HandleMessage::Type* out)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
-
 	const auto transaction = tdbb->getTransaction();
 
 	const UCHAR bpb[] = {
@@ -108,8 +102,6 @@ void BlobUtilPackage::openBlobFunction(ThrowStatusExceptionWrapper* status,
 	IExternalContext* context, const BlobMessage::Type* in, HandleMessage::Type* out)
 {
 	const auto tdbb = JRD_get_thread_data();
-	Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
-
 	const auto transaction = tdbb->getTransaction();
 
 	bid blobId = *(bid*) &in->blob;
@@ -125,8 +117,6 @@ void BlobUtilPackage::seekFunction(ThrowStatusExceptionWrapper* status,
 	IExternalContext* context, const SeekInput::Type* in, SeekOutput::Type* out)
 {
 	const auto tdbb = JRD_get_thread_data();
-	Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
-
 	const auto transaction = tdbb->getTransaction();
 	const auto blob = getBlobFromHandle(tdbb, in->handle);
 
@@ -144,8 +134,6 @@ void BlobUtilPackage::readFunction(ThrowStatusExceptionWrapper* status,
 		status_exception::raise(Arg::Gds(isc_random) << "Length must be NULL or greater than 0");
 
 	const auto tdbb = JRD_get_thread_data();
-	Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
-
 	const auto transaction = tdbb->getTransaction();
 	const auto blob = getBlobFromHandle(tdbb, in->handle);
 
@@ -164,8 +152,6 @@ void BlobUtilPackage::makeBlobFunction(ThrowStatusExceptionWrapper* status,
 	IExternalContext* context, const HandleMessage::Type* in, BlobMessage::Type* out)
 {
 	const auto tdbb = JRD_get_thread_data();
-	Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
-
 	const auto transaction = tdbb->getTransaction();
 
 	const auto blob = getBlobFromHandle(tdbb, in->handle);
