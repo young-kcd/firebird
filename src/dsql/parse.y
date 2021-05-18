@@ -679,6 +679,7 @@ using namespace Firebird;
 
 // tokens added for Firebird 5.0
 
+%token <metaNamePtr> TIMEZONE_NAME
 %token <metaNamePtr> UNICODE_CHAR
 %token <metaNamePtr> UNICODE_VAL
 
