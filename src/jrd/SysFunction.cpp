@@ -1370,6 +1370,8 @@ void makeDecode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, d
 }
 
 
+const unsigned MAX_CHARACTER_LEN = 32765;
+
 unsigned encodeLen(unsigned len)
 {
 	len = (len + 2) / 3 * 4;
@@ -1383,7 +1385,13 @@ void makeEncode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, d
 	if (args[0]->isBlob())
 		result->makeBlob(isc_blob_text, ttype_ascii);
 	else if (args[0]->isText())
-		result->makeVarying(encodeLen(args[0]->getStringLength()), ttype_ascii);
+	{
+		unsigned len = encodeLen(args[0]->getStringLength());
+		if (len <= MAX_CHARACTER_LEN)
+			result->makeVarying(len, ttype_ascii);
+		else
+			result->makeBlob(isc_blob_text, ttype_ascii);
+	}
 	else
 		status_exception::raise(Arg::Gds(isc_tom_strblob));
 
@@ -1416,7 +1424,13 @@ void makeEncodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
 	if (args[0]->isBlob())
 		result->makeBlob(isc_blob_text, ttype_ascii);
 	else if (args[0]->isText())
-		result->makeVarying(args[0]->getStringLength() * 2, ttype_ascii);
+	{
+		unsigned len = args[0]->getStringLength() * 2;
+		if (len <= MAX_CHARACTER_LEN)
+			result->makeVarying(len, ttype_ascii);
+		else
+			result->makeBlob(isc_blob_text, ttype_ascii);
+	}
 	else
 		status_exception::raise(Arg::Gds(isc_tom_strblob));
 
@@ -3216,7 +3230,8 @@ dsc* evlEncodeDecode64(thread_db* tdbb, bool encodeFlag, const SysFunction* func
 	out.resize(outLen);
 
 	dsc result;
-	if (arg->isBlob())
+	unsigned len = encodeLen(arg->getStringLength());
+	if (arg->isBlob() || (encodeFlag && len > MAX_CHARACTER_LEN))
 	{
 		AutoPtr<blb> blob(blb::create2(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid,
 			sizeof(streamBpb), streamBpb));
@@ -3332,6 +3347,7 @@ dsc* evlEncodeDecodeHex(thread_db* tdbb, bool encodeFlag, const SysFunction* fun
 		status_exception::raise(Arg::Gds(isc_odd_hex_len) << Arg::Num(pos));
 
 	dsc result;
+	bool mkBlob = true;
 	if (arg->isBlob())
 	{
 		if(out.hasData())
@@ -3342,12 +3358,30 @@ dsc* evlEncodeDecodeHex(thread_db* tdbb, bool encodeFlag, const SysFunction* fun
 
 		inBlob->BLB_close(tdbb);
 		inBlob.release();
+	}
+	else
+	{
+		if (encodeFlag && arg->getStringLength() * 2 > MAX_CHARACTER_LEN)
+		{
+			outBlob.reset(blb::create2(tdbb, tdbb->getRequest()->req_transaction,
+				&impure->vlu_misc.vlu_bid, sizeof(streamBpb), streamBpb));
+			if(out.hasData())
+				outBlob->BLB_put_data(tdbb, out.begin(), out.getCount());
+			outBlob->BLB_close(tdbb);
+			outBlob.release();
+		}
+		else
+		{
+			result.makeText(out.getCount(), encodeFlag ? ttype_ascii : ttype_binary, const_cast<UCHAR*>(out.begin()));
+			mkBlob = false;
+		}
+	}
 
+	if (mkBlob)
+	{
 		result.makeBlob(encodeFlag ? isc_blob_text : isc_blob_untyped, encodeFlag ? ttype_ascii : ttype_binary,
 			(ISC_QUAD*)&impure->vlu_misc.vlu_bid);
 	}
-	else
-		result.makeText(out.getCount(), encodeFlag ? ttype_ascii : ttype_binary, const_cast<UCHAR*>(out.begin()));
 
 	EVL_make_value(tdbb, &result, impure);
 	return &impure->vlu_desc;
