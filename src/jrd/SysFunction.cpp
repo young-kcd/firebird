@@ -1382,8 +1382,6 @@ void makeDecode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, d
 }
 
 
-const unsigned MAX_CHARACTER_LEN = 32765;
-
 unsigned encodeLen(unsigned len)
 {
 	len = (len + 2) / 3 * 4;
@@ -1399,7 +1397,7 @@ void makeEncode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, d
 	else if (args[0]->isText())
 	{
 		unsigned len = encodeLen(args[0]->getStringLength());
-		if (len <= MAX_CHARACTER_LEN)
+		if (len <= MAX_VARY_COLUMN_SIZE)
 			result->makeVarying(len, ttype_ascii);
 		else
 			result->makeBlob(isc_blob_text, ttype_ascii);
@@ -1438,7 +1436,7 @@ void makeEncodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
 	else if (args[0]->isText())
 	{
 		unsigned len = args[0]->getStringLength() * 2;
-		if (len <= MAX_CHARACTER_LEN)
+		if (len <= MAX_VARY_COLUMN_SIZE)
 			result->makeVarying(len, ttype_ascii);
 		else
 			result->makeBlob(isc_blob_text, ttype_ascii);
@@ -3261,7 +3259,7 @@ dsc* evlEncodeDecode64(thread_db* tdbb, bool encodeFlag, const SysFunction* func
 
 	dsc result;
 	unsigned len = encodeLen(arg->getStringLength());
-	if (arg->isBlob() || (encodeFlag && len > MAX_CHARACTER_LEN))
+	if (arg->isBlob() || (encodeFlag && len > MAX_VARY_COLUMN_SIZE))
 	{
 		AutoPtr<blb> blob(blb::create2(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid,
 			sizeof(streamBpb), streamBpb));
@@ -3391,7 +3389,7 @@ dsc* evlEncodeDecodeHex(thread_db* tdbb, bool encodeFlag, const SysFunction* fun
 	}
 	else
 	{
-		if (encodeFlag && arg->getStringLength() * 2 > MAX_CHARACTER_LEN)
+		if (encodeFlag && arg->getStringLength() * 2 > MAX_VARY_COLUMN_SIZE)
 		{
 			outBlob.reset(blb::create2(tdbb, tdbb->getRequest()->req_transaction,
 				&impure->vlu_misc.vlu_bid, sizeof(streamBpb), streamBpb));
