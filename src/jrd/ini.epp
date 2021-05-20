@@ -810,7 +810,12 @@ void INI_init_dsql(thread_db* tdbb, dsql_dbb* database)
 	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
 		if (relfld[RFLD_R_ODS] > ENCODE_ODS(majorVersion, minorVersion))
+		{
+			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
+				;
+
 			continue;
+		}
 
 		dsql_rel* relation = FB_NEW_POOL(database->dbb_pool) dsql_rel(database->dbb_pool);
 
