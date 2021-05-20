@@ -475,10 +475,19 @@ standaloneServerInstalled() {
 
 #------------------------------------------------------------------------
 # Corrects build-time "libdir" value
-#	Warning - parameter ignored !!!
 
 CorrectLibDir() {
-	dirname $(ldconfig -p | grep ld-linux | awk -F '>' '{print $2;}')
+	ld=${1}
+	l64=/usr/lib64
+
+	if [ "$ld" = "$l64" ]
+	then
+		LDL=ld-linux-x86-64
+	else
+		LDL=ld-linux-x32
+	fi
+
+	dirname $(ldconfig -p | grep $LDL | awk -F '>' '{print $2;}')
 }
 
 
