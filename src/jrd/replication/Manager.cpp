@@ -191,6 +191,9 @@ Manager::~Manager()
 
 void Manager::shutdown()
 {
+	if (m_shutdown)
+		return;
+
 	m_shutdown = true;
 
 	m_workingSemaphore.release();
