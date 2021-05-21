@@ -1357,10 +1357,10 @@ static void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code)
 
 static void badSqldaVersion(const short version)
 {
-		(Arg::Gds(isc_dsql_sqlda_value_err) <<
-		 Arg::Gds(isc_dsql_invalid_sqlda_version) <<
-		 Arg::Num(SQLDA_VERSION1) << Arg::Num(SQLDA_VERSION1) << Arg::Num(version)
-		).raise();
+	(Arg::Gds(isc_dsql_sqlda_value_err) <<
+		Arg::Gds(isc_dsql_invalid_sqlda_version) <<
+		Arg::Num(SQLDA_VERSION1) << Arg::Num(SQLDA_VERSION1) << Arg::Num(version)
+	).raise();
 }
 
 // Set charset info in SQLVAR according to legacy rules
