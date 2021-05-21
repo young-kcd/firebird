@@ -412,8 +412,6 @@ set OUTPATH=%FB_OUTPUT_DIR%\include
 @copy %FB_ROOT_PATH%\src\yvalve\perf.h %OUTPATH%\ > nul
 @copy %FB_ROOT_PATH%\src\include\gen\firebird.pas %OUTPATH%\firebird\ > nul || (@call :ERROR Failure executing copy %FB_ROOT_PATH%\src\include\gen\firebird.pas %OUTPATH%\firebird\  )
 @if %ERRLEV% GEQ 1 goto :END
-@xcopy /e /i /y %FB_ROOT_PATH%\src\include\firebird\impl %OUTPATH%\firebird\  > nul || (@call :ERROR Failure executing @xcopy /e /i /y %FB_ROOT_PATH%\src\include\firebird\* %OUTPATH%\firebird\  )
-@if %ERRLEV% GEQ 1 goto :END
 
 endlocal
 
