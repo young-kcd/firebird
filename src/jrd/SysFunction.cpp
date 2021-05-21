@@ -1346,13 +1346,23 @@ unsigned decodeLen(unsigned len)
 }
 
 
+unsigned characterLen(DataTypeUtilBase* dataTypeUtil, const dsc* arg)
+{
+	unsigned len = arg->getStringLength();
+	unsigned maxBytes = dataTypeUtil->maxBytesPerChar(arg->getCharSet());
+	fb_assert(maxBytes);
+	fb_assert(!(len % maxBytes));
+	return len / maxBytes;
+}
+
+
 void makeDecode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args)
 {
 	fb_assert(argsCount == 1);
 	if (args[0]->isBlob())
 		result->makeBlob(isc_blob_untyped, ttype_binary);
 	else if (args[0]->isText())
-		result->makeVarying(decodeLen(args[0]->getStringLength()), ttype_binary);
+		result->makeVarying(decodeLen(characterLen(dataTypeUtil, args[0])), ttype_binary);
 	else
 		status_exception::raise(Arg::Gds(isc_tom_strblob));
 
@@ -1373,7 +1383,13 @@ void makeEncode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, d
 	if (args[0]->isBlob())
 		result->makeBlob(isc_blob_text, ttype_ascii);
 	else if (args[0]->isText())
-		result->makeVarying(encodeLen(args[0]->dsc_length), ttype_ascii);
+	{
+		unsigned len = encodeLen(args[0]->getStringLength());
+		if (len <= MAX_VARY_COLUMN_SIZE)
+			result->makeVarying(len, ttype_ascii);
+		else
+			result->makeBlob(isc_blob_text, ttype_ascii);
+	}
 	else
 		status_exception::raise(Arg::Gds(isc_tom_strblob));
 
@@ -1388,7 +1404,7 @@ void makeDecodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
 		result->makeBlob(isc_blob_untyped, ttype_binary);
 	else if (args[0]->isText())
 	{
-		unsigned len = args[0]->getStringLength();
+		unsigned len = characterLen(dataTypeUtil, args[0]);
 	 	if (len % 2 || !len)
  			status_exception::raise(Arg::Gds(isc_odd_hex_len) << Arg::Num(len));
 		result->makeVarying(len / 2, ttype_binary);
@@ -1406,7 +1422,13 @@ void makeEncodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
 	if (args[0]->isBlob())
 		result->makeBlob(isc_blob_text, ttype_ascii);
 	else if (args[0]->isText())
-		result->makeVarying(args[0]->dsc_length * 2, ttype_ascii);
+	{
+		unsigned len = args[0]->getStringLength() * 2;
+		if (len <= MAX_VARY_COLUMN_SIZE)
+			result->makeVarying(len, ttype_ascii);
+		else
+			result->makeBlob(isc_blob_text, ttype_ascii);
+	}
 	else
 		status_exception::raise(Arg::Gds(isc_tom_strblob));
 
@@ -3206,7 +3228,8 @@ dsc* evlEncodeDecode64(thread_db* tdbb, bool encodeFlag, const SysFunction* func
 	out.resize(outLen);
 
 	dsc result;
-	if (arg->isBlob())
+	unsigned len = encodeLen(arg->getStringLength());
+	if (arg->isBlob() || (encodeFlag && len > MAX_VARY_COLUMN_SIZE))
 	{
 		AutoPtr<blb> blob(blb::create2(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid,
 			sizeof(streamBpb), streamBpb));
@@ -3322,6 +3345,7 @@ dsc* evlEncodeDecodeHex(thread_db* tdbb, bool encodeFlag, const SysFunction* fun
 		status_exception::raise(Arg::Gds(isc_odd_hex_len) << Arg::Num(pos));
 
 	dsc result;
+	bool mkBlob = true;
 	if (arg->isBlob())
 	{
 		if(out.hasData())
@@ -3332,12 +3356,30 @@ dsc* evlEncodeDecodeHex(thread_db* tdbb, bool encodeFlag, const SysFunction* fun
 
 		inBlob->BLB_close(tdbb);
 		inBlob.release();
+	}
+	else
+	{
+		if (encodeFlag && arg->getStringLength() * 2 > MAX_VARY_COLUMN_SIZE)
+		{
+			outBlob.reset(blb::create2(tdbb, tdbb->getRequest()->req_transaction,
+				&impure->vlu_misc.vlu_bid, sizeof(streamBpb), streamBpb));
+			if(out.hasData())
+				outBlob->BLB_put_data(tdbb, out.begin(), out.getCount());
+			outBlob->BLB_close(tdbb);
+			outBlob.release();
+		}
+		else
+		{
+			result.makeText(out.getCount(), encodeFlag ? ttype_ascii : ttype_binary, const_cast<UCHAR*>(out.begin()));
+			mkBlob = false;
+		}
+	}
 
+	if (mkBlob)
+	{
 		result.makeBlob(encodeFlag ? isc_blob_text : isc_blob_untyped, encodeFlag ? ttype_ascii : ttype_binary,
 			(ISC_QUAD*)&impure->vlu_misc.vlu_bid);
 	}
-	else
-		result.makeText(out.getCount(), encodeFlag ? ttype_ascii : ttype_binary, const_cast<UCHAR*>(out.begin()));
 
 	EVL_make_value(tdbb, &result, impure);
 	return &impure->vlu_desc;
