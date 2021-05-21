@@ -314,8 +314,8 @@ ChangeLog::ChangeLog(MemoryPool& pool,
 					 const FB_UINT64 sequence,
 					 const Replication::Config* config)
 	: PermanentStorage(pool),
-	  m_dbId(dbId), m_config(config),
-	  m_segments(pool), m_sequence(sequence), m_shutdown(false)
+	  m_dbId(dbId), m_config(config), m_segments(pool),
+	  m_sequence(sequence), m_generation(0), m_shutdown(false)
 {
 	memcpy(&m_guid, &guid, sizeof(Guid));
 
@@ -423,7 +423,7 @@ void ChangeLog::lockState()
 	{
 		const auto state = m_sharedMemory->getHeader();
 
-		if (m_segments.isEmpty() || state->segmentCount > m_segments.getCount())
+		if (m_segments.isEmpty() || state->generation != m_generation)
 			initSegments();
 	}
 	catch (const Exception&)
@@ -588,7 +588,16 @@ FB_UINT64 ChangeLog::write(ULONG length, const UCHAR* data, bool sync)
 	if (segment->isEmpty())
 		state->timestamp = time(NULL);
 
+	fb_assert(segment->getSequence() == state->sequence);
+
 	segment->append(length, data);
+
+	if (segment->getLength() > m_config->segmentSize)
+	{
+		segment->setState(SEGMENT_STATE_FULL);
+		state->flushMark++;
+		m_workingSemaphore.release();
+	}
 
 	if (sync)
 	{
@@ -623,9 +632,7 @@ FB_UINT64 ChangeLog::write(ULONG length, const UCHAR* data, bool sync)
 		}
 	}
 
-	fb_assert(segment->getSequence() == state->sequence);
-
-	return segment->getSequence();
+	return state->sequence;
 }
 
 bool ChangeLog::archiveExecute(Segment* segment)
@@ -803,19 +810,21 @@ void ChangeLog::bgArchiver()
 				}
 			}
 
+			Segment* lastSegment = nullptr;
+
 			while (!m_shutdown)
 			{
 				bool restart = false;
 
 				for (const auto segment : m_segments)
 				{
-					if (segment->getState() == SEGMENT_STATE_FULL)
+					if (segment != lastSegment &&
+						segment->getState() == SEGMENT_STATE_FULL)
 					{
-						if (archiveSegment(segment))
-						{
-							restart = true;
-							break;
-						}
+						lastSegment = segment;
+						archiveSegment(segment);
+						restart = true;
+						break;
 					}
 				}
 
@@ -870,7 +879,7 @@ void ChangeLog::initSegments()
 		m_segments.add(segment.release());
 	}
 
-	state->segmentCount = (ULONG) m_segments.getCount();
+	m_generation = state->generation;
 }
 
 void ChangeLog::clearSegments()
@@ -902,7 +911,7 @@ ChangeLog::Segment* ChangeLog::createSegment()
 	segment->addRef();
 
 	m_segments.add(segment);
-	state->segmentCount++;
+	state->generation++;
 
 	return segment;
 }
@@ -925,17 +934,21 @@ ChangeLog::Segment* ChangeLog::reuseSegment(ChangeLog::Segment* segment)
 
 	segment->release();
 
-	// Rename the backing file
+	// Increase the sequence
 
 	const auto state = m_sharedMemory->getHeader();
 	const auto sequence = ++state->sequence;
+
+	// Attempt to rename the backing file
 
 	PathName newname;
 	newname.printf(FILENAME_PATTERN, m_config->filePrefix.c_str(), sequence);
 	newname = m_config->journalDirectory + newname;
 
+	// If renaming fails, then we just create a new file.
+	// The old segment will be reused later in this case.
 	if (::rename(orgname.c_str(), newname.c_str()) < 0)
-		raiseError("Journal file %s rename failed (error: %d)", orgname.c_str(), ERRNO);
+		return createSegment();
 
 	// Re-open the segment using a new name and initialize it
 
@@ -947,6 +960,7 @@ ChangeLog::Segment* ChangeLog::reuseSegment(ChangeLog::Segment* segment)
 	segment->addRef();
 
 	m_segments.add(segment);
+	state->generation++;
 
 	return segment;
 }
@@ -982,25 +996,15 @@ ChangeLog::Segment* ChangeLog::getSegment(ULONG length)
 
 	const auto state = m_sharedMemory->getHeader();
 
-	if (activeSegment)
+	if (activeSegment && activeSegment->hasData() && m_config->archiveTimeout)
 	{
-		if (activeSegment->getLength() + length > m_config->segmentSize)
+		const size_t deltaTimestamp = time(NULL) - state->timestamp;
+
+		if (deltaTimestamp > m_config->archiveTimeout)
 		{
 			activeSegment->setState(SEGMENT_STATE_FULL);
-			state->flushMark++;
 			activeSegment = NULL;
 			m_workingSemaphore.release();
-		}
-		else if (activeSegment->hasData() && m_config->archiveTimeout)
-		{
-			const size_t deltaTimestamp = time(NULL) - state->timestamp;
-
-			if (deltaTimestamp > m_config->archiveTimeout)
-			{
-				activeSegment->setState(SEGMENT_STATE_FULL);
-				activeSegment = NULL;
-				m_workingSemaphore.release();
-			}
 		}
 	}
 
