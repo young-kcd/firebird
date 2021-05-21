@@ -27,6 +27,12 @@
 
 ## Bugfixes
 
+* [#6816](https://github.com/FirebirdSQL/firebird/issues/6816): Illegal output length in base64/hex encode/decode functions  
+  Contributor(s): Alex Peshkoff
+
+* [#6812](https://github.com/FirebirdSQL/firebird/issues/6812): BASE64_ENCODE and HEX_ENCODE can exceed maximum widths for VARCHAR  
+  Contributor(s): Alex Peshkoff
+
 * [#6808](https://github.com/FirebirdSQL/firebird/issues/6808): Segfault in encrypt/decrypt functions when their first argument is NULL  
   Contributor(s): Alex Peshkoff
 
