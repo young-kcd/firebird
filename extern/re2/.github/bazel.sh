@@ -1,8 +1,6 @@
 #!/bin/bash
 set -eux
 
-cd git/re2
-
 bazel clean
 bazel build --compilation_mode=dbg -- //:all
 bazel test  --compilation_mode=dbg --test_output=errors -- //:all \
