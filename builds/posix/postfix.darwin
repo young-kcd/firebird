@@ -21,7 +21,7 @@
 TARGET ?= Release
 ICU_VERS = icu54
 ICU_LOC ?= $(HOME)/$(ICU_VERS)/icu/source/lib/
-FB_FW = ../gen/$(TARGET)/frameworks/Firebird4.framework
+FB_FW = ../gen/$(TARGET)/frameworks/Firebird5.framework
 
 all: framework
 
@@ -53,7 +53,7 @@ framework:
 	cp ../gen/$(TARGET)/firebird/intl/fbintl.conf $(FB_FW)/Versions/A/Resources/intl/fbintl.conf
 	#chmod a+rx $(FB_FW)/Versions/A/Resources/intl/fbintl
 	cp -r ../gen/$(TARGET)/firebird/plugins $(FB_FW)/Versions/A/Resources/plugins
-	cp ../gen/$(TARGET)/firebird/security4.fdb $(FB_FW)/Versions/A/Resources/security4.fdb
+	cp ../gen/$(TARGET)/firebird/security5.fdb $(FB_FW)/Versions/A/Resources/security5.fdb
 	cp ../gen/$(TARGET)/firebird/firebird.msg $(FB_FW)/Versions/A/Resources/firebird.msg
 	cp -r ../gen/$(TARGET)/firebird/help $(FB_FW)/Versions/A/Resources/help
 	cp -r ../gen/$(TARGET)/firebird/tzdata $(FB_FW)/Versions/A/Resources/tzdata

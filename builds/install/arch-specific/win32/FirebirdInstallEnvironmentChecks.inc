@@ -795,7 +795,7 @@ else
 SharedFileArray[27].Filename := ExpandConstant('{app}')+'databases.conf';
 SharedFileArray[28].Filename := ExpandConstant('{app}')+'firebird.conf';
 SharedFileArray[29].Filename := ExpandConstant('{app}')+'firebird.log';
-SharedFileArray[30].Filename := ExpandConstant('{app}')+'security4.fdb';
+SharedFileArray[30].Filename := ExpandConstant('{app}')+'security5.fdb';
 SharedFileArray[31].Filename := ExpandConstant('{app}')+'fbtrace.conf';
 SharedFileArray[32].Filename := ExpandConstant('{app}')+'fbsvcmgr.exe';
 SharedFileArray[33].Filename := ExpandConstant('{app}')+'fbrmclib.dll';
@@ -1173,7 +1173,7 @@ begin
     LoadStringFromFile( GetAppPath+'\firebird.conf', FirebirdConfStr );
     if  pos('SharedDatabase', FirebirdConfStr) > 0 then begin
       RenameFile(GetAppPath+'\firebird.conf', GetAppPath+'\firebird.conf.preRC1');
-      RenameFile(GetAppPath+'\security4.fdb', GetAppPath+'\security4.fdb.preRC1');
+      RenameFile(GetAppPath+'\security5.fdb', GetAppPath+'\security5.fdb.preRC1');
     end
   end
 end;
@@ -1181,7 +1181,7 @@ end;
 
 function ConfigureAuthentication: boolean;
 begin
-  if FileExists(WizardDirValue + '\security4.fdb') then
+  if FileExists(WizardDirValue + '\security5.fdb') then
 		Result := false
 	else
 		Result := true;

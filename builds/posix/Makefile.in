@@ -413,7 +413,7 @@ $(GPRE):	$(GPRE_Objects) $(COMMON_LIB)
 	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS) $(call LINK_DARWIN_RPATH,..)
 
 HELP_FDB = $(FIREBIRD)/help/help.fdb
-SECURITY_FDB = $(FIREBIRD)/security4.fdb
+SECURITY_FDB = $(FIREBIRD)/security5.fdb
 SECURITY_TMP = security.tmp
 
 databases:		yachts.lnk msg.timestamp $(HELP_FDB) $(SECURITY_FDB)

@@ -306,11 +306,11 @@ goto :EOF
 @rmdir /s /q %FB_GEN_DIR%\dbs 2>nul
 @mkdir %FB_GEN_DIR%\dbs 2>nul
 
-@echo Create security4.fdb...
-@echo create database '%FB_GEN_DB_DIR%\dbs\security4.fdb'; | "%FB_BIN_DIR%\isql" -q
+@echo Create security5.fdb...
+@echo create database '%FB_GEN_DB_DIR%\dbs\security5.fdb'; | "%FB_BIN_DIR%\isql" -q
 @echo Apply security.sql...
-@"%FB_BIN_DIR%\isql" -q %FB_GEN_DB_DIR%/dbs/security4.fdb -i %FB_ROOT_PATH%\src\dbs\security.sql
-@copy %FB_GEN_DIR%\dbs\security4.fdb %FB_GEN_DIR%\dbs\security.fdb > nul
+@"%FB_BIN_DIR%\isql" -q %FB_GEN_DB_DIR%/dbs/security5.fdb -i %FB_ROOT_PATH%\src\dbs\security.sql
+@copy %FB_GEN_DIR%\dbs\security5.fdb %FB_GEN_DIR%\dbs\security.fdb > nul
 
 @echo Restore metadata.gbak...
 @%FB_BIN_DIR%\gbak -r %FB_ROOT_PATH%\builds\misc\metadata.gbak %FB_GEN_DB_DIR%/dbs/metadata.fdb

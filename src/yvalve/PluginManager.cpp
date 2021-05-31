@@ -42,6 +42,7 @@
 #include "../common/classes/GenericMap.h"
 #include "../common/db_alias.h"
 #include "../common/dllinst.h"
+#include "../common/file_params.h"
 
 #include "../yvalve/config/os/config_root.h"
 
@@ -1182,7 +1183,7 @@ public:
 			cache[i] = fb_utils::getPrefix(i, "");
 		}
 
-		db = fb_utils::getPrefix(IConfigManager::DIR_SECDB, "security4.fdb");
+		db = fb_utils::getPrefix(IConfigManager::DIR_SECDB, SECURITY_DB);
 	}
 
 	const char* getDir(unsigned code)

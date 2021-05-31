@@ -460,8 +460,8 @@ Source: {#FilesDir}\fbtrace.conf; DestDir: {app}; DestName: fbtrace.conf; Compon
 Source: {#FilesDir}\databases.conf; DestDir: {app}; Components: ClientComponent; Flags: uninsneveruninstall onlyifdoesntexist
 Source: {#FilesDir}\replication.conf; DestDir: {app}; DestName: replication.conf.default; Components: ServerComponent;
 Source: {#FilesDir}\replication.conf; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist; check: NoReplicationConfExists;
-Source: {#FilesDir}\security4.fdb; DestDir: {app}; Destname: security4.fdb.empty; Components: ServerComponent;
-Source: {#FilesDir}\security4.fdb; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist
+Source: {#FilesDir}\security5.fdb; DestDir: {app}; Destname: security5.fdb.empty; Components: ServerComponent;
+Source: {#FilesDir}\security5.fdb; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist
 Source: {#FilesDir}\firebird.msg; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\firebird.log; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall skipifsourcedoesntexist external dontcopy
 
@@ -1014,7 +1014,7 @@ begin
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\firebird.log', false);
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\databases.conf', false);
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\fbtrace.conf', false);
-      IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\security4.fdb', false);
+      IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\security5.fdb', false);
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\replication.conf', false);
 
 			InitSecurityDB;
@@ -1140,8 +1140,8 @@ begin
           aStringList.add(appPath+'\firebird.log');
           aStringList.add(appPath+'\databases.conf');
           aStringList.add(appPath+'\fbtrace.conf');
-          aStringList.add(appPath+'\security4.fdb');
-          aStringList.add(appPath+'\security4.fdb.old');
+          aStringList.add(appPath+'\security5.fdb');
+          aStringList.add(appPath+'\security5.fdb.old');
           aStringList.add(appPath+'\replication.conf');
 
           for count := 0 to aStringList.count - 1 do begin

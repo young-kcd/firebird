@@ -906,7 +906,7 @@ add_subdirectory("utilities")
 add_custom_target(copy_files
     #ALL # uncomment this to copy files every build
     # databases
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${GENERATED_DIR}/security.fdb ${output_dir}/security4.fdb
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${GENERATED_DIR}/security.fdb ${output_dir}/security5.fdb
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${GENERATED_DIR}/help.fdb ${output_dir}/help/help.fdb
     # configs, text files
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/builds/install/misc/firebird.conf ${output_dir}/firebird.conf

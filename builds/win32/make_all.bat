@@ -78,7 +78,7 @@ for %%v in (gpre_boot build_msg codes) do (
 @copy %FB_ROOT_PATH%\builds\install\misc\IDPLicense.txt %FB_OUTPUT_DIR% >nul
 
 :: DATABASES
-@copy %FB_GEN_DIR%\dbs\security4.FDB %FB_OUTPUT_DIR%\security4.fdb >nul
+@copy %FB_GEN_DIR%\dbs\security5.FDB %FB_OUTPUT_DIR%\security5.fdb >nul
 @copy %FB_GEN_DIR%\dbs\HELP.fdb %FB_OUTPUT_DIR%\help\help.fdb >nul
 
 :: DOCS
