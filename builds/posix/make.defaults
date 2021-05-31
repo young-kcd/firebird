@@ -103,7 +103,7 @@ GLOB_OPTIONS:=
 #____________________________________________________________________________
 
 # Global c++ flags: firebird needs no RTTI, choose build standard
-PLUSPLUS_FLAGS:= -fno-rtti -std=c++11
+PLUSPLUS_FLAGS:= -fno-rtti -std=c++17
 
 # If this is defined then we use special rules useful for developers only
 IsDeveloper = @DEVEL_FLG@

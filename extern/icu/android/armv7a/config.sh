@@ -18,7 +18,7 @@
     --enable-dyload \
     --with-cross-build=$CROSS_BUILD_DIR \
     CFLAGS='-Os -march=armv7-a -mfloat-abi=softfp -mfpu=neon' \
-    CXXFLAGS='--std=c++11 -march=armv7-a -mfloat-abi=softfp -mfpu=neon' \
+    CXXFLAGS='--std=c++17 -march=armv7-a -mfloat-abi=softfp -mfpu=neon' \
     LDFLAGS='-static-libstdc++ -march=armv7-a -Wl,--fix-cortex-a8' \
     CC=arm-linux-androideabi-clang \
     CXX=arm-linux-androideabi-clang++ \
