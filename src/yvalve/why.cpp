@@ -3620,15 +3620,6 @@ ISC_STATUS API_ROUTINE isc_unwind_request(ISC_STATUS* userStatus, FB_API_HANDLE*
 // Shutdown firebird.
 int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 {
-	if (reason == fb_shutrsn_emergency)
-	{
-		shutdownStarted = true;
-		abortShutdown();
-	}
-
-	if (shutdownStarted)
-		return FB_SUCCESS;
-
 	StatusVector status(NULL);
 	CheckStatusWrapper statusWrapper(&status);
 
@@ -5896,6 +5887,10 @@ YService* Dispatcher::attachServiceManager(CheckStatusWrapper* status, const cha
 
 void Dispatcher::shutdown(CheckStatusWrapper* userStatus, unsigned int timeout, const int reason)
 {
+	// set "process exiting" state
+	if (reason == fb_shutrsn_emergency)
+		abortShutdown();
+
 	// can't syncronize with already killed threads, just exit
 	if (MasterInterfacePtr()->getProcessExiting())
 		return;
