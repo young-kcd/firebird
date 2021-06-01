@@ -412,7 +412,7 @@ void LockManager::shutdownOwner(thread_db* tdbb, SRQ_PTR* owner_handle)
 	{
 		{ // checkout scope
 			LockTableCheckout checkout(this, FB_FUNCTION);
-			EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::OPTIONAL);
+			EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::UNNECESSARY);
 			Thread::sleep(10);
 		}
 
@@ -1380,7 +1380,7 @@ void LockManager::blocking_action(thread_db* tdbb, SRQ_PTR blocking_owner_offset
 
 			{ // checkout scope
 				LockTableCheckout checkout(this, FB_FUNCTION);
-				EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::OPTIONAL);
+				EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::UNNECESSARY);
 				(*routine)(arg);
 			}
 
@@ -3811,7 +3811,7 @@ void LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_wai
 				}
 
 				{ // scope
-					EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::OPTIONAL);
+					EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::UNNECESSARY);
 					ret = m_sharedMemory->eventWait(&owner->own_wakeup, value, (timeout - current_time) * 1000000);
 					--m_waitingOwners;
 				}

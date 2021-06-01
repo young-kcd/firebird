@@ -1233,7 +1233,7 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 			enginesCopy.put(accessor.current()->first, accessor.current()->second);
 	}
 
-	EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::OPTIONAL);
+	EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::UNNECESSARY);
 
 	EnginesMap::Accessor accessor(&enginesCopy);
 	for (bool found = accessor.getFirst(); found; found = accessor.getNext())

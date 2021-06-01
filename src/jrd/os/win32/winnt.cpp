@@ -270,7 +270,7 @@ void PIO_extend(thread_db* tdbb, jrd_file* main_file, const ULONG extPages, cons
 	if (!main_file->fil_ext_lock)
 		return;
 
-	EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::OPTIONAL);
+	EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::UNNECESSARY);
 	FileExtendLockGuard extLock(main_file->fil_ext_lock, true);
 
 	ULONG leftPages = extPages;
@@ -314,7 +314,7 @@ void PIO_flush(thread_db* tdbb, jrd_file* main_file)
  *	Flush the operating system cache back to good, solid oxide.
  *
  **************************************/
-	EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::OPTIONAL);
+	EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::UNNECESSARY);
 
 	for (jrd_file* file = main_file; file; file = file->fil_next)
 		FlushFileBuffers(file->fil_desc);
@@ -437,7 +437,7 @@ USHORT PIO_init_data(thread_db* tdbb, jrd_file* main_file, FbStatusVector* statu
 
 	Database* const dbb = tdbb->getDatabase();
 
-	EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::OPTIONAL);
+	EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::UNNECESSARY);
 	FileExtendLockGuard extLock(main_file->fil_ext_lock, false);
 
 	// Fake buffer, used in seek_file. Page space ID doesn't matter there
@@ -570,7 +570,7 @@ bool PIO_read(thread_db* tdbb, jrd_file* file, BufferDesc* bdb, Ods::pag* page, 
 
 	const DWORD size = dbb->dbb_page_size;
 
-	EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::OPTIONAL);
+	EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::UNNECESSARY);
 	FileExtendLockGuard extLock(file->fil_ext_lock, false);
 
 	OVERLAPPED overlapped;
@@ -615,7 +615,7 @@ bool PIO_read_ahead(thread_db*	tdbb,
 
 	Database* const dbb = tdbb->getDatabase();
 
-	EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::OPTIONAL);
+	EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::UNNECESSARY);
 
 	// If an I/O status block was passed the caller wants to queue an asynchronous I/O.
 
@@ -701,7 +701,7 @@ bool PIO_status(thread_db* tdbb, phys_io_blk* piob, FbStatusVector* status_vecto
  *	Check the status of an asynchronous I/O.
  *
  **************************************/
-	EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::OPTIONAL);
+	EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::UNNECESSARY);
 
 	if (!(piob->piob_flags & PIOB_success))
 	{
@@ -744,7 +744,7 @@ bool PIO_write(thread_db* tdbb, jrd_file* file, BufferDesc* bdb, Ods::pag* page,
 
 	const DWORD size = dbb->dbb_page_size;
 
-	EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::OPTIONAL);
+	EngineCheckout cout(tdbb, FB_FUNCTION, EngineCheckout::UNNECESSARY);
 	FileExtendLockGuard extLock(file->fil_ext_lock, false);
 
 	OVERLAPPED overlapped;

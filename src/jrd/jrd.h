@@ -1081,7 +1081,7 @@ namespace Jrd {
 		enum Type
 		{
 			REQUIRED,
-			OPTIONAL,
+			UNNECESSARY,
 			AVOID
 		};
 
@@ -1095,7 +1095,7 @@ namespace Jrd {
 				if (att)
 					m_ref = att->getStable();
 
-				fb_assert(type == OPTIONAL || m_ref.hasData());
+				fb_assert(type == UNNECESSARY || m_ref.hasData());
 
 				if (m_ref.hasData())
 					m_ref->getMutex()->leave();
@@ -1133,7 +1133,7 @@ namespace Jrd {
 		{
 			if (!m_mutex.tryEnter(from))
 			{
-				EngineCheckout cout(tdbb, from, optional ? EngineCheckout::OPTIONAL : EngineCheckout::REQUIRED);
+				EngineCheckout cout(tdbb, from, optional ? EngineCheckout::UNNECESSARY : EngineCheckout::REQUIRED);
 				m_mutex.enter(from);
 			}
 		}
@@ -1161,7 +1161,7 @@ namespace Jrd {
 		{
 			if (!m_sync.lockConditional(type, from))
 			{
-				EngineCheckout cout(tdbb, from, optional ? EngineCheckout::OPTIONAL : EngineCheckout::REQUIRED);
+				EngineCheckout cout(tdbb, from, optional ? EngineCheckout::UNNECESSARY : EngineCheckout::REQUIRED);
 				m_sync.lock(type);
 			}
 		}
