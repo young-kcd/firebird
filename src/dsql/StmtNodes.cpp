@@ -2692,8 +2692,14 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 	// This is required for cascading referential integrity, which can be implemented as
 	// post_erase triggers.
 
-	if (!relation->rel_file && !relation->rel_view_rse && !relation->isVirtual())
-		IDX_erase(tdbb, rpb, transaction);
+	if (!relation->rel_view_rse)
+	{
+		if (!relation->rel_file && !relation->isVirtual())
+			IDX_erase(tdbb, rpb, transaction);
+
+		// Mark this rpb as already deleted to skip the subsequent attempts
+		rpb->rpb_runtime_flags |= RPB_just_deleted;
+	}
 
 	if (!relation->rel_view_rse || (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG))
 	{
@@ -2702,7 +2708,6 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 	}
 
 	rpb->rpb_number.setValid(false);
-	rpb->rpb_runtime_flags |= RPB_just_deleted;
 
 	return parentStmt;
 }
