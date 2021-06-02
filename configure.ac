@@ -549,6 +549,11 @@ AC_ARG_WITH(builtin-tomcrypt,
   [TOMCRYPT_BUILD=Y])
 AC_SUBST(TOMCRYPT_BUILD)
 
+TERMLIB=
+AC_ARG_WITH(termlib,
+  [  --with-termlib          build with explicitly specified termcap support library],
+  [TERMLIB=${withval}])
+
 dnl Avoid dumb '-g -O2' autoconf's default
 dnl Debugging information and optimization flags should be set in prefix.$platform file
 dnl Should be replaced with AC_PROG_GCC_DEFAULT_FLAGS() when available
@@ -858,18 +863,21 @@ else
 fi
 AC_SUBST(CRYPTLIB)
 
-dnl Check for libraries
-AC_SEARCH_LIBS(dlopen, dl)
-AC_CHECK_LIB(m, main)
+dnl Check for termcap support
 if test "$EDITLINE_FLG" = "Y"; then
-	AC_CHECK_LIB(curses, tgetent, TERMLIB=curses, \
-		AC_CHECK_LIB(ncurses, tgetent, TERMLIB=ncurses, \
-			AC_CHECK_LIB(termcap, tgetent, TERMLIB=termcap, \
-				AC_CHECK_LIB(tinfo, tgetent, TERMLIB=tinfo, \
-					AC_MSG_ERROR(termcap support not found)))))
+	if test -z "$TERMLIB"; then
+		AC_CHECK_LIB(curses, tgetent, TERMLIB=curses, \
+			AC_CHECK_LIB(ncurses, tgetent, TERMLIB=ncurses, \
+				AC_CHECK_LIB(termcap, tgetent, TERMLIB=termcap, \
+					AC_CHECK_LIB(tinfo, tgetent, TERMLIB=tinfo, \
+						AC_MSG_ERROR(termcap support not found)))))
+	fi
 	AC_SUBST(TERMLIB)
 fi
 
+dnl Check for libraries
+AC_SEARCH_LIBS(dlopen, dl)
+AC_CHECK_LIB(m, main)
 AC_SEARCH_LIBS(inet_aton, resolv)
 AC_CHECK_LIB(atomic, main)
 
