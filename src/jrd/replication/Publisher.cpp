@@ -661,6 +661,8 @@ void REPL_gen_id(thread_db* tdbb, SLONG genId, SINT64 value)
 		attachment->att_generators.store(genId, genName);
 	}
 
+	fb_assert(genName.hasData());
+
 	AutoSetRestoreFlag<ULONG> noRecursion(&tdbb->tdbb_flags, TDBB_repl_in_progress, true);
 
 	FbLocalStatus status;

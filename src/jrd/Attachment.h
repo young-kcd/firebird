@@ -349,7 +349,7 @@ public:
 
 		bool lookup(SLONG id, MetaName& name)
 		{
-			if (id < (int) m_objects.getCount())
+			if (id < (int) m_objects.getCount() && m_objects[id].hasData())
 			{
 				name = m_objects[id];
 				return true;
