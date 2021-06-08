@@ -151,6 +151,7 @@ Manager::Manager(const string& dbId,
 		}
 
 		ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
+		dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
 		if (login.hasData())
 		{
