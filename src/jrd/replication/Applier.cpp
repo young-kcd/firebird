@@ -531,6 +531,20 @@ void Applier::insertRecord(thread_db* tdbb, TraNumber traNum,
 		}
 
 		fb_utils::init_status(tdbb->tdbb_status_vector);
+
+		// Undo this particular insert (without involving a savepoint)
+		VerbAction* const action = transaction->tra_save_point->getAction(relation);
+
+		if (action && action->vct_records)
+		{
+			const SINT64 recno = rpb.rpb_number.getValue();
+			if (action->vct_records->test(recno))
+			{
+				fb_assert(!action->vct_undo || !action->vct_undo->locate(recno));
+				VIO_backout(tdbb, &rpb, transaction);
+				action->vct_records->clear(recno);
+			}
+		}
 	}
 
 	bool found = false;
