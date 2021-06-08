@@ -366,6 +366,7 @@ namespace
 
 			ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
 
+			dpb.insertByte(isc_dpb_no_db_triggers, 1);
 			dpb.insertString(isc_dpb_user_name, DBA_USER_NAME);
 			dpb.insertString(isc_dpb_config, ParsedList::getNonLoopbackProviders(m_config->dbName));
 
