@@ -10702,6 +10702,7 @@ dsc* StrCaseNode::execute(thread_db* tdbb, jrd_req* request) const
 		return NULL;
 
 	TextType* textType = INTL_texttype_lookup(tdbb, value->getTextType());
+	CharSet* charSet = textType->getCharSet();
 	auto intlFunction = (blrOp == blr_lowcase ? &TextType::str_to_lower : &TextType::str_to_upper);
 
 	if (value->isBlob())
@@ -10716,13 +10717,15 @@ dsc* StrCaseNode::execute(thread_db* tdbb, jrd_req* request) const
 		blb* blob = blb::open(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value->dsc_address));
 
-		HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
+		HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer;
 
 		if (charSet->isMultiByte())
-			buffer.getBuffer(blob->blb_length);	// alloc space to put entire blob in memory
+		{
+			// Alloc space to put entire blob in memory, with extra space for additional bytes when changing case.
+			buffer.getBuffer(blob->blb_length / charSet->minBytesPerChar() * charSet->maxBytesPerChar());
+		}
 
-		blb* newBlob = blb::create(tdbb, tdbb->getRequest()->req_transaction,
-			&impure->vlu_misc.vlu_bid);
+		blb* newBlob = blb::create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
 
 		while (!(blob->blb_flags & BLB_eof))
 		{
@@ -10730,7 +10733,7 @@ dsc* StrCaseNode::execute(thread_db* tdbb, jrd_req* request) const
 
 			if (len)
 			{
-				len = (textType->*intlFunction)(len, buffer.begin(), len, buffer.begin());
+				len = (textType->*intlFunction)(len, buffer.begin(), buffer.getCapacity(), buffer.begin());
 				newBlob->BLB_put_data(tdbb, buffer.begin(), len);
 			}
 		}
@@ -10743,16 +10746,16 @@ dsc* StrCaseNode::execute(thread_db* tdbb, jrd_req* request) const
 		UCHAR* ptr;
 		VaryStr<TEMP_STR_LENGTH> temp;
 		USHORT ttype;
+		ULONG len = MOV_get_string_ptr(tdbb, value, &ttype, &ptr, &temp, sizeof(temp));
 
 		dsc desc;
-		desc.dsc_length = MOV_get_string_ptr(tdbb, value, &ttype, &ptr, &temp, sizeof(temp));
+		desc.dsc_length = len / charSet->minBytesPerChar() * charSet->maxBytesPerChar();
 		desc.dsc_dtype = dtype_text;
 		desc.dsc_address = NULL;
 		desc.setTextType(ttype);
 		EVL_make_value(tdbb, &desc, impure);
 
-		ULONG len = (textType->*intlFunction)(desc.dsc_length,
-			ptr, desc.dsc_length, impure->vlu_desc.dsc_address);
+		len = (textType->*intlFunction)(len, ptr, desc.dsc_length, impure->vlu_desc.dsc_address);
 
 		if (len == INTL_BAD_STR_LENGTH)
 			status_exception::raise(Arg::Gds(isc_arith_except));
