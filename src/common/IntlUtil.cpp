@@ -601,7 +601,7 @@ ULONG IntlUtil::toLower(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG 
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16_str;
 	UCHAR* utf16_ptr;
 
-	if (dstLen >= utf16_length)	// if dst buffer is sufficient large, use it as intermediate
+	if (dst != src && dstLen >= utf16_length)	// if dst buffer is sufficient large, use it as intermediate
 		utf16_ptr = dst;
 	else
 		utf16_ptr = utf16_str.getBuffer(utf16_length);
@@ -627,7 +627,7 @@ ULONG IntlUtil::toUpper(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG 
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> utf16_str;
 	UCHAR* utf16_ptr;
 
-	if (dstLen >= utf16_length)	// if dst buffer is sufficient large, use it as intermediate
+	if (dst != src && dstLen >= utf16_length)	// if dst buffer is sufficient large, use it as intermediate
 		utf16_ptr = dst;
 	else
 		utf16_ptr = utf16_str.getBuffer(utf16_length);
