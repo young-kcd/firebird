@@ -624,7 +624,9 @@ namespace
 		{
 			// First pass: create the processing queue
 
-			for (auto iter = PathUtils::newDirIterator(pool, config->sourceDirectory);
+			AutoPtr<PathUtils::DirIterator> iter;
+
+			for (iter = PathUtils::newDirIterator(pool, config->sourceDirectory);
 				*iter; ++(*iter))
 			{
 				const auto filename = **iter;

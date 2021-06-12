@@ -851,7 +851,9 @@ void ChangeLog::initSegments()
 
 	const auto state = m_sharedMemory->getHeader();
 
-	for (auto iter = PathUtils::newDirIterator(getPool(), m_config->journalDirectory);
+	AutoPtr<PathUtils::DirIterator> iter;
+
+	for (iter = PathUtils::newDirIterator(getPool(), m_config->journalDirectory);
 		*iter; ++(*iter))
 	{
 		const auto filename = **iter;
