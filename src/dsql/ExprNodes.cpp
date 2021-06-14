@@ -12036,6 +12036,7 @@ dsc* SubstringSimilarNode::execute(thread_db* tdbb, jrd_req* request) const
 		if (!(impure->vlu_flags & VLU_computed))
 		{
 			delete impure->vlu_misc.vlu_invariant;
+			impure->vlu_misc.vlu_invariant = NULL;
 
 			impure->vlu_misc.vlu_invariant = evaluator = collation->createSubstringSimilarMatcher(
 				tdbb, *tdbb->getDefaultPool(), patternStr, patternLen, escapeStr, escapeLen);
