@@ -945,7 +945,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 				if (!(impure->vlu_flags & VLU_computed))
 				{
 					delete impure->vlu_misc.vlu_invariant;
-					impure->vlu_flags |= VLU_computed;
+					impure->vlu_misc.vlu_invariant = NULL;
 
 					if (blrOp == blr_like)
 					{
@@ -957,6 +957,8 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 						impure->vlu_misc.vlu_invariant = evaluator = obj->createSimilarToMatcher(
 							*tdbb->getDefaultPool(), p2, l2, escape_str, escape_length);
 					}
+
+					impure->vlu_flags |= VLU_computed;
 				}
 				else
 				{
@@ -1001,6 +1003,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 				if (!(impure->vlu_flags & VLU_computed))
 				{
 					delete impure->vlu_misc.vlu_invariant;
+					impure->vlu_misc.vlu_invariant = NULL;
 
 					if (blrOp == blr_containing)
 					{
@@ -1070,6 +1073,7 @@ bool ComparativeBoolNode::stringFunction(thread_db* tdbb, jrd_req* request,
 			if (!(impure->vlu_flags & VLU_computed))
 			{
 				delete impure->vlu_misc.vlu_invariant;
+				impure->vlu_misc.vlu_invariant = NULL;
 
 				if (blrOp == blr_containing)
 				{
@@ -1152,7 +1156,7 @@ bool ComparativeBoolNode::stringFunction(thread_db* tdbb, jrd_req* request,
 			if (!(impure->vlu_flags & VLU_computed))
 			{
 				delete impure->vlu_misc.vlu_invariant;
-				impure->vlu_flags |= VLU_computed;
+				impure->vlu_misc.vlu_invariant = NULL;
 
 				if (blrOp == blr_like)
 				{
@@ -1164,6 +1168,8 @@ bool ComparativeBoolNode::stringFunction(thread_db* tdbb, jrd_req* request,
 					impure->vlu_misc.vlu_invariant = evaluator = obj->createSimilarToMatcher(
 						*tdbb->getDefaultPool(), p2, l2, escape_str, escape_length);
 				}
+
+				impure->vlu_flags |= VLU_computed;
 			}
 			else
 			{
