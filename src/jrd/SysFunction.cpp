@@ -2851,6 +2851,47 @@ private:
 };
 
 
+// Descriptor value loader, taking into an account BLOBs
+
+class DscValue
+{
+public:
+	DscValue(thread_db* tdbb, const dsc* desc, bool forceNull = false)
+	{
+		if (desc->isBlob())
+		{
+			AutoPtr<blb> b(blb::open(tdbb, tdbb->getRequest()->req_transaction, (bid*) desc->dsc_address));
+			if (b->blb_length > MAX_VARY_COLUMN_SIZE)
+				(Arg::Gds(isc_expression_eval_err) << Arg::Gds(isc_malformed_string)).raise();
+
+			UCHAR* data = buf.getBuffer(b->blb_length);
+			l = b->BLB_get_data(tdbb, data, b->blb_length, false);
+			v = data;
+		}
+		else
+			v = CVT_get_bytes(desc, l);
+
+		if (forceNull && l == 0)
+			v = nullptr;
+	}
+
+	unsigned getLength() const
+	{
+		return l;
+	}
+
+	const UCHAR* getBytes() const
+	{
+		return v;
+	}
+
+private:
+	UCharBuffer buf;
+	const UCHAR* v;
+	unsigned l;
+};
+
+
 // Lists of constant parameter values
 
 class CodeValue
@@ -2938,20 +2979,15 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 	else if (modeName.hasData())
 		status_exception::raise(Arg::Gds(isc_tom_no_mode));
 
-	unsigned len;
-	const void* data = CVT_get_bytes(dscs[CRYPT_ARG_KEY], len);
-	UCharBuffer key;
-	memcpy(key.getBuffer(len), data, len);
+	DscValue key(tdbb, dscs[CRYPT_ARG_KEY]);
 
-	UCharBuffer iv;
-	data = CVT_get_bytes(dscs[CRYPT_ARG_IV], len);
+	DscValue iv(tdbb, dscs[CRYPT_ARG_IV]);
 	if ((m && (m->code != MODE_ECB)) || (a && (a->code != ALG_RC4)))	// all other need IV
 	{
-		if (!len)
+		if (!iv.getLength())
 			status_exception::raise(Arg::Gds(isc_tom_iv_miss));
-		memcpy(iv.getBuffer(len), data, len);
 	}
-	else if (len)
+	else if (iv.getLength())
 		status_exception::raise(Arg::Gds(isc_tom_no_iv));
 
 	const unsigned CTR_32 = 1;
@@ -2987,8 +3023,8 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		if (dscHasData(dscs[CRYPT_ARG_COUNTER]))
 		{
 			ctrVal = MOV_get_int64(tdbb, dscs[CRYPT_ARG_COUNTER], 0);
-			if (m && ctrVal > key.getCount())
-				status_exception::raise(Arg::Gds(isc_tom_ctr_big) << Arg::Num(ctrVal) <<  Arg::Num(key.getCount()));
+			if (m && ctrVal > key.getLength())
+				status_exception::raise(Arg::Gds(isc_tom_ctr_big) << Arg::Num(ctrVal) <<  Arg::Num(key.getLength()));
 		}
 	}
 	else if (dscHasData(dscs[CRYPT_ARG_COUNTER]))
@@ -3002,15 +3038,15 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 	if (m)
 	{
 		unsigned blockLen = cipher_descriptor[cipher].block_length;
-		if (iv.hasData() && iv.getCount() != blockLen)
-			status_exception::raise(Arg::Gds(isc_tom_iv_length) << Arg::Num(iv.getCount()) << Arg::Num(blockLen));
+		if (iv.getBytes() && iv.getLength() != blockLen)
+			status_exception::raise(Arg::Gds(isc_tom_iv_length) << Arg::Num(iv.getLength()) << Arg::Num(blockLen));
 
 		switch (m->code)
 		{
 		case MODE_ECB:
 			{
 				symmetric_ECB ecb;
-				tomCheck(ecb_start(cipher, key.begin(), key.getCount(), 0, &ecb), Arg::Gds(isc_tom_init_mode) << "ECB");
+				tomCheck(ecb_start(cipher, key.getBytes(), key.getLength(), 0, &ecb), Arg::Gds(isc_tom_init_mode) << "ECB");
 
 				while (dp.hasData())
 				{
@@ -3027,7 +3063,7 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		case MODE_CBC:
 			{
 				symmetric_CBC cbc;
-				tomCheck(cbc_start(cipher, iv.begin(), key.begin(), key.getCount(), 0, &cbc), Arg::Gds(isc_tom_init_mode) << "CBC");
+				tomCheck(cbc_start(cipher, iv.getBytes(), key.getBytes(), key.getLength(), 0, &cbc), Arg::Gds(isc_tom_init_mode) << "CBC");
 
 				while (dp.hasData())
 				{
@@ -3044,7 +3080,7 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		case MODE_CFB:
 			{
 				symmetric_CFB cfb;
-				tomCheck(cfb_start(cipher, iv.begin(), key.begin(), key.getCount(), 0, &cfb), Arg::Gds(isc_tom_init_mode) << "CFB");
+				tomCheck(cfb_start(cipher, iv.getBytes(), key.getBytes(), key.getLength(), 0, &cfb), Arg::Gds(isc_tom_init_mode) << "CFB");
 
 				while (dp.hasData())
 				{
@@ -3061,7 +3097,7 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		case MODE_OFB:
 			{
 				symmetric_OFB ofb;
-				tomCheck(ofb_start(cipher, iv.begin(), key.begin(), key.getCount(), 0, &ofb), Arg::Gds(isc_tom_init_mode) << "OFB");
+				tomCheck(ofb_start(cipher, iv.getBytes(), key.getBytes(), key.getLength(), 0, &ofb), Arg::Gds(isc_tom_init_mode) << "OFB");
 
 				while (dp.hasData())
 				{
@@ -3078,7 +3114,7 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		case MODE_CTR:
 			{
 				symmetric_CTR ctr;
-				tomCheck(ctr_start(cipher, iv.begin(), key.begin(), key.getCount(), 0,
+				tomCheck(ctr_start(cipher, iv.getBytes(), key.getBytes(), key.getLength(), 0,
 					(c->code == CTR_LITTLE_ENDIAN ? CTR_COUNTER_LITTLE_ENDIAN : CTR_COUNTER_BIG_ENDIAN) | ctrVal,
 					&ctr), Arg::Gds(isc_tom_init_mode) << "CTR");
 
@@ -3102,10 +3138,10 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		{
 		case ALG_RC4:
 			{
-				if (key.getCount() < 5)		// 40 bit - constant from tomcrypt
-					(Arg::Gds(isc_tom_key_length) << Arg::Num(key.getCount()) << Arg::Num(4)).raise();
+				if (key.getLength() < 5)		// 40 bit - constant from tomcrypt
+					(Arg::Gds(isc_tom_key_length) << Arg::Num(key.getLength()) << Arg::Num(4)).raise();
 				rc4_state rc4;
-				tomCheck(rc4_stream_setup(&rc4, key.begin(), key.getCount()), Arg::Gds(isc_tom_init_cip) << "RC4");
+				tomCheck(rc4_stream_setup(&rc4, key.getBytes(), key.getLength()), Arg::Gds(isc_tom_init_cip) << "RC4");
 
 				while (dp.hasData())
 				{
@@ -3120,25 +3156,25 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 		case ALG_CHACHA:
 			{
 				chacha_state chacha;
-				switch (key.getCount())
+				switch (key.getLength())
 				{
 				case 16:
 				case 32:
 					break;
 				default:
-					status_exception::raise(Arg::Gds(isc_tom_chacha_key) << Arg::Num(key.getCount()));
+					status_exception::raise(Arg::Gds(isc_tom_chacha_key) << Arg::Num(key.getLength()));
 				}
-				tomCheck(chacha_setup(&chacha, key.begin(), key.getCount(), 20), Arg::Gds(isc_tom_init_cip) << "CHACHA#20");
-				switch (iv.getCount())
+				tomCheck(chacha_setup(&chacha, key.getBytes(), key.getLength(), 20), Arg::Gds(isc_tom_init_cip) << "CHACHA#20");
+				switch (iv.getLength())
 				{
 				case 12:
-					tomCheck(chacha_ivctr32(&chacha, iv.begin(), iv.getCount(), ctrVal), Arg::Gds(isc_tom_setup_cip) << "CHACHA#20");
+					tomCheck(chacha_ivctr32(&chacha, iv.getBytes(), iv.getLength(), ctrVal), Arg::Gds(isc_tom_setup_cip) << "CHACHA#20");
 					break;
 				case 8:
-					tomCheck(chacha_ivctr64(&chacha, iv.begin(), iv.getCount(), ctrVal),  Arg::Gds(isc_tom_setup_cip) << "CHACHA#20");
+					tomCheck(chacha_ivctr64(&chacha, iv.getBytes(), iv.getLength(), ctrVal),  Arg::Gds(isc_tom_setup_cip) << "CHACHA#20");
 					break;
 				default:
-					status_exception::raise(Arg::Gds(isc_tom_setup_chacha) << Arg::Num(iv.getCount()));
+					status_exception::raise(Arg::Gds(isc_tom_setup_chacha) << Arg::Num(iv.getLength()));
 					break;
 				}
 
@@ -3154,11 +3190,11 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 
 		case ALG_SOBER:
 			{
-				if (key.getCount() < 4)		// 4, 8, 12, ...
-					(Arg::Gds(isc_tom_key_length) << Arg::Num(key.getCount()) << Arg::Num(3)).raise();
+				if (key.getLength() < 4)		// 4, 8, 12, ...
+					(Arg::Gds(isc_tom_key_length) << Arg::Num(key.getLength()) << Arg::Num(3)).raise();
 				sober128_state sober128;
-				tomCheck(sober128_stream_setup(&sober128, key.begin(), key.getCount()), Arg::Gds(isc_tom_init_cip) << "SOBER-128");
-				tomCheck(sober128_stream_setiv(&sober128, iv.begin(), iv.getCount()),  Arg::Gds(isc_tom_setup_cip) << "SOBER-128");
+				tomCheck(sober128_stream_setup(&sober128, key.getBytes(), key.getLength()), Arg::Gds(isc_tom_init_cip) << "SOBER-128");
+				tomCheck(sober128_stream_setiv(&sober128, iv.getBytes(), iv.getLength()),  Arg::Gds(isc_tom_setup_cip) << "SOBER-128");
 
 				while (dp.hasData())
 				{
@@ -3420,31 +3456,28 @@ dsc* evlRsaEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const Ne
 	if (hash < 0)
 		status_exception::raise(Arg::Gds(isc_tom_hash_bad) << hashName);
 
-	unsigned len;
-	const UCHAR* data = CVT_get_bytes(dscs[RSA_CRYPT_ARG_VALUE], len);
-	if (!data)
+	DscValue data(tdbb, dscs[RSA_CRYPT_ARG_VALUE]);
+	if (!data.getBytes())
 		return nullptr;
 
-	unsigned keyLen;
-	const UCHAR* key = CVT_get_bytes(dscs[RSA_CRYPT_ARG_KEY], keyLen);
-	if (!key)
+	DscValue key(tdbb, dscs[RSA_CRYPT_ARG_KEY]);
+	if (!key.getBytes())
 		return nullptr;
 
-	unsigned paramLen;
-	const UCHAR* lParam = CVT_get_bytes(dscs[RSA_CRYPT_ARG_LPARAM], paramLen);
-	if (!paramLen)
-		lParam = nullptr;
+	DscValue lParam(tdbb, dscs[RSA_CRYPT_ARG_LPARAM], true);
 
 	// Run tomcrypt functions
 	rsa_key rsaKey;
-	tomCheck(rsa_import(key, keyLen, &rsaKey), Arg::Gds(isc_tom_rsa_import));
+	tomCheck(rsa_import(key.getBytes(), key.getLength(), &rsaKey), Arg::Gds(isc_tom_rsa_import));
 
 	unsigned long outlen = encryptFlag ? 256 : 190;
 	UCharBuffer outBuf;
 	int stat = 0;
-	int cryptRc = encryptFlag ? rsa_encrypt_key(data, len, outBuf.getBuffer(outlen), &outlen, lParam, paramLen,
-			prng().getState(), prng().getIndex(), hash, &rsaKey) :
-		rsa_decrypt_key(data, len, outBuf.getBuffer(outlen), &outlen, lParam, paramLen, hash, &stat, &rsaKey);
+	int cryptRc = encryptFlag ?
+		rsa_encrypt_key(data.getBytes(), data.getLength(), outBuf.getBuffer(outlen), &outlen,
+			lParam.getBytes(), lParam.getLength(), prng().getState(), prng().getIndex(), hash, &rsaKey) :
+		rsa_decrypt_key(data.getBytes(), data.getLength(), outBuf.getBuffer(outlen), &outlen,
+			lParam.getBytes(), lParam.getLength(), hash, &stat, &rsaKey);
 	rsa_free(&rsaKey);
 	tomCheck(cryptRc, Arg::Gds(encryptFlag ? isc_tom_crypt_cip : isc_tom_decrypt_cip) << "RSA");
 	if ((!encryptFlag) && (!stat))
@@ -3509,12 +3542,11 @@ dsc* evlRsaPublic(thread_db* tdbb, const SysFunction* function, const NestValueA
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	unsigned len;
-	const UCHAR* data = CVT_get_bytes(value, len);
+	DscValue data(tdbb, value);
 	rsa_key rsaKey;
-	tomCheck(rsa_import(data, len, &rsaKey), Arg::Gds(isc_tom_rsa_import));
+	tomCheck(rsa_import(data.getBytes(), data.getLength(), &rsaKey), Arg::Gds(isc_tom_rsa_import));
 
-	unsigned long outlen = len;
+	unsigned long outlen = data.getLength();
 	UCharBuffer key;
 	int cryptRc = rsa_export(key.getBuffer(outlen), &outlen, PK_PUBLIC, &rsaKey);
 	rsa_free(&rsaKey);
@@ -3551,10 +3583,15 @@ dsc* evlRsaSign(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	if (hash < 0)
 		status_exception::raise(Arg::Gds(isc_tom_hash_bad) << hashName);
 
-	unsigned len;
-	const UCHAR* data = CVT_get_bytes(dscs[RSA_SIGN_ARG_VALUE], len);
-	if (!data)
+	DscValue data(tdbb, dscs[RSA_SIGN_ARG_VALUE]);
+	if (!data.getBytes())
 		return nullptr;
+
+	DscValue key(tdbb, dscs[RSA_SIGN_ARG_KEY]);
+	if (!key.getBytes())
+		return nullptr;
+	rsa_key rsaKey;
+	tomCheck(rsa_import(key.getBytes(), key.getLength(), &rsaKey), Arg::Gds(isc_tom_rsa_import));
 
 	SLONG saltLength = 8;
 	if (dscHasData(dscs[RSA_SIGN_ARG_SALTLEN]))
@@ -3564,16 +3601,9 @@ dsc* evlRsaSign(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 	}
 
-	unsigned keyLen;
-	const UCHAR* key = CVT_get_bytes(dscs[RSA_SIGN_ARG_KEY], keyLen);
-	if (!key)
-		return nullptr;
-	rsa_key rsaKey;
-	tomCheck(rsa_import(key, keyLen, &rsaKey), Arg::Gds(isc_tom_rsa_import));
-
 	unsigned long signLen = 1024;
 	UCharBuffer sign;
-	int cryptRc = rsa_sign_hash(data, len, sign.getBuffer(signLen), &signLen,
+	int cryptRc = rsa_sign_hash(data.getBytes(), data.getLength(), sign.getBuffer(signLen), &signLen,
 		prng().getState(), prng().getIndex(), hash, saltLength, &rsaKey);
 	rsa_free(&rsaKey);
 	tomCheck(cryptRc, Arg::Gds(isc_tom_rsa_sign));
@@ -3620,15 +3650,19 @@ dsc* evlRsaVerify(thread_db* tdbb, const SysFunction* function, const NestValueA
 	if (hash < 0)
 		status_exception::raise(Arg::Gds(isc_tom_hash_bad) << hashName);
 
-	unsigned len;
-	const UCHAR* data = CVT_get_bytes(dscs[RSA_VERIFY_ARG_VALUE], len);
-	if (!data)
+	DscValue data(tdbb, dscs[RSA_VERIFY_ARG_VALUE]);
+	if (!data.getBytes())
 		return nullptr;
 
-	unsigned signLen;
-	const UCHAR* sign = CVT_get_bytes(dscs[RSA_VERIFY_ARG_SIGNATURE], signLen);
-	if (!sign)
+	DscValue sign(tdbb, dscs[RSA_VERIFY_ARG_SIGNATURE]);
+	if (!sign.getBytes())
 		return boolResult(tdbb, impure, false);
+
+	DscValue key(tdbb, dscs[RSA_VERIFY_ARG_KEY]);
+	if (!key.getBytes())
+		return boolResult(tdbb, impure, false);
+	rsa_key rsaKey;
+	tomCheck(rsa_import(key.getBytes(), key.getLength(), &rsaKey), Arg::Gds(isc_tom_rsa_import));
 
 	SLONG saltLength = 8;
 	if (dscHasData(dscs[RSA_VERIFY_ARG_SALTLEN]))
@@ -3638,15 +3672,9 @@ dsc* evlRsaVerify(thread_db* tdbb, const SysFunction* function, const NestValueA
 			status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 	}
 
-	unsigned keyLen;
-	const UCHAR* key = CVT_get_bytes(dscs[RSA_VERIFY_ARG_KEY], keyLen);
-	if (!key)
-		return boolResult(tdbb, impure, false);
-	rsa_key rsaKey;
-	tomCheck(rsa_import(key, keyLen, &rsaKey), Arg::Gds(isc_tom_rsa_import));
-
 	int state = 0;
-	int cryptRc = rsa_verify_hash(sign, signLen, data, len, hash, saltLength, &state, &rsaKey);
+	int cryptRc = rsa_verify_hash(sign.getBytes(), sign.getLength(), data.getBytes(), data.getLength(),
+		hash, saltLength, &state, &rsaKey);
 	rsa_free(&rsaKey);
 	if (cryptRc != CRYPT_INVALID_PACKET)
 		tomCheck(cryptRc, Arg::Gds(isc_tom_rsa_verify));
