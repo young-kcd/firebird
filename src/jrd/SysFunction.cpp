@@ -3038,7 +3038,7 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 	if (m)
 	{
 		unsigned blockLen = cipher_descriptor[cipher].block_length;
-		if (iv.getBytes() && iv.getLength() != blockLen)
+		if (iv.getLength() && iv.getLength() != blockLen)
 			status_exception::raise(Arg::Gds(isc_tom_iv_length) << Arg::Num(iv.getLength()) << Arg::Num(blockLen));
 
 		switch (m->code)
