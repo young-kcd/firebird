@@ -724,7 +724,7 @@ clean_vers:
 
 clean_misc:
 	$(RM) security.tmp test.header.txt
-	$(RM) $(API_PAS_FILE) $(API_H_FILE) $(TMP_FUNCS) $(RPL_AWK) $(RPL_GREP)
+	$(RM) $(TMP_FUNCS) $(RPL_AWK) $(RPL_GREP)
 
 
 ifeq ($(EDITLINE_FLG),Y)
