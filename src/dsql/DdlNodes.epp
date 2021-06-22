@@ -2485,6 +2485,21 @@ void DropFunctionNode::dropArguments(thread_db* tdbb, jrd_tra* transaction,
 					 FLD.RDB$FIELD_NAME STARTING WITH IMPLICIT_DOMAIN_PREFIX AND
 					 FLD.RDB$SYSTEM_FLAG EQ 0
 			{
+				if (!FLD.RDB$SECURITY_CLASS.NULL)
+					deleteSecurityClass(tdbb, transaction, FLD.RDB$SECURITY_CLASS);
+
+				AutoCacheRequest request3(tdbb, drq_e_arg_prvs, DYN_REQUESTS);
+
+				FOR(REQUEST_HANDLE request3 TRANSACTION_HANDLE transaction)
+					PRIV IN RDB$USER_PRIVILEGES
+					WITH PRIV.RDB$RELATION_NAME EQ FLD.RDB$FIELD_NAME AND
+					PRIV.RDB$OBJECT_TYPE = obj_field AND
+					PRIV.RDB$GRANTOR NOT MISSING
+				{
+					ERASE PRIV;
+				}
+				END_FOR
+
 				ERASE FLD;
 			}
 			END_FOR
@@ -3288,6 +3303,21 @@ void DropProcedureNode::dropParameters(thread_db* tdbb, jrd_tra* transaction,
 					 FLD.RDB$FIELD_NAME STARTING WITH IMPLICIT_DOMAIN_PREFIX AND
 					 FLD.RDB$SYSTEM_FLAG EQ 0
 			{
+				if (!FLD.RDB$SECURITY_CLASS.NULL)
+					deleteSecurityClass(tdbb, transaction, FLD.RDB$SECURITY_CLASS);
+
+				AutoCacheRequest request3(tdbb, drq_e_prm_prvs, DYN_REQUESTS);
+
+				FOR(REQUEST_HANDLE request3 TRANSACTION_HANDLE transaction)
+					PRIV IN RDB$USER_PRIVILEGES
+					WITH PRIV.RDB$RELATION_NAME EQ FLD.RDB$FIELD_NAME AND
+					PRIV.RDB$OBJECT_TYPE = obj_field AND
+					PRIV.RDB$GRANTOR NOT MISSING
+				{
+					ERASE PRIV;
+				}
+				END_FOR
+
 				ERASE FLD;
 			}
 			END_FOR
