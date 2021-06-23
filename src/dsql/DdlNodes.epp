@@ -934,6 +934,22 @@ void DdlNode::storePrivileges(thread_db* tdbb, jrd_tra* transaction,
 	}
 }
 
+void DdlNode::deletePrivilegesByRelName(thread_db* tdbb, jrd_tra* transaction,
+	const MetaName& name, int type)
+{
+	AutoCacheRequest request(tdbb, drq_e_usr_prvs, DYN_REQUESTS);
+
+	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		PRIV IN RDB$USER_PRIVILEGES
+		WITH PRIV.RDB$RELATION_NAME EQ name.c_str() AND
+			 PRIV.RDB$OBJECT_TYPE = type AND
+			 PRIV.RDB$GRANTOR NOT MISSING
+	{
+		ERASE PRIV;
+	}
+	END_FOR
+}
+
 void DdlNode::executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction, DdlTriggerWhen when,
 	int action, const MetaName& objectName, const MetaName& oldNewObjectName, const string& sqlText)
 {
@@ -2486,6 +2502,11 @@ void DropFunctionNode::dropArguments(thread_db* tdbb, jrd_tra* transaction,
 					 FLD.RDB$SYSTEM_FLAG EQ 0
 			{
 				ERASE FLD;
+
+				if (!FLD.RDB$SECURITY_CLASS.NULL)
+					deleteSecurityClass(tdbb, transaction, FLD.RDB$SECURITY_CLASS);
+
+				deletePrivilegesByRelName(tdbb, transaction, FLD.RDB$FIELD_NAME, obj_field);
 			}
 			END_FOR
 		}
@@ -2562,16 +2583,7 @@ void DropFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 	if (package.isEmpty())
 	{
-		requestHandle.reset(tdbb, drq_e_fun_prvs, DYN_REQUESTS);
-
-		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
-			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$RELATION_NAME EQ name.c_str()
-				AND PRIV.RDB$OBJECT_TYPE = obj_udf
-				AND PRIV.RDB$GRANTOR NOT MISSING
-		{
-			ERASE PRIV;
-		}
-		END_FOR
+		deletePrivilegesByRelName(tdbb, transaction, name, obj_udf);
 
 		requestHandle.reset(tdbb, drq_e_fun_prv, DYN_REQUESTS);
 
@@ -3289,6 +3301,11 @@ void DropProcedureNode::dropParameters(thread_db* tdbb, jrd_tra* transaction,
 					 FLD.RDB$SYSTEM_FLAG EQ 0
 			{
 				ERASE FLD;
+
+				if (!FLD.RDB$SECURITY_CLASS.NULL)
+					deleteSecurityClass(tdbb, transaction, FLD.RDB$SECURITY_CLASS);
+
+				deletePrivilegesByRelName(tdbb, transaction, FLD.RDB$FIELD_NAME, obj_field);
 			}
 			END_FOR
 		}
@@ -3365,16 +3382,7 @@ void DropProcedureNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 
 	if (package.isEmpty())
 	{
-		requestHandle.reset(tdbb, drq_e_prc_prvs, DYN_REQUESTS);
-
-		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
-			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$RELATION_NAME EQ name.c_str()
-				AND PRIV.RDB$OBJECT_TYPE = obj_procedure
-				AND PRIV.RDB$GRANTOR NOT MISSING
-		{
-			ERASE PRIV;
-		}
-		END_FOR
+		deletePrivilegesByRelName(tdbb, transaction, name, obj_procedure);
 
 		requestHandle.reset(tdbb, drq_e_prc_prv, DYN_REQUESTS);
 
@@ -4270,17 +4278,7 @@ void DropCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	}
 	END_FOR
 
-	request.reset(tdbb, drq_e_coll_prvs, DYN_REQUESTS);
-
-	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-		PRIV IN RDB$USER_PRIVILEGES
-		WITH PRIV.RDB$RELATION_NAME EQ name.c_str() AND
-			 PRIV.RDB$OBJECT_TYPE = obj_collation AND
-			 PRIV.RDB$GRANTOR NOT MISSING
-	{
-		ERASE PRIV;
-	}
-	END_FOR
+	deletePrivilegesByRelName(tdbb, transaction, name, obj_collation);
 
 	if (found)
 	{
@@ -5355,17 +5353,7 @@ void DropDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	}
 	END_FOR
 
-	request.reset(tdbb, drq_e_gfld_prvs, DYN_REQUESTS);
-
-	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-		PRIV IN RDB$USER_PRIVILEGES
-		WITH PRIV.RDB$RELATION_NAME EQ name.c_str() AND
-			 PRIV.RDB$OBJECT_TYPE = obj_field AND
-			 PRIV.RDB$GRANTOR NOT MISSING
-	{
-		ERASE PRIV;
-	}
-	END_FOR
+	deletePrivilegesByRelName(tdbb, transaction, name, obj_field);
 
 	if (found)
 	{
@@ -5626,17 +5614,7 @@ void DropExceptionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	}
 	END_FOR
 
-	request.reset(tdbb, drq_e_xcp_prvs, DYN_REQUESTS);
-
-	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-		PRIV IN RDB$USER_PRIVILEGES
-		WITH PRIV.RDB$RELATION_NAME EQ name.c_str() AND
-			 PRIV.RDB$OBJECT_TYPE = obj_exception AND
-			 PRIV.RDB$GRANTOR NOT MISSING
-	{
-		ERASE PRIV;
-	}
-	END_FOR
+	deletePrivilegesByRelName(tdbb, transaction, name, obj_exception);
 
 	if (found)
 	{
@@ -5974,17 +5952,7 @@ void DropSequenceNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	}
 	END_FOR
 
-	request.reset(tdbb, drq_e_gen_prvs, DYN_REQUESTS);
-
-	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-		PRIV IN RDB$USER_PRIVILEGES
-		WITH PRIV.RDB$RELATION_NAME EQ name.c_str() AND
-			 PRIV.RDB$OBJECT_TYPE = obj_generator AND
-			 PRIV.RDB$GRANTOR NOT MISSING
-	{
-		ERASE PRIV;
-	}
-	END_FOR
+	deletePrivilegesByRelName(tdbb, transaction, name, obj_generator);
 
 	if (found)
 	{
@@ -8627,17 +8595,7 @@ void DropRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	}
 	END_FOR
 
-	request.reset(tdbb, drq_e_usr_prvs, DYN_REQUESTS);
-
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-		PRIV IN RDB$USER_PRIVILEGES
-		WITH PRIV.RDB$RELATION_NAME EQ name.c_str() AND
-			 PRIV.RDB$OBJECT_TYPE = obj_relation AND
-			 PRIV.RDB$GRANTOR NOT MISSING
-	{
-		ERASE PRIV;
-	}
-	END_FOR
+	deletePrivilegesByRelName(tdbb, transaction, name, obj_relation);
 
 	request.reset(tdbb, drq_e_view_prv, DYN_REQUESTS);
 

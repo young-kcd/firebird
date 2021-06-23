@@ -189,6 +189,9 @@ public:
 	static void storePrivileges(thread_db* tdbb, jrd_tra* transaction,
 		const MetaName& name, int type, const char* privileges);
 
+	static void deletePrivilegesByRelName(thread_db* tdbb, jrd_tra* transaction,
+		const MetaName& name, int type);
+
 public:
 	// Check permission on DDL operation. Return true if everything is OK.
 	// Raise an exception for bad permission.
