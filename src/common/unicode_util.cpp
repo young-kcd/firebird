@@ -1471,10 +1471,6 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 			icu->ucolSetAttribute(compareCollator, UCOL_STRENGTH, UCOL_SECONDARY, &status);
 	}
 
-	USet* contractions = icu->usetOpen(0, 0);
-	// status not verified here.
-	icu->ucolGetContractions(partialCollator, contractions, &status);
-
 	Utf16Collation* obj = FB_NEW Utf16Collation();
 	obj->icu = icu;
 	obj->tt = tt;
@@ -1482,9 +1478,39 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 	obj->compareCollator = compareCollator;
 	obj->partialCollator = partialCollator;
 	obj->sortCollator = sortCollator;
-	obj->contractions = contractions;
-	obj->contractionsCount = icu->usetGetItemCount(contractions);
 	obj->numericSort = isNumericSort;
+	obj->maxContractionsPrefixLength = 0;
+
+	USet* contractions = icu->usetOpen(1, 0);
+	// status not verified here.
+	icu->ucolGetContractions(partialCollator, contractions, &status);
+
+	int contractionsCount = icu->usetGetItemCount(contractions);
+
+	for (int contractionIndex = 0; contractionIndex < contractionsCount; ++contractionIndex)
+	{
+		UChar str[10];
+		UChar32 start, end;
+
+		status = U_ZERO_ERROR;
+		int len = icu->usetGetItem(contractions, contractionIndex, &start, &end, str, sizeof(str), &status);
+
+		if (len >= 2)
+		{
+			obj->maxContractionsPrefixLength = len - 1 > obj->maxContractionsPrefixLength ?
+				len - 1 : obj->maxContractionsPrefixLength;
+
+			for (int currentLen = 1; currentLen < len; ++currentLen)
+			{
+				string s(reinterpret_cast<const char*>(str), currentLen * 2);
+
+				if (!obj->contractionsPrefix.exist(s))
+					obj->contractionsPrefix.push(s);
+			}
+		}
+	}
+
+	icu->usetClose(contractions);
 
 	return obj;
 }
@@ -1492,8 +1518,6 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 
 UnicodeUtil::Utf16Collation::~Utf16Collation()
 {
-	icu->usetClose(contractions);
-
 	icu->ucolClose(compareCollator);
 	icu->ucolClose(partialCollator);
 	icu->ucolClose(sortCollator);
@@ -1544,30 +1568,16 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 	switch (key_type)
 	{
 		case INTL_KEY_PARTIAL:
-		{
 			coll = partialCollator;
 
 			// Remove last bytes of key if they are start of a contraction
 			// to correctly find in the index.
-			ConversionICU& cIcu(getConversionICU());
-			for (int i = 0; i < contractionsCount; ++i)
+
+			for (int i = MIN(maxContractionsPrefixLength, srcLenLong); i > 0; --i)
 			{
-				UChar str[10];
-				UErrorCode status = U_ZERO_ERROR;
-				int len = icu->usetGetItem(contractions, i, NULL, NULL, str, sizeof(str), &status);
-				if (len < 0)
-					fatal_exception::raiseFmt("uset_getItem() error %d", status);
-
-				if (unsigned(len) > srcLenLong)		// safe cast - sign checked
-					len = srcLenLong;
-				else
-					--len;
-
-				// safe cast - alignment not changed
-				if (cIcu.u_strCompare(str, len,
-						reinterpret_cast<const UChar*>(src) + srcLenLong - len, len, true) == 0)
+				if (contractionsPrefix.exist(string(reinterpret_cast<const char*>(src + srcLenLong - i), i * 2)))
 				{
-					srcLenLong -= len;
+					srcLenLong -= i;
 					break;
 				}
 			}
@@ -1588,7 +1598,6 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 			}
 
 			break;
-		}
 
 		case INTL_KEY_UNIQUE:
 			coll = compareCollator;
