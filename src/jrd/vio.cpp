@@ -1550,9 +1550,6 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		fb_assert(!(rpb->rpb_runtime_flags & RPB_undo_read));
 	}
 
-	// deleting tx has updated/inserted this record before
-	tdbb->bumpRelStats(RuntimeStatistics::RECORD_DELETES, relation->rel_id);
-
 	// Special case system transaction
 
 	if (transaction->tra_flags & TRA_system)
@@ -1877,6 +1874,9 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	// If the page can be updated simply, we can skip the remaining crud
 
+	Database* dbb = tdbb->getDatabase();
+	const bool backVersion = (rpb->rpb_b_page != 0);
+
 	record_param temp;
 	temp.rpb_transaction_nr = transaction->tra_number;
 	temp.rpb_address = NULL;
@@ -1892,10 +1892,17 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		if (transaction->tra_save_point && transaction->tra_save_point->isChanging())
 			verb_post(tdbb, transaction, rpb, rpb->rpb_undo);
 
+		// We have INSERT + DELETE or UPDATE + DELETE in the same transaction.
+		// UPDATE has already notified GC, while INSERT has not. Check for 
+		// backversion allows to avoid second notification in case of UPDATE.
+
+		if ((dbb->dbb_flags & DBB_gc_background) && !rpb->rpb_relation->isTemporary() && !backVersion)
+			notify_garbage_collector(tdbb, rpb, transaction->tra_number);
+
+		tdbb->bumpRelStats(RuntimeStatistics::RECORD_DELETES, relation->rel_id);
 		return true;
 	}
 
-	const bool backVersion = (rpb->rpb_b_page != 0);
 	const TraNumber tid_fetch = rpb->rpb_transaction_nr;
 	if (DPM_chain(tdbb, rpb, &temp))
 	{
@@ -1949,6 +1956,8 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	if (transaction->tra_save_point && transaction->tra_save_point->isChanging())
 		verb_post(tdbb, transaction, rpb, 0);
 
+	tdbb->bumpRelStats(RuntimeStatistics::RECORD_DELETES, relation->rel_id);
+
 	// for an autocommit transaction, mark a commit as necessary
 
 	if (transaction->tra_flags & TRA_autocommit)
@@ -1956,7 +1965,6 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	// VIO_erase
 
-	Database* dbb = tdbb->getDatabase();
 	if (backVersion && !(tdbb->getAttachment()->att_flags & ATT_no_cleanup) &&
 		(dbb->dbb_flags & DBB_gc_cooperative))
 	{
