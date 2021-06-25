@@ -31,6 +31,7 @@
 #include "../common/IntlUtil.h"
 #include "../common/os/mod_loader.h"
 #include "../common/classes/fb_string.h"
+#include "../common/classes/objects_array.h"
 
 #undef U_SHOW_CPLUSPLUS_API
 #define U_SHOW_CPLUSPLUS_API 0
@@ -168,6 +169,11 @@ public:
 									  Firebird::IntlUtil::SpecificAttributesMap& specificAttributes,
 									  const Firebird::string& configInfo);
 
+		Utf16Collation()
+			: contractionsPrefix(*getDefaultMemoryPool())
+		{
+		}
+
 		~Utf16Collation();
 
 		USHORT keyLength(USHORT len) const;
@@ -190,8 +196,8 @@ public:
 		UCollator* compareCollator;
 		UCollator* partialCollator;
 		UCollator* sortCollator;
-		USet* contractions;
-		int contractionsCount;
+		Firebird::SortedObjectsArray<Firebird::string> contractionsPrefix;	// UTF-16 string
+		unsigned maxContractionsPrefixLength;	// number of characters
 		bool numericSort;
 	};
 
