@@ -5880,9 +5880,36 @@ select_expr_body
 		}
 	;
 
-%type <rseNode> query_term
+%type <recSourceNode> query_term
 query_term
+	: query_primary
+	;
+
+%type <recSourceNode> query_primary
+query_primary
 	: query_spec
+		{ $$ = $1; }
+	| '(' select_expr_body order_clause_opt result_offset_clause fetch_first_clause ')'
+		{
+			if ($3 || $4 || $5)
+			{
+				SelectExprNode* node = newNode<SelectExprNode>();
+				node->querySpec = $2;
+				node->orderClause = $3;
+
+				if ($4 || $5)
+				{
+					RowsClause* rowsNode = newNode<RowsClause>();
+					rowsNode->skip = $4;
+					rowsNode->length = $5;
+					node->rowsClause = rowsNode;
+				}
+
+				$$ = node;
+			}
+			else
+				$$ = $2;
+		}
 	;
 
 %type <rseNode> query_spec
