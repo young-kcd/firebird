@@ -1296,8 +1296,8 @@ void ExtEngineManager::makeFunction(thread_db* tdbb, CompilerScratch* csb, Jrd::
 	metadata->name = udf->getName().identifier;
 	metadata->entryPoint = entryPointTrimmed;
 	metadata->body = body;
-	metadata->inputParameters = Routine::createMetadata(udf->getInputFields(), true);
-	metadata->outputParameters = Routine::createMetadata(udf->getOutputFields(), true);
+	metadata->inputParameters.assignRefNoIncr(Routine::createMetadata(udf->getInputFields(), true));
+	metadata->outputParameters.assignRefNoIncr(Routine::createMetadata(udf->getOutputFields(), true));
 
 	FbLocalStatus status;
 
@@ -1323,10 +1323,10 @@ void ExtEngineManager::makeFunction(thread_db* tdbb, CompilerScratch* csb, Jrd::
 				Arg::Gds(isc_eem_func_not_returned) << udf->getName().toString() << engine);
 		}
 
-		extInputParameters = inBuilder->getMetadata(&status);
+		extInputParameters.assignRefNoIncr(inBuilder->getMetadata(&status));
 		status.check();
 
-		extOutputParameters = outBuilder->getMetadata(&status);
+		extOutputParameters.assignRefNoIncr(outBuilder->getMetadata(&status));
 		status.check();
 	}
 
@@ -1420,8 +1420,8 @@ void ExtEngineManager::makeProcedure(thread_db* tdbb, CompilerScratch* csb, jrd_
 	metadata->name = prc->getName().identifier;
 	metadata->entryPoint = entryPointTrimmed;
 	metadata->body = body;
-	metadata->inputParameters = Routine::createMetadata(prc->getInputFields(), true);
-	metadata->outputParameters = Routine::createMetadata(prc->getOutputFields(), true);
+	metadata->inputParameters.assignRefNoIncr(Routine::createMetadata(prc->getInputFields(), true));
+	metadata->outputParameters.assignRefNoIncr(Routine::createMetadata(prc->getOutputFields(), true));
 
 	FbLocalStatus status;
 
@@ -1448,10 +1448,10 @@ void ExtEngineManager::makeProcedure(thread_db* tdbb, CompilerScratch* csb, jrd_
 					prc->getName().toString() << engine);
 		}
 
-		extInputParameters = inBuilder->getMetadata(&status);
+		extInputParameters.assignRefNoIncr(inBuilder->getMetadata(&status));
 		status.check();
 
-		extOutputParameters = outBuilder->getMetadata(&status);
+		extOutputParameters.assignRefNoIncr(outBuilder->getMetadata(&status));
 		status.check();
 	}
 
