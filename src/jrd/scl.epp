@@ -188,12 +188,8 @@ static void raiseError(thread_db* tdbb, SecurityClass::flags_t mask, SLONG type,
 	const Firebird::string fullName = r_name.hasData() ?
 		r_name.c_str() + Firebird::string(".") + name.c_str() : name.c_str();
 
-	Arg::StatusVector status;
-	status << Arg::Gds(isc_no_priv) << Arg::Str(names->p_names_string) <<
-			  Arg::Str(typeAsStr) <<
-			  Arg::Str(fullName);
-	ERR_post(status);
-
+	ERR_post(Arg::Gds(isc_no_priv) << Arg::Str(names->p_names_string) <<
+			 Arg::Str(typeAsStr) << Arg::Str(fullName));
 }
 
 
