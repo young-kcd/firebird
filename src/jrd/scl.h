@@ -26,6 +26,7 @@
 
 #include "../common/classes/MetaName.h"
 #include "../common/classes/tree.h"
+#include "../common/classes/GenericMap.h"
 #include "../common/security.h"
 #include "../jrd/obj.h"
 
@@ -35,9 +36,12 @@ class ClumpletWriter;
 
 namespace Jrd {
 
+class thread_db;
+
 const size_t ACL_BLOB_BUFFER_SIZE = MAX_USHORT; // used to read/write acl blob
 
 // Security class definition
+
 
 class SecurityClass
 {
@@ -45,23 +49,40 @@ public:
 	typedef ULONG flags_t;
 	enum BlobAccessCheck { BA_UNKNOWN, BA_SUCCESS, BA_FAILURE };
 
-	SecurityClass(Firebird::MemoryPool &pool, const Firebird::MetaName& name)
-		: scl_flags(0), scl_name(pool, name), scl_blb_access(BA_UNKNOWN)
+	SecurityClass(Firebird::MemoryPool &pool, const Firebird::MetaName& name, const Firebird::MetaName& userName)
+		: permissions(pool), sclClassUser(pool, Firebird::MetaNamePair(name, userName)), scl_flags(0), scl_blb_access(BA_UNKNOWN)
 	{}
 
-	flags_t scl_flags;			// Access permissions
-	const Firebird::MetaName scl_name;
+private:
+	typedef Firebird::Pair<Firebird::Left<Firebird::MetaName, SLONG> > SecurityObject;
+	mutable Firebird::GenericMap<Firebird::Pair<Firebird::Left<SecurityObject, flags_t> > > permissions;
+
+public:
+	bool getPrivileges(Firebird::MetaName objName, SLONG objType, flags_t& privileges) const
+	{
+		return permissions.get(SecurityObject(objName, objType), privileges);
+	}
+
+	void setPrivileges(Firebird::MetaName objName, SLONG objType, flags_t privileges) const
+	{
+		flags_t* p = permissions.put(SecurityObject(objName, objType));
+		if (p)
+			*p = privileges;
+	}
+
+	const Firebird::MetaNamePair sclClassUser;
+	flags_t scl_flags;			// Default (no object) access permissions
 	BlobAccessCheck scl_blb_access;
 
-	static const Firebird::MetaName& generate(const void*, const SecurityClass* item)
+	static const Firebird::MetaNamePair& generate(const void*, const SecurityClass* item)
 	{
-		return item->scl_name;
+		return item->sclClassUser;
 	}
 };
 
 typedef Firebird::BePlusTree<
 	SecurityClass*,
-	Firebird::MetaName,
+	Firebird::MetaNamePair,
 	Firebird::MemoryPool,
 	SecurityClass
 > SecurityClassList;
@@ -81,6 +102,11 @@ const SecurityClass::flags_t SCL_execute		= 1024;		// EXECUTE access
 const SecurityClass::flags_t SCL_usage			= 2048;		// USAGE access
 const SecurityClass::flags_t SCL_create			= 4096;
 
+const SecurityClass::flags_t SCL_SELECT_ANY	= SCL_select | SCL_references;
+const SecurityClass::flags_t SCL_ACCESS_ANY	= SCL_insert | SCL_update | SCL_delete |
+											  SCL_execute | SCL_usage | SCL_SELECT_ANY;
+const SecurityClass::flags_t SCL_MODIFY_ANY	= SCL_create | SCL_alter | SCL_control | SCL_drop;
+
 
 // information about the user
 
@@ -88,6 +114,7 @@ const USHORT USR_locksmith	= 1;		// User has great karma
 const USHORT USR_dba		= 2;		// User has DBA privileges
 const USHORT USR_owner		= 4;		// User owns database
 const USHORT USR_mapdown	= 8;		// Mapping failed when getting context
+const USHORT USR_newrole	= 16;		// usr_granted_roles array needs refresh
 
 class UserId
 {
@@ -101,7 +128,8 @@ public:
 	Auth::AuthenticationBlock usr_auth_block;	// Authentication block after mapping
 	USHORT				usr_user_id;		// User id
 	USHORT				usr_group_id;		// Group id
-	USHORT				usr_flags;			// Misc. crud
+	mutable USHORT		usr_flags;			// Misc. crud
+	mutable Firebird::string usr_granted_role;
 
 	bool locksmith() const
 	{
@@ -122,10 +150,27 @@ public:
 		  usr_auth_block(p),
 		  usr_user_id(ui.usr_user_id),
 		  usr_group_id(ui.usr_group_id),
-		  usr_flags(ui.usr_flags)
+		  usr_flags(ui.usr_flags),
+		  usr_granted_role(p)
 	{
 		usr_auth_block.assign(ui.usr_auth_block);
+		if (!(usr_flags & USR_newrole))
+			usr_granted_role = ui.usr_granted_role;
 	}
+
+	UserId(Firebird::MemoryPool& p)
+		: usr_user_name(p),
+		  usr_sql_role_name(p),
+		  usr_trusted_role(p),
+		  usr_project_name(p),
+		  usr_org_name(p),
+		  usr_auth_method(p),
+		  usr_auth_block(p),
+		  usr_user_id(0),
+		  usr_group_id(0),
+		  usr_flags(0),
+		  usr_granted_role(p)
+	{ }
 
 	UserId(const UserId& ui)
 		: usr_user_name(ui.usr_user_name),
@@ -139,6 +184,8 @@ public:
 		  usr_flags(ui.usr_flags)
 	{
 		usr_auth_block.assign(ui.usr_auth_block);
+		if (!(usr_flags & USR_newrole))
+			usr_granted_role = ui.usr_granted_role;
 	}
 
 	UserId& operator=(const UserId& ui)
@@ -153,12 +200,25 @@ public:
 		usr_group_id = ui.usr_group_id;
 		usr_flags = ui.usr_flags;
 		usr_auth_block.assign(ui.usr_auth_block);
+		if (!(usr_flags & USR_newrole))
+			usr_granted_role = ui.usr_granted_role;
 
 		return *this;
 	}
 
+	bool roleInUse(thread_db* tdbb, const Firebird::string& role) const
+	{
+		if (usr_flags & USR_newrole)
+			findGrantedRoles(tdbb);
+		return usr_granted_role == role;
+	}
+
 	void populateDpb(Firebird::ClumpletWriter& dpb, bool embeddedSupport);
+
+private:
+	void findGrantedRoles(thread_db* tdbb) const;
 };
+
 
 // These numbers are arbitrary and only used at run-time. Can be changed if necessary at any moment.
 // We need to include here the new objects that accept ACLs.

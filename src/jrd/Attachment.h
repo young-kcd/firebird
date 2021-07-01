@@ -238,6 +238,8 @@ public:
 	Database*	att_database;				// Parent database block
 	Attachment*	att_next;					// Next attachment to database
 	UserId*		att_user;					// User identification
+	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+		Firebird::MetaName, UserId*> > > att_user_ids;	// set of used UserIds
 	jrd_tra*	att_transactions;			// Transactions belonging to attachment
 	jrd_tra*	att_dbkey_trans;			// transaction to control db-key scope
 	TraNumber	att_oldest_snapshot;		// GTT's record versions older than this can be garbage-collected
@@ -384,6 +386,7 @@ public:
 	}
 
 	JAttachment* getInterface() throw();
+	UserId* getUserId(const Firebird::string &userName);
 
 	JProvider* getProvider()
 	{

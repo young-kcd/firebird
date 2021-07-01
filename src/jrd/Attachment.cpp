@@ -175,6 +175,7 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, JProvider* provider
 	: att_pool(pool),
 	  att_memory_stats(&dbb->dbb_memory_stats),
 	  att_database(dbb),
+	  att_user_ids(*pool),
 	  att_requests(*pool),
 	  att_lock_owner_id(Database::getLockOwnerId()),
 	  att_backup_state_counter(0),
@@ -766,3 +767,18 @@ JAttachment* Attachment::getInterface() throw()
 	return att_stable->getInterface();
 }
 
+UserId* Attachment::getUserId(const string& userName)
+{
+	// It's necessary to keep specified sql role of user
+	if (att_user && att_user->usr_user_name == userName)
+		return att_user;
+
+	UserId* result = NULL;
+	if (!att_user_ids.get(userName, result))
+	{
+		result = FB_NEW_POOL(*att_pool) UserId(*att_pool);
+		result->usr_user_name = userName;
+		att_user_ids.put(userName, result);
+	}
+	return result;
+}

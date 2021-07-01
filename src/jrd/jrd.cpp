@@ -7323,6 +7323,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 	if (options.dpb_role_name.hasData())
 	{
 		user.usr_sql_role_name = options.dpb_role_name;
+		user.usr_flags |= USR_newrole;
 	}
 
 	if (trusted_role.hasData())
