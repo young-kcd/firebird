@@ -11952,6 +11952,8 @@ ValueExprNode* SubstringSimilarNode::pass2(thread_db* tdbb, CompilerScratch* csb
 {
 	if (nodFlags & FLAG_INVARIANT)
 		csb->csb_invariants.push(&impureOffset);
+	else
+		nodFlags |= FLAG_PATTERN_MATCHER_CACHE;
 
 	ValueExprNode::pass2(tdbb, csb);
 
@@ -11999,34 +12001,73 @@ dsc* SubstringSimilarNode::execute(thread_db* tdbb, jrd_req* request) const
 	if (escapeLen == 0 || charSet->length(escapeLen, escapeStr, true) != 1)
 		ERR_post(Arg::Gds(isc_escape_invalid));
 
-	impure_value* impure = request->getImpure<impure_value>(impureOffset);
-
 	AutoPtr<BaseSubstringSimilarMatcher> autoEvaluator;	// deallocate non-invariant evaluator
 	BaseSubstringSimilarMatcher* evaluator;
+
+	impure_value* impure = request->getImpure<impure_value>(impureOffset);
+
+	auto createMatcher = [&]()
+	{
+		return collation->createSubstringSimilarMatcher(
+			tdbb, *tdbb->getDefaultPool(), patternStr, patternLen, escapeStr, escapeLen);
+	};
 
 	if (nodFlags & FLAG_INVARIANT)
 	{
 		if (!(impure->vlu_flags & VLU_computed))
 		{
 			delete impure->vlu_misc.vlu_invariant;
-			impure->vlu_misc.vlu_invariant = NULL;
+			impure->vlu_misc.vlu_invariant = nullptr;
 
-			impure->vlu_misc.vlu_invariant = evaluator = collation->createSubstringSimilarMatcher(
-				tdbb, *tdbb->getDefaultPool(), patternStr, patternLen, escapeStr, escapeLen);
+			impure->vlu_misc.vlu_invariant = evaluator = createMatcher();
 
 			impure->vlu_flags |= VLU_computed;
 		}
 		else
+			impure->vlu_misc.vlu_invariant->reset();
+
+		evaluator = static_cast<BaseSubstringSimilarMatcher*>(impure->vlu_misc.vlu_invariant);
+	}
+	else if (nodFlags & FLAG_PATTERN_MATCHER_CACHE)
+	{
+		auto& cache = impure->vlu_misc.vlu_patternMatcherCache;
+		const bool cacheHit = cache &&
+			cache->matcher &&
+			cache->ttype == textType &&
+			cache->patternLen == patternLen &&
+			cache->escapeLen == escapeLen &&
+			memcmp(cache->key, patternStr, patternLen) == 0 &&
+			memcmp(cache->key + patternLen, escapeStr, escapeLen) == 0;
+
+		if (cacheHit)
+			cache->matcher->reset();
+		else
 		{
-			evaluator = static_cast<BaseSubstringSimilarMatcher*>(impure->vlu_misc.vlu_invariant);
-			evaluator->reset();
+			if (cache && cache->keySize < patternLen + escapeLen)
+			{
+				delete cache;
+				cache = nullptr;
+			}
+
+			if (!cache)
+			{
+				cache = FB_NEW_RPT(*tdbb->getDefaultPool(), patternLen + escapeLen)
+					impure_value::PatternMatcherCache(patternLen + escapeLen);
+			}
+
+			cache->ttype = textType;
+			cache->patternLen = patternLen;
+			cache->escapeLen = escapeLen;
+			memcpy(cache->key, patternStr, patternLen);
+			memcpy(cache->key + patternLen, escapeStr, escapeLen);
+
+			cache->matcher = createMatcher();
 		}
+
+		evaluator = static_cast<BaseSubstringSimilarMatcher*>(cache->matcher.get());
 	}
 	else
-	{
-		autoEvaluator = evaluator = collation->createSubstringSimilarMatcher(tdbb, *tdbb->getDefaultPool(),
-			patternStr, patternLen, escapeStr, escapeLen);
-	}
+		autoEvaluator = evaluator = createMatcher();
 
 	evaluator->process(exprStr, exprLen);
 
