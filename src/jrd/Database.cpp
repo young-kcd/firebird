@@ -520,6 +520,7 @@ namespace Jrd
 	{
 		MutexLockGuard guard(g_mutex, FB_FUNCTION);
 
+		Database::GlobalObjectHolder::DbId* entry = g_hashTable->lookup(m_id);
 		if (!g_hashTable->remove(m_id))
 			fb_assert(false);
 
@@ -527,6 +528,8 @@ namespace Jrd
 		m_lockMgr = nullptr;
 		m_eventMgr = nullptr;
 		m_replMgr = nullptr;
+
+		delete entry;
 	}
 
 	void Database::GlobalObjectHolder::shutdown()
