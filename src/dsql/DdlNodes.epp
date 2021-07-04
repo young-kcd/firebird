@@ -1212,7 +1212,7 @@ string AlterEDSPoolSetNode::internalPrint(NodePrinter& printer) const
 
 void AlterEDSPoolSetNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/, jrd_tra* /*transaction*/)
 {
-	EDS::ConnectionsPool* pool = EDS::Manager::getConnPool(false);
+	EDS::ConnectionsPool* pool = EDS::Manager::getConnPool(true);
 	switch (m_param)
 	{
 	case POOL_SIZE:
