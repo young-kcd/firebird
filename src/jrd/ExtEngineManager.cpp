@@ -1263,7 +1263,7 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 				}
 
 				if (close)
-				{										
+				{
 					if (engines.remove(accessor.current()->first)) // If engine has already been deleted - nothing to do
 						PluginManagerInterfacePtr()->releasePlugin(engine);
 				}
@@ -1544,8 +1544,7 @@ void ExtEngineManager::makeTrigger(thread_db* tdbb, CompilerScratch* csb, Jrd::T
 	ContextManager<IExternalTrigger> ctxManager(tdbb, attInfo, attInfo->adminCharSet,
 		CallerName(obj_trigger, trg->name, userName));
 
-	///MemoryPool& pool = *tdbb->getDefaultPool();
-	MemoryPool& pool = *getDefaultMemoryPool();
+	MemoryPool& pool = *tdbb->getAttachment()->att_pool;
 
 	AutoPtr<RoutineMetadata> metadata(FB_NEW_POOL(pool) RoutineMetadata(pool));
 	metadata->name = trg->name;
