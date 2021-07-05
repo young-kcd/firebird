@@ -165,6 +165,11 @@ public:
 		  extBody(p),
 		  extTrigger(NULL)
 	{}
+
+	virtual ~Trigger()
+	{
+		delete extTrigger;
+	}
 };
 
 
@@ -248,8 +253,19 @@ public:
 		prc_record_format = NULL;
 	}
 
+	virtual ~jrd_prc()
+	{
+		delete prc_external;
+	}
+
 	virtual bool checkCache(thread_db* tdbb) const;
 	virtual void clearCache(thread_db* tdbb);
+
+	virtual void releaseExternal()
+	{
+		delete prc_external;
+		prc_external = NULL;
+	}
 
 protected:
 	virtual bool reload(thread_db* tdbb);	// impl is in met.epp
