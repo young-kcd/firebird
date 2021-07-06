@@ -3363,6 +3363,7 @@ static ValueExprNode* optimize_like(thread_db* tdbb, CompilerScratch* csb, Compa
 	TextType* patternTextType = INTL_texttype_lookup(tdbb, INTL_TTYPE(pattern_desc));
 	CharSet* patternCharset = patternTextType->getCharSet();
 
+	MoveBuffer escape_buffer;
 	UCHAR escape_canonic[sizeof(ULONG)];
 	UCHAR first_ch[sizeof(ULONG)];
 	ULONG first_len;
@@ -3373,8 +3374,6 @@ static ValueExprNode* optimize_like(thread_db* tdbb, CompilerScratch* csb, Compa
 	if (escape_node)
 	{
 		// Ensure escape string is same character set as match string
-
-		MoveBuffer escape_buffer;
 
 		p_count = MOV_make_string2(tdbb, escape_desc, INTL_TTYPE(&match_desc), &p, escape_buffer);
 
