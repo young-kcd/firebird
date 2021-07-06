@@ -142,31 +142,6 @@ namespace
 			return c == '*' || c == '+' || c == '?' || c == '{';
 		}
 
-		bool isSpecial(UChar32 c)
-		{
-			switch (c)
-			{
-				case '^':
-				case '-':
-				case '_':
-				case '%':
-				case '[':
-				case ']':
-				case '(':
-				case ')':
-				case '{':
-				case '}':
-				case '|':
-				case '?':
-				case '+':
-				case '*':
-					return true;
-
-				default:
-					return false;
-			}
-		}
-
 		bool isRe2Special(UChar32 c)
 		{
 			switch (c)
@@ -401,7 +376,7 @@ namespace
 						charSavePos = patternPos;
 						c = getPatternChar();
 
-						if (!(c == escapeChar || isSpecial(c)))
+						if (!(c == escapeChar || SimilarToRegex::isSpecialChar(c)))
 							status_exception::raise(Arg::Gds(isc_escape_invalid));
 					}
 					else
@@ -470,7 +445,7 @@ namespace
 								charSavePos = patternPos;
 								c = getPatternChar();
 
-								if (!(c == escapeChar || isSpecial(c)))
+								if (!(c == escapeChar || SimilarToRegex::isSpecialChar(c)))
 									status_exception::raise(Arg::Gds(isc_escape_invalid));
 							}
 
@@ -638,12 +613,12 @@ namespace
 						charSavePos = patternPos;
 						op = getPatternChar();
 
-						if (!isSpecial(op) && op != escapeChar)
+						if (!SimilarToRegex::isSpecialChar(op) && op != escapeChar)
 							status_exception::raise(Arg::Gds(isc_escape_invalid));
 					}
 					else
 					{
-						if (isSpecial(op))
+						if (SimilarToRegex::isSpecialChar(op))
 						{
 							controlChar = true;
 							patternPos = charSavePos;

@@ -352,7 +352,7 @@ static bool map_equal(const ValueExprNode*, const ValueExprNode*, const MapNode*
 static void mark_indices(CompilerScratch::csb_repeat* csbTail, SSHORT relationId);
 static bool node_equality(const ValueExprNode*, const ValueExprNode*);
 static bool node_equality(const BoolExprNode*, const BoolExprNode*);
-static ValueExprNode* optimize_like(thread_db*, CompilerScratch*, ComparativeBoolNode*);
+static ValueExprNode* optimize_like_similar(thread_db*, CompilerScratch*, ComparativeBoolNode*);
 static USHORT river_count(USHORT count, ValueExprNode** eq_class);
 static bool search_stack(const ValueExprNode*, const ValueExprNodeStack&);
 static void set_direction(SortNode*, SortNode*);
@@ -1445,12 +1445,13 @@ static SLONG decompose(thread_db* tdbb, BoolExprNode* boolNode, BoolExprNodeStac
 			return 2;
 		}
 
-		// turn a LIKE into a LIKE and a STARTING WITH, if it starts
+		// turn a LIKE/SIMILAR into a LIKE/SIMILAR and a STARTING WITH, if it starts
 		// with anything other than a pattern-matching character
 
 		ValueExprNode* arg;
 
-		if (cmpNode->blrOp == blr_like && (arg = optimize_like(tdbb, csb, cmpNode)))
+		if ((cmpNode->blrOp == blr_like || cmpNode->blrOp == blr_similar) &&
+			(arg = optimize_like_similar(tdbb, csb, cmpNode)))
 		{
 			ComparativeBoolNode* newCmpNode = FB_NEW_POOL(csb->csb_pool) ComparativeBoolNode(
 				csb->csb_pool, blr_starting);
@@ -3389,150 +3390,202 @@ static bool node_equality(const BoolExprNode* node1, const BoolExprNode* node2)
 }
 
 
-static ValueExprNode* optimize_like(thread_db* tdbb, CompilerScratch* csb, ComparativeBoolNode* like_node)
+static ValueExprNode* optimize_like_similar(thread_db* tdbb, CompilerScratch* csb, ComparativeBoolNode* cmpNode)
 {
 /**************************************
  *
- *	o p t i m i z e _ l i k e
+ *	o p t i m i z e _ l i k e _ s i m i l a r
  *
  **************************************
  *
  * Functional description
- *	Optimize a LIKE expression, if possible,
- *	into a "starting with" AND a "like".  This
+ *	Optimize a LIKE/SIMILAR expression, if possible,
+ *	into a "starting with" AND a "LIKE/SIMILAR".  This
  *	will allow us to use the index for the
- *	starting with, and the LIKE can just tag
+ *	starting with, and the LIKE/SIMILAR can just tag
  *	along for the ride.
  *	But on the ride it does useful work, consider
- *	match LIKE "ab%c".  This is optimized by adding
- *	AND starting_with "ab", but the LIKE clause is
+ *	match LIKE/SIMILAR "ab%c".  This is optimized by adding
+ *	AND starting_with "ab", but the LIKE/SIMILAR clause is
  *	still needed.
  *
  **************************************/
 	SET_TDBB(tdbb);
 
-	ValueExprNode* match_node = like_node->arg1;
-	ValueExprNode* pattern_node = like_node->arg2;
-	ValueExprNode* escape_node = like_node->arg3;
+	ValueExprNode* matchNode = cmpNode->arg1;
+	ValueExprNode* patternNode = cmpNode->arg2;
+	ValueExprNode* escapeNode = cmpNode->arg3;
 
 	// if the pattern string or the escape string can't be
 	// evaluated at compile time, forget it
-	if (!nodeIs<LiteralNode>(pattern_node) || (escape_node && !nodeIs<LiteralNode>(escape_node)))
-		return NULL;
+	if (!nodeIs<LiteralNode>(patternNode) || (escapeNode && !nodeIs<LiteralNode>(escapeNode)))
+		return nullptr;
 
-	dsc match_desc;
-	match_node->getDesc(tdbb, csb, &match_desc);
+	dsc matchDesc;
+	matchNode->getDesc(tdbb, csb, &matchDesc);
 
-	dsc* pattern_desc = &nodeAs<LiteralNode>(pattern_node)->litDesc;
-	dsc* escape_desc = NULL;
+	dsc* patternDesc = &nodeAs<LiteralNode>(patternNode)->litDesc;
+	dsc* escapeDesc = nullptr;
 
-	if (escape_node)
-		escape_desc = &nodeAs<LiteralNode>(escape_node)->litDesc;
+	if (escapeNode)
+		escapeDesc = &nodeAs<LiteralNode>(escapeNode)->litDesc;
 
 	// if either is not a character expression, forget it
-	if ((match_desc.dsc_dtype > dtype_any_text) ||
-		(pattern_desc->dsc_dtype > dtype_any_text) ||
-		(escape_node && escape_desc->dsc_dtype > dtype_any_text))
+	if ((matchDesc.dsc_dtype > dtype_any_text) ||
+		(patternDesc->dsc_dtype > dtype_any_text) ||
+		(escapeNode && escapeDesc->dsc_dtype > dtype_any_text))
 	{
-		return NULL;
+		return nullptr;
 	}
 
-	TextType* matchTextType = INTL_texttype_lookup(tdbb, INTL_TTYPE(&match_desc));
+	TextType* matchTextType = INTL_texttype_lookup(tdbb, INTL_TTYPE(&matchDesc));
 	CharSet* matchCharset = matchTextType->getCharSet();
-	TextType* patternTextType = INTL_texttype_lookup(tdbb, INTL_TTYPE(pattern_desc));
+	TextType* patternTextType = INTL_texttype_lookup(tdbb, INTL_TTYPE(patternDesc));
 	CharSet* patternCharset = patternTextType->getCharSet();
 
-	UCHAR escape_canonic[sizeof(ULONG)];
-	UCHAR first_ch[sizeof(ULONG)];
-	ULONG first_len;
-	UCHAR* p;
-	USHORT p_count;
-
-	// Get the escape character, if any
-	if (escape_node)
+	if (cmpNode->blrOp == blr_like)
 	{
-		// Ensure escape string is same character set as match string
+		UCHAR escape_canonic[sizeof(ULONG)];
+		UCHAR first_ch[sizeof(ULONG)];
+		ULONG first_len;
+		UCHAR* p;
+		USHORT p_count;
+		MoveBuffer escapeBuffer;
 
-		MoveBuffer escape_buffer;
+		// Get the escape character, if any
+		if (escapeNode)
+		{
+			// Ensure escape string is same character set as match string
+			p_count = MOV_make_string2(tdbb, escapeDesc, INTL_TTYPE(&matchDesc), &p, escapeBuffer);
 
-		p_count = MOV_make_string2(tdbb, escape_desc, INTL_TTYPE(&match_desc), &p, escape_buffer);
+			first_len = matchCharset->substring(p_count, p, sizeof(first_ch), first_ch, 0, 1);
+			matchTextType->canonical(first_len, p, sizeof(escape_canonic), escape_canonic);
+		}
+
+		MoveBuffer patternBuffer;
+		p_count = MOV_make_string2(tdbb, patternDesc, INTL_TTYPE(&matchDesc), &p, patternBuffer);
 
 		first_len = matchCharset->substring(p_count, p, sizeof(first_ch), first_ch, 0, 1);
-		matchTextType->canonical(first_len, p, sizeof(escape_canonic), escape_canonic);
-	}
 
-	MoveBuffer pattern_buffer;
+		UCHAR first_canonic[sizeof(ULONG)];
+		matchTextType->canonical(first_len, p, sizeof(first_canonic), first_canonic);
 
-	p_count = MOV_make_string2(tdbb, pattern_desc, INTL_TTYPE(&match_desc), &p, pattern_buffer);
+		const BYTE canWidth = matchTextType->getCanonicalWidth();
 
-	first_len = matchCharset->substring(p_count, p, sizeof(first_ch), first_ch, 0, 1);
+		const UCHAR* matchOneChar = matchCharset->getSqlMatchOneLength() != 0 ?
+			matchTextType->getCanonicalChar(TextType::CHAR_SQL_MATCH_ONE) : nullptr;
+		const UCHAR* matchAnyChar = matchCharset->getSqlMatchAnyLength() != 0 ?
+			matchTextType->getCanonicalChar(TextType::CHAR_SQL_MATCH_ANY) : nullptr;
 
-	UCHAR first_canonic[sizeof(ULONG)];
-	matchTextType->canonical(first_len, p, sizeof(first_canonic), first_canonic);
-
-	const BYTE canWidth = matchTextType->getCanonicalWidth();
-
-	const UCHAR* matchOneChar = matchCharset->getSqlMatchOneLength() != 0 ?
-		matchTextType->getCanonicalChar(TextType::CHAR_SQL_MATCH_ONE) : NULL;
-	const UCHAR* matchAnyChar = matchCharset->getSqlMatchAnyLength() != 0 ?
-		matchTextType->getCanonicalChar(TextType::CHAR_SQL_MATCH_ANY) : NULL;
-
-	// If the first character is a wildcard char, forget it.
-	if ((!escape_node || memcmp(first_canonic, escape_canonic, canWidth) != 0) &&
-		((matchOneChar && memcmp(first_canonic, matchOneChar, canWidth) == 0) ||
-		 (matchAnyChar && memcmp(first_canonic, matchAnyChar, canWidth) == 0)))
-	{
-		return NULL;
-	}
-
-	// allocate a literal node to store the starting with string;
-	// assume it will be shorter than the pattern string
-	// CVC: This assumption may not be true if we use "value like field".
-
-	LiteralNode* literal = FB_NEW_POOL(csb->csb_pool) LiteralNode(csb->csb_pool);
-	literal->litDesc = *pattern_desc;
-	UCHAR* q = literal->litDesc.dsc_address = FB_NEW_POOL(csb->csb_pool)
-		UCHAR[literal->litDesc.dsc_length];
-
-	// Set the string length to point till the first wildcard character.
-
-	HalfStaticArray<UCHAR, BUFFER_SMALL> patternCanonical;
-	ULONG patternCanonicalLen = p_count / matchCharset->minBytesPerChar() * canWidth;
-
-	patternCanonicalLen = matchTextType->canonical(p_count, p,
-		patternCanonicalLen, patternCanonical.getBuffer(patternCanonicalLen));
-
-	for (const UCHAR* patternPtr = patternCanonical.begin(); patternPtr < patternCanonical.end(); )
-	{
-		// if there are escape characters, skip past them and
-		// don't treat the next char as a wildcard
-		const UCHAR* patternPtrStart = patternPtr;
-		patternPtr += canWidth;
-
-		if (escape_node && (memcmp(patternPtrStart, escape_canonic, canWidth) == 0))
+		// If the first character is a wildcard char, forget it.
+		if ((!escapeNode || memcmp(first_canonic, escape_canonic, canWidth) != 0) &&
+			((matchOneChar && memcmp(first_canonic, matchOneChar, canWidth) == 0) ||
+			(matchAnyChar && memcmp(first_canonic, matchAnyChar, canWidth) == 0)))
 		{
-			// Check for Escape character at end of string
-			if (!(patternPtr < patternCanonical.end()))
+			return nullptr;
+		}
+
+		// allocate a literal node to store the starting with string;
+		// assume it will be shorter than the pattern string
+
+		LiteralNode* literal = FB_NEW_POOL(csb->csb_pool) LiteralNode(csb->csb_pool);
+		literal->litDesc = *patternDesc;
+		UCHAR* q = literal->litDesc.dsc_address = FB_NEW_POOL(csb->csb_pool) UCHAR[literal->litDesc.dsc_length];
+
+		// Set the string length to point till the first wildcard character.
+
+		HalfStaticArray<UCHAR, BUFFER_SMALL> patternCanonical;
+		ULONG patternCanonicalLen = p_count / matchCharset->minBytesPerChar() * canWidth;
+
+		patternCanonicalLen = matchTextType->canonical(p_count, p,
+			patternCanonicalLen, patternCanonical.getBuffer(patternCanonicalLen));
+
+		for (const UCHAR* patternPtr = patternCanonical.begin(); patternPtr < patternCanonical.end(); )
+		{
+			// if there are escape characters, skip past them and don't treat the next char as a wildcard
+			const UCHAR* patternPtrStart = patternPtr;
+			patternPtr += canWidth;
+
+			if (escapeNode && (memcmp(patternPtrStart, escape_canonic, canWidth) == 0))
+			{
+				// Check for Escape character at end of string
+				if (!(patternPtr < patternCanonical.end()))
+					break;
+
+				patternPtrStart = patternPtr;
+				patternPtr += canWidth;
+			}
+			else if ((matchOneChar && memcmp(patternPtrStart, matchOneChar, canWidth) == 0) ||
+					(matchAnyChar && memcmp(patternPtrStart, matchAnyChar, canWidth) == 0))
+			{
+				break;
+			}
+
+			q += patternCharset->substring(patternDesc->dsc_length,
+					patternDesc->dsc_address,
+					literal->litDesc.dsc_length - (q - literal->litDesc.dsc_address), q,
+					(patternPtrStart - patternCanonical.begin()) / canWidth, 1);
+		}
+
+		literal->litDesc.dsc_length = q - literal->litDesc.dsc_address;
+
+		return literal;
+	}
+	else
+	{
+		fb_assert(cmpNode->blrOp == blr_similar);
+
+		MoveBuffer escapeBuffer;
+		UCHAR* escapeStart = nullptr;
+		ULONG escapeLen = 0;
+
+		// Get the escape character, if any
+		if (escapeNode)
+		{
+			// Ensure escape string is same character set as match string
+			escapeLen = MOV_make_string2(tdbb, escapeDesc, INTL_TTYPE(&matchDesc), &escapeStart, escapeBuffer);
+		}
+
+		MoveBuffer patternBuffer;
+		UCHAR* patternStart;
+		ULONG patternLen = MOV_make_string2(tdbb, patternDesc, INTL_TTYPE(&matchDesc), &patternStart, patternBuffer);
+		const auto patternEnd = patternStart + patternLen;
+		const UCHAR* patternPtr = patternStart;
+
+		MoveBuffer prefixBuffer;
+		ULONG charLen = 0;
+
+		while (IntlUtil::readOneChar(matchCharset, &patternPtr, patternEnd, &charLen))
+		{
+			if (escapeNode && charLen == escapeLen && memcmp(patternPtr, escapeStart, escapeLen) == 0)
+			{
+				if (!IntlUtil::readOneChar(matchCharset, &patternPtr, patternEnd, &charLen) ||
+					!((charLen == escapeLen && memcmp(patternPtr, escapeStart, escapeLen) == 0) ||
+					  (charLen == 1 && SimilarToRegex::isSpecialChar(*patternPtr))))
+				{
+					// Invalid escape.
+					return nullptr;
+				}
+			}
+			else if (charLen == 1 && SimilarToRegex::isSpecialChar(*patternPtr))
 				break;
 
-			patternPtrStart = patternPtr;
-			patternPtr += canWidth;
-		}
-		else if ((matchOneChar && memcmp(patternPtrStart, matchOneChar, canWidth) == 0) ||
-				 (matchAnyChar && memcmp(patternPtrStart, matchAnyChar, canWidth) == 0))
-		{
-			break;
+			prefixBuffer.push(patternPtr, charLen);
 		}
 
-		q += patternCharset->substring(pattern_desc->dsc_length,
-			pattern_desc->dsc_address,
-			literal->litDesc.dsc_length - (q - literal->litDesc.dsc_address), q,
-			(patternPtrStart - patternCanonical.begin()) / canWidth, 1);
+		if (prefixBuffer.isEmpty())
+			return nullptr;
+
+		// Allocate a literal node to store the starting with string.
+		// Use the match text type as the pattern string is converted to it.
+
+		LiteralNode* literal = FB_NEW_POOL(csb->csb_pool) LiteralNode(csb->csb_pool);
+		literal->litDesc.makeText(prefixBuffer.getCount(), INTL_TTYPE(&matchDesc),
+			FB_NEW_POOL(csb->csb_pool) UCHAR[prefixBuffer.getCount()]);
+		memcpy(literal->litDesc.dsc_address, prefixBuffer.begin(), prefixBuffer.getCount());
+
+		return literal;
 	}
-
-	literal->litDesc.dsc_length = q - literal->litDesc.dsc_address;
-
-	return literal;
 }
 
 
