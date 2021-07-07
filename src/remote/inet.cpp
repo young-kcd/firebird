@@ -2851,7 +2851,7 @@ static rem_port* inet_try_connect(PACKET* packet,
  **************************************/
 	P_CNCT* cnct = &packet->p_cnct;
 	packet->p_operation = op_connect;
-	cnct->p_cnct_operation = op_attach;
+	cnct->p_cnct_operation = 0;
 	cnct->p_cnct_cversion = CONNECT_VERSION3;
 	cnct->p_cnct_client = ARCHITECTURE;
 

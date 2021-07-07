@@ -337,7 +337,7 @@ typedef struct p_malloc
 
 typedef struct p_cnct
 {
-	P_OP	p_cnct_operation;			// OP_CREATE or OP_OPEN
+	ULONG	p_cnct_operation;			// unused
 	USHORT	p_cnct_cversion;			// Version of connect protocol
 	P_ARCH	p_cnct_client;				// Architecture of client
 	CSTRING_CONST	p_cnct_file;		// File name
