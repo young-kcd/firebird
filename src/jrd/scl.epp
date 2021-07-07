@@ -168,8 +168,7 @@ namespace
 			if (p->num == num)
 				return p->name;
 		}
-		if (num)
-			fb_assert(false);
+		fb_assert(!num);
 		return "<unknown object type>";
 	}
 } // anonymous namespace
