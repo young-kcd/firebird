@@ -34,13 +34,9 @@
 struct dsc;
 
 void SCL_check_access(Jrd::thread_db*, const Jrd::SecurityClass*,
-					  SLONG, const Firebird::MetaName&,
-					  Jrd::SecurityClass::flags_t, SLONG type, bool recursive, const Firebird::MetaName&,
-					  const Firebird::MetaName& = "");
-void SCL_check_access(Jrd::thread_db*, const Jrd::SecurityClass*,
 					  const Jrd::SecurityClass*, SLONG, const Firebird::MetaName&,
 					  Jrd::SecurityClass::flags_t, SLONG type, bool recursive, const Firebird::MetaName&,
-					  const Firebird::MetaName&);
+					  const Firebird::MetaName& = "");
 void SCL_check_create_access(Jrd::thread_db*, int type);
 void SCL_check_charset(Jrd::thread_db* tdbb, const Firebird::MetaName&, Jrd::SecurityClass::flags_t);
 void SCL_check_collation(Jrd::thread_db* tdbb, const Firebird::MetaName&, Jrd::SecurityClass::flags_t);

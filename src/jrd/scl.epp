@@ -168,7 +168,8 @@ namespace
 			if (p->num == num)
 				return p->name;
 		}
-		fb_assert(false);
+		if (num)
+			fb_assert(false);
 		return "<unknown object type>";
 	}
 } // anonymous namespace
@@ -196,20 +197,6 @@ static void raiseError(thread_db* tdbb, SecurityClass::flags_t mask, SLONG type,
 // Functional description
 //	Check security class for desired permission.
 //	userName a name of user in which context permissions will be checked.
-
-
-void SCL_check_access(thread_db* tdbb,
-					  const SecurityClass* s_class,
-					  SLONG obj_type,
-					  const Firebird::MetaName& obj_name,
-					  SecurityClass::flags_t mask,
-					  SLONG type,
-					  bool recursive,
-					  const Firebird::MetaName& name,
-					  const Firebird::MetaName& r_name)
-{
-	SCL_check_access(tdbb, s_class, NULL, obj_type, obj_name, mask, type, recursive, name, r_name);
-}
 
 
 static bool check_access(thread_db* tdbb,
@@ -353,7 +340,7 @@ void SCL_check_charset(thread_db* tdbb, const MetaName& name, SecurityClass::fla
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, name, mask, SCL_object_charset, false, name);
+	SCL_check_access(tdbb, s_class, NULL, 0, name, mask, SCL_object_charset, false, name);
 }
 
 
@@ -384,7 +371,7 @@ void SCL_check_collation(thread_db* tdbb, const MetaName& name, SecurityClass::f
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, name, mask, SCL_object_collation, false, name);
+	SCL_check_access(tdbb, s_class, NULL, 0, name, mask, SCL_object_collation, false, name);
 }
 
 
@@ -453,7 +440,7 @@ void SCL_check_domain(thread_db* tdbb, const MetaName& name, SecurityClass::flag
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, name, mask, SCL_object_domain, false, name);
+	SCL_check_access(tdbb, s_class, NULL, 0, name, mask, SCL_object_domain, false, name);
 }
 
 
@@ -486,7 +473,7 @@ bool SCL_check_exception(thread_db* tdbb, const MetaName& name, SecurityClass::f
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, name, mask, SCL_object_exception, false, name);
+	SCL_check_access(tdbb, s_class, NULL, 0, name, mask, SCL_object_exception, false, name);
 	return found;
 }
 
@@ -520,7 +507,7 @@ bool SCL_check_generator(thread_db* tdbb, const MetaName& name, SecurityClass::f
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, name, mask, SCL_object_generator, false, name);
+	SCL_check_access(tdbb, s_class, NULL, 0, name, mask, SCL_object_generator, false, name);
 	return found;
 }
 
@@ -616,7 +603,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 	if (reln_name.isEmpty())
 		return;
 
-	SCL_check_access(tdbb, s_class, 0, NULL, mask, SCL_object_table, false, reln_name);
+	SCL_check_access(tdbb, s_class, NULL, 0, NULL, mask, SCL_object_table, false, reln_name);
 
 	request.reset();
 
@@ -636,7 +623,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 	{
 		s_class = (!RF.RDB$SECURITY_CLASS.NULL) ?
 			SCL_get_class(tdbb, RF.RDB$SECURITY_CLASS) : default_s_class;
-		SCL_check_access(tdbb, s_class, 0, NULL, mask,
+		SCL_check_access(tdbb, s_class, NULL, 0, NULL, mask,
 						 SCL_object_column, false, RF.RDB$FIELD_NAME, reln_name);
 	}
 	END_FOR
@@ -680,7 +667,7 @@ bool SCL_check_package(thread_db* tdbb, const dsc* dsc_name, SecurityClass::flag
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, id_package, name, mask, SCL_object_package, false, name);
+	SCL_check_access(tdbb, s_class, NULL, id_package, name, mask, SCL_object_package, false, name);
 	return found;
 }
 
@@ -723,7 +710,7 @@ bool SCL_check_procedure(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fl
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, id_procedure, name, mask, SCL_object_procedure, false, name);
+	SCL_check_access(tdbb, s_class, NULL, id_procedure, name, mask, SCL_object_procedure, false, name);
 	return found;
 }
 
@@ -766,7 +753,7 @@ bool SCL_check_function(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, id_function, name, mask, SCL_object_function, false, name);
+	SCL_check_access(tdbb, s_class, NULL, id_function, name, mask, SCL_object_function, false, name);
 	return found;
 }
 
@@ -801,7 +788,7 @@ void SCL_check_filter(thread_db* tdbb, const MetaName &name, SecurityClass::flag
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, id_filter, name, mask, SCL_object_filter, false, name);
+	SCL_check_access(tdbb, s_class, NULL, id_filter, name, mask, SCL_object_filter, false, name);
 }
 
 
@@ -847,7 +834,7 @@ void SCL_check_relation(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, NULL, mask, SCL_object_table, false, name);
+	SCL_check_access(tdbb, s_class, NULL, 0, NULL, mask, SCL_object_table, false, name);
 }
 
 bool SCL_check_view(thread_db* tdbb, const dsc* dsc_name, SecurityClass::flags_t mask)
@@ -888,7 +875,7 @@ bool SCL_check_view(thread_db* tdbb, const dsc* dsc_name, SecurityClass::flags_t
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, NULL, mask, SCL_object_view, false, name);
+	SCL_check_access(tdbb, s_class, NULL, 0, NULL, mask, SCL_object_view, false, name);
 	return found;
 }
 
@@ -921,7 +908,7 @@ void SCL_check_role(thread_db* tdbb, const Firebird::MetaName& name, SecurityCla
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, NULL, mask, SCL_object_role, false, name);
+	SCL_check_access(tdbb, s_class, NULL, 0, NULL, mask, SCL_object_role, false, name);
 }
 
 SecurityClass* SCL_get_class(thread_db* tdbb, const TEXT* par_string)
@@ -994,7 +981,7 @@ Jrd::SecurityClass* SCL_get_class(Jrd::thread_db* tdbb, SLONG view_id)
 	if (!view)
 		return NULL;
 
-	return SCL_get_class(tdbb, view->rel_owner_name.c_str());
+	return SCL_get_class(tdbb, view->rel_security_name.c_str());
 }
 
 
