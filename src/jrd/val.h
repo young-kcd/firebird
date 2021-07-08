@@ -31,9 +31,9 @@
 
 #include "../include/fb_blk.h"
 #include "../common/classes/array.h"
+#include "../jrd/intl_classes.h"
 #include "../jrd/MetaName.h"
 #include "../jrd/QualifiedName.h"
-
 #include "../jrd/RecordNumber.h"
 #include "../common/dsc.h"
 
@@ -57,7 +57,6 @@ class ArrayField;
 class blb;
 class jrd_req;
 class jrd_tra;
-class PatternMatcher;
 
 // Various structures in the impure area
 
