@@ -261,6 +261,7 @@ const int op_partition_args	= 26;
 const int op_subproc_decl	= 27;
 const int op_subfunc_decl	= 28;
 const int op_window_win		= 29;
+const int op_erase			= 30;	// special due to optional blr_marks after blr_erase
 
 static const UCHAR
 	// generic print formats
@@ -347,7 +348,8 @@ static const UCHAR
 	relation_field[] = { op_line, op_indent, op_byte, op_literal,
 						 op_line, op_indent, op_byte, op_literal, op_pad, op_line, 0},
 	store3[] = { op_line, op_byte, op_line, op_verb, op_verb, op_verb, 0},
-	marks[] = { op_byte, op_literal, op_line, op_verb, 0};
+	marks[] = { op_byte, op_literal, op_line, op_verb, 0},
+	erase[] = { op_erase, 0};
 
 
 #include "../jrd/blp.h"
@@ -3746,6 +3748,21 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			blr_print_verb(control, level);
 			break;
 		}
+
+		case op_erase:
+			blr_print_byte(control);
+			if (control->ctl_blr_reader.peekByte() == blr_marks)
+			{
+				offset = blr_print_line(control, offset);
+				blr_indent(control, level);
+				blr_print_blr(control, control->ctl_blr_reader.getByte());
+				n = blr_print_byte(control);
+
+				while (n-- > 0)
+					blr_print_char(control);
+			}
+			offset = blr_print_line(control, offset);
+			break;
 
 		default:
 			fb_assert(false);

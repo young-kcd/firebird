@@ -30,7 +30,7 @@ static const struct
 	{"begin", begin},
 	{"declare", declare},
 	{"message", message},
-	{"erase", byte_line},
+	{"erase", erase},
 	{"fetch", two},
 	{"for", two},
 	{"if", three},
