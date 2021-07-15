@@ -57,7 +57,7 @@ static const struct
 	{"maximum", two},
 	{"minimum", two},	// 30
 	{"total", two},
-	{NULL, NULL}, // {"count2", two},
+	{"receive_batch", byte_verb},
 	{NULL, NULL},
 	{"add", two},
 	{"subtract", two},
