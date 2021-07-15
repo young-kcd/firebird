@@ -71,9 +71,9 @@ DATABASE DB = FILENAME "ODS.RDB";
 static bool check_number(const UCHAR*, USHORT);
 static bool check_user_group(thread_db* tdbb, const UCHAR*, USHORT);
 static bool check_string(const UCHAR*, const Firebird::MetaName&);
-static SecurityClass::flags_t compute_access(thread_db* tdbb, const SecurityClass*,	SLONG, const Firebird::MetaName&);
+static SecurityClass::flags_t compute_access(thread_db* tdbb, const SecurityClass*,	SLONG, const Firebird::MetaName*);
 static SecurityClass::flags_t get_sys_privileges(thread_db* tdbb);
-static SecurityClass::flags_t walk_acl(thread_db* tdbb, const Acl&, const MetaName&, SLONG, const MetaName&);
+static SecurityClass::flags_t walk_acl(thread_db* tdbb, const Acl&, const MetaName&, SLONG, const MetaName*);
 static void raiseError(thread_db* tdbb, SecurityClass::flags_t mask, SLONG type, const Firebird::MetaName& name,
 	const Firebird::MetaName& r_name, const MetaName &invoker);
 
@@ -245,7 +245,7 @@ static bool check_access(thread_db* tdbb,
 		SecurityClass::flags_t priv = 0;
 		if (!s_class->getPrivileges(obj_name, obj_type, priv))
 		{
-			priv = compute_access(tdbb, s_class, obj_type, obj_name);
+			priv = compute_access(tdbb, s_class, obj_type, &obj_name);
 			s_class->setPrivileges(obj_name, obj_type, priv);
 		}
 		if (priv & mask)
@@ -910,7 +910,7 @@ void SCL_check_role(thread_db* tdbb, const Firebird::MetaName& name, SecurityCla
 	SCL_check_access(tdbb, s_class, NULL, 0, NULL, mask, SCL_object_role, false, name);
 }
 
-SecurityClass* SCL_get_class(thread_db* tdbb, const TEXT* par_string)
+SecurityClass* SCL_get_class(thread_db* tdbb, const TEXT* par_string, const jrd_rel* view)
 {
 /**************************************
  *
@@ -936,10 +936,15 @@ SecurityClass* SCL_get_class(thread_db* tdbb, const TEXT* par_string)
 
 	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
-	const UserId* effectiveUserId = attachment->att_user;
 	Firebird::MetaName userName;
-	if (effectiveUserId)
-		userName = effectiveUserId->usr_user_name;
+	if (view)
+		userName = view->rel_security_name;
+	else
+	{
+		const UserId* effectiveUserId = attachment->att_user;
+		if (effectiveUserId)
+			userName = effectiveUserId->usr_user_name;
+	}
 
 	Firebird::MetaNamePair key(string, userName);
 	// Look for the class already known
@@ -953,7 +958,7 @@ SecurityClass* SCL_get_class(thread_db* tdbb, const TEXT* par_string)
 	MemoryPool& pool = *attachment->att_pool;
 
 	SecurityClass* const s_class = FB_NEW_POOL(pool) SecurityClass(pool, string, userName);
-	s_class->scl_flags = compute_access(tdbb, s_class, 0, NULL);
+	s_class->scl_flags = compute_access(tdbb, s_class, view ? id_view : 0, view ? &view->rel_name : NULL);
 
 	if (s_class->scl_flags & SCL_exists)
 	{
@@ -971,7 +976,7 @@ SecurityClass* SCL_get_class(thread_db* tdbb, const TEXT* par_string)
 }
 
 
-Jrd::SecurityClass* SCL_get_class(Jrd::thread_db* tdbb, SLONG view_id)
+Jrd::SecurityClass* SCL_get_class_for_view(Jrd::thread_db* tdbb, SLONG view_id, const TEXT* par_string)
 {
 	if (!view_id)
 		return NULL;
@@ -980,7 +985,7 @@ Jrd::SecurityClass* SCL_get_class(Jrd::thread_db* tdbb, SLONG view_id)
 	if (!view)
 		return NULL;
 
-	return SCL_get_class(tdbb, view->rel_security_name.c_str());
+	return SCL_get_class(tdbb, par_string, view);
 }
 
 
@@ -1478,7 +1483,7 @@ static bool check_string(const UCHAR* acl, const Firebird::MetaName& string)
 	const FB_SIZE_T length = *acl++;
 	const TEXT* const ptr = (TEXT*) acl;
 
-	return (string.compare(ptr, length) != 0);
+	return string.compare(ptr, length) != 0;
 }
 
 static void get_string(const UCHAR* acl, Firebird::MetaName& str)
@@ -1546,7 +1551,7 @@ static SecurityClass::flags_t get_sys_privileges(thread_db* tdbb)
 static SecurityClass::flags_t compute_access(thread_db* tdbb,
 											 const SecurityClass* s_class,
 											 SLONG obj_type,
-											 const Firebird::MetaName& obj_name)
+											 const Firebird::MetaName* obj_name)
 {
 /**************************************
  *
@@ -1610,7 +1615,7 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 									   const Acl& acl,
 									   const MetaName& userName,
 									   SLONG obj_type,
-									   const MetaName& obj_name)
+									   const MetaName* obj_name)
 {
 /**************************************
  *
@@ -1690,7 +1695,7 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 				case id_procedure:
 				case id_trigger:
 				case id_function:
-					if (c != obj_type || check_string(a, obj_name))
+					if (c != obj_type || (!obj_name) || check_string(a, *obj_name))
 						hit = false;
 					break;
 

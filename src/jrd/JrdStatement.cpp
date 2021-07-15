@@ -470,7 +470,7 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 			 ++access)
 		{
 			const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
-			const SecurityClass* v_sec_class = SCL_get_class(tdbb, access->acc_view_id);
+			const SecurityClass* v_sec_class = SCL_get_class_for_view(tdbb, access->acc_view_id, access->acc_security_name.c_str());
 
 			if (routine->getName().package.isEmpty())
 			{
@@ -499,7 +499,7 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 	for (const AccessItem* access = accessList.begin(); access != accessList.end(); ++access)
 	{
 		const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
-		const SecurityClass* v_sec_class = SCL_get_class(tdbb, access->acc_view_id);
+		const SecurityClass* v_sec_class = SCL_get_class_for_view(tdbb, access->acc_view_id, access->acc_security_name.c_str());
 
 		MetaName objName;
 		SLONG objType = 0;
@@ -649,8 +649,8 @@ void JrdStatement::verifyTriggerAccess(thread_db* tdbb, jrd_rel* ownerRelation,
 
 			// a direct access to an object from this trigger
 			const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
-			const SecurityClass* v_sec_class = SCL_get_class(tdbb,
-				access->acc_view_id ? access->acc_view_id : view ? view->rel_id : 0);
+			const SecurityClass* v_sec_class = SCL_get_class_for_view(tdbb,
+				access->acc_view_id ? access->acc_view_id : view ? view->rel_id : 0, access->acc_security_name.c_str());
 			SCL_check_access(tdbb, sec_class, v_sec_class,
 				id_trigger, t.statement->triggerName, access->acc_mask,
 				access->acc_type, true, access->acc_name, access->acc_r_name);

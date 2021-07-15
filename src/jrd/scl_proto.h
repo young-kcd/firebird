@@ -27,9 +27,9 @@
 #include "../jrd/scl.h"
 #include "../common/classes/array.h"
 
-//namespace Jrd {
-//	class SecurityClass;
-//}
+namespace Jrd {
+	class jrd_rel;
+}
 
 struct dsc;
 
@@ -52,8 +52,8 @@ void SCL_check_filter(Jrd::thread_db* tdbb, const Firebird::MetaName &name, Jrd:
 void SCL_check_relation(Jrd::thread_db* tdbb, const dsc*, Jrd::SecurityClass::flags_t, bool protectSys = true);
 bool SCL_check_view(Jrd::thread_db* tdbb, const dsc*, Jrd::SecurityClass::flags_t);
 void SCL_check_role(Jrd::thread_db* tdbb, const Firebird::MetaName&, Jrd::SecurityClass::flags_t);
-Jrd::SecurityClass* SCL_get_class(Jrd::thread_db*, const TEXT*);
-Jrd::SecurityClass* SCL_get_class(Jrd::thread_db*, SLONG view_id);
+Jrd::SecurityClass* SCL_get_class(Jrd::thread_db*, const TEXT*, const Jrd::jrd_rel* view = NULL);
+Jrd::SecurityClass* SCL_get_class_for_view(Jrd::thread_db*, SLONG view_id, const TEXT*);
 Jrd::SecurityClass::flags_t SCL_get_mask(Jrd::thread_db* tdbb, const TEXT*, const TEXT*);
 void SCL_clear_classes(Jrd::thread_db*, const TEXT*);
 void SCL_release_all(Jrd::SecurityClassList*&);
