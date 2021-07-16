@@ -341,7 +341,7 @@ void Applier::process(thread_db* tdbb, ULONG length, const UCHAR* data)
 				blob_id.bid_quad.bid_quad_high = reader.getInt32();
 				blob_id.bid_quad.bid_quad_low = reader.getInt32();
 				do {
-					const ULONG length = reader.getInt16();
+					const ULONG length = (USHORT) reader.getInt16();
 					if (!length)
 					{
 						// Close our newly created blob
