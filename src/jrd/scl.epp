@@ -937,8 +937,8 @@ SecurityClass* SCL_get_class(thread_db* tdbb, const TEXT* par_string, const jrd_
 	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	Firebird::MetaName userName;
-	if (view)
-		userName = view->rel_security_name;
+	if (view && (view->rel_flags & REL_sql_relation))
+		userName = view->rel_owner_name;
 	else
 	{
 		const UserId* effectiveUserId = attachment->att_user;
