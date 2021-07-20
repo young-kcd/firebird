@@ -5711,12 +5711,15 @@ void rem_port::start_crypt(P_CRYPT * crypt, PACKET* sendL)
 	{
 		ICryptKey* key = NULL;
 		PathName keyName(crypt->p_key.cstr_address, crypt->p_key.cstr_length);
-		for (unsigned k = 0; k < port_crypt_keys.getCount(); ++k)
+		if (getPortConfig()->getWireCrypt(WC_SERVER) != WIRE_CRYPT_DISABLED)
 		{
-			if (keyName == port_crypt_keys[k]->keyName)
+			for (unsigned k = 0; k < port_crypt_keys.getCount(); ++k)
 			{
-				key = port_crypt_keys[k];
-				break;
+				if (keyName == port_crypt_keys[k]->keyName)
+				{
+					key = port_crypt_keys[k];
+					break;
+				}
 			}
 		}
 
