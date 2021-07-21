@@ -258,6 +258,7 @@ public:
 			Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::dpbList, MAX_DPB_SIZE);
 			dpb.insertByte(isc_dpb_sec_attach, TRUE);
 			dpb.insertString(isc_dpb_config, Firebird::ParsedList::getNonLoopbackProviders(secDbName));
+			dpb.insertString(isc_dpb_set_bind, "BOOLEAN TO NATIVE");
 
 			unsigned int authBlockSize;
 			const unsigned char* authBlock = logonInfo->authBlock(&authBlockSize);
