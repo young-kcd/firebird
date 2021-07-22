@@ -112,6 +112,7 @@ function(epp_process type files)
                 COMMENT "Calling GPRE master for ${F}"
                 #
                 COMMAND ${CMAKE_COMMAND} -E make_directory ${dir}
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different metadata.fdb ${dir}/yachts.lnk
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different security.fdb ${dir}/security.fdb
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different msg.fdb ${dir}/msg.fdb
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different help.fdb ${dir}/help.fdb

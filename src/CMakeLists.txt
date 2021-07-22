@@ -120,6 +120,21 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy_if_different security_.fdb security.fdb
     COMMAND ${BOOT_GFIX_CMD} -write sync security.fdb
 )
+add_custom_command(
+    OUTPUT metadata.fdb
+    DEPENDS
+        boot_isql
+        boot_gfix
+    VERBATIM
+    #
+    COMMAND ${CMAKE_COMMAND} -E remove metadata.fdb
+    COMMAND ${CMAKE_COMMAND} -E remove metadata_.fdb
+    COMMAND ${CMAKE_COMMAND} -E echo "create database 'metadata_.fdb';" > create_db_metadata.sql
+    COMMAND ${BOOT_ISQL_CMD} -q -i create_db_metadata.sql
+    COMMAND ${BOOT_GFIX_CMD} -sql_dialect 1 metadata_.fdb
+    COMMAND ${BOOT_GFIX_CMD} -mode read_only metadata_.fdb
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different metadata_.fdb metadata.fdb
+)
 add_custom_target(databases
     DEPENDS
         boot_engine

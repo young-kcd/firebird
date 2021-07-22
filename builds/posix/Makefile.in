@@ -415,9 +415,19 @@ $(GPRE):	$(GPRE_Objects) $(COMMON_LIB)
 SECURITY_FDB = $(FIREBIRD)/security5.fdb
 SECURITY_TMP = security.tmp
 
-databases:		msg.timestamp $(SECURITY_FDB)
+databases:		yachts.lnk msg.timestamp $(SECURITY_FDB)
 
 export LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(FIREBIRD)/lib
+
+yachts.lnk:		metadata.fdb
+	-$(RM) $@
+	$(LN) $^ $@
+
+metadata.fdb:	$(RUN_ISQL)
+	-$(RM) $@
+	echo create database \'metadata.fdb\'\; | $(RUN_ISQL) -sqldialect 1
+	$(RUN_GFIX) -mode read_only $@
+	$(CHMOD) 0444 $@
 
 $(SECURITY_FDB):	security.fdb
 	-$(RM) $@
@@ -746,6 +756,7 @@ clean_config clean_all: clean clean_makefiles
 
 clean_dbs:
 	$(RM) *.fdb *.FDB msg.timestamp
+	$(RM) yachts.lnk
 
 
 # The examples are a bit different, since the makefile is included in the directory
