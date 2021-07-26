@@ -909,6 +909,30 @@ void INF_database_info(thread_db* tdbb,
 			length = p - buffer;
 			break;
 
+		case fb_info_username:
+			{
+				MetaName user;
+				if (att->att_user)
+					user = att->att_user->getUserName();
+				if (user.isEmpty())
+					user = "<* unknown *>";
+				if (!(info = INF_put_item(item, user.length(), user.c_str(), info, end)))
+					return;
+			}
+			continue;
+
+		case fb_info_sqlrole:
+			{
+				MetaName role;
+				if (att->att_user)
+					role = att->att_user->getSqlRole();
+				if (role.isEmpty())
+					role = "<* unknown *>";
+				if (!(info = INF_put_item(item, role.length(), role.c_str(), info, end)))
+					return;
+			}
+			continue;
+
 		default:
 			buffer[0] = item;
 			item = isc_info_error;

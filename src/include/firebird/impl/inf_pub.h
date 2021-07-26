@@ -173,6 +173,9 @@ enum db_info_types
 
 	fb_info_replica_mode = 146,
 
+	fb_info_username = 147,
+	fb_info_sqlrole = 148,
+
 	isc_info_db_last_value   /* Leave this LAST! */
 };
 
