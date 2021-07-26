@@ -1417,7 +1417,6 @@ bool ISQL_statement_ends_in_comment(const char* statement)
 	const char* const statementStart = statement;
 	const char* commentStart = nullptr;
 	const char* commentEnd = nullptr;
-	const char* altQuoteStart = nullptr;
 	char altQuoteChar = '\0';
 
 	enum
@@ -1473,8 +1472,6 @@ bool ISQL_statement_ends_in_comment(const char* statement)
 					case normal:
 						if (lastChar == 'q' || lastChar == 'Q')
 						{
-							altQuoteStart = statement - 2;
-
 							if (!(altQuoteChar = *statement++))
 								return false;
 
