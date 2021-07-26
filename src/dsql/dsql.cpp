@@ -82,8 +82,8 @@ using namespace Firebird;
 
 static ULONG	get_request_info(thread_db*, dsql_req*, ULONG, UCHAR*);
 static dsql_dbb*	init(Jrd::thread_db*, Jrd::Attachment*);
-static dsql_req* prepareRequest(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, bool);
-static dsql_req* prepareStatement(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, bool);
+static dsql_req* prepareRequest(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, unsigned, bool);
+static dsql_req* prepareStatement(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, unsigned, bool);
 static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const);
 static void		release_statement(DsqlCompiledStatement* statement);
 static void		sql_info(thread_db*, dsql_req*, ULONG, const UCHAR*, ULONG, UCHAR*);
@@ -288,7 +288,7 @@ bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 	UCHAR* dsqlMsgBuffer = req_msg_buffers[message->msg_buffer_number];
 	if (!firstRowFetched && needRestarts())
 	{
-		// Note: tra_handle can't be changed by executeReceiveWithRestarts below 
+		// Note: tra_handle can't be changed by executeReceiveWithRestarts below
 		// and outMetadata and outMsg in not used there, so passing NULL's is safe.
 		jrd_tra* tra = req_transaction;
 
@@ -392,7 +392,7 @@ void DSQL_free_statement(thread_db* tdbb, dsql_req* request, USHORT option)
  **/
 dsql_req* DSQL_prepare(thread_db* tdbb,
 					   Attachment* attachment, jrd_tra* transaction,
-					   ULONG length, const TEXT* string, USHORT dialect,
+					   ULONG length, const TEXT* string, USHORT dialect, unsigned prepareFlags,
 					   Array<UCHAR>* items, Array<UCHAR>* buffer,
 					   bool isInternalRequest)
 {
@@ -406,7 +406,7 @@ dsql_req* DSQL_prepare(thread_db* tdbb,
 		// Allocate a new request block and then prepare the request.
 
 		request = prepareRequest(tdbb, database, transaction, length, string, dialect,
-			isInternalRequest);
+			prepareFlags, isInternalRequest);
 
 		// Can not prepare a CREATE DATABASE/SCHEMA statement
 
@@ -557,7 +557,7 @@ void DSQL_execute_immediate(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tr
 	try
 	{
 		request = prepareRequest(tdbb, database, *tra_handle, length, string, dialect,
-			isInternalRequest);
+			0, isInternalRequest);
 
 		const DsqlCompiledStatement* statement = request->getStatement();
 
@@ -659,7 +659,8 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, boo
 			scratch->getBlrData().getCount(), scratch->getBlrData().begin(),
 			statement->getSqlText(),
 			scratch->getDebugData().getCount(), scratch->getDebugData().begin(),
-			(scratch->flags & DsqlCompilerScratch::FLAG_INTERNAL_REQUEST));
+			(scratch->flags & DsqlCompilerScratch::FLAG_INTERNAL_REQUEST),
+			(scratch->prepareFlags & IStatement::PREPARE_KEEP_EXEC_PATH));
 	}
 	catch (const Exception&)
 	{
@@ -940,7 +941,7 @@ void DsqlDmlRequest::executeReceiveWithRestarts(thread_db* tdbb, jrd_tra** traHa
 				"\tQuery:\n%s\n", numTries, req_request->getStatement()->sqlText->c_str() );
 		}
 
-		// When restart we must execute query 
+		// When restart we must execute query
 		exec = true;
 	}
 }
@@ -1477,17 +1478,17 @@ static void checkD(IStatus* st)
 // Prepare a request for execution. Return SQL status code.
 // Note: caller is responsible for pool handling.
 static dsql_req* prepareRequest(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
-	ULONG textLength, const TEXT* text, USHORT clientDialect, bool isInternalRequest)
+	ULONG textLength, const TEXT* text, USHORT clientDialect, unsigned prepareFlags, bool isInternalRequest)
 {
 	return prepareStatement(tdbb, database, transaction, textLength, text, clientDialect,
-		isInternalRequest);
+		prepareFlags, isInternalRequest);
 }
 
 
 // Prepare a statement for execution. Return SQL status code.
 // Note: caller is responsible for pool handling.
 static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
-	ULONG textLength, const TEXT* text, USHORT clientDialect, bool isInternalRequest)
+	ULONG textLength, const TEXT* text, USHORT clientDialect, unsigned prepareFlags, bool isInternalRequest)
 {
 	Database* const dbb = tdbb->getDatabase();
 
@@ -1547,6 +1548,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 
 		DsqlCompilerScratch* scratch = FB_NEW_POOL(*scratchPool) DsqlCompilerScratch(*scratchPool, database,
 			transaction, statement);
+		scratch->prepareFlags = prepareFlags;
 		scratch->clientDialect = clientDialect;
 
 		if (isInternalRequest)
@@ -2216,6 +2218,59 @@ static void sql_info(thread_db* tdbb,
 						info = put_item(item, plan.length(), reinterpret_cast<const UCHAR*>(plan.c_str()),
 										info, end_info);
 					}
+				}
+
+				if (!info)
+					return;
+			}
+			break;
+
+		case isc_info_sql_exec_path_blr_bytes:
+		case isc_info_sql_exec_path_blr_text:
+			{
+				HalfStaticArray<UCHAR, 128> path;
+
+				if (request->req_request && request->req_request->getStatement())
+				{
+					const auto& blr = request->req_request->getStatement()->blr;
+
+					if (blr.hasData())
+					{
+						if (item == isc_info_sql_exec_path_blr_bytes)
+							path.push(blr.begin(), blr.getCount());
+						else if (item == isc_info_sql_exec_path_blr_text)
+						{
+							fb_print_blr(blr.begin(), (ULONG) blr.getCount(),
+								[](void* arg, SSHORT offset, const char* line)
+								{
+									auto& localPath = *static_cast<decltype(path)*>(arg);
+									auto lineLen = strlen(line);
+									char offsetStr[10];
+									auto offsetLen = sprintf(offsetStr, "%5d", (int) offset);
+
+									localPath.push(reinterpret_cast<const UCHAR*>(offsetStr), offsetLen);
+									localPath.push(' ');
+									localPath.push(reinterpret_cast<const UCHAR*>(line), lineLen);
+									localPath.push('\n');
+								},
+								&path, 0);
+						}
+					}
+				}
+
+				if (path.hasData())
+				{
+					// 1-byte item + 2-byte length + isc_info_end/isc_info_truncated == 4
+					const ULONG bufferLength = end_info - info - 4;
+					const ULONG maxLength = MIN(bufferLength, MAX_USHORT);
+
+					if (path.getCount() > maxLength)
+					{
+						*info = isc_info_truncated;
+						info = NULL;
+					}
+					else
+						info = put_item(item, path.getCount(), path.begin(), info, end_info);
 				}
 
 				if (!info)

@@ -229,6 +229,7 @@ DdlNode* CreateAlterPackageNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 		itemScratch->clientDialect = dsqlScratch->clientDialect;
 		itemScratch->flags |= DsqlCompilerScratch::FLAG_DDL;
+		itemScratch->prepareFlags = dsqlScratch->prepareFlags;
 		itemScratch->package = name;
 
 		switch ((*items)[i].type)
@@ -624,6 +625,7 @@ DdlNode* CreatePackageBodyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 			itemScratch->clientDialect = dsqlScratch->clientDialect;
 			itemScratch->flags |= DsqlCompilerScratch::FLAG_DDL;
+			itemScratch->prepareFlags = dsqlScratch->prepareFlags;
 			itemScratch->package = name;
 
 			switch ((*arrays[i])[j].type)
