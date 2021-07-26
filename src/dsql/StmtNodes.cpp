@@ -1725,6 +1725,7 @@ DeclareSubFuncNode* DeclareSubFuncNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 		DsqlCompilerScratch::FLAG_FUNCTION |
 		DsqlCompilerScratch::FLAG_SUB_ROUTINE |
 		(dsqlScratch->flags & DsqlCompilerScratch::FLAG_DDL);
+	blockScratch->prepareFlags = dsqlScratch->prepareFlags;
 
 	dsqlBlock = dsqlBlock->dsqlPass(blockScratch);
 
@@ -2064,8 +2065,11 @@ DeclareSubProcNode* DeclareSubProcNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	blockScratch = FB_NEW_POOL(pool) DsqlCompilerScratch(pool,
 		dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), statement, dsqlScratch);
 	blockScratch->clientDialect = dsqlScratch->clientDialect;
-	blockScratch->flags |= DsqlCompilerScratch::FLAG_PROCEDURE | DsqlCompilerScratch::FLAG_SUB_ROUTINE;
-	blockScratch->flags |= dsqlScratch->flags & DsqlCompilerScratch::FLAG_DDL;
+	blockScratch->flags |=
+		DsqlCompilerScratch::FLAG_PROCEDURE |
+		DsqlCompilerScratch::FLAG_SUB_ROUTINE |
+		(dsqlScratch->flags & DsqlCompilerScratch::FLAG_DDL);
+	blockScratch->prepareFlags = dsqlScratch->prepareFlags;
 
 	dsqlBlock = dsqlBlock->dsqlPass(blockScratch);
 

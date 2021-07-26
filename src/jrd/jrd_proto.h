@@ -73,7 +73,7 @@ void JRD_start_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction,
 void JRD_unwind_request(Jrd::thread_db* tdbb, Jrd::jrd_req* request);
 void JRD_compile(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, Jrd::jrd_req** req_handle,
 	ULONG blr_length, const UCHAR* blr, Firebird::RefStrPtr,
-	ULONG dbginfo_length, const UCHAR* dbginfo, bool isInternalRequest);
+	ULONG dbginfo_length, const UCHAR* dbginfo, bool isInternalRequest, bool preserveBlrData);
 bool JRD_verify_database_access(const Firebird::PathName&);
 void JRD_shutdown_attachment(Jrd::Attachment* attachment);
 void JRD_shutdown_attachments(Jrd::Database* dbb);
