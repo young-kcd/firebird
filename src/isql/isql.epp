@@ -6391,6 +6391,8 @@ static bool printUser(const char* dbName)
 		case fb_info_sqlrole:
 			len = gds__vax_integer(p, 2);
 			role.assign(p + 2, len);
+			if (role == "NONE")
+				role.erase();
 			break;
 
 		default:
@@ -6401,19 +6403,108 @@ static bool printUser(const char* dbName)
 		p += (2 + len);
 	}
 
+	if (login.hasData() || role.hasData())
+	{
+		bool wasOut = dbName && dbName[0];
+		if (wasOut)
+			isqlGlob.printf("Database: %s", dbName);
+
+		if (login.hasData())
+		{
+			isqlGlob.printf("%sUser: %s", wasOut ? ", " : "", login.c_str());
+			wasOut = true;
+		}
+
+		if (role.hasData())
+		{
+			isqlGlob.printf("%sRole: %s", wasOut ? ", " : "", role.c_str());
+			wasOut = true;
+		}
+
+		if (wasOut)
+			isqlGlob.printf("%s", NEWLINE);
+
+		return true;
+	}
+
+	// fallback to SQL way to do job
+
+	if (!frontendTransaction())
+		return false;
+
+	class FbTransCommit
+	{
+	public:
+		~FbTransCommit()
+		{
+			if (DB && fbTrans)
+			{
+				fbTrans->rollback(fbStatus);
+				if (succeeded())
+					fbTrans = NULL;
+			}
+		}
+	};
+	FbTransCommit fbTransCommit;
+
+	const char* sql = "SELECT CURRENT_USER, CURRENT_ROLE FROM RDB$DATABASE";
+
+	Firebird::RefPtr<Firebird::IStatement> st(Firebird::REF_NO_INCR,
+		DB->prepare(fbStatus, fbTrans, 0, sql, 3, Firebird::IStatement::PREPARE_PREFETCH_METADATA));
+	if (failed())
+		return false;
+	Firebird::RefPtr<Firebird::IMessageMetadata> m(Firebird::REF_NO_INCR,
+		st->getOutputMetadata(fbStatus));
+	if (failed())
+		return false;
+	unsigned bs = m->getMessageLength(fbStatus);
+	if (failed())
+		return false;
+	Firebird::UCharBuffer outBuf;
+	UCHAR* buf = outBuf.getBuffer(bs);
+	st->execute(fbStatus, fbTrans, NULL, NULL, m, buf);
+	if (failed())
+		return false;
+
+	struct FieldInfo
+	{
+		const char* text;
+		const char* skip;
+	};
+	FieldInfo fieldInfo[2] = {
+		{"User", NULL},
+		{"Role", "NONE"}
+	};
+
 	bool wasOut = dbName && dbName[0];
 	if (wasOut)
 		isqlGlob.printf("Database: %s", dbName);
 
-	if (login.hasData())
+	for (unsigned i = 0; i < FB_NELEM(fieldInfo); ++i)
 	{
-		isqlGlob.printf("%sUser: %s", wasOut ? ", " : "", login.c_str());
-		wasOut = true;
-	}
+		IsqlVar v;
+		if (ISQL_fill_var(&v, m, i, buf) == ps_ERR)
+			return false;
+		if (*v.nullInd)
+			continue;
 
-	if (role.hasData() && role != "NONE")
-	{
-		isqlGlob.printf("%sRole: %s", wasOut ? ", " : "", role.c_str());
+		Firebird::string txt;
+		switch(v.type & ~1)
+		{
+		case SQL_TEXT:
+			txt.assign(v.value.asChar, v.length);
+			break;
+		case SQL_VARYING:
+			txt.assign(v.value.asVary->vary_string, v.value.asVary->vary_length);
+			break;
+		}
+
+		txt.trim();
+
+		if (fieldInfo[i].skip && txt == fieldInfo[i].skip)
+			continue;
+
+		isqlGlob.printf("%s%s: %s", wasOut ? ", " : "", fieldInfo[i].text, txt.c_str());
 		wasOut = true;
 	}
 
