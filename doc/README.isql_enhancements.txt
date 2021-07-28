@@ -241,14 +241,12 @@ SQL>
 
 
 
-Isql enhancements in Firebird v4.0.1.
+Isql enhancements in Firebird v5.
 ---------------------------------
 
 10) SET EXEC_PATH_DISPLAY BLR/OFF
 
 Retrieves the execution path of a DML statement formatted as BLR text.
-
-It requires server v4.0.1 or greater to work.
 
 Warning: this feature is very tied to engine internals and its usage is discouraged
 if you do not understand very well how these internals are subject to change between
