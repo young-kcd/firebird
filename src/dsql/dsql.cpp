@@ -2245,8 +2245,13 @@ static void sql_info(thread_db* tdbb,
 								{
 									auto& localPath = *static_cast<decltype(path)*>(arg);
 									auto lineLen = strlen(line);
+
+									// Trim trailing spaces.
+									while (lineLen > 0 && line[lineLen - 1] == ' ')
+										--lineLen;
+
 									char offsetStr[10];
-									auto offsetLen = sprintf(offsetStr, "%5d", (int) offset);
+									const auto offsetLen = sprintf(offsetStr, "%5d", (int) offset);
 
 									localPath.push(reinterpret_cast<const UCHAR*>(offsetStr), offsetLen);
 									localPath.push(' ');
