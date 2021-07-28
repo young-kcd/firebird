@@ -400,7 +400,6 @@ static processing_state print_performance(const SINT64* perf_before);
 static void print_message(Firebird::IMessageMetadata* msg, const char* dir);
 static void process_header(Firebird::IMessageMetadata*, const unsigned pad[], TEXT header[], TEXT header2[]);
 static void process_plan();
-static void process_exec_path();
 static SINT64 process_record_count(const unsigned statement_type);
 static unsigned process_message_display(Firebird::IMessageMetadata* msg, unsigned pad[]);
 static processing_state process_statement(const TEXT*);
@@ -458,7 +457,6 @@ public:
 		Echo = false;
 		Time_display = false;
 		Sqlda_display = false;
-		ExecPathDisplay[0] = 0;
 		Stats = false;
 		Autocommit = true;	// Commit ddl
 		Warnings = true;	// Print warnings
@@ -482,7 +480,6 @@ public:
 	bool Echo;
 	bool Time_display;
 	bool Sqlda_display;
-	UCHAR ExecPathDisplay[10];
 	bool Stats;
 	bool Autocommit;	// Commit ddl
 	bool Warnings;		// Print warnings
@@ -5178,8 +5175,9 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		{
 			stat, count, list, plan, planonly, explain, blobdisplay, echo, autoddl,
 			width, transaction, terminator, names, time,
+//#ifdef DEV_BUILD
 			sqlda_display,
-			exec_path_display,
+//#endif
 			sql, warning, sqlCont, heading, bail,
 			bulk_insert, maxrows, stmtTimeout,
 			keepTranParams,
@@ -5206,8 +5204,9 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		{SetOptions::terminator, "TERMINATOR", 4},
 		{SetOptions::names, "NAMES", 0},
 		{SetOptions::time, "TIME", 0},
+//#ifdef DEV_BUILD
 		{SetOptions::sqlda_display, "SQLDA_DISPLAY", 0},
-		{SetOptions::exec_path_display, "EXEC_PATH_DISPLAY", 0},
+//#endif
 		{SetOptions::sql, "SQL", 0},
 		{SetOptions::warning, "WARNINGS", 7},
 		{SetOptions::warning, "WNG", 0},
@@ -5351,52 +5350,11 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 			ret = do_set_command(parms[2], &setValues.Time_display);
 		break;
 
+//#ifdef DEV_BUILD
 	case SetOptions::sqlda_display:
 		ret = do_set_command(parms[2], &setValues.Sqlda_display);
 		break;
-
-	case SetOptions::exec_path_display:
-		ret = SKIP;
-		if (strcmp(parms[2], "OFF") == 0)
-			setValues.ExecPathDisplay[0] = 0;
-		else
-		{
-			Firebird::Array<UCHAR> execPath;
-
-			for (int parNum = 2; parNum < MAX_TERMS - 1 && *parms[parNum]; ++parNum)
-			{
-				const char* param = parms[parNum];
-				UCHAR code;
-
-				if (strcmp(param, "BLR") == 0)
-					code = isc_info_sql_exec_path_blr_text;
-				else
-				{
-					ret = ps_ERR;
-					break;
-				}
-
-				if (execPath.exist(code))
-				{
-					ret = ps_ERR;
-					break;
-				}
-
-				execPath.push(code);
-			}
-
-			if (ret != ps_ERR)
-			{
-				if (execPath.getCount() < sizeof(setValues.ExecPathDisplay))
-				{
-					memcpy(setValues.ExecPathDisplay, execPath.begin(), execPath.getCount());
-					setValues.ExecPathDisplay[execPath.getCount()] = 0;
-				}
-				else
-					ret = ps_ERR;
-			}
-		}
-		break;
+//#endif // DEV_BUILD
 
 	case SetOptions::sql:
 		if (!strcmp(parms[2], "DIALECT"))
@@ -8502,58 +8460,6 @@ static void process_plan()
 }
 
 
-static void process_exec_path()
-{
-	if (!global_Stmt)
-		return;
-
-	Firebird::Array<UCHAR> pathBuffer;
-	pathBuffer.getBuffer(MAX_USHORT, false);
-
-	for (const UCHAR* code = setValues.ExecPathDisplay; *code; ++code)
-	{
-		global_Stmt->getInfo(fbStatus, 1, code, pathBuffer.getCount(), pathBuffer.begin());
-
-		if (ISQL_errmsg(fbStatus))
-			return;
-
-		Firebird::string pathString;
-
-		for (const UCHAR* ptr = pathBuffer.begin(); ptr < pathBuffer.end();)
-		{
-			const UCHAR tag = *ptr++;
-
-			if (tag == *code)
-			{
-				const USHORT len = (USHORT) gds__vax_integer(ptr, sizeof(USHORT));
-				ptr += sizeof(USHORT);
-				pathString.assign((const char*) ptr, len);
-				ptr += len;
-			}
-			else if (tag == isc_info_end)
-				break;
-			else if (tag == isc_info_truncated)
-			{
-				pathString = "* error: overflow *\n";
-				break;
-			}
-			else
-				pathString = "* unknown error *\n";
-		}
-
-		if (pathString.hasData())
-		{
-			IUTILS_printf2(Diag, "%sExecution path (%s):%s%s%s", NEWLINE,
-				(*code == isc_info_sql_exec_path_blr_text ? "BLR" :
-				 "* unknown *"
-				),
-				NEWLINE, NEWLINE,
-				pathString.c_str());
-		}
-	}
-}
-
-
 // ***************************************
 // p r o c e s s _ r e c o r d _ c o u n t
 // ***************************************
@@ -8852,8 +8758,7 @@ static processing_state process_statement(const TEXT* str2)
 	}
 
 	global_Stmt = DB->prepare(fbStatus, prepare_trans, 0, str2, isqlGlob.SQL_dialect,
-		Firebird::IStatement::PREPARE_PREFETCH_METADATA |
-		(setValues.ExecPathDisplay[0] ? Firebird::IStatement::PREPARE_KEEP_EXEC_PATH : 0));
+		Firebird::IStatement::PREPARE_PREFETCH_METADATA);
 	if (failed())
 	{
 		if (isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION && Input_file)
@@ -8927,6 +8832,7 @@ static processing_state process_statement(const TEXT* str2)
 		}
 	}
 
+
 	const bool is_selectable =
 		statement_type == isc_info_sql_stmt_select ||
 		statement_type == isc_info_sql_stmt_select_for_upd ||
@@ -8944,9 +8850,6 @@ static processing_state process_statement(const TEXT* str2)
 			return ret;	// do not execute
 		}
 	}
-
-	if (setValues.ExecPathDisplay[0])
-		process_exec_path();
 
 	// If the statement isn't a select, execute it and be done
 
