@@ -1718,7 +1718,6 @@ namespace Firebird
 		static const unsigned PREPARE_PREFETCH_FLAGS = 0x40;
 		static const unsigned PREPARE_PREFETCH_METADATA = IStatement::PREPARE_PREFETCH_TYPE | IStatement::PREPARE_PREFETCH_FLAGS | IStatement::PREPARE_PREFETCH_INPUT_PARAMETERS | IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS;
 		static const unsigned PREPARE_PREFETCH_ALL = IStatement::PREPARE_PREFETCH_METADATA | IStatement::PREPARE_PREFETCH_LEGACY_PLAN | IStatement::PREPARE_PREFETCH_DETAILED_PLAN | IStatement::PREPARE_PREFETCH_AFFECTED_RECORDS;
-		static const unsigned PREPARE_KEEP_EXEC_PATH = 0x80;
 		static const unsigned FLAG_HAS_CURSOR = 0x1;
 		static const unsigned FLAG_REPEAT_EXECUTE = 0x2;
 		static const unsigned CURSOR_TYPE_SCROLLABLE = 0x1;

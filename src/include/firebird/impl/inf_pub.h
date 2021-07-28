@@ -478,8 +478,6 @@ enum info_db_provider
 #define isc_info_sql_stmt_timeout_user	28
 #define isc_info_sql_stmt_timeout_run	29
 #define isc_info_sql_stmt_blob_align	30
-#define isc_info_sql_exec_path_blr_bytes	31
-#define isc_info_sql_exec_path_blr_text		32
 
 /*********************************/
 /* SQL information return values */
