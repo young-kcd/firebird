@@ -452,11 +452,6 @@ interface Statement : ReferenceCounted
 		PREPARE_PREFETCH_METADATA | PREPARE_PREFETCH_LEGACY_PLAN | PREPARE_PREFETCH_DETAILED_PLAN |
 		PREPARE_PREFETCH_AFFECTED_RECORDS;
 
-	// Keep the execution path information to be retrieved with getInfo and isc_info_sql_exec_path_*
-	// Warning: this feature is very tied to engine internals and its usage is discouraged if you do
-	// not understand very well how these internals are subject to change between versions.
-	const uint PREPARE_KEEP_EXEC_PATH				= 0x80;
-
 	// Statement flags.
 	const uint FLAG_HAS_CURSOR	 					= 0x01;
 	const uint FLAG_REPEAT_EXECUTE				 	= 0x02;
