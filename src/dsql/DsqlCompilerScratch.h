@@ -76,7 +76,6 @@ public:
 		  transaction(aTransaction),
 		  statement(aStatement),
 		  flags(0),
-		  prepareFlags(0),
 		  nestingLevel(0),
 		  ports(p),
 		  relation(NULL),
@@ -268,7 +267,6 @@ private:
 
 public:
 	unsigned flags;						// flags
-	unsigned prepareFlags;				// prepare flags (IStatement::PREPARE*)
 	unsigned nestingLevel;				// begin...end nesting level
 	Firebird::Array<dsql_msg*> ports;	// Port messages
 	dsql_rel* relation;					// relation created by this request (for DDL)
