@@ -2064,8 +2064,10 @@ DeclareSubProcNode* DeclareSubProcNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	blockScratch = FB_NEW_POOL(pool) DsqlCompilerScratch(pool,
 		dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), statement, dsqlScratch);
 	blockScratch->clientDialect = dsqlScratch->clientDialect;
-	blockScratch->flags |= DsqlCompilerScratch::FLAG_PROCEDURE | DsqlCompilerScratch::FLAG_SUB_ROUTINE;
-	blockScratch->flags |= dsqlScratch->flags & DsqlCompilerScratch::FLAG_DDL;
+	blockScratch->flags |=
+		DsqlCompilerScratch::FLAG_PROCEDURE |
+		DsqlCompilerScratch::FLAG_SUB_ROUTINE |
+		(dsqlScratch->flags & DsqlCompilerScratch::FLAG_DDL);
 
 	dsqlBlock = dsqlBlock->dsqlPass(blockScratch);
 
@@ -8577,6 +8579,39 @@ void SetRoleNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** /*traHan
 	}
 
 	SCL_release_all(attachment->att_security_classes);
+}
+
+
+//--------------------
+
+
+SetDebugOptionNode::SetDebugOptionNode(MemoryPool& pool, MetaName* aName, ExprNode* aValue)
+	: SessionManagementNode(pool),
+	  name(pool, *aName),
+	  value(aValue)
+{
+}
+
+void SetDebugOptionNode::execute(thread_db* tdbb, dsql_req* /*request*/, jrd_tra** /*traHandle*/) const
+{
+	SET_TDBB(tdbb);
+	auto& debugOptions = tdbb->getAttachment()->getDebugOptions();
+
+	const auto literal = nodeAs<LiteralNode>(value);
+
+	if (!literal)
+	{
+		// This currently can happen with negative numbers.
+		// Since it's not relevant for DSQL_KEEP_BLR, let's throw an error.
+		ERR_post(Arg::Gds(isc_random) << "Invalid DEBUG option value");
+	}
+
+	const auto litDesc = &literal->litDesc;
+
+	if (name == "DSQL_KEEP_BLR")
+		debugOptions.setDsqlKeepBlr(MOV_get_boolean(litDesc));
+	else
+		ERR_post(Arg::Gds(isc_random) << "Invalid DEBUG option");
 }
 
 
