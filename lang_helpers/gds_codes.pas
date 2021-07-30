@@ -1955,6 +1955,8 @@ const
 	gds_block_size                       = 335545273;
 	isc_tom_key_length                   = 335545274;
 	gds_tom_key_length                   = 335545274;
+	isc_inf_invalid_args                 = 335545275;
+	gds_inf_invalid_args                 = 335545275;
 	isc_gfix_db_name                     = 335740929;
 	gds_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;

@@ -1140,7 +1140,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 		start_info = NULL;
 	}
 
-	while (items < end_items2 && *items != isc_info_end)
+	while (items < end_items2 && *items != isc_info_end && info < end)
 	{
 		// if we attached to the "anonymous" service we allow only following queries:
 
