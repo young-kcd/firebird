@@ -288,7 +288,7 @@ bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 	UCHAR* dsqlMsgBuffer = req_msg_buffers[message->msg_buffer_number];
 	if (!firstRowFetched && needRestarts())
 	{
-		// Note: tra_handle can't be changed by executeReceiveWithRestarts below 
+		// Note: tra_handle can't be changed by executeReceiveWithRestarts below
 		// and outMetadata and outMsg in not used there, so passing NULL's is safe.
 		jrd_tra* tra = req_transaction;
 
@@ -940,7 +940,7 @@ void DsqlDmlRequest::executeReceiveWithRestarts(thread_db* tdbb, jrd_tra** traHa
 				"\tQuery:\n%s\n", numTries, req_request->getStatement()->sqlText->c_str() );
 		}
 
-		// When restart we must execute query 
+		// When restart we must execute query
 		exec = true;
 	}
 }
@@ -2030,7 +2030,7 @@ static void sql_info(thread_db* tdbb,
 
 	const DsqlCompiledStatement* statement = request->getStatement();
 
-	while (items < end_items && *items != isc_info_end)
+	while (items < end_items && *items != isc_info_end && info < end_info)
 	{
 		ULONG length;
 		USHORT number;
@@ -2136,9 +2136,25 @@ static void sql_info(thread_db* tdbb,
 			break;
 
 		case isc_info_sql_sqlda_start:
-			length = *items++;
-			first_index = static_cast<USHORT>(gds__vax_integer(items, length));
-			items += length;
+			if (items < end_items)
+			{
+				length = *items++;
+
+				if (end_items - items >= length)
+				{
+					first_index = static_cast<USHORT>(gds__vax_integer(items, length));
+					items += length;
+					break;
+				}
+			}
+
+			buffer[0] = item;
+			length = 1 + INF_convert(isc_inf_invalid_args, buffer + 1);
+
+			if (!(info = put_item(isc_info_error, length, buffer, info, end_info)))
+				return;
+
+			items = end_items;
 			break;
 
 		case isc_info_sql_batch_fetch:
@@ -2261,7 +2277,8 @@ static void sql_info(thread_db* tdbb,
 		}
 	}
 
-	*info++ = isc_info_end;
+	if (info < end_info)
+		*info++ = isc_info_end;
 
 	if (start_info && (end_info - info >= 7))
 	{

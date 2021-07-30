@@ -1062,6 +1062,7 @@ Data source : @4', NULL, NULL)
 ('ses_reset_failed', NULL, 'Attachment.cpp', NULL, 0, 952, NULL, 'Reset of user session failed. Connection is shut down.', NULL, NULL);
 ('block_size', NULL, 'unix.cpp', NULL, 0, 953, NULL, 'File size is less than expected', NULL, NULL);
 ('tom_key_length', NULL, 'SysFunction.cpp', NULL, 0, 954, NULL, 'Invalid key length @1, need >@2', NULL, NULL);
+('inf_invalid_args', NULL, NULL, NULL, 0, 955, NULL, 'Invalid information arguments', NULL, NULL);
 -- GFIX
 ('gfix_db_name', 'ALICE_gfix', 'alice.c', NULL, 3, 1, NULL, 'data base file name (@1) already given', NULL, NULL);
 ('gfix_invalid_sw', 'ALICE_gfix', 'alice.c', NULL, 3, 2, NULL, 'invalid switch @1', NULL, NULL);
