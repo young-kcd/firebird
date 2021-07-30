@@ -368,6 +368,7 @@ static processing_state drop_db();
 static processing_state edit(const TEXT* const*);
 static processing_state end_trans();
 static processing_state escape(const TEXT*);
+static processing_state execSetDebugCommand();
 static processing_state frontend(const TEXT*);
 static processing_state frontend_set(const char* cmd, const char* const* parms,
 	const char* const* lparms, char* const bad_dialect_buf, bool& bad_dialect);
@@ -4790,6 +4791,27 @@ static processing_state escape(const TEXT* cmd)
 }
 
 
+static processing_state execSetDebugCommand()
+{
+	if (!DB)
+		return SKIP;
+
+	const char* stmt = setValues.ExecPathDisplay[0] ?
+		"set debug option dsql_keep_blr = true" :
+		"set debug option dsql_keep_blr = false";
+
+	DB->execute(fbStatus, nullptr, 0, stmt, isqlGlob.SQL_dialect, nullptr, nullptr, nullptr, nullptr);
+
+	if (setValues.ExecPathDisplay[0] && (fbStatus->getState() & Firebird::IStatus::STATE_ERRORS))
+	{
+		STDERROUT("SET EXEC_PATH_DISPLAY is not supported in this connection.");
+		return FAIL;
+	}
+
+	return SKIP;
+}
+
+
 static processing_state frontend(const TEXT* statement)
 {
 /**************************************
@@ -5357,7 +5379,10 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 
 	case SetOptions::exec_path_display:
 		ret = SKIP;
-		if (strcmp(parms[2], "OFF") == 0)
+
+		if (!*parms[2])
+			ret = ps_ERR;
+		else if (strcmp(parms[2], "OFF") == 0)
 			setValues.ExecPathDisplay[0] = 0;
 		else
 		{
@@ -5396,6 +5421,10 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 					ret = ps_ERR;
 			}
 		}
+
+		if (ret != ps_ERR)
+			ret = execSetDebugCommand();
+
 		break;
 
 	case SetOptions::sql:
@@ -6100,6 +6129,9 @@ void ISQL_get_version(bool call_by_create_db)
 		isqlGlob.db_SQL_dialect = global_dialect_spoken;
 	else
 		isqlGlob.db_SQL_dialect = SQL_DIALECT_V5;
+
+	if (setValues.ExecPathDisplay[0])
+		execSetDebugCommand();
 }
 
 
@@ -6760,6 +6792,9 @@ static processing_state newdb(TEXT* dbname,
 			}
 		}
 	}
+
+	if (setValues.ExecPathDisplay[0])
+		execSetDebugCommand();
 
 	global_Stmt = NULL;
 
@@ -8852,8 +8887,7 @@ static processing_state process_statement(const TEXT* str2)
 	}
 
 	global_Stmt = DB->prepare(fbStatus, prepare_trans, 0, str2, isqlGlob.SQL_dialect,
-		Firebird::IStatement::PREPARE_PREFETCH_METADATA |
-		(setValues.ExecPathDisplay[0] ? Firebird::IStatement::PREPARE_KEEP_EXEC_PATH : 0));
+		Firebird::IStatement::PREPARE_PREFETCH_METADATA);
 	if (failed())
 	{
 		if (isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION && Input_file)
