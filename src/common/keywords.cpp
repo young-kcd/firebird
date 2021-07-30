@@ -169,6 +169,7 @@ static const TOK tokens[] =
 	{TOK_DATEDIFF, "DATEDIFF", true},
 	{TOK_DAY, "DAY", false},
 	{TOK_DDL, "DDL", true},
+	{TOK_DEBUG, "DEBUG", true},
 	{TOK_DEC, "DEC", false},
 	{TOK_DECFLOAT, "DECFLOAT", false},
 	{TOK_DECIMAL, "DECIMAL", false},

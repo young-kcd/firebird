@@ -2646,7 +2646,7 @@ JRequest* JAttachment::compileRequest(CheckStatusWrapper* user_status,
 		try
 		{
 			jrd_req* request = NULL;
-			JRD_compile(tdbb, getHandle(), &request, blr_length, blr, RefStrPtr(), 0, NULL, false, false);
+			JRD_compile(tdbb, getHandle(), &request, blr_length, blr, RefStrPtr(), 0, NULL, false);
 			stmt = request->getStatement();
 
 			trace.finish(request, ITracePlugin::RESULT_SUCCESS);
@@ -9189,8 +9189,7 @@ void JRD_compile(thread_db* tdbb,
 				 RefStrPtr ref_str,
 				 ULONG dbginfo_length,
 				 const UCHAR* dbginfo,
-				 bool isInternalRequest,
-				 bool preserveBlrData)
+				 bool isInternalRequest)
 {
 /**************************************
  *
@@ -9216,7 +9215,7 @@ void JRD_compile(thread_db* tdbb,
 
 	fb_assert(statement->blr.isEmpty());
 
-	if (preserveBlrData)
+	if (attachment->getDebugOptions().getDsqlKeepBlr())
 		statement->blr.insert(0, blr, blr_length);
 
 	*req_handle = request;

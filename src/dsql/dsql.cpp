@@ -82,8 +82,8 @@ using namespace Firebird;
 
 static ULONG	get_request_info(thread_db*, dsql_req*, ULONG, UCHAR*);
 static dsql_dbb*	init(Jrd::thread_db*, Jrd::Attachment*);
-static dsql_req* prepareRequest(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, unsigned, bool);
-static dsql_req* prepareStatement(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, unsigned, bool);
+static dsql_req* prepareRequest(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, bool);
+static dsql_req* prepareStatement(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, bool);
 static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const);
 static void		release_statement(DsqlCompiledStatement* statement);
 static void		sql_info(thread_db*, dsql_req*, ULONG, const UCHAR*, ULONG, UCHAR*);
@@ -406,7 +406,7 @@ dsql_req* DSQL_prepare(thread_db* tdbb,
 		// Allocate a new request block and then prepare the request.
 
 		request = prepareRequest(tdbb, database, transaction, length, string, dialect,
-			prepareFlags, isInternalRequest);
+			isInternalRequest);
 
 		// Can not prepare a CREATE DATABASE/SCHEMA statement
 
@@ -557,7 +557,7 @@ void DSQL_execute_immediate(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tr
 	try
 	{
 		request = prepareRequest(tdbb, database, *tra_handle, length, string, dialect,
-			0, isInternalRequest);
+			isInternalRequest);
 
 		const DsqlCompiledStatement* statement = request->getStatement();
 
@@ -659,8 +659,7 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, boo
 			scratch->getBlrData().getCount(), scratch->getBlrData().begin(),
 			statement->getSqlText(),
 			scratch->getDebugData().getCount(), scratch->getDebugData().begin(),
-			(scratch->flags & DsqlCompilerScratch::FLAG_INTERNAL_REQUEST),
-			(scratch->prepareFlags & IStatement::PREPARE_KEEP_EXEC_PATH));
+			(scratch->flags & DsqlCompilerScratch::FLAG_INTERNAL_REQUEST));
 	}
 	catch (const Exception&)
 	{
@@ -1478,17 +1477,16 @@ static void checkD(IStatus* st)
 // Prepare a request for execution. Return SQL status code.
 // Note: caller is responsible for pool handling.
 static dsql_req* prepareRequest(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
-	ULONG textLength, const TEXT* text, USHORT clientDialect, unsigned prepareFlags, bool isInternalRequest)
+	ULONG textLength, const TEXT* text, USHORT clientDialect, bool isInternalRequest)
 {
-	return prepareStatement(tdbb, database, transaction, textLength, text, clientDialect,
-		prepareFlags, isInternalRequest);
+	return prepareStatement(tdbb, database, transaction, textLength, text, clientDialect, isInternalRequest);
 }
 
 
 // Prepare a statement for execution. Return SQL status code.
 // Note: caller is responsible for pool handling.
 static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
-	ULONG textLength, const TEXT* text, USHORT clientDialect, unsigned prepareFlags, bool isInternalRequest)
+	ULONG textLength, const TEXT* text, USHORT clientDialect, bool isInternalRequest)
 {
 	Database* const dbb = tdbb->getDatabase();
 
@@ -1548,7 +1546,6 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 
 		DsqlCompilerScratch* scratch = FB_NEW_POOL(*scratchPool) DsqlCompilerScratch(*scratchPool, database,
 			transaction, statement);
-		scratch->prepareFlags = prepareFlags;
 		scratch->clientDialect = clientDialect;
 
 		if (isInternalRequest)
