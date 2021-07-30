@@ -770,7 +770,7 @@ namespace
 
 				// If no new segments appeared since our last attempt,
 				// then there's no point in replaying the whole sequence
-				if (max_sequence == last_sequence)
+				if (max_sequence == last_sequence && !last_offset)
 				{
 					target->verbose("No new segments found, suspending for %u seconds",
 									config->applyIdleTimeout);
