@@ -870,6 +870,8 @@ void Applier::storeBlob(thread_db* tdbb, TraNumber traNum, bid* blobId,
 	}
 
 	fb_assert(blob);
+	fb_assert(blob->blb_flags & BLB_temporary);
+	fb_assert(!(blob->blb_flags & BLB_closed));
 
 	if (length)
 		blob->BLB_put_segment(tdbb, data, length);
@@ -1154,6 +1156,24 @@ void Applier::doInsert(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		}
 	}
 
+	// Cleanup temporary blobs stored for this command beforehand but not materialized
+
+	ReplBlobMap::Accessor accessor(&transaction->tra_repl_blobs);
+	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
+	{
+		const auto tempBlobId = accessor.current()->second;
+
+		if (transaction->tra_blobs->locate(tempBlobId))
+		{
+			const auto current = &transaction->tra_blobs->current();
+
+			if (!current->bli_materialized)
+				current->bli_blob_object->BLB_cancel(tdbb);
+		}
+	}
+
+	transaction->tra_repl_blobs.clear();
+
 	Savepoint::ChangeMarker marker(transaction->tra_save_point);
 
 	VIO_store(tdbb, rpb, transaction);
@@ -1232,6 +1252,24 @@ void Applier::doUpdate(thread_db* tdbb, record_param* orgRpb, record_param* newR
 			}
 		}
 	}
+
+	// Cleanup temporary blobs stored for this command beforehand but not materialized
+
+	ReplBlobMap::Accessor accessor(&transaction->tra_repl_blobs);
+	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
+	{
+		const auto tempBlobId = accessor.current()->second;
+
+		if (transaction->tra_blobs->locate(tempBlobId))
+		{
+			const auto current = &transaction->tra_blobs->current();
+
+			if (!current->bli_materialized)
+				current->bli_blob_object->BLB_cancel(tdbb);
+		}
+	}
+
+	transaction->tra_repl_blobs.clear();
 
 	Savepoint::ChangeMarker marker(transaction->tra_save_point);
 
