@@ -5444,7 +5444,7 @@ JStatement* JAttachment::prepare(CheckStatusWrapper* user_status, ITransaction* 
 			// observation for now.
 			StatementMetadata::buildInfoItems(items, flags);
 
-			statement = DSQL_prepare(tdbb, getHandle(), tra, stmtLength, sqlStmt, dialect,
+			statement = DSQL_prepare(tdbb, getHandle(), tra, stmtLength, sqlStmt, dialect, flags,
 				&items, &buffer, false);
 			rc = FB_NEW JStatement(statement, getStable(), buffer);
 			rc->addRef();
@@ -9210,19 +9210,13 @@ void JRD_compile(thread_db* tdbb,
 
 	JrdStatement* statement = request->getStatement();
 
-	if (!ref_str)
-	{
-		fb_assert(statement->blr.isEmpty());
-
-		// hvlad: if\when we implement request's cache in the future and
-		// CMP_compile2 will return us previously compiled request with
-		// non-empty req_blr, then we must replace assertion by the line below
-		// if (!statement->req_blr.isEmpty())
-
-		statement->blr.insert(0, blr, blr_length);
-	}
-	else
+	if (ref_str)
 		statement->sqlText = ref_str;
+
+	fb_assert(statement->blr.isEmpty());
+
+	if (attachment->getDebugOptions().getDsqlKeepBlr())
+		statement->blr.insert(0, blr, blr_length);
 
 	*req_handle = request;
 }

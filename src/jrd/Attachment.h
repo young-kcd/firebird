@@ -401,6 +401,23 @@ public:
 		USHORT originalTimeZone = Firebird::TimeZoneUtil::GMT_ZONE;
 	};
 
+	class DebugOptions
+	{
+	public:
+		bool getDsqlKeepBlr() const
+		{
+			return dsqlKeepBlr;
+		}
+
+		void setDsqlKeepBlr(bool value)
+		{
+			dsqlKeepBlr = value;
+		}
+
+	private:
+		bool dsqlKeepBlr = false;
+	};
+
 public:
 	static Attachment* create(Database* dbb, JProvider* provider);
 	static void destroy(Attachment* const attachment);
@@ -656,6 +673,11 @@ public:
 		return att_initial_options.getBindings();
 	}
 
+	DebugOptions& getDebugOptions()
+	{
+		return att_debug_options;
+	}
+
 	void checkReplSetLock(thread_db* tdbb);
 	void invalidateReplSet(thread_db* tdbb, bool broadcast);
 
@@ -677,6 +699,7 @@ private:
 
 	Firebird::Array<JBatch*> att_batches;
 	InitialOptions att_initial_options;	// Initial session options
+	DebugOptions att_debug_options;
 
 	Lock* att_repl_lock;				// Replication set lock
 	JProvider* att_provider;	// Provider which created this attachment

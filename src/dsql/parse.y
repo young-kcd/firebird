@@ -677,6 +677,10 @@ using namespace Firebird;
 %token <metaNamePtr> CLEAR
 %token <metaNamePtr> OLDEST
 
+// tokens added for Firebird 4.0.1
+
+%token <metaNamePtr> DEBUG
+
 // precedence declarations for expression evaluation
 
 %left	OR
@@ -884,7 +888,8 @@ tra_statement
 
 %type <mngNode> mng_statement
 mng_statement
-	: set_decfloat_round						{ $$ = $1; }
+	: set_debug_option							{ $$ = $1; }
+	| set_decfloat_round						{ $$ = $1; }
 	| set_decfloat_traps						{ $$ = $1; }
 	| session_statement							{ $$ = $1; }
 	| set_role									{ $$ = $1; }
@@ -5348,6 +5353,12 @@ set_role
 		{ $$ = newNode<SetRoleNode>(); }
 	;
 
+%type <mngNode> set_debug_option
+set_debug_option
+	: SET DEBUG OPTION valid_symbol_name '=' constant
+		{ $$ = newNode<SetDebugOptionNode>($4, $6); }
+	;
+
 %type <setDecFloatRoundNode> set_decfloat_round
 set_decfloat_round
 	: SET DECFLOAT ROUND valid_symbol_name
@@ -9040,6 +9051,7 @@ non_reserved_word
 	| TOTALORDER
 	| TRAPS
 	| ZONE
+	| DEBUG				// added in FB 4.0.1
 	;
 
 %%
