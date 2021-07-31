@@ -2240,7 +2240,7 @@ static void sql_info(thread_db* tdbb,
 							fb_print_blr(blr.begin(), (ULONG) blr.getCount(),
 								[](void* arg, SSHORT offset, const char* line)
 								{
-									auto& localPath = *static_cast<decltype(path)*>(arg);
+									auto& localPath = *static_cast<HalfStaticArray<UCHAR, 128>*>(arg);
 									auto lineLen = strlen(line);
 
 									// Trim trailing spaces.
