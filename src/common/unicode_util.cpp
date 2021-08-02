@@ -1711,7 +1711,16 @@ UnicodeUtil::ICU* UnicodeUtil::Utf16Collation::loadICU(
 			}
 
 			if (avail < 0)
-				continue;
+			{
+				UErrorCode status = U_ZERO_ERROR;
+				UCollator* testCollator = icu->ucolOpen(locale.c_str(), &status);
+				if (!testCollator)
+					continue;
+
+				icu->ucolClose(testCollator);
+				if (status != U_ZERO_ERROR)
+					continue;
+			}
 		}
 
 		char version[U_MAX_VERSION_STRING_LENGTH];
