@@ -273,9 +273,12 @@ public:
 
 	void (U_EXPORT2 *ucolClose)(UCollator* coll);
 	int32_t (U_EXPORT2 *ucolGetContractions)(const UCollator* coll, USet* conts, UErrorCode* status);
+	const UChar* (U_EXPORT2 *ucolGetRules)(const UCollator* coll, int32_t* length);
 	int32_t (U_EXPORT2 *ucolGetSortKey)(const UCollator* coll, const UChar* source,
 		int32_t sourceLength, uint8_t* result, int32_t resultLength);
 	UCollator* (U_EXPORT2 *ucolOpen)(const char* loc, UErrorCode* status);
+	UCollator* (U_EXPORT2 *ucolOpenRules)(const UChar* rules, int32_t rulesLength, UColAttributeValue normalizationMode,
+		UCollationStrength strength, UParseError* parseError, UErrorCode* status);
 	void (U_EXPORT2 *ucolSetAttribute)(UCollator* coll, UColAttribute attr,
 		UColAttributeValue value, UErrorCode* status);
 	UCollationResult (U_EXPORT2 *ucolStrColl)(const UCollator* coll, const UChar* source,
@@ -1161,8 +1164,10 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const string& icuVersion, const string& c
 
 			icu->getEntryPoint("ucol_close", icu->inModule, icu->ucolClose);
 			icu->getEntryPoint("ucol_getContractions", icu->inModule, icu->ucolGetContractions);
+			icu->getEntryPoint("ucol_getRules", icu->inModule, icu->ucolGetRules);
 			icu->getEntryPoint("ucol_getSortKey", icu->inModule, icu->ucolGetSortKey);
 			icu->getEntryPoint("ucol_open", icu->inModule, icu->ucolOpen);
+			icu->getEntryPoint("ucol_openRules", icu->inModule, icu->ucolOpenRules);
 			icu->getEntryPoint("ucol_setAttribute", icu->inModule, icu->ucolSetAttribute);
 			icu->getEntryPoint("ucol_strcoll", icu->inModule, icu->ucolStrColl);
 			icu->getEntryPoint("ucol_getVersion", icu->inModule, icu->ucolGetVersion);
@@ -1376,6 +1381,19 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 		}
 	}
 
+	string disableCompressions;
+	if (specificAttributes.get(IntlUtil::convertAsciiToUtf16("DISABLE-COMPRESSIONS"), disableCompressions))
+	{
+		++attributeCount;
+
+		disableCompressions = IntlUtil::convertUtf16ToAscii(disableCompressions, &error);
+		if (error || !(disableCompressions == "0" || disableCompressions == "1"))
+		{
+			gds__log("IntlUtil::convertUtf16ToAscii failed");
+			return NULL;
+		}
+	}
+
 	locale = IntlUtil::convertUtf16ToAscii(locale, &error);
 	if (error)
 	{
@@ -1406,15 +1424,48 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 	}
 
 	UErrorCode status = U_ZERO_ERROR;
+	HalfStaticArray<UChar, BUFFER_TINY> rulesBuffer;
 
-	UCollator* compareCollator = icu->ucolOpen(locale.c_str(), &status);
+	if (disableCompressions == "1")
+	{
+		UCollator* initialCollator = icu->ucolOpen(locale.c_str(), &status);
+
+		if (!initialCollator)
+		{
+			gds__log("ucolOpen failed");
+			return NULL;
+		}
+
+		static const UChar CONTRACTION_RULES[] = u"[suppressContractions [^]]";
+		int32_t rulesLen;
+		const UChar* rules = icu->ucolGetRules(initialCollator, &rulesLen);
+		rulesBuffer.push(rules, rulesLen);
+		rulesBuffer.push(CONTRACTION_RULES, FB_NELEM(CONTRACTION_RULES) - 1);
+
+		icu->ucolClose(initialCollator);
+	}
+
+	auto openCollation = [&]()
+	{
+		if (disableCompressions == "1")
+		{
+			UParseError parseError;
+			return icu->ucolOpenRules(rulesBuffer.begin(), rulesBuffer.getCount(),
+				UCOL_DEFAULT, UCOL_DEFAULT, &parseError, &status);
+		}
+		else
+			return icu->ucolOpen(locale.c_str(), &status);
+	};
+
+	UCollator* compareCollator = openCollation();
 	if (!compareCollator)
 	{
 		gds__log("ucolOpen failed");
 		return NULL;
 	}
 
-	UCollator* partialCollator = icu->ucolOpen(locale.c_str(), &status);
+	UCollator* partialCollator = openCollation();
+
 	if (!partialCollator)
 	{
 		gds__log("ucolOpen failed");
@@ -1422,7 +1473,7 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 		return NULL;
 	}
 
-	UCollator* sortCollator = icu->ucolOpen(locale.c_str(), &status);
+	UCollator* sortCollator = openCollation();
 	if (!sortCollator)
 	{
 		gds__log("ucolOpen failed");
