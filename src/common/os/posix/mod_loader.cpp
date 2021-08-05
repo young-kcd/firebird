@@ -53,6 +53,8 @@ public:
 	~DlfcnModule();
 	void* findSymbol(ISC_STATUS*, const Firebird::string&);
 
+	bool getRealPath(Firebird::PathName& realPath);
+
 private:
 	void* module;
 };
@@ -201,4 +203,24 @@ void* DlfcnModule::findSymbol(ISC_STATUS* status, const Firebird::string& symNam
 #endif
 
 	return result;
+}
+
+bool DlfcnModule::getRealPath(Firebird::PathName& realPath)
+{
+	char b[PATH_MAX];
+
+	if (dlinfo(module, RTLD_DI_ORIGIN, b) == 0)
+	{
+		realPath = b;
+		realPath += '/';
+		realPath += fileName;
+
+		if (realpath(realPath.c_str(), b))
+		{
+			realPath = b;
+			return true;
+		}
+	}
+
+	return false;
 }
