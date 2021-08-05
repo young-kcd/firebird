@@ -76,7 +76,7 @@ namespace Replication
 		Firebird::UCharBuffer* getBuffer();
 		void releaseBuffer(Firebird::UCharBuffer* buffer);
 
-		void flush(Firebird::UCharBuffer* buffer, bool sync);
+		void flush(Firebird::UCharBuffer* buffer, bool sync, bool prepare);
 
 		void forceJournalSwitch()
 		{

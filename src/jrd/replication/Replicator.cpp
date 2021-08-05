@@ -64,7 +64,8 @@ void Replicator::flush(BatchBlock& block, FlushReason reason, ULONG flags)
 	// Pass the buffer to the replication manager and setup the new one
 
 	const auto sync = (reason == FLUSH_SYNC);
-	m_manager->flush(block.buffer, sync);
+	const auto prepare = (reason == FLUSH_PREPARE);
+	m_manager->flush(block.buffer, sync, prepare);
 
 	memset(&block.header, 0, sizeof(Block));
 	block.header.traNumber = traNumber;
