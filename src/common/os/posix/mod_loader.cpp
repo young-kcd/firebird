@@ -38,6 +38,8 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#define _GNU_SOURCE
 #include <dlfcn.h>
 
 /// This is the POSIX (dlopen) implementation of the mod_loader abstraction.
