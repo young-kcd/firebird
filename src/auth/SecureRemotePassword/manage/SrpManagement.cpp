@@ -258,7 +258,6 @@ public:
 			Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::dpbList, MAX_DPB_SIZE);
 			dpb.insertByte(isc_dpb_sec_attach, TRUE);
 			dpb.insertString(isc_dpb_config, Firebird::ParsedList::getNonLoopbackProviders(secDbName));
-			dpb.insertString(isc_dpb_set_bind, "BOOLEAN TO NATIVE");
 
 			unsigned int authBlockSize;
 			const unsigned char* authBlock = logonInfo->authBlock(&authBlockSize);
@@ -343,6 +342,8 @@ public:
 			fb_assert(curAtt);
 			fb_assert(mainTra);
 			fb_assert(grAdminTra);
+
+			curAtt->execute(status, nullptr, 0, "SET BIND OF BOOLEAN TO NATIVE", SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
 
 			switch(user->operation())
 			{
