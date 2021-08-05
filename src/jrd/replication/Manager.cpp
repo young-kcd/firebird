@@ -244,9 +244,11 @@ void Manager::releaseBuffer(UCharBuffer* buffer)
 	m_buffers.add(buffer);
 }
 
-void Manager::flush(UCharBuffer* buffer, bool sync)
+void Manager::flush(UCharBuffer* buffer, bool sync, bool prepare)
 {
 	fb_assert(buffer && buffer->hasData());
+
+	const auto prepareBuffer = prepare ? buffer : nullptr;
 
 	MutexLockGuard guard(m_queueMutex, FB_FUNCTION);
 
@@ -257,10 +259,9 @@ void Manager::flush(UCharBuffer* buffer, bool sync)
 	// If the background thread is lagging too far behind,
 	// replicate packets synchronously rather than relying
 	// on the background thread to catch up any time soon
-	if (!sync && m_queueSize > MAX_BG_WRITER_LAG)
-		sync = true;
+	const bool lagging = (m_queueSize > MAX_BG_WRITER_LAG);
 
-	if (sync)
+	if (sync || prepare || lagging)
 	{
 		const auto tdbb = JRD_get_thread_data();
 		const auto dbb = tdbb->getDatabase();
@@ -269,16 +270,39 @@ void Manager::flush(UCharBuffer* buffer, bool sync)
 		{
 			if (buffer)
 			{
-				const auto length = (ULONG) buffer->getCount();
+				auto length = (ULONG) buffer->getCount();
+				fb_assert(length);
+				bool hasData = true;
 
 				if (m_changeLog)
 				{
-					const auto sequence = m_changeLog->write(length, buffer->begin(), true);
-
-					if (sequence != m_sequence)
+					if (prepareBuffer == buffer)
 					{
-						dbb->setReplSequence(tdbb, sequence);
-						m_sequence = sequence;
+						// Remove the opPrepareTransaction command from the journal
+						fb_assert(buffer->back() == opPrepareTransaction);
+
+						const auto block = (Block*) buffer->begin();
+						block->length -= sizeof(UCHAR);
+						length -= sizeof(UCHAR);
+						hasData = (block->length != 0);
+					}
+
+					if (hasData)
+					{
+						const auto sequence = m_changeLog->write(length, buffer->begin(), sync);
+
+						if (sequence != m_sequence)
+						{
+							dbb->setReplSequence(tdbb, sequence);
+							m_sequence = sequence;
+						}
+					}
+
+					if (prepareBuffer == buffer)
+					{
+						const auto block = (Block*) buffer->begin();
+						block->length += sizeof(UCHAR);
+						length += sizeof(UCHAR);
 					}
 				}
 
