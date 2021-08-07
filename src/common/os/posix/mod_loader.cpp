@@ -38,8 +38,6 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-
-#define _GNU_SOURCE
 #include <link.h>
 #include <dlfcn.h>
 
@@ -211,7 +209,7 @@ void* DlfcnModule::findSymbol(ISC_STATUS* status, const Firebird::string& symNam
 bool DlfcnModule::getRealPath(Firebird::PathName& realPath)
 {
 	char b[PATH_MAX];
-
+/*
 	if (dlinfo(module, RTLD_DI_ORIGIN, b) == 0)
 	{
 		realPath = b;
@@ -219,6 +217,16 @@ bool DlfcnModule::getRealPath(Firebird::PathName& realPath)
 		realPath += fileName;
 
 		if (realpath(realPath.c_str(), b))
+		{
+			realPath = b;
+			return true;
+		}
+	}
+*/
+	struct link_map* lm;
+	if (dlinfo(module, RTLD_DI_LINKMAP, &lm) == 0)
+	{
+		if (realpath(lm->l_name, b))
 		{
 			realPath = b;
 			return true;
