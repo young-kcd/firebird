@@ -782,7 +782,7 @@ void INF_database_info(thread_db* tdbb,
 
 					if (end_items - items >= length)
 					{
-						const ULONG pageNum = gds__vax_integer(items, length);
+						pageNum = gds__vax_integer(items, length);
 						items += length;
 						validArgs = true;
 					}
