@@ -677,6 +677,14 @@ void Service::fillDpb(ClumpletWriter& dpb)
 			status_exception::raise(status);
 		}
 	}
+	if (svc_remote_process.hasData())
+	{
+		dpb.insertString(isc_dpb_process_name, svc_remote_process);
+	}
+	if (svc_remote_pid)
+	{
+		dpb.insertInt(isc_dpb_process_id, svc_remote_pid);
+	}
 }
 
 bool Service::utf8FileNames()
