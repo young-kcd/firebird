@@ -921,8 +921,11 @@ void Service::detach()
 	// save it cause after call to finish() we can't access class members any more
 	const bool localDoShutdown = svc_do_shutdown;
 
-	TraceServiceImpl service(this);
-	svc_trace_manager->event_service_detach(&service, ITracePlugin::RESULT_SUCCESS);
+	if (svc_trace_manager->needs(ITraceFactory::TRACE_EVENT_SERVICE_DETACH))
+	{
+		TraceServiceImpl service(this);
+		svc_trace_manager->event_service_detach(&service, ITracePlugin::RESULT_SUCCESS);
+	}
 
 	// Mark service as detached.
 	finish(SVC_detached);
