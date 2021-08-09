@@ -982,6 +982,18 @@ case $host in
 		;;
 esac
 AC_CHECK_FUNCS(poll)
+AC_CHECK_FUNCS(dlinfo)
+if test "$ac_cv_func_dlinfo" = "yes"; then
+  AC_MSG_CHECKING(if dlinfo supports RTLD_DI_LINKMAP)
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
+#include <link.h>
+#include <dlfcn.h>]], [[struct link_map info; dlinfo(0, RTLD_DI_LINKMAP, &info);]])],[AC_DEFINE(HAVE_RTLD_DI_LINKMAP, [1], [Linkmap info support]) AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
+
+  AC_MSG_CHECKING(if dlinfo supports RTLD_DI_ORIGIN)
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
+#include <link.h>
+#include <dlfcn.h>]], [[char info[256]; dlinfo(0, RTLD_DI_ORIGIN, info);]])],[AC_DEFINE(HAVE_RTLD_DI_ORIGIN, [1], [Origin info support]) AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
+fi
 
 dnl Check for time function
 AC_SEARCH_LIBS(clock_gettime, rt)

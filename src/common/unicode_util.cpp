@@ -194,7 +194,7 @@ void BaseICU::initialize(ModuleLoader::Module* module)
 namespace Jrd {
 
 static ModuleLoader::Module* formatAndLoad(const char* templateName,
-	int majorVersion, int minorVersion);
+	int& majorVersion, int& minorVersion);
 
 
 // encapsulate ICU collations libraries
@@ -312,7 +312,7 @@ private:
 	ImplementConversionICU(int aMajorVersion, int aMinorVersion)
 		: BaseICU(aMajorVersion, aMinorVersion)
 	{
-		module = formatAndLoad(ucTemplate, aMajorVersion, aMinorVersion);
+		module = formatAndLoad(ucTemplate, this->majorVersion, this->minorVersion);
 		if (!module)
 			return;
 
@@ -342,6 +342,15 @@ private:
 		inModule = formatAndLoad(inTemplate, aMajorVersion, aMinorVersion);
 		if (!inModule)
 			return;
+
+		if (aMajorVersion != this->majorVersion || aMinorVersion != this->minorVersion)
+		{
+			string err;
+			err.printf("Wrong version of IN icu module: loaded %d.%d, expected %d.%d",
+						aMajorVersion, aMinorVersion, this->majorVersion, this->minorVersion);
+
+			(Arg::Gds(isc_random) << Arg::Str(err)).raise();
+		}
 
 		getEntryPoint("ucal_getTZDataVersion", inModule, ucalGetTZDataVersion);
 		getEntryPoint("ucal_getDefaultTimeZone", inModule, ucalGetDefaultTimeZone);
@@ -413,9 +422,47 @@ static const char* const COLL_30_VERSION = "41.128.4.4";	// ICU 3.0 collator ver
 
 static GlobalPtr<UnicodeUtil::ICUModules> icuModules;
 
+static bool extractVersionFromPath(const PathName& realPath, int& major, int& minor)
+{
+	major = 0;
+	minor = 0;
+	int mult = 1;
+
+	const FB_SIZE_T len = realPath.length();
+	const char* buf = realPath.begin();
+
+	bool dot = false;
+	for (const char* p = buf + len - 1; p >= buf; p--)
+	{
+		if (*p >= '0' && *p < '9')
+		{
+			major += (*p - '0') * mult;
+			mult *= 10;
+		}
+		else if (*p == '.' && !dot)
+		{
+			dot = true;
+			minor = major;
+			major = 0;
+			mult = 1;
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	if (minor && !major)
+	{
+		major = minor;
+		minor = 0;
+	}
+
+	return major != 0;
+}
 
 static ModuleLoader::Module* formatAndLoad(const char* templateName,
-	int majorVersion, int minorVersion)
+	int& majorVersion, int& minorVersion)
 {
 #ifdef ANDROID
 	static ModuleLoader::Module* dat = ModuleLoader::loadModule(NULL,
@@ -432,7 +479,28 @@ static ModuleLoader::Module* formatAndLoad(const char* templateName,
 	{
 		PathName filename;
 		filename.printf(templateName, "");
+		filename.rtrim(".");
+
+		//gds__log("ICU: link %s", filename.c_str());
+
 		module = ModuleLoader::fixAndLoadModule(NULL, filename);
+
+#ifdef LINUX
+		// try to resolve symlinks and extract version numbers from suffix
+		PathName realPath;
+		if (module && module->getRealPath(realPath))
+		{
+			//gds__log("ICU: module name %s, real path %s", module->fileName.c_str(), realPath.c_str());
+
+			int major, minor;
+			if (extractVersionFromPath(realPath, major, minor))
+			{
+				//gds__log("ICU: extracted version %d.%d", major, minor);
+				majorVersion = major;
+				minorVersion = minor;
+			}
+		}
+#endif
 	}
 	else
 	{
@@ -1134,7 +1202,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const string& icuVersion, const string& c
 
 		icu = FB_NEW_POOL(*getDefaultMemoryPool()) ICU(majorVersion, minorVersion);
 
-		icu->ucModule = formatAndLoad(ucTemplate, majorVersion, minorVersion);
+		icu->ucModule = formatAndLoad(ucTemplate, icu->majorVersion, icu->minorVersion);
 		if (!icu->ucModule)
 		{
 			gds__log("failed to load UC icu module version %s", configVersion.c_str());
@@ -1146,6 +1214,14 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const string& icuVersion, const string& c
 		if (!icu->inModule)
 		{
 			gds__log("failed to load IN icu module version %s", configVersion.c_str());
+			delete icu;
+			continue;
+		}
+
+		if (icu->majorVersion != majorVersion || icu->minorVersion != minorVersion)
+		{
+			gds__log("Wrong version of IN icu module: loaded %d.%d, expected %d.%d",
+					 majorVersion, minorVersion, icu->majorVersion, icu->minorVersion);
 			delete icu;
 			continue;
 		}
@@ -1265,7 +1341,12 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 
 	for (int major = 79; major >= 3;)
 	{
+#ifdef WIN_NT
 		int minor = 0;
+#else
+		int minor = 9;
+#endif
+
 		if (major == 4)
 			minor = 8;
 		else if (major <= 4)
