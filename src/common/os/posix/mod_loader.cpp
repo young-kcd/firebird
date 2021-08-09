@@ -208,8 +208,10 @@ void* DlfcnModule::findSymbol(ISC_STATUS* status, const Firebird::string& symNam
 
 bool DlfcnModule::getRealPath(Firebird::PathName& realPath)
 {
+#ifdef HAVE_DLINFO
 	char b[PATH_MAX];
-/*
+
+#ifdef HAVE_RTLD_DI_ORIGIN
 	if (dlinfo(module, RTLD_DI_ORIGIN, b) == 0)
 	{
 		realPath = b;
@@ -222,7 +224,9 @@ bool DlfcnModule::getRealPath(Firebird::PathName& realPath)
 			return true;
 		}
 	}
-*/
+#endif
+
+#ifdef HAVE_RTLD_DI_LINKMAP
 	struct link_map* lm;
 	if (dlinfo(module, RTLD_DI_LINKMAP, &lm) == 0)
 	{
@@ -232,6 +236,8 @@ bool DlfcnModule::getRealPath(Firebird::PathName& realPath)
 			return true;
 		}
 	}
+#endif
 
+#endif
 	return false;
 }
