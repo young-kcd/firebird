@@ -167,6 +167,7 @@ void GDS_breakpoint(int);
 
 
 static void		blr_error(gds_ctl*, const TEXT*, ...) ATTRIBUTE_FORMAT(2,3);
+static void		blr_format(gds_ctl*, const char*, va_list args);
 static void		blr_format(gds_ctl*, const char*, ...) ATTRIBUTE_FORMAT(2,3);
 static void		blr_indent(gds_ctl*, SSHORT);
 static void		blr_print_blr(gds_ctl*, UCHAR);
@@ -2737,6 +2738,23 @@ static void blr_error(gds_ctl* control, const TEXT* string, ...)
 }
 
 
+static void blr_format(gds_ctl* control, const char* string, va_list args)
+{
+/**************************************
+ *
+ *	b l r _ f o r m a t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Format args passed as va_list.
+ *
+ **************************************/
+	Firebird::string temp;
+	temp.vprintf(string, args);
+	control->ctl_string += temp;
+}
+
 static void blr_format(gds_ctl* control, const char* string, ...)
 {
 /**************************************
@@ -2749,13 +2767,10 @@ static void blr_format(gds_ctl* control, const char* string, ...)
  *	Format an utterance.
  *
  **************************************/
-	va_list ptr;
-
-	va_start(ptr, string);
-	Firebird::string temp;
-	temp.vprintf(string, ptr);
-	control->ctl_string += temp;
-	va_end(ptr);
+	va_list args;
+	va_start(args, string);
+	blr_format(control, string, args);
+	va_end(args);
 }
 
 
