@@ -1517,11 +1517,11 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 			return NULL;
 		}
 
-		static const UChar CONTRACTION_RULES[] = u"[suppressContractions [^]]";
+		static const char16_t CONTRACTION_RULES[] = u"[suppressContractions [^]]";
 		int32_t rulesLen;
 		const UChar* rules = icu->ucolGetRules(initialCollator, &rulesLen);
 		rulesBuffer.push(rules, rulesLen);
-		rulesBuffer.push(CONTRACTION_RULES, FB_NELEM(CONTRACTION_RULES) - 1);
+		rulesBuffer.push((const UChar*) CONTRACTION_RULES, FB_NELEM(CONTRACTION_RULES) - 1);
 
 		icu->ucolClose(initialCollator);
 	}
