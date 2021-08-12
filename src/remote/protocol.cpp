@@ -1068,6 +1068,11 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 			return P_TRUE(xdrs, p);
 		}
 
+	case op_batch_sync:
+		{
+			return P_TRUE(xdrs, p);
+		}
+
 	case op_batch_set_bpb:
 		{
 			P_BATCH_SETBPB* b = &p->p_batch_setbpb;
