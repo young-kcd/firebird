@@ -324,6 +324,8 @@ int ResultSet::release()
 class Batch FB_FINAL : public RefCntIface<IBatchImpl<Batch, CheckStatusWrapper> >
 {
 public:
+	static const ULONG DEFER_BATCH_LIMIT = 64;
+
 	Batch(Statement* s, IMessageMetadata* inFmt, unsigned parLength, const unsigned char* par);
 
 	// IResultSet implementation
@@ -345,6 +347,14 @@ private:
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
 	void releaseStatement();
 	void setBlobAlignment();
+
+	void cleanup()
+	{
+		if (blobPolicy != BLOB_NONE)
+			blobStream = blobStreamBuffer;
+		sizePointer = nullptr;
+		messageStream = 0;
+	}
 
 	void genBlobId(ISC_QUAD* blobId)
 	{
@@ -372,7 +382,7 @@ private:
 			if (step == messageBufferSize)
 			{
 				// direct packet sent
-				sendMessagePacket(step, ptr);
+				sendMessagePacket(step, ptr, false);
 			}
 			else
 			{
@@ -381,7 +391,7 @@ private:
 				messageStream += step;
 				if (messageStream == messageBufferSize)
 				{
-					sendMessagePacket(messageBufferSize, messageStreamBuffer);
+					sendMessagePacket(messageBufferSize, messageStreamBuffer, false);
 					messageStream = 0;
 				}
 			}
@@ -401,7 +411,7 @@ private:
 		ULONG space = blobBufferSize - (blobStream - blobStreamBuffer);
 		if (space < Rsr::BatchStream::SIZEOF_BLOB_HEAD)
 		{
-			sendBlobPacket(blobStream - blobStreamBuffer, blobStreamBuffer);
+			sendBlobPacket(blobStream - blobStreamBuffer, blobStreamBuffer, false);
 			blobStream = blobStreamBuffer;
 		}
 	}
@@ -431,7 +441,7 @@ private:
 			if (step == blobBufferSize)
 			{
 				// direct packet sent
-				sendBlobPacket(blobBufferSize, ptr);
+				sendBlobPacket(blobBufferSize, ptr, false);
 			}
 			else
 			{
@@ -440,7 +450,7 @@ private:
 				blobStream += step;
 				if (blobStream - blobStreamBuffer == blobBufferSize)
 				{
-					sendBlobPacket(blobBufferSize, blobStreamBuffer);
+					sendBlobPacket(blobBufferSize, blobStreamBuffer, false);
 					blobStream = blobStreamBuffer;
 					sizePointer = NULL;
 				}
@@ -497,22 +507,23 @@ private:
 			ULONG size = blobStream - blobStreamBuffer;
 			if (size)
 			{
-				sendBlobPacket(size, blobStreamBuffer);
+				sendBlobPacket(size, blobStreamBuffer, messageStream == 0);
 				blobStream = blobStreamBuffer;
 			}
 		}
 
 		if (messageStream)
 		{
-			sendMessagePacket(messageStream, messageStreamBuffer);
+			sendMessagePacket(messageStream, messageStreamBuffer, true);
 			messageStream = 0;
 		}
 
 		batchActive = false;
 	}
 
-	void sendBlobPacket(unsigned size, const UCHAR* ptr);
-	void sendMessagePacket(unsigned size, const UCHAR* ptr);
+	void sendBlobPacket(unsigned size, const UCHAR* ptr, bool flash);
+	void sendMessagePacket(unsigned size, const UCHAR* ptr, bool flash);
+	void sendDeferredPacket(rem_port* port, PACKET* packet, bool flash);
 
 	Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete> messageStreamBuffer, blobStreamBuffer;
 	ULONG messageStream;
@@ -2385,7 +2396,7 @@ void Batch::add(CheckStatusWrapper* status, unsigned count, const void* inBuffer
 }
 
 
-void Batch::sendMessagePacket(unsigned count, const UCHAR* ptr)
+void Batch::sendMessagePacket(unsigned count, const UCHAR* ptr, bool flash)
 {
 	Rsr* statement = stmt->getStatement();
 	CHECK_HANDLE(statement, isc_bad_req_handle);
@@ -2401,8 +2412,7 @@ void Batch::sendMessagePacket(unsigned count, const UCHAR* ptr)
 	batch->p_batch_data.cstr_address = const_cast<UCHAR*>(ptr);
 	statement->rsr_batch_size = alignedSize;
 
-	send_partial_packet(port, packet);
-	defer_packet(port, packet, true);
+	sendDeferredPacket(port, packet, flash);
 }
 
 
@@ -2529,7 +2539,7 @@ void Batch::addBlobStream(CheckStatusWrapper* status, unsigned length, const voi
 }
 
 
-void Batch::sendBlobPacket(unsigned size, const UCHAR* ptr)
+void Batch::sendBlobPacket(unsigned size, const UCHAR* ptr, bool flash)
 {
 	Rsr* statement = stmt->getStatement();
 	Rdb* rdb = statement->rsr_rdb;
@@ -2545,8 +2555,31 @@ void Batch::sendBlobPacket(unsigned size, const UCHAR* ptr)
 	batch->p_batch_blob_data.cstr_address = const_cast<UCHAR*>(ptr);
 	batch->p_batch_blob_data.cstr_length = size;
 
+	sendDeferredPacket(port, packet, flash);
+}
+
+
+void Batch::sendDeferredPacket(rem_port* port, PACKET* packet, bool flash)
+{
 	send_partial_packet(port, packet);
 	defer_packet(port, packet, true);
+
+	if ((port->port_protocol >= PROTOCOL_VERSION17) &&
+		((port->port_deferred_packets->getCount() >= DEFER_BATCH_LIMIT) || flash))
+	{
+		packet->p_operation = op_batch_sync;
+		send_packet(port, packet);
+		receive_packet(port, packet);
+
+		LocalStatus warning;
+		port->checkResponse(&warning, packet, false);
+		Rsr* statement = stmt->getStatement();
+		if (statement->haveException())
+		{
+			cleanup();
+			statement->raiseException();
+		}
+	}
 }
 
 
@@ -2735,7 +2768,12 @@ IBatchCompletionState* Batch::execute(CheckStatusWrapper* status, ITransaction* 
 		statement->rsr_batch_cs = nullptr;
 
 		if (packet->p_operation == op_batch_cs)
+		{
+			// when working with 4.0.0 server we could not raise it in advance...
+			statement->clearException();
+
 			return cs.release();
+		}
 
 		REMOTE_check_response(status, rdb, packet);
 	}
@@ -2765,10 +2803,7 @@ void Batch::cancel(CheckStatusWrapper* status)
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		// Cleanup local data
-		if (blobPolicy != BLOB_NONE)
-			blobStream = blobStreamBuffer;
-		sizePointer = nullptr;
-		messageStream = 0;
+		cleanup();
 		batchActive = false;
 
 		// Prepare packet
@@ -7951,8 +7986,6 @@ static void receive_packet_noqueue(rem_port* port, PACKET* packet)
 
 	// Receive responses for all deferred packets that were already sent
 
-	Rdb* rdb = port->port_context;
-
 	if (port->port_deferred_packets)
 	{
 		while (port->port_deferred_packets->getCount())
@@ -7962,17 +7995,25 @@ static void receive_packet_noqueue(rem_port* port, PACKET* packet)
 				break;
 
 			OBJCT stmt_id = 0;
-			bool bCheckResponse = false, bFreeStmt = false;
+			bool bCheckResponse = false, bFreeStmt = false, bAssign = false;
 
-			if (p->packet.p_operation == op_execute)
+			switch (p->packet.p_operation)
 			{
+			case op_execute:
 				stmt_id = p->packet.p_sqldata.p_sqldata_statement;
 				bCheckResponse = true;
-			}
-			else if (p->packet.p_operation == op_free_statement)
-			{
+				bAssign = true;
+				break;
+
+			case op_batch_msg:
+				stmt_id = p->packet.p_batch_msg.p_batch_statement;
+				bCheckResponse = true;
+				break;
+
+			case op_free_statement:
 				stmt_id = p->packet.p_sqlfree.p_sqlfree_statement;
 				bFreeStmt = (p->packet.p_sqlfree.p_sqlfree_option == DSQL_drop);
+				break;
 			}
 
 			receive_packet_with_callback(port, &p->packet);
@@ -7983,9 +8024,9 @@ static void receive_packet_noqueue(rem_port* port, PACKET* packet)
 
 			if (bCheckResponse)
 			{
-				bool bAssign = true;
 				try
 				{
+					Rdb* rdb = port->port_context;
 					LocalStatus ls;
 					CheckStatusWrapper status(&ls);
 					REMOTE_check_response(&status, rdb, &p->packet);

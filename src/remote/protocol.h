@@ -93,6 +93,11 @@ const USHORT PROTOCOL_VERSION15 = (FB_PROTOCOL_FLAG | 15);
 const USHORT PROTOCOL_VERSION16 = (FB_PROTOCOL_FLAG | 16);
 const USHORT PROTOCOL_STMT_TOUT = PROTOCOL_VERSION16;
 
+// Protocol 17:
+//	- supports op_batch_sync
+
+const USHORT PROTOCOL_VERSION17 = (FB_PROTOCOL_FLAG | 17);
+
 // Architecture types
 
 enum P_ARCH
@@ -289,6 +294,7 @@ enum P_OP
 	op_repl_req				= 108,
 
 	op_batch_cancel			= 109,
+	op_batch_sync			= 110,
 
 	op_max
 };

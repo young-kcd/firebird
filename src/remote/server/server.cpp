@@ -1918,7 +1918,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	{
 		if ((protocol->p_cnct_version == PROTOCOL_VERSION10 ||
 			 (protocol->p_cnct_version >= PROTOCOL_VERSION11 &&
-			  protocol->p_cnct_version <= PROTOCOL_VERSION16)) &&
+			  protocol->p_cnct_version <= PROTOCOL_VERSION17)) &&
 			 (protocol->p_cnct_architecture == arch_generic ||
 			  protocol->p_cnct_architecture == ARCHITECTURE) &&
 			protocol->p_cnct_weight >= weight)
@@ -3717,6 +3717,16 @@ void rem_port::batch_cancel(P_BATCH_FREE_CANCEL* batch, PACKET* sendL)
 }
 
 
+void rem_port::batch_sync(PACKET* sendL)
+{
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
+
+	// no need checking protocol version if client is using batch_sync, just return synced response
+	this->send_response(sendL, 0, 0, &status_vector, false);
+}
+
+
 void rem_port::replicate(P_REPLICATE* repl, PACKET* sendL)
 {
 	LocalStatus ls;
@@ -4990,6 +5000,10 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 
 		case op_batch_cancel:
 			port->batch_cancel(&receive->p_batch_free_cancel, sendL);
+			break;
+
+		case op_batch_sync:
+			port->batch_sync(sendL);
 			break;
 
 		case op_batch_blob_stream:
