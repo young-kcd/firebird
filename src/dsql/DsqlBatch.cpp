@@ -818,10 +818,7 @@ void DsqlBatch::DataCache::put3(const void* data, ULONG dataSize, ULONG offset)
 void DsqlBatch::DataCache::put(const void* d, ULONG dataSize)
 {
 	if (m_limit && (m_used + m_cache.getCount() + dataSize > m_limit))
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-			  Arg::Gds(isc_batch_too_big));
-	}
+		ERR_post(Arg::Gds(isc_batch_too_big));
 
 	const UCHAR* data = reinterpret_cast<const UCHAR*>(d);
 
