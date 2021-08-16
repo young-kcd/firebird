@@ -2315,7 +2315,7 @@ void JBlob::getInfo(CheckStatusWrapper* user_status,
 }
 
 
-void JBlob::cancel(CheckStatusWrapper* user_status)
+void JBlob::cancel_1(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -2328,6 +2328,14 @@ void JBlob::cancel(CheckStatusWrapper* user_status)
  *
  **************************************/
 	freeEngineData(user_status);
+}
+
+
+void JBlob::cancel(CheckStatusWrapper* user_status)
+{
+	freeEngineData(user_status);
+	if (user_status->isEmpty())
+		release();
 }
 
 
@@ -2369,7 +2377,7 @@ void JBlob::freeEngineData(CheckStatusWrapper* user_status)
 }
 
 
-void JEvents::cancel(CheckStatusWrapper* user_status)
+void JEvents::cancel_1(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -2382,6 +2390,14 @@ void JEvents::cancel(CheckStatusWrapper* user_status)
  *
  **************************************/
 	freeEngineData(user_status);
+}
+
+
+void JEvents::cancel(CheckStatusWrapper* user_status)
+{
+	freeEngineData(user_status);
+	if (user_status->isEmpty())
+		release();
 }
 
 
@@ -2467,6 +2483,14 @@ void JAttachment::cancelOperation(CheckStatusWrapper* user_status, int option)
 
 void JBlob::close(CheckStatusWrapper* user_status)
 {
+	close_1(user_status);
+	if (user_status->isEmpty())
+		release();
+}
+
+
+void JBlob::close_1(CheckStatusWrapper* user_status)
+{
 /**************************************
  *
  *	g d s _ $ c l o s e _ b l o b
@@ -2505,6 +2529,14 @@ void JBlob::close(CheckStatusWrapper* user_status)
 
 
 void JTransaction::commit(CheckStatusWrapper* user_status)
+{
+	commit_1(user_status);
+	if (user_status->isEmpty())
+		release();
+}
+
+
+void JTransaction::commit_1(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -3211,7 +3243,7 @@ void JAttachment::executeDyn(CheckStatusWrapper* status, ITransaction* /*tra*/, 
 }
 
 
-void JAttachment::detach(CheckStatusWrapper* user_status)
+void JAttachment::detach_1(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -3227,6 +3259,24 @@ void JAttachment::detach(CheckStatusWrapper* user_status)
 		return;				// already detached
 
 	freeEngineData(user_status, false);
+}
+
+
+void JAttachment::detach(CheckStatusWrapper* user_status)
+{
+/**************************************
+ *
+ *	g d s _ $ d e t a c h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Close down a database.
+ *
+ **************************************/
+	detach_1(user_status);
+	if (user_status->isEmpty())
+		release();
 }
 
 
@@ -3305,6 +3355,14 @@ void JAttachment::freeEngineData(CheckStatusWrapper* user_status, bool forceFree
 
 
 void JAttachment::dropDatabase(CheckStatusWrapper* user_status)
+{
+	dropDatabase_1(user_status);
+	if (user_status->isEmpty())
+		release();
+}
+
+
+void JAttachment::dropDatabase_1(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -3877,7 +3935,7 @@ JTransaction* JAttachment::reconnectTransaction(CheckStatusWrapper* user_status,
 }
 
 
-void JRequest::free(CheckStatusWrapper* user_status)
+void JRequest::free_1(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -3890,6 +3948,14 @@ void JRequest::free(CheckStatusWrapper* user_status)
  *
  **************************************/
 	freeEngineData(user_status);
+}
+
+
+void JRequest::free(CheckStatusWrapper* user_status)
+{
+	freeEngineData(user_status);
+	if (user_status->isEmpty())
+		release();
 }
 
 
@@ -4010,6 +4076,14 @@ void JTransaction::rollbackRetaining(CheckStatusWrapper* user_status)
 
 void JTransaction::rollback(CheckStatusWrapper* user_status)
 {
+	rollback_1(user_status);
+	if (user_status->isEmpty())
+		release();
+}
+
+
+void JTransaction::rollback_1(CheckStatusWrapper* user_status)
+{
 /**************************************
  *
  *	g d s _ $ r o l l b a c k
@@ -4047,6 +4121,14 @@ void JTransaction::rollback(CheckStatusWrapper* user_status)
 
 
 void JTransaction::disconnect(CheckStatusWrapper* user_status)
+{
+	disconnect_1(user_status);
+	if (user_status->isEmpty())
+		release();
+}
+
+
+void JTransaction::disconnect_1(CheckStatusWrapper* user_status)
 {
 	try
 	{
@@ -4181,7 +4263,7 @@ JService* JProvider::attachServiceManager(CheckStatusWrapper* user_status, const
 }
 
 
-void JService::detach(CheckStatusWrapper* user_status)
+void JService::detach_1(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -4194,6 +4276,14 @@ void JService::detach(CheckStatusWrapper* user_status)
  *
  **************************************/
 	freeEngineData(user_status);
+}
+
+
+void JService::detach(CheckStatusWrapper* user_status)
+{
+	freeEngineData(user_status);
+	if (user_status->isEmpty())
+		release();
 }
 
 
@@ -5362,10 +5452,12 @@ void JResultSet::freeEngineData(CheckStatusWrapper* user_status)
 	successful_completion(user_status);
 }
 
+
 StableAttachmentPart* JResultSet::getAttachment()
 {
 	return statement->getAttachment();
 }
+
 
 IMessageMetadata* JResultSet::getMetadata(CheckStatusWrapper* user_status)
 {
@@ -5373,9 +5465,17 @@ IMessageMetadata* JResultSet::getMetadata(CheckStatusWrapper* user_status)
 }
 
 
+void JResultSet::close_1(CheckStatusWrapper* user_status)
+{
+	freeEngineData(user_status);
+}
+
+
 void JResultSet::close(CheckStatusWrapper* user_status)
 {
 	freeEngineData(user_status);
+	if (user_status->isEmpty())
+		release();
 }
 
 
@@ -5407,9 +5507,17 @@ void JStatement::freeEngineData(CheckStatusWrapper* user_status)
 }
 
 
+void JStatement::free_1(CheckStatusWrapper* user_status)
+{
+	freeEngineData(user_status);
+}
+
+
 void JStatement::free(CheckStatusWrapper* user_status)
 {
 	freeEngineData(user_status);
+	if (user_status->isEmpty())
+		release();
 }
 
 
@@ -5891,9 +5999,17 @@ int JBatch::release()
 }
 
 
+void JBatch::close_1(CheckStatusWrapper* user_status)
+{
+	freeEngineData(user_status);
+}
+
+
 void JBatch::close(CheckStatusWrapper* user_status)
 {
 	freeEngineData(user_status);
+	if (user_status->isEmpty())
+		release();
 }
 
 
@@ -6297,9 +6413,17 @@ void JReplicator::process(CheckStatusWrapper* status, unsigned length, const UCH
 }
 
 
+void JReplicator::close_1(CheckStatusWrapper* user_status)
+{
+	freeEngineData(user_status);
+}
+
+
 void JReplicator::close(CheckStatusWrapper* user_status)
 {
 	freeEngineData(user_status);
+	if (user_status->isEmpty())
+		release();
 }
 
 
