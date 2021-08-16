@@ -75,6 +75,8 @@
 #include <signal.h>
 #endif
 
+#include <functional>
+
 using namespace Firebird;
 using namespace Why;
 
@@ -1323,6 +1325,27 @@ namespace Why
 		DispatcherEntry(const DispatcherEntry&);	// prohibit copy constructor
 		bool shutdownMode;
 	};
+
+
+	template <class Y>
+	void done(CheckStatusWrapper* status, YEntry<Y>& entry, Y* y, std::function<void()> newClose, std::function<void()> oldClose)
+	{
+		if (entry.next())
+			newClose();
+
+		if (!(status->getState() & IStatus::STATE_ERRORS))
+			y->destroy(Y::DF_RELEASE | Y::DF_KEEP_NEXT);
+
+		else if (status->getErrors()[1] == isc_wish_list)
+		{
+			status->init();
+			if (entry.next())
+				oldClose();
+
+			if (!(status->getState() & IStatus::STATE_ERRORS))
+				y->destroy(Y::DF_RELEASE);
+		}
+	}
 
 }	// namespace Why
 
@@ -3892,19 +3915,21 @@ void YEvents::cancel(CheckStatusWrapper* status)
 	{
 		YEntry<YEvents> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->cancel(status);
-
-		if (status->getErrors()[1] == isc_att_shutdown)
-			status->init();
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{
+				entry.next()->cancel(status);
+				if (status->getErrors()[1] == isc_att_shutdown)
+					status->init();
+			}, [&]{entry.next()->cancel_1(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
+}
+
+void YEvents::cancel_1(CheckStatusWrapper* status)
+{
+	cancel(status);
 }
 
 
@@ -4037,16 +4062,17 @@ void YRequest::free(CheckStatusWrapper* status)
 	{
 		YEntry<YRequest> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->free(status);
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{entry.next()->free(status);}, [&]{entry.next()->free_1(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
+}
+
+void YRequest::free_1(CheckStatusWrapper* status)
+{
+	free(status);
 }
 
 
@@ -4132,16 +4158,17 @@ void YBlob::cancel(CheckStatusWrapper* status)
 	{
 		YEntry<YBlob> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->cancel(status);
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{entry.next()->cancel(status);}, [&]{entry.next()->cancel_1(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
+}
+
+void YBlob::cancel_1(CheckStatusWrapper* status)
+{
+	cancel(status);
 }
 
 void YBlob::close(CheckStatusWrapper* status)
@@ -4150,16 +4177,17 @@ void YBlob::close(CheckStatusWrapper* status)
 	{
 		YEntry<YBlob> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->close(status);
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{entry.next()->close(status);}, [&]{entry.next()->close_1(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
+}
+
+void YBlob::close_1(CheckStatusWrapper* status)
+{
+	close(status);
 }
 
 int YBlob::seek(CheckStatusWrapper* status, int mode, int offset)
@@ -4429,17 +4457,19 @@ void YStatement::free(CheckStatusWrapper* status)
 	{
 		YEntry<YStatement> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->free(status);
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{entry.next()->free(status);}, [&]{entry.next()->free_1(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
 }
+
+void YStatement::free_1(CheckStatusWrapper* status)
+{
+	free(status);
+}
+
 
 YBatch* YStatement::createBatch(CheckStatusWrapper* status, IMessageMetadata* inMetadata, unsigned parLength,
 	const unsigned char* par)
@@ -4838,23 +4868,26 @@ IMessageMetadata* YResultSet::getMetadata(CheckStatusWrapper* status)
 	return NULL;
 }
 
+
 void YResultSet::close(CheckStatusWrapper* status)
 {
 	try
 	{
 		YEntry<YResultSet> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->close(status);
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{entry.next()->close(status);}, [&]{entry.next()->close_1(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
 }
+
+void YResultSet::close_1(CheckStatusWrapper* status)
+{
+	close(status);
+}
+
 
 //-------------------------------------
 
@@ -5034,16 +5067,18 @@ void YBatch::close(CheckStatusWrapper* status)
 	{
 		YEntry<YBatch> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->close(status);
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{entry.next()->close(status);}, [&]{entry.next()->close_1(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
+}
+
+
+void YBatch::close_1(CheckStatusWrapper* status)
+{
+	close(status);
 }
 
 
@@ -5082,16 +5117,18 @@ void YReplicator::close(CheckStatusWrapper* status)
 	{
 		YEntry<YReplicator> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->close(status);
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{entry.next()->close(status);}, [&]{entry.next()->close_1(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
+}
+
+
+void YReplicator::close_1(CheckStatusWrapper* status)
+{
+	close(status);
 }
 
 
@@ -5133,8 +5170,8 @@ void YTransaction::destroy(unsigned dstrFlags)
 	// can't release cursors by itself. See also CORE-6067.
 	const bool releaseCursors = handle;
 
-	childBlobs.destroy(dstrFlags & ~DF_RELEASE);
-	childCursors.destroy(releaseCursors ? dstrFlags : dstrFlags & ~DF_RELEASE);
+	childBlobs.destroy(dstrFlags & ~(DF_RELEASE | DF_KEEP_NEXT));
+	childCursors.destroy((releaseCursors ? dstrFlags : dstrFlags & ~DF_RELEASE) & ~DF_KEEP_NEXT);
 
 	YAttachment* att = attachment.release();
 	if (att)
@@ -5186,10 +5223,7 @@ void YTransaction::commit(CheckStatusWrapper* status)
 	{
 		YEntry<YTransaction> entry(status, this);
 
-		entry.next()->commit(status);
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{entry.next()->commit(status);}, [&]{entry.next()->commit_1(status);});
 	}
 	catch (const Exception& e)
 	{
@@ -5217,13 +5251,11 @@ void YTransaction::rollback(CheckStatusWrapper* status)
 	{
 		YEntry<YTransaction> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->rollback(status);
-		if (isNetworkError(status))
-			status->init();
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{
+				entry.next()->rollback(status);
+				if (isNetworkError(status))
+					status->init();
+			}, [&]{entry.next()->rollback_1(status);});
 	}
 	catch (const Exception& e)
 	{
@@ -5273,6 +5305,22 @@ void YTransaction::disconnect(CheckStatusWrapper* status)
 		e.stuffException(status);
 	}
 }
+
+void YTransaction::commit_1(CheckStatusWrapper* status)
+{
+	commit(status);
+}
+
+void YTransaction::rollback_1(CheckStatusWrapper* status)
+{
+	rollback(status);
+}
+
+void YTransaction::disconnect_1(CheckStatusWrapper* status)
+{
+	disconnect(status);
+}
+
 
 void YTransaction::addCleanupHandler(CheckStatusWrapper* status, CleanupCallback* callback)
 {
@@ -5403,12 +5451,13 @@ void YAttachment::destroy(unsigned dstrFlags)
 
 	cleanupHandlers.clear();
 
-	childRequests.destroy(dstrFlags & ~DF_RELEASE);
-	childStatements.destroy(dstrFlags & ~DF_RELEASE);
-	childIscStatements.destroy(dstrFlags & ~DF_RELEASE);
-	childBlobs.destroy(dstrFlags & ~DF_RELEASE);
-	childEvents.destroy(dstrFlags & ~DF_RELEASE);
-	childTransactions.destroy(dstrFlags & ~DF_RELEASE);
+	unsigned childFlags = dstrFlags & ~(DF_KEEP_NEXT | DF_RELEASE);
+	childRequests.destroy(childFlags);
+	childStatements.destroy(childFlags);
+	childIscStatements.destroy(childFlags);
+	childBlobs.destroy(childFlags);
+	childEvents.destroy(childFlags);
+	childTransactions.destroy(childFlags);
 
 	removeHandle(&attachments, handle);
 
@@ -5863,19 +5912,21 @@ void YAttachment::detach(CheckStatusWrapper* status)
 	{
 		YEntry<YAttachment> entry(status, this, CHECK_NONE);
 
-		if (entry.next())
-			entry.next()->detach(status);
-
-		if (isNetworkError(status))
-			status->init();
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{
+				entry.next()->detach(status);
+				if (isNetworkError(status))
+					status->init();
+			}, [&]{entry.next()->detach_1(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
+}
+
+void YAttachment::detach_1(CheckStatusWrapper* status)
+{
+	detach(status);
 }
 
 void YAttachment::dropDatabase(CheckStatusWrapper* status)
@@ -5884,15 +5935,17 @@ void YAttachment::dropDatabase(CheckStatusWrapper* status)
 	{
 		YEntry<YAttachment> entry(status, this);
 
-		entry.next()->dropDatabase(status);
-
-		if (!(status->getState() & IStatus::STATE_ERRORS))
-			destroy(DF_RELEASE);
+		done(status, entry, this, [&]{entry.next()->dropDatabase(status);}, [&]{entry.next()->dropDatabase_1(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
+}
+
+void YAttachment::dropDatabase_1(CheckStatusWrapper* status)
+{
+	dropDatabase(status);
 }
 
 void YAttachment::addCleanupHandler(CheckStatusWrapper* status, CleanupCallback* callback)
@@ -6101,15 +6154,17 @@ void YService::detach(CheckStatusWrapper* status)
 	{
 		YEntry<YService> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		if (entry.next())
-			entry.next()->detach(status);
-
-		destroy(DF_RELEASE);
+		done(status, entry, this, [&]{entry.next()->detach(status);}, [&]{entry.next()->detach_1(status);});
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
+}
+
+void YService::detach_1(CheckStatusWrapper* status)
+{
+	detach(status);
 }
 
 void YService::query(CheckStatusWrapper* status, unsigned int sendLength, const unsigned char* sendItems,

@@ -173,6 +173,8 @@ public:
 	void cancel(CheckStatusWrapper* status) override;
 	void close(CheckStatusWrapper* status) override;
 	int seek(CheckStatusWrapper* status, int mode, int offset) override;			// returns position
+	void cancel_1(Firebird::CheckStatusWrapper* status) override;
+	void close_1(Firebird::CheckStatusWrapper* status) override;
 
 public:
 	explicit Blob(Rbl* handle)
@@ -223,6 +225,9 @@ public:
 	ITransaction* join(CheckStatusWrapper* status, ITransaction* tra) override;
 	Transaction* validate(CheckStatusWrapper* status, IAttachment* attachment) override;
 	Transaction* enterDtc(CheckStatusWrapper* status) override;
+	void commit_1(Firebird::CheckStatusWrapper* status) override;
+	void rollback_1(Firebird::CheckStatusWrapper* status) override;
+	void disconnect_1(Firebird::CheckStatusWrapper* status) override;
 
 public:
 	Transaction(Rtr* handle, Attachment* a)
@@ -285,6 +290,7 @@ public:
 	FB_BOOLEAN isBof(CheckStatusWrapper* status) override;
 	IMessageMetadata* getMetadata(CheckStatusWrapper* status) override;
 	void close(CheckStatusWrapper* status) override;
+	void close_1(CheckStatusWrapper* status) override;
 	void setDelayedOutputFormat(CheckStatusWrapper* status, IMessageMetadata* format) override;
 
 	ResultSet(Statement* s, IMessageMetadata* outFmt)
@@ -328,7 +334,7 @@ public:
 
 	Batch(Statement* s, IMessageMetadata* inFmt, unsigned parLength, const unsigned char* par);
 
-	// IResultSet implementation
+	// IBatch implementation
 	int release() override;
 	void add(Firebird::CheckStatusWrapper* status, unsigned count, const void* inBuffer) override;
 	void addBlob(Firebird::CheckStatusWrapper* status, unsigned length, const void* inBuffer, ISC_QUAD* blobId,
@@ -342,6 +348,7 @@ public:
 	void setDefaultBpb(Firebird::CheckStatusWrapper* status, unsigned parLength, const unsigned char* par) override;
 	Firebird::IMessageMetadata* getMetadata(Firebird::CheckStatusWrapper* status) override;
 	void close(Firebird::CheckStatusWrapper* status) override;
+	void close_1(Firebird::CheckStatusWrapper* status) override;
 
 private:
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
@@ -569,6 +576,7 @@ public:
 	int release() override;
 	void process(CheckStatusWrapper* status, unsigned length, const unsigned char* data) override;
 	void close(CheckStatusWrapper* status) override;
+	void close_1(CheckStatusWrapper* status) override;
 
 	explicit Replicator(Attachment* att) : attachment(att)
 	{}
@@ -616,6 +624,7 @@ public:
 		unsigned int flags) override;
 	void setCursorName(CheckStatusWrapper* status, const char* name) override;
 	void free(CheckStatusWrapper* status) override;
+	void free_1(CheckStatusWrapper* status) override;
 	unsigned getFlags(CheckStatusWrapper* status) override;
 
 	unsigned int getTimeout(CheckStatusWrapper* status) override
@@ -716,6 +725,7 @@ public:
 							  unsigned int length, const void* message) override;
 	void unwind(CheckStatusWrapper* status, int level) override;
 	void free(CheckStatusWrapper* status) override;
+	void free_1(CheckStatusWrapper* status) override;
 
 public:
 	Request(Rrq* handle, Attachment* a)
@@ -753,6 +763,7 @@ public:
 	// IEvents implementation
 	int release() override;
 	void cancel(CheckStatusWrapper* status) override;
+	void cancel_1(CheckStatusWrapper* status) override;
 
 public:
 	Events(Rvnt* handle)
@@ -834,6 +845,8 @@ public:
 	void ping(CheckStatusWrapper* status) override;
 	void detach(CheckStatusWrapper* status) override;
 	void dropDatabase(CheckStatusWrapper* status) override;
+	void detach_1(Firebird::CheckStatusWrapper* status) override;
+	void dropDatabase_1(Firebird::CheckStatusWrapper* status) override;
 
 	unsigned int getIdleTimeout(CheckStatusWrapper* status) override;
 	void setIdleTimeout(CheckStatusWrapper* status, unsigned int timeOut) override;
@@ -898,6 +911,7 @@ public:
 	// IService implementation
 	int release() override;
 	void detach(CheckStatusWrapper* status) override;
+	void detach_1(CheckStatusWrapper* status) override;
 	void query(CheckStatusWrapper* status,
 					   unsigned int sendLength, const unsigned char* sendItems,
 					   unsigned int receiveLength, const unsigned char* receiveItems,
@@ -1278,7 +1292,7 @@ void Blob::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Blob::cancel(CheckStatusWrapper* status)
+void Blob::cancel_1(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -1295,7 +1309,15 @@ void Blob::cancel(CheckStatusWrapper* status)
 }
 
 
-void Blob::close(CheckStatusWrapper* status)
+void Blob::cancel(CheckStatusWrapper* status)
+{
+	cancel_1(status);
+	if (status->isEmpty())
+		release();
+}
+
+
+void Blob::close_1(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -1331,6 +1353,14 @@ void Blob::close(CheckStatusWrapper* status)
 	{
 		ex.stuffException(status);
 	}
+}
+
+
+void Blob::close(CheckStatusWrapper* status)
+{
+	close_1(status);
+	if (status->isEmpty())
+		release();
 }
 
 
@@ -1416,7 +1446,7 @@ void Events::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Events::cancel(CheckStatusWrapper* status)
+void Events::cancel_1(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -1433,7 +1463,15 @@ void Events::cancel(CheckStatusWrapper* status)
 }
 
 
-void Transaction::commit(CheckStatusWrapper* status)
+void Events::cancel(CheckStatusWrapper* status)
+{
+	cancel_1(status);
+	if (status->isEmpty())
+		release();
+}
+
+
+void Transaction::commit_1(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -1465,6 +1503,14 @@ void Transaction::commit(CheckStatusWrapper* status)
 	{
 		ex.stuffException(status);
 	}
+}
+
+
+void Transaction::commit(CheckStatusWrapper* status)
+{
+	commit_1(status);
+	if (status->isEmpty())
+		release();
 }
 
 
@@ -1987,7 +2033,7 @@ void Attachment::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Attachment::detach(CheckStatusWrapper* status)
+void Attachment::detach_1(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -2004,7 +2050,15 @@ void Attachment::detach(CheckStatusWrapper* status)
 }
 
 
-void Attachment::dropDatabase(CheckStatusWrapper* status)
+void Attachment::detach(CheckStatusWrapper* status)
+{
+	detach_1(status);
+	if (status->isEmpty())
+		release();
+}
+
+
+void Attachment::dropDatabase_1(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -2059,6 +2113,14 @@ void Attachment::dropDatabase(CheckStatusWrapper* status)
 	{
 		ex.stuffException(status);
 	}
+}
+
+
+void Attachment::dropDatabase(CheckStatusWrapper* status)
+{
+	dropDatabase_1(status);
+	if (status->isEmpty())
+		release();
 }
 
 
@@ -2885,6 +2947,14 @@ void Batch::close(CheckStatusWrapper* status)
 }
 
 
+void Batch::close_1(CheckStatusWrapper* status)
+{
+	close_1(status);
+	if (status->isEmpty())
+		release();
+}
+
+
 void Batch::releaseStatement()
 {
 	if (tmpStatement)
@@ -2973,6 +3043,14 @@ void Replicator::close(CheckStatusWrapper* status)
 {
 	reset(status);
 	freeClientData(status);
+}
+
+
+void Replicator::close_1(CheckStatusWrapper* status)
+{
+	close_1(status);
+	if (status->isEmpty())
+		release();
 }
 
 
@@ -3626,7 +3704,7 @@ void Statement::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Statement::free(CheckStatusWrapper* status)
+void Statement::free_1(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -3641,6 +3719,14 @@ void Statement::free(CheckStatusWrapper* status)
 
 	reset(status);
 	freeClientData(status);
+}
+
+
+void Statement::free(CheckStatusWrapper* status)
+{
+	free_1(status);
+	if (status->isEmpty())
+		release();
 }
 
 
@@ -4631,7 +4717,7 @@ void ResultSet::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void ResultSet::close(CheckStatusWrapper* status)
+void ResultSet::close_1(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -4646,6 +4732,25 @@ void ResultSet::close(CheckStatusWrapper* status)
 
 	reset(status);
 	freeClientData(status);
+}
+
+
+void ResultSet::close(CheckStatusWrapper* status)
+{
+/**************************************
+ *
+ *	d s q l _ f r e e _ s t a t e m e n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Close SQL cursor
+ *
+ **************************************/
+
+	close_1(status);
+	if (status->isEmpty())
+		release();
 }
 
 
@@ -5532,7 +5637,7 @@ void Request::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Request::free(CheckStatusWrapper* status)
+void Request::free_1(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -5546,6 +5651,14 @@ void Request::free(CheckStatusWrapper* status)
  **************************************/
 	reset(status);
 	freeClientData(status);
+}
+
+
+void Request::free(CheckStatusWrapper* status)
+{
+	free_1(status);
+	if (status->isEmpty())
+		release();
 }
 
 
@@ -5716,7 +5829,7 @@ void Transaction::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Transaction::rollback(CheckStatusWrapper* status)
+void Transaction::rollback_1(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -5733,7 +5846,15 @@ void Transaction::rollback(CheckStatusWrapper* status)
 }
 
 
-void Transaction::disconnect(CheckStatusWrapper* status)
+void Transaction::rollback(CheckStatusWrapper* status)
+{
+	rollback_1(status);
+	if (status->isEmpty())
+		release();
+}
+
+
+void Transaction::disconnect_1(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -5751,6 +5872,15 @@ void Transaction::disconnect(CheckStatusWrapper* status)
 		ex.stuffException(status);
 	}
 }
+
+
+void Transaction::disconnect(CheckStatusWrapper* status)
+{
+	disconnect_1(status);
+	if (status->isEmpty())
+		release();
+}
+
 
 
 int Blob::seek(CheckStatusWrapper* status, int mode, int offset)
@@ -6004,7 +6134,7 @@ void Service::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Service::detach(CheckStatusWrapper* status)
+void Service::detach_1(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -6018,6 +6148,14 @@ void Service::detach(CheckStatusWrapper* status)
  **************************************/
 	reset(status);
 	freeClientData(status);
+}
+
+
+void Service::detach(CheckStatusWrapper* status)
+{
+	detach_1(status);
+	if (status->isEmpty())
+		release();
 }
 
 

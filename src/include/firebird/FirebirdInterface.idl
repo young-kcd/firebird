@@ -347,9 +347,13 @@ interface Blob : ReferenceCounted
 
 	void putSegment(Status status, uint length,
 									const void* buffer);
+	void cancel_1(Status status);
+	void close_1(Status status);
+	int seek(Status status, int mode, int offset);			// returns position
+
+version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
 	void cancel(Status status);
 	void close(Status status);
-	int seek(Status status, int mode, int offset);			// returns position
 }
 
 interface Transaction : ReferenceCounted
@@ -359,14 +363,19 @@ interface Transaction : ReferenceCounted
 						 uint bufferLength, uchar* buffer);
 	void prepare(Status status,
 						 uint msgLength, const uchar* message);
-	void commit(Status status);
+	void commit_1(Status status);
 	void commitRetaining(Status status);
-	void rollback(Status status);
+	void rollback_1(Status status);
 	void rollbackRetaining(Status status);
-	void disconnect(Status status);
+	void disconnect_1(Status status);
 	Transaction join(Status status, Transaction transaction);
 	Transaction validate(Status status, Attachment attachment);
 	Transaction enterDtc(Status status);
+
+version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	void commit(Status status);
+	void rollback(Status status);
+	void disconnect(Status status);
 }
 
 interface MessageMetadata : ReferenceCounted
@@ -426,12 +435,15 @@ interface ResultSet : ReferenceCounted
 	boolean isEof(Status status);
 	boolean isBof(Status status);
 	MessageMetadata getMetadata(Status status);
-	void close(Status status);
+	void close_1(Status status);
 
 	// This item is for ISC API emulation only
 	// It may be gone in future versions
 	// Please do not use it!
 	void setDelayedOutputFormat(Status status, MessageMetadata format);
+
+version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	void close(Status status);
 }
 
 interface Statement : ReferenceCounted
@@ -472,7 +484,7 @@ interface Statement : ReferenceCounted
 	ResultSet openCursor(Status status, Transaction transaction,
 		MessageMetadata inMetadata, void* inBuffer, MessageMetadata outMetadata, uint flags);
 	void setCursorName(Status status, const string name);
-	void free(Status status);
+	void free_1(Status status);
 	uint getFlags(Status status);
 
 version:	// 3.0 => 4.0
@@ -487,6 +499,9 @@ version:	// 3.0 => 4.0
 	Pipe createPipe(Status status, Transaction transaction, MessageMetadata inMetadata,
 		void* inBuffer, MessageMetadata outMetadata, uint parLength, const uchar* par);
 	*/
+
+version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	void free(Status status);
 }
 
 interface Batch : ReferenceCounted
@@ -516,6 +531,9 @@ interface Batch : ReferenceCounted
 	uint getBlobAlignment(Status status);
 	MessageMetadata getMetadata(Status status);
 	void setDefaultBpb(Status status, uint parLength, const uchar* par);
+	void close_1(Status status);
+
+version:	// 4.0.0 => 4.0.1
 	void close(Status status);
 }
 
@@ -554,6 +572,9 @@ interface Replicator : ReferenceCounted
 	void process(Status status, ReplicationBatch batch);
 */
 	void process(Status status, uint length, const uchar* data);
+	void close_1(Status status);
+
+version:	// 4.0.0 => 4.0.1
 	void close(Status status);
 }
 
@@ -570,11 +591,17 @@ interface Request : ReferenceCounted
 	void startAndSend(Status status, Transaction tra, int level, uint msgType,
 							  uint length, const void* message);
 	void unwind(Status status, int level);
+	void free_1(Status status);
+
+version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
 	void free(Status status);
 }
 
 interface Events : ReferenceCounted
 {
+	void cancel_1(Status status);
+
+version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
 	void cancel(Status status);
 }
 
@@ -620,8 +647,8 @@ interface Attachment : ReferenceCounted
 						   uint length, const uchar* events);
 	void cancelOperation(Status status, int option);
 	void ping(Status status);
-	void detach(Status status);
-	void dropDatabase(Status status);
+	void detach_1(Status status);
+	void dropDatabase_1(Status status);
 
 version:	// 3.0 => 4.0
 	// Idle attachment timeout, seconds
@@ -643,17 +670,24 @@ version:	// 3.0 => 4.0
 	*/
 
 	Replicator createReplicator(Status status);
+
+version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	void detach(Status status);
+	void dropDatabase(Status status);
 }
 
 interface Service : ReferenceCounted
 {
-	void detach(Status status);
+	void detach_1(Status status);
 	void query(Status status,
 					   uint sendLength, const uchar* sendItems,
 					   uint receiveLength, const uchar* receiveItems,
 					   uint bufferLength, uchar* buffer);
 	void start(Status status,
 					   uint spbLength, const uchar* spb);
+
+version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	void detach(Status status);
 }
 
 interface Provider : PluginBase

@@ -63,6 +63,8 @@ public:
 	void cancel(Firebird::CheckStatusWrapper* status) override;
 	void close(Firebird::CheckStatusWrapper* status) override;
 	int seek(Firebird::CheckStatusWrapper* status, int mode, int offset) override;			// returns position
+	void cancel_1(Firebird::CheckStatusWrapper* status) override;
+	void close_1(Firebird::CheckStatusWrapper* status) override;
 
 public:
 	JBlob(blb* handle, StableAttachmentPart* sa);
@@ -108,6 +110,9 @@ public:
 	Firebird::ITransaction* join(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction) override;
 	JTransaction* validate(Firebird::CheckStatusWrapper* status, Firebird::IAttachment* testAtt) override;
 	JTransaction* enterDtc(Firebird::CheckStatusWrapper* status) override;
+	void commit_1(Firebird::CheckStatusWrapper* status) override;
+	void rollback_1(Firebird::CheckStatusWrapper* status) override;
+	void disconnect_1(Firebird::CheckStatusWrapper* status) override;
 
 public:
 	JTransaction(jrd_tra* handle, StableAttachmentPart* sa);
@@ -158,6 +163,7 @@ public:
 	FB_BOOLEAN isBof(Firebird::CheckStatusWrapper* status) override;
 	Firebird::IMessageMetadata* getMetadata(Firebird::CheckStatusWrapper* status) override;
 	void close(Firebird::CheckStatusWrapper* status) override;
+	void close_1(Firebird::CheckStatusWrapper* status) override;
 	void setDelayedOutputFormat(Firebird::CheckStatusWrapper* status, Firebird::IMessageMetadata* format) override;
 
 public:
@@ -202,6 +208,7 @@ public:
 	Firebird::IMessageMetadata* getMetadata(Firebird::CheckStatusWrapper* status) override;
 	void setDefaultBpb(Firebird::CheckStatusWrapper* status, unsigned parLength, const unsigned char* par) override;
 	void close(Firebird::CheckStatusWrapper* status) override;
+	void close_1(Firebird::CheckStatusWrapper* status) override;
 
 public:
 	JBatch(DsqlBatch* handle, JStatement* aStatement, Firebird::IMessageMetadata* aMetadata);
@@ -234,6 +241,7 @@ public:
 	int release() override;
 	void process(Firebird::CheckStatusWrapper* status, unsigned length, const unsigned char* data) override;
 	void close(Firebird::CheckStatusWrapper* status) override;
+	void close_1(Firebird::CheckStatusWrapper* status) override;
 
 public:
 	JReplicator(Applier* appl, StableAttachmentPart* sa);
@@ -270,6 +278,7 @@ public:
 		unsigned int itemsLength, const unsigned char* items,
 		unsigned int bufferLength, unsigned char* buffer) override;
 	void free(Firebird::CheckStatusWrapper* status) override;
+	void free_1(Firebird::CheckStatusWrapper* status) override;
 	ISC_UINT64 getAffectedRecords(Firebird::CheckStatusWrapper* userStatus) override;
 	Firebird::IMessageMetadata* getOutputMetadata(Firebird::CheckStatusWrapper* userStatus) override;
 	Firebird::IMessageMetadata* getInputMetadata(Firebird::CheckStatusWrapper* userStatus) override;
@@ -328,6 +337,7 @@ public:
 		unsigned int msg_type, unsigned int length, const void* message) override;
 	void unwind(Firebird::CheckStatusWrapper* status, int level) override;
 	void free(Firebird::CheckStatusWrapper* status) override;
+	void free_1(Firebird::CheckStatusWrapper* status) override;
 
 public:
 	JRequest(JrdStatement* handle, StableAttachmentPart* sa);
@@ -355,6 +365,7 @@ public:
 	// IEvents implementation
 	int release() override;
 	void cancel(Firebird::CheckStatusWrapper* status) override;
+	void cancel_1(Firebird::CheckStatusWrapper* status) override;
 
 public:
 	JEvents(int aId, StableAttachmentPart* sa, Firebird::IEventCallback* aCallback);
@@ -428,6 +439,8 @@ public:
 	void ping(Firebird::CheckStatusWrapper* status) override;
 	void detach(Firebird::CheckStatusWrapper* status) override;
 	void dropDatabase(Firebird::CheckStatusWrapper* status) override;
+	void detach_1(Firebird::CheckStatusWrapper* status) override;
+	void dropDatabase_1(Firebird::CheckStatusWrapper* status) override;
 
 	unsigned int getIdleTimeout(Firebird::CheckStatusWrapper* status) override;
 	void setIdleTimeout(Firebird::CheckStatusWrapper* status, unsigned int timeOut) override;
@@ -477,6 +490,7 @@ public:
 	// IService implementation
 	int release() override;
 	void detach(Firebird::CheckStatusWrapper* status) override;
+	void detach_1(Firebird::CheckStatusWrapper* status) override;
 	void query(Firebird::CheckStatusWrapper* status,
 		unsigned int sendLength, const unsigned char* sendItems,
 		unsigned int receiveLength, const unsigned char* receiveItems,
