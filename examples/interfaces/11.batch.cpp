@@ -134,7 +134,7 @@ static void print_cs(ThrowStatusWrapper& status, IBatchCompletionState* cs, IUti
 		case IBatchCompletionState::EXECUTE_FAILED:
 			if (!pr1)
 			{
-				printf("Message Status\n", p);
+				printf("Message Status\n");
 				pr1 = true;
 			}
 			printf("%5u   Execute failed\n", p);
@@ -147,7 +147,7 @@ static void print_cs(ThrowStatusWrapper& status, IBatchCompletionState* cs, IUti
 		default:
 			if (!pr1)
 			{
-				printf("Message Status\n", p);
+				printf("Message Status\n");
 				pr1 = true;
 			}
 			printf("%5u   Updated %d record(s)\n", p, s);
@@ -157,7 +157,7 @@ static void print_cs(ThrowStatusWrapper& status, IBatchCompletionState* cs, IUti
 	}
 	printf("Summary: total=%u success=%u success(but no update info)=%u\n", upcount, succ, unk);
 
-	// 2. Print detailed errors (if exist) for messages 
+	// 2. Print detailed errors (if exist) for messages
 
 	s2 = master->getStatus();
 	for(p = 0; (p = cs->findError(&status, p)) != IBatchCompletionState::NO_MORE_ERRORS; ++p)
@@ -171,7 +171,7 @@ static void print_cs(ThrowStatusWrapper& status, IBatchCompletionState* cs, IUti
 			text[sizeof(text) - 1] = 0;
 			if (!pr2)
 			{
-				printf("\nDetailed errors status:\n", p);
+				printf("\nDetailed errors status:\n");
 				pr2 = true;
 			}
 			printf("Message %u: %s\n", p, text);
