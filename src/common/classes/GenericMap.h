@@ -31,7 +31,9 @@
 
 #include "../common/classes/fb_string.h"
 #include "../common/classes/fb_pair.h"
+#include "../common/classes/rwlock.h"
 #include "../common/classes/tree.h"
+#include <functional>
 
 namespace Firebird {
 
@@ -317,6 +319,48 @@ public:
 	ConstIterator end() const
 	{
 		return ConstIterator(this, true);
+	}
+
+	ValueType& compute(RWLock& lock, const KeyType& key, std::function<void (const KeyType&, ValueType&, bool)> func)
+	{
+		{	// scope
+			ReadLockGuard sync(lock, FB_FUNCTION);
+
+			const auto value = get(key);
+
+			if (value)
+			{
+				func(key, *value, true);
+				return *value;
+			}
+		}
+
+		{	// scope
+			WriteLockGuard sync(lock, FB_FUNCTION);
+
+			auto value = get(key);
+
+			if (value)
+			{
+				func(key, *value, true);
+				return *value;
+			}
+
+			value = put(key);
+			fb_assert(value);
+
+			try
+			{
+				func(key, *value, false);
+			}
+			catch (...)
+			{
+				remove(key);
+				throw;
+			}
+
+			return *value;
+		}
 	}
 
 private:
