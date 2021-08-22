@@ -104,6 +104,12 @@ public:
 		: ptr(v)
 	{}
 
+	AutoPtr(AutoPtr&& v)
+		: ptr(v.ptr)
+	{
+		v.ptr = nullptr;
+	}
+
 	~AutoPtr()
 	{
 		Clear<Where>::clear(ptr);
@@ -113,6 +119,17 @@ public:
 	{
 		Clear<Where>::clear(ptr);
 		ptr = v;
+		return *this;
+	}
+
+	AutoPtr& operator=(AutoPtr&& r)
+	{
+		if (this != &r)
+		{
+			ptr = r.ptr;
+			r.ptr = nullptr;
+		}
+
 		return *this;
 	}
 
