@@ -5773,7 +5773,7 @@ dsc* evlRand(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	tdbb->getAttachment()->att_random_generator.getBytes(&n, sizeof(n));
 	n &= QUADCONST(0x7FFFFFFFFFFFFFFF);	// remove the sign
 
-	impure->vlu_misc.vlu_double = (double) n / MAX_SINT64;
+	impure->vlu_misc.vlu_double = (double) n / (double) MAX_SINT64;
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
 
 	return &impure->vlu_desc;
