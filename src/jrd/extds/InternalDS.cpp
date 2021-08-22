@@ -382,7 +382,8 @@ void InternalTransaction::doCommit(FbStatusVector* status, thread_db* tdbb, bool
 		else
 		{
 			m_transaction->commit(&s);
-			m_transaction.clear();
+			if (!(s->getState() & IStatus::STATE_ERRORS))
+				m_transaction.clear();
 		}
 	}
 }
@@ -413,7 +414,8 @@ void InternalTransaction::doRollback(FbStatusVector* status, thread_db* tdbb, bo
 		else
 		{
 			m_transaction->rollback(&s);
-			m_transaction.clear();
+			if (!(s->getState() & IStatus::STATE_ERRORS))
+				m_transaction.clear();
 		}
 	}
 
