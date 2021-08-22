@@ -241,6 +241,12 @@ namespace Firebird
 	};
 
 	template <typename T>
+	RefPtr<T> makeRef(T* o)
+	{
+		return RefPtr<T>(o);
+	}
+
+	template <typename T>
 	RefPtr<T> makeNoIncRef(T* arg)
 	{
 		return RefPtr<T>(REF_NO_INCR, arg);
