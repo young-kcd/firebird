@@ -115,6 +115,12 @@ namespace Firebird
 			}
 		}
 
+		RefPtr(RefPtr&& r)
+			: ptr(r.ptr)
+		{
+			r.ptr = nullptr;
+		}
+
 		~RefPtr()
 		{
 			if (ptr)
@@ -132,9 +138,12 @@ namespace Firebird
 
 		void moveFrom(RefPtr& r)
 		{
-			assign(NULL);
-			ptr = r.ptr;
-			r.ptr = NULL;
+			if (this != &r)
+			{
+				assign(nullptr);
+				ptr = r.ptr;
+				r.ptr = nullptr;
+			}
 		}
 
 		T* clear()		// nullify pointer w/o calling release
@@ -152,6 +161,12 @@ namespace Firebird
 		T* operator=(const RefPtr& r)
 		{
 			return assign(r.ptr);
+		}
+
+		T* operator=(RefPtr&& r)
+		{
+			moveFrom(r);
+			return ptr;
 		}
 
 		operator T*()
