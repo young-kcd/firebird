@@ -693,11 +693,12 @@ const unsigned RSA_CRYPT_ARG_VALUE = 0;
 const unsigned RSA_CRYPT_ARG_KEY = 1;
 const unsigned RSA_CRYPT_ARG_LPARAM = 2;
 const unsigned RSA_CRYPT_ARG_HASH = 3;
-const unsigned RSA_CRYPT_ARG_MAX = 4;
+const unsigned RSA_CRYPT_ARG_PKCS_1_5 = 4;
+const unsigned RSA_CRYPT_ARG_MAX = 5;
 
 void setParamsRsaEncrypt(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
 {
-	fb_assert(argsCount == RSA_CRYPT_ARG_MAX);
+	fb_assert(argsCount == RSA_CRYPT_ARG_MAX || argsCount == RSA_CRYPT_ARG_MAX - 1);
 
 	setParamVarying(args[RSA_CRYPT_ARG_VALUE], ttype_binary);
 	setParamVarying(args[RSA_CRYPT_ARG_KEY], ttype_binary);
@@ -707,6 +708,9 @@ void setParamsRsaEncrypt(DataTypeUtilBase*, const SysFunction*, int argsCount, d
 
 	if (args[RSA_CRYPT_ARG_HASH]->dsc_length)
 		args[RSA_CRYPT_ARG_HASH]->makeVarying(args[RSA_CRYPT_ARG_HASH]->getStringLength(), ttype_binary);
+
+	if (argsCount == RSA_CRYPT_ARG_MAX)
+		args[RSA_CRYPT_ARG_PKCS_1_5]->makeShort(0);
 }
 
 
@@ -714,11 +718,12 @@ const unsigned RSA_SIGN_ARG_VALUE = 0;
 const unsigned RSA_SIGN_ARG_KEY = 1;
 const unsigned RSA_SIGN_ARG_HASH = 2;
 const unsigned RSA_SIGN_ARG_SALTLEN = 3;
-const unsigned RSA_SIGN_ARG_MAX = 4;
+const unsigned RSA_SIGN_ARG_PKCS_1_5 = 4;
+const unsigned RSA_SIGN_ARG_MAX = 5;
 
 void setParamsRsaSign(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
 {
-	fb_assert(argsCount == RSA_SIGN_ARG_MAX);
+	fb_assert(argsCount == RSA_SIGN_ARG_MAX || argsCount == RSA_SIGN_ARG_MAX - 1);
 
 	setParamVarying(args[RSA_SIGN_ARG_VALUE], ttype_binary);
 	setParamVarying(args[RSA_SIGN_ARG_KEY], ttype_binary);
@@ -728,6 +733,9 @@ void setParamsRsaSign(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc*
 
 	if (args[RSA_SIGN_ARG_SALTLEN]->dsc_length)
 		args[RSA_SIGN_ARG_SALTLEN]->makeShort(0);
+
+	if (argsCount == RSA_SIGN_ARG_MAX)
+		args[RSA_SIGN_ARG_PKCS_1_5]->makeShort(0);
 }
 
 
@@ -736,11 +744,12 @@ const unsigned RSA_VERIFY_ARG_SIGNATURE = 1;
 const unsigned RSA_VERIFY_ARG_KEY = 2;
 const unsigned RSA_VERIFY_ARG_HASH = 3;
 const unsigned RSA_VERIFY_ARG_SALTLEN = 4;
-const unsigned RSA_VERIFY_ARG_MAX = 5;
+const unsigned RSA_VERIFY_ARG_PKCS_1_5 = 5;
+const unsigned RSA_VERIFY_ARG_MAX = 6;
 
 void setParamsRsaVerify(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
 {
-	fb_assert(argsCount == RSA_VERIFY_ARG_MAX);
+	fb_assert(argsCount == RSA_VERIFY_ARG_MAX || argsCount == RSA_VERIFY_ARG_MAX - 1);
 
 	setParamVarying(args[RSA_VERIFY_ARG_VALUE], ttype_binary);
 	setParamVarying(args[RSA_VERIFY_ARG_KEY], ttype_binary);
@@ -751,6 +760,9 @@ void setParamsRsaVerify(DataTypeUtilBase*, const SysFunction*, int argsCount, ds
 
 	if (args[RSA_VERIFY_ARG_SALTLEN]->dsc_length)
 		args[RSA_VERIFY_ARG_SALTLEN]->makeShort(0);
+
+	if (argsCount == RSA_VERIFY_ARG_MAX)
+		args[RSA_VERIFY_ARG_PKCS_1_5]->makeShort(0);
 }
 
 
@@ -1453,7 +1465,7 @@ void makeCrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc*
 void makeRsaCrypt(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
 	int argsCount, const dsc** args)
 {
-	fb_assert(argsCount == RSA_CRYPT_ARG_MAX);
+	fb_assert(argsCount == RSA_CRYPT_ARG_MAX || argsCount == RSA_CRYPT_ARG_MAX - 1);
 
 	result->makeVarying(256, ttype_binary);
 	result->setNullable(args[0]->isNullable());
@@ -3443,14 +3455,15 @@ dsc* evlRsaEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const Ne
 {
 	tomcryptInitializer();
 
-	fb_assert(args.getCount() == RSA_CRYPT_ARG_MAX);
+	fb_assert(args.getCount() == RSA_CRYPT_ARG_MAX || args.getCount() == RSA_CRYPT_ARG_MAX - 1);
 
 	jrd_req* request = tdbb->getRequest();
 
 	// parse args and check correctness
 	const dsc* dscs[RSA_CRYPT_ARG_MAX];
-	for (unsigned i = 0; i < RSA_CRYPT_ARG_MAX; ++i)
+	for (unsigned i = 0; i < args.getCount(); ++i)
 		dscs[i] = EVL_expr(tdbb, request, args[i]);
+	SSHORT pkcs15 = args.getCount() < RSA_CRYPT_ARG_MAX ? 0 : *(SSHORT*)(dscs[RSA_CRYPT_ARG_PKCS_1_5]->dsc_address);
 
 	MetaName hashName;
 	if (dscs[RSA_CRYPT_ARG_HASH])
@@ -3481,10 +3494,12 @@ dsc* evlRsaEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const Ne
 	UCharBuffer outBuf;
 	int stat = 0;
 	int cryptRc = encryptFlag ?
-		rsa_encrypt_key(data.getBytes(), data.getLength(), outBuf.getBuffer(outlen), &outlen,
-			lParam.getBytes(), lParam.getLength(), prng().getState(), prng().getIndex(), hash, &rsaKey) :
-		rsa_decrypt_key(data.getBytes(), data.getLength(), outBuf.getBuffer(outlen), &outlen,
-			lParam.getBytes(), lParam.getLength(), hash, &stat, &rsaKey);
+		rsa_encrypt_key_ex(data.getBytes(), data.getLength(), outBuf.getBuffer(outlen), &outlen,
+			lParam.getBytes(), lParam.getLength(), prng().getState(), prng().getIndex(), hash,
+			pkcs15 ? LTC_PKCS_1_V1_5 : LTC_PKCS_1_OAEP, &rsaKey) :
+		rsa_decrypt_key_ex(data.getBytes(), data.getLength(), outBuf.getBuffer(outlen), &outlen,
+			lParam.getBytes(), lParam.getLength(), hash,
+			pkcs15 ? LTC_PKCS_1_V1_5 : LTC_PKCS_1_OAEP, &stat, &rsaKey);
 	rsa_free(&rsaKey);
 	tomCheck(cryptRc, Arg::Gds(encryptFlag ? isc_tom_crypt_cip : isc_tom_decrypt_cip) << "RSA");
 	if ((!encryptFlag) && (!stat))
@@ -3570,14 +3585,16 @@ dsc* evlRsaSign(thread_db* tdbb, const SysFunction* function, const NestValueArr
 {
 	tomcryptInitializer();
 
-	fb_assert(args.getCount() == RSA_SIGN_ARG_MAX);
+	fb_assert(args.getCount() == RSA_SIGN_ARG_MAX || args.getCount() == RSA_SIGN_ARG_MAX - 1);
 
 	jrd_req* request = tdbb->getRequest();
 
 	// parse args and check correctness
 	const dsc* dscs[RSA_SIGN_ARG_MAX];
-	for (unsigned i = 0; i < RSA_SIGN_ARG_MAX; ++i)
+	for (unsigned i = 0; i < args.getCount(); ++i)
 		dscs[i] = EVL_expr(tdbb, request, args[i]);
+
+	SSHORT pkcs15 = args.getCount() < RSA_SIGN_ARG_MAX ? 0 : *(SSHORT*)(dscs[RSA_SIGN_ARG_PKCS_1_5]->dsc_address);
 
 	MetaName hashName;
 	if (dscs[RSA_SIGN_ARG_HASH])
@@ -3610,8 +3627,8 @@ dsc* evlRsaSign(thread_db* tdbb, const SysFunction* function, const NestValueArr
 
 	unsigned long signLen = 1024;
 	UCharBuffer sign;
-	int cryptRc = rsa_sign_hash(data.getBytes(), data.getLength(), sign.getBuffer(signLen), &signLen,
-		prng().getState(), prng().getIndex(), hash, saltLength, &rsaKey);
+	int cryptRc = rsa_sign_hash_ex(data.getBytes(), data.getLength(), sign.getBuffer(signLen), &signLen,
+		pkcs15 ? LTC_PKCS_1_V1_5 : LTC_PKCS_1_PSS, prng().getState(), prng().getIndex(), hash, saltLength, &rsaKey);
 	rsa_free(&rsaKey);
 	tomCheck(cryptRc, Arg::Gds(isc_tom_rsa_sign));
 
@@ -3637,14 +3654,15 @@ dsc* evlRsaVerify(thread_db* tdbb, const SysFunction* function, const NestValueA
 {
 	tomcryptInitializer();
 
-	fb_assert(args.getCount() == RSA_VERIFY_ARG_MAX);
+	fb_assert(args.getCount() == RSA_VERIFY_ARG_MAX || args.getCount() == RSA_VERIFY_ARG_MAX - 1);
 
 	jrd_req* request = tdbb->getRequest();
 
 	// parse args and check correctness
 	const dsc* dscs[RSA_VERIFY_ARG_MAX];
-	for (unsigned i = 0; i < RSA_VERIFY_ARG_MAX; ++i)
+	for (unsigned i = 0; i < args.getCount(); ++i)
 		dscs[i] = EVL_expr(tdbb, request, args[i]);
+	SSHORT pkcs15 = args.getCount() < RSA_VERIFY_ARG_MAX ? 0 : *(SSHORT*)(dscs[RSA_VERIFY_ARG_PKCS_1_5]->dsc_address);
 
 	MetaName hashName;
 	if (dscs[RSA_VERIFY_ARG_HASH])
@@ -3680,8 +3698,8 @@ dsc* evlRsaVerify(thread_db* tdbb, const SysFunction* function, const NestValueA
 	}
 
 	int state = 0;
-	int cryptRc = rsa_verify_hash(sign.getBytes(), sign.getLength(), data.getBytes(), data.getLength(),
-		hash, saltLength, &state, &rsaKey);
+	int cryptRc = rsa_verify_hash_ex(sign.getBytes(), sign.getLength(), data.getBytes(), data.getLength(),
+		pkcs15 ? LTC_PKCS_1_V1_5 : LTC_PKCS_1_PSS, hash, saltLength, &state, &rsaKey);
 	rsa_free(&rsaKey);
 	if (cryptRc != CRYPT_INVALID_PACKET)
 		tomCheck(cryptRc, Arg::Gds(isc_tom_rsa_verify));
@@ -6444,8 +6462,8 @@ const SysFunction SysFunction::functions[] =
 		{"CRYPT_HASH", 2, 2, setParamsHash, makeHash, evlHash, NULL},
 		{"DATEADD", 3, 3, setParamsDateAdd, makeDateAdd, evlDateAdd, NULL},
 		{"DATEDIFF", 3, 3, setParamsDateDiff, makeInt64Result, evlDateDiff, NULL},
-		{"DECRYPT", 7, 7, setParamsEncrypt, makeCrypt, evlDecrypt, NULL},
-		{"ENCRYPT", 7, 7, setParamsEncrypt, makeCrypt, evlEncrypt, NULL},
+		{"DECRYPT", CRYPT_ARG_MAX, CRYPT_ARG_MAX, setParamsEncrypt, makeCrypt, evlDecrypt, NULL},
+		{"ENCRYPT", CRYPT_ARG_MAX, CRYPT_ARG_MAX, setParamsEncrypt, makeCrypt, evlEncrypt, NULL},
 		{"EXP", 1, 1, setParamsDblDec, makeDblDecResult, evlExp, NULL},
 		{"FIRST_DAY", 2, 2, setParamsFirstLastDay, makeFirstLastDayResult, evlFirstLastDay, (void*) funFirstDay},
 		{"FLOOR", 1, 1, setParamsDblDec, makeCeilFloor, evlFloor, NULL},
@@ -6480,12 +6498,12 @@ const SysFunction SysFunction::functions[] =
 		{"RIGHT", 2, 2, setParamsSecondInteger, makeLeftRight, evlRight, NULL},
 		{"ROUND", 1, 2, setParamsRoundTrunc, makeRound, evlRound, NULL},
 		{"RPAD", 2, 3, setParamsSecondInteger, makePad, evlPad, (void*) funRPad},
-		{"RSA_DECRYPT", 4, 4, setParamsRsaEncrypt, makeRsaCrypt, evlRsaDecrypt, NULL},
-		{"RSA_ENCRYPT", 4, 4, setParamsRsaEncrypt, makeRsaCrypt, evlRsaEncrypt, NULL},
+		{"RSA_DECRYPT", RSA_CRYPT_ARG_MAX, RSA_CRYPT_ARG_MAX, setParamsRsaEncrypt, makeRsaCrypt, evlRsaDecrypt, NULL},
+		{"RSA_ENCRYPT", RSA_CRYPT_ARG_MAX, RSA_CRYPT_ARG_MAX, setParamsRsaEncrypt, makeRsaCrypt, evlRsaEncrypt, NULL},
 		{"RSA_PRIVATE", 1, 1, setParamsInteger, makeRsaPrivate, evlRsaPrivate, NULL},
 		{"RSA_PUBLIC", 1, 1, setParamsRsaPublic, makeRsaPublic, evlRsaPublic, NULL},
-		{"RSA_SIGN_HASH", 4, 4, setParamsRsaSign, makeRsaSign, evlRsaSign, NULL},
-		{"RSA_VERIFY_HASH", 5, 5, setParamsRsaVerify, makeBoolResult, evlRsaVerify, NULL},
+		{"RSA_SIGN_HASH", RSA_SIGN_ARG_MAX, RSA_SIGN_ARG_MAX, setParamsRsaSign, makeRsaSign, evlRsaSign, NULL},
+		{"RSA_VERIFY_HASH", RSA_VERIFY_ARG_MAX, RSA_VERIFY_ARG_MAX, setParamsRsaVerify, makeBoolResult, evlRsaVerify, NULL},
 		{"SIGN", 1, 1, setParamsDblDec, makeShortResult, evlSign, NULL},
 		{"SIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfSin},
 		{"SINH", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfSinh},

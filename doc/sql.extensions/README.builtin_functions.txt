@@ -1069,11 +1069,13 @@ Function:
     short symmetric keys which are then used in block ciphers to encrypt a message.
 
 Format:
-    RSA_ENCRYPT ( <string> KEY <public key> [LPARAM <string>] [HASH <hash>] )
+    RSA_ENCRYPT ( <string> KEY <public key> [LPARAM <string>] [HASH <hash>] [PKCS_1_5] )
         KEY should be a value, returhed by RSA_PUBLIC function.
         LPARAM is an additional system specific tag that can be applied to identify which
             system encoded the message. Default value is NULL.
         hash ::= { MD5 | SHA1 | SHA256 | SHA512 } Default is SHA256.
+        PKCS_1_5 makes engine use old padding, needed for backward compatibility.
+            Due to security reasons should NOT be used in new projects.
 
 Example:
     (tip - start running samples one by one from RSA_PRIVATE function)
@@ -1089,11 +1091,13 @@ Function:
     Decrypts using RSA private key and OAEP de-pads the resulting data.
 
 Format:
-    RSA_DECRYPT ( <string> KEY <private key> [LPARAM <string>] [HASH <hash>] )
+    RSA_DECRYPT ( <string> KEY <private key> [LPARAM <string>] [HASH <hash>] [PKCS_1_5] )
         KEY should be a value, returhed by RSA_PRIVATE function.
         LPARAM is the same variable passed to RSA_ENCRYPT. If it does not match
           what was used during encoding this function will not decrypt the packet.
         hash ::= { MD5 | SHA1 | SHA256 | SHA512 } Default is SHA256.
+        PKCS_1_5 makes engine use old padding, needed for backward compatibility.
+            Due to security reasons should NOT be used in new projects.
 
 Example:
     (tip - start running samples one by one from RSA_PRIVATE function)
@@ -1109,11 +1113,12 @@ Function:
     Performs PSS encoding of message digest to be signed and signs using RSA private key.
 
 Format:
-    RSA_SIGN_HASH ( <string> KEY <private key> [HASH <hash>] [SALT_LENGTH <smallint>] )
+    RSA_SIGN_HASH ( <string> KEY <private key> [HASH <hash>] [SALT_LENGTH <smallint>] [PKCS_1_5] )
         KEY should be a value, returhed by RSA_PRIVATE function.
         hash ::= { MD5 | SHA1 | SHA256 | SHA512 } Default is SHA256.
         SALT_LENGTH indicates the length of the desired salt, and should typically be small.
             A good value is between 8 and 16.
+        PKCS_1_5 makes engine use old padding, needed for backward compatibility.
 
 Example:
     (tip - start running samples one by one from RSA_PRIVATE function)
@@ -1130,12 +1135,13 @@ Function:
         using RSA public key.
 
 Format:
-    RSA_VERIFY_HASH ( <string> SIGNATURE <string> KEY <public key> [HASH <hash>] [SALT_LENGTH <smallint>] )
+    RSA_VERIFY_HASH ( <string> SIGNATURE <string> KEY <public key> [HASH <hash>] [SALT_LENGTH <smallint>] [PKCS_1_5] )
         SIGNATURE should be a value, returhed by RSA_SIGN function.
         KEY should be a value, returhed by RSA_PUBLIC function.
         hash ::= { MD5 | SHA1 | SHA256 | SHA512 } Default is SHA256.
         SALT_LENGTH indicates the length of the desired salt, and should typically be small.
             A good value is between 8 and 16.
+        PKCS_1_5 makes engine use old padding, needed for backward compatibility.
 
 Example:
     (tip - start running samples one by one from RSA_PRIVATE function)
