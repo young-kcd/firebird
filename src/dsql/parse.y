@@ -680,6 +680,7 @@ using namespace Firebird;
 // tokens added for Firebird 4.0.1
 
 %token <metaNamePtr> DEBUG
+%token <metaNamePtr> PKCS_1_5
 
 // tokens added for Firebird 5.0
 
@@ -8260,25 +8261,25 @@ system_function_special_syntax
 		}
 	| POSITION '(' value_list_opt  ')'
 		{ $$ = newNode<SysFuncCallNode>(*$1, $3); }
-	| rsa_encrypt_decrypt '(' value KEY value crypt_opt_lparam crypt_opt_hash ')'
+	| rsa_encrypt_decrypt '(' value KEY value crypt_opt_lparam crypt_opt_hash crypt_opt_pkcs')'
 		{
 			$$ = newNode<SysFuncCallNode>(*$1,
 				newNode<ValueListNode>($3)->add($5)->add($6)->
-					add(MAKE_str_constant(newIntlString($7->c_str()), CS_ASCII)));
+					add(MAKE_str_constant(newIntlString($7->c_str()), CS_ASCII))->add($8));
 			$$->dsqlSpecialSyntax = true;
 		}
-	| RSA_SIGN_HASH '(' value KEY value crypt_opt_hash crypt_opt_saltlen ')'
+	| RSA_SIGN_HASH '(' value KEY value crypt_opt_hash crypt_opt_saltlen crypt_opt_pkcs ')'
 		{
 			$$ = newNode<SysFuncCallNode>(*$1,
 				newNode<ValueListNode>($3)->add($5)->
-					add(MAKE_str_constant(newIntlString($6->c_str()), CS_ASCII))->add($7));
+					add(MAKE_str_constant(newIntlString($6->c_str()), CS_ASCII))->add($7)->add($8));
 			$$->dsqlSpecialSyntax = true;
 		}
-	| RSA_VERIFY_HASH '(' value SIGNATURE value KEY value crypt_opt_hash crypt_opt_saltlen ')'
+	| RSA_VERIFY_HASH '(' value SIGNATURE value KEY value crypt_opt_hash crypt_opt_saltlen crypt_opt_pkcs ')'
 		{
 			$$ = newNode<SysFuncCallNode>(*$1,
 				newNode<ValueListNode>($3)->add($5)->add($7)->
-					add(MAKE_str_constant(newIntlString($8->c_str()), CS_ASCII))->add($9));
+					add(MAKE_str_constant(newIntlString($8->c_str()), CS_ASCII))->add($9)->add($10));
 			$$->dsqlSpecialSyntax = true;
 		}
 	| RDB_SYSTEM_PRIVILEGE '(' valid_symbol_name ')'
@@ -8304,6 +8305,14 @@ crypt_opt_lparam
 		{ $$ = MAKE_str_constant(newIntlString(""), CS_ASCII); }
 	| LPARAM value
 		{ $$ = $2; }
+	;
+
+%type <valueExprNode> crypt_opt_pkcs
+crypt_opt_pkcs
+	: // nothing
+		{ $$ = MAKE_const_slong(0); }
+	| PKCS_1_5
+		{ $$ = MAKE_const_slong(1); }
 	;
 
 %type <metaNamePtr> crypt_opt_hash
@@ -9088,6 +9097,7 @@ non_reserved_word
 	| TRAPS
 	| ZONE
 	| DEBUG				// added in FB 4.0.1
+	| PKCS_1_5
 	| TIMEZONE_NAME		// added in FB 5.0
 	| UNICODE_CHAR
 	| UNICODE_VAL

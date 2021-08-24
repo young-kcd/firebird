@@ -358,6 +358,7 @@ static const TOK tokens[] =
 	{TOK_PASSWORD, "PASSWORD", true},
 	{TOK_PERCENT_RANK, "PERCENT_RANK", true},
 	{TOK_PI, "PI", true},
+	{TOK_PKCS_1_5, "PKCS_1_5", true},
 	{TOK_PLACING, "PLACING", true},
 	{TOK_PLAN, "PLAN", false},
 	{TOK_PLUGIN, "PLUGIN", true},
