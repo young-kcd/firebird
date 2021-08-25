@@ -1962,6 +1962,8 @@ C --
       PARAMETER (GDS__tom_key_length                   = 335545274)
       INTEGER*4 GDS__inf_invalid_args                
       PARAMETER (GDS__inf_invalid_args                 = 335545275)
+      INTEGER*4 GDS__sysf_invalid_null_empty         
+      PARAMETER (GDS__sysf_invalid_null_empty          = 335545276)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

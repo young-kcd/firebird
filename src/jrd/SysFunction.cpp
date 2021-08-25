@@ -2876,7 +2876,7 @@ public:
 		if (l == 0)
 		{
 			if (objectName)
-				(Arg::Gds(isc_tom_bad_param) << objectName).raise();
+				(Arg::Gds(isc_sysf_invalid_null_empty) << objectName).raise();
 
 			v = nullptr;
 		}
