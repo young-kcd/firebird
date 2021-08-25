@@ -1063,6 +1063,7 @@ Data source : @4', NULL, NULL)
 ('block_size', NULL, 'unix.cpp', NULL, 0, 953, NULL, 'File size is less than expected', NULL, NULL);
 ('tom_key_length', NULL, 'SysFunction.cpp', NULL, 0, 954, NULL, 'Invalid key length @1, need >@2', NULL, NULL);
 ('inf_invalid_args', NULL, NULL, NULL, 0, 955, NULL, 'Invalid information arguments', NULL, NULL);
+('tom_bad_param', NULL, 'SysFunction.cpp', NULL, 0, 956, NULL, 'Empty or NULL parameter @1 is not accepted', NULL, NULL);
 -- GFIX
 ('gfix_db_name', 'ALICE_gfix', 'alice.c', NULL, 3, 1, NULL, 'data base file name (@1) already given', NULL, NULL);
 ('gfix_invalid_sw', 'ALICE_gfix', 'alice.c', NULL, 3, 2, NULL, 'invalid switch @1', NULL, NULL);

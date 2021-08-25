@@ -2898,9 +2898,11 @@ private:
 class DscValue
 {
 public:
-	DscValue(thread_db* tdbb, const dsc* desc, bool forceNull = false)
+	DscValue(thread_db* tdbb, const dsc* desc, const char* objectName = nullptr)
 	{
-		if (desc->isBlob())
+		if (!desc)
+			l = 0;
+		else if (desc->isBlob())
 		{
 			AutoPtr<blb> b(blb::open(tdbb, tdbb->getRequest()->req_transaction, (bid*) desc->dsc_address));
 			if (b->blb_length > MAX_VARY_COLUMN_SIZE)
@@ -2913,8 +2915,13 @@ public:
 		else
 			v = CVT_get_bytes(desc, l);
 
-		if (forceNull && l == 0)
+		if (l == 0)
+		{
+			if (objectName)
+				(Arg::Gds(isc_tom_bad_param) << objectName).raise();
+
 			v = nullptr;
+		}
 	}
 
 	unsigned getLength() const
@@ -3021,7 +3028,7 @@ dsc* evlEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const NestV
 	else if (modeName.hasData())
 		status_exception::raise(Arg::Gds(isc_tom_no_mode));
 
-	DscValue key(tdbb, dscs[CRYPT_ARG_KEY]);
+	DscValue key(tdbb, dscs[CRYPT_ARG_KEY], "crypt key");
 
 	DscValue iv(tdbb, dscs[CRYPT_ARG_IV]);
 	if ((m && (m->code != MODE_ECB)) || (a && (a->code != ALG_RC4)))	// all other need IV
@@ -3503,11 +3510,11 @@ dsc* evlRsaEncryptDecrypt(thread_db* tdbb, const SysFunction* function, const Ne
 	if (!data.getBytes())
 		return nullptr;
 
-	DscValue key(tdbb, dscs[RSA_CRYPT_ARG_KEY]);
+	DscValue key(tdbb, dscs[RSA_CRYPT_ARG_KEY], "crypt key");
 	if (!key.getBytes())
 		return nullptr;
 
-	DscValue lParam(tdbb, dscs[RSA_CRYPT_ARG_LPARAM], true);
+	DscValue lParam(tdbb, dscs[RSA_CRYPT_ARG_LPARAM]);
 
 	// Run tomcrypt functions
 	rsa_key rsaKey;
@@ -3587,7 +3594,7 @@ dsc* evlRsaPublic(thread_db* tdbb, const SysFunction* function, const NestValueA
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	DscValue data(tdbb, value);
+	DscValue data(tdbb, value, "private key");
 	rsa_key rsaKey;
 	tomCheck(rsa_import(data.getBytes(), data.getLength(), &rsaKey), Arg::Gds(isc_tom_rsa_import));
 
@@ -3644,7 +3651,7 @@ dsc* evlRsaSign(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	if (!data.getBytes())
 		return nullptr;
 
-	DscValue key(tdbb, dscs[RSA_SIGN_ARG_KEY]);
+	DscValue key(tdbb, dscs[RSA_SIGN_ARG_KEY], "private key");
 	if (!key.getBytes())
 		return nullptr;
 	rsa_key rsaKey;
@@ -3716,7 +3723,7 @@ dsc* evlRsaVerify(thread_db* tdbb, const SysFunction* function, const NestValueA
 	if (!sign.getBytes())
 		return boolResult(tdbb, impure, false);
 
-	DscValue key(tdbb, dscs[RSA_VERIFY_ARG_KEY]);
+	DscValue key(tdbb, dscs[RSA_VERIFY_ARG_KEY], "public key");
 	if (!key.getBytes())
 		return boolResult(tdbb, impure, false);
 	rsa_key rsaKey;
