@@ -980,7 +980,7 @@ Data source : @4"},		/* eds_statement */
 	{335545273, "File size is less than expected"},		/* block_size */
 	{335545274, "Invalid key length @1, need >@2"},		/* tom_key_length */
 	{335545275, "Invalid information arguments"},		/* inf_invalid_args */
-	{335545276, "Empty or NULL parameter @1 is not accepted"},		/* tom_bad_param */
+	{335545276, "Empty or NULL parameter @1 is not accepted"},		/* sysf_invalid_null_empty */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */
