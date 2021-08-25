@@ -978,6 +978,7 @@ static const struct {
 	{"tom_key_length", 335545274},
 	{"inf_invalid_args", 335545275},
 	{"sysf_invalid_null_empty", 335545276},
+	{"bad_loctab_num", 335545277},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

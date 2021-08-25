@@ -1585,13 +1585,14 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	dsql_par* dsqlParameter;
+	dsql_msg* dsqlMessage = nullptr;
+	dsql_par* dsqlParameter = nullptr;
 	NestConst<MessageNode> message;
 	NestConst<ValueExprNode> argFlag;
 	NestConst<ValueExprNode> argIndicator;
 	NestConst<ItemInfo> argInfo;
-	USHORT dsqlParameterIndex;
-	USHORT argNumber;
+	USHORT dsqlParameterIndex = 0;
+	USHORT argNumber = 0;
 };
 
 

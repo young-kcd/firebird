@@ -548,6 +548,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	switch (statement->getType())
 	{
 	case DsqlCompiledStatement::TYPE_SELECT:
+	case DsqlCompiledStatement::TYPE_RETURNING_CURSOR:
 	case DsqlCompiledStatement::TYPE_SELECT_UPD:
 	case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
 		m_stmt_selectable = true;

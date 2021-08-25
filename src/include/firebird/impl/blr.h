@@ -451,4 +451,12 @@
 
 #define blr_marks					(unsigned char) 217		// mark some blr code with specific flags
 
+#define blr_dcl_local_table			(unsigned char) 218
+
+// subcodes of blr_dcl_local_table
+#define blr_dcl_local_table_format	(unsigned char) 1
+
+#define blr_local_table_truncate	(unsigned char) 219
+#define blr_local_table_id			(unsigned char) 220
+
 #endif // FIREBIRD_IMPL_BLR_H

@@ -180,7 +180,8 @@ namespace
 			if (relationNode->getKind() != DmlNode::KIND_REC_SOURCE)
 				PAR_syntax_error(csb, "TABLE");
 
-			RelationSourceNode* relationSource = nodeAs<RelationSourceNode>(
+			//// TODO: LocalTableSourceNode
+			auto relationSource = nodeAs<RelationSourceNode>(
 				static_cast<RecordSourceNode*>(relationNode));
 
 			if (!relationSource)
@@ -1011,6 +1012,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 		// in which case the base relation (and alias) must be specified
 
 		USHORT n = (unsigned int) csb->csb_blr_reader.getByte();
+		//// TODO: LocalTableSourceNode (blr_local_table_id)
 		if (n != blr_relation && n != blr_relation2 && n != blr_rid && n != blr_rid2)
 			PAR_syntax_error(csb, "TABLE");
 
@@ -1018,6 +1020,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 		// this would add a new context; while this is a reference to
 		// an existing context
 
+		//// TODO: LocalTableSourceNode
 		plan->relationNode = RelationSourceNode::parse(tdbb, csb, n, false);
 
 		jrd_rel* relation = plan->relationNode->relation;
@@ -1296,6 +1299,9 @@ RecordSourceNode* PAR_parseRecordSource(thread_db* tdbb, CompilerScratch* csb)
 		case blr_relation2:
 		case blr_rid2:
 			return RelationSourceNode::parse(tdbb, csb, blrOp, true);
+
+		case blr_local_table_id:
+			return LocalTableSourceNode::parse(tdbb, csb, blrOp, true);
 
 		case blr_union:
 		case blr_recurse:
@@ -1622,6 +1628,7 @@ DmlNode* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb)
 		case blr_rid:
 		case blr_relation2:
 		case blr_rid2:
+		case blr_local_table_id:
 		case blr_union:
 		case blr_recurse:
 		case blr_window:

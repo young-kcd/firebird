@@ -98,6 +98,7 @@ static inline bool reqTypeWithCursor(DsqlCompiledStatement::Type type)
 		case DsqlCompiledStatement::TYPE_SELECT:
 		case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
 		case DsqlCompiledStatement::TYPE_SELECT_UPD:
+		case DsqlCompiledStatement::TYPE_RETURNING_CURSOR:
 			return true;
 	}
 
@@ -2062,6 +2063,7 @@ static void sql_info(thread_db* tdbb,
 			case DsqlCompiledStatement::TYPE_SELECT:
 			case DsqlCompiledStatement::TYPE_SELECT_UPD:
 			case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
+			case DsqlCompiledStatement::TYPE_RETURNING_CURSOR:
 				value |= IStatement::FLAG_HAS_CURSOR;
 				break;
 			}
@@ -2075,6 +2077,7 @@ static void sql_info(thread_db* tdbb,
 			switch (statement->getType())
 			{
 			case DsqlCompiledStatement::TYPE_SELECT:
+			case DsqlCompiledStatement::TYPE_RETURNING_CURSOR:
 				number = isc_info_sql_stmt_select;
 				break;
 			case DsqlCompiledStatement::TYPE_SELECT_UPD:

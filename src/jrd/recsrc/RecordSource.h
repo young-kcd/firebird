@@ -39,6 +39,7 @@ namespace Jrd
 	class jrd_prc;
 	class AggNode;
 	class BoolExprNode;
+	class DeclareLocalTableNode;
 	class Sort;
 	class CompilerScratch;
 	class RecordBuffer;
@@ -1143,6 +1144,24 @@ namespace Jrd
 
 		Firebird::Array<NestConst<SortedStream> > m_args;
 		Firebird::Array<const NestValueArray*> m_keys;
+	};
+
+	class LocalTableStream : public RecordStream
+	{
+	public:
+		LocalTableStream(CompilerScratch* csb, StreamType stream, const DeclareLocalTableNode* table);
+
+		void open(thread_db* tdbb) const override;
+		void close(thread_db* tdbb) const override;
+
+		bool getRecord(thread_db* tdbb) const override;
+		bool refetchRecord(thread_db* tdbb) const override;
+		bool lockRecord(thread_db* tdbb) const override;
+
+		void print(thread_db* tdbb, Firebird::string& plan, bool detailed, unsigned level) const override;
+
+	private:
+		const DeclareLocalTableNode* m_table;
 	};
 
 	class Union : public RecordStream

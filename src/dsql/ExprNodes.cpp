@@ -6085,6 +6085,7 @@ ValueExprNode* FieldNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, Rec
 								procNode->dsqlContext = stackContext;
 								*list = procNode;
 							}
+							//// TODO: LocalTableSourceNode
 
 							fb_assert(*list);
 							return NULL;
@@ -9457,14 +9458,7 @@ ValueExprNode* OverNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 static RegisterNode<ParameterNode> regParameterNode({blr_parameter, blr_parameter2, blr_parameter3});
 
 ParameterNode::ParameterNode(MemoryPool& pool)
-	: TypedNode<ValueExprNode, ExprNode::TYPE_PARAMETER>(pool),
-	  dsqlParameter(NULL),
-	  message(NULL),
-	  argFlag(NULL),
-	  argIndicator(NULL),
-	  argInfo(NULL),
-	  dsqlParameterIndex(0),
-	  argNumber(0)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_PARAMETER>(pool)
 {
 }
 
@@ -9536,11 +9530,12 @@ ValueExprNode* ParameterNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 					Arg::Gds(isc_dsql_command_err));
 	}
 
-	dsql_msg* tempMsg = dsqlParameter ?
-		dsqlParameter->par_message : dsqlScratch->getStatement()->getSendMsg();
+	auto msg = dsqlMessage ? dsqlMessage :
+		dsqlParameter ? dsqlParameter->par_message :
+		dsqlScratch->getStatement()->getSendMsg();
 
-	ParameterNode* node = FB_NEW_POOL(dsqlScratch->getPool()) ParameterNode(dsqlScratch->getPool());
-	node->dsqlParameter = MAKE_parameter(tempMsg, true, true, dsqlParameterIndex, NULL);
+	auto node = FB_NEW_POOL(dsqlScratch->getPool()) ParameterNode(dsqlScratch->getPool());
+	node->dsqlParameter = MAKE_parameter(msg, true, true, dsqlParameterIndex, nullptr);
 	node->dsqlParameterIndex = dsqlParameterIndex;
 
 	return node;
@@ -9923,11 +9918,12 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 			PASS1_ambiguity_check(dsqlScratch, getAlias(true), contexts);
 
-			RelationSourceNode* relNode = FB_NEW_POOL(dsqlScratch->getPool()) RelationSourceNode(
+			//// TODO: LocalTableSourceNode
+			auto relNode = FB_NEW_POOL(dsqlScratch->getPool()) RelationSourceNode(
 				dsqlScratch->getPool());
 			relNode->dsqlContext = context;
 
-			RecordKeyNode* node = FB_NEW_POOL(dsqlScratch->getPool()) RecordKeyNode(dsqlScratch->getPool(), blrOp);
+			auto node = FB_NEW_POOL(dsqlScratch->getPool()) RecordKeyNode(dsqlScratch->getPool(), blrOp);
 			node->dsqlRelation = relNode;
 
 			return node;
@@ -9959,11 +9955,12 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				if (context->ctx_flags & CTX_null)
 					return NullNode::instance();
 
-				RelationSourceNode* relNode = FB_NEW_POOL(dsqlScratch->getPool()) RelationSourceNode(
+				//// TODO: LocalTableSourceNode
+				auto relNode = FB_NEW_POOL(dsqlScratch->getPool()) RelationSourceNode(
 					dsqlScratch->getPool());
 				relNode->dsqlContext = context;
 
-				RecordKeyNode* node = FB_NEW_POOL(dsqlScratch->getPool()) RecordKeyNode(dsqlScratch->getPool(), blrOp);
+				auto node = FB_NEW_POOL(dsqlScratch->getPool()) RecordKeyNode(dsqlScratch->getPool(), blrOp);
 				node->dsqlRelation = relNode;
 
 				return node;

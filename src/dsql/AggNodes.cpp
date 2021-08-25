@@ -999,6 +999,7 @@ string CountAggNode::internalPrint(NodePrinter& printer) const
 	return "CountAggNode";
 }
 
+//// TODO: Improve count(*) in local tables.
 void CountAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 {
 	AggNode::aggInit(tdbb, request);

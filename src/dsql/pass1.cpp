@@ -362,6 +362,7 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, RecordSourceNode*
 		relation_name = procNode->dsqlName.identifier;
 	else if ((relNode = nodeAs<RelationSourceNode>(relationNode)))
 		relation_name = relNode->dsqlName;
+	//// TODO: LocalTableSourceNode
 	else if ((selNode = nodeAs<SelectExprNode>(relationNode)))
 		relation_name = selNode->alias.c_str();
 
@@ -683,12 +684,9 @@ void PASS1_check_unique_fields_names(StrArray& names, const CompoundStmtNode* fi
 	{
 		const char* name = NULL;
 
-		const DeclareVariableNode* varNode;
-		const DeclareCursorNode* cursorNode;
-
-		if ((varNode = nodeAs<DeclareVariableNode>(*ptr)))
+		if (auto varNode = nodeAs<DeclareVariableNode>(*ptr))
 			name = varNode->dsqlDef->name.c_str();
-		else if ((cursorNode = nodeAs<DeclareCursorNode>(*ptr)))
+		else if (auto cursorNode = nodeAs<DeclareCursorNode>(*ptr))
 			name = cursorNode->dsqlName.c_str();
 		else if (nodeAs<DeclareSubProcNode>(*ptr) || nodeAs<DeclareSubFuncNode>(*ptr))
 			continue;
@@ -1326,12 +1324,10 @@ ValueListNode* PASS1_expand_select_list(DsqlCompilerScratch* dsqlScratch, ValueL
 void PASS1_expand_select_node(DsqlCompilerScratch* dsqlScratch, ExprNode* node, ValueListNode* list,
 	bool hide_using)
 {
-	RseNode* rseNode;
-	ProcedureSourceNode* procNode;
-	RelationSourceNode* relNode;
 	FieldNode* fieldNode;
 
-	if ((rseNode = nodeAs<RseNode>(node)))
+	//// TODO: LocalTableSourceNode
+	if (auto rseNode = nodeAs<RseNode>(node))
 	{
 		ValueListNode* sub_items = rseNode->dsqlSelectList;
 
@@ -1375,7 +1371,7 @@ void PASS1_expand_select_node(DsqlCompilerScratch* dsqlScratch, ExprNode* node, 
 			}
 		}
 	}
-	else if ((procNode = nodeAs<ProcedureSourceNode>(node)))
+	else if (auto procNode = nodeAs<ProcedureSourceNode>(node))
 	{
 		dsql_ctx* context = procNode->dsqlContext;
 
@@ -1395,7 +1391,7 @@ void PASS1_expand_select_node(DsqlCompilerScratch* dsqlScratch, ExprNode* node, 
 			}
 		}
 	}
-	else if ((relNode = nodeAs<RelationSourceNode>(node)))
+	else if (auto relNode = nodeAs<RelationSourceNode>(node))
 	{
 		dsql_ctx* context = relNode->dsqlContext;
 
@@ -1730,6 +1726,7 @@ RecordSourceNode* PASS1_relation(DsqlCompilerScratch* dsqlScratch, RecordSourceN
 		procNode->dsqlContext = context;
 		return procNode;
 	}
+	//// TODO: LocalTableSourceNode
 
 	fb_assert(false);
 	return NULL;
@@ -2928,31 +2925,26 @@ static void remap_streams_to_parent_context(ExprNode* input, dsql_ctx* parent_co
 {
 	DEV_BLKCHK(parent_context, dsql_type_ctx);
 
-	RecSourceListNode* listNode;
-	ProcedureSourceNode* procNode;
-	RelationSourceNode* relNode;
-	RseNode* rseNode;
-	UnionSourceNode* unionNode;
-
-	if ((listNode = nodeAs<RecSourceListNode>(input)))
+	if (auto listNode = nodeAs<RecSourceListNode>(input))
 	{
 		NestConst<RecordSourceNode>* ptr = listNode->items.begin();
 		for (const NestConst<RecordSourceNode>* const end = listNode->items.end(); ptr != end; ++ptr)
 			remap_streams_to_parent_context(*ptr, parent_context);
 	}
-	else if ((procNode = nodeAs<ProcedureSourceNode>(input)))
+	else if (auto procNode = nodeAs<ProcedureSourceNode>(input))
 	{
 		DEV_BLKCHK(procNode->dsqlContext, dsql_type_ctx);
 		procNode->dsqlContext->ctx_parent = parent_context;
 	}
-	else if ((relNode = nodeAs<RelationSourceNode>(input)))
+	else if (auto relNode = nodeAs<RelationSourceNode>(input))
 	{
 		DEV_BLKCHK(relNode->dsqlContext, dsql_type_ctx);
 		relNode->dsqlContext->ctx_parent = parent_context;
 	}
-	else if ((rseNode = nodeAs<RseNode>(input)))
+	//// TODO: LocalTableSourceNode
+	else if (auto rseNode = nodeAs<RseNode>(input))
 		remap_streams_to_parent_context(rseNode->dsqlStreams, parent_context);
-	else if ((unionNode = nodeAs<UnionSourceNode>(input)))
+	else if (auto unionNode = nodeAs<UnionSourceNode>(input))
 		remap_streams_to_parent_context(unionNode->dsqlClauses, parent_context);
 	else
 		fb_assert(nodeAs<AggregateSourceNode>(input));

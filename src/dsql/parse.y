@@ -6524,7 +6524,7 @@ insert_start
 	: INSERT INTO simple_table_name
 		{
 			StoreNode* node = newNode<StoreNode>();
-			node->dsqlRelation = $3;
+			node->target = $3;
 			$$ = node;
 		}
 	;
@@ -6559,10 +6559,13 @@ merge
 				node->usingClause = $5;
 				node->condition = $7;
 			}
-		merge_when_clause($8) returning_clause
+		merge_when_clause($8)
+		plan_clause order_clause_opt returning_clause
 			{
 				MergeNode* node = $$ = $8;
-				node->returning = $10;
+				node->plan = $10;
+				node->order = $11;
+				node->returning = $12;
 			}
 	;
 
@@ -6705,12 +6708,16 @@ update_or_insert
 				node->relation = $5;
 			}
 		ins_column_parens_opt(NOTRIAL(&$6->fields)) override_opt VALUES '(' value_or_default_list ')'
-				update_or_insert_matching_opt(NOTRIAL(&$6->matching)) returning_clause
+				update_or_insert_matching_opt(NOTRIAL(&$6->matching))
+				plan_clause order_clause_opt rows_clause_optional returning_clause
 			{
 				UpdateOrInsertNode* node = $$ = $6;
 				node->overrideClause = $8;
 				node->values = $11;
-				node->returning = $14;
+				node->plan = $14;
+				node->order = $15;
+				node->rows = $16;
+				node->returning = $17;
 			}
 	;
 

@@ -81,6 +81,9 @@
     <ClCompile Include="..\..\..\src\jrd\recsrc\IndexTableScan.cpp">
       <Filter>JRD files\Data Access</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\recsrc\LocalTableStream.cpp">
+      <Filter>JRD files\Data Access</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\recsrc\LockedStream.cpp">
       <Filter>JRD files\Data Access</Filter>
     </ClCompile>

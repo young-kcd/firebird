@@ -977,6 +977,7 @@ static const struct {
 	{335545274, "22023"}, // 954 tom_key_length
 	{335545275, "HY000"}, // 955 inf_invalid_args
 	{335545276, "22023"}, // 956 sysf_invalid_null_empty
+	{335545277, "HY000"}, // 957 bad_loctab_num
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

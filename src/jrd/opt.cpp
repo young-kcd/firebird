@@ -1281,7 +1281,7 @@ static void check_sorts(CompilerScratch* csb, RseNode* rse)
 							{
 								RecordSourceNode* subNode = new_rse->rse_relations[i];
 
-								if (nodeIs<RelationSourceNode>(subNode) &&
+								if ((nodeIs<RelationSourceNode>(subNode) || nodeIs<LocalTableSourceNode>(subNode)) &&
 									subNode->getStream() == sort_stream &&
 									new_rse != rse)
 								{
@@ -1289,7 +1289,6 @@ static void check_sorts(CompilerScratch* csb, RseNode* rse)
 									sortStreamFound = true;
 									break;
 								}
-
 							}
 
 							if (sortStreamFound)
@@ -1309,7 +1308,7 @@ static void check_sorts(CompilerScratch* csb, RseNode* rse)
 				}
 				else
 				{
-					if (nodeIs<RelationSourceNode>(node) &&
+					if ((nodeIs<RelationSourceNode>(node) || nodeIs<LocalTableSourceNode>(node)) &&
 						node->getStream() == sort_stream &&
 						new_rse && new_rse != rse)
 					{
@@ -2090,7 +2089,7 @@ static RecordSource* gen_outer(thread_db* tdbb, OptimizerBlk* opt, RseNode* rse,
 	{
 		const RecordSourceNode* node = rse->rse_relations[i];
 
-		if (nodeIs<RelationSourceNode>(node))
+		if (nodeIs<RelationSourceNode>(node) || nodeIs<LocalTableSourceNode>(node))
 		{
 			stream_ptr[i]->stream_rsb = NULL;
 			stream_ptr[i]->stream_num = node->getStream();

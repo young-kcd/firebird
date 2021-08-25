@@ -263,6 +263,7 @@ const int op_subproc_decl	= 27;
 const int op_subfunc_decl	= 28;
 const int op_window_win		= 29;
 const int op_erase			= 30;	// special due to optional blr_marks after blr_erase
+const int op_dcl_local_table	= 31;
 
 static const UCHAR
 	// generic print formats
@@ -302,7 +303,7 @@ static const UCHAR
 	gen_id[]	= { op_byte, op_literal, op_line, op_verb, 0},
 	gen_id2[]	= { op_byte, op_literal, op_line, 0},
 	declare[]	= { op_word, op_dtype, op_line, 0},
-	variable[]	= { op_word, op_line, 0},
+	one_word[]	= { op_word, op_line, 0},
 	indx[]		= { op_line, op_verb, op_indent, op_byte, op_line, op_args, 0},
 	seek[]		= { op_line, op_verb, op_verb, 0},
 	join[]		= { op_join, op_line, 0},
@@ -332,6 +333,7 @@ static const UCHAR
 	user_savepoint[]	= { op_byte, op_byte, op_literal, op_line, 0},
 	exec_into[] = { op_word, op_line, op_indent, op_exec_into, 0},
 	dcl_cursor[] = { op_word, op_line, op_verb, op_indent, op_word, op_line, op_args, 0},
+	dcl_local_table[] = { op_dcl_local_table, 0 },
 	cursor_stmt[] = { op_cursor_stmt, 0 },
 	strlength[] = { op_byte, op_line, op_verb, 0},
 	trim[] = { op_byte, op_byte_opt_verb, op_verb, 0},
@@ -350,7 +352,8 @@ static const UCHAR
 						 op_line, op_indent, op_byte, op_literal, op_pad, op_line, 0},
 	store3[] = { op_line, op_byte, op_line, op_verb, op_verb, op_verb, 0},
 	marks[] = { op_byte, op_literal, op_line, op_verb, 0},
-	erase[] = { op_erase, 0};
+	erase[] = { op_erase, 0},
+	local_table[] = { op_word, op_byte, op_literal, op_byte, op_line, 0};
 
 
 #include "../jrd/blp.h"
@@ -3778,6 +3781,56 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			}
 			offset = blr_print_line(control, offset);
 			break;
+
+		case op_dcl_local_table:
+		{
+			offset = blr_print_line(control, offset);
+			blr_indent(control, level);
+			blr_print_word(control);
+			offset = blr_print_line(control, offset);
+
+			static const char* subCodes[] =
+			{
+				nullptr,
+				"format"
+			};
+
+			while ((blr_operator = control->ctl_blr_reader.getByte()) != blr_end)
+			{
+				blr_indent(control, level);
+
+				if (blr_operator == 0 || blr_operator >= FB_NELEM(subCodes))
+					blr_error(control, "*** invalid blr_dcl_local_table sub code ***");
+
+				blr_format(control, "blr_dcl_local_table_%s, ", subCodes[blr_operator]);
+
+				switch (blr_operator)
+				{
+					case blr_dcl_local_table_format:
+						n = blr_print_word(control);
+						offset = blr_print_line(control, offset);
+						++level;
+
+						while (--n >= 0)
+						{
+							blr_indent(control, level);
+							blr_print_dtype(control);
+							offset = blr_print_line(control, offset);
+						}
+
+						--level;
+						break;
+
+					default:
+						fb_assert(false);
+				}
+			}
+
+			// print blr_end
+			control->ctl_blr_reader.seekBackward(1);
+			blr_print_verb(control, level);
+			break;
+		}
 
 		default:
 			fb_assert(false);

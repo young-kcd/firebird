@@ -71,6 +71,7 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 	  parentStatement(NULL),
 	  subStatements(*p),
 	  fors(*p),
+	  localTables(*p),
 	  invariants(*p),
 	  blr(*p),
 	  mapFieldInfo(*p),
@@ -154,6 +155,8 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 
 		// make a vector of all used RSEs
 		fors = csb->csb_fors;
+
+		localTables = csb->csb_localTables;
 
 		// make a vector of all invariant-type nodes, so that we will
 		// be able to easily reinitialize them when we restart the request

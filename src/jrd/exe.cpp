@@ -982,6 +982,17 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 			tdbb->setRequest(old_request);
 			tdbb->setTransaction(old_transaction);
 		}
+
+		for (auto localTable : statement->localTables)
+		{
+			if (!localTable)
+				continue;
+
+			auto impure = localTable->getImpure(tdbb, request, false);
+			delete impure->recordBuffer;
+			impure->recordBuffer = nullptr;
+		}
+
 		release_blobs(tdbb, request);
 	}
 

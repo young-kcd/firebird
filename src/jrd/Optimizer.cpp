@@ -187,6 +187,7 @@ namespace Jrd
 			alias = csb_tail->csb_relation->rel_name.c_str();
 		else if (csb_tail->csb_procedure)
 			alias = csb_tail->csb_procedure->getName().toString();
+		//// TODO: LocalTableSourceNode
 		else
 			fb_assert(false);
 

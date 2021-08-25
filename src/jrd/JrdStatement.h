@@ -81,6 +81,7 @@ public:
 	Firebird::Array<JrdStatement*> subStatements;	// Array of subroutines' statements
 	const StmtNode* topNode;			// top of execution tree
 	Firebird::Array<const RecordSource*> fors;	// record sources
+	Firebird::Array<const DeclareLocalTableNode*> localTables;	// local tables
 	Firebird::Array<ULONG*> invariants;	// pointer to nodes invariant offsets
 	Firebird::RefStrPtr sqlText;		// SQL text (encoded in the metadata charset)
 	Firebird::Array<UCHAR> blr;			// BLR for non-SQL query

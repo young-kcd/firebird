@@ -1959,6 +1959,8 @@ const
 	gds_inf_invalid_args                 = 335545275;
 	isc_sysf_invalid_null_empty          = 335545276;
 	gds_sysf_invalid_null_empty          = 335545276;
+	isc_bad_loctab_num                   = 335545277;
+	gds_bad_loctab_num                   = 335545277;
 	isc_gfix_db_name                     = 335740929;
 	gds_gfix_db_name                     = 335740929;
 	isc_gfix_invalid_sw                  = 335740930;

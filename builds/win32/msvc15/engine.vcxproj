@@ -121,6 +121,7 @@
     <ClCompile Include="..\..\..\src\jrd\recsrc\FullTableScan.cpp" />
     <ClCompile Include="..\..\..\src\jrd\recsrc\HashJoin.cpp" />
     <ClCompile Include="..\..\..\src\jrd\recsrc\IndexTableScan.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\recsrc\LocalTableStream.cpp" />
     <ClCompile Include="..\..\..\src\jrd\recsrc\LockedStream.cpp" />
     <ClCompile Include="..\..\..\src\jrd\recsrc\MergeJoin.cpp" />
     <ClCompile Include="..\..\..\src\jrd\recsrc\NestedLoopJoin.cpp" />

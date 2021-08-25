@@ -283,6 +283,75 @@ public:
 };
 
 
+class LocalTableSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_LOCAL_TABLE>
+{
+public:
+	explicit LocalTableSourceNode(MemoryPool& pool, const MetaName& aDsqlName = NULL)
+		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_LOCAL_TABLE>(pool),
+		  alias(pool)
+	{
+	}
+
+	static LocalTableSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, const SSHORT blrOp,
+		bool parseContext);
+
+	Firebird::string internalPrint(NodePrinter& printer) const override;
+	RecordSourceNode* dsqlPass(DsqlCompilerScratch* dsqlScratch) override;
+
+	bool dsqlSubSelectFinder(SubSelectFinder& /*visitor*/) override
+	{
+		return false;
+	}
+
+	bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const override;
+	void genBlr(DsqlCompilerScratch* dsqlScratch) override;
+
+	LocalTableSourceNode* copy(thread_db* tdbb, NodeCopier& copier) const override;
+
+	RecordSourceNode* pass1(thread_db* tdbb, CompilerScratch* csb) override
+	{
+		return this;
+	}
+
+	void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
+		BoolExprNode** boolean, RecordSourceNodeStack& stack) override;
+
+	RecordSourceNode* pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/) override
+	{
+		return this;
+	}
+
+	void pass2Rse(thread_db* tdbb, CompilerScratch* csb) override;
+
+	bool containsStream(StreamType checkStream) const override
+	{
+		return checkStream == stream;
+	}
+
+	void computeDbKeyStreams(StreamList& streamList) const override
+	{
+		streamList.add(getStream());
+	}
+
+	bool computable(CompilerScratch* /*csb*/, StreamType /*stream*/,
+		bool /*allowOnlyCurrentStream*/, ValueExprNode* /*value*/) override
+	{
+		return true;
+	}
+
+	void findDependentFromStreams(const OptimizerRetrieval* /*optRet*/,
+		SortedStreamList* /*streamList*/) override
+	{
+	}
+
+	RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream) override;
+
+public:
+	Firebird::string alias;
+	USHORT tableNumber = 0;
+	SSHORT context = 0;			// user-specified context number for the local table reference
+};
+
 class RelationSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RELATION>
 {
 public:

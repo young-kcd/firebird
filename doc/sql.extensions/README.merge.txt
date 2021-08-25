@@ -7,7 +7,7 @@ MERGE statement
     condition.
 
   Author:
-    Adriano dos Santos Fernandes <adrianosf@uol.com.br>
+    Adriano dos Santos Fernandes <adrianosf@gmail.com>
 
   Format:
 	<merge statement> ::=
@@ -16,6 +16,8 @@ MERGE statement
 			USING <table or view or derived table> [ [AS] <correlation name> ]
 			ON <condition>
 			<merge when>...
+			[<plan clause>]
+			[<order by clause>]
 			<returning clause>
 
 	<merge when> ::=
