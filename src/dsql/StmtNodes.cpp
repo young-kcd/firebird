@@ -7424,7 +7424,7 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 
 	for (;;)
 	{
-		const StreamType stream = relSource->getStream();
+		const StreamType stream = node->target->getStream();
 
 		CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[stream];
 		tail->csb_flags |= csb_store;
