@@ -9120,7 +9120,7 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 						const auto varAssign = FB_NEW_POOL(pool) AssignmentNode(pool);
 						varAssign->asgnFrom = assign2->asgnFrom;
 						varAssign->asgnTo = var;
-						node->varAssignments.add(varAssign->dsqlPass(dsqlScratch));
+						node->varAssignments.add(varAssign);
 
 						assign2->asgnFrom = var;
 					}
