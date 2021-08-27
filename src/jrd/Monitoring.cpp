@@ -467,8 +467,8 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 	// Enumerate active sessions
 
 	const bool locksmith = attachment->locksmith(tdbb, MONITOR_ANY_ATTACHMENT);
-	const char* user_name_ptr = locksmith ? NULL : attachment->att_user ?
-		attachment->att_user->getUserName().c_str() : "";
+	const UserId* const user = attachment->getEffectiveUserId();
+	const char* const user_name_ptr = locksmith ? NULL : user ? user->getUserName().c_str() : "";
 
 	MonitoringData::SessionList sessions(pool);
 
