@@ -219,10 +219,10 @@ void TimerEntry::cleanup()
 
 ISC_UINT64 curTime()
 {
-	ISC_UINT64 rc = fb_utils::query_performance_counter();
+	double rc = fb_utils::query_performance_counter();
 	rc *= 1000000;
 	rc /= fb_utils::query_performance_frequency();
-	return rc;
+	return ISC_UINT64(rc);
 }
 
 TimerEntry* getTimer(ITimer* timer)
