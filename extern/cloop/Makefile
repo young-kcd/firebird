@@ -28,7 +28,7 @@ OBJS_C := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS_C))
 OBJS_CPP := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS_CPP))
 
 C_FLAGS := -ggdb -fPIC -MMD -MP -W -Wall -Wno-unused-parameter
-CXX_FLAGS := $(C_FLAGS)
+CXX_FLAGS := $(C_FLAGS) -std=c++11
 FPC_FLAGS := -Mdelphi -Cg
 
 ifeq ($(shell uname),FreeBSD)
