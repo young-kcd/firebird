@@ -343,7 +343,8 @@ void CppGenerator::generate()
 				fprintf(out, "\t\t\tif (cloopVTable->version < %d)\n", method->version);
 				fprintf(out, "\t\t\t{\n");
 
-				ActionParametersBlock apb = {out, LANGUAGE_CPP, prefix, "StatusType", statusName, interface, method};
+				const string exceptionClass("StatusType");
+				ActionParametersBlock apb = {out, LANGUAGE_CPP, prefix, exceptionClass, statusName, interface, method};
 
 				if (method->notImplementedAction)
 					method->notImplementedAction->generate(apb, 4);
