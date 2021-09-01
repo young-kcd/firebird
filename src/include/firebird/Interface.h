@@ -106,6 +106,9 @@ inline const intptr_t* stubError()
 
 } // namespace Firebird
 
+#ifndef FB_UsedInYValve
+#define FB_UsedInYValve false
+#endif
 
 #include "IdlFbInterfaces.h"
 

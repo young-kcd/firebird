@@ -121,6 +121,8 @@ type
 
 		class procedure checkException(status: IStatus);
 		class procedure catchException(status: IStatus; e: Exception);
+		class procedure setVersionError(status: IStatus; interfaceName: string;
+			currentVersion, expectedVersion: NativeInt);
 
 	private
 		status: IStatus;
@@ -276,18 +278,18 @@ type
 	IBlob_getInfoPtr = procedure(this: IBlob; status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr); cdecl;
 	IBlob_getSegmentPtr = function(this: IBlob; status: IStatus; bufferLength: Cardinal; buffer: Pointer; segmentLength: CardinalPtr): Integer; cdecl;
 	IBlob_putSegmentPtr = procedure(this: IBlob; status: IStatus; length: Cardinal; buffer: Pointer); cdecl;
-	IBlob_cancel_1Ptr = procedure(this: IBlob; status: IStatus); cdecl;
-	IBlob_close_1Ptr = procedure(this: IBlob; status: IStatus); cdecl;
+	IBlob_deprecatedCancelPtr = procedure(this: IBlob; status: IStatus); cdecl;
+	IBlob_deprecatedClosePtr = procedure(this: IBlob; status: IStatus); cdecl;
 	IBlob_seekPtr = function(this: IBlob; status: IStatus; mode: Integer; offset: Integer): Integer; cdecl;
 	IBlob_cancelPtr = procedure(this: IBlob; status: IStatus); cdecl;
 	IBlob_closePtr = procedure(this: IBlob; status: IStatus); cdecl;
 	ITransaction_getInfoPtr = procedure(this: ITransaction; status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr); cdecl;
 	ITransaction_preparePtr = procedure(this: ITransaction; status: IStatus; msgLength: Cardinal; message: BytePtr); cdecl;
-	ITransaction_commit_1Ptr = procedure(this: ITransaction; status: IStatus); cdecl;
+	ITransaction_deprecatedCommitPtr = procedure(this: ITransaction; status: IStatus); cdecl;
 	ITransaction_commitRetainingPtr = procedure(this: ITransaction; status: IStatus); cdecl;
-	ITransaction_rollback_1Ptr = procedure(this: ITransaction; status: IStatus); cdecl;
+	ITransaction_deprecatedRollbackPtr = procedure(this: ITransaction; status: IStatus); cdecl;
 	ITransaction_rollbackRetainingPtr = procedure(this: ITransaction; status: IStatus); cdecl;
-	ITransaction_disconnect_1Ptr = procedure(this: ITransaction; status: IStatus); cdecl;
+	ITransaction_deprecatedDisconnectPtr = procedure(this: ITransaction; status: IStatus); cdecl;
 	ITransaction_joinPtr = function(this: ITransaction; status: IStatus; transaction: ITransaction): ITransaction; cdecl;
 	ITransaction_validatePtr = function(this: ITransaction; status: IStatus; attachment: IAttachment): ITransaction; cdecl;
 	ITransaction_enterDtcPtr = function(this: ITransaction; status: IStatus): ITransaction; cdecl;
@@ -334,7 +336,7 @@ type
 	IResultSet_isEofPtr = function(this: IResultSet; status: IStatus): Boolean; cdecl;
 	IResultSet_isBofPtr = function(this: IResultSet; status: IStatus): Boolean; cdecl;
 	IResultSet_getMetadataPtr = function(this: IResultSet; status: IStatus): IMessageMetadata; cdecl;
-	IResultSet_close_1Ptr = procedure(this: IResultSet; status: IStatus); cdecl;
+	IResultSet_deprecatedClosePtr = procedure(this: IResultSet; status: IStatus); cdecl;
 	IResultSet_setDelayedOutputFormatPtr = procedure(this: IResultSet; status: IStatus; format: IMessageMetadata); cdecl;
 	IResultSet_closePtr = procedure(this: IResultSet; status: IStatus); cdecl;
 	IStatement_getInfoPtr = procedure(this: IStatement; status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr); cdecl;
@@ -346,7 +348,7 @@ type
 	IStatement_executePtr = function(this: IStatement; status: IStatus; transaction: ITransaction; inMetadata: IMessageMetadata; inBuffer: Pointer; outMetadata: IMessageMetadata; outBuffer: Pointer): ITransaction; cdecl;
 	IStatement_openCursorPtr = function(this: IStatement; status: IStatus; transaction: ITransaction; inMetadata: IMessageMetadata; inBuffer: Pointer; outMetadata: IMessageMetadata; flags: Cardinal): IResultSet; cdecl;
 	IStatement_setCursorNamePtr = procedure(this: IStatement; status: IStatus; name: PAnsiChar); cdecl;
-	IStatement_free_1Ptr = procedure(this: IStatement; status: IStatus); cdecl;
+	IStatement_deprecatedFreePtr = procedure(this: IStatement; status: IStatus); cdecl;
 	IStatement_getFlagsPtr = function(this: IStatement; status: IStatus): Cardinal; cdecl;
 	IStatement_getTimeoutPtr = function(this: IStatement; status: IStatus): Cardinal; cdecl;
 	IStatement_setTimeoutPtr = procedure(this: IStatement; status: IStatus; timeOut: Cardinal); cdecl;
@@ -362,14 +364,14 @@ type
 	IBatch_getBlobAlignmentPtr = function(this: IBatch; status: IStatus): Cardinal; cdecl;
 	IBatch_getMetadataPtr = function(this: IBatch; status: IStatus): IMessageMetadata; cdecl;
 	IBatch_setDefaultBpbPtr = procedure(this: IBatch; status: IStatus; parLength: Cardinal; par: BytePtr); cdecl;
-	IBatch_close_1Ptr = procedure(this: IBatch; status: IStatus); cdecl;
+	IBatch_deprecatedClosePtr = procedure(this: IBatch; status: IStatus); cdecl;
 	IBatch_closePtr = procedure(this: IBatch; status: IStatus); cdecl;
 	IBatchCompletionState_getSizePtr = function(this: IBatchCompletionState; status: IStatus): Cardinal; cdecl;
 	IBatchCompletionState_getStatePtr = function(this: IBatchCompletionState; status: IStatus; pos: Cardinal): Integer; cdecl;
 	IBatchCompletionState_findErrorPtr = function(this: IBatchCompletionState; status: IStatus; pos: Cardinal): Cardinal; cdecl;
 	IBatchCompletionState_getStatusPtr = procedure(this: IBatchCompletionState; status: IStatus; to_: IStatus; pos: Cardinal); cdecl;
 	IReplicator_processPtr = procedure(this: IReplicator; status: IStatus; length: Cardinal; data: BytePtr); cdecl;
-	IReplicator_close_1Ptr = procedure(this: IReplicator; status: IStatus); cdecl;
+	IReplicator_deprecatedClosePtr = procedure(this: IReplicator; status: IStatus); cdecl;
 	IReplicator_closePtr = procedure(this: IReplicator; status: IStatus); cdecl;
 	IRequest_receivePtr = procedure(this: IRequest; status: IStatus; level: Integer; msgType: Cardinal; length: Cardinal; message: Pointer); cdecl;
 	IRequest_sendPtr = procedure(this: IRequest; status: IStatus; level: Integer; msgType: Cardinal; length: Cardinal; message: Pointer); cdecl;
@@ -377,9 +379,9 @@ type
 	IRequest_startPtr = procedure(this: IRequest; status: IStatus; tra: ITransaction; level: Integer); cdecl;
 	IRequest_startAndSendPtr = procedure(this: IRequest; status: IStatus; tra: ITransaction; level: Integer; msgType: Cardinal; length: Cardinal; message: Pointer); cdecl;
 	IRequest_unwindPtr = procedure(this: IRequest; status: IStatus; level: Integer); cdecl;
-	IRequest_free_1Ptr = procedure(this: IRequest; status: IStatus); cdecl;
+	IRequest_deprecatedFreePtr = procedure(this: IRequest; status: IStatus); cdecl;
 	IRequest_freePtr = procedure(this: IRequest; status: IStatus); cdecl;
-	IEvents_cancel_1Ptr = procedure(this: IEvents; status: IStatus); cdecl;
+	IEvents_deprecatedCancelPtr = procedure(this: IEvents; status: IStatus); cdecl;
 	IEvents_cancelPtr = procedure(this: IEvents; status: IStatus); cdecl;
 	IAttachment_getInfoPtr = procedure(this: IAttachment; status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr); cdecl;
 	IAttachment_startTransactionPtr = function(this: IAttachment; status: IStatus; tpbLength: Cardinal; tpb: BytePtr): ITransaction; cdecl;
@@ -397,8 +399,8 @@ type
 	IAttachment_queEventsPtr = function(this: IAttachment; status: IStatus; callback: IEventCallback; length: Cardinal; events: BytePtr): IEvents; cdecl;
 	IAttachment_cancelOperationPtr = procedure(this: IAttachment; status: IStatus; option: Integer); cdecl;
 	IAttachment_pingPtr = procedure(this: IAttachment; status: IStatus); cdecl;
-	IAttachment_detach_1Ptr = procedure(this: IAttachment; status: IStatus); cdecl;
-	IAttachment_dropDatabase_1Ptr = procedure(this: IAttachment; status: IStatus); cdecl;
+	IAttachment_deprecatedDetachPtr = procedure(this: IAttachment; status: IStatus); cdecl;
+	IAttachment_deprecatedDropDatabasePtr = procedure(this: IAttachment; status: IStatus); cdecl;
 	IAttachment_getIdleTimeoutPtr = function(this: IAttachment; status: IStatus): Cardinal; cdecl;
 	IAttachment_setIdleTimeoutPtr = procedure(this: IAttachment; status: IStatus; timeOut: Cardinal); cdecl;
 	IAttachment_getStatementTimeoutPtr = function(this: IAttachment; status: IStatus): Cardinal; cdecl;
@@ -407,7 +409,7 @@ type
 	IAttachment_createReplicatorPtr = function(this: IAttachment; status: IStatus): IReplicator; cdecl;
 	IAttachment_detachPtr = procedure(this: IAttachment; status: IStatus); cdecl;
 	IAttachment_dropDatabasePtr = procedure(this: IAttachment; status: IStatus); cdecl;
-	IService_detach_1Ptr = procedure(this: IService; status: IStatus); cdecl;
+	IService_deprecatedDetachPtr = procedure(this: IService; status: IStatus); cdecl;
 	IService_queryPtr = procedure(this: IService; status: IStatus; sendLength: Cardinal; sendItems: BytePtr; receiveLength: Cardinal; receiveItems: BytePtr; bufferLength: Cardinal; buffer: BytePtr); cdecl;
 	IService_startPtr = procedure(this: IService; status: IStatus; spbLength: Cardinal; spb: BytePtr); cdecl;
 	IService_detachPtr = procedure(this: IService; status: IStatus); cdecl;
@@ -1197,8 +1199,8 @@ type
 		getInfo: IBlob_getInfoPtr;
 		getSegment: IBlob_getSegmentPtr;
 		putSegment: IBlob_putSegmentPtr;
-		cancel_1: IBlob_cancel_1Ptr;
-		close_1: IBlob_close_1Ptr;
+		deprecatedCancel: IBlob_deprecatedCancelPtr;
+		deprecatedClose: IBlob_deprecatedClosePtr;
 		seek: IBlob_seekPtr;
 		cancel: IBlob_cancelPtr;
 		close: IBlob_closePtr;
@@ -1210,8 +1212,8 @@ type
 		procedure getInfo(status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr);
 		function getSegment(status: IStatus; bufferLength: Cardinal; buffer: Pointer; segmentLength: CardinalPtr): Integer;
 		procedure putSegment(status: IStatus; length: Cardinal; buffer: Pointer);
-		procedure cancel_1(status: IStatus);
-		procedure close_1(status: IStatus);
+		procedure deprecatedCancel(status: IStatus);
+		procedure deprecatedClose(status: IStatus);
 		function seek(status: IStatus; mode: Integer; offset: Integer): Integer;
 		procedure cancel(status: IStatus);
 		procedure close(status: IStatus);
@@ -1225,8 +1227,8 @@ type
 		procedure getInfo(status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr); virtual; abstract;
 		function getSegment(status: IStatus; bufferLength: Cardinal; buffer: Pointer; segmentLength: CardinalPtr): Integer; virtual; abstract;
 		procedure putSegment(status: IStatus; length: Cardinal; buffer: Pointer); virtual; abstract;
-		procedure cancel_1(status: IStatus); virtual; abstract;
-		procedure close_1(status: IStatus); virtual; abstract;
+		procedure deprecatedCancel(status: IStatus); virtual; abstract;
+		procedure deprecatedClose(status: IStatus); virtual; abstract;
 		function seek(status: IStatus; mode: Integer; offset: Integer): Integer; virtual; abstract;
 		procedure cancel(status: IStatus); virtual; abstract;
 		procedure close(status: IStatus); virtual; abstract;
@@ -1235,11 +1237,11 @@ type
 	TransactionVTable = class(ReferenceCountedVTable)
 		getInfo: ITransaction_getInfoPtr;
 		prepare: ITransaction_preparePtr;
-		commit_1: ITransaction_commit_1Ptr;
+		deprecatedCommit: ITransaction_deprecatedCommitPtr;
 		commitRetaining: ITransaction_commitRetainingPtr;
-		rollback_1: ITransaction_rollback_1Ptr;
+		deprecatedRollback: ITransaction_deprecatedRollbackPtr;
 		rollbackRetaining: ITransaction_rollbackRetainingPtr;
-		disconnect_1: ITransaction_disconnect_1Ptr;
+		deprecatedDisconnect: ITransaction_deprecatedDisconnectPtr;
 		join: ITransaction_joinPtr;
 		validate: ITransaction_validatePtr;
 		enterDtc: ITransaction_enterDtcPtr;
@@ -1253,11 +1255,11 @@ type
 
 		procedure getInfo(status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr);
 		procedure prepare(status: IStatus; msgLength: Cardinal; message: BytePtr);
-		procedure commit_1(status: IStatus);
+		procedure deprecatedCommit(status: IStatus);
 		procedure commitRetaining(status: IStatus);
-		procedure rollback_1(status: IStatus);
+		procedure deprecatedRollback(status: IStatus);
 		procedure rollbackRetaining(status: IStatus);
-		procedure disconnect_1(status: IStatus);
+		procedure deprecatedDisconnect(status: IStatus);
 		function join(status: IStatus; transaction: ITransaction): ITransaction;
 		function validate(status: IStatus; attachment: IAttachment): ITransaction;
 		function enterDtc(status: IStatus): ITransaction;
@@ -1273,11 +1275,11 @@ type
 		function release(): Integer; virtual; abstract;
 		procedure getInfo(status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr); virtual; abstract;
 		procedure prepare(status: IStatus; msgLength: Cardinal; message: BytePtr); virtual; abstract;
-		procedure commit_1(status: IStatus); virtual; abstract;
+		procedure deprecatedCommit(status: IStatus); virtual; abstract;
 		procedure commitRetaining(status: IStatus); virtual; abstract;
-		procedure rollback_1(status: IStatus); virtual; abstract;
+		procedure deprecatedRollback(status: IStatus); virtual; abstract;
 		procedure rollbackRetaining(status: IStatus); virtual; abstract;
-		procedure disconnect_1(status: IStatus); virtual; abstract;
+		procedure deprecatedDisconnect(status: IStatus); virtual; abstract;
 		function join(status: IStatus; transaction: ITransaction): ITransaction; virtual; abstract;
 		function validate(status: IStatus; attachment: IAttachment): ITransaction; virtual; abstract;
 		function enterDtc(status: IStatus): ITransaction; virtual; abstract;
@@ -1419,7 +1421,7 @@ type
 		isEof: IResultSet_isEofPtr;
 		isBof: IResultSet_isBofPtr;
 		getMetadata: IResultSet_getMetadataPtr;
-		close_1: IResultSet_close_1Ptr;
+		deprecatedClose: IResultSet_deprecatedClosePtr;
 		setDelayedOutputFormat: IResultSet_setDelayedOutputFormatPtr;
 		close: IResultSet_closePtr;
 	end;
@@ -1436,7 +1438,7 @@ type
 		function isEof(status: IStatus): Boolean;
 		function isBof(status: IStatus): Boolean;
 		function getMetadata(status: IStatus): IMessageMetadata;
-		procedure close_1(status: IStatus);
+		procedure deprecatedClose(status: IStatus);
 		procedure setDelayedOutputFormat(status: IStatus; format: IMessageMetadata);
 		procedure close(status: IStatus);
 	end;
@@ -1455,7 +1457,7 @@ type
 		function isEof(status: IStatus): Boolean; virtual; abstract;
 		function isBof(status: IStatus): Boolean; virtual; abstract;
 		function getMetadata(status: IStatus): IMessageMetadata; virtual; abstract;
-		procedure close_1(status: IStatus); virtual; abstract;
+		procedure deprecatedClose(status: IStatus); virtual; abstract;
 		procedure setDelayedOutputFormat(status: IStatus; format: IMessageMetadata); virtual; abstract;
 		procedure close(status: IStatus); virtual; abstract;
 	end;
@@ -1470,7 +1472,7 @@ type
 		execute: IStatement_executePtr;
 		openCursor: IStatement_openCursorPtr;
 		setCursorName: IStatement_setCursorNamePtr;
-		free_1: IStatement_free_1Ptr;
+		deprecatedFree: IStatement_deprecatedFreePtr;
 		getFlags: IStatement_getFlagsPtr;
 		getTimeout: IStatement_getTimeoutPtr;
 		setTimeout: IStatement_setTimeoutPtr;
@@ -1503,7 +1505,7 @@ type
 		function execute(status: IStatus; transaction: ITransaction; inMetadata: IMessageMetadata; inBuffer: Pointer; outMetadata: IMessageMetadata; outBuffer: Pointer): ITransaction;
 		function openCursor(status: IStatus; transaction: ITransaction; inMetadata: IMessageMetadata; inBuffer: Pointer; outMetadata: IMessageMetadata; flags: Cardinal): IResultSet;
 		procedure setCursorName(status: IStatus; name: PAnsiChar);
-		procedure free_1(status: IStatus);
+		procedure deprecatedFree(status: IStatus);
 		function getFlags(status: IStatus): Cardinal;
 		function getTimeout(status: IStatus): Cardinal;
 		procedure setTimeout(status: IStatus; timeOut: Cardinal);
@@ -1525,7 +1527,7 @@ type
 		function execute(status: IStatus; transaction: ITransaction; inMetadata: IMessageMetadata; inBuffer: Pointer; outMetadata: IMessageMetadata; outBuffer: Pointer): ITransaction; virtual; abstract;
 		function openCursor(status: IStatus; transaction: ITransaction; inMetadata: IMessageMetadata; inBuffer: Pointer; outMetadata: IMessageMetadata; flags: Cardinal): IResultSet; virtual; abstract;
 		procedure setCursorName(status: IStatus; name: PAnsiChar); virtual; abstract;
-		procedure free_1(status: IStatus); virtual; abstract;
+		procedure deprecatedFree(status: IStatus); virtual; abstract;
 		function getFlags(status: IStatus): Cardinal; virtual; abstract;
 		function getTimeout(status: IStatus): Cardinal; virtual; abstract;
 		procedure setTimeout(status: IStatus; timeOut: Cardinal); virtual; abstract;
@@ -1544,7 +1546,7 @@ type
 		getBlobAlignment: IBatch_getBlobAlignmentPtr;
 		getMetadata: IBatch_getMetadataPtr;
 		setDefaultBpb: IBatch_setDefaultBpbPtr;
-		close_1: IBatch_close_1Ptr;
+		deprecatedClose: IBatch_deprecatedClosePtr;
 		close: IBatch_closePtr;
 	end;
 
@@ -1572,7 +1574,7 @@ type
 		function getBlobAlignment(status: IStatus): Cardinal;
 		function getMetadata(status: IStatus): IMessageMetadata;
 		procedure setDefaultBpb(status: IStatus; parLength: Cardinal; par: BytePtr);
-		procedure close_1(status: IStatus);
+		procedure deprecatedClose(status: IStatus);
 		procedure close(status: IStatus);
 	end;
 
@@ -1591,7 +1593,7 @@ type
 		function getBlobAlignment(status: IStatus): Cardinal; virtual; abstract;
 		function getMetadata(status: IStatus): IMessageMetadata; virtual; abstract;
 		procedure setDefaultBpb(status: IStatus; parLength: Cardinal; par: BytePtr); virtual; abstract;
-		procedure close_1(status: IStatus); virtual; abstract;
+		procedure deprecatedClose(status: IStatus); virtual; abstract;
 		procedure close(status: IStatus); virtual; abstract;
 	end;
 
@@ -1626,7 +1628,7 @@ type
 
 	ReplicatorVTable = class(ReferenceCountedVTable)
 		process: IReplicator_processPtr;
-		close_1: IReplicator_close_1Ptr;
+		deprecatedClose: IReplicator_deprecatedClosePtr;
 		close: IReplicator_closePtr;
 	end;
 
@@ -1634,7 +1636,7 @@ type
 		const VERSION = 4;
 
 		procedure process(status: IStatus; length: Cardinal; data: BytePtr);
-		procedure close_1(status: IStatus);
+		procedure deprecatedClose(status: IStatus);
 		procedure close(status: IStatus);
 	end;
 
@@ -1644,7 +1646,7 @@ type
 		procedure addRef(); virtual; abstract;
 		function release(): Integer; virtual; abstract;
 		procedure process(status: IStatus; length: Cardinal; data: BytePtr); virtual; abstract;
-		procedure close_1(status: IStatus); virtual; abstract;
+		procedure deprecatedClose(status: IStatus); virtual; abstract;
 		procedure close(status: IStatus); virtual; abstract;
 	end;
 
@@ -1655,7 +1657,7 @@ type
 		start: IRequest_startPtr;
 		startAndSend: IRequest_startAndSendPtr;
 		unwind: IRequest_unwindPtr;
-		free_1: IRequest_free_1Ptr;
+		deprecatedFree: IRequest_deprecatedFreePtr;
 		free: IRequest_freePtr;
 	end;
 
@@ -1668,7 +1670,7 @@ type
 		procedure start(status: IStatus; tra: ITransaction; level: Integer);
 		procedure startAndSend(status: IStatus; tra: ITransaction; level: Integer; msgType: Cardinal; length: Cardinal; message: Pointer);
 		procedure unwind(status: IStatus; level: Integer);
-		procedure free_1(status: IStatus);
+		procedure deprecatedFree(status: IStatus);
 		procedure free(status: IStatus);
 	end;
 
@@ -1683,19 +1685,19 @@ type
 		procedure start(status: IStatus; tra: ITransaction; level: Integer); virtual; abstract;
 		procedure startAndSend(status: IStatus; tra: ITransaction; level: Integer; msgType: Cardinal; length: Cardinal; message: Pointer); virtual; abstract;
 		procedure unwind(status: IStatus; level: Integer); virtual; abstract;
-		procedure free_1(status: IStatus); virtual; abstract;
+		procedure deprecatedFree(status: IStatus); virtual; abstract;
 		procedure free(status: IStatus); virtual; abstract;
 	end;
 
 	EventsVTable = class(ReferenceCountedVTable)
-		cancel_1: IEvents_cancel_1Ptr;
+		deprecatedCancel: IEvents_deprecatedCancelPtr;
 		cancel: IEvents_cancelPtr;
 	end;
 
 	IEvents = class(IReferenceCounted)
 		const VERSION = 4;
 
-		procedure cancel_1(status: IStatus);
+		procedure deprecatedCancel(status: IStatus);
 		procedure cancel(status: IStatus);
 	end;
 
@@ -1704,7 +1706,7 @@ type
 
 		procedure addRef(); virtual; abstract;
 		function release(): Integer; virtual; abstract;
-		procedure cancel_1(status: IStatus); virtual; abstract;
+		procedure deprecatedCancel(status: IStatus); virtual; abstract;
 		procedure cancel(status: IStatus); virtual; abstract;
 	end;
 
@@ -1725,8 +1727,8 @@ type
 		queEvents: IAttachment_queEventsPtr;
 		cancelOperation: IAttachment_cancelOperationPtr;
 		ping: IAttachment_pingPtr;
-		detach_1: IAttachment_detach_1Ptr;
-		dropDatabase_1: IAttachment_dropDatabase_1Ptr;
+		deprecatedDetach: IAttachment_deprecatedDetachPtr;
+		deprecatedDropDatabase: IAttachment_deprecatedDropDatabasePtr;
 		getIdleTimeout: IAttachment_getIdleTimeoutPtr;
 		setIdleTimeout: IAttachment_setIdleTimeoutPtr;
 		getStatementTimeout: IAttachment_getStatementTimeoutPtr;
@@ -1756,8 +1758,8 @@ type
 		function queEvents(status: IStatus; callback: IEventCallback; length: Cardinal; events: BytePtr): IEvents;
 		procedure cancelOperation(status: IStatus; option: Integer);
 		procedure ping(status: IStatus);
-		procedure detach_1(status: IStatus);
-		procedure dropDatabase_1(status: IStatus);
+		procedure deprecatedDetach(status: IStatus);
+		procedure deprecatedDropDatabase(status: IStatus);
 		function getIdleTimeout(status: IStatus): Cardinal;
 		procedure setIdleTimeout(status: IStatus; timeOut: Cardinal);
 		function getStatementTimeout(status: IStatus): Cardinal;
@@ -1789,8 +1791,8 @@ type
 		function queEvents(status: IStatus; callback: IEventCallback; length: Cardinal; events: BytePtr): IEvents; virtual; abstract;
 		procedure cancelOperation(status: IStatus; option: Integer); virtual; abstract;
 		procedure ping(status: IStatus); virtual; abstract;
-		procedure detach_1(status: IStatus); virtual; abstract;
-		procedure dropDatabase_1(status: IStatus); virtual; abstract;
+		procedure deprecatedDetach(status: IStatus); virtual; abstract;
+		procedure deprecatedDropDatabase(status: IStatus); virtual; abstract;
 		function getIdleTimeout(status: IStatus): Cardinal; virtual; abstract;
 		procedure setIdleTimeout(status: IStatus; timeOut: Cardinal); virtual; abstract;
 		function getStatementTimeout(status: IStatus): Cardinal; virtual; abstract;
@@ -1802,7 +1804,7 @@ type
 	end;
 
 	ServiceVTable = class(ReferenceCountedVTable)
-		detach_1: IService_detach_1Ptr;
+		deprecatedDetach: IService_deprecatedDetachPtr;
 		query: IService_queryPtr;
 		start: IService_startPtr;
 		detach: IService_detachPtr;
@@ -1811,7 +1813,7 @@ type
 	IService = class(IReferenceCounted)
 		const VERSION = 4;
 
-		procedure detach_1(status: IStatus);
+		procedure deprecatedDetach(status: IStatus);
 		procedure query(status: IStatus; sendLength: Cardinal; sendItems: BytePtr; receiveLength: Cardinal; receiveItems: BytePtr; bufferLength: Cardinal; buffer: BytePtr);
 		procedure start(status: IStatus; spbLength: Cardinal; spb: BytePtr);
 		procedure detach(status: IStatus);
@@ -1822,7 +1824,7 @@ type
 
 		procedure addRef(); virtual; abstract;
 		function release(): Integer; virtual; abstract;
-		procedure detach_1(status: IStatus); virtual; abstract;
+		procedure deprecatedDetach(status: IStatus); virtual; abstract;
 		procedure query(status: IStatus; sendLength: Cardinal; sendItems: BytePtr; receiveLength: Cardinal; receiveItems: BytePtr; bufferLength: Cardinal; buffer: BytePtr); virtual; abstract;
 		procedure start(status: IStatus; spbLength: Cardinal; spb: BytePtr); virtual; abstract;
 		procedure detach(status: IStatus); virtual; abstract;
@@ -3736,6 +3738,7 @@ type
 	function fb_get_master_interface : IMaster; cdecl; external 'fbclient';
 
 const
+	FB_UsedInYValve = FALSE;
 	isc_dpb_version1 = byte(1);
 	isc_dpb_version2 = byte(2);
 	isc_dpb_cdd_pathname = byte(1);
@@ -5854,7 +5857,13 @@ end;
 
 function IFirebirdConf.getVersion(status: IStatus): Cardinal;
 begin
-	Result := FirebirdConfVTable(vTable).getVersion(Self, status);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IFirebirdConf', vTable.version, 4);
+		Result := 0;
+	end
+	else begin
+		Result := FirebirdConfVTable(vTable).getVersion(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -5894,7 +5903,11 @@ end;
 
 procedure IPluginModule.threadDetach();
 begin
-	PluginModuleVTable(vTable).threadDetach(Self);
+	if (vTable.version < 3) then begin
+	end
+	else begin
+		PluginModuleVTable(vTable).threadDetach(Self);
+	end;
 end;
 
 procedure IPluginManager.registerPluginFactory(pluginType: Cardinal; defaultName: PAnsiChar; factory: IPluginFactory);
@@ -5983,7 +5996,12 @@ end;
 
 function IConfigManager.getDefaultSecurityDb(): PAnsiChar;
 begin
-	Result := ConfigManagerVTable(vTable).getDefaultSecurityDb(Self);
+	if (vTable.version < 3) then begin
+		Result := nil;
+	end
+	else begin
+		Result := ConfigManagerVTable(vTable).getDefaultSecurityDb(Self);
+	end;
 end;
 
 procedure IEventCallback.eventCallbackFunction(length: Cardinal; events: BytePtr);
@@ -6009,15 +6027,15 @@ begin
 	FbException.checkException(status);
 end;
 
-procedure IBlob.cancel_1(status: IStatus);
+procedure IBlob.deprecatedCancel(status: IStatus);
 begin
-	BlobVTable(vTable).cancel_1(Self, status);
+	BlobVTable(vTable).deprecatedCancel(Self, status);
 	FbException.checkException(status);
 end;
 
-procedure IBlob.close_1(status: IStatus);
+procedure IBlob.deprecatedClose(status: IStatus);
 begin
-	BlobVTable(vTable).close_1(Self, status);
+	BlobVTable(vTable).deprecatedClose(Self, status);
 	FbException.checkException(status);
 end;
 
@@ -6029,13 +6047,33 @@ end;
 
 procedure IBlob.cancel(status: IStatus);
 begin
-	BlobVTable(vTable).cancel(Self, status);
+	if (vTable.version < 4) then begin
+		if FB_UsedInYValve then begin
+			FbException.setVersionError(status, 'IBlob', vTable.version, 4);
+		end
+		else begin
+			deprecatedCancel(status);
+		end
+	end
+	else begin
+		BlobVTable(vTable).cancel(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure IBlob.close(status: IStatus);
 begin
-	BlobVTable(vTable).close(Self, status);
+	if (vTable.version < 4) then begin
+		if FB_UsedInYValve then begin
+			FbException.setVersionError(status, 'IBlob', vTable.version, 4);
+		end
+		else begin
+			deprecatedClose(status);
+		end
+	end
+	else begin
+		BlobVTable(vTable).close(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -6051,9 +6089,9 @@ begin
 	FbException.checkException(status);
 end;
 
-procedure ITransaction.commit_1(status: IStatus);
+procedure ITransaction.deprecatedCommit(status: IStatus);
 begin
-	TransactionVTable(vTable).commit_1(Self, status);
+	TransactionVTable(vTable).deprecatedCommit(Self, status);
 	FbException.checkException(status);
 end;
 
@@ -6063,9 +6101,9 @@ begin
 	FbException.checkException(status);
 end;
 
-procedure ITransaction.rollback_1(status: IStatus);
+procedure ITransaction.deprecatedRollback(status: IStatus);
 begin
-	TransactionVTable(vTable).rollback_1(Self, status);
+	TransactionVTable(vTable).deprecatedRollback(Self, status);
 	FbException.checkException(status);
 end;
 
@@ -6075,9 +6113,9 @@ begin
 	FbException.checkException(status);
 end;
 
-procedure ITransaction.disconnect_1(status: IStatus);
+procedure ITransaction.deprecatedDisconnect(status: IStatus);
 begin
-	TransactionVTable(vTable).disconnect_1(Self, status);
+	TransactionVTable(vTable).deprecatedDisconnect(Self, status);
 	FbException.checkException(status);
 end;
 
@@ -6101,19 +6139,49 @@ end;
 
 procedure ITransaction.commit(status: IStatus);
 begin
-	TransactionVTable(vTable).commit(Self, status);
+	if (vTable.version < 4) then begin
+		if FB_UsedInYValve then begin
+			FbException.setVersionError(status, 'ITransaction', vTable.version, 4);
+		end
+		else begin
+			deprecatedCommit(status);
+		end
+	end
+	else begin
+		TransactionVTable(vTable).commit(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure ITransaction.rollback(status: IStatus);
 begin
-	TransactionVTable(vTable).rollback(Self, status);
+	if (vTable.version < 4) then begin
+		if FB_UsedInYValve then begin
+			FbException.setVersionError(status, 'ITransaction', vTable.version, 4);
+		end
+		else begin
+			deprecatedRollback(status);
+		end
+	end
+	else begin
+		TransactionVTable(vTable).rollback(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure ITransaction.disconnect(status: IStatus);
 begin
-	TransactionVTable(vTable).disconnect(Self, status);
+	if (vTable.version < 4) then begin
+		if FB_UsedInYValve then begin
+			FbException.setVersionError(status, 'ITransaction', vTable.version, 4);
+		end
+		else begin
+			deprecatedDisconnect(status);
+		end
+	end
+	else begin
+		TransactionVTable(vTable).disconnect(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -6209,13 +6277,25 @@ end;
 
 function IMessageMetadata.getAlignment(status: IStatus): Cardinal;
 begin
-	Result := MessageMetadataVTable(vTable).getAlignment(Self, status);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IMessageMetadata', vTable.version, 4);
+		Result := 0;
+	end
+	else begin
+		Result := MessageMetadataVTable(vTable).getAlignment(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
 function IMessageMetadata.getAlignedLength(status: IStatus): Cardinal;
 begin
-	Result := MessageMetadataVTable(vTable).getAlignedLength(Self, status);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IMessageMetadata', vTable.version, 4);
+		Result := 0;
+	end
+	else begin
+		Result := MessageMetadataVTable(vTable).getAlignedLength(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -6281,25 +6361,45 @@ end;
 
 procedure IMetadataBuilder.setField(status: IStatus; index: Cardinal; field: PAnsiChar);
 begin
-	MetadataBuilderVTable(vTable).setField(Self, status, index, field);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IMetadataBuilder', vTable.version, 4);
+	end
+	else begin
+		MetadataBuilderVTable(vTable).setField(Self, status, index, field);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure IMetadataBuilder.setRelation(status: IStatus; index: Cardinal; relation: PAnsiChar);
 begin
-	MetadataBuilderVTable(vTable).setRelation(Self, status, index, relation);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IMetadataBuilder', vTable.version, 4);
+	end
+	else begin
+		MetadataBuilderVTable(vTable).setRelation(Self, status, index, relation);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure IMetadataBuilder.setOwner(status: IStatus; index: Cardinal; owner: PAnsiChar);
 begin
-	MetadataBuilderVTable(vTable).setOwner(Self, status, index, owner);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IMetadataBuilder', vTable.version, 4);
+	end
+	else begin
+		MetadataBuilderVTable(vTable).setOwner(Self, status, index, owner);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure IMetadataBuilder.setAlias(status: IStatus; index: Cardinal; alias: PAnsiChar);
 begin
-	MetadataBuilderVTable(vTable).setAlias(Self, status, index, alias);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IMetadataBuilder', vTable.version, 4);
+	end
+	else begin
+		MetadataBuilderVTable(vTable).setAlias(Self, status, index, alias);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -6357,9 +6457,9 @@ begin
 	FbException.checkException(status);
 end;
 
-procedure IResultSet.close_1(status: IStatus);
+procedure IResultSet.deprecatedClose(status: IStatus);
 begin
-	ResultSetVTable(vTable).close_1(Self, status);
+	ResultSetVTable(vTable).deprecatedClose(Self, status);
 	FbException.checkException(status);
 end;
 
@@ -6371,7 +6471,17 @@ end;
 
 procedure IResultSet.close(status: IStatus);
 begin
-	ResultSetVTable(vTable).close(Self, status);
+	if (vTable.version < 4) then begin
+		if FB_UsedInYValve then begin
+			FbException.setVersionError(status, 'IResultSet', vTable.version, 4);
+		end
+		else begin
+			deprecatedClose(status);
+		end
+	end
+	else begin
+		ResultSetVTable(vTable).close(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -6429,9 +6539,9 @@ begin
 	FbException.checkException(status);
 end;
 
-procedure IStatement.free_1(status: IStatus);
+procedure IStatement.deprecatedFree(status: IStatus);
 begin
-	StatementVTable(vTable).free_1(Self, status);
+	StatementVTable(vTable).deprecatedFree(Self, status);
 	FbException.checkException(status);
 end;
 
@@ -6443,25 +6553,52 @@ end;
 
 function IStatement.getTimeout(status: IStatus): Cardinal;
 begin
-	Result := StatementVTable(vTable).getTimeout(Self, status);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IStatement', vTable.version, 4);
+		Result := 0;
+	end
+	else begin
+		Result := StatementVTable(vTable).getTimeout(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure IStatement.setTimeout(status: IStatus; timeOut: Cardinal);
 begin
-	StatementVTable(vTable).setTimeout(Self, status, timeOut);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IStatement', vTable.version, 4);
+	end
+	else begin
+		StatementVTable(vTable).setTimeout(Self, status, timeOut);
+	end;
 	FbException.checkException(status);
 end;
 
 function IStatement.createBatch(status: IStatus; inMetadata: IMessageMetadata; parLength: Cardinal; par: BytePtr): IBatch;
 begin
-	Result := StatementVTable(vTable).createBatch(Self, status, inMetadata, parLength, par);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IStatement', vTable.version, 4);
+		Result := nil;
+	end
+	else begin
+		Result := StatementVTable(vTable).createBatch(Self, status, inMetadata, parLength, par);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure IStatement.free(status: IStatus);
 begin
-	StatementVTable(vTable).free(Self, status);
+	if (vTable.version < 5) then begin
+		if FB_UsedInYValve then begin
+			FbException.setVersionError(status, 'IStatement', vTable.version, 5);
+		end
+		else begin
+			deprecatedFree(status);
+		end
+	end
+	else begin
+		StatementVTable(vTable).free(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -6525,15 +6662,25 @@ begin
 	FbException.checkException(status);
 end;
 
-procedure IBatch.close_1(status: IStatus);
+procedure IBatch.deprecatedClose(status: IStatus);
 begin
-	BatchVTable(vTable).close_1(Self, status);
+	BatchVTable(vTable).deprecatedClose(Self, status);
 	FbException.checkException(status);
 end;
 
 procedure IBatch.close(status: IStatus);
 begin
-	BatchVTable(vTable).close(Self, status);
+	if (vTable.version < 4) then begin
+		if FB_UsedInYValve then begin
+			FbException.setVersionError(status, 'IBatch', vTable.version, 4);
+		end
+		else begin
+			deprecatedClose(status);
+		end
+	end
+	else begin
+		BatchVTable(vTable).close(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -6567,15 +6714,25 @@ begin
 	FbException.checkException(status);
 end;
 
-procedure IReplicator.close_1(status: IStatus);
+procedure IReplicator.deprecatedClose(status: IStatus);
 begin
-	ReplicatorVTable(vTable).close_1(Self, status);
+	ReplicatorVTable(vTable).deprecatedClose(Self, status);
 	FbException.checkException(status);
 end;
 
 procedure IReplicator.close(status: IStatus);
 begin
-	ReplicatorVTable(vTable).close(Self, status);
+	if (vTable.version < 4) then begin
+		if FB_UsedInYValve then begin
+			FbException.setVersionError(status, 'IReplicator', vTable.version, 4);
+		end
+		else begin
+			deprecatedClose(status);
+		end
+	end
+	else begin
+		ReplicatorVTable(vTable).close(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -6615,27 +6772,47 @@ begin
 	FbException.checkException(status);
 end;
 
-procedure IRequest.free_1(status: IStatus);
+procedure IRequest.deprecatedFree(status: IStatus);
 begin
-	RequestVTable(vTable).free_1(Self, status);
+	RequestVTable(vTable).deprecatedFree(Self, status);
 	FbException.checkException(status);
 end;
 
 procedure IRequest.free(status: IStatus);
 begin
-	RequestVTable(vTable).free(Self, status);
+	if (vTable.version < 4) then begin
+		if FB_UsedInYValve then begin
+			FbException.setVersionError(status, 'IRequest', vTable.version, 4);
+		end
+		else begin
+			deprecatedFree(status);
+		end
+	end
+	else begin
+		RequestVTable(vTable).free(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
-procedure IEvents.cancel_1(status: IStatus);
+procedure IEvents.deprecatedCancel(status: IStatus);
 begin
-	EventsVTable(vTable).cancel_1(Self, status);
+	EventsVTable(vTable).deprecatedCancel(Self, status);
 	FbException.checkException(status);
 end;
 
 procedure IEvents.cancel(status: IStatus);
 begin
-	EventsVTable(vTable).cancel(Self, status);
+	if (vTable.version < 4) then begin
+		if FB_UsedInYValve then begin
+			FbException.setVersionError(status, 'IEvents', vTable.version, 4);
+		end
+		else begin
+			deprecatedCancel(status);
+		end
+	end
+	else begin
+		EventsVTable(vTable).cancel(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -6735,69 +6912,123 @@ begin
 	FbException.checkException(status);
 end;
 
-procedure IAttachment.detach_1(status: IStatus);
+procedure IAttachment.deprecatedDetach(status: IStatus);
 begin
-	AttachmentVTable(vTable).detach_1(Self, status);
+	AttachmentVTable(vTable).deprecatedDetach(Self, status);
 	FbException.checkException(status);
 end;
 
-procedure IAttachment.dropDatabase_1(status: IStatus);
+procedure IAttachment.deprecatedDropDatabase(status: IStatus);
 begin
-	AttachmentVTable(vTable).dropDatabase_1(Self, status);
+	AttachmentVTable(vTable).deprecatedDropDatabase(Self, status);
 	FbException.checkException(status);
 end;
 
 function IAttachment.getIdleTimeout(status: IStatus): Cardinal;
 begin
-	Result := AttachmentVTable(vTable).getIdleTimeout(Self, status);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IAttachment', vTable.version, 4);
+		Result := 0;
+	end
+	else begin
+		Result := AttachmentVTable(vTable).getIdleTimeout(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure IAttachment.setIdleTimeout(status: IStatus; timeOut: Cardinal);
 begin
-	AttachmentVTable(vTable).setIdleTimeout(Self, status, timeOut);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IAttachment', vTable.version, 4);
+	end
+	else begin
+		AttachmentVTable(vTable).setIdleTimeout(Self, status, timeOut);
+	end;
 	FbException.checkException(status);
 end;
 
 function IAttachment.getStatementTimeout(status: IStatus): Cardinal;
 begin
-	Result := AttachmentVTable(vTable).getStatementTimeout(Self, status);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IAttachment', vTable.version, 4);
+		Result := 0;
+	end
+	else begin
+		Result := AttachmentVTable(vTable).getStatementTimeout(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure IAttachment.setStatementTimeout(status: IStatus; timeOut: Cardinal);
 begin
-	AttachmentVTable(vTable).setStatementTimeout(Self, status, timeOut);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IAttachment', vTable.version, 4);
+	end
+	else begin
+		AttachmentVTable(vTable).setStatementTimeout(Self, status, timeOut);
+	end;
 	FbException.checkException(status);
 end;
 
 function IAttachment.createBatch(status: IStatus; transaction: ITransaction; stmtLength: Cardinal; sqlStmt: PAnsiChar; dialect: Cardinal; inMetadata: IMessageMetadata; parLength: Cardinal; par: BytePtr): IBatch;
 begin
-	Result := AttachmentVTable(vTable).createBatch(Self, status, transaction, stmtLength, sqlStmt, dialect, inMetadata, parLength, par);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IAttachment', vTable.version, 4);
+		Result := nil;
+	end
+	else begin
+		Result := AttachmentVTable(vTable).createBatch(Self, status, transaction, stmtLength, sqlStmt, dialect, inMetadata, parLength, par);
+	end;
 	FbException.checkException(status);
 end;
 
 function IAttachment.createReplicator(status: IStatus): IReplicator;
 begin
-	Result := AttachmentVTable(vTable).createReplicator(Self, status);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IAttachment', vTable.version, 4);
+		Result := nil;
+	end
+	else begin
+		Result := AttachmentVTable(vTable).createReplicator(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure IAttachment.detach(status: IStatus);
 begin
-	AttachmentVTable(vTable).detach(Self, status);
+	if (vTable.version < 5) then begin
+		if FB_UsedInYValve then begin
+			FbException.setVersionError(status, 'IAttachment', vTable.version, 5);
+		end
+		else begin
+			deprecatedDetach(status);
+		end
+	end
+	else begin
+		AttachmentVTable(vTable).detach(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure IAttachment.dropDatabase(status: IStatus);
 begin
-	AttachmentVTable(vTable).dropDatabase(Self, status);
+	if (vTable.version < 5) then begin
+		if FB_UsedInYValve then begin
+			FbException.setVersionError(status, 'IAttachment', vTable.version, 5);
+		end
+		else begin
+			deprecatedDropDatabase(status);
+		end
+	end
+	else begin
+		AttachmentVTable(vTable).dropDatabase(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
-procedure IService.detach_1(status: IStatus);
+procedure IService.deprecatedDetach(status: IStatus);
 begin
-	ServiceVTable(vTable).detach_1(Self, status);
+	ServiceVTable(vTable).deprecatedDetach(Self, status);
 	FbException.checkException(status);
 end;
 
@@ -6815,7 +7046,17 @@ end;
 
 procedure IService.detach(status: IStatus);
 begin
-	ServiceVTable(vTable).detach(Self, status);
+	if (vTable.version < 4) then begin
+		if FB_UsedInYValve then begin
+			FbException.setVersionError(status, 'IService', vTable.version, 4);
+		end
+		else begin
+			deprecatedDetach(status);
+		end
+	end
+	else begin
+		ServiceVTable(vTable).detach(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -6953,7 +7194,13 @@ end;
 
 function IClientBlock.getAuthBlock(status: IStatus): IAuthBlock;
 begin
-	Result := ClientBlockVTable(vTable).getAuthBlock(Self, status);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IClientBlock', vTable.version, 4);
+		Result := nil;
+	end
+	else begin
+		Result := ClientBlockVTable(vTable).getAuthBlock(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -6965,7 +7212,12 @@ end;
 
 procedure IServer.setDbCryptCallback(status: IStatus; cryptCallback: ICryptKeyCallback);
 begin
-	ServerVTable(vTable).setDbCryptCallback(Self, status, cryptCallback);
+	if (vTable.version < 6) then begin
+		FbException.setVersionError(status, 'IServer', vTable.version, 6);
+	end
+	else begin
+		ServerVTable(vTable).setDbCryptCallback(Self, status, cryptCallback);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -7102,13 +7354,25 @@ end;
 
 function ILogonInfo.attachment(status: IStatus): IAttachment;
 begin
-	Result := LogonInfoVTable(vTable).attachment(Self, status);
+	if (vTable.version < 3) then begin
+		FbException.setVersionError(status, 'ILogonInfo', vTable.version, 3);
+		Result := nil;
+	end
+	else begin
+		Result := LogonInfoVTable(vTable).attachment(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
 function ILogonInfo.transaction(status: IStatus): ITransaction;
 begin
-	Result := LogonInfoVTable(vTable).transaction(Self, status);
+	if (vTable.version < 3) then begin
+		FbException.setVersionError(status, 'ILogonInfo', vTable.version, 3);
+		Result := nil;
+	end
+	else begin
+		Result := LogonInfoVTable(vTable).transaction(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -7199,13 +7463,24 @@ end;
 
 function IWireCryptPlugin.getSpecificData(status: IStatus; keyType: PAnsiChar; length: CardinalPtr): BytePtr;
 begin
-	Result := WireCryptPluginVTable(vTable).getSpecificData(Self, status, keyType, length);
+	if (vTable.version < 5) then begin
+		FbException.setVersionError(status, 'IWireCryptPlugin', vTable.version, 5);
+		Result := nil;
+	end
+	else begin
+		Result := WireCryptPluginVTable(vTable).getSpecificData(Self, status, keyType, length);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure IWireCryptPlugin.setSpecificData(status: IStatus; keyType: PAnsiChar; length: Cardinal; data: BytePtr);
 begin
-	WireCryptPluginVTable(vTable).setSpecificData(Self, status, keyType, length, data);
+	if (vTable.version < 5) then begin
+		FbException.setVersionError(status, 'IWireCryptPlugin', vTable.version, 5);
+	end
+	else begin
+		WireCryptPluginVTable(vTable).setSpecificData(Self, status, keyType, length, data);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -7228,13 +7503,25 @@ end;
 
 function IKeyHolderPlugin.useOnlyOwnKeys(status: IStatus): Boolean;
 begin
-	Result := KeyHolderPluginVTable(vTable).useOnlyOwnKeys(Self, status);
+	if (vTable.version < 5) then begin
+		FbException.setVersionError(status, 'IKeyHolderPlugin', vTable.version, 5);
+		Result := false;
+	end
+	else begin
+		Result := KeyHolderPluginVTable(vTable).useOnlyOwnKeys(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
 function IKeyHolderPlugin.chainHandle(status: IStatus): ICryptKeyCallback;
 begin
-	Result := KeyHolderPluginVTable(vTable).chainHandle(Self, status);
+	if (vTable.version < 5) then begin
+		FbException.setVersionError(status, 'IKeyHolderPlugin', vTable.version, 5);
+		Result := nil;
+	end
+	else begin
+		Result := KeyHolderPluginVTable(vTable).chainHandle(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -7264,7 +7551,12 @@ end;
 
 procedure IDbCryptPlugin.setInfo(status: IStatus; info: IDbCryptInfo);
 begin
-	DbCryptPluginVTable(vTable).setInfo(Self, status, info);
+	if (vTable.version < 5) then begin
+		FbException.setVersionError(status, 'IDbCryptPlugin', vTable.version, 5);
+	end
+	else begin
+		DbCryptPluginVTable(vTable).setInfo(Self, status, info);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -7550,55 +7842,103 @@ end;
 
 function IUtil.getDecFloat16(status: IStatus): IDecFloat16;
 begin
-	Result := UtilVTable(vTable).getDecFloat16(Self, status);
+	if (vTable.version < 3) then begin
+		FbException.setVersionError(status, 'IUtil', vTable.version, 3);
+		Result := nil;
+	end
+	else begin
+		Result := UtilVTable(vTable).getDecFloat16(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
 function IUtil.getDecFloat34(status: IStatus): IDecFloat34;
 begin
-	Result := UtilVTable(vTable).getDecFloat34(Self, status);
+	if (vTable.version < 3) then begin
+		FbException.setVersionError(status, 'IUtil', vTable.version, 3);
+		Result := nil;
+	end
+	else begin
+		Result := UtilVTable(vTable).getDecFloat34(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure IUtil.decodeTimeTz(status: IStatus; timeTz: ISC_TIME_TZPtr; hours: CardinalPtr; minutes: CardinalPtr; seconds: CardinalPtr; fractions: CardinalPtr; timeZoneBufferLength: Cardinal; timeZoneBuffer: PAnsiChar);
 begin
-	UtilVTable(vTable).decodeTimeTz(Self, status, timeTz, hours, minutes, seconds, fractions, timeZoneBufferLength, timeZoneBuffer);
+	if (vTable.version < 3) then begin
+		FbException.setVersionError(status, 'IUtil', vTable.version, 3);
+	end
+	else begin
+		UtilVTable(vTable).decodeTimeTz(Self, status, timeTz, hours, minutes, seconds, fractions, timeZoneBufferLength, timeZoneBuffer);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure IUtil.decodeTimeStampTz(status: IStatus; timeStampTz: ISC_TIMESTAMP_TZPtr; year: CardinalPtr; month: CardinalPtr; day: CardinalPtr; hours: CardinalPtr; minutes: CardinalPtr; seconds: CardinalPtr; fractions: CardinalPtr; timeZoneBufferLength: Cardinal; timeZoneBuffer: PAnsiChar);
 begin
-	UtilVTable(vTable).decodeTimeStampTz(Self, status, timeStampTz, year, month, day, hours, minutes, seconds, fractions, timeZoneBufferLength, timeZoneBuffer);
+	if (vTable.version < 3) then begin
+		FbException.setVersionError(status, 'IUtil', vTable.version, 3);
+	end
+	else begin
+		UtilVTable(vTable).decodeTimeStampTz(Self, status, timeStampTz, year, month, day, hours, minutes, seconds, fractions, timeZoneBufferLength, timeZoneBuffer);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure IUtil.encodeTimeTz(status: IStatus; timeTz: ISC_TIME_TZPtr; hours: Cardinal; minutes: Cardinal; seconds: Cardinal; fractions: Cardinal; timeZone: PAnsiChar);
 begin
-	UtilVTable(vTable).encodeTimeTz(Self, status, timeTz, hours, minutes, seconds, fractions, timeZone);
+	if (vTable.version < 3) then begin
+		FbException.setVersionError(status, 'IUtil', vTable.version, 3);
+	end
+	else begin
+		UtilVTable(vTable).encodeTimeTz(Self, status, timeTz, hours, minutes, seconds, fractions, timeZone);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure IUtil.encodeTimeStampTz(status: IStatus; timeStampTz: ISC_TIMESTAMP_TZPtr; year: Cardinal; month: Cardinal; day: Cardinal; hours: Cardinal; minutes: Cardinal; seconds: Cardinal; fractions: Cardinal; timeZone: PAnsiChar);
 begin
-	UtilVTable(vTable).encodeTimeStampTz(Self, status, timeStampTz, year, month, day, hours, minutes, seconds, fractions, timeZone);
+	if (vTable.version < 3) then begin
+		FbException.setVersionError(status, 'IUtil', vTable.version, 3);
+	end
+	else begin
+		UtilVTable(vTable).encodeTimeStampTz(Self, status, timeStampTz, year, month, day, hours, minutes, seconds, fractions, timeZone);
+	end;
 	FbException.checkException(status);
 end;
 
 function IUtil.getInt128(status: IStatus): IInt128;
 begin
-	Result := UtilVTable(vTable).getInt128(Self, status);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IUtil', vTable.version, 4);
+		Result := nil;
+	end
+	else begin
+		Result := UtilVTable(vTable).getInt128(Self, status);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure IUtil.decodeTimeTzEx(status: IStatus; timeTz: ISC_TIME_TZ_EXPtr; hours: CardinalPtr; minutes: CardinalPtr; seconds: CardinalPtr; fractions: CardinalPtr; timeZoneBufferLength: Cardinal; timeZoneBuffer: PAnsiChar);
 begin
-	UtilVTable(vTable).decodeTimeTzEx(Self, status, timeTz, hours, minutes, seconds, fractions, timeZoneBufferLength, timeZoneBuffer);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IUtil', vTable.version, 4);
+	end
+	else begin
+		UtilVTable(vTable).decodeTimeTzEx(Self, status, timeTz, hours, minutes, seconds, fractions, timeZoneBufferLength, timeZoneBuffer);
+	end;
 	FbException.checkException(status);
 end;
 
 procedure IUtil.decodeTimeStampTzEx(status: IStatus; timeStampTz: ISC_TIMESTAMP_TZ_EXPtr; year: CardinalPtr; month: CardinalPtr; day: CardinalPtr; hours: CardinalPtr; minutes: CardinalPtr; seconds: CardinalPtr; fractions: CardinalPtr; timeZoneBufferLength: Cardinal; timeZoneBuffer: PAnsiChar);
 begin
-	UtilVTable(vTable).decodeTimeStampTzEx(Self, status, timeStampTz, year, month, day, hours, minutes, seconds, fractions, timeZoneBufferLength, timeZoneBuffer);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'IUtil', vTable.version, 4);
+	end
+	else begin
+		UtilVTable(vTable).decodeTimeStampTzEx(Self, status, timeStampTz, year, month, day, hours, minutes, seconds, fractions, timeZoneBufferLength, timeZoneBuffer);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -7810,12 +8150,22 @@ end;
 
 function ITraceTransaction.getInitialID(): Int64;
 begin
-	Result := TraceTransactionVTable(vTable).getInitialID(Self);
+	if (vTable.version < 3) then begin
+		Result := 0;
+	end
+	else begin
+		Result := TraceTransactionVTable(vTable).getInitialID(Self);
+	end;
 end;
 
 function ITraceTransaction.getPreviousID(): Int64;
 begin
-	Result := TraceTransactionVTable(vTable).getPreviousID(Self);
+	if (vTable.version < 3) then begin
+		Result := 0;
+	end
+	else begin
+		Result := TraceTransactionVTable(vTable).getPreviousID(Self);
+	end;
 end;
 
 function ITraceParams.getCount(): Cardinal;
@@ -7830,7 +8180,13 @@ end;
 
 function ITraceParams.getTextUTF8(status: IStatus; idx: Cardinal): PAnsiChar;
 begin
-	Result := TraceParamsVTable(vTable).getTextUTF8(Self, status, idx);
+	if (vTable.version < 3) then begin
+		FbException.setVersionError(status, 'ITraceParams', vTable.version, 3);
+		Result := nil;
+	end
+	else begin
+		Result := TraceParamsVTable(vTable).getTextUTF8(Self, status, idx);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -8041,7 +8397,13 @@ end;
 
 function ITraceLogWriter.write_s(status: IStatus; buf: Pointer; size: Cardinal): Cardinal;
 begin
-	Result := TraceLogWriterVTable(vTable).write_s(Self, status, buf, size);
+	if (vTable.version < 4) then begin
+		FbException.setVersionError(status, 'ITraceLogWriter', vTable.version, 4);
+		Result := 0;
+	end
+	else begin
+		Result := TraceLogWriterVTable(vTable).write_s(Self, status, buf, size);
+	end;
 	FbException.checkException(status);
 end;
 
@@ -9393,19 +9755,19 @@ begin
 	end
 end;
 
-procedure IBlobImpl_cancel_1Dispatcher(this: IBlob; status: IStatus); cdecl;
+procedure IBlobImpl_deprecatedCancelDispatcher(this: IBlob; status: IStatus); cdecl;
 begin
 	try
-		IBlobImpl(this).cancel_1(status);
+		IBlobImpl(this).deprecatedCancel(status);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
 end;
 
-procedure IBlobImpl_close_1Dispatcher(this: IBlob; status: IStatus); cdecl;
+procedure IBlobImpl_deprecatedCloseDispatcher(this: IBlob; status: IStatus); cdecl;
 begin
 	try
-		IBlobImpl(this).close_1(status);
+		IBlobImpl(this).deprecatedClose(status);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
@@ -9482,10 +9844,10 @@ begin
 	end
 end;
 
-procedure ITransactionImpl_commit_1Dispatcher(this: ITransaction; status: IStatus); cdecl;
+procedure ITransactionImpl_deprecatedCommitDispatcher(this: ITransaction; status: IStatus); cdecl;
 begin
 	try
-		ITransactionImpl(this).commit_1(status);
+		ITransactionImpl(this).deprecatedCommit(status);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
@@ -9500,10 +9862,10 @@ begin
 	end
 end;
 
-procedure ITransactionImpl_rollback_1Dispatcher(this: ITransaction; status: IStatus); cdecl;
+procedure ITransactionImpl_deprecatedRollbackDispatcher(this: ITransaction; status: IStatus); cdecl;
 begin
 	try
-		ITransactionImpl(this).rollback_1(status);
+		ITransactionImpl(this).deprecatedRollback(status);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
@@ -9518,10 +9880,10 @@ begin
 	end
 end;
 
-procedure ITransactionImpl_disconnect_1Dispatcher(this: ITransaction; status: IStatus); cdecl;
+procedure ITransactionImpl_deprecatedDisconnectDispatcher(this: ITransaction; status: IStatus); cdecl;
 begin
 	try
-		ITransactionImpl(this).disconnect_1(status);
+		ITransactionImpl(this).deprecatedDisconnect(status);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
@@ -10019,10 +10381,10 @@ begin
 	end
 end;
 
-procedure IResultSetImpl_close_1Dispatcher(this: IResultSet; status: IStatus); cdecl;
+procedure IResultSetImpl_deprecatedCloseDispatcher(this: IResultSet; status: IStatus); cdecl;
 begin
 	try
-		IResultSetImpl(this).close_1(status);
+		IResultSetImpl(this).deprecatedClose(status);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
@@ -10153,10 +10515,10 @@ begin
 	end
 end;
 
-procedure IStatementImpl_free_1Dispatcher(this: IStatement; status: IStatus); cdecl;
+procedure IStatementImpl_deprecatedFreeDispatcher(this: IStatement; status: IStatus); cdecl;
 begin
 	try
-		IStatementImpl(this).free_1(status);
+		IStatementImpl(this).deprecatedFree(status);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
@@ -10323,10 +10685,10 @@ begin
 	end
 end;
 
-procedure IBatchImpl_close_1Dispatcher(this: IBatch; status: IStatus); cdecl;
+procedure IBatchImpl_deprecatedCloseDispatcher(this: IBatch; status: IStatus); cdecl;
 begin
 	try
-		IBatchImpl(this).close_1(status);
+		IBatchImpl(this).deprecatedClose(status);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
@@ -10429,10 +10791,10 @@ begin
 	end
 end;
 
-procedure IReplicatorImpl_close_1Dispatcher(this: IReplicator; status: IStatus); cdecl;
+procedure IReplicatorImpl_deprecatedCloseDispatcher(this: IReplicator; status: IStatus); cdecl;
 begin
 	try
-		IReplicatorImpl(this).close_1(status);
+		IReplicatorImpl(this).deprecatedClose(status);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
@@ -10527,10 +10889,10 @@ begin
 	end
 end;
 
-procedure IRequestImpl_free_1Dispatcher(this: IRequest; status: IStatus); cdecl;
+procedure IRequestImpl_deprecatedFreeDispatcher(this: IRequest; status: IStatus); cdecl;
 begin
 	try
-		IRequestImpl(this).free_1(status);
+		IRequestImpl(this).deprecatedFree(status);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
@@ -10571,10 +10933,10 @@ begin
 	end
 end;
 
-procedure IEventsImpl_cancel_1Dispatcher(this: IEvents; status: IStatus); cdecl;
+procedure IEventsImpl_deprecatedCancelDispatcher(this: IEvents; status: IStatus); cdecl;
 begin
 	try
-		IEventsImpl(this).cancel_1(status);
+		IEventsImpl(this).deprecatedCancel(status);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
@@ -10759,19 +11121,19 @@ begin
 	end
 end;
 
-procedure IAttachmentImpl_detach_1Dispatcher(this: IAttachment; status: IStatus); cdecl;
+procedure IAttachmentImpl_deprecatedDetachDispatcher(this: IAttachment; status: IStatus); cdecl;
 begin
 	try
-		IAttachmentImpl(this).detach_1(status);
+		IAttachmentImpl(this).deprecatedDetach(status);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
 end;
 
-procedure IAttachmentImpl_dropDatabase_1Dispatcher(this: IAttachment; status: IStatus); cdecl;
+procedure IAttachmentImpl_deprecatedDropDatabaseDispatcher(this: IAttachment; status: IStatus); cdecl;
 begin
 	try
-		IAttachmentImpl(this).dropDatabase_1(status);
+		IAttachmentImpl(this).deprecatedDropDatabase(status);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
@@ -10875,10 +11237,10 @@ begin
 	end
 end;
 
-procedure IServiceImpl_detach_1Dispatcher(this: IService; status: IStatus); cdecl;
+procedure IServiceImpl_deprecatedDetachDispatcher(this: IService; status: IStatus); cdecl;
 begin
 	try
-		IServiceImpl(this).detach_1(status);
+		IServiceImpl(this).deprecatedDetach(status);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
@@ -14992,6 +15354,27 @@ begin
 		status.setErrors(@statusVector);
 	end
 end;
+
+class procedure FbException.setVersionError(status: IStatus; interfaceName: string;
+		currentVersion, expectedVersion: NativeInt);
+var
+	statusVector: array[0..8] of NativeIntPtr;
+	msg: AnsiString;
+begin
+	msg := interfaceName;
+
+	statusVector[0] := NativeIntPtr(isc_arg_gds);
+	statusVector[1] := NativeIntPtr(isc_interface_version_too_old);
+	statusVector[2] := NativeIntPtr(isc_arg_number);
+	statusVector[3] := NativeIntPtr(expectedVersion);
+	statusVector[4] := NativeIntPtr(isc_arg_number);
+	statusVector[5] := NativeIntPtr(currentVersion);
+	statusVector[6] := NativeIntPtr(isc_arg_string);
+	statusVector[7] := NativeIntPtr(PAnsiChar(msg));
+	statusVector[8] := NativeIntPtr(isc_arg_end);
+
+	status.setErrors(@statusVector);
+end;
 initialization
 	IVersionedImpl_vTable := VersionedVTable.create;
 	IVersionedImpl_vTable.version := 1;
@@ -15135,8 +15518,8 @@ initialization
 	IBlobImpl_vTable.getInfo := @IBlobImpl_getInfoDispatcher;
 	IBlobImpl_vTable.getSegment := @IBlobImpl_getSegmentDispatcher;
 	IBlobImpl_vTable.putSegment := @IBlobImpl_putSegmentDispatcher;
-	IBlobImpl_vTable.cancel_1 := @IBlobImpl_cancel_1Dispatcher;
-	IBlobImpl_vTable.close_1 := @IBlobImpl_close_1Dispatcher;
+	IBlobImpl_vTable.deprecatedCancel := @IBlobImpl_deprecatedCancelDispatcher;
+	IBlobImpl_vTable.deprecatedClose := @IBlobImpl_deprecatedCloseDispatcher;
 	IBlobImpl_vTable.seek := @IBlobImpl_seekDispatcher;
 	IBlobImpl_vTable.cancel := @IBlobImpl_cancelDispatcher;
 	IBlobImpl_vTable.close := @IBlobImpl_closeDispatcher;
@@ -15147,11 +15530,11 @@ initialization
 	ITransactionImpl_vTable.release := @ITransactionImpl_releaseDispatcher;
 	ITransactionImpl_vTable.getInfo := @ITransactionImpl_getInfoDispatcher;
 	ITransactionImpl_vTable.prepare := @ITransactionImpl_prepareDispatcher;
-	ITransactionImpl_vTable.commit_1 := @ITransactionImpl_commit_1Dispatcher;
+	ITransactionImpl_vTable.deprecatedCommit := @ITransactionImpl_deprecatedCommitDispatcher;
 	ITransactionImpl_vTable.commitRetaining := @ITransactionImpl_commitRetainingDispatcher;
-	ITransactionImpl_vTable.rollback_1 := @ITransactionImpl_rollback_1Dispatcher;
+	ITransactionImpl_vTable.deprecatedRollback := @ITransactionImpl_deprecatedRollbackDispatcher;
 	ITransactionImpl_vTable.rollbackRetaining := @ITransactionImpl_rollbackRetainingDispatcher;
-	ITransactionImpl_vTable.disconnect_1 := @ITransactionImpl_disconnect_1Dispatcher;
+	ITransactionImpl_vTable.deprecatedDisconnect := @ITransactionImpl_deprecatedDisconnectDispatcher;
 	ITransactionImpl_vTable.join := @ITransactionImpl_joinDispatcher;
 	ITransactionImpl_vTable.validate := @ITransactionImpl_validateDispatcher;
 	ITransactionImpl_vTable.enterDtc := @ITransactionImpl_enterDtcDispatcher;
@@ -15213,7 +15596,7 @@ initialization
 	IResultSetImpl_vTable.isEof := @IResultSetImpl_isEofDispatcher;
 	IResultSetImpl_vTable.isBof := @IResultSetImpl_isBofDispatcher;
 	IResultSetImpl_vTable.getMetadata := @IResultSetImpl_getMetadataDispatcher;
-	IResultSetImpl_vTable.close_1 := @IResultSetImpl_close_1Dispatcher;
+	IResultSetImpl_vTable.deprecatedClose := @IResultSetImpl_deprecatedCloseDispatcher;
 	IResultSetImpl_vTable.setDelayedOutputFormat := @IResultSetImpl_setDelayedOutputFormatDispatcher;
 	IResultSetImpl_vTable.close := @IResultSetImpl_closeDispatcher;
 
@@ -15230,7 +15613,7 @@ initialization
 	IStatementImpl_vTable.execute := @IStatementImpl_executeDispatcher;
 	IStatementImpl_vTable.openCursor := @IStatementImpl_openCursorDispatcher;
 	IStatementImpl_vTable.setCursorName := @IStatementImpl_setCursorNameDispatcher;
-	IStatementImpl_vTable.free_1 := @IStatementImpl_free_1Dispatcher;
+	IStatementImpl_vTable.deprecatedFree := @IStatementImpl_deprecatedFreeDispatcher;
 	IStatementImpl_vTable.getFlags := @IStatementImpl_getFlagsDispatcher;
 	IStatementImpl_vTable.getTimeout := @IStatementImpl_getTimeoutDispatcher;
 	IStatementImpl_vTable.setTimeout := @IStatementImpl_setTimeoutDispatcher;
@@ -15251,7 +15634,7 @@ initialization
 	IBatchImpl_vTable.getBlobAlignment := @IBatchImpl_getBlobAlignmentDispatcher;
 	IBatchImpl_vTable.getMetadata := @IBatchImpl_getMetadataDispatcher;
 	IBatchImpl_vTable.setDefaultBpb := @IBatchImpl_setDefaultBpbDispatcher;
-	IBatchImpl_vTable.close_1 := @IBatchImpl_close_1Dispatcher;
+	IBatchImpl_vTable.deprecatedClose := @IBatchImpl_deprecatedCloseDispatcher;
 	IBatchImpl_vTable.close := @IBatchImpl_closeDispatcher;
 
 	IBatchCompletionStateImpl_vTable := BatchCompletionStateVTable.create;
@@ -15267,7 +15650,7 @@ initialization
 	IReplicatorImpl_vTable.addRef := @IReplicatorImpl_addRefDispatcher;
 	IReplicatorImpl_vTable.release := @IReplicatorImpl_releaseDispatcher;
 	IReplicatorImpl_vTable.process := @IReplicatorImpl_processDispatcher;
-	IReplicatorImpl_vTable.close_1 := @IReplicatorImpl_close_1Dispatcher;
+	IReplicatorImpl_vTable.deprecatedClose := @IReplicatorImpl_deprecatedCloseDispatcher;
 	IReplicatorImpl_vTable.close := @IReplicatorImpl_closeDispatcher;
 
 	IRequestImpl_vTable := RequestVTable.create;
@@ -15280,14 +15663,14 @@ initialization
 	IRequestImpl_vTable.start := @IRequestImpl_startDispatcher;
 	IRequestImpl_vTable.startAndSend := @IRequestImpl_startAndSendDispatcher;
 	IRequestImpl_vTable.unwind := @IRequestImpl_unwindDispatcher;
-	IRequestImpl_vTable.free_1 := @IRequestImpl_free_1Dispatcher;
+	IRequestImpl_vTable.deprecatedFree := @IRequestImpl_deprecatedFreeDispatcher;
 	IRequestImpl_vTable.free := @IRequestImpl_freeDispatcher;
 
 	IEventsImpl_vTable := EventsVTable.create;
 	IEventsImpl_vTable.version := 4;
 	IEventsImpl_vTable.addRef := @IEventsImpl_addRefDispatcher;
 	IEventsImpl_vTable.release := @IEventsImpl_releaseDispatcher;
-	IEventsImpl_vTable.cancel_1 := @IEventsImpl_cancel_1Dispatcher;
+	IEventsImpl_vTable.deprecatedCancel := @IEventsImpl_deprecatedCancelDispatcher;
 	IEventsImpl_vTable.cancel := @IEventsImpl_cancelDispatcher;
 
 	IAttachmentImpl_vTable := AttachmentVTable.create;
@@ -15310,8 +15693,8 @@ initialization
 	IAttachmentImpl_vTable.queEvents := @IAttachmentImpl_queEventsDispatcher;
 	IAttachmentImpl_vTable.cancelOperation := @IAttachmentImpl_cancelOperationDispatcher;
 	IAttachmentImpl_vTable.ping := @IAttachmentImpl_pingDispatcher;
-	IAttachmentImpl_vTable.detach_1 := @IAttachmentImpl_detach_1Dispatcher;
-	IAttachmentImpl_vTable.dropDatabase_1 := @IAttachmentImpl_dropDatabase_1Dispatcher;
+	IAttachmentImpl_vTable.deprecatedDetach := @IAttachmentImpl_deprecatedDetachDispatcher;
+	IAttachmentImpl_vTable.deprecatedDropDatabase := @IAttachmentImpl_deprecatedDropDatabaseDispatcher;
 	IAttachmentImpl_vTable.getIdleTimeout := @IAttachmentImpl_getIdleTimeoutDispatcher;
 	IAttachmentImpl_vTable.setIdleTimeout := @IAttachmentImpl_setIdleTimeoutDispatcher;
 	IAttachmentImpl_vTable.getStatementTimeout := @IAttachmentImpl_getStatementTimeoutDispatcher;
@@ -15325,7 +15708,7 @@ initialization
 	IServiceImpl_vTable.version := 4;
 	IServiceImpl_vTable.addRef := @IServiceImpl_addRefDispatcher;
 	IServiceImpl_vTable.release := @IServiceImpl_releaseDispatcher;
-	IServiceImpl_vTable.detach_1 := @IServiceImpl_detach_1Dispatcher;
+	IServiceImpl_vTable.deprecatedDetach := @IServiceImpl_deprecatedDetachDispatcher;
 	IServiceImpl_vTable.query := @IServiceImpl_queryDispatcher;
 	IServiceImpl_vTable.start := @IServiceImpl_startDispatcher;
 	IServiceImpl_vTable.detach := @IServiceImpl_detachDispatcher;

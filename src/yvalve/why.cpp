@@ -28,7 +28,10 @@
  */
 
 #include "firebird.h"
+
+#define FB_UsedInYValve true
 #include "firebird/Interface.h"
+
 #include "memory_routines.h"
 #include "gen/iberror.h"
 #include "gen/msg_facs.h"
@@ -1336,7 +1339,7 @@ namespace Why
 		if (!(status->getState() & IStatus::STATE_ERRORS))
 			y->destroy(Y::DF_RELEASE | Y::DF_KEEP_NEXT);
 
-		else if (status->getErrors()[1] == isc_wish_list)
+		else if (status->getErrors()[1] == isc_interface_version_too_old)
 		{
 			status->init();
 			if (entry.next())
@@ -3919,7 +3922,7 @@ void YEvents::cancel(CheckStatusWrapper* status)
 				entry.next()->cancel(status);
 				if (status->getErrors()[1] == isc_att_shutdown)
 					status->init();
-			}, [&]{entry.next()->cancel_1(status);});
+			}, [&]{entry.next()->deprecatedCancel(status);});
 	}
 	catch (const Exception& e)
 	{
@@ -3927,7 +3930,7 @@ void YEvents::cancel(CheckStatusWrapper* status)
 	}
 }
 
-void YEvents::cancel_1(CheckStatusWrapper* status)
+void YEvents::deprecatedCancel(CheckStatusWrapper* status)
 {
 	cancel(status);
 }
@@ -4062,7 +4065,7 @@ void YRequest::free(CheckStatusWrapper* status)
 	{
 		YEntry<YRequest> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		done(status, entry, this, [&]{entry.next()->free(status);}, [&]{entry.next()->free_1(status);});
+		done(status, entry, this, [&]{entry.next()->free(status);}, [&]{entry.next()->deprecatedFree(status);});
 	}
 	catch (const Exception& e)
 	{
@@ -4070,7 +4073,7 @@ void YRequest::free(CheckStatusWrapper* status)
 	}
 }
 
-void YRequest::free_1(CheckStatusWrapper* status)
+void YRequest::deprecatedFree(CheckStatusWrapper* status)
 {
 	free(status);
 }
@@ -4158,7 +4161,7 @@ void YBlob::cancel(CheckStatusWrapper* status)
 	{
 		YEntry<YBlob> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		done(status, entry, this, [&]{entry.next()->cancel(status);}, [&]{entry.next()->cancel_1(status);});
+		done(status, entry, this, [&]{entry.next()->cancel(status);}, [&]{entry.next()->deprecatedCancel(status);});
 	}
 	catch (const Exception& e)
 	{
@@ -4166,7 +4169,7 @@ void YBlob::cancel(CheckStatusWrapper* status)
 	}
 }
 
-void YBlob::cancel_1(CheckStatusWrapper* status)
+void YBlob::deprecatedCancel(CheckStatusWrapper* status)
 {
 	cancel(status);
 }
@@ -4177,7 +4180,7 @@ void YBlob::close(CheckStatusWrapper* status)
 	{
 		YEntry<YBlob> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		done(status, entry, this, [&]{entry.next()->close(status);}, [&]{entry.next()->close_1(status);});
+		done(status, entry, this, [&]{entry.next()->close(status);}, [&]{entry.next()->deprecatedClose(status);});
 	}
 	catch (const Exception& e)
 	{
@@ -4185,7 +4188,7 @@ void YBlob::close(CheckStatusWrapper* status)
 	}
 }
 
-void YBlob::close_1(CheckStatusWrapper* status)
+void YBlob::deprecatedClose(CheckStatusWrapper* status)
 {
 	close(status);
 }
@@ -4457,7 +4460,7 @@ void YStatement::free(CheckStatusWrapper* status)
 	{
 		YEntry<YStatement> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		done(status, entry, this, [&]{entry.next()->free(status);}, [&]{entry.next()->free_1(status);});
+		done(status, entry, this, [&]{entry.next()->free(status);}, [&]{entry.next()->deprecatedFree(status);});
 	}
 	catch (const Exception& e)
 	{
@@ -4465,7 +4468,7 @@ void YStatement::free(CheckStatusWrapper* status)
 	}
 }
 
-void YStatement::free_1(CheckStatusWrapper* status)
+void YStatement::deprecatedFree(CheckStatusWrapper* status)
 {
 	free(status);
 }
@@ -4875,7 +4878,7 @@ void YResultSet::close(CheckStatusWrapper* status)
 	{
 		YEntry<YResultSet> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		done(status, entry, this, [&]{entry.next()->close(status);}, [&]{entry.next()->close_1(status);});
+		done(status, entry, this, [&]{entry.next()->close(status);}, [&]{entry.next()->deprecatedClose(status);});
 	}
 	catch (const Exception& e)
 	{
@@ -4883,7 +4886,7 @@ void YResultSet::close(CheckStatusWrapper* status)
 	}
 }
 
-void YResultSet::close_1(CheckStatusWrapper* status)
+void YResultSet::deprecatedClose(CheckStatusWrapper* status)
 {
 	close(status);
 }
@@ -5067,7 +5070,7 @@ void YBatch::close(CheckStatusWrapper* status)
 	{
 		YEntry<YBatch> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		done(status, entry, this, [&]{entry.next()->close(status);}, [&]{entry.next()->close_1(status);});
+		done(status, entry, this, [&]{entry.next()->close(status);}, [&]{entry.next()->deprecatedClose(status);});
 	}
 	catch (const Exception& e)
 	{
@@ -5076,7 +5079,7 @@ void YBatch::close(CheckStatusWrapper* status)
 }
 
 
-void YBatch::close_1(CheckStatusWrapper* status)
+void YBatch::deprecatedClose(CheckStatusWrapper* status)
 {
 	close(status);
 }
@@ -5117,7 +5120,7 @@ void YReplicator::close(CheckStatusWrapper* status)
 	{
 		YEntry<YReplicator> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		done(status, entry, this, [&]{entry.next()->close(status);}, [&]{entry.next()->close_1(status);});
+		done(status, entry, this, [&]{entry.next()->close(status);}, [&]{entry.next()->deprecatedClose(status);});
 	}
 	catch (const Exception& e)
 	{
@@ -5126,7 +5129,7 @@ void YReplicator::close(CheckStatusWrapper* status)
 }
 
 
-void YReplicator::close_1(CheckStatusWrapper* status)
+void YReplicator::deprecatedClose(CheckStatusWrapper* status)
 {
 	close(status);
 }
@@ -5223,7 +5226,7 @@ void YTransaction::commit(CheckStatusWrapper* status)
 	{
 		YEntry<YTransaction> entry(status, this);
 
-		done(status, entry, this, [&]{entry.next()->commit(status);}, [&]{entry.next()->commit_1(status);});
+		done(status, entry, this, [&]{entry.next()->commit(status);}, [&]{entry.next()->deprecatedCommit(status);});
 	}
 	catch (const Exception& e)
 	{
@@ -5255,7 +5258,7 @@ void YTransaction::rollback(CheckStatusWrapper* status)
 				entry.next()->rollback(status);
 				if (isNetworkError(status))
 					status->init();
-			}, [&]{entry.next()->rollback_1(status);});
+			}, [&]{entry.next()->deprecatedRollback(status);});
 	}
 	catch (const Exception& e)
 	{
@@ -5306,17 +5309,17 @@ void YTransaction::disconnect(CheckStatusWrapper* status)
 	}
 }
 
-void YTransaction::commit_1(CheckStatusWrapper* status)
+void YTransaction::deprecatedCommit(CheckStatusWrapper* status)
 {
 	commit(status);
 }
 
-void YTransaction::rollback_1(CheckStatusWrapper* status)
+void YTransaction::deprecatedRollback(CheckStatusWrapper* status)
 {
 	rollback(status);
 }
 
-void YTransaction::disconnect_1(CheckStatusWrapper* status)
+void YTransaction::deprecatedDisconnect(CheckStatusWrapper* status)
 {
 	disconnect(status);
 }
@@ -5916,7 +5919,7 @@ void YAttachment::detach(CheckStatusWrapper* status)
 				entry.next()->detach(status);
 				if (isNetworkError(status))
 					status->init();
-			}, [&]{entry.next()->detach_1(status);});
+			}, [&]{entry.next()->deprecatedDetach(status);});
 	}
 	catch (const Exception& e)
 	{
@@ -5924,7 +5927,7 @@ void YAttachment::detach(CheckStatusWrapper* status)
 	}
 }
 
-void YAttachment::detach_1(CheckStatusWrapper* status)
+void YAttachment::deprecatedDetach(CheckStatusWrapper* status)
 {
 	detach(status);
 }
@@ -5935,7 +5938,7 @@ void YAttachment::dropDatabase(CheckStatusWrapper* status)
 	{
 		YEntry<YAttachment> entry(status, this);
 
-		done(status, entry, this, [&]{entry.next()->dropDatabase(status);}, [&]{entry.next()->dropDatabase_1(status);});
+		done(status, entry, this, [&]{entry.next()->dropDatabase(status);}, [&]{entry.next()->deprecatedDropDatabase(status);});
 	}
 	catch (const Exception& e)
 	{
@@ -5943,7 +5946,7 @@ void YAttachment::dropDatabase(CheckStatusWrapper* status)
 	}
 }
 
-void YAttachment::dropDatabase_1(CheckStatusWrapper* status)
+void YAttachment::deprecatedDropDatabase(CheckStatusWrapper* status)
 {
 	dropDatabase(status);
 }
@@ -6154,7 +6157,7 @@ void YService::detach(CheckStatusWrapper* status)
 	{
 		YEntry<YService> entry(status, this, CHECK_WARN_ZERO_HANDLE);
 
-		done(status, entry, this, [&]{entry.next()->detach(status);}, [&]{entry.next()->detach_1(status);});
+		done(status, entry, this, [&]{entry.next()->detach(status);}, [&]{entry.next()->deprecatedDetach(status);});
 	}
 	catch (const Exception& e)
 	{
@@ -6162,7 +6165,7 @@ void YService::detach(CheckStatusWrapper* status)
 	}
 }
 
-void YService::detach_1(CheckStatusWrapper* status)
+void YService::deprecatedDetach(CheckStatusWrapper* status)
 {
 	detach(status);
 }

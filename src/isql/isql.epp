@@ -9252,6 +9252,10 @@ static processing_state process_statement(const TEXT* str2)
 		}
 
 		curs->close(fbStatus);
+		if (ISQL_errmsg(fbStatus))
+		{
+			return ps_ERR;
+		}
 	}
 
 	// Avoid cancel during cleanup
