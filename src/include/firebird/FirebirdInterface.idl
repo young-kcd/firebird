@@ -38,6 +38,8 @@ typedef FB_DEC16;
 typedef FB_DEC34;
 typedef FB_I128;
 
+boolean FB_UsedInYValve;
+
 // Versioned interface - base for all FB interfaces
 interface Versioned
 {
@@ -347,12 +349,14 @@ interface Blob : ReferenceCounted
 
 	void putSegment(Status status, uint length,
 									const void* buffer);
-	void cancel_1(Status status);
-	void close_1(Status status);
+	void deprecatedCancel(Status status);
+	void deprecatedClose(Status status);
 	int seek(Status status, int mode, int offset);			// returns position
 
 version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedCancel(status) endif]
 	void cancel(Status status);
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedClose(status) endif]
 	void close(Status status);
 }
 
@@ -363,18 +367,21 @@ interface Transaction : ReferenceCounted
 						 uint bufferLength, uchar* buffer);
 	void prepare(Status status,
 						 uint msgLength, const uchar* message);
-	void commit_1(Status status);
+	void deprecatedCommit(Status status);
 	void commitRetaining(Status status);
-	void rollback_1(Status status);
+	void deprecatedRollback(Status status);
 	void rollbackRetaining(Status status);
-	void disconnect_1(Status status);
+	void deprecatedDisconnect(Status status);
 	Transaction join(Status status, Transaction transaction);
 	Transaction validate(Status status, Attachment attachment);
 	Transaction enterDtc(Status status);
 
 version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedCommit(status) endif]
 	void commit(Status status);
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedRollback(status) endif]
 	void rollback(Status status);
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedDisconnect(status) endif]
 	void disconnect(Status status);
 }
 
@@ -435,7 +442,7 @@ interface ResultSet : ReferenceCounted
 	boolean isEof(Status status);
 	boolean isBof(Status status);
 	MessageMetadata getMetadata(Status status);
-	void close_1(Status status);
+	void deprecatedClose(Status status);
 
 	// This item is for ISC API emulation only
 	// It may be gone in future versions
@@ -443,6 +450,7 @@ interface ResultSet : ReferenceCounted
 	void setDelayedOutputFormat(Status status, MessageMetadata format);
 
 version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedClose(status) endif]
 	void close(Status status);
 }
 
@@ -484,7 +492,7 @@ interface Statement : ReferenceCounted
 	ResultSet openCursor(Status status, Transaction transaction,
 		MessageMetadata inMetadata, void* inBuffer, MessageMetadata outMetadata, uint flags);
 	void setCursorName(Status status, const string name);
-	void free_1(Status status);
+	void deprecatedFree(Status status);
 	uint getFlags(Status status);
 
 version:	// 3.0 => 4.0
@@ -501,6 +509,7 @@ version:	// 3.0 => 4.0
 	*/
 
 version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedFree(status) endif]
 	void free(Status status);
 }
 
@@ -531,9 +540,10 @@ interface Batch : ReferenceCounted
 	uint getBlobAlignment(Status status);
 	MessageMetadata getMetadata(Status status);
 	void setDefaultBpb(Status status, uint parLength, const uchar* par);
-	void close_1(Status status);
+	void deprecatedClose(Status status);
 
 version:	// 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedClose(status) endif]
 	void close(Status status);
 }
 
@@ -572,9 +582,10 @@ interface Replicator : ReferenceCounted
 	void process(Status status, ReplicationBatch batch);
 */
 	void process(Status status, uint length, const uchar* data);
-	void close_1(Status status);
+	void deprecatedClose(Status status);
 
 version:	// 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedClose(status) endif]
 	void close(Status status);
 }
 
@@ -591,17 +602,19 @@ interface Request : ReferenceCounted
 	void startAndSend(Status status, Transaction tra, int level, uint msgType,
 							  uint length, const void* message);
 	void unwind(Status status, int level);
-	void free_1(Status status);
+	void deprecatedFree(Status status);
 
 version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedFree(status) endif]
 	void free(Status status);
 }
 
 interface Events : ReferenceCounted
 {
-	void cancel_1(Status status);
+	void deprecatedCancel(Status status);
 
 version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedCancel(status) endif]
 	void cancel(Status status);
 }
 
@@ -647,8 +660,8 @@ interface Attachment : ReferenceCounted
 						   uint length, const uchar* events);
 	void cancelOperation(Status status, int option);
 	void ping(Status status);
-	void detach_1(Status status);
-	void dropDatabase_1(Status status);
+	void deprecatedDetach(Status status);
+	void deprecatedDropDatabase(Status status);
 
 version:	// 3.0 => 4.0
 	// Idle attachment timeout, seconds
@@ -672,13 +685,15 @@ version:	// 3.0 => 4.0
 	Replicator createReplicator(Status status);
 
 version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedDetach(status) endif]
 	void detach(Status status);
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedDropDatabase(status) endif]
 	void dropDatabase(Status status);
 }
 
 interface Service : ReferenceCounted
 {
-	void detach_1(Status status);
+	void deprecatedDetach(Status status);
 	void query(Status status,
 					   uint sendLength, const uchar* sendItems,
 					   uint receiveLength, const uchar* receiveItems,
@@ -687,6 +702,7 @@ interface Service : ReferenceCounted
 					   uint spbLength, const uchar* spb);
 
 version:	// 3.0.7 => 3.0.8, 4.0.0 => 4.0.1
+	[notImplementedAction if ::FB_UsedInYValve then defaultAction else call deprecatedDetach(status) endif]
 	void detach(Status status);
 }
 

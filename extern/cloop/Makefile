@@ -29,7 +29,7 @@ OBJS_CPP := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS_CPP))
 
 C_FLAGS := -ggdb -fPIC -MMD -MP -W -Wall -Wno-unused-parameter
 CXX_FLAGS := $(C_FLAGS)
-FPC_FLAGS := -Mdelphi
+FPC_FLAGS := -Mdelphi -Cg
 
 ifeq ($(shell uname),FreeBSD)
 	DL_LIB :=
@@ -47,6 +47,7 @@ endif
 
 ifeq ($(TARGET),debug)
 	FPC_FLAGS += -g
+	LD_FLAGS += -ggdb
 endif
 
 vpath %.c $(SRC_DIRS)
@@ -85,6 +86,7 @@ $(foreach bdir,$(OBJ_DIRS),$(eval $(call compile,$(bdir))))
 -include $(addsuffix .d,$(basename $(OBJS_CPP)))
 
 $(BIN_DIR)/cloop: \
+	$(OBJ_DIR)/cloop/Action.o \
 	$(OBJ_DIR)/cloop/Expr.o \
 	$(OBJ_DIR)/cloop/Generator.o \
 	$(OBJ_DIR)/cloop/Lexer.o \

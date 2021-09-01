@@ -2318,7 +2318,7 @@ void JBlob::getInfo(CheckStatusWrapper* user_status,
 }
 
 
-void JBlob::cancel_1(CheckStatusWrapper* user_status)
+void JBlob::deprecatedCancel(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -2380,7 +2380,7 @@ void JBlob::freeEngineData(CheckStatusWrapper* user_status)
 }
 
 
-void JEvents::cancel_1(CheckStatusWrapper* user_status)
+void JEvents::deprecatedCancel(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -2486,13 +2486,13 @@ void JAttachment::cancelOperation(CheckStatusWrapper* user_status, int option)
 
 void JBlob::close(CheckStatusWrapper* user_status)
 {
-	close_1(user_status);
+	deprecatedClose(user_status);
 	if (user_status->isEmpty())
 		release();
 }
 
 
-void JBlob::close_1(CheckStatusWrapper* user_status)
+void JBlob::deprecatedClose(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -2533,13 +2533,13 @@ void JBlob::close_1(CheckStatusWrapper* user_status)
 
 void JTransaction::commit(CheckStatusWrapper* user_status)
 {
-	commit_1(user_status);
+	deprecatedCommit(user_status);
 	if (user_status->isEmpty())
 		release();
 }
 
 
-void JTransaction::commit_1(CheckStatusWrapper* user_status)
+void JTransaction::deprecatedCommit(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -3249,7 +3249,7 @@ void JAttachment::executeDyn(CheckStatusWrapper* status, ITransaction* /*tra*/, 
 }
 
 
-void JAttachment::detach_1(CheckStatusWrapper* user_status)
+void JAttachment::deprecatedDetach(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -3280,7 +3280,7 @@ void JAttachment::detach(CheckStatusWrapper* user_status)
  *	Close down a database.
  *
  **************************************/
-	detach_1(user_status);
+	deprecatedDetach(user_status);
 	if (user_status->isEmpty())
 		release();
 }
@@ -3362,13 +3362,13 @@ void JAttachment::freeEngineData(CheckStatusWrapper* user_status, bool forceFree
 
 void JAttachment::dropDatabase(CheckStatusWrapper* user_status)
 {
-	dropDatabase_1(user_status);
+	deprecatedDropDatabase(user_status);
 	if (user_status->isEmpty())
 		release();
 }
 
 
-void JAttachment::dropDatabase_1(CheckStatusWrapper* user_status)
+void JAttachment::deprecatedDropDatabase(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -3941,7 +3941,7 @@ JTransaction* JAttachment::reconnectTransaction(CheckStatusWrapper* user_status,
 }
 
 
-void JRequest::free_1(CheckStatusWrapper* user_status)
+void JRequest::deprecatedFree(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -4082,13 +4082,13 @@ void JTransaction::rollbackRetaining(CheckStatusWrapper* user_status)
 
 void JTransaction::rollback(CheckStatusWrapper* user_status)
 {
-	rollback_1(user_status);
+	deprecatedRollback(user_status);
 	if (user_status->isEmpty())
 		release();
 }
 
 
-void JTransaction::rollback_1(CheckStatusWrapper* user_status)
+void JTransaction::deprecatedRollback(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -4128,13 +4128,13 @@ void JTransaction::rollback_1(CheckStatusWrapper* user_status)
 
 void JTransaction::disconnect(CheckStatusWrapper* user_status)
 {
-	disconnect_1(user_status);
+	deprecatedDisconnect(user_status);
 	if (user_status->isEmpty())
 		release();
 }
 
 
-void JTransaction::disconnect_1(CheckStatusWrapper* user_status)
+void JTransaction::deprecatedDisconnect(CheckStatusWrapper* user_status)
 {
 	try
 	{
@@ -4269,7 +4269,7 @@ JService* JProvider::attachServiceManager(CheckStatusWrapper* user_status, const
 }
 
 
-void JService::detach_1(CheckStatusWrapper* user_status)
+void JService::deprecatedDetach(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -5471,7 +5471,7 @@ IMessageMetadata* JResultSet::getMetadata(CheckStatusWrapper* user_status)
 }
 
 
-void JResultSet::close_1(CheckStatusWrapper* user_status)
+void JResultSet::deprecatedClose(CheckStatusWrapper* user_status)
 {
 	freeEngineData(user_status);
 }
@@ -5513,7 +5513,7 @@ void JStatement::freeEngineData(CheckStatusWrapper* user_status)
 }
 
 
-void JStatement::free_1(CheckStatusWrapper* user_status)
+void JStatement::deprecatedFree(CheckStatusWrapper* user_status)
 {
 	freeEngineData(user_status);
 }
@@ -6005,7 +6005,7 @@ int JBatch::release()
 }
 
 
-void JBatch::close_1(CheckStatusWrapper* user_status)
+void JBatch::deprecatedClose(CheckStatusWrapper* user_status)
 {
 	freeEngineData(user_status);
 }
@@ -6419,7 +6419,7 @@ void JReplicator::process(CheckStatusWrapper* status, unsigned length, const UCH
 }
 
 
-void JReplicator::close_1(CheckStatusWrapper* user_status)
+void JReplicator::deprecatedClose(CheckStatusWrapper* user_status)
 {
 	freeEngineData(user_status);
 }

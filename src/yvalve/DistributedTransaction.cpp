@@ -61,9 +61,9 @@ public:
 	DTransaction* join(CheckStatusWrapper* status, ITransaction* transaction);
 	ITransaction* validate(CheckStatusWrapper* status, IAttachment* attachment);
 	DTransaction* enterDtc(CheckStatusWrapper* status);
-	void commit_1(CheckStatusWrapper* status);
-	void rollback_1(CheckStatusWrapper* status);
-	void disconnect_1(CheckStatusWrapper* status);
+	void deprecatedCommit(CheckStatusWrapper* status);
+	void deprecatedRollback(CheckStatusWrapper* status);
+	void deprecatedDisconnect(CheckStatusWrapper* status);
 
 private:
 	typedef HalfStaticArray<ITransaction*, 8> SubArray;
@@ -390,17 +390,17 @@ void DTransaction::disconnect(CheckStatusWrapper* status)
 	}
 }
 
-void DTransaction::commit_1(CheckStatusWrapper* status)
+void DTransaction::deprecatedCommit(CheckStatusWrapper* status)
 {
 	commit(status);
 }
 
-void DTransaction::rollback_1(CheckStatusWrapper* status)
+void DTransaction::deprecatedRollback(CheckStatusWrapper* status)
 {
 	rollback(status);
 }
 
-void DTransaction::disconnect_1(CheckStatusWrapper* status)
+void DTransaction::deprecatedDisconnect(CheckStatusWrapper* status)
 {
 	disconnect(status);
 }
