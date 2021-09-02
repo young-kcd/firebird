@@ -207,7 +207,6 @@
 #if _MSC_VER < 1500
 #define vsnprintf _vsnprintf
 #endif
-#define isnan _isnan
 #endif
 
 #if !defined(HAS_NOEXCEPT)
