@@ -653,6 +653,16 @@ public:
 
 	UserId* getUserId(const Firebird::MetaString& userName);
 
+	const Firebird::MetaString& getUserName(const Firebird::MetaString& emptyName = "") const
+	{
+		return att_user ? att_user->getUserName() : emptyName;
+	}
+
+	const Firebird::MetaString& getSqlRole(const Firebird::MetaString& emptyName = "") const
+	{
+		return att_user ? att_user->getSqlRole() : emptyName;
+	}
+
 	const UserId* getEffectiveUserId() const
 	{
 		if (att_ss_user)
@@ -660,11 +670,10 @@ public:
 		return att_user;
 	}
 
-	UserId* getEffectiveUserId()
+	const Firebird::MetaString& getEffectiveUserName(const Firebird::MetaString& emptyName = "") const
 	{
-		if (att_ss_user)
-			return att_ss_user;
-		return att_user;
+		const auto user = getEffectiveUserId();
+		return user ? user->getUserName() : emptyName;
 	}
 
 	void setInitialOptions(thread_db* tdbb, DatabaseOptions& options, bool newDb);

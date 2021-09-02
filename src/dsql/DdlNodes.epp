@@ -913,7 +913,7 @@ void DdlNode::storePrivileges(thread_db* tdbb, jrd_tra* transaction,
 							  const char* privileges)
 {
 	Attachment* const attachment = transaction->tra_attachment;
-	const MetaString& userName = attachment->att_user->getUserName();
+	const MetaString& userName = attachment->getUserName();
 
 	AutoCacheRequest request(tdbb, drq_s_usr_prvs, DYN_REQUESTS);
 
@@ -976,7 +976,7 @@ void DdlNode::storeGlobalField(thread_db* tdbb, jrd_tra* transaction, MetaName& 
 	const TypeClause* field, const string& computedSource, const BlrDebugWriter::BlrData& computedValue)
 {
 	Attachment* const attachment = transaction->tra_attachment;
-	const MetaString& userName = attachment->att_user->getUserName();
+	const MetaString& userName = attachment->getUserName();
 
 	const ValueListNode* elements = field->ranges;
 	const USHORT dims = elements ? elements->items.getCount() / 2 : 0;
@@ -1779,7 +1779,7 @@ void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch
 	jrd_tra* transaction)
 {
 	Attachment* const attachment = transaction->getAttachment();
-	const MetaString& userName = attachment->att_user->getUserName();
+	const MetaString& userName = attachment->getUserName();
 
 	if (package.isEmpty())
 	{
@@ -2802,7 +2802,7 @@ void CreateAlterProcedureNode::executeCreate(thread_db* tdbb, DsqlCompilerScratc
 	jrd_tra* transaction)
 {
 	Attachment* const attachment = transaction->getAttachment();
-	const MetaString& userName = attachment->att_user->getUserName();
+	const MetaString& userName = attachment->getUserName();
 
 	if (package.isEmpty())
 	{
@@ -3973,7 +3973,7 @@ void CreateCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	jrd_tra* transaction)
 {
 	Attachment* const attachment = transaction->tra_attachment;
-	const MetaString& userName = attachment->att_user->getUserName();
+	const MetaString& userName = attachment->getUserName();
 
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
@@ -5529,7 +5529,7 @@ void CreateAlterExceptionNode::executeCreate(thread_db* tdbb, DsqlCompilerScratc
 	jrd_tra* transaction)
 {
 	Attachment* const attachment = transaction->getAttachment();
-	const MetaString& userName = attachment->att_user->getUserName();
+	const MetaString& userName = attachment->getUserName();
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
 		DDL_TRIGGER_CREATE_EXCEPTION, name, NULL);
@@ -5896,7 +5896,7 @@ SSHORT CreateAlterSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, con
 	fb_sysflag sysFlag, SINT64 val, SLONG step)
 {
 	Attachment* const attachment = transaction->tra_attachment;
-	const MetaString& userName = attachment->att_user->getUserName();
+	const MetaString& userName = attachment->getUserName();
 
 	DYN_UTIL_check_unique_name(tdbb, transaction, name, obj_generator);
 
@@ -8748,7 +8748,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	jrd_tra* transaction)
 {
 	Attachment* const attachment = transaction->tra_attachment;
-	const MetaString& userName = attachment->att_user->getUserName();
+	const MetaString& userName = attachment->getUserName();
 
 	const dsql_rel* modifyingView = NULL;
 
@@ -10168,7 +10168,7 @@ void CreateFilterNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 // Define a blob filter.
 void CreateFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/, jrd_tra* transaction)
 {
-	MetaName ownerName(tdbb->getAttachment()->att_user->getUserName());
+	MetaName ownerName(tdbb->getAttachment()->getUserName());
 
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
@@ -10430,7 +10430,7 @@ void CreateAlterRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		Arg::PrivateDyn(293).raise();
 	}
 
-	MetaName ownerName(tdbb->getAttachment()->att_user->getUserName());
+	MetaName ownerName(tdbb->getAttachment()->getUserName());
 
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
@@ -10969,7 +10969,7 @@ void DropRoleNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 
 void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
 {
-	MetaName user(tdbb->getAttachment()->att_user->getUserName());
+	MetaName user(tdbb->getAttachment()->getUserName());
 
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
@@ -11126,13 +11126,10 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	if (text.isEmpty() && mode == USER_MOD)
 	{
 		// alter current user
-		UserId* usr = tdbb->getAttachment()->att_user;
-		fb_assert(usr);
+		text = tdbb->getAttachment()->getUserName();
 
-		if (!usr)
+		if (text.isEmpty())
 			(Arg::Gds(isc_random) << "Missing user name for ALTER CURRENT USER").raise();
-
-		text = usr->getUserName();
 	}
 
 	Firebird::LocalStatus s;
@@ -11792,7 +11789,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 			(Arg::PrivateDyn(295) << DBA_USER_NAME << owner).raise();
 	}
 
-	MetaName currentUser(attachment->getEffectiveUserId()->getUserName());
+	MetaName currentUser(attachment->getEffectiveUserName());
 	MetaName grantorRevoker(grantor ? *grantor : currentUser);
 
 	if (!isGrant && !privs)	// REVOKE ALL ON ALL

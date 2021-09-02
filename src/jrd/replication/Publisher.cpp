@@ -133,7 +133,7 @@ namespace
 				auto& pool = *attachment->att_pool;
 				const auto manager = dbb->replManager(true);
 				const auto& guid = dbb->dbb_guid;
-				const auto& userName = attachment->att_user->getUserName();
+				const auto& userName = attachment->getUserName();
 
 				attachment->att_replicator = FB_NEW Replicator(pool, manager, guid, userName);
 			}

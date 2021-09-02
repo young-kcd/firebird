@@ -4488,18 +4488,11 @@ dsc* CurrentRoleNode::execute(thread_db* tdbb, jrd_req* request) const
 	impure->vlu_desc.dsc_sub_type = 0;
 	impure->vlu_desc.dsc_scale = 0;
 	impure->vlu_desc.setTextType(ttype_metadata);
-	const char* curRole = NULL;
 
-	if (tdbb->getAttachment()->att_user)
-	{
-		curRole = tdbb->getAttachment()->att_user->getSqlRole().c_str();
-		impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(const_cast<char*>(curRole));
-	}
+	const char* curRole = tdbb->getAttachment()->getSqlRole().c_str();
 
-	if (curRole)
-		impure->vlu_desc.dsc_length = static_cast<USHORT>(strlen(curRole));
-	else
-		impure->vlu_desc.dsc_length = 0;
+	impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(const_cast<char*>(curRole));
+	impure->vlu_desc.dsc_length = static_cast<USHORT>(strlen(curRole));
 
 	return &impure->vlu_desc;
 }
@@ -4581,18 +4574,11 @@ dsc* CurrentUserNode::execute(thread_db* tdbb, jrd_req* request) const
 	impure->vlu_desc.dsc_sub_type = 0;
 	impure->vlu_desc.dsc_scale = 0;
 	impure->vlu_desc.setTextType(ttype_metadata);
-	const char* curUser = NULL;
 
-	if (tdbb->getAttachment()->att_user)
-	{
-		curUser = tdbb->getAttachment()->att_user->getUserName().c_str();
-		impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(const_cast<char*>(curUser));
-	}
+	const char* curUser = tdbb->getAttachment()->getUserName().c_str();
 
-	if (curUser)
-		impure->vlu_desc.dsc_length = static_cast<USHORT>(strlen(curUser));
-	else
-		impure->vlu_desc.dsc_length = 0;
+	impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(const_cast<char*>(curUser));
+	impure->vlu_desc.dsc_length = static_cast<USHORT>(strlen(curUser));
 
 	return &impure->vlu_desc;
 }

@@ -621,11 +621,10 @@ void INF_database_info(thread_db* tdbb,
 
 		case isc_info_user_names:
 			// Assumes user names will be smaller than sizeof(buffer) - 1.
-			if (!(tdbb->getAttachment()->locksmith(tdbb, USER_MANAGEMENT)))
+			if (!tdbb->getAttachment()->locksmith(tdbb, USER_MANAGEMENT))
 			{
-				const UserId* user = tdbb->getAttachment()->att_user;
-				const char* userName = (user && user->getUserName().hasData()) ?
-					user->getUserName().c_str() : "<Unknown>";
+				const auto attachment = tdbb->getAttachment();
+				const char* userName = attachment->getUserName("<Unknown>").c_str();
 				const ULONG len = MIN(strlen(userName), MAX_UCHAR);
 				*p++ = static_cast<UCHAR>(len);
 				memcpy(p, userName, len);
@@ -641,7 +640,7 @@ void INF_database_info(thread_db* tdbb,
 
 				for (const Jrd::Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
 				{
-					const UserId* user = att->att_user;
+					const UserId* const user = att->att_user;
 
 					if (user)
 					{
@@ -933,9 +932,7 @@ void INF_database_info(thread_db* tdbb,
 
 		case fb_info_username:
 			{
-				MetaString user;
-				if (att->att_user)
-					user = att->att_user->getUserName();
+				const MetaString& user = att->getUserName();
 				if (!(info = INF_put_item(item, user.length(), user.c_str(), info, end)))
 					return;
 			}
@@ -943,9 +940,7 @@ void INF_database_info(thread_db* tdbb,
 
 		case fb_info_sqlrole:
 			{
-				MetaString role;
-				if (att->att_user)
-					role = att->att_user->getSqlRole();
+				const MetaString& role = att->getSqlRole();
 				if (!(info = INF_put_item(item, role.length(), role.c_str(), info, end)))
 					return;
 			}
