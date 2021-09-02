@@ -98,7 +98,6 @@ static void check_class(thread_db*, jrd_tra*, record_param*, record_param*, USHO
 static bool check_nullify_source(thread_db*, record_param*, record_param*, int, int = -1);
 static void check_owner(thread_db*, jrd_tra*, record_param*, record_param*, USHORT);
 static void check_repl_state(thread_db*, jrd_tra*, record_param*, record_param*, USHORT);
-static bool check_user(thread_db*, const dsc*);
 static int check_precommitted(const jrd_tra*, const record_param*);
 static void check_rel_field_class(thread_db*, record_param*, jrd_tra*);
 static void delete_record(thread_db*, record_param*, ULONG, MemoryPool*);
@@ -1841,10 +1840,16 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_priv:
 			protect_system_table_delupd(tdbb, relation, "DELETE");
 			EVL_field(0, rpb->rpb_record, f_file_name, &desc);
-			if (!(tdbb->getRequest()->getStatement()->flags & JrdStatement::FLAG_INTERNAL))
+			if (!tdbb->getRequest()->hasInternalStatement())
 			{
 				EVL_field(0, rpb->rpb_record, f_prv_grantor, &desc);
-				if (!check_user(tdbb, &desc))
+				MetaName grantor;
+				MOV_get_metaname(tdbb, &desc, grantor);
+
+				const auto attachment = tdbb->getAttachment();
+				const MetaString& currentUser = attachment->getUserName();
+
+				if (grantor != currentUser)
 				{
 					ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("REVOKE") <<
 													  Arg::Str("TABLE") <<
@@ -4319,11 +4324,11 @@ static void check_owner(thread_db* tdbb,
 		if (!MOV_compare(tdbb, &desc1, &desc2))
 			return;
 
-		const Jrd::Attachment* const attachment = tdbb->getAttachment();
+		const auto attachment = tdbb->getAttachment();
+		const MetaString& name = attachment->getUserName();
 
-		if (attachment->att_user)
+		if (name.hasData())
 		{
-			const MetaName name(attachment->att_user->getUserName());
 			desc2.makeText((USHORT) name.length(), CS_METADATA, (UCHAR*) name.c_str());
 
 			if (!MOV_compare(tdbb, &desc1, &desc2))
@@ -4368,38 +4373,6 @@ static void check_repl_state(thread_db* tdbb,
 		return;
 
 	DFW_post_work(transaction, dfw_change_repl_state, "", 0);
-}
-
-
-static bool check_user(thread_db* tdbb, const dsc* desc)
-{
-/**************************************
- *
- *	c h e c k _ u s e r
- *
- **************************************
- *
- * Functional description
- *	Validate string against current user name.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	const TEXT* p = (TEXT *) desc->dsc_address;
-	const TEXT* const end = p + desc->dsc_length;
-	const UserId* user = tdbb->getAttachment()->att_user;
-	const TEXT* q = user ? user->getUserName().c_str() : "";
-
-	// It is OK to not internationalize this function for v4.00 as
-	// User names are limited to 7-bit ASCII for v4.00
-
-	for (; p < end && *p != ' '; p++, q++)
-	{
-		if (UPPER7(*p) != UPPER7(*q))
-			return false;
-	}
-
-	return *q ? false : true;
 }
 
 
@@ -6229,10 +6202,11 @@ static void set_owner_name(thread_db* tdbb, Record* record, USHORT field_id)
 
 	if (!EVL_field(0, record, field_id, &desc1))
 	{
-		const Jrd::UserId* const user = tdbb->getAttachment()->att_user;
-		if (user)
+		const auto attachment = tdbb->getAttachment();
+		const MetaString& name = attachment->getUserName();
+
+		if (name.hasData())
 		{
-			const MetaName name(user->getUserName());
 			dsc desc2;
 			desc2.makeText((USHORT) name.length(), CS_METADATA, (UCHAR*) name.c_str());
 			MOV_move(tdbb, &desc2, &desc1);

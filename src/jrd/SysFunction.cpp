@@ -4368,22 +4368,20 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 		}
 		else if (nameStr == CURRENT_USER_NAME)
 		{
-			MetaName user;
-			if (attachment->att_user)
-				user = attachment->att_user->getUserName();
+			const MetaString& user = attachment->getUserName();
 
 			if (user.isEmpty())
 				return NULL;
+
 			resultStr = user.c_str();
 		}
 		else if (nameStr == CURRENT_ROLE_NAME)
 		{
-			MetaName role;
-			if (attachment->att_user)
-				role = attachment->att_user->getSqlRole();
+			const MetaString& role = attachment->getSqlRole();
 
 			if (role.isEmpty())
 				return NULL;
+
 			resultStr = role.c_str();
 		}
 		else if (nameStr == SESSION_IDLE_TIMEOUT)
@@ -4438,14 +4436,11 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 			resultStr.printf("%" UQUADFORMAT, dbb->getReplSequence(tdbb));
 		else if (nameStr == EFFECTIVE_USER_NAME)
 		{
-			MetaName user;
-			if (attachment->att_ss_user)
-				user = attachment->att_ss_user->getUserName();
-			else if (attachment->att_user)
-				user = attachment->att_user->getUserName();
+			const MetaString& user = attachment->getEffectiveUserName();
 
 			if (user.isEmpty())
 				return NULL;
+
 			resultStr = user.c_str();
 		}
 		else if (nameStr == SESSION_TIMEZONE)

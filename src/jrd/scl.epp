@@ -915,11 +915,7 @@ SecurityClass* SCL_get_class(thread_db* tdbb, const TEXT* par_string)
 		return NULL;
 
 	Jrd::Attachment* const attachment = tdbb->getAttachment();
-
-	const UserId* effectiveUserId = attachment->getEffectiveUserId();
-	MetaName userName;
-	if (effectiveUserId)
-		userName= effectiveUserId->getUserName();
+	const MetaString& userName = attachment->getEffectiveUserName();
 
 	MetaNamePair key(string, userName);
 	// Look for the class already known

@@ -1818,7 +1818,7 @@ TimeoutTimer* dsql_req::setupTimer(thread_db* tdbb)
 {
 	if (req_request)
 	{
-		if (req_request->getStatement()->flags & JrdStatement::FLAG_INTERNAL)
+		if (req_request->hasInternalStatement())
 			return req_timer;
 
 		req_request->req_timeout = this->req_timeout;
