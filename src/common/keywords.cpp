@@ -486,6 +486,7 @@ static const TOK tokens[] =
 	{TOK_TAGS, "TAGS", true},
 	{TOK_TAN, "TAN", true},
 	{TOK_TANH, "TANH", true},
+	{TOK_TARGET, "TARGET", true},
 	{TOK_TEMPORARY, "TEMPORARY", true},
 	{TOK_THEN, "THEN", false},
 	{TOK_TIES, "TIES", true},

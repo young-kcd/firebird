@@ -1147,7 +1147,9 @@ public:
 	explicit MergeNode(MemoryPool& pool)
 		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_MERGE>(pool),
 		  whenMatched(pool),
-		  whenNotMatched(pool)
+		  whenNotMatchedByTarget(pool),
+		  whenNotMatchedBySource(pool),
+		  usingContexts(pool)
 	{
 	}
 
@@ -1160,13 +1162,15 @@ public:
 	NestConst<RecordSourceNode> usingClause;
 	NestConst<BoolExprNode> condition;
 	Firebird::ObjectsArray<Matched> whenMatched;
-	Firebird::ObjectsArray<NotMatched> whenNotMatched;
+	Firebird::ObjectsArray<NotMatched> whenNotMatchedByTarget;
+	Firebird::ObjectsArray<Matched> whenNotMatchedBySource;
 	NestConst<PlanNode> plan;
 	NestConst<ValueListNode> order;
 	NestConst<ReturningClause> returning;
 
 	NestConst<RseNode> rse;
-	dsql_ctx* targetContext = nullptr;
+	dsql_ctx* oldContext = nullptr;
+	Firebird::SortedArray<USHORT> usingContexts;
 };
 
 

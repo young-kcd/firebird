@@ -78,7 +78,7 @@ static void dsqlGenReturning(DsqlCompilerScratch* dsqlScratch, ReturningClause* 
 	Nullable<USHORT> localTableNumber);
 static void dsqlGenReturningLocalTableCursor(DsqlCompilerScratch* dsqlScratch, ReturningClause* returning,
 	USHORT localTableNumber);
-static void dsqlGenReturningLocalTableDecl(DsqlCompilerScratch* dsqlScratch, ReturningClause* returning, USHORT tableNumber);
+static void dsqlGenReturningLocalTableDecl(DsqlCompilerScratch* dsqlScratch, USHORT tableNumber);
 static dsql_ctx* dsqlGetContext(const RecordSourceNode* node);
 static void dsqlGetContexts(DsqlContextStack& contexts, const RecordSourceNode* node);
 static StmtNode* dsqlNullifyReturning(DsqlCompilerScratch*, StmtNode* input);
@@ -2365,7 +2365,7 @@ void EraseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			dsqlScratch->appendUChar(blr_begin);
 
 			tableNumber = dsqlScratch->localTableNumber++;
-			dsqlGenReturningLocalTableDecl(dsqlScratch, dsqlReturning, tableNumber.value);
+			dsqlGenReturningLocalTableDecl(dsqlScratch, tableNumber.value);
 		}
 		else
 		{
@@ -5508,8 +5508,10 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	join->dsqlFrom->items[0] = source;
 
-	// Left join if WHEN NOT MATCHED is present.
-	if (whenNotMatched.hasData())
+	// Choose join type.
+	if (whenNotMatchedBySource.hasData())
+		join->rse_jointype = whenNotMatchedByTarget.hasData() ? blr_full : blr_right;
+	else if (whenNotMatchedByTarget.hasData())
 		join->rse_jointype = blr_left;
 
 	join->dsqlFrom->items[1] = target;
@@ -5520,63 +5522,12 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	querySpec->dsqlFrom->items[0] = join;
 	querySpec->rse_plan = plan;
 
-	BoolExprNode* matchedConditions = nullptr;
-	BoolExprNode* notMatchedConditions = nullptr;
-
-	for (auto& matched : whenMatched)
-	{
-		if (matched.condition)
-			matchedConditions = PASS1_compose(matchedConditions, matched.condition, blr_or);
-		else
-		{
-			matchedConditions = nullptr;
-			break;
-		}
-	}
-
-	for (auto& notMatched : whenNotMatched)
-	{
-		if (notMatched.condition)
-			notMatchedConditions = PASS1_compose(notMatchedConditions, notMatched.condition, blr_or);
-		else
-		{
-			notMatchedConditions = nullptr;
-			break;
-		}
-	}
-
-	if (matchedConditions || notMatchedConditions)
-	{
-		const char* targetName = target->alias.nullStr();
-		if (!targetName)
-			targetName = target->dsqlName.c_str();
-
-		if (whenMatched.hasData())	// WHEN MATCHED
-		{
-			auto missingNode = FB_NEW_POOL(pool) MissingBoolNode(
-				pool, FB_NEW_POOL(pool) RecordKeyNode(pool, blr_dbkey, targetName));
-
-			querySpec->dsqlWhere = FB_NEW_POOL(pool) NotBoolNode(pool, missingNode);
-
-			if (matchedConditions)
-				querySpec->dsqlWhere = PASS1_compose(querySpec->dsqlWhere, matchedConditions, blr_and);
-		}
-
-		if (whenNotMatched.hasData())	// WHEN NOT MATCHED
-		{
-			BoolExprNode* temp = FB_NEW_POOL(pool) MissingBoolNode(pool,
-				FB_NEW_POOL(pool) RecordKeyNode(pool, blr_dbkey, targetName));
-
-			if (notMatchedConditions)
-				temp = PASS1_compose(temp, notMatchedConditions, blr_and);
-
-			querySpec->dsqlWhere = PASS1_compose(querySpec->dsqlWhere, temp, blr_or);
-		}
-	}
-
 	const auto selectExpr = FB_NEW_POOL(pool) SelectExprNode(pool);
 	selectExpr->querySpec = querySpec;
 	selectExpr->orderClause = order;
+
+	if (returning && dsqlScratch->isPsql())
+		selectExpr->dsqlFlags |= RecordSourceNode::DFLAG_SINGLETON;
 
 	const auto dsqlSelect = FB_NEW_POOL(pool) SelectNode(pool);
 	dsqlSelect->dsqlExpr = selectExpr;
@@ -5589,17 +5540,57 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	source = processedRse->dsqlStreams->items[0];
 	target = nodeAs<RelationSourceNode>(processedRse->dsqlStreams->items[1]);
 
-	mergeNode->targetContext = dsqlGetContext(target);
+	mergeNode->oldContext = dsqlGetContext(target);
 
 	DsqlContextStack usingCtxs;
+
+	PASS1_expand_contexts(usingCtxs, source->dsqlContext);
+	DerivedFieldNode::getContextNumbers(mergeNode->usingContexts, usingCtxs);
+
+	usingCtxs.clear();
 	dsqlGetContexts(usingCtxs, source);
+
+	bool useMatchedConditions = whenMatched.hasData();
+	bool useNotMatchedByTargetConditions = whenNotMatchedByTarget.hasData();
+	bool useNotMatchedBySourceConditions = whenNotMatchedBySource.hasData();
+
+	for (auto& matched : whenMatched)
+	{
+		if (!matched.condition)
+		{
+			useMatchedConditions = false;
+			break;
+		}
+	}
+
+	for (auto& notMatched : whenNotMatchedByTarget)
+	{
+		if (!notMatched.condition)
+		{
+			useNotMatchedByTargetConditions = false;
+			break;
+		}
+	}
+
+	for (auto& notMatched : whenNotMatchedBySource)
+	{
+		if (!notMatched.condition)
+		{
+			useNotMatchedBySourceConditions = false;
+			break;
+		}
+	}
+
+	BoolExprNode* matchedConditions = nullptr;
+	BoolExprNode* notMatchedByTargetConditions = nullptr;
+	BoolExprNode* notMatchedBySourceConditions = nullptr;
 
 	for (auto& matched : whenMatched)
 	{
 		auto& processedMatched = mergeNode->whenMatched.add();
 		processedMatched.assignments = matched.assignments;
 
-		if (matched.assignments)
+		if (matched.assignments)	// SET
 		{
 			// Get the assignments of the UPDATE dsqlScratch.
 			// Separate the new and org values to process in correct contexts.
@@ -5611,24 +5602,25 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				processedMatched.processedFields.add(assign->asgnTo);
 			}
 
-			const auto oldContext = dsqlGetContext(target);
+			{	// scope
+				// Go to the same level of source and target contexts.
+				AutoSetRestore<USHORT> autoScopeLevel(&dsqlScratch->scopeLevel, dsqlScratch->scopeLevel + 1);
+				DsqlContextStack::AutoRestore autoContext(*dsqlScratch->context);
 
-			++dsqlScratch->scopeLevel;	// Go to the same level of source and target contexts.
+				dsqlScratch->context->push(usingCtxs);	// push the USING contexts
+				dsqlScratch->context->push(mergeNode->oldContext);	// push the OLD context
 
-			for (DsqlContextStack::iterator itr(usingCtxs); itr.hasData(); ++itr)
-				dsqlScratch->context->push(itr.object());	// push the USING contexts
+				processedMatched.condition = doDsqlPass(dsqlScratch, matched.condition, false);
 
-			dsqlScratch->context->push(oldContext);	// process old context values
+				if (useMatchedConditions)
+				{
+					matchedConditions = PASS1_compose(matchedConditions,
+						doDsqlPass(dsqlScratch, matched.condition, false), blr_or);
+				}
 
-			processedMatched.condition = doDsqlPass(dsqlScratch, matched.condition, false);
-
-			for (auto& ptr : processedMatched.processedValues)
-				ptr = doDsqlPass(dsqlScratch, ptr, false);
-
-			// And pop the contexts.
-			dsqlScratch->context->pop();
-			dsqlScratch->context->pop();
-			--dsqlScratch->scopeLevel;
+				for (auto& ptr : processedMatched.processedValues)
+					ptr = doDsqlPass(dsqlScratch, ptr, false);
+			}
 
 			// Process relation.
 			processedMatched.modifyRelation = PASS1_relation(dsqlScratch, relation);
@@ -5642,23 +5634,17 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 			if (returning)
 			{
-				// Repush the source contexts.
-				++dsqlScratch->scopeLevel;	// Go to the same level of source and target contexts.
+				// Go to the same level of source and target contexts.
+				AutoSetRestore<USHORT> autoScopeLevel(&dsqlScratch->scopeLevel, dsqlScratch->scopeLevel + 1);
+				DsqlContextStack::AutoRestore autoContext(*dsqlScratch->context);
 
-				for (DsqlContextStack::iterator itr(usingCtxs); itr.hasData(); ++itr)
-					dsqlScratch->context->push(itr.object());	// push the USING contexts
+				dsqlScratch->context->push(usingCtxs);	// push the USING contexts
+				dsqlScratch->context->push(mergeNode->oldContext);	// push the OLD context
 
-				dsqlScratch->context->push(oldContext);	// process old context values
-
-				modContext->ctx_scope_level = oldContext->ctx_scope_level;
+				modContext->ctx_scope_level = mergeNode->oldContext->ctx_scope_level;
 
 				mergeNode->returning = processedMatched.processedReturning = dsqlProcessReturning(dsqlScratch,
-					oldContext, modContext, returning, dsqlScratch->isPsql());
-
-				// And pop them.
-				dsqlScratch->context->pop();
-				dsqlScratch->context->pop();
-				--dsqlScratch->scopeLevel;
+					mergeNode->oldContext, modContext, returning, dsqlScratch->isPsql());
 			}
 
 			auto valueIt = processedMatched.processedValues.begin();
@@ -5674,43 +5660,51 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			// We do not allow cases like UPDATE SET f1 = v1, f2 = v2, f1 = v3...
 			dsqlFieldAppearsOnce(processedMatched.processedFields, "MERGE");
 		}
-		else
+		else	// DELETE
 		{
-			++dsqlScratch->scopeLevel;	// Go to the same level of source and target contexts.
+			// Go to the same level of source and target contexts.
+			AutoSetRestore<USHORT> autoScopeLevel(&dsqlScratch->scopeLevel, dsqlScratch->scopeLevel + 1);
+			DsqlContextStack::AutoRestore autoContext(*dsqlScratch->context);
 
-			for (DsqlContextStack::iterator itr(usingCtxs); itr.hasData(); ++itr)
-				dsqlScratch->context->push(itr.object());	// push the USING contexts
-
-			dsqlScratch->context->push(mergeNode->targetContext);	// process old context values
+			dsqlScratch->context->push(usingCtxs);	// push the USING contexts
+			dsqlScratch->context->push(mergeNode->oldContext);	// push the OLD context
 
 			processedMatched.condition = doDsqlPass(dsqlScratch, matched.condition, false);
 
-			mergeNode->returning = processedMatched.processedReturning = dsqlProcessReturning(dsqlScratch,
-				mergeNode->targetContext, nullptr, returning, dsqlScratch->isPsql());
+			if (useMatchedConditions)
+			{
+				matchedConditions = PASS1_compose(matchedConditions,
+					doDsqlPass(dsqlScratch, matched.condition, false), blr_or);
+			}
 
-			// And pop the contexts.
-			dsqlScratch->context->pop();
-			dsqlScratch->context->pop();
-			--dsqlScratch->scopeLevel;
+			mergeNode->returning = processedMatched.processedReturning = dsqlProcessReturning(dsqlScratch,
+				mergeNode->oldContext, nullptr, returning, dsqlScratch->isPsql());
 		}
 	}
 
-	for (auto& notMatched : whenNotMatched)
+	for (auto& notMatched : whenNotMatchedByTarget)
 	{
-		++dsqlScratch->scopeLevel;	// Go to the same level of the source context.
+		// Go to the same level of the source context.
+		AutoSetRestore<USHORT> autoScopeLevel(&dsqlScratch->scopeLevel, dsqlScratch->scopeLevel + 1);
+		DsqlContextStack::AutoRestore autoContext(*dsqlScratch->context);
 
-		for (DsqlContextStack::iterator itr(usingCtxs); itr.hasData(); ++itr)
-			dsqlScratch->context->push(itr.object());	// push the USING contexts
+		dsqlScratch->context->push(usingCtxs);	// push the USING contexts
 
 		// The INSERT relation should be processed in a higher level than the source context.
 		++dsqlScratch->scopeLevel;
 
-		auto& processedNotMatched = mergeNode->whenNotMatched.add();
+		auto& processedNotMatched = mergeNode->whenNotMatchedByTarget.add();
 		processedNotMatched.overrideClause = notMatched.overrideClause;
 		processedNotMatched.condition = doDsqlPass(dsqlScratch, notMatched.condition, false);
 
+		if (useNotMatchedByTargetConditions)
+		{
+			notMatchedByTargetConditions = PASS1_compose(notMatchedByTargetConditions,
+				doDsqlPass(dsqlScratch, notMatched.condition, false), blr_or);
+		}
+
 		{	// scope
-			DsqlContextStack::AutoRestore autoContext(*dsqlScratch->context);
+			DsqlContextStack::AutoRestore autoContextForValues(*dsqlScratch->context);
 
 			const auto values = doDsqlPass(dsqlScratch, notMatched.values, false);
 
@@ -5808,22 +5802,170 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 		if (returning)
 		{
-			const auto oldContext = dsqlGetContext(target);
-			dsqlScratch->context->push(oldContext);
+			dsqlScratch->context->push(mergeNode->oldContext);
 
 			const auto storeContext = dsqlGetContext(processedNotMatched.storeRelation);
-			storeContext->ctx_scope_level = oldContext->ctx_scope_level;
+			storeContext->ctx_scope_level = mergeNode->oldContext->ctx_scope_level;
 
 			mergeNode->returning = processedNotMatched.processedReturning = dsqlProcessReturning(dsqlScratch,
-				oldContext, storeContext, returning, dsqlScratch->isPsql());
+				mergeNode->oldContext, storeContext, returning, dsqlScratch->isPsql());
 
 			dsqlScratch->context->pop();
 		}
-
-		// Pop the USING context.
-		dsqlScratch->context->pop();
-		--dsqlScratch->scopeLevel;
 	}
+
+	for (auto& notMatched : whenNotMatchedBySource)
+	{
+		auto& processedNotMatched = mergeNode->whenNotMatchedBySource.add();
+		processedNotMatched.assignments = notMatched.assignments;
+
+		if (notMatched.assignments)	// SET
+		{
+			// Get the assignments of the UPDATE dsqlScratch.
+			// Separate the new and org values to process in correct contexts.
+			for (auto& stmt : notMatched.assignments->statements)
+			{
+				const auto assign = nodeAs<AssignmentNode>(stmt);
+				fb_assert(assign);
+				processedNotMatched.processedValues.add(assign->asgnFrom);
+				processedNotMatched.processedFields.add(assign->asgnTo);
+			}
+
+			++dsqlScratch->scopeLevel;	// Go to the same level of source and target contexts.
+			dsqlScratch->context->push(mergeNode->oldContext);	// push the OLD context
+
+			processedNotMatched.condition = doDsqlPass(dsqlScratch, notMatched.condition, false);
+
+			if (useNotMatchedBySourceConditions)
+			{
+				notMatchedBySourceConditions = PASS1_compose(notMatchedBySourceConditions,
+					doDsqlPass(dsqlScratch, notMatched.condition, false), blr_or);
+			}
+
+			for (auto& ptr : processedNotMatched.processedValues)
+				ptr = doDsqlPass(dsqlScratch, ptr, false);
+
+			// And pop the context.
+			dsqlScratch->context->pop();
+			--dsqlScratch->scopeLevel;
+
+			// Process relation.
+			processedNotMatched.modifyRelation = PASS1_relation(dsqlScratch, relation);
+			auto modContext = dsqlGetContext(processedNotMatched.modifyRelation);
+
+			// Process new context values.
+			for (auto& ptr : processedNotMatched.processedFields)
+				ptr = doDsqlPass(dsqlScratch, ptr, false);
+
+			dsqlScratch->context->pop();
+
+			if (returning)
+			{
+				// Go to the same level of source and target contexts.
+				AutoSetRestore<USHORT> autoScopeLevel(&dsqlScratch->scopeLevel, dsqlScratch->scopeLevel + 1);
+				DsqlContextStack::AutoRestore autoContext(*dsqlScratch->context);
+
+				dsqlScratch->context->push(usingCtxs);	// push the USING contexts
+				dsqlScratch->context->push(mergeNode->oldContext);	// push the OLD context
+
+				modContext->ctx_scope_level = mergeNode->oldContext->ctx_scope_level;
+
+				mergeNode->returning = processedNotMatched.processedReturning = dsqlProcessReturning(dsqlScratch,
+					mergeNode->oldContext, modContext, returning, dsqlScratch->isPsql());
+			}
+
+			auto valueIt = processedNotMatched.processedValues.begin();
+
+			for (auto& field : processedNotMatched.processedFields)
+			{
+				if (!PASS1_set_parameter_type(dsqlScratch, *valueIt, field, false))
+					PASS1_set_parameter_type(dsqlScratch, field, *valueIt, false);
+
+				++valueIt;
+			}
+
+			// We do not allow cases like UPDATE SET f1 = v1, f2 = v2, f1 = v3...
+			dsqlFieldAppearsOnce(processedNotMatched.processedFields, "MERGE");
+		}
+		else	// DELETE
+		{
+			// Go to the same level of source and target contexts.
+			AutoSetRestore<USHORT> autoScopeLevel(&dsqlScratch->scopeLevel, dsqlScratch->scopeLevel + 1);
+			DsqlContextStack::AutoRestore autoContext(*dsqlScratch->context);
+
+			dsqlScratch->context->push(mergeNode->oldContext);	// push the OLD context
+
+			processedNotMatched.condition = doDsqlPass(dsqlScratch, notMatched.condition, false);
+
+			if (useNotMatchedBySourceConditions)
+			{
+				notMatchedBySourceConditions = PASS1_compose(notMatchedBySourceConditions,
+					doDsqlPass(dsqlScratch, notMatched.condition, false), blr_or);
+			}
+
+			dsqlScratch->context->push(usingCtxs);	// push the USING contexts
+
+			mergeNode->returning = processedNotMatched.processedReturning = dsqlProcessReturning(dsqlScratch,
+				mergeNode->oldContext, nullptr, returning, dsqlScratch->isPsql());
+		}
+	}
+
+	const auto targetDbKey = [dsqlScratch, mergeNode]() {
+		auto relNode = FB_NEW_POOL(dsqlScratch->getPool()) RelationSourceNode(dsqlScratch->getPool());
+		relNode->dsqlContext = mergeNode->oldContext;
+
+		auto recKeyNode = FB_NEW_POOL(dsqlScratch->getPool()) RecordKeyNode(dsqlScratch->getPool(), blr_dbkey);
+		recKeyNode->dsqlRelation = relNode;
+
+		return recKeyNode;
+	};
+
+	const auto sourceDbKey = [dsqlScratch, source]() {
+		auto relNode = FB_NEW_POOL(dsqlScratch->getPool()) RelationSourceNode(dsqlScratch->getPool());
+		relNode->dsqlContext = source->dsqlContext;
+
+		return FB_NEW_POOL(dsqlScratch->getPool()) DerivedFieldNode(dsqlScratch->getPool(), source->dsqlContext,
+			MAKE_constant("1", CONSTANT_BOOLEAN));
+	};
+
+	if (join->rse_jointype != blr_inner)
+	{
+		if (whenMatched.hasData())
+		{
+			matchedConditions = PASS1_compose(
+				PASS1_compose(
+					FB_NEW_POOL(pool) NotBoolNode(pool, FB_NEW_POOL(pool) MissingBoolNode(pool, targetDbKey())),
+					join->rse_jointype == blr_left ?
+						nullptr :
+						FB_NEW_POOL(pool) NotBoolNode(pool, FB_NEW_POOL(pool) MissingBoolNode(pool, sourceDbKey())),
+					blr_and
+				),
+				matchedConditions,
+				blr_and);
+		}
+
+		if (whenNotMatchedByTarget.hasData())
+		{
+			notMatchedByTargetConditions = PASS1_compose(
+				FB_NEW_POOL(pool) MissingBoolNode(pool, targetDbKey()),
+				notMatchedByTargetConditions,
+				blr_and);
+		}
+
+		if (whenNotMatchedBySource.hasData())
+		{
+			notMatchedBySourceConditions = PASS1_compose(
+				FB_NEW_POOL(pool) MissingBoolNode(pool, sourceDbKey()),
+				notMatchedBySourceConditions,
+				blr_and);
+		}
+	}
+
+	fb_assert(!mergeNode->rse->dsqlWhere);
+
+	mergeNode->rse->dsqlWhere = PASS1_compose(mergeNode->rse->dsqlWhere, matchedConditions, blr_or);
+	mergeNode->rse->dsqlWhere = PASS1_compose(mergeNode->rse->dsqlWhere, notMatchedByTargetConditions, blr_or);
+	mergeNode->rse->dsqlWhere = PASS1_compose(mergeNode->rse->dsqlWhere, notMatchedBySourceConditions, blr_or);
 
 	if (!dsqlScratch->isPsql())
 	{
@@ -5845,7 +5987,8 @@ string MergeNode::internalPrint(NodePrinter& printer) const
 	NODE_PRINT(printer, usingClause);
 	NODE_PRINT(printer, condition);
 	//// FIXME-PRINT: NODE_PRINT(printer, whenMatched);
-	//// FIXME-PRINT: NODE_PRINT(printer, whenNotMatched);
+	//// FIXME-PRINT: NODE_PRINT(printer, whenNotMatchedByTarget);
+	//// FIXME-PRINT: NODE_PRINT(printer, whenNotMatchedBySource);
 	NODE_PRINT(printer, returning);
 	NODE_PRINT(printer, rse);
 
@@ -5861,7 +6004,7 @@ void MergeNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		dsqlScratch->appendUChar(blr_begin);
 
 		tableNumber = dsqlScratch->localTableNumber++;
-		dsqlGenReturningLocalTableDecl(dsqlScratch, returning, tableNumber.value);
+		dsqlGenReturningLocalTableDecl(dsqlScratch, tableNumber.value);
 	}
 
 	// Put src info for blr_for.
@@ -5871,34 +6014,117 @@ void MergeNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	// Generate FOR loop
 
 	dsqlScratch->appendUChar(blr_for);
-
 	dsqlScratch->putBlrMarkers(MARK_FOR_UPDATE | MARK_MERGE);
-
-	if (returning && dsqlScratch->isPsql())
-		dsqlScratch->appendUChar(blr_singular);
-
 	GEN_rse(dsqlScratch, rse);
 
 	// Build body of FOR loop
 
-	dsqlScratch->appendUChar(blr_if);
+	if (whenNotMatchedBySource.hasData())
+	{
+		dsqlScratch->appendUChar(blr_if);
+		dsqlScratch->appendUChar(blr_missing);
+		dsqlScratch->appendUChar(blr_derived_expr);
+		dsqlScratch->appendUChar(usingContexts.getCount());
 
-	if (whenNotMatched.isEmpty())
-		dsqlScratch->appendUChar(blr_not);
+		for (auto usingContext : usingContexts)
+			GEN_stuff_context_number(dsqlScratch, usingContext);
 
-	dsqlScratch->appendUChar(blr_missing);
-	dsqlScratch->appendUChar(blr_dbkey);
-	GEN_stuff_context(dsqlScratch, targetContext);
+		dsqlScratch->appendUChar(blr_literal);
+		dsqlScratch->appendUChar(blr_bool);
+		dsqlScratch->appendUChar(1);
+
+		for (auto nextNotMatched = whenNotMatchedBySource.begin(), notMatched = nextNotMatched++;
+			 notMatched != whenNotMatchedBySource.end();
+			 notMatched = nextNotMatched++)
+		{
+			const bool isLast = nextNotMatched == whenNotMatchedBySource.end();
+
+			if (notMatched->condition || !isLast)
+			{
+				dsqlScratch->appendUChar(blr_if);
+
+				if (notMatched->condition)
+					notMatched->condition->genBlr(dsqlScratch);
+				else
+				{
+					dsqlScratch->appendUChar(blr_eql);
+					dsqlScratch->appendUChar(blr_literal);
+					dsqlScratch->appendUChar(blr_bool);
+					dsqlScratch->appendUChar(1);
+					dsqlScratch->appendUChar(blr_literal);
+					dsqlScratch->appendUChar(blr_bool);
+					dsqlScratch->appendUChar(1);
+				}
+			}
+
+			if (notMatched->assignments)	// UPDATE
+			{
+				dsqlScratch->appendUChar(returning ? blr_modify2 : blr_modify);
+				GEN_stuff_context(dsqlScratch, oldContext);
+				GEN_stuff_context(dsqlScratch, notMatched->modifyRelation->dsqlContext);
+				dsqlScratch->putBlrMarkers(MARK_MERGE);
+
+				dsqlScratch->appendUChar(blr_begin);
+
+				auto valueIt = notMatched->processedValues.begin();
+
+				for (auto& field : notMatched->processedFields)
+				{
+					dsqlScratch->appendUChar(blr_assignment);
+					(*valueIt++)->genBlr(dsqlScratch);
+					field->genBlr(dsqlScratch);
+				}
+
+				dsqlScratch->appendUChar(blr_end);
+
+				if (returning)
+					dsqlGenReturning(dsqlScratch, notMatched->processedReturning, tableNumber);
+			}
+			else	// DELETE
+			{
+				if (returning)
+				{
+					dsqlScratch->appendUChar(blr_begin);
+					dsqlGenReturning(dsqlScratch, notMatched->processedReturning, tableNumber);
+				}
+
+				dsqlScratch->appendUChar(blr_erase);
+				GEN_stuff_context(dsqlScratch, oldContext);
+				dsqlScratch->putBlrMarkers(MARK_MERGE);
+
+				if (returning)
+					dsqlScratch->appendUChar(blr_end);
+			}
+
+			if (notMatched->condition && isLast)
+				dsqlScratch->appendUChar(blr_end);
+		}
+
+		if (whenNotMatchedByTarget.isEmpty() && whenMatched.isEmpty())
+			dsqlScratch->appendUChar(blr_end);
+	}
+
+	if (whenNotMatchedByTarget.hasData() || whenMatched.hasData())
+	{
+		dsqlScratch->appendUChar(blr_if);
+
+		if (whenNotMatchedByTarget.isEmpty())
+			dsqlScratch->appendUChar(blr_not);
+
+		dsqlScratch->appendUChar(blr_missing);
+		dsqlScratch->appendUChar(blr_dbkey);
+		GEN_stuff_context(dsqlScratch, oldContext);
+	}
 
 	//// TODO: It should be possible, under certain circunstances, to use single blr_store for inserts
 	//// and single blr_modify for updates.
 	//// However, if there are inserts with different override clauses or deletes, this is not possible.
 
-	for (auto nextNotMatched = whenNotMatched.begin(), notMatched = nextNotMatched++;
-		 notMatched != whenNotMatched.end();
+	for (auto nextNotMatched = whenNotMatchedByTarget.begin(), notMatched = nextNotMatched++;
+		 notMatched != whenNotMatchedByTarget.end();
 		 notMatched = nextNotMatched++)
 	{
-		const bool isLast = nextNotMatched == whenNotMatched.end();
+		const bool isLast = nextNotMatched == whenNotMatchedByTarget.end();
 
 		if (notMatched->condition || !isLast)
 		{
@@ -5973,7 +6199,7 @@ void MergeNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		if (matched->assignments)	// UPDATE
 		{
 			dsqlScratch->appendUChar(returning ? blr_modify2 : blr_modify);
-			GEN_stuff_context(dsqlScratch, targetContext);
+			GEN_stuff_context(dsqlScratch, oldContext);
 			GEN_stuff_context(dsqlScratch, matched->modifyRelation->dsqlContext);
 			dsqlScratch->putBlrMarkers(MARK_MERGE);
 
@@ -6002,7 +6228,7 @@ void MergeNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			}
 
 			dsqlScratch->appendUChar(blr_erase);
-			GEN_stuff_context(dsqlScratch, targetContext);
+			GEN_stuff_context(dsqlScratch, oldContext);
 			dsqlScratch->putBlrMarkers(MARK_MERGE);
 
 			if (returning)
@@ -6013,8 +6239,11 @@ void MergeNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			dsqlScratch->appendUChar(blr_end);
 	}
 
-	if (whenNotMatched.hasData() != whenMatched.hasData())
+	if ((whenNotMatchedByTarget.hasData() || whenMatched.hasData()) &&
+		whenNotMatchedByTarget.hasData() != whenMatched.hasData())
+	{
 		dsqlScratch->appendUChar(blr_end);
+	}
 
 	if (returning && !dsqlScratch->isPsql())
 	{
@@ -6425,7 +6654,7 @@ void ModifyNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	if (dsqlReturning && !dsqlScratch->isPsql())
 	{
 		if (dsqlCursorName.isEmpty())
-			dsqlGenReturningLocalTableDecl(dsqlScratch, dsqlReturning, dsqlReturningLocalTableNumber.value);
+			dsqlGenReturningLocalTableDecl(dsqlScratch, dsqlReturningLocalTableNumber.value);
 		else
 		{
 			dsqlScratch->appendUChar(blr_send);
@@ -7333,7 +7562,7 @@ void StoreNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	if (dsqlReturning && !dsqlScratch->isPsql())
 	{
 		if (dsqlRse)
-			dsqlGenReturningLocalTableDecl(dsqlScratch, dsqlReturning, dsqlReturningLocalTableNumber.value);
+			dsqlGenReturningLocalTableDecl(dsqlScratch, dsqlReturningLocalTableNumber.value);
 		else if (!(dsqlScratch->flags & DsqlCompilerScratch::FLAG_UPDATE_OR_INSERT))
 		{
 			dsqlScratch->appendUChar(blr_send);
@@ -9388,17 +9617,17 @@ static void dsqlGenReturningLocalTableCursor(DsqlCompilerScratch* dsqlScratch, R
 }
 
 // Generate BLR for returning's local table declaration.
-static void dsqlGenReturningLocalTableDecl(DsqlCompilerScratch* dsqlScratch, ReturningClause* returning, USHORT tableNumber)
+static void dsqlGenReturningLocalTableDecl(DsqlCompilerScratch* dsqlScratch, USHORT tableNumber)
 {
 	dsqlScratch->appendUChar(blr_dcl_local_table);
 	dsqlScratch->appendUShort(tableNumber);
 	dsqlScratch->appendUChar(blr_dcl_local_table_format);
-	dsqlScratch->appendUShort(returning->first->items.getCount());
+	dsqlScratch->appendUShort(dsqlScratch->returningClause->second->items.getCount());
 
-	for (auto& retSource : returning->first->items)
+	for (auto& retTarget : dsqlScratch->returningClause->second->items)
 	{
 		dsc fieldDesc;
-		DsqlDescMaker::fromNode(dsqlScratch, &fieldDesc, retSource);
+		DsqlDescMaker::fromNode(dsqlScratch, &fieldDesc, retTarget);
 		GEN_descriptor(dsqlScratch, &fieldDesc, true);
 	}
 

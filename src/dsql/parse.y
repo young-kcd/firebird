@@ -684,6 +684,7 @@ using namespace Firebird;
 
 // tokens added for Firebird 5.0
 
+%token <metaNamePtr> TARGET
 %token <metaNamePtr> TIMEZONE_NAME
 %token <metaNamePtr> UNICODE_CHAR
 %token <metaNamePtr> UNICODE_VAL
@@ -6586,9 +6587,17 @@ merge_when_matched_clause($mergeNode)
 
 %type merge_when_not_matched_clause(<mergeNode>)
 merge_when_not_matched_clause($mergeNode)
-	: WHEN NOT MATCHED
-			{ $<mergeNotMatchedClause>$ = &$mergeNode->whenNotMatched.add(); }
-		merge_insert_specification(NOTRIAL($<mergeNotMatchedClause>4))
+	: WHEN NOT MATCHED by_target_noise
+			{ $<mergeNotMatchedClause>$ = &$mergeNode->whenNotMatchedByTarget.add(); }
+		merge_insert_specification(NOTRIAL($<mergeNotMatchedClause>5))
+	| WHEN NOT MATCHED BY SOURCE
+			{ $<mergeMatchedClause>$ = &$mergeNode->whenNotMatchedBySource.add(); }
+		merge_update_specification(NOTRIAL($<mergeMatchedClause>6), NOTRIAL(&$mergeNode->relation->dsqlName))
+	;
+
+by_target_noise
+	: // empty
+	| BY TARGET
 	;
 
 %type merge_update_specification(<mergeMatchedClause>, <metaNamePtr>)
@@ -9105,7 +9114,8 @@ non_reserved_word
 	| ZONE
 	| DEBUG				// added in FB 4.0.1
 	| PKCS_1_5
-	| TIMEZONE_NAME		// added in FB 5.0
+	| TARGET			// added in FB 5.0
+	| TIMEZONE_NAME
 	| UNICODE_CHAR
 	| UNICODE_VAL
 	;

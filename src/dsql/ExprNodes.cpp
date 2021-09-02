@@ -8499,14 +8499,32 @@ bool DsqlMapNode::dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* ot
 //--------------------
 
 
-DerivedFieldNode::DerivedFieldNode(MemoryPool& pool, const MetaName& aName, USHORT aScope,
-			ValueExprNode* aValue)
-	: TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_FIELD>(pool),
-	  name(aName),
-	  value(aValue),
-	  context(NULL),
-	  scope(aScope)
+void DerivedFieldNode::getContextNumbers(Firebird::SortedArray<USHORT>& contextNumbers, const DsqlContextStack& contextStack)
 {
+	for (DsqlContextStack::const_iterator stack(contextStack); stack.hasData(); ++stack)
+	{
+		const auto* const context = stack.object();
+
+		if (context->ctx_win_maps.hasData())
+		{
+			for (const auto& winMap : context->ctx_win_maps)
+			{
+				// bottleneck
+				fb_assert(winMap->context <= MAX_UCHAR);
+
+				if (!contextNumbers.exist(winMap->context))
+					contextNumbers.add(winMap->context);
+			}
+		}
+		else
+		{
+			// bottleneck
+			fb_assert(context->ctx_context <= MAX_UCHAR);
+
+			if (!contextNumbers.exist(context->ctx_context))
+				contextNumbers.add(context->ctx_context);
+		}
+	}
 }
 
 string DerivedFieldNode::internalPrint(NodePrinter& printer) const
@@ -8653,29 +8671,8 @@ void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	{
 		if (context->ctx_main_derived_contexts.hasData())
 		{
-			HalfStaticArray<USHORT, 4> derivedContexts;
-
-			for (DsqlContextStack::const_iterator stack(context->ctx_main_derived_contexts);
-				 stack.hasData(); ++stack)
-			{
-				const dsql_ctx* const derivedContext = stack.object();
-
-				if (derivedContext->ctx_win_maps.hasData())
-				{
-					for (auto& winMap : derivedContext->ctx_win_maps)
-					{
-						// bottleneck
-						fb_assert(winMap->context <= MAX_UCHAR);
-						derivedContexts.add(winMap->context);
-					}
-				}
-				else
-				{
-					// bottleneck
-					fb_assert(derivedContext->ctx_context <= MAX_UCHAR);
-					derivedContexts.add(derivedContext->ctx_context);
-				}
-			}
+			SortedArray<USHORT> derivedContexts;
+			getContextNumbers(derivedContexts, context->ctx_main_derived_contexts);
 
 			const FB_SIZE_T derivedContextsCount = derivedContexts.getCount();
 

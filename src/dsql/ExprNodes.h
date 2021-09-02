@@ -1058,7 +1058,25 @@ class DerivedFieldNode : public TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_
 {
 public:
 	DerivedFieldNode(MemoryPool& pool, const MetaName& aName, USHORT aScope,
-		ValueExprNode* aValue);
+				ValueExprNode* aValue)
+		: TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_FIELD>(pool),
+		  name(aName),
+		  value(aValue),
+		  context(NULL),
+		  scope(aScope)
+	{
+	}
+
+	// Construct already processed node.
+	DerivedFieldNode(MemoryPool& pool, dsql_ctx* aContext, ValueExprNode* aValue)
+		: TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_FIELD>(pool),
+		  value(aValue),
+		  context(aContext),
+		  scope(0)
+	{
+	}
+
+	static void getContextNumbers(Firebird::SortedArray<USHORT>& contextNumbers, const DsqlContextStack& contextStack);
 
 	virtual void getChildren(NodeRefsHolder& holder, bool dsql) const
 	{

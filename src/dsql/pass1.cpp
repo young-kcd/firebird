@@ -178,7 +178,6 @@ using namespace Firebird;
 
 
 static string pass1_alias_concat(const string&, const string&);
-static void pass1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context);
 static ValueListNode* pass1_group_by_list(DsqlCompilerScratch*, ValueListNode*, ValueListNode*);
 static ValueExprNode* pass1_make_derived_field(thread_db*, DsqlCompilerScratch*, ValueExprNode*);
 static RseNode* pass1_rse(DsqlCompilerScratch*, RecordSourceNode*, ValueListNode*, RowsClause*, bool, USHORT);
@@ -955,8 +954,9 @@ DeclareCursorNode* PASS1_cursor_name(DsqlCompilerScratch* dsqlScratch, const Met
 
 
 // Extract relation and procedure context and expand derived child contexts.
-static void pass1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context)
+void PASS1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context)
 {
+	//// TODO: LocalTableSourceNode
 	if (context->ctx_relation || context->ctx_procedure ||
 		context->ctx_map || context->ctx_win_maps.hasData())
 	{
@@ -968,7 +968,7 @@ static void pass1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context)
 	else
 	{
 		for (DsqlContextStack::iterator i(context->ctx_childs_derived_table); i.hasData(); ++i)
-			pass1_expand_contexts(contexts, i.object());
+			PASS1_expand_contexts(contexts, i.object());
 	}
 }
 
@@ -1089,7 +1089,7 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 			context->ctx_childs_derived_table.push(childCtx);
 
 			// Collect contexts that will be used for blr_derived_expr generation.
-			pass1_expand_contexts(context->ctx_main_derived_contexts, childCtx);
+			PASS1_expand_contexts(context->ctx_main_derived_contexts, childCtx);
 		}
 
 		while (temp.hasData())
