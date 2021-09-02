@@ -427,12 +427,12 @@ private:
 	{
 		fb_assert(alignment);
 
-		FB_UINT64 zeroFill = 0;
-		UCHAR* newPointer = FB_ALIGN(blobStream, alignment);
 		ULONG align = FB_ALIGN(blobStream, alignment) - blobStream;
-		putBlobData(align, &zeroFill);
 		if (bs)
 			*bs += align;
+
+		FB_UINT64 zeroFill = 0;
+		putBlobData(align, &zeroFill);
 	}
 
 	void putBlobData(ULONG size, const void* p)
@@ -459,7 +459,7 @@ private:
 				{
 					sendBlobPacket(blobBufferSize, blobStreamBuffer, false);
 					blobStream = blobStreamBuffer;
-					sizePointer = NULL;
+					sizePointer = nullptr;
 				}
 			}
 
@@ -480,15 +480,16 @@ private:
 		{
 			newBlob();
 
-			ISC_QUAD zero = {0, 0};
-			putBlobData(sizeof zero, &zero);
+			ISC_QUAD quadZero = {0, 0};
+			putBlobData(sizeof quadZero, &quadZero);
 			setSizePointer();
-			ULONG z2 = 0;
-			putBlobData(sizeof z2, &z2);
-			putBlobData(sizeof z2, &z2);
+			ULONG longZero = 0;
+			putBlobData(sizeof longZero, &longZero);
+			putBlobData(sizeof longZero, &longZero);
 		}
 
 		*sizePointer += size;
+
 		if (segmented)
 		{
 			if (size > MAX_USHORT)
@@ -497,11 +498,14 @@ private:
 					<< Arg::Gds(isc_big_segment) << Arg::Num(size)).raise();
 			}
 
-			alignBlobBuffer(BLOB_SEGHDR_ALIGN, sizePointer);
 			*sizePointer += sizeof(USHORT);
+
+			alignBlobBuffer(BLOB_SEGHDR_ALIGN, sizePointer);
+
 			USHORT segSize = size;
 			putBlobData(sizeof segSize, &segSize);
 		}
+
 		putBlobData(size, ptr);
 	}
 
