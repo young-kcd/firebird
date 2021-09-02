@@ -18,6 +18,7 @@
  * Adriano dos Santos Fernandes - refactored from pass1.cpp, gen.cpp, cmp.cpp, par.cpp and exe.cpp
  */
 
+#include <algorithm>
 #include "firebird.h"
 #include "firebird/impl/blr.h"
 #include "../common/TimeZoneUtil.h"
@@ -5550,36 +5551,21 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	usingCtxs.clear();
 	dsqlGetContexts(usingCtxs, source);
 
-	bool useMatchedConditions = whenMatched.hasData();
-	bool useNotMatchedByTargetConditions = whenNotMatchedByTarget.hasData();
-	bool useNotMatchedBySourceConditions = whenNotMatchedBySource.hasData();
+	const auto noConditionCheck = [](const auto& i) {
+		return i.condition == nullptr;
+	};
 
-	for (auto& matched : whenMatched)
-	{
-		if (!matched.condition)
-		{
-			useMatchedConditions = false;
-			break;
-		}
-	}
+	const bool useMatchedConditions = std::none_of(
+		whenMatched.begin(), whenMatched.end(),
+		noConditionCheck);
 
-	for (auto& notMatched : whenNotMatchedByTarget)
-	{
-		if (!notMatched.condition)
-		{
-			useNotMatchedByTargetConditions = false;
-			break;
-		}
-	}
+	const bool useNotMatchedByTargetConditions = std::none_of(
+		whenNotMatchedByTarget.begin(), whenNotMatchedByTarget.end(),
+		noConditionCheck);
 
-	for (auto& notMatched : whenNotMatchedBySource)
-	{
-		if (!notMatched.condition)
-		{
-			useNotMatchedBySourceConditions = false;
-			break;
-		}
-	}
+	const bool useNotMatchedBySourceConditions = std::none_of(
+		whenNotMatchedBySource.begin(), whenNotMatchedBySource.end(),
+		noConditionCheck);
 
 	BoolExprNode* matchedConditions = nullptr;
 	BoolExprNode* notMatchedByTargetConditions = nullptr;
