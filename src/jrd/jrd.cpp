@@ -2167,9 +2167,6 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				dbb->dbb_linger_seconds = 0;
 			}
 
-			if (dbb->isReplica(REPLICA_READ_ONLY))
-				attachment->att_flags |= ATT_no_db_triggers;
-
 			CCH_init2(tdbb);
 			VIO_init(tdbb);
 			attachment->setInitialOptions(tdbb, options, newDb);
@@ -3119,9 +3116,6 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 
 				PAG_set_db_replica(tdbb, options.dpb_replica_mode);
 			}
-
-			if (dbb->isReplica(REPLICA_READ_ONLY))
-				attachment->att_flags |= ATT_no_db_triggers;
 
 			PAG_attachment_id(tdbb);
 
