@@ -4325,7 +4325,7 @@ static void check_owner(thread_db* tdbb,
 			return;
 
 		const auto attachment = tdbb->getAttachment();
-		const MetaString& name = attachment->getUserName();
+		const MetaString& name = attachment->getEffectiveUserName();
 
 		if (name.hasData())
 		{
@@ -6203,7 +6203,7 @@ static void set_owner_name(thread_db* tdbb, Record* record, USHORT field_id)
 	if (!EVL_field(0, record, field_id, &desc1))
 	{
 		const auto attachment = tdbb->getAttachment();
-		const MetaString& name = attachment->getUserName();
+		const MetaString& name = attachment->getEffectiveUserName();
 
 		if (name.hasData())
 		{
