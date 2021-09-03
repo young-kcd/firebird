@@ -2940,14 +2940,14 @@ void Batch::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Batch::close(CheckStatusWrapper* status)
+void Batch::deprecatedClose(CheckStatusWrapper* status)
 {
 	reset(status);
 	freeClientData(status);
 }
 
 
-void Batch::deprecatedClose(CheckStatusWrapper* status)
+void Batch::close(CheckStatusWrapper* status)
 {
 	deprecatedClose(status);
 	if (status->isEmpty())
@@ -3039,14 +3039,14 @@ void Replicator::process(CheckStatusWrapper* status, unsigned length, const unsi
 }
 
 
-void Replicator::close(CheckStatusWrapper* status)
+void Replicator::deprecatedClose(CheckStatusWrapper* status)
 {
 	reset(status);
 	freeClientData(status);
 }
 
 
-void Replicator::deprecatedClose(CheckStatusWrapper* status)
+void Replicator::close(CheckStatusWrapper* status)
 {
 	deprecatedClose(status);
 	if (status->isEmpty())
