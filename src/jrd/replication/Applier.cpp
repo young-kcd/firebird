@@ -883,7 +883,7 @@ void Applier::executeSql(thread_db* tdbb,
 						 TraNumber traNum,
 						 unsigned charset,
 						 const string& sql,
-						 const MetaName& owner)
+						 const MetaName& ownerName)
 {
 	jrd_tra* transaction = NULL;
 	if (!m_txnMap.get(traNum, transaction))
@@ -897,11 +897,10 @@ void Applier::executeSql(thread_db* tdbb,
 	const auto dialect =
 		(dbb->dbb_flags & DBB_DB_SQL_dialect_3) ? SQL_DIALECT_V6 : SQL_DIALECT_V5;
 
-	UserId user(*attachment->att_user);
-	user.setUserName(owner);
-
 	AutoSetRestore<SSHORT> autoCharset(&attachment->att_charset, charset);
-	AutoSetRestore<UserId*> autoOwner(&attachment->att_user, &user);
+
+	UserId* const owner = attachment->getUserId(ownerName);
+	AutoSetRestore<UserId*> autoOwner(&attachment->att_ss_user, owner);
 
 	DSQL_execute_immediate(tdbb, attachment, &transaction,
 						   0, sql.c_str(), dialect,
