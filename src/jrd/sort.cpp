@@ -1957,7 +1957,7 @@ void Sort::orderAndSave(thread_db* tdbb)
  * scratch file as one big chunk
  *
  **************************************/
-	EngineCheckout(tdbb, FB_FUNCTION);
+	EngineCheckout cout(tdbb, FB_FUNCTION);
 
 	run_control* run = m_runs;
 	run->run_records = 0;
@@ -2053,7 +2053,7 @@ void Sort::sortBuffer(thread_db* tdbb)
  * been requested, detect and handle them.
  *
  **************************************/
-	EngineCheckout(tdbb, FB_FUNCTION);
+	EngineCheckout cout(tdbb, FB_FUNCTION);
 
 	// First, insert a pointer to the high key
 
