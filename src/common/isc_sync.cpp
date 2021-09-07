@@ -131,6 +131,7 @@ static size_t getpagesize()
 
 #include <process.h>
 #include <windows.h>
+#include <psapi.h>
 
 #endif
 
@@ -1466,8 +1467,46 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 
 #endif // UNIX
 
-
 #ifdef WIN_NT
+
+// Get name of the file that was mapped into memory at given address.
+// This routine should not throw as caller is not ready currently.
+static bool getMappedFileName(void* addr, PathName& mappedName)
+{
+	char* mapName = mappedName.getBuffer(MAXPATHLEN + 1);
+	const DWORD mapLen = GetMappedFileName(GetCurrentProcess(), addr, mapName, MAXPATHLEN);
+	mappedName.resize(mapLen);
+	if (!mapLen)
+		//system_call_failed::raise("GetMappedFileName");
+		return false;
+
+	char dosDevice[] = {'A', ':', 0};
+
+	DWORD drives = GetLogicalDrives();
+	for (; drives; drives >>= 1, dosDevice[0]++)
+		if (drives & 1)
+		{
+			char ntDevice[MAXPATHLEN + 1];
+			DWORD ntLen = QueryDosDevice(dosDevice, ntDevice, MAXPATHLEN);
+
+			if (!ntLen)
+				//system_call_failed::raise("QueryDosDevice");
+				return false;
+
+			ntLen = strlen(ntDevice);
+
+			if (ntLen <= mapLen && 
+				_memicmp(ntDevice, mapName, ntLen) == 0 &&				
+				mapName[ntLen] == '\\')
+			{
+				mappedName.replace(0, ntLen, dosDevice);
+				return true;
+			}				
+		}
+
+	return false;
+}
+
 SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject* cb, bool /*skipLock*/)
   :	sh_mem_mutex(0), sh_mem_length_mapped(0),
 	sh_mem_handle(0), sh_mem_object(0), sh_mem_interest(0), sh_mem_hdr_object(0),
@@ -1638,16 +1677,29 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 			system_call_failed::raise("SetFilePointer", err);
 		}
 	}
+/*
 	else
 	{
 		if ((err != ERROR_ALREADY_EXISTS) || SetFilePointer(file_handle, 0, NULL, FILE_END) == 0)
 		{
 			CloseHandle(event_handle);
 			CloseHandle(file_handle);
-			goto retry;
+
+			// We are not initializer but file is created by us.
+			//if (err == NO_ERROR)
+			//	DeleteFile(expanded_filename);
+
+			if (retry_count < 100)	// 1 sec
+				goto retry;
+
+			if (err == ERROR_ALREADY_EXISTS)
+				(Arg::Gds(isc_random) << Arg::Str("File for memory mapping is empty.")).raise();
+
+			// unexpected error
+			system_call_failed::raise("CreateFile", err);
 		}
 	}
-
+*/
 	// Create a file mapping object that will be used to make remapping possible.
 	// The current length of real mapped file and its name are saved in it.
 
@@ -1759,6 +1811,25 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
 		system_call_failed::raise("MapViewOfFile", err);
+	}
+
+	PathName mappedName;
+	if (!getMappedFileName(address, mappedName) || mappedName != expanded_filename)
+	{
+		UnmapViewOfFile(address);
+		CloseHandle(file_obj);
+		UnmapViewOfFile(header_address);
+		CloseHandle(header_obj);
+		CloseHandle(event_handle);
+		CloseHandle(file_handle);
+
+		gds__log("Wrong file for memory mapping:\n"
+				 "\t      expected %s\n"
+				 "\talready mapped %s\n" 
+				 "\tCheck for presence of another Firebird instance with different lock directory", 
+				 expanded_filename, mappedName.c_str());
+
+		(Arg::Gds(isc_random) << Arg::Str("Wrong file for memory mapping, see details in firebird.log")).raise();
 	}
 
 	sh_mem_header = (MemoryHeader*) address;
