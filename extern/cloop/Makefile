@@ -53,10 +53,10 @@ vpath %.c $(SRC_DIRS)
 vpath %.cpp $(SRC_DIRS)
 
 define compile
-$1/%.o: %.c
+$1/%.o: %.c | $1
 	$(CC) -c $$(C_FLAGS) $$< -o $$@
 
-$1/%.o: %.cpp
+$1/%.o: %.cpp | $1
 	$(CXX) -c $$(CXX_FLAGS) $$< -o $$@
 endef
 
