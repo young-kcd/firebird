@@ -551,10 +551,8 @@ void INF_database_info(thread_db* tdbb,
 
 		case fb_info_creation_timestamp_tz:
 			length = INF_convert(dbb->dbb_creation_date.utc_timestamp.timestamp_date, p);
-			p += length;
-			length += INF_convert(dbb->dbb_creation_date.utc_timestamp.timestamp_time, p);
-			p += length;
-			length += INF_convert(dbb->dbb_creation_date.time_zone, p);
+			length += INF_convert(dbb->dbb_creation_date.utc_timestamp.timestamp_time, p + length);
+			length += INF_convert(dbb->dbb_creation_date.time_zone, p + length);
 			break;
 
 		case isc_info_no_reserve:
