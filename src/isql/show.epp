@@ -251,6 +251,7 @@ static const UCHAR db_items[] =
 	isc_info_db_id,
 #endif
 	fb_info_crypt_state,
+	fb_info_protocol_version,
 	fb_info_wire_crypt,
 	isc_info_end
 };
@@ -558,6 +559,14 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 		case fb_info_wire_crypt:
 			if (d && length)
 				sprintf (info, "Wire crypt plugin: %.*s%s", length, d, separator);
+			break;
+
+		case fb_info_protocol_version:
+			value_out = ISQL_vax_integer(d, length);
+			if (value_out)
+				sprintf(info, "Protocol version = %" SQUADFORMAT"%s", value_out, separator);
+			else
+				sprintf(info, "Embedded connection%s", separator);
 			break;
 
 #ifdef DEV_BUILD
@@ -3536,7 +3545,7 @@ static void show_db()
 		return;
 	END_ERROR;
 
-	SCHAR info_buf[BUFFER_LENGTH400];
+	SCHAR info_buf[BUFFER_LENGTH512];
 
 	// First general database parameters
 
