@@ -888,6 +888,10 @@ void INF_database_info(thread_db* tdbb,
 			length = INF_convert(att->getActualIdleTimeout(), buffer);
 			break;
 
+		case fb_info_protocol_version:
+			length = INF_convert(0, buffer);
+			break;
+
 		case fb_info_features:
 			{
 				static const unsigned char features[] = ENGINE_FEATURES;

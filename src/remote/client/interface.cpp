@@ -1888,7 +1888,11 @@ void Attachment::getInfo(CheckStatusWrapper* status,
 		HalfStaticArray<UCHAR, 1024> temp;
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
+
 		rem_port* port = rdb->rdb_port;
+		USHORT protocol = memchr(items, fb_info_protocol_version, item_length) ? port->port_protocol : 0;
+		protocol &= FB_PROTOCOL_MASK;
+
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		UCHAR* temp_buffer = temp.getBuffer(buffer_length);
@@ -1902,7 +1906,8 @@ void Attachment::getInfo(CheckStatusWrapper* status,
 		MERGE_database_info(temp_buffer, buffer, buffer_length,
 							DbImplementation::current.backwardCompatibleImplementation(), 3, 1,
 							reinterpret_cast<const UCHAR*>(version.c_str()),
-							reinterpret_cast<const UCHAR*>(port->port_host->str_data));
+							reinterpret_cast<const UCHAR*>(port->port_host->str_data),
+							protocol);
 	}
 	catch (const Exception& ex)
 	{

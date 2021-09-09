@@ -252,6 +252,7 @@ static const UCHAR db_items[] =
 	isc_info_db_id,
 #endif
 	fb_info_crypt_state,
+	fb_info_protocol_version,
 	fb_info_wire_crypt,
 	fb_info_creation_timestamp_tz,
 	isc_info_creation_date,
@@ -611,6 +612,14 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 
 				crdatePrinted = true;
 			}
+			break;
+
+		case fb_info_protocol_version:
+			value_out = ISQL_vax_integer(d, length);
+			if (value_out)
+				sprintf(info, "Protocol version = %" SQUADFORMAT"%s", value_out, separator);
+			else
+				sprintf(info, "Embedded connection%s", separator);
 			break;
 
 #ifdef DEV_BUILD

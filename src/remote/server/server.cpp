@@ -4391,11 +4391,14 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 		{
 			string version;
 			versionInfo(version);
+			USHORT protocol = memchr(stuff->p_info_items.cstr_address, fb_info_protocol_version,
+				stuff->p_info_items.cstr_length) ? port_protocol & FB_PROTOCOL_MASK : 0;
 			info_db_len = MERGE_database_info(temp_buffer, //temp
 				buffer, buffer_length,
 				DbImplementation::current.backwardCompatibleImplementation(), 4, 1,
 				reinterpret_cast<const UCHAR*>(version.c_str()),
-				reinterpret_cast<const UCHAR*>(this->port_host->str_data));
+				reinterpret_cast<const UCHAR*>(this->port_host->str_data),
+				protocol);
 		}
 		break;
 
