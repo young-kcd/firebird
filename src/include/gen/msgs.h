@@ -882,7 +882,7 @@ Data source : @4"},		/* eds_statement */
 	{335545175, "Segment size (@1) should not exceed 65535 (64K - 1) when using segmented blob"},		/* big_segment */
 	{335545176, "Invalid blob policy in the batch for @1() call"},		/* batch_policy */
 	{335545177, "Can't change default BPB after adding any data to batch"},		/* batch_defbpb */
-	{335545178, "Unexpected info buffer structure querying for default blob alignment"},		/* batch_align */
+	{335545178, "Unexpected info buffer structure querying for server batch parameters"},		/* batch_align */
 	{335545179, "Duplicated segment @1 in multisegment connect block parameter"},		/* multi_segment_dup */
 	{335545180, "Plugin not supported by network protocol"},		/* non_plugin_protocol */
 	{335545181, "Error parsing message format"},		/* message_format */

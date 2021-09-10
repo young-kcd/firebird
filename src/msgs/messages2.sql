@@ -965,7 +965,7 @@ Data source : @4', NULL, NULL)
 ('big_segment', NULL, NULL, NULL, 0, 855, NULL, 'Segment size (@1) should not exceed 65535 (64K - 1) when using segmented blob', NULL, NULL);
 ('batch_policy', NULL, NULL, NULL, 0, 856, NULL, 'Invalid blob policy in the batch for @1() call', NULL, NULL);
 ('batch_defbpb', NULL, NULL, NULL, 0, 857, NULL, 'Can''t change default BPB after adding any data to batch', NULL, NULL);
-('batch_align', NULL, 'interface.cpp', NULL, 0, 858, NULL, 'Unexpected info buffer structure querying for default blob alignment', NULL, NULL);
+('batch_align', NULL, 'interface.cpp', NULL, 0, 858, NULL, 'Unexpected info buffer structure querying for server batch parameters', NULL, NULL);
 ('multi_segment_dup', 'getMultiPartConnectParameter', 'server.cpp', NULL, 0, 859, NULL, 'Duplicated segment @1 in multisegment connect block parameter', NULL, NULL);
 ('non_plugin_protocol', NULL, 'server.cpp', NULL, 0, 860, NULL, 'Plugin not supported by network protocol', NULL, NULL);
 ('message_format', NULL, 'server.cpp', NULL, 0, 861, NULL, 'Error parsing message format', NULL, NULL);
