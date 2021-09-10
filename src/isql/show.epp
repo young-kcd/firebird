@@ -57,6 +57,7 @@
 #include "../common/classes/UserBlob.h"
 #include "../common/classes/VaryStr.h"
 #include "../common/classes/ImplementHelper.h"
+#include "../common/TimeZoneUtil.h"
 #include "../isql/OptionsBase.h"
 
 #include <firebird/Interface.h>
@@ -252,6 +253,8 @@ static const UCHAR db_items[] =
 #endif
 	fb_info_crypt_state,
 	fb_info_wire_crypt,
+	fb_info_creation_timestamp_tz,
+	isc_info_creation_date,
 	isc_info_end
 };
 
@@ -399,6 +402,8 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 	db_handle->getInfo(&statusWrapper, item_length, db_itemsL, sizeof(buffer), buffer);
 	if (ISQL_errmsg(status_vector))
 		return false;
+
+	bool crdatePrinted = false;
 
 	*info_buf = '\0';
 	SCHAR* info = info_buf;
@@ -558,6 +563,54 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 		case fb_info_wire_crypt:
 			if (d && length)
 				sprintf (info, "Wire crypt plugin: %.*s%s", length, d, separator);
+			break;
+
+		case isc_info_creation_date:
+			if (length == sizeof(ISC_TIMESTAMP) && !crdatePrinted)
+			{
+				ISC_TIMESTAMP ts;
+
+				const UCHAR* p = d;
+				ts.timestamp_date = ISQL_vax_integer(p, sizeof(ISC_DATE));
+				p += sizeof(ISC_DATE);
+				ts.timestamp_time = ISQL_vax_integer(p, sizeof(ISC_TIME));
+
+				struct tm time;
+				isc_decode_timestamp(&ts, &time);
+
+				sprintf(info, "Creation date: %s %d, %d %d:%02d:%02d\n",
+					FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,
+					time.tm_hour, time.tm_min, time.tm_sec);
+			}
+			break;
+
+		case fb_info_creation_timestamp_tz:
+			if (length == sizeof(ISC_TIMESTAMP_TZ))
+			{
+				ISC_TIMESTAMP_TZ tsz;
+
+				const UCHAR* p = d;
+				tsz.utc_timestamp.timestamp_date = ISQL_vax_integer(p, sizeof(ISC_DATE));
+				p += sizeof(ISC_DATE);
+				tsz.utc_timestamp.timestamp_time = ISQL_vax_integer(p, sizeof(ISC_TIME));
+				p += sizeof(ISC_TIME);
+				tsz.time_zone = ISQL_vax_integer(p, sizeof(ULONG));
+
+				unsigned year, month, day, hours, minutes, seconds, fractions;
+				char timeZone[Firebird::TimeZoneUtil::MAX_SIZE];
+
+				Firebird::UtilInterfacePtr()->decodeTimeStampTz(fbStatus, &tsz,
+					&year, &month, &day, &hours, &minutes, &seconds, &fractions, sizeof(timeZone), timeZone);
+
+				if (ISQL_errmsg(fbStatus))
+					break;
+
+				sprintf(info, "Creation date: %s %d, %d %d:%02d:%02d %s\n",
+					FB_SHORT_MONTHS[month - 1], day, year,
+					hours, minutes, seconds, timeZone);
+
+				crdatePrinted = true;
+			}
 			break;
 
 #ifdef DEV_BUILD
@@ -3536,7 +3589,7 @@ static void show_db()
 		return;
 	END_ERROR;
 
-	SCHAR info_buf[BUFFER_LENGTH400];
+	SCHAR info_buf[BUFFER_LENGTH512];
 
 	// First general database parameters
 
