@@ -58,7 +58,8 @@ public:
 		SpbSendItems,
 		SpbReceiveItems,
 		SpbResponse,
-		InfoResponse
+		InfoResponse,
+		InfoItems
 	};
 
 	struct KindList
