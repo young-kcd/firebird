@@ -1972,6 +1972,7 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'get_pub_table', 'restore.epp', NULL, 12, 402, NULL, 'publication for table', NULL, NULL);
 ('gbak_opt_replica', 'burp_usage', 'burp.c', NULL, 12, 403, NULL, '    @1REPLICA <mode>      "none", "read_only" or "read_write" replica mode', NULL, NULL);
 ('gbak_replica_req', 'BURP_gbak', 'burp.c', NULL, 12, 404, NULL, '"none", "read_only" or "read_write" required', NULL, NULL);
+(NULL, 'get_blob', 'restore.epp', NULL, 12, 405, NULL, 'could not access batch parameters', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);
