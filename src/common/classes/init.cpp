@@ -45,6 +45,13 @@
 // operator in destructor will cause AV.
 #undef DEBUG_INIT
 
+#ifdef WIN_NT
+#pragma init_seg(lib)
+#define FB_INIT_PRIORITY
+#else
+#define FB_INIT_PRIORITY __attribute__ ((init_priority (150)))
+#endif
+
 static bool dontCleanup = false;
 
 namespace
@@ -173,7 +180,7 @@ namespace
 		}
 	};
 
-	Cleanup global;
+	Cleanup global FB_INIT_PRIORITY;
 #endif //DEBUG_INIT
 
 	void init()
@@ -208,6 +215,17 @@ namespace
 		Firebird::MemoryPool::contextPoolInit();
 	}
 
+	class Init
+	{
+	public:
+		Init()
+		{
+			init();
+		}
+	};
+
+	Init initGlobal FB_INIT_PRIORITY;
+
 	Firebird::InstanceControl::InstanceList* instanceList = 0;
 	FPTR_VOID gdsCleanup = 0;
 	FPTR_VOID gdsShutdown = 0;
@@ -216,12 +234,6 @@ namespace
 
 namespace Firebird
 {
-	InstanceControl::InstanceControl()
-	{
-		// Initialize required subsystems, including static mutex
-		init();
-	}
-
 	InstanceControl::InstanceList::InstanceList(DtorPriority p)
 		: priority(p)
 	{
