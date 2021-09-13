@@ -55,6 +55,8 @@ public:
 		PRIORITY_TLS_KEY
 	};
 
+    InstanceControl();
+
 	//
 	// GlobalPtr should not be directly derived from class with virtual functions -
 	// virtual table for its instances may become invalid in the moment,
