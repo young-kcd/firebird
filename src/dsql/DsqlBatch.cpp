@@ -124,6 +124,8 @@ DsqlBatch::DsqlBatch(dsql_req* req, const dsql_msg* /*message*/, IMessageMetadat
 			m_bufferSize = pb.getInt();
 			if (m_bufferSize > HARD_BUFFER_LIMIT)
 				m_bufferSize = HARD_BUFFER_LIMIT;
+			if (!m_bufferSize)
+				m_bufferSize = HARD_BUFFER_LIMIT;
 			break;
 		}
 	}
@@ -817,7 +819,7 @@ void DsqlBatch::DataCache::put3(const void* data, ULONG dataSize, ULONG offset)
 
 void DsqlBatch::DataCache::put(const void* d, ULONG dataSize)
 {
-	if (m_limit && (m_used + m_cache.getCount() + dataSize > m_limit))
+	if (m_used + m_cache.getCount() + dataSize > m_limit)
 		ERR_post(Arg::Gds(isc_batch_too_big));
 
 	const UCHAR* data = reinterpret_cast<const UCHAR*>(d);
