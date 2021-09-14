@@ -783,7 +783,7 @@ bool PIO_read(thread_db* tdbb, jrd_file* file, BufferDesc* bdb, Ods::pag* page, 
 		}
 	}
 
-	return unix_error("read_retry", file, isc_io_read_err);
+	return unix_error("read_retry", file, isc_io_read_err, status_vector);
 }
 
 
@@ -827,7 +827,7 @@ bool PIO_write(thread_db* tdbb, jrd_file* file, BufferDesc* bdb, Ods::pag* page,
 			return unix_error("write", file, isc_io_write_err, status_vector);
 	}
 
-	return unix_error("write_retry", file, isc_io_write_err);
+	return unix_error("write_retry", file, isc_io_write_err, status_vector);
 }
 
 
