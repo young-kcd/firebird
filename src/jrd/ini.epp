@@ -445,6 +445,9 @@ void INI_format(const char* owner, const char* charset)
 			generator->gen_name, length, buffer);
 	}
 
+	add_security_to_sys_obj(tdbb, ownerName, obj_sql_role,
+		ADMIN_ROLE, length, buffer);
+
 	for (const IntlManager::CharSetDefinition* charset = IntlManager::defaultCharSets;
 		 charset->name;
 		 ++charset)
@@ -1171,6 +1174,18 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 			MODIFY GEN USING
 				GEN.RDB$SECURITY_CLASS.NULL = FALSE;
 				PAD(security_class.c_str(), GEN.RDB$SECURITY_CLASS);
+			END_MODIFY
+		}
+		END_FOR
+	}
+	else if (obj_type == obj_sql_role)
+	{
+		FOR(REQUEST_HANDLE handle) R IN RDB$ROLES
+			WITH R.RDB$ROLE_NAME EQ obj_name.c_str()
+		{
+			MODIFY R USING
+				R.RDB$SECURITY_CLASS.NULL = FALSE;
+				PAD(security_class.c_str(), R.RDB$SECURITY_CLASS);
 			END_MODIFY
 		}
 		END_FOR

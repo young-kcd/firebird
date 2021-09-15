@@ -31,6 +31,8 @@
 #include "../yvalve/gds_proto.h"
 #include "../common/gdsassert.h"
 
+typedef struct xdr_t XDR;
+
 inline UCHAR* XDR_ALLOC(ULONG size)
 {
 	return (UCHAR*) gds__alloc((SLONG) size);
@@ -66,24 +68,14 @@ inline void DEBUG_XDR_FREE(XDR*, const void*, const void*, ULONG)
 const unsigned MAXSTRING_FOR_WRAPSTRING	= 65535;
 
 
-static bool_t mem_getbytes(XDR*, SCHAR*, unsigned);
-static bool_t mem_putbytes(XDR*, const SCHAR*, unsigned);
-
-
-static const XDR::xdr_ops mem_ops =
-{
-	mem_getbytes,
-	mem_putbytes
-};
-
-#define GETBYTES	 (*xdrs->x_ops->x_getbytes)
-#define PUTBYTES	 (*xdrs->x_ops->x_putbytes)
+#define GETBYTES	 xdrs->x_getbytes
+#define PUTBYTES	 xdrs->x_putbytes
 
 inline bool_t GETLONG(XDR* xdrs, SLONG* lp)
 {
 	SLONG l;
 
-	if (!(*xdrs->x_ops->x_getbytes)(xdrs, reinterpret_cast<char*>(&l), 4))
+	if (!xdrs->x_getbytes(reinterpret_cast<char*>(&l), 4))
 		return FALSE;
 
 	*lp = xdrs->x_local ? l : ntohl(l);
@@ -94,7 +86,7 @@ inline bool_t GETLONG(XDR* xdrs, SLONG* lp)
 inline bool_t PUTLONG(XDR* xdrs, const SLONG* lp)
 {
 	const SLONG l = xdrs->x_local ? *lp : htonl(*lp);
-	return (*xdrs->x_ops->x_putbytes)(xdrs, reinterpret_cast<const char*>(&l), 4);
+	return xdrs->x_putbytes(reinterpret_cast<const char*>(&l), 4);
 }
 
 static SCHAR zeros[4] = { 0, 0, 0, 0 };
@@ -484,17 +476,17 @@ bool_t xdr_opaque(XDR* xdrs, SCHAR* p, unsigned len)
 	switch (xdrs->x_op)
 	{
 	case XDR_ENCODE:
-		if (!PUTBYTES(xdrs, p, len))
+		if (!PUTBYTES(p, len))
 			return FALSE;
 		if (l)
-			return PUTBYTES(xdrs, filler, l);
+			return PUTBYTES(filler, l);
 		return TRUE;
 
 	case XDR_DECODE:
-		if (!GETBYTES(xdrs, p, len))
+		if (!GETBYTES(p, len))
 			return FALSE;
 		if (l)
-			return GETBYTES(xdrs, trash, l);
+			return GETBYTES(trash, l);
 		return TRUE;
 
 	case XDR_FREE:
@@ -601,12 +593,12 @@ bool_t xdr_string(XDR* xdrs, SCHAR** sp, unsigned maxlength)
 		length = static_cast<ULONG>(strlen(*sp));
 		if (length > maxlength ||
 			!PUTLONG(xdrs, reinterpret_cast<SLONG*>(&length)) ||
-			!PUTBYTES(xdrs, *sp, length))
+			!PUTBYTES(*sp, length))
 		{
 			return FALSE;
 		}
 		if ((length = (4 - length) & 3) != 0)
-			return PUTBYTES(xdrs, filler, length);
+			return PUTBYTES(filler, length);
 		return TRUE;
 
 	case XDR_DECODE:
@@ -619,13 +611,13 @@ bool_t xdr_string(XDR* xdrs, SCHAR** sp, unsigned maxlength)
 			DEBUG_XDR_ALLOC(xdrs, sp, *sp, (maxlength + 1));
 		}
 		if (!GETLONG(xdrs, reinterpret_cast<SLONG*>(&length)) ||
-			length > maxlength || !GETBYTES(xdrs, *sp, length))
+			length > maxlength || !GETBYTES(*sp, length))
 		{
 			return FALSE;
 		}
 		(*sp)[length] = 0;
 		if ((length = (4 - length) & 3) != 0)
-			return GETBYTES(xdrs, trash, length);
+			return GETBYTES(trash, length);
 		return TRUE;
 
 	case XDR_FREE:
@@ -759,7 +751,7 @@ bool_t xdr_wrapstring(XDR* xdrs, SCHAR** strp)
 }
 
 
-int xdrmem_create(	XDR* xdrs, SCHAR* addr, unsigned len, xdr_op x_op)
+int xdr_t::create(SCHAR* addr, unsigned len, xdr_op op)
 {
 /**************************************
  *
@@ -772,16 +764,14 @@ int xdrmem_create(	XDR* xdrs, SCHAR* addr, unsigned len, xdr_op x_op)
  *
  **************************************/
 
-	xdrs->x_base = xdrs->x_private = addr;
-	xdrs->x_handy = len;
-	xdrs->x_ops = &mem_ops;
-	xdrs->x_op = x_op;
+	x_base = x_private = addr;
+	x_handy = len;
+	x_op = op;
 
 	return TRUE;
 }
 
-
-static bool_t mem_getbytes(	XDR* xdrs, SCHAR* buff, unsigned bytecount)
+bool_t xdr_t::x_getbytes(SCHAR* buff, unsigned bytecount)
 {
 /**************************************
  *
@@ -793,14 +783,14 @@ static bool_t mem_getbytes(	XDR* xdrs, SCHAR* buff, unsigned bytecount)
  *	Get a bunch of bytes from a memory stream if it fits.
  *
  **************************************/
-	if (xdrs->x_handy < bytecount)
+	if (x_handy < bytecount)
 		return FALSE;
 
 	if (bytecount)
 	{
-		memcpy(buff, xdrs->x_private, bytecount);
-		xdrs->x_private += bytecount;
-		xdrs->x_handy -= bytecount;
+		memcpy(buff, x_private, bytecount);
+		x_private += bytecount;
+		x_handy -= bytecount;
 	}
 
 	return TRUE;
@@ -828,7 +818,7 @@ SLONG xdr_peek_long(const XDR* xdrs, const void* data, size_t size)
 }
 
 
-static bool_t mem_putbytes(XDR* xdrs, const SCHAR* buff, unsigned bytecount)
+bool_t xdr_t::x_putbytes(const SCHAR* buff, unsigned bytecount)
 {
 /**************************************
  *
@@ -840,15 +830,19 @@ static bool_t mem_putbytes(XDR* xdrs, const SCHAR* buff, unsigned bytecount)
  *	Put a bunch of bytes to a memory stream if it fits.
  *
  **************************************/
-	if (xdrs->x_handy < bytecount)
+	if (x_handy < bytecount)
 		return FALSE;
 
 	if (bytecount)
 	{
-		memcpy(xdrs->x_private, buff, bytecount);
-		xdrs->x_private += bytecount;
-		xdrs->x_handy -= bytecount;
+		memcpy(x_private, buff, bytecount);
+		x_private += bytecount;
+		x_handy -= bytecount;
 	}
 
 	return TRUE;
 }
+
+xdr_t::~xdr_t()
+{ }
+

@@ -133,6 +133,9 @@
 #include "../dsql/dsql_proto.h"
 
 #ifdef WIN_NT
+#include <process.h>
+#define getpid _getpid
+
 #include "../common/dllinst.h"
 #endif
 
@@ -1066,6 +1069,7 @@ static void		purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsig
 static void		getUserInfo(UserId&, const DatabaseOptions&, const char*, const char*,
 	const RefPtr<const Config>*, bool, ICryptKeyCallback*);
 static void		makeRoleName(Database*, string&, DatabaseOptions&);
+static void		waitForShutdown(Semaphore&);
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
 
@@ -4160,12 +4164,7 @@ void JProvider::shutdown(CheckStatusWrapper* status, unsigned int timeout, const
 			Thread::start(shutdown_thread, &shutdown_semaphore, THREAD_medium, &h);
 
 			if (!shutdown_semaphore.tryEnter(0, timeout))
-			{
-				// sad, but we MUST kill shutdown_thread because engine DLL\SO is unloaded
-				// else whole process will be crashed
-				Thread::kill(h);
-				status_exception::raise(Arg::Gds(isc_shutdown_timeout));
-			}
+				waitForShutdown(shutdown_semaphore);
 
 			Thread::waitForCompletion(h);
 		}
@@ -6396,6 +6395,54 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	if (dbb->dbb_crypto_manager)
 		dbb->dbb_crypto_manager->detach(tdbb, attachment);
 
+	Sync sync(&dbb->dbb_sync, "jrd.cpp: release_attachment");
+
+	// avoid races with special threads
+	XThreadEnsureUnlock threadGuard(dbb->dbb_thread_mutex, FB_FUNCTION);
+	threadGuard.enter();
+
+	sync.lock(SYNC_EXCLUSIVE);
+
+	// stop special threads if and only if we release last regular attachment
+	bool other = false;
+	{ // checkout scope
+		EngineCheckout checkout(tdbb, FB_FUNCTION);
+
+		SPTHR_DEBUG(fprintf(stderr, "\nrelease attachment=%p\n", attachment));
+		for (Jrd::Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
+		{
+			SPTHR_DEBUG(fprintf(stderr, "att=%p FromThr=%c ", att, att->att_flags & ATT_from_thread ? '1' : '0'));
+			if (att == attachment)
+			{
+				SPTHR_DEBUG(fprintf(stderr, "self\n"));
+				continue;
+			}
+			if (att->att_flags & ATT_from_thread)
+			{
+				SPTHR_DEBUG(fprintf(stderr, "found special att=%p\n", att));
+				continue;
+			}
+
+			// Found attachment that is not current (to be released) and is not special
+			other = true;
+			SPTHR_DEBUG(fprintf(stderr, "other\n"));
+			break;
+		}
+
+		// Notify special threads
+		threadGuard.leave();
+
+		// Sync with special threads
+		sync.unlock();
+		if (!other)
+		{
+			// crypt thread
+			if (dbb->dbb_crypto_manager)
+				dbb->dbb_crypto_manager->terminateCryptThread(tdbb, true);
+		}
+
+	} // EngineCheckout scope
+
 	Monitoring::cleanupAttachment(tdbb);
 
 	dbb->dbb_extManager.closeAttachment(tdbb, attachment);
@@ -6451,56 +6498,8 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	attachment->mergeStats();
 
-	// avoid races with crypt thread
-	Mutex dummyMutex;
-	MutexEnsureUnlock cryptGuard(dbb->dbb_crypto_manager ? dbb->dbb_crypto_manager->cryptAttMutex :
-		dummyMutex, FB_FUNCTION);
-	cryptGuard.enter();
-
-	Sync sync(&dbb->dbb_sync, "jrd.cpp: release_attachment");
-	sync.lock(SYNC_EXCLUSIVE);
-
-	// stop the crypt thread if we release last regular attachment
-	Jrd::Attachment* crypt_att = NULL;
-	bool other = false;
-	CRYPT_DEBUG(fprintf(stderr, "\nrelease attachment=%p\n", attachment));
-	for (Jrd::Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
-	{
-		CRYPT_DEBUG(fprintf(stderr, "att=%p crypt_att=%p F=%c ", att, crypt_att, att->att_flags & ATT_crypt_thread ? '1' : '0'));
-		if (att == attachment)
-		{
-			CRYPT_DEBUG(fprintf(stderr, "self\n"));
-			continue;
-		}
-		if (att->att_flags & ATT_crypt_thread)
-		{
-			crypt_att = att;
-			CRYPT_DEBUG(fprintf(stderr, "found crypt_att=%p\n", crypt_att));
-			continue;
-		}
-		crypt_att = NULL;
-		other = true;
-		CRYPT_DEBUG(fprintf(stderr, "other\n"));
-		break;
-	}
-
-	if (dbb->dbb_crypto_manager && !(other || crypt_att))
-		dbb->dbb_crypto_manager->terminateCryptThread(tdbb, false);
-
-	cryptGuard.leave();
-
-	if (crypt_att)
-	{
-		sync.unlock();
-
-		CRYPT_DEBUG(fprintf(stderr, "crypt_att=%p terminateCryptThread\n", crypt_att));
-		fb_assert(dbb->dbb_crypto_manager);
-		dbb->dbb_crypto_manager->terminateCryptThread(tdbb, true);
-
-		sync.lock(SYNC_EXCLUSIVE);
-	}
-
 	// remove the attachment block from the dbb linked list
+	sync.lock(SYNC_EXCLUSIVE);
 	for (Jrd::Attachment** ptr = &dbb->dbb_attachments; *ptr; ptr = &(*ptr)->att_next)
 	{
 		if (*ptr == attachment)
@@ -7324,6 +7323,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 	if (options.dpb_role_name.hasData())
 	{
 		user.usr_sql_role_name = options.dpb_role_name;
+		user.usr_flags |= USR_newrole;
 	}
 
 	if (trusted_role.hasData())
@@ -7478,6 +7478,42 @@ namespace
 } // anonymous namespace
 
 
+static void waitForShutdown(Semaphore& shutdown_semaphore)
+{
+	const int pid = getpid();
+	unsigned int timeout = 10000;	// initial value, 10 sec
+	bool done = false;
+
+	for (int i = 0; i < 5; i++)
+	{
+		gds__log("PID %d: engine shutdown is in progress with %s database(s) attached",
+			pid, databases == NULL ? "no" : "some");
+
+		timeout *= 2;
+		if (shutdown_semaphore.tryEnter(timeout))
+		{
+			done = true;
+			break;
+		}
+	}
+
+	if (!done)
+	{
+		if (databases == NULL)
+		{
+			gds__log("PID %d: wait for engine shutdown failed, terminating", pid);
+			if (Config::getBugcheckAbort())
+				abort();
+
+			// return immediately
+			_exit(5);
+		}
+
+		shutdown_semaphore.enter();
+	}
+}
+
+
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 {
 /**************************************
@@ -7539,6 +7575,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 
 		// Extra shutdown operations
 		Service::shutdownServices();
+		TRA_shutdown_sweep();
 	}
 	catch (const Exception& ex)
 	{
@@ -8249,8 +8286,6 @@ void TrigVector::release(thread_db* tdbb) const
 			JrdStatement* stmt = t->statement;
 			if (stmt)
 				stmt->release(tdbb);
-
-			delete t->extTrigger;
 		}
 
 		delete this;

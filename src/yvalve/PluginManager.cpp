@@ -522,7 +522,8 @@ namespace
 		int release();
 
 	private:
-		~ConfiguredPlugin();
+		~ConfiguredPlugin() {}
+		void destroy();
 
 		RefPtr<PluginModule> module;
 		unsigned int regPlugin;
@@ -685,10 +686,15 @@ namespace
 
 	GlobalPtr<PluginsMap> plugins;
 
-	ConfiguredPlugin::~ConfiguredPlugin()
+	void ConfiguredPlugin::destroy()
 	{
-		MutexLockGuard g(plugins->mutex, FB_FUNCTION);
+		// plugins->mutex must be entered by current thread
 
+#ifdef DEV_BUILD
+		if (!plugins->mutex.tryEnter(FB_FUNCTION))
+			fb_assert(false);
+		plugins->mutex.leave();
+#endif
 		if (!destroyingPluginsMap)
 		{
 			plugins->remove(MapKey(module->getPlugin(regPlugin).type, plugName));
@@ -733,6 +739,16 @@ namespace
 
 		if (x == 0)
 		{
+			{ // plugins->mutex scope
+				MutexLockGuard g(plugins->mutex, FB_FUNCTION);
+				if (refCounter != 0)
+					return 1;
+
+				destroy();
+			}
+
+			// Must run out of mutex scope to avoid deadlock with PluginManager::threadDetach()
+			// called when module is unloaded by dtor
 			delete this;
 			return 0;
 		}
@@ -1080,7 +1096,7 @@ void PluginManager::unregisterModule(IPluginModule* cleanup)
 		Firebird::dDllUnloadTID = GetCurrentThreadId();
 #endif
 
-	fb_shutdown(5000, fb_shutrsn_exit_called);
+	fb_shutdown(10000, fb_shutrsn_exit_called);
 }
 
 IPluginSet* PluginManager::getPlugins(CheckStatusWrapper* status, unsigned int interfaceType,

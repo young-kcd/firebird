@@ -739,7 +739,7 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseFactor(int* flagp
 		const UCHAR* p = originalPatternStr +
 			charSet->substring(originalPatternLen, originalPatternStr,
 							   originalPatternLen, dummy.getBuffer(originalPatternLen),
-							   1, patternPos - patternStart);
+							   0, patternPos - patternStart);
 		ULONG size = 0;
 		bool comma = false;
 		string s1, s2;

@@ -524,8 +524,13 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 	SET_TDBB(tdbb);
 	fb_assert(idx->idx_expression != NULL);
 
+	// check for resursive expression evaluation
 	jrd_req* const org_request = tdbb->getRequest();
-	jrd_req* const expr_request = idx->idx_expression_statement->findRequest(tdbb);
+	jrd_req* const expr_request = idx->idx_expression_statement->findRequest(tdbb, true);
+
+	if (expr_request == NULL)
+		ERR_post(Arg::Gds(isc_random) << "Attempt to evaluate index expression recursively");
+
 	fb_assert(expr_request != org_request);
 
 	fb_assert(expr_request->req_caller == NULL);

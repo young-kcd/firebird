@@ -44,7 +44,6 @@
 #include "../remote/parse_proto.h"
 #include "../remote/remot_proto.h"
 #include "../remote/server/serve_proto.h"
-#include "../common/xdr_proto.h"
 #ifdef WIN_NT
 #include "../../remote/server/os/win32/cntl_proto.h"
 #include <stdlib.h>
@@ -2841,7 +2840,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 	}
 
 	this->port_flags |= PORT_disconnect;
-	this->port_flags &= ~PORT_z_data;
+	this->port_z_data = 0;
 
 	if (!rdb)
 	{
@@ -5712,12 +5711,15 @@ void rem_port::start_crypt(P_CRYPT * crypt, PACKET* sendL)
 	{
 		ICryptKey* key = NULL;
 		PathName keyName(crypt->p_key.cstr_address, crypt->p_key.cstr_length);
-		for (unsigned k = 0; k < port_crypt_keys.getCount(); ++k)
+		if (getPortConfig()->getWireCrypt(WC_SERVER) != WIRE_CRYPT_DISABLED)
 		{
-			if (keyName == port_crypt_keys[k]->keyName)
+			for (unsigned k = 0; k < port_crypt_keys.getCount(); ++k)
 			{
-				key = port_crypt_keys[k];
-				break;
+				if (keyName == port_crypt_keys[k]->keyName)
+				{
+					key = port_crypt_keys[k];
+					break;
+				}
 			}
 		}
 
@@ -6187,7 +6189,7 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 		return 0;
 	}
 
-	SLONG original_op = xdr_peek_long(&port_async_receive->port_receive, buffer, dataSize);
+	SLONG original_op = xdr_peek_long(port_async_receive->port_receive, buffer, dataSize);
 	switch (original_op)
 	{
 	case op_cancel:
@@ -6203,7 +6205,7 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 		MutexLockGuard guard(mutex, FB_FUNCTION);
 
 		port_async_receive->clearRecvQue();
-		port_async_receive->port_receive.x_handy = 0;
+		port_async_receive->port_receive->x_handy = 0;
 		port_async_receive->port_protocol = port_protocol;
 		memcpy(port_async_receive->port_queue.add().getBuffer(dataSize), buffer, dataSize);
 
@@ -6212,7 +6214,7 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 		port_async_receive->receive(asyncPacket);
 	}
 
-	const SSHORT asyncSize = dataSize - port_async_receive->port_receive.x_handy;
+	const SSHORT asyncSize = dataSize - port_async_receive->port_receive->x_handy;
 	fb_assert(asyncSize >= 0);
 
 	switch (asyncPacket->p_operation)

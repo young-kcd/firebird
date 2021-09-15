@@ -39,6 +39,25 @@
 #include <stdio.h>
 #endif
 
+// This macro is copied from ICU 68.2 to avoid need in utf8_countTrailBytes[] array
+
+#define FB_U8_NEXT_UNSAFE(s, i, c) do { \
+    (c)=(uint8_t)(s)[(i)++]; \
+    if(((c)&0x80)!=0) { \
+        if((c)<0xe0) { \
+            (c)=(((c)&0x1f)<<6)|((s)[(i)++]&0x3f); \
+        } else if((c)<0xf0) { \
+            /* no need for (c&0xf) because the upper bits are truncated after <<12 in the cast to (UChar) */ \
+            (c)=(UChar)(((c)<<12)|(((s)[i]&0x3f)<<6)|((s)[(i)+1]&0x3f)); \
+            (i)+=2; \
+        } else { \
+            (c)=(((c)&7)<<18)|(((s)[i]&0x3f)<<12)|(((s)[(i)+1]&0x3f)<<6)|((s)[(i)+2]&0x3f); \
+            (i)+=3; \
+        } \
+    } \
+} while (false)
+
+
 namespace fb_utils
 {
 	char* copy_terminate(char* dest, const char* src, size_t bufsize);

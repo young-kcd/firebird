@@ -47,6 +47,7 @@ const int obj_blob_filter		= 16;
 const int obj_collation			= 17;
 const int obj_package_header	= 18;
 const int obj_package_body		= 19;
+const int obj_last_non_ddl		= 19;	// keep in sync!!!
 
 // objects types for ddl operations
 const int obj_database			= 20;
@@ -69,6 +70,9 @@ const int obj_type_MAX			= 33;	// keep this last!
 const int obj_user_or_role		= 34;
 const int obj_schema			= 35;
 const int obj_parameter			= 36;
+
+// used in cache only
+const int obj_view_owner		= 37;
 
 inline const char* get_object_name(int object_type)
 {

@@ -102,7 +102,7 @@ static void release_temp_tables(thread_db*, jrd_tra*);
 static void retain_temp_tables(thread_db*, jrd_tra*, TraNumber);
 static void restart_requests(thread_db*, jrd_tra*);
 static void start_sweeper(thread_db*);
-static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM);
+//static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM);
 static void transaction_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number);
 static void transaction_options(thread_db*, jrd_tra*, const UCHAR*, USHORT);
 static void transaction_start(thread_db* tdbb, jrd_tra* temp);
@@ -2657,6 +2657,90 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 }
 
 
+namespace {
+	class SweepParameter : public GlobalStorage
+	{
+	public:
+		SweepParameter(Database* d)
+			: dbb(d)
+		{ }
+
+		void waitForStartup()
+		{
+			sem.enter();
+		}
+
+		static void runSweep(SweepParameter* par)
+		{
+			FbLocalStatus status;
+			PathName dbName(par->dbb->dbb_database_name);
+
+			// reference is needed to guarantee that provider exists
+			// between semaphore release and attach database
+			AutoPlugin<JProvider> prov(JProvider::getInstance());
+			par->sem.release();
+
+			AutoDispose<IXpbBuilder> dpb(UtilInterfacePtr()->getXpbBuilder(&status, IXpbBuilder::DPB, NULL, 0));
+			status.check();
+			dpb->insertString(&status, isc_dpb_user_name, "sweeper");
+			status.check();
+			UCHAR byte = isc_dpb_records;
+			dpb->insertBytes(&status, isc_dpb_sweep, &byte, 1);
+			status.check();
+			const UCHAR* dpbBytes = dpb->getBuffer(&status);
+			status.check();
+			unsigned dpbLen = dpb->getBufferLength(&status);
+			status.check();
+
+			AutoRelease<IAttachment> att(prov->attachDatabase(&status, dbName.c_str(), dpbLen, dpbBytes));
+			status.check();
+		}
+
+		void exceptionHandler(const Exception& ex, ThreadFinishSync<SweepParameter*>::ThreadRoutine*)
+		{
+			FbLocalStatus st;
+			ex.stuffException(&st);
+			if (st->getErrors()[1] != isc_att_shutdown)
+				iscLogException("Automatic sweep error", ex);
+		}
+
+	private:
+		Semaphore sem;
+		Database* dbb;
+	};
+
+	typedef ThreadFinishSync<SweepParameter*> SweepSync;
+	typedef HalfStaticArray<SweepSync*, 16> SweepThreads;
+	InitInstance<SweepThreads> sweepThreads;
+	GlobalPtr<Mutex> swThrMutex;
+	bool sweepDown = false;
+}
+
+
+void TRA_shutdown_sweep()
+{
+/**************************************
+ *
+ *	T R A _ s h u t d o w n _ s w e e p
+ *
+ **************************************
+ *
+ * Functional description
+ *	Wait for sweep threads exit.
+ *
+ **************************************/
+	MutexLockGuard g(swThrMutex, FB_FUNCTION);
+	if (sweepDown)
+		return;
+	sweepDown = true;
+
+	SweepThreads& swThr(sweepThreads());
+	for (unsigned n = 0; n < swThr.getCount(); ++n)
+		swThr[n]->waitForCompletion();
+	swThr.clear();
+}
+
+
 static void start_sweeper(thread_db* tdbb)
 {
 /**************************************
@@ -2671,73 +2755,45 @@ static void start_sweeper(thread_db* tdbb)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
+	bool started = false;
 
 	if (!dbb->allowSweepThread(tdbb))
 		return;
 
 	TRA_update_counters(tdbb, dbb);
 
-	// allocate space for the string and a null at the end
-	const char* pszFilename = tdbb->getAttachment()->att_filename.c_str();
-
-	char* database = (char*) gds__alloc(static_cast<SLONG>(strlen(pszFilename)) + 1);
-
-	if (database)
+	try
 	{
-		strcpy(database, pszFilename);
-
-		try
-		{
-			Thread::start(sweep_database, database, THREAD_medium);
+		MutexLockGuard g(swThrMutex, FB_FUNCTION);
+		if (sweepDown)
 			return;
-		}
-		catch (const Firebird::Exception& ex)
+
+		// perform housekeeping
+		SweepThreads& swThr(sweepThreads());
+		for (unsigned n = 0; n < swThr.getCount(); )
 		{
-			gds__free(database);
-			iscLogException("cannot start sweep thread", ex);
+			if (swThr[n]->tryWait())
+			{
+				delete swThr[n];
+				swThr.remove(n);
+			}
+			else
+				++n;
 		}
+
+		AutoPtr<SweepSync> sweepSync(FB_NEW SweepSync(*getDefaultMemoryPool(), SweepParameter::runSweep));
+		SweepParameter swPar(dbb);
+		sweepSync->run(&swPar);
+		started = true;
+		swPar.waitForStartup();
+		sweepThreads().add(sweepSync.release());
 	}
-	else
+	catch (const Exception&)
 	{
-		ERR_log(0, 0, "cannot start sweep thread, Out of Memory");
+		if (!started)
+			dbb->clearSweepStarting();
+		throw;
 	}
-	dbb->clearSweepFlags(tdbb);
-}
-
-
-static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
-{
-/**************************************
- *
- *	s w e e p _ d a t a b a s e
- *
- **************************************
- *
- * Functional description
- *	Sweep database.
- *
- **************************************/
-	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::dpbList, MAX_DPB_SIZE);
-
-	dpb.insertByte(isc_dpb_sweep, isc_dpb_records);
-	// use embedded authentication to attach database
-	const char* szAuthenticator = "sweeper";
-	dpb.insertString(isc_dpb_user_name, szAuthenticator, fb_strlen(szAuthenticator));
-
-	ISC_STATUS_ARRAY status_vector = {0};
-	isc_db_handle db_handle = 0;
-
-	isc_attach_database(status_vector, 0, (const char*) database,
-						&db_handle, dpb.getBufferLength(),
-						reinterpret_cast<const char*>(dpb.getBuffer()));
-
-	if (db_handle)
-	{
-		isc_detach_database(status_vector, &db_handle);
-	}
-
-	gds__free(database);
-	return 0;
 }
 
 
@@ -3509,6 +3565,9 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 
 		// If the transaction block is getting out of hand, force a sweep
 
+		SPTHR_DEBUG(fprintf(stderr, "dbb_sweep_interval=%d tra_oldest_active=%d oldest=%d oldest_state=%d\n",
+			dbb->dbb_sweep_interval, trans->tra_oldest_active, oldest, oldest_state));
+
 		if (dbb->dbb_sweep_interval &&
 			(trans->tra_oldest_active > oldest) &&
 			(trans->tra_oldest_active - oldest > dbb->dbb_sweep_interval) &&
@@ -3712,9 +3771,7 @@ void jrd_tra::checkBlob(thread_db* tdbb, const bid* blob_id, bool punt)
 				// Relation has not been checked for access rights
 				try
 				{
-					ThreadStatusGuard status_vector(tdbb);
-
-					SCL_check_access(tdbb, s_class, 0, 0, NULL, SCL_select, SCL_object_table, false,
+					SCL_check_access(tdbb, s_class, NULL, 0, "", SCL_select, SCL_object_table, false,
 						blb_relation->rel_name);
 					s_class->scl_blb_access = SecurityClass::BA_SUCCESS;
 				}
@@ -3734,9 +3791,11 @@ void jrd_tra::checkBlob(thread_db* tdbb, const bid* blob_id, bool punt)
 					// but someone else has (SP, view)
 					// store Blob ID as allowed in this transaction
 					tra_fetched_blobs.add(*blob_id);
+					// and clear status vector
+					tdbb->tdbb_status_vector->init();
 				}
 				break;
-						
+
 			case SecurityClass::BA_FAILURE:
 				// Relation has been checked earlier and check was failed
 				if (punt)

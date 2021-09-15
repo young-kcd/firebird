@@ -167,34 +167,6 @@ const char* UNKNOWN = "*unknown*";
 
 namespace IcuUtil
 {
-	// Duplicate from ICU to not need to link ISQL with it. It's used by U8_NEXT_UNSAFE.
-	static const uint8_t utf8_countTrailBytes[256] = {
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-
-		2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-		3, 3, 3, 3, 3,
-		3, 3, 3,    /* illegal in Unicode */
-		4, 4, 4, 4, /* illegal in Unicode */
-		5, 5,       /* illegal in Unicode */
-		0, 0        /* illegal bytes 0xfe and 0xff */
-	};
-
 	// Return the number of characters of a string.
 	static unsigned charLength(SSHORT charset, unsigned len, const char* str)
 	{
@@ -209,7 +181,7 @@ namespace IcuUtil
 		while (i < len)
 		{
 			UChar32 c;
-			U8_NEXT_UNSAFE(str, i, c);
+			FB_U8_NEXT_UNSAFE(str, i, c);
 			++charLen;
 		}
 
@@ -249,7 +221,7 @@ namespace IcuUtil
 		while (i < len && width > 0)
 		{
 			UChar32 c;
-			U8_NEXT_UNSAFE(str, i, c);
+			FB_U8_NEXT_UNSAFE(str, i, c);
 			--width;
 		}
 
@@ -575,7 +547,7 @@ static bool M_Transaction()
 {
 	if (DB && !M__trans && setValues.KeepTranParams)
 	{
-		M__trans = DB->execute(fbStatus, NULL, 
+		M__trans = DB->execute(fbStatus, NULL,
 							   TranParams->length(), TranParams->c_str(),
 							   isqlGlob.SQL_dialect, NULL, NULL, NULL, NULL);
 
@@ -1390,6 +1362,123 @@ processing_state ISQL_fill_var(IsqlVar* var,
 }
 
 
+// Check if statement ends with single-line comment.
+bool ISQL_statement_ends_in_comment(const char* statement)
+{
+	const char* const statementStart = statement;
+	const char* commentStart = NULL;
+	const char* commentEnd = NULL;
+	const char* altQuoteStart = NULL;
+	char altQuoteChar = '\0';
+
+	enum
+	{
+		normal,
+		in_single_line_comment,
+		in_block_comment,
+		in_single_quoted_string,
+		in_double_quoted_string
+	} state = normal;
+
+	while (char c = *statement++)
+	{
+		char lastChar = statement - 1 == statementStart ? '\0' : statement[-2];
+
+		switch (c)
+		{
+			case '\n':
+				if (state == in_single_line_comment)
+					state = normal;
+				break;
+
+			case '-':
+				// Could this the be start of a single-line comment.
+				if (state == normal && lastChar == '-')
+					state = in_single_line_comment;
+				break;
+
+			case '*':
+				// Could this the be start of a comment. We can only look back, not forward.
+				// Ignore possibilities of a comment beginning inside quoted strings.
+				if (state == normal && lastChar == '/' && statement - commentEnd > 3)
+				{
+					state = in_block_comment;
+					commentStart = statement - 2;
+				}
+				break;
+
+			case '/':
+				// Perhaps this is the end of a comment.
+				// Ignore possibilities of a comment ending inside quoted strings.
+				// Ignore things like /*/ since it isn't a block comment; only the start of it. Or end.
+				if (state == in_block_comment && lastChar == '*' && statement - commentStart > 3)
+				{
+					state = normal;
+					commentEnd = statement - 2;	// mark start of non-comment to track this: /**/*
+				}
+				break;
+
+			case SINGLE_QUOTE:
+				switch (state)
+				{
+					case normal:
+						if (lastChar == 'q' || lastChar == 'Q')
+						{
+							altQuoteStart = statement - 2;
+
+							if (!(altQuoteChar = *statement++))
+								return false;
+
+							switch (altQuoteChar)
+							{
+								case '{':
+									altQuoteChar = '}';
+									break;
+								case '(':
+									altQuoteChar = ')';
+									break;
+								case '[':
+									altQuoteChar = ']';
+									break;
+								case '<':
+									altQuoteChar = '>';
+									break;
+							}
+						}
+						else
+							altQuoteChar = '\0';
+
+						state = in_single_quoted_string;
+						break;
+
+					case in_single_quoted_string:
+						if (!altQuoteChar || lastChar == altQuoteChar)
+							state = normal;
+						break;
+				}
+				break;
+
+			case DBL_QUOTE:
+				switch (state)
+				{
+					case normal:
+						state = in_double_quoted_string;
+						break;
+					case in_double_quoted_string:
+						state = normal;
+						break;
+				}
+				break;
+
+			default:
+				break;
+		}
+	}
+
+	return state == in_single_line_comment;
+}
+
+
 void ISQL_get_default_source(const TEXT* rel_name,
 							 TEXT* field_name,
 							 ISC_QUAD* blob_id)
@@ -1951,6 +2040,7 @@ void ISQL_print_validation(FILE* fp,
 	bool issql = false;
 	bool firsttime = true;
 	TEXT buffer[BUFFER_LENGTH512];
+	Firebird::string fullText;
 
 	do
 	{
@@ -1988,6 +2078,7 @@ void ISQL_print_validation(FILE* fp,
 		}
 
 		IUTILS_printf(fp, buffer);
+		fullText += buffer;
 	} while (true);
 
 	// CVC: If firsttime == true, then it didn't write the "/*" or the "(".
@@ -1998,6 +2089,9 @@ void ISQL_print_validation(FILE* fp,
 		ISQL_errmsg(fbStatus);
 
 	blob->close(fbStatus);
+
+	if (ISQL_statement_ends_in_comment(fullText.c_str()))
+		fputc('\n', fp);
 }
 
 
@@ -7291,13 +7385,13 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 			else
 			{
 				if (setValues.Time_display)
-					sprintf(d, "%2d-%s-%4d %2.2d:%2.2d:%2.2d.%4.4" ULONGFORMAT,
+					sprintf(d, "%2.2d-%s-%4.4d %2.2d:%2.2d:%2.2d.%4.4" ULONGFORMAT,
 							times.tm_mday, alpha_months[times.tm_mon],
 							times.tm_year + 1900, times.tm_hour, times.tm_min,
 							times.tm_sec,
 							((ULONG*) var->value.asChar)[1] % ISC_TIME_SECONDS_PRECISION);
 				else
-					sprintf(d, "%2d-%s-%4d", times.tm_mday,
+					sprintf(d, "%2.2d-%s-%4.4d", times.tm_mday,
 							alpha_months[times.tm_mon], times.tm_year + 1900);
 			}
 
@@ -8073,9 +8167,15 @@ static unsigned process_message_display(Firebird::IMessageMetadata* message, uns
 				pad[i] = setValues.global_Col_default;
 			disp_length = pad[i];
 
-			if (charSet == 4)
+			if (charSet == CS_UNICODE_FSS)
+				disp_length *= 3;
+			else if (charSet == CS_UTF8)
 				disp_length *= 4;
 		}
+		else if (isqlGlob.att_charset == CS_UNICODE_FSS)
+			disp_length = MAX(disp_length, namelength * 3);
+		else if (isqlGlob.att_charset == CS_UTF8)
+			disp_length = MAX(disp_length, namelength * 4);
 
 		// The total line length
 		linelength += disp_length + 1;

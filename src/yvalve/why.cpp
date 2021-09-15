@@ -718,7 +718,7 @@ RefPtr<T> translateHandle(GlobalPtr<GenericMap<Pair<NonPooled<FB_API_HANDLE, T*>
 
 //-------------------------------------
 
-const int SHUTDOWN_TIMEOUT = 5000;	// 5 sec
+const int SHUTDOWN_TIMEOUT = 10000;	// 10 sec
 
 class ShutdownInit
 {
@@ -5887,6 +5887,10 @@ YService* Dispatcher::attachServiceManager(CheckStatusWrapper* status, const cha
 
 void Dispatcher::shutdown(CheckStatusWrapper* userStatus, unsigned int timeout, const int reason)
 {
+	// set "process exiting" state
+	if (reason == fb_shutrsn_emergency)
+		abortShutdown();
+
 	// can't syncronize with already killed threads, just exit
 	if (MasterInterfacePtr()->getProcessExiting())
 		return;

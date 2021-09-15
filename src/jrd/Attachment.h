@@ -37,6 +37,7 @@
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/SyncObject.h"
 #include "../common/classes/array.h"
+#include "../common/classes/fb_atomic.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
 #include "../common/ThreadStart.h"
@@ -237,6 +238,8 @@ public:
 	Database*	att_database;				// Parent database block
 	Attachment*	att_next;					// Next attachment to database
 	UserId*		att_user;					// User identification
+	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+		Firebird::MetaName, UserId*> > > att_user_ids;	// set of used UserIds
 	jrd_tra*	att_transactions;			// Transactions belonging to attachment
 	jrd_tra*	att_dbkey_trans;			// transaction to control db-key scope
 	TraNumber	att_oldest_snapshot;		// GTT's record versions older than this can be garbage-collected
@@ -263,7 +266,7 @@ public:
 	SSHORT		att_client_charset;			// user's charset specified in dpb
 	SSHORT		att_charset;				// current (client or external) attachment charset
 	Lock*		att_long_locks;				// outstanding two phased locks
-	Lock*		att_wait_lock;				// lock at which attachment waits currently
+	Firebird::AtomicCounter att_wait_owner_handle;		// lock owner with which attachment waits currently
 	vec<Lock*>*	att_compatibility_table;	// hash table of compatible locks
 	Validation*	att_validation;
 	Firebird::PathName	att_working_directory;	// Current working directory is cached
@@ -383,6 +386,7 @@ public:
 	}
 
 	JAttachment* getInterface() throw();
+	UserId* getUserId(const Firebird::string &userName);
 
 	JProvider* getProvider()
 	{
@@ -419,7 +423,7 @@ const ULONG ATT_creator				= 0x08000L; // This attachment created the DB
 const ULONG ATT_monitor_done		= 0x10000L; // Monitoring data is refreshed
 const ULONG ATT_security_db			= 0x20000L; // Attachment used for security purposes
 const ULONG ATT_mapping				= 0x40000L; // Attachment used for mapping auth block
-const ULONG ATT_crypt_thread		= 0x80000L; // Attachment from crypt thread
+const ULONG ATT_from_thread			= 0x80000L; // Attachment from internal special thread (sweep, crypt)
 const ULONG ATT_monitor_init		= 0x100000L; // Attachment is registered in monitoring
 
 const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);

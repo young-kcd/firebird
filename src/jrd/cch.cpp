@@ -1011,14 +1011,25 @@ void CCH_forget_page(thread_db* tdbb, WIN* window)
 		dbb->dbb_flags &= ~DBB_suspend_bgio;
 
 	clear_dirty_flag_and_nbak_state(tdbb, bdb);
-	bdb->bdb_flags = 0;
 	BufferControl* bcb = dbb->dbb_bcb;
 
 	removeDirty(bcb, bdb);
 
-	QUE_DELETE(bdb->bdb_in_use);
-	QUE_DELETE(bdb->bdb_que);
-	QUE_INSERT(bcb->bcb_empty, bdb->bdb_que);
+	// remove from LRU list
+	{
+		SyncLockGuard lruSync(&bcb->bcb_syncLRU, SYNC_EXCLUSIVE, FB_FUNCTION);
+		requeueRecentlyUsed(bcb);
+		QUE_DELETE(bdb->bdb_in_use);
+	}
+
+	// remove from hash table and put into empty list
+	{
+		SyncLockGuard bcbSync(&bcb->bcb_syncObject, SYNC_EXCLUSIVE, FB_FUNCTION);
+		QUE_DELETE(bdb->bdb_que);
+		QUE_INSERT(bcb->bcb_empty, bdb->bdb_que);
+	}
+
+	bdb->bdb_flags = 0;
 
 	if (tdbb->tdbb_flags & TDBB_no_cache_unwind)
 		bdb->release(tdbb, true);
@@ -3945,11 +3956,11 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 					const bool write_thru = (bcb->bcb_flags & BCB_exclusive);
 					if (!write_buffer(tdbb, bdb, bdb->bdb_page, write_thru, tdbb->tdbb_status_vector, true))
 					{
-						bcbSync.lock(SYNC_EXCLUSIVE);
+						lruSync.lock(SYNC_EXCLUSIVE);
 						bdb->bdb_flags &= ~BDB_free_pending;
 						QUE_DELETE(bdb->bdb_in_use);
 						QUE_APPEND(bcb->bcb_in_use, bdb->bdb_in_use);
-						bcbSync.unlock();
+						lruSync.unlock();
 
 						bdb->release(tdbb, true);
 						CCH_unwind(tdbb, true);
@@ -4377,7 +4388,6 @@ static void page_validation_error(thread_db* tdbb, WIN* window, SSHORT type)
 	SET_TDBB(tdbb);
 	BufferDesc* bdb = window->win_bdb;
 	const pag* page = bdb->bdb_buffer;
-
 	PageSpace* pages =
 		tdbb->getDatabase()->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
 
@@ -4387,6 +4397,7 @@ static void page_validation_error(thread_db* tdbb, WIN* window, SSHORT type)
 					 Arg::Gds(isc_badpagtyp) << Arg::Num(bdb->bdb_page.getPageNum()) <<
 												pagtype(type) <<
 												pagtype(page->pag_type));
+
 	// We should invalidate this bad buffer.
 	CCH_unwind(tdbb, true);
 }

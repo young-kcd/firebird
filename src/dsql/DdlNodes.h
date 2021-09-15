@@ -1529,7 +1529,8 @@ public:
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
 	{
-		statusVector << Firebird::Arg::Gds(isc_dsql_drop_table_failed) << name;
+		statusVector << Firebird::Arg::Gds(view ? isc_dsql_drop_view_failed :
+			isc_dsql_drop_table_failed) << name;
 	}
 
 public:

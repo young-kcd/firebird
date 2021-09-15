@@ -48,17 +48,22 @@
 // conflicting blk_t definitions (we are gonna fix this, in due time).
 
 
-static bool_t burp_getbytes(XDR*, SCHAR *, unsigned);
-static bool_t burp_putbytes(XDR*, const SCHAR*, unsigned);
+struct BurpXdr : public xdr_t
+{
+	virtual bool_t x_getbytes(SCHAR *, unsigned);		// get some bytes from "
+	virtual bool_t x_putbytes(const SCHAR*, unsigned);	// put some bytes to "
+
+	BurpXdr()
+		: x_public(NULL)
+	{ }
+
+	lstring* x_public;
+};
+typedef struct BurpXdr XDR;
+
 static bool_t expand_buffer(XDR*);
 static int xdr_init(XDR*, lstring*, enum xdr_op);
 static bool_t xdr_slice(XDR*, lstring*, /*USHORT,*/ const UCHAR*);
-
-static xdr_t::xdr_ops burp_ops =
-{
-	burp_getbytes,
-	burp_putbytes
-};
 
 const unsigned increment = 1024;
 
@@ -224,7 +229,7 @@ ULONG CAN_slice(lstring* buffer, lstring* slice, bool_t direction, /*USHORT sdl_
 }
 
 
-static bool_t burp_getbytes(XDR* xdrs, SCHAR* buff, unsigned bytecount)
+bool_t BurpXdr::x_getbytes(SCHAR* buff, unsigned bytecount)
 {
 /**************************************
  *
@@ -237,29 +242,29 @@ static bool_t burp_getbytes(XDR* xdrs, SCHAR* buff, unsigned bytecount)
  *
  **************************************/
 
-	if (bytecount && xdrs->x_handy >= bytecount)
+	if (bytecount && x_handy >= bytecount)
 	{
-		memcpy(buff, xdrs->x_private, bytecount);
-		xdrs->x_private += bytecount;
-		xdrs->x_handy -= bytecount;
+		memcpy(buff, x_private, bytecount);
+		x_private += bytecount;
+		x_handy -= bytecount;
 
 		return TRUE;
 	}
 
 	while (bytecount--)
 	{
-		if (xdrs->x_handy == 0 && !expand_buffer(xdrs))
+		if (x_handy == 0 && !expand_buffer(this))
 			return FALSE;
 
-		*buff++ = *xdrs->x_private++;
-		--xdrs->x_handy;
+		*buff++ = *x_private++;
+		--x_handy;
 	}
 
 	return TRUE;
 }
 
 
-static bool_t burp_putbytes(XDR* xdrs, const SCHAR* buff, unsigned bytecount)
+bool_t BurpXdr::x_putbytes(const SCHAR* buff, unsigned bytecount)
 {
 /**************************************
  *
@@ -272,22 +277,22 @@ static bool_t burp_putbytes(XDR* xdrs, const SCHAR* buff, unsigned bytecount)
  *
  **************************************/
 
-	if (bytecount && xdrs->x_handy >= bytecount)
+	if (bytecount && x_handy >= bytecount)
 	{
-		memcpy(xdrs->x_private, buff, bytecount);
-		xdrs->x_private += bytecount;
-		xdrs->x_handy -= bytecount;
+		memcpy(x_private, buff, bytecount);
+		x_private += bytecount;
+		x_handy -= bytecount;
 
 		return TRUE;
 	}
 
 	while (bytecount--)
 	{
-		if (xdrs->x_handy == 0 && !expand_buffer(xdrs))
+		if (x_handy == 0 && !expand_buffer(this))
 			return FALSE;
 
-		*xdrs->x_private++ = *buff++;
-		--xdrs->x_handy;
+		*x_private++ = *buff++;
+		--x_handy;
 	}
 
 	return TRUE;
@@ -308,7 +313,7 @@ static bool_t expand_buffer(XDR* xdrs)
  *	old one.
  *
  **************************************/
-	lstring* buffer = (lstring*) xdrs->x_public;
+	lstring* buffer = xdrs->x_public;
 	const unsigned usedLength = xdrs->x_private - xdrs->x_base;
 	const unsigned length = usedLength + xdrs->x_handy + increment;
 
@@ -341,11 +346,8 @@ static int xdr_init(XDR* xdrs, lstring* buffer, enum xdr_op x_op)
  *
  **************************************/
 
-	xdrs->x_public = (caddr_t) buffer;
-	xdrs->x_base = xdrs->x_private = (caddr_t) buffer->lstr_address;
-	xdrs->x_handy = buffer->lstr_length;
-	xdrs->x_ops = &burp_ops;
-	xdrs->x_op = x_op;
+	xdrs->x_public = buffer;
+	xdrs->create((caddr_t) buffer->lstr_address, buffer->lstr_length, x_op);
 
 	return TRUE;
 }

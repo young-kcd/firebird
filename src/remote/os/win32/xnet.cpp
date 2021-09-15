@@ -68,17 +68,15 @@ static rem_port* receive(rem_port*, PACKET*);
 static int send_full(rem_port*, PACKET*);
 static int send_partial(rem_port*, PACKET*);
 
-static int xdrxnet_create(XDR*, rem_port*, UCHAR*, USHORT, xdr_op);
+static XDR* xdrxnet_create(rem_port*, UCHAR *, USHORT, xdr_op);
 
-static bool_t xnet_getbytes(XDR*, SCHAR*, unsigned);
-static bool_t xnet_putbytes(XDR*, const SCHAR*, unsigned);
 static bool_t xnet_read(XDR* xdrs);
 static bool_t xnet_write(XDR* xdrs);
 
-static xdr_t::xdr_ops xnet_ops =
+struct XnetXdr : public XDR
 {
-	xnet_getbytes,
-	xnet_putbytes
+	virtual bool_t x_getbytes(SCHAR *, unsigned);		// get some bytes from "
+	virtual bool_t x_putbytes(const SCHAR*, unsigned);	// put some bytes to "
 };
 
 static DWORD current_process_id;
@@ -700,8 +698,8 @@ static rem_port* alloc_port(rem_port* parent,
 	port->port_request = aux_request;
 	port->port_buff_size = send_length;
 
-	xdrxnet_create(&port->port_send, port, send_buffer, send_length, XDR_ENCODE);
-	xdrxnet_create(&port->port_receive, port, receive_buffer, 0, XDR_DECODE);
+	port->port_send = xdrxnet_create(port, send_buffer, send_length, XDR_ENCODE);
+	port->port_receive = xdrxnet_create(port, receive_buffer, 0, XDR_DECODE);
 
 	if (parent)
 	{
@@ -902,7 +900,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		endPoint->make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_EVNT_CHAN_EMPTED,
 						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_recv_channel_empted =
-			CreateEvent(ISC_get_security_desc(), FALSE, TRUE, name_buffer);
+			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_empted ||
 			(xcc->xcc_event_recv_channel_empted && ERRNO == ERROR_ALREADY_EXISTS))
 		{
@@ -922,7 +920,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		endPoint->make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_EMPTED,
 						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_send_channel_empted =
-			CreateEvent(ISC_get_security_desc(), FALSE, TRUE, name_buffer);
+			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_empted ||
 			(xcc->xcc_event_send_channel_empted && ERRNO == ERROR_ALREADY_EXISTS))
 		{
@@ -1589,13 +1587,9 @@ static rem_port* receive( rem_port* main_port, PACKET* packet)
  *
  **************************************/
 
-#ifdef DEV_BUILD
-	main_port->port_receive.x_client = !(main_port->port_flags & PORT_server);
-#endif
-
 	try
 	{
-		if (!xdr_protocol(&main_port->port_receive, packet))
+		if (!xdr_protocol(main_port->port_receive, packet))
 			packet->p_operation = op_exit;
 	}
 	catch (const Exception&)
@@ -1621,14 +1615,10 @@ static int send_full( rem_port* port, PACKET* packet)
  *
  **************************************/
 
-#ifdef DEV_BUILD
-	port->port_send.x_client = !(port->port_flags & PORT_server);
-#endif
-
-	if (!xdr_protocol(&port->port_send, packet))
+	if (!xdr_protocol(port->port_send, packet))
 		return FALSE;
 
-	if (xnet_write(&port->port_send))
+	if (xnet_write(port->port_send))
 		return TRUE;
 
 	xnet_error(port, isc_net_write_err, ERRNO);
@@ -1649,11 +1639,7 @@ static int send_partial( rem_port* port, PACKET* packet)
  *
  **************************************/
 
-#ifdef DEV_BUILD
-	port->port_send.x_client = !(port->port_flags & PORT_server);
-#endif
-
-	return xdr_protocol(&port->port_send, packet);
+	return xdr_protocol(port->port_send, packet);
 }
 
 void XnetClientEndPoint::server_shutdown(rem_port* port)
@@ -1698,7 +1684,7 @@ void XnetClientEndPoint::server_shutdown(rem_port* port)
 }
 
 
-static int xdrxnet_create(XDR* xdrs, rem_port* port, UCHAR* buffer, USHORT length, xdr_op x_op)
+static XDR* xdrxnet_create(rem_port* port, UCHAR* buffer, USHORT length, xdr_op x_op)
 {
 /**************************************
  *
@@ -1711,15 +1697,13 @@ static int xdrxnet_create(XDR* xdrs, rem_port* port, UCHAR* buffer, USHORT lengt
  *
  **************************************/
 
-	xdrs->x_public = (caddr_t) port;
-	xdrs->x_private = reinterpret_cast<SCHAR*>(buffer);
-	xdrs->x_base = xdrs->x_private;
-	xdrs->x_handy = length;
-	xdrs->x_ops = &xnet_ops;
-	xdrs->x_op = x_op;
-	xdrs->x_local = true;
+	XDR* xdrs = FB_NEW XnetXdr;
 
-	return TRUE;
+	xdrs->x_public = port;
+	xdrs->x_local = true;
+	xdrs->create(reinterpret_cast<SCHAR*>(buffer), length, x_op);
+
+	return xdrs;
 }
 
 
@@ -1772,7 +1756,7 @@ static void xnet_error(rem_port* port, ISC_STATUS operation, int status)
 }
 
 
-static bool_t xnet_getbytes(XDR* xdrs, SCHAR* buff, unsigned bytecount)
+bool_t XnetXdr::x_getbytes(SCHAR* buff, unsigned bytecount)
 {
 /**************************************
  *
@@ -1784,7 +1768,7 @@ static bool_t xnet_getbytes(XDR* xdrs, SCHAR* buff, unsigned bytecount)
  *	Fetch a bunch of bytes from remote interface.
  *
  **************************************/
-	rem_port* port = (rem_port*) xdrs->x_public;
+	rem_port* port = x_public;
 	const bool portServer = (port->port_flags & PORT_server);
 	XCC xcc = port->port_xcc;
 	XPM xpm = xcc->xcc_xpm;
@@ -1802,24 +1786,24 @@ static bool_t xnet_getbytes(XDR* xdrs, SCHAR* buff, unsigned bytecount)
 		}
 
 		SLONG to_copy;
-		if (xdrs->x_handy >= bytecount)
+		if (x_handy >= bytecount)
 			to_copy = bytecount;
 		else
-			to_copy = xdrs->x_handy;
+			to_copy = x_handy;
 
-		if (xdrs->x_handy)
+		if (x_handy)
 		{
 			if (to_copy == sizeof(SLONG))
-				*((SLONG*)buff)	= *((SLONG*)xdrs->x_private);
+				*((SLONG*)buff)	= *((SLONG*)x_private);
 			else
-				memcpy(buff, xdrs->x_private, to_copy);
+				memcpy(buff, x_private, to_copy);
 
-			xdrs->x_handy -= to_copy;
-			xdrs->x_private += to_copy;
+			x_handy -= to_copy;
+			x_private += to_copy;
 		}
 		else
 		{
-			if (!xnet_read(xdrs))
+			if (!xnet_read(this))
 				return FALSE;
 		}
 
@@ -1834,7 +1818,7 @@ static bool_t xnet_getbytes(XDR* xdrs, SCHAR* buff, unsigned bytecount)
 }
 
 
-static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, unsigned bytecount)
+bool_t XnetXdr::x_putbytes(const SCHAR* buff, unsigned bytecount)
 {
 /**************************************
  *
@@ -1846,7 +1830,7 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, unsigned bytecount)
  *	Put a bunch of bytes into a memory stream.
  *
  **************************************/
-	rem_port* port = (rem_port*)xdrs->x_public;
+	rem_port* port = x_public;
 	const bool portServer = (port->port_flags & PORT_server);
 	XCC xcc = port->port_xcc;
 	XCH xch = xcc->xcc_send_channel;
@@ -1866,14 +1850,14 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, unsigned bytecount)
 		}
 
 		SLONG to_copy;
-		if (xdrs->x_handy >= bytecount)
+		if (x_handy >= bytecount)
 			to_copy = bytecount;
 		else
-			to_copy = xdrs->x_handy;
+			to_copy = x_handy;
 
-		if (xdrs->x_handy)
+		if (x_handy)
 		{
-			if (xdrs->x_handy == xch->xch_size)
+			if (x_handy == xch->xch_size)
 			{
 				while (!xnet_shutdown)
 				{
@@ -1921,16 +1905,16 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, unsigned bytecount)
 			}
 
 			if (to_copy == sizeof(SLONG))
-				*((SLONG*)xdrs->x_private) = *((SLONG*)buff);
+				*((SLONG*)x_private) = *((SLONG*)buff);
 			else
-				memcpy(xdrs->x_private, buff, to_copy);
+				memcpy(x_private, buff, to_copy);
 
-			xdrs->x_handy -= to_copy;
-			xdrs->x_private += to_copy;
+			x_handy -= to_copy;
+			x_private += to_copy;
 		}
 		else
 		{
-			if (!xnet_write(xdrs))
+			if (!xnet_write(this))
 			{
 				xnet_error(port, isc_net_write_err, ERRNO);
 				return FALSE;
@@ -1960,7 +1944,7 @@ static bool_t xnet_read(XDR* xdrs)
  *	Read a buffer full of data.
  *
  **************************************/
-	rem_port* port = (rem_port*) xdrs->x_public;
+	rem_port* port = xdrs->x_public;
 	const bool portServer = (port->port_flags & PORT_server);
 	XCC xcc = port->port_xcc;
 	XCH xch = xcc->xcc_recv_channel;
@@ -2048,7 +2032,7 @@ static bool_t xnet_write(XDR* xdrs)
  *  filled and ready for reading.
  *
  **************************************/
-	rem_port* port = (rem_port*) xdrs->x_public;
+	rem_port* port = xdrs->x_public;
 	XCC xcc = port->port_xcc;
 	XCH xch = xcc->xcc_send_channel;
 

@@ -367,6 +367,7 @@ void Routine::remove(thread_db* tdbb)
 		setSecurityName("");
 		setId(0);
 		setDefaultCount(0);
+		releaseExternal();
 	}
 }
 

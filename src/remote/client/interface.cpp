@@ -129,6 +129,27 @@ namespace {
 		if (length > MAX_USHORT && port->port_protocol < PROTOCOL_VERSION13)
 			status_exception::raise(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
 	}
+
+	class SaveString
+	{
+	public:
+		SaveString(cstring& toSave, ULONG newLength, UCHAR* newBuffer)
+			: ptr(&toSave),
+			  oldValue(*ptr)
+		{
+			ptr->cstr_address = newBuffer;
+			ptr->cstr_allocated = newLength;
+		}
+
+		~SaveString()
+		{
+			*ptr = oldValue;
+		}
+
+	private:
+		cstring* ptr;
+		cstring oldValue;
+	};
 }
 
 namespace Remote {
@@ -2298,7 +2319,8 @@ void Statement::freeClientData(CheckStatusWrapper* status, bool force)
 
 		if (rdb->rdb_port->port_flags & PORT_lazy)
 		{
-			defer_packet(rdb->rdb_port, packet);
+			send_packet(rdb->rdb_port, packet);
+			defer_packet(rdb->rdb_port, packet, true);
 			packet->p_resp.p_resp_object = statement->rsr_id;
 		}
 		else
@@ -2499,9 +2521,7 @@ Statement* Attachment::prepare(CheckStatusWrapper* status, ITransaction* apiTra,
 		}
 
 		P_RESP* response = &packet->p_resp;
-		CSTRING temp = response->p_resp_data;
-		response->p_resp_data.cstr_allocated = (ULONG) buffer.getCount();
-		response->p_resp_data.cstr_address = buffer.begin();
+		SaveString temp(response->p_resp_data, buffer.getCount(), buffer.begin());
 
 		try
 		{
@@ -2522,8 +2542,8 @@ Statement* Attachment::prepare(CheckStatusWrapper* status, ITransaction* apiTra,
 		else
 		{
 			fb_assert(!response->p_resp_object);
+			response->p_resp_object = 0;
 		}
-		response->p_resp_data = temp;
 
 		if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
 		{
@@ -3020,7 +3040,13 @@ int ResultSet::fetchNext(CheckStatusWrapper* status, void* buffer)
 			status_exception::raise(Arg::Gds(isc_port_len) <<
 				Arg::Num(msg_length) << Arg::Num(statement->rsr_user_select_format->fmt_length));
 		}
-		if (statement->rsr_user_select_format == statement->rsr_select_format) {
+		if (statement->rsr_user_select_format == statement->rsr_select_format)
+		{
+			if (!msg || !message->msg_address)
+			{
+				move_error(Arg::Gds(isc_dsql_sqlda_err));
+				// Msg 263 SQLDA missing or wrong number of variables
+			}
 			memcpy(msg, message->msg_address, msg_length);
 		}
 		else
@@ -3399,7 +3425,7 @@ int Blob::getSegment(CheckStatusWrapper* status, unsigned int bufferLength, void
 		PACKET* packet = &rdb->rdb_packet;
 		P_SGMT* segment = &packet->p_sgmt;
 		P_RESP* response = &packet->p_resp;
-		CSTRING temp = response->p_resp_data;
+		SaveString temp(response->p_resp_data, bufferLength, bufferPtr);
 
 		// Handle a blob that has been created rather than opened (this should yield an error)
 
@@ -3409,21 +3435,10 @@ int Blob::getSegment(CheckStatusWrapper* status, unsigned int bufferLength, void
 			segment->p_sgmt_length = bufferLength;
 			segment->p_sgmt_blob = blob->rbl_id;
 			segment->p_sgmt_segment.cstr_length = 0;
+
 			send_packet(port, packet);
-			response->p_resp_data.cstr_allocated = bufferLength;
-			response->p_resp_data.cstr_address = bufferPtr;
+			receive_response(status, rdb, packet);
 
-			try
-			{
-				receive_response(status, rdb, packet);
-			}
-			catch (const Exception& /*ex*/)
-			{
-				response->p_resp_data = temp;
-				throw;
-			}
-
-			response->p_resp_data = temp;
 			if (segmentLength)
 				*segmentLength = response->p_resp_data.cstr_length;
 			return IStatus::RESULT_OK;
@@ -3557,15 +3572,7 @@ int Blob::getSegment(CheckStatusWrapper* status, unsigned int bufferLength, void
 			response->p_resp_data.cstr_allocated = blob->rbl_buffer_length;
 			response->p_resp_data.cstr_address = blob->rbl_buffer;
 
-			try
-			{
-				receive_response(status, rdb, packet);
-			}
-			catch (const Exception& /*ex*/)
-			{
-				response->p_resp_data = temp;
-				throw;
-			}
+			receive_response(status, rdb, packet);
 
 			blob->rbl_length = (USHORT) response->p_resp_data.cstr_length;
 			blob->rbl_ptr = blob->rbl_buffer;
@@ -3575,8 +3582,6 @@ int Blob::getSegment(CheckStatusWrapper* status, unsigned int bufferLength, void
 			else if (response->p_resp_object == 2)
 				blob->rbl_flags |= Rbl::EOF_PENDING;
 		}
-
-		response->p_resp_data = temp;
 
 		if (segmentLength)
 			*segmentLength = length;
@@ -6156,21 +6161,9 @@ static void info(CheckStatusWrapper* status,
 	// Set up for the response packet.
 
 	P_RESP* response = &packet->p_resp;
-	CSTRING temp = response->p_resp_data;
-	response->p_resp_data.cstr_allocated = buffer_length;
-	response->p_resp_data.cstr_address = buffer;
+	SaveString temp(response->p_resp_data, buffer_length, buffer);
 
-	try
-	{
-		receive_response(status, rdb, packet);
-	}
-	catch (const Exception&)
-	{
-		response->p_resp_data = temp;
-		throw;
-	}
-
-	response->p_resp_data = temp;
+	receive_response(status, rdb, packet);
 }
 
 static bool useLegacyAuth(const char* nm, int protocol, ClumpletWriter& dpb)
@@ -6477,7 +6470,8 @@ static void mov_dsql_message(const UCHAR* from_msg,
  *
  **************************************/
 
-	if (!from_fmt || !to_fmt || from_fmt->fmt_desc.getCount() != to_fmt->fmt_desc.getCount())
+	if (!from_msg || !from_fmt || !to_msg || !to_fmt ||
+		from_fmt->fmt_desc.getCount() != to_fmt->fmt_desc.getCount())
 	{
 		move_error(Arg::Gds(isc_dsql_sqlda_err));
 		// Msg 263 SQLDA missing or wrong number of variables
@@ -7326,19 +7320,10 @@ static void svcstart(CheckStatusWrapper*	status,
 
 	// Set up for the response packet.
 	P_RESP* response = &packet->p_resp;
-	CSTRING temp = response->p_resp_data;
+	SaveString temp(response->p_resp_data, 0, NULL);
+	response->p_resp_data.cstr_length = 0;
 
-	try
-	{
-		receive_response(status, rdb, packet);
-	}
-	catch (const Exception&)
-	{
-		response->p_resp_data = temp;
-		throw;
-	}
-
-	response->p_resp_data = temp;
+	receive_response(status, rdb, packet);
 }
 
 

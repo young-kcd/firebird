@@ -135,10 +135,20 @@ int MasterImplementation::serverMode(int mode)
 
 namespace Why {
 
+static bool abortShutdownFlag = false;
+
+void abortShutdown()
+{
+	abortShutdownFlag = true;
+}
+
 Thread::Handle timerThreadHandle = 0;
 
 FB_BOOLEAN MasterImplementation::getProcessExiting()
 {
+	if (abortShutdownFlag)
+		return true;
+
 #ifdef WIN_NT
 	if (timerThreadHandle && WaitForSingleObject(timerThreadHandle, 0) != WAIT_TIMEOUT)
 		return true;
@@ -209,10 +219,10 @@ void TimerEntry::cleanup()
 
 ISC_UINT64 curTime()
 {
-	ISC_UINT64 rc = fb_utils::query_performance_counter();
+	double rc = fb_utils::query_performance_counter();
 	rc *= 1000000;
 	rc /= fb_utils::query_performance_frequency();
-	return rc;
+	return ISC_UINT64(rc);
 }
 
 TimerEntry* getTimer(ITimer* timer)

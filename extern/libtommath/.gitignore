@@ -1,5 +1,6 @@
 lib/
 temp/
 *.o
+*.a
 *.l*
 .libs/

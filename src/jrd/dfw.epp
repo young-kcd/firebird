@@ -3115,13 +3115,13 @@ static bool compute_security(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 		{
 			// Get security class.  This may return NULL if it doesn't exist
 
-			SecurityClass* s_class = SCL_recompute_class(tdbb, work->dfw_name.c_str());
+			SCL_clear_classes(tdbb, work->dfw_name.c_str());
 
 			AutoRequest handle;
 			FOR(REQUEST_HANDLE handle) X IN RDB$DATABASE
 				WITH X.RDB$SECURITY_CLASS EQ work->dfw_name.c_str()
 			{
-				attachment->att_security_class = s_class;
+				attachment->att_security_class = SCL_get_class(tdbb, work->dfw_name.c_str());
 			}
 			END_FOR
 		}
@@ -4855,6 +4855,13 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 		    EXT_fini(relation, false);
 		}
 
+		if (relation->isTemporary())
+		{
+			// release pages, allocated for current GTT instance
+			AutoSetRestoreFlag<USHORT> tmpSpace(&tdbb->tdbb_flags, TDBB_use_db_page_space, false);
+			relation->delPages(tdbb);
+		}
+
 		RelationPages* const relPages = relation->getBasePages();
 		if (relPages->rel_index_root) {
 			IDX_delete_indices(tdbb, relation, relPages);
@@ -5674,8 +5681,16 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			null_view = blob_id.isEmpty();
 			external_flag = REL.RDB$EXTERNAL_FILE[0];
 
-			if (REL.RDB$FORMAT == MAX_TABLE_VERSIONS)
-				raiseTooManyVersionsError(obj_relation, work->dfw_name);
+			if (REL.RDB$VIEW_BLR.NULL)
+			{
+				if (REL.RDB$FORMAT == MAX_TABLE_VERSIONS)
+					raiseTooManyVersionsError(obj_relation, work->dfw_name);
+			}
+			else
+			{
+				if (REL.RDB$FORMAT == MAX_VIEW_VERSIONS)
+					raiseTooManyVersionsError(obj_view, work->dfw_name);
+			}
 
 			MODIFY REL USING
 				blb* blob = blb::create(tdbb, transaction, &REL.RDB$RUNTIME);

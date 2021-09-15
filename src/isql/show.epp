@@ -54,6 +54,7 @@
 #include "../isql/extra_proto.h"
 #include "../common/utils_proto.h"
 #include "../jrd/constants.h"
+#include "../common/classes/timestamp.h"
 #include "../common/classes/UserBlob.h"
 #include "../common/classes/VaryStr.h"
 #include "../common/classes/ImplementHelper.h"
@@ -251,6 +252,7 @@ static const UCHAR db_items[] =
 	isc_info_db_id,
 #endif
 	fb_info_crypt_state,
+	isc_info_creation_date,
 	isc_info_end
 };
 
@@ -551,6 +553,25 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 			value_out = ISQL_vax_integer(d, length);
 			sprintf(info, "ODS = %" SLONGFORMAT".%" SQUADFORMAT"%s",
 					(SLONG) isqlGlob.major_ods, value_out, separator);
+			break;
+
+		case isc_info_creation_date:
+			if (length == sizeof(ISC_TIMESTAMP))
+			{
+				ISC_TIMESTAMP ts;
+
+				const UCHAR* p = d;
+				ts.timestamp_date = ISQL_vax_integer(p, sizeof(ISC_DATE));
+				p += sizeof(ISC_DATE);
+				ts.timestamp_time = ISQL_vax_integer(p, sizeof(ISC_TIME));
+
+				struct tm time;
+				isc_decode_timestamp(&ts, &time);
+
+				sprintf(info, "Creation date: %s %d, %d %d:%02d:%02d\n",
+					FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,
+					time.tm_hour, time.tm_min, time.tm_sec);
+			}
 			break;
 
 #ifdef DEV_BUILD
@@ -1853,7 +1874,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 }
 
 
-void SHOW_print_metadata_text_blob(FILE* fp, ISC_QUAD* blobid, bool escape_squote)
+void SHOW_print_metadata_text_blob(FILE* fp, ISC_QUAD* blobid, bool escape_squote, bool avoid_end_in_single_line_comment)
 {
 /**************************************
  *
@@ -1876,6 +1897,7 @@ void SHOW_print_metadata_text_blob(FILE* fp, ISC_QUAD* blobid, bool escape_squot
 	if (ISQL_errmsg(fbStatus))
 		return;
 
+	string fullText;
 	SCHAR buffer[BUFFER_LENGTH512];
 	bool endedWithCr = false;
 
@@ -1907,29 +1929,51 @@ void SHOW_print_metadata_text_blob(FILE* fp, ISC_QUAD* blobid, bool escape_squot
 		}
 
 		if (prevEndedWithCr && buffer[0] != '\n')
-		    fputc('\r', fp);
+		{
+			fputc('\r', fp);
+			if (avoid_end_in_single_line_comment)
+				fullText += "\r";
+		}
 
 		if (escape_squote)
 		{
 			for (const UCHAR* p = (UCHAR*) buffer; *p; ++p)
 			{
 				if (*p == SINGLE_QUOTE)
-			        fputc(*p, fp);
-			    fputc(*p, fp);
+				{
+					fputc(*p, fp);
+					if (avoid_end_in_single_line_comment)
+						fullText += *p;
+				}
+
+				fputc(*p, fp);
+				if (avoid_end_in_single_line_comment)
+					fullText += *p;
 			}
 			fflush(fp);
 		}
 		else
+		{
 			IUTILS_printf(fp, buffer);
+			if (avoid_end_in_single_line_comment)
+				fullText += buffer;
+		}
 	}
 
 	if (endedWithCr)
-	    fputc('\r', fp);
+	{
+		fputc('\r', fp);
+		if (avoid_end_in_single_line_comment)
+			fullText += "\r";
+	}
 
 	if (fbStatus->getState() & Firebird::IStatus::STATE_ERRORS)
 		ISQL_errmsg(fbStatus);
 
 	blob->close(fbStatus);
+
+	if (avoid_end_in_single_line_comment && ISQL_statement_ends_in_comment(fullText.c_str()))
+		fputc('\n', fp);
 }
 
 
@@ -3474,7 +3518,7 @@ static void show_db()
 		return;
 	END_ERROR;
 
-	SCHAR info_buf[BUFFER_LENGTH400];
+	SCHAR info_buf[BUFFER_LENGTH512];
 
 	// First general database parameters
 

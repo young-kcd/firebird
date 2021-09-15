@@ -63,9 +63,6 @@ const char* const ucTemplate = "lib/libicuuc.%s.dylib";
 #elif defined(HPUX)
 const char* const inTemplate = "libicui18n.sl.%s";
 const char* const ucTemplate = "libicuuc.sl.%s";
-#elif defined(ANDROID)
-const char* const inTemplate = "libicui18n.so";
-const char* const ucTemplate = "libicuuc.so";
 #else
 const char* const inTemplate = "libicui18n.so.%s";
 const char* const ucTemplate = "libicuuc.so.%s";
@@ -256,7 +253,7 @@ private:
 		getEntryPoint("ucnv_setFromUCallBack", module, ucnv_setFromUCallBack);
 		getEntryPoint("ucnv_setToUCallBack", module, ucnv_setToUCallBack);
 
-#if defined(WIN_NT) || defined(DARWIN)
+#if defined(WIN_NT) || defined(DARWIN) || defined(ANDROID)
 		if (uSetDataDirectory)
 		{
 			PathName path, file;
@@ -338,6 +335,14 @@ static GlobalPtr<UnicodeUtil::ICUModules> icuModules;
 static ModuleLoader::Module* formatAndLoad(const char* templateName,
 	int majorVersion, int minorVersion)
 {
+#ifdef ANDROID
+	static ModuleLoader::Module* dat = ModuleLoader::loadModule(NULL,
+		fb_utils::getPrefix(Firebird::IConfigManager::DIR_LIB, "libicudata.so"));
+
+	Firebird::PathName newName = fb_utils::getPrefix(Firebird::IConfigManager::DIR_LIB, templateName);
+	templateName = newName.c_str();
+#endif
+
 	// ICU has several schemas for placing version into file name
 	const char* patterns[] =
 	{

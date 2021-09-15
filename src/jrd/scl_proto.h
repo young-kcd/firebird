@@ -27,13 +27,14 @@
 #include "../jrd/scl.h"
 #include "../common/classes/array.h"
 
-//namespace Jrd {
-//	class SecurityClass;
-//}
+namespace Jrd {
+	class jrd_rel;
+}
 
 struct dsc;
 
-void SCL_check_access(Jrd::thread_db*, const Jrd::SecurityClass*, SLONG, SLONG, const Firebird::MetaName&,
+void SCL_check_access(Jrd::thread_db*, const Jrd::SecurityClass*,
+					  const Jrd::SecurityClass*, SLONG, const Firebird::MetaName&,
 					  Jrd::SecurityClass::flags_t, SLONG type, bool recursive, const Firebird::MetaName&,
 					  const Firebird::MetaName& = "");
 void SCL_check_create_access(Jrd::thread_db*, int type);
@@ -51,14 +52,16 @@ void SCL_check_filter(Jrd::thread_db* tdbb, const Firebird::MetaName &name, Jrd:
 void SCL_check_relation(Jrd::thread_db* tdbb, const dsc*, Jrd::SecurityClass::flags_t, bool protectSys = true);
 bool SCL_check_view(Jrd::thread_db* tdbb, const dsc*, Jrd::SecurityClass::flags_t);
 void SCL_check_role(Jrd::thread_db* tdbb, const Firebird::MetaName&, Jrd::SecurityClass::flags_t);
-Jrd::SecurityClass* SCL_get_class(Jrd::thread_db*, const TEXT*);
+Jrd::SecurityClass* SCL_get_class(Jrd::thread_db*, const TEXT*, const Jrd::jrd_rel* view = NULL);
+Jrd::SecurityClass* SCL_get_class_for_view(Jrd::thread_db*, SLONG view_id, const TEXT*);
 Jrd::SecurityClass::flags_t SCL_get_mask(Jrd::thread_db* tdbb, const TEXT*, const TEXT*);
-void SCL_init(Jrd::thread_db* tdbb, bool, const Jrd::UserId& tempId);
-Jrd::SecurityClass* SCL_recompute_class(Jrd::thread_db*, const TEXT*);
+void SCL_clear_classes(Jrd::thread_db*, const TEXT*);
 void SCL_release_all(Jrd::SecurityClassList*&);
 bool SCL_role_granted(Jrd::thread_db* tdbb, const Jrd::UserId& usr, const TEXT* sql_role);
-bool SCL_admin_role(Jrd::thread_db* tdbb, const TEXT* sql_role);
 Jrd::SecurityClass::flags_t SCL_get_object_mask(const int object_type);
+ULONG SCL_get_number(const UCHAR*);
+void SCL_init(Jrd::thread_db* tdbb, bool, const Jrd::UserId& tempId);
+bool SCL_admin_role(Jrd::thread_db* tdbb, const TEXT* sql_role);
 
 namespace Jrd {
 typedef Firebird::Array<UCHAR> Acl;

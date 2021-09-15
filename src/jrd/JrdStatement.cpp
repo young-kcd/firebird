@@ -317,7 +317,7 @@ bool JrdStatement::isActive() const
 	return false;
 }
 
-jrd_req* JrdStatement::findRequest(thread_db* tdbb)
+jrd_req* JrdStatement::findRequest(thread_db* tdbb, bool unique)
 {
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
@@ -345,6 +345,9 @@ jrd_req* JrdStatement::findRequest(thread_db* tdbb)
 				clone = next;
 				break;
 			}
+
+			if (unique)
+				return NULL;
 
 			++count;
 		}
@@ -467,16 +470,17 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 			 ++access)
 		{
 			const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
+			const SecurityClass* v_sec_class = SCL_get_class_for_view(tdbb, access->acc_view_id, access->acc_security_name.c_str());
 
 			if (routine->getName().package.isEmpty())
 			{
-				SCL_check_access(tdbb, sec_class, access->acc_view_id, aclType,
+				SCL_check_access(tdbb, sec_class, v_sec_class, aclType,
 					routine->getName().identifier, access->acc_mask, access->acc_type,
 					true, access->acc_name, access->acc_r_name);
 			}
 			else
 			{
-				SCL_check_access(tdbb, sec_class, access->acc_view_id,
+				SCL_check_access(tdbb, sec_class, v_sec_class,
 					id_package, routine->getName().package,
 					access->acc_mask, access->acc_type,
 					true, access->acc_name, access->acc_r_name);
@@ -495,6 +499,7 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 	for (const AccessItem* access = accessList.begin(); access != accessList.end(); ++access)
 	{
 		const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
+		const SecurityClass* v_sec_class = SCL_get_class_for_view(tdbb, access->acc_view_id, access->acc_security_name.c_str());
 
 		MetaName objName;
 		SLONG objType = 0;
@@ -525,7 +530,7 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 			objName = transaction->tra_caller_name.name;
 		}
 
-		SCL_check_access(tdbb, sec_class, access->acc_view_id, objType, objName,
+		SCL_check_access(tdbb, sec_class, v_sec_class, objType, objName,
 			access->acc_mask, access->acc_type, true, access->acc_name, access->acc_r_name);
 	}
 }
@@ -644,8 +649,9 @@ void JrdStatement::verifyTriggerAccess(thread_db* tdbb, jrd_rel* ownerRelation,
 
 			// a direct access to an object from this trigger
 			const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
-			SCL_check_access(tdbb, sec_class,
-				(access->acc_view_id) ? access->acc_view_id : (view ? view->rel_id : 0),
+			const SecurityClass* v_sec_class = SCL_get_class_for_view(tdbb,
+				access->acc_view_id ? access->acc_view_id : view ? view->rel_id : 0, access->acc_security_name.c_str());
+			SCL_check_access(tdbb, sec_class, v_sec_class,
 				id_trigger, t.statement->triggerName, access->acc_mask,
 				access->acc_type, true, access->acc_name, access->acc_r_name);
 		}
