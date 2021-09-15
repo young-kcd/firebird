@@ -553,7 +553,7 @@ private:
 	UCHAR blobPolicy;
 	bool segmented, defSegmented, batchActive;
 
-	ULONG messageCount, blobCount, serverSize;
+	ULONG messageCount, blobCount, serverSize, blobHeadSize;
 
 public:
 	bool tmpStatement;
@@ -2375,7 +2375,8 @@ Batch::Batch(Statement* s, IMessageMetadata* inFmt, unsigned parLength, const un
 	  messageSize(0), alignedSize(0), blobBufferSize(0), messageBufferSize(0), flags(0),
 	  stmt(s), format(inFmt), blobAlign(0), blobPolicy(BLOB_NONE),
 	  segmented(false), defSegmented(false), batchActive(false),
-	  messageCount(0), blobCount(0), serverSize(0), tmpStatement(false)
+	  messageCount(0), blobCount(0), serverSize(0), blobHeadSize(0),
+	  tmpStatement(false)
 {
 	LocalStatus ls;
 	CheckStatusWrapper st(&ls);
@@ -2762,8 +2763,8 @@ void Batch::setServerInfo()
 	}
 
 	// Perform info call to server
-	UCHAR items[] = {IBatch::INF_BLOB_ALIGNMENT, IBatch::INF_BUFFER_BYTES_SIZE};
-	UCHAR buffer[32];
+	UCHAR items[] = {IBatch::INF_BLOB_ALIGNMENT, IBatch::INF_BUFFER_BYTES_SIZE, IBatch::INF_BLOB_HEADER};
+	UCHAR buffer[64];
 	info(&s, rdb, op_info_batch, statement->rsr_id, 0,
 		 sizeof(items), items, 0, 0, sizeof(buffer), buffer);
 	check(&s);
@@ -2784,6 +2785,9 @@ void Batch::setServerInfo()
 		case IBatch::INF_BUFFER_BYTES_SIZE:
 			serverSize = out.getInt();
 			break;
+		case IBatch::INF_BLOB_HEADER:
+			blobHeadSize = out.getInt();
+			break;
 		case isc_info_error:
 			(Arg::Gds(isc_batch_align) << Arg::Gds(out.getInt())).raise();
 		case isc_info_truncated:
@@ -2797,7 +2801,7 @@ void Batch::setServerInfo()
 		}
 	}
 
-	if (! (blobAlign && serverSize))
+	if (! (blobAlign && serverSize && blobHeadSize))
 		Arg::Gds(isc_batch_align).raise();
 }
 
@@ -3050,6 +3054,10 @@ void Batch::getInfo(CheckStatusWrapper* status, unsigned int itemsLength, const 
 				case IBatch::INF_BLOB_ALIGNMENT:
 					setServerInfo();
 					out.insertInt(item, blobAlign);
+					break;
+				case IBatch::INF_BLOB_HEADER:
+					setServerInfo();
+					out.insertInt(item, blobHeadSize);
 					break;
 				default:
 					out.insertInt(isc_info_error, isc_infunk);

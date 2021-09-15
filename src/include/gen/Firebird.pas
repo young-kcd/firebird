@@ -1560,15 +1560,16 @@ type
 		const TAG_BUFFER_BYTES_SIZE = Byte(3);
 		const TAG_BLOB_POLICY = Byte(4);
 		const TAG_DETAILED_ERRORS = Byte(5);
+		const INF_BUFFER_BYTES_SIZE = Byte(10);
+		const INF_DATA_BYTES_SIZE = Byte(11);
+		const INF_BLOBS_BYTES_SIZE = Byte(12);
+		const INF_BLOB_ALIGNMENT = Byte(13);
+		const INF_BLOB_HEADER = Byte(14);
 		const BLOB_NONE = Byte(0);
 		const BLOB_ID_ENGINE = Byte(1);
 		const BLOB_ID_USER = Byte(2);
 		const BLOB_STREAM = Byte(3);
 		const BLOB_SEGHDR_ALIGN = Cardinal(2);
-		const INF_BUFFER_BYTES_SIZE = Byte(10);
-		const INF_DATA_BYTES_SIZE = Byte(11);
-		const INF_BLOBS_BYTES_SIZE = Byte(12);
-		const INF_BLOB_ALIGNMENT = Byte(13);
 
 		procedure add(status: IStatus; count: Cardinal; inBuffer: Pointer);
 		procedure addBlob(status: IStatus; length: Cardinal; inBuffer: Pointer; blobId: ISC_QUADPtr; parLength: Cardinal; par: BytePtr);
