@@ -1029,6 +1029,9 @@ void DsqlBatch::info(thread_db* tdbb, unsigned int itemsLength, const unsigned c
 			case IBatch::INF_BLOB_ALIGNMENT:
 				out.insertInt(item, BLOB_STREAM_ALIGN);
 				break;
+			case IBatch::INF_BLOB_HEADER:
+				out.insertInt(item, SIZEOF_BLOB_HEAD);
+				break;
 			case isc_info_length:
 				flInfoLength = true;
 				break;

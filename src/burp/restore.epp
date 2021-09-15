@@ -2098,11 +2098,6 @@ void get_array(BurpGlobals* tdgbl, burp_rel* relation, UCHAR* record_buffer)
 }
 
 
-static const unsigned GBAK_BATCH_STEP = 1000;
-static const unsigned GBAK_BATCH_BLOBSTEP = 1024;	// keep slightly bigger than GBAK_BATCH_STEP
-static unsigned batchBufferSize = 0;
-
-
 void get_blob(BurpGlobals* tdgbl, Firebird::IBatch* batch, const burp_fld* fields, UCHAR* record_buffer)
 {
 /**************************************
@@ -2168,48 +2163,30 @@ void get_blob(BurpGlobals* tdgbl, Firebird::IBatch* batch, const burp_fld* field
 		// msg 36 Can't find field for blob
 	}
 
-	// Choose blob creation method
-	FbLocalStatus status_vector;
+	// Choose blob creation method based on maximum possible blob size
+	const UCHAR blob_desc[] = {isc_bpb_version1, isc_bpb_type, 1, blob_type};
 	bool blobInline = false;
 	if (batch)
 	{
-		if (!batchBufferSize)
+		ULONG segHeaderOverhead = 0;
+		if (!(blob_type & isc_bpb_type_stream))
 		{
-			UCHAR item = Firebird::IBatch::INF_BUFFER_BYTES_SIZE;
-			UCHAR infoBuf[64];
-			batch->getInfo(&status_vector, 1, &item, sizeof infoBuf, infoBuf);
-			if (status_vector->hasData())
-			{
-				if (status_vector->getErrors()[1] == isc_interface_version_too_old)	// FB4.0.0
-					batchBufferSize = 256 * 1024 * 1024;
-				else
-					BURP_error_redirect(&status_vector, 405);
-			}
-
-			if (!batchBufferSize)
-			{
-				Firebird::ClumpletReader rdr(Firebird::ClumpletReader::InfoResponse, infoBuf, sizeof infoBuf);
-				rdr.rewind();
-				if (rdr.isEof() || rdr.getClumpTag() != item)
-					BURP_error(405, true);
-				else
-					batchBufferSize = rdr.getInt();
-			}
-
-			fb_assert(batchBufferSize);
+			// Is it segmented blob?			header itself					segment alignment
+			segHeaderOverhead = Firebird::IBatch::BLOB_SEGHDR_ALIGN + (Firebird::IBatch::BLOB_SEGHDR_ALIGN - 1);
 		}
+		FB_UINT64 fullSize = (FB_UINT64(max_segment) + segHeaderOverhead) * segments;
 
-		if (FB_UINT64(segments) * max_segment < batchBufferSize / GBAK_BATCH_BLOBSTEP)
-			blobInline = true;
+		// Take into an account parameters size
+		fullSize += sizeof(blob_desc);
+		blobInline = fullSize < tdgbl->batchInlineBlobLimit;
 	}
 
 	// Create new blob
 	ISC_QUAD* blob_id = (ISC_QUAD*) ((UCHAR*) record_buffer + field->fld_offset);
-	const UCHAR blob_desc[] = {isc_bpb_version1, isc_bpb_type, 1, blob_type};
-
 	BlobBuffer local_buffer;
 	UCHAR* const buffer = local_buffer.getBuffer(max_segment);
 	bool first = true;
+	FbLocalStatus status_vector;
 	BlobWrapper blob(&status_vector);
 
 	if (!blobInline)
@@ -3144,12 +3121,13 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 		RCRD_LENGTH length = offset;
 
 		// Create batch
+		unsigned batchStep = 1000;
 
 		Firebird::AutoDispose<Firebird::IXpbBuilder> pb(Firebird::UtilInterfacePtr()->
 			getXpbBuilder(&tdgbl->throwStatus, Firebird::IXpbBuilder::BATCH, NULL, 0));
 		pb->insertInt(&tdgbl->throwStatus, Firebird::IBatch::TAG_MULTIERROR, 1);
 		pb->insertInt(&tdgbl->throwStatus, Firebird::IBatch::TAG_BLOB_POLICY, Firebird::IBatch::BLOB_ID_ENGINE);
-		pb->insertInt(&tdgbl->throwStatus, Firebird::IBatch::TAG_DETAILED_ERRORS, GBAK_BATCH_STEP);
+		pb->insertInt(&tdgbl->throwStatus, Firebird::IBatch::TAG_DETAILED_ERRORS, batchStep);
 		pb->insertInt(&tdgbl->throwStatus, Firebird::IBatch::TAG_BUFFER_BYTES_SIZE, 0);
 
 		Firebird::RefPtr<Firebird::IBatch> batch(Firebird::REF_NO_INCR, DB->
@@ -3164,6 +3142,60 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 			// Try to roll back to use of old version (fieldnames independent)
 			return get_data_old(tdgbl, relation);
 		}
+
+		// determine batch parameters
+		tdgbl->batchInlineBlobLimit = 0;
+
+		const UCHAR items[] =
+			{Firebird::IBatch::INF_BUFFER_BYTES_SIZE,
+			 Firebird::IBatch::INF_BLOB_ALIGNMENT,
+			 Firebird::IBatch::INF_BLOB_HEADER};
+		UCHAR infoBuf[64];
+		batch->getInfo(fbStatus, sizeof items, items, sizeof infoBuf, infoBuf);
+		if (fbStatus->hasData())
+		{
+			if (fbStatus->getErrors()[1] == isc_interface_version_too_old)	// v4.0.0
+				tdgbl->batchInlineBlobLimit = 255 * 1024;		// 1Kb reserve should be always enough
+			else
+				BURP_error_redirect(fbStatus, 405);
+		}
+
+		if (!tdgbl->batchInlineBlobLimit)
+		{
+			ULONG blAlign = 0, blHdr = 0, bufSize = 0;
+			Firebird::ClumpletReader rdr(Firebird::ClumpletReader::InfoResponse, infoBuf, sizeof infoBuf);
+			for (rdr.rewind(); !rdr.isEof(); rdr.moveNext())
+			{
+				if (rdr.getClumpTag() == isc_info_end)
+					break;
+				switch (rdr.getClumpTag())
+				{
+				case Firebird::IBatch::INF_BUFFER_BYTES_SIZE:
+					bufSize = rdr.getInt();
+					break;
+			 	case Firebird::IBatch::INF_BLOB_ALIGNMENT:
+					blAlign = rdr.getInt();
+					break;
+			 	case Firebird::IBatch::INF_BLOB_HEADER:
+					blHdr = rdr.getInt();
+					break;
+				}
+			}
+
+			if (!(bufSize && blAlign && blHdr))
+				BURP_error(405, true);
+
+			// correct batchStep if necessary
+			unsigned msgSize = meta->getAlignedLength(&tdgbl->throwStatus);
+			if (msgSize * batchStep > bufSize)
+				batchStep = bufSize / msgSize;
+
+			// determine maximum blob size for inline transfer
+			tdgbl->batchInlineBlobLimit = bufSize / batchStep;
+			// take into an account:	   blob alignment	header size
+			tdgbl->batchInlineBlobLimit -= ((blAlign - 1) + blHdr);
+		}
+		fb_assert(tdgbl->batchInlineBlobLimit);
 
 		UCHAR* buffer = NULL;
 		Firebird::Array<UCHAR> requestBuffer;
@@ -3281,7 +3313,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 			}
 
 			batch->add(&tdgbl->throwStatus, 1, sql);
-			if ((records % GBAK_BATCH_STEP != 0) && (record == rec_data))
+			if ((records % batchStep != 0) && (record == rec_data))
 				continue;
 
 			Firebird::AutoDispose<Firebird::IBatchCompletionState> cs(batch->execute(&tdgbl->throwStatus, gds_trans));
