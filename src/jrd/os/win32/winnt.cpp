@@ -374,7 +374,9 @@ void PIO_force_write(jrd_file* file, const bool forceWrite, const bool notUseFSC
 			file->fil_flags &= ~FIL_no_fs_cache;
 		}
 
+#ifndef _USING_V110_SDK71_
 		SetFileCompletionNotificationModes(hFile, FILE_SKIP_SET_EVENT_ON_HANDLE);
+#endif
 	}
 }
 
@@ -556,7 +558,9 @@ jrd_file* PIO_open(thread_db* tdbb,
 		}
 	}
 
+#ifndef _USING_V110_SDK71_
 	SetFileCompletionNotificationModes(desc, FILE_SKIP_SET_EVENT_ON_HANDLE);
+#endif
 
 	return setup_file(dbb, string, desc, readOnly, shareMode);
 }
