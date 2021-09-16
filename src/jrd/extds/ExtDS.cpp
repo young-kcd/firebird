@@ -249,7 +249,7 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 }
 
 ConnectionsPool* Manager::getConnPool(bool create)
-{ 
+{
 	if (!m_connPool && create)
 		m_connPool = FB_NEW_POOL(manager->getPool()) ConnectionsPool(manager->getPool());
 
@@ -412,8 +412,6 @@ Connection* Provider::getBoundConnection(Jrd::thread_db* tdbb,
 
 void Provider::jrdAttachmentEnd(thread_db* tdbb, Jrd::Attachment* att, bool forced)
 {
-	Database* dbb = tdbb->getDatabase();
-
 	HalfStaticArray<Connection*, 16> toRelease(getPool());
 
 	{	// scope
@@ -2231,7 +2229,7 @@ void Statement::setInParams(thread_db* tdbb, const MetaName* const* names,
 
 		doSetInParams(tdbb, mapCount, m_sqlParamsMap.begin(), sqlParams);
 	}
-	else 
+	else
 		doSetInParams(tdbb, count, NULL, (params ? params->items.begin() : NULL));
 }
 

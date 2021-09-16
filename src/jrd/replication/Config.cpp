@@ -168,8 +168,6 @@ Config* Config::get(const PathName& lookupName)
 		const PathName filename =
 			fb_utils::getPrefix(IConfigManager::DIR_CONF, REPLICATION_CFGFILE);
 
-		MemoryPool& pool = *getDefaultMemoryPool();
-
 		ConfigFile cfgFile(filename, ConfigFile::HAS_SUB_CONF |
 									 ConfigFile::NATIVE_ORDER |
 									 ConfigFile::CUSTOM_MACROS);
@@ -334,15 +332,13 @@ void Config::enumerate(Firebird::Array<Config*>& replicas)
 		const PathName filename =
 			fb_utils::getPrefix(IConfigManager::DIR_CONF, REPLICATION_CFGFILE);
 
-		MemoryPool& pool = *getDefaultMemoryPool();
-
 		ConfigFile cfgFile(filename, ConfigFile::HAS_SUB_CONF |
 									 ConfigFile::NATIVE_ORDER |
 									 ConfigFile::CUSTOM_MACROS);
 
 		AutoPtr<Config> defConfig(FB_NEW Config);
 
-		bool defaultFound = false, exactMatch = false;
+		bool defaultFound = false;
 
 		for (const auto& section : cfgFile.getParameters())
 		{

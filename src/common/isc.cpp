@@ -340,7 +340,6 @@ bool ISC_get_user(Firebird::string* name, int* id, int* group)
  **************************************/
 	// egid and euid need to be signed, uid_t is unsigned on SUN!
 	SLONG egid, euid;
-	TEXT user_name[256];
 	const TEXT* p = NULL;
 
 	euid = (SLONG) geteuid();

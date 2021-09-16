@@ -329,7 +329,6 @@ static const UCHAR
 	byte_line[]		= { op_byte, op_line, 0},
 	byte_args[] = { op_byte, op_line, op_args, 0},
 	byte_verb[] = { op_byte, op_line, op_verb, 0},
-	byte_verb_verb[] = { op_byte, op_line, op_verb, op_verb, 0},
 	byte_literal[] = { op_byte, op_literal, op_line, 0},
 	byte_byte_verb[] = { op_byte, op_byte, op_line, op_verb, 0},
 	verb_byte_verb[] = { op_verb, op_byte, op_line, op_verb, 0},

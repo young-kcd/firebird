@@ -743,8 +743,6 @@ namespace Jrd
 			if (!group)
 				return;
 
-			Impure* const impure = getImpure(request);
-
 			for (const NestConst<ValueExprNode>* ptrValue = group->begin(), *endValue = group->end();
 				 ptrValue != endValue;
 				 ++ptrValue)

@@ -70,7 +70,9 @@
 #include "../common/classes/array.h"
 #include "../common/StatusHolder.h"
 
+#ifdef WIN_NT
 static int process_id;
+#endif
 
 // Unix specific stuff
 

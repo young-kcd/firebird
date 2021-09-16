@@ -51,7 +51,6 @@ enum pp_vals {
 };
 
 
-const size_t MAX_TOKEN_SIZE = 1024;
 static void generate_error(const Firebird::NoCaseString&, SSHORT, char = 0);
 
 struct pp_table

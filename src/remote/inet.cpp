@@ -1282,7 +1282,6 @@ rem_port* INET_server(SOCKET sock)
  *	established.  Set up port block with the appropriate socket.
  *
  **************************************/
-	int n = 0;
 	rem_port* const port = alloc_port(NULL);
 	port->port_flags |= PORT_server;
 	port->port_server_flags |= SRVR_server;

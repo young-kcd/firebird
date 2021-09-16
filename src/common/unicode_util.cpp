@@ -422,6 +422,7 @@ static const char* const COLL_30_VERSION = "41.128.4.4";	// ICU 3.0 collator ver
 
 static GlobalPtr<UnicodeUtil::ICUModules> icuModules;
 
+#ifdef LINUX
 static bool extractVersionFromPath(const PathName& realPath, int& major, int& minor)
 {
 	major = 0;
@@ -460,6 +461,7 @@ static bool extractVersionFromPath(const PathName& realPath, int& major, int& mi
 
 	return major != 0;
 }
+#endif
 
 static ModuleLoader::Module* formatAndLoad(const char* templateName,
 	int& majorVersion, int& minorVersion)

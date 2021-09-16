@@ -45,6 +45,8 @@
 
 #include "firebird/Interface.h"
 
+#include <type_traits>	// std::is_unsigned
+
 #ifndef WIN_NT
 #include <signal.h>
 #include <fcntl.h>
@@ -425,8 +427,7 @@ public:
 		m_flags(0)
 	{
 		// Require base flags field to be unsigned.
-		// This is a compile-time assertion; it won't build if you use a signed flags field.
-		typedef int dummy[T(-1) > 0];
+		static_assert(std::is_unsigned<T>::value, "T must be unsigned");
 	}
 	explicit RFlags(const T flags) :
 		m_flags(flags)

@@ -2605,9 +2605,6 @@ void LockManager::post_blockage(thread_db* tdbb, lrq* request, lbl* lock)
 	const SRQ_PTR owner_offset = request->lrq_owner;
 	const own* owner = (own*) SRQ_ABS_PTR(owner_offset);
 
-	const SRQ_PTR request_offset = SRQ_REL_PTR(request);
-	const SRQ_PTR lock_offset = SRQ_REL_PTR(lock);
-
 	ASSERT_ACQUIRED;
 	CHECK(request->lrq_flags & LRQ_pending);
 

@@ -95,22 +95,23 @@
 const char* const PROTOCOL_INET = "inet";
 const char* const PROTOCOL_INET4 = "inet4";
 const char* const PROTOCOL_INET6 = "inet6";
+
+#ifdef WIN_NT
 const char* const PROTOCOL_WNET = "wnet";
 const char* const PROTOCOL_XNET = "xnet";
 
-const char* const INET_SEPARATOR = "/";
 const char* const WNET_SEPARATOR = "@";
+const char* const WNET_LOCALHOST = "\\\\.";
+#endif
+
+const char* const INET_SEPARATOR = "/";
 
 const char* const INET_LOCALHOST = "localhost";
-const char* const WNET_LOCALHOST = "\\\\.";
 
 
 using namespace Firebird;
 
 namespace {
-	// Success vector for general use
-	const ISC_STATUS success_vector[] = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
-
 	void handle_error(ISC_STATUS code)
 	{
 		Arg::Gds(code).raise();

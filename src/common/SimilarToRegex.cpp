@@ -365,7 +365,6 @@ namespace
 
 					unsigned charSavePos = patternPos;
 					UChar32 c = getPatternChar();
-					bool range = false;
 					bool charClass = false;
 
 					if (useEscape && c == escapeChar)

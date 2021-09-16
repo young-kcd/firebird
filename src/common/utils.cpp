@@ -854,8 +854,11 @@ FetchPassResult fetchPassword(const Firebird::PathName& name, const char*& passw
 
 
 
-const SINT64 BILLION = 1000000000;
+#ifdef WIN_NT
 static SINT64 saved_frequency = 0;
+#elif defined(HAVE_CLOCK_GETTIME)
+const SINT64 BILLION = 1000000000;
+#endif
 
 // Returns current value of performance counter
 SINT64 query_performance_counter()

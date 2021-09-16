@@ -189,8 +189,6 @@ namespace
 		usage(uSvc, isc_nbackup_allowed_switches);
 	}
 
-	const int MSG_LEN = 1024;
-
 	// HPUX has non-posix-conformant method to return error codes from posix_fadvise().
 	// Instead of error code, directly returned by function (like specified by posix),
 	// -1 is returned in case of error and errno is set. Luckily, we can easily detect it runtime.
@@ -923,7 +921,7 @@ void NBackup::print_child_stderr()
 	DWORD bytesRead;
 	while (true)
 	{
-		// Check if pipe have data to read. This is necessary to avoid hung if 
+		// Check if pipe have data to read. This is necessary to avoid hung if
 		// pipe is empty. Ignore read error as ReadFile set bytesRead to zero
 		// in this case and it is enough for our usage.
 		const BOOL ret = PeekNamedPipe(childStdErr, NULL, 1, NULL, &bytesRead, NULL);
@@ -947,7 +945,7 @@ void NBackup::print_child_stderr()
 				if (*pEndL == '\n')
 					pEndL++;
 			}
-			else 
+			else
 			{
 				pEndL = strchr(p, '\n');
 				if (pEndL)

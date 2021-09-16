@@ -214,7 +214,6 @@ namespace Jrd {
 			fb_assert(pageSpace);
 
 			Jrd::jrd_file* file = pageSpace->file;
-			const bool isTempPage = pageSpace->isTemporary();
 
 			Jrd::BackupManager::StateReadGuard stateGuard(tdbb);
 			Jrd::BackupManager* bm = dbb->dbb_backup_manager;
