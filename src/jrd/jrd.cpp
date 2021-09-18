@@ -8000,6 +8000,12 @@ static void purge_transactions(thread_db* tdbb, Jrd::Attachment* attachment, con
 	Database* const dbb = attachment->att_database;
 	jrd_tra* const trans_dbk = attachment->att_dbkey_trans;
 
+	if (force_flag)
+	{
+		for (auto applier : attachment->att_repl_appliers)
+			applier->cleanupTransactions(tdbb);
+	}
+
 	unsigned int count = 0;
 	jrd_tra* next;
 

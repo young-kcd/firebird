@@ -134,7 +134,7 @@ namespace Jrd
 		static Applier* create(thread_db* tdbb);
 
 		void process(thread_db* tdbb, ULONG length, const UCHAR* data);
-
+		void cleanupTransactions(thread_db* tdbb);
 		void shutdown(thread_db* tdbb);
 
 		Attachment* getAttachment() const
@@ -159,7 +159,6 @@ namespace Jrd
 		void prepareTransaction(thread_db* tdbb, TraNumber traNum);
 		void commitTransaction(thread_db* tdbb, TraNumber traNum);
 		void rollbackTransaction(thread_db* tdbb, TraNumber traNum, bool cleanup);
-		void cleanupTransactions(thread_db* tdbb);
 
 		void startSavepoint(thread_db* tdbb, TraNumber traNum);
 		void cleanupSavepoint(thread_db* tdbb, TraNumber traNum, bool undo);
