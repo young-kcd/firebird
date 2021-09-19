@@ -940,7 +940,10 @@ static bool nt_error(const TEXT* string,
 	Arg::StatusVector status;
 	status << Arg::Gds(isc_io_error) << Arg::Str(string) << Arg::Str(file->fil_string) <<
 			  Arg::Gds(operation);
-	if (lastError != ERROR_SUCCESS)
+
+	// Caller must already handle ERROR_IO_PENDING by calling GetOverlappedResult().
+	// Since GetOverlappedResult() not clears last error - ignore it here.
+	if (lastError != ERROR_SUCCESS && lastError != ERROR_IO_PENDING)
 		status << Arg::Windows(lastError);
 
 	if (!status_vector)
