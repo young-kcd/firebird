@@ -1507,9 +1507,34 @@ static bool getMappedFileName(void* addr, PathName& mappedName)
 	return false;
 }
 
+
+void SharedMemoryBase::internalUnmap()
+{
+	if (!UnmapViewOfFile(sh_mem_header))
+		return;
+
+	sh_mem_header = NULL;
+	CloseHandle(sh_mem_object);
+	CloseHandle(sh_mem_handle);
+
+	CloseHandle(sh_mem_interest);
+
+	if (!UnmapViewOfFile(sh_mem_hdr_address))
+		return;
+
+	sh_mem_hdr_address = NULL;
+	CloseHandle(sh_mem_hdr_object);
+
+	ISC_mutex_fini(&sh_mem_winMutex);
+	sh_mem_mutex = NULL;
+
+	if (sh_mem_unlink)
+		unlinkFile();
+}
+
 SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject* cb, bool /*skipLock*/)
   :	sh_mem_mutex(0), sh_mem_length_mapped(0),
-	sh_mem_handle(0), sh_mem_object(0), sh_mem_interest(0), sh_mem_hdr_object(0),
+	sh_mem_handle(INVALID_HANDLE_VALUE), sh_mem_object(0), sh_mem_interest(0), sh_mem_hdr_object(0),
 	sh_mem_hdr_address(0), sh_mem_header(NULL), sh_mem_callback(cb), sh_mem_unlink(false)
 {
 /**************************************
@@ -1527,10 +1552,6 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	fb_assert(sh_mem_callback);
 	sh_mem_name[0] = '\0';
 
-	ISC_mutex_init(&sh_mem_winMutex, filename);
-	sh_mem_mutex = &sh_mem_winMutex;
-
-	HANDLE file_handle;
 	HANDLE event_handle = 0;
 	int retry_count = 0;
 
@@ -1585,14 +1606,13 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 		{
 			CloseHandle(event_handle);
 			if (retry_count > 10)
-			{
-				system_call_failed::raise("WaitForSingleObject", 0);
-			}
+				(Arg::Gds(isc_random) << Arg::Str("Wait for shared memory initialization timed out.")).raise();
+
 			goto retry;
 		}
 	}
 
-	file_handle = CreateFile(expanded_filename,
+	HANDLE file_handle = CreateFile(expanded_filename,
 							 GENERIC_READ | GENERIC_WRITE,
 							 FILE_SHARE_READ | FILE_SHARE_WRITE,
 							 NULL,
@@ -1810,6 +1830,9 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 		(Arg::Gds(isc_random) << Arg::Str("Wrong file for memory mapping, see details in firebird.log")).raise();
 	}
 
+	ISC_mutex_init(&sh_mem_winMutex, filename);
+	sh_mem_mutex = &sh_mem_winMutex;
+
 	sh_mem_header = (MemoryHeader*) address;
 	sh_mem_length_mapped = length;
 	sh_mem_handle = file_handle;
@@ -1819,27 +1842,26 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	sh_mem_hdr_address = header_address;
 	strcpy(sh_mem_name, filename);
 
-	sh_mem_callback->initialize(this, init_flag);
+	try
+	{
+		sh_mem_callback->initialize(this, init_flag);
+	}
+	catch (const Exception&)
+	{
+		internalUnmap();
+		throw;
+	}
 
 	if (init_flag)
 	{
-		err = 0;
 		if (!FlushViewOfFile(address, 0))
 		{
 			err = GetLastError();
+			internalUnmap();
+			system_call_failed::raise("FlushViewOfFile", err);
 		}
 
 		SetEvent(event_handle);
-		if (err)
-		{
-			UnmapViewOfFile(address);
-			CloseHandle(file_obj);
-			UnmapViewOfFile(header_address);
-			CloseHandle(header_obj);
-			CloseHandle(event_handle);
-			CloseHandle(file_handle);
-			system_call_failed::raise("FlushViewOfFile", err);
-		}
 	}
 }
 #endif
@@ -2761,36 +2783,7 @@ SharedMemoryBase::~SharedMemoryBase()
 	}
 #endif
 
-#ifdef UNIX
 	internalUnmap();
-#endif
-
-#ifdef WIN_NT
-	if (!UnmapViewOfFile(sh_mem_header))
-	{
-		return;
-	}
-	sh_mem_header = NULL;
-	CloseHandle(sh_mem_object);
-	CloseHandle(sh_mem_handle);
-
-	CloseHandle(sh_mem_interest);
-
-	if (!UnmapViewOfFile(sh_mem_hdr_address))
-	{
-		return;
-	}
-	sh_mem_hdr_address = NULL;
-	CloseHandle(sh_mem_hdr_object);
-
-	ISC_mutex_fini(&sh_mem_winMutex);
-	sh_mem_mutex = NULL;
-
-	if (sh_mem_unlink)
-	{
-		unlinkFile();
-	}
-#endif
 }
 
 void SharedMemoryBase::logError(const char* text, const CheckStatusWrapper* status)

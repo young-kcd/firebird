@@ -252,9 +252,6 @@ public:
 #endif
 	bool remapFile(Firebird::CheckStatusWrapper* status, ULONG newSize, bool truncateFlag);
 	void removeMapFile();
-#ifdef UNIX
-	void internalUnmap();
-#endif
 
 	void mutexLock();
 	bool mutexLockCond();
@@ -284,10 +281,10 @@ public:
 
 	ULONG	sh_mem_length_mapped;
 #ifdef WIN_NT
-	void*	sh_mem_handle;
-	void*	sh_mem_object;
-	void*	sh_mem_interest;
-	void*	sh_mem_hdr_object;
+	HANDLE	sh_mem_handle;					// file handle
+	HANDLE	sh_mem_object;					// file mapping
+	HANDLE	sh_mem_interest;				// event
+	HANDLE	sh_mem_hdr_object;				// file mapping
 	ULONG*	sh_mem_hdr_address;
 #endif
 	TEXT	sh_mem_name[MAXPATHLEN];
@@ -302,6 +299,7 @@ private:
 	bool sh_mem_unlink;
 #endif
 	void unlinkFile();
+	void internalUnmap();
 
 public:
 	enum MemoryTypes
