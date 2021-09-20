@@ -1671,29 +1671,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 			system_call_failed::raise("SetFilePointer", err);
 		}
 	}
-/*
-	else
-	{
-		if ((err != ERROR_ALREADY_EXISTS) || SetFilePointer(file_handle, 0, NULL, FILE_END) == 0)
-		{
-			CloseHandle(event_handle);
-			CloseHandle(file_handle);
 
-			// We are not initializer but file is created by us.
-			//if (err == NO_ERROR)
-			//	DeleteFile(expanded_filename);
-
-			if (retry_count < 100)	// 1 sec
-				goto retry;
-
-			if (err == ERROR_ALREADY_EXISTS)
-				(Arg::Gds(isc_random) << Arg::Str("File for memory mapping is empty.")).raise();
-
-			// unexpected error
-			system_call_failed::raise("CreateFile", err);
-		}
-	}
-*/
 	// Create a file mapping object that will be used to make remapping possible.
 	// The current length of real mapped file and its name are saved in it.
 
