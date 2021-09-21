@@ -1517,9 +1517,6 @@ void JRD_transliterate(thread_db* tdbb, Firebird::IStatus* vector) throw()
 
 const ULONG SWEEP_INTERVAL		= 20000;
 
-const char DBL_QUOTE			= '\042';
-const char SINGLE_QUOTE			= '\'';
-
 
 static void trace_warning(thread_db* tdbb, FbStatusVector* userStatus, const char* func)
 {
@@ -7460,7 +7457,6 @@ static void init_database_lock(thread_db* tdbb)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	// Main database lock
 
@@ -8039,7 +8035,6 @@ static void purge_transactions(thread_db* tdbb, Jrd::Attachment* attachment, con
  *	from an attachment
  *
  **************************************/
-	Database* const dbb = attachment->att_database;
 	jrd_tra* const trans_dbk = attachment->att_dbkey_trans;
 
 	if (force_flag)

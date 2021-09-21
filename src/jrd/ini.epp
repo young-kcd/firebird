@@ -1435,7 +1435,6 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, AutoRequest&
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	STORE(REQUEST_HANDLE handle) X IN RDB$FIELDS

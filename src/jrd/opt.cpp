@@ -363,11 +363,11 @@ static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* csbTail);
 // macro definitions
 
 #ifdef OPT_DEBUG
-const int DEBUG_PUNT			= 5;
-const int DEBUG_RELATIONSHIPS	= 4;
-const int DEBUG_ALL				= 3;
-const int DEBUG_CANDIDATE		= 2;
-const int DEBUG_BEST			= 1;
+//const int DEBUG_PUNT			= 5;
+//const int DEBUG_RELATIONSHIPS	= 4;
+//const int DEBUG_ALL			= 3;
+//const int DEBUG_CANDIDATE		= 2;
+//const int DEBUG_BEST			= 1;
 const int DEBUG_NONE			= 0;
 
 FILE *opt_debug_file = 0;

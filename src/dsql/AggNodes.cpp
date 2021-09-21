@@ -2237,16 +2237,15 @@ void RegrCountAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 
 bool RegrCountAggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 {
+	EVL_expr(tdbb, request, arg);
+	if (request->req_flags & req_null)
+		return false;
+
+	EVL_expr(tdbb, request, arg2);
+	if (request->req_flags & req_null)
+		return false;
+
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
-
-	dsc* desc = EVL_expr(tdbb, request, arg);
-	if (request->req_flags & req_null)
-		return false;
-
-	dsc* desc2 = EVL_expr(tdbb, request, arg2);
-	if (request->req_flags & req_null)
-		return false;
-
 	++impure->vlu_misc.vlu_int64;
 
 	return true;

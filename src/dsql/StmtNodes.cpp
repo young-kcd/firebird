@@ -2007,7 +2007,6 @@ DeclareSubProcNode* DeclareSubProcNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 		for (NestConst<ParameterClause>* i = paramArray.begin(); i != paramArray.end(); ++i)
 		{
 			ParameterClause* param = *i;
-			const unsigned paramIndex = i - paramArray.begin();
 
 			SignatureParameter sigParam(pool);
 			sigParam.type = 1;	// output

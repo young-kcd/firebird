@@ -73,7 +73,6 @@ void InternalProvider::jrdAttachmentEnd(thread_db* tdbb, Attachment* att, bool f
 		return;
 
 	{	// scope
-		Database* dbb = tdbb->getDatabase();
 		MutexLockGuard guard(m_mutex, FB_FUNCTION);
 
 		AttToConnMap::Accessor acc(&m_connections);
