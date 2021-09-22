@@ -1062,6 +1062,15 @@ if test "$ac_cv_sys_file_offset_bits" = "no"; then
    AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)],[])
 fi
 
+dnl Use int128 support for big endians
+if test "$ac_cv_c_bigendian" = "yes"; then
+  ABSEIL_BUILD_FLG=Y
+  AC_DEFINE(FB_USE_ABSEIL_INT128, 1, [Use Abseil's class int128])
+else
+  ABSEIL_BUILD_FLG=N
+fi
+AC_SUBST(ABSEIL_BUILD_FLG)
+
 AC_CHECK_SIZEOF(void *)
 VOID_PTR_SIZE=$ac_cv_sizeof_void_p
 AC_SUBST(VOID_PTR_SIZE)
