@@ -46,6 +46,10 @@ ifeq ($(RE2_BUILD_FLG),Y)
  WFLAGS += -I$(ROOT)/extern/re2
 endif
 
+ifeq ($(ABSEIL_BUILD_FLG),Y)
+ WFLAGS += -I$(ROOT)/extern/int128
+endif
+
 ifeq ($(LSB_FLG),Y)
   WFLAGS += -DLSB_BUILD
 endif
