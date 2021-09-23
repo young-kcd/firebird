@@ -388,38 +388,158 @@ public:
 
 	Int128 operator&=(FB_UINT64 mask);
 	Int128 operator&=(ULONG mask);
-	Int128 operator-() const;
-	Int128 operator/(unsigned value) const;
-	Int128 operator+=(unsigned value);
-	Int128 operator-=(unsigned value);
-	Int128 operator*=(unsigned value);
 
-	Int128 operator<<(int value) const;
-	Int128 operator>>(int value) const;
+	int compare(Int128 tgt) const
+	{
+		return v < tgt.v ? -1 : v > tgt.v ? 1 : 0;
+	}
 
-	int compare(Int128 tgt) const;
-	bool operator>(Int128 value) const;
-	bool operator>=(Int128 value) const;
-	bool operator==(Int128 value) const;
-	bool operator!=(Int128 value) const;
-	Int128 operator&=(Int128 value);
-	Int128 operator|=(Int128 value);
-	Int128 operator^=(Int128 value);
-	Int128 operator~() const;
-	int sign() const;
+	Int128 operator/ (unsigned value) const
+	{
+		Int128 rc (*this);
+		rc.v.DivInt (value);
+		return rc;
+	}
 
-	Int128 abs() const;
-	Int128 neg() const;
-	Int128 add(Int128 op2) const;
-	Int128 sub(Int128 op2) const;
+	Int128 operator<< (int value) const
+	{
+		Int128 rc (*this);
+		rc.v <<= value;
+		return rc;
+	}
+
+	Int128 operator>> (int value) const
+	{
+		Int128 rc (*this);
+		rc.v >>= value;
+		return rc;
+	}
+
+	Int128 operator&= (Int128 value)
+	{
+		v &= value.v;
+		return *this;
+	}
+
+	Int128 operator|= (Int128 value)
+	{
+		v |= value.v;
+		return *this;
+	}
+
+	Int128 operator^= (Int128 value)
+	{
+		v ^= value.v;
+		return *this;
+	}
+
+	Int128 operator~ () const
+	{
+		Int128 rc (*this);
+		rc.v.BitNot ();
+		return rc;
+	}
+
+	Int128 operator- () const
+	{
+		return neg ();
+	}
+
+	Int128 operator+= (unsigned value)
+	{
+		v.AddInt (value);
+		return *this;
+	}
+
+	Int128 operator-= (unsigned value)
+	{
+		v.SubInt (value);
+		return *this;
+	}
+
+	Int128 operator*= (unsigned value)
+	{
+		v.MulInt (value);
+		return *this;
+	}
+
+	bool operator> (Int128 value) const
+	{
+		return v > value.v;
+	}
+
+	bool operator>= (Int128 value) const
+	{
+		return v >= value.v;
+	}
+
+	bool operator== (Int128 value) const
+	{
+		return v == value.v;
+	}
+
+	bool operator!= (Int128 value) const
+	{
+		return v != value.v;
+	}
+
+	int sign() const
+	{
+		return v.IsSign() ? -1 : v.IsZero() ? 0 : 1;
+	}
+
+	Int128 abs() const
+	{
+		Int128 rc(*this);
+		if (rc.v.Abs())
+			overflow();
+		return rc;
+	}
+
+	Int128 neg() const
+	{
+		Int128 rc(*this);
+		if (rc.v.ChangeSign())
+			overflow();
+		return rc;
+	}
+
+	Int128 add(Int128 op2) const
+	{
+		Int128 rc(*this);
+		if (rc.v.Add(op2.v))
+			overflow();
+		return rc;
+	}
+
+	Int128 sub(Int128 op2) const
+	{
+		Int128 rc(*this);
+		if (rc.v.Sub(op2.v))
+			overflow();
+		return rc;
+	}
+
 	Int128 mul(Int128 op2) const;
 	Int128 div(Int128 op2, int scale) const;
-	Int128 mod(Int128 op2) const;
+
+	Int128 mod(Int128 op2) const
+	{
+		Int128 tmp(*this);
+		Int128 rc;
+		if (tmp.v.Div(op2.v, rc.v))
+			zerodivide();
+		return rc;
+	}
 
 	void getTable32(unsigned* dwords) const;		// internal data in per-32bit form
 	void setTable32(const unsigned* dwords);
 	void setScale(int scale);
-	UCHAR* getBytes();
+
+	UCHAR* getBytes()
+	{
+		return (UCHAR*)(v.table);
+	}
 
 protected:
 	ttmath::Int<TTMATH_BITS(128)> v;

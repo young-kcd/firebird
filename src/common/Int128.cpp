@@ -493,43 +493,6 @@ double Int128::toDouble() const
 	return rc;
 }
 
-int Int128::compare(Int128 tgt) const
-{
-	return v < tgt.v ? -1 : v > tgt.v ? 1 : 0;
-}
-
-Int128 Int128::abs() const
-{
-	Int128 rc(*this);
-	if (rc.v.Abs())
-		overflow();
-	return rc;
-}
-
-Int128 Int128::neg() const
-{
-	Int128 rc(*this);
-	if (rc.v.ChangeSign())
-		overflow();
-	return rc;
-}
-
-Int128 Int128::add(Int128 op2) const
-{
-	Int128 rc(*this);
-	if (rc.v.Add(op2.v))
-		overflow();
-	return rc;
-}
-
-Int128 Int128::sub(Int128 op2) const
-{
-	Int128 rc(*this);
-	if (rc.v.Sub(op2.v))
-		overflow();
-	return rc;
-}
-
 Int128 Int128::mul(Int128 op2) const
 {
 	Int128 rc(*this);
@@ -572,25 +535,6 @@ Int128 Int128::div(Int128 op2, int scale) const
 
 	op1.setScale(scale);
 	return op1;
-}
-
-Int128 Int128::mod(Int128 op2) const
-{
-	Int128 tmp(*this);
-	Int128 rc;
-	if (tmp.v.Div(op2.v, rc.v))
-		zerodivide();
-	return rc;
-}
-
-int Int128::sign() const
-{
-	return v.IsSign() ? -1 : v.IsZero() ? 0 : 1;
-}
-
-UCHAR* Int128::getBytes()
-{
-	return (UCHAR*)(v.table);
 }
 
 void Int128::getTable32(unsigned* dwords) const
@@ -656,95 +600,6 @@ Int128 Int128::operator&=(ULONG mask)
 	for (unsigned i = 1; i < FB_NELEM(v.table); ++i)
 		v.table[i] = 0;
 	return *this;
-}
-
-Int128 Int128::operator/(unsigned value) const
-{
-	Int128 rc(*this);
-	rc.v.DivInt(value);
-	return rc;
-}
-
-Int128 Int128::operator<<(int value) const
-{
-	Int128 rc(*this);
-	rc.v <<= value;
-	return rc;
-}
-
-Int128 Int128::operator>>(int value) const
-{
-	Int128 rc(*this);
-	rc.v >>= value;
-	return rc;
-}
-
-Int128 Int128::operator&=(Int128 value)
-{
-	v &= value.v;
-	return *this;
-}
-
-Int128 Int128::operator|=(Int128 value)
-{
-	v |= value.v;
-	return *this;
-}
-
-Int128 Int128::operator^=(Int128 value)
-{
-	v ^= value.v;
-	return *this;
-}
-
-Int128 Int128::operator~() const
-{
-	Int128 rc(*this);
-	rc.v.BitNot();
-	return rc;
-}
-
-Int128 Int128::operator-() const
-{
-	return neg();
-}
-
-Int128 Int128::operator+=(unsigned value)
-{
-	v.AddInt(value);
-	return *this;
-}
-
-Int128 Int128::operator-=(unsigned value)
-{
-	v.SubInt(value);
-	return *this;
-}
-
-Int128 Int128::operator*=(unsigned value)
-{
-	v.MulInt(value);
-	return *this;
-}
-
-bool Int128::operator>(Int128 value) const
-{
-	return v > value.v;
-}
-
-bool Int128::operator>=(Int128 value) const
-{
-	return v >= value.v;
-}
-
-bool Int128::operator==(Int128 value) const
-{
-	return v == value.v;
-}
-
-bool Int128::operator!=(Int128 value) const
-{
-	return v != value.v;
 }
 
 void Int128::zerodivide()
