@@ -1235,6 +1235,8 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 			blb::release_array(transaction->tra_arrays);
 	}
 
+	fb_assert(transaction->tra_temp_blobs_count == 0);
+
 	if (transaction->tra_pool)
 	{
 		// Iterate the doubly linked list of requests for transaction and null out the transaction references
