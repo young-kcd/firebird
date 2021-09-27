@@ -176,7 +176,7 @@ external:
 	ln -sf $(ROOT)/extern/decNumber/libdecFloat.a $(LIB)
 
 ifeq ($(ABSEIL_BUILD_FLG),Y)
-	$(MAKE) -C $(ROOT)/extern/int128/absl/numeric
+	CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" $(MAKE) -C $(ROOT)/extern/int128/absl/numeric
 	ln -sf $(ROOT)/extern/int128/absl/numeric/libi128.a $(LIB)
 endif
 
@@ -336,7 +336,7 @@ cross2:
 	$(MAKE) re2
 	CC="$(CC)" CFLAGS="$(CFLAGS)" $(MAKE) -C $(ROOT)/extern/decNumber
 	ln -sf $(ROOT)/extern/decNumber/libdecFloat$(CROSS).a $(LIB)
-	$(MAKE) -C $(ROOT)/extern/int128/absl/numeric
+	CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)" $(MAKE) -C $(ROOT)/extern/int128/absl/numeric
 	ln -sf $(ROOT)/extern/int128/absl/numeric/libi128$(CROSS).a $(LIB)
 	$(MAKE) yvalve
 	$(MAKE) engine
