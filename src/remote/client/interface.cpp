@@ -539,7 +539,7 @@ private:
 
 	void sendBlobPacket(unsigned size, const UCHAR* ptr, bool flash);
 	void sendMessagePacket(unsigned size, const UCHAR* ptr, bool flash);
-	void sendDeferredPacket(rem_port* port, PACKET* packet, bool flash);
+	void sendDeferredPacket(IStatus* status, rem_port* port, PACKET* packet, bool flash);
 
 	Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete> messageStreamBuffer, blobStreamBuffer;
 	ULONG messageStream;
@@ -2354,8 +2354,15 @@ Batch* Statement::createBatch(CheckStatusWrapper* status, IMessageMetadata* inMe
 		batch->p_batch_pb.cstr_length = parLength;
 		batch->p_batch_pb.cstr_address = par;
 
-		send_partial_packet(port, packet);
-		defer_packet(port, packet, true);
+		if (port->port_flags & PORT_lazy)
+		{
+			send_partial_packet(port, packet);
+			defer_packet(port, packet, true);
+		}
+		else {
+			send_and_receive(status, rdb, packet);
+		}
+
 		message->msg_address = NULL;
 
 		Batch* b = FB_NEW Batch(this, inMetadata, parLength, par);
@@ -2492,7 +2499,7 @@ void Batch::sendMessagePacket(unsigned count, const UCHAR* ptr, bool flash)
 	batch->p_batch_data.cstr_address = const_cast<UCHAR*>(ptr);
 	statement->rsr_batch_size = alignedSize;
 
-	sendDeferredPacket(port, packet, flash);
+	sendDeferredPacket(nullptr, port, packet, flash);
 	messageCount += count;
 }
 
@@ -2636,32 +2643,44 @@ void Batch::sendBlobPacket(unsigned size, const UCHAR* ptr, bool flash)
 	batch->p_batch_blob_data.cstr_address = const_cast<UCHAR*>(ptr);
 	batch->p_batch_blob_data.cstr_length = size;
 
-	sendDeferredPacket(port, packet, flash);
+	sendDeferredPacket(nullptr, port, packet, flash);
 
 	blobCount += size;
 }
 
 
-void Batch::sendDeferredPacket(rem_port* port, PACKET* packet, bool flash)
+void Batch::sendDeferredPacket(IStatus* status, rem_port* port, PACKET* packet, bool flash)
 {
-	send_partial_packet(port, packet);
-	defer_packet(port, packet, true);
-
-	if ((port->port_protocol >= PROTOCOL_VERSION17) &&
-		((port->port_deferred_packets->getCount() >= DEFER_BATCH_LIMIT) || flash))
+	if (port->port_flags & PORT_lazy)
 	{
-		packet->p_operation = op_batch_sync;
-		send_packet(port, packet);
-		receive_packet(port, packet);
+		send_partial_packet(port, packet);
+		defer_packet(port, packet, true);
 
-		LocalStatus warning;
-		port->checkResponse(&warning, packet, false);
-		Rsr* statement = stmt->getStatement();
-		if (statement->haveException())
+		if ((port->port_protocol >= PROTOCOL_VERSION17) &&
+			((port->port_deferred_packets->getCount() >= DEFER_BATCH_LIMIT) || flash))
 		{
-			cleanup();
-			statement->raiseException();
+			packet->p_operation = op_batch_sync;
+			send_packet(port, packet);
+			receive_packet(port, packet);
+
+			LocalStatus warning;
+			port->checkResponse(&warning, packet, false);
+			Rsr* statement = stmt->getStatement();
+			if (statement->haveException())
+			{
+				cleanup();
+				statement->raiseException();
+			}
 		}
+	}
+	else if (status)
+	{
+		send_and_receive(status, port->port_context, packet);
+	}
+	else
+	{
+		LocalStatus local;
+		send_and_receive(&local, port->port_context, packet);
 	}
 }
 
@@ -2696,8 +2715,7 @@ void Batch::setDefaultBpb(CheckStatusWrapper* status, unsigned parLength, const 
 		batch->p_batch_blob_bpb.cstr_address = par;
 		batch->p_batch_blob_bpb.cstr_length = parLength;
 
-		send_partial_packet(port, packet);
-		defer_packet(port, packet, true);
+		sendDeferredPacket(status, port, packet, true);
 	}
 	catch (const Exception& ex)
 	{
@@ -2844,8 +2862,7 @@ void Batch::registerBlob(CheckStatusWrapper* status, const ISC_QUAD* existingBlo
 		batch->p_batch_exist_id = *existingBlob;
 		batch->p_batch_blob_id = *blobId;
 
-		send_partial_packet(port, packet);
-		defer_packet(port, packet, true);
+		sendDeferredPacket(status, port, packet, true);
 	}
 	catch (const Exception& ex)
 	{
