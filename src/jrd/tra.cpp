@@ -1511,6 +1511,12 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, TraNumber number, int 
 	UCHAR* address = tip->tip_transactions + byte;
 	const int old_state = ((*address) >> shift) & TRA_MASK;
 
+	if (old_state == tra_committed && state != old_state)
+	{
+		CCH_RELEASE(tdbb, &window);
+		gds__log("Attempt to change state of the already committed transaction.\n\Please, nNotify Firebird developers.");
+	}
+
 #ifdef SUPERSERVER_V2
 	CCH_MARK(tdbb, &window);
 	const ULONG generation = tip->tip_header.pag_generation;
@@ -1947,8 +1953,14 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, TraNumber number, jrd_tra::wait_t 
 
 	if (state == tra_active)
 	{
-		state = tra_dead;
-		TRA_set_state(tdbb, 0, number, tra_dead);
+		// Double check via TIP to be absolutely sure
+		state = TRA_fetch_state(tdbb, number);
+
+		if (state == tra_active)
+		{
+			state = tra_dead;
+			TRA_set_state(tdbb, 0, number, tra_dead);
+		}
 	}
 
 	if (number > trans->tra_top)

@@ -382,11 +382,17 @@ int TipCache::snapshotState(thread_db* tdbb, TraNumber number)
 
 		return TRA_fetch_state(tdbb, number);
 	}
-	// if the transaction has been started since we last looked, extend the cache upward
+	else
+	{
+		const bool extend = (pos >= m_cache.getCount());
+		sync.unlock();
 
-	sync.unlock();
+		// if the transaction has been started since we last looked, extend the cache upward,
+		// else fill the gap inside the cache 
 
-	return extendCache(tdbb, number);
+		return extend ? extendCache(tdbb, number) :
+			TRA_fetch_state(tdbb, number);
+	}
 }
 
 
