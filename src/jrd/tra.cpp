@@ -1514,7 +1514,7 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, TraNumber number, int 
 	if (old_state == tra_committed && state != old_state)
 	{
 		CCH_RELEASE(tdbb, &window);
-		gds__log("Attempt to change state of the already committed transaction.\n\Please, nNotify Firebird developers.");
+		gds__log("Attempt to change state of the already committed transaction.\n\tPlease, notify Firebird developers.");
 	}
 
 #ifdef SUPERSERVER_V2
