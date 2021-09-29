@@ -258,6 +258,7 @@ void makeBin(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* r
 void makeBinShift(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeCeilFloor(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
+void makeDateDiff(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeDecode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeEncode64(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeDecodeHex(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
@@ -1271,6 +1272,30 @@ void makeDateAdd(DataTypeUtilBase*, const SysFunction*, dsc* result, int argsCou
 		return;
 
 	*result = *args[2];
+	result->setNullable(isNullable);
+}
+
+
+void makeDateDiff(DataTypeUtilBase* dataTypeUtil, const SysFunction*, dsc* result, int argsCount, const dsc** args)
+{
+	if (dataTypeUtil->getDialect() == 1)
+		result->makeDouble();
+	else
+	{
+		if (argsCount >= 1 &&
+			args[0]->dsc_address &&	// constant
+			CVT_get_long(args[0], 0, JRD_get_thread_data()->getAttachment()->att_dec_status, ERR_post) == blr_extract_millisecond)
+		{
+			result->makeInt64(ISC_TIME_SECONDS_PRECISION_SCALE + 3);
+		}
+		else
+			result->makeInt64(0);
+	}
+
+	bool isNullable;
+	if (initResult(result, argsCount, args, &isNullable))
+		return;
+
 	result->setNullable(isNullable);
 }
 
@@ -3873,6 +3898,7 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 	}
 
 	SINT64 result = 0;
+	SCHAR scale = 0;
 
 	switch (part)
 	{
@@ -3919,10 +3945,9 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 
 		case blr_extract_millisecond:
 			result = (SINT64) ONE_DAY *
-				(timestamp2.value().timestamp_date - timestamp1.value().timestamp_date) * 1000;
-			result += ((SINT64) timestamp2.value().timestamp_time -
-				(SINT64) timestamp1.value().timestamp_time) /
-				(ISC_TIME_SECONDS_PRECISION / 1000);
+				(timestamp2.value().timestamp_date - timestamp1.value().timestamp_date) * ISC_TIME_SECONDS_PRECISION;
+			result += (SINT64) timestamp2.value().timestamp_time - (SINT64) timestamp1.value().timestamp_time;
+			scale = ISC_TIME_SECONDS_PRECISION_SCALE + 3;
 			break;
 
 		default:
@@ -3934,7 +3959,7 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 	}
 
 	impure->vlu_misc.vlu_int64 = result;
-	impure->vlu_desc.makeInt64(0, &impure->vlu_misc.vlu_int64);
+	impure->vlu_desc.makeInt64(scale, &impure->vlu_misc.vlu_int64);
 
 	return &impure->vlu_desc;
 }
@@ -6456,7 +6481,7 @@ const SysFunction SysFunction::functions[] =
 		{"COT", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (void*) trfCot},
 		{"CRYPT_HASH", 2, 2, setParamsHash, makeHash, evlHash, NULL},
 		{"DATEADD", 3, 3, setParamsDateAdd, makeDateAdd, evlDateAdd, NULL},
-		{"DATEDIFF", 3, 3, setParamsDateDiff, makeInt64Result, evlDateDiff, NULL},
+		{"DATEDIFF", 3, 3, setParamsDateDiff, makeDateDiff, evlDateDiff, NULL},
 		{"DECRYPT", CRYPT_ARG_MAX, CRYPT_ARG_MAX, setParamsEncrypt, makeCrypt, evlDecrypt, NULL},
 		{"ENCRYPT", CRYPT_ARG_MAX, CRYPT_ARG_MAX, setParamsEncrypt, makeCrypt, evlEncrypt, NULL},
 		{"EXP", 1, 1, setParamsDblDec, makeDblDecResult, evlExp, NULL},
