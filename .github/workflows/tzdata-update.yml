@@ -9,8 +9,17 @@ jobs:
     if: github.repository == 'FirebirdSQL/firebird'
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        branch:
+          - master
+          - v4.0-release
+
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: ${{ matrix.branch }}
 
       - name: Checkout ICU
         run: git clone --depth 1 https://github.com/unicode-org/icu-data.git -b main /tmp/icu-checkout
@@ -35,4 +44,7 @@ jobs:
           commit-message: Update tzdata.
           title: Update tzdata.
           assignees: asfernandes
-          branch: work/tzdata-update
+          branch: work/tzdata-update-${{ matrix.branch }}
+          base: ${{ matrix.branch }}
+          labels: |
+            type: task
