@@ -2039,7 +2039,7 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 
 		case blr_extract_millisecond:
 			result = (SINT64) oneDay *
-				(timestamp2.value().timestamp_date - timestamp1.value().timestamp_date) * 1000;
+				(timestamp2.value().timestamp_date - timestamp1.value().timestamp_date) * ISC_TIME_SECONDS_PRECISION;
 			result += (SINT64) timestamp2.value().timestamp_time - (SINT64) timestamp1.value().timestamp_time;
 			scale = ISC_TIME_SECONDS_PRECISION_SCALE + 3;
 			break;
