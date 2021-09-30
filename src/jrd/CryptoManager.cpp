@@ -1016,6 +1016,7 @@ namespace Jrd {
 
 							// scheduling
 							JRD_reschedule(tdbb);
+							JRD_reschedule(tempDbb);
 
 							// nbackup state check
 							int bak_state = Ods::hdr_nbak_unknown;

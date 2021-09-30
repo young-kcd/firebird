@@ -258,6 +258,7 @@ void Thread::yield()
 #else
 	pthread_yield();
 #endif // _POSIX_PRIORITY_SCHEDULING
+	sleep(0);
 }
 
 #endif // USE_POSIX_THREADS
