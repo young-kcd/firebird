@@ -735,8 +735,7 @@ static int validate(Firebird::UtilSvc* svc)
 
 	FbLocalStatus status;
 	AutoPlugin<JProvider> jProv(JProvider::getInstance());
-	RefPtr<JAttachment> jAtt;
-	jAtt.assignRefNoIncr(jProv->attachDatabase(&status, expandedFilename.c_str(), dpb.getBufferLength(), dpb.getBuffer()));
+	RefPtr<JAttachment> jAtt(jProv->attachDatabase(&status, expandedFilename.c_str(), dpb.getBufferLength(), dpb.getBuffer()));
 
 	if (status->getState() & IStatus::STATE_ERRORS)
 	{
