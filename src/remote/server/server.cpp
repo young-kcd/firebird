@@ -3740,7 +3740,11 @@ void rem_port::replicate(P_REPLICATE* repl, PACKET* sendL)
 	}
 
 	if (!this->port_replicator)
+	{
 		this->port_replicator = rdb->rdb_iface->createReplicator(&status_vector);
+		check(&status_vector);
+		fb_assert(this->port_replicator);
+	}
 
 	if (repl->p_repl_data.cstr_length)
 	{
