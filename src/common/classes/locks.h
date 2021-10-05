@@ -331,6 +331,13 @@ public:
 		lock->enter(aReason);
 	}
 
+	RaiiLockGuard(M* aLock, const char* aReason)
+		: lock(aLock)
+	{
+		if (lock)
+			lock->enter(aReason);
+	}
+
 	~RaiiLockGuard()
 	{
 		try

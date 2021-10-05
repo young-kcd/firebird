@@ -59,11 +59,11 @@
 #include <memory.h>
 
 #ifdef DEBUG_GDS_ALLOC
-#define FB_NEW new(__FILE__, __LINE__)
+#define FB_NEW new(*getDefaultMemoryPool(), __FILE__, __LINE__)
 #define FB_NEW_POOL(pool) new(pool, __FILE__, __LINE__)
 #define FB_NEW_RPT(pool, count) new(pool, count, __FILE__, __LINE__)
 #else // DEBUG_GDS_ALLOC
-#define FB_NEW new
+#define FB_NEW new(*getDefaultMemoryPool())
 #define FB_NEW_POOL(pool) new(pool)
 #define FB_NEW_RPT(pool, count) new(pool, count)
 #endif // DEBUG_GDS_ALLOC
@@ -159,6 +159,8 @@ private:
 
 class MemoryPool
 {
+friend class ExternalMemoryHandler;
+
 private:
 	MemPool* pool;
 
@@ -174,6 +176,7 @@ public:
 	enum RecommendedBufferSize { MAX_MEDIUM_BLOCK_SIZE = 64384 };	// MediumLimits::TOP_LIMIT - 128
 
 	static MemoryPool* defaultMemoryManager;
+	static MemoryPool* externalMemoryManager;
 
 public:
 	// Create memory pool instance
@@ -193,14 +196,10 @@ public:
 
 	void* calloc(size_t size ALLOC_PARAMS);
 
-#ifdef LIBC_CALLS_NEW
-	static void* globalAlloc(size_t s ALLOC_PARAMS);
-#else
 	static void* globalAlloc(size_t s ALLOC_PARAMS)
 	{
 		return defaultMemoryManager->allocate(s ALLOC_PASS_ARGS);
 	}
-#endif // LIBC_CALLS_NEW
 
 	void* allocate(size_t size ALLOC_PARAMS);
 
@@ -218,8 +217,8 @@ public:
 	void setStatsGroup(MemoryStats& stats) noexcept;
 
 	// Initialize and finalize global memory pool
-	static void init();
-	static void cleanup();
+	static void initDefaultPool();
+	static void cleanupDefaultPool();
 
 	// Initialize context pool
 	static void contextPoolInit();
@@ -282,12 +281,24 @@ private:
 	friend class MemPool;
 };
 
+void initExternalMemoryPool();
+
 } // namespace Firebird
 
 static inline Firebird::MemoryPool* getDefaultMemoryPool() noexcept
 {
 	fb_assert(Firebird::MemoryPool::defaultMemoryManager);
 	return Firebird::MemoryPool::defaultMemoryManager;
+}
+
+static inline Firebird::MemoryPool* getExternalMemoryPool() noexcept
+{
+	using namespace Firebird;
+
+	if (!MemoryPool::externalMemoryManager)
+		initExternalMemoryPool();
+
+	return MemoryPool::externalMemoryManager;
 }
 
 namespace Firebird {
@@ -341,16 +352,12 @@ private:
 using Firebird::MemoryPool;
 
 // operators new and delete
-extern void* operator new(size_t s ALLOC_PARAMS);
-extern void* operator new[](size_t s ALLOC_PARAMS);
-extern void operator delete(void* mem ALLOC_PARAMS) noexcept;
-extern void operator delete[](void* mem ALLOC_PARAMS) noexcept;
-
 
 inline void* operator new(size_t s, Firebird::MemoryPool& pool ALLOC_PARAMS)
 {
 	return pool.allocate(s ALLOC_PASS_ARGS);
 }
+
 inline void* operator new[](size_t s, Firebird::MemoryPool& pool ALLOC_PARAMS)
 {
 	return pool.allocate(s ALLOC_PASS_ARGS);
@@ -360,6 +367,7 @@ inline void operator delete(void* mem, Firebird::MemoryPool& pool ALLOC_PARAMS) 
 {
 	MemoryPool::globalFree(mem);
 }
+
 inline void operator delete[](void* mem, Firebird::MemoryPool& pool ALLOC_PARAMS) noexcept
 {
 	MemoryPool::globalFree(mem);
@@ -370,6 +378,7 @@ inline void operator delete(void* mem, std::size_t s ALLOC_PARAMS) noexcept
 {
 	MemoryPool::globalFree(mem);
 }
+
 inline void operator delete[](void* mem, std::size_t s ALLOC_PARAMS) noexcept
 {
 	MemoryPool::globalFree(mem);
@@ -390,16 +399,6 @@ namespace Firebird
 	class GlobalStorage
 	{
 	public:
-		void* operator new(size_t size ALLOC_PARAMS)
-		{
-			return getDefaultMemoryPool()->allocate(size ALLOC_PASS_ARGS);
-		}
-
-		void operator delete(void* mem)
-		{
-			getDefaultMemoryPool()->deallocate(mem);
-		}
-
 		MemoryPool& getPool() const
 		{
 			return *getDefaultMemoryPool();

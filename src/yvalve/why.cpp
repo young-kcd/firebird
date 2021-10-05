@@ -137,12 +137,8 @@ private:
 
 	// Fool-proof requested by Alex
 	// Private memory operators to be sure that this class is used in heap only with launcher
-#ifdef DEBUG_GDS_ALLOC
-	void* operator new (size_t s, const char* file, int line) { return MemoryPool::globalAlloc(s, file, line); }
-	void operator delete (void* mem, const char* file, int line) { MemoryPool::globalFree(mem); }
-#else
-	void* operator new (size_t s) { return MemoryPool::globalAlloc(s); }
-#endif
+	void* operator new (size_t s, Firebird::MemoryPool& pool ALLOC_PARAMS) { return pool.allocate(s ALLOC_PASS_ARGS); }
+	void operator delete (void* mem, Firebird::MemoryPool& ALLOC_PARAMS) { MemoryPool::globalFree(mem); }
 	void operator delete (void* mem) { MemoryPool::globalFree(mem); }
 
 public:
