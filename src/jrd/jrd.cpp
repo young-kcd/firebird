@@ -5196,12 +5196,14 @@ IReplicator* JAttachment::createReplicator(CheckStatusWrapper* user_status)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status, "JResultSet::fetchNext");
+			transliterateException(tdbb, ex, user_status, "JAttachment::createReplicator");
+			return nullptr;
 		}
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
+		return nullptr;
 	}
 
 	successful_completion(user_status);
