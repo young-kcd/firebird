@@ -374,17 +374,20 @@ namespace
 			DispatcherPtr provider;
 			FbLocalStatus localStatus;
 
-			m_attachment =
+			const auto att =
 				provider->attachDatabase(&localStatus, m_config->dbName.c_str(),
-								   	     dpb.getBufferLength(), dpb.getBuffer());
+										 dpb.getBufferLength(), dpb.getBuffer());
 			localStatus.check();
+			m_attachment.assignRefNoIncr(att);
 
-			m_replicator = m_attachment->createReplicator(&localStatus);
+			const auto repl = m_attachment->createReplicator(&localStatus);
 			localStatus.check();
+			m_replicator.assignRefNoIncr(repl);
 
 			fb_assert(!m_sequence);
 
-			const auto transaction = m_attachment->startTransaction(&localStatus, 0, NULL);
+			RefPtr<ITransaction> transaction(REF_NO_INCR,
+				m_attachment->startTransaction(&localStatus, 0, NULL));
 			localStatus.check();
 
 			const char* sql =
@@ -398,9 +401,6 @@ namespace
 								  NULL, NULL, result.getMetadata(), result.getData());
 			localStatus.check();
 
-			transaction->commit(&localStatus);
-			localStatus.check();
-
 			m_sequence = result->sequence;
 #endif
 			m_connected = true;
@@ -410,18 +410,9 @@ namespace
 
 		void shutdown()
 		{
-			if (m_attachment)
-			{
-#ifndef NO_DATABASE
-				FbLocalStatus localStatus;
-				m_replicator->close(&localStatus);
-				m_attachment->detach(&localStatus);
-#endif
-				m_replicator = NULL;
-				m_attachment = NULL;
-				m_sequence = 0;
-			}
-
+			m_replicator = nullptr;
+			m_attachment = nullptr;
+			m_sequence = 0;
 			m_connected = false;
 		}
 
@@ -430,6 +421,7 @@ namespace
 #ifdef NO_DATABASE
 			return true;
 #else
+			fb_assert(m_replicator);
 			m_replicator->process(&status, length, data);
 			return status.isSuccess();
 #endif
@@ -472,8 +464,8 @@ namespace
 	private:
 		AutoPtr<const Replication::Config> m_config;
 		string m_lastError;
-		IAttachment* m_attachment;
-		IReplicator* m_replicator;
+		RefPtr<IAttachment> m_attachment;
+		RefPtr<IReplicator> m_replicator;
 		FB_UINT64 m_sequence;
 		bool m_connected;
 	};
