@@ -26,6 +26,9 @@
 #define JRD_ATTACHMENT_H
 
 #include "firebird.h"
+
+#define DEBUG_LCK_LIST
+
 // Definition of block types for data allocation in JRD
 #include "../include/fb_blk.h"
 #include "../jrd/scl.h"
