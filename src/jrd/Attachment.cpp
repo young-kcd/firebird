@@ -989,10 +989,10 @@ void Jrd::Attachment::SyncGuard::init(const char* f, bool
 
 	if (jStable)
 	{
-		jStable->getMutex()->enter(f);
+		jStable->getSync()->enter(f);
 		if (!jStable->getHandle())
 		{
-			jStable->getMutex()->leave();
+			jStable->getSync()->leave();
 			Arg::Gds(isc_att_shutdown).raise();
 		}
 	}
@@ -1004,13 +1004,13 @@ void StableAttachmentPart::manualLock(ULONG& flags, const ULONG whatLock)
 
 	if (whatLock & ATT_async_manual_lock)
 	{
-		asyncMutex.enter(FB_FUNCTION);
+		async.enter(FB_FUNCTION);
 		flags |= ATT_async_manual_lock;
 	}
 
 	if (whatLock & ATT_manual_lock)
 	{
-		mainMutex.enter(FB_FUNCTION);
+		mainSync.enter(FB_FUNCTION);
 		flags |= ATT_manual_lock;
 	}
 }
@@ -1020,7 +1020,7 @@ void StableAttachmentPart::manualUnlock(ULONG& flags)
 	if (flags & ATT_manual_lock)
 	{
 		flags &= ~ATT_manual_lock;
-		mainMutex.leave();
+		mainSync.leave();
 	}
 	manualAsyncUnlock(flags);
 }
@@ -1030,7 +1030,7 @@ void StableAttachmentPart::manualAsyncUnlock(ULONG& flags)
 	if (flags & ATT_async_manual_lock)
 	{
 		flags &= ~ATT_async_manual_lock;
-		asyncMutex.leave();
+		async.leave();
 	}
 }
 
@@ -1038,7 +1038,7 @@ void StableAttachmentPart::onIdleTimer(TimerImpl*)
 {
 	// Ensure attachment is still alive and still idle
 
-	MutexEnsureUnlock guard(*this->getMutex(), FB_FUNCTION);
+	EnsureUnlock<Sync, NotRefCounted> guard(*this->getSync(), FB_FUNCTION);
 	if (!guard.tryEnter())
 		return;
 

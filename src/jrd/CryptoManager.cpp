@@ -970,7 +970,7 @@ namespace Jrd {
 						dbb.dbb_database_name.c_str(), writer.getBufferLength(), writer.getBuffer()));
 					check(&status_vector);
 
-					MutexLockGuard attGuard(*(jAtt->getStable()->getMutex()), FB_FUNCTION);
+					AttSyncLockGuard attGuard(*(jAtt->getStable()->getSync()), FB_FUNCTION);
 					Attachment* att = jAtt->getHandle();
 					if (!att)
 						Arg::Gds(isc_att_shutdown).raise();
