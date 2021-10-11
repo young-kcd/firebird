@@ -4292,6 +4292,11 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 				resultStr = RO_VALUE;
 			else if (dbb->dbb_replica_mode == REPLICA_READ_WRITE)
 				resultStr = RW_VALUE;
+			else
+			{
+				fb_assert(dbb->dbb_replica_mode == REPLICA_NONE);
+				return NULL;
+			}
 		}
 		else if (nameStr == SESSION_ID_NAME)
 			resultStr.printf("%" SQUADFORMAT, PAG_attachment_id(tdbb));
