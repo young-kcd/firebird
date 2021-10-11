@@ -448,34 +448,42 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 		fb_assert(transaction);
 		const auto selfTraNum = transaction->tra_number;
 
+		const auto orgTraNum = rpb->rpb_transaction_nr;
+
 		// Code underneath is a slightly customized version of VIO_refetch_record,
 		// because in the case of deleted record followed by a commit we should
 		// find the original version (or die trying).
 
-		const auto orgTraNum = rpb->rpb_transaction_nr;
+		auto temp = *rpb;
+		temp.rpb_record = nullptr;
+		AutoPtr<Record> cleanupRecord;
 
 		// If the primary record version disappeared, we cannot proceed
 
-		if (!DPM_get(tdbb, rpb, LCK_read))
+		if (!DPM_get(tdbb, &temp, LCK_read))
 			Arg::Gds(isc_no_cur_rec).raise();
 
-		tdbb->bumpRelStats(RuntimeStatistics::RECORD_RPT_READS, rpb->rpb_relation->rel_id);
+		tdbb->bumpRelStats(RuntimeStatistics::RECORD_RPT_READS, relation->rel_id);
 
-		if (VIO_chase_record_version(tdbb, rpb, transaction, tdbb->getDefaultPool(), false, false))
+		if (VIO_chase_record_version(tdbb, &temp, transaction, tdbb->getDefaultPool(), false, false))
 		{
-			if (!(rpb->rpb_runtime_flags & RPB_undo_data))
-				VIO_data(tdbb, rpb, tdbb->getDefaultPool());
+			if (!(temp.rpb_runtime_flags & RPB_undo_data))
+				VIO_data(tdbb, &temp, tdbb->getDefaultPool());
 
-			if (rpb->rpb_transaction_nr == orgTraNum && orgTraNum != selfTraNum)
+			cleanupRecord = temp.rpb_record;
+
+			VIO_copy_record(tdbb, &temp, rpb);
+
+			if (temp.rpb_transaction_nr == orgTraNum && orgTraNum != selfTraNum)
 				continue; // we surely see the original record version
 		}
-		else if (!(rpb->rpb_flags & rpb_deleted))
+		else if (!(temp.rpb_flags & rpb_deleted))
 			Arg::Gds(isc_no_cur_rec).raise();
 
-		if (rpb->rpb_transaction_nr != selfTraNum)
+		if (temp.rpb_transaction_nr != selfTraNum)
 		{
 			// Ensure that somebody really touched this record
-			fb_assert(rpb->rpb_transaction_nr != orgTraNum);
+			fb_assert(temp.rpb_transaction_nr != orgTraNum);
 			// and we discovered it in READ COMMITTED transaction
 			fb_assert(transaction->tra_flags & TRA_read_committed);
 			// and our transaction isn't READ CONSISTENCY one
@@ -485,10 +493,10 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 		// We have found a more recent record version. Unless it's a delete stub,
 		// validate whether it's still suitable for the result set.
 
-		if (!(rpb->rpb_flags & rpb_deleted))
+		if (!(temp.rpb_flags & rpb_deleted))
 		{
-			fb_assert(rpb->rpb_length != 0);
-			fb_assert(rpb->rpb_address != nullptr);
+			fb_assert(temp.rpb_length != 0);
+			fb_assert(temp.rpb_address != nullptr);
 
 			// Record can be safely returned only if it has no fields
 			// acting as sort keys or they haven't been changed
@@ -509,7 +517,7 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 					continue;
 
 				const auto null1 = (*(data + item.flagOffset) == TRUE);
-				const auto null2 = !EVL_field(relation, rpb->rpb_record, item.fieldId, &from);
+				const auto null2 = !EVL_field(relation, temp.rpb_record, item.fieldId, &from);
 
 				if (null1 != null2)
 				{
@@ -553,14 +561,11 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 		// If it's our transaction who updated/deleted this record, punt.
 		// We don't know how to find the original record version.
 
-		if (rpb->rpb_transaction_nr == selfTraNum)
+		if (temp.rpb_transaction_nr == selfTraNum)
 			Arg::Gds(isc_no_cur_rec).raise();
 
 		// We have to find the original record version, sigh.
 		// Scan version chain backwards until it's done.
-
-		auto temp = *rpb;
-		temp.rpb_record = nullptr;
 
 		RuntimeStatistics::Accumulator backversions(tdbb, relation,
 													RuntimeStatistics::RECORD_BACKVERSION_READS);
@@ -583,10 +588,11 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 
 			VIO_data(tdbb, &temp, tdbb->getDefaultPool());
 
+			cleanupRecord.reset(temp.rpb_record);
+
 			++backversions;
 		}
 
 		VIO_copy_record(tdbb, &temp, rpb);
-		delete temp.rpb_record;
 	}
 }
