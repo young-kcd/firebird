@@ -1322,9 +1322,16 @@ namespace Jrd {
 		return 0;
 	}
 
-	ULONG CryptoManager::getCurrentPage() const
+	ULONG CryptoManager::getCurrentPage(thread_db* tdbb) const
 	{
-		return process ? currentPage : 0;
+		if (!process)
+			return 0;
+
+		if (currentPage)
+			return currentPage;
+
+		CchHdr hdr(tdbb, LCK_read);
+		return hdr->hdr_crypt_page;
 	}
 
 	ULONG CryptoManager::getLastPage(thread_db* tdbb)

@@ -297,7 +297,7 @@ public:
 	bool checkValidation(Firebird::IDbCryptPlugin* crypt);
 	void setDbInfo(Firebird::IDbCryptPlugin* cp);
 
-	ULONG getCurrentPage() const;
+	ULONG getCurrentPage(thread_db* tdbb) const;
 	UCHAR getCurrentState() const;
 	const char* getKeyName() const;
 	const char* getPluginName() const;

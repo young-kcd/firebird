@@ -901,7 +901,7 @@ void Monitoring::putDatabase(thread_db* tdbb, SnapshotData::DumpRecord& record)
 	// crypt thread status
 	if (dbb->dbb_crypto_manager)
 	{
-		record.storeInteger(f_mon_db_crypt_page, dbb->dbb_crypto_manager->getCurrentPage());
+		record.storeInteger(f_mon_db_crypt_page, dbb->dbb_crypto_manager->getCurrentPage(tdbb));
 		record.storeInteger(f_mon_db_crypt_state, dbb->dbb_crypto_manager->getCurrentState());
 	}
 
