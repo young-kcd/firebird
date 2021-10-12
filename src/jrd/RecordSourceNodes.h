@@ -484,7 +484,7 @@ public:
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
 
-	virtual void collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const;
+	virtual void collectStreams(SortedStreamList& streamList) const;
 
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
@@ -703,7 +703,7 @@ public:
 	virtual RecordSourceNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool containsStream(StreamType checkStream) const;
-	virtual void collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const;
+	virtual void collectStreams(SortedStreamList& streamList) const;
 
 	virtual void computeDbKeyStreams(StreamList& /*streamList*/) const
 	{
@@ -836,7 +836,7 @@ public:
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
 
-	virtual void collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const;
+	virtual void collectStreams(SortedStreamList& streamList) const;
 
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 

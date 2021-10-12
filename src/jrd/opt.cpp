@@ -179,10 +179,10 @@ namespace
 				csb->csb_rpt[*iter].deactivate();
 		}
 
-		bool isReferenced(CompilerScratch* csb, const ExprNode* node) const
+		bool isReferenced(const ExprNode* node) const
 		{
 			SortedStreamList nodeStreams;
-			node->collectStreams(csb, nodeStreams);
+			node->collectStreams(nodeStreams);
 
 			if (!nodeStreams.hasData())
 				return false;
@@ -558,7 +558,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 		{
 			BoolExprNode* const node = iter.object();
 
-			if (rse->rse_jointype != blr_inner && node->possiblyUnknown(opt))
+			if (rse->rse_jointype != blr_inner && node->possiblyUnknown())
 			{
 				// parent missing conjunctions shouldn't be
 				// distributed to FULL OUTER JOIN streams at all
@@ -1232,7 +1232,7 @@ static void check_sorts(CompilerScratch* csb, RseNode* rse)
 				// This position doesn't use a simple field, thus we should
 				// check the expression internals.
 				SortedStreamList streams;
-				(*sort_ptr)->collectStreams(csb, streams);
+				(*sort_ptr)->collectStreams(streams);
 
 				// We can use this sort only if there's a single stream
 				// referenced by the expression.
@@ -2413,7 +2413,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			// that are local to this stream. The remaining ones are left in piece
 			// as possible candidates for a merge/hash join.
 
-			if ((inversion && node->findStream(csb, stream)) ||
+			if ((inversion && node->findStream(stream)) ||
 				(!inversion && node->computable(csb, stream, true)))
 			{
 				compose(*tdbb->getDefaultPool(), &boolean, node);
@@ -2902,9 +2902,9 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 		{
 			River* const river1 = *iter1;
 
-			if (!river1->isReferenced(csb, node1))
+			if (!river1->isReferenced(node1))
 			{
-				if (!river1->isReferenced(csb, node2))
+				if (!river1->isReferenced(node2))
 					continue;
 
 				ValueExprNode* const temp = node1;
@@ -2918,7 +2918,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 			{
 				River* const river2 = *iter2;
 
-				if (river2->isReferenced(csb, node2))
+				if (river2->isReferenced(node2))
 				{
 					for (eq_class = classes; eq_class < last_class; eq_class += cnt)
 					{
