@@ -47,12 +47,12 @@ namespace
 		// ILogonInfo implementation
 		const char* name()
 		{
-			return att->getUserName().c_str();
+			return att->att_user ? att->att_user->getUserName().c_str() : "";
 		}
 
 		const char* role()
 		{
-			return att->getSqlRole().c_str();
+			return att->att_user ? att->att_user->getSqlRole().c_str() : "";
 		}
 
 		const char* networkProtocol()
