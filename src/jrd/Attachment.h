@@ -212,7 +212,7 @@ public:
 
 		void enter(const char* aReason)
 		{
-			int curTid = getThreadId();
+			ThreadId curTid = getThreadId();
 
 			if (threadId == curTid)
 			{
@@ -236,7 +236,7 @@ public:
 
 		bool tryEnter(const char* aReason)
 		{
-			int curTid = getThreadId();
+			ThreadId curTid = getThreadId();
 
 			if (threadId == curTid)
 			{
