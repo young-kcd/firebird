@@ -1338,15 +1338,15 @@ void ProcedureSourceNode::findDependentFromStreams(const OptimizerRetrieval* opt
 		targetList->findDependentFromStreams(optRet, streamList);
 }
 
-void ProcedureSourceNode::collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const
+void ProcedureSourceNode::collectStreams(SortedStreamList& streamList) const
 {
-	RecordSourceNode::collectStreams(csb, streamList);
+	RecordSourceNode::collectStreams(streamList);
 
 	if (sourceList)
-		sourceList->collectStreams(csb, streamList);
+		sourceList->collectStreams(streamList);
 
 	if (targetList)
-		targetList->collectStreams(csb, streamList);
+		targetList->collectStreams(streamList);
 }
 
 
@@ -2413,7 +2413,7 @@ bool WindowSourceNode::containsStream(StreamType checkStream) const
 	return false;
 }
 
-void WindowSourceNode::collectStreams(CompilerScratch* /*csb*/, SortedStreamList& streamList) const
+void WindowSourceNode::collectStreams(SortedStreamList& streamList) const
 {
 	for (ObjectsArray<Window>::const_iterator window = windows.begin();
 		 window != windows.end();
@@ -3431,27 +3431,27 @@ void RseNode::findDependentFromStreams(const OptimizerRetrieval* optRet,
 		(*ptr)->findDependentFromStreams(optRet, streamList);
 }
 
-void RseNode::collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const
+void RseNode::collectStreams(SortedStreamList& streamList) const
 {
 	if (rse_first)
-		rse_first->collectStreams(csb, streamList);
+		rse_first->collectStreams(streamList);
 
 	if (rse_skip)
-		rse_skip->collectStreams(csb, streamList);
+		rse_skip->collectStreams(streamList);
 
 	if (rse_boolean)
-		rse_boolean->collectStreams(csb, streamList);
+		rse_boolean->collectStreams(streamList);
 
 	// ASF: The legacy code used to visit rse_sorted and rse_projection, but the nod_sort was never
 	// handled.
-	// rse_sorted->collectStreams(csb, streamList);
-	// rse_projection->collectStreams(csb, streamList);
+	// rse_sorted->collectStreams(streamList);
+	// rse_projection->collectStreams(streamList);
 
 	const NestConst<RecordSourceNode>* ptr;
 	const NestConst<RecordSourceNode>* end;
 
 	for (ptr = rse_relations.begin(), end = rse_relations.end(); ptr != end; ++ptr)
-		(*ptr)->collectStreams(csb, streamList);
+		(*ptr)->collectStreams(streamList);
 }
 
 
@@ -3839,7 +3839,7 @@ static void genDeliverUnmapped(CompilerScratch* csb, BoolExprNodeStack* deliverS
 					// Check also the expression inside the map, because aggregate
 					// functions aren't allowed to be delivered to the WHERE clause.
 					ValueExprNode* value = map->sourceList[fieldId];
-					okNode = value->unmappable(csb, map, shellStream);
+					okNode = value->unmappable(map, shellStream);
 
 					if (okNode)
 						*newChildren[indexArg] = map->sourceList[fieldId];
@@ -3847,7 +3847,7 @@ static void genDeliverUnmapped(CompilerScratch* csb, BoolExprNodeStack* deliverS
 			}
 			else
 			{
-				if ((okNode = children[indexArg]->unmappable(csb, map, shellStream)))
+				if ((okNode = children[indexArg]->unmappable(map, shellStream)))
 					*newChildren[indexArg] = children[indexArg];
 			}
 		}

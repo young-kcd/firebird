@@ -396,11 +396,16 @@ template <typename To, typename From> static bool nodeIs(const NestConst<From>& 
 }
 
 
-class NodeRefsHolder : public Firebird::PermanentStorage
+class NodeRefsHolder : public Firebird::AutoStorage
 {
 public:
-	NodeRefsHolder(MemoryPool& pool)
-		: PermanentStorage(pool),
+	NodeRefsHolder()
+		: refs(getPool())
+	{
+	}
+
+	explicit NodeRefsHolder(MemoryPool& pool)
+		: AutoStorage(pool),
 		  refs(pool)
 	{
 	}
@@ -654,18 +659,18 @@ public:
 	}
 
 	// Check if expression could return NULL or expression can turn NULL into a true/false.
-	virtual bool possiblyUnknown(OptimizerBlk* opt);
+	virtual bool possiblyUnknown();
 
 	// Verify if this node is allowed in an unmapped boolean.
-	virtual bool unmappable(CompilerScratch* csb, const MapNode* mapNode, StreamType shellStream);
+	virtual bool unmappable(const MapNode* mapNode, StreamType shellStream);
 
 	// Return all streams referenced by the expression.
-	virtual void collectStreams(CompilerScratch* csb, SortedStreamList& streamList) const;
+	virtual void collectStreams(SortedStreamList& streamList) const;
 
-	virtual bool findStream(CompilerScratch* csb, StreamType stream)
+	virtual bool findStream(StreamType stream)
 	{
 		SortedStreamList streams;
-		collectStreams(csb, streams);
+		collectStreams(streams);
 
 		return streams.exist(stream);
 	}
@@ -679,7 +684,7 @@ public:
 	}
 
 	// Determine if two expression trees are the same.
-	virtual bool sameAs(CompilerScratch* csb, const ExprNode* other, bool ignoreStreams) const;
+	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 
 	// See if node is presently computable.
 	// A node is said to be computable, if all the streams involved
@@ -1022,19 +1027,19 @@ public:
 
 	virtual AggNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
-	virtual bool possiblyUnknown(OptimizerBlk* /*opt*/)
+	virtual bool possiblyUnknown()
 	{
 		return true;
 	}
 
-	virtual void collectStreams(CompilerScratch* /*csb*/, SortedStreamList& /*streamList*/) const
+	virtual void collectStreams(SortedStreamList& /*streamList*/) const
 	{
 		// ASF: Although in v2.5 the visitor happens normally for the node childs, nod_count has
 		// been set to 0 in CMP_pass2, so that doesn't happens.
 		return;
 	}
 
-	virtual bool unmappable(CompilerScratch* /*csb*/, const MapNode* /*mapNode*/, StreamType /*shellStream*/)
+	virtual bool unmappable(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
 	{
 		return false;
 	}
@@ -1155,23 +1160,23 @@ public:
 		fb_assert(false);
 	}
 
-	virtual bool possiblyUnknown(OptimizerBlk* /*opt*/)
+	virtual bool possiblyUnknown()
 	{
 		return true;
 	}
 
-	virtual bool unmappable(CompilerScratch* /*csb*/, const MapNode* /*mapNode*/, StreamType /*shellStream*/)
+	virtual bool unmappable(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
 	{
 		return false;
 	}
 
-	virtual void collectStreams(CompilerScratch* /*csb*/, SortedStreamList& streamList) const
+	virtual void collectStreams(SortedStreamList& streamList) const
 	{
 		if (!streamList.exist(getStream()))
 			streamList.add(getStream());
 	}
 
-	virtual bool sameAs(CompilerScratch* /*csb*/, const ExprNode* /*other*/, bool /*ignoreStreams*/) const
+	virtual bool sameAs(const ExprNode* /*other*/, bool /*ignoreStreams*/) const
 	{
 		return false;
 	}

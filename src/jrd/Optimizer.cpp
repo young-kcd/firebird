@@ -69,7 +69,7 @@ namespace
 		{
 			// The desired expression can be hidden inside a derived expression node,
 			// so try to recover it (see CORE-4118).
-			while (!idx->idx_expression->sameAs(csb, node, true))
+			while (!idx->idx_expression->sameAs(node, true))
 			{
 				DerivedExprNode* const derivedExpr = nodeAs<DerivedExprNode>(node);
 				CastNode* const cast = nodeAs<CastNode>(node);
@@ -83,8 +83,8 @@ namespace
 			}
 
 			SortedStreamList exprStreams, nodeStreams;
-			idx->idx_expression->collectStreams(csb, exprStreams);
-			node->collectStreams(csb, nodeStreams);
+			idx->idx_expression->collectStreams(exprStreams);
+			node->collectStreams(nodeStreams);
 
 			if (exprStreams.getCount() == 1 && exprStreams[0] == 0 &&
 				nodeStreams.getCount() == 1 && nodeStreams[0] == stream)
@@ -748,10 +748,10 @@ void OptimizerRetrieval::analyzeNavigation(const InversionCandidateList& inversi
 					ValueExprNode* const node1 = cmpNode->arg1;
 					ValueExprNode* const node2 = cmpNode->arg2;
 
-					if (node1->sameAs(csb, orgNode, false))
+					if (node1->sameAs(orgNode, false))
 						nodes.add(node2);
 
-					if (node2->sameAs(csb, orgNode, false))
+					if (node2->sameAs(orgNode, false))
 						nodes.add(node1);
 				}
 			}
