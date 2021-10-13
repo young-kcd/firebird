@@ -289,7 +289,7 @@ bool ExprNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 	return true;
 }
 
-bool ExprNode::possiblyUnknown()
+bool ExprNode::possiblyUnknown() const
 {
 	NodeRefsHolder holder;
 	getChildren(holder, false);
@@ -303,7 +303,7 @@ bool ExprNode::possiblyUnknown()
 	return false;
 }
 
-bool ExprNode::unmappable(const MapNode* mapNode, StreamType shellStream)
+bool ExprNode::unmappable(const MapNode* mapNode, StreamType shellStream) const
 {
 	NodeRefsHolder holder;
 	getChildren(holder, false);

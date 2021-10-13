@@ -95,7 +95,7 @@ public:
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual bool possiblyUnknown()
+	virtual bool possiblyUnknown() const
 	{
 		return blrOp == blr_equiv ? true : BoolExprNode::possiblyUnknown();
 	}
@@ -143,7 +143,7 @@ public:
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual bool possiblyUnknown()
+	virtual bool possiblyUnknown() const
 	{
 		return true;
 	}
@@ -176,7 +176,7 @@ public:
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual bool possiblyUnknown()
+	virtual bool possiblyUnknown() const
 	{
 		return true;
 	}
@@ -224,7 +224,7 @@ public:
 		return true;
 	}
 
-	virtual bool possiblyUnknown()
+	virtual bool possiblyUnknown() const
 	{
 		return true;
 	}

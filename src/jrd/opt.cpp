@@ -2413,7 +2413,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			// that are local to this stream. The remaining ones are left in piece
 			// as possible candidates for a merge/hash join.
 
-			if ((inversion && node->findStream(stream)) ||
+			if ((inversion && node->containsStream(stream)) ||
 				(!inversion && node->computable(csb, stream, true)))
 			{
 				compose(*tdbb->getDefaultPool(), &boolean, node);

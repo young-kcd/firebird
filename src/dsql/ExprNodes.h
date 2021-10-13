@@ -312,7 +312,7 @@ public:
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
-	virtual bool possiblyUnknown()
+	virtual bool possiblyUnknown() const
 	{
 		return true;
 	}
@@ -776,7 +776,7 @@ public:
 		dsqlDesc = desc;
 	}
 
-	virtual bool possiblyUnknown()
+	virtual bool possiblyUnknown() const
 	{
 		return false;
 	}
@@ -787,7 +787,7 @@ public:
 			streamList.add(fieldStream);
 	}
 
-	virtual bool unmappable(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
+	virtual bool unmappable(const MapNode* /*mapNode*/, StreamType /*shellStream*/) const
 	{
 		return true;
 	}
@@ -1642,7 +1642,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
-	virtual bool possiblyUnknown()
+	virtual bool possiblyUnknown() const
 	{
 		return false;
 	}
@@ -1900,12 +1900,12 @@ public:
 	virtual bool dsqlFieldFinder(FieldFinder& visitor);
 	virtual ValueExprNode* dsqlFieldRemapper(FieldRemapper& visitor);
 
-	virtual bool unmappable(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
+	virtual bool unmappable(const MapNode* /*mapNode*/, StreamType /*shellStream*/) const
 	{
 		return false;
 	}
 
-	virtual bool possiblyUnknown()
+	virtual bool possiblyUnknown() const
 	{
 		return true;
 	}
@@ -2114,7 +2114,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
-	virtual bool possiblyUnknown()
+	virtual bool possiblyUnknown() const
 	{
 		return true;
 	}
@@ -2163,7 +2163,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
-	virtual bool possiblyUnknown()
+	virtual bool possiblyUnknown() const
 	{
 		return true;
 	}
