@@ -42,6 +42,7 @@ class SimpleDelete
 public:
 	static void clear(What* ptr)
 	{
+		static_assert(sizeof(What) > 0, "can't delete pointer to incomplete type");
 		delete ptr;
 	}
 };
@@ -61,6 +62,7 @@ class ArrayDelete
 public:
 	static void clear(What* ptr)
 	{
+		static_assert(sizeof(What) > 0, "can't delete pointer to incomplete type");
 		delete[] ptr;
 	}
 };
