@@ -949,11 +949,6 @@ SINT64 WindowedStream::WindowStream::locateFrameRange(thread_db* tdbb, jrd_req* 
 
 	if (offsetDesc)
 	{
-		int direction = (frame->bound == WindowClause::Frame::Bound::FOLLOWING ? 1 : -1);
-
-		if (m_order->direction[0] == ORDER_DESC)
-			direction *= -1;
-
 		cacheValues(tdbb, request, &m_order->expressions, impure->orderValues,
 			AdjustFunctor(m_arithNodes[frame == m_frameExtent->frame1 ? 0 : 1], offsetDesc));
 	}
