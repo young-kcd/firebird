@@ -3495,18 +3495,18 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		}
 		END_FOR
 
+		if (!relation)
+		{
+			// The record was not found in RDB$INDICES.
+			// Apparently the index was dropped in the same transaction.
+			return false;
+		}
+
 		if (key_count != idx.idx_count)
 		{
 			ERR_post(Arg::Gds(isc_no_meta_update) <<
 					 Arg::Gds(isc_key_field_err) << Arg::Str(work->dfw_name));
 			// Msg352: too few key columns found for index %s (incorrect column name?)
-		}
-
-		if (!relation)
-		{
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_idx_create_err) << Arg::Str(work->dfw_name));
-			// Msg308: can't create index %s
 		}
 
 		// Make sure the relation info is all current
