@@ -474,7 +474,7 @@ void Applier::cleanupSavepoint(thread_db* tdbb, TraNumber traNum, bool undo)
 
 	LocalThreadContext context(tdbb, transaction);
 
-	if (!transaction->tra_save_point)
+	if (!transaction->tra_save_point || transaction->tra_save_point->isSystem())
 		raiseError("Transaction %" SQUADFORMAT" has no savepoints to cleanup", traNum);
 
 	if (undo)
