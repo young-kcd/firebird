@@ -905,7 +905,7 @@ Data source : @4', NULL, NULL)
 ('no_cursor', 'DSQL_open', 'dsql.cpp', NULL, 0, 795, NULL, 'Cannot open cursor for non-SELECT statement', NULL, NULL);
 ('dsql_window_incompat_frames', NULL, 'ExprNodes.cpp', NULL, 0, 796, NULL, 'If <window frame bound 1> specifies @1, then <window frame bound 2> shall not specify @2', NULL, NULL);
 ('dsql_window_range_multi_key', NULL, 'ExprNodes.cpp', NULL, 0, 797, NULL, 'RANGE based window with <expr> {PRECEDING | FOLLOWING} cannot have ORDER BY with more than one value', NULL, NULL);
-('dsql_window_range_inv_key_type', NULL, 'ExprNodes.cpp', NULL, 0, 798, NULL, 'RANGE based window must have an ORDER BY key of numerical, date, time or timestamp types', NULL, NULL);
+('dsql_window_range_inv_key_type', NULL, 'ExprNodes.cpp', NULL, 0, 798, NULL, 'RANGE based window with <offset> PRECEDING/FOLLOWING must have a single ORDER BY key of numerical, date, time or timestamp types', NULL, NULL);
 ('dsql_window_frame_value_inv_type', NULL, 'ExprNodes.cpp', NULL, 0, 799, NULL, 'Window RANGE/ROWS PRECEDING/FOLLOWING value must be of a numerical type', NULL, NULL);
 ('window_frame_value_invalid', NULL, 'ExprNodes.cpp', NULL, 0, 800, NULL, 'Invalid PRECEDING or FOLLOWING offset in window function: cannot be negative', NULL, NULL);
 ('dsql_window_not_found', NULL, 'ExprNodes.cpp', NULL, 0, 801, NULL, 'Window @1 not found', NULL, NULL);
