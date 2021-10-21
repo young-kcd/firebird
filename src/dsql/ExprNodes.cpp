@@ -9173,14 +9173,13 @@ WindowClause* WindowClause::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		doDsqlPass(dsqlScratch, extent ? extent : window->extent),
 		exclusion ? exclusion : window->exclusion);
 
-	if (node->order && node->extent && node->extent->unit == FrameExtent::Unit::RANGE &&
+	if (node->extent && node->extent->unit == FrameExtent::Unit::RANGE &&
 		(node->extent->frame1->value || (node->extent->frame2 && node->extent->frame2->value)))
 	{
-		if (node->order->items.getCount() > 1)
-		{
-			status_exception::raise(
-				Arg::Gds(isc_dsql_window_range_multi_key));
-		}
+		if (!node->order)
+			status_exception::raise(Arg::Gds(isc_dsql_window_range_inv_key_type));
+		else if (node->order->items.getCount() > 1)
+			status_exception::raise(Arg::Gds(isc_dsql_window_range_multi_key));
 		else
 		{
 			OrderNode* key = nodeAs<OrderNode>(node->order->items[0]);
@@ -9190,10 +9189,7 @@ WindowClause* WindowClause::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			DsqlDescMaker::fromNode(dsqlScratch, &desc, key->value);
 
 			if (!desc.isDateTime() && !desc.isNumeric())
-			{
-				status_exception::raise(
-					Arg::Gds(isc_dsql_window_range_inv_key_type));
-			}
+				status_exception::raise(Arg::Gds(isc_dsql_window_range_inv_key_type));
 		}
 	}
 
