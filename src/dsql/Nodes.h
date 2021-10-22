@@ -1434,11 +1434,11 @@ public:
 		POST_TRIG = 2
 	};
 
-	// Marks used by EraseNode, ModifyNode and StoreNode
-	static const unsigned MARK_POSITIONED	= 0x01;		// Erase|Modify node is positioned at explicit cursor
-	static const unsigned MARK_MERGE		= 0x02;		// node is part of MERGE statement
-	// Marks used by ForNode
-	static const unsigned MARK_FOR_UPDATE	= 0x04;		// implicit cursor used in UPDATE\DELETE\MERGE statement
+	// Marks used by EraseNode, ModifyNode, StoreNode and ForNode
+	static const unsigned MARK_POSITIONED		= 0x01;	// Erase|Modify node is positioned at explicit cursor
+	static const unsigned MARK_MERGE			= 0x02;	// node is part of MERGE statement
+	static const unsigned MARK_FOR_UPDATE		= 0x04;	// implicit cursor used in UPDATE\DELETE\MERGE statement
+	static const unsigned MARK_AVOID_COUNTERS	= 0x08;	// do not touch record counters
 
 	struct ExeState
 	{

@@ -95,8 +95,8 @@ bool SubQuery::fetch(thread_db* tdbb) const
 // ---------------------
 
 Cursor::Cursor(CompilerScratch* csb, const RecordSource* rsb,
-			   const VarInvariantArray* invariants, bool scrollable)
-	: m_top(rsb), m_invariants(invariants), m_scrollable(scrollable)
+			   const VarInvariantArray* invariants, bool scrollable, bool updateCounters)
+	: m_top(rsb), m_invariants(invariants), m_scrollable(scrollable), m_updateCounters(updateCounters)
 {
 	fb_assert(m_top);
 
@@ -175,8 +175,12 @@ bool Cursor::fetchNext(thread_db* tdbb) const
 		}
 	}
 
-	request->req_records_selected++;
-	request->req_records_affected.bumpFetched();
+	if (m_updateCounters)
+	{
+		request->req_records_selected++;
+		request->req_records_affected.bumpFetched();
+	}
+
 	impure->irsb_state = POSITIONED;
 
 	return true;
@@ -226,8 +230,12 @@ bool Cursor::fetchPrior(thread_db* tdbb) const
 		return false;
 	}
 
-	request->req_records_selected++;
-	request->req_records_affected.bumpFetched();
+	if (m_updateCounters)
+	{
+		request->req_records_selected++;
+		request->req_records_affected.bumpFetched();
+	}
+
 	impure->irsb_state = POSITIONED;
 
 	return true;
@@ -293,8 +301,12 @@ bool Cursor::fetchAbsolute(thread_db* tdbb, SINT64 offset) const
 		return false;
 	}
 
-	request->req_records_selected++;
-	request->req_records_affected.bumpFetched();
+	if (m_updateCounters)
+	{
+		request->req_records_selected++;
+		request->req_records_affected.bumpFetched();
+	}
+
 	impure->irsb_state = POSITIONED;
 
 	return true;
@@ -355,8 +367,12 @@ bool Cursor::fetchRelative(thread_db* tdbb, SINT64 offset) const
 		return false;
 	}
 
-	request->req_records_selected++;
-	request->req_records_affected.bumpFetched();
+	if (m_updateCounters)
+	{
+		request->req_records_selected++;
+		request->req_records_affected.bumpFetched();
+	}
+
 	impure->irsb_state = POSITIONED;
 
 	return true;

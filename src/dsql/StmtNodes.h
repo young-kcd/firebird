@@ -951,10 +951,9 @@ public:
 		  statement(NULL),
 		  cursor(NULL),
 		  parBlrBeginCnt(0),
+		  marks(0),
 		  dsqlLabelNumber(0),
 		  dsqlForceSingular(false),
-		  forUpdate(false),
-		  isMerge(false),
 		  withLock(false)
 	{
 	}
@@ -997,10 +996,9 @@ public:
 	NestConst<StmtNode> statement;
 	NestConst<Cursor> cursor;
 	int parBlrBeginCnt;
+	unsigned marks;
 	USHORT dsqlLabelNumber;
 	bool dsqlForceSingular;
-	bool forUpdate;				// part of UPDATE\DELETE\MERGE statement
-	bool isMerge;				// part of MERGE statement
 	bool withLock;				// part of SELECT ... WITH LOCK	statement
 };
 
@@ -1317,7 +1315,8 @@ public:
 	explicit StoreNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_STORE>(pool),
 		  dsqlFields(pool),
-		  validations(pool)
+		  validations(pool),
+		  marks(0)
 	{
 	}
 
@@ -1347,6 +1346,7 @@ public:
 	NestConst<StmtNode> statement2;
 	NestConst<StmtNode> subStore;
 	Firebird::Array<ValidateInfo> validations;
+	unsigned marks;
 	Nullable<USHORT> dsqlReturningLocalTableNumber;
 	Nullable<OverrideClause> overrideClause;
 };

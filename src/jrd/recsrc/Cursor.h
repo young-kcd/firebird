@@ -63,7 +63,7 @@ namespace Jrd
 
 	public:
 		Cursor(CompilerScratch* csb, const RecordSource* rsb, const VarInvariantArray* invariants,
-			bool scrollable);
+			bool scrollable, bool updateCounters);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -82,6 +82,11 @@ namespace Jrd
 			return m_top;
 		}
 
+		constexpr bool isUpdateCounters() const
+		{
+			return m_updateCounters;
+		}
+
 	public:
 		MetaName name;	// optional name for explicit PSQL cursors
 
@@ -90,6 +95,7 @@ namespace Jrd
 		const RecordSource* const m_top;
 		const VarInvariantArray* const m_invariants;
 		const bool m_scrollable;
+		const bool m_updateCounters;
 	};
 
 } // namespace

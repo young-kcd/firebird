@@ -1140,7 +1140,8 @@ const StmtNode* CursorStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeSt
 			switch (request->req_operation)
 			{
 				case jrd_req::req_evaluate:
-					request->req_records_affected.clear();
+					if (cursor->isUpdateCounters())
+						request->req_records_affected.clear();
 
 					if (cursorOp == blr_cursor_fetch)
 						fetched = cursor->fetchNext(tdbb);
@@ -1301,7 +1302,7 @@ DeclareCursorNode* DeclareCursorNode::pass2(thread_db* tdbb, CompilerScratch* cs
 	csb->csb_fors.add(rsb);
 
 	cursor = FB_NEW_POOL(*tdbb->getDefaultPool()) Cursor(csb, rsb, rse->rse_invariants,
-		(rse->flags & RseNode::FLAG_SCROLLABLE));
+		(rse->flags & RseNode::FLAG_SCROLLABLE), true);
 	csb->csb_dbg_info->curIndexToName.get(cursorNumber, cursor->name);
 
 	StreamList cursorStreams;
@@ -2617,7 +2618,8 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 	{
 		case jrd_req::req_evaluate:
 		{
-			request->req_records_affected.bumpModified(false);
+			if (!(marks & MARK_AVOID_COUNTERS))
+				request->req_records_affected.bumpModified(false);
 
 			if (!statement)
 				break;
@@ -2722,8 +2724,11 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 
 	if (!relation->rel_view_rse || (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG))
 	{
-		request->req_records_deleted++;
-		request->req_records_affected.bumpModified(true);
+		if (!(marks & MARK_AVOID_COUNTERS))
+		{
+			request->req_records_deleted++;
+			request->req_records_affected.bumpModified(true);
+		}
 	}
 
 	rpb->rpb_number.setValid(false);
@@ -4853,11 +4858,7 @@ DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 	ForNode* node = FB_NEW_POOL(pool) ForNode(pool);
 
 	if (csb->csb_blr_reader.peekByte() == blr_marks)
-	{
-		unsigned marks = PAR_marks(csb);
-		node->forUpdate = (marks & StmtNode::MARK_FOR_UPDATE) != 0;
-		node->isMerge = (marks & StmtNode::MARK_MERGE) != 0;
-	}
+		node->marks |= PAR_marks(csb);
 
 	if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_stall)
 		node->stall = PAR_parse_stmt(tdbb, csb);
@@ -4954,8 +4955,7 @@ string ForNode::internalPrint(NodePrinter& printer) const
 	NODE_PRINT(printer, statement);
 	NODE_PRINT(printer, cursor);
 	NODE_PRINT(printer, parBlrBeginCnt);
-	NODE_PRINT(printer, forUpdate);
-	NODE_PRINT(printer, isMerge);
+	NODE_PRINT(printer, marks);
 	NODE_PRINT(printer, withLock);
 
 	return "ForNode";
@@ -4979,7 +4979,6 @@ void ForNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 	dsqlScratch->appendUChar(blr_for);
 
-	const unsigned marks = (forUpdate ? StmtNode::MARK_FOR_UPDATE : 0) | (isMerge ? StmtNode::MARK_MERGE : 0);
 	if (marks)
 		dsqlScratch->putBlrMarkers(marks);
 
@@ -5023,7 +5022,7 @@ StmtNode* ForNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	doPass1(tdbb, csb, stall.getAddress());
 
 	{ // scope
-		AutoSetRestore<bool> autoImplicitCursor(&csb->csb_implicit_cursor, forUpdate);
+		AutoSetRestore<bool> autoImplicitCursor(&csb->csb_implicit_cursor, (marks & MARK_FOR_UPDATE));
 		doPass1(tdbb, csb, rse.getAddress());
 	}
 
@@ -5048,7 +5047,7 @@ StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	csb->csb_fors.add(rsb);
 
 	cursor = FB_NEW_POOL(*tdbb->getDefaultPool()) Cursor(csb, rsb, rse->rse_invariants,
-		(rse->flags & RseNode::FLAG_SCROLLABLE));
+		(rse->flags & RseNode::FLAG_SCROLLABLE), !(marks & MARK_AVOID_COUNTERS));
 	// ASF: We cannot define the name of the cursor here, but this is not a problem,
 	// as implicit cursors are always positioned in a valid record, and the name is
 	// only used to raise isc_cursor_not_positioned.
@@ -5056,7 +5055,7 @@ StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	if (rse->flags & RseNode::FLAG_WRITELOCK)
 		withLock = true;
 
-	if (isMerge)
+	if (marks & MARK_MERGE)
 		impureOffset = csb->allocImpure<ImpureMerge>();
 	else
 		impureOffset = csb->allocImpure<Impure>();
@@ -5076,7 +5075,7 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 			// initialize impure values
 			impure->savepoint = 0;
 			impure->writeLockMode = false;
-			if (isMerge)
+			if (marks & MARK_MERGE)
 				merge->recUpdated = nullptr;
 
 			if (!(transaction->tra_flags & TRA_system) &&
@@ -5086,8 +5085,11 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 				const Savepoint* const savepoint = transaction->startSavepoint();
 				impure->savepoint = savepoint->getNumber();
 			}
+
 			cursor->open(tdbb);
-			request->req_records_affected.clear();
+
+			if (cursor->isUpdateCounters())
+				request->req_records_affected.clear();
 
 			// fall into
 
@@ -5177,7 +5179,7 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 
 			cursor->close(tdbb);
 
-			if (isMerge)
+			if (marks & MARK_MERGE)
 			{
 				delete merge->recUpdated;
 				merge->recUpdated = nullptr;
@@ -5208,7 +5210,7 @@ void ForNode::setWriteLockMode(jrd_req* request) const
 void ForNode::checkRecordUpdated(thread_db* tdbb, jrd_req* request, record_param* rpb) const
 {
 	jrd_rel* relation = rpb->rpb_relation;
-	if (!isMerge || relation->isVirtual() || relation->rel_file || relation->rel_view_rse)
+	if (!(marks & MARK_MERGE) || relation->isVirtual() || relation->rel_file || relation->rel_view_rse)
 		return;
 
 	ImpureMerge* impure = request->getImpure<ImpureMerge>(impureOffset);
@@ -5223,7 +5225,7 @@ void ForNode::checkRecordUpdated(thread_db* tdbb, jrd_req* request, record_param
 void ForNode::setRecordUpdated(thread_db* tdbb, jrd_req* request, record_param* rpb) const
 {
 	jrd_rel* relation = rpb->rpb_relation;
-	if (!isMerge || relation->isVirtual() || relation->rel_file || relation->rel_view_rse)
+	if (!(marks & MARK_MERGE) || relation->isVirtual() || relation->rel_file || relation->rel_view_rse)
 		return;
 
 	ImpureMerge* impure = request->getImpure<ImpureMerge>(impureOffset);
@@ -6937,7 +6939,8 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 	switch (request->req_operation)
 	{
 		case jrd_req::req_evaluate:
-			request->req_records_affected.bumpModified(false);
+			if (!(marks & MARK_AVOID_COUNTERS))
+				request->req_records_affected.bumpModified(false);
 
 			if (impure->sta_state == 0 && forNode && forNode->isWriteLockMode(request))
 				request->req_operation = jrd_req::req_return;
@@ -7023,8 +7026,11 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 				if (!relation->rel_view_rse ||
 					(!subMod && (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG)))
 				{
-					request->req_records_updated++;
-					request->req_records_affected.bumpModified(true);
+					if (!(marks & MARK_AVOID_COUNTERS))
+					{
+						request->req_records_updated++;
+						request->req_records_affected.bumpModified(true);
+					}
 				}
 
 				if (statement2)
@@ -7311,6 +7317,9 @@ DmlNode* StoreNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 		}
 	}
 
+	if (csb->csb_blr_reader.peekByte() == blr_marks)
+		node->marks |= PAR_marks(csb);
+
 	const UCHAR* blrPos = csb->csb_blr_reader.getPos();
 
 	node->target = PAR_parseRecordSource(tdbb, csb);
@@ -7538,6 +7547,7 @@ string StoreNode::internalPrint(NodePrinter& printer) const
 	NODE_PRINT(printer, statement2);
 	NODE_PRINT(printer, subStore);
 	//// FIXME-PRINT: NODE_PRINT(printer, validations);
+	NODE_PRINT(printer, marks);
 
 	return "StoreNode";
 }
@@ -7888,10 +7898,14 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 	switch (request->req_operation)
 	{
 		case jrd_req::req_evaluate:
-			if (!nodeIs<ForNode>(parentStmt))
-				request->req_records_affected.clear();
+			if (!(marks & MARK_AVOID_COUNTERS))
+			{
+				if (!nodeIs<ForNode>(parentStmt))
+					request->req_records_affected.clear();
 
-			request->req_records_affected.bumpModified(false);
+				request->req_records_affected.bumpModified(false);
+			}
+
 			impure->sta_state = 0;
 			if (relation)
 				RLCK_reserve_relation(tdbb, transaction, relation, true);
@@ -7945,8 +7959,11 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 					!relation->rel_view_rse ||
 					(!subStore && (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG)))
 				{
-					request->req_records_inserted++;
-					request->req_records_affected.bumpModified(true);
+					if (!(marks & MARK_AVOID_COUNTERS))
+					{
+						request->req_records_inserted++;
+						request->req_records_affected.bumpModified(true);
+					}
 				}
 
 				if (statement2)
@@ -9524,6 +9541,7 @@ static void dsqlGenReturning(DsqlCompilerScratch* dsqlScratch, ReturningClause* 
 		const USHORT localStoreContext = dsqlScratch->contextNumber++;
 
 		dsqlScratch->appendUChar(blr_store);
+		dsqlScratch->putBlrMarkers(StmtNode::MARK_AVOID_COUNTERS);
 		dsqlScratch->appendUChar(blr_local_table_id);
 		dsqlScratch->appendUShort(localTableNumber.value);
 		dsqlScratch->appendMetaString("");	// alias
@@ -9570,6 +9588,7 @@ static void dsqlGenReturningLocalTableCursor(DsqlCompilerScratch* dsqlScratch, R
 	const USHORT localForContext = dsqlScratch->contextNumber++;
 
 	dsqlScratch->appendUChar(blr_for);
+	dsqlScratch->putBlrMarkers(StmtNode::MARK_AVOID_COUNTERS);
 	dsqlScratch->appendUChar(blr_rse);
 	dsqlScratch->appendUChar(1);
 	dsqlScratch->appendUChar(blr_local_table_id);
@@ -10555,8 +10574,8 @@ ForNode* pass2FindForNode(StmtNode* node, StreamType stream)
 	ForNode* forNode = nodeAs<ForNode>(node);
 	if (forNode && forNode->rse->containsStream(stream))
 	{
-		//fb_assert(forNode->forUpdate == true);
-		if (forNode->forUpdate)
+		//fb_assert(forNode->marks & StmtNode::MARK_FOR_UPDATE);
+		if (forNode->marks & StmtNode::MARK_FOR_UPDATE)
 			return forNode;
 	}
 
