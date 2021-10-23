@@ -36,13 +36,14 @@ jobs:
 
           echo $VERSION > extern/icu/tzdata/version.txt
           extern/icu/tzdata/update.sh
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3.5.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: Update tzdata.
-          title: Update tzdata.
+          commit-message: Update tzdata to version ${{ env.VERSION }}.
+          title: Update tzdata to version ${{ env.VERSION }}.
           assignees: asfernandes
           branch: work/tzdata-update-${{ matrix.branch }}
           base: ${{ matrix.branch }}
