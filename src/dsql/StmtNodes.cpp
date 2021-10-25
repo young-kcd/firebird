@@ -517,7 +517,8 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 					while (transaction->tra_save_point &&
 						transaction->tra_save_point->getNumber() >= savNumber)
 					{
-						transaction->rollforwardSavepoint(tdbb);
+						fb_assert(!transaction->tra_save_point->isChanging());
+						transaction->releaseSavepoint(tdbb);
 					}
 				}
 
@@ -542,12 +543,15 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 					// The savepoint of this block will be dealt with below.
 					// Do this only if error handlers exist. Otherwise, leave undo up to callers.
 
+					Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
+
 					while (transaction->tra_save_point &&
 						transaction->tra_save_point->getNumber() > savNumber &&
 						transaction->tra_save_point->getNext() &&
 						transaction->tra_save_point->getNext()->getNumber() > savNumber)
 					{
-						transaction->rollforwardSavepoint(tdbb, false);
+						REPL_save_cleanup(tdbb, transaction, transaction->tra_save_point, true);
+						transaction->tra_save_point = transaction->tra_save_point->rollforward(tdbb);
 					}
 
 					// There can be no savepoints above the given one
@@ -633,7 +637,8 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 					while (transaction->tra_save_point &&
 						transaction->tra_save_point->getNumber() >= savNumber)
 					{
-						transaction->rollforwardSavepoint(tdbb);
+						fb_assert(!transaction->tra_save_point->isChanging());
+						transaction->releaseSavepoint(tdbb);
 					}
 				}
 			}
@@ -649,12 +654,13 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 			{
 				savNumber = *request->getImpure<SavNumber>(impureOffset);
 
-				// rollforward all savepoints
+				// release all savepoints
 				while (transaction->tra_save_point &&
 					transaction->tra_save_point->getNext() &&
 					transaction->tra_save_point->getNumber() >= savNumber)
 				{
-					transaction->rollforwardSavepoint(tdbb);
+					fb_assert(!transaction->tra_save_point->isChanging());
+					transaction->releaseSavepoint(tdbb);
 				}
 			}
 
@@ -3298,7 +3304,8 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 			while (transaction->tra_save_point &&
 				transaction->tra_save_point->getNumber() > savNumber)
 			{
-				transaction->rollforwardSavepoint(tdbb);
+				fb_assert(!transaction->tra_save_point->isChanging());
+				transaction->releaseSavepoint(tdbb);
 			}
 		}
 	}
@@ -4075,7 +4082,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 			transaction->tra_save_point->isSystem() &&
 			transaction->tra_save_point->isChanging())
 		{
-			transaction->rollforwardSavepoint(tdbb, false);
+			transaction->releaseSavepoint(tdbb);
 		}
 
 		{ // scope
@@ -4100,7 +4107,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 					transaction->tra_save_point->isSystem() &&
 					transaction->tra_save_point->isChanging())
 				{
-					transaction->rollforwardSavepoint(tdbb, false);
+					transaction->releaseSavepoint(tdbb);
 				}
 
 				AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
@@ -5139,7 +5146,8 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 				while (transaction->tra_save_point &&
 					transaction->tra_save_point->getNumber() >= impure->savepoint)
 				{
-					transaction->rollforwardSavepoint(tdbb);
+					fb_assert(!transaction->tra_save_point->isChanging());
+					transaction->releaseSavepoint(tdbb);
 				}
 			}
 
@@ -5171,7 +5179,8 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 						while (transaction->tra_save_point &&
 							transaction->tra_save_point->getNumber() >= impure->savepoint)
 						{
-							transaction->rollforwardSavepoint(tdbb);
+							fb_assert(!transaction->tra_save_point->isChanging());
+							transaction->releaseSavepoint(tdbb);
 						}
 					}
 				}
@@ -8130,7 +8139,8 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 				while (transaction->tra_save_point &&
 					transaction->tra_save_point->getNumber() >= savNumber)
 				{
-					transaction->rollforwardSavepoint(tdbb);
+					fb_assert(!transaction->tra_save_point->isChanging());
+					transaction->releaseSavepoint(tdbb);
 				}
 
 				// Restore the savepoint initially created by EXE_start
@@ -8803,7 +8813,8 @@ const StmtNode* SavepointEncloseNode::execute(thread_db* tdbb, jrd_req* request,
 			while (transaction->tra_save_point &&
 				transaction->tra_save_point->getNumber() >= savNumber)
 			{
-				transaction->rollforwardSavepoint(tdbb);
+				fb_assert(!transaction->tra_save_point->isChanging());
+				transaction->releaseSavepoint(tdbb);
 			}
 		}
 	}

@@ -454,7 +454,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 		// Get rid of all user savepoints
 		while (transaction->tra_save_point && !transaction->tra_save_point->isRoot())
-			transaction->rollforwardSavepoint(tdbb);
+			transaction->releaseSavepoint(tdbb);
 
 		trace.finish(ITracePlugin::RESULT_SUCCESS);
 		return;
@@ -467,7 +467,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 	// Get rid of all user savepoints
 	while (transaction->tra_save_point && !transaction->tra_save_point->isRoot())
-		transaction->rollforwardSavepoint(tdbb);
+		transaction->releaseSavepoint(tdbb);
 
 	// Let replicator perform heavy and error-prone part of work
 
@@ -503,7 +503,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	// in indices and BLOBs after in-place updates
 
 	while (transaction->tra_save_point)
-		transaction->rollforwardSavepoint(tdbb);
+		transaction->releaseSavepoint(tdbb);
 
 	// Flush pages if transaction logically modified data
 
@@ -1397,7 +1397,10 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 			// It will clean up blob ids and temporary space anyway but faster than rollback
 			// because record data won't be updated with intermediate versions
 			while (transaction->tra_save_point && !transaction->tra_save_point->isRoot())
-				transaction->rollforwardSavepoint(tdbb);
+			{
+				REPL_save_cleanup(tdbb, transaction, transaction->tra_save_point, true);
+				transaction->tra_save_point = transaction->tra_save_point->rollforward(tdbb);
+			}
 
 			if (transaction->tra_save_point)
 			{
@@ -3981,11 +3984,14 @@ void jrd_tra::rollbackToSavepoint(thread_db* tdbb, SavNumber number)
  *
  **************************************/
 {
+	Jrd::ContextPoolHolder context(tdbb, tra_pool);
+
 	// Merge all savepoints (except the given one) into a single one
 	while (tra_save_point && tra_save_point->getNumber() > number &&
 		tra_save_point->getNext() && tra_save_point->getNext()->getNumber() >= number)
 	{
-		rollforwardSavepoint(tdbb, false);
+		REPL_save_cleanup(tdbb, this, tra_save_point, true);
+		tra_save_point = tra_save_point->rollforward(tdbb);
 	}
 
 	// Check that savepoint with the given number really exists
@@ -4000,10 +4006,10 @@ void jrd_tra::rollbackToSavepoint(thread_db* tdbb, SavNumber number)
 }
 
 
-void jrd_tra::rollforwardSavepoint(thread_db* tdbb, bool assertChanging)
+void jrd_tra::releaseSavepoint(thread_db* tdbb)
 /**************************************
  *
- *	 r o l l f o r w a r d S a v e p o i n t
+ *	 r e l e a s e S a v e p o i n t
  *
  **************************************
  *
@@ -4014,8 +4020,6 @@ void jrd_tra::rollforwardSavepoint(thread_db* tdbb, bool assertChanging)
 {
 	if (tra_save_point && !(tra_flags & TRA_system))
 	{
-		fb_assert(!assertChanging || !tra_save_point->isChanging());
-
 		REPL_save_cleanup(tdbb, this, tra_save_point, false);
 
 		Jrd::ContextPoolHolder context(tdbb, tra_pool);
