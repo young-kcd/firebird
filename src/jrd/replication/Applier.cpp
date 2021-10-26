@@ -852,15 +852,13 @@ void Applier::storeBlob(thread_db* tdbb, TraNumber traNum, bid* blobId,
 
 	LocalThreadContext context(tdbb, transaction);
 
-	const auto orgBlobId = blobId->get_permanent_number().getValue();
-
+	ULONG tempBlobId;
 	blb* blob = NULL;
 
-	ReplBlobMap::Accessor accessor(&transaction->tra_repl_blobs);
-	if (accessor.locate(orgBlobId))
-	{
-		const auto tempBlobId = accessor.current()->second;
+	const auto numericId = blobId->get_permanent_number().getValue();
 
+	if (transaction->tra_repl_blobs.get(numericId, tempBlobId))
+	{
 		if (transaction->tra_blobs->locate(tempBlobId))
 		{
 			const auto current = &transaction->tra_blobs->current();
@@ -872,7 +870,7 @@ void Applier::storeBlob(thread_db* tdbb, TraNumber traNum, bid* blobId,
 	{
 		bid newBlobId;
 		blob = blb::create(tdbb, transaction, &newBlobId);
-		transaction->tra_repl_blobs.put(orgBlobId, newBlobId.bid_temp_id());
+		transaction->tra_repl_blobs.put(numericId, newBlobId.bid_temp_id());
 	}
 
 	fb_assert(blob);
@@ -1125,13 +1123,13 @@ void Applier::doInsert(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 			if (!blobId->isEmpty())
 			{
+				ULONG tempBlobId;
 				bool found = false;
 
 				const auto numericId = blobId->get_permanent_number().getValue();
 
-				ReplBlobMap::Accessor accessor(&transaction->tra_repl_blobs);
-				if (accessor.locate(numericId) &&
-					transaction->tra_blobs->locate(accessor.current()->second))
+				if (transaction->tra_repl_blobs.get(numericId, tempBlobId) &&
+					transaction->tra_blobs->locate(tempBlobId))
 				{
 					const auto current = &transaction->tra_blobs->current();
 
@@ -1146,7 +1144,6 @@ void Applier::doInsert(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 						current->bli_materialized = true;
 						current->bli_blob_id = *blobId;
 						transaction->tra_blobs->fastRemove();
-						accessor.fastRemove();
 						found = true;
 					}
 				}
@@ -1164,7 +1161,7 @@ void Applier::doInsert(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	// Cleanup temporary blobs stored for this command beforehand but not materialized
 
-	ReplBlobMap::Accessor accessor(&transaction->tra_repl_blobs);
+	ReplBlobMap::ConstAccessor accessor(&transaction->tra_repl_blobs);
 	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 	{
 		const auto tempBlobId = accessor.current()->second;
@@ -1222,13 +1219,13 @@ void Applier::doUpdate(thread_db* tdbb, record_param* orgRpb, record_param* newR
 				}
 				else
 				{
+					ULONG tempBlobId;
 					bool found = false;
 
 					const auto numericId = dstBlobId->get_permanent_number().getValue();
 
-					ReplBlobMap::Accessor accessor(&transaction->tra_repl_blobs);
-					if (accessor.locate(numericId) &&
-						transaction->tra_blobs->locate(accessor.current()->second))
+					if (transaction->tra_repl_blobs.get(numericId, tempBlobId) &&
+						transaction->tra_blobs->locate(tempBlobId))
 					{
 						const auto current = &transaction->tra_blobs->current();
 
@@ -1243,7 +1240,6 @@ void Applier::doUpdate(thread_db* tdbb, record_param* orgRpb, record_param* newR
 							current->bli_materialized = true;
 							current->bli_blob_id = *dstBlobId;
 							transaction->tra_blobs->fastRemove();
-							accessor.fastRemove();
 							found = true;
 						}
 					}
@@ -1262,7 +1258,7 @@ void Applier::doUpdate(thread_db* tdbb, record_param* orgRpb, record_param* newR
 
 	// Cleanup temporary blobs stored for this command beforehand but not materialized
 
-	ReplBlobMap::Accessor accessor(&transaction->tra_repl_blobs);
+	ReplBlobMap::ConstAccessor accessor(&transaction->tra_repl_blobs);
 	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 	{
 		const auto tempBlobId = accessor.current()->second;
