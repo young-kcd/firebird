@@ -126,7 +126,8 @@ Config::Config()
 	  pluginName(getPool()),
 	  logErrors(true),
 	  reportErrors(false),
-	  disableOnError(true)
+	  disableOnError(true),
+	  cascadeReplication(false)
 {
 }
 
@@ -152,7 +153,8 @@ Config::Config(const Config& other)
 	  pluginName(getPool(), other.pluginName),
 	  logErrors(other.logErrors),
 	  reportErrors(other.reportErrors),
-	  disableOnError(other.disableOnError)
+	  disableOnError(other.disableOnError),
+	  cascadeReplication(other.cascadeReplication)
 {
 }
 
@@ -283,6 +285,10 @@ Config* Config::get(const PathName& lookupName)
 				else if (key == "disable_on_error")
 				{
 					parseBoolean(value, config->disableOnError);
+				}
+				else if (key == "cascade_replication")
+				{
+					parseBoolean(value, config->cascadeReplication);
 				}
 			}
 
