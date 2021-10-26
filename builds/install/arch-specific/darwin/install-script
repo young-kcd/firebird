@@ -74,7 +74,6 @@ chown -R firebird:firebird "$FB_FW"
 echo "Set the permissions correctly"
     chmod 777 "$FB_FW/Resources/"
     chmod 660 "$FB_FW/Resources/security5.fdb"
-    chmod 444 "$FB_FW/Resources/help/help.fdb"
 
 # Remove all older traces of Classic first
 echo "Remove all older traces of Classic first"

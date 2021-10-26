@@ -169,11 +169,6 @@ s none @prefix@/lib/libfbclient.so=@prefix@/lib/libfbclient.so.2
 
 f none @prefix@/lib/libib_util.so=$SRCDIR/lib/libib_util.so 0755 firebird firebird
 
-# help
-
-d none @prefix@/help 0755 firebird firebird
-f none @prefix@/help/help.fdb=$SRCDIR/help/help.fdb 0444 firebird firebird
-
 # messages
 
 f none @prefix@/firebird.msg=$SRCDIR/firebird.msg 0666 firebird firebird

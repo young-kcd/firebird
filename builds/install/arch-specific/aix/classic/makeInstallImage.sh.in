@@ -104,7 +104,6 @@ copyFiles() {
     mkdir -p $DestDir
     mkdir $DestDir/bin
     mkdir $DestDir/examples
-    mkdir $DestDir/help
     mkdir $DestDir/include
     mkdir $DestDir/intl
     mkdir $DestDir/lib

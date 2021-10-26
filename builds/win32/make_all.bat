@@ -42,7 +42,6 @@ if errorlevel 1 call :ERROR build failed - see make_all_%FB_TARGET_PLATFORM%.log
 @mkdir %FB_OUTPUT_DIR% 2>nul
 @mkdir %FB_OUTPUT_DIR%\intl 2>nul
 @mkdir %FB_OUTPUT_DIR%\tzdata 2>nul
-@mkdir %FB_OUTPUT_DIR%\help 2>nul
 @mkdir %FB_OUTPUT_DIR%\doc 2>nul
 @mkdir %FB_OUTPUT_DIR%\doc\sql.extensions 2>nul
 @mkdir %FB_OUTPUT_DIR%\include 2>nul
@@ -79,7 +78,6 @@ for %%v in (gpre_boot build_msg) do (
 
 :: DATABASES
 @copy %FB_GEN_DIR%\dbs\security5.FDB %FB_OUTPUT_DIR%\security5.fdb >nul
-@copy %FB_GEN_DIR%\dbs\HELP.fdb %FB_OUTPUT_DIR%\help\help.fdb >nul
 
 :: DOCS
 @copy %FB_ROOT_PATH%\*.md %FB_OUTPUT_DIR%\doc\ >nul
