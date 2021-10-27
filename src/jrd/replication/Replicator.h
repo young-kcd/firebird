@@ -261,7 +261,6 @@ namespace Replication
 		const Firebird::MetaString m_user;
 		Firebird::Array<Transaction*> m_transactions;
 		GeneratorCache m_generators;
-		Firebird::Mutex m_mutex;
 		Firebird::RefPtr<Firebird::IAttachment> m_attachment;
 
 		void initialize();
