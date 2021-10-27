@@ -456,12 +456,6 @@ namespace Jrd
 			GlobalObjectHolder::init(getUniqueFileId(), dbb_filename, dbb_config);
 	}
 
-	void Database::shutdownGlobalObjects()
-	{
-		if (dbb_gblobj_holder)
-			dbb_gblobj_holder->shutdown();
-	}
-
 	// Database::Linger class implementation
 
 	void Database::Linger::handler()
@@ -518,6 +512,10 @@ namespace Jrd
 
 	Database::GlobalObjectHolder::~GlobalObjectHolder()
 	{
+		// here we cleanup what should not be globally protected
+		if (m_replMgr)
+			m_replMgr->shutdown();
+
 		MutexLockGuard guard(g_mutex, FB_FUNCTION);
 
 		Database::GlobalObjectHolder::DbId* entry = g_hashTable->lookup(m_id);
@@ -530,12 +528,6 @@ namespace Jrd
 		m_replMgr = nullptr;
 
 		delete entry;
-	}
-
-	void Database::GlobalObjectHolder::shutdown()
-	{
-		if (m_replMgr)
-			m_replMgr->shutdown();
 	}
 
 	LockManager* Database::GlobalObjectHolder::getLockManager()

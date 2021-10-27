@@ -307,8 +307,6 @@ class Database : public pool_alloc<type_dbb>
 
 		~GlobalObjectHolder();
 
-		void shutdown();
-
 		LockManager* getLockManager();
 		EventManager* getEventManager();
 		Replication::Manager* getReplManager(bool create);

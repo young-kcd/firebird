@@ -67,8 +67,7 @@ namespace Replication
 		};
 
 	public:
-		Manager(const Firebird::string& dbId,
-				const Replication::Config* config);
+		Manager(const Firebird::string& dbId, const Replication::Config* config);
 		~Manager();
 
 		void shutdown();
@@ -114,7 +113,6 @@ namespace Replication
 
 		volatile bool m_shutdown;
 		volatile bool m_signalled;
-		Firebird::AtomicCounter m_waiters;
 
 		Firebird::AutoPtr<ChangeLog> m_changeLog;
 		Firebird::RWLock m_lock;
