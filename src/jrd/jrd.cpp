@@ -7883,8 +7883,6 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 
 	CCH_fini(tdbb);
 
-	dbb->shutdownGlobalObjects();
-
 	{ // scope
 		MutexLockGuard listGuard2(databases_mutex, FB_FUNCTION);
 
