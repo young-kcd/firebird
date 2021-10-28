@@ -88,6 +88,10 @@ goto :END
 ::===============================
 :: Set up the compiler environment
 
+if DEFINED VS170COMNTOOLS (
+@devenv /? >nul 2>nul
+@   if errorlevel 9009 (call "%VS170COMNTOOLS%\..\..\VC\Auxiliary\Build\vcvarsall.bat" %PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS170COMNTOOLS%\..\..\VC\Auxiliary\Build\vcvarsall.bat" %PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
+) else (
 if DEFINED VS160COMNTOOLS (
 @devenv /? >nul 2>nul
 @if errorlevel 9009 (call "%VS160COMNTOOLS%\..\..\VC\Auxiliary\Build\vcvarsall.bat" %PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS160COMNTOOLS%\..\..\VC\Auxiliary\Build\vcvarsall.bat" %PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
@@ -97,6 +101,7 @@ if DEFINED VS150COMNTOOLS (
 @if errorlevel 9009 (call "%VS150COMNTOOLS%\..\..\VC\Auxiliary\Build\vcvarsall.bat" %PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS150COMNTOOLS%\..\..\VC\Auxiliary\Build\vcvarsall.bat" %PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
 ) else (
 @goto :HELP
+)
 )
 )
 goto :END
