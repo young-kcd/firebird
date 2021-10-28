@@ -82,7 +82,7 @@ namespace Jrd
 			return m_top;
 		}
 
-#if defined __GNUC__ && (__GNUC__ > 6)
+#if (!defined __GNUC__) || (__GNUC__ > 6)
 		constexpr
 #endif
 				  bool isUpdateCounters() const
