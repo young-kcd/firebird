@@ -671,10 +671,9 @@ $(FIREBIRD_MSG):	$(BUILD_FILE) msg.timestamp
 
 tzdata: $(FIREBIRD)/tzdata
 
-# FIXME: For big-endian, be.zip must be used.
-$(FIREBIRD)/tzdata: $(ROOT)/extern/icu/tzdata/le.zip
+$(FIREBIRD)/tzdata: $(ROOT)/extern/icu/tzdata/$(TZDATA_ZIP)
 	mkdir -p $(FIREBIRD)/tzdata
-	unzip -o $(ROOT)/extern/icu/tzdata/le.zip -d $(FIREBIRD)/tzdata
+	unzip -o $(ROOT)/extern/icu/tzdata/$(TZDATA_ZIP) -d $(FIREBIRD)/tzdata
 
 $(BUILD_FILE):	$(BUILD_Objects) $(COMMON_LIB)
 	$(EXE_LINK) $(EXE_LINK_OPTIONS) $(LSB_UNDEF) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS) $(call LINK_DARWIN_RPATH,..)
