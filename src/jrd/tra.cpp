@@ -2105,7 +2105,17 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN* window, bool dontW
 	const bool new_tip = ((number % dbb->dbb_page_manager.transPerTIP) == 0);
 
 	if (new_tip)
-		TRA_extend_tip(tdbb, (number / dbb->dbb_page_manager.transPerTIP)); //, window);
+	{
+		try
+		{
+			TRA_extend_tip(tdbb, (number / dbb->dbb_page_manager.transPerTIP)); //, window);
+		}
+		catch (Exception&)
+		{
+			CCH_RELEASE(tdbb, window);
+			throw;
+		}
+	}
 
 	// Extend, if necessary, has apparently succeeded.  Next, update header page
 

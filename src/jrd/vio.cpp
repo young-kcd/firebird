@@ -224,13 +224,13 @@ static bool assert_gc_enabled(const jrd_tra* transaction, const jrd_rel* relatio
 inline void check_gbak_cheating_insupd(thread_db* tdbb, const jrd_rel* relation, const char* op)
 {
 	const Attachment* const attachment = tdbb->getAttachment();
-	const jrd_tra* const transaction = tdbb->getTransaction();
+	const jrd_req* const request = tdbb->getRequest();
 
-	// It doesn't matter that we use protect_system_table_upd() that's for deletions and updates
-	// but this code is for insertions and updates, because we use force = true.
-	if (relation->isSystem() && attachment->isGbak() && !(attachment->att_flags & ATT_creator))
+	if (relation->isSystem() && attachment->isGbak() && !(attachment->att_flags & ATT_creator) &&
+		!request->hasInternalStatement())
 	{
-		protect_system_table_delupd(tdbb, relation, op, true);
+		status_exception::raise(Arg::Gds(isc_protect_sys_tab) <<
+			Arg::Str(op) << Arg::Str(relation->rel_name));
 	}
 }
 
