@@ -11519,7 +11519,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 	const MetaName objName(object ? object->second : "");
 	bool crdb = false;
 
-	AutoPtr<char, ArrayDelete> privileges(new char[MAX(strlen(ALL_PRIVILEGES), strlen(privs ? privs : "")) + 1]);
+	AutoPtr<char, ArrayDelete> privileges(FB_NEW char[MAX(strlen(ALL_PRIVILEGES), strlen(privs ? privs : "")) + 1]);
 	strcpy(privileges, privs ? privs : "");
 
 	if (strcmp(privileges, "A") == 0)

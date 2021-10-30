@@ -380,6 +380,23 @@ bool isIPv6supported()
 	return false;
 }
 
+bool getCurrentModulePath(char* buffer, size_t bufferSize)
+{
+	HMODULE hmod = 0;
+
+	GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+		(LPCTSTR) &getCurrentModulePath,
+		&hmod);
+
+	if (hmod)
+	{
+		GetModuleFileName(hmod, buffer, bufferSize);
+		return true;
+	}
+
+	return false;
+}
+
 int open(const char* pathname, int flags, mode_t mode)
 {
 	return ::_open(pathname, flags, mode);

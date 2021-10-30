@@ -43,6 +43,14 @@
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
+
+#ifdef HAVE_DLADDR
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <dlfcn.h>
+#endif	// HAVE_DLADDR
+
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
@@ -333,6 +341,21 @@ bool isIPv6supported()
 #else
 	return true;
 #endif
+}
+
+bool getCurrentModulePath(char* buffer, size_t bufferSize)
+{
+#ifdef HAVE_DLADDR
+	Dl_info path;
+
+	if (dladdr((void*) &getCurrentModulePath, &path))
+	{
+		strncpy(buffer, path.dli_fname, bufferSize);
+		return true;
+	}
+#endif
+
+	return false;
 }
 
 // setting flag is not absolutely required, therefore ignore errors here
