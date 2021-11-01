@@ -7261,7 +7261,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 		else if (options.dpb_auth_block.hasData())
 		{
 			if (mapUser(name, trusted_role, &auth_method, &user.usr_auth_block, options.dpb_auth_block,
-				aliasName, dbName, (config ? (*config)->getSecurityDatabase() : NULL), cryptCb, NULL))
+				aliasName, dbName, (config ? (*config)->getSecurityDatabase() : NULL), cryptCb, NULL, true))
 			{
 				user.usr_flags |= USR_mapdown;
 			}

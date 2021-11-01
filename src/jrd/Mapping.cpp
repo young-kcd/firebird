@@ -970,7 +970,8 @@ namespace Jrd {
 bool mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 	AuthReader::AuthBlock* newAuthBlock,
 	const AuthReader::AuthBlock& authBlock,	const char* alias, const char* db,
-	const char* securityAlias, ICryptKeyCallback* cryptCb, Firebird::IAttachment* att)
+	const char* securityAlias, ICryptKeyCallback* cryptCb, Firebird::IAttachment* att,
+	bool logMsgs)
 {
 	AuthReader::Info info;
 
@@ -1160,49 +1161,53 @@ bool mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 
 	if (fName.found == Found::FND_NOTHING)
 	{
-		NoCaseString msg = "Missing security context required for ";
-		if (db)
-			msg += db;
-		if (db && securityAlias)
-			msg += " or ";
-		if (securityAlias)
-			msg += secExpanded.c_str();
-
-		msg += "\n\tAvailable context(s): ";
-		bool fstCtx = true;
-		for (AuthReader scan(newBlock); scan.getInfo(info); scan.moveNext())
+		if (logMsgs)
 		{
-			if (info.type == NM_USER || info.type == NM_ROLE)
-			{
-				if (!fstCtx)
-					msg += "\n\t\t";
-				else
-					fstCtx = false;
+			NoCaseString msg = "Missing security context required for ";
+			if (db)
+				msg += db;
+			if (db && securityAlias)
+				msg += " or ";
+			if (securityAlias)
+				msg += secExpanded.c_str();
 
-				msg += info.type;
-				msg += ' ';
-				msg += info.name;
-				if (info.secDb.hasData())
+			msg += "\n\tAvailable context(s): ";
+			bool fstCtx = true;
+			for (AuthReader scan(newBlock); scan.getInfo(info); scan.moveNext())
+			{
+				if (info.type == NM_USER || info.type == NM_ROLE)
 				{
-					msg += " in ";
-					msg += info.secDb;
-				}
-				if (info.plugin.hasData())
-				{
-					msg += " plugin ";
-					msg += info.plugin;
+					if (!fstCtx)
+						msg += "\n\t\t";
+					else
+						fstCtx = false;
+
+					msg += info.type;
+					msg += ' ';
+					msg += info.name;
+					if (info.secDb.hasData())
+					{
+						msg += " in ";
+						msg += info.secDb;
+					}
+					if (info.plugin.hasData())
+					{
+						msg += " plugin ";
+						msg += info.plugin;
+					}
 				}
 			}
-		}
-		if (fstCtx)
-			msg += "<none>";
+			if (fstCtx)
+				msg += "<none>";
 
-		gds__log("%s", msg.c_str());
+			gds__log("%s", msg.c_str());
+		}
 
 		Arg::Gds v(isc_sec_context);
 		v << alias;
 		if (secDown || dbDown)
 			v << Arg::Gds(isc_map_down);
+		abort();
 		v.raise();
 	}
 	else

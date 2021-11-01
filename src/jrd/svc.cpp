@@ -788,7 +788,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 
 					string trusted_role;
 					mapUser(svc_username, trusted_role, NULL, &svc_auth_block, svc_auth_block,
-						"services manager", NULL, config->getSecurityDatabase(), svc_crypt_callback, NULL);
+						"services manager", NULL, config->getSecurityDatabase(), svc_crypt_callback, NULL, true);
 					trusted_role.upper();
 					svc_trusted_role = trusted_role == ADMIN_ROLE;
 				}

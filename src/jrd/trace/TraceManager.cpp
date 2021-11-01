@@ -260,7 +260,8 @@ void TraceManager::update_session(const TraceSession& session)
 					mapUser(s_user, t_role, NULL, NULL, session.ses_auth,
 						attachment->att_filename.c_str(), dbb->dbb_filename.c_str(),
 						dbb->dbb_config->getSecurityDatabase(),
-						dbb->dbb_callback, attachment->getInterface());
+						dbb->dbb_callback, attachment->getInterface(),
+						false);
 				}
 				catch (const Firebird::Exception&)
 				{
@@ -291,7 +292,7 @@ void TraceManager::update_session(const TraceSession& session)
 				try
 				{
 					mapUser(s_user, t_role, NULL, NULL, session.ses_auth, "services manager", NULL,
-						config->getSecurityDatabase(), service->getCryptCallback(), NULL);
+						config->getSecurityDatabase(), service->getCryptCallback(), NULL, false);
 				}
 				catch (const Firebird::Exception&)
 				{
