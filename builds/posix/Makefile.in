@@ -75,7 +75,8 @@ ifndef GCC
 endif
 
 ifeq ($(TOMMATH_BUILD_FLG),Y)
-TOM2TOM_FLAGS=-I../libtommath
+TOM2TOM_CFLAGS=-I../libtommath
+LTC_LDFLAGS='-L$(LIB) $(subst $,$$$$,$(call LIB_LINK_RPATH,lib))'
 endif
 
 .PHONY:	master_process cross_process firebird Debug Release external
@@ -198,7 +199,7 @@ endif
 endif
 
 ifeq ($(TOMCRYPT_BUILD_FLG),Y)
-	CC="$(CC)" CFLAGS="$(CFLAGS) $(TOM2TOM_FLAGS)" $(MAKE) -C $(ROOT)/extern/libtomcrypt -f makefile.shared GCC=$(GCC)
+	CC="$(CC)" CFLAGS="$(CFLAGS) $(TOM2TOM_CFLAGS)" $(MAKE) -C $(ROOT)/extern/libtomcrypt -f makefile.shared GCC=$(GCC) LTC_LDFLAGS=$(LTC_LDFLAGS)
 
 ifeq ($(PLATFORM),DARWIN)
 	install_name_tool -id "@rpath/lib/libtomcrypt.dylib" $(TOMCRYPT)/.libs/libtomcrypt.1.dylib
