@@ -255,24 +255,26 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 					VIO_record(tdbb, rpb, MET_current(tdbb, relation), tdbb->getDefaultPool());
 			}
 
+			const bool isNull = !EVL_field(relation, buffer_record, (USHORT) i, &from);
+
 			if (map.map_type == FieldMap::REGULAR_FIELD)
 			{
 				Record* const record = rpb->rpb_record;
 				record->reset();
 
-				if (EVL_field(relation, buffer_record, (USHORT) i, &from))
+				if (isNull)
+					record->setNull(map.map_id);
+				else
 				{
 					EVL_field(relation, record, map.map_id, &to);
 					MOV_move(tdbb, &from, &to);
 					record->clearNull(map.map_id);
 				}
-				else
-				{
-					record->setNull(map.map_id);
-				}
 
 				continue;
 			}
+
+			fb_assert(!isNull);
 
 			switch (map.map_type)
 			{
