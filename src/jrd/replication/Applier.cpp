@@ -104,11 +104,17 @@ namespace
 
 		UCHAR getByte()
 		{
+			if (m_data >= m_end)
+				malformed();
+
 			return *m_data++;
 		}
 
 		SSHORT getInt16()
 		{
+			if (m_data + sizeof(SSHORT) > m_end)
+				malformed();
+
 			SSHORT value;
 			memcpy(&value, m_data, sizeof(SSHORT));
 			m_data += sizeof(SSHORT);
@@ -117,6 +123,9 @@ namespace
 
 		SLONG getInt32()
 		{
+			if (m_data + sizeof(SLONG) > m_end)
+				malformed();
+
 			SLONG value;
 			memcpy(&value, m_data, sizeof(SLONG));
 			m_data += sizeof(SLONG);
@@ -125,6 +134,9 @@ namespace
 
 		SINT64 getInt64()
 		{
+			if (m_data + sizeof(SINT64) > m_end)
+				malformed();
+
 			SINT64 value;
 			memcpy(&value, m_data, sizeof(SINT64));
 			m_data += sizeof(SINT64);
@@ -140,6 +152,10 @@ namespace
 		string getString()
 		{
 			const auto length = getInt32();
+
+			if (m_data + length > m_end)
+				malformed();
+
 			const string str((const char*) m_data, length);
 			m_data += length;
 			return str;
@@ -147,6 +163,9 @@ namespace
 
 		const UCHAR* getBinary(ULONG length)
 		{
+			if (m_data + length > m_end)
+				malformed();
+
 			const auto ptr = m_data;
 			m_data += length;
 			return ptr;
@@ -175,6 +194,11 @@ namespace
 		const UCHAR* m_data;
 		const UCHAR* const m_end;
 		HalfStaticArray<MetaString, 64> m_atoms;
+
+		static void malformed()
+		{
+			raiseError("Replication block is malformed");
+		}
 	};
 
 	class LocalThreadContext
