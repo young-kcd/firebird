@@ -8026,7 +8026,7 @@ void LiteralNode::fixMinSInt64(MemoryPool& pool)
 
 void LiteralNode::fixMinSInt128(MemoryPool& pool)
 {
-	// MIN_SINT64 should be stored as BIGINT, not 128-bit integer
+	// MIN_SINT128 should be stored as INT128, not decfloat
 
 	const UCHAR* s = litDesc.dsc_address;
 	const char* const minSInt128 = "170141183460469231731687303715884105728";
@@ -8061,6 +8061,22 @@ void LiteralNode::fixMinSInt128(MemoryPool& pool)
 	litDesc.dsc_length = sizeof(Int128);
 	litDesc.dsc_scale = scale;
 	litDesc.dsc_sub_type = 0;
+	litDesc.dsc_address = reinterpret_cast<UCHAR*>(valuePtr);
+}
+
+
+void LiteralNode::fixMinSInt32(MemoryPool& pool)
+{
+	// MIN_SINT32 should be stored as SLONG, not 64-bit integer
+
+	const SINT64* i64 = (SINT64*)litDesc.dsc_address;
+	const SINT64 minSInt32 = QUADCONST(0x80000000);
+	if (*i64 != minSInt32)
+		return;
+
+	SLONG* valuePtr = FB_NEW_POOL(pool) SLONG(0x80000000);
+	litDesc.dsc_dtype = dtype_long;
+	litDesc.dsc_length = sizeof(SLONG);
 	litDesc.dsc_address = reinterpret_cast<UCHAR*>(valuePtr);
 }
 
@@ -8713,6 +8729,9 @@ NegateNode::NegateNode(MemoryPool& pool, ValueExprNode* aArg)
 	{
 		switch(literal->litDesc.dsc_dtype)
 		{
+		case dtype_int64:
+			literal->fixMinSInt32(pool);
+			break;
 		case dtype_int128:
 			literal->fixMinSInt64(pool);
 			break;

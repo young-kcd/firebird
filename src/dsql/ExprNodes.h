@@ -941,6 +941,7 @@ public:
 		return reinterpret_cast<const char*>(litDesc.dsc_address);
 	}
 
+	void fixMinSInt32(MemoryPool& pool);
 	void fixMinSInt64(MemoryPool& pool);
 	void fixMinSInt128(MemoryPool& pool);
 
