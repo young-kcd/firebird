@@ -444,11 +444,15 @@ template <typename CharType, typename StrConverter>
 class StartsMatcher : public PatternMatcher
 {
 public:
-	StartsMatcher(MemoryPool& pool, TextType* ttype, const CharType* str, SLONG str_len, SLONG aPatternByteLength)
+	StartsMatcher(MemoryPool& pool, TextType* ttype, const CharType* str, SLONG str_len, SLONG aByteLengthLimit)
 		: PatternMatcher(pool, ttype),
-		  evaluator(pool, str, str_len),
-		  patternByteLength(ttype->getCharSet()->isMultiByte() ? -1 : aPatternByteLength)
+		  evaluator(pool, str, str_len)
 	{
+		auto charSet = ttype->getCharSet();
+
+		byteLengthLimit = charSet->isMultiByte() ?
+			aByteLengthLimit / charSet->minBytesPerChar() * charSet->maxBytesPerChar() :
+			aByteLengthLimit;
 	}
 
 	void reset()
@@ -464,11 +468,8 @@ public:
 
 	bool process(const UCHAR* str, SLONG length)
 	{
-		if (patternByteLength != -1)
-		{
-			if (processedByteLength + length > patternByteLength)
-				length = patternByteLength - processedByteLength;
-		}
+		if (processedByteLength + length > byteLengthLimit)
+			length = byteLengthLimit - processedByteLength;
 
 		processedByteLength += length;
 
@@ -482,20 +483,26 @@ public:
 	static StartsMatcher* create(MemoryPool& pool, TextType* ttype,
 		const UCHAR* str, SLONG length)
 	{
-		const auto patternByteLength = length;
+		const auto byteLengthLimit = length;
 
 		StrConverter cvt(pool, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
 
 		return FB_NEW_POOL(pool) StartsMatcher(pool, ttype,
-			reinterpret_cast<const CharType*>(str), length / sizeof(CharType), patternByteLength);
+			reinterpret_cast<const CharType*>(str), length / sizeof(CharType), byteLengthLimit);
 	}
 
 	static bool evaluate(MemoryPool& pool, TextType* ttype, const UCHAR* s, SLONG sl,
 		const UCHAR* p, SLONG pl)
 	{
-		if (!ttype->getCharSet()->isMultiByte() && sl > pl)
-			sl = pl;
+		if (sl > pl)
+		{
+			auto charSet = ttype->getCharSet();
+
+			sl = charSet->isMultiByte() ?
+				MIN(sl, pl / charSet->minBytesPerChar() * charSet->maxBytesPerChar()) :
+				pl;
+		}
 
 		StrConverter cvt1(pool, ttype, p, pl);
 		fb_assert(pl % sizeof(CharType) == 0);
@@ -513,7 +520,7 @@ public:
 
 private:
 	Firebird::StartsEvaluator<CharType> evaluator;
-	const SLONG patternByteLength;	// -1 used for MBCS and not optimize things
+	SLONG byteLengthLimit;
 	SLONG processedByteLength = 0;
 };
 
