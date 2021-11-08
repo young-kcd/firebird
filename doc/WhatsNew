@@ -310,11 +310,6 @@
       Contributor(s):
         Ilya Eremin <ilya071294 at gmail.com>
 
-    * Bugfix #5137 (CORE-4841)
-        Make message about missing password being always displayed as reply on attempt to issue CREATE new login without PASSWORD clause
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
     * Bugfix #5082 (CORE-4783)
         Exception "too few key columns found for index" raises when attempt to create table with PK and immediatelly drop this PK within the same transaction
       Contributor(s):
