@@ -1,4 +1,342 @@
   **************************
+  * v3.0.8
+  **************************
+
+    * Improvement #6957
+        Add database creation time to the output of ISQL's command SHOW DATABASE
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement #6769 (CORE-6542)
+        More efficient implementation of SUBSTRING for UTF8 character set
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Improvement #6748 (CORE-6519)
+        Freeing a statement using DSQL_drop or DSQL_unprepare should send free packet immediately
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement #5913 (CORE-5647)
+        Increase number of formats/versions of views from 255 to 32K
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Improvement #5137 (CORE-4841)
+        Make message about missing password being always displayed as reply on attempt to issue CREATE new login without PASSWORD clause
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #7036
+        Unexpected messages '"Missing security context ...' in firebird.log
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #7034
+        Scroll cursor server crash
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix #7031
+        gbak -b fails with "invalid transaction handle (expecting explicit transaction start)"
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix #6999
+        GBAK removes database and backup files if finished unsuccessfully
+      Contributor(s):
+        Ilya Eremin <ilya071294 at gmail.com>
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6987
+        DATEDIFF does not support fractional value for MILLISECOND
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix #6984
+        Committed transaction could be marked as dead in some very special and rare case
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix #6967
+        PIO_read / PIO_write may falsely return success in a case when block was read/written incompletely
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6949
+        On Windows, engine may hang on initialization when another instance with different lock directory is running
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix #6932
+        GTT's pages are not released while dropping it
+      Contributor(s):
+        Ilya Eremin <ilya071294 at gmail.com>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix #6918
+        Service detach is always traced
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix #6896
+        Client forcing server to encryption
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6866
+        Orphan records are left in RDB$SECURITY_CLASSES and RDB$USER_PRIVILEGES after DROP PROCEDURE/FUNCTION
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix #6854
+        Crash occurs when SIMILAR TO is used
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix #6836
+        fb_shutdown() does not wait for self completion in other thread
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6817
+        -fetch_password passwordfile does not work with GFIX
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6796
+        Buffer overflow when padding line with national characters causes ISQL to crash
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix #6782
+        Cannot get "records fetched" counter for procedures/functions in trace
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix #6781
+        Crashing (due to UDF exception) server process hangs
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix #6780
+        firebird.msg is missing in Firebird Android builds
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6777
+        AV when engine shut down and cancels attachment that is waiting in lock manager
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix #6768 (CORE-6542)
+        Backup cannot be restored on a raw device (error during "open O_CREAT" operation for file "/dev/sda1")
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6759 (CORE-6532)
+        Results of concatenation with blob has no info about collation of source columns (which are declared with such info)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix #6758 (CORE-6531)
+        COMPUTED BY column looses charset and collate of source field <F> when <F> is either of type BLOB or VARCHAR casted to BLOB
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix #6755 (CORE-6528)
+        Connect to a database that contains broken pages can lead to server crash
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6752 (CORE-6525)
+        Segfaults in fbclient when receiving invalid / unexpected data from server
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6751 (CORE-6524)
+        Various segfaults in fbclient
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6750 (CORE-6521)
+        CAST of infinity values to FLOAT doesn't work
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6747 (CORE-6518)
+        Wrong message when connecting to tiny trash database file
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6746 (CORE-6517)
+        CREATE DATABASE fails with 'Token unknown' error when DB name is enclosed in double quotes and 'DEFAULT CHARACTER SET' is specified after DB name
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix #6731 (CORE-6501)
+        Segfault when shutting down database which got encrypted by another process
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6729 (CORE-6499)
+        GSTAT with switch -t executed via services fails with "found unknown switch" error
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6724 (CORE-6494)
+        Inconsistent translation "string->timestamp->string->timestamp" in the Dialect 1
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix #6719 (CORE-6489)
+        User without ALTER ANY ROLE privilege can use COMMENT ON ROLE
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6718 (CORE-6488)
+        Event delivery could be missed when local (XNET) protocol is used
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix #6717 (CORE-6487)
+        FETCH ABSOLUTE and RELATIVE beyond bounds of cursor should always position immediately before-first or after-last
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix #6716 (CORE-6486)
+        FETCH RELATIVE has an off by one error for the first row
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix #6710 (CORE-6479)
+        COMMENT ON USER can only apply comment on user defined by the default UserManager plugin
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6708 (CORE-6477)
+        Rare race condition in Plugin Manager could lead to the server crash
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix #6700 (CORE-6468)
+        Wire compression causes sporadic "Error reading data from the connection" errors
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6698 (CORE-6466)
+        Comments before the first line of code are removed
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix #6683 (CORE-6450)
+        Races in cache of opened security databases
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6680 (CORE-6447)
+        Unexpectedly different text of message for parameterized expression starting from second run
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix #6679 (CORE-6446)
+        CLOOP envelopes are wrong regarding IStatus
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #2367 (CORE-6441)
+        Srp plugin keeps connection after database has been removed for ~10 seconds (SS and SC)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6674 (CORE-6440)
+        Expression indexes containing COALESCE inside cannot be matched by the optimizer after migration from v2.5 to v3.0
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix #6672 (CORE-6437)
+        GFIX cannot set big value for buffers
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix #6670 (CORE-6433)
+        Firebird server crashes during a daily maintenance / set statistics index
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6669 (CORE-6432)
+        Possible buffer overflow in client library in Attachment::getInfo() call
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6650 (CORE-6412)
+        Firebird freezes when trying to manage users via triggers
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6646 (CORE-6408)
+        RETURNING clause in MERGE cannot reference column in aliased target table using qualified reference (alias.column) if DELETE action present
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix #6624 (CORE-6385)
+        Wrong line and column information after IF statement
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix #6265 (CORE-6015)
+        Segfault when using expression index with complex expression
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix #6220 (CORE-5966)
+        Slow performance when executing SQL scripts as non-SYSDBA user
+      Contributor(s):
+        Roman Simakov <roman.simakov at red-soft.biz>
+
+    * Bugfix #5877 (CORE-5611)
+        Higher memory consumption for prepared statements
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix #5534 (CORE-5255)
+        String truncation exception on UPPER/LOWER functions, UTF8 database and some multibyte characters
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix #5173 (CORE-4878)
+        Compound ALTER TABLE statement with ADD and DROP the same constraint failed if this constraint involves index creation (PK/UNQ/FK)
+      Contributor(s):
+        Ilya Eremin <ilya071294 at gmail.com>
+
+    * Bugfix #5137 (CORE-4841)
+        Make message about missing password being always displayed as reply on attempt to issue CREATE new login without PASSWORD clause
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #5082 (CORE-4783)
+        Exception "too few key columns found for index" raises when attempt to create table with PK and immediatelly drop this PK within the same transaction
+      Contributor(s):
+        Ilya Eremin <ilya071294 at gmail.com>
+
+    * Bugfix #3886 (CORE-3529)
+        RECREATE TABLE T with PK or UK is impossible after duplicate typing w/o commit when ISQL is launched in AUTODDL=OFF mode
+      Contributor(s):
+        Ilya Eremin <ilya071294 at gmail.com>
+
+    * Bugfix #1210 (CORE-2917)
+        Server hangs on I/O error during "open" operation for file "/tmp/firebird/fb_trace_ksVDoc"
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #2469 (CORE-2032)
+        Stored procedure recursively called by calculated field fails after reconnect
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+
+  **************************
   * v3.0.7
   **************************
 
