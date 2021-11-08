@@ -1207,7 +1207,6 @@ bool mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 		v << alias;
 		if (secDown || dbDown)
 			v << Arg::Gds(isc_map_down);
-		abort();
 		v.raise();
 	}
 	else
