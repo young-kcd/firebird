@@ -89,6 +89,7 @@ private:
 	Firebird::RefPtr<StableAttachmentPart> sAtt;
 
 	void freeEngineData(Firebird::CheckStatusWrapper* status);
+	void internalClose(Firebird::CheckStatusWrapper* status);
 };
 
 class JTransaction FB_FINAL :
@@ -145,6 +146,9 @@ private:
 	JTransaction(JTransaction* from);
 
 	void freeEngineData(Firebird::CheckStatusWrapper* status);
+	void internalCommit(Firebird::CheckStatusWrapper* status);
+	void internalRollback(Firebird::CheckStatusWrapper* status);
+	void internalDisconnect(Firebird::CheckStatusWrapper* status);
 };
 
 class JResultSet FB_FINAL :
@@ -483,6 +487,9 @@ private:
 	{
 		att = NULL;
 	}
+
+	void internalDetach(Firebird::CheckStatusWrapper* status);
+	void internalDropDatabase(Firebird::CheckStatusWrapper* status);
 };
 
 class JService FB_FINAL :
