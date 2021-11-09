@@ -185,6 +185,8 @@ public:
 
 private:
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalCancel(Firebird::CheckStatusWrapper* status);
+	void internalClose(Firebird::CheckStatusWrapper* status);
 
 	Rbl* blob;
 };
@@ -254,6 +256,9 @@ private:
 	{ }
 
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalCommit(Firebird::CheckStatusWrapper* status);
+	void internalRollback(Firebird::CheckStatusWrapper* status);
+	void internalDisconnect(Firebird::CheckStatusWrapper* status);
 
 	Attachment* remAtt;
 	Rtr* transaction;
@@ -303,6 +308,7 @@ public:
 private:
 	void releaseStatement();
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalClose(CheckStatusWrapper* status);
 
 	Statement* stmt;
 	RefPtr<IMessageMetadata> outputFormat;
@@ -355,6 +361,7 @@ public:
 
 private:
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalClose(Firebird::CheckStatusWrapper* status);
 	void releaseStatement();
 	void setServerInfo();
 
@@ -589,6 +596,7 @@ public:
 
 private:
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalClose(CheckStatusWrapper* status);
 
 	Attachment* attachment;
 };
@@ -691,6 +699,7 @@ public:
 
 private:
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalFree(CheckStatusWrapper* status);
 
 	StatementMetadata metadata;
 	Attachment* remAtt;
@@ -742,6 +751,7 @@ public:
 
 private:
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalFree(CheckStatusWrapper* status);
 
 	Attachment* remAtt;
 	Rrq* rq;
@@ -780,6 +790,7 @@ public:
 
 private:
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalCancel(CheckStatusWrapper* status);
 
 	Rvnt* rvnt;
 	Rdb* rdb;
@@ -889,6 +900,8 @@ public:
 private:
 	void execWithCheck(CheckStatusWrapper* status, const string& stmt);
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalDetach(Firebird::CheckStatusWrapper* status);
+	void internalDropDatabase(Firebird::CheckStatusWrapper* status);
 	SLONG getSingleInfo(CheckStatusWrapper* status, UCHAR infoItem);
 
 	Rdb* rdb;
@@ -929,6 +942,7 @@ public:
 
 private:
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
+	void internalDetach(CheckStatusWrapper* status);
 
 	Rdb* rdb;
 };
@@ -1298,7 +1312,7 @@ void Blob::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Blob::deprecatedCancel(CheckStatusWrapper* status)
+void Blob::internalCancel(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -1317,13 +1331,19 @@ void Blob::deprecatedCancel(CheckStatusWrapper* status)
 
 void Blob::cancel(CheckStatusWrapper* status)
 {
-	deprecatedCancel(status);
+	internalCancel(status);
 	if (status->isEmpty())
 		release();
 }
 
 
-void Blob::deprecatedClose(CheckStatusWrapper* status)
+void Blob::deprecatedCancel(CheckStatusWrapper* status)
+{
+	internalCancel(status);
+}
+
+
+void Blob::internalClose(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -1364,9 +1384,15 @@ void Blob::deprecatedClose(CheckStatusWrapper* status)
 
 void Blob::close(CheckStatusWrapper* status)
 {
-	deprecatedClose(status);
+	internalClose(status);
 	if (status->isEmpty())
 		release();
+}
+
+
+void Blob::deprecatedClose(CheckStatusWrapper* status)
+{
+	internalClose(status);
 }
 
 
@@ -1452,7 +1478,7 @@ void Events::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Events::deprecatedCancel(CheckStatusWrapper* status)
+void Events::internalCancel(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -1471,13 +1497,19 @@ void Events::deprecatedCancel(CheckStatusWrapper* status)
 
 void Events::cancel(CheckStatusWrapper* status)
 {
-	deprecatedCancel(status);
+	internalCancel(status);
 	if (status->isEmpty())
 		release();
 }
 
 
-void Transaction::deprecatedCommit(CheckStatusWrapper* status)
+void Events::deprecatedCancel(CheckStatusWrapper* status)
+{
+	internalCancel(status);
+}
+
+
+void Transaction::internalCommit(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -1514,9 +1546,15 @@ void Transaction::deprecatedCommit(CheckStatusWrapper* status)
 
 void Transaction::commit(CheckStatusWrapper* status)
 {
-	deprecatedCommit(status);
+	internalCommit(status);
 	if (status->isEmpty())
 		release();
+}
+
+
+void Transaction::deprecatedCommit(CheckStatusWrapper* status)
+{
+	internalCommit(status);
 }
 
 
@@ -2044,7 +2082,7 @@ void Attachment::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Attachment::deprecatedDetach(CheckStatusWrapper* status)
+void Attachment::internalDetach(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -2063,13 +2101,19 @@ void Attachment::deprecatedDetach(CheckStatusWrapper* status)
 
 void Attachment::detach(CheckStatusWrapper* status)
 {
-	deprecatedDetach(status);
+	internalDetach(status);
 	if (status->isEmpty())
 		release();
 }
 
 
-void Attachment::deprecatedDropDatabase(CheckStatusWrapper* status)
+void Attachment::deprecatedDetach(CheckStatusWrapper* status)
+{
+	internalDetach(status);
+}
+
+
+void Attachment::internalDropDatabase(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -2129,9 +2173,15 @@ void Attachment::deprecatedDropDatabase(CheckStatusWrapper* status)
 
 void Attachment::dropDatabase(CheckStatusWrapper* status)
 {
-	deprecatedDropDatabase(status);
+	internalDropDatabase(status);
 	if (status->isEmpty())
 		release();
+}
+
+
+void Attachment::deprecatedDropDatabase(CheckStatusWrapper* status)
+{
+	internalDropDatabase(status);
 }
 
 
@@ -3023,7 +3073,7 @@ void Batch::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Batch::deprecatedClose(CheckStatusWrapper* status)
+void Batch::internalClose(CheckStatusWrapper* status)
 {
 	reset(status);
 	freeClientData(status);
@@ -3032,9 +3082,15 @@ void Batch::deprecatedClose(CheckStatusWrapper* status)
 
 void Batch::close(CheckStatusWrapper* status)
 {
-	deprecatedClose(status);
+	internalClose(status);
 	if (status->isEmpty())
 		release();
+}
+
+
+void Batch::deprecatedClose(CheckStatusWrapper* status)
+{
+	internalClose(status);
 }
 
 
@@ -3193,7 +3249,7 @@ void Replicator::process(CheckStatusWrapper* status, unsigned length, const unsi
 }
 
 
-void Replicator::deprecatedClose(CheckStatusWrapper* status)
+void Replicator::internalClose(CheckStatusWrapper* status)
 {
 	reset(status);
 	freeClientData(status);
@@ -3202,9 +3258,15 @@ void Replicator::deprecatedClose(CheckStatusWrapper* status)
 
 void Replicator::close(CheckStatusWrapper* status)
 {
-	deprecatedClose(status);
+	internalClose(status);
 	if (status->isEmpty())
 		release();
+}
+
+
+void Replicator::deprecatedClose(CheckStatusWrapper* status)
+{
+	internalClose(status);
 }
 
 
@@ -3858,7 +3920,7 @@ void Statement::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Statement::deprecatedFree(CheckStatusWrapper* status)
+void Statement::internalFree(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -3878,9 +3940,15 @@ void Statement::deprecatedFree(CheckStatusWrapper* status)
 
 void Statement::free(CheckStatusWrapper* status)
 {
-	deprecatedFree(status);
+	internalFree(status);
 	if (status->isEmpty())
 		release();
+}
+
+
+void Statement::deprecatedFree(CheckStatusWrapper* status)
+{
+	internalFree(status);
 }
 
 
@@ -4871,7 +4939,7 @@ void ResultSet::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void ResultSet::deprecatedClose(CheckStatusWrapper* status)
+void ResultSet::internalClose(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -4891,20 +4959,15 @@ void ResultSet::deprecatedClose(CheckStatusWrapper* status)
 
 void ResultSet::close(CheckStatusWrapper* status)
 {
-/**************************************
- *
- *	d s q l _ f r e e _ s t a t e m e n t
- *
- **************************************
- *
- * Functional description
- *	Close SQL cursor
- *
- **************************************/
-
-	deprecatedClose(status);
+	internalClose(status);
 	if (status->isEmpty())
 		release();
+}
+
+
+void ResultSet::deprecatedClose(CheckStatusWrapper* status)
+{
+	internalClose(status);
 }
 
 
@@ -5791,7 +5854,7 @@ void Request::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Request::deprecatedFree(CheckStatusWrapper* status)
+void Request::internalFree(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -5810,9 +5873,15 @@ void Request::deprecatedFree(CheckStatusWrapper* status)
 
 void Request::free(CheckStatusWrapper* status)
 {
-	deprecatedFree(status);
+	internalFree(status);
 	if (status->isEmpty())
 		release();
+}
+
+
+void Request::deprecatedFree(CheckStatusWrapper* status)
+{
+	internalFree(status);
 }
 
 
@@ -5983,7 +6052,7 @@ void Transaction::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Transaction::deprecatedRollback(CheckStatusWrapper* status)
+void Transaction::internalRollback(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -6002,13 +6071,19 @@ void Transaction::deprecatedRollback(CheckStatusWrapper* status)
 
 void Transaction::rollback(CheckStatusWrapper* status)
 {
-	deprecatedRollback(status);
+	internalRollback(status);
 	if (status->isEmpty())
 		release();
 }
 
 
-void Transaction::deprecatedDisconnect(CheckStatusWrapper* status)
+void Transaction::deprecatedRollback(CheckStatusWrapper* status)
+{
+	internalRollback(status);
+}
+
+
+void Transaction::internalDisconnect(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -6030,11 +6105,16 @@ void Transaction::deprecatedDisconnect(CheckStatusWrapper* status)
 
 void Transaction::disconnect(CheckStatusWrapper* status)
 {
-	deprecatedDisconnect(status);
+	internalDisconnect(status);
 	if (status->isEmpty())
 		release();
 }
 
+
+void Transaction::deprecatedDisconnect(CheckStatusWrapper* status)
+{
+	internalDisconnect(status);
+}
 
 
 int Blob::seek(CheckStatusWrapper* status, int mode, int offset)
@@ -6288,7 +6368,7 @@ void Service::freeClientData(CheckStatusWrapper* status, bool force)
 }
 
 
-void Service::deprecatedDetach(CheckStatusWrapper* status)
+void Service::internalDetach(CheckStatusWrapper* status)
 {
 /**************************************
  *
@@ -6307,9 +6387,15 @@ void Service::deprecatedDetach(CheckStatusWrapper* status)
 
 void Service::detach(CheckStatusWrapper* status)
 {
-	deprecatedDetach(status);
+	internalDetach(status);
 	if (status->isEmpty())
 		release();
+}
+
+
+void Service::deprecatedDetach(CheckStatusWrapper* status)
+{
+	internalDetach(status);
 }
 
 

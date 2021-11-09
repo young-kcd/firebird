@@ -2483,13 +2483,19 @@ void JAttachment::cancelOperation(CheckStatusWrapper* user_status, int option)
 
 void JBlob::close(CheckStatusWrapper* user_status)
 {
-	deprecatedClose(user_status);
+	internalClose(user_status);
 	if (user_status->isEmpty())
 		release();
 }
 
 
 void JBlob::deprecatedClose(CheckStatusWrapper* user_status)
+{
+	internalClose(user_status);
+}
+
+
+void JBlob::internalClose(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -2530,13 +2536,19 @@ void JBlob::deprecatedClose(CheckStatusWrapper* user_status)
 
 void JTransaction::commit(CheckStatusWrapper* user_status)
 {
-	deprecatedCommit(user_status);
+	internalCommit(user_status);
 	if (user_status->isEmpty())
 		release();
 }
 
 
 void JTransaction::deprecatedCommit(CheckStatusWrapper* user_status)
+{
+	internalCommit(user_status);
+}
+
+
+void JTransaction::internalCommit(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -3242,18 +3254,8 @@ void JAttachment::executeDyn(CheckStatusWrapper* status, ITransaction* /*tra*/, 
 }
 
 
-void JAttachment::deprecatedDetach(CheckStatusWrapper* user_status)
+void JAttachment::internalDetach(CheckStatusWrapper* user_status)
 {
-/**************************************
- *
- *	g d s _ $ d e t a c h
- *
- **************************************
- *
- * Functional description
- *	Close down a database.
- *
- **************************************/
 	if (!att->getHandle())
 		return;				// already detached
 
@@ -3261,19 +3263,15 @@ void JAttachment::deprecatedDetach(CheckStatusWrapper* user_status)
 }
 
 
+void JAttachment::deprecatedDetach(CheckStatusWrapper* user_status)
+{
+	internalDetach(user_status);
+}
+
+
 void JAttachment::detach(CheckStatusWrapper* user_status)
 {
-/**************************************
- *
- *	g d s _ $ d e t a c h
- *
- **************************************
- *
- * Functional description
- *	Close down a database.
- *
- **************************************/
-	deprecatedDetach(user_status);
+	internalDetach(user_status);
 	if (user_status->isEmpty())
 		release();
 }
@@ -3284,6 +3282,7 @@ void JAttachment::freeEngineData(CheckStatusWrapper* user_status, bool forceFree
 /**************************************
  *
  *	f r e e E n g i n e D a t a
+ *	former g d s _ $ d e t a c h
  *
  **************************************
  *
@@ -3355,13 +3354,19 @@ void JAttachment::freeEngineData(CheckStatusWrapper* user_status, bool forceFree
 
 void JAttachment::dropDatabase(CheckStatusWrapper* user_status)
 {
-	deprecatedDropDatabase(user_status);
+	internalDropDatabase(user_status);
 	if (user_status->isEmpty())
 		release();
 }
 
 
 void JAttachment::deprecatedDropDatabase(CheckStatusWrapper* user_status)
+{
+	internalDropDatabase(user_status);
+}
+
+
+void JAttachment::internalDropDatabase(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -3936,16 +3941,6 @@ JTransaction* JAttachment::reconnectTransaction(CheckStatusWrapper* user_status,
 
 void JRequest::deprecatedFree(CheckStatusWrapper* user_status)
 {
-/**************************************
- *
- *	g d s _ $ r e l e a s e _ r e q u e s t
- *
- **************************************
- *
- * Functional description
- *	Release a request.
- *
- **************************************/
 	freeEngineData(user_status);
 }
 
@@ -4075,13 +4070,19 @@ void JTransaction::rollbackRetaining(CheckStatusWrapper* user_status)
 
 void JTransaction::rollback(CheckStatusWrapper* user_status)
 {
-	deprecatedRollback(user_status);
+	internalRollback(user_status);
 	if (user_status->isEmpty())
 		release();
 }
 
 
 void JTransaction::deprecatedRollback(CheckStatusWrapper* user_status)
+{
+	internalRollback(user_status);
+}
+
+
+void JTransaction::internalRollback(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -4121,13 +4122,19 @@ void JTransaction::deprecatedRollback(CheckStatusWrapper* user_status)
 
 void JTransaction::disconnect(CheckStatusWrapper* user_status)
 {
-	deprecatedDisconnect(user_status);
+	internalDisconnect(user_status);
 	if (user_status->isEmpty())
 		release();
 }
 
 
 void JTransaction::deprecatedDisconnect(CheckStatusWrapper* user_status)
+{
+	internalDisconnect(user_status);
+}
+
+
+void JTransaction::internalDisconnect(CheckStatusWrapper* user_status)
 {
 	try
 	{
@@ -4264,16 +4271,6 @@ JService* JProvider::attachServiceManager(CheckStatusWrapper* user_status, const
 
 void JService::deprecatedDetach(CheckStatusWrapper* user_status)
 {
-/**************************************
- *
- *	g d s _ $ s e r v i c e _ d e t a c h
- *
- **************************************
- *
- * Functional description
- *	Close down a service.
- *
- **************************************/
 	freeEngineData(user_status);
 }
 
