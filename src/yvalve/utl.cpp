@@ -3247,7 +3247,7 @@ void makeKey()
 	int err = pthread_key_create(&key, ThreadCleanup::destructor);
 	if (err)
 	{
-		Firebird::system_call_failed("pthread_key_create", err);
+		Firebird::system_call_failed::raise("pthread_key_create", err);
 	}
 	keySet = true;
 }
@@ -3257,13 +3257,13 @@ void ThreadCleanup::initThreadCleanup()
 	int err = pthread_once(&keyOnce, makeKey);
 	if (err)
 	{
-		Firebird::system_call_failed("pthread_once", err);
+		Firebird::system_call_failed::raise("pthread_once", err);
 	}
 
 	err = pthread_setspecific(key, &key);
 	if (err)
 	{
-		Firebird::system_call_failed("pthread_setspecific", err);
+		Firebird::system_call_failed::raise("pthread_setspecific", err);
 	}
 }
 
@@ -3287,7 +3287,7 @@ public:
 		{
 			int err = pthread_key_delete(key);
 			if (err)
-				Firebird::system_call_failed("pthread_key_delete", err);
+				gds__log("pthread_key_delete failed with error %d", err);
 		}
 	}
 };
