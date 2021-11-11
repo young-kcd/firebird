@@ -203,13 +203,6 @@ public:
 	typedef Bits<maxSystemPrivilege> Privileges;
 
 private:
-/*
-	MetaName	usr_user_name;		// User name
-	MetaName	usr_sql_role_name;	// Role name
-	mutable Firebird::SortedArray<MetaName> usr_granted_roles; // Granted roles list
-	MetaName	usr_trusted_role;	// Trusted role if set
-	MetaName	usr_init_role;		// Initial role, assigned at sclInit()
- */
 	Firebird::MetaString	usr_user_name;		// User name
 	Firebird::MetaString	usr_sql_role_name;	// Role name
 	mutable Firebird::SortedArray<MetaName> usr_granted_roles; // Granted roles list
