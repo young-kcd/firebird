@@ -165,7 +165,7 @@ bool PREPARSE_execute(CheckStatusWrapper* status, Why::YAttachment** ptrAtt,
 	{
 		if (stmt.isEmpty())
 		{
-			Arg::Gds(isc_command_end_err).raise();
+			return false;	// let others care
 		}
 
 		bool hasUser = true;
