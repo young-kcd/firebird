@@ -2332,9 +2332,6 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2(ISC_STATUS* userStatus, isc_db_handl
 
 	try
 	{
-		if (!sqlStmt)
-			Arg::Gds(isc_command_end_err).raise();
-
 		FB_BOOLEAN stmtIsCrDb = FB_FALSE;
 		YAttachment* att = utilInterface.executeCreateDatabase(&statusWrapper, stmtLength,
 			sqlStmt, dialect, &stmtIsCrDb);
@@ -5513,9 +5510,6 @@ YStatement* YAttachment::prepare(CheckStatusWrapper* status, ITransaction* trans
 	try
 	{
 		YEntry<YAttachment> entry(status, this);
-
-		if (!sqlStmt)
-			Arg::Gds(isc_command_end_err).raise();
 
 		NextTransaction trans;
 		if (transaction)
