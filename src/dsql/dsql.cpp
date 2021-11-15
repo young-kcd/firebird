@@ -2196,7 +2196,8 @@ static void sql_info(thread_db* tdbb,
 		case isc_info_sql_explain_plan:
 			{
 				const bool detailed = (item == isc_info_sql_explain_plan);
-				string plan = OPT_get_plan(tdbb, request->req_request, detailed);
+				string plan = tdbb->getAttachment()->stringToUserCharSet(tdbb,
+					OPT_get_plan(tdbb, request->req_request, detailed));
 
 				if (plan.hasData())
 				{
