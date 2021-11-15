@@ -2838,7 +2838,7 @@ void Validation::checkDPinPP(jrd_rel* relation, ULONG page_number)
 	* Functional description
 	*	Check if data page presented in pointer page.
 	* If not we try to fix it by setting pointer page slot in the page_number.
-	* Early in walk_chain we observed that this page in related to the relation so we skip such kind of check here.
+	* Early in walk_chain we observed that this page is related to the relation so we skip such kind of check here.
 	**************************************/
 
 	WIN window(DB_PAGE_SPACE, page_number);
@@ -2895,11 +2895,10 @@ void Validation::checkDPinPP(jrd_rel* relation, ULONG page_number)
 				vdr_fixed++;
 			}
 		}
+		release_page(&window);
 	}
 	else
 		corrupt(VAL_DATA_PAGE_HASNO_PP, relation, page_number, dpage->dpg_sequence);
-
-	release_page(&window);
 }
 
 void Validation::checkDPinPIP(jrd_rel* relation, ULONG page_number)
