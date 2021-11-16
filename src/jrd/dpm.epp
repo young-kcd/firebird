@@ -3018,6 +3018,16 @@ static UCHAR* find_space(thread_db*	tdbb,
 	const SSHORT aligned_size = ROUNDUP(size, ODS_ALIGNMENT);
 	data_page* page = (data_page*) rpb->getWindow(tdbb).win_buffer;
 
+	if ((page->dpg_count > 0) && (type == DPM_primary) && (page->dpg_header.pag_flags & dpg_secondary))
+	{
+		// Attempt to put primary record on secondary data page - seems
+		// flags on PP is not correct. Fix flags and let caller to find
+		// space for record at another data page.
+
+		mark_full(tdbb, rpb);
+		return NULL;
+	}
+
 	// Scan allocated lines looking for an empty slot, the high water mark,
 	// and the amount of space potentially available on the page
 
