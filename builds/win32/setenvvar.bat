@@ -29,7 +29,17 @@ if DEFINED VS150COMNTOOLS (
 @set MSVC_VERSION=15
 @set MSVC_CMAKE_GENERATOR=Visual Studio 15
 ) else (
+if DEFINED VS140COMNTOOLS (
+@set MSVC_VERSION=14
+@set MSVC_CMAKE_GENERATOR=Visual Studio 14
+) else (
+if DEFINED VS120COMNTOOLS (
+@set MSVC_VERSION=12
+@set MSVC_CMAKE_GENERATOR=Visual Studio 12
+) else (
 @goto :HELP
+)
+)
 )
 )
 )
