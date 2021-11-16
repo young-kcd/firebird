@@ -27,6 +27,11 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix #7044
+        Validation error: Data page N {sequence M} marked as secondary but contains primary record versions in table T
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix #7036
         Unexpected messages '"Missing security context ...' in firebird.log
       Contributor(s):
