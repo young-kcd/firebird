@@ -215,12 +215,12 @@ system_error::system_error(const char* syscall, const char* arg, int error_code)
 
 void system_error::raise(const char* syscall, int error_code)
 {
-	throw system_error(syscall, nullptr, error_code);
+	throw system_error(syscall, NULL, error_code);
 }
 
 void system_error::raise(const char* syscall)
 {
-	throw system_error(syscall, nullptr, getSystemError());
+	throw system_error(syscall, NULL, getSystemError());
 }
 
 int system_error::getSystemError()
@@ -249,12 +249,12 @@ system_call_failed::system_call_failed(const char* syscall, const char* arg, int
 
 void system_call_failed::raise(const char* syscall, int error_code)
 {
-	throw system_call_failed(syscall, nullptr, error_code);
+	throw system_call_failed(syscall, NULL, error_code);
 }
 
 void system_call_failed::raise(const char* syscall)
 {
-	throw system_call_failed(syscall, nullptr, getSystemError());
+	throw system_call_failed(syscall, NULL, getSystemError());
 }
 
 
