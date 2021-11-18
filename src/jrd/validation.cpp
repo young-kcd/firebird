@@ -1252,11 +1252,12 @@ Validation::FETCH_CODE Validation::fetch_page(bool mark, ULONG page_number,
 		const ULONG page_scn = (*page_pointer)->pag_scn;
 
 		WIN scns_window(DB_PAGE_SPACE, scn_page_num);
-		scns_page* scns = (scns_page*) *page_pointer;
+		scns_page* scns;
 
-		if (scn_page_num != page_number) {
+		if (scn_page_num == page_number)
+			scns = (scns_page*) *page_pointer;
+		else
 			fetch_page(mark, scn_page_num, pag_scns, &scns_window, &scns);
-		}
 
 		if (scns->scn_pages[scn_slot] != page_scn)
 		{
