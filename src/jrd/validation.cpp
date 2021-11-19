@@ -2855,7 +2855,7 @@ void Validation::checkDPinPP(jrd_rel* relation, ULONG page_number)
 	DECOMPOSE(sequence, dbb->dbb_dp_per_pp, pp_sequence, slot);
 
 	const vcl* vector = relation->getBasePages()->rel_pages;
-	pointer_page* ppage = 0;
+	pointer_page* ppage = NULL;
 	if (pp_sequence < vector->count())
 	{
 		fetch_page(false, (*vector)[pp_sequence], pag_pointer, &window, &ppage);
@@ -3042,16 +3042,21 @@ Validation::RTN Validation::walk_relation(jrd_rel* relation)
 
 			if (c.getFirst() && b.getFirst())
 			{
-				for (bool next = true; next; next = c.getNext())
+				while (true)
 				{
 					if (c.current() == b.current())
 						b.getNext();
-					else if ((c.current() < b.current()) || !b.getNext())
+					else if ( ( c.current() < b.current() ) || !b.getNext() )
 					{
 						//fprintf(stdout, "chain page was visited not via data pages %d\n", c.current());
 						checkDPinPP(relation, c.current());
 						checkDPinPIP(relation, c.current());
 					}
+					else
+						continue;
+
+					if (!c.getNext())
+						break;
 				}
 			}
 		}
