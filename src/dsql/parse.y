@@ -867,7 +867,6 @@ dml_statement
 	| merge										{ $$ = $1; }
 	| exec_procedure							{ $$ = $1; }
 	| exec_block								{ $$ = $1; }
-	| savepoint									{ $$ = $1; }
 	| select									{ $$ = $1; }
 	| update									{ $$ = $1; }
 	| update_or_insert							{ $$ = $1; }
@@ -890,6 +889,7 @@ ddl_statement
 %type <traNode> tra_statement
 tra_statement
 	: set_transaction							{ $$ = $1; }
+	| savepoint									{ $$ = $1; }
 	| commit									{ $$ = $1; }
 	| rollback									{ $$ = $1; }
 	;
@@ -5260,50 +5260,31 @@ precision_opt_nz
 
 // transaction statements
 
-%type <stmtNode> savepoint
+%type <traNode> savepoint
 savepoint
 	: set_savepoint
 	| release_savepoint
 	| undo_savepoint
 	;
 
-%type <stmtNode> set_savepoint
+%type <traNode> set_savepoint
 set_savepoint
 	: SAVEPOINT symbol_savepoint_name
-		{
-			UserSavepointNode* node = newNode<UserSavepointNode>();
-			node->command = UserSavepointNode::CMD_SET;
-			node->name = *$2;
-			$$ = node;
-		}
+		{ $$ = newNode<UserSavepointNode>(UserSavepointNode::CMD_SET, *$2); }
 	;
 
-%type <stmtNode> release_savepoint
+%type <traNode> release_savepoint
 release_savepoint
-	: RELEASE SAVEPOINT symbol_savepoint_name release_only_opt
-		{
-			UserSavepointNode* node = newNode<UserSavepointNode>();
-			node->command = ($4 ? UserSavepointNode::CMD_RELEASE_ONLY : UserSavepointNode::CMD_RELEASE);
-			node->name = *$3;
-			$$ = node;
-		}
+	: RELEASE SAVEPOINT symbol_savepoint_name
+		{ $$ = newNode<UserSavepointNode>(UserSavepointNode::CMD_RELEASE, *$3); }
+	| RELEASE SAVEPOINT symbol_savepoint_name ONLY
+		{ $$ = newNode<UserSavepointNode>(UserSavepointNode::CMD_RELEASE_ONLY, *$3); }
 	;
 
-%type <boolVal> release_only_opt
-release_only_opt
-	: /* nothing */		{ $$ = false; }
-	| ONLY				{ $$ = true; }
-	;
-
-%type <stmtNode> undo_savepoint
+%type <traNode> undo_savepoint
 undo_savepoint
 	: ROLLBACK optional_work TO optional_savepoint symbol_savepoint_name
-		{
-			UserSavepointNode* node = newNode<UserSavepointNode>();
-			node->command = UserSavepointNode::CMD_ROLLBACK;
-			node->name = *$5;
-			$$ = node;
-		}
+		{ $$ = newNode<UserSavepointNode>(UserSavepointNode::CMD_ROLLBACK, *$5); }
 	;
 
 optional_savepoint
