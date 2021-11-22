@@ -1059,8 +1059,8 @@ void DsqlTransactionRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scra
 {
 	node = Node::doDsqlPass(scratch, node);
 
-	// Don't trace pseudo-statements (without requests associated).
-	req_traced = false;
+	// Don't trace anything except savepoint statements
+	req_traced = (scratch->getStatement()->getType() == DsqlCompiledStatement::TYPE_SAVEPOINT);
 }
 
 // Execute a dynamic SQL statement.
@@ -1069,7 +1069,9 @@ void DsqlTransactionRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	IMessageMetadata* /*outMetadata*/, UCHAR* /*outMsg*/,
 	bool /*singleton*/)
 {
+	TraceDSQLExecute trace(req_dbb->dbb_attachment, this);
 	node->execute(tdbb, this, traHandle);
+	trace.finish(false, ITracePlugin::RESULT_SUCCESS);
 }
 
 
