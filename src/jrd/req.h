@@ -219,10 +219,20 @@ public:
 			CS_METADATA : req_attachment->att_charset;
 	}
 
+	bool isRequestIdUnassigned() const
+	{
+		return req_id == 0;
+	}
+
 	StmtNumber getRequestId() const
 	{
 		if (!req_id)
-			req_id = JRD_get_thread_data()->getDatabase()->generateStatementId();
+		{
+			req_id = statement->requests.hasData() && this == statement->requests[0] ?
+				statement->getStatementId() :
+				JRD_get_thread_data()->getDatabase()->generateStatementId();
+		}
+
 		return req_id;
 	}
 

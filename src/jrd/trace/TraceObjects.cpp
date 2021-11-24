@@ -212,7 +212,7 @@ void TraceSQLStatementImpl::fillPlan(bool explained)
 	{
 		m_planExplained = explained;
 		if (m_stmt->req_request)
-			m_plan = OPT_get_plan(JRD_get_thread_data(), m_stmt->req_request, m_planExplained);
+			m_plan = OPT_get_plan(JRD_get_thread_data(), m_stmt->req_request->getStatement(), m_planExplained);
 	}
 }
 

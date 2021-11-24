@@ -878,7 +878,14 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	if (transaction->tra_flags & TRA_prepared)
 		ERR_post(Arg::Gds(isc_req_no_trans));
 
-	JrdStatement* statement = request->getStatement();
+	const auto dbb = tdbb->getDatabase();
+	const auto statement = request->getStatement();
+
+	// Generate request id.
+	request->setRequestId(
+		request->isRequestIdUnassigned() && statement->requests.hasData() && request == statement->requests[0] ?
+			statement->getStatementId() :
+			dbb->generateStatementId());
 
 	/* Post resources to transaction block.  In particular, the interest locks
 	on relations/indices are copied to the transaction, which is very

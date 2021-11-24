@@ -441,7 +441,7 @@ static const UCHAR sort_dtypes[] =
 };
 
 
-string OPT_get_plan(thread_db* tdbb, const jrd_req* request, bool detailed)
+string OPT_get_plan(thread_db* tdbb, const JrdStatement* statement, bool detailed)
 {
 /**************************************
  *
@@ -455,9 +455,9 @@ string OPT_get_plan(thread_db* tdbb, const jrd_req* request, bool detailed)
  **************************************/
 	string plan;
 
-	if (request)
+	if (statement)
 	{
-		const Array<const RecordSource*>& fors = request->getStatement()->fors;
+		const Array<const RecordSource*>& fors = statement->fors;
 
 		for (FB_SIZE_T i = 0; i < fors.getCount(); i++)
 		{
