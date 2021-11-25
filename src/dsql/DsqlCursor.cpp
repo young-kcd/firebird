@@ -117,11 +117,7 @@ int DsqlCursor::fetchNext(thread_db* tdbb, UCHAR* buffer)
 		return 0;
 	}
 
-	if (m_state == EOS)
-		return 1;
-
-	const FB_UINT64 position = (m_state == BOS) ? 0 : m_position + 1;
-	return fetchFromCache(tdbb, buffer, position);
+	return fetchRelative(tdbb, buffer, 1);
 }
 
 int DsqlCursor::fetchPrior(thread_db* tdbb, UCHAR* buffer)
@@ -129,17 +125,7 @@ int DsqlCursor::fetchPrior(thread_db* tdbb, UCHAR* buffer)
 	if (!(m_flags & IStatement::CURSOR_TYPE_SCROLLABLE))
 		(Arg::Gds(isc_invalid_fetch_option) << Arg::Str("PRIOR")).raise();
 
-	if (m_state == BOS)
-		return -1;
-
-	if (!m_position)
-	{
-		m_state = BOS;
-		return -1;
-	}
-
-	const FB_UINT64 position = ((m_state == EOS) ? m_cachedCount : m_position) - 1;
-	return fetchFromCache(tdbb, buffer, position);
+	return fetchRelative(tdbb, buffer, -1);
 }
 
 int DsqlCursor::fetchFirst(thread_db* tdbb, UCHAR* buffer)
@@ -182,6 +168,12 @@ int DsqlCursor::fetchAbsolute(thread_db* tdbb, UCHAR* buffer, SLONG position)
 		offset = m_cachedCount;
 	}
 
+	if (position + offset < 0)
+	{
+		m_state = BOS;
+		return -1;
+	}
+
 	return fetchFromCache(tdbb, buffer, position + offset);
 }
 
@@ -190,12 +182,14 @@ int DsqlCursor::fetchRelative(thread_db* tdbb, UCHAR* buffer, SLONG offset)
 	if (!(m_flags & IStatement::CURSOR_TYPE_SCROLLABLE))
 		(Arg::Gds(isc_invalid_fetch_option) << Arg::Str("RELATIVE")).raise();
 
+	SINT64 position = m_position + offset;
+
 	if (m_state == BOS)
 	{
 		if (offset <= 0)
 			return -1;
 
-		return fetchFromCache(tdbb, buffer, offset - 1);
+		position = offset - 1;
 	}
 	else if (m_state == EOS)
 	{
@@ -204,19 +198,16 @@ int DsqlCursor::fetchRelative(thread_db* tdbb, UCHAR* buffer, SLONG offset)
 
 		fb_assert(m_eof);
 
-		if ((SINT64) m_cachedCount + offset < 0)
-			return -1;
-
-		return fetchFromCache(tdbb, buffer, m_cachedCount + offset);
+		position = m_cachedCount + offset;
 	}
 
-	if ((SINT64) m_position + offset < 0)
+	if (position < 0)
 	{
 		m_state = BOS;
 		return -1;
 	}
 
-	return fetchFromCache(tdbb, buffer, m_position + offset);
+	return fetchFromCache(tdbb, buffer, position);
 }
 
 int DsqlCursor::fetchFromCache(thread_db* tdbb, UCHAR* buffer, FB_UINT64 position)
