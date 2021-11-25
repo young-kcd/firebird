@@ -432,7 +432,8 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 		const auto relation = rpb->rpb_relation;
 
 		// Ensure the record is still in the most recent format
-		VIO_record(tdbb, rpb, MET_current(tdbb, relation), tdbb->getDefaultPool());
+		const auto record =
+			VIO_record(tdbb, rpb, MET_current(tdbb, relation), tdbb->getDefaultPool());
 
 		// Set all fields to NULL if the stream was originally marked as invalid
 		if (!rpb->rpb_number.isValid())
@@ -456,7 +457,7 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 
 		auto temp = *rpb;
 		temp.rpb_record = nullptr;
-		AutoPtr<Record> cleanupRecord;
+		AutoPtr<Record> tempRecord;
 
 		// If the primary record version disappeared, we cannot proceed
 
@@ -470,9 +471,9 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 			if (!(temp.rpb_runtime_flags & RPB_undo_data))
 				VIO_data(tdbb, &temp, tdbb->getDefaultPool());
 
-			cleanupRecord = temp.rpb_record;
+			tempRecord = temp.rpb_record;
 
-			VIO_copy_record(tdbb, &temp, rpb);
+			VIO_copy_record(tdbb, relation, tempRecord, record);
 
 			if (temp.rpb_transaction_nr == orgTraNum && orgTraNum != selfTraNum)
 				continue; // we surely see the original record version
@@ -588,11 +589,11 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 
 			VIO_data(tdbb, &temp, tdbb->getDefaultPool());
 
-			cleanupRecord.reset(temp.rpb_record);
+			tempRecord.reset(temp.rpb_record);
 
 			++backversions;
 		}
 
-		VIO_copy_record(tdbb, &temp, rpb);
+		VIO_copy_record(tdbb, relation, tempRecord, record);
 	}
 }

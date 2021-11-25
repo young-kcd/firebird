@@ -7103,10 +7103,11 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 	newRpb->rpb_length = newFormat->fmt_length;
 	newRpb->rpb_format_number = newFormat->fmt_version;
 
-	if (!orgRpb->rpb_record)
+	Record* orgRecord = orgRpb->rpb_record;
+	if (!orgRecord)
 	{
 		const Format* const orgFormat = newFormat;
-		Record* const orgRecord = VIO_record(tdbb, orgRpb, orgFormat, tdbb->getDefaultPool());
+		orgRecord = VIO_record(tdbb, orgRpb, orgFormat, tdbb->getDefaultPool());
 		orgRpb->rpb_address = orgRecord->getData();
 		orgRpb->rpb_length = orgFormat->fmt_length;
 		orgRpb->rpb_format_number = orgFormat->fmt_version;
@@ -7114,7 +7115,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 
 	// Copy the original record to the new record
 
-	VIO_copy_record(tdbb, orgRpb, newRpb);
+	VIO_copy_record(tdbb, relation, orgRecord, newRecord);
 
 	newRpb->rpb_number = orgRpb->rpb_number;
 	newRpb->rpb_number.setValid(true);

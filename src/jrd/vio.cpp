@@ -1252,7 +1252,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 }
 
 
-void VIO_copy_record(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
+void VIO_copy_record(thread_db* tdbb, jrd_rel* relation, Record* orgRecord, Record* newRecord)
 {
 /**************************************
  *
@@ -1264,60 +1264,60 @@ void VIO_copy_record(thread_db* tdbb, record_param* org_rpb, record_param* new_r
  *	Copy the given record to a new destination,
  *	taking care about possible format differences.
  **************************************/
-	fb_assert(org_rpb && new_rpb);
-	Record* const org_record = org_rpb->rpb_record;
-	Record* const new_record = new_rpb->rpb_record;
-	fb_assert(org_record && new_record);
-
 	// dimitr:	Clear the req_null flag that may stay active after the last
 	//			boolean evaluation. Here we use only EVL_field() calls that
 	//			do not touch this flag and data copying is done only for
 	//			non-NULL fields, so req_null should never be seen inside blb::move().
 	//			See CORE-6090 for details.
 
-	jrd_req* const request = tdbb->getRequest();
+	const auto request = tdbb->getRequest();
 	request->req_flags &= ~req_null;
+
+	const auto orgFormat = orgRecord->getFormat();
+	const auto newFormat = newRecord->getFormat();
+	fb_assert(orgFormat && newFormat);
 
 	// Copy the original record to the new record. If the format hasn't changed,
 	// this is a simple move. If the format has changed, each field must be
 	// fetched and moved separately, remembering to set the missing flag.
 
-	if (new_rpb->rpb_format_number == org_rpb->rpb_format_number)
-		new_record->copyDataFrom(org_record, true);
-	else
+	if (newFormat->fmt_version == orgFormat->fmt_version)
 	{
-		DSC org_desc, new_desc;
+		newRecord->copyDataFrom(orgRecord, true);
+		return;
+	}
 
-		for (USHORT i = 0; i < new_record->getFormat()->fmt_count; i++)
+	dsc orgDesc, newDesc;
+
+	for (USHORT i = 0; i < newFormat->fmt_count; i++)
+	{
+		newRecord->clearNull(i);
+
+		if (EVL_field(relation, newRecord, i, &newDesc))
 		{
-			new_record->clearNull(i);
-
-			if (EVL_field(new_rpb->rpb_relation, new_record, i, &new_desc))
+			if (EVL_field(relation, orgRecord, i, &orgDesc))
 			{
-				if (EVL_field(org_rpb->rpb_relation, org_record, i, &org_desc))
-				{
-					// If the source is not a blob or it's a temporary blob,
-					// then we'll need to materialize the resulting blob.
-					// Thus blb::move() is called with rpb and field ID.
-					// See also CORE-5600.
+				// If the source is not a blob or it's a temporary blob,
+				// then we'll need to materialize the resulting blob.
+				// Thus blb::move() is called with rpb and field ID.
+				// See also CORE-5600.
 
-					const bool materialize =
-						(DTYPE_IS_BLOB_OR_QUAD(new_desc.dsc_dtype) &&
-							!(DTYPE_IS_BLOB_OR_QUAD(org_desc.dsc_dtype) &&
-								((bid*) org_desc.dsc_address)->bid_internal.bid_relation_id));
+				const bool materialize =
+					(DTYPE_IS_BLOB_OR_QUAD(newDesc.dsc_dtype) &&
+						!(DTYPE_IS_BLOB_OR_QUAD(orgDesc.dsc_dtype) &&
+							((bid*) orgDesc.dsc_address)->bid_internal.bid_relation_id));
 
-					if (materialize)
-						blb::move(tdbb, &org_desc, &new_desc, new_rpb, i);
-					else
-						MOV_move(tdbb, &org_desc, &new_desc);
-				}
+				if (materialize)
+					blb::move(tdbb, &orgDesc, &newDesc, relation, newRecord, i);
 				else
-				{
-					new_record->setNull(i);
+					MOV_move(tdbb, &orgDesc, &newDesc);
+			}
+			else
+			{
+				newRecord->setNull(i);
 
-					if (new_desc.dsc_dtype)
-						memset(new_desc.dsc_address, 0, new_desc.dsc_length);
-				}
+				if (!newDesc.isUnknown())
+					memset(newDesc.dsc_address, 0, newDesc.dsc_length);
 			}
 		}
 	}
@@ -4038,9 +4038,10 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 
 	transaction->tra_flags |= TRA_write;
 
-	if (!org_rpb->rpb_record)
+	Record* org_record = org_rpb->rpb_record;
+	if (!org_record)
 	{
-		Record* const org_record = VIO_record(tdbb, org_rpb, NULL, tdbb->getDefaultPool());
+		org_record = VIO_record(tdbb, org_rpb, NULL, tdbb->getDefaultPool());
 		org_rpb->rpb_address = org_record->getData();
 		const Format* const org_format = org_record->getFormat();
 		org_rpb->rpb_length = org_format->fmt_length;
@@ -4066,7 +4067,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 		new_rpb.rpb_length = new_format->fmt_length;
 		new_rpb.rpb_format_number = new_format->fmt_version;
 
-		VIO_copy_record(tdbb, org_rpb, &new_rpb);
+		VIO_copy_record(tdbb, relation, org_record, new_record);
 	}
 
 	// We're about to lock the record. Post a refetch request
