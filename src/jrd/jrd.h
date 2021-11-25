@@ -210,13 +210,6 @@ private:
 };
 
 
-//
-// Flags to indicate normal internal requests vs. dyn internal requests
-//
-const int IRQ_REQUESTS				= 1;
-const int DYN_REQUESTS				= 2;
-
-
 // Procedure block
 
 class jrd_prc : public Routine

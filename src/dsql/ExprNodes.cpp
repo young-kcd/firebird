@@ -4864,7 +4864,7 @@ DmlNode* DefaultNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	if (csb->csb_g_flags & csb_get_dependencies)
 	{
 		CompilerScratch::Dependency dependency(obj_relation);
-		dependency.relation = MET_lookup_relation(tdbb, relationName);
+		dependency.relation = MetadataCache::lookup_relation(tdbb, relationName);
 		dependency.subName = FB_NEW_POOL(pool) MetaName(fieldName);
 		csb->csb_dependencies.push(dependency);
 	}
@@ -4873,7 +4873,7 @@ DmlNode* DefaultNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 	while (true)
 	{
-		jrd_rel* relation = MET_lookup_relation(tdbb, relationName);
+		jrd_rel* relation = MetadataCache::lookup_relation(tdbb, relationName);
 
 		if (relation && relation->rel_fields)
 		{
@@ -5826,7 +5826,7 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 				(procedure->flags & Routine::FLAG_BEING_SCANNED) ||
 				(procedure->flags & Routine::FLAG_BEING_ALTERED)))
 		{
-			const jrd_prc* scan_proc = MET_procedure(tdbb, procedure->getId(), false, 0);
+			const jrd_prc* scan_proc = MetadataCache::findProcedure(tdbb, procedure->getId(), false, 0);
 
 			if (scan_proc != procedure)
 				procedure = NULL;

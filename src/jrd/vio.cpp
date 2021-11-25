@@ -1629,7 +1629,7 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				}
 				EVL_field(0, rpb->rpb_record, f_rel_name, &desc);
 				DFW_post_work(transaction, dfw_delete_relation, &desc, id);
-				jrd_rel* rel_drop = MET_lookup_relation_id(tdbb, id, false);
+				jrd_rel* rel_drop = MetadataCache::lookup_relation_id(tdbb, id, false);
 				if (rel_drop)
 					MET_scan_relation(tdbb, rel_drop);
 			}
@@ -1646,7 +1646,7 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_prc_name, &desc);
 
 			DFW_post_work(transaction, dfw_delete_procedure, &desc, id, package_name);
-			MET_lookup_procedure_id(tdbb, id, false, true, 0);
+			MetadataCache::lookup_procedure_id(tdbb, id, false, true, 0);
 			break;
 
 		case rel_collations:
@@ -1691,7 +1691,7 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			{
 				MetaName relation_name;
 				MOV_get_metaname(tdbb, &desc, relation_name);
-				r2 = MET_lookup_relation(tdbb, relation_name);
+				r2 = MetadataCache::lookup_relation(tdbb, relation_name);
 				fb_assert(r2);
 
 				DSC idx_name;
@@ -1723,8 +1723,8 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 					index_desc idx;
 
 					if ((BTR_lookup(tdbb, r2, id - 1, &idx, r2->getBasePages())) &&
-						MET_lookup_partner(tdbb, r2, &idx, index_name.nullStr()) &&
-						(partner = MET_lookup_relation_id(tdbb, idx.idx_primary_relation, false)) )
+						MetadataCache::lookup_partner(tdbb, r2, &idx, index_name.nullStr()) &&
+						(partner = MetadataCache::lookup_relation_id(tdbb, idx.idx_primary_relation, false)) )
 					{
 						DFW_post_work_arg(transaction, work, 0, partner->rel_id,
 										  dfw_arg_partner_rel_id);
@@ -1746,7 +1746,7 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			DFW_post_work(transaction, dfw_update_format, &desc, 0);
 			EVL_field(0, rpb->rpb_record, f_rfr_fname, &desc2);
 			MOV_get_metaname(tdbb, &desc, object_name);
-			if ( (r2 = MET_lookup_relation(tdbb, object_name)) )
+			if ( (r2 = MetadataCache::lookup_relation(tdbb, object_name)) )
 			{
 				DFW_post_work(transaction, dfw_delete_rfr, &desc2, r2->rel_id);
 			}
@@ -1766,7 +1766,7 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 			EVL_field(0, rpb->rpb_record, f_prm_name, &desc2);
 
-			if ( (procedure = MET_lookup_procedure(tdbb,
+			if ( (procedure = MetadataCache::lookup_procedure(tdbb,
 					QualifiedName(object_name, package_name), true)) )
 			{
 				work = DFW_post_work(transaction, dfw_delete_prm, &desc2, procedure->getId(),
@@ -3918,12 +3918,12 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 	bool ret = true;
 
 	try {
-
-		for (FB_SIZE_T i = 1; (vector = attachment->att_relations) && i < vector->count(); i++)
+		MetadataCache& mdc = attachment->att_mdc;
+		for (FB_SIZE_T i = 1; i < mdc.relCount(); i++)
 		{
-			relation = (*vector)[i];
+			relation = mdc.getRelation(i);
 			if (relation)
-				relation = MET_lookup_relation_id(tdbb, i, false);
+				relation = MetadataCache::lookup_relation_id(tdbb, i, false);
 
 			if (relation &&
 				!(relation->rel_flags & (REL_deleted | REL_deleting)) &&
@@ -4845,7 +4845,7 @@ void Database::garbage_collector(Database* dbb)
 				if ((dbb->dbb_flags & DBB_gc_pending) &&
 					(gc_bitmap = gc->getPages(dbb->dbb_oldest_snapshot, relID)))
 				{
-					relation = MET_lookup_relation_id(tdbb, relID, false);
+					relation = MetadataCache::lookup_relation_id(tdbb, relID, false);
 					if (!relation || (relation->rel_flags & (REL_deleted | REL_deleting)))
 					{
 						delete gc_bitmap;
@@ -4992,7 +4992,7 @@ void Database::garbage_collector(Database* dbb)
 		attachment->releaseLocks(tdbb);
 		LCK_fini(tdbb, LCK_OWNER_attachment);
 
-		attachment->releaseRelations(tdbb);
+		attachment->att_mdc.releaseRelations(tdbb);
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{

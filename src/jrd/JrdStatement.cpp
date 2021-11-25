@@ -106,7 +106,7 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 				case Resource::rsc_relation:
 				{
 					jrd_rel* relation = resource->rsc_rel;
-					MET_post_existence(tdbb, relation);
+					MetadataCache::post_existence(tdbb, relation);
 					break;
 				}
 
@@ -431,7 +431,7 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 
 		if (item->exa_action == ExternalAccess::exa_procedure)
 		{
-			routine = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
+			routine = MetadataCache::lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
 			if (!routine)
 			{
 				string name;
@@ -455,7 +455,7 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 		}
 		else
 		{
-			jrd_rel* relation = MET_lookup_relation_id(tdbb, item->exa_rel_id, false);
+			jrd_rel* relation = MetadataCache::lookup_relation_id(tdbb, item->exa_rel_id, false);
 
 			if (!relation)
 				continue;
@@ -463,7 +463,7 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 			MetaName userName = item->user;
 			if (item->exa_view_id)
 			{
-				jrd_rel* view = MET_lookup_relation_id(tdbb, item->exa_view_id, false);
+				jrd_rel* view = MetadataCache::lookup_relation_id(tdbb, item->exa_view_id, false);
 				if (view && (view->rel_flags & REL_sql_relation))
 					userName = view->rel_owner_name;
 			}
@@ -501,7 +501,7 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 
 			if (access->acc_ss_rel_id)
 			{
-				const jrd_rel* view = MET_lookup_relation_id(tdbb, access->acc_ss_rel_id, false);
+				const jrd_rel* view = MetadataCache::lookup_relation_id(tdbb, access->acc_ss_rel_id, false);
 				if (view && (view->rel_flags & REL_sql_relation))
 					userName = view->rel_owner_name;
 			}
@@ -569,7 +569,7 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 
 		if (access->acc_ss_rel_id)
 		{
-			const jrd_rel* view = MET_lookup_relation_id(tdbb, access->acc_ss_rel_id, false);
+			const jrd_rel* view = MetadataCache::lookup_relation_id(tdbb, access->acc_ss_rel_id, false);
 			if (view && (view->rel_flags & REL_sql_relation))
 				userName = view->rel_owner_name;
 		}
@@ -700,7 +700,7 @@ void JrdStatement::verifyTriggerAccess(thread_db* tdbb, jrd_rel* ownerRelation,
 			// a direct access to an object from this trigger
 			if (access->acc_ss_rel_id)
 			{
-				const jrd_rel* view = MET_lookup_relation_id(tdbb, access->acc_ss_rel_id, false);
+				const jrd_rel* view = MetadataCache::lookup_relation_id(tdbb, access->acc_ss_rel_id, false);
 				if (view && (view->rel_flags & REL_sql_relation))
 					userName = view->rel_owner_name;
 			}
@@ -750,7 +750,7 @@ void JrdStatement::buildExternalAccess(thread_db* tdbb, ExternalAccessList& list
 		// Add externals recursively
 		if (item->exa_action == ExternalAccess::exa_procedure)
 		{
-			jrd_prc* const procedure = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
+			jrd_prc* const procedure = MetadataCache::lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
 			if (procedure && procedure->getStatement())
 			{
 				item->user = procedure->invoker ? MetaName(procedure->invoker->getUserName()) : user;
@@ -774,7 +774,7 @@ void JrdStatement::buildExternalAccess(thread_db* tdbb, ExternalAccessList& list
 		}
 		else
 		{
-			jrd_rel* relation = MET_lookup_relation_id(tdbb, item->exa_rel_id, false);
+			jrd_rel* relation = MetadataCache::lookup_relation_id(tdbb, item->exa_rel_id, false);
 
 			if (!relation)
 				continue;

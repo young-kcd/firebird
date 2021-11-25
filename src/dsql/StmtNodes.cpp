@@ -2923,7 +2923,7 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 	if (blrOp == blr_exec_pid)
 	{
 		const USHORT pid = csb->csb_blr_reader.getWord();
-		if (!(procedure = MET_lookup_procedure_id(tdbb, pid, false, false, 0)))
+		if (!(procedure = MetadataCache::lookup_procedure_id(tdbb, pid, false, false, 0)))
 			name.identifier.printf("id %d", pid);
 	}
 	else
@@ -2944,7 +2944,7 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 			}
 		}
 		else
-			procedure = MET_lookup_procedure(tdbb, name, false);
+			procedure = MetadataCache::lookup_procedure(tdbb, name, false);
 	}
 
 	if (!procedure)
@@ -10714,7 +10714,7 @@ static void preprocessAssignments(thread_db* tdbb, CompilerScratch* csb,
 					}
 					else if (relation->rel_view_rse && fld->fld_source_rel_field.first.hasData())
 					{
-						relation = MET_lookup_relation(tdbb, fld->fld_source_rel_field.first);
+						relation = MetadataCache::lookup_relation(tdbb, fld->fld_source_rel_field.first);
 
 						fb_assert(relation);
 						if (!relation)

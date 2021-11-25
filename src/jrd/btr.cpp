@@ -284,7 +284,7 @@ void IndexErrorContext::raise(thread_db* tdbb, idx_e result, Record* record)
 	MetaName indexName(m_indexName), constraintName;
 
 	if (indexName.isEmpty())
-		MET_lookup_index(tdbb, indexName, relationName, indexId + 1);
+		MetadataCache::lookup_index(tdbb, indexName, relationName, indexId + 1);
 
 	if (indexName.hasData())
 		MET_lookup_cnstrt_for_index(tdbb, constraintName, indexName);
@@ -1332,7 +1332,7 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 				  error.value()[1] == isc_expression_eval_index))
 			{
 				MetaName indexName;
-				MET_lookup_index(tdbb, indexName, relation->rel_name, idx->idx_id + 1);
+				MetadataCache::lookup_index(tdbb, indexName, relation->rel_name, idx->idx_id + 1);
 
 				if (indexName.isEmpty())
 					indexName = "***unknown***";

@@ -522,7 +522,7 @@ void Applier::insertRecord(thread_db* tdbb, TraNumber traNum,
 
 	TRA_attach_request(transaction, m_request);
 
-	const auto relation = MET_lookup_relation(tdbb, relName);
+	const auto relation = MetadataCache::lookup_relation(tdbb, relName);
 	if (!relation)
 		raiseError("Table %s is not found", relName.c_str());
 
@@ -642,7 +642,7 @@ void Applier::updateRecord(thread_db* tdbb, TraNumber traNum,
 
 	TRA_attach_request(transaction, m_request);
 
-	const auto relation = MET_lookup_relation(tdbb, relName);
+	const auto relation = MetadataCache::lookup_relation(tdbb, relName);
 	if (!relation)
 		raiseError("Table %s is not found", relName.c_str());
 
@@ -782,7 +782,7 @@ void Applier::deleteRecord(thread_db* tdbb, TraNumber traNum,
 
 	TRA_attach_request(transaction, m_request);
 
-	const auto relation = MET_lookup_relation(tdbb, relName);
+	const auto relation = MetadataCache::lookup_relation(tdbb, relName);
 	if (!relation)
 		raiseError("Table %s is not found", relName.c_str());
 
@@ -849,7 +849,7 @@ void Applier::setSequence(thread_db* tdbb, const MetaName& genName, SINT64 value
 {
 	const auto attachment = tdbb->getAttachment();
 
-	auto gen_id = attachment->att_generators.lookup(genName);
+	auto gen_id = attachment->att_mdc.lookupSequence(genName);
 
 	if (gen_id < 0)
 	{
@@ -858,7 +858,7 @@ void Applier::setSequence(thread_db* tdbb, const MetaName& genName, SINT64 value
 		if (gen_id < 0)
 			raiseError("Generator %s is not found", genName.c_str());
 
-		attachment->att_generators.store(gen_id, genName);
+		attachment->att_mdc.setSequence(gen_id, genName);
 	}
 
 	AutoSetRestoreFlag<ULONG> noCascade(&tdbb->tdbb_flags, TDBB_repl_in_progress, !m_enableCascade);

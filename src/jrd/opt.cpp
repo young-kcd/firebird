@@ -1032,7 +1032,7 @@ static void check_indices(const CompilerScratch::csb_repeat* csb_tail)
 			((idx->idx_runtime_flags & idx_plan_navigate) && !(idx->idx_runtime_flags & idx_navigate)))
 		{
 			if (relation)
-				MET_lookup_index(tdbb, index_name, relation->rel_name, (USHORT) (idx->idx_id + 1));
+				MetadataCache::lookup_index(tdbb, index_name, relation->rel_name, (USHORT) (idx->idx_id + 1));
 			else
 				index_name = "";
 
@@ -3138,7 +3138,7 @@ static double get_cardinality(thread_db* tdbb, jrd_rel* relation, const Format* 
 		return EXT_cardinality(tdbb, relation);
 	}
 
-	MET_post_existence(tdbb, relation);
+	MetadataCache::post_existence(tdbb, relation);
 	const double cardinality = DPM_cardinality(tdbb, relation, format);
 	MET_release_existence(tdbb, relation);
 

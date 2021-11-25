@@ -3065,7 +3065,7 @@ void BufferControl::cache_writer(BufferControl* bcb)
 		attachment->releaseLocks(tdbb);
 		LCK_fini(tdbb, LCK_OWNER_attachment);
 
-		attachment->releaseRelations(tdbb);
+		attachment->att_mdc.releaseRelations(tdbb);
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{

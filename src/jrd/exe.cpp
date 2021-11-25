@@ -552,15 +552,15 @@ void EXE_execute_db_triggers(thread_db* tdbb, jrd_tra* transaction, TriggerActio
 			return;
 	}
 
-	if (attachment->att_triggers[type])
+	TrigVector** triggers = attachment->att_mdc.getTriggers(type | TRIGGER_TYPE_DB);
+	if (triggers)
 	{
 		jrd_tra* old_transaction = tdbb->getTransaction();
 		tdbb->setTransaction(transaction);
 
 		try
 		{
-			EXE_execute_triggers(tdbb, &attachment->att_triggers[type],
-				NULL, NULL, trigger_action, StmtNode::ALL_TRIGS);
+			EXE_execute_triggers(tdbb, triggers, NULL, NULL, trigger_action, StmtNode::ALL_TRIGS);
 			tdbb->setTransaction(old_transaction);
 		}
 		catch (...)
@@ -578,8 +578,9 @@ void EXE_execute_ddl_triggers(thread_db* tdbb, jrd_tra* transaction, bool preTri
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	// Our caller verifies (ATT_no_db_triggers) if DDL triggers should not run.
+	TrigVector** cachedTriggers = attachment->att_mdc.getTriggers(TRIGGER_TYPE_DDL);
 
-	if (attachment->att_ddl_triggers)
+	if (cachedTriggers && *cachedTriggers)
 	{
 		jrd_tra* const oldTransaction = tdbb->getTransaction();
 		tdbb->setTransaction(transaction);
@@ -589,9 +590,7 @@ void EXE_execute_ddl_triggers(thread_db* tdbb, jrd_tra* transaction, bool preTri
 			TrigVector triggers;
 			TrigVector* triggersPtr = &triggers;
 
-			for (TrigVector::iterator i = attachment->att_ddl_triggers->begin();
-				 i != attachment->att_ddl_triggers->end();
-				 ++i)
+			for (auto i = (*cachedTriggers)->begin(); i != (*cachedTriggers)->end(); ++i)
 			{
 				if ((i->type & (1LL << action)) &&
 					((preTriggers && (i->type & 0x1) == 0) || (!preTriggers && (i->type & 0x1) == 0x1)))
@@ -600,8 +599,7 @@ void EXE_execute_ddl_triggers(thread_db* tdbb, jrd_tra* transaction, bool preTri
 				}
 			}
 
-			EXE_execute_triggers(tdbb, &triggersPtr, NULL, NULL, TRIGGER_DDL,
-				StmtNode::ALL_TRIGS);
+			EXE_execute_triggers(tdbb, &triggersPtr, NULL, NULL, TRIGGER_DDL, StmtNode::ALL_TRIGS);
 
 			tdbb->setTransaction(oldTransaction);
 		}

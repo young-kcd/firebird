@@ -108,13 +108,10 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
 			// Point TraceCounts to counts array from baseline object
 			if (base_cnts->setToDiff(*new_cnts))
 			{
-				jrd_rel* const relation =
-					rel_id < static_cast<SLONG>(att->att_relations->count()) ?
-					(*att->att_relations)[rel_id] : NULL;
-
 				TraceCounts traceCounts;
 				traceCounts.trc_relation_id = rel_id;
 				traceCounts.trc_counters = base_cnts->getCounterVector();
+				jrd_rel* const relation = att->att_mdc.getRelation(rel_id);
 				traceCounts.trc_relation_name = relation ? relation->rel_name.c_str() : NULL;
 				temp.add(traceCounts);
 			}
@@ -124,14 +121,11 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
 		}
 		else
 		{
-			jrd_rel* const relation =
-				rel_id < static_cast<SLONG>(att->att_relations->count()) ?
-				(*att->att_relations)[rel_id] : NULL;
-
 			// Point TraceCounts to counts array from object with updated counters
 			TraceCounts traceCounts;
 			traceCounts.trc_relation_id = rel_id;
 			traceCounts.trc_counters = new_cnts->getCounterVector();
+			jrd_rel* const relation = att->att_mdc.getRelation(rel_id);
 			traceCounts.trc_relation_name = relation ? relation->rel_name.c_str() : NULL;
 			temp.add(traceCounts);
 		}

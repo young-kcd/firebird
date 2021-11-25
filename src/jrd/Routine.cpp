@@ -377,12 +377,12 @@ void Routine::remove(thread_db* tdbb)
 
 bool jrd_prc::checkCache(thread_db* tdbb) const
 {
-	return tdbb->getAttachment()->att_procedures[getId()] == this;
+	return tdbb->getAttachment()->att_mdc.getProcedure(getId()) == this;
 }
 
 void jrd_prc::clearCache(thread_db* tdbb)
 {
-	tdbb->getAttachment()->att_procedures[getId()] = NULL;
+	tdbb->getAttachment()->att_mdc.setProcedure(getId(), nullptr);
 }
 
 

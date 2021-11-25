@@ -1121,7 +1121,7 @@ void PAG_header(thread_db* tdbb, bool info)
 	if (header->hdr_flags & hdr_SQL_dialect_3)
 		dbb->dbb_flags |= DBB_DB_SQL_dialect_3;
 
-	jrd_rel* relation = MET_relation(tdbb, 0);
+	jrd_rel* relation = MetadataCache::findRelation(tdbb, 0);
 	RelationPages* relPages = relation->getBasePages();
 	if (!relPages->rel_pages)
 	{

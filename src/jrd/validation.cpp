@@ -1618,17 +1618,17 @@ void Validation::walk_database()
 		walk_generators();
 	}
 
-	vec<jrd_rel*>* vector;
-	for (USHORT i = 0; (vector = attachment->att_relations) && i < vector->count(); i++)
+	MetadataCache& mdc = attachment->att_mdc;
+	for (USHORT i = 0; i < mdc.relCount(); i++)
 	{
 #ifdef DEBUG_VAL_VERBOSE
 		if (i > dbb->dbb_max_sys_rel) // Why not system flag instead?
 			VAL_debug_level = 2;
 #endif
-		jrd_rel* relation = (*vector)[i];
+		jrd_rel* relation = mdc.getRelation(i);
 
 		if (relation && relation->rel_flags & REL_check_existence)
-			relation = MET_lookup_relation_id(vdr_tdbb, i, false);
+			relation = MetadataCache::lookup_relation_id(vdr_tdbb, i, false);
 
 		if (relation)
 		{
@@ -3135,7 +3135,7 @@ Validation::RTN Validation::walk_root(jrd_rel* relation)
 		MetaName index;
 
 		release_page(&window);
-		MET_lookup_index(vdr_tdbb, index, relation->rel_name, i + 1);
+		MetadataCache::lookup_index(vdr_tdbb, index, relation->rel_name, i + 1);
 		fetch_page(false, relPages->rel_index_root, pag_root, &window, &page);
 
 		if (vdr_idx_incl)

@@ -1140,7 +1140,7 @@ void AlterCharSetNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	jrd_tra* transaction)
 {
 	METD_drop_charset(transaction, charSet);
-	MET_dsql_cache_release(tdbb, SYM_intlsym_charset, charSet);
+	MetadataCache::dsql_cache_release(tdbb, SYM_intlsym_charset, charSet);
 
 	bool charSetFound = false;
 	bool collationFound = false;
@@ -1787,7 +1787,7 @@ void CreateAlterFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsql
 	{
 		// Update DSQL cache
 		METD_drop_function(transaction, QualifiedName(name, package));
-		MET_dsql_cache_release(tdbb, SYM_udf, name, package);
+		MetadataCache::dsql_cache_release(tdbb, SYM_udf, name, package);
 	}
 }
 
@@ -2473,7 +2473,7 @@ void AlterExternalFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* ds
 
 	// Update DSQL cache
 	METD_drop_function(transaction, QualifiedName(name, ""));
-	MET_dsql_cache_release(tdbb, SYM_udf, name, "");
+	MetadataCache::dsql_cache_release(tdbb, SYM_udf, name, "");
 }
 
 
@@ -2607,7 +2607,7 @@ void DropFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 	// Update DSQL cache
 	METD_drop_function(transaction, QualifiedName(name, package));
-	MET_dsql_cache_release(tdbb, SYM_udf, name, package);
+	MetadataCache::dsql_cache_release(tdbb, SYM_udf, name, package);
 }
 
 
@@ -2791,7 +2791,7 @@ void CreateAlterProcedureNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsq
 	{
 		// Update DSQL cache
 		METD_drop_procedure(transaction, QualifiedName(name, package));
-		MET_dsql_cache_release(tdbb, SYM_procedure, name, package);
+		MetadataCache::dsql_cache_release(tdbb, SYM_procedure, name, package);
 	}
 }
 
@@ -3406,7 +3406,7 @@ void DropProcedureNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 
 	// Update DSQL cache
 	METD_drop_procedure(transaction, QualifiedName(name, package));
-	MET_dsql_cache_release(tdbb, SYM_procedure, name, package);
+	MetadataCache::dsql_cache_release(tdbb, SYM_procedure, name, package);
 }
 
 
@@ -4113,7 +4113,7 @@ void CreateCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 	// Update DSQL cache
 	METD_drop_collation(transaction, name);
-	MET_dsql_cache_release(tdbb, SYM_intlsym_collation, name);
+	MetadataCache::dsql_cache_release(tdbb, SYM_intlsym_collation, name);
 }
 
 DdlNode* CreateCollationNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -4292,7 +4292,7 @@ void DropCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 
 	// Update DSQL cache
 	METD_drop_collation(transaction, name);
-	MET_dsql_cache_release(tdbb, SYM_intlsym_collation, name);
+	MetadataCache::dsql_cache_release(tdbb, SYM_intlsym_collation, name);
 }
 
 
@@ -7520,7 +7520,7 @@ void CreateRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScrat
 
 	// Update DSQL cache
 	METD_drop_relation(transaction, name);
-	MET_dsql_cache_release(tdbb, SYM_relation, name);
+	MetadataCache::dsql_cache_release(tdbb, SYM_relation, name);
 }
 
 // Starting from the elements in a table definition, locate the PK columns if given in a
@@ -7897,7 +7897,7 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 
 		// Update DSQL cache
 		METD_drop_relation(transaction, name);
-		MET_dsql_cache_release(tdbb, SYM_relation, name);
+		MetadataCache::dsql_cache_release(tdbb, SYM_relation, name);
 	}
 	catch (const Exception&)
 	{
@@ -8417,7 +8417,7 @@ void DropRelationNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 void DropRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
-	jrd_rel* rel_drop = MET_lookup_relation(tdbb, name);
+	jrd_rel* rel_drop = MetadataCache::lookup_relation(tdbb, name);
 	if (rel_drop)
 		MET_scan_relation(tdbb, rel_drop);
 
@@ -8632,7 +8632,7 @@ void DropRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	savePoint.release();	// everything is ok
 
 	METD_drop_relation(transaction, name.c_str());
-	MET_dsql_cache_release(tdbb, SYM_relation, name);
+	MetadataCache::dsql_cache_release(tdbb, SYM_relation, name);
 }
 
 
@@ -9233,7 +9233,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 	// Update DSQL cache
 	METD_drop_relation(transaction, name);
-	MET_dsql_cache_release(tdbb, SYM_relation, name);
+	MetadataCache::dsql_cache_release(tdbb, SYM_relation, name);
 }
 
 // Generate a trigger to implement the WITH CHECK OPTION clause for a VIEW.

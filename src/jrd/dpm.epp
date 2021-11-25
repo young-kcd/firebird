@@ -2015,7 +2015,7 @@ void DPM_scan_pages( thread_db* tdbb)
 	// infinite recursion from this internal request when RDB$PAGES
 	// has been extended with another pointer page.
 
-	jrd_rel* relation = MET_relation(tdbb, 0);
+	jrd_rel* relation = MetadataCache::findRelation(tdbb, 0);
 	RelationPages* relPages = relation->getBasePages();
 
 	vcl** address = &relPages->rel_pages;
@@ -2038,7 +2038,7 @@ void DPM_scan_pages( thread_db* tdbb)
 
 	FOR(REQUEST_HANDLE request) X IN RDB$PAGES
 	{
-		relation = MET_relation(tdbb, X.RDB$RELATION_ID);
+		relation = MetadataCache::findRelation(tdbb, X.RDB$RELATION_ID);
 		relPages = relation->getBasePages();
 		sequence = X.RDB$PAGE_SEQUENCE;
 		MemoryPool* pool = dbb->dbb_permanent;

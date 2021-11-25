@@ -203,8 +203,6 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
  *      <never>         - if error
  *
  **************************************/
-	CharSetContainer* cs = NULL;
-
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	fb_assert(attachment);
@@ -213,10 +211,7 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 	if (id == CS_dynamic)
 		id = tdbb->getCharSet();
 
-	if (id >= attachment->att_charsets.getCount())
-		attachment->att_charsets.resize(id + 10);
-	else
-		cs = attachment->att_charsets[id];
+	CharSetContainer* cs = attachment->att_mdc.getCharSet(id);
 
 	// allocate a new character set object if we couldn't find one.
 	if (!cs)
@@ -225,8 +220,8 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 
 		if (lookupInternalCharSet(id, &info) || MET_get_char_coll_subtype_info(tdbb, id, &info))
 		{
-			attachment->att_charsets[id] = cs =
-				FB_NEW_POOL(*attachment->att_pool) CharSetContainer(*attachment->att_pool, id, &info);
+			cs = FB_NEW_POOL(*attachment->att_pool) CharSetContainer(*attachment->att_pool, id, &info);
+			attachment->att_mdc.setCharSet(id, cs);
 		}
 		else
 			ERR_post(Arg::Gds(isc_text_subtype) << Arg::Num(ttype));
@@ -497,24 +492,24 @@ static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info)
 }
 
 
-void Jrd::Attachment::releaseIntlObjects(thread_db* tdbb)
+void Jrd::MetadataCache::releaseIntlObjects(thread_db* tdbb)
 {
-	for (FB_SIZE_T i = 0; i < att_charsets.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < mdc_charsets.getCount(); i++)
 	{
-		if (att_charsets[i])
-			att_charsets[i]->release(tdbb);
+		if (mdc_charsets[i])
+			mdc_charsets[i]->release(tdbb);
 	}
 }
 
 
-void Jrd::Attachment::destroyIntlObjects(thread_db* tdbb)
+void Jrd::MetadataCache::destroyIntlObjects(thread_db* tdbb)
 {
-	for (FB_SIZE_T i = 0; i < att_charsets.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < mdc_charsets.getCount(); i++)
 	{
-		if (att_charsets[i])
+		if (mdc_charsets[i])
 		{
-			att_charsets[i]->destroy(tdbb);
-			att_charsets[i] = NULL;
+			mdc_charsets[i]->destroy(tdbb);
+			mdc_charsets[i] = NULL;
 		}
 	}
 }

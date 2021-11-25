@@ -620,7 +620,7 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 				csb->csb_blr_reader.getString(*aliasString);
 			}
 
-			if (!(node->relation = MET_lookup_relation_id(tdbb, id, false)))
+			if (!(node->relation = MetadataCache::lookup_relation_id(tdbb, id, false)))
 				name.printf("id %d", id);
 
 			break;
@@ -637,7 +637,7 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 				csb->csb_blr_reader.getString(*aliasString);
 			}
 
-			node->relation = MET_lookup_relation(tdbb, name);
+			node->relation = MetadataCache::lookup_relation(tdbb, name);
 			break;
 		}
 
@@ -966,7 +966,7 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 				csb->csb_blr_reader.getString(*aliasString);
 			}
 
-			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, false, false, 0)))
+			if (!(procedure = MetadataCache::lookup_procedure_id(tdbb, pid, false, false, 0)))
 				name.identifier.printf("id %d", pid);
 
 			break;
@@ -1005,7 +1005,7 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 				}
 			}
 			else
-				procedure = MET_lookup_procedure(tdbb, name, false);
+				procedure = MetadataCache::lookup_procedure(tdbb, name, false);
 
 			break;
 
@@ -1194,7 +1194,7 @@ ProcedureSourceNode* ProcedureSourceNode::copy(thread_db* tdbb, NodeCopier& copi
 		newSource->procedure = procedure;
 	else
 	{
-		newSource->procedure = MET_lookup_procedure_id(tdbb, procedureId, false, false, 0);
+		newSource->procedure = MetadataCache::lookup_procedure_id(tdbb, procedureId, false, false, 0);
 		if (!newSource->procedure)
 		{
 			string name;

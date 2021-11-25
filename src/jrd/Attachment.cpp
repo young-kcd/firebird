@@ -255,24 +255,15 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, JProvider* provider
 	  att_current_timezone(att_original_timezone),
 	  att_repl_appliers(*pool),
 	  att_utility(UTIL_NONE),
-	  att_procedures(*pool),
-	  att_functions(*pool),
-	  att_generators(*pool),
-	  att_internal(*pool),
-	  att_dyn_req(*pool),
 	  att_dec_status(DecimalStatus::DEFAULT),
-	  att_charsets(*pool),
-	  att_charset_ids(*pool),
 	  att_pools(*pool),
+	  att_mdc(*pool),
 	  att_idle_timeout(0),
 	  att_stmt_timeout(0),
 	  att_batches(*pool),
 	  att_initial_options(*pool),
 	  att_provider(provider)
-{
-	att_internal.grow(irq_MAX);
-	att_dyn_req.grow(drq_MAX);
-}
+{ }
 
 
 Jrd::Attachment::~Attachment()
@@ -284,20 +275,6 @@ Jrd::Attachment::~Attachment()
 
 	for (unsigned n = 0; n < att_batches.getCount(); ++n)
 		att_batches[n]->resetHandle();
-
-	for (Function** iter = att_functions.begin(); iter < att_functions.end(); ++iter)
-	{
-		Function* const function = *iter;
-		if (function)
-			delete function;
-	}
-
-	for (jrd_prc** iter = att_procedures.begin(); iter < att_procedures.end(); ++iter)
-	{
-		jrd_prc* const procedure = *iter;
-		if (procedure)
-			delete procedure;
-	}
 
 	while (att_pools.hasData())
 		deletePool(att_pools.pop());
@@ -371,7 +348,7 @@ string Jrd::Attachment::stringToMetaCharSet(thread_db* tdbb, const string& str,
 
 	if (charSet)
 	{
-		if (!MET_get_char_coll_subtype(tdbb, &charSetId, (const UCHAR*) charSet,
+		if (!MetadataCache::get_char_coll_subtype(tdbb, &charSetId, (const UCHAR*) charSet,
 				static_cast<USHORT>(strlen(charSet))))
 		{
 			(Arg::Gds(isc_charset_not_found) << Arg::Str(charSet)).raise();
@@ -443,63 +420,6 @@ void Jrd::Attachment::storeBinaryBlob(thread_db* tdbb, jrd_tra* transaction,
 	blob->BLB_close(tdbb);
 }
 
-void Jrd::Attachment::releaseGTTs(thread_db* tdbb)
-{
-	if (!att_relations)
-		return;
-
-	for (FB_SIZE_T i = 1; i < att_relations->count(); i++)
-	{
-		jrd_rel* relation = (*att_relations)[i];
-		if (relation && (relation->rel_flags & REL_temp_conn) &&
-			!(relation->rel_flags & (REL_deleted | REL_deleting)))
-		{
-			relation->delPages(tdbb);
-		}
-	}
-}
-
-static void runDBTriggers(thread_db* tdbb, TriggerAction action)
-{
-	fb_assert(action == TRIGGER_CONNECT || action == TRIGGER_DISCONNECT);
-
-	Database* dbb = tdbb->getDatabase();
-	Attachment* att = tdbb->getAttachment();
-	fb_assert(dbb);
-	fb_assert(att);
-
-	const unsigned trgKind = (action == TRIGGER_CONNECT) ? DB_TRIGGER_CONNECT : DB_TRIGGER_DISCONNECT;
-
-	const TrigVector* const triggers =	att->att_triggers[trgKind];
-	if (!triggers || triggers->isEmpty())
-		return;
-
-	ThreadStatusGuard temp_status(tdbb);
-	jrd_tra* transaction = NULL;
-
-	try
-	{
-		transaction = TRA_start(tdbb, 0, NULL);
-		EXE_execute_db_triggers(tdbb, transaction, action);
-		TRA_commit(tdbb, transaction, false);
-		return;
-	}
-	catch (const Exception& /*ex*/)
-	{
-		if (!(dbb->dbb_flags & DBB_bugcheck) && transaction)
-		{
-			try
-			{
-				TRA_rollback(tdbb, transaction, false, false);
-			}
-			catch (const Exception& /*ex2*/)
-			{
-			}
-		}
-		throw;
-	}
-}
-
 void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 {
 	jrd_tra* oldTran = traHandle ? *traHandle : nullptr;
@@ -533,7 +453,7 @@ void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 	{
 		// Run ON DISCONNECT trigger before reset
 		if (!(att_flags & ATT_no_db_triggers))
-			runDBTriggers(tdbb, TRIGGER_DISCONNECT);
+			att_mdc.runDBTriggers(tdbb, TRIGGER_DISCONNECT);
 
 		// shutdown attachment on any error after this point
 		shutAtt = true;
@@ -571,11 +491,11 @@ void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 			SCL_release_all(att_security_classes);
 
 		// reset GTT's
-		releaseGTTs(tdbb);
+		att_mdc.releaseGTTs(tdbb);
 
 		// Run ON CONNECT trigger after reset
 		if (!(att_flags & ATT_no_db_triggers))
-			runDBTriggers(tdbb, TRIGGER_CONNECT);
+			att_mdc.runDBTriggers(tdbb, TRIGGER_CONNECT);
 
 		if (oldTran)
 		{
@@ -657,43 +577,6 @@ bool Attachment::hasActiveRequests() const
 }
 
 
-// Find an inactive incarnation of a system request. If necessary, clone it.
-jrd_req* Jrd::Attachment::findSystemRequest(thread_db* tdbb, USHORT id, USHORT which)
-{
-	static const int MAX_RECURSION = 100;
-
-	// If the request hasn't been compiled or isn't active, there're nothing to do.
-
-	//Database::CheckoutLockGuard guard(this, dbb_cmp_clone_mutex);
-
-	fb_assert(which == IRQ_REQUESTS || which == DYN_REQUESTS);
-
-	JrdStatement* statement = (which == IRQ_REQUESTS ? att_internal[id] : att_dyn_req[id]);
-
-	if (!statement)
-		return NULL;
-
-	// Look for requests until we find one that is available.
-
-	for (int n = 0;; ++n)
-	{
-		if (n > MAX_RECURSION)
-		{
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-						Arg::Gds(isc_req_depth_exceeded) << Arg::Num(MAX_RECURSION));
-			// Msg363 "request depth exceeded. (Recursive definition?)"
-		}
-
-		jrd_req* clone = statement->getRequest(tdbb, n);
-
-		if (!(clone->req_flags & (req_active | req_reserved)))
-		{
-			clone->req_flags |= req_reserved;
-			return clone;
-		}
-	}
-}
-
 void Jrd::Attachment::initLocks(thread_db* tdbb)
 {
 	// Take out lock on attachment id
@@ -731,94 +614,7 @@ void Jrd::Attachment::initLocks(thread_db* tdbb)
 
 void Jrd::Attachment::releaseLocks(thread_db* tdbb)
 {
-	// Go through relations and indices and release
-	// all existence locks that might have been taken.
-
-	vec<jrd_rel*>* rvector = att_relations;
-
-	if (rvector)
-	{
-		vec<jrd_rel*>::iterator ptr, end;
-
-		for (ptr = rvector->begin(), end = rvector->end(); ptr < end; ++ptr)
-		{
-			jrd_rel* relation = *ptr;
-
-			if (relation)
-			{
-				if (relation->rel_existence_lock)
-				{
-					LCK_release(tdbb, relation->rel_existence_lock);
-					relation->rel_flags |= REL_check_existence;
-					relation->rel_use_count = 0;
-				}
-
-				if (relation->rel_partners_lock)
-				{
-					LCK_release(tdbb, relation->rel_partners_lock);
-					relation->rel_flags |= REL_check_partners;
-				}
-
-				if (relation->rel_rescan_lock)
-				{
-					LCK_release(tdbb, relation->rel_rescan_lock);
-					relation->rel_flags &= ~REL_scanned;
-				}
-
-				if (relation->rel_gc_lock)
-				{
-					LCK_release(tdbb, relation->rel_gc_lock);
-					relation->rel_flags |= REL_gc_lockneed;
-				}
-
-				for (IndexLock* index = relation->rel_index_locks; index; index = index->idl_next)
-				{
-					if (index->idl_lock)
-					{
-						index->idl_count = 0;
-						LCK_release(tdbb, index->idl_lock);
-					}
-				}
-
-				for (IndexBlock* index = relation->rel_index_blocks; index; index = index->idb_next)
-				{
-					if (index->idb_lock)
-						LCK_release(tdbb, index->idb_lock);
-				}
-			}
-		}
-	}
-
-	// Release all procedure existence locks that might have been taken
-
-	for (jrd_prc** iter = att_procedures.begin(); iter < att_procedures.end(); ++iter)
-	{
-		jrd_prc* const procedure = *iter;
-
-		if (procedure)
-		{
-			if (procedure->existenceLock)
-			{
-				LCK_release(tdbb, procedure->existenceLock);
-				procedure->flags |= Routine::FLAG_CHECK_EXISTENCE;
-				procedure->useCount = 0;
-			}
-		}
-	}
-
-	// Release all function existence locks that might have been taken
-
-	for (Function** iter = att_functions.begin(); iter < att_functions.end(); ++iter)
-	{
-		Function* const function = *iter;
-
-		if (function)
-			function->releaseLocks(tdbb);
-	}
-
-	// Release collation existence locks
-
-	releaseIntlObjects(tdbb);
+	att_mdc.releaseLocks(tdbb);
 
 	// Release the DSQL cache locks
 
@@ -842,20 +638,6 @@ void Jrd::Attachment::releaseLocks(thread_db* tdbb)
 
 	if (att_repl_lock)
 		LCK_release(tdbb, att_repl_lock);
-
-	// And release the system requests
-
-	for (JrdStatement** itr = att_internal.begin(); itr != att_internal.end(); ++itr)
-	{
-		if (*itr)
-			(*itr)->release(tdbb);
-	}
-
-	for (JrdStatement** itr = att_dyn_req.begin(); itr != att_dyn_req.end(); ++itr)
-	{
-		if (*itr)
-			(*itr)->release(tdbb);
-	}
 }
 
 void Jrd::Attachment::detachLocks()
@@ -885,27 +667,6 @@ void Jrd::Attachment::detachLocks()
 	}
 
 	att_long_locks = NULL;
-}
-
-void Jrd::Attachment::releaseRelations(thread_db* tdbb)
-{
-	if (att_relations)
-	{
-		vec<jrd_rel*>* vector = att_relations;
-
-		for (vec<jrd_rel*>::iterator ptr = vector->begin(), end = vector->end(); ptr < end; ++ptr)
-		{
-			jrd_rel* relation = *ptr;
-
-			if (relation)
-			{
-				if (relation->rel_file)
-					EXT_fini(relation, false);
-
-				delete relation;
-			}
-		}
-	}
 }
 
 int Jrd::Attachment::blockingAstShutdown(void* ast_object)
@@ -1107,18 +868,13 @@ void Attachment::checkReplSetLock(thread_db* tdbb)
 	}
 }
 
+// Move to database level ????????
+
 void Attachment::invalidateReplSet(thread_db* tdbb, bool broadcast)
 {
 	att_flags |= ATT_repl_reset;
 
-	if (att_relations)
-	{
-		for (auto relation : *att_relations)
-		{
-			if (relation)
-				relation->rel_repl_state.invalidate();
-		}
-	}
+	att_mdc.invalidateReplSet(tdbb);
 
 	if (broadcast)
 	{

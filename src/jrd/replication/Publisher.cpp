@@ -655,10 +655,10 @@ void REPL_gen_id(thread_db* tdbb, SLONG genId, SINT64 value)
 	const auto attachment = tdbb->getAttachment();
 
 	MetaName genName;
-	if (!attachment->att_generators.lookup(genId, genName))
+	if (!attachment->att_mdc.getSequence(genId, genName))
 	{
 		MET_lookup_generator_id(tdbb, genId, genName, nullptr);
-		attachment->att_generators.store(genId, genName);
+		attachment->att_mdc.setSequence(genId, genName);
 	}
 
 	fb_assert(genName.hasData());

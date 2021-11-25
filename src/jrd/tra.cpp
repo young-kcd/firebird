@@ -973,7 +973,7 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
 				switch (rsc->rsc_type)
 				{
 				case Resource::rsc_relation:
-					MET_post_existence(tdbb, rsc->rsc_rel);
+					MetadataCache::post_existence(tdbb, rsc->rsc_rel);
 					if (rsc->rsc_rel->rel_file) {
 						EXT_tra_attach(rsc->rsc_rel->rel_file, transaction);
 					}
@@ -2254,7 +2254,7 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rel
 		if (ctx[i]->vcx_type == VCT_PROCEDURE)
 			continue;
 
-		jrd_rel* base_rel = MET_lookup_relation(tdbb, ctx[i]->vcx_relation_name);
+		jrd_rel* base_rel = MetadataCache::lookup_relation(tdbb, ctx[i]->vcx_relation_name);
 		if (!base_rel)
 		{
 			// should be a BUGCHECK
@@ -2474,11 +2474,11 @@ static void release_temp_tables(thread_db* tdbb, jrd_tra* transaction)
  *
  **************************************/
 	Attachment* att = tdbb->getAttachment();
-	vec<jrd_rel*>& rels = *att->att_relations;
+	MetadataCache& mdc = att->att_mdc;
 
-	for (FB_SIZE_T i = 0; i < rels.count(); i++)
+	for (FB_SIZE_T i = 0; i < mdc.relCount(); i++)
 	{
-		jrd_rel* relation = rels[i];
+		jrd_rel* relation = mdc.getRelation(i);
 
 		if (relation && (relation->rel_flags & REL_temp_tran))
 			relation->delPages(tdbb, transaction->tra_number);
@@ -2500,11 +2500,11 @@ static void retain_temp_tables(thread_db* tdbb, jrd_tra* transaction, TraNumber 
  *
  **************************************/
 	Attachment* att = tdbb->getAttachment();
-	vec<jrd_rel*>& rels = *att->att_relations;
+	MetadataCache& mdc = att->att_mdc;
 
-	for (FB_SIZE_T i = 0; i < rels.count(); i++)
+	for (FB_SIZE_T i = 0; i < mdc.relCount(); i++)
 	{
-		jrd_rel* relation = rels[i];
+		jrd_rel* relation = mdc.getRelation(i);
 
 		if (relation && (relation->rel_flags & REL_temp_tran))
 			relation->retainPages(tdbb, transaction->tra_number, new_number);
@@ -3183,7 +3183,7 @@ static void transaction_options(thread_db* tdbb,
 				const MetaName metaName = attachment->nameToMetaCharSet(tdbb, orgName);
 
 				tpb += len;
-				jrd_rel* relation = MET_lookup_relation(tdbb, metaName);
+				jrd_rel* relation = MetadataCache::lookup_relation(tdbb, metaName);
 				if (!relation)
 				{
 					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
@@ -4051,10 +4051,10 @@ void jrd_tra::checkBlob(thread_db* tdbb, const bid* blob_id, jrd_fld* fld, bool 
 	if (!tra_blobs->locate(blob_id->bid_temp_id()) &&
 		!tra_fetched_blobs.locate(*blob_id))
 	{
-		vec<jrd_rel*>* vector = tra_attachment->att_relations;
+		MetadataCache& mdc = tra_attachment->att_mdc;
 		jrd_rel* blb_relation;
 
-		if (rel_id < vector->count() &&	(blb_relation = (*vector)[rel_id]))
+		if (rel_id < mdc.relCount() && (blb_relation = mdc.getRelation(rel_id)))
 		{
 			const MetaName security_name = fld ?
 				fld->fld_security_name : blb_relation->rel_security_name;
@@ -4183,7 +4183,7 @@ void TraceSweepEvent::beginSweepRelation(jrd_rel* relation)
 	if (relation && relation->rel_name.isEmpty())
 	{
 		// don't accumulate per-relation stats for metadata query below
-		MET_lookup_relation_id(m_tdbb, relation->rel_id, false);
+		MetadataCache::lookup_relation_id(m_tdbb, relation->rel_id, false);
 	}
 
 	m_relation_clock = fb_utils::query_performance_counter();

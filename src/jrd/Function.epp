@@ -46,6 +46,7 @@
 #include "../jrd/vio_proto.h"
 #include "../common/utils_proto.h"
 #include "../jrd/DebugInterface.h"
+#include "../jrd/QualifiedName.h"
 
 #include "../jrd/Function.h"
 
@@ -60,9 +61,9 @@ const char* const Function::EXCEPTION_MESSAGE = "The user defined function: \t%s
 Function* Function::lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool noscan, USHORT flags)
 {
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Function* check_function = NULL;
+	Function* check_function = nullptr;
 
-	Function* function = (id < attachment->att_functions.getCount()) ? attachment->att_functions[id] : NULL;
+	Function* function = attachment->att_mdc.getFunction(id);
 
 	if (function && function->getId() == id &&
 		!(function->flags & Routine::FLAG_CLEARED) &&
@@ -82,7 +83,7 @@ Function* Function::lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool
 
 	// We need to look up the function in RDB$FUNCTIONS
 
-	function = NULL;
+	function = nullptr;
 
 	AutoCacheRequest request(tdbb, irq_l_fun_id, IRQ_REQUESTS);
 
@@ -110,37 +111,23 @@ Function* Function::lookup(thread_db* tdbb, const QualifiedName& name, bool nosc
 {
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	Function* check_function = NULL;
-
 	// See if we already know the function by name
 
-	for (Function** iter = attachment->att_functions.begin(); iter < attachment->att_functions.end(); ++iter)
+	Function* function = attachment->att_mdc.lookupFunction(tdbb, name, noscan ? 0 : Routine::FLAG_SCANNED,
+		Routine::FLAG_OBSOLETE | Routine::FLAG_CLEARED | Routine::FLAG_BEING_SCANNED | Routine::FLAG_BEING_ALTERED);
+	Function* check_function = function;
+
+	if (function)
 	{
-		Function* const function = *iter;
+		if (!(function->flags & Routine::FLAG_CHECK_EXISTENCE))
+			return function;
 
-		if (function && !(function->flags & Routine::FLAG_OBSOLETE) &&
-			!(function->flags & Routine::FLAG_CLEARED) &&
-			((function->flags & Routine::FLAG_SCANNED) || noscan) &&
-			!(function->flags & Routine::FLAG_BEING_SCANNED) &&
-			!(function->flags & Routine::FLAG_BEING_ALTERED))
-		{
-			if (function->getName() == name)
-			{
-				if (function->flags & Routine::FLAG_CHECK_EXISTENCE)
-				{
-					check_function = function;
-					LCK_lock(tdbb, check_function->existenceLock, LCK_SR, LCK_WAIT);
-					break;
-				}
-
-				return function;
-			}
-		}
+		LCK_lock(tdbb, check_function->existenceLock, LCK_SR, LCK_WAIT);
 	}
 
 	// We need to look up the function in RDB$FUNCTIONS
 
-	Function* function = NULL;
+	function = nullptr;
 
 	AutoCacheRequest request(tdbb, irq_l_fun_name, IRQ_REQUESTS);
 
@@ -171,11 +158,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	jrd_tra* sysTransaction = attachment->getSysTransaction();
 	Database* const dbb = tdbb->getDatabase();
-
-	if (id >= attachment->att_functions.getCount())
-		attachment->att_functions.grow(id + 1);
-
-	Function* function = attachment->att_functions[id];
+	Function* function = attachment->att_mdc.getFunction(id, true);
 
 	if (function && !(function->flags & Routine::FLAG_OBSOLETE))
 	{
@@ -199,7 +182,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 	function->flags &= ~(Routine::FLAG_OBSOLETE | Routine::FLAG_CLEARED);
 
 	function->setId(id);
-	attachment->att_functions[id] = function;
+	attachment->att_mdc.setFunction(id, function);
 
 	if (!function->existenceLock)
 	{
@@ -220,9 +203,9 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			WITH X.RDB$FUNCTION_ID EQ id
 		{
 			function->setName(QualifiedName(X.RDB$FUNCTION_NAME,
-				(X.RDB$PACKAGE_NAME.NULL ? NULL : X.RDB$PACKAGE_NAME)));
-
+				(X.RDB$PACKAGE_NAME.NULL ? nullptr : X.RDB$PACKAGE_NAME)));
 			function->owner = X.RDB$OWNER_NAME;
+
 			Nullable<bool> ssDefiner;
 
 			if (!X.RDB$SECURITY_CLASS.NULL)
@@ -348,7 +331,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 					try
 					{
 						parameter->prm_default_value = static_cast<ValueExprNode*>(MET_parse_blob(
-							tdbb, NULL, &default_value, NULL, NULL, false, false));
+							tdbb, nullptr, &default_value, nullptr, nullptr, false, false));
 					}
 					catch (const Exception&)
 					{
@@ -388,9 +371,9 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			function->setImplemented(true);
 			function->setDefined(true);
 
-			function->fun_entrypoint = NULL;
-			function->fun_external = NULL;
-			function->setStatement(NULL);
+			function->fun_entrypoint = nullptr;
+			function->fun_external = nullptr;
+			function->setStatement(nullptr);
 
 			if (!X.RDB$MODULE_NAME.NULL && !X.RDB$ENTRYPOINT.NULL)
 			{
@@ -442,7 +425,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 						try
 						{
 							function->parseBlr(tdbb, csb, &X.RDB$FUNCTION_BLR,
-								X.RDB$DEBUG_INFO.NULL ? NULL : &X.RDB$DEBUG_INFO);
+								X.RDB$DEBUG_INFO.NULL ? nullptr : &X.RDB$DEBUG_INFO);
 						}
 						catch (const Exception& ex)
 						{
@@ -505,7 +488,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 		{
 			LCK_release(tdbb, function->existenceLock);
 			delete function->existenceLock;
-			function->existenceLock = NULL;
+			function->existenceLock = nullptr;
 		}
 
 		throw;
@@ -545,12 +528,12 @@ void Function::releaseLocks(thread_db* tdbb)
 
 bool Function::checkCache(thread_db* tdbb) const
 {
-	return tdbb->getAttachment()->att_functions[getId()] == this;
+	return tdbb->getAttachment()->att_mdc.getFunction(getId()) == this;
 }
 
 void Function::clearCache(thread_db* tdbb)
 {
-	tdbb->getAttachment()->att_functions[getId()] = NULL;
+	tdbb->getAttachment()->att_mdc.setFunction(getId(), nullptr);
 }
 
 bool Function::reload(thread_db* tdbb)
@@ -577,7 +560,7 @@ bool Function::reload(thread_db* tdbb)
 			try
 			{
 				this->parseBlr(tdbb, csb, &X.RDB$FUNCTION_BLR,
-					X.RDB$DEBUG_INFO.NULL ? NULL : &X.RDB$DEBUG_INFO);
+					X.RDB$DEBUG_INFO.NULL ? nullptr : &X.RDB$DEBUG_INFO);
 
 				// parseBlr() above could set FLAG_RELOAD again
 				return !(this->flags & Routine::FLAG_RELOAD);

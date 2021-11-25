@@ -137,10 +137,10 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 		{
 			// find the corresponding primary key index
 
-			if (!MET_lookup_partner(tdbb, relation, &idx, 0))
+			if (!MetadataCache::lookup_partner(tdbb, relation, &idx, 0))
 				continue;
 
-			jrd_rel* referenced_relation = MET_relation(tdbb, idx.idx_primary_relation);
+			jrd_rel* referenced_relation = MetadataCache::findRelation(tdbb, idx.idx_primary_relation);
 			MET_scan_relation(tdbb, referenced_relation);
 			const USHORT index_id = idx.idx_primary_index;
 
@@ -336,10 +336,10 @@ void IDX_create_index(thread_db* tdbb,
 	USHORT partner_index_id = 0;
 	if (isForeign)
 	{
-		if (!MET_lookup_partner(tdbb, relation, idx, index_name))
+		if (!MetadataCache::lookup_partner(tdbb, relation, idx, index_name))
 			BUGCHECK(173);		// msg 173 referenced index description not found
 
-		partner_relation = MET_relation(tdbb, idx->idx_primary_relation);
+		partner_relation = MetadataCache::findRelation(tdbb, idx->idx_primary_relation);
 		partner_index_id = idx->idx_primary_index;
 	}
 
@@ -926,7 +926,7 @@ void IDX_modify_check_constraints(thread_db* tdbb,
 	while (BTR_next_index(tdbb, org_rpb->rpb_relation, transaction, &idx, &window))
 	{
 		if (!(idx.idx_flags & (idx_primary | idx_unique)) ||
-			!MET_lookup_partner(tdbb, org_rpb->rpb_relation, &idx, 0))
+			!MetadataCache::lookup_partner(tdbb, org_rpb->rpb_relation, &idx, 0))
 		{
 			continue;
 		}
@@ -1001,7 +1001,7 @@ void IDX_modify_flag_uk_modified(thread_db* tdbb,
 	while (BTR_next_index(tdbb, relation, transaction, &idx, &window))
 	{
 		if (!(idx.idx_flags & (idx_primary | idx_unique)) ||
-			!MET_lookup_partner(tdbb, relation, &idx, 0))
+			!MetadataCache::lookup_partner(tdbb, relation, &idx, 0))
 		{
 			continue;
 		}
@@ -1289,7 +1289,7 @@ static idx_e check_foreign_key(thread_db* tdbb,
 
 	idx_e result = idx_e_ok;
 
-	if (!MET_lookup_partner(tdbb, relation, idx, 0))
+	if (!MetadataCache::lookup_partner(tdbb, relation, idx, 0))
 		return result;
 
 	jrd_rel* partner_relation = NULL;
@@ -1297,7 +1297,7 @@ static idx_e check_foreign_key(thread_db* tdbb,
 
 	if (idx->idx_flags & idx_foreign)
 	{
-		partner_relation = MET_relation(tdbb, idx->idx_primary_relation);
+		partner_relation = MetadataCache::findRelation(tdbb, idx->idx_primary_relation);
 		index_id = idx->idx_primary_index;
 		result = check_partner_index(tdbb, relation, record, transaction, idx,
 									 partner_relation, index_id);
@@ -1311,7 +1311,7 @@ static idx_e check_foreign_key(thread_db* tdbb,
 			if (idx->idx_id != (*idx->idx_foreign_primaries)[index_number])
 				continue;
 
-			partner_relation = MET_relation(tdbb, (*idx->idx_foreign_relations)[index_number]);
+			partner_relation = MetadataCache::findRelation(tdbb, (*idx->idx_foreign_relations)[index_number]);
 			index_id = (*idx->idx_foreign_indexes)[index_number];
 
 			if ((relation->rel_flags & REL_temp_conn) && (partner_relation->rel_flags & REL_temp_tran))

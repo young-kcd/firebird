@@ -1384,19 +1384,15 @@ blb* blb::open2(thread_db* tdbb,
 
 	if (try_relations)
 	{
-		// Ordinarily, we would call MET_relation to get the relation id.
+		// Ordinarily, we would call findRelation() to get the relation id.
 		// However, since the blob id must be considered suspect, this is
 		// not a good idea.  On the other hand, if we don't already
 		// know about the relation, the blob id has got to be invalid
 		// anyway.
 
-		vec<jrd_rel*>* vector = tdbb->getAttachment()->att_relations;
-
-		if (blobId.bid_internal.bid_relation_id >= vector->count() ||
-			!(blob->blb_relation = (*vector)[blobId.bid_internal.bid_relation_id] ) )
-		{
+		blob->blb_relation = tdbb->getAttachment()->att_mdc.getRelation(blobId.bid_internal.bid_relation_id);
+		if (!blob->blb_relation)
 				ERR_post(Arg::Gds(isc_bad_segstr_id));
-		}
 
 		blob->blb_pg_space_id = blob->blb_relation->getPages(tdbb)->rel_pg_space_id;
 		DPM_get_blob(tdbb, blob, blobId.get_permanent_number(), false, 0);
@@ -1694,10 +1690,10 @@ void blb::put_slice(thread_db*	tdbb,
 
 	jrd_rel* relation;
 	if (info.sdl_info_relation.length()) {
-		relation = MET_lookup_relation(tdbb, info.sdl_info_relation);
+		relation = MetadataCache::lookup_relation(tdbb, info.sdl_info_relation);
 	}
 	else {
-		relation = MET_relation(tdbb, info.sdl_info_rid);
+		relation = MetadataCache::findRelation(tdbb, info.sdl_info_rid);
 	}
 
 	if (!relation) {

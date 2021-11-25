@@ -537,7 +537,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 			if (csb->csb_g_flags & csb_get_dependencies)
 			{
 				CompilerScratch::Dependency dependency(obj_relation);
-				dependency.relation = MET_lookup_relation(tdbb, *relationName);
+				dependency.relation = MetadataCache::lookup_relation(tdbb, *relationName);
 				dependency.subName = fieldName;
 				csb->csb_dependencies.push(dependency);
 			}
@@ -997,7 +997,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 				SLONG relation_id;
 				IndexStatus idx_status;
-				const SLONG index_id = MET_lookup_index_name(tdbb, name, &relation_id, &idx_status);
+				const SLONG index_id = MetadataCache::lookup_index_name(tdbb, name, &relation_id, &idx_status);
 
 				if (idx_status == MET_object_unknown || idx_status == MET_object_inactive)
 				{
@@ -1063,7 +1063,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 					SLONG relation_id;
 					IndexStatus idx_status;
-					const SLONG index_id = MET_lookup_index_name(tdbb, name, &relation_id, &idx_status);
+					const SLONG index_id = MetadataCache::lookup_index_name(tdbb, name, &relation_id, &idx_status);
 
 					if (idx_status == MET_object_unknown || idx_status == MET_object_inactive)
 					{
@@ -1152,7 +1152,7 @@ void PAR_procedure_parms(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedu
 		const Format* format = input_flag ? procedure->getInputFormat() : procedure->getOutputFormat();
 		/* dimitr: procedure (with its parameter formats) is allocated out of
 				   its own pool (prc_request->req_pool) and can be freed during
-				   the cache cleanup (MET_clear_cache). Since the current
+				   the cache cleanup clear_cache(). Since the current
 				   tdbb default pool is different from the procedure's one,
 				   it's dangerous to copy a pointer from one request to another.
 				   As an experiment, I've decided to copy format by value

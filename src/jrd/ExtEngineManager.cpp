@@ -566,7 +566,7 @@ private:
 
 		USHORT charSetId;
 
-		if (!MET_get_char_coll_subtype(tdbb, &charSetId,
+		if (!MetadataCache::get_char_coll_subtype(tdbb, &charSetId,
 				reinterpret_cast<const UCHAR*>(charSetName), static_cast<USHORT>(strlen(charSetName))))
 		{
 			status_exception::raise(Arg::Gds(isc_charset_not_found) << Arg::Str(charSetName));
@@ -1765,7 +1765,7 @@ void ExtEngineManager::setupAdminCharSet(thread_db* tdbb, IExternalEngine* engin
 
 	charSetName[MAX_SQL_IDENTIFIER_LEN] = '\0';
 
-	if (!MET_get_char_coll_subtype(tdbb, &attInfo->adminCharSet,
+	if (!MetadataCache::get_char_coll_subtype(tdbb, &attInfo->adminCharSet,
 			reinterpret_cast<const UCHAR*>(charSetName),
 			static_cast<USHORT>(strlen(charSetName))))
 	{

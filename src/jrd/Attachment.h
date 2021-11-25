@@ -47,6 +47,7 @@
 
 #include "../jrd/EngineInterface.h"
 #include "../jrd/sbm.h"
+#include "../jrd/met.h"
 
 #include <atomic>
 
@@ -427,55 +428,6 @@ public:
 		Firebird::RefPtr<StableAttachmentPart> jStable;
 	};
 
-	class GeneratorFinder
-	{
-	public:
-		explicit GeneratorFinder(MemoryPool& pool)
-			: m_objects(pool)
-		{}
-
-		void store(SLONG id, const MetaName& name)
-		{
-			fb_assert(id >= 0);
-			fb_assert(name.hasData());
-
-			if (id < (int) m_objects.getCount())
-			{
-				fb_assert(m_objects[id].isEmpty());
-				m_objects[id] = name;
-			}
-			else
-			{
-				m_objects.resize(id + 1);
-				m_objects[id] = name;
-			}
-		}
-
-		bool lookup(SLONG id, MetaName& name)
-		{
-			if (id < (int) m_objects.getCount() && m_objects[id].hasData())
-			{
-				name = m_objects[id];
-				return true;
-			}
-
-			return false;
-		}
-
-		SLONG lookup(const MetaName& name)
-		{
-			FB_SIZE_T pos;
-
-			if (m_objects.find(name, pos))
-				return (SLONG) pos;
-
-			return -1;
-		}
-
-	private:
-		Firebird::Array<MetaName> m_objects;
-	};
-
 	class InitialOptions
 	{
 	public:
@@ -610,44 +562,26 @@ public:
 
 	UtilType att_utility;
 
-	/// former Database members - start
-
-	vec<jrd_rel*>*					att_relations;			// relation vector
-	Firebird::Array<jrd_prc*>		att_procedures;			// scanned procedures
-	TrigVector*						att_triggers[DB_TRIGGER_MAX];
-	TrigVector*						att_ddl_triggers;
-	Firebird::Array<Function*>		att_functions;			// User defined functions
-	GeneratorFinder					att_generators;
-
-	Firebird::Array<JrdStatement*>	att_internal;			// internal statements
-	Firebird::Array<JrdStatement*>	att_dyn_req;			// internal dyn statements
 	Firebird::ICryptKeyCallback*	att_crypt_callback;		// callback for DB crypt
 	Firebird::DecimalStatus			att_dec_status;			// error handling and rounding
-
-	jrd_req* findSystemRequest(thread_db* tdbb, USHORT id, USHORT which);
-
-	Firebird::Array<CharSetContainer*>	att_charsets;		// intl character set descriptions
-	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		MetaName, USHORT> > > att_charset_ids;	// Character set ids
-
-	void releaseIntlObjects(thread_db* tdbb);			// defined in intl.cpp
-	void destroyIntlObjects(thread_db* tdbb);			// defined in intl.cpp
 
 	void initLocks(thread_db* tdbb);
 	void releaseLocks(thread_db* tdbb);
 	void detachLocks();
-
-	void releaseRelations(thread_db* tdbb);
 
 	static int blockingAstShutdown(void*);
 	static int blockingAstCancel(void*);
 	static int blockingAstMonitor(void*);
 	static int blockingAstReplSet(void*);
 
+	/// former Database members - start
+
 	Firebird::Array<MemoryPool*>	att_pools;		// pools
 
 	MemoryPool* createPool();
 	void deletePool(MemoryPool* pool);
+
+	MetadataCache att_mdc;
 
 	/// former Database members - end
 
@@ -683,7 +617,6 @@ public:
 	void storeBinaryBlob(thread_db* tdbb, jrd_tra* transaction, bid* blobId,
 		const Firebird::ByteChunk& chunk);
 
-	void releaseGTTs(thread_db* tdbb);
 	void resetSession(thread_db* tdbb, jrd_tra** traHandle);
 
 	void signalCancel();

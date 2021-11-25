@@ -32,6 +32,7 @@
 namespace Jrd
 {
 
+template <typename T> class vec;
 class BoolExprNode;
 class RseNode;
 class StmtNode;

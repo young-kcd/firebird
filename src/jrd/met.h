@@ -24,6 +24,10 @@
 #ifndef JRD_MET_H
 #define JRD_MET_H
 
+#include "../jrd/val.h"
+#include "../jrd/irq.h"
+#include "../jrd/drq.h"
+
 // Record types for record summary blob records
 
 enum rsr_t {
@@ -125,6 +129,254 @@ example #3:
 
 const int TRIGGER_COMBINED_MAX	= 128;
 
+
+//
+// Flags to indicate normal internal requests vs. dyn internal requests
+//
+enum InternalRequest : USHORT {
+	NOT_REQUEST, IRQ_REQUESTS, DYN_REQUESTS
+};
+
+
 #include "../jrd/obj.h"
+#include "../dsql/sym.h"
+
+class CharSetContainer;
+
+namespace Jrd {
+
+template <typename T> class vec;
+class Routine;
+class jrd_prc;
+class Function;
+class TrigVector;
+struct index_desc;
+struct DSqlCacheItem;
+
+// index status
+enum IndexStatus
+{
+	MET_object_active,
+	MET_object_deferred_active,
+	MET_object_inactive,
+	MET_object_unknown
+};
+
+class MetadataCache : public Firebird::PermanentStorage
+{
+	class GeneratorFinder
+	{
+	public:
+		explicit GeneratorFinder(MemoryPool& pool)
+			: m_objects(pool)
+		{}
+
+		void store(SLONG id, const MetaName& name)
+		{
+			fb_assert(id >= 0);
+			fb_assert(name.hasData());
+
+			if (id < (int) m_objects.getCount())
+			{
+				fb_assert(m_objects[id].isEmpty());
+				m_objects[id] = name;
+			}
+			else
+			{
+				m_objects.resize(id + 1);
+				m_objects[id] = name;
+			}
+		}
+
+		bool lookup(SLONG id, MetaName& name)
+		{
+			if (id < (int) m_objects.getCount() && m_objects[id].hasData())
+			{
+				name = m_objects[id];
+				return true;
+			}
+
+			return false;
+		}
+
+		SLONG lookup(const MetaName& name)
+		{
+			FB_SIZE_T pos;
+
+			if (m_objects.find(name, pos))
+				return (SLONG) pos;
+
+			return -1;
+		}
+
+	private:
+		Firebird::Array<MetaName> m_objects;
+	};
+
+
+public:
+	MetadataCache(MemoryPool& pool)
+		: Firebird::PermanentStorage(pool),
+		  mdc_procedures(getPool()),
+		  mdc_functions(getPool()),
+		  mdc_generators(getPool()),
+		  mdc_internal(getPool()),
+		  mdc_dyn_req(getPool()),
+		  mdc_charsets(getPool()),
+		  mdc_charset_ids(getPool())
+	{
+		mdc_internal.grow(irq_MAX);
+		mdc_dyn_req.grow(drq_MAX);
+	}
+
+	~MetadataCache();
+
+	jrd_req* findSystemRequest(thread_db* tdbb, USHORT id, InternalRequest which);
+
+	void releaseIntlObjects(thread_db* tdbb);			// defined in intl.cpp
+	void destroyIntlObjects(thread_db* tdbb);			// defined in intl.cpp
+
+	void releaseRelations(thread_db* tdbb);
+	void releaseLocks(thread_db* tdbb);
+	void releaseGTTs(thread_db* tdbb);
+	void runDBTriggers(thread_db* tdbb, TriggerAction action);
+	void invalidateReplSet(thread_db* tdbb);
+	Function* lookupFunction(thread_db* tdbb, const QualifiedName& name, USHORT setBits, USHORT clearBits);
+	jrd_rel* getRelation(ULONG rel_id);
+	void setRelation(ULONG rel_id, jrd_rel* rel);
+	USHORT relCount();
+	void releaseTrigger(thread_db* tdbb, USHORT triggerId, const MetaName& name);
+	TrigVector** getTriggers(USHORT triggerId);
+
+	void cacheRequest(InternalRequest which, USHORT id, JrdStatement* stmt)
+	{
+		if (which == IRQ_REQUESTS)
+			mdc_internal[id] = stmt;
+		else if (which == DYN_REQUESTS)
+			mdc_dyn_req[id] = stmt;
+		else
+		{
+			fb_assert(false);
+		}
+	}
+
+	Function* getFunction(USHORT id, bool grow = false)
+	{
+		if (id >= mdc_functions.getCount())
+		{
+			if (grow)
+				mdc_functions.grow(id + 1);
+			else
+				return nullptr;
+		}
+		return mdc_functions[id];
+	}
+
+	void setFunction(USHORT id, Function* f)
+	{
+		if (id >= mdc_functions.getCount())
+			mdc_functions.grow(id + 1);
+
+		mdc_functions[id] = f;
+	}
+
+	jrd_prc* getProcedure(USHORT id, bool grow = false)
+	{
+		if (id >= mdc_procedures.getCount())
+		{
+			if (grow)
+				mdc_procedures.grow(id + 1);
+			else
+				return nullptr;
+		}
+		return mdc_procedures[id];
+	}
+
+	void setProcedure(USHORT id, jrd_prc* p)
+	{
+		if (id >= mdc_procedures.getCount())
+			mdc_procedures.grow(id + 1);
+
+		mdc_procedures[id] = p;
+	}
+
+	SLONG lookupSequence(const MetaName& name)
+	{
+		return mdc_generators.lookup(name);
+	}
+
+	bool getSequence(SLONG id, MetaName& name)
+	{
+		return mdc_generators.lookup(id, name);
+	}
+
+	void setSequence(SLONG id, const MetaName& name)
+	{
+		mdc_generators.store(id, name);
+	}
+
+	CharSetContainer* getCharSet(USHORT id)
+	{
+		if (id >= mdc_charsets.getCount())
+			return nullptr;
+		return mdc_charsets[id];
+	}
+
+	void setCharSet(USHORT id, CharSetContainer* cs)
+	{
+		if (id >= mdc_charsets.getCount())
+			mdc_charsets.grow(id + 10);
+
+		mdc_charsets[id] = cs;
+	}
+
+	// former met_proto.h
+#ifdef DEV_BUILD
+	static void verify_cache(thread_db* tdbb);
+#else
+	static void verify_cache(thread_db* tdbb) { }
+#endif
+	static void clear_cache(thread_db* tdbb);
+	static void update_partners(thread_db* tdbb);
+	static bool routine_in_use(thread_db* tdbb, Routine* routine);
+	void load_db_triggers(thread_db* tdbb, int type);
+	void load_ddl_triggers(thread_db* tdbb);
+	static jrd_prc* lookup_procedure(thread_db* tdbb, const QualifiedName& name, bool noscan);
+	static jrd_prc* lookup_procedure_id(thread_db* tdbb, USHORT id, bool return_deleted, bool noscan, USHORT flags);
+	static jrd_rel* lookup_relation(thread_db*, const MetaName&);
+	static jrd_rel* lookup_relation_id(thread_db*, SLONG, bool);
+	static void lookup_index(thread_db* tdbb, MetaName& index_name, const MetaName& relation_name, USHORT number);
+	static SLONG lookup_index_name(thread_db* tdbb, const MetaName& index_name,
+								   SLONG* relation_id, IndexStatus* status);
+	static bool lookup_partner(thread_db* tdbb, jrd_rel* relation, index_desc* idx, const TEXT* index_name);
+	static void scan_partners(thread_db*, jrd_rel*);
+	static void post_existence(thread_db* tdbb, jrd_rel* relation);
+	static jrd_prc* findProcedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags);
+    static jrd_rel* findRelation(thread_db* tdbb, USHORT id);
+	static bool get_char_coll_subtype(thread_db* tdbb, USHORT* id, const UCHAR* name, USHORT length);
+	static bool resolve_charset_and_collation(thread_db* tdbb, USHORT* id,
+											  const UCHAR* charset, const UCHAR* collation);
+	static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, sym_type type, const QualifiedName& name);
+	static void dsql_cache_release(thread_db* tdbb, sym_type type, const MetaName& name, const MetaName& package = "");
+	static bool dsql_cache_use(thread_db* tdbb, sym_type type, const MetaName& name, const MetaName& package = "");
+	// end of met_proto.h
+
+private:
+	vec<jrd_rel*>*					mdc_relations;			// relation vector
+	Firebird::Array<jrd_prc*>		mdc_procedures;			// scanned procedures
+	TrigVector*						mdc_triggers[DB_TRIGGER_MAX];
+	TrigVector*						mdc_ddl_triggers;
+	Firebird::Array<Function*>		mdc_functions;			// User defined functions
+	GeneratorFinder					mdc_generators;
+
+	Firebird::Array<JrdStatement*>	mdc_internal;			// internal statements
+	Firebird::Array<JrdStatement*>	mdc_dyn_req;			// internal dyn statements
+
+	Firebird::Array<CharSetContainer*>	mdc_charsets;		// intl character set descriptions
+	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+		MetaName, USHORT> > > mdc_charset_ids;	// Character set ids
+};
+
+} // namespace Jrd
 
 #endif // JRD_MET_H

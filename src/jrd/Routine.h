@@ -184,7 +184,7 @@ namespace Jrd
 		USHORT flags;
 		USHORT useCount;		// requests compiled with routine
 		SSHORT intUseCount;		// number of routines compiled with routine, set and
-								// used internally in the MET_clear_cache routine
+								// used internally in the clear_cache() routine
 								// no code should rely on value of this field
 								// (it will usually be 0)
 		USHORT alterCount;		// No. of times the routine was altered

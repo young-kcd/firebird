@@ -2199,17 +2199,18 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				try
 				{
 					// load all database triggers
-					MET_load_db_triggers(tdbb, DB_TRIGGER_CONNECT);
-					MET_load_db_triggers(tdbb, DB_TRIGGER_DISCONNECT);
-					MET_load_db_triggers(tdbb, DB_TRIGGER_TRANS_START);
-					MET_load_db_triggers(tdbb, DB_TRIGGER_TRANS_COMMIT);
-					MET_load_db_triggers(tdbb, DB_TRIGGER_TRANS_ROLLBACK);
+					MetadataCache& mdc = attachment->att_mdc;
+					mdc.load_db_triggers(tdbb, DB_TRIGGER_CONNECT);
+					mdc.load_db_triggers(tdbb, DB_TRIGGER_DISCONNECT);
+					mdc.load_db_triggers(tdbb, DB_TRIGGER_TRANS_START);
+					mdc.load_db_triggers(tdbb, DB_TRIGGER_TRANS_COMMIT);
+					mdc.load_db_triggers(tdbb, DB_TRIGGER_TRANS_ROLLBACK);
 
 					// load DDL triggers
-					MET_load_ddl_triggers(tdbb);
+					mdc.load_ddl_triggers(tdbb);
 
-					const TrigVector* trig_connect = attachment->att_triggers[DB_TRIGGER_CONNECT];
-					if (trig_connect && !trig_connect->isEmpty())
+					TrigVector** trig_connect = attachment->att_mdc.getTriggers(DB_TRIGGER_CONNECT | TRIGGER_TYPE_DB);
+					if (trig_connect && *trig_connect && !(*trig_connect)->isEmpty())
 					{
 						// Start a transaction to execute ON CONNECT triggers.
 						// Ensure this transaction can't trigger auto-sweep.
@@ -6731,7 +6732,7 @@ static void find_intl_charset(thread_db* tdbb, Jrd::Attachment* attachment, cons
 	USHORT id;
 	const UCHAR* lc_ctype = reinterpret_cast<const UCHAR*>(options->dpb_lc_ctype.c_str());
 
-	if (MET_get_char_coll_subtype(tdbb, &id, lc_ctype, options->dpb_lc_ctype.length()) &&
+	if (MetadataCache::get_char_coll_subtype(tdbb, &id, lc_ctype, options->dpb_lc_ctype.length()) &&
 		INTL_defined_type(tdbb, id & 0xFF))
 	{
 		if ((id & 0xFF) == CS_BINARY)
@@ -7550,7 +7551,7 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	dbb->dbb_extManager->closeAttachment(tdbb, attachment);
 
 	if (dbb->dbb_config->getServerMode() == MODE_SUPER)
-		attachment->releaseGTTs(tdbb);
+		attachment->att_mdc.releaseGTTs(tdbb);
 
 	if (attachment->att_event_session)
 		dbb->eventManager()->deleteSession(attachment->att_event_session);
@@ -7559,20 +7560,20 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	while (attachment->att_requests.hasData())
 		CMP_release(tdbb, attachment->att_requests.back());
 
-	MET_clear_cache(tdbb);
+	MetadataCache::clear_cache(tdbb);
 
 	attachment->releaseLocks(tdbb);
 
 	// Shut down any extern relations
 
-	attachment->releaseRelations(tdbb);
+	attachment->att_mdc.releaseRelations(tdbb);
 
 	// Release any validation error vector allocated
 
 	delete attachment->att_validation;
 	attachment->att_validation = NULL;
 
-	attachment->destroyIntlObjects(tdbb);
+	attachment->att_mdc.destroyIntlObjects(tdbb);
 
 	attachment->detachLocks();
 
@@ -8162,12 +8163,11 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 	{
 		try
 		{
-			const TrigVector* const trig_disconnect =
-				attachment->att_triggers[DB_TRIGGER_DISCONNECT];
+			TrigVector** trig_disconnect = attachment->att_mdc.getTriggers(DB_TRIGGER_CONNECT | TRIGGER_TYPE_DB);
 
 			if (!forcedPurge &&
 				!(attachment->att_flags & ATT_no_db_triggers) &&
-				trig_disconnect && !trig_disconnect->isEmpty())
+				trig_disconnect && *trig_disconnect && !(*trig_disconnect)->isEmpty())
 			{
 				ThreadStatusGuard temp_status(tdbb);
 
