@@ -399,21 +399,25 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 			// ASF: Don't let MOV_move call blb::move because MOV
 			// will not pass the destination field to blb::move.
 
-			record_param* rpb = NULL;
+			jrd_rel* relation = nullptr;
+			Record* record = nullptr;
 			USHORT fieldId = 0;
+
 			if (to)
 			{
 				const FieldNode* toField = nodeAs<FieldNode>(to);
 				if (toField)
 				{
+					const auto rpb = &request->req_rpb[toField->fieldStream];
+					relation = rpb->rpb_relation;
+					record = rpb->rpb_record;
 					fieldId = toField->fieldId;
-					rpb = &request->req_rpb[toField->fieldStream];
 				}
 				else if (!(nodeAs<ParameterNode>(to) || nodeAs<VariableNode>(to)))
 					BUGCHECK(199);	// msg 199 expected field node
 			}
 
-			blb::move(tdbb, from_desc, to_desc, rpb, fieldId);
+			blb::move(tdbb, from_desc, to_desc, relation, record, fieldId);
 		}
 		else if (!DSC_EQUIV(from_desc, to_desc, false))
 		{

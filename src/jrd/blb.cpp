@@ -87,7 +87,7 @@ static ArrayField* find_array(jrd_tra*, const bid*);
 static BlobFilter* find_filter(thread_db*, SSHORT, SSHORT);
 //static blob_page* get_next_page(thread_db*, blb*, WIN *);
 //static void insert_page(thread_db*, blb*);
-static void move_from_string(Jrd::thread_db*, const dsc*, dsc*, const record_param* rpb, USHORT fieldId);
+static void move_from_string(Jrd::thread_db*, const dsc*, dsc*, jrd_rel*, Record*, USHORT);
 static void move_to_string(Jrd::thread_db*, dsc*, dsc*);
 static void slice_callback(array_slice*, ULONG, dsc*);
 static blb* store_array(thread_db*, jrd_tra*, bid*);
@@ -949,7 +949,8 @@ SLONG blb::BLB_lseek(USHORT mode, SLONG offset)
 // which in turn calls blb::create2 that writes in the blob id. Although the
 // compiler allows to modify from_desc->dsc_address' contents when from_desc is
 // constant, this is misleading so I didn't make the source descriptor constant.
-void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const record_param* rpb, USHORT fieldId)
+void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc,
+			   jrd_rel* relation, Record* record, USHORT fieldId)
 {
 /**************************************
  *
@@ -980,7 +981,7 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const record_param
 		if (!DTYPE_IS_BLOB_OR_QUAD(from_desc->dsc_dtype))
 		{
 			// anything that can be copied into a string can be copied into a blob
-			move_from_string(tdbb, from_desc, to_desc, rpb, fieldId);
+			move_from_string(tdbb, from_desc, to_desc, relation, record, fieldId);
 			return;
 		}
 	}
@@ -996,7 +997,7 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const record_param
 
 	// We should not materialize the blob if the destination field
 	// stream (nod_union, for example) doesn't have a relation.
-	const bool simpleMove = !rpb || (rpb->rpb_relation == NULL);
+	const bool simpleMove = (relation == NULL);
 
 	// Use local copy of source blob id to not change contents of from_desc in
 	// a case when it points to materialized temporary blob (see below for
@@ -1052,14 +1053,12 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const record_param
 	}
 
 	jrd_req* request = tdbb->getRequest();
-	jrd_rel* relation = rpb->rpb_relation;
 
 	if (relation->isVirtual()) {
 		ERR_post(Arg::Gds(isc_read_only));
 	}
 
 	RelationPages* relPages = relation->getPages(tdbb);
-	Record* record = rpb->rpb_record;
 
 	// If either the source value is null or the blob id itself is null
 	// (all zeros), then the blob is null.
@@ -2498,7 +2497,7 @@ void blb::insert_page(thread_db* tdbb)
 
 
 static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc,
-	const record_param* rpb, USHORT fieldId)
+							 jrd_rel* relation, Record* record, USHORT fieldId)
 {
 /**************************************
  *
@@ -2554,7 +2553,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	blob->BLB_put_segment(tdbb, fromstr, length);
 	blob->BLB_close(tdbb);
 	ULONG blob_temp_id = blob->getTempId();
-	blb::move(tdbb, &blob_desc, to_desc, rpb, fieldId);
+	blb::move(tdbb, &blob_desc, to_desc, relation, record, fieldId);
 
 	// 14-June-2004. Nickolay Samofatov
 	// The code below saves a lot of memory when bunches of records are

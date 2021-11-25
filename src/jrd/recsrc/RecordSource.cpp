@@ -46,24 +46,7 @@ using namespace Jrd;
 
 string RecordSource::printName(thread_db* tdbb, const string& name, bool quote)
 {
-	const UCHAR* namePtr = (const UCHAR*) name.c_str();
-	ULONG nameLength = (ULONG) name.length();
-
-	MoveBuffer nameBuffer;
-
-	const CHARSET_ID charset = tdbb->getCharSet();
-	if (charset != CS_METADATA && charset != CS_NONE)
-	{
-		const ULONG bufferLength = INTL_convert_bytes(tdbb, charset, NULL, 0,
-													  CS_METADATA, namePtr, nameLength, ERR_post);
-		nameBuffer.getBuffer(bufferLength);
-		nameLength = INTL_convert_bytes(tdbb, charset, nameBuffer.begin(), bufferLength,
-										CS_METADATA, namePtr, nameLength, ERR_post);
-
-		namePtr = nameBuffer.begin();
-	}
-
-	const string result(namePtr, nameLength);
+	const string result(name.c_str(), name.length());
 	return quote ? "\"" + result + "\"" : result;
 }
 
