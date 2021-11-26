@@ -3785,7 +3785,8 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 	CheckStatusWrapper status_vector(&ls);
 	Rsr* statement;
 	getHandle(statement, sqldata->p_sqldata_statement);
-	USHORT out_msg_type = (op == op_execute2) ? sqldata->p_sqldata_out_message_number : 0;
+
+	const USHORT out_msg_type = (op == op_execute2) ? sqldata->p_sqldata_out_message_number : 0;
 	const bool defer = this->haveRecvData();
 
 	if ((SSHORT) out_msg_type == -1)
@@ -3793,13 +3794,14 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		return this->send_response(sendL, (OBJCT) (transaction ? transaction->rtr_id : 0),
 			0, &status_vector, defer);
 	}
+
 	statement->checkIface();
 
 	ULONG in_msg_length = 0, out_msg_length = 0;
 	UCHAR* in_msg = NULL;
 	UCHAR* out_msg = NULL;
-	ULONG out_blr_length;
-	UCHAR* out_blr;
+	ULONG out_blr_length = 0;
+	UCHAR* out_blr = NULL;
 
 	if (statement->rsr_format)
 	{
@@ -3808,22 +3810,19 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		in_msg_length = statement->rsr_format->fmt_length;
 		in_msg = statement->rsr_message->msg_address;
 	}
+
 	if (op == op_execute2)
 	{
 		out_blr_length = sqldata->p_sqldata_out_blr.cstr_length;
 		out_blr = sqldata->p_sqldata_out_blr.cstr_address;
+
 		if (this->port_statement->rsr_select_format)
 		{
 			out_msg_length = this->port_statement->rsr_select_format->fmt_length;
 			out_msg = this->port_statement->rsr_message->msg_buffer;
 		}
 	}
-	else
-	{
-		out_blr_length = 0;
-		out_msg_type = 0;
-		out_blr = NULL;
-	}
+
 	statement->rsr_flags.clear(Rsr::FETCHED);
 
 	ITransaction* tra = NULL;
@@ -3866,6 +3865,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 											 iMsgBuffer.metadata, iMsgBuffer.buffer,
 											 (out_blr_length ? oMsgBuffer.metadata : DELAYED_OUT_FORMAT),
 											 cursorFlags);
+
 		if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
 		{
 			transaction->rtr_cursors.add(statement);
@@ -3885,6 +3885,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		sendL->p_operation = op_sql_response;
 		sendL->p_sqldata.p_sqldata_messages =
 			((status_vector.getState() & Firebird::IStatus::STATE_ERRORS) || !out_msg) ? 0 : 1;
+
 		this->send_partial(sendL);
 	}
 
