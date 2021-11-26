@@ -299,8 +299,8 @@ public:
 	void deprecatedClose(CheckStatusWrapper* status) override;
 	void setDelayedOutputFormat(CheckStatusWrapper* status, IMessageMetadata* format) override;
 
-	ResultSet(Statement* s, IMessageMetadata* outFmt)
-		: stmt(s), tmpStatement(false), delayedFormat(outFmt == DELAYED_OUT_FORMAT)
+	ResultSet(Statement* s, IMessageMetadata* outFmt, unsigned f)
+		: stmt(s), flags(f), tmpStatement(false), delayedFormat(outFmt == DELAYED_OUT_FORMAT)
 	{
 		if (!delayedFormat)
 			outputFormat = outFmt;
@@ -313,6 +313,7 @@ private:
 	void internalClose(CheckStatusWrapper* status);
 
 	Statement* stmt;
+	const unsigned flags;
 	RefPtr<IMessageMetadata> outputFormat;
 
 public:
@@ -3615,7 +3616,7 @@ ResultSet* Statement::openCursor(CheckStatusWrapper* status, Firebird::ITransact
 		defer_packet(port, packet, true);
 		message->msg_address = NULL;
 
-		ResultSet* rs = FB_NEW ResultSet(this, outFormat);
+		ResultSet* rs = FB_NEW ResultSet(this, outFormat, flags);
 		rs->addRef();
 		return rs;
 	}
@@ -4906,6 +4907,9 @@ int ResultSet::fetchPrior(CheckStatusWrapper* user_status, void* buffer)
 {
 	try
 	{
+		if (!(flags & IStatement::CURSOR_TYPE_SCROLLABLE))
+			(Arg::Gds(isc_invalid_fetch_option) << Arg::Str("PRIOR")).raise();
+
 		return fetch(user_status, buffer, fetch_prior) ?
 			IStatus::RESULT_OK : IStatus::RESULT_NO_DATA;
 	}
@@ -4922,6 +4926,9 @@ int ResultSet::fetchFirst(CheckStatusWrapper* user_status, void* buffer)
 {
 	try
 	{
+		if (!(flags & IStatement::CURSOR_TYPE_SCROLLABLE))
+			(Arg::Gds(isc_invalid_fetch_option) << Arg::Str("FIRST")).raise();
+
 		return fetch(user_status, buffer, fetch_first) ?
 			IStatus::RESULT_OK : IStatus::RESULT_NO_DATA;
 	}
@@ -4938,6 +4945,9 @@ int ResultSet::fetchLast(CheckStatusWrapper* user_status, void* buffer)
 {
 	try
 	{
+		if (!(flags & IStatement::CURSOR_TYPE_SCROLLABLE))
+			(Arg::Gds(isc_invalid_fetch_option) << Arg::Str("LAST")).raise();
+
 		return fetch(user_status, buffer, fetch_last) ?
 			IStatus::RESULT_OK : IStatus::RESULT_NO_DATA;
 	}
@@ -4954,6 +4964,9 @@ int ResultSet::fetchAbsolute(CheckStatusWrapper* user_status, int position, void
 {
 	try
 	{
+		if (!(flags & IStatement::CURSOR_TYPE_SCROLLABLE))
+			(Arg::Gds(isc_invalid_fetch_option) << Arg::Str("ABSOLUTE")).raise();
+
 		return fetch(user_status, buffer, fetch_absolute, position) ?
 			IStatus::RESULT_OK : IStatus::RESULT_NO_DATA;
 	}
@@ -4970,6 +4983,9 @@ int ResultSet::fetchRelative(CheckStatusWrapper* user_status, int offset, void* 
 {
 	try
 	{
+		if (!(flags & IStatement::CURSOR_TYPE_SCROLLABLE))
+			(Arg::Gds(isc_invalid_fetch_option) << Arg::Str("RELATIVE")).raise();
+
 		return fetch(user_status, buffer, fetch_relative, offset) ?
 			IStatus::RESULT_OK : IStatus::RESULT_NO_DATA;
 	}
