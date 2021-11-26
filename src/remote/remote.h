@@ -497,6 +497,9 @@ struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rsr>
 		Firebird::BatchCompletionState* rsr_batch_cs;	// client
 	};
 
+	P_FETCH			rsr_fetch_operation;	// Last performed fetch operation
+	SLONG			rsr_fetch_position;		// and position
+
 	struct BatchStream
 	{
 		BatchStream()
@@ -526,16 +529,20 @@ struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rsr>
 
 public:
 	// Values for rsr_flags.
-	enum {
+	enum : USHORT {
 		FETCHED = 1,		// Cleared by execute, set by fetch
 		EOF_SET = 2,		// End-of-stream encountered
-		//BLOB = 4,			// Statement relates to blob op
-		NO_BATCH = 8,		// Do not batch fetch rows
-		STREAM_ERR = 16,	// There is an error pending in the batched rows
-		LAZY = 32,			// To be allocated at the first reference
-		DEFER_EXECUTE = 64,	// op_execute can be deferred
-		PAST_EOF = 128		// EOF was returned by fetch from this statement
+		NO_BATCH = 4,		// Do not batch fetch rows
+		STREAM_ERR = 8,		// There is an error pending in the batched rows
+		LAZY = 16,			// To be allocated at the first reference
+		DEFER_EXECUTE = 32,	// op_execute can be deferred
+		PAST_EOF = 64,		// EOF was returned by fetch from this statement
+		BOF_SET = 128,		// Beginning-of-stream
+		PAST_BOF = 256		// BOF was returned by fetch from this statement
 	};
+
+	static const auto STREAM_END = (BOF_SET | EOF_SET);
+	static const auto PAST_END = (PAST_BOF | PAST_EOF);
 
 public:
 	Rsr() :
@@ -544,7 +551,8 @@ public:
 		rsr_format(0), rsr_message(0), rsr_buffer(0), rsr_status(0),
 		rsr_id(0), rsr_fmt_length(0),
 		rsr_rows_pending(0), rsr_msgs_waiting(0), rsr_reorder_level(0), rsr_batch_count(0),
-		rsr_cursor_name(getPool()), rsr_delayed_format(false), rsr_timeout(0), rsr_self(NULL)
+		rsr_cursor_name(getPool()), rsr_delayed_format(false), rsr_timeout(0), rsr_self(NULL),
+		rsr_fetch_operation(fetch_next), rsr_fetch_position(0)
 	{ }
 
 	~Rsr()
@@ -1336,7 +1344,7 @@ public:
 	ISC_STATUS	end_transaction(P_OP, P_RLSE*, PACKET*);
 	ISC_STATUS	execute_immediate(P_OP, P_SQLST*, PACKET*);
 	ISC_STATUS	execute_statement(P_OP, P_SQLDATA*, PACKET*);
-	ISC_STATUS	fetch(P_SQLDATA*, PACKET*);
+	ISC_STATUS	fetch(P_SQLDATA*, PACKET*, bool);
 	ISC_STATUS	get_segment(P_SGMT*, PACKET*);
 	ISC_STATUS	get_slice(P_SLC*, PACKET*);
 	void		info(P_OP, P_INFO*, PACKET*);

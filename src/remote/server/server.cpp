@@ -3858,11 +3858,14 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 
 	if ((flags & IStatement::FLAG_HAS_CURSOR) && (out_msg_length == 0))
 	{
+		const auto cursorFlags = (port_protocol >= PROTOCOL_FETCH_SCROLL) ?
+			sqldata->p_sqldata_cursor_flags : 0;
+
 		statement->rsr_cursor =
 			statement->rsr_iface->openCursor(&status_vector, tra,
 											 iMsgBuffer.metadata, iMsgBuffer.buffer,
 											 (out_blr_length ? oMsgBuffer.metadata : DELAYED_OUT_FORMAT),
-											 0);
+											 cursorFlags);
 		if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
 		{
 			transaction->rtr_cursors.add(statement);
@@ -3909,7 +3912,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 }
 
 
-ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
+ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL, bool scroll)
 {
 /*****************************************
  *
@@ -3926,16 +3929,29 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	Rsr* statement;
 	getHandle(statement, sqldata->p_sqldata_statement);
 
-	// On first fetch, clear the end-of-stream flag & reset the message buffers
+	// The default (and legacy) scrolling option is FETCH NEXT
+	const auto operation = scroll ? sqldata->p_sqldata_fetch_op : fetch_next;
+	const auto position = scroll ? sqldata->p_sqldata_fetch_pos : 0;
+
+	// Whether we're fetching in the forward direction
+	const bool forward =
+		(operation == fetch_next || operation == fetch_last ||
+		((operation == fetch_absolute || operation == fetch_relative) && position > 0));
+
+	// Whether we're fetching relatively to the current position
+	const bool relative =
+		(operation == fetch_next || operation == fetch_prior || operation == fetch_relative);
 
 	if (!statement->rsr_flags.test(Rsr::FETCHED))
 	{
-		statement->rsr_flags.clear(Rsr::EOF_SET | Rsr::STREAM_ERR);
+		// On first fetch, clear the end-of-stream flag & reset the message buffers
+
+		statement->rsr_flags.clear(Rsr::STREAM_END | Rsr::STREAM_ERR);
 		statement->clearException();
 
 		RMessage* message = statement->rsr_message;
 
-		if (message != NULL)
+		if (message)
 		{
 			statement->rsr_buffer = message;
 
@@ -3949,12 +3965,18 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			}
 		}
 	}
+	else if (!relative)
+	{
+		// Clear the end-of-stream flag if the fetch is positioned absolutely
+		statement->rsr_flags.clear(Rsr::STREAM_END);
+	}
 
 	const ULONG msg_length = statement->rsr_format ? statement->rsr_format->fmt_length : 0;
 
 	// If required, call setDelayedOutputFormat()
 
 	statement->checkCursor();
+
 	if (statement->rsr_delayed_format)
 	{
 		InternalMessageBuffer msgBuffer(sqldata->p_sqldata_blr.cstr_length,
@@ -3969,10 +3991,15 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		statement->rsr_delayed_format = false;
 	}
 
-	// Get ready to ship the data out
+	// Setup the prefetch count. It's available only for FETCH NEXT and FETCH PRIOR
+	// operations, unless batching is disabled explicitly.
 
-	const USHORT max_records = statement->rsr_flags.test(Rsr::NO_BATCH) ?
-		1 : sqldata->p_sqldata_messages;
+	const bool prefetch = (operation == fetch_next || operation == fetch_prior) &&
+		!statement->rsr_flags.test(Rsr::NO_BATCH);
+
+	const USHORT max_records = prefetch ? sqldata->p_sqldata_messages : 1;
+
+	// Get ready to ship the data out
 
 	P_SQLDATA* response = &sendL->p_sqldata;
 	sendL->p_operation = op_fetch_response;
@@ -3986,31 +4013,55 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	const FB_UINT64 org_packets = this->port_snd_packets;
 
 	USHORT count = 0;
-	bool rc = true;
+	bool success = true;
+	int rc = 0;
 
 	for (; count < max_records; count++)
 	{
-		// Have we exhausted the cache & reached cursor EOF?
-		if (statement->rsr_flags.test(Rsr::EOF_SET) && !statement->rsr_msgs_waiting)
-		{
-			statement->rsr_flags.clear(Rsr::EOF_SET);
-			rc = false;
-			break;
-		}
+		// If we have exhausted the cache...
 
-		// Have we exhausted the cache & have a pending error?
-		if (statement->rsr_flags.test(Rsr::STREAM_ERR) && !statement->rsr_msgs_waiting)
+		if (!statement->rsr_msgs_waiting)
 		{
-			fb_assert(statement->rsr_status);
-			statement->rsr_flags.clear(Rsr::STREAM_ERR);
-			return this->send_response(sendL, 0, 0, statement->rsr_status->value(), false);
+			// ... have we reached end of the cursor?
+
+			if (relative)
+			{
+				if (forward)
+				{
+					if (statement->rsr_flags.test(Rsr::EOF_SET))
+					{
+						statement->rsr_flags.clear(Rsr::EOF_SET);
+						success = false;
+					}
+				}
+				else
+				{
+					if (statement->rsr_flags.test(Rsr::BOF_SET))
+					{
+						statement->rsr_flags.clear(Rsr::BOF_SET);
+						success = false;
+					}
+				}
+			}
+
+			if (!success)
+				break;
+
+			// ... do we have a pending error?
+
+			if (statement->rsr_flags.test(Rsr::STREAM_ERR))
+			{
+				fb_assert(statement->rsr_status);
+				statement->rsr_flags.clear(Rsr::STREAM_ERR);
+				return this->send_response(sendL, 0, 0, statement->rsr_status->value(), false);
+			}
 		}
 
 		message = statement->rsr_buffer;
 
-		// Make sure message can be de referenced, if not then return false
+		// Make sure message can be dereferenced, if not then return false
 		if (message == NULL)
-			return FALSE;
+			return FB_FAILURE;
 
 		// If we don't have a message cached, get one from the access method.
 
@@ -4018,15 +4069,46 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		{
 			fb_assert(statement->rsr_msgs_waiting == 0);
 
-			rc = statement->rsr_cursor->fetchNext(
-				&status_vector, message->msg_buffer) == IStatus::RESULT_OK;
+			switch (operation)
+			{
+				case fetch_next:
+					rc = statement->rsr_cursor->fetchNext(&status_vector, message->msg_buffer);
+					break;
+
+				case fetch_prior:
+					rc = statement->rsr_cursor->fetchPrior(&status_vector, message->msg_buffer);
+					break;
+
+				case fetch_first:
+					rc = statement->rsr_cursor->fetchFirst(&status_vector, message->msg_buffer);
+					break;
+
+				case fetch_last:
+					rc = statement->rsr_cursor->fetchLast(&status_vector, message->msg_buffer);
+					break;
+
+				case fetch_absolute:
+					rc = statement->rsr_cursor->fetchAbsolute(&status_vector, position,
+															  message->msg_buffer);
+					break;
+
+				case fetch_relative:
+					rc = statement->rsr_cursor->fetchRelative(&status_vector, position,
+															  message->msg_buffer);
+					break;
+
+				default:
+					fb_assert(false);
+			}
 
 			statement->rsr_flags.set(Rsr::FETCHED);
 
 			if (status_vector.getState() & Firebird::IStatus::STATE_ERRORS)
 				return this->send_response(sendL, 0, 0, &status_vector, false);
 
-			if (!rc)
+			success = (rc == IStatus::RESULT_OK);
+
+			if (!success)
 				break;
 
 			message->msg_address = message->msg_buffer;
@@ -4040,8 +4122,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 
 		// There's a buffer waiting -- send it
 
-		if (!this->send_partial(sendL))
-			return FALSE;
+		this->send_partial(sendL);
 
 		message->msg_address = NULL;
 
@@ -4053,7 +4134,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			break;
 	}
 
-	response->p_sqldata_status = rc ? 0 : 100;
+	response->p_sqldata_status = success ? 0 : 100;
 	response->p_sqldata_messages = 0;
 
 	// hvlad: message->msg_address not used in xdr_protocol because of
@@ -4079,7 +4160,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	while (message->msg_address && message->msg_next != statement->rsr_buffer)
 		message = message->msg_next;
 
-	USHORT prefetch_count = (rc && !statement->rsr_flags.test(Rsr::NO_BATCH)) ? count : 0;
+	USHORT prefetch_count = (success && prefetch) ? count : 0;
 
 	for (; prefetch_count; --prefetch_count)
 	{
@@ -4098,8 +4179,21 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			next = message;
 		}
 
-		rc = statement->rsr_cursor->fetchNext(
-			&status_vector, message->msg_buffer) == IStatus::RESULT_OK;
+		// Only FETCH NEXT and FETCH PRIOR operations are available for prefetch
+
+		switch (operation)
+		{
+			case fetch_next:
+				rc = statement->rsr_cursor->fetchNext(&status_vector, message->msg_buffer);
+				break;
+
+			case fetch_prior:
+				rc = statement->rsr_cursor->fetchPrior(&status_vector, message->msg_buffer);
+				break;
+
+			default:
+				fb_assert(false);
+		}
 
 		if (status_vector.getState() & Firebird::IStatus::STATE_ERRORS)
 		{
@@ -4109,11 +4203,18 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 				statement->rsr_flags.set(Rsr::STREAM_ERR);
 				statement->saveException(&status_vector, true);
 			}
+
 			break;
 		}
-		if (!rc)
+
+		if (rc == IStatus::RESULT_NO_DATA)
 		{
-			statement->rsr_flags.set(Rsr::EOF_SET);
+			if (statement->rsr_cursor->isBof(&status_vector))
+				statement->rsr_flags.set(Rsr::BOF_SET);
+
+			if (statement->rsr_cursor->isEof(&status_vector))
+				statement->rsr_flags.set(Rsr::EOF_SET);
+
 			break;
 		}
 
@@ -4122,7 +4223,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		statement->rsr_msgs_waiting++;
 	}
 
-	return TRUE;
+	return FB_SUCCESS;
 }
 
 
@@ -4967,7 +5068,8 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 			break;
 
 		case op_fetch:
-			port->fetch(&receive->p_sqldata, sendL);
+		case op_fetch_scroll:
+			port->fetch(&receive->p_sqldata, sendL, op == op_fetch_scroll);
 			break;
 
 		case op_free_statement:

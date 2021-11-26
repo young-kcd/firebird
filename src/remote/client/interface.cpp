@@ -307,6 +307,7 @@ public:
 	}
 
 private:
+	bool fetch(CheckStatusWrapper* status, void* message, P_FETCH operation, int position = 0);
 	void releaseStatement();
 	void freeClientData(CheckStatusWrapper* status, bool force = false);
 	void internalClose(CheckStatusWrapper* status);
@@ -3442,6 +3443,7 @@ ITransaction* Statement::execute(CheckStatusWrapper* status, ITransaction* apiTr
 		sqldata->p_sqldata_out_blr.cstr_address = const_cast<UCHAR*>(out_blr);
 		sqldata->p_sqldata_out_message_number = 0;	// out_msg_type
 		sqldata->p_sqldata_timeout = statement->rsr_timeout;
+		sqldata->p_sqldata_cursor_flags = 0;
 
 		send_packet(port, packet);
 
@@ -3489,7 +3491,7 @@ ITransaction* Statement::execute(CheckStatusWrapper* status, ITransaction* apiTr
 
 
 ResultSet* Statement::openCursor(CheckStatusWrapper* status, Firebird::ITransaction* apiTra,
-	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outFormat, unsigned int /*flags*/)
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outFormat, unsigned int flags)
 {
 /**************************************
  *
@@ -3607,6 +3609,7 @@ ResultSet* Statement::openCursor(CheckStatusWrapper* status, Firebird::ITransact
 		sqldata->p_sqldata_out_blr.cstr_address = const_cast<UCHAR*>(out_blr);
 		sqldata->p_sqldata_out_message_number = 0;	// out_msg_type
 		sqldata->p_sqldata_timeout = statement->rsr_timeout;
+		sqldata->p_sqldata_cursor_flags = flags;
 
 		send_partial_packet(port, packet);
 		defer_packet(port, packet, true);
@@ -4361,369 +4364,6 @@ ISC_UINT64 Statement::getAffectedRecords(CheckStatusWrapper* status)
 }
 
 
-void ResultSet::setDelayedOutputFormat(CheckStatusWrapper* status, IMessageMetadata* format)
-{
-	try
-	{
-		reset(status);
-
-		// Check and validate handles, etc.
-		if (!delayedFormat)
-		{
-			(Arg::Gds(isc_dsql_cursor_err) << Arg::Gds(isc_bad_req_handle)).raise();
-		}
-
-		outputFormat = format;
-		delayedFormat = false;
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
-	}
-}
-
-
-int ResultSet::fetchNext(CheckStatusWrapper* status, void* buffer)
-{
-/**************************************
- *
- *	d s q l _ f e t c h
- *
- **************************************
- *
- * Functional description
- *	Fetch next record from a dynamic SQL cursor.
- *
- **************************************/
-
-	try
-	{
-		reset(status);
-
-		// Check and validate handles, etc.
-
-		if (delayedFormat || !stmt)
-		{
-			(Arg::Gds(isc_dsql_cursor_err) << Arg::Gds(isc_bad_req_handle)).raise();
-		}
-		Rsr* statement = stmt->getStatement();
-		CHECK_HANDLE(statement, isc_bad_req_handle);
-
-		Rdb* rdb = statement->rsr_rdb;
-		CHECK_HANDLE(rdb, isc_bad_db_handle);
-
-		rem_port* port = rdb->rdb_port;
-
-		BlrFromMessage outBlr(outputFormat, stmt->getDialect(), port->port_protocol);
-		unsigned int blr_length = outBlr.getLength();
-		const UCHAR* blr = outBlr.getBytes();
-		const unsigned int msg_length = outBlr.getMsgLength();
-		UCHAR* msg = static_cast<UCHAR*>(buffer);
-
-		// Validate data length
-
-		CHECK_LENGTH(port, blr_length);
-		CHECK_LENGTH(port, msg_length);
-
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-
-		// On first fetch, clear the end-of-stream flag & reset the message buffers
-
-		if (!statement->rsr_flags.test(Rsr::FETCHED))
-		{
-			statement->raiseException();
-
-			statement->rsr_flags.clear(Rsr::EOF_SET | Rsr::STREAM_ERR | Rsr::PAST_EOF);
-			statement->rsr_rows_pending = 0;
-			statement->clearException();
-
-			RMessage* message = statement->rsr_message;
-			if (message)
-			{
-				statement->rsr_buffer = message;
-				while (true)
-				{
-					message->msg_address = NULL;
-					message = message->msg_next;
-					if (message == statement->rsr_message) {
-						break;
-					}
-				}
-			}
-		}
-		else if (statement->rsr_flags.testAll(Rsr::EOF_SET | Rsr::PAST_EOF))
-		{
-			Arg::Gds(isc_req_sync).raise();
-		}
-
-		// Parse the blr describing the message, if there is any.
-
-		if (blr_length)
-		{
-			if (statement->rsr_user_select_format &&
-				statement->rsr_user_select_format != statement->rsr_select_format)
-			{
-				delete statement->rsr_user_select_format;
-			}
-
-			statement->rsr_user_select_format = PARSE_msg_format(blr, blr_length);
-
-			if (statement->rsr_flags.test(Rsr::FETCHED))
-				blr_length = 0;
-			else
-			{
-				delete statement->rsr_select_format;
-				statement->rsr_select_format = statement->rsr_user_select_format;
-			}
-		}
-
-		if (!statement->rsr_buffer)
-		{
-			statement->rsr_buffer = FB_NEW RMessage(0);
-			statement->rsr_message = statement->rsr_buffer;
-			statement->rsr_message->msg_next = statement->rsr_message;
-			statement->rsr_fmt_length = 0;
-		}
-
-		RMessage* message = statement->rsr_message;
-
-#ifdef DEBUG
-		fprintf(stdout, "Rows Pending in REM_fetch=%lu\n", statement->rsr_rows_pending);
-#endif
-
-		// Check to see if data is waiting.  If not, solicite data.
-
-		if ((!statement->rsr_flags.test(Rsr::EOF_SET | Rsr::STREAM_ERR) &&
-				(!statement->rsr_message->msg_address) && (statement->rsr_rows_pending == 0)) ||
-			(					// Low in inventory
-				(statement->rsr_rows_pending <= statement->rsr_reorder_level) &&
-				(statement->rsr_msgs_waiting <= statement->rsr_reorder_level) &&
-				// not using named pipe on NT
-				// Pipelining causes both server & client to
-				// write at the same time. In named pipes, writes
-				// block for the other end to read -  and so when both
-				// attempt to write simultaenously, they end up
-				// waiting indefinetly for the other end to read
-				(port->port_type != rem_port::PIPE) &&
-				(port->port_type != rem_port::XNET) &&
-				// We've reached eof or there was an error
-				!statement->rsr_flags.test(Rsr::EOF_SET | Rsr::STREAM_ERR) &&
-				// No error pending
-				!statement->haveException() ))
-		{
-			// set up the packet for the other guy...
-
-			PACKET* packet = &rdb->rdb_packet;
-			packet->p_operation = op_fetch;
-			P_SQLDATA* sqldata = &packet->p_sqldata;
-			sqldata->p_sqldata_statement = statement->rsr_id;
-			sqldata->p_sqldata_blr.cstr_length = blr_length;
-			sqldata->p_sqldata_blr.cstr_address = const_cast<unsigned char*>(blr);
-			sqldata->p_sqldata_message_number = 0;	// msg_type
-			sqldata->p_sqldata_messages = 0;
-			if (statement->rsr_select_format)
-			{
-				sqldata->p_sqldata_messages =
-					REMOTE_compute_batch_size(port, 0, op_fetch_response, statement->rsr_select_format);
-
-				// Reorder data when the local buffer is half empty
-
-				statement->rsr_reorder_level = sqldata->p_sqldata_messages / 2;
-#ifdef DEBUG
-				fprintf(stdout, "Recalculating Rows Pending in REM_fetch=%lu\n",
-						   statement->rsr_rows_pending);
-#endif
-			}
-			statement->rsr_rows_pending += sqldata->p_sqldata_messages;
-
-			// We've either got data, or some is on the way, or we have an error, or we have EOF
-
-			if (!(statement->rsr_msgs_waiting || (statement->rsr_rows_pending > 0) ||
-				statement->haveException() || statement->rsr_flags.test(Rsr::EOF_SET)))
-			{
-				// We were asked to fetch from the statement, not ready for it
-				// Give up before sending something to the server
-				Arg::Gds(isc_req_sync).raise();
-			}
-
-			// Make the batch request - and force the packet over the wire
-
-			send_packet(port, packet);
-
-			statement->rsr_batch_count++;
-
-			// Queue up receipt of the pending data
-
-			enqueue_receive(port, batch_dsql_fetch, rdb, statement, NULL);
-
-			fb_assert(statement->rsr_rows_pending > 0 || (!statement->rsr_select_format));
-		}
-
-		// Receive queued responses until we have some data for this cursor
-		// or an error status has been received.
-
-		// We've either got data, or some is on the way, or we have an error, or we have EOF
-
-		fb_assert(statement->rsr_msgs_waiting || (statement->rsr_rows_pending > 0) ||
-			   statement->haveException() || statement->rsr_flags.test(Rsr::EOF_SET));
-
-		while (!statement->haveException() &&			// received a database error
-			!statement->rsr_flags.test(Rsr::EOF_SET) &&	// reached end of cursor
-			statement->rsr_msgs_waiting < 2	&&			// Have looked ahead for end of batch
-			statement->rsr_rows_pending != 0)
-		{
-			// Hit end of batch
-			receive_queued_packet(port, statement->rsr_id);
-		}
-
-		if (!statement->rsr_msgs_waiting)
-		{
-			if (statement->rsr_flags.test(Rsr::EOF_SET))
-			{
-				// hvlad: we may have queued fetch packet but received EOF before start
-				// handling of this packet. Handle it now.
-				clear_stmt_que(port, statement);
-
-				// hvlad: as we processed all queued packets at code above we can leave Rsr::EOF_SET flag.
-				// It allows us to return EOF for all subsequent isc_dsql_fetch calls until statement
-				// will be re-executed (and without roundtrip to remote server).
-				//statement->rsr_flags.clear(Rsr::EOF_SET);
-				statement->rsr_flags.set(Rsr::PAST_EOF);
-
-				return IStatus::RESULT_NO_DATA;
-			}
-
-			if (statement->rsr_flags.test(Rsr::STREAM_ERR))
-			{
-				// The previous batch of receives ended with an error status.
-				// We're all done returning data in the local queue.
-				// Return that error status vector to the user.
-
-				// Stuff in the error result to the user's vector
-
-				statement->rsr_flags.clear(Rsr::STREAM_ERR);
-
-				// hvlad: prevent subsequent fetches
-				statement->rsr_flags.set(Rsr::EOF_SET);
-				statement->raiseException();
-			}
-		}
-		statement->rsr_msgs_waiting--;
-
-		message = statement->rsr_message;
-		statement->rsr_message = message->msg_next;
-
-		if (statement->rsr_user_select_format->fmt_length != msg_length)
-		{
-			status_exception::raise(Arg::Gds(isc_port_len) <<
-				Arg::Num(msg_length) << Arg::Num(statement->rsr_user_select_format->fmt_length));
-		}
-		if (statement->rsr_user_select_format == statement->rsr_select_format)
-		{
-			if (!msg || !message->msg_address)
-			{
-				move_error(Arg::Gds(isc_dsql_sqlda_err));
-				// Msg 263 SQLDA missing or wrong number of variables
-			}
-			memcpy(msg, message->msg_address, msg_length);
-		}
-		else
-		{
-			mov_dsql_message(message->msg_address, statement->rsr_select_format, msg,
-							 statement->rsr_user_select_format);
-		}
-
-		message->msg_address = NULL;
-		return IStatus::RESULT_OK;
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
-	}
-	return IStatus::RESULT_ERROR;
-}
-
-
-int ResultSet::fetchPrior(CheckStatusWrapper* user_status, void* buffer)
-{
-	try
-	{
-		status_exception::raise(Arg::Gds(isc_wish_list));
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(user_status);
-		return FB_FALSE;
-	}
-
-	return FB_TRUE;
-}
-
-
-int ResultSet::fetchFirst(CheckStatusWrapper* user_status, void* buffer)
-{
-	try
-	{
-		status_exception::raise(Arg::Gds(isc_wish_list));
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(user_status);
-		return FB_FALSE;
-	}
-
-	return FB_TRUE;
-}
-
-
-int ResultSet::fetchLast(CheckStatusWrapper* user_status, void* buffer)
-{
-	try
-	{
-		status_exception::raise(Arg::Gds(isc_wish_list));
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(user_status);
-		return FB_FALSE;
-	}
-
-	return FB_TRUE;
-}
-
-
-int ResultSet::fetchAbsolute(CheckStatusWrapper* user_status, int position, void* buffer)
-{
-	try
-	{
-		status_exception::raise(Arg::Gds(isc_wish_list));
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(user_status);
-		return FB_FALSE;
-	}
-
-	return FB_TRUE;
-}
-
-
-int ResultSet::fetchRelative(CheckStatusWrapper* user_status, int offset, void* buffer)
-{
-	try
-	{
-		status_exception::raise(Arg::Gds(isc_wish_list));
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(user_status);
-		return FB_FALSE;
-	}
-
-	return FB_TRUE;
-}
-
-
 void Statement::setCursorName(CheckStatusWrapper* status, const char* cursor)
 {
 /*****************************************
@@ -4807,6 +4447,541 @@ void Statement::setCursorName(CheckStatusWrapper* status, const char* cursor)
 }
 
 
+void ResultSet::setDelayedOutputFormat(CheckStatusWrapper* status, IMessageMetadata* format)
+{
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+		if (!delayedFormat)
+		{
+			(Arg::Gds(isc_dsql_cursor_err) << Arg::Gds(isc_bad_req_handle)).raise();
+		}
+
+		outputFormat = format;
+		delayedFormat = false;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+
+bool ResultSet::fetch(CheckStatusWrapper* status, void* buffer, P_FETCH operation, int position)
+{
+/**************************************
+ *
+ *	d s q l _ f e t c h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Fetch next record from a dynamic SQL cursor.
+ *
+ **************************************/
+
+	reset(status);
+
+	// Check and validate handles, etc.
+
+	if (delayedFormat || !stmt)
+	{
+		(Arg::Gds(isc_dsql_cursor_err) << Arg::Gds(isc_bad_req_handle)).raise();
+	}
+
+	Rsr* const statement = stmt->getStatement();
+	CHECK_HANDLE(statement, isc_bad_req_handle);
+
+	Rdb* const rdb = statement->rsr_rdb;
+	CHECK_HANDLE(rdb, isc_bad_db_handle);
+
+	rem_port* const port = rdb->rdb_port;
+
+	// Scrolling is not available in older protocols
+	if (operation != fetch_next && port->port_protocol < PROTOCOL_FETCH_SCROLL)
+		unsupported();
+
+	// Whether we're fetching in the forward direction
+	const bool forward =
+		(operation == fetch_next || operation == fetch_last ||
+		((operation == fetch_absolute || operation == fetch_relative) && position > 0));
+
+	// Whether we're fetching relatively to the current position
+	const bool relative =
+		(operation == fetch_next || operation == fetch_prior || operation == fetch_relative);
+
+	BlrFromMessage outBlr(outputFormat, stmt->getDialect(), port->port_protocol);
+	unsigned int blr_length = outBlr.getLength();
+	const UCHAR* blr = outBlr.getBytes();
+	const unsigned int msg_length = outBlr.getMsgLength();
+	UCHAR* msg = static_cast<UCHAR*>(buffer);
+
+	// Validate data length
+
+	CHECK_LENGTH(port, blr_length);
+	CHECK_LENGTH(port, msg_length);
+
+	RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+	if (!statement->rsr_flags.test(Rsr::FETCHED))
+	{
+		// On first fetch, clear the end-of-stream flag & reset the message buffers
+
+		statement->raiseException();
+
+		statement->rsr_flags.clear(Rsr::STREAM_END | Rsr::PAST_END | Rsr::STREAM_ERR);
+		statement->rsr_rows_pending = 0;
+		statement->rsr_fetch_operation = operation;
+		statement->rsr_fetch_position = position;
+		statement->clearException();
+
+		RMessage* message = statement->rsr_message;
+		if (message)
+		{
+			statement->rsr_buffer = message;
+
+			while (true)
+			{
+				message->msg_address = NULL;
+				message = message->msg_next;
+
+				if (message == statement->rsr_message)
+					break;
+			}
+		}
+	}
+	else if (relative)
+	{
+		// For the relative fetch, check whether end-of-stream is already reached
+
+		if (forward)
+		{
+			if (statement->rsr_flags.testAll(Rsr::EOF_SET | Rsr::PAST_EOF))
+				Arg::Gds(isc_req_sync).raise();
+		}
+		else
+		{
+			if (statement->rsr_flags.testAll(Rsr::BOF_SET | Rsr::PAST_BOF))
+				Arg::Gds(isc_req_sync).raise();
+		}
+	}
+	else
+	{
+		// Clear the end-of-stream flag if the fetch is positioned absolutely
+		statement->rsr_flags.clear(Rsr::STREAM_END | Rsr::PAST_END);
+	}
+
+	// Parse the blr describing the message, if there is any.
+
+	if (blr_length)
+	{
+		if (statement->rsr_user_select_format &&
+			statement->rsr_user_select_format != statement->rsr_select_format)
+		{
+			delete statement->rsr_user_select_format;
+		}
+
+		statement->rsr_user_select_format = PARSE_msg_format(blr, blr_length);
+
+		if (statement->rsr_flags.test(Rsr::FETCHED))
+			blr_length = 0;
+		else
+		{
+			delete statement->rsr_select_format;
+			statement->rsr_select_format = statement->rsr_user_select_format;
+		}
+	}
+
+	if (!statement->rsr_buffer)
+	{
+		statement->rsr_buffer = FB_NEW RMessage(0);
+		statement->rsr_message = statement->rsr_buffer;
+		statement->rsr_message->msg_next = statement->rsr_message;
+		statement->rsr_fmt_length = 0;
+	}
+
+	RMessage* message = statement->rsr_message;
+
+#ifdef DEBUG
+	fprintf(stdout, "Rows Pending in REM_fetch=%lu\n", statement->rsr_rows_pending);
+#endif
+
+	// If the fetch direction was changed, we don't need the batched rows anymore.
+	// Swallow them and reset the stream for subsequent fetches.
+
+	if (operation != statement->rsr_fetch_operation ||
+		position != statement->rsr_fetch_position)
+	{
+		while (statement->rsr_rows_pending)
+			receive_queued_packet(port, statement->rsr_id);
+
+		if (statement->rsr_flags.test(Rsr::STREAM_ERR))
+		{
+			statement->rsr_flags.clear(Rsr::STREAM_ERR);
+
+			// hvlad: prevent subsequent fetches
+			statement->rsr_flags.set(Rsr::STREAM_END);
+			statement->raiseException();
+		}
+
+		statement->rsr_flags.clear(Rsr::STREAM_END | Rsr::PAST_END);
+
+		// We have some messages in the queue. Reset them for reuse.
+
+		if (statement->rsr_msgs_waiting)
+		{
+			fb_assert(statement->rsr_fetch_operation == fetch_next ||
+					  statement->rsr_fetch_operation == fetch_prior);
+
+			RMessage* message = statement->rsr_message;
+			if (message)
+			{
+				statement->rsr_buffer = message;
+
+				while (true)
+				{
+					message->msg_address = NULL;
+					message = message->msg_next;
+
+					if (message == statement->rsr_message)
+						break;
+				}
+			}
+
+			const ULONG offset = statement->rsr_msgs_waiting + 1;
+			statement->rsr_msgs_waiting = 0;
+
+			// If we had some rows batched and the requested scrolling is relative,
+			// then move the server cursor to the actual client's position before proceeding.
+			// We don't know the absolute client's position, but it's not really necessary.
+			// rsr_msgs_waiting shows how much we're ahead the server, so we may re-position
+			// the cursor relatively.
+
+			if (relative)
+			{
+				const bool isAhead = (statement->rsr_fetch_operation == fetch_next);
+
+				PACKET* packet = &rdb->rdb_packet;
+				packet->p_operation = op_fetch_scroll;
+				P_SQLDATA* sqldata = &packet->p_sqldata;
+				sqldata->p_sqldata_statement = statement->rsr_id;
+				sqldata->p_sqldata_blr.cstr_length = 0;
+				sqldata->p_sqldata_blr.cstr_address = nullptr;
+				sqldata->p_sqldata_message_number = 0;	// msg_type
+				sqldata->p_sqldata_messages = statement->rsr_select_format ? 1 : 0;
+				sqldata->p_sqldata_fetch_op = fetch_relative;
+				sqldata->p_sqldata_fetch_pos = isAhead ? -offset : offset;
+
+				send_packet(port, packet);
+
+				// Receive response packets. If everything is OK, there should be two of them:
+				// first with packet->p_sqldata.p_sqldata_messages == 1 and second with
+				// packet->p_sqldata.p_sqldata_messages == 0 (end-of-batch).
+
+				do
+				{
+					receive_packet(rdb->rdb_port, packet);
+
+					// If we get an error, handle it
+					if (packet->p_operation != op_fetch_response)
+					{
+						statement->rsr_flags.set(Rsr::STREAM_ERR);
+						REMOTE_check_response(status, rdb, packet);
+						break;
+					}
+
+					// If we get end-of-stream, something went seriously wrong, thus punt
+					if (packet->p_sqldata.p_sqldata_status == 100)
+						Arg::Gds(isc_req_sync).raise();
+
+					// We should get either the requested row or the end-of-batch marker
+					fb_assert(packet->p_sqldata.p_sqldata_messages == 0 ||
+							  packet->p_sqldata.p_sqldata_messages == 1);
+
+					// Release the received message, we don't need it
+					const auto message = statement->rsr_message;
+					if (message && message->msg_address)
+					{
+						statement->rsr_message = message->msg_next;
+						message->msg_address = NULL;
+					}
+				}
+				while (packet->p_sqldata.p_sqldata_messages);
+			}
+		}
+
+		// These are the necessary conditions to continue fetching (see below)
+		fb_assert(!statement->rsr_flags.test(Rsr::STREAM_END | Rsr::STREAM_ERR));
+		fb_assert(!statement->rsr_message->msg_address);
+		fb_assert(!statement->rsr_rows_pending);
+	}
+
+	// Check to see if data is waiting.  If not, solicite data.
+
+	if ((!statement->rsr_flags.test(Rsr::STREAM_END | Rsr::STREAM_ERR) &&
+		!statement->rsr_message->msg_address && !statement->rsr_rows_pending) ||
+		(	// Low in inventory
+			(statement->rsr_rows_pending <= statement->rsr_reorder_level) &&
+			(statement->rsr_msgs_waiting <= statement->rsr_reorder_level) &&
+			// not using named pipe on NT
+			// Pipelining causes both server & client to
+			// write at the same time. In named pipes, writes
+			// block for the other end to read -  and so when both
+			// attempt to write simultaneously, they end up
+			// waiting indefinitely for the other end to read
+			(port->port_type != rem_port::PIPE) &&
+			(port->port_type != rem_port::XNET) &&
+			// We're fetching either forward or backward
+			(operation == fetch_next || operation == fetch_prior) &&
+			// We've reached end-of-stream or there was an error
+			!statement->rsr_flags.test(Rsr::STREAM_END | Rsr::STREAM_ERR) &&
+			// No error pending
+			!statement->haveException() ))
+	{
+		// set up the packet for the other guy...
+
+		PACKET* packet = &rdb->rdb_packet;
+		packet->p_operation = (operation == fetch_next) ? op_fetch : op_fetch_scroll;
+		P_SQLDATA* sqldata = &packet->p_sqldata;
+		sqldata->p_sqldata_statement = statement->rsr_id;
+		sqldata->p_sqldata_blr.cstr_length = blr_length;
+		sqldata->p_sqldata_blr.cstr_address = const_cast<unsigned char*>(blr);
+		sqldata->p_sqldata_message_number = 0;	// msg_type
+		sqldata->p_sqldata_messages = statement->rsr_select_format ? 1 : 0;
+		sqldata->p_sqldata_fetch_op = operation;
+		sqldata->p_sqldata_fetch_pos = position;
+
+		if (statement->rsr_select_format)
+		{
+			if (operation == fetch_next || operation == fetch_prior)
+			{
+				sqldata->p_sqldata_messages = REMOTE_compute_batch_size(
+					port, 0, op_fetch_response, statement->rsr_select_format);
+			}
+
+			// Reorder data when the local buffer is half empty
+
+			statement->rsr_reorder_level = sqldata->p_sqldata_messages / 2;
+#ifdef DEBUG
+			fprintf(stdout, "Recalculating Rows Pending in REM_fetch=%lu\n",
+					   statement->rsr_rows_pending);
+#endif
+		}
+
+		statement->rsr_rows_pending += sqldata->p_sqldata_messages;
+
+		// We've either got data, or some is on the way, or we have an error, or we have EOF
+
+		if (!(statement->rsr_msgs_waiting ||
+			statement->rsr_rows_pending ||
+			statement->haveException() ||
+			statement->rsr_flags.test(Rsr::STREAM_END)))
+		{
+			// We were asked to fetch from the statement, not ready for it.
+			// Give up before sending something to the server.
+			Arg::Gds(isc_req_sync).raise();
+		}
+
+		// Make the batch request - and force the packet over the wire
+
+		send_packet(port, packet);
+
+		statement->rsr_batch_count++;
+		statement->rsr_fetch_operation = operation;
+		statement->rsr_fetch_position = position;
+
+		// Queue up receipt of the pending data
+
+		enqueue_receive(port, batch_dsql_fetch, rdb, statement, NULL);
+
+		fb_assert(statement->rsr_rows_pending || !statement->rsr_select_format);
+	}
+
+	// Receive queued responses until we have some data for this cursor
+	// or an error status has been received.
+
+	// We've either got data, or some is on the way, or we have an error, or we have EOF
+
+	fb_assert(statement->rsr_msgs_waiting || statement->rsr_rows_pending ||
+			  statement->haveException() || statement->rsr_flags.test(Rsr::STREAM_END));
+
+	while (!statement->haveException() &&			// received a database error
+		!statement->rsr_flags.test(Rsr::STREAM_END) &&	// reached end of stream
+		statement->rsr_msgs_waiting < 2	&&			// Have looked ahead for end of batch
+		statement->rsr_rows_pending)
+	{
+		// Hit end of batch
+		receive_queued_packet(port, statement->rsr_id);
+	}
+
+	if (!statement->rsr_msgs_waiting)
+	{
+		if (statement->rsr_flags.test(Rsr::STREAM_END))
+		{
+			// hvlad: we may have queued fetch packet but received end-of-stream before start
+			// handling of this packet. Handle it now.
+			clear_stmt_que(port, statement);
+
+			// hvlad: as we processed all queued packets at code above we can leave Rsr::EOF_SET flag.
+			// It allows us to return EOF for all subsequent isc_dsql_fetch calls until statement
+			// will be re-executed (and without roundtrip to remote server).
+			//statement->rsr_flags.clear(Rsr::STREAM_END);
+
+			if (statement->rsr_flags.test(Rsr::BOF_SET))
+				statement->rsr_flags.set(Rsr::PAST_BOF);
+
+			if (statement->rsr_flags.test(Rsr::EOF_SET))
+				statement->rsr_flags.set(Rsr::PAST_EOF);
+
+			return false;
+		}
+
+		if (statement->rsr_flags.test(Rsr::STREAM_ERR))
+		{
+			// The previous batch of receives ended with an error status.
+			// We're all done returning data in the local queue.
+			// Return that error status vector to the user.
+
+			// Stuff in the error result to the user's vector
+
+			statement->rsr_flags.clear(Rsr::STREAM_ERR);
+
+			// hvlad: prevent subsequent fetches
+			statement->rsr_flags.set(Rsr::STREAM_END);
+			statement->raiseException();
+		}
+	}
+
+	statement->rsr_msgs_waiting--;
+
+	message = statement->rsr_message;
+	statement->rsr_message = message->msg_next;
+
+	if (statement->rsr_user_select_format->fmt_length != msg_length)
+	{
+		status_exception::raise(Arg::Gds(isc_port_len) <<
+			Arg::Num(msg_length) << Arg::Num(statement->rsr_user_select_format->fmt_length));
+	}
+
+	if (statement->rsr_user_select_format == statement->rsr_select_format)
+	{
+		if (!msg || !message->msg_address)
+		{
+			move_error(Arg::Gds(isc_dsql_sqlda_err));
+			// Msg 263 SQLDA missing or wrong number of variables
+		}
+
+		memcpy(msg, message->msg_address, msg_length);
+	}
+	else
+	{
+		mov_dsql_message(message->msg_address, statement->rsr_select_format, msg,
+						 statement->rsr_user_select_format);
+	}
+
+	message->msg_address = NULL;
+	return true;
+}
+
+
+int ResultSet::fetchNext(CheckStatusWrapper* user_status, void* buffer)
+{
+	try
+	{
+		return fetch(user_status, buffer, fetch_next) ?
+			IStatus::RESULT_OK : IStatus::RESULT_NO_DATA;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+	}
+
+	return IStatus::RESULT_ERROR;
+}
+
+
+int ResultSet::fetchPrior(CheckStatusWrapper* user_status, void* buffer)
+{
+	try
+	{
+		return fetch(user_status, buffer, fetch_prior) ?
+			IStatus::RESULT_OK : IStatus::RESULT_NO_DATA;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+	}
+
+	return IStatus::RESULT_ERROR;
+}
+
+
+int ResultSet::fetchFirst(CheckStatusWrapper* user_status, void* buffer)
+{
+	try
+	{
+		return fetch(user_status, buffer, fetch_first) ?
+			IStatus::RESULT_OK : IStatus::RESULT_NO_DATA;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+	}
+
+	return IStatus::RESULT_ERROR;
+}
+
+
+int ResultSet::fetchLast(CheckStatusWrapper* user_status, void* buffer)
+{
+	try
+	{
+		return fetch(user_status, buffer, fetch_last) ?
+			IStatus::RESULT_OK : IStatus::RESULT_NO_DATA;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+	}
+
+	return IStatus::RESULT_ERROR;
+}
+
+
+int ResultSet::fetchAbsolute(CheckStatusWrapper* user_status, int position, void* buffer)
+{
+	try
+	{
+		return fetch(user_status, buffer, fetch_absolute, position) ?
+			IStatus::RESULT_OK : IStatus::RESULT_NO_DATA;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+	}
+
+	return IStatus::RESULT_ERROR;
+}
+
+
+int ResultSet::fetchRelative(CheckStatusWrapper* user_status, int offset, void* buffer)
+{
+	try
+	{
+		return fetch(user_status, buffer, fetch_relative, offset) ?
+			IStatus::RESULT_OK : IStatus::RESULT_NO_DATA;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+	}
+
+	return IStatus::RESULT_ERROR;
+}
+
+
 FB_BOOLEAN ResultSet::isEof(CheckStatusWrapper* status)
 {
 	try
@@ -4822,12 +4997,16 @@ FB_BOOLEAN ResultSet::isEof(CheckStatusWrapper* status)
 		Rsr* statement = stmt->getStatement();
 		CHECK_HANDLE(statement, isc_bad_req_handle);
 
+		if (!statement->rsr_flags.test(Rsr::FETCHED))
+			return FB_FALSE;
+
 		return statement->rsr_flags.test(Rsr::EOF_SET) ? FB_TRUE : FB_FALSE;
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
+
 	return FB_FALSE;
 }
 
@@ -4836,7 +5015,21 @@ FB_BOOLEAN ResultSet::isBof(CheckStatusWrapper* status)
 {
 	try
 	{
-		status_exception::raise(Arg::Gds(isc_wish_list));
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		if (!stmt)
+		{
+			Arg::Gds(isc_dsql_cursor_err).raise();
+		}
+		Rsr* statement = stmt->getStatement();
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+
+		if (!statement->rsr_flags.test(Rsr::FETCHED))
+			return FB_TRUE;
+
+		return statement->rsr_flags.test(Rsr::BOF_SET) ? FB_TRUE : FB_FALSE;
 	}
 	catch (const Exception& ex)
 	{
@@ -7287,8 +7480,8 @@ static void batch_dsql_fetch(rem_port*	port,
 	// to handoff to them.  We'll grab the whole batch when we need to
 	// receive a response for a DIFFERENT network request on the wire,
 	// so we have to clear the wire before the response can be received
-	// In addtion to the above we grab all the records in case of XNET as
-	// we need to clear the queue
+	// In addition to the above we grab all the records in case of XNET as
+	// we need to clear the queue.
 	const bool clear_queue = (id != statement->rsr_id || port->port_type == rem_port::XNET);
 
 	statement->rsr_flags.set(Rsr::FETCHED);
@@ -7307,9 +7500,9 @@ static void batch_dsql_fetch(rem_port*	port,
 
 			new_msg->msg_next = message;
 
-			while (message->msg_next != new_msg->msg_next) {
+			while (message->msg_next != new_msg->msg_next)
 				message = message->msg_next;
-			}
+
 			message->msg_next = new_msg;
 		}
 
@@ -7322,12 +7515,14 @@ static void batch_dsql_fetch(rem_port*	port,
 			statement->rsr_rows_pending = 0;
 			--statement->rsr_batch_count;
 			dequeue_receive(port);
+
 			throw;
 		}
 
 		if (packet->p_operation != op_fetch_response)
 		{
 			statement->rsr_flags.set(Rsr::STREAM_ERR);
+
 			try
 			{
 				REMOTE_check_response(&status, rdb, packet);
@@ -7342,6 +7537,7 @@ static void batch_dsql_fetch(rem_port*	port,
 			statement->rsr_rows_pending = 0;
 			--statement->rsr_batch_count;
 			dequeue_receive(port);
+
 			break;
 		}
 
@@ -7351,17 +7547,28 @@ static void batch_dsql_fetch(rem_port*	port,
 		{
 			if (packet->p_sqldata.p_sqldata_status == 100)
 			{
-				statement->rsr_flags.set(Rsr::EOF_SET);
+				const auto operation = statement->rsr_fetch_operation;
+				const auto position = statement->rsr_fetch_position;
+
+				const bool forward =
+					(operation == fetch_next || operation == fetch_last ||
+					((operation == fetch_absolute || operation == fetch_relative) && position > 0));
+
+				if (forward)
+					statement->rsr_flags.set(Rsr::EOF_SET);
+				else
+					statement->rsr_flags.set(Rsr::BOF_SET);
+
 				statement->rsr_rows_pending = 0;
 #ifdef DEBUG
 				fprintf(stdout, "Resetting Rows Pending in batch_dsql_fetch=%lu\n",
 						   statement->rsr_rows_pending);
 #endif
 			}
-			--statement->rsr_batch_count;
-			if (statement->rsr_batch_count == 0) {
+
+			if (--statement->rsr_batch_count == 0)
 				statement->rsr_rows_pending = 0;
-			}
+
 			dequeue_receive(port);
 
 			// clear next queued batch(es) if present
@@ -7375,15 +7582,17 @@ static void batch_dsql_fetch(rem_port*	port,
 			}
 			break;
 		}
+
 		statement->rsr_msgs_waiting++;
 		statement->rsr_rows_pending--;
+
 #ifdef DEBUG
 		fprintf(stdout, "Decrementing Rows Pending in batch_dsql_fetch=%lu\n",
 				   statement->rsr_rows_pending);
 #endif
-		if (!clear_queue) {
+
+		if (!clear_queue)
 			break;
-		}
 	}
 }
 

@@ -302,6 +302,8 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 	}
 #endif
 
+	const auto port = xdrs->x_public;
+
 	switch (p->p_operation)
 	{
 	case op_reject:
@@ -659,11 +661,10 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 			}
 			MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_out_message_number));
 		}
-		{ // scope
-			rem_port* port = xdrs->x_public;
-			if (port->port_protocol >= PROTOCOL_STMT_TOUT)
-				MAP(xdr_u_long, sqldata->p_sqldata_timeout);
-		}
+		if (port->port_protocol >= PROTOCOL_STMT_TOUT)
+			MAP(xdr_u_long, sqldata->p_sqldata_timeout);
+		if (port->port_protocol >= PROTOCOL_FETCH_SCROLL)
+			MAP(xdr_u_long, sqldata->p_sqldata_cursor_flags);
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -702,6 +703,7 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 		return P_TRUE(xdrs, p);
 
 	case op_fetch:
+	case op_fetch_scroll:
 		sqldata = &p->p_sqldata;
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_statement));
 		if (!xdr_sql_blr(xdrs, (SLONG) sqldata->p_sqldata_statement,
@@ -711,6 +713,15 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 		}
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_message_number));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_messages));
+		if (p->p_operation == op_fetch_scroll)
+		{
+			MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_fetch_op));
+			if (sqldata->p_sqldata_fetch_op == fetch_absolute ||
+				sqldata->p_sqldata_fetch_op == fetch_relative)
+			{
+				MAP(xdr_long, sqldata->p_sqldata_fetch_pos);
+			}
+		}
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -820,7 +831,6 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 			P_CRYPT_CALLBACK* cc = &p->p_cc;
 			MAP(xdr_cstring, cc->p_cc_data);
 
-			rem_port* port = xdrs->x_public;
 			// If the protocol is 0 we are in the process of establishing a connection.
 			// crypt_key_callback at this phaze means server protocol is at least P15
 			if (port->port_protocol >= PROTOCOL_VERSION14 || port->port_protocol == 0)
@@ -856,7 +866,6 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 				return P_TRUE(xdrs, p);
 			}
 
-			rem_port* port = xdrs->x_public;
 			SSHORT statement_id = b->p_batch_statement;
 			Rsr* statement;
 			if (statement_id >= 0)
@@ -933,7 +942,6 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 			if (xdrs->x_op == XDR_FREE)
 				return P_TRUE(xdrs, p);
 
-			rem_port* port = xdrs->x_public;
 			SSHORT statement_id = b->p_batch_statement;
 			DEB_RBATCH(fprintf(stderr, "BatRem: xdr CS %d\n", statement_id));
 			Rsr* statement;

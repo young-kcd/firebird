@@ -4149,7 +4149,7 @@ int YBlob::getSegment(CheckStatusWrapper* status, unsigned int bufferLength,
 		e.stuffException(status);
 	}
 
-	return 0;
+	return IStatus::RESULT_ERROR;
 }
 
 void YBlob::putSegment(CheckStatusWrapper* status, unsigned int length, const void* buffer)
@@ -4750,7 +4750,7 @@ int YResultSet::fetchNext(CheckStatusWrapper* status, void* buffer)
 		e.stuffException(status);
 	}
 
-	return FB_FALSE;
+	return IStatus::RESULT_ERROR;
 }
 
 int YResultSet::fetchPrior(CheckStatusWrapper* status, void* buffer)
@@ -4766,7 +4766,7 @@ int YResultSet::fetchPrior(CheckStatusWrapper* status, void* buffer)
 		e.stuffException(status);
 	}
 
-	return FB_FALSE;
+	return IStatus::RESULT_ERROR;
 }
 
 int YResultSet::fetchFirst(CheckStatusWrapper* status, void* buffer)
@@ -4782,7 +4782,7 @@ int YResultSet::fetchFirst(CheckStatusWrapper* status, void* buffer)
 		e.stuffException(status);
 	}
 
-	return FB_FALSE;
+	return IStatus::RESULT_ERROR;
 }
 
 int YResultSet::fetchLast(CheckStatusWrapper* status, void* buffer)
@@ -4798,7 +4798,7 @@ int YResultSet::fetchLast(CheckStatusWrapper* status, void* buffer)
 		e.stuffException(status);
 	}
 
-	return FB_FALSE;
+	return IStatus::RESULT_ERROR;
 }
 
 int YResultSet::fetchAbsolute(CheckStatusWrapper* status, int position, void* buffer)
@@ -4814,7 +4814,7 @@ int YResultSet::fetchAbsolute(CheckStatusWrapper* status, int position, void* bu
 		e.stuffException(status);
 	}
 
-	return FB_FALSE;
+	return IStatus::RESULT_ERROR;
 }
 
 int YResultSet::fetchRelative(CheckStatusWrapper* status, int offset, void* buffer)
@@ -4830,7 +4830,7 @@ int YResultSet::fetchRelative(CheckStatusWrapper* status, int offset, void* buff
 		e.stuffException(status);
 	}
 
-	return FB_FALSE;
+	return IStatus::RESULT_ERROR;
 }
 
 FB_BOOLEAN YResultSet::isEof(CheckStatusWrapper* status)
