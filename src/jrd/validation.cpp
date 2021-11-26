@@ -859,6 +859,7 @@ Validation::Validation(thread_db* tdbb, UtilSvc* uSvc) :
 	vdr_errors = 0;
 	vdr_warns = 0;
 	vdr_fixed = 0;
+	vdr_ignored = 0;
 	vdr_max_transaction = 0;
 	vdr_rel_backversion_counter = 0;
 	vdr_backversion_pages = NULL;
@@ -1020,7 +1021,7 @@ bool Validation::run(thread_db* tdbb, USHORT flags)
 		vdr_flags = flags;
 
 		// initialize validate errors
-		vdr_errors = vdr_warns = vdr_fixed = 0;
+		vdr_errors = vdr_warns = vdr_fixed = vdr_ignored = 0;
 		for (USHORT i = 0; i < VAL_MAX_ERROR; i++)
 			vdr_err_counts[i] = 0;
 
@@ -1029,7 +1030,7 @@ bool Validation::run(thread_db* tdbb, USHORT flags)
 		gds__log("Database: %s\n\tValidation started", fileName.c_str());
 
 		walk_database();
-		if (vdr_errors || vdr_warns)
+		if ( (vdr_errors + vdr_warns) > (vdr_fixed + vdr_ignored))
 			vdr_flags &= ~VDR_update;
 
 		if (!(vdr_flags & VDR_online) && !(vdr_flags & VDR_partial)) {
@@ -1045,7 +1046,7 @@ bool Validation::run(thread_db* tdbb, USHORT flags)
 
 		cleanup();
 
-		gds__log("Database: %s\n\tValidation finished: %d errors, %d warnings, %d fixed",
+		gds__log("Database: %s\n\tValidation finished: %d errors, %d warnings, %d fixed, %d ignored",
 			fileName.c_str(), vdr_errors, vdr_warns, vdr_fixed);
 	}	// try
 	catch (const Firebird::Exception& ex)
@@ -1152,6 +1153,14 @@ Validation::RTN Validation::corrupt(int err_code, const jrd_rel* relation, ...)
 
 	s.append("\n");
 	output(s.c_str());
+
+	switch (err_code)
+	{
+		case VAL_REL_CHAIN_ORPHANS:
+		case VAL_INDEX_MISSING_ROWS:
+		case VAL_INDEX_BAD_LEFT_SIBLING:
+			vdr_ignored++;
+	}
 
 	return rtn_corrupt;
 }

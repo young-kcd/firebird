@@ -140,6 +140,7 @@ private:
 	int vdr_errors;
 	int vdr_warns;
 	int vdr_fixed;
+	int vdr_ignored;						// Counts a number of corrupts which mush not prevent orphan pages fixing
 	TraNumber vdr_max_transaction;
 	FB_UINT64 vdr_rel_backversion_counter;	// Counts slots w/rhd_chain
 	PageBitmap* vdr_backversion_pages;      // 1 bit per visited table page
