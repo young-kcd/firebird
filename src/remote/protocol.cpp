@@ -716,11 +716,7 @@ bool_t xdr_protocol(RemoteXdr* xdrs, PACKET* p)
 		if (p->p_operation == op_fetch_scroll)
 		{
 			MAP(xdr_short, reinterpret_cast<SSHORT&>(sqldata->p_sqldata_fetch_op));
-			if (sqldata->p_sqldata_fetch_op == fetch_absolute ||
-				sqldata->p_sqldata_fetch_op == fetch_relative)
-			{
-				MAP(xdr_long, sqldata->p_sqldata_fetch_pos);
-			}
+			MAP(xdr_long, sqldata->p_sqldata_fetch_pos);
 		}
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
