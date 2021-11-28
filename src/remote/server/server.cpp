@@ -3948,6 +3948,8 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL, bool scroll)
 		// On first fetch, clear the end-of-stream flag & reset the message buffers
 
 		statement->rsr_flags.clear(Rsr::STREAM_END | Rsr::STREAM_ERR);
+		statement->rsr_fetch_operation = operation;
+		statement->rsr_fetch_position = position;
 		statement->clearException();
 
 		RMessage* message = statement->rsr_message;
@@ -3991,6 +3993,47 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL, bool scroll)
 
 		statement->rsr_delayed_format = false;
 	}
+
+	// If the fetch direction was changed, discard the messages already cached
+
+	if (operation != statement->rsr_fetch_operation ||
+		position != statement->rsr_fetch_position)
+	{
+		if (statement->rsr_flags.test(Rsr::STREAM_ERR))
+		{
+			fb_assert(statement->rsr_status);
+			statement->rsr_flags.clear(Rsr::STREAM_ERR);
+			return this->send_response(sendL, 0, 0, statement->rsr_status->value(), false);
+		}
+
+		statement->rsr_flags.clear(Rsr::STREAM_END);
+
+		if (statement->rsr_msgs_waiting)
+		{
+			fb_assert(statement->rsr_fetch_operation == fetch_next ||
+					  statement->rsr_fetch_operation == fetch_prior);
+
+			RMessage* message = statement->rsr_message;
+			if (message)
+			{
+				statement->rsr_buffer = message;
+
+				while (true)
+				{
+					message->msg_address = NULL;
+					message = message->msg_next;
+
+					if (message == statement->rsr_message)
+						break;
+				}
+			}
+
+			statement->rsr_msgs_waiting = 0;
+		}
+	}
+
+	statement->rsr_fetch_operation = operation;
+	statement->rsr_fetch_position = position;
 
 	// Setup the prefetch count. It's available only for FETCH NEXT and FETCH PRIOR
 	// operations, unless batching is disabled explicitly.
