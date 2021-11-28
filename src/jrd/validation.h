@@ -69,7 +69,8 @@ private:
 		fetch_ok,
 		//fetch_checksum,
 		fetch_type,
-		fetch_duplicate
+		fetch_duplicate,
+		fetch_io			// IO error while page reading
 	};
 
 	enum RTN
@@ -121,8 +122,12 @@ private:
 		VAL_DATA_PAGE_SLOT_BAD_VAL  = 37,
 		VAL_DATA_PAGE_HASNO_PP      = 38,
 		VAL_DATA_PAGE_SEC_PRI		= 39,
+		VAL_FETCH_PAGE_ERROR		= 40,
+		VAL_INDEX_PAGE_LOST			= 41,
+		VAL_PIP_PAGE_LOST			= 42,
+		VAL_SCN_PAGE_LOST			= 43,
 
-		VAL_MAX_ERROR				= 40
+		VAL_MAX_ERROR
 	};
 
 	struct MSG_ENTRY

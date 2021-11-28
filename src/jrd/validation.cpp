@@ -847,7 +847,11 @@ const Validation::MSG_ENTRY Validation::vdr_msg_table[VAL_MAX_ERROR] =
 	{true, isc_info_ppage_errors,	"Data page %" ULONGFORMAT" is not in PP (%" ULONGFORMAT"). Slot (%d) is not found"},
 	{true, isc_info_ppage_errors,	"Data page %" ULONGFORMAT" is not in PP (%" ULONGFORMAT"). Slot (%d) has value %" ULONGFORMAT},
 	{true, isc_info_ppage_errors,	"Pointer page is not found for data page %" ULONGFORMAT". dpg_sequence (%" ULONGFORMAT") is invalid"},
-	{true, isc_info_dpage_errors,	"Data page %" ULONGFORMAT" {sequence %" ULONGFORMAT"} marked as secondary but contains primary record versions"}
+	{true, isc_info_dpage_errors,	"Data page %" ULONGFORMAT" {sequence %" ULONGFORMAT"} marked as secondary but contains primary record versions"},
+	{true, isc_info_page_errors,	"Fetch page %" ULONGFORMAT" error"},
+	{true, isc_info_page_errors,	"Index %d has unreadable page %" ULONGFORMAT". File: %s, line: %d\n\t"},
+	{true, isc_info_page_errors,	"Page inventory page %" ULONGFORMAT" {sequence %" ULONGFORMAT"} read error"},
+	{true, isc_info_page_errors,	"SCN page %" ULONGFORMAT" {sequence %" ULONGFORMAT"} read error"}
 };
 
 Validation::Validation(thread_db* tdbb, UtilSvc* uSvc) :
@@ -1207,9 +1211,18 @@ Validation::FETCH_CODE Validation::fetch_page(bool mark, ULONG page_number,
 	}
 	else
 	{
+		// I/O error must not be written into status vector and reported in gfix
+		// It's handled in a caller of the function.
+		ThreadStatusGuard status_vector(vdr_tdbb);
 		*page_pointer = CCH_FETCH_NO_SHADOW(vdr_tdbb, window,
 			(vdr_flags & VDR_online ? LCK_read : LCK_write),
 			0);
+
+		if (!*page_pointer)
+		{
+			corrupt(VAL_FETCH_PAGE_ERROR, 0, page_number);
+			return fetch_io;
+		}
 
 		vdr_used_bdbs.add(UsedBdb(window->win_bdb));
 	}
@@ -1266,7 +1279,8 @@ Validation::FETCH_CODE Validation::fetch_page(bool mark, ULONG page_number,
 		if (scn_page_num == page_number)
 			scns = (scns_page*) *page_pointer;
 		else
-			fetch_page(mark, scn_page_num, pag_scns, &scns_window, &scns);
+			if (fetch_page(mark, scn_page_num, pag_scns, &scns_window, &scns) == fetch_io)
+				return fetch_io;
 
 		if (scns->scn_pages[scn_slot] != page_scn)
 		{
@@ -1334,7 +1348,8 @@ void Validation::garbage_collect()
 	{
 		const ULONG page_number = sequence ? sequence * pageSpaceMgr.pagesPerPIP - 1 : pageSpace->pipFirst;
 		page_inv_page* page = 0;
-		fetch_page(false, page_number, pag_pages, &window, &page);
+		if (fetch_page(false, page_number, pag_pages, &window, &page) == fetch_io)
+			return;	// stop any garbage collecting in non healthy database
 		UCHAR* p = page->pip_bits;
 		const UCHAR* const end = p + pageSpaceMgr.bytesBitPIP;
 		while (p < end && number < vdr_max_page)
@@ -1476,8 +1491,10 @@ Validation::RTN Validation::walk_blob(jrd_rel* relation, const blh* header, USHO
 	}
 
 	// Level 1 blobs are a little more complicated
-	WIN window1(DB_PAGE_SPACE, -1), window2(DB_PAGE_SPACE, -1);
-	window1.win_flags = window2.win_flags = WIN_garbage_collector;
+	WIN window1(DB_PAGE_SPACE, -1);
+	WIN window2(DB_PAGE_SPACE, -1);
+	window1.win_flags = WIN_garbage_collector;
+	window2.win_flags = WIN_garbage_collector;
 
 	const ULONG* pages1 = header->blh_page;
 	const ULONG* const end1 = pages1 + ((USHORT) (length - BLH_SIZE) >> SHIFTLONG);
@@ -1486,7 +1503,8 @@ Validation::RTN Validation::walk_blob(jrd_rel* relation, const blh* header, USHO
 	for (; pages1 < end1; pages1++)
 	{
 		blob_page* page1 = 0;
-		fetch_page(true, *pages1, pag_blob, &window1, &page1);
+		if (fetch_page(true, *pages1, pag_blob, &window1, &page1) == fetch_io)
+			return corrupt(VAL_BLOB_CORRUPT, relation, number.getValue());
 		if (page1->blp_lead_page != header->blh_lead_page) {
 			corrupt(VAL_BLOB_INCONSISTENT, relation, number.getValue());
 		}
@@ -1505,7 +1523,12 @@ Validation::RTN Validation::walk_blob(jrd_rel* relation, const blh* header, USHO
 			for (; pages2 < end2; pages2++, sequence++)
 			{
 				blob_page* page2 = 0;
-				fetch_page(true, *pages2, pag_blob, &window2, &page2);
+				if (fetch_page(true, *pages2, pag_blob, &window2, &page2) == fetch_io)
+				{
+					corrupt(VAL_BLOB_CORRUPT, relation, number.getValue());
+					release_page(&window1);
+					return rtn_corrupt;
+				}
 				if (page2->blp_lead_page != header->blh_lead_page || page2->blp_sequence != sequence)
 				{
 					corrupt(VAL_BLOB_CORRUPT, relation, number.getValue());
@@ -1556,7 +1579,8 @@ Validation::RTN Validation::walk_chain(jrd_rel* relation, const rhd* header,
 #endif
 		vdr_rel_chain_counter++;
 		data_page* page = 0;
-		fetch_page(true, page_number, pag_data, &window, &page);
+		if (fetch_page(true, page_number, pag_data, &window, &page) == fetch_io)
+			return corrupt(VAL_REC_CHAIN_BROKEN, relation, head_number.getValue());
 
 		if (page->dpg_relation != relation->rel_id)
 		{
@@ -1612,7 +1636,8 @@ void Validation::walk_database()
 	DPM_scan_pages(vdr_tdbb);
 	WIN window(DB_PAGE_SPACE, -1);
 	header_page* page = 0;
-	fetch_page(true, HEADER_PAGE, pag_header, &window, &page);
+	if (fetch_page(true, HEADER_PAGE, pag_header, &window, &page) == fetch_io)
+		return;
  	TraNumber next = vdr_max_transaction = Ods::getNT(page);
 
 	if (vdr_flags & VDR_online) {
@@ -1703,7 +1728,8 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 	window.win_flags = WIN_garbage_collector;
 
 	data_page* page = 0;
-	fetch_page(true, page_number, pag_data, &window, &page);
+	if (fetch_page(true, page_number, pag_data, &window, &page) == fetch_io)
+		return rtn_corrupt;
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
@@ -1894,8 +1920,8 @@ void Validation::walk_generators()
 #endif
 				// It doesn't make a difference generator_page or pointer_page because it's not used.
 				generator_page* page = NULL;
-				fetch_page(true, *ptr, pag_ids, &window, &page);
-				release_page(&window);
+				if (fetch_page(true, *ptr, pag_ids, &window, &page) != fetch_io)
+					release_page(&window);
 			}
 		}
 	}
@@ -1922,7 +1948,8 @@ void Validation::walk_header(ULONG page_num)
 #endif
 		WIN window(DB_PAGE_SPACE, -1);
 		header_page* page = 0;
-		fetch_page(true, page_num, pag_header, &window, &page);
+		if (fetch_page(true, page_num, pag_header, &window, &page) == fetch_io)
+			return;	// corrupt(VAL_BROKEN_HDR_CHAIN, ...)?
 		page_num = page->hdr_next_page;
 		release_page(&window);
 	}
@@ -1994,7 +2021,8 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 		window.win_flags = WIN_garbage_collector;
 
 		btree_page* page = 0;
-		fetch_page(true, next, pag_index, &window, &page);
+		if (fetch_page(true, next, pag_index, &window, &page) == fetch_io)
+			return corrupt(VAL_INDEX_PAGE_LOST, relation, id + 1, next, __FILE__, __LINE__);
 
 		// remember each page for circular reference detection
 		visited_pages.set(next);
@@ -2236,72 +2264,80 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 				down_window.win_flags = WIN_garbage_collector;
 
 				btree_page* down_page = 0;
-				fetch_page(false, down_number, pag_index, &down_window, &down_page);
-				const bool downLeafPage = (down_page->btr_level == 0);
 
-				// make sure the initial key is greater than the pointer key
-				UCHAR* downPointer = down_page->btr_nodes + down_page->btr_jump_size;
-
-				IndexNode downNode;
-				downPointer = downNode.readNode(downPointer, downLeafPage);
-
-				p = downNode.data;
-				q = key.key_data;
-				l = MIN(key.key_length, downNode.length);
-				for (; l; l--, p++, q++)
+				if (fetch_page(false, down_number, pag_index, &down_window, &down_page) == fetch_io)
 				{
-					if (*p < *q)
+					// We can skip the page for now. Probably later we will step on it again.
+					corrupt(VAL_INDEX_PAGE_LOST, relation, id + 1, down_number, __FILE__, __LINE__);
+				}
+				else
+				{
+					const bool downLeafPage = (down_page->btr_level == 0);
+
+					// make sure the initial key is greater than the pointer key
+					UCHAR* downPointer = down_page->btr_nodes + down_page->btr_jump_size;
+
+					IndexNode downNode;
+					downPointer = downNode.readNode(downPointer, downLeafPage);
+
+					p = downNode.data;
+					q = key.key_data;
+					l = MIN(key.key_length, downNode.length);
+					for (; l; l--, p++, q++)
 					{
-						corrupt(VAL_INDEX_PAGE_CORRUPT, relation,
-								id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page),
-								__FILE__, __LINE__);
+						if (*p < *q)
+						{
+							corrupt(VAL_INDEX_PAGE_CORRUPT, relation,
+									id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page),
+									__FILE__, __LINE__);
+						}
+						else if (*p > *q)
+							break;
 					}
-					else if (*p > *q)
-						break;
-				}
 
-				// Only check record-number if this isn't the first page in
-				// the level and it isn't a MARKER.
-				// Also don't check on primary/unique keys, because duplicates aren't
-				// sorted on recordnumber, except for NULL keys.
-				if (down_page->btr_left_sibling &&
-					!(downNode.isEndBucket || downNode.isEndLevel) && (!unique || nullKeyNode))
-				{
-					// Check record number if key is equal with node on
-					// pointer page. In that case record number on page
-					// down should be same or larger.
-					if ((l == 0) && (key.key_length == downNode.length) &&
-						(downNode.recordNumber < down_record_number))
+					// Only check record-number if this isn't the first page in
+					// the level and it isn't a MARKER.
+					// Also don't check on primary/unique keys, because duplicates aren't
+					// sorted on recordnumber, except for NULL keys.
+					if (down_page->btr_left_sibling &&
+						!(downNode.isEndBucket || downNode.isEndLevel) && (!unique || nullKeyNode))
 					{
-						corrupt(VAL_INDEX_PAGE_CORRUPT, relation,
-								id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page),
-								__FILE__, __LINE__);
+						// Check record number if key is equal with node on
+						// pointer page. In that case record number on page
+						// down should be same or larger.
+						if ((l == 0) && (key.key_length == downNode.length) &&
+							(downNode.recordNumber < down_record_number))
+						{
+							corrupt(VAL_INDEX_PAGE_CORRUPT, relation,
+									id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page),
+									__FILE__, __LINE__);
+						}
 					}
+
+					// check the left and right sibling pointers against the parent pointers
+					if (previous_number != down_page->btr_left_sibling)
+					{
+						corrupt(VAL_INDEX_BAD_LEFT_SIBLING, relation,
+								id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page));
+					}
+
+					downNode.readNode(pointer, leafPage);
+					const ULONG next_number = downNode.pageNumber;
+
+					if (!(downNode.isEndBucket || downNode.isEndLevel) &&
+						(next_number != down_page->btr_sibling))
+					{
+						corrupt(VAL_INDEX_MISSES_NODE, relation,
+								id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page));
+					}
+
+					if (downNode.isEndLevel && down_page->btr_sibling) {
+						corrupt(VAL_INDEX_ORPHAN_CHILD, relation, id + 1, next);
+					}
+					previous_number = down_number;
+
+					release_page(&down_window);
 				}
-
-				// check the left and right sibling pointers against the parent pointers
-				if (previous_number != down_page->btr_left_sibling)
-				{
-					corrupt(VAL_INDEX_BAD_LEFT_SIBLING, relation,
-							id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page));
-				}
-
-				downNode.readNode(pointer, leafPage);
-				const ULONG next_number = downNode.pageNumber;
-
-				if (!(downNode.isEndBucket || downNode.isEndLevel) &&
-					(next_number != down_page->btr_sibling))
-				{
-					corrupt(VAL_INDEX_MISSES_NODE, relation,
-							id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page));
-				}
-
-				if (downNode.isEndLevel && down_page->btr_sibling) {
-					corrupt(VAL_INDEX_ORPHAN_CHILD, relation, id + 1, next);
-				}
-				previous_number = down_number;
-
-				release_page(&down_window);
 			}
 		}
 
@@ -2394,7 +2430,11 @@ void Validation::walk_pip()
 			fprintf(stdout, "walk_pip: page %d\n", page_number);
 #endif
 		WIN window(DB_PAGE_SPACE, -1);
-		fetch_page(true, page_number, pag_pages, &window, &page);
+		if (fetch_page(true, page_number, pag_pages, &window, &page) == fetch_io)
+		{
+			corrupt(VAL_PIP_PAGE_LOST, NULL, page_number, sequence);
+			break;	// it's possible to continue but may lead to infinity loop w/o limiting sequence
+		}
 
 		ULONG pipMin = MAX_ULONG;
 		ULONG pipExtent = MAX_ULONG;
@@ -2517,7 +2557,8 @@ Validation::RTN Validation::walk_pointer_page(jrd_rel* relation, ULONG sequence)
 	WIN window(DB_PAGE_SPACE, -1);
 	window.win_flags = WIN_garbage_collector;
 
-	fetch_page(true, (*vector)[sequence], pag_pointer, &window, &page);
+	if (fetch_page(true, (*vector)[sequence], pag_pointer, &window, &page) == fetch_io)
+		return corrupt(VAL_P_PAGE_LOST, relation, sequence);
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
@@ -2618,7 +2659,9 @@ Validation::RTN Validation::walk_pointer_page(jrd_rel* relation, ULONG sequence)
 				return corrupt(VAL_P_PAGE_LOST, relation, sequence);
 			}
 
-			fetch_page(false, (*vector)[sequence], pag_pointer, &window, &page);
+			const ULONG ppgNext = page->ppg_next;
+			if (fetch_page(false, (*vector)[sequence], pag_pointer, &window, &page) == fetch_io)
+				return corrupt(VAL_P_PAGE_INCONSISTENT, relation, ppgNext, sequence);
 
 			++sequence;
 			const bool error = (sequence >= vector->count()) ||
@@ -2743,7 +2786,8 @@ Validation::RTN Validation::walk_record(jrd_rel* relation, const rhd* header, US
 		WIN window(DB_PAGE_SPACE, -1);
 		window.win_flags = WIN_garbage_collector;
 
-		fetch_page(true, page_number, pag_data, &window, &page);
+		if (fetch_page(true, page_number, pag_data, &window, &page) == fetch_io)
+			return corrupt(VAL_REC_FRAGMENT_CORRUPT, relation, number.getValue());
 		const data_page::dpg_repeat* line = &page->dpg_rpt[line_number];
 		if (page->dpg_relation != relation->rel_id ||
 			line_number >= page->dpg_count || !(length = line->dpg_length))
@@ -2846,14 +2890,15 @@ void Validation::checkDPinPP(jrd_rel* relation, ULONG page_number)
 	/**************************************
 	*
 	* Functional description
-	*	Check if data page presented in pointer page.
-	* If not we try to fix it by setting pointer page slot in the page_number.
+	*	Check if data page is presented in pointer page.
+	* If it does not we try to fix it by setting the pointer page slot in the page_number.
 	* Early in walk_chain we observed that this page is related to the relation so we skip such kind of check here.
 	**************************************/
 
 	WIN window(DB_PAGE_SPACE, page_number);
 	data_page* dpage;
-	fetch_page(false, page_number, pag_data, &window, &dpage);
+	if (fetch_page(false, page_number, pag_data, &window, &dpage) == fetch_io)
+		return;	// error was reported in fetch_page. There is nothing to add.
 	const ULONG sequence = dpage->dpg_sequence;
 	const bool dpEmpty = (dpage->dpg_count == 0);
 	release_page(&window);
@@ -2867,7 +2912,8 @@ void Validation::checkDPinPP(jrd_rel* relation, ULONG page_number)
 	pointer_page* ppage = NULL;
 	if (pp_sequence < vector->count())
 	{
-		fetch_page(false, (*vector)[pp_sequence], pag_pointer, &window, &ppage);
+		if (fetch_page(false, (*vector)[pp_sequence], pag_pointer, &window, &ppage) == fetch_io)
+			return;	// error was reported in fetch_page. There is nothing to add.
 		if (slot >= ppage->ppg_count)
 		{
 			corrupt(VAL_DATA_PAGE_SLOT_NOT_FOUND, relation, page_number, window.win_page.getPageNum(), slot);
@@ -2932,7 +2978,8 @@ void Validation::checkDPinPIP(jrd_rel* relation, ULONG page_number)
 	WIN pip_window(DB_PAGE_SPACE, (sequence == 0) ? pageSpace->pipFirst : sequence * pageMgr.pagesPerPIP - 1);
 
 	page_inv_page* pages;
-	fetch_page(false, pip_window.win_page.getPageNum(), pag_pages, &pip_window, &pages);
+	if (fetch_page(false, pip_window.win_page.getPageNum(), pag_pages, &pip_window, &pages) == fetch_io)
+		return;	// error was reported in fetch_page. There is nothing to add.
 	if (pages->pip_bits[relative_bit >> 3] & (1 << (relative_bit & 7)))
 	{
 		corrupt(VAL_DATA_PAGE_ISNT_IN_PIP, relation, page_number, pip_window.win_page.getPageNum(), relative_bit);
@@ -3008,7 +3055,13 @@ Validation::RTN Validation::walk_relation(jrd_rel* relation)
 
 		WIN window(DB_PAGE_SPACE, -1);
 		header_page* page = NULL;
-		fetch_page(false, HEADER_PAGE, pag_header, &window, &page);
+		if (fetch_page(false, HEADER_PAGE, pag_header, &window, &page) == fetch_io)
+		{
+			output("Cannot read header page\n");
+			vdr_errors++;
+			return rtn_ok;	// Return OK like above
+		}
+
 		vdr_max_transaction = Ods::getNT(page);
 		release_page(&window);
 	}
@@ -3139,7 +3192,8 @@ Validation::RTN Validation::walk_root(jrd_rel* relation)
 
 	index_root_page* page = 0;
 	WIN window(DB_PAGE_SPACE, -1);
-	fetch_page(true, relPages->rel_index_root, pag_root, &window, &page);
+	if (fetch_page(true, relPages->rel_index_root, pag_root, &window, &page) == fetch_io)
+		return corrupt(VAL_INDEX_ROOT_MISSING, relation);
 
 	for (USHORT i = 0; i < page->irt_count; i++)
 	{
@@ -3150,7 +3204,8 @@ Validation::RTN Validation::walk_root(jrd_rel* relation)
 
 		release_page(&window);
 		MET_lookup_index(vdr_tdbb, index, relation->rel_name, i + 1);
-		fetch_page(false, relPages->rel_index_root, pag_root, &window, &page);
+		if (fetch_page(false, relPages->rel_index_root, pag_root, &window, &page) == fetch_io)
+			continue;
 
 		if (vdr_idx_incl)
 		{
@@ -3208,7 +3263,11 @@ Validation::RTN Validation::walk_tip(TraNumber transaction)
 		}
 
 		WIN window(DB_PAGE_SPACE, -1);
-		fetch_page(true, (*vector)[sequence], pag_transactions, &window, &page);
+		if (fetch_page(true, (*vector)[sequence], pag_transactions, &window, &page) == fetch_io)
+		{
+			corrupt(VAL_TIP_LOST_SEQUENCE, 0, sequence);
+			continue;
+		}
 
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
@@ -3251,7 +3310,11 @@ Validation::RTN Validation::walk_scns()
 		const ULONG scnPage = pageSpace->getSCNPageNum(sequence);
 		WIN scnWindow(pageSpace->pageSpaceID, scnPage);
 		scns_page* scns = NULL;
-		fetch_page(true, scnPage, pag_scns, &scnWindow, &scns);
+		if (fetch_page(true, scnPage, pag_scns, &scnWindow, &scns) == fetch_io)
+		{
+			corrupt(VAL_SCN_PAGE_LOST, 0, scnPage, sequence);
+			continue;
+		}
 
 		if (scns->scn_sequence != sequence)
 		{
