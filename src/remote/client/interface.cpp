@@ -5016,7 +5016,7 @@ FB_BOOLEAN ResultSet::isEof(CheckStatusWrapper* status)
 		if (!statement->rsr_flags.test(Rsr::FETCHED))
 			return FB_FALSE;
 
-		return statement->rsr_flags.test(Rsr::EOF_SET) ? FB_TRUE : FB_FALSE;
+		return statement->rsr_flags.test(Rsr::PAST_EOF) ? FB_TRUE : FB_FALSE;
 	}
 	catch (const Exception& ex)
 	{
@@ -5045,7 +5045,7 @@ FB_BOOLEAN ResultSet::isBof(CheckStatusWrapper* status)
 		if (!statement->rsr_flags.test(Rsr::FETCHED))
 			return FB_TRUE;
 
-		return statement->rsr_flags.test(Rsr::BOF_SET) ? FB_TRUE : FB_FALSE;
+		return statement->rsr_flags.test(Rsr::PAST_BOF) ? FB_TRUE : FB_FALSE;
 	}
 	catch (const Exception& ex)
 	{
