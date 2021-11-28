@@ -4504,11 +4504,6 @@ bool ResultSet::fetch(CheckStatusWrapper* status, void* buffer, P_FETCH operatio
 	if (operation != fetch_next && port->port_protocol < PROTOCOL_FETCH_SCROLL)
 		unsupported();
 
-	// Whether we're fetching in the forward direction
-	const bool forward =
-		(operation == fetch_next || operation == fetch_last ||
-		((operation == fetch_absolute || operation == fetch_relative) && position > 0));
-
 	// Whether we're fetching relatively to the current position
 	const bool relative =
 		(operation == fetch_next || operation == fetch_prior || operation == fetch_relative);
@@ -4553,22 +4548,7 @@ bool ResultSet::fetch(CheckStatusWrapper* status, void* buffer, P_FETCH operatio
 			}
 		}
 	}
-	else if (relative)
-	{
-		// For the relative fetch, check whether end-of-stream is already reached
-
-		if (forward)
-		{
-			if (statement->rsr_flags.testAll(Rsr::EOF_SET | Rsr::PAST_EOF))
-				Arg::Gds(isc_req_sync).raise();
-		}
-		else
-		{
-			if (statement->rsr_flags.testAll(Rsr::BOF_SET | Rsr::PAST_BOF))
-				Arg::Gds(isc_req_sync).raise();
-		}
-	}
-	else
+	else if (!relative)
 	{
 		// Clear the end-of-stream flag if the fetch is positioned absolutely
 		statement->rsr_flags.clear(Rsr::STREAM_END | Rsr::PAST_END);
