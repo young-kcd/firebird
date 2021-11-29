@@ -7405,27 +7405,21 @@ static void clear_stmt_que(rem_port* port, Rsr* statement)
  *
  * Functional description
  *
- * Receive and handle all queued packets for completely
- * fetched statement. There is must be no more than one
- * such packet and it must contain isc_req_sync response.
+ * Receive and handle all queued packets for a completely fetched statement.
+ * There must be no more than one such packet.
  *
  **************************************/
-
-	fb_assert(statement->rsr_batch_count == 0 || statement->rsr_batch_count == 1);
+	fb_assert(statement->rsr_batch_count <= 1);
 
 	while (statement->rsr_batch_count)
-	{
 		receive_queued_packet(port, statement->rsr_id);
 
-		// We must receive isc_req_sync as we did fetch after EOF
-		fb_assert(statement->haveException() == isc_req_sync);
-	}
-
 	// hvlad: clear isc_req_sync error as it is received because of our batch
-	// fetching code, not because of wrong client application
-	if (statement->haveException() == isc_req_sync) {
+	// fetching code, not because of wrong client application.
+	// dimitr: modern engine versions do not pass isc_req_sync to the client,
+	// but it's possible if we're connected to the older one.
+	if (statement->haveException() == isc_req_sync)
 		statement->clearException();
-	}
 }
 
 static void batch_dsql_fetch(rem_port*	port,
