@@ -3976,9 +3976,10 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL, bool scroll)
 
 	const ULONG msg_length = statement->rsr_format ? statement->rsr_format->fmt_length : 0;
 
-	// If required, call setDelayedOutputFormat()
-
 	statement->checkCursor();
+	auto cursor = statement->rsr_cursor;
+
+	// If required, call setDelayedOutputFormat()
 
 	if (statement->rsr_delayed_format)
 	{
@@ -3988,7 +3989,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL, bool scroll)
 		if (!msgBuffer.metadata)
 			Arg::Gds(isc_dsql_cursor_open_err).raise();
 
-		statement->rsr_cursor->setDelayedOutputFormat(&status_vector, msgBuffer.metadata);
+		cursor->setDelayedOutputFormat(&status_vector, msgBuffer.metadata);
 		check(&status_vector);
 
 		statement->rsr_delayed_format = false;
@@ -4006,6 +4007,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL, bool scroll)
 			return this->send_response(sendL, 0, 0, statement->rsr_status->value(), false);
 		}
 
+		const bool endOfStream = statement->rsr_flags.test(Rsr::STREAM_END);
 		statement->rsr_flags.clear(Rsr::STREAM_END);
 
 		if (statement->rsr_msgs_waiting)
@@ -4028,7 +4030,26 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL, bool scroll)
 				}
 			}
 
+			const ULONG offset = statement->rsr_msgs_waiting + (endOfStream ? 1 : 0);
 			statement->rsr_msgs_waiting = 0;
+
+			// If we had some rows cached and the requested scrolling is relative,
+			// then re-position the server cursor appropriately
+
+			if (relative)
+			{
+				const bool isAhead = (statement->rsr_fetch_operation == fetch_next);
+
+				const int rc = cursor->fetchRelative(&status_vector,
+													 isAhead ? -offset : offset,
+													 message->msg_buffer);
+
+				if (status_vector.getState() & Firebird::IStatus::STATE_ERRORS)
+					return this->send_response(sendL, 0, 0, &status_vector, false);
+
+				// Re-positioning should never fail
+				fb_assert(rc == IStatus::RESULT_OK);
+			}
 		}
 	}
 
@@ -4116,29 +4137,27 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL, bool scroll)
 			switch (operation)
 			{
 				case fetch_next:
-					rc = statement->rsr_cursor->fetchNext(&status_vector, message->msg_buffer);
+					rc = cursor->fetchNext(&status_vector, message->msg_buffer);
 					break;
 
 				case fetch_prior:
-					rc = statement->rsr_cursor->fetchPrior(&status_vector, message->msg_buffer);
+					rc = cursor->fetchPrior(&status_vector, message->msg_buffer);
 					break;
 
 				case fetch_first:
-					rc = statement->rsr_cursor->fetchFirst(&status_vector, message->msg_buffer);
+					rc = cursor->fetchFirst(&status_vector, message->msg_buffer);
 					break;
 
 				case fetch_last:
-					rc = statement->rsr_cursor->fetchLast(&status_vector, message->msg_buffer);
+					rc = cursor->fetchLast(&status_vector, message->msg_buffer);
 					break;
 
 				case fetch_absolute:
-					rc = statement->rsr_cursor->fetchAbsolute(&status_vector, position,
-															  message->msg_buffer);
+					rc = cursor->fetchAbsolute(&status_vector, position, message->msg_buffer);
 					break;
 
 				case fetch_relative:
-					rc = statement->rsr_cursor->fetchRelative(&status_vector, position,
-															  message->msg_buffer);
+					rc = cursor->fetchRelative(&status_vector, position, message->msg_buffer);
 					break;
 
 				default:
@@ -4228,11 +4247,11 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL, bool scroll)
 		switch (operation)
 		{
 			case fetch_next:
-				rc = statement->rsr_cursor->fetchNext(&status_vector, message->msg_buffer);
+				rc = cursor->fetchNext(&status_vector, message->msg_buffer);
 				break;
 
 			case fetch_prior:
-				rc = statement->rsr_cursor->fetchPrior(&status_vector, message->msg_buffer);
+				rc = cursor->fetchPrior(&status_vector, message->msg_buffer);
 				break;
 
 			default:
@@ -4253,10 +4272,10 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL, bool scroll)
 
 		if (rc == IStatus::RESULT_NO_DATA)
 		{
-			if (statement->rsr_cursor->isBof(&status_vector))
+			if (cursor->isBof(&status_vector))
 				statement->rsr_flags.set(Rsr::BOF_SET);
 
-			if (statement->rsr_cursor->isEof(&status_vector))
+			if (cursor->isEof(&status_vector))
 				statement->rsr_flags.set(Rsr::EOF_SET);
 
 			break;

@@ -4607,6 +4607,7 @@ bool ResultSet::fetch(CheckStatusWrapper* status, void* buffer, P_FETCH operatio
 			statement->raiseException();
 		}
 
+		const bool endOfStream = statement->rsr_flags.test(Rsr::STREAM_END);
 		statement->rsr_flags.clear(Rsr::STREAM_END | Rsr::PAST_END);
 
 		// We have some messages in the queue. Reset them for reuse.
@@ -4631,7 +4632,7 @@ bool ResultSet::fetch(CheckStatusWrapper* status, void* buffer, P_FETCH operatio
 				}
 			}
 
-			const ULONG offset = statement->rsr_msgs_waiting + 1;
+			const ULONG offset = statement->rsr_msgs_waiting + (endOfStream ? 1 : 0);
 			statement->rsr_msgs_waiting = 0;
 
 			// If we had some rows batched and the requested scrolling is relative,
