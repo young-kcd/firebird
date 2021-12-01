@@ -573,6 +573,10 @@ public:
 
 	virtual void setDelayedFormat(thread_db* tdbb, Firebird::IMessageMetadata* metadata);
 
+	USHORT parseMetadata(Firebird::IMessageMetadata* meta, const Firebird::Array<dsql_par*>& parameters_list);
+	void mapInOut(Jrd::thread_db* tdbb, bool toExternal, const dsql_msg* message, Firebird::IMessageMetadata* meta,
+		UCHAR* dsql_msg_buf, const UCHAR* in_dsql_msg_buf = NULL);
+
 	static void destroy(thread_db* tdbb, dsql_req* request, bool drop);
 
 private:

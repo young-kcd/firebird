@@ -80,9 +80,6 @@ using namespace Firebird;
 
 static ULONG	get_request_info(thread_db*, dsql_req*, ULONG, UCHAR*);
 static dsql_dbb*	init(Jrd::thread_db*, Jrd::Attachment*);
-static void		map_in_out(Jrd::thread_db*, dsql_req*, bool, const dsql_msg*, IMessageMetadata*, UCHAR*,
-	const UCHAR* = NULL);
-static USHORT	parse_metadata(dsql_req*, IMessageMetadata*, const Array<dsql_par*>&);
 static dsql_req* prepareRequest(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, bool);
 static dsql_req* prepareStatement(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, bool);
 static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const);
@@ -272,6 +269,12 @@ bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 
 	dsql_msg* message = (dsql_msg*) statement->getReceiveMsg();
 
+	if (delayedFormat && message)
+	{
+		parseMetadata(delayedFormat, message->msg_parameters);
+		delayedFormat = NULL;
+	}
+
 	// Set up things for tracing this call
 	Jrd::Attachment* att = req_dbb->dbb_attachment;
 	TraceDSQLFetch trace(att, this);
@@ -285,13 +288,12 @@ bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 
 	if (eofReached)
 	{
-		delayedFormat = NULL;
 		trace.fetch(true, ITracePlugin::RESULT_SUCCESS);
 		return false;
 	}
 
-	map_in_out(tdbb, this, true, message, delayedFormat, msgBuffer);
-	delayedFormat = NULL;
+	if (msgBuffer)
+		mapInOut(tdbb, true, message, NULL, msgBuffer);
 
 	trace.fetch(false, ITracePlugin::RESULT_SUCCESS);
 	return true;
@@ -679,9 +681,9 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 
 	const dsql_msg* message = statement->getSendMsg();
 	if (message)
-		map_in_out(tdbb, this, false, message, inMetadata, NULL, inMsg);
+		mapInOut(tdbb, false, message, inMetadata, NULL, inMsg);
 
-	// we need to map_in_out before tracing of execution start to let trace
+	// we need to mapInOut before tracing of execution start to let trace
 	// manager know statement parameters values
 	TraceDSQLExecute trace(req_dbb->dbb_attachment, this);
 
@@ -713,7 +715,7 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	}
 
 	if (outMetadata && message)
-		parse_metadata(this, outMetadata, message->msg_parameters);
+		parseMetadata(outMetadata, message->msg_parameters);
 
 	if ((outMsg && message) || isBlock)
 	{
@@ -736,7 +738,7 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 		JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, msgBuffer);
 
 		if (outMsg)
-			map_in_out(tdbb, this, true, message, NULL, outMsg);
+			mapInOut(tdbb, true, message, NULL, outMsg);
 
 		// if this is a singleton select, make sure there's in fact one record
 
@@ -989,13 +991,12 @@ static dsql_dbb* init(thread_db* tdbb, Jrd::Attachment* attachment)
 
 /**
 
- 	map_in_out
+	mapInOut
 
     @brief	Map data from external world into message or
  	from message to external world.
 
 
-    @param request
     @param toExternal
     @param message
     @param meta
@@ -1003,10 +1004,10 @@ static dsql_dbb* init(thread_db* tdbb, Jrd::Attachment* attachment)
     @param in_dsql_msg_buf
 
  **/
-static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, const dsql_msg* message,
+void dsql_req::mapInOut(thread_db* tdbb, bool toExternal, const dsql_msg* message,
 	IMessageMetadata* meta, UCHAR* dsql_msg_buf, const UCHAR* in_dsql_msg_buf)
 {
-	USHORT count = parse_metadata(request, meta, message->msg_parameters);
+	USHORT count = parseMetadata(meta, message->msg_parameters);
 
 	// Sanity check
 
@@ -1041,7 +1042,7 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 			 // Make sure the message given to us is long enough
 
 			dsc desc;
-			if (!request->req_user_descs.get(parameter, desc))
+			if (!req_user_descs.get(parameter, desc))
 				desc.clear();
 
 			/***
@@ -1059,14 +1060,14 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 					Arg::Gds(isc_dsql_sqlvar_index) << Arg::Num(parameter->par_index-1));
 			}
 
-			UCHAR* msgBuffer = request->req_msg_buffers[parameter->par_message->msg_buffer_number];
+			UCHAR* msgBuffer = req_msg_buffers[parameter->par_message->msg_buffer_number];
 
 			SSHORT* flag = NULL;
 			dsql_par* const null_ind = parameter->par_null;
 			if (null_ind != NULL)
 			{
 				dsc userNullDesc;
-				if (!request->req_user_descs.get(null_ind, userNullDesc))
+				if (!req_user_descs.get(null_ind, userNullDesc))
 					userNullDesc.clear();
 
 				const ULONG null_offset = (IPTR) userNullDesc.dsc_address;
@@ -1129,7 +1130,7 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 			Arg::Gds(isc_dsql_wrong_param_num) << Arg::Num(count) <<Arg::Num(count2));
 	}
 
-	const DsqlCompiledStatement* statement = request->getStatement();
+	const DsqlCompiledStatement* statement = getStatement();
 	const dsql_par* parameter;
 
 	const dsql_par* dbkey;
@@ -1138,7 +1139,7 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 	{
 		UCHAR* parentMsgBuffer = statement->getParentRequest() ?
 			statement->getParentRequest()->req_msg_buffers[dbkey->par_message->msg_buffer_number] : NULL;
-		UCHAR* msgBuffer = request->req_msg_buffers[parameter->par_message->msg_buffer_number];
+		UCHAR* msgBuffer = req_msg_buffers[parameter->par_message->msg_buffer_number];
 
 		fb_assert(parentMsgBuffer);
 
@@ -1168,7 +1169,7 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 		UCHAR* parentMsgBuffer = statement->getParentRequest() ?
 			statement->getParentRequest()->req_msg_buffers[rec_version->par_message->msg_buffer_number] :
 			NULL;
-		UCHAR* msgBuffer = request->req_msg_buffers[parameter->par_message->msg_buffer_number];
+		UCHAR* msgBuffer = req_msg_buffers[parameter->par_message->msg_buffer_number];
 
 		fb_assert(parentMsgBuffer);
 
@@ -1195,18 +1196,16 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 
 /**
 
- 	parse_metadata
+	parseMetadata
 
     @brief	Parse the message of a request.
 
 
-    @param request
     @param meta
     @param parameters_list
 
  **/
-static USHORT parse_metadata(dsql_req* request, IMessageMetadata* meta,
-	const Array<dsql_par*>& parameters_list)
+USHORT dsql_req::parseMetadata(IMessageMetadata* meta, const Array<dsql_par*>& parameters_list)
 {
 	HalfStaticArray<const dsql_par*, 16> parameters;
 
@@ -1280,7 +1279,7 @@ static USHORT parse_metadata(dsql_req* request, IMessageMetadata* meta,
 		if (desc.isText() && desc.getTextType() == ttype_dynamic)
 			desc.setTextType(ttype_none);
 
-		request->req_user_descs.put(parameter, desc);
+		req_user_descs.put(parameter, desc);
 
 		dsql_par* null = parameter->par_null;
 		if (null)
@@ -1291,7 +1290,7 @@ static USHORT parse_metadata(dsql_req* request, IMessageMetadata* meta,
 			desc.dsc_length = sizeof(SSHORT);
 			desc.dsc_address = (UCHAR*)(IPTR) nullOffset;
 
-			request->req_user_descs.put(null, desc);
+			req_user_descs.put(null, desc);
 		}
 	}
 
