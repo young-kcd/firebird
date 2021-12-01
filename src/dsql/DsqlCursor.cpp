@@ -34,10 +34,10 @@ static const char* const SCRATCH = "fb_cursor_";
 static const ULONG PREFETCH_SIZE = 65536; // 64 KB
 
 DsqlCursor::DsqlCursor(dsql_req* req, ULONG flags)
-	: m_request(req), m_resultSet(NULL), m_flags(flags),
+	: m_request(req), m_message(req->getStatement()->getReceiveMsg()),
+	  m_resultSet(NULL), m_flags(flags),
 	  m_space(req->getPool(), SCRATCH),
-	  m_state(BOS), m_eof(false), m_position(0), m_cachedCount(0),
-	  m_messageSize(req->getStatement()->getReceiveMsg()->msg_length)
+	  m_state(BOS), m_eof(false), m_position(0), m_cachedCount(0)
 {
 	TRA_link_cursor(m_request->req_transaction, this);
 }
@@ -223,9 +223,14 @@ int DsqlCursor::fetchFromCache(thread_db* tdbb, UCHAR* buffer, FB_UINT64 positio
 
 	fb_assert(position < m_cachedCount);
 
-	const FB_UINT64 offset = position * m_messageSize;
-	const FB_UINT64 readBytes = m_space.read(offset, buffer, m_messageSize);
-	fb_assert(readBytes == m_messageSize);
+	UCHAR* const msgBuffer = m_request->req_msg_buffers[m_message->msg_buffer_number];
+
+	const FB_UINT64 offset = position * m_message->msg_length;
+	const FB_UINT64 readBytes = m_space.read(offset, msgBuffer, m_message->msg_length);
+	fb_assert(readBytes == m_message->msg_length);
+
+	m_request->mapInOut(tdbb, true, m_message, NULL, buffer);
+
 	m_position = position;
 	m_state = POSITIONED;
 	return 0;
@@ -235,34 +240,23 @@ bool DsqlCursor::cacheInput(thread_db* tdbb, FB_UINT64 position)
 {
 	fb_assert(!m_eof);
 
-	const ULONG prefetchCount = MAX(PREFETCH_SIZE / m_messageSize, 1);
-	const ULONG prefetchSize = prefetchCount * m_messageSize;
-
-	UCharBuffer messageBuffer;
-	UCHAR* const buffer = messageBuffer.getBuffer(prefetchSize);
+	const ULONG prefetchCount = MAX(PREFETCH_SIZE / m_message->msg_length, 1);
+	const UCHAR* const msgBuffer = m_request->req_msg_buffers[m_message->msg_buffer_number];
 
 	while (position >= m_cachedCount)
 	{
-		ULONG count = 0;
-
-		for (; count < prefetchCount; count++)
+		for (ULONG count = 0; count < prefetchCount; count++)
 		{
-			UCHAR* const ptr = buffer + count * m_messageSize;
-
-			if (!m_request->fetch(tdbb, ptr))
+			if (!m_request->fetch(tdbb, NULL))
 			{
 				m_eof = true;
 				break;
 			}
-		}
 
-		if (count)
-		{
-			const FB_UINT64 offset = m_cachedCount * m_messageSize;
-			const ULONG fetchedSize = count * m_messageSize;
-			const FB_UINT64 writtenBytes = m_space.write(offset, buffer, fetchedSize);
-			fb_assert(writtenBytes == fetchedSize);
-			m_cachedCount += count;
+			const FB_UINT64 offset = m_cachedCount * m_message->msg_length;
+			const FB_UINT64 writtenBytes = m_space.write(offset, msgBuffer, m_message->msg_length);
+			fb_assert(writtenBytes == m_message->msg_length);
+			m_cachedCount++;
 		}
 
 		if (m_eof)
