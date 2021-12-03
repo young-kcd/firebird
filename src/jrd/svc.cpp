@@ -1976,14 +1976,14 @@ THREAD_ENTRY_DECLARE Service::run(THREAD_ENTRY_PARAM arg)
 		RefPtr<SvcMutex> ref(svc->svc_existence);
 		exit_code = svc->svc_service_run->serv_thd(svc);
 
-		if (svc->svc_thread)
-		{
-			threadCollect->add(svc->svc_thread);
-			svc->svc_thread = 0;
-		}
+		Thread::Handle thrHandle = svc->svc_thread;
+		svc->svc_thread = 0;
 		svc->started();
 		svc->svc_sem_full.release();
 		svc->finish(SVC_finished);
+
+		if (thrHandle)
+			threadCollect->add(thrHandle);
 	}
 	catch (const Exception& ex)
 	{
