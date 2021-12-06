@@ -4007,7 +4007,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL, bool scroll)
 			return this->send_response(sendL, 0, 0, statement->rsr_status->value(), false);
 		}
 
-		const bool endOfStream = statement->rsr_flags.test(Rsr::STREAM_END);
+		const SLONG adjustment = statement->getCursorAdjustment();
 		statement->rsr_flags.clear(Rsr::STREAM_END);
 
 		if (statement->rsr_msgs_waiting)
@@ -4030,26 +4030,22 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL, bool scroll)
 				}
 			}
 
-			const ULONG offset = statement->rsr_msgs_waiting + (endOfStream ? 1 : 0);
 			statement->rsr_msgs_waiting = 0;
+		}
 
-			// If we had some rows cached and the requested scrolling is relative,
-			// then re-position the server cursor appropriately
+		// If we had some rows cached and the requested scrolling is relative,
+		// then re-position the server cursor appropriately
 
-			if (relative)
-			{
-				const bool isAhead = (statement->rsr_fetch_operation == fetch_next);
+		if (relative && adjustment)
+		{
+			const auto message = statement->rsr_buffer;
+			const int rc = cursor->fetchRelative(&status_vector, adjustment, message->msg_buffer);
 
-				const int rc = cursor->fetchRelative(&status_vector,
-													 isAhead ? -offset : offset,
-													 message->msg_buffer);
+			if (status_vector.getState() & Firebird::IStatus::STATE_ERRORS)
+				return this->send_response(sendL, 0, 0, &status_vector, false);
 
-				if (status_vector.getState() & Firebird::IStatus::STATE_ERRORS)
-					return this->send_response(sendL, 0, 0, &status_vector, false);
-
-				// Re-positioning should never fail
-				fb_assert(rc == IStatus::RESULT_OK);
-			}
+			// Re-positioning should never fail
+			fb_assert(rc == IStatus::RESULT_OK);
 		}
 	}
 

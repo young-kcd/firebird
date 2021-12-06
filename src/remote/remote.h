@@ -583,6 +583,17 @@ public:
 	void checkIface(ISC_STATUS code = isc_unprepared_stmt);
 	void checkCursor();
 	void checkBatch();
+
+	SLONG getCursorAdjustment() const
+	{
+		if (rsr_fetch_operation != fetch_next && rsr_fetch_operation != fetch_prior)
+			return 0;
+
+		const bool isEnd = rsr_flags.test(Rsr::STREAM_END) && !rsr_flags.test(Rsr::PAST_END);
+		const SLONG offset = rsr_msgs_waiting + (isEnd ? 1 : 0);
+		const bool isAhead = (rsr_fetch_operation == fetch_next);
+		return isAhead ? -offset : offset;
+	}
 };
 
 

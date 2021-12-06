@@ -4553,6 +4553,26 @@ bool ResultSet::fetch(CheckStatusWrapper* status, void* buffer, P_FETCH operatio
 		// Clear the end-of-stream flag if the fetch is positioned absolutely
 		statement->rsr_flags.clear(Rsr::STREAM_END | Rsr::PAST_END);
 	}
+	else if (statement->rsr_flags.test(Rsr::PAST_END))
+	{
+		// If we're already at BOF/EOF and the requested fetch operation
+		// cannot change our position, just do nothing
+
+		if (operation == fetch_relative && position == 0)
+			return false;
+
+		if ((operation == fetch_next || (operation == fetch_relative && position > 0)) &&
+			statement->rsr_flags.test(Rsr::PAST_EOF))
+		{
+			return false;
+		}
+
+		if ((operation == fetch_prior || (operation == fetch_relative && position < 0)) &&
+			statement->rsr_flags.test(Rsr::PAST_BOF))
+		{
+			return false;
+		}
+	}
 
 	// Parse the blr describing the message, if there is any.
 
@@ -4607,7 +4627,7 @@ bool ResultSet::fetch(CheckStatusWrapper* status, void* buffer, P_FETCH operatio
 			statement->raiseException();
 		}
 
-		const bool endOfStream = statement->rsr_flags.test(Rsr::STREAM_END);
+		const SLONG adjustment = statement->getCursorAdjustment();
 		statement->rsr_flags.clear(Rsr::STREAM_END | Rsr::PAST_END);
 
 		// We have some messages in the queue. Reset them for reuse.
@@ -4632,66 +4652,65 @@ bool ResultSet::fetch(CheckStatusWrapper* status, void* buffer, P_FETCH operatio
 				}
 			}
 
-			const ULONG offset = statement->rsr_msgs_waiting + (endOfStream ? 1 : 0);
 			statement->rsr_msgs_waiting = 0;
+		}
 
-			// If we had some rows batched and the requested scrolling is relative,
-			// then move the server cursor to the actual client's position before proceeding.
-			// We don't know the absolute client's position, but it's not really necessary.
-			// rsr_msgs_waiting shows how much we're ahead the server, so we may re-position
-			// the cursor relatively.
+		// If we had some rows batched and the requested scrolling is relative,
+		// then move the server cursor to the actual client's position before proceeding.
+		// We don't know the absolute client's position, but it's not really necessary.
+		// rsr_msgs_waiting shows how much we're ahead the server, so we may re-position
+		// the cursor relatively.
 
-			if (relative)
+		if (relative && adjustment)
+		{
+			const bool isAhead = (statement->rsr_fetch_operation == fetch_next);
+
+			PACKET* packet = &rdb->rdb_packet;
+			packet->p_operation = op_fetch_scroll;
+			P_SQLDATA* sqldata = &packet->p_sqldata;
+			sqldata->p_sqldata_statement = statement->rsr_id;
+			sqldata->p_sqldata_blr.cstr_length = 0;
+			sqldata->p_sqldata_blr.cstr_address = nullptr;
+			sqldata->p_sqldata_message_number = 0;	// msg_type
+			sqldata->p_sqldata_messages = statement->rsr_select_format ? 1 : 0;
+			sqldata->p_sqldata_fetch_op = fetch_relative;
+			sqldata->p_sqldata_fetch_pos = adjustment;
+
+			send_packet(port, packet);
+
+			// Receive response packets. If everything is OK, there should be two of them:
+			// first with packet->p_sqldata.p_sqldata_messages == 1 and second with
+			// packet->p_sqldata.p_sqldata_messages == 0 (end-of-batch).
+
+			do
 			{
-				const bool isAhead = (statement->rsr_fetch_operation == fetch_next);
+				receive_packet(rdb->rdb_port, packet);
 
-				PACKET* packet = &rdb->rdb_packet;
-				packet->p_operation = op_fetch_scroll;
-				P_SQLDATA* sqldata = &packet->p_sqldata;
-				sqldata->p_sqldata_statement = statement->rsr_id;
-				sqldata->p_sqldata_blr.cstr_length = 0;
-				sqldata->p_sqldata_blr.cstr_address = nullptr;
-				sqldata->p_sqldata_message_number = 0;	// msg_type
-				sqldata->p_sqldata_messages = statement->rsr_select_format ? 1 : 0;
-				sqldata->p_sqldata_fetch_op = fetch_relative;
-				sqldata->p_sqldata_fetch_pos = isAhead ? -offset : offset;
-
-				send_packet(port, packet);
-
-				// Receive response packets. If everything is OK, there should be two of them:
-				// first with packet->p_sqldata.p_sqldata_messages == 1 and second with
-				// packet->p_sqldata.p_sqldata_messages == 0 (end-of-batch).
-
-				do
+				// If we get an error, handle it
+				if (packet->p_operation != op_fetch_response)
 				{
-					receive_packet(rdb->rdb_port, packet);
-
-					// If we get an error, handle it
-					if (packet->p_operation != op_fetch_response)
-					{
-						statement->rsr_flags.set(Rsr::STREAM_ERR);
-						REMOTE_check_response(status, rdb, packet);
-						break;
-					}
-
-					// If we get end-of-stream, something went seriously wrong, thus punt
-					if (packet->p_sqldata.p_sqldata_status == 100)
-						Arg::Gds(isc_req_sync).raise();
-
-					// We should get either the requested row or the end-of-batch marker
-					fb_assert(packet->p_sqldata.p_sqldata_messages == 0 ||
-							  packet->p_sqldata.p_sqldata_messages == 1);
-
-					// Release the received message, we don't need it
-					const auto message = statement->rsr_message;
-					if (message && message->msg_address)
-					{
-						statement->rsr_message = message->msg_next;
-						message->msg_address = NULL;
-					}
+					statement->rsr_flags.set(Rsr::STREAM_ERR);
+					REMOTE_check_response(status, rdb, packet);
+					break;
 				}
-				while (packet->p_sqldata.p_sqldata_messages);
+
+				// If we get end-of-stream, something went seriously wrong, thus punt
+				if (packet->p_sqldata.p_sqldata_status == 100)
+					Arg::Gds(isc_req_sync).raise();
+
+				// We should get either the requested row or the end-of-batch marker
+				fb_assert(packet->p_sqldata.p_sqldata_messages == 0 ||
+						  packet->p_sqldata.p_sqldata_messages == 1);
+
+				// Release the received message, we don't need it
+				const auto message = statement->rsr_message;
+				if (message && message->msg_address)
+				{
+					statement->rsr_message = message->msg_next;
+					message->msg_address = NULL;
+				}
 			}
+			while (packet->p_sqldata.p_sqldata_messages);
 		}
 
 		// These are the necessary conditions to continue fetching (see below)
