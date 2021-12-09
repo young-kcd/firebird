@@ -384,7 +384,7 @@ Filename: msiexec.exe; Parameters: "/qn /norestart /i ""{tmp}\vccrt{#msvc_runtim
 #endif
 
 ;Only register Firebird if we are installing AND configuring
-Filename: {app}\instreg.exe; Parameters: "install "; StatusMsg: {cm:instreg}; MinVersion: {#MinVer}; Components: ClientComponent; Flags: runminimized; Check: ConfigureFirebird;
+Filename: {app}\instreg.exe; Parameters: "install "; StatusMsg: {cm:instreg}; MinVersion: {#MinVer}; Components: ServerComponent; Flags: runminimized; Check: ConfigureFirebird;
 
 Filename: {app}\instclient.exe; Parameters: "install fbclient"; StatusMsg: {cm:instclientCopyFbClient}; MinVersion: {#MinVer}; Components: ClientComponent; Flags: runminimized; Check: CopyFBClientLib;
 Filename: {app}\instclient.exe; Parameters: "install gds32"; StatusMsg: {cm:instclientGenGds32}; MinVersion: {#MinVer}; Components: ClientComponent; Flags: runminimized; Check: CopyGds32
@@ -410,7 +410,7 @@ Filename: "{#MyAppURL}/afterinstall"; Description: "After installation - What Ne
 Root: HKLM; Subkey: SOFTWARE\Microsoft\Windows\CurrentVersion\Run; ValueType: string; ValueName: Firebird; ValueData: ; Flags: uninsdeletevalue; Tasks: UseApplicationTask; Check: ConfigureFirebird;
 
 ;This doesn't seem to get cleared automatically by instreg on uninstall, so lets make sure of it
-Root: HKLM; Subkey: "SOFTWARE\Firebird Project"; Flags: uninsdeletekeyifempty; Components: ClientComponent DevAdminComponent ServerComponent
+Root: HKLM; Subkey: "SOFTWARE\Firebird Project"; Flags: uninsdeletekeyifempty; Components: ServerComponent
 
 ;Clean up Invalid registry entries from previous installs.
 Root: HKLM; Subkey: "SOFTWARE\FirebirdSQL"; ValueType: none; Flags: deletekey;
@@ -476,7 +476,7 @@ Source: {#FilesDir}\firebird.exe; DestDir: {app}; Components: ServerComponent; F
 Source: {#FilesDir}\fb_lock_print.exe; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\ib_util.dll; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\instclient.exe; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
-Source: {#FilesDir}\instreg.exe; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\instreg.exe; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\instsvc.exe; DestDir: {app}; Components: ServerComponent; MinVersion: {#MinVer}; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\isql.exe; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion
 Source: {#FilesDir}\nbackup.exe; DestDir: {app}; Components: DevAdminComponent; Flags: ignoreversion
@@ -595,7 +595,7 @@ Filename: {app}\instclient.exe; Parameters: " remove fbclient"; StatusMsg: {cm:i
 Filename: {app}\wow64\instclient.exe; Parameters: " remove gds32"; StatusMsg: {cm:instclientDecLibCountGds32}; MinVersion: {#MinVer}; Flags: runminimized 32bit; RunOnceId: RemoveGDS32x86
 Filename: {app}\wow64\instclient.exe; Parameters: " remove fbclient"; StatusMsg: {cm:instclientDecLibCountFbClient}; MinVersion: {#MinVer}; Flags: runminimized 32bit; RunOnceId: RemoveFbClientx86
 #endif
-Filename: {app}\instreg.exe; Parameters: " remove"; StatusMsg: {cm:instreg}; MinVersion: {#MinVer}; Flags: runminimized; RunOnceId: RemoveRegistryEntry
+Filename: {app}\instreg.exe; Parameters: " remove"; StatusMsg: {cm:instreg}; MinVersion: {#MinVer}; Components: ServerComponent; Flags: runminimized; RunOnceId: RemoveRegistryEntry
 
 [UninstallDelete]
 Type: files; Name: "{app}\*.lck"

@@ -920,7 +920,10 @@ end;
 
 function ConfigureFirebird: boolean;
 begin
-  result := (InstallAndConfigure AND Configure) = Configure;
+  if IsNotServerInstall then
+    Result := False
+  else
+    Result := (InstallAndConfigure AND Configure) = Configure;
 end;
 
 
@@ -1206,6 +1209,7 @@ begin
   end
 end;
 }
+
 
 function ConfigureAuthentication: boolean;
 begin
