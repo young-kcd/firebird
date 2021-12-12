@@ -163,9 +163,9 @@ const unsigned char* ChaCha::getSpecificData(CheckStatusWrapper* status, const c
 	RefPtr<IConfigEntry> entry(config->find(status, "CounterSize"));
 	check(status);
 	if (entry.hasData())
-		*len = entry->getIntValue() == 32 ? 16 : 8;
+		*len = entry->getIntValue() == 64 ? 8 : 16;
 	else
-		*len = 8;
+		*len = 16;
 
 	if (*len == 16)
 	{
