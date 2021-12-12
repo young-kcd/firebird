@@ -87,8 +87,8 @@ private:
 class ChaCha FB_FINAL : public StdPlugin<IWireCryptPluginImpl<ChaCha, CheckStatusWrapper> >
 {
 public:
-	explicit ChaCha(IPluginConfig*)
-		: en(NULL), de(NULL), iv(getPool())
+	explicit ChaCha(IPluginConfig* cfg)
+		: en(NULL), de(NULL), iv(getPool()), pluginConfig(cfg)
 	{ }
 
 	// ICryptPlugin implementation
@@ -103,6 +103,7 @@ private:
 	Cipher* createCypher(unsigned int l, const void* key);
 	AutoPtr<Cipher> en, de;
 	UCharBuffer iv;
+	RefPtr<IPluginConfig> pluginConfig;
 };
 
 void ChaCha::setKey(CheckStatusWrapper* status, ICryptKey* key)
@@ -157,9 +158,22 @@ const char* ChaCha::getKnownTypes(CheckStatusWrapper* status)
 
 const unsigned char* ChaCha::getSpecificData(CheckStatusWrapper* status, const char*, unsigned* len)
 {
-	*len = 16;
-	GenerateRandomBytes(iv.getBuffer(*len), 12);
-	iv[12] = iv[13] = iv[14] = iv[15] = 0;
+	RefPtr<IConfig> config(pluginConfig->getDefaultConfig(status));
+	check(status);
+	RefPtr<IConfigEntry> entry(config->find(status, "CounterSize"));
+	check(status);
+	if (entry.hasData())
+		*len = entry->getIntValue() == 32 ? 16 : 8;
+	else
+		*len = 8;
+
+	if (*len == 16)
+	{
+		GenerateRandomBytes(iv.getBuffer(16), 12);
+		iv[12] = iv[13] = iv[14] = iv[15] = 0;
+	}
+	else
+		GenerateRandomBytes(iv.getBuffer(8), 8);
 	return iv.begin();
 }
 
