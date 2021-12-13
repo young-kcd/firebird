@@ -27,17 +27,14 @@
 # configure using --with-builtin-tommath
 # or add the relevant -I, -L for an installed version of libtommath
 
-DYLD_LIBRARY_PATH=$(HOME)/icu54/icu/source/lib
-export DYLD_LIBRARY_PATH
-
 MACOSX_DEPLOYMENT_TARGET=10.9
 export MACOSX_DEPLOYMENT_TARGET
 
 PROD_FLAGS=-DDARWIN -pipe -O2 -MMD -fPIC -fno-common -arch i386 -mmacosx-version-min=10.9
 DEV_FLAGS=-ggdb -DDARWIN -pipe -MMD -fPIC -fno-common -Wall -arch i386 -mmacosx-version-min=10.9 -Wno-non-virtual-dtor
-CXXFLAGS:=$(CXXFLAGS) -fvisibility-inlines-hidden -fvisibility=hidden -msse4 
+CXXFLAGS:=$(CXXFLAGS) -fvisibility-inlines-hidden -fvisibility=hidden -msse4
 
-EXE_LINK_OPTIONS:=-m32
+EXE_LINK_OPTIONS+=-m32
 LD_FLAGS+=-m32 -arch i386
 LINK_LIBS+=-liconv
 MATHLIB=$(ROOT)/extern/libtommath/.libs/libtommath.a
