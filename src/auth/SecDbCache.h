@@ -104,6 +104,16 @@ public:
 			(*this)->mutex.enter(FB_FUNCTION);
 		}
 
+		void reset()
+		{
+			if (hasData())
+			{
+				(*this)->mutex.leave();
+				(*this)->close();
+				assign(NULL);
+			}
+		}
+
 		~Instance()
 		{
 			if (hasData())
