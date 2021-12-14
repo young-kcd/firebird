@@ -31,8 +31,6 @@
 #include <tomcrypt.h>
 #include <../common/os/guid.h>
 
-#include "../remote/remot_proto.h"
-
 using namespace Firebird;
 
 namespace
@@ -143,13 +141,13 @@ public:
 	{
 		*len = IV_SIZE;
 
-		WIRECRYPT_DEBUG(fprintf(stderr, "getSpecificData %d\n", *len));
+		//WIRECRYPT_DEBUG(fprintf(stderr, "getSpecificData %d\n", *len));
 		return iv.begin();
 	}
 
 	void setSpecificData(CheckStatusWrapper* status, const char* type, unsigned len, const unsigned char* data)
 	{
-		WIRECRYPT_DEBUG(fprintf(stderr, "setSpecificData %d\n", len));
+		//WIRECRYPT_DEBUG(fprintf(stderr, "setSpecificData %d\n", len));
 		memcpy(iv.getBuffer(len), data, len);
 	}
 
