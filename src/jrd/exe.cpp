@@ -1087,9 +1087,13 @@ static void execute_looper(thread_db* tdbb,
 
 	if (savNumber)
 	{
-		if (transaction->tra_save_point &&
-			transaction->tra_save_point->isSystem() &&
-			transaction->tra_save_point->getNumber() == savNumber)
+		// There should be no other savepoint but the one started by ourselves.
+		// But just in case it suddenly happened, cleanup them all.
+		fb_assert(transaction->tra_save_point &&
+			transaction->tra_save_point->getNumber() == savNumber);
+
+		while (transaction->tra_save_point &&
+			transaction->tra_save_point->getNumber() >= savNumber)
 		{
 			const auto savepoint = transaction->tra_save_point;
 			// Forget about any undo for this verb

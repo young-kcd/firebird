@@ -298,7 +298,7 @@
 
 #define blr_post_arg		(unsigned char)163
 #define blr_exec_into		(unsigned char)164
-#define blr_user_savepoint	(unsigned char)165
+//#define blr_user_savepoint	(unsigned char)165
 #define blr_dcl_cursor		(unsigned char)166
 #define blr_cursor_stmt		(unsigned char)167
 #define blr_current_timestamp2	(unsigned char)168
@@ -342,13 +342,6 @@
 /* second sub parameter for blr_trim */
 #define blr_trim_spaces		(unsigned char)0
 #define blr_trim_characters	(unsigned char)1
-
-/* These codes are actions for user-defined savepoints */
-
-#define blr_savepoint_set	(unsigned char)0
-#define blr_savepoint_release	(unsigned char)1
-#define blr_savepoint_undo	(unsigned char)2
-#define blr_savepoint_release_single	(unsigned char)3
 
 /* These codes are actions for cursors */
 

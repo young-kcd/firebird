@@ -182,90 +182,6 @@ public:
 };
 
 
-class CommitRollbackNode : public TransactionNode
-{
-public:
-	enum Command : UCHAR
-	{
-		CMD_COMMIT,
-		CMD_ROLLBACK
-	};
-
-public:
-	explicit CommitRollbackNode(MemoryPool& pool, Command aCommand, bool aRetain)
-		: TransactionNode(pool),
-		  command(aCommand),
-		  retain(aRetain)
-	{
-	}
-
-public:
-	virtual Firebird::string internalPrint(NodePrinter& printer) const
-	{
-		TransactionNode::internalPrint(printer);
-
-		NODE_PRINT(printer, command);
-		NODE_PRINT(printer, retain);
-
-		return "CommitRollbackNode";
-	}
-
-	virtual CommitRollbackNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
-	{
-		switch (command)
-		{
-			case CMD_COMMIT:
-				dsqlScratch->getStatement()->setType(retain ?
-					DsqlCompiledStatement::TYPE_COMMIT_RETAIN : DsqlCompiledStatement::TYPE_COMMIT);
-				break;
-
-			case CMD_ROLLBACK:
-				dsqlScratch->getStatement()->setType(retain ?
-					DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN : DsqlCompiledStatement::TYPE_ROLLBACK);
-				break;
-		}
-
-		return this;
-	}
-
-	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** transaction) const
-	{
-		if (retain)
-		{
-			switch (command)
-			{
-				case CMD_COMMIT:
-					JRD_commit_retaining(tdbb, request->req_transaction);
-					break;
-
-				case CMD_ROLLBACK:
-					JRD_rollback_retaining(tdbb, request->req_transaction);
-					break;
-			}
-		}
-		else
-		{
-			switch (command)
-			{
-				case CMD_COMMIT:
-					JRD_commit_transaction(tdbb, request->req_transaction);
-					break;
-
-				case CMD_ROLLBACK:
-					JRD_rollback_transaction(tdbb, request->req_transaction);
-					break;
-			}
-
-			*transaction = NULL;
-		}
-	}
-
-private:
-	Command command;
-	bool retain;
-};
-
-
 class CompoundStmtNode : public TypedNode<StmtNode, StmtNode::TYPE_COMPOUND_STMT>	// blr_begin
 {
 public:
@@ -1352,42 +1268,6 @@ public:
 };
 
 
-class UserSavepointNode : public TypedNode<StmtNode, StmtNode::TYPE_USER_SAVEPOINT>
-{
-public:
-	enum Command : SSHORT
-	{
-		CMD_NOTHING = -1,
-		CMD_SET = blr_savepoint_set,
-		CMD_RELEASE = blr_savepoint_release,
-		CMD_RELEASE_ONLY = blr_savepoint_release_single,
-		CMD_ROLLBACK = blr_savepoint_undo
-	};
-
-public:
-	explicit UserSavepointNode(MemoryPool& pool)
-		: TypedNode<StmtNode, StmtNode::TYPE_USER_SAVEPOINT>(pool),
-		  command(CMD_NOTHING),
-		  name(pool)
-	{
-	}
-
-public:
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
-
-	virtual Firebird::string internalPrint(NodePrinter& printer) const;
-	virtual UserSavepointNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
-	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual UserSavepointNode* pass1(thread_db* tdbb, CompilerScratch* csb);
-	virtual UserSavepointNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
-
-public:
-	Command command;
-	MetaName name;
-};
-
-
 class SelectNode : public TypedNode<StmtNode, StmtNode::TYPE_SELECT>
 {
 public:
@@ -1672,6 +1552,64 @@ public:
 	Nullable<bool> ignoreLimbo;
 	Nullable<bool> restartRequests;
 	Nullable<bool> autoCommit;
+};
+
+
+class CommitRollbackNode : public TransactionNode
+{
+public:
+	enum Command : UCHAR
+	{
+		CMD_COMMIT,
+		CMD_ROLLBACK
+	};
+
+public:
+	explicit CommitRollbackNode(MemoryPool& pool, Command aCommand, bool aRetain)
+		: TransactionNode(pool),
+		  command(aCommand),
+		  retain(aRetain)
+	{
+	}
+
+public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
+	virtual CommitRollbackNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** transaction) const;
+
+private:
+	const Command command;
+	const bool retain;
+};
+
+
+class UserSavepointNode : public TransactionNode
+{
+public:
+	enum Command : UCHAR
+	{
+		CMD_SET,
+		CMD_RELEASE,
+		CMD_RELEASE_ONLY,
+		CMD_ROLLBACK
+	};
+
+public:
+	explicit UserSavepointNode(MemoryPool& pool, Command aCommand, const MetaName& aName)
+		: TransactionNode(pool),
+		  command(aCommand),
+		  name(pool, aName)
+	{
+	}
+
+public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
+	virtual UserSavepointNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** transaction) const;
+
+public:
+	const Command command;
+	const MetaName name;
 };
 
 

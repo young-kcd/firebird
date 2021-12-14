@@ -8035,145 +8035,6 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 //--------------------
 
 
-static RegisterNode<UserSavepointNode> regUserSavepointNode({blr_user_savepoint});
-
-DmlNode* UserSavepointNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
-{
-	UserSavepointNode* node = FB_NEW_POOL(pool) UserSavepointNode(pool);
-
-	node->command = (Command) csb->csb_blr_reader.getByte();
-	csb->csb_blr_reader.getMetaName(node->name);
-
-	return node;
-}
-
-UserSavepointNode* UserSavepointNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
-{
-	fb_assert(!(dsqlScratch->flags & DsqlCompilerScratch::FLAG_BLOCK));
-	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SAVEPOINT);
-	return this;
-}
-
-string UserSavepointNode::internalPrint(NodePrinter& printer) const
-{
-	StmtNode::internalPrint(printer);
-
-	NODE_PRINT(printer, (SSHORT) command);
-	NODE_PRINT(printer, name);
-
-	return "UserSavepointNode";
-}
-
-void UserSavepointNode::genBlr(DsqlCompilerScratch* dsqlScratch)
-{
-	dsqlScratch->appendUChar(blr_user_savepoint);
-	dsqlScratch->appendUChar((UCHAR) command);
-	dsqlScratch->appendNullString(name.c_str());
-}
-
-UserSavepointNode* UserSavepointNode::pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
-{
-	return this;
-}
-
-UserSavepointNode* UserSavepointNode::pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
-{
-	return this;
-}
-
-const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
-{
-	jrd_tra* transaction = request->req_transaction;
-
-	if (request->req_operation == jrd_req::req_evaluate &&
-		!(transaction->tra_flags & TRA_system))
-	{
-		// Skip the savepoint created by EXE_start
-		Savepoint* const previous = transaction->tra_save_point;
-
-		// Find savepoint
-		Savepoint* savepoint = NULL;
-
-		for (Savepoint::Iterator iter(previous); *iter; ++iter)
-		{
-			Savepoint* const current = *iter;
-
-			if (current == previous)
-				continue;
-
-			if (current->isSystem())
-				break;
-
-			if (current->getName() == name)
-			{
-				savepoint = current;
-				break;
-			}
-		}
-
-		if (!savepoint && command != CMD_SET)
-			ERR_post(Arg::Gds(isc_invalid_savepoint) << Arg::Str(name));
-
-		switch (command)
-		{
-			case CMD_SET:
-				// Release the savepoint
-				if (savepoint)
-					savepoint->rollforward(tdbb, previous);
-
-				// Use the savepoint created by EXE_start
-				transaction->tra_save_point->setName(name);
-				break;
-
-			case CMD_RELEASE_ONLY:
-			{
-				// Release the savepoint
-				savepoint->rollforward(tdbb, previous);
-				break;
-			}
-
-			case CMD_RELEASE:
-			{
-				const SavNumber savNumber = savepoint->getNumber();
-
-				// Release the savepoint and all subsequent ones
-				while (transaction->tra_save_point &&
-					transaction->tra_save_point->getNumber() >= savNumber)
-				{
-					fb_assert(!transaction->tra_save_point->isChanging());
-					transaction->releaseSavepoint(tdbb);
-				}
-
-				// Restore the savepoint initially created by EXE_start
-				transaction->startSavepoint();
-				break;
-			}
-
-			case CMD_ROLLBACK:
-			{
-				transaction->rollbackToSavepoint(tdbb, savepoint->getNumber());
-
-				// Now set the savepoint again to allow to return to it later
-				Savepoint* const savepoint = transaction->startSavepoint();
-				savepoint->setName(name);
-				break;
-			}
-
-			default:
-				SOFT_BUGCHECK(232);	// msg 232 EVL_expr: invalid operation
-				break;
-		}
-
-		request->req_operation = jrd_req::req_return;
-	}
-
-	return parentStmt;
-}
-
-
-//--------------------
-
-
 static RegisterNode<SelectNode> regSelectNode({blr_select});
 
 DmlNode* SelectNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
@@ -9456,6 +9317,172 @@ void UpdateOrInsertNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		dsqlScratch->appendUChar(blr_end);	// blr_if
 
 	dsqlScratch->appendUChar(blr_end);
+}
+
+
+//--------------------
+
+
+Firebird::string CommitRollbackNode::internalPrint(NodePrinter& printer) const
+{
+	TransactionNode::internalPrint(printer);
+
+	NODE_PRINT(printer, command);
+	NODE_PRINT(printer, retain);
+
+	return "CommitRollbackNode";
+}
+
+CommitRollbackNode* CommitRollbackNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	switch (command)
+	{
+		case CMD_COMMIT:
+			dsqlScratch->getStatement()->setType(retain ?
+				DsqlCompiledStatement::TYPE_COMMIT_RETAIN : DsqlCompiledStatement::TYPE_COMMIT);
+			break;
+
+		case CMD_ROLLBACK:
+			dsqlScratch->getStatement()->setType(retain ?
+				DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN : DsqlCompiledStatement::TYPE_ROLLBACK);
+			break;
+	}
+
+	return this;
+}
+
+void CommitRollbackNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** transaction) const
+{
+	if (retain)
+	{
+		switch (command)
+		{
+			case CMD_COMMIT:
+				JRD_commit_retaining(tdbb, request->req_transaction);
+				break;
+
+			case CMD_ROLLBACK:
+				JRD_rollback_retaining(tdbb, request->req_transaction);
+				break;
+		}
+	}
+	else
+	{
+		switch (command)
+		{
+			case CMD_COMMIT:
+				JRD_commit_transaction(tdbb, request->req_transaction);
+				break;
+
+			case CMD_ROLLBACK:
+				JRD_rollback_transaction(tdbb, request->req_transaction);
+				break;
+		}
+
+		*transaction = NULL;
+	}
+}
+
+
+//--------------------
+
+
+Firebird::string UserSavepointNode::internalPrint(NodePrinter& printer) const
+{
+	TransactionNode::internalPrint(printer);
+
+	NODE_PRINT(printer, command);
+	NODE_PRINT(printer, name);
+
+	return "UserSavepointNode";
+}
+
+UserSavepointNode* UserSavepointNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SAVEPOINT);
+	return this;
+}
+
+void UserSavepointNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** /*transaction*/) const
+{
+	jrd_tra* const transaction = request->req_transaction;
+	fb_assert(!(transaction->tra_flags & TRA_system));
+
+	// Find savepoint
+	Savepoint* savepoint = nullptr;
+	Savepoint* previous = nullptr;
+
+	for (Savepoint::Iterator iter(transaction->tra_save_point); *iter; ++iter)
+	{
+		Savepoint* const current = *iter;
+
+		if (current == previous)
+			continue;
+
+		if (current->isSystem())
+			break;
+
+		if (current->getName() == name)
+		{
+			savepoint = current;
+			break;
+		}
+
+		previous = current;
+	}
+
+	if (!savepoint && command != CMD_SET)
+		ERR_post(Arg::Gds(isc_invalid_savepoint) << Arg::Str(name));
+
+	fb_assert(!savepoint || !previous || previous->getNext() == savepoint);
+
+	switch (command)
+	{
+		case CMD_SET:
+		{
+			// Release the savepoint
+			if (savepoint)
+				savepoint->rollforward(tdbb, previous);
+
+			savepoint = transaction->startSavepoint();
+			savepoint->setName(name);
+			break;
+		}
+
+		case CMD_RELEASE_ONLY:
+		{
+			// Release the savepoint
+			savepoint->rollforward(tdbb, previous);
+			break;
+		}
+
+		case CMD_RELEASE:
+		{
+			const SavNumber savNumber = savepoint->getNumber();
+
+			// Release the savepoint and all subsequent ones
+			while (transaction->tra_save_point &&
+				transaction->tra_save_point->getNumber() >= savNumber)
+			{
+				fb_assert(!transaction->tra_save_point->isChanging());
+				transaction->releaseSavepoint(tdbb);
+			}
+			break;
+		}
+
+		case CMD_ROLLBACK:
+		{
+			transaction->rollbackToSavepoint(tdbb, savepoint->getNumber());
+
+			// Now set the savepoint again to allow to return to it later
+			savepoint = transaction->startSavepoint();
+			savepoint->setName(name);
+			break;
+		}
+
+		default:
+			fb_assert(false);
+	}
 }
 
 

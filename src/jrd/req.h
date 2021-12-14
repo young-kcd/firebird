@@ -401,7 +401,7 @@ const ULONG req_proc_fetch		= 0x200L;		// Fetch from procedure in progress
 const ULONG req_same_tx_upd		= 0x400L;		// record was updated by same transaction
 const ULONG req_reserved		= 0x800L;		// Request reserved for client
 const ULONG req_update_conflict	= 0x1000L;		// We need to restart request due to update conflict
-const ULONG req_restart_ready	= 0x2000L;		// Request is ready to restat in case of update conflict
+const ULONG req_restart_ready	= 0x2000L;		// Request is ready to restart in case of update conflict
 
 
 // Index lock block
