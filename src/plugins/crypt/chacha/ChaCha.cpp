@@ -36,13 +36,16 @@ using namespace Firebird;
 namespace
 {
 
-void tomCheck(int err, const char* text)
+void tomCheck(int err, const char* text, int specErr = CRYPT_OK,  const char* specText = nullptr)
 {
 	if (err == CRYPT_OK)
 		return;
 
 	string buf;
-	buf.printf("TomCrypt library error %s: %s", text, error_to_string(err));
+	if (specText && (err == specErr))
+		buf = specText;
+	else
+		buf.printf("TomCrypt library error %s: %s", text, error_to_string(err));
 	(Arg::Gds(isc_random) << buf).raise();
 }
 
@@ -76,7 +79,8 @@ public:
 	{
 		unsigned char* t = static_cast<unsigned char*>(to);
 		const unsigned char* f = static_cast<const unsigned char*>(from);
-		tomCheck(chacha_crypt(&chacha, f, length, t), "processing CHACHA#20");
+		tomCheck(chacha_crypt(&chacha, f, length, t), "processing CHACHA#20",
+			CRYPT_OVERFLOW, "Connection broken - internal chacha overflow. Reattach to server to proceed.");
 	}
 
 private:
@@ -103,13 +107,11 @@ public:
 	// ICryptPlugin implementation
 	const char* getKnownTypes(CheckStatusWrapper* status)
 	{
-		status->init();
 		return "Symmetric";
 	}
 
 	void setKey(CheckStatusWrapper* status, ICryptKey* key)
 	{
-		status->init();
 		try
 		{
     		unsigned int l;
@@ -127,14 +129,26 @@ public:
 
 	void encrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to)
 	{
-		status->init();
-		en->transform(length, from, to);
+		try
+		{
+			en->transform(length, from, to);
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
 	}
 
 	void decrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to)
 	{
-		status->init();
-		de->transform(length, from, to);
+		try
+		{
+			de->transform(length, from, to);
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
 	}
 
 	const unsigned char* getSpecificData(CheckStatusWrapper* status, const char* type, unsigned* len)
