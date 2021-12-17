@@ -662,6 +662,10 @@ private:
 	const dsql_msg* message = m_request->getStatement()->getSendMsg();
 	bool startRequest = true;
 
+	bool isExecBlock = m_request->getStatement()->getType() == DsqlCompiledStatement::TYPE_EXEC_BLOCK;
+	const auto receiveMessage = isExecBlock ? m_request->getStatement()->getReceiveMsg() : nullptr;
+	auto receiveMsgBuffer = isExecBlock ? m_request->req_msg_buffers[receiveMessage->msg_buffer_number] : nullptr;
+
 	// process messages
 	ULONG remains;
 	UCHAR* data;
@@ -676,13 +680,6 @@ private:
 
 		while (remains >= m_messageSize)
 		{
-			if (startRequest)
-			{
-				EXE_unwind(tdbb, req);
-				EXE_start(tdbb, req, transaction);
-				startRequest = false;
-			}
-
 			// skip alignment data
 			UCHAR* alignedData = FB_ALIGN(data, m_alignment);
 			if (alignedData != data)
@@ -690,6 +687,13 @@ private:
 				remains -= (alignedData - data);
 				data = alignedData;
 				continue;
+			}
+
+			if (startRequest)
+			{
+				EXE_unwind(tdbb, req);
+				EXE_start(tdbb, req, transaction);
+				startRequest = isExecBlock;
 			}
 
 			// translate blob IDs
@@ -730,6 +734,9 @@ private:
 				ULONG after = req->req_records_inserted + req->req_records_updated +
 					req->req_records_deleted;
 				completionState->regUpdate(after - before);
+
+				if (isExecBlock)
+					EXE_receive(tdbb, req, receiveMessage->msg_number, receiveMessage->msg_length, receiveMsgBuffer);
 			}
 			catch (const Exception& ex)
 			{
