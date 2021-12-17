@@ -1555,6 +1555,7 @@ type
 	IBatch = class(IReferenceCounted)
 		const VERSION = 4;
 		const VERSION1 = Byte(1);
+		const CURRENT_VERSION = Byte(IBatch.VERSION1);
 		const TAG_MULTIERROR = Byte(1);
 		const TAG_RECORD_COUNTS = Byte(2);
 		const TAG_BUFFER_BYTES_SIZE = Byte(3);
