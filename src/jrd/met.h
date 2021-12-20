@@ -24,9 +24,12 @@
 #ifndef JRD_MET_H
 #define JRD_MET_H
 
+#include "../common/classes/vector.h"
+
 #include "../jrd/val.h"
 #include "../jrd/irq.h"
 #include "../jrd/drq.h"
+#include "../jrd/HazardPtr.h"
 
 // Record types for record summary blob records
 
@@ -164,53 +167,84 @@ enum IndexStatus
 
 class MetadataCache : public Firebird::PermanentStorage
 {
-	class GeneratorFinder
+	template <class Object>
+	class Collection : public Firebird::PermanentStorage
 	{
 	public:
-		explicit GeneratorFinder(MemoryPool& pool)
-			: m_objects(pool)
+		typedef typename Object::Key Key;
+		typedef Object* Value;
+		typedef std::atomic<Object*> ArrayElement;
+
+		explicit Collection(MemoryPool& pool)
+			: Firebird::PermanentStorage(pool)
 		{}
 
-		void store(SLONG id, const MetaName& name)
+		void store(SLONG id, const Value val)
 		{
 			fb_assert(id >= 0);
-			fb_assert(name.hasData());
+			fb_assert(id < (int) m_objects.getCapacity());
 
-			if (id < (int) m_objects.getCount())
-			{
-				fb_assert(m_objects[id].isEmpty());
-				m_objects[id] = name;
-			}
-			else
-			{
-				m_objects.resize(id + 1);
-				m_objects[id] = name;
-			}
+			if (id >= (int) m_objects.getCount())
+				m_objects.grow(id + 1);
+
+			m_objects[id].store(val, std::memory_order_release);
 		}
 
-		bool lookup(SLONG id, MetaName& name)
+		bool load(SLONG id, Hazard<Object>& val)
 		{
-			if (id < (int) m_objects.getCount() && m_objects[id].hasData())
+			if (id < (int) m_objects.getCount())
 			{
-				name = m_objects[id];
-				return true;
+				val.set(m_objects[id]);
+
+				if (val->hasData())
+					return true;
 			}
 
 			return false;
 		}
 
-		SLONG lookup(const MetaName& name)
+		SLONG lookup(thread_db* tdbb, const Key key)
 		{
-			FB_SIZE_T pos;
-
-			if (m_objects.find(name, pos))
-				return (SLONG) pos;
+			for (FB_SIZE_T pos = 0; pos < m_objects.getCount(); ++pos)
+			{
+				Hazard<Object> val(tdbb, m_objects[pos]);
+				if (val->getKey() == key)
+					return (SLONG) pos;
+			}
 
 			return -1;
 		}
 
 	private:
-		Firebird::Array<MetaName> m_objects;
+		static const unsigned int MAX_IDS = 0x8000u;
+		Firebird::Vector<std::atomic<Object*>, MAX_IDS> m_objects;
+	};
+
+
+	class GenObject : public HazardObject
+	{
+	public:
+		typedef MetaName Key;
+
+		GenObject(MetaName name)
+			: value(name)
+		{ }
+
+		GenObject()
+		{ }
+
+		bool hasData() const
+		{
+			return value.hasData();
+		}
+
+		MetaName getKey() const
+		{
+			return value;
+		}
+
+	public:
+		MetaName value;
 	};
 
 
@@ -300,19 +334,28 @@ public:
 		mdc_procedures[id] = p;
 	}
 
-	SLONG lookupSequence(const MetaName& name)
+	SLONG lookupSequence(thread_db* tdbb, const MetaName& name)
 	{
-		return mdc_generators.lookup(name);
+		return mdc_generators.lookup(tdbb, name);
 	}
 
-	bool getSequence(SLONG id, MetaName& name)
+	bool getSequence(thread_db* tdbb, SLONG id, MetaName& name)
 	{
-		return mdc_generators.lookup(id, name);
+		GenObject genObj;
+		// !!!!!!!!!!!!!!!! Hazard<GenObject> hp(tdbb, &genObj);
+		Hazard<GenObject> hp(tdbb);
+
+		if (!mdc_generators.load(id, hp))
+			return false;
+
+		name = genObj.value;
+		return true;
 	}
 
-	void setSequence(SLONG id, const MetaName& name)
+	void setSequence(SLONG id, MetaName name)
 	{
-		mdc_generators.store(id, name);
+		GenObject* genObj = FB_NEW_POOL(getPool()) GenObject(name);
+		mdc_generators.store(id, genObj);
 	}
 
 	CharSetContainer* getCharSet(USHORT id)
@@ -367,7 +410,7 @@ private:
 	TrigVector*						mdc_triggers[DB_TRIGGER_MAX];
 	TrigVector*						mdc_ddl_triggers;
 	Firebird::Array<Function*>		mdc_functions;			// User defined functions
-	GeneratorFinder					mdc_generators;
+	Collection<GenObject>			mdc_generators;
 
 	Firebird::Array<JrdStatement*>	mdc_internal;			// internal statements
 	Firebird::Array<JrdStatement*>	mdc_dyn_req;			// internal dyn statements

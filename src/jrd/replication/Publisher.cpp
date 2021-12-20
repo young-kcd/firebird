@@ -652,13 +652,13 @@ void REPL_gen_id(thread_db* tdbb, SLONG genId, SINT64 value)
 	if (!replicator)
 		return;
 
-	const auto attachment = tdbb->getAttachment();
+	const auto database = tdbb->getDatabase();
 
 	MetaName genName;
-	if (!attachment->att_mdc.getSequence(genId, genName))
+	if (!database->dbb_mdc.getSequence(tdbb, genId, genName))
 	{
 		MET_lookup_generator_id(tdbb, genId, genName, nullptr);
-		attachment->att_mdc.setSequence(genId, genName);
+		database->dbb_mdc.setSequence(genId, genName);
 	}
 
 	fb_assert(genName.hasData());

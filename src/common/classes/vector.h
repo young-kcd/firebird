@@ -114,6 +114,14 @@ public:
 		return data;
 	}
 
+	void grow(FB_SIZE_T cntL) noexcept
+	{
+		fb_assert(cntL <= Capacity);
+		fb_assert(cntL > count);
+		memset(data + count, 0, sizeof(T) * (cntL - count));
+		count = cntL;
+	}
+
 	void push(const T& item)
 	{
 		add(item);

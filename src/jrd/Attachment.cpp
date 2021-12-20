@@ -132,6 +132,9 @@ void Jrd::Attachment::destroy(Attachment* const attachment)
 	}
 
 	Database* const dbb = attachment->att_database;
+	attachment->att_delayed_delete.garbageCollect(HazardDelayedDelete::GarbageCollectMethod::GC_FORCE);
+	dbb->dbb_delayed_delete.delayedDelete(attachment->att_delayed_delete.getHazardPointers());
+
 	MemoryPool* const pool = attachment->att_pool;
 	Firebird::MemoryStats temp_stats;
 	pool->setStatsGroup(temp_stats);
@@ -262,7 +265,8 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, JProvider* provider
 	  att_stmt_timeout(0),
 	  att_batches(*pool),
 	  att_initial_options(*pool),
-	  att_provider(provider)
+	  att_provider(provider),
+	  att_delayed_delete(*dbb->dbb_permanent, *pool)
 { }
 
 

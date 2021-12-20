@@ -70,6 +70,7 @@
 #include "../common/classes/SyncObject.h"
 #include "../common/classes/Synchronize.h"
 #include "../jrd/replication/Manager.h"
+#include "../jrd/HazardPtr.h"
 #include "fb_types.h"
 
 
@@ -545,6 +546,10 @@ public:
 	Dictionary dbb_dic;					// metanames dictionary
 	Firebird::InitInstance<KeywordsMap, KeywordsMapAllocator, Firebird::TraditionalDelete> dbb_keywords_map;
 
+	MetadataCache dbb_mdc;
+	HazardDelayedDelete dbb_delayed_delete;
+	Firebird::Mutex dbb_dd_mutex;
+
 	// returns true if primary file is located on raw device
 	bool onRawDevice() const;
 
@@ -611,7 +616,9 @@ private:
 		dbb_repl_sequence(0),
 		dbb_replica_mode(REPLICA_NONE),
 		dbb_compatibility_index(~0U),
-		dbb_dic(*p)
+		dbb_dic(*p),
+		dbb_mdc(*p),
+		dbb_delayed_delete(*p, *p)
 	{
 		dbb_pools.add(p);
 	}
