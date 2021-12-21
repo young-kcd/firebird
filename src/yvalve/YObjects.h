@@ -366,6 +366,9 @@ public:
 	void close(Firebird::CheckStatusWrapper* status);
 	void deprecatedClose(Firebird::CheckStatusWrapper* status);
 	void setDelayedOutputFormat(Firebird::CheckStatusWrapper* status, Firebird::IMessageMetadata* format);
+	void getInfo(Firebird::CheckStatusWrapper* status,
+		unsigned int itemsLength, const unsigned char* items,
+		unsigned int bufferLength, unsigned char* buffer);
 
 public:
 	AtomicAttPtr attachment;

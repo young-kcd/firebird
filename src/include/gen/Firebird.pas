@@ -339,6 +339,7 @@ type
 	IResultSet_deprecatedClosePtr = procedure(this: IResultSet; status: IStatus); cdecl;
 	IResultSet_setDelayedOutputFormatPtr = procedure(this: IResultSet; status: IStatus; format: IMessageMetadata); cdecl;
 	IResultSet_closePtr = procedure(this: IResultSet; status: IStatus); cdecl;
+	IResultSet_getInfoPtr = procedure(this: IResultSet; status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr); cdecl;
 	IStatement_getInfoPtr = procedure(this: IStatement; status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr); cdecl;
 	IStatement_getTypePtr = function(this: IStatement; status: IStatus): Cardinal; cdecl;
 	IStatement_getPlanPtr = function(this: IStatement; status: IStatus; detailed: Boolean): PAnsiChar; cdecl;
@@ -1425,10 +1426,12 @@ type
 		deprecatedClose: IResultSet_deprecatedClosePtr;
 		setDelayedOutputFormat: IResultSet_setDelayedOutputFormatPtr;
 		close: IResultSet_closePtr;
+		getInfo: IResultSet_getInfoPtr;
 	end;
 
 	IResultSet = class(IReferenceCounted)
-		const VERSION = 4;
+		const VERSION = 5;
+		const INF_RECORD_COUNT = Byte(10);
 
 		function fetchNext(status: IStatus; message: Pointer): Integer;
 		function fetchPrior(status: IStatus; message: Pointer): Integer;
@@ -1442,6 +1445,7 @@ type
 		procedure deprecatedClose(status: IStatus);
 		procedure setDelayedOutputFormat(status: IStatus; format: IMessageMetadata);
 		procedure close(status: IStatus);
+		procedure getInfo(status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr);
 	end;
 
 	IResultSetImpl = class(IResultSet)
@@ -1461,6 +1465,7 @@ type
 		procedure deprecatedClose(status: IStatus); virtual; abstract;
 		procedure setDelayedOutputFormat(status: IStatus; format: IMessageMetadata); virtual; abstract;
 		procedure close(status: IStatus); virtual; abstract;
+		procedure getInfo(status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr); virtual; abstract;
 	end;
 
 	StatementVTable = class(ReferenceCountedVTable)
@@ -6498,6 +6503,17 @@ begin
 	FbException.checkException(status);
 end;
 
+procedure IResultSet.getInfo(status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr);
+begin
+	if (vTable.version < 5) then begin
+		FbException.setVersionError(status, 'IResultSet', vTable.version, 5);
+	end
+	else begin
+		ResultSetVTable(vTable).getInfo(Self, status, itemsLength, items, bufferLength, buffer);
+	end;
+	FbException.checkException(status);
+end;
+
 procedure IStatement.getInfo(status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr);
 begin
 	StatementVTable(vTable).getInfo(Self, status, itemsLength, items, bufferLength, buffer);
@@ -10427,6 +10443,15 @@ procedure IResultSetImpl_closeDispatcher(this: IResultSet; status: IStatus); cde
 begin
 	try
 		IResultSetImpl(this).close(status);
+	except
+		on e: Exception do FbException.catchException(status, e);
+	end
+end;
+
+procedure IResultSetImpl_getInfoDispatcher(this: IResultSet; status: IStatus; itemsLength: Cardinal; items: BytePtr; bufferLength: Cardinal; buffer: BytePtr); cdecl;
+begin
+	try
+		IResultSetImpl(this).getInfo(status, itemsLength, items, bufferLength, buffer);
 	except
 		on e: Exception do FbException.catchException(status, e);
 	end
@@ -15617,7 +15642,7 @@ initialization
 	IMetadataBuilderImpl_vTable.setAlias := @IMetadataBuilderImpl_setAliasDispatcher;
 
 	IResultSetImpl_vTable := ResultSetVTable.create;
-	IResultSetImpl_vTable.version := 4;
+	IResultSetImpl_vTable.version := 5;
 	IResultSetImpl_vTable.addRef := @IResultSetImpl_addRefDispatcher;
 	IResultSetImpl_vTable.release := @IResultSetImpl_releaseDispatcher;
 	IResultSetImpl_vTable.fetchNext := @IResultSetImpl_fetchNextDispatcher;
@@ -15632,6 +15657,7 @@ initialization
 	IResultSetImpl_vTable.deprecatedClose := @IResultSetImpl_deprecatedCloseDispatcher;
 	IResultSetImpl_vTable.setDelayedOutputFormat := @IResultSetImpl_setDelayedOutputFormatDispatcher;
 	IResultSetImpl_vTable.close := @IResultSetImpl_closeDispatcher;
+	IResultSetImpl_vTable.getInfo := @IResultSetImpl_getInfoDispatcher;
 
 	IStatementImpl_vTable := StatementVTable.create;
 	IStatementImpl_vTable.version := 5;

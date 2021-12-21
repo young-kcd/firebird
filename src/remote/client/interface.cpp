@@ -298,6 +298,9 @@ public:
 	void close(CheckStatusWrapper* status) override;
 	void deprecatedClose(CheckStatusWrapper* status) override;
 	void setDelayedOutputFormat(CheckStatusWrapper* status, IMessageMetadata* format) override;
+	void getInfo(CheckStatusWrapper* status,
+				 unsigned int itemsLength, const unsigned char* items,
+				 unsigned int bufferLength, unsigned char* buffer) override;
 
 	ResultSet(Statement* s, IMessageMetadata* outFmt, unsigned f)
 		: stmt(s), flags(f), tmpStatement(false), delayedFormat(outFmt == DELAYED_OUT_FORMAT)
@@ -5068,6 +5071,38 @@ IMessageMetadata* ResultSet::getMetadata(CheckStatusWrapper* status)
 
 	outputFormat->addRef();
 	return outputFormat;
+}
+
+void ResultSet::getInfo(CheckStatusWrapper* status,
+						unsigned int itemsLength, const unsigned char* items,
+						unsigned int bufferLength, unsigned char* buffer)
+{
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		if (!stmt)
+			Arg::Gds(isc_dsql_cursor_err).raise();
+
+		const auto statement = stmt->getStatement();
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+
+		const auto rdb = statement->rsr_rdb;
+		const auto port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		if (port->port_protocol < PROTOCOL_FETCH_SCROLL)
+			unsupported();
+
+		info(status, rdb, op_info_cursor, statement->rsr_id, 0,
+			 itemsLength, items, 0, 0, bufferLength, buffer);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
 }
 
 void ResultSet::freeClientData(CheckStatusWrapper* status, bool force)
