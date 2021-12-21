@@ -688,7 +688,6 @@ private:
 		bool singleton, bool exec, bool fetch);
 
 	NestConst<StmtNode> node;
-	Firebird::RefPtr<Firebird::IMessageMetadata> delayedFormat;
 	bool needDelayedFormat;
 	bool firstRowFetched;
 };

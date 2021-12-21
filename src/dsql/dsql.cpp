@@ -246,7 +246,10 @@ void DsqlDmlRequest::setDelayedFormat(thread_db* tdbb, IMessageMetadata* metadat
 	}
 
 	needDelayedFormat = false;
-	delayedFormat = metadata;
+
+	const auto message = (dsql_msg*) getStatement()->getReceiveMsg();
+	if (metadata && message)
+		parseMetadata(metadata, message->msg_parameters);
 }
 
 
@@ -276,13 +279,7 @@ bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 				  Arg::Gds(isc_unprepared_stmt));
 	}
 
-	dsql_msg* message = (dsql_msg*) statement->getReceiveMsg();
-
-	if (delayedFormat && message)
-	{
-		parseMetadata(delayedFormat, message->msg_parameters);
-		delayedFormat = NULL;
-	}
+	const auto message = (dsql_msg*) statement->getReceiveMsg();
 
 	// Set up things for tracing this call
 	Jrd::Attachment* att = req_dbb->dbb_attachment;
