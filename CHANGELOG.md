@@ -99,6 +99,9 @@
 * [#6985](https://github.com/FirebirdSQL/firebird/issues/6985): Application could hang when using new Batch API with blobs over XNET  
   Contributor(s): Vlad Khorsun
 
+* [#6979](https://github.com/FirebirdSQL/firebird/issues/6979): Windows x64 server installer installs an incomplete x86 client
+  Contributor(s): Paul Reeves
+
 * [#6978](https://github.com/FirebirdSQL/firebird/issues/6978): Firebird 4 fails to build on big endian platforms  
   Contributor(s): Alex Peshkoff
 
@@ -123,6 +126,9 @@
 * [#6945](https://github.com/FirebirdSQL/firebird/issues/6945): Segfault in the batch interface when gbak restores a database with many blobs over the wire  
   Contributor(s): Alex Peshkoff
 
+* [#6943](https://github.com/FirebirdSQL/firebird/issues/6943): Windows client install is missing some DLLs
+  Contributor(s): Paul Reeves
+
 * [#6935](https://github.com/FirebirdSQL/firebird/issues/6935): SQL SECURITY DEFINER has inconsistent behaviour if the object owner is non-privileged  
   Contributor(s): Dmitry Yemanov
 
@@ -131,6 +137,9 @@
 
 * [#6930](https://github.com/FirebirdSQL/firebird/issues/6930): Segfault when calling cryptographic functions  
   Contributor(s): Alex Peshkoff
+
+* [#6917](https://github.com/FirebirdSQL/firebird/issues/6917): Firebird 4 installer asks for SYSDBA password when doing client installation
+  Contributor(s): Paul Reeves
 
 * [#6913](https://github.com/FirebirdSQL/firebird/issues/6913): Buffer overflows in getInfo APIs  
   Contributor(s): Adriano dos Santos Fernandes
