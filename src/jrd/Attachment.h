@@ -95,6 +95,7 @@ namespace Jrd
 	class TrigVector;
 	class Function;
 	class JrdStatement;
+	class ProfilerManager;
 	class Validation;
 	class Applier;
 
@@ -562,6 +563,7 @@ public:
 	ULONG		att_flags;					// Flags describing the state of the attachment
 	SSHORT		att_client_charset;			// user's charset specified in dpb
 	SSHORT		att_charset;				// current (client or external) attachment charset
+	bool 		att_in_system_routine = false;	// running a system routine
 	Lock*		att_long_locks;				// outstanding two phased locks
 #ifdef DEBUG_LCK_LIST
 	UCHAR		att_long_locks_type;		// Lock type of the first lock in list
@@ -795,6 +797,9 @@ public:
 	void checkReplSetLock(thread_db* tdbb);
 	void invalidateReplSet(thread_db* tdbb, bool broadcast);
 
+	ProfilerManager* getProfilerManager(thread_db* tdbb);
+	bool isProfilerActive();
+
 	JProvider* getProvider()
 	{
 		fb_assert(att_provider);
@@ -814,6 +819,7 @@ private:
 	Firebird::Array<JBatch*> att_batches;
 	InitialOptions att_initial_options;	// Initial session options
 	DebugOptions att_debug_options;
+	Firebird::AutoPtr<ProfilerManager> att_profiler_manager;	// ProfilerManager
 
 	Lock* att_repl_lock;				// Replication set lock
 	JProvider* att_provider;	// Provider which created this attachment

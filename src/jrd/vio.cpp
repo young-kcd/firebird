@@ -88,6 +88,7 @@
 #include "../jrd/Function.h"
 #include "../common/StatusArg.h"
 #include "../jrd/GarbageCollector.h"
+#include "../jrd/ProfilerManager.h"
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceJrdHelpers.h"
 

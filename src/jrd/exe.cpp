@@ -111,6 +111,7 @@
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/recsrc/Cursor.h"
 #include "../jrd/Function.h"
+#include "../jrd/ProfilerManager.h"
 
 
 using namespace Jrd;
@@ -998,6 +999,11 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 		}
 
 		release_blobs(tdbb, request);
+
+		const auto attachment = request->req_attachment;
+
+		if (attachment->isProfilerActive() && !request->hasInternalStatement())
+			attachment->getProfilerManager(tdbb)->onRequestFinish(request);
 	}
 
 	request->req_sorts.unlinkAll();
@@ -1336,10 +1342,10 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 		ERR_post(Arg::Gds(isc_req_no_trans));
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	const auto dbb = tdbb->getDatabase();
+	const auto attachment = tdbb->getAttachment();
 
-	// ASF: It's already a StmtNode, so do not do a virtual call in execution.
-	if (!node)	/// if (!node || node->getKind() != DmlNode::KIND_STATEMENT
+	if (!node)
 		BUGCHECK(147);
 
 	// Save the old pool and request to restore on exit
@@ -1353,6 +1359,11 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 
 	// Execute stuff until we drop
 
+	SINT64 lastPerfCounter = fb_utils::query_performance_counter();
+	const StmtNode* profileNode = nullptr;
+	ULONG lastProfiledLine = node->line;
+	ULONG lastProfiledColumn = node->column;
+
 	while (node && !(request->req_flags & req_stall))
 	{
 		try
@@ -1365,6 +1376,33 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 				{
 					request->req_src_line = node->line;
 					request->req_src_column = node->column;
+				}
+
+				if (attachment->isProfilerActive() && !request->hasInternalStatement())
+				{
+					if (profileNode &&
+						profileNode->hasLineColumn &&
+						profileNode->isProfileAware() &&
+						(profileNode->line != lastProfiledLine || profileNode->column != lastProfiledColumn))
+					{
+						const SINT64 currentPerfCounter = fb_utils::query_performance_counter();
+
+						attachment->getProfilerManager(tdbb)->afterPsqlLineColumn(request,
+							profileNode->line, profileNode->column,
+							currentPerfCounter - lastPerfCounter);
+
+						lastPerfCounter = currentPerfCounter;
+						lastProfiledLine = profileNode->line;
+						lastProfiledColumn = profileNode->column;
+					}
+
+					if (node->hasLineColumn)
+					{
+						profileNode = node;
+
+						attachment->getProfilerManager(tdbb)->beforePsqlLineColumn(request,
+							profileNode->line, profileNode->column);
+					}
 				}
 			}
 
@@ -1409,6 +1447,20 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 			}
 		}
 	} // while()
+
+	if (attachment->isProfilerActive() &&
+		!request->hasInternalStatement() &&
+		profileNode &&
+		profileNode->hasLineColumn &&
+		profileNode->isProfileAware() &&
+		(profileNode->line != lastProfiledLine || profileNode->column != lastProfiledColumn))
+	{
+		const SINT64 currentPerfCounter = fb_utils::query_performance_counter();
+
+		attachment->getProfilerManager(tdbb)->afterPsqlLineColumn(request,
+			profileNode->line, profileNode->column,
+			currentPerfCounter - lastPerfCounter);
+	}
 
 	request->adjustCallerStats();
 

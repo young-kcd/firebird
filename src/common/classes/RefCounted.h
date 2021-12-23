@@ -121,6 +121,12 @@ namespace Firebird
 			r.ptr = nullptr;
 		}
 
+		RefPtr(MemoryPool&, RefPtr&& r)
+			: ptr(r.ptr)
+		{
+			r.ptr = nullptr;
+		}
+
 		~RefPtr()
 		{
 			if (ptr)

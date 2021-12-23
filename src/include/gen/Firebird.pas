@@ -111,6 +111,8 @@ type
 	IReplicatedRecord = class;
 	IReplicatedTransaction = class;
 	IReplicatedSession = class;
+	IProfilerPlugin = class;
+	IProfilerSession = class;
 
 	FbException = class(Exception)
 	public
@@ -712,6 +714,22 @@ type
 	IReplicatedSession_startTransactionPtr = function(this: IReplicatedSession; status: IStatus; transaction: ITransaction; number: Int64): IReplicatedTransaction; cdecl;
 	IReplicatedSession_cleanupTransactionPtr = procedure(this: IReplicatedSession; status: IStatus; number: Int64); cdecl;
 	IReplicatedSession_setSequencePtr = procedure(this: IReplicatedSession; status: IStatus; name: PAnsiChar; value: Int64); cdecl;
+	IProfilerPlugin_initPtr = procedure(this: IProfilerPlugin; status: IStatus; attachment: IAttachment; transaction: ITransaction); cdecl;
+	IProfilerPlugin_startSessionPtr = function(this: IProfilerPlugin; status: IStatus; transaction: ITransaction; description: PAnsiChar; timestamp: ISC_TIMESTAMP_TZ): IProfilerSession; cdecl;
+	IProfilerPlugin_flushPtr = procedure(this: IProfilerPlugin; status: IStatus; transaction: ITransaction); cdecl;
+	IProfilerSession_getIdPtr = function(this: IProfilerSession): Int64; cdecl;
+	IProfilerSession_getFlagsPtr = function(this: IProfilerSession): Cardinal; cdecl;
+	IProfilerSession_finishPtr = procedure(this: IProfilerSession; status: IStatus; timestamp: ISC_TIMESTAMP_TZ); cdecl;
+	IProfilerSession_defineStatementPtr = procedure(this: IProfilerSession; status: IStatus; statementId: Int64; parentStatementId: Int64; type_: PAnsiChar; packageName: PAnsiChar; routineName: PAnsiChar; sqlText: PAnsiChar); cdecl;
+	IProfilerSession_defineRecordSourcePtr = procedure(this: IProfilerSession; statementId: Int64; cursorId: Cardinal; recSourceId: Cardinal; accessPath: PAnsiChar; parentRecSourceId: Cardinal); cdecl;
+	IProfilerSession_onRequestStartPtr = procedure(this: IProfilerSession; status: IStatus; requestId: Int64; statementId: Int64; callerRequestId: Int64; timestamp: ISC_TIMESTAMP_TZ); cdecl;
+	IProfilerSession_onRequestFinishPtr = procedure(this: IProfilerSession; status: IStatus; requestId: Int64; timestamp: ISC_TIMESTAMP_TZ); cdecl;
+	IProfilerSession_beforePsqlLineColumnPtr = procedure(this: IProfilerSession; requestId: Int64; line: Cardinal; column: Cardinal); cdecl;
+	IProfilerSession_afterPsqlLineColumnPtr = procedure(this: IProfilerSession; requestId: Int64; line: Cardinal; column: Cardinal; runTime: QWord); cdecl;
+	IProfilerSession_beforeRecordSourceOpenPtr = procedure(this: IProfilerSession; requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal); cdecl;
+	IProfilerSession_afterRecordSourceOpenPtr = procedure(this: IProfilerSession; requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal; runTime: QWord); cdecl;
+	IProfilerSession_beforeRecordSourceGetRecordPtr = procedure(this: IProfilerSession; requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal); cdecl;
+	IProfilerSession_afterRecordSourceGetRecordPtr = procedure(this: IProfilerSession; requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal; runTime: QWord); cdecl;
 
 	VersionedVTable = class
 		version: NativeInt;
@@ -1079,7 +1097,8 @@ type
 		const TYPE_DB_CRYPT = Cardinal(9);
 		const TYPE_KEY_HOLDER = Cardinal(10);
 		const TYPE_REPLICATOR = Cardinal(11);
-		const TYPE_COUNT = Cardinal(12);
+		const TYPE_PROFILER = Cardinal(12);
+		const TYPE_COUNT = Cardinal(13);
 
 		procedure registerPluginFactory(pluginType: Cardinal; defaultName: PAnsiChar; factory: IPluginFactory);
 		procedure registerModule(cleanup: IPluginModule);
@@ -3744,6 +3763,87 @@ type
 		function startTransaction(status: IStatus; transaction: ITransaction; number: Int64): IReplicatedTransaction; virtual; abstract;
 		procedure cleanupTransaction(status: IStatus; number: Int64); virtual; abstract;
 		procedure setSequence(status: IStatus; name: PAnsiChar; value: Int64); virtual; abstract;
+	end;
+
+	ProfilerPluginVTable = class(PluginBaseVTable)
+		init: IProfilerPlugin_initPtr;
+		startSession: IProfilerPlugin_startSessionPtr;
+		flush: IProfilerPlugin_flushPtr;
+	end;
+
+	IProfilerPlugin = class(IPluginBase)
+		const VERSION = 4;
+
+		procedure init(status: IStatus; attachment: IAttachment; transaction: ITransaction);
+		function startSession(status: IStatus; transaction: ITransaction; description: PAnsiChar; timestamp: ISC_TIMESTAMP_TZ): IProfilerSession;
+		procedure flush(status: IStatus; transaction: ITransaction);
+	end;
+
+	IProfilerPluginImpl = class(IProfilerPlugin)
+		constructor create;
+
+		procedure addRef(); virtual; abstract;
+		function release(): Integer; virtual; abstract;
+		procedure setOwner(r: IReferenceCounted); virtual; abstract;
+		function getOwner(): IReferenceCounted; virtual; abstract;
+		procedure init(status: IStatus; attachment: IAttachment; transaction: ITransaction); virtual; abstract;
+		function startSession(status: IStatus; transaction: ITransaction; description: PAnsiChar; timestamp: ISC_TIMESTAMP_TZ): IProfilerSession; virtual; abstract;
+		procedure flush(status: IStatus; transaction: ITransaction); virtual; abstract;
+	end;
+
+	ProfilerSessionVTable = class(DisposableVTable)
+		getId: IProfilerSession_getIdPtr;
+		getFlags: IProfilerSession_getFlagsPtr;
+		finish: IProfilerSession_finishPtr;
+		defineStatement: IProfilerSession_defineStatementPtr;
+		defineRecordSource: IProfilerSession_defineRecordSourcePtr;
+		onRequestStart: IProfilerSession_onRequestStartPtr;
+		onRequestFinish: IProfilerSession_onRequestFinishPtr;
+		beforePsqlLineColumn: IProfilerSession_beforePsqlLineColumnPtr;
+		afterPsqlLineColumn: IProfilerSession_afterPsqlLineColumnPtr;
+		beforeRecordSourceOpen: IProfilerSession_beforeRecordSourceOpenPtr;
+		afterRecordSourceOpen: IProfilerSession_afterRecordSourceOpenPtr;
+		beforeRecordSourceGetRecord: IProfilerSession_beforeRecordSourceGetRecordPtr;
+		afterRecordSourceGetRecord: IProfilerSession_afterRecordSourceGetRecordPtr;
+	end;
+
+	IProfilerSession = class(IDisposable)
+		const VERSION = 3;
+		const FLAG_BEFORE_EVENTS = Cardinal($1);
+		const FLAG_AFTER_EVENTS = Cardinal($2);
+
+		function getId(): Int64;
+		function getFlags(): Cardinal;
+		procedure finish(status: IStatus; timestamp: ISC_TIMESTAMP_TZ);
+		procedure defineStatement(status: IStatus; statementId: Int64; parentStatementId: Int64; type_: PAnsiChar; packageName: PAnsiChar; routineName: PAnsiChar; sqlText: PAnsiChar);
+		procedure defineRecordSource(statementId: Int64; cursorId: Cardinal; recSourceId: Cardinal; accessPath: PAnsiChar; parentRecSourceId: Cardinal);
+		procedure onRequestStart(status: IStatus; requestId: Int64; statementId: Int64; callerRequestId: Int64; timestamp: ISC_TIMESTAMP_TZ);
+		procedure onRequestFinish(status: IStatus; requestId: Int64; timestamp: ISC_TIMESTAMP_TZ);
+		procedure beforePsqlLineColumn(requestId: Int64; line: Cardinal; column: Cardinal);
+		procedure afterPsqlLineColumn(requestId: Int64; line: Cardinal; column: Cardinal; runTime: QWord);
+		procedure beforeRecordSourceOpen(requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal);
+		procedure afterRecordSourceOpen(requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal; runTime: QWord);
+		procedure beforeRecordSourceGetRecord(requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal);
+		procedure afterRecordSourceGetRecord(requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal; runTime: QWord);
+	end;
+
+	IProfilerSessionImpl = class(IProfilerSession)
+		constructor create;
+
+		procedure dispose(); virtual; abstract;
+		function getId(): Int64; virtual; abstract;
+		function getFlags(): Cardinal; virtual; abstract;
+		procedure finish(status: IStatus; timestamp: ISC_TIMESTAMP_TZ); virtual; abstract;
+		procedure defineStatement(status: IStatus; statementId: Int64; parentStatementId: Int64; type_: PAnsiChar; packageName: PAnsiChar; routineName: PAnsiChar; sqlText: PAnsiChar); virtual; abstract;
+		procedure defineRecordSource(statementId: Int64; cursorId: Cardinal; recSourceId: Cardinal; accessPath: PAnsiChar; parentRecSourceId: Cardinal); virtual; abstract;
+		procedure onRequestStart(status: IStatus; requestId: Int64; statementId: Int64; callerRequestId: Int64; timestamp: ISC_TIMESTAMP_TZ); virtual; abstract;
+		procedure onRequestFinish(status: IStatus; requestId: Int64; timestamp: ISC_TIMESTAMP_TZ); virtual; abstract;
+		procedure beforePsqlLineColumn(requestId: Int64; line: Cardinal; column: Cardinal); virtual; abstract;
+		procedure afterPsqlLineColumn(requestId: Int64; line: Cardinal; column: Cardinal; runTime: QWord); virtual; abstract;
+		procedure beforeRecordSourceOpen(requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal); virtual; abstract;
+		procedure afterRecordSourceOpen(requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal; runTime: QWord); virtual; abstract;
+		procedure beforeRecordSourceGetRecord(requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal); virtual; abstract;
+		procedure afterRecordSourceGetRecord(requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal; runTime: QWord); virtual; abstract;
 	end;
 
 	function fb_get_master_interface : IMaster; cdecl; external 'fbclient';
@@ -8839,6 +8939,93 @@ procedure IReplicatedSession.setSequence(status: IStatus; name: PAnsiChar; value
 begin
 	ReplicatedSessionVTable(vTable).setSequence(Self, status, name, value);
 	FbException.checkException(status);
+end;
+
+procedure IProfilerPlugin.init(status: IStatus; attachment: IAttachment; transaction: ITransaction);
+begin
+	ProfilerPluginVTable(vTable).init(Self, status, attachment, transaction);
+	FbException.checkException(status);
+end;
+
+function IProfilerPlugin.startSession(status: IStatus; transaction: ITransaction; description: PAnsiChar; timestamp: ISC_TIMESTAMP_TZ): IProfilerSession;
+begin
+	Result := ProfilerPluginVTable(vTable).startSession(Self, status, transaction, description, timestamp);
+	FbException.checkException(status);
+end;
+
+procedure IProfilerPlugin.flush(status: IStatus; transaction: ITransaction);
+begin
+	ProfilerPluginVTable(vTable).flush(Self, status, transaction);
+	FbException.checkException(status);
+end;
+
+function IProfilerSession.getId(): Int64;
+begin
+	Result := ProfilerSessionVTable(vTable).getId(Self);
+end;
+
+function IProfilerSession.getFlags(): Cardinal;
+begin
+	Result := ProfilerSessionVTable(vTable).getFlags(Self);
+end;
+
+procedure IProfilerSession.finish(status: IStatus; timestamp: ISC_TIMESTAMP_TZ);
+begin
+	ProfilerSessionVTable(vTable).finish(Self, status, timestamp);
+	FbException.checkException(status);
+end;
+
+procedure IProfilerSession.defineStatement(status: IStatus; statementId: Int64; parentStatementId: Int64; type_: PAnsiChar; packageName: PAnsiChar; routineName: PAnsiChar; sqlText: PAnsiChar);
+begin
+	ProfilerSessionVTable(vTable).defineStatement(Self, status, statementId, parentStatementId, type_, packageName, routineName, sqlText);
+	FbException.checkException(status);
+end;
+
+procedure IProfilerSession.defineRecordSource(statementId: Int64; cursorId: Cardinal; recSourceId: Cardinal; accessPath: PAnsiChar; parentRecSourceId: Cardinal);
+begin
+	ProfilerSessionVTable(vTable).defineRecordSource(Self, statementId, cursorId, recSourceId, accessPath, parentRecSourceId);
+end;
+
+procedure IProfilerSession.onRequestStart(status: IStatus; requestId: Int64; statementId: Int64; callerRequestId: Int64; timestamp: ISC_TIMESTAMP_TZ);
+begin
+	ProfilerSessionVTable(vTable).onRequestStart(Self, status, requestId, statementId, callerRequestId, timestamp);
+	FbException.checkException(status);
+end;
+
+procedure IProfilerSession.onRequestFinish(status: IStatus; requestId: Int64; timestamp: ISC_TIMESTAMP_TZ);
+begin
+	ProfilerSessionVTable(vTable).onRequestFinish(Self, status, requestId, timestamp);
+	FbException.checkException(status);
+end;
+
+procedure IProfilerSession.beforePsqlLineColumn(requestId: Int64; line: Cardinal; column: Cardinal);
+begin
+	ProfilerSessionVTable(vTable).beforePsqlLineColumn(Self, requestId, line, column);
+end;
+
+procedure IProfilerSession.afterPsqlLineColumn(requestId: Int64; line: Cardinal; column: Cardinal; runTime: QWord);
+begin
+	ProfilerSessionVTable(vTable).afterPsqlLineColumn(Self, requestId, line, column, runTime);
+end;
+
+procedure IProfilerSession.beforeRecordSourceOpen(requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal);
+begin
+	ProfilerSessionVTable(vTable).beforeRecordSourceOpen(Self, requestId, cursorId, recSourceId);
+end;
+
+procedure IProfilerSession.afterRecordSourceOpen(requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal; runTime: QWord);
+begin
+	ProfilerSessionVTable(vTable).afterRecordSourceOpen(Self, requestId, cursorId, recSourceId, runTime);
+end;
+
+procedure IProfilerSession.beforeRecordSourceGetRecord(requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal);
+begin
+	ProfilerSessionVTable(vTable).beforeRecordSourceGetRecord(Self, requestId, cursorId, recSourceId);
+end;
+
+procedure IProfilerSession.afterRecordSourceGetRecord(requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal; runTime: QWord);
+begin
+	ProfilerSessionVTable(vTable).afterRecordSourceGetRecord(Self, requestId, cursorId, recSourceId, runTime);
 end;
 
 var
@@ -15343,6 +15530,211 @@ begin
 	vTable := IReplicatedSessionImpl_vTable;
 end;
 
+procedure IProfilerPluginImpl_addRefDispatcher(this: IProfilerPlugin); cdecl;
+begin
+	try
+		IProfilerPluginImpl(this).addRef();
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+function IProfilerPluginImpl_releaseDispatcher(this: IProfilerPlugin): Integer; cdecl;
+begin
+	try
+		Result := IProfilerPluginImpl(this).release();
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+procedure IProfilerPluginImpl_setOwnerDispatcher(this: IProfilerPlugin; r: IReferenceCounted); cdecl;
+begin
+	try
+		IProfilerPluginImpl(this).setOwner(r);
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+function IProfilerPluginImpl_getOwnerDispatcher(this: IProfilerPlugin): IReferenceCounted; cdecl;
+begin
+	try
+		Result := IProfilerPluginImpl(this).getOwner();
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+procedure IProfilerPluginImpl_initDispatcher(this: IProfilerPlugin; status: IStatus; attachment: IAttachment; transaction: ITransaction); cdecl;
+begin
+	try
+		IProfilerPluginImpl(this).init(status, attachment, transaction);
+	except
+		on e: Exception do FbException.catchException(status, e);
+	end
+end;
+
+function IProfilerPluginImpl_startSessionDispatcher(this: IProfilerPlugin; status: IStatus; transaction: ITransaction; description: PAnsiChar; timestamp: ISC_TIMESTAMP_TZ): IProfilerSession; cdecl;
+begin
+	try
+		Result := IProfilerPluginImpl(this).startSession(status, transaction, description, timestamp);
+	except
+		on e: Exception do FbException.catchException(status, e);
+	end
+end;
+
+procedure IProfilerPluginImpl_flushDispatcher(this: IProfilerPlugin; status: IStatus; transaction: ITransaction); cdecl;
+begin
+	try
+		IProfilerPluginImpl(this).flush(status, transaction);
+	except
+		on e: Exception do FbException.catchException(status, e);
+	end
+end;
+
+var
+	IProfilerPluginImpl_vTable: ProfilerPluginVTable;
+
+constructor IProfilerPluginImpl.create;
+begin
+	vTable := IProfilerPluginImpl_vTable;
+end;
+
+procedure IProfilerSessionImpl_disposeDispatcher(this: IProfilerSession); cdecl;
+begin
+	try
+		IProfilerSessionImpl(this).dispose();
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+function IProfilerSessionImpl_getIdDispatcher(this: IProfilerSession): Int64; cdecl;
+begin
+	try
+		Result := IProfilerSessionImpl(this).getId();
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+function IProfilerSessionImpl_getFlagsDispatcher(this: IProfilerSession): Cardinal; cdecl;
+begin
+	try
+		Result := IProfilerSessionImpl(this).getFlags();
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+procedure IProfilerSessionImpl_finishDispatcher(this: IProfilerSession; status: IStatus; timestamp: ISC_TIMESTAMP_TZ); cdecl;
+begin
+	try
+		IProfilerSessionImpl(this).finish(status, timestamp);
+	except
+		on e: Exception do FbException.catchException(status, e);
+	end
+end;
+
+procedure IProfilerSessionImpl_defineStatementDispatcher(this: IProfilerSession; status: IStatus; statementId: Int64; parentStatementId: Int64; type_: PAnsiChar; packageName: PAnsiChar; routineName: PAnsiChar; sqlText: PAnsiChar); cdecl;
+begin
+	try
+		IProfilerSessionImpl(this).defineStatement(status, statementId, parentStatementId, type_, packageName, routineName, sqlText);
+	except
+		on e: Exception do FbException.catchException(status, e);
+	end
+end;
+
+procedure IProfilerSessionImpl_defineRecordSourceDispatcher(this: IProfilerSession; statementId: Int64; cursorId: Cardinal; recSourceId: Cardinal; accessPath: PAnsiChar; parentRecSourceId: Cardinal); cdecl;
+begin
+	try
+		IProfilerSessionImpl(this).defineRecordSource(statementId, cursorId, recSourceId, accessPath, parentRecSourceId);
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+procedure IProfilerSessionImpl_onRequestStartDispatcher(this: IProfilerSession; status: IStatus; requestId: Int64; statementId: Int64; callerRequestId: Int64; timestamp: ISC_TIMESTAMP_TZ); cdecl;
+begin
+	try
+		IProfilerSessionImpl(this).onRequestStart(status, requestId, statementId, callerRequestId, timestamp);
+	except
+		on e: Exception do FbException.catchException(status, e);
+	end
+end;
+
+procedure IProfilerSessionImpl_onRequestFinishDispatcher(this: IProfilerSession; status: IStatus; requestId: Int64; timestamp: ISC_TIMESTAMP_TZ); cdecl;
+begin
+	try
+		IProfilerSessionImpl(this).onRequestFinish(status, requestId, timestamp);
+	except
+		on e: Exception do FbException.catchException(status, e);
+	end
+end;
+
+procedure IProfilerSessionImpl_beforePsqlLineColumnDispatcher(this: IProfilerSession; requestId: Int64; line: Cardinal; column: Cardinal); cdecl;
+begin
+	try
+		IProfilerSessionImpl(this).beforePsqlLineColumn(requestId, line, column);
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+procedure IProfilerSessionImpl_afterPsqlLineColumnDispatcher(this: IProfilerSession; requestId: Int64; line: Cardinal; column: Cardinal; runTime: QWord); cdecl;
+begin
+	try
+		IProfilerSessionImpl(this).afterPsqlLineColumn(requestId, line, column, runTime);
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+procedure IProfilerSessionImpl_beforeRecordSourceOpenDispatcher(this: IProfilerSession; requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal); cdecl;
+begin
+	try
+		IProfilerSessionImpl(this).beforeRecordSourceOpen(requestId, cursorId, recSourceId);
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+procedure IProfilerSessionImpl_afterRecordSourceOpenDispatcher(this: IProfilerSession; requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal; runTime: QWord); cdecl;
+begin
+	try
+		IProfilerSessionImpl(this).afterRecordSourceOpen(requestId, cursorId, recSourceId, runTime);
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+procedure IProfilerSessionImpl_beforeRecordSourceGetRecordDispatcher(this: IProfilerSession; requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal); cdecl;
+begin
+	try
+		IProfilerSessionImpl(this).beforeRecordSourceGetRecord(requestId, cursorId, recSourceId);
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+procedure IProfilerSessionImpl_afterRecordSourceGetRecordDispatcher(this: IProfilerSession; requestId: Int64; cursorId: Cardinal; recSourceId: Cardinal; runTime: QWord); cdecl;
+begin
+	try
+		IProfilerSessionImpl(this).afterRecordSourceGetRecord(requestId, cursorId, recSourceId, runTime);
+	except
+		on e: Exception do FbException.catchException(nil, e);
+	end
+end;
+
+var
+	IProfilerSessionImpl_vTable: ProfilerSessionVTable;
+
+constructor IProfilerSessionImpl.create;
+begin
+	vTable := IProfilerSessionImpl_vTable;
+end;
+
 constructor FbException.create(status: IStatus);
 begin
 	inherited Create('FbException');
@@ -16331,6 +16723,33 @@ initialization
 	IReplicatedSessionImpl_vTable.cleanupTransaction := @IReplicatedSessionImpl_cleanupTransactionDispatcher;
 	IReplicatedSessionImpl_vTable.setSequence := @IReplicatedSessionImpl_setSequenceDispatcher;
 
+	IProfilerPluginImpl_vTable := ProfilerPluginVTable.create;
+	IProfilerPluginImpl_vTable.version := 4;
+	IProfilerPluginImpl_vTable.addRef := @IProfilerPluginImpl_addRefDispatcher;
+	IProfilerPluginImpl_vTable.release := @IProfilerPluginImpl_releaseDispatcher;
+	IProfilerPluginImpl_vTable.setOwner := @IProfilerPluginImpl_setOwnerDispatcher;
+	IProfilerPluginImpl_vTable.getOwner := @IProfilerPluginImpl_getOwnerDispatcher;
+	IProfilerPluginImpl_vTable.init := @IProfilerPluginImpl_initDispatcher;
+	IProfilerPluginImpl_vTable.startSession := @IProfilerPluginImpl_startSessionDispatcher;
+	IProfilerPluginImpl_vTable.flush := @IProfilerPluginImpl_flushDispatcher;
+
+	IProfilerSessionImpl_vTable := ProfilerSessionVTable.create;
+	IProfilerSessionImpl_vTable.version := 3;
+	IProfilerSessionImpl_vTable.dispose := @IProfilerSessionImpl_disposeDispatcher;
+	IProfilerSessionImpl_vTable.getId := @IProfilerSessionImpl_getIdDispatcher;
+	IProfilerSessionImpl_vTable.getFlags := @IProfilerSessionImpl_getFlagsDispatcher;
+	IProfilerSessionImpl_vTable.finish := @IProfilerSessionImpl_finishDispatcher;
+	IProfilerSessionImpl_vTable.defineStatement := @IProfilerSessionImpl_defineStatementDispatcher;
+	IProfilerSessionImpl_vTable.defineRecordSource := @IProfilerSessionImpl_defineRecordSourceDispatcher;
+	IProfilerSessionImpl_vTable.onRequestStart := @IProfilerSessionImpl_onRequestStartDispatcher;
+	IProfilerSessionImpl_vTable.onRequestFinish := @IProfilerSessionImpl_onRequestFinishDispatcher;
+	IProfilerSessionImpl_vTable.beforePsqlLineColumn := @IProfilerSessionImpl_beforePsqlLineColumnDispatcher;
+	IProfilerSessionImpl_vTable.afterPsqlLineColumn := @IProfilerSessionImpl_afterPsqlLineColumnDispatcher;
+	IProfilerSessionImpl_vTable.beforeRecordSourceOpen := @IProfilerSessionImpl_beforeRecordSourceOpenDispatcher;
+	IProfilerSessionImpl_vTable.afterRecordSourceOpen := @IProfilerSessionImpl_afterRecordSourceOpenDispatcher;
+	IProfilerSessionImpl_vTable.beforeRecordSourceGetRecord := @IProfilerSessionImpl_beforeRecordSourceGetRecordDispatcher;
+	IProfilerSessionImpl_vTable.afterRecordSourceGetRecord := @IProfilerSessionImpl_afterRecordSourceGetRecordDispatcher;
+
 finalization
 	IVersionedImpl_vTable.destroy;
 	IReferenceCountedImpl_vTable.destroy;
@@ -16427,5 +16846,7 @@ finalization
 	IReplicatedRecordImpl_vTable.destroy;
 	IReplicatedTransactionImpl_vTable.destroy;
 	IReplicatedSessionImpl_vTable.destroy;
+	IProfilerPluginImpl_vTable.destroy;
+	IProfilerSessionImpl_vTable.destroy;
 
 end.

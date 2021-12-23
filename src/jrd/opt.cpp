@@ -79,6 +79,7 @@
 #include "../jrd/RecordSourceNodes.h"
 #include "../jrd/VirtualTable.h"
 #include "../jrd/Monitoring.h"
+#include "../jrd/ProfilerManager.h"
 #include "../jrd/TimeZone.h"
 #include "../jrd/UserManagement.h"
 #include "../common/classes/array.h"
@@ -462,7 +463,7 @@ string OPT_get_plan(thread_db* tdbb, const JrdStatement* statement, bool detaile
 		for (FB_SIZE_T i = 0; i < fors.getCount(); i++)
 		{
 			plan += detailed ? "\nSelect Expression" : "\nPLAN ";
-			fors[i]->print(tdbb, plan, detailed, 0);
+			fors[i]->print(tdbb, plan, detailed, 0, true);
 		}
 	}
 

@@ -648,10 +648,7 @@ void JrdStatement::release(thread_db* tdbb)
 
 	const auto attachment = tdbb->getAttachment();
 
-	FB_SIZE_T pos;
-	if (attachment->att_statements.find(this, pos))
-		attachment->att_statements.remove(pos);
-	else
+	if (!attachment->att_statements.findAndRemove(this))
 		fb_assert(false);
 
 	sqlText = NULL;

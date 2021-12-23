@@ -23,6 +23,7 @@
 #include "firebird.h"
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
+#include "../jrd/ProfilerManager.h"
 #include "../jrd/cmp_proto.h"
 
 #include "RecordSource.h"
@@ -105,7 +106,9 @@ Cursor::Cursor(CompilerScratch* csb, const RecordSource* rsb,
 
 void Cursor::open(thread_db* tdbb) const
 {
-	jrd_req* const request = tdbb->getRequest();
+	const auto request = tdbb->getRequest();
+	const auto attachment = tdbb->getAttachment();
+
 	Impure* impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_active = true;
@@ -132,7 +135,9 @@ bool Cursor::fetchNext(thread_db* tdbb) const
 	if (!validate(tdbb))
 		return false;
 
-	jrd_req* const request = tdbb->getRequest();
+	const auto request = tdbb->getRequest();
+	const auto attachment = tdbb->getAttachment();
+
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!impure->irsb_active)
@@ -197,7 +202,9 @@ bool Cursor::fetchPrior(thread_db* tdbb) const
 	if (!validate(tdbb))
 		return false;
 
-	jrd_req* const request = tdbb->getRequest();
+	const auto request = tdbb->getRequest();
+	const auto attachment = tdbb->getAttachment();
+
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!impure->irsb_active)
@@ -274,7 +281,9 @@ bool Cursor::fetchAbsolute(thread_db* tdbb, SINT64 offset) const
 	if (!validate(tdbb))
 		return false;
 
-	jrd_req* const request = tdbb->getRequest();
+	const auto request = tdbb->getRequest();
+	const auto attachment = tdbb->getAttachment();
+
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!impure->irsb_active)
@@ -323,7 +332,9 @@ bool Cursor::fetchRelative(thread_db* tdbb, SINT64 offset) const
 	if (!validate(tdbb))
 		return false;
 
-	jrd_req* const request = tdbb->getRequest();
+	const auto request = tdbb->getRequest();
+	const auto attachment = tdbb->getAttachment();
+
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!impure->irsb_active)

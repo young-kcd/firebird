@@ -515,6 +515,8 @@ RecordSource* CMP_post_rse(thread_db* tdbb, CompilerScratch* csb, RseNode* rse)
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(rse, type_nod);
 
+	AutoSetRestore<ULONG> autoCurrentCursorProfileId(&csb->csb_currentCursorProfileId, csb->csb_nextCursorProfileId++);
+
 	RecordSource* rsb = OPT_compile(tdbb, csb, rse, NULL);
 
 	if (rse->flags & RseNode::FLAG_SINGULAR)
