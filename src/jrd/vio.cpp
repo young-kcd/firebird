@@ -238,6 +238,7 @@ inline void check_gbak_cheating_insupd(thread_db* tdbb, const jrd_rel* relation,
 inline void check_gbak_cheating_delete(thread_db* tdbb, const jrd_rel* relation)
 {
 	const Attachment* const attachment = tdbb->getAttachment();
+	const jrd_tra* const transaction = tdbb->getTransaction();
 
 	if (relation->isSystem() && attachment->isGbak())
 	{
@@ -2525,6 +2526,8 @@ bool VIO_get_current(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
+
+	Attachment* const attachment = tdbb->getAttachment();
 
 #ifdef VIO_DEBUG
 	jrd_rel* relation = rpb->rpb_relation;
@@ -5192,12 +5195,12 @@ static void list_staying_fast(thread_db* tdbb, record_param* rpb, RecordStack& s
 		}
 	}
 
-	///const TraNumber oldest_active = tdbb->getTransaction()->tra_oldest_active;
+	const TraNumber oldest_active = tdbb->getTransaction()->tra_oldest_active;
 
 	while (temp.rpb_b_page)
 	{
-		///ULONG page = temp.rpb_page = temp.rpb_b_page;
-		///USHORT line = temp.rpb_line = temp.rpb_b_line;
+		ULONG page = temp.rpb_page = temp.rpb_b_page;
+		USHORT line = temp.rpb_line = temp.rpb_b_line;
 		temp.rpb_record = NULL;
 
 		if (temp.rpb_flags & rpb_delta)
