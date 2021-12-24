@@ -239,59 +239,48 @@ void GEN_request(DsqlCompilerScratch* scratch, DmlNode* node)
 	else
 		scratch->appendUChar(blr_version5);
 
-	if (statement->getType() == DsqlCompiledStatement::TYPE_SAVEPOINT)
+	const bool block = statement->getType() == DsqlCompiledStatement::TYPE_EXEC_BLOCK ||
+		statement->getType() == DsqlCompiledStatement::TYPE_SELECT_BLOCK;
+
+	// To parse sub-routines messages, they must not have that begin...end pair.
+	// And since it appears to be unnecessary for execute block too, do not generate them.
+	if (!block)
+		scratch->appendUChar(blr_begin);
+
+	GEN_hidden_variables(scratch);
+
+	switch (statement->getType())
 	{
-		// Do not generate BEGIN..END block around savepoint statement
-		// to avoid breaking of savepoint logic
-		statement->setSendMsg(NULL);
-		statement->setReceiveMsg(NULL);
+	case DsqlCompiledStatement::TYPE_SELECT:
+	case DsqlCompiledStatement::TYPE_SELECT_UPD:
+	case DsqlCompiledStatement::TYPE_EXEC_BLOCK:
+	case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
 		node->genBlr(scratch);
-	}
-	else
-	{
-		const bool block = statement->getType() == DsqlCompiledStatement::TYPE_EXEC_BLOCK ||
-			statement->getType() == DsqlCompiledStatement::TYPE_SELECT_BLOCK;
+		break;
 
-		// To parse sub-routines messages, they must not have that begin...end pair.
-		// And since it appears to be unnecessary for execute block too, do not generate them.
-		if (!block)
-			scratch->appendUChar(blr_begin);
-
-		GEN_hidden_variables(scratch);
-
-		switch (statement->getType())
+	///case DsqlCompiledStatement::TYPE_RETURNING_CURSOR:
+	default:
 		{
-		case DsqlCompiledStatement::TYPE_SELECT:
-		case DsqlCompiledStatement::TYPE_SELECT_UPD:
-		case DsqlCompiledStatement::TYPE_EXEC_BLOCK:
-		case DsqlCompiledStatement::TYPE_SELECT_BLOCK:
-			node->genBlr(scratch);
-			break;
-
-		///case DsqlCompiledStatement::TYPE_RETURNING_CURSOR:
-		default:
+			dsql_msg* message = statement->getSendMsg();
+			if (!message->msg_parameter)
+				statement->setSendMsg(NULL);
+			else
 			{
-				dsql_msg* message = statement->getSendMsg();
-				if (!message->msg_parameter)
-					statement->setSendMsg(NULL);
-				else
-				{
-					GEN_port(scratch, message);
-					scratch->appendUChar(blr_receive_batch);
-					scratch->appendUChar(message->msg_number);
-				}
-				message = statement->getReceiveMsg();
-				if (!message->msg_parameter)
-					statement->setReceiveMsg(NULL);
-				else
-					GEN_port(scratch, message);
-				node->genBlr(scratch);
+				GEN_port(scratch, message);
+				scratch->appendUChar(blr_receive_batch);
+				scratch->appendUChar(message->msg_number);
 			}
+			message = statement->getReceiveMsg();
+			if (!message->msg_parameter)
+				statement->setReceiveMsg(NULL);
+			else
+				GEN_port(scratch, message);
+			node->genBlr(scratch);
 		}
-
-		if (!block)
-			scratch->appendUChar(blr_end);
 	}
+
+	if (!block)
+		scratch->appendUChar(blr_end);
 
 	scratch->appendUChar(blr_eoc);
 }

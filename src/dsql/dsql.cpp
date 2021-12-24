@@ -697,8 +697,7 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch, boo
 
 bool DsqlDmlRequest::needRestarts()
 {
-	return (req_transaction && (req_transaction->tra_flags & TRA_read_consistency) &&
-		statement->getType() != DsqlCompiledStatement::TYPE_SAVEPOINT);
+	return (req_transaction && (req_transaction->tra_flags & TRA_read_consistency));
 };
 
 // Execute a dynamic SQL statement
