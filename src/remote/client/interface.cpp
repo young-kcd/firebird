@@ -700,7 +700,7 @@ void registerRedirector(Firebird::IPluginManager* iPlugin)
 } // namespace Remote
 
 /*
-extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* master)
+extern "C" FB_DLL_EXPORT void FB_PLUGIN_ENTRY_POINT(IMaster* master)
 {
 	IPluginManager* pi = master->getPluginManager();
 	registerRedirector(pi);
@@ -1634,7 +1634,7 @@ void Attachment::freeClientData(CheckStatusWrapper* status, bool force)
 			// telling the user that an unrecoverable network error occurred and that
 			// if there was any uncommitted work, its gone......  Oh well....
 			ex.stuffException(status);
-			
+
 			if (!fb_utils::isNetworkError(status->getErrors()[1]) && (!force))
 			{
 				return;
@@ -3981,7 +3981,7 @@ Firebird::IEvents* Attachment::queEvents(CheckStatusWrapper* status, Firebird::I
 			port->connect(packet);
 
 			rem_port* port_async = port->port_async;
-			port_async->port_events_threadId = 
+			port_async->port_events_threadId =
 				Thread::start(event_thread, port_async, THREAD_high, &port_async->port_events_thread);
 
 			port_async->port_context = rdb;
