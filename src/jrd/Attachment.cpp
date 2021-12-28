@@ -132,8 +132,13 @@ void Jrd::Attachment::destroy(Attachment* const attachment)
 	}
 
 	Database* const dbb = attachment->att_database;
-	attachment->att_delayed_delete.garbageCollect(HazardDelayedDelete::GarbageCollectMethod::GC_FORCE);
-	dbb->dbb_delayed_delete.delayedDelete(attachment->att_delayed_delete.getHazardPointers());
+	{
+		// context scope is needed here for correct GC of hazard pointers
+		ThreadContextHolder tdbb(dbb, attachment);
+
+		attachment->att_delayed_delete.garbageCollect(HazardDelayedDelete::GarbageCollectMethod::GC_FORCE);
+		dbb->dbb_delayed_delete.delayedDelete(attachment->att_delayed_delete.getHazardPointers());
+	}
 
 	MemoryPool* const pool = attachment->att_pool;
 	Firebird::MemoryStats temp_stats;

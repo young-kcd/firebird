@@ -208,7 +208,7 @@ class MetadataCache : public Firebird::PermanentStorage
 			for (FB_SIZE_T pos = 0; pos < m_objects.getCount(); ++pos)
 			{
 				Hazard<Object> val(tdbb, m_objects[pos]);
-				if (val->getKey() == key)
+				if (val.hasData() && val->getKey() == key)
 					return (SLONG) pos;
 			}
 
@@ -341,14 +341,12 @@ public:
 
 	bool getSequence(thread_db* tdbb, SLONG id, MetaName& name)
 	{
-		GenObject genObj;
-		// !!!!!!!!!!!!!!!! Hazard<GenObject> hp(tdbb, &genObj);
 		Hazard<GenObject> hp(tdbb);
 
 		if (!mdc_generators.load(id, hp))
 			return false;
 
-		name = genObj.value;
+		name = hp->value;
 		return true;
 	}
 

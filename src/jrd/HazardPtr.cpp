@@ -146,7 +146,9 @@ void HazardDelayedDelete::garbageCollect(GarbageCollectMethod gcMethod)
 	LocalHP localCopy;
 	localCopy.setSortMode(FB_ARRAY_SORT_MANUAL);
 	{
-		SyncLockGuard dbbSync(&database->dbb_sync, SYNC_SHARED, FB_FUNCTION);
+		Sync dbbSync(&database->dbb_sync, FB_FUNCTION);
+		if (!database->dbb_sync.ourExclusiveLock())
+			dbbSync.lock(SYNC_SHARED);
 
 		copyHazardPointers(tdbb, localCopy, database->dbb_attachments);
 		copyHazardPointers(tdbb, localCopy, database->dbb_sys_attachments);
