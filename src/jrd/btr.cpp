@@ -577,9 +577,9 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 		Jrd::ContextPoolHolder context(tdbb, expr_request->req_pool);
 
 		if (org_request)
-			expr_request->req_gmt_timestamp = org_request->req_gmt_timestamp;
+			expr_request->setGmtTimeStamp(org_request->getGmtTimeStamp());
 		else
-			TimeZoneUtil::validateGmtTimeStamp(expr_request->req_gmt_timestamp);
+			expr_request->validateTimeStamp();
 
 		if (!(result = EVL_expr(tdbb, expr_request, idx->idx_expression)))
 			result = &idx->idx_expression_desc;
@@ -594,7 +594,7 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 		expr_request->req_caller = NULL;
 		expr_request->req_flags &= ~req_in_use;
 		expr_request->req_attachment = NULL;
-		expr_request->req_gmt_timestamp.invalidate();
+		expr_request->invalidateTimeStamp();
 
 		throw;
 	}
@@ -605,7 +605,7 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 	expr_request->req_caller = NULL;
 	expr_request->req_flags &= ~req_in_use;
 	expr_request->req_attachment = NULL;
-	expr_request->req_gmt_timestamp.invalidate();
+	expr_request->invalidateTimeStamp();
 
 	return result;
 }
@@ -3443,9 +3443,9 @@ static ULONG fast_load(thread_db* tdbb,
 
 		// Detect the case when set of duplicate keys contains more then one key
 		// from primary record version. It breaks the unique constraint and must
-		// be rejected. Note, it is not always could be detected while sorting. 
-		// Set to true when primary record version is found in current set of 
-		// duplicate keys.		
+		// be rejected. Note, it is not always could be detected while sorting.
+		// Set to true when primary record version is found in current set of
+		// duplicate keys.
 		bool primarySeen = false;
 
 		while (!error)
@@ -6405,7 +6405,7 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
 								break;
 
 							// node contains more bytes than a key, check numbers
-							// of last key segment and current node segment.  
+							// of last key segment and current node segment.
 
 							fb_assert(!descending);
 							fb_assert(p - STUFF_COUNT - 1 >= key->key_data);
@@ -6415,7 +6415,7 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
 
 							fb_assert(keySeg <= nodeSeg);
 
-							// If current segment at node is the same as last segment 
+							// If current segment at node is the same as last segment
 							// of the key then node > key.
 							if (keySeg == nodeSeg)
 								return false;

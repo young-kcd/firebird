@@ -241,7 +241,7 @@ Applier* Applier::create(thread_db* tdbb)
 	AutoPtr<CompilerScratch> csb(FB_NEW_POOL(*req_pool) CompilerScratch(*req_pool));
 
 	const auto request = JrdStatement::makeRequest(tdbb, csb, true);
-	TimeZoneUtil::validateGmtTimeStamp(request->req_gmt_timestamp);
+	request->validateTimeStamp();
 	request->req_attachment = attachment;
 
 	auto& att_pool = *attachment->att_pool;
