@@ -4273,11 +4273,7 @@ dsc* CurrentTimeNode::execute(thread_db* tdbb, jrd_req* request) const
 	request->req_flags &= ~req_null;
 
 	// Use the request timestamp.
-	ISC_TIMESTAMP_TZ currentTimeStamp = request->getTimeStampTz();
-
-	impure->vlu_misc.vlu_sql_time_tz.time_zone = tdbb->getAttachment()->att_current_timezone;
-	impure->vlu_misc.vlu_sql_time_tz.utc_time = TimeZoneUtil::timeStampTzToTimeTz(currentTimeStamp).utc_time;
-
+	impure->vlu_misc.vlu_sql_time_tz = request->getTimeTz();
 	TimeStamp::round_time(impure->vlu_misc.vlu_sql_time_tz.utc_time, precision);
 
 	impure->vlu_desc.makeTimeTz(&impure->vlu_misc.vlu_sql_time_tz);
