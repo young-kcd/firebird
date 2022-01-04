@@ -167,6 +167,104 @@ private:
 
 class jrd_req : public pool_alloc<type_req>
 {
+private:
+	class TimeStampCache
+	{
+	public:
+		void invalidate()
+		{
+			gmtTimeStamp.invalidate();
+		}
+
+		ISC_TIMESTAMP getLocalTimeStamp(USHORT currentTimeZone) const
+		{
+			fb_assert(!gmtTimeStamp.isEmpty());
+
+			if (timeZone != currentTimeZone)
+				update(currentTimeZone);
+
+			return localTimeStamp;
+		}
+
+		ISC_TIMESTAMP getGmtTimeStamp() const
+		{
+			fb_assert(!gmtTimeStamp.isEmpty());
+			return gmtTimeStamp.value();
+		}
+
+		void setGmtTimeStamp(USHORT currentTimeZone, ISC_TIMESTAMP ts)
+		{
+			gmtTimeStamp = ts;
+			update(currentTimeZone);
+		}
+
+		ISC_TIMESTAMP_TZ getTimeStampTz(USHORT currentTimeZone) const
+		{
+			fb_assert(!gmtTimeStamp.isEmpty());
+
+			ISC_TIMESTAMP_TZ timeStampTz;
+			timeStampTz.utc_timestamp = gmtTimeStamp.value();
+			timeStampTz.time_zone = currentTimeZone;
+			return timeStampTz;
+		}
+
+		ISC_TIME_TZ getTimeTz(USHORT currentTimeZone) const
+		{
+			fb_assert(!gmtTimeStamp.isEmpty());
+
+			ISC_TIME_TZ timeTz;
+
+			if (timeZone != currentTimeZone)
+				update(currentTimeZone);
+
+			if (localTimeValid)
+			{
+				timeTz.utc_time = localTime;
+				timeTz.time_zone = timeZone;
+			}
+			else
+			{
+				ISC_TIMESTAMP_TZ timeStamp;
+				timeStamp.utc_timestamp = gmtTimeStamp.value();
+				timeStamp.time_zone = timeZone;
+
+				timeTz = Firebird::TimeZoneUtil::timeStampTzToTimeTz(timeStamp);
+
+				localTime = timeTz.utc_time;
+				localTimeValid = true;
+			}
+
+			return timeTz;
+		}
+
+		void validate(USHORT currentTimeZone)
+		{
+			if (gmtTimeStamp.isEmpty())
+			{
+				Firebird::TimeZoneUtil::validateGmtTimeStamp(gmtTimeStamp);
+				update(currentTimeZone);
+			}
+		}
+
+	private:
+		void update(USHORT currentTimeZone) const
+		{
+			localTimeStamp = Firebird::TimeZoneUtil::timeStampTzToTimeStamp(
+				getTimeStampTz(currentTimeZone), currentTimeZone);
+			timeZone = currentTimeZone;
+			localTimeValid = false;
+		}
+
+	private:
+		Firebird::TimeStamp gmtTimeStamp;		// Start time of request in GMT time zone
+
+		// These are valid only when !gmtTimeStamp.isEmpty(), so no initialization is necessary.
+		mutable ISC_TIMESTAMP localTimeStamp;	// Timestamp in timeZone's zone
+		mutable ISC_USHORT timeZone;			// Timezone borrowed from the attachment when updated
+		mutable ISC_TIME localTime;				// gmtTimeStamp converted to local time (WITH TZ)
+		mutable bool localTimeValid;			// localTime calculation is expensive. So is it valid (calculated)?
+	};
+
 public:
 	jrd_req(Attachment* attachment, /*const*/ JrdStatement* aStatement,
 			Firebird::MemoryStats* parent_stats)
@@ -234,13 +332,7 @@ public:
 private:
 	JrdStatement* const statement;
 	mutable StmtNumber	req_id;			// request identifier
-	Firebird::TimeStamp	req_gmt_timestamp;	// Start time of request in GMT time zone
-
-	// These are valid only when !req_gmt_timestamp.isEmpty(), so no initialization is necessary.
-	mutable ISC_TIMESTAMP req_local_timestamp;	// Timestamp in req_timezone's timezone
-	mutable ISC_USHORT req_timezone;			// Timezone borrowed from the attachment
-	mutable ISC_TIME req_local_time;			// req_gmt_timestamp converted to local time (WITH TZ)
-	mutable bool req_local_time_valid;			// req_local_time calculation is expensive. So is it valid (calculated)?
+	TimeStampCache req_timeStampCache;	// time stamp cache
 
 public:
 	MemoryPool* req_pool;
@@ -377,86 +469,37 @@ public:
 
 	void invalidateTimeStamp()
 	{
-		req_gmt_timestamp.invalidate();
+		req_timeStampCache.invalidate();
 	}
 
 	ISC_TIMESTAMP getLocalTimeStamp() const
 	{
-		fb_assert(!req_gmt_timestamp.isEmpty());
-
-		if (req_timezone != req_attachment->att_current_timezone)
-			updateLocalTimeStamp();
-
-		return req_local_timestamp;
+		return req_timeStampCache.getLocalTimeStamp(req_attachment->att_current_timezone);
 	}
 
 	ISC_TIMESTAMP getGmtTimeStamp() const
 	{
-		fb_assert(!req_gmt_timestamp.isEmpty());
-		return req_gmt_timestamp.value();
+		return req_timeStampCache.getGmtTimeStamp();
 	}
 
 	void setGmtTimeStamp(ISC_TIMESTAMP ts)
 	{
-		req_gmt_timestamp = ts;
-		updateLocalTimeStamp();
+		req_timeStampCache.setGmtTimeStamp(req_attachment->att_current_timezone, ts);
 	}
 
 	ISC_TIMESTAMP_TZ getTimeStampTz() const
 	{
-		fb_assert(!req_gmt_timestamp.isEmpty());
-
-		ISC_TIMESTAMP_TZ timeStampTz;
-		timeStampTz.utc_timestamp = req_gmt_timestamp.value();
-		timeStampTz.time_zone = req_attachment->att_current_timezone;
-		return timeStampTz;
+		return req_timeStampCache.getTimeStampTz(req_attachment->att_current_timezone);
 	}
 
 	ISC_TIME_TZ getTimeTz() const
 	{
-		fb_assert(!req_gmt_timestamp.isEmpty());
-
-		ISC_TIME_TZ timeTz;
-
-		if (req_timezone != req_attachment->att_current_timezone)
-			updateLocalTimeStamp();
-
-		if (req_local_time_valid)
-		{
-			timeTz.utc_time = req_local_time;
-			timeTz.time_zone = req_timezone;
-		}
-		else
-		{
-			ISC_TIMESTAMP_TZ timeStamp;
-			timeStamp.utc_timestamp = req_gmt_timestamp.value();
-			timeStamp.time_zone = req_timezone;
-
-			timeTz = Firebird::TimeZoneUtil::timeStampTzToTimeTz(timeStamp);
-
-			req_local_time = timeTz.utc_time;
-			req_local_time_valid = true;
-		}
-
-		return timeTz;
+		return req_timeStampCache.getTimeTz(req_attachment->att_current_timezone);
 	}
 
 	void validateTimeStamp()
 	{
-		if (req_gmt_timestamp.isEmpty())
-		{
-			Firebird::TimeZoneUtil::validateGmtTimeStamp(req_gmt_timestamp);
-			updateLocalTimeStamp();
-		}
-	}
-
-private:
-	void updateLocalTimeStamp() const
-	{
-		req_local_timestamp = Firebird::TimeZoneUtil::timeStampTzToTimeStamp(
-			getTimeStampTz(), req_attachment->att_current_timezone);
-		req_timezone = req_attachment->att_current_timezone;
-		req_local_time_valid = false;
+		req_timeStampCache.validate(req_attachment->att_current_timezone);
 	}
 };
 
