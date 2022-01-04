@@ -239,6 +239,8 @@ private:
 	// These are valid only when !req_gmt_timestamp.isEmpty(), so no initialization is necessary.
 	mutable ISC_TIMESTAMP req_local_timestamp;	// Timestamp in req_timezone's timezone
 	mutable ISC_USHORT req_timezone;			// Timezone borrowed from the attachment
+	mutable ISC_TIME req_local_time;			// req_gmt_timestamp converted to local time (WITH TZ)
+	mutable bool req_local_time_valid;			// req_local_time calculation is expensive. So is it valid (calculated)?
 
 public:
 	MemoryPool* req_pool;
@@ -410,6 +412,35 @@ public:
 		return timeStampTz;
 	}
 
+	ISC_TIME_TZ getTimeTz() const
+	{
+		fb_assert(!req_gmt_timestamp.isEmpty());
+
+		ISC_TIME_TZ timeTz;
+
+		if (req_timezone != req_attachment->att_current_timezone)
+			updateLocalTimeStamp();
+
+		if (req_local_time_valid)
+		{
+			timeTz.utc_time = req_local_time;
+			timeTz.time_zone = req_timezone;
+		}
+		else
+		{
+			ISC_TIMESTAMP_TZ timeStamp;
+			timeStamp.utc_timestamp = req_gmt_timestamp.value();
+			timeStamp.time_zone = req_timezone;
+
+			timeTz = Firebird::TimeZoneUtil::timeStampTzToTimeTz(timeStamp);
+
+			req_local_time = timeTz.utc_time;
+			req_local_time_valid = true;
+		}
+
+		return timeTz;
+	}
+
 	void validateTimeStamp()
 	{
 		if (req_gmt_timestamp.isEmpty())
@@ -425,6 +456,7 @@ private:
 		req_local_timestamp = Firebird::TimeZoneUtil::timeStampTzToTimeStamp(
 			getTimeStampTz(), req_attachment->att_current_timezone);
 		req_timezone = req_attachment->att_current_timezone;
+		req_local_time_valid = false;
 	}
 };
 
