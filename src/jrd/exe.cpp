@@ -1087,10 +1087,11 @@ static void execute_looper(thread_db* tdbb,
 
 	if (savNumber)
 	{
-		// There should be no other savepoint but the one started by ourselves.
-		// But just in case it suddenly happened, cleanup them all.
-		fb_assert(transaction->tra_save_point &&
-			transaction->tra_save_point->getNumber() == savNumber);
+		// Unless the looper returns after SUSPEND (this preserves existing savepoints),
+		// there should be no other savepoint but the one started by ourselves.
+		fb_assert((request->req_flags & req_stall) ||
+			(transaction->tra_save_point &&
+				transaction->tra_save_point->getNumber() == savNumber));
 
 		while (transaction->tra_save_point &&
 			transaction->tra_save_point->getNumber() >= savNumber)
