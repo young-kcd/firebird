@@ -315,7 +315,7 @@ public:
 	};
 
 private:
-	class IdleTimer FB_FINAL :
+	class IdleTimer final :
 		public Firebird::RefCntIface<Firebird::ITimerImpl<IdleTimer, Firebird::CheckStatusWrapper> >
 	{
 	public:

@@ -369,7 +369,7 @@ const USHORT WIN_garbage_collect	= 8;	// scan left a page for garbage collector
 
 
 #ifdef USE_ITIMER
-class TimeoutTimer FB_FINAL :
+class TimeoutTimer final :
 	public Firebird::RefCntIface<Firebird::ITimerImpl<TimeoutTimer, Firebird::CheckStatusWrapper> >
 {
 public:

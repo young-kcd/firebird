@@ -244,7 +244,7 @@ struct MonitoringHeader : public Firebird::MemoryHeader
 };
 
 
-class MonitoringData FB_FINAL : public Firebird::PermanentStorage, public Firebird::IpcObject
+class MonitoringData final : public Firebird::PermanentStorage, public Firebird::IpcObject
 {
 	static const USHORT MONITOR_VERSION = 5;
 	static const ULONG DEFAULT_SIZE = 1048576;

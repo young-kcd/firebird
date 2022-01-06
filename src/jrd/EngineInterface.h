@@ -48,7 +48,7 @@ class JStatement;
 class JAttachment;
 class JProvider;
 
-class JBlob FB_FINAL :
+class JBlob final :
 	public Firebird::RefCntIface<Firebird::IBlobImpl<JBlob, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -92,7 +92,7 @@ private:
 	void internalClose(Firebird::CheckStatusWrapper* status);
 };
 
-class JTransaction FB_FINAL :
+class JTransaction final :
 	public Firebird::RefCntIface<Firebird::ITransactionImpl<JTransaction, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -151,7 +151,7 @@ private:
 	void internalDisconnect(Firebird::CheckStatusWrapper* status);
 };
 
-class JResultSet FB_FINAL :
+class JResultSet final :
 	public Firebird::RefCntIface<Firebird::IResultSetImpl<JResultSet, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -193,7 +193,7 @@ private:
 	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JBatch FB_FINAL :
+class JBatch final :
 	public Firebird::RefCntIface<Firebird::IBatchImpl<JBatch, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -239,7 +239,7 @@ private:
 	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JReplicator FB_FINAL :
+class JReplicator final :
 	public Firebird::RefCntIface<Firebird::IReplicatorImpl<JReplicator, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -274,7 +274,7 @@ private:
 	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JStatement FB_FINAL :
+class JStatement final :
 	public Firebird::RefCntIface<Firebird::IStatementImpl<JStatement, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -325,7 +325,7 @@ private:
 	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JRequest FB_FINAL :
+class JRequest final :
 	public Firebird::RefCntIface<Firebird::IRequestImpl<JRequest, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -365,7 +365,7 @@ private:
 	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JEvents FB_FINAL : public Firebird::RefCntIface<Firebird::IEventsImpl<JEvents, Firebird::CheckStatusWrapper> >
+class JEvents final : public Firebird::RefCntIface<Firebird::IEventsImpl<JEvents, Firebird::CheckStatusWrapper> >
 {
 public:
 	// IEvents implementation
@@ -394,7 +394,7 @@ private:
 	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JAttachment FB_FINAL :
+class JAttachment final :
 	public Firebird::RefCntIface<Firebird::IAttachmentImpl<JAttachment, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -492,7 +492,7 @@ private:
 	void internalDropDatabase(Firebird::CheckStatusWrapper* status);
 };
 
-class JService FB_FINAL :
+class JService final :
 	public Firebird::RefCntIface<Firebird::IServiceImpl<JService, Firebird::CheckStatusWrapper> >
 {
 public:
@@ -515,7 +515,7 @@ private:
 	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JProvider FB_FINAL :
+class JProvider final :
 	public Firebird::StdPlugin<Firebird::IProviderImpl<JProvider, Firebird::CheckStatusWrapper> >
 {
 public:

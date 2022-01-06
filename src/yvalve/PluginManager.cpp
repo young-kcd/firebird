@@ -113,7 +113,7 @@ namespace
 
 	bool flShutdown = false;
 
-	class ConfigParameterAccess FB_FINAL :
+	class ConfigParameterAccess final :
 		public RefCntIface<IConfigEntryImpl<ConfigParameterAccess, CheckStatusWrapper> >
 	{
 	public:
@@ -147,7 +147,7 @@ namespace
 		const ConfigFile::Parameter* par;
 	};
 
-	class ConfigAccess FB_FINAL :
+	class ConfigAccess final :
 		public RefCntIface<IConfigImpl<ConfigAccess, CheckStatusWrapper> >
 	{
 	public:
@@ -432,7 +432,7 @@ namespace
 
 	// Provides most of configuration services for plugins,
 	// except per-database configuration in databases.conf
-	class ConfiguredPlugin FB_FINAL :
+	class ConfiguredPlugin final :
 		public RefCntIface<ITimerImpl<ConfiguredPlugin, CheckStatusWrapper> >
 	{
 	public:
@@ -517,7 +517,7 @@ namespace
 	};
 
 	// Provides per-database configuration from databases.conf.
-	class FactoryParameter FB_FINAL :
+	class FactoryParameter final :
 		public RefCntIface<IPluginConfigImpl<FactoryParameter, CheckStatusWrapper> >
 	{
 	public:
@@ -770,7 +770,7 @@ namespace
 
 
 	// Provides access to plugins of given type / name.
-	class PluginSet FB_FINAL : public RefCntIface<IPluginSetImpl<PluginSet, CheckStatusWrapper> >
+	class PluginSet final : public RefCntIface<IPluginSetImpl<PluginSet, CheckStatusWrapper> >
 	{
 	public:
 		// IPluginSet implementation

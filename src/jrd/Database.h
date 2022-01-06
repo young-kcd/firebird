@@ -370,7 +370,7 @@ public:
 		bool exist;
 	};
 
-	class Linger FB_FINAL :
+	class Linger final :
 		public Firebird::RefCntIface<Firebird::ITimerImpl<Linger, Firebird::CheckStatusWrapper> >
 	{
 	public:

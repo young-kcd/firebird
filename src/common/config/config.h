@@ -65,9 +65,9 @@
 				type getParameterName() const;
 		   form, for world-wide (global) parameters
 				static type getParameterName();
-		   should be used. Also, for world-wide parameters, values of default 
+		   should be used. Also, for world-wide parameters, values of default
 		   config instance (see getDefaultConfig()) should be used.
-		5. Macros CONFIG_GET_GLOBAL_XXX and CONFIG_GET_PER_DB_XXX helps to 
+		5. Macros CONFIG_GET_GLOBAL_XXX and CONFIG_GET_PER_DB_XXX helps to
 		   declare and implement trivial getXXX functions and to enforce rule (4).
 **/
 
@@ -432,7 +432,7 @@ public:
 
 
 	// CONFIG_GET_GLOBAL_XXX (CONFIG_GET_PER_DB_XXX) set of macros helps to
-	// create trivial static (non-static) getXXX functions. 
+	// create trivial static (non-static) getXXX functions.
 	// Correctness of declaration and implementation is enforced with help
 	// of entries[XXX].is_global.
 
@@ -627,7 +627,7 @@ public:
 };
 
 // Implementation of interface to access master configuration file
-class FirebirdConf FB_FINAL :
+class FirebirdConf final :
 	public RefCntIface<IFirebirdConfImpl<FirebirdConf, CheckStatusWrapper> >
 {
 public:

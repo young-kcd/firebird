@@ -89,7 +89,7 @@ private:
 
 
 template <unsigned IV_SIZE>
-class ChaCha FB_FINAL : public StdPlugin<IWireCryptPluginImpl<ChaCha<IV_SIZE>, CheckStatusWrapper> >
+class ChaCha final : public StdPlugin<IWireCryptPluginImpl<ChaCha<IV_SIZE>, CheckStatusWrapper> >
 {
 public:
 	explicit ChaCha(IPluginConfig*)

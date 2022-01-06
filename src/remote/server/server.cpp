@@ -907,7 +907,7 @@ private:
 GlobalPtr<Mutex> GlobalPortLock::mtx;
 #endif
 
-class Callback FB_FINAL : public RefCntIface<IEventCallbackImpl<Callback, CheckStatusWrapper> >
+class Callback final : public RefCntIface<IEventCallbackImpl<Callback, CheckStatusWrapper> >
 {
 public:
 	explicit Callback(Rdb* aRdb, Rvnt* aEvent)

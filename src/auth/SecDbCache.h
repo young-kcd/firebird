@@ -55,7 +55,7 @@ public:
 
 class PluginDatabases;
 
-class CachedSecurityDatabase FB_FINAL
+class CachedSecurityDatabase final
 	: public Firebird::RefCntIface<Firebird::ITimerImpl<CachedSecurityDatabase, Firebird::CheckStatusWrapper> >
 {
 public:

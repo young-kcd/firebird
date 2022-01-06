@@ -636,7 +636,7 @@ public:
 	static const ULONG FLAG_DELIVER = 0x2;
 };
 
-class MappingIpc FB_FINAL : public Firebird::IpcObject
+class MappingIpc final : public Firebird::IpcObject
 {
 	static const USHORT MAPPING_VERSION = 1;
 	static const size_t DEFAULT_SIZE = 1024 * 1024;

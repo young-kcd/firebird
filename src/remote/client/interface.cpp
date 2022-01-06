@@ -154,7 +154,7 @@ namespace Remote {
 class Attachment;
 class Statement;
 
-class Blob FB_FINAL : public RefCntIface<IBlobImpl<Blob, CheckStatusWrapper> >
+class Blob final : public RefCntIface<IBlobImpl<Blob, CheckStatusWrapper> >
 {
 public:
 	// IBlob implementation
@@ -204,7 +204,7 @@ int Blob::release()
 	return 0;
 }
 
-class Transaction FB_FINAL : public RefCntIface<ITransactionImpl<Transaction, CheckStatusWrapper> >
+class Transaction final : public RefCntIface<ITransactionImpl<Transaction, CheckStatusWrapper> >
 {
 public:
 	// ITransaction implementation
@@ -275,7 +275,7 @@ int Transaction::release()
 	return 0;
 }
 
-class ResultSet FB_FINAL : public RefCntIface<IResultSetImpl<ResultSet, CheckStatusWrapper> >
+class ResultSet final : public RefCntIface<IResultSetImpl<ResultSet, CheckStatusWrapper> >
 {
 public:
 	// IResultSet implementation
@@ -330,7 +330,7 @@ int ResultSet::release()
 	return 0;
 }
 
-class Batch FB_FINAL : public RefCntIface<IBatchImpl<Batch, CheckStatusWrapper> >
+class Batch final : public RefCntIface<IBatchImpl<Batch, CheckStatusWrapper> >
 {
 public:
 	static const ULONG DEFER_BATCH_LIMIT = 64;
@@ -579,7 +579,7 @@ int Batch::release()
 	return 0;
 }
 
-class Replicator FB_FINAL : public RefCntIface<IReplicatorImpl<Replicator, CheckStatusWrapper> >
+class Replicator final : public RefCntIface<IReplicatorImpl<Replicator, CheckStatusWrapper> >
 {
 public:
 	// IReplicator implementation
@@ -614,7 +614,7 @@ int Replicator::release()
 	return 0;
 }
 
-class Statement FB_FINAL : public RefCntIface<IStatementImpl<Statement, CheckStatusWrapper> >
+class Statement final : public RefCntIface<IStatementImpl<Statement, CheckStatusWrapper> >
 {
 public:
 	// IStatement implementation
@@ -720,7 +720,7 @@ int Statement::release()
 	return 0;
 }
 
-class Request FB_FINAL : public RefCntIface<IRequestImpl<Request, CheckStatusWrapper> >
+class Request final : public RefCntIface<IRequestImpl<Request, CheckStatusWrapper> >
 {
 public:
 	// IRequest implementation
@@ -770,7 +770,7 @@ int Request::release()
 	return 0;
 }
 
-class Events FB_FINAL : public RefCntIface<IEventsImpl<Events, CheckStatusWrapper> >
+class Events final : public RefCntIface<IEventsImpl<Events, CheckStatusWrapper> >
 {
 public:
 	// IEvents implementation
@@ -814,7 +814,7 @@ int Events::release()
 	return 0;
 }
 
-class Attachment FB_FINAL : public RefCntIface<IAttachmentImpl<Attachment, CheckStatusWrapper> >
+class Attachment final : public RefCntIface<IAttachmentImpl<Attachment, CheckStatusWrapper> >
 {
 public:
 	// IAttachment implementation
@@ -921,7 +921,7 @@ int Attachment::release()
 	return 0;
 }
 
-class Service FB_FINAL : public RefCntIface<IServiceImpl<Service, CheckStatusWrapper> >
+class Service final : public RefCntIface<IServiceImpl<Service, CheckStatusWrapper> >
 {
 public:
 	// IService implementation

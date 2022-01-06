@@ -125,7 +125,7 @@ namespace Auth {
 GlobalPtr<PluginDatabases> instances;
 
 
-class SecurityDatabaseServer FB_FINAL :
+class SecurityDatabaseServer final :
 	public StdPlugin<IServerImpl<SecurityDatabaseServer, CheckStatusWrapper> >
 {
 public:

@@ -55,14 +55,14 @@ struct impure_value;
 struct record_param;
 
 
-class ExtEngineManager FB_FINAL : public Firebird::PermanentStorage
+class ExtEngineManager final : public Firebird::PermanentStorage
 {
 private:
 	class AttachmentImpl;
 	template <typename T> class ContextManager;
 	class TransactionImpl;
 
-	class RoutineMetadata FB_FINAL :
+	class RoutineMetadata final :
 		public Firebird::VersionedIface<Firebird::IRoutineMetadataImpl<RoutineMetadata, Firebird::CheckStatusWrapper> >,
 		public Firebird::PermanentStorage
 	{

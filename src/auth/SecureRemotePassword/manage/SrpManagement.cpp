@@ -52,7 +52,7 @@ Firebird::GlobalPtr<Firebird::ConfigKeys> keys;
 
 namespace Auth {
 
-class SrpManagement FB_FINAL : public Firebird::StdPlugin<Firebird::IManagementImpl<SrpManagement, Firebird::CheckStatusWrapper> >
+class SrpManagement final : public Firebird::StdPlugin<Firebird::IManagementImpl<SrpManagement, Firebird::CheckStatusWrapper> >
 {
 public:
 	explicit SrpManagement(Firebird::IPluginConfig* par)

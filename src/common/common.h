@@ -880,21 +880,6 @@ void GDS_breakpoint(int);
 #define FB_CONST64(a) (a##LL)
 #endif
 
-// Check for "final" keyword support
-#ifdef CPP_11
-#define FB_FINAL final
-#else
-#ifdef __GNUC__
-#if ((__GNUC__ == 4 && __GNUC_MINOR__ >= 7) || (__GNUC__ >= 5))
-#define FB_FINAL __final
-#endif
-#endif
-// Please add support for other compilers here
-#ifndef FB_FINAL
-#define FB_FINAL
-#endif
-#endif
-
 #define FB_UNUSED(value) do { if (value) {} } while (false)
 #define FB_UNUSED_VAR(value) (void) value
 
