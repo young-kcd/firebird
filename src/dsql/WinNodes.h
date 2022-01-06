@@ -31,7 +31,7 @@ namespace Jrd {
 
 
 // DENSE_RANK function.
-class DenseRankWinNode : public WinFuncNode
+class DenseRankWinNode final : public WinFuncNode
 {
 public:
 	explicit DenseRankWinNode(MemoryPool& pool);
@@ -60,7 +60,7 @@ protected:
 };
 
 // RANK function.
-class RankWinNode : public WinFuncNode
+class RankWinNode final : public WinFuncNode
 {
 public:
 	explicit RankWinNode(MemoryPool& pool);
@@ -93,7 +93,7 @@ private:
 };
 
 // PERCENT_RANK function.
-class PercentRankWinNode : public WinFuncNode
+class PercentRankWinNode final : public WinFuncNode
 {
 public:
 	explicit PercentRankWinNode(MemoryPool& pool);
@@ -128,7 +128,7 @@ private:
 };
 
 // CUME_DIST function.
-class CumeDistWinNode : public WinFuncNode
+class CumeDistWinNode final : public WinFuncNode
 {
 public:
 	explicit CumeDistWinNode(MemoryPool& pool);
@@ -158,7 +158,7 @@ protected:
 };
 
 // ROW_NUMBER function.
-class RowNumberWinNode : public WinFuncNode
+class RowNumberWinNode final : public WinFuncNode
 {
 public:
 	explicit RowNumberWinNode(MemoryPool& pool);
@@ -187,7 +187,7 @@ protected:
 };
 
 // FIRST_VALUE function.
-class FirstValueWinNode : public WinFuncNode
+class FirstValueWinNode final : public WinFuncNode
 {
 public:
 	explicit FirstValueWinNode(MemoryPool& pool, ValueExprNode* aArg = NULL);
@@ -213,7 +213,7 @@ protected:
 };
 
 // LAST_VALUE function.
-class LastValueWinNode : public WinFuncNode
+class LastValueWinNode final : public WinFuncNode
 {
 public:
 	explicit LastValueWinNode(MemoryPool& pool, ValueExprNode* aArg = NULL);
@@ -239,7 +239,7 @@ protected:
 };
 
 // NTH_VALUE function.
-class NthValueWinNode : public WinFuncNode
+class NthValueWinNode final : public WinFuncNode
 {
 public:
 	enum
@@ -319,7 +319,7 @@ protected:
 };
 
 // LAG function.
-class LagWinNode : public LagLeadWinNode
+class LagWinNode final : public LagLeadWinNode
 {
 public:
 	explicit LagWinNode(MemoryPool& pool, ValueExprNode* aArg = NULL, ValueExprNode* aRows = NULL,
@@ -338,7 +338,7 @@ protected:
 };
 
 // LEAD function.
-class LeadWinNode : public LagLeadWinNode
+class LeadWinNode final : public LagLeadWinNode
 {
 public:
 	explicit LeadWinNode(MemoryPool& pool, ValueExprNode* aArg = NULL, ValueExprNode* aRows = NULL,
@@ -357,7 +357,7 @@ protected:
 };
 
 // NTILE function.
-class NTileWinNode : public WinFuncNode
+class NTileWinNode final : public WinFuncNode
 {
 public:
 	explicit NTileWinNode(MemoryPool& pool, ValueExprNode* aArg = NULL);

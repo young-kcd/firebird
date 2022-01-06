@@ -283,7 +283,7 @@ public:
 };
 
 
-class LocalTableSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_LOCAL_TABLE>
+class LocalTableSourceNode final : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_LOCAL_TABLE>
 {
 public:
 	explicit LocalTableSourceNode(MemoryPool& pool, const MetaName& aDsqlName = NULL)
@@ -352,7 +352,7 @@ public:
 	SSHORT context = 0;			// user-specified context number for the local table reference
 };
 
-class RelationSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RELATION>
+class RelationSourceNode final : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RELATION>
 {
 public:
 	explicit RelationSourceNode(MemoryPool& pool, const MetaName& aDsqlName = NULL)
@@ -428,7 +428,7 @@ public:
 	SSHORT context;			// user-specified context number for the relation reference
 };
 
-class ProcedureSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_PROCEDURE>
+class ProcedureSourceNode final : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_PROCEDURE>
 {
 public:
 	explicit ProcedureSourceNode(MemoryPool& pool,
@@ -524,7 +524,7 @@ private:
 	bool isSubRoutine;
 };
 
-class AggregateSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_AGGREGATE_SOURCE>
+class AggregateSourceNode final : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_AGGREGATE_SOURCE>
 {
 public:
 	explicit AggregateSourceNode(MemoryPool& pool)
@@ -589,7 +589,7 @@ public:
 	bool dsqlWindow;
 };
 
-class UnionSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_UNION>
+class UnionSourceNode final : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_UNION>
 {
 public:
 	explicit UnionSourceNode(MemoryPool& pool)
@@ -654,7 +654,7 @@ public:
 	bool recursive;		// union node is a recursive union
 };
 
-class WindowSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_WINDOW>
+class WindowSourceNode final : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_WINDOW>
 {
 public:
 	struct Window
@@ -722,7 +722,7 @@ private:
 	Firebird::ObjectsArray<Window> windows;
 };
 
-class RseNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RSE>
+class RseNode final : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RSE>
 {
 public:
 	static const USHORT FLAG_VARIANT			= 0x01;	// variant (not invariant?)
@@ -871,7 +871,7 @@ public:
 	bool dsqlExplicitJoin;
 };
 
-class SelectExprNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_SELECT_EXPR>
+class SelectExprNode final : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_SELECT_EXPR>
 {
 public:
 	explicit SelectExprNode(MemoryPool& pool)

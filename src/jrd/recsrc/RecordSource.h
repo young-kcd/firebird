@@ -144,7 +144,7 @@ namespace Jrd
 
 	// Primary (table scan) access methods
 
-	class FullTableScan : public RecordStream
+	class FullTableScan final : public RecordStream
 	{
 		struct Impure : public RecordSource::Impure
 		{
@@ -171,7 +171,7 @@ namespace Jrd
 		Firebird::Array<DbKeyRangeNode*> m_dbkeyRanges;
 	};
 
-	class BitmapTableScan : public RecordStream
+	class BitmapTableScan final : public RecordStream
 	{
 		struct Impure : public RecordSource::Impure
 		{
@@ -196,7 +196,7 @@ namespace Jrd
 		NestConst<InversionNode> const m_inversion;
 	};
 
-	class IndexTableScan : public RecordStream
+	class IndexTableScan final : public RecordStream
 	{
 		struct Impure : public RecordSource::Impure
 		{
@@ -251,7 +251,7 @@ namespace Jrd
 		FB_SIZE_T m_offset;
 	};
 
-	class ExternalTableScan : public RecordStream
+	class ExternalTableScan final : public RecordStream
 	{
 		struct Impure : public RecordSource::Impure
 		{
@@ -303,7 +303,7 @@ namespace Jrd
 		const Firebird::string m_alias;
 	};
 
-	class ProcedureScan : public RecordStream
+	class ProcedureScan final : public RecordStream
 	{
 		struct Impure : public RecordSource::Impure
 		{
@@ -775,7 +775,7 @@ namespace Jrd
 		bool m_oneRowWhenEmpty;
 	};
 
-	class AggregatedStream : public BaseAggWinStream<AggregatedStream, RecordSource>
+	class AggregatedStream final : public BaseAggWinStream<AggregatedStream, RecordSource>
 	{
 	public:
 		AggregatedStream(thread_db* tdbb, CompilerScratch* csb, StreamType stream,
@@ -793,7 +793,7 @@ namespace Jrd
 		using FrameExtent = WindowClause::FrameExtent;
 		using Exclusion = WindowClause::Exclusion;
 
-		class WindowStream : public BaseAggWinStream<WindowStream, BaseBufferedStream>
+		class WindowStream final : public BaseAggWinStream<WindowStream, BaseBufferedStream>
 		{
 		private:
 			struct AdjustFunctor
@@ -830,7 +830,7 @@ namespace Jrd
 			};
 
 		public:
-			struct Impure : public BaseAggWinStream::Impure
+			struct Impure final : public BaseAggWinStream::Impure
 			{
 				impure_value* orderValues;
 				SINT64 partitionPending, rangePending;
@@ -1148,7 +1148,7 @@ namespace Jrd
 		Firebird::Array<const NestValueArray*> m_keys;
 	};
 
-	class LocalTableStream : public RecordStream
+	class LocalTableStream final : public RecordStream
 	{
 	public:
 		LocalTableStream(CompilerScratch* csb, StreamType stream, const DeclareLocalTableNode* table);
@@ -1166,7 +1166,7 @@ namespace Jrd
 		const DeclareLocalTableNode* m_table;
 	};
 
-	class Union : public RecordStream
+	class Union final : public RecordStream
 	{
 		struct Impure : public RecordSource::Impure
 		{
@@ -1198,7 +1198,7 @@ namespace Jrd
 		StreamList m_streams;
 	};
 
-	class RecursiveStream : public RecordStream
+	class RecursiveStream final : public RecordStream
 	{
 		static const FB_SIZE_T MAX_RECURSE_LEVEL = 1024;
 

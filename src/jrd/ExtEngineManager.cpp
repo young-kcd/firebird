@@ -152,7 +152,7 @@ namespace
 
 	// Initialize output parameters with their domains default value or NULL.
 	// Kind of blr_init_variable, but for parameters.
-	class InitParameterNode : public TypedNode<StmtNode, StmtNode::TYPE_EXT_INIT_PARAMETER>
+	class InitParameterNode final : public TypedNode<StmtNode, StmtNode::TYPE_EXT_INIT_PARAMETER>
 	{
 	public:
 		InitParameterNode(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
@@ -421,7 +421,7 @@ namespace
 	};
 
 	// External trigger node.
-	class ExtTriggerNode : public TypedNode<StmtNode, StmtNode::TYPE_EXT_TRIGGER>
+	class ExtTriggerNode final : public TypedNode<StmtNode, StmtNode::TYPE_EXT_TRIGGER>
 	{
 	public:
 		ExtTriggerNode(MemoryPool& pool, const ExtEngineManager::Trigger* aTrigger)
@@ -1247,7 +1247,7 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 				FbLocalStatus status;
 				engine->closeAttachment(&status, attInfo->context);	//// FIXME: log status
 
-				// Check whether the engine is used by other attachments. 
+				// Check whether the engine is used by other attachments.
 				// If no one uses, release it.
 				bool close = true;
 				WriteLockGuard writeGuard(enginesLock, FB_FUNCTION);

@@ -30,7 +30,7 @@
 namespace Jrd {
 
 
-class AvgAggNode : public AggNode
+class AvgAggNode final : public AggNode
 {
 public:
 	explicit AvgAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, ValueExprNode* aArg = NULL);
@@ -65,7 +65,7 @@ private:
 	ULONG tempImpure;
 };
 
-class ListAggNode : public AggNode
+class ListAggNode final : public AggNode
 {
 public:
 	explicit ListAggNode(MemoryPool& pool, bool aDistinct, ValueExprNode* aArg = NULL,
@@ -102,7 +102,7 @@ private:
 	NestConst<ValueExprNode> delimiter;
 };
 
-class CountAggNode : public AggNode
+class CountAggNode final : public AggNode
 {
 public:
 	explicit CountAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, ValueExprNode* aArg = NULL);
@@ -128,7 +128,7 @@ protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 };
 
-class SumAggNode : public AggNode
+class SumAggNode final : public AggNode
 {
 public:
 	explicit SumAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, ValueExprNode* aArg = NULL);
@@ -158,7 +158,7 @@ protected:
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
 };
 
-class MaxMinAggNode : public AggNode
+class MaxMinAggNode final : public AggNode
 {
 public:
 	enum MaxMinType
@@ -192,7 +192,7 @@ public:
 	const MaxMinType type;
 };
 
-class StdDevAggNode : public AggNode
+class StdDevAggNode final : public AggNode
 {
 public:
 	enum StdDevType
@@ -244,7 +244,7 @@ private:
 	ULONG impure2Offset;
 };
 
-class CorrAggNode : public AggNode
+class CorrAggNode final : public AggNode
 {
 public:
 	enum CorrType
@@ -304,7 +304,7 @@ private:
 	ULONG impure2Offset;
 };
 
-class RegrAggNode : public AggNode
+class RegrAggNode final : public AggNode
 {
 public:
 	enum RegrType
@@ -369,7 +369,7 @@ private:
 	ULONG impure2Offset;
 };
 
-class RegrCountAggNode : public AggNode
+class RegrCountAggNode final : public AggNode
 {
 public:
 	explicit RegrCountAggNode(MemoryPool& pool,

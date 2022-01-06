@@ -31,7 +31,7 @@ namespace Jrd {
 class SubQuery;
 
 
-class BinaryBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_BINARY_BOOL>
+class BinaryBoolNode final : public TypedNode<BoolExprNode, ExprNode::TYPE_BINARY_BOOL>
 {
 public:
 	BinaryBoolNode(MemoryPool& pool, UCHAR aBlrOp, BoolExprNode* aArg1 = NULL,
@@ -67,7 +67,7 @@ public:
 };
 
 
-class ComparativeBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_COMPARATIVE_BOOL>
+class ComparativeBoolNode final : public TypedNode<BoolExprNode, ExprNode::TYPE_COMPARATIVE_BOOL>
 {
 public:
 	enum DsqlFlag : UCHAR
@@ -126,7 +126,7 @@ public:
 };
 
 
-class MissingBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_MISSING_BOOL>
+class MissingBoolNode final : public TypedNode<BoolExprNode, ExprNode::TYPE_MISSING_BOOL>
 {
 public:
 	explicit MissingBoolNode(MemoryPool& pool, ValueExprNode* aArg = NULL, bool aDsqlUnknown = false);
@@ -159,7 +159,7 @@ public:
 };
 
 
-class NotBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_NOT_BOOL>
+class NotBoolNode final : public TypedNode<BoolExprNode, ExprNode::TYPE_NOT_BOOL>
 {
 public:
 	explicit NotBoolNode(MemoryPool& pool, BoolExprNode* aArg = NULL);
@@ -193,7 +193,7 @@ public:
 };
 
 
-class RseBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_RSE_BOOL>
+class RseBoolNode final : public TypedNode<BoolExprNode, ExprNode::TYPE_RSE_BOOL>
 {
 public:
 	RseBoolNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDsqlRse = NULL);

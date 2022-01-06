@@ -119,7 +119,7 @@ enum OverrideClause : UCHAR
 };
 
 
-class AssignmentNode : public TypedNode<StmtNode, StmtNode::TYPE_ASSIGNMENT>
+class AssignmentNode final : public TypedNode<StmtNode, StmtNode::TYPE_ASSIGNMENT>
 {
 public:
 	explicit AssignmentNode(MemoryPool& pool)
@@ -153,7 +153,7 @@ public:
 };
 
 
-class BlockNode : public TypedNode<StmtNode, StmtNode::TYPE_BLOCK>
+class BlockNode final : public TypedNode<StmtNode, StmtNode::TYPE_BLOCK>
 {
 public:
 	explicit BlockNode(MemoryPool& pool)
@@ -209,7 +209,7 @@ public:
 };
 
 
-class ContinueLeaveNode : public TypedNode<StmtNode, StmtNode::TYPE_CONTINUE_LEAVE>
+class ContinueLeaveNode final : public TypedNode<StmtNode, StmtNode::TYPE_CONTINUE_LEAVE>
 {
 public:
 	explicit ContinueLeaveNode(MemoryPool& pool, UCHAR aBlrOp)
@@ -247,7 +247,7 @@ public:
 };
 
 
-class CursorStmtNode : public TypedNode<StmtNode, StmtNode::TYPE_CURSOR_STMT>
+class CursorStmtNode final : public TypedNode<StmtNode, StmtNode::TYPE_CURSOR_STMT>
 {
 public:
 	explicit CursorStmtNode(MemoryPool& pool, UCHAR aCursorOp, const MetaName& aDsqlName = "",
@@ -284,7 +284,7 @@ public:
 };
 
 
-class DeclareCursorNode : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_CURSOR>
+class DeclareCursorNode final : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_CURSOR>
 {
 public:
 	static const USHORT CUR_TYPE_NONE = 0;
@@ -328,7 +328,7 @@ public:
 };
 
 
-class DeclareLocalTableNode : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_LOCAL_TABLE>
+class DeclareLocalTableNode final : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_LOCAL_TABLE>
 {
 public:
 	struct Impure
@@ -367,7 +367,7 @@ public:
 };
 
 
-class DeclareSubFuncNode : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_SUBFUNC>
+class DeclareSubFuncNode final : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_SUBFUNC>
 {
 public:
 	explicit DeclareSubFuncNode(MemoryPool& pool, const MetaName& aName)
@@ -421,7 +421,7 @@ public:
 };
 
 
-class DeclareSubProcNode : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_SUBPROC>
+class DeclareSubProcNode final : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_SUBPROC>
 {
 public:
 	explicit DeclareSubProcNode(MemoryPool& pool, const MetaName& aName)
@@ -473,7 +473,7 @@ public:
 };
 
 
-class DeclareVariableNode : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_VARIABLE>
+class DeclareVariableNode final : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_VARIABLE>
 {
 public:
 	explicit DeclareVariableNode(MemoryPool& pool)
@@ -502,7 +502,7 @@ public:
 };
 
 
-class EraseNode : public TypedNode<StmtNode, StmtNode::TYPE_ERASE>
+class EraseNode final : public TypedNode<StmtNode, StmtNode::TYPE_ERASE>
 {
 public:
 	explicit EraseNode(MemoryPool& pool)
@@ -555,7 +555,7 @@ public:
 };
 
 
-class ErrorHandlerNode : public TypedNode<StmtNode, StmtNode::TYPE_ERROR_HANDLER>
+class ErrorHandlerNode final : public TypedNode<StmtNode, StmtNode::TYPE_ERROR_HANDLER>
 {
 public:
 	explicit ErrorHandlerNode(MemoryPool& pool)
@@ -581,7 +581,7 @@ public:
 };
 
 
-class ExecProcedureNode : public TypedNode<StmtNode, StmtNode::TYPE_EXEC_PROCEDURE>
+class ExecProcedureNode final : public TypedNode<StmtNode, StmtNode::TYPE_EXEC_PROCEDURE>
 {
 public:
 	explicit ExecProcedureNode(MemoryPool& pool,
@@ -627,7 +627,7 @@ public:
 };
 
 
-class ExecStatementNode : public TypedNode<StmtNode, StmtNode::TYPE_EXEC_STATEMENT>
+class ExecStatementNode final : public TypedNode<StmtNode, StmtNode::TYPE_EXEC_STATEMENT>
 {
 public:
 	explicit ExecStatementNode(MemoryPool& pool)
@@ -683,7 +683,7 @@ public:
 };
 
 
-class IfNode : public TypedNode<StmtNode, StmtNode::TYPE_IF>
+class IfNode final : public TypedNode<StmtNode, StmtNode::TYPE_IF>
 {
 public:
 	explicit IfNode(MemoryPool& pool)
@@ -711,7 +711,7 @@ public:
 };
 
 
-class InAutonomousTransactionNode : public TypedNode<StmtNode, StmtNode::TYPE_IN_AUTO_TRANS>
+class InAutonomousTransactionNode final : public TypedNode<StmtNode, StmtNode::TYPE_IN_AUTO_TRANS>
 {
 	struct Impure
 	{
@@ -741,7 +741,7 @@ public:
 };
 
 
-class InitVariableNode : public TypedNode<StmtNode, StmtNode::TYPE_INIT_VARIABLE>
+class InitVariableNode final : public TypedNode<StmtNode, StmtNode::TYPE_INIT_VARIABLE>
 {
 public:
 	explicit InitVariableNode(MemoryPool& pool)
@@ -770,7 +770,7 @@ public:
 };
 
 
-class ExecBlockNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_EXEC_BLOCK>
+class ExecBlockNode final : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_EXEC_BLOCK>
 {
 public:
 	explicit ExecBlockNode(MemoryPool& pool)
@@ -797,7 +797,7 @@ public:
 };
 
 
-class ExceptionNode : public TypedNode<StmtNode, StmtNode::TYPE_EXCEPTION>
+class ExceptionNode final : public TypedNode<StmtNode, StmtNode::TYPE_EXCEPTION>
 {
 public:
 	ExceptionNode(MemoryPool& pool, const MetaName& name,
@@ -839,7 +839,7 @@ public:
 };
 
 
-class ExitNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_EXIT>
+class ExitNode final : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_EXIT>
 {
 public:
 	explicit ExitNode(MemoryPool& pool)
@@ -853,7 +853,7 @@ public:
 };
 
 
-class ForNode : public TypedNode<StmtNode, StmtNode::TYPE_FOR>
+class ForNode final : public TypedNode<StmtNode, StmtNode::TYPE_FOR>
 {
 public:
 	explicit ForNode(MemoryPool& pool)
@@ -919,7 +919,7 @@ public:
 };
 
 
-class HandlerNode : public TypedNode<StmtNode, StmtNode::TYPE_HANDLER>
+class HandlerNode final : public TypedNode<StmtNode, StmtNode::TYPE_HANDLER>
 {
 public:
 	explicit HandlerNode(MemoryPool& pool)
@@ -943,7 +943,7 @@ public:
 };
 
 
-class LabelNode : public TypedNode<StmtNode, StmtNode::TYPE_LABEL>
+class LabelNode final : public TypedNode<StmtNode, StmtNode::TYPE_LABEL>
 {
 public:
 	explicit LabelNode(MemoryPool& pool)
@@ -969,7 +969,7 @@ public:
 };
 
 
-class LineColumnNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_LINE_COLUMN>
+class LineColumnNode final : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_LINE_COLUMN>
 {
 public:
 	explicit LineColumnNode(MemoryPool& pool, ULONG aLine, ULONG aColumn, StmtNode* aStatement)
@@ -990,7 +990,7 @@ private:
 };
 
 
-class LoopNode : public TypedNode<StmtNode, StmtNode::TYPE_LOOP>
+class LoopNode final : public TypedNode<StmtNode, StmtNode::TYPE_LOOP>
 {
 public:
 	explicit LoopNode(MemoryPool& pool)
@@ -1020,7 +1020,7 @@ public:
 };
 
 
-class MergeNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_MERGE>
+class MergeNode final : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_MERGE>
 {
 public:
 	struct Matched
@@ -1122,7 +1122,7 @@ public:
 };
 
 
-class ModifyNode : public TypedNode<StmtNode, StmtNode::TYPE_MODIFY>
+class ModifyNode final : public TypedNode<StmtNode, StmtNode::TYPE_MODIFY>
 {
 public:
 	explicit ModifyNode(MemoryPool& pool)
@@ -1171,7 +1171,7 @@ public:
 };
 
 
-class PostEventNode : public TypedNode<StmtNode, StmtNode::TYPE_POST_EVENT>
+class PostEventNode final : public TypedNode<StmtNode, StmtNode::TYPE_POST_EVENT>
 {
 public:
 	explicit PostEventNode(MemoryPool& pool)
@@ -1197,7 +1197,7 @@ public:
 };
 
 
-class ReceiveNode : public TypedNode<StmtNode, StmtNode::TYPE_RECEIVE>
+class ReceiveNode final : public TypedNode<StmtNode, StmtNode::TYPE_RECEIVE>
 {
 public:
 	explicit ReceiveNode(MemoryPool& pool)
@@ -1225,7 +1225,7 @@ public:
 };
 
 
-class StoreNode : public TypedNode<StmtNode, StmtNode::TYPE_STORE>
+class StoreNode final : public TypedNode<StmtNode, StmtNode::TYPE_STORE>
 {
 public:
 	explicit StoreNode(MemoryPool& pool)
@@ -1268,7 +1268,7 @@ public:
 };
 
 
-class SelectNode : public TypedNode<StmtNode, StmtNode::TYPE_SELECT>
+class SelectNode final : public TypedNode<StmtNode, StmtNode::TYPE_SELECT>
 {
 public:
 	explicit SelectNode(MemoryPool& pool)
@@ -1301,7 +1301,7 @@ public:
 
 
 // This is only for GPRE's cmp_set_generator().
-class SetGeneratorNode : public TypedNode<StmtNode, StmtNode::TYPE_SET_GENERATOR>
+class SetGeneratorNode final : public TypedNode<StmtNode, StmtNode::TYPE_SET_GENERATOR>
 {
 public:
 	SetGeneratorNode(MemoryPool& pool, const MetaName& name, ValueExprNode* aValue = NULL)
@@ -1331,7 +1331,7 @@ public:
 };
 
 
-class StallNode : public TypedNode<StmtNode, StmtNode::TYPE_STALL>
+class StallNode final : public TypedNode<StmtNode, StmtNode::TYPE_STALL>
 {
 public:
 	explicit StallNode(MemoryPool& pool)
@@ -1377,7 +1377,7 @@ public:
 };
 
 
-class ReturnNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_RETURN>
+class ReturnNode final : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_RETURN>
 {
 public:
 	explicit ReturnNode(MemoryPool& pool, ValueExprNode* val = NULL)
@@ -1395,7 +1395,7 @@ public:
 };
 
 
-class SavepointEncloseNode : public TypedNode<StmtNode, StmtNode::TYPE_SAVEPOINT>
+class SavepointEncloseNode final : public TypedNode<StmtNode, StmtNode::TYPE_SAVEPOINT>
 {
 public:
 	explicit SavepointEncloseNode(MemoryPool& pool, StmtNode* stmt)
@@ -1423,7 +1423,7 @@ public:
 };
 
 
-class SessionManagementWrapperNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_SESSION_MANAGEMENT_WRAPPER>
+class SessionManagementWrapperNode final : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_SESSION_MANAGEMENT_WRAPPER>
 {
 public:
 	explicit SessionManagementWrapperNode(MemoryPool& pool, SessionManagementNode* aWrapped,
@@ -1830,7 +1830,7 @@ public:
 };
 
 
-class TruncateLocalTableNode : public TypedNode<StmtNode, StmtNode::TYPE_TRUNCATE_LOCAL_TABLE>
+class TruncateLocalTableNode final : public TypedNode<StmtNode, StmtNode::TYPE_TRUNCATE_LOCAL_TABLE>
 {
 public:
 	explicit TruncateLocalTableNode(MemoryPool& pool)
@@ -1868,7 +1868,7 @@ public:
 };
 
 
-class UpdateOrInsertNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_UPDATE_OR_INSERT>
+class UpdateOrInsertNode final : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_UPDATE_OR_INSERT>
 {
 public:
 	explicit UpdateOrInsertNode(MemoryPool& pool)

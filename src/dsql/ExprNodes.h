@@ -40,7 +40,7 @@ class RelationSourceNode;
 class ValueListNode;
 
 
-class ArithmeticNode : public TypedNode<ValueExprNode, ExprNode::TYPE_ARITHMETIC>
+class ArithmeticNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_ARITHMETIC>
 {
 public:
 	ArithmeticNode(MemoryPool& pool, UCHAR aBlrOp, bool aDialect1,
@@ -124,7 +124,7 @@ public:
 };
 
 
-class ArrayNode : public TypedNode<ValueExprNode, ExprNode::TYPE_ARRAY>
+class ArrayNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_ARRAY>
 {
 public:
 	ArrayNode(MemoryPool& pool, FieldNode* aField);
@@ -171,7 +171,7 @@ public:
 };
 
 
-class AtNode : public TypedNode<ValueExprNode, ExprNode::TYPE_AT>
+class AtNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_AT>
 {
 public:
 	AtNode(MemoryPool& pool, ValueExprNode* aDateTimeArg = NULL, ValueExprNode* aZoneArg = NULL);
@@ -204,7 +204,7 @@ public:
 };
 
 
-class BoolAsValueNode : public TypedNode<ValueExprNode, ExprNode::TYPE_BOOL_AS_VALUE>
+class BoolAsValueNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_BOOL_AS_VALUE>
 {
 public:
 	explicit BoolAsValueNode(MemoryPool& pool, BoolExprNode* aBoolean = NULL);
@@ -237,7 +237,7 @@ public:
 };
 
 
-class CastNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CAST>
+class CastNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_CAST>
 {
 public:
 	explicit CastNode(MemoryPool& pool, ValueExprNode* aSource = NULL, dsql_fld* aDsqlField = NULL);
@@ -281,7 +281,7 @@ public:
 };
 
 
-class CoalesceNode : public TypedNode<ValueExprNode, ExprNode::TYPE_COALESCE>
+class CoalesceNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_COALESCE>
 {
 public:
 	explicit CoalesceNode(MemoryPool& pool, ValueListNode* aArgs = NULL)
@@ -322,7 +322,7 @@ public:
 };
 
 
-class CollateNode : public TypedNode<ValueExprNode, ExprNode::TYPE_COLLATE>
+class CollateNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_COLLATE>
 {
 public:
 	CollateNode(MemoryPool& pool, ValueExprNode* aArg, const MetaName& aCollation);
@@ -384,7 +384,7 @@ public:
 };
 
 
-class ConcatenateNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CONCATENATE>
+class ConcatenateNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_CONCATENATE>
 {
 public:
 	explicit ConcatenateNode(MemoryPool& pool, ValueExprNode* aArg1 = NULL, ValueExprNode* aArg2 = NULL);
@@ -417,7 +417,7 @@ public:
 };
 
 
-class CurrentDateNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_DATE>
+class CurrentDateNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_DATE>
 {
 public:
 	explicit CurrentDateNode(MemoryPool& pool)
@@ -439,7 +439,7 @@ public:
 };
 
 
-class CurrentTimeNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_TIME>
+class CurrentTimeNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_TIME>
 {
 public:
 	CurrentTimeNode(MemoryPool& pool, unsigned aPrecision)
@@ -466,7 +466,7 @@ public:
 };
 
 
-class CurrentTimeStampNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_TIMESTAMP>
+class CurrentTimeStampNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_TIMESTAMP>
 {
 public:
 	CurrentTimeStampNode(MemoryPool& pool, unsigned aPrecision)
@@ -493,7 +493,7 @@ public:
 };
 
 
-class CurrentRoleNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_ROLE>
+class CurrentRoleNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_ROLE>
 {
 public:
 	explicit CurrentRoleNode(MemoryPool& pool)
@@ -516,7 +516,7 @@ public:
 };
 
 
-class CurrentUserNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_USER>
+class CurrentUserNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_USER>
 {
 public:
 	explicit CurrentUserNode(MemoryPool& pool)
@@ -539,7 +539,7 @@ public:
 };
 
 
-class DecodeNode : public TypedNode<ValueExprNode, ExprNode::TYPE_DECODE>
+class DecodeNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_DECODE>
 {
 public:
 	explicit DecodeNode(MemoryPool& pool, ValueExprNode* aTest = NULL,
@@ -615,7 +615,7 @@ private:
 };
 
 
-class DerivedExprNode : public TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_EXPR>
+class DerivedExprNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_EXPR>
 {
 public:
 	explicit DerivedExprNode(MemoryPool& pool)
@@ -682,7 +682,7 @@ public:
 };
 
 
-class DomainValidationNode : public TypedNode<ValueExprNode, ExprNode::TYPE_DOMAIN_VALIDATION>
+class DomainValidationNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_DOMAIN_VALIDATION>
 {
 public:
 	explicit DomainValidationNode(MemoryPool& pool)
@@ -711,7 +711,7 @@ public:
 };
 
 
-class ExtractNode : public TypedNode<ValueExprNode, ExprNode::TYPE_EXTRACT>
+class ExtractNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_EXTRACT>
 {
 public:
 	ExtractNode(MemoryPool& pool, UCHAR aBlrSubOp, ValueExprNode* aArg = NULL);
@@ -745,7 +745,7 @@ public:
 };
 
 
-class FieldNode : public TypedNode<ValueExprNode, ExprNode::TYPE_FIELD>
+class FieldNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_FIELD>
 {
 public:
 	FieldNode(MemoryPool& pool, dsql_ctx* context = NULL, dsql_fld* field = NULL, ValueListNode* indices = NULL);
@@ -823,7 +823,7 @@ public:
 };
 
 
-class GenIdNode : public TypedNode<ValueExprNode, ExprNode::TYPE_GEN_ID>
+class GenIdNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_GEN_ID>
 {
 public:
 	GenIdNode(MemoryPool& pool, bool aDialect1,
@@ -868,7 +868,7 @@ private:
 };
 
 
-class InternalInfoNode : public TypedNode<ValueExprNode, ExprNode::TYPE_INTERNAL_INFO>
+class InternalInfoNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_INTERNAL_INFO>
 {
 public:
 	struct InfoAttr
@@ -905,7 +905,7 @@ public:
 };
 
 
-class LiteralNode : public TypedNode<ValueExprNode, ExprNode::TYPE_LITERAL>
+class LiteralNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_LITERAL>
 {
 public:
 	explicit LiteralNode(MemoryPool& pool);
@@ -952,7 +952,7 @@ public:
 };
 
 
-class DsqlAliasNode : public TypedNode<ValueExprNode, ExprNode::TYPE_ALIAS>
+class DsqlAliasNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_ALIAS>
 {
 public:
 	DsqlAliasNode(MemoryPool& pool, const MetaName& aName, ValueExprNode* aValue)
@@ -1005,7 +1005,7 @@ public:
 };
 
 
-class DsqlMapNode : public TypedNode<ValueExprNode, ExprNode::TYPE_MAP>
+class DsqlMapNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_MAP>
 {
 public:
 	DsqlMapNode(MemoryPool& pool, dsql_ctx* aContext, dsql_map* aMap);
@@ -1055,7 +1055,7 @@ public:
 };
 
 
-class DerivedFieldNode : public TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_FIELD>
+class DerivedFieldNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_FIELD>
 {
 public:
 	DerivedFieldNode(MemoryPool& pool, const MetaName& aName, USHORT aScope,
@@ -1131,7 +1131,7 @@ public:
 };
 
 
-class LocalTimeNode : public TypedNode<ValueExprNode, ExprNode::TYPE_LOCAL_TIME>
+class LocalTimeNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_LOCAL_TIME>
 {
 public:
 	LocalTimeNode(MemoryPool& pool, unsigned aPrecision)
@@ -1158,7 +1158,7 @@ public:
 };
 
 
-class LocalTimeStampNode : public TypedNode<ValueExprNode, ExprNode::TYPE_LOCAL_TIMESTAMP>
+class LocalTimeStampNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_LOCAL_TIMESTAMP>
 {
 public:
 	LocalTimeStampNode(MemoryPool& pool, unsigned aPrecision)
@@ -1185,7 +1185,7 @@ public:
 };
 
 
-class NegateNode : public TypedNode<ValueExprNode, ExprNode::TYPE_NEGATE>
+class NegateNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_NEGATE>
 {
 public:
 	explicit NegateNode(MemoryPool& pool, ValueExprNode* aArg = NULL);
@@ -1216,7 +1216,7 @@ public:
 };
 
 
-class NullNode : public TypedNode<ValueExprNode, ExprNode::TYPE_NULL>
+class NullNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_NULL>
 {
 private:
 	friend class Firebird::GlobalPtr<NullNode>;
@@ -1288,7 +1288,7 @@ class WindowClause : public DsqlNode<WindowClause, ExprNode::TYPE_WINDOW_CLAUSE>
 public:
 	// ListExprNode has no relation with this but works perfectly here for now.
 
-	class Frame : public TypedNode<ListExprNode, ExprNode::TYPE_WINDOW_CLAUSE_FRAME>
+	class Frame final : public TypedNode<ListExprNode, ExprNode::TYPE_WINDOW_CLAUSE_FRAME>
 	{
 	public:
 		enum class Bound : UCHAR
@@ -1360,7 +1360,7 @@ public:
 		NestConst<ValueExprNode> value;
 	};
 
-	class FrameExtent : public TypedNode<ListExprNode, ExprNode::TYPE_WINDOW_CLAUSE_FRAME_EXTENT>
+	class FrameExtent final : public TypedNode<ListExprNode, ExprNode::TYPE_WINDOW_CLAUSE_FRAME_EXTENT>
 	{
 	public:
 		enum class Unit : UCHAR
@@ -1521,7 +1521,7 @@ public:
 
 // OVER is used only in DSQL. In the engine, normal aggregate functions are used in partitioned
 // maps.
-class OverNode : public TypedNode<ValueExprNode, ExprNode::TYPE_OVER>
+class OverNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_OVER>
 {
 public:
 	explicit OverNode(MemoryPool& pool, AggNode* aAggExpr, const MetaName* aWindowName);
@@ -1562,7 +1562,7 @@ public:
 };
 
 
-class ParameterNode : public TypedNode<ValueExprNode, ExprNode::TYPE_PARAMETER>
+class ParameterNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_PARAMETER>
 {
 private:
 	// CVC: This is a guess for the length of the parameter for LIKE and others, when the
@@ -1615,7 +1615,7 @@ public:
 };
 
 
-class RecordKeyNode : public TypedNode<ValueExprNode, ExprNode::TYPE_RECORD_KEY>
+class RecordKeyNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_RECORD_KEY>
 {
 public:
 	RecordKeyNode(MemoryPool& pool, UCHAR aBlrOp, const MetaName& aDsqlQualifier = NULL);
@@ -1693,7 +1693,7 @@ public:
 };
 
 
-class ScalarNode : public TypedNode<ValueExprNode, ExprNode::TYPE_SCALAR>
+class ScalarNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_SCALAR>
 {
 public:
 	explicit ScalarNode(MemoryPool& pool)
@@ -1751,7 +1751,7 @@ public:
 };
 
 
-class StmtExprNode : public TypedNode<ValueExprNode, ExprNode::TYPE_STMT_EXPR>
+class StmtExprNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_STMT_EXPR>
 {
 public:
 	explicit StmtExprNode(MemoryPool& pool)
@@ -1810,7 +1810,7 @@ public:
 };
 
 
-class StrCaseNode : public TypedNode<ValueExprNode, ExprNode::TYPE_STR_CASE>
+class StrCaseNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_STR_CASE>
 {
 public:
 	StrCaseNode(MemoryPool& pool, UCHAR aBlrOp, ValueExprNode* aArg = NULL);
@@ -1844,7 +1844,7 @@ public:
 };
 
 
-class StrLenNode : public TypedNode<ValueExprNode, ExprNode::TYPE_STR_LEN>
+class StrLenNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_STR_LEN>
 {
 public:
 	StrLenNode(MemoryPool& pool, UCHAR aBlrSubOp, ValueExprNode* aArg = NULL);
@@ -1879,7 +1879,7 @@ public:
 
 
 // This node is used for DSQL subqueries and for legacy (BLR-only) functionality.
-class SubQueryNode : public TypedNode<ValueExprNode, ExprNode::TYPE_SUBQUERY>
+class SubQueryNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_SUBQUERY>
 {
 public:
 	explicit SubQueryNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDsqlRse = NULL,
@@ -1937,7 +1937,7 @@ public:
 };
 
 
-class SubstringNode : public TypedNode<ValueExprNode, ExprNode::TYPE_SUBSTRING>
+class SubstringNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_SUBSTRING>
 {
 public:
 	explicit SubstringNode(MemoryPool& pool, ValueExprNode* aExpr = NULL,
@@ -1977,7 +1977,7 @@ public:
 };
 
 
-class SubstringSimilarNode : public TypedNode<ValueExprNode, ExprNode::TYPE_SUBSTRING_SIMILAR>
+class SubstringSimilarNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_SUBSTRING_SIMILAR>
 {
 public:
 	explicit SubstringSimilarNode(MemoryPool& pool, ValueExprNode* aExpr = NULL,
@@ -2015,7 +2015,7 @@ public:
 };
 
 
-class SysFuncCallNode : public TypedNode<ValueExprNode, ExprNode::TYPE_SYSFUNC_CALL>
+class SysFuncCallNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_SYSFUNC_CALL>
 {
 public:
 	explicit SysFuncCallNode(MemoryPool& pool, const MetaName& aName,
@@ -2050,7 +2050,7 @@ public:
 };
 
 
-class TrimNode : public TypedNode<ValueExprNode, ExprNode::TYPE_TRIM>
+class TrimNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_TRIM>
 {
 public:
 	explicit TrimNode(MemoryPool& pool, UCHAR aWhere,
@@ -2088,7 +2088,7 @@ public:
 };
 
 
-class UdfCallNode : public TypedNode<ValueExprNode, ExprNode::TYPE_UDF_CALL>
+class UdfCallNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_UDF_CALL>
 {
 private:
 	struct Impure
@@ -2139,7 +2139,7 @@ private:
 };
 
 
-class ValueIfNode : public TypedNode<ValueExprNode, ExprNode::TYPE_VALUE_IF>
+class ValueIfNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_VALUE_IF>
 {
 public:
 	explicit ValueIfNode(MemoryPool& pool, BoolExprNode* aCondition = NULL,
@@ -2182,7 +2182,7 @@ public:
 };
 
 
-class VariableNode : public TypedNode<ValueExprNode, ExprNode::TYPE_VARIABLE>
+class VariableNode final : public TypedNode<ValueExprNode, ExprNode::TYPE_VARIABLE>
 {
 public:
 	explicit VariableNode(MemoryPool& pool);
