@@ -582,9 +582,9 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 					if (*p)
 					{
 						TEXT buffer[32];
-						const char* end = buffer + sizeof(buffer) - 1;
 						char* pp = buffer;
-						while (*p && *p != ' ' && pp < end)
+						const char* ppend = buffer + sizeof(buffer) - 1;
+						while (*p && *p != ' ' && pp < ppend)
 							*pp++ = *p++;
 						*pp++ = '\0';
 
@@ -633,11 +633,8 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 						const char* piend = protocol_inet + sizeof(protocol_inet) - 1;
 
 						*pi++ = '/';
-						while (*p && *p != ' ')
-						{
-							if (pi < piend)
-								*pi++ = *p;
-						}
+						while (*p && *p != ' ' && pi < piend)
+							*pi++ = *p++;
 						*pi++ = '\0';
 					}
 					break;
