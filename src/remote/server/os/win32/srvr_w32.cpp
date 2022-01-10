@@ -585,7 +585,17 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 						char* pp = buffer;
 						const char* ppend = buffer + sizeof(buffer) - 1;
 						while (*p && *p != ' ' && pp < ppend)
-							*pp++ = *p++;
+						{
+							if (*p == '@')
+							{
+								p++;
+								*pp++ = '\0';
+								connection_handle = (HANDLE)_atoi64(buffer);
+								pp = buffer;
+							}
+							else
+								*pp++ = *p++;
+						}
 						*pp++ = '\0';
 
 						if (connection_handle == INVALID_HANDLE_VALUE)
