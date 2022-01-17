@@ -37,10 +37,36 @@ using namespace Firebird;
 HazardObject::~HazardObject()
 { }
 
-void HazardObject::delayedDelete(thread_db* tdbb)
+int HazardObject::release(thread_db* tdbb)
 {
 	HazardDelayedDelete& dd = tdbb->getAttachment()->att_delayed_delete;
 	dd.delayedDelete(this);
+	return 0;
+}
+
+RefHazardObject::~RefHazardObject()
+{
+	fb_assert(counter == 0);
+}
+
+int RefHazardObject::release(thread_db* tdbb)
+{
+	fb_assert(counter > 0);
+	if (--counter == 0)
+	{
+		HazardObject::release(tdbb);
+		return 0;
+	}
+
+	return 1;
+}
+
+void RefHazardObject::addRef(thread_db*)
+{
+	fb_assert(counter >= 0);
+	if (counter < 1)
+		fatal_exception::raise("Attempt to reuse released object failed");		// need special error handling? !!!!!!!!!!!
+	++counter;
 }
 
 HazardBase::HazardBase(thread_db* tdbb)
@@ -127,7 +153,7 @@ void HazardDelayedDelete::copyHazardPointers(thread_db* tdbb, LocalHP& local, At
 {
 	for (Attachment* attachment = from; attachment; attachment = attachment->att_next)
 	{
-		Hazard<HazardPointers> hp(tdbb, attachment->att_delayed_delete.hazardPointers);
+		HazardPtr<HazardPointers> hp(tdbb, attachment->att_delayed_delete.hazardPointers);
 		copyHazardPointers(local, hp->hp, hp->hpCount);
 	}
 }
@@ -153,7 +179,7 @@ void HazardDelayedDelete::garbageCollect(GarbageCollectMethod gcMethod)
 		copyHazardPointers(tdbb, localCopy, database->dbb_attachments);
 		copyHazardPointers(tdbb, localCopy, database->dbb_sys_attachments);
 
-		Hazard<HazardPointers> hp(tdbb, database->dbb_delayed_delete.hazardPointers);
+		HazardPtr<HazardPointers> hp(tdbb, database->dbb_delayed_delete.hazardPointers);
 		copyHazardPointers(localCopy, hp->hp, hp->hpCount);
 	}
 	localCopy.sort();

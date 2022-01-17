@@ -40,7 +40,7 @@
 #include "../jrd/CryptoManager.h"
 #include "../jrd/os/pio_proto.h"
 #include "../common/os/os_utils.h"
-//#include "../dsql/Parser.h"
+#include "../jrd/met.h"
 
 // Thread data block
 #include "../common/ThreadData.h"
@@ -568,6 +568,42 @@ namespace Jrd
 		}
 		return m_replMgr;
 	}
+
+	Database::Database(MemoryPool* p, Firebird::IPluginConfig* pConf, bool shared)
+	:	dbb_permanent(p),
+		dbb_page_manager(this, *p),
+		dbb_file_id(*p),
+		dbb_modules(*p),
+		dbb_extManager(nullptr),
+		dbb_flags(shared ? DBB_shared : 0),
+		dbb_filename(*p),
+		dbb_database_name(*p),
+#ifdef HAVE_ID_BY_NAME
+		dbb_id(*p),
+#endif
+		dbb_owner(*p),
+		dbb_pools(*p, 4),
+		dbb_sort_buffers(*p),
+		dbb_gc_fini(*p, garbage_collector, THREAD_medium),
+		dbb_stats(*p),
+		dbb_lock_owner_id(getLockOwnerId()),
+		dbb_tip_cache(NULL),
+		dbb_creation_date(Firebird::TimeZoneUtil::getCurrentGmtTimeStamp()),
+		dbb_external_file_directory_list(NULL),
+		dbb_init_fini(FB_NEW_POOL(*getDefaultMemoryPool()) ExistenceRefMutex()),
+		dbb_linger_seconds(0),
+		dbb_linger_end(0),
+		dbb_plugin_config(pConf),
+		dbb_repl_sequence(0),
+		dbb_replica_mode(REPLICA_NONE),
+		dbb_compatibility_index(~0U),
+		dbb_dic(*p),
+		dbb_mdc(FB_NEW_POOL(*p) MetadataCache(*p)),
+		dbb_delayed_delete(*p, *p)
+	{
+		dbb_pools.add(p);
+	}
+
 
 	GlobalPtr<Database::GlobalObjectHolder::DbIdHash>
 		Database::GlobalObjectHolder::g_hashTable;

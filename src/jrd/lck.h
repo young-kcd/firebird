@@ -97,10 +97,7 @@ public:
 		return lck_attachment;
 	}
 
-	Attachment* getLockAttachment()
-	{
-		return lck_attachment ? lck_attachment->getHandle() : NULL;
-	}
+	Attachment* getLockAttachment();
 
 	void setLockAttachment(Attachment* att);
 

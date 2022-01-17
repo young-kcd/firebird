@@ -26,6 +26,7 @@
 #include "../common/classes/NestConst.h"
 #include "../jrd/val.h"
 #include "../dsql/Nodes.h"
+#include "../jrd/HazardPtr.h"
 
 namespace Jrd
 {
@@ -37,8 +38,8 @@ namespace Jrd
 		static const char* const EXCEPTION_MESSAGE;
 
 	public:
-		static Function* lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool noscan, USHORT flags);
-		static Function* lookup(thread_db* tdbb, const QualifiedName& name, bool noscan);
+		static HazardPtr<Function> lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool noscan, USHORT flags);
+		static HazardPtr<Function> lookup(thread_db* tdbb, const QualifiedName& name, bool noscan);
 
 		void releaseLocks(thread_db* tdbb);
 
@@ -54,7 +55,7 @@ namespace Jrd
 		{
 		}
 
-		static Function* loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT flags);
+		static HazardPtr<Function> loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT flags);
 		static int blockingAst(void*);
 
 	public:

@@ -90,6 +90,11 @@ public:
 		return !(identifier == m.identifier && package == m.package);
 	}
 
+	bool hasData() const
+	{
+		return identifier.hasData();
+	}
+
 public:
 	Firebird::string toString() const
 	{

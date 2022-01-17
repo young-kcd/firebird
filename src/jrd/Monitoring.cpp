@@ -47,6 +47,7 @@
 #include "../jrd/RecordBuffer.h"
 #include "../jrd/Monitoring.h"
 #include "../jrd/Function.h"
+#include "../jrd/met.h"
 
 #ifdef WIN_NT
 #include <process.h>
@@ -641,12 +642,12 @@ RecordBuffer* SnapshotData::getData(int id) const
 
 RecordBuffer* SnapshotData::allocBuffer(thread_db* tdbb, MemoryPool& pool, int rel_id)
 {
-	jrd_rel* const relation = MetadataCache::lookup_relation_id(tdbb, rel_id, false);
+	HazardPtr<jrd_rel> relation = MetadataCache::lookup_relation_id(tdbb, rel_id, false);
 	fb_assert(relation);
 	MET_scan_relation(tdbb, relation);
 	fb_assert(relation->isVirtual());
 
-	const Format* const format = MET_current(tdbb, relation);
+	const Format* const format = MET_current(tdbb, relation.get());
 	fb_assert(format);
 
 	RecordBuffer* const buffer = FB_NEW_POOL(pool) RecordBuffer(pool, format);
@@ -701,7 +702,7 @@ void SnapshotData::putField(thread_db* tdbb, Record* record, const DumpField& fi
 		SLONG rel_id;
 		memcpy(&rel_id, field.data, field.length);
 
-		const jrd_rel* const relation = MetadataCache::lookup_relation_id(tdbb, rel_id, false);
+		HazardPtr<jrd_rel> relation = MetadataCache::lookup_relation_id(tdbb, rel_id, false);
 		if (!relation || relation->rel_name.isEmpty())
 			return;
 

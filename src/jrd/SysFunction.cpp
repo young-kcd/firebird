@@ -60,6 +60,7 @@
 #include "../common/classes/FpeControl.h"
 #include "../jrd/extds/ExtDS.h"
 #include "../jrd/align.h"
+#include "../jrd/met.h"
 
 #include <functional>
 #include <cmath>
@@ -5085,7 +5086,7 @@ dsc* evlMakeDbkey(Jrd::thread_db* tdbb, const SysFunction* function, const NestV
 		MetaName relName;
 		MOV_get_metaname(tdbb, argDsc, relName);
 
-		const jrd_rel* const relation = MetadataCache::lookup_relation(tdbb, relName);
+		HazardPtr<jrd_rel> relation = MetadataCache::lookup_relation(tdbb, relName);
 		if (!relation)
 			(Arg::Gds(isc_relnotdef) << Arg::Str(relName)).raise();
 

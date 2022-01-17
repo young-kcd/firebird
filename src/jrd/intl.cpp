@@ -204,14 +204,14 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-	fb_assert(attachment);
+	Jrd::Database* const dbb = tdbb->getDatabase();
+	fb_assert(dbb);
 
 	USHORT id = TTYPE_TO_CHARSET(ttype);
 	if (id == CS_dynamic)
 		id = tdbb->getCharSet();
 
-	CharSetContainer* cs = attachment->att_mdc.getCharSet(id);
+	CharSetContainer* cs = dbb->dbb_mdc->getCharSet(id);
 
 	// allocate a new character set object if we couldn't find one.
 	if (!cs)
@@ -221,7 +221,7 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 		if (lookupInternalCharSet(id, &info) || MET_get_char_coll_subtype_info(tdbb, id, &info))
 		{
 			cs = FB_NEW_POOL(*attachment->att_pool) CharSetContainer(*attachment->att_pool, id, &info);
-			attachment->att_mdc.setCharSet(id, cs);
+			dbb->dbb_mdc->setCharSet(id, cs);
 		}
 		else
 			ERR_post(Arg::Gds(isc_text_subtype) << Arg::Num(ttype));

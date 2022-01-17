@@ -2199,17 +2199,17 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				try
 				{
 					// load all database triggers
-					MetadataCache& mdc = attachment->att_mdc;
-					mdc.load_db_triggers(tdbb, DB_TRIGGER_CONNECT);
-					mdc.load_db_triggers(tdbb, DB_TRIGGER_DISCONNECT);
-					mdc.load_db_triggers(tdbb, DB_TRIGGER_TRANS_START);
-					mdc.load_db_triggers(tdbb, DB_TRIGGER_TRANS_COMMIT);
-					mdc.load_db_triggers(tdbb, DB_TRIGGER_TRANS_ROLLBACK);
+					MetadataCache* mdc = dbb->dbb_mdc;
+					mdc->load_db_triggers(tdbb, DB_TRIGGER_CONNECT);
+					mdc->load_db_triggers(tdbb, DB_TRIGGER_DISCONNECT);
+					mdc->load_db_triggers(tdbb, DB_TRIGGER_TRANS_START);
+					mdc->load_db_triggers(tdbb, DB_TRIGGER_TRANS_COMMIT);
+					mdc->load_db_triggers(tdbb, DB_TRIGGER_TRANS_ROLLBACK);
 
 					// load DDL triggers
-					mdc.load_ddl_triggers(tdbb);
+					mdc->load_ddl_triggers(tdbb);
 
-					TrigVector** trig_connect = attachment->att_mdc.getTriggers(DB_TRIGGER_CONNECT | TRIGGER_TYPE_DB);
+					TrigVector** trig_connect = dbb->dbb_mdc->getTriggers(DB_TRIGGER_CONNECT | TRIGGER_TYPE_DB);
 					if (trig_connect && *trig_connect && !(*trig_connect)->isEmpty())
 					{
 						// Start a transaction to execute ON CONNECT triggers.
@@ -7551,7 +7551,7 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	dbb->dbb_extManager->closeAttachment(tdbb, attachment);
 
 	if (dbb->dbb_config->getServerMode() == MODE_SUPER)
-		attachment->att_mdc.releaseGTTs(tdbb);
+		dbb->dbb_mdc->releaseGTTs(tdbb);
 
 	if (attachment->att_event_session)
 		dbb->eventManager()->deleteSession(attachment->att_event_session);
@@ -7566,14 +7566,14 @@ void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	// Shut down any extern relations
 
-	attachment->att_mdc.releaseRelations(tdbb);
+	dbb->dbb_mdc->releaseRelations(tdbb);
 
 	// Release any validation error vector allocated
 
 	delete attachment->att_validation;
 	attachment->att_validation = NULL;
 
-	attachment->att_mdc.destroyIntlObjects(tdbb);
+	dbb->dbb_mdc->destroyIntlObjects(tdbb);
 
 	attachment->detachLocks();
 
@@ -8163,7 +8163,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 	{
 		try
 		{
-			TrigVector** trig_disconnect = attachment->att_mdc.getTriggers(DB_TRIGGER_CONNECT | TRIGGER_TYPE_DB);
+			TrigVector** trig_disconnect = dbb->dbb_mdc->getTriggers(DB_TRIGGER_CONNECT | TRIGGER_TYPE_DB);
 
 			if (!forcedPurge &&
 				!(attachment->att_flags & ATT_no_db_triggers) &&

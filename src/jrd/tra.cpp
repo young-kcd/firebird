@@ -2473,12 +2473,11 @@ static void release_temp_tables(thread_db* tdbb, jrd_tra* transaction)
  *	Release data of temporary tables with transaction lifetime
  *
  **************************************/
-	Attachment* att = tdbb->getAttachment();
-	MetadataCache& mdc = att->att_mdc;
+	MetadataCache* mdc = tdbb->getDatabase()->dbb_mdc;
 
-	for (FB_SIZE_T i = 0; i < mdc.relCount(); i++)
+	for (FB_SIZE_T i = 0; i < mdc->relCount(); i++)
 	{
-		jrd_rel* relation = mdc.getRelation(i);
+		jrd_rel* relation = mdc->getRelation(i);
 
 		if (relation && (relation->rel_flags & REL_temp_tran))
 			relation->delPages(tdbb, transaction->tra_number);
@@ -2499,12 +2498,11 @@ static void retain_temp_tables(thread_db* tdbb, jrd_tra* transaction, TraNumber 
  *  transaction number (see retain_context).
  *
  **************************************/
-	Attachment* att = tdbb->getAttachment();
-	MetadataCache& mdc = att->att_mdc;
+	MetadataCache* mdc = tdbb->getDatabase()->dbb_mdc;
 
-	for (FB_SIZE_T i = 0; i < mdc.relCount(); i++)
+	for (FB_SIZE_T i = 0; i < mdc->relCount(); i++)
 	{
-		jrd_rel* relation = mdc.getRelation(i);
+		jrd_rel* relation = mdc->getRelation(i);
 
 		if (relation && (relation->rel_flags & REL_temp_tran))
 			relation->retainPages(tdbb, transaction->tra_number, new_number);
@@ -4051,10 +4049,10 @@ void jrd_tra::checkBlob(thread_db* tdbb, const bid* blob_id, jrd_fld* fld, bool 
 	if (!tra_blobs->locate(blob_id->bid_temp_id()) &&
 		!tra_fetched_blobs.locate(*blob_id))
 	{
-		MetadataCache& mdc = tra_attachment->att_mdc;
-		jrd_rel* blb_relation;
+		MetadataCache* mdc = tra_attachment->att_database->dbb_mdc;
+		//jrd_rel* blb_relation;
 
-		if (rel_id < mdc.relCount() && (blb_relation = mdc.getRelation(rel_id)))
+		if (rel_id < mdc->relCount() && (auto blb_relation = mdc->getRelation(rel_id)))
 		{
 			const MetaName security_name = fld ?
 				fld->fld_security_name : blb_relation->rel_security_name;

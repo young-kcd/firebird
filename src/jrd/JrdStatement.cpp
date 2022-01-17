@@ -36,6 +36,7 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/Collation.h"
+#include "../jrd/met.h"
 
 using namespace Firebird;
 using namespace Jrd;
@@ -426,7 +427,7 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 
 	for (ExternalAccess* item = external.begin(); item != external.end(); ++item)
 	{
-		const Routine* routine = NULL;
+		HazardPtr<Routine> routine(tdbb);
 		int aclType;
 
 		if (item->exa_action == ExternalAccess::exa_procedure)
@@ -455,7 +456,7 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 		}
 		else
 		{
-			jrd_rel* relation = MetadataCache::lookup_relation_id(tdbb, item->exa_rel_id, false);
+			HazardPtr<jrd_rel> relation = MetadataCache::lookup_relation_id(tdbb, item->exa_rel_id, false);
 
 			if (!relation)
 				continue;
@@ -463,7 +464,7 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 			MetaName userName = item->user;
 			if (item->exa_view_id)
 			{
-				jrd_rel* view = MetadataCache::lookup_relation_id(tdbb, item->exa_view_id, false);
+				HazardPtr<jrd_rel> view = MetadataCache::lookup_relation_id(tdbb, item->exa_view_id, false);
 				if (view && (view->rel_flags & REL_sql_relation))
 					userName = view->rel_owner_name;
 			}
@@ -471,16 +472,16 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 			switch (item->exa_action)
 			{
 				case ExternalAccess::exa_insert:
-					verifyTriggerAccess(tdbb, relation, relation->rel_pre_store, userName);
-					verifyTriggerAccess(tdbb, relation, relation->rel_post_store, userName);
+					verifyTriggerAccess(tdbb, relation.get(), relation->rel_pre_store, userName);
+					verifyTriggerAccess(tdbb, relation.get(), relation->rel_post_store, userName);
 					break;
 				case ExternalAccess::exa_update:
-					verifyTriggerAccess(tdbb, relation, relation->rel_pre_modify, userName);
-					verifyTriggerAccess(tdbb, relation, relation->rel_post_modify, userName);
+					verifyTriggerAccess(tdbb, relation.get(), relation->rel_pre_modify, userName);
+					verifyTriggerAccess(tdbb, relation.get(), relation->rel_post_modify, userName);
 					break;
 				case ExternalAccess::exa_delete:
-					verifyTriggerAccess(tdbb, relation, relation->rel_pre_erase, userName);
-					verifyTriggerAccess(tdbb, relation, relation->rel_post_erase, userName);
+					verifyTriggerAccess(tdbb, relation.get(), relation->rel_pre_erase, userName);
+					verifyTriggerAccess(tdbb, relation.get(), relation->rel_post_erase, userName);
 					break;
 				default:
 					fb_assert(false);
@@ -501,7 +502,7 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 
 			if (access->acc_ss_rel_id)
 			{
-				const jrd_rel* view = MetadataCache::lookup_relation_id(tdbb, access->acc_ss_rel_id, false);
+				HazardPtr<jrd_rel> view = MetadataCache::lookup_relation_id(tdbb, access->acc_ss_rel_id, false);
 				if (view && (view->rel_flags & REL_sql_relation))
 					userName = view->rel_owner_name;
 			}
@@ -569,7 +570,7 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 
 		if (access->acc_ss_rel_id)
 		{
-			const jrd_rel* view = MetadataCache::lookup_relation_id(tdbb, access->acc_ss_rel_id, false);
+			HazardPtr<jrd_rel> view = MetadataCache::lookup_relation_id(tdbb, access->acc_ss_rel_id, false);
 			if (view && (view->rel_flags & REL_sql_relation))
 				userName = view->rel_owner_name;
 		}
@@ -666,13 +667,14 @@ void JrdStatement::verifyTriggerAccess(thread_db* tdbb, jrd_rel* ownerRelation,
 
 	for (FB_SIZE_T i = 0; i < triggers->getCount(); i++)
 	{
-		Trigger& t = (*triggers)[i];
-		t.compile(tdbb);
-		if (!t.statement)
+		HazardPtr<Trigger> t(tdbb);
+		triggers->load(i, t);
+		t->compile(tdbb);
+		if (!t->statement)
 			continue;
 
-		for (const AccessItem* access = t.statement->accessList.begin();
-			 access != t.statement->accessList.end(); ++access)
+		for (const AccessItem* access = t->statement->accessList.begin();
+			 access != t->statement->accessList.end(); ++access)
 		{
 			// If this is not a system relation, we don't post access check if:
 			//
@@ -700,12 +702,12 @@ void JrdStatement::verifyTriggerAccess(thread_db* tdbb, jrd_rel* ownerRelation,
 			// a direct access to an object from this trigger
 			if (access->acc_ss_rel_id)
 			{
-				const jrd_rel* view = MetadataCache::lookup_relation_id(tdbb, access->acc_ss_rel_id, false);
+				HazardPtr<jrd_rel> view = MetadataCache::lookup_relation_id(tdbb, access->acc_ss_rel_id, false);
 				if (view && (view->rel_flags & REL_sql_relation))
 					userName = view->rel_owner_name;
 			}
-			else if (t.ssDefiner.specified && t.ssDefiner.value)
-				userName = t.owner;
+			else if (t->ssDefiner.specified && t->ssDefiner.value)
+				userName = t->owner;
 
 			Attachment* attachment = tdbb->getAttachment();
 			UserId* effectiveUser = userName.hasData() ? attachment->getUserId(userName) : attachment->att_ss_user;
@@ -713,7 +715,7 @@ void JrdStatement::verifyTriggerAccess(thread_db* tdbb, jrd_rel* ownerRelation,
 
 			const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
 
-			SCL_check_access(tdbb, sec_class, id_trigger, t.statement->triggerName, access->acc_mask,
+			SCL_check_access(tdbb, sec_class, id_trigger, t->statement->triggerName, access->acc_mask,
 				access->acc_type, true, access->acc_name, access->acc_r_name);
 		}
 	}
@@ -728,13 +730,14 @@ inline void JrdStatement::triggersExternalAccess(thread_db* tdbb, ExternalAccess
 
 	for (FB_SIZE_T i = 0; i < tvec->getCount(); i++)
 	{
-		Trigger& t = (*tvec)[i];
-		t.compile(tdbb);
+		HazardPtr<Trigger> t(tdbb);
+		tvec->load(i, t);
+		t->compile(tdbb);
 
-		if (t.statement)
+		if (t->statement)
 		{
-			const MetaName& userName = (t.ssDefiner.specified && t.ssDefiner.value) ? t.owner : user;
-			t.statement->buildExternalAccess(tdbb, list, userName);
+			const MetaName& userName = (t->ssDefiner.specified && t->ssDefiner.value) ? t->owner : user;
+			t->statement->buildExternalAccess(tdbb, list, userName);
 		}
 	}
 }
@@ -750,7 +753,7 @@ void JrdStatement::buildExternalAccess(thread_db* tdbb, ExternalAccessList& list
 		// Add externals recursively
 		if (item->exa_action == ExternalAccess::exa_procedure)
 		{
-			jrd_prc* const procedure = MetadataCache::lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
+			HazardPtr<jrd_prc> procedure = MetadataCache::lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
 			if (procedure && procedure->getStatement())
 			{
 				item->user = procedure->invoker ? MetaName(procedure->invoker->getUserName()) : user;
@@ -762,7 +765,7 @@ void JrdStatement::buildExternalAccess(thread_db* tdbb, ExternalAccessList& list
 		}
 		else if (item->exa_action == ExternalAccess::exa_function)
 		{
-			Function* const function = Function::lookup(tdbb, item->exa_fun_id, false, false, 0);
+			HazardPtr<Function> function = Function::lookup(tdbb, item->exa_fun_id, false, false, 0);
 			if (function && function->getStatement())
 			{
 				item->user = function->invoker ? MetaName(function->invoker->getUserName()) : user;
@@ -774,7 +777,7 @@ void JrdStatement::buildExternalAccess(thread_db* tdbb, ExternalAccessList& list
 		}
 		else
 		{
-			jrd_rel* relation = MetadataCache::lookup_relation_id(tdbb, item->exa_rel_id, false);
+			HazardPtr<jrd_rel> relation = MetadataCache::lookup_relation_id(tdbb, item->exa_rel_id, false);
 
 			if (!relation)
 				continue;

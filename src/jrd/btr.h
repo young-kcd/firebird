@@ -35,6 +35,7 @@
 #include "../jrd/RecordNumber.h"
 #include "../jrd/sbm.h"
 #include "../jrd/lck.h"
+#include "../jrd/pag.h"
 
 struct dsc;
 

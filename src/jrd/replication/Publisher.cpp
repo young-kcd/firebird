@@ -655,10 +655,10 @@ void REPL_gen_id(thread_db* tdbb, SLONG genId, SINT64 value)
 	const auto database = tdbb->getDatabase();
 
 	MetaName genName;
-	if (!database->dbb_mdc.getSequence(tdbb, genId, genName))
+	if (!database->dbb_mdc->getSequence(tdbb, genId, genName))
 	{
 		MET_lookup_generator_id(tdbb, genId, genName, nullptr);
-		database->dbb_mdc.setSequence(genId, genName);
+		database->dbb_mdc->setSequence(genId, genName);
 	}
 
 	fb_assert(genName.hasData());

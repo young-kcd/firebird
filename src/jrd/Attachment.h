@@ -48,7 +48,6 @@
 #include "../jrd/EngineInterface.h"
 #include "../jrd/sbm.h"
 #include "../jrd/HazardPtr.h"
-#include "../jrd/met.h"
 
 #include <atomic>
 
@@ -581,8 +580,6 @@ public:
 
 	MemoryPool* createPool();
 	void deletePool(MemoryPool* pool);
-
-	MetadataCache att_mdc;
 
 	/// former Database members - end
 

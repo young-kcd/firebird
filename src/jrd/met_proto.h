@@ -25,6 +25,7 @@
 #define JRD_MET_PROTO_H
 
 #include "../jrd/MetaName.h"
+#include "../jrd/HazardPtr.h"
 
 struct dsc;
 
@@ -93,6 +94,7 @@ SLONG		MET_lookup_generator(Jrd::thread_db*, const Jrd::MetaName&, bool* sysGen 
 bool		MET_lookup_generator_id(Jrd::thread_db*, SLONG, Jrd::MetaName&, bool* sysGen = 0);
 void		MET_update_generator_increment(Jrd::thread_db* tdbb, SLONG gen_id, SLONG step);
 void		MET_lookup_index_expression(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*);
+bool		MET_lookup_partner(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation, Jrd::index_desc* idx, const TEXT* index_name);
 Jrd::DmlNode*	MET_parse_blob(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::bid*, Jrd::CompilerScratch**,
 							   Jrd::JrdStatement**, bool, bool);
 void		MET_parse_sys_trigger(Jrd::thread_db*, Jrd::jrd_rel*);
@@ -104,6 +106,7 @@ void		MET_revoke(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::MetaName&,
 	const Jrd::MetaName&, const Firebird::string&);
 void		MET_scan_partners(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_scan_relation(Jrd::thread_db*, Jrd::jrd_rel*);
+void		MET_scan_relation(Jrd::thread_db*, Jrd::HazardPtr<Jrd::jrd_rel>);
 void		MET_trigger_msg(Jrd::thread_db*, Firebird::string&, const Jrd::MetaName&, USHORT);
 void		MET_update_shadow(Jrd::thread_db*, Jrd::Shadow*, USHORT);
 void		MET_update_transaction(Jrd::thread_db*, Jrd::jrd_tra*, const bool);

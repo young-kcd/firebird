@@ -38,6 +38,7 @@
 #include "../jrd/Optimizer.h"
 #include "../jrd/RecordSourceNodes.h"
 #include "../jrd/recsrc/RecordSource.h"
+#include "../jrd/met.h"
 #include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"

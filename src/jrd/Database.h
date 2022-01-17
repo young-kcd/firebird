@@ -35,6 +35,7 @@
 #include "../common/gdsassert.h"
 #include "../common/dsc.h"
 #include "../jrd/btn.h"
+#include "../jrd/vec.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/val.h"
 #include "../jrd/irq.h"
@@ -90,6 +91,7 @@ class MonitoringData;
 class GarbageCollector;
 class CryptoManager;
 class KeywordsMap;
+class MetadataCache;
 
 // allocator for keywords table
 class KeywordsMapAllocator
@@ -98,118 +100,6 @@ public:
 	static KeywordsMap* create();
 	static void destroy(KeywordsMap* inst);
 };
-
-// general purpose vector
-template <class T, BlockType TYPE = type_vec>
-class vec_base : protected pool_alloc<TYPE>
-{
-public:
-	typedef typename Firebird::Array<T>::iterator iterator;
-	typedef typename Firebird::Array<T>::const_iterator const_iterator;
-
-	/*
-	static vec_base* newVector(MemoryPool& p, int len)
-	{
-		return FB_NEW_POOL(p) vec_base<T, TYPE>(p, len);
-	}
-
-	static vec_base* newVector(MemoryPool& p, const vec_base& base)
-	{
-		return FB_NEW_POOL(p) vec_base<T, TYPE>(p, base);
-	}
-	*/
-
-	FB_SIZE_T count() const { return v.getCount(); }
-	T& operator[](FB_SIZE_T index) { return v[index]; }
-	const T& operator[](FB_SIZE_T index) const { return v[index]; }
-
-	iterator begin() { return v.begin(); }
-	iterator end() { return v.end(); }
-
-	const_iterator begin() const { return v.begin(); }
-	const_iterator end() const { return v.end(); }
-
-	void clear() { v.clear(); }
-
-	T* memPtr() { return &v[0]; }
-
-	void resize(FB_SIZE_T n, T val = T()) { v.resize(n, val); }
-
-	void operator delete(void* mem) { MemoryPool::globalFree(mem); }
-
-protected:
-	vec_base(MemoryPool& p, int len)
-		: v(p, len)
-	{
-		v.resize(len);
-	}
-
-	vec_base(MemoryPool& p, const vec_base& base)
-		: v(p)
-	{
-		v = base.v;
-	}
-
-private:
-	Firebird::Array<T> v;
-};
-
-template <typename T>
-class vec : public vec_base<T, type_vec>
-{
-public:
-	static vec* newVector(MemoryPool& p, int len)
-	{
-		return FB_NEW_POOL(p) vec<T>(p, len);
-	}
-
-	static vec* newVector(MemoryPool& p, const vec& base)
-	{
-		return FB_NEW_POOL(p) vec<T>(p, base);
-	}
-
-	static vec* newVector(MemoryPool& p, vec* base, int len)
-	{
-		if (!base)
-			base = FB_NEW_POOL(p) vec<T>(p, len);
-		else if (len > (int) base->count())
-			base->resize(len);
-		return base;
-	}
-
-private:
-	vec(MemoryPool& p, int len) : vec_base<T, type_vec>(p, len) {}
-	vec(MemoryPool& p, const vec& base) : vec_base<T, type_vec>(p, base) {}
-};
-
-class vcl : public vec_base<ULONG, type_vcl>
-{
-public:
-	static vcl* newVector(MemoryPool& p, int len)
-	{
-		return FB_NEW_POOL(p) vcl(p, len);
-	}
-
-	static vcl* newVector(MemoryPool& p, const vcl& base)
-	{
-		return FB_NEW_POOL(p) vcl(p, base);
-	}
-
-	static vcl* newVector(MemoryPool& p, vcl* base, int len)
-	{
-		if (!base)
-			base = FB_NEW_POOL(p) vcl(p, len);
-		else if (len > (int) base->count())
-			base->resize(len);
-		return base;
-	}
-
-private:
-	vcl(MemoryPool& p, int len) : vec_base<ULONG, type_vcl>(p, len) {}
-	vcl(MemoryPool& p, const vcl& base) : vec_base<ULONG, type_vcl>(p, base) {}
-};
-
-typedef vec<TraNumber> TransactionsVector;
 
 
 //
@@ -546,7 +436,7 @@ public:
 	Dictionary dbb_dic;					// metanames dictionary
 	Firebird::InitInstance<KeywordsMap, KeywordsMapAllocator, Firebird::TraditionalDelete> dbb_keywords_map;
 
-	MetadataCache dbb_mdc;
+	MetadataCache* dbb_mdc;
 	HazardDelayedDelete dbb_delayed_delete;
 	Firebird::Mutex dbb_dd_mutex;
 
@@ -588,41 +478,7 @@ public:
 	}
 
 private:
-	Database(MemoryPool* p, Firebird::IPluginConfig* pConf, bool shared)
-	:	dbb_permanent(p),
-		dbb_page_manager(this, *p),
-		dbb_file_id(*p),
-		dbb_modules(*p),
-		dbb_extManager(nullptr),
-		dbb_flags(shared ? DBB_shared : 0),
-		dbb_filename(*p),
-		dbb_database_name(*p),
-#ifdef HAVE_ID_BY_NAME
-		dbb_id(*p),
-#endif
-		dbb_owner(*p),
-		dbb_pools(*p, 4),
-		dbb_sort_buffers(*p),
-		dbb_gc_fini(*p, garbage_collector, THREAD_medium),
-		dbb_stats(*p),
-		dbb_lock_owner_id(getLockOwnerId()),
-		dbb_tip_cache(NULL),
-		dbb_creation_date(Firebird::TimeZoneUtil::getCurrentGmtTimeStamp()),
-		dbb_external_file_directory_list(NULL),
-		dbb_init_fini(FB_NEW_POOL(*getDefaultMemoryPool()) ExistenceRefMutex()),
-		dbb_linger_seconds(0),
-		dbb_linger_end(0),
-		dbb_plugin_config(pConf),
-		dbb_repl_sequence(0),
-		dbb_replica_mode(REPLICA_NONE),
-		dbb_compatibility_index(~0U),
-		dbb_dic(*p),
-		dbb_mdc(*p),
-		dbb_delayed_delete(*p, *p)
-	{
-		dbb_pools.add(p);
-	}
-
+	Database(MemoryPool* p, Firebird::IPluginConfig* pConf, bool shared);
 	~Database();
 
 public:

@@ -26,6 +26,7 @@
 #include "../common/classes/BlrReader.h"
 #include "../jrd/MetaName.h"
 #include "../jrd/QualifiedName.h"
+#include "../jrd/HazardPtr.h"
 #include "../common/classes/NestConst.h"
 #include "../common/MsgMetadata.h"
 #include "../common/classes/Nullable.h"
@@ -40,7 +41,7 @@ namespace Jrd
 	class Parameter;
 	class UserId;
 
-	class Routine : public Firebird::PermanentStorage
+	class Routine : public Firebird::PermanentStorage, public RefHazardObject
 	{
 	protected:
 		explicit Routine(MemoryPool& p)
@@ -134,6 +135,8 @@ namespace Jrd
 		const Firebird::Array<NestConst<Parameter> >& getOutputFields() const { return outputFields; }
 		Firebird::Array<NestConst<Parameter> >& getOutputFields() { return outputFields; }
 
+		bool hasData() const { return name.hasData(); }
+
 		void parseBlr(thread_db* tdbb, CompilerScratch* csb, bid* blob_id, bid* blobDbg);
 		void parseMessages(thread_db* tdbb, CompilerScratch* csb, Firebird::BlrReader blrReader);
 
@@ -151,7 +154,7 @@ namespace Jrd
 		{
 		}
 
-		void release(thread_db* tdbb);
+		int release(thread_db* tdbb) override;
 		void releaseStatement(thread_db* tdbb);
 		void remove(thread_db* tdbb);
 		virtual void releaseExternal() {};
@@ -192,6 +195,8 @@ namespace Jrd
 
 		MetaName owner;
 		Jrd::UserId* invoker;		// Invoker ID
+
+		typedef QualifiedName Key;
 	};
 }
 

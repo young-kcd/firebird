@@ -849,7 +849,7 @@ void Applier::setSequence(thread_db* tdbb, const MetaName& genName, SINT64 value
 {
 	const auto dbb = tdbb->getDatabase();
 
-	auto gen_id = dbb->dbb_mdc.lookupSequence(tdbb, genName);
+	auto gen_id = dbb->dbb_mdc->lookupSequence(tdbb, genName);
 
 	if (gen_id < 0)
 	{
@@ -858,7 +858,7 @@ void Applier::setSequence(thread_db* tdbb, const MetaName& genName, SINT64 value
 		if (gen_id < 0)
 			raiseError("Generator %s is not found", genName.c_str());
 
-		dbb->dbb_mdc.setSequence(gen_id, genName);
+		dbb->dbb_mdc->setSequence(gen_id, genName);
 	}
 
 	AutoSetRestoreFlag<ULONG> noCascade(&tdbb->tdbb_flags, TDBB_repl_in_progress, !m_enableCascade);

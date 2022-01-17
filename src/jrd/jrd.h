@@ -37,7 +37,9 @@
 #include "../jrd/jrd_proto.h"
 #include "../jrd/obj.h"
 #include "../jrd/val.h"
+#include "../jrd/vec.h"
 #include "../jrd/status.h"
+#include "../jrd/Database.h"
 
 #include "../common/classes/fb_atomic.h"
 #include "../common/classes/fb_string.h"
@@ -86,7 +88,7 @@
 #include "../jrd/pag.h"
 
 #include "../jrd/RuntimeStatistics.h"
-#include "../jrd/Database.h"
+//#include "../jrd/Database.h"
 #include "../jrd/lck.h"
 
 // Error codes
@@ -127,169 +129,8 @@ class dsql_dbb;
 class PreparedStatement;
 class TraceManager;
 class MessageNode;
+class Database;
 
-
-// Relation trigger definition
-
-class Trigger
-{
-public:
-	Firebird::HalfStaticArray<UCHAR, 128> blr;			// BLR code
-	Firebird::HalfStaticArray<UCHAR, 128> debugInfo;	// Debug info
-	JrdStatement* statement;							// Compiled statement
-	bool		releaseInProgress;
-	bool		sysTrigger;
-	FB_UINT64	type;						// Trigger type
-	USHORT		flags;						// Flags as they are in RDB$TRIGGERS table
-	jrd_rel*	relation;					// Trigger parent relation
-	MetaName	name;				// Trigger name
-	MetaName	engine;				// External engine name
-	Firebird::string	entryPoint;			// External trigger entrypoint
-	Firebird::string	extBody;			// External trigger body
-	ExtEngineManager::Trigger* extTrigger;	// External trigger
-	Nullable<bool> ssDefiner;
-	MetaName	owner;				// Owner for SQL SECURITY
-
-	bool isActive() const;
-
-	void compile(thread_db*);				// Ensure that trigger is compiled
-	void release(thread_db*);				// Try to free trigger request
-
-	explicit Trigger(MemoryPool& p)
-		: blr(p),
-		  debugInfo(p),
-		  releaseInProgress(false),
-		  name(p),
-		  engine(p),
-		  entryPoint(p),
-		  extBody(p),
-		  extTrigger(NULL)
-	{}
-
-	virtual ~Trigger()
-	{
-		delete extTrigger;
-	}
-};
-
-
-// Array of triggers (suppose separate arrays for triggers of different types)
-
-class TrigVector : public Firebird::ObjectsArray<Trigger>
-{
-public:
-	explicit TrigVector(Firebird::MemoryPool& pool)
-		: Firebird::ObjectsArray<Trigger>(pool),
-		  useCount(0)
-	{ }
-
-	TrigVector()
-		: Firebird::ObjectsArray<Trigger>(),
-		  useCount(0)
-	{ }
-
-	void addRef()
-	{
-		++useCount;
-	}
-
-	bool hasActive() const;
-
-	void decompile(thread_db* tdbb);
-
-	void release();
-	void release(thread_db* tdbb);
-
-	~TrigVector()
-	{
-		fb_assert(useCount.value() == 0);
-	}
-
-private:
-	Firebird::AtomicCounter useCount;
-};
-
-
-// Procedure block
-
-class jrd_prc : public Routine
-{
-public:
-	const Format*	prc_record_format;
-	prc_t			prc_type;					// procedure type
-
-	const ExtEngineManager::Procedure* getExternal() const { return prc_external; }
-	void setExternal(ExtEngineManager::Procedure* value) { prc_external = value; }
-
-private:
-	const ExtEngineManager::Procedure* prc_external;
-
-public:
-	explicit jrd_prc(MemoryPool& p)
-		: Routine(p),
-		  prc_record_format(NULL),
-		  prc_type(prc_legacy),
-		  prc_external(NULL)
-	{
-	}
-
-public:
-	virtual int getObjectType() const
-	{
-		return obj_procedure;
-	}
-
-	virtual SLONG getSclType() const
-	{
-		return SCL_object_procedure;
-	}
-
-	virtual void releaseFormat()
-	{
-		delete prc_record_format;
-		prc_record_format = NULL;
-	}
-
-	virtual ~jrd_prc()
-	{
-		delete prc_external;
-	}
-
-	virtual bool checkCache(thread_db* tdbb) const;
-	virtual void clearCache(thread_db* tdbb);
-
-	virtual void releaseExternal()
-	{
-		delete prc_external;
-		prc_external = NULL;
-	}
-
-protected:
-	virtual bool reload(thread_db* tdbb);	// impl is in met.epp
-};
-
-
-// Parameter block
-
-class Parameter : public pool_alloc<type_prm>
-{
-public:
-	USHORT		prm_number;
-	dsc			prm_desc;
-	NestConst<ValueExprNode>	prm_default_value;
-	bool		prm_nullable;
-	prm_mech_t	prm_mechanism;
-	MetaName prm_name;			// asciiz name
-	MetaName prm_field_source;
-	FUN_T		prm_fun_mechanism;
-
-public:
-	explicit Parameter(MemoryPool& p)
-		: prm_name(p),
-		  prm_field_source(p)
-	{
-	}
-};
 
 // Index block to cache index information
 
@@ -900,68 +741,6 @@ inline bool JRD_reschedule(Jrd::thread_db* tdbb, bool force = false)
 
 	return false;
 }
-
-// Threading macros
-
-/* Define JRD_get_thread_data off the platform specific version.
- * If we're in DEV mode, also do consistancy checks on the
- * retrieved memory structure.  This was originally done to
- * track down cases of no "PUT_THREAD_DATA" on the NLM.
- *
- * This allows for NULL thread data (which might be an error by itself)
- * If there is thread data,
- * AND it is tagged as being a thread_db.
- * AND it has a non-NULL database field,
- * THEN we validate that the structure there is a database block.
- * Otherwise, we return what we got.
- * We can't always validate the database field, as during initialization
- * there is no database set up.
- */
-
-#if defined(DEV_BUILD)
-#include "../jrd/err_proto.h"
-
-inline Jrd::thread_db* JRD_get_thread_data()
-{
-	Firebird::ThreadData* p1 = Firebird::ThreadData::getSpecific();
-	if (p1 && p1->getType() == Firebird::ThreadData::tddDBB)
-	{
-		Jrd::thread_db* p2 = (Jrd::thread_db*) p1;
-		if (p2->getDatabase() && !p2->getDatabase()->checkHandle())
-		{
-			BUGCHECK(147);
-		}
-	}
-	return (Jrd::thread_db*) p1;
-}
-
-inline void CHECK_TDBB(const Jrd::thread_db* tdbb)
-{
-	fb_assert(tdbb && (tdbb->getType() == Firebird::ThreadData::tddDBB) &&
-		(!tdbb->getDatabase() || tdbb->getDatabase()->checkHandle()));
-}
-
-inline void CHECK_DBB(const Jrd::Database* dbb)
-{
-	fb_assert(dbb && dbb->checkHandle());
-}
-
-#else // PROD_BUILD
-
-inline Jrd::thread_db* JRD_get_thread_data()
-{
-	return (Jrd::thread_db*) Firebird::ThreadData::getSpecific();
-}
-
-inline void CHECK_DBB(const Jrd::Database*)
-{
-}
-
-inline void CHECK_TDBB(const Jrd::thread_db*)
-{
-}
-
-#endif
 
 inline Jrd::Database* GET_DBB()
 {

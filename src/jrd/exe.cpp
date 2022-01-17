@@ -556,7 +556,7 @@ void EXE_execute_db_triggers(thread_db* tdbb, jrd_tra* transaction, TriggerActio
 			return;
 	}
 
-	TrigVector** triggers = attachment->att_mdc.getTriggers(type | TRIGGER_TYPE_DB);
+	TrigVector** triggers = attachment->att_database->dbb_mdc->getTriggers(type | TRIGGER_TYPE_DB);
 	if (triggers)
 	{
 		jrd_tra* old_transaction = tdbb->getTransaction();
@@ -579,10 +579,10 @@ void EXE_execute_db_triggers(thread_db* tdbb, jrd_tra* transaction, TriggerActio
 // Execute DDL triggers.
 void EXE_execute_ddl_triggers(thread_db* tdbb, jrd_tra* transaction, bool preTriggers, int action)
 {
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Jrd::Database* const dbb = tdbb->getDatabase();
 
 	// Our caller verifies (ATT_no_db_triggers) if DDL triggers should not run.
-	TrigVector** cachedTriggers = attachment->att_mdc.getTriggers(TRIGGER_TYPE_DDL);
+	TrigVector** cachedTriggers = dbb->dbb_mdc->getTriggers(TRIGGER_TYPE_DDL);
 
 	if (cachedTriggers && *cachedTriggers)
 	{
@@ -1596,5 +1596,44 @@ static void trigger_failure(thread_db* tdbb, jrd_req* trigger)
 	else
 	{
 		ERR_punt();
+	}
+}
+
+void AutoCacheRequest::reset(thread_db* tdbb, USHORT aId, InternalRequest aWhich)
+{
+	release();
+
+	id = aId;
+	which = aWhich;
+	request = tdbb->getDatabase()->dbb_mdc->findSystemRequest(tdbb, id, which);
+}
+
+AutoCacheRequest::AutoCacheRequest(thread_db* tdbb, USHORT aId, InternalRequest aWhich)
+	: id(aId),
+	  which(aWhich),
+	  request(tdbb->getDatabase()->dbb_mdc->findSystemRequest(tdbb, id, which))
+{ }
+
+void AutoCacheRequest::cacheRequest()
+{
+	Jrd::Database* dbb = JRD_get_thread_data()->getDatabase();
+	dbb->dbb_mdc->cacheRequest(which, id, request->getStatement());
+}
+
+void AutoCacheRequest::release()
+{
+	if (request)
+	{
+		EXE_unwind(JRD_get_thread_data(), request);
+		request = NULL;
+	}
+}
+
+void AutoRequest::release()
+{
+	if (request)
+	{
+		CMP_release(JRD_get_thread_data(), request);
+		request = NULL;
 	}
 }

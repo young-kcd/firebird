@@ -26,6 +26,7 @@
 
 #include "../jrd/RuntimeStatistics.h"
 #include "../jrd/ntrace.h"
+#include "../jrd/met.h"
 
 using namespace Firebird;
 
@@ -111,7 +112,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
 				TraceCounts traceCounts;
 				traceCounts.trc_relation_id = rel_id;
 				traceCounts.trc_counters = base_cnts->getCounterVector();
-				jrd_rel* const relation = att->att_mdc.getRelation(rel_id);
+				HazardPtr<jrd_rel> relation = att->att_database->dbb_mdc->getRelation(rel_id);
 				traceCounts.trc_relation_name = relation ? relation->rel_name.c_str() : NULL;
 				temp.add(traceCounts);
 			}
@@ -125,7 +126,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
 			TraceCounts traceCounts;
 			traceCounts.trc_relation_id = rel_id;
 			traceCounts.trc_counters = new_cnts->getCounterVector();
-			jrd_rel* const relation = att->att_mdc.getRelation(rel_id);
+			HazardPtr<jrd_rel> relation = att->att_database->dbb_mdc->getRelation(rel_id);
 			traceCounts.trc_relation_name = relation ? relation->rel_name.c_str() : NULL;
 			temp.add(traceCounts);
 		}

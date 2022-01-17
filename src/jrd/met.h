@@ -24,11 +24,14 @@
 #ifndef JRD_MET_H
 #define JRD_MET_H
 
-#include "../common/classes/vector.h"
+#include "../jrd/Relation.h"
+#include "../jrd/ExtEngineManager.h"
+#include "../jrd/Function.h"
 
 #include "../jrd/val.h"
 #include "../jrd/irq.h"
 #include "../jrd/drq.h"
+
 #include "../jrd/HazardPtr.h"
 
 // Record types for record summary blob records
@@ -132,15 +135,7 @@ example #3:
 
 const int TRIGGER_COMBINED_MAX	= 128;
 
-
-//
-// Flags to indicate normal internal requests vs. dyn internal requests
-//
-enum InternalRequest : USHORT {
-	NOT_REQUEST, IRQ_REQUESTS, DYN_REQUESTS
-};
-
-
+#include "../jrd/exe_proto.h"
 #include "../jrd/obj.h"
 #include "../dsql/sym.h"
 
@@ -148,11 +143,173 @@ class CharSetContainer;
 
 namespace Jrd {
 
-template <typename T> class vec;
-class Routine;
-class jrd_prc;
-class Function;
-class TrigVector;
+// Relation trigger definition
+
+class Trigger : public RefHazardObject
+{
+public:
+	typedef QualifiedName Key;
+
+	Firebird::HalfStaticArray<UCHAR, 128> blr;			// BLR code
+	Firebird::HalfStaticArray<UCHAR, 128> debugInfo;	// Debug info
+	JrdStatement* statement;							// Compiled statement
+	bool		releaseInProgress;
+	bool		sysTrigger;
+	FB_UINT64	type;						// Trigger type
+	USHORT		flags;						// Flags as they are in RDB$TRIGGERS table
+	jrd_rel*	relation;					// Trigger parent relation
+	MetaName	name;				// Trigger name
+	MetaName	engine;				// External engine name
+	Firebird::string	entryPoint;			// External trigger entrypoint
+	Firebird::string	extBody;			// External trigger body
+	ExtEngineManager::Trigger* extTrigger;	// External trigger
+	Nullable<bool> ssDefiner;
+	MetaName	owner;				// Owner for SQL SECURITY
+
+	bool hasData() const
+	{
+		return name.hasData();
+	}
+
+	bool isActive() const;
+
+	void compile(thread_db*);				// Ensure that trigger is compiled
+	int release(thread_db*) override;		// Try to free trigger request
+
+	explicit Trigger(MemoryPool& p)
+		: blr(p),
+		  debugInfo(p),
+		  releaseInProgress(false),
+		  name(p),
+		  engine(p),
+		  entryPoint(p),
+		  extBody(p),
+		  extTrigger(NULL)
+	{}
+
+	virtual ~Trigger()
+	{
+		delete extTrigger;
+	}
+};
+
+	// Array of triggers (suppose separate arrays for triggers of different types)
+	class TrigVector : public HazardArray<Trigger>
+	{
+	public:
+		explicit TrigVector(Firebird::MemoryPool& pool)
+			: HazardArray<Trigger>(pool),
+			  useCount(0)
+		{ }
+
+/*		TrigVector()
+			: HazardArray<Trigger>(),
+			  useCount(0)
+		{ }
+ */
+		void addRef()
+		{
+			++useCount;
+		}
+
+		bool hasActive() const;
+
+		void decompile(thread_db* tdbb);
+
+		void release();
+		void release(thread_db* tdbb);
+
+		~TrigVector()
+		{
+			fb_assert(useCount.value() == 0);
+		}
+
+	private:
+		Firebird::AtomicCounter useCount;
+	};
+
+
+// Procedure block
+
+class jrd_prc : public Routine
+{
+public:
+	const Format*	prc_record_format;
+	prc_t			prc_type;					// procedure type
+
+	const ExtEngineManager::Procedure* getExternal() const { return prc_external; }
+	void setExternal(ExtEngineManager::Procedure* value) { prc_external = value; }
+
+private:
+	const ExtEngineManager::Procedure* prc_external;
+
+public:
+	explicit jrd_prc(MemoryPool& p)
+		: Routine(p),
+		  prc_record_format(NULL),
+		  prc_type(prc_legacy),
+		  prc_external(NULL)
+	{
+	}
+
+public:
+	virtual int getObjectType() const
+	{
+		return obj_procedure;
+	}
+
+	virtual SLONG getSclType() const
+	{
+		return SCL_object_procedure;
+	}
+
+	virtual void releaseFormat()
+	{
+		delete prc_record_format;
+		prc_record_format = NULL;
+	}
+
+	virtual ~jrd_prc()
+	{
+		delete prc_external;
+	}
+
+	virtual bool checkCache(thread_db* tdbb) const;
+	virtual void clearCache(thread_db* tdbb);
+
+	virtual void releaseExternal()
+	{
+		delete prc_external;
+		prc_external = NULL;
+	}
+
+protected:
+	virtual bool reload(thread_db* tdbb);	// impl is in met.epp
+};
+
+
+// Parameter block
+
+class Parameter : public pool_alloc<type_prm>
+{
+public:
+	USHORT		prm_number;
+	dsc			prm_desc;
+	NestConst<ValueExprNode>	prm_default_value;
+	bool		prm_nullable;
+	prm_mech_t	prm_mechanism;
+	MetaName prm_name;			// asciiz name
+	MetaName prm_field_source;
+	FUN_T		prm_fun_mechanism;
+
+public:
+	explicit Parameter(MemoryPool& p)
+		: prm_name(p),
+		  prm_field_source(p)
+	{
+	}
+};
+
 struct index_desc;
 struct DSqlCacheItem;
 
@@ -167,70 +324,16 @@ enum IndexStatus
 
 class MetadataCache : public Firebird::PermanentStorage
 {
-	template <class Object>
-	class Collection : public Firebird::PermanentStorage
-	{
-	public:
-		typedef typename Object::Key Key;
-		typedef Object* Value;
-		typedef std::atomic<Object*> ArrayElement;
-
-		explicit Collection(MemoryPool& pool)
-			: Firebird::PermanentStorage(pool)
-		{}
-
-		void store(SLONG id, const Value val)
-		{
-			fb_assert(id >= 0);
-			fb_assert(id < (int) m_objects.getCapacity());
-
-			if (id >= (int) m_objects.getCount())
-				m_objects.grow(id + 1);
-
-			m_objects[id].store(val, std::memory_order_release);
-		}
-
-		bool load(SLONG id, Hazard<Object>& val)
-		{
-			if (id < (int) m_objects.getCount())
-			{
-				val.set(m_objects[id]);
-
-				if (val->hasData())
-					return true;
-			}
-
-			return false;
-		}
-
-		SLONG lookup(thread_db* tdbb, const Key key)
-		{
-			for (FB_SIZE_T pos = 0; pos < m_objects.getCount(); ++pos)
-			{
-				Hazard<Object> val(tdbb, m_objects[pos]);
-				if (val.hasData() && val->getKey() == key)
-					return (SLONG) pos;
-			}
-
-			return -1;
-		}
-
-	private:
-		static const unsigned int MAX_IDS = 0x8000u;
-		Firebird::Vector<std::atomic<Object*>, MAX_IDS> m_objects;
-	};
-
-
-	class GenObject : public HazardObject
+	class Generator : public HazardObject
 	{
 	public:
 		typedef MetaName Key;
 
-		GenObject(MetaName name)
+		Generator(MetaName name)
 			: value(name)
 		{ }
 
-		GenObject()
+		Generator()
 		{ }
 
 		bool hasData() const
@@ -251,6 +354,7 @@ class MetadataCache : public Firebird::PermanentStorage
 public:
 	MetadataCache(MemoryPool& pool)
 		: Firebird::PermanentStorage(pool),
+		  mdc_relations(getPool()),
 		  mdc_procedures(getPool()),
 		  mdc_functions(getPool()),
 		  mdc_generators(getPool()),
@@ -275,8 +379,8 @@ public:
 	void releaseGTTs(thread_db* tdbb);
 	void runDBTriggers(thread_db* tdbb, TriggerAction action);
 	void invalidateReplSet(thread_db* tdbb);
-	Function* lookupFunction(thread_db* tdbb, const QualifiedName& name, USHORT setBits, USHORT clearBits);
-	jrd_rel* getRelation(ULONG rel_id);
+	HazardPtr<Function> lookupFunction(thread_db* tdbb, const QualifiedName& name, USHORT setBits, USHORT clearBits);
+	HazardPtr<jrd_rel> getRelation(ULONG rel_id);
 	void setRelation(ULONG rel_id, jrd_rel* rel);
 	USHORT relCount();
 	void releaseTrigger(thread_db* tdbb, USHORT triggerId, const MetaName& name);
@@ -294,44 +398,44 @@ public:
 		}
 	}
 
-	Function* getFunction(USHORT id, bool grow = false)
+	HazardPtr<Function> getFunction(thread_db* tdbb, USHORT id, bool grow = false)
 	{
+		HazardPtr<Function> rc(tdbb);
+
 		if (id >= mdc_functions.getCount())
 		{
 			if (grow)
 				mdc_functions.grow(id + 1);
-			else
-				return nullptr;
 		}
-		return mdc_functions[id];
+		else
+			mdc_functions.load(id, rc);
+
+		return rc;
 	}
 
-	void setFunction(USHORT id, Function* f)
+	HazardPtr<Function> setFunction(thread_db* tdbb, USHORT id, Function* f)
 	{
-		if (id >= mdc_functions.getCount())
-			mdc_functions.grow(id + 1);
-
-		mdc_functions[id] = f;
+		return mdc_functions.store(tdbb, id, f);
 	}
 
-	jrd_prc* getProcedure(USHORT id, bool grow = false)
+	HazardPtr<jrd_prc> getProcedure(thread_db* tdbb, USHORT id, bool grow = false)
 	{
+		HazardPtr<jrd_prc> rc(tdbb);
+
 		if (id >= mdc_procedures.getCount())
 		{
 			if (grow)
 				mdc_procedures.grow(id + 1);
-			else
-				return nullptr;
 		}
-		return mdc_procedures[id];
+		else
+			mdc_procedures.load(id, rc);
+
+		return rc;
 	}
 
-	void setProcedure(USHORT id, jrd_prc* p)
+	void setProcedure(thread_db* tdbb, USHORT id, jrd_prc* p)
 	{
-		if (id >= mdc_procedures.getCount())
-			mdc_procedures.grow(id + 1);
-
-		mdc_procedures[id] = p;
+		mdc_procedures.store(tdbb, id, p);
 	}
 
 	SLONG lookupSequence(thread_db* tdbb, const MetaName& name)
@@ -341,7 +445,7 @@ public:
 
 	bool getSequence(thread_db* tdbb, SLONG id, MetaName& name)
 	{
-		Hazard<GenObject> hp(tdbb);
+		HazardPtr<Generator> hp(tdbb);
 
 		if (!mdc_generators.load(id, hp))
 			return false;
@@ -350,10 +454,10 @@ public:
 		return true;
 	}
 
-	void setSequence(SLONG id, MetaName name)
+	void setSequence(thread_db* tdbb, SLONG id, MetaName name)
 	{
-		GenObject* genObj = FB_NEW_POOL(getPool()) GenObject(name);
-		mdc_generators.store(id, genObj);
+		Generator* genObj = FB_NEW_POOL(getPool()) Generator(name);
+		mdc_generators.store(tdbb, id, genObj);
 	}
 
 	CharSetContainer* getCharSet(USHORT id)
@@ -382,33 +486,31 @@ public:
 	static bool routine_in_use(thread_db* tdbb, Routine* routine);
 	void load_db_triggers(thread_db* tdbb, int type);
 	void load_ddl_triggers(thread_db* tdbb);
-	static jrd_prc* lookup_procedure(thread_db* tdbb, const QualifiedName& name, bool noscan);
-	static jrd_prc* lookup_procedure_id(thread_db* tdbb, USHORT id, bool return_deleted, bool noscan, USHORT flags);
-	static jrd_rel* lookup_relation(thread_db*, const MetaName&);
-	static jrd_rel* lookup_relation_id(thread_db*, SLONG, bool);
+	static HazardPtr<jrd_prc> lookup_procedure(thread_db* tdbb, const QualifiedName& name, bool noscan);
+	static HazardPtr<jrd_prc> lookup_procedure_id(thread_db* tdbb, USHORT id, bool return_deleted, bool noscan, USHORT flags);
+	static HazardPtr<jrd_rel> lookup_relation(thread_db*, const MetaName&);
+	static HazardPtr<jrd_rel> lookup_relation_id(thread_db*, SLONG, bool);
 	static void lookup_index(thread_db* tdbb, MetaName& index_name, const MetaName& relation_name, USHORT number);
 	static SLONG lookup_index_name(thread_db* tdbb, const MetaName& index_name,
 								   SLONG* relation_id, IndexStatus* status);
-	static bool lookup_partner(thread_db* tdbb, jrd_rel* relation, index_desc* idx, const TEXT* index_name);
-	static void scan_partners(thread_db*, jrd_rel*);
 	static void post_existence(thread_db* tdbb, jrd_rel* relation);
-	static jrd_prc* findProcedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags);
-    static jrd_rel* findRelation(thread_db* tdbb, USHORT id);
+	static HazardPtr<jrd_prc> findProcedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags);
+    static HazardPtr<jrd_rel> findRelation(thread_db* tdbb, USHORT id);
 	static bool get_char_coll_subtype(thread_db* tdbb, USHORT* id, const UCHAR* name, USHORT length);
 	static bool resolve_charset_and_collation(thread_db* tdbb, USHORT* id,
 											  const UCHAR* charset, const UCHAR* collation);
-	static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, sym_type type, const QualifiedName& name);
+	static HazardPtr<DSqlCacheItem> get_dsql_cache_item(thread_db* tdbb, sym_type type, const QualifiedName& name);
 	static void dsql_cache_release(thread_db* tdbb, sym_type type, const MetaName& name, const MetaName& package = "");
 	static bool dsql_cache_use(thread_db* tdbb, sym_type type, const MetaName& name, const MetaName& package = "");
 	// end of met_proto.h
 
 private:
-	vec<jrd_rel*>*					mdc_relations;			// relation vector
-	Firebird::Array<jrd_prc*>		mdc_procedures;			// scanned procedures
+	HazardArray<jrd_rel>			mdc_relations;			// relations
+	HazardArray<jrd_prc>			mdc_procedures;			// scanned procedures
 	TrigVector*						mdc_triggers[DB_TRIGGER_MAX];
 	TrigVector*						mdc_ddl_triggers;
-	Firebird::Array<Function*>		mdc_functions;			// User defined functions
-	Collection<GenObject>			mdc_generators;
+	HazardArray<Function>			mdc_functions;			// User defined functions
+	HazardArray<Generator>			mdc_generators;
 
 	Firebird::Array<JrdStatement*>	mdc_internal;			// internal statements
 	Firebird::Array<JrdStatement*>	mdc_dyn_req;			// internal dyn statements

@@ -30,6 +30,13 @@ namespace Jrd {
 	class jrd_req;
 	class jrd_tra;
 	class AssignmentNode;
+
+	//
+	// Flags to indicate normal internal requests vs. dyn internal requests
+	//
+	enum InternalRequest : USHORT {
+		NOT_REQUEST, IRQ_REQUESTS, DYN_REQUESTS
+	};
 }
 
 void EXE_assignment(Jrd::thread_db*, const Jrd::AssignmentNode*);
@@ -59,12 +66,7 @@ namespace Jrd
 	class AutoCacheRequest
 	{
 	public:
-		AutoCacheRequest(thread_db* tdbb, USHORT aId, InternalRequest aWhich)
-			: id(aId),
-			  which(aWhich),
-			  request(tdbb->getAttachment()->att_mdc.findSystemRequest(tdbb, id, which))
-		{
-		}
+		AutoCacheRequest(thread_db* tdbb, USHORT aId, InternalRequest aWhich);
 
 		AutoCacheRequest()
 			: id(0),
@@ -79,14 +81,7 @@ namespace Jrd
 		}
 
 	public:
-		void reset(thread_db* tdbb, USHORT aId, InternalRequest aWhich)
-		{
-			release();
-
-			id = aId;
-			which = aWhich;
-			request = tdbb->getAttachment()->att_mdc.findSystemRequest(tdbb, id, which);
-		}
+		void reset(thread_db* tdbb, USHORT aId, InternalRequest aWhich);
 
 		void compile(thread_db* tdbb, const UCHAR* blr, ULONG blrLength)
 		{
@@ -113,20 +108,8 @@ namespace Jrd
 		}
 
 	private:
-		inline void release()
-		{
-			if (request)
-			{
-				EXE_unwind(JRD_get_thread_data(), request);
-				request = NULL;
-			}
-		}
-
-		inline void cacheRequest()
-		{
-			Jrd::Attachment* att = JRD_get_thread_data()->getAttachment();
-			att->att_mdc.cacheRequest(which, id, request->getStatement());
-		}
+		void release();
+		void cacheRequest();
 
 	private:
 		USHORT id;
@@ -177,14 +160,7 @@ namespace Jrd
 		}
 
 	private:
-		inline void release()
-		{
-			if (request)
-			{
-				CMP_release(JRD_get_thread_data(), request);
-				request = NULL;
-			}
-		}
+		void release();
 
 	private:
 		jrd_req* request;

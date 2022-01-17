@@ -22,7 +22,7 @@
 #ifndef JRD_RELATION_H
 #define JRD_RELATION_H
 
-#include "../jrd/jrd.h"
+#include "../jrd/vec.h"
 #include "../jrd/btr.h"
 #include "../jrd/lck.h"
 #include "../jrd/pag.h"
@@ -36,6 +36,11 @@ template <typename T> class vec;
 class BoolExprNode;
 class RseNode;
 class StmtNode;
+class jrd_fld;
+class ExternalFile;
+class IndexLock;
+class IndexBlock;
+class TrigVector;
 
 // view context block to cache view aliases
 
@@ -219,11 +224,13 @@ struct frgn
 // in the database, though it is not really filled out until
 // the relation is scanned
 
-class jrd_rel : public pool_alloc<type_rel>
+class jrd_rel : public HazardObject
 {
 	typedef Firebird::HalfStaticArray<Record*, 4> GCRecordList;
 
 public:
+	typedef MetaName Key;
+
 	MemoryPool*		rel_pool;
 	USHORT			rel_id;
 	USHORT			rel_current_fmt;	// Current format number

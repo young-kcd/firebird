@@ -46,6 +46,7 @@
 #include "../jrd/Function.h"
 #include "../jrd/TimeZone.h"
 #include "../jrd/SystemPackages.h"
+#include "../jrd/met.h"
 #include "../common/isc_proto.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/fb_string.h"

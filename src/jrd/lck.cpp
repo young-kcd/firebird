@@ -1496,6 +1496,11 @@ Lock::~Lock()
 	}
 }
 
+Attachment* Lock::getLockAttachment()
+{
+	return lck_attachment ? lck_attachment->getHandle() : NULL;
+}
+
 void Lock::setLockAttachment(Jrd::Attachment* attachment)
 {
 	if (get_owner_type(lck_type) == LCK_OWNER_database)

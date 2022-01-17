@@ -1723,7 +1723,7 @@ bool VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 					index_desc idx;
 
 					if ((BTR_lookup(tdbb, r2, id - 1, &idx, r2->getBasePages())) &&
-						MetadataCache::lookup_partner(tdbb, r2, &idx, index_name.nullStr()) &&
+						MET_lookup_partner(tdbb, r2, &idx, index_name.nullStr()) &&
 						(partner = MetadataCache::lookup_relation_id(tdbb, idx.idx_primary_relation, false)) )
 					{
 						DFW_post_work_arg(transaction, work, 0, partner->rel_id,
@@ -3918,10 +3918,10 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 	bool ret = true;
 
 	try {
-		MetadataCache& mdc = attachment->att_mdc;
-		for (FB_SIZE_T i = 1; i < mdc.relCount(); i++)
+		MetadataCache* mdc = attachment->att_database->dbb_mdc;
+		for (FB_SIZE_T i = 1; i < mdc->relCount(); i++)
 		{
-			relation = mdc.getRelation(i);
+			relation = mdc->getRelation(i);
 			if (relation)
 				relation = MetadataCache::lookup_relation_id(tdbb, i, false);
 
@@ -4993,7 +4993,7 @@ void Database::garbage_collector(Database* dbb)
 		attachment->releaseLocks(tdbb);
 		LCK_fini(tdbb, LCK_OWNER_attachment);
 
-		attachment->att_mdc.releaseRelations(tdbb);
+		dbb->dbb_mdc->releaseRelations(tdbb);
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{

@@ -52,6 +52,7 @@
 #include "../common/sdl.h"
 #include "../jrd/intl.h"
 #include "../jrd/cch.h"
+#include "../jrd/met.h"
 #include "../common/gdsassert.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/blf_proto.h"
@@ -1389,7 +1390,7 @@ blb* blb::open2(thread_db* tdbb,
 		// know about the relation, the blob id has got to be invalid
 		// anyway.
 
-		blob->blb_relation = tdbb->getAttachment()->att_mdc.getRelation(blobId.bid_internal.bid_relation_id);
+		blob->blb_relation = tdbb->getDatabase()->dbb_mdc->getRelation(blobId.bid_internal.bid_relation_id);
 		if (!blob->blb_relation)
 				ERR_post(Arg::Gds(isc_bad_segstr_id));
 
@@ -1687,13 +1688,9 @@ void blb::put_slice(thread_db*	tdbb,
 	if (SDL_info(tdbb->tdbb_status_vector, sdl, &info, 0))
 		ERR_punt();
 
-	jrd_rel* relation;
-	if (info.sdl_info_relation.length()) {
-		relation = MetadataCache::lookup_relation(tdbb, info.sdl_info_relation);
-	}
-	else {
-		relation = MetadataCache::findRelation(tdbb, info.sdl_info_rid);
-	}
+	HazardPtr<jrd_rel> relation = info.sdl_info_relation.length() ?
+		MetadataCache::lookup_relation(tdbb, info.sdl_info_relation) :
+		MetadataCache::findRelation(tdbb, info.sdl_info_rid);
 
 	if (!relation) {
 		IBERROR(196);			// msg 196 relation for array not known

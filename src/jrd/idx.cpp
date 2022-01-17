@@ -60,6 +60,7 @@
 #include "../jrd/jrd_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/met.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/tra_proto.h"
@@ -137,7 +138,7 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 		{
 			// find the corresponding primary key index
 
-			if (!MetadataCache::lookup_partner(tdbb, relation, &idx, 0))
+			if (!MET_lookup_partner(tdbb, relation, &idx, 0))
 				continue;
 
 			jrd_rel* referenced_relation = MetadataCache::findRelation(tdbb, idx.idx_primary_relation);
@@ -336,7 +337,7 @@ void IDX_create_index(thread_db* tdbb,
 	USHORT partner_index_id = 0;
 	if (isForeign)
 	{
-		if (!MetadataCache::lookup_partner(tdbb, relation, idx, index_name))
+		if (!MET_lookup_partner(tdbb, relation, idx, index_name))
 			BUGCHECK(173);		// msg 173 referenced index description not found
 
 		partner_relation = MetadataCache::findRelation(tdbb, idx->idx_primary_relation);
@@ -926,7 +927,7 @@ void IDX_modify_check_constraints(thread_db* tdbb,
 	while (BTR_next_index(tdbb, org_rpb->rpb_relation, transaction, &idx, &window))
 	{
 		if (!(idx.idx_flags & (idx_primary | idx_unique)) ||
-			!MetadataCache::lookup_partner(tdbb, org_rpb->rpb_relation, &idx, 0))
+			!MET_lookup_partner(tdbb, org_rpb->rpb_relation, &idx, 0))
 		{
 			continue;
 		}
@@ -1001,7 +1002,7 @@ void IDX_modify_flag_uk_modified(thread_db* tdbb,
 	while (BTR_next_index(tdbb, relation, transaction, &idx, &window))
 	{
 		if (!(idx.idx_flags & (idx_primary | idx_unique)) ||
-			!MetadataCache::lookup_partner(tdbb, relation, &idx, 0))
+			!MET_lookup_partner(tdbb, relation, &idx, 0))
 		{
 			continue;
 		}
@@ -1289,7 +1290,7 @@ static idx_e check_foreign_key(thread_db* tdbb,
 
 	idx_e result = idx_e_ok;
 
-	if (!MetadataCache::lookup_partner(tdbb, relation, idx, 0))
+	if (!MET_lookup_partner(tdbb, relation, idx, 0))
 		return result;
 
 	jrd_rel* partner_relation = NULL;

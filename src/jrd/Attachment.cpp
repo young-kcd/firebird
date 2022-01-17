@@ -42,6 +42,7 @@
 #include "../jrd/tpc_proto.h"
 
 #include "../jrd/extds/ExtDS.h"
+#include "../jrd/met.h"
 
 #include "../jrd/replication/Applier.h"
 #include "../jrd/replication/Manager.h"
@@ -265,7 +266,6 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, JProvider* provider
 	  att_utility(UTIL_NONE),
 	  att_dec_status(DecimalStatus::DEFAULT),
 	  att_pools(*pool),
-	  att_mdc(*pool),
 	  att_idle_timeout(0),
 	  att_stmt_timeout(0),
 	  att_batches(*pool),
@@ -462,7 +462,7 @@ void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 	{
 		// Run ON DISCONNECT trigger before reset
 		if (!(att_flags & ATT_no_db_triggers))
-			att_mdc.runDBTriggers(tdbb, TRIGGER_DISCONNECT);
+			att_database->dbb_mdc->runDBTriggers(tdbb, TRIGGER_DISCONNECT);
 
 		// shutdown attachment on any error after this point
 		shutAtt = true;
@@ -500,11 +500,11 @@ void Jrd::Attachment::resetSession(thread_db* tdbb, jrd_tra** traHandle)
 			SCL_release_all(att_security_classes);
 
 		// reset GTT's
-		att_mdc.releaseGTTs(tdbb);
+		att_database->dbb_mdc->releaseGTTs(tdbb);
 
 		// Run ON CONNECT trigger after reset
 		if (!(att_flags & ATT_no_db_triggers))
-			att_mdc.runDBTriggers(tdbb, TRIGGER_CONNECT);
+			att_database->dbb_mdc->runDBTriggers(tdbb, TRIGGER_CONNECT);
 
 		if (oldTran)
 		{
@@ -623,7 +623,7 @@ void Jrd::Attachment::initLocks(thread_db* tdbb)
 
 void Jrd::Attachment::releaseLocks(thread_db* tdbb)
 {
-	att_mdc.releaseLocks(tdbb);
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! to database att_mdc.releaseLocks(tdbb);
 
 	// Release the DSQL cache locks
 
@@ -877,13 +877,13 @@ void Attachment::checkReplSetLock(thread_db* tdbb)
 	}
 }
 
-// Move to database level ????????
+// Move to database level ???????? !!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 void Attachment::invalidateReplSet(thread_db* tdbb, bool broadcast)
 {
 	att_flags |= ATT_repl_reset;
 
-	att_mdc.invalidateReplSet(tdbb);
+	att_database->dbb_mdc->invalidateReplSet(tdbb);
 
 	if (broadcast)
 	{

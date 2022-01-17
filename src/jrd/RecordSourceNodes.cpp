@@ -38,6 +38,7 @@
 #include "../dsql/gen_proto.h"
 #include "../dsql/metd_proto.h"
 #include "../dsql/pass1_proto.h"
+#include "../jrd/met.h"
 
 using namespace Firebird;
 using namespace Jrd;
@@ -622,7 +623,6 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 
 			if (!(node->relation = MetadataCache::lookup_relation_id(tdbb, id, false)))
 				name.printf("id %d", id);
-
 			break;
 		}
 
@@ -968,7 +968,6 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 
 			if (!(procedure = MetadataCache::lookup_procedure_id(tdbb, pid, false, false, 0)))
 				name.identifier.printf("id %d", pid);
-
 			break;
 		}
 

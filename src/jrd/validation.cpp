@@ -1587,7 +1587,7 @@ void Validation::walk_database()
  * Functional description
  *
  **************************************/
-	Jrd::Attachment* attachment = vdr_tdbb->getAttachment();
+	Jrd::Database* const dbb = vdr_tdbb->getDatabase();
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
@@ -1618,14 +1618,14 @@ void Validation::walk_database()
 		walk_generators();
 	}
 
-	MetadataCache& mdc = attachment->att_mdc;
-	for (USHORT i = 0; i < mdc.relCount(); i++)
+	MetadataCache* mdc = dbb->dbb_mdc;
+	for (USHORT i = 0; i < mdc->relCount(); i++)
 	{
 #ifdef DEBUG_VAL_VERBOSE
 		if (i > dbb->dbb_max_sys_rel) // Why not system flag instead?
 			VAL_debug_level = 2;
 #endif
-		jrd_rel* relation = mdc.getRelation(i);
+		jrd_rel* relation = mdc->getRelation(i);
 
 		if (relation && relation->rel_flags & REL_check_existence)
 			relation = MetadataCache::lookup_relation_id(vdr_tdbb, i, false);

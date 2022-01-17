@@ -124,6 +124,7 @@ static BoolExprNode* parse_field_validation_blr(thread_db* tdbb, bid* blob_id, c
 static void save_trigger_data(thread_db*, TrigVector**, jrd_rel*, JrdStatement*, blb*, blb*,
 	const TEXT*, FB_UINT64, bool, USHORT, const MetaName&, const string&,
 	const bid*, Nullable<bool> ssDefiner);
+static void scan_partners(thread_db*, jrd_rel*);
 static void store_dependencies(thread_db*, CompilerScratch*, const jrd_rel*,
 	const MetaName&, int, jrd_tra*);
 static bool verify_TRG_ignore_perm(thread_db*, const MetaName&);
@@ -336,9 +337,9 @@ void MetadataCache::update_partners(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Attachment* const attachment = tdbb->getAttachment();
+	Database* const dbb = tdbb->getDatabase();
 
-	vec<jrd_rel*>* relations = attachment->att_mdc.mdc_relations;
+	vec<jrd_rel*>* relations = dbb->dbb_mdc->mdc_relations;
 
 	vec<jrd_rel*>::iterator ptr = relations->begin();
 	for (const vec<jrd_rel*>::const_iterator end = relations->end(); ptr < end; ++ptr)
@@ -422,12 +423,12 @@ void MetadataCache::verify_cache(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Attachment* att = tdbb->getAttachment();
-	if (!att)
+	Database* dbb = tdbb->getDatabase();
+	if (!dbb)
 		return;
-	MetadataCache& mdc = att->att_mdc;
+	MetadataCache* mdc = dbb->dbb_mdc;
 
-	for (jrd_prc** iter = mdc.mdc_procedures.begin(); iter != mdc.mdc_procedures.end(); ++iter)
+	for (jrd_prc** iter = mdc->mdc_procedures.begin(); iter != mdc->mdc_procedures.end(); ++iter)
 	{
 		Routine* routine = *iter;
 
@@ -438,7 +439,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 		}
 	}
 
-	for (Function** iter = mdc.mdc_functions.begin(); iter != mdc.mdc_functions.end(); ++iter)
+	for (Function** iter = mdc->mdc_functions.begin(); iter != mdc->mdc_functions.end(); ++iter)
 	{
 		Routine* routine = *iter;
 
@@ -450,7 +451,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 	}
 
 	// Walk procedures and calculate internal dependencies
-	for (jrd_prc** iter = mdc.mdc_procedures.begin(); iter != mdc.mdc_procedures.end(); ++iter)
+	for (jrd_prc** iter = mdc->mdc_procedures.begin(); iter != mdc->mdc_procedures.end(); ++iter)
 	{
 		jrd_prc* routine = *iter;
 
@@ -461,7 +462,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 		}
 	}
 
-	for (Function** iter = mdc.mdc_functions.begin(); iter != mdc.mdc_functions.end(); ++iter)
+	for (Function** iter = mdc->mdc_functions.begin(); iter != mdc->mdc_functions.end(); ++iter)
 	{
 		Routine* routine = *iter;
 
@@ -473,7 +474,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 	}
 
 	// Walk procedures again and check dependencies
-	for (jrd_prc** iter = mdc.mdc_procedures.begin(); iter != mdc.mdc_procedures.end(); ++iter)
+	for (jrd_prc** iter = mdc->mdc_procedures.begin(); iter != mdc->mdc_procedures.end(); ++iter)
 	{
 		Routine* routine = *iter;
 
@@ -486,7 +487,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 				routine->getId(), routine->getName().toString().c_str(),
 				routine->useCount, routine->intUseCount);
 
-			for (jrd_prc** iter2 = mdc.mdc_procedures.begin(); iter2 != mdc.mdc_procedures.end(); ++iter2)
+			for (jrd_prc** iter2 = mdc->mdc_procedures.begin(); iter2 != mdc->mdc_procedures.end(); ++iter2)
 			{
 				Routine* routine2 = *iter2;
 
@@ -514,7 +515,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 				}
 			}
 
-			for (Function** iter2 = mdc.mdc_functions.begin(); iter2 != mdc.mdc_functions.end(); ++iter2)
+			for (Function** iter2 = mdc->mdc_functions.begin(); iter2 != mdc->mdc_functions.end(); ++iter2)
 			{
 				Routine* routine2 = *iter2;
 
@@ -548,7 +549,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 	}
 
 	// Walk functions again and check dependencies
-	for (Function** iter = mdc.mdc_functions.begin(); iter != mdc.mdc_functions.end(); ++iter)
+	for (Function** iter = mdc->mdc_functions.begin(); iter != mdc->mdc_functions.end(); ++iter)
 	{
 		Routine* routine = *iter;
 
@@ -561,7 +562,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 				routine->getId(), routine->getName().toString().c_str(),
 				routine->useCount, routine->intUseCount);
 
-			for (jrd_prc** iter2 = mdc.mdc_procedures.begin(); iter2 != mdc.mdc_procedures.end(); ++iter2)
+			for (jrd_prc** iter2 = mdc->mdc_procedures.begin(); iter2 != mdc->mdc_procedures.end(); ++iter2)
 			{
 				Routine* routine2 = *iter2;
 
@@ -589,7 +590,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 				}
 			}
 
-			for (Function** iter2 = mdc.mdc_functions.begin(); iter2 != mdc.mdc_functions.end(); ++iter2)
+			for (Function** iter2 = mdc->mdc_functions.begin(); iter2 != mdc->mdc_functions.end(); ++iter2)
 			{
 				Routine* routine2 = *iter2;
 
@@ -623,7 +624,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 	}
 
 	// Fix back int_use_count
-	for (jrd_prc** iter = mdc.mdc_procedures.begin(); iter != mdc.mdc_procedures.end(); ++iter)
+	for (jrd_prc** iter = mdc->mdc_procedures.begin(); iter != mdc->mdc_procedures.end(); ++iter)
 	{
 		Routine* routine = *iter;
 
@@ -631,7 +632,7 @@ void MetadataCache::verify_cache(thread_db* tdbb)
 			routine->intUseCount = 0;
 	}
 
-	for (Function** iter = mdc.mdc_functions.begin(); iter != mdc.mdc_functions.end(); ++iter)
+	for (Function** iter = mdc->mdc_functions.begin(); iter != mdc->mdc_functions.end(); ++iter)
 	{
 		Routine* routine = *iter;
 
@@ -658,18 +659,18 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	verify_cache(tdbb);
 
-	MetadataCache& mdc = tdbb->getAttachment()->att_mdc;
+	MetadataCache& mdc = tdbb->getDatabase()->dbb_mdc;
 
 	// Release global (db-level and DDL) triggers
 
 	for (unsigned i = 0; i < DB_TRIGGER_MAX; i++)
-		MET_release_triggers(tdbb, &mdc.mdc_triggers[i], false);
+		MET_release_triggers(tdbb, &mdc->mdc_triggers[i], false);
 
-	MET_release_triggers(tdbb, &mdc.mdc_ddl_triggers, false);
+	MET_release_triggers(tdbb, &mdc->mdc_ddl_triggers, false);
 
 	// Release relation triggers
 
-	vec<jrd_rel*>* const relations = mdc.mdc_relations;
+	vec<jrd_rel*>* const relations = mdc->mdc_relations;
 	if (relations)
 	{
 		vec<jrd_rel*>::iterator ptr, end;
@@ -685,7 +686,7 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 
 	// Walk routines and calculate internal dependencies.
 
-	for (jrd_prc** iter = mdc.mdc_procedures.begin(); iter != mdc.mdc_procedures.end(); ++iter)
+	for (jrd_prc** iter = mdc->mdc_procedures.begin(); iter != mdc->mdc_procedures.end(); ++iter)
 	{
 		Routine* const routine = *iter;
 
@@ -696,7 +697,7 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 		}
 	}
 
-	for (Function** iter = mdc.mdc_functions.begin(); iter != mdc.mdc_functions.end(); ++iter)
+	for (Function** iter = mdc->mdc_functions.begin(); iter != mdc->mdc_functions.end(); ++iter)
 	{
 		Function* const routine = *iter;
 
@@ -709,7 +710,7 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 
 	// Walk routines again and adjust dependencies for routines which will not be removed.
 
-	for (jrd_prc** iter = mdc.mdc_procedures.begin(); iter != mdc.mdc_procedures.end(); ++iter)
+	for (jrd_prc** iter = mdc->mdc_procedures.begin(); iter != mdc->mdc_procedures.end(); ++iter)
 	{
 		Routine* const routine = *iter;
 
@@ -721,7 +722,7 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 		}
 	}
 
-	for (Function** iter = mdc.mdc_functions.begin(); iter != mdc.mdc_functions.end(); ++iter)
+	for (Function** iter = mdc->mdc_functions.begin(); iter != mdc->mdc_functions.end(); ++iter)
 	{
 		Function* const routine = *iter;
 
@@ -735,7 +736,7 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 
 	// Deallocate all used requests.
 
-	for (jrd_prc** iter = mdc.mdc_procedures.begin(); iter != mdc.mdc_procedures.end(); ++iter)
+	for (jrd_prc** iter = mdc->mdc_procedures.begin(); iter != mdc->mdc_procedures.end(); ++iter)
 	{
 		Routine* const routine = *iter;
 
@@ -761,7 +762,7 @@ void MetadataCache::clear_cache(thread_db* tdbb)
 		}
 	}
 
-	for (Function** iter = mdc.mdc_functions.begin(); iter != mdc.mdc_functions.end(); ++iter)
+	for (Function** iter = mdc->mdc_functions.begin(); iter != mdc->mdc_functions.end(); ++iter)
 	{
 		Function* const routine = *iter;
 
@@ -808,9 +809,9 @@ bool MetadataCache::routine_in_use(thread_db* tdbb, Routine* routine)
 
 	verify_cache(tdbb);
 
-	MetadataCache& mdc = tdbb->getAttachment()->att_mdc;
+	MetadataCache& mdc = tdbb->getDatabase()->dbb_mdc;
 
-	vec<jrd_rel*>* relations = mdc.mdc_relations;
+	vec<jrd_rel*>* relations = mdc->mdc_relations;
 	{ // scope
 	    vec<jrd_rel*>::iterator ptr, end;
 
@@ -831,7 +832,7 @@ bool MetadataCache::routine_in_use(thread_db* tdbb, Routine* routine)
 
 	// Walk routines and calculate internal dependencies
 
-	for (jrd_prc** iter = mdc.mdc_procedures.begin(); iter != mdc.mdc_procedures.end(); ++iter)
+	for (jrd_prc** iter = mdc->mdc_procedures.begin(); iter != mdc->mdc_procedures.end(); ++iter)
 	{
 		jrd_prc* procedure = *iter;
 
@@ -842,7 +843,7 @@ bool MetadataCache::routine_in_use(thread_db* tdbb, Routine* routine)
 		}
 	}
 
-	for (Function** iter = mdc.mdc_functions.begin(); iter != mdc.mdc_functions.end(); ++iter)
+	for (Function** iter = mdc->mdc_functions.begin(); iter != mdc->mdc_functions.end(); ++iter)
 	{
 		Function* function = *iter;
 
@@ -856,7 +857,7 @@ bool MetadataCache::routine_in_use(thread_db* tdbb, Routine* routine)
 	// Walk routines again and adjust dependencies for routines
 	// which will not be removed.
 
-	for (jrd_prc** iter = mdc.mdc_procedures.begin(); iter != mdc.mdc_procedures.end(); ++iter)
+	for (jrd_prc** iter = mdc->mdc_procedures.begin(); iter != mdc->mdc_procedures.end(); ++iter)
 	{
 		jrd_prc* procedure = *iter;
 
@@ -868,7 +869,7 @@ bool MetadataCache::routine_in_use(thread_db* tdbb, Routine* routine)
 		}
 	}
 
-	for (Function** iter = mdc.mdc_functions.begin(); iter != mdc.mdc_functions.end(); ++iter)
+	for (Function** iter = mdc->mdc_functions.begin(); iter != mdc->mdc_functions.end(); ++iter)
 	{
 		Function* function = *iter;
 
@@ -884,7 +885,7 @@ bool MetadataCache::routine_in_use(thread_db* tdbb, Routine* routine)
 
 	// Fix back intUseCount
 
-	for (jrd_prc** iter = mdc.mdc_procedures.begin(); iter != mdc.mdc_procedures.end(); ++iter)
+	for (jrd_prc** iter = mdc->mdc_procedures.begin(); iter != mdc->mdc_procedures.end(); ++iter)
 	{
 		jrd_prc* procedure = *iter;
 
@@ -892,7 +893,7 @@ bool MetadataCache::routine_in_use(thread_db* tdbb, Routine* routine)
 			procedure->intUseCount = 0;
 	}
 
-	for (Function** iter = mdc.mdc_functions.begin(); iter != mdc.mdc_functions.end(); ++iter)
+	for (Function** iter = mdc->mdc_functions.begin(); iter != mdc->mdc_functions.end(); ++iter)
 	{
 		Function* function = *iter;
 
@@ -2638,7 +2639,7 @@ void MET_lookup_index_expression(thread_db* tdbb, jrd_rel* relation, index_desc*
 }
 
 
-bool MetadataCache::lookup_partner(thread_db* tdbb, jrd_rel* relation, index_desc* idx, const TEXT* index_name)
+bool MET_lookup_partner(thread_db* tdbb, jrd_rel* relation, index_desc* idx, const TEXT* index_name)
 {
 /**************************************
  *
@@ -2751,11 +2752,11 @@ jrd_prc* MetadataCache::lookup_procedure(thread_db* tdbb, const QualifiedName& n
  **************************************/
 	SET_TDBB(tdbb);
 	Attachment* attachment = tdbb->getAttachment();
-	MetadataCache& mdc = attachment->att_mdc;
+	MetadataCache* mdc = attachment->att_database->dbb_mdc;
 	jrd_prc* check_procedure = NULL;
 
 	// See if we already know the procedure by name
-	for (jrd_prc** iter = mdc.mdc_procedures.begin(); iter != mdc.mdc_procedures.end(); ++iter)
+	for (jrd_prc** iter = mdc->mdc_procedures.begin(); iter != mdc->mdc_procedures.end(); ++iter)
 	{
 		jrd_prc* procedure = *iter;
 
@@ -2823,12 +2824,12 @@ jrd_prc* MetadataCache::lookup_procedure_id(thread_db* tdbb, USHORT id,
  **************************************/
 	SET_TDBB(tdbb);
 	Attachment* attachment = tdbb->getAttachment();
-	MetadataCache& mdc = attachment->att_mdc;
+	MetadataCache* mdc = attachment->att_database->dbb_mdc;
 	jrd_prc* check_procedure = NULL;
 
 	jrd_prc* procedure;
 
-	if (id < (USHORT) mdc.mdc_procedures.getCount() && (procedure = mdc.mdc_procedures[id]) &&
+	if (id < (USHORT) mdc->mdc_procedures.getCount() && (procedure = mdc->mdc_procedures[id]) &&
 		procedure->getId() == id &&
 		!(procedure->flags & Routine::FLAG_CLEARED) &&
 		!(procedure->flags & Routine::FLAG_BEING_SCANNED) &&
@@ -2888,11 +2889,11 @@ jrd_rel* MetadataCache::lookup_relation(thread_db* tdbb, const MetaName& name)
  **************************************/
 	SET_TDBB(tdbb);
 	Attachment* attachment = tdbb->getAttachment();
-	MetadataCache& mdc = attachment->att_mdc;
+	MetadataCache* mdc = attachment->att_database->dbb_mdc;
 
 	// See if we already know the relation by name
 
-	vec<jrd_rel*>* relations = mdc.mdc_relations;
+	vec<jrd_rel*>* relations = mdc->mdc_relations;
 	jrd_rel* check_relation = NULL;
 
 	vec<jrd_rel*>::iterator ptr = relations->begin();
@@ -2985,7 +2986,7 @@ jrd_rel* MetadataCache::lookup_relation_id(thread_db* tdbb, SLONG id, bool retur
  **************************************/
 	SET_TDBB(tdbb);
 	Attachment* const attachment = tdbb->getAttachment();
-	MetadataCache& mdc = attachment->att_mdc;
+	MetadataCache* mdc = attachment->att_database->dbb_mdc;
 
 	// System relations are above suspicion
 
@@ -2997,7 +2998,7 @@ jrd_rel* MetadataCache::lookup_relation_id(thread_db* tdbb, SLONG id, bool retur
 
 	jrd_rel* check_relation = NULL;
 	jrd_rel* relation;
-	vec<jrd_rel*>* vector = mdc.mdc_relations;
+	vec<jrd_rel*>* vector = mdc->mdc_relations;
 	if (vector && (id < (SLONG) vector->count()) && (relation = (*vector)[id]))
 	{
 		if (relation->rel_flags & REL_deleting)
@@ -3275,12 +3276,12 @@ jrd_prc* MetadataCache::findProcedure(thread_db* tdbb, USHORT id, bool noscan, U
 	SET_TDBB(tdbb);
 	Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
-	MetadataCache& mdc = attachment->att_mdc;
+	MetadataCache* mdc = dbb->dbb_mdc;
 
-	if (id >= mdc.mdc_procedures.getCount())
-		mdc.mdc_procedures.resize(id + 10);
+	if (id >= mdc->mdc_procedures.getCount())
+		mdc->mdc_procedures.resize(id + 10);
 
-	jrd_prc* procedure = mdc.mdc_procedures[id];
+	jrd_prc* procedure = mdc->mdc_procedures[id];
 
 	if (procedure && !(procedure->flags & Routine::FLAG_OBSOLETE))
 	{
@@ -3319,7 +3320,7 @@ jrd_prc* MetadataCache::findProcedure(thread_db* tdbb, USHORT id, bool noscan, U
 
 	if (!procedure)
 	{
-		procedure = FB_NEW_POOL(mdc.getPool()) jrd_prc(mdc.getPool());
+		procedure = FB_NEW_POOL(mdc->getPool()) jrd_prc(mdc->getPool());
 	}
 
 	try {
@@ -3328,11 +3329,11 @@ jrd_prc* MetadataCache::findProcedure(thread_db* tdbb, USHORT id, bool noscan, U
 	procedure->flags &= ~(Routine::FLAG_OBSOLETE | Routine::FLAG_CLEARED);
 
 	procedure->setId(id);
-	attachment->att_mdc.mdc_procedures[id] = procedure;
+	dbb->dbb_mdc->mdc_procedures[id] = procedure;
 
 	if (!procedure->existenceLock)
 	{
-		Lock* lock = FB_NEW_RPT(mdc.getPool(), 0)
+		Lock* lock = FB_NEW_RPT(mdc->getPool(), 0)
 			Lock(tdbb, sizeof(SLONG), LCK_prc_exist, procedure, blocking_ast_procedure);
 		procedure->existenceLock = lock;
 		lock->setKey(procedure->getId());
@@ -3413,7 +3414,7 @@ jrd_prc* MetadataCache::findProcedure(thread_db* tdbb, USHORT id, bool noscan, U
 					procedure->getOutputFields() : procedure->getInputFields();
 
 				// should be error if field already exists
-				Parameter* parameter = FB_NEW_POOL(mdc.getPool()) Parameter(mdc.getPool());
+				Parameter* parameter = FB_NEW_POOL(mdc->getPool()) Parameter(mdc->getPool());
 				parameter->prm_number = PA.RDB$PARAMETER_NUMBER;
 				paramArray[parameter->prm_number] = parameter;
 				parameter->prm_name = PA.RDB$PARAMETER_NAME;
@@ -3460,7 +3461,7 @@ jrd_prc* MetadataCache::findProcedure(thread_db* tdbb, USHORT id, bool noscan, U
 
 			if (paramArray.hasData() && paramArray[0])
 			{
-				Format* format = Format::newFormat(mdc.getPool(), procedure->getOutputFields().getCount());
+				Format* format = Format::newFormat(mdc->getPool(), procedure->getOutputFields().getCount());
 				procedure->prc_record_format = format;
 				ULONG length = FLAG_BYTES(format->fmt_count);
 				Format::fmt_desc_iterator desc = format->fmt_desc.begin();
@@ -3667,12 +3668,12 @@ jrd_rel* MetadataCache::findRelation(thread_db* tdbb, USHORT id)
 	CHECK_DBB(dbb);
 
 	Attachment* attachment = tdbb->getAttachment();
-	MetadataCache& mdc = attachment->att_mdc;
-	vec<jrd_rel*>* vector = mdc.mdc_relations;
-	MemoryPool& pool = mdc.getPool();
+	MetadataCache* mdc = attachment->att_database->dbb_mdc;
+	vec<jrd_rel*>* vector = mdc->mdc_relations;
+	MemoryPool& pool = mdc->getPool();
 
 	if (!vector)
-		vector = mdc.mdc_relations = vec<jrd_rel*>::newVector(pool, id + 10);
+		vector = mdc->mdc_relations = vec<jrd_rel*>::newVector(pool, id + 10);
 	else if (id >= vector->count())
 		vector->resize(id + 10);
 
@@ -3819,9 +3820,14 @@ void MET_scan_partners(thread_db* tdbb, jrd_rel* relation)
 	SET_TDBB(tdbb);
 
 	if (relation->rel_flags & REL_check_partners)
-		MetadataCache::scan_partners(tdbb, relation);
+		scan_partners(tdbb, relation);
 }
 
+
+void MET_scan_relation(thread_db* tdbb, HazardPtr<Jrd::jrd_rel> relation)
+{
+	MET_scan_relation(tdbb, relation.get());
+}
 
 void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 {
@@ -4317,7 +4323,7 @@ DSqlCacheItem* MetadataCache::get_dsql_cache_item(thread_db* tdbb, sym_type type
 {
 	Database* dbb = tdbb->getDatabase();
 	Attachment* attachment = tdbb->getAttachment();
-	MetadataCache& mdc = attachment->att_mdc;
+	MetadataCache* mdc = attachment->att_database->dbb_mdc;
 
 	fb_assert((int) type <= MAX_UCHAR);
 	UCHAR ucharType = (UCHAR) type;
@@ -4345,7 +4351,7 @@ DSqlCacheItem* MetadataCache::get_dsql_cache_item(thread_db* tdbb, sym_type type
 	if (item)
 	{
 		item->key = key;
-		item->lock = FB_NEW_RPT(mdc.getPool(), key.length())
+		item->lock = FB_NEW_RPT(mdc->getPool(), key.length())
 			Lock(tdbb, key.length(), LCK_dsql_cache, item, blocking_ast_dsql_cache);
 		memcpy(item->lock->getKeyPtr(), key.c_str(), key.length());
 	}
@@ -4848,8 +4854,8 @@ bool MetadataCache::resolve_charset_and_collation(thread_db* tdbb, USHORT* id,
 	bool found = false;
 
 	SET_TDBB(tdbb);
-	Attachment* attachment = tdbb->getAttachment();
-	MetadataCache& mdc = attachment->att_mdc;
+	Database* dbb = tdbb->getDatabase();
+	MetadataCache* mdc = dbb->dbb_mdc;
 
 	fb_assert(id != NULL);
 
@@ -4860,13 +4866,13 @@ bool MetadataCache::resolve_charset_and_collation(thread_db* tdbb, USHORT* id,
 		if (charset == NULL)
 			charset = (const UCHAR*) DEFAULT_CHARACTER_SET_NAME;
 
-		if (mdc.mdc_charset_ids.get((const TEXT*) charset, *id))
+		if (mdc->mdc_charset_ids.get((const TEXT*) charset, *id))
 			return true;
 
 		USHORT charset_id = 0;
 		if (get_type(tdbb, &charset_id, charset, "RDB$CHARACTER_SET_NAME"))
 		{
-			attachment->att_mdc.mdc_charset_ids.put((const TEXT*) charset, charset_id);
+			mdc->mdc_charset_ids.put((const TEXT*) charset, charset_id);
 			*id = charset_id;
 			return true;
 		}
@@ -4879,7 +4885,7 @@ bool MetadataCache::resolve_charset_and_collation(thread_db* tdbb, USHORT* id,
 				WITH CS.RDB$CHARACTER_SET_NAME EQ charset
 		{
             found = true;
-			attachment->att_mdc.mdc_charset_ids.put((const TEXT*) charset, CS.RDB$CHARACTER_SET_ID);
+			mdc->mdc_charset_ids.put((const TEXT*) charset, CS.RDB$CHARACTER_SET_ID);
 			*id = CS.RDB$CHARACTER_SET_ID;
 		}
 		END_FOR
@@ -4911,7 +4917,7 @@ bool MetadataCache::resolve_charset_and_collation(thread_db* tdbb, USHORT* id,
 			AND AL1.RDB$TYPE EQ CS.RDB$CHARACTER_SET_ID
 	{
         found = true;
-		attachment->att_mdc.mdc_charset_ids.put((const TEXT*) charset, CS.RDB$CHARACTER_SET_ID);
+		mdc->mdc_charset_ids.put((const TEXT*) charset, CS.RDB$CHARACTER_SET_ID);
 		*id = CS.RDB$CHARACTER_SET_ID | (COL.RDB$COLLATION_ID << 8);
 	}
 	END_FOR
@@ -5005,7 +5011,7 @@ const Trigger* findTrigger(TrigVector* triggers, const MetaName& trig_name)
 }
 
 
-void MetadataCache::scan_partners(thread_db* tdbb, jrd_rel* relation)
+void scan_partners(thread_db* tdbb, jrd_rel* relation)
 {
 /**************************************
  *
@@ -5054,7 +5060,7 @@ void MetadataCache::scan_partners(thread_db* tdbb, jrd_rel* relation)
 	{
 		//// ASF: Hack fix for CORE-4304, until nasty interactions between dfw and met are not resolved.
 		const jrd_rel* partner_relation = relation->rel_name == IND.RDB$RELATION_NAME ?
-			relation : lookup_relation(tdbb, IND.RDB$RELATION_NAME);
+			relation : MetadataCache::lookup_relation(tdbb, IND.RDB$RELATION_NAME);
 
 		if (partner_relation && !IDX.RDB$INDEX_INACTIVE && !IND.RDB$INDEX_INACTIVE)
 		{
@@ -5500,11 +5506,13 @@ Nullable<bool> MET_get_ss_definer(Jrd::thread_db* tdbb)
 
 MetadataCache::~MetadataCache()
 {
+/*
 	for (auto iter = mdc_functions.begin(); iter < mdc_functions.end(); ++iter)
 		delete *iter;
 
 	for (auto iter = mdc_procedures.begin(); iter < mdc_procedures.end(); ++iter)
 		delete *iter;
+ */
 }
 
 void MetadataCache::releaseGTTs(thread_db* tdbb)
@@ -5728,7 +5736,7 @@ void MetadataCache::invalidateReplSet(thread_db* tdbb)
 	}
 }
 
-Function* MetadataCache::lookupFunction(thread_db* tdbb, const QualifiedName& name, USHORT setBits, USHORT clearBits)
+HazardPtr<Function> MetadataCache::lookupFunction(thread_db* tdbb, const QualifiedName& name, USHORT setBits, USHORT clearBits)
 {
 	for (auto function : mdc_functions)
 	{
@@ -5739,7 +5747,7 @@ Function* MetadataCache::lookupFunction(thread_db* tdbb, const QualifiedName& na
 		}
 	}
 
-	return nullptr;
+	return HazardPtr<Function>();
 }
 
 jrd_rel* MetadataCache::getRelation(ULONG rel_id)

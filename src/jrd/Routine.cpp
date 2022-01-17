@@ -28,6 +28,7 @@
 #include "../common/StatusHolder.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/par_proto.h"
+#include "../jrd/met.h"
 
 using namespace Firebird;
 
@@ -258,19 +259,19 @@ void Routine::parseMessages(thread_db* tdbb, CompilerScratch* csb, BlrReader blr
 }
 
 // Decrement the routine's use count.
-void Routine::release(thread_db* tdbb)
+int Routine::release(thread_db* tdbb)
 {
 	// Actually, it's possible for routines to have intermixed dependencies, so
 	// this routine can be called for the routine which is being freed itself.
 	// Hence we should just silently ignore such a situation.
 
 	if (!useCount)
-		return;
+		return 0;
 
 	if (intUseCount > 0)
 		intUseCount--;
 
-	--useCount;
+	int use = --useCount;
 
 #ifdef DEBUG_PROCS
 	{
@@ -286,7 +287,7 @@ void Routine::release(thread_db* tdbb)
 	// in the cache is different than this routine.
 	// The routine will be different than in the cache only if it is a
 	// floating copy, i.e. an old copy or a deleted routine.
-	if (useCount == 0 && !checkCache(tdbb))
+	if (use == 0 && !checkCache(tdbb))
 	{
 		if (getStatement())
 			releaseStatement(tdbb);
@@ -294,6 +295,8 @@ void Routine::release(thread_db* tdbb)
 		flags &= ~Routine::FLAG_BEING_ALTERED;
 		remove(tdbb);
 	}
+
+	return use;
 }
 
 void Routine::releaseStatement(thread_db* tdbb)
@@ -377,12 +380,12 @@ void Routine::remove(thread_db* tdbb)
 
 bool jrd_prc::checkCache(thread_db* tdbb) const
 {
-	return tdbb->getAttachment()->att_mdc.getProcedure(getId()) == this;
+	return tdbb->getDatabase()->dbb_mdc->getProcedure(tdbb, getId()) == this;
 }
 
 void jrd_prc::clearCache(thread_db* tdbb)
 {
-	tdbb->getAttachment()->att_mdc.setProcedure(getId(), nullptr);
+	tdbb->getDatabase()->dbb_mdc->setProcedure(tdbb, getId(), nullptr);
 }
 
 
