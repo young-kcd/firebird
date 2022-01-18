@@ -1341,7 +1341,6 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 	temp.printf("%s.%ld.%ld", name.c_str(), eff_gid, eff_uid);
 	port->port_user_name = REMOTE_make_string(temp.c_str());
 
-	port->port_protocol_str = REMOTE_make_string("TCPv4");
 	get_peer_info(port);
 
 	return true;
@@ -2627,6 +2626,71 @@ static XDR_INT inet_destroy( XDR*)
 	return (XDR_INT) 0;
 }
 
+namespace {
+
+// The class SockAddr was developed by Michal Kubecek <mike@mk-sys.cz>
+// for Firebird v3 and later backported partially into Firebird v2.5
+
+class SockAddr
+{
+private:
+	union sa_data {
+		struct sockaddr sock;
+		struct sockaddr_in inet;
+		struct sockaddr_in6 inet6;
+	} data;
+	socklen_t len;
+
+public:
+	void SockAddr::clear()
+	{
+		len = 0;
+		memset(&data, 0, sizeof(data));
+	}
+
+	const SockAddr& operator = (const SockAddr& x);
+
+	SockAddr() { clear(); }
+	~SockAddr() {}
+
+	struct sockaddr* ptr() { return &data.sock; }
+	const struct sockaddr* ptr() const { return &data.sock; }
+	unsigned length() const { return len; }
+	unsigned short SockAddr::family() const { return data.sock.sa_family; }
+
+	int getpeername(SOCKET s)
+	{
+		len = sizeof(sa_data);
+		int R = ::getpeername(s, ptr(), &len);
+		if (R < 0)
+			clear();
+		return R;
+	}
+
+	void unmapV4()
+	{
+		if (family() != AF_INET6)
+			return;
+
+		// IPv6 mapped IPv4 addresses are ::ffff:0:0/32
+		static const unsigned char v4mapped_pfx[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff};
+
+		if (memcmp(data.inet6.sin6_addr.s6_addr, v4mapped_pfx, sizeof(v4mapped_pfx)) != 0)
+			return;
+
+		unsigned short port = ntohs(data.inet6.sin6_port);
+		struct in_addr addr;
+		memcpy(&addr, (char*)(&data.inet6.sin6_addr.s6_addr) + sizeof(v4mapped_pfx), sizeof(addr));
+
+		data.inet.sin_family = AF_INET;
+		data.inet.sin_port = htons(port);
+		data.inet.sin_addr.s_addr = addr.s_addr;
+		len = sizeof(struct sockaddr_in);
+	}
+};
+
+}
+
 void get_peer_info(rem_port* port)
 {
 /**************************************
@@ -2639,23 +2703,25 @@ void get_peer_info(rem_port* port)
 *	Port just connected. Obtain some info about connection and peer.
 *
 **************************************/
-	struct sockaddr_in address;
-	socklen_t l = sizeof(address);
+	port->port_protocol_str = REMOTE_make_string("TCPv4");
 
-	memset(&address, 0, sizeof(address));
-	int status = getpeername(port->port_handle, (struct sockaddr *) &address, &l);
-	if (status == 0)
+	SockAddr address;
+	if (address.getpeername(port->port_handle) == 0)
 	{
 		Firebird::string addr_str;
+		address.unmapV4();	// convert mapped IPv4 to regular IPv4
 		char host[64];		// 32 digits, 7 colons, 1 trailing null byte
 		char serv[16];
-		int nameinfo = getnameinfo((struct sockaddr *) &address, l, host, sizeof(host),
+		int nameinfo = getnameinfo(address.ptr(), address.length(), host, sizeof(host),
 								   serv, sizeof(serv), NI_NUMERICHOST | NI_NUMERICSERV);
 
 		if (!nameinfo)
 			addr_str.printf("%s/%s", host, serv);
 
 		port->port_address_str = REMOTE_make_string(addr_str.c_str());
+
+		if (address.family() == AF_INET6)
+			port->port_protocol_str->str_data[4] = '6';
 	}
 }
 
