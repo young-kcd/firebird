@@ -1281,7 +1281,8 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 					key->key_nulls |= 1 << n;
 				else
 				{
-					if (desc_ptr->dsc_dtype == dtype_text)
+					if (desc_ptr->dsc_dtype == dtype_text &&
+						tail->idx_field < record->getFormat()->fmt_desc.getCount())
 					{
 						// That's necessary for NO-PAD collations.
 						INTL_adjust_text_descriptor(tdbb, desc_ptr);
