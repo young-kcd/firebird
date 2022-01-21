@@ -423,6 +423,8 @@ void PIO_header(thread_db* tdbb, UCHAR* address, int length)
 	jrd_file* file = pageSpace->file;
 	HANDLE desc = file->fil_desc;
 
+	FileExtendLockGuard extLock(file->fil_ext_lock, false);
+
 	OVERLAPPED overlapped;
 	OVERLAPPED* overlapped_ptr;
 
