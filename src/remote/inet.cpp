@@ -2642,7 +2642,7 @@ private:
 	socklen_t len;
 
 public:
-	void SockAddr::clear()
+	void clear()
 	{
 		len = 0;
 		memset(&data, 0, sizeof(data));
@@ -2656,7 +2656,7 @@ public:
 	struct sockaddr* ptr() { return &data.sock; }
 	const struct sockaddr* ptr() const { return &data.sock; }
 	unsigned length() const { return len; }
-	unsigned short SockAddr::family() const { return data.sock.sa_family; }
+	unsigned short family() const { return data.sock.sa_family; }
 
 	int getpeername(SOCKET s)
 	{
