@@ -239,7 +239,7 @@ dnl CPU_TYPE=ppc64
     STD_EDITLINE=true
     ;;
 
-  aarch64*-*-linux*)                           
+  aarch64*-*-linux*)
     MAKEFILE_PREFIX=linux_arm64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
@@ -251,7 +251,7 @@ dnl CPU_TYPE=ppc64
     libdir=/usr/lib64
     ;;
 
-  powerpc64le-*-linux*)                           
+  powerpc64le-*-linux*)
     MAKEFILE_PREFIX=linux_powerpc64el
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
@@ -263,7 +263,7 @@ dnl CPU_TYPE=ppc64
     libdir=/usr/lib64
     ;;
 
-  powerpc64-*-linux*)                           
+  powerpc64-*-linux*)
     MAKEFILE_PREFIX=linux_powerpc64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
@@ -840,7 +840,7 @@ AC_COMPILE_IFELSE(
 dnl check for va_copy() in stdarg.h
 AC_COMPILE_IFELSE(
 	[AC_LANG_PROGRAM([[#include <stdarg.h>
-		void vafun(const char* fmt, ...) {va_list par, par2; va_start(par, fmt); va_copy(par2, par); va_end(par2); va_end(par);}]], 
+		void vafun(const char* fmt, ...) {va_list par, par2; va_start(par, fmt); va_copy(par2, par); va_end(par2); va_end(par);}]],
 		[[return 0;]])],
 	AC_DEFINE(HAVE_VA_COPY, 1, [Define this if va_copy() is defined in stdarg.h]))
 
@@ -924,15 +924,8 @@ AC_COMPILE_IFELSE(
 	AC_DEFINE(HAVE_AO_COMPARE_AND_SWAP_FULL, 1, [Define this if AO_compare_and_swap_full() is defined in atomic_ops.h]))
 
 dnl Check for time function
-case $host in
-        *-darwin*)
-                ac_cv_func_clock_gettime=no
-                ;;
-        *)
-		AC_SEARCH_LIBS(clock_gettime, rt)
-                AC_CHECK_FUNCS(clock_gettime)
-                ;;
-esac
+AC_SEARCH_LIBS(clock_gettime, rt)
+AC_CHECK_FUNCS(clock_gettime)
 
 dnl Checks for pthread functions
 AC_CHECK_FUNCS(pthread_mutexattr_setprotocol)
