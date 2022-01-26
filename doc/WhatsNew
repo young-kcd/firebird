@@ -1,4 +1,49 @@
   **************************
+  * v3.0.9
+  **************************
+
+    * Bugfix #7115
+        Server hangs in trace code when it tries to update mapping cache
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #7112
+        Avoid unload of plugins in MacOS due to problematic reload of them
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix #7109
+        Content of DB file can be overwritten with zero characters in some (rare) cases
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix #7084
+        Creating unique constraints on MacOS fails on larger tables
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix #7067
+        Deadlock when using not initialized security database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #7060
+        Deadlock when execute test for CORE-4337
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #7043
+        Wrong message when user has no access to /tmp/firebird
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #6966
+        Status vector for ES(<EMPTY_STRING>) is unstable if another execute block with correct statement was executed before
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+
+  **************************
   * v3.0.8
   **************************
 
