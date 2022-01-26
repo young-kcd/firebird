@@ -252,6 +252,7 @@ void TraceManager::update_session(const TraceSession& session)
 
 			if (session.ses_auth.hasData())
 			{
+				AutoSetRestoreFlag<ULONG> autoRestore(&attachment->att_flags, ATT_mapping, true);
 				Database* dbb = attachment->att_database;
 				fb_assert(dbb);
 
