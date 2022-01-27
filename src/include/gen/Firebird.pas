@@ -5151,6 +5151,8 @@ const
 	 isc_inf_invalid_args = 335545275;
 	 isc_sysf_invalid_null_empty = 335545276;
 	 isc_bad_loctab_num = 335545277;
+	 isc_quoted_str_bad = 335545278;
+	 isc_quoted_str_miss = 335545279;
 	 isc_gfix_db_name = 335740929;
 	 isc_gfix_invalid_sw = 335740930;
 	 isc_gfix_incmp_sw = 335740932;
