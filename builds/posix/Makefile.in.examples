@@ -116,6 +116,9 @@ $(EXAMPLES_FB)/README:
 	$(CP) $(ROOT)/examples/stat/*.* $(EXAMPLES_FB)/stat/
 	$(CP) $(ROOT)/examples/udf/*.* $(EXAMPLES_FB)/udf/
 	$(CP) $(ROOT)/examples/udr/*.* $(EXAMPLES_FB)/udr/
+	$(CP) $(ROOT)/examples/object_pascal/*.* $(EXAMPLES_FB)/object_pascal/
+	$(CP) $(ROOT)/examples/object_pascal/[mM]ake* $(EXAMPLES_FB)/object_pascal/
+	$(CP) $(ROOT)/examples/object_pascal/common/*.* $(EXAMPLES_FB)/object_pascal/common/
 #	$(CP) intlemp.fdb $(EXAMPLES_FB)/empbuild/
 	$(CP) $(ROOT)/examples/readme $(EXAMPLES_FB)/README
 	$(CP) $(ROOT)/examples/empbuild/employe2.sql $(EXAMPLES_FB)/empbuild/
