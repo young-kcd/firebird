@@ -72,6 +72,7 @@
 #include "../jrd/intl.h"
 #include "../jrd/sbm.h"
 #include "../jrd/blb.h"
+#include "../jrd/met.h"
 #include "firebird/impl/blr.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
@@ -556,8 +557,8 @@ void EXE_execute_db_triggers(thread_db* tdbb, jrd_tra* transaction, TriggerActio
 			return;
 	}
 
-	TrigVector** triggers = attachment->att_database->dbb_mdc->getTriggers(type | TRIGGER_TYPE_DB);
-	if (triggers)
+	TrigVectorPtr* triggers = attachment->att_database->dbb_mdc->getTriggers(type | TRIGGER_TYPE_DB);
+	if (triggers && *triggers)
 	{
 		jrd_tra* old_transaction = tdbb->getTransaction();
 		tdbb->setTransaction(transaction);
@@ -582,7 +583,7 @@ void EXE_execute_ddl_triggers(thread_db* tdbb, jrd_tra* transaction, bool preTri
 	Jrd::Database* const dbb = tdbb->getDatabase();
 
 	// Our caller verifies (ATT_no_db_triggers) if DDL triggers should not run.
-	TrigVector** cachedTriggers = dbb->dbb_mdc->getTriggers(TRIGGER_TYPE_DDL);
+	TrigVectorPtr* cachedTriggers = dbb->dbb_mdc->getTriggers(TRIGGER_TYPE_DDL);
 
 	if (cachedTriggers && *cachedTriggers)
 	{
@@ -592,14 +593,15 @@ void EXE_execute_ddl_triggers(thread_db* tdbb, jrd_tra* transaction, bool preTri
 		try
 		{
 			TrigVector triggers;
-			TrigVector* triggersPtr = &triggers;
+			TrigVectorPtr triggersPtr = &triggers;
+			unsigned n = 0;
 
-			for (auto i = (*cachedTriggers)->begin(); i != (*cachedTriggers)->end(); ++i)
+			for (auto t : **cachedTriggers)
 			{
-				if ((i->type & (1LL << action)) &&
-					((preTriggers && (i->type & 0x1) == 0) || (!preTriggers && (i->type & 0x1) == 0x1)))
+				if ((t->type & (1LL << action)) &&
+					((preTriggers && (t->type & 0x1) == 0) || (!preTriggers && (t->type & 0x1) == 0x1)))
 				{
-					triggers.add() = *i;
+					triggers.store(tdbb, n++, t);
 				}
 			}
 
@@ -1103,7 +1105,7 @@ static void execute_looper(thread_db* tdbb,
 
 
 void EXE_execute_triggers(thread_db* tdbb,
-								TrigVector** triggers,
+								TrigVectorPtr* triggers,
 								record_param* old_rpb,
 								record_param* new_rpb,
 								TriggerAction trigger_action, StmtNode::WhichTrigger which_trig)
@@ -1119,7 +1121,7 @@ void EXE_execute_triggers(thread_db* tdbb,
  *	if any blow up.
  *
  **************************************/
-	if (!*triggers)
+	if (!(triggers && *triggers))
 		return;
 
 	SET_TDBB(tdbb);
@@ -1127,7 +1129,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 	jrd_req* const request = tdbb->getRequest();
 	jrd_tra* const transaction = request ? request->req_transaction : tdbb->getTransaction();
 
-	TrigVector* vector = *triggers;
+	TrigVectorPtr vector(triggers->load());
 	Record* const old_rec = old_rpb ? old_rpb->rpb_record : NULL;
 	Record* const new_rec = new_rpb ? new_rpb->rpb_record : NULL;
 
@@ -1157,7 +1159,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 
 	try
 	{
-		for (TrigVector::iterator ptr = vector->begin(); ptr != vector->end(); ++ptr)
+		for (TrigVector::iterator ptr = vector.load()->begin(); ptr != vector.load()->end(); ++ptr)
 		{
 			ptr->compile(tdbb);
 

@@ -1390,7 +1390,8 @@ blb* blb::open2(thread_db* tdbb,
 		// know about the relation, the blob id has got to be invalid
 		// anyway.
 
-		blob->blb_relation = tdbb->getDatabase()->dbb_mdc->getRelation(blobId.bid_internal.bid_relation_id);
+		blob->blb_relation = tdbb->getDatabase()->dbb_mdc->
+			getRelation(tdbb, blobId.bid_internal.bid_relation_id).unsafePointer();
 		if (!blob->blb_relation)
 				ERR_post(Arg::Gds(isc_bad_segstr_id));
 
@@ -1707,7 +1708,7 @@ void blb::put_slice(thread_db*	tdbb,
 	// Make sure relation is scanned
 	MET_scan_relation(tdbb, relation);
 
-	jrd_fld* field = NULL;
+	jrd_fld* field;
 	if (n < 0 || !(field = MET_get_field(relation, n))) {
 		IBERROR(197);			// msg 197 field for array not known
 	}

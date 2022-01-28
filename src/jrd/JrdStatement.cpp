@@ -472,16 +472,16 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 			switch (item->exa_action)
 			{
 				case ExternalAccess::exa_insert:
-					verifyTriggerAccess(tdbb, relation.get(), relation->rel_pre_store, userName);
-					verifyTriggerAccess(tdbb, relation.get(), relation->rel_post_store, userName);
+					verifyTriggerAccess(tdbb, relation.unsafePointer(), relation->rel_pre_store, userName);
+					verifyTriggerAccess(tdbb, relation.unsafePointer(), relation->rel_post_store, userName);
 					break;
 				case ExternalAccess::exa_update:
-					verifyTriggerAccess(tdbb, relation.get(), relation->rel_pre_modify, userName);
-					verifyTriggerAccess(tdbb, relation.get(), relation->rel_post_modify, userName);
+					verifyTriggerAccess(tdbb, relation.unsafePointer(), relation->rel_pre_modify, userName);
+					verifyTriggerAccess(tdbb, relation.unsafePointer(), relation->rel_post_modify, userName);
 					break;
 				case ExternalAccess::exa_delete:
-					verifyTriggerAccess(tdbb, relation.get(), relation->rel_pre_erase, userName);
-					verifyTriggerAccess(tdbb, relation.get(), relation->rel_post_erase, userName);
+					verifyTriggerAccess(tdbb, relation.unsafePointer(), relation->rel_pre_erase, userName);
+					verifyTriggerAccess(tdbb, relation.unsafePointer(), relation->rel_post_erase, userName);
 					break;
 				default:
 					fb_assert(false);

@@ -25,7 +25,6 @@
 #define JRD_MET_H
 
 #include "../jrd/Relation.h"
-#include "../jrd/ExtEngineManager.h"
 #include "../jrd/Function.h"
 
 #include "../jrd/val.h"
@@ -142,92 +141,6 @@ const int TRIGGER_COMBINED_MAX	= 128;
 class CharSetContainer;
 
 namespace Jrd {
-
-// Relation trigger definition
-
-class Trigger : public RefHazardObject
-{
-public:
-	typedef QualifiedName Key;
-
-	Firebird::HalfStaticArray<UCHAR, 128> blr;			// BLR code
-	Firebird::HalfStaticArray<UCHAR, 128> debugInfo;	// Debug info
-	JrdStatement* statement;							// Compiled statement
-	bool		releaseInProgress;
-	bool		sysTrigger;
-	FB_UINT64	type;						// Trigger type
-	USHORT		flags;						// Flags as they are in RDB$TRIGGERS table
-	jrd_rel*	relation;					// Trigger parent relation
-	MetaName	name;				// Trigger name
-	MetaName	engine;				// External engine name
-	Firebird::string	entryPoint;			// External trigger entrypoint
-	Firebird::string	extBody;			// External trigger body
-	ExtEngineManager::Trigger* extTrigger;	// External trigger
-	Nullable<bool> ssDefiner;
-	MetaName	owner;				// Owner for SQL SECURITY
-
-	bool hasData() const
-	{
-		return name.hasData();
-	}
-
-	bool isActive() const;
-
-	void compile(thread_db*);				// Ensure that trigger is compiled
-	int release(thread_db*) override;		// Try to free trigger request
-
-	explicit Trigger(MemoryPool& p)
-		: blr(p),
-		  debugInfo(p),
-		  releaseInProgress(false),
-		  name(p),
-		  engine(p),
-		  entryPoint(p),
-		  extBody(p),
-		  extTrigger(NULL)
-	{}
-
-	virtual ~Trigger()
-	{
-		delete extTrigger;
-	}
-};
-
-	// Array of triggers (suppose separate arrays for triggers of different types)
-	class TrigVector : public HazardArray<Trigger>
-	{
-	public:
-		explicit TrigVector(Firebird::MemoryPool& pool)
-			: HazardArray<Trigger>(pool),
-			  useCount(0)
-		{ }
-
-/*		TrigVector()
-			: HazardArray<Trigger>(),
-			  useCount(0)
-		{ }
- */
-		void addRef()
-		{
-			++useCount;
-		}
-
-		bool hasActive() const;
-
-		void decompile(thread_db* tdbb);
-
-		void release();
-		void release(thread_db* tdbb);
-
-		~TrigVector()
-		{
-			fb_assert(useCount.value() == 0);
-		}
-
-	private:
-		Firebird::AtomicCounter useCount;
-	};
-
 
 // Procedure block
 
@@ -380,11 +293,12 @@ public:
 	void runDBTriggers(thread_db* tdbb, TriggerAction action);
 	void invalidateReplSet(thread_db* tdbb);
 	HazardPtr<Function> lookupFunction(thread_db* tdbb, const QualifiedName& name, USHORT setBits, USHORT clearBits);
-	HazardPtr<jrd_rel> getRelation(ULONG rel_id);
-	void setRelation(ULONG rel_id, jrd_rel* rel);
+	HazardPtr<jrd_rel> getRelation(thread_db* tdbb, ULONG rel_id);
+	HazardPtr<jrd_rel> getRelation(Attachment* att, ULONG rel_id);
+	void setRelation(thread_db* tdbb, ULONG rel_id, jrd_rel* rel);
 	USHORT relCount();
 	void releaseTrigger(thread_db* tdbb, USHORT triggerId, const MetaName& name);
-	TrigVector** getTriggers(USHORT triggerId);
+	TrigVectorPtr* getTriggers(USHORT triggerId);
 
 	void cacheRequest(InternalRequest which, USHORT id, JrdStatement* stmt)
 	{
@@ -483,7 +397,7 @@ public:
 #endif
 	static void clear_cache(thread_db* tdbb);
 	static void update_partners(thread_db* tdbb);
-	static bool routine_in_use(thread_db* tdbb, Routine* routine);
+	static bool routine_in_use(thread_db* tdbb, HazardPtr<Routine> routine);
 	void load_db_triggers(thread_db* tdbb, int type);
 	void load_ddl_triggers(thread_db* tdbb);
 	static HazardPtr<jrd_prc> lookup_procedure(thread_db* tdbb, const QualifiedName& name, bool noscan);
@@ -499,7 +413,7 @@ public:
 	static bool get_char_coll_subtype(thread_db* tdbb, USHORT* id, const UCHAR* name, USHORT length);
 	static bool resolve_charset_and_collation(thread_db* tdbb, USHORT* id,
 											  const UCHAR* charset, const UCHAR* collation);
-	static HazardPtr<DSqlCacheItem> get_dsql_cache_item(thread_db* tdbb, sym_type type, const QualifiedName& name);
+	static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, sym_type type, const QualifiedName& name);
 	static void dsql_cache_release(thread_db* tdbb, sym_type type, const MetaName& name, const MetaName& package = "");
 	static bool dsql_cache_use(thread_db* tdbb, sym_type type, const MetaName& name, const MetaName& package = "");
 	// end of met_proto.h
@@ -507,8 +421,8 @@ public:
 private:
 	HazardArray<jrd_rel>			mdc_relations;			// relations
 	HazardArray<jrd_prc>			mdc_procedures;			// scanned procedures
-	TrigVector*						mdc_triggers[DB_TRIGGER_MAX];
-	TrigVector*						mdc_ddl_triggers;
+	TrigVectorPtr					mdc_triggers[DB_TRIGGER_MAX];
+	TrigVectorPtr					mdc_ddl_triggers;
 	HazardArray<Function>			mdc_functions;			// User defined functions
 	HazardArray<Generator>			mdc_generators;
 
@@ -518,6 +432,8 @@ private:
 	Firebird::Array<CharSetContainer*>	mdc_charsets;		// intl character set descriptions
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		MetaName, USHORT> > > mdc_charset_ids;	// Character set ids
+
+	Firebird::Mutex mdc_db_triggers_mutex;					// Also used for load DDL triggers
 };
 
 } // namespace Jrd

@@ -93,6 +93,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
 
 	// Calculate relation-level statistics
 	temp.clear();
+	MetadataCache* mdc = att->att_database->dbb_mdc;
 
 	// This loop assumes that base array is smaller than new one
 	RelCounters::iterator base_cnts = rel_counts.begin();
@@ -112,7 +113,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
 				TraceCounts traceCounts;
 				traceCounts.trc_relation_id = rel_id;
 				traceCounts.trc_counters = base_cnts->getCounterVector();
-				HazardPtr<jrd_rel> relation = att->att_database->dbb_mdc->getRelation(rel_id);
+				HazardPtr<jrd_rel> relation = mdc->getRelation(att, rel_id);
 				traceCounts.trc_relation_name = relation ? relation->rel_name.c_str() : NULL;
 				temp.add(traceCounts);
 			}
@@ -126,7 +127,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
 			TraceCounts traceCounts;
 			traceCounts.trc_relation_id = rel_id;
 			traceCounts.trc_counters = new_cnts->getCounterVector();
-			HazardPtr<jrd_rel> relation = att->att_database->dbb_mdc->getRelation(rel_id);
+			HazardPtr<jrd_rel> relation = mdc->getRelation(att, rel_id);
 			traceCounts.trc_relation_name = relation ? relation->rel_name.c_str() : NULL;
 			temp.add(traceCounts);
 		}

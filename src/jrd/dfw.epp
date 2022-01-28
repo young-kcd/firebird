@@ -365,7 +365,7 @@ public:
 	{
 	}
 
-	ProtectRelations(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relation) :
+	ProtectRelations(thread_db* tdbb, jrd_tra* transaction, HazardPtr<jrd_rel>& relation) :
 		m_tdbb(tdbb),
 		m_transaction(transaction),
 		m_locks()
@@ -379,7 +379,7 @@ public:
 		unlock();
 	}
 
-	void addRelation(jrd_rel* relation)
+	void addRelation(HazardPtr<jrd_rel>& relation)
 	{
 		FB_SIZE_T pos;
 		if (!m_locks.find(relation->rel_id, pos))
@@ -411,7 +411,7 @@ public:
 private:
 	struct relLock
 	{
-		relLock(jrd_rel* relation = NULL) :
+		relLock(HazardPtr<jrd_rel> relation = HazardPtr<jrd_rel>()) :
 			m_relation(relation),
 			m_lock(NULL),
 			m_release(false)
@@ -426,7 +426,7 @@ private:
 			return item.m_relation->rel_id;
 		}
 
-		jrd_rel* m_relation;
+		HazardPtr<jrd_rel> m_relation;
 		Lock* m_lock;
 		bool m_release;
 	};
@@ -500,12 +500,12 @@ static bool formatsAreEqual(const Format*, const Format*);
 static bool	find_depend_in_dfw(thread_db*, TEXT*, USHORT, USHORT, jrd_tra*);
 static void get_array_desc(thread_db*, const TEXT*, Ods::InternalArrayDesc*);
 static void get_trigger_dependencies(DeferredWork*, bool, jrd_tra*);
-static Format*	make_format(thread_db*, jrd_rel*, USHORT *, TemporaryField*);
+static Format*	make_format(thread_db*, HazardPtr<jrd_rel>, USHORT *, TemporaryField*);
 static void put_summary_blob(thread_db* tdbb, blb*, enum rsr_t, bid*, jrd_tra*);
 static void put_summary_record(thread_db* tdbb, blb*, enum rsr_t, const UCHAR*, ULONG);
 static void	setup_array(thread_db*, blb*, const TEXT*, USHORT, TemporaryField*);
-static blb*	setup_triggers(thread_db*, jrd_rel*, bool, TrigVector**, blb*);
-static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, TrigVector**, const TEXT*, bool);
+static blb*	setup_triggers(thread_db*, jrd_rel*, bool, TrigVectorPtr*, blb*);
+static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, TrigVectorPtr*, const TEXT*, bool);
 static bool validate_text_type (thread_db*, const TemporaryField*);
 
 static void check_partners(thread_db*, const USHORT);
@@ -578,7 +578,7 @@ static void raiseObjectInUseError(const string& obj_type, const string& obj_name
 			 Arg::Gds(isc_obj_in_use) << Arg::Str(name));
 }
 
-static void raiseRelationInUseError(const jrd_rel* relation)
+static void raiseRelationInUseError(const HazardPtr<jrd_rel>& relation)
 {
 	const string obj_type =
 		relation->isView() ? "VIEW" : "TABLE";
@@ -587,7 +587,7 @@ static void raiseRelationInUseError(const jrd_rel* relation)
 	raiseObjectInUseError(obj_type, obj_name);
 }
 
-static void raiseRoutineInUseError(const Routine* routine, const QualifiedName& name)
+static void raiseRoutineInUseError(const HazardPtr<Routine> routine, const QualifiedName& name)
 {
 	const string obj_type =
 		(routine->getObjectType() == obj_udf) ? "FUNCTION" : "PROCEDURE";
@@ -605,7 +605,7 @@ static void raiseTooManyVersionsError(const int obj_type, const string& obj_name
 
 void Jrd::ProtectRelations::relLock::takeLock(thread_db* tdbb, jrd_tra* transaction)
 {
-	m_lock = RLCK_transaction_relation_lock(tdbb, transaction, m_relation);
+	m_lock = RLCK_transaction_relation_lock(tdbb, transaction, m_relation.unsafePointer());
 
 	m_release = (m_lock->lck_logical == LCK_none);
 
@@ -670,9 +670,9 @@ struct deferred_task
 namespace
 {
 	template <typename Self, typename T, int objType,
-		T* (*lookupById)(thread_db*, USHORT, bool, bool, USHORT),
-		T* (*lookupByName)(Jrd::thread_db*, const QualifiedName&, bool),
-		T* (*loadById)(thread_db*, USHORT, bool, USHORT)
+		HazardPtr<T> (*lookupById)(thread_db*, USHORT, bool, bool, USHORT),
+		HazardPtr<T> (*lookupByName)(Jrd::thread_db*, const QualifiedName&, bool),
+		HazardPtr<T> (*loadById)(thread_db*, USHORT, bool, USHORT)
 	>
 	class RoutineManager
 	{
@@ -694,7 +694,7 @@ namespace
 					const bool compile = !work->findArg(dfw_arg_check_blr);
 					getDependencies(work, compile, transaction);
 
-					T* routine = lookupByName(tdbb,
+					HazardPtr<T> routine = lookupByName(tdbb,
 						QualifiedName(work->dfw_name, work->dfw_package), compile);
 
 					if (!routine)
@@ -713,7 +713,7 @@ namespace
 		{
 			SET_TDBB(tdbb);
 			const QualifiedName name(work->dfw_name, work->dfw_package);
-			Routine* routine;
+			HazardPtr<Routine> routine;
 
 			switch (phase)
 			{
@@ -774,7 +774,7 @@ namespace
 						if (routine->existenceLock)
 							LCK_release(tdbb, routine->existenceLock);
 
-						Self::clearId(tdbb->getAttachment(), routine->getId());
+						Self::clearId(tdbb, routine->getId());
 
 						if (!(routine = lookupById(tdbb, work->dfw_id, false,
 								true, Routine::FLAG_BEING_ALTERED)))
@@ -866,7 +866,7 @@ namespace
 		{
 			SET_TDBB(tdbb);
 			const QualifiedName name(work->dfw_name, work->dfw_package);
-			T* routine;
+			HazardPtr<T> routine;
 
 			switch (phase)
 			{
@@ -927,7 +927,7 @@ namespace
 						if (routine->existenceLock)
 							LCK_release(tdbb, routine->existenceLock);
 
-						Self::clearId(tdbb->getAttachment(), routine->getId());
+						Self::clearId(tdbb, routine->getId());
 						return false;
 					}
 
@@ -973,7 +973,7 @@ namespace
 
 			bid blobId;
 			blobId.clear();
-			Routine* routine = Self::lookupBlobId(tdbb, work, blobId, compile);
+			HazardPtr<Routine> routine = Self::lookupBlobId(tdbb, work, blobId, compile);
 
 			MetadataCache::verify_cache(tdbb);
 
@@ -1017,12 +1017,12 @@ namespace
 			return "function";
 		}
 
-		static void clearId(Jrd::Attachment* attachment, USHORT id)
+		static void clearId(Jrd::thread_db* tdbb, USHORT id)
 		{
-			attachment->att_database->dbb_mdc->setFunction(id, nullptr);
+			tdbb->getDatabase()->dbb_mdc->setFunction(tdbb, id, nullptr);
 		}
 
-		static Routine* lookupBlobId(thread_db* tdbb, DeferredWork* work, bid& blobId, bool compile);
+		static HazardPtr<Routine> lookupBlobId(thread_db* tdbb, DeferredWork* work, bid& blobId, bool compile);
 		static void validate(thread_db* tdbb, jrd_tra* transaction, DeferredWork* work,
 			SSHORT validBlr);
 		static void checkOutParamDependencies(thread_db* tdbb, DeferredWork* work, jrd_tra* transaction);
@@ -1037,12 +1037,12 @@ namespace
 			return "procedure";
 		}
 
-		static void clearId(Jrd::Attachment* attachment, USHORT id)
+		static void clearId(Jrd::thread_db* tdbb, USHORT id)
 		{
-			attachment->att_database->dbb_mdc->setProcedure(id, nullptr);
+			tdbb->getDatabase()->dbb_mdc->setProcedure(tdbb, id, nullptr);
 		}
 
-		static Routine* lookupBlobId(thread_db* tdbb, DeferredWork* work, bid& blobId, bool compile);
+		static Jrd::HazardPtr<Routine> lookupBlobId(thread_db* tdbb, DeferredWork* work, bid& blobId, bool compile);
 		static void validate(thread_db* tdbb, jrd_tra* transaction, DeferredWork* work,
 			SSHORT validBlr);
 		static void checkOutParamDependencies(thread_db* tdbb, DeferredWork* work, jrd_tra* transaction);
@@ -1050,12 +1050,12 @@ namespace
 
 	// These methods cannot be defined inline, because GPRE generates wrong code.
 
-	Routine* FunctionManager::lookupBlobId(thread_db* tdbb, DeferredWork* work, bid& blobId,
+	HazardPtr<Routine> FunctionManager::lookupBlobId(thread_db* tdbb, DeferredWork* work, bid& blobId,
 		bool compile)
 	{
 		Jrd::Attachment* attachment = tdbb->getAttachment();
 		AutoCacheRequest handle(tdbb, irq_c_fun_dpd, IRQ_REQUESTS);
-		Routine* routine = NULL;
+		HazardPtr<Routine> routine(tdbb);
 
 		FOR(REQUEST_HANDLE handle)
 			X IN RDB$FUNCTIONS WITH
@@ -1095,12 +1095,12 @@ namespace
 		// Do nothing, as function output is unnamed.
 	}
 
-	Routine* ProcedureManager::lookupBlobId(thread_db* tdbb, DeferredWork* work, bid& blobId,
+	Jrd::HazardPtr<Routine> ProcedureManager::lookupBlobId(thread_db* tdbb, DeferredWork* work, bid& blobId,
 		bool compile)
 	{
-		Jrd::Attachment* attachment = tdbb->getAttachment();
+		Attachment* attachment = tdbb->getAttachment();
 		AutoCacheRequest handle(tdbb, irq_c_prc_dpd, IRQ_REQUESTS);
-		Routine* routine = NULL;
+		HazardPtr<Routine> routine(tdbb);
 
 		FOR(REQUEST_HANDLE handle)
 			X IN RDB$PROCEDURES WITH
@@ -2358,7 +2358,7 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 
 	case 3:
 		{
-			jrd_rel* relation = MetadataCache::lookup_relation(tdbb, work->dfw_name);
+			HazardPtr<jrd_rel> relation = MetadataCache::lookup_relation(tdbb, work->dfw_name);
 			if (!relation || relation->rel_view_rse || work->dfw_ids.isEmpty())
 				break;
 
@@ -2683,7 +2683,7 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 
 	case 3:
 		{
-			jrd_rel* relation = NULL;
+			HazardPtr<jrd_rel> relation;
 			index_desc idx;
 			MemoryPool* new_pool = NULL;
 
@@ -2712,7 +2712,7 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 					{
 						SelectivityList selectivity(*tdbb->getDefaultPool());
 						const USHORT localId = IDX.RDB$INDEX_ID - 1;
-						IDX_statistics(tdbb, relation, localId, selectivity);
+						IDX_statistics(tdbb, relation.unsafePointer(), localId, selectivity);
 						DFW_update_index(work->dfw_name.c_str(), localId, selectivity, transaction);
 
 						return false;
@@ -2720,7 +2720,7 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 
 					if (IDX.RDB$INDEX_ID)
 					{
-						IDX_delete_index(tdbb, relation, IDX.RDB$INDEX_ID - 1);
+						IDX_delete_index(tdbb, relation.unsafePointer(), IDX.RDB$INDEX_ID - 1);
 						MET_delete_dependencies(tdbb, work->dfw_name, obj_expression_index, transaction);
 						MODIFY IDX
 							IDX.RDB$INDEX_ID.NULL = TRUE;
@@ -2751,7 +2751,7 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 						if (!IDX.RDB$EXPRESSION_BLR.NULL)
 						{
 							idx.idx_expression = static_cast<ValueExprNode*>(MET_get_dependencies(
-								tdbb, relation, NULL, 0, NULL, &IDX.RDB$EXPRESSION_BLR,
+								tdbb, relation.unsafePointer(), NULL, 0, NULL, &IDX.RDB$EXPRESSION_BLR,
 								&idx.idx_expression_statement, &csb, work->dfw_name, obj_expression_index, 0,
 								transaction));
 						}
@@ -2797,7 +2797,7 @@ static bool create_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork*
 			{
 				fb_assert(work->dfw_id <= dbb->dbb_max_idx);
 				idx.idx_id = work->dfw_id;
-				IDX_create_index(tdbb, relation, &idx, work->dfw_name.c_str(), &work->dfw_id,
+				IDX_create_index(tdbb, relation.unsafePointer(), &idx, work->dfw_name.c_str(), &work->dfw_id,
 					transaction, selectivity);
 
 				fb_assert(work->dfw_id == idx.idx_id);
@@ -3029,7 +3029,7 @@ static void cleanup_index_creation(thread_db* tdbb, DeferredWork* work, jrd_tra*
 			// dimitr: I have no idea why the condition below is required here
 			AND IREL.RDB$VIEW_BLR MISSING // views do not have indices
 	{
-		jrd_rel* const relation = MetadataCache::lookup_relation(tdbb, IDXN.RDB$RELATION_NAME);
+		HazardPtr<jrd_rel> relation = MetadataCache::lookup_relation(tdbb, IDXN.RDB$RELATION_NAME);
 		RelationPages* const relPages = relation->getPages(tdbb, MAX_TRA_NUMBER, false);
 
 		if (relPages && relPages->rel_index_root)
@@ -3053,7 +3053,7 @@ static void cleanup_index_creation(thread_db* tdbb, DeferredWork* work, jrd_tra*
 				}
 				else if (tree_exists)
 				{
-					IndexLock* const idx_lock = CMP_get_index_lock(tdbb, relation, work->dfw_id);
+					IndexLock* const idx_lock = CMP_get_index_lock(tdbb, relation.unsafePointer(), work->dfw_id);
 
 					if (idx_lock)
 					{
@@ -3076,8 +3076,8 @@ static void cleanup_index_creation(thread_db* tdbb, DeferredWork* work, jrd_tra*
 				idx.idx_id = idx_invalid;
 				idx.idx_flags = idx_foreign;
 
-				jrd_rel* partner_relation = NULL;
-				if (MET_lookup_partner(tdbb, relation, &idx, work->dfw_name.c_str()))
+				HazardPtr<jrd_rel> partner_relation;
+				if (MET_lookup_partner(tdbb, relation.unsafePointer(), &idx, work->dfw_name.c_str()))
 				{
 					partner_relation = MetadataCache::lookup_relation_id(tdbb, idx.idx_primary_relation, true);
 				}
@@ -3234,7 +3234,7 @@ static bool modify_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 	}
 
 	bool gtt_preserve = false;
-	jrd_rel* relation = NULL;
+	HazardPtr<jrd_rel> relation;
 
 	if (is_create)
 	{
@@ -3300,8 +3300,8 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
  *
  **************************************/
 	AutoCacheRequest request;
-	jrd_rel* relation;
-	jrd_rel* partner_relation;
+	HazardPtr<jrd_rel> relation;
+	HazardPtr<jrd_rel> partner_relation;
 	index_desc idx;
 	int key_count;
 
@@ -3321,7 +3321,7 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 	case 3:
 		key_count = 0;
-		relation = NULL;
+		relation.clear();
 		idx.idx_flags = 0;
 
 		// Fetch the information necessary to create the index.  On the first
@@ -3357,7 +3357,7 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 				{
 					SelectivityList selectivity(*tdbb->getDefaultPool());
 					const USHORT id = IDX.RDB$INDEX_ID - 1;
-					IDX_statistics(tdbb, relation, id, selectivity);
+					IDX_statistics(tdbb, relation.unsafePointer(), id, selectivity);
 					DFW_update_index(work->dfw_name.c_str(), id, selectivity, transaction);
 				}
 
@@ -3366,7 +3366,7 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 			if (IDX.RDB$INDEX_ID)
 			{
-				IDX_delete_index(tdbb, relation, (USHORT)(IDX.RDB$INDEX_ID - 1));
+				IDX_delete_index(tdbb, relation.unsafePointer(), (USHORT)(IDX.RDB$INDEX_ID - 1));
 
 				AutoCacheRequest request2(tdbb, irq_c_index_m, IRQ_REQUESTS);
 
@@ -3518,7 +3518,7 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 		// Actually create the index
 
-		partner_relation = NULL;
+		partner_relation.clear();
 
 		// Protect relation from modification to create consistent index
 		ProtectRelations protectRelations(tdbb, transaction);
@@ -3528,7 +3528,7 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		{
 			idx.idx_id = idx_invalid;
 
-			if (MetadataCache::lookup_partner(tdbb, relation, &idx, work->dfw_name.c_str()))
+			if (MET_lookup_partner(tdbb, relation.unsafePointer(), &idx, work->dfw_name.c_str()))
 			{
 				partner_relation = MetadataCache::lookup_relation_id(tdbb, idx.idx_primary_relation, true);
 			}
@@ -3547,7 +3547,7 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			protectRelations.addRelation(partner_relation);
 
 			int bad_segment;
-			if (!IDX_check_master_types(tdbb, idx, partner_relation, bad_segment))
+			if (!IDX_check_master_types(tdbb, idx, partner_relation.unsafePointer(), bad_segment))
 			{
 				ERR_post(Arg::Gds(isc_no_meta_update) <<
 							Arg::Gds(isc_partner_idx_incompat_type) << Arg::Num(bad_segment + 1));
@@ -3581,7 +3581,7 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		fb_assert(work->dfw_id <= dbb->dbb_max_idx);
 		idx.idx_id = work->dfw_id;
 		SelectivityList selectivity(*tdbb->getDefaultPool());
-		IDX_create_index(tdbb, relation, &idx, work->dfw_name.c_str(),
+		IDX_create_index(tdbb, relation.unsafePointer(), &idx, work->dfw_name.c_str(),
 						&work->dfw_id, transaction, selectivity);
 		fb_assert(work->dfw_id == idx.idx_id);
 		DFW_update_index(work->dfw_name.c_str(), idx.idx_id, selectivity, transaction);
@@ -3621,7 +3621,7 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
  *
  **************************************/
 	AutoCacheRequest request;
-	jrd_rel* relation;
+	HazardPtr<jrd_rel> relation;
 	USHORT rel_id, external_flag;
 	bid blob_id;
 	AutoRequest handle;
@@ -3653,10 +3653,10 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 				RelationPages* const relPages = relation->getBasePages();
 
 				if (relPages->rel_index_root)
-					IDX_delete_indices(tdbb, relation, relPages);
+					IDX_delete_indices(tdbb, relation.unsafePointer(), relPages);
 
 				if (relPages->rel_pages)
-					DPM_delete_relation(tdbb, relation);
+					DPM_delete_relation(tdbb, relation.unsafePointer());
 
 				// Mark relation in the cache as dropped
 				relation->rel_flags |= REL_deleted;
@@ -3761,7 +3761,7 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 		if (rel_id && blob_id.isEmpty() && !external_flag)
 		{
 			relation = MetadataCache::findRelation(tdbb, rel_id);
-			DPM_create_relation(tdbb, relation);
+			DPM_create_relation(tdbb, relation.unsafePointer());
 		}
 
 		return true;
@@ -3830,20 +3830,20 @@ static bool create_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 
 				if (arg)
 				{
-					MetadataCache& mdc = tdbb->getDatabase()->dbb_mdc;
+					MetadataCache* mdc = tdbb->getDatabase()->dbb_mdc;
 					// ASF: arg->dfw_id is RDB$TRIGGER_TYPE truncated to USHORT
-					TrigVector** vector_ptr = mdc.getTriggers(arg->dfw_id);
-					if (vector_ptr)
+					TrigVectorPtr* vector_ptr(mdc->getTriggers(arg->dfw_id));
+					if (vector_ptr && *vector_ptr)
 					{
 						MET_release_triggers(tdbb, vector_ptr, true);
 						if ((arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
 						{
 							unsigned triggerKind = arg->dfw_id & ~TRIGGER_TYPE_DB;
-							mdc.load_db_triggers(tdbb, triggerKind);
+							mdc->load_db_triggers(tdbb, triggerKind);
 						}
 						else if ((arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DDL)
 						{
-							mdc.load_ddl_triggers(tdbb);
+							mdc->load_ddl_triggers(tdbb);
 						}
 					}
 				}
@@ -4023,7 +4023,7 @@ void DFW_reset_icu(thread_db* tdbb)
 				USHORT rel_id = rs->getInt(tdbb, 2);
 				if (!tables.exists(rel_id))
 				{
-					jrd_rel* relation = MetadataCache::lookup_relation_id(tdbb, rel_id, false);
+					HazardPtr<jrd_rel> relation = MetadataCache::lookup_relation_id(tdbb, rel_id, false);
 					if (relation)
 						tables.addRelation(relation);
 				}
@@ -4508,7 +4508,7 @@ static void check_partners(thread_db* tdbb, const USHORT rel_id)
  *
  **************************************/
 	Database* const dbb = tdbb->getDatabase();
-	jrd_rel *relation = dbb->dbb_mdc->getRelation(rel_id);
+	HazardPtr<jrd_rel> relation = dbb->dbb_mdc->getRelation(tdbb, rel_id);
 	fb_assert(relation);
 
 	LCK_lock(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
@@ -4544,7 +4544,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 	// Look up the relation.  If we can't find the relation,
 	// don't worry about the index.
 
-	jrd_rel* relation = MetadataCache::lookup_relation_id(tdbb, work->dfw_id, false);
+	HazardPtr<jrd_rel> relation = MetadataCache::lookup_relation_id(tdbb, work->dfw_id, false);
 	if (!relation) {
 		return false;
 	}
@@ -4560,7 +4560,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 	switch (phase)
 	{
 	case 0:
-		index = CMP_get_index_lock(tdbb, relation, id);
+		index = CMP_get_index_lock(tdbb, relation.unsafePointer(), id);
 		if (index)
 		{
 			if (!index->idl_count)
@@ -4582,7 +4582,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		// will remains 1 and will be decremented by IDX_delete_index at
 		// phase 4
 
-		index = CMP_get_index_lock(tdbb, relation, id);
+		index = CMP_get_index_lock(tdbb, relation.unsafePointer(), id);
 		if (index)
 		{
 			// take into account lock probably used by temp index instance
@@ -4590,7 +4590,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			if (isTempIndex && (index->idl_count == 1))
 			{
 				index_desc idx;
-				if (BTR_lookup(tdbb, relation, id, &idx, relPages))
+				if (BTR_lookup(tdbb, relation.unsafePointer(), id, &idx, relPages))
 				{
 					index->idl_count--;
 					LCK_release(tdbb, index->idl_lock);
@@ -4623,10 +4623,10 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		return true;
 
 	case 4:
-		index = CMP_get_index_lock(tdbb, relation, id);
+		index = CMP_get_index_lock(tdbb, relation.unsafePointer(), id);
 		if (isTempIndex && index)
 			index->idl_count++;
-		IDX_delete_index(tdbb, relation, id);
+		IDX_delete_index(tdbb, relation.unsafePointer(), id);
 
 		if (isTempIndex)
 			return false;
@@ -4761,7 +4761,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
  *
  **************************************/
 	AutoRequest request;
-	jrd_rel* relation;
+	HazardPtr<jrd_rel> relation;
 	Resource* rsc;
 	USHORT view_count;
 	bool adjusted;
@@ -4907,7 +4907,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 		}
 
 		if (relation->rel_file) {
-		    EXT_fini(relation, false);
+		    EXT_fini(relation.unsafePointer(), false);
 		}
 
 		if (relation->isTemporary())
@@ -4919,11 +4919,11 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 
 		RelationPages* const relPages = relation->getBasePages();
 		if (relPages->rel_index_root) {
-			IDX_delete_indices(tdbb, relation, relPages);
+			IDX_delete_indices(tdbb, relation.unsafePointer(), relPages);
 		}
 
 		if (relPages->rel_pages) {
-			DPM_delete_relation(tdbb, relation);
+			DPM_delete_relation(tdbb, relation.unsafePointer());
 		}
 
 		// if this is a view (or even if we don't know), delete dependency lists
@@ -4994,7 +4994,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 	int rel_exists, field_count;
 	AutoRequest handle;
 	MetaName f;
-	jrd_rel* relation;
+	HazardPtr<jrd_rel> relation;
 
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
@@ -5171,8 +5171,8 @@ static bool delete_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 				// ASF: arg->dfw_id is RDB$TRIGGER_TYPE truncated to USHORT
 				if (arg)
 				{
-					MetadataCache& mdc = tdbb->getDatabase()->dbb_mdc;
-					mdc.releaseTrigger(tdbb, arg->dfw_id, work->dfw_name);
+					MetadataCache* mdc = tdbb->getDatabase()->dbb_mdc;
+					mdc->releaseTrigger(tdbb, arg->dfw_id, work->dfw_name);
 				}
 			}
 		}
@@ -5393,7 +5393,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 	if (compile)
 		compile = !tdbb->getAttachment()->isGbak();
 
-	jrd_rel* relation = NULL;
+	HazardPtr<jrd_rel> relation;
 	bid blob_id;
 	blob_id.clear();
 
@@ -5427,7 +5427,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
 		const MetaName depName(work->dfw_name);
-		MET_get_dependencies(tdbb, relation, NULL, 0, NULL, &blob_id, (compile ? &statement : NULL),
+		MET_get_dependencies(tdbb, relation.unsafePointer(), NULL, 0, NULL, &blob_id, (compile ? &statement : NULL),
 							 NULL, depName, obj_trigger, par_flags, transaction);
 
 		if (statement)
@@ -5438,7 +5438,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 }
 
 
-static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, TemporaryField* stack)
+static Format* make_format(thread_db* tdbb, HazardPtr<jrd_rel> relation, USHORT* version, TemporaryField* stack)
 {
 /**************************************
  *
@@ -5536,7 +5536,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, 
 
 	Format* old_format;
 	if (format->fmt_version &&
-		(old_format = MET_format(tdbb, relation, (format->fmt_version - 1))) &&
+		(old_format = MET_format(tdbb, relation.unsafePointer(), (format->fmt_version - 1))) &&
 		(formatsAreEqual(old_format, format)))
 	{
 		delete format;
@@ -5633,7 +5633,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
  **************************************/
 	TemporaryField* stack;
 	TemporaryField* external;
-	jrd_rel* relation;
+	HazardPtr<jrd_rel> relation;
 	//bid blob_id;
 	//blob_id.clear();
 
@@ -5641,7 +5641,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 	int physical_fields = 0;
 	bool external_flag = false;
 	bool computed_field;
-	TrigVector* triggers[TRIGGER_MAX];
+	TrigVectorPtr triggers[TRIGGER_MAX];
 
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
@@ -5655,7 +5655,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		return true;
 
 	case 3:
-		relation = NULL;
+		relation.clear();
 		stack = external = NULL;
 		computed_field = false;
 
@@ -5860,7 +5860,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 											 FLD.RDB$CHARACTER_SET_ID, collation))
 					{
 						if (null_view && REL.RDB$FORMAT.NULL)
-							DPM_delete_relation(tdbb, relation);
+							DPM_delete_relation(tdbb, relation.unsafePointer());
 
 						ERR_post(Arg::Gds(isc_no_meta_update) <<
 								 Arg::Gds(isc_random) << Arg::Str(work->dfw_name));
@@ -5870,7 +5870,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 					if (!validate_text_type(tdbb, tfb))
 					{
 						if (null_view && REL.RDB$FORMAT.NULL)
-							DPM_delete_relation(tdbb, relation);
+							DPM_delete_relation(tdbb, relation.unsafePointer());
 
 						ERR_post_nothrow(Arg::Gds(isc_no_meta_update) <<
 										 Arg::Gds(isc_random) << Arg::Str(work->dfw_name));
@@ -5891,7 +5891,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 						try
 						{
 							ValueExprNode* defaultNode = static_cast<ValueExprNode*>(MET_parse_blob(
-								tdbb, relation, defaultValue, NULL, &defaultStatement, false, false));
+								tdbb, relation.unsafePointer(), defaultValue, NULL, &defaultStatement, false, false));
 
 							jrd_req* const defaultRequest = defaultStatement->findRequest(tdbb);
 
@@ -5989,14 +5989,14 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 				if (null_view && !physical_fields)
 				{
 					if (REL.RDB$FORMAT.NULL)
-						DPM_delete_relation(tdbb, relation);
+						DPM_delete_relation(tdbb, relation.unsafePointer());
 
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
 							 Arg::Gds(isc_table_name) << Arg::Str(work->dfw_name) <<
 			 				 Arg::Gds(isc_must_have_phys_field));
 				}
 
-				blob = setup_triggers(tdbb, relation, null_view, triggers, blob);
+				blob = setup_triggers(tdbb, relation.unsafePointer(), null_view, triggers, blob);
 
 				blob->BLB_close(tdbb);
 				USHORT version = REL.RDB$FORMAT.NULL ? 0 : REL.RDB$FORMAT;
@@ -6124,20 +6124,20 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 				arg = work->findArg(dfw_arg_trg_type);
 				fb_assert(arg);
 
-				MetadataCache& mdc = tdbb->getDatabase()->dbb_mdc;
+				MetadataCache* mdc = tdbb->getDatabase()->dbb_mdc;
 				// ASF: arg->dfw_id is RDB$TRIGGER_TYPE truncated to USHORT
-				TrigVector** vector_ptr = mdc.getTriggers(arg->dfw_id);
-				if (vector_ptr)
+				TrigVectorPtr* vector_ptr = mdc->getTriggers(arg->dfw_id);
+				if (vector_ptr && *vector_ptr)
 				{
 					MET_release_triggers(tdbb, vector_ptr, true);
 					if ((arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
 					{
 						unsigned triggerKind = arg->dfw_id & ~TRIGGER_TYPE_DB;
-						mdc.load_db_triggers(tdbb, triggerKind);
+						mdc->load_db_triggers(tdbb, triggerKind);
 					}
 					else if ((arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DDL)
 					{
-						mdc.load_ddl_triggers(tdbb);
+						mdc->load_ddl_triggers(tdbb);
 					}
 				}
 			}
@@ -6152,7 +6152,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 
 				try
 				{
-					jrd_rel* relation = MetadataCache::lookup_relation(tdbb, relation_name);
+					HazardPtr<jrd_rel> relation = MetadataCache::lookup_relation(tdbb, relation_name);
 
 					if (relation)
 					{
@@ -6160,7 +6160,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 						relation->rel_flags &= ~REL_scanned;
 						MET_scan_relation(tdbb, relation);
 
-						TrigVector* triggers[TRIGGER_MAX];
+						TrigVectorPtr triggers[TRIGGER_MAX];
 
 						for (int i = 0; i < TRIGGER_MAX; ++i)
 							triggers[i] = NULL;
@@ -6170,14 +6170,18 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 						{
 							Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-							MET_load_trigger(tdbb, relation, work->dfw_name, triggers);
+							MET_load_trigger(tdbb, relation.unsafePointer(), work->dfw_name, triggers);
 
 							for (int i = 0; i < TRIGGER_MAX; ++i)
 							{
 								if (triggers[i])
 								{
-									for (FB_SIZE_T j = 0; j < triggers[i]->getCount(); ++j)
-										(*triggers[i])[j].compile(tdbb);
+									HazardPtr<Trigger> trig(tdbb);
+									for (FB_SIZE_T j = 0; j < triggers[i].load()->getCount(); ++j)
+									{
+										if (triggers[i].load()->load(j, trig))
+											trig->compile(tdbb);
+									}
 
 									MET_release_triggers(tdbb, &triggers[i], true);
 								}
@@ -6427,7 +6431,7 @@ static void setup_array(thread_db* tdbb, blb* blob, const TEXT* field_name, USHO
 
 
 static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
-	TrigVector** triggers, blb* blob)
+	TrigVectorPtr* triggers, blb* blob)
 {
 /**************************************
  *
@@ -6525,7 +6529,7 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 static void setup_trigger_details(thread_db* tdbb,
 								  jrd_rel* relation,
 								  blb* blob,
-								  TrigVector** triggers,
+								  TrigVectorPtr* triggers,
 								  const TEXT* trigger_name,
 								  bool null_view)
 {

@@ -339,32 +339,32 @@ void jrd_rel::releaseTriggers(thread_db* tdbb, bool destroy)
 	MET_release_triggers(tdbb, &rel_post_modify, destroy);
 }
 
-void jrd_rel::replaceTriggers(thread_db* tdbb, TrigVector** triggers)
+void jrd_rel::replaceTriggers(thread_db* tdbb, TrigVectorPtr* triggers)
 {
-	TrigVector* tmp_vector;
+	TrigVectorPtr tmp_vector;
 
-	tmp_vector = rel_pre_store;
-	rel_pre_store = triggers[TRIGGER_PRE_STORE];
+	tmp_vector.store(rel_pre_store.load());
+	rel_pre_store.store(triggers[TRIGGER_PRE_STORE].load());
 	MET_release_triggers(tdbb, &tmp_vector, true);
 
-	tmp_vector = rel_post_store;
-	rel_post_store = triggers[TRIGGER_POST_STORE];
+	tmp_vector.store(rel_post_store.load());
+	rel_post_store.store(triggers[TRIGGER_POST_STORE].load());
 	MET_release_triggers(tdbb, &tmp_vector, true);
 
-	tmp_vector = rel_pre_erase;
-	rel_pre_erase = triggers[TRIGGER_PRE_ERASE];
+	tmp_vector.store(rel_pre_erase.load());
+	rel_pre_erase.store(triggers[TRIGGER_PRE_ERASE].load());
 	MET_release_triggers(tdbb, &tmp_vector, true);
 
-	tmp_vector = rel_post_erase;
-	rel_post_erase = triggers[TRIGGER_POST_ERASE];
+	tmp_vector.store(rel_post_erase.load());
+	rel_post_erase.store(triggers[TRIGGER_POST_ERASE].load());
 	MET_release_triggers(tdbb, &tmp_vector, true);
 
-	tmp_vector = rel_pre_modify;
-	rel_pre_modify = triggers[TRIGGER_PRE_MODIFY];
+	tmp_vector.store(rel_pre_modify.load());
+	rel_pre_modify.store(triggers[TRIGGER_PRE_MODIFY].load());
 	MET_release_triggers(tdbb, &tmp_vector, true);
 
-	tmp_vector = rel_post_modify;
-	rel_post_modify = triggers[TRIGGER_POST_MODIFY];
+	tmp_vector.store(rel_post_modify.load());
+	rel_post_modify.store(triggers[TRIGGER_POST_MODIFY].load());
 	MET_release_triggers(tdbb, &tmp_vector, true);
 }
 

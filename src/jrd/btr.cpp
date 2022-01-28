@@ -45,6 +45,7 @@
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "../jrd/sort.h"
+#include "../jrd/met.h"
 #include "../common/gdsassert.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
@@ -6041,7 +6042,7 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 			for (USHORT i = 0; i < idx->idx_count; i++)
 			{
 				const USHORT field_id = idx->idx_rpt[i].idx_field;
-				const jrd_fld* const field = MET_get_field(relation, field_id);
+				jrd_fld* field = MET_get_field(relation, field_id);
 
 				if (field)
 					value.printf("\"%s\"", field->fld_name.c_str());

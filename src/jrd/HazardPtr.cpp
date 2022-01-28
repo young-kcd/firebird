@@ -69,17 +69,24 @@ void RefHazardObject::addRef(thread_db*)
 	++counter;
 }
 
-HazardBase::HazardBase(thread_db* tdbb)
-	: hazardDelayed(tdbb->getAttachment()->att_delayed_delete)
-{ }
+HazardDelayedDelete* HazardBase::getHazardDelayed(thread_db* tdbb)
+{
+	if (!tdbb)
+		tdbb = JRD_get_thread_data();
+	return &tdbb->getAttachment()->att_delayed_delete;
+}
 
+HazardDelayedDelete* HazardBase::getHazardDelayed(Attachment* att)
+{
+	return &att->att_delayed_delete;
+}
 
 HazardDelayedDelete::HazardPointers* HazardDelayedDelete::HazardPointers::create(MemoryPool& p, unsigned size)
 {
 	return FB_NEW_RPT(p, size) HazardPointers(size);
 }
 
-void HazardDelayedDelete::add(void* ptr)
+void HazardDelayedDelete::add(Ptr ptr)
 {
 	// as long as we access our own hazard pointers single relaxed load is OK
 	HazardPointers *hp = hazardPointers.load(std::memory_order_relaxed);
@@ -111,7 +118,7 @@ void HazardDelayedDelete::add(void* ptr)
 	hp->hpCount++;
 }
 
-void HazardDelayedDelete::remove(void* ptr)
+void HazardDelayedDelete::remove(Ptr ptr)
 {
 	// as long as we access our own hazard pointers single relaxed load is OK
 	HazardPointers *hp = hazardPointers.load(std::memory_order_relaxed);
@@ -140,7 +147,7 @@ void HazardDelayedDelete::delayedDelete(HazardObject* mem, bool gc)
 		garbageCollect(GarbageCollectMethod::GC_NORMAL);
 }
 
-void HazardDelayedDelete::copyHazardPointers(LocalHP& local, void** from, unsigned count)
+void HazardDelayedDelete::copyHazardPointers(LocalHP& local, Ptr* from, unsigned count)
 {
 	for (unsigned n = 0; n < count; ++n)
 	{

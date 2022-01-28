@@ -101,6 +101,7 @@
 #include "../jrd/intl_classes.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
+#include "../jrd/met.h"
 #include "../intl/charsets.h"
 #include "../intl/country_codes.h"
 #include "../common/gdsassert.h"
@@ -220,7 +221,7 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 
 		if (lookupInternalCharSet(id, &info) || MET_get_char_coll_subtype_info(tdbb, id, &info))
 		{
-			cs = FB_NEW_POOL(*attachment->att_pool) CharSetContainer(*attachment->att_pool, id, &info);
+			cs = FB_NEW_POOL(*dbb->dbb_permanent) CharSetContainer(*dbb->dbb_permanent, id, &info);
 			dbb->dbb_mdc->setCharSet(id, cs);
 		}
 		else

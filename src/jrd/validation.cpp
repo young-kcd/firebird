@@ -1625,7 +1625,7 @@ void Validation::walk_database()
 		if (i > dbb->dbb_max_sys_rel) // Why not system flag instead?
 			VAL_debug_level = 2;
 #endif
-		jrd_rel* relation = mdc->getRelation(i);
+		HazardPtr<jrd_rel> relation = mdc->getRelation(vdr_tdbb, i);
 
 		if (relation && relation->rel_flags & REL_check_existence)
 			relation = MetadataCache::lookup_relation_id(vdr_tdbb, i, false);

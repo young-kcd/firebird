@@ -57,6 +57,7 @@
 #include "../jrd/intl.h"
 #include "../jrd/btr.h"
 #include "../jrd/sort.h"
+#include "../jrd/met.h"
 #include "../common/gdsassert.h"
 #include "../jrd/cmp_proto.h"
 #include "../common/dsc_proto.h"

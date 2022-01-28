@@ -31,6 +31,7 @@
 
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
+#include "../common/gdsassert.h"
 #include "fb_blk.h"
 
 #include <atomic>
@@ -39,11 +40,14 @@ namespace Jrd {
 
 	class thread_db;
 	class Attachment;
+	class HazardDelayedDelete;
 
 	class HazardObject
 	{
-	public:
+		friend HazardDelayedDelete;
+	protected:
 		virtual ~HazardObject();
+	public:
 		virtual int release(thread_db* tdbb);
 	};
 
@@ -64,12 +68,16 @@ namespace Jrd {
 
 	class HazardDelayedDelete : public Firebird::PermanentStorage
 	{
+	public:
+		typedef const void* Ptr;
+
+	private:
 		static const unsigned int INITIAL_SIZE = 4;
 		static const unsigned int DELETED_LIST_SIZE = 32;
 
-		typedef Firebird::SortedArray<void*, Firebird::InlineStorage<void*, 128>> LocalHP;
+		typedef Firebird::SortedArray<Ptr, Firebird::InlineStorage<Ptr, 128>> LocalHP;
 
-		class HazardPointers : public HazardObject, public pool_alloc_rpt<void*>
+		class HazardPointers : public HazardObject, public pool_alloc_rpt<Ptr>
 		{
 		private:
 			HazardPointers(unsigned size)
@@ -79,7 +87,7 @@ namespace Jrd {
 		public:
 			unsigned int hpCount;
 			unsigned int hpSize;
-			void* hp[1];
+			Ptr hp[1];
 
 			static HazardPointers* create(MemoryPool& p, unsigned size);
 		};
@@ -93,8 +101,8 @@ namespace Jrd {
 			  hazardPointers(HazardPointers::create(getPool(), INITIAL_SIZE))
 		{ }
 
-		void add(void* ptr);
-		void remove(void* ptr);
+		void add(Ptr ptr);
+		void remove(Ptr ptr);
 
 		void delayedDelete(HazardObject* mem, bool gc = true);
 		void garbageCollect(GarbageCollectMethod gcMethod);
@@ -103,7 +111,7 @@ namespace Jrd {
 		HazardPointers* getHazardPointers();
 
 	private:
-		static void copyHazardPointers(LocalHP& local, void** from, unsigned count);
+		static void copyHazardPointers(LocalHP& local, Ptr* from, unsigned count);
 		static void copyHazardPointers(thread_db* tdbb, LocalHP& local, Attachment* from);
 
 		Firebird::HalfStaticArray<HazardObject*, DELETED_LIST_SIZE> toDelete;
@@ -112,32 +120,65 @@ namespace Jrd {
 
 	class HazardBase
 	{
-	public:
-		HazardBase(thread_db* tdbb);
+	protected:
+		explicit HazardBase(thread_db* tdbb)
+			: hazardDelayed(getHazardDelayed(tdbb))
+		{ }
 
-		void add(void* hazardPointer)
+		explicit HazardBase(Attachment* att)
+			: hazardDelayed(getHazardDelayed(att))
+		{ }
+
+		explicit HazardBase(HazardDelayedDelete* hd)
+			: hazardDelayed(hd)
+		{ }
+
+		HazardBase()
+			: hazardDelayed(nullptr)
+		{ }
+
+		void add(const void* hazardPointer)
 		{
-			hazardDelayed.add(hazardPointer);
+			if (!hazardDelayed)
+				hazardDelayed = getHazardDelayed();
+			hazardDelayed->add(hazardPointer);
 		}
 
-		void remove(void* hazardPointer)
+		void remove(const void* hazardPointer)
 		{
-			hazardDelayed.remove(hazardPointer);
+			if (!hazardDelayed)
+				hazardDelayed = getHazardDelayed();
+			hazardDelayed->remove(hazardPointer);
 		}
 
 	private:
-		HazardDelayedDelete& hazardDelayed;
+		HazardDelayedDelete* hazardDelayed;
+
+	public:
+		static HazardDelayedDelete* getHazardDelayed(thread_db* tdbb = nullptr);
+		static HazardDelayedDelete* getHazardDelayed(Attachment* att);
 	};
 
 	template <typename T>
-	class HazardPtr : private HazardBase
+	class HazardPtr : public HazardBase
 	{
-	private:
-		HazardPtr();
-
 	public:
+		HazardPtr()
+			: hazardPointer(nullptr)
+		{ }
+
 		explicit HazardPtr(thread_db* tdbb)
 			: HazardBase(tdbb),
+			  hazardPointer(nullptr)
+		{ }
+
+		explicit HazardPtr(Attachment* att)
+			: HazardBase(att),
+			  hazardPointer(nullptr)
+		{ }
+
+		explicit HazardPtr(HazardDelayedDelete* hd)
+			: HazardBase(hd),
 			  hazardPointer(nullptr)
 		{ }
 
@@ -148,7 +189,7 @@ namespace Jrd {
 			set(from);
 		}
 
-		HazardPtr(const HazardPtr& copy)
+		HazardPtr(HazardPtr& copy)
 			: HazardBase(copy),
 			  hazardPointer(nullptr)
 		{
@@ -162,14 +203,30 @@ namespace Jrd {
 			hazardPointer = move.hazardPointer;
 		}
 
+		template <class T2>
+		HazardPtr(HazardPtr<T2>& copy)
+			: HazardBase(copy),
+			  hazardPointer(nullptr)
+		{
+			reset(copy.unsafePointer());
+		}
+
+		template <class T2>
+		HazardPtr(HazardPtr<T2>&& move)
+			: HazardBase(move),
+			  hazardPointer(nullptr)
+		{
+			hazardPointer = move.unsafePointer();
+		}
+
 		~HazardPtr()
 		{
 			reset(nullptr);
 		}
 
-		T* get()
+		T* unsafePointer() const
 		{
-			return hazardPointer;
+			return get();
 		}
 
 		void set(std::atomic<T*>& from)
@@ -182,12 +239,28 @@ namespace Jrd {
 			} while (get() != v);
 		}
 
+		// atomically replaces 'where' with 'newVal', using *this as old value for comparison
+		// always sets *this to actual data from 'where'
+		bool replace(std::atomic<T*>* where, T* newVal)
+		{
+			T* val = get();
+			bool rc = where->compare_exchange_strong(val, newVal,
+				std::memory_order_release, std::memory_order_acquire);
+			reset(rc ? newVal : val);
+			return rc;
+		}
+
 		void clear()
 		{
 			reset(nullptr);
 		}
 
 		T* operator->()
+		{
+			return hazardPointer;
+		}
+
+		const T* operator->() const
 		{
 			return hazardPointer;
 		}
@@ -214,7 +287,7 @@ namespace Jrd {
 
 		HazardPtr& operator=(const HazardPtr& copyAssign)
 		{
-			reset(copyAssign.hazardPointer);
+			reset(copyAssign.hazardPointer, &copyAssign);
 			return *this;
 		}
 
@@ -222,6 +295,7 @@ namespace Jrd {
 		{
 			if (hazardPointer)
 				 remove(hazardPointer);
+			HazardBase::operator=(moveAssign);
 			hazardPointer = moveAssign.hazardPointer;
 			return *this;
 		}
@@ -229,7 +303,7 @@ namespace Jrd {
 		template <class T2>
 		HazardPtr& operator=(const HazardPtr<T2>& copyAssign)
 		{
-			reset(copyAssign.get());
+			reset(copyAssign.unsafePointer(), &copyAssign);
 			return *this;
 		}
 
@@ -238,28 +312,49 @@ namespace Jrd {
 		{
 			if (hazardPointer)
 				 remove(hazardPointer);
-			hazardPointer = moveAssign.get();
+			HazardBase::operator=(moveAssign);
+			hazardPointer = moveAssign.unsafePointer();
 			return *this;
 		}
 
 	private:
-		void reset(T* newPtr)
+		void reset(T* newPtr, const HazardBase* newBase = nullptr)
 		{
 			if (newPtr != hazardPointer)
 			{
 				if (hazardPointer)
 					remove(hazardPointer);
+				if (newBase)
+					HazardBase::operator=(*newBase);
 				if (newPtr)
 					add(newPtr);
 				hazardPointer = newPtr;
 			}
 		}
 
+		T* get() const
+		{
+			return hazardPointer;
+		}
+
 		T* hazardPointer;
 	};
 
+	template <typename T>
+	bool operator==(const T* v1, const HazardPtr<T> v2)
+	{
+		return v2 == v1;
+	}
+
+	template <typename T, typename T2>
+	bool operator==(const T* v1, const HazardPtr<T2> v2)
+	{
+		return v1 == v2.unsafePointer();
+	}
+
+
 	template <class Object>
-	class HazardArray : public Firebird::PermanentStorage//, private ObjectBase
+	class HazardArray : public Firebird::PermanentStorage
 	{
 	public:
 		typedef typename Object::Key Key;
@@ -328,8 +423,6 @@ namespace Jrd {
 
 		HazardPtr<Object> store(thread_db* tdbb, FB_SIZE_T id, Object* const val)
 		{
-			fb_assert(id >= 0);
-
 			if (id >= getCount())
 				grow(id + 1);
 
@@ -352,23 +445,40 @@ namespace Jrd {
 			sub = &sub[id & SUBARRAY_MASK];
 			Object* oldVal = sub->load(std::memory_order_acquire);
 			while (!sub->compare_exchange_weak(oldVal, val,
-                    std::memory_order_release, std::memory_order_acquire));	// empty body
+				std::memory_order_release, std::memory_order_acquire));	// empty body
 
 			if (oldVal)
-				oldVal->release(tdbb);
+				oldVal->release(tdbb);		// delayedDelete
 
 			return HazardPtr<Object>(tdbb, *sub);
 		}
 
-		bool load(SLONG id, HazardPtr<Object>& val) const
+		bool replace(thread_db* tdbb, FB_SIZE_T id, HazardPtr<Object>& oldVal, Object* const newVal)
 		{
-			if (id < (int) getCount())
+			if (id >= getCount())
+				grow(id + 1);
+
+			SubArrayElement* sub = m_objects[id >> SUBARRAY_SHIFT].load(std::memory_order_acquire);
+			fb_assert(sub);
+			sub = &sub[id & SUBARRAY_MASK];
+
+			return oldVal.replace(sub, newVal);
+		}
+
+		void store(thread_db* tdbb, FB_SIZE_T id, const HazardPtr<Object>& val)
+		{
+			store(tdbb, id, val.unsafePointer());
+		}
+
+		bool load(FB_SIZE_T id, HazardPtr<Object>& val) const
+		{
+			if (id < getCount())
 			{
 				SubArrayElement* sub = m_objects[id >> SUBARRAY_SHIFT].load(std::memory_order_acquire);
 				if (sub)
 				{
 					val.set(sub[id & SUBARRAY_MASK]);
-					if (val->hasData())
+					if (val && val->hasData())
 						return true;
 				}
 			}
@@ -376,8 +486,80 @@ namespace Jrd {
 			return false;
 		}
 
+		class iterator
+		{
+		public:
+			HazardPtr<Object> operator*()
+			{
+				return get();
+			}
+
+			HazardPtr<Object> operator->()
+			{
+				return get();
+			}
+
+			iterator& operator++()
+			{
+				++index;
+				return *this;
+			}
+
+			iterator& operator--()
+			{
+				--index;
+				return *this;
+			}
+
+			bool operator==(const iterator& itr) const
+			{
+				fb_assert(array == itr.array);
+				return index == itr.index;
+			}
+
+			bool operator!=(const iterator& itr) const
+			{
+				fb_assert(array == itr.array);
+				return index != itr.index;
+			}
+
+		private:
+			void* operator new(size_t);
+			void* operator new[](size_t);
+
+		public:
+			enum class Location {Begin, End};
+			iterator(const HazardArray* a, Location loc = Location::Begin)
+				: array(a),
+				  hd(HazardPtr<Object>::getHazardDelayed()),
+				  index(loc == Location::Begin ? 0 : array->getCount())
+			{ }
+
+			HazardPtr<Object> get()
+			{
+				HazardPtr<Object> rc(hd);
+				array->load(index, rc);
+				return rc;
+			}
+
+		private:
+			const HazardArray* array;
+			HazardDelayedDelete* hd;
+			FB_SIZE_T index;
+		};
+
+		iterator begin() const
+		{
+			return iterator(this);
+		}
+
+		iterator end() const
+		{
+			return iterator(this, iterator::Location::End);
+		}
+
 	private:
-		Firebird::HalfStaticArray<ArrayElement, 4> m_objects;
+		Firebird::HalfStaticArray<ArrayElement, 4> m_objects;			//!!!!!!!
 		Firebird::Mutex objectsGrowMutex;
 	};
 

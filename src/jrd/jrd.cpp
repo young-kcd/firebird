@@ -132,6 +132,7 @@
 #include "../jrd/DebugInterface.h"
 #include "../jrd/CryptoManager.h"
 #include "../jrd/DbCreators.h"
+#include "../jrd/met.h"
 
 #include "../dsql/dsql.h"
 #include "../dsql/dsql_proto.h"
@@ -871,110 +872,6 @@ namespace
 #undef TEXT
 #define TEXT    SCHAR
 #endif	// WIN_NT
-
-bool Trigger::isActive() const
-{
-	return statement && statement->isActive();
-}
-
-void Trigger::compile(thread_db* tdbb)
-{
-	SET_TDBB(tdbb);
-
-	Database* dbb = tdbb->getDatabase();
-	Jrd::Attachment* const att = tdbb->getAttachment();
-
-	if (extTrigger)
-		return;
-
-	if (!statement)
-	{
-		// Allocate statement memory pool
-		MemoryPool* new_pool = att->createPool();
-		// Trigger request is not compiled yet. Lets do it now
-		USHORT par_flags = (USHORT) (flags & TRG_ignore_perm) ? csb_ignore_perm : 0;
-		if (type & 1)
-			par_flags |= csb_pre_trigger;
-		else
-			par_flags |= csb_post_trigger;
-
-		try
-		{
-			Jrd::ContextPoolHolder context(tdbb, new_pool);
-
-			AutoPtr<CompilerScratch> auto_csb(FB_NEW_POOL(*new_pool) CompilerScratch(*new_pool));
-			CompilerScratch* csb = auto_csb;
-
-			csb->csb_g_flags |= par_flags;
-
-			if (engine.isEmpty())
-			{
-				if (debugInfo.hasData())
-				{
-					DBG_parse_debug_info((ULONG) debugInfo.getCount(), debugInfo.begin(),
-										 *csb->csb_dbg_info);
-				}
-
-				PAR_blr(tdbb, relation, blr.begin(), (ULONG) blr.getCount(), NULL, &csb, &statement,
-					(relation ? true : false), par_flags);
-			}
-			else
-			{
-				dbb->dbb_extManager->makeTrigger(tdbb, csb, this, engine, entryPoint, extBody.c_str(),
-					(relation ?
-						(type & 1 ? IExternalTrigger::TYPE_BEFORE : IExternalTrigger::TYPE_AFTER) :
-						IExternalTrigger::TYPE_DATABASE));
-			}
-		}
-		catch (const Exception&)
-		{
-			if (statement)
-			{
-				statement->release(tdbb);
-				statement = NULL;
-			}
-			else
-				att->deletePool(new_pool);
-
-			throw;
-		}
-
-		statement->triggerName = name;
-		if (ssDefiner.orElse(false))
-			statement->triggerInvoker = att->getUserId(owner);
-
-		if (sysTrigger)
-			statement->flags |= JrdStatement::FLAG_SYS_TRIGGER;
-
-		if (flags & TRG_ignore_perm)
-			statement->flags |= JrdStatement::FLAG_IGNORE_PERM;
-	}
-}
-
-void Trigger::release(thread_db* tdbb)
-{
-	if (extTrigger)
-	{
-		delete extTrigger;
-		extTrigger = NULL;
-	}
-
-	// dimitr:	We should never release triggers created by MET_parse_sys_trigger().
-	//			System triggers do have BLR, but it's not stored inside the trigger object.
-	//			However, triggers backing RI constraints are also marked as system,
-	//			but they are loaded in a regular way and their BLR is present here.
-	//			This is why we cannot simply check for sysTrigger, sigh.
-
-	const bool sysTableTrigger = (blr.isEmpty() && engine.isEmpty());
-
-	if (sysTableTrigger || !statement || statement->isActive() || releaseInProgress)
-		return;
-
-	AutoSetRestore<bool> autoProgressFlag(&releaseInProgress, true);
-
-	statement->release(tdbb);
-	statement = NULL;
-}
 
 
 namespace
@@ -2209,8 +2106,8 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 					// load DDL triggers
 					mdc->load_ddl_triggers(tdbb);
 
-					TrigVector** trig_connect = dbb->dbb_mdc->getTriggers(DB_TRIGGER_CONNECT | TRIGGER_TYPE_DB);
-					if (trig_connect && *trig_connect && !(*trig_connect)->isEmpty())
+					TrigVectorPtr* trig_connect = dbb->dbb_mdc->getTriggers(DB_TRIGGER_CONNECT | TRIGGER_TYPE_DB);
+					if (trig_connect && trig_connect->load() && !trig_connect->load()->isEmpty())
 					{
 						// Start a transaction to execute ON CONNECT triggers.
 						// Ensure this transaction can't trigger auto-sweep.
@@ -8163,11 +8060,11 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 	{
 		try
 		{
-			TrigVector** trig_disconnect = dbb->dbb_mdc->getTriggers(DB_TRIGGER_CONNECT | TRIGGER_TYPE_DB);
+			TrigVectorPtr* trig_disconnect = dbb->dbb_mdc->getTriggers(DB_TRIGGER_CONNECT | TRIGGER_TYPE_DB);
 
 			if (!forcedPurge &&
 				!(attachment->att_flags & ATT_no_db_triggers) &&
-				trig_disconnect && *trig_disconnect && !(*trig_disconnect)->isEmpty())
+				trig_disconnect && trig_disconnect->load() && !trig_disconnect->load()->isEmpty())
 			{
 				ThreadStatusGuard temp_status(tdbb);
 
@@ -9558,9 +9455,9 @@ void JRD_cancel_operation(thread_db* /*tdbb*/, Jrd::Attachment* attachment, int 
 
 bool TrigVector::hasActive() const
 {
-	for (const_iterator iter = begin(); iter != end(); ++iter)
+	for (auto t : *this)
 	{
-		if (iter->isActive())
+		if (t->isActive())
 			return true;
 	}
 
@@ -9570,8 +9467,8 @@ bool TrigVector::hasActive() const
 
 void TrigVector::decompile(thread_db* tdbb)
 {
-	for (iterator iter = begin(); iter != end(); ++iter)
-		iter->release(tdbb);
+	for (auto t : *this)
+		t->release(tdbb);
 }
 
 

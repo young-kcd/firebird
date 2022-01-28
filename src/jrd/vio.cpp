@@ -3921,7 +3921,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 		MetadataCache* mdc = attachment->att_database->dbb_mdc;
 		for (FB_SIZE_T i = 1; i < mdc->relCount(); i++)
 		{
-			relation = mdc->getRelation(i);
+			relation = mdc->getRelation(tdbb, i);
 			if (relation)
 				relation = MetadataCache::lookup_relation_id(tdbb, i, false);
 

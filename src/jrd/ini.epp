@@ -55,6 +55,7 @@
 #include "../jrd/acl.h"
 #include "../jrd/dyn.h"
 #include "../jrd/irq.h"
+#include "../jrd/met.h"
 #include "../jrd/IntlManager.h"
 #include "../jrd/PreparedStatement.h"
 #include "../jrd/constants.h"
@@ -256,7 +257,7 @@ void INI_format(const char* owner, const char* charset)
 	{
 		if (relfld[RFLD_R_TYPE] == rel_persistent)
 		{
-			DPM_create_relation(tdbb, MetadataCache::findRelation(tdbb, relfld[RFLD_R_ID]));
+			DPM_create_relation(tdbb, MetadataCache::findRelation(tdbb, relfld[RFLD_R_ID]).unsafePointer());
 		}
 
 		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
@@ -662,7 +663,7 @@ void INI_init(thread_db* tdbb)
 	const int* fld;
 	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
-		jrd_rel* relation = MetadataCache::findRelation(tdbb, relfld[RFLD_R_ID]);
+		HazardPtr<jrd_rel> relation = MetadataCache::findRelation(tdbb, relfld[RFLD_R_ID]);
 		relation->rel_flags |= REL_system;
 		relation->rel_flags |= MET_get_rel_flags_from_TYPE(relfld[RFLD_R_TYPE]);
 		relation->rel_name = names[relfld[RFLD_R_NAME]];
@@ -743,7 +744,7 @@ void INI_init2(thread_db* tdbb)
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_version = dbb->dbb_minor_version;
-	MetadataCache& mdc = tdbb->getDatabase()->dbb_mdc;
+	MetadataCache* mdc = tdbb->getDatabase()->dbb_mdc;
 
 	const int* fld;
 	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
@@ -753,12 +754,12 @@ void INI_init2(thread_db* tdbb)
 			// free the space allocated for RDB$ROLES
 
 			const USHORT id = relfld[RFLD_R_ID];
-			jrd_rel* relation = mdc.getRelation(id);
+			HazardPtr<jrd_rel> relation = mdc->getRelation(tdbb, id);
 			delete relation->rel_current_format;
 			delete relation->rel_formats;
 			delete relation->rel_fields;
-			delete relation;
-			mdc.setRelation(id, nullptr);
+			relation->release(tdbb);			// delayedDelete
+			mdc->setRelation(tdbb, id, nullptr);
 
 			fld = relfld + RFLD_RPT;
 			while (fld[RFLD_F_NAME])
@@ -768,7 +769,7 @@ void INI_init2(thread_db* tdbb)
 		}
 		else
 		{
-			jrd_rel* relation = MetadataCache::findRelation(tdbb, relfld[RFLD_R_ID]);
+			HazardPtr<jrd_rel> relation = MetadataCache::findRelation(tdbb, relfld[RFLD_R_ID]);
 			Format* format = relation->rel_current_format;
 
 			int n = 0;
@@ -947,7 +948,7 @@ static void add_index_set(thread_db* tdbb)
 	for (int n = 0; n < SYSTEM_INDEX_COUNT; n++)
 	{
 		const ini_idx_t* index = &indices[n];
-		jrd_rel* relation = MetadataCache::findRelation(tdbb, index->ini_idx_relid);
+		HazardPtr<jrd_rel> relation = MetadataCache::findRelation(tdbb, index->ini_idx_relid);
 
 		MetaName indexName;
 		indexName.printf("RDB$INDEX_%d", index->ini_idx_index_id);
@@ -991,7 +992,7 @@ static void add_index_set(thread_db* tdbb)
 			idx.idx_flags = index->ini_idx_flags;
 			SelectivityList selectivity(*tdbb->getDefaultPool());
 
-			IDX_create_index(tdbb, relation, &idx, indexName.c_str(), NULL,
+			IDX_create_index(tdbb, relation.unsafePointer(), &idx, indexName.c_str(), NULL,
 				attachment->getSysTransaction(), selectivity);
 
 			X.RDB$INDEX_ID = idx.idx_id + 1;

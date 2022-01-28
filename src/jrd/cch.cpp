@@ -42,6 +42,7 @@
 #include "../jrd/tra.h"
 #include "../jrd/sbm.h"
 #include "../jrd/nbak.h"
+#include "../jrd/met.h"
 #include "../common/gdsassert.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"

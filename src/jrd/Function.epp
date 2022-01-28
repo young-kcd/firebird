@@ -175,7 +175,7 @@ HazardPtr<Function> Function::loadMetadata(thread_db* tdbb, USHORT id, bool nosc
 		}
 	}
 
-	Function* newFun = function.get();
+	Function* newFun = function.unsafePointer();
 	if (!newFun)
 		newFun = FB_NEW_POOL(*dbb->dbb_permanent) Function(*dbb->dbb_permanent);
 
@@ -190,7 +190,7 @@ HazardPtr<Function> Function::loadMetadata(thread_db* tdbb, USHORT id, bool nosc
 	if (!function->existenceLock)
 	{
 		Lock* const lock = FB_NEW_RPT(*attachment->att_pool, 0)
-			Lock(tdbb, sizeof(SLONG), LCK_fun_exist, function.get(), blockingAst);
+			Lock(tdbb, sizeof(SLONG), LCK_fun_exist, function.unsafePointer(), blockingAst);
 		function->existenceLock = lock;
 		lock->setKey(function->getId());
 	}
@@ -417,7 +417,7 @@ HazardPtr<Function> Function::loadMetadata(thread_db* tdbb, USHORT id, bool nosc
 						else
 							body.getBuffer(1)[0] = 0;
 
-						dbb->dbb_extManager->makeFunction(tdbb, csb, function.get(), X.RDB$ENGINE_NAME,
+						dbb->dbb_extManager->makeFunction(tdbb, csb, function.unsafePointer(), X.RDB$ENGINE_NAME,
 							(X.RDB$ENTRYPOINT.NULL ? "" : X.RDB$ENTRYPOINT), (char*) body.begin());
 
 						if (!function->fun_external)

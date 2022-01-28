@@ -78,16 +78,17 @@ Jrd::DmlNode*	MET_get_dependencies(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*,
 								Jrd::CompilerScratch*, Jrd::bid*, Jrd::JrdStatement**,
 								Jrd::CompilerScratch**, const Jrd::MetaName&, int, USHORT,
 								Jrd::jrd_tra*, const Jrd::MetaName& = Jrd::MetaName());
+Jrd::jrd_fld*	MET_get_field(const Jrd::HazardPtr<Jrd::jrd_rel>&, USHORT);
 Jrd::jrd_fld*	MET_get_field(const Jrd::jrd_rel*, USHORT);
 ULONG		MET_get_rel_flags_from_TYPE(USHORT);
 bool		MET_get_repl_state(Jrd::thread_db*, const Jrd::MetaName&);
 void		MET_get_shadow_files(Jrd::thread_db*, bool);
 bool		MET_load_exception(Jrd::thread_db*, Jrd::ExceptionItem&);
-void		MET_load_trigger(Jrd::thread_db*, Jrd::jrd_rel*, const Jrd::MetaName&, Jrd::TrigVector**);
+void		MET_load_trigger(Jrd::thread_db*, Jrd::jrd_rel*, const Jrd::MetaName&, Jrd::TrigVectorPtr*);
 void		MET_lookup_cnstrt_for_index(Jrd::thread_db*, Jrd::MetaName& constraint, const Jrd::MetaName& index_name);
 void		MET_lookup_cnstrt_for_trigger(Jrd::thread_db*, Jrd::MetaName&, Jrd::MetaName&, const Jrd::MetaName&);
 void		MET_lookup_exception(Jrd::thread_db*, SLONG, /* OUT */ Jrd::MetaName&, /* OUT */ Firebird::string*);
-int			MET_lookup_field(Jrd::thread_db*, Jrd::jrd_rel*, const Jrd::MetaName&);
+int			MET_lookup_field(Jrd::thread_db*, Jrd::HazardPtr<Jrd::jrd_rel>, const Jrd::MetaName&);
 Jrd::BlobFilter*	MET_lookup_filter(Jrd::thread_db*, SSHORT, SSHORT);
 bool		MET_load_generator(Jrd::thread_db*, Jrd::GeneratorItem&, bool* sysGen = 0, SLONG* step = 0);
 SLONG		MET_lookup_generator(Jrd::thread_db*, const Jrd::MetaName&, bool* sysGen = 0, SLONG* step = 0);
@@ -100,8 +101,8 @@ Jrd::DmlNode*	MET_parse_blob(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::bid*, Jrd::Com
 void		MET_parse_sys_trigger(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_prepare(Jrd::thread_db*, Jrd::jrd_tra*, USHORT, const UCHAR*);
 void		MET_release_existence(Jrd::thread_db*, Jrd::jrd_rel*);
-void		MET_release_trigger(Jrd::thread_db*, Jrd::TrigVector**, const Jrd::MetaName&);
-void		MET_release_triggers(Jrd::thread_db*, Jrd::TrigVector**, bool);
+void		MET_release_trigger(Jrd::thread_db*, Jrd::TrigVectorPtr*, const Jrd::MetaName&);
+void		MET_release_triggers(Jrd::thread_db*, Jrd::TrigVectorPtr*, bool);
 void		MET_revoke(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::MetaName&,
 	const Jrd::MetaName&, const Firebird::string&);
 void		MET_scan_partners(Jrd::thread_db*, Jrd::jrd_rel*);

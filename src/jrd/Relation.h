@@ -28,6 +28,8 @@
 #include "../jrd/pag.h"
 #include "../jrd/val.h"
 #include "../jrd/Attachment.h"
+#include "../jrd/HazardPtr.h"
+#include "../jrd/ExtEngineManager.h"
 
 namespace Jrd
 {
@@ -40,7 +42,111 @@ class jrd_fld;
 class ExternalFile;
 class IndexLock;
 class IndexBlock;
-class TrigVector;
+
+// Relation trigger definition
+
+class Trigger : public HazardObject
+{
+public:
+	typedef MetaName Key;
+
+	Firebird::HalfStaticArray<UCHAR, 128> blr;			// BLR code
+	Firebird::HalfStaticArray<UCHAR, 128> debugInfo;	// Debug info
+	JrdStatement* statement;							// Compiled statement
+	bool		releaseInProgress;
+	bool		sysTrigger;
+	FB_UINT64	type;						// Trigger type
+	USHORT		flags;						// Flags as they are in RDB$TRIGGERS table
+	jrd_rel*	relation;					// Trigger parent relation
+	MetaName	name;				// Trigger name
+	MetaName	engine;				// External engine name
+	Firebird::string	entryPoint;			// External trigger entrypoint
+	Firebird::string	extBody;			// External trigger body
+	ExtEngineManager::Trigger* extTrigger;	// External trigger
+	Nullable<bool> ssDefiner;
+	MetaName	owner;				// Owner for SQL SECURITY
+
+	bool hasData() const
+	{
+		return name.hasData();
+	}
+
+	Key getKey() const
+	{
+		return name;
+	}
+
+	bool isActive() const;
+
+	void compile(thread_db*);				// Ensure that trigger is compiled
+	int release(thread_db*) override;		// Try to free trigger request
+
+	explicit Trigger(MemoryPool& p)
+		: blr(p),
+		  debugInfo(p),
+		  releaseInProgress(false),
+		  name(p),
+		  engine(p),
+		  entryPoint(p),
+		  extBody(p),
+		  extTrigger(NULL)
+	{}
+
+	virtual ~Trigger()
+	{
+		delete extTrigger;
+	}
+};
+
+// Array of triggers (suppose separate arrays for triggers of different types)
+class TrigVector : public HazardArray<Trigger>
+{
+public:
+	explicit TrigVector(Firebird::MemoryPool& pool)
+		: HazardArray<Trigger>(pool),
+		  useCount(0)
+	{ }
+
+	TrigVector()
+		: HazardArray<Trigger>(Firebird::AutoStorage::getAutoMemoryPool()),
+		  useCount(0)
+	{ }
+
+	HazardPtr<Trigger> add(Trigger*);
+
+	void addRef()
+	{
+		++useCount;
+	}
+
+	bool hasData() const
+	{
+		return getCount() > 0;
+	}
+
+	bool isEmpty() const
+	{
+		return getCount() == 0;
+	}
+
+	bool hasActive() const;
+
+	void decompile(thread_db* tdbb);
+
+	void release();
+	void release(thread_db* tdbb);
+
+	~TrigVector()
+	{
+		fb_assert(useCount.value() == 0);
+	}
+
+private:
+	Firebird::AtomicCounter useCount;
+};
+
+typedef std::atomic<TrigVector*> TrigVectorPtr;
+
 
 // view context block to cache view aliases
 
@@ -261,24 +367,28 @@ public:
 	Lock*		rel_gc_lock;			// garbage collection lock
 	IndexLock*	rel_index_locks;		// index existence locks
 	IndexBlock*	rel_index_blocks;		// index blocks for caching index info
-	TrigVector*	rel_pre_erase; 			// Pre-operation erase trigger
-	TrigVector*	rel_post_erase;			// Post-operation erase trigger
-	TrigVector*	rel_pre_modify;			// Pre-operation modify trigger
-	TrigVector*	rel_post_modify;		// Post-operation modify trigger
-	TrigVector*	rel_pre_store;			// Pre-operation store trigger
-	TrigVector*	rel_post_store;			// Post-operation store trigger
+	TrigVectorPtr	rel_pre_erase; 			// Pre-operation erase trigger
+	TrigVectorPtr	rel_post_erase;			// Post-operation erase trigger
+	TrigVectorPtr	rel_pre_modify;			// Pre-operation modify trigger
+	TrigVectorPtr	rel_post_modify;		// Post-operation modify trigger
+	TrigVectorPtr	rel_pre_store;			// Pre-operation store trigger
+	TrigVectorPtr	rel_post_store;			// Post-operation store trigger
 	prim		rel_primary_dpnds;		// foreign dependencies on this relation's primary key
 	frgn		rel_foreign_refs;		// foreign references to other relations' primary keys
 	Nullable<bool>	rel_ss_definer;
 
 	TriState	rel_repl_state;			// replication state
 
-	Firebird::Mutex rel_drop_mutex;
+	Firebird::Mutex rel_drop_mutex, rel_trig_load_mutex;
 
 	bool isSystem() const;
 	bool isTemporary() const;
 	bool isVirtual() const;
 	bool isView() const;
+	bool hasData() const
+	{
+		return rel_name.hasData();
+	}
 
 	bool isReplicating(thread_db* tdbb);
 
@@ -340,7 +450,7 @@ public:
 
 	bool hasTriggers() const;
 	void releaseTriggers(thread_db* tdbb, bool destroy);
-	void replaceTriggers(thread_db* tdbb, TrigVector** triggers);
+	void replaceTriggers(thread_db* tdbb, TrigVectorPtr* triggers);
 
 	static Lock* createLock(thread_db* tdbb, MemoryPool* pool, jrd_rel* relation, lck_t, bool);
 	static int blocking_ast_gcLock(void*);

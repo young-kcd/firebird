@@ -82,6 +82,7 @@
 #include "../jrd/sort.h"
 #include "firebird/impl/blr.h"
 #include "../jrd/tra.h"
+#include "../jrd/met.h"
 #include "../common/gdsassert.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/timestamp.h"
