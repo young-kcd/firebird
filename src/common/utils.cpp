@@ -1615,6 +1615,8 @@ bool containsErrorCode(const ISC_STATUS* v, ISC_STATUS code)
 
 inline bool sqlSymbolChar(char c, bool first)
 {
+	if (c & 0x80)
+		return false;
 	return (isdigit(c) && !first) || isalpha(c) || c == '_' || c == '$';
 }
 
