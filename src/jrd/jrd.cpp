@@ -1350,7 +1350,7 @@ void JRD_make_role_name(string& userIdRole, const int dialect)
 		// Invoke utility twice: first to strip quotes, next to uppercase if needed
 		// For unquoted string nothing bad happens
 		fb_utils::dpbItemUpper(userIdRole);
-		fb_utils::dpbItemUpper(userIdRole);
+		userIdRole.upper();
 		break;
 
 	case SQL_DIALECT_V6_TRANSITION:
