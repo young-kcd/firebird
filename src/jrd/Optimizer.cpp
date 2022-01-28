@@ -2673,61 +2673,53 @@ void OptimizerInnerJoin::calculateStreamInfo()
  *  all streams.
  *
  **************************************/
+	StreamList streams;
 
-	FB_SIZE_T i = 0;
-	// First get the base cost without any relation to an other inner join stream.
-	for (i = 0; i < innerStreams.getCount(); i++)
+	// First get the base cost without any relation to any other inner join stream
+	for (auto innerStream : innerStreams)
 	{
-		CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[innerStreams[i]->stream];
+		streams.add(innerStream->stream);
+
+		const auto csb_tail = &csb->csb_rpt[innerStream->stream];
 		csb_tail->activate();
 
-		OptimizerRetrieval optimizerRetrieval(pool, optimizer, innerStreams[i]->stream,
+		OptimizerRetrieval optimizerRetrieval(pool, optimizer, innerStream->stream,
 											  false, false, sort);
 		AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getCost());
 
-		innerStreams[i]->baseCost = candidate->cost;
-		innerStreams[i]->baseSelectivity = candidate->selectivity;
-		innerStreams[i]->baseIndexes = candidate->indexes;
-		innerStreams[i]->baseUnique = candidate->unique;
-		innerStreams[i]->baseNavigated = candidate->navigated;
+		innerStream->baseCost = candidate->cost;
+		innerStream->baseSelectivity = candidate->selectivity;
+		innerStream->baseIndexes = candidate->indexes;
+		innerStream->baseUnique = candidate->unique;
+		innerStream->baseNavigated = candidate->navigated;
 
 		csb_tail->deactivate();
 	}
 
-	for (i = 0; i < innerStreams.getCount(); i++)
-	{
-		CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[innerStreams[i]->stream];
-		csb_tail->activate();
+	StreamStateHolder stateHolder(csb, streams);
+	stateHolder.activate();
 
-		// Find streams that have a indexed relationship to this
-		// stream and add the information.
-		for (FB_SIZE_T j = 0; j < innerStreams.getCount(); j++)
-		{
-			if (innerStreams[j]->stream != innerStreams[i]->stream)
-				getIndexedRelationship(innerStreams[i], innerStreams[j]);
-		}
+	// Collect stream inter-dependencies
+	for (const auto innerStream : innerStreams)
+		getIndexedRelationships(innerStream);
 
-		csb_tail->deactivate();
-	}
-
-	// Sort the streams based on independecy and cost.
-	// Except when a PLAN was forced.
+	// Unless PLAN is enforced, sort the streams based on independecy and cost
 	if (!plan && (innerStreams.getCount() > 1))
 	{
 		StreamInfoList tempStreams(pool);
 
-		for (i = 0; i < innerStreams.getCount(); i++)
+		for (const auto innerStream : innerStreams)
 		{
 			FB_SIZE_T index = 0;
 			for (; index < tempStreams.getCount(); index++)
 			{
 				// First those streams which can't be used by other streams
-				// or can't depend on a stream.
-				if (innerStreams[i]->isIndependent() && !tempStreams[index]->isIndependent())
+				// or can't depend on a stream
+				if (innerStream->isIndependent() && !tempStreams[index]->isIndependent())
 					break;
 
 				// Next those with the lowest previous expected streams
-				const int compare = innerStreams[i]->previousExpectedStreams -
+				const int compare = innerStream->previousExpectedStreams -
 					tempStreams[index]->previousExpectedStreams;
 
 				if (compare < 0)
@@ -2736,11 +2728,11 @@ void OptimizerInnerJoin::calculateStreamInfo()
 				if (compare == 0)
 				{
 					// Next those with the cheapest base cost
-					if (innerStreams[i]->baseCost < tempStreams[index]->baseCost)
+					if (innerStream->baseCost < tempStreams[index]->baseCost)
 						break;
 				}
 			}
-			tempStreams.insert(index, innerStreams[i]);
+			tempStreams.insert(index, innerStream);
 		}
 
 		// Finally update the innerStreams with the sorted streams
@@ -3073,8 +3065,7 @@ void OptimizerInnerJoin::findBestOrder(StreamType position, InnerJoinStreamInfo*
 		innerStreams[i]->used = streamFlags[i];
 }
 
-void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
-	InnerJoinStreamInfo* testStream)
+void OptimizerInnerJoin::getIndexedRelationships(InnerJoinStreamInfo* testStream)
 {
 /**************************************
  *
@@ -3091,38 +3082,38 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
  *  expected stream to the testStream.
  *
  **************************************/
-
-	CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[testStream->stream];
-	csb_tail->activate();
+	const auto csb_tail = &csb->csb_rpt[testStream->stream];
 
 	OptimizerRetrieval optimizerRetrieval(pool, optimizer, testStream->stream, false, false, NULL);
 	AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getCost());
 
-	if (candidate->dependentFromStreams.exist(baseStream->stream))
+	for (auto baseStream : innerStreams)
 	{
-		// If we could use more conjunctions on the testing stream
-		// with the base stream active as without the base stream
-		// then the test stream has a indexed relationship with the base stream.
-		IndexRelationship* indexRelationship = FB_NEW_POOL(pool) IndexRelationship();
-		indexRelationship->stream = testStream->stream;
-		indexRelationship->unique = candidate->unique;
-		indexRelationship->cost = candidate->cost;
-		indexRelationship->cardinality = candidate->unique ?
-			csb_tail->csb_cardinality : csb_tail->csb_cardinality * candidate->selectivity;
-
-		// indexRelationship are kept sorted on cost and unique in the indexRelations array.
-		// The unique and cheapest indexed relatioships are on the first position.
-		FB_SIZE_T index = 0;
-		for (; index < baseStream->indexedRelationships.getCount(); index++)
+		if (baseStream->stream != testStream->stream &&
+			candidate->dependentFromStreams.exist(baseStream->stream))
 		{
-			if (cheaperRelationship(indexRelationship, baseStream->indexedRelationships[index]))
-				break;
-		}
-		baseStream->indexedRelationships.insert(index, indexRelationship);
-		testStream->previousExpectedStreams++;
-	}
+			// If we could use more conjunctions on the testing stream
+			// with the base stream active as without the base stream
+			// then the test stream has a indexed relationship with the base stream.
+			IndexRelationship* indexRelationship = FB_NEW_POOL(pool) IndexRelationship();
+			indexRelationship->stream = testStream->stream;
+			indexRelationship->unique = candidate->unique;
+			indexRelationship->cost = candidate->cost;
+			indexRelationship->cardinality = candidate->unique ?
+				csb_tail->csb_cardinality : csb_tail->csb_cardinality * candidate->selectivity;
 
-	csb_tail->deactivate();
+			// indexRelationship are kept sorted on cost and unique in the indexRelations array.
+			// The unique and cheapest indexed relationships are on the first position.
+			FB_SIZE_T index = 0;
+			for (; index < baseStream->indexedRelationships.getCount(); index++)
+			{
+				if (cheaperRelationship(indexRelationship, baseStream->indexedRelationships[index]))
+					break;
+			}
+			baseStream->indexedRelationships.insert(index, indexRelationship);
+			testStream->previousExpectedStreams++;
+		}
+	}
 }
 
 InnerJoinStreamInfo* OptimizerInnerJoin::getStreamInfo(StreamType stream)
