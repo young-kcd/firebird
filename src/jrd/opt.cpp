@@ -282,8 +282,6 @@ namespace
 				{
 					// Ideally, we should never get here. But just in case it happened, handle it.
 
-					fb_assert(false);
-
 					for (River** iter = rivers.begin(); iter < rivers.end(); iter++)
 					{
 						River* const sub_river = *iter;
