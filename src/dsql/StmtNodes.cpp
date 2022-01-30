@@ -1767,19 +1767,16 @@ void DeclareSubFuncNode::genParameters(DsqlCompilerScratch* dsqlScratch,
 	}
 }
 
-DeclareSubFuncNode* DeclareSubFuncNode::pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
+DeclareSubFuncNode* DeclareSubFuncNode::pass1(thread_db* tdbb, CompilerScratch* /*csb*/)
 {
+	ContextPoolHolder context(tdbb, &subCsb->csb_pool);
+	PAR_blr(tdbb, NULL, blrStart, blrLength, NULL, &subCsb, NULL, false, 0);
+
 	return this;
 }
 
-DeclareSubFuncNode* DeclareSubFuncNode::pass2(thread_db* tdbb, CompilerScratch* /*csb*/)
+DeclareSubFuncNode* DeclareSubFuncNode::pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 {
-	// scope needed here?
-	{	// scope
-		ContextPoolHolder context(tdbb, &subCsb->csb_pool);
-		PAR_blr(tdbb, NULL, blrStart, blrLength, NULL, &subCsb, NULL, false, 0);
-	}
-
 	return this;
 }
 
@@ -2111,16 +2108,16 @@ void DeclareSubProcNode::genParameters(DsqlCompilerScratch* dsqlScratch,
 	}
 }
 
-DeclareSubProcNode* DeclareSubProcNode::pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
-{
-	return this;
-}
-
-DeclareSubProcNode* DeclareSubProcNode::pass2(thread_db* tdbb, CompilerScratch* /*csb*/)
+DeclareSubProcNode* DeclareSubProcNode::pass1(thread_db* tdbb, CompilerScratch* /*csb*/)
 {
 	ContextPoolHolder context(tdbb, &subCsb->csb_pool);
 	PAR_blr(tdbb, NULL, blrStart, blrLength, NULL, &subCsb, NULL, false, 0);
 
+	return this;
+}
+
+DeclareSubProcNode* DeclareSubProcNode::pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
+{
 	return this;
 }
 
@@ -2206,6 +2203,9 @@ DeclareVariableNode* DeclareVariableNode::pass1(thread_db* tdbb, CompilerScratch
 		*tdbb->getDefaultPool(), csb->csb_variables, varId + 1);
 	fb_assert(!(*vector)[varId]);
 	(*vector)[varId] = this;
+
+	if (!csb->mainCsb && csb->csb_variables_used_in_subroutines.exist(varId))
+		usedInSubRoutines = true;
 
 	return this;
 }
@@ -4490,6 +4490,8 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->loopLevel = 0;
 
 	StmtNode* stmtNode = body->dsqlPass(dsqlScratch);
+
+	dsqlScratch->putOuterMaps();
 	GEN_hidden_variables(dsqlScratch);
 
 	dsqlScratch->appendUChar(blr_stall);
@@ -7127,6 +7129,104 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 	}
 
 	return statement;
+}
+
+
+//--------------------
+
+
+static RegisterNode<OuterMapNode> regOuterMapNode({blr_outer_map});
+
+DmlNode* OuterMapNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
+{
+	fb_assert(csb->mainCsb);
+	if (!csb->mainCsb)
+		PAR_error(csb, Arg::Gds(isc_random) << "Invalid blr_outer_map. Must be inside subroutine.");
+
+	const auto node = FB_NEW_POOL(pool) OuterMapNode(pool);
+
+	auto& blrReader = csb->csb_blr_reader;
+	UCHAR subCode;
+
+	while ((subCode = blrReader.getByte()) != blr_end)
+	{
+		switch (subCode)
+		{
+			case blr_outer_map_message:
+			{
+				const USHORT outerNumber = blrReader.getWord();
+				const USHORT innerNumber = blrReader.getWord();
+
+				csb->outerMessagesMap.put(innerNumber, outerNumber);
+
+				const auto outerMessage = CMP_csb_element(csb->mainCsb, outerNumber)->csb_message;
+				if (!outerMessage)
+				{
+					fb_assert(false);
+					PAR_error(csb, Arg::Gds(isc_random) <<
+						"Invalid blr_outer_map_message: outer message does not exist");
+				}
+
+				const auto tail = CMP_csb_element(csb, innerNumber);
+				if (tail->csb_message)
+				{
+					fb_assert(false);
+					PAR_error(csb, Arg::Gds(isc_random) <<
+						"Invalid blr_outer_map_message: inner message already exist");
+				}
+
+				tail->csb_message = outerMessage;
+
+				if (innerNumber > csb->csb_msg_number)
+					csb->csb_msg_number = innerNumber;
+
+				break;
+			}
+
+			case blr_outer_map_variable:
+			{
+				const USHORT outerNumber = blrReader.getWord();
+				const USHORT innerNumber = blrReader.getWord();
+
+				csb->mainCsb->csb_variables_used_in_subroutines.add(outerNumber);
+				csb->outerVarsMap.put(innerNumber, outerNumber);
+
+				auto& outerVariables = *csb->mainCsb->csb_variables;
+				if (outerNumber >= outerVariables.count() || !outerVariables[outerNumber])
+				{
+					fb_assert(false);
+					PAR_error(csb, Arg::Gds(isc_random) <<
+						"Invalid blr_outer_map_variable: outer variable does not exist");
+				}
+
+				auto& innerVariables = *(csb->csb_variables = vec<DeclareVariableNode*>::newVector(
+					*tdbb->getDefaultPool(), csb->csb_variables, innerNumber + 1));
+
+				if (innerVariables[innerNumber])
+				{
+					fb_assert(false);
+					PAR_error(csb, Arg::Gds(isc_random) <<
+						"Invalid blr_outer_map_variable: inner variable already exist");
+				}
+
+				innerVariables[innerNumber] = outerVariables[outerNumber];
+				break;
+			}
+
+			default:
+				PAR_error(csb, Arg::Gds(isc_random) << "Invalid blr_outer_map sub code");
+		}
+	}
+
+	return node;
+}
+
+const StmtNode* OuterMapNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+{
+	if (request->req_operation == jrd_req::req_evaluate)
+		request->req_operation = jrd_req::req_return;
+
+	return parentStmt;
 }
 
 

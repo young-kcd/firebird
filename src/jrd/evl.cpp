@@ -136,25 +136,18 @@ dsc* EVL_assign_to(thread_db* tdbb, const ValueExprNode* node)
 	DEV_BLKCHK(node, type_nod);
 
 	jrd_req* request = tdbb->getRequest();
-	impure_value* impure = request->getImpure<impure_value>(node->impureOffset);
 
 	// The only nodes that can be assigned to are: argument, field and variable.
 
-	int arg_number;
-	const dsc* desc;
-	const MessageNode* message;
-	Record* record;
-	const ParameterNode* paramNode;
-	const VariableNode* varNode;
-	const FieldNode* fieldNode;
-
-	if ((paramNode = nodeAs<ParameterNode>(node)))
+	if (auto paramNode = nodeAs<ParameterNode>(node))
 	{
-		message = paramNode->message;
-		arg_number = paramNode->argNumber;
-		desc = &message->format->fmt_desc[arg_number];
+		auto message = paramNode->message;
+		auto arg_number = paramNode->argNumber;
+		auto desc = &message->format->fmt_desc[arg_number];
 
-		impure->vlu_desc.dsc_address = request->getImpure<UCHAR>(
+		auto impure = request->getImpure<impure_value>(node->impureOffset);
+
+		impure->vlu_desc.dsc_address = paramNode->getParamRequest(request)->getImpure<UCHAR>(
 			message->impureOffset + (IPTR) desc->dsc_address);
 		impure->vlu_desc.dsc_dtype = desc->dsc_dtype;
 		impure->vlu_desc.dsc_length = desc->dsc_length;
@@ -177,15 +170,15 @@ dsc* EVL_assign_to(thread_db* tdbb, const ValueExprNode* node)
 	}
 	else if (nodeIs<NullNode>(node))
 		return NULL;
-	else if ((varNode = nodeAs<VariableNode>(node)))
+	else if (auto varNode = nodeAs<VariableNode>(node))
 	{
-		// Calculate descriptor
-		impure = request->getImpure<impure_value>(varNode->varDecl->impureOffset);
+		auto impure = varNode->getVarRequest(request)->getImpure<impure_value>(varNode->varDecl->impureOffset);
 		return &impure->vlu_desc;
 	}
-	else if ((fieldNode = nodeAs<FieldNode>(node)))
+	else if (auto fieldNode = nodeAs<FieldNode>(node))
 	{
-		record = request->req_rpb[fieldNode->fieldStream].rpb_record;
+		auto record = request->req_rpb[fieldNode->fieldStream].rpb_record;
+		auto impure = request->getImpure<impure_value>(node->impureOffset);
 
 		if (!EVL_field(0, record, fieldNode->fieldId, &impure->vlu_desc))
 		{
@@ -672,11 +665,10 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 		request->req_flags = flags;
 	}
 
-	Firebird::string s;
-
 	if (err)
 	{
 		ISC_STATUS status = isc_not_valid_for_var;
+		string s;
 		const char* arg;
 
 		if (item.type == Item::TYPE_CAST)

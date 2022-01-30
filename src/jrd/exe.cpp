@@ -261,6 +261,14 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 	SET_TDBB(tdbb);
 	jrd_req* request = tdbb->getRequest();
 
+	const auto toVar = nodeAs<VariableNode>(to);
+
+	if (toVar && toVar->outerDecl)
+		request = toVar->getVarRequest(request);
+
+	AutoSetRestore2<jrd_req*, thread_db> autoSetRequest(
+		tdbb, &thread_db::getRequest, &thread_db::setRequest, request);
+
 	// Get descriptors of receiving and sending fields/parameters, variables, etc.
 
 	dsc* missing = NULL;
@@ -284,31 +292,39 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 		null = -1;
 
 	USHORT* impure_flags = NULL;
-	const ParameterNode* toParam;
-	const VariableNode* toVar;
+	const auto toParam = nodeAs<ParameterNode>(to);
 
-	if ((toParam = nodeAs<ParameterNode>(to)))
+	if (toParam)
 	{
 		const MessageNode* message = toParam->message;
+		const auto paramRequest = toParam->getParamRequest(request);
 
 		if (toParam->argInfo)
 		{
+			AutoSetRestore2<jrd_req*, thread_db> autoSetRequest(
+				tdbb, &thread_db::getRequest, &thread_db::setRequest, paramRequest);
+
 			EVL_validate(tdbb, Item(Item::TYPE_PARAMETER, message->messageNumber, toParam->argNumber),
 				toParam->argInfo, from_desc, null == -1);
 		}
 
-		impure_flags = request->getImpure<USHORT>(
+		impure_flags = paramRequest->getImpure<USHORT>(
 			message->impureFlags + (sizeof(USHORT) * toParam->argNumber));
 	}
-	else if ((toVar = nodeAs<VariableNode>(to)))
+	else if (toVar)
 	{
+		const auto varRequest = toVar->getVarRequest(request);
+
 		if (toVar->varInfo)
 		{
+			AutoSetRestore2<jrd_req*, thread_db> autoSetRequest(
+				tdbb, &thread_db::getRequest, &thread_db::setRequest, varRequest);
+
 			EVL_validate(tdbb, Item(Item::TYPE_VARIABLE, toVar->varId),
 				toVar->varInfo, from_desc, null == -1);
 		}
 
-		impure_flags = &request->getImpure<impure_value>(
+		impure_flags = &varRequest->getImpure<impure_value>(
 			toVar->varDecl->impureOffset)->vlu_flags;
 	}
 
@@ -321,43 +337,6 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 
 	if (!null)
 	{
-		// if necessary and appropriate, use the indicator variable
-
-		if (toParam && toParam->argIndicator)
-		{
-			dsc* indicator = EVL_assign_to(tdbb, toParam->argIndicator);
-			temp.dsc_dtype = dtype_short;
-			temp.dsc_length = sizeof(SSHORT);
-			temp.dsc_scale = 0;
-			temp.dsc_sub_type = 0;
-
-			SSHORT len;
-
-			if ((from_desc->dsc_dtype <= dtype_varying) && (to_desc->dsc_dtype <= dtype_varying) &&
-				(TEXT_LEN(from_desc) > TEXT_LEN(to_desc)))
-			{
-				len = TEXT_LEN(from_desc);
-			}
-			else
-				len = 0;
-
-			temp.dsc_address = (UCHAR *) &len;
-			MOV_move(tdbb, &temp, indicator);
-
-			if (len)
-			{
-				temp = *from_desc;
-				temp.dsc_length = TEXT_LEN(to_desc);
-
-				if (temp.dsc_dtype == dtype_cstring)
-					temp.dsc_length += 1;
-				else if (temp.dsc_dtype == dtype_varying)
-					temp.dsc_length += 2;
-
-				from_desc = &temp;
-			}
-		}
-
 		// Validate range for datetime values
 
 		if (DTYPE_IS_DATE(from_desc->dsc_dtype))
@@ -454,7 +433,6 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 
 	// Handle the null flag as appropriate for fields and message arguments.
 
-
 	const FieldNode* toField = nodeAs<FieldNode>(to);
 	if (toField)
 	{
@@ -499,12 +477,6 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 		temp.dsc_sub_type = 0;
 		temp.dsc_address = (UCHAR*) &null;
 		MOV_move(tdbb, &temp, to_desc);
-
-		if (null && toParam->argIndicator)
-		{
-			to_desc = EVL_assign_to(tdbb, toParam->argIndicator);
-			MOV_move(tdbb, &temp, to_desc);
-		}
 	}
 }
 

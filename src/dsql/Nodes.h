@@ -539,8 +539,7 @@ public:
 	static const USHORT FLAG_DOUBLE		= 0x20;
 	static const USHORT FLAG_DATE		= 0x40;
 	static const USHORT FLAG_DECFLOAT	= 0x80;
-	static const USHORT FLAG_VALUE		= 0x100;	// Full value area required in impure space.
-	static const USHORT FLAG_INT128		= 0x200;
+	static const USHORT FLAG_INT128		= 0x100;
 
 	explicit ExprNode(Type aType, MemoryPool& pool)
 		: DmlNode(pool),
@@ -1409,6 +1408,7 @@ public:
 		TYPE_MERGE_SEND,
 		TYPE_MESSAGE,
 		TYPE_MODIFY,
+		TYPE_OUTER_MAP,
 		TYPE_POST_EVENT,
 		TYPE_RECEIVE,
 		TYPE_RETURN,

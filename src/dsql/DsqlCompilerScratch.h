@@ -117,10 +117,12 @@ public:
 		  outputVariables(p),
 		  returningClause(nullptr),
 		  currCteAlias(NULL),
+		  mainScratch(aMainScratch),
+		  outerMessagesMap(p),
+		  outerVarsMap(p),
 		  ctes(p),
 		  cteAliases(p),
 		  psql(false),
-		  mainScratch(aMainScratch),
 		  subFunctions(p),
 		  subProcedures(p)
 	{
@@ -181,6 +183,7 @@ public:
 	void putLocalVariables(CompoundStmtNode* parameters, USHORT locals);
 	void putLocalVariable(dsql_var* variable, const DeclareVariableNode* hostParam,
 		const MetaName& collationName);
+	void putOuterMaps();
 	dsql_var* makeVariable(dsql_fld*, const char*, const dsql_var::Type type, USHORT,
 		USHORT, USHORT);
 	dsql_var* resolveVariable(const MetaName& varName);
@@ -313,14 +316,16 @@ public:
 	Firebird::Array<dsql_var*> outputVariables;
 	ReturningClause* returningClause;
 	const Firebird::string* const* currCteAlias;
+	DsqlCompilerScratch* mainScratch;
+	Firebird::NonPooledMap<USHORT, USHORT> outerMessagesMap;	// <outer, inner>
+	Firebird::NonPooledMap<USHORT, USHORT> outerVarsMap;		// <outer, inner>
 
 private:
 	Firebird::HalfStaticArray<SelectExprNode*, 4> ctes; // common table expressions
 	Firebird::HalfStaticArray<const Firebird::string*, 4> cteAliases; // CTE aliases in recursive members
 	bool psql;
-	DsqlCompilerScratch* mainScratch;
-	Firebird::GenericMap<Firebird::Left<MetaName, DeclareSubFuncNode*> > subFunctions;
-	Firebird::GenericMap<Firebird::Left<MetaName, DeclareSubProcNode*> > subProcedures;
+	Firebird::LeftPooledMap<MetaName, DeclareSubFuncNode*> subFunctions;
+	Firebird::LeftPooledMap<MetaName, DeclareSubProcNode*> subProcedures;
 };
 
 class PsqlChanger

@@ -318,6 +318,7 @@ const int op_subfunc_decl	= 28;
 const int op_window_win		= 29;
 const int op_erase			= 30;	// special due to optional blr_marks after blr_erase
 const int op_dcl_local_table	= 31;
+const int op_outer_map		= 32;
 
 static const UCHAR
 	// generic print formats
@@ -406,7 +407,8 @@ static const UCHAR
 	store3[] = { op_line, op_byte, op_line, op_verb, op_verb, op_verb, 0},
 	marks[] = { op_byte, op_literal, op_line, op_verb, 0},
 	erase[] = { op_erase, 0},
-	local_table[] = { op_word, op_byte, op_literal, op_byte, op_line, 0};
+	local_table[] = { op_word, op_byte, op_literal, op_byte, op_line, 0},
+	outer_map[] = { op_outer_map, 0 };
 
 
 #include "../jrd/blp.h"
@@ -3872,6 +3874,46 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 						}
 
 						--level;
+						break;
+
+					default:
+						fb_assert(false);
+				}
+			}
+
+			// print blr_end
+			control->ctl_blr_reader.seekBackward(1);
+			blr_print_verb(control, level);
+			break;
+		}
+
+		case op_outer_map:
+		{
+			offset = blr_print_line(control, offset);
+
+			static const char* subCodes[] =
+			{
+				nullptr,
+				"message",
+				"variable"
+			};
+
+			while ((blr_operator = control->ctl_blr_reader.getByte()) != blr_end)
+			{
+				blr_indent(control, level);
+
+				if (blr_operator == 0 || blr_operator >= FB_NELEM(subCodes))
+					blr_error(control, "*** invalid blr_outer_map sub code ***");
+
+				blr_format(control, "blr_outer_map_%s, ", subCodes[blr_operator]);
+
+				switch (blr_operator)
+				{
+					case blr_outer_map_message:
+					case blr_outer_map_variable:
+						blr_print_word(control);
+						n = blr_print_word(control);
+						offset = blr_print_line(control, offset);
 						break;
 
 					default:

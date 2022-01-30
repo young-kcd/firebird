@@ -1579,10 +1579,7 @@ public:
 		ValueExprNode::getChildren(holder, dsql);
 
 		if (!dsql)
-		{
 			holder.add(argFlag);
-			holder.add(argIndicator);
-		}
 	}
 
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
@@ -1598,6 +1595,8 @@ public:
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual bool dsqlMatch(DsqlCompilerScratch* dsqlScratch, const ExprNode* other, bool ignoreMapCast) const;
 
+	jrd_req* getParamRequest(jrd_req* request) const;
+
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
@@ -1608,10 +1607,10 @@ public:
 	dsql_par* dsqlParameter = nullptr;
 	NestConst<MessageNode> message;
 	NestConst<ValueExprNode> argFlag;
-	NestConst<ValueExprNode> argIndicator;
 	NestConst<ItemInfo> argInfo;
 	USHORT dsqlParameterIndex = 0;
 	USHORT argNumber = 0;
+	bool outerDecl = false;
 };
 
 
@@ -2201,6 +2200,8 @@ public:
 		dsqlDesc = desc;
 	}
 
+	jrd_req* getVarRequest(jrd_req* request) const;
+
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual ValueExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -2212,7 +2213,8 @@ public:
 	NestConst<dsql_var> dsqlVar;
 	NestConst<DeclareVariableNode> varDecl;
 	NestConst<ItemInfo> varInfo;
-	USHORT varId;
+	USHORT varId = 0;
+	bool outerDecl = false;
 };
 
 

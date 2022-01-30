@@ -137,9 +137,6 @@ SortNode* SortNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 SortNode* SortNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	for (NestConst<ValueExprNode>* i = expressions.begin(); i != expressions.end(); ++i)
-		(*i)->nodFlags |= ExprNode::FLAG_VALUE;
-
-	for (NestConst<ValueExprNode>* i = expressions.begin(); i != expressions.end(); ++i)
 		ExprNode::doPass2(tdbb, csb, i->getAddress());
 
 	return this;

@@ -36,6 +36,7 @@
 #include "../jrd/Relation.h"
 #include "../common/classes/array.h"
 #include "../jrd/MetaName.h"
+#include "../common/classes/fb_pair.h"
 #include "../common/classes/NestConst.h"
 
 #include "iberror.h"
@@ -453,12 +454,15 @@ public:
 		csb_current_nodes(p),
 		csb_current_for_nodes(p),
 		csb_computing_fields(p),
+		csb_variables_used_in_subroutines(p),
 		csb_pool(p),
 		csb_map_field_info(p),
 		csb_map_item_info(p),
 		csb_message_pad(p),
 		subFunctions(p),
 		subProcedures(p),
+		outerMessagesMap(p),
+		outerVarsMap(p),
 		csb_currentForNode(NULL),
 		csb_currentDMLNode(NULL),
 		csb_currentAssignTarget(NULL),
@@ -517,6 +521,7 @@ public:
 												// candidates within whose scope we are
 	Firebird::Array<ForNode*> csb_current_for_nodes;
 	Firebird::SortedArray<jrd_fld*> csb_computing_fields;	// Computed fields being compiled
+	Firebird::SortedArray<USHORT> csb_variables_used_in_subroutines;
 	StreamType		csb_n_stream;				// Next available stream
 	USHORT			csb_msg_number;				// Highest used message number
 	ULONG			csb_impure;					// Next offset into impure area
@@ -541,8 +546,10 @@ public:
 	bool		csb_returning_expr;
 	bool		csb_implicit_cursor;
 
-	Firebird::GenericMap<Firebird::Left<MetaName, DeclareSubFuncNode*> > subFunctions;
-	Firebird::GenericMap<Firebird::Left<MetaName, DeclareSubProcNode*> > subProcedures;
+	Firebird::LeftPooledMap<MetaName, DeclareSubFuncNode*> subFunctions;
+	Firebird::LeftPooledMap<MetaName, DeclareSubProcNode*> subProcedures;
+	Firebird::NonPooledMap<USHORT, USHORT> outerMessagesMap;	// <inner, outer>
+	Firebird::NonPooledMap<USHORT, USHORT> outerVarsMap;		// <inner, outer>
 
 	ForNode*	csb_currentForNode;
 	StmtNode*	csb_currentDMLNode;		// could be StoreNode or ModifyNode

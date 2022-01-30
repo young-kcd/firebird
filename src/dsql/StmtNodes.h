@@ -477,9 +477,7 @@ class DeclareVariableNode final : public TypedNode<StmtNode, StmtNode::TYPE_DECL
 {
 public:
 	explicit DeclareVariableNode(MemoryPool& pool)
-		: TypedNode<StmtNode, StmtNode::TYPE_DECLARE_VARIABLE>(pool),
-		  dsqlDef(NULL),
-		  varId(0)
+		: TypedNode<StmtNode, StmtNode::TYPE_DECLARE_VARIABLE>(pool)
 	{
 		varDesc.clear();
 	}
@@ -498,7 +496,8 @@ public:
 public:
 	NestConst<ParameterClause> dsqlDef;
 	dsc varDesc;
-	USHORT varId;
+	USHORT varId = 0;
+	bool usedInSubRoutines = false;
 };
 
 
@@ -1093,9 +1092,7 @@ class MessageNode : public TypedNode<StmtNode, StmtNode::TYPE_MESSAGE>
 public:
 	explicit MessageNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_MESSAGE>(pool),
-		  format(NULL),
-		  impureFlags(0),
-		  messageNumber(0)
+		  itemsUsedInSubroutines(pool)
 	{
 	}
 
@@ -1116,9 +1113,10 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
+	Firebird::SortedArray<USHORT> itemsUsedInSubroutines;
 	NestConst<Format> format;
-	ULONG impureFlags;
-	USHORT messageNumber;
+	ULONG impureFlags = 0;
+	USHORT messageNumber = 0;
 };
 
 
@@ -1168,6 +1166,40 @@ public:
 	unsigned marks = 0;						// see StmtNode::IUD_MARK_xxx
 	USHORT dsqlRseFlags = 0;
 	Nullable<USHORT> dsqlReturningLocalTableNumber;
+};
+
+
+class OuterMapNode final : public TypedNode<StmtNode, StmtNode::TYPE_OUTER_MAP>
+{
+public:
+	explicit OuterMapNode(MemoryPool& pool)
+		: TypedNode<StmtNode, StmtNode::TYPE_OUTER_MAP>(pool)
+	{
+	}
+
+public:
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	Firebird::string internalPrint(NodePrinter& /*printer*/) const override
+	{
+		return "OuterMapNode";
+	}
+
+	void genBlr(DsqlCompilerScratch* /*dsqlScratch*/) override
+	{
+	}
+
+	OuterMapNode* pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/) override
+	{
+		return this;
+	}
+
+	OuterMapNode* pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/) override
+	{
+		return this;
+	}
+
+	const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const override;
 };
 
 

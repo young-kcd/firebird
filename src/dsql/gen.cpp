@@ -77,14 +77,9 @@ void GEN_hidden_variables(DsqlCompilerScratch* dsqlScratch)
  *	Emit BLR for hidden variables.
  *
  **************************************/
-	if (dsqlScratch->hiddenVariables.isEmpty())
-		return;
 
-	for (Array<dsql_var*>::const_iterator i = dsqlScratch->hiddenVariables.begin();
-		 i != dsqlScratch->hiddenVariables.end();
-		 ++i)
+	for (const auto var : dsqlScratch->hiddenVariables)
 	{
-		const dsql_var* var = *i;
 		dsqlScratch->appendUChar(blr_dcl_variable);
 		dsqlScratch->appendUShort(var->number);
 		GEN_descriptor(dsqlScratch, &var->desc, true);
@@ -247,6 +242,7 @@ void GEN_request(DsqlCompilerScratch* scratch, DmlNode* node)
 	if (!block)
 		scratch->appendUChar(blr_begin);
 
+	scratch->putOuterMaps();
 	GEN_hidden_variables(scratch);
 
 	switch (statement->getType())

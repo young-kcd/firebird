@@ -1141,6 +1141,7 @@ void PAR_procedure_parms(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedu
 		MemoryPool& pool = *tdbb->getDefaultPool();
 
 		// We have a few parameters. Get on with creating the message block
+		// Outer messages map may start with 2, but they are always in the routine start.
 		USHORT n = ++csb->csb_msg_number;
 		if (n < 2)
 			csb->csb_msg_number = n = 2;

@@ -2342,6 +2342,8 @@ void CreateAlterFunctionNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* 
 		dsqlScratch->cursorNumber = 0;
 
 		StmtNode* stmtNode = body->dsqlPass(dsqlScratch);
+
+		dsqlScratch->putOuterMaps();
 		GEN_hidden_variables(dsqlScratch);
 
 		dsqlScratch->appendUChar(blr_stall);
@@ -3235,6 +3237,8 @@ void CreateAlterProcedureNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch*
 	dsqlScratch->cursorNumber = 0;
 
 	StmtNode* stmtNode = body->dsqlPass(dsqlScratch);
+
+	dsqlScratch->putOuterMaps();
 	GEN_hidden_variables(dsqlScratch);
 
 	dsqlScratch->appendUChar(blr_stall);
@@ -3751,6 +3755,8 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 		dsqlScratch->scopeLevel++;
 
 		StmtNode* stmtNode = body->dsqlPass(dsqlScratch);
+
+		dsqlScratch->putOuterMaps();
 		GEN_hidden_variables(dsqlScratch);
 
 		// dimitr: I see no reason to deny EXIT command in triggers,

@@ -193,8 +193,8 @@
 #define blr_agg_min		(unsigned char)85
 #define blr_agg_total		(unsigned char)86
 #define blr_agg_average		(unsigned char)87
-#define	blr_parameter3		(unsigned char)88	/* same as Rdb definition */
 /* unsupported
+#define	blr_parameter3		(unsigned char)88
 #define blr_run_max		(unsigned char)89
 #define blr_run_min		(unsigned char)90
 #define blr_run_total		(unsigned char)91
@@ -221,7 +221,7 @@
 
 // unused codes: 111..117
 
-#define blr_run_count		(unsigned char)118	/* changed from 88 to avoid conflict with blr_parameter3 */
+///#define blr_run_count		(unsigned char)118
 #define blr_rs_stream		(unsigned char)119
 #define blr_exec_proc		(unsigned char)120
 
@@ -451,5 +451,9 @@
 
 #define blr_local_table_truncate	(unsigned char) 219
 #define blr_local_table_id			(unsigned char) 220
+
+#define blr_outer_map				(unsigned char) 221
+#define blr_outer_map_message		(unsigned char) 1
+#define blr_outer_map_variable			(unsigned char) 2
 
 #endif // FIREBIRD_IMPL_BLR_H
