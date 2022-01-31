@@ -726,6 +726,12 @@ void EXE_receive(thread_db* tdbb,
 				fb_assert(transaction->tra_save_free == savepoint);
 				transaction->tra_save_free = savepoint->moveToStack(request->req_proc_sav_point);
 				fb_assert(request->req_proc_sav_point == savepoint);
+
+				// Ensure that the priorly existing savepoints are preserved,
+				// e.g. 10-11-12-(5-6-7) where savNumber == 5. This may happen
+				// due to looper savepoints being reused in subsequent invokations.
+				if (savepoint->getNumber() == savNumber)
+					break;
 			}
 		}
 		catch (...)
@@ -1076,6 +1082,12 @@ static void execute_looper(thread_db* tdbb,
 			fb_assert(savepoint == transaction->tra_save_free);
 			transaction->tra_save_free = savepoint->moveToStack(request->req_savepoints);
 			fb_assert(savepoint != transaction->tra_save_free);
+
+			// Ensure that the priorly existing savepoints are preserved,
+			// e.g. 10-11-12-(5-6-7) where savNumber == 5. This may happen
+			// due to looper savepoints being reused in subsequent invokations.
+			if (savepoint->getNumber() == savNumber)
+				break;
 		}
 	}
 }
