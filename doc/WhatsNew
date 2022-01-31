@@ -2,6 +2,11 @@
   * v3.0.9
   **************************
 
+    * Bugfix #7119
+        Database statistics service could not find existing table(s)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix #7115
         Server hangs in trace code when it tries to update mapping cache
       Contributor(s):
@@ -14,6 +19,11 @@
 
     * Bugfix #7109
         Content of DB file can be overwritten with zero characters in some (rare) cases
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix #7103
+        FB service hangs and cannot be stopped after several 'DELETE FROM MON$STATEMENTS' being issued in order to stop ES/EDS which waits record for updating
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
