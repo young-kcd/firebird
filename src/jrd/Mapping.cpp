@@ -1235,20 +1235,11 @@ InitInstance<SysPrivCache> spCache;
 
 void resetMap(const char* db, ULONG index)
 {
-	switch(index)
-	{
-	case Mapping::MAPPING_CACHE:
+	if(index & Mapping::MAPPING_CACHE)
 		resetMap(db);
-		break;
 
-	case Mapping::SYSTEM_PRIVILEGES_CACHE:
+	if(index & Mapping::SYSTEM_PRIVILEGES_CACHE)
 		spCache().invalidate(db);
-		break;
-
-	default:
-		fb_assert(false);
-		break;
-	}
 }
 
 } // anonymous namespace
