@@ -48,6 +48,13 @@ public:
 	static JrdStatement* makeStatement(thread_db* tdbb, CompilerScratch* csb, bool internalFlag);
 	static jrd_req* makeRequest(thread_db* tdbb, CompilerScratch* csb, bool internalFlag);
 
+	StmtNumber getStatementId() const
+	{
+		if (!id)
+			id = JRD_get_thread_data()->getDatabase()->generateStatementId();
+		return id;
+	}
+
 	const Routine* getRoutine() const;
 	bool isActive() const;
 
@@ -68,6 +75,7 @@ public:
 	unsigned flags;						// statement flags
 	unsigned blrVersion;
 	ULONG impureSize;					// Size of impure area
+	mutable StmtNumber id;				// statement identifier
 	Firebird::Array<record_param> rpbsSetup;
 	Firebird::Array<jrd_req*> requests;	// vector of requests
 	ExternalAccessList externalList;	// Access to procedures/triggers to be checked

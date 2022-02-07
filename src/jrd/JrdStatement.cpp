@@ -304,6 +304,8 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 	if (internalFlag)
 		statement->flags |= FLAG_INTERNAL;
 
+	tdbb->getAttachment()->att_statements.add(statement);
+
 	return statement;
 }
 
@@ -407,7 +409,6 @@ jrd_req* JrdStatement::getRequest(thread_db* tdbb, USHORT level)
 
 	// Create the request.
 	jrd_req* const request = FB_NEW_POOL(*pool) jrd_req(attachment, this, parentStats);
-	request->setRequestId(dbb->generateStatementId());
 
 	requests[level] = request;
 
@@ -645,14 +646,19 @@ void JrdStatement::release(thread_db* tdbb)
 	for (jrd_req** instance = requests.begin(); instance != requests.end(); ++instance)
 		EXE_release(tdbb, *instance);
 
+	const auto attachment = tdbb->getAttachment();
+
+	FB_SIZE_T pos;
+	if (attachment->att_statements.find(this, pos))
+		attachment->att_statements.remove(pos);
+	else
+		fb_assert(false);
+
 	sqlText = NULL;
 
 	// Sub statement pool is the same of the main statement, so don't delete it.
 	if (!parentStatement)
-	{
-		Jrd::Attachment* const att = tdbb->getAttachment();
-		att->deletePool(pool);
-	}
+		attachment->deletePool(pool);
 }
 
 // Check that we have enough rights to access all resources this list of triggers touches.
