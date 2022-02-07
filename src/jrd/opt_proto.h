@@ -30,7 +30,7 @@
 #include "../jrd/lls.h"
 
 namespace Jrd {
-	class jrd_req;
+	class JrdStatement;
 	class jrd_rel;
 	class RecordSource;
 	struct index_desc;

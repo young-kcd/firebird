@@ -41,6 +41,8 @@
     <ClCompile Include="..\..\..\src\dsql\DsqlCompilerScratch.cpp" />
     <ClCompile Include="..\..\..\src\dsql\DsqlCursor.cpp" />
     <ClCompile Include="..\..\..\src\dsql\DSqlDataTypeUtil.cpp" />
+    <ClCompile Include="..\..\..\src\dsql\DsqlRequests.cpp" />
+    <ClCompile Include="..\..\..\src\dsql\DsqlStatements.cpp" />
     <ClCompile Include="..\..\..\src\dsql\errd.cpp" />
     <ClCompile Include="..\..\..\src\dsql\ExprNodes.cpp" />
     <ClCompile Include="..\..\..\src\dsql\gen.cpp" />
@@ -186,6 +188,8 @@
     <ClInclude Include="..\..\..\src\dsql\DsqlCompilerScratch.h" />
     <ClInclude Include="..\..\..\src\dsql\DsqlCursor.h" />
     <ClInclude Include="..\..\..\src\dsql\DSqlDataTypeUtil.h" />
+    <ClInclude Include="..\..\..\src\dsql\DsqlRequests.h" />
+    <ClInclude Include="..\..\..\src\dsql\DsqlStatements.h" />
     <ClInclude Include="..\..\..\src\dsql\dsql_proto.h" />
     <ClInclude Include="..\..\..\src\dsql\errd_proto.h" />
     <ClInclude Include="..\..\..\src\dsql\ExprNodes.h" />

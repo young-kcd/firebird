@@ -143,38 +143,26 @@ BoolExprNode* CMP_clone_node_opt(thread_db* tdbb, CompilerScratch* csb, BoolExpr
 	return clone;
 }
 
-
-jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool internal_flag,
-					  ULONG dbginfo_length, const UCHAR* dbginfo)
+// Compile a statement.
+JrdStatement* CMP_compile(thread_db* tdbb, const UCHAR* blr, ULONG blrLength, bool internalFlag,
+	ULONG dbginfoLength, const UCHAR* dbginfo)
 {
-/**************************************
- *
- *	C M P _ c o m p i l e 2
- *
- **************************************
- *
- * Functional description
- *	Compile a BLR request.
- *
- **************************************/
-	jrd_req* request = NULL;
+	JrdStatement* statement = nullptr;
 
 	SET_TDBB(tdbb);
-	Jrd::Attachment* const att = tdbb->getAttachment();
+	const auto att = tdbb->getAttachment();
 
 	// 26.09.2002 Nickolay Samofatov: default memory pool will become statement pool
 	// and will be freed by CMP_release
-	MemoryPool* const new_pool = att->createPool();
+	const auto newPool = att->createPool();
 
 	try
 	{
-		Jrd::ContextPoolHolder context(tdbb, new_pool);
+		Jrd::ContextPoolHolder context(tdbb, newPool);
 
-		CompilerScratch* csb =
-			PAR_parse(tdbb, blr, blr_length, internal_flag, dbginfo_length, dbginfo);
+		const auto csb = PAR_parse(tdbb, blr, blrLength, internalFlag, dbginfoLength, dbginfo);
 
-		request = JrdStatement::makeRequest(tdbb, csb, internal_flag);
-		new_pool->setStatsGroup(request->req_memory_stats);
+		statement = JrdStatement::makeStatement(tdbb, csb, internalFlag);
 
 #ifdef CMP_DEBUG
 		if (csb->csb_dump.hasData())
@@ -196,19 +184,39 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool 
 		}
 #endif
 
-		request->getStatement()->verifyAccess(tdbb);
+		statement->verifyAccess(tdbb);
 
 		delete csb;
 	}
 	catch (const Firebird::Exception& ex)
 	{
 		ex.stuffException(tdbb->tdbb_status_vector);
-		if (request)
-			CMP_release(tdbb, request);
+		if (statement)
+			statement->release(tdbb);
 		else
-			att->deletePool(new_pool);
+			att->deletePool(newPool);
 		ERR_punt();
 	}
+
+	return statement;
+}
+
+jrd_req* CMP_compile_request(thread_db* tdbb, const UCHAR* blr, ULONG blrLength, bool internalFlag)
+{
+/**************************************
+ *
+ *	C M P _ c o m p i l e _ r e q u e s t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Compile a BLR request.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	auto statement = CMP_compile(tdbb, blr, blrLength, internalFlag, 0, nullptr);
+	auto request = statement->getRequest(tdbb, 0);
 
 	return request;
 }

@@ -455,12 +455,10 @@ string OPT_get_plan(thread_db* tdbb, const JrdStatement* statement, bool detaile
 
 	if (statement)
 	{
-		const Array<const RecordSource*>& fors = statement->fors;
-
-		for (FB_SIZE_T i = 0; i < fors.getCount(); i++)
+		for (const auto& recordSource : statement->fors)
 		{
 			plan += detailed ? "\nSelect Expression" : "\nPLAN ";
-			fors[i]->print(tdbb, plan, detailed, 0);
+			recordSource->print(tdbb, plan, detailed, 0);
 		}
 	}
 

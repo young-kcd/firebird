@@ -410,6 +410,9 @@ jrd_req* JrdStatement::getRequest(thread_db* tdbb, USHORT level)
 	// Create the request.
 	jrd_req* const request = FB_NEW_POOL(*pool) jrd_req(attachment, this, parentStats);
 
+	if (level == 0)
+		pool->setStatsGroup(request->req_memory_stats);
+
 	requests[level] = request;
 
 	return request;

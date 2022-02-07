@@ -382,8 +382,8 @@ public:
 	ULONG		req_flags;				// misc request flags
 	Savepoint*	req_savepoints;			// Looper savepoint list
 	Savepoint*	req_proc_sav_point;		// procedure savepoint list
-	unsigned int req_timeout;					// query timeout in milliseconds, set by the dsql_req::setupTimer
-	Firebird::RefPtr<TimeoutTimer> req_timer;	// timeout timer, shared with dsql_req
+	unsigned int req_timeout;					// query timeout in milliseconds, set by the DsqlRequest::setupTimer
+	Firebird::RefPtr<TimeoutTimer> req_timer;	// timeout timer, shared with DsqlRequest
 
 	Firebird::AutoPtr<Jrd::RuntimeStatistics> req_fetch_baseline; // State of request performance counters when we reported it last time
 	SINT64 req_fetch_elapsed;	// Number of clock ticks spent while fetching rows for this request since we reported it last time

@@ -213,7 +213,7 @@ public:
 
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
-		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
+		dsqlScratch->getStatement()->setType(DsqlStatement::TYPE_DDL);
 		return this;
 	}
 
@@ -283,7 +283,7 @@ public:
 		return this;
 	}
 
-	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** transaction) const = 0;
+	virtual void execute(thread_db* tdbb, DsqlRequest* request, jrd_tra** transaction) const = 0;
 };
 
 
@@ -300,12 +300,12 @@ public:
 	{
 		Node::dsqlPass(dsqlScratch);
 
-		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SESSION_MANAGEMENT);
+		dsqlScratch->getStatement()->setType(DsqlStatement::TYPE_SESSION_MANAGEMENT);
 
 		return this;
 	}
 
-	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** traHandle) const = 0;
+	virtual void execute(thread_db* tdbb, DsqlRequest* request, jrd_tra** traHandle) const = 0;
 };
 
 
