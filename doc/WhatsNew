@@ -7,6 +7,11 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix #7118
+        Chained JOIN .. USING across the same column names may be optimized badly
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix #7115
         Server hangs in trace code when it tries to update mapping cache
       Contributor(s):
@@ -42,6 +47,16 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix #7057
+        Client-side positioned updates work wrongly with scrollable cursors
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix #7056
+        Fetching from a scrollable cursor may overwrite user-specified buffer and corrupt memory
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix #7043
         Wrong message when user has no access to /tmp/firebird
       Contributor(s):
@@ -51,6 +66,11 @@
         Status vector for ES(<EMPTY_STRING>) is unstable if another execute block with correct statement was executed before
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix #3357
+        Bad execution plan if some stream depends on multiple streams via a function
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
 
   **************************
