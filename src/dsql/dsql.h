@@ -123,20 +123,13 @@ namespace Jrd {
 class dsql_dbb : public pool_alloc<dsql_type_dbb>
 {
 public:
-	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		MetaName, class dsql_rel*> > > dbb_relations;			// known relations in database
-	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		QualifiedName, class dsql_prc*> > > dbb_procedures;	// known procedures in database
-	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		QualifiedName, class dsql_udf*> > > dbb_functions;	// known functions in database
-	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		MetaName, class dsql_intlsym*> > > dbb_charsets;		// known charsets in database
-	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		MetaName, class dsql_intlsym*> > > dbb_collations;	// known collations in database
-	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<
-		SSHORT, dsql_intlsym*> > > dbb_charsets_by_id;	// charsets sorted by charset_id
-	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		Firebird::string, DsqlDmlRequest*>>> dbb_cursors;	// known cursors in database
+	Firebird::LeftPooledMap<MetaName, class dsql_rel*> dbb_relations;		// known relations in database
+	Firebird::LeftPooledMap<QualifiedName, class dsql_prc*> dbb_procedures;	// known procedures in database
+	Firebird::LeftPooledMap<QualifiedName, class dsql_udf*> dbb_functions;	// known functions in database
+	Firebird::LeftPooledMap<MetaName, class dsql_intlsym*> dbb_charsets;	// known charsets in database
+	Firebird::LeftPooledMap<MetaName, class dsql_intlsym*> dbb_collations;	// known collations in database
+	Firebird::NonPooledMap<SSHORT, dsql_intlsym*> dbb_charsets_by_id;		// charsets sorted by charset_id
+	Firebird::LeftPooledMap<Firebird::string, DsqlDmlRequest*> dbb_cursors;	// known cursors in database
 
 	MemoryPool&		dbb_pool;			// The current pool for the dbb
 	Attachment*		dbb_attachment;
@@ -178,13 +171,13 @@ public:
 	{
 	}
 
-	class dsql_fld*	rel_fields;		// Field block
-	//dsql_rel*	rel_base_relation;	// base relation for an updatable view
-	MetaName rel_name;	// Name of relation
-	MetaName rel_owner;	// Owner of relation
-	USHORT		rel_id;				// Relation id
-	USHORT		rel_dbkey_length;
-	USHORT		rel_flags;
+	class dsql_fld* rel_fields;		// Field block
+	//dsql_rel* rel_base_relation;	// base relation for an updatable view
+	MetaName rel_name;				// Name of relation
+	MetaName rel_owner;				// Owner of relation
+	USHORT rel_id;					// Relation id
+	USHORT rel_dbkey_length;
+	USHORT rel_flags;
 };
 
 // rel_flags bits
@@ -507,8 +500,7 @@ public:
 	Firebird::string	ctx_internal_alias;	// Alias as specified in query
 	DsqlContextStack	ctx_main_derived_contexts;	// contexts used for blr_derived_expr
 	DsqlContextStack	ctx_childs_derived_table;	// Childs derived table context
-	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		MetaName, ImplicitJoin*> > > ctx_imp_join;	// Map of USING fieldname to ImplicitJoin
+	Firebird::LeftPooledMap<MetaName, ImplicitJoin*> ctx_imp_join;	// Map of USING fieldname to ImplicitJoin
 	Firebird::Array<WindowMap*> ctx_win_maps;	// Maps for window functions
 	Firebird::GenericMap<NamedWindowClause> ctx_named_windows;
 
