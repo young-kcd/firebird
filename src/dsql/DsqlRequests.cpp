@@ -24,7 +24,7 @@
 #include "../dsql/dsql.h"
 #include "../dsql/DsqlBatch.h"
 #include "../dsql/Nodes.h"
-#include "../jrd/JrdStatement.h"
+#include "../jrd/Statement.h"
 #include "../jrd/req.h"
 #include "../jrd/tra.h"
 #include "../jrd/replication/Publisher.h"

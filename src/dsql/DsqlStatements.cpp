@@ -24,7 +24,7 @@
 #include "../dsql/dsql.h"
 #include "../dsql/Nodes.h"
 #include "../dsql/DsqlCompilerScratch.h"
-#include "../jrd/JrdStatement.h"
+#include "../jrd/Statement.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/gen_proto.h"
 #include "../jrd/cmp_proto.h"

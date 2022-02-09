@@ -19,7 +19,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/JrdStatement.h"
+#include "../jrd/Statement.h"
 #include "../jrd/Attachment.h"
 #include "../jrd/intl_classes.h"
 #include "../jrd/acl.h"

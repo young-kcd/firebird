@@ -31,7 +31,7 @@
 #include "../jrd/exe.h"
 #include "../jrd/sort.h"
 #include "../jrd/Attachment.h"
-#include "../jrd/JrdStatement.h"
+#include "../jrd/Statement.h"
 #include "../jrd/Record.h"
 #include "../jrd/RecordNumber.h"
 #include "../common/classes/timestamp.h"
