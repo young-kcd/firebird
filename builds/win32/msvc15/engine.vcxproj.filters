@@ -43,6 +43,9 @@
     <Filter Include="Replication">
       <UniqueIdentifier>{686cba10-1e4f-44f7-b044-972ef8327197}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Optimizer">
+      <UniqueIdentifier>{4acc7c23-ac25-4311-a075-813ed730cb40}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\jrd\recsrc\WindowedStream.cpp">
@@ -480,15 +483,6 @@
     <ClCompile Include="..\..\..\src\jrd\SystemPackages.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\optimizer\Optimizer.cpp">
-      <Filter>Optimizer</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\optimizer\Retrieval.cpp">
-      <Filter>Optimizer</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\optimizer\InnerJoin.cpp">
-      <Filter>Optimizer</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\replication\Applier.cpp">
       <Filter>Replication</Filter>
     </ClCompile>
@@ -515,6 +509,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\MetaName.cpp">
       <Filter>JRD files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\optimizer\InnerJoin.cpp">
+      <Filter>Optimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\optimizer\Optimizer.cpp">
+      <Filter>Optimizer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\optimizer\Retrieval.cpp">
+      <Filter>Optimizer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
