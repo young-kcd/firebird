@@ -111,7 +111,7 @@ Format* Routine::createFormat(MemoryPool& pool, IMessageMetadata* params, bool a
 	return format;
 }
 
-void Routine::setStatement(JrdStatement* value)
+void Routine::setStatement(Statement* value)
 {
 	statement = value;
 
@@ -173,7 +173,7 @@ void Routine::parseBlr(thread_db* tdbb, CompilerScratch* csb, bid* blob_id, bid*
 
 	flags &= ~Routine::FLAG_RELOAD;
 
-	JrdStatement* statement = getStatement();
+	Statement* statement = getStatement();
 	PAR_blr(tdbb, NULL, tmp.begin(), (ULONG) tmp.getCount(), NULL, &csb, &statement, false, 0);
 	setStatement(statement);
 
